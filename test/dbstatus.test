@@ -133,6 +133,10 @@ foreach ::lookaside_buffer_size {0 64 120} {
       END;
       SELECT * FROM v1;
     }
+    8x {
+      CREATE TABLE t1(a, b, UNIQUE(a, b));
+      CREATE VIRTUAL TABLE t2 USING echo(t1);
+    }
   } {
     set tn "$::lookaside_buffer_size-$tn"
   
@@ -142,6 +146,9 @@ foreach ::lookaside_buffer_size {0 64 120} {
     sqlite3 db test.db
     sqlite3_db_config_lookaside db 0 $::lookaside_buffer_size 500
     db cache size 0
+
+    catch { register_echo_module db }
+    ifcapable !vtab { if {[string match *x $tn]} continue }
   
     # Step 2.
     execsql $schema
@@ -166,9 +173,20 @@ foreach ::lookaside_buffer_size {0 64 120} {
     set nAlloc4  [lindex [sqlite3_status SQLITE_STATUS_MEMORY_USED 0] 1]
     incr nAlloc4 [lookaside db]
     set nSchema4 [lindex [sqlite3_db_status db SQLITE_DBSTATUS_SCHEMA_USED 0] 1]
-  
     set nFree [expr {$nAlloc1-$nAlloc2}]
-    do_test dbstatus-2.$tn.a { expr {$nSchema1-$nSchema2} } $nFree
+    
+    # Tests for which the test name ends in an "x" report slightly less
+    # memory than is actually freed when all statements are finalized.
+    # This is because a small amount of memory allocated by a virtual table
+    # implementation using sqlite3_mprintf() is technically considered
+    # external and so is not counted as "statement memory".
+    #
+    if {[string match *x $tn]} {
+      do_test dbstatus-2.$tn.ax { expr {($nSchema1-$nSchema2)<=$nFree} } 1
+    } else {
+      do_test dbstatus-2.$tn.a { expr {$nSchema1-$nSchema2} } $nFree
+    }
+  
     do_test dbstatus-2.$tn.b { list $nAlloc1 $nSchema1 } "$nAlloc3 $nSchema3"
     do_test dbstatus-2.$tn.c { list $nAlloc2 $nSchema2 } "$nAlloc4 $nSchema4"
   }
@@ -239,6 +257,14 @@ foreach ::lookaside_buffer_size {0 64 120} {
     } {
       SELECT count(*) FROM t1 WHERE upper(a)='ABC';
     }
+    5x {
+      CREATE TABLE t1(a, b UNIQUE);
+      CREATE VIRTUAL TABLE t2 USING echo(t1);
+    } {
+      SELECT count(*) FROM t2;
+      SELECT * FROM t2 WHERE b>5;
+      SELECT * FROM t2 WHERE b='abcdefg';
+    }
   } {
     set tn "$::lookaside_buffer_size-$tn"
 
@@ -248,6 +274,9 @@ foreach ::lookaside_buffer_size {0 64 120} {
     sqlite3 db test.db
     sqlite3_db_config_lookaside db 0 $::lookaside_buffer_size 500
     db cache size 1000
+
+    catch { register_echo_module db }
+    ifcapable !vtab { if {[string match *x $tn]} continue }
   
     execsql $schema
     db cache flush
@@ -279,8 +308,21 @@ foreach ::lookaside_buffer_size {0 64 120} {
     set nStmt4 [lindex [sqlite3_db_status db SQLITE_DBSTATUS_STMT_USED 0] 1]
   
     set nFree [expr {$nAlloc1-$nAlloc2}]
-    do_test dbstatus-3.$tn.a { list $nStmt2 } {0}
-    do_test dbstatus-3.$tn.b { list $nStmt1 } [list $nFree]
+
+    do_test dbstatus-3.$tn.a { expr $nStmt2 } {0}
+
+    # Tests for which the test name ends in an "x" report slightly less
+    # memory than is actually freed when all statements are finalized.
+    # This is because a small amount of memory allocated by a virtual table
+    # implementation using sqlite3_mprintf() is technically considered
+    # external and so is not counted as "statement memory".
+    #
+    if {[string match *x $tn]} {
+      do_test dbstatus-3.$tn.bx { expr $nStmt1<=$nFree }  {1}
+    } else {
+      do_test dbstatus-3.$tn.b { expr $nStmt1==$nFree } {1}
+    }
+
     do_test dbstatus-3.$tn.c { list $nAlloc1 $nStmt1 } [list $nAlloc3 $nStmt3]
     do_test dbstatus-3.$tn.d { list $nAlloc2 $nStmt2 } [list $nAlloc4 $nStmt4]
   }

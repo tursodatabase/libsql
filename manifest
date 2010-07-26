@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Further\sfixes\sto\sthe\sP4_MEM\ssize\smeasurement\slogic.
-D 2010-07-26T14:20:07
+C Add\svirtual\stable\stest\scases\sto\sdbstatus.test.
+D 2010-07-26T14:47:14
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -139,7 +136,7 @@ F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 6d422ea91cf3d2d00408c5a8f2391cd458da85f8
 F src/main.c a487fe90aecaccb142e4a6b738c7e26e99145bcd
-F src/malloc.c 1cf0f2f45926c40b638e85e9b67fe5fabd072829
+F src/malloc.c 9d7dc6a52aa13ba3639eb40c573dd7adb3a16813
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 89d4ea8d5cdd55635cbaa48ad53132af6294cbb2
 F src/mem2.c 12c91260fd2320eda9355dea5445b137f848c05b
@@ -333,7 +330,7 @@ F test/createtab.test 199cf68f44e5d9e87a0b8afc7130fdeb4def3272
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
 F test/ctime.test 7bd009071e242aac4f18521581536b652b789a47
 F test/date.test 6354b883f922c38046a8efbad187cc95df6da023
-F test/dbstatus.test 77ff0d38db69b4136a6db168c9e1b23f41276201
+F test/dbstatus.test 1a536e002020392ec946a916f727836394566e3d
 F test/default.test 6faf23ccb300114924353007795aa9a8ec0aa9dc
 F test/delete.test f7629d9eb245dfca170169cc5c7a735dec34aeb4
 F test/delete2.test 3a03f2cca1f9a67ec469915cb8babd6485db43fa
@@ -841,14 +838,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8166f33885b86029bb8a0fbaf70606a0d2d5ec2e
-R 206ab46db8056d477c83ba4fb6c527f4
-U drh
-Z 33466832801b7ba31895995976b46d64
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMTZmaoxKgR168RlERAn+pAJ4rC1olXw/iDp2XbDUFSLTSJSuc+wCfRE9f
-5SDUlQ0qZ1NrdW8jGONN1jQ=
-=xJpP
------END PGP SIGNATURE-----
+P 934cda2987c331b57a195ed45e9a91794896672a
+R c1701c0ea6fc39bdd7ca655ca980d689
+U dan
+Z 9ecff26939461d0a9295122b2a8fa08b
