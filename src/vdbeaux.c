@@ -592,7 +592,7 @@ static void freeP4(sqlite3 *db, int p4type, void *p4){
         break;
       }
       case P4_MPRINTF: {
-        sqlite3_free(p4);
+        if( db->pnBytesFreed==0 ) sqlite3_free(p4);
         break;
       }
       case P4_VDBEFUNC: {
