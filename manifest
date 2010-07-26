@@ -1,5 +1,5 @@
-C Add\svirtual\stable\stest\scases\sto\sdbstatus.test.
-D 2010-07-26T14:47:14
+C When\scalculating\sschema\smemory,\suse\sthe\sactual\sallocated\ssize\sof\shash\selements,\snot\ssizeof(HashElem).\sAlso\sfix\sa\sbug\sin\sdbstatus.test
+D 2010-07-26T15:57:02
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -174,7 +174,7 @@ F src/sqlite.h.in e789728101d821fd4307208aa11e332e51eedbf9
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
 F src/sqliteInt.h a9be6badc6cd6a3c1ae54475a98661cf351ecad5
 F src/sqliteLimit.h 196e2f83c3b444c4548fc1874f52f84fdbda40f3
-F src/status.c 0fa47a4331a263afaa37c9272531998dd975f557
+F src/status.c 51f65ba9768846c071fa621624d55d6866fce28b
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c ae1e4fb653c91ddad7e2534d209711a12604ccc4
 F src/test1.c ff3b4533fc4d78d1bff2ef831a5791db55096ed3
@@ -330,7 +330,7 @@ F test/createtab.test 199cf68f44e5d9e87a0b8afc7130fdeb4def3272
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
 F test/ctime.test 7bd009071e242aac4f18521581536b652b789a47
 F test/date.test 6354b883f922c38046a8efbad187cc95df6da023
-F test/dbstatus.test 1a536e002020392ec946a916f727836394566e3d
+F test/dbstatus.test ce26cd49a3746ca7ae0e5802ef0b2a9edbf71b29
 F test/default.test 6faf23ccb300114924353007795aa9a8ec0aa9dc
 F test/delete.test f7629d9eb245dfca170169cc5c7a735dec34aeb4
 F test/delete2.test 3a03f2cca1f9a67ec469915cb8babd6485db43fa
@@ -838,7 +838,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 934cda2987c331b57a195ed45e9a91794896672a
-R c1701c0ea6fc39bdd7ca655ca980d689
+P 72b84d066a4eac90a77142c3ea66ef3d21a1104e
+R 2474ec9a0af1eced2c64b9ba3d68389f
 U dan
-Z 9ecff26939461d0a9295122b2a8fa08b
+Z 56b699b5658e8a61d5f2f34712da4df0

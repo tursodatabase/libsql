@@ -149,20 +149,20 @@ int sqlite3_db_status(
 
       db->pnBytesFreed = &nByte;
       for(i=0; i<db->nDb; i++){
-	Schema *pSchema = db->aDb[i].pSchema;
-	if( pSchema ){
-  	  HashElem *p;
+        Schema *pSchema = db->aDb[i].pSchema;
+        if( pSchema ){
+            HashElem *p;
 
-	  nByte += sizeof(HashElem) * (
-	      pSchema->tblHash.count 
-	    + pSchema->trigHash.count
-	    + pSchema->idxHash.count
-	    + pSchema->fkeyHash.count
-	  );
-	  nByte += sqlite3MallocSize(pSchema->tblHash.ht);
-	  nByte += sqlite3MallocSize(pSchema->trigHash.ht);
-	  nByte += sqlite3MallocSize(pSchema->idxHash.ht);
-	  nByte += sqlite3MallocSize(pSchema->fkeyHash.ht);
+          nByte += sqlite3GlobalConfig.m.xRoundup(sizeof(HashElem)) * (
+              pSchema->tblHash.count 
+            + pSchema->trigHash.count
+            + pSchema->idxHash.count
+            + pSchema->fkeyHash.count
+          );
+          nByte += sqlite3MallocSize(pSchema->tblHash.ht);
+          nByte += sqlite3MallocSize(pSchema->trigHash.ht);
+          nByte += sqlite3MallocSize(pSchema->idxHash.ht);
+          nByte += sqlite3MallocSize(pSchema->fkeyHash.ht);
 
           for(p=sqliteHashFirst(&pSchema->trigHash); p; p=sqliteHashNext(p)){
             sqlite3DeleteTrigger(db, (Trigger*)sqliteHashData(p));
@@ -170,7 +170,7 @@ int sqlite3_db_status(
           for(p=sqliteHashFirst(&pSchema->tblHash); p; p=sqliteHashNext(p)){
             sqlite3DeleteTable(db, (Table *)sqliteHashData(p));
           }
-	}
+        }
       }
       db->pnBytesFreed = 0;
 
@@ -190,7 +190,7 @@ int sqlite3_db_status(
 
       db->pnBytesFreed = &nByte;
       for(pVdbe=db->pVdbe; pVdbe; pVdbe=pVdbe->pNext){
-	sqlite3VdbeDeleteObject(db, pVdbe);
+        sqlite3VdbeDeleteObject(db, pVdbe);
       }
       db->pnBytesFreed = 0;
 

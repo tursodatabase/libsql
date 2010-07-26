@@ -291,7 +291,7 @@ foreach ::lookaside_buffer_size {0 64 120} {
     # Step 3.
     db cache flush
     set nAlloc2  [lindex [sqlite3_status SQLITE_STATUS_MEMORY_USED 0] 1]
-    incr nAlloc3 [lookaside db]
+    incr nAlloc2 [lookaside db]
     set nStmt2   [lindex [sqlite3_db_status db SQLITE_DBSTATUS_STMT_USED 0] 1]
     
     # Step 3.
