@@ -610,7 +610,9 @@ static void freeP4(sqlite3 *db, int p4type, void *p4){
         if( db->pnBytesFreed==0 ){
           sqlite3ValueFree((sqlite3_value*)p4);
         }else{
-          sqlite3DbFree(db, ((Mem*)p4)->zMalloc);
+          Mem *p = (Mem*)p4;
+          sqlite3DbFree(db, p->zMalloc);
+          sqlite3DbFree(db, p);
         }
         break;
       }
