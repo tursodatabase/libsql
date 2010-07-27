@@ -210,6 +210,7 @@ struct unixFile {
   int fileFlags;                      /* Miscellanous flags */
   const char *zPath;                  /* Name of the file */
   unixShm *pShm;                      /* Shared memory segment information */
+  int szChunk;                        /* Configured by FCNTL_CHUNK_SIZE */
 #if SQLITE_ENABLE_LOCKING_STYLE
   int openFlags;                      /* The flags specified at open() */
 #endif
@@ -2763,6 +2764,43 @@ static int unixWrite(
   }
   SimulateIOError(( wrote=(-1), amt=1 ));
   SimulateDiskfullError(( wrote=0, amt=1 ));
+
+  /* If the user has configured a chunk-size for this file, it could be
+  ** that the file needs to be extended at this point. 
+  */
+  if( pFile->szChunk && amt==0 ){
+    i64 nSize;                    /* Required file size */
+    struct stat buf;              /* Used to hold return values of fstat() */
+    int rc = fstat(pFile->h, &buf);
+    if( rc!=0 ) return SQLITE_IOERR_FSTAT;
+    nSize = ((offset+amt+pFile->szChunk-1) / pFile->szChunk) * pFile->szChunk;
+    if( nSize>(i64)buf.st_size ){
+#ifdef HAVE_POSIX_FALLOCATE
+      if( posix_fallocate(pFile->h, buf.st_size, nSize-buf.st_size) ){
+        return SQLITE_IOERR_WRITE;
+      }
+#else
+      /* If the OS does not have posix_fallocate(), fake it. First use
+      ** ftruncate() to set the file size, then write a single byte to
+      ** the last byte in each block within the extended region.
+      */
+      int nBlk = buf.st_blksize;  /* File-system block size */
+      i64 iWrite;                 /* Next offset to write to */
+
+      if( ftruncate(pFile->h, nSize) ){
+	pFile->lastErrno = errno;
+	return SQLITE_IOERR_TRUNCATE;
+      }
+      iWrite = ((buf.st_size + 2*nBlk - 1)/nBlk)*nBlk-1;
+      do {
+	wrote = seekAndWrite(pFile, iWrite, "", 1);
+	iWrite += nBlk;
+      } while( wrote==1 && iWrite<nSize );
+      if( wrote!=1 ) amt = 1;
+#endif
+    }
+  }
+
   if( amt>0 ){
     if( wrote<0 ){
       /* lastErrno set by seekAndWrite */
@@ -2772,6 +2810,7 @@ static int unixWrite(
       return SQLITE_FULL;
     }
   }
+
   return SQLITE_OK;
 }
 
@@ -2973,12 +3012,23 @@ static int unixSync(sqlite3_file *id, int flags){
 ** Truncate an open file to a specified size
 */
 static int unixTruncate(sqlite3_file *id, i64 nByte){
+  unixFile *pFile = (unixFile *)id;
   int rc;
-  assert( id );
+  assert( pFile );
   SimulateIOError( return SQLITE_IOERR_TRUNCATE );
-  rc = ftruncate(((unixFile*)id)->h, (off_t)nByte);
+
+  /* If the user has configured a chunk-size for this file, truncate the
+  ** file so that it consists of an integer number of chunks (i.e. the
+  ** actual file size after the operation may be larger than the requested
+  ** size).
+  */
+  if( pFile->szChunk ){
+    nByte = ((nByte + pFile->szChunk - 1)/pFile->szChunk) * pFile->szChunk;
+  }
+
+  rc = ftruncate(pFile->h, (off_t)nByte);
   if( rc ){
-    ((unixFile*)id)->lastErrno = errno;
+    pFile->lastErrno = errno;
     return SQLITE_IOERR_TRUNCATE;
   }else{
 #ifndef NDEBUG
@@ -2989,8 +3039,8 @@ static int unixTruncate(sqlite3_file *id, i64 nByte){
     ** when restoring a database using the backup API from a zero-length
     ** source.
     */
-    if( ((unixFile*)id)->inNormalWrite && nByte==0 ){
-      ((unixFile*)id)->transCntrChng = 1;
+    if( pFile->inNormalWrite && nByte==0 ){
+      pFile->transCntrChng = 1;
     }
 #endif
 
@@ -3046,6 +3096,10 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
     case SQLITE_LAST_ERRNO: {
       *(int*)pArg = ((unixFile*)id)->lastErrno;
       return SQLITE_OK;
+    }
+    case SQLITE_FCNTL_CHUNK_SIZE: {
+      ((unixFile*)id)->szChunk = *(int *)pArg;
+      return SQLITE_OK;				    
     }
     case SQLITE_FCNTL_SIZE_HINT: {
 #if 0 /* No performance advantage seen on Linux */

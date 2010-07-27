@@ -696,6 +696,7 @@ struct sqlite3_io_methods {
 #define SQLITE_SET_LOCKPROXYFILE      3
 #define SQLITE_LAST_ERRNO             4
 #define SQLITE_FCNTL_SIZE_HINT        5
+#define SQLITE_FCNTL_CHUNK_SIZE       6
 
 /*
 ** CAPI3REF: Mutex Handle
