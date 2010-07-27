@@ -103,15 +103,15 @@ SHPREFIX =
 #
 #TCL_FLAGS =
 #TCL_FLAGS = -DSTATIC_BUILD=1
-TCL_FLAGS = -I/home/drh/tcltk/8.4linux
-#TCL_FLAGS = -I/home/drh/tcltk/8.4win -DSTATIC_BUILD=1
+TCL_FLAGS = -I/home/drh/tcltk/8.5linux
+#TCL_FLAGS = -I/home/drh/tcltk/8.5win -DSTATIC_BUILD=1
 #TCL_FLAGS = -I/home/drh/tcltk/8.3hpux
 
 #### Linker options needed to link against the TCL library.
 #
 #LIBTCL = -ltcl -lm -ldl
-LIBTCL = /home/drh/tcltk/8.4linux/libtcl8.4g.a -lm -ldl
-#LIBTCL = /home/drh/tcltk/8.4win/libtcl84s.a -lmsvcrt
+LIBTCL = /home/drh/tcltk/8.5linux/libtcl8.5g.a -lm -ldl
+#LIBTCL = /home/drh/tcltk/8.5win/libtcl85s.a -lmsvcrt
 #LIBTCL = /home/drh/tcltk/8.3hpux/libtcl8.3.a -ldld -lm -lc
 
 #### Additional objects for SQLite library when TCL support is enabled.

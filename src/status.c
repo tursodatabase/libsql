@@ -21,8 +21,8 @@
 */
 typedef struct sqlite3StatType sqlite3StatType;
 static SQLITE_WSD struct sqlite3StatType {
-  int nowValue[9];         /* Current value */
-  int mxValue[9];          /* Maximum value */
+  int nowValue[10];         /* Current value */
+  int mxValue[10];          /* Maximum value */
 } sqlite3Stat = { {0,}, {0,} };
 
 
@@ -150,8 +150,8 @@ int sqlite3_db_status(
       db->pnBytesFreed = &nByte;
       for(i=0; i<db->nDb; i++){
         Schema *pSchema = db->aDb[i].pSchema;
-        if( pSchema ){
-            HashElem *p;
+        if( ALWAYS(pSchema!=0) ){
+          HashElem *p;
 
           nByte += sqlite3GlobalConfig.m.xRoundup(sizeof(HashElem)) * (
               pSchema->tblHash.count 

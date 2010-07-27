@@ -1,9 +1,9 @@
-C Add\sexperimental\sunix-only\sfile-control\sto\sgrow\sand\struncate\sthe\sdatabase\sfile\sby\sa\sconfigurable\schunk\ssize.
-D 2010-07-27T18:34:16
-F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
+C Merge\strunk\schanges\sinto\sexperimental\sbranch.
+D 2010-07-27T18:36:38
+F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
-F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
-F Makefile.vxworks 4314cde20a1d9460ec5083526ea975442306ae7e
+F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
+F Makefile.vxworks c85ec1d8597fe2f7bc225af12ac1666e21379151
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION ddbfd1d7e557883fe2fd646cffe46c28cebcff48
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -21,8 +21,8 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure c7e2aee57206205b4c7c0811b3d055570d95421f x
-F configure.ac 14740970ddb674d92a9f5da89083dff1179014ff
+F configure e0e4abf2b1a2c53a3b46e9ee9eb859fad58df4c4 x
+F configure.ac 699040cc9abb7465dca5a2972bc89d227fd8f734
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/pager-invariants.txt 870107036470d7c419e93768676fae2f8749cf9e
@@ -136,7 +136,7 @@ F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 6d422ea91cf3d2d00408c5a8f2391cd458da85f8
 F src/main.c a487fe90aecaccb142e4a6b738c7e26e99145bcd
-F src/malloc.c 9d7dc6a52aa13ba3639eb40c573dd7adb3a16813
+F src/malloc.c 19a468460c7df72de245f10c06bd0625777b7c83
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 89d4ea8d5cdd55635cbaa48ad53132af6294cbb2
 F src/mem2.c 12c91260fd2320eda9355dea5445b137f848c05b
@@ -170,11 +170,11 @@ F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 74fef1334bec27e606ef0b19e5c41cd0a639e69c
 F src/shell.c fd4ccdb37c3b68de0623eb938a649e0990710714
-F src/sqlite.h.in 3b201a7aced2227339c2bba8dfbee47a823d43ad
+F src/sqlite.h.in 2dfa3db44fd123ea5f0e20e87fa3d9db189feb98
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
 F src/sqliteInt.h a9be6badc6cd6a3c1ae54475a98661cf351ecad5
 F src/sqliteLimit.h 196e2f83c3b444c4548fc1874f52f84fdbda40f3
-F src/status.c 51f65ba9768846c071fa621624d55d6866fce28b
+F src/status.c 496913d4e8441195f6f2a75b1c95993a45b9b30b
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c ae1e4fb653c91ddad7e2534d209711a12604ccc4
 F src/test1.c 0bfcda72f9f8ab5c0e90fac05cc22c1c21131ddf
@@ -200,7 +200,7 @@ F src/test_intarray.c d879bbf8e4ce085ab966d1f3c896a7c8b4f5fc99
 F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c 424a334cdfdc8a6f975abe3641440147bded3185
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
-F src/test_malloc.c 76bce0d5846dbfc9f24a65efab781b1ffb441380
+F src/test_malloc.c 058e41dc853b1fa8ccd1083e9571018a74aeb3a7
 F src/test_mutex.c ce06b59aca168cd8c520b77159a24352a7469bd3
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
 F src/test_osinst.c f408c6a181f2fb04c56273afd5c3e1e82f60392c
@@ -620,7 +620,7 @@ F test/tclsqlite.test 8c154101e704170c2be10f137a5499ac2c6da8d3
 F test/tempdb.test 800c36623d67a2ad1f58784b9c5644e0405af6e6
 F test/temptable.test f42121a0d29a62f00f93274464164177ab1cc24a
 F test/temptrigger.test b0273db072ce5f37cf19140ceb1f0d524bbe9f05
-F test/tester.tcl cab2b46972cd50c3939a0e30e0b37e73f558bc2d
+F test/tester.tcl bc01480bbf2e948b52da8943fedc4237b0735961
 F test/thread001.test a3e6a7254d1cb057836cb3145b60c10bf5b7e60f
 F test/thread002.test afd20095e6e845b405df4f2c920cb93301ca69db
 F test/thread003.test b824d4f52b870ae39fc5bae4d8070eca73085dca
@@ -839,10 +839,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1d7571e4be6d96aec13cd8b3b7b10b8dc44d19a5
-R 06d24f984109c26ad9ccb04075848e30
-T *branch * experimental
-T *sym-experimental *
-T -sym-trunk *
+P 7cf0e851d4c5e826ea22ed08291b7c91d7b1abc7 8118de2af33557f75b4f2f1b1194a21d46ccf7fe
+R db6f0268ed3b851f8967be0e4ae70758
 U dan
-Z 84d3b6ef35de3d3ded4f7f20ba0de5c7
+Z d9d588012d8704dd90455874cd937598

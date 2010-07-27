@@ -5205,6 +5205,7 @@ int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
 #define SQLITE_STATUS_PARSER_STACK         6
 #define SQLITE_STATUS_PAGECACHE_SIZE       7
 #define SQLITE_STATUS_SCRATCH_SIZE         8
+#define SQLITE_STATUS_MALLOC_COUNT         9
 
 /*
 ** CAPI3REF: Database Connection Status
