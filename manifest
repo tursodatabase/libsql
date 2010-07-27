@@ -1,12 +1,12 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sa\sbug\sin\sthe\sSQLITE_STATUS_MALLOC_COUNT\scounter.\s\sAdd\san\sALWAYS()\saround\na\scondition\sin\sthe\sSQLITE_DBSTATUS_SCHEMA_USED\slogic\sthat\sis\salways\strue.
-D 2010-07-26T19:09:32
-F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
+C Update\sthe\smakefiles\sto\sprefer\sTCL\sversion\s8.5\sinstead\sof\s8.4.
+D 2010-07-27T16:42:23
+F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
-F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
-F Makefile.vxworks 4314cde20a1d9460ec5083526ea975442306ae7e
+F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
+F Makefile.vxworks c85ec1d8597fe2f7bc225af12ac1666e21379151
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION ddbfd1d7e557883fe2fd646cffe46c28cebcff48
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -24,8 +24,8 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure c7e2aee57206205b4c7c0811b3d055570d95421f x
-F configure.ac 14740970ddb674d92a9f5da89083dff1179014ff
+F configure e0e4abf2b1a2c53a3b46e9ee9eb859fad58df4c4 x
+F configure.ac 699040cc9abb7465dca5a2972bc89d227fd8f734
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/pager-invariants.txt 870107036470d7c419e93768676fae2f8749cf9e
@@ -841,14 +841,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8f8e442b3af553753e25c304efa289b626e3a227
-R 5371a85b2515d99b31bc6a1e384719ad
+P 6df081adbfa581c477bd2c96bb3f7f44be131a8f
+R 2e30ee83ed26c6b6d858b65a1a40368a
 U drh
-Z 87f1a64358a92f9d6ead03c3021e38e6
+Z 7c9b71a765785eb5366a775431acbda9
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMTd1voxKgR168RlERAmvEAJ9Dgn0OTr0OmSVFUH3d22Y+JTDFdACeJ8b1
-r/VI49yVB7hY03oBNs8YaCk=
-=iNp6
+iD8DBQFMTwxyoxKgR168RlERAoWhAKCIJmTkn9tifBBxLWcZZSTjSKv7hQCghz7k
+L9/hegUPu/Ry2mCj4VCVOlE=
+=kcSH
 -----END PGP SIGNATURE-----

@@ -139,7 +139,7 @@ USE_AMALGAMATION=1
 # if not, then we fall back to plain tclsh.
 # TODO: try other versions before falling back?
 # 
-AC_CHECK_PROGS(TCLSH_CMD, [tclsh8.4 tclsh], none)
+AC_CHECK_PROGS(TCLSH_CMD, [tclsh8.5 tclsh], none)
 if test "$TCLSH_CMD" = "none"; then
   # If we can't find a local tclsh, then building the amalgamation will fail.
   # We act as though --disable-amalgamation has been used.
