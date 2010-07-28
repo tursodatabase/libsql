@@ -178,6 +178,11 @@ do_test shell1-1.14.3 {
        [regexp {Error: missing argument for option: -separator} $res]
 } {1 1}
 
+# -stats               print memory stats before each finalize
+do_test shell1-1.14b.1 {
+  catchcmd "-stats test.db" "" 
+} {0 {}}
+
 # -nullvalue 'text'    set text string for NULL values
 do_test shell1-1.15.1 {
   catchcmd "-nullvalue 'x' test.db" ""
@@ -195,7 +200,7 @@ do_test shell1-1.15.3 {
 # -version             show SQLite version
 do_test shell1-1.16.1 {
   catchcmd "-version test.db" "" 
-} {0 3.7.0}
+} {0 3.7.1}
 
 #----------------------------------------------------------------------------
 # Test cases shell1-2.*: Basic "dot" command token parsing.
@@ -621,12 +626,28 @@ do_test shell1-3.23.1 {
        [regexp {nullvalue:} $res] \
        [regexp {output:} $res] \
        [regexp {separator:} $res] \
+       [regexp {stats:} $res] \
        [regexp {width:} $res]
-} {1 1 1 1 1 1 1 1}
+} {1 1 1 1 1 1 1 1 1}
 do_test shell1-3.23.2 {
   # too many arguments
   catchcmd "test.db" ".show BAD"
 } {1 {Error: unknown command or invalid arguments:  "show". Enter ".help" for help}}
+
+# .stats ON|OFF          Turn stats on or off
+do_test shell1-3.23b.1 {
+  catchcmd "test.db" ".stats"
+} {1 {Error: unknown command or invalid arguments:  "stats". Enter ".help" for help}}
+do_test shell1-3.23b.2 {
+  catchcmd "test.db" ".stats ON"
+} {0 {}}
+do_test shell1-3.23b.3 {
+  catchcmd "test.db" ".stats OFF"
+} {0 {}}
+do_test shell1-3.23b.4 {
+  # too many arguments
+  catchcmd "test.db" ".stats OFF BAD"
+} {1 {Error: unknown command or invalid arguments:  "stats". Enter ".help" for help}}
 
 # .tables ?TABLE?        List names of tables
 #                          If TABLE specified, only list tables matching
