@@ -5414,9 +5414,11 @@ int sqlite3PagerRefcount(Pager *pPager){
 ** used by the pager and its associated cache.
 */
 int sqlite3PagerMemUsed(Pager *pPager){
-  int perPageSize = pPager->pageSize + pPager->nExtra + 20;
+  int perPageSize = pPager->pageSize + pPager->nExtra + sizeof(PgHdr)
+                                     + 5*sizeof(void*);
   return perPageSize*sqlite3PcachePagecount(pPager->pPCache)
-           + sqlite3MallocSize(pPager);
+           + sqlite3MallocSize(pPager)
+           + (pPager->pTmpSpace ? pPager->pageSize : 0);
 }
 
 /*

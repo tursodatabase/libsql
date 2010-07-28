@@ -5152,6 +5152,9 @@ int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
 ** *pHighwater parameter to [sqlite3_status()] is of interest.  
 ** The value written into the *pCurrent parameter is undefined.</dd>)^
 **
+** ^(<dt>SQLITE_STATUS_MALLOC_COUNT</dt>
+** <dd>This parameter records the number of separate memory allocations.</dd>)^
+**
 ** ^(<dt>SQLITE_STATUS_PAGECACHE_USED</dt>
 ** <dd>This parameter returns the number of pages used out of the
 ** [pagecache memory allocator] that was configured using 
@@ -5260,7 +5263,7 @@ int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiwtr, int resetFlg);
 **
 ** ^(<dt>SQLITE_DBSTATUS_SCHEMA_USED</dt>
 ** <dd>This parameter returns the approximate number of of bytes of heap
-** and lookaside memory used to store the schema for all databases associated
+** memory used to store the schema for all databases associated
 ** with the connection - main, temp, and any [ATTACH]-ed databases.)^ 
 ** ^The full amount of memory used by the schemas is reported, even if the
 ** schema memory is shared with other database connections due to
