@@ -110,6 +110,11 @@ for {set i 1} {$i < 50} {incr i} {
   db2 close
 }
 
+proc byte_is_zero {file offset} {
+  if {[file size test.db] <= $offset} { return 1 }
+  expr { [hexio_read $file $offset 1] == "00" }
+}
+
 do_multiclient_test i {
 
   set testname(1) multiproc
@@ -158,22 +163,24 @@ do_multiclient_test i {
       COMMIT;
       PRAGMA wal_checkpoint;
     }
-    file size test.db
-  } [expr $AUTOVACUUM ? 4*1024 : 3*1024]
+    byte_is_zero test.db [expr $AUTOVACUUM ? 4*1024 : 3*1024]
+  } {1}
   do_test wal3-2.$tn.5 {
     sql2 {
       COMMIT;
       PRAGMA wal_checkpoint;
     }
-    file size test.db
-  } [expr $AUTOVACUUM ? 5*1024 : 4*1024]
+    list [byte_is_zero test.db [expr $AUTOVACUUM ? 4*1024 : 3*1024]]   \
+         [byte_is_zero test.db [expr $AUTOVACUUM ? 5*1024 : 4*1024]]
+  } {0 1}
   do_test wal3-2.$tn.6 {
     sql3 {
       COMMIT;
       PRAGMA wal_checkpoint;
     }
-    file size test.db
-  } [expr $AUTOVACUUM ? 5*1024 : 4*1024]
+    list [byte_is_zero test.db [expr $AUTOVACUUM ? 4*1024 : 3*1024]]   \
+         [byte_is_zero test.db [expr $AUTOVACUUM ? 5*1024 : 4*1024]]
+  } {0 1}
 }
 catch {db close}
 
@@ -700,6 +707,7 @@ do_test wal3-9.0 {
   file delete -force test.db test.db-journal test.db wal
   sqlite3 db test.db
   execsql {
+    PRAGMA page_size = 1024;
     PRAGMA journal_mode = WAL;
     CREATE TABLE whoami(x);
     INSERT INTO whoami VALUES('nobody');
@@ -722,15 +730,19 @@ for {set i 0} {$i < 50} {incr i} {
     execsql { SELECT * FROM whoami } $c
   } $c
 }
+
+set sz [expr 1024 * (2+$AUTOVACUUM)]
 do_test wal3-9.3 {
   for {set i 0} {$i < 49} {incr i} { db$i close }
   execsql { PRAGMA wal_checkpoint } 
-  set sz1 [file size test.db]
+  byte_is_zero test.db [expr $sz-1024]
+} {1}
+do_test wal3-9.4 {
   db49 close
   execsql { PRAGMA wal_checkpoint } 
   set sz2 [file size test.db]
-  expr {$sz2 > $sz1}
-} {1}
+  byte_is_zero test.db [expr $sz-1024]
+} {0}
 
 db close
 

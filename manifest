@@ -1,5 +1,5 @@
-C Support\sFCNTL_CHUNK_SIZE\son\swindows\stoo.
-D 2010-07-28T14:26:18
+C Fix\serrors\sin\swal3.test\scaused\sby\srecent\smodifications.
+D 2010-07-28T15:10:38
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -782,7 +782,7 @@ F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
 F test/wal.test 1891e6f72dd437a1c2a48091aa9182ba17a8f780
 F test/wal2.test fa6dc4457b46988f46cf6c68ea51ebe341765f4a
-F test/wal3.test d2ae7e66f973bd6b58ce49e546b2c00f44fe0485
+F test/wal3.test 695ea0f6c516423c611891df9a285aacd33344e3
 F test/wal4.test 3404b048fa5e10605facaf70384e6d2943412e30
 F test/wal_common.tcl 895d76138043b86bdccf36494054bdabcf65837b
 F test/walbak.test 4df1c7369da0301caeb9a48fa45997fd592380e4
@@ -839,7 +839,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 621824092d443425c420ba9010bbe1202fe99ea2
-R d7ede0d4642b161610b7d818427c7a8c
+P a038688c991435967b935946c2283707820bb5da
+R 27913a854c524e2ed86aec3ca2a1108c
 U dan
-Z 95d00fbeff8589e69f2af3194811a965
+Z bf8c1f74204eb606b6c5a25382962d26
