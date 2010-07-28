@@ -136,4 +136,34 @@ do_test autoindex1-401 {
   }
 } {4087}
 
+# Ticket [8011086c85c6c404014c947fcf3eb9f42b184a0d] from 2010-07-08
+# Make sure automatic indices are not created for the RHS of an IN expression
+# that is not a correlated subquery.
+#
+do_test autoindex1-500 {
+  db eval {
+    CREATE TABLE t501(a INTEGER PRIMARY KEY, b);
+    CREATE TABLE t502(x INTEGER PRIMARY KEY, y);
+    EXPLAIN QUERY PLAN
+    SELECT b FROM t501
+     WHERE t501.a IN (SELECT x FROM t502 WHERE y=?);
+  }
+} {0 0 {TABLE t501 USING PRIMARY KEY} 0 0 {TABLE t502}}
+do_test autoindex1-501 {
+  db eval {
+    EXPLAIN QUERY PLAN
+    SELECT b FROM t501
+     WHERE t501.a IN (SELECT x FROM t502 WHERE y=t501.b);
+  }
+} {0 0 {TABLE t501} 0 0 {TABLE t502 WITH AUTOMATIC INDEX}}
+do_test autoindex1-502 {
+  db eval {
+    EXPLAIN QUERY PLAN
+    SELECT b FROM t501
+     WHERE t501.a=123
+       AND t501.a IN (SELECT x FROM t502 WHERE y=t501.b);
+  }
+} {0 0 {TABLE t501 USING PRIMARY KEY} 0 0 {TABLE t502}}
+    
+
 finish_test

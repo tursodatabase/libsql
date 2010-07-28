@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Update\sthe\smakefiles\sto\sprefer\sTCL\sversion\s8.5\sinstead\sof\s8.4.
-D 2010-07-27T16:42:23
+C Do\snot\sallow\sautomatic\sindices\sfor\sthe\sRHS\sof\sIN\sexpressions\swhich\sare\snot\ncorrelated\ssubqueries.\s\sTicket\s[8011086c85c6c404014c9]
+D 2010-07-28T02:53:37
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -125,7 +125,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 4f3aadad62c6c9f0d4e5a96718516ac4e3c598df
 F src/date.c 5dd8448a0bfea8d31fb14cff487d0c06ff8c8b20
 F src/delete.c 7ed8a8c8b5f748ece92df173d7e0f7810c899ebd
-F src/expr.c 7490fc3b16414d1a45d5acadf559317f9244891f
+F src/expr.c a0fd9c5e248229851077de92f2e9346f2c43ed46
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c cacfe3e24b311e4e089a9c470bdb73196af6f729
 F src/func.c 75dc1fd91e5692cadb80d257bab68d7343060467
@@ -258,7 +258,7 @@ F test/auth.test 8f21c160a4562f54f27618e85bac869efcecbcaf
 F test/auth2.test 270baddc8b9c273682760cffba6739d907bd2882
 F test/auth3.test a4755e6a2a2fea547ffe63c874eb569e60a28eb5
 F test/autoinc.test 85ef3180a737e6580086a018c09c6f1a52759b46
-F test/autoindex1.test ffb06a246e2c1f89cfbe3d93eca513c9e78d4063
+F test/autoindex1.test 7df441bf0e7a88644eb80993339dbf1db3a12c68
 F test/autovacuum.test bb7c0885e6f8f1d633045de48f2b66082162766d
 F test/autovacuum_ioerr2.test 598b0663074d3673a9c1bc9a16e80971313bafe6
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
@@ -841,14 +841,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6df081adbfa581c477bd2c96bb3f7f44be131a8f
-R 2e30ee83ed26c6b6d858b65a1a40368a
+P 8118de2af33557f75b4f2f1b1194a21d46ccf7fe
+R 40c9c305c287d6d5baa795d30f2cf9ee
 U drh
-Z 7c9b71a765785eb5366a775431acbda9
+Z 937ef6a9e9466c178b83c982e778c20e
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMTwxyoxKgR168RlERAoWhAKCIJmTkn9tifBBxLWcZZSTjSKv7hQCghz7k
-L9/hegUPu/Ry2mCj4VCVOlE=
-=kcSH
+iD8DBQFMT5u2oxKgR168RlERAsjPAJ4pDaNKroaW8Tnm1cU0jDkzKN0KwACePYGJ
+C5ZTN2Lh/obd8jivM7gzwas=
+=32EK
 -----END PGP SIGNATURE-----
