@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Do\snot\sallow\sautomatic\sindices\sfor\sthe\sRHS\sof\sIN\sexpressions\swhich\sare\snot\ncorrelated\ssubqueries.\s\sTicket\s[8011086c85c6c404014c9]
-D 2010-07-28T02:53:37
+C Add\sdocumentation\sfor\sthe\sSQLITE_STATUS_MALLOC_COUNT\sparameter\sto\nsqlite3_status().
+D 2010-07-28T15:49:02
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +173,7 @@ F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 74fef1334bec27e606ef0b19e5c41cd0a639e69c
 F src/shell.c fd4ccdb37c3b68de0623eb938a649e0990710714
-F src/sqlite.h.in 5bc6d2d1bc5251b887123b12b67895785ff41a5f
+F src/sqlite.h.in 874bf890b70f72d4e444707a2a10b59cd920123a
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
 F src/sqliteInt.h a9be6badc6cd6a3c1ae54475a98661cf351ecad5
 F src/sqliteLimit.h 196e2f83c3b444c4548fc1874f52f84fdbda40f3
@@ -841,14 +841,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8118de2af33557f75b4f2f1b1194a21d46ccf7fe
-R 40c9c305c287d6d5baa795d30f2cf9ee
+P 267492d3a7eff7b7b24ed6bd6d6ff55148fe37f3
+R 8575a8caac4126fb5e920b76e9a1802f
 U drh
-Z 937ef6a9e9466c178b83c982e778c20e
+Z 4d163993207ade26e450eac3f975081d
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMT5u2oxKgR168RlERAsjPAJ4pDaNKroaW8Tnm1cU0jDkzKN0KwACePYGJ
-C5ZTN2Lh/obd8jivM7gzwas=
-=32EK
+iD8DBQFMUFFxoxKgR168RlERAuu3AJsGZVDMtkyuNWSm7CqMLv7kOY7hmgCfdtQp
+ZbImEQ0zq6QE+jWsdQnFVvs=
+=OY3A
 -----END PGP SIGNATURE-----
