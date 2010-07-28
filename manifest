@@ -1,5 +1,8 @@
-C Fix\sthe\sdbstatus.test\sscript\sso\sthat\sit\sworks\scorrectly\son\s64-bit\smachines.
-D 2010-07-28T18:51:27
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Get\sSQLITE_OMIT_VIRTUALTABLE\sworking\sagain\safter\sbeing\sbroken\sby\srecent\nchanges.
+D 2010-07-28T19:17:51
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -116,7 +119,7 @@ F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
 F src/btree.c ed454f53f7bf7fb89c7a89f93fa93c5cd35e7aae
 F src/btree.h dd83041eda10c17daf023257c1fc883b5f71f85a
 F src/btreeInt.h b0c87f6725b06a0aa194a6d25d54b16ce9d6e291
-F src/build.c d4593392b8bf0753dd16f494628823f6f39ee7fb
+F src/build.c 0018d49629fc4807100c988dd191dd95e185bb38
 F src/callback.c da3c38d0ef5d7f04fae371e519bda61aa9cb1704
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 4f3aadad62c6c9f0d4e5a96718516ac4e3c598df
@@ -839,7 +842,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ae89777e7f8bae2cdd3407395ea84c1b39577c4b
-R 2a8c5b3b0588775770d82323830400c1
+P a3401d9ee540828f3efd26d89f6b771e0ecb2777
+R eb10d882c7f0c445d545596dbfed0422
 U drh
-Z 7ee6144044fdd857458625ffd89ede5a
+Z e999ed9036c340aa6dca3b64e8338713
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMUIJioxKgR168RlERAuXQAJ9FI7fhAyA4RJomQp31Ht8ypo2meACbBmAO
+JUSNNYQ1jjZQIsqp8HPdpZw=
+=0jgg
+-----END PGP SIGNATURE-----
