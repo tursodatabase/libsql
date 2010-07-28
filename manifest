@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Record\sthe\spcache\sallocation\ssize\sstatistics\seven\sfor\spcache\soverflow\nallocations.\s\sAdjust\sthe\swording\son\sone\sof\sthe\sstat\soutput\slines\sin\nthe\sshell.
-D 2010-07-28T17:01:24
+C Adjust\sthe\sshell\stest\sscript\s"shell4.test"\sto\saccount\sfor\schanges\sin\sthe\n".stat\son"\sdisplay\sformat\sfrom\sthe\sprevious\scheckin.
+D 2010-07-28T17:16:41
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -829,7 +829,7 @@ F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/shell1.test 930444cadb71ce9ce78bc6cd14ec21e6b69776ea
 F tool/shell2.test 5dc76b8005b465f420fed8241621da7513060ff3
 F tool/shell3.test 4fad469e8003938426355afdf34155f08c587836
-F tool/shell4.test 0c82af2b7ce4e8e84565078a8690d1c46ec4e8f6
+F tool/shell4.test b8d99dc22399a256f1090f6d755f666f394ba02b
 F tool/showdb.c 01c20e8181941b714fe07f72c64a7560fee17ff9
 F tool/showjournal.c ec3b171be148656827c4949fbfb8ab4370822f87
 F tool/showwal.c f09e5a80a293919290ec85a6a37c85a5ddcf37d9
@@ -842,14 +842,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 419ce0ed89d10252492b2926817259899ee74e71
-R dc9c16c2cc8d28f83225dd05e4b97cc5
+P f9adf66ad575abbb63736caef27bd3c619e516a6
+R 9558d79cf319dc848ba05a8d52ee237b
 U drh
-Z 7a885145d3d413b050104a74c1f92d01
+Z 2f19f50f273aa39e26644f0a727198db
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMUGJnoxKgR168RlERArUkAJ9o1qOoDHVAVPszZ+b9N0jILvo1HwCfUjk9
-BFlxHahyt1UMfIuBBDlNIKk=
-=3jW+
+iD8DBQFMUGX8oxKgR168RlERAtubAJ47D4HEKATV6b/ioA0aSOHcQpGbtACfbXdm
+NtY/U+/oQI9Ujb0cG0mLzfE=
+=QYCo
 -----END PGP SIGNATURE-----
