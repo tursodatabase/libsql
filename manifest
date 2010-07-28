@@ -1,5 +1,8 @@
-C Modify\sCLI\sto\soptionally\sdisplay\s"stats".
-D 2010-07-28T16:05:35
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Record\sthe\spcache\sallocation\ssize\sstatistics\seven\sfor\spcache\soverflow\nallocations.\s\sAdjust\sthe\swording\son\sone\sof\sthe\sstat\soutput\slines\sin\nthe\sshell.
+D 2010-07-28T17:01:24
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -161,7 +164,7 @@ F src/pager.h 879fdde5a102d2f21a3135d6f647530b21c2796c
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
-F src/pcache1.c 3a7c28f46a61b43ff0b5c087a7983c154f4b264c
+F src/pcache1.c 638844c118163e3a10e1e3265703adf74870312d
 F src/pragma.c 8b24ce00a93de345b6c3bd1e1e2cfba9f63d2325
 F src/prepare.c ce4c35a2b1d5fe916e4a46b70d24a6e997d7c4c6
 F src/printf.c 8ae5082dd38a1b5456030c3755ec3a392cd51506
@@ -169,7 +172,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 74fef1334bec27e606ef0b19e5c41cd0a639e69c
-F src/shell.c 74c82a4ecfd833900a5bacc5f32abd18b93079d1
+F src/shell.c cc1a4d200a2c67919da363958048b592d9d3b72f
 F src/sqlite.h.in 373dedd8489ecd9dfb33d6d4378ee9f34a3c2386
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
 F src/sqliteInt.h a9be6badc6cd6a3c1ae54475a98661cf351ecad5
@@ -839,7 +842,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 07abfd5268564c18afd1074c2069d65c64f4b8eb
-R 685d62477503a0184c458ad36031979f
-U shaneh
-Z 72eb3f2af1f8ca9f1cfbf340110562c7
+P 419ce0ed89d10252492b2926817259899ee74e71
+R dc9c16c2cc8d28f83225dd05e4b97cc5
+U drh
+Z 7a885145d3d413b050104a74c1f92d01
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMUGJnoxKgR168RlERArUkAJ9o1qOoDHVAVPszZ+b9N0jILvo1HwCfUjk9
+BFlxHahyt1UMfIuBBDlNIKk=
+=3jW+
+-----END PGP SIGNATURE-----
