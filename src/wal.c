@@ -1521,6 +1521,7 @@ static int walCheckpoint(
   u32 iDbpage = 0;                /* Next database page to write */
   u32 iFrame = 0;                 /* Wal frame containing data for iDbpage */
   u32 mxSafeFrame;                /* Max frame that can be backfilled */
+  u32 mxPage;                     /* Max database page to write */
   int i;                          /* Loop counter */
   volatile WalCkptInfo *pInfo;    /* The checkpoint status information */
 
@@ -1545,6 +1546,7 @@ static int walCheckpoint(
   ** cannot be backfilled from the WAL.
   */
   mxSafeFrame = pWal->hdr.mxFrame;
+  mxPage = pWal->hdr.nPage;
   pInfo = walCkptInfo(pWal);
   for(i=1; i<WAL_NREADER; i++){
     u32 y = pInfo->aReadMark[i];
@@ -1565,6 +1567,8 @@ static int walCheckpoint(
   if( pInfo->nBackfill<mxSafeFrame
    && (rc = walLockExclusive(pWal, WAL_READ_LOCK(0), 1))==SQLITE_OK
   ){
+    i64 nReq;                     /* File size hint passed to VFS */
+    i64 nSize;                    /* Current size of database file */
     u32 nBackfill = pInfo->nBackfill;
 
     /* Sync the WAL to disk */
@@ -1572,11 +1576,20 @@ static int walCheckpoint(
       rc = sqlite3OsSync(pWal->pWalFd, sync_flags);
     }
 
+    /* If the database file may grow as a result of this checkpoint, hint
+    ** about the eventual size of the db file to the VFS layer. 
+    */
+    nReq = ((i64)mxPage * szPage);
+    rc = sqlite3OsFileSize(pWal->pDbFd, &nSize);
+    if( rc==SQLITE_OK && nSize<nReq ){
+      rc = sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_SIZE_HINT, &nReq);
+    }
+
     /* Iterate through the contents of the WAL, copying data to the db file. */
     while( rc==SQLITE_OK && 0==walIteratorNext(pIter, &iDbpage, &iFrame) ){
       i64 iOffset;
       assert( walFramePgno(pWal, iFrame)==iDbpage );
-      if( iFrame<=nBackfill || iFrame>mxSafeFrame ) continue;
+      if( iFrame<=nBackfill || iFrame>mxSafeFrame || iDbpage>mxPage ) continue;
       iOffset = walFrameOffset(iFrame, szPage) + WAL_FRAME_HDRSIZE;
       /* testcase( IS_BIG_INT(iOffset) ); // requires a 4GiB WAL file */
       rc = sqlite3OsRead(pWal->pWalFd, zBuf, szPage, iOffset);

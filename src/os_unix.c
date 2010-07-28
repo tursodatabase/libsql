@@ -2765,42 +2765,6 @@ static int unixWrite(
   SimulateIOError(( wrote=(-1), amt=1 ));
   SimulateDiskfullError(( wrote=0, amt=1 ));
 
-  /* If the user has configured a chunk-size for this file, it could be
-  ** that the file needs to be extended at this point. 
-  */
-  if( pFile->szChunk && amt==0 ){
-    i64 nSize;                    /* Required file size */
-    struct stat buf;              /* Used to hold return values of fstat() */
-    int rc = fstat(pFile->h, &buf);
-    if( rc!=0 ) return SQLITE_IOERR_FSTAT;
-    nSize = ((offset+amt+pFile->szChunk-1) / pFile->szChunk) * pFile->szChunk;
-    if( nSize>(i64)buf.st_size ){
-#ifdef HAVE_POSIX_FALLOCATE
-      if( posix_fallocate(pFile->h, buf.st_size, nSize-buf.st_size) ){
-        return SQLITE_IOERR_WRITE;
-      }
-#else
-      /* If the OS does not have posix_fallocate(), fake it. First use
-      ** ftruncate() to set the file size, then write a single byte to
-      ** the last byte in each block within the extended region.
-      */
-      int nBlk = buf.st_blksize;  /* File-system block size */
-      i64 iWrite;                 /* Next offset to write to */
-
-      if( ftruncate(pFile->h, nSize) ){
-	pFile->lastErrno = errno;
-	return SQLITE_IOERR_TRUNCATE;
-      }
-      iWrite = ((buf.st_size + 2*nBlk - 1)/nBlk)*nBlk-1;
-      do {
-	wrote = seekAndWrite(pFile, iWrite, "", 1);
-	iWrite += nBlk;
-      } while( wrote==1 && iWrite<nSize );
-      if( wrote!=1 ) amt = 1;
-#endif
-    }
-  }
-
   if( amt>0 ){
     if( wrote<0 ){
       /* lastErrno set by seekAndWrite */
@@ -3083,6 +3047,54 @@ static int unixFileSize(sqlite3_file *id, i64 *pSize){
 static int proxyFileControl(sqlite3_file*,int,void*);
 #endif
 
+/* 
+** This function is called to handle the SQLITE_FCNTL_SIZE_HINT 
+** file-control operation.
+**
+** If the user has configured a chunk-size for this file, it could be
+** that the file needs to be extended at this point. Otherwise, the
+** SQLITE_FCNTL_SIZE_HINT operation is a no-op for Unix.
+*/
+static int fcntlSizeHint(unixFile *pFile, i64 nByte){
+  if( pFile->szChunk ){
+    i64 nSize;                    /* Required file size */
+    struct stat buf;              /* Used to hold return values of fstat() */
+   
+    if( fstat(pFile->h, &buf) ) return SQLITE_IOERR_FSTAT;
+
+    nSize = ((nByte+pFile->szChunk-1) / pFile->szChunk) * pFile->szChunk;
+    if( nSize>(i64)buf.st_size ){
+#if defined(HAVE_POSIX_FALLOCATE) && HAVE_POSIX_FALLOCATE
+      if( posix_fallocate(pFile->h, buf.st_size, nSize-buf.st_size) ){
+        return SQLITE_IOERR_WRITE;
+      }
+#else
+      /* If the OS does not have posix_fallocate(), fake it. First use
+      ** ftruncate() to set the file size, then write a single byte to
+      ** the last byte in each block within the extended region. This
+      ** is the same technique used by glibc to implement posix_fallocate()
+      ** on systems that do not have a real fallocate() system call.
+      */
+      int nBlk = buf.st_blksize;  /* File-system block size */
+      i64 iWrite;                 /* Next offset to write to */
+      int nWrite;                 /* Return value from seekAndWrite() */
+
+      if( ftruncate(pFile->h, nSize) ){
+        pFile->lastErrno = errno;
+        return SQLITE_IOERR_TRUNCATE;
+      }
+      iWrite = ((buf.st_size + 2*nBlk - 1)/nBlk)*nBlk-1;
+      do {
+        nWrite = seekAndWrite(pFile, iWrite, "", 1);
+        iWrite += nBlk;
+      } while( nWrite==1 && iWrite<nSize );
+      if( nWrite!=1 ) return SQLITE_IOERR_WRITE;
+#endif
+    }
+  }
+
+  return SQLITE_OK;
+}
 
 /*
 ** Information and control of an open file handle.
@@ -3099,15 +3111,10 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
     }
     case SQLITE_FCNTL_CHUNK_SIZE: {
       ((unixFile*)id)->szChunk = *(int *)pArg;
-      return SQLITE_OK;				    
+      return SQLITE_OK;
     }
     case SQLITE_FCNTL_SIZE_HINT: {
-#if 0 /* No performance advantage seen on Linux */
-      sqlite3_int64 szFile = *(sqlite3_int64*)pArg;
-      unixFile *pFile = (unixFile*)id;
-      ftruncate(pFile->h, szFile);
-#endif
-      return SQLITE_OK;
+      return fcntlSizeHint((unixFile *)id, *(i64 *)pArg);
     }
 #ifndef NDEBUG
     /* The pager calls this method to signal that it has done
