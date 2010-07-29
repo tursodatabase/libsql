@@ -500,7 +500,8 @@ static void fkScanChildren(
       if( pIdx ){
         Column *pCol;
         iCol = pIdx->aiColumn[i];
-        pCol = &pIdx->pTable->aCol[iCol];
+        pCol = &pTab->aCol[iCol];
+        if( pTab->iPKey==iCol ) iCol = -1;
         pLeft->iTable = regData+iCol+1;
         pLeft->affinity = pCol->affinity;
         pLeft->pColl = sqlite3LocateCollSeq(pParse, pCol->zColl);
