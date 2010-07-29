@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Change\sthe\sprofile\stimer\sunits\sback\sto\snanoseconds\sand\supdate\sthe\nsqlite3_profile()\sdocumentation.\nTicket\s[c43940c49b74c70a69]
-D 2010-07-29T10:07:21
+C Unconditionally\sinclude\sthe\spTmpSpace\ssize\sin\sthe\sestimate\sof\sthe\spager\nmemory\sused.
+D 2010-07-29T10:13:25
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -159,7 +159,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c 3109e0e5a0d5551bab2e8c7322b20a3b8b171248
 F src/os_win.c 1f8b0a1a5bcf6289e7754d0d3c16cec16d4c93ab
-F src/pager.c b877df9489b647cb3a9b3590f168bd4ee31bf9e7
+F src/pager.c 33117640d8e0058dbf705b95e20ebf246cbb4bc1
 F src/pager.h 879fdde5a102d2f21a3135d6f647530b21c2796c
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
@@ -842,14 +842,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 53902f7d4a46aa70ecc5bf180a01ff888d52686a
-R 5c7f3d7af62d969d6bf07f63f9a6dc16
+P 7783b98a938b77d6b8e4e85b32b05452c47fbe4b
+R 54f530c45555c790bc9a8821ecdef2cc
 U drh
-Z 278ae6e643818185a89142571af06620
+Z 869a0eb236cd26434ebfb55c77681f9e
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMUVLcoxKgR168RlERAoZMAJ49AHrWc/0+siMt64/zrJKLt1+nUACeMpNG
-x2umDnXBmB1KEwdKFIiDQOs=
-=yNbn
+iD8DBQFMUVRIoxKgR168RlERAvBDAJ9CRTxDpPrfIV014m7PF1cya0vJ4wCfcUqX
+d/N5Jv9w79SBeOLPorRuaro=
+=dYzW
 -----END PGP SIGNATURE-----
