@@ -2171,7 +2171,13 @@ int sqlite3_set_authorizer(
 ** ^The callback function registered by sqlite3_profile() is invoked
 ** as each SQL statement finishes.  ^The profile callback contains
 ** the original statement text and an estimate of wall-clock time
-** of how long that statement took to run.
+** of how long that statement took to run.  ^The profile callback
+** time is in units of nanoseconds, however the current implementation
+** is only capable of millisecond resolution so the six least significant
+** digits in the time are meaningless.  Future versions of SQLite
+** might provide greater resolution on the profiler callback.  The
+** sqlite3_profile() function is considered experimental and is
+** subject to change in future versions of SQLite.
 */
 void *sqlite3_trace(sqlite3*, void(*xTrace)(void*,const char*), void*);
 SQLITE_EXPERIMENTAL void *sqlite3_profile(sqlite3*,
