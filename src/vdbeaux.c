@@ -1802,6 +1802,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
       }
     }
     sqlite3OsCloseFree(pMaster);
+    assert( rc!=SQLITE_BUSY );
     if( rc!=SQLITE_OK ){
       sqlite3DbFree(db, zMaster);
       return rc;
