@@ -33,7 +33,7 @@ do_test dbstatus-1.1 {
   set sz2 [lindex [sqlite3_db_status db SQLITE_DBSTATUS_CACHE_USED 0] 1]
   set ::PAGESZ [expr {$sz2-$sz1}]
   set ::BASESZ [expr {$sz1-$::PAGESZ}]
-  expr {$::PAGESZ>1024 && $::PAGESZ<1200}
+  expr {$::PAGESZ>1024 && $::PAGESZ<1300}
 } {1}
 do_test dbstatus-1.2 {
   db eval {

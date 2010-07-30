@@ -139,7 +139,7 @@ SQLite. Documentation follows.
   3.2 The SQLITE_MAX_LIKE_PATTERN_LENGTH Macro
 
     Passing very long patterns to the built-in SQLite LIKE operator can
-    cause a stack overflow. To curb this problem, SQLite defines the
+    cause excessive CPU usage. To curb this problem, SQLite defines the
     SQLITE_MAX_LIKE_PATTERN_LENGTH macro as the maximum length of a
     pattern in bytes (irrespective of encoding). The default value is
     defined in internal header file "limits.h".
@@ -167,4 +167,3 @@ SQLite. Documentation follows.
     malicious users may execute arbitrary SQL (i.e. gears), they
     should be prevented from invoking the icu_load_collation() function,
     possibly using the authorisation callback.
-

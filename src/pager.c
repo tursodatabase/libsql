@@ -332,7 +332,7 @@ struct PagerSavepoint {
 struct Pager {
   sqlite3_vfs *pVfs;          /* OS functions to use for IO */
   u8 exclusiveMode;           /* Boolean. True if locking_mode==EXCLUSIVE */
-  u8 journalMode;             /* On of the PAGER_JOURNALMODE_* values */
+  u8 journalMode;             /* One of the PAGER_JOURNALMODE_* values */
   u8 useJournal;              /* Use a rollback journal on this file */
   u8 noReadlock;              /* Do not bother to obtain readlocks */
   u8 noSync;                  /* Do not sync the journal if true */
@@ -5152,7 +5152,7 @@ int sqlite3PagerCommitPhaseOne(
       );
       if( !zMaster && isOpen(pPager->jfd) 
        && pPager->journalOff==jrnlBufferSize(pPager) 
-       && pPager->dbSize>=pPager->dbFileSize
+       && pPager->dbSize>=pPager->dbOrigSize
        && (0==(pPg = sqlite3PcacheDirtyList(pPager->pPCache)) || 0==pPg->pDirty)
       ){
         /* Update the db file change counter via the direct-write method. The 
@@ -5418,7 +5418,7 @@ int sqlite3PagerMemUsed(Pager *pPager){
                                      + 5*sizeof(void*);
   return perPageSize*sqlite3PcachePagecount(pPager->pPCache)
            + sqlite3MallocSize(pPager)
-           + (pPager->pTmpSpace ? pPager->pageSize : 0);
+           + pPager->pageSize;
 }
 
 /*

@@ -114,4 +114,23 @@ do_test icu-4.3 {
   }
 } {apricot cherry chokecherry yamot peach plum}
 
+#-------------------------------------------------------------------------
+# Test that it is not possible to call the ICU regex() function with 
+# anything other than exactly two arguments. See also:
+#
+#   http://src.chromium.org/viewvc/chrome/trunk/src/third_party/sqlite/icu-regexp.patch?revision=34807&view=markup
+#
+do_catchsql_test icu-5.1 { SELECT regexp('a[abc]c.*', 'abc') } {0 1}
+do_catchsql_test icu-5.2 { 
+  SELECT regexp('a[abc]c.*') 
+} {1 {wrong number of arguments to function regexp()}}
+do_catchsql_test icu-5.3 { 
+  SELECT regexp('a[abc]c.*', 'abc', 'c') 
+} {1 {wrong number of arguments to function regexp()}}
+do_catchsql_test icu-5.4 { 
+  SELECT 'abc' REGEXP 'a[abc]c.*'
+} {0 1}
+do_catchsql_test icu-5.4 { SELECT 'abc' REGEXP }    {1 {near " ": syntax error}}
+do_catchsql_test icu-5.5 { SELECT 'abc' REGEXP, 1 } {1 {near ",": syntax error}}
+
 finish_test
