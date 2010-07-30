@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Updates\sto\sthe\sREADME.txt\sfile\sfor\sICU.
-D 2010-07-30T00:31:08
+C Add\stests\sto\scheck\sthat\sthe\sICU\sregexp()\sfunction\scan\sonly\sbe\scalled\swith\sexactly\stwo\sarguments.
+D 2010-07-30T05:06:05
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -434,7 +431,7 @@ F test/fuzz3.test aec64345184d1662bd30e6a17851ff659d596dc5
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test dd7001ac86d09c154a7dff064f4739c60e2b312c
 F test/hook.test f04c3412463f8ec117c1c704c74ca0f627ce733a
-F test/icu.test 1fc0ff9a3bafc80abf679b11afc0f8a3ce995abd
+F test/icu.test 70df4faca133254c042d02ae342c0a141f2663f4
 F test/in.test d49419c6df515852f477fa513f3317181d46bc92
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
@@ -842,14 +839,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 4b97f8640e9167cd355a24836fe74e4224cf12b9
-R fda1ba80f79b2fb815acfba3823e7f3c
-U drh
-Z e6f3e75f35f977c024c7ef45c20f7378
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMUh1PoxKgR168RlERAhDjAJ94fFkU1Vvwjzg0aF63VdoJQml3IQCgiaGY
-8YFN918cOPji+ErsPUza7Is=
-=2Eaq
------END PGP SIGNATURE-----
+P d37443d33388b402e610a00c362a1e2e79548801
+R 1df44901de4b741a545cdb85506640b4
+U dan
+Z 47b66d0e2bb0d61fe912692f971ceef4
