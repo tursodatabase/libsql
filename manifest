@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Remove\sa\stest\sfrom\ssqlite3PagerCommitPhaseOne\swhich\sis\snow\salways\strue\nafter\sthe\smulti-file\stransaction\sfix.
-D 2010-07-30T16:44:30
+C Fix\stypos\sin\scomments.\s\sNo\scode\sor\slogic\schanges.
+D 2010-07-30T16:54:25
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,7 +217,7 @@ F src/test_vfs.c 7e291f85256516ebde6633bc381ff7eedfa30234
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c 604607d6813e9551cf5189d899e0a25c12681080
 F src/trigger.c b8bedb9c0084ceb51a40f54fcca2ce048c8de852
-F src/update.c 19c899c23cd29fd102c9068e0b0ff5b087204beb
+F src/update.c 1521162d20c2994af1fdc8833e1a88dae09052c8
 F src/utf.c 1baeeac91707a4df97ccc6141ec0f808278af685
 F src/util.c 32aebf04c10e51ad3977a928b7416bed671b620b
 F src/vacuum.c 241a8386727c1497eba4955933356dfba6ff8c9f
@@ -227,7 +227,7 @@ F src/vdbeInt.h ffd68c4d4229227a5089bec53a1c635146177abc
 F src/vdbeapi.c d0f4407e465f261780ad725c1caece7d66a6aa35
 F src/vdbeaux.c 8a443e73760ca65ffdfda3e26df4c8c90eeefa11
 F src/vdbeblob.c 258a6010ba7a82b72b327fb24c55790655689256
-F src/vdbemem.c 5e579abf6532001dfbee0e640dc34eae897a9807
+F src/vdbemem.c e5673f81a2381b35c60e73ef0a8502be2ab1041e
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c 82200af3881fa4e1c9cf07cf31d98c09d437e3ab
 F src/wal.c 0925601f3299c2941a67c9cfff41ee710f70ca82
@@ -843,14 +843,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ad78ccacb00e2f8a5ca93e2c9006266d9477fe48
-R ab9c5083b94a38201583f7f7d962aec2
+P 6758f6a8ec97941e09847b309812b3194eb57f19
+R ac740eb62d9494600aa4fed42f2a1b74
 U drh
-Z 731cac3ef7411b3c0b31c9abc868e228
+Z 84adaeb91a66675447d0e577f5b22205
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMUwFzoxKgR168RlERAs0AAJ4r8+wS17WmbvJdavU0h3g2I0y8FwCfRtkq
-kzxM3lMJD9/oWhUWCEVKnVw=
-=ua+E
+iD8DBQFMUwPEoxKgR168RlERApBcAJ0QiVUigby9jkqMoirXpeoWGfBM9gCbBiAk
+y6uzCEydAktZnuJxiYQi1OU=
+=wXzG
 -----END PGP SIGNATURE-----
