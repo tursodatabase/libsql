@@ -1082,7 +1082,6 @@ static int writeMasterJournal(Pager *pPager, const char *zMaster){
   u32 cksum = 0;                   /* Checksum of string zMaster */
 
   assert( pPager->setMaster==0 );
-
   if( !zMaster 
    || pPager->journalMode==PAGER_JOURNALMODE_MEMORY 
    || pPager->journalMode==PAGER_JOURNALMODE_OFF 
@@ -5139,7 +5138,7 @@ int sqlite3PagerCommitPhaseOne(
     ** backup in progress needs to be restarted.
     */
     sqlite3BackupRestart(pPager->pBackup);
-  }else if( pPager->state!=PAGER_SYNCED && pPager->dbModified ){
+  }else if( pPager->dbModified ){
     if( pagerUseWal(pPager) ){
       PgHdr *pList = sqlite3PcacheDirtyList(pPager->pPCache);
       if( pList ){
@@ -5277,6 +5276,7 @@ int sqlite3PagerCommitPhaseOne(
       IOTRACE(("DBSYNC %p\n", pPager))
     }
 
+    assert( pPager->state!=PAGER_SYNCED );
     pPager->state = PAGER_SYNCED;
   }
 
