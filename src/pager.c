@@ -325,12 +325,6 @@ struct PagerSavepoint {
 **   doNotSpill value set to prevent pagerStress() from trying to use
 **   the journal during a rollback.
 **
-** needSync
-**
-**   TODO: It might be easier to set this variable in writeJournalHdr()
-**   and writeMasterJournal() only. Change its meaning to "unsynced data
-**   has been written to the journal".
-**
 ** subjInMemory
 **
 **   This is a boolean variable. If true, then any required sub-journal
@@ -363,7 +357,6 @@ struct Pager {
   */
   u8 state;                   /* PAGER_UNLOCK, _SHARED, _RESERVED, etc. */
   u8 dbModified;              /* True if there are any changes to the Db */
-  u8 needSync;                /* True if an fsync() is needed on the journal */
   u8 journalStarted;          /* True if header of journal is synced */
   u8 changeCountDone;         /* Set after incrementing the change-counter */
   u8 setMaster;               /* True if a m-j name has been written to jrnl */
@@ -1119,7 +1112,6 @@ static int writeMasterJournal(Pager *pPager, const char *zMaster){
     return rc;
   }
   pPager->journalOff += (nMaster+20);
-  pPager->needSync = !pPager->noSync;
 
   /* If the pager is in peristent-journal mode, then the physical 
   ** journal-file may extend past the end of the master-journal name
@@ -1485,7 +1477,6 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
     pPager->state = PAGER_EXCLUSIVE;
   }
   pPager->setMaster = 0;
-  pPager->needSync = 0;
   pPager->dbModified = 0;
 
   /* TODO: Is this optimal? Why is the db size invalidated here 
@@ -2681,7 +2672,6 @@ void sqlite3PagerSetSafetyLevel(Pager *pPager, int level, int bFullFsync){
   pPager->noSync =  (level==1 || pPager->tempFile) ?1:0;
   pPager->fullSync = (level==3 && !pPager->tempFile) ?1:0;
   pPager->sync_flags = (bFullFsync?SQLITE_SYNC_FULL:SQLITE_SYNC_NORMAL);
-  if( pPager->noSync ) pPager->needSync = 0;
 }
 #endif
 
@@ -3181,9 +3171,9 @@ void sqlite3PagerRef(DbPage *pPg){
 ** been written to the journal have actually reached the surface of the
 ** disk and can be restored in the event of a hot-journal rollback.
 **
-** If the Pager.needSync flag is not set, then this function is a
-** no-op. Otherwise, the actions required depend on the journal-mode
-** and the device characteristics of the the file-system, as follows:
+** If the Pager.noSync flag is set, then this function is a no-op. 
+** Otherwise, the actions required depend on the journal-mode and the 
+** device characteristics of the the file-system, as follows:
 **
 **   * If the journal file is an in-memory journal file, no action need
 **     be taken.
@@ -3207,17 +3197,16 @@ void sqlite3PagerRef(DbPage *pPg){
 **     if( NOT SEQUENTIAL ) xSync(<journal file>);
 **   }
 **
-** The Pager.needSync flag is never be set for temporary files, or any
-** file operating in no-sync mode (Pager.noSync set to non-zero).
-**
 ** If successful, this routine clears the PGHDR_NEED_SYNC flag of every 
 ** page currently held in memory before returning SQLITE_OK. If an IO
 ** error is encountered, then the IO error code is returned to the caller.
 */
 static int syncJournal(Pager *pPager){
-  if( pPager->needSync ){
+  if( !pPager->noSync ){
     assert( !pPager->tempFile );
-    if( pPager->journalMode!=PAGER_JOURNALMODE_MEMORY ){
+    if( pPager->journalMode!=PAGER_JOURNALMODE_MEMORY 
+     && pPager->journalMode!=PAGER_JOURNALMODE_OFF 
+    ){
       int rc;                              /* Return code */
       const int iDc = sqlite3OsDeviceCharacteristics(pPager->fd);
       assert( isOpen(pPager->jfd) );
@@ -3295,10 +3284,9 @@ static int syncJournal(Pager *pPager){
       }
     }
 
-    /* The journal file was just successfully synced. Set Pager.needSync 
-    ** to zero and clear the PGHDR_NEED_SYNC flag on all pagess.
+    /* The journal file was just successfully synced. Clear the 
+    ** PGHDR_NEED_SYNC flag on all pagess.
     */
-    pPager->needSync = 0;
     pPager->journalStarted = 1;
     pPager->journalHdr = pPager->journalOff;
     sqlite3PcacheClearSyncFlags(pPager->pPCache);
@@ -3394,6 +3382,8 @@ static int pager_write_pagelist(Pager *pPager, PgHdr *pList){
     if( pgno<=pPager->dbSize && 0==(pList->flags&PGHDR_DONT_WRITE) ){
       i64 offset = (pgno-1)*(i64)pPager->pageSize;   /* Offset to write */
       char *pData;                                   /* Data to write */    
+
+      assert( (pList->flags&PGHDR_NEED_SYNC)==0 );
 
       /* Encode the database */
       CODEC2(pPager, pList->pData, pgno, 6, return SQLITE_NOMEM, pData);
@@ -3604,6 +3594,7 @@ static int pagerStress(void *p, PgHdr *pPg){
   
     /* Write the contents of the page out to the database file. */
     if( rc==SQLITE_OK ){
+      assert( (pPg->flags&PGHDR_NEED_SYNC)==0 );
       rc = pager_write_pagelist(pPager, pPg);
     }
   }
@@ -3885,7 +3876,6 @@ int sqlite3PagerOpen(
   pPager->changeCountDone = pPager->tempFile;
   pPager->memDb = (u8)memDb;
   pPager->readOnly = (u8)readOnly;
-  /* pPager->needSync = 0; */
   assert( useJournal || pPager->tempFile );
   pPager->noSync = pPager->tempFile;
   pPager->fullSync = pPager->noSync ?0:1;
@@ -4550,7 +4540,6 @@ static int pager_open_journal(Pager *pPager){
     /* TODO: Check if all of these are really required. */
     pPager->dbOrigSize = pPager->dbSize;
     pPager->journalStarted = 0;
-    pPager->needSync = 0;
     pPager->nRec = 0;
     pPager->journalOff = 0;
     pPager->setMaster = 0;
@@ -4770,7 +4759,6 @@ static int pager_write(PgHdr *pPg){
         */
         if( !pPager->noSync ){
           pPg->flags |= PGHDR_NEED_SYNC;
-          pPager->needSync = 1;
         }
 
         /* An error has occurred writing to the journal file. The 
@@ -4793,7 +4781,6 @@ static int pager_write(PgHdr *pPg){
       }else{
         if( !pPager->journalStarted && !pPager->noSync ){
           pPg->flags |= PGHDR_NEED_SYNC;
-          pPager->needSync = 1;
         }
         PAGERTRACE(("APPEND %d page %d needSync=%d\n",
                 PAGERID(pPager), pPg->pgno,
@@ -4886,7 +4873,6 @@ int sqlite3PagerWrite(DbPage *pDbPage){
             rc = pager_write(pPage);
             if( pPage->flags&PGHDR_NEED_SYNC ){
               needSync = 1;
-              assert(pPager->needSync);
             }
             sqlite3PagerUnref(pPage);
           }
@@ -4914,7 +4900,6 @@ int sqlite3PagerWrite(DbPage *pDbPage){
           sqlite3PagerUnref(pPage);
         }
       }
-      assert(pPager->needSync);
     }
 
     assert( pPager->doNotSyncSpill==1 );
@@ -5245,14 +5230,20 @@ int sqlite3PagerCommitPhaseOne(
       rc = writeMasterJournal(pPager, zMaster);
       if( rc!=SQLITE_OK ) goto commit_phase_one_exit;
   
-      /* Sync the journal file. If the atomic-update optimization is being
-      ** used, this call will not create the journal file or perform any
-      ** real IO.
+      /* Sync the journal file and write all dirty pages to the database.
+      ** If the atomic-update optimization is being used, this sync will not 
+      ** create the journal file or perform any real IO.
+      **
+      ** Because the change-counter page was just modified, unless the
+      ** atomic-update optimization is used it is almost certain that the
+      ** journal requires a sync here. However, in locking_mode=exclusive
+      ** on a system under memory pressure it is just possible that this is 
+      ** not the case. In this case it is likely enough that the redundant
+      ** xSync() call will be changed to a no-op by the OS anyhow. 
       */
       rc = syncJournal(pPager);
       if( rc!=SQLITE_OK ) goto commit_phase_one_exit;
-  
-      /* Write all dirty pages to the database file. */
+
       rc = pager_write_pagelist(pPager,sqlite3PcacheDirtyList(pPager->pPCache));
       if( rc!=SQLITE_OK ){
         assert( rc!=SQLITE_IOERR_BLOCKED );
@@ -5766,11 +5757,10 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
     needSyncPgno = pPg->pgno;
     assert( pageInJournal(pPg) || pPg->pgno>pPager->dbOrigSize );
     assert( pPg->flags&PGHDR_DIRTY );
-    assert( pPager->needSync );
   }
 
   /* If the cache contains a page with page-number pgno, remove it
-  ** from its hash chain. Also, if the PgHdr.needSync was set for 
+  ** from its hash chain. Also, if the PGHDR_NEED_SYNC flag was set for 
   ** page pgno before the 'move' operation, it needs to be retained 
   ** for the page moved there.
   */
@@ -5799,7 +5789,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
     ** sync()ed before any data is written to database file page needSyncPgno.
     ** Currently, no such page exists in the page-cache and the 
     ** "is journaled" bitvec flag has been set. This needs to be remedied by
-    ** loading the page into the pager-cache and setting the PgHdr.needSync 
+    ** loading the page into the pager-cache and setting the PGHDR_NEED_SYNC
     ** flag.
     **
     ** If the attempt to load the page into the page-cache fails, (due
@@ -5808,12 +5798,8 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
     ** this transaction, it may be written to the database file before
     ** it is synced into the journal file. This way, it may end up in
     ** the journal file twice, but that is not a problem.
-    **
-    ** The sqlite3PagerGet() call may cause the journal to sync. So make
-    ** sure the Pager.needSync flag is set too.
     */
     PgHdr *pPgHdr;
-    assert( pPager->needSync );
     rc = sqlite3PagerGet(pPager, needSyncPgno, &pPgHdr);
     if( rc!=SQLITE_OK ){
       if( needSyncPgno<=pPager->dbOrigSize ){
@@ -5822,7 +5808,6 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
       }
       return rc;
     }
-    pPager->needSync = 1;
     assert( pPager->noSync==0 && !MEMDB );
     pPgHdr->flags |= PGHDR_NEED_SYNC;
     sqlite3PcacheMakeDirty(pPgHdr);

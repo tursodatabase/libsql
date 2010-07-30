@@ -1,5 +1,5 @@
-C Merge\strunk\schanges\sinto\sexperimental\sagain.
-D 2010-07-30T14:39:13
+C Remove\svariable\sPager.needSync,\swhich\swas\salmost\scompletely\sunused.
+D 2010-07-30T15:43:13
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -156,7 +156,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c ae5ca8a6031380708f3fec7be325233d49944914
 F src/os_win.c 51cb62f76262d961ea4249489383d714501315a7
-F src/pager.c d493b8164eee3339730983121cf1c6215af157aa
+F src/pager.c 3e152b44733459c0a1f39d9a60646ab3aa4a7845
 F src/pager.h 80726162dc3942f59ab27b738fb667b9ba0a89d5
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
@@ -841,7 +841,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P cbbaf8e67a23dc332ce935bc7234246eacba60bf ad78ccacb00e2f8a5ca93e2c9006266d9477fe48
-R acbdc50f69dbd02f5f58643fea54f04c
+P 87e0f4e184284bf775c2fc7c4e9a334f4f237c59
+R 3e31f33b6e6cf5ef4a3978e597fbc7d4
 U dan
-Z 94891c66bfdc0aff59f3a65e9a0b9b92
+Z 9b7608ba93c0b902202a5a1f630e015f
