@@ -282,11 +282,9 @@ struct PagerSavepoint {
 **
 ** journalStarted
 **
-**   This flag is set whenever the the main journal is opened and
-**   initialized
+**   This flag is set during a write-transaction after the first 
+**   journal-header is written and synced to disk.
 **
-**   The point of this flag is that it must be set after the 
-**   first journal header in a journal file has been synced to disk.
 **   After this has happened, new pages appended to the database 
 **   do not need the PGHDR_NEED_SYNC flag set, as they do not need
 **   to wait for a journal sync before they can be written out to
@@ -294,18 +292,28 @@ struct PagerSavepoint {
 **   
 ** setMaster
 **
-**   This variable is used to ensure that the master journal file name
-**   (if any) is only written into the journal file once.
+**   When PagerCommitPhaseOne() is called to commit a transaction, it may
+**   (or may not) specify a master-journal name to be written into the 
+**   journal file before it is synced to disk.
 **
-**   When committing a transaction, the master journal file name (if any)
-**   may be written into the journal file while the pager is still in
-**   PAGER_RESERVED state (see CommitPhaseOne() for the action). It
-**   then attempts to upgrade to an exclusive lock. If this attempt
-**   fails, then SQLITE_BUSY may be returned to the user and the user
-**   may attempt to commit the transaction again later (calling
-**   CommitPhaseOne() again). This flag is used to ensure that the 
-**   master journal name is only written to the journal file the first
-**   time CommitPhaseOne() is called.
+**   Whether or not a journal file contains a master-journal pointer affects 
+**   the way in which the journal file is finalized after the transaction is 
+**   committed or rolled back when running in "journal_mode=PERSIST" mode.
+**   If a journal file does not contain a master-journal pointer, it is
+**   finalized by overwriting the first journal header with zeroes. If,
+**   on the other hand, it does contain a master-journal pointer, the
+**   journal file is finalized by truncating it to zero bytes, just as if
+**   the connection were running in "journal_mode=truncate" mode.
+**
+**   Journal files that contain master journal pointers cannot be finalized
+**   simply by overwriting the first journal-header with zeroes, as the
+**   master journal pointer could interfere with hot-journal rollback of any
+**   subsequently interrupted transaction that reuses the journal file.
+**
+**   The flag is cleared as soon as the journal file is finalized (either
+**   by PagerCommitPhaseTwo or PagerRollback). If an IO error prevents the
+**   journal file from being successfully finalized, the setMaster flag
+**   is cleared anyway.
 **
 ** doNotSpill, doNotSyncSpill
 **
@@ -1073,7 +1081,9 @@ static int writeMasterJournal(Pager *pPager, const char *zMaster){
   i64 jrnlSize;                    /* Size of journal file on disk */
   u32 cksum = 0;                   /* Checksum of string zMaster */
 
-  if( !zMaster || pPager->setMaster
+  assert( pPager->setMaster==0 );
+
+  if( !zMaster 
    || pPager->journalMode==PAGER_JOURNALMODE_MEMORY 
    || pPager->journalMode==PAGER_JOURNALMODE_OFF 
   ){
