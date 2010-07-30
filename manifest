@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\stypos\sin\scomments.\s\sNo\scode\sor\slogic\schanges.
-D 2010-07-30T16:54:25
+C If\sa\sdatabase\sbecomes\scorrupted\ssuch\sthat\san\sindex\sis\sout\sof\ssync\swith\sits\ntable,\smake\ssure\sthe\scorruption\sis\sdetected\sand\sreported\sback.\s\sDo\snot\sassume\nthat\sindices\salways\scontain\srowids\sfor\svalid\stable\srows.
+D 2010-07-30T18:40:55
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -225,7 +225,7 @@ F src/vdbe.c cefff41564b68a412e65e6a1013ec1b1c1ece6c4
 F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
 F src/vdbeInt.h ffd68c4d4229227a5089bec53a1c635146177abc
 F src/vdbeapi.c d0f4407e465f261780ad725c1caece7d66a6aa35
-F src/vdbeaux.c 8a443e73760ca65ffdfda3e26df4c8c90eeefa11
+F src/vdbeaux.c e18a42d0bdac405565f2d258a82457fd10db133d
 F src/vdbeblob.c 258a6010ba7a82b72b327fb24c55790655689256
 F src/vdbemem.c e5673f81a2381b35c60e73ef0a8502be2ab1041e
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
@@ -843,14 +843,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6758f6a8ec97941e09847b309812b3194eb57f19
-R ac740eb62d9494600aa4fed42f2a1b74
+P 15c294ca051ed8b5078e7ac9a969b0f9358d9184
+R da192c1b3eb6d24627da3d8e846fd5c4
 U drh
-Z 84adaeb91a66675447d0e577f5b22205
+Z 0f8b248fb2e8c5c8333c7907bb68e233
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMUwPEoxKgR168RlERApBcAJ0QiVUigby9jkqMoirXpeoWGfBM9gCbBiAk
-y6uzCEydAktZnuJxiYQi1OU=
-=wXzG
+iD8DBQFMUxy6oxKgR168RlERAmAgAJ9doS44VIifgo0Uhs0eLiDf12dnMgCeOBB1
+2ly4IN6mhS73wXbwSCh2iW0=
+=HByC
 -----END PGP SIGNATURE-----
