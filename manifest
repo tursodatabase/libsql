@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Unconditionally\sinclude\sthe\spTmpSpace\ssize\sin\sthe\sestimate\sof\sthe\spager\nmemory\sused.
-D 2010-07-29T10:13:25
+C Updates\sto\sthe\sREADME.txt\sfile\sfor\sICU.
+D 2010-07-30T00:31:08
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -77,7 +77,7 @@ F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c b6d86d1d750787db5c168c73da4e87670ed890a1
 F ext/fts3/fts3_write.c 4b21a0c6f2772b261f14e3a2e80e1e3e849268b0
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
-F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
+F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c 850e9a36567bbcce6bd85a4b68243cad8e3c2de2
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -842,14 +842,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 7783b98a938b77d6b8e4e85b32b05452c47fbe4b
-R 54f530c45555c790bc9a8821ecdef2cc
+P 4b97f8640e9167cd355a24836fe74e4224cf12b9
+R fda1ba80f79b2fb815acfba3823e7f3c
 U drh
-Z 869a0eb236cd26434ebfb55c77681f9e
+Z e6f3e75f35f977c024c7ef45c20f7378
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMUVRIoxKgR168RlERAvBDAJ9CRTxDpPrfIV014m7PF1cya0vJ4wCfcUqX
-d/N5Jv9w79SBeOLPorRuaro=
-=dYzW
+iD8DBQFMUh1PoxKgR168RlERAhDjAJ94fFkU1Vvwjzg0aF63VdoJQml3IQCgiaGY
+8YFN918cOPji+ErsPUza7Is=
+=2Eaq
 -----END PGP SIGNATURE-----
