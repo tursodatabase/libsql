@@ -1,5 +1,5 @@
-C Merge\sfurther\strunk\schanges\sinto\sexperimental\sbranch.
-D 2010-07-30T07:26:51
+C Make\ssure\sa\sconnection\shas\san\sexclusive\slock\son\sall\sdatabase\sfiles\sinvolved\sin\sa\smulti-file\stransaction\sbefore\swriting\sthe\smaster-journal\spointer\sinto\sany\sjournal\sfiles.\sFix\sfor\s[f3e5abed55].
+D 2010-07-30T10:02:24
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -156,7 +156,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c ae5ca8a6031380708f3fec7be325233d49944914
 F src/os_win.c 51cb62f76262d961ea4249489383d714501315a7
-F src/pager.c 65efcf8cc70de5facf4375dbd78a99ceb3d19d6e
+F src/pager.c 237bee4c1cec621821e05c7c808f631d4ee3aa32
 F src/pager.h 879fdde5a102d2f21a3135d6f647530b21c2796c
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
@@ -222,7 +222,7 @@ F src/vdbe.c cefff41564b68a412e65e6a1013ec1b1c1ece6c4
 F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
 F src/vdbeInt.h ffd68c4d4229227a5089bec53a1c635146177abc
 F src/vdbeapi.c d0f4407e465f261780ad725c1caece7d66a6aa35
-F src/vdbeaux.c 77442ab4233858cf603910429033fbbd997ecdef
+F src/vdbeaux.c bb14feb1f210aec69889e145cc41b466319bfd2b
 F src/vdbeblob.c 258a6010ba7a82b72b327fb24c55790655689256
 F src/vdbemem.c 5e579abf6532001dfbee0e640dc34eae897a9807
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
@@ -840,7 +840,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P aa81900153a2762cb2ad41e6710c1f1e7dc8b41e 451d965742cc219db709939b4ba1da2f2343dbce
-R ed3ad896c2cd90b3c1af9b65becc7431
+P fb847d70407b0f0e548919b7554f62bc1dab8a6c
+R ed4b8e20864f45ad745b5c55b793d01a
 U dan
-Z 9e7bcf251287b29d791a1cd12b29e0e0
+Z a4643485bfc292d567c95a06fb090017

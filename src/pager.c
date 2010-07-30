@@ -5062,6 +5062,26 @@ int sqlite3PagerSync(Pager *pPager){
 }
 
 /*
+** This function may only be called while a write-transaction is active in
+** rollback. If the connection is in WAL mode, this call is a no-op. 
+** Otherwise, if the connection does not already have an EXCLUSIVE lock on 
+** the database file, an attempt is made to obtain one.
+**
+** If the EXCLUSIVE lock is already held or the attempt to obtain it is
+** successful, or the connection is in WAL mode, SQLITE_OK is returned.
+** Otherwise, either SQLITE_BUSY or an SQLITE_IOERR_XXX error code is 
+** returned.
+*/
+int sqlite3PagerExclusiveLock(Pager *pPager){
+  int rc = SQLITE_OK;
+  assert( pPager->state>=PAGER_RESERVED );
+  if( 0==pagerUseWal(pPager) ){
+    rc = pager_wait_on_lock(pPager, PAGER_EXCLUSIVE);
+  }
+  return rc;
+}
+
+/*
 ** Sync the database file for the pager pPager. zMaster points to the name
 ** of a master journal file that should be written into the individual
 ** journal file. zMaster may be NULL, which is interpreted as no master

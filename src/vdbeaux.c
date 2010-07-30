@@ -1646,9 +1646,6 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
   ** to the transaction.
   */
   rc = sqlite3VtabSync(db, &p->zErrMsg);
-  if( rc!=SQLITE_OK ){
-    return rc;
-  }
 
   /* This loop determines (a) if the commit hook should be invoked and
   ** (b) how many database files have open write transactions, not 
@@ -1656,12 +1653,16 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
   ** one database file has an open write transaction, a master journal
   ** file is required for an atomic commit.
   */ 
-  for(i=0; i<db->nDb; i++){ 
+  for(i=0; rc==SQLITE_OK && i<db->nDb; i++){ 
     Btree *pBt = db->aDb[i].pBt;
     if( sqlite3BtreeIsInTrans(pBt) ){
       needXcommit = 1;
       if( i!=1 ) nTrans++;
+      rc = sqlite3PagerExclusiveLock(sqlite3BtreePager(pBt));
     }
+  }
+  if( rc!=SQLITE_OK ){
+    return rc;
   }
 
   /* If there are any write-transactions at all, invoke the commit hook */
