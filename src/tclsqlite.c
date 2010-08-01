@@ -2571,7 +2571,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     int v;
     const char *zOp;
     if( objc!=3 ){
-      Tcl_WrongNumArgs(interp, 2, objv, "(step|sort)");
+      Tcl_WrongNumArgs(interp, 2, objv, "(step|sort|autoindex)");
       return TCL_ERROR;
     }
     zOp = Tcl_GetString(objv[2]);
