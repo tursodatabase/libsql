@@ -403,7 +403,6 @@ do_test analyze3-3.6.5 {
 } {SQLITE_OK}
 
 do_test analyze3-3.7.1 {
-breakpoint
   set S [sqlite3_prepare_v2 db {
     SELECT * FROM t1 WHERE a IN (
       ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?33,

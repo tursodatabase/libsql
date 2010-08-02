@@ -456,7 +456,7 @@ do_test wal2-6.1.5 {
     SELECT * FROM t1;
     PRAGMA lock_status;
   }
-} {1 2 main exclusive temp closed}
+} {1 2 main shared temp closed}
 do_test wal2-6.1.6 {
   execsql {
     INSERT INTO t1 VALUES(3, 4);
@@ -522,7 +522,7 @@ do_test wal2-6.2.8 {
     SELECT * FROM t1;
     pragma lock_status;
   }
-} {1 2 3 4 main exclusive temp closed}
+} {1 2 3 4 main shared temp closed}
 do_test wal2-6.2.9 {
   execsql {
     INSERT INTO t1 VALUES(5, 6);
@@ -608,6 +608,11 @@ set READMARK1_SET {
 set READMARK1_READ {
   {4 1 lock shared} {4 1 unlock shared}
 }
+set READMARK1_WRITE {
+  {4 1 lock shared} 
+    {0 1 lock exclusive} {0 1 unlock exclusive} 
+  {4 1 unlock shared}
+}
 
 foreach {tn sql res expected_locks} {
   2 {
@@ -664,13 +669,9 @@ foreach {tn sql res expected_locks} {
 
   9 {
     SELECT * FROM t1 ORDER BY x
-  } {Arthur {Julius Henry} Karl Leonard} { }
+  } {Arthur {Julius Henry} Karl Leonard} $READMARK1_READ
 
-  10 {
-    DELETE FROM t1
-  } {} {
-    $READMARK1_READ
-  }
+  10 { DELETE FROM t1 } {} $READMARK1_WRITE
 
   11 {
     SELECT * FROM t1
@@ -942,7 +943,6 @@ do_test wal2-10.2.2 {
   set hdr [set_tvfs_hdr $::filename] 
   lindex $hdr 0 
 } {3007000}
-breakpoint
 do_test wal2-10.2.3 { 
   lset hdr 0 3007001
   wal_fix_walindex_cksum hdr 
