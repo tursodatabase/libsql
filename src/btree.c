@@ -7848,6 +7848,29 @@ int sqlite3BtreeIsInTrans(Btree *p){
   return (p && (p->inTrans==TRANS_WRITE));
 }
 
+#ifndef SQLITE_OMIT_WAL
+/*
+** Run a checkpoint on the Btree passed as the first argument.
+**
+** Return SQLITE_LOCKED if this or any other connection has an open 
+** transaction on the shared-cache the argument Btree is connected to.
+*/
+int sqlite3BtreeCheckpoint(Btree *p){
+  int rc = SQLITE_OK;
+  if( p ){
+    BtShared *pBt = p->pBt;
+    sqlite3BtreeEnter(p);
+    if( pBt->inTransaction!=TRANS_NONE ){
+      rc = SQLITE_LOCKED;
+    }else{
+      rc = sqlite3PagerCheckpoint(pBt->pPager);
+    }
+    sqlite3BtreeLeave(p);
+  }
+  return rc;
+}
+#endif
+
 /*
 ** Return non-zero if a read (or write) transaction is active.
 */
