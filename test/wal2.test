@@ -980,30 +980,32 @@ do_test wal2-11.1.1 {
   execsql { SELECT name FROM sqlite_master } db2
 } {t1}
 
-# Set all zeroed slots in the first hash table to invalid values.
-#
-set blob [string range [tvfs shm $::filename] 0 16383]
-set I [string range [tvfs shm $::filename] 16384 end]
-binary scan $I t* L
-set I [list]
-foreach p $L {
-  lappend I [expr $p ? $p : 400]
+if {$::tcl_version>=8.5} {
+  # Set all zeroed slots in the first hash table to invalid values.
+  #
+  set blob [string range [tvfs shm $::filename] 0 16383]
+  set I [string range [tvfs shm $::filename] 16384 end]
+  binary scan $I t* L
+  set I [list]
+  foreach p $L {
+    lappend I [expr $p ? $p : 400]
+  }
+  append blob [binary format t* $I]
+  tvfs shm $::filename $blob
+  do_test wal2-11.2 {
+    catchsql { INSERT INTO t1 VALUES(10, 11, 12) }
+  } {1 {database disk image is malformed}}
+  
+  # Fill up the hash table on the first page of shared memory with 0x55 bytes.
+  #
+  set blob [string range [tvfs shm $::filename] 0 16383]
+  append blob [string repeat [binary format c 55] 16384]
+  tvfs shm $::filename $blob
+  do_test wal2-11.3 {
+    catchsql { SELECT * FROM t1 } db2
+  } {1 {database disk image is malformed}}
 }
-append blob [binary format t* $I]
-tvfs shm $::filename $blob
-do_test wal2-11.2 {
-  catchsql { INSERT INTO t1 VALUES(10, 11, 12) }
-} {1 {database disk image is malformed}}
-
-# Fill up the hash table on the first page of shared memory with 0x55 bytes.
-#
-set blob [string range [tvfs shm $::filename] 0 16383]
-append blob [string repeat [binary format c 55] 16384]
-tvfs shm $::filename $blob
-do_test wal2-11.3 {
-  catchsql { SELECT * FROM t1 } db2
-} {1 {database disk image is malformed}}
-
+  
 db close
 db2 close
 tvfs delete
@@ -1148,4 +1150,3 @@ if {$::tcl_platform(platform) == "unix"} {
 }
 
 finish_test
-

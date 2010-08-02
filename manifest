@@ -1,5 +1,8 @@
-C In\sshared-cache\smode,\sdo\snot\sallow\sone\sconnection\sto\scheckpoint\sa\sdatabase\swhile\sa\ssecond\sconnection\sis\sreading\sor\swriting\sthe\ssame\sshared-cache.
-D 2010-08-02T10:47:06
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Modify\swal2.test\sto\sdisable\stests\srequiring\sTCL\s8.5\sif\sthe\stest\sharness\sis\ncompiled\susing\sTCL\s8.4.
+D 2010-08-02T10:59:14
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -781,7 +784,7 @@ F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
 F test/wal.test 1891e6f72dd437a1c2a48091aa9182ba17a8f780
-F test/wal2.test fa6dc4457b46988f46cf6c68ea51ebe341765f4a
+F test/wal2.test 8dcebda41587e0b2b57194d03fd8700e01e85656
 F test/wal3.test d2ae7e66f973bd6b58ce49e546b2c00f44fe0485
 F test/wal4.test 3404b048fa5e10605facaf70384e6d2943412e30
 F test/wal_common.tcl 895d76138043b86bdccf36494054bdabcf65837b
@@ -841,7 +844,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8eadd7b87bfe8786e0352ca14b29d1451998c02c
-R a67fb210b5d7dd1a4ef9d58317971625
-U dan
-Z 5d06583ec8d1edb28c3029d4562549b8
+P e75b52d156905ce16bedb94f65c01a4640bdfa75
+R 4bcc255fd245f0aefdffbbd0dcd527e2
+U drh
+Z 73dcbb237530d4b99c645ee151eb2169
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMVqUFoxKgR168RlERAr7YAJ4i7F11zp1UnFfAGpxICAppvxfFxwCfRCKv
+nCovMTlO5dRRYoRobLXqmLk=
+=2tPU
+-----END PGP SIGNATURE-----
