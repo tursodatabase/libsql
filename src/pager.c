@@ -140,6 +140,7 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 **    * The dbSize, dbOrigSize and dbFileSize variables may not be trusted.
 **
 **  READER:
+**
 **    In this state all the requirements for reading the database in 
 **    rollback (non-WAL) mode are met. Unless the pager is (or recently
 **    was) in exclusive-locking mode, a user-level read transaction is 
@@ -152,12 +153,16 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 **      may not be trusted at this point.
 **
 **  WRITER_INITIAL:
+**
 **    * A write transaction is active.
 **    * A RESERVED or greater lock is held on the database file.
 **    * The dbSize, dbOrigSize and dbFileSize variables are all valid.
 **    * The contents of the pager cache have not been modified.
+**    * The journal file may or may not be open.
+**    * Nothing (not even the first header) has been written to the journal.
 **
 **  WRITER_CACHEMOD:
+**
 **    * A write transaction is active.
 **    * A RESERVED or greater lock is held on the database file.
 **    * The journal file is open and the first header has been written 
@@ -165,6 +170,7 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 **    * The contents of the page cache have been modified.
 **
 **  WRITER_DBMOD:
+**
 **    * A write transaction is active.
 **    * An EXCLUSIVE or greater lock is held on the database file.
 **    * The journal file is open and the first header has been written 
@@ -173,6 +179,7 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 **      written to disk).
 **
 **  WRITER_FINISHED:
+**
 **    * A write transaction is active.
 **    * An EXCLUSIVE or greater lock is held on the database file.
 **    * All writing and syncing of journal and database data has finished.
@@ -180,12 +187,62 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 **      commit the transaction. If an error did occur, the caller will need
 **      to rollback the transaction. 
 **
+**  ERROR:
+**
+**    The ERROR state is entered when an IO, OOM or disk-full error 
+**    occurs at a point in the code that makes it difficult to be sure
+**    that the in-memory pager state (cache contents, db size etc.) are
+**    consistent with the contents of the file-system.
+**
+**    For example, if an IO error occurs while performing a rollback, 
+**    the contents of the page-cache may be left in an inconsistent state.
+**    At this point it would be dangerous to change back to READER state
+**    (as usually happens after a rollback). Any subsequent readers might
+**    report database corruption (due to the inconsistent cache), and if
+**    they upgrade to writers, they may inadvertently corrupt the database
+**    file. To avoid this hazard, the pager switches into the ERROR state
+**    instead of READER following such an error.
+**
+**    Once it has entered the ERROR state, any attempt to use the pager
+**    to read or write data returns an error. Eventually, once all 
+**    outstanding transactions have been abandoned, the pager is able to
+**    transition back to NONE state, discarding the contents of the 
+**    page-cache and any other in-memory state at the same time. Everything
+**    is reloaded from disk (and, if necessary, hot-journal rollback peformed)
+**    when a read-transaction is next opened on the pager (transitioning
+**    the pager into READER state). At that point the system has recovered 
+**    from the error.
+**
+**    Specifically, the pager jumps into the ERROR state if:
+**
+**      1. An error occurs while attempting a rollback. This happens in
+**         function sqlite3PagerRollback().
+**
+**      2. An error occurs while attempting to finalize a journal file
+**         following a commit in function sqlite3PagerCommitPhaseTwo().
+**
+**      3. An error occurs while attempting to write to the journal or
+**         database file in function pagerStress() in order to free up
+**         memory.
+**
+**    In other cases, the error is returned to the b-tree layer. The b-tree
+**    layer then attempts a rollback operation. If the error condition 
+**    persists, the pager enters the ERROR state via condition (1) above.
+**
+**    Condition (3) is necessary because it can be triggered by a read-only
+**    statement executed within a transaction. In this case, if the error
+**    code were simply returned to the user, the b-tree layer would not
+**    automatically attempt a rollback, as it assumes that an error in a
+**    read-only statement cannot leave the pager in an internally inconsistent 
+**    state.
+**    
+**
 ** State diagram:
 **
-**                            NONE <-------------+
-**                              |                |
-**                              V                |
-**               +---------> READER------------->|
+**                            NONE <------+------+
+**                              |         |      |
+**                              V         |      |
+**               +---------> READER-------+      |
 **               |              |                |
 **               |              V                |
 **               |<-------WRITER_INITIAL-----> ERROR
@@ -1619,7 +1676,6 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
       || (pPager->exclusiveMode && pPager->journalMode!=PAGER_JOURNALMODE_WAL)
     ){
       rc = zeroJournalHdr(pPager, hasMaster);
-      pager_error(pPager, rc);
       pPager->journalOff = 0;
     }else{
       /* This branch may be executed with Pager.journalMode==MEMORY if
@@ -4327,7 +4383,7 @@ int sqlite3PagerSharedLock(Pager *pPager){
       rc = pager_wait_on_lock(pPager, SHARED_LOCK);
       if( rc!=SQLITE_OK ){
         assert( pPager->eLock==PAGER_UNLOCK );
-        return pager_error(pPager, rc);
+        goto failed;
       }
     }
 
@@ -4358,7 +4414,6 @@ int sqlite3PagerSharedLock(Pager *pPager){
       */
       rc = pagerLock(pPager, EXCLUSIVE_LOCK);
       if( rc!=SQLITE_OK ){
-        rc = pager_error(pPager, rc);
         goto failed;
       }
  
@@ -4411,6 +4466,10 @@ int sqlite3PagerSharedLock(Pager *pPager){
       ** it back since the process that crashed and left the hot journal
       ** probably did not sync it and we are required to always sync
       ** the journal before playing it back.
+      **
+      ** Even if an error occurs while syncing or rolling back the 
+      ** hot-journal, there is no need to enter the ERROR state here, as
+      ** the pager never left state NONE anyhow.
       */
       if( isOpen(pPager->jfd) ){
         rc = pagerSyncHotJournal(pPager);
@@ -4420,7 +4479,6 @@ int sqlite3PagerSharedLock(Pager *pPager){
           pPager->eState = PAGER_NONE;
         }
         if( rc!=SQLITE_OK ){
-          rc = pager_error(pPager, rc);
           goto failed;
         }
       }else{
@@ -4488,8 +4546,10 @@ int sqlite3PagerSharedLock(Pager *pPager){
 
  failed:
   if( rc!=SQLITE_OK ){
-    /* pager_unlock() is a no-op for exclusive mode and in-memory databases. */
     pager_unlock(pPager);
+    assert( (pPager->eState==PAGER_NONE)
+        ||  (pPager->exclusiveMode && pagerUseWal(pPager))
+    );
   }else{
     pPager->eState = PAGER_READER;
   }
@@ -5544,20 +5604,11 @@ int sqlite3PagerCommitPhaseTwo(Pager *pPager){
   ** called, just return the same error code without doing anything. */
   if( NEVER(pPager->errCode) ) return pPager->errCode;
 
-  /* This function should not be called if the pager is not in at least
-  ** PAGER_RESERVED state. **FIXME**: Make it so that this test always
-  ** fails - make it so that we never reach this point if we do not hold
-  ** all necessary locks.
-  */
   assert( pPager->eState==PAGER_WRITER_INITIAL
        || pPager->eState==PAGER_WRITER_FINISHED
        || (pagerUseWal(pPager) && pPager->eState==PAGER_WRITER_CACHEMOD)
   );
   assert( assert_pager_state(pPager) );
-
-#if 0
-  if( NEVER(pPager->state<PAGER_RESERVED) ) return SQLITE_ERROR;
-#endif
 
   /* An optimization. If the database was not actually modified during
   ** this transaction, the pager is running in exclusive-mode and is
@@ -5637,13 +5688,11 @@ int sqlite3PagerRollback(Pager *pPager){
 
   if( pagerUseWal(pPager) ){
     int rc2;
-
     rc = sqlite3PagerSavepoint(pPager, SAVEPOINT_ROLLBACK, -1);
     rc2 = pager_end_transaction(pPager, pPager->setMaster);
     if( rc==SQLITE_OK ) rc = rc2;
-    rc = pager_error(pPager, rc);
   }else if( pPager->eState==PAGER_WRITER_INITIAL ){
-    rc = pager_end_transaction(pPager, pPager->setMaster);
+    rc = pager_end_transaction(pPager, 0);
   }else if( pPager->errCode && pPager->errCode!=SQLITE_FULL ){
     if( pPager->eState>=PAGER_WRITER_DBMOD ){
       pager_playback(pPager, 0);
@@ -5660,14 +5709,12 @@ int sqlite3PagerRollback(Pager *pPager){
     }else{
       rc = pager_playback(pPager, 0);
     }
-
-    /* If an error occurs during a ROLLBACK, we can no longer trust the pager
-    ** cache. So call pager_error() on the way out to make any error 
-    ** persistent.
-    */
-    rc = pager_error(pPager, rc);
   }
-  return rc;
+
+  /* If an error occurs during a ROLLBACK, we can no longer trust the pager
+  ** cache. So call pager_error() on the way out to make any error persistent.
+  */
+  return pager_error(pPager, rc);
 }
 
 /*
