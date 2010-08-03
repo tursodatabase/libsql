@@ -788,8 +788,10 @@ static void compileoptionusedFunc(
   const char *zOptName;
   assert( argc==1 );
   UNUSED_PARAMETER(argc);
-  /* IMP: R-xxxx This function is an SQL wrapper around the
-  ** sqlite3_compileoption_used() C interface. */
+  /* IMP: R-39564-36305 The sqlite_compileoption_used() SQL
+  ** function is a wrapper around the sqlite3_compileoption_used() C/C++
+  ** function.
+  */
   if( (zOptName = (const char*)sqlite3_value_text(argv[0]))!=0 ){
     sqlite3_result_int(context, sqlite3_compileoption_used(zOptName));
   }
@@ -810,8 +812,9 @@ static void compileoptiongetFunc(
   int n;
   assert( argc==1 );
   UNUSED_PARAMETER(argc);
-  /* IMP: R-xxxx This function is an SQL wrapper around the
-  ** sqlite3_compileoption_get() C interface. */
+  /* IMP: R-04922-24076 The sqlite_compileoption_get() SQL function
+  ** is a wrapper around the sqlite3_compileoption_get() C/C++ function.
+  */
   n = sqlite3_value_int(argv[0]);
   sqlite3_result_text(context, sqlite3_compileoption_get(n), -1, SQLITE_STATIC);
 }
