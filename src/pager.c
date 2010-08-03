@@ -130,13 +130,24 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 ** pager may be in any one of the following six states:
 **
 **  NONE:
+**    The pager starts up in this state. Nothing is guaranteed in this
+**    state - the file may or may not be locked and the database size is
+**    unknown. The database may not be read or written.
+**
 **    * No read or write transaction is active.
 **    * Any lock, or no lock at all, may be held on the database file.
+**    * The dbSize, dbOrigSize and dbFileSize variables may not be trusted.
 **
 **  READER:
-**    * A read transaction is active.
+**    In this state all the requirements for reading the database in 
+**    rollback (non-WAL) mode are met. Unless the pager is (or recently
+**    was) in exclusive-locking mode, a user-level read transaction is 
+**    open. The database size is known in this state.
+** 
+**    * A read transaction may be active.
 **    * A SHARED or greater lock is held on the database file.
-**    * The dbSize variable is valid.
+**    * The dbSize variable may be trusted (even if a user-level read 
+**      transaction is not active).
 **
 **  WRITER_INITIAL:
 **    * A write transaction is active.
@@ -167,8 +178,7 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 **      commit the transaction. If an error did occur, the caller will need
 **      to rollback the transaction. 
 **
-**
-** Allowable transitions and the [function] that performe each:
+** Allowable transitions and the [function] that performs each:
 ** 
 **   NONE              -> READER              [PagerSharedLock]
 **   READER            -> WRITER_INITIAL      [PagerBegin]
@@ -182,6 +192,19 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 **   WRITER_FINISHED   -> READER              [pager_end_transaction]
 ** 
 **   READER            -> NONE                [pager_unlock]
+**
+** Notes:
+**
+**   * A pager is never in WRITER_DBMOD or WRITER_FINISHED state if the
+**     connection is open in WAL mode. A WAL connection is always in one
+**     of the first four states.
+**
+**   * Normally, a connection open in exclusive mode is never in PAGER_NONE
+**     state. There are two exceptions: immediately after exclusive-mode has
+**     been turned on (and before any read or write transactions are 
+**     executed), and when the pager is leaving the "error state".
+**
+**   * See also: assert_pager_state().
 */
 #define PAGER_NONE                  0
 #define PAGER_READER                1
@@ -425,8 +448,8 @@ struct Pager {
   u8 state;                   /* PAGER_UNLOCK, _SHARED, _RESERVED, etc. */
   u8 dbModified;              /* True if there are any changes to the Db */
   u8 journalStarted;          /* True if header of journal is synced */
-#endif
   u8 dbSizeValid;             /* Set when dbSize is correct */
+#endif
   u8 eState;                  /* Pager state (NONE, READER, WRITER_INITIAL..) */
   u8 eLock;                   /* Current lock held on database file */
 
@@ -623,7 +646,6 @@ static int assert_pager_state(Pager *p){
     case PAGER_NONE:
       assert( !MEMDB );
       assert( !p->tempFile );
-      assert( !pagerUseWal(pPager) );
       break;
 
     case PAGER_READER:
@@ -1348,7 +1370,6 @@ static void pager_reset(Pager *pPager){
   if( SQLITE_OK==pPager->errCode ){
     sqlite3BackupRestart(pPager->pBackup);
     sqlite3PcacheClear(pPager->pPCache);
-    pPager->dbSizeValid = 0;
   }
 }
 
@@ -1427,14 +1448,6 @@ static void pager_unlock(Pager *pPager){
     sqlite3BitvecDestroy(pPager->pInJournal);
     pPager->pInJournal = 0;
     releaseAllSavepoints(pPager);
-
-    /* If the file is unlocked, somebody else might change it. The
-    ** values stored in Pager.dbSize etc. might become invalid if
-    ** this happens.  One can argue that this doesn't need to be cleared
-    ** until the change-counter check fails in PagerSharedLock().
-    ** Clearing the page size cache here is being conservative.
-    */
-    pPager->dbSizeValid = 0;
 
     if( pagerUseWal(pPager) ){
       sqlite3WalEndReadTransaction(pPager->pWal);
@@ -2589,6 +2602,7 @@ static int pagerBeginReadTransaction(Pager *pPager){
   int changed = 0;                /* True if cache must be reset */
 
   assert( pagerUseWal(pPager) );
+  assert( pPager->eState==PAGER_NONE || pPager->eState==PAGER_SHARED );
 
   /* sqlite3WalEndReadTransaction() was not called for the previous
   ** transaction in locking_mode=EXCLUSIVE.  So call it now.  If we
@@ -2598,18 +2612,40 @@ static int pagerBeginReadTransaction(Pager *pPager){
   sqlite3WalEndReadTransaction(pPager->pWal);
 
   rc = sqlite3WalBeginReadTransaction(pPager->pWal, &changed);
-  if( rc==SQLITE_OK ){
-    int dummy;
-    if( changed ){
-      pager_reset(pPager);
-      assert( pPager->errCode || pPager->dbSizeValid==0 );
-    }
-    rc = sqlite3PagerPagecount(pPager, &dummy);
+  if( rc==SQLITE_OK && changed ){
+    pager_reset(pPager);
   }
-  pPager->eState = PAGER_READER;
 
   return rc;
 }
+
+
+/*
+** TODO: Description here.
+*/
+static int pagerPagecount(Pager *pPager, Pgno *pnPage){
+  Pgno nPage;                     /* Value to return via *pnPage */
+
+  assert( pPager->eState==PAGER_NONE );
+  nPage = sqlite3WalDbsize(pPager->pWal);
+  if( nPage==0 ){
+    i64 n = 0;                    /* Size of db file in bytes */
+    assert( isOpen(pPager->fd) || pPager->tempFile );
+    if( isOpen(pPager->fd) ){
+      int rc = sqlite3OsFileSize(pPager->fd, &n);
+      if( rc!=SQLITE_OK ){
+        return rc;
+      }
+    }
+    nPage = (Pgno)(n / pPager->pageSize);
+    if( nPage==0 && n>0 ){
+      nPage = 1;
+    }
+  }
+  *pnPage = nPage;
+  return SQLITE_OK;
+}
+
 
 /*
 ** Check if the *-wal file that corresponds to the database opened by pPager
@@ -2635,10 +2671,11 @@ static int pagerOpenWalIfPresent(Pager *pPager){
   int rc = SQLITE_OK;
   if( !pPager->tempFile ){
     int isWal;                    /* True if WAL file exists */
-    int nPage;                    /* Size of the database file */
+    Pgno nPage;                   /* Size of the database file */
 
+    assert( pPager->eState==PAGER_NONE );
     assert( pPager->eLock>=SHARED_LOCK || pPager->noReadlock );
-    rc = sqlite3PagerPagecount(pPager, &nPage);
+    rc = pagerPagecount(pPager, &nPage);
     if( rc ) return rc;
     if( nPage==0 ){
       rc = sqlite3OsDelete(pPager->pVfs, pPager->zWal, 0);
@@ -2650,7 +2687,7 @@ static int pagerOpenWalIfPresent(Pager *pPager){
     }
     if( rc==SQLITE_OK ){
       if( isWal ){
-        pager_reset(pPager);
+        assert( sqlite3PcachePagecount(pPager->pPCache)==0 );
         rc = sqlite3PagerOpenWal(pPager, 0);
         if( rc==SQLITE_OK ){
           rc = pagerBeginReadTransaction(pPager);
@@ -2960,11 +2997,19 @@ int sqlite3PagerSetPagesize(Pager *pPager, u16 *pPageSize, int nReserve){
      && sqlite3PcacheRefCount(pPager->pPCache)==0 
      && pageSize && pageSize!=pPager->pageSize 
     ){
-      char *pNew = (char *)sqlite3PageMalloc(pageSize);
+      char *pNew;                 /* New temp space */
+      i64 nByte = 0;
+      if( pPager->eState>PAGER_NONE && isOpen(pPager->fd) ){
+        rc = sqlite3OsFileSize(pPager->fd, &nByte);
+        if( rc!=SQLITE_OK ) return rc;
+      }
+      pNew = (char *)sqlite3PageMalloc(pageSize);
       if( !pNew ){
         rc = SQLITE_NOMEM;
       }else{
+        assert( pPager->eState==PAGER_NONE || pPager->eState==PAGER_READER );
         pager_reset(pPager);
+        pPager->dbSize = nByte/pageSize;
         pPager->pageSize = pageSize;
         sqlite3PageFree(pPager->pTmpSpace);
         pPager->pTmpSpace = pNew;
@@ -3088,15 +3133,18 @@ int sqlite3PagerReadFileheader(Pager *pPager, int N, unsigned char *pDest){
 int sqlite3PagerPagecount(Pager *pPager, int *pnPage){
   Pgno nPage = 0;           /* Value to return via *pnPage */
 
+  assert( pPager->eState>=PAGER_SHARED );
+  assert( pPager->eState!=PAGER_WRITER_FINISHED );
+
   /* Determine the number of pages in the file. Store this in nPage. */
-  if( pPager->dbSizeValid ){
+  if( pPager->eState>PAGER_NONE ){
     nPage = pPager->dbSize;
   }else{
     int rc;                 /* Error returned by OsFileSize() */
     i64 n = 0;              /* File size in bytes returned by OsFileSize() */
 
     if( pagerUseWal(pPager) && pPager->eState!=PAGER_NONE ){
-      sqlite3WalDbsize(pPager->pWal, &nPage);
+      nPage = sqlite3WalDbsize(pPager->pWal);
     }
 
     if( nPage==0 ){
@@ -3116,7 +3164,6 @@ int sqlite3PagerPagecount(Pager *pPager, int *pnPage){
     if( pPager->eState!=PAGER_NONE ){
       pPager->dbSize = nPage;
       pPager->dbFileSize = nPage;
-      pPager->dbSizeValid = 1;
     }
   }
 
@@ -3235,7 +3282,6 @@ static void assertTruncateConstraint(Pager *pPager){
 ** truncation will be done when the current transaction is committed.
 */
 void sqlite3PagerTruncateImage(Pager *pPager, Pgno nPage){
-  assert( pPager->dbSizeValid );
   assert( pPager->dbSize>=nPage );
   assert( pPager->eState>=PAGER_WRITER_CACHEMOD );
   pPager->dbSize = nPage;
@@ -4064,7 +4110,6 @@ int sqlite3PagerOpen(
   /* pPager->stmtOpen = 0; */
   /* pPager->stmtInUse = 0; */
   /* pPager->nRef = 0; */
-  pPager->dbSizeValid = (u8)memDb;
   /* pPager->stmtSize = 0; */
   /* pPager->stmtJSize = 0; */
   /* pPager->nPage = 0; */
@@ -4146,10 +4191,9 @@ static int hasHotJournal(Pager *pPager, int *pExists){
   int exists = 1;               /* True if a journal file is present */
   int jrnlOpen = !!isOpen(pPager->jfd);
 
-  assert( pPager!=0 );
   assert( pPager->useJournal );
   assert( isOpen(pPager->fd) );
-  assert( pPager->eState<=PAGER_SHARED );
+  assert( pPager->eState==PAGER_NONE );
 
   assert( jrnlOpen==0 || ( sqlite3OsDeviceCharacteristics(pPager->jfd) &
     SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN
@@ -4172,7 +4216,7 @@ static int hasHotJournal(Pager *pPager, int *pExists){
     */
     rc = sqlite3OsCheckReservedLock(pPager->fd, &locked);
     if( rc==SQLITE_OK && !locked ){
-      int nPage;
+      Pgno nPage;                 /* Number of pages in database file */
 
       /* Check the size of the database file. If it consists of 0 pages,
       ** then delete the journal file. See the header comment above for 
@@ -4180,7 +4224,7 @@ static int hasHotJournal(Pager *pPager, int *pExists){
       ** a RESERVED lock to avoid race conditions and to avoid violating
       ** [H33020].
       */
-      rc = sqlite3PagerPagecount(pPager, &nPage);
+      rc = pagerPagecount(pPager, &nPage);
       if( rc==SQLITE_OK ){
         if( nPage==0 ){
           sqlite3BeginBenignMalloc();
@@ -4268,8 +4312,13 @@ int sqlite3PagerSharedLock(Pager *pPager){
   int isErrorReset = 0;              /* True if recovering from error state */
 
   /* This routine is only called from b-tree and only when there are no
-  ** outstanding pages */
+  ** outstanding pages. This implies that the pager state should either
+  ** be NONE or READER. READER is only possible if the pager is or was in 
+  ** exclusive access mode.
+  */
   assert( sqlite3PcacheRefCount(pPager->pPCache)==0 );
+  assert( pPager->eState==PAGER_NONE || pPager->eState==PAGER_READER );
+  assert( assert_pager_state(pPager) );
   if( NEVER(MEMDB && pPager->errCode) ){ return pPager->errCode; }
 
   /* If this database is in an error-state, now is a chance to clear
@@ -4281,14 +4330,12 @@ int sqlite3PagerSharedLock(Pager *pPager){
       isErrorReset = 1;
     }
     pPager->errCode = SQLITE_OK;
+    pPager->eState = PAGER_NONE;
     pager_reset(pPager);
   }
 
-  if( pagerUseWal(pPager) ){
-    rc = pagerBeginReadTransaction(pPager);
-  }else if( pPager->eState==PAGER_NONE || isErrorReset ){
+  if( !pagerUseWal(pPager) && pPager->eState==PAGER_NONE ){
     sqlite3_vfs * const pVfs = pPager->pVfs;
-    int isHotJournal = 0;
 
     assert( !MEMDB && !pPager->tempFile );
     assert( sqlite3PcacheRefCount(pPager->pPCache)==0 );
@@ -4301,18 +4348,17 @@ int sqlite3PagerSharedLock(Pager *pPager){
         return pager_error(pPager, rc);
       }
     }
-    pPager->eState = PAGER_READER;
 
     /* If a journal file exists, and there is no RESERVED lock on the
     ** database file, then it either needs to be played back or deleted.
     */
     if( !isErrorReset ){
-      rc = hasHotJournal(pPager, &isHotJournal);
+      rc = hasHotJournal(pPager, &isErrorReset);
       if( rc!=SQLITE_OK ){
         goto failed;
       }
     }
-    if( isErrorReset || isHotJournal ){
+    if( isErrorReset ){
       /* Get an EXCLUSIVE lock on the database file. At this point it is
       ** important that a RESERVED lock is not obtained on the way to the
       ** EXCLUSIVE lock. If it were, another process might open the
@@ -4389,7 +4435,7 @@ int sqlite3PagerSharedLock(Pager *pPager){
         if( rc==SQLITE_OK ){
           pPager->eState = PAGER_WRITER_FINISHED;
           rc = pager_playback(pPager, 1);
-          pPager->eState = PAGER_READER;
+          pPager->eState = PAGER_NONE;
         }
         if( rc!=SQLITE_OK ){
           rc = pager_error(pPager, rc);
@@ -4399,7 +4445,7 @@ int sqlite3PagerSharedLock(Pager *pPager){
         osUnlock(pPager, SHARED_LOCK);
       }
 
-      assert( pPager->eState==PAGER_READER );
+      assert( pPager->eState==PAGER_NONE );
       assert( (pPager->eLock==SHARED_LOCK)
            || (pPager->exclusiveMode && pPager->eLock>SHARED_LOCK)
       );
@@ -4422,14 +4468,11 @@ int sqlite3PagerSharedLock(Pager *pPager){
       ** detected.  The chance of an undetected change is so small that
       ** it can be neglected.
       */
-      int nPage = 0;
+      Pgno nPage = 0;
       char dbFileVers[sizeof(pPager->dbFileVers)];
-      sqlite3PagerPagecount(pPager, &nPage);
 
-      if( pPager->errCode ){
-        rc = pPager->errCode;
-        goto failed;
-      }
+      rc = pagerPagecount(pPager, &nPage);
+      if( rc ) goto failed;
 
       if( nPage>0 ){
         IOTRACE(("CKVERS %p %d\n", pPager, sizeof(dbFileVers)));
@@ -4445,7 +4488,6 @@ int sqlite3PagerSharedLock(Pager *pPager){
         pager_reset(pPager);
       }
     }
-    assert( pPager->eState==PAGER_READER );
 
     /* If there is a WAL file in the file-system, open this database in WAL
     ** mode. Otherwise, the following function call is a no-op.
@@ -4453,10 +4495,21 @@ int sqlite3PagerSharedLock(Pager *pPager){
     rc = pagerOpenWalIfPresent(pPager);
   }
 
+  if( pagerUseWal(pPager) && rc==SQLITE_OK ){
+    rc = pagerBeginReadTransaction(pPager);
+  }
+
+  if( pPager->eState==PAGER_NONE && rc==SQLITE_OK ){
+    pPager->eState = PAGER_NONE;
+    rc = pagerPagecount(pPager, &pPager->dbSize);
+  }
+
  failed:
   if( rc!=SQLITE_OK ){
     /* pager_unlock() is a no-op for exclusive mode and in-memory databases. */
     pager_unlock(pPager);
+  }else{
+    pPager->eState = PAGER_READER;
   }
   return rc;
 }
@@ -4713,7 +4766,6 @@ static int pager_open_journal(Pager *pPager){
   if( NEVER(pPager->errCode) ) return pPager->errCode;
 
   if( !pagerUseWal(pPager) && pPager->journalMode!=PAGER_JOURNALMODE_OFF ){
-    testcase( pPager->dbSizeValid==0 );
     rc = sqlite3PagerPagecount(pPager, &nPage);
     if( rc ) return rc;
     pPager->pInJournal = sqlite3BitvecCreate(nPage);
@@ -5636,10 +5688,6 @@ int sqlite3PagerRollback(Pager *pPager){
       rc = pager_playback(pPager, 0);
     }
 
-    if( !MEMDB ){
-      pPager->dbSizeValid = 0;
-    }
-
     /* If an error occurs during a ROLLBACK, we can no longer trust the pager
     ** cache. So call pager_error() on the way out to make any error 
     ** persistent.
@@ -5692,7 +5740,7 @@ int *sqlite3PagerStats(Pager *pPager){
   a[0] = sqlite3PcacheRefCount(pPager->pPCache);
   a[1] = sqlite3PcachePagecount(pPager->pPCache);
   a[2] = sqlite3PcacheGetCachesize(pPager->pPCache);
-  a[3] = pPager->dbSizeValid ? (int) pPager->dbSize : -1;
+  a[3] = pPager->eState==PAGER_NONE ? -1 : (int) pPager->dbSize;
   a[4] = pPager->eState;
   a[5] = pPager->errCode;
   a[6] = pPager->nHit;
@@ -6010,7 +6058,6 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
     if( MEMDB ){
       /* Do not discard pages from an in-memory database since we might
       ** need to rollback later.  Just move the page out of the way. */
-      assert( pPager->dbSizeValid );
       sqlite3PcacheMove(pPgOld, pPager->dbSize+1);
     }else{
       sqlite3PcacheDrop(pPgOld);
@@ -6287,21 +6334,24 @@ int sqlite3PagerWalSupported(Pager *pPager){
 ** file (not a temp file or an in-memory database), and the WAL file
 ** is not already open, make an attempt to open it now. If successful,
 ** return SQLITE_OK. If an error occurs or the VFS used by the pager does 
-** not support the xShmXXX() methods, return an error code. *pisOpen is
+** not support the xShmXXX() methods, return an error code. *pbOpen is
 ** not modified in either case.
 **
 ** If the pager is open on a temp-file (or in-memory database), or if
-** the WAL file is already open, set *pisOpen to 1 and return SQLITE_OK
+** the WAL file is already open, set *pbOpen to 1 and return SQLITE_OK
 ** without doing anything.
 */
 int sqlite3PagerOpenWal(
   Pager *pPager,                  /* Pager object */
-  int *pisOpen                    /* OUT: Set to true if call is a no-op */
+  int *pbOpen                     /* OUT: Set to true if call is a no-op */
 ){
   int rc = SQLITE_OK;             /* Return code */
 
-  assert( pPager->eState>=PAGER_READER );
-  assert( (pisOpen==0 && !pPager->tempFile && !pPager->pWal) || *pisOpen==0 );
+  assert( assert_pager_state(pPager) );
+  assert( pPager->eState==PAGER_NONE   || pbOpen );
+  assert( pPager->eState==PAGER_READER || !pbOpen );
+  assert( pbOpen==0 || *pbOpen==0 );
+  assert( pbOpen!=0 || (!pPager->tempFile && !pPager->pWal) );
 
   if( !pPager->tempFile && !pPager->pWal ){
     if( !sqlite3PagerWalSupported(pPager) ) return SQLITE_CANTOPEN;
@@ -6313,9 +6363,10 @@ int sqlite3PagerOpenWal(
     rc = sqlite3WalOpen(pPager->pVfs, pPager->fd, pPager->zWal, &pPager->pWal);
     if( rc==SQLITE_OK ){
       pPager->journalMode = PAGER_JOURNALMODE_WAL;
+      pPager->eState = PAGER_NONE;
     }
   }else{
-    *pisOpen = 1;
+    *pbOpen = 1;
   }
 
   return rc;

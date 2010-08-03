@@ -2166,11 +2166,13 @@ int sqlite3WalRead(
 
 
 /* 
-** Set *pPgno to the size of the database file (or zero, if unknown).
+** Return the size of the database in pages (or zero, if unknown).
 */
-void sqlite3WalDbsize(Wal *pWal, Pgno *pPgno){
-  assert( pWal->readLock>=0 || pWal->lockError );
-  *pPgno = pWal->hdr.nPage;
+Pgno sqlite3WalDbsize(Wal *pWal){
+  if( pWal && pWal->readLock>=0 ){
+    return pWal->hdr.nPage;
+  }
+  return 0;
 }
 
 
