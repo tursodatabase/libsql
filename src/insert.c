@@ -1220,6 +1220,7 @@ void sqlite3GenerateConstraintChecks(
     if( onError==OE_Ignore ){
       sqlite3VdbeAddOp2(v, OP_Goto, 0, ignoreDest);
     }else{
+      if( onError==OE_Replace ) onError = OE_Abort; /* IMP: R-15569-63625 */
       sqlite3HaltConstraint(pParse, onError, 0, 0);
     }
     sqlite3VdbeResolveLabel(v, allOk);

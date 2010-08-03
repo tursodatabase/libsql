@@ -1308,16 +1308,7 @@ int sqlite3Checkpoint(sqlite3 *db, int iDb){
 
   for(i=0; i<db->nDb && rc==SQLITE_OK; i++){
     if( i==iDb || iDb==SQLITE_MAX_ATTACHED ){
-      Btree *pBt = db->aDb[i].pBt;
-      if( pBt ){
-        if( sqlite3BtreeIsInReadTrans(pBt) ){
-          rc = SQLITE_LOCKED;
-        }else{
-          sqlite3BtreeEnter(pBt);
-          rc = sqlite3PagerCheckpoint(sqlite3BtreePager(pBt));
-          sqlite3BtreeLeave(pBt);
-        }
-      }
+      rc = sqlite3BtreeCheckpoint(db->aDb[i].pBt);
     }
   }
 

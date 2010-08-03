@@ -8,7 +8,7 @@
 **    May you find forgiveness for yourself and forgive others.
 **    May you share freely, never taking more than you give.
 **
-sqlite*************************************************************************
+*************************************************************************
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 */

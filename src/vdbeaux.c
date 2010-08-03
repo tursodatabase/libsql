@@ -2400,11 +2400,8 @@ int sqlite3VdbeCursorMoveto(VdbeCursor *p){
     rc = sqlite3BtreeMovetoUnpacked(p->pCursor, 0, p->movetoTarget, 0, &res);
     if( rc ) return rc;
     p->lastRowid = p->movetoTarget;
-    p->rowidIsValid = ALWAYS(res==0) ?1:0;
-    if( NEVER(res<0) ){
-      rc = sqlite3BtreeNext(p->pCursor, &res);
-      if( rc ) return rc;
-    }
+    if( res!=0 ) return SQLITE_CORRUPT_BKPT;
+    p->rowidIsValid = 1;
 #ifdef SQLITE_TEST
     sqlite3_search_count++;
 #endif

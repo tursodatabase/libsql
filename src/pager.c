@@ -5561,7 +5561,7 @@ int sqlite3PagerCommitPhaseOne(
       */
       rc = syncJournal(pPager, 0);
       if( rc!=SQLITE_OK ) goto commit_phase_one_exit;
-
+  
       rc = pager_write_pagelist(pPager,sqlite3PcacheDirtyList(pPager->pPCache));
       if( rc!=SQLITE_OK ){
         assert( rc!=SQLITE_IOERR_BLOCKED );
