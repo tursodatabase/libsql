@@ -4064,6 +4064,7 @@ WhereInfo *sqlite3WhereBegin(
     int bestJ = -1;             /* The value of j */
     Bitmask m;                  /* Bitmask value for j or bestJ */
     int isOptimal;              /* Iterator for optimal/non-optimal search */
+    int nUnconstrained;         /* Number tables without INDEXED BY */
 
     memset(&bestPlan, 0, sizeof(bestPlan));
     bestPlan.rCost = SQLITE_BIG_DBL;
@@ -4105,6 +4106,7 @@ WhereInfo *sqlite3WhereBegin(
     ** algorithm may choose to use t2 for the outer loop, which is a much
     ** costlier approach.
     */
+    nUnconstrained = 0;
     for(isOptimal=(iFrom<nTabList-1); isOptimal>=0; isOptimal--){
       Bitmask mask;  /* Mask of tables not yet ready */
       for(j=iFrom, pTabItem=&pTabList->a[j]; j<nTabList; j++, pTabItem++){
@@ -4121,6 +4123,7 @@ WhereInfo *sqlite3WhereBegin(
         }
         mask = (isOptimal ? m : notReady);
         pOrderBy = ((i==0 && ppOrderBy )?*ppOrderBy:0);
+        if( pTabItem->pIndex==0 ) nUnconstrained++;
   
         assert( pTabItem->pTab );
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -4134,9 +4137,28 @@ WhereInfo *sqlite3WhereBegin(
         }
         assert( isOptimal || (sCost.used&notReady)==0 );
 
-        if( (sCost.used&notReady)==0
-         && (bestJ<0 || sCost.rCost<bestPlan.rCost
-             || (sCost.rCost<=bestPlan.rCost && sCost.nRow<bestPlan.nRow))
+        /* Conditions under which this table becomes the best so far:
+        **
+        **   (1) The table must not depend on other tables that have not
+        **       yet run.
+        **
+        **   (2) A full-table-scan plan cannot supercede another plan unless
+        **       the full-table-scan is an optimal plan.
+        **
+        **   (3) The plan cost must be lower than prior plans or else the
+        **       cost must be the same and the number of rows must be lower.
+        **
+        **   (4) All tables have an INDEXED BY clause or this table lacks an
+        **       INDEXED BY clause or this table uses the specific
+        **       index specified by its INDEXED BY clause.
+        */
+        if( (sCost.used&notReady)==0                       /* (1) */
+            && (bestJ<0 || isOptimal                       /* (2) */
+                || (sCost.plan.wsFlags & WHERE_NOT_FULLSCAN)!=0)
+            && (bestJ<0 || sCost.rCost<bestPlan.rCost      /* (3) */
+                || (sCost.rCost<=bestPlan.rCost && sCost.nRow<bestPlan.nRow))
+            && (nUnconstrained==0 || pTabItem->pIndex==0   /* (4) */
+                || pTabItem->pIndex==sCost.plan.u.pIdx)
         ){
           WHERETRACE(("... best so far with cost=%g and nRow=%g\n",
                       sCost.rCost, sCost.nRow));

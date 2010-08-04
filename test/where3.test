@@ -212,5 +212,27 @@ do_test where3-2.7 {
   }
 } {tB {} tC * tA * tD *}
 
+# Ticket [13f033c865f878953]
+# If the outer loop must be a full table scan, do not let ANALYZE trick
+# the planner into use a table for the outer loop that might be indexable
+# if held until an inner loop.
+# 
+do_test where3-3.0 {
+  execsql {
+    CREATE TABLE t301(a INTEGER PRIMARY KEY,b,c);
+    CREATE INDEX t301c ON t301(c);
+    INSERT INTO t301 VALUES(1,2,3);
+    CREATE TABLE t302(x, y);
+    ANALYZE;
+    explain query plan
+    SELECT * FROM t302, t301 WHERE t302.x=5 AND t301.a=t302.y;
+  }
+} {0 0 {TABLE t302} 1 1 {TABLE t301 USING PRIMARY KEY}}
+do_test where3-3.1 {
+  execsql {
+    explain query plan
+    SELECT * FROM t301, t302 WHERE t302.x=5 AND t301.a=t302.y;
+  }
+} {0 1 {TABLE t302} 1 0 {TABLE t301 USING PRIMARY KEY}}
 
 finish_test
