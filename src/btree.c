@@ -2569,13 +2569,27 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
     if( p->inTrans>pBt->inTransaction ){
       pBt->inTransaction = p->inTrans;
     }
-#ifndef SQLITE_OMIT_SHARED_CACHE
     if( wrflag ){
+      MemPage *pPage1 = pBt->pPage1;
+#ifndef SQLITE_OMIT_SHARED_CACHE
       assert( !pBt->pWriter );
       pBt->pWriter = p;
       pBt->isExclusive = (u8)(wrflag>1);
-    }
 #endif
+
+      /* If the db-size header field is incorrect (as it may be if an old
+      ** client has been writing the database file), update it now. Doing
+      ** this sooner rather than later means the database size can safely 
+      ** re-read the database size from page 1 if a savepoint or transaction
+      ** rollback occurs within the transaction.
+      */
+      if( pBt->nPage!=get4byte(&pPage1->aData[28]) ){
+        rc = sqlite3PagerWrite(pPage1->pDbPage);
+        if( rc==SQLITE_OK ){
+          put4byte(&pPage1->aData[28], pBt->nPage);
+        }
+      }
+    }
   }
 
 
