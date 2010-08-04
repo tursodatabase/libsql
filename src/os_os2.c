@@ -779,7 +779,7 @@ static int os2Open(
 
   memset( pFile, 0, sizeof(*pFile) );
 
-  OSTRACE( "OPEN want %d\n", flags ));
+  OSTRACE(( "OPEN want %d\n", flags ));
 
   if( flags & SQLITE_OPEN_READWRITE ){
     ulOpenMode |= OPEN_ACCESS_READWRITE;
