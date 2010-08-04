@@ -127,7 +127,25 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 
 /*
 ** The Pager.eState variable stores the current 'state' of a pager. A
-** pager may be in any one of the following six states:
+** pager may be in any one of the seven states shown in the following
+** state diagram.
+**
+**                            NONE <------+------+
+**                              |         |      |
+**                              V         |      |
+**               +---------> READER-------+      |
+**               |              |                |
+**               |              V                |
+**               |<-------WRITER_INITIAL-----> ERROR
+**               |              |                ^  
+**               |              V                |
+**               |<------WRITER_CACHEMOD-------->|
+**               |              |                |
+**               |              V                |
+**               |<-------WRITER_DBMOD---------->|
+**               |              |                |
+**               |              V                |
+**               +<------WRITER_FINISHED-------->+
 **
 **  NONE:
 **
@@ -237,26 +255,6 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 **    state.
 **    
 **
-** State diagram:
-**
-**                            NONE <------+------+
-**                              |         |      |
-**                              V         |      |
-**               +---------> READER-------+      |
-**               |              |                |
-**               |              V                |
-**               |<-------WRITER_INITIAL-----> ERROR
-**               |              |                ^  
-**               |              V                |
-**               |<------WRITER_CACHEMOD-------->|
-**               |              |                |
-**               |              V                |
-**               |<-------WRITER_DBMOD---------->|
-**               |              |                |
-**               |              V                |
-**               +<------WRITER_FINISHED-------->+
-**
-**
 ** State transitions and the [function] that performs each:
 ** 
 **   NONE              -> READER              [PagerSharedLock]
@@ -265,12 +263,11 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 **   WRITER_CACHEMOD   -> WRITER_DBMOD        [syncJournal]
 **   WRITER_DBMOD      -> WRITER_FINISHED     [PagerCommitPhaseOne]
 ** 
-**   WRITER_INITIAL    -> READER              [pager_end_transaction]
-**   WRITER_CACHEMOD   -> READER              [pager_end_transaction]
-**   WRITER_DBMOD      -> READER              [pager_end_transaction]
-**   WRITER_FINISHED   -> READER              [pager_end_transaction]
+**   WRITER_***        -> READER              [pager_end_transaction]
+**   WRITER_***        -> ERROR               [pager_error]
 ** 
 **   READER            -> NONE                [pager_unlock]
+**   ERROR             -> NONE                [pager_unlock]
 **
 ** Notes:
 **
@@ -716,6 +713,11 @@ static int assert_pager_state(Pager *p){
   /* Check that MEMDB implies noSync. */
   assert( !MEMDB || p->noSync );
 
+  /* If changeCountDone is set, a RESERVED lock or greater must be held
+  ** on the file.
+  */
+  assert( pPager->changeCountDone==0 || pPager->eLock>=RESERVED_LOCK );
+
   switch( p->eState ){
     case PAGER_NONE:
       assert( !MEMDB );
@@ -891,13 +893,31 @@ static int write32bits(sqlite3_file *fd, i64 offset, u32 val){
 ** If file pFd is open, call sqlite3OsUnlock() on it.
 */
 static int osUnlock(Pager *pPager, int eLock){
-  if( !isOpen(pPager->fd) ){
-    return SQLITE_OK;
+  int rc = SQLITE_OK;
+  if( isOpen(pPager->fd) ){
+    assert( pPager->eLock>=eLock );
+    assert( eLock!=NO_LOCK || pagerUseWal(pPager)==0 );
+    rc = sqlite3OsUnlock(pPager->fd, eLock);
+    if( rc==SQLITE_OK ){
+      pPager->eLock = eLock;
+    }
   }
-  assert( pPager->eLock>=eLock );
-  assert( eLock!=NO_LOCK || pagerUseWal(pPager)==0 );
-  pPager->eLock = eLock;
-  return sqlite3OsUnlock(pPager->fd, eLock);
+  return rc;
+}
+
+static int osLock(Pager *pPager, int eLock){
+  int rc;
+  assert( eLock==SHARED_LOCK || eLock==RESERVED_LOCK || eLock==EXCLUSIVE_LOCK );
+  if( pPager->eLock>=eLock ){
+    rc = SQLITE_OK;
+  }else{
+    rc = sqlite3OsLock(pPager->fd, eLock);
+    if( rc==SQLITE_OK ){
+      pPager->eLock = eLock;
+      IOTRACE(("LOCK %p %d\n", pPager, locktype))
+    }
+  }
+  return rc;
 }
 
 /*
@@ -1565,7 +1585,7 @@ static void pager_unlock(Pager *pPager){
   ** it can safely move back to PAGER_NONE state. This happens in both
   ** normal and exclusive-locking mode.
   */
-  if( pPager->errCode ){
+  if( pPager->errCode && !pPager->tempFile ){
     pager_reset(pPager);
     pPager->changeCountDone = 0;
     pPager->eState = PAGER_NONE;
@@ -1728,10 +1748,10 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
     */
     rc2 = sqlite3WalEndWriteTransaction(pPager->pWal);
     assert( rc2==SQLITE_OK );
-    if( !pPager->exclusiveMode && sqlite3WalExclusiveMode(pPager->pWal, 0) ){
-      rc2 = osUnlock(pPager, SHARED_LOCK);
-    }
-  }else if( !pPager->exclusiveMode ){
+  }
+  if( !pPager->exclusiveMode 
+   && (!pagerUseWal(pPager) || sqlite3WalExclusiveMode(pPager->pWal, 0))
+  ){
     rc2 = osUnlock(pPager, SHARED_LOCK);
     pPager->changeCountDone = 0;
   }
@@ -3245,20 +3265,6 @@ int sqlite3PagerPagecount(Pager *pPager, int *pnPage){
 }
 
 
-static int pagerLock(Pager *pPager, int eLock){
-  int rc;
-  assert( eLock==SHARED_LOCK || eLock==RESERVED_LOCK || eLock==EXCLUSIVE_LOCK );
-  if( pPager->eLock>=eLock ){
-    rc = SQLITE_OK;
-  }else{
-    rc = sqlite3OsLock(pPager->fd, eLock);
-    if( rc==SQLITE_OK ){
-      pPager->eLock = eLock;
-    }
-  }
-  return rc;
-}
-
 /*
 ** Try to obtain a lock of type locktype on the database file. If
 ** a similar or greater lock is already held, this function is a no-op
@@ -3295,12 +3301,8 @@ static int pager_wait_on_lock(Pager *pPager, int locktype){
     rc = SQLITE_OK;
   }else{
     do {
-      rc = sqlite3OsLock(pPager->fd, locktype);
+      rc = osLock(pPager, locktype);
     }while( rc==SQLITE_BUSY && pPager->xBusyHandler(pPager->pBusyHandlerArg) );
-    if( rc==SQLITE_OK ){
-      pPager->eLock = (u8)locktype;
-      IOTRACE(("LOCK %p %d\n", pPager, locktype))
-    }
   }
   return rc;
 }
@@ -4274,7 +4276,7 @@ static int hasHotJournal(Pager *pPager, int *pExists){
     rc = sqlite3OsAccess(pVfs, pPager->zJournal, SQLITE_ACCESS_EXISTS, &exists);
   }
   if( rc==SQLITE_OK && exists ){
-    int locked;                 /* True if some process holds a RESERVED lock */
+    int locked = 0;             /* True if some process holds a RESERVED lock */
 
     /* Race condition here:  Another process might have been holding the
     ** the RESERVED lock and have a journal open at the sqlite3OsAccess() 
@@ -4298,9 +4300,9 @@ static int hasHotJournal(Pager *pPager, int *pExists){
       if( rc==SQLITE_OK ){
         if( nPage==0 ){
           sqlite3BeginBenignMalloc();
-          if( sqlite3OsLock(pPager->fd, RESERVED_LOCK)==SQLITE_OK ){
+          if( osLock(pPager, RESERVED_LOCK)==SQLITE_OK ){
             sqlite3OsDelete(pVfs, pPager->zJournal, 0);
-            sqlite3OsUnlock(pPager->fd, SHARED_LOCK);
+            osUnlock(pPager, SHARED_LOCK);
           }
           sqlite3EndBenignMalloc();
         }else{
@@ -4379,7 +4381,6 @@ static int hasHotJournal(Pager *pPager, int *pExists){
 */
 int sqlite3PagerSharedLock(Pager *pPager){
   int rc = SQLITE_OK;                /* Return code */
-  int isErrorReset = 0;              /* True if recovering from error state */
 
   /* This routine is only called from b-tree and only when there are no
   ** outstanding pages. This implies that the pager state should either
@@ -4392,7 +4393,7 @@ int sqlite3PagerSharedLock(Pager *pPager){
   if( NEVER(MEMDB && pPager->errCode) ){ return pPager->errCode; }
 
   if( !pagerUseWal(pPager) && pPager->eState==PAGER_NONE ){
-    sqlite3_vfs * const pVfs = pPager->pVfs;
+    int bHotJournal = 1;          /* True if there exists a hot journal-file */
 
     assert( !MEMDB && !pPager->tempFile );
     assert( pPager->noReadlock==0 || pPager->readOnly );
@@ -4408,13 +4409,13 @@ int sqlite3PagerSharedLock(Pager *pPager){
     /* If a journal file exists, and there is no RESERVED lock on the
     ** database file, then it either needs to be played back or deleted.
     */
-    if( !isErrorReset ){
-      rc = hasHotJournal(pPager, &isErrorReset);
-      if( rc!=SQLITE_OK ){
-        goto failed;
-      }
+    if( pPager->eLock<=SHARED_LOCK ){
+      rc = hasHotJournal(pPager, &bHotJournal);
     }
-    if( isErrorReset ){
+    if( rc!=SQLITE_OK ){
+      goto failed;
+    }
+    if( bHotJournal ){
       /* Get an EXCLUSIVE lock on the database file. At this point it is
       ** important that a RESERVED lock is not obtained on the way to the
       ** EXCLUSIVE lock. If it were, another process might open the
@@ -4430,7 +4431,7 @@ int sqlite3PagerSharedLock(Pager *pPager){
       ** Unless the pager is in locking_mode=exclusive mode, the lock is
       ** downgraded to SHARED_LOCK before this function returns.
       */
-      rc = pagerLock(pPager, EXCLUSIVE_LOCK);
+      rc = osLock(pPager, EXCLUSIVE_LOCK);
       if( rc!=SQLITE_OK ){
         goto failed;
       }
@@ -4449,19 +4450,19 @@ int sqlite3PagerSharedLock(Pager *pPager){
       ** function was called and the journal file does not exist.
       */
       if( !isOpen(pPager->jfd) ){
-        int res;
-        rc = sqlite3OsAccess(pVfs,pPager->zJournal,SQLITE_ACCESS_EXISTS,&res);
-        if( rc==SQLITE_OK ){
-          if( res ){
-            int fout = 0;
-            int f = SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_JOURNAL;
-            assert( !pPager->tempFile );
-            rc = sqlite3OsOpen(pVfs, pPager->zJournal, pPager->jfd, f, &fout);
-            assert( rc!=SQLITE_OK || isOpen(pPager->jfd) );
-            if( rc==SQLITE_OK && fout&SQLITE_OPEN_READONLY ){
-              rc = SQLITE_CANTOPEN_BKPT;
-              sqlite3OsClose(pPager->jfd);
-            }
+        sqlite3_vfs * const pVfs = pPager->pVfs;
+        int bExists;              /* True if journal file exists */
+        rc = sqlite3OsAccess(
+            pVfs, pPager->zJournal, SQLITE_ACCESS_EXISTS, &bExists);
+        if( rc==SQLITE_OK && bExists ){
+          int fout = 0;
+          int f = SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_JOURNAL;
+          assert( !pPager->tempFile );
+          rc = sqlite3OsOpen(pVfs, pPager->zJournal, pPager->jfd, f, &fout);
+          assert( rc!=SQLITE_OK || isOpen(pPager->jfd) );
+          if( rc==SQLITE_OK && fout&SQLITE_OPEN_READONLY ){
+            rc = SQLITE_CANTOPEN_BKPT;
+            sqlite3OsClose(pPager->jfd);
           }
         }
       }
@@ -4581,9 +4582,7 @@ int sqlite3PagerSharedLock(Pager *pPager){
 ** nothing to rollback, so this routine is a no-op.
 */ 
 static void pagerUnlockIfUnused(Pager *pPager){
-  if( (sqlite3PcacheRefCount(pPager->pPCache)==0)
-   && (!pPager->exclusiveMode || pPager->journalOff>0) 
-  ){
+  if( (sqlite3PcacheRefCount(pPager->pPCache)==0) ){
     pagerUnlockAndRollback(pPager);
   }
 }
@@ -4907,7 +4906,7 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
       ** exclusive lock on the database is not already held, obtain it now.
       */
       if( pPager->exclusiveMode && sqlite3WalExclusiveMode(pPager->pWal, -1) ){
-        rc = pagerLock(pPager, EXCLUSIVE_LOCK);
+        rc = osLock(pPager, EXCLUSIVE_LOCK);
         if( rc!=SQLITE_OK ){
           return rc;
         }
@@ -4926,7 +4925,7 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
       ** busy-handler callback can be used when upgrading to the EXCLUSIVE
       ** lock, but not when obtaining the RESERVED lock.
       */
-      rc = pagerLock(pPager, RESERVED_LOCK);
+      rc = osLock(pPager, RESERVED_LOCK);
       if( rc==SQLITE_OK && exFlag ){
         rc = pager_wait_on_lock(pPager, EXCLUSIVE_LOCK);
       }
@@ -6263,13 +6262,13 @@ int sqlite3PagerSetJournalMode(Pager *pPager, int eMode){
       }
       if( pPager->eState==PAGER_READER ){
         assert( rc==SQLITE_OK );
-        rc = sqlite3OsLock(pPager->fd, RESERVED_LOCK);
+        rc = osLock(pPager, RESERVED_LOCK);
       }
       if( rc==SQLITE_OK ){
         sqlite3OsDelete(pPager->pVfs, pPager->zJournal, 0);
       }
       if( rc==SQLITE_OK && state==PAGER_READER ){
-        sqlite3OsUnlock(pPager->fd, SHARED_LOCK);
+        osUnlock(pPager, SHARED_LOCK);
       }else if( state==PAGER_NONE ){
         pager_unlock(pPager);
       }
@@ -6417,7 +6416,7 @@ int sqlite3PagerCloseWal(Pager *pPager){
   */
   if( !pPager->pWal ){
     int logexists = 0;
-    rc = sqlite3OsLock(pPager->fd, SQLITE_LOCK_SHARED);
+    rc = osLock(pPager, SHARED_LOCK);
     if( rc==SQLITE_OK ){
       rc = sqlite3OsAccess(
           pPager->pVfs, pPager->zWal, SQLITE_ACCESS_EXISTS, &logexists
@@ -6433,7 +6432,7 @@ int sqlite3PagerCloseWal(Pager *pPager){
   ** the database file, the log and log-summary files will be deleted.
   */
   if( rc==SQLITE_OK && pPager->pWal ){
-    rc = sqlite3OsLock(pPager->fd, SQLITE_LOCK_EXCLUSIVE);
+    rc = osLock(pPager, EXCLUSIVE_LOCK);
     if( rc==SQLITE_OK ){
       rc = sqlite3WalClose(pPager->pWal,
                            (pPager->noSync ? 0 : pPager->sync_flags), 
@@ -6443,7 +6442,7 @@ int sqlite3PagerCloseWal(Pager *pPager){
     }else{
       /* If we cannot get an EXCLUSIVE lock, downgrade the PENDING lock
       ** that we did get back to SHARED. */
-      sqlite3OsUnlock(pPager->fd, SQLITE_LOCK_SHARED);
+      osUnlock(pPager, SQLITE_LOCK_SHARED);
     }
   }
   return rc;
