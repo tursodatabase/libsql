@@ -1225,6 +1225,23 @@ proc slave_test_file {zFile} {
   show_memstats
 }
 
+# Open a new connection on database test.db and execute the SQL script
+# supplied as an argument. Before returning, close the new conection and
+# restore the 4 byte fields starting at header offsets 28, 92 and 96
+# to the values they held before the SQL was executed. This simulates
+# a write by a pre-3.7.0 client.
+#
+proc sql36231 {sql} {
+  set B [hexio_read test.db 92 8]
+  set A [hexio_read test.db 28 4]
+  sqlite3 db36231 test.db
+  catch { db36231 func a_string a_string }
+  execsql $sql db36231
+  db36231 close
+  hexio_write test.db 28 $A
+  hexio_write test.db 92 $B
+  return ""
+}
 
 # If the library is compiled with the SQLITE_DEFAULT_AUTOVACUUM macro set
 # to non-zero, then set the global variable $AUTOVACUUM to 1.

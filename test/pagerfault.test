@@ -1045,4 +1045,37 @@ ifcapable crashtest {
   }
 }
 
+
+#-------------------------------------------------------------------------
+# When a 3.7.0 client opens a write-transaction on a database file that
+# has been appended to or truncated by a pre-370 client, it updates
+# the db-size in the file header immediately. This test case provokes
+# errors during that operation.
+#
+do_test pagerfault-22-pre1 {
+  faultsim_delete_and_reopen
+  db func a_string a_string
+  execsql {
+    PRAGMA page_size = 1024;
+    PRAGMA auto_vacuum = 0;
+    CREATE TABLE t1(a);
+    CREATE INDEX i1 ON t1(a);
+    INSERT INTO t1 VALUES(a_string(3000));
+    CREATE TABLE t2(a);
+    INSERT INTO t2 VALUES(1);
+  }
+  db close
+  sql36231 { INSERT INTO t1 VALUES(a_string(3000)) }
+  faultsim_save_and_close
+} {}
+do_faultsim_test pagerfault-22 -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { INSERT INTO t2 VALUES(2) }
+  execsql { SELECT * FROM t2 }
+} -test {
+  faultsim_test_result {0 {1 2}}
+  faultsim_integrity_check
+}
+
 finish_test
