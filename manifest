@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Backport\sthe\s[65b8636ac6e5]\sfix\sfor\sticket\s[51ae9cad317a1]\sto\sversion\s3.7.0.
-D 2010-08-04T11:59:06
+C Backport\sfix\s[267492d3a7eff7b]\sfor\sthe\sperformance\sregression\scaused\sby\nautomatic\sindexing\sand\sreported\sby\sticket\s[8011086c85c6c4040].
+D 2010-08-04T12:13:36
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -125,7 +125,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 4f3aadad62c6c9f0d4e5a96718516ac4e3c598df
 F src/date.c 5dd8448a0bfea8d31fb14cff487d0c06ff8c8b20
 F src/delete.c 41cb4f78557810eecc167b7e2317de7e12d20929
-F src/expr.c b2b053429575bf964c64bdf5459c5cbbe5bf93b8
+F src/expr.c 96bda574284ead53ba7af6334414b4e958cc866a
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e2116672a6bd610dc888e27df292ebc7999c9bb0
 F src/func.c 0c28599430856631216b6c0131c51c89bf516026
@@ -258,7 +258,7 @@ F test/auth.test 8f21c160a4562f54f27618e85bac869efcecbcaf
 F test/auth2.test 270baddc8b9c273682760cffba6739d907bd2882
 F test/auth3.test a4755e6a2a2fea547ffe63c874eb569e60a28eb5
 F test/autoinc.test 85ef3180a737e6580086a018c09c6f1a52759b46
-F test/autoindex1.test ffb06a246e2c1f89cfbe3d93eca513c9e78d4063
+F test/autoindex1.test 7df441bf0e7a88644eb80993339dbf1db3a12c68
 F test/autovacuum.test bb7c0885e6f8f1d633045de48f2b66082162766d
 F test/autovacuum_ioerr2.test 598b0663074d3673a9c1bc9a16e80971313bafe6
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
@@ -840,19 +840,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b36b105eab6fd3195f4bfba6cb5cda0f063b7460
-R 31c974a6d3f6b8018f2e5977571634b1
-T *bgcolor * #ffb67c
-T *branch * branch-3.7.0
-T *sym-branch-3.7.0 *
-T -sym-release *
-T -sym-trunk *
+P dec70c63d052bbe41fc4a065109d2845c67d3f15
+R cad30b8a17ffb534adaad71e15e6c81c
 U drh
-Z 3144cc4986e1c468c829202f323640cf
+Z fe2e670be839990d293f52ae319d7c3c
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMWVYOoxKgR168RlERAoF3AJ9tlSOAFwhoCXpCUpFeVieTmRPNxwCfQvwj
-F4/EhfaUu5V0KCxMjMOPdyk=
-=hZ38
+iD8DBQFMWVl0oxKgR168RlERAuH9AJ91LXvtNBl+29YEUcrfx0nsvvItBgCfWcfv
+Cofhdg1EokDOZTpI/zEIPAQ=
+=C/qV
 -----END PGP SIGNATURE-----
