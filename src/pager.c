@@ -163,12 +163,23 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 **    rollback (non-WAL) mode are met. Unless the pager is (or recently
 **    was) in exclusive-locking mode, a user-level read transaction is 
 **    open. The database size is known in this state.
+**
+**    A connection running with locking_mode=normal enters this state when
+**    it opens a read-transaction on the database and returns to state
+**    NONE after the read-transaction is completed. However a connection
+**    running in locking_mode=exclusive (including temp databases) remains in
+**    this state even after the read-transaction is closed. The only way
+**    a locking_mode=exclusive connection can transition from READER to NONE
+**    is via the ERROR state (see below).
 ** 
-**    * A read transaction may be active.
+**    * A read transaction may be active (but a write-transaction cannot).
 **    * A SHARED or greater lock is held on the database file.
 **    * The dbSize variable may be trusted (even if a user-level read 
 **      transaction is not active). The dbOrigSize and dbFileSize variables
 **      may not be trusted at this point.
+**    * If the database is a WAL database, then the WAL connection is open.
+**    * Even if a read-transaction is not open, it is guaranteed that 
+**      there is no hot-journal in the file-system.
 **
 **  WRITER_INITIAL:
 **
@@ -290,62 +301,55 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 #define PAGER_WRITER_FINISHED       5
 #define PAGER_ERROR                 6
 
-
 /*
-** The page cache as a whole is always in one of the following
-** states:
+** The Pager.eLock variable is almost always set to one of the 
+** following locking-states, according to the lock currently held on
+** the database file: NO_LOCK, SHARED_LOCK, RESERVED_LOCK or EXCLUSIVE_LOCK.
+** This variable is kept up to date as locks are taken and released by
+** the pagerLockDb() and pagerUnlockDb() wrappers.
 **
-**   PAGER_UNLOCK        The page cache is not currently reading or 
-**                       writing the database file.  There is no
-**                       data held in memory.  This is the initial
-**                       state.
+** If the VFS xLock() or xUnlock() returns an error other than SQLITE_BUSY
+** (i.e. one of the SQLITE_IOERR subtypes), it is not clear whether or not
+** the operation was successful. In these circumstances pagerLockDb() and
+** pagerUnlockDb() take a conservative approach - eLock is always updated
+** when unlocking the file, and only updated when locking the file if the
+** VFS call is successful. This way, the Pager.eLock variable may be set
+** to a less exclusive (lower) value than the lock that is actually held
+** at the system level, but it is never set to a more exclusive value.
 **
-**   PAGER_SHARED        The page cache is reading the database.
-**                       Writing is not permitted.  There can be
-**                       multiple readers accessing the same database
-**                       file at the same time.
+** This is usually safe. If an xUnlock fails or appears to fail, there may 
+** be a few redundant xLock() calls or a lock may be held for longer than
+** required, but nothing really goes wrong.
 **
-**   PAGER_RESERVED      This process has reserved the database for writing
-**                       but has not yet made any changes.  Only one process
-**                       at a time can reserve the database.  The original
-**                       database file has not been modified so other
-**                       processes may still be reading the on-disk
-**                       database file.
+** The exception is when the database file is unlocked as the pager moves
+** from ERROR to NONE state. At this point there may be a hot-journal file 
+** in the file-system that needs to be rolled back (as part of a NONE->SHARED
+** transition, by the same pager or any other). If the call to xUnlock()
+** fails at this point and the pager is left holding an EXCLUSIVE lock, this
+** can confuse the call to xCheckReservedLock() call made later as part
+** of hot-journal detection.
 **
-**   PAGER_EXCLUSIVE     The page cache is writing the database.
-**                       Access is exclusive.  No other processes or
-**                       threads can be reading or writing while one
-**                       process is writing.
+** xCheckReservedLock() is defined as returning true "if there is a RESERVED 
+** lock held by this process or any others". So xCheckReservedLock may 
+** return true because the caller itself is holding an EXCLUSIVE lock (but
+** doesn't know it because of a previous error in xUnlock). If this happens
+** a hot-journal may be mistaken for a journal being created by an active
+** transaction in another process, causing SQLite to read from the database
+** without rolling it back.
 **
-**   PAGER_SYNCED        The pager moves to this state from PAGER_EXCLUSIVE
-**                       after all dirty pages have been written to the
-**                       database file and the file has been synced to
-**                       disk. All that remains to do is to remove or
-**                       truncate the journal file and the transaction 
-**                       will be committed.
+** To work around this, if a call to xUnlock() fails when unlocking the
+** database in the ERROR state, Pager.eLock is set to UNKNOWN_LOCK. It
+** is only changed back to a real locking state after a successful call
+** to xLock(EXCLUSIVE). Also, the code to do the NONE->SHARED state transition
+** omits the check for a hot-journal if Pager.eLock is set to UNKNOWN_LOCK 
+** lock. Instead, it assumes a hot-journal exists and obtains an EXCLUSIVE
+** lock on the database file before attempting to roll it back. See function
+** PagerSharedLock() for more detail.
 **
-** The page cache comes up in PAGER_UNLOCK.  The first time a
-** sqlite3PagerGet() occurs, the state transitions to PAGER_SHARED.
-** After all pages have been released using sqlite_page_unref(),
-** the state transitions back to PAGER_UNLOCK.  The first time
-** that sqlite3PagerWrite() is called, the state transitions to
-** PAGER_RESERVED.  (Note that sqlite3PagerWrite() can only be
-** called on an outstanding page which means that the pager must
-** be in PAGER_SHARED before it transitions to PAGER_RESERVED.)
-** PAGER_RESERVED means that there is an open rollback journal.
-** The transition to PAGER_EXCLUSIVE occurs before any changes
-** are made to the database file, though writes to the rollback
-** journal occurs with just PAGER_RESERVED.  After an sqlite3PagerRollback()
-** or sqlite3PagerCommitPhaseTwo(), the state can go back to PAGER_SHARED,
-** or it can stay at PAGER_EXCLUSIVE if we are in exclusive access mode.
+** Pager.eLock may only be set to UNKNOWN_LOCK when the pager is in 
+** PAGER_NONE state.
 */
-#define PAGER_UNLOCK      0
-#define PAGER_SHARED      1   /* same as SHARED_LOCK */
-#define PAGER_RESERVED    2   /* same as RESERVED_LOCK */
-#define PAGER_EXCLUSIVE   4   /* same as EXCLUSIVE_LOCK */
-#define PAGER_SYNCED      5
-
-#define UNKNOWN_LOCK      (EXCLUSIVE_LOCK+1)
+#define UNKNOWN_LOCK                (EXCLUSIVE_LOCK+1)
 
 /*
 ** A macro used for invoking the codec if there is one
@@ -398,14 +402,11 @@ struct PagerSavepoint {
 ** A open page cache is an instance of the following structure.
 **
 ** errCode
+**   The Pager.errCode variable is only ever non-zero when the condition
+**   (Pager.eState==PAGER_ERROR) is true. 
 **
-**   Pager.errCode may be set to SQLITE_IOERR, SQLITE_CORRUPT, or
-**   or SQLITE_FULL. Once one of the first three errors occurs, it persists
-**   and is returned as the result of every major pager API call.  The
-**   SQLITE_FULL return code is slightly different. It persists only until the
-**   next successful rollback is performed on the pager cache. Also,
-**   SQLITE_FULL does not affect the sqlite3PagerGet() and sqlite3PagerLookup()
-**   APIs, they may still be used successfully.
+**   Pager.errCode may be set to SQLITE_FULL, SQLITE_IOERR or one of the
+**   SQLITE_IOERR_XXX sub-codes.
 **
 ** dbSize, dbOrigSize, dbFileSize
 **
@@ -418,10 +419,7 @@ struct PagerSavepoint {
 **   out from the cache to the actual file on disk. Or if the image has been
 **   truncated by an incremental-vacuum operation. The Pager.dbOrigSize variable
 **   contains the number of pages in the database image when the current
-**   transaction was opened. The contents of all three of these variables is
-**   only guaranteed to be correct if the boolean Pager.dbSizeValid is true.
-**
-**   TODO: Under what conditions is dbSizeValid set? Cleared?
+**   transaction was opened. 
 **
 ** changeCountDone
 **
@@ -719,6 +717,7 @@ static int assert_pager_state(Pager *p){
   ** on the file.
   */
   assert( pPager->changeCountDone==0 || pPager->eLock>=RESERVED_LOCK );
+  assert( p->eLock!=PENDING_LOCK );
 
   switch( p->eState ){
     case PAGER_NONE:
@@ -899,16 +898,22 @@ static int write32bits(sqlite3_file *fd, i64 offset, u32 val){
 }
 
 /*
-** This function and pagerLockDb() are wrappers around sqlite3OsLock() and
-** sqlite3OsUnlock() that set the Pager.eLock variable to reflect the
-** current lock held on the database file.
+** Unlock the database file to level eLock, which must be either NO_LOCK
+** or SHARED_LOCK. Regardless of whether or not the call to xUnlock()
+** succeeds, set the Pager.eLock variable to match the (attempted) new lock.
+**
+** Except, if Pager.eLock is set to UNKNOWN_LOCK when this function is
+** called, do not modify it. See the comment above the #define of 
+** UNKNOWN_LOCK for an explanation of this.
 */
 static int pagerUnlockDb(Pager *pPager, int eLock){
   int rc = SQLITE_OK;
+
   assert( !pPager->exclusiveMode );
+  assert( eLock==NO_LOCK || eLock==SHARED_LOCK );
+  assert( eLock!=NO_LOCK || pagerUseWal(pPager)==0 );
   if( isOpen(pPager->fd) ){
     assert( pPager->eLock>=eLock );
-    assert( eLock!=NO_LOCK || pagerUseWal(pPager)==0 );
     rc = sqlite3OsUnlock(pPager->fd, eLock);
     if( pPager->eLock!=UNKNOWN_LOCK ){
       pPager->eLock = eLock;
@@ -918,12 +923,21 @@ static int pagerUnlockDb(Pager *pPager, int eLock){
   return rc;
 }
 
+/*
+** Lock the database file to level eLock, which must be either SHARED_LOCK,
+** RESERVED_LOCK or EXCLUSIVE_LOCK. If the caller is successful, set the
+** Pager.eLock variable to the new locking state. 
+**
+** Except, if Pager.eLock is set to UNKNOWN_LOCK when this function is 
+** called, do not modify it unless the new locking state is EXCLUSIVE_LOCK. 
+** See the comment above the #define of UNKNOWN_LOCK for an explanation 
+** of this.
+*/
 static int pagerLockDb(Pager *pPager, int eLock){
-  int rc;
+  int rc = SQLITE_OK;
+
   assert( eLock==SHARED_LOCK || eLock==RESERVED_LOCK || eLock==EXCLUSIVE_LOCK );
-  if( pPager->eLock>=eLock && pPager->eLock!=UNKNOWN_LOCK ){
-    rc = SQLITE_OK;
-  }else{
+  if( pPager->eLock<eLock || pPager->eLock==UNKNOWN_LOCK ){
     rc = sqlite3OsLock(pPager->fd, eLock);
     if( rc==SQLITE_OK && (pPager->eLock!=UNKNOWN_LOCK||eLock==EXCLUSIVE_LOCK) ){
       pPager->eLock = eLock;
@@ -1583,6 +1597,11 @@ static void pager_unlock(Pager *pPager){
       sqlite3OsClose(pPager->jfd);
     }
 
+    /* If the pager is in the ERROR state and the call to unlock the database
+    ** file fails, set the current lock to UNKNOWN_LOCK. See the comment
+    ** above the #define for UNKNOWN_LOCK for an explanation of why this
+    ** is necessary.
+    */
     rc = pagerUnlockDb(pPager, NO_LOCK);
     if( rc!=SQLITE_OK && pPager->eState==PAGER_ERROR ){
       pPager->eLock = UNKNOWN_LOCK;
@@ -2750,7 +2769,7 @@ static int pagerBeginReadTransaction(Pager *pPager){
   int changed = 0;                /* True if cache must be reset */
 
   assert( pagerUseWal(pPager) );
-  assert( pPager->eState==PAGER_NONE || pPager->eState==PAGER_SHARED );
+  assert( pPager->eState==PAGER_NONE || pPager->eState==PAGER_READER );
 
   /* sqlite3WalEndReadTransaction() was not called for the previous
   ** transaction in locking_mode=EXCLUSIVE.  So call it now.  If we
@@ -3284,7 +3303,7 @@ int sqlite3PagerReadFileheader(Pager *pPager, int N, unsigned char *pDest){
 ** this is considered a 1 page file.
 */
 int sqlite3PagerPagecount(Pager *pPager, int *pnPage){
-  assert( pPager->eState>=PAGER_SHARED );
+  assert( pPager->eState>=PAGER_READER );
   assert( pPager->eState!=PAGER_WRITER_FINISHED );
   *pnPage = (int)pPager->dbSize;
   return SQLITE_OK;
@@ -3307,11 +3326,6 @@ int sqlite3PagerPagecount(Pager *pPager, int *pnPage){
 */
 static int pager_wait_on_lock(Pager *pPager, int locktype){
   int rc;                              /* Return code */
-
-  /* The OS lock values must be the same as the Pager lock values */
-  assert( PAGER_SHARED==SHARED_LOCK );
-  assert( PAGER_RESERVED==RESERVED_LOCK );
-  assert( PAGER_EXCLUSIVE==EXCLUSIVE_LOCK );
 
   /* Check that this is either a no-op (because the requested lock is 
   ** already held, or one of the transistions that the busy-handler
@@ -4424,7 +4438,7 @@ int sqlite3PagerSharedLock(Pager *pPager){
     if( pPager->noReadlock==0 ){
       rc = pager_wait_on_lock(pPager, SHARED_LOCK);
       if( rc!=SQLITE_OK ){
-        assert( pPager->eLock==PAGER_UNLOCK );
+        assert( pPager->eLock==NO_LOCK || pPager->eLock==UNKNOWN_LOCK );
         goto failed;
       }
     }
@@ -5393,7 +5407,7 @@ int sqlite3PagerExclusiveLock(Pager *pPager){
   );
   assert( assert_pager_state(pPager) );
   if( 0==pagerUseWal(pPager) ){
-    rc = pager_wait_on_lock(pPager, PAGER_EXCLUSIVE);
+    rc = pager_wait_on_lock(pPager, EXCLUSIVE_LOCK);
   }
   return rc;
 }
