@@ -3615,6 +3615,7 @@ static int syncJournal(Pager *pPager, int newHdr){
       if( newHdr && 0==(iDc&SQLITE_IOCAP_SAFE_APPEND) ){
         pPager->nRec = 0;
         rc = writeJournalHdr(pPager);
+        if( rc!=SQLITE_OK ) return rc;
       }
     }else{
       pPager->journalHdr = pPager->journalOff;
