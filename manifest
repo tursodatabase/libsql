@@ -1,5 +1,5 @@
-C Fix\ssome\sproblems\swith\serror\srecovery\sintroduced\swhile\sreworking\spager\sstate.
-D 2010-08-04T19:14:22
+C Fixes\sfor\serror\shandling\swith\stemp\sdatabases.\sAnd\sfor\serrors\sthat\soccur\swithin\sOS\slocking\sprimitives.
+D 2010-08-05T15:30:22
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -156,7 +156,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c ae5ca8a6031380708f3fec7be325233d49944914
 F src/os_win.c 51cb62f76262d961ea4249489383d714501315a7
-F src/pager.c d181fe863c886da94d7c19cf62385858e610384e
+F src/pager.c c09ca0cf83f928f0299be6620322acd9c38fa3ce
 F src/pager.h 80726162dc3942f59ab27b738fb667b9ba0a89d5
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
@@ -842,7 +842,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 15368a9f8523d5fb611cd576080daed2cf2f1500
-R 38aa93658d08e993fa60d40008fca82a
+P 77eaab6f77c53cc4f429b65dfcf287ad6084c2da
+R 002859c356edc1f0f7f124dc9ba8ad0d
 U dan
-Z 9ffe03344bd2caf8cb58c57ef391fd3e
+Z f6fbebc4624605af3301d8eb4f042add
