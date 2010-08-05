@@ -4065,6 +4065,7 @@ WhereInfo *sqlite3WhereBegin(
     Bitmask m;                  /* Bitmask value for j or bestJ */
     int isOptimal;              /* Iterator for optimal/non-optimal search */
     int nUnconstrained;         /* Number tables without INDEXED BY */
+    Bitmask notIndexed;         /* Mask of tables that cannot use an index */
 
     memset(&bestPlan, 0, sizeof(bestPlan));
     bestPlan.rCost = SQLITE_BIG_DBL;
@@ -4107,8 +4108,9 @@ WhereInfo *sqlite3WhereBegin(
     ** costlier approach.
     */
     nUnconstrained = 0;
+    notIndexed = 0;
     for(isOptimal=(iFrom<nTabList-1); isOptimal>=0; isOptimal--){
-      Bitmask mask;  /* Mask of tables not yet ready */
+      Bitmask mask;             /* Mask of tables not yet ready */
       for(j=iFrom, pTabItem=&pTabList->a[j]; j<nTabList; j++, pTabItem++){
         int doNotReorder;    /* True if this table should not be reordered */
         WhereCost sCost;     /* Cost information from best[Virtual]Index() */
@@ -4137,28 +4139,43 @@ WhereInfo *sqlite3WhereBegin(
         }
         assert( isOptimal || (sCost.used&notReady)==0 );
 
+        /* If an INDEXED BY clause is present, then the plan must use that
+        ** index if it uses any index at all */
+        assert( pTabItem->pIndex==0 
+                  || (sCost.plan.wsFlags & WHERE_NOT_FULLSCAN)==0
+                  || sCost.plan.u.pIdx==pTabItem->pIndex );
+
+        if( isOptimal && (sCost.plan.wsFlags & WHERE_NOT_FULLSCAN)==0 ){
+          notIndexed |= m;
+        }
+
         /* Conditions under which this table becomes the best so far:
         **
         **   (1) The table must not depend on other tables that have not
         **       yet run.
         **
         **   (2) A full-table-scan plan cannot supercede another plan unless
-        **       the full-table-scan is an optimal plan.
+        **       it is an "optimal" plan as defined above.
         **
-        **   (3) The plan cost must be lower than prior plans or else the
-        **       cost must be the same and the number of rows must be lower.
-        **
-        **   (4) All tables have an INDEXED BY clause or this table lacks an
+        **   (3) All tables have an INDEXED BY clause or this table lacks an
         **       INDEXED BY clause or this table uses the specific
-        **       index specified by its INDEXED BY clause.
+        **       index specified by its INDEXED BY clause.  This rule ensures
+        **       that a best-so-far is always selected even if an impossible
+        **       combination of INDEXED BY clauses are given.  The error
+        **       will be detected and relayed back to the application later.
+        **       The NEVER() comes about because rule (2) above prevents
+        **       An indexable full-table-scan from reaching rule (3).
+        **
+        **   (4) The plan cost must be lower than prior plans or else the
+        **       cost must be the same and the number of rows must be lower.
         */
         if( (sCost.used&notReady)==0                       /* (1) */
-            && (bestJ<0 || isOptimal                       /* (2) */
+            && (bestJ<0 || (notIndexed&m)!=0               /* (2) */
                 || (sCost.plan.wsFlags & WHERE_NOT_FULLSCAN)!=0)
-            && (bestJ<0 || sCost.rCost<bestPlan.rCost      /* (3) */
+            && (nUnconstrained==0 || pTabItem->pIndex==0   /* (3) */
+                || NEVER((sCost.plan.wsFlags & WHERE_NOT_FULLSCAN)!=0))
+            && (bestJ<0 || sCost.rCost<bestPlan.rCost      /* (4) */
                 || (sCost.rCost<=bestPlan.rCost && sCost.nRow<bestPlan.nRow))
-            && (nUnconstrained==0 || pTabItem->pIndex==0   /* (4) */
-                || pTabItem->pIndex==sCost.plan.u.pIdx)
         ){
           WHERETRACE(("... best so far with cost=%g and nRow=%g\n",
                       sCost.rCost, sCost.nRow));

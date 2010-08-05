@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C If\sthe\souter\sloop\sof\sa\sjoin\smust\sbe\sa\sfull\stable\sscan,\smake\ssure\sthat\san\nincomplete\sANALYZE\sdoes\snot\strick\sthe\splanner\sinto\suse\sa\stable\sthat\smight\nbe\sindexable\sin\san\sinner\sloop.\s\sTicket\s[13f033c865f878]
-D 2010-08-04T21:17:16
+C Fix\sthe\squery\splanner\sso\sthat\swhen\sit\shas\sa\schoice\sof\sfull-scan\stables\sto\nmove\sto\sthe\souter\sloop,\sit\schooses\sthe\sone\sthat\sis\slikely\sto\sgive\sthe\sfewest\noutput\srows.
+D 2010-08-05T02:52:32
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -233,7 +233,7 @@ F src/vtab.c 82200af3881fa4e1c9cf07cf31d98c09d437e3ab
 F src/wal.c 0925601f3299c2941a67c9cfff41ee710f70ca82
 F src/wal.h 906c85760598b18584921fe08008435aa4eeeeb2
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c a1398b29b8ec129ab656ee136e9116fc2f26e3f2
+F src/where.c a4b2cb14dbd727ff277be3f52851425191a87f66
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 6745008c144bd2956d58864d21f7b304689c1cce
@@ -801,7 +801,7 @@ F test/walslow.test d21625e2e99e11c032ce949e8a94661576548933
 F test/walthread.test a25a393c068a2b42b44333fa3fdaae9072f1617c
 F test/where.test de337a3fe0a459ec7c93db16a519657a90552330
 F test/where2.test 43d4becaf5a5df854e6c21d624a1cb84c6904554
-F test/where3.test acdacc5e1e50ea935b74b3378e4e4b3fa4950092
+F test/where3.test 3bf8006d441b66a57bee02bb420423f84eb8fde3
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
@@ -844,14 +844,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 65b8636ac6e5d3e4502d4f576ddf9350d5df3022
-R f303f8cd6c15f9355d52ea6f34dbc596
+P e7a714b52c45af096af74049826d32c647abfe3f
+R 3b6850bff2212e5e06d5e22c17492cd7
 U drh
-Z 334acc501b61b4dedf959e66e446e709
+Z be2f8a9b75ad13b92899d24ed9ea0e24
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMWdjfoxKgR168RlERAtzHAJsHfo8i9JQtGPiUDENko/1YB6PzvwCfchpH
-IJ8P1uaP+Eu9M19yQeVqg/o=
-=L8a0
+iD8DBQFMWidzoxKgR168RlERAgBpAJ9Bgesz+bY3zJhMYLF/PXRObWtInQCdH7Y+
+9WSa5R0wAcOA6sAA258SaiU=
+=4Hzv
 -----END PGP SIGNATURE-----
