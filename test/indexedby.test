@@ -123,6 +123,16 @@ do_test indexedby-4.1 {
 do_test indexedby-4.2 {
   EQP { SELECT * FROM t1 INDEXED BY i1, t2 WHERE a = c }
 } {0 1 {TABLE t2} 1 0 {TABLE t1 WITH INDEX i1}}
+do_test indexedby-4.3 {
+  catchsql {
+    SELECT * FROM t1 INDEXED BY i1, t2 INDEXED BY i3 WHERE a=c
+  }
+} {1 {cannot use index: i1}}
+do_test indexedby-4.4 {
+  catchsql {
+    SELECT * FROM t2 INDEXED BY i3, t1 INDEXED BY i1 WHERE a=c
+  }
+} {1 {cannot use index: i3}}
 
 # Test embedding an INDEXED BY in a CREATE VIEW statement. This block
 # also tests that nothing bad happens if an index refered to by
