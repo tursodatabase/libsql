@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sthe\squery\splanner\sso\sthat\swhen\sit\shas\sa\schoice\sof\sfull-scan\stables\sto\nmove\sto\sthe\souter\sloop,\sit\schooses\sthe\sone\sthat\sis\slikely\sto\sgive\sthe\sfewest\noutput\srows.
-D 2010-08-05T02:52:32
+C Do\snot\sread\sthe\sdatabase\sfile\ssize\son\sa\sSAVEPOINT\srollback\sany\smore\ssince\nafter\scheckin\s[65b8636ac6e5]\sthe\sin-header-size\sfield\sis\salways\svalid.
+D 2010-08-05T03:21:40
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -116,7 +116,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 51d83300fe0baee39405c416ceb19a58ed30a8ed
 F src/bitvec.c 06ad2c36a9c3819c0b9cbffec7b15f58d5d834e0
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c 397093afc0019b973e1c4403480431d13219c2e3
+F src/btree.c 63eebba7bd87207556670139eae5ef6c1f8bb416
 F src/btree.h b4ba2fdf6b64c7c376bdfffa826af6b786b151d9
 F src/btreeInt.h b0c87f6725b06a0aa194a6d25d54b16ce9d6e291
 F src/build.c 0018d49629fc4807100c988dd191dd95e185bb38
@@ -844,14 +844,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e7a714b52c45af096af74049826d32c647abfe3f
-R 3b6850bff2212e5e06d5e22c17492cd7
+P 309bbedf9648c750d7b8aedbc15d4fd68f846824
+R bda8b5590c04c7d8c36202547873a81d
 U drh
-Z be2f8a9b75ad13b92899d24ed9ea0e24
+Z 8bb9067ef709f53cb1b5f1b652ca859d
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMWidzoxKgR168RlERAgBpAJ9Bgesz+bY3zJhMYLF/PXRObWtInQCdH7Y+
-9WSa5R0wAcOA6sAA258SaiU=
-=4Hzv
+iD8DBQFMWi5HoxKgR168RlERAlXwAJ9qH3avuE8PBfX9m6PAH1EzBknHOgCfXXO6
+/hMYcMneW5BDk2aaY4BAU3Q=
+=bhUe
 -----END PGP SIGNATURE-----
