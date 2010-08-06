@@ -32,7 +32,6 @@
 
 #include "fts3Int.h"
 #include <assert.h>
-#include <ctype.h>
 #include <string.h>
 
 /*
