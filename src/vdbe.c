@@ -4349,7 +4349,7 @@ case OP_IdxRowid: {              /* out2-prerelease */
 ** that if the key from register P3 is a prefix of the key in the cursor,
 ** the result is false whereas it would be true with IdxGT.
 */
-/* Opcode: IdxLT P1 P2 P3 * P5
+/* Opcode: IdxLT P1 P2 P3 P4 P5
 **
 ** The P4 register values beginning with P3 form an unpacked index 
 ** key that omits the ROWID.  Compare this key value against the index 
