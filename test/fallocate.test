@@ -59,7 +59,11 @@ do_test fallocate-1.6 {
 #
 do_test fallocate-1.7 {
   execsql { BEGIN; INSERT INTO t1 VALUES(1, 2); }
-  hexio_get_int [hexio_read test.db-journal 16 4]
+  if {[permutation] != "inmemory_journal"} {
+    hexio_get_int [hexio_read test.db-journal 16 4]
+  } else {
+    set {} 1024
+  }
 } {1024}
 do_test fallocate-1.8 { execsql { COMMIT } } {}
 
@@ -68,72 +72,73 @@ do_test fallocate-1.8 { execsql { COMMIT } } {}
 # The following tests - fallocate-2.* - test that things work in WAL
 # mode as well.
 #
-set skipwaltests [expr {[permutation]=="journaltest"}]
+set skipwaltests [expr {
+  [permutation]=="journaltest" || [permutation]=="inmemory_journal"
+}]
 ifcapable !wal { set skipwaltests 1 }
 
 if {!$skipwaltests} {
-db close
-file delete -force test.db
-sqlite3 db test.db
-file_control_chunksize_test db main [expr 32*1024]
-
-do_test fallocate-2.1 {
-  execsql {
-    PRAGMA page_size = 1024;
-    PRAGMA journal_mode = WAL;
-    CREATE TABLE t1(a, b);
-  }
-  file size test.db
-} [expr 32*1024]
-
-do_test fallocate-2.2 {
-  execsql { INSERT INTO t1 VALUES(1, zeroblob(35*1024)) }
-  execsql { PRAGMA wal_checkpoint }
-  file size test.db
-} [expr 64*1024]
-
-do_test fallocate-2.3 {
-  execsql { DELETE FROM t1 }
-  execsql { VACUUM }
-  file size test.db
-} [expr 64*1024]
-
-do_test fallocate-2.4 {
-  execsql { PRAGMA wal_checkpoint }
-  file size test.db
-} [expr 32*1024]
-
-do_test fallocate-2.5 {
-  execsql { 
-    INSERT INTO t1 VALUES(2, randomblob(35*1024));
-    PRAGMA wal_checkpoint;
-    INSERT INTO t1 VALUES(3, randomblob(128));
-    DELETE FROM t1 WHERE a = 2;
-    VACUUM;
-  }
-  file size test.db
-} [expr 64*1024]
-
-do_test fallocate-2.6 {
-  sqlite3 db2 test.db
-  execsql { BEGIN ; SELECT count(a) FROM t1 } db2
-  execsql {  
-    INSERT INTO t1 VALUES(4, randomblob(128));
-    PRAGMA wal_checkpoint;
-  }
-  file size test.db
-} [expr 64*1024]
-
-do_test fallocate-2.7 {
-  execsql { SELECT count(b) FROM t1 } db2
-} {1}
-
-do_test fallocate-2.8 {
-  execsql { COMMIT } db2
-  execsql { PRAGMA wal_checkpoint }
-  file size test.db
-} [expr 32*1024]
-
+  db close
+  file delete -force test.db
+  sqlite3 db test.db
+  file_control_chunksize_test db main [expr 32*1024]
+  
+  do_test fallocate-2.1 {
+    execsql {
+      PRAGMA page_size = 1024;
+      PRAGMA journal_mode = WAL;
+      CREATE TABLE t1(a, b);
+    }
+    file size test.db
+  } [expr 32*1024]
+  
+  do_test fallocate-2.2 {
+    execsql { INSERT INTO t1 VALUES(1, zeroblob(35*1024)) }
+    execsql { PRAGMA wal_checkpoint }
+    file size test.db
+  } [expr 64*1024]
+  
+  do_test fallocate-2.3 {
+    execsql { DELETE FROM t1 }
+    execsql { VACUUM }
+    file size test.db
+  } [expr 64*1024]
+  
+  do_test fallocate-2.4 {
+    execsql { PRAGMA wal_checkpoint }
+    file size test.db
+  } [expr 32*1024]
+  
+  do_test fallocate-2.5 {
+    execsql { 
+      INSERT INTO t1 VALUES(2, randomblob(35*1024));
+      PRAGMA wal_checkpoint;
+      INSERT INTO t1 VALUES(3, randomblob(128));
+      DELETE FROM t1 WHERE a = 2;
+      VACUUM;
+    }
+    file size test.db
+  } [expr 64*1024]
+  
+  do_test fallocate-2.6 {
+    sqlite3 db2 test.db
+    execsql { BEGIN ; SELECT count(a) FROM t1 } db2
+    execsql {  
+      INSERT INTO t1 VALUES(4, randomblob(128));
+      PRAGMA wal_checkpoint;
+    }
+    file size test.db
+  } [expr 64*1024]
+  
+  do_test fallocate-2.7 {
+    execsql { SELECT count(b) FROM t1 } db2
+  } {1}
+  
+  do_test fallocate-2.8 {
+    execsql { COMMIT } db2
+    execsql { PRAGMA wal_checkpoint }
+    file size test.db
+  } [expr 32*1024]
 }
 
 

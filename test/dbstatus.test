@@ -55,6 +55,12 @@ proc lookaside {db} {
 #
 foreach ::lookaside_buffer_size {0 64 120} {
 
+  # Do not run any of these tests if there is SQL configured to run
+  # as part of the [sqlite3] command. This prevents the script from
+  # configuring the size of the lookaside buffer after [sqlite3] has
+  # returned.
+  if {[presql] != ""} break
+
   #-------------------------------------------------------------------------
   # Tests for SQLITE_DBSTATUS_SCHEMA_USED.
   #
@@ -317,6 +323,7 @@ foreach ::lookaside_buffer_size {0 64 120} {
     # implementation using sqlite3_mprintf() is technically considered
     # external and so is not counted as "statement memory".
     #
+puts "$nStmt1 $nFree"
     if {[string match *x $tn]} {
       do_test dbstatus-3.$tn.bx { expr $nStmt1<=$nFree }  {1}
     } else {
