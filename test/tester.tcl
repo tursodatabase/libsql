@@ -70,6 +70,7 @@
 #      wal_set_journal_mode   ?DB?
 #      wal_check_journal_mode TESTNAME?DB?
 #      permutation
+#      presql
 #
 
 # Set the precision of FP arithmatic used by the interpreter. And 
@@ -1149,6 +1150,11 @@ proc permutation {} {
   set perm ""
   catch {set perm $::G(perm:name)}
   set perm
+}
+proc presql {} {
+  set presql ""
+  catch {set presql $::G(perm:presql)}
+  set presql
 }
 
 #-------------------------------------------------------------------------
