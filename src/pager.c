@@ -147,6 +147,22 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 **               |              V                |
 **               +<------WRITER_FINISHED-------->+
 **
+**
+** List of state transitions and the C [function] that performs each:
+** 
+**   NONE              -> READER              [sqlite3PagerSharedLock]
+**   READER            -> NONE                [pager_unlock]
+**
+**   READER            -> WRITER_INITIAL      [sqlite3PagerBegin]
+**   WRITER_INITIAL    -> WRITER_CACHEMOD     [pager_open_journal]
+**   WRITER_CACHEMOD   -> WRITER_DBMOD        [syncJournal]
+**   WRITER_DBMOD      -> WRITER_FINISHED     [sqlite3PagerCommitPhaseOne]
+**   WRITER_***        -> READER              [pager_end_transaction]
+**
+**   WRITER_***        -> ERROR               [pager_error]
+**   ERROR             -> NONE                [pager_unlock]
+** 
+**
 **  NONE:
 **
 **    The pager starts up in this state. Nothing is guaranteed in this
@@ -171,6 +187,10 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 **    this state even after the read-transaction is closed. The only way
 **    a locking_mode=exclusive connection can transition from READER to NONE
 **    is via the ERROR state (see below).
+**
+**    TODO: Maybe WAL connections should behave like locking_mode=exclusive
+**          connections and remain in READER state even when there is no
+**          active read transaction.
 ** 
 **    * A read transaction may be active (but a write-transaction cannot).
 **    * A SHARED or greater lock is held on the database file.
@@ -183,8 +203,15 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 **
 **  WRITER_INITIAL:
 **
+**    The pager moves to this state from READER when a write-transaction
+**    is first opened on the database.
+**
 **    * A write transaction is active.
-**    * A RESERVED or greater lock is held on the database file.
+**    * If the connection is open in rollback-mode, a RESERVED or greater 
+**      lock is held on the database file.
+**    * If the connection is open in WAL-mode, a WAL write transaction
+**      is open (i.e. sqlite3WalBeginWriteTransaction() has been successfully
+**      called).
 **    * The dbSize, dbOrigSize and dbFileSize variables are all valid.
 **    * The contents of the pager cache have not been modified.
 **    * The journal file may or may not be open.
@@ -265,20 +292,6 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 **    read-only statement cannot leave the pager in an internally inconsistent 
 **    state.
 **    
-**
-** State transitions and the [function] that performs each:
-** 
-**   NONE              -> READER              [PagerSharedLock]
-**   READER            -> WRITER_INITIAL      [PagerBegin]
-**   WRITER_INITIAL    -> WRITER_CACHEMOD     [pager_open_journal]
-**   WRITER_CACHEMOD   -> WRITER_DBMOD        [syncJournal]
-**   WRITER_DBMOD      -> WRITER_FINISHED     [PagerCommitPhaseOne]
-** 
-**   WRITER_***        -> READER              [pager_end_transaction]
-**   WRITER_***        -> ERROR               [pager_error]
-** 
-**   READER            -> NONE                [pager_unlock]
-**   ERROR             -> NONE                [pager_unlock]
 **
 ** Notes:
 **
@@ -802,12 +815,14 @@ static char *print_pager_state(Pager *p){
   static char zRet[1024];
 
   sqlite3_snprintf(1024, zRet,
+      "Filename:      %s\n"
       "State:         %s errCode=%d\n"
       "Lock:          %s\n"
       "Locking mode:  locking_mode=%s\n"
       "Journal mode:  journal_mode=%s\n"
       "Backing store: tempFile=%d memDb=%d useJournal=%d\n"
       "Journal:       journalOff=%lld journalHdr=%lld\n"
+      , p->zFilename
       , p->eState==PAGER_NONE            ? "NONE" :
         p->eState==PAGER_READER          ? "READER" :
         p->eState==PAGER_WRITER_INITIAL  ? "WRITER_INITIAL" :
@@ -1819,13 +1834,14 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
 ** call to pager_unlock(), as described above.
 */
 static void pagerUnlockAndRollback(Pager *pPager){
-  if( pPager->eState!=PAGER_ERROR ){
+  if( pPager->eState!=PAGER_ERROR && pPager->eState!=PAGER_NONE ){
     assert( assert_pager_state(pPager) );
     if( pPager->eState>=PAGER_WRITER_INITIAL ){
       sqlite3BeginBenignMalloc();
       sqlite3PagerRollback(pPager);
       sqlite3EndBenignMalloc();
     }else if( pPager->eLock>=RESERVED_LOCK && !pPager->exclusiveMode ){
+      assert( pPager->eState==PAGER_READER );
       pager_end_transaction(pPager, 0);
     }
   }
