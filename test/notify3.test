@@ -92,50 +92,57 @@ set noerr {{0 {}}}
 # it is possible to use the unlock-notify mechanism to determine when
 # the ATTACH might succeed.
 #
-foreach {
-  tn
-  db1_loaded
-  db2_loaded
-  enable_extended_errors
-  result
-  error1 error2
-} "
-  0   0 0 0   $err     SQLITE_LOCKED               SQLITE_LOCKED_SHAREDCACHE
-  1   0 0 1   $err     SQLITE_LOCKED_SHAREDCACHE   SQLITE_LOCKED_SHAREDCACHE
-  2   0 1 0   $err     SQLITE_LOCKED               SQLITE_LOCKED_SHAREDCACHE
-  3   0 1 1   $err     SQLITE_LOCKED_SHAREDCACHE   SQLITE_LOCKED_SHAREDCACHE
-  4   1 0 0   $err     SQLITE_LOCKED               SQLITE_LOCKED_SHAREDCACHE
-  5   1 0 1   $err     SQLITE_LOCKED_SHAREDCACHE   SQLITE_LOCKED_SHAREDCACHE
-  6   1 1 0   $noerr   SQLITE_OK                   SQLITE_OK
-  7   1 1 1   $noerr   SQLITE_OK                   SQLITE_OK
-" {
-
-  do_test notify3-2.$tn.1 {
-    catch { db1 close }
-    catch { db2 close }
-    sqlite3 db1 test.db
-    sqlite3 db2 test.db2
-
-    sqlite3_extended_result_codes db1 $enable_extended_errors
-    sqlite3_extended_result_codes db2 $enable_extended_errors
-
-    if { $db1_loaded } { db1 eval "SELECT * FROM sqlite_master" }
-    if { $db2_loaded } { db2 eval "SELECT * FROM sqlite_master" }
-
-    db2 eval "BEGIN EXCLUSIVE"
-    catchsql "ATTACH 'test.db2' AS two" db1
-  } $result
-
-  do_test notify3-2.$tn.2 {
-    list [sqlite3_errcode db1] [sqlite3_extended_errcode db1]
-  } [list $error1 $error2]
-
-  do_test notify3-2.$tn.3 {
-    db1 unlock_notify {set invoked 1}
-    set invoked 0
-    db2 eval commit
-    set invoked
-  } [lindex $result 0]
+# This test does not work for test-permutations that specify SQL to
+# be executed as part of the [sqlite3] command that opens the database.
+# Executing such SQL causes SQLite to load the database schema into memory 
+# earlier than expected, causing test cases to fail.
+#
+if {[presql] == ""} {
+  foreach {
+    tn
+    db1_loaded
+    db2_loaded
+    enable_extended_errors
+    result
+    error1 error2
+  } "
+    0   0 0 0   $err     SQLITE_LOCKED               SQLITE_LOCKED_SHAREDCACHE
+    1   0 0 1   $err     SQLITE_LOCKED_SHAREDCACHE   SQLITE_LOCKED_SHAREDCACHE
+    2   0 1 0   $err     SQLITE_LOCKED               SQLITE_LOCKED_SHAREDCACHE
+    3   0 1 1   $err     SQLITE_LOCKED_SHAREDCACHE   SQLITE_LOCKED_SHAREDCACHE
+    4   1 0 0   $err     SQLITE_LOCKED               SQLITE_LOCKED_SHAREDCACHE
+    5   1 0 1   $err     SQLITE_LOCKED_SHAREDCACHE   SQLITE_LOCKED_SHAREDCACHE
+    6   1 1 0   $noerr   SQLITE_OK                   SQLITE_OK
+    7   1 1 1   $noerr   SQLITE_OK                   SQLITE_OK
+  " {
+  
+    do_test notify3-2.$tn.1 {
+      catch { db1 close }
+      catch { db2 close }
+      sqlite3 db1 test.db
+      sqlite3 db2 test.db2
+  
+      sqlite3_extended_result_codes db1 $enable_extended_errors
+      sqlite3_extended_result_codes db2 $enable_extended_errors
+  
+      if { $db1_loaded } { db1 eval "SELECT * FROM sqlite_master" }
+      if { $db2_loaded } { db2 eval "SELECT * FROM sqlite_master" }
+  
+      db2 eval "BEGIN EXCLUSIVE"
+      catchsql "ATTACH 'test.db2' AS two" db1
+    } $result
+  
+    do_test notify3-2.$tn.2 {
+      list [sqlite3_errcode db1] [sqlite3_extended_errcode db1]
+    } [list $error1 $error2]
+  
+    do_test notify3-2.$tn.3 {
+      db1 unlock_notify {set invoked 1}
+      set invoked 0
+      db2 eval commit
+      set invoked
+    } [lindex $result 0]
+  }
 }
 catch { db1 close }
 catch { db2 close }

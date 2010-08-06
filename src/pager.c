@@ -5533,7 +5533,7 @@ int sqlite3PagerCommitPhaseOne(
   assert( pPager->eState==PAGER_WRITER_LOCKED
        || pPager->eState==PAGER_WRITER_CACHEMOD
        || pPager->eState==PAGER_WRITER_DBMOD
-       || pPager->eState==PAGER_WRITER_ERROR
+       || pPager->eState==PAGER_ERROR
   );
   assert( assert_pager_state(pPager) );
 

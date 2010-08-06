@@ -3365,7 +3365,7 @@ static Bitmask codeOneLoopStart(
     **         constraints but an index is selected anyway, in order
     **         to force the output order to conform to an ORDER BY.
     */  
-    int aStartOp[] = {
+    static const u8 aStartOp[] = {
       0,
       0,
       OP_Rewind,           /* 2: (!start_constraints && startEq &&  !bRev) */
@@ -3375,12 +3375,12 @@ static Bitmask codeOneLoopStart(
       OP_SeekGe,           /* 6: (start_constraints  &&  startEq && !bRev) */
       OP_SeekLe            /* 7: (start_constraints  &&  startEq &&  bRev) */
     };
-    int aEndOp[] = {
+    static const u8 aEndOp[] = {
       OP_Noop,             /* 0: (!end_constraints) */
       OP_IdxGE,            /* 1: (end_constraints && !bRev) */
       OP_IdxLT             /* 2: (end_constraints && bRev) */
     };
-    int nEq = pLevel->plan.nEq;
+    int nEq = pLevel->plan.nEq;  /* Number of == or IN terms */
     int isMinQuery = 0;          /* If this is an optimized SELECT min(x).. */
     int regBase;                 /* Base register holding constraint values */
     int r1;                      /* Temp register */
@@ -3390,10 +3390,10 @@ static Bitmask codeOneLoopStart(
     int endEq;                   /* True if range end uses ==, >= or <= */
     int start_constraints;       /* Start of range is constrained */
     int nConstraint;             /* Number of constraint terms */
-    Index *pIdx;         /* The index we will be using */
-    int iIdxCur;         /* The VDBE cursor for the index */
-    int nExtraReg = 0;   /* Number of extra registers needed */
-    int op;              /* Instruction opcode */
+    Index *pIdx;                 /* The index we will be using */
+    int iIdxCur;                 /* The VDBE cursor for the index */
+    int nExtraReg = 0;           /* Number of extra registers needed */
+    int op;                      /* Instruction opcode */
     char *zStartAff;             /* Affinity for start of range constraint */
     char *zEndAff;               /* Affinity for end of range constraint */
 
