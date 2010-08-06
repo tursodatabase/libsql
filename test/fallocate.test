@@ -68,6 +68,10 @@ do_test fallocate-1.8 { execsql { COMMIT } } {}
 # The following tests - fallocate-2.* - test that things work in WAL
 # mode as well.
 #
+set skipwaltests [expr {[permutation]=="journaltest"}]
+ifcapable !wal { set skipwaltests 1 }
+
+if {!$skipwaltests} {
 db close
 file delete -force test.db
 sqlite3 db test.db
@@ -129,6 +133,8 @@ do_test fallocate-2.8 {
   execsql { PRAGMA wal_checkpoint }
   file size test.db
 } [expr 32*1024]
+
+}
 
 
 finish_test

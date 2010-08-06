@@ -379,6 +379,15 @@ static int openTransaction(jt_file *pMain, jt_file *pJournal){
     ** leaf to the jt_file.pWritable bitvec.
     */
     rc = sqlite3OsRead(p, aData, pMain->nPagesize, 0);
+    if( rc==SQLITE_OK ){
+      u32 nDbsize = decodeUint32(&aData[28]);
+      if( nDbsize>0 && memcmp(&aData[24], &aData[92], 4)==0 ){
+        u32 iPg;
+        for(iPg=nDbsize+1; iPg<=pMain->nPage; iPg++){
+          sqlite3BitvecSet(pMain->pWritable, iPg);
+        }
+      }
+    }
     iTrunk = decodeUint32(&aData[32]);
     while( rc==SQLITE_OK && iTrunk>0 ){
       u32 nLeaf;
@@ -491,7 +500,6 @@ finish_rjf:
   }
   return rc;
 }
-
 
 /*
 ** Write data to an jt-file.
