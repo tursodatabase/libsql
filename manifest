@@ -1,5 +1,5 @@
-C Further\senhancements\sto\scomments\sin\spager.c.
-D 2010-08-06T17:18:01
+C Add\stest\scase\s'cgt_pager_1',\sintended\sfor\suse\swith\scallgrind\sto\sdetect\sperformance\sregression\sin\sthe\spager\smodule,\sto\sthreadtest3.c.
+D 2010-08-07T05:15:23
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -632,7 +632,7 @@ F test/thread2.test e08034b83fe9693ade77049732518e5b3d2d700d
 F test/thread_common.tcl 2aa6f2fdcd4d6e461169c3e5ca098eebf643b863
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c ace893054fa134af3fc8d6e7cfecddb8e3acefb9
-F test/threadtest3.c f7e21a9bcddff1499d46a1fc68d1ba31e4063be4
+F test/threadtest3.c 58df1e3c060f534fd7fb0702331b0acc41c381d8
 F test/tkt-02a8e81d44.test 58494de77be2cf249228ada3f313fa399821c6ab
 F test/tkt-26ff0c2d1e.test 888324e751512972c6e0d1a09df740d8f5aaf660
 F test/tkt-2ea2425d34.test 1cf13e6f75d149b3209a0cb32927a82d3d79fb28
@@ -843,7 +843,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 7bd8ba084e75bcd5c744e1d4a1812df3a4d91887
-R 8a9a6e1ca5d584d1153bedf7c51336b6
+P 876162c7e036af1cb447409b685afc72c0061a32
+R 27f96e8eaa225660cd3eee27494507ba
 U dan
-Z 9aa10a3fe3170bea3315ad90ad87b34f
+Z 3bc5778d1d89a64090d5ae07cc0b0720
