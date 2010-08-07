@@ -6364,10 +6364,11 @@ int sqlite3PagerSetJournalMode(Pager *pPager, int eMode){
   if( eMode!=eOld ){
 
     /* Change the journal mode. */
+    assert( pPager->eState!=PAGER_ERROR );
     pPager->journalMode = (u8)eMode;
 
     /* When transistioning from TRUNCATE or PERSIST to any other journal
-    ** mode except WAL (and we are not in locking_mode=EXCLUSIVE) then 
+    ** mode except WAL, unless the pager is in locking_mode=exclusive mode,
     ** delete the journal file.
     */
     assert( (PAGER_JOURNALMODE_TRUNCATE & 5)==1 );
@@ -6380,8 +6381,6 @@ int sqlite3PagerSetJournalMode(Pager *pPager, int eMode){
     assert( isOpen(pPager->fd) || pPager->exclusiveMode );
     if( !pPager->exclusiveMode && (eOld & 5)==1 && (eMode & 1)==0 ){
 
-      sqlite3OsClose(pPager->jfd);
-
       /* In this case we would like to delete the journal file. If it is
       ** not possible, then that is not a problem. Deleting the journal file
       ** here is an optimization only.
@@ -6390,24 +6389,29 @@ int sqlite3PagerSetJournalMode(Pager *pPager, int eMode){
       ** database file. This ensures that the journal file is not deleted
       ** while it is in use by some other client.
       */
-      int rc = SQLITE_OK;
-      int state = pPager->eState;
-      if( state==PAGER_OPEN ){
-        rc = sqlite3PagerSharedLock(pPager);
-      }
-      if( pPager->eState==PAGER_READER ){
-        assert( rc==SQLITE_OK );
-        rc = pagerLockDb(pPager, RESERVED_LOCK);
-      }
-      if( rc==SQLITE_OK ){
+      sqlite3OsClose(pPager->jfd);
+      if( pPager->eLock>=RESERVED_LOCK ){
         sqlite3OsDelete(pPager->pVfs, pPager->zJournal, 0);
+      }else{
+        int rc = SQLITE_OK;
+        int state = pPager->eState;
+        if( state==PAGER_OPEN ){
+          rc = sqlite3PagerSharedLock(pPager);
+        }
+        if( pPager->eState==PAGER_READER ){
+          assert( rc==SQLITE_OK );
+          rc = pagerLockDb(pPager, RESERVED_LOCK);
+        }
+        if( rc==SQLITE_OK ){
+          sqlite3OsDelete(pPager->pVfs, pPager->zJournal, 0);
+        }
+        if( rc==SQLITE_OK && state==PAGER_READER ){
+          pagerUnlockDb(pPager, SHARED_LOCK);
+        }else if( state==PAGER_OPEN ){
+          pager_unlock(pPager);
+        }
+        assert( state==pPager->eState );
       }
-      if( rc==SQLITE_OK && state==PAGER_READER ){
-        pagerUnlockDb(pPager, SHARED_LOCK);
-      }else if( state==PAGER_OPEN ){
-        pager_unlock(pPager);
-      }
-      assert( state==pPager->eState );
     }
   }
 

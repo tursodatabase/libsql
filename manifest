@@ -1,5 +1,5 @@
-C Add\stest\scase\s'cgt_pager_1',\sintended\sfor\suse\swith\scallgrind\sto\sdetect\sperformance\sregression\sin\sthe\spager\smodule,\sto\sthreadtest3.c.
-D 2010-08-07T05:15:23
+C Fix\sa\sproblem\swherein\schanging\sthe\sjournal-mode\simmediately\safter\sleaving\sexclusive-locking\smode\scould\slead\sto\sthe\sdatabase\sbeing\sunlocked\swithout\sclearing\sthe\schangeCountDone\sflag.
+D 2010-08-07T09:31:14
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -156,7 +156,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c ae5ca8a6031380708f3fec7be325233d49944914
 F src/os_win.c 51cb62f76262d961ea4249489383d714501315a7
-F src/pager.c 2dffe4d468c7665cceaa43eb56e4b5c2f0d28396
+F src/pager.c 9621456e9fdbd134273a434efb2c873c4c4f2a9e
 F src/pager.h 80726162dc3942f59ab27b738fb667b9ba0a89d5
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
@@ -471,7 +471,7 @@ F test/join6.test bf82cf3f979e9eade83ad0d056a66c5ed71d1901
 F test/journal1.test 36f2d1bb9bf03f790f43fbdb439e44c0657fab19
 F test/journal2.test 50a3604768494d4a337f194f0a9480e7c57dcb72
 F test/journal3.test ff175219be1b02d2f7e54297ad7e491b7533edb6
-F test/jrnlmode.test 2d5a8b6d68de8512f522532731d90ca96912f3b7
+F test/jrnlmode.test e3fe6c4a2c3213d285650dc8e33aab7eaaa5ce53
 F test/jrnlmode2.test a19e28de1a6ec898067e46a122f1b71c9323bf00
 F test/jrnlmode3.test cfcdb12b90e640a23b92785a002d96c0624c8710
 F test/keyword1.test a2400977a2e4fde43bf33754c2929fda34dbca05
@@ -843,7 +843,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 876162c7e036af1cb447409b685afc72c0061a32
-R 27f96e8eaa225660cd3eee27494507ba
+P b5d46f1ea08db2b88d2205bc283b9262ad970b55
+R 1c87633c0c4928fc4e767694680c3b36
 U dan
-Z 3bc5778d1d89a64090d5ae07cc0b0720
+Z d18018a31ac0c912f6e4858813e6f216
