@@ -377,4 +377,11 @@ sqlite3 db2 test.db2
 do_test walmode-8.19 { execsql { PRAGMA main.journal_mode } db2 }  {wal}
 db2 close
 
+do_execsql_test walmode-8.20 { PRAGMA journal_mode = DELETE } {delete}
+do_execsql_test walmode-8.21 { PRAGMA main.journal_mode }     {delete}
+do_execsql_test walmode-8.22 { PRAGMA two.journal_mode }      {delete}
+do_execsql_test walmode-8.21 { PRAGMA journal_mode = WAL }    {wal}
+do_execsql_test walmode-8.21 { PRAGMA main.journal_mode }     {wal}
+do_execsql_test walmode-8.22 { PRAGMA two.journal_mode }      {wal}
+
 finish_test

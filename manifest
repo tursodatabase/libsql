@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swherein\schanging\sthe\sjournal-mode\simmediately\safter\sleaving\sexclusive-locking\smode\scould\slead\sto\sthe\sdatabase\sbeing\sunlocked\swithout\sclearing\sthe\schangeCountDone\sflag.
-D 2010-08-07T09:31:14
+C Fix\sminor\sproblems\sand\supdate\scomments\sin\spager.c.
+D 2010-08-07T16:17:49
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -156,7 +156,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c ae5ca8a6031380708f3fec7be325233d49944914
 F src/os_win.c 51cb62f76262d961ea4249489383d714501315a7
-F src/pager.c 9621456e9fdbd134273a434efb2c873c4c4f2a9e
+F src/pager.c 3af4caaa32f26d537ff857ac30d3ac3ce7e46ea5
 F src/pager.h 80726162dc3942f59ab27b738fb667b9ba0a89d5
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
@@ -227,7 +227,7 @@ F src/vdbeblob.c 258a6010ba7a82b72b327fb24c55790655689256
 F src/vdbemem.c e5673f81a2381b35c60e73ef0a8502be2ab1041e
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c 82200af3881fa4e1c9cf07cf31d98c09d437e3ab
-F src/wal.c 6e04bccccd75acf86725cc8cb4b107cd245e018c
+F src/wal.c ef5e37b8cf0b617b787d00eb9c63c803f1f790b1
 F src/wal.h 96669b645e27cd5a111ba59f0cae7743a207bc3c
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 7db3e41c2a846f9deeb24f1bbb75461b4010b7b5
@@ -794,7 +794,7 @@ F test/walcrash.test e763841551d6b23677ccb419797c1589dcbdbaf5
 F test/walcrash2.test 019d60b89d96c1937adb2b30b850ac7e86e5a142
 F test/walfault.test 05c470688d742688e455dd56816bd6bcffa298f8
 F test/walhook.test ed00a40ba7255da22d6b66433ab61fab16a63483
-F test/walmode.test 5dc3008ef71988ecdd949ea16e5750e325b92b54
+F test/walmode.test 4ecd37284f245247f7935896ab66f6943f0432a0
 F test/walshared.test 985b4a3406b2b2dace1d52a42d26a11dd6900981
 F test/walslow.test d21625e2e99e11c032ce949e8a94661576548933
 F test/walthread.test a25a393c068a2b42b44333fa3fdaae9072f1617c
@@ -843,7 +843,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b5d46f1ea08db2b88d2205bc283b9262ad970b55
-R 1c87633c0c4928fc4e767694680c3b36
+P 531abc808526d607768bf6f503268d4cc66ab169
+R 8bd570ff99007432bc59ff36d6f70bed
 U dan
-Z d18018a31ac0c912f6e4858813e6f216
+Z ab88a6e6bc1538b57c390502ab433fb7

@@ -891,6 +891,7 @@ static char *print_pager_state(Pager *p){
       "Journal mode:  journal_mode=%s\n"
       "Backing store: tempFile=%d memDb=%d useJournal=%d\n"
       "Journal:       journalOff=%lld journalHdr=%lld\n"
+      "Size:          dbsize=%d dbOrigSize=%d dbFileSize=%d\n"
       , p->zFilename
       , p->eState==PAGER_OPEN            ? "OPEN" :
         p->eState==PAGER_READER          ? "READER" :
@@ -914,6 +915,7 @@ static char *print_pager_state(Pager *p){
         p->journalMode==PAGER_JOURNALMODE_WAL      ? "wal" : "?error?"
       , (int)p->tempFile, (int)p->memDb, (int)p->useJournal
       , p->journalOff, p->journalHdr
+      , (int)p->dbSize, (int)p->dbOrigSize, (int)p->dbFileSize
   );
 
   return zRet;
@@ -1520,7 +1522,6 @@ static int writeMasterJournal(Pager *pPager, const char *zMaster){
   u32 cksum = 0;                   /* Checksum of string zMaster */
 
   assert( pPager->setMaster==0 );
-  assert( !zMaster || pPager->journalMode!=PAGER_JOURNALMODE_WAL );
   assert( !pagerUseWal(pPager) );
 
   if( !zMaster 
@@ -5168,33 +5169,18 @@ static int pager_write(PgHdr *pPg){
       if( pPg->pgno<=pPager->dbOrigSize && isOpen(pPager->jfd) ){
         u32 cksum;
         char *pData2;
+        i64 iOff = pPager->journalOff;
 
         /* We should never write to the journal file the page that
         ** contains the database locks.  The following assert verifies
         ** that we do not. */
         assert( pPg->pgno!=PAGER_MJ_PGNO(pPager) );
 
-        assert( pPager->journalHdr <= pPager->journalOff );
+        assert( pPager->journalHdr<=pPager->journalOff );
         CODEC2(pPager, pData, pPg->pgno, 7, return SQLITE_NOMEM, pData2);
         cksum = pager_cksum(pPager, (u8*)pData2);
-        rc = write32bits(pPager->jfd, pPager->journalOff, pPg->pgno);
-        if( rc==SQLITE_OK ){
-          rc = sqlite3OsWrite(pPager->jfd, pData2, pPager->pageSize,
-                              pPager->journalOff + 4);
-          pPager->journalOff += pPager->pageSize+4;
-        }
-        if( rc==SQLITE_OK ){
-          rc = write32bits(pPager->jfd, pPager->journalOff, cksum);
-          pPager->journalOff += 4;
-        }
-        IOTRACE(("JOUT %p %d %lld %d\n", pPager, pPg->pgno, 
-                 pPager->journalOff, pPager->pageSize));
-        PAGER_INCR(sqlite3_pager_writej_count);
-        PAGERTRACE(("JOURNAL %d page %d needSync=%d hash(%08x)\n",
-             PAGERID(pPager), pPg->pgno, 
-             ((pPg->flags&PGHDR_NEED_SYNC)?1:0), pager_pagehash(pPg)));
 
-        /* Even if an IO or diskfull error occurred while journalling the
+        /* Even if an IO or diskfull error occurs while journalling the
         ** page in the block above, set the need-sync flag for the page.
         ** Otherwise, when the transaction is rolled back, the logic in
         ** playback_one_page() will think that the page needs to be restored
@@ -5203,13 +5189,21 @@ static int pager_write(PgHdr *pPg){
         */
         pPg->flags |= PGHDR_NEED_SYNC;
 
-        /* An error has occurred writing to the journal file. The 
-        ** transaction will be rolled back by the layer above.
-        */
-        if( rc!=SQLITE_OK ){
-          return rc;
-        }
+        rc = write32bits(pPager->jfd, iOff, pPg->pgno);
+        if( rc!=SQLITE_OK ) return rc;
+        rc = sqlite3OsWrite(pPager->jfd, pData2, pPager->pageSize, iOff+4);
+        if( rc!=SQLITE_OK ) return rc;
+        rc = write32bits(pPager->jfd, iOff+pPager->pageSize+4, cksum);
+        if( rc!=SQLITE_OK ) return rc;
 
+        IOTRACE(("JOUT %p %d %lld %d\n", pPager, pPg->pgno, 
+                 pPager->journalOff, pPager->pageSize));
+        PAGER_INCR(sqlite3_pager_writej_count);
+        PAGERTRACE(("JOURNAL %d page %d needSync=%d hash(%08x)\n",
+             PAGERID(pPager), pPg->pgno, 
+             ((pPg->flags&PGHDR_NEED_SYNC)?1:0), pager_pagehash(pPg)));
+
+        pPager->journalOff += 8 + pPager->pageSize;
         pPager->nRec++;
         assert( pPager->pInJournal!=0 );
         rc = sqlite3BitvecSet(pPager->pInJournal, pPg->pgno);
@@ -5335,7 +5329,7 @@ int sqlite3PagerWrite(DbPage *pDbPage){
     ** before any of them can be written out to the database file.
     */
     if( rc==SQLITE_OK && needSync ){
-      assert( !MEMDB && pPager->noSync==0 );
+      assert( !MEMDB );
       for(ii=0; ii<nPage; ii++){
         PgHdr *pPage = pager_lookup(pPager, pg1+ii);
         if( pPage ){
@@ -5790,47 +5784,30 @@ int sqlite3PagerCommitPhaseTwo(Pager *pPager){
 }
 
 /*
-** Rollback all changes. The database falls back to PAGER_SHARED mode.
+** If a write transaction is open, then all changes made within the 
+** transaction are reverted and the current write-transaction is closed.
+** The pager falls back to PAGER_READER state if successful, or PAGER_ERROR
+** state if an error occurs.
 **
-** This function performs two tasks:
+** If the pager is already in PAGER_ERROR state when this function is called,
+** it returns Pager.errCode immediately. No work is performed in this case.
+**
+** Otherwise, in rollback mode, this function performs two functions:
 **
 **   1) It rolls back the journal file, restoring all database file and 
 **      in-memory cache pages to the state they were in when the transaction
 **      was opened, and
+**
 **   2) It finalizes the journal file, so that it is not used for hot
 **      rollback at any point in the future.
 **
-** subject to the following qualifications:
+** Finalization of the journal file (task 2) is only performed if the 
+** rollback is successful.
 **
-** * If the journal file is not yet open when this function is called,
-**   then only (2) is performed. In this case there is no journal file
-**   to roll back.
-**
-** * If in an error state other than SQLITE_FULL, then task (1) is 
-**   performed. If successful, task (2). Regardless of the outcome
-**   of either, the error state error code is returned to the caller
-**   (i.e. either SQLITE_IOERR or SQLITE_CORRUPT).
-**
-** * If the pager is in PAGER_RESERVED state, then attempt (1). Whether
-**   or not (1) is successful, also attempt (2). If successful, return
-**   SQLITE_OK. Otherwise, enter the error state and return the first 
-**   error code encountered. 
-**
-**   In this case there is no chance that the database was written to. 
-**   So is safe to finalize the journal file even if the playback 
-**   (operation 1) failed. However the pager must enter the error state
-**   as the contents of the in-memory cache are now suspect.
-**
-** * Finally, if in PAGER_EXCLUSIVE state, then attempt (1). Only
-**   attempt (2) if (1) is successful. Return SQLITE_OK if successful,
-**   otherwise enter the error state and return the error code from the 
-**   failing operation.
-**
-**   In this case the database file may have been written to. So if the
-**   playback operation did not succeed it would not be safe to finalize
-**   the journal file. It needs to be left in the file-system so that
-**   some other process can use it to restore the database state (by
-**   hot-journal rollback).
+** In WAL mode, all cache-entries containing data modified within the
+** current transaction are either expelled from the cache or reverted to
+** their pre-transaction state by re-reading data from the database or
+** WAL files. The WAL transaction is then closed.
 */
 int sqlite3PagerRollback(Pager *pPager){
   int rc = SQLITE_OK;                  /* Return code */
@@ -5849,11 +5826,12 @@ int sqlite3PagerRollback(Pager *pPager){
     rc = sqlite3PagerSavepoint(pPager, SAVEPOINT_ROLLBACK, -1);
     rc2 = pager_end_transaction(pPager, pPager->setMaster);
     if( rc==SQLITE_OK ) rc = rc2;
-  }else if( !isOpen(pPager->jfd) ){
+  }else if( !isOpen(pPager->jfd) || pPager->eState==PAGER_WRITER_LOCKED ){
     rc = pager_end_transaction(pPager, 0);
   }else{
     rc = pager_playback(pPager, 0);
   }
+
   assert( pPager->eState==PAGER_READER || rc!=SQLITE_OK );
   assert( rc==SQLITE_OK || rc==SQLITE_FULL || (rc&0xFF)==SQLITE_IOERR );
 
