@@ -218,3 +218,5 @@ SELECT * FROM foo2;
 b
 1
 2}}
+
+puts "CLI tests completed successfully"

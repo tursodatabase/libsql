@@ -604,6 +604,7 @@ do_test table-13.1 {
   }
 } {}
 set i 0
+unset -nocomplain date time seconds
 foreach {date time seconds} {
   1976-07-04 12:00:00 205329600
   1994-04-16 14:00:00 766504800

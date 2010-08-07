@@ -17,6 +17,8 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+do_not_use_codec
+
 # Initialize the test.db database so that it is non-empty
 #
 do_test lock4-1.1 {

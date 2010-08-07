@@ -16,69 +16,8 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+source $testdir/lock_common.tcl
 
-# Launch another testfixture process to be controlled by this one. A
-# channel name is returned that may be passed as the first argument to proc
-# 'testfixture' to execute a command. The child testfixture process is shut
-# down by closing the channel.
-proc launch_testfixture {} {
-  set prg [info nameofexec]
-  if {$prg eq ""} {
-    set prg [file join . testfixture]
-  }
-  set chan [open "|$prg tf_main.tcl" r+]
-  fconfigure $chan -buffering line
-  return $chan
-}
-
-# Execute a command in a child testfixture process, connected by two-way
-# channel $chan. Return the result of the command, or an error message.
-proc testfixture {chan cmd} {
-  puts $chan $cmd
-  puts $chan OVER
-  set r ""
-  while { 1 } {
-    set line [gets $chan]
-    if { $line == "OVER" } { 
-      return $r
-    }
-    if {[eof $chan]} {
-      return "ERROR: Child process hung up"
-    }
-    append r $line
-  }
-}
-
-# Write the main loop for the child testfixture processes into file
-# tf_main.tcl. The parent (this script) interacts with the child processes
-# via a two way pipe. The parent writes a script to the stdin of the child
-# process, followed by the word "OVER" on a line of its own. The child
-# process evaluates the script and writes the results to stdout, followed
-# by an "OVER" of its own.
-set f [open tf_main.tcl w]
-puts $f {
-  set l [open log w]
-  set script ""
-  while {![eof stdin]} {
-    flush stdout
-    set line [gets stdin]
-    puts $l "READ $line"
-    if { $line == "OVER" } {
-      catch {eval $script} result
-      puts $result
-      puts $l "WRITE $result"
-      puts OVER
-      puts $l "WRITE OVER"
-      flush stdout
-      set script ""
-    } else {
-      append script $line
-      append script " ; "
-    }
-  }
-  close $l
-}
-close $f
 
 # Simple locking test case:
 #
@@ -95,7 +34,6 @@ close $f
 #
 do_test lock2-1.1 {
   set ::tf1 [launch_testfixture]
-  testfixture $::tf1 "sqlite3_test_control_pending_byte $::sqlite_pending_byte"
   testfixture $::tf1 {
     sqlite3 db test.db -key xyzzy
     db eval {select * from sqlite_master}
@@ -121,9 +59,8 @@ do_test lock2-1.3 {
 } {}
 do_test lock2-1.4 {
   testfixture $::tf1 {
-    db eval {
-      CREATE TABLE def(d, e, f)
-    }
+    catch { db eval { CREATE TABLE def(d, e, f) } } msg
+    set msg
   }
 } {database is locked}
 do_test lock2-1.5 {
@@ -141,10 +78,11 @@ do_test lock2-1.6 {
 } {}
 do_test lock2-1.7 {
   testfixture $::tf1 {
-    db eval {
+    catch { db eval {
       BEGIN;
       SELECT * FROM sqlite_master;
-    }
+    } } msg 
+    set msg
   }
 } {database is locked}
 do_test lock2-1.8 {
@@ -157,6 +95,7 @@ do_test lock2-1.9 {
     SELECT * FROM sqlite_master;
   }
 } "table abc abc [expr $AUTOVACUUM?3:2] {CREATE TABLE abc(a, b, c)}"
+catch flush_async_queue
 do_test lock2-1.10 {
   testfixture $::tf1 {
     db eval {
@@ -167,6 +106,6 @@ do_test lock2-1.10 {
 
 catch {testfixture $::tf1 {db close}}
 catch {close $::tf1}
-sqlite3_soft_heap_limit $soft_limit
+sqlite3_soft_heap_limit $cmdlinearg(soft-heap-limit)
 
 finish_test

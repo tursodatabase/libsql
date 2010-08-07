@@ -1,0 +1,45 @@
+# 2010 March 10
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Tests for the sqlite3_db_status() function
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+
+# Make sure sqlite3_db_config() and sqlite3_db_status are working.
+#
+unset -nocomplain PAGESZ
+unset -nocomplain BASESZ
+do_test dbstatus-1.1 {
+  db close
+  sqlite3 db :memory:
+  db eval {
+    CREATE TABLE t1(x);
+  }
+  set sz1 [lindex [sqlite3_db_status db SQLITE_DBSTATUS_CACHE_USED 0] 1]
+  db eval {
+    CREATE TABLE t2(y);
+  }
+  set sz2 [lindex [sqlite3_db_status db SQLITE_DBSTATUS_CACHE_USED 0] 1]
+  set ::PAGESZ [expr {$sz2-$sz1}]
+  set ::BASESZ [expr {$sz1-$::PAGESZ}]
+  expr {$::PAGESZ>1024 && $::PAGESZ<1200}
+} {1}
+do_test dbstatus-1.2 {
+  db eval {
+    INSERT INTO t1 VALUES(zeroblob(9000));
+  }
+  lindex [sqlite3_db_status db SQLITE_DBSTATUS_CACHE_USED 0] 1
+} [expr {$BASESZ + 10*$PAGESZ}]
+
+finish_test

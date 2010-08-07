@@ -19,6 +19,7 @@ source $testdir/tester.tcl
 
 # Create several tables to work with.
 #
+wal_set_journal_mode
 do_test trans-1.0 {
   execsql {
     CREATE TABLE one(a int PRIMARY KEY, b text);
@@ -46,6 +47,7 @@ do_test trans-1.10 {
   execsql {SELECT b FROM two ORDER BY a} altdb
 } {I V X}
 integrity_check trans-1.11
+wal_check_journal_mode trans-1.12
 
 # Basic transactions
 #
@@ -82,6 +84,7 @@ do_test trans-2.10 {
   }
 } {1 2 3 1 5 10}
 integrity_check trans-2.11
+wal_check_journal_mode trans-2.12
 
 # Check the locking behavior
 #
@@ -162,6 +165,7 @@ do_test trans-3.14 {
   lappend v $msg
 } {0 {1 2 3 4}}
 integrity_check trans-3.15
+wal_check_journal_mode trans-3.16
 
 do_test trans-4.1 {
   set v [catch {execsql {
@@ -228,6 +232,8 @@ do_test trans-4.11 {
   lappend v $msg
 } {0 {1 2 3 4}}
 integrity_check trans-4.12
+wal_check_journal_mode trans-4.13
+wal_check_journal_mode trans-4.14 altdb
 do_test trans-4.98 {
   altdb close
   execsql {
@@ -775,6 +781,7 @@ do_test trans-7.14 {
   execsql {SELECT md5sum(type,name,tbl_name,rootpage,sql) FROM sqlite_master}
 } $checksum2
 integrity_check trans-7.15
+wal_check_journal_mode trans-7.16
 
 # Arrange for another process to begin modifying the database but abort
 # and die in the middle of the modification.  Then have this process read
@@ -824,7 +831,7 @@ do_test trans-8.5 {
   execsql {SELECT md5sum(type,name,tbl_name,rootpage,sql) FROM sqlite_master}
 } $checksum2
 integrity_check trans-8.6
-
+wal_check_journal_mode trans-8.7
 
 # In the following sequence of tests, compute the MD5 sum of the content
 # of a table, make lots of modifications to that table, then do a rollback.
@@ -854,6 +861,7 @@ do_test trans-9.1 {
     SELECT count(*) FROM t3;
   }
 } {1024}
+wal_check_journal_mode trans-9.1.1
 
 # The following procedure computes a "signature" for table "t3".  If
 # T3 changes in any way, the signature should change.  
@@ -875,12 +883,11 @@ proc signature {} {
 # is in use, only 20 iterations. Otherwise the test pcache runs out
 # of page slots and SQLite reports "out of memory".
 #
-if {[info exists ISQUICK] || (
-  $TEMP_STORE==3 && [catch {set ::permutations_test_prefix} val]==0 && 
-  [regexp {^pcache[[:digit:]]*$} $val]
+if {[info exists G(isquick)] || (
+  $TEMP_STORE==3 && [regexp {^pcache[[:digit:]]*$} [permutation]]
 ) } {
   set limit 20
-} elseif {[info exists SOAKTEST]} {
+} elseif {[info exists G(issoak)]} {
   set limit 100
 } else {
   set limit 40
@@ -925,6 +932,7 @@ for {set i 2} {$i<=$limit} {incr i} {
          INSERT INTO t3 SELECT randstr(10,400) FROM t3 WHERE random()%10==0;
        }
     } {}
+    catch flush_async_queue
     if {$tcl_platform(platform)=="unix"} {
       do_test trans-9.$i.4-$cnt {
          expr {$sqlite_sync_count>0}
@@ -940,6 +948,8 @@ for {set i 2} {$i<=$limit} {incr i} {
       }
     }
   }
+
+  wal_check_journal_mode trans-9.$i.6-$cnt
   set ::pager_old_format 0
 }
    

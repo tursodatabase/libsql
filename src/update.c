@@ -8,7 +8,7 @@
 **    May you find forgiveness for yourself and forgive others.
 **    May you share freely, never taking more than you give.
 **
-*************************************************************************
+sqlite*************************************************************************
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 */
@@ -212,6 +212,7 @@ void sqlite3Update(
         pRowidExpr = pChanges->a[i].pExpr;
       }else{
         sqlite3ErrorMsg(pParse, "no such column: %s", pChanges->a[i].zName);
+        pParse->checkSchema = 1;
         goto update_cleanup;
       }
     }
@@ -396,8 +397,7 @@ void sqlite3Update(
     );
     for(i=0; i<pTab->nCol; i++){
       if( aXRef[i]<0 || oldmask==0xffffffff || (oldmask & (1<<i)) ){
-        sqlite3VdbeAddOp3(v, OP_Column, iCur, i, regOld+i);
-        sqlite3ColumnDefault(v, pTab, i, regOld+i);
+        sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, i, regOld+i);
       }else{
         sqlite3VdbeAddOp2(v, OP_Null, 0, regOld+i);
       }

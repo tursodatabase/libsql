@@ -571,7 +571,7 @@ static int fts3StringAppend(
 ** is no way for fts3BestSnippet() to know whether or not the document 
 ** actually contains terms that follow the final highlighted term. 
 */
-int fts3SnippetShift(
+static int fts3SnippetShift(
   Fts3Table *pTab,                /* FTS3 table snippet comes from */
   int nSnippet,                   /* Number of tokens desired for snippet */
   const char *zDoc,               /* Document text to extract snippet from */

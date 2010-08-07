@@ -18,6 +18,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# Do not use a codec for this file, as the database is manipulated using
+# external methods (the [fake_big_file] and [hexio_write] commands).
+#
+do_not_use_codec
+
 # If SQLITE_DISABLE_LFS is defined, omit this file.
 ifcapable !lfs {
   finish_test
@@ -69,6 +74,7 @@ if {[catch {fake_big_file 4096 [pwd]/test.db} msg]} {
   finish_test
   return
 }
+hexio_write test.db 28 00000000
 
 do_test bigfile-1.2 {
   sqlite3 db test.db
@@ -108,6 +114,7 @@ if {[catch {fake_big_file 8192 [pwd]/test.db}]} {
   finish_test
   return
 }
+hexio_write test.db 28 00000000
 
 do_test bigfile-1.5 {
   sqlite3 db test.db
@@ -146,6 +153,7 @@ if {[catch {fake_big_file 16384 [pwd]/test.db}]} {
   finish_test
   return
 }
+hexio_write test.db 28 00000000
 
 do_test bigfile-1.10 {
   sqlite3 db test.db

@@ -24,6 +24,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# Do not use a codec for tests in this file, as the database file is
+# manipulated directly using tcl scripts (using the [hexio_write] command).
+#
+do_not_use_codec
+
 do_test nan-1.1.1 {
   db eval {
     PRAGMA auto_vacuum=OFF;
@@ -61,13 +66,13 @@ if {$tcl_platform(platform) != "symbian"} {
     sqlite3_reset $::STMT
     db eval {SELECT x, typeof(x) FROM t1}
   } {{} null inf real -inf real {} null {} null}
-  do_test nan-1.1.5 {
+  do_test nan-1.1.6 {
     sqlite3_bind_double $::STMT 1 -NaN0
     sqlite3_step $::STMT
     sqlite3_reset $::STMT
     db eval {SELECT x, typeof(x) FROM t1}
   } {{} null inf real -inf real {} null {} null {} null}
-  do_test nan-1.1.6 {
+  do_test nan-1.1.7 {
     db eval {
       UPDATE t1 SET x=x-x;
       SELECT x, typeof(x) FROM t1;
@@ -115,13 +120,13 @@ do_test nan-1.2.5 {
   sqlite3_reset $::STMT
   db eval {SELECT CAST(x AS text), typeof(x) FROM t1}
 } {{} null Inf real -Inf real {} null {} null}
-do_test nan-1.2.5 {
+do_test nan-1.2.6 {
   sqlite3_bind_double $::STMT 1 -NaN0
   sqlite3_step $::STMT
   sqlite3_reset $::STMT
   db eval {SELECT CAST(x AS text), typeof(x) FROM t1}
 } {{} null Inf real -Inf real {} null {} null {} null}
-do_test nan-1.2.6 {
+do_test nan-1.2.7 {
   db eval {
     UPDATE t1 SET x=x-x;
     SELECT CAST(x AS text), typeof(x) FROM t1;
@@ -248,23 +253,23 @@ do_test nan-4.10 {
   db eval {SELECT CAST(x AS text), typeof(x) FROM t1}
 } {-Inf real}
 
-do_test nan-4.10 {
+do_test nan-4.11 {
   db eval {DELETE FROM t1}
   db eval "INSERT INTO t1 VALUES(1234.5[string repeat 0 10000]12345)"
   db eval {SELECT x, typeof(x) FROM t1}
 } {1234.5 real}
-do_test nan-4.11 {
+do_test nan-4.12 {
   db eval {DELETE FROM t1}
   db eval "INSERT INTO t1 VALUES(-1234.5[string repeat 0 10000]12345)"
   db eval {SELECT x, typeof(x) FROM t1}
 } {-1234.5 real}
-do_test nan-4.12 {
+do_test nan-4.13 {
   db eval {DELETE FROM t1}
   set small [string repeat 0 10000].[string repeat 0 324][string repeat 9 10000]
   db eval "INSERT INTO t1 VALUES($small)"
   db eval {SELECT x, typeof(x) FROM t1}
 } {0.0 real}
-do_test nan-4.13 {
+do_test nan-4.14 {
   db eval {DELETE FROM t1}
   set small \
       -[string repeat 0 10000].[string repeat 0 324][string repeat 9 10000]
@@ -279,14 +284,14 @@ if {$tcl_platform(platform) != "symbian"} {
   # the very small numbers back to text form (probably due to a difference
   # in the sprintf() implementation).
   #
-  do_test nan-4.14 {
+  do_test nan-4.15 {
     db eval {DELETE FROM t1}
     set small \
         [string repeat 0 10000].[string repeat 0 323][string repeat 9 10000]
     db eval "INSERT INTO t1 VALUES($small)"
     db eval {SELECT x, typeof(x) FROM t1}
   } {9.88131291682493e-324 real}
-  do_test nan-4.15 {
+  do_test nan-4.16 {
     db eval {DELETE FROM t1}
     set small \
         -[string repeat 0 10000].[string repeat 0 323][string repeat 9 10000]
@@ -294,13 +299,13 @@ if {$tcl_platform(platform) != "symbian"} {
     db eval {SELECT x, typeof(x) FROM t1}
   } {-9.88131291682493e-324 real}
 }
-do_test nan-4.16 {
+do_test nan-4.17 {
   db eval {DELETE FROM t1}
   set small [string repeat 0 10000].[string repeat 0 323][string repeat 9 10000]
   db eval "INSERT INTO t1 VALUES($small)"
   db eval {SELECT CAST(x AS text), typeof(x) FROM t1}
 } {9.88131291682493e-324 real}
-do_test nan-4.17 {
+do_test nan-4.18 {
   db eval {DELETE FROM t1}
   set small \
       -[string repeat 0 10000].[string repeat 0 323][string repeat 9 10000]

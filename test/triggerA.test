@@ -77,7 +77,7 @@ do_test triggerA-1.5 {
 do_test triggerA-1.6 {
   db eval {
      CREATE VIEW v5 AS SELECT x, b FROM t1, t2 WHERE y=c;
-     SELECT * FROM v5;
+     SELECT * FROM v5 ORDER BY x DESC;
   }
 } {10 1003 9 904 8 805 7 705 6 603 5 504 4 404 3 305 2 203 1 103}
 

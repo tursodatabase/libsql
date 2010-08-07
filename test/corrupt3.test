@@ -18,6 +18,8 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+if {[sqlite3 -has-codec]} { finish_test ; return }
+
 # We must have the page_size pragma for these tests to work.
 #
 ifcapable !pager_pragmas {

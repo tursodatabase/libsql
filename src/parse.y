@@ -848,21 +848,25 @@ likeop(A) ::= LIKE_KW(X).     {A.eOperator = X; A.not = 0;}
 likeop(A) ::= NOT LIKE_KW(X). {A.eOperator = X; A.not = 1;}
 likeop(A) ::= MATCH(X).       {A.eOperator = X; A.not = 0;}
 likeop(A) ::= NOT MATCH(X).   {A.eOperator = X; A.not = 1;}
-%type escape {ExprSpan}
-%destructor escape {sqlite3ExprDelete(pParse->db, $$.pExpr);}
-escape(X) ::= ESCAPE expr(A). [ESCAPE] {X = A;}
-escape(X) ::= .               [ESCAPE] {memset(&X,0,sizeof(X));}
-expr(A) ::= expr(X) likeop(OP) expr(Y) escape(E).  [LIKE_KW]  {
+expr(A) ::= expr(X) likeop(OP) expr(Y).  [LIKE_KW]  {
   ExprList *pList;
   pList = sqlite3ExprListAppend(pParse,0, Y.pExpr);
   pList = sqlite3ExprListAppend(pParse,pList, X.pExpr);
-  if( E.pExpr ){
-    pList = sqlite3ExprListAppend(pParse,pList, E.pExpr);
-  }
   A.pExpr = sqlite3ExprFunction(pParse, pList, &OP.eOperator);
   if( OP.not ) A.pExpr = sqlite3PExpr(pParse, TK_NOT, A.pExpr, 0, 0);
   A.zStart = X.zStart;
   A.zEnd = Y.zEnd;
+  if( A.pExpr ) A.pExpr->flags |= EP_InfixFunc;
+}
+expr(A) ::= expr(X) likeop(OP) expr(Y) ESCAPE expr(E).  [LIKE_KW]  {
+  ExprList *pList;
+  pList = sqlite3ExprListAppend(pParse,0, Y.pExpr);
+  pList = sqlite3ExprListAppend(pParse,pList, X.pExpr);
+  pList = sqlite3ExprListAppend(pParse,pList, E.pExpr);
+  A.pExpr = sqlite3ExprFunction(pParse, pList, &OP.eOperator);
+  if( OP.not ) A.pExpr = sqlite3PExpr(pParse, TK_NOT, A.pExpr, 0, 0);
+  A.zStart = X.zStart;
+  A.zEnd = E.zEnd;
   if( A.pExpr ) A.pExpr->flags |= EP_InfixFunc;
 }
 
@@ -959,14 +963,27 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
   in_op(A) ::= IN.      {A = 0;}
   in_op(A) ::= NOT IN.  {A = 1;}
   expr(A) ::= expr(X) in_op(N) LP exprlist(Y) RP(E). [IN] {
-    A.pExpr = sqlite3PExpr(pParse, TK_IN, X.pExpr, 0, 0);
-    if( A.pExpr ){
-      A.pExpr->x.pList = Y;
-      sqlite3ExprSetHeight(pParse, A.pExpr);
+    if( Y==0 ){
+      /* Expressions of the form
+      **
+      **      expr1 IN ()
+      **      expr1 NOT IN ()
+      **
+      ** simplify to constants 0 (false) and 1 (true), respectively,
+      ** regardless of the value of expr1.
+      */
+      A.pExpr = sqlite3PExpr(pParse, TK_INTEGER, 0, 0, &sqlite3IntTokens[N]);
+      sqlite3ExprDelete(pParse->db, X.pExpr);
     }else{
-      sqlite3ExprListDelete(pParse->db, Y);
+      A.pExpr = sqlite3PExpr(pParse, TK_IN, X.pExpr, 0, 0);
+      if( A.pExpr ){
+        A.pExpr->x.pList = Y;
+        sqlite3ExprSetHeight(pParse, A.pExpr);
+      }else{
+        sqlite3ExprListDelete(pParse->db, Y);
+      }
+      if( N ) A.pExpr = sqlite3PExpr(pParse, TK_NOT, A.pExpr, 0, 0);
     }
-    if( N ) A.pExpr = sqlite3PExpr(pParse, TK_NOT, A.pExpr, 0, 0);
     A.zStart = X.zStart;
     A.zEnd = &E.z[E.n];
   }

@@ -16,6 +16,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# Do not use a codec for tests in this file, as the database file is
+# manipulated directly using tcl scripts (using the [hexio_write] command).
+#
+do_not_use_codec
+
 # Skip this whole file if date and time functions are omitted
 # at compile-time
 #
@@ -495,30 +500,32 @@ datetest 13.34 {date('2001-01-01','-1.5 years')} {1999-07-02}
 # Put a floating point number in the database so that we can manipulate
 # raw bits using the hexio interface.
 #
-do_test date-14.1 {
-  execsql {
-    PRAGMA auto_vacuum=OFF;
-    PRAGMA page_size = 1024;
-    CREATE TABLE t1(x);
-    INSERT INTO t1 VALUES(1.1);
+if {0==[sqlite3 -has-codec]} {
+  do_test date-14.1 {
+    execsql {
+      PRAGMA auto_vacuum=OFF;
+      PRAGMA page_size = 1024;
+      CREATE TABLE t1(x);
+      INSERT INTO t1 VALUES(1.1);
+    }
+    db close
+    hexio_write test.db 2040 4142ba32bffffff9
+    sqlite3 db test.db
+    db eval {SELECT * FROM t1}
+  } {2454629.5}
+  
+  # Changing the least significant byte of the floating point value between
+  # 00 and FF should always generate a time of either 23:59:59 or 00:00:00,
+  # never 24:00:00
+  #
+  for {set i 0} {$i<=255} {incr i} {
+    db close
+    hexio_write test.db 2047 [format %02x $i]
+    sqlite3 db test.db
+    do_test date-14.2.$i {
+      set date [db one {SELECT datetime(x) FROM t1}]
+      expr {$date eq "2008-06-12 00:00:00" || $date eq "2008-06-11 23:59:59"}
+    } {1}
   }
-  db close
-  hexio_write test.db 2040 4142ba32bffffff9
-  sqlite3 db test.db
-  db eval {SELECT * FROM t1}
-} {2454629.5}
-
-# Changing the least significant byte of the floating point value between
-# 00 and FF should always generate a time of either 23:59:59 or 00:00:00,
-# never 24:00:00
-#
-for {set i 0} {$i<=255} {incr i} {
-  db close
-  hexio_write test.db 2047 [format %02x $i]
-  sqlite3 db test.db
-  do_test date-14.2.$i {
-    set date [db one {SELECT datetime(x) FROM t1}]
-    expr {$date eq "2008-06-12 00:00:00" || $date eq "2008-06-11 23:59:59"}
-  } {1}
 }
 finish_test

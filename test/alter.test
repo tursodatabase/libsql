@@ -173,6 +173,20 @@ ifcapable tempdb {
   }
 }
 
+# Create bogus application-defined functions for functions used 
+# internally by ALTER TABLE, to ensure that ALTER TABLE falls back
+# to the built-in functions.
+#
+proc failing_app_func {args} {error "bad function"}
+do_test alter-1.7-prep {
+  db func substr failing_app_func
+  db func like failing_app_func
+  db func sqlite_rename_table failing_app_func
+  db func sqlite_rename_trigger failing_app_func
+  db func sqlite_rename_parent failing_app_func
+  catchsql {SELECT substr(name,1,3) FROM sqlite_master}
+} {1 {bad function}}
+
 # Make sure the ALTER TABLE statements work with the
 # non-callback API
 #
@@ -567,7 +581,8 @@ do_test alter-5.3 {
 } {}
 
 foreach tblname [execsql {
-  SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite%'
+  SELECT name FROM sqlite_master
+   WHERE type='table' AND name NOT GLOB 'sqlite*'
 }] {
   execsql "DROP TABLE \"$tblname\""
 }
@@ -688,17 +703,17 @@ do_test alter-9.2 {
 do_test alter-10.1 {
   execsql "CREATE TABLE xyz(x UNIQUE)"
   execsql "ALTER TABLE xyz RENAME TO xyz\u1234abc"
-  execsql {SELECT name FROM sqlite_master WHERE name LIKE 'xyz%'}
+  execsql {SELECT name FROM sqlite_master WHERE name GLOB 'xyz*'}
 } [list xyz\u1234abc]
 do_test alter-10.2 {
-  execsql {SELECT name FROM sqlite_master WHERE name LIKE 'sqlite_autoindex%'}
+  execsql {SELECT name FROM sqlite_master WHERE name GLOB 'sqlite_autoindex*'}
 } [list sqlite_autoindex_xyz\u1234abc_1]
 do_test alter-10.3 {
   execsql "ALTER TABLE xyz\u1234abc RENAME TO xyzabc"
-  execsql {SELECT name FROM sqlite_master WHERE name LIKE 'xyz%'}
+  execsql {SELECT name FROM sqlite_master WHERE name GLOB 'xyz*'}
 } [list xyzabc]
 do_test alter-10.4 {
-  execsql {SELECT name FROM sqlite_master WHERE name LIKE 'sqlite_autoindex%'}
+  execsql {SELECT name FROM sqlite_master WHERE name GLOB 'sqlite_autoindex*'}
 } [list sqlite_autoindex_xyzabc_1]
 
 do_test alter-11.1 {
@@ -795,19 +810,19 @@ do_test alter-13.1 {
     CREATE TABLE t3102b -- comment
     (y);
     CREATE INDEX t3102c ON t3102a(x);
-    SELECT name FROM sqlite_master WHERE name LIKE 't3102%' ORDER BY 1;
+    SELECT name FROM sqlite_master WHERE name GLOB 't3102*' ORDER BY 1;
   }
 } {t3102a t3102b t3102c}
 do_test alter-13.2 {
   execsql {
     ALTER TABLE t3102a RENAME TO t3102a_rename;
-    SELECT name FROM sqlite_master WHERE name LIKE 't3102%' ORDER BY 1;
+    SELECT name FROM sqlite_master WHERE name GLOB 't3102*' ORDER BY 1;
   }
 } {t3102a_rename t3102b t3102c}
 do_test alter-13.3 {
   execsql {
     ALTER TABLE t3102b RENAME TO t3102b_rename;
-    SELECT name FROM sqlite_master WHERE name LIKE 't3102%' ORDER BY 1;
+    SELECT name FROM sqlite_master WHERE name GLOB 't3102*' ORDER BY 1;
   }
 } {t3102a_rename t3102b_rename t3102c}
 

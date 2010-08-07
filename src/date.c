@@ -314,10 +314,8 @@ static int parseYyyyMmDd(const char *zDate, DateTime *p){
 ** Set the time to the current time reported by the VFS
 */
 static void setDateTimeToCurrent(sqlite3_context *context, DateTime *p){
-  double r;
   sqlite3 *db = sqlite3_context_db_handle(context);
-  sqlite3OsCurrentTime(db->pVfs, &r);
-  p->iJD = (sqlite3_int64)(r*86400000.0 + 0.5);
+  sqlite3OsCurrentTimeInt64(db->pVfs, &p->iJD);
   p->validJD = 1;
 }
 
@@ -1038,22 +1036,15 @@ static void currentTimeFunc(
   time_t t;
   char *zFormat = (char *)sqlite3_user_data(context);
   sqlite3 *db;
-  double rT;
+  sqlite3_int64 iT;
   char zBuf[20];
 
   UNUSED_PARAMETER(argc);
   UNUSED_PARAMETER(argv);
 
   db = sqlite3_context_db_handle(context);
-  sqlite3OsCurrentTime(db->pVfs, &rT);
-#ifndef SQLITE_OMIT_FLOATING_POINT
-  t = 86400.0*(rT - 2440587.5) + 0.5;
-#else
-  /* without floating point support, rT will have
-  ** already lost fractional day precision.
-  */
-  t = 86400 * (rT - 2440587) - 43200;
-#endif
+  sqlite3OsCurrentTimeInt64(db->pVfs, &iT);
+  t = iT/1000 - 10000*(sqlite3_int64)21086676;
 #ifdef HAVE_GMTIME_R
   {
     struct tm sNow;

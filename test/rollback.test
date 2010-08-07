@@ -79,11 +79,9 @@ do_test rollback-1.9 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}
 
-set permutation ""
-catch {set permutation $::permutations_test_prefix}
 if {$tcl_platform(platform) == "unix" 
- && $permutation ne "onefile"
- && $permutation ne "inmemory_journal"
+ && [permutation] ne "onefile"
+ && [permutation] ne "inmemory_journal"
 } {
   do_test rollback-2.1 {
     execsql {
@@ -135,7 +133,7 @@ if {$tcl_platform(platform) == "unix"
       SELECT distinct tbl_name FROM sqlite_master;
     } db2
   } {t1 t3}
-  if {[lsearch {exclusive persistent_journal no_journal} $permutation]<0} {
+  if {[lsearch {exclusive persistent_journal no_journal} [permutation]]<0} {
     do_test rollback-2.3 {
       file exists testA.db-journal
     } 0

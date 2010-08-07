@@ -121,7 +121,7 @@ do_test lock5-flock.2 {
 } {0}
 
 do_test lock5-flock.3 {
-  sqlite3 db2 test.db -vfs unix-flock
+  catch { sqlite3 db2 test.db -vfs unix-flock }
   catchsql { SELECT * FROM t1 } db2
 } {1 {database is locked}}
 

@@ -141,5 +141,5 @@ do_test capi3b-2.12 {
 
 catch {db2 close}
 
-sqlite3_soft_heap_limit $soft_limit
+sqlite3_soft_heap_limit $cmdlinearg(soft-heap-limit)
 finish_test

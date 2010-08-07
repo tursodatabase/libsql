@@ -15,7 +15,7 @@ rename finish_test rtree_finish_test
 proc finish_test {} {}
 
 set RTREE_EXCLUDE { }
-if {[info exists ISQUICK] && $ISQUICK} { 
+if {[info exists G(isquick)] && $G(isquick)} { 
   set RTREE_EXCLUDE rtree3.test
 }
 
@@ -28,8 +28,7 @@ foreach testfile [lsort -dictionary [glob -nocomplain $rtreedir/*.test]] {
   catch {db close}
   if {$sqlite_open_file_count>0} {
     puts "$tail did not close all files: $sqlite_open_file_count"
-    incr nErr
-    lappend ::failList $tail
+    fail_test $tail
     set sqlite_open_file_count 0
   }
 }

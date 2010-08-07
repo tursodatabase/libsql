@@ -2614,6 +2614,7 @@ Index *sqlite3CreateIndex(
     if( j>=pTab->nCol ){
       sqlite3ErrorMsg(pParse, "table %s has no column named %s",
         pTab->zName, zColName);
+      pParse->checkSchema = 1;
       goto exit_create_index;
     }
     pIndex->aiColumn[i] = j;
@@ -3382,7 +3383,7 @@ void sqlite3Savepoint(Parse *pParse, int op, Token *pName){
   if( zName ){
     Vdbe *v = sqlite3GetVdbe(pParse);
 #ifndef SQLITE_OMIT_AUTHORIZATION
-    static const char *az[] = { "BEGIN", "RELEASE", "ROLLBACK" };
+    static const char * const az[] = { "BEGIN", "RELEASE", "ROLLBACK" };
     assert( !SAVEPOINT_BEGIN && SAVEPOINT_RELEASE==1 && SAVEPOINT_ROLLBACK==2 );
 #endif
     if( !v || sqlite3AuthCheck(pParse, SQLITE_SAVEPOINT, az[op], zName, 0) ){
@@ -3422,7 +3423,6 @@ int sqlite3OpenTempDatabase(Parse *pParse){
       db->mallocFailed = 1;
       return 1;
     }
-    sqlite3PagerJournalMode(sqlite3BtreePager(pBt), db->dfltJournalMode);
   }
   return 0;
 }

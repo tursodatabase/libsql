@@ -28,9 +28,9 @@ proc pager_cache_size {db} {
   return $stats(page)
 }
 
-do_test cache-1.1 {
-  pager_cache_size db
-} {0}
+if {[permutation] == ""} { 
+  do_test cache-1.1 { pager_cache_size db } {0}
+}
 
 do_test cache-1.2 {
   execsql {
@@ -58,6 +58,6 @@ for {set ii 0} {$ii < 10} {incr ii} {
   } $::cache_size
 
 }
-sqlite3_soft_heap_limit $soft_limit
+sqlite3_soft_heap_limit $cmdlinearg(soft-heap-limit)
 
 finish_test

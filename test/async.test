@@ -23,8 +23,8 @@ proc finish_test {} {
   catch {db2 close}
   catch {db3 close}
 }
-if {[info exists ISQUICK]} { set ASYNC_SAVE_ISQUICK $ISQUICK }
-set ISQUICK 1
+if {[info exists G(isquick)]} { set ASYNC_SAVE_ISQUICK $G(isquick) }
+set G(isquick) 1
 
 set ASYNC_INCLUDE {
   insert.test
@@ -43,13 +43,22 @@ set ASYNC_INCLUDE {
 # Enable asynchronous IO.
 sqlite3async_initialize "" 1
 
+# This proc flushes the contents of the async-IO queue through to the 
+# underlying VFS. A couple of the test scripts identified in $ASYNC_INCLUDE
+# above contain lines like "catch flush_async_queue" in places where 
+# this is required for the tests to work in async mode.
+#
+proc flush_async_queue {} {
+  sqlite3async_control halt idle
+  sqlite3async_start
+  sqlite3async_wait
+  sqlite3async_control halt never
+}
+
 rename do_test async_really_do_test
 proc do_test {name args} {
   uplevel async_really_do_test async_io-$name $args
-  sqlite3async_start
-  sqlite3async_control halt idle
-  sqlite3async_wait
-  sqlite3async_control halt never
+  flush_async_queue
 }
 
 foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
@@ -62,19 +71,13 @@ foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
   # [file delete]). If the asynchronous backend still has the file
   # open, it will become confused.
   #
-  sqlite3async_control halt idle
-  sqlite3async_start
-  sqlite3async_wait
-  sqlite3async_control halt never
+  flush_async_queue
 }
 
 # Flush the write-queue and disable asynchronous IO. This should ensure
 # all allocated memory is cleaned up.
 set sqlite3async_trace 1
-sqlite3async_control halt idle
-sqlite3async_start
-sqlite3async_wait
-sqlite3async_control halt never
+flush_async_queue
 sqlite3async_shutdown
 set sqlite3async_trace 0
 
@@ -83,5 +86,5 @@ rename async_really_do_test do_test
 rename finish_test {}
 rename async_really_finish_test finish_test
 
-if {[info exists ASYNC_SAVE_ISQUICK]} { set ISQUICK $ASYNC_SAVE_ISQUICK }
+if {[info exists ASYNC_SAVE_ISQUICK]} { set G(isquick) $ASYNC_SAVE_ISQUICK }
 finish_test

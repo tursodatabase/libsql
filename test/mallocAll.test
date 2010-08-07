@@ -30,7 +30,7 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 rename finish_test really_finish_test
 proc finish_test {} {}
-set ISQUICK 1
+set G(isquick) 1
 
 set EXCLUDE {
   mallocAll.test
@@ -56,8 +56,7 @@ foreach testfile [lsort -dictionary [glob $testdir/*malloc*.test]] {
   catch {db close}
   if {$sqlite_open_file_count>0} {
     puts "$tail did not close all files: $sqlite_open_file_count"
-    incr nErr
-    lappend ::failList $tail
+    fail_test $tail
     set sqlite_open_file_count 0
   }
 }

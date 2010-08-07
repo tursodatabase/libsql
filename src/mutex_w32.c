@@ -25,9 +25,9 @@
 struct sqlite3_mutex {
   CRITICAL_SECTION mutex;    /* Mutex controlling the lock */
   int id;                    /* Mutex type */
-  int nRef;                  /* Number of enterances */
-  DWORD owner;               /* Thread holding this mutex */
 #ifdef SQLITE_DEBUG
+  volatile int nRef;         /* Number of enterances */
+  volatile DWORD owner;      /* Thread holding this mutex */
   int trace;                 /* True to trace changes */
 #endif
 };
@@ -35,7 +35,7 @@ struct sqlite3_mutex {
 #ifdef SQLITE_DEBUG
 #define SQLITE3_MUTEX_INITIALIZER { SQLITE_W32_MUTEX_INITIALIZER, 0, 0L, (DWORD)0, 0 }
 #else
-#define SQLITE3_MUTEX_INITIALIZER { SQLITE_W32_MUTEX_INITIALIZER, 0, 0L, (DWORD)0 }
+#define SQLITE3_MUTEX_INITIALIZER { SQLITE_W32_MUTEX_INITIALIZER, 0 }
 #endif
 
 /*
@@ -191,7 +191,9 @@ static sqlite3_mutex *winMutexAlloc(int iType){
     case SQLITE_MUTEX_RECURSIVE: {
       p = sqlite3MallocZero( sizeof(*p) );
       if( p ){  
+#ifdef SQLITE_DEBUG
         p->id = iType;
+#endif
         InitializeCriticalSection(&p->mutex);
       }
       break;
@@ -201,7 +203,9 @@ static sqlite3_mutex *winMutexAlloc(int iType){
       assert( iType-2 >= 0 );
       assert( iType-2 < ArraySize(winMutex_staticMutexes) );
       p = &winMutex_staticMutexes[iType-2];
+#ifdef SQLITE_DEBUG
       p->id = iType;
+#endif
       break;
     }
   }
@@ -234,12 +238,14 @@ static void winMutexFree(sqlite3_mutex *p){
 ** more than once, the behavior is undefined.
 */
 static void winMutexEnter(sqlite3_mutex *p){
+#ifdef SQLITE_DEBUG
   DWORD tid = GetCurrentThreadId(); 
   assert( p->id==SQLITE_MUTEX_RECURSIVE || winMutexNotheld2(p, tid) );
+#endif
   EnterCriticalSection(&p->mutex);
+#ifdef SQLITE_DEBUG
   p->owner = tid; 
   p->nRef++;
-#ifdef SQLITE_DEBUG
   if( p->trace ){
     printf("enter mutex %p (%d) with nRef=%d\n", p, p->trace, p->nRef);
   }
@@ -288,11 +294,11 @@ static int winMutexTry(sqlite3_mutex *p){
 static void winMutexLeave(sqlite3_mutex *p){
 #ifndef NDEBUG
   DWORD tid = GetCurrentThreadId();
-#endif
   assert( p->nRef>0 );
   assert( p->owner==tid );
   p->nRef--;
   assert( p->nRef==0 || p->id==SQLITE_MUTEX_RECURSIVE );
+#endif
   LeaveCriticalSection(&p->mutex);
 #ifdef SQLITE_DEBUG
   if( p->trace ){
@@ -301,8 +307,8 @@ static void winMutexLeave(sqlite3_mutex *p){
 #endif
 }
 
-sqlite3_mutex_methods *sqlite3DefaultMutex(void){
-  static sqlite3_mutex_methods sMutex = {
+sqlite3_mutex_methods const *sqlite3DefaultMutex(void){
+  static const sqlite3_mutex_methods sMutex = {
     winMutexInit,
     winMutexEnd,
     winMutexAlloc,

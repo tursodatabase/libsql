@@ -22,6 +22,11 @@ ifcapable !stat2 {
   return
 }
 
+# Do not use a codec for tests in this file, as the database file is
+# manipulated directly using tcl scripts (using the [hexio_write] command).
+#
+do_not_use_codec
+
 #--------------------------------------------------------------------
 # Test organization:
 #

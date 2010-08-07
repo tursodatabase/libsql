@@ -54,6 +54,19 @@ do_test vacuum-1.1 {
   set ::cksum [cksum]
   expr {$::cksum!=""}
 } {1}
+
+# Create bogus application-defined functions for functions used 
+# internally by VACUUM, to ensure that VACUUM falls back
+# to the built-in functions.
+#
+proc failing_app_func {args} {error "bad function"}
+do_test vacuum-1.1b {
+  db func substr failing_app_func
+  db func like failing_app_func
+  db func quote failing_app_func
+  catchsql {SELECT substr(name,1,3) FROM sqlite_master}
+} {1 {bad function}}
+
 do_test vacuum-1.2 {
   execsql {
     VACUUM;

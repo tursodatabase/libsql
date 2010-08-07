@@ -81,7 +81,7 @@ static int os2Close( sqlite3_file *id ){
   APIRET rc = NO_ERROR;
   os2File *pFile;
   if( id && (pFile = (os2File*)id) != 0 ){
-    OSTRACE2( "CLOSE %d\n", pFile->h );
+    OSTRACE(( "CLOSE %d\n", pFile->h ));
     rc = DosClose( pFile->h );
     pFile->locktype = NO_LOCK;
     if( pFile->pathToDel != NULL ){
@@ -112,7 +112,7 @@ static int os2Read(
   os2File *pFile = (os2File*)id;
   assert( id!=0 );
   SimulateIOError( return SQLITE_IOERR_READ );
-  OSTRACE3( "READ %d lock=%d\n", pFile->h, pFile->locktype );
+  OSTRACE(( "READ %d lock=%d\n", pFile->h, pFile->locktype ));
   if( DosSetFilePtr(pFile->h, offset, FILE_BEGIN, &fileLocation) != NO_ERROR ){
     return SQLITE_IOERR;
   }
@@ -145,7 +145,7 @@ static int os2Write(
   assert( id!=0 );
   SimulateIOError( return SQLITE_IOERR_WRITE );
   SimulateDiskfullError( return SQLITE_FULL );
-  OSTRACE3( "WRITE %d lock=%d\n", pFile->h, pFile->locktype );
+  OSTRACE(( "WRITE %d lock=%d\n", pFile->h, pFile->locktype ));
   if( DosSetFilePtr(pFile->h, offset, FILE_BEGIN, &fileLocation) != NO_ERROR ){
     return SQLITE_IOERR;
   }
@@ -167,7 +167,7 @@ static int os2Write(
 static int os2Truncate( sqlite3_file *id, i64 nByte ){
   APIRET rc = NO_ERROR;
   os2File *pFile = (os2File*)id;
-  OSTRACE3( "TRUNCATE %d %lld\n", pFile->h, nByte );
+  OSTRACE(( "TRUNCATE %d %lld\n", pFile->h, nByte ));
   SimulateIOError( return SQLITE_IOERR_TRUNCATE );
   rc = DosSetFileSize( pFile->h, nByte );
   return rc == NO_ERROR ? SQLITE_OK : SQLITE_IOERR_TRUNCATE;
@@ -187,7 +187,7 @@ int sqlite3_fullsync_count = 0;
 */
 static int os2Sync( sqlite3_file *id, int flags ){
   os2File *pFile = (os2File*)id;
-  OSTRACE3( "SYNC %d lock=%d\n", pFile->h, pFile->locktype );
+  OSTRACE(( "SYNC %d lock=%d\n", pFile->h, pFile->locktype ));
 #ifdef SQLITE_TEST
   if( flags & SQLITE_SYNC_FULL){
     sqlite3_fullsync_count++;
@@ -237,7 +237,7 @@ static int getReadLock( os2File *pFile ){
   UnlockArea.lOffset = 0L;
   UnlockArea.lRange = 0L;
   res = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, LOCK_TIMEOUT, 1L );
-  OSTRACE3( "GETREADLOCK %d res=%d\n", pFile->h, res );
+  OSTRACE(( "GETREADLOCK %d res=%d\n", pFile->h, res ));
   return res;
 }
 
@@ -255,7 +255,7 @@ static int unlockReadLock( os2File *id ){
   UnlockArea.lOffset = SHARED_FIRST;
   UnlockArea.lRange = SHARED_SIZE;
   res = DosSetFileLocks( id->h, &UnlockArea, &LockArea, LOCK_TIMEOUT, 1L );
-  OSTRACE3( "UNLOCK-READLOCK file handle=%d res=%d?\n", id->h, res );
+  OSTRACE(( "UNLOCK-READLOCK file handle=%d res=%d?\n", id->h, res ));
   return res;
 }
 
@@ -296,14 +296,14 @@ static int os2Lock( sqlite3_file *id, int locktype ){
   memset(&LockArea, 0, sizeof(LockArea));
   memset(&UnlockArea, 0, sizeof(UnlockArea));
   assert( pFile!=0 );
-  OSTRACE4( "LOCK %d %d was %d\n", pFile->h, locktype, pFile->locktype );
+  OSTRACE(( "LOCK %d %d was %d\n", pFile->h, locktype, pFile->locktype ));
 
   /* If there is already a lock of this type or more restrictive on the
   ** os2File, do nothing. Don't use the end_lock: exit path, as
   ** sqlite3_mutex_enter() hasn't been called yet.
   */
   if( pFile->locktype>=locktype ){
-    OSTRACE3( "LOCK %d %d ok (already held)\n", pFile->h, locktype );
+    OSTRACE(( "LOCK %d %d ok (already held)\n", pFile->h, locktype ));
     return SQLITE_OK;
   }
 
@@ -330,7 +330,7 @@ static int os2Lock( sqlite3_file *id, int locktype ){
     res = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, 100L, 0L );
     if( res == NO_ERROR ){
       gotPendingLock = 1;
-      OSTRACE3( "LOCK %d pending lock boolean set.  res=%d\n", pFile->h, res );
+      OSTRACE(( "LOCK %d pending lock boolean set.  res=%d\n", pFile->h, res ));
     }
   }
 
@@ -342,7 +342,7 @@ static int os2Lock( sqlite3_file *id, int locktype ){
     if( res == NO_ERROR ){
       newLocktype = SHARED_LOCK;
     }
-    OSTRACE3( "LOCK %d acquire shared lock. res=%d\n", pFile->h, res );
+    OSTRACE(( "LOCK %d acquire shared lock. res=%d\n", pFile->h, res ));
   }
 
   /* Acquire a RESERVED lock
@@ -357,7 +357,7 @@ static int os2Lock( sqlite3_file *id, int locktype ){
     if( res == NO_ERROR ){
       newLocktype = RESERVED_LOCK;
     }
-    OSTRACE3( "LOCK %d acquire reserved lock. res=%d\n", pFile->h, res );
+    OSTRACE(( "LOCK %d acquire reserved lock. res=%d\n", pFile->h, res ));
   }
 
   /* Acquire a PENDING lock
@@ -365,7 +365,8 @@ static int os2Lock( sqlite3_file *id, int locktype ){
   if( locktype==EXCLUSIVE_LOCK && res == NO_ERROR ){
     newLocktype = PENDING_LOCK;
     gotPendingLock = 0;
-    OSTRACE2( "LOCK %d acquire pending lock. pending lock boolean unset.\n", pFile->h );
+    OSTRACE(( "LOCK %d acquire pending lock. pending lock boolean unset.\n",
+               pFile->h ));
   }
 
   /* Acquire an EXCLUSIVE lock
@@ -373,7 +374,7 @@ static int os2Lock( sqlite3_file *id, int locktype ){
   if( locktype==EXCLUSIVE_LOCK && res == NO_ERROR ){
     assert( pFile->locktype>=SHARED_LOCK );
     res = unlockReadLock(pFile);
-    OSTRACE2( "unreadlock = %d\n", res );
+    OSTRACE(( "unreadlock = %d\n", res ));
     LockArea.lOffset = SHARED_FIRST;
     LockArea.lRange = SHARED_SIZE;
     UnlockArea.lOffset = 0L;
@@ -382,10 +383,10 @@ static int os2Lock( sqlite3_file *id, int locktype ){
     if( res == NO_ERROR ){
       newLocktype = EXCLUSIVE_LOCK;
     }else{
-      OSTRACE2( "OS/2 error-code = %d\n", res );
+      OSTRACE(( "OS/2 error-code = %d\n", res ));
       getReadLock(pFile);
     }
-    OSTRACE3( "LOCK %d acquire exclusive lock.  res=%d\n", pFile->h, res );
+    OSTRACE(( "LOCK %d acquire exclusive lock.  res=%d\n", pFile->h, res ));
   }
 
   /* If we are holding a PENDING lock that ought to be released, then
@@ -398,7 +399,7 @@ static int os2Lock( sqlite3_file *id, int locktype ){
     UnlockArea.lOffset = PENDING_BYTE;
     UnlockArea.lRange = 1L;
     r = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, LOCK_TIMEOUT, 0L );
-    OSTRACE3( "LOCK %d unlocking pending/is shared. r=%d\n", pFile->h, r );
+    OSTRACE(( "LOCK %d unlocking pending/is shared. r=%d\n", pFile->h, r ));
   }
 
   /* Update the state of the lock has held in the file descriptor then
@@ -407,12 +408,12 @@ static int os2Lock( sqlite3_file *id, int locktype ){
   if( res == NO_ERROR ){
     rc = SQLITE_OK;
   }else{
-    OSTRACE4( "LOCK FAILED %d trying for %d but got %d\n", pFile->h,
-              locktype, newLocktype );
+    OSTRACE(( "LOCK FAILED %d trying for %d but got %d\n", pFile->h,
+              locktype, newLocktype ));
     rc = SQLITE_BUSY;
   }
   pFile->locktype = newLocktype;
-  OSTRACE3( "LOCK %d now %d\n", pFile->h, pFile->locktype );
+  OSTRACE(( "LOCK %d now %d\n", pFile->h, pFile->locktype ));
   return rc;
 }
 
@@ -427,7 +428,7 @@ static int os2CheckReservedLock( sqlite3_file *id, int *pOut ){
   assert( pFile!=0 );
   if( pFile->locktype>=RESERVED_LOCK ){
     r = 1;
-    OSTRACE3( "TEST WR-LOCK %d %d (local)\n", pFile->h, r );
+    OSTRACE(( "TEST WR-LOCK %d %d (local)\n", pFile->h, r ));
   }else{
     FILELOCK  LockArea,
               UnlockArea;
@@ -439,7 +440,7 @@ static int os2CheckReservedLock( sqlite3_file *id, int *pOut ){
     UnlockArea.lOffset = 0L;
     UnlockArea.lRange = 0L;
     rc = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, LOCK_TIMEOUT, 0L );
-    OSTRACE3( "TEST WR-LOCK %d lock reserved byte rc=%d\n", pFile->h, rc );
+    OSTRACE(( "TEST WR-LOCK %d lock reserved byte rc=%d\n", pFile->h, rc ));
     if( rc == NO_ERROR ){
       APIRET rcu = NO_ERROR; /* return code for unlocking */
       LockArea.lOffset = 0L;
@@ -447,10 +448,10 @@ static int os2CheckReservedLock( sqlite3_file *id, int *pOut ){
       UnlockArea.lOffset = RESERVED_BYTE;
       UnlockArea.lRange = 1L;
       rcu = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, LOCK_TIMEOUT, 0L );
-      OSTRACE3( "TEST WR-LOCK %d unlock reserved byte r=%d\n", pFile->h, rcu );
+      OSTRACE(( "TEST WR-LOCK %d unlock reserved byte r=%d\n", pFile->h, rcu ));
     }
     r = !(rc == NO_ERROR);
-    OSTRACE3( "TEST WR-LOCK %d %d (remote)\n", pFile->h, r );
+    OSTRACE(( "TEST WR-LOCK %d %d (remote)\n", pFile->h, r ));
   }
   *pOut = r;
   return SQLITE_OK;
@@ -478,7 +479,7 @@ static int os2Unlock( sqlite3_file *id, int locktype ){
   memset(&UnlockArea, 0, sizeof(UnlockArea));
   assert( pFile!=0 );
   assert( locktype<=SHARED_LOCK );
-  OSTRACE4( "UNLOCK %d to %d was %d\n", pFile->h, locktype, pFile->locktype );
+  OSTRACE(( "UNLOCK %d to %d was %d\n", pFile->h, locktype, pFile->locktype ));
   type = pFile->locktype;
   if( type>=EXCLUSIVE_LOCK ){
     LockArea.lOffset = 0L;
@@ -486,11 +487,11 @@ static int os2Unlock( sqlite3_file *id, int locktype ){
     UnlockArea.lOffset = SHARED_FIRST;
     UnlockArea.lRange = SHARED_SIZE;
     res = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, LOCK_TIMEOUT, 0L );
-    OSTRACE3( "UNLOCK %d exclusive lock res=%d\n", pFile->h, res );
+    OSTRACE(( "UNLOCK %d exclusive lock res=%d\n", pFile->h, res ));
     if( locktype==SHARED_LOCK && getReadLock(pFile) != NO_ERROR ){
       /* This should never happen.  We should always be able to
       ** reacquire the read lock */
-      OSTRACE3( "UNLOCK %d to %d getReadLock() failed\n", pFile->h, locktype );
+      OSTRACE(( "UNLOCK %d to %d getReadLock() failed\n", pFile->h, locktype ));
       rc = SQLITE_IOERR_UNLOCK;
     }
   }
@@ -500,11 +501,12 @@ static int os2Unlock( sqlite3_file *id, int locktype ){
     UnlockArea.lOffset = RESERVED_BYTE;
     UnlockArea.lRange = 1L;
     res = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, LOCK_TIMEOUT, 0L );
-    OSTRACE3( "UNLOCK %d reserved res=%d\n", pFile->h, res );
+    OSTRACE(( "UNLOCK %d reserved res=%d\n", pFile->h, res ));
   }
   if( locktype==NO_LOCK && type>=SHARED_LOCK ){
     res = unlockReadLock(pFile);
-    OSTRACE5( "UNLOCK %d is %d want %d res=%d\n", pFile->h, type, locktype, res );
+    OSTRACE(( "UNLOCK %d is %d want %d res=%d\n",
+              pFile->h, type, locktype, res ));
   }
   if( type>=PENDING_LOCK ){
     LockArea.lOffset = 0L;
@@ -512,10 +514,10 @@ static int os2Unlock( sqlite3_file *id, int locktype ){
     UnlockArea.lOffset = PENDING_BYTE;
     UnlockArea.lRange = 1L;
     res = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, LOCK_TIMEOUT, 0L );
-    OSTRACE3( "UNLOCK %d pending res=%d\n", pFile->h, res );
+    OSTRACE(( "UNLOCK %d pending res=%d\n", pFile->h, res ));
   }
   pFile->locktype = locktype;
-  OSTRACE3( "UNLOCK %d now %d\n", pFile->h, pFile->locktype );
+  OSTRACE(( "UNLOCK %d now %d\n", pFile->h, pFile->locktype ));
   return rc;
 }
 
@@ -526,7 +528,8 @@ static int os2FileControl(sqlite3_file *id, int op, void *pArg){
   switch( op ){
     case SQLITE_FCNTL_LOCKSTATE: {
       *(int*)pArg = ((os2File*)id)->locktype;
-      OSTRACE3( "FCNTL_LOCKSTATE %d lock=%d\n", ((os2File*)id)->h, ((os2File*)id)->locktype );
+      OSTRACE(( "FCNTL_LOCKSTATE %d lock=%d\n",
+                ((os2File*)id)->h, ((os2File*)id)->locktype ));
       return SQLITE_OK;
     }
   }
@@ -713,7 +716,7 @@ static int getTempname(int nBuf, char *zBuf ){
     zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
   }
   zBuf[j] = 0;
-  OSTRACE2( "TEMP FILENAME: %s\n", zBuf );
+  OSTRACE(( "TEMP FILENAME: %s\n", zBuf ));
   return SQLITE_OK;
 }
 
@@ -776,30 +779,30 @@ static int os2Open(
 
   memset( pFile, 0, sizeof(*pFile) );
 
-  OSTRACE2( "OPEN want %d\n", flags );
+  OSTRACE(( "OPEN want %d\n", flags ));
 
   if( flags & SQLITE_OPEN_READWRITE ){
     ulOpenMode |= OPEN_ACCESS_READWRITE;
-    OSTRACE1( "OPEN read/write\n" );
+    OSTRACE(( "OPEN read/write\n" ));
   }else{
     ulOpenMode |= OPEN_ACCESS_READONLY;
-    OSTRACE1( "OPEN read only\n" );
+    OSTRACE(( "OPEN read only\n" ));
   }
 
   if( flags & SQLITE_OPEN_CREATE ){
     ulOpenFlags |= OPEN_ACTION_OPEN_IF_EXISTS | OPEN_ACTION_CREATE_IF_NEW;
-    OSTRACE1( "OPEN open new/create\n" );
+    OSTRACE(( "OPEN open new/create\n" ));
   }else{
     ulOpenFlags |= OPEN_ACTION_OPEN_IF_EXISTS | OPEN_ACTION_FAIL_IF_NEW;
-    OSTRACE1( "OPEN open existing\n" );
+    OSTRACE(( "OPEN open existing\n" ));
   }
 
   if( flags & SQLITE_OPEN_MAIN_DB ){
     ulOpenMode |= OPEN_SHARE_DENYNONE;
-    OSTRACE1( "OPEN share read/write\n" );
+    OSTRACE(( "OPEN share read/write\n" ));
   }else{
     ulOpenMode |= OPEN_SHARE_DENYWRITE;
-    OSTRACE1( "OPEN share read only\n" );
+    OSTRACE(( "OPEN share read only\n" ));
   }
 
   if( flags & SQLITE_OPEN_DELETEONCLOSE ){
@@ -809,10 +812,10 @@ static int os2Open(
 #endif
     os2FullPathname( pVfs, zName, CCHMAXPATH, pathUtf8 );
     pFile->pathToDel = convertUtf8PathToCp( pathUtf8 );
-    OSTRACE1( "OPEN hidden/delete on close file attributes\n" );
+    OSTRACE(( "OPEN hidden/delete on close file attributes\n" ));
   }else{
     pFile->pathToDel = NULL;
-    OSTRACE1( "OPEN normal file attribute\n" );
+    OSTRACE(( "OPEN normal file attribute\n" ));
   }
 
   /* always open in random access mode for possibly better speed */
@@ -831,13 +834,14 @@ static int os2Open(
                 (PEAOP2)NULL );
   free( zNameCp );
   if( rc != NO_ERROR ){
-    OSTRACE7( "OPEN Invalid handle rc=%d: zName=%s, ulAction=%#lx, ulAttr=%#lx, ulFlags=%#lx, ulMode=%#lx\n",
-              rc, zName, ulAction, ulFileAttribute, ulOpenFlags, ulOpenMode );
+    OSTRACE(( "OPEN Invalid handle rc=%d: zName=%s, ulAction=%#lx, ulAttr=%#lx, ulFlags=%#lx, ulMode=%#lx\n",
+              rc, zName, ulAction, ulFileAttribute, ulOpenFlags, ulOpenMode ));
     if( pFile->pathToDel )
       free( pFile->pathToDel );
     pFile->pathToDel = NULL;
     if( flags & SQLITE_OPEN_READWRITE ){
-      OSTRACE2( "OPEN %d Invalid handle\n", ((flags | SQLITE_OPEN_READONLY) & ~SQLITE_OPEN_READWRITE) );
+      OSTRACE(( "OPEN %d Invalid handle\n",
+                ((flags | SQLITE_OPEN_READONLY) & ~SQLITE_OPEN_READWRITE) ));
       return os2Open( pVfs, zName, id,
                       ((flags | SQLITE_OPEN_READONLY) & ~SQLITE_OPEN_READWRITE),
                       pOutFlags );
@@ -853,7 +857,7 @@ static int os2Open(
   pFile->pMethod = &os2IoMethod;
   pFile->h = h;
   OpenCounter(+1);
-  OSTRACE3( "OPEN %d pOutFlags=%d\n", pFile->h, pOutFlags );
+  OSTRACE(( "OPEN %d pOutFlags=%d\n", pFile->h, pOutFlags ));
   return SQLITE_OK;
 }
 
@@ -870,7 +874,7 @@ static int os2Delete(
   SimulateIOError( return SQLITE_IOERR_DELETE );
   rc = DosDelete( (PSZ)zFilenameCp );
   free( zFilenameCp );
-  OSTRACE2( "DELETE \"%s\"\n", zFilename );
+  OSTRACE(( "DELETE \"%s\"\n", zFilename ));
   return rc == NO_ERROR ? SQLITE_OK : SQLITE_IOERR_DELETE;
 }
 
@@ -891,17 +895,17 @@ static int os2Access(
   rc = DosQueryPathInfo( (PSZ)zFilenameCp, FIL_STANDARD,
                          &fsts3ConfigInfo, sizeof(FILESTATUS3) );
   free( zFilenameCp );
-  OSTRACE4( "ACCESS fsts3ConfigInfo.attrFile=%d flags=%d rc=%d\n",
-            fsts3ConfigInfo.attrFile, flags, rc );
+  OSTRACE(( "ACCESS fsts3ConfigInfo.attrFile=%d flags=%d rc=%d\n",
+            fsts3ConfigInfo.attrFile, flags, rc ));
   switch( flags ){
     case SQLITE_ACCESS_READ:
     case SQLITE_ACCESS_EXISTS:
       rc = (rc == NO_ERROR);
-      OSTRACE3( "ACCESS %s access of read and exists  rc=%d\n", zFilename, rc );
+      OSTRACE(( "ACCESS %s access of read and exists  rc=%d\n", zFilename, rc));
       break;
     case SQLITE_ACCESS_READWRITE:
       rc = (rc == NO_ERROR) && ( (fsts3ConfigInfo.attrFile & FILE_READONLY) == 0 );
-      OSTRACE3( "ACCESS %s access of read/write  rc=%d\n", zFilename, rc );
+      OSTRACE(( "ACCESS %s access of read/write  rc=%d\n", zFilename, rc ));
       break;
     default:
       assert( !"Invalid flags argument" );
@@ -1111,7 +1115,7 @@ int sqlite3_os_init(void){
     os2Randomness,     /* xRandomness */
     os2Sleep,          /* xSleep */
     os2CurrentTime,    /* xCurrentTime */
-    os2GetLastError    /* xGetLastError */
+    os2GetLastError,   /* xGetLastError */
   };
   sqlite3_vfs_register(&os2Vfs, 1);
   initUconvObjects();

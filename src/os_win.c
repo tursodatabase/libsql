@@ -76,6 +76,10 @@
 # define FormatMessageW(a,b,c,d,e,f,g) 0
 #endif
 
+/* Forward references */
+typedef struct winShm winShm;           /* A connection to shared-memory */
+typedef struct winShmNode winShmNode;   /* A region of shared-memory */
+
 /*
 ** WinCE lacks native support for file locking so we have to fake it
 ** with some code of our own.
@@ -95,12 +99,15 @@ typedef struct winceLock {
 */
 typedef struct winFile winFile;
 struct winFile {
-  const sqlite3_io_methods *pMethod;/* Must be first */
+  const sqlite3_io_methods *pMethod; /*** Must be first ***/
+  sqlite3_vfs *pVfs;      /* The VFS used to open this file */
   HANDLE h;               /* Handle for accessing the file */
   unsigned char locktype; /* Type of lock currently held on this file */
   short sharedLockByte;   /* Randomly chosen byte used as a shared lock */
   DWORD lastErrno;        /* The Windows errno from the last I/O error */
   DWORD sectorSize;       /* Sector size of the device file is on */
+  winShm *pShm;           /* Instance of shared memory on this file */
+  const char *zPath;      /* Full pathname of this file */
 #if SQLITE_OS_WINCE
   WCHAR *zDeleteOnClose;  /* Name of file to delete when closing */
   HANDLE hMutex;          /* Mutex used to control access to shared lock */  
@@ -629,9 +636,11 @@ static int winClose(sqlite3_file *id){
   winFile *pFile = (winFile*)id;
 
   assert( id!=0 );
-  OSTRACE2("CLOSE %d\n", pFile->h);
+  assert( pFile->pShm==0 );
+  OSTRACE(("CLOSE %d\n", pFile->h));
   do{
     rc = CloseHandle(pFile->h);
+    /* SimulateIOError( rc=0; cnt=MX_CLOSE_ATTEMPT; ); */
   }while( rc==0 && ++cnt < MX_CLOSE_ATTEMPT && (Sleep(100), 1) );
 #if SQLITE_OS_WINCE
 #define WINCE_DELETION_ATTEMPTS 3
@@ -648,6 +657,7 @@ static int winClose(sqlite3_file *id){
     free(pFile->zDeleteOnClose);
   }
 #endif
+  OSTRACE(("CLOSE %d %s\n", pFile->h, rc ? "ok" : "failed"));
   OpenCounter(-1);
   return rc ? SQLITE_OK : SQLITE_IOERR;
 }
@@ -679,7 +689,7 @@ static int winRead(
 
   assert( id!=0 );
   SimulateIOError(return SQLITE_IOERR_READ);
-  OSTRACE3("READ %d lock=%d\n", pFile->h, pFile->locktype);
+  OSTRACE(("READ %d lock=%d\n", pFile->h, pFile->locktype));
   rc = SetFilePointer(pFile->h, lowerBits, &upperBits, FILE_BEGIN);
   if( rc==INVALID_SET_FILE_POINTER && (error=GetLastError())!=NO_ERROR ){
     pFile->lastErrno = error;
@@ -718,11 +728,15 @@ static int winWrite(
   assert( id!=0 );
   SimulateIOError(return SQLITE_IOERR_WRITE);
   SimulateDiskfullError(return SQLITE_FULL);
-  OSTRACE3("WRITE %d lock=%d\n", pFile->h, pFile->locktype);
+  OSTRACE(("WRITE %d lock=%d\n", pFile->h, pFile->locktype));
   rc = SetFilePointer(pFile->h, lowerBits, &upperBits, FILE_BEGIN);
   if( rc==INVALID_SET_FILE_POINTER && (error=GetLastError())!=NO_ERROR ){
     pFile->lastErrno = error;
-    return SQLITE_FULL;
+    if( pFile->lastErrno==ERROR_HANDLE_DISK_FULL ){
+      return SQLITE_FULL;
+    }else{
+      return SQLITE_IOERR_WRITE;
+    }
   }
   assert( amt>0 );
   while(
@@ -735,7 +749,11 @@ static int winWrite(
   }
   if( !rc || amt>(int)wrote ){
     pFile->lastErrno = GetLastError();
-    return SQLITE_FULL;
+    if( pFile->lastErrno==ERROR_HANDLE_DISK_FULL ){
+      return SQLITE_FULL;
+    }else{
+      return SQLITE_IOERR_WRITE;
+    }
   }
   return SQLITE_OK;
 }
@@ -746,24 +764,25 @@ static int winWrite(
 static int winTruncate(sqlite3_file *id, sqlite3_int64 nByte){
   LONG upperBits = (LONG)((nByte>>32) & 0x7fffffff);
   LONG lowerBits = (LONG)(nByte & 0xffffffff);
-  DWORD rc;
+  DWORD dwRet;
   winFile *pFile = (winFile*)id;
   DWORD error;
+  int rc = SQLITE_OK;
 
   assert( id!=0 );
-  OSTRACE3("TRUNCATE %d %lld\n", pFile->h, nByte);
+  OSTRACE(("TRUNCATE %d %lld\n", pFile->h, nByte));
   SimulateIOError(return SQLITE_IOERR_TRUNCATE);
-  rc = SetFilePointer(pFile->h, lowerBits, &upperBits, FILE_BEGIN);
-  if( rc==INVALID_SET_FILE_POINTER && (error=GetLastError())!=NO_ERROR ){
+  dwRet = SetFilePointer(pFile->h, lowerBits, &upperBits, FILE_BEGIN);
+  if( dwRet==INVALID_SET_FILE_POINTER && (error=GetLastError())!=NO_ERROR ){
     pFile->lastErrno = error;
-    return SQLITE_IOERR_TRUNCATE;
-  }
+    rc = SQLITE_IOERR_TRUNCATE;
   /* SetEndOfFile will fail if nByte is negative */
-  if( !SetEndOfFile(pFile->h) ){
+  }else if( !SetEndOfFile(pFile->h) ){
     pFile->lastErrno = GetLastError();
-    return SQLITE_IOERR_TRUNCATE;
+    rc = SQLITE_IOERR_TRUNCATE;
   }
-  return SQLITE_OK;
+  OSTRACE(("TRUNCATE %d %lld %s\n", pFile->h, nByte, rc==SQLITE_OK ? "ok" : "failed"));
+  return rc;
 }
 
 #ifdef SQLITE_TEST
@@ -779,14 +798,20 @@ int sqlite3_fullsync_count = 0;
 ** Make sure all writes to a particular file are committed to disk.
 */
 static int winSync(sqlite3_file *id, int flags){
-#ifndef SQLITE_NO_SYNC
+#if !defined(NDEBUG) || !defined(SQLITE_NO_SYNC) || defined(SQLITE_DEBUG)
   winFile *pFile = (winFile*)id;
-
-  assert( id!=0 );
-  OSTRACE3("SYNC %d lock=%d\n", pFile->h, pFile->locktype);
 #else
   UNUSED_PARAMETER(id);
 #endif
+
+  assert( pFile );
+  /* Check that one of SQLITE_SYNC_NORMAL or FULL was passed */
+  assert((flags&0x0F)==SQLITE_SYNC_NORMAL
+      || (flags&0x0F)==SQLITE_SYNC_FULL
+  );
+
+  OSTRACE(("SYNC %d lock=%d\n", pFile->h, pFile->locktype));
+
 #ifndef SQLITE_TEST
   UNUSED_PARAMETER(flags);
 #else
@@ -795,11 +820,18 @@ static int winSync(sqlite3_file *id, int flags){
   }
   sqlite3_sync_count++;
 #endif
+
+  /* Unix cannot, but some systems may return SQLITE_FULL from here. This
+  ** line is to test that doing so does not cause any problems.
+  */
+  SimulateDiskfullError( return SQLITE_FULL );
+  SimulateIOError( return SQLITE_IOERR; );
+
   /* If we compiled with the SQLITE_NO_SYNC flag, then syncing is a
   ** no-op
   */
 #ifdef SQLITE_NO_SYNC
-    return SQLITE_OK;
+  return SQLITE_OK;
 #else
   if( FlushFileBuffers(pFile->h) ){
     return SQLITE_OK;
@@ -924,8 +956,8 @@ static int winLock(sqlite3_file *id, int locktype){
   DWORD error = NO_ERROR;
 
   assert( id!=0 );
-  OSTRACE5("LOCK %d %d was %d(%d)\n",
-          pFile->h, locktype, pFile->locktype, pFile->sharedLockByte);
+  OSTRACE(("LOCK %d %d was %d(%d)\n",
+           pFile->h, locktype, pFile->locktype, pFile->sharedLockByte));
 
   /* If there is already a lock of this type or more restrictive on the
   ** OsFile, do nothing. Don't use the end_lock: exit path, as
@@ -955,7 +987,7 @@ static int winLock(sqlite3_file *id, int locktype){
       /* Try 3 times to get the pending lock.  The pending lock might be
       ** held by another reader process who will release it momentarily.
       */
-      OSTRACE2("could not get a PENDING lock. cnt=%d\n", cnt);
+      OSTRACE(("could not get a PENDING lock. cnt=%d\n", cnt));
       Sleep(1);
     }
     gotPendingLock = res;
@@ -1000,13 +1032,13 @@ static int winLock(sqlite3_file *id, int locktype){
   if( locktype==EXCLUSIVE_LOCK && res ){
     assert( pFile->locktype>=SHARED_LOCK );
     res = unlockReadLock(pFile);
-    OSTRACE2("unreadlock = %d\n", res);
+    OSTRACE(("unreadlock = %d\n", res));
     res = LockFile(pFile->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
     if( res ){
       newLocktype = EXCLUSIVE_LOCK;
     }else{
       error = GetLastError();
-      OSTRACE2("error-code = %d\n", error);
+      OSTRACE(("error-code = %d\n", error));
       getReadLock(pFile);
     }
   }
@@ -1024,8 +1056,8 @@ static int winLock(sqlite3_file *id, int locktype){
   if( res ){
     rc = SQLITE_OK;
   }else{
-    OSTRACE4("LOCK FAILED %d trying for %d but got %d\n", pFile->h,
-           locktype, newLocktype);
+    OSTRACE(("LOCK FAILED %d trying for %d but got %d\n", pFile->h,
+           locktype, newLocktype));
     pFile->lastErrno = error;
     rc = SQLITE_BUSY;
   }
@@ -1042,17 +1074,19 @@ static int winCheckReservedLock(sqlite3_file *id, int *pResOut){
   int rc;
   winFile *pFile = (winFile*)id;
 
+  SimulateIOError( return SQLITE_IOERR_CHECKRESERVEDLOCK; );
+
   assert( id!=0 );
   if( pFile->locktype>=RESERVED_LOCK ){
     rc = 1;
-    OSTRACE3("TEST WR-LOCK %d %d (local)\n", pFile->h, rc);
+    OSTRACE(("TEST WR-LOCK %d %d (local)\n", pFile->h, rc));
   }else{
     rc = LockFile(pFile->h, RESERVED_BYTE, 0, 1, 0);
     if( rc ){
       UnlockFile(pFile->h, RESERVED_BYTE, 0, 1, 0);
     }
     rc = !rc;
-    OSTRACE3("TEST WR-LOCK %d %d (remote)\n", pFile->h, rc);
+    OSTRACE(("TEST WR-LOCK %d %d (remote)\n", pFile->h, rc));
   }
   *pResOut = rc;
   return SQLITE_OK;
@@ -1075,8 +1109,8 @@ static int winUnlock(sqlite3_file *id, int locktype){
   int rc = SQLITE_OK;
   assert( pFile!=0 );
   assert( locktype<=SHARED_LOCK );
-  OSTRACE5("UNLOCK %d to %d was %d(%d)\n", pFile->h, locktype,
-          pFile->locktype, pFile->sharedLockByte);
+  OSTRACE(("UNLOCK %d to %d was %d(%d)\n", pFile->h, locktype,
+          pFile->locktype, pFile->sharedLockByte));
   type = pFile->locktype;
   if( type>=EXCLUSIVE_LOCK ){
     UnlockFile(pFile->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
@@ -1117,6 +1151,13 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       winTruncate(id, sz);
       return SQLITE_OK;
     }
+    case SQLITE_FCNTL_SIZE_HINT: {
+      sqlite3_int64 sz = *(sqlite3_int64*)pArg;
+      SimulateIOErrorBenign(1);
+      winTruncate(id, sz);
+      SimulateIOErrorBenign(0);
+      return SQLITE_OK;
+    }
   }
   return SQLITE_ERROR;
 }
@@ -1141,34 +1182,647 @@ static int winSectorSize(sqlite3_file *id){
 */
 static int winDeviceCharacteristics(sqlite3_file *id){
   UNUSED_PARAMETER(id);
-  return 0;
+  return SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN;
 }
+
+#ifndef SQLITE_OMIT_WAL
+
+/*
+** Helper functions to obtain and relinquish the global mutex. The
+** global mutex is used to protect the winLockInfo objects used by 
+** this file, all of which may be shared by multiple threads.
+**
+** Function winShmMutexHeld() is used to assert() that the global mutex 
+** is held when required. This function is only used as part of assert() 
+** statements. e.g.
+**
+**   winShmEnterMutex()
+**     assert( winShmMutexHeld() );
+**   winShmLeaveMutex()
+*/
+static void winShmEnterMutex(void){
+  sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
+}
+static void winShmLeaveMutex(void){
+  sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
+}
+#ifdef SQLITE_DEBUG
+static int winShmMutexHeld(void) {
+  return sqlite3_mutex_held(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
+}
+#endif
+
+/*
+** Object used to represent a single file opened and mmapped to provide
+** shared memory.  When multiple threads all reference the same
+** log-summary, each thread has its own winFile object, but they all
+** point to a single instance of this object.  In other words, each
+** log-summary is opened only once per process.
+**
+** winShmMutexHeld() must be true when creating or destroying
+** this object or while reading or writing the following fields:
+**
+**      nRef
+**      pNext 
+**
+** The following fields are read-only after the object is created:
+** 
+**      fid
+**      zFilename
+**
+** Either winShmNode.mutex must be held or winShmNode.nRef==0 and
+** winShmMutexHeld() is true when reading or writing any other field
+** in this structure.
+**
+*/
+struct winShmNode {
+  sqlite3_mutex *mutex;      /* Mutex to access this object */
+  char *zFilename;           /* Name of the file */
+  winFile hFile;             /* File handle from winOpen */
+
+  int szRegion;              /* Size of shared-memory regions */
+  int nRegion;               /* Size of array apRegion */
+  struct ShmRegion {
+    HANDLE hMap;             /* File handle from CreateFileMapping */
+    void *pMap;
+  } *aRegion;
+  DWORD lastErrno;           /* The Windows errno from the last I/O error */
+
+  int nRef;                  /* Number of winShm objects pointing to this */
+  winShm *pFirst;            /* All winShm objects pointing to this */
+  winShmNode *pNext;         /* Next in list of all winShmNode objects */
+#ifdef SQLITE_DEBUG
+  u8 nextShmId;              /* Next available winShm.id value */
+#endif
+};
+
+/*
+** A global array of all winShmNode objects.
+**
+** The winShmMutexHeld() must be true while reading or writing this list.
+*/
+static winShmNode *winShmNodeList = 0;
+
+/*
+** Structure used internally by this VFS to record the state of an
+** open shared memory connection.
+**
+** The following fields are initialized when this object is created and
+** are read-only thereafter:
+**
+**    winShm.pShmNode
+**    winShm.id
+**
+** All other fields are read/write.  The winShm.pShmNode->mutex must be held
+** while accessing any read/write fields.
+*/
+struct winShm {
+  winShmNode *pShmNode;      /* The underlying winShmNode object */
+  winShm *pNext;             /* Next winShm with the same winShmNode */
+  u8 hasMutex;               /* True if holding the winShmNode mutex */
+  u16 sharedMask;            /* Mask of shared locks held */
+  u16 exclMask;              /* Mask of exclusive locks held */
+#ifdef SQLITE_DEBUG
+  u8 id;                     /* Id of this connection with its winShmNode */
+#endif
+};
+
+/*
+** Constants used for locking
+*/
+#define WIN_SHM_BASE   ((22+SQLITE_SHM_NLOCK)*4)        /* first lock byte */
+#define WIN_SHM_DMS    (WIN_SHM_BASE+SQLITE_SHM_NLOCK)  /* deadman switch */
+
+/*
+** Apply advisory locks for all n bytes beginning at ofst.
+*/
+#define _SHM_UNLCK  1
+#define _SHM_RDLCK  2
+#define _SHM_WRLCK  3
+static int winShmSystemLock(
+  winShmNode *pFile,    /* Apply locks to this open shared-memory segment */
+  int lockType,         /* _SHM_UNLCK, _SHM_RDLCK, or _SHM_WRLCK */
+  int ofst,             /* Offset to first byte to be locked/unlocked */
+  int nByte             /* Number of bytes to lock or unlock */
+){
+  OVERLAPPED ovlp;
+  DWORD dwFlags;
+  int rc = 0;           /* Result code form Lock/UnlockFileEx() */
+
+  /* Access to the winShmNode object is serialized by the caller */
+  assert( sqlite3_mutex_held(pFile->mutex) || pFile->nRef==0 );
+
+  /* Initialize the locking parameters */
+  dwFlags = LOCKFILE_FAIL_IMMEDIATELY;
+  if( lockType == _SHM_WRLCK ) dwFlags |= LOCKFILE_EXCLUSIVE_LOCK;
+
+  memset(&ovlp, 0, sizeof(OVERLAPPED));
+  ovlp.Offset = ofst;
+
+  /* Release/Acquire the system-level lock */
+  if( lockType==_SHM_UNLCK ){
+    rc = UnlockFileEx(pFile->hFile.h, 0, nByte, 0, &ovlp);
+  }else{
+    rc = LockFileEx(pFile->hFile.h, dwFlags, 0, nByte, 0, &ovlp);
+  }
+  
+  if( rc!= 0 ){
+    rc = SQLITE_OK;
+  }else{
+    pFile->lastErrno =  GetLastError();
+    rc = SQLITE_BUSY;
+  }
+
+  OSTRACE(("SHM-LOCK %d %s %s 0x%08lx\n", 
+           pFile->hFile.h,
+           rc==SQLITE_OK ? "ok" : "failed",
+           lockType==_SHM_UNLCK ? "UnlockFileEx" : "LockFileEx",
+           pFile->lastErrno));
+
+  return rc;
+}
+
+/* Forward references to VFS methods */
+static int winOpen(sqlite3_vfs*,const char*,sqlite3_file*,int,int*);
+static int winDelete(sqlite3_vfs *,const char*,int);
+
+/*
+** Purge the winShmNodeList list of all entries with winShmNode.nRef==0.
+**
+** This is not a VFS shared-memory method; it is a utility function called
+** by VFS shared-memory methods.
+*/
+static void winShmPurge(sqlite3_vfs *pVfs, int deleteFlag){
+  winShmNode **pp;
+  winShmNode *p;
+  assert( winShmMutexHeld() );
+  pp = &winShmNodeList;
+  while( (p = *pp)!=0 ){
+    if( p->nRef==0 ){
+      int i;
+      if( p->mutex ) sqlite3_mutex_free(p->mutex);
+      for(i=0; i<p->nRegion; i++){
+        UnmapViewOfFile(p->aRegion[i].pMap);
+        CloseHandle(p->aRegion[i].hMap);
+      }
+      if( p->hFile.h != INVALID_HANDLE_VALUE ){
+        SimulateIOErrorBenign(1);
+        winClose((sqlite3_file *)&p->hFile);
+        SimulateIOErrorBenign(0);
+      }
+      if( deleteFlag ){
+        SimulateIOErrorBenign(1);
+        winDelete(pVfs, p->zFilename, 0);
+        SimulateIOErrorBenign(0);
+      }
+      *pp = p->pNext;
+      sqlite3_free(p->aRegion);
+      sqlite3_free(p);
+    }else{
+      pp = &p->pNext;
+    }
+  }
+}
+
+/*
+** Open the shared-memory area associated with database file pDbFd.
+**
+** When opening a new shared-memory file, if no other instances of that
+** file are currently open, in this process or in other processes, then
+** the file must be truncated to zero length or have its header cleared.
+*/
+static int winOpenSharedMemory(winFile *pDbFd){
+  struct winShm *p;                  /* The connection to be opened */
+  struct winShmNode *pShmNode = 0;   /* The underlying mmapped file */
+  int rc;                            /* Result code */
+  struct winShmNode *pNew;           /* Newly allocated winShmNode */
+  int nName;                         /* Size of zName in bytes */
+
+  assert( pDbFd->pShm==0 );    /* Not previously opened */
+
+  /* Allocate space for the new sqlite3_shm object.  Also speculatively
+  ** allocate space for a new winShmNode and filename.
+  */
+  p = sqlite3_malloc( sizeof(*p) );
+  if( p==0 ) return SQLITE_NOMEM;
+  memset(p, 0, sizeof(*p));
+  nName = sqlite3Strlen30(pDbFd->zPath);
+  pNew = sqlite3_malloc( sizeof(*pShmNode) + nName + 15 );
+  if( pNew==0 ){
+    sqlite3_free(p);
+    return SQLITE_NOMEM;
+  }
+  memset(pNew, 0, sizeof(*pNew));
+  pNew->zFilename = (char*)&pNew[1];
+  sqlite3_snprintf(nName+15, pNew->zFilename, "%s-shm", pDbFd->zPath);
+
+  /* Look to see if there is an existing winShmNode that can be used.
+  ** If no matching winShmNode currently exists, create a new one.
+  */
+  winShmEnterMutex();
+  for(pShmNode = winShmNodeList; pShmNode; pShmNode=pShmNode->pNext){
+    /* TBD need to come up with better match here.  Perhaps
+    ** use FILE_ID_BOTH_DIR_INFO Structure.
+    */
+    if( sqlite3StrICmp(pShmNode->zFilename, pNew->zFilename)==0 ) break;
+  }
+  if( pShmNode ){
+    sqlite3_free(pNew);
+  }else{
+    pShmNode = pNew;
+    pNew = 0;
+    ((winFile*)(&pShmNode->hFile))->h = INVALID_HANDLE_VALUE;
+    pShmNode->pNext = winShmNodeList;
+    winShmNodeList = pShmNode;
+
+    pShmNode->mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
+    if( pShmNode->mutex==0 ){
+      rc = SQLITE_NOMEM;
+      goto shm_open_err;
+    }
+    rc = winOpen(pDbFd->pVfs,
+                 pShmNode->zFilename,             /* Name of the file (UTF-8) */
+                 (sqlite3_file*)&pShmNode->hFile,  /* File handle here */
+                 SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, /* Mode flags */
+                 0);
+    if( SQLITE_OK!=rc ){
+      rc = SQLITE_CANTOPEN_BKPT;
+      goto shm_open_err;
+    }
+
+    /* Check to see if another process is holding the dead-man switch.
+    ** If not, truncate the file to zero length. 
+    */
+    if( winShmSystemLock(pShmNode, _SHM_WRLCK, WIN_SHM_DMS, 1)==SQLITE_OK ){
+      rc = winTruncate((sqlite3_file *)&pShmNode->hFile, 0);
+      if( rc!=SQLITE_OK ){
+        rc = SQLITE_IOERR_SHMOPEN;
+      }
+    }
+    if( rc==SQLITE_OK ){
+      winShmSystemLock(pShmNode, _SHM_UNLCK, WIN_SHM_DMS, 1);
+      rc = winShmSystemLock(pShmNode, _SHM_RDLCK, WIN_SHM_DMS, 1);
+    }
+    if( rc ) goto shm_open_err;
+  }
+
+  /* Make the new connection a child of the winShmNode */
+  p->pShmNode = pShmNode;
+#ifdef SQLITE_DEBUG
+  p->id = pShmNode->nextShmId++;
+#endif
+  pShmNode->nRef++;
+  pDbFd->pShm = p;
+  winShmLeaveMutex();
+
+  /* The reference count on pShmNode has already been incremented under
+  ** the cover of the winShmEnterMutex() mutex and the pointer from the
+  ** new (struct winShm) object to the pShmNode has been set. All that is
+  ** left to do is to link the new object into the linked list starting
+  ** at pShmNode->pFirst. This must be done while holding the pShmNode->mutex 
+  ** mutex.
+  */
+  sqlite3_mutex_enter(pShmNode->mutex);
+  p->pNext = pShmNode->pFirst;
+  pShmNode->pFirst = p;
+  sqlite3_mutex_leave(pShmNode->mutex);
+  return SQLITE_OK;
+
+  /* Jump here on any error */
+shm_open_err:
+  winShmSystemLock(pShmNode, _SHM_UNLCK, WIN_SHM_DMS, 1);
+  winShmPurge(pDbFd->pVfs, 0);      /* This call frees pShmNode if required */
+  sqlite3_free(p);
+  sqlite3_free(pNew);
+  winShmLeaveMutex();
+  return rc;
+}
+
+/*
+** Close a connection to shared-memory.  Delete the underlying 
+** storage if deleteFlag is true.
+*/
+static int winShmUnmap(
+  sqlite3_file *fd,          /* Database holding shared memory */
+  int deleteFlag             /* Delete after closing if true */
+){
+  winFile *pDbFd;       /* Database holding shared-memory */
+  winShm *p;            /* The connection to be closed */
+  winShmNode *pShmNode; /* The underlying shared-memory file */
+  winShm **pp;          /* For looping over sibling connections */
+
+  pDbFd = (winFile*)fd;
+  p = pDbFd->pShm;
+  if( p==0 ) return SQLITE_OK;
+  pShmNode = p->pShmNode;
+
+  /* Remove connection p from the set of connections associated
+  ** with pShmNode */
+  sqlite3_mutex_enter(pShmNode->mutex);
+  for(pp=&pShmNode->pFirst; (*pp)!=p; pp = &(*pp)->pNext){}
+  *pp = p->pNext;
+
+  /* Free the connection p */
+  sqlite3_free(p);
+  pDbFd->pShm = 0;
+  sqlite3_mutex_leave(pShmNode->mutex);
+
+  /* If pShmNode->nRef has reached 0, then close the underlying
+  ** shared-memory file, too */
+  winShmEnterMutex();
+  assert( pShmNode->nRef>0 );
+  pShmNode->nRef--;
+  if( pShmNode->nRef==0 ){
+    winShmPurge(pDbFd->pVfs, deleteFlag);
+  }
+  winShmLeaveMutex();
+
+  return SQLITE_OK;
+}
+
+/*
+** Change the lock state for a shared-memory segment.
+*/
+static int winShmLock(
+  sqlite3_file *fd,          /* Database file holding the shared memory */
+  int ofst,                  /* First lock to acquire or release */
+  int n,                     /* Number of locks to acquire or release */
+  int flags                  /* What to do with the lock */
+){
+  winFile *pDbFd = (winFile*)fd;        /* Connection holding shared memory */
+  winShm *p = pDbFd->pShm;              /* The shared memory being locked */
+  winShm *pX;                           /* For looping over all siblings */
+  winShmNode *pShmNode = p->pShmNode;
+  int rc = SQLITE_OK;                   /* Result code */
+  u16 mask;                             /* Mask of locks to take or release */
+
+  assert( ofst>=0 && ofst+n<=SQLITE_SHM_NLOCK );
+  assert( n>=1 );
+  assert( flags==(SQLITE_SHM_LOCK | SQLITE_SHM_SHARED)
+       || flags==(SQLITE_SHM_LOCK | SQLITE_SHM_EXCLUSIVE)
+       || flags==(SQLITE_SHM_UNLOCK | SQLITE_SHM_SHARED)
+       || flags==(SQLITE_SHM_UNLOCK | SQLITE_SHM_EXCLUSIVE) );
+  assert( n==1 || (flags & SQLITE_SHM_EXCLUSIVE)!=0 );
+
+  mask = (u16)((1U<<(ofst+n)) - (1U<<ofst));
+  assert( n>1 || mask==(1<<ofst) );
+  sqlite3_mutex_enter(pShmNode->mutex);
+  if( flags & SQLITE_SHM_UNLOCK ){
+    u16 allMask = 0; /* Mask of locks held by siblings */
+
+    /* See if any siblings hold this same lock */
+    for(pX=pShmNode->pFirst; pX; pX=pX->pNext){
+      if( pX==p ) continue;
+      assert( (pX->exclMask & (p->exclMask|p->sharedMask))==0 );
+      allMask |= pX->sharedMask;
+    }
+
+    /* Unlock the system-level locks */
+    if( (mask & allMask)==0 ){
+      rc = winShmSystemLock(pShmNode, _SHM_UNLCK, ofst+WIN_SHM_BASE, n);
+    }else{
+      rc = SQLITE_OK;
+    }
+
+    /* Undo the local locks */
+    if( rc==SQLITE_OK ){
+      p->exclMask &= ~mask;
+      p->sharedMask &= ~mask;
+    } 
+  }else if( flags & SQLITE_SHM_SHARED ){
+    u16 allShared = 0;  /* Union of locks held by connections other than "p" */
+
+    /* Find out which shared locks are already held by sibling connections.
+    ** If any sibling already holds an exclusive lock, go ahead and return
+    ** SQLITE_BUSY.
+    */
+    for(pX=pShmNode->pFirst; pX; pX=pX->pNext){
+      if( (pX->exclMask & mask)!=0 ){
+        rc = SQLITE_BUSY;
+        break;
+      }
+      allShared |= pX->sharedMask;
+    }
+
+    /* Get shared locks at the system level, if necessary */
+    if( rc==SQLITE_OK ){
+      if( (allShared & mask)==0 ){
+        rc = winShmSystemLock(pShmNode, _SHM_RDLCK, ofst+WIN_SHM_BASE, n);
+      }else{
+        rc = SQLITE_OK;
+      }
+    }
+
+    /* Get the local shared locks */
+    if( rc==SQLITE_OK ){
+      p->sharedMask |= mask;
+    }
+  }else{
+    /* Make sure no sibling connections hold locks that will block this
+    ** lock.  If any do, return SQLITE_BUSY right away.
+    */
+    for(pX=pShmNode->pFirst; pX; pX=pX->pNext){
+      if( (pX->exclMask & mask)!=0 || (pX->sharedMask & mask)!=0 ){
+        rc = SQLITE_BUSY;
+        break;
+      }
+    }
+  
+    /* Get the exclusive locks at the system level.  Then if successful
+    ** also mark the local connection as being locked.
+    */
+    if( rc==SQLITE_OK ){
+      rc = winShmSystemLock(pShmNode, _SHM_WRLCK, ofst+WIN_SHM_BASE, n);
+      if( rc==SQLITE_OK ){
+        assert( (p->sharedMask & mask)==0 );
+        p->exclMask |= mask;
+      }
+    }
+  }
+  sqlite3_mutex_leave(pShmNode->mutex);
+  OSTRACE(("SHM-LOCK shmid-%d, pid-%d got %03x,%03x %s\n",
+           p->id, (int)GetCurrentProcessId(), p->sharedMask, p->exclMask,
+           rc ? "failed" : "ok"));
+  return rc;
+}
+
+/*
+** Implement a memory barrier or memory fence on shared memory.  
+**
+** All loads and stores begun before the barrier must complete before
+** any load or store begun after the barrier.
+*/
+static void winShmBarrier(
+  sqlite3_file *fd          /* Database holding the shared memory */
+){
+  UNUSED_PARAMETER(fd);
+  /* MemoryBarrier(); // does not work -- do not know why not */
+  winShmEnterMutex();
+  winShmLeaveMutex();
+}
+
+/*
+** This function is called to obtain a pointer to region iRegion of the 
+** shared-memory associated with the database file fd. Shared-memory regions 
+** are numbered starting from zero. Each shared-memory region is szRegion 
+** bytes in size.
+**
+** If an error occurs, an error code is returned and *pp is set to NULL.
+**
+** Otherwise, if the isWrite parameter is 0 and the requested shared-memory
+** region has not been allocated (by any client, including one running in a
+** separate process), then *pp is set to NULL and SQLITE_OK returned. If 
+** isWrite is non-zero and the requested shared-memory region has not yet 
+** been allocated, it is allocated by this function.
+**
+** If the shared-memory region has already been allocated or is allocated by
+** this call as described above, then it is mapped into this processes 
+** address space (if it is not already), *pp is set to point to the mapped 
+** memory and SQLITE_OK returned.
+*/
+static int winShmMap(
+  sqlite3_file *fd,               /* Handle open on database file */
+  int iRegion,                    /* Region to retrieve */
+  int szRegion,                   /* Size of regions */
+  int isWrite,                    /* True to extend file if necessary */
+  void volatile **pp              /* OUT: Mapped memory */
+){
+  winFile *pDbFd = (winFile*)fd;
+  winShm *p = pDbFd->pShm;
+  winShmNode *pShmNode;
+  int rc = SQLITE_OK;
+
+  if( !p ){
+    rc = winOpenSharedMemory(pDbFd);
+    if( rc!=SQLITE_OK ) return rc;
+    p = pDbFd->pShm;
+  }
+  pShmNode = p->pShmNode;
+
+  sqlite3_mutex_enter(pShmNode->mutex);
+  assert( szRegion==pShmNode->szRegion || pShmNode->nRegion==0 );
+
+  if( pShmNode->nRegion<=iRegion ){
+    struct ShmRegion *apNew;           /* New aRegion[] array */
+    int nByte = (iRegion+1)*szRegion;  /* Minimum required file size */
+    sqlite3_int64 sz;                  /* Current size of wal-index file */
+
+    pShmNode->szRegion = szRegion;
+
+    /* The requested region is not mapped into this processes address space.
+    ** Check to see if it has been allocated (i.e. if the wal-index file is
+    ** large enough to contain the requested region).
+    */
+    rc = winFileSize((sqlite3_file *)&pShmNode->hFile, &sz);
+    if( rc!=SQLITE_OK ){
+      rc = SQLITE_IOERR_SHMSIZE;
+      goto shmpage_out;
+    }
+
+    if( sz<nByte ){
+      /* The requested memory region does not exist. If isWrite is set to
+      ** zero, exit early. *pp will be set to NULL and SQLITE_OK returned.
+      **
+      ** Alternatively, if isWrite is non-zero, use ftruncate() to allocate
+      ** the requested memory region.
+      */
+      if( !isWrite ) goto shmpage_out;
+      rc = winTruncate((sqlite3_file *)&pShmNode->hFile, nByte);
+      if( rc!=SQLITE_OK ){
+        rc = SQLITE_IOERR_SHMSIZE;
+        goto shmpage_out;
+      }
+    }
+
+    /* Map the requested memory region into this processes address space. */
+    apNew = (struct ShmRegion *)sqlite3_realloc(
+        pShmNode->aRegion, (iRegion+1)*sizeof(apNew[0])
+    );
+    if( !apNew ){
+      rc = SQLITE_IOERR_NOMEM;
+      goto shmpage_out;
+    }
+    pShmNode->aRegion = apNew;
+
+    while( pShmNode->nRegion<=iRegion ){
+      HANDLE hMap;                /* file-mapping handle */
+      void *pMap = 0;             /* Mapped memory region */
+     
+      hMap = CreateFileMapping(pShmNode->hFile.h, 
+          NULL, PAGE_READWRITE, 0, nByte, NULL
+      );
+      if( hMap ){
+        pMap = MapViewOfFile(hMap, FILE_MAP_WRITE | FILE_MAP_READ,
+            0, 0, nByte
+        );
+      }
+      if( !pMap ){
+        pShmNode->lastErrno = GetLastError();
+        rc = SQLITE_IOERR;
+        if( hMap ) CloseHandle(hMap);
+        goto shmpage_out;
+      }
+
+      pShmNode->aRegion[pShmNode->nRegion].pMap = pMap;
+      pShmNode->aRegion[pShmNode->nRegion].hMap = hMap;
+      pShmNode->nRegion++;
+    }
+  }
+
+shmpage_out:
+  if( pShmNode->nRegion>iRegion ){
+    char *p = (char *)pShmNode->aRegion[iRegion].pMap;
+    *pp = (void *)&p[iRegion*szRegion];
+  }else{
+    *pp = 0;
+  }
+  sqlite3_mutex_leave(pShmNode->mutex);
+  return rc;
+}
+
+#else
+# define winShmMap     0
+# define winShmLock    0
+# define winShmBarrier 0
+# define winShmUnmap   0
+#endif /* #ifndef SQLITE_OMIT_WAL */
+
+/*
+** Here ends the implementation of all sqlite3_file methods.
+**
+********************** End sqlite3_file Methods *******************************
+******************************************************************************/
 
 /*
 ** This vector defines all the methods that can operate on an
 ** sqlite3_file for win32.
 */
 static const sqlite3_io_methods winIoMethod = {
-  1,                        /* iVersion */
-  winClose,
-  winRead,
-  winWrite,
-  winTruncate,
-  winSync,
-  winFileSize,
-  winLock,
-  winUnlock,
-  winCheckReservedLock,
-  winFileControl,
-  winSectorSize,
-  winDeviceCharacteristics
+  2,                              /* iVersion */
+  winClose,                       /* xClose */
+  winRead,                        /* xRead */
+  winWrite,                       /* xWrite */
+  winTruncate,                    /* xTruncate */
+  winSync,                        /* xSync */
+  winFileSize,                    /* xFileSize */
+  winLock,                        /* xLock */
+  winUnlock,                      /* xUnlock */
+  winCheckReservedLock,           /* xCheckReservedLock */
+  winFileControl,                 /* xFileControl */
+  winSectorSize,                  /* xSectorSize */
+  winDeviceCharacteristics,       /* xDeviceCharacteristics */
+  winShmMap,                      /* xShmMap */
+  winShmLock,                     /* xShmLock */
+  winShmBarrier,                  /* xShmBarrier */
+  winShmUnmap                     /* xShmUnmap */
 };
 
-/***************************************************************************
-** Here ends the I/O methods that form the sqlite3_io_methods object.
+/****************************************************************************
+**************************** sqlite3_vfs methods ****************************
 **
-** The next block of code implements the VFS methods.
-****************************************************************************/
+** This division contains the implementation of methods on the
+** sqlite3_vfs object.
+*/
 
 /*
 ** Convert a UTF-8 filename into whatever form the underlying
@@ -1202,6 +1856,13 @@ static int getTempname(int nBuf, char *zBuf){
     "0123456789";
   size_t i, j;
   char zTempPath[MAX_PATH+1];
+
+  /* It's odd to simulate an io-error here, but really this is just
+  ** using the io-error infrastructure to test that SQLite handles this
+  ** function failing. 
+  */
+  SimulateIOError( return SQLITE_IOERR );
+
   if( sqlite3_temp_directory ){
     sqlite3_snprintf(MAX_PATH-30, zTempPath, "%s", sqlite3_temp_directory);
   }else if( isNT() ){
@@ -1233,17 +1894,27 @@ static int getTempname(int nBuf, char *zBuf){
     }
 #endif
   }
+
+  /* Check that the output buffer is large enough for the temporary file 
+  ** name. If it is not, return SQLITE_ERROR.
+  */
+  if( (sqlite3Strlen30(zTempPath) + sqlite3Strlen30(SQLITE_TEMP_FILE_PREFIX) + 17) >= nBuf ){
+    return SQLITE_ERROR;
+  }
+
   for(i=sqlite3Strlen30(zTempPath); i>0 && zTempPath[i-1]=='\\'; i--){}
   zTempPath[i] = 0;
-  sqlite3_snprintf(nBuf-30, zBuf,
+
+  sqlite3_snprintf(nBuf-17, zBuf,
                    "%s\\"SQLITE_TEMP_FILE_PREFIX, zTempPath);
   j = sqlite3Strlen30(zBuf);
-  sqlite3_randomness(20, &zBuf[j]);
-  for(i=0; i<20; i++, j++){
+  sqlite3_randomness(15, &zBuf[j]);
+  for(i=0; i<15; i++, j++){
     zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
   }
   zBuf[j] = 0;
-  OSTRACE2("TEMP FILENAME: %s\n", zBuf);
+
+  OSTRACE(("TEMP FILENAME: %s\n", zBuf));
   return SQLITE_OK; 
 }
 
@@ -1335,6 +2006,8 @@ static int winOpen(
   assert( id!=0 );
   UNUSED_PARAMETER(pVfs);
 
+  pFile->h = INVALID_HANDLE_VALUE;
+
   /* If the second argument to this function is NULL, generate a 
   ** temporary file name to use 
   */
@@ -1416,7 +2089,11 @@ static int winOpen(
     );
 #endif
   }
+  OSTRACE(("OPEN %d %s 0x%lx %s\n", 
+           h, zName, dwDesiredAccess, 
+           h==INVALID_HANDLE_VALUE ? "failed" : "ok"));
   if( h==INVALID_HANDLE_VALUE ){
+    pFile->lastErrno = GetLastError();
     free(zConverted);
     if( flags & SQLITE_OPEN_READWRITE ){
       return winOpen(pVfs, zName, id, 
@@ -1436,6 +2113,9 @@ static int winOpen(
   pFile->pMethod = &winIoMethod;
   pFile->h = h;
   pFile->lastErrno = NO_ERROR;
+  pFile->pVfs = pVfs;
+  pFile->pShm = 0;
+  pFile->zPath = zName;
   pFile->sectorSize = getSectorSize(pVfs, zUtf8Name);
 #if SQLITE_OS_WINCE
   if( (flags & (SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_DB)) ==
@@ -1478,13 +2158,15 @@ static int winDelete(
   int cnt = 0;
   DWORD rc;
   DWORD error = 0;
-  void *zConverted = convertUtf8Filename(zFilename);
+  void *zConverted;
   UNUSED_PARAMETER(pVfs);
   UNUSED_PARAMETER(syncDir);
+
+  SimulateIOError(return SQLITE_IOERR_DELETE);
+  zConverted = convertUtf8Filename(zFilename);
   if( zConverted==0 ){
     return SQLITE_NOMEM;
   }
-  SimulateIOError(return SQLITE_IOERR_DELETE);
   if( isNT() ){
     do{
       DeleteFileW(zConverted);
@@ -1507,7 +2189,10 @@ static int winDelete(
 #endif
   }
   free(zConverted);
-  OSTRACE2("DELETE \"%s\"\n", zFilename);
+  OSTRACE(("DELETE \"%s\" %s\n", zFilename,
+       ( (rc==INVALID_FILE_ATTRIBUTES) && (error==ERROR_FILE_NOT_FOUND)) ?
+         "ok" : "failed" ));
+ 
   return (   (rc == INVALID_FILE_ATTRIBUTES) 
           && (error == ERROR_FILE_NOT_FOUND)) ? SQLITE_OK : SQLITE_IOERR_DELETE;
 }
@@ -1523,13 +2208,38 @@ static int winAccess(
 ){
   DWORD attr;
   int rc = 0;
-  void *zConverted = convertUtf8Filename(zFilename);
+  void *zConverted;
   UNUSED_PARAMETER(pVfs);
+
+  SimulateIOError( return SQLITE_IOERR_ACCESS; );
+  zConverted = convertUtf8Filename(zFilename);
   if( zConverted==0 ){
     return SQLITE_NOMEM;
   }
   if( isNT() ){
-    attr = GetFileAttributesW((WCHAR*)zConverted);
+    WIN32_FILE_ATTRIBUTE_DATA sAttrData;
+    memset(&sAttrData, 0, sizeof(sAttrData));
+    if( GetFileAttributesExW((WCHAR*)zConverted,
+                             GetFileExInfoStandard, 
+                             &sAttrData) ){
+      /* For an SQLITE_ACCESS_EXISTS query, treat a zero-length file
+      ** as if it does not exist.
+      */
+      if(    flags==SQLITE_ACCESS_EXISTS
+          && sAttrData.nFileSizeHigh==0 
+          && sAttrData.nFileSizeLow==0 ){
+        attr = INVALID_FILE_ATTRIBUTES;
+      }else{
+        attr = sAttrData.dwFileAttributes;
+      }
+    }else{
+      if( GetLastError()!=ERROR_FILE_NOT_FOUND ){
+        free(zConverted);
+        return SQLITE_IOERR_ACCESS;
+      }else{
+        attr = INVALID_FILE_ATTRIBUTES;
+      }
+    }
 /* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
 ** Since the ASCII version of these Windows API do not exist for WINCE,
 ** it's important to not reference them for WINCE builds.
@@ -1569,12 +2279,14 @@ static int winFullPathname(
 ){
   
 #if defined(__CYGWIN__)
+  SimulateIOError( return SQLITE_ERROR );
   UNUSED_PARAMETER(nFull);
   cygwin_conv_to_full_win32_path(zRelative, zFull);
   return SQLITE_OK;
 #endif
 
 #if SQLITE_OS_WINCE
+  SimulateIOError( return SQLITE_ERROR );
   UNUSED_PARAMETER(nFull);
   /* WinCE has no concept of a relative pathname, or so I am told. */
   sqlite3_snprintf(pVfs->mxPathname, zFull, "%s", zRelative);
@@ -1585,6 +2297,13 @@ static int winFullPathname(
   int nByte;
   void *zConverted;
   char *zOut;
+
+  /* It's odd to simulate an io-error here, but really this is just
+  ** using the io-error infrastructure to test that SQLite handles this
+  ** function failing. This function could fail if, for example, the
+  ** current working directory has been unlinked.
+  */
+  SimulateIOError( return SQLITE_ERROR );
   UNUSED_PARAMETER(nFull);
   zConverted = convertUtf8Filename(zRelative);
   if( isNT() ){
@@ -1652,7 +2371,9 @@ static int getSectorSize(
   ** to get the drive letter to look up the sector
   ** size.
   */
+  SimulateIOErrorBenign(1);
   rc = winFullPathname(pVfs, zRelative, MAX_PATH, zFullpath);
+  SimulateIOErrorBenign(0);
   if( rc == SQLITE_OK )
   {
     void *zConverted = convertUtf8Filename(zFullpath);
@@ -1800,34 +2521,32 @@ static int winSleep(sqlite3_vfs *pVfs, int microsec){
 }
 
 /*
-** The following variable, if set to a non-zero value, becomes the result
-** returned from sqlite3OsCurrentTime().  This is used for testing.
+** The following variable, if set to a non-zero value, is interpreted as
+** the number of seconds since 1970 and is used to set the result of
+** sqlite3OsCurrentTime() during testing.
 */
 #ifdef SQLITE_TEST
-int sqlite3_current_time = 0;
+int sqlite3_current_time = 0;  /* Fake system time in seconds since 1970. */
 #endif
 
 /*
-** Find the current time (in Universal Coordinated Time).  Write the
-** current time and date as a Julian Day number into *prNow and
-** return 0.  Return 1 if the time and date cannot be found.
+** Find the current time (in Universal Coordinated Time).  Write into *piNow
+** the current time and date as a Julian Day number times 86_400_000.  In
+** other words, write into *piNow the number of milliseconds since the Julian
+** epoch of noon in Greenwich on November 24, 4714 B.C according to the
+** proleptic Gregorian calendar.
+**
+** On success, return 0.  Return 1 if the time and date cannot be found.
 */
-int winCurrentTime(sqlite3_vfs *pVfs, double *prNow){
-  FILETIME ft;
+static int winCurrentTimeInt64(sqlite3_vfs *pVfs, sqlite3_int64 *piNow){
   /* FILETIME structure is a 64-bit value representing the number of 
      100-nanosecond intervals since January 1, 1601 (= JD 2305813.5). 
   */
-  sqlite3_int64 timeW;   /* Whole days */
-  sqlite3_int64 timeF;   /* Fractional Days */
-
-  /* Number of 100-nanosecond intervals in a single day */
-  static const sqlite3_int64 ntuPerDay = 
-      10000000*(sqlite3_int64)86400;
-
-  /* Number of 100-nanosecond intervals in half of a day */
-  static const sqlite3_int64 ntuPerHalfDay = 
-      10000000*(sqlite3_int64)43200;
-
+  FILETIME ft;
+  static const sqlite3_int64 winFiletimeEpoch = 23058135*(sqlite3_int64)8640000;
+#ifdef SQLITE_TEST
+  static const sqlite3_int64 unixEpoch = 24405875*(sqlite3_int64)8640000;
+#endif
   /* 2^32 - to avoid use of LL and warnings in gcc */
   static const sqlite3_int64 max32BitValue = 
       (sqlite3_int64)2000000000 + (sqlite3_int64)2000000000 + (sqlite3_int64)294967296;
@@ -1842,21 +2561,33 @@ int winCurrentTime(sqlite3_vfs *pVfs, double *prNow){
 #else
   GetSystemTimeAsFileTime( &ft );
 #endif
-  UNUSED_PARAMETER(pVfs);
-  timeW = (((sqlite3_int64)ft.dwHighDateTime)*max32BitValue) + (sqlite3_int64)ft.dwLowDateTime;
-  timeF = timeW % ntuPerDay;          /* fractional days (100-nanoseconds) */
-  timeW = timeW / ntuPerDay;          /* whole days */
-  timeW = timeW + 2305813;            /* add whole days (from 2305813.5) */
-  timeF = timeF + ntuPerHalfDay;      /* add half a day (from 2305813.5) */
-  timeW = timeW + (timeF/ntuPerDay);  /* add whole day if half day made one */
-  timeF = timeF % ntuPerDay;          /* compute new fractional days */
-  *prNow = (double)timeW + ((double)timeF / (double)ntuPerDay);
+
+  *piNow = winFiletimeEpoch +
+            ((((sqlite3_int64)ft.dwHighDateTime)*max32BitValue) + 
+               (sqlite3_int64)ft.dwLowDateTime)/(sqlite3_int64)10000;
+
 #ifdef SQLITE_TEST
   if( sqlite3_current_time ){
-    *prNow = ((double)sqlite3_current_time + (double)43200) / (double)86400 + (double)2440587;
+    *piNow = 1000*(sqlite3_int64)sqlite3_current_time + unixEpoch;
   }
 #endif
+  UNUSED_PARAMETER(pVfs);
   return 0;
+}
+
+/*
+** Find the current time (in Universal Coordinated Time).  Write the
+** current time and date as a Julian Day number into *prNow and
+** return 0.  Return 1 if the time and date cannot be found.
+*/
+int winCurrentTime(sqlite3_vfs *pVfs, double *prNow){
+  int rc;
+  sqlite3_int64 i;
+  rc = winCurrentTimeInt64(pVfs, &i);
+  if( !rc ){
+    *prNow = i/86400000.0;
+  }
+  return rc;
 }
 
 /*
@@ -1894,30 +2625,32 @@ static int winGetLastError(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
   return getLastErrorMsg(nBuf, zBuf);
 }
 
+
+
 /*
 ** Initialize and deinitialize the operating system interface.
 */
 int sqlite3_os_init(void){
   static sqlite3_vfs winVfs = {
-    1,                 /* iVersion */
-    sizeof(winFile),   /* szOsFile */
-    MAX_PATH,          /* mxPathname */
-    0,                 /* pNext */
-    "win32",           /* zName */
-    0,                 /* pAppData */
- 
-    winOpen,           /* xOpen */
-    winDelete,         /* xDelete */
-    winAccess,         /* xAccess */
-    winFullPathname,   /* xFullPathname */
-    winDlOpen,         /* xDlOpen */
-    winDlError,        /* xDlError */
-    winDlSym,          /* xDlSym */
-    winDlClose,        /* xDlClose */
-    winRandomness,     /* xRandomness */
-    winSleep,          /* xSleep */
-    winCurrentTime,    /* xCurrentTime */
-    winGetLastError    /* xGetLastError */
+    2,                   /* iVersion */
+    sizeof(winFile),     /* szOsFile */
+    MAX_PATH,            /* mxPathname */
+    0,                   /* pNext */
+    "win32",             /* zName */
+    0,                   /* pAppData */
+    winOpen,             /* xOpen */
+    winDelete,           /* xDelete */
+    winAccess,           /* xAccess */
+    winFullPathname,     /* xFullPathname */
+    winDlOpen,           /* xDlOpen */
+    winDlError,          /* xDlError */
+    winDlSym,            /* xDlSym */
+    winDlClose,          /* xDlClose */
+    winRandomness,       /* xRandomness */
+    winSleep,            /* xSleep */
+    winCurrentTime,      /* xCurrentTime */
+    winGetLastError,     /* xGetLastError */
+    winCurrentTimeInt64, /* xCurrentTimeInt64 */
   };
 
   sqlite3_vfs_register(&winVfs, 1);

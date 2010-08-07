@@ -18,6 +18,15 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# Do not use a codec for tests in this file, as the database file is
+# manipulated directly using tcl scripts (using the [hexio_write] command).
+#
+do_not_use_codec
+
+set presql ""
+catch { set presql "$::G(perm:presql);" }
+unset -nocomplain ::G(perm:presql)
+
 # The following tests - corrupt2-1.* - create some databases corrupted in
 # specific ways and ensure that SQLite detects them as corrupt.
 #
@@ -41,9 +50,10 @@ do_test corrupt2-1.2 {
   close $f
 
   sqlite3 db2 corrupt.db
-  catchsql {
+  catchsql "
+    $::presql
     SELECT * FROM sqlite_master;
-  } db2
+  " db2
 } {1 {file is encrypted or is not a database}}
 
 do_test corrupt2-1.3 {
@@ -60,9 +70,10 @@ do_test corrupt2-1.3 {
   close $f
 
   sqlite3 db2 corrupt.db
-  catchsql {
+  catchsql "
+    $::presql
     SELECT * FROM sqlite_master;
-  } db2
+  " db2
 } {1 {file is encrypted or is not a database}}
 
 do_test corrupt2-1.4 {
@@ -79,9 +90,10 @@ do_test corrupt2-1.4 {
   close $f
 
   sqlite3 db2 corrupt.db
-  catchsql {
+  catchsql "
+    $::presql
     SELECT * FROM sqlite_master;
-  } db2
+  " db2
 } {1 {database disk image is malformed}}
 
 do_test corrupt2-1.5 {
@@ -101,9 +113,10 @@ do_test corrupt2-1.5 {
   close $f
 
   sqlite3 db2 corrupt.db
-  catchsql {
+  catchsql "
+    $::presql
     SELECT * FROM sqlite_master;
-  } db2
+  " db2
 } {1 {database disk image is malformed}}
 db2 close
 
@@ -115,7 +128,8 @@ do_test corrupt2-2.1 {
   copy_file test.db corrupt.db
 
   sqlite3 db2 corrupt.db 
-  execsql {
+  execsql "
+    $::presql
     CREATE INDEX a1 ON abc(a);
     CREATE INDEX a2 ON abc(b);
     PRAGMA writable_schema = 1;
@@ -123,13 +137,14 @@ do_test corrupt2-2.1 {
       SET name = 'a3', sql = 'CREATE INDEX a3' || substr(sql, 16, 10000)
       WHERE type = 'index';
     PRAGMA writable_schema = 0;
-  } db2
+  " db2
 
   db2 close
   sqlite3 db2 corrupt.db 
-  catchsql {
+  catchsql "
+    $::presql
     SELECT * FROM sqlite_master;
-  } db2
+  " db2
 } {1 {malformed database schema (a3) - index a3 already exists}}
 
 db2 close
@@ -139,7 +154,8 @@ do_test corrupt2-3.1 {
   file delete -force corrupt.db-journal
   sqlite3 db2 corrupt.db 
 
-  execsql {
+  execsql "
+    $::presql
     PRAGMA auto_vacuum = 1;
     PRAGMA page_size = 1024;
     CREATE TABLE t1(a, b, c);
@@ -149,7 +165,7 @@ do_test corrupt2-3.1 {
     INSERT INTO t2 SELECT * FROM t2;
     INSERT INTO t2 SELECT * FROM t2;
     INSERT INTO t2 SELECT * FROM t2;
-  } db2
+  " db2
 
   db2 close
 
@@ -168,9 +184,10 @@ do_test corrupt2-3.1 {
   close $fd
 
   sqlite3 db2 corrupt.db 
-  catchsql {
+  catchsql "
+    $::presql
     DROP TABLE t1;
-  } db2
+  " db2
 } {1 {database disk image is malformed}}
 
 do_test corrupt2-4.1 {
@@ -187,7 +204,8 @@ do_test corrupt2-5.1 {
   file delete -force corrupt.db-journal
   sqlite3 db2 corrupt.db 
 
-  execsql {
+  execsql "
+    $::presql
     PRAGMA auto_vacuum = 0;
     PRAGMA page_size = 1024;
     CREATE TABLE t1(a, b, c);
@@ -198,7 +216,7 @@ do_test corrupt2-5.1 {
     INSERT INTO t2 SELECT * FROM t2;
     INSERT INTO t2 SELECT * FROM t2;
     INSERT INTO t1 SELECT * FROM t2;
-  } db2
+  " db2
 
   db2 close
 
@@ -219,6 +237,7 @@ do_test corrupt2-5.1 {
   close $fd
 
   sqlite3 db2 corrupt.db 
+  db2 eval $::presql
   db2 eval {SELECT rowid FROM t1} {
     set result [db2 eval {pragma integrity_check}]
     break
@@ -242,6 +261,7 @@ proc corruption_test {args} {
   file delete -force corrupt.db-journal
 
   sqlite3 db corrupt.db 
+  db eval $::presql
   eval $A(-tclprep)
   db eval $A(-sqlprep)
   db close
@@ -276,7 +296,7 @@ ifcapable autovacuum {
     hexio_write corrupt.db [expr 1024*5] 00000008
   } -test {
     do_test corrupt2-6.1 {
-      catchsql { pragma incremental_vacuum = 1 }
+      catchsql " $::presql pragma incremental_vacuum = 1 "
     } {1 {database disk image is malformed}}
   }
 
@@ -297,7 +317,7 @@ ifcapable autovacuum {
     hexio_write corrupt.db [expr 1024*2 + 8] 00000009
   } -test {
     do_test corrupt2-6.2 {
-      catchsql { pragma incremental_vacuum = 1 }
+      catchsql " $::presql pragma incremental_vacuum = 1 "
     } {1 {database disk image is malformed}}
   }
 
@@ -318,7 +338,7 @@ ifcapable autovacuum {
     hexio_write corrupt.db [expr 1024 + ($nPage-3)*5] 010000000
   } -test {
     do_test corrupt2-6.3 {
-      catchsql { pragma incremental_vacuum = 1 }
+      catchsql " $::presql pragma incremental_vacuum = 1 "
     } {1 {database disk image is malformed}}
   }
 
@@ -334,12 +354,14 @@ ifcapable autovacuum {
     seek $fd 0 end
     puts -nonewline $fd [string repeat x $nAppend]
     close $fd
+    hexio_write corrupt.db 28 00000000
   } -test {
     do_test corrupt2-6.4 {
-      catchsql { 
+      catchsql " 
+        $::presql 
         BEGIN EXCLUSIVE;
         COMMIT;
-      }
+      "
     } {1 {database disk image is malformed}}
   }
 }
@@ -373,7 +395,7 @@ corruption_test -sqlprep $sqlprep -corrupt {
   close $fd
 } -test {
   do_test corrupt2-7.1 {
-    catchsql { SELECT b FROM t1 ORDER BY b ASC }
+    catchsql " $::presql SELECT b FROM t1 ORDER BY b ASC "
   } {1 {database disk image is malformed}}
 }
 
@@ -394,7 +416,7 @@ corruption_test -sqlprep $sqlprep -corrupt {
   close $fd
 } -test {
   do_test corrupt2-7.1 {
-    catchsql { SELECT b FROM t1 ORDER BY b DESC }
+    catchsql " $::presql SELECT b FROM t1 ORDER BY b DESC "
   } {1 {database disk image is malformed}}
 }
 
@@ -412,7 +434,7 @@ corruption_test -sqlprep $sqlprep -corrupt {
   close $fd
 } -test {
   do_test corrupt2-8.1 {
-    catchsql { SELECT * FROM t1 WHERE rowid=1000 }
+    catchsql " $::presql SELECT * FROM t1 WHERE rowid=1000 "
   } {1 {database disk image is malformed}}
 }
 
@@ -440,7 +462,7 @@ corruption_test -sqlprep {
   close $fd
 } -test {
   do_test corrupt2-9.1 {
-    catchsql { SELECT sql FROM sqlite_master }
+    catchsql " $::presql SELECT sql FROM sqlite_master "
   } {1 {database disk image is malformed}}
 }
 
@@ -451,7 +473,7 @@ corruption_test -sqlprep {
   UPDATE sqlite_master SET rootpage = NULL WHERE name = 't2';
 } -test {
   do_test corrupt2-10.1 {
-    catchsql { SELECT * FROM t2 }
+    catchsql " $::presql SELECT * FROM t2 "
   } {1 {malformed database schema (t2)}}
   do_test corrupt2-10.2 {
     sqlite3_errcode db
@@ -476,7 +498,7 @@ corruption_test -sqlprep {
   hexio_write corrupt.db 24   12345678
 } -test {
   do_test corrupt2-11.1 {
-    catchsql { PRAGMA incremental_vacuum }
+    catchsql " $::presql PRAGMA incremental_vacuum "
   } {1 {database disk image is malformed}}
 }
 corruption_test -sqlprep {
@@ -497,7 +519,7 @@ corruption_test -sqlprep {
   hexio_write corrupt.db 24   12345678
 } -test {
   do_test corrupt2-12.1 {
-    catchsql { PRAGMA incremental_vacuum }
+    catchsql " $::presql PRAGMA incremental_vacuum "
   } {1 {database disk image is malformed}}
 }
 
@@ -515,13 +537,14 @@ ifcapable autovacuum {
       INSERT INTO t1 VALUES(NULL, randstr(50,50));
     }
     for {set ii 0} {$ii < 10} {incr ii} {
-      db eval { INSERT INTO t1 SELECT NULL, randstr(50,50) FROM t1 }
+      db eval " $::presql INSERT INTO t1 SELECT NULL, randstr(50,50) FROM t1 "
     }
   } -corrupt {
     do_test corrupt2-13.1 {
       file size corrupt.db
     } $::sqlite_pending_byte
     hexio_write corrupt.db [expr $::sqlite_pending_byte+1023] 00
+    hexio_write corrupt.db 28 00000000
   } -test {
     do_test corrupt2-13.2 {
       file size corrupt.db

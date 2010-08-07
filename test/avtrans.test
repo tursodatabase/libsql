@@ -22,8 +22,9 @@ source $testdir/tester.tcl
 # Create several tables to work with.
 #
 do_test avtrans-1.0 {
-  execsql {
-    PRAGMA auto_vacuum=ON;
+  execsql { PRAGMA auto_vacuum=ON }
+  wal_set_journal_mode
+  execsql { 
     CREATE TABLE one(a int PRIMARY KEY, b text);
     INSERT INTO one VALUES(1,'one');
     INSERT INTO one VALUES(2,'two');
@@ -48,6 +49,7 @@ do_test avtrans-1.10 {
   execsql {SELECT b FROM two ORDER BY a} altdb
 } {I V X}
 integrity_check avtrans-1.11
+wal_check_journal_mode avtrans-1.12
 
 # Basic transactions
 #
@@ -84,6 +86,7 @@ do_test avtrans-2.10 {
   }
 } {1 2 3 1 5 10}
 integrity_check avtrans-2.11
+wal_check_journal_mode avtrans-2.12
 
 # Check the locking behavior
 #
@@ -162,7 +165,7 @@ do_test avtrans-3.14 {
   } db} msg]
   lappend v $msg
 } {0 {1 2 3 4}}
-sqlite3_soft_heap_limit $soft_limit
+sqlite3_soft_heap_limit $cmdlinearg(soft-heap-limit)
 integrity_check avtrans-3.15
 
 do_test avtrans-4.1 {
@@ -854,7 +857,7 @@ proc signature {} {
 # t3 a little larger, and thus takes a little longer, so doing 40 tests
 # is more than 2.0 times slower than doing 20 tests.  Considerably more.
 #
-if {[info exists ISQUICK]} {
+if {[info exists G(isquick)]} {
   set limit 20
 } else {
   set limit 40
@@ -913,9 +916,11 @@ for {set i 2} {$i<=$limit} {incr i} {
         } {1}
       }
     }
+    wal_check_journal_mode avtrans-9.$i-6.$cnt
   }
   set ::pager_old_format 0
 }
 integrity_check avtrans-10.1
+wal_check_journal_mode avtrans-10.2
    
 finish_test

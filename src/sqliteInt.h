@@ -92,7 +92,7 @@
 ** The correct "ANSI" way to do this is to use the intptr_t type. 
 ** Unfortunately, that typedef is not available on all compilers, or
 ** if it is available, it requires an #include of specific headers
-** that very from one machine to the next.
+** that vary from one machine to the next.
 **
 ** Ticket #3860:  The llvm-gcc-4.2 compiler from Apple chokes on
 ** the ((void*)&((char*)0)[X]) construct.  But MSVC chokes on ((void*)(X)).
@@ -273,6 +273,13 @@
 #endif
 
 /*
+** Return true (non-zero) if the input is a integer that is too large
+** to fit in 32-bits.  This macro is used inside of various testcase()
+** macros to verify that we have tested SQLite for large-file support.
+*/
+#define IS_BIG_INT(X)  (((X)&~(i64)0xffffffff)!=0)
+
+/*
 ** The macro unlikely() is a hint that surrounds a boolean
 ** expression that is usually false.  Macro likely() surrounds
 ** a boolean expression that is usually true.  GCC is able to
@@ -301,6 +308,7 @@
 */
 #ifdef SQLITE_OMIT_FLOATING_POINT
 # define double sqlite_int64
+# define float sqlite_int64
 # define LONGDOUBLE_TYPE sqlite_int64
 # ifndef SQLITE_BIG_DBL
 #   define SQLITE_BIG_DBL (((sqlite3_int64)1)<<50)
@@ -789,7 +797,6 @@ struct sqlite3 {
   u8 temp_store;                /* 1: file 2: memory 0: default */
   u8 mallocFailed;              /* True if we have seen a malloc failure */
   u8 dfltLockMode;              /* Default locking-mode for attached dbs */
-  u8 dfltJournalMode;           /* Default journal mode for attached dbs */
   signed char nextAutovac;      /* Autovac setting after VACUUM if >=0 */
   u8 suppressErr;               /* Do not issue error messages if true */
   int nextPagesize;             /* Pagesize after VACUUM if >0 */
@@ -822,6 +829,10 @@ struct sqlite3 {
   void (*xRollbackCallback)(void*); /* Invoked at every commit. */
   void *pUpdateArg;
   void (*xUpdateCallback)(void*,int, const char*,const char*,sqlite_int64);
+#ifndef SQLITE_OMIT_WAL
+  int (*xWalCallback)(void *, sqlite3 *, const char *, int);
+  void *pWalArg;
+#endif
   void(*xCollNeeded)(void*,sqlite3*,int eTextRep,const char*);
   void(*xCollNeeded16)(void*,sqlite3*,int eTextRep,const void*);
   void *pCollNeededArg;
@@ -911,6 +922,8 @@ struct sqlite3 {
 #define SQLITE_ReverseOrder   0x01000000  /* Reverse unordered SELECTs */
 #define SQLITE_RecTriggers    0x02000000  /* Enable recursive triggers */
 #define SQLITE_ForeignKeys    0x04000000  /* Enforce foreign key constraints  */
+#define SQLITE_AutoIndex      0x08000000  /* Enable automatic indexes */
+#define SQLITE_PreferBuiltin  0x10000000  /* Preference to built-in funcs */
 
 /*
 ** Bits of the sqlite3.flags field that are used by the
@@ -922,7 +935,8 @@ struct sqlite3 {
 #define SQLITE_IndexSort      0x04        /* Disable indexes for sorting */
 #define SQLITE_IndexSearch    0x08        /* Disable indexes for searching */
 #define SQLITE_IndexCover     0x10        /* Disable index covering table */
-#define SQLITE_OptMask        0x1f        /* Mask of all disablable opts */
+#define SQLITE_GroupByOrder   0x20        /* Disable GROUPBY cover of ORDERBY */
+#define SQLITE_OptMask        0xff        /* Mask of all disablable opts */
 
 /*
 ** Possible values for the sqlite.magic field.
@@ -1773,6 +1787,9 @@ typedef u64 Bitmask;
 ** and the next table on the list.  The parser builds the list this way.
 ** But sqlite3SrcListShiftJoinType() later shifts the jointypes so that each
 ** jointype expresses the join between the table and the previous table.
+**
+** In the colUsed field, the high-order bit (bit 63) is set if the table
+** contains more than 63 columns and the 64-th or later column is used.
 */
 struct SrcList {
   i16 nSrc;        /* Number of tables or subqueries in the FROM clause */
@@ -1884,7 +1901,7 @@ struct WhereLevel {
 #define WHERE_ORDERBY_MAX      0x0002 /* ORDER BY processing for max() func */
 #define WHERE_ONEPASS_DESIRED  0x0004 /* Want to do one-pass UPDATE/DELETE */
 #define WHERE_DUPLICATES_OK    0x0008 /* Ok to return a row more than once */
-#define WHERE_OMIT_OPEN        0x0010 /* Table cursor are already open */
+#define WHERE_OMIT_OPEN        0x0010 /* Table cursors are already open */
 #define WHERE_OMIT_CLOSE       0x0020 /* Omit close of table & index cursors */
 #define WHERE_FORCE_TABLE      0x0040 /* Do not use an index-only search */
 #define WHERE_ONETABLE_ONLY    0x0080 /* Only code the 1st table in pTabList */
@@ -1907,6 +1924,7 @@ struct WhereInfo {
   int iBreak;                    /* Jump here to break out of the loop */
   int nLevel;                    /* Number of nested loop */
   struct WhereClause *pWC;       /* Decomposition of the WHERE clause */
+  double savedNQueryLoop;        /* pParse->nQueryLoop outside the WHERE loop */
   WhereLevel a[1];               /* Information about each nest loop in WHERE */
 };
 
@@ -2148,6 +2166,7 @@ struct Parse {
   u8 eTriggerOp;       /* TK_UPDATE, TK_INSERT or TK_DELETE */
   u8 eOrconf;          /* Default ON CONFLICT policy for trigger steps */
   u8 disableTriggers;  /* True to disable triggers */
+  double nQueryLoop;   /* Estimated number of iterations of a query */
 
   /* Above is constant between recursions.  Below is reset before and after
   ** each recursion */
@@ -2523,7 +2542,8 @@ const sqlite3_mem_methods *sqlite3MemGetMemsys5(void);
 
 
 #ifndef SQLITE_MUTEX_OMIT
-  sqlite3_mutex_methods *sqlite3DefaultMutex(void);
+  sqlite3_mutex_methods const *sqlite3DefaultMutex(void);
+  sqlite3_mutex_methods const *sqlite3NoopMutex(void);
   sqlite3_mutex *sqlite3MutexAlloc(int);
   int sqlite3MutexInit(void);
   int sqlite3MutexEnd(void);
@@ -2655,6 +2675,7 @@ void sqlite3Update(Parse*, SrcList*, ExprList*, Expr*, int);
 WhereInfo *sqlite3WhereBegin(Parse*, SrcList*, Expr*, ExprList**, u16);
 void sqlite3WhereEnd(WhereInfo*);
 int sqlite3ExprCodeGetColumn(Parse*, Table*, int, int, int);
+void sqlite3ExprCodeGetColumnOfTable(Vdbe*, Table*, int, int, int);
 void sqlite3ExprCodeMove(Parse*, int, int, int);
 void sqlite3ExprCodeCopy(Parse*, int, int, int);
 void sqlite3ExprCacheStore(Parse*, int, int, int);
@@ -2681,6 +2702,7 @@ void sqlite3Vacuum(Parse*);
 int sqlite3RunVacuum(char**, sqlite3*);
 char *sqlite3NameFromToken(sqlite3*, Token*);
 int sqlite3ExprCompare(Expr*, Expr*);
+int sqlite3ExprListCompare(ExprList*, ExprList*);
 void sqlite3ExprAnalyzeAggregates(NameContext*, Expr*);
 void sqlite3ExprAnalyzeAggList(NameContext*,ExprList*);
 Vdbe *sqlite3GetVdbe(Parse*);
@@ -2868,13 +2890,16 @@ void sqlite3ValueApplyAffinity(sqlite3_value *, u8, u8);
 extern const unsigned char sqlite3OpcodeProperty[];
 extern const unsigned char sqlite3UpperToLower[];
 extern const unsigned char sqlite3CtypeMap[];
+extern const Token sqlite3IntTokens[];
 extern SQLITE_WSD struct Sqlite3Config sqlite3Config;
 extern SQLITE_WSD FuncDefHash sqlite3GlobalFunctions;
+#ifndef SQLITE_OMIT_WSD
 extern int sqlite3PendingByte;
+#endif
 #endif
 void sqlite3RootPageMoved(Db*, int, int);
 void sqlite3Reindex(Parse*, Token*, Token*);
-void sqlite3AlterFunctions(sqlite3*);
+void sqlite3AlterFunctions(void);
 void sqlite3AlterRenameTable(Parse*, SrcList*, Token*);
 int sqlite3GetToken(const unsigned char *, int *);
 void sqlite3NestedParse(Parse*, const char*, ...);
@@ -2983,6 +3008,9 @@ void sqlite3ExprListCheckLength(Parse*, ExprList*, const char*);
 CollSeq *sqlite3BinaryCompareCollSeq(Parse *, Expr *, Expr *);
 int sqlite3TempInMemory(const sqlite3*);
 VTable *sqlite3GetVTable(sqlite3*, Table*);
+const char *sqlite3JournalModename(int);
+int sqlite3Checkpoint(sqlite3*, int);
+int sqlite3WalDefaultHook(void*,sqlite3*,const char*,int);
 
 /* Declarations for functions in fkey.c. All of these are replaced by
 ** no-op macros if OMIT_FOREIGN_KEY is defined. In this case no foreign
@@ -3089,4 +3117,43 @@ SQLITE_EXTERN void (*sqlite3IoTrace)(const char*,...);
 # define sqlite3VdbeIOTraceSql(X)
 #endif
 
+/*
+** These routines are available for the mem2.c debugging memory allocator
+** only.  They are used to verify that different "types" of memory
+** allocations are properly tracked by the system.
+**
+** sqlite3MemdebugSetType() sets the "type" of an allocation to one of
+** the MEMTYPE_* macros defined below.  The type must be a bitmask with
+** a single bit set.
+**
+** sqlite3MemdebugHasType() returns true if any of the bits in its second
+** argument match the type set by the previous sqlite3MemdebugSetType().
+** sqlite3MemdebugHasType() is intended for use inside assert() statements.
+** For example:
+**
+**     assert( sqlite3MemdebugHasType(p, MEMTYPE_HEAP) );
+**
+** Perhaps the most important point is the difference between MEMTYPE_HEAP
+** and MEMTYPE_DB.  If an allocation is MEMTYPE_DB, that means it might have
+** been allocated by lookaside, except the allocation was too large or
+** lookaside was already full.  It is important to verify that allocations
+** that might have been satisfied by lookaside are not passed back to 
+** non-lookaside free() routines.  Asserts such as the example above are
+** placed on the non-lookaside free() routines to verify this constraint. 
+**
+** All of this is no-op for a production build.  It only comes into
+** play when the SQLITE_MEMDEBUG compile-time option is used.
+*/
+#ifdef SQLITE_MEMDEBUG
+  void sqlite3MemdebugSetType(void*,u8);
+  int sqlite3MemdebugHasType(void*,u8);
+#else
+# define sqlite3MemdebugSetType(X,Y)  /* no-op */
+# define sqlite3MemdebugHasType(X,Y)  1
 #endif
+#define MEMTYPE_HEAP     0x01    /* General heap allocations */
+#define MEMTYPE_DB       0x02    /* Associated with a database connection */
+#define MEMTYPE_SCRATCH  0x04    /* Scratch allocations */
+#define MEMTYPE_PCACHE   0x08    /* Page cache allocations */
+
+#endif /* _SQLITEINT_H_ */

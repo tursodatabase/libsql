@@ -386,6 +386,7 @@ TESTSRC = \
   $(TOP)/src/test_server.c \
   $(TOP)/src/test_tclvar.c \
   $(TOP)/src/test_thread.c \
+  $(TOP)/src/test_vfs.c \
   $(TOP)/src/test_wsd.c \
 
 #TESTSRC += $(TOP)/ext/fts2/fts2_tokenizer.c
@@ -624,7 +625,7 @@ fulltest:	testfixture$(EXE) sqlite3$(EXE)
 	./testfixture$(EXE) $(TOP)/test/all.test
 
 soaktest:	testfixture$(EXE) sqlite3$(EXE)
-	./testfixture$(EXE) $(TOP)/test/all.test -soak 1
+	./testfixture$(EXE) $(TOP)/test/all.test -soak=1
 
 test:	testfixture$(EXE) sqlite3$(EXE)
 	./testfixture$(EXE) $(TOP)/test/veryquick.test

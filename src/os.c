@@ -34,8 +34,10 @@
 **     sqlite3OsLock()
 **
 */
-#if defined(SQLITE_TEST) && (SQLITE_OS_WIN==0)
-  #define DO_OS_MALLOC_TEST(x) if (!x || !sqlite3IsMemJournal(x)) {     \
+#if defined(SQLITE_TEST)
+int sqlite3_memdebug_vfs_oom_test = 1;
+  #define DO_OS_MALLOC_TEST(x)                                       \
+  if (sqlite3_memdebug_vfs_oom_test && (!x || !sqlite3IsMemJournal(x))) {  \
     void *pTstAlloc = sqlite3Malloc(10);                             \
     if (!pTstAlloc) return SQLITE_IOERR_NOMEM;                       \
     sqlite3_free(pTstAlloc);                                         \
@@ -98,6 +100,24 @@ int sqlite3OsSectorSize(sqlite3_file *id){
 int sqlite3OsDeviceCharacteristics(sqlite3_file *id){
   return id->pMethods->xDeviceCharacteristics(id);
 }
+int sqlite3OsShmLock(sqlite3_file *id, int offset, int n, int flags){
+  return id->pMethods->xShmLock(id, offset, n, flags);
+}
+void sqlite3OsShmBarrier(sqlite3_file *id){
+  id->pMethods->xShmBarrier(id);
+}
+int sqlite3OsShmUnmap(sqlite3_file *id, int deleteFlag){
+  return id->pMethods->xShmUnmap(id, deleteFlag);
+}
+int sqlite3OsShmMap(
+  sqlite3_file *id,               /* Database file handle */
+  int iPage,
+  int pgsz,
+  int bExtend,                    /* True to extend file if necessary */
+  void volatile **pp              /* OUT: Pointer to mapping */
+){
+  return id->pMethods->xShmMap(id, iPage, pgsz, bExtend, pp);
+}
 
 /*
 ** The next group of routines are convenience wrappers around the
@@ -112,11 +132,11 @@ int sqlite3OsOpen(
 ){
   int rc;
   DO_OS_MALLOC_TEST(0);
-  /* 0x7f3f is a mask of SQLITE_OPEN_ flags that are valid to be passed
+  /* 0x87f3f is a mask of SQLITE_OPEN_ flags that are valid to be passed
   ** down into the VFS layer.  Some SQLITE_OPEN_ flags (for example,
   ** SQLITE_OPEN_FULLMUTEX or SQLITE_OPEN_SHAREDCACHE) are blocked before
   ** reaching the VFS. */
-  rc = pVfs->xOpen(pVfs, zPath, pFile, flags & 0x7f3f, pFlagsOut);
+  rc = pVfs->xOpen(pVfs, zPath, pFile, flags & 0x87f3f, pFlagsOut);
   assert( rc==SQLITE_OK || pFile->pMethods==0 );
   return rc;
 }
@@ -161,8 +181,16 @@ int sqlite3OsRandomness(sqlite3_vfs *pVfs, int nByte, char *zBufOut){
 int sqlite3OsSleep(sqlite3_vfs *pVfs, int nMicro){
   return pVfs->xSleep(pVfs, nMicro);
 }
-int sqlite3OsCurrentTime(sqlite3_vfs *pVfs, double *pTimeOut){
-  return pVfs->xCurrentTime(pVfs, pTimeOut);
+int sqlite3OsCurrentTimeInt64(sqlite3_vfs *pVfs, sqlite3_int64 *pTimeOut){
+  int rc;
+  if( pVfs->iVersion>=2 && pVfs->xCurrentTimeInt64 ){
+    rc = pVfs->xCurrentTimeInt64(pVfs, pTimeOut);
+  }else{
+    double r;
+    rc = pVfs->xCurrentTime(pVfs, &r);
+    *pTimeOut = (sqlite3_int64)(r*86400000.0);
+  }
+  return rc;
 }
 
 int sqlite3OsOpenMalloc(

@@ -58,10 +58,7 @@ do_test tempdb-2.1 {
   # to be in memory. These variables are used to calculate the expected
   # number of open files in the test cases below.
   #
-  set jrnl_in_memory [expr {
-    [info exists ::permutations_test_prefix] &&
-    $::permutations_test_prefix eq "inmemory_journal"
-  }]
+  set jrnl_in_memory [expr {[permutation] eq "inmemory_journal"}]
   set subj_in_memory [expr {$jrnl_in_memory || $TEMP_STORE == 3}]
 
   db close
@@ -74,6 +71,7 @@ do_test tempdb-2.2 {
     BEGIN;
       INSERT INTO t1 VALUES(1, 2, 3);
       INSERT INTO t1 VALUES(4, 5, 6);
+      INSERT INTO t2 VALUES(7, 8, 9);
       INSERT INTO t2 SELECT * FROM t1;
   }
   catchsql { INSERT INTO t1 SELECT * FROM t2 }

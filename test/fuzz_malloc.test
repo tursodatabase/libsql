@@ -25,9 +25,9 @@ ifcapable !memdebug {
 source $testdir/malloc_common.tcl
 source $testdir/fuzz_common.tcl
 
-if {[info exists ISQUICK]} {
+if {[info exists G(isquick)]} {
   set ::REPEATS 20
-} elseif {[info exists SOAKTEST]} {
+} elseif {[info exists G(issoak)]} {
   set ::REPEATS 100
 } else {
   set ::REPEATS 40

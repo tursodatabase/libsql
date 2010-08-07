@@ -654,12 +654,14 @@ do_test autovacuum-8.1 {
   sqlite3 db2 test.db
   db eval {PRAGMA auto_vacuum}
 } {1}
-do_test autovacuum-8.2 {
-  db eval {BEGIN EXCLUSIVE}
-  catchsql {PRAGMA auto_vacuum} db2
-} {1 {database is locked}}
-catch {db2 close}
-catch {db eval {COMMIT}}
+if {[permutation] == ""} {
+  do_test autovacuum-8.2 {
+    db eval {BEGIN EXCLUSIVE}
+    catchsql {PRAGMA auto_vacuum} db2
+  } {1 {database is locked}}
+  catch {db2 close}
+  catch {db eval {COMMIT}}
+}
 
 do_test autovacuum-9.1 {
   execsql {

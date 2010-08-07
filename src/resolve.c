@@ -357,6 +357,7 @@ static int lookupName(
     }else{
       sqlite3ErrorMsg(pParse, "%s: %s", zErr, zCol);
     }
+    pParse->checkSchema = 1;
     pTopNC->nErr++;
   }
 
@@ -403,7 +404,7 @@ lookupname_end:
 
 /*
 ** Allocate and return a pointer to an expression to load the column iCol
-** from datasource iSrc datasource in SrcList pSrc.
+** from datasource iSrc in SrcList pSrc.
 */
 Expr *sqlite3CreateColumnExpr(sqlite3 *db, SrcList *pSrc, int iSrc, int iCol){
   Expr *p = sqlite3ExprAlloc(db, TK_COLUMN, 0, 0);
@@ -415,6 +416,8 @@ Expr *sqlite3CreateColumnExpr(sqlite3 *db, SrcList *pSrc, int iSrc, int iCol){
       p->iColumn = -1;
     }else{
       p->iColumn = (ynVar)iCol;
+      testcase( iCol==BMS );
+      testcase( iCol==BMS-1 );
       pItem->colUsed |= ((Bitmask)1)<<(iCol>=BMS ? BMS-1 : iCol);
     }
     ExprSetProperty(p, EP_Resolved);

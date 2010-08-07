@@ -112,10 +112,8 @@ do_test trigger7-99.1 {
     UPDATE sqlite_master SET sql='nonsense';
   }
   db close
-  sqlite3 db test.db
-  catchsql {
-    DROP TRIGGER t2r5
-  }
+  catch { sqlite3 db test.db }
+  catchsql { DROP TRIGGER t2r5 }
 } {1 {malformed database schema (t2r12) - near "nonsense": syntax error}}
 
 finish_test

@@ -323,6 +323,27 @@ void sqlite3_result_error_nomem(sqlite3_context *pCtx){
 }
 
 /*
+** This function is called after a transaction has been committed. It 
+** invokes callbacks registered with sqlite3_wal_hook() as required.
+*/
+static int doWalCallbacks(sqlite3 *db){
+  int rc = SQLITE_OK;
+#ifndef SQLITE_OMIT_WAL
+  int i;
+  for(i=0; i<db->nDb; i++){
+    Btree *pBt = db->aDb[i].pBt;
+    if( pBt ){
+      int nEntry = sqlite3PagerWalCallback(sqlite3BtreePager(pBt));
+      if( db->xWalCallback && nEntry>0 && rc==SQLITE_OK ){
+        rc = db->xWalCallback(db->pWalArg, db, db->aDb[i].zName, nEntry);
+      }
+    }
+  }
+#endif
+  return rc;
+}
+
+/*
 ** Execute the statement pStmt, either until a row of data is ready, the
 ** statement is completely executed or an error occurs.
 **
@@ -337,9 +358,12 @@ static int sqlite3Step(Vdbe *p){
 
   assert(p);
   if( p->magic!=VDBE_MAGIC_RUN ){
-    sqlite3_log(SQLITE_MISUSE, 
-          "attempt to step a halted statement: [%s]", p->zSql);
-    return SQLITE_MISUSE_BKPT;
+    /* We used to require that sqlite3_reset() be called before retrying
+    ** sqlite3_step() after any error.  But after 3.6.23, we changed this
+    ** so that sqlite3_reset() would be called automatically instead of
+    ** throwing the error.
+    */
+    sqlite3_reset((sqlite3_stmt*)p);
   }
 
   /* Check that malloc() has not failed. If it has, return early. */
@@ -367,9 +391,7 @@ static int sqlite3Step(Vdbe *p){
 
 #ifndef SQLITE_OMIT_TRACE
     if( db->xProfile && !db->init.busy ){
-      double rNow;
-      sqlite3OsCurrentTime(db->pVfs, &rNow);
-      p->startTime = (u64)((rNow - (int)rNow)*3600.0*24.0*1000000000.0);
+      sqlite3OsCurrentTimeInt64(db->pVfs, &p->startTime);
     }
 #endif
 
@@ -390,15 +412,19 @@ static int sqlite3Step(Vdbe *p){
   /* Invoke the profile callback if there is one
   */
   if( rc!=SQLITE_ROW && db->xProfile && !db->init.busy && p->zSql ){
-    double rNow;
-    u64 elapseTime;
-
-    sqlite3OsCurrentTime(db->pVfs, &rNow);
-    elapseTime = (u64)((rNow - (int)rNow)*3600.0*24.0*1000000000.0);
-    elapseTime -= p->startTime;
-    db->xProfile(db->pProfileArg, p->zSql, elapseTime);
+    sqlite3_int64 iNow;
+    sqlite3OsCurrentTimeInt64(db->pVfs, &iNow);
+    db->xProfile(db->pProfileArg, p->zSql, iNow - p->startTime);
   }
 #endif
+
+  if( rc==SQLITE_DONE ){
+    assert( p->rc==SQLITE_OK );
+    p->rc = doWalCallbacks(db);
+    if( p->rc!=SQLITE_OK ){
+      rc = SQLITE_ERROR;
+    }
+  }
 
   db->errCode = rc;
   if( SQLITE_NOMEM==sqlite3ApiExit(p->db, p->rc) ){

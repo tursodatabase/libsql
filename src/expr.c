@@ -1505,14 +1505,20 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
     /* Could not found an existing table or index to use as the RHS b-tree.
     ** We will have to generate an ephemeral table to do the job.
     */
+    double savedNQueryLoop = pParse->nQueryLoop;
     int rMayHaveNull = 0;
     eType = IN_INDEX_EPH;
     if( prNotFound ){
       *prNotFound = rMayHaveNull = ++pParse->nMem;
-    }else if( pX->pLeft->iColumn<0 && !ExprHasAnyProperty(pX, EP_xIsSelect) ){
-      eType = IN_INDEX_ROWID;
+    }else{
+      testcase( pParse->nQueryLoop>(double)1 );
+      pParse->nQueryLoop = (double)1;
+      if( pX->pLeft->iColumn<0 && !ExprHasAnyProperty(pX, EP_xIsSelect) ){
+        eType = IN_INDEX_ROWID;
+      }
     }
     sqlite3CodeSubselect(pParse, pX, rMayHaveNull, eType==IN_INDEX_ROWID);
+    pParse->nQueryLoop = savedNQueryLoop;
   }else{
     pX->iTable = iTab;
   }
@@ -1635,7 +1641,7 @@ int sqlite3CodeSubselect(
           keyInfo.aColl[0] = sqlite3BinaryCompareCollSeq(pParse, pExpr->pLeft,
               pEList->a[0].pExpr);
         }
-      }else if( pExpr->x.pList!=0 ){
+      }else if( ALWAYS(pExpr->x.pList!=0) ){
         /* Case 2:     expr IN (exprlist)
         **
         ** For each expression, build an index key from the evaluation and
@@ -1705,7 +1711,6 @@ int sqlite3CodeSubselect(
       ** an integer 0 (not exists) or 1 (exists) into a memory cell
       ** and record that memory cell in iColumn.
       */
-      static const Token one = { "1", 1 };  /* Token for literal value 1 */
       Select *pSel;                         /* SELECT statement to encode */
       SelectDest dest;                      /* How to deal with SELECt result */
 
@@ -1726,7 +1731,8 @@ int sqlite3CodeSubselect(
         VdbeComment((v, "Init EXISTS result"));
       }
       sqlite3ExprDelete(pParse->db, pSel->pLimit);
-      pSel->pLimit = sqlite3PExpr(pParse, TK_INTEGER, 0, 0, &one);
+      pSel->pLimit = sqlite3PExpr(pParse, TK_INTEGER, 0, 0,
+                                  &sqlite3IntTokens[1]);
       if( sqlite3Select(pParse, pSel, &dest) ){
         return 0;
       }
@@ -1794,8 +1800,20 @@ static void sqlite3ExprCodeIN(
   sqlite3ExprCachePush(pParse);
   r1 = sqlite3GetTempReg(pParse);
   sqlite3ExprCode(pParse, pExpr->pLeft, r1);
-  sqlite3VdbeAddOp2(v, OP_IsNull, r1, destIfNull);
 
+  /* If the LHS is NULL, then the result is either false or NULL depending
+  ** on whether the RHS is empty or not, respectively.
+  */
+  if( destIfNull==destIfFalse ){
+    /* Shortcut for the common case where the false and NULL outcomes are
+    ** the same. */
+    sqlite3VdbeAddOp2(v, OP_IsNull, r1, destIfNull);
+  }else{
+    int addr1 = sqlite3VdbeAddOp1(v, OP_NotNull, r1);
+    sqlite3VdbeAddOp2(v, OP_Rewind, pExpr->iTable, destIfFalse);
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, destIfNull);
+    sqlite3VdbeJumpHere(v, addr1);
+  }
 
   if( eType==IN_INDEX_ROWID ){
     /* In this case, the RHS is the ROWID of table b-tree
@@ -2083,6 +2101,27 @@ static void sqlite3ExprCachePinRegister(Parse *pParse, int iReg){
 }
 
 /*
+** Generate code to extract the value of the iCol-th column of a table.
+*/
+void sqlite3ExprCodeGetColumnOfTable(
+  Vdbe *v,        /* The VDBE under construction */
+  Table *pTab,    /* The table containing the value */
+  int iTabCur,    /* The cursor for this table */
+  int iCol,       /* Index of the column to extract */
+  int regOut      /* Extract the valud into this register */
+){
+  if( iCol<0 || iCol==pTab->iPKey ){
+    sqlite3VdbeAddOp2(v, OP_Rowid, iTabCur, regOut);
+  }else{
+    int op = IsVirtual(pTab) ? OP_VColumn : OP_Column;
+    sqlite3VdbeAddOp3(v, op, iTabCur, iCol, regOut);
+  }
+  if( iCol>=0 ){
+    sqlite3ColumnDefault(v, pTab, iCol, regOut);
+  }
+}
+
+/*
 ** Generate code that will extract the iColumn-th column from
 ** table pTab and store the column value in a register.  An effort
 ** is made to store the column value in register iReg, but this is
@@ -2110,13 +2149,7 @@ int sqlite3ExprCodeGetColumn(
     }
   }  
   assert( v!=0 );
-  if( iColumn<0 ){
-    sqlite3VdbeAddOp2(v, OP_Rowid, iTable, iReg);
-  }else if( ALWAYS(pTab!=0) ){
-    int op = IsVirtual(pTab) ? OP_VColumn : OP_Column;
-    sqlite3VdbeAddOp3(v, op, iTable, iColumn, iReg);
-    sqlite3ColumnDefault(v, pTab, iColumn, iReg);
-  }
+  sqlite3ExprCodeGetColumnOfTable(v, pTab, iTable, iColumn, iReg);
   sqlite3ExprCacheStore(pParse, iTable, iColumn, iReg);
   return iReg;
 }
@@ -2353,27 +2386,12 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     }
 #endif
     case TK_VARIABLE: {
-      VdbeOp *pOp;
       assert( !ExprHasProperty(pExpr, EP_IntValue) );
       assert( pExpr->u.zToken!=0 );
       assert( pExpr->u.zToken[0]!=0 );
-      if( pExpr->u.zToken[1]==0
-         && (pOp = sqlite3VdbeGetOp(v, -1))->opcode==OP_Variable
-         && pOp->p1+pOp->p3==pExpr->iColumn
-         && pOp->p2+pOp->p3==target
-         && pOp->p4.z==0
-      ){
-        /* If the previous instruction was a copy of the previous unnamed
-        ** parameter into the previous register, then simply increment the
-        ** repeat count on the prior instruction rather than making a new
-        ** instruction.
-        */
-        pOp->p3++;
-      }else{
-        sqlite3VdbeAddOp3(v, OP_Variable, pExpr->iColumn, target, 1);
-        if( pExpr->u.zToken[1]!=0 ){
-          sqlite3VdbeChangeP4(v, -1, pExpr->u.zToken, 0);
-        }
+      sqlite3VdbeAddOp2(v, OP_Variable, pExpr->iColumn, target);
+      if( pExpr->u.zToken[1]!=0 ){
+        sqlite3VdbeChangeP4(v, -1, pExpr->u.zToken, 0);
       }
       break;
     }
@@ -3440,7 +3458,6 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
 ** an incorrect 0 or 1 could lead to a malfunction.
 */
 int sqlite3ExprCompare(Expr *pA, Expr *pB){
-  int i;
   if( pA==0||pB==0 ){
     return pB==pA ? 0 : 2;
   }
@@ -3453,18 +3470,7 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB){
   if( pA->op!=pB->op ) return 2;
   if( sqlite3ExprCompare(pA->pLeft, pB->pLeft) ) return 2;
   if( sqlite3ExprCompare(pA->pRight, pB->pRight) ) return 2;
-
-  if( pA->x.pList && pB->x.pList ){
-    if( pA->x.pList->nExpr!=pB->x.pList->nExpr ) return 2;
-    for(i=0; i<pA->x.pList->nExpr; i++){
-      Expr *pExprA = pA->x.pList->a[i].pExpr;
-      Expr *pExprB = pB->x.pList->a[i].pExpr;
-      if( sqlite3ExprCompare(pExprA, pExprB) ) return 2;
-    }
-  }else if( pA->x.pList || pB->x.pList ){
-    return 2;
-  }
-
+  if( sqlite3ExprListCompare(pA->x.pList, pB->x.pList) ) return 2;
   if( pA->iTable!=pB->iTable || pA->iColumn!=pB->iColumn ) return 2;
   if( ExprHasProperty(pA, EP_IntValue) ){
     if( !ExprHasProperty(pB, EP_IntValue) || pA->u.iValue!=pB->u.iValue ){
@@ -3481,6 +3487,31 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB){
   return 0;
 }
 
+/*
+** Compare two ExprList objects.  Return 0 if they are identical and 
+** non-zero if they differ in any way.
+**
+** This routine might return non-zero for equivalent ExprLists.  The
+** only consequence will be disabled optimizations.  But this routine
+** must never return 0 if the two ExprList objects are different, or
+** a malfunction will result.
+**
+** Two NULL pointers are considered to be the same.  But a NULL pointer
+** always differs from a non-NULL pointer.
+*/
+int sqlite3ExprListCompare(ExprList *pA, ExprList *pB){
+  int i;
+  if( pA==0 && pB==0 ) return 0;
+  if( pA==0 || pB==0 ) return 1;
+  if( pA->nExpr!=pB->nExpr ) return 1;
+  for(i=0; i<pA->nExpr; i++){
+    Expr *pExprA = pA->a[i].pExpr;
+    Expr *pExprB = pB->a[i].pExpr;
+    if( pA->a[i].sortOrder!=pB->a[i].sortOrder ) return 1;
+    if( sqlite3ExprCompare(pExprA, pExprB) ) return 1;
+  }
+  return 0;
+}
 
 /*
 ** Add a new element to the pAggInfo->aCol[] array.  Return the index of

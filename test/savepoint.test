@@ -13,7 +13,8 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-
+source $testdir/lock_common.tcl
+source $testdir/malloc_common.tcl
 
 #----------------------------------------------------------------------
 # The following tests - savepoint-1.* - test that the SAVEPOINT, RELEASE
@@ -21,6 +22,7 @@ source $testdir/tester.tcl
 # flag is correctly set and unset as a result.
 #
 do_test savepoint-1.1 {
+  wal_set_journal_mode
   execsql {
     SAVEPOINT sp1;
     RELEASE sp1;
@@ -93,6 +95,7 @@ do_test savepoint-1.5 {
 do_test savepoint-1.6 {
   execsql COMMIT
 } {}
+wal_check_journal_mode savepoint-1.7
 
 #------------------------------------------------------------------------
 # These tests - savepoint-2.* - test rollbacks and releases of savepoints
@@ -175,36 +178,42 @@ do_test savepoint-2.11 {
   }
   execsql { SELECT * FROM t1 }
 } {}
+wal_check_journal_mode savepoint-2.12
 
 #------------------------------------------------------------------------
 # This block of tests - savepoint-3.* - test that when a transaction
 # savepoint is rolled back, locks are not released from database files.
 # And that when a transaction savepoint is released, they are released.
+#
+# These tests do not work in WAL mode. WAL mode does not take RESERVED
+# locks on the database file.
 # 
-do_test savepoint-3.1 {
-  execsql { SAVEPOINT "transaction" }
-  execsql { PRAGMA lock_status }
-} {main unlocked temp closed}
-
-do_test savepoint-3.2 {
-  execsql { INSERT INTO t1 VALUES(1, 2, 3) }
-  execsql { PRAGMA lock_status }
-} {main reserved temp closed}
-
-do_test savepoint-3.3 {
-  execsql { ROLLBACK TO "transaction" }
-  execsql { PRAGMA lock_status }
-} {main reserved temp closed}
-
-do_test savepoint-3.4 {
-  execsql { INSERT INTO t1 VALUES(1, 2, 3) }
-  execsql { PRAGMA lock_status }
-} {main reserved temp closed}
-
-do_test savepoint-3.5 {
-  execsql { RELEASE "transaction" }
-  execsql { PRAGMA lock_status }
-} {main unlocked temp closed}
+if {[wal_is_wal_mode]==0} {
+  do_test savepoint-3.1 {
+    execsql { SAVEPOINT "transaction" }
+    execsql { PRAGMA lock_status }
+  } {main unlocked temp closed}
+  
+  do_test savepoint-3.2 {
+    execsql { INSERT INTO t1 VALUES(1, 2, 3) }
+    execsql { PRAGMA lock_status }
+  } {main reserved temp closed}
+  
+  do_test savepoint-3.3 {
+    execsql { ROLLBACK TO "transaction" }
+    execsql { PRAGMA lock_status }
+  } {main reserved temp closed}
+  
+  do_test savepoint-3.4 {
+    execsql { INSERT INTO t1 VALUES(1, 2, 3) }
+    execsql { PRAGMA lock_status }
+  } {main reserved temp closed}
+  
+  do_test savepoint-3.5 {
+    execsql { RELEASE "transaction" }
+    execsql { PRAGMA lock_status }
+  } {main unlocked temp closed}
+}
 
 #------------------------------------------------------------------------
 # Test that savepoints that include schema modifications are handled
@@ -264,6 +273,7 @@ do_test savepoint-4.7 {
 do_test savepoint-4.8 {
   execsql COMMIT
 } {}
+wal_check_journal_mode savepoint-4.9
 
 #------------------------------------------------------------------------
 # Test some logic errors to do with the savepoint feature.
@@ -312,6 +322,18 @@ ifcapable incrblob {
     execsql {release abc}
   } {}
   
+  # Rollback mode:
+  #
+  #   Open a savepoint transaction and insert a row into the database. Then,
+  #   using a second database handle, open a read-only transaction on the
+  #   database file. Check that the savepoint transaction cannot be committed
+  #   until after the read-only transaction has been closed.
+  #
+  # WAL mode:
+  # 
+  #   As above, except that the savepoint transaction can be successfully
+  #   committed before the read-only transaction has been closed.
+  #
   do_test savepoint-5.4.1 {
     execsql {
       SAVEPOINT main;
@@ -320,17 +342,28 @@ ifcapable incrblob {
   } {}
   do_test savepoint-5.4.2 {
     sqlite3 db2 test.db
-    execsql { BEGIN ; SELECT * FROM blobs } db2
-    catchsql { RELEASE main }
-  } {1 {database is locked}}
-  do_test savepoint-5.4.3 {
-    db2 close
-    catchsql { RELEASE main }
-  } {0 {}}
-  do_test savepoint-5.4.4 {
+    execsql { BEGIN ; SELECT count(*) FROM blobs } db2
+  } {1}
+  if {[wal_is_wal_mode]} {
+    do_test savepoint-5.4.3 { catchsql "RELEASE main" } {0 {}}
+    do_test savepoint-5.4.4 { db2 close               } {}
+  } else {
+    do_test savepoint-5.4.3 {
+      catchsql { RELEASE main }
+    } {1 {database is locked}}
+    do_test savepoint-5.4.4 {
+      db2 close
+      catchsql { RELEASE main }
+    } {0 {}}
+  }
+  do_test savepoint-5.4.5 {
     execsql { SELECT x FROM blobs WHERE rowid = 2 }
   } {{another blob}}
+  do_test savepoint-5.4.6 {
+    execsql { SELECT count(*) FROM blobs }
+  } {2}
 }
+wal_check_journal_mode savepoint-5.5
 
 #-------------------------------------------------------------------------
 # The following tests, savepoint-6.*, test an incr-vacuum inside of a
@@ -342,8 +375,9 @@ ifcapable {autovacuum && pragma} {
   sqlite3 db test.db
 
   do_test savepoint-6.1 {
-    execsql { 
-      PRAGMA auto_vacuum = incremental;
+    execsql { PRAGMA auto_vacuum = incremental }
+    wal_set_journal_mode
+    execsql {
       CREATE TABLE t1(a, b, c);
       CREATE INDEX i1 ON t1(a, b);
       BEGIN;
@@ -376,6 +410,8 @@ ifcapable {autovacuum && pragma} {
   } {}
 
   integrity_check savepoint-6.4
+
+  wal_check_journal_mode savepoint-6.5
 }
 
 #-------------------------------------------------------------------------
@@ -387,8 +423,9 @@ file delete -force test.db
 sqlite3 db test.db
 
 do_test savepoint-7.1 {
+  execsql { PRAGMA auto_vacuum = incremental }
+  wal_set_journal_mode
   execsql {
-    PRAGMA auto_vacuum = incremental;
     PRAGMA cache_size = 10;
     BEGIN;
     CREATE TABLE t1(a PRIMARY KEY, b);
@@ -449,13 +486,15 @@ do_test savepoint-7.3.2 {
   }
   execsql { PRAGMA integrity_check }
 } {ok}
+wal_check_journal_mode savepoint-7.3.3
 
 do_test savepoint-7.4.1 {
   db close
   file delete -force test.db
   sqlite3 db test.db
+  execsql { PRAGMA auto_vacuum = incremental }
+  wal_set_journal_mode
   execsql {
-    PRAGMA auto_vacuum = incremental;
     CREATE TABLE t1(a, b, PRIMARY KEY(a, b));
     INSERT INTO t1 VALUES(randstr(1000,1000), randstr(1000,1000));
     BEGIN;
@@ -497,6 +536,7 @@ do_test savepoint-7.5.2 {
     DROP TABLE t5;
   }
 } {}
+wal_check_journal_mode savepoint-7.5.3
 
 # Test oddly named and quoted savepoints.
 #
@@ -598,120 +638,122 @@ do_test savepoint-10.1.3 {
 set templockstate [lindex [db eval {PRAGMA lock_status}] 3]
 
 
-do_test savepoint-10.2.1 {
-  file delete -force test3.db
-  file delete -force test2.db
-  execsql {
-    ATTACH 'test2.db' AS aux1;
-    ATTACH 'test3.db' AS aux2;
-    DROP TABLE t1;
-    CREATE TABLE main.t1(x, y);
-    CREATE TABLE aux1.t2(x, y);
-    CREATE TABLE aux2.t3(x, y);
-    SELECT name FROM sqlite_master 
-      UNION ALL
-    SELECT name FROM aux1.sqlite_master 
-      UNION ALL
-    SELECT name FROM aux2.sqlite_master;
-  }
-} {t1 t2 t3}
-do_test savepoint-10.2.2 {
-  execsql { PRAGMA lock_status }
-} [list main unlocked temp $templockstate aux1 unlocked aux2 unlocked]
-
-do_test savepoint-10.2.3 {
-  execsql {
-    SAVEPOINT one;
-    INSERT INTO t1 VALUES(1, 2);
-    PRAGMA lock_status;
-  }
-} [list main reserved temp $templockstate aux1 unlocked aux2 unlocked]
-do_test savepoint-10.2.4 {
-  execsql {
-    INSERT INTO t3 VALUES(3, 4);
-    PRAGMA lock_status;
-  }
-} [list main reserved temp $templockstate aux1 unlocked aux2 reserved]
-do_test savepoint-10.2.5 {
-  execsql {
-    SAVEPOINT two;
-    INSERT INTO t2 VALUES(5, 6);
-    PRAGMA lock_status;
-  }
-} [list main reserved temp $templockstate aux1 reserved aux2 reserved]
-do_test savepoint-10.2.6 {
-  execsql { SELECT * FROM t2 }
-} {5 6}
-do_test savepoint-10.2.7 {
-  execsql { ROLLBACK TO two }
-  execsql { SELECT * FROM t2 }
-} {}
-do_test savepoint-10.2.8 {
-  execsql { PRAGMA lock_status }
-} [list main reserved temp $templockstate aux1 reserved aux2 reserved]
-do_test savepoint-10.2.9 {
-  execsql { SELECT 'a', * FROM t1 UNION ALL SELECT 'b', * FROM t3 }
-} {a 1 2 b 3 4}
-do_test savepoint-10.2.9 {
-  execsql {
-    INSERT INTO t2 VALUES(5, 6);
-    RELEASE one;
-  }
-  execsql { 
-    SELECT * FROM t1;
-    SELECT * FROM t2;
-    SELECT * FROM t3;
-  }
-} {1 2 5 6 3 4}
-do_test savepoint-10.2.9 {
-  execsql { PRAGMA lock_status }
-} [list main unlocked temp $templockstate aux1 unlocked aux2 unlocked]
-
-do_test savepoint-10.2.10 {
-  execsql { 
-    SAVEPOINT one;
-      INSERT INTO t1 VALUES('a', 'b');
+if {[wal_is_wal_mode]==0} {
+  do_test savepoint-10.2.1 {
+    file delete -force test3.db
+    file delete -force test2.db
+    execsql {
+      ATTACH 'test2.db' AS aux1;
+      ATTACH 'test3.db' AS aux2;
+      DROP TABLE t1;
+      CREATE TABLE main.t1(x, y);
+      CREATE TABLE aux1.t2(x, y);
+      CREATE TABLE aux2.t3(x, y);
+      SELECT name FROM sqlite_master 
+        UNION ALL
+      SELECT name FROM aux1.sqlite_master 
+        UNION ALL
+      SELECT name FROM aux2.sqlite_master;
+    }
+  } {t1 t2 t3}
+  do_test savepoint-10.2.2 {
+    execsql { PRAGMA lock_status }
+  } [list main unlocked temp $templockstate aux1 unlocked aux2 unlocked]
+  
+  do_test savepoint-10.2.3 {
+    execsql {
+      SAVEPOINT one;
+      INSERT INTO t1 VALUES(1, 2);
+      PRAGMA lock_status;
+    }
+  } [list main reserved temp $templockstate aux1 unlocked aux2 unlocked]
+  do_test savepoint-10.2.4 {
+    execsql {
+      INSERT INTO t3 VALUES(3, 4);
+      PRAGMA lock_status;
+    }
+  } [list main reserved temp $templockstate aux1 unlocked aux2 reserved]
+  do_test savepoint-10.2.5 {
+    execsql {
       SAVEPOINT two;
-        INSERT INTO t2 VALUES('c', 'd');
-        SAVEPOINT three;
-          INSERT INTO t3 VALUES('e', 'f');
-  }
-  execsql { 
-    SELECT * FROM t1;
-    SELECT * FROM t2;
-    SELECT * FROM t3;
-  }
-} {1 2 a b 5 6 c d 3 4 e f}
-do_test savepoint-10.2.11 {
-  execsql { ROLLBACK TO two }
-  execsql { 
-    SELECT * FROM t1;
-    SELECT * FROM t2;
-    SELECT * FROM t3;
-  }
-} {1 2 a b 5 6 3 4}
-do_test savepoint-10.2.12 {
-  execsql { 
-    INSERT INTO t3 VALUES('g', 'h');
-    ROLLBACK TO two;
-  }
-  execsql { 
-    SELECT * FROM t1;
-    SELECT * FROM t2;
-    SELECT * FROM t3;
-  }
-} {1 2 a b 5 6 3 4}
-do_test savepoint-10.2.13 {
-  execsql { ROLLBACK }
-  execsql { 
-    SELECT * FROM t1;
-    SELECT * FROM t2;
-    SELECT * FROM t3;
-  }
-} {1 2 5 6 3 4}
-do_test savepoint-10.2.14 {
-  execsql { PRAGMA lock_status }
-} [list main unlocked temp $templockstate aux1 unlocked aux2 unlocked]
+      INSERT INTO t2 VALUES(5, 6);
+      PRAGMA lock_status;
+    }
+  } [list main reserved temp $templockstate aux1 reserved aux2 reserved]
+  do_test savepoint-10.2.6 {
+    execsql { SELECT * FROM t2 }
+  } {5 6}
+  do_test savepoint-10.2.7 {
+    execsql { ROLLBACK TO two }
+    execsql { SELECT * FROM t2 }
+  } {}
+  do_test savepoint-10.2.8 {
+    execsql { PRAGMA lock_status }
+  } [list main reserved temp $templockstate aux1 reserved aux2 reserved]
+  do_test savepoint-10.2.9 {
+    execsql { SELECT 'a', * FROM t1 UNION ALL SELECT 'b', * FROM t3 }
+  } {a 1 2 b 3 4}
+  do_test savepoint-10.2.9 {
+    execsql {
+      INSERT INTO t2 VALUES(5, 6);
+      RELEASE one;
+    }
+    execsql { 
+      SELECT * FROM t1;
+      SELECT * FROM t2;
+      SELECT * FROM t3;
+    }
+  } {1 2 5 6 3 4}
+  do_test savepoint-10.2.9 {
+    execsql { PRAGMA lock_status }
+  } [list main unlocked temp $templockstate aux1 unlocked aux2 unlocked]
+  
+  do_test savepoint-10.2.10 {
+    execsql { 
+      SAVEPOINT one;
+        INSERT INTO t1 VALUES('a', 'b');
+        SAVEPOINT two;
+          INSERT INTO t2 VALUES('c', 'd');
+          SAVEPOINT three;
+            INSERT INTO t3 VALUES('e', 'f');
+    }
+    execsql { 
+      SELECT * FROM t1;
+      SELECT * FROM t2;
+      SELECT * FROM t3;
+    }
+  } {1 2 a b 5 6 c d 3 4 e f}
+  do_test savepoint-10.2.11 {
+    execsql { ROLLBACK TO two }
+    execsql { 
+      SELECT * FROM t1;
+      SELECT * FROM t2;
+      SELECT * FROM t3;
+    }
+  } {1 2 a b 5 6 3 4}
+  do_test savepoint-10.2.12 {
+    execsql { 
+      INSERT INTO t3 VALUES('g', 'h');
+      ROLLBACK TO two;
+    }
+    execsql { 
+      SELECT * FROM t1;
+      SELECT * FROM t2;
+      SELECT * FROM t3;
+    }
+  } {1 2 a b 5 6 3 4}
+  do_test savepoint-10.2.13 {
+    execsql { ROLLBACK }
+    execsql { 
+      SELECT * FROM t1;
+      SELECT * FROM t2;
+      SELECT * FROM t3;
+    }
+  } {1 2 5 6 3 4}
+  do_test savepoint-10.2.14 {
+    execsql { PRAGMA lock_status }
+  } [list main unlocked temp $templockstate aux1 unlocked aux2 unlocked]
+}
 
 #-------------------------------------------------------------------------
 # The following tests - savepoint-11.* - test the interaction of 
@@ -722,8 +764,9 @@ do_test savepoint-11.1 {
   db close
   file delete -force test.db
   sqlite3 db test.db
+  execsql { PRAGMA auto_vacuum = full; }
+  wal_set_journal_mode
   execsql {
-    PRAGMA auto_vacuum = full;
     CREATE TABLE t1(a, b, UNIQUE(a, b));
     INSERT INTO t1 VALUES(1, randstr(1000,1000));
     INSERT INTO t1 VALUES(2, randstr(1000,1000));
@@ -751,9 +794,9 @@ do_test savepoint-11.6 {
 integrity_check savepoint-11.7
 do_test savepoint-11.8 {
   execsql { ROLLBACK }
+  execsql { PRAGMA wal_checkpoint }
   file size test.db
 } {8192}
-
 
 do_test savepoint-11.9 {
   execsql {
@@ -782,6 +825,7 @@ do_test savepoint-11.11 {
 do_test savepoint-11.12 {
   execsql {SELECT * FROM t2}
 } {1 2 3 4}
+wal_check_journal_mode savepoint-11.13
 
 #-------------------------------------------------------------------------
 # The following tests - savepoint-12.* - test the interaction of 
@@ -815,50 +859,164 @@ do_test savepoint-12.3 {
 do_test savepoint-12.4 {
   execsql { SAVEPOINT one }
 } {}
+wal_check_journal_mode savepoint-12.5
 
 #-------------------------------------------------------------------------
 # The following tests - savepoint-13.* - test the interaction of 
 # savepoints and "journal_mode = off".
 # 
-do_test savepoint-13.1 {
-  db close
-  catch {file delete -force test.db}
-  sqlite3 db test.db
-  execsql {
-    BEGIN;
-      CREATE TABLE t1(a PRIMARY KEY, b);
-      INSERT INTO t1 VALUES(1, 2);
-    COMMIT;
-    PRAGMA journal_mode = off;
-  }
-} {off}
-do_test savepoint-13.2 {
-  execsql {
-    BEGIN;
-    INSERT INTO t1 VALUES(3, 4);
-    INSERT INTO t1 SELECT a+4,b+4  FROM t1;
-    COMMIT;
-  }
-} {}
-do_test savepoint-13.3 {
-  execsql {
-    BEGIN;
-      INSERT INTO t1 VALUES(9, 10);
-      SAVEPOINT s1;
-        INSERT INTO t1 VALUES(11, 12);
-    COMMIT;
-  }
-} {}
-do_test savepoint-13.4 {
-  execsql {
-    BEGIN;
-      INSERT INTO t1 VALUES(13, 14);
-      SAVEPOINT s1;
-        INSERT INTO t1 VALUES(15, 16);
-      ROLLBACK TO s1;
-    ROLLBACK;
-    SELECT * FROM t1;
-  }
-} {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16}
+if {[wal_is_wal_mode]==0} {
+  do_test savepoint-13.1 {
+    db close
+    catch {file delete -force test.db}
+    sqlite3 db test.db
+    execsql {
+      BEGIN;
+        CREATE TABLE t1(a PRIMARY KEY, b);
+        INSERT INTO t1 VALUES(1, 2);
+      COMMIT;
+      PRAGMA journal_mode = off;
+    }
+  } {off}
+  do_test savepoint-13.2 {
+    execsql {
+      BEGIN;
+      INSERT INTO t1 VALUES(3, 4);
+      INSERT INTO t1 SELECT a+4,b+4  FROM t1;
+      COMMIT;
+    }
+  } {}
+  do_test savepoint-13.3 {
+    execsql {
+      BEGIN;
+        INSERT INTO t1 VALUES(9, 10);
+        SAVEPOINT s1;
+          INSERT INTO t1 VALUES(11, 12);
+      COMMIT;
+    }
+  } {}
+  do_test savepoint-13.4 {
+    execsql {
+      BEGIN;
+        INSERT INTO t1 VALUES(13, 14);
+        SAVEPOINT s1;
+          INSERT INTO t1 VALUES(15, 16);
+        ROLLBACK TO s1;
+      ROLLBACK;
+      SELECT * FROM t1;
+    }
+  } {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16}
+}
+
+db close
+file delete test.db
+do_multiclient_test tn {
+  do_test savepoint-14.$tn.1 {
+    sql1 {
+      CREATE TABLE foo(x);
+      INSERT INTO foo VALUES(1);
+      INSERT INTO foo VALUES(2);
+    }
+    sql2 {
+      BEGIN;
+        SELECT * FROM foo;
+    }
+  } {1 2}
+  do_test savepoint-14.$tn.2 {
+    sql1 {
+      SAVEPOINT one;
+      INSERT INTO foo VALUES(1);
+    }
+    csql1 { RELEASE one }
+  } {1 {database is locked}}
+  do_test savepoint-14.$tn.3 {
+    sql1 { ROLLBACK TO one }
+    sql2 { COMMIT }
+    sql1 { RELEASE one }
+  } {}
+
+  do_test savepoint-14.$tn.4 {
+    sql2 {
+      BEGIN;
+        SELECT * FROM foo;
+    }
+  } {1 2}
+  do_test savepoint-14.$tn.5 {
+    sql1 {
+      SAVEPOINT one;
+      INSERT INTO foo VALUES(1);
+    }
+    csql1 { RELEASE one }
+  } {1 {database is locked}}
+  do_test savepoint-14.$tn.6 {
+    sql2 { COMMIT }
+    sql1 {
+      ROLLBACK TO one;
+      INSERT INTO foo VALUES(3);
+      INSERT INTO foo VALUES(4);
+      INSERT INTO foo VALUES(5);
+      RELEASE one;
+    }
+  } {}
+  do_test savepoint-14.$tn.7 {
+    sql2 { CREATE INDEX fooidx ON foo(x); }
+    sql3 { PRAGMA integrity_check }
+  } {ok}
+}
+
+do_multiclient_test tn {
+  do_test savepoint-15.$tn.1 {
+    sql1 {
+      CREATE TABLE foo(x);
+      INSERT INTO foo VALUES(1);
+      INSERT INTO foo VALUES(2);
+    }
+    sql2 { BEGIN; SELECT * FROM foo; }
+  } {1 2}
+  do_test savepoint-15.$tn.2 {
+    sql1 {
+      PRAGMA locking_mode = EXCLUSIVE;
+      BEGIN;
+        INSERT INTO foo VALUES(3);
+    }
+    csql1 { COMMIT }
+  } {1 {database is locked}}
+  do_test savepoint-15.$tn.3 {
+    sql1 { ROLLBACK }
+    sql2 { COMMIT }
+    sql1 {
+      INSERT INTO foo VALUES(3);
+      PRAGMA locking_mode = NORMAL;
+      INSERT INTO foo VALUES(4);
+    }
+    sql2 { CREATE INDEX fooidx ON foo(x); }
+    sql3 { PRAGMA integrity_check }
+  } {ok}
+}
+
+do_multiclient_test tn {
+  do_test savepoint-16.$tn.1 {
+    sql1 {
+      CREATE TABLE foo(x);
+      INSERT INTO foo VALUES(1);
+      INSERT INTO foo VALUES(2);
+    }
+  } {}
+  do_test savepoint-16.$tn.2 {
+
+    db eval {SELECT * FROM foo} {
+      sql1 { INSERT INTO foo VALUES(3) }
+      sql2 { SELECT * FROM foo }
+      sql1 { INSERT INTO foo VALUES(4) }
+      break
+    }
+
+    sql2 { CREATE INDEX fooidx ON foo(x); }
+    sql3 { PRAGMA integrity_check }
+  } {ok}
+  do_test savepoint-16.$tn.3 {
+    sql1 { SELECT * FROM foo }
+  } {1 2 3 4}
+}
 
 finish_test

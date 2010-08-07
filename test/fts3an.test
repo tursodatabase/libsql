@@ -185,12 +185,34 @@ do_test fts3an-3.1 {
   set t
 } $ret
 
-# TODO(shess) It would be useful to test a couple edge cases, but I
-# don't know if we have the precision to manage it from here at this
-# time.  Prefix hits can cross leaves, which the code above _should_
-# hit by virtue of size.  There are two variations on this.  If the
-# tree is 2 levels high, the code will find the leaf-node extent
-# directly, but if it is higher, the code will have to follow two
-# separate interior branches down the tree.  Both should be tested.
+# Test a boundary condition: More than 2^16 terms that match a searched for
+# prefix in a single segment.
+#
+puts "This next test can take a little while (~ 30 seconds)..."
+do_test fts3an-4.1 {
+  execsql { CREATE VIRTUAL TABLE ft USING fts3(x) }
+  execsql BEGIN
+    execsql { INSERT INTO ft VALUES(NULL) }
+    execsql { INSERT INTO ft SELECT * FROM ft }     ;#      2
+    execsql { INSERT INTO ft SELECT * FROM ft }     ;#      4
+    execsql { INSERT INTO ft SELECT * FROM ft }     ;#      8
+    execsql { INSERT INTO ft SELECT * FROM ft }     ;#     16
+    execsql { INSERT INTO ft SELECT * FROM ft }     ;#     32
+    execsql { INSERT INTO ft SELECT * FROM ft }     ;#     64
+    execsql { INSERT INTO ft SELECT * FROM ft }     ;#    128
+    execsql { INSERT INTO ft SELECT * FROM ft }     ;#    256
+    execsql { INSERT INTO ft SELECT * FROM ft }     ;#    512
+    execsql { INSERT INTO ft SELECT * FROM ft }     ;#   1024
+    execsql { INSERT INTO ft SELECT * FROM ft }     ;#   2048
+    execsql { INSERT INTO ft SELECT * FROM ft }     ;#   4096
+    execsql { INSERT INTO ft SELECT * FROM ft }     ;#   8192
+    execsql { INSERT INTO ft SELECT * FROM ft }     ;#  16384
+    execsql { INSERT INTO ft SELECT * FROM ft }     ;#  32768
+    execsql { INSERT INTO ft SELECT * FROM ft }     ;#  65536
+    execsql { INSERT INTO ft SELECT * FROM ft }     ;# 131072
+  execsql COMMIT
+  execsql { UPDATE ft SET x = 'abc' || rowid }
+  execsql { SELECT count(*) FROM ft WHERE x MATCH 'abc*' }
+} {131072}
 
 finish_test

@@ -298,15 +298,17 @@ ifcapable {trigger} {
 
 # Try to open a database with a corrupt database file.
 #
-do_test main-2.0 {
-  catch {db close}
-  file delete -force test.db
-  set fd [open test.db w]
-  puts $fd hi!
-  close $fd
-  set v [catch {sqlite3 db test.db} msg]
-  if {$v} {lappend v $msg} {lappend v {}}
-} {0 {}}
+if {[permutation] == ""} {
+  do_test main-2.0 {
+    catch {db close}
+    file delete -force test.db
+    set fd [open test.db w]
+    puts $fd hi!
+    close $fd
+    set v [catch {sqlite3 db test.db} msg]
+    if {$v} {lappend v $msg} {lappend v {}}
+  } {0 {}}
+}
 
 # Here are some tests for tokenize.c.  
 #

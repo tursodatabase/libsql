@@ -71,15 +71,19 @@ do_test capi2-1.6 {
 do_test capi2-1.7 {
   list [sqlite3_column_count $VM] [get_row_values $VM] [get_column_names $VM]
 } {2 {} {name rowid text INTEGER}}
-do_test capi2-1.8-misuse {
+
+# This used to be SQLITE_MISUSE.  But now we automatically reset prepared
+# statements.
+do_test capi2-1.8 {
   sqlite3_step $VM
-} {SQLITE_MISUSE}
+} {SQLITE_ROW}
 
 # Update: In v2, once SQLITE_MISUSE is returned the statement handle cannot
 # be interrogated for more information. However in v3, since the column
 # count, names and types are determined at compile time, these are still
 # accessible after an SQLITE_MISUSE error.
 do_test capi2-1.9 {
+  sqlite3_reset $VM
   list [sqlite3_column_count $VM] [get_row_values $VM] [get_column_names $VM]
 } {2 {} {name rowid text INTEGER}}
 do_test capi2-1.10 {

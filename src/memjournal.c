@@ -196,11 +196,10 @@ static int memjrnlClose(sqlite3_file *pJfd){
 ** exists purely as a contingency, in case some malfunction in some other
 ** part of SQLite causes Sync to be called by mistake.
 */
-static int memjrnlSync(sqlite3_file *NotUsed, int NotUsed2){   /*NO_TEST*/
-  UNUSED_PARAMETER2(NotUsed, NotUsed2);                        /*NO_TEST*/
-  assert( 0 );                                                 /*NO_TEST*/
-  return SQLITE_OK;                                            /*NO_TEST*/
-}                                                              /*NO_TEST*/
+static int memjrnlSync(sqlite3_file *NotUsed, int NotUsed2){
+  UNUSED_PARAMETER2(NotUsed, NotUsed2);
+  return SQLITE_OK;
+}
 
 /*
 ** Query the size of the file in bytes.
@@ -214,7 +213,7 @@ static int memjrnlFileSize(sqlite3_file *pJfd, sqlite_int64 *pSize){
 /*
 ** Table of methods for MemJournal sqlite3_file object.
 */
-static struct sqlite3_io_methods MemJournalMethods = {
+static const struct sqlite3_io_methods MemJournalMethods = {
   1,                /* iVersion */
   memjrnlClose,     /* xClose */
   memjrnlRead,      /* xRead */
@@ -227,7 +226,11 @@ static struct sqlite3_io_methods MemJournalMethods = {
   0,                /* xCheckReservedLock */
   0,                /* xFileControl */
   0,                /* xSectorSize */
-  0                 /* xDeviceCharacteristics */
+  0,                /* xDeviceCharacteristics */
+  0,                /* xShmMap */
+  0,                /* xShmLock */
+  0,                /* xShmBarrier */
+  0                 /* xShmUnlock */
 };
 
 /* 
@@ -237,7 +240,7 @@ void sqlite3MemJournalOpen(sqlite3_file *pJfd){
   MemJournal *p = (MemJournal *)pJfd;
   assert( EIGHT_BYTE_ALIGNMENT(p) );
   memset(p, 0, sqlite3MemJournalSize());
-  p->pMethod = &MemJournalMethods;
+  p->pMethod = (sqlite3_io_methods*)&MemJournalMethods;
 }
 
 /*

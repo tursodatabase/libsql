@@ -22,6 +22,11 @@ catch {file delete -force test.db test.db-journal test.bu}
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# Do not use a codec for tests in this file, as the database file is
+# manipulated directly using tcl scripts (using the [hexio_write] command).
+#
+do_not_use_codec
+
 # Construct a compact, dense database for testing.
 #
 do_test corruptC-1.1 {
@@ -67,7 +72,7 @@ sqlite3 db test.db
 set fsize [file size test.db]
 
 # Set a quasi-random random seed. 
-if {[info exists SOAKTEST]} {
+if {[info exists ::G(issoak)]} {
   # If we are doing SOAK tests, we want a different
   # random seed for each run.  Ideally we would like 
   # to use [clock clicks] or something like that here.
@@ -275,6 +280,17 @@ do_test corruptC-2.14 {
   hexio_write test.db [expr $filesize-2048] 00000001
   catchsql {DELETE FROM t1 WHERE rowid = (SELECT max(rowid) FROM t1)}
 } {1 {database disk image is malformed}}
+
+# At one point this particular corrupt database was causing a buffer
+# overread. Which caused a crash in a run of all.test once.
+#
+do_test corruptC-2.15 {
+  db close
+  copy_file test.bu test.db
+  hexio_write test.db 986 b9
+  sqlite3 db test.db
+  catchsql {SELECT count(*) FROM sqlite_master;}
+} {1 {malformed database schema (t1i1) - no such table: main.t1}}
 
 #
 # Now test for a series of quasi-random seeds.

@@ -212,7 +212,7 @@ do_test exclusive-2.8 {
     ROLLBACK;
   } db2
 } {}
-sqlite3_soft_heap_limit $soft_limit
+sqlite3_soft_heap_limit $cmdlinearg(soft-heap-limit)
 
 do_test exclusive-2.9 {
   # Write the database to establish the exclusive lock with connection 'db.

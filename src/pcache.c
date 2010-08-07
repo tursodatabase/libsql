@@ -260,15 +260,17 @@ int sqlite3PcacheFetch(
 
   if( pPage ){
     if( !pPage->pData ){
-      memset(pPage, 0, sizeof(PgHdr) + pCache->szExtra);
-      pPage->pExtra = (void*)&pPage[1];
-      pPage->pData = (void *)&((char *)pPage)[sizeof(PgHdr) + pCache->szExtra];
+      memset(pPage, 0, sizeof(PgHdr));
+      pPage->pData = (void *)&pPage[1];
+      pPage->pExtra = (void*)&((char *)pPage->pData)[pCache->szPage];
+      memset(pPage->pExtra, 0, pCache->szExtra);
       pPage->pCache = pCache;
       pPage->pgno = pgno;
     }
     assert( pPage->pCache==pCache );
     assert( pPage->pgno==pgno );
-    assert( pPage->pExtra==(void *)&pPage[1] );
+    assert( pPage->pData==(void *)&pPage[1] );
+    assert( pPage->pExtra==(void *)&((char *)&pPage[1])[pCache->szPage] );
 
     if( 0==pPage->nRef ){
       pCache->nRef++;
@@ -407,7 +409,12 @@ void sqlite3PcacheTruncate(PCache *pCache, Pgno pgno){
     PgHdr *pNext;
     for(p=pCache->pDirty; p; p=pNext){
       pNext = p->pDirtyNext;
-      if( p->pgno>pgno ){
+      /* This routine never gets call with a positive pgno except right
+      ** after sqlite3PcacheCleanAll().  So if there are dirty pages,
+      ** it must be that pgno==0.
+      */
+      assert( p->pgno>0 );
+      if( ALWAYS(p->pgno>pgno) ){
         assert( p->flags&PGHDR_DIRTY );
         sqlite3PcacheMakeClean(p);
       }

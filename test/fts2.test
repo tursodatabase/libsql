@@ -21,7 +21,7 @@ while {[set arg [lshift argv]] != ""} {
       sqlite3_enable_shared_cache 1
     }
     -soak {
-       set SOAKTEST 1
+       set G(issoak) 1
     }
     default {
       set argv [linsert $argv 0 $arg]
@@ -38,7 +38,7 @@ ifcapable !fts2 {
 }
 rename finish_test really_finish_test
 proc finish_test {} {}
-set ISQUICK 1
+set G(isquick) 1
 
 set EXCLUDE {
   fts2.test
@@ -58,8 +58,7 @@ foreach testfile [lsort -dictionary [glob $testdir/fts2*.test]] {
   catch {db close}
   if {$sqlite_open_file_count>0} {
     puts "$tail did not close all files: $sqlite_open_file_count"
-    incr nErr
-    lappend ::failList $tail
+    fail_test $tail
     set sqlite_open_file_count 0
   }
 }

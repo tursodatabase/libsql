@@ -173,6 +173,7 @@ static void *pcache1Alloc(int nByte){
       int sz = sqlite3MallocSize(p);
       sqlite3StatusAdd(SQLITE_STATUS_PAGECACHE_OVERFLOW, sz);
     }
+    sqlite3MemdebugSetType(p, MEMTYPE_PCACHE);
   }
   return p;
 }
@@ -190,7 +191,10 @@ static void pcache1Free(void *p){
     pSlot->pNext = pcache1.pFree;
     pcache1.pFree = pSlot;
   }else{
-    int iSize = sqlite3MallocSize(p);
+    int iSize;
+    assert( sqlite3MemdebugHasType(p, MEMTYPE_PCACHE) );
+    sqlite3MemdebugSetType(p, MEMTYPE_HEAP);
+    iSize = sqlite3MallocSize(p);
     sqlite3StatusAdd(SQLITE_STATUS_PAGECACHE_OVERFLOW, -iSize);
     sqlite3_free(p);
   }
@@ -712,7 +716,7 @@ static void pcache1Destroy(sqlite3_pcache *p){
 ** already provided an alternative.
 */
 void sqlite3PCacheSetDefault(void){
-  static sqlite3_pcache_methods defaultMethods = {
+  static const sqlite3_pcache_methods defaultMethods = {
     0,                       /* pArg */
     pcache1Init,             /* xInit */
     pcache1Shutdown,         /* xShutdown */

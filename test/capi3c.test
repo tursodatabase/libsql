@@ -19,6 +19,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# Do not use a codec for tests in this file, as the database file is
+# manipulated directly using tcl scripts (using the [hexio_write] command).
+#
+do_not_use_codec
+
 # Return the UTF-16 representation of the supplied UTF-8 string $str.
 # If $nt is true, append two 0x00 bytes as a nul terminator.
 proc utf16 {str {nt 1}} {
@@ -606,7 +611,7 @@ db close
 do_test capi3c-6.0 {
   sqlite3 db test.db
   set DB [sqlite3_connection_pointer db]
-  sqlite3_key $DB xyzzy
+  if {[sqlite3 -has-codec]==0} { sqlite3_key $DB xyzzy }
   set sql {SELECT a FROM t1 order by rowid}
   set STMT [sqlite3_prepare_v2 $DB $sql -1 TAIL]
   expr 0
@@ -653,7 +658,7 @@ if {![sqlite3 -has-codec]} {
     set_file_format 5
   } {}
   do_test capi3c-7.2 {
-    sqlite3 db test.db
+    catch { sqlite3 db test.db }
     catchsql {
       SELECT * FROM sqlite_master;
     }
@@ -681,7 +686,7 @@ if {![sqlite3 -has-codec]} {
     db close
   } {}
   do_test capi3c-8.3 {
-    sqlite3 db test.db
+    catch { sqlite3 db test.db }
     catchsql {
       SELECT * FROM sqlite_master;
     }
@@ -700,7 +705,7 @@ if {![sqlite3 -has-codec]} {
     db close
   } {};
   do_test capi3c-8.5 {
-    sqlite3 db test.db
+    catch { sqlite3 db test.db }
     catchsql {
       SELECT * FROM sqlite_master;
     }

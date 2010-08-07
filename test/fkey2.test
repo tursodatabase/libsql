@@ -74,8 +74,14 @@ ifcapable {!foreignkey||!trigger} {
 # fkey2-18.*: Test that the authorization callback is invoked when processing
 #             FK constraints.
 #
+# fkey2-20.*: Test that ON CONFLICT clauses specified as part of statements
+#             do not affect the operation of FK constraints.
+#
 # fkey2-genfkey.*: Tests that were used with the shell tool .genfkey
 #            command. Recycled to test the built-in implementation.
+#
+# fkey2-dd08e5.*:  Tests to verify that ticket dd08e5a988d00decc4a543daa8d
+#                  has been fixed.
 #
 
 
@@ -1410,7 +1416,7 @@ do_test fkey2-17.1.2 {
 } {SQLITE_CONSTRAINT}
 do_test fkey2-17.1.3 {
   sqlite3_step $STMT
-} {SQLITE_MISUSE}
+} {SQLITE_CONSTRAINT}
 do_test fkey2-17.1.4 {
   sqlite3_finalize $STMT
 } {SQLITE_CONSTRAINT}
@@ -1598,6 +1604,121 @@ ifcapable auth {
   unset authargs
 }
 
+
+do_test fkey2-19.1 {
+  execsql {
+    CREATE TABLE main(id INTEGER PRIMARY KEY);
+    CREATE TABLE sub(id INT REFERENCES main(id));
+    INSERT INTO main VALUES(1);
+    INSERT INTO main VALUES(2);
+    INSERT INTO sub VALUES(2);
+  }
+} {}
+do_test fkey2-19.2 {
+  set S [sqlite3_prepare_v2 db "DELETE FROM main WHERE id = ?" -1 dummy]
+  sqlite3_bind_int $S 1 2
+  sqlite3_step $S
+} {SQLITE_CONSTRAINT}
+do_test fkey2-19.3 {
+  sqlite3_reset $S
+} {SQLITE_CONSTRAINT}
+do_test fkey2-19.4 {
+  sqlite3_bind_int $S 1 1
+  sqlite3_step $S
+} {SQLITE_DONE}
+do_test fkey2-19.4 {
+  sqlite3_finalize $S
+} {SQLITE_OK}
+
+drop_all_tables
+do_test fkey2-20.1 {
+  execsql {
+    CREATE TABLE pp(a PRIMARY KEY, b);
+    CREATE TABLE cc(c PRIMARY KEY, d REFERENCES pp);
+  }
+} {}
+
+foreach {tn insert} {
+  1 "INSERT"
+  2 "INSERT OR IGNORE"
+  3 "INSERT OR ABORT"
+  4 "INSERT OR ROLLBACK"
+  5 "INSERT OR REPLACE"
+  6 "INSERT OR FAIL"
+} {
+  do_test fkey2-20.2.$tn.1 {
+    catchsql "$insert INTO cc VALUES(1, 2)"
+  } {1 {foreign key constraint failed}}
+  do_test fkey2-20.2.$tn.2 {
+    execsql { SELECT * FROM cc }
+  } {}
+  do_test fkey2-20.2.$tn.3 {
+    execsql {
+      BEGIN;
+        INSERT INTO pp VALUES(2, 'two');
+        INSERT INTO cc VALUES(1, 2);
+    }
+    catchsql "$insert INTO cc VALUES(3, 4)"
+  } {1 {foreign key constraint failed}}
+  do_test fkey2-20.2.$tn.4 {
+    execsql { COMMIT ; SELECT * FROM cc }
+  } {1 2}
+  do_test fkey2-20.2.$tn.5 {
+    execsql { DELETE FROM cc ; DELETE FROM pp }
+  } {}
+}
+
+foreach {tn update} {
+  1 "UPDATE"
+  2 "UPDATE OR IGNORE"
+  3 "UPDATE OR ABORT"
+  4 "UPDATE OR ROLLBACK"
+  5 "UPDATE OR REPLACE"
+  6 "UPDATE OR FAIL"
+} {
+  do_test fkey2-20.3.$tn.1 {
+    execsql {
+      INSERT INTO pp VALUES(2, 'two');
+      INSERT INTO cc VALUES(1, 2);
+    }
+  } {}
+  do_test fkey2-20.3.$tn.2 {
+    catchsql "$update pp SET a = 1"
+  } {1 {foreign key constraint failed}}
+  do_test fkey2-20.3.$tn.3 {
+    execsql { SELECT * FROM pp }
+  } {2 two}
+  do_test fkey2-20.3.$tn.4 {
+    catchsql "$update cc SET d = 1"
+  } {1 {foreign key constraint failed}}
+  do_test fkey2-20.3.$tn.5 {
+    execsql { SELECT * FROM cc }
+  } {1 2}
+  do_test fkey2-20.3.$tn.6 {
+    execsql {
+      BEGIN;
+        INSERT INTO pp VALUES(3, 'three');
+    }
+    catchsql "$update pp SET a = 1 WHERE a = 2"
+  } {1 {foreign key constraint failed}}
+  do_test fkey2-20.3.$tn.7 {
+    execsql { COMMIT ; SELECT * FROM pp }
+  } {2 two 3 three}
+  do_test fkey2-20.3.$tn.8 {
+    execsql {
+      BEGIN;
+        INSERT INTO cc VALUES(2, 2);
+    }
+    catchsql "$update cc SET d = 1 WHERE c = 1"
+  } {1 {foreign key constraint failed}}
+  do_test fkey2-20.3.$tn.9 {
+    execsql { COMMIT ; SELECT * FROM cc }
+  } {1 2 2 2}
+  do_test fkey2-20.3.$tn.10 {
+    execsql { DELETE FROM cc ; DELETE FROM pp }
+  } {}
+}
+
 #-------------------------------------------------------------------------
 # The following block of tests, those prefixed with "fkey2-genfkey.", are 
 # the same tests that were used to test the ".genfkey" command provided 
@@ -1773,5 +1894,47 @@ do_test fkey2-genfkey.3.6 {
     SELECT * FROM t3;
   }
 } {hello {} {}}
+
+#-------------------------------------------------------------------------
+# Verify that ticket dd08e5a988d00decc4a543daa8dbbfab9c577ad8 has been
+# fixed.
+#
+do_test fkey2-dd08e5.1.1 {
+  execsql {
+    PRAGMA foreign_keys=ON;
+    CREATE TABLE tdd08(a INTEGER PRIMARY KEY, b);
+    CREATE UNIQUE INDEX idd08 ON tdd08(a,b);
+    INSERT INTO tdd08 VALUES(200,300);
+
+    CREATE TABLE tdd08_b(w,x,y, FOREIGN KEY(x,y) REFERENCES tdd08(a,b));
+    INSERT INTO tdd08_b VALUES(100,200,300);
+  }
+} {}
+do_test fkey2-dd08e5.1.2 {
+  catchsql {
+    DELETE FROM tdd08;
+  }
+} {1 {foreign key constraint failed}}
+do_test fkey2-dd08e5.1.3 {
+  execsql {
+    SELECT * FROM tdd08;
+  }
+} {200 300}
+do_test fkey2-dd08e5.1.4 {
+  catchsql {
+    INSERT INTO tdd08_b VALUES(400,500,300);
+  }
+} {1 {foreign key constraint failed}}
+do_test fkey2-dd08e5.1.5 {
+  catchsql {
+    UPDATE tdd08_b SET x=x+1;
+  }
+} {1 {foreign key constraint failed}}
+do_test fkey2-dd08e5.1.6 {
+  catchsql {
+    UPDATE tdd08 SET a=a+1;
+  }
+} {1 {foreign key constraint failed}}
+
 
 finish_test

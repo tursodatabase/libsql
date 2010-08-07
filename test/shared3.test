@@ -90,12 +90,12 @@ do_test shared3-2.8 {
   execsql {
     INSERT INTO t1 VALUES(10, randomblob(10000))
   } db1
-  sqlite3 db3 $alternative_name
 
   # If the pager-cache is really still limited to 10 pages, then the INSERT
   # statement above should have caused the pager to grab an exclusive lock
   # on the database file so that the cache could be spilled.
   #
+  catch { sqlite3 db3 $alternative_name }
   catchsql {select count(*) from sqlite_master} db3
 } {1 {database is locked}}
 

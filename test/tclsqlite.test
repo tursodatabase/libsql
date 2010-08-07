@@ -25,7 +25,7 @@ source $testdir/tester.tcl
 if {[sqlite3 -has-codec]} {
   set r "sqlite_orig HANDLE FILENAME ?-key CODEC-KEY?"
 } else {
-  set r "sqlite3 HANDLE FILENAME ?-vfs VFSNAME? ?-readonly BOOLEAN? ?-create BOOLEAN? ?-nomutex BOOLEAN? ?-fullmutex BOOLEAN?"
+  set r "sqlite_orig HANDLE FILENAME ?-vfs VFSNAME? ?-readonly BOOLEAN? ?-create BOOLEAN? ?-nomutex BOOLEAN? ?-fullmutex BOOLEAN?"
 }
 do_test tcl-1.1 {
   set v [catch {sqlite3 bogus} msg]
@@ -35,7 +35,7 @@ do_test tcl-1.1 {
 do_test tcl-1.2 {
   set v [catch {db bogus} msg]
   lappend v $msg
-} {1 {bad option "bogus": must be authorizer, backup, busy, cache, changes, close, collate, collation_needed, commit_hook, complete, copy, enable_load_extension, errorcode, eval, exists, function, incrblob, interrupt, last_insert_rowid, nullvalue, onecolumn, profile, progress, rekey, restore, rollback_hook, status, timeout, total_changes, trace, transaction, unlock_notify, update_hook, or version}}
+} {1 {bad option "bogus": must be authorizer, backup, busy, cache, changes, close, collate, collation_needed, commit_hook, complete, copy, enable_load_extension, errorcode, eval, exists, function, incrblob, interrupt, last_insert_rowid, nullvalue, onecolumn, profile, progress, rekey, restore, rollback_hook, status, timeout, total_changes, trace, transaction, unlock_notify, update_hook, version, or wal_hook}}
 do_test tcl-1.2.1 {
   set v [catch {db cache bogus} msg]
   lappend v $msg

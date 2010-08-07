@@ -14,6 +14,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# Do not use a codec for tests in this file, as the database file is
+# manipulated directly using tcl scripts (using the [hexio_write] command).
+#
+do_not_use_codec
+
 # These tests only work for Tcl version 8.5 and later on Windows (for now)
 #
 if {$tcl_platform(platform)=="windows"} {
@@ -94,6 +99,7 @@ do_test async4.1.14 {
 do_test async4.1.15 {
   sqlite3async_start
   sqlite3async_wait
+  hexio_write test.db 28 00000000
   execsql { pragma integrity_check } db2
 } {{*** in database main ***
 Page 5 is never used}}

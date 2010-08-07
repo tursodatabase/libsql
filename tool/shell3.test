@@ -121,3 +121,4 @@ do_test shell3-2.7 {
 } {1 {Error: incomplete SQL: CREATE TABLE}}
 
 
+puts "CLI tests completed successfully"

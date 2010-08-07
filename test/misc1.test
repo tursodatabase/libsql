@@ -481,8 +481,12 @@ do_test misc1-14.1 {
   execsql {BEGIN}
   file exists ./test.db-journal
 } {0}
-do_test misc1-14.2 {
-  execsql {UPDATE t1 SET a=0 WHERE 0}
+do_test misc1-14.2a {
+  execsql {UPDATE t1 SET a=a||'x' WHERE 0}
+  file exists ../test.db-journal
+} {0}
+do_test misc1-14.2b {
+  execsql {UPDATE t1 SET a=a||'y' WHERE 1}
   file exists ../test.db-journal
 } {1}
 do_test misc1-14.3 {

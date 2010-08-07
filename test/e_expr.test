@@ -1,0 +1,332 @@
+# 2010 July 16
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file implements tests to verify that the "testable statements" in 
+# the lang_expr.html document are correct.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/malloc_common.tcl
+
+# Set up three global variables:
+#
+#   ::opname         An array mapping from SQL operator to an easy to parse
+#                    name. The names are used as part of test case names.
+#
+#   ::opprec         An array mapping from SQL operator to a numeric
+#                    precedence value. Operators that group more tightly
+#                    have lower numeric precedences.
+#
+#   ::oplist         A list of all SQL operators supported by SQLite.
+#
+foreach {op opn} {
+      ||   cat     *   mul       /  div       %     mod       +      add
+      -    sub     <<  lshift    >> rshift    &     bitand    |      bitor
+      <    less    <=  lesseq    >  more      >=    moreeq    =      eq1
+      ==   eq2     <>  ne1       != ne2       IS    is        LIKE   like
+      GLOB glob    AND and       OR or        MATCH match     REGEXP regexp
+      {IS NOT} isnt
+} {
+  set ::opname($op) $opn
+}
+set oplist [list]
+foreach {prec opl} {
+  1   ||
+  2   {* / %}
+  3   {+ -}
+  4   {<< >> & |}
+  5   {< <= > >=}
+  6   {= == != <> IS {IS NOT} LIKE GLOB MATCH REGEXP}
+  7   AND
+  8   OR
+} {
+  foreach op $opl { 
+    set ::opprec($op) $prec 
+    lappend oplist $op
+  }
+}
+
+
+# Hook in definitions of MATCH and REGEX. The following implementations
+# cause MATCH and REGEX to behave similarly to the == operator.
+#
+proc matchfunc {a b} { return [expr {$a==$b}] }
+proc regexfunc {a b} { return [expr {$a==$b}] }
+db func match  -argcount 2 matchfunc
+db func regexp -argcount 2 regexfunc
+
+#-------------------------------------------------------------------------
+# Test cases e_expr-1.* attempt to verify that all binary operators listed
+# in the documentation exist and that the relative precedences of the
+# operators are also as the documentation suggests.
+#
+# EVIDENCE-OF: R-15514-65163 SQLite understands the following binary
+# operators, in order from highest to lowest precedence: || * / % + -
+# << >> & | < <= > >= = == != <> IS IS
+# NOT IN LIKE GLOB MATCH REGEXP AND OR
+#
+# EVIDENCE-OF: R-38759-38789 Operators IS and IS NOT have the same
+# precedence as =.
+#
+
+unset -nocomplain untested
+foreach op1 $oplist {
+  foreach op2 $oplist {
+    set untested($op1,$op2) 1
+    foreach {tn A B C} {
+       1     22   45    66
+       2      0    0     0
+       3      0    0     1
+       4      0    1     0
+       5      0    1     1
+       6      1    0     0
+       7      1    0     1
+       8      1    1     0
+       9      1    1     1
+      10      5    6     1
+      11      1    5     6
+      12      1    5     5
+      13      5    5     1
+
+      14      5    2     1
+      15      1    4     1
+      16     -1    0     1
+      17      0    1    -1
+
+    } {
+      set testname "e_expr-1.$opname($op1).$opname($op2).$tn"
+
+      # If $op2 groups more tightly than $op1, then the result
+      # of executing $sql1 whould be the same as executing $sql3.
+      # If $op1 groups more tightly, or if $op1 and $op2 have 
+      # the same precedence, then executing $sql1 should return
+      # the same value as $sql2.
+      #
+      set sql1 "SELECT $A $op1 $B $op2 $C"
+      set sql2 "SELECT ($A $op1 $B) $op2 $C"
+      set sql3 "SELECT $A $op1 ($B $op2 $C)"
+
+      set a2 [db one $sql2]
+      set a3 [db one $sql3]
+
+      do_execsql_test $testname $sql1 [list [
+        if {$opprec($op2) < $opprec($op1)} {set a3} {set a2}
+      ]]
+      if {$a2 != $a3} { unset -nocomplain untested($op1,$op2) }
+    }
+  }
+}
+
+foreach op {* AND OR + || & |} { unset untested($op,$op) }
+unset untested(+,-)  ;#       Since    (a+b)-c == a+(b-c)
+unset untested(*,<<) ;#       Since    (a*b)<<c == a*(b<<c)
+
+do_test e_expr-1.1 { array names untested } {}
+
+# At one point, test 1.2.2 was failing. Instead of the correct result, it
+# was returning {1 1 0}. This would seem to indicate that LIKE has the
+# same precedence as '<'. Which is incorrect. It has lower precedence.
+#
+do_execsql_test e_expr-1.2.1 { 
+  SELECT 0 < 2 LIKE 1,   (0 < 2) LIKE 1,   0 < (2 LIKE 1)
+} {1 1 0}
+do_execsql_test e_expr-1.2.2 { 
+  SELECT 0 LIKE 0 < 2,   (0 LIKE 0) < 2,   0 LIKE (0 < 2)
+} {0 1 0}
+
+# Showing that LIKE and == have the same precedence
+#
+do_execsql_test e_expr-1.2.3 { 
+  SELECT 2 LIKE 2 == 1,   (2 LIKE 2) == 1,    2 LIKE (2 == 1)
+} {1 1 0}
+do_execsql_test e_expr-1.2.4 { 
+  SELECT 2 == 2 LIKE 1,   (2 == 2) LIKE 1,    2 == (2 LIKE 1)
+} {1 1 0}
+
+# Showing that < groups more tightly than == (< has higher precedence). 
+#
+do_execsql_test e_expr-1.2.5 { 
+  SELECT 0 < 2 == 1,   (0 < 2) == 1,   0 < (2 == 1)
+} {1 1 0}
+do_execsql_test e_expr-1.6 { 
+  SELECT 0 == 0 < 2,   (0 == 0) < 2,   0 == (0 < 2)
+} {0 1 0}
+
+#-------------------------------------------------------------------------
+# Check that the four unary prefix operators mentioned in the 
+# documentation exist.
+#
+# EVIDENCE-OF: R-13958-53419 Supported unary prefix operators are these:
+# - + ~ NOT
+#
+do_execsql_test e_expr-2.1 { SELECT -   10   } {-10}
+do_execsql_test e_expr-2.2 { SELECT +   10   } {10}
+do_execsql_test e_expr-2.3 { SELECT ~   10   } {-11}
+do_execsql_test e_expr-2.4 { SELECT NOT 10   } {0}
+
+#-------------------------------------------------------------------------
+# Tests for the two statements made regarding the unary + operator.
+#
+# EVIDENCE-OF: R-53670-03373 The unary operator + is a no-op.
+#
+# EVIDENCE-OF: R-19480-30968 It can be applied to strings, numbers,
+# blobs or NULL and it always returns a result with the same value as
+# the operand.
+#
+foreach {tn literal type} {
+  1     'helloworld'   text
+  2     45             integer
+  3     45.2           real
+  4     45.0           real
+  5     X'ABCDEF'      blob
+  6     NULL           null
+} {
+  set sql " SELECT quote( + $literal ), typeof( + $literal) "
+  do_execsql_test e_expr-3.$tn $sql [list $literal $type]
+}
+
+#-------------------------------------------------------------------------
+# Check that both = and == are both acceptable as the "equals" operator.
+# Similarly, either != or <> work as the not-equals operator.
+#
+# EVIDENCE-OF: R-03679-60639 Equals can be either = or ==.
+#
+# EVIDENCE-OF: R-30082-38996 The non-equals operator can be either != or
+# <>.
+#
+foreach {tn literal different} {
+  1   'helloworld'  '12345'
+  2   22            23
+  3   'xyz'         X'78797A'
+  4   X'78797A00'   'xyz'
+} {
+  do_execsql_test e_expr-4.$tn "
+    SELECT $literal  = $literal,   $literal == $literal,
+           $literal  = $different, $literal == $different,
+           $literal  = NULL,       $literal == NULL,
+           $literal != $literal,   $literal <> $literal,
+           $literal != $different, $literal <> $different,
+           $literal != NULL,       $literal != NULL
+
+  " {1 1 0 0 {} {} 0 0 1 1 {} {}}
+}
+
+#-------------------------------------------------------------------------
+# Test the || operator.
+#
+# EVIDENCE-OF: R-44409-62641 The || operator is "concatenate" - it joins
+# together the two strings of its operands.
+#
+foreach {tn a b} {
+  1   'helloworld'  '12345'
+  2   22            23
+} {
+  set as [db one "SELECT $a"]
+  set bs [db one "SELECT $b"]
+  
+  do_execsql_test e_expr-5.$tn "SELECT $a || $b" [list "${as}${bs}"]
+}
+
+#-------------------------------------------------------------------------
+# Test the % operator.
+#
+# EVIDENCE-OF: R-08914-63790 The operator % outputs the value of its
+# left operand modulo its right operand.
+#
+do_execsql_test e_expr-6.1 {SELECT  72%5}  {2}
+do_execsql_test e_expr-6.2 {SELECT  72%-5} {2}
+do_execsql_test e_expr-6.3 {SELECT -72%-5} {-2}
+do_execsql_test e_expr-6.4 {SELECT -72%5}  {-2}
+
+#-------------------------------------------------------------------------
+# Test that the results of all binary operators are either numeric or 
+# NULL, except for the || operator, which may evaluate to either a text
+# value or NULL.
+#
+# EVIDENCE-OF: R-20665-17792 The result of any binary operator is either
+# a numeric value or NULL, except for the || concatenation operator
+# which always evaluates to either NULL or a text value.
+#
+set literals {
+  1 'abc'        2 'hexadecimal'       3 ''
+  4 123          5 -123                6 0
+  7 123.4        8 0.0                 9 -123.4
+ 10 X'ABCDEF'   11 X''                12 X'0000'
+ 13     NULL
+}
+foreach op $oplist {
+  foreach {n1 rhs} $literals { 
+  foreach {n2 lhs} $literals {
+
+    set t [db one " SELECT typeof($lhs $op $rhs) "]
+    do_test e_expr-7.$opname($op).$n1.$n2 {
+      expr {
+           ($op=="||" && ($t == "text" || $t == "null"))
+        || ($op!="||" && ($t == "integer" || $t == "real" || $t == "null"))
+      }
+    } 1
+
+  }}
+}
+
+#-------------------------------------------------------------------------
+# Test the IS and IS NOT operators.
+#
+# EVIDENCE-OF: R-24731-45773 The IS and IS NOT operators work like = and
+# != except when one or both of the operands are NULL.
+#
+# EVIDENCE-OF: R-06325-15315 In this case, if both operands are NULL,
+# then the IS operator evaluates to 1 (true) and the IS NOT operator
+# evaluates to 0 (false).
+#
+# EVIDENCE-OF: R-19812-36779 If one operand is NULL and the other is
+# not, then the IS operator evaluates to 0 (false) and the IS NOT
+# operator is 1 (true).
+#
+# EVIDENCE-OF: R-61975-13410 It is not possible for an IS or IS NOT
+# expression to evaluate to NULL.
+#
+do_execsql_test e_expr-8.1.1  { SELECT NULL IS     NULL } {1}
+do_execsql_test e_expr-8.1.2  { SELECT 'ab' IS     NULL } {0}
+do_execsql_test e_expr-8.1.3  { SELECT NULL IS     'ab' } {0}
+do_execsql_test e_expr-8.1.4  { SELECT 'ab' IS     'ab' } {1}
+do_execsql_test e_expr-8.1.5  { SELECT NULL ==     NULL } {{}}
+do_execsql_test e_expr-8.1.6  { SELECT 'ab' ==     NULL } {{}}
+do_execsql_test e_expr-8.1.7  { SELECT NULL ==     'ab' } {{}}
+do_execsql_test e_expr-8.1.8  { SELECT 'ab' ==     'ab' } {1}
+do_execsql_test e_expr-8.1.9  { SELECT NULL IS NOT NULL } {0}
+do_execsql_test e_expr-8.1.10 { SELECT 'ab' IS NOT NULL } {1}
+do_execsql_test e_expr-8.1.11 { SELECT NULL IS NOT 'ab' } {1}
+do_execsql_test e_expr-8.1.12 { SELECT 'ab' IS NOT 'ab' } {0}
+do_execsql_test e_expr-8.1.13 { SELECT NULL !=     NULL } {{}}
+do_execsql_test e_expr-8.1.14 { SELECT 'ab' !=     NULL } {{}}
+do_execsql_test e_expr-8.1.15 { SELECT NULL !=     'ab' } {{}}
+do_execsql_test e_expr-8.1.16 { SELECT 'ab' !=     'ab' } {0}
+
+foreach {n1 rhs} $literals { 
+  foreach {n2 lhs} $literals {
+    if {$rhs!="NULL" && $lhs!="NULL"} {
+      set eq [execsql "SELECT $lhs = $rhs, $lhs != $rhs"]
+    } else {
+      set eq [list [expr {$lhs=="NULL" && $rhs=="NULL"}] \
+                   [expr {$lhs!="NULL" || $rhs!="NULL"}]
+      ]
+    }
+    set test e_expr-8.2.$n1.$n2
+    do_execsql_test $test.1 "SELECT $lhs IS $rhs, $lhs IS NOT $rhs" $eq
+    do_execsql_test $test.2 "
+      SELECT ($lhs IS $rhs) IS NULL, ($lhs IS NOT $rhs) IS NULL
+    " {0 0}
+  }
+}
+
+finish_test

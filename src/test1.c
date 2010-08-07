@@ -1901,6 +1901,13 @@ static int sqlite_abort(
   int argc,              /* Number of arguments */
   char **argv            /* Text of each argument */
 ){
+#if defined(_MSC_VER)
+  /* We do this, otherwise the test will halt with a popup message
+   * that we have to click away before the test will continue.
+   */
+  _set_abort_behavior( 0, _CALL_REPORTFAULT );
+#endif
+  exit(255);
   assert( interp==0 );   /* This will always fail */
   return TCL_OK;
 }
@@ -2025,6 +2032,7 @@ static int test_stmt_status(
   } aOp[] = {
     { "SQLITE_STMTSTATUS_FULLSCAN_STEP",   SQLITE_STMTSTATUS_FULLSCAN_STEP   },
     { "SQLITE_STMTSTATUS_SORT",            SQLITE_STMTSTATUS_SORT            },
+    { "SQLITE_STMTSTATUS_AUTOINDEX",       SQLITE_STMTSTATUS_AUTOINDEX       },
   };
   if( objc!=4 ){
     Tcl_WrongNumArgs(interp, 1, objv, "STMT PARAMETER RESETFLAG");
@@ -2625,7 +2633,7 @@ bad_args:
 }
 
 /*
-** Usage:         test_errstr <err code>
+** Usage:         sqlite3_test_errstr <err code>
 **
 ** Test that the english language string equivalents for sqlite error codes
 ** are sane. The parameter is an integer representing an sqlite error code.
@@ -3900,7 +3908,6 @@ static int test_global_recover(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-#ifndef SQLITE_OMIT_GLOBALRECOVER
 #ifndef SQLITE_OMIT_DEPRECATED
   int rc;
   if( objc!=1 ){
@@ -3909,7 +3916,6 @@ static int test_global_recover(
   }
   rc = sqlite3_global_recover();
   Tcl_SetResult(interp, (char *)t1ErrorName(rc), TCL_STATIC);
-#endif
 #endif
   return TCL_OK;
 }
@@ -4609,7 +4615,7 @@ static int file_control_lasterrno_test(
 }
 
 /*
-** tclcmd:   file_control_lockproxy_test DB
+** tclcmd:   file_control_lockproxy_test DB PWD
 **
 ** This TCL command runs the sqlite3_file_control interface and
 ** verifies correct operation of the SQLITE_GET_LOCKPROXYFILE and
@@ -4622,15 +4628,18 @@ static int file_control_lockproxy_test(
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
   sqlite3 *db;
+  const char *zPwd;
+  int nPwd;
   
-  if( objc!=2 ){
+  if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-                     Tcl_GetStringFromObj(objv[0], 0), " DB", 0);
+                     Tcl_GetStringFromObj(objv[0], 0), " DB PWD", 0);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
    return TCL_ERROR;
   }
+  zPwd = Tcl_GetStringFromObj(objv[2], &nPwd);
   
 #if !defined(SQLITE_ENABLE_LOCKING_STYLE)
 #  if defined(__APPLE__)
@@ -4641,9 +4650,15 @@ static int file_control_lockproxy_test(
 #endif
 #if SQLITE_ENABLE_LOCKING_STYLE && defined(__APPLE__)
   {
-    char *proxyPath = "test.proxy";
     char *testPath;
     int rc;
+    char proxyPath[400];
+    
+    if( sizeof(proxyPath)<nPwd+20 ){
+      Tcl_AppendResult(interp, "PWD too big", (void*)0);
+      return TCL_ERROR;
+    }
+    sprintf(proxyPath, "%s/test.proxy", zPwd);
     rc = sqlite3_file_control(db, NULL, SQLITE_SET_LOCKPROXYFILE, proxyPath);
     if( rc ){
       Tcl_SetObjResult(interp, Tcl_NewIntObj(rc)); 
@@ -4868,6 +4883,35 @@ static int test_unlock_notify(
 }
 #endif
 
+/*
+** tclcmd:  sqlite3_wal_checkpoint db ?NAME?
+*/
+static int test_wal_checkpoint(
+  ClientData clientData, /* Unused */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  char *zDb = 0;
+  sqlite3 *db;
+  int rc;
+
+  if( objc!=3 && objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB ?NAME?");
+    return TCL_ERROR;
+  }
+
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
+    return TCL_ERROR;
+  }
+  if( objc==3 ){
+    zDb = Tcl_GetString(objv[2]);
+  }
+  rc = sqlite3_wal_checkpoint(db, zDb);
+  Tcl_SetResult(interp, (char *)t1ErrorName(rc), TCL_STATIC);
+  return TCL_OK;
+}
+
 
 /*
 **     tcl_objproc COMMANDNAME ARGS...
@@ -5089,6 +5133,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #ifdef SQLITE_ENABLE_UNLOCK_NOTIFY
      { "sqlite3_unlock_notify", test_unlock_notify, 0  },
 #endif
+     { "sqlite3_wal_checkpoint", test_wal_checkpoint, 0  },
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   int i;
@@ -5099,9 +5144,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   extern int sqlite3_pager_readdb_count;
   extern int sqlite3_pager_writedb_count;
   extern int sqlite3_pager_writej_count;
-#if defined(__linux__) && defined(SQLITE_TEST) && SQLITE_THREADSAFE
-  extern int threadsOverrideEachOthersLocks;
-#endif
 #if SQLITE_OS_WIN
   extern int sqlite3_os_type;
 #endif
@@ -5109,6 +5151,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   extern int sqlite3WhereTrace;
   extern int sqlite3OSTrace;
   extern int sqlite3VdbeAddopTrace;
+  extern int sqlite3WalTrace;
 #endif
 #ifdef SQLITE_TEST
   extern char sqlite3_query_plan[];
@@ -5157,10 +5200,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   Tcl_LinkVar(interp, "unaligned_string_counter",
       (char*)&unaligned_string_counter, TCL_LINK_INT);
 #endif
-#if defined(__linux__) && defined(SQLITE_TEST) && SQLITE_THREADSAFE
-  Tcl_LinkVar(interp, "threadsOverrideEachOthersLocks",
-      (char*)&threadsOverrideEachOthersLocks, TCL_LINK_INT);
-#endif
 #ifndef SQLITE_OMIT_UTF16
   Tcl_LinkVar(interp, "sqlite_last_needed_collation",
       (char*)&pzNeededCollation, TCL_LINK_STRING|TCL_LINK_READ_ONLY);
@@ -5180,6 +5219,10 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&sqlite3WhereTrace, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_os_trace",
       (char*)&sqlite3OSTrace, TCL_LINK_INT);
+#ifndef SQLITE_OMIT_WAL
+  Tcl_LinkVar(interp, "sqlite_wal_trace",
+      (char*)&sqlite3WalTrace, TCL_LINK_INT);
+#endif
 #endif
 #ifndef SQLITE_OMIT_DISKIO
   Tcl_LinkVar(interp, "sqlite_opentemp_count",

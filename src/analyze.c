@@ -36,7 +36,7 @@ static void openStatTable(
   int iStatCur,           /* Open the sqlite_stat1 table on this cursor */
   const char *zWhere      /* Delete entries associated with this table */
 ){
-  static struct {
+  static const struct {
     const char *zName;
     const char *zCols;
   } aTable[] = {
@@ -618,12 +618,16 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
                   n = 24;
                 }
                 pSample->nByte = (u8)n;
-                pSample->u.z = sqlite3DbMallocRaw(dbMem, n);
-                if( pSample->u.z ){
-                  memcpy(pSample->u.z, z, n);
+                if( n < 1){
+                  pSample->u.z = 0;
                 }else{
-                  db->mallocFailed = 1;
-                  break;
+                  pSample->u.z = sqlite3DbMallocRaw(dbMem, n);
+                  if( pSample->u.z ){
+                    memcpy(pSample->u.z, z, n);
+                  }else{
+                    db->mallocFailed = 1;
+                    break;
+                  }
                 }
               }
             }

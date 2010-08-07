@@ -296,7 +296,7 @@ do_test analyze-99.1 {
     UPDATE sqlite_master SET sql='nonsense' WHERE name='sqlite_stat1';
   }
   db close
-  sqlite3 db test.db
+  catch { sqlite3 db test.db }
   catchsql {
     ANALYZE
   }

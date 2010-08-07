@@ -2526,8 +2526,8 @@ static void substSelect(
 **  (14)  The subquery does not use OFFSET
 **
 **  (15)  The outer query is not part of a compound select or the
-**        subquery does not have both an ORDER BY and a LIMIT clause.
-**        (See ticket #2339)
+**        subquery does not have a LIMIT clause.
+**        (See ticket #2339 and ticket [02a8e81d44]).
 **
 **  (16)  The outer query is not an aggregate or the subquery does
 **        not contain ORDER BY.  (Ticket #2942)  This used to not matter
@@ -2610,7 +2610,7 @@ static int flattenSubquery(
   ** and (14). */
   if( pSub->pLimit && p->pLimit ) return 0;              /* Restriction (13) */
   if( pSub->pOffset ) return 0;                          /* Restriction (14) */
-  if( p->pRightmost && pSub->pLimit && pSub->pOrderBy ){
+  if( p->pRightmost && pSub->pLimit ){
     return 0;                                            /* Restriction (15) */
   }
   if( pSubSrc->nSrc==0 ) return 0;                       /* Restriction (7)  */
@@ -3020,6 +3020,7 @@ int sqlite3IndexedByLookup(Parse *pParse, struct SrcList_item *pFrom){
     );
     if( !pIdx ){
       sqlite3ErrorMsg(pParse, "no such index: %s", zIndex, 0);
+      pParse->checkSchema = 1;
       return SQLITE_ERROR;
     }
     pFrom->pIndex = pIdx;
@@ -3498,6 +3499,18 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
       sqlite3ExprCacheClear(pParse);
     }
   }
+
+  /* Before populating the accumulator registers, clear the column cache.
+  ** Otherwise, if any of the required column values are already present 
+  ** in registers, sqlite3ExprCode() may use OP_SCopy to copy the value
+  ** to pC->iMem. But by the time the value is used, the original register
+  ** may have been used, invalidating the underlying buffer holding the
+  ** text or blob value. See ticket [883034dcb5].
+  **
+  ** Another solution would be to change the OP_SCopy used to copy cached
+  ** values to an OP_Copy.
+  */
+  sqlite3ExprCacheClear(pParse);
   for(i=0, pC=pAggInfo->aCol; i<pAggInfo->nAccumulator; i++, pC++){
     sqlite3ExprCode(pParse, pC->pExpr, pC->iMem);
   }
@@ -3704,6 +3717,18 @@ int sqlite3Select(
     pGroupBy = p->pGroupBy;
     p->selFlags &= ~SF_Distinct;
     isDistinct = 0;
+  }
+
+  /* If there is both a GROUP BY and an ORDER BY clause and they are
+  ** identical, then disable the ORDER BY clause since the GROUP BY
+  ** will cause elements to come out in the correct order.  This is
+  ** an optimization - the correct answer should result regardless.
+  ** Use the SQLITE_GroupByOrder flag with SQLITE_TESTCTRL_OPTIMIZER
+  ** to disable this optimization for testing purposes.
+  */
+  if( sqlite3ExprListCompare(p->pGroupBy, pOrderBy)==0
+         && (db->flags & SQLITE_GroupByOrder)==0 ){
+    pOrderBy = 0;
   }
 
   /* If there is an ORDER BY clause, then this sorting

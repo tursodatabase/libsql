@@ -191,10 +191,14 @@ int sqlite3_blob_open(
       sqlite3VdbeUsesBtree(v, iDb); 
 
       /* Configure the OP_TableLock instruction */
+#ifdef SQLITE_OMIT_SHARED_CACHE
+      sqlite3VdbeChangeToNoop(v, 2, 1);
+#else
       sqlite3VdbeChangeP1(v, 2, iDb);
       sqlite3VdbeChangeP2(v, 2, pTab->tnum);
       sqlite3VdbeChangeP3(v, 2, flags);
       sqlite3VdbeChangeP4(v, 2, pTab->zName, P4_TRANSIENT);
+#endif
 
       /* Remove either the OP_OpenWrite or OpenRead. Set the P2 
       ** parameter of the other to pTab->tnum.  */

@@ -743,7 +743,7 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
     pOp->p4.pKeyInfo = pKeyInfo;
     if( pKeyInfo ){
       u8 *aSortOrder;
-      memcpy(pKeyInfo, zP4, nByte);
+      memcpy((char*)pKeyInfo, zP4, nByte - nField);
       aSortOrder = pKeyInfo->aSortOrder;
       if( aSortOrder ){
         pKeyInfo->aSortOrder = (unsigned char*)&pKeyInfo->aColl[nField];
@@ -814,9 +814,12 @@ void sqlite3VdbeNoopComment(Vdbe *p, const char *zFormat, ...){
 **
 ** If a memory allocation error has occurred prior to the calling of this
 ** routine, then a pointer to a dummy VdbeOp will be returned.  That opcode
-** is readable and writable, but it has no effect.  The return of a dummy
-** opcode allows the call to continue functioning after a OOM fault without
-** having to check to see if the return from this routine is a valid pointer.
+** is readable but not writable, though it is cast to a writable value.
+** The return of a dummy opcode allows the call to continue functioning
+** after a OOM fault without having to check to see if the return from 
+** this routine is a valid pointer.  But because the dummy.opcode is 0,
+** dummy will never be written to.  This is verified by code inspection and
+** by running with Valgrind.
 **
 ** About the #ifdef SQLITE_OMIT_TRACE:  Normally, this routine is never called
 ** unless p->nOp>0.  This is because in the absense of SQLITE_OMIT_TRACE,
@@ -827,17 +830,19 @@ void sqlite3VdbeNoopComment(Vdbe *p, const char *zFormat, ...){
 ** check the value of p->nOp-1 before continuing.
 */
 VdbeOp *sqlite3VdbeGetOp(Vdbe *p, int addr){
-  static VdbeOp dummy;
+  /* C89 specifies that the constant "dummy" will be initialized to all
+  ** zeros, which is correct.  MSVC generates a warning, nevertheless. */
+  static const VdbeOp dummy;  /* Ignore the MSVC warning about no initializer */
   assert( p->magic==VDBE_MAGIC_INIT );
   if( addr<0 ){
 #ifdef SQLITE_OMIT_TRACE
-    if( p->nOp==0 ) return &dummy;
+    if( p->nOp==0 ) return (VdbeOp*)&dummy;
 #endif
     addr = p->nOp - 1;
   }
   assert( (addr>=0 && addr<p->nOp) || p->db->mallocFailed );
   if( p->db->mallocFailed ){
-    return &dummy;
+    return (VdbeOp*)&dummy;
   }else{
     return &p->aOp[addr];
   }
@@ -950,6 +955,11 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
 
 /*
 ** Declare to the Vdbe that the BTree object at db->aDb[i] is used.
+**
+** The prepared statement has to know in advance which Btree objects
+** will be used so that it can acquire mutexes on them all in sorted
+** order (via sqlite3VdbeMutexArrayEnter().  Mutexes are acquired
+** in order (and released in reverse order) to avoid deadlocks.
 */
 void sqlite3VdbeUsesBtree(Vdbe *p, int i){
   int mask;
@@ -1449,6 +1459,7 @@ void sqlite3VdbeMakeReady(
   p->cacheCtr = 1;
   p->minWriteFileFormat = 255;
   p->iStatement = 0;
+  p->nFkConstraint = 0;
 #ifdef VDBE_PROFILE
   {
     int i;
@@ -2137,10 +2148,17 @@ int sqlite3VdbeHalt(Vdbe *p){
     */
     if( eStatementOp ){
       rc = sqlite3VdbeCloseStatement(p, eStatementOp);
-      if( rc && (NEVER(p->rc==SQLITE_OK) || p->rc==SQLITE_CONSTRAINT) ){
-        p->rc = rc;
-        sqlite3DbFree(db, p->zErrMsg);
-        p->zErrMsg = 0;
+      if( rc ){
+        assert( eStatementOp==SAVEPOINT_ROLLBACK );
+        if( NEVER(p->rc==SQLITE_OK) || p->rc==SQLITE_CONSTRAINT ){
+          p->rc = rc;
+          sqlite3DbFree(db, p->zErrMsg);
+          p->zErrMsg = 0;
+        }
+        invalidateCursorsOnModifiedBtrees(db);
+        sqlite3RollbackAll(db);
+        sqlite3CloseSavepoints(db);
+        db->autoCommit = 1;
       }
     }
   

@@ -17,6 +17,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# Do not use a codec for tests in this file, as the database file is
+# manipulated directly using tcl scripts (using the [hexio_write] command).
+#
+do_not_use_codec
+
 # Test organization:
 #
 # pragma-1.*: Test cache_size, default_cache_size and synchronous on main db.
@@ -317,6 +322,7 @@ ifcapable attach {
       puts -nonewline $out [read $in]
       close $in
       close $out
+      hexio_write testerr.db 28 00000000
       execsql {REINDEX t2}
       execsql {PRAGMA integrity_check}
     } {ok}
@@ -634,13 +640,15 @@ do_test pragma-7.1.2 {
 } {}
 } ;# ifcapable schema_pragmas
 ifcapable {utf16} {
-  do_test pragma-7.2 {
-    db close
-    sqlite3 db test.db
-    catchsql {
-      pragma encoding=bogus;
-    }
-  } {1 {unsupported encoding: bogus}}
+  if {[permutation] == ""} {
+    do_test pragma-7.2 {
+      db close
+      sqlite3 db test.db
+      catchsql {
+        pragma encoding=bogus;
+      }
+    } {1 {unsupported encoding: bogus}}
+  }
 }
 ifcapable tempdb {
   do_test pragma-7.3 {

@@ -1,0 +1,169 @@
+# 2010 April 07
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is testing automatic index creation logic.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# If the library is not compiled with automatic index support then
+# skip all tests in this file.
+#
+ifcapable {!autoindex} {
+  finish_test
+  return
+}
+
+# With automatic index turned off, we do a full scan of the T2 table
+do_test autoindex1-100 {
+  db eval {
+    CREATE TABLE t1(a,b);
+    INSERT INTO t1 VALUES(1,11);
+    INSERT INTO t1 VALUES(2,22);
+    INSERT INTO t1 SELECT a+2, b+22 FROM t1;
+    INSERT INTO t1 SELECT a+4, b+44 FROM t1;
+    CREATE TABLE t2(c,d);
+    INSERT INTO t2 SELECT a, 900+b FROM t1;
+  }
+  db eval {
+    PRAGMA automatic_index=OFF;
+    SELECT b, d FROM t1 JOIN t2 ON a=c ORDER BY b;
+  }
+} {11 911 22 922 33 933 44 944 55 955 66 966 77 977 88 988}
+do_test autoindex1-101 {
+  db status step
+} {63}
+do_test autoindex1-102 {
+  db status autoindex
+} {0}
+
+# With autoindex turned on, we build an index once and then use that index
+# to find T2 values.
+do_test autoindex1-110 {
+  db eval {
+    PRAGMA automatic_index=ON;
+    SELECT b, d FROM t1 JOIN t2 ON a=c ORDER BY b;
+  }
+} {11 911 22 922 33 933 44 944 55 955 66 966 77 977 88 988}
+do_test autoindex1-111 {
+  db status step
+} {7}
+do_test autoindex1-112 {
+  db status autoindex
+} {7}
+
+# The same test as above, but this time the T2 query is a subquery rather
+# than a join.
+do_test autoindex1-200 {
+  db eval {
+    PRAGMA automatic_index=OFF;
+    SELECT b, (SELECT d FROM t2 WHERE c=a) FROM t1;
+  }
+} {11 911 22 922 33 933 44 944 55 955 66 966 77 977 88 988}
+do_test autoindex1-201 {
+  db status step
+} {35}
+do_test autoindex1-202 {
+  db status autoindex
+} {0}
+do_test autoindex1-210 {
+  db eval {
+    PRAGMA automatic_index=ON;
+    SELECT b, (SELECT d FROM t2 WHERE c=a) FROM t1;
+  }
+} {11 911 22 922 33 933 44 944 55 955 66 966 77 977 88 988}
+do_test autoindex1-211 {
+  db status step
+} {7}
+do_test autoindex1-212 {
+  db status autoindex
+} {7}
+
+
+# Modify the second table of the join while the join is in progress
+#
+do_test autoindex1-300 {
+  set r {}
+  db eval {SELECT b, d FROM t1 JOIN t2 ON (c=a)} {
+    lappend r $b $d
+    db eval {UPDATE t2 SET d=d+1}
+  }
+  set r
+} {11 911 22 922 33 933 44 944 55 955 66 966 77 977 88 988}
+do_test autoindex1-310 {
+  db eval {SELECT d FROM t2 ORDER BY d}
+} {919 930 941 952 963 974 985 996}
+
+# The next test does a 10-way join on unindexed tables.  Without
+# automatic indices, the join will take a long time to complete.
+# With automatic indices, it should only take about a second.
+#
+do_test autoindex1-400 {
+  db eval {
+    CREATE TABLE t4(a, b);
+    INSERT INTO t4 VALUES(1,2);
+    INSERT INTO t4 VALUES(2,3);
+  }
+  for {set n 2} {$n<4096} {set n [expr {$n+$n}]} {
+    db eval {INSERT INTO t4 SELECT a+$n, b+$n FROM t4}
+  }
+  db eval {
+    SELECT count(*) FROM t4;
+  }
+} {4096}
+do_test autoindex1-401 {
+  db eval {
+    SELECT count(*)
+      FROM t4 AS x1
+      JOIN t4 AS x2 ON x2.a=x1.b
+      JOIN t4 AS x3 ON x3.a=x2.b
+      JOIN t4 AS x4 ON x4.a=x3.b
+      JOIN t4 AS x5 ON x5.a=x4.b
+      JOIN t4 AS x6 ON x6.a=x5.b
+      JOIN t4 AS x7 ON x7.a=x6.b
+      JOIN t4 AS x8 ON x8.a=x7.b
+      JOIN t4 AS x9 ON x9.a=x8.b
+      JOIN t4 AS x10 ON x10.a=x9.b;
+  }
+} {4087}
+
+# Ticket [8011086c85c6c404014c947fcf3eb9f42b184a0d] from 2010-07-08
+# Make sure automatic indices are not created for the RHS of an IN expression
+# that is not a correlated subquery.
+#
+do_test autoindex1-500 {
+  db eval {
+    CREATE TABLE t501(a INTEGER PRIMARY KEY, b);
+    CREATE TABLE t502(x INTEGER PRIMARY KEY, y);
+    EXPLAIN QUERY PLAN
+    SELECT b FROM t501
+     WHERE t501.a IN (SELECT x FROM t502 WHERE y=?);
+  }
+} {0 0 {TABLE t501 USING PRIMARY KEY} 0 0 {TABLE t502}}
+do_test autoindex1-501 {
+  db eval {
+    EXPLAIN QUERY PLAN
+    SELECT b FROM t501
+     WHERE t501.a IN (SELECT x FROM t502 WHERE y=t501.b);
+  }
+} {0 0 {TABLE t501} 0 0 {TABLE t502 WITH AUTOMATIC INDEX}}
+do_test autoindex1-502 {
+  db eval {
+    EXPLAIN QUERY PLAN
+    SELECT b FROM t501
+     WHERE t501.a=123
+       AND t501.a IN (SELECT x FROM t502 WHERE y=t501.b);
+  }
+} {0 0 {TABLE t501 USING PRIMARY KEY} 0 0 {TABLE t502}}
+    
+
+finish_test

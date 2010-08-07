@@ -132,7 +132,7 @@ ifcapable attach {
     execsql {
       PRAGMA journal_mode;
     }
-  } {persist}
+  } {off}
   do_test jrnlmode-1.12 {
     execsql {
       ATTACH ':memory:' as aux2;
@@ -317,9 +317,10 @@ ifcapable pragma {
   do_test jrnlmode-5.3 {
     execsql { 
       ATTACH 'test2.db' AS aux;
+      PRAGMA aux.journal_mode=persist;
       PRAGMA aux.journal_size_limit;
     }
-  } {-1}
+  } {persist -1}
   do_test jrnlmode-5.4.1 {
     execsql { PRAGMA aux.journal_size_limit = 999999999999 }
   } {999999999999}
@@ -337,8 +338,11 @@ ifcapable pragma {
   } {10240}
 
   do_test jrnlmode-5.8 {
-    execsql { ATTACH 'test3.db' AS aux2 }
-  } {}
+    execsql {
+      ATTACH 'test3.db' AS aux2;
+      PRAGMA aux2.journal_mode=persist;
+    }
+  } {persist}
 
   do_test jrnlmode-5.9 {
     execsql {
@@ -454,7 +458,7 @@ ifcapable pragma {
 ifcapable pragma {
   # These tests are not run as part of the "journaltest" permutation,
   # as the test_journal.c layer is incompatible with in-memory journaling.
-  if {[catch {set ::permutations_test_prefix} z] || $z ne "journaltest"} {
+  if {[permutation] ne "journaltest"} {
 
     do_test jrnlmode-6.1 {
       execsql {
@@ -484,7 +488,7 @@ ifcapable pragma {
           INSERT INTO t4 VALUES(3, 4);
       }
       file exists test.db-journal
-    } {1}
+    } {0}
     do_test jrnlmode-6.7 {
       execsql {
         COMMIT;
@@ -493,15 +497,31 @@ ifcapable pragma {
     } {1 2 3 4}
     do_test jrnlmode-6.8 {
       file exists test.db-journal
-    } {1}
+    } {0}
     do_test jrnlmode-6.9 {
       execsql {
         PRAGMA journal_mode = DELETE;
-        BEGIN IMMEDIATE; COMMIT;
+        BEGIN IMMEDIATE; INSERT INTO t4 VALUES(1,2); COMMIT;
       }
       file exists test.db-journal
     } {0}
   }
+}
+
+ifcapable pragma {
+  catch { db close }
+  do_test jrnlmode-7.1 {
+    foreach f [glob -nocomplain test.db*] { file delete -force $f }
+    sqlite3 db test.db
+    execsql {
+      PRAGMA journal_mode = memory;
+      PRAGMA auto_vacuum = 0;
+      PRAGMA page_size = 1024;
+      PRAGMA user_version = 5;
+      PRAGMA user_version;
+    }
+  } {memory 5}
+  do_test jrnlmode-7.2 { file size test.db } {1024}
 }
 
 finish_test

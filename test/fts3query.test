@@ -20,6 +20,7 @@ source $testdir/tester.tcl
 # If this build does not include FTS3, skip the tests in this file.
 #
 ifcapable !fts3 { finish_test ; return }
+source $testdir/malloc_common.tcl
 source $testdir/fts3_common.tcl
 set DO_MALLOC_TEST 0
 
@@ -100,6 +101,34 @@ db func mit mit
 do_test fts3query-3.3 {
   execsql { SELECT mit(matchinfo(foobar)) FROM foobar WHERE foobar MATCH 'the' }
 } {{1 1 3 3 1}}
+
+# The following tests check that ticket 775b39dd3c has been fixed.
+#
+proc eqp {sql} {
+  uplevel [list execsql "EXPLAIN QUERY PLAN $sql"]
+}
+do_test fts3query-4.1 {
+  execsql {
+    DROP TABLE IF EXISTS t1;
+    CREATE TABLE t1(number INTEGER PRIMARY KEY, date);
+    CREATE INDEX i1 ON t1(date);
+    CREATE VIRTUAL TABLE ft USING fts3(title);
+    CREATE TABLE bt(title);
+  }
+} {}
+do_test fts3query-4.2 {
+  eqp "SELECT t1.number FROM t1, ft WHERE t1.number=ft.rowid ORDER BY t1.date"
+} {0 0 {TABLE t1 WITH INDEX i1 ORDER BY} 1 1 {TABLE ft VIRTUAL TABLE INDEX 1:}}
+do_test fts3query-4.3 {
+  eqp "SELECT t1.number FROM ft, t1 WHERE t1.number=ft.rowid ORDER BY t1.date"
+} {0 1 {TABLE t1 WITH INDEX i1 ORDER BY} 1 0 {TABLE ft VIRTUAL TABLE INDEX 1:}}
+do_test fts3query-4.4 {
+  eqp "SELECT t1.number FROM t1, bt WHERE t1.number=bt.rowid ORDER BY t1.date"
+} {0 0 {TABLE t1 WITH INDEX i1 ORDER BY} 1 1 {TABLE bt USING PRIMARY KEY}}
+do_test fts3query-4.5 {
+  eqp "SELECT t1.number FROM bt, t1 WHERE t1.number=bt.rowid ORDER BY t1.date"
+} {0 1 {TABLE t1 WITH INDEX i1 ORDER BY} 1 0 {TABLE bt USING PRIMARY KEY}}
+
 
 finish_test
 

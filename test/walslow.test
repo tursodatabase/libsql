@@ -1,0 +1,73 @@
+# 2010 March 17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the operation of the library in
+# "PRAGMA journal_mode=WAL" mode. The tests in this file use 
+# brute force methods, so may take a while to run.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+ifcapable !wal {finish_test ; return }
+
+proc reopen_db {} {
+  catch { db close }
+  file delete -force test.db test.db-wal
+  sqlite3 db test.db
+  execsql { PRAGMA journal_mode = wal }
+}
+
+db close
+save_prng_state
+for {set seed 1} {$seed<10} {incr seed} {
+  expr srand($seed)
+  restore_prng_state
+  reopen_db
+  do_test walslow-1.seed=$seed.0 {
+    execsql { CREATE TABLE t1(a, b) }
+    execsql { CREATE INDEX i1 ON t1(a) }
+    execsql { CREATE INDEX i2 ON t1(b) }
+  } {}
+
+  for {set iTest 1} {$iTest < 100} {incr iTest} {
+
+    do_test walslow-1.seed=$seed.$iTest.1 {
+      set w [expr int(rand()*2000)]
+      set x [expr int(rand()*2000)]
+      execsql { INSERT INTO t1 VALUES(randomblob($w), randomblob($x)) }
+      execsql { PRAGMA integrity_check }
+    } {ok}
+
+    do_test walslow-1.seed=$seed.$iTest.2 {
+      execsql "PRAGMA wal_checkpoint;"
+      execsql { PRAGMA integrity_check }
+    } {ok}
+
+    do_test walslow-1.seed=$seed.$iTest.3 {
+      file delete -force testX.db testX.db-wal
+      file copy test.db testX.db
+      file copy test.db-wal testX.db-wal
+  
+      sqlite3 db2 testX.db
+      execsql { PRAGMA journal_mode = WAL } db2
+      execsql { PRAGMA integrity_check } db2
+    } {ok}
+  
+    do_test walslow-1.seed=$seed.$iTest.4 {
+      execsql { SELECT count(*) FROM t1 WHERE a!=b } db2
+    } [execsql { SELECT count(*) FROM t1 WHERE a!=b }]
+    db2 close
+  }
+}
+
+
+finish_test

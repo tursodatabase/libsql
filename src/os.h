@@ -217,7 +217,11 @@
 ** 1GB boundary.
 **
 */
-#define PENDING_BYTE      sqlite3PendingByte
+#ifdef SQLITE_OMIT_WSD
+# define PENDING_BYTE     (0x40000000)
+#else
+# define PENDING_BYTE      sqlite3PendingByte
+#endif
 #define RESERVED_BYTE     (PENDING_BYTE+1)
 #define SHARED_FIRST      (PENDING_BYTE+2)
 #define SHARED_SIZE       510
@@ -243,6 +247,10 @@ int sqlite3OsFileControl(sqlite3_file*,int,void*);
 #define SQLITE_FCNTL_DB_UNCHANGED 0xca093fa0
 int sqlite3OsSectorSize(sqlite3_file *id);
 int sqlite3OsDeviceCharacteristics(sqlite3_file *id);
+int sqlite3OsShmMap(sqlite3_file *,int,int,int,void volatile **);
+int sqlite3OsShmLock(sqlite3_file *id, int, int, int);
+void sqlite3OsShmBarrier(sqlite3_file *id);
+int sqlite3OsShmUnmap(sqlite3_file *id, int);
 
 /* 
 ** Functions for accessing sqlite3_vfs methods 
@@ -259,7 +267,7 @@ void sqlite3OsDlClose(sqlite3_vfs *, void *);
 #endif /* SQLITE_OMIT_LOAD_EXTENSION */
 int sqlite3OsRandomness(sqlite3_vfs *, int, char *);
 int sqlite3OsSleep(sqlite3_vfs *, int);
-int sqlite3OsCurrentTime(sqlite3_vfs *, double*);
+int sqlite3OsCurrentTimeInt64(sqlite3_vfs *, sqlite3_int64*);
 
 /*
 ** Convenience functions for opening and closing files using 

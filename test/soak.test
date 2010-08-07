@@ -65,14 +65,14 @@ set SOAKTESTS {
   corruptC.test
 }
 
-set ISQUICK 1
+set G(isquick) 1
 
 set soak_starttime  [clock seconds]
 set soak_finishtime [expr {$soak_starttime + $TIMEOUT}]
 
 # Loop until the timeout is reached or an error occurs.
 #
-for {set iRun 0} {[clock seconds] < $soak_finishtime && $nErr==0} {incr iRun} {
+for {set iRun 0} {[clock seconds] < $soak_finishtime} {incr iRun} {
 
   set iIdx [expr {$iRun % [llength $SOAKTESTS]}]
   source [file join $testdir [lindex $SOAKTESTS $iIdx]]
@@ -80,11 +80,11 @@ for {set iRun 0} {[clock seconds] < $soak_finishtime && $nErr==0} {incr iRun} {
 
   if {$sqlite_open_file_count>0} {
     puts "$tail did not close all files: $sqlite_open_file_count"
-    incr nErr
-    lappend ::failList $tail
+    fail_test $tail
     set sqlite_open_file_count 0
   }
 
+  if {[set_test_counter errors]>0} break
 }
 
 really_finish_test

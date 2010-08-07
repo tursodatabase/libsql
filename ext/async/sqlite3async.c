@@ -667,7 +667,7 @@ static int asyncRead(
 ){
   AsyncFileData *p = ((AsyncFile *)pFile)->pData;
   int rc = SQLITE_OK;
-  sqlite3_int64 filesize;
+  sqlite3_int64 filesize = 0;
   sqlite3_file *pBase = p->pBaseRead;
   sqlite3_int64 iAmt64 = (sqlite3_int64)iAmt;
 
@@ -690,7 +690,7 @@ static int asyncRead(
     }
     nRead = MIN(filesize - iOffset, iAmt64);
     if( nRead>0 ){
-      rc = pBase->pMethods->xRead(pBase, zOut, nRead, iOffset);
+      rc = pBase->pMethods->xRead(pBase, zOut, (int)nRead, iOffset);
       ASYNC_TRACE(("READ %s %d bytes at %d\n", p->zName, nRead, iOffset));
     }
   }
@@ -717,9 +717,11 @@ static int asyncRead(
         if( iBeginIn<0 ) iBeginIn = 0;
         if( iBeginOut<0 ) iBeginOut = 0;
 
+        filesize = MAX(filesize, pWrite->iOffset+nByte64);
+
         nCopy = MIN(nByte64-iBeginIn, iAmt64-iBeginOut);
         if( nCopy>0 ){
-          memcpy(&((char *)zOut)[iBeginOut], &pWrite->zBuf[iBeginIn], nCopy);
+          memcpy(&((char *)zOut)[iBeginOut], &pWrite->zBuf[iBeginIn], (size_t)nCopy);
           ASYNC_TRACE(("OVERREAD %d bytes at %d\n", nCopy, iBeginOut+iOffset));
         }
       }
@@ -728,6 +730,9 @@ static int asyncRead(
 
 asyncread_out:
   async_mutex_leave(ASYNC_MUTEX_QUEUE);
+  if( rc==SQLITE_OK && filesize<(iOffset+iAmt) ){
+    rc = SQLITE_IOERR_SHORT_READ;
+  }
   return rc;
 }
 
@@ -1138,7 +1143,6 @@ static int asyncOpen(
   async_mutex_leave(ASYNC_MUTEX_LOCK);
 
   if( rc==SQLITE_OK ){
-    incrOpenFileCount();
     pData->pLock = pLock;
   }
 
@@ -1155,7 +1159,10 @@ static int asyncOpen(
   }
   if( rc!=SQLITE_OK ){
     p->pMethod = 0;
+  }else{
+    incrOpenFileCount();
   }
+
   return rc;
 }
 
@@ -1232,7 +1239,7 @@ static int asyncFullPathname(
   if( rc==SQLITE_OK ){
     int i, j;
     char *z = zPathOut;
-    int n = strlen(z);
+    int n = (int)strlen(z);
     while( n>1 && z[n-1]=='/' ){ n--; }
     for(i=j=0; i<n; i++){
       if( z[i]=='/' ){

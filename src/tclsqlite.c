@@ -123,6 +123,7 @@ struct SqliteDb {
   SqlFunc *pFunc;            /* List of SQL functions */
   Tcl_Obj *pUpdateHook;      /* Update hook script (if any) */
   Tcl_Obj *pRollbackHook;    /* Rollback hook script (if any) */
+  Tcl_Obj *pWalHook;         /* WAL hook script (if any) */
   Tcl_Obj *pUnlockNotify;    /* Unlock notify script (if any) */
   SqlCollate *pCollate;      /* List of SQL collation functions */
   int rc;                    /* Return code of most recent sqlite3_exec() */
@@ -132,7 +133,7 @@ struct SqliteDb {
   int maxStmt;               /* The next maximum number of stmtList */
   int nStmt;                 /* Number of statements in stmtList */
   IncrblobChannel *pIncrblob;/* Linked list of open incrblob channels */
-  int nStep, nSort;          /* Statistics for most recent operation */
+  int nStep, nSort, nIndex;  /* Statistics for most recent operation */
   int nTransaction;          /* Number of nested [transaction] methods */
 };
 
@@ -485,6 +486,9 @@ static void DbDeleteCmd(void *db){
   if( pDb->pRollbackHook ){
     Tcl_DecrRefCount(pDb->pRollbackHook);
   }
+  if( pDb->pWalHook ){
+    Tcl_DecrRefCount(pDb->pWalHook);
+  }
   if( pDb->pCollateNeeded ){
     Tcl_DecrRefCount(pDb->pCollateNeeded);
   }
@@ -587,6 +591,35 @@ static void DbRollbackHandler(void *clientData){
   if( TCL_OK!=Tcl_EvalObjEx(pDb->interp, pDb->pRollbackHook, 0) ){
     Tcl_BackgroundError(pDb->interp);
   }
+}
+
+/*
+** This procedure handles wal_hook callbacks.
+*/
+static int DbWalHandler(
+  void *clientData, 
+  sqlite3 *db, 
+  const char *zDb, 
+  int nEntry
+){
+  int ret = SQLITE_OK;
+  Tcl_Obj *p;
+  SqliteDb *pDb = (SqliteDb*)clientData;
+  Tcl_Interp *interp = pDb->interp;
+  assert(pDb->pWalHook);
+
+  p = Tcl_DuplicateObj(pDb->pWalHook);
+  Tcl_IncrRefCount(p);
+  Tcl_ListObjAppendElement(interp, p, Tcl_NewStringObj(zDb, -1));
+  Tcl_ListObjAppendElement(interp, p, Tcl_NewIntObj(nEntry));
+  if( TCL_OK!=Tcl_EvalObjEx(interp, p, 0) 
+   || TCL_OK!=Tcl_GetIntFromObj(interp, Tcl_GetObjResult(interp), &ret)
+  ){
+    Tcl_BackgroundError(interp);
+  }
+  Tcl_DecrRefCount(p);
+
+  return ret;
 }
 
 #if defined(SQLITE_TEST) && defined(SQLITE_ENABLE_UNLOCK_NOTIFY)
@@ -1351,6 +1384,7 @@ static int dbEvalStep(DbEvalContext *p){
 
       pDb->nStep = sqlite3_stmt_status(pStmt,SQLITE_STMTSTATUS_FULLSCAN_STEP,1);
       pDb->nSort = sqlite3_stmt_status(pStmt,SQLITE_STMTSTATUS_SORT,1);
+      pDb->nIndex = sqlite3_stmt_status(pStmt,SQLITE_STMTSTATUS_AUTOINDEX,1);
       dbReleaseColumnNames(p);
       p->pPreStmt = 0;
 
@@ -1544,7 +1578,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     "restore",            "rollback_hook",     "status",
     "timeout",            "total_changes",     "trace",
     "transaction",        "unlock_notify",     "update_hook",
-    "version",            0                    
+    "version",            "wal_hook",          0
   };
   enum DB_enum {
     DB_AUTHORIZER,        DB_BACKUP,           DB_BUSY,
@@ -1558,7 +1592,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     DB_RESTORE,           DB_ROLLBACK_HOOK,    DB_STATUS,
     DB_TIMEOUT,           DB_TOTAL_CHANGES,    DB_TRACE,
     DB_TRANSACTION,       DB_UNLOCK_NOTIFY,    DB_UPDATE_HOOK,
-    DB_VERSION,
+    DB_VERSION,           DB_WAL_HOOK
   };
   /* don't leave trailing commas on DB_enum, it confuses the AIX xlc compiler */
 
@@ -2528,7 +2562,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   }
 
   /*
-  **     $db status (step|sort)
+  **     $db status (step|sort|autoindex)
   **
   ** Display SQLITE_STMTSTATUS_FULLSCAN_STEP or 
   ** SQLITE_STMTSTATUS_SORT for the most recent eval.
@@ -2545,8 +2579,11 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       v = pDb->nStep;
     }else if( strcmp(zOp, "sort")==0 ){
       v = pDb->nSort;
+    }else if( strcmp(zOp, "autoindex")==0 ){
+      v = pDb->nIndex;
     }else{
-      Tcl_AppendResult(interp, "bad argument: should be step or sort", 
+      Tcl_AppendResult(interp, 
+            "bad argument: should be autoindex, step, or sort", 
             (char*)0);
       return TCL_ERROR;
     }
@@ -2726,9 +2763,11 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   }
 
   /*
+  **    $db wal_hook ?script?
   **    $db update_hook ?script?
   **    $db rollback_hook ?script?
   */
+  case DB_WAL_HOOK: 
   case DB_UPDATE_HOOK: 
   case DB_ROLLBACK_HOOK: {
 
@@ -2738,6 +2777,8 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     Tcl_Obj **ppHook; 
     if( choice==DB_UPDATE_HOOK ){
       ppHook = &pDb->pUpdateHook;
+    }else if( choice==DB_WAL_HOOK ){
+      ppHook = &pDb->pWalHook;
     }else{
       ppHook = &pDb->pRollbackHook;
     }
@@ -2763,6 +2804,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 
     sqlite3_update_hook(pDb->db, (pDb->pUpdateHook?DbUpdateHandler:0), pDb);
     sqlite3_rollback_hook(pDb->db,(pDb->pRollbackHook?DbRollbackHandler:0),pDb);
+    sqlite3_wal_hook(pDb->db,(pDb->pWalHook?DbWalHandler:0),pDb);
 
     break;
   }
@@ -2855,8 +2897,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     if( strcmp(zArg,"-key")==0 ){
       pKey = Tcl_GetByteArrayFromObj(objv[i+1], &nKey);
     }else if( strcmp(zArg, "-vfs")==0 ){
-      i++;
-      zVfs = Tcl_GetString(objv[i]);
+      zVfs = Tcl_GetString(objv[i+1]);
     }else if( strcmp(zArg, "-readonly")==0 ){
       int b;
       if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
@@ -3447,22 +3488,55 @@ static char zMainloop[] =
   "}\n"
 ;
 #endif
+#if TCLSH==2
+static char zMainloop[] = 
+#include "spaceanal_tcl.h"
+;
+#endif
 
-#define TCLSH_MAIN main   /* Needed to fake out mktclapp */
-int TCLSH_MAIN(int argc, char **argv){
-  Tcl_Interp *interp;
-  
-  /* Call sqlite3_shutdown() once before doing anything else. This is to
-  ** test that sqlite3_shutdown() can be safely called by a process before
-  ** sqlite3_initialize() is. */
-  sqlite3_shutdown();
+#ifdef SQLITE_TEST
+static void init_all(Tcl_Interp *);
+static int init_all_cmd(
+  ClientData cd,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
 
-  Tcl_FindExecutable(argv[0]);
-  interp = Tcl_CreateInterp();
+  Tcl_Interp *slave;
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "SLAVE");
+    return TCL_ERROR;
+  }
+
+  slave = Tcl_GetSlave(interp, Tcl_GetString(objv[1]));
+  if( !slave ){
+    return TCL_ERROR;
+  }
+
+  init_all(slave);
+  return TCL_OK;
+}
+#endif
+
+/*
+** Configure the interpreter passed as the first argument to have access
+** to the commands and linked variables that make up:
+**
+**   * the [sqlite3] extension itself, 
+**
+**   * If SQLITE_TCLMD5 or SQLITE_TEST is defined, the Md5 commands, and
+**
+**   * If SQLITE_TEST is set, the various test interfaces used by the Tcl
+**     test suite.
+*/
+static void init_all(Tcl_Interp *interp){
   Sqlite3_Init(interp);
+
 #if defined(SQLITE_TEST) || defined(SQLITE_TCLMD5)
   Md5_Init(interp);
 #endif
+
 #ifdef SQLITE_TEST
   {
     extern int Sqliteconfig_Init(Tcl_Interp*);
@@ -3477,6 +3551,7 @@ int TCLSH_MAIN(int argc, char **argv){
     extern int Sqlitetest9_Init(Tcl_Interp*);
     extern int Sqlitetestasync_Init(Tcl_Interp*);
     extern int Sqlitetest_autoext_Init(Tcl_Interp*);
+    extern int Sqlitetest_demovfs_Init(Tcl_Interp *);
     extern int Sqlitetest_func_Init(Tcl_Interp*);
     extern int Sqlitetest_hexio_Init(Tcl_Interp*);
     extern int Sqlitetest_init_Init(Tcl_Interp*);
@@ -3490,6 +3565,8 @@ int TCLSH_MAIN(int argc, char **argv){
     extern int SqlitetestOsinst_Init(Tcl_Interp*);
     extern int Sqlitetestbackup_Init(Tcl_Interp*);
     extern int Sqlitetestintarray_Init(Tcl_Interp*);
+    extern int Sqlitetestvfs_Init(Tcl_Interp *);
+    extern int SqlitetestStat_Init(Tcl_Interp*);
 
     Sqliteconfig_Init(interp);
     Sqlitetest1_Init(interp);
@@ -3503,6 +3580,7 @@ int TCLSH_MAIN(int argc, char **argv){
     Sqlitetest9_Init(interp);
     Sqlitetestasync_Init(interp);
     Sqlitetest_autoext_Init(interp);
+    Sqlitetest_demovfs_Init(interp);
     Sqlitetest_func_Init(interp);
     Sqlitetest_hexio_Init(interp);
     Sqlitetest_init_Init(interp);
@@ -3515,12 +3593,34 @@ int TCLSH_MAIN(int argc, char **argv){
     SqlitetestOsinst_Init(interp);
     Sqlitetestbackup_Init(interp);
     Sqlitetestintarray_Init(interp);
+    Sqlitetestvfs_Init(interp);
+    SqlitetestStat_Init(interp);
+
+    Tcl_CreateObjCommand(interp,"load_testfixture_extensions",init_all_cmd,0,0);
 
 #ifdef SQLITE_SSE
     Sqlitetestsse_Init(interp);
 #endif
   }
 #endif
+}
+
+#define TCLSH_MAIN main   /* Needed to fake out mktclapp */
+int TCLSH_MAIN(int argc, char **argv){
+  Tcl_Interp *interp;
+  
+  /* Call sqlite3_shutdown() once before doing anything else. This is to
+  ** test that sqlite3_shutdown() can be safely called by a process before
+  ** sqlite3_initialize() is. */
+  sqlite3_shutdown();
+
+#if TCLSH==2
+  sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);
+#endif
+  Tcl_FindExecutable(argv[0]);
+
+  interp = Tcl_CreateInterp();
+  init_all(interp);
   if( argc>=2 ){
     int i;
     char zArgc[32];
@@ -3532,14 +3632,14 @@ int TCLSH_MAIN(int argc, char **argv){
       Tcl_SetVar(interp, "argv", argv[i],
           TCL_GLOBAL_ONLY | TCL_LIST_ELEMENT | TCL_APPEND_VALUE);
     }
-    if( Tcl_EvalFile(interp, argv[1])!=TCL_OK ){
+    if( TCLSH==1 && Tcl_EvalFile(interp, argv[1])!=TCL_OK ){
       const char *zInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
       if( zInfo==0 ) zInfo = Tcl_GetStringResult(interp);
       fprintf(stderr,"%s: %s\n", *argv, zInfo);
       return 1;
     }
   }
-  if( argc<=1 ){
+  if( TCLSH==2 || argc<=1 ){
     Tcl_GlobalEval(interp, zMainloop);
   }
   return 0;

@@ -54,6 +54,20 @@
 #define FTS3_VARINT_MAX 10
 
 /*
+** The testcase() macro is only used by the amalgamation.  If undefined,
+** make it a no-op.
+*/
+#ifndef testcase
+# define testcase(X)
+#endif
+
+/*
+** Terminator values for position-lists and column-lists.
+*/
+#define POS_COLUMN  (1)     /* Column-list terminator */
+#define POS_END     (0)     /* Position-list terminator */ 
+
+/*
 ** This section provides definitions to allow the
 ** FTS3 extension to be compiled outside of the 
 ** amalgamation.

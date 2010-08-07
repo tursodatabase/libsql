@@ -34,6 +34,7 @@ extern int access();
 #define MAXRHS 1000
 #endif
 
+static int showPrecedenceConflict = 0;
 static const char **made_files = NULL;
 static int made_files_count = 0;
 static int successful_exit = 0;
@@ -1084,7 +1085,7 @@ static int resolve_conflict(
       /* Not enough precedence information. */
       apy->type = SRCONFLICT;
       errcnt++;
-    }else if( spx->prec>spy->prec ){    /* Lower precedence wins */
+    }else if( spx->prec>spy->prec ){    /* higher precedence wins */
       apy->type = RD_RESOLVED;
     }else if( spx->prec<spy->prec ){
       apx->type = SH_RESOLVED;
@@ -1404,6 +1405,7 @@ int main(int argc, char **argv)
   static int statistics = 0;
   static int mhflag = 0;
   static int nolinenosflag = 0;
+  static int noResort = 0;
   static struct s_options options[] = {
     {OPT_FLAG, "b", (char*)&basisflag, "Print only the basis in report."},
     {OPT_FLAG, "c", (char*)&compress, "Don't compress the action table."},
@@ -1412,7 +1414,10 @@ int main(int argc, char **argv)
     {OPT_FLAG, "g", (char*)&rpflag, "Print grammar without actions."},
     {OPT_FLAG, "m", (char*)&mhflag, "Output a makeheaders compatible file."},
     {OPT_FLAG, "l", (char*)&nolinenosflag, "Do not print #line statements."},
+    {OPT_FLAG, "p", (char*)&showPrecedenceConflict,
+                    "Show conflicts resolved by precedence rules"},
     {OPT_FLAG, "q", (char*)&quiet, "(Quiet) Don't print the report file."},
+    {OPT_FLAG, "r", (char*)&noResort, "Do not sort or renumber states"},
     {OPT_FLAG, "s", (char*)&statistics,
                                    "Print parser stats to standard output."},
     {OPT_FLAG, "x", (char*)&version, "Print the version number."},
@@ -1499,8 +1504,9 @@ int main(int argc, char **argv)
     if( compress==0 ) CompressTables(&lem);
 
     /* Reorder and renumber the states so that states with fewer choices
-    ** occur at the end. */
-    ResortStates(&lem);
+    ** occur at the end.  This is an optimization that helps make the
+    ** generated parser tables smaller. */
+    if( noResort==0 ) ResortStates(&lem);
 
     /* Generate a report of the parser generated.  (the "y.output" file) */
     if( !quiet ) ReportOutput(&lem);
@@ -2896,11 +2902,25 @@ int PrintAction(struct action *ap, FILE *fp, int indent){
         indent,ap->sp->name,ap->x.rp->index);
       break;
     case SSCONFLICT:
-      fprintf(fp,"%*s shift  %d ** Parsing conflict **", 
+      fprintf(fp,"%*s shift  %-3d ** Parsing conflict **", 
         indent,ap->sp->name,ap->x.stp->statenum);
       break;
     case SH_RESOLVED:
+      if( showPrecedenceConflict ){
+        fprintf(fp,"%*s shift  %-3d -- dropped by precedence",
+                indent,ap->sp->name,ap->x.stp->statenum);
+      }else{
+        result = 0;
+      }
+      break;
     case RD_RESOLVED:
+      if( showPrecedenceConflict ){
+        fprintf(fp,"%*s reduce %-3d -- dropped by precedence",
+                indent,ap->sp->name,ap->x.rp->index);
+      }else{
+        result = 0;
+      }
+      break;
     case NOT_USED:
       result = 0;
       break;

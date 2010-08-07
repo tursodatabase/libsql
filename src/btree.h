@@ -81,6 +81,7 @@ int sqlite3BtreeSyncDisabled(Btree*);
 int sqlite3BtreeSetPageSize(Btree *p, int nPagesize, int nReserve, int eFix);
 int sqlite3BtreeGetPageSize(Btree*);
 int sqlite3BtreeMaxPageCount(Btree*,int);
+u32 sqlite3BtreeLastPage(Btree*);
 int sqlite3BtreeSecureDelete(Btree*,int);
 int sqlite3BtreeGetReserve(Btree*);
 int sqlite3BtreeSetAutoVacuum(Btree *, int);
@@ -184,6 +185,8 @@ struct Pager *sqlite3BtreePager(Btree*);
 int sqlite3BtreePutData(BtCursor*, u32 offset, u32 amt, void*);
 void sqlite3BtreeCacheOverflow(BtCursor *);
 void sqlite3BtreeClearCursor(BtCursor *);
+
+int sqlite3BtreeSetVersion(Btree *pBt, int iVersion);
 
 #ifndef NDEBUG
 int sqlite3BtreeCursorIsValid(BtCursor*);

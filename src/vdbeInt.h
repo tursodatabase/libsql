@@ -311,7 +311,7 @@ struct Vdbe {
   int btreeMask;          /* Bitmask of db->aDb[] entries referenced */
   i64 startTime;          /* Time when query started - used for profiling */
   BtreeMutexArray aMutex; /* An array of Btree used here and needing locks */
-  int aCounter[2];        /* Counters used by sqlite3_stmt_status() */
+  int aCounter[3];        /* Counters used by sqlite3_stmt_status() */
   char *zSql;             /* Text of the SQL statement that generated this */
   void *pFree;            /* Free this when deleting the vdbe */
   i64 nFkConstraint;      /* Number of imm. FK constraints this VM */

@@ -208,7 +208,7 @@ foreach AutoVacuumMode [list 0 1] {
     nRead db
   } [expr $AutoVacuumMode ? 4 : 30]
 }
-sqlite3_soft_heap_limit $soft_limit
+sqlite3_soft_heap_limit $cmdlinearg(soft-heap-limit)
 
 #------------------------------------------------------------------------
 # incrblob-3.*: 
@@ -500,7 +500,7 @@ do_test incrblob-6.15 {
   }
 } {a different invocation}
 db2 close
-sqlite3_soft_heap_limit $soft_limit
+sqlite3_soft_heap_limit $cmdlinearg(soft-heap-limit)
 
 #-----------------------------------------------------------------------
 # The following tests verify the behaviour of the incremental IO

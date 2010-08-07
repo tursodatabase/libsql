@@ -76,7 +76,6 @@ proc do_mallocC_test {tn args} {
     #} $sum
 
     #integrity_check mallocC-$tn.$::n.4
-  if {$::nErr>1} return
   }
   unset ::mallocopts
 }

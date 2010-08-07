@@ -50,6 +50,10 @@ static int devsymCheckReservedLock(sqlite3_file*, int *);
 static int devsymFileControl(sqlite3_file*, int op, void *pArg);
 static int devsymSectorSize(sqlite3_file*);
 static int devsymDeviceCharacteristics(sqlite3_file*);
+static int devsymShmLock(sqlite3_file*,int,int,int);
+static int devsymShmMap(sqlite3_file*,int,int,int, void volatile **);
+static void devsymShmBarrier(sqlite3_file*);
+static int devsymShmUnmap(sqlite3_file*,int);
 
 /*
 ** Method declarations for devsym_vfs.
@@ -69,7 +73,7 @@ static int devsymSleep(sqlite3_vfs*, int microseconds);
 static int devsymCurrentTime(sqlite3_vfs*, double*);
 
 static sqlite3_vfs devsym_vfs = {
-  1,                     /* iVersion */
+  2,                     /* iVersion */
   sizeof(devsym_file),      /* szOsFile */
   DEVSYM_MAX_PATHNAME,      /* mxPathname */
   0,                     /* pNext */
@@ -92,11 +96,13 @@ static sqlite3_vfs devsym_vfs = {
 #endif /* SQLITE_OMIT_LOAD_EXTENSION */
   devsymRandomness,         /* xRandomness */
   devsymSleep,              /* xSleep */
-  devsymCurrentTime         /* xCurrentTime */
+  devsymCurrentTime,        /* xCurrentTime */
+  0,                        /* xGetLastError */
+  0                         /* xCurrentTimeInt64 */
 };
 
 static sqlite3_io_methods devsym_io_methods = {
-  1,                            /* iVersion */
+  2,                                /* iVersion */
   devsymClose,                      /* xClose */
   devsymRead,                       /* xRead */
   devsymWrite,                      /* xWrite */
@@ -108,7 +114,11 @@ static sqlite3_io_methods devsym_io_methods = {
   devsymCheckReservedLock,          /* xCheckReservedLock */
   devsymFileControl,                /* xFileControl */
   devsymSectorSize,                 /* xSectorSize */
-  devsymDeviceCharacteristics       /* xDeviceCharacteristics */
+  devsymDeviceCharacteristics,      /* xDeviceCharacteristics */
+  devsymShmMap,                     /* xShmMap */
+  devsymShmLock,                    /* xShmLock */
+  devsymShmBarrier,                 /* xShmBarrier */
+  devsymShmUnmap                    /* xShmUnmap */
 };
 
 struct DevsymGlobal {
@@ -223,6 +233,34 @@ static int devsymDeviceCharacteristics(sqlite3_file *pFile){
 }
 
 /*
+** Shared-memory methods are all pass-thrus.
+*/
+static int devsymShmLock(sqlite3_file *pFile, int ofst, int n, int flags){
+  devsym_file *p = (devsym_file *)pFile;
+  return sqlite3OsShmLock(p->pReal, ofst, n, flags);
+}
+static int devsymShmMap(
+  sqlite3_file *pFile, 
+  int iRegion, 
+  int szRegion, 
+  int isWrite, 
+  void volatile **pp
+){
+  devsym_file *p = (devsym_file *)pFile;
+  return sqlite3OsShmMap(p->pReal, iRegion, szRegion, isWrite, pp);
+}
+static void devsymShmBarrier(sqlite3_file *pFile){
+  devsym_file *p = (devsym_file *)pFile;
+  sqlite3OsShmBarrier(p->pReal);
+}
+static int devsymShmUnmap(sqlite3_file *pFile, int delFlag){
+  devsym_file *p = (devsym_file *)pFile;
+  return sqlite3OsShmUnmap(p->pReal, delFlag);
+}
+
+
+
+/*
 ** Open an devsym file handle.
 */
 static int devsymOpen(
@@ -330,8 +368,9 @@ static int devsymSleep(sqlite3_vfs *pVfs, int nMicro){
 ** Return the current time as a Julian Day number in *pTimeOut.
 */
 static int devsymCurrentTime(sqlite3_vfs *pVfs, double *pTimeOut){
-  return sqlite3OsCurrentTime(g.pVfs, pTimeOut);
+  return g.pVfs->xCurrentTime(g.pVfs, pTimeOut);
 }
+
 
 /*
 ** This procedure registers the devsym vfs with SQLite. If the argument is
@@ -346,9 +385,13 @@ void devsym_register(int iDeviceChar, int iSectorSize){
   }
   if( iDeviceChar>=0 ){
     g.iDeviceChar = iDeviceChar;
+  }else{
+    g.iDeviceChar = 0;
   }
   if( iSectorSize>=0 ){
     g.iSectorSize = iSectorSize;
+  }else{
+    g.iSectorSize = 512;
   }
 }
 

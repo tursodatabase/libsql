@@ -480,22 +480,6 @@ static void registerTrace(FILE *out, int iReg, Mem *p){
 #define CHECK_FOR_INTERRUPT \
    if( db->u1.isInterrupted ) goto abort_due_to_interrupt;
 
-#ifdef SQLITE_DEBUG
-static int fileExists(sqlite3 *db, const char *zFile){
-  int res = 0;
-  int rc = SQLITE_OK;
-#ifdef SQLITE_TEST
-  /* If we are currently testing IO errors, then do not call OsAccess() to
-  ** test for the presence of zFile. This is because any IO error that
-  ** occurs here will not be reported, causing the test to fail.
-  */
-  extern int sqlite3_io_error_pending;
-  if( sqlite3_io_error_pending<=0 )
-#endif
-    rc = sqlite3OsAccess(db->pVfs, zFile, SQLITE_ACCESS_EXISTS, &res);
-  return (res && rc==SQLITE_OK);
-}
-#endif
 
 #ifndef NDEBUG
 /*
@@ -594,18 +578,13 @@ int sqlite3VdbeExec(
 #endif
 #ifdef SQLITE_DEBUG
   sqlite3BeginBenignMalloc();
-  if( p->pc==0 
-   && ((p->db->flags & SQLITE_VdbeListing) || fileExists(db, "vdbe_explain"))
-  ){
+  if( p->pc==0  && (p->db->flags & SQLITE_VdbeListing)!=0 ){
     int i;
     printf("VDBE Program Listing:\n");
     sqlite3VdbePrintSql(p);
     for(i=0; i<p->nOp; i++){
       sqlite3VdbePrintOp(stdout, i, &aOp[i]);
     }
-  }
-  if( fileExists(db, "vdbe_trace") ){
-    p->trace = stdout;
   }
   sqlite3EndBenignMalloc();
 #endif
@@ -627,13 +606,6 @@ int sqlite3VdbeExec(
         sqlite3VdbePrintSql(p);
       }
       sqlite3VdbePrintOp(p->trace, pc, pOp);
-    }
-    if( p->trace==0 && pc==0 ){
-      sqlite3BeginBenignMalloc();
-      if( fileExists(db, "vdbe_sqltrace") ){
-        sqlite3VdbePrintSql(p);
-      }
-      sqlite3EndBenignMalloc();
     }
 #endif
       
@@ -989,38 +961,23 @@ case OP_Blob: {                /* out2-prerelease */
   break;
 }
 
-/* Opcode: Variable P1 P2 P3 P4 *
+/* Opcode: Variable P1 P2 * P4 *
 **
-** Transfer the values of bound parameters P1..P1+P3-1 into registers
-** P2..P2+P3-1.
+** Transfer the values of bound parameter P1 into register P2
 **
 ** If the parameter is named, then its name appears in P4 and P3==1.
 ** The P4 value is used by sqlite3_bind_parameter_name().
 */
-case OP_Variable: {
-  int p1;          /* Variable to copy from */
-  int p2;          /* Register to copy to */
-  int n;           /* Number of values left to copy */
+case OP_Variable: {            /* out2-prerelease */
   Mem *pVar;       /* Value being transferred */
 
-  p1 = pOp->p1 - 1;
-  p2 = pOp->p2;
-  n = pOp->p3;
-  assert( p1>=0 && p1+n<=p->nVar );
-  assert( p2>=1 && p2+n-1<=p->nMem );
-  assert( pOp->p4.z==0 || pOp->p3==1 || pOp->p3==0 );
-
-  while( n-- > 0 ){
-    pVar = &p->aVar[p1++];
-    if( sqlite3VdbeMemTooBig(pVar) ){
-      goto too_big;
-    }
-    pOut = &aMem[p2++];
-    sqlite3VdbeMemReleaseExternal(pOut);
-    pOut->flags = MEM_Null;
-    sqlite3VdbeMemShallowCopy(pOut, pVar, MEM_Static);
-    UPDATE_MAX_BLOBSIZE(pOut);
+  assert( pOp->p1>0 && pOp->p1<=p->nVar );
+  pVar = &p->aVar[pOp->p1 - 1];
+  if( sqlite3VdbeMemTooBig(pVar) ){
+    goto too_big;
   }
+  sqlite3VdbeMemShallowCopy(pOut, pVar, MEM_Static);
+  UPDATE_MAX_BLOBSIZE(pOut);
   break;
 }
 
@@ -1383,7 +1340,7 @@ case OP_Function: {
   for(i=0; i<n; i++, pArg++){
     apVal[i] = pArg;
     sqlite3VdbeMemStoreType(pArg);
-    REGISTER_TRACE(pOp->p2, pArg);
+    REGISTER_TRACE(pOp->p2+i, pArg);
   }
 
   assert( pOp->p4type==P4_FUNCDEF || pOp->p4type==P4_VDBEFUNC );
@@ -3068,10 +3025,10 @@ case OP_OpenWrite: {
 **
 ** Open a new cursor P1 to a transient table.
 ** The cursor is always opened read/write even if 
-** the main database is read-only.  The transient or virtual
+** the main database is read-only.  The ephemeral
 ** table is deleted automatically when the cursor is closed.
 **
-** P2 is the number of columns in the virtual table.
+** P2 is the number of columns in the ephemeral table.
 ** The cursor points to a BTree table if P4==0 and to a BTree index
 ** if P4 is not 0.  If P4 is not NULL, it points to a KeyInfo structure
 ** that defines the format of keys in the index.
@@ -3082,6 +3039,14 @@ case OP_OpenWrite: {
 ** this opcode.  Then this opcode was call OpenVirtual.  But
 ** that created confusion with the whole virtual-table idea.
 */
+/* Opcode: OpenAutoindex P1 P2 * P4 *
+**
+** This opcode works the same as OP_OpenEphemeral.  It has a
+** different name to distinguish its use.  Tables created using
+** by this opcode will be used for automatically created transient
+** indices in joins.
+*/
+case OP_OpenAutoindex: 
 case OP_OpenEphemeral: {
   VdbeCursor *pCx;
   static const int openFlags = 
@@ -4173,14 +4138,13 @@ case OP_Rewind: {        /* jump */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
+  res = 1;
   if( (pCrsr = pC->pCursor)!=0 ){
     rc = sqlite3BtreeFirst(pCrsr, &res);
     pC->atFirst = res==0 ?1:0;
     pC->deferredMoveto = 0;
     pC->cacheStatus = CACHE_STALE;
     pC->rowidIsValid = 0;
-  }else{
-    res = 1;
   }
   pC->nullRow = (u8)res;
   assert( pOp->p2>0 && pOp->p2<p->nOp );
@@ -4190,7 +4154,7 @@ case OP_Rewind: {        /* jump */
   break;
 }
 
-/* Opcode: Next P1 P2 * * *
+/* Opcode: Next P1 P2 * * P5
 **
 ** Advance cursor P1 so that it points to the next key/data pair in its
 ** table or index.  If there are no more key/value pairs then fall through
@@ -4199,9 +4163,12 @@ case OP_Rewind: {        /* jump */
 **
 ** The P1 cursor must be for a real table, not a pseudo-table.
 **
+** If P5 is positive and the jump is taken, then event counter
+** number P5-1 in the prepared statement is incremented.
+**
 ** See also: Prev
 */
-/* Opcode: Prev P1 P2 * * *
+/* Opcode: Prev P1 P2 * * P5
 **
 ** Back up cursor P1 so that it points to the previous key/data pair in its
 ** table or index.  If there is no previous key/value pairs then fall through
@@ -4209,6 +4176,9 @@ case OP_Rewind: {        /* jump */
 ** jump immediately to P2.
 **
 ** The P1 cursor must be for a real table, not a pseudo-table.
+**
+** If P5 is positive and the jump is taken, then event counter
+** number P5-1 in the prepared statement is incremented.
 */
 case OP_Prev:          /* jump */
 case OP_Next: {        /* jump */
@@ -4218,6 +4188,7 @@ case OP_Next: {        /* jump */
 
   CHECK_FOR_INTERRUPT;
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  assert( pOp->p5<=ArraySize(p->aCounter) );
   pC = p->apCsr[pOp->p1];
   if( pC==0 ){
     break;  /* See ticket #2273 */
@@ -5171,6 +5142,139 @@ case OP_AggFinal: {
   break;
 }
 
+#ifndef SQLITE_OMIT_WAL
+/* Opcode: Checkpoint P1 * * * *
+**
+** Checkpoint database P1. This is a no-op if P1 is not currently in
+** WAL mode.
+*/
+case OP_Checkpoint: {
+  rc = sqlite3Checkpoint(db, pOp->p1);
+  break;
+};  
+#endif
+
+#ifndef SQLITE_OMIT_PRAGMA
+/* Opcode: JournalMode P1 P2 P3 * P5
+**
+** Change the journal mode of database P1 to P3. P3 must be one of the
+** PAGER_JOURNALMODE_XXX values. If changing between the various rollback
+** modes (delete, truncate, persist, off and memory), this is a simple
+** operation. No IO is required.
+**
+** If changing into or out of WAL mode the procedure is more complicated.
+**
+** Write a string containing the final journal-mode to register P2.
+*/
+case OP_JournalMode: {    /* out2-prerelease */
+  Btree *pBt;                     /* Btree to change journal mode of */
+  Pager *pPager;                  /* Pager associated with pBt */
+  int eNew;                       /* New journal mode */
+  int eOld;                       /* The old journal mode */
+  const char *zFilename;          /* Name of database file for pPager */
+
+  eNew = pOp->p3;
+  assert( eNew==PAGER_JOURNALMODE_DELETE 
+       || eNew==PAGER_JOURNALMODE_TRUNCATE 
+       || eNew==PAGER_JOURNALMODE_PERSIST 
+       || eNew==PAGER_JOURNALMODE_OFF
+       || eNew==PAGER_JOURNALMODE_MEMORY
+       || eNew==PAGER_JOURNALMODE_WAL
+       || eNew==PAGER_JOURNALMODE_QUERY
+  );
+  assert( pOp->p1>=0 && pOp->p1<db->nDb );
+
+  /* This opcode is used in two places: PRAGMA journal_mode and ATTACH.
+  ** In PRAGMA journal_mode, the sqlite3VdbeUsesBtree() routine is called
+  ** when the statment is prepared and so p->aMutex.nMutex>0.  All mutexes
+  ** are already acquired.  But when used in ATTACH, sqlite3VdbeUsesBtree()
+  ** is not called when the statement is prepared because it requires the
+  ** iDb index of the database as a parameter, and the database has not
+  ** yet been attached so that index is unavailable.  We have to wait
+  ** until runtime (now) to get the mutex on the newly attached database.
+  ** No other mutexes are required by the ATTACH command so this is safe
+  ** to do.
+  */
+  assert( (p->btreeMask & (1<<pOp->p1))!=0 || p->aMutex.nMutex==0 );
+  if( p->aMutex.nMutex==0 ){
+    /* This occurs right after ATTACH.  Get a mutex on the newly ATTACHed
+    ** database. */
+    sqlite3VdbeUsesBtree(p, pOp->p1);
+    sqlite3VdbeMutexArrayEnter(p);
+  }
+
+  pBt = db->aDb[pOp->p1].pBt;
+  pPager = sqlite3BtreePager(pBt);
+  eOld = sqlite3PagerGetJournalMode(pPager);
+  if( eNew==PAGER_JOURNALMODE_QUERY ) eNew = eOld;
+  if( !sqlite3PagerOkToChangeJournalMode(pPager) ) eNew = eOld;
+
+#ifndef SQLITE_OMIT_WAL
+  zFilename = sqlite3PagerFilename(pPager);
+
+  /* Do not allow a transition to journal_mode=WAL for a database
+  ** in temporary storage or if the VFS does not support shared memory 
+  */
+  if( eNew==PAGER_JOURNALMODE_WAL
+   && (zFilename[0]==0                         /* Temp file */
+       || !sqlite3PagerWalSupported(pPager))   /* No shared-memory support */
+  ){
+    eNew = eOld;
+  }
+
+  if( (eNew!=eOld)
+   && (eOld==PAGER_JOURNALMODE_WAL || eNew==PAGER_JOURNALMODE_WAL)
+  ){
+    if( !db->autoCommit || db->activeVdbeCnt>1 ){
+      rc = SQLITE_ERROR;
+      sqlite3SetString(&p->zErrMsg, db, 
+          "cannot change %s wal mode from within a transaction",
+          (eNew==PAGER_JOURNALMODE_WAL ? "into" : "out of")
+      );
+      break;
+    }else{
+ 
+      if( eOld==PAGER_JOURNALMODE_WAL ){
+        /* If leaving WAL mode, close the log file. If successful, the call
+        ** to PagerCloseWal() checkpoints and deletes the write-ahead-log 
+        ** file. An EXCLUSIVE lock may still be held on the database file 
+        ** after a successful return. 
+        */
+        rc = sqlite3PagerCloseWal(pPager);
+        if( rc==SQLITE_OK ){
+          sqlite3PagerSetJournalMode(pPager, eNew);
+        }
+      }else if( eOld==PAGER_JOURNALMODE_MEMORY ){
+        /* Cannot transition directly from MEMORY to WAL.  Use mode OFF
+        ** as an intermediate */
+        sqlite3PagerSetJournalMode(pPager, PAGER_JOURNALMODE_OFF);
+      }
+  
+      /* Open a transaction on the database file. Regardless of the journal
+      ** mode, this transaction always uses a rollback journal.
+      */
+      assert( sqlite3BtreeIsInTrans(pBt)==0 );
+      if( rc==SQLITE_OK ){
+        rc = sqlite3BtreeSetVersion(pBt, (eNew==PAGER_JOURNALMODE_WAL ? 2 : 1));
+      }
+    }
+  }
+#endif /* ifndef SQLITE_OMIT_WAL */
+
+  if( rc ){
+    eNew = eOld;
+  }
+  eNew = sqlite3PagerSetJournalMode(pPager, eNew);
+
+  pOut = &aMem[pOp->p2];
+  pOut->flags = MEM_Str|MEM_Static|MEM_Term;
+  pOut->z = (char *)sqlite3JournalModename(eNew);
+  pOut->n = sqlite3Strlen30(pOut->z);
+  pOut->enc = SQLITE_UTF8;
+  sqlite3VdbeChangeEncoding(pOut, encoding);
+  break;
+};
+#endif /* SQLITE_OMIT_PRAGMA */
 
 #if !defined(SQLITE_OMIT_VACUUM) && !defined(SQLITE_OMIT_ATTACH)
 /* Opcode: Vacuum * * * * *
@@ -5616,19 +5720,7 @@ case OP_VUpdate: {
 ** Write the current number of pages in database P1 to memory cell P2.
 */
 case OP_Pagecount: {            /* out2-prerelease */
-  int p1;
-  int nPage;
-  Pager *pPager;
-
-  p1 = pOp->p1; 
-  pPager = sqlite3BtreePager(db->aDb[p1].pBt);
-  rc = sqlite3PagerPagecount(pPager, &nPage);
-  /* OP_Pagecount is always called from within a read transaction.  The
-  ** page count has already been successfully read and cached.  So the
-  ** sqlite3PagerPagecount() call above cannot fail. */
-  if( ALWAYS(rc==SQLITE_OK) ){
-    pOut->u.i = nPage;
-  }
+  pOut->u.i = sqlite3BtreeLastPage(db->aDb[pOp->p1].pBt);
   break;
 }
 #endif

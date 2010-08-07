@@ -14,6 +14,7 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+
 # Tests in this file are quite similar to those run by trans.test and
 # avtrans.test.
 #
@@ -23,6 +24,7 @@ proc signature {} {
 }
 
 do_test savepoint2-1 {
+  wal_set_journal_mode
   execsql {
     PRAGMA cache_size=10;
     BEGIN;
@@ -42,6 +44,7 @@ do_test savepoint2-1 {
     SELECT count(*) FROM t3;
   }
 } {1024}
+wal_check_journal_mode savepoint2-1.1
 
 unset -nocomplain ::sig
 unset -nocomplain SQL
@@ -140,6 +143,9 @@ for {set ii 2} {$ii < ($iterations+2)} {incr ii} {
     sqlite3_get_autocommit db
   } {1}
   integrity_check savepoint2-$ii.6.1
+
+  # Check that the connection is still running in WAL mode.
+  wal_check_journal_mode savepoint2-$ii.7
 }
 
 unset -nocomplain ::sig

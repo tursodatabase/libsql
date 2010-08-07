@@ -26,6 +26,10 @@ set DATABASE_SCHEMA {
     CREATE INDEX i2 ON t1(y);
 }
 
+if {0==[info exists ::G(savepoint6_iterations)]} {
+  set ::G(savepoint6_iterations) 1000
+}
+
 #--------------------------------------------------------------------------
 # In memory database state.
 #
@@ -222,10 +226,11 @@ foreach zSetup [list {
   set testname normal
   sqlite3 db test.db
 } {
+  if {[wal_is_wal_mode]} continue
   set testname tempdb
   sqlite3 db ""
 } {
-  if {[catch {set ::permutations_test_prefix} z] == 0 && $z eq "journaltest"} {
+  if {[permutation] eq "journaltest"} {
     continue
   }
   set testname nosync
@@ -241,9 +246,11 @@ foreach zSetup [list {
   unset -nocomplain ::aEntry
 
   catch { db close }
-  file delete -force test.db
+  file delete -force test.db test.db-wal test.db-journal
   eval $zSetup
   sql $DATABASE_SCHEMA
+
+  wal_set_journal_mode
 
   do_test savepoint6-$testname.setup {
     savepoint one
@@ -252,7 +259,7 @@ foreach zSetup [list {
     checkdb
   } {ok}
   
-  for {set i 0} {$i < 1000} {incr i} {
+  for {set i 0} {$i < $::G(savepoint6_iterations)} {incr i} {
     do_test savepoint6-$testname.$i.1 {
       savepoint_op
       checkdb
@@ -264,6 +271,8 @@ foreach zSetup [list {
       checkdb
     } {ok}
   }
+
+  wal_check_journal_mode savepoint6-$testname.walok
 }
 
 unset -nocomplain ::lSavepoint

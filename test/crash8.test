@@ -258,6 +258,7 @@ ifcapable pragma {
       INSERT INTO ab VALUES(6, NULL);
       UPDATE ab SET b = randstr(1000,1000);
       ATTACH 'test2.db' AS aux;
+      PRAGMA aux.journal_mode = persist;
       CREATE TABLE aux.ab(a, b);
       INSERT INTO aux.ab SELECT * FROM main.ab;
 
@@ -382,7 +383,7 @@ for {set i 1} {$i < 10} {incr i} {
       BEGIN;
         UPDATE t1 SET x = randomblob(900);
     }
-    file delete -force testX.db testX.db-journal
+    file delete -force testX.db testX.db-journal testX.db-wal
     copy_file test.db testX.db
     copy_file test.db-journal testX.db-journal
     db close

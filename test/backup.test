@@ -16,6 +16,8 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+do_not_use_codec
+
 #---------------------------------------------------------------------
 # Test organization:
 #
@@ -38,6 +40,8 @@ source $testdir/tester.tcl
 #
 # backup-9.*: Test that passing a negative argument to backup_step() is
 #             interpreted as "copy the whole file".
+# 
+# backup-10.*: Test writing the source database mid backup.
 #
 
 proc data_checksum {db file} { $db one "SELECT md5sum(a, b) FROM ${file}.t1" }
@@ -487,6 +491,7 @@ db2 close
 #   3) Backing up memory-to-file. 
 #
 set iTest 0
+file delete -force bak.db-wal
 foreach {writer file} {db test.db db3 test.db db :memory:} {
   incr iTest
   catch { file delete bak.db }
@@ -905,6 +910,7 @@ ifcapable memorymanage {
 }
 
 
+#-----------------------------------------------------------------------
 # Test that if the database is written to via the same database handle being
 # used as the source by a backup operation:
 #

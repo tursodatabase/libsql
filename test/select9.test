@@ -25,8 +25,6 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-#set ISQUICK 1
-
 #-------------------------------------------------------------------------
 # test_compound_select TESTNAME SELECT RESULT
 #
@@ -62,7 +60,7 @@ proc test_compound_select {testname sql result} {
 
   set iLimitIncr  1
   set iOffsetIncr 1
-  if {[info exists ::ISQUICK] && $::ISQUICK && $nRow>=5} {
+  if {[info exists ::G(isquick)] && $::G(isquick) && $nRow>=5} {
     set iOffsetIncr [expr $nRow / 5]
     set iLimitIncr [expr $nRow / 5]
   }

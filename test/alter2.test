@@ -22,9 +22,15 @@ source $testdir/tester.tcl
 # We have to have pragmas in order to do this test
 ifcapable {!pragma} return
 
+# Do not use a codec for tests in this file, as the database file is
+# manipulated directly using tcl scripts. See proc [set_file_format].
+#
+do_not_use_codec
+
 # These tests do not work if there is a codec. 
 #
 #if {[catch {sqlite3 -has_codec} r] || $r} return
+#
 
 # The file format change affects the way row-records stored in tables (but 
 # not indices) are interpreted. Before version 3.1.3, a row-record for a 
@@ -71,6 +77,21 @@ proc alter_table {tbl sql {file_format 2}} {
   dbat close
   set_file_format 2
 }
+
+# Create bogus application-defined functions for functions used 
+# internally by ALTER TABLE, to ensure that ALTER TABLE falls back
+# to the built-in functions.
+#
+proc failing_app_func {args} {error "bad function"}
+do_test alter2-1.0 {
+  db func substr failing_app_func
+  db func like failing_app_func
+  db func sqlite_rename_table failing_app_func
+  db func sqlite_rename_trigger failing_app_func
+  db func sqlite_rename_parent failing_app_func
+  catchsql {SELECT substr('abcdefg',1,3)}
+} {1 {bad function}}
+
 
 #-----------------------------------------------------------------------
 # Some basic tests to make sure short rows are handled.
@@ -233,7 +254,8 @@ ifcapable trigger {
 do_test alter2-4.1 {
   db close
   set_file_format 5
-  sqlite3 db test.db
+  catch { sqlite3 db test.db }
+  set {} {}
 } {}
 do_test alter2-4.2 {
   # We have to run two queries here because the Tcl interface uses

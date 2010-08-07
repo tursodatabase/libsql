@@ -76,15 +76,18 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
     ** or executed.  All the parser does is build the internal data
     ** structures that describe the table, index, or view.
     */
-    char *zErr;
     int rc;
+    sqlite3_stmt *pStmt;
+    TESTONLY(int rcp);            /* Return code from sqlite3_prepare() */
+
     assert( db->init.busy );
     db->init.iDb = iDb;
     db->init.newTnum = atoi(argv[1]);
     db->init.orphanTrigger = 0;
-    rc = sqlite3_exec(db, argv[2], 0, 0, &zErr);
+    TESTONLY(rcp = ) sqlite3_prepare(db, argv[2], -1, &pStmt, 0);
+    rc = db->errCode;
+    assert( (rc&0xFF)==(rcp&0xFF) );
     db->init.iDb = 0;
-    assert( rc!=SQLITE_OK || zErr==0 );
     if( SQLITE_OK!=rc ){
       if( db->init.orphanTrigger ){
         assert( iDb==1 );
@@ -92,12 +95,12 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
         pData->rc = rc;
         if( rc==SQLITE_NOMEM ){
           db->mallocFailed = 1;
-        }else if( rc!=SQLITE_INTERRUPT && rc!=SQLITE_LOCKED ){
-          corruptSchema(pData, argv[0], zErr);
+        }else if( rc!=SQLITE_INTERRUPT && (rc&0xFF)!=SQLITE_LOCKED ){
+          corruptSchema(pData, argv[0], sqlite3_errmsg(db));
         }
       }
-      sqlite3DbFree(db, zErr);
     }
+    sqlite3_finalize(pStmt);
   }else if( argv[0]==0 ){
     corruptSchema(pData, 0, 0);
   }else{
@@ -582,6 +585,7 @@ static int sqlite3Prepare(
   sqlite3VtabUnlockList(db);
 
   pParse->db = db;
+  pParse->nQueryLoop = (double)1;
   if( nBytes>=0 && (nBytes==0 || zSql[nBytes-1]!=0) ){
     char *zSqlCopy;
     int mxLen = db->aLimit[SQLITE_LIMIT_SQL_LENGTH];
@@ -603,6 +607,7 @@ static int sqlite3Prepare(
   }else{
     sqlite3RunParser(pParse, zSql, &zErrMsg);
   }
+  assert( 1==(int)pParse->nQueryLoop );
 
   if( db->mallocFailed ){
     pParse->rc = SQLITE_NOMEM;

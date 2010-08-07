@@ -17,6 +17,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# Do not use a codec for tests in this file, as the database file is
+# manipulated directly using tcl scripts (using the [hexio_write] command).
+#
+do_not_use_codec
+
 db eval {PRAGMA legacy_file_format=OFF}
 
 # This procedure sets the value of the file-format in file 'test.db'
