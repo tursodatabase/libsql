@@ -361,6 +361,7 @@ static int openTransaction(jt_file *pMain, jt_file *pJournal){
   sqlite3_file *p = pMain->pReal;
   int rc = SQLITE_OK;
 
+  closeTransaction(pMain);
   aData = sqlite3_malloc(pMain->nPagesize);
   pMain->pWritable = sqlite3BitvecCreate(pMain->nPage);
   pMain->aCksum = sqlite3_malloc(sizeof(u32) * (pMain->nPage + 1));

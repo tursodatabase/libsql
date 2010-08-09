@@ -901,7 +901,7 @@ static char *print_pager_state(Pager *p){
         p->eState==PAGER_WRITER_FINISHED ? "WRITER_FINISHED" :
         p->eState==PAGER_ERROR           ? "ERROR" : "?error?"
       , (int)p->errCode
-      , p->eLock==NO_LOCK         ? "OPEN" :
+      , p->eLock==NO_LOCK         ? "NO_LOCK" :
         p->eLock==RESERVED_LOCK   ? "RESERVED" :
         p->eLock==EXCLUSIVE_LOCK  ? "EXCLUSIVE" :
         p->eLock==SHARED_LOCK     ? "SHARED" :
