@@ -92,7 +92,7 @@ extern "C" {
 **
 ** Since version 3.6.18, SQLite source code has been stored in the
 ** <a href="http://www.fossil-scm.org/">Fossil configuration management
-** system</a>.  ^The SQLITE_SOURCE_ID macro evalutes to
+** system</a>.  ^The SQLITE_SOURCE_ID macro evaluates to
 ** a string which identifies a particular check-in of SQLite
 ** within its configuration management system.  ^The SQLITE_SOURCE_ID
 ** string contains the date and time of the check-in (UTC) and an SHA1
@@ -149,7 +149,7 @@ int sqlite3_libversion_number(void);
 ** compile time.  ^The SQLITE_ prefix may be omitted from the 
 ** option name passed to sqlite3_compileoption_used().  
 **
-** ^The sqlite3_compileoption_get() function allows interating
+** ^The sqlite3_compileoption_get() function allows iterating
 ** over the list of options that were defined at compile time by
 ** returning the N-th compile time option string.  ^If N is out of range,
 ** sqlite3_compileoption_get() returns a NULL pointer.  ^The SQLITE_ 
@@ -157,7 +157,7 @@ int sqlite3_libversion_number(void);
 ** sqlite3_compileoption_get().
 **
 ** ^Support for the diagnostic functions sqlite3_compileoption_used()
-** and sqlite3_compileoption_get() may be omitted by specifing the 
+** and sqlite3_compileoption_get() may be omitted by specifying the 
 ** [SQLITE_OMIT_COMPILEOPTION_DIAGS] option at compile time.
 **
 ** See also: SQL functions [sqlite_compileoption_used()] and
@@ -263,7 +263,7 @@ typedef sqlite_uint64 sqlite3_uint64;
 **
 ** ^The sqlite3_close() routine is the destructor for the [sqlite3] object.
 ** ^Calls to sqlite3_close() return SQLITE_OK if the [sqlite3] object is
-** successfullly destroyed and all associated resources are deallocated.
+** successfully destroyed and all associated resources are deallocated.
 **
 ** Applications must [sqlite3_finalize | finalize] all [prepared statements]
 ** and [sqlite3_blob_close | close] all [BLOB handles] associated with
@@ -2667,7 +2667,7 @@ typedef struct sqlite3_context sqlite3_context;
 ** </ul>
 **
 ** In the templates above, NNN represents an integer literal,
-** and VVV represents an alphanumeric identifer.)^  ^The values of these
+** and VVV represents an alphanumeric identifier.)^  ^The values of these
 ** parameters (also called "host parameter names" or "SQL parameters")
 ** can be set using the sqlite3_bind_*() routines defined here.
 **
@@ -3446,7 +3446,7 @@ int sqlite3_value_numeric_type(sqlite3_value*);
 /*
 ** CAPI3REF: Obtain Aggregate Function Context
 **
-** Implementions of aggregate SQL functions use this
+** Implementations of aggregate SQL functions use this
 ** routine to allocate memory for storing their state.
 **
 ** ^The first time the sqlite3_aggregate_context(C,N) routine is called 
@@ -3718,7 +3718,7 @@ void sqlite3_result_zeroblob(sqlite3_context*, int n);
 **
 ** A pointer to the user supplied routine must be passed as the fifth
 ** argument.  ^If it is NULL, this is the same as deleting the collation
-** sequence (so that SQLite cannot call it anymore).
+** sequence (so that SQLite cannot call it any more).
 ** ^Each time the application supplied function is invoked, it is passed
 ** as its first parameter a copy of the void* passed as the fourth argument
 ** to sqlite3_create_collation() or sqlite3_create_collation16().
@@ -4936,7 +4936,7 @@ void sqlite3_mutex_leave(sqlite3_mutex*);
 ** it is passed a NULL pointer).
 **
 ** The xMutexInit() method must be threadsafe.  ^It must be harmless to
-** invoke xMutexInit() mutiple times within the same process and without
+** invoke xMutexInit() multiple times within the same process and without
 ** intervening calls to xMutexEnd().  Second and subsequent calls to
 ** xMutexInit() must be no-ops.
 **
@@ -5106,7 +5106,7 @@ int sqlite3_test_control(int op, ...);
 ** CAPI3REF: SQLite Runtime Status
 **
 ** ^This interface is used to retrieve runtime status information
-** about the preformance of SQLite, and optionally to reset various
+** about the performance of SQLite, and optionally to reset various
 ** highwater marks.  ^The first argument is an integer code for
 ** the specific parameter to measure.  ^(Recognized integer codes
 ** are of the form [SQLITE_STATUS_MEMORY_USED | SQLITE_STATUS_...].)^
@@ -5232,7 +5232,7 @@ int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
 ** database connection object to be interrogated.  ^The second argument
 ** is an integer constant, taken from the set of
 ** [SQLITE_DBSTATUS_LOOKASIDE_USED | SQLITE_DBSTATUS_*] macros, that
-** determiness the parameter to interrogate.  The set of 
+** determines the parameter to interrogate.  The set of 
 ** [SQLITE_DBSTATUS_LOOKASIDE_USED | SQLITE_DBSTATUS_*] macros is likely
 ** to grow in future releases of SQLite.
 **
@@ -5654,7 +5654,7 @@ typedef struct sqlite3_backup sqlite3_backup;
 **
 ** ^Each call to sqlite3_backup_step() sets two values inside
 ** the [sqlite3_backup] object: the number of pages still to be backed
-** up and the total number of pages in the source databae file.
+** up and the total number of pages in the source database file.
 ** The sqlite3_backup_remaining() and sqlite3_backup_pagecount() interfaces
 ** retrieve these two values, respectively.
 **
@@ -5750,7 +5750,7 @@ int sqlite3_backup_pagecount(sqlite3_backup *p);
 ** blocked connection already has a registered unlock-notify callback,
 ** then the new callback replaces the old.)^ ^If sqlite3_unlock_notify() is
 ** called with a NULL pointer as its second argument, then any existing
-** unlock-notify callback is cancelled. ^The blocked connections 
+** unlock-notify callback is canceled. ^The blocked connections 
 ** unlock-notify callback may also be canceled by closing the blocked
 ** connection using [sqlite3_close()].
 **
@@ -5832,7 +5832,7 @@ int sqlite3_unlock_notify(
 **
 ** ^The [sqlite3_strnicmp()] API allows applications and extensions to
 ** compare the contents of two buffers containing UTF-8 strings in a
-** case-indendent fashion, using the same definition of case independence 
+** case-independent fashion, using the same definition of case independence 
 ** that SQLite uses internally when comparing identifiers.
 */
 int sqlite3_strnicmp(const char *, const char *, int);
