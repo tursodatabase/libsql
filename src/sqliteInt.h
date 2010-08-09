@@ -1354,7 +1354,7 @@ struct FKey {
 */
 struct KeyInfo {
   sqlite3 *db;        /* The database connection */
-  u8 enc;             /* Text encoding - one of the TEXT_Utf* values */
+  u8 enc;             /* Text encoding - one of the SQLITE_UTF* values */
   u16 nField;         /* Number of entries in aColl[] */
   u8 *aSortOrder;     /* Sort order for each column.  May be NULL */
   CollSeq *aColl[1];  /* Collating sequence for each term of the key */
