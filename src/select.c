@@ -1798,7 +1798,7 @@ multi_select_end:
 ** regReturn is the number of the register holding the subroutine
 ** return address.
 **
-** If regPrev>0 then it is a the first register in a vector that
+** If regPrev>0 then it is the first register in a vector that
 ** records the previous output.  mem[regPrev] is a flag that is false
 ** if there has been no previous output.  If regPrev>0 then code is
 ** generated to suppress duplicates.  pKeyInfo is used for comparing
