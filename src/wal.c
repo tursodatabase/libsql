@@ -1582,7 +1582,7 @@ static int walCheckpoint(
     nReq = ((i64)mxPage * szPage);
     rc = sqlite3OsFileSize(pWal->pDbFd, &nSize);
     if( rc==SQLITE_OK && nSize<nReq ){
-      rc = sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_SIZE_HINT, &nReq);
+      sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_SIZE_HINT, &nReq);
     }
 
     /* Iterate through the contents of the WAL, copying data to the db file. */
