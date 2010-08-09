@@ -1567,7 +1567,6 @@ static int walCheckpoint(
   if( pInfo->nBackfill<mxSafeFrame
    && (rc = walLockExclusive(pWal, WAL_READ_LOCK(0), 1))==SQLITE_OK
   ){
-    i64 nReq;                     /* File size hint passed to VFS */
     i64 nSize;                    /* Current size of database file */
     u32 nBackfill = pInfo->nBackfill;
 
@@ -1579,10 +1578,12 @@ static int walCheckpoint(
     /* If the database file may grow as a result of this checkpoint, hint
     ** about the eventual size of the db file to the VFS layer. 
     */
-    nReq = ((i64)mxPage * szPage);
-    rc = sqlite3OsFileSize(pWal->pDbFd, &nSize);
-    if( rc==SQLITE_OK && nSize<nReq ){
-      sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_SIZE_HINT, &nReq);
+    if( rc==SQLITE_OK ){
+      i64 nReq = ((i64)mxPage * szPage);
+      rc = sqlite3OsFileSize(pWal->pDbFd, &nSize);
+      if( rc==SQLITE_OK && nSize<nReq ){
+        sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_SIZE_HINT, &nReq);
+      }
     }
 
     /* Iterate through the contents of the WAL, copying data to the db file. */

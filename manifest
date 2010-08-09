@@ -1,5 +1,5 @@
-C In\sWAL\smode,\signore\sany\serror\sreturned\sby\san\sxFileControl(FCNTL_SIZE_HINT)\scall.\sThis\smatches\sthe\sbehaviour\sin\srollback\smode.
-D 2010-08-09T07:07:38
+C Fix\sa\sproblem\scausing\sthe\sreturn\scode\sof\san\sxSync\scall\sto\sbe\signored\sin\swal.c.
+D 2010-08-09T07:51:41
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -227,7 +227,7 @@ F src/vdbeblob.c 258a6010ba7a82b72b327fb24c55790655689256
 F src/vdbemem.c e5673f81a2381b35c60e73ef0a8502be2ab1041e
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c 82200af3881fa4e1c9cf07cf31d98c09d437e3ab
-F src/wal.c 4ac3c3d757447b54f6911d11843a5a40e2a14ab8
+F src/wal.c 582acbaa606c748675fafff516ec1b34a7bdae62
 F src/wal.h 96669b645e27cd5a111ba59f0cae7743a207bc3c
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 7db3e41c2a846f9deeb24f1bbb75461b4010b7b5
@@ -843,7 +843,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 92e456374b052aceff356d10317b5b94fcdeaa5c
-R 8b8b84b2159488c8018e6a3bb6917d04
+P 158a309737bd4cdc033cd504a6d0cc43c15b6e17
+R 79082b63de1369184eea76cab5557bfc
 U dan
-Z c0e146dd93d7d775035eb9a6bc3d7235
+Z 5fdda4c9d9e63d074670dd4c1c360d96
