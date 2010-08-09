@@ -241,6 +241,11 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 **
 **  WRITER_DBMOD:
 **
+**    The pager transitions from WRITER_CACHEMOD into WRITER_DBMOD state
+**    when it modifies the contents of the database file. WAL connections
+**    never enter this state (since they do not modify the database file,
+**    just the log file).
+**
 **    * A write transaction is active.
 **    * An EXCLUSIVE or greater lock is held on the database file.
 **    * The journal file is open and the first header has been written 
@@ -249,6 +254,15 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 **      written to disk).
 **
 **  WRITER_FINISHED:
+**
+**    It is not possible for a WAL connection to enter this state.
+**
+**    A rollback-mode pager changes to WRITER_FINISHED state from WRITER_DBMOD
+**    state after the entire transaction has been successfully written into the
+**    database file. In this state the transaction may be committed simply
+**    by finalizing the journal file. Once in WRITER_FINISHED state, it is 
+**    not possible to modify the database further. At this point, the upper 
+**    layer must either commit or rollback the transaction.
 **
 **    * A write transaction is active.
 **    * An EXCLUSIVE or greater lock is held on the database file.
@@ -1642,16 +1656,28 @@ static int addToSavepointBitvecs(Pager *pPager, Pgno pgno){
 }
 
 /*
-** Unlock the database file. This function is a no-op if the pager
-** is in exclusive mode.
+** This function is a no-op if the pager is in exclusive mode and not
+** in the ERROR state. Otherwise, it switches the pager to PAGER_OPEN
+** state.
 **
-** If the pager is currently in error state, discard the contents of 
-** the cache and reset the Pager structure internal state. If there is
-** an open journal-file, then the next time a shared-lock is obtained
-** on the pager file (by this or any other process), it will be
-** treated as a hot-journal and rolled back.
+** If the pager is not in exclusive-access mode, the database file is
+** completely unlocked. If the file is unlocked and the file-system does
+** not exhibit the UNDELETABLE_WHEN_OPEN property, the journal file is
+** closed (if it is open).
+**
+** If the pager is in ERROR state when this function is called, the 
+** contents of the pager cache are discarded before switching back to 
+** the OPEN state. Regardless of whether the pager is in exclusive-mode
+** or not, any journal file left in the file-system will be treated
+** as a hot-journal and rolled back the next time a read-transaction
+** is opened (by this or by any other connection).
 */
 static void pager_unlock(Pager *pPager){
+
+  assert( pPager->eState==PAGER_READER 
+       || pPager->eState==PAGER_OPEN 
+       || pPager->eState==PAGER_ERROR 
+  );
 
   sqlite3BitvecDestroy(pPager->pInJournal);
   pPager->pInJournal = 0;
@@ -1719,18 +1745,20 @@ static void pager_unlock(Pager *pPager){
 }
 
 /*
-** This function should be called when an IOERR, CORRUPT or FULL error
-** may have occurred. The first argument is a pointer to the pager 
-** structure, the second the error-code about to be returned by a pager 
-** API function. The value returned is a copy of the second argument 
-** to this function. 
+** This function is called whenever an IOERR or FULL error that requires
+** the pager to transition into the ERROR state may ahve occurred.
+** The first argument is a pointer to the pager structure, the second 
+** the error-code about to be returned by a pager API function. The 
+** value returned is a copy of the second argument to this function. 
 **
-** If the second argument is SQLITE_IOERR, SQLITE_CORRUPT, or SQLITE_FULL
-** the error becomes persistent. Until the persistent error is cleared,
-** subsequent API calls on this Pager will immediately return the same 
-** error code.
+** If the second argument is SQLITE_FULL, SQLITE_IOERR or one of the
+** IOERR sub-codes, the pager enters the ERROR state and the error code
+** is stored in Pager.errCode. While the pager remains in the ERROR state,
+** all major API calls on the Pager will immediately return Pager.errCode.
+** Except, if the error-code is SQLITE_FULL, calls to PagerLookup() and
+** PagerAcquire are handled as if the pager were in PAGER_READER state.
 **
-** A persistent error indicates that the contents of the pager-cache 
+** The ERROR state indicates that the contents of the pager-cache 
 ** cannot be trusted. This state can be cleared by completely discarding 
 ** the contents of the pager-cache. If a transaction was active when
 ** the persistent error occurred, then the rollback journal may need
@@ -2087,7 +2115,7 @@ static int pager_playback_one_page(
     pagerReportSize(pPager);
   }
 
-  /* If the pager is in RESERVED state, then there must be a copy of this
+  /* If the pager is in CACHEMOD state, then there must be a copy of this
   ** page in the pager cache. In this case just update the pager cache,
   ** not the database file. The page is left marked dirty in this case.
   **
@@ -2098,8 +2126,11 @@ static int pager_playback_one_page(
   ** either. So the condition described in the above paragraph is not
   ** assert()able.
   **
-  ** If in EXCLUSIVE state, then we update the pager cache if it exists
-  ** and the main file. The page is then marked not dirty.
+  ** If in WRITER_DBMOD, WRITER_FINISHED or OPEN state, then we update the
+  ** pager cache if it exists and the main file. The page is then marked 
+  ** not dirty. Since this code is only executed in PAGER_OPEN state for
+  ** a hot-journal rollback, it is guaranteed that the page-cache is empty
+  ** if the pager is in OPEN state.
   **
   ** Ticket #1171:  The statement journal might contain page content that is
   ** different from the page content at the start of the transaction.
@@ -2125,6 +2156,7 @@ static int pager_playback_one_page(
     pPg = pager_lookup(pPager, pgno);
   }
   assert( pPg || !MEMDB );
+  assert( pPager->eState!=PAGER_OPEN || pPg==0 );
   PAGERTRACE(("PLAYBACK %d page %d hash(%08x) %s\n",
            PAGERID(pPager), pgno, pager_datahash(pPager->pageSize, (u8*)aData),
            (isMainJrnl?"main-journal":"sub-journal")
@@ -2365,10 +2397,10 @@ delmaster_out:
 ** file in the file-system. This only happens when committing a transaction,
 ** or rolling back a transaction (including rolling back a hot-journal).
 **
-** If the main database file is not open, or an exclusive lock is not
-** held, this function is a no-op. Otherwise, the size of the file is
-** changed to nPage pages (nPage*pPager->pageSize bytes). If the file
-** on disk is currently larger than nPage pages, then use the VFS
+** If the main database file is not open, or the pager is not in either
+** DBMOD or OPEN state, this function is a no-op. Otherwise, the size 
+** of the file is changed to nPage pages (nPage*pPager->pageSize bytes). 
+** If the file on disk is currently larger than nPage pages, then use the VFS
 ** xTruncate() method to truncate it.
 **
 ** Or, it might might be the case that the file on disk is smaller than 
@@ -2389,6 +2421,7 @@ static int pager_truncate(Pager *pPager, Pgno nPage){
    && (pPager->eState>=PAGER_WRITER_DBMOD || pPager->eState==PAGER_OPEN) 
   ){
     i64 currentSize, newSize;
+    assert( pPager->eLock==EXCLUSIVE_LOCK );
     /* TODO: Is it safe to use Pager.dbFileSize here? */
     rc = sqlite3OsFileSize(pPager->fd, &currentSize);
     newSize = pPager->pageSize*(i64)nPage;
