@@ -1,5 +1,5 @@
-C Modify\ssome\scomments\sin\spager.c.
-D 2010-08-09T19:17:29
+C Add\svariable\spager.dbHintSize,\sused\sto\slimit\sthe\snumber\sof\scalls\smade\sto\sthe\sxFileControl(FCNTL_SIZE_HINT)\smethod.
+D 2010-08-10T09:58:57
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -156,7 +156,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c ae5ca8a6031380708f3fec7be325233d49944914
 F src/os_win.c 51cb62f76262d961ea4249489383d714501315a7
-F src/pager.c df8e60594f095c3bd6b74c7c8a2585655b055536
+F src/pager.c 6e8316c94f4ce46480f7f628c3e819d922af2111
 F src/pager.h 80726162dc3942f59ab27b738fb667b9ba0a89d5
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
@@ -843,7 +843,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P aecbd890327dc676d6c2366b07f3d2e636a4983e
-R f5e40f8996c812e7f2b0312f4a214200
+P 5662da6d4f648e5d07d7cbea6bbd92fa684c02c9
+R 016b700a84062c14051dadc45f2eaff7
 U dan
-Z 6addb6181e8f60b5f4d1be2660768d4f
+Z bdf1c4ed8f87e806444ebc6f32ecd642

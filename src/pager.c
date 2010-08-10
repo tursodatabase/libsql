@@ -565,7 +565,30 @@ struct PagerSavepoint {
 **   Throughout a write-transaction, dbFileSize contains the size of
 **   the file on disk in pages. It is set to a copy of dbSize when the
 **   write-transaction is first opened, and updated when VFS calls are made
-**   to write or truncate the database file on disk.
+**   to write or truncate the database file on disk. 
+**
+**   The only reason the dbFileSize variable is required is to suppress 
+**   unnecessary calls to xTruncate() after committing a transaction. If, 
+**   when a transaction is committed, the dbFileSize variable indicates 
+**   that the database file is larger than the database image (Pager.dbSize), 
+**   pager_truncate() is called. The pager_truncate() call uses xFilesize()
+**   to measure the database file on disk, and then truncates it if required.
+**   dbFileSize is not used when rolling back a transaction. In this case
+**   pager_truncate() is called unconditionally (which means there may be
+**   a call to xFilesize() that is not strictly required). In either case,
+**   pager_truncate() may cause the file to become smaller or larger.
+**
+** dbHintSize
+**
+**   The dbHintSize variable is used to limit the number of calls made to
+**   the VFS xFileControl(FCNTL_SIZE_HINT) method. 
+**
+**   dbHintSize is set to a copy of the dbSize variable when a
+**   write-transaction is opened (at the same time as dbFileSize and
+**   dbOrigSize). If the xFileControl(FCNTL_SIZE_HINT) method is called,
+**   dbHintSize is increased to the number of pages that correspond to the
+**   size-hint passed to the method call. See pager_write_pagelist() for 
+**   details.
 **
 ** errCode
 **
@@ -619,6 +642,7 @@ struct Pager {
   Pgno dbSize;                /* Number of pages in the database */
   Pgno dbOrigSize;            /* dbSize before the current transaction */
   Pgno dbFileSize;            /* Number of pages in the database file */
+  Pgno dbHintSize;            /* Value passed to FCNTL_SIZE_HINT call */
   int errCode;                /* One of several kinds of errors */
   int nRec;                   /* Pages journalled since last j-header written */
   u32 cksumInit;              /* Quasi-random value added to every checksum */
@@ -831,6 +855,7 @@ static int assert_pager_state(Pager *p){
       }
       assert( pPager->dbSize==pPager->dbOrigSize );
       assert( pPager->dbOrigSize==pPager->dbFileSize );
+      assert( pPager->dbOrigSize==pPager->dbHintSize );
       assert( pPager->setMaster==0 );
       break;
 
@@ -850,6 +875,7 @@ static int assert_pager_state(Pager *p){
         );
       }
       assert( pPager->dbOrigSize==pPager->dbFileSize );
+      assert( pPager->dbOrigSize==pPager->dbHintSize );
       break;
 
     case PAGER_WRITER_DBMOD:
@@ -861,6 +887,7 @@ static int assert_pager_state(Pager *p){
            || p->journalMode==PAGER_JOURNALMODE_OFF 
            || p->journalMode==PAGER_JOURNALMODE_WAL 
       );
+      assert( pPager->dbOrigSize<=pPager->dbHintSize );
       break;
 
     case PAGER_WRITER_FINISHED:
@@ -3829,41 +3856,12 @@ static int syncJournal(Pager *pPager, int newHdr){
 ** be obtained, SQLITE_BUSY is returned.
 */
 static int pager_write_pagelist(Pager *pPager, PgHdr *pList){
-  int rc;                              /* Return code */
+  int rc = SQLITE_OK;                  /* Return code */
 
-  /* Normally, this function is called in WRITER_DBMOD state.
-  **
-  ** However it may be called in WRITER_CACHEMOD state if the page being
-  ** written (and all other pages that reside on the same disk sector) was
-  ** a free-list leaf page at the start of the transaction. In that case
-  ** the database file is not really being modified, so it is Ok to write
-  ** to it in CACHEMOD state.
-  */
+  /* This function is only called for rollback pagers in WRITER_DBMOD state. */
   assert( !pagerUseWal(pPager) );
-  assert( pPager->eState==PAGER_WRITER_DBMOD
-       || pPager->eState==PAGER_WRITER_CACHEMOD 
-  );
-  assert( pPager->eState==PAGER_WRITER_DBMOD 
-       || (pList->pDirty==0 && pList->pgno<=pPager->dbFileSize)
-  );
-
-  /* At this point there may be either a RESERVED or EXCLUSIVE lock on the
-  ** database file. If there is already an EXCLUSIVE lock, the following
-  ** call is a no-op.
-  **
-  ** Moving the lock from RESERVED to EXCLUSIVE actually involves going
-  ** through an intermediate state PENDING.   A PENDING lock prevents new
-  ** readers from attaching to the database but is unsufficient for us to
-  ** write.  The idea of a PENDING lock is to prevent new readers from
-  ** coming in while we wait for existing readers to clear.
-  **
-  ** While the pager is in the RESERVED state, the original database file
-  ** is unchanged and we can rollback without having to playback the
-  ** journal into the original database file.  Once we transition to
-  ** EXCLUSIVE, it means the database file has been changed and any rollback
-  ** will require a journal playback.
-  */
-  rc = pager_wait_on_lock(pPager, EXCLUSIVE_LOCK);
+  assert( pPager->eState==PAGER_WRITER_DBMOD );
+  assert( pPager->eLock==EXCLUSIVE_LOCK );
 
   /* If the file is a temp-file has not yet been opened, open it now. It
   ** is not possible for rc to be other than SQLITE_OK if this branch
@@ -3878,9 +3876,10 @@ static int pager_write_pagelist(Pager *pPager, PgHdr *pList){
   ** file size will be.
   */
   assert( rc!=SQLITE_OK || isOpen(pPager->fd) );
-  if( rc==SQLITE_OK && pPager->dbSize>pPager->dbOrigSize ){
+  if( rc==SQLITE_OK && pPager->dbSize>pPager->dbHintSize ){
     sqlite3_int64 szFile = pPager->pageSize * (sqlite3_int64)pPager->dbSize;
     sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_SIZE_HINT, &szFile);
+    pPager->dbHintSize = pPager->dbSize;
   }
 
   while( rc==SQLITE_OK && pList ){
@@ -4062,7 +4061,9 @@ static int pagerStress(void *p, PgHdr *pPg){
   }else{
   
     /* Sync the journal file if required. */
-    if( pPg->flags&PGHDR_NEED_SYNC ){
+    if( pPg->flags&PGHDR_NEED_SYNC 
+     || pPager->eState==PAGER_WRITER_CACHEMOD
+    ){
       rc = syncJournal(pPager, 1);
     }
   
@@ -5124,7 +5125,9 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
       ** WAL mode.
       */
       pPager->eState = PAGER_WRITER_LOCKED;
-      pPager->dbFileSize = pPager->dbOrigSize = pPager->dbSize;
+      pPager->dbHintSize = pPager->dbSize;
+      pPager->dbFileSize = pPager->dbSize;
+      pPager->dbOrigSize = pPager->dbSize;
       pPager->journalOff = 0;
     }
 
