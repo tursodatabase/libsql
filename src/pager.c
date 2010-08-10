@@ -2723,10 +2723,9 @@ end_playback:
     rc = readMasterJournal(pPager->jfd, zMaster, pPager->pVfs->mxPathname+1);
     testcase( rc!=SQLITE_OK );
   }
-  if( rc==SQLITE_OK && !pPager->noSync && pPager->eState>=PAGER_WRITER_DBMOD ){
-    rc = sqlite3OsSync(pPager->fd, pPager->sync_flags);
-  }
-  if( rc==SQLITE_OK && !pPager->noSync && pPager->eState>=PAGER_WRITER_DBMOD ){
+  if( rc==SQLITE_OK && !pPager->noSync 
+   && (pPager->eState>=PAGER_WRITER_DBMOD || pPager->eState==PAGER_OPEN)
+  ){
     rc = sqlite3OsSync(pPager->fd, pPager->sync_flags);
   }
   if( rc==SQLITE_OK ){
