@@ -182,12 +182,16 @@ foreach ::lookaside_buffer_size {0 64 120} {
     set nFree [expr {$nAlloc1-$nAlloc2}]
     
     # Tests for which the test name ends in an "x" report slightly less
-    # memory than is actually freed when all statements are finalized.
-    # This is because a small amount of memory allocated by a virtual table
-    # implementation using sqlite3_mprintf() is technically considered
-    # external and so is not counted as "statement memory".
+    # memory than is actually freed when all schema items are finalized.
+    # This is because memory allocated by virtual table implementations
+    # for any reason is not counted as "schema memory".
     #
-    if {[string match *x $tn]} {
+    # Additionally, in auto-vacuum mode, dropping tables and indexes causes
+    # the page-cache to shrink. So the amount of memory freed is always
+    # much greater than just that reported by DBSTATUS_SCHEMA_USED in this
+    # case.
+    #
+    if {[string match *x $tn] || $AUTOVACUUM} {
       do_test dbstatus-2.$tn.ax { expr {($nSchema1-$nSchema2)<=$nFree} } 1
     } else {
       do_test dbstatus-2.$tn.a { expr {$nSchema1-$nSchema2} } $nFree
@@ -323,7 +327,7 @@ foreach ::lookaside_buffer_size {0 64 120} {
     # implementation using sqlite3_mprintf() is technically considered
     # external and so is not counted as "statement memory".
     #
-puts "$nStmt1 $nFree"
+#puts "$nStmt1 $nFree"
     if {[string match *x $tn]} {
       do_test dbstatus-3.$tn.bx { expr $nStmt1<=$nFree }  {1}
     } else {
