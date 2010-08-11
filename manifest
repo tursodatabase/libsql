@@ -1,5 +1,5 @@
-C Fixes\sto\stcl\stest\sfiles\sso\sthat\sthey\swork\sin\sauto-vacuum\smode.
-D 2010-08-11T11:35:50
+C Use\ssqlite3DbFree()\sinstead\sof\ssqlite3_free()\sto\sfree\sany\serror\smessage\sreported\sby\sthe\sparser\slayer\swhile\sattempting\sto\sparse\sa\sCREATE\sTABLE\sstatement\spassed\sto\ssqlite3_declare_vtab().
+D 2010-08-11T11:59:38
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -226,7 +226,7 @@ F src/vdbeaux.c e18a42d0bdac405565f2d258a82457fd10db133d
 F src/vdbeblob.c 258a6010ba7a82b72b327fb24c55790655689256
 F src/vdbemem.c e5673f81a2381b35c60e73ef0a8502be2ab1041e
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
-F src/vtab.c 82200af3881fa4e1c9cf07cf31d98c09d437e3ab
+F src/vtab.c 0e8e0cb30dffb078367e843e84e37ef99236c7e4
 F src/wal.c 582acbaa606c748675fafff516ec1b34a7bdae62
 F src/wal.h 96669b645e27cd5a111ba59f0cae7743a207bc3c
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
@@ -843,7 +843,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f854cbe06355dd3455b8af4ad6366949c412434e
-R 8100cf013cafb385b45c46a7946d4b51
+P ea9eaf7480f6fbe2a37813508d1b730d45155966
+R 5cf5e11c7819da65780bea10cbcb63a2
 U dan
-Z 0cb971a0eede9ee7180d74e425f8b9d8
+Z d42c7208733aa84b0734a3cdeb0c0ed1

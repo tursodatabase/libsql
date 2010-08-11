@@ -673,7 +673,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
       db->pVTab = 0;
     }else{
       sqlite3Error(db, SQLITE_ERROR, zErr);
-      sqlite3_free(zErr);
+      sqlite3DbFree(db, zErr);
       rc = SQLITE_ERROR;
     }
     pParse->declareVtab = 0;
