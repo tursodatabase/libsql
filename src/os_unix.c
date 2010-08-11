@@ -5979,7 +5979,7 @@ static int proxyTransformUnixFile(unixFile *pFile, const char *path) {
       pCtx->conchFile->pMethod->xClose((sqlite3_file *)pCtx->conchFile);
       sqlite3_free(pCtx->conchFile);
     }
-    sqlite3_free(pCtx->lockProxyPath);
+    sqlite3DbFree(0, pCtx->lockProxyPath);
     sqlite3_free(pCtx->conchFilePath); 
     sqlite3_free(pCtx);
   }
@@ -6170,9 +6170,9 @@ static int proxyClose(sqlite3_file *id) {
       if( rc ) return rc;
       sqlite3_free(conchFile);
     }
-    sqlite3_free(pCtx->lockProxyPath);
+    sqlite3DbFree(0, pCtx->lockProxyPath);
     sqlite3_free(pCtx->conchFilePath);
-    sqlite3_free(pCtx->dbPath);
+    sqlite3DbFree(0, pCtx->dbPath);
     /* restore the original locking context and pMethod then close it */
     pFile->lockingContext = pCtx->oldLockingContext;
     pFile->pMethod = pCtx->pOldMethod;
