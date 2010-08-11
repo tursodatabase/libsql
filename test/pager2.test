@@ -116,4 +116,21 @@ foreach code [list {
 db close
 tv delete
 
+
+#-------------------------------------------------------------------------
+# Test a ROLLBACK with journal_mode=off.
+#
+breakpoint
+do_test pager2-2.1 {
+  faultsim_delete_and_reopen
+  execsql {
+    CREATE TABLE t1(a, b);
+    PRAGMA journal_mode = off;
+    BEGIN;
+      INSERT INTO t1 VALUES(1, 2);
+    ROLLBACK;
+    SELECT * FROM t1;
+  }
+} {off 1 2}
+
 finish_test

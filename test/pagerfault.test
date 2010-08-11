@@ -52,7 +52,7 @@ do_faultsim_test pagerfault-1 -prep {
 } -body {
   execsql { SELECT count(*) FROM t1 }
 } -test {
-  faultsim_test_result {0 4}
+  faultsim_test_result {0 4} 
   faultsim_integrity_check
   if {[db one { SELECT count(*) FROM t1 }] != 4} {
     error "Database content appears incorrect"
@@ -1077,5 +1077,51 @@ do_faultsim_test pagerfault-22 -prep {
   faultsim_test_result {0 {1 2}}
   faultsim_integrity_check
 }
+
+#-------------------------------------------------------------------------
+# Provoke an OOM error during a commit of multi-file transaction. One of
+# the databases written during the transaction is an in-memory database.
+# This test causes rollback of the in-memory database after CommitPhaseOne()
+# has successfully returned. i.e. the series of calls for the aborted commit 
+# is:
+#
+#   PagerCommitPhaseOne(<in-memory-db>)   ->   SQLITE_OK
+#   PagerCommitPhaseOne(<file-db>)        ->   SQLITE_IOERR
+#   PagerRollback(<in-memory-db>)
+#   PagerRollback(<file-db>)
+#
+do_faultsim_test pagerfault-23 -prep {
+  foreach f [glob -nocomplain test.db*] { file delete -force $f }
+  sqlite3 db :memory:
+  db eval { 
+    ATTACH 'test.db2' AS aux;
+    CREATE TABLE t1(a, b);
+    CREATE TABLE aux.t2(a, b);
+  }
+} -body {
+  execsql { 
+    BEGIN;
+      INSERT INTO t1 VALUES(1,2);
+      INSERT INTO t2 VALUES(3,4); 
+    COMMIT;
+  }
+} -test {
+  faultsim_test_result {0 {}}
+  faultsim_integrity_check
+}
+
+do_faultsim_test pagerfault-24 -prep {
+  faultsim_delete_and_reopen
+  db eval { PRAGMA temp_store = file }
+  execsql { CREATE TABLE x(a, b) }
+} -body {
+  execsql { CREATE TEMP TABLE t1(a, b) }
+} -test {
+  faultsim_test_result {0 {}} {1 {unable to open a temporary database file for storing temporary tables}}
+  set ic [db eval { PRAGMA temp.integrity_check }]
+  if {$ic != "ok"} { error "Integrity check: $ic" }
+}
+
+
 
 finish_test

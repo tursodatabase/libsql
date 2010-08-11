@@ -1,5 +1,5 @@
-C Update\san\sr-tree\sextension\stest\scase\sto\saccount\sfor\srecent\schanges\sto\sthe\squery\splanner.\sAlso\sfix\sa\scomment\sin\srtree.c.
-D 2010-08-11T12:26:46
+C Improve\scoverage\sof\spager.c.
+D 2010-08-11T18:56:46
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -156,7 +156,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c 11194cbcf6a57456e58022dc537ab8c3497d9bb9
 F src/os_win.c 51cb62f76262d961ea4249489383d714501315a7
-F src/pager.c b3db762350ee71f5f8bde04f21ca2ffcccded483
+F src/pager.c 3fb56c4d03798058e5cf57b668468fa616e20bac
 F src/pager.h 80726162dc3942f59ab27b738fb667b9ba0a89d5
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
@@ -539,10 +539,10 @@ F test/notify3.test d60923e186e0900f4812a845fcdfd8eea096e33a
 F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test af02ed0a9cbc0d2a61b8f35171d4d117e588e4ec
-F test/pager1.test d8e4b2bc8164c920e6ea0572c9e13576d6e4f3fa
-F test/pager2.test f5c757c271ce642d36a393ecbfb3aef1c240dcef
+F test/pager1.test 20457c96ab1d4e876d335cfd6ddd0f539bda3f81
+F test/pager2.test 9edc1584cbc8ecd3b34dbcc8e86467bf05caa27f
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
-F test/pagerfault.test c1d176326ce244db157ce9c3ba128be2a9b172d6
+F test/pagerfault.test 495ab0a0ed30aebe7e4278fcee148986085d4c8b
 F test/pagerfault2.test 1f79ea40d1133b2683a2f811b00f2399f7ec2401
 F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
@@ -843,7 +843,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 7c674aaba52b00a78babc1e1ece7e5b652b65039
-R e8f0a89b3e6e46377528a5271511edf8
+P eaaca669a4afc83906806b22365b010c83bc3db8
+R 2966f30f98145ee75718d7c3465c6545
 U dan
-Z ddfd9f64a4ee25bfe95e56a61185d67f
+Z cd90e6256916f41a20463762a4c0c757

@@ -1062,6 +1062,10 @@ do_execsql_test pager1-6.8 {
 } {11}
 do_execsql_test pager1-6.9 { COMMIT } {}
 
+do_execsql_test pager1-6.10 { PRAGMA max_page_count = 10 } {10}
+do_execsql_test pager1-6.11 { SELECT * FROM t11 }          {1 2 3 4}
+do_execsql_test pager1-6.12 { PRAGMA max_page_count }      {11}
+
 
 #-------------------------------------------------------------------------
 # The following tests work with "PRAGMA journal_mode=TRUNCATE" and
@@ -1742,7 +1746,7 @@ do_multiclient_test tn {
     }
   } {1 2 3 4 5 6}
   do_test pager1-17.$tn.3.2 {
-    csql1 { INSERT INTO t1 VALUES(3, 4) }
+  csql1 { INSERT INTO t1 VALUES(3, 4) }
   } {1 {database is locked}}
   do_test pager1-17.$tn.3.3 { sql2 COMMIT } {}
 }
@@ -2232,6 +2236,7 @@ db close
 tv delete
 
 #-------------------------------------------------------------------------
+#
 do_test pager1.27.1 {
   faultsim_delete_and_reopen
   sqlite3_pager_refcounts db
@@ -2243,4 +2248,29 @@ do_test pager1.27.1 {
   execsql COMMIT
 } {}
 
+#-------------------------------------------------------------------------
+# Test that attempting to open a write-transaction with 
+# locking_mode=exclusive in WAL mode fails if there are other clients on 
+# the same database.
+#
+catch { db close }
+do_multiclient_test tn {
+  do_test pager1-28.$tn.1 {
+    sql1 { 
+      PRAGMA journal_mode = WAL;
+      CREATE TABLE t1(a, b);
+      INSERT INTO t1 VALUES('a', 'b');
+    }
+  } {wal}
+  do_test pager1-28.$tn.2 { sql2 { SELECT * FROM t1 } } {a b}
+
+  do_test pager1-28.$tn.3 { sql1 { PRAGMA locking_mode=exclusive } } {exclusive}
+  do_test pager1-28.$tn.4 { 
+    csql1 { BEGIN; INSERT INTO t1 VALUES('c', 'd'); }
+  } {1 {database is locked}}
+  code2 { db2 close ; sqlite3 db2 test.db }
+  do_test pager1-28.$tn.4 { 
+    sql1 { INSERT INTO t1 VALUES('c', 'd'); COMMIT }
+  } {}
+}
 finish_test
