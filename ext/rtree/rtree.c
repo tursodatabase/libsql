@@ -1072,11 +1072,10 @@ static int rtreeFilter(
 **   idxNum     idxStr        Strategy
 **   ------------------------------------------------
 **     1        Unused        Direct lookup by rowid.
-**     2        See below     R-tree query.
-**     3        Unused        Full table scan.
+**     2        See below     R-tree query or full-table scan.
 **   ------------------------------------------------
 **
-** If strategy 1 or 3 is used, then idxStr is not meaningful. If strategy
+** If strategy 1 is used, then idxStr is not meaningful. If strategy
 ** 2 is used, idxStr is formatted to contain 2 bytes for each 
 ** constraint used. The first two bytes of idxStr correspond to 
 ** the constraint in sqlite3_index_info.aConstraintUsage[] with
