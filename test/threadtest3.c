@@ -517,6 +517,7 @@ static void opendb_x(
           pDb->db, "md5sum", -1, SQLITE_UTF8, 0, 0, md5step, md5finalize
       );
       sqlite3_busy_handler(pDb->db, busyhandler, 0);
+      sqlite3_exec(pDb->db, "PRAGMA synchronous=OFF", 0, 0, 0);
     }
   }
 }
@@ -1219,6 +1220,58 @@ static void walthread5(int nMs){
   print_and_free_err(&err);
 }
 
+/*------------------------------------------------------------------------
+** Test case "cgt_pager_1"
+*/
+#define CALLGRINDTEST1_NROW 10000
+static void cgt_pager_1_populate(Error *pErr, Sqlite *pDb){
+  const char *zInsert = "INSERT INTO t1 VALUES(:iRow, zeroblob(:iBlob))";
+  i64 iRow;
+  sql_script(pErr, pDb, "BEGIN");
+  for(iRow=1; iRow<=CALLGRINDTEST1_NROW; iRow++){
+    i64 iBlob = 600 + (iRow%300);
+    execsql(pErr, pDb, zInsert, &iRow, &iBlob);
+  }
+  sql_script(pErr, pDb, "COMMIT");
+}
+static void cgt_pager_1_update(Error *pErr, Sqlite *pDb){
+  const char *zUpdate = "UPDATE t1 SET b = zeroblob(:iBlob) WHERE a = :iRow";
+  i64 iRow;
+  sql_script(pErr, pDb, "BEGIN");
+  for(iRow=1; iRow<=CALLGRINDTEST1_NROW; iRow++){
+    i64 iBlob = 600 + ((iRow+100)%300);
+    execsql(pErr, pDb, zUpdate, &iBlob, &iRow);
+  }
+  sql_script(pErr, pDb, "COMMIT");
+}
+static void cgt_pager_1_read(Error *pErr, Sqlite *pDb){
+  i64 iRow;
+  sql_script(pErr, pDb, "BEGIN");
+  for(iRow=1; iRow<=CALLGRINDTEST1_NROW; iRow++){
+    execsql(pErr, pDb, "SELECT * FROM t1 WHERE a = :iRow", &iRow);
+  }
+  sql_script(pErr, pDb, "COMMIT");
+}
+static void cgt_pager_1(int nMs){
+  void (*xSub)(Error *, Sqlite *);
+  Error err = {0};
+  Sqlite db = {0};
+
+  opendb(&err, &db, "test.db", 1);
+  sql_script(&err, &db,
+      "PRAGMA cache_size = 2000;"
+      "PRAGMA page_size = 1024;"
+      "CREATE TABLE t1(a INTEGER PRIMARY KEY, b BLOB);"
+  );
+
+  xSub = cgt_pager_1_populate; xSub(&err, &db);
+  xSub = cgt_pager_1_update;   xSub(&err, &db);
+  xSub = cgt_pager_1_read;     xSub(&err, &db);
+
+  closedb(&err, &db);
+  print_and_free_err(&err);
+}
+
 int main(int argc, char **argv){
   struct ThreadTest {
     void (*xTest)(int);
@@ -1230,6 +1283,9 @@ int main(int argc, char **argv){
     { walthread3, "walthread3", 20000 },
     { walthread4, "walthread4", 20000 },
     { walthread5, "walthread5",  1000 },
+    { walthread5, "walthread5",  1000 },
+    
+    { cgt_pager_1, "cgt_pager_1", 0 },
   };
 
   int i;

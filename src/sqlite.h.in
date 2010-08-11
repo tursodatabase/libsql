@@ -690,12 +690,21 @@ struct sqlite3_io_methods {
 ** is often close.  The underlying VFS might choose to preallocate database
 ** file space based on this hint in order to help writes to the database
 ** file run faster.
+**
+** The [SQLITE_FCNTL_CHUNK_SIZE] opcode is used to request that the VFS
+** extends and truncates the database file in chunks of a size specified
+** by the user. The fourth argument to [sqlite3_file_control()] should 
+** point to an integer (type int) containing the new chunk-size to use
+** for the nominated database. Allocating database file space in large
+** chunks (say 1MB at a time), may reduce file-system fragmentation and
+** improve performance on some systems.
 */
 #define SQLITE_FCNTL_LOCKSTATE        1
 #define SQLITE_GET_LOCKPROXYFILE      2
 #define SQLITE_SET_LOCKPROXYFILE      3
 #define SQLITE_LAST_ERRNO             4
 #define SQLITE_FCNTL_SIZE_HINT        5
+#define SQLITE_FCNTL_CHUNK_SIZE       6
 
 /*
 ** CAPI3REF: Mutex Handle

@@ -108,6 +108,7 @@ struct winFile {
   DWORD sectorSize;       /* Sector size of the device file is on */
   winShm *pShm;           /* Instance of shared memory on this file */
   const char *zPath;      /* Full pathname of this file */
+  int szChunk;            /* Chunk size configured by FCNTL_CHUNK_SIZE */
 #if SQLITE_OS_WINCE
   WCHAR *zDeleteOnClose;  /* Name of file to delete when closing */
   HANDLE hMutex;          /* Mutex used to control access to shared lock */  
@@ -621,6 +622,42 @@ static BOOL winceLockFileEx(
 ******************************************************************************/
 
 /*
+** Some microsoft compilers lack this definition.
+*/
+#ifndef INVALID_SET_FILE_POINTER
+# define INVALID_SET_FILE_POINTER ((DWORD)-1)
+#endif
+
+/*
+** Move the current position of the file handle passed as the first 
+** argument to offset iOffset within the file. If successful, return 0. 
+** Otherwise, set pFile->lastErrno and return non-zero.
+*/
+static int seekWinFile(winFile *pFile, sqlite3_int64 iOffset){
+  LONG upperBits;                 /* Most sig. 32 bits of new offset */
+  LONG lowerBits;                 /* Least sig. 32 bits of new offset */
+  DWORD dwRet;                    /* Value returned by SetFilePointer() */
+
+  upperBits = (LONG)((iOffset>>32) & 0x7fffffff);
+  lowerBits = (LONG)(iOffset & 0xffffffff);
+
+  /* API oddity: If successful, SetFilePointer() returns a dword 
+  ** containing the lower 32-bits of the new file-offset. Or, if it fails,
+  ** it returns INVALID_SET_FILE_POINTER. However according to MSDN, 
+  ** INVALID_SET_FILE_POINTER may also be a valid new offset. So to determine 
+  ** whether an error has actually occured, it is also necessary to call 
+  ** GetLastError().
+  */
+  dwRet = SetFilePointer(pFile->h, lowerBits, &upperBits, FILE_BEGIN);
+  if( (dwRet==INVALID_SET_FILE_POINTER && GetLastError()!=NO_ERROR) ){
+    pFile->lastErrno = GetLastError();
+    return 1;
+  }
+
+  return 0;
+}
+
+/*
 ** Close a file.
 **
 ** It is reported that an attempt to close a handle might sometimes
@@ -663,13 +700,6 @@ static int winClose(sqlite3_file *id){
 }
 
 /*
-** Some microsoft compilers lack this definition.
-*/
-#ifndef INVALID_SET_FILE_POINTER
-# define INVALID_SET_FILE_POINTER ((DWORD)-1)
-#endif
-
-/*
 ** Read data from a file into a buffer.  Return SQLITE_OK if all
 ** bytes were read successfully and SQLITE_IOERR if anything goes
 ** wrong.
@@ -680,32 +710,27 @@ static int winRead(
   int amt,                   /* Number of bytes to read */
   sqlite3_int64 offset       /* Begin reading at this offset */
 ){
-  LONG upperBits = (LONG)((offset>>32) & 0x7fffffff);
-  LONG lowerBits = (LONG)(offset & 0xffffffff);
-  DWORD rc;
-  winFile *pFile = (winFile*)id;
-  DWORD error;
-  DWORD got;
+  winFile *pFile = (winFile*)id;  /* file handle */
+  DWORD nRead;                    /* Number of bytes actually read from file */
 
   assert( id!=0 );
   SimulateIOError(return SQLITE_IOERR_READ);
   OSTRACE(("READ %d lock=%d\n", pFile->h, pFile->locktype));
-  rc = SetFilePointer(pFile->h, lowerBits, &upperBits, FILE_BEGIN);
-  if( rc==INVALID_SET_FILE_POINTER && (error=GetLastError())!=NO_ERROR ){
-    pFile->lastErrno = error;
+
+  if( seekWinFile(pFile, offset) ){
     return SQLITE_FULL;
   }
-  if( !ReadFile(pFile->h, pBuf, amt, &got, 0) ){
+  if( !ReadFile(pFile->h, pBuf, amt, &nRead, 0) ){
     pFile->lastErrno = GetLastError();
     return SQLITE_IOERR_READ;
   }
-  if( got==(DWORD)amt ){
-    return SQLITE_OK;
-  }else{
+  if( nRead<(DWORD)amt ){
     /* Unread parts of the buffer must be zero-filled */
-    memset(&((char*)pBuf)[got], 0, amt-got);
+    memset(&((char*)pBuf)[nRead], 0, amt-nRead);
     return SQLITE_IOERR_SHORT_READ;
   }
+
+  return SQLITE_OK;
 }
 
 /*
@@ -713,47 +738,42 @@ static int winRead(
 ** or some other error code on failure.
 */
 static int winWrite(
-  sqlite3_file *id,         /* File to write into */
-  const void *pBuf,         /* The bytes to be written */
-  int amt,                  /* Number of bytes to write */
-  sqlite3_int64 offset      /* Offset into the file to begin writing at */
+  sqlite3_file *id,               /* File to write into */
+  const void *pBuf,               /* The bytes to be written */
+  int amt,                        /* Number of bytes to write */
+  sqlite3_int64 offset            /* Offset into the file to begin writing at */
 ){
-  LONG upperBits = (LONG)((offset>>32) & 0x7fffffff);
-  LONG lowerBits = (LONG)(offset & 0xffffffff);
-  DWORD rc;
-  winFile *pFile = (winFile*)id;
-  DWORD error;
-  DWORD wrote = 0;
+  int rc;                         /* True if error has occured, else false */
+  winFile *pFile = (winFile*)id;  /* File handle */
 
-  assert( id!=0 );
+  assert( amt>0 );
+  assert( pFile );
   SimulateIOError(return SQLITE_IOERR_WRITE);
   SimulateDiskfullError(return SQLITE_FULL);
+
   OSTRACE(("WRITE %d lock=%d\n", pFile->h, pFile->locktype));
-  rc = SetFilePointer(pFile->h, lowerBits, &upperBits, FILE_BEGIN);
-  if( rc==INVALID_SET_FILE_POINTER && (error=GetLastError())!=NO_ERROR ){
-    pFile->lastErrno = error;
-    if( pFile->lastErrno==ERROR_HANDLE_DISK_FULL ){
-      return SQLITE_FULL;
-    }else{
-      return SQLITE_IOERR_WRITE;
+
+  rc = seekWinFile(pFile, offset);
+  if( rc==0 ){
+    u8 *aRem = (u8 *)pBuf;        /* Data yet to be written */
+    int nRem = amt;               /* Number of bytes yet to be written */
+    DWORD nWrite;                 /* Bytes written by each WriteFile() call */
+
+    while( nRem>0 && WriteFile(pFile->h, aRem, nRem, &nWrite, 0) && nWrite>0 ){
+      aRem += nWrite;
+      nRem -= nWrite;
+    }
+    if( nRem>0 ){
+      pFile->lastErrno = GetLastError();
+      rc = 1;
     }
   }
-  assert( amt>0 );
-  while(
-     amt>0
-     && (rc = WriteFile(pFile->h, pBuf, amt, &wrote, 0))!=0
-     && wrote>0
-  ){
-    amt -= wrote;
-    pBuf = &((char*)pBuf)[wrote];
-  }
-  if( !rc || amt>(int)wrote ){
-    pFile->lastErrno = GetLastError();
+
+  if( rc ){
     if( pFile->lastErrno==ERROR_HANDLE_DISK_FULL ){
       return SQLITE_FULL;
-    }else{
-      return SQLITE_IOERR_WRITE;
     }
+    return SQLITE_IOERR_WRITE;
   }
   return SQLITE_OK;
 }
@@ -762,26 +782,32 @@ static int winWrite(
 ** Truncate an open file to a specified size
 */
 static int winTruncate(sqlite3_file *id, sqlite3_int64 nByte){
-  LONG upperBits = (LONG)((nByte>>32) & 0x7fffffff);
-  LONG lowerBits = (LONG)(nByte & 0xffffffff);
-  DWORD dwRet;
-  winFile *pFile = (winFile*)id;
-  DWORD error;
-  int rc = SQLITE_OK;
+  winFile *pFile = (winFile*)id;  /* File handle object */
+  int rc = SQLITE_OK;             /* Return code for this function */
 
-  assert( id!=0 );
+  assert( pFile );
+
   OSTRACE(("TRUNCATE %d %lld\n", pFile->h, nByte));
   SimulateIOError(return SQLITE_IOERR_TRUNCATE);
-  dwRet = SetFilePointer(pFile->h, lowerBits, &upperBits, FILE_BEGIN);
-  if( dwRet==INVALID_SET_FILE_POINTER && (error=GetLastError())!=NO_ERROR ){
-    pFile->lastErrno = error;
+
+  /* If the user has configured a chunk-size for this file, truncate the
+  ** file so that it consists of an integer number of chunks (i.e. the
+  ** actual file size after the operation may be larger than the requested
+  ** size).
+  */
+  if( pFile->szChunk ){
+    nByte = ((nByte + pFile->szChunk - 1)/pFile->szChunk) * pFile->szChunk;
+  }
+
+  /* SetEndOfFile() returns non-zero when successful, or zero when it fails. */
+  if( seekWinFile(pFile, nByte) ){
     rc = SQLITE_IOERR_TRUNCATE;
-  /* SetEndOfFile will fail if nByte is negative */
-  }else if( !SetEndOfFile(pFile->h) ){
+  }else if( 0==SetEndOfFile(pFile->h) ){
     pFile->lastErrno = GetLastError();
     rc = SQLITE_IOERR_TRUNCATE;
   }
-  OSTRACE(("TRUNCATE %d %lld %s\n", pFile->h, nByte, rc==SQLITE_OK ? "ok" : "failed"));
+
+  OSTRACE(("TRUNCATE %d %lld %s\n", pFile->h, nByte, rc ? "failed" : "ok"));
   return rc;
 }
 
@@ -1144,6 +1170,10 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
     }
     case SQLITE_LAST_ERRNO: {
       *(int*)pArg = (int)((winFile*)id)->lastErrno;
+      return SQLITE_OK;
+    }
+    case SQLITE_FCNTL_CHUNK_SIZE: {
+      ((winFile*)id)->szChunk = *(int *)pArg;
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_SIZE_HINT: {
