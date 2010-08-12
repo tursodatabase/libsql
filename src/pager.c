@@ -3354,6 +3354,8 @@ void sqlite3PagerSetBusyhandler(
 ** then *pPageSize is set to the old, retained page size before returning.
 */
 int sqlite3PagerSetPagesize(Pager *pPager, u32 *pPageSize, int nReserve){
+  int rc = SQLITE_OK;
+
   /* It is not possible to do a full assert_pager_state() here, as this
   ** function may be called from within PagerOpen(), before the state
   ** of the Pager object is internally consistent.
@@ -3372,14 +3374,16 @@ int sqlite3PagerSetPagesize(Pager *pPager, u32 *pPageSize, int nReserve){
   ){
     char *pNew;                 /* New temp space */
     i64 nByte = 0;
+
     if( pPager->eState>PAGER_OPEN && isOpen(pPager->fd) ){
-      int rc = sqlite3OsFileSize(pPager->fd, &nByte);
-      if( rc!=SQLITE_OK ) return rc;
+      rc = sqlite3OsFileSize(pPager->fd, &nByte);
     }
-    pNew = (char *)sqlite3PageMalloc(pageSize);
-    if( !pNew ){
-      return SQLITE_NOMEM;
-    }else{
+    if( rc==SQLITE_OK ){
+      pNew = (char *)sqlite3PageMalloc(pageSize);
+      if( !pNew ) rc = SQLITE_NOMEM;
+    }
+
+    if( rc==SQLITE_OK ){
       pager_reset(pPager);
       pPager->dbSize = nByte/pageSize;
       pPager->pageSize = pageSize;
@@ -3390,11 +3394,13 @@ int sqlite3PagerSetPagesize(Pager *pPager, u32 *pPageSize, int nReserve){
   }
 
   *pPageSize = pPager->pageSize;
-  if( nReserve<0 ) nReserve = pPager->nReserve;
-  assert( nReserve>=0 && nReserve<1000 );
-  pPager->nReserve = (i16)nReserve;
-  pagerReportSize(pPager);
-  return SQLITE_OK;
+  if( rc==SQLITE_OK ){
+    if( nReserve<0 ) nReserve = pPager->nReserve;
+    assert( nReserve>=0 && nReserve<1000 );
+    pPager->nReserve = (i16)nReserve;
+    pagerReportSize(pPager);
+  }
+  return rc;
 }
 
 /*

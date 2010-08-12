@@ -28,8 +28,6 @@ proc a_string {n} {
 }
 db func a_string a_string
 
-if 1 {
-
 #-------------------------------------------------------------------------
 # Test fault-injection while rolling back a hot-journal file.
 #
@@ -1125,14 +1123,13 @@ do_faultsim_test pagerfault-24 -prep {
   if {$ic != "ok"} { error "Integrity check: $ic" }
 }
 
-}
-
 proc lockrows {n} {
   if {$n==0} { return "" }
   db eval { SELECT * FROM t1 WHERE oid = $n } { 
     return [lockrows [expr {$n-1}]]
   }
 }
+
 
 do_test pagerfault-25-pre1 {
   faultsim_delete_and_reopen
@@ -1150,7 +1147,7 @@ do_test pagerfault-25-pre1 {
   }
   faultsim_save_and_close
 } {}
-do_faultsim_test pagerfault-25 -faults full -prep {
+do_faultsim_test pagerfault-25 -prep {
   faultsim_restore_and_reopen
   db func a_string a_string
   set ::channel [db incrblob -readonly t1 a 1]
@@ -1164,9 +1161,40 @@ do_faultsim_test pagerfault-25 -faults full -prep {
   lockrows 30
 } -test {
   catch { lockrows 30 }
+  catch { db eval COMMIT }
   close $::channel
   faultsim_test_result {0 {}} 
 }
+
+do_faultsim_test pagerfault-26 -prep {
+  faultsim_delete_and_reopen
+  execsql {
+    PRAGMA page_size = 1024;
+    PRAGMA journal_mode = truncate;
+    PRAGMA auto_vacuum = full;
+    PRAGMA locking_mode=exclusive;
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, 2);
+    PRAGMA page_size = 4096;
+  }
+} -body {
+  execsql {
+    VACUUM;
+  }
+} -test {
+  faultsim_test_result {0 {}}
+
+  set contents [db eval {SELECT * FROM t1}]
+  if {$contents != "1 2"} { error "Bad database contents ($contents)" }
+
+  set sz [file size test.db]
+  if {$testrc!=0 && $sz!=1024*3 && $sz!=4096*3} { 
+    error "Expected file size to be 3072 or 12288 bytes - actual size $sz bytes"
+  }
+  if {$testrc==0 && $sz!=4096*3} { 
+    error "Expected file size to be 12288 bytes - actual size $sz bytes"
+  }
+} 
 
 
 finish_test

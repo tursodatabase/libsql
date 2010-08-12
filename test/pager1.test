@@ -2328,5 +2328,24 @@ do_multiclient_test tn {
   do_test pager1-28.$tn.20 { sql2 { COMMIT } } {}
 }
 
+do_test pager1-29.1 {
+  faultsim_delete_and_reopen
+  execsql {
+    PRAGMA page_size = 1024;
+    PRAGMA auto_vacuum = full;
+    PRAGMA locking_mode=exclusive;
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, 2);
+  }
+  file size test.db
+} [expr 1024*3]
+do_test pager1-29.2 {
+  execsql {
+    PRAGMA page_size = 4096;
+    VACUUM;
+  }
+  file size test.db
+} [expr 4096*3]
+
 
 finish_test
