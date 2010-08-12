@@ -118,9 +118,11 @@ tv delete
 
 
 #-------------------------------------------------------------------------
-# Test a ROLLBACK with journal_mode=off.
 #
-breakpoint
+# pager2-2.1: Test a ROLLBACK with journal_mode=off.
+# pager2-2.2: Test shrinking the database (auto-vacuum) with 
+#             journal_mode=off
+#
 do_test pager2-2.1 {
   faultsim_delete_and_reopen
   execsql {
@@ -132,5 +134,18 @@ do_test pager2-2.1 {
     SELECT * FROM t1;
   }
 } {off 1 2}
+do_test pager2-2.2 {
+  faultsim_delete_and_reopen
+  execsql {
+    PRAGMA auto_vacuum = incremental;
+    PRAGMA page_size = 1024;
+    PRAGMA journal_mode = off;
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(zeroblob(5000), zeroblob(5000));
+    DELETE FROM t1;
+    PRAGMA incremental_vacuum;
+  }
+  file size test.db
+} {3072}
 
 finish_test

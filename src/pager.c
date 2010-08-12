@@ -4126,7 +4126,7 @@ static int pagerStress(void *p, PgHdr *pPg){
     sqlite3PcacheMakeClean(pPg);
   }
 
-  return pager_error(pPager, rc);
+  return pager_error(pPager, rc); 
 }
 
 
@@ -5701,9 +5701,6 @@ int sqlite3PagerCommitPhaseOne(
       ** that it took at the start of the transaction. Otherwise, the
       ** calls to sqlite3PagerGet() return zeroed pages instead of 
       ** reading data from the database file.
-      **
-      ** When journal_mode==OFF the dbOrigSize is always zero, so this
-      ** block never runs if journal_mode=OFF.
       */
   #ifndef SQLITE_OMIT_AUTOVACUUM
       if( pPager->dbSize<pPager->dbOrigSize 
@@ -6425,6 +6422,7 @@ int sqlite3PagerSetJournalMode(Pager *pPager, int eMode){
       }else{
         int rc = SQLITE_OK;
         int state = pPager->eState;
+        assert( state==PAGER_OPEN || state==PAGER_READER );
         if( state==PAGER_OPEN ){
           rc = sqlite3PagerSharedLock(pPager);
         }

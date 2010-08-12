@@ -15,7 +15,7 @@ source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 source $testdir/malloc_common.tcl
 source $testdir/wal_common.tcl
- 
+
 # Do not use a codec for tests in this file, as the database file is
 # manipulated directly using tcl scripts (using the [hexio_write] command).
 #
@@ -2273,4 +2273,60 @@ do_multiclient_test tn {
     sql1 { INSERT INTO t1 VALUES('c', 'd'); COMMIT }
   } {}
 }
+
+#-------------------------------------------------------------------------
+# Normally, when changing from journal_mode=PERSIST to DELETE the pager
+# attempts to delete the journal file. However, if it cannot obtain a
+# RESERVED lock on the database file, this step is skipped.
+#
+do_multiclient_test tn {
+  do_test pager1-28.$tn.1 {
+    sql1 { 
+      PRAGMA journal_mode = PERSIST;
+      CREATE TABLE t1(a, b);
+      INSERT INTO t1 VALUES('a', 'b');
+    }
+  } {persist}
+  do_test pager1-28.$tn.2 { file exists test.db-journal } 1
+  do_test pager1-28.$tn.3 { sql1 { PRAGMA journal_mode = DELETE } } delete
+  do_test pager1-28.$tn.4 { file exists test.db-journal } 0
+
+  do_test pager1-28.$tn.5 {
+    sql1 { 
+      PRAGMA journal_mode = PERSIST;
+      INSERT INTO t1 VALUES('c', 'd');
+    }
+  } {persist}
+  do_test pager1-28.$tn.6 { file exists test.db-journal } 1
+  do_test pager1-28.$tn.7 {
+    sql2 { BEGIN; INSERT INTO t1 VALUES('e', 'f'); }
+  } {}
+  do_test pager1-28.$tn.8  { file exists test.db-journal } 1
+  do_test pager1-28.$tn.9  { sql1 { PRAGMA journal_mode = DELETE } } delete
+  do_test pager1-28.$tn.10 { file exists test.db-journal } 1
+
+  do_test pager1-28.$tn.11 { sql2 COMMIT } {}
+  do_test pager1-28.$tn.12 { file exists test.db-journal } 0
+
+  do_test pager1-28-$tn.13 {
+    code1 { set channel [db incrblob -readonly t1 a 2] }
+    sql1 {
+      PRAGMA journal_mode = PERSIST;
+      INSERT INTO t1 VALUES('g', 'h');
+    }
+  } {persist}
+  do_test pager1-28.$tn.14 { file exists test.db-journal } 1
+  do_test pager1-28.$tn.15 {
+    sql2 { BEGIN; INSERT INTO t1 VALUES('e', 'f'); }
+  } {}
+  do_test pager1-28.$tn.16 { sql1 { PRAGMA journal_mode = DELETE } } delete
+  do_test pager1-28.$tn.17 { file exists test.db-journal } 1
+
+  do_test pager1-28.$tn.17 { csql2 { COMMIT } } {1 {database is locked}}
+  do_test pager1-28-$tn.18 { code1 { read $channel } } c
+  do_test pager1-28-$tn.19 { code1 { close $channel } } {}
+  do_test pager1-28.$tn.20 { sql2 { COMMIT } } {}
+}
+
+
 finish_test

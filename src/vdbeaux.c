@@ -2061,8 +2061,17 @@ int sqlite3VdbeHalt(Vdbe *p){
     isSpecialError = mrc==SQLITE_NOMEM || mrc==SQLITE_IOERR
                      || mrc==SQLITE_INTERRUPT || mrc==SQLITE_FULL;
     if( isSpecialError ){
-      /* If the query was read-only, we need do no rollback at all. Otherwise,
-      ** proceed with the special handling.
+      /* If the query was read-only and the error code is SQLITE_INTERRUPT, 
+      ** no rollback is necessary. Otherwise, at least a savepoint 
+      ** transaction must be rolled back to restore the database to a 
+      ** consistent state.
+      **
+      ** Even if the statement is read-only, it is important to perform
+      ** a statement or transaction rollback operation. If the error 
+      ** occured while writing to the journal, sub-journal or database
+      ** file as part of an effort to free up cache space (see function
+      ** pagerStress() in pager.c), the rollback is required to restore 
+      ** the pager to a consistent state.
       */
       if( !p->readOnly || mrc!=SQLITE_INTERRUPT ){
         if( (mrc==SQLITE_NOMEM || mrc==SQLITE_FULL) && p->usesStmtJournal ){

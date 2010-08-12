@@ -28,6 +28,8 @@ proc a_string {n} {
 }
 db func a_string a_string
 
+if 1 {
+
 #-------------------------------------------------------------------------
 # Test fault-injection while rolling back a hot-journal file.
 #
@@ -1117,11 +1119,54 @@ do_faultsim_test pagerfault-24 -prep {
 } -body {
   execsql { CREATE TEMP TABLE t1(a, b) }
 } -test {
-  faultsim_test_result {0 {}} {1 {unable to open a temporary database file for storing temporary tables}}
+  faultsim_test_result {0 {}} \
+    {1 {unable to open a temporary database file for storing temporary tables}}
   set ic [db eval { PRAGMA temp.integrity_check }]
   if {$ic != "ok"} { error "Integrity check: $ic" }
 }
 
+}
+
+proc lockrows {n} {
+  if {$n==0} { return "" }
+  db eval { SELECT * FROM t1 WHERE oid = $n } { 
+    return [lockrows [expr {$n-1}]]
+  }
+}
+
+do_test pagerfault-25-pre1 {
+  faultsim_delete_and_reopen
+  db func a_string a_string
+  execsql {
+    PRAGMA page_size = 1024;
+    PRAGMA auto_vacuum = 0;
+    CREATE TABLE t1(a);
+    INSERT INTO t1 VALUES(a_string(500));
+    INSERT INTO t1 SELECT a_string(500) FROM t1;
+    INSERT INTO t1 SELECT a_string(500) FROM t1;
+    INSERT INTO t1 SELECT a_string(500) FROM t1;
+    INSERT INTO t1 SELECT a_string(500) FROM t1;
+    INSERT INTO t1 SELECT a_string(500) FROM t1;
+  }
+  faultsim_save_and_close
+} {}
+do_faultsim_test pagerfault-25 -faults full -prep {
+  faultsim_restore_and_reopen
+  db func a_string a_string
+  set ::channel [db incrblob -readonly t1 a 1]
+  execsql { 
+    PRAGMA cache_size = 10;
+    BEGIN;
+      INSERT INTO t1 VALUES(a_string(3000));
+      INSERT INTO t1 VALUES(a_string(3000));
+  }
+} -body {
+  lockrows 30
+} -test {
+  catch { lockrows 30 }
+  close $::channel
+  faultsim_test_result {0 {}} 
+}
 
 
 finish_test
