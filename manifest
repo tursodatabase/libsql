@@ -1,5 +1,5 @@
-C Improve\scoverage\sof\spager.c.
-D 2010-08-11T18:56:46
+C Increase\sthe\smaximum\spage\ssize\sfrom\s32k\sto\s64k.
+D 2010-08-12T02:41:12
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -113,9 +113,9 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 51d83300fe0baee39405c416ceb19a58ed30a8ed
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c 63eebba7bd87207556670139eae5ef6c1f8bb416
+F src/btree.c 042a5c0a6a8b6121019b258737872b1ab703d39e
 F src/btree.h b4ba2fdf6b64c7c376bdfffa826af6b786b151d9
-F src/btreeInt.h b0c87f6725b06a0aa194a6d25d54b16ce9d6e291
+F src/btreeInt.h 5b034ff54800046cc5870605d683ac1f9134bd99
 F src/build.c 0018d49629fc4807100c988dd191dd95e185bb38
 F src/callback.c da3c38d0ef5d7f04fae371e519bda61aa9cb1704
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
@@ -156,8 +156,8 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c 11194cbcf6a57456e58022dc537ab8c3497d9bb9
 F src/os_win.c 51cb62f76262d961ea4249489383d714501315a7
-F src/pager.c 3fb56c4d03798058e5cf57b668468fa616e20bac
-F src/pager.h 80726162dc3942f59ab27b738fb667b9ba0a89d5
+F src/pager.c 39be42c3234a4ea51ddf185a47a91f31a0439fd1
+F src/pager.h 985a83d35b0cfa8e1c23ef91ed5cdb9bde73695a
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
@@ -173,12 +173,12 @@ F src/shell.c 8517fc1f9c59ae4007e6cc8b9af91ab231ea2056
 F src/sqlite.h.in 2d72a6242df41c517e38eec8791abcf5484a36f1
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
 F src/sqliteInt.h e33b15e8176442bf7484f0e716edfd1ce03b2979
-F src/sqliteLimit.h 196e2f83c3b444c4548fc1874f52f84fdbda40f3
+F src/sqliteLimit.h 4ae9b005144400984cbcafd4d7c09659bb2af92a
 F src/status.c 496913d4e8441195f6f2a75b1c95993a45b9b30b
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 5cd96419fb6c771006f064196ccc70c29d01bec7
 F src/test1.c 0bfcda72f9f8ab5c0e90fac05cc22c1c21131ddf
-F src/test2.c e3f564ab1e9fd0b47b0c9e23e7054e38bf0836cf
+F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 4c21700c73a890a47fc685c1097bfb661346ac94
 F src/test4.c 0528360b5025688002a5feb6be906ddce52eaaee
 F src/test5.c e1a19845625144caf038031234a12185e40d315c
@@ -210,7 +210,7 @@ F src/test_server.c bbba05c144b5fc4b52ff650a4328027b3fa5fcc6
 F src/test_stat.c dcabb7d39da058cbfc9ddc427cd92fbf14822b28
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c bedd05cad673dba53326f3aa468cc803038896c0
-F src/test_vfs.c 7e291f85256516ebde6633bc381ff7eedfa30234
+F src/test_vfs.c 702e52636113f6b9721da90ef1bf26e07fff414d
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c 604607d6813e9551cf5189d899e0a25c12681080
 F src/trigger.c b8bedb9c0084ceb51a40f54fcca2ce048c8de852
@@ -227,7 +227,7 @@ F src/vdbeblob.c 258a6010ba7a82b72b327fb24c55790655689256
 F src/vdbemem.c e5673f81a2381b35c60e73ef0a8502be2ab1041e
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c 0e8e0cb30dffb078367e843e84e37ef99236c7e4
-F src/wal.c 582acbaa606c748675fafff516ec1b34a7bdae62
+F src/wal.c c79ae356eb124ba2ca4e9842e30bc1fa9c0ef273
 F src/wal.h 96669b645e27cd5a111ba59f0cae7743a207bc3c
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 7db3e41c2a846f9deeb24f1bbb75461b4010b7b5
@@ -539,7 +539,7 @@ F test/notify3.test d60923e186e0900f4812a845fcdfd8eea096e33a
 F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test af02ed0a9cbc0d2a61b8f35171d4d117e588e4ec
-F test/pager1.test 20457c96ab1d4e876d335cfd6ddd0f539bda3f81
+F test/pager1.test 9a7650f95bc84ef2fa4c2db87f9676d2641f9829
 F test/pager2.test 9edc1584cbc8ecd3b34dbcc8e86467bf05caa27f
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
 F test/pagerfault.test 495ab0a0ed30aebe7e4278fcee148986085d4c8b
@@ -782,7 +782,7 @@ F test/vtabE.test 7c4693638d7797ce2eda17af74292b97e705cc61
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
-F test/wal.test 1891e6f72dd437a1c2a48091aa9182ba17a8f780
+F test/wal.test 0369e9ef9ac9b0f9a4a274819d83489578ccaef1
 F test/wal2.test 223f3e14d475730af772a7f5862d4bcfa7565c3a
 F test/wal3.test 695ea0f6c516423c611891df9a285aacd33344e3
 F test/wal4.test 3404b048fa5e10605facaf70384e6d2943412e30
@@ -843,7 +843,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P eaaca669a4afc83906806b22365b010c83bc3db8
-R 2966f30f98145ee75718d7c3465c6545
-U dan
-Z cd90e6256916f41a20463762a4c0c757
+P 2fa05d01b6b11788a5b73d203fcac9d4a4ba9fd8
+R 68189c2924cc1a955c4daa7396f7f071
+U drh
+Z ea2561c5cb1a509ae1c92e5b10fbf288

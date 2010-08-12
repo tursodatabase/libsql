@@ -1000,7 +1000,7 @@ static int testvfs_obj_cmd(
         int n;
         u8 *a = Tcl_GetByteArrayFromObj(objv[3], &n);
         int pgsz = pBuffer->pgsz;
-        if( pgsz==0 ) pgsz = 32768;
+        if( pgsz==0 ) pgsz = 65536;
         for(i=0; i*pgsz<n; i++){
           int nByte = pgsz;
           tvfsAllocPage(pBuffer, i, pgsz);
@@ -1014,7 +1014,7 @@ static int testvfs_obj_cmd(
       pObj = Tcl_NewObj();
       for(i=0; pBuffer->aPage[i]; i++){
         int pgsz = pBuffer->pgsz;
-        if( pgsz==0 ) pgsz = 32768;
+        if( pgsz==0 ) pgsz = 65536;
         Tcl_AppendObjToObj(pObj, Tcl_NewByteArrayObj(pBuffer->aPage[i], pgsz));
       }
       Tcl_SetObjResult(interp, pObj);

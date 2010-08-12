@@ -1505,7 +1505,6 @@ static int readJournalHdr(
   if( pPager->journalOff==0 ){
     u32 iPageSize;               /* Page-size field of journal header */
     u32 iSectorSize;             /* Sector-size field of journal header */
-    u16 iPageSize16;             /* Copy of iPageSize in 16-bit variable */
 
     /* Read the page-size and sector-size journal header fields. */
     if( SQLITE_OK!=(rc = read32bits(pPager->jfd, iHdrOff+20, &iSectorSize))
@@ -1535,10 +1534,8 @@ static int readJournalHdr(
     ** Use a testcase() macro to make sure that malloc failure within 
     ** PagerSetPagesize() is tested.
     */
-    iPageSize16 = (u16)iPageSize;
-    rc = sqlite3PagerSetPagesize(pPager, &iPageSize16, -1);
+    rc = sqlite3PagerSetPagesize(pPager, &iPageSize, -1);
     testcase( rc!=SQLITE_OK );
-    assert( rc!=SQLITE_OK || iPageSize16==(u16)iPageSize );
 
     /* Update the assumed sector-size to match the value used by 
     ** the process that created this journal. If this journal was
@@ -3356,7 +3353,7 @@ void sqlite3PagerSetBusyhandler(
 ** function was called, or because the memory allocation attempt failed, 
 ** then *pPageSize is set to the old, retained page size before returning.
 */
-int sqlite3PagerSetPagesize(Pager *pPager, u16 *pPageSize, int nReserve){
+int sqlite3PagerSetPagesize(Pager *pPager, u32 *pPageSize, int nReserve){
   /* It is not possible to do a full assert_pager_state() here, as this
   ** function may be called from within PagerOpen(), before the state
   ** of the Pager object is internally consistent.
@@ -3367,7 +3364,7 @@ int sqlite3PagerSetPagesize(Pager *pPager, u16 *pPageSize, int nReserve){
   ** is a no-op for that case anyhow.
   */
 
-  u16 pageSize = *pPageSize;
+  u32 pageSize = *pPageSize;
   assert( pageSize==0 || (pageSize>=512 && pageSize<=SQLITE_MAX_PAGE_SIZE) );
   if( (pPager->memDb==0 || pPager->dbSize==0)
    && sqlite3PcacheRefCount(pPager->pPCache)==0 
@@ -3392,7 +3389,7 @@ int sqlite3PagerSetPagesize(Pager *pPager, u16 *pPageSize, int nReserve){
     }
   }
 
-  *pPageSize = (u16)pPager->pageSize;
+  *pPageSize = pPager->pageSize;
   if( nReserve<0 ) nReserve = pPager->nReserve;
   assert( nReserve>=0 && nReserve<1000 );
   pPager->nReserve = (i16)nReserve;
@@ -4184,7 +4181,7 @@ int sqlite3PagerOpen(
   int useJournal = (flags & PAGER_OMIT_JOURNAL)==0; /* False to omit journal */
   int noReadlock = (flags & PAGER_NO_READLOCK)!=0;  /* True to omit read-lock */
   int pcacheSize = sqlite3PcacheSize();       /* Bytes to allocate for PCache */
-  u16 szPageDflt = SQLITE_DEFAULT_PAGE_SIZE;  /* Default page size */
+  u32 szPageDflt = SQLITE_DEFAULT_PAGE_SIZE;  /* Default page size */
 
   /* Figure out how much space is required for each journal file-handle
   ** (there are two of them, the main journal and the sub-journal). This
@@ -4319,7 +4316,7 @@ int sqlite3PagerOpen(
         if( pPager->sectorSize>SQLITE_MAX_DEFAULT_PAGE_SIZE ){
           szPageDflt = SQLITE_MAX_DEFAULT_PAGE_SIZE;
         }else{
-          szPageDflt = (u16)pPager->sectorSize;
+          szPageDflt = (u32)pPager->sectorSize;
         }
       }
 #ifdef SQLITE_ENABLE_ATOMIC_WRITE

@@ -72,7 +72,7 @@ static int pager_open(
   int argc,              /* Number of arguments */
   const char **argv      /* Text of each argument */
 ){
-  u16 pageSize;
+  u32 pageSize;
   Pager *pPager;
   int nPage;
   int rc;

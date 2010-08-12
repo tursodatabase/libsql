@@ -99,7 +99,7 @@ int sqlite3PagerReadFileheader(Pager*, int, unsigned char*);
 
 /* Functions used to configure a Pager object. */
 void sqlite3PagerSetBusyhandler(Pager*, int(*)(void *), void *);
-int sqlite3PagerSetPagesize(Pager*, u16*, int);
+int sqlite3PagerSetPagesize(Pager*, u32*, int);
 int sqlite3PagerMaxPageCount(Pager*, int);
 void sqlite3PagerSetCachesize(Pager*, int);
 void sqlite3PagerSetSafetyLevel(Pager*,int,int);

@@ -46,7 +46,7 @@
 **
 ** The file is divided into pages.  The first page is called page 1,
 ** the second is page 2, and so forth.  A page number of zero indicates
-** "no such page".  The page size can be any power of 2 between 512 and 32768.
+** "no such page".  The page size can be any power of 2 between 512 and 65536.
 ** Each page can be either a btree page, a freelist page, an overflow
 ** page, or a pointer-map page.
 **
@@ -413,14 +413,14 @@ struct BtShared {
   u8 autoVacuum;        /* True if auto-vacuum is enabled */
   u8 incrVacuum;        /* True if incr-vacuum is enabled */
 #endif
-  u16 pageSize;         /* Total number of bytes on a page */
-  u16 usableSize;       /* Number of usable bytes on each page */
   u16 maxLocal;         /* Maximum local payload in non-LEAFDATA tables */
   u16 minLocal;         /* Minimum local payload in non-LEAFDATA tables */
   u16 maxLeaf;          /* Maximum local payload in a LEAFDATA table */
   u16 minLeaf;          /* Minimum local payload in a LEAFDATA table */
   u8 inTransaction;     /* Transaction state */
   u8 doNotUseWAL;       /* If true, do not open write-ahead-log file */
+  u32 pageSize;         /* Total number of bytes on a page */
+  u32 usableSize;       /* Number of usable bytes on each page */
   int nTransaction;     /* Number of open transactions (read + write) */
   u32 nPage;            /* Number of pages in the database */
   void *pSchema;        /* Pointer to space allocated by sqlite3BtreeSchema() */
