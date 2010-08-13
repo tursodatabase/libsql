@@ -1,5 +1,5 @@
-C Do\snot\sapply\sthe\sflattening\soptimization\sif\sthe\ssub-query\sis\sDISTINCT.\sFix\sfor\s[e4b8a2ba6e].
-D 2010-08-13T16:38:49
+C Add\stests\sto\stest\sfile\se_expr.test.
+D 2010-08-13T18:41:09
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -340,7 +340,7 @@ F test/descidx2.test 9f1a0c83fd57f8667c82310ca21b30a350888b5d
 F test/descidx3.test fe720e8b37d59f4cef808b0bf4e1b391c2e56b6f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
-F test/e_expr.test 141e53fea525bce4f5403fcb0067b88e64fec5eb
+F test/e_expr.test f9ff41e5419bb861807072bf195abb85d4670021
 F test/e_fkey.test 6721a741c6499b3ab7e5385923233343c8f1ad05
 F test/e_fts3.test 75bb0aee26384ef586165e21018a17f7cd843469
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
@@ -843,7 +843,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 02def8f92588b8a45dff3976d1e7f9e3f0359b3b
-R 74ad88fe4f30f12e9ec66365eae8f2a6
+P 497aafd8ed6a636a8bd5fa2cad265a20593ee34f
+R f6d0c1ed7d5a218762ae4f3a6bffc24d
 U dan
-Z 55affff7311e423c3bc737f8b0377763
+Z 2fd985318d5073be48e0a663ee3f56cf

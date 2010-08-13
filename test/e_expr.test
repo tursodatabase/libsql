@@ -329,4 +329,124 @@ foreach {n1 rhs} $literals {
   }
 }
 
+#-------------------------------------------------------------------------
+# Run some tests on the COLLATE "unary postfix operator".
+#
+# This collation sequence reverses both arguments before using 
+# [string compare] to compare them. For example, when comparing the
+# strings 'one' and 'four', return the result of:
+#   
+#   string compare eno ruof
+#
+proc reverse_str {zStr} {
+  set out ""
+  foreach c [split $zStr {}] { set out "${c}${out}" }
+  set out
+}
+proc reverse_collate {zLeft zRight} {
+  string compare [reverse_str $zLeft] [reverse_str $zRight]
+}
+db collate reverse reverse_collate
+
+# EVIDENCE-OF: R-59577-33471 The COLLATE operator is a unary postfix
+# operator that assigns a collating sequence to an expression.
+#
+# EVIDENCE-OF: R-23441-22541 The COLLATE operator has a higher
+# precedence (binds more tightly) than any prefix unary operator or any
+# binary operator.
+#
+do_execsql_test e_expr-9.1 { SELECT  'abcd' < 'bbbb'    COLLATE reverse } 0
+do_execsql_test e_expr-9.2 { SELECT ('abcd' < 'bbbb')   COLLATE reverse } 1
+do_execsql_test e_expr-9.3 { SELECT  'abcd' <= 'bbbb'   COLLATE reverse } 0
+do_execsql_test e_expr-9.4 { SELECT ('abcd' <= 'bbbb')  COLLATE reverse } 1
+
+do_execsql_test e_expr-9.5 { SELECT  'abcd' > 'bbbb'    COLLATE reverse } 1
+do_execsql_test e_expr-9.6 { SELECT ('abcd' > 'bbbb')   COLLATE reverse } 0
+do_execsql_test e_expr-9.7 { SELECT  'abcd' >= 'bbbb'   COLLATE reverse } 1
+do_execsql_test e_expr-9.8 { SELECT ('abcd' >= 'bbbb')  COLLATE reverse } 0
+
+do_execsql_test e_expr-9.10 { SELECT  'abcd' =  'ABCD'  COLLATE nocase } 1
+do_execsql_test e_expr-9.11 { SELECT ('abcd' =  'ABCD') COLLATE nocase } 0
+do_execsql_test e_expr-9.12 { SELECT  'abcd' == 'ABCD'  COLLATE nocase } 1
+do_execsql_test e_expr-9.13 { SELECT ('abcd' == 'ABCD') COLLATE nocase } 0
+do_execsql_test e_expr-9.14 { SELECT  'abcd' IS 'ABCD'  COLLATE nocase } 1
+do_execsql_test e_expr-9.15 { SELECT ('abcd' IS 'ABCD') COLLATE nocase } 0
+
+do_execsql_test e_expr-9.16 { SELECT  'abcd' != 'ABCD'      COLLATE nocase } 0
+do_execsql_test e_expr-9.17 { SELECT ('abcd' != 'ABCD')     COLLATE nocase } 1
+do_execsql_test e_expr-9.18 { SELECT  'abcd' <> 'ABCD'      COLLATE nocase } 0
+do_execsql_test e_expr-9.19 { SELECT ('abcd' <> 'ABCD')     COLLATE nocase } 1
+do_execsql_test e_expr-9.20 { SELECT  'abcd' IS NOT 'ABCD'  COLLATE nocase } 0
+do_execsql_test e_expr-9.21 { SELECT ('abcd' IS NOT 'ABCD') COLLATE nocase } 1
+
+do_execsql_test e_expr-9.22 { 
+  SELECT 'bbb' BETWEEN 'AAA' AND 'CCC' COLLATE nocase 
+} 1
+do_execsql_test e_expr-9.23 { 
+  SELECT ('bbb' BETWEEN 'AAA' AND 'CCC') COLLATE nocase 
+} 0
+
+# EVIDENCE-OF: R-58731-25439 The collating sequence set by the COLLATE
+# operator overrides the collating sequence determined by the COLLATE
+# clause in a table column definition.
+#
+do_execsql_test e_expr-9.24 { 
+  CREATE TABLE t24(a COLLATE NOCASE, b);
+  INSERT INTO t24 VALUES('aaa', 1);
+  INSERT INTO t24 VALUES('bbb', 2);
+  INSERT INTO t24 VALUES('ccc', 3);
+} {}
+do_execsql_test e_expr-9.25 { SELECT 'BBB' = a FROM t24 } {0 1 0}
+do_execsql_test e_expr-9.25 { SELECT a = 'BBB' FROM t24 } {0 1 0}
+do_execsql_test e_expr-9.25 { SELECT 'BBB' = a COLLATE binary FROM t24 } {0 0 0}
+do_execsql_test e_expr-9.25 { SELECT a COLLATE binary = 'BBB' FROM t24 } {0 0 0}
+
+#-------------------------------------------------------------------------
+# Test statements related to literal values.
+#
+# EVIDENCE-OF: R-31536-32008 Literal values may be integers, floating
+# point numbers, strings, BLOBs, or NULLs.
+#
+do_execsql_test e_expr-10.1.1 { SELECT typeof(5)       } {integer}
+do_execsql_test e_expr-10.1.2 { SELECT typeof(5.1)     } {real}
+do_execsql_test e_expr-10.1.3 { SELECT typeof('5.1')   } {text}
+do_execsql_test e_expr-10.1.4 { SELECT typeof(X'ABCD') } {blob}
+do_execsql_test e_expr-10.1.5 { SELECT typeof(NULL)    } {null}
+
+# EVIDENCE-OF: R-26921-59298 Scientific notation is supported for
+# floating point literal values.
+#
+do_execsql_test e_expr-10.2.1 { SELECT typeof(3.4e-02)    } {real}
+do_execsql_test e_expr-10.2.2 { SELECT typeof(3e+5)       } {real}
+do_execsql_test e_expr-10.2.3 { SELECT 3.4e-02            } {0.034}
+do_execsql_test e_expr-10.2.4 { SELECT 3e+4               } {30000.0}
+
+# EVIDENCE-OF: R-35229-17830 A string constant is formed by enclosing
+# the string in single quotes (').
+#
+# EVIDENCE-OF: R-07100-06606 A single quote within the string can be
+# encoded by putting two single quotes in a row - as in Pascal.
+#
+do_execsql_test e_expr-10.3.1 { SELECT 'is not' }         {{is not}}
+do_execsql_test e_expr-10.3.2 { SELECT typeof('is not') } {text}
+do_execsql_test e_expr-10.3.3 { SELECT 'isn''t' }         {isn't}
+do_execsql_test e_expr-10.3.4 { SELECT typeof('isn''t') } {text}
+
+# EVIDENCE-OF: R-09593-03321 BLOB literals are string literals
+# containing hexadecimal data and preceded by a single "x" or "X"
+# character.
+#
+# EVIDENCE-OF: R-39344-59787 For example: X'53514C697465'
+#
+do_execsql_test e_expr-10.4.1 { SELECT typeof(X'0123456789ABCDEF') } blob
+do_execsql_test e_expr-10.4.2 { SELECT typeof(x'0123456789ABCDEF') } blob
+do_execsql_test e_expr-10.4.3 { SELECT typeof(X'0123456789abcdef') } blob
+do_execsql_test e_expr-10.4.4 { SELECT typeof(x'0123456789abcdef') } blob
+do_execsql_test e_expr-10.4.5 { SELECT typeof(X'53514C697465')     } blob
+
+# EVIDENCE-OF: R-23914-51476 A literal value can also be the token
+# "NULL".
+do_execsql_test e_expr-10.5.1 { SELECT NULL         } {{}}
+do_execsql_test e_expr-10.5.2 { SELECT typeof(NULL) } {null}
+
 finish_test
