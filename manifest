@@ -1,5 +1,5 @@
-C If\san\serror\soccurs\sin\sPagerSetPagesize(),\sset\sthe\soutput\svariable\sto\sthe\sunmodified\spage-size\sbefore\sreturning.
-D 2010-08-12T16:36:35
+C Do\snot\sapply\sthe\sflattening\soptimization\sif\sthe\ssub-query\sis\sDISTINCT.\sFix\sfor\s[e4b8a2ba6e].
+D 2010-08-13T16:38:49
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/printf.c 8ae5082dd38a1b5456030c3755ec3a392cd51506
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
-F src/select.c 4b8f481406c7fd2672abf715a2acaed8f9cde046
+F src/select.c 8add6cab889fc02e1492eda8dba462ccf11f51dd
 F src/shell.c 8517fc1f9c59ae4007e6cc8b9af91ab231ea2056
 F src/sqlite.h.in 2d72a6242df41c517e38eec8791abcf5484a36f1
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
@@ -585,7 +585,7 @@ F test/select8.test 391de11bdd52339c30580dabbbbe97e3e9a3c79d
 F test/select9.test 74c0fb2c6eecb0219cbed0cbe3df136f8fbf9343
 F test/selectA.test 06d1032fa9009314c95394f2ca2e60d9f7ae8532
 F test/selectB.test f305cc6660804cb239aab4e2f26b0e288b59958b
-F test/selectC.test 33bb5673a8141df193c6fd56e6de7fea38b8d2ee
+F test/selectC.test f9bf1bc4581b5b8158caa6e4e4f682acb379fb25
 F test/server1.test f5b790d4c0498179151ca8a7715a65a7802c859c
 F test/shared.test b9114eaea7e748a3a4c8ff7b9ca806c8f95cef3e
 F test/shared2.test d6ba4ca1827ea36a1ac23a99e3c36eeac9165450
@@ -843,7 +843,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 228c5b16af80c22e97d9d4deb351e0d3f4523f89
-R 639f1bec1c909cc7434c6e41850105f7
+P 02def8f92588b8a45dff3976d1e7f9e3f0359b3b
+R 74ad88fe4f30f12e9ec66365eae8f2a6
 U dan
-Z 132d1fc4e540d643bf195378105a77c8
+Z 55affff7311e423c3bc737f8b0377763
