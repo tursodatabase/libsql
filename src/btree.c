@@ -2260,9 +2260,7 @@ static int lockBtree(BtShared *pBt){
   ** a valid database file. 
   */
   nPage = nPageHeader = get4byte(28+(u8*)pPage1->aData);
-  if( (rc = sqlite3PagerPagecount(pBt->pPager, &nPageFile))!=SQLITE_OK ){;
-    goto page1_init_failed;
-  }
+  sqlite3PagerPagecount(pBt->pPager, &nPageFile);
   if( nPage==0 || memcmp(24+(u8*)pPage1->aData, 92+(u8*)pPage1->aData,4)!=0 ){
     nPage = nPageFile;
   }

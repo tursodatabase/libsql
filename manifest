@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Minor\ssimplifications\sto\sbtree.c\sin\ssupport\sof\sfull-coverage\stesting.
-D 2010-08-14T16:02:52
+C Change\ssqlite3PagerPagecount()\sto\sreturn\svoid,\ssince\sthe\sreturn\svalue\swas\nalways\sSQLITE_OK\sand\swas\snever\sused.
+D 2010-08-14T17:12:05
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -116,7 +116,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 51d83300fe0baee39405c416ceb19a58ed30a8ed
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c 4d861dd1620afb925cd4192bbf37ae9adb0f9fa1
+F src/btree.c f5758ebc3601b57ed8510b97b3d4cff8dcaef995
 F src/btree.h b4ba2fdf6b64c7c376bdfffa826af6b786b151d9
 F src/btreeInt.h 5b034ff54800046cc5870605d683ac1f9134bd99
 F src/build.c 0018d49629fc4807100c988dd191dd95e185bb38
@@ -159,8 +159,8 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c 11194cbcf6a57456e58022dc537ab8c3497d9bb9
 F src/os_win.c 51cb62f76262d961ea4249489383d714501315a7
-F src/pager.c afcd1f6f707f3bff2e214f326fcdcdebe1ef8203
-F src/pager.h 985a83d35b0cfa8e1c23ef91ed5cdb9bde73695a
+F src/pager.c 6d9ceacc880409d327e23c344d882604122ed401
+F src/pager.h ef8c8f71ab022cc2fff768a1175dd32355be9dcd
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
@@ -846,14 +846,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 68a49f7fe382e4d36e1259cdeec956c942906ddb
-R b1c481dfca4b477e31b2e4af146892a8
+P 364df6c7735447cc2187923918a35bf62d82decc
+R 41b21b9cec2b7ed19a7b12aa909cd6f7
 U drh
-Z e57dcfeb0f939d5ce958fed0088bea4e
+Z ea65b0e4d3c92c02b13a56775c5b9c0e
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMZr4voxKgR168RlERAu/MAJ9MTU0aCRWDXO4vBzXH44vQSjsLvwCfTpi/
-5wlpXOWGqiiDyRwwIlXwR/I=
-=job1
+iD8DBQFMZs5noxKgR168RlERAkpiAJwKvysDHu9rzoE7x0MsHUslCjN76ACeNG3q
+vd7eRLuMVa97Knwh46KjX44=
+=OB1N
 -----END PGP SIGNATURE-----

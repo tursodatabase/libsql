@@ -3505,11 +3505,10 @@ int sqlite3PagerReadFileheader(Pager *pPager, int N, unsigned char *pDest){
 ** However, if the file is between 1 and <page-size> bytes in size, then 
 ** this is considered a 1 page file.
 */
-int sqlite3PagerPagecount(Pager *pPager, int *pnPage){
+void sqlite3PagerPagecount(Pager *pPager, int *pnPage){
   assert( pPager->eState>=PAGER_READER );
   assert( pPager->eState!=PAGER_WRITER_FINISHED );
   *pnPage = (int)pPager->dbSize;
-  return SQLITE_OK;
 }
 
 
