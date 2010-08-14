@@ -494,7 +494,7 @@ static int statFilter(
 ){
   StatCursor *pCsr = (StatCursor *)pCursor;
 
-  statResetCsr((StatCursor *)pCursor);
+  statResetCsr(pCsr);
   return statNext(pCursor);
 }
 

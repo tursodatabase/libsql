@@ -22,8 +22,12 @@
 #include "sqliteInt.h"
 #include "wal.h"
 
-/*
-******************** NOTES ON THE DESIGN OF THE PAGER ************************
+
+/******************* NOTES ON THE DESIGN OF THE PAGER ************************
+**
+** This comment block describes invariants that hold when using a rollback
+** journal.  These invariants do not apply for journal_mode=WAL,
+** journal_mode=MEMORY, or journal_mode=OFF.
 **
 ** Within this comment block, a page is deemed to have been synced
 ** automatically as soon as it is written when PRAGMA synchronous=OFF.
@@ -57,7 +61,7 @@
 **     transaction.
 ** 
 ** (3) Writes to the database file are an integer multiple of the page size
-**     in length and are aligned to a page boundary.
+**     in length and are aligned on a page boundary.
 ** 
 ** (4) Reads from the database file are either aligned on a page boundary and
 **     an integer multiple of the page size in length or are taken from the
@@ -88,7 +92,8 @@
 ** 
 ** (9) Whenever the database file is modified, at least one bit in the range
 **     of bytes from 24 through 39 inclusive will be changed prior to releasing
-**     the EXCLUSIVE lock.
+**     the EXCLUSIVE lock, thus signaling other connections on the same
+**     database to flush their caches.
 **
 ** (10) The pattern of bits in bytes 24 through 39 shall not repeat in less
 **      than one billion transactions.
@@ -101,7 +106,8 @@
 **
 ** (13) A SHARED lock is held on the database file while reading any
 **      content out of the database file.
-*/
+**
+******************************************************************************/
 
 /*
 ** Macros for troubleshooting.  Normally turned off
@@ -625,16 +631,14 @@ struct Pager {
   u8 readOnly;                /* True for a read-only database */
   u8 memDb;                   /* True to inhibit all file I/O */
 
-  /* The following block contains those class members that are dynamically
-  ** modified during normal operations. The other variables in this structure
-  ** are either constant throughout the lifetime of the pager, or else
-  ** used to store configuration parameters that affect the way the pager 
-  ** operates.
-  **
-  ** The 'state' variable is described in more detail along with the
-  ** descriptions of the values it may take - PAGER_UNLOCK etc. Many of the
-  ** other variables in this block are described in the comment directly 
-  ** above this class definition.
+  /**************************************************************************
+  ** The following block contains those class members that change during
+  ** routine opertion.  Class members not in this block are either fixed
+  ** when the pager is first created or else only change when there is a
+  ** significant mode change (such as changing the page_size, locking_mode,
+  ** or the journal_mode).  From another view, these class members describe
+  ** the "state" of the pager, while other class members describe the
+  ** "configuration" of the pager.
   */
   u8 eState;                  /* Pager state (OPEN, READER, WRITER_LOCKED..) */
   u8 eLock;                   /* Current lock held on database file */
@@ -657,17 +661,21 @@ struct Pager {
   sqlite3_file *sjfd;         /* File descriptor for sub-journal */
   i64 journalOff;             /* Current write offset in the journal file */
   i64 journalHdr;             /* Byte offset to previous journal header */
-  i64 journalSizeLimit;       /* Size limit for persistent journal files */
+  sqlite3_backup *pBackup;    /* Pointer to list of ongoing backup processes */
   PagerSavepoint *aSavepoint; /* Array of active savepoints */
   int nSavepoint;             /* Number of elements in aSavepoint[] */
   char dbFileVers[16];        /* Changes whenever database file changes */
-  u32 sectorSize;             /* Assumed sector size during rollback */
+  /*
+  ** End of the routinely-changing class members
+  ***************************************************************************/
 
   u16 nExtra;                 /* Add this many bytes to each in-memory page */
   i16 nReserve;               /* Number of unused bytes at end of each page */
   u32 vfsFlags;               /* Flags for sqlite3_vfs.xOpen() */
+  u32 sectorSize;             /* Assumed sector size during rollback */
   int pageSize;               /* Number of bytes in a page */
   Pgno mxPgno;                /* Maximum allowed size of the database */
+  i64 journalSizeLimit;       /* Size limit for persistent journal files */
   char *zFilename;            /* Name of the database file */
   char *zJournal;             /* Name of the journal file */
   int (*xBusyHandler)(void*); /* Function to call when busy */
@@ -685,7 +693,6 @@ struct Pager {
 #endif
   char *pTmpSpace;            /* Pager.pageSize bytes of space for tmp use */
   PCache *pPCache;            /* Pointer to page cache object */
-  sqlite3_backup *pBackup;    /* Pointer to list of ongoing backup processes */
 #ifndef SQLITE_OMIT_WAL
   Wal *pWal;                  /* Write-ahead log used by "journal_mode=wal" */
   char *zWal;                 /* File name for write-ahead log */
@@ -6369,6 +6376,13 @@ int sqlite3PagerLockingMode(Pager *pPager, int eMode){
 */
 int sqlite3PagerSetJournalMode(Pager *pPager, int eMode){
   u8 eOld = pPager->journalMode;    /* Prior journalmode */
+
+#ifdef SQLITE_DEBUG
+  /* The print_pager_state() routine is intended to be used by the debugger
+  ** only.  We invoke it once here to suppress a compiler warning. */
+  print_pager_state(pPager);
+#endif
+
 
   /* The eMode parameter is always valid */
   assert(      eMode==PAGER_JOURNALMODE_DELETE
