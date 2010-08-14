@@ -32,7 +32,16 @@ int sqlite3BtreeTrace=1;  /* True to enable tracing */
 # define TRACE(X)
 #endif
 
-
+/*
+** Extract a 2-byte big-endian integer from an array of unsigned bytes.
+** But if the value is zero, make it 65536.
+**
+** This routine is used to extract the "offset to cell content area" value
+** from the header of a btree page.  If the page size is 65536 and the page
+** is empty, the offset should be 65536, but the 2-byte value stores zero.
+** This routine makes the necessary adjustment to 65536.
+*/
+#define get2byteNotZero(X)  (((((int)get2byte(X))-1)&0xffff)+1)
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
 /*
@@ -1154,8 +1163,7 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   nFrag = data[hdr+7];
   assert( pPage->cellOffset == hdr + 12 - 4*pPage->leaf );
   gap = pPage->cellOffset + 2*pPage->nCell;
-  top = get2byte(&data[hdr+5]);
-  if( top==0 ) top = 65536;
+  top = get2byteNotZero(&data[hdr+5]);
   if( gap>top ) return SQLITE_CORRUPT_BKPT;
   testcase( gap+2==top );
   testcase( gap+1==top );
@@ -1165,8 +1173,7 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
     /* Always defragment highly fragmented pages */
     rc = defragmentPage(pPage);
     if( rc ) return rc;
-    top = get2byte(&data[hdr+5]);
-    if( top==0 ) top = 65536;
+    top = get2byteNotZero(&data[hdr+5]);
   }else if( gap+2<=top ){
     /* Search the freelist looking for a free slot big enough to satisfy 
     ** the request. The allocation is made from the first free slot in 
@@ -1208,8 +1215,7 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   if( gap+2+nByte>top ){
     rc = defragmentPage(pPage);
     if( rc ) return rc;
-    top = get2byte(&data[hdr+5]);
-    if( top==0 ) top = 65536;
+    top = get2byteNotZero(&data[hdr+5]);
     assert( gap+nByte<=top );
   }
 
@@ -1392,8 +1398,7 @@ static int btreeInitPage(MemPage *pPage){
     pPage->nOverflow = 0;
     usableSize = pBt->usableSize;
     pPage->cellOffset = cellOffset = hdr + 12 - 4*pPage->leaf;
-    top = get2byte(&data[hdr+5]);
-    if( top==0 ) top = 65536;
+    top = get2byteNotZero(&data[hdr+5]);
     pPage->nCell = get2byte(&data[hdr+3]);
     if( pPage->nCell>MX_CELL(pBt) ){
       /* To many cells for a single page.  The page must be corrupt */
@@ -5490,7 +5495,7 @@ static void assemblePage(
 
   /* Check that the page has just been zeroed by zeroPage() */
   assert( pPage->nCell==0 );
-  assert( get2byte(&data[hdr+5])==(nUsable&0xffff) );
+  assert( get2byteNotZero(&data[hdr+5])==nUsable );
 
   pCellptr = &data[pPage->cellOffset + nCell*2];
   cellbody = nUsable;
@@ -5556,7 +5561,8 @@ static int balance_quick(MemPage *pParent, MemPage *pPage, u8 *pSpace){
   assert( sqlite3PagerIswriteable(pParent->pDbPage) );
   assert( pPage->nOverflow==1 );
 
-  if( pPage->nCell<=0 ) return SQLITE_CORRUPT_BKPT;
+  /* This error condition is now caught prior to reaching this function */
+  if( NEVER(pPage->nCell<=0) ) return SQLITE_CORRUPT_BKPT;
 
   /* Allocate a new page. This page will become the right-sibling of 
   ** pPage. Make the parent page writable, so that the new divider cell
@@ -7665,8 +7671,7 @@ static int checkTreePage(
   if( hit==0 ){
     pCheck->mallocFailed = 1;
   }else{
-    int contentOffset = get2byte(&data[hdr+5]);
-    if( contentOffset==0 ) contentOffset = 65536;
+    int contentOffset = get2byteNotZero(&data[hdr+5]);
     assert( contentOffset<=usableSize );  /* Enforced by btreeInitPage() */
     memset(hit+contentOffset, 0, usableSize-contentOffset);
     memset(hit, 1, contentOffset);

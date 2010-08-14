@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Tweaks\sto\scomments\sin\spager.c.\s\sFix\stwo\scompiler\swarnings.
-D 2010-08-14T12:42:45
+C Minor\ssimplifications\sto\sbtree.c\sin\ssupport\sof\sfull-coverage\stesting.
+D 2010-08-14T16:02:52
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -116,7 +116,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 51d83300fe0baee39405c416ceb19a58ed30a8ed
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c 042a5c0a6a8b6121019b258737872b1ab703d39e
+F src/btree.c 4d861dd1620afb925cd4192bbf37ae9adb0f9fa1
 F src/btree.h b4ba2fdf6b64c7c376bdfffa826af6b786b151d9
 F src/btreeInt.h 5b034ff54800046cc5870605d683ac1f9134bd99
 F src/build.c 0018d49629fc4807100c988dd191dd95e185bb38
@@ -846,14 +846,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P d8bbab78fa56b076dfafb36daa7d6ef0b07f9a44
-R 00ed3364cfce8a4105ed9a3a25cad7ed
+P 68a49f7fe382e4d36e1259cdeec956c942906ddb
+R b1c481dfca4b477e31b2e4af146892a8
 U drh
-Z 25d17dd4620d7e65e11d0b88322d1479
+Z e57dcfeb0f939d5ce958fed0088bea4e
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMZo9IoxKgR168RlERAp1LAJwOT7m3IIp+K8QF3N/Nj+jyeFSJlACfXB9z
-d6d5VsCmNb5RNvHYenT8x/U=
-=t0vs
+iD8DBQFMZr4voxKgR168RlERAu/MAJ9MTU0aCRWDXO4vBzXH44vQSjsLvwCfTpi/
+5wlpXOWGqiiDyRwwIlXwR/I=
+=job1
 -----END PGP SIGNATURE-----
