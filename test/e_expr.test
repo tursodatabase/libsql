@@ -600,4 +600,18 @@ foreach {tn sql} [list                           \
   do_catchsql_test e_expr-11.7.$tn $sql [list 1 {too many SQL variables}]
 }
 
+# EVIDENCE-OF: R-14068-49671 Parameters that are not assigned values
+# using sqlite3_bind() are treated as NULL.
+#
+do_test e_expr-11.7.1 {
+  set stmt [sqlite3_prepare_v2 db { SELECT ?, :a, @b, $d } -1]
+  sqlite3_step $stmt
+
+  list [sqlite3_column_type $stmt 0] \
+       [sqlite3_column_type $stmt 1] \
+       [sqlite3_column_type $stmt 2] \
+       [sqlite3_column_type $stmt 3] 
+} {NULL NULL NULL NULL}
+do_test e_expr-11.7.1 { sqlite3_finalize $stmt } SQLITE_OK
+
 finish_test
