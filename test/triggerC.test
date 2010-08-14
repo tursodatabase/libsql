@@ -916,6 +916,27 @@ do_test triggerC-11.4 {
   }
 } {{} {} 1 1}
 
+do_test triggerC-12.1 {
+  db close
+  file delete -force test.db
+  sqlite3 db test.db
+
+  execsql {
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, 2);
+    INSERT INTO t1 VALUES(3, 4);
+    INSERT INTO t1 VALUES(5, 6);
+    CREATE TRIGGER tr1 AFTER INSERT ON t1 BEGIN SELECT 1 ; END ;
+    SELECT count(*) FROM sqlite_master;
+  }
+} {2}
+do_test triggerC-12.2 {
+  db eval { SELECT * FROM t1 } {
+    if {$a == 3} { execsql { DROP TRIGGER tr1 } }
+  }
+  execsql { SELECT count(*) FROM sqlite_master }
+} {1}
+
 
 
 finish_test
