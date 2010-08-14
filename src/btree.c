@@ -7677,7 +7677,7 @@ static int checkTreePage(
     cellStart = hdr + 12 - 4*pPage->leaf;
     for(i=0; i<nCell; i++){
       int pc = get2byte(&data[cellStart+i*2]);
-      u16 size = 1024;
+      u32 size = 65536;
       int j;
       if( pc<=usableSize-4 ){
         size = cellSizePtr(pPage, &data[pc]);

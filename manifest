@@ -1,5 +1,8 @@
-C Add\stest\scase\sto\se_expr.test.
-D 2010-08-14T18:32:24
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Adjustments\sfor\sbetter\s64K\spage\ssize\shandling.
+D 2010-08-14T21:21:25
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -113,7 +116,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 51d83300fe0baee39405c416ceb19a58ed30a8ed
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c f5758ebc3601b57ed8510b97b3d4cff8dcaef995
+F src/btree.c 083ced0941ef7c3bcb667b7319114ab492ed4325
 F src/btree.h b4ba2fdf6b64c7c376bdfffa826af6b786b151d9
 F src/btreeInt.h 5b034ff54800046cc5870605d683ac1f9134bd99
 F src/build.c 0018d49629fc4807100c988dd191dd95e185bb38
@@ -227,7 +230,7 @@ F src/vdbeblob.c 258a6010ba7a82b72b327fb24c55790655689256
 F src/vdbemem.c e5673f81a2381b35c60e73ef0a8502be2ab1041e
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c 0e8e0cb30dffb078367e843e84e37ef99236c7e4
-F src/wal.c c79ae356eb124ba2ca4e9842e30bc1fa9c0ef273
+F src/wal.c c2d20c37c594e8d67facb273184fcd70e881bd02
 F src/wal.h 96669b645e27cd5a111ba59f0cae7743a207bc3c
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 7db3e41c2a846f9deeb24f1bbb75461b4010b7b5
@@ -843,7 +846,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 7dd78eb7974ec7c40af3fcf2b125ca5bc0766b5c
-R 0228d9fad28861af037393c6d2923e36
-U dan
-Z 43f60defab7e944b5b137eea1702bf95
+P db9539f2ceabd3c5a3eb5d4701f80f4e7da9344d
+R 1a92e64b60334d2b1f13f1288894a05a
+U drh
+Z cb5fbd482dc54c48c890fe543adb260b
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMZwjYoxKgR168RlERAuTTAKCAlGN4ms1osdDGqkAZEJOT1U/ayQCeKWVo
+j5q8jHm2fn070zRuR44G9+w=
+=r7zM
+-----END PGP SIGNATURE-----

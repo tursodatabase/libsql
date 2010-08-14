@@ -292,6 +292,10 @@ typedef struct WalCkptInfo WalCkptInfo;
 **
 ** The actual header in the wal-index consists of two copies of this
 ** object.
+**
+** The szPage value can be any power of 2 between 512 and 32768, inclusive.
+** Or it can be 1 to represent a 65536-byte page.  The latter case was
+** added in 3.7.1 when support for 64K pages was added.  
 */
 struct WalIndexHdr {
   u32 iVersion;                   /* Wal-index version */
@@ -299,7 +303,7 @@ struct WalIndexHdr {
   u32 iChange;                    /* Counter incremented each transaction */
   u8 isInit;                      /* 1 when initialized */
   u8 bigEndCksum;                 /* True if checksums in WAL are big-endian */
-  u16 szPage;                     /* Database page size in bytes */
+  u16 szPage;                     /* Database page size in bytes. 1==64K */
   u32 mxFrame;                    /* Index of last valid frame in the WAL */
   u32 nPage;                      /* Size of database in pages */
   u32 aFrameCksum[2];             /* Checksum of last frame in log */
@@ -1131,7 +1135,9 @@ static int walIndexRecover(Wal *pWal){
       if( nTruncate ){
         pWal->hdr.mxFrame = iFrame;
         pWal->hdr.nPage = nTruncate;
-        pWal->hdr.szPage = (szPage>=0x10000) ? (szPage>>16) : szPage;
+        pWal->hdr.szPage = (szPage&0xff00) | (szPage>>16);
+        testcase( szPage<=32768 );
+        testcase( szPage>=65536 );
         aFrameCksum[0] = pWal->hdr.aFrameCksum[0];
         aFrameCksum[1] = pWal->hdr.aFrameCksum[1];
       }
@@ -1525,8 +1531,9 @@ static int walCheckpoint(
   int i;                          /* Loop counter */
   volatile WalCkptInfo *pInfo;    /* The checkpoint status information */
 
-  szPage = pWal->hdr.szPage;
-  if( szPage<512 ) szPage <<= 16;
+  szPage = (pWal->hdr.szPage&0xfe00) + ((pWal->hdr.szPage&0x0001)<<16);
+  testcase( szPage<=32768 );
+  testcase( szPage>=65536 );
   if( pWal->hdr.mxFrame==0 ) return SQLITE_OK;
 
   /* Allocate the iterator */
@@ -1728,8 +1735,9 @@ static int walIndexTryHdr(Wal *pWal, int *pChanged){
   if( memcmp(&pWal->hdr, &h1, sizeof(WalIndexHdr)) ){
     *pChanged = 1;
     memcpy(&pWal->hdr, &h1, sizeof(WalIndexHdr));
-    pWal->szPage = pWal->hdr.szPage;
-    if( pWal->szPage<512 ) pWal->szPage <<= 16;
+    pWal->szPage = (pWal->hdr.szPage&0xfe00) + ((pWal->hdr.szPage&0x0001)<<16);
+    testcase( pWal->szPage<=32768 );
+    testcase( pWal->szPage>=65536 );
   }
 
   /* The header was successfully read. Return zero. */
@@ -2162,7 +2170,9 @@ int sqlite3WalRead(
     int sz;
     i64 iOffset;
     sz = pWal->hdr.szPage;
-    if( sz<512 ) sz <<= 16;
+    sz = (pWal->hdr.szPage&0xfe00) + ((pWal->hdr.szPage&0x0001)<<16);
+    testcase( sz<=32768 );
+    testcase( sz>=65536 );
     iOffset = walFrameOffset(iRead, sz) + WAL_FRAME_HDRSIZE;
     *pInWal = 1;
     /* testcase( IS_BIG_INT(iOffset) ); // requires a 4GiB WAL */
@@ -2541,7 +2551,9 @@ int sqlite3WalFrames(
 
   if( rc==SQLITE_OK ){
     /* Update the private copy of the header. */
-    pWal->hdr.szPage = szPage>=0x10000 ? (szPage >> 16) : szPage;
+    pWal->hdr.szPage = (szPage&0xff00) | (szPage>>16);
+    testcase( szPage<=32768 );
+    testcase( szPage>=65536 );
     pWal->hdr.mxFrame = iFrame;
     if( isCommit ){
       pWal->hdr.iChange++;
