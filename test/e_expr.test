@@ -446,7 +446,158 @@ do_execsql_test e_expr-10.4.5 { SELECT typeof(X'53514C697465')     } blob
 
 # EVIDENCE-OF: R-23914-51476 A literal value can also be the token
 # "NULL".
+#
 do_execsql_test e_expr-10.5.1 { SELECT NULL         } {{}}
 do_execsql_test e_expr-10.5.2 { SELECT typeof(NULL) } {null}
+
+#-------------------------------------------------------------------------
+# Test statements related to bound parameters
+#
+
+proc parameter_test {tn sql params result} {
+  set stmt [sqlite3_prepare_v2 db $sql -1]
+
+  foreach {number name} $params {
+    set nm [sqlite3_bind_parameter_name $stmt $number]
+    do_test $tn.name.$number [list set {} $nm] $name
+    sqlite3_bind_int $stmt $number [expr -1 * $number]
+  }
+
+  sqlite3_step $stmt
+
+  set res [list]
+  for {set i 0} {$i < [sqlite3_column_count $stmt]} {incr i} {
+    lappend res [sqlite3_column_text $stmt $i]
+  }
+
+  set rc [sqlite3_finalize $stmt]
+  do_test $tn.rc [list set {} $rc] SQLITE_OK
+  do_test $tn.res [list set {} $res] $result
+}
+
+# EVIDENCE-OF: R-33509-39458 A question mark followed by a number NNN
+# holds a spot for the NNN-th parameter. NNN must be between 1 and
+# SQLITE_MAX_VARIABLE_NUMBER.
+#
+set mvn $SQLITE_MAX_VARIABLE_NUMBER
+parameter_test e_expr-11.1 "
+  SELECT ?1, ?123, ?$SQLITE_MAX_VARIABLE_NUMBER, ?123, ?4
+"   "1 ?1  123 ?123 $mvn ?$mvn 4 ?4"   "-1 -123 -$mvn -123 -4"
+
+set errmsg "variable number must be between ?1 and ?$SQLITE_MAX_VARIABLE_NUMBER"
+foreach {tn param_number} [list \
+  2  0                                    \
+  3  [expr $SQLITE_MAX_VARIABLE_NUMBER+1] \
+  4  [expr $SQLITE_MAX_VARIABLE_NUMBER+2] \
+  5  12345678903456789034567890234567890  \
+  6  2147483648                           \
+  7  2147483649                           \
+  8  4294967296                           \
+  9  4294967297                           \
+  10 9223372036854775808                  \
+  11 9223372036854775809                  \
+  12 18446744073709551616                 \
+  13 18446744073709551617                 \
+] {
+  do_catchsql_test e_expr-11.1.$tn "SELECT ?$param_number" [list 1 $errmsg]
+}
+
+# EVIDENCE-OF: R-33670-36097 A question mark that is not followed by a
+# number creates a parameter with a number one greater than the largest
+# parameter number already assigned.
+#
+# EVIDENCE-OF: R-42938-07030 If this means the parameter number is
+# greater than SQLITE_MAX_VARIABLE_NUMBER, it is an error.
+#
+parameter_test e_expr-11.2.1 "SELECT ?"          {1 {}}       -1
+parameter_test e_expr-11.2.2 "SELECT ?, ?"       {1 {} 2 {}}  {-1 -2}
+parameter_test e_expr-11.2.3 "SELECT ?5, ?"      {5 ?5 6 {}}  {-5 -6}
+parameter_test e_expr-11.2.4 "SELECT ?, ?5"      {1 {} 5 ?5}  {-1 -5}
+parameter_test e_expr-11.2.5 "SELECT ?, ?456, ?" {
+  1 {} 456 ?456 457 {}
+}  {-1 -456 -457}
+parameter_test e_expr-11.2.5 "SELECT ?, ?456, ?4, ?" {
+  1 {} 456 ?456 4 ?4 457 {}
+}  {-1 -456 -4 -457}
+foreach {tn sql} [list                           \
+  1  "SELECT ?$mvn, ?"                           \
+  2  "SELECT ?[expr $mvn-5], ?, ?, ?, ?, ?, ?"   \
+  3  "SELECT ?[expr $mvn], ?5, ?6, ?"            \
+] {
+  do_catchsql_test e_expr-11.3.$tn $sql [list 1 {too many SQL variables}]
+}
+
+# EVIDENCE-OF: R-11620-22743 A colon followed by an identifier name
+# holds a spot for a named parameter with the name :AAAA.
+#
+# Identifiers in SQLite consist of alphanumeric, '_' and '$' characters,
+# and any UTF characters with codepoints larger than 127 (non-ASCII 
+# characters).
+#
+parameter_test e_expr-11.2.1 {SELECT :AAAA}         {1 :AAAA}       -1
+parameter_test e_expr-11.2.2 {SELECT :123}          {1 :123}        -1
+parameter_test e_expr-11.2.3 {SELECT :__}           {1 :__}         -1
+parameter_test e_expr-11.2.4 {SELECT :_$_}          {1 :_$_}        -1
+parameter_test e_expr-11.2.5 "
+  SELECT :\u0e40\u0e2d\u0e28\u0e02\u0e39\u0e40\u0e2d\u0e25
+" "1 :\u0e40\u0e2d\u0e28\u0e02\u0e39\u0e40\u0e2d\u0e25" -1
+parameter_test e_expr-11.2.6 "SELECT :\u0080" "1 :\u0080" -1
+
+# EVIDENCE-OF: R-49783-61279 An "at" sign works exactly like a colon,
+# except that the name of the parameter created is @AAAA.
+#
+parameter_test e_expr-11.3.1 {SELECT @AAAA}         {1 @AAAA}       -1
+parameter_test e_expr-11.3.2 {SELECT @123}          {1 @123}        -1
+parameter_test e_expr-11.3.3 {SELECT @__}           {1 @__}         -1
+parameter_test e_expr-11.3.4 {SELECT @_$_}          {1 @_$_}        -1
+parameter_test e_expr-11.3.5 "
+  SELECT @\u0e40\u0e2d\u0e28\u0e02\u0e39\u0e40\u0e2d\u0e25
+" "1 @\u0e40\u0e2d\u0e28\u0e02\u0e39\u0e40\u0e2d\u0e25" -1
+parameter_test e_expr-11.3.6 "SELECT @\u0080" "1 @\u0080" -1
+
+# EVIDENCE-OF: R-62610-51329 A dollar-sign followed by an identifier
+# name also holds a spot for a named parameter with the name $AAAA.
+#
+# EVIDENCE-OF: R-55025-21042 The identifier name in this case can
+# include one or more occurrences of "::" and a suffix enclosed in
+# "(...)" containing any text at all.
+#
+# Note: Looks like an identifier cannot consist entirely of "::" 
+# characters or just a suffix. Also, the other named variable characters
+# (: and @) work the same way internally. Why not just document it that way?
+#
+parameter_test e_expr-11.4.1 {SELECT $AAAA}         {1 $AAAA}       -1
+parameter_test e_expr-11.4.2 {SELECT $123}          {1 $123}        -1
+parameter_test e_expr-11.4.3 {SELECT $__}           {1 $__}         -1
+parameter_test e_expr-11.4.4 {SELECT $_$_}          {1 $_$_}        -1
+parameter_test e_expr-11.4.5 "
+  SELECT \$\u0e40\u0e2d\u0e28\u0e02\u0e39\u0e40\u0e2d\u0e25
+" "1 \$\u0e40\u0e2d\u0e28\u0e02\u0e39\u0e40\u0e2d\u0e25" -1
+parameter_test e_expr-11.4.6 "SELECT \$\u0080" "1 \$\u0080" -1
+
+parameter_test e_expr-11.5.1 {SELECT $::::a(++--++)} {1 $::::a(++--++)} -1
+parameter_test e_expr-11.5.2 {SELECT $::a()} {1 $::a()} -1
+parameter_test e_expr-11.5.3 {SELECT $::1(::#$)} {1 $::1(::#$)} -1
+ 
+# EVIDENCE-OF: R-11370-04520 Named parameters are also numbered. The
+# number assigned is one greater than the largest parameter number
+# already assigned.
+#
+# EVIDENCE-OF: R-42620-22184 If this means the parameter would be
+# assigned a number greater than SQLITE_MAX_VARIABLE_NUMBER, it is an
+# error.
+#
+parameter_test e_expr-11.6.1 "SELECT ?, @abc"    {1 {} 2 @abc} {-1 -2}
+parameter_test e_expr-11.6.2 "SELECT ?123, :a1"  {123 ?123 124 :a1} {-123 -124}
+parameter_test e_expr-11.6.3 {SELECT $a, ?8, ?, $b, ?2, $c} {
+  1 $a 8 ?8 9 {} 10 $b 2 ?2 11 $c
+} {-1 -8 -9 -10 -2 -11}
+foreach {tn sql} [list                           \
+  1  "SELECT ?$mvn, \$::a"                       \
+  2  "SELECT ?$mvn, ?4, @a1"                     \
+  3  "SELECT ?[expr $mvn-2], :bag, @123, \$x"    \
+] {
+  do_catchsql_test e_expr-11.7.$tn $sql [list 1 {too many SQL variables}]
+}
 
 finish_test
