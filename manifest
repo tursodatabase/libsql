@@ -1,5 +1,8 @@
-C Add\stests\sfor\sdifferent\spage\ssizes\sto\swal.test.\sIncluding\s64K\spages.
-D 2010-08-16T19:23:02
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Remove\san\ssuperfluous\sbranch\sfrom\spager.c.
+D 2010-08-16T20:02:10
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -156,7 +159,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c 11194cbcf6a57456e58022dc537ab8c3497d9bb9
 F src/os_win.c 51cb62f76262d961ea4249489383d714501315a7
-F src/pager.c 6d9ceacc880409d327e23c344d882604122ed401
+F src/pager.c 5a4fdd063b71f9cd9b5f561fd205941167efeb83
 F src/pager.h ef8c8f71ab022cc2fff768a1175dd32355be9dcd
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
@@ -843,7 +846,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P d4a26bb629bc739a4bca16b5a876199aa9ecda43
-R 1ccd99e93014e351a49a88a25e3c3422
-U dan
-Z fbbe38304cb5ec697d8b7efa74c06093
+P d95bcc052910cfd4848afe0d32f717506ad5a789
+R 7f1ad401d5d30eb8789317264f68cef9
+U drh
+Z b110b81e4bbc30011f2058afc954649c
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMaZlGoxKgR168RlERArY4AJ4kGrynz7zzjVX9UDbRDl5/3v+PggCeJDeA
+SaO0LUHGohOU+jh0oR4OoE4=
+=VOx3
+-----END PGP SIGNATURE-----

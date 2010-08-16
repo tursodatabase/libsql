@@ -6567,9 +6567,8 @@ int sqlite3PagerOpenWal(
   if( !pPager->tempFile && !pPager->pWal ){
     if( !sqlite3PagerWalSupported(pPager) ) return SQLITE_CANTOPEN;
 
-    if( isOpen(pPager->jfd) ){
-      sqlite3OsClose(pPager->jfd);
-    }
+    /* Close any rollback journal previously open */
+    sqlite3OsClose(pPager->jfd);
 
     /* Open the connection to the log file. If this operation fails, 
     ** (e.g. due to malloc() failure), unlock the database file and 
