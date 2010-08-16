@@ -1706,7 +1706,7 @@ static int walIndexTryHdr(Wal *pWal, int *pChanged){
   /* The first page of the wal-index must be mapped at this point. */
   assert( pWal->nWiData>0 && pWal->apWiData[0] );
 
-  /* Read the header. This might happen currently with a write to the
+  /* Read the header. This might happen concurrently with a write to the
   ** same area of shared memory on a different CPU in a SMP,
   ** meaning it is possible that an inconsistent snapshot is read
   ** from the file. If this happens, return non-zero.

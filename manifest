@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Add\sALWAYS()\smacros\sin\swal.c\sto\scover\sbranches\sthat\sare\sno\slonger\sreachable\nfollowing\sthe\spager\srefactoring.
-D 2010-08-16T14:18:00
+C Fix\sa\stypo\sin\sa\scomment\sin\swal.c.\s\sNo\scode\schanges.
+D 2010-08-16T16:31:44
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -230,7 +230,7 @@ F src/vdbeblob.c 258a6010ba7a82b72b327fb24c55790655689256
 F src/vdbemem.c e5673f81a2381b35c60e73ef0a8502be2ab1041e
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c 0e8e0cb30dffb078367e843e84e37ef99236c7e4
-F src/wal.c 6b170507776d01e1af01d19762564b75f1e0c98d
+F src/wal.c 241b963c0244b26eba2d5de63fb96a94dad0bc3b
 F src/wal.h 96669b645e27cd5a111ba59f0cae7743a207bc3c
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 7db3e41c2a846f9deeb24f1bbb75461b4010b7b5
@@ -846,14 +846,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P faf1974e2de321bfefb68b81d702ae69771933ef
-R d448d7a55c7f1edda8088cf8cf2f24b3
+P 24f24c927c77bb3bb4d26a23dd5d94f964db8033
+R d04163fd1f7348336648868a2a4ab08f
 U drh
-Z 0dbfc6c0fd736ea91ec08670fb6d2090
+Z a03fc86522180e0948d68c0cc84f776d
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMaUicoxKgR168RlERAqtPAJ97MonTPU5sZIrsJVkp01tYjFeJXACdFB90
-bjtppN7EGnG+XgMC6cgZQ8I=
-=OPhy
+iD8DBQFMaWf1oxKgR168RlERAmiQAJ9VgSroQGOcjT5p2FV9QqaWvXB1+ACfc4XT
+3pX56Rvqq1NdrK3kl/RP/5U=
+=9oof
 -----END PGP SIGNATURE-----
