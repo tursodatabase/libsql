@@ -614,4 +614,209 @@ do_test e_expr-11.7.1 {
 } {NULL NULL NULL NULL}
 do_test e_expr-11.7.1 { sqlite3_finalize $stmt } SQLITE_OK
 
+#-------------------------------------------------------------------------
+# "Test" the syntax diagrams in lang_expr.html.
+#
+# EVIDENCE-OF: R-04177-20688 -- syntax diagram signed-number
+#
+do_execsql_test e_expr-12.1.1 { SELECT 0, +0, -0 } {0 0 0}
+do_execsql_test e_expr-12.1.2 { SELECT 1, +1, -1 } {1 1 -1}
+do_execsql_test e_expr-12.1.3 { SELECT 2, +2, -2 } {2 2 -2}
+do_execsql_test e_expr-12.1.4 { 
+  SELECT 1.4, +1.4, -1.4 
+} {1.4 1.4 -1.4}
+do_execsql_test e_expr-12.1.5 { 
+  SELECT 1.5e+5, +1.5e+5, -1.5e+5 
+} {150000.0 150000.0 -150000.0}
+do_execsql_test e_expr-12.1.6 { 
+  SELECT 0.0001, +0.0001, -0.0001 
+} {0.0001 0.0001 -0.0001}
+
+# EVIDENCE-OF: R-30740-26723 -- syntax diagram literal-value
+#
+set sqlite_current_time 1
+do_execsql_test e_expr-12.2.1 {SELECT 123}               {123}
+do_execsql_test e_expr-12.2.2 {SELECT 123.4e05}          {12340000.0}
+do_execsql_test e_expr-12.2.3 {SELECT 'abcde'}           {abcde}
+do_execsql_test e_expr-12.2.4 {SELECT X'414243'}         {ABC}
+do_execsql_test e_expr-12.2.5 {SELECT NULL}              {{}}
+do_execsql_test e_expr-12.2.6 {SELECT CURRENT_TIME}      {00:00:01}
+do_execsql_test e_expr-12.2.7 {SELECT CURRENT_DATE}      {1970-01-01}
+do_execsql_test e_expr-12.2.8 {SELECT CURRENT_TIMESTAMP} {{1970-01-01 00:00:01}}
+set sqlite_current_time 0
+
+# EVIDENCE-OF: R-57598-59332 -- syntax diagram expr
+#
+file delete -force test.db2
+execsql {
+  ATTACH 'test.db2' AS dbname;
+  CREATE TABLE dbname.tblname(cname);
+}
+
+proc glob {args} {return 1}
+db function glob glob
+db function match glob
+db function regexp glob
+
+foreach {tn expr} {
+  1 123
+  2 123.4e05
+  3 'abcde'
+  4 X'414243'
+  5 NULL
+  6 CURRENT_TIME
+  7 CURRENT_DATE
+  8 CURRENT_TIMESTAMP
+
+  9 ?
+ 10 ?123
+ 11 @hello
+ 12 :world
+ 13 $tcl
+ 14 $tcl(array)
+  
+  15 cname
+  16 tblname.cname
+  17 dbname.tblname.cname
+
+  18 "+ EXPR"
+  19 "- EXPR"
+  20 "NOT EXPR"
+  21 "~ EXPR"
+
+  22 "EXPR1 || EXPR2"
+  23 "EXPR1 * EXPR2"
+  24 "EXPR1 / EXPR2"
+  25 "EXPR1 % EXPR2"
+  26 "EXPR1 + EXPR2"
+  27 "EXPR1 - EXPR2"
+  28 "EXPR1 << EXPR2"
+  29 "EXPR1 >> EXPR2"
+  30 "EXPR1 & EXPR2"
+  31 "EXPR1 | EXPR2"
+  32 "EXPR1 < EXPR2"
+  33 "EXPR1 <= EXPR2"
+  34 "EXPR1 > EXPR2"
+  35 "EXPR1 >= EXPR2"
+  36 "EXPR1 = EXPR2"
+  37 "EXPR1 == EXPR2"
+  38 "EXPR1 != EXPR2"
+  39 "EXPR1 <> EXPR2"
+  40 "EXPR1 IS EXPR2"
+  41 "EXPR1 IS NOT EXPR2"
+  42 "EXPR1 AND EXPR2"
+  43 "EXPR1 OR EXPR2"
+ 
+  44 "count(*)"
+  45 "count(DISTINCT EXPR)"
+  46 "substr(EXPR, 10, 20)"
+  47 "changes()"
+ 
+  48 "( EXPR )"
+ 
+  49 "CAST ( EXPR AS integer )"
+  50 "CAST ( EXPR AS 'abcd' )"
+  51 "CAST ( EXPR AS 'ab$ $cd' )"
+ 
+  52 "EXPR COLLATE nocase"
+  53 "EXPR COLLATE binary"
+ 
+  54 "EXPR1 LIKE EXPR2"
+  55 "EXPR1 LIKE EXPR2 ESCAPE EXPR"
+  56 "EXPR1 GLOB EXPR2"
+  57 "EXPR1 GLOB EXPR2 ESCAPE EXPR"
+  58 "EXPR1 REGEXP EXPR2"
+  59 "EXPR1 REGEXP EXPR2 ESCAPE EXPR"
+  60 "EXPR1 MATCH EXPR2"
+  61 "EXPR1 MATCH EXPR2 ESCAPE EXPR"
+  62 "EXPR1 NOT LIKE EXPR2"
+  63 "EXPR1 NOT LIKE EXPR2 ESCAPE EXPR"
+  64 "EXPR1 NOT GLOB EXPR2"
+  65 "EXPR1 NOT GLOB EXPR2 ESCAPE EXPR"
+  66 "EXPR1 NOT REGEXP EXPR2"
+  67 "EXPR1 NOT REGEXP EXPR2 ESCAPE EXPR"
+  68 "EXPR1 NOT MATCH EXPR2"
+  69 "EXPR1 NOT MATCH EXPR2 ESCAPE EXPR"
+ 
+  70 "EXPR ISNULL"
+  71 "EXPR NOTNULL"
+  72 "EXPR NOT NULL"
+ 
+  73 "EXPR1 IS EXPR2"
+  74 "EXPR1 IS NOT EXPR2"
+
+  75 "EXPR NOT BETWEEN EXPR1 AND EXPR2"
+  76 "EXPR BETWEEN EXPR1 AND EXPR2"
+
+  77 "EXPR NOT IN (SELECT cname FROM tblname)"
+  78 "EXPR NOT IN (1)"
+  79 "EXPR NOT IN (1, 2, 3)"
+  80 "EXPR NOT IN tblname"
+  81 "EXPR NOT IN dbname.tblname"
+  82 "EXPR IN (SELECT cname FROM tblname)"
+  83 "EXPR IN (1)"
+  84 "EXPR IN (1, 2, 3)"
+  85 "EXPR IN tblname"
+  86 "EXPR IN dbname.tblname"
+
+  87 "EXISTS (SELECT cname FROM tblname)"
+  88 "NOT EXISTS (SELECT cname FROM tblname)"
+
+  89 "CASE EXPR WHEN EXPR1 THEN EXPR2 ELSE EXPR END"
+  90 "CASE EXPR WHEN EXPR1 THEN EXPR2 END"
+  91 "CASE EXPR WHEN EXPR1 THEN EXPR2 WHEN EXPR THEN EXPR1 ELSE EXPR2 END"
+  92 "CASE EXPR WHEN EXPR1 THEN EXPR2 WHEN EXPR THEN EXPR1 END"
+  93 "CASE WHEN EXPR1 THEN EXPR2 ELSE EXPR END"
+  94 "CASE WHEN EXPR1 THEN EXPR2 END"
+  95 "CASE WHEN EXPR1 THEN EXPR2 WHEN EXPR THEN EXPR1 ELSE EXPR2 END"
+  96 "CASE WHEN EXPR1 THEN EXPR2 WHEN EXPR THEN EXPR1 END"
+} {
+
+  # If the expression string being parsed contains "EXPR2", then replace
+  # string "EXPR1" and "EXPR2" with arbitrary SQL expressions. If it 
+  # contains "EXPR", then replace EXPR with an arbitrary SQL expression.
+  # 
+  set elist [list $expr]
+  if {[string match *EXPR2* $expr]} {
+    set elist [list]
+    foreach {e1 e2} { cname "34+22" } {
+      lappend elist [string map [list EXPR1 $e1 EXPR2 $e2] $expr]
+    }
+  } 
+  if {[string match *EXPR* $expr]} {
+    set elist2 [list]
+    foreach el $elist {
+      foreach e { cname "34+22" } {
+        lappend elist2 [string map [list EXPR $e] $el]
+      }
+    }
+    set elist $elist2
+  }
+
+  set x 0
+  foreach e $elist {
+    incr x
+    do_test e_expr-12.3.$tn.$x { 
+      set rc [catch { execsql "SELECT $e FROM tblname" } msg]
+    } {0}
+  }
+}
+
+# EVIDENCE-OF: R-49462-56079 -- syntax diagram raise-function
+#
+foreach {tn raiseexpr} {
+  1 "RAISE(IGNORE)"
+  2 "RAISE(ROLLBACK, 'error message')"
+  3 "RAISE(ABORT, 'error message')"
+  4 "RAISE(FAIL, 'error message')"
+} {
+  do_execsql_test e_expr-12.4.$tn "
+    CREATE TRIGGER dbname.tr$tn BEFORE DELETE ON tblname BEGIN
+      SELECT $raiseexpr ;
+    END;
+  " {}
+}
+
+
 finish_test
+
