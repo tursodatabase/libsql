@@ -2188,7 +2188,7 @@ int sqlite3WalRead(
 ** Return the size of the database in pages (or zero, if unknown).
 */
 Pgno sqlite3WalDbsize(Wal *pWal){
-  if( pWal && pWal->readLock>=0 ){
+  if( pWal && ALWAYS(pWal->readLock>=0) ){
     return pWal->hdr.nPage;
   }
   return 0;
@@ -2267,7 +2267,7 @@ int sqlite3WalEndWriteTransaction(Wal *pWal){
 */
 int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
   int rc = SQLITE_OK;
-  if( pWal->writeLock ){
+  if( ALWAYS(pWal->writeLock) ){
     Pgno iMax = pWal->hdr.mxFrame;
     Pgno iFrame;
   
