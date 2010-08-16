@@ -1,5 +1,5 @@
-C Add\stest\scases\sdesigned\sto\sexercise\sall\ssyntax\sdiagram\spaths\sin\slang_expr.html
-D 2010-08-16T18:26:31
+C Add\stests\sfor\sdifferent\spage\ssizes\sto\swal.test.\sIncluding\s64K\spages.
+D 2010-08-16T19:23:02
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -782,7 +782,7 @@ F test/vtabE.test 7c4693638d7797ce2eda17af74292b97e705cc61
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
-F test/wal.test 0369e9ef9ac9b0f9a4a274819d83489578ccaef1
+F test/wal.test a63947f76decb58d7a707d152cb1c34187e54cc6
 F test/wal2.test 223f3e14d475730af772a7f5862d4bcfa7565c3a
 F test/wal3.test 695ea0f6c516423c611891df9a285aacd33344e3
 F test/wal4.test 3404b048fa5e10605facaf70384e6d2943412e30
@@ -843,7 +843,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P d854a3d41c68f785c909c159cd9ca2154c64001a
-R 6da9ee7cb13dd395d9512044025cccd7
+P d4a26bb629bc739a4bca16b5a876199aa9ecda43
+R 1ccd99e93014e351a49a88a25e3c3422
 U dan
-Z 71f38616e78b2b8aca56702050cbc0eb
+Z fbbe38304cb5ec697d8b7efa74c06093

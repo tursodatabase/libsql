@@ -58,7 +58,7 @@ proc log_deleted {logfile} {
 # wal-6.*: Test creating databases with different page sizes.
 #
 #
-
+#
 do_test wal-0.1 {
   execsql { PRAGMA auto_vacuum = 0 }
   execsql { PRAGMA synchronous = normal }
@@ -1443,5 +1443,29 @@ do_test wal-21.2 {
 do_test wal-21.3 {
   execsql { PRAGMA integrity_check }
 } {ok}
+
+#-------------------------------------------------------------------------
+# Test reading and writing of databases with different page-sizes.
+#
+foreach pgsz {512 1024 2048 4096 8192 16384 32768 65536} {
+  do_multiclient_test tn [string map [list %PGSZ% $pgsz] {
+    do_test e_expr-22.%PGSZ%.$tn.1 {
+      sql1 {
+        PRAGMA main.page_size = %PGSZ%;
+        PRAGMA auto_vacuum = 0;
+        PRAGMA journal_mode = WAL;
+        CREATE TABLE t1(x UNIQUE);
+        INSERT INTO t1 SELECT randomblob(800);
+        INSERT INTO t1 SELECT randomblob(800);
+        INSERT INTO t1 SELECT randomblob(800);
+      }
+    } {wal}
+    do_test e_expr-22.%PGSZ%.$tn.2 { sql2 { PRAGMA integrity_check } } {ok}
+    do_test e_expr-22.%PGSZ%.$tn.3 {
+      sql1 {PRAGMA wal_checkpoint}
+      expr {[file size test.db] % %PGSZ%}
+    } {0}
+  }]
+}
 
 finish_test
