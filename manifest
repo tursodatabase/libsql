@@ -1,5 +1,5 @@
-C Invoke\ssqlite3_log()\swhenever\sone\sor\smore\sframes\sare\srecovered\sfrom\sa\sWAL\sfile.
-D 2010-08-17T14:52:23
+C Add\stests\sfor\sthe\sBETWEEN\soperator\sto\se_expr.test.
+D 2010-08-17T16:06:09
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -340,7 +340,7 @@ F test/descidx2.test 9f1a0c83fd57f8667c82310ca21b30a350888b5d
 F test/descidx3.test fe720e8b37d59f4cef808b0bf4e1b391c2e56b6f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
-F test/e_expr.test cf59df3421b01df3e6c9a64b75bce17679122de3
+F test/e_expr.test 27827ef76338a181f997592760d9f8f702c150e9
 F test/e_fkey.test 6721a741c6499b3ab7e5385923233343c8f1ad05
 F test/e_fts3.test 75bb0aee26384ef586165e21018a17f7cd843469
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
@@ -843,7 +843,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 07570ce38051a05d6e8a71e39766850f6719ac07
-R 9dc78c7561a603e522c0bb81eb112898
+P e05089aaefe02ec59a1923812349471a78075d29
+R f6617952e848f11c3cd7a85d48d9906b
 U dan
-Z d52d7cfd0d7a3de647988329bc045380
+Z 2833d70ff5cee480c0ad0f9b9cb3be0b

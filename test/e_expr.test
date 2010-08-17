@@ -817,6 +817,70 @@ foreach {tn raiseexpr} {
   " {}
 }
 
+#-------------------------------------------------------------------------
+# Test the statements related to the BETWEEN operator.
+#
+# EVIDENCE-OF: R-40079-54503 The BETWEEN operator is logically
+# equivalent to a pair of comparisons. "x BETWEEN y AND z" is equivalent
+# to "x>=y AND x<=z" except that with BETWEEN, the x expression is
+# only evaluated once.
+#
+db func x x
+proc x {} { incr ::xcount ; return [expr $::x] }
+foreach {tn x expr res nEval} {
+  1  10  "x() >= 5 AND x() <= 15"  1  2
+  2  10  "x() BETWEEN 5 AND 15"    1  1
+
+  3   5  "x() >= 5 AND x() <= 5"   1  2
+  4   5  "x() BETWEEN 5 AND 5"     1  1
+} {
+  do_test e_expr-13.1.$tn {
+    set ::xcount 0
+    set a [execsql "SELECT $expr"]
+    list $::xcount $a
+  } [list $nEval $res]
+}
+
+# EVIDENCE-OF: R-05155-34454 The precedence of the BETWEEN operator is
+# the same as the precedence as operators == and != and LIKE and groups
+# left to right.
+# 
+# Therefore, BETWEEN groups more tightly than operator "AND", but less
+# so than "<".
+#
+do_execsql_test e_expr-13.2.1  { SELECT 1 == 10 BETWEEN 0 AND 2   }  1
+do_execsql_test e_expr-13.2.2  { SELECT (1 == 10) BETWEEN 0 AND 2 }  1
+do_execsql_test e_expr-13.2.3  { SELECT 1 == (10 BETWEEN 0 AND 2) }  0
+do_execsql_test e_expr-13.2.4  { SELECT  6 BETWEEN 4 AND 8 == 1 }    1
+do_execsql_test e_expr-13.2.5  { SELECT (6 BETWEEN 4 AND 8) == 1 }   1
+do_execsql_test e_expr-13.2.6  { SELECT  6 BETWEEN 4 AND (8 == 1) }  0
+
+do_execsql_test e_expr-13.2.7  { SELECT  5 BETWEEN 0 AND 0  != 1 }   1
+do_execsql_test e_expr-13.2.8  { SELECT (5 BETWEEN 0 AND 0) != 1 }   1
+do_execsql_test e_expr-13.2.9  { SELECT  5 BETWEEN 0 AND (0 != 1) }  0
+do_execsql_test e_expr-13.2.10 { SELECT  1 != 0  BETWEEN 0 AND 2  }  1
+do_execsql_test e_expr-13.2.11 { SELECT (1 != 0) BETWEEN 0 AND 2  }  1
+do_execsql_test e_expr-13.2.12 { SELECT  1 != (0 BETWEEN 0 AND 2) }  0
+
+do_execsql_test e_expr-13.2.13  { SELECT 1 LIKE 10 BETWEEN 0 AND 2   }  1
+do_execsql_test e_expr-13.2.14  { SELECT (1 LIKE 10) BETWEEN 0 AND 2 }  1
+do_execsql_test e_expr-13.2.15  { SELECT 1 LIKE (10 BETWEEN 0 AND 2) }  0
+do_execsql_test e_expr-13.2.16  { SELECT  6 BETWEEN 4 AND 8 LIKE 1   }  1
+do_execsql_test e_expr-13.2.17  { SELECT (6 BETWEEN 4 AND 8) LIKE 1  }  1
+do_execsql_test e_expr-13.2.18  { SELECT  6 BETWEEN 4 AND (8 LIKE 1) }  0
+
+do_execsql_test e_expr-13.2.19  { SELECT 0 AND 0 BETWEEN 0 AND 1   } 0
+do_execsql_test e_expr-13.2.20  { SELECT 0 AND (0 BETWEEN 0 AND 1) } 0
+do_execsql_test e_expr-13.2.21  { SELECT (0 AND 0) BETWEEN 0 AND 1 } 1
+do_execsql_test e_expr-13.2.22  { SELECT 0 BETWEEN -1 AND 1 AND 0   } 0
+do_execsql_test e_expr-13.2.23  { SELECT (0 BETWEEN -1 AND 1) AND 0 } 0
+do_execsql_test e_expr-13.2.24  { SELECT 0 BETWEEN -1 AND (1 AND 0) } 1
+
+do_execsql_test e_expr-13.2.25  { SELECT 2 < 3 BETWEEN 0 AND 1   } 1
+do_execsql_test e_expr-13.2.26  { SELECT (2 < 3) BETWEEN 0 AND 1 } 1
+do_execsql_test e_expr-13.2.27  { SELECT 2 < (3 BETWEEN 0 AND 1) } 0
+do_execsql_test e_expr-13.2.28  { SELECT 2 BETWEEN 1 AND 2 < 3    } 0
+do_execsql_test e_expr-13.2.29  { SELECT 2 BETWEEN 1 AND (2 < 3)  } 0
+do_execsql_test e_expr-13.2.30  { SELECT (2 BETWEEN 1 AND 2) < 3  } 1
 
 finish_test
-
