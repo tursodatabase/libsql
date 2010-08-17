@@ -606,17 +606,6 @@ struct PagerSavepoint {
 **   is set to zero in all other states. In PAGER_ERROR state, Pager.errCode 
 **   is always set to SQLITE_FULL, SQLITE_IOERR or one of the SQLITE_IOERR_XXX 
 **   sub-codes.
-**
-**   If Pager.errCode is set to SQLITE_IOERR or one of its subcodes, then
-**   this value is immediately returned when ever any sqlite3PagerXXX() method
-**   that returns an error code is called. If it is set to SQLITE_FULL,
-**   then it is returned whenever any such sqlite3PagerXXX() method except
-**   for PagerAcquire() or PagerLookup() is called.
-**
-**   TODO: Review the SQLITE_FULL/PagerAcquire() exception. Is it a good idea?
-**         If so, are there bugs whereby shared-cache clients can see 
-**         uncommitted data when the pager is in the ERROR state?
-**
 */
 struct Pager {
   sqlite3_vfs *pVfs;          /* OS functions to use for IO */
@@ -1805,8 +1794,6 @@ static void pager_unlock(Pager *pPager){
 ** IOERR sub-codes, the pager enters the ERROR state and the error code
 ** is stored in Pager.errCode. While the pager remains in the ERROR state,
 ** all major API calls on the Pager will immediately return Pager.errCode.
-** Except, if the error-code is SQLITE_FULL, calls to PagerLookup() and
-** PagerAcquire are handled as if the pager were in PAGER_READER state.
 **
 ** The ERROR state indicates that the contents of the pager-cache 
 ** cannot be trusted. This state can be cleared by completely discarding 
@@ -3336,7 +3323,7 @@ void sqlite3PagerSetBusyhandler(
 **
 ** If the pager is in the error state when this function is called, it
 ** is a no-op. The value returned is the error state error code (i.e. 
-** one of SQLITE_IOERR, SQLITE_CORRUPT or SQLITE_FULL).
+** one of SQLITE_IOERR, an SQLITE_IOERR_xxx sub-code or SQLITE_FULL).
 **
 ** Otherwise, if all of the following are true:
 **
@@ -4567,7 +4554,7 @@ static int hasHotJournal(Pager *pPager, int *pExists){
 **
 ** The following operations are also performed by this function.
 **
-**   1) If the pager is currently in PAGER_UNLOCK state (no lock held
+**   1) If the pager is currently in PAGER_OPEN state (no lock held
 **      on the database file), then an attempt is made to obtain a
 **      SHARED lock on the database file. Immediately after obtaining
 **      the SHARED lock, the file-system is checked for a hot-journal,
@@ -4582,14 +4569,9 @@ static int hasHotJournal(Pager *pPager, int *pExists){
 **      the contents of the page cache and rolling back any open journal
 **      file.
 **
-** If the operation described by (2) above is not attempted, and if the
-** pager is in an error state other than SQLITE_FULL when this is called,
-** the error state error code is returned. It is permitted to read the
-** database when in SQLITE_FULL error state.
-**
-** Otherwise, if everything is successful, SQLITE_OK is returned. If an
-** IO error occurs while locking the database, checking for a hot-journal
-** file or rolling back a journal file, the IO error code is returned.
+** If everything is successful, SQLITE_OK is returned. If an IO error 
+** occurs while locking the database, checking for a hot-journal file or 
+** rolling back a journal file, the IO error code is returned.
 */
 int sqlite3PagerSharedLock(Pager *pPager){
   int rc = SQLITE_OK;                /* Return code */
@@ -4874,7 +4856,7 @@ int sqlite3PagerAcquire(
 
   /* If the pager is in the error state, return an error immediately. 
   ** Otherwise, request the page from the PCache layer. */
-  if( pPager->errCode!=SQLITE_OK && pPager->errCode!=SQLITE_FULL ){
+  if( pPager->errCode!=SQLITE_OK ){
     rc = pPager->errCode;
   }else{
     rc = sqlite3PcacheFetch(pPager->pPCache, pgno, 1, ppPage);
@@ -4963,9 +4945,7 @@ pager_acquire_err:
 /*
 ** Acquire a page if it is already in the in-memory cache.  Do
 ** not read the page from disk.  Return a pointer to the page,
-** or 0 if the page is not in cache. Also, return 0 if the 
-** pager is in PAGER_UNLOCK state when this function is called,
-** or if the pager is in an error state other than SQLITE_FULL.
+** or 0 if the page is not in cache. 
 **
 ** See also sqlite3PagerGet().  The difference between this routine
 ** and sqlite3PagerGet() is that _get() will go to the disk and read
@@ -4978,7 +4958,7 @@ DbPage *sqlite3PagerLookup(Pager *pPager, Pgno pgno){
   assert( pPager!=0 );
   assert( pgno!=0 );
   assert( pPager->pPCache!=0 );
-  assert( pPager->eState>=PAGER_READER );
+  assert( pPager->eState>=PAGER_READER && pPager->eState!=PAGER_ERROR );
   sqlite3PcacheFetch(pPager->pPCache, pgno, 0, &pPg);
   return pPg;
 }
@@ -5107,7 +5087,7 @@ static int pager_open_journal(Pager *pPager){
 int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
   int rc = SQLITE_OK;
 
-  if( pPager->errCode ) return pPager->errCode;
+  if( NEVER(pPager->errCode) ) return pPager->errCode;
   assert( pPager->eState>=PAGER_READER && pPager->eState<PAGER_ERROR );
   pPager->subjInMemory = (u8)subjInMemory;
 
