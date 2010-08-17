@@ -4053,9 +4053,14 @@ static int pagerStress(void *p, PgHdr *pPg){
   ** The doNotSpill flag inhibits all cache spilling regardless of whether
   ** or not a sync is required.  This is set during a rollback.
   **
-  ** Spilling is also inhibited when in an error state.
+  ** Spilling is also prohibited when in an error state since that could
+  ** lead to database corruption.   In the current implementaton it 
+  ** is impossible for sqlite3PCacheFetch() to be called with createFlag==1
+  ** while in the error state, hence it is impossible for this routine to
+  ** be called in the error state.  Nevertheless, we include a NEVER()
+  ** test for the error state as a safeguard against future changes.
   */
-  if( pPager->errCode ) return SQLITE_OK;
+  if( NEVER(pPager->errCode) ) return SQLITE_OK;
   if( pPager->doNotSpill ) return SQLITE_OK;
   if( pPager->doNotSyncSpill && (pPg->flags & PGHDR_NEED_SYNC)!=0 ){
     return SQLITE_OK;
