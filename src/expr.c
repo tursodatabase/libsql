@@ -554,13 +554,14 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
   }else if( z[0]=='?' ){
     /* Wildcard of the form "?nnn".  Convert "nnn" to an integer and
     ** use it as the variable number */
-    int i = atoi((char*)&z[1]);
+    i64 i;
+    int bOk = sqlite3Atoi64(&z[1], &i);
     pExpr->iColumn = (ynVar)i;
     testcase( i==0 );
     testcase( i==1 );
     testcase( i==db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER]-1 );
     testcase( i==db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER] );
-    if( i<1 || i>db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER] ){
+    if( bOk==0 || i<1 || i>db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER] ){
       sqlite3ErrorMsg(pParse, "variable number must be between ?1 and ?%d",
           db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER]);
     }

@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C It\sis\sno\slonger\spossible\sto\sreach\spagerStress()\swhile\sin\sthe\serror\sstate,\nso\sput\sa\sNEVER()\saround\sthe\serror\sstate\stest\sof\sthat\sroutine.
-D 2010-08-17T18:37:13
+C Return\san\serror\swhen\sparsing\s"?NNN"\sif\sNNN\sis\sso\slarge\sit\scannot\sbe\sstored\sas\sa\s32-bit\sint.
+D 2010-08-17T19:34:14
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -125,7 +122,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 4f3aadad62c6c9f0d4e5a96718516ac4e3c598df
 F src/date.c 5dd8448a0bfea8d31fb14cff487d0c06ff8c8b20
 F src/delete.c 7ed8a8c8b5f748ece92df173d7e0f7810c899ebd
-F src/expr.c a0fd9c5e248229851077de92f2e9346f2c43ed46
+F src/expr.c 9532d71de52ad7a5523b0a4b9d7d64874560e328
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 58bbf52c6ddd3f64ca40a3230f9e548a83a5cb16
 F src/func.c 464b0dc70618b896c402c574eb04bc5eacf35341
@@ -846,14 +843,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8ac185236e766becdac7248c1ba3dfa42a9464b1
-R 15788ebc670118d1933aed30ce393c67
-U drh
-Z 4d416488630bf985a539466ff7ee6ddb
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMatbcoxKgR168RlERAiVJAKCLNKPoYvUl5GoHta8oDcjdGJE8mACfZs+E
-8kxI6koAtXdn/nw0mMZtkgg=
-=Gyit
------END PGP SIGNATURE-----
+P d7ed463496c4474cc435d032874a4e55d780e74a
+R 3be15ad5597167776a39a56056816d30
+U dan
+Z 8343604ee459a9523d2a5de8f96f92a2
