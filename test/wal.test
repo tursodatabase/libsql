@@ -1449,7 +1449,7 @@ do_test wal-21.3 {
 #
 foreach pgsz {512 1024 2048 4096 8192 16384 32768 65536} {
   do_multiclient_test tn [string map [list %PGSZ% $pgsz] {
-    do_test e_expr-22.%PGSZ%.$tn.1 {
+    do_test wal-22.%PGSZ%.$tn.1 {
       sql1 {
         PRAGMA main.page_size = %PGSZ%;
         PRAGMA auto_vacuum = 0;
@@ -1460,12 +1460,52 @@ foreach pgsz {512 1024 2048 4096 8192 16384 32768 65536} {
         INSERT INTO t1 SELECT randomblob(800);
       }
     } {wal}
-    do_test e_expr-22.%PGSZ%.$tn.2 { sql2 { PRAGMA integrity_check } } {ok}
-    do_test e_expr-22.%PGSZ%.$tn.3 {
+    do_test wal-22.%PGSZ%.$tn.2 { sql2 { PRAGMA integrity_check } } {ok}
+    do_test wal-22.%PGSZ%.$tn.3 {
       sql1 {PRAGMA wal_checkpoint}
       expr {[file size test.db] % %PGSZ%}
     } {0}
   }]
 }
+
+#-------------------------------------------------------------------------
+# Test that when 1 or more pages are recovered from a WAL file, 
+# sqlite3_log() is invoked to report this to the user.
+#
+set walfile [file join [pwd] test.db-wal]
+catch {db close}
+file delete -force test.db
+do_test wal-23.1 {
+  faultsim_delete_and_reopen
+  execsql {
+    CREATE TABLE t1(a, b);
+    PRAGMA journal_mode = WAL;
+    INSERT INTO t1 VALUES(1, 2);
+    INSERT INTO t1 VALUES(3, 4);
+  }
+  faultsim_save_and_close
+
+  sqlite3_shutdown
+  test_sqlite3_log [list lappend ::log]
+  set ::log [list]
+  sqlite3 db test.db
+  execsql { SELECT * FROM t1 }
+} {1 2 3 4}
+do_test wal-23.2 { set ::log } {}
+
+do_test wal-23.3 {
+  db close
+  set ::log [list]
+  faultsim_restore_and_reopen
+  execsql { SELECT * FROM t1 }
+} {1 2 3 4}
+do_test wal-23.4 { 
+  set ::log 
+} [list SQLITE_OK "Recovered 2 frames from WAL file $walfile"]
+
+db close
+sqlite3_shutdown
+test_sqlite3_log
+sqlite3_initialize
 
 finish_test

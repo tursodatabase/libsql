@@ -1,5 +1,5 @@
-C Fix\ssome\snon-ANSI\sC\scode\sin\stest_demovfs.c.\sAlso\schange\sthe\ssame\sfile\sso\sthat\sattempting\sto\sdelete\sa\sfile\sthat\sdoes\snot\sexist\sdoes\snot\sreturn\san\serror.
-D 2010-08-17T05:55:36
+C Invoke\ssqlite3_log()\swhenever\sone\sor\smore\sframes\sare\srecovered\sfrom\sa\sWAL\sfile.
+D 2010-08-17T14:52:23
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -177,7 +177,7 @@ F src/sqliteLimit.h 4ae9b005144400984cbcafd4d7c09659bb2af92a
 F src/status.c 496913d4e8441195f6f2a75b1c95993a45b9b30b
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 5cd96419fb6c771006f064196ccc70c29d01bec7
-F src/test1.c 0bfcda72f9f8ab5c0e90fac05cc22c1c21131ddf
+F src/test1.c 55005c9781b157b1d215ba145768783b9abae78c
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 4c21700c73a890a47fc685c1097bfb661346ac94
 F src/test4.c 0528360b5025688002a5feb6be906ddce52eaaee
@@ -227,7 +227,7 @@ F src/vdbeblob.c 258a6010ba7a82b72b327fb24c55790655689256
 F src/vdbemem.c e5673f81a2381b35c60e73ef0a8502be2ab1041e
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c 0e8e0cb30dffb078367e843e84e37ef99236c7e4
-F src/wal.c 241b963c0244b26eba2d5de63fb96a94dad0bc3b
+F src/wal.c 109c45210e5b01c6fd3de92805488a2f6895e17f
 F src/wal.h 96669b645e27cd5a111ba59f0cae7743a207bc3c
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 7db3e41c2a846f9deeb24f1bbb75461b4010b7b5
@@ -782,7 +782,7 @@ F test/vtabE.test 7c4693638d7797ce2eda17af74292b97e705cc61
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
-F test/wal.test a63947f76decb58d7a707d152cb1c34187e54cc6
+F test/wal.test 5847943563e4a38aa9ceff12891a52bdda17f3a6
 F test/wal2.test 223f3e14d475730af772a7f5862d4bcfa7565c3a
 F test/wal3.test 695ea0f6c516423c611891df9a285aacd33344e3
 F test/wal4.test 3404b048fa5e10605facaf70384e6d2943412e30
@@ -843,7 +843,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 4271a95c8236bda4a4f8c02bf3a3560de1d00402
-R 18c0cd58bb3c4ba7fcb0fd62a8f6bf9b
+P 07570ce38051a05d6e8a71e39766850f6719ac07
+R 9dc78c7561a603e522c0bb81eb112898
 U dan
-Z ca9e70bb404e459223eefc978ac4467f
+Z d52d7cfd0d7a3de647988329bc045380

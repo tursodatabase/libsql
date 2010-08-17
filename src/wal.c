@@ -1162,6 +1162,17 @@ finished:
     pInfo->nBackfill = 0;
     pInfo->aReadMark[0] = 0;
     for(i=1; i<WAL_NREADER; i++) pInfo->aReadMark[i] = READMARK_NOT_USED;
+
+    /* If more than one frame was recovered from the log file, report an
+    ** event via sqlite3_log(). This is to help with identifying performance
+    ** problems caused by applications routinely shutting down without
+    ** checkpointing the log file.
+    */
+    if( pWal->hdr.nPage ){
+      sqlite3_log(SQLITE_OK, "Recovered %d frames from WAL file %s",
+          pWal->hdr.nPage, pWal->zWalName
+      );
+    }
   }
 
 recovery_error:
