@@ -503,6 +503,7 @@ void sqlite3DeleteIndexSamples(sqlite3 *db, Index *pIdx){
     sqlite3DbFree(db, pIdx->aSample);
   }
 #else
+  UNUSED_PARAMETER(db);
   UNUSED_PARAMETER(pIdx);
 #endif
 }

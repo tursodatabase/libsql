@@ -2265,8 +2265,8 @@ static int lockBtree(BtShared *pBt){
     nPage = nPageFile;
   }
   if( nPage>0 ){
-    int pageSize;
-    int usableSize;
+    u32 pageSize;
+    u32 usableSize;
     u8 *page1 = pPage1->aData;
     rc = SQLITE_NOTADB;
     if( memcmp(page1, zMagicHeader, 16)!=0 ){
@@ -2334,8 +2334,8 @@ static int lockBtree(BtShared *pBt){
       ** again with the correct page-size.
       */
       releasePage(pPage1);
-      pBt->usableSize = (u32)usableSize;
-      pBt->pageSize = (u32)pageSize;
+      pBt->usableSize = usableSize;
+      pBt->pageSize = pageSize;
       freeTempSpace(pBt);
       rc = sqlite3PagerSetPagesize(pBt->pPager, &pBt->pageSize,
                                    pageSize-usableSize);
@@ -2348,8 +2348,8 @@ static int lockBtree(BtShared *pBt){
     if( usableSize<480 ){
       goto page1_init_failed;
     }
-    pBt->pageSize = (u32)pageSize;
-    pBt->usableSize = (u32)usableSize;
+    pBt->pageSize = pageSize;
+    pBt->usableSize = usableSize;
 #ifndef SQLITE_OMIT_AUTOVACUUM
     pBt->autoVacuum = (get4byte(&page1[36 + 4*4])?1:0);
     pBt->incrVacuum = (get4byte(&page1[36 + 7*4])?1:0);
@@ -5333,7 +5333,7 @@ static int fillInCell(
 */
 static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
   int i;          /* Loop counter */
-  int pc;         /* Offset to cell content of cell being deleted */
+  u32 pc;         /* Offset to cell content of cell being deleted */
   u8 *data;       /* pPage->aData */
   u8 *ptr;        /* Used to move bytes around within data[] */
   int rc;         /* The return code */
@@ -5351,7 +5351,7 @@ static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
   hdr = pPage->hdrOffset;
   testcase( pc==get2byte(&data[hdr+5]) );
   testcase( pc+sz==pPage->pBt->usableSize );
-  if( pc < get2byte(&data[hdr+5]) || pc+sz > pPage->pBt->usableSize ){
+  if( pc < (u32)get2byte(&data[hdr+5]) || pc+sz > pPage->pBt->usableSize ){
     *pRC = SQLITE_CORRUPT_BKPT;
     return;
   }
@@ -5889,7 +5889,7 @@ static int balance_nonroot(
       ** is allocated.  */
       if( pBt->secureDelete ){
         int iOff = SQLITE_PTR_TO_INT(apDiv[i]) - SQLITE_PTR_TO_INT(pParent->aData);
-        if( (iOff+szNew[i])>pBt->usableSize ){
+        if( (iOff+szNew[i])>(int)pBt->usableSize ){
           rc = SQLITE_CORRUPT_BKPT;
           memset(apOld, 0, (i+1)*sizeof(MemPage*));
           goto balance_cleanup;
@@ -7458,7 +7458,7 @@ static void checkList(
         checkPtrmap(pCheck, iPage, PTRMAP_FREEPAGE, 0, zContext);
       }
 #endif
-      if( n>pCheck->pBt->usableSize/4-2 ){
+      if( n>(int)pCheck->pBt->usableSize/4-2 ){
         checkAppendMsg(pCheck, zContext,
            "freelist leaf count too big on page %d", iPage);
         N--;
@@ -7682,7 +7682,7 @@ static int checkTreePage(
       if( pc<=usableSize-4 ){
         size = cellSizePtr(pPage, &data[pc]);
       }
-      if( (pc+size-1)>=usableSize ){
+      if( (int)(pc+size-1)>=usableSize ){
         checkAppendMsg(pCheck, 0, 
             "Corruption detected in cell %d on page %d",i,iPage);
       }else{

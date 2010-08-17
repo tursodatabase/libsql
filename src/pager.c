@@ -1334,7 +1334,7 @@ static int zeroJournalHdr(Pager *pPager, int doTruncate){
 static int writeJournalHdr(Pager *pPager){
   int rc = SQLITE_OK;                 /* Return code */
   char *zHeader = pPager->pTmpSpace;  /* Temporary space used to build header */
-  u32 nHeader = pPager->pageSize;     /* Size of buffer pointed to by zHeader */
+  u32 nHeader = (u32)pPager->pageSize;/* Size of buffer pointed to by zHeader */
   u32 nWrite;                         /* Bytes of header sector written */
   int ii;                             /* Loop counter */
 
@@ -3364,7 +3364,7 @@ int sqlite3PagerSetPagesize(Pager *pPager, u32 *pPageSize, int nReserve){
   assert( pageSize==0 || (pageSize>=512 && pageSize<=SQLITE_MAX_PAGE_SIZE) );
   if( (pPager->memDb==0 || pPager->dbSize==0)
    && sqlite3PcacheRefCount(pPager->pPCache)==0 
-   && pageSize && pageSize!=pPager->pageSize 
+   && pageSize && pageSize!=(u32)pPager->pageSize 
   ){
     char *pNew;                 /* New temp space */
     i64 nByte = 0;
@@ -4899,7 +4899,7 @@ int sqlite3PagerAcquire(
       goto pager_acquire_err;
     }
 
-    if( MEMDB || pPager->dbSize<(int)pgno || noContent || !isOpen(pPager->fd) ){
+    if( MEMDB || pPager->dbSize<pgno || noContent || !isOpen(pPager->fd) ){
       if( pgno>pPager->mxPgno ){
         rc = SQLITE_FULL;
         goto pager_acquire_err;
