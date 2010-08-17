@@ -2216,8 +2216,8 @@ static int pager_playback_one_page(
   }else{
     isSynced = (pPg==0 || 0==(pPg->flags & PGHDR_NEED_SYNC));
   }
-  if( (pPager->eState>=PAGER_WRITER_DBMOD || pPager->eState==PAGER_OPEN)
-   && isOpen(pPager->fd)
+  if( isOpen(pPager->fd)
+   && (pPager->eState>=PAGER_WRITER_DBMOD || pPager->eState==PAGER_OPEN)
    && isSynced
   ){
     i64 ofst = (pgno-1)*(i64)pPager->pageSize;
@@ -2595,7 +2595,7 @@ static int pager_playback(Pager *pPager, int isHot){
   */
   assert( isOpen(pPager->jfd) );
   rc = sqlite3OsFileSize(pPager->jfd, &szJ);
-  if( rc!=SQLITE_OK || szJ==0 ){
+  if( rc!=SQLITE_OK ){
     goto end_playback;
   }
 
@@ -2629,7 +2629,7 @@ static int pager_playback(Pager *pPager, int isHot){
   while( 1 ){
     /* Read the next journal header from the journal file.  If there are
     ** not enough bytes left in the journal file for a complete header, or
-    ** it is corrupted, then a process must of failed while writing it.
+    ** it is corrupted, then a process must have failed while writing it.
     ** This indicates nothing more needs to be rolled back.
     */
     rc = readJournalHdr(pPager, isHot, szJ, &nRec, &mxPg);
@@ -5106,7 +5106,9 @@ static int pager_open_journal(Pager *pPager){
 */
 int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
   int rc = SQLITE_OK;
-  assert( pPager->eState>=PAGER_READER );
+
+  if( pPager->errCode ) return pPager->errCode;
+  assert( pPager->eState>=PAGER_READER && pPager->eState<PAGER_ERROR );
   pPager->subjInMemory = (u8)subjInMemory;
 
   if( ALWAYS(pPager->eState==PAGER_READER) ){
@@ -5626,7 +5628,7 @@ int sqlite3PagerCommitPhaseOne(
   assert( assert_pager_state(pPager) );
 
   /* If a prior error occurred, report that error again. */
-  if( pPager->errCode ) return pPager->errCode;
+  if( NEVER(pPager->errCode) ) return pPager->errCode;
 
   PAGERTRACE(("DATABASE SYNC: File=%s zMaster=%s nSize=%d\n", 
       pPager->zFilename, zMaster, pPager->dbSize));
