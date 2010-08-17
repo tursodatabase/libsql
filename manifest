@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Remove\san\ssuperfluous\sbranch\sfrom\spager.c.
-D 2010-08-16T20:02:10
+C Fix\ssome\snon-ANSI\sC\scode\sin\stest_demovfs.c.\sAlso\schange\sthe\ssame\sfile\sso\sthat\sattempting\sto\sdelete\sa\sfile\sthat\sdoes\snot\sexist\sdoes\snot\sreturn\san\serror.
+D 2010-08-17T05:55:36
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -194,7 +191,7 @@ F src/test_autoext.c 30e7bd98ab6d70a62bb9ba572e4c7df347fe645e
 F src/test_backup.c c129c91127e9b46e335715ae2e75756e25ba27de
 F src/test_btree.c 47cd771250f09cdc6e12dda5bc71bc0b3abc96e2
 F src/test_config.c 5a11c51af2156e2d07186930b36f2b8239a4393f
-F src/test_demovfs.c da81a5f7785bb352bda7911c332a983ec4f17f27
+F src/test_demovfs.c 0aed671636735116fc872c5b03706fd5612488b5
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_func.c 13b582345fb1185a93e46c53310fae8547dcce20
 F src/test_hexio.c 1237f000ec7a491009b1233f5c626ea71bce1ea2
@@ -846,14 +843,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P d95bcc052910cfd4848afe0d32f717506ad5a789
-R 7f1ad401d5d30eb8789317264f68cef9
-U drh
-Z b110b81e4bbc30011f2058afc954649c
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMaZlGoxKgR168RlERArY4AJ4kGrynz7zzjVX9UDbRDl5/3v+PggCeJDeA
-SaO0LUHGohOU+jh0oR4OoE4=
-=VOx3
------END PGP SIGNATURE-----
+P 4271a95c8236bda4a4f8c02bf3a3560de1d00402
+R 18c0cd58bb3c4ba7fcb0fd62a8f6bf9b
+U dan
+Z ca9e70bb404e459223eefc978ac4467f
