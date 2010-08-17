@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Suppress\sharmless\scompiler\swarning.
-D 2010-08-17T19:40:08
+C Remove\sa\sNEVER()\sthat\sis\sactually\sreachable.
+D 2010-08-17T19:49:14
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -159,7 +159,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c 11194cbcf6a57456e58022dc537ab8c3497d9bb9
 F src/os_win.c 51cb62f76262d961ea4249489383d714501315a7
-F src/pager.c 67193153faa34f1577d10f81e677cdcfc36070a7
+F src/pager.c 3c0f1bd2f6870b2b98f540470d39cde9c5c964d2
 F src/pager.h ef8c8f71ab022cc2fff768a1175dd32355be9dcd
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
@@ -846,14 +846,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P fc9014be0f00d046e7ba830a644f9ce93eca5db8
-R 08dc99eaf91bba1ab1abe808bc12426d
+P 3f8c068a41b01f59d7f5d56f3bced78587f4d26c
+R 0e975e64194b772586d783ae23f541c3
 U drh
-Z 72b8c51b52c60a3d7d15cc0c39638b2f
+Z 7c3874a9d62d92c19dbda87e69ee4cca
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMauWboxKgR168RlERApB6AJ9KS20DweXJdlAQEkHQT7Uvl25P2wCeMZCL
-jmhmura1hUYwBMHtIse3KbQ=
-=MfR5
+iD8DBQFMaue9oxKgR168RlERAu71AJ9Nk4H9NiTuF/IHZPG8buHkH0saeACfS7El
+cdIbCKIWYZrkomUAPmV/H70=
+=c7oq
 -----END PGP SIGNATURE-----

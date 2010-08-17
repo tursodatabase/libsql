@@ -5092,7 +5092,7 @@ static int pager_open_journal(Pager *pPager){
 int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
   int rc = SQLITE_OK;
 
-  if( NEVER(pPager->errCode) ) return pPager->errCode;
+  if( pPager->errCode ) return pPager->errCode;
   assert( pPager->eState>=PAGER_READER && pPager->eState<PAGER_ERROR );
   pPager->subjInMemory = (u8)subjInMemory;
 
