@@ -194,6 +194,31 @@ do_test like-3.4 {
   set sqlite_like_count
 } 0
 
+# The LIKE optimization still works when the RHS is a string with no
+# wildcard.  Ticket [e090183531fc2747]
+#
+do_test like-3.4.2 {
+  queryplan {
+    SELECT x FROM t1 WHERE x LIKE 'a' ORDER BY 1;
+  }
+} {a nosort {} i1}
+do_test like-3.4.3 {
+  queryplan {
+    SELECT x FROM t1 WHERE x LIKE 'ab' ORDER BY 1;
+  }
+} {ab nosort {} i1}
+do_test like-3.4.4 {
+  queryplan {
+    SELECT x FROM t1 WHERE x LIKE 'abcd' ORDER BY 1;
+  }
+} {abcd nosort {} i1}
+do_test like-3.4.5 {
+  queryplan {
+    SELECT x FROM t1 WHERE x LIKE 'abcde' ORDER BY 1;
+  }
+} {nosort {} i1}
+
+
 # Partial optimization when the pattern does not end in '%'
 #
 do_test like-3.5 {
@@ -308,6 +333,26 @@ do_test like-3.23 {
 do_test like-3.24 {
   set sqlite_like_count
 } 6
+
+# GLOB optimization when there is no wildcard.  Ticket [e090183531fc2747]
+#
+do_test like-3.25 {
+  queryplan {
+    SELECT x FROM t1 WHERE x GLOB 'a' ORDER BY 1;
+  }
+} {a nosort {} i1}
+do_test like-3.26 {
+  queryplan {
+    SELECT x FROM t1 WHERE x GLOB 'abcd' ORDER BY 1;
+  }
+} {abcd nosort {} i1}
+do_test like-3.27 {
+  queryplan {
+    SELECT x FROM t1 WHERE x GLOB 'abcde' ORDER BY 1;
+  }
+} {nosort {} i1}
+
+
 
 # No optimization if the LHS of the LIKE is not a column name or
 # if the RHS is not a string.
@@ -732,6 +777,95 @@ do_test like-10.15 {
     SELECT a FROM t10b WHERE a GLOB '12*' ORDER BY a;
   }
 } {12 123 scan 5 like 6}
+
+# LIKE and GLOB where the default collating sequence is not appropriate
+# but an index with the appropriate collating sequence exists.
+#
+do_test like-11.0 {
+  execsql {
+    CREATE TABLE t11(
+      a INTEGER PRIMARY KEY,
+      b TEXT COLLATE nocase,
+      c TEXT COLLATE binary
+    );
+    INSERT INTO t11 VALUES(1, 'a','a');
+    INSERT INTO t11 VALUES(2, 'ab','ab');
+    INSERT INTO t11 VALUES(3, 'abc','abc');
+    INSERT INTO t11 VALUES(4, 'abcd','abcd');
+    INSERT INTO t11 VALUES(5, 'A','A');
+    INSERT INTO t11 VALUES(6, 'AB','AB');
+    INSERT INTO t11 VALUES(7, 'ABC','ABC');
+    INSERT INTO t11 VALUES(8, 'ABCD','ABCD');
+    INSERT INTO t11 VALUES(9, 'x','x');
+    INSERT INTO t11 VALUES(10, 'yz','yz');
+    INSERT INTO t11 VALUES(11, 'X','X');
+    INSERT INTO t11 VALUES(12, 'YZ','YZ');
+    SELECT count(*) FROM t11;
+  }
+} {12}
+do_test like-11.1 {
+  queryplan {
+    PRAGMA case_sensitive_like=OFF;
+    SELECT b FROM t11 WHERE b LIKE 'abc%' ORDER BY a;
+  }
+} {abc abcd ABC ABCD nosort t11 *}
+do_test like-11.2 {
+  queryplan {
+    PRAGMA case_sensitive_like=ON;
+    SELECT b FROM t11 WHERE b LIKE 'abc%' ORDER BY a;
+  }
+} {abc abcd nosort t11 *}
+do_test like-11.3 {
+  queryplan {
+    PRAGMA case_sensitive_like=OFF;
+    CREATE INDEX t11b ON t11(b);
+    SELECT b FROM t11 WHERE b LIKE 'abc%' ORDER BY a;
+  }
+} {abc abcd ABC ABCD sort {} t11b}
+do_test like-11.4 {
+  queryplan {
+    PRAGMA case_sensitive_like=ON;
+    SELECT b FROM t11 WHERE b LIKE 'abc%' ORDER BY a;
+  }
+} {abc abcd nosort t11 *}
+do_test like-11.5 {
+  queryplan {
+    PRAGMA case_sensitive_like=OFF;
+    DROP INDEX t11b;
+    CREATE INDEX t11bnc ON t11(b COLLATE nocase);
+    SELECT b FROM t11 WHERE b LIKE 'abc%' ORDER BY a;
+  }
+} {abc abcd ABC ABCD sort {} t11bnc}
+do_test like-11.6 {
+  queryplan {
+    CREATE INDEX t11bb ON t11(b COLLATE binary);
+    SELECT b FROM t11 WHERE b LIKE 'abc%' ORDER BY a;
+  }
+} {abc abcd ABC ABCD sort {} t11bnc}
+do_test like-11.7 {
+  queryplan {
+    PRAGMA case_sensitive_like=ON;
+    SELECT b FROM t11 WHERE b LIKE 'abc%' ORDER BY a;
+  }
+} {abc abcd sort {} t11bb}
+do_test like-11.8 {
+  queryplan {
+    PRAGMA case_sensitive_like=OFF;
+    SELECT b FROM t11 WHERE b GLOB 'abc*' ORDER BY a;
+  }
+} {abc abcd sort {} t11bb}
+do_test like-11.9 {
+  queryplan {
+    CREATE INDEX t11cnc ON t11(c COLLATE nocase);
+    CREATE INDEX t11cb ON t11(c COLLATE binary);
+    SELECT c FROM t11 WHERE c LIKE 'abc%' ORDER BY a;
+  }
+} {abc abcd ABC ABCD sort {} t11cnc}
+do_test like-11.10 {
+  queryplan {
+    SELECT c FROM t11 WHERE c GLOB 'abc*' ORDER BY a;
+  }
+} {abc abcd sort {} t11cb}
 
 
 finish_test

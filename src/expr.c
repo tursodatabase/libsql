@@ -56,24 +56,31 @@ char sqlite3ExprAffinity(Expr *pExpr){
 }
 
 /*
+** Set the explicit collating sequence for an expression to the
+** collating sequence supplied in the second argument.
+*/
+Expr *sqlite3ExprSetColl(Expr *pExpr, CollSeq *pColl){
+  if( pExpr && pColl ){
+    pExpr->pColl = pColl;
+    pExpr->flags |= EP_ExpCollate;
+  }
+  return pExpr;
+}
+
+/*
 ** Set the collating sequence for expression pExpr to be the collating
 ** sequence named by pToken.   Return a pointer to the revised expression.
 ** The collating sequence is marked as "explicit" using the EP_ExpCollate
 ** flag.  An explicit collating sequence will override implicit
 ** collating sequences.
 */
-Expr *sqlite3ExprSetColl(Parse *pParse, Expr *pExpr, Token *pCollName){
+Expr *sqlite3ExprSetCollByToken(Parse *pParse, Expr *pExpr, Token *pCollName){
   char *zColl = 0;            /* Dequoted name of collation sequence */
   CollSeq *pColl;
   sqlite3 *db = pParse->db;
   zColl = sqlite3NameFromToken(db, pCollName);
-  if( pExpr && zColl ){
-    pColl = sqlite3LocateCollSeq(pParse, zColl);
-    if( pColl ){
-      pExpr->pColl = pColl;
-      pExpr->flags |= EP_ExpCollate;
-    }
-  }
+  pColl = sqlite3LocateCollSeq(pParse, zColl);
+  sqlite3ExprSetColl(pExpr, pColl);
   sqlite3DbFree(db, zColl);
   return pExpr;
 }
