@@ -1,5 +1,5 @@
-C Disable\sthe\sSQLITE_MAX_PAGE_SIZE\scompile\stime\soption\s(it\sis\snow\salways\sset\sto\s65536).\sFix\ssome\sother\sproblems\sin\stest\sfiles.
-D 2010-08-18T15:25:17
+C Updated\stests\sfor\sCLI.\s\sAdded\ssome\sbasic\stests\sfor\sthe\s.import\scommand.
+D 2010-08-18T17:16:26
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -830,7 +830,8 @@ F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/shell1.test 930444cadb71ce9ce78bc6cd14ec21e6b69776ea
 F tool/shell2.test 5dc76b8005b465f420fed8241621da7513060ff3
 F tool/shell3.test 4fad469e8003938426355afdf34155f08c587836
-F tool/shell4.test b8d99dc22399a256f1090f6d755f666f394ba02b
+F tool/shell4.test 35f9c3d452b4e76d5013c63e1fd07478a62f14ce
+F tool/shell5.test 62bfaf9267296da1b91e4b1c03e44e7b393f6a94
 F tool/showdb.c 01c20e8181941b714fe07f72c64a7560fee17ff9
 F tool/showjournal.c ec3b171be148656827c4949fbfb8ab4370822f87
 F tool/showwal.c f09e5a80a293919290ec85a6a37c85a5ddcf37d9
@@ -843,7 +844,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 3497f54ac2f85746c50fe6f94380a22033f2464b
-R a73eece0710a0475fa95dd2e2d9fb72f
-U dan
-Z 22aea5abe93efb349f9f67cf7e694881
+P 56cc883d3af5574c9dafecef8aa96d1d05c01b83
+R f8071fb87093491279a52abcb3066064
+U shaneh
+Z 27e86cf284ab8d3eda267dae6456bdb0
