@@ -56,24 +56,31 @@ char sqlite3ExprAffinity(Expr *pExpr){
 }
 
 /*
+** Set the explicit collating sequence for an expression to the
+** collating sequence supplied in the second argument.
+*/
+Expr *sqlite3ExprSetColl(Expr *pExpr, CollSeq *pColl){
+  if( pExpr && pColl ){
+    pExpr->pColl = pColl;
+    pExpr->flags |= EP_ExpCollate;
+  }
+  return pExpr;
+}
+
+/*
 ** Set the collating sequence for expression pExpr to be the collating
 ** sequence named by pToken.   Return a pointer to the revised expression.
 ** The collating sequence is marked as "explicit" using the EP_ExpCollate
 ** flag.  An explicit collating sequence will override implicit
 ** collating sequences.
 */
-Expr *sqlite3ExprSetColl(Parse *pParse, Expr *pExpr, Token *pCollName){
+Expr *sqlite3ExprSetCollByToken(Parse *pParse, Expr *pExpr, Token *pCollName){
   char *zColl = 0;            /* Dequoted name of collation sequence */
   CollSeq *pColl;
   sqlite3 *db = pParse->db;
   zColl = sqlite3NameFromToken(db, pCollName);
-  if( pExpr && zColl ){
-    pColl = sqlite3LocateCollSeq(pParse, zColl);
-    if( pColl ){
-      pExpr->pColl = pColl;
-      pExpr->flags |= EP_ExpCollate;
-    }
-  }
+  pColl = sqlite3LocateCollSeq(pParse, zColl);
+  sqlite3ExprSetColl(pExpr, pColl);
   sqlite3DbFree(db, zColl);
   return pExpr;
 }
@@ -547,13 +554,14 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
   }else if( z[0]=='?' ){
     /* Wildcard of the form "?nnn".  Convert "nnn" to an integer and
     ** use it as the variable number */
-    int i = atoi((char*)&z[1]);
+    i64 i;
+    int bOk = sqlite3Atoi64(&z[1], &i);
     pExpr->iColumn = (ynVar)i;
     testcase( i==0 );
     testcase( i==1 );
     testcase( i==db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER]-1 );
     testcase( i==db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER] );
-    if( i<1 || i>db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER] ){
+    if( bOk==0 || i<1 || i>db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER] ){
       sqlite3ErrorMsg(pParse, "variable number must be between ?1 and ?%d",
           db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER]);
     }

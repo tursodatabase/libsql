@@ -791,8 +791,10 @@ static void compileoptionusedFunc(
   const char *zOptName;
   assert( argc==1 );
   UNUSED_PARAMETER(argc);
-  /* IMP: R-xxxx This function is an SQL wrapper around the
-  ** sqlite3_compileoption_used() C interface. */
+  /* IMP: R-39564-36305 The sqlite_compileoption_used() SQL
+  ** function is a wrapper around the sqlite3_compileoption_used() C/C++
+  ** function.
+  */
   if( (zOptName = (const char*)sqlite3_value_text(argv[0]))!=0 ){
     sqlite3_result_int(context, sqlite3_compileoption_used(zOptName));
   }
@@ -813,8 +815,9 @@ static void compileoptiongetFunc(
   int n;
   assert( argc==1 );
   UNUSED_PARAMETER(argc);
-  /* IMP: R-xxxx This function is an SQL wrapper around the
-  ** sqlite3_compileoption_get() C interface. */
+  /* IMP: R-04922-24076 The sqlite_compileoption_get() SQL function
+  ** is a wrapper around the sqlite3_compileoption_get() C/C++ function.
+  */
   n = sqlite3_value_int(argv[0]);
   sqlite3_result_text(context, sqlite3_compileoption_get(n), -1, SQLITE_STATIC);
 }
@@ -1013,14 +1016,14 @@ static void replaceFunc(
       testcase( nOut-2==db->aLimit[SQLITE_LIMIT_LENGTH] );
       if( nOut-1>db->aLimit[SQLITE_LIMIT_LENGTH] ){
         sqlite3_result_error_toobig(context);
-        sqlite3DbFree(db, zOut);
+        sqlite3_free(zOut);
         return;
       }
       zOld = zOut;
       zOut = sqlite3_realloc(zOut, (int)nOut);
       if( zOut==0 ){
         sqlite3_result_error_nomem(context);
-        sqlite3DbFree(db, zOld);
+        sqlite3_free(zOld);
         return;
       }
       memcpy(&zOut[j], zRep, nRep);
@@ -1381,7 +1384,7 @@ static void groupConcatStep(
   if( pAccum ){
     sqlite3 *db = sqlite3_context_db_handle(context);
     int firstTerm = pAccum->useMalloc==0;
-    pAccum->useMalloc = 1;
+    pAccum->useMalloc = 2;
     pAccum->mxAlloc = db->aLimit[SQLITE_LIMIT_LENGTH];
     if( !firstTerm ){
       if( argc==2 ){

@@ -1078,4 +1078,156 @@ do_faultsim_test pagerfault-22 -prep {
   faultsim_integrity_check
 }
 
+
+#-------------------------------------------------------------------------
+# When a 3.7.0 client opens a write-transaction on a database file that
+# has been appended to or truncated by a pre-370 client, it updates
+# the db-size in the file header immediately. This test case provokes
+# errors during that operation.
+#
+do_test pagerfault-22-pre1 {
+  faultsim_delete_and_reopen
+  db func a_string a_string
+  execsql {
+    PRAGMA page_size = 1024;
+    PRAGMA auto_vacuum = 0;
+    CREATE TABLE t1(a);
+    CREATE INDEX i1 ON t1(a);
+    INSERT INTO t1 VALUES(a_string(3000));
+    CREATE TABLE t2(a);
+    INSERT INTO t2 VALUES(1);
+  }
+  db close
+  sql36231 { INSERT INTO t1 VALUES(a_string(3000)) }
+  faultsim_save_and_close
+} {}
+do_faultsim_test pagerfault-22 -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { INSERT INTO t2 VALUES(2) }
+  execsql { SELECT * FROM t2 }
+} -test {
+  faultsim_test_result {0 {1 2}}
+  faultsim_integrity_check
+}
+
+#-------------------------------------------------------------------------
+# Provoke an OOM error during a commit of multi-file transaction. One of
+# the databases written during the transaction is an in-memory database.
+# This test causes rollback of the in-memory database after CommitPhaseOne()
+# has successfully returned. i.e. the series of calls for the aborted commit 
+# is:
+#
+#   PagerCommitPhaseOne(<in-memory-db>)   ->   SQLITE_OK
+#   PagerCommitPhaseOne(<file-db>)        ->   SQLITE_IOERR
+#   PagerRollback(<in-memory-db>)
+#   PagerRollback(<file-db>)
+#
+do_faultsim_test pagerfault-23 -prep {
+  foreach f [glob -nocomplain test.db*] { file delete -force $f }
+  sqlite3 db :memory:
+  db eval { 
+    ATTACH 'test.db2' AS aux;
+    CREATE TABLE t1(a, b);
+    CREATE TABLE aux.t2(a, b);
+  }
+} -body {
+  execsql { 
+    BEGIN;
+      INSERT INTO t1 VALUES(1,2);
+      INSERT INTO t2 VALUES(3,4); 
+    COMMIT;
+  }
+} -test {
+  faultsim_test_result {0 {}}
+  faultsim_integrity_check
+}
+
+do_faultsim_test pagerfault-24 -prep {
+  faultsim_delete_and_reopen
+  db eval { PRAGMA temp_store = file }
+  execsql { CREATE TABLE x(a, b) }
+} -body {
+  execsql { CREATE TEMP TABLE t1(a, b) }
+} -test {
+  faultsim_test_result {0 {}} \
+    {1 {unable to open a temporary database file for storing temporary tables}}
+  set ic [db eval { PRAGMA temp.integrity_check }]
+  if {$ic != "ok"} { error "Integrity check: $ic" }
+}
+
+proc lockrows {n} {
+  if {$n==0} { return "" }
+  db eval { SELECT * FROM t1 WHERE oid = $n } { 
+    return [lockrows [expr {$n-1}]]
+  }
+}
+
+
+do_test pagerfault-25-pre1 {
+  faultsim_delete_and_reopen
+  db func a_string a_string
+  execsql {
+    PRAGMA page_size = 1024;
+    PRAGMA auto_vacuum = 0;
+    CREATE TABLE t1(a);
+    INSERT INTO t1 VALUES(a_string(500));
+    INSERT INTO t1 SELECT a_string(500) FROM t1;
+    INSERT INTO t1 SELECT a_string(500) FROM t1;
+    INSERT INTO t1 SELECT a_string(500) FROM t1;
+    INSERT INTO t1 SELECT a_string(500) FROM t1;
+    INSERT INTO t1 SELECT a_string(500) FROM t1;
+  }
+  faultsim_save_and_close
+} {}
+do_faultsim_test pagerfault-25 -prep {
+  faultsim_restore_and_reopen
+  db func a_string a_string
+  set ::channel [db incrblob -readonly t1 a 1]
+  execsql { 
+    PRAGMA cache_size = 10;
+    BEGIN;
+      INSERT INTO t1 VALUES(a_string(3000));
+      INSERT INTO t1 VALUES(a_string(3000));
+  }
+} -body {
+  lockrows 30
+} -test {
+  catch { lockrows 30 }
+  catch { db eval COMMIT }
+  close $::channel
+  faultsim_test_result {0 {}} 
+}
+
+do_faultsim_test pagerfault-26 -prep {
+  faultsim_delete_and_reopen
+  execsql {
+    PRAGMA page_size = 1024;
+    PRAGMA journal_mode = truncate;
+    PRAGMA auto_vacuum = full;
+    PRAGMA locking_mode=exclusive;
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, 2);
+    PRAGMA page_size = 4096;
+  }
+} -body {
+  execsql {
+    VACUUM;
+  }
+} -test {
+  faultsim_test_result {0 {}}
+
+  set contents [db eval {SELECT * FROM t1}]
+  if {$contents != "1 2"} { error "Bad database contents ($contents)" }
+
+  set sz [file size test.db]
+  if {$testrc!=0 && $sz!=1024*3 && $sz!=4096*3} { 
+    error "Expected file size to be 3072 or 12288 bytes - actual size $sz bytes"
+  }
+  if {$testrc==0 && $sz!=4096*3} { 
+    error "Expected file size to be 12288 bytes - actual size $sz bytes"
+  }
+} 
+
+
 finish_test

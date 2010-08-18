@@ -502,6 +502,20 @@ static int checkSavepointCount(sqlite3 *db){
 #endif
 
 /*
+** Transfer error message text from an sqlite3_vtab.zErrMsg (text stored
+** in memory obtained from sqlite3_malloc) into a Vdbe.zErrMsg (text stored
+** in memory obtained from sqlite3DbMalloc).
+*/
+static void importVtabErrMsg(Vdbe *p, sqlite3_vtab *pVtab){
+  sqlite3 *db = p->db;
+  sqlite3DbFree(db, p->zErrMsg);
+  p->zErrMsg = sqlite3DbStrDup(db, pVtab->zErrMsg);
+  sqlite3_free(pVtab->zErrMsg);
+  pVtab->zErrMsg = 0;
+}
+
+
+/*
 ** Execute as much of a VDBE program as we can then return.
 **
 ** sqlite3VdbeMakeReady() must be called before this routine in order to
@@ -4030,9 +4044,7 @@ case OP_Rowid: {                 /* out2-prerelease */
     pModule = pVtab->pModule;
     assert( pModule->xRowid );
     rc = pModule->xRowid(pC->pVtabCursor, &v);
-    sqlite3DbFree(db, p->zErrMsg);
-    p->zErrMsg = pVtab->zErrMsg;
-    pVtab->zErrMsg = 0;
+    importVtabErrMsg(p, pVtab);
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
   }else{
     assert( pC->pCursor!=0 );
@@ -4337,7 +4349,7 @@ case OP_IdxRowid: {              /* out2-prerelease */
 ** that if the key from register P3 is a prefix of the key in the cursor,
 ** the result is false whereas it would be true with IdxGT.
 */
-/* Opcode: IdxLT P1 P2 P3 * P5
+/* Opcode: IdxLT P1 P2 P3 P4 P5
 **
 ** The P4 register values beginning with P3 form an unpacked index 
 ** key that omits the ROWID.  Compare this key value against the index 
@@ -5375,11 +5387,7 @@ case OP_VBegin: {
   VTable *pVTab;
   pVTab = pOp->p4.pVtab;
   rc = sqlite3VtabBegin(db, pVTab);
-  if( pVTab ){
-    sqlite3DbFree(db, p->zErrMsg);
-    p->zErrMsg = pVTab->pVtab->zErrMsg;
-    pVTab->pVtab->zErrMsg = 0;
-  }
+  if( pVTab ) importVtabErrMsg(p, pVTab->pVtab);
   break;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
@@ -5429,9 +5437,7 @@ case OP_VOpen: {
   pModule = (sqlite3_module *)pVtab->pModule;
   assert(pVtab && pModule);
   rc = pModule->xOpen(pVtab, &pVtabCursor);
-  sqlite3DbFree(db, p->zErrMsg);
-  p->zErrMsg = pVtab->zErrMsg;
-  pVtab->zErrMsg = 0;
+  importVtabErrMsg(p, pVtab);
   if( SQLITE_OK==rc ){
     /* Initialize sqlite3_vtab_cursor base class */
     pVtabCursor->pVtab = pVtab;
@@ -5508,9 +5514,7 @@ case OP_VFilter: {   /* jump */
     p->inVtabMethod = 1;
     rc = pModule->xFilter(pVtabCursor, iQuery, pOp->p4.z, nArg, apArg);
     p->inVtabMethod = 0;
-    sqlite3DbFree(db, p->zErrMsg);
-    p->zErrMsg = pVtab->zErrMsg;
-    pVtab->zErrMsg = 0;
+    importVtabErrMsg(p, pVtab);
     if( rc==SQLITE_OK ){
       res = pModule->xEof(pVtabCursor);
     }
@@ -5560,9 +5564,7 @@ case OP_VColumn: {
   MemSetTypeFlag(&sContext.s, MEM_Null);
 
   rc = pModule->xColumn(pCur->pVtabCursor, &sContext, pOp->p2);
-  sqlite3DbFree(db, p->zErrMsg);
-  p->zErrMsg = pVtab->zErrMsg;
-  pVtab->zErrMsg = 0;
+  importVtabErrMsg(p, pVtab);
   if( sContext.isError ){
     rc = sContext.isError;
   }
@@ -5615,9 +5617,7 @@ case OP_VNext: {   /* jump */
   p->inVtabMethod = 1;
   rc = pModule->xNext(pCur->pVtabCursor);
   p->inVtabMethod = 0;
-  sqlite3DbFree(db, p->zErrMsg);
-  p->zErrMsg = pVtab->zErrMsg;
-  pVtab->zErrMsg = 0;
+  importVtabErrMsg(p, pVtab);
   if( rc==SQLITE_OK ){
     res = pModule->xEof(pCur->pVtabCursor);
   }
@@ -5647,9 +5647,7 @@ case OP_VRename: {
   REGISTER_TRACE(pOp->p1, pName);
   assert( pName->flags & MEM_Str );
   rc = pVtab->pModule->xRename(pVtab, pName->z);
-  sqlite3DbFree(db, p->zErrMsg);
-  p->zErrMsg = pVtab->zErrMsg;
-  pVtab->zErrMsg = 0;
+  importVtabErrMsg(p, pVtab);
 
   break;
 }
@@ -5701,9 +5699,7 @@ case OP_VUpdate: {
       pX++;
     }
     rc = pModule->xUpdate(pVtab, nArg, apArg, &rowid);
-    sqlite3DbFree(db, p->zErrMsg);
-    p->zErrMsg = pVtab->zErrMsg;
-    pVtab->zErrMsg = 0;
+    importVtabErrMsg(p, pVtab);
     if( rc==SQLITE_OK && pOp->p1 ){
       assert( nArg>1 && apArg[0] && (apArg[0]->flags&MEM_Null) );
       db->lastRowid = rowid;

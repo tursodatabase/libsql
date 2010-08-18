@@ -376,7 +376,13 @@ static int statNext(sqlite3_vtab_cursor *pCursor){
   if( pCsr->aPage[0].pPg==0 ){
     rc = sqlite3_step(pCsr->pStmt);
     if( rc==SQLITE_ROW ){
+      int nPage;
       u32 iRoot = sqlite3_column_int64(pCsr->pStmt, 1);
+      sqlite3PagerPagecount(pPager, &nPage);
+      if( nPage==0 ){
+        pCsr->isEof = 1;
+        return sqlite3_reset(pCsr->pStmt);
+      }
       rc = sqlite3PagerGet(pPager, iRoot, &pCsr->aPage[0].pPg);
       pCsr->aPage[0].iPgno = iRoot;
       pCsr->aPage[0].iCell = 0;
@@ -486,17 +492,9 @@ static int statFilter(
   int idxNum, const char *idxStr,
   int argc, sqlite3_value **argv
 ){
-  sqlite3 *db = ((StatTable *)(pCursor->pVtab))->db;
   StatCursor *pCsr = (StatCursor *)pCursor;
-  int nPage = 0;
 
-  statResetCsr((StatCursor *)pCursor);
-  sqlite3PagerPagecount(sqlite3BtreePager(db->aDb[0].pBt), &nPage);
-  if( nPage==0 ){
-    pCsr->isEof = 1;
-    return SQLITE_OK;
-  }
-
+  statResetCsr(pCsr);
   return statNext(pCursor);
 }
 

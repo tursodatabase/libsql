@@ -4632,6 +4632,44 @@ static int file_control_lasterrno_test(
 }
 
 /*
+** tclcmd:   file_control_chunksize_test DB DBNAME SIZE
+**
+** This TCL command runs the sqlite3_file_control interface and
+** verifies correct operation of the SQLITE_GET_LOCKPROXYFILE and
+** SQLITE_SET_LOCKPROXYFILE verbs.
+*/
+static int file_control_chunksize_test(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  int nSize;                      /* New chunk size */
+  char *zDb;                      /* Db name ("main", "temp" etc.) */
+  sqlite3 *db;                    /* Database handle */
+  int rc;                         /* file_control() return code */
+
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB DBNAME SIZE");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) 
+   || Tcl_GetIntFromObj(interp, objv[3], &nSize)
+  ){
+   return TCL_ERROR;
+  }
+  zDb = Tcl_GetString(objv[2]);
+  if( zDb[0]=='\0' ) zDb = NULL;
+
+  rc = sqlite3_file_control(db, zDb, SQLITE_FCNTL_CHUNK_SIZE, (void *)&nSize);
+  if( rc ){
+    Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_STATIC);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
+/*
 ** tclcmd:   file_control_lockproxy_test DB PWD
 **
 ** This TCL command runs the sqlite3_file_control interface and
@@ -5020,6 +5058,47 @@ static int test_wal_checkpoint(
   return TCL_OK;
 }
 
+/*
+** tclcmd:  test_sqlite3_log ?SCRIPT?
+*/
+static struct LogCallback {
+  Tcl_Interp *pInterp;
+  Tcl_Obj *pObj;
+} logcallback = {0, 0};
+static void xLogcallback(void *unused, int err, char *zMsg){
+  Tcl_Obj *pNew = Tcl_DuplicateObj(logcallback.pObj);
+  Tcl_IncrRefCount(pNew);
+  Tcl_ListObjAppendElement(
+      0, pNew, Tcl_NewStringObj(sqlite3TestErrorName(err), -1)
+  );
+  Tcl_ListObjAppendElement(0, pNew, Tcl_NewStringObj(zMsg, -1));
+  Tcl_EvalObjEx(logcallback.pInterp, pNew, TCL_EVAL_GLOBAL|TCL_EVAL_DIRECT);
+  Tcl_DecrRefCount(pNew);
+}
+static int test_sqlite3_log(
+  ClientData clientData,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  if( objc>2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "SCRIPT");
+    return TCL_ERROR;
+  }
+  if( logcallback.pObj ){
+    Tcl_DecrRefCount(logcallback.pObj);
+    logcallback.pObj = 0;
+    logcallback.pInterp = 0;
+    sqlite3_config(SQLITE_CONFIG_LOG, 0, 0);
+  }
+  if( objc>1 ){
+    logcallback.pObj = objv[1];
+    Tcl_IncrRefCount(logcallback.pObj);
+    logcallback.pInterp = interp;
+    sqlite3_config(SQLITE_CONFIG_LOG, xLogcallback, 0);
+  }
+  return TCL_OK;
+}
 
 /*
 **     tcl_objproc COMMANDNAME ARGS...
@@ -5216,9 +5295,10 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "file_control_test",          file_control_test,   0   },
      { "file_control_lasterrno_test", file_control_lasterrno_test,  0   },
      { "file_control_lockproxy_test", file_control_lockproxy_test,  0   },
+     { "file_control_chunksize_test", file_control_chunksize_test,  0   },
+     { "sqlite3_vfs_list",           vfs_list,     0   },
      { "path_is_local",              path_is_local,  0   },
      { "path_is_dos",                path_is_dos,  0   },
-     { "sqlite3_vfs_list",           vfs_list,     0   },
 
      /* Functions from os.h */
 #ifndef SQLITE_OMIT_UTF16
@@ -5245,6 +5325,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_unlock_notify", test_unlock_notify, 0  },
 #endif
      { "sqlite3_wal_checkpoint", test_wal_checkpoint, 0  },
+     { "test_sqlite3_log",     test_sqlite3_log, 0  },
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   int i;

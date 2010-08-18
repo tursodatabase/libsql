@@ -500,7 +500,8 @@ static void fkScanChildren(
       if( pIdx ){
         Column *pCol;
         iCol = pIdx->aiColumn[i];
-        pCol = &pIdx->pTable->aCol[iCol];
+        pCol = &pTab->aCol[iCol];
+        if( pTab->iPKey==iCol ) iCol = -1;
         pLeft->iTable = regData+iCol+1;
         pLeft->affinity = pCol->affinity;
         pLeft->pColl = sqlite3LocateCollSeq(pParse, pCol->zColl);
@@ -1061,11 +1062,7 @@ static Trigger *fkActionTrigger(
       pWhere = 0;
     }
 
-    /* In the current implementation, pTab->dbMem==0 for all tables except
-    ** for temporary tables used to describe subqueries.  And temporary
-    ** tables do not have foreign key constraints.  Hence, pTab->dbMem
-    ** should always be 0 there.
-    */
+    /* Disable lookaside memory allocation */
     enableLookaside = db->lookaside.bEnabled;
     db->lookaside.bEnabled = 0;
 
@@ -1155,37 +1152,39 @@ void sqlite3FkActions(
 ** table pTab. Remove the deleted foreign keys from the Schema.fkeyHash
 ** hash table.
 */
-void sqlite3FkDelete(Table *pTab){
+void sqlite3FkDelete(sqlite3 *db, Table *pTab){
   FKey *pFKey;                    /* Iterator variable */
   FKey *pNext;                    /* Copy of pFKey->pNextFrom */
 
   for(pFKey=pTab->pFKey; pFKey; pFKey=pNext){
 
     /* Remove the FK from the fkeyHash hash table. */
-    if( pFKey->pPrevTo ){
-      pFKey->pPrevTo->pNextTo = pFKey->pNextTo;
-    }else{
-      void *data = (void *)pFKey->pNextTo;
-      const char *z = (data ? pFKey->pNextTo->zTo : pFKey->zTo);
-      sqlite3HashInsert(&pTab->pSchema->fkeyHash, z, sqlite3Strlen30(z), data);
+    if( !db || db->pnBytesFreed==0 ){
+      if( pFKey->pPrevTo ){
+        pFKey->pPrevTo->pNextTo = pFKey->pNextTo;
+      }else{
+        void *p = (void *)pFKey->pNextTo;
+        const char *z = (p ? pFKey->pNextTo->zTo : pFKey->zTo);
+        sqlite3HashInsert(&pTab->pSchema->fkeyHash, z, sqlite3Strlen30(z), p);
+      }
+      if( pFKey->pNextTo ){
+        pFKey->pNextTo->pPrevTo = pFKey->pPrevTo;
+      }
     }
-    if( pFKey->pNextTo ){
-      pFKey->pNextTo->pPrevTo = pFKey->pPrevTo;
-    }
-
-    /* Delete any triggers created to implement actions for this FK. */
-#ifndef SQLITE_OMIT_TRIGGER
-    fkTriggerDelete(pTab->dbMem, pFKey->apTrigger[0]);
-    fkTriggerDelete(pTab->dbMem, pFKey->apTrigger[1]);
-#endif
 
     /* EV: R-30323-21917 Each foreign key constraint in SQLite is
     ** classified as either immediate or deferred.
     */
     assert( pFKey->isDeferred==0 || pFKey->isDeferred==1 );
 
+    /* Delete any triggers created to implement actions for this FK. */
+#ifndef SQLITE_OMIT_TRIGGER
+    fkTriggerDelete(db, pFKey->apTrigger[0]);
+    fkTriggerDelete(db, pFKey->apTrigger[1]);
+#endif
+
     pNext = pFKey->pNextFrom;
-    sqlite3DbFree(pTab->dbMem, pFKey);
+    sqlite3DbFree(db, pFKey);
   }
 }
 #endif /* ifndef SQLITE_OMIT_FOREIGN_KEY */

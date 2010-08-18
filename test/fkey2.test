@@ -1936,5 +1936,50 @@ do_test fkey2-dd08e5.1.6 {
   }
 } {1 {foreign key constraint failed}}
 
+#-------------------------------------------------------------------------
+# Verify that ticket ce7c133ea6cc9ccdc1a60d80441f80b6180f5eba
+# fixed.
+#
+do_test fkey2-ce7c13.1.1 {
+  execsql {
+    CREATE TABLE tce71(a INTEGER PRIMARY KEY, b);
+    CREATE UNIQUE INDEX ice71 ON tce71(a,b);
+    INSERT INTO tce71 VALUES(100,200);
+    CREATE TABLE tce72(w, x, y, FOREIGN KEY(x,y) REFERENCES tce71(a,b));
+    INSERT INTO tce72 VALUES(300,100,200);
+    UPDATE tce71 set b = 200 where a = 100;
+    SELECT * FROM tce71, tce72;
+  }
+} {100 200 300 100 200}
+do_test fkey2-ce7c13.1.2 {
+  catchsql {
+    UPDATE tce71 set b = 201 where a = 100;
+  }
+} {1 {foreign key constraint failed}}
+do_test fkey2-ce7c13.1.3 {
+  catchsql {
+    UPDATE tce71 set a = 101 where a = 100;
+  }
+} {1 {foreign key constraint failed}}
+do_test fkey2-ce7c13.1.4 {
+  execsql {
+    CREATE TABLE tce73(a INTEGER PRIMARY KEY, b, UNIQUE(a,b));
+    INSERT INTO tce73 VALUES(100,200);
+    CREATE TABLE tce74(w, x, y, FOREIGN KEY(x,y) REFERENCES tce73(a,b));
+    INSERT INTO tce74 VALUES(300,100,200);
+    UPDATE tce73 set b = 200 where a = 100;
+    SELECT * FROM tce73, tce74;
+  }
+} {100 200 300 100 200}
+do_test fkey2-ce7c13.1.5 {
+  catchsql {
+    UPDATE tce73 set b = 201 where a = 100;
+  }
+} {1 {foreign key constraint failed}}
+do_test fkey2-ce7c13.1.6 {
+  catchsql {
+    UPDATE tce73 set a = 101 where a = 100;
+  }
+} {1 {foreign key constraint failed}}
 
 finish_test

@@ -70,6 +70,7 @@
 #      wal_set_journal_mode   ?DB?
 #      wal_check_journal_mode TESTNAME?DB?
 #      permutation
+#      presql
 #
 
 # Set the precision of FP arithmatic used by the interpreter. And 
@@ -441,8 +442,10 @@ proc finalize_testing {} {
     puts "$sqlite_open_file_count files were left open"
     incr nErr
   }
-  if {[sqlite3_memory_used]>0} {
-    puts "Unfreed memory: [sqlite3_memory_used] bytes"
+  if {[lindex [sqlite3_status SQLITE_STATUS_MALLOC_COUNT 0] 1]>0 ||
+              [sqlite3_memory_used]>0} {
+    puts "Unfreed memory: [sqlite3_memory_used] bytes in\
+         [lindex [sqlite3_status SQLITE_STATUS_MALLOC_COUNT 0] 1] allocations"
     incr nErr
     ifcapable memdebug||mem5||(mem3&&debug) {
       puts "Writing unfreed memory log to \"./memleak.txt\""
@@ -493,6 +496,9 @@ proc show_memstats {} {
   set val [format {now %10d  max %10d  max-size %10d} \
               [lindex $x 1] [lindex $x 2] [lindex $y 2]]
   puts "Memory used:          $val"
+  set x [sqlite3_status SQLITE_STATUS_MALLOC_COUNT 0]
+  set val [format {now %10d  max %10d} [lindex $x 1] [lindex $x 2]]
+  puts "Allocation count:     $val"
   set x [sqlite3_status SQLITE_STATUS_PAGECACHE_USED 0]
   set y [sqlite3_status SQLITE_STATUS_PAGECACHE_SIZE 0]
   set val [format {now %10d  max %10d  max-size %10d} \
@@ -1148,6 +1154,11 @@ proc permutation {} {
   set perm ""
   catch {set perm $::G(perm:name)}
   set perm
+}
+proc presql {} {
+  set presql ""
+  catch {set presql $::G(perm:presql)}
+  set presql
 }
 
 proc forced_proxy_locking {} {

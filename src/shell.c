@@ -398,6 +398,7 @@ struct previous_mode_data {
 struct callback_data {
   sqlite3 *db;           /* The database */
   int echoOn;            /* True to echo input commands */
+  int statsOn;           /* True to display memory stats before each finalize */
   int cnt;               /* Number of records displayed so far */
   FILE *out;             /* Write results here */
   int mode;              /* An output mode setting */
@@ -962,6 +963,86 @@ static char *save_err_msg(
 }
 
 /*
+** Display memory stats.
+*/
+static int display_stats(
+  sqlite3 *db,                /* Database to query */
+  struct callback_data *pArg, /* Pointer to struct callback_data */
+  int bReset                  /* True to reset the stats */
+){
+  int iCur;
+  int iHiwtr;
+
+  if( pArg && pArg->out ){
+    
+    iHiwtr = iCur = -1;
+    sqlite3_status(SQLITE_STATUS_MEMORY_USED, &iCur, &iHiwtr, bReset);
+    fprintf(pArg->out, "Memory Used:                         %d (max %d) bytes\n", iCur, iHiwtr);
+    iHiwtr = iCur = -1;
+    sqlite3_status(SQLITE_STATUS_MALLOC_COUNT, &iCur, &iHiwtr, bReset);
+    fprintf(pArg->out, "Number of Allocations:               %d (max %d)\n", iCur, iHiwtr);
+/*
+** Not currently used by the CLI.
+**    iHiwtr = iCur = -1;
+**    sqlite3_status(SQLITE_STATUS_PAGECACHE_USED, &iCur, &iHiwtr, bReset);
+**    fprintf(pArg->out, "Number of Pcache Pages Used:         %d (max %d) pages\n", iCur, iHiwtr);
+*/
+    iHiwtr = iCur = -1;
+    sqlite3_status(SQLITE_STATUS_PAGECACHE_OVERFLOW, &iCur, &iHiwtr, bReset);
+    fprintf(pArg->out, "Number of Pcache Overflow Bytes:     %d (max %d) bytes\n", iCur, iHiwtr);
+/*
+** Not currently used by the CLI.
+**    iHiwtr = iCur = -1;
+**    sqlite3_status(SQLITE_STATUS_SCRATCH_USED, &iCur, &iHiwtr, bReset);
+**    fprintf(pArg->out, "Number of Scratch Allocations Used:  %d (max %d)\n", iCur, iHiwtr);
+*/
+    iHiwtr = iCur = -1;
+    sqlite3_status(SQLITE_STATUS_SCRATCH_OVERFLOW, &iCur, &iHiwtr, bReset);
+    fprintf(pArg->out, "Number of Scratch Overflow Bytes:    %d (max %d) bytes\n", iCur, iHiwtr);
+    iHiwtr = iCur = -1;
+    sqlite3_status(SQLITE_STATUS_MALLOC_SIZE, &iCur, &iHiwtr, bReset);
+    fprintf(pArg->out, "Largest Allocation:                  %d bytes\n", iHiwtr);
+    iHiwtr = iCur = -1;
+    sqlite3_status(SQLITE_STATUS_PAGECACHE_SIZE, &iCur, &iHiwtr, bReset);
+    fprintf(pArg->out, "Largest Pcache Allocation:           %d bytes\n", iHiwtr);
+    iHiwtr = iCur = -1;
+    sqlite3_status(SQLITE_STATUS_SCRATCH_SIZE, &iCur, &iHiwtr, bReset);
+    fprintf(pArg->out, "Largest Scratch Allocation:          %d bytes\n", iHiwtr);
+#ifdef YYTRACKMAXSTACKDEPTH
+    iHiwtr = iCur = -1;
+    sqlite3_status(SQLITE_STATUS_PARSER_STACK, &iCur, &iHiwtr, bReset);
+    fprintf(pArg->out, "Deepest Parser Stack:                %d (max %d)\n", iCur, iHiwtr);
+#endif
+  }
+
+  if( pArg && pArg->out && db ){
+    iHiwtr = iCur = -1;
+    sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_USED, &iCur, &iHiwtr, bReset);
+    fprintf(pArg->out, "Lookaside Slots Used:                %d (max %d)\n", iCur, iHiwtr);
+    iHiwtr = iCur = -1;
+    sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_USED, &iCur, &iHiwtr, bReset);
+    fprintf(pArg->out, "Pager Heap Usage:                    %d bytes\n", iCur); 
+    iHiwtr = iCur = -1;
+    sqlite3_db_status(db, SQLITE_DBSTATUS_SCHEMA_USED, &iCur, &iHiwtr, bReset);
+    fprintf(pArg->out, "Schema Heap Usage:                   %d bytes\n", iCur); 
+    iHiwtr = iCur = -1;
+    sqlite3_db_status(db, SQLITE_DBSTATUS_STMT_USED, &iCur, &iHiwtr, bReset);
+    fprintf(pArg->out, "Statement Heap/Lookaside Usage:      %d bytes\n", iCur); 
+  }
+
+  if( pArg && pArg->out && db && pArg->pStmt ){
+    iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_FULLSCAN_STEP, bReset);
+    fprintf(pArg->out, "Fullscan Steps:                      %d\n", iCur);
+    iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_SORT, bReset);
+    fprintf(pArg->out, "Sort Operations:                     %d\n", iCur);
+    iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_AUTOINDEX, bReset);
+    fprintf(pArg->out, "Autoindex Inserts:                   %d\n", iCur);
+  }
+
+  return 0;
+}
+
+/*
 ** Execute a statement or set of statements.  Print 
 ** any result rows/columns depending on the current mode 
 ** set via the supplied callback.
@@ -1000,10 +1081,16 @@ static int shell_exec(
         continue;
       }
 
+      /* save off the prepared statment handle and reset row count */
+      if( pArg ){
+        pArg->pStmt = pStmt;
+        pArg->cnt = 0;
+      }
+
       /* echo the sql statement if echo on */
-      if( pArg->echoOn ){
+      if( pArg && pArg->echoOn ){
         const char *zStmtSql = sqlite3_sql(pStmt);
-        fprintf(pArg->out,"%s\n", zStmtSql ? zStmtSql : zSql);
+        fprintf(pArg->out, "%s\n", zStmtSql ? zStmtSql : zSql);
       }
 
       /* perform the first step.  this will tell us if we
@@ -1029,11 +1116,6 @@ static int shell_exec(
             for(i=0; i<nCol; i++){
               azCols[i] = (char *)sqlite3_column_name(pStmt, i);
             }
-            /* save off the prepared statment handle and reset row count */
-            if( pArg ){
-              pArg->pStmt = pStmt;
-              pArg->cnt = 0;
-            }
             do{
               /* extract the data and data types */
               for(i=0; i<nCol; i++){
@@ -1056,15 +1138,17 @@ static int shell_exec(
               }
             } while( SQLITE_ROW == rc );
             sqlite3_free(pData);
-            if( pArg ){
-              pArg->pStmt = NULL;
-            }
           }
         }else{
           do{
             rc = sqlite3_step(pStmt);
           } while( rc == SQLITE_ROW );
         }
+      }
+
+      /* print usage stats if stats on */
+      if( pArg && pArg->statsOn ){
+        display_stats(db, pArg, 0);
       }
 
       /* Finalize the statement just executed. If this fails, save a 
@@ -1076,6 +1160,11 @@ static int shell_exec(
         while( isspace(zSql[0]) ) zSql++;
       }else if( pzErrMsg ){
         *pzErrMsg = save_err_msg(db);
+      }
+
+      /* clear saved stmt handle */
+      if( pArg ){
+        pArg->pStmt = NULL;
       }
     }
   } /* end while */
@@ -1256,6 +1345,7 @@ static char zHelp[] =
   "                         LIKE pattern TABLE.\n"
   ".separator STRING      Change separator used by output mode and .import\n"
   ".show                  Show the current values for various settings\n"
+  ".stats ON|OFF          Turn stats on or off\n"
   ".tables ?TABLE?        List names of tables\n"
   "                         If TABLE specified, only list tables matching\n"
   "                         LIKE pattern TABLE.\n"
@@ -2001,11 +2091,16 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     fprintf(p->out,"%9.9s: ", "separator");
       output_c_string(p->out, p->separator);
       fprintf(p->out, "\n");
+    fprintf(p->out,"%9.9s: %s\n","stats", p->statsOn ? "on" : "off");
     fprintf(p->out,"%9.9s: ","width");
     for (i=0;i<(int)ArraySize(p->colWidth) && p->colWidth[i] != 0;i++) {
       fprintf(p->out,"%d ",p->colWidth[i]);
     }
     fprintf(p->out,"\n");
+  }else
+
+  if( c=='s' && strncmp(azArg[0], "stats", n)==0 && nArg>1 && nArg<3 ){
+    p->statsOn = booleanValue(azArg[1]);
   }else
 
   if( c=='t' && n>1 && strncmp(azArg[0], "tables", n)==0 && nArg<3 ){
@@ -2391,6 +2486,7 @@ static const char zOptions[] =
   "   -line                set output mode to 'line'\n"
   "   -list                set output mode to 'list'\n"
   "   -separator 'x'       set output field separator (|)\n"
+  "   -stats               print memory stats before each finalize\n"
   "   -nullvalue 'text'    set text string for NULL values\n"
   "   -version             show SQLite version\n"
 ;
@@ -2555,6 +2651,8 @@ int main(int argc, char **argv){
       data.showHeader = 0;
     }else if( strcmp(z,"-echo")==0 ){
       data.echoOn = 1;
+    }else if( strcmp(z,"-stats")==0 ){
+      data.statsOn = 1;
     }else if( strcmp(z,"-bail")==0 ){
       bail_on_error = 1;
     }else if( strcmp(z,"-version")==0 ){

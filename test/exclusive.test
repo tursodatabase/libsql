@@ -253,6 +253,11 @@ db2 close
 # from being inspected externally.
 #
 if {$tcl_platform(platform) != "windows"} {
+
+  # Return a list of two booleans (either 0 or 1). The first is true
+  # if the named file exists. The second is true only if the file
+  # exists and the first 28 bytes contain at least one non-zero byte.
+  #
   proc filestate {fname} {
     set exists 0
     set content 0
@@ -263,6 +268,7 @@ if {$tcl_platform(platform) != "windows"} {
     }
     list $exists $content
   }
+
   do_test exclusive-3.0 {
     filestate test.db-journal
   } {0 0}

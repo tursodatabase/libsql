@@ -129,7 +129,7 @@ test_suite "veryquick" -prefix "" -description {
   This test suite is the same as the "quick" tests, except that some files
   that test malloc and IO errors are omitted.
 } -files [
-  test_set $allquicktests -exclude *malloc* *ioerr* *fault* 
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault*
 ]
 
 test_suite "quick" -prefix "" -description {

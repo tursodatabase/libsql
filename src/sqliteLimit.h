@@ -133,9 +133,8 @@
 # define SQLITE_MAX_VARIABLE_NUMBER 999
 #endif
 
-/* Maximum page size.  The upper bound on this value is 32768.  This a limit
-** imposed by the necessity of storing the value in a 2-byte unsigned integer
-** and the fact that the page size must be a power of 2.
+/* Maximum page size.  The upper bound on this value is 65536.  This a limit
+** imposed by the use of 16-bit offsets within each page.
 **
 ** If this limit is changed, then the compiled library is technically
 ** incompatible with an SQLite library compiled with a different limit. If
@@ -145,7 +144,7 @@
 ** lead to database corruption.
 */
 #ifndef SQLITE_MAX_PAGE_SIZE
-# define SQLITE_MAX_PAGE_SIZE 32768
+# define SQLITE_MAX_PAGE_SIZE 65536
 #endif
 
 

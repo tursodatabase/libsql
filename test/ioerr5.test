@@ -91,6 +91,15 @@ foreach locking_mode {normal exclusive} {
         INSERT INTO a VALUES(1, 'ABCDEFGHIJKLMNOP');
       }
     } {}
+
+    # Open a read-only cursor on table "a". If the COMMIT below is
+    # interrupted by a persistent IO error, the pager will transition to 
+    # PAGER_ERROR state. If there are no other read-only cursors open,
+    # from there the pager immediately discards all cached data and 
+    # switches to PAGER_OPEN state. This read-only cursor stops that
+    # from happening, leaving the pager stuck in PAGER_ERROR state.
+    #
+    set channel [db incrblob -readonly a Name [db last_insert_rowid]]
   
     # Now try to commit the transaction. Cause an IO error to occur
     # within this operation, which moves the pager into the error state.
@@ -118,25 +127,11 @@ foreach locking_mode {normal exclusive} {
     # with the dirty page.
     #
     do_test ioerr5-1.$locking_mode-$iFail.3 {
-      set bt [btree_from_db db]
       sqlite3_soft_heap_limit 1024
       compilesql16 "SELECT 10"
-      array set stats [btree_pager_stats $bt]
+    } {}
 
-      # If the pager made it all the way to PAGER_SYNCED state, then 
-      # both in-memory pages are clean. Following the calls to 
-      # release_memory() that were made as part of the [compilesql16]
-      # above, there will be zero pages left in the cache.
-      #
-      # If the pager did not make it as far as PAGER_SYNCED, the two
-      # in memory pages are still dirty. So there will be 2 pages left
-      # in the cache following the release_memory() calls.
-      #
-      if {$stats(state)==5} {
-        set nPage 0
-      }
-      expr {$stats(page)==$nPage}
-    } {1}
+    close $channel
 
     # Ensure that nothing was written to the database while reclaiming
     # memory from the pager in error state.
@@ -148,7 +143,7 @@ foreach locking_mode {normal exclusive} {
       close $fd
       expr {$zDatabase eq $zDatabase2}
     } {1}
-  
+
     if {$rc eq [list 0 {}]} {
       do_test ioerr5.1-$locking_mode-$iFail.3 {
         execsql { SELECT count(*) FROM a }

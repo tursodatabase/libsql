@@ -16,7 +16,6 @@
 #include "fts3Int.h"
 #include <string.h>
 #include <assert.h>
-#include <ctype.h>
 
 
 /*

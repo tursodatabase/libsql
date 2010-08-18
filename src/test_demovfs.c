@@ -127,6 +127,7 @@
 #include <sys/param.h>
 #include <unistd.h>
 #include <time.h>
+#include <errno.h>
 
 /*
 ** Size of the write buffer used by journal files in bytes.
@@ -134,6 +135,11 @@
 #ifndef SQLITE_DEMOVFS_BUFFERSZ
 # define SQLITE_DEMOVFS_BUFFERSZ 8192
 #endif
+
+/*
+** The maximum pathname length supported by this VFS.
+*/
+#define MAXPATHNAME 512
 
 /*
 ** When using this VFS, the sqlite3_file* handles that SQLite uses are
@@ -446,16 +452,19 @@ static int demoOpen(
 ** file has been synced to disk before returning.
 */
 static int demoDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
-  int rc;
+  int rc;                         /* Return code */
+
   rc = unlink(zPath);
+  if( rc!=0 && errno==ENOENT ) return SQLITE_OK;
+
   if( rc==0 && dirSync ){
     int dfd;                      /* File descriptor open on directory */
     int i;                        /* Iterator variable */
-    char zDir[pVfs->mxPathname+1];/* Name of directory containing file zPath */
+    char zDir[MAXPATHNAME+1];     /* Name of directory containing file zPath */
 
     /* Figure out the directory name from the path of the file deleted. */
-    sqlite3_snprintf(pVfs->mxPathname, zDir, "%s", zPath);
-    zDir[pVfs->mxPathname] = '\0';
+    sqlite3_snprintf(MAXPATHNAME, zDir, "%s", zPath);
+    zDir[MAXPATHNAME] = '\0';
     for(i=strlen(zDir); i>1 && zDir[i]!='/'; i++);
     zDir[i] = '\0';
 
@@ -524,13 +533,13 @@ static int demoFullPathname(
   int nPathOut,                   /* Size of output buffer in bytes */
   char *zPathOut                  /* Pointer to output buffer */
 ){
-  char zDir[pVfs->mxPathname+1];
+  char zDir[MAXPATHNAME+1];
   if( zPath[0]=='/' ){
     zDir[0] = '\0';
   }else{
     getcwd(zDir, sizeof(zDir));
   }
-  zDir[pVfs->mxPathname] = '\0';
+  zDir[MAXPATHNAME] = '\0';
 
   sqlite3_snprintf(nPathOut, zPathOut, "%s/%s", zDir, zPath);
   zPathOut[nPathOut-1] = '\0';
@@ -609,7 +618,7 @@ sqlite3_vfs *sqlite3_demovfs(void){
   static sqlite3_vfs demovfs = {
     1,                            /* iVersion */
     sizeof(DemoFile),             /* szOsFile */
-    512,                          /* mxPathname */
+    MAXPATHNAME,                  /* mxPathname */
     0,                            /* pNext */
     "demo",                       /* zName */
     0,                            /* pAppData */

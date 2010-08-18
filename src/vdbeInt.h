@@ -323,6 +323,7 @@ struct Vdbe {
   VdbeFrame *pFrame;      /* Parent frame */
   int nFrame;             /* Number of frames in pFrame list */
   u32 expmask;            /* Binding to these vars invalidates VM */
+  SubProgram *pProgram;   /* Linked list of all sub-programs used by VM */
 };
 
 /*

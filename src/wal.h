@@ -25,7 +25,7 @@
 # define sqlite3WalBeginReadTransaction(y,z)   0
 # define sqlite3WalEndReadTransaction(z)
 # define sqlite3WalRead(v,w,x,y,z)             0
-# define sqlite3WalDbsize(y,z)
+# define sqlite3WalDbsize(y)                   0
 # define sqlite3WalBeginWriteTransaction(y)    0
 # define sqlite3WalEndWriteTransaction(x)      0
 # define sqlite3WalUndo(x,y,z)                 0
@@ -61,9 +61,8 @@ void sqlite3WalEndReadTransaction(Wal *pWal);
 /* Read a page from the write-ahead log, if it is present. */
 int sqlite3WalRead(Wal *pWal, Pgno pgno, int *pInWal, int nOut, u8 *pOut);
 
-/* Return the size of the database as it existed at the beginning
-** of the snapshot */
-void sqlite3WalDbsize(Wal *pWal, Pgno *pPgno);
+/* If the WAL is not empty, return the size of the database. */
+Pgno sqlite3WalDbsize(Wal *pWal);
 
 /* Obtain or release the WRITER lock. */
 int sqlite3WalBeginWriteTransaction(Wal *pWal);

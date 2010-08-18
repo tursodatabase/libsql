@@ -88,8 +88,8 @@ do_test rtree6.2.2 {
 do_test rtree6.2.3 {
   query_plan {SELECT * FROM t1,t2 WHERE k=ii}
 } [list \
-  {TABLE t2}                          \
-  {TABLE t1 VIRTUAL TABLE INDEX 1:}   \
+  {TABLE t1 VIRTUAL TABLE INDEX 2:}   \
+  {TABLE t2 USING PRIMARY KEY}        \
 ]
 
 do_test rtree6.2.4 {
@@ -102,8 +102,8 @@ do_test rtree6.2.4 {
 do_test rtree6.2.5 {
   query_plan {SELECT * FROM t1,t2 WHERE k=ii AND x1<v}
 } [list \
-  {TABLE t2}                              \
-  {TABLE t1 VIRTUAL TABLE INDEX 1:}   \
+  {TABLE t1 VIRTUAL TABLE INDEX 2:}   \
+  {TABLE t2 USING PRIMARY KEY}        \
 ]
 
 finish_test

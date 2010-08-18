@@ -81,8 +81,8 @@ struct SubProgram {
   int nOp;                      /* Elements in aOp[] */
   int nMem;                     /* Number of memory cells required */
   int nCsr;                     /* Number of cursors required */
-  int nRef;                     /* Number of pointers to this structure */
   void *token;                  /* id that may be used to recursive triggers */
+  SubProgram *pNext;            /* Next sub-program already visited */
 };
 
 /*
@@ -184,6 +184,7 @@ VdbeOp *sqlite3VdbeGetOp(Vdbe*, int);
 int sqlite3VdbeMakeLabel(Vdbe*);
 void sqlite3VdbeRunOnlyOnce(Vdbe*);
 void sqlite3VdbeDelete(Vdbe*);
+void sqlite3VdbeDeleteObject(sqlite3*,Vdbe*);
 void sqlite3VdbeMakeReady(Vdbe*,int,int,int,int,int,int);
 int sqlite3VdbeFinalize(Vdbe*);
 void sqlite3VdbeResolveLabel(Vdbe*, int);
@@ -201,7 +202,6 @@ sqlite3 *sqlite3VdbeDb(Vdbe*);
 void sqlite3VdbeSetSql(Vdbe*, const char *z, int n, int);
 void sqlite3VdbeSwap(Vdbe*,Vdbe*);
 VdbeOp *sqlite3VdbeTakeOpArray(Vdbe*, int*, int*);
-void sqlite3VdbeProgramDelete(sqlite3 *, SubProgram *, int);
 sqlite3_value *sqlite3VdbeGetValue(Vdbe*, int, u8);
 void sqlite3VdbeSetVarmask(Vdbe*, int);
 #ifndef SQLITE_OMIT_TRACE
@@ -211,6 +211,10 @@ void sqlite3VdbeSetVarmask(Vdbe*, int);
 UnpackedRecord *sqlite3VdbeRecordUnpack(KeyInfo*,int,const void*,char*,int);
 void sqlite3VdbeDeleteUnpackedRecord(UnpackedRecord*);
 int sqlite3VdbeRecordCompare(int,const void*,UnpackedRecord*);
+
+#ifndef SQLITE_OMIT_TRIGGER
+void sqlite3VdbeLinkSubProgram(Vdbe *, SubProgram *);
+#endif
 
 
 #ifndef NDEBUG

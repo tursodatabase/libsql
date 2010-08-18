@@ -235,6 +235,7 @@ static void pthreadMutexEnter(sqlite3_mutex *p){
   */
   pthread_mutex_lock(&p->mutex);
 #if SQLITE_MUTEX_NREF
+  assert( p->nRef>0 || p->owner==0 );
   p->owner = pthread_self();
   p->nRef++;
 #endif
@@ -307,6 +308,7 @@ static void pthreadMutexLeave(sqlite3_mutex *p){
   assert( pthreadMutexHeld(p) );
 #if SQLITE_MUTEX_NREF
   p->nRef--;
+  if( p->nRef==0 ) p->owner = 0;
 #endif
   assert( p->nRef==0 || p->id==SQLITE_MUTEX_RECURSIVE );
 

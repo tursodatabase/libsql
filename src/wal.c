@@ -292,6 +292,10 @@ typedef struct WalCkptInfo WalCkptInfo;
 **
 ** The actual header in the wal-index consists of two copies of this
 ** object.
+**
+** The szPage value can be any power of 2 between 512 and 32768, inclusive.
+** Or it can be 1 to represent a 65536-byte page.  The latter case was
+** added in 3.7.1 when support for 64K pages was added.  
 */
 struct WalIndexHdr {
   u32 iVersion;                   /* Wal-index version */
@@ -299,7 +303,7 @@ struct WalIndexHdr {
   u32 iChange;                    /* Counter incremented each transaction */
   u8 isInit;                      /* 1 when initialized */
   u8 bigEndCksum;                 /* True if checksums in WAL are big-endian */
-  u16 szPage;                     /* Database page size in bytes */
+  u16 szPage;                     /* Database page size in bytes. 1==64K */
   u32 mxFrame;                    /* Index of last valid frame in the WAL */
   u32 nPage;                      /* Size of database in pages */
   u32 aFrameCksum[2];             /* Checksum of last frame in log */
@@ -410,7 +414,7 @@ struct Wal {
   u32 iCallback;             /* Value to pass to log callback (or 0) */
   int nWiData;               /* Size of array apWiData */
   volatile u32 **apWiData;   /* Pointer to wal-index content in memory */
-  u16 szPage;                /* Database page size */
+  u32 szPage;                /* Database page size */
   i16 readLock;              /* Which read lock is being held.  -1 for none */
   u8 exclusiveMode;          /* Non-zero if connection is in exclusive mode */
   u8 writeLock;              /* True if in a write transaction */
@@ -1081,7 +1085,7 @@ static int walIndexRecover(Wal *pWal){
       goto finished;
     }
     pWal->hdr.bigEndCksum = (u8)(magic&0x00000001);
-    pWal->szPage = (u16)szPage;
+    pWal->szPage = szPage;
     pWal->nCkpt = sqlite3Get4byte(&aBuf[12]);
     memcpy(&pWal->hdr.aSalt, &aBuf[16], 8);
 
@@ -1131,7 +1135,9 @@ static int walIndexRecover(Wal *pWal){
       if( nTruncate ){
         pWal->hdr.mxFrame = iFrame;
         pWal->hdr.nPage = nTruncate;
-        pWal->hdr.szPage = (u16)szPage;
+        pWal->hdr.szPage = (szPage&0xff00) | (szPage>>16);
+        testcase( szPage<=32768 );
+        testcase( szPage>=65536 );
         aFrameCksum[0] = pWal->hdr.aFrameCksum[0];
         aFrameCksum[1] = pWal->hdr.aFrameCksum[1];
       }
@@ -1156,6 +1162,17 @@ finished:
     pInfo->nBackfill = 0;
     pInfo->aReadMark[0] = 0;
     for(i=1; i<WAL_NREADER; i++) pInfo->aReadMark[i] = READMARK_NOT_USED;
+
+    /* If more than one frame was recovered from the log file, report an
+    ** event via sqlite3_log(). This is to help with identifying performance
+    ** problems caused by applications routinely shutting down without
+    ** checkpointing the log file.
+    */
+    if( pWal->hdr.nPage ){
+      sqlite3_log(SQLITE_OK, "Recovered %d frames from WAL file %s",
+          pWal->hdr.nPage, pWal->zWalName
+      );
+    }
   }
 
 recovery_error:
@@ -1516,14 +1533,18 @@ static int walCheckpoint(
   u8 *zBuf                        /* Temporary buffer to use */
 ){
   int rc;                         /* Return code */
-  int szPage = pWal->hdr.szPage;  /* Database page-size */
+  int szPage;                     /* Database page-size */
   WalIterator *pIter = 0;         /* Wal iterator context */
   u32 iDbpage = 0;                /* Next database page to write */
   u32 iFrame = 0;                 /* Wal frame containing data for iDbpage */
   u32 mxSafeFrame;                /* Max frame that can be backfilled */
+  u32 mxPage;                     /* Max database page to write */
   int i;                          /* Loop counter */
   volatile WalCkptInfo *pInfo;    /* The checkpoint status information */
 
+  szPage = (pWal->hdr.szPage&0xfe00) + ((pWal->hdr.szPage&0x0001)<<16);
+  testcase( szPage<=32768 );
+  testcase( szPage>=65536 );
   if( pWal->hdr.mxFrame==0 ) return SQLITE_OK;
 
   /* Allocate the iterator */
@@ -1534,7 +1555,7 @@ static int walCheckpoint(
   assert( pIter );
 
   /*** TODO:  Move this test out to the caller.  Make it an assert() here ***/
-  if( pWal->hdr.szPage!=nBuf ){
+  if( szPage!=nBuf ){
     rc = SQLITE_CORRUPT_BKPT;
     goto walcheckpoint_out;
   }
@@ -1545,6 +1566,7 @@ static int walCheckpoint(
   ** cannot be backfilled from the WAL.
   */
   mxSafeFrame = pWal->hdr.mxFrame;
+  mxPage = pWal->hdr.nPage;
   pInfo = walCkptInfo(pWal);
   for(i=1; i<WAL_NREADER; i++){
     u32 y = pInfo->aReadMark[i];
@@ -1565,6 +1587,7 @@ static int walCheckpoint(
   if( pInfo->nBackfill<mxSafeFrame
    && (rc = walLockExclusive(pWal, WAL_READ_LOCK(0), 1))==SQLITE_OK
   ){
+    i64 nSize;                    /* Current size of database file */
     u32 nBackfill = pInfo->nBackfill;
 
     /* Sync the WAL to disk */
@@ -1572,11 +1595,22 @@ static int walCheckpoint(
       rc = sqlite3OsSync(pWal->pWalFd, sync_flags);
     }
 
+    /* If the database file may grow as a result of this checkpoint, hint
+    ** about the eventual size of the db file to the VFS layer. 
+    */
+    if( rc==SQLITE_OK ){
+      i64 nReq = ((i64)mxPage * szPage);
+      rc = sqlite3OsFileSize(pWal->pDbFd, &nSize);
+      if( rc==SQLITE_OK && nSize<nReq ){
+        sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_SIZE_HINT, &nReq);
+      }
+    }
+
     /* Iterate through the contents of the WAL, copying data to the db file. */
     while( rc==SQLITE_OK && 0==walIteratorNext(pIter, &iDbpage, &iFrame) ){
       i64 iOffset;
       assert( walFramePgno(pWal, iFrame)==iDbpage );
-      if( iFrame<=nBackfill || iFrame>mxSafeFrame ) continue;
+      if( iFrame<=nBackfill || iFrame>mxSafeFrame || iDbpage>mxPage ) continue;
       iOffset = walFrameOffset(iFrame, szPage) + WAL_FRAME_HDRSIZE;
       /* testcase( IS_BIG_INT(iOffset) ); // requires a 4GiB WAL file */
       rc = sqlite3OsRead(pWal->pWalFd, zBuf, szPage, iOffset);
@@ -1683,7 +1717,7 @@ static int walIndexTryHdr(Wal *pWal, int *pChanged){
   /* The first page of the wal-index must be mapped at this point. */
   assert( pWal->nWiData>0 && pWal->apWiData[0] );
 
-  /* Read the header. This might happen currently with a write to the
+  /* Read the header. This might happen concurrently with a write to the
   ** same area of shared memory on a different CPU in a SMP,
   ** meaning it is possible that an inconsistent snapshot is read
   ** from the file. If this happens, return non-zero.
@@ -1712,7 +1746,9 @@ static int walIndexTryHdr(Wal *pWal, int *pChanged){
   if( memcmp(&pWal->hdr, &h1, sizeof(WalIndexHdr)) ){
     *pChanged = 1;
     memcpy(&pWal->hdr, &h1, sizeof(WalIndexHdr));
-    pWal->szPage = pWal->hdr.szPage;
+    pWal->szPage = (pWal->hdr.szPage&0xfe00) + ((pWal->hdr.szPage&0x0001)<<16);
+    testcase( pWal->szPage<=32768 );
+    testcase( pWal->szPage>=65536 );
   }
 
   /* The header was successfully read. Return zero. */
@@ -2031,6 +2067,7 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
 ** read-lock.
 */
 void sqlite3WalEndReadTransaction(Wal *pWal){
+  sqlite3WalEndWriteTransaction(pWal);
   if( pWal->readLock>=0 ){
     walUnlockShared(pWal, WAL_READ_LOCK(pWal->readLock));
     pWal->readLock = -1;
@@ -2141,7 +2178,13 @@ int sqlite3WalRead(
   ** required page. Read and return data from the log file.
   */
   if( iRead ){
-    i64 iOffset = walFrameOffset(iRead, pWal->hdr.szPage) + WAL_FRAME_HDRSIZE;
+    int sz;
+    i64 iOffset;
+    sz = pWal->hdr.szPage;
+    sz = (pWal->hdr.szPage&0xfe00) + ((pWal->hdr.szPage&0x0001)<<16);
+    testcase( sz<=32768 );
+    testcase( sz>=65536 );
+    iOffset = walFrameOffset(iRead, sz) + WAL_FRAME_HDRSIZE;
     *pInWal = 1;
     /* testcase( IS_BIG_INT(iOffset) ); // requires a 4GiB WAL */
     return sqlite3OsRead(pWal->pWalFd, pOut, nOut, iOffset);
@@ -2153,11 +2196,13 @@ int sqlite3WalRead(
 
 
 /* 
-** Set *pPgno to the size of the database file (or zero, if unknown).
+** Return the size of the database in pages (or zero, if unknown).
 */
-void sqlite3WalDbsize(Wal *pWal, Pgno *pPgno){
-  assert( pWal->readLock>=0 || pWal->lockError );
-  *pPgno = pWal->hdr.nPage;
+Pgno sqlite3WalDbsize(Wal *pWal){
+  if( pWal && ALWAYS(pWal->readLock>=0) ){
+    return pWal->hdr.nPage;
+  }
+  return 0;
 }
 
 
@@ -2233,7 +2278,7 @@ int sqlite3WalEndWriteTransaction(Wal *pWal){
 */
 int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
   int rc = SQLITE_OK;
-  if( pWal->writeLock ){
+  if( ALWAYS(pWal->writeLock) ){
     Pgno iMax = pWal->hdr.mxFrame;
     Pgno iFrame;
   
@@ -2422,7 +2467,7 @@ int sqlite3WalFrames(
     sqlite3Put4byte(&aWalHdr[24], aCksum[0]);
     sqlite3Put4byte(&aWalHdr[28], aCksum[1]);
     
-    pWal->szPage = (u16)szPage;
+    pWal->szPage = szPage;
     pWal->hdr.bigEndCksum = SQLITE_BIGENDIAN;
     pWal->hdr.aFrameCksum[0] = aCksum[0];
     pWal->hdr.aFrameCksum[1] = aCksum[1];
@@ -2517,7 +2562,9 @@ int sqlite3WalFrames(
 
   if( rc==SQLITE_OK ){
     /* Update the private copy of the header. */
-    pWal->hdr.szPage = (u16)szPage;
+    pWal->hdr.szPage = (szPage&0xff00) | (szPage>>16);
+    testcase( szPage<=32768 );
+    testcase( szPage>=65536 );
     pWal->hdr.mxFrame = iFrame;
     if( isCommit ){
       pWal->hdr.iChange++;

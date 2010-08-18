@@ -99,7 +99,7 @@ int sqlite3PagerReadFileheader(Pager*, int, unsigned char*);
 
 /* Functions used to configure a Pager object. */
 void sqlite3PagerSetBusyhandler(Pager*, int(*)(void *), void *);
-int sqlite3PagerSetPagesize(Pager*, u16*, int);
+int sqlite3PagerSetPagesize(Pager*, u32*, int);
 int sqlite3PagerMaxPageCount(Pager*, int);
 void sqlite3PagerSetCachesize(Pager*, int);
 void sqlite3PagerSetSafetyLevel(Pager*,int,int);
@@ -126,9 +126,10 @@ void *sqlite3PagerGetData(DbPage *);
 void *sqlite3PagerGetExtra(DbPage *); 
 
 /* Functions used to manage pager transactions and savepoints. */
-int sqlite3PagerPagecount(Pager*, int*);
+void sqlite3PagerPagecount(Pager*, int*);
 int sqlite3PagerBegin(Pager*, int exFlag, int);
 int sqlite3PagerCommitPhaseOne(Pager*,const char *zMaster, int);
+int sqlite3PagerExclusiveLock(Pager*);
 int sqlite3PagerSync(Pager *pPager);
 int sqlite3PagerCommitPhaseTwo(Pager*);
 int sqlite3PagerRollback(Pager*);

@@ -27,6 +27,8 @@ proc do_multiclient_test {varname script} {
     set tn 2
   }] {
     faultsim_delete_and_reopen
+
+    proc code1 {tcl} { uplevel #0 $tcl }
   
     # Open connections [db2] and [db3]. Depending on which iteration this
     # is, the connections may be created in this interpreter, or in 

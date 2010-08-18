@@ -92,7 +92,7 @@ extern "C" {
 **
 ** Since version 3.6.18, SQLite source code has been stored in the
 ** <a href="http://www.fossil-scm.org/">Fossil configuration management
-** system</a>.  ^The SQLITE_SOURCE_ID macro evalutes to
+** system</a>.  ^The SQLITE_SOURCE_ID macro evaluates to
 ** a string which identifies a particular check-in of SQLite
 ** within its configuration management system.  ^The SQLITE_SOURCE_ID
 ** string contains the date and time of the check-in (UTC) and an SHA1
@@ -149,7 +149,7 @@ int sqlite3_libversion_number(void);
 ** compile time.  ^The SQLITE_ prefix may be omitted from the 
 ** option name passed to sqlite3_compileoption_used().  
 **
-** ^The sqlite3_compileoption_get() function allows interating
+** ^The sqlite3_compileoption_get() function allows iterating
 ** over the list of options that were defined at compile time by
 ** returning the N-th compile time option string.  ^If N is out of range,
 ** sqlite3_compileoption_get() returns a NULL pointer.  ^The SQLITE_ 
@@ -157,7 +157,7 @@ int sqlite3_libversion_number(void);
 ** sqlite3_compileoption_get().
 **
 ** ^Support for the diagnostic functions sqlite3_compileoption_used()
-** and sqlite3_compileoption_get() may be omitted by specifing the 
+** and sqlite3_compileoption_get() may be omitted by specifying the 
 ** [SQLITE_OMIT_COMPILEOPTION_DIAGS] option at compile time.
 **
 ** See also: SQL functions [sqlite_compileoption_used()] and
@@ -263,7 +263,7 @@ typedef sqlite_uint64 sqlite3_uint64;
 **
 ** ^The sqlite3_close() routine is the destructor for the [sqlite3] object.
 ** ^Calls to sqlite3_close() return SQLITE_OK if the [sqlite3] object is
-** successfullly destroyed and all associated resources are deallocated.
+** successfully destroyed and all associated resources are deallocated.
 **
 ** Applications must [sqlite3_finalize | finalize] all [prepared statements]
 ** and [sqlite3_blob_close | close] all [BLOB handles] associated with
@@ -690,12 +690,21 @@ struct sqlite3_io_methods {
 ** is often close.  The underlying VFS might choose to preallocate database
 ** file space based on this hint in order to help writes to the database
 ** file run faster.
+**
+** The [SQLITE_FCNTL_CHUNK_SIZE] opcode is used to request that the VFS
+** extends and truncates the database file in chunks of a size specified
+** by the user. The fourth argument to [sqlite3_file_control()] should 
+** point to an integer (type int) containing the new chunk-size to use
+** for the nominated database. Allocating database file space in large
+** chunks (say 1MB at a time), may reduce file-system fragmentation and
+** improve performance on some systems.
 */
 #define SQLITE_FCNTL_LOCKSTATE        1
 #define SQLITE_GET_LOCKPROXYFILE      2
 #define SQLITE_SET_LOCKPROXYFILE      3
 #define SQLITE_LAST_ERRNO             4
 #define SQLITE_FCNTL_SIZE_HINT        5
+#define SQLITE_FCNTL_CHUNK_SIZE       6
 
 /*
 ** CAPI3REF: Mutex Handle
@@ -2171,7 +2180,13 @@ int sqlite3_set_authorizer(
 ** ^The callback function registered by sqlite3_profile() is invoked
 ** as each SQL statement finishes.  ^The profile callback contains
 ** the original statement text and an estimate of wall-clock time
-** of how long that statement took to run.
+** of how long that statement took to run.  ^The profile callback
+** time is in units of nanoseconds, however the current implementation
+** is only capable of millisecond resolution so the six least significant
+** digits in the time are meaningless.  Future versions of SQLite
+** might provide greater resolution on the profiler callback.  The
+** sqlite3_profile() function is considered experimental and is
+** subject to change in future versions of SQLite.
 */
 void *sqlite3_trace(sqlite3*, void(*xTrace)(void*,const char*), void*);
 SQLITE_EXPERIMENTAL void *sqlite3_profile(sqlite3*,
@@ -2652,7 +2667,7 @@ typedef struct sqlite3_context sqlite3_context;
 ** </ul>
 **
 ** In the templates above, NNN represents an integer literal,
-** and VVV represents an alphanumeric identifer.)^  ^The values of these
+** and VVV represents an alphanumeric identifier.)^  ^The values of these
 ** parameters (also called "host parameter names" or "SQL parameters")
 ** can be set using the sqlite3_bind_*() routines defined here.
 **
@@ -3431,7 +3446,7 @@ int sqlite3_value_numeric_type(sqlite3_value*);
 /*
 ** CAPI3REF: Obtain Aggregate Function Context
 **
-** Implementions of aggregate SQL functions use this
+** Implementations of aggregate SQL functions use this
 ** routine to allocate memory for storing their state.
 **
 ** ^The first time the sqlite3_aggregate_context(C,N) routine is called 
@@ -3703,7 +3718,7 @@ void sqlite3_result_zeroblob(sqlite3_context*, int n);
 **
 ** A pointer to the user supplied routine must be passed as the fifth
 ** argument.  ^If it is NULL, this is the same as deleting the collation
-** sequence (so that SQLite cannot call it anymore).
+** sequence (so that SQLite cannot call it any more).
 ** ^Each time the application supplied function is invoked, it is passed
 ** as its first parameter a copy of the void* passed as the fourth argument
 ** to sqlite3_create_collation() or sqlite3_create_collation16().
@@ -4320,7 +4335,8 @@ struct sqlite3_module {
 ** CAPI3REF: Virtual Table Indexing Information
 ** KEYWORDS: sqlite3_index_info
 **
-** The sqlite3_index_info structure and its substructures is used to
+** The sqlite3_index_info structure and its substructures is used as part
+** of the [virtual table] interface to
 ** pass information into and receive the reply from the [xBestIndex]
 ** method of a [virtual table module].  The fields under **Inputs** are the
 ** inputs to xBestIndex and are read-only.  xBestIndex inserts its
@@ -4328,10 +4344,12 @@ struct sqlite3_module {
 **
 ** ^(The aConstraint[] array records WHERE clause constraints of the form:
 **
-** <pre>column OP expr</pre>
+** <blockquote>column OP expr</blockquote>
 **
 ** where OP is =, &lt;, &lt;=, &gt;, or &gt;=.)^  ^(The particular operator is
-** stored in aConstraint[].op.)^  ^(The index of the column is stored in
+** stored in aConstraint[].op using one of the
+** [SQLITE_INDEX_CONSTRAINT_EQ | SQLITE_INDEX_CONSTRAINT_ values].)^
+** ^(The index of the column is stored in
 ** aConstraint[].iColumn.)^  ^(aConstraint[].usable is TRUE if the
 ** expr on the right-hand side can be evaluated (and thus the constraint
 ** is usable) and false if it cannot.)^
@@ -4391,6 +4409,15 @@ struct sqlite3_index_info {
   int orderByConsumed;       /* True if output is already ordered */
   double estimatedCost;      /* Estimated cost of using this index */
 };
+
+/*
+** CAPI3REF: Virtual Table Constraint Operator Codes
+**
+** These macros defined the allowed values for the
+** [sqlite3_index_info].aConstraint[].op field.  Each value represents
+** an operator that is part of a constraint term in the wHERE clause of
+** a query that uses a [virtual table].
+*/
 #define SQLITE_INDEX_CONSTRAINT_EQ    2
 #define SQLITE_INDEX_CONSTRAINT_GT    4
 #define SQLITE_INDEX_CONSTRAINT_LE    8
@@ -4909,7 +4936,7 @@ void sqlite3_mutex_leave(sqlite3_mutex*);
 ** it is passed a NULL pointer).
 **
 ** The xMutexInit() method must be threadsafe.  ^It must be harmless to
-** invoke xMutexInit() mutiple times within the same process and without
+** invoke xMutexInit() multiple times within the same process and without
 ** intervening calls to xMutexEnd().  Second and subsequent calls to
 ** xMutexInit() must be no-ops.
 **
@@ -5079,7 +5106,7 @@ int sqlite3_test_control(int op, ...);
 ** CAPI3REF: SQLite Runtime Status
 **
 ** ^This interface is used to retrieve runtime status information
-** about the preformance of SQLite, and optionally to reset various
+** about the performance of SQLite, and optionally to reset various
 ** highwater marks.  ^The first argument is an integer code for
 ** the specific parameter to measure.  ^(Recognized integer codes
 ** are of the form [SQLITE_STATUS_MEMORY_USED | SQLITE_STATUS_...].)^
@@ -5130,6 +5157,9 @@ int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
 ** internal equivalents).  Only the value returned in the
 ** *pHighwater parameter to [sqlite3_status()] is of interest.  
 ** The value written into the *pCurrent parameter is undefined.</dd>)^
+**
+** ^(<dt>SQLITE_STATUS_MALLOC_COUNT</dt>
+** <dd>This parameter records the number of separate memory allocations.</dd>)^
 **
 ** ^(<dt>SQLITE_STATUS_PAGECACHE_USED</dt>
 ** <dd>This parameter returns the number of pages used out of the
@@ -5192,6 +5222,7 @@ int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
 #define SQLITE_STATUS_PARSER_STACK         6
 #define SQLITE_STATUS_PAGECACHE_SIZE       7
 #define SQLITE_STATUS_SCRATCH_SIZE         8
+#define SQLITE_STATUS_MALLOC_COUNT         9
 
 /*
 ** CAPI3REF: Database Connection Status
@@ -5201,7 +5232,7 @@ int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
 ** database connection object to be interrogated.  ^The second argument
 ** is an integer constant, taken from the set of
 ** [SQLITE_DBSTATUS_LOOKASIDE_USED | SQLITE_DBSTATUS_*] macros, that
-** determiness the parameter to interrogate.  The set of 
+** determines the parameter to interrogate.  The set of 
 ** [SQLITE_DBSTATUS_LOOKASIDE_USED | SQLITE_DBSTATUS_*] macros is likely
 ** to grow in future releases of SQLite.
 **
@@ -5231,16 +5262,33 @@ int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiwtr, int resetFlg);
 ** <dd>This parameter returns the number of lookaside memory slots currently
 ** checked out.</dd>)^
 **
-** <dt>SQLITE_DBSTATUS_CACHE_USED</dt>
-** <dd>^This parameter returns the approximate number of of bytes of heap
-** memory used by all pager caches associated with the database connection.
+** ^(<dt>SQLITE_DBSTATUS_CACHE_USED</dt>
+** <dd>This parameter returns the approximate number of of bytes of heap
+** memory used by all pager caches associated with the database connection.)^
 ** ^The highwater mark associated with SQLITE_DBSTATUS_CACHE_USED is always 0.
+**
+** ^(<dt>SQLITE_DBSTATUS_SCHEMA_USED</dt>
+** <dd>This parameter returns the approximate number of of bytes of heap
+** memory used to store the schema for all databases associated
+** with the connection - main, temp, and any [ATTACH]-ed databases.)^ 
+** ^The full amount of memory used by the schemas is reported, even if the
+** schema memory is shared with other database connections due to
+** [shared cache mode] being enabled.
+** ^The highwater mark associated with SQLITE_DBSTATUS_SCHEMA_USED is always 0.
+**
+** ^(<dt>SQLITE_DBSTATUS_STMT_USED</dt>
+** <dd>This parameter returns the approximate number of of bytes of heap
+** and lookaside memory used by all prepared statements associated with
+** the database connection.)^
+** ^The highwater mark associated with SQLITE_DBSTATUS_STMT_USED is always 0.
 ** </dd>
 ** </dl>
 */
 #define SQLITE_DBSTATUS_LOOKASIDE_USED     0
 #define SQLITE_DBSTATUS_CACHE_USED         1
-#define SQLITE_DBSTATUS_MAX                1   /* Largest defined DBSTATUS */
+#define SQLITE_DBSTATUS_SCHEMA_USED        2
+#define SQLITE_DBSTATUS_STMT_USED          3
+#define SQLITE_DBSTATUS_MAX                3   /* Largest defined DBSTATUS */
 
 
 /*
@@ -5606,7 +5654,7 @@ typedef struct sqlite3_backup sqlite3_backup;
 **
 ** ^Each call to sqlite3_backup_step() sets two values inside
 ** the [sqlite3_backup] object: the number of pages still to be backed
-** up and the total number of pages in the source databae file.
+** up and the total number of pages in the source database file.
 ** The sqlite3_backup_remaining() and sqlite3_backup_pagecount() interfaces
 ** retrieve these two values, respectively.
 **
@@ -5702,7 +5750,7 @@ int sqlite3_backup_pagecount(sqlite3_backup *p);
 ** blocked connection already has a registered unlock-notify callback,
 ** then the new callback replaces the old.)^ ^If sqlite3_unlock_notify() is
 ** called with a NULL pointer as its second argument, then any existing
-** unlock-notify callback is cancelled. ^The blocked connections 
+** unlock-notify callback is canceled. ^The blocked connections 
 ** unlock-notify callback may also be canceled by closing the blocked
 ** connection using [sqlite3_close()].
 **
@@ -5784,7 +5832,7 @@ int sqlite3_unlock_notify(
 **
 ** ^The [sqlite3_strnicmp()] API allows applications and extensions to
 ** compare the contents of two buffers containing UTF-8 strings in a
-** case-indendent fashion, using the same definition of case independence 
+** case-independent fashion, using the same definition of case independence 
 ** that SQLite uses internally when comparing identifiers.
 */
 int sqlite3_strnicmp(const char *, const char *, int);

@@ -502,7 +502,7 @@ foreach {tn ofst value result} {
 
           7   24    511      {1 2 3 4}
           8   24    513      {1 2 3 4}
-          9   24    65536    {1 2 3 4}
+          9   24    131072   {1 2 3 4}
 
          10   32    65536    {1 2}
 } {
@@ -1066,6 +1066,10 @@ do_execsql_test pager1-6.8 {
     PRAGMA max_page_count = 10;
 } {11}
 do_execsql_test pager1-6.9 { COMMIT } {}
+
+do_execsql_test pager1-6.10 { PRAGMA max_page_count = 10 } {10}
+do_execsql_test pager1-6.11 { SELECT * FROM t11 }          {1 2 3 4}
+do_execsql_test pager1-6.12 { PRAGMA max_page_count }      {11}
 
 
 #-------------------------------------------------------------------------
@@ -1760,7 +1764,7 @@ do_multiclient_test tn {
     }
   } {1 2 3 4 5 6}
   do_test pager1-17.$tn.3.2 {
-    csql1 { INSERT INTO t1 VALUES(3, 4) }
+  csql1 { INSERT INTO t1 VALUES(3, 4) }
   } {1 {database is locked}}
   do_test pager1-17.$tn.3.3 { sql2 COMMIT } {}
 }
@@ -2254,6 +2258,7 @@ db close
 tv delete
 
 #-------------------------------------------------------------------------
+#
 do_test pager1.27.1 {
   faultsim_delete_and_reopen
   sqlite3_pager_refcounts db
@@ -2264,5 +2269,105 @@ do_test pager1.27.1 {
   sqlite3_pager_refcounts db
   execsql COMMIT
 } {}
+
+#-------------------------------------------------------------------------
+# Test that attempting to open a write-transaction with 
+# locking_mode=exclusive in WAL mode fails if there are other clients on 
+# the same database.
+#
+catch { db close }
+do_multiclient_test tn {
+  do_test pager1-28.$tn.1 {
+    sql1 { 
+      PRAGMA journal_mode = WAL;
+      CREATE TABLE t1(a, b);
+      INSERT INTO t1 VALUES('a', 'b');
+    }
+  } {wal}
+  do_test pager1-28.$tn.2 { sql2 { SELECT * FROM t1 } } {a b}
+
+  do_test pager1-28.$tn.3 { sql1 { PRAGMA locking_mode=exclusive } } {exclusive}
+  do_test pager1-28.$tn.4 { 
+    csql1 { BEGIN; INSERT INTO t1 VALUES('c', 'd'); }
+  } {1 {database is locked}}
+  code2 { db2 close ; sqlite3 db2 test.db }
+  do_test pager1-28.$tn.4 { 
+    sql1 { INSERT INTO t1 VALUES('c', 'd'); COMMIT }
+  } {}
+}
+
+#-------------------------------------------------------------------------
+# Normally, when changing from journal_mode=PERSIST to DELETE the pager
+# attempts to delete the journal file. However, if it cannot obtain a
+# RESERVED lock on the database file, this step is skipped.
+#
+do_multiclient_test tn {
+  do_test pager1-28.$tn.1 {
+    sql1 { 
+      PRAGMA journal_mode = PERSIST;
+      CREATE TABLE t1(a, b);
+      INSERT INTO t1 VALUES('a', 'b');
+    }
+  } {persist}
+  do_test pager1-28.$tn.2 { file exists test.db-journal } 1
+  do_test pager1-28.$tn.3 { sql1 { PRAGMA journal_mode = DELETE } } delete
+  do_test pager1-28.$tn.4 { file exists test.db-journal } 0
+
+  do_test pager1-28.$tn.5 {
+    sql1 { 
+      PRAGMA journal_mode = PERSIST;
+      INSERT INTO t1 VALUES('c', 'd');
+    }
+  } {persist}
+  do_test pager1-28.$tn.6 { file exists test.db-journal } 1
+  do_test pager1-28.$tn.7 {
+    sql2 { BEGIN; INSERT INTO t1 VALUES('e', 'f'); }
+  } {}
+  do_test pager1-28.$tn.8  { file exists test.db-journal } 1
+  do_test pager1-28.$tn.9  { sql1 { PRAGMA journal_mode = DELETE } } delete
+  do_test pager1-28.$tn.10 { file exists test.db-journal } 1
+
+  do_test pager1-28.$tn.11 { sql2 COMMIT } {}
+  do_test pager1-28.$tn.12 { file exists test.db-journal } 0
+
+  do_test pager1-28-$tn.13 {
+    code1 { set channel [db incrblob -readonly t1 a 2] }
+    sql1 {
+      PRAGMA journal_mode = PERSIST;
+      INSERT INTO t1 VALUES('g', 'h');
+    }
+  } {persist}
+  do_test pager1-28.$tn.14 { file exists test.db-journal } 1
+  do_test pager1-28.$tn.15 {
+    sql2 { BEGIN; INSERT INTO t1 VALUES('e', 'f'); }
+  } {}
+  do_test pager1-28.$tn.16 { sql1 { PRAGMA journal_mode = DELETE } } delete
+  do_test pager1-28.$tn.17 { file exists test.db-journal } 1
+
+  do_test pager1-28.$tn.17 { csql2 { COMMIT } } {1 {database is locked}}
+  do_test pager1-28-$tn.18 { code1 { read $channel } } c
+  do_test pager1-28-$tn.19 { code1 { close $channel } } {}
+  do_test pager1-28.$tn.20 { sql2 { COMMIT } } {}
+}
+
+do_test pager1-29.1 {
+  faultsim_delete_and_reopen
+  execsql {
+    PRAGMA page_size = 1024;
+    PRAGMA auto_vacuum = full;
+    PRAGMA locking_mode=exclusive;
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, 2);
+  }
+  file size test.db
+} [expr 1024*3]
+do_test pager1-29.2 {
+  execsql {
+    PRAGMA page_size = 4096;
+    VACUUM;
+  }
+  file size test.db
+} [expr 4096*3]
+
 
 finish_test

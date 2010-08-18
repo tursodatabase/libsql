@@ -268,6 +268,22 @@ do_test analyze3-2.5 {
   set like "%a"
   sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE $like }
 } {999 999 100}
+do_test analyze3-2.6 {
+  set like "a"
+  sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE $like }
+} {101 0 0}
+do_test analyze3-2.7 {
+  set like "ab"
+  sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE $like }
+} {11 0 0}
+do_test analyze3-2.8 {
+  set like "abc"
+  sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE $like }
+} {2 0 1}
+do_test analyze3-2.9 {
+  set like "a_c"
+  sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE $like }
+} {101 0 10}
 
 
 #-------------------------------------------------------------------------
@@ -387,7 +403,6 @@ do_test analyze3-3.6.5 {
 } {SQLITE_OK}
 
 do_test analyze3-3.7.1 {
-breakpoint
   set S [sqlite3_prepare_v2 db {
     SELECT * FROM t1 WHERE a IN (
       ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?33,

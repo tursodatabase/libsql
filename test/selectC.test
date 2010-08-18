@@ -210,4 +210,27 @@ do_test selectC-3.3 {
   }
 } {xxx abcxxx yyy defyyy}
 
+
+proc udf {} { incr ::udf }
+set ::udf 0
+db function udf udf
+
+do_execsql_test selectC-4.1 {
+  create table t_distinct_bug (a, b, c);
+  insert into t_distinct_bug values ('1', '1', 'a');
+  insert into t_distinct_bug values ('1', '2', 'b');
+  insert into t_distinct_bug values ('1', '3', 'c');
+  insert into t_distinct_bug values ('1', '1', 'd');
+  insert into t_distinct_bug values ('1', '2', 'e');
+  insert into t_distinct_bug values ('1', '3', 'f');
+} {}
+
+do_execsql_test selectC-4.2 {
+  select a from (select distinct a, b from t_distinct_bug)
+} {1 1 1}
+
+do_execsql_test selectC-4.3 {
+  select a, udf() from (select distinct a, b from t_distinct_bug)
+} {1 1 1 2 1 3}
+
 finish_test

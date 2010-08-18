@@ -2653,7 +2653,7 @@ static void hashDestroy(void *p){
 ** used to retrieve the respective implementations.
 **
 ** Calling sqlite3Fts3SimpleTokenizerModule() sets the value pointed
-** to by the argument to point a the "simple" tokenizer implementation.
+** to by the argument to point to the "simple" tokenizer implementation.
 ** Function ...PorterTokenizerModule() sets *pModule to point to the
 ** porter tokenizer/stemmer implementation.
 */

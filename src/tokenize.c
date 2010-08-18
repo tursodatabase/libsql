@@ -496,7 +496,7 @@ abort_parse:
   }
 #endif
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  sqlite3DbFree(db, pParse->apVtabLock);
+  sqlite3_free(pParse->apVtabLock);
 #endif
 
   if( !IN_DECLARE_VTAB ){
@@ -504,7 +504,7 @@ abort_parse:
     ** structure built up in pParse->pNewTable. The calling code (see vtab.c)
     ** will take responsibility for freeing the Table structure.
     */
-    sqlite3DeleteTable(pParse->pNewTable);
+    sqlite3DeleteTable(db, pParse->pNewTable);
   }
 
   sqlite3DeleteTrigger(db, pParse->pNewTrigger);
@@ -518,7 +518,7 @@ abort_parse:
   while( pParse->pZombieTab ){
     Table *p = pParse->pZombieTab;
     pParse->pZombieTab = p->pNextZombie;
-    sqlite3DeleteTable(p);
+    sqlite3DeleteTable(db, p);
   }
   if( nErr>0 && pParse->rc==SQLITE_OK ){
     pParse->rc = SQLITE_ERROR;
