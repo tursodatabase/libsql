@@ -1,5 +1,5 @@
-C Fix\ssome\scompiler\swarnings\sin\sthe\sMSVC\sbuild.
-D 2010-08-18T02:28:48
+C Fix\sissue\swith\swal.test\son\sWindows.
+D 2010-08-18T14:54:04
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -782,7 +782,7 @@ F test/vtabE.test 7c4693638d7797ce2eda17af74292b97e705cc61
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
-F test/wal.test 5847943563e4a38aa9ceff12891a52bdda17f3a6
+F test/wal.test d3fa8ceb59141b1c4517faf0ad28f78b0f69f2b1
 F test/wal2.test 223f3e14d475730af772a7f5862d4bcfa7565c3a
 F test/wal3.test 695ea0f6c516423c611891df9a285aacd33344e3
 F test/wal4.test 3404b048fa5e10605facaf70384e6d2943412e30
@@ -843,7 +843,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P acb171d4cfef2fec8833f761019f5c81f0d138a0
-R bed8bce9a2e419101d3f791610ed1f26
+P 1f5662b7db5d623c8d99c45a8d97a0aa4427593f
+R 39728b0927b06ca00977e5f97ff2704d
 U shaneh
-Z 270823ca4f22464a3274c0a02c7a64f0
+Z 41c37f03c1429158f64096f5438b9bbb
