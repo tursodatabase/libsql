@@ -35,6 +35,20 @@ ifcapable !wal {
   finish_test
   return
 }
+if { ![wal_is_ok] } {
+  do_test walmode-0.1 {
+    execsql { PRAGMA journal_mode = wal }
+  } {delete}
+  do_test walmode-0.2 {
+    execsql { PRAGMA main.journal_mode = wal }
+  } {delete}
+  do_test walmode-0.3 {
+    execsql { PRAGMA main.journal_mode }
+  } {delete}
+
+  finish_test
+  return
+}
 
 do_test walmode-1.1 {
   set sqlite_sync_count 0

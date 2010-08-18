@@ -45,13 +45,9 @@ ifcapable autovacuum {
 # if we're using proxy locks, we use 2 filedescriptors for a db
 # that is open but NOT yet locked, after a lock is taken we'll have 3, 
 # normally sqlite uses 1 (proxy locking adds the conch and the local lock)
-set using_proxy 0
-foreach {name value} [array get env SQLITE_FORCE_PROXY_LOCKING] {
-  set using_proxy $value
-}
 set extrafds_prelock 0
 set extrafds_postlock 0
-if {$using_proxy>0} {
+if {[forced_proxy_locking]} {
   set extrafds_prelock 1
   set extrafds_postlock 2
 } 

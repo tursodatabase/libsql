@@ -106,87 +106,91 @@ if {[catch {sqlite3 db test.db -vfs unix-flock} msg]} {
   return
 }
 
-do_test lock5-flock.1 {
-  sqlite3 db test.db -vfs unix-flock
-  execsql {
-    CREATE TABLE t1(a, b);
-    BEGIN;
-    INSERT INTO t1 VALUES(1, 2);
-  }
-} {}
+# Only run the flock tests on a local file system
+if { [path_is_local "."] } {
 
-# Make sure we are not accidentally using the dotfile locking scheme.
-do_test lock5-flock.2 {
-  file exists test.db.lock
-} {0}
+  do_test lock5-flock.1 {
+    sqlite3 db test.db -vfs unix-flock
+    execsql {
+      CREATE TABLE t1(a, b);
+      BEGIN;
+      INSERT INTO t1 VALUES(1, 2);
+    }
+  } {}
 
-do_test lock5-flock.3 {
-  catch { sqlite3 db2 test.db -vfs unix-flock }
-  catchsql { SELECT * FROM t1 } db2
-} {1 {database is locked}}
+  # Make sure we are not accidentally using the dotfile locking scheme.
+  do_test lock5-flock.2 {
+    file exists test.db.lock
+  } {0}
 
-do_test lock5-flock.4 {
-  execsql COMMIT
-  catchsql { SELECT * FROM t1 } db2
-} {0 {1 2}}
+  do_test lock5-flock.3 {
+    catch { sqlite3 db2 test.db -vfs unix-flock }
+    catchsql { SELECT * FROM t1 } db2
+  } {1 {database is locked}}
 
-do_test lock5-flock.5 {
-  execsql BEGIN
-  catchsql { SELECT * FROM t1 } db2
-} {0 {1 2}}
+  do_test lock5-flock.4 {
+    execsql COMMIT
+    catchsql { SELECT * FROM t1 } db2
+  } {0 {1 2}}
 
-do_test lock5-flock.6 {
-  execsql {SELECT * FROM t1}
-  catchsql { SELECT * FROM t1 } db2
-} {1 {database is locked}}
+  do_test lock5-flock.5 {
+    execsql BEGIN
+    catchsql { SELECT * FROM t1 } db2
+  } {0 {1 2}}
 
-do_test lock5-flock.7 {
-  db close
-  catchsql { SELECT * FROM t1 } db2
-} {0 {1 2}}
+  do_test lock5-flock.6 {
+    execsql {SELECT * FROM t1}
+    catchsql { SELECT * FROM t1 } db2
+  } {1 {database is locked}}
 
-do_test lock5-flock.8 {
-  db2 close
-} {}
+  do_test lock5-flock.7 {
+    db close
+    catchsql { SELECT * FROM t1 } db2
+  } {0 {1 2}}
 
-#####################################################################
+  do_test lock5-flock.8 {
+    db2 close
+  } {}
 
-do_test lock5-none.1 {
-  sqlite3 db test.db -vfs unix-none
-  sqlite3 db2 test.db -vfs unix-none
-  execsql {
-    BEGIN;
-    INSERT INTO t1 VALUES(3, 4);
-  }
-} {}
-do_test lock5-none.2 {
-  execsql { SELECT * FROM t1 }
-} {1 2 3 4}
-do_test lock5-flock.3 {
-  execsql { SELECT * FROM t1 } db2
-} {1 2}
-do_test lock5-none.4 {
-  execsql { 
-    BEGIN;
-    SELECT * FROM t1;
-  } db2
-} {1 2}
-do_test lock5-none.5 {
-  execsql COMMIT
-  execsql {SELECT * FROM t1} db2
-} {1 2}
+  #####################################################################
 
-ifcapable memorymanage {
-  do_test lock5-none.6 {
-    sqlite3_release_memory 1000000
-    execsql {SELECT * FROM t1} db2
+  do_test lock5-none.1 {
+    sqlite3 db test.db -vfs unix-none
+    sqlite3 db2 test.db -vfs unix-none
+    execsql {
+      BEGIN;
+      INSERT INTO t1 VALUES(3, 4);
+    }
+  } {}
+  do_test lock5-none.2 {
+    execsql { SELECT * FROM t1 }
   } {1 2 3 4}
-}
+  do_test lock5-flock.3 {
+    execsql { SELECT * FROM t1 } db2
+  } {1 2}
+  do_test lock5-none.4 {
+    execsql { 
+      BEGIN;
+      SELECT * FROM t1;
+    } db2
+  } {1 2}
+  do_test lock5-none.5 {
+    execsql COMMIT
+    execsql {SELECT * FROM t1} db2
+  } {1 2}
 
-do_test lock5-flock.X {
-  db close
-  db2 close
-} {}
+  ifcapable memorymanage {
+    do_test lock5-none.6 {
+      sqlite3_release_memory 1000000
+      execsql {SELECT * FROM t1} db2
+    } {1 2 3 4}
+  }
+
+  do_test lock5-flock.X {
+    db close
+    db2 close
+  } {}
+}
 
 ifcapable lock_proxy_pragmas {
   set env(SQLITE_FORCE_PROXY_LOCKING) $::using_proxy

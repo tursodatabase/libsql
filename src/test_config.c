@@ -528,7 +528,23 @@ Tcl_SetVar2(interp, "sqlite_options", "long_double",
 #else
   Tcl_SetVar2(interp, "sqlite_options", "yytrackmaxstackdepth", "0", TCL_GLOBAL_ONLY);
 #endif
-
+  
+#ifdef __APPLE__
+# if  defined(__ppc__)
+  Tcl_SetVar2(interp, "os_options", "arch", "ppc", TCL_GLOBAL_ONLY);
+# elif defined(__i386__)
+  Tcl_SetVar2(interp, "os_options", "arch", "i386", TCL_GLOBAL_ONLY);
+# elif defined(__x86_64__)
+  Tcl_SetVar2(interp, "os_options", "arch", "x86_64", TCL_GLOBAL_ONLY);
+# elif defined(__arm__)
+  Tcl_SetVar2(interp, "os_options", "arch", "arm", TCL_GLOBAL_ONLY);
+# else
+#  error Unrecognized architecture for exec_options
+# endif
+#else
+  Tcl_SetVar2(interp, "os_options", "arch", "unknown", TCL_GLOBAL_ONLY);
+#endif
+  
 #define LINKVAR(x) { \
     static const int cv_ ## x = SQLITE_ ## x; \
     Tcl_LinkVar(interp, "SQLITE_" #x, (char *)&(cv_ ## x), \

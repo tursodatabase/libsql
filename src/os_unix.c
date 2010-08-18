@@ -3033,6 +3033,11 @@ static int unixFileSize(sqlite3_file *id, i64 *pSize){
 static int proxyFileControl(sqlite3_file*,int,void*);
 #endif
 
+#if (SQLITE_ENABLE_APPLE_SPI>0) && defined(__APPLE__)
+#include "sqlite3_private.h"
+#include <copyfile.h>
+static int getDbPathForUnixFile(unixFile *pFile, char *dbPath);
+#endif
 
 /*
 ** Information and control of an open file handle.
@@ -3072,6 +3077,219 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       return proxyFileControl(id,op,pArg);
     }
 #endif /* SQLITE_ENABLE_LOCKING_STYLE && defined(__APPLE__) */
+#if (SQLITE_ENABLE_APPLE_SPI>0) && defined(__APPLE__)
+    case SQLITE_TRUNCATE_DATABASE: {
+      unixFile *pFile = (unixFile*)id;
+      int trc = SQLITE_OK;
+      int eFileLock = pFile->eFileLock;
+      int rc = SQLITE_OK;
+      char jPath[MAXPATHLEN+9];
+      size_t jLen;
+      
+      if( eFileLock<SQLITE_LOCK_SHARED ){
+        rc = pFile->pMethod->xLock(id, SQLITE_LOCK_SHARED);
+      }
+      if( !rc && eFileLock<SQLITE_LOCK_EXCLUSIVE ){
+        rc = pFile->pMethod->xLock(id, SQLITE_LOCK_EXCLUSIVE);
+      }
+      if( rc ){
+        if( pFile->eFileLock > eFileLock ){
+          pFile->pMethod->xUnlock(id, eFileLock);
+        }
+        return rc;
+      }
+      rc = pFile->pMethod->xTruncate(id, ((pFile->fsFlags & SQLITE_FSFLAGS_IS_MSDOS) != 0) ? 1L : 0L);
+      if( !rc && (SQLITE_OK==getDbPathForUnixFile(pFile, jPath)) ){
+        jLen = strlcat(jPath, "-journal", MAXPATHLEN+9);
+        if( jLen < MAXPATHLEN+9 ){
+          int jfd = open(jPath, O_TRUNC);
+          if( (jfd == -1) ){
+            if ( errno!=ENOENT ){
+              perror(jPath);
+            }
+          } else {
+            fsync(jfd);
+            close(jfd);
+          }
+        }
+      }else{
+        trc=rc;
+      }
+      if( !trc ){
+        trc = pFile->pMethod->xSync(id, SQLITE_SYNC_FULL);
+      }
+      if( pFile->eFileLock > eFileLock ){
+        int unlockRC = pFile->pMethod->xUnlock(id, SQLITE_LOCK_SHARED);
+        if (!rc) rc = unlockRC;
+      }
+      if( pFile->eFileLock > eFileLock ){
+        int unlockRC = pFile->pMethod->xUnlock(id, SQLITE_LOCK_NONE);
+        if (!rc) rc = unlockRC;
+      }
+      if( trc ){
+        return trc;
+      }
+      return rc;
+    }
+      
+    case SQLITE_REPLACE_DATABASE: {
+      unixFile *pFile = (unixFile*)id;
+      int trc = SQLITE_OK;
+      int eFileLock = pFile->eFileLock;
+      int rc = SQLITE_OK;
+      char jPath[MAXPATHLEN+9];
+      size_t jLen;
+      sqlite3 *srcdb = (sqlite3 *)pArg;
+      Btree *pSrcBtree = NULL;
+      int eSrcFileLock = SQLITE_LOCK_NONE;
+      int srcLockRC = -1;
+      sqlite3_file *src_file = NULL;
+      unixFile *pSrcFile = NULL;
+      
+      if( !sqlite3SafetyCheckOk(srcdb) ){
+        return SQLITE_MISUSE;
+      }
+      if( eFileLock<SQLITE_LOCK_SHARED ){
+        rc = pFile->pMethod->xLock(id, SQLITE_LOCK_SHARED);
+      }
+      if( !rc && eFileLock<SQLITE_LOCK_EXCLUSIVE ){
+        rc = pFile->pMethod->xLock(id, SQLITE_LOCK_EXCLUSIVE);
+      }
+      if( !rc ){
+        /* get the src file descriptor adhering to the db struct access rules 
+         ** this code is modeled after sqlite3_file_control() in main.c
+         */ 
+        sqlite3_mutex_enter(srcdb->mutex);
+        if( srcdb->nDb>0 ){
+          pSrcBtree = srcdb->aDb[0].pBt;
+        }
+        if( pSrcBtree ){
+          Pager *pSrcPager;
+          sqlite3BtreeEnter(pSrcBtree);
+          pSrcPager = sqlite3BtreePager(pSrcBtree);
+          assert( pSrcPager!=0 );
+          src_file = sqlite3PagerFile(pSrcPager);
+          assert( src_file!=0 );
+          if( src_file->pMethods ){
+            pSrcFile = (unixFile *)src_file;
+            eSrcFileLock = pSrcFile->eFileLock;
+            if( eSrcFileLock<SQLITE_LOCK_SHARED ){
+              rc = pSrcFile->pMethod->xLock(src_file, SQLITE_LOCK_SHARED);
+              srcLockRC = rc; /* SQLITE_OK means we need to unlock later */
+            } else if( eSrcFileLock==SQLITE_LOCK_EXCLUSIVE ){
+              /* if the src database has an exclusive lock, verify that the
+               ** it doesn't have a journal file with open transactions 
+               */
+              if( getDbPathForUnixFile(pSrcFile, jPath) ){
+                rc = SQLITE_INTERNAL;
+              }else{
+                jLen = strlcat(jPath, "-journal", MAXPATHLEN+9);
+                if( jLen < MAXPATHLEN+9 ){
+                  int jfd = open(jPath, O_RDONLY);
+                  if( jfd==-1 ){
+                    if( errno!=ENOENT ){
+                      pFile->lastErrno = errno;
+                      rc = SQLITE_IOERR;
+                    }
+                  }else{
+                    /* if the journal exists ensure there's no pending 
+                     ** transaction by checking the journal header */
+                    char magic[8];
+                    ssize_t rlen = pread(jfd, magic, 8, 0);
+                    if( rlen<0 ){
+                      pFile->lastErrno = errno;
+                      rc = SQLITE_IOERR;
+                    }else if( rlen==8 ){
+                      char test[8] = {'\0','\0','\0','\0','\0','\0','\0','\0'};
+                      if( memcmp(magic,test,8) ){
+                        rc = SQLITE_LOCKED;
+                      }
+                    }else if( rlen!=0 ){
+                      rc = SQLITE_INTERNAL;
+                    }
+                    close(jfd);
+                  }
+                }
+              }
+            }
+          }else{
+            rc = SQLITE_MISUSE;
+          }
+          if( rc ){
+            if( srcLockRC==SQLITE_OK ){
+              pSrcFile->pMethod->xUnlock(src_file, eSrcFileLock);
+            }
+            sqlite3BtreeLeave(pSrcBtree);
+          }
+        }
+        if( pSrcFile==NULL || (pSrcFile->h<0) ){
+          rc = SQLITE_INTERNAL;
+          sqlite3_mutex_leave(srcdb->mutex);
+        }
+      }
+      if( rc ){
+        /* unroll state changes and return error code */
+        if( pFile->eFileLock > eFileLock ){
+          pFile->pMethod->xUnlock(id, eFileLock);
+        }
+        return rc;
+      }else{
+        /* both databases are locked appropriately, copy file data
+         ** and then unroll the locks we added. 
+         */
+        copyfile_state_t s;
+        
+        s = copyfile_state_alloc();
+        if( fcopyfile(pSrcFile->h, pFile->h, s, COPYFILE_ALL) ){
+          switch(errno) {
+            case ENOMEM:
+              rc = SQLITE_NOMEM;
+              break;
+            default:
+              rc = SQLITE_INTERNAL;
+          }
+        }
+        copyfile_state_free(s);
+        if( srcLockRC==SQLITE_OK ){
+          pSrcFile->pMethod->xUnlock(src_file, eSrcFileLock);
+        }
+        sqlite3BtreeLeave(pSrcBtree);
+        sqlite3_mutex_leave(srcdb->mutex);
+      }
+      
+      if( !rc && (SQLITE_OK==getDbPathForUnixFile(pFile, jPath)) ){
+        jLen = strlcat(jPath, "-journal", MAXPATHLEN+9);
+        if( jLen < MAXPATHLEN+9 ){
+          int jfd = open(jPath, O_TRUNC);
+          if( (jfd == -1) ){
+            if ( errno!=ENOENT ){
+              perror(jPath);
+            }
+          } else {
+            fsync(jfd);
+            close(jfd);
+          }
+        }
+      }else{
+        trc=rc;
+      }
+      if( !trc ){
+        trc = pFile->pMethod->xSync(id, SQLITE_SYNC_FULL);
+      }
+      if( pFile->eFileLock > eFileLock ){
+        int unlockRC = pFile->pMethod->xUnlock(id, SQLITE_LOCK_SHARED);
+        if (!rc) rc = unlockRC;
+      }
+      if( pFile->eFileLock > eFileLock ){
+        int unlockRC = pFile->pMethod->xUnlock(id, SQLITE_LOCK_NONE);
+        if (!rc) rc = unlockRC;
+      }
+      if( trc ){
+        return trc;
+      }
+      return rc;
+    }
+#endif /* (SQLITE_ENABLE_APPLE_SPI>0) && defined(__APPLE__) */
   }
   return SQLITE_ERROR;
 }
@@ -4575,6 +4793,9 @@ static int unixOpen(
   if (0 == strncmp("msdos", fsInfo.f_fstypename, 5)) {
     ((unixFile*)pFile)->fsFlags |= SQLITE_FSFLAGS_IS_MSDOS;
   }
+  if (0 == strncmp("exfat", fsInfo.f_fstypename, 5)) {
+    ((unixFile*)pFile)->fsFlags |= SQLITE_FSFLAGS_IS_MSDOS;
+  }
 #endif
   
 #if SQLITE_ENABLE_LOCKING_STYLE
@@ -4612,13 +4833,19 @@ static int unixOpen(
     if( useProxy ){
       rc = fillInUnixFile(pVfs, fd, dirfd, pFile, zPath, noLock, isDelete);
       if( rc==SQLITE_OK ){
+        /* cache the pMethod in case the transform fails */
+        const struct sqlite3_io_methods *pMethod = pFile->pMethods;
         rc = proxyTransformUnixFile((unixFile*)pFile, ":auto:");
         if( rc!=SQLITE_OK ){
           /* Use unixClose to clean up the resources added in fillInUnixFile 
           ** and clear all the structure's references.  Specifically, 
           ** pFile->pMethods will be NULL so sqlite3OsClose will be a no-op 
           */
-          unixClose(pFile);
+          if( pMethod!=NULL ){
+            pMethod->xClose(pFile);
+          }else{
+            unixClose(pFile);
+          }
           return rc;
         }
       }
@@ -5815,7 +6042,7 @@ static int switchLockProxyPath(unixFile *pFile, const char *path) {
 ** This routine find the filename associated with pFile and writes it
 ** int dbPath.
 */
-static int proxyGetDbPathForUnixFile(unixFile *pFile, char *dbPath){
+static int getDbPathForUnixFile(unixFile *pFile, char *dbPath){
 #if defined(__APPLE__)
   if( pFile->pMethod == &afpIoMethods ){
     /* afp style keeps a reference to the db path in the filePath field 
@@ -5854,7 +6081,7 @@ static int proxyTransformUnixFile(unixFile *pFile, const char *path) {
   if( pFile->eFileLock!=NO_LOCK ){
     return SQLITE_BUSY;
   }
-  proxyGetDbPathForUnixFile(pFile, dbPath);
+  getDbPathForUnixFile(pFile, dbPath);
   if( !path || path[0]=='\0' || !strcmp(path, ":auto:") ){
     lockPath=NULL;
   }else{
@@ -5897,6 +6124,9 @@ static int proxyTransformUnixFile(unixFile *pFile, const char *path) {
   }  
   if( rc==SQLITE_OK && lockPath ){
     pCtx->lockProxyPath = sqlite3DbStrDup(0, lockPath);
+    if( pCtx->lockProxyPath==NULL ){
+      rc = SQLITE_NOMEM;
+    }
   }
 
   if( rc==SQLITE_OK ){

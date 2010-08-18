@@ -62,26 +62,28 @@ do_test tkt3457-1.1 {
   execsql COMMIT
 } {}
 
-do_test tkt3457-1.2 {
-  file copy -force bak.db-journal test.db-journal
-  file attributes test.db-journal -permissions ---------
-  catchsql { SELECT * FROM t1 }
-} {1 {unable to open database file}}
-do_test tkt3457-1.3 {
-  file copy -force bak.db-journal test.db-journal
-  file attributes test.db-journal -permissions -w--w--w-
-  catchsql { SELECT * FROM t1 }
-} {1 {unable to open database file}}
-do_test tkt3457-1.4 {
-  file copy -force bak.db-journal test.db-journal
-  file attributes test.db-journal -permissions r--r--r--
-  catchsql { SELECT * FROM t1 }
-} {1 {unable to open database file}}
+if { ![path_is_dos "."] } {
+  do_test tkt3457-1.2 {
+    file copy -force bak.db-journal test.db-journal
+    file attributes test.db-journal -permissions ---------
+    catchsql { SELECT * FROM t1 }
+  } {1 {unable to open database file}}
+  do_test tkt3457-1.3 {
+    file copy -force bak.db-journal test.db-journal
+    file attributes test.db-journal -permissions -w--w--w-
+    catchsql { SELECT * FROM t1 }
+  } {1 {unable to open database file}}
+  do_test tkt3457-1.4 {
+    file copy -force bak.db-journal test.db-journal
+    file attributes test.db-journal -permissions r--r--r--
+    catchsql { SELECT * FROM t1 }
+  } {1 {unable to open database file}}
 
-do_test tkt3457-1.5 {
-  file copy -force bak.db-journal test.db-journal
-  file attributes test.db-journal -permissions rw-rw-rw-
-  catchsql { SELECT * FROM t1 }
-} {0 {1 2 3 4 5 6}}
+  do_test tkt3457-1.5 {
+    file copy -force bak.db-journal test.db-journal
+    file attributes test.db-journal -permissions rw-rw-rw-
+    catchsql { SELECT * FROM t1 }
+  } {0 {1 2 3 4 5 6}}
+}
 
 finish_test

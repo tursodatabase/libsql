@@ -1415,17 +1415,15 @@ void sqlite3Pragma(
   ** of N.
   */
   if( sqlite3StrICmp(zLeft, "wal_autocheckpoint")==0 ){
-    sqlite3_int64 ret;
+    i64 walArg = 0;
     if( zRight ){
       int nAuto = atoi(zRight);
       sqlite3_wal_autocheckpoint(db, nAuto);
     }
     if( db->xWalCallback==sqlite3WalDefaultHook ){
-      ret = SQLITE_PTR_TO_INT(db->pWalArg);
-    }else{
-      ret = 0;
+      walArg = SQLITE_PTR_TO_INT(db->pWalArg);
     }
-    returnSingleInt(pParse, "wal_autocheckpoint", &ret);
+    returnSingleInt(pParse, "wal_autocheckpoint", &walArg);
   }else
 #endif
 

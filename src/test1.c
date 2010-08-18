@@ -3134,8 +3134,25 @@ static int test_clear_bindings(
     return TCL_ERROR;
   }
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
-  sqlite3_clear_bindings(0); /* test for handling NULL <rdar://problem/6646331> */
   Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3_clear_bindings(pStmt)));
+  return TCL_OK;
+}
+
+/*
+ ** Usage:   sqlite3_clear_bindings STMT
+ **
+ */
+static int test_clear_bindings_null(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){  
+  if( objc!=1 ){
+    return TCL_ERROR;
+  }
+  /* test for handling NULL <rdar://problem/6646331> */
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3_clear_bindings(0)));
   return TCL_OK;
 }
 
@@ -4684,6 +4701,97 @@ static int file_control_lockproxy_test(
   return TCL_OK;  
 }
 
+#ifdef __APPLE__
+#include <sys/param.h>
+#include <sys/mount.h>
+#include <sys/errno.h>
+#endif
+
+/*
+ ** tclcmd:   path_is_local PWD
+ */
+static int path_is_local(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3 *db;
+  const char *zPath;
+  int nPath;
+  
+  if( objc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+                     Tcl_GetStringFromObj(objv[0], 0), " PATH", 0);
+    return TCL_ERROR;
+  }
+  zPath = Tcl_GetStringFromObj(objv[1], &nPath);
+  
+#ifdef __APPLE__
+  {
+    struct statfs fsInfo;
+    if( statfs(zPath, &fsInfo) == -1 ){
+      int err = errno;
+      Tcl_AppendResult(interp, "Error calling statfs on path",
+                       Tcl_NewIntObj(err), 0);
+      return TCL_ERROR;
+    }
+    if( fsInfo.f_flags&MNT_LOCAL ){
+      Tcl_SetObjResult(interp, Tcl_NewIntObj(1)); 
+    } else {
+      Tcl_SetObjResult(interp, Tcl_NewIntObj(0)); 
+    }
+  }
+#else
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(1)); 
+#endif
+  
+  return TCL_OK;  
+}
+
+/*
+ ** tclcmd:   path_is_dos PWD
+ */
+static int path_is_dos(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3 *db;
+  const char *zPath;
+  int nPath;
+  
+  if( objc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+                     Tcl_GetStringFromObj(objv[0], 0), " PATH", 0);
+    return TCL_ERROR;
+  }
+  zPath = Tcl_GetStringFromObj(objv[1], &nPath);
+  
+#ifdef __APPLE__
+  {
+    struct statfs fsInfo;
+    if( statfs(zPath, &fsInfo) == -1 ){
+      int err = errno;
+      Tcl_AppendResult(interp, "Error calling statfs on path",
+                       Tcl_NewIntObj(err), 0);
+      return TCL_ERROR;
+    }
+    if (0 == strncmp("msdos", fsInfo.f_fstypename, 5)) {
+      Tcl_SetObjResult(interp, Tcl_NewIntObj(1)); 
+    } else if (0 == strncmp("exfat", fsInfo.f_fstypename, 5)) {
+      Tcl_SetObjResult(interp, Tcl_NewIntObj(1)); 
+    } else {
+      Tcl_SetObjResult(interp, Tcl_NewIntObj(0)); 
+    }
+  }
+#else
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(0)); 
+#endif
+  
+  return TCL_OK;  
+}
 
 /*
 ** tclcmd:   sqlite3_vfs_list
@@ -5023,6 +5131,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_bind_parameter_name",   test_bind_parameter_name,  0},
      { "sqlite3_bind_parameter_index",  test_bind_parameter_index, 0},
      { "sqlite3_clear_bindings",        test_clear_bindings, 0},
+     { "sqlite3_clear_bindings_null",   test_clear_bindings_null, 0},
      { "sqlite3_sleep",                 test_sleep,          0},
      { "sqlite3_errcode",               test_errcode       ,0 },
      { "sqlite3_extended_errcode",      test_ex_errcode    ,0 },
@@ -5107,6 +5216,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "file_control_test",          file_control_test,   0   },
      { "file_control_lasterrno_test", file_control_lasterrno_test,  0   },
      { "file_control_lockproxy_test", file_control_lockproxy_test,  0   },
+     { "path_is_local",              path_is_local,  0   },
+     { "path_is_dos",                path_is_dos,  0   },
      { "sqlite3_vfs_list",           vfs_list,     0   },
 
      /* Functions from os.h */

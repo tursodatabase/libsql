@@ -19,6 +19,10 @@ source $testdir/lock_common.tcl
 source $testdir/wal_common.tcl
 source $testdir/malloc_common.tcl
 ifcapable !wal {finish_test ; return }
+if { ![wal_is_ok] } {
+  finish_test 
+  return 
+}
 
 set a_string_counter 1
 proc a_string {n} {

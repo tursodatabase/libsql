@@ -26,21 +26,35 @@ if {[catch {sqlite3 db test.db -vfs unix-none} msg]} {
 db close
 file delete -force test.db.lock
 
+#####################################################################
 ifcapable lock_proxy_pragmas {
   set ::using_proxy 0
   foreach {name value} [array get env SQLITE_FORCE_PROXY_LOCKING] {
     set ::using_proxy $value
   }
-  # Disable the proxy locking for these tests
-  set env(SQLITE_FORCE_PROXY_LOCKING) "0"
-}
+
+  # enable the proxy locking for these tests
+  set env(SQLITE_FORCE_PROXY_LOCKING) "1"
+
+  # test conch file creation
+  #
+
+  catch { file delete lock_proxy_test.db }
+  catch { file delete .lock_proxy_test.db-conch }
+  # test that proxy locking mode creates conch files
+  do_test lock_proxy1.0 {
+    sqlite3 db2 lock_proxy_test.db
+    catchsql {
+      create table x(y);
+    } db2
+    file exists .lock_proxy_test.db-conch
+  } {1}
+  catch { db2 close }
 
 
-#####################################################################
+  # test proxy locking readonly file system handling
+  #
 
-# test proxy locking readonly file system handling
-#
-ifcapable lock_proxy_pragmas {
   if {[file exists /usr/bin/hdiutil]} {
 
     puts "Creating readonly file system for proxy locking tests..."
@@ -52,15 +66,16 @@ ifcapable lock_proxy_pragmas {
     }
     exec hdiutil create -megabytes 1 -fs HFS+ readonly.dmg -volname readonly
     exec hdiutil attach readonly.dmg
-    set sqlite_hostid_num 4
-    set env(SQLITE_FORCE_PROXY_LOCKING) "1"
 
+    # create test1.db and a .test1.db-conch for host4
+    set sqlite_hostid_num 4
     sqlite3 db2 /Volumes/readonly/test1.db 
     execsql {
       create table x(y);
     } db2
     db2 close
 
+    # create test2.db and a .test2.db-conch for host5
     set sqlite_hostid_num 5
     sqlite3 db2 /Volumes/readonly/test2.db 
     execsql {
@@ -68,16 +83,19 @@ ifcapable lock_proxy_pragmas {
     } db2
     db2 close
 
+    # create test3.db without a conch file
     set env(SQLITE_FORCE_PROXY_LOCKING) "0"
     sqlite3 db2 /Volumes/readonly/test3.db 
     execsql {
       create table x(y);
     } db2
     db2 close
-    set env(SQLITE_FORCE_PROXY_LOCKING) "1"
     exec hdiutil detach /Volumes/readonly
     exec hdiutil attach -readonly readonly.dmg
 
+    # test that an unwritable, host-mismatched conch file prevents 
+    # read only proxy-locking mode database access
+    set env(SQLITE_FORCE_PROXY_LOCKING) "1"
     do_test lock_proxy2.0 {
       sqlite3 db2 /Volumes/readonly/test1.db
       catchsql {
@@ -86,6 +104,8 @@ ifcapable lock_proxy_pragmas {
     } {1 {database is locked}}
     catch { db2 close }
     
+    # test that an unwritable, host-matching conch file allows
+    # read only proxy-locking mode database access
     do_test lock_proxy2.1 {
       sqlite3 db2 /Volumes/readonly/test2.db
       catchsql {
@@ -94,6 +114,8 @@ ifcapable lock_proxy_pragmas {
     } {0 {table x x 2 {CREATE TABLE x(y)}}}
     catch { db2 close }
 
+    # test that an unwritable, nonexistant conch file allows
+    # read only proxy-locking mode database access
     do_test lock_proxy2.2 {
       sqlite3 db2 /Volumes/readonly/test3.db
       catchsql {

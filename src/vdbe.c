@@ -566,7 +566,7 @@ int sqlite3VdbeExec(
     ** sqlite3_column_text16() failed.  */
     goto no_mem;
   }
-  assert( p->rc==SQLITE_OK || p->rc==SQLITE_BUSY );
+  assert( p->rc==SQLITE_OK || p->rc==SQLITE_BUSY || ((p->rc&0xFF) == SQLITE_LOCKED));
   p->rc = SQLITE_OK;
   assert( p->explain==0 );
   p->pResultSet = 0;

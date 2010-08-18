@@ -656,6 +656,9 @@ do_test bind-13.4 {
                [sqlite3_column_type $VM 2]
 } {NULL NULL NULL}
 sqlite3_finalize $VM
+do_test bind-13.5 {
+  sqlite3_clear_bindings_null
+} {0}
 
 #--------------------------------------------------------------------
 # These tests attempt to reproduce bug #3463.

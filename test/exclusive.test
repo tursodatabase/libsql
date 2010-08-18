@@ -395,12 +395,8 @@ sqlite db test.db
 # if we're using proxy locks, we use 3 filedescriptors for a db
 # that is open but NOT writing changes, normally
 # sqlite uses 1 (proxy locking adds the conch and the local lock)
-set using_proxy 0
-foreach {name value} [array get env SQLITE_FORCE_PROXY_LOCKING] {
-  set using_proxy $value
-}
 set extrafds 0
-if {$using_proxy!=0} {
+if {[forced_proxy_locking]} {
   set extrafds 2
 } 
 

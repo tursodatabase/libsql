@@ -20,7 +20,7 @@ source $testdir/malloc_common.tcl
 # If a connection is required to create a journal file, it creates it with 
 # the same file-system permissions as the database file itself. Test this.
 #
-if {$::tcl_platform(platform) == "unix"} {
+if {$::tcl_platform(platform) == "unix" && ![path_is_dos "."]} {
 
   set umask [exec /bin/sh -c umask]
   faultsim_delete_and_reopen

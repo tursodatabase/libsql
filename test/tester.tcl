@@ -1150,6 +1150,35 @@ proc permutation {} {
   set perm
 }
 
+proc forced_proxy_locking {} {
+  ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
+    set force_proxy_value 0
+    set force_key "SQLITE_FORCE_PROXY_LOCKING="
+    foreach {env_pair} [exec env] { 
+      if { [string first $force_key $env_pair] == 0} {
+        set force_proxy_value [string range $env_pair [string length $force_key] end]
+      }
+    }
+    if { "$force_proxy_value " == "1 " } {
+      return 1
+    } 
+  }
+  return 0
+}
+
+proc wal_is_ok {} {
+  if { [forced_proxy_locking] } {
+    return 0
+  }
+  if { ![path_is_local "."] } {
+    return 0
+  }
+  if { [path_is_dos "."] } {
+    return 0
+  }
+  return 1
+}
+
 #-------------------------------------------------------------------------
 #
 proc slave_test_script {script} {
