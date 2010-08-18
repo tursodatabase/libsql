@@ -2365,7 +2365,7 @@ static int lockBtree(BtShared *pBt){
   **     9-byte nKey value
   **     4-byte nData value
   **     4-byte overflow page pointer
-  ** So a cell consists of a 2-byte poiner, a header which is as much as
+  ** So a cell consists of a 2-byte pointer, a header which is as much as
   ** 17 bytes long, 0 to N bytes of payload, and an optional 4 byte overflow
   ** page pointer.
   */
@@ -5968,7 +5968,7 @@ static int balance_nonroot(
       szCell[nCell] = sz;
       pTemp = &aSpace1[iSpace1];
       iSpace1 += sz;
-      assert( sz<=pBt->pageSize/4 );
+      assert( sz<=pBt->maxLocal+23 );
       assert( iSpace1<=pBt->pageSize );
       memcpy(pTemp, apDiv[i], sz);
       apCell[nCell] = pTemp+leafCorrection;
@@ -6214,7 +6214,7 @@ static int balance_nonroot(
         }
       }
       iOvflSpace += sz;
-      assert( sz<=pBt->pageSize/4 );
+      assert( sz<=pBt->maxLocal+23 );
       assert( iOvflSpace<=pBt->pageSize );
       insertCell(pParent, nxDiv, pCell, sz, pTemp, pNew->pgno, &rc);
       if( rc!=SQLITE_OK ) goto balance_cleanup;
