@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Remove\sa\sNEVER()\sthat\sis\sactually\sreachable.
-D 2010-08-17T19:49:14
+C Fix\ssome\scompiler\swarnings\sin\sthe\sMSVC\sbuild.
+D 2010-08-18T02:28:48
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -116,7 +113,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 51d83300fe0baee39405c416ceb19a58ed30a8ed
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c 3b4bca08abcc289922fbc0c87ab9b89d487b2df6
+F src/btree.c b1213572824331457d3fbebf0a06945b4765ad4f
 F src/btree.h b4ba2fdf6b64c7c376bdfffa826af6b786b151d9
 F src/btreeInt.h 5b034ff54800046cc5870605d683ac1f9134bd99
 F src/build.c 0018d49629fc4807100c988dd191dd95e185bb38
@@ -125,7 +122,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 4f3aadad62c6c9f0d4e5a96718516ac4e3c598df
 F src/date.c 5dd8448a0bfea8d31fb14cff487d0c06ff8c8b20
 F src/delete.c 7ed8a8c8b5f748ece92df173d7e0f7810c899ebd
-F src/expr.c 9532d71de52ad7a5523b0a4b9d7d64874560e328
+F src/expr.c 9ee507c3dc6eaa5657cbd1dad026cdeda89c559f
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 58bbf52c6ddd3f64ca40a3230f9e548a83a5cb16
 F src/func.c 464b0dc70618b896c402c574eb04bc5eacf35341
@@ -159,7 +156,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c 11194cbcf6a57456e58022dc537ab8c3497d9bb9
 F src/os_win.c 51cb62f76262d961ea4249489383d714501315a7
-F src/pager.c 3c0f1bd2f6870b2b98f540470d39cde9c5c964d2
+F src/pager.c 8b73d7f47d0143f7b9571125c6f897b8f1c59435
 F src/pager.h ef8c8f71ab022cc2fff768a1175dd32355be9dcd
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
@@ -230,7 +227,7 @@ F src/vdbeblob.c 258a6010ba7a82b72b327fb24c55790655689256
 F src/vdbemem.c e5673f81a2381b35c60e73ef0a8502be2ab1041e
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c 0e8e0cb30dffb078367e843e84e37ef99236c7e4
-F src/wal.c 109c45210e5b01c6fd3de92805488a2f6895e17f
+F src/wal.c 5ac2119e23ee4424599d4275b66dc88d612a0543
 F src/wal.h 96669b645e27cd5a111ba59f0cae7743a207bc3c
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 7db3e41c2a846f9deeb24f1bbb75461b4010b7b5
@@ -846,14 +843,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 3f8c068a41b01f59d7f5d56f3bced78587f4d26c
-R 0e975e64194b772586d783ae23f541c3
-U drh
-Z 7c3874a9d62d92c19dbda87e69ee4cca
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMaue9oxKgR168RlERAu71AJ9Nk4H9NiTuF/IHZPG8buHkH0saeACfS7El
-cdIbCKIWYZrkomUAPmV/H70=
-=c7oq
------END PGP SIGNATURE-----
+P acb171d4cfef2fec8833f761019f5c81f0d138a0
+R bed8bce9a2e419101d3f791610ed1f26
+U shaneh
+Z 270823ca4f22464a3274c0a02c7a64f0

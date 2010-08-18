@@ -566,7 +566,7 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
           db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER]);
     }
     if( i>pParse->nVar ){
-      pParse->nVar = i;
+      pParse->nVar = (int)i;
     }
   }else{
     /* Wildcards like ":aaa", "$aaa" or "@aaa".  Reuse the same variable

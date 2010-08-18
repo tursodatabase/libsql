@@ -1057,7 +1057,7 @@ static int pagerUnlockDb(Pager *pPager, int eLock){
     assert( pPager->eLock>=eLock );
     rc = sqlite3OsUnlock(pPager->fd, eLock);
     if( pPager->eLock!=UNKNOWN_LOCK ){
-      pPager->eLock = eLock;
+      pPager->eLock = (u8)eLock;
     }
     IOTRACE(("UNLOCK %p %d\n", pPager, eLock))
   }
@@ -1081,7 +1081,7 @@ static int pagerLockDb(Pager *pPager, int eLock){
   if( pPager->eLock<eLock || pPager->eLock==UNKNOWN_LOCK ){
     rc = sqlite3OsLock(pPager->fd, eLock);
     if( rc==SQLITE_OK && (pPager->eLock!=UNKNOWN_LOCK||eLock==EXCLUSIVE_LOCK) ){
-      pPager->eLock = eLock;
+      pPager->eLock = (u8)eLock;
       IOTRACE(("LOCK %p %d\n", pPager, eLock))
     }
   }
@@ -3366,7 +3366,7 @@ int sqlite3PagerSetPagesize(Pager *pPager, u32 *pPageSize, int nReserve){
    && sqlite3PcacheRefCount(pPager->pPCache)==0 
    && pageSize && pageSize!=(u32)pPager->pageSize 
   ){
-    char *pNew;                 /* New temp space */
+    char *pNew = NULL;             /* New temp space */
     i64 nByte = 0;
 
     if( pPager->eState>PAGER_OPEN && isOpen(pPager->fd) ){
@@ -3379,7 +3379,7 @@ int sqlite3PagerSetPagesize(Pager *pPager, u32 *pPageSize, int nReserve){
 
     if( rc==SQLITE_OK ){
       pager_reset(pPager);
-      pPager->dbSize = nByte/pageSize;
+      pPager->dbSize = (Pgno)(nByte/pageSize);
       pPager->pageSize = pageSize;
       sqlite3PageFree(pPager->pTmpSpace);
       pPager->pTmpSpace = pNew;

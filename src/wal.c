@@ -1135,7 +1135,7 @@ static int walIndexRecover(Wal *pWal){
       if( nTruncate ){
         pWal->hdr.mxFrame = iFrame;
         pWal->hdr.nPage = nTruncate;
-        pWal->hdr.szPage = (szPage&0xff00) | (szPage>>16);
+        pWal->hdr.szPage = (u16)((szPage&0xff00) | (szPage>>16));
         testcase( szPage<=32768 );
         testcase( szPage>=65536 );
         aFrameCksum[0] = pWal->hdr.aFrameCksum[0];
@@ -2562,7 +2562,7 @@ int sqlite3WalFrames(
 
   if( rc==SQLITE_OK ){
     /* Update the private copy of the header. */
-    pWal->hdr.szPage = (szPage&0xff00) | (szPage>>16);
+    pWal->hdr.szPage = (u16)((szPage&0xff00) | (szPage>>16));
     testcase( szPage<=32768 );
     testcase( szPage>=65536 );
     pWal->hdr.mxFrame = iFrame;
