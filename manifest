@@ -1,5 +1,5 @@
-C Fix\sissue\swith\swal.test\son\sWindows.
-D 2010-08-18T14:54:04
+C Disable\sthe\sSQLITE_MAX_PAGE_SIZE\scompile\stime\soption\s(it\sis\snow\salways\sset\sto\s65536).\sFix\ssome\sother\sproblems\sin\stest\sfiles.
+D 2010-08-18T15:25:17
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +173,7 @@ F src/shell.c 8517fc1f9c59ae4007e6cc8b9af91ab231ea2056
 F src/sqlite.h.in 2d72a6242df41c517e38eec8791abcf5484a36f1
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
 F src/sqliteInt.h e33b15e8176442bf7484f0e716edfd1ce03b2979
-F src/sqliteLimit.h 4ae9b005144400984cbcafd4d7c09659bb2af92a
+F src/sqliteLimit.h a17dcd3fb775d63b64a43a55c54cb282f9726f44
 F src/status.c 496913d4e8441195f6f2a75b1c95993a45b9b30b
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 5cd96419fb6c771006f064196ccc70c29d01bec7
@@ -461,7 +461,7 @@ F test/ioerr.test 390785ec65f10aa58a82b048ee12e9052d783fa8
 F test/ioerr2.test 1b56cb80d5b0726ee3ba325ca175734541e32955
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/ioerr4.test fc6eddfec2efc2f1ed217b9eae4c1c1d3516ce86
-F test/ioerr5.test a5e04b7a590f262c4100ba0b277387889802672b
+F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
 F test/join.test 8d63cc4d230a7affafa4b6ab0b97c49b8ccb365c
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
@@ -782,7 +782,7 @@ F test/vtabE.test 7c4693638d7797ce2eda17af74292b97e705cc61
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
-F test/wal.test d3fa8ceb59141b1c4517faf0ad28f78b0f69f2b1
+F test/wal.test 70227190e713b3e7eb2a7d5ec3510b66db01f327
 F test/wal2.test 223f3e14d475730af772a7f5862d4bcfa7565c3a
 F test/wal3.test 695ea0f6c516423c611891df9a285aacd33344e3
 F test/wal4.test 3404b048fa5e10605facaf70384e6d2943412e30
@@ -843,7 +843,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1f5662b7db5d623c8d99c45a8d97a0aa4427593f
-R 39728b0927b06ca00977e5f97ff2704d
-U shaneh
-Z 41c37f03c1429158f64096f5438b9bbb
+P 3497f54ac2f85746c50fe6f94380a22033f2464b
+R a73eece0710a0475fa95dd2e2d9fb72f
+U dan
+Z 22aea5abe93efb349f9f67cf7e694881
