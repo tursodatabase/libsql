@@ -114,10 +114,19 @@ proc do_allbackcompat_test {script} {
 
 proc read_file {zFile} {
   set zData {}
-  catch {
+  if {[file exists $zFile]} {
     set fd [open $zFile]
     fconfigure $fd -translation binary -encoding binary
-    set zData [read $fd]
+
+    if {[file size $zFile]<=$::sqlite_pending_byte || $zFile != "test.db"} {
+      set zData [read $fd]
+    } else {
+      set zData [read $fd $::sqlite_pending_byte]
+      append zData [string repeat x 512]
+      seek $fd [expr $::sqlite_pending_byte+512] start
+      append zData [read $fd]
+    }
+
     close $fd
   }
   return $zData

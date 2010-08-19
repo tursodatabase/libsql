@@ -1,5 +1,5 @@
-C Add\stests\sfor\sWAL\smode\sto\stest/backcompat.test.
-D 2010-08-19T15:48:47
+C Fix\sbackcompat.test\sso\sthat\sit\sworks\swith\swindows\smandatory\slocking.
+D 2010-08-19T17:16:11
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 543f91f24cd7fee774ecc0a61c19704c0c3e78fd
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -259,7 +259,7 @@ F test/autoindex1.test 7df441bf0e7a88644eb80993339dbf1db3a12c68
 F test/autovacuum.test bb7c0885e6f8f1d633045de48f2b66082162766d
 F test/autovacuum_ioerr2.test 598b0663074d3673a9c1bc9a16e80971313bafe6
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
-F test/backcompat.test f09684c48e5e467b4fd9e733e5867e23f957ecf2
+F test/backcompat.test bf0f2468f9c9aba447a0625060b09d9663795074
 F test/backup.test 200e64bd91244b73ca8094bc1e03dfc83cc94c2e
 F test/backup2.test b7c69f937c912e85ac8a5dbd1e1cf290302b2d49
 F test/backup_ioerr.test 1f012e692f42c0442ae652443258f70e9f20fa38
@@ -845,7 +845,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b03091fc3592896fcf1ec563ae9682a8e0a05baa
-R 52a8e7fbae7866867598a61fe83f6054
+P 7999910e85b1f24c5860425ba47e7ab10c22e887
+R 2312b59b9cab0b977ed7b7f3e201421e
 U dan
-Z b9ee7c10dc1f3cce4f3c954e7b1d3a07
+Z e72bc2907346bae2124df9a31e8a0e8b
