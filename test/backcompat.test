@@ -91,7 +91,9 @@ proc do_allbackcompat_test {script} {
     set nErr [set_test_counter errors]
     foreach dir {0 1} {
 
-      set ::bcname ".[string map {testfixture {}} $bin].$dir."
+      set bintag [string map {testfixture {}} $bin]
+      if {$bintag == ""} {set bintag self}
+      set ::bcname ".$bintag.$dir."
 
       rename do_test _do_test
       proc do_test {nm sql res} {
@@ -143,6 +145,10 @@ proc write_file_system {data} {
 
 #-------------------------------------------------------------------------
 # Actual tests begin here.
+#
+# This first block of tests checks to see that the same database and 
+# journal files can be used by old and new versions. WAL and wal-index
+# files are tested separately below.
 #
 do_allbackcompat_test {
 
@@ -206,9 +212,50 @@ do_allbackcompat_test {
   do_test backcompat-1.2.7 { sql1 { PRAGMA integrity_check } } {ok}
   do_test backcompat-1.2.8 { sql2 { PRAGMA integrity_check } } {ok}
 }
-
 foreach k [lsort [array names ::incompatible]] {
-  puts "ERROR: Detected incompatibility with version $k"
+  puts "ERROR: Detected journal incompatibility with version $k"
+}
+unset ::incompatible
+
+
+#-------------------------------------------------------------------------
+# Test that WAL and wal-index files may be shared between different 
+# SQLite versions.
+#
+do_allbackcompat_test {
+  if {[code1 {sqlite3 -version}] >= "3.7.0"
+   && [code2 {sqlite3 -version}] >= "3.7.0"
+  } {
+
+    do_test backcompat-2.1.1 { sql1 {
+      PRAGMA journal_mode = WAL;
+      CREATE TABLE t1(a PRIMARY KEY, b UNIQUE);
+      INSERT INTO t1 VALUES('I', 1);
+      INSERT INTO t1 VALUES('II', 2);
+      INSERT INTO t1 VALUES('III', 3);
+      SELECT * FROM t1;
+    } } {wal I 1 II 2 III 3}
+    do_test backcompat-2.1.2 { sql2 {
+      SELECT * FROM t1;
+    } } {I 1 II 2 III 3}
+
+    set data [read_file_system]
+    code1 {db close}
+    code2 {db close}
+    write_file_system $data
+    code1 {sqlite3 db test.db}
+    code2 {sqlite3 db test.db}
+
+    # The WAL file now in the file-system was created by the [code1]
+    # process. Check that the [code2] process can recover the log.
+    #
+    do_test backcompat-2.1.3 { sql2 {
+      SELECT * FROM t1;
+    } } {I 1 II 2 III 3}
+    do_test backcompat-2.1.4 { sql1 {
+      SELECT * FROM t1;
+    } } {I 1 II 2 III 3}
+  }
 }
 
 finish_test
