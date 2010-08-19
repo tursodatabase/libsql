@@ -748,7 +748,7 @@ tclsqlite-shell.lo:	$(TOP)/src/tclsqlite.c $(HDR)
 	$(LTCOMPILE) -DTCLSH=1 -o $@ -c $(TOP)/src/tclsqlite.c
 
 tclsqlite-stubs.lo:	$(TOP)/src/tclsqlite.c $(HDR)
-	$(LTCOMPILE) -DTCL_USE_STUBS=1 -o $@ -c $(TOP)/src/tclsqlite.c
+	$(LTCOMPILE) -DUSE_TCL_STUBS=1 -o $@ -c $(TOP)/src/tclsqlite.c
 
 tclsqlite3$(TEXE):	tclsqlite-shell.lo libsqlite3.la
 	$(LTLINK) -o $@ tclsqlite-shell.lo \
