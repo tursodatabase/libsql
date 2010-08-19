@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Fix\stwo\sasserts\sin\sthe\sbtree\slogic\sso\sthat\sthey\swork\scorrectly\seven\sfor\nmaximum-size\sindex\sentries\sfor\s32K\sand\s64K\spages.
-D 2010-08-18T21:19:04
+C Add\snew\stest\sscript\sbackcompat.test,\sfor\stesting\sdatabase/journal/wal\sfile\scompatibility\sagainst\sprevious\sversions.
+D 2010-08-19T11:05:54
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -262,6 +259,7 @@ F test/autoindex1.test 7df441bf0e7a88644eb80993339dbf1db3a12c68
 F test/autovacuum.test bb7c0885e6f8f1d633045de48f2b66082162766d
 F test/autovacuum_ioerr2.test 598b0663074d3673a9c1bc9a16e80971313bafe6
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
+F test/backcompat.test 5bf6bd795d9a0ec3c68ba8483c35c6fdab3a85a8
 F test/backup.test 200e64bd91244b73ca8094bc1e03dfc83cc94c2e
 F test/backup2.test b7c69f937c912e85ac8a5dbd1e1cf290302b2d49
 F test/backup_ioerr.test 1f012e692f42c0442ae652443258f70e9f20fa38
@@ -492,7 +490,7 @@ F test/lock4.test c82268c031d39345d05efa672f80b025481b3ae5
 F test/lock5.test b2abb5e711bc59b0eae00f6c97a36ec9f458fada
 F test/lock6.test 8df56060f396151777390982422c800d026e1722
 F test/lock7.test 64006c84c1c616657e237c7ad6532b765611cf64
-F test/lock_common.tcl 57727421a6a850443944cbadfdf5a6dd9e4ac81c
+F test/lock_common.tcl 751d4d6b1d97e1e1266b4126e0a123f1e8d7346b
 F test/lookaside.test 382e7bc2fab23d902c8eafb1b9ed7ababfff75a6
 F test/main.test 9d7bbfcc1b52c88ba7b2ba6554068ecf9939f252
 F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
@@ -847,14 +845,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P d46567e5d75a2b9fe96d2a7a30708b2827a0d490
-R d8d679ffa4745c8bf93b5e6b5825b960
-U drh
-Z 7f378ed449a1354042bf47ceab852b72
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMbE5MoxKgR168RlERAm3gAJ9j3QLeVFJiXfvfSnsTlMhGqmvBSgCfTW3m
-v1U06YCPq+T+CyTYAg08zFE=
-=0zqd
------END PGP SIGNATURE-----
+P e127192d106bd7e036caacf01bf7725eeaa85dbe
+R 483010ace30045b3aabe4559c5204690
+U dan
+Z f27bf406a20d9eac5bd8544c4021a73e

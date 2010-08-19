@@ -65,15 +65,18 @@ proc do_multiclient_test {varname script} {
 # channel name is returned that may be passed as the first argument to proc
 # 'testfixture' to execute a command. The child testfixture process is shut
 # down by closing the channel.
-proc launch_testfixture {} {
+proc launch_testfixture {{prg ""}} {
   write_main_loop
-  set prg [info nameofexec]
-  if {$prg eq ""} {
-    set prg [file join . testfixture]
-  }
+  if {$prg eq ""} { set prg [info nameofexec] }
+  if {$prg eq ""} { set prg [file join . testfixture] }
   set chan [open "|$prg tf_main.tcl" r+]
   fconfigure $chan -buffering line
-  testfixture $chan "sqlite3_test_control_pending_byte $::sqlite_pending_byte"
+  set rc [catch { 
+    testfixture $chan "sqlite3_test_control_pending_byte $::sqlite_pending_byte"
+  }]
+  if {$rc} {
+    testfixture $chan "set ::sqlite_pending_byte $::sqlite_pending_byte"
+  }
   return $chan
 }
 
