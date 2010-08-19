@@ -1509,6 +1509,14 @@ static int readJournalHdr(
       return rc;
     }
 
+    /* Versions of SQLite prior to 3.5.8 set the page-size field of the
+    ** journal header to zero. In this case, assume that the Pager.pageSize
+    ** variable is already set to the correct page size.
+    */
+    if( iPageSize==0 ){
+      iPageSize = pPager->pageSize;
+    }
+
     /* Check that the values read from the page-size and sector-size fields
     ** are within range. To be 'in range', both values need to be a power
     ** of two greater than or equal to 512 or 32, and not greater than their 

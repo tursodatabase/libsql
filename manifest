@@ -1,5 +1,5 @@
-C Add\snew\stest\sscript\sbackcompat.test,\sfor\stesting\sdatabase/journal/wal\sfile\scompatibility\sagainst\sprevious\sversions.
-D 2010-08-19T11:05:54
+C Modify\sthe\scode\sfor\sreading\shot-journal\sfiles\sso\sthat\sit\scan\shandle\sjournals\sgenerated\sby\sversions\s3.5.7\sand\searlier.
+D 2010-08-19T15:11:34
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -156,7 +156,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c 11194cbcf6a57456e58022dc537ab8c3497d9bb9
 F src/os_win.c 51cb62f76262d961ea4249489383d714501315a7
-F src/pager.c 8b73d7f47d0143f7b9571125c6f897b8f1c59435
+F src/pager.c 3e9815178b2f3ffcf9f5a6b7d40212be77b4f5bf
 F src/pager.h ef8c8f71ab022cc2fff768a1175dd32355be9dcd
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
@@ -259,7 +259,7 @@ F test/autoindex1.test 7df441bf0e7a88644eb80993339dbf1db3a12c68
 F test/autovacuum.test bb7c0885e6f8f1d633045de48f2b66082162766d
 F test/autovacuum_ioerr2.test 598b0663074d3673a9c1bc9a16e80971313bafe6
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
-F test/backcompat.test 5bf6bd795d9a0ec3c68ba8483c35c6fdab3a85a8
+F test/backcompat.test a64138b3f00bcb6af91fb609e805b03a7d74e690
 F test/backup.test 200e64bd91244b73ca8094bc1e03dfc83cc94c2e
 F test/backup2.test b7c69f937c912e85ac8a5dbd1e1cf290302b2d49
 F test/backup_ioerr.test 1f012e692f42c0442ae652443258f70e9f20fa38
@@ -845,7 +845,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e127192d106bd7e036caacf01bf7725eeaa85dbe
-R 483010ace30045b3aabe4559c5204690
+P 8804f4989d157707911488781109ce0641c0ad0b
+R 8a8db0863e0d33ddc8ea68f9c11cd0ea
 U dan
-Z f27bf406a20d9eac5bd8544c4021a73e
+Z 9fa359ca155f08d9a7ed0d63491f2a4b
