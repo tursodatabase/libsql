@@ -67,8 +67,9 @@ proc do_multiclient_test {varname script} {
 # down by closing the channel.
 proc launch_testfixture {{prg ""}} {
   write_main_loop
-  if {$prg eq ""} { set prg [info nameofexec] }
+  if {$prg eq ""} { set prg [file join . [info nameofexec]] }
   if {$prg eq ""} { set prg [file join . testfixture] }
+  if {[file tail $prg]==$prg} { set prg [file join . $prg] }
   set chan [open "|$prg tf_main.tcl" r+]
   fconfigure $chan -buffering line
   set rc [catch { 
