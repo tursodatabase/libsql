@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sthe\ssqlite3_release_memory()\sinterface\sso\sthat\sit\sdoes\snot\sattempt\nto\sfree\sSQLITE_CONFIG_PAGECACHE\smemory.
-D 2010-08-20T09:14:13
+C Disable\sthe\sMEMSYS2\sauxiliary\sroutines\sif\sMEMSYS2\sis\schanged\sto\san\salternative\nmemory\sallocator\susing\sSQLITE_CONFIG_MALLOC.
+D 2010-08-20T09:53:20
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 543f91f24cd7fee774ecc0a61c19704c0c3e78fd
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -142,7 +142,7 @@ F src/main.c 99622181f36d68e9f2a851c7b34263b3dcd03470
 F src/malloc.c 19a468460c7df72de245f10c06bd0625777b7c83
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 89d4ea8d5cdd55635cbaa48ad53132af6294cbb2
-F src/mem2.c 12c91260fd2320eda9355dea5445b137f848c05b
+F src/mem2.c 9e5f72e38573db9598fe60d3fa530d473cc8714e
 F src/mem3.c 9b237d911ba9904142a804be727cc6664873f8a3
 F src/mem5.c eb7a5cb98915dd7a086fa415ce3a5a0f20d0acff
 F src/memjournal.c 4a93a25ad9f76c40afa070ffd7187eb3a5fd7aee
@@ -848,14 +848,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b0f4796306a2cb11d6897d5c33f5da05c7473e07
-R 52b2c9daf815aabbcbe4f07fa5e7c8a1
+P 0426cd62d5ef2bd09570835c78f8fc3bcb7cdd49
+R bb794b07f256cd00b205b08f63c32658
 U drh
-Z 54aa36efa36980359eb0729807e35e53
+Z 9d8596e43956a79725c5c4debb4ff7e8
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMbkdooxKgR168RlERArSaAJkBY/VKqEvxhWGtTQ3D8omuqoAsfwCgg/cl
-y9J1gJoJvPaaszdEVe3Ak2I=
-=hICH
+iD8DBQFMblCToxKgR168RlERAtLaAJ4sNfpcsYXXZy9snzT5twUBl3oCzgCfQx37
+VI2puMgM19z9REsc6fsD1nY=
+=DM/T
 -----END PGP SIGNATURE-----
