@@ -34,12 +34,16 @@ db close
 # against.
 #
 set binaries [list]
-set pattern "[file tail [info nameofexec]]*"
-foreach file [glob $pattern] {
-  if {[file executable $file]} {lappend binaries $file}
+set pattern "[file tail [info nameofexec]]?*"
+if {$tcl_platform(platform)=="windows"} {
+  set pattern [string map {\.exe {}} $pattern]
+}
+foreach file [glob -nocomplain $pattern] {
+  if {[file executable $file] && } {lappend binaries $file}
 }
 if {[llength $binaries]==0} {
-  puts "WARNING: No binaries to test against. No tests have been run."
+  puts "WARNING: No historical binaries to test against."
+  puts "WARNING: No backwards-compatibility tests have been run."
   finish_test
   return
 }
@@ -50,7 +54,9 @@ proc get_version {binary} {
   set v
 }
 foreach bin $binaries {
-  puts "Testing against $bin - version [get_version $bin]"
+  puts -nonewline "Testing against $bin - "
+  flush stdout
+  puts "version [get_version $bin]"
 }
 
 proc do_backcompat_test {rv bin1 bin2 script} {
@@ -92,6 +98,7 @@ proc do_allbackcompat_test {script} {
     foreach dir {0 1} {
 
       set bintag [string map {testfixture {}} $bin]
+      set bintag [string map {\.exe {}} $bintag]
       if {$bintag == ""} {set bintag self}
       set ::bcname ".$bintag.$dir."
 
@@ -200,9 +207,6 @@ do_allbackcompat_test {
       UPDATE t1 SET a = randomblob(500);
   } } {}
   set data [read_file_system]
-
-  set f "test.db-journal[incr x]"
-  file copy -force test.db-journal $f
 
   do_test backcompat-1.2.4 { sql1 { COMMIT } } {}
 

@@ -1,5 +1,5 @@
-C Avoid\sassuming\sthat\sthe\suser\shas\s"."\sin\stheir\spath\swhen\srunning\smulti-process\stests.
-D 2010-08-20T12:31:30
+C Merge\sleaf\screated\sby\saccident.
+D 2010-08-20T12:34:00
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 543f91f24cd7fee774ecc0a61c19704c0c3e78fd
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -139,7 +139,7 @@ F src/main.c 99622181f36d68e9f2a851c7b34263b3dcd03470
 F src/malloc.c 19a468460c7df72de245f10c06bd0625777b7c83
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 89d4ea8d5cdd55635cbaa48ad53132af6294cbb2
-F src/mem2.c 12c91260fd2320eda9355dea5445b137f848c05b
+F src/mem2.c 9e5f72e38573db9598fe60d3fa530d473cc8714e
 F src/mem3.c 9b237d911ba9904142a804be727cc6664873f8a3
 F src/mem5.c eb7a5cb98915dd7a086fa415ce3a5a0f20d0acff
 F src/memjournal.c 4a93a25ad9f76c40afa070ffd7187eb3a5fd7aee
@@ -161,7 +161,7 @@ F src/pager.h ef8c8f71ab022cc2fff768a1175dd32355be9dcd
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
-F src/pcache1.c 638844c118163e3a10e1e3265703adf74870312d
+F src/pcache1.c e921e8a1d52c93abde63cb6dad1fa39770410c52
 F src/pragma.c 8b24ce00a93de345b6c3bd1e1e2cfba9f63d2325
 F src/prepare.c ce4c35a2b1d5fe916e4a46b70d24a6e997d7c4c6
 F src/printf.c 8ae5082dd38a1b5456030c3755ec3a392cd51506
@@ -176,7 +176,7 @@ F src/sqliteInt.h e33b15e8176442bf7484f0e716edfd1ce03b2979
 F src/sqliteLimit.h a17dcd3fb775d63b64a43a55c54cb282f9726f44
 F src/status.c 496913d4e8441195f6f2a75b1c95993a45b9b30b
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c 5cd96419fb6c771006f064196ccc70c29d01bec7
+F src/tclsqlite.c cacee9482417b6fc6043f6bb831ff9496d46242d
 F src/test1.c 55005c9781b157b1d215ba145768783b9abae78c
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 4c21700c73a890a47fc685c1097bfb661346ac94
@@ -259,7 +259,7 @@ F test/autoindex1.test 7df441bf0e7a88644eb80993339dbf1db3a12c68
 F test/autovacuum.test bb7c0885e6f8f1d633045de48f2b66082162766d
 F test/autovacuum_ioerr2.test 598b0663074d3673a9c1bc9a16e80971313bafe6
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
-F test/backcompat.test bf0f2468f9c9aba447a0625060b09d9663795074
+F test/backcompat.test 6df9e6d8c7be6d574e78fd352faa5f94fb744f7a
 F test/backup.test 200e64bd91244b73ca8094bc1e03dfc83cc94c2e
 F test/backup2.test b7c69f937c912e85ac8a5dbd1e1cf290302b2d49
 F test/backup_ioerr.test 1f012e692f42c0442ae652443258f70e9f20fa38
@@ -845,7 +845,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8d05f66db7d6e8b8916fcf22fa92159d863d2610
-R 3cb626532d96dbbd2c42f67aa60740fe
+P daa5d461b98fc068cbba52d338ca8690edd27bc9 40e11aabc7668e1c9db43d9183edb445996254bd
+R bc0dee4f394d8df90bdcb29bf2bdf710
 U dan
-Z 1b26b23e6878cdb3ce0d4315c76a4f13
+Z f7574014cc8231579235f0f454dcfece
