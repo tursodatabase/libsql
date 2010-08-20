@@ -200,6 +200,25 @@ static void pcache1Free(void *p){
   }
 }
 
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+/*
+** Return the size of a pache allocation
+*/
+static int pcache1MemSize(void *p){
+  assert( sqlite3_mutex_held(pcache1.mutex) );
+  if( p>=pcache1.pStart && p<pcache1.pEnd ){
+    return pcache1.szSlot;
+  }else{
+    int iSize;
+    assert( sqlite3MemdebugHasType(p, MEMTYPE_PCACHE) );
+    sqlite3MemdebugSetType(p, MEMTYPE_HEAP);
+    iSize = sqlite3MallocSize(p);
+    sqlite3MemdebugSetType(p, MEMTYPE_PCACHE);
+    return iSize;
+  }
+}
+#endif /* SQLITE_ENABLE_MEMORY_MANAGEMENT */
+
 /*
 ** Allocate a new page object initially associated with cache pCache.
 */
@@ -748,7 +767,7 @@ int sqlite3PcacheReleaseMemory(int nReq){
     PgHdr1 *p;
     pcache1EnterMutex();
     while( (nReq<0 || nFree<nReq) && (p=pcache1.pLruTail) ){
-      nFree += sqlite3MallocSize(PGHDR1_TO_PAGE(p));
+      nFree += pcache1MemSize(PGHDR1_TO_PAGE(p));
       pcache1PinPage(p);
       pcache1RemoveFromHash(p);
       pcache1FreePage(p);

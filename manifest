@@ -1,5 +1,8 @@
-C Adjust\sfilename\sglobbing\sin\sbackcompat.test\sfor\sWindows.
-D 2010-08-19T18:05:46
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Fix\sthe\ssqlite3_release_memory()\sinterface\sso\sthat\sit\sdoes\snot\sattempt\nto\sfree\sSQLITE_CONFIG_PAGECACHE\smemory.
+D 2010-08-20T09:14:13
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 543f91f24cd7fee774ecc0a61c19704c0c3e78fd
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -161,7 +164,7 @@ F src/pager.h ef8c8f71ab022cc2fff768a1175dd32355be9dcd
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
-F src/pcache1.c 638844c118163e3a10e1e3265703adf74870312d
+F src/pcache1.c e921e8a1d52c93abde63cb6dad1fa39770410c52
 F src/pragma.c 8b24ce00a93de345b6c3bd1e1e2cfba9f63d2325
 F src/prepare.c ce4c35a2b1d5fe916e4a46b70d24a6e997d7c4c6
 F src/printf.c 8ae5082dd38a1b5456030c3755ec3a392cd51506
@@ -845,7 +848,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8d05f66db7d6e8b8916fcf22fa92159d863d2610
-R d9f5b31d60c2c1063b071033be51256c
-U shaneh
-Z e8887c1df6874578f88d6a0c574bc962
+P b0f4796306a2cb11d6897d5c33f5da05c7473e07
+R 52b2c9daf815aabbcbe4f07fa5e7c8a1
+U drh
+Z 54aa36efa36980359eb0729807e35e53
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMbkdooxKgR168RlERArSaAJkBY/VKqEvxhWGtTQ3D8omuqoAsfwCgg/cl
+y9J1gJoJvPaaszdEVe3Ak2I=
+=hICH
+-----END PGP SIGNATURE-----
