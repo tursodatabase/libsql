@@ -39,7 +39,7 @@ if {$tcl_platform(platform)=="windows"} {
   set pattern [string map {\.exe {}} $pattern]
 }
 foreach file [glob -nocomplain $pattern] {
-  if {[file executable $file] && } {lappend binaries $file}
+  if {[file executable $file]} {lappend binaries $file}
 }
 if {[llength $binaries]==0} {
   puts "WARNING: No historical binaries to test against."

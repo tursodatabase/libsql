@@ -1,5 +1,5 @@
-C Merge\sleaf\screated\sby\saccident.
-D 2010-08-20T12:34:00
+C Fix\stypo\sin\sbackcompat.test.
+D 2010-08-20T12:43:01
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 543f91f24cd7fee774ecc0a61c19704c0c3e78fd
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -259,7 +259,7 @@ F test/autoindex1.test 7df441bf0e7a88644eb80993339dbf1db3a12c68
 F test/autovacuum.test bb7c0885e6f8f1d633045de48f2b66082162766d
 F test/autovacuum_ioerr2.test 598b0663074d3673a9c1bc9a16e80971313bafe6
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
-F test/backcompat.test 6df9e6d8c7be6d574e78fd352faa5f94fb744f7a
+F test/backcompat.test 49bd844eb245f0b2b6f2a3f8bebad0065403a9a7
 F test/backup.test 200e64bd91244b73ca8094bc1e03dfc83cc94c2e
 F test/backup2.test b7c69f937c912e85ac8a5dbd1e1cf290302b2d49
 F test/backup_ioerr.test 1f012e692f42c0442ae652443258f70e9f20fa38
@@ -490,7 +490,7 @@ F test/lock4.test c82268c031d39345d05efa672f80b025481b3ae5
 F test/lock5.test b2abb5e711bc59b0eae00f6c97a36ec9f458fada
 F test/lock6.test 8df56060f396151777390982422c800d026e1722
 F test/lock7.test 64006c84c1c616657e237c7ad6532b765611cf64
-F test/lock_common.tcl 6586fc80d8518aa3c7da08af033bbd283ed6fca8
+F test/lock_common.tcl 18c637fc89e12f1ac0d27d2186f12c3d3f789e3e
 F test/lookaside.test 382e7bc2fab23d902c8eafb1b9ed7ababfff75a6
 F test/main.test 9d7bbfcc1b52c88ba7b2ba6554068ecf9939f252
 F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
@@ -845,7 +845,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P daa5d461b98fc068cbba52d338ca8690edd27bc9 40e11aabc7668e1c9db43d9183edb445996254bd
-R bc0dee4f394d8df90bdcb29bf2bdf710
+P 1f680cb37584baa106cee0544d5be63049d55858
+R 1338f3ac38bd76f6a310136c937339b3
 U dan
-Z f7574014cc8231579235f0f454dcfece
+Z 62dec69b60d03a3de58a535924d923d1
