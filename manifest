@@ -1,5 +1,8 @@
-C Fix\stypo\sin\sbackcompat.test.
-D 2010-08-20T12:43:01
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Do\snot\sallow\sa\sbackup\sto\schange\sthe\spage\ssize\sif\sa\scodec\sis\sin\suse.
+D 2010-08-20T15:32:21
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 543f91f24cd7fee774ecc0a61c19704c0c3e78fd
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -110,7 +113,7 @@ F src/alter.c 8dc27638e7e2553e80b2b621f232be5eb1e85ef3
 F src/analyze.c da65ce99bb159b10e85a1e460adbe53a88062500
 F src/attach.c 17bec1f18254d9341369f20f90ba24ce35d20d10
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
-F src/backup.c 51d83300fe0baee39405c416ceb19a58ed30a8ed
+F src/backup.c 8ff0b7018df253c7f30d3f9702b0b16f19209d5c
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
 F src/btree.c 69942b33b4ed4e0cc9a36b18a288839293528267
@@ -845,7 +848,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1f680cb37584baa106cee0544d5be63049d55858
-R 1338f3ac38bd76f6a310136c937339b3
-U dan
-Z 62dec69b60d03a3de58a535924d923d1
+P 6a0cbb272c3f0c1dfdeed381ba92f2f2f16ae824
+R 4d947b2be8e528f5b1f57b6ae25bb254
+U drh
+Z a5dd11d4db14995185bd3cc381bc0177
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMbqAJoxKgR168RlERAtWjAJsGkTB7PoEEAyEHc28sHL4Q6xG9XQCghnJH
+TrSCzzZw80Uns0M1vpEzqWw=
+=GSse
+-----END PGP SIGNATURE-----

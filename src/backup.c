@@ -221,6 +221,15 @@ static int backupOnePage(sqlite3_backup *p, Pgno iSrcPg, const u8 *zSrcData){
     rc = SQLITE_READONLY;
   }
 
+#ifdef SQLITE_HAS_CODEC
+  /* Backup is not possible if the page size of the destination is changing
+  ** a a codec is in use.
+  */
+  if( nSrcPgsz!=nDestPgsz && sqlite3PagerGetCodec(pDestPager)!=0 ){
+    rc = SQLITE_READONLY;
+  }
+#endif
+
   /* This loop runs once for each destination page spanned by the source 
   ** page. For each iteration, variable iOff is set to the byte offset
   ** of the destination page.
