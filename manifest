@@ -1,5 +1,8 @@
-C Add\ssome\stests\sto\se_expr.test\sand\spagerfault.test.\sNo\scode\schanges.
-D 2010-08-21T15:51:06
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Version\s3.7.1\srelease\scandidate
+D 2010-08-21T16:01:46
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 543f91f24cd7fee774ecc0a61c19704c0c3e78fd
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -845,7 +848,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 699a9bf28377f43f58c509878cce60cb906dbf48
+P 44de3cab9c89eb28485c0dc36d791b1c61d56b34
 R ba75d512677d6cf0802a70f734aafd6f
-U dan
-Z d7b809533302a351af4f83e27bcd9161
+U drh
+Z 9eb9cc7f3392e65cec0523ad38099f7c
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMb/huoxKgR168RlERAp5nAJ9bQ/OZp/nGB/mbch5eawtJ3xzNqQCdH2LV
+awMpPL8qm3hJm5LCIu8Eivk=
+=ZYFd
+-----END PGP SIGNATURE-----
