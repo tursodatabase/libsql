@@ -730,11 +730,16 @@ int sqlite3BtreeCursorHasMoved(BtCursor *pCur, int *pHasMoved){
 ** Given a page number of a regular database page, return the page
 ** number for the pointer-map page that contains the entry for the
 ** input page number.
+**
+** Return 0 (not a valid page) for pgno==1 since there is
+** no pointer map associated with page 1.  The integrity_check logic
+** requires that ptrmapPageno(*,1)!=1.
 */
 static Pgno ptrmapPageno(BtShared *pBt, Pgno pgno){
   int nPagesPerMapPage;
   Pgno iPtrMap, ret;
   assert( sqlite3_mutex_held(pBt->mutex) );
+  if( pgno<2 ) return 0;
   nPagesPerMapPage = (pBt->usableSize/5)+1;
   iPtrMap = (pgno-2)/nPagesPerMapPage;
   ret = (iPtrMap*nPagesPerMapPage) + 2; 
