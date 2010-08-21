@@ -1196,5 +1196,41 @@ do_faultsim_test pagerfault-26 -prep {
   }
 } 
 
+do_test pagerfault-27-pre {
+  faultsim_delete_and_reopen
+  db func a_string a_string
+  execsql {
+    PRAGMA page_size = 1024;
+    CREATE TABLE t1(a, b);
+    CREATE TABLE t2(a UNIQUE, b UNIQUE);
+    INSERT INTO t2 VALUES( a_string(800), a_string(800) );
+    INSERT INTO t2 SELECT a_string(800), a_string(800) FROM t2;
+    INSERT INTO t2 SELECT a_string(800), a_string(800) FROM t2;
+    INSERT INTO t2 SELECT a_string(800), a_string(800) FROM t2;
+    INSERT INTO t2 SELECT a_string(800), a_string(800) FROM t2;
+    INSERT INTO t2 SELECT a_string(800), a_string(800) FROM t2;
+    INSERT INTO t2 SELECT a_string(800), a_string(800) FROM t2;
+    INSERT INTO t1 VALUES (a_string(20000), a_string(20000));
+  }
+  faultsim_save_and_close
+} {}
+do_faultsim_test pagerfault-27 -faults ioerr-persistent -prep {
+  faultsim_restore_and_reopen
+  db func a_string a_string
+  execsql { 
+    PRAGMA cache_size = 10;
+    BEGIN EXCLUSIVE;
+  }
+  set ::channel [db incrblob t1 a 1]
+} -body {
+  puts $::channel [string repeat abc 6000]
+  flush $::channel
+} -test {
+  puts [catchsql { UPDATE t2 SET a = a_string(800), b = a_string(800) }]
+  catch { close $::channel }
+  puts [catchsql { ROLLBACK }]
+  faultsim_integrity_check
+}
 
 finish_test
+
