@@ -1,5 +1,8 @@
-C Fixes\sfor\sthe\sSQLITE_CHECK_PAGES\sdebugging\sfeature.
-D 2010-08-23T18:19:31
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Version\s3.7.2\srelease\scandidate\s1
+D 2010-08-23T18:52:01
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 543f91f24cd7fee774ecc0a61c19704c0c3e78fd
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -846,7 +849,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 77889510fa67268043c604826047af81c8bd1ca7
+P 21a1e5961bba148fda50cc0b7d472ca74f90808a
 R aa9cc30f9dbcb7ea427137065cf4e4be
-U dan
-Z e09a56feaa9e8e294c4d46e5c8dde804
+U drh
+Z e73ee740c6593b4458c2d23b6fa7b923
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMcsNUoxKgR168RlERApyRAKCOHvk0Gn1uE2F8YVm3k/w13/3UugCeOh16
+bApiXjM1a7FP+Qr1HX5kWTQ=
+=L2Lf
+-----END PGP SIGNATURE-----
