@@ -1226,9 +1226,9 @@ do_faultsim_test pagerfault-27 -faults ioerr-persistent -prep {
   puts $::channel [string repeat abc 6000]
   flush $::channel
 } -test {
-  puts [catchsql { UPDATE t2 SET a = a_string(800), b = a_string(800) }]
+  catchsql { UPDATE t2 SET a = a_string(800), b = a_string(800) }
   catch { close $::channel }
-  puts [catchsql { ROLLBACK }]
+  catchsql { ROLLBACK }
   faultsim_integrity_check
 }
 

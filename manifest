@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Update\sthe\sversion\snumber\sin\spreparation\sfor\sthe\s3.7.2\srelease.
-D 2010-08-23T17:09:23
+C Fixes\sfor\sthe\sSQLITE_CHECK_PAGES\sdebugging\sfeature.
+D 2010-08-23T18:19:31
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 543f91f24cd7fee774ecc0a61c19704c0c3e78fd
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -159,7 +156,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c 11194cbcf6a57456e58022dc537ab8c3497d9bb9
 F src/os_win.c 51cb62f76262d961ea4249489383d714501315a7
-F src/pager.c 3e9815178b2f3ffcf9f5a6b7d40212be77b4f5bf
+F src/pager.c a5f5d9787b11dfb0b6082e6f5846d00b459a8e19
 F src/pager.h ef8c8f71ab022cc2fff768a1175dd32355be9dcd
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
@@ -546,7 +543,7 @@ F test/openv2.test af02ed0a9cbc0d2a61b8f35171d4d117e588e4ec
 F test/pager1.test 6922029d71a8090169c71a67a141b6b94ad17d50
 F test/pager2.test 0fbb6b6dc40ce1fecfe758c555a748ad2e9beaa3
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
-F test/pagerfault.test ddbf04b5e2afafb3ea888e1083239a8000f155d4
+F test/pagerfault.test 84c6a4fcfe1a9e450fc1cec86f5baebfb017e53e
 F test/pagerfault2.test 1f79ea40d1133b2683a2f811b00f2399f7ec2401
 F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
@@ -849,14 +846,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 255f1eefa373153942c67b18b22177933657911d
-R 4efbd792cc303d8f5321a4e7a77b89bf
-U drh
-Z b7de43c0f1a6ae936b6b0d525ee8c226
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMcqtGoxKgR168RlERAoFyAKCCDxIuWoL7+zDYyJYgn4ILXRqGNQCdEfYB
-1U11ZoOMe7F5D7xXMSND/Nk=
-=NV8i
------END PGP SIGNATURE-----
+P 77889510fa67268043c604826047af81c8bd1ca7
+R aa9cc30f9dbcb7ea427137065cf4e4be
+U dan
+Z e09a56feaa9e8e294c4d46e5c8dde804
