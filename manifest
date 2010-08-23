@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Update\sthe\s"showdb"\sdebug\sutility\sto\shandle\s64K\spage\sdatabase\sand\swith\nextra\soptions\sto\sdecode\sthe\sfreelist\sstructure.
-D 2010-08-23T15:26:50
+C Fix\sfor\sticket\s[5e10420e8d].
+D 2010-08-23T15:41:24
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 543f91f24cd7fee774ecc0a61c19704c0c3e78fd
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -116,7 +113,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 8ff0b7018df253c7f30d3f9702b0b16f19209d5c
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c 2dff4076d3c994dc1954ec7c1792febd49e13631
+F src/btree.c 5047fb303cdf6806a42676a6f513c57e15b7d69b
 F src/btree.h b4ba2fdf6b64c7c376bdfffa826af6b786b151d9
 F src/btreeInt.h 5b034ff54800046cc5870605d683ac1f9134bd99
 F src/build.c 0018d49629fc4807100c988dd191dd95e185bb38
@@ -643,6 +640,7 @@ F test/tkt-2ea2425d34.test 1cf13e6f75d149b3209a0cb32927a82d3d79fb28
 F test/tkt-31338dca7e.test 5741cd48de500347a437ba1be58c8335e83c5a5e
 F test/tkt-3fe897352e.test 10de1a67bd5c66b238a4c96abe55531b37bb4f00
 F test/tkt-4a03edc4c8.test 2865e4edbc075b954daa82f8da7cc973033ec76e
+F test/tkt-5e10420e8d.test 904d1687b3c06d43e5b3555bbcf6802e7c0ffd84
 F test/tkt-5ee23731f.test 3581260f2a71e51db94e1506ba6b0f7311d002a9
 F test/tkt-78e04e52ea.test fb5430c675e708f5cbafdf3e7e5593da5145a527
 F test/tkt-80e031a00f.test 9a154173461a4dbe2de49cda73963e04842d52f7
@@ -848,14 +846,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 3613b0695a5e990905ab146fadcab34dd04d5874
-R 058fa6e3ab648ae5ff66e22c57c21a88
-U drh
-Z 4b496641e3aad55cb1970e3775c32e6e
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMcpM9oxKgR168RlERAiQ4AKCNTq26d6guoArVL/8XVQDv9ujn6gCbB8sK
-0u6T4zf+ph77zjra1ytd08E=
-=CUDO
------END PGP SIGNATURE-----
+P 1070918e3b68c0ba5bfab11a97214b87c601f93c
+R 45ce7ab03a363e4feb15c9dc292263d2
+U dan
+Z ef561b85144cdce9ae177b02b80c54d2
