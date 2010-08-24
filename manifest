@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Cherrypick\sthe\schanges\sfor\senhancement\srequests\s[e090183531fc27474]\s\n(use\sindices\son\sLIKE\swith\sno\swildcards)\sand\s[4711020446da7d93d993]\n(use\snocase\sindex\sfor\sLIKE\seven\sif\sthe\scolumn\sis\sbinary)\sinto\sthe\n3.6.23.1\srelease\sof\sthe\sApple-OSX\sbranch.
-D 2010-08-17T23:13:42
+C Cherrypick\sthe\sincremental_vacuum\sbug\sfix\s([255f1eefa373153942c67b18b])\sinto\nthe\sapple-osx\s3.6.23\sbranch.
+D 2010-08-24T01:59:56
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in b12be4429b75eca982a5646752652efde58e8f29
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -115,7 +115,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c b293534bc2df23c57668a585b17ee7faaaef0939
 F src/bitvec.c 06ad2c36a9c3819c0b9cbffec7b15f58d5d834e0
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c 0d6e44d664b1775b269ea7e6f66fdffcfc32ceb3
+F src/btree.c d66fc956658bedbf92857c2e34a0cad59e11f5a8
 F src/btree.h 0e193b7e90f1d78b79c79474040e3d66a553a4fa
 F src/btreeInt.h 71ed5e7f009caf17b7dc304350b3cb64b5970135
 F src/build.c 11100b66fb97638d2d874c1d34d8db90650bb1d7
@@ -619,6 +619,7 @@ F test/tkt-2ea2425d34.test 1cf13e6f75d149b3209a0cb32927a82d3d79fb28
 F test/tkt-31338dca7e.test 5741cd48de500347a437ba1be58c8335e83c5a5e
 F test/tkt-3fe897352e.test 10de1a67bd5c66b238a4c96abe55531b37bb4f00
 F test/tkt-4a03edc4c8.test 2865e4edbc075b954daa82f8da7cc973033ec76e
+F test/tkt-5e10420e8d.test a182c11ac3fba3aa4ef939df1198beb6c9e65a01
 F test/tkt-5ee23731f.test 3581260f2a71e51db94e1506ba6b0f7311d002a9
 F test/tkt-78e04e52ea.test fb5430c675e708f5cbafdf3e7e5593da5145a527
 F test/tkt-94c04eaadb.test be5ea61cb04dfdc047d19b5c5a9e75fa3da67a7f
@@ -799,14 +800,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 21ca87f69125a9e7124c6ddc566d17f64661b0d3
-R 746b72865ced8034924c2cc1c718a49c
+P 220cca50da08c5166afa3d2364fdf7f8e7308836
+R 53cff399f9385e49cbb3330e864858d1
 U drh
-Z bb87ab062eae07f981b513eb1b914158
+Z c43f6854461e2a577ea65066711f8188
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMaxeqoxKgR168RlERAsD4AJ9c9h3cETIYGap5CjJMrATUO3T+cACgjLkN
-T2aAsvx2yasC+G+Gv6NOb3E=
-=s+Bg
+iD8DBQFMcyefoxKgR168RlERAismAJ98pUiMf/A6i2i7jlUyImdIiWAKNQCfRHwH
+bZggWdZ6/Ce7kdRRmLfxAFU=
+=4R4g
 -----END PGP SIGNATURE-----
