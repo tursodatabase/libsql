@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C The\sR-tree\smodule\sshould\snot\sassume\sthat\sits\sshadow\stables\sare\sconsistent.\nIf\sa\sproblem\sis\sfound\sin\sa\sshadow\stable,\sreturn\sSQLITE_CORRUPT.
-D 2010-08-24T01:49:48
+C Add\stests\sto\se_expr.test.
+D 2010-08-24T13:11:53
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 543f91f24cd7fee774ecc0a61c19704c0c3e78fd
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -344,7 +341,7 @@ F test/descidx2.test 9f1a0c83fd57f8667c82310ca21b30a350888b5d
 F test/descidx3.test fe720e8b37d59f4cef808b0bf4e1b391c2e56b6f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
-F test/e_expr.test 8a35ce2718c61e871970bda09f4f3e549067c1ba
+F test/e_expr.test 1c531745c94f091445157fb7953a2cc3f256f8e4
 F test/e_fkey.test 6721a741c6499b3ab7e5385923233343c8f1ad05
 F test/e_fts3.test 75bb0aee26384ef586165e21018a17f7cd843469
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
@@ -849,14 +846,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 42537b60566f288167f1b5864a5435986838e3a3
-R 2c180f83601b5fb3eca266f1d7990e7f
-U drh
-Z 10d60dee314996598be1db5d0c7786c6
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMcyU/oxKgR168RlERAix8AJ4mlLsRwIdCGZXuMMz9jxnrImU9JACffIYe
-yL2XIDq+iw10tkqZ3HaRjys=
-=n6uZ
------END PGP SIGNATURE-----
+P 7f2f71cc9e3c39093f09231f448576cff6afb5fe
+R aba17ed62d7523dad2435b92dcbb7f3b
+U dan
+Z 181c658325527cf2c74e166fe7d3a968

@@ -1102,5 +1102,280 @@ do_execsql_test e_expr-19.2.3 { SELECT 'X' NOT MATCH 'Y' } 0
 do_test         e_expr-19.2.4 { set matchargs } {Y X}
 sqlite3 db test.db
 
+#-------------------------------------------------------------------------
+# Test cases for the testable statements related to the CASE expression.
+#
+# EVIDENCE-OF: R-15199-61389 There are two basic forms of the CASE
+# expression: those with a base expression and those without.
+#
+do_execsql_test e_expr-20.1 {
+  SELECT CASE WHEN 1 THEN 'true' WHEN 0 THEN 'false' ELSE 'else' END;
+} {true}
+do_execsql_test e_expr-20.2 {
+  SELECT CASE 0 WHEN 1 THEN 'true' WHEN 0 THEN 'false' ELSE 'else' END;
+} {false}
+
+proc var {nm} {
+  lappend ::varlist $nm
+  return [set "::$nm"]
+}
+db func var var
+
+# EVIDENCE-OF: R-30638-59954 In a CASE without a base expression, each
+# WHEN expression is evaluated and the result treated as a boolean,
+# starting with the leftmost and continuing to the right.
+#
+foreach {a b c} {0 0 0} break
+set varlist [list]
+do_execsql_test e_expr-21.1.1 {
+  SELECT CASE WHEN var('a') THEN 'A' 
+              WHEN var('b') THEN 'B' 
+              WHEN var('c') THEN 'C' END
+} {{}}
+do_test e_expr-21.1.2 { set varlist } {a b c}
+set varlist [list]
+do_execsql_test e_expr-21.1.3 {
+  SELECT CASE WHEN var('c') THEN 'C' 
+              WHEN var('b') THEN 'B' 
+              WHEN var('a') THEN 'A' 
+              ELSE 'no result'
+  END
+} {{no result}}
+do_test e_expr-21.1.4 { set varlist } {c b a}
+
+# EVIDENCE-OF: R-39009-25596 The result of the CASE expression is the
+# evaluation of the THEN expression that corresponds to the first WHEN
+# expression that evaluates to true.
+#
+foreach {a b c} {0 1 0} break
+do_execsql_test e_expr-21.2.1 {
+  SELECT CASE WHEN var('a') THEN 'A' 
+              WHEN var('b') THEN 'B' 
+              WHEN var('c') THEN 'C' 
+              ELSE 'no result'
+  END
+} {B}
+foreach {a b c} {0 1 1} break
+do_execsql_test e_expr-21.2.2 {
+  SELECT CASE WHEN var('a') THEN 'A' 
+              WHEN var('b') THEN 'B' 
+              WHEN var('c') THEN 'C'
+              ELSE 'no result'
+  END
+} {B}
+foreach {a b c} {0 0 1} break
+do_execsql_test e_expr-21.2.3 {
+  SELECT CASE WHEN var('a') THEN 'A' 
+              WHEN var('b') THEN 'B' 
+              WHEN var('c') THEN 'C'
+              ELSE 'no result'
+  END
+} {C}
+
+# EVIDENCE-OF: R-24227-04807 Or, if none of the WHEN expressions
+# evaluate to true, the result of evaluating the ELSE expression, if
+# any.
+#
+foreach {a b c} {0 0 0} break
+do_execsql_test e_expr-21.3.1 {
+  SELECT CASE WHEN var('a') THEN 'A' 
+              WHEN var('b') THEN 'B' 
+              WHEN var('c') THEN 'C'
+              ELSE 'no result'
+  END
+} {{no result}}
+
+# EVIDENCE-OF: R-14168-07579 If there is no ELSE expression and none of
+# the WHEN expressions are true, then the overall result is NULL.
+#
+db nullvalue null
+do_execsql_test e_expr-21.3.2 {
+  SELECT CASE WHEN var('a') THEN 'A' 
+              WHEN var('b') THEN 'B' 
+              WHEN var('c') THEN 'C'
+  END
+} {null}
+db nullvalue {}
+
+# EVIDENCE-OF: R-13943-13592 A NULL result is considered untrue when
+# evaluating WHEN terms.
+#
+do_execsql_test e_expr-21.4.1 {
+  SELECT CASE WHEN NULL THEN 'A' WHEN 1 THEN 'B' END
+} {B}
+do_execsql_test e_expr-21.4.2 {
+  SELECT CASE WHEN 0 THEN 'A' WHEN NULL THEN 'B' ELSE 'C' END
+} {C}
+
+# EVIDENCE-OF: R-38620-19499 In a CASE with a base expression, the base
+# expression is evaluated just once and the result is compared against
+# the evaluation of each WHEN expression from left to right.
+#
+# Note: This test case tests the "evaluated just once" part of the above
+# statement. Tests associated with the next two statements test that the
+# comparisons take place.
+#
+foreach {a b c} [list [expr 3] [expr 4] [expr 5]] break
+set ::varlist [list]
+do_execsql_test e_expr-22.1.1 {
+  SELECT CASE var('a') WHEN 1 THEN 'A' WHEN 2 THEN 'B' WHEN 3 THEN 'C' END
+} {C}
+do_test e_expr-22.1.2 { set ::varlist } {a}
+
+# EVIDENCE-OF: R-07667-49537 The result of the CASE expression is the
+# evaluation of the THEN expression that corresponds to the first WHEN
+# expression for which the comparison is true.
+#
+do_execsql_test e_expr-22.2.1 {
+  SELECT CASE 23 WHEN 1 THEN 'A' WHEN 23 THEN 'B' WHEN 23 THEN 'C' END
+} {B}
+do_execsql_test e_expr-22.2.2 {
+  SELECT CASE 1 WHEN 1 THEN 'A' WHEN 23 THEN 'B' WHEN 23 THEN 'C' END
+} {A}
+
+# EVIDENCE-OF: R-47543-32145 Or, if none of the WHEN expressions
+# evaluate to a value equal to the base expression, the result of
+# evaluating the ELSE expression, if any.
+#
+do_execsql_test e_expr-22.3.1 {
+  SELECT CASE 24 WHEN 1 THEN 'A' WHEN 23 THEN 'B' WHEN 23 THEN 'C' ELSE 'D' END
+} {D}
+
+# EVIDENCE-OF: R-54721-48557 If there is no ELSE expression and none of
+# the WHEN expressions produce a result equal to the base expression,
+# the overall result is NULL.
+#
+do_execsql_test e_expr-22.4.1 {
+  SELECT CASE 24 WHEN 1 THEN 'A' WHEN 23 THEN 'B' WHEN 23 THEN 'C' END
+} {{}}
+db nullvalue null
+do_execsql_test e_expr-22.4.2 {
+  SELECT CASE 24 WHEN 1 THEN 'A' WHEN 23 THEN 'B' WHEN 23 THEN 'C' END
+} {null}
+db nullvalue {}
+
+# EVIDENCE-OF: R-11479-62774 When comparing a base expression against a
+# WHEN expression, the same collating sequence, affinity, and
+# NULL-handling rules apply as if the base expression and WHEN
+# expression are respectively the left- and right-hand operands of an =
+# operator.
+#
+proc rev {str} {
+  set ret ""
+  set chars [split $str]
+  for {set i [expr [llength $chars]-1]} {$i>=0} {incr i -1} {
+    append ret [lindex $chars $i]
+  }
+  set ret
+}
+proc reverse {lhs rhs} {
+  string compare [rev $lhs] [ref $rhs]
+}
+db collate reverse reverse
+do_execsql_test e_expr-23.1.1 {
+  CREATE TABLE t1(
+    a TEXT     COLLATE NOCASE,
+    b          COLLATE REVERSE,
+    c INTEGER,
+    d BLOB
+  );
+  INSERT INTO t1 VALUES('abc', 'cba', 55, 34.5);
+} {}
+do_execsql_test e_expr-23.1.2 {
+  SELECT CASE a WHEN 'xyz' THEN 'A' WHEN 'AbC' THEN 'B' END FROM t1
+} {B}
+do_execsql_test e_expr-23.1.3 {
+  SELECT CASE 'AbC' WHEN 'abc' THEN 'A' WHEN a THEN 'B' END FROM t1
+} {B}
+do_execsql_test e_expr-23.1.4 {
+  SELECT CASE a WHEN b THEN 'A' ELSE 'B' END FROM t1
+} {B}
+do_execsql_test e_expr-23.1.5 {
+  SELECT CASE b WHEN a THEN 'A' ELSE 'B' END FROM t1
+} {A}
+do_execsql_test e_expr-23.1.6 {
+  SELECT CASE 55 WHEN '55' THEN 'A' ELSE 'B' END
+} {B}
+do_execsql_test e_expr-23.1.7 {
+  SELECT CASE c WHEN '55' THEN 'A' ELSE 'B' END FROM t1
+} {A}
+do_execsql_test e_expr-23.1.8 {
+  SELECT CASE '34.5' WHEN d THEN 'A' ELSE 'B' END FROM t1
+} {B}
+do_execsql_test e_expr-23.1.9 {
+  SELECT CASE NULL WHEN NULL THEN 'A' ELSE 'B' END
+} {B}
+
+# EVIDENCE-OF: R-37304-39405 If the base expression is NULL then the
+# result of the CASE is always the result of evaluating the ELSE
+# expression if it exists, or NULL if it does not.
+#
+do_execsql_test e_expr-24.1.1 {
+  SELECT CASE NULL WHEN 'abc' THEN 'A' WHEN 'def' THEN 'B' END;
+} {{}}
+do_execsql_test e_expr-24.1.2 {
+  SELECT CASE NULL WHEN 'abc' THEN 'A' WHEN 'def' THEN 'B' ELSE 'C' END;
+} {C}
+
+# EVIDENCE-OF: R-56280-17369 Both forms of the CASE expression use lazy,
+# or short-circuit, evaluation.
+#
+set varlist [list]
+foreach {a b c} {0 1 0} break
+do_execsql_test e_expr-25.1.1 {
+  SELECT CASE WHEN var('a') THEN 'A' 
+              WHEN var('b') THEN 'B' 
+              WHEN var('c') THEN 'C' 
+  END
+} {B}
+do_test e_expr-25.1.2 { set ::varlist } {a b}
+set varlist [list]
+do_execsql_test e_expr-25.1.3 {
+  SELECT CASE '0' WHEN var('a') THEN 'A' 
+                  WHEN var('b') THEN 'B' 
+                  WHEN var('c') THEN 'C' 
+  END
+} {A}
+do_test e_expr-25.1.4 { set ::varlist } {a}
+
+# EVIDENCE-OF: R-34773-62253 The only difference between the following
+# two CASE expressions is that the x expression is evaluated exactly
+# once in the first example but might be evaluated multiple times in the
+# second: CASE x WHEN w1 THEN r1 WHEN w2 THEN r2 ELSE r3 END CASE WHEN
+# x=w1 THEN r1 WHEN x=w2 THEN r2 ELSE r3 END
+#
+proc ceval {x} {
+  incr ::evalcount
+  return $x
+}
+db func ceval ceval
+set ::evalcount 0
+
+do_execsql_test e_expr-26.1.1 {
+  CREATE TABLE t2(x, w1, r1, w2, r2, r3);
+  INSERT INTO t2 VALUES(1, 1, 'R1', 2, 'R2', 'R3');
+  INSERT INTO t2 VALUES(2, 1, 'R1', 2, 'R2', 'R3');
+  INSERT INTO t2 VALUES(3, 1, 'R1', 2, 'R2', 'R3');
+} {}
+do_execsql_test e_expr-26.1.2 {
+  SELECT CASE x WHEN w1 THEN r1 WHEN w2 THEN r2 ELSE r3 END FROM t2
+} {R1 R2 R3}
+do_execsql_test e_expr-26.1.3 {
+  SELECT CASE WHEN x=w1 THEN r1 WHEN x=w2 THEN r2 ELSE r3 END FROM t2
+} {R1 R2 R3}
+
+do_execsql_test e_expr-26.1.4 {
+  SELECT CASE ceval(x) WHEN w1 THEN r1 WHEN w2 THEN r2 ELSE r3 END FROM t2
+} {R1 R2 R3}
+do_test e_expr-26.1.5 { set ::evalcount } {3}
+set ::evalcount 0
+do_execsql_test e_expr-26.1.6 {
+  SELECT CASE 
+    WHEN ceval(x)=w1 THEN r1 
+    WHEN ceval(x)=w2 THEN r2 
+    ELSE r3 END 
+  FROM t2
+} {R1 R2 R3}
+do_test e_expr-26.1.6 { set ::evalcount } {5}
 
 finish_test
