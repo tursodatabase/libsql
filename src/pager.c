@@ -2977,6 +2977,7 @@ static int pagerBeginReadTransaction(Pager *pPager){
 
   return rc;
 }
+#endif
 
 /*
 ** This function is called as part of the transition from PAGER_OPEN
@@ -2998,7 +2999,11 @@ static int pagerPagecount(Pager *pPager, Pgno *pnPage){
   */
   assert( pPager->eState==PAGER_OPEN );
   assert( pPager->eLock>=SHARED_LOCK || pPager->noReadlock );
+#ifndef SQLITE_OMIT_WAL
   nPage = sqlite3WalDbsize(pPager->pWal);
+#else
+  nPage = 0;
+#endif
 
   /* If the database size was not available from the WAL sub-system,
   ** determine it based on the size of the database file. If the size
@@ -3033,7 +3038,7 @@ static int pagerPagecount(Pager *pPager, Pgno *pnPage){
   return SQLITE_OK;
 }
 
-
+#ifndef SQLITE_OMIT_WAL
 /*
 ** Check if the *-wal file that corresponds to the database opened by pPager
 ** exists if the database is not empy, or verify that the *-wal file does
@@ -4778,7 +4783,9 @@ int sqlite3PagerSharedLock(Pager *pPager){
     ** mode. Otherwise, the following function call is a no-op.
     */
     rc = pagerOpenWalIfPresent(pPager);
+#ifndef SQLITE_OMIT_WAL
     assert( pPager->pWal==0 || rc==SQLITE_OK );
+#endif
   }
 
   if( pagerUseWal(pPager) ){

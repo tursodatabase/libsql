@@ -1919,32 +1919,34 @@ do_test pager1-20.2.2 {
   }
 } {}
 
-do_test pager1-20.3.1 {
-  faultsim_delete_and_reopen
-  db func a_string a_string
-  execsql {
-    PRAGMA cache_size = 10;
-    PRAGMA journal_mode = wal;
-    BEGIN;
-      CREATE TABLE t1(x);
-      CREATE TABLE t2(y);
-      INSERT INTO t1 VALUES(a_string(800));
-      INSERT INTO t1 SELECT a_string(800) FROM t1;         /*   2 */
-      INSERT INTO t1 SELECT a_string(800) FROM t1;         /*   4 */
-      INSERT INTO t1 SELECT a_string(800) FROM t1;         /*   8 */
-      INSERT INTO t1 SELECT a_string(800) FROM t1;         /*  16 */
-      INSERT INTO t1 SELECT a_string(800) FROM t1;         /*  32 */
-    COMMIT;
-  }
-} {wal}
-do_test pager1-20.3.2 {
-  execsql {
-    BEGIN;
-    INSERT INTO t2 VALUES('xxxx');
-  }
-  recursive_select 32 t1
-  execsql COMMIT
-} {}
+ifcapable wal {
+  do_test pager1-20.3.1 {
+    faultsim_delete_and_reopen
+    db func a_string a_string
+    execsql {
+      PRAGMA cache_size = 10;
+      PRAGMA journal_mode = wal;
+      BEGIN;
+        CREATE TABLE t1(x);
+        CREATE TABLE t2(y);
+        INSERT INTO t1 VALUES(a_string(800));
+        INSERT INTO t1 SELECT a_string(800) FROM t1;         /*   2 */
+        INSERT INTO t1 SELECT a_string(800) FROM t1;         /*   4 */
+        INSERT INTO t1 SELECT a_string(800) FROM t1;         /*   8 */
+        INSERT INTO t1 SELECT a_string(800) FROM t1;         /*  16 */
+        INSERT INTO t1 SELECT a_string(800) FROM t1;         /*  32 */
+      COMMIT;
+    }
+  } {wal}
+  do_test pager1-20.3.2 {
+    execsql {
+      BEGIN;
+      INSERT INTO t2 VALUES('xxxx');
+    }
+    recursive_select 32 t1
+    execsql COMMIT
+  } {}
+}
 
 #-------------------------------------------------------------------------
 # Test that a WAL database may not be opened if:
@@ -1952,28 +1954,30 @@ do_test pager1-20.3.2 {
 #   pager1-21.1.*: The VFS has an iVersion less than 2, or
 #   pager1-21.2.*: The VFS does not provide xShmXXX() methods.
 #
-do_test pager1-21.0 {
-  faultsim_delete_and_reopen
-  execsql {
-    PRAGMA journal_mode = WAL;
-    CREATE TABLE ko(c DEFAULT 'abc', b DEFAULT 'def');
-    INSERT INTO ko DEFAULT VALUES;
-  }
-} {wal}
-do_test pager1-21.1 {
-  testvfs tv -noshm 1
-  sqlite3 db2 test.db -vfs tv
-  catchsql { SELECT * FROM ko } db2
-} {1 {unable to open database file}}
-db2 close
-tv delete
-do_test pager1-21.2 {
-  testvfs tv -iversion 1
-  sqlite3 db2 test.db -vfs tv
-  catchsql { SELECT * FROM ko } db2
-} {1 {unable to open database file}}
-db2 close
-tv delete
+ifcapable wal {
+  do_test pager1-21.0 {
+    faultsim_delete_and_reopen
+    execsql {
+      PRAGMA journal_mode = WAL;
+      CREATE TABLE ko(c DEFAULT 'abc', b DEFAULT 'def');
+      INSERT INTO ko DEFAULT VALUES;
+    }
+  } {wal}
+  do_test pager1-21.1 {
+    testvfs tv -noshm 1
+    sqlite3 db2 test.db -vfs tv
+    catchsql { SELECT * FROM ko } db2
+  } {1 {unable to open database file}}
+  db2 close
+  tv delete
+  do_test pager1-21.2 {
+    testvfs tv -iversion 1
+    sqlite3 db2 test.db -vfs tv
+    catchsql { SELECT * FROM ko } db2
+  } {1 {unable to open database file}}
+  db2 close
+  tv delete
+}
 
 #-------------------------------------------------------------------------
 # Test that a "PRAGMA wal_checkpoint":
@@ -2254,24 +2258,26 @@ do_test pager1.27.1 {
 # the same database.
 #
 catch { db close }
-do_multiclient_test tn {
-  do_test pager1-28.$tn.1 {
-    sql1 { 
-      PRAGMA journal_mode = WAL;
-      CREATE TABLE t1(a, b);
-      INSERT INTO t1 VALUES('a', 'b');
-    }
-  } {wal}
-  do_test pager1-28.$tn.2 { sql2 { SELECT * FROM t1 } } {a b}
+ifcapable wal {
+  do_multiclient_test tn {
+    do_test pager1-28.$tn.1 {
+      sql1 { 
+        PRAGMA journal_mode = WAL;
+        CREATE TABLE t1(a, b);
+        INSERT INTO t1 VALUES('a', 'b');
+      }
+    } {wal}
+    do_test pager1-28.$tn.2 { sql2 { SELECT * FROM t1 } } {a b}
 
-  do_test pager1-28.$tn.3 { sql1 { PRAGMA locking_mode=exclusive } } {exclusive}
-  do_test pager1-28.$tn.4 { 
-    csql1 { BEGIN; INSERT INTO t1 VALUES('c', 'd'); }
-  } {1 {database is locked}}
-  code2 { db2 close ; sqlite3 db2 test.db }
-  do_test pager1-28.$tn.4 { 
-    sql1 { INSERT INTO t1 VALUES('c', 'd'); COMMIT }
-  } {}
+    do_test pager1-28.$tn.3 { sql1 { PRAGMA locking_mode=exclusive } } {exclusive}
+    do_test pager1-28.$tn.4 { 
+      csql1 { BEGIN; INSERT INTO t1 VALUES('c', 'd'); }
+    } {1 {database is locked}}
+    code2 { db2 close ; sqlite3 db2 test.db }
+    do_test pager1-28.$tn.4 { 
+      sql1 { INSERT INTO t1 VALUES('c', 'd'); COMMIT }
+    } {}
+  }
 }
 
 #-------------------------------------------------------------------------

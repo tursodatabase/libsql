@@ -15,6 +15,9 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !wal {finish_test ; return }
+
 db close
 set ::enable_shared_cache [sqlite3_enable_shared_cache 1]
 
