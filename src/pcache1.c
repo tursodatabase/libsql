@@ -23,8 +23,13 @@ typedef struct PCache1 PCache1;
 typedef struct PgHdr1 PgHdr1;
 typedef struct PgFreeslot PgFreeslot;
 
-/* Pointers to structures of this type are cast and returned as 
-** opaque sqlite3_pcache* handles
+/* Each page cache is an instance of the following object.  Every
+** open database file (including each in-memory database and each
+** temporary or transient database) has a single page cache which
+** is an instance of this object.
+**
+** Pointers to structures of this type are cast and returned as 
+** opaque sqlite3_pcache* handles.
 */
 struct PCache1 {
   /* Cache configuration parameters. Page size (szPage) and the purgeable
@@ -202,7 +207,7 @@ static void pcache1Free(void *p){
 
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
 /*
-** Return the size of a pache allocation
+** Return the size of a pcache allocation
 */
 static int pcache1MemSize(void *p){
   assert( sqlite3_mutex_held(pcache1.mutex) );
