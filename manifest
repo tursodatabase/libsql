@@ -1,5 +1,5 @@
-C Changes\sto\ssupport\sbuilding\swith\sSQLITE_OMIT_WAL.
-D 2010-08-24T18:35:12
+C Replicate\sasserts\son\sunixOpen()\sto\swinOpen()\sin\sos_win.c.
+D 2010-08-24T20:46:53
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 543f91f24cd7fee774ecc0a61c19704c0c3e78fd
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -155,7 +155,7 @@ F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c 11194cbcf6a57456e58022dc537ab8c3497d9bb9
-F src/os_win.c 51cb62f76262d961ea4249489383d714501315a7
+F src/os_win.c 718a48ca09d1bb747acb6b76e6a7e20eab182a7e
 F src/pager.c 48556db031d16064ffbde48053da8ec5032df7e8
 F src/pager.h ef8c8f71ab022cc2fff768a1175dd32355be9dcd
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -846,7 +846,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 5e8101c5122336844ea920e6fbdace23e35b931f
-R a696c1133501b0d7ad2be0304e78dcd5
+P d1ed743b6ed07ad0ee7d466932c5a83caa9489ee
+R 4de3851ce739f58f5ec292f30759a537
 U shaneh
-Z 80d9d8f470083fca9ed888138d87f8b3
+Z b2eb9e260c96bf7904a512bfdbfae9ac

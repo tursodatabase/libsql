@@ -1468,7 +1468,7 @@ static int winOpenSharedMemory(winFile *pDbFd){
     rc = winOpen(pDbFd->pVfs,
                  pShmNode->zFilename,             /* Name of the file (UTF-8) */
                  (sqlite3_file*)&pShmNode->hFile,  /* File handle here */
-                 SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, /* Mode flags */
+                 SQLITE_OPEN_WAL | SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, /* Mode flags */
                  0);
     if( SQLITE_OK!=rc ){
       rc = SQLITE_CANTOPEN_BKPT;
@@ -2024,9 +2024,54 @@ static int winOpen(
   int isTemp = 0;
 #endif
   winFile *pFile = (winFile*)id;
-  void *zConverted;                 /* Filename in OS encoding */
-  const char *zUtf8Name = zName;    /* Filename in UTF-8 encoding */
-  char zTmpname[MAX_PATH+1];        /* Buffer used to create temp filename */
+  void *zConverted;              /* Filename in OS encoding */
+  const char *zUtf8Name = zName; /* Filename in UTF-8 encoding */
+
+  /* If argument zPath is a NULL pointer, this function is required to open
+  ** a temporary file. Use this buffer to store the file name in.
+  */
+  char zTmpname[MAX_PATH+1];     /* Buffer used to create temp filename */
+
+  int rc = SQLITE_OK;            /* Function Return Code */
+  int eType = flags&0xFFFFFF00;  /* Type of file to open */
+
+  int isExclusive  = (flags & SQLITE_OPEN_EXCLUSIVE);
+  int isDelete     = (flags & SQLITE_OPEN_DELETEONCLOSE);
+  int isCreate     = (flags & SQLITE_OPEN_CREATE);
+  int isReadonly   = (flags & SQLITE_OPEN_READONLY);
+  int isReadWrite  = (flags & SQLITE_OPEN_READWRITE);
+
+  int isOpenJournal = (isCreate && (
+        eType==SQLITE_OPEN_MASTER_JOURNAL 
+     || eType==SQLITE_OPEN_MAIN_JOURNAL 
+     || eType==SQLITE_OPEN_WAL
+  ));
+
+  /* Check the following statements are true: 
+  **
+  **   (a) Exactly one of the READWRITE and READONLY flags must be set, and 
+  **   (b) if CREATE is set, then READWRITE must also be set, and
+  **   (c) if EXCLUSIVE is set, then CREATE must also be set.
+  **   (d) if DELETEONCLOSE is set, then CREATE must also be set.
+  */
+  assert((isReadonly==0 || isReadWrite==0) && (isReadWrite || isReadonly));
+  assert(isCreate==0 || isReadWrite);
+  assert(isExclusive==0 || isCreate);
+  assert(isDelete==0 || isCreate);
+
+  /* The main DB, main journal, WAL file and master journal are never 
+  ** automatically deleted. Nor are they ever temporary files.  */
+  assert( (!isDelete && zName) || eType!=SQLITE_OPEN_MAIN_DB );
+  assert( (!isDelete && zName) || eType!=SQLITE_OPEN_MAIN_JOURNAL );
+  assert( (!isDelete && zName) || eType!=SQLITE_OPEN_MASTER_JOURNAL );
+  assert( (!isDelete && zName) || eType!=SQLITE_OPEN_WAL );
+
+  /* Assert that the upper layer has set one of the "file-type" flags. */
+  assert( eType==SQLITE_OPEN_MAIN_DB      || eType==SQLITE_OPEN_TEMP_DB 
+       || eType==SQLITE_OPEN_MAIN_JOURNAL || eType==SQLITE_OPEN_TEMP_JOURNAL 
+       || eType==SQLITE_OPEN_SUBJOURNAL   || eType==SQLITE_OPEN_MASTER_JOURNAL 
+       || eType==SQLITE_OPEN_TRANSIENT_DB || eType==SQLITE_OPEN_WAL
+  );
 
   assert( id!=0 );
   UNUSED_PARAMETER(pVfs);
@@ -2037,7 +2082,8 @@ static int winOpen(
   ** temporary file name to use 
   */
   if( !zUtf8Name ){
-    int rc = getTempname(MAX_PATH+1, zTmpname);
+    assert(isDelete && !isOpenJournal);
+    rc = getTempname(MAX_PATH+1, zTmpname);
     if( rc!=SQLITE_OK ){
       return rc;
     }
@@ -2050,29 +2096,31 @@ static int winOpen(
     return SQLITE_NOMEM;
   }
 
-  if( flags & SQLITE_OPEN_READWRITE ){
+  if( isReadWrite ){
     dwDesiredAccess = GENERIC_READ | GENERIC_WRITE;
   }else{
     dwDesiredAccess = GENERIC_READ;
   }
+
   /* SQLITE_OPEN_EXCLUSIVE is used to make sure that a new file is 
   ** created. SQLite doesn't use it to indicate "exclusive access" 
   ** as it is usually understood.
   */
-  assert(!(flags & SQLITE_OPEN_EXCLUSIVE) || (flags & SQLITE_OPEN_CREATE));
-  if( flags & SQLITE_OPEN_EXCLUSIVE ){
+  if( isExclusive ){
     /* Creates a new file, only if it does not already exist. */
     /* If the file exists, it fails. */
     dwCreationDisposition = CREATE_NEW;
-  }else if( flags & SQLITE_OPEN_CREATE ){
+  }else if( isCreate ){
     /* Open existing file, or create if it doesn't exist */
     dwCreationDisposition = OPEN_ALWAYS;
   }else{
     /* Opens a file, only if it exists. */
     dwCreationDisposition = OPEN_EXISTING;
   }
+
   dwShareMode = FILE_SHARE_READ | FILE_SHARE_WRITE;
-  if( flags & SQLITE_OPEN_DELETEONCLOSE ){
+
+  if( isDelete ){
 #if SQLITE_OS_WINCE
     dwFlagsAndAttributes = FILE_ATTRIBUTE_HIDDEN;
     isTemp = 1;
@@ -2089,6 +2137,7 @@ static int winOpen(
 #if SQLITE_OS_WINCE
   dwFlagsAndAttributes |= FILE_FLAG_RANDOM_ACCESS;
 #endif
+
   if( isNT() ){
     h = CreateFileW((WCHAR*)zConverted,
        dwDesiredAccess,
@@ -2114,26 +2163,30 @@ static int winOpen(
     );
 #endif
   }
+
   OSTRACE(("OPEN %d %s 0x%lx %s\n", 
            h, zName, dwDesiredAccess, 
            h==INVALID_HANDLE_VALUE ? "failed" : "ok"));
+
   if( h==INVALID_HANDLE_VALUE ){
     pFile->lastErrno = GetLastError();
     free(zConverted);
-    if( flags & SQLITE_OPEN_READWRITE ){
+    if( isReadWrite ){
       return winOpen(pVfs, zName, id, 
-             ((flags|SQLITE_OPEN_READONLY)&~SQLITE_OPEN_READWRITE), pOutFlags);
+             ((flags|SQLITE_OPEN_READONLY)&~(SQLITE_OPEN_CREATE|SQLITE_OPEN_READWRITE)), pOutFlags);
     }else{
       return SQLITE_CANTOPEN_BKPT;
     }
   }
+
   if( pOutFlags ){
-    if( flags & SQLITE_OPEN_READWRITE ){
+    if( isReadWrite ){
       *pOutFlags = SQLITE_OPEN_READWRITE;
     }else{
       *pOutFlags = SQLITE_OPEN_READONLY;
     }
   }
+
   memset(pFile, 0, sizeof(*pFile));
   pFile->pMethod = &winIoMethod;
   pFile->h = h;
@@ -2142,9 +2195,9 @@ static int winOpen(
   pFile->pShm = 0;
   pFile->zPath = zName;
   pFile->sectorSize = getSectorSize(pVfs, zUtf8Name);
+
 #if SQLITE_OS_WINCE
-  if( (flags & (SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_DB)) ==
-               (SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_DB)
+  if( isReadWrite && eType==SQLITE_OPEN_MAIN_DB
        && !winceCreateLock(zName, pFile)
   ){
     CloseHandle(h);
@@ -2158,8 +2211,9 @@ static int winOpen(
   {
     free(zConverted);
   }
+
   OpenCounter(+1);
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
