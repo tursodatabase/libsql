@@ -438,8 +438,11 @@ nodeAcquire(
     pRtree->iDepth = readInt16(pNode->zData);
   }
 
-  assert( (rc==SQLITE_OK && pNode) || (pNode==0 && rc!=SQLITE_OK) );
-  nodeHashInsert(pRtree, pNode);
+  if( pNode!=0 ){
+    nodeHashInsert(pRtree, pNode);
+  }else if( rc==SQLITE_OK ){
+    rc = SQLITE_CORRUPT;
+  }
 
   return rc;
 }
