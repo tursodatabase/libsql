@@ -166,4 +166,38 @@ do_test fts3ao-3.3 {
   execsql { SELECT a, b, c FROM t1 WHERE c MATCH 'two'; }
 } {{one three four} {one four} {one two}}
 
+#---------------------------------------------------------------------
+# Test that it is possible to rename an fts3 table within a 
+# transaction.
+#
+do_test fts3ao-4.1 {
+  execsql {
+    CREATE VIRTUAL TABLE t4 USING fts3;
+    INSERT INTO t4 VALUES('the quick brown fox');
+  }
+} {}
+do_test fts3ao-4.2 {
+  execsql {
+    BEGIN;
+      INSERT INTO t4 VALUES('jumped over the');
+  }
+} {}
+do_test fts3ao-4.3 { execsql { ALTER TABLE t4 RENAME TO t5; } } {}
+do_test fts3ao-4.4 { execsql { INSERT INTO t5 VALUES('lazy dog'); } } {}
+do_test fts3ao-4.5 { execsql COMMIT } {}
+do_test fts3ao-4.6 {
+  execsql { SELECT * FROM t5 }
+} {{the quick brown fox} {jumped over the} {lazy dog}}
+do_test fts3ao-4.7 {
+  execsql {
+    BEGIN;
+      INSERT INTO t5 VALUES('Down came a jumbuck to drink at that billabong');
+      ALTER TABLE t5 RENAME TO t6;
+      INSERT INTO t6 VALUES('Down came the troopers, one, two, three');
+    ROLLBACK;
+    SELECT * FROM t5;
+  }
+} {{the quick brown fox} {jumped over the} {lazy dog}}
+
 finish_test
+

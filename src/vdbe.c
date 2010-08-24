@@ -5648,6 +5648,7 @@ case OP_VRename: {
   assert( pName->flags & MEM_Str );
   rc = pVtab->pModule->xRename(pVtab, pName->z);
   importVtabErrMsg(p, pVtab);
+  p->expired = 0;
 
   break;
 }

@@ -2581,11 +2581,14 @@ static int fts3RenameMethod(
   const char *zName               /* New name of table */
 ){
   Fts3Table *p = (Fts3Table *)pVtab;
-  sqlite3 *db;                    /* Database connection */
+  sqlite3 *db = p->db;            /* Database connection */
   int rc;                         /* Return Code */
- 
-  db = p->db;
-  rc = SQLITE_OK;
+
+  rc = sqlite3Fts3PendingTermsFlush(p);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
+
   fts3DbExec(&rc, db,
     "ALTER TABLE %Q.'%q_content'  RENAME TO '%q_content';",
     p->zDb, p->zName, zName
