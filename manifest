@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Merge\schanges\sthrough\srelease\s3.7.2\sinto\sthe\sapple-osx\sbranch.
-D 2010-08-24T01:08:11
+C Merge\sin\sthe\sR-tree\sfix\sfrom\sthe\strunk.
+D 2010-08-24T01:51:07
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c58f7d37ad0f9b28655ba4e28c6cb0f879569cd7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -81,7 +81,7 @@ F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c 850e9a36567bbcce6bd85a4b68243cad8e3c2de2
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c f76dba3edc1bd5f261f9d71e455fb62619099151
+F ext/rtree/rtree.c 4646fb3f52f11842450c6465af382589d8a232ab
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 51bb0cd0405970501e63258401ae5ad235a4f468
 F ext/rtree/rtree2.test 7b665c44d25e51b3098068d983a39902b2e2d7a1
@@ -854,14 +854,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 866e9286ae4226b2bec40ef18c672a41768abf1f 42537b60566f288167f1b5864a5435986838e3a3
-R b90ef642aae0ac30fb7a61a1e0be0fdb
+P 415c448dc45a297bd1b0bbce25c4572eeab286f0 7f2f71cc9e3c39093f09231f448576cff6afb5fe
+R a5989b39fa52f0620b0851b6f3c872a9
 U drh
-Z 1c471b938c17ff72270ce2f43edc1fcc
+Z e8776a8fd86a44ef5757f798d9dc8b80
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD4DBQFMcxuaoxKgR168RlERAh66AJ9x4GdYxXfsFSw+a46wDFbYJj088ACYkCd4
-vS4UiZumt45mBBT+i5zWwA==
-=aiSb
+iD8DBQFMcyWOoxKgR168RlERAqbDAJ45pfKsU4ofV34wUA8rb3Q7JjhdFACfWukV
+aiZS9mIwn46DtBOb8pfJwlM=
+=f9ny
 -----END PGP SIGNATURE-----
