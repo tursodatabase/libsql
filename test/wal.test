@@ -1476,7 +1476,7 @@ foreach pgsz {512 1024 2048 4096 8192 16384 32768 65536} {
 # Test that when 1 or more pages are recovered from a WAL file, 
 # sqlite3_log() is invoked to report this to the user.
 #
-set walfile [file join [pwd] test.db-wal]
+set walfile [file nativename [file join [pwd] test.db-wal]]
 catch {db close}
 file delete -force test.db
 do_test wal-23.1 {
@@ -1503,9 +1503,10 @@ do_test wal-23.3 {
   faultsim_restore_and_reopen
   execsql { SELECT * FROM t1 }
 } {1 2 3 4}
+set nPage [expr 2+$AUTOVACUUM]
 do_test wal-23.4 { 
   set ::log 
-} [list SQLITE_OK "Recovered 2 frames from WAL file $walfile"]
+} [list SQLITE_OK "Recovered $nPage frames from WAL file $walfile"]
 
 db close
 sqlite3_shutdown

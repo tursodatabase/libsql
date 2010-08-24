@@ -862,25 +862,245 @@ do_execsql_test e_expr-13.2.10 { SELECT  1 != 0  BETWEEN 0 AND 2  }  1
 do_execsql_test e_expr-13.2.11 { SELECT (1 != 0) BETWEEN 0 AND 2  }  1
 do_execsql_test e_expr-13.2.12 { SELECT  1 != (0 BETWEEN 0 AND 2) }  0
 
-do_execsql_test e_expr-13.2.13  { SELECT 1 LIKE 10 BETWEEN 0 AND 2   }  1
-do_execsql_test e_expr-13.2.14  { SELECT (1 LIKE 10) BETWEEN 0 AND 2 }  1
-do_execsql_test e_expr-13.2.15  { SELECT 1 LIKE (10 BETWEEN 0 AND 2) }  0
-do_execsql_test e_expr-13.2.16  { SELECT  6 BETWEEN 4 AND 8 LIKE 1   }  1
-do_execsql_test e_expr-13.2.17  { SELECT (6 BETWEEN 4 AND 8) LIKE 1  }  1
-do_execsql_test e_expr-13.2.18  { SELECT  6 BETWEEN 4 AND (8 LIKE 1) }  0
+do_execsql_test e_expr-13.2.13 { SELECT 1 LIKE 10 BETWEEN 0 AND 2   }  1
+do_execsql_test e_expr-13.2.14 { SELECT (1 LIKE 10) BETWEEN 0 AND 2 }  1
+do_execsql_test e_expr-13.2.15 { SELECT 1 LIKE (10 BETWEEN 0 AND 2) }  0
+do_execsql_test e_expr-13.2.16 { SELECT  6 BETWEEN 4 AND 8 LIKE 1   }  1
+do_execsql_test e_expr-13.2.17 { SELECT (6 BETWEEN 4 AND 8) LIKE 1  }  1
+do_execsql_test e_expr-13.2.18 { SELECT  6 BETWEEN 4 AND (8 LIKE 1) }  0
 
-do_execsql_test e_expr-13.2.19  { SELECT 0 AND 0 BETWEEN 0 AND 1   } 0
-do_execsql_test e_expr-13.2.20  { SELECT 0 AND (0 BETWEEN 0 AND 1) } 0
-do_execsql_test e_expr-13.2.21  { SELECT (0 AND 0) BETWEEN 0 AND 1 } 1
-do_execsql_test e_expr-13.2.22  { SELECT 0 BETWEEN -1 AND 1 AND 0   } 0
-do_execsql_test e_expr-13.2.23  { SELECT (0 BETWEEN -1 AND 1) AND 0 } 0
-do_execsql_test e_expr-13.2.24  { SELECT 0 BETWEEN -1 AND (1 AND 0) } 1
+do_execsql_test e_expr-13.2.19 { SELECT 0 AND 0 BETWEEN 0 AND 1   } 0
+do_execsql_test e_expr-13.2.20 { SELECT 0 AND (0 BETWEEN 0 AND 1) } 0
+do_execsql_test e_expr-13.2.21 { SELECT (0 AND 0) BETWEEN 0 AND 1 } 1
+do_execsql_test e_expr-13.2.22 { SELECT 0 BETWEEN -1 AND 1 AND 0   } 0
+do_execsql_test e_expr-13.2.23 { SELECT (0 BETWEEN -1 AND 1) AND 0 } 0
+do_execsql_test e_expr-13.2.24 { SELECT 0 BETWEEN -1 AND (1 AND 0) } 1
 
-do_execsql_test e_expr-13.2.25  { SELECT 2 < 3 BETWEEN 0 AND 1   } 1
-do_execsql_test e_expr-13.2.26  { SELECT (2 < 3) BETWEEN 0 AND 1 } 1
-do_execsql_test e_expr-13.2.27  { SELECT 2 < (3 BETWEEN 0 AND 1) } 0
-do_execsql_test e_expr-13.2.28  { SELECT 2 BETWEEN 1 AND 2 < 3    } 0
-do_execsql_test e_expr-13.2.29  { SELECT 2 BETWEEN 1 AND (2 < 3)  } 0
-do_execsql_test e_expr-13.2.30  { SELECT (2 BETWEEN 1 AND 2) < 3  } 1
+do_execsql_test e_expr-13.2.25 { SELECT 2 < 3 BETWEEN 0 AND 1   } 1
+do_execsql_test e_expr-13.2.26 { SELECT (2 < 3) BETWEEN 0 AND 1 } 1
+do_execsql_test e_expr-13.2.27 { SELECT 2 < (3 BETWEEN 0 AND 1) } 0
+do_execsql_test e_expr-13.2.28 { SELECT 2 BETWEEN 1 AND 2 < 3    } 0
+do_execsql_test e_expr-13.2.29 { SELECT 2 BETWEEN 1 AND (2 < 3)  } 0
+do_execsql_test e_expr-13.2.30 { SELECT (2 BETWEEN 1 AND 2) < 3  } 1
+
+#-------------------------------------------------------------------------
+# Test the statements related to the LIKE and GLOB operators.
+#
+# EVIDENCE-OF: R-16584-60189 The LIKE operator does a pattern matching
+# comparison.
+#
+# EVIDENCE-OF: R-11295-04657 The operand to the right of the LIKE
+# operator contains the pattern and the left hand operand contains the
+# string to match against the pattern.
+#
+do_execsql_test e_expr-14.1.1 { SELECT 'abc%' LIKE 'abcde' } 0
+do_execsql_test e_expr-14.1.2 { SELECT 'abcde' LIKE 'abc%' } 1
+
+# EVIDENCE-OF: R-55406-38524 A percent symbol ("%") in the LIKE pattern
+# matches any sequence of zero or more characters in the string.
+#
+do_execsql_test e_expr-14.2.1 { SELECT 'abde'    LIKE 'ab%de' } 1
+do_execsql_test e_expr-14.2.2 { SELECT 'abXde'   LIKE 'ab%de' } 1
+do_execsql_test e_expr-14.2.3 { SELECT 'abABCde' LIKE 'ab%de' } 1
+
+# EVIDENCE-OF: R-30433-25443 An underscore ("_") in the LIKE pattern
+# matches any single character in the string.
+#
+do_execsql_test e_expr-14.3.1 { SELECT 'abde'    LIKE 'ab_de' } 0
+do_execsql_test e_expr-14.3.2 { SELECT 'abXde'   LIKE 'ab_de' } 1
+do_execsql_test e_expr-14.3.3 { SELECT 'abABCde' LIKE 'ab_de' } 0
+
+# EVIDENCE-OF: R-59007-20454 Any other character matches itself or its
+# lower/upper case equivalent (i.e. case-insensitive matching).
+#
+do_execsql_test e_expr-14.4.1 { SELECT 'abc' LIKE 'aBc' } 1
+do_execsql_test e_expr-14.4.2 { SELECT 'aBc' LIKE 'aBc' } 1
+do_execsql_test e_expr-14.4.3 { SELECT 'ac'  LIKE 'aBc' } 0
+
+# EVIDENCE-OF: R-23648-58527 SQLite only understands upper/lower case
+# for ASCII characters by default.
+#
+# EVIDENCE-OF: R-04532-11527 The LIKE operator is case sensitive by
+# default for unicode characters that are beyond the ASCII range.
+#
+# EVIDENCE-OF: R-44381-11669 the expression
+# 'a'&nbsp;LIKE&nbsp;'A' is TRUE but
+# '&aelig;'&nbsp;LIKE&nbsp;'&AElig;' is FALSE.
+#
+do_execsql_test e_expr-14.5.1 { SELECT 'A' LIKE 'a'         } 1
+do_execsql_test e_expr-14.5.2 "SELECT '\u00c6' LIKE '\u00e6'" 0
+
+# EVIDENCE-OF: R-56683-13731 If the optional ESCAPE clause is present,
+# then the expression following the ESCAPE keyword must evaluate to a
+# string consisting of a single character.
+#
+do_catchsql_test e_expr-14.6.1 { 
+  SELECT 'A' LIKE 'a' ESCAPE '12' 
+} {1 {ESCAPE expression must be a single character}}
+do_catchsql_test e_expr-14.6.2 { 
+  SELECT 'A' LIKE 'a' ESCAPE '' 
+} {1 {ESCAPE expression must be a single character}}
+do_catchsql_test e_expr-14.6.3 { SELECT 'A' LIKE 'a' ESCAPE 'x' }    {0 1}
+do_catchsql_test e_expr-14.6.4 "SELECT 'A' LIKE 'a' ESCAPE '\u00e6'" {0 1}
+
+# EVIDENCE-OF: R-02045-23762 This character may be used in the LIKE
+# pattern to include literal percent or underscore characters.
+#
+# EVIDENCE-OF: R-13345-31830 The escape character followed by a percent
+# symbol (%), underscore (_), or a second instance of the escape
+# character itself matches a literal percent symbol, underscore, or a
+# single escape character, respectively.
+#
+do_execsql_test e_expr-14.7.1  { SELECT 'abc%'  LIKE 'abcX%' ESCAPE 'X' } 1
+do_execsql_test e_expr-14.7.2  { SELECT 'abc5'  LIKE 'abcX%' ESCAPE 'X' } 0
+do_execsql_test e_expr-14.7.3  { SELECT 'abc'   LIKE 'abcX%' ESCAPE 'X' } 0
+do_execsql_test e_expr-14.7.4  { SELECT 'abcX%' LIKE 'abcX%' ESCAPE 'X' } 0
+do_execsql_test e_expr-14.7.5  { SELECT 'abc%%' LIKE 'abcX%' ESCAPE 'X' } 0
+
+do_execsql_test e_expr-14.7.6  { SELECT 'abc_'  LIKE 'abcX_' ESCAPE 'X' } 1
+do_execsql_test e_expr-14.7.7  { SELECT 'abc5'  LIKE 'abcX_' ESCAPE 'X' } 0
+do_execsql_test e_expr-14.7.8  { SELECT 'abc'   LIKE 'abcX_' ESCAPE 'X' } 0
+do_execsql_test e_expr-14.7.9  { SELECT 'abcX_' LIKE 'abcX_' ESCAPE 'X' } 0
+do_execsql_test e_expr-14.7.10 { SELECT 'abc__' LIKE 'abcX_' ESCAPE 'X' } 0
+
+do_execsql_test e_expr-14.7.11 { SELECT 'abcX'  LIKE 'abcXX' ESCAPE 'X' } 1
+do_execsql_test e_expr-14.7.12 { SELECT 'abc5'  LIKE 'abcXX' ESCAPE 'X' } 0
+do_execsql_test e_expr-14.7.13 { SELECT 'abc'   LIKE 'abcXX' ESCAPE 'X' } 0
+do_execsql_test e_expr-14.7.14 { SELECT 'abcXX' LIKE 'abcXX' ESCAPE 'X' } 0
+
+# EVIDENCE-OF: R-51359-17496 The infix LIKE operator is implemented by
+# calling the application-defined SQL functions like(Y,X) or like(Y,X,Z).
+#
+proc likefunc {args} {
+  eval lappend ::likeargs $args
+  return 1
+}
+db func like likefunc
+set ::likeargs [list]
+do_execsql_test e_expr-15.1.1 { SELECT 'abc' LIKE 'def' } 1
+do_test         e_expr-15.1.2 { set likeargs } {def abc}
+set ::likeargs [list]
+do_execsql_test e_expr-15.1.3 { SELECT 'abc' LIKE 'def' ESCAPE 'X' } 1
+do_test         e_expr-15.1.4 { set likeargs } {def abc X}
+db close
+sqlite3 db test.db
+
+# EVIDENCE-OF: R-22868-25880 The LIKE operator can be made case
+# sensitive using the case_sensitive_like pragma.
+#
+do_execsql_test e_expr-16.1.1 { SELECT 'abcxyz' LIKE 'ABC%' } 1
+do_execsql_test e_expr-16.1.2 { PRAGMA case_sensitive_like = 1 } {}
+do_execsql_test e_expr-16.1.3 { SELECT 'abcxyz' LIKE 'ABC%' } 0
+do_execsql_test e_expr-16.1.4 { SELECT 'ABCxyz' LIKE 'ABC%' } 1
+do_execsql_test e_expr-16.1.5 { PRAGMA case_sensitive_like = 0 } {}
+do_execsql_test e_expr-16.1.6 { SELECT 'abcxyz' LIKE 'ABC%' } 1
+do_execsql_test e_expr-16.1.7 { SELECT 'ABCxyz' LIKE 'ABC%' } 1
+
+# EVIDENCE-OF: R-52087-12043 The GLOB operator is similar to LIKE but
+# uses the Unix file globbing syntax for its wildcards.
+#
+# EVIDENCE-OF: R-09813-17279 Also, GLOB is case sensitive, unlike LIKE.
+#
+do_execsql_test e_expr-17.1.1 { SELECT 'abcxyz' GLOB 'abc%' } 0
+do_execsql_test e_expr-17.1.2 { SELECT 'abcxyz' GLOB 'abc*' } 1
+do_execsql_test e_expr-17.1.3 { SELECT 'abcxyz' GLOB 'abc___' } 0
+do_execsql_test e_expr-17.1.4 { SELECT 'abcxyz' GLOB 'abc???' } 1
+
+do_execsql_test e_expr-17.1.5 { SELECT 'abcxyz' GLOB 'abc*' } 1
+do_execsql_test e_expr-17.1.6 { SELECT 'ABCxyz' GLOB 'abc*' } 0
+do_execsql_test e_expr-17.1.7 { SELECT 'abcxyz' GLOB 'ABC*' } 0
+
+# EVIDENCE-OF: R-39616-20555 Both GLOB and LIKE may be preceded by the
+# NOT keyword to invert the sense of the test.
+#
+do_execsql_test e_expr-17.2.1 { SELECT 'abcxyz' NOT GLOB 'ABC*' } 1
+do_execsql_test e_expr-17.2.2 { SELECT 'abcxyz' NOT GLOB 'abc*' } 0
+do_execsql_test e_expr-17.2.3 { SELECT 'abcxyz' NOT LIKE 'ABC%' } 0
+do_execsql_test e_expr-17.2.4 { SELECT 'abcxyz' NOT LIKE 'abc%' } 0
+do_execsql_test e_expr-17.2.5 { SELECT 'abdxyz' NOT LIKE 'abc%' } 1
+
+db nullvalue null
+do_execsql_test e_expr-17.2.6 { SELECT 'abcxyz' NOT GLOB NULL } null
+do_execsql_test e_expr-17.2.7 { SELECT 'abcxyz' NOT LIKE NULL } null
+do_execsql_test e_expr-17.2.8 { SELECT NULL NOT GLOB 'abc*' } null
+do_execsql_test e_expr-17.2.9 { SELECT NULL NOT LIKE 'ABC%' } null
+db nullvalue {}
+
+# EVIDENCE-OF: R-39414-35489 The infix GLOB operator is implemented by
+# calling the function glob(Y,X) and can be modified by overriding that
+# function.
+proc globfunc {args} {
+  eval lappend ::globargs $args
+  return 1
+}
+db func glob -argcount 2 globfunc
+set ::globargs [list]
+do_execsql_test e_expr-17.3.1 { SELECT 'abc' GLOB 'def' } 1
+do_test         e_expr-17.3.2 { set globargs } {def abc}
+set ::globargs [list]
+do_execsql_test e_expr-17.3.3 { SELECT 'X' NOT GLOB 'Y' } 0
+do_test         e_expr-17.3.4 { set globargs } {Y X}
+sqlite3 db test.db
+
+# EVIDENCE-OF: R-41650-20872 No regexp() user function is defined by
+# default and so use of the REGEXP operator will normally result in an
+# error message.
+#
+do_catchsql_test e_expr-18.1.1 { 
+  SELECT regexp('abc', 'def') 
+} {1 {no such function: regexp}}
+do_catchsql_test e_expr-18.1.2 { 
+  SELECT 'abc' REGEXP 'def'
+} {1 {no such function: REGEXP}}
+
+# EVIDENCE-OF: R-33693-50180 The REGEXP operator is a special syntax for
+# the regexp() user function.
+#
+# EVIDENCE-OF: R-57289-13578 If a application-defined SQL function named
+# "regexp" is added at run-time, that function will be called in order
+# to implement the REGEXP operator.
+#
+proc regexpfunc {args} {
+  eval lappend ::regexpargs $args
+  return 1
+}
+db func regexp -argcount 2 regexpfunc
+set ::regexpargs [list]
+do_execsql_test e_expr-18.2.1 { SELECT 'abc' REGEXP 'def' } 1
+do_test         e_expr-18.2.2 { set regexpargs } {def abc}
+set ::regexpargs [list]
+do_execsql_test e_expr-18.2.3 { SELECT 'X' NOT REGEXP 'Y' } 0
+do_test         e_expr-18.2.4 { set regexpargs } {Y X}
+sqlite3 db test.db
+
+# EVIDENCE-OF: R-42037-37826 The default match() function implementation
+# raises an exception and is not really useful for anything.
+#
+do_catchsql_test e_expr-19.1.1 { 
+  SELECT 'abc' MATCH 'def' 
+} {1 {unable to use function MATCH in the requested context}}
+do_catchsql_test e_expr-19.1.2 { 
+  SELECT match('abc', 'def')
+} {1 {unable to use function MATCH in the requested context}}
+
+# EVIDENCE-OF: R-37916-47407 The MATCH operator is a special syntax for
+# the match() application-defined function.
+#
+# EVIDENCE-OF: R-06021-09373 But extensions can override the match()
+# function with more helpful logic.
+#
+proc matchfunc {args} {
+  eval lappend ::matchargs $args
+  return 1
+}
+db func match -argcount 2 matchfunc
+set ::matchargs [list]
+do_execsql_test e_expr-19.2.1 { SELECT 'abc' MATCH 'def' } 1
+do_test         e_expr-19.2.2 { set matchargs } {def abc}
+set ::matchargs [list]
+do_execsql_test e_expr-19.2.3 { SELECT 'X' NOT MATCH 'Y' } 0
+do_test         e_expr-19.2.4 { set matchargs } {Y X}
+sqlite3 db test.db
+
 
 finish_test

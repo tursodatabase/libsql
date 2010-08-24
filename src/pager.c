@@ -1057,7 +1057,7 @@ static int pagerUnlockDb(Pager *pPager, int eLock){
     assert( pPager->eLock>=eLock );
     rc = sqlite3OsUnlock(pPager->fd, eLock);
     if( pPager->eLock!=UNKNOWN_LOCK ){
-      pPager->eLock = eLock;
+      pPager->eLock = (u8)eLock;
     }
     IOTRACE(("UNLOCK %p %d\n", pPager, eLock))
   }
@@ -1081,7 +1081,7 @@ static int pagerLockDb(Pager *pPager, int eLock){
   if( pPager->eLock<eLock || pPager->eLock==UNKNOWN_LOCK ){
     rc = sqlite3OsLock(pPager->fd, eLock);
     if( rc==SQLITE_OK && (pPager->eLock!=UNKNOWN_LOCK||eLock==EXCLUSIVE_LOCK) ){
-      pPager->eLock = eLock;
+      pPager->eLock = (u8)eLock;
       IOTRACE(("LOCK %p %d\n", pPager, eLock))
     }
   }
@@ -1161,13 +1161,14 @@ static void pager_set_pagehash(PgHdr *pPage){
 #define CHECK_PAGE(x) checkPage(x)
 static void checkPage(PgHdr *pPg){
   Pager *pPager = pPg->pPager;
-  assert( !pPg->pageHash || pPager->errCode
-      || (pPg->flags&PGHDR_DIRTY) || pPg->pageHash==pager_pagehash(pPg) );
+  assert( pPager->eState!=PAGER_ERROR );
+  assert( (pPg->flags&PGHDR_DIRTY) || pPg->pageHash==pager_pagehash(pPg) );
 }
 
 #else
 #define pager_datahash(X,Y)  0
 #define pager_pagehash(X)  0
+#define pager_set_pagehash(X)
 #define CHECK_PAGE(x)
 #endif  /* SQLITE_CHECK_PAGES */
 
@@ -1507,6 +1508,14 @@ static int readJournalHdr(
      || SQLITE_OK!=(rc = read32bits(pPager->jfd, iHdrOff+24, &iPageSize))
     ){
       return rc;
+    }
+
+    /* Versions of SQLite prior to 3.5.8 set the page-size field of the
+    ** journal header to zero. In this case, assume that the Pager.pageSize
+    ** variable is already set to the correct page size.
+    */
+    if( iPageSize==0 ){
+      iPageSize = pPager->pageSize;
     }
 
     /* Check that the values read from the page-size and sector-size fields
@@ -1929,11 +1938,19 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
         rc = sqlite3OsDelete(pPager->pVfs, pPager->zJournal, 0);
       }
     }
+  }
 
 #ifdef SQLITE_CHECK_PAGES
-    sqlite3PcacheIterateDirty(pPager->pPCache, pager_set_pagehash);
-#endif
+  sqlite3PcacheIterateDirty(pPager->pPCache, pager_set_pagehash);
+  if( pPager->dbSize==0 && sqlite3PcacheRefCount(pPager->pPCache)>0 ){
+    PgHdr *p = pager_lookup(pPager, 1);
+    if( p ){
+      p->pageHash = 0;
+      sqlite3PagerUnref(p);
+    }
   }
+#endif
+
   sqlite3BitvecDestroy(pPager->pInJournal);
   pPager->pInJournal = 0;
   pPager->nRec = 0;
@@ -2280,9 +2297,8 @@ static int pager_playback_one_page(
       assert( !pagerUseWal(pPager) );
       sqlite3PcacheMakeClean(pPg);
     }
-#ifdef SQLITE_CHECK_PAGES
-    pPg->pageHash = pager_pagehash(pPg);
-#endif
+    pager_set_pagehash(pPg);
+
     /* If this was page 1, then restore the value of Pager.dbFileVers.
     ** Do this before any decoding. */
     if( pgno==1 ){
@@ -2921,6 +2937,14 @@ static int pagerWalFrames(
       sqlite3BackupUpdate(pPager->pBackup, p->pgno, (u8 *)p->pData);
     }
   }
+
+#ifdef SQLITE_CHECK_PAGES
+  {
+    PgHdr *p;
+    for(p=pList; p; p=p->pDirty) pager_set_pagehash(p);
+  }
+#endif
+
   return rc;
 }
 
@@ -3366,7 +3390,7 @@ int sqlite3PagerSetPagesize(Pager *pPager, u32 *pPageSize, int nReserve){
    && sqlite3PcacheRefCount(pPager->pPCache)==0 
    && pageSize && pageSize!=(u32)pPager->pageSize 
   ){
-    char *pNew;                 /* New temp space */
+    char *pNew = NULL;             /* New temp space */
     i64 nByte = 0;
 
     if( pPager->eState>PAGER_OPEN && isOpen(pPager->fd) ){
@@ -3379,7 +3403,7 @@ int sqlite3PagerSetPagesize(Pager *pPager, u32 *pPageSize, int nReserve){
 
     if( rc==SQLITE_OK ){
       pager_reset(pPager);
-      pPager->dbSize = nByte/pageSize;
+      pPager->dbSize = (Pgno)(nByte/pageSize);
       pPager->pageSize = pageSize;
       sqlite3PageFree(pPager->pTmpSpace);
       pPager->pTmpSpace = pNew;
@@ -3952,9 +3976,7 @@ static int pager_write_pagelist(Pager *pPager, PgHdr *pList){
     }else{
       PAGERTRACE(("NOSTORE %d page %d\n", PAGERID(pPager), pgno));
     }
-#ifdef SQLITE_CHECK_PAGES
-    pList->pageHash = pager_pagehash(pList);
-#endif
+    pager_set_pagehash(pList);
     pList = pList->pDirty;
   }
 
@@ -4143,7 +4165,7 @@ static int pagerStress(void *p, PgHdr *pPg){
     sqlite3PcacheMakeClean(pPg);
   }
 
-  return pager_error(pPager, rc);
+  return pager_error(pPager, rc); 
 }
 
 
@@ -4942,9 +4964,7 @@ int sqlite3PagerAcquire(
         goto pager_acquire_err;
       }
     }
-#ifdef SQLITE_CHECK_PAGES
-    pPg->pageHash = pager_pagehash(pPg);
-#endif
+    pager_set_pagehash(pPg);
   }
 
   return SQLITE_OK;
@@ -5442,9 +5462,7 @@ void sqlite3PagerDontWrite(PgHdr *pPg){
     PAGERTRACE(("DONT_WRITE page %d of %d\n", pPg->pgno, PAGERID(pPager)));
     IOTRACE(("CLEAN %p %d\n", pPager, pPg->pgno))
     pPg->flags |= PGHDR_DONT_WRITE;
-#ifdef SQLITE_CHECK_PAGES
-    pPg->pageHash = pager_pagehash(pPg);
-#endif
+    pager_set_pagehash(pPg);
   }
 }
 

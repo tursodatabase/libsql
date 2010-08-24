@@ -35,6 +35,13 @@ static int decodeVarint(const unsigned char *z, i64 *pVal){
   return 9;
 }
 
+/*
+** Extract a big-endian 32-bit integer
+*/
+static unsigned int decodeInt32(const unsigned char *z){
+  return (z[0]<<24) + (z[1]<<16) + (z[2]<<8) + z[3];
+}
+
 /* Report an out-of-memory error and die.
 */
 static void out_of_memory(void){
@@ -246,11 +253,64 @@ static void decode_btree_page(unsigned char *a, int pgno, int hdrSize){
   }
 }
 
+/*
+** Decode a freelist trunk page.
+*/
+static void decode_trunk_page(
+  int pgno,             /* The page number */
+  int pagesize,         /* Size of each page */
+  int detail,           /* Show leaf pages if true */
+  int recursive         /* Follow the trunk change if true */
+){
+  int n, i, k;
+  unsigned char *a;
+  while( pgno>0 ){
+    a = getContent((pgno-1)*pagesize, pagesize);
+    printf("Decode of freelist trunk page %d:\n", pgno);
+    print_decode_line(a, 0, 4, "Next freelist trunk page");
+    print_decode_line(a, 4, 4, "Number of entries on this page");
+    if( detail ){
+      n = (int)decodeInt32(&a[4]);
+      for(i=0; i<n; i++){
+        unsigned int x = decodeInt32(&a[8+4*i]);
+        char zIdx[10];
+        sprintf(zIdx, "[%d]", i);
+        printf("  %5s %7u", zIdx, x);
+        if( i%5==4 ) printf("\n");
+      }
+      if( i%5!=0 ) printf("\n");
+    }
+    if( !recursive ){
+      pgno = 0;
+    }else{
+      pgno = (int)decodeInt32(&a[0]);
+    }
+    free(a);
+  }
+}
+
+/*
+** Print a usage comment
+*/
+static void usage(const char *argv0){
+  fprintf(stderr, "Usage %s FILENAME ?args...?\n\n", argv0);
+  fprintf(stderr,
+    "args:\n"
+    "    dbheader        Show database header\n"
+    "    NNN..MMM        Show hex of pages NNN through MMM\n"
+    "    NNN..end        Show hex of pages NNN through end of file\n"
+    "    NNNb            Decode btree page NNN\n"
+    "    NNNt            Decode freelist trunk page NNN\n"
+    "    NNNtd           Show leave freelist pages on the decode\n"
+    "    NNNtr           Recurisvely decode freelist starting at NNN\n"
+  );
+}
+
 int main(int argc, char **argv){
   struct stat sbuf;
   unsigned char zPgSz[2];
   if( argc<2 ){
-    fprintf(stderr,"Usage: %s FILENAME ?PAGE? ...\n", argv[0]);
+    usage(argv[0]);
     exit(1);
   }
   db = open(argv[1], O_RDONLY);
@@ -262,7 +322,7 @@ int main(int argc, char **argv){
   zPgSz[1] = 0;
   lseek(db, 16, SEEK_SET);
   read(db, zPgSz, 2);
-  pagesize = zPgSz[0]*256 + zPgSz[1];
+  pagesize = zPgSz[0]*256 + zPgSz[1]*65536;
   if( pagesize==0 ) pagesize = 1024;
   printf("Pagesize: %d\n", pagesize);
   fstat(db, &sbuf);
@@ -303,6 +363,17 @@ int main(int argc, char **argv){
         a = getContent(ofst, nByte);
         decode_btree_page(a, iStart, hdrSize);
         free(a);
+        continue;
+      }else if( zLeft && zLeft[0]=='t' ){
+        unsigned char *a;
+        int detail = 0;
+        int recursive = 0;
+        int i;
+        for(i=1; zLeft[i]; i++){
+          if( zLeft[i]=='r' ) recursive = 1;
+          if( zLeft[i]=='d' ) detail = 1;
+        }
+        decode_trunk_page(iStart, pagesize, detail, recursive);
         continue;
       }else{
         iEnd = iStart;

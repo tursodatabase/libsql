@@ -129,7 +129,7 @@ foreach locking_mode {normal exclusive} {
     do_test ioerr5-1.$locking_mode-$iFail.3 {
       sqlite3_soft_heap_limit 1024
       compilesql16 "SELECT 10"
-    } {}
+    } {SQLITE_OK}
 
     close $channel
 
