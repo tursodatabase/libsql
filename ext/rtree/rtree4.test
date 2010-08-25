@@ -23,7 +23,7 @@ ifcapable !rtree {
 }
 
 set ::NROW 2500
-if {[info exists ISQUICK] && $ISQUICK} {
+if {[info exists G(isquick)] && $G(isquick)} {
   set ::NROW 250
 }
 

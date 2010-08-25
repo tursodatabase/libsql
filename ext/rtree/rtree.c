@@ -53,6 +53,9 @@
   #define AssignCells splitNodeStartree
 #endif
 
+#if !defined(NDEBUG) && !defined(SQLITE_DEBUG) 
+# define NDEBUG 1
+#endif
 
 #ifndef SQLITE_CORE
   #include "sqlite3ext.h"
@@ -306,10 +309,8 @@ static void nodeReference(RtreeNode *p){
 ** Clear the content of node p (set all bytes to 0x00).
 */
 static void nodeZero(Rtree *pRtree, RtreeNode *p){
-  if( p ){
-    memset(&p->zData[2], 0, pRtree->iNodeSize-2);
-    p->isDirty = 1;
-  }
+  memset(&p->zData[2], 0, pRtree->iNodeSize-2);
+  p->isDirty = 1;
 }
 
 /*
@@ -338,13 +339,11 @@ static RtreeNode *nodeHashLookup(Rtree *pRtree, i64 iNode){
 ** Add node pNode to the node hash table.
 */
 static void nodeHashInsert(Rtree *pRtree, RtreeNode *pNode){
-  if( pNode ){
-    int iHash;
-    assert( pNode->pNext==0 );
-    iHash = nodeHash(pNode->iNode);
-    pNode->pNext = pRtree->aHash[iHash];
-    pRtree->aHash[iHash] = pNode;
-  }
+  int iHash;
+  assert( pNode->pNext==0 );
+  iHash = nodeHash(pNode->iNode);
+  pNode->pNext = pRtree->aHash[iHash];
+  pRtree->aHash[iHash] = pNode;
 }
 
 /*
@@ -366,11 +365,11 @@ static void nodeHashDelete(Rtree *pRtree, RtreeNode *pNode){
 ** assigned a node number when nodeWrite() is called to write the
 ** node contents out to the database.
 */
-static RtreeNode *nodeNew(Rtree *pRtree, RtreeNode *pParent, int zero){
+static RtreeNode *nodeNew(Rtree *pRtree, RtreeNode *pParent){
   RtreeNode *pNode;
   pNode = (RtreeNode *)sqlite3_malloc(sizeof(RtreeNode) + pRtree->iNodeSize);
   if( pNode ){
-    memset(pNode, 0, sizeof(RtreeNode) + (zero?pRtree->iNodeSize:0));
+    memset(pNode, 0, sizeof(RtreeNode) + pRtree->iNodeSize);
     pNode->zData = (u8 *)&pNode[1];
     pNode->nRef = 1;
     pNode->pParent = pParent;
@@ -434,7 +433,7 @@ nodeAcquire(
   *ppNode = pNode;
   rc = sqlite3_reset(pRtree->pReadNode);
 
-  if( rc==SQLITE_OK && iNode==1 ){
+  if( pNode && iNode==1 ){
     pRtree->iDepth = readInt16(pNode->zData);
   }
 
@@ -762,9 +761,15 @@ static int testRtreeCell(Rtree *pRtree, RtreeCursor *pCursor){
     );
 
     switch( p->op ){
-      case RTREE_LE: case RTREE_LT: bRes = p->rValue<cell_min; break;
-      case RTREE_GE: case RTREE_GT: bRes = p->rValue>cell_max; break;
-      case RTREE_EQ: 
+      case RTREE_LE: case RTREE_LT: 
+        bRes = p->rValue<cell_min; 
+        break;
+
+      case RTREE_GE: case RTREE_GT: 
+        bRes = p->rValue>cell_max; 
+        break;
+
+      default: assert( p->op==RTREE_EQ );
         bRes = (p->rValue>cell_max || p->rValue<cell_min);
         break;
     }
@@ -797,7 +802,7 @@ static int testRtreeEntry(Rtree *pRtree, RtreeCursor *pCursor){
       case RTREE_LT: res = (coord<p->rValue);  break;
       case RTREE_GE: res = (coord>=p->rValue); break;
       case RTREE_GT: res = (coord>p->rValue);  break;
-      case RTREE_EQ: res = (coord==p->rValue); break;
+      default:       res = (coord==p->rValue); break;
     }
 
     if( !res ) return 1;
@@ -900,13 +905,17 @@ static int rtreeNext(sqlite3_vtab_cursor *pVtabCursor){
   RtreeCursor *pCsr = (RtreeCursor *)pVtabCursor;
   int rc = SQLITE_OK;
 
+  /* RtreeCursor.pNode must not be NULL. If is is NULL, then this cursor is
+  ** already at EOF. It is against the rules to call the xNext() method of
+  ** a cursor that has already reached EOF.
+  */
+  assert( pCsr->pNode );
+
   if( pCsr->iStrategy==1 ){
     /* This "scan" is a direct lookup by rowid. There is no next entry. */
     nodeRelease(pRtree, pCsr->pNode);
     pCsr->pNode = 0;
-  }
-
-  else if( pCsr->pNode ){
+  }else{
     /* Move to the next entry that matches the configured constraints. */
     int iHeight = 0;
     while( pCsr->pNode ){
@@ -1016,7 +1025,8 @@ static int rtreeFilter(
     i64 iRowid = sqlite3_value_int64(argv[0]);
     rc = findLeafNode(pRtree, iRowid, &pLeaf);
     pCsr->pNode = pLeaf; 
-    if( pLeaf && rc==SQLITE_OK ){
+    if( pLeaf ){
+      assert( rc==SQLITE_OK );
       pCsr->iCell = nodeRowidIndex(pRtree, pLeaf, iRowid);
     }
   }else{
@@ -1272,7 +1282,12 @@ static float cellOverlap(
   int ii;
   float overlap = 0.0;
   for(ii=0; ii<nCell; ii++){
-    if( ii!=iExclude ){
+#if VARIANT_RSTARTREE_CHOOSESUBTREE
+    if( ii!=iExclude )
+#else
+    assert( iExclude==-1 );
+#endif
+    {
       int jj;
       float o = 1.0;
       for(jj=0; jj<(pRtree->nDim*2); jj+=2){
@@ -1365,22 +1380,31 @@ static int ChooseLeaf(
     ** the smallest area.
     */
     for(iCell=0; iCell<nCell; iCell++){
+      int bBest = 0;
       float growth;
       float area;
       float overlap = 0.0;
       nodeGetCell(pRtree, pNode, iCell, &cell);
       growth = cellGrowth(pRtree, &cell, pCell);
       area = cellArea(pRtree, &cell);
+
 #if VARIANT_RSTARTREE_CHOOSESUBTREE
       if( ii==(pRtree->iDepth-1) ){
         overlap = cellOverlapEnlargement(pRtree,&cell,pCell,aCell,nCell,iCell);
       }
-#endif
       if( (iCell==0) 
        || (overlap<fMinOverlap) 
        || (overlap==fMinOverlap && growth<fMinGrowth)
        || (overlap==fMinOverlap && growth==fMinGrowth && area<fMinArea)
       ){
+        bBest = 1;
+      }
+#else
+      if( iCell==0||growth<fMinGrowth||(growth==fMinGrowth && area<fMinArea) ){
+        bBest = 1;
+      }
+#endif
+      if( bBest ){
         fMinOverlap = overlap;
         fMinGrowth = growth;
         fMinArea = area;
@@ -1950,14 +1974,14 @@ static int SplitNode(
   nCell++;
 
   if( pNode->iNode==1 ){
-    pRight = nodeNew(pRtree, pNode, 1);
-    pLeft = nodeNew(pRtree, pNode, 1);
+    pRight = nodeNew(pRtree, pNode);
+    pLeft = nodeNew(pRtree, pNode);
     pRtree->iDepth++;
     pNode->isDirty = 1;
     writeInt16(pNode->zData, pRtree->iDepth);
   }else{
     pLeft = pNode;
-    pRight = nodeNew(pRtree, pLeft->pParent, 1);
+    pRight = nodeNew(pRtree, pLeft->pParent);
     nodeReference(pLeft);
   }
 
@@ -2358,7 +2382,9 @@ static int rtreeUpdate(
   rtreeReference(pRtree);
 
   assert(nData>=1);
+#if 0
   assert(hashIsEmpty(pRtree));
+#endif
 
   /* If azData[0] is not an SQL NULL value, it is the rowid of a
   ** record to delete from the r-tree table. The following block does
