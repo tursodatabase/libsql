@@ -3019,10 +3019,15 @@ int Sqlite3_Init(Tcl_Interp *interp){
   Tcl_InitStubs(interp, "8.4", 0);
   Tcl_CreateObjCommand(interp, "sqlite3", (Tcl_ObjCmdProc*)DbMain, 0, 0);
   Tcl_PkgProvide(interp, "sqlite3", PACKAGE_VERSION);
-#if 0
+
+#ifndef SQLITE_3_SUFFIX_ONLY
+  /* The "sqlite" alias is undocumented.  It is here only to support
+  ** legacy scripts.  All new scripts should use only the "sqlite3"
+  ** command.
+  */
   Tcl_CreateObjCommand(interp, "sqlite", (Tcl_ObjCmdProc*)DbMain, 0, 0);
-  Tcl_PkgProvide(interp, "sqlite", PACKAGE_VERSION);
 #endif
+
   return TCL_OK;
 }
 int Tclsqlite3_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp); }

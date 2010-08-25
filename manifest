@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Disable\sthe\slegacy\s"sqlite"\scommand\sin\sthe\sTCL\sinterface.\s\sProvide\sonly\nthe\s"sqlite3"\scommand.
-D 2010-08-25T19:39:20
+C Reinstate\sthe\s"sqlite"\salias\sfor\sbackwards\scompatibility\s(but\sleave\s\nit\sundocumented)\sbut\sremove\sthe\sPackageProvide\sfor\s"sqlite".
+D 2010-08-25T20:35:51
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 543f91f24cd7fee774ecc0a61c19704c0c3e78fd
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -180,7 +180,7 @@ F src/sqliteInt.h e33b15e8176442bf7484f0e716edfd1ce03b2979
 F src/sqliteLimit.h a17dcd3fb775d63b64a43a55c54cb282f9726f44
 F src/status.c 496913d4e8441195f6f2a75b1c95993a45b9b30b
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c 07cbbfbf48fbe8c3d904d91d7f7f3617ebbe4d95
+F src/tclsqlite.c a378d78d7af3f7a10bd7aab1db9388113e7616c4
 F src/test1.c 55005c9781b157b1d215ba145768783b9abae78c
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 4c21700c73a890a47fc685c1097bfb661346ac94
@@ -850,14 +850,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 05f6c1aebbe757dd3b54fd027057b9db7ae3a990
-R c0bc705eb72a76850ee8164992ea1bf0
+P 909b3d8862aeae04611969f5fc27d32a82026767
+R 764c99689ee6b1ab3c95ea5643a88612
 U drh
-Z 5881ab9502db33a92b1b747f352bf063
+Z a4a2c827e86e7f9928530c9b4e6b2fe5
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMdXFroxKgR168RlERAhm8AJ4jwzVRrJmjwgMOxLxjKvkRVCrqawCfWZsq
-9GU91ZJ0Sgbifl3CYkPDFkQ=
-=8/vk
+iD8DBQFMdX6qoxKgR168RlERAsEhAJwMKGZqB9weJp14pkFqFVNZtWL0ZgCfchua
++QBIgEpturnqd6DIbr4qhkI=
+=Ru8a
 -----END PGP SIGNATURE-----
