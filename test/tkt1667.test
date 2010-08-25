@@ -34,7 +34,7 @@ file delete -force test.db test.db-journal
 set first_ptrmap_page   [expr 1024/5 + 3]
 sqlite3_test_control_pending_byte [expr 1024 * ($first_ptrmap_page-1)]
 
-sqlite db test.db
+sqlite3 db test.db
 
 do_test tkt1667-1 {
   execsql {

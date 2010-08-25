@@ -396,7 +396,7 @@ do_test exclusive-4.5 {
 # longer active.
 #
 db close
-sqlite db test.db
+sqlite3 db test.db
 
 # if we're using proxy locks, we use 3 filedescriptors for a db
 # that is open but NOT writing changes, normally
