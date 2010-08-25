@@ -33,8 +33,6 @@ if {!$MEMDEBUG} {
    return
 }
 
-if 1 {
-
 do_faultsim_test rtree3-1 -faults oom* -prep {
   faultsim_delete_and_reopen
 } -body {
@@ -96,8 +94,6 @@ do_faultsim_test rtree3-3b -faults oom* -prep {
   db eval COMMIT
 } 
 
-}
-
 do_test rtree3-4.prep {
   faultsim_delete_and_reopen
   execsql {
@@ -112,12 +108,19 @@ do_test rtree3-4.prep {
   faultsim_save_and_close
 } {}
 
-do_faultsim_test rtree3-4 -faults oom-transient -prep {
+do_faultsim_test rtree3-4a -faults oom-transient -prep {
   faultsim_restore_and_reopen
 } -body {
   db eval { SELECT count(*) FROM rt }
 } -test {
   faultsim_test_result {0 1500}
+}
+do_faultsim_test rtree3-4b -faults oom-transient -prep {
+  faultsim_restore_and_reopen
+} -body {
+  db eval { DELETE FROM rt WHERE ii BETWEEN 880 AND 920 }
+} -test {
+  faultsim_test_result {0 {}}
 }
 
 finish_test

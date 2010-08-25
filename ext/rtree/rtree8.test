@@ -104,12 +104,23 @@ do_catchsql_test rtree8-2.1.5 {
 } {1 {database disk image is malformed}}
 
 do_execsql_test rtree8-2.1.6 { 
-  DELETE FROM t1_node;
-  DELETE FROM t1_parent;
-  DELETE FROM t1_rowid;
   DROP TABLE t1;
   CREATE VIRTUAL TABLE t1 USING rtree_i32(id, x1, x2);
 } {}
+
+
+populate_t1 50
+do_execsql_test rtree8-2.2.1 {
+  DELETE FROM t1_parent
+} {}
+do_catchsql_test rtree8-2.2.2 {
+  DELETE FROM t1 WHERE id=25
+} {1 {database disk image is malformed}}
+do_execsql_test rtree8-2.2.3 { 
+  DROP TABLE t1;
+  CREATE VIRTUAL TABLE t1 USING rtree_i32(id, x1, x2);
+} {}
+
 
 #-------------------------------------------------------------------------
 # Test that trying to use the MATCH operator with the r-tree module does
@@ -119,7 +130,7 @@ breakpoint
 populate_t1 10
 do_catchsql_test rtree8-3.1 { 
   SELECT * FROM t1 WHERE x1 MATCH '1234'
-} {1 {}}
+} {1 {unable to use function MATCH in the requested context}}
 
 
 finish_test

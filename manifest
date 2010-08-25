@@ -1,5 +1,5 @@
-C Test\scases\sto\simprove\scoverage\sof\srtree\smodule.\sFixes\sassociated\swith\sthe\ssame.
-D 2010-08-25T17:53:17
+C Further\stest\scoverage\simprovements\sfor\srtree.c.
+D 2010-08-25T19:04:38
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 543f91f24cd7fee774ecc0a61c19704c0c3e78fd
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,16 +78,16 @@ F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c 850e9a36567bbcce6bd85a4b68243cad8e3c2de2
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 73a4df9b61bfdb39e29d9d8a9927d811bb0f3389
+F ext/rtree/rtree.c 586c8d6a72ff67060e3850d3a9ef86a85caf38dc
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 51bb0cd0405970501e63258401ae5ad235a4f468
 F ext/rtree/rtree2.test 47b90f549a59e667e9fb01338956ead6f66c8d9d
-F ext/rtree/rtree3.test 5ffcb3f44fe925e7a2e6e1960f3d2bf628683db3
+F ext/rtree/rtree3.test d2a408858ef14a2bf50ec2e7031c35782243b94d
 F ext/rtree/rtree4.test 2adce44dc544f6eb570898c8d5270bdf6ca64bd8
 F ext/rtree/rtree5.test 92508f5152a50110af6551fa5b769d1bbd7c4ef3
 F ext/rtree/rtree6.test 903720aaab819764c3693aaac0affe8174104ac8
 F ext/rtree/rtree7.test 6fd29fb8e13795c822f4ceeea92ab5d61c96976d
-F ext/rtree/rtree8.test d226534180f063924ee9d5500d43aebaeba28c7e
+F ext/rtree/rtree8.test 7ba5d3b6ce7bb75fcce41a0a2da8796b99b69b5b
 F ext/rtree/rtree_perf.tcl 6c18c1f23cd48e0f948930c98dfdd37dfccb5195
 F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/tkt3363.test 2bf324f7908084a5f463de3109db9c6e607feb1b
@@ -847,7 +847,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 40526d8390896ccb883c45afa70e7adb568d174f
-R 34bbfc350aec51a2c8611327e89641b5
+P 865cec04e4d814f63fb71feb67de7f06f8d54035
+R c8194745b3bd7fb8c0dc3d8838dec5f9
 U dan
-Z ca03a4a4ecb8f93f6b9fcda928df5c52
+Z 5bf1b8b670d95aa442bbc4a1f760237b

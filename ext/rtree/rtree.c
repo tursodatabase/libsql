@@ -1998,8 +1998,12 @@ static int SplitNode(
     goto splitnode_out;
   }
 
-  /* Ensure both child nodes have node numbers assigned to them. */
-  if( (0==pRight->iNode && SQLITE_OK!=(rc = nodeWrite(pRtree, pRight)))
+  /* Ensure both child nodes have node numbers assigned to them by calling
+  ** nodeWrite(). Node pRight always needs a node number, as it was created
+  ** by nodeNew() above. But node pLeft sometimes already has a node number.
+  ** In this case avoid the all to nodeWrite().
+  */
+  if( SQLITE_OK!=(rc = nodeWrite(pRtree, pRight))
    || (0==pLeft->iNode && SQLITE_OK!=(rc = nodeWrite(pRtree, pLeft)))
   ){
     goto splitnode_out;
@@ -2064,14 +2068,19 @@ splitnode_out:
 static int fixLeafParent(Rtree *pRtree, RtreeNode *pLeaf){
   int rc = SQLITE_OK;
   if( pLeaf->iNode!=1 && pLeaf->pParent==0 ){
+    int rc2;                      /* sqlite3_reset() return code */
     sqlite3_bind_int64(pRtree->pReadParent, 1, pLeaf->iNode);
-    if( sqlite3_step(pRtree->pReadParent)==SQLITE_ROW ){
+    rc = sqlite3_step(pRtree->pReadParent);
+    if( rc==SQLITE_ROW ){
       i64 iNode = sqlite3_column_int64(pRtree->pReadParent, 0);
       rc = nodeAcquire(pRtree, iNode, 0, &pLeaf->pParent);
-    }else{
-      rc = SQLITE_ERROR;
+    }else if( rc==SQLITE_DONE ){
+      rc = SQLITE_CORRUPT;
     }
-    sqlite3_reset(pRtree->pReadParent);
+    rc2 = sqlite3_reset(pRtree->pReadParent);
+    if( rc==SQLITE_OK ){
+      rc = rc2;
+    }
     if( rc==SQLITE_OK ){
       rc = fixLeafParent(pRtree, pLeaf->pParent);
     }
@@ -2881,12 +2890,10 @@ static void rtreedepth(sqlite3_context *ctx, int nArg, sqlite3_value **apArg){
 ** function "rtreenode".
 */
 int sqlite3RtreeInit(sqlite3 *db){
-  int rc = SQLITE_OK;
+  const int utf8 = SQLITE_UTF8;
+  int rc;
 
-  if( rc==SQLITE_OK ){
-    int utf8 = SQLITE_UTF8;
-    rc = sqlite3_create_function(db, "rtreenode", 2, utf8, 0, rtreenode, 0, 0);
-  }
+  rc = sqlite3_create_function(db, "rtreenode", 2, utf8, 0, rtreenode, 0, 0);
   if( rc==SQLITE_OK ){
     int utf8 = SQLITE_UTF8;
     rc = sqlite3_create_function(db, "rtreedepth", 1, utf8, 0,rtreedepth, 0, 0);
