@@ -1,5 +1,5 @@
-C Simplification\sof\schanges\sfor\sSQLITE_OMIT_WAL\ssupport\sin\spager.c.
-D 2010-08-26T05:23:37
+C Improve\scoverage\sof\srtree.c\ssome\smore.
+D 2010-08-26T07:59:11
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 543f91f24cd7fee774ecc0a61c19704c0c3e78fd
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,16 +78,16 @@ F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c 850e9a36567bbcce6bd85a4b68243cad8e3c2de2
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 586c8d6a72ff67060e3850d3a9ef86a85caf38dc
+F ext/rtree/rtree.c e26a75709563c3638ea59960a11464985e3779d9
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 51bb0cd0405970501e63258401ae5ad235a4f468
 F ext/rtree/rtree2.test 47b90f549a59e667e9fb01338956ead6f66c8d9d
-F ext/rtree/rtree3.test d2a408858ef14a2bf50ec2e7031c35782243b94d
+F ext/rtree/rtree3.test db7652535e339bbbf5f3909599a088c7daa4be87
 F ext/rtree/rtree4.test 2adce44dc544f6eb570898c8d5270bdf6ca64bd8
 F ext/rtree/rtree5.test 92508f5152a50110af6551fa5b769d1bbd7c4ef3
 F ext/rtree/rtree6.test 903720aaab819764c3693aaac0affe8174104ac8
 F ext/rtree/rtree7.test 6fd29fb8e13795c822f4ceeea92ab5d61c96976d
-F ext/rtree/rtree8.test 7ba5d3b6ce7bb75fcce41a0a2da8796b99b69b5b
+F ext/rtree/rtree8.test 64b83b163a6997202e11c4226a74e7e52f26e75c
 F ext/rtree/rtree_perf.tcl 6c18c1f23cd48e0f948930c98dfdd37dfccb5195
 F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/tkt3363.test 2bf324f7908084a5f463de3109db9c6e607feb1b
@@ -565,7 +565,7 @@ F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
 F test/rollback.test 1a83118ea6db4e7d8c10eaa63871b5e90502ffdc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test e58e0acef38b527ed1b0b70d3ada588f804af287
-F test/rtree.test fb372aff108d4371bd0b5e63e106947587ff4310
+F test/rtree.test dbc0c5113c1d67e5cc44a495d682dda531c83fd4
 F test/savepoint.test 992d6429b6bce16ac172f7431975044ceaeb0803
 F test/savepoint2.test 9b8543940572a2f01a18298c3135ad0c9f4f67d7
 F test/savepoint3.test e328085853b14898d78ceea00dfe7db18bb6a9ec
@@ -847,7 +847,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 699cc6b48774be111f2e076cc1920ae79497dcea
-R dbf929a2ab5b426ab9068f733752d8aa
-U shaneh
-Z 81bf9be826701101829ac75722805b4a
+P afb2484c64bf0cdec8240b9ecd0a794c44a63066
+R c9799883c88c738cdee99f610758f82c
+U dan
+Z 3ec65e959402f5df9ce6352482675a71

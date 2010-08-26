@@ -126,11 +126,45 @@ do_execsql_test rtree8-2.2.3 {
 # Test that trying to use the MATCH operator with the r-tree module does
 # not confuse it.
 #
-breakpoint
 populate_t1 10
 do_catchsql_test rtree8-3.1 { 
   SELECT * FROM t1 WHERE x1 MATCH '1234'
 } {1 {unable to use function MATCH in the requested context}}
+
+#-------------------------------------------------------------------------
+# Test a couple of invalid arguments to rtreedepth().
+#
+do_catchsql_test rtree8-4.1 {
+  SELECT rtreedepth('hello world')
+} {1 {Invalid argument to rtreedepth()}}
+do_catchsql_test rtree8-4.2 {
+  SELECT rtreedepth(X'00')
+} {1 {Invalid argument to rtreedepth()}}
+
+
+#-------------------------------------------------------------------------
+# Delete half of a lopsided tree.
+#
+do_execsql_test rtree8-5.1 { 
+  CREATE VIRTUAL TABLE t2 USING rtree_i32(id, x1, x2) 
+} {}
+do_test rtree8-5.2 {
+  execsql BEGIN
+  for {set i 0} {$i < 100} {incr i} {
+    execsql { INSERT INTO t2 VALUES($i, 100, 101) }
+  }
+  for {set i 100} {$i < 200} {incr i} {
+    execsql { INSERT INTO t2 VALUES($i, 1000, 1001) }
+  }
+  execsql COMMIT
+} {}
+do_test rtree8-5.3 {
+  execsql BEGIN
+  for {set i 0} {$i < 200} {incr i} {
+    execsql { DELETE FROM t2 WHERE id = $i }
+  }
+  execsql COMMIT
+} {}
 
 
 finish_test

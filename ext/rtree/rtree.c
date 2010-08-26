@@ -2065,6 +2065,11 @@ splitnode_out:
   return rc;
 }
 
+/*
+** If node pLeaf is not the root of the r-tree and its pParent
+** pointer is still NULL, locate the parent node of pLeaf and populate 
+** pLeaf->pParent.
+*/
 static int fixLeafParent(Rtree *pRtree, RtreeNode *pLeaf){
   int rc = SQLITE_OK;
   if( pLeaf->iNode!=1 && pLeaf->pParent==0 ){
@@ -2442,19 +2447,17 @@ static int rtreeUpdate(
     ** the root node (the operation that Gutman's paper says to perform 
     ** in this scenario).
     */
-    if( rc==SQLITE_OK && pRtree->iDepth>0 ){
-      if( rc==SQLITE_OK && NCELL(pRoot)==1 ){
-        RtreeNode *pChild;
-        i64 iChild = nodeGetRowid(pRtree, pRoot, 0);
-        rc = nodeAcquire(pRtree, iChild, pRoot, &pChild);
-        if( rc==SQLITE_OK ){
-          rc = removeNode(pRtree, pChild, pRtree->iDepth-1);
-        }
-        if( rc==SQLITE_OK ){
-          pRtree->iDepth--;
-          writeInt16(pRoot->zData, pRtree->iDepth);
-          pRoot->isDirty = 1;
-        }
+    if( rc==SQLITE_OK && pRtree->iDepth>0 && NCELL(pRoot)==1 ){
+      RtreeNode *pChild;
+      i64 iChild = nodeGetRowid(pRtree, pRoot, 0);
+      rc = nodeAcquire(pRtree, iChild, pRoot, &pChild);
+      if( rc==SQLITE_OK ){
+        rc = removeNode(pRtree, pChild, pRtree->iDepth-1);
+      }
+      if( rc==SQLITE_OK ){
+        pRtree->iDepth--;
+        writeInt16(pRoot->zData, pRtree->iDepth);
+        pRoot->isDirty = 1;
       }
     }
 

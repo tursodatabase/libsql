@@ -33,6 +33,8 @@ if {!$MEMDEBUG} {
    return
 }
 
+if 1 {
+
 do_faultsim_test rtree3-1 -faults oom* -prep {
   faultsim_delete_and_reopen
 } -body {
@@ -94,6 +96,8 @@ do_faultsim_test rtree3-3b -faults oom* -prep {
   db eval COMMIT
 } 
 
+}
+
 do_test rtree3-4.prep {
   faultsim_delete_and_reopen
   execsql {
@@ -108,19 +112,87 @@ do_test rtree3-4.prep {
   faultsim_save_and_close
 } {}
 
-do_faultsim_test rtree3-4a -faults oom-transient -prep {
+do_faultsim_test rtree3-4a -faults oom-* -prep {
   faultsim_restore_and_reopen
 } -body {
   db eval { SELECT count(*) FROM rt }
 } -test {
   faultsim_test_result {0 1500}
 }
-do_faultsim_test rtree3-4b -faults oom-transient -prep {
+
+do_faultsim_test rtree3-4b -faults oom-* -prep {
   faultsim_restore_and_reopen
 } -body {
-  db eval { DELETE FROM rt WHERE ii BETWEEN 880 AND 920 }
+  db eval { DELETE FROM rt WHERE ii BETWEEN 1 AND 100 }
 } -test {
   faultsim_test_result {0 {}}
 }
+
+do_test rtree3-5.prep {
+  faultsim_delete_and_reopen
+  execsql {
+    BEGIN;
+    PRAGMA page_size = 512;
+    CREATE VIRTUAL TABLE rt USING rtree(ii, x1, x2, y1, y2);
+  }
+  for {set i 0} {$i < 100} {incr i} {
+    execsql { INSERT INTO rt VALUES($i, $i, $i+1, $i, $i+1) }
+  }
+  execsql { COMMIT }
+  faultsim_save_and_close
+} {}
+do_faultsim_test rtree3-5 -faults oom-* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  for {set i 100} {$i < 110} {incr i} {
+    execsql { INSERT INTO rt VALUES($i, $i, $i+1, $i, $i+1) }
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+do_test rtree3-6.prep {
+  faultsim_delete_and_reopen
+  execsql {
+    BEGIN;
+    PRAGMA page_size = 512;
+    CREATE VIRTUAL TABLE rt USING rtree(ii, x1, x2, y1, y2);
+  }
+  for {set i 0} {$i < 50} {incr i} {
+    execsql { INSERT INTO rt VALUES($i, $i, $i+1, $i, $i+1) }
+  }
+  execsql { COMMIT }
+  faultsim_save_and_close
+} {}
+do_faultsim_test rtree3-6 -faults oom-* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql BEGIN
+  for {set i 0} {$i < 50} {incr i} {
+    execsql { DELETE FROM rt WHERE ii=$i }
+  }
+  execsql COMMIT
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+do_test rtree3-7.prep {
+  faultsim_delete_and_reopen
+  execsql { CREATE VIRTUAL TABLE rt USING rtree(ii, x1, x2, y1, y2) }
+  faultsim_save_and_close
+} {}
+do_faultsim_test rtree3-7 -faults oom-* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { ALTER TABLE rt RENAME TO rt2 }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+do_faultsim_test rtree3-8 -faults oom-* -prep {
+  catch { db close }
+} -body {
+  sqlite3 db test.db
+} 
 
 finish_test

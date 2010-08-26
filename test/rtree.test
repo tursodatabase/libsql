@@ -18,6 +18,7 @@ set RTREE_EXCLUDE { }
 if {[info exists G(isquick)] && $G(isquick)} { 
   set RTREE_EXCLUDE rtree3.test
 }
+set G(isquick) 1
 
 set rtreedir [file join $testdir .. ext rtree]
 
