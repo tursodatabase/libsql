@@ -69,6 +69,7 @@ proc test_set {args} {
       foreach f $a { set t($f) 1 }
     } else {
       foreach f $a { array unset t $f }
+      foreach f $a { array unset t */$f }
     }
   }
 
@@ -84,13 +85,17 @@ proc test_set {args} {
 #
 set alltests [list]
 foreach f [glob $testdir/*.test] { lappend alltests [file tail $f] }
+foreach f [glob -nocomplain $testdir/../ext/rtree/*.test] { 
+  lappend alltests $f 
+}
+
 if {$::tcl_platform(platform)!="unix"} {
   set alltests [test_set $alltests -exclude crash.test crash2.test]
 }
 set alltests [test_set $alltests -exclude {
   all.test        async.test         quick.test  veryquick.test
   memleak.test    permutations.test  soak.test   fts3.test
-  mallocAll.test
+  mallocAll.tes   rtree.test
 }]
 
 set allquicktests [test_set $alltests -exclude {
@@ -105,7 +110,7 @@ set allquicktests [test_set $alltests -exclude {
   thread003.test thread004.test thread005.test trans2.test vacuum3.test 
   incrvacuum_ioerr.test autovacuum_crash.test btree8.test shared_err.test
   vtab_err.test walslow.test walcrash.test 
-  walthread.test 
+  walthread.test rtree3.test
 }]
 if {[info exists ::env(QUICKTEST_INCLUDE)]} {
   set allquicktests [concat $allquicktests $::env(QUICKTEST_INCLUDE)]
@@ -734,6 +739,11 @@ test_suite "wal" -description {
   fts3am.test  fts3an.test  fts3ao.test  fts3b.test
   fts3c.test   fts3d.test   fts3e.test   fts3query.test 
 }
+
+test_suite "rtree" -description {
+  All R-tree related tests. Provides coverage of source file rtree.c.
+} -files [glob -nocomplain $::testdir/../ext/rtree/*.test]
+
 # End of tests
 #############################################################################
 
@@ -759,7 +769,8 @@ proc run_tests {name args} {
   uplevel $options(-initialize)
 
   foreach file [lsort $options(-files)] {
-      slave_test_file $::testdir/$file
+    if {[file tail $file] == $file} { set file [file join $::testdir $file] }
+    slave_test_file $file
   }
 
   uplevel $options(-shutdown)

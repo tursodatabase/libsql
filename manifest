@@ -1,5 +1,5 @@
-C Remove\sunreachable\scondition\sfrom\srtree.c.
-D 2010-08-26T11:27:23
+C Fix\sa\scouple\sof\smemory\sleaks\sin\sr-tree\sthat\scan\soccur\sfollowing\san\sOOM\scondition.
+D 2010-08-26T14:15:38
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 543f91f24cd7fee774ecc0a61c19704c0c3e78fd
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,19 +78,19 @@ F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c 850e9a36567bbcce6bd85a4b68243cad8e3c2de2
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 536070b23d6da289824460a08529f07e638d7c81
+F ext/rtree/rtree.c 2e87d4f44329bfdfb1d074d874b7500e9db83a06
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
-F ext/rtree/rtree1.test 51bb0cd0405970501e63258401ae5ad235a4f468
-F ext/rtree/rtree2.test 47b90f549a59e667e9fb01338956ead6f66c8d9d
-F ext/rtree/rtree3.test db7652535e339bbbf5f3909599a088c7daa4be87
-F ext/rtree/rtree4.test 2adce44dc544f6eb570898c8d5270bdf6ca64bd8
-F ext/rtree/rtree5.test 92508f5152a50110af6551fa5b769d1bbd7c4ef3
-F ext/rtree/rtree6.test 903720aaab819764c3693aaac0affe8174104ac8
-F ext/rtree/rtree7.test 6fd29fb8e13795c822f4ceeea92ab5d61c96976d
-F ext/rtree/rtree8.test 64b83b163a6997202e11c4226a74e7e52f26e75c
+F ext/rtree/rtree1.test dbd4250ac0ad367a262eb9676f7e3080b0368206
+F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
+F ext/rtree/rtree3.test deafc076f639b824466e9f82b39f1601b86dca8e
+F ext/rtree/rtree4.test 0061e6f464fd3dc6a79f82454c5a1c3dadbe42af
+F ext/rtree/rtree5.test ce3d7ccae2cfd9d2e1052b462424964c9bdcda12
+F ext/rtree/rtree6.test 1ebe0d632a7501cc80ba5a225f028fd4f0fdda08
+F ext/rtree/rtree7.test bcb647b42920b3b5d025846689147778485cc318
+F ext/rtree/rtree8.test e4e291e4cdbc576ac0cfc34c6a75c00b2ee347c3
 F ext/rtree/rtree_perf.tcl 6c18c1f23cd48e0f948930c98dfdd37dfccb5195
 F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
-F ext/rtree/tkt3363.test 2bf324f7908084a5f463de3109db9c6e607feb1b
+F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
@@ -550,7 +550,7 @@ F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test 4118a183908ecaed343a06fcef3ba82e87e0129d
 F test/pcache2.test 0d85f2ab6963aee28c671d4c71bec038c00a1d16
-F test/permutations.test 17498d1219f922d5a6da893a94c4dc7766fb2426
+F test/permutations.test fff338765bb6d9235d385ead4e6d5c9433b6ba05
 F test/pragma.test ed78d200f65c6998df51196cb8c39d5300570f24
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
@@ -565,7 +565,7 @@ F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
 F test/rollback.test 1a83118ea6db4e7d8c10eaa63871b5e90502ffdc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test e58e0acef38b527ed1b0b70d3ada588f804af287
-F test/rtree.test dbc0c5113c1d67e5cc44a495d682dda531c83fd4
+F test/rtree.test 0c8d9dd458d6824e59683c19ab2ffa9ef946f798
 F test/savepoint.test 992d6429b6bce16ac172f7431975044ceaeb0803
 F test/savepoint2.test 9b8543940572a2f01a18298c3135ad0c9f4f67d7
 F test/savepoint3.test e328085853b14898d78ceea00dfe7db18bb6a9ec
@@ -847,7 +847,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P bee1959dde19ebec20a7ffcb732aee0c8bb2e67d
-R 9fb046de4a8191bdd0781857213d3e87
+P 90f40cd36860d3af13ec24575dff7cc1f57ac493
+R a46858ce791434a7e43a1a791bfcb584
 U dan
-Z 921a91bcff15deea1dac40ed4f714457
+Z 87e2b951218964ab648d9c5a5a463f97

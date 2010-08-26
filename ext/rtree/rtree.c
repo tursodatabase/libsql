@@ -2097,6 +2097,7 @@ static int deleteCell(Rtree *, RtreeNode *, int, int);
 
 static int removeNode(Rtree *pRtree, RtreeNode *pNode, int iHeight){
   int rc;
+  int rc2;
   RtreeNode *pParent;
   int iCell;
 
@@ -2106,9 +2107,12 @@ static int removeNode(Rtree *pRtree, RtreeNode *pNode, int iHeight){
   iCell = nodeParentIndex(pRtree, pNode);
   pParent = pNode->pParent;
   pNode->pParent = 0;
-  if( SQLITE_OK!=(rc = deleteCell(pRtree, pParent, iCell, iHeight+1)) 
-   || SQLITE_OK!=(rc = nodeRelease(pRtree, pParent))
-  ){
+  rc = deleteCell(pRtree, pParent, iCell, iHeight+1);
+  rc2 = nodeRelease(pRtree, pParent);
+  if( rc==SQLITE_OK ){
+    rc = rc2;
+  }
+  if( rc!=SQLITE_OK ){
     return rc;
   }
 
@@ -2448,12 +2452,15 @@ static int rtreeUpdate(
     ** in this scenario).
     */
     if( rc==SQLITE_OK && pRtree->iDepth>0 && NCELL(pRoot)==1 ){
+      int rc2;
       RtreeNode *pChild;
       i64 iChild = nodeGetRowid(pRtree, pRoot, 0);
       rc = nodeAcquire(pRtree, iChild, pRoot, &pChild);
       if( rc==SQLITE_OK ){
         rc = removeNode(pRtree, pChild, pRtree->iDepth-1);
       }
+      rc2 = nodeRelease(pRtree, pChild);
+      if( rc==SQLITE_OK ) rc = rc2;
       if( rc==SQLITE_OK ){
         pRtree->iDepth--;
         writeInt16(pRoot->zData, pRtree->iDepth);

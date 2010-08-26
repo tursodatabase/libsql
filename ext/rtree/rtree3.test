@@ -14,26 +14,39 @@
 #
 
 if {![info exists testdir]} {
-  set testdir [file join [file dirname $argv0] .. .. test]
+  set testdir [file join [file dirname [info script]] .. .. test]
 } 
 source $testdir/tester.tcl
 source $testdir/malloc_common.tcl
-
 ifcapable !rtree {
   finish_test
   return
 }
 
-# Only run these tests if memory debugging is turned on.
+# Test summary:
 #
-source $testdir/malloc_common.tcl
-if {!$MEMDEBUG} {
-   puts "Skipping malloc tests: not compiled with -DSQLITE_MEMDEBUG..."
-   finish_test
-   return
-}
-
-if 1 {
+#   rtree3-1: Test OOM in simple CREATE TABLE, INSERT, DELETE and SELECT 
+#             commands on an almost empty table.
+#
+#   rtree3-2: Test OOM in a DROP TABLE command.
+#
+#   rtree3-3a: Test OOM during a transaction to insert 100 pseudo-random rows.
+#
+#   rtree3-3b: Test OOM during a transaction deleting all entries in the
+#              database constructed in [rtree3-3a] in pseudo-random order.
+#
+#   rtree3-4a: OOM during "SELECT count(*) FROM ..." on a big table.
+#
+#   rtree3-4b: OOM while deleting rows from a big table.
+#
+#   rtree3-5: Test OOM while inserting rows into a big table.
+#
+#   rtree3-6: Test OOM while deleting all rows of a table, one at a time.
+#
+#   rtree3-7: OOM during an ALTER TABLE RENAME TABLE command.
+#
+#   rtree3-8: Test OOM while registering the r-tree module with sqlite.
+#
 
 do_faultsim_test rtree3-1 -faults oom* -prep {
   faultsim_delete_and_reopen
@@ -96,8 +109,6 @@ do_faultsim_test rtree3-3b -faults oom* -prep {
   db eval COMMIT
 } 
 
-}
-
 do_test rtree3-4.prep {
   faultsim_delete_and_reopen
   execsql {
@@ -120,7 +131,7 @@ do_faultsim_test rtree3-4a -faults oom-* -prep {
   faultsim_test_result {0 1500}
 }
 
-do_faultsim_test rtree3-4b -faults oom-* -prep {
+do_faultsim_test rtree3-4b -faults oom-transient -prep {
   faultsim_restore_and_reopen
 } -body {
   db eval { DELETE FROM rt WHERE ii BETWEEN 1 AND 100 }

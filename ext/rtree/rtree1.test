@@ -13,7 +13,7 @@
 #
 
 if {![info exists testdir]} {
-  set testdir [file join [file dirname $argv0] .. .. test]
+  set testdir [file join [file dirname [info script]] .. .. test]
 }
 source [file join [file dirname [info script]] rtree_util.tcl]
 source $testdir/tester.tcl
