@@ -1,5 +1,5 @@
-C Improve\scoverage\sof\srtree.c\ssome\smore.
-D 2010-08-26T07:59:11
+C Remove\sunreachable\scondition\sfrom\srtree.c.
+D 2010-08-26T11:27:23
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 543f91f24cd7fee774ecc0a61c19704c0c3e78fd
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c 850e9a36567bbcce6bd85a4b68243cad8e3c2de2
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c e26a75709563c3638ea59960a11464985e3779d9
+F ext/rtree/rtree.c 536070b23d6da289824460a08529f07e638d7c81
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 51bb0cd0405970501e63258401ae5ad235a4f468
 F ext/rtree/rtree2.test 47b90f549a59e667e9fb01338956ead6f66c8d9d
@@ -847,7 +847,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P afb2484c64bf0cdec8240b9ecd0a794c44a63066
-R c9799883c88c738cdee99f610758f82c
+P bee1959dde19ebec20a7ffcb732aee0c8bb2e67d
+R 9fb046de4a8191bdd0781857213d3e87
 U dan
-Z 3ec65e959402f5df9ce6352482675a71
+Z 921a91bcff15deea1dac40ed4f714457

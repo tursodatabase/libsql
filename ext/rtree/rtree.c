@@ -2162,6 +2162,7 @@ static void fixBoundingBox(Rtree *pRtree, RtreeNode *pNode){
 ** cell, adjust the r-tree data structure if required.
 */
 static int deleteCell(Rtree *pRtree, RtreeNode *pNode, int iCell, int iHeight){
+  RtreeNode *pParent;
   int rc;
 
   if( SQLITE_OK!=(rc = fixLeafParent(pRtree, pNode)) ){
@@ -2178,11 +2179,10 @@ static int deleteCell(Rtree *pRtree, RtreeNode *pNode, int iCell, int iHeight){
   ** cell in the parent node so that it tightly contains the updated
   ** node.
   */
-  if( pNode->iNode!=1 ){
-    RtreeNode *pParent = pNode->pParent;
-    if( (pParent->iNode!=1 || NCELL(pParent)!=1) 
-     && (NCELL(pNode)<RTREE_MINCELLS(pRtree))
-    ){
+  pParent = pNode->pParent;
+  assert( pParent || pNode->iNode==1 );
+  if( pParent ){
+    if( NCELL(pNode)<RTREE_MINCELLS(pRtree) ){
       rc = removeNode(pRtree, pNode, iHeight);
     }else{
       fixBoundingBox(pRtree, pNode);
