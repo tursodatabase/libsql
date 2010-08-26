@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Add\sEXTERN\smacros\sbefore\sentry\spoints\sin\stclsqlite.c.\s\sThis\sundoes\sthe\nchange\s[b4d3e0d528c7d17fa3d05]\son\s[2006-03-06\s23:30:52].
-D 2010-08-26T16:46:58
+C Add\stests\sfor\sCAST\sexpressions\sto\se_expr.test.\sMore\sto\scome.
+D 2010-08-26T19:05:24
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 543f91f24cd7fee774ecc0a61c19704c0c3e78fd
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -345,7 +342,7 @@ F test/descidx2.test 9f1a0c83fd57f8667c82310ca21b30a350888b5d
 F test/descidx3.test fe720e8b37d59f4cef808b0bf4e1b391c2e56b6f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
-F test/e_expr.test 1c531745c94f091445157fb7953a2cc3f256f8e4
+F test/e_expr.test cdf7e80d43fbbbb2112ecb2739f36acca55a2411
 F test/e_fkey.test 6721a741c6499b3ab7e5385923233343c8f1ad05
 F test/e_fts3.test 75bb0aee26384ef586165e21018a17f7cd843469
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
@@ -850,14 +847,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1975a27cdec09e1dad4ca8281a87dd7754c02c3e
-R f25d441688f62b1bff0d009ddc9b05f0
-U drh
-Z 9a37771618dd7265a40873a32109b615
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMdpqGoxKgR168RlERAgpjAKCERLBDfs1cXus2KLEcDb9piX9h0ACeNdCt
-sppF4YYqwSPmRWJwYVXibNc=
-=57pg
------END PGP SIGNATURE-----
+P 8b2cf9d492901a65942d0e0b87c568d1539deece
+R 0d519dfc0382f559c3cea0304f62bcc2
+U dan
+Z ba07e15a41f6520ebcfaaaf0e0a6ab47

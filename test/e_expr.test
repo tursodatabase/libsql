@@ -1378,4 +1378,120 @@ do_execsql_test e_expr-26.1.6 {
 } {R1 R2 R3}
 do_test e_expr-26.1.6 { set ::evalcount } {5}
 
+
+#-------------------------------------------------------------------------
+# Test statements related to CAST expressions.
+#
+# EVIDENCE-OF: R-65079-31758 Application of a CAST expression is
+# different to application of a column affinity, as with a CAST
+# expression the storage class conversion is forced even if it is lossy
+# and irrreversible.
+#
+do_execsql_test e_expr-27.1.1 {
+  CREATE TABLE t3(a TEXT, b REAL, c INTEGER);
+  INSERT INTO t3 VALUES(X'555655', '1.23abc', 4.5);
+  SELECT typeof(a), a, typeof(b), b, typeof(c), c FROM t3;
+} {blob UVU text 1.23abc real 4.5}
+do_execsql_test e_expr-27.1.2 {
+  SELECT 
+    typeof(CAST(X'555655' as TEXT)), CAST(X'555655' as TEXT),
+    typeof(CAST('1.23abc' as REAL)), CAST('1.23abc' as REAL),
+    typeof(CAST(4.5 as INTEGER)), CAST(4.5 as INTEGER)
+} {text UVU real 1.23 integer 4}
+
+proc do_expr_test {tn expr type value} {
+  uplevel do_execsql_test $tn [list "SELECT typeof($expr), $expr"] [
+    list [list $type $value]
+  ]
+}
+proc do_qexpr_test {tn expr value} {
+  uplevel do_execsql_test $tn [list "SELECT quote($expr)"] [list $value]
+}
+
+# EVIDENCE-OF: R-27225-65050 If the value of <expr> is NULL, then
+# the result of the CAST expression is also NULL.
+#
+do_expr_test e_expr-27.2.1 { CAST(NULL AS integer) } null {}
+do_expr_test e_expr-27.2.2 { CAST(NULL AS text) }    null {}
+do_expr_test e_expr-27.2.3 { CAST(NULL AS blob) }    null {}
+do_expr_test e_expr-27.2.4 { CAST(NULL AS number) }  null {}
+
+# EVIDENCE-OF: R-31076-23575 Casting a value to a <type-name> with
+# no affinity causes the value to be converted into a BLOB.
+#
+do_expr_test e_expr-27.3.1 { CAST('abc' AS blob)       } blob abc
+do_expr_test e_expr-27.3.2 { CAST('def' AS shobblob_x) } blob def
+do_expr_test e_expr-27.3.3 { CAST('ghi' AS abbLOb10)   } blob ghi
+
+# EVIDENCE-OF: R-22956-37754 Casting to a BLOB consists of first casting
+# the value to TEXT in the encoding of the database connection, then
+# interpreting the resulting byte sequence as a BLOB instead of as TEXT.
+#
+do_qexpr_test e_expr-27.4.1 { CAST('ghi' AS blob) } X'676869'
+do_qexpr_test e_expr-27.4.2 { CAST(456 AS blob) }   X'343536'
+do_qexpr_test e_expr-27.4.3 { CAST(1.78 AS blob) }  X'312E3738'
+rename db db2
+sqlite3 db :memory:
+db eval { PRAGMA encoding = 'utf-16le' }
+do_qexpr_test e_expr-27.4.4 { CAST('ghi' AS blob) } X'670068006900'
+do_qexpr_test e_expr-27.4.5 { CAST(456 AS blob) }   X'340035003600'
+do_qexpr_test e_expr-27.4.6 { CAST(1.78 AS blob) }  X'31002E0037003800'
+db close
+sqlite3 db :memory:
+db eval { PRAGMA encoding = 'utf-16be' }
+do_qexpr_test e_expr-27.4.7 { CAST('ghi' AS blob) } X'006700680069'
+do_qexpr_test e_expr-27.4.8 { CAST(456 AS blob) }   X'003400350036'
+do_qexpr_test e_expr-27.4.9 { CAST(1.78 AS blob) }  X'0031002E00370038'
+db close
+rename db2 db
+
+# EVIDENCE-OF: R-04207-37981 To cast a BLOB value to TEXT, the sequence
+# of bytes that make up the BLOB is interpreted as text encoded using
+# the database encoding.
+#
+do_expr_test e_expr-28.1.1 { CAST (X'676869' AS text) } text ghi
+do_expr_test e_expr-28.1.2 { CAST (X'670068006900' AS text) } text g
+rename db db2
+sqlite3 db :memory:
+db eval { PRAGMA encoding = 'utf-16le' }
+do_expr_test e_expr-28.1.3 { CAST (X'676869' AS text) == 'ghi' } integer 0
+do_expr_test e_expr-28.1.4 { CAST (X'670068006900' AS text) } text ghi
+db close
+rename db2 db
+
+# EVIDENCE-OF: R-22235-47006 Casting an INTEGER or REAL value into TEXT
+# renders the value as if via sqlite3_snprintf() except that the
+# resulting TEXT uses the encoding of the database connection.
+#
+do_expr_test e_expr-28.2.1 { CAST (1 AS text)   }     text 1
+do_expr_test e_expr-28.2.2 { CAST (45 AS text)  }     text 45
+do_expr_test e_expr-28.2.3 { CAST (-45 AS text) }     text -45
+do_expr_test e_expr-28.2.4 { CAST (8.8 AS text)    }  text 8.8
+do_expr_test e_expr-28.2.5 { CAST (2.3e+5 AS text) }  text 230000.0
+do_expr_test e_expr-28.2.6 { CAST (-2.3e-5 AS text) } text -2.3e-05
+do_expr_test e_expr-28.2.7 { CAST (0.0 AS text) }     text 0.0
+do_expr_test e_expr-28.2.7 { CAST (0 AS text) }       text 0
+
+# EVIDENCE-OF: R-26346-36443 When casting a BLOB value to a REAL, the
+# value is first converted to TEXT.
+#
+do_expr_test e_expr-29.1.1 { CAST (X'312E3233' AS REAL) } real 1.23
+do_expr_test e_expr-29.1.2 { CAST (X'3233302E30' AS REAL) } real 230.0
+do_expr_test e_expr-29.1.3 { CAST (X'2D392E3837' AS REAL) } real -9.87
+do_expr_test e_expr-29.1.4 { CAST (X'302E30303031' AS REAL) } real 0.0001
+rename db db2
+sqlite3 db :memory:
+db eval { PRAGMA encoding = 'utf-16le' }
+do_expr_test e_expr-29.1.1 { 
+    CAST (X'31002E0032003300' AS REAL) } real 1.23
+do_expr_test e_expr-29.1.2 { 
+    CAST (X'3200330030002E003000' AS REAL) } real 230.0
+do_expr_test e_expr-29.1.3 { 
+    CAST (X'2D0039002E0038003700' AS REAL) } real -9.87
+do_expr_test e_expr-29.1.4 { 
+    CAST (X'30002E003000300030003100' AS REAL) } real 0.0001
+db close
+rename db2 db
+
 finish_test
+
