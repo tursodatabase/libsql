@@ -3014,8 +3014,10 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 ** if the extension only supplies one new name!)  The "sqlite" command is
 ** used to open a new SQLite database.  See the DbMain() routine above
 ** for additional information.
+**
+** The EXTERN macros are required by TCL in order to work on windows.
 */
-int Sqlite3_Init(Tcl_Interp *interp){
+EXTERN int Sqlite3_Init(Tcl_Interp *interp){
   Tcl_InitStubs(interp, "8.4", 0);
   Tcl_CreateObjCommand(interp, "sqlite3", (Tcl_ObjCmdProc*)DbMain, 0, 0);
   Tcl_PkgProvide(interp, "sqlite3", PACKAGE_VERSION);
@@ -3030,13 +3032,13 @@ int Sqlite3_Init(Tcl_Interp *interp){
 
   return TCL_OK;
 }
-int Tclsqlite3_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp); }
-int Sqlite3_SafeInit(Tcl_Interp *interp){ return TCL_OK; }
-int Tclsqlite3_SafeInit(Tcl_Interp *interp){ return TCL_OK; }
-int Sqlite3_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
-int Tclsqlite3_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
-int Sqlite3_SafeUnload(Tcl_Interp *interp, int flags){ return TCL_OK; }
-int Tclsqlite3_SafeUnload(Tcl_Interp *interp, int flags){ return TCL_OK;}
+EXTERN int Tclsqlite3_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp); }
+EXTERN int Sqlite3_SafeInit(Tcl_Interp *interp){ return TCL_OK; }
+EXTERN int Tclsqlite3_SafeInit(Tcl_Interp *interp){ return TCL_OK; }
+EXTERN int Sqlite3_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
+EXTERN int Tclsqlite3_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
+EXTERN int Sqlite3_SafeUnload(Tcl_Interp *interp, int flags){ return TCL_OK; }
+EXTERN int Tclsqlite3_SafeUnload(Tcl_Interp *interp, int flags){ return TCL_OK;}
 
 
 #ifndef SQLITE_3_SUFFIX_ONLY
