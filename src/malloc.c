@@ -97,7 +97,12 @@ static SQLITE_WSD struct Mem0Global {
   ** which pages are available.
   */
   u32 *aScratchFree;
-  u32 *aPageFree;
+
+  /*
+  ** True if heap is nearly "full" where "full" is defined by the
+  ** sqlite3_soft_heap_limit() setting.
+  */
+  int nearlyFull;
 } mem0 = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
 #define mem0 GLOBAL(struct Mem0Global, mem0)
@@ -125,23 +130,22 @@ int sqlite3MallocInit(void){
     sqlite3GlobalConfig.pScratch = 0;
     sqlite3GlobalConfig.szScratch = 0;
   }
-  if( sqlite3GlobalConfig.pPage && sqlite3GlobalConfig.szPage>=512
-      && sqlite3GlobalConfig.nPage>=1 ){
-    int i;
-    int overhead;
-    int sz = ROUNDDOWN8(sqlite3GlobalConfig.szPage);
-    int n = sqlite3GlobalConfig.nPage;
-    overhead = (4*n + sz - 1)/sz;
-    sqlite3GlobalConfig.nPage -= overhead;
-    mem0.aPageFree = (u32*)&((char*)sqlite3GlobalConfig.pPage)
-                  [sqlite3GlobalConfig.szPage*sqlite3GlobalConfig.nPage];
-    for(i=0; i<sqlite3GlobalConfig.nPage; i++){ mem0.aPageFree[i] = i; }
-    mem0.nPageFree = sqlite3GlobalConfig.nPage;
-  }else{
+  if( sqlite3GlobalConfig.pPage==0 || sqlite3GlobalConfig.szPage<512
+      || sqlite3GlobalConfig.nPage<1 ){
     sqlite3GlobalConfig.pPage = 0;
     sqlite3GlobalConfig.szPage = 0;
+    sqlite3GlobalConfig.nPage = 0;
   }
   return sqlite3GlobalConfig.m.xInit(sqlite3GlobalConfig.m.pAppData);
+}
+
+/*
+** Return true if the heap is currently under memory pressure - in other
+** words if the amount of heap used is close to the limit set by
+** sqlite3_soft_heap_limit().
+*/
+int sqlite3HeapNearlyFull(void){
+  return mem0.nearlyFull;
 }
 
 /*
@@ -186,10 +190,13 @@ int sqlite3MemoryAlarm(
   void *pArg,
   sqlite3_int64 iThreshold
 ){
+  int nUsed;
   sqlite3_mutex_enter(mem0.mutex);
   mem0.alarmCallback = xCallback;
   mem0.alarmArg = pArg;
   mem0.alarmThreshold = iThreshold;
+  nUsed = sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED);
+  mem0.nearlyFull = (iThreshold>0 && iThreshold<=nUsed);
   sqlite3_mutex_leave(mem0.mutex);
   return SQLITE_OK;
 }
@@ -240,14 +247,19 @@ static int mallocWithAlarm(int n, void **pp){
   if( mem0.alarmCallback!=0 ){
     int nUsed = sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED);
     if( nUsed+nFull >= mem0.alarmThreshold ){
+      mem0.nearlyFull = 1;
       sqlite3MallocAlarm(nFull);
+    }else{
+      mem0.nearlyFull = 0;
     }
   }
   p = sqlite3GlobalConfig.m.xMalloc(nFull);
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   if( p==0 && mem0.alarmCallback ){
     sqlite3MallocAlarm(nFull);
     p = sqlite3GlobalConfig.m.xMalloc(nFull);
   }
+#endif
   if( p ){
     nFull = sqlite3MallocSize(p);
     sqlite3StatusAdd(SQLITE_STATUS_MEMORY_USED, nFull);

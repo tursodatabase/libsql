@@ -1648,12 +1648,10 @@ void sqlite3CreateView(
   }
   sqlite3StartTable(pParse, pName1, pName2, isTemp, 1, 0, noErr);
   p = pParse->pNewTable;
-  if( p==0 ){
+  if( p==0 || pParse->nErr ){
     sqlite3SelectDelete(db, pSelect);
     return;
   }
-  assert( pParse->nErr==0 ); /* If sqlite3StartTable return non-NULL then
-                             ** there could not have been an error */
   sqlite3TwoPartName(pParse, pName1, pName2, &pName);
   iDb = sqlite3SchemaToIndex(db, p->pSchema);
   if( sqlite3FixInit(&sFix, pParse, iDb, "view", pName)
