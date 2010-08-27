@@ -1791,6 +1791,131 @@ static int test_create_collation_v2(
 }
 
 /*
+** USAGE: sqlite3_create_function_v2 DB NAME NARG ENC ?SWITCHES?
+**
+** Available switches are:
+**
+**   -func    SCRIPT
+**   -step    SCRIPT
+**   -final   SCRIPT
+**   -destroy SCRIPT
+*/
+typedef struct CreateFunctionV2 CreateFunctionV2;
+struct CreateFunctionV2 {
+  Tcl_Interp *interp;
+  Tcl_Obj *pFunc;                 /* Script for function invocation */
+  Tcl_Obj *pStep;                 /* Script for agg. step invocation */
+  Tcl_Obj *pFinal;                /* Script for agg. finalization invocation */
+  Tcl_Obj *pDestroy;              /* Destructor script */
+};
+static void cf2Func(sqlite3_context *ctx, int nArg, sqlite3_value **aArg){
+}
+static void cf2Step(sqlite3_context *ctx, int nArg, sqlite3_value **aArg){
+}
+static void cf2Final(sqlite3_context *ctx){
+}
+static void cf2Destroy(void *pUser){
+  CreateFunctionV2 *p = (CreateFunctionV2 *)pUser;
+
+  if( p->interp && p->pDestroy ){
+    int rc = Tcl_EvalObjEx(p->interp, p->pDestroy, 0);
+    if( rc!=TCL_OK ) Tcl_BackgroundError(p->interp);
+  }
+
+  if( p->pFunc ) Tcl_DecrRefCount(p->pFunc); 
+  if( p->pStep ) Tcl_DecrRefCount(p->pStep); 
+  if( p->pFinal ) Tcl_DecrRefCount(p->pFinal); 
+  if( p->pDestroy ) Tcl_DecrRefCount(p->pDestroy); 
+  sqlite3_free(p);
+}
+static int test_create_function_v2(
+  ClientData clientData,          /* Not used */
+  Tcl_Interp *interp,             /* The invoking TCL interpreter */
+  int objc,                       /* Number of arguments */
+  Tcl_Obj *CONST objv[]           /* Command arguments */
+){
+  sqlite3 *db;
+  const char *zFunc;
+  int nArg;
+  int enc;
+  CreateFunctionV2 *p;
+  int i;
+  int rc;
+
+  struct EncTable {
+    const char *zEnc;
+    int enc;
+  } aEnc[] = {
+    {"utf8",    SQLITE_UTF8 },
+    {"utf16",   SQLITE_UTF16 },
+    {"utf16le", SQLITE_UTF16LE },
+    {"utf16be", SQLITE_UTF16BE },
+    {"any",     SQLITE_ANY },
+    {"0", 0 }
+  };
+
+  if( objc<5 || (objc%2)==0 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB NAME NARG ENC SWITCHES...");
+    return TCL_ERROR;
+  }
+
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  zFunc = Tcl_GetString(objv[2]);
+  if( Tcl_GetIntFromObj(interp, objv[3], &nArg) ) return TCL_ERROR;
+  if( Tcl_GetIndexFromObjStruct(interp, objv[4], aEnc, sizeof(aEnc[0]), 
+          "encoding", 0, &enc)
+  ){
+    return TCL_ERROR;
+  }
+  enc = aEnc[enc].enc;
+
+  p = sqlite3_malloc(sizeof(CreateFunctionV2));
+  assert( p );
+  memset(p, 0, sizeof(CreateFunctionV2));
+  p->interp = interp;
+
+  for(i=5; i<objc; i+=2){
+    int iSwitch;
+    const char *azSwitch[] = {"-func", "-step", "-final", "-destroy", 0};
+    if( Tcl_GetIndexFromObj(interp, objv[i], azSwitch, "switch", 0, &iSwitch) ){
+      sqlite3_free(p);
+      return TCL_ERROR;
+    }
+
+    switch( iSwitch ){
+      case 0: p->pFunc = objv[i+1];      break;
+      case 1: p->pStep = objv[i+1];      break;
+      case 2: p->pFinal = objv[i+1];     break;
+      case 3: p->pDestroy = objv[i+1];   break;
+    }
+  }
+  if( p->pFunc ) p->pFunc = Tcl_DuplicateObj(p->pFunc); 
+  if( p->pStep ) p->pStep = Tcl_DuplicateObj(p->pStep); 
+  if( p->pFinal ) p->pFinal = Tcl_DuplicateObj(p->pFinal); 
+  if( p->pDestroy ) p->pDestroy = Tcl_DuplicateObj(p->pDestroy); 
+
+  if( p->pFunc ) Tcl_IncrRefCount(p->pFunc); 
+  if( p->pStep ) Tcl_IncrRefCount(p->pStep); 
+  if( p->pFinal ) Tcl_IncrRefCount(p->pFinal); 
+  if( p->pDestroy ) Tcl_IncrRefCount(p->pDestroy); 
+
+  rc = sqlite3_create_function_v2(db, zFunc, nArg, enc, (void *)p, 
+      (p->pFunc ? cf2Func : 0),
+      (p->pStep ? cf2Step : 0),
+      (p->pFinal ? cf2Final : 0),
+      cf2Destroy
+  );
+  if( rc!=SQLITE_OK ){
+    p->interp = 0;
+    cf2Destroy(p);
+    Tcl_ResetResult(interp);
+    Tcl_AppendResult(interp, sqlite3TestErrorName(rc), 0);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
+/*
 ** Usage: sqlite3_load_extension DB-HANDLE FILE ?PROC?
 */
 static int test_load_extension(
@@ -2291,7 +2416,7 @@ static int test_collate_func(
   int nB, const void *zB
 ){
   Tcl_Interp *i = pTestCollateInterp;
-  int encin = (int)pCtx;
+  int encin = SQLITE_PTR_TO_INT(pCtx);
   int res;
   int n;
 
@@ -2420,7 +2545,7 @@ static void test_collate_needed_cb(
   }
   zNeededCollation[i] = 0;
   sqlite3_create_collation(
-      db, "test_collate", ENC(db), (void *)enc, test_collate_func);
+      db, "test_collate", ENC(db), SQLITE_INT_TO_PTR(enc), test_collate_func);
 }
 
 /*
@@ -2469,8 +2594,8 @@ static int alignmentCollFunc(
 ){
   int rc, n;
   n = nKey1<nKey2 ? nKey1 : nKey2;
-  if( nKey1>0 && 1==(1&(int)pKey1) ) unaligned_string_counter++;
-  if( nKey2>0 && 1==(1&(int)pKey2) ) unaligned_string_counter++;
+  if( nKey1>0 && 1==(1&(SQLITE_PTR_TO_INT(pKey1))) ) unaligned_string_counter++;
+  if( nKey2>0 && 1==(1&(SQLITE_PTR_TO_INT(pKey2))) ) unaligned_string_counter++;
   rc = memcmp(pKey1, pKey2, n);
   if( rc==0 ){
     rc = nKey1 - nKey2;
@@ -5187,6 +5312,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "file_control_lockproxy_test", file_control_lockproxy_test,  0   },
      { "file_control_chunksize_test", file_control_chunksize_test,  0   },
      { "sqlite3_vfs_list",           vfs_list,     0   },
+     { "sqlite3_create_function_v2", test_create_function_v2, 0 },
 
      /* Functions from os.h */
 #ifndef SQLITE_OMIT_UTF16
