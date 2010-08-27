@@ -1482,16 +1482,169 @@ do_expr_test e_expr-29.1.4 { CAST (X'302E30303031' AS REAL) } real 0.0001
 rename db db2
 sqlite3 db :memory:
 db eval { PRAGMA encoding = 'utf-16le' }
-do_expr_test e_expr-29.1.1 { 
+do_expr_test e_expr-29.1.5 { 
     CAST (X'31002E0032003300' AS REAL) } real 1.23
-do_expr_test e_expr-29.1.2 { 
+do_expr_test e_expr-29.1.6 { 
     CAST (X'3200330030002E003000' AS REAL) } real 230.0
-do_expr_test e_expr-29.1.3 { 
+do_expr_test e_expr-29.1.7 { 
     CAST (X'2D0039002E0038003700' AS REAL) } real -9.87
-do_expr_test e_expr-29.1.4 { 
+do_expr_test e_expr-29.1.8 { 
     CAST (X'30002E003000300030003100' AS REAL) } real 0.0001
 db close
 rename db2 db
 
-finish_test
+# EVIDENCE-OF: R-54898-34554 When casting a TEXT value to REAL, the
+# longest possible prefix of the value that can be interpreted as a real
+# number is extracted from the TEXT value and the remainder ignored.
+#
+do_expr_test e_expr-29.2.1 { CAST('1.23abcd' AS REAL) } real 1.23
+do_expr_test e_expr-29.2.2 { CAST('1.45.23abcd' AS REAL) } real 1.45
+do_expr_test e_expr-29.2.3 { CAST('-2.12e-01ABC' AS REAL) } real -0.212
+do_expr_test e_expr-29.2.4 { CAST('1 2 3 4' AS REAL) } real 1.0
 
+# EVIDENCE-OF: R-11321-47427 Any leading spaces in the TEXT value are
+# ignored when converging from TEXT to REAL.
+#
+do_expr_test e_expr-29.3.1 { CAST(' 1.23abcd' AS REAL) } real 1.23
+do_expr_test e_expr-29.3.2 { CAST('    1.45.23abcd' AS REAL) } real 1.45
+do_expr_test e_expr-29.3.3 { CAST('   -2.12e-01ABC' AS REAL) } real -0.212
+do_expr_test e_expr-29.3.4 { CAST(' 1 2 3 4' AS REAL) } real 1.0
+
+# EVIDENCE-OF: R-22662-28218 If there is no prefix that can be
+# interpreted as a real number, the result of the conversion is 0.0.
+#
+do_expr_test e_expr-29.4.1 { CAST('' AS REAL) } real 0.0
+do_expr_test e_expr-29.4.2 { CAST('not a number' AS REAL) } real 0.0
+do_expr_test e_expr-29.4.3 { CAST('XXI' AS REAL) } real 0.0
+
+# EVIDENCE-OF: R-21829-14563 When casting a BLOB value to INTEGER, the
+# value is first converted to TEXT.
+#
+do_expr_test e_expr-30.1.1 { CAST(X'313233' AS INTEGER) } integer 123
+do_expr_test e_expr-30.1.2 { CAST(X'2D363738' AS INTEGER) } integer -678
+do_expr_test e_expr-30.1.3 { 
+  CAST(X'31303030303030' AS INTEGER) 
+} integer 1000000
+do_expr_test e_expr-30.1.4 { 
+  CAST(X'2D31313235383939393036383432363234' AS INTEGER) 
+} integer -1125899906842624
+
+rename db db2
+sqlite3 db :memory:
+execsql { PRAGMA encoding = 'utf-16be' }
+do_expr_test e_expr-30.1.5 { CAST(X'003100320033' AS INTEGER) } integer 123
+do_expr_test e_expr-30.1.6 { CAST(X'002D003600370038' AS INTEGER) } integer -678
+do_expr_test e_expr-30.1.7 { 
+  CAST(X'0031003000300030003000300030' AS INTEGER) 
+} integer 1000000
+do_expr_test e_expr-30.1.8 { 
+  CAST(X'002D0031003100320035003800390039003900300036003800340032003600320034' AS INTEGER) 
+} integer -1125899906842624
+db close
+rename db2 db
+
+# EVIDENCE-OF: R-47612-45842 When casting a TEXT value to INTEGER, the
+# longest possible prefix of the value that can be interpreted as an
+# integer number is extracted from the TEXT value and the remainder
+# ignored.
+#
+do_expr_test e_expr-30.2.1 { CAST('123abcd' AS INT) } integer 123
+do_expr_test e_expr-30.2.2 { CAST('14523abcd' AS INT) } integer 14523
+do_expr_test e_expr-30.2.3 { CAST('-2.12e-01ABC' AS INT) } integer -2
+do_expr_test e_expr-30.2.4 { CAST('1 2 3 4' AS INT) } integer 1
+
+# EVIDENCE-OF: R-34400-33772 Any leading spaces in the TEXT value when
+# converting from TEXT to INTEGER are ignored.
+#
+do_expr_test e_expr-30.3.1 { CAST('   123abcd' AS INT) } integer 123
+do_expr_test e_expr-30.3.2 { CAST('  14523abcd' AS INT) } integer 14523
+do_expr_test e_expr-30.3.3 { CAST(' -2.12e-01ABC' AS INT) } integer -2
+do_expr_test e_expr-30.3.4 { CAST('     1 2 3 4' AS INT) } integer 1
+
+# EVIDENCE-OF: R-43164-44276 If there is no prefix that can be
+# interpreted as an integer number, the result of the conversion is 0.
+#
+do_expr_test e_expr-30.4.1 { CAST('' AS INTEGER) } integer 0
+do_expr_test e_expr-30.4.2 { CAST('not a number' AS INTEGER) } integer 0
+do_expr_test e_expr-30.4.3 { CAST('XXI' AS INTEGER) } integer 0
+
+# EVIDENCE-OF: R-00741-38776 A cast of a REAL value into an INTEGER will
+# truncate the fractional part of the REAL.
+#
+do_expr_test e_expr-31.1.1 { CAST(3.14159 AS INTEGER) } integer 3
+do_expr_test e_expr-31.1.2 { CAST(1.99999 AS INTEGER) } integer 1
+do_expr_test e_expr-31.1.3 { CAST(-1.99999 AS INTEGER) } integer -1
+do_expr_test e_expr-31.1.4 { CAST(-0.99999 AS INTEGER) } integer 0
+
+# EVIDENCE-OF: R-06126-36021 If an REAL is too large to be represented
+# as an INTEGER then the result of the cast is the largest negative
+# integer: -9223372036854775808.
+#
+do_expr_test e_expr-31.2.1 { CAST(2e+50 AS INT) } integer -9223372036854775808
+do_expr_test e_expr-31.2.2 { CAST(-2e+50 AS INT) } integer -9223372036854775808
+do_expr_test e_expr-31.2.3 { 
+  CAST(-9223372036854775809.0 AS INT)
+} integer -9223372036854775808
+do_expr_test e_expr-31.2.4 { 
+  CAST(9223372036854775809.0 AS INT)
+} integer -9223372036854775808
+
+
+# EVIDENCE-OF: R-09295-61337 Casting a TEXT or BLOB value into NUMERIC
+# first does a forced conversion into REAL but then further converts the
+# result into INTEGER if and only if the conversion from REAL to INTEGER
+# is lossless and reversible.
+#
+do_expr_test e_expr-32.1.1 { CAST('45'   AS NUMERIC)  } integer 45
+do_expr_test e_expr-32.1.2 { CAST('45.0' AS NUMERIC)  } integer 45
+do_expr_test e_expr-32.1.3 { CAST('45.2' AS NUMERIC)  } real 45.2
+do_expr_test e_expr-32.1.4 { CAST('11abc' AS NUMERIC) } integer 11
+do_expr_test e_expr-32.1.5 { CAST('11.1abc' AS NUMERIC) } real 11.1
+
+# EVIDENCE-OF: R-30347-18702 Casting a REAL or INTEGER value to NUMERIC
+# is a no-op, even if a real value could be losslessly converted to an
+# integer.
+#
+do_expr_test e_expr-32.2.1 { CAST(13.0 AS NUMERIC) } real 13.0
+do_expr_test e_expr-32.2.2 { CAST(13.5 AS NUMERIC) } real 13.5
+
+do_expr_test e_expr-32.2.3 { 
+  CAST(-9223372036854775808 AS NUMERIC)
+} integer -9223372036854775808
+do_expr_test e_expr-32.2.4 { 
+  CAST(9223372036854775807 AS NUMERIC)
+} integer 9223372036854775807
+
+# EVIDENCE-OF: R-64550-29191 Note that the result from casting any
+# non-BLOB value into a BLOB and the result from casting any BLOB value
+# into a non-BLOB value may be different depending on whether the
+# database encoding is UTF-8, UTF-16be, or UTF-16le.
+#
+sqlite3 db1 :memory: ; db1 eval { PRAGMA encoding = 'utf-8' }
+sqlite3 db2 :memory: ; db2 eval { PRAGMA encoding = 'utf-16le' }
+sqlite3 db3 :memory: ; db3 eval { PRAGMA encoding = 'utf-16be' }
+foreach {tn castexpr differs} {
+  1 { CAST(123 AS BLOB)    } 1
+  2 { CAST('' AS BLOB)     } 0
+  3 { CAST('abcd' AS BLOB) } 1
+
+  4 { CAST(X'abcd' AS TEXT) } 1
+  5 { CAST(X'' AS TEXT)     } 0
+} {
+  set r1 [db1 eval "SELECT typeof($castexpr), quote($castexpr)"]
+  set r2 [db2 eval "SELECT typeof($castexpr), quote($castexpr)"]
+  set r3 [db3 eval "SELECT typeof($castexpr), quote($castexpr)"]
+
+  if {$differs} {
+    set res [expr {$r1!=$r2 && $r2!=$r3}]
+  } else {
+    set res [expr {$r1==$r2 && $r2==$r3}]
+  }
+
+  do_test e_expr-33.1.$tn {set res} 1
+}
+db1 close
+db2 close
+db3 close
+
+finish_test
