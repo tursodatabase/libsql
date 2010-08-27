@@ -2513,6 +2513,22 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 
+    /* sqlite3_test_control(SQLITE_TESTCTRL_SCRATCHMALLOC, sz, &pNew, pFree);
+    **
+    ** Pass pFree into sqlite3ScratchFree(). 
+    ** If sz>0 then allocate a scratch buffer into pNew.  
+    */
+    case SQLITE_TESTCTRL_SCRATCHMALLOC: {
+      void *pFree, **ppNew;
+      int sz;
+      sz = va_arg(ap, int);
+      ppNew = va_arg(ap, void**);
+      pFree = va_arg(ap, void*);
+      if( sz ) *ppNew = sqlite3ScratchMalloc(sz);
+      sqlite3ScratchFree(pFree);
+      break;
+    }
+
   }
   va_end(ap);
 #endif /* SQLITE_OMIT_BUILTIN_TEST */

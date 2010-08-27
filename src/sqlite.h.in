@@ -1257,15 +1257,14 @@ struct sqlite3_mem_methods {
 ** aligned memory buffer from which the scrach allocations will be
 ** drawn, the size of each scratch allocation (sz),
 ** and the maximum number of scratch allocations (N).  The sz
-** argument must be a multiple of 16. The sz parameter should be a few bytes
-** larger than the actual scratch space required due to internal overhead.
+** argument must be a multiple of 16.
 ** The first argument must be a pointer to an 8-byte aligned buffer
 ** of at least sz*N bytes of memory.
-** ^SQLite will use no more than one scratch buffer per thread.  So
-** N should be set to the expected maximum number of threads.  ^SQLite will
-** never require a scratch buffer that is more than 6 times the database
-** page size. ^If SQLite needs needs additional scratch memory beyond 
-** what is provided by this configuration option, then 
+** ^SQLite will use no more than two scratch buffers per thread.  So
+** N should be set to twice the expected maximum number of threads.
+** ^SQLite will never require a scratch buffer that is more than 6
+** times the database page size. ^If SQLite needs needs additional
+** scratch memory beyond what is provided by this configuration option, then 
 ** [sqlite3_malloc()] will be used to obtain the memory needed.</dd>
 **
 ** <dt>SQLITE_CONFIG_PAGECACHE</dt>
@@ -1285,8 +1284,7 @@ struct sqlite3_mem_methods {
 ** memory needs for the first N pages that it adds to cache.  ^If additional
 ** page cache memory is needed beyond what is provided by this option, then
 ** SQLite goes to [sqlite3_malloc()] for the additional storage space.
-** ^The implementation might use one or more of the N buffers to hold 
-** memory accounting information. The pointer in the first argument must
+** The pointer in the first argument must
 ** be aligned to an 8-byte boundary or subsequent behavior of SQLite
 ** will be undefined.</dd>
 **
@@ -5100,7 +5098,8 @@ int sqlite3_test_control(int op, ...);
 #define SQLITE_TESTCTRL_OPTIMIZATIONS           15
 #define SQLITE_TESTCTRL_ISKEYWORD               16
 #define SQLITE_TESTCTRL_PGHDRSZ                 17
-#define SQLITE_TESTCTRL_LAST                    17
+#define SQLITE_TESTCTRL_SCRATCHMALLOC           18
+#define SQLITE_TESTCTRL_LAST                    18
 
 /*
 ** CAPI3REF: SQLite Runtime Status
