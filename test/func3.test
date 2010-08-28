@@ -66,6 +66,6 @@ do_test func3-4.1 {
   } msg]
   list $rc $msg
 } {1 SQLITE_MISUSE}
-do_test func3-4.2 { set destroyed } 0
+do_test func3-4.2 { set destroyed } 1
 
 finish_test

@@ -1907,7 +1907,6 @@ static int test_create_function_v2(
   );
   if( rc!=SQLITE_OK ){
     p->interp = 0;
-    cf2Destroy(p);
     Tcl_ResetResult(interp);
     Tcl_AppendResult(interp, sqlite3TestErrorName(rc), 0);
     return TCL_ERROR;
