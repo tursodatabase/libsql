@@ -26,7 +26,7 @@ BCC = @BUILD_CC@ @BUILD_CFLAGS@
 # will run on the target platform.  (BCC and TCC are usually the
 # same unless your are cross-compiling.)
 #
-TCC = @CC@ @CPPFLAGS@ @CFLAGS@ -I. -I${TOP}/src
+TCC = @CC@ @CPPFLAGS@ @CFLAGS@ -I. -I${TOP}/src -I${TOP}/ext/rtree
 
 # Define this for the autoconf-based build, so that the code knows it can
 # include the generated config.h
@@ -367,6 +367,7 @@ TESTSRC = \
   $(TOP)/src/test_onefile.c \
   $(TOP)/src/test_osinst.c \
   $(TOP)/src/test_pcache.c \
+  $(TOP)/src/test_rtree.c \
   $(TOP)/src/test_schema.c \
   $(TOP)/src/test_server.c \
   $(TOP)/src/test_stat.c \
@@ -460,6 +461,8 @@ EXTHDR += \
   $(TOP)/ext/rtree/rtree.h
 EXTHDR += \
   $(TOP)/ext/icu/sqliteicu.h
+EXTHDR += \
+  $(TOP)/ext/rtree/sqlite3rtree.h
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.

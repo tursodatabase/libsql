@@ -1075,13 +1075,17 @@ int sqlite3_create_function_v2(
   sqlite3_mutex_enter(db->mutex);
   if( xDestroy ){
     pArg = (FuncDestructor *)sqlite3DbMallocZero(db, sizeof(FuncDestructor));
-    if( !pArg ) goto out;
+    if( !pArg ){
+      xDestroy(p);
+      goto out;
+    }
     pArg->xDestroy = xDestroy;
     pArg->pUserData = p;
   }
   rc = sqlite3CreateFunc(db, zFunc, nArg, enc, p, xFunc, xStep, xFinal, pArg);
   if( pArg && pArg->nRef==0 ){
     assert( rc!=SQLITE_OK );
+    xDestroy(p);
     sqlite3DbFree(db, pArg);
   }
 
