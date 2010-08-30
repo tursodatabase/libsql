@@ -48,7 +48,7 @@ static int gHere = 42;
 ** The width, height and depth parameters must all be greater than zero.
 */
 static int cube_geom(
-  RtreeGeometry *p,
+  sqlite3_rtree_geometry *p,
   int nCoord, 
   double *aCoord, 
   int *piRes
