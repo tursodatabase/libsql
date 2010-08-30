@@ -673,6 +673,7 @@ do_faultsim_test pagerfault-14a -prep {
 } -test {
   faultsim_test_result {0 {}} {1 {}} {1 {SQL logic error or missing database}}
 }
+
 do_faultsim_test pagerfault-14b -prep {
   catch { db2 close }
   faultsim_restore_and_reopen
@@ -686,7 +687,7 @@ do_faultsim_test pagerfault-14b -prep {
   if {$rc != "SQLITE_OK"} { error [sqlite3_test_errstr $rc] }
   set {} {}
 } -test {
-  faultsim_test_result {0 {}}
+  faultsim_test_result {0 {}} {1 {sqlite3_backup_init() failed}}
 }
 do_faultsim_test pagerfault-14c -prep {
   catch { db2 close }
@@ -705,7 +706,7 @@ do_faultsim_test pagerfault-14c -prep {
   if {$rc != "SQLITE_OK"} { error [sqlite3_test_errstr $rc] }
   set {} {}
 } -test {
-  faultsim_test_result {0 {}}
+  faultsim_test_result {0 {}} {1 {sqlite3_backup_init() failed}}
 }
 
 do_test pagerfault-15-pre1 {
