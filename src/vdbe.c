@@ -961,11 +961,7 @@ case OP_Null: {           /* out2-prerelease */
 /* Opcode: Blob P1 P2 * P4
 **
 ** P4 points to a blob of data P1 bytes long.  Store this
-** blob in register P2. This instruction is not coded directly
-** by the compiler. Instead, the compiler layer specifies
-** an OP_HexBlob opcode, with the hex string representation of
-** the blob as P4. This opcode is transformed to an OP_Blob
-** the first time it is executed.
+** blob in register P2.
 */
 case OP_Blob: {                /* out2-prerelease */
   assert( pOp->p1 <= SQLITE_MAX_LENGTH );
@@ -1439,7 +1435,7 @@ case OP_Function: {
 /* Opcode: ShiftLeft P1 P2 P3 * *
 **
 ** Shift the integer value in register P2 to the left by the
-** number of bits specified by the integer in regiser P1.
+** number of bits specified by the integer in register P1.
 ** Store the result in register P3.
 ** If either input is NULL, the result is NULL.
 */
@@ -1601,7 +1597,7 @@ case OP_ToNumeric: {                  /* same as TK_TO_NUMERIC, in1 */
 
 /* Opcode: ToInt P1 * * * *
 **
-** Force the value in register P1 be an integer.  If
+** Force the value in register P1 to be an integer.  If
 ** The value is currently a real number, drop its fractional part.
 ** If the value is text or blob, try to convert it to an integer using the
 ** equivalent of atoi() and store 0 if no such conversion is possible.
@@ -1642,7 +1638,7 @@ case OP_ToReal: {                  /* same as TK_TO_REAL, in1 */
 **
 ** If the SQLITE_JUMPIFNULL bit of P5 is set and either reg(P1) or
 ** reg(P3) is NULL then take the jump.  If the SQLITE_JUMPIFNULL 
-** bit is clear then fall thru if either operand is NULL.
+** bit is clear then fall through if either operand is NULL.
 **
 ** The SQLITE_AFF_MASK portion of P5 must be an affinity character -
 ** SQLITE_AFF_TEXT, SQLITE_AFF_INTEGER, and so forth. An attempt is made 
@@ -1801,8 +1797,8 @@ case OP_Permutation: {
 
 /* Opcode: Compare P1 P2 P3 P4 *
 **
-** Compare to vectors of registers in reg(P1)..reg(P1+P3-1) (all this
-** one "A") and in reg(P2)..reg(P2+P3-1) ("B").  Save the result of
+** Compare two vectors of registers in reg(P1)..reg(P1+P3-1) (call this
+** vector "A") and in reg(P2)..reg(P2+P3-1) ("B").  Save the result of
 ** the comparison for use by the next OP_Jump instruct.
 **
 ** P4 is a KeyInfo structure that defines collating sequences and sort
@@ -2345,12 +2341,9 @@ case OP_Affinity: {
 
 /* Opcode: MakeRecord P1 P2 P3 P4 *
 **
-** Convert P2 registers beginning with P1 into a single entry
-** suitable for use as a data record in a database table or as a key
-** in an index.  The details of the format are irrelevant as long as
-** the OP_Column opcode can decode the record later.
-** Refer to source code comments for the details of the record
-** format.
+** Convert P2 registers beginning with P1 into the [record format]
+** use as a data record in a database table or as a key
+** in an index.  The OP_Column opcode can decode the record later.
 **
 ** P4 may be a string that is P2 characters long.  The nth character of the
 ** string indicates the column affinity that should be used for the nth
@@ -3542,7 +3535,7 @@ case OP_IsUnique: {        /* jump, in3 */
 **
 ** Use the content of register P3 as a integer key.  If a record 
 ** with that key does not exist in table of P1, then jump to P2. 
-** If the record does exist, then fall thru.  The cursor is left 
+** If the record does exist, then fall through.  The cursor is left 
 ** pointing to the record if it exists.
 **
 ** The difference between this operation and NotFound is that this
