@@ -1503,6 +1503,7 @@ static int multiSelect(
   if( dest.eDest==SRT_EphemTab ){
     assert( p->pEList );
     sqlite3VdbeAddOp2(v, OP_OpenEphemeral, dest.iParm, p->pEList->nExpr);
+    sqlite3VdbeChangeP5(v, BTREE_UNORDERED);
     dest.eDest = SRT_Table;
   }
 
@@ -3769,6 +3770,7 @@ int sqlite3Select(
     pKeyInfo = keyInfoFromExprList(pParse, p->pEList);
     sqlite3VdbeAddOp4(v, OP_OpenEphemeral, distinct, 0, 0,
                         (char*)pKeyInfo, P4_KEYINFO_HANDOFF);
+    sqlite3VdbeChangeP5(v, BTREE_UNORDERED);
   }else{
     distinct = -1;
   }

@@ -3006,6 +3006,7 @@ case OP_OpenWrite: {
   pCur = allocateCursor(p, pOp->p1, nField, iDb, 1);
   if( pCur==0 ) goto no_mem;
   pCur->nullRow = 1;
+  pCur->isOrdered = 1;
   rc = sqlite3BtreeCursor(pX, p2, wrFlag, pKeyInfo, pCur->pCursor);
   pCur->pKeyInfo = pKeyInfo;
 
@@ -3056,7 +3057,7 @@ case OP_OpenWrite: {
 case OP_OpenAutoindex: 
 case OP_OpenEphemeral: {
   VdbeCursor *pCx;
-  static const int openFlags = 
+  static const int vfsFlags = 
       SQLITE_OPEN_READWRITE |
       SQLITE_OPEN_CREATE |
       SQLITE_OPEN_EXCLUSIVE |
@@ -3067,20 +3068,21 @@ case OP_OpenEphemeral: {
   pCx = allocateCursor(p, pOp->p1, pOp->p2, -1, 1);
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
-  rc = sqlite3BtreeOpen(0, db, &pCx->pBt, BTREE_OMIT_JOURNAL, openFlags);
+  rc = sqlite3BtreeOpen(0, db, &pCx->pBt, 
+                        BTREE_OMIT_JOURNAL | BTREE_SINGLE | pOp->p5, vfsFlags);
   if( rc==SQLITE_OK ){
     rc = sqlite3BtreeBeginTrans(pCx->pBt, 1);
   }
   if( rc==SQLITE_OK ){
     /* If a transient index is required, create it by calling
-    ** sqlite3BtreeCreateTable() with the BTREE_ZERODATA flag before
+    ** sqlite3BtreeCreateTable() with the BTREE_BLOBKEY flag before
     ** opening it. If a transient table is required, just use the
-    ** automatically created table with root-page 1 (an INTKEY table).
+    ** automatically created table with root-page 1 (an BLOB_INTKEY table).
     */
     if( pOp->p4.pKeyInfo ){
       int pgno;
       assert( pOp->p4type==P4_KEYINFO );
-      rc = sqlite3BtreeCreateTable(pCx->pBt, &pgno, BTREE_ZERODATA); 
+      rc = sqlite3BtreeCreateTable(pCx->pBt, &pgno, BTREE_BLOBKEY); 
       if( rc==SQLITE_OK ){
         assert( pgno==MASTER_ROOT+1 );
         rc = sqlite3BtreeCursor(pCx->pBt, pgno, 1, 
@@ -3094,6 +3096,7 @@ case OP_OpenEphemeral: {
       pCx->isTable = 1;
     }
   }
+  pCx->isOrdered = (pOp->p5!=BTREE_UNORDERED);
   pCx->isIndex = !pCx->isTable;
   break;
 }
@@ -3209,6 +3212,7 @@ case OP_SeekGt: {       /* jump, in3 */
   assert( OP_SeekLe == OP_SeekLt+1 );
   assert( OP_SeekGe == OP_SeekLt+2 );
   assert( OP_SeekGt == OP_SeekLt+3 );
+  assert( pC->isOrdered );
   if( pC->pCursor!=0 ){
     oc = pOp->opcode;
     pC->nullRow = 0;
@@ -4362,6 +4366,7 @@ case OP_IdxGE: {        /* jump */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
+  assert( pC->isOrdered );
   if( ALWAYS(pC->pCursor!=0) ){
     assert( pC->deferredMoveto==0 );
     assert( pOp->p5==0 || pOp->p5==1 );
@@ -4514,9 +4519,9 @@ case OP_CreateTable: {          /* out2-prerelease */
   assert( pDb->pBt!=0 );
   if( pOp->opcode==OP_CreateTable ){
     /* flags = BTREE_INTKEY; */
-    flags = BTREE_LEAFDATA|BTREE_INTKEY;
+    flags = BTREE_INTKEY;
   }else{
-    flags = BTREE_ZERODATA;
+    flags = BTREE_BLOBKEY;
   }
   rc = sqlite3BtreeCreateTable(pDb->pBt, &pgno, flags);
   pOut->u.i = pgno;

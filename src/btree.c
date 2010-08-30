@@ -1726,6 +1726,13 @@ int sqlite3BtreeOpen(
 
   assert( db!=0 );
   assert( sqlite3_mutex_held(db->mutex) );
+  assert( (flags&0xff)==flags );   /* flags fit in 8 bits */
+
+  /* Only a BTREE_SINGLE database can be BTREE_UNORDERED */
+  assert( (flags & BTREE_UNORDERED)==0 || (flags & BTREE_SINGLE)!=0 );
+
+  /* A BTREE_SINGLE database is always a temporary and/or ephemeral */
+  assert( (flags & BTREE_SINGLE)==0 || isTempDb );
 
   if( db->flags & SQLITE_NoReadlock ){
     flags |= BTREE_NO_READLOCK;
@@ -1828,6 +1835,7 @@ int sqlite3BtreeOpen(
     if( rc!=SQLITE_OK ){
       goto btree_open_out;
     }
+    pBt->openFlags = flags;
     pBt->db = db;
     sqlite3PagerSetBusyhandler(pBt->pPager, btreeInvokeBusyHandler, pBt);
     p->pBt = pBt;
@@ -6890,11 +6898,12 @@ int sqlite3BtreeDelete(BtCursor *pCur){
 **     BTREE_INTKEY|BTREE_LEAFDATA     Used for SQL tables with rowid keys
 **     BTREE_ZERODATA                  Used for SQL indices
 */
-static int btreeCreateTable(Btree *p, int *piTable, int flags){
+static int btreeCreateTable(Btree *p, int *piTable, int createTabFlags){
   BtShared *pBt = p->pBt;
   MemPage *pRoot;
   Pgno pgnoRoot;
   int rc;
+  int ptfFlags;          /* Page-type flage for the root page of new table */
 
   assert( sqlite3BtreeHoldsMutex(p) );
   assert( pBt->inTransaction==TRANS_WRITE );
@@ -7013,8 +7022,14 @@ static int btreeCreateTable(Btree *p, int *piTable, int flags){
   }
 #endif
   assert( sqlite3PagerIswriteable(pRoot->pDbPage) );
-  zeroPage(pRoot, flags | PTF_LEAF);
+  if( createTabFlags & BTREE_INTKEY ){
+    ptfFlags = PTF_INTKEY | PTF_LEAFDATA | PTF_LEAF;
+  }else{
+    ptfFlags = PTF_ZERODATA | PTF_LEAF;
+  }
+  zeroPage(pRoot, ptfFlags);
   sqlite3PagerUnref(pRoot->pDbPage);
+  assert( (pBt->openFlags & BTREE_SINGLE)==0 || pgnoRoot==2 );
   *piTable = (int)pgnoRoot;
   return SQLITE_OK;
 }
