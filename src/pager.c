@@ -4227,6 +4227,13 @@ int sqlite3PagerOpen(
   /* Set the output variable to NULL in case an error occurs. */
   *ppPager = 0;
 
+#ifndef SQLITE_OMIT_MEMORYDB
+  if( flags & PAGER_MEMORY ){
+    memDb = 1;
+    zFilename = 0;
+  }
+#endif
+
   /* Compute and store the full pathname in an allocated buffer pointed
   ** to by zPathname, length nPathname. Or, if this is a temporary file,
   ** leave both nPathname and zPathname set to 0.
@@ -4237,17 +4244,8 @@ int sqlite3PagerOpen(
     if( zPathname==0 ){
       return SQLITE_NOMEM;
     }
-#ifndef SQLITE_OMIT_MEMORYDB
-    if( strcmp(zFilename,":memory:")==0 ){
-      memDb = 1;
-      zPathname[0] = 0;
-    }else
-#endif
-    {
-      zPathname[0] = 0; /* Make sure initialized even if FullPathname() fails */
-      rc = sqlite3OsFullPathname(pVfs, zFilename, nPathname, zPathname);
-    }
-
+    zPathname[0] = 0; /* Make sure initialized even if FullPathname() fails */
+    rc = sqlite3OsFullPathname(pVfs, zFilename, nPathname, zPathname);
     nPathname = sqlite3Strlen30(zPathname);
     if( rc==SQLITE_OK && nPathname+8>pVfs->mxPathname ){
       /* This branch is taken when the journal path required by

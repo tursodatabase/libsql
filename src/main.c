@@ -1411,60 +1411,6 @@ int sqlite3TempInMemory(const sqlite3 *db){
 }
 
 /*
-** This routine is called to create a connection to a database BTree
-** driver.  If zFilename is the name of a file, then that file is
-** opened and used.  If zFilename is the magic name ":memory:" then
-** the database is stored in memory (and is thus forgotten as soon as
-** the connection is closed.)  If zFilename is NULL then the database
-** is a "virtual" database for transient use only and is deleted as
-** soon as the connection is closed.
-**
-** A virtual database can be either a disk file (that is automatically
-** deleted when the file is closed) or it an be held entirely in memory.
-** The sqlite3TempInMemory() function is used to determine which.
-*/
-int sqlite3BtreeFactory(
-  sqlite3 *db,              /* Main database when opening aux otherwise 0 */
-  const char *zFilename,    /* Name of the file containing the BTree database */
-  int omitJournal,          /* if TRUE then do not journal this file */
-  int nCache,               /* How many pages in the page cache */
-  int vfsFlags,             /* Flags passed through to vfsOpen */
-  Btree **ppBtree           /* Pointer to new Btree object written here */
-){
-  int btFlags = 0;
-  int rc;
-  
-  assert( sqlite3_mutex_held(db->mutex) );
-  assert( ppBtree != 0);
-  if( omitJournal ){
-    btFlags |= BTREE_OMIT_JOURNAL;
-  }
-  if( db->flags & SQLITE_NoReadlock ){
-    btFlags |= BTREE_NO_READLOCK;
-  }
-#ifndef SQLITE_OMIT_MEMORYDB
-  if( zFilename==0 && sqlite3TempInMemory(db) ){
-    zFilename = ":memory:";
-  }
-#endif
-
-  if( (vfsFlags & SQLITE_OPEN_MAIN_DB)!=0 && (zFilename==0 || *zFilename==0) ){
-    vfsFlags = (vfsFlags & ~SQLITE_OPEN_MAIN_DB) | SQLITE_OPEN_TEMP_DB;
-  }
-  rc = sqlite3BtreeOpen(zFilename, (sqlite3 *)db, ppBtree, btFlags, vfsFlags);
-
-  /* If the B-Tree was successfully opened, set the pager-cache size to the
-  ** default value. Except, if the call to BtreeOpen() returned a handle
-  ** open on an existing shared pager-cache, do not change the pager-cache 
-  ** size.
-  */
-  if( rc==SQLITE_OK && 0==sqlite3BtreeSchema(*ppBtree, 0, 0) ){
-    sqlite3BtreeSetCacheSize(*ppBtree, nCache);
-  }
-  return rc;
-}
-
-/*
 ** Return UTF-8 encoded English language explanation of the most recent
 ** error.
 */
@@ -1864,9 +1810,8 @@ static int openDatabase(
 
   /* Open the backend database driver */
   db->openFlags = flags;
-  rc = sqlite3BtreeFactory(db, zFilename, 0, SQLITE_DEFAULT_CACHE_SIZE, 
-                           flags | SQLITE_OPEN_MAIN_DB,
-                           &db->aDb[0].pBt);
+  rc = sqlite3BtreeOpen(zFilename, db, &db->aDb[0].pBt, 0,
+                        flags | SQLITE_OPEN_MAIN_DB);
   if( rc!=SQLITE_OK ){
     if( rc==SQLITE_IOERR_NOMEM ){
       rc = SQLITE_NOMEM;

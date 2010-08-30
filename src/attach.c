@@ -124,9 +124,8 @@ static void attachFunc(
   ** it to obtain the database schema. At this point the schema may
   ** or may not be initialised.
   */
-  rc = sqlite3BtreeFactory(db, zFile, 0, SQLITE_DEFAULT_CACHE_SIZE,
-                           db->openFlags | SQLITE_OPEN_MAIN_DB,
-                           &aNew->pBt);
+  rc = sqlite3BtreeOpen(zFile, db, &aNew->pBt, 0,
+                        db->openFlags | SQLITE_OPEN_MAIN_DB);
   db->nDb++;
   if( rc==SQLITE_CONSTRAINT ){
     rc = SQLITE_ERROR;
