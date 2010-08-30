@@ -32,13 +32,13 @@ do_execsql_test rtree9-1.4 {
   DELETE FROM rt;
 } {}
 
+
 for {set i 0} {$i < 1000} {incr i} {
   set x [expr $i%10]
   set y [expr ($i/10)%10]
   set z [expr ($i/100)%10]
   execsql { INSERT INTO rt VALUES($i, $x, $x+1, $y, $y+1, $z, $z+1) }
 }
-
 do_execsql_test rtree9-2.1 {
   SELECT id FROM rt WHERE id MATCH cube(2.5, 2.5, 2.5, 1, 1, 1) ORDER BY id;
 } {222 223 232 233 322 323 332 333}
@@ -46,8 +46,37 @@ do_execsql_test rtree9-2.2 {
   SELECT id FROM rt WHERE id MATCH cube(5.5, 5.5, 5.5, 1, 1, 1) ORDER BY id;
 } {555 556 565 566 655 656 665 666}
 
-do_catchsql_test rtree9-3.1 {
-  SELECT id FROM rt WHERE id MATCH cube(5.5, 5.5, 1, 1, 1) ORDER BY id;
+
+do_execsql_test rtree9-3.1 {
+  CREATE VIRTUAL TABLE rt32 USING rtree_i32(id, x1, x2, y1, y2, z1, z2);
+} {} 
+for {set i 0} {$i < 1000} {incr i} {
+  set x [expr $i%10]
+  set y [expr ($i/10)%10]
+  set z [expr ($i/100)%10]
+  execsql { INSERT INTO rt32 VALUES($i, $x, $x+1, $y, $y+1, $z, $z+1) }
+}
+do_execsql_test rtree9-3.2 {
+  SELECT id FROM rt32 WHERE id MATCH cube(3, 3, 3, 1, 1, 1) ORDER BY id;
+} {222 223 224 232 233 234 242 243 244 322 323 324 332 333 334 342 343 344 422 423 424 432 433 434 442 443 444}
+do_execsql_test rtree9-3.3 {
+  SELECT id FROM rt32 WHERE id MATCH cube(5.5, 5.5, 5.5, 1, 1, 1) ORDER BY id;
+} {555 556 565 566 655 656 665 666}
+
+
+do_catchsql_test rtree9-4.1 {
+  SELECT id FROM rt32 WHERE id MATCH cube(5.5, 5.5, 1, 1, 1) ORDER BY id;
+} {1 {SQL logic error or missing database}}
+for {set x 2} {$x<200} {incr x 2} {
+  do_catchsql_test rtree9-4.2.[expr $x/2] {
+    SELECT id FROM rt WHERE id MATCH randomblob($x)
+  } {1 {SQL logic error or missing database}}
+}
+
+do_catchsql_test rtree9-4.3 {
+  SELECT id FROM rt WHERE id MATCH CAST( 
+    (cube(5.5, 5.5, 5.5, 1, 1, 1) || X'1234567812345678') AS blob 
+  )
 } {1 {SQL logic error or missing database}}
 
 

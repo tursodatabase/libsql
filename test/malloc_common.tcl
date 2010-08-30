@@ -185,7 +185,7 @@ proc faultsim_delete_and_reopen {{file test.db}} {
 # injecting OOM faults into test cases.
 #
 proc oom_injectstart {nRepeat iFail} {
-  sqlite3_memdebug_fail $iFail -repeat $nRepeat
+  sqlite3_memdebug_fail [expr $iFail-1] -repeat $nRepeat
 }
 proc oom_injectstop {} {
   sqlite3_memdebug_fail -1

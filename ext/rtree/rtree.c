@@ -1106,14 +1106,14 @@ static int deserializeGeometry(sqlite3_value *pValue, RtreeConstraint *pCons){
   int nBlob;
 
   /* Check that value is actually a blob. */
-  if( !sqlite3_value_type(pValue)==SQLITE_BLOB ) return SQLITE_MISUSE;
+  if( !sqlite3_value_type(pValue)==SQLITE_BLOB ) return SQLITE_ERROR;
 
   /* Check that the blob is roughly the right size. */
   nBlob = sqlite3_value_bytes(pValue);
   if( nBlob<sizeof(RtreeGeomBlob) 
    || ((nBlob-sizeof(RtreeGeomBlob))%sizeof(double))!=0
   ){
-    return SQLITE_MISUSE;
+    return SQLITE_ERROR;
   }
 
   pGeom = (RtreeGeometry *)sqlite3_malloc(sizeof(RtreeGeometry) + nBlob);
@@ -1125,8 +1125,8 @@ static int deserializeGeometry(sqlite3_value *pValue, RtreeConstraint *pCons){
   if( p->magic!=RTREE_GEOMETRY_MAGIC 
    || nBlob!=(sizeof(RtreeGeomBlob) + (p->nParam-1)*sizeof(double))
   ){
-    sqlite3_free(p);
-    return SQLITE_MISUSE;
+    sqlite3_free(pGeom);
+    return SQLITE_ERROR;
   }
 
   pGeom->pContext = p->pContext;
@@ -1295,6 +1295,8 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     }
 
     if( p->usable && (p->iColumn>0 || p->op==SQLITE_INDEX_CONSTRAINT_MATCH) ){
+      int j, opmsk;
+      static const unsigned char compatible[] = { 0, 0, 1, 1, 2, 2 };
       u8 op = 0;
       switch( p->op ){
         case SQLITE_INDEX_CONSTRAINT_EQ: op = RTREE_EQ; break;
@@ -1302,32 +1304,33 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
         case SQLITE_INDEX_CONSTRAINT_LE: op = RTREE_LE; break;
         case SQLITE_INDEX_CONSTRAINT_LT: op = RTREE_LT; break;
         case SQLITE_INDEX_CONSTRAINT_GE: op = RTREE_GE; break;
-        case SQLITE_INDEX_CONSTRAINT_MATCH: op = RTREE_MATCH; break;
+        default:
+          assert( p->op==SQLITE_INDEX_CONSTRAINT_MATCH );
+          op = RTREE_MATCH; 
+          break;
       }
-      if( op ){
-        /* Make sure this particular constraint has not been used before.
-        ** If it has been used before, ignore it.
-        **
-        ** A <= or < can be used if there is a prior >= or >.
-        ** A >= or > can be used if there is a prior < or <=.
-        ** A <= or < is disqualified if there is a prior <=, <, or ==.
-        ** A >= or > is disqualified if there is a prior >=, >, or ==.
-        ** A == is disqualifed if there is any prior constraint.
-        */
-        int j, opmsk;
-        static const unsigned char compatible[] = { 0, 0, 1, 1, 2, 2 };
-        assert( compatible[RTREE_EQ & 7]==0 );
-        assert( compatible[RTREE_LT & 7]==1 );
-        assert( compatible[RTREE_LE & 7]==1 );
-        assert( compatible[RTREE_GT & 7]==2 );
-        assert( compatible[RTREE_GE & 7]==2 );
-        cCol = p->iColumn - 1 + 'a';
-        opmsk = compatible[op & 7];
-        for(j=0; j<iIdx; j+=2){
-          if( zIdxStr[j+1]==cCol && (compatible[zIdxStr[j] & 7] & opmsk)!=0 ){
-            op = 0;
-            break;
-          }
+      assert( op!=0 );
+
+      /* Make sure this particular constraint has not been used before.
+      ** If it has been used before, ignore it.
+      **
+      ** A <= or < can be used if there is a prior >= or >.
+      ** A >= or > can be used if there is a prior < or <=.
+      ** A <= or < is disqualified if there is a prior <=, <, or ==.
+      ** A >= or > is disqualified if there is a prior >=, >, or ==.
+      ** A == is disqualifed if there is any prior constraint.
+      */
+      assert( compatible[RTREE_EQ & 7]==0 );
+      assert( compatible[RTREE_LT & 7]==1 );
+      assert( compatible[RTREE_LE & 7]==1 );
+      assert( compatible[RTREE_GT & 7]==2 );
+      assert( compatible[RTREE_GE & 7]==2 );
+      cCol = p->iColumn - 1 + 'a';
+      opmsk = compatible[op & 7];
+      for(j=0; j<iIdx; j+=2){
+        if( zIdxStr[j+1]==cCol && (compatible[zIdxStr[j] & 7] & opmsk)!=0 ){
+          op = 0;
+          break;
         }
       }
       if( op ){

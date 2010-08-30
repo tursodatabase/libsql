@@ -31,6 +31,11 @@ static void cube_context_free(void *p){
   sqlite3_free(p);
 }
 
+/*
+** The context pointer registered along with the 'cube' callback is
+** always ((void *)&gHere). This is just to facilitate testing, it is not
+** actually used for anything.
+*/
 static int gHere = 42;
 
 /*
@@ -96,14 +101,17 @@ static int register_cube_geom(
 ){
 #ifdef SQLITE_ENABLE_RTREE
   extern int getDbPointer(Tcl_Interp*, const char*, sqlite3**);
+  extern const char *sqlite3TestErrorName(int);
   sqlite3 *db;
+  int rc;
 
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "DB");
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
-  sqlite3_rtree_geometry_callback(db, "cube", cube_geom, (void *)&gHere);
+  rc = sqlite3_rtree_geometry_callback(db, "cube", cube_geom, (void *)&gHere);
+  Tcl_SetResult(interp, sqlite3TestErrorName(rc), TCL_STATIC);
 #endif
   return TCL_OK;
 }
