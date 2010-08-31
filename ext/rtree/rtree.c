@@ -80,8 +80,9 @@ typedef struct RtreeCursor RtreeCursor;
 typedef struct RtreeNode RtreeNode;
 typedef struct RtreeCell RtreeCell;
 typedef struct RtreeConstraint RtreeConstraint;
+typedef struct RtreeMatchArg RtreeMatchArg;
+typedef struct RtreeGeomCallback RtreeGeomCallback;
 typedef union RtreeCoord RtreeCoord;
-typedef struct RtreeGeomBlob RtreeGeomBlob;
 
 /* The rtree may have between 1 and RTREE_MAX_DIMENSIONS dimensions. */
 #define RTREE_MAX_DIMENSIONS 5
@@ -235,7 +236,7 @@ struct RtreeCell {
 
 
 /*
-** Value for the first field of every RtreeGeomBlob object. The MATCH
+** Value for the first field of every RtreeMatchArg object. The MATCH
 ** operator tests that the first field of a blob operand matches this
 ** value to avoid operating on invalid blobs (which could cause a segfault).
 */
@@ -246,12 +247,25 @@ struct RtreeCell {
 ** the right-hand-side of an SQL MATCH operator used to constrain an
 ** r-tree query.
 */
-struct RtreeGeomBlob {
+struct RtreeMatchArg {
   u32 magic;                      /* Always RTREE_GEOMETRY_MAGIC */
   int (*xGeom)(sqlite3_rtree_geometry *, int, double *, int *);
   void *pContext;
   int nParam;
   double aParam[1];
+};
+
+/*
+** When a geometry callback is created (see sqlite3_rtree_geometry_callback),
+** a single instance of the following structure is allocated. It is used
+** as the context for the user-function created by by s_r_g_c(). The object
+** is eventually deleted by the destructor mechanism provided by
+** sqlite3_create_function_v2() (which is called by s_r_g_c() to create
+** the geometry callback function).
+*/
+struct RtreeGeomCallback {
+  int (*xGeom)(sqlite3_rtree_geometry *, int, double *, int *);
+  void *pContext;
 };
 
 #ifndef MAX
@@ -1106,7 +1120,7 @@ static int findLeafNode(Rtree *pRtree, i64 iRowid, RtreeNode **ppLeaf){
 ** operator.
 */
 static int deserializeGeometry(sqlite3_value *pValue, RtreeConstraint *pCons){
-  RtreeGeomBlob *p;
+  RtreeMatchArg *p;
   sqlite3_rtree_geometry *pGeom;
   int nBlob;
 
@@ -1115,8 +1129,8 @@ static int deserializeGeometry(sqlite3_value *pValue, RtreeConstraint *pCons){
 
   /* Check that the blob is roughly the right size. */
   nBlob = sqlite3_value_bytes(pValue);
-  if( nBlob<sizeof(RtreeGeomBlob) 
-   || ((nBlob-sizeof(RtreeGeomBlob))%sizeof(double))!=0
+  if( nBlob<sizeof(RtreeMatchArg) 
+   || ((nBlob-sizeof(RtreeMatchArg))%sizeof(double))!=0
   ){
     return SQLITE_ERROR;
   }
@@ -1126,11 +1140,11 @@ static int deserializeGeometry(sqlite3_value *pValue, RtreeConstraint *pCons){
   );
   if( !pGeom ) return SQLITE_NOMEM;
   memset(pGeom, 0, sizeof(sqlite3_rtree_geometry));
-  p = (RtreeGeomBlob *)&pGeom[1];
+  p = (RtreeMatchArg *)&pGeom[1];
 
   memcpy(p, sqlite3_value_blob(pValue), nBlob);
   if( p->magic!=RTREE_GEOMETRY_MAGIC 
-   || nBlob!=(sizeof(RtreeGeomBlob) + (p->nParam-1)*sizeof(double))
+   || nBlob!=(sizeof(RtreeMatchArg) + (p->nParam-1)*sizeof(double))
   ){
     sqlite3_free(pGeom);
     return SQLITE_ERROR;
@@ -1193,7 +1207,7 @@ static int rtreeFilter(
           p->iCoord = idxStr[ii*2+1]-'a';
           if( p->op==RTREE_MATCH ){
             /* A MATCH operator. The right-hand-side must be a blob that
-            ** can be cast into an RtreeGeomBlob object. One created using
+            ** can be cast into an RtreeMatchArg object. One created using
             ** an sqlite3_rtree_geometry_callback() SQL user function.
             */
             rc = deserializeGeometry(argv[ii], p);
@@ -3093,12 +3107,6 @@ static void doSqlite3Free(void *p){
   sqlite3_free(p);
 }
 
-typedef struct GeomCallbackCtx GeomCallbackCtx;
-struct GeomCallbackCtx {
-  int (*xGeom)(sqlite3_rtree_geometry *, int, double *, int *);
-  void *pContext;
-};
-
 /*
 ** Each call to sqlite3_rtree_geometry_callback() creates an ordinary SQLite
 ** scalar user function. This C function is the callback used for all such
@@ -3108,12 +3116,12 @@ struct GeomCallbackCtx {
 ** table MATCH operators.
 */
 static void geomCallback(sqlite3_context *ctx, int nArg, sqlite3_value **aArg){
-  GeomCallbackCtx *pGeomCtx = (GeomCallbackCtx *)sqlite3_user_data(ctx);
-  RtreeGeomBlob *pBlob;
+  RtreeGeomCallback *pGeomCtx = (RtreeGeomCallback *)sqlite3_user_data(ctx);
+  RtreeMatchArg *pBlob;
   int nBlob;
 
-  nBlob = sizeof(RtreeGeomBlob) + (nArg-1)*sizeof(double);
-  pBlob = (RtreeGeomBlob *)sqlite3_malloc(nBlob);
+  nBlob = sizeof(RtreeMatchArg) + (nArg-1)*sizeof(double);
+  pBlob = (RtreeMatchArg *)sqlite3_malloc(nBlob);
   if( !pBlob ){
     sqlite3_result_error_nomem(ctx);
   }else{
@@ -3138,10 +3146,10 @@ int sqlite3_rtree_geometry_callback(
   int (*xGeom)(sqlite3_rtree_geometry *, int, double *, int *),
   void *pContext
 ){
-  GeomCallbackCtx *pGeomCtx;      /* Context object for new user-function */
+  RtreeGeomCallback *pGeomCtx;      /* Context object for new user-function */
 
   /* Allocate and populate the context object. */
-  pGeomCtx = (GeomCallbackCtx *)sqlite3_malloc(sizeof(GeomCallbackCtx));
+  pGeomCtx = (RtreeGeomCallback *)sqlite3_malloc(sizeof(RtreeGeomCallback));
   if( !pGeomCtx ) return SQLITE_NOMEM;
   pGeomCtx->xGeom = xGeom;
   pGeomCtx->pContext = pContext;
