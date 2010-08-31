@@ -2606,6 +2606,7 @@ case OP_Savepoint: {
         if( p1==SAVEPOINT_ROLLBACK && (db->flags&SQLITE_InternChanges)!=0 ){
           sqlite3ExpirePreparedStatements(db);
           sqlite3ResetInternalSchema(db, 0);
+          db->flags = (db->flags | SQLITE_InternChanges);
         }
       }
   
