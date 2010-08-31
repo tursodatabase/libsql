@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Provide\shints\sto\sthe\sbtree\slayer\sduring\sthe\screation\sof\stransient\stables\nwhen\sit\sis\spossible\sfor\sthose\stables\sto\suse\sa\shash\srather\sthan\sa\sbinary\stree.\nNo\suse\sis\scurrent\smade\sof\sthose\shints,\sthough\sassert()\sstatement\sverify\ntheir\saccuracy.
-D 2010-08-30T22:15:45
+C Remove\sunreachable\sbranches\sto\sfacilitate\stest\scoverage.
+D 2010-08-31T01:09:16
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -162,7 +162,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c 11194cbcf6a57456e58022dc537ab8c3497d9bb9
 F src/os_win.c 718a48ca09d1bb747acb6b76e6a7e20eab182a7e
-F src/pager.c cf462c23efdfa00722eab91e1b097a44ad471d14
+F src/pager.c 51d77a9df463f77bf214f32bb2dbc2d0da41fc3e
 F src/pager.h 8167a1e720d0b7a2790079007128e594010220ad
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
@@ -229,7 +229,7 @@ F src/vdbe.c 36d9521bfc257bc068ad0bdee8f341d96d858ff7
 F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
 F src/vdbeInt.h a247bd5448039e83394bf4179975b2ae0092874c
 F src/vdbeapi.c d0f4407e465f261780ad725c1caece7d66a6aa35
-F src/vdbeaux.c c73bcefcebfd3d2cf91bf6a41ef0fb0d884814c6
+F src/vdbeaux.c de0b06b11a25293e820a49159eca9f1c51a64716
 F src/vdbeblob.c 258a6010ba7a82b72b327fb24c55790655689256
 F src/vdbemem.c e5673f81a2381b35c60e73ef0a8502be2ab1041e
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
@@ -854,14 +854,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P fc4d75370bad9021d01b76dbb1b8dde9ff223d2c
-R ad3bc7fe837e4387bdc8b7d527b6677e
+P 4fead8e714c7e50a9d246467e62bc846ef6180a0
+R 2a554c21e54c6c6b8cf219133e4b794c
 U drh
-Z a25a6ea6fddbc5fd583dc3a0bce7dfb5
+Z 1f84fd2f1fe3fdabeee2241cc9429c00
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMfC2VoxKgR168RlERAgsLAJ96exRcGb6HNQhqw763Wtb1qZt8OACeKV37
-W21WHOHvQuRsjF2J4rqfHKU=
-=0DbL
+iD8DBQFMfFY/oxKgR168RlERAmjVAJ9LLyOmGxhu/yZZZmudXyMu4QPOdQCdEH6H
+g2BR3lfdwre9DKrRofma7OY=
+=SZjz
 -----END PGP SIGNATURE-----

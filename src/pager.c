@@ -4300,19 +4300,15 @@ int sqlite3PagerOpen(
 
   /* Fill in the Pager.zFilename and Pager.zJournal buffers, if required. */
   if( zPathname ){
+    assert( nPathname>0 );
     pPager->zJournal =   (char*)(pPtr += nPathname + 1);
     memcpy(pPager->zFilename, zPathname, nPathname);
     memcpy(pPager->zJournal, zPathname, nPathname);
     memcpy(&pPager->zJournal[nPathname], "-journal", 8);
-    if( pPager->zFilename[0]==0 ){
-      pPager->zJournal[0] = 0;
-    }
 #ifndef SQLITE_OMIT_WAL
-    else{
-      pPager->zWal = &pPager->zJournal[nPathname+8+1];
-      memcpy(pPager->zWal, zPathname, nPathname);
-      memcpy(&pPager->zWal[nPathname], "-wal", 4);
-    }
+    pPager->zWal = &pPager->zJournal[nPathname+8+1];
+    memcpy(pPager->zWal, zPathname, nPathname);
+    memcpy(&pPager->zWal[nPathname], "-wal", 4);
 #endif
     sqlite3_free(zPathname);
   }
@@ -4321,9 +4317,10 @@ int sqlite3PagerOpen(
 
   /* Open the pager file.
   */
-  if( zFilename && zFilename[0] && !memDb ){
+  if( zFilename && zFilename[0] ){
     int fout = 0;                    /* VFS flags returned by xOpen() */
     rc = sqlite3OsOpen(pVfs, pPager->zFilename, pPager->fd, vfsFlags, &fout);
+    assert( !memDb );
     readOnly = (fout&SQLITE_OPEN_READONLY);
 
     /* If the file was successfully opened for read/write access,
