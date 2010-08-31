@@ -26,15 +26,33 @@
 # include "sqliteicu.h"
 #endif
 
-/*
-** The version of the library
-*/
 #ifndef SQLITE_AMALGAMATION
+/* IMPLEMENTATION-OF: R-46656-45156 The sqlite3_version[] string constant
+** contains the text of SQLITE_VERSION macro. 
+*/
 const char sqlite3_version[] = SQLITE_VERSION;
 #endif
+
+/* IMPLEMENTATION-OF: R-53536-42575 The sqlite3_libversion() function returns
+** a pointer to the to the sqlite3_version[] string constant. 
+*/
 const char *sqlite3_libversion(void){ return sqlite3_version; }
+
+/* IMPLEMENTATION-OF: R-63124-39300 The sqlite3_sourceid() function returns a
+** pointer to a string constant whose value is the same as the
+** SQLITE_SOURCE_ID C preprocessor macro. 
+*/
 const char *sqlite3_sourceid(void){ return SQLITE_SOURCE_ID; }
+
+/* IMPLEMENTATION-OF: R-35210-63508 The sqlite3_libversion_number() function
+** returns an integer equal to SQLITE_VERSION_NUMBER.
+*/
 int sqlite3_libversion_number(void){ return SQLITE_VERSION_NUMBER; }
+
+/* IMPLEMENTATION-OF: R-54823-41343 The sqlite3_threadsafe() function returns
+** zero if and only if SQLite was compiled mutexing code omitted due to
+** the SQLITE_THREADSAFE compile-time option being set to 0.
+*/
 int sqlite3_threadsafe(void){ return SQLITE_THREADSAFE; }
 
 #if !defined(SQLITE_OMIT_TRACE) && defined(SQLITE_ENABLE_IOTRACE)

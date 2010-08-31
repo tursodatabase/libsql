@@ -62,12 +62,13 @@ void sqlite3_soft_heap_limit(int n){
 */
 int sqlite3_release_memory(int n){
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
-  int nRet = 0;
-  nRet += sqlite3PcacheReleaseMemory(n-nRet);
-  return nRet;
+  return sqlite3PcacheReleaseMemory(n);
 #else
+  /* IMPLEMENTATION-OF: R-34391-24921 The sqlite3_release_memory() routine
+  ** is a no-op returning zero if SQLite is not compiled with
+  ** SQLITE_ENABLE_MEMORY_MANAGEMENT. */
   UNUSED_PARAMETER(n);
-  return SQLITE_OK;
+  return 0;
 #endif
 }
 
@@ -511,6 +512,9 @@ void *sqlite3Realloc(void *pOld, int nBytes){
     return 0;
   }
   nOld = sqlite3MallocSize(pOld);
+  /* IMPLEMENTATION-OF: R-46199-30249 SQLite guarantees that the second
+  ** argument to xRealloc is always a value returned by a prior call to
+  ** xRoundup. */
   nNew = sqlite3GlobalConfig.m.xRoundup(nBytes);
   if( nOld==nNew ){
     pNew = pOld;

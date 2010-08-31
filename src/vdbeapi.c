@@ -495,6 +495,12 @@ void *sqlite3_user_data(sqlite3_context *p){
 /*
 ** Extract the user data from a sqlite3_context structure and return a
 ** pointer to it.
+**
+** IMPLEMENTATION-OF: R-46798-50301 The sqlite3_context_db_handle() interface
+** returns a copy of the pointer to the database connection (the 1st
+** parameter) of the sqlite3_create_function() and
+** sqlite3_create_function16() routines that originally registered the
+** application defined function.
 */
 sqlite3 *sqlite3_context_db_handle(sqlite3_context *p){
   assert( p && p->pFunc );

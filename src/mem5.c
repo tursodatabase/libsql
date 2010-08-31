@@ -395,7 +395,7 @@ static void *memsys5Realloc(void *pPrior, int nBytes){
   int nOld;
   void *p;
   assert( pPrior!=0 );
-  assert( (nBytes&(nBytes-1))==0 );
+  assert( (nBytes&(nBytes-1))==0 );  /* EV: R-46199-30249 */
   assert( nBytes>=0 );
   if( nBytes==0 ){
     return 0;

@@ -4089,6 +4089,8 @@ int sqlite3_enable_shared_cache(int);
 ** pages to improve performance is an example of non-essential memory.
 ** ^sqlite3_release_memory() returns the number of bytes actually freed,
 ** which might be more or less than the amount requested.
+** ^The sqlite3_release_memory() routine is a no-op returning zero
+** if SQLite is not compiled with [SQLITE_ENABLE_MEMORY_MANAGEMENT].
 */
 int sqlite3_release_memory(int);
 

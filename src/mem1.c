@@ -89,7 +89,7 @@ static int sqlite3MemSize(void *pPrior){
 static void *sqlite3MemRealloc(void *pPrior, int nByte){
   sqlite3_int64 *p = (sqlite3_int64*)pPrior;
   assert( pPrior!=0 && nByte>0 );
-  nByte = ROUND8(nByte);
+  assert( nByte==ROUND8(nByte) ); /* EV: R-46199-30249 */
   p--;
   p = realloc(p, nByte+8 );
   if( p ){
