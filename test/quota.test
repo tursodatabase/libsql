@@ -101,7 +101,7 @@ do_test quota-2.4.2 {
 } {1 {database or disk is full}}
 do_test quota-2.4.3 { set ::quota } {5120 6144}
 do_test quota-2.4.4 { file size test.db } {5120}
-do_test quota-2.4.5 {
+do_test quota-2.4.99 {
   db close
   sqlite3_quota_shutdown
 } {SQLITE_OK}
@@ -139,12 +139,35 @@ do_test quota-3.1.3 {
   execsql { CREATE TABLE t2(a, b) } db2
   set ::quota
 } {}
+puts "quotas: [sqlite3_quota_dump]"
 
 do_test quota-3.X {
   catch { db close }
   catch { db2 close }
-  sqlite3_quota_shutdown 
-} {SQLITE_OK}
+} {0}
+
+#-------------------------------------------------------------------------
+# Quotas are deleted when unused and when there limit is set to zero
+#
+
+# Return a list of all currently defined quotas.  Each quota is identified
+# by its pattern.
+proc quota_list {} {
+  set allq {}
+  foreach q [sqlite3_quota_dump] {
+    lappend allq [lindex $q 0]
+  }
+  return [lsort $allq]
+}
+do_test quota-4.1 {
+  sqlite3_quota_set *test.db 0 {}
+  quota_list
+} {}
+do_test quota-4.2 {
+  sqlite3_quota_set *test.db 4096 {}
+  quota_list
+} {*test.db}
+
+
+sqlite3_quota_shutdown 
 finish_test
-
-
