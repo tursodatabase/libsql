@@ -15,6 +15,9 @@
 
 #include <sqlite3.h>
 
+/* Solely for the UNUSED_PARAMETER() macro. */
+#include "sqliteInt.h"
+
 /* 
 ** Type used to cache parameter information for the "circle" r-tree geometry
 ** callback.
@@ -234,7 +237,12 @@ static int register_cube_geom(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-#ifdef SQLITE_ENABLE_RTREE
+#ifndef SQLITE_ENABLE_RTREE
+  UNUSED_PARAMETER(clientData);
+  UNUSED_PARAMETER(interp);
+  UNUSED_PARAMETER(objc);
+  UNUSED_PARAMETER(objv);
+#else
   extern int getDbPointer(Tcl_Interp*, const char*, sqlite3**);
   extern const char *sqlite3TestErrorName(int);
   sqlite3 *db;
@@ -257,7 +265,12 @@ static int register_circle_geom(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-#ifdef SQLITE_ENABLE_RTREE
+#ifndef SQLITE_ENABLE_RTREE
+  UNUSED_PARAMETER(clientData);
+  UNUSED_PARAMETER(interp);
+  UNUSED_PARAMETER(objc);
+  UNUSED_PARAMETER(objv);
+#else
   extern int getDbPointer(Tcl_Interp*, const char*, sqlite3**);
   extern const char *sqlite3TestErrorName(int);
   sqlite3 *db;

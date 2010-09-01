@@ -814,7 +814,7 @@ int sqlite3PcacheReleaseMemory(int nReq){
   if( pcache1.pStart==0 ){
     PgHdr1 *p;
     pcache1EnterMutex();
-    while( (nReq<0 || nFree<nReq) && (p=pcache1.pLruTail) ){
+    while( (nReq<0 || nFree<nReq) && ((p=pcache1.pLruTail)!=0) ){
       nFree += pcache1MemSize(PGHDR1_TO_PAGE(p));
       pcache1PinPage(p);
       pcache1RemoveFromHash(p);

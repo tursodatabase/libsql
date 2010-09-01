@@ -1835,7 +1835,7 @@ int sqlite3BtreeOpen(
     if( rc!=SQLITE_OK ){
       goto btree_open_out;
     }
-    pBt->openFlags = flags;
+    pBt->openFlags = (u8)flags;
     pBt->db = db;
     sqlite3PagerSetBusyhandler(pBt->pPager, btreeInvokeBusyHandler, pBt);
     p->pBt = pBt;

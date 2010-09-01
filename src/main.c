@@ -1088,7 +1088,7 @@ int sqlite3_create_function_v2(
   void (*xFinal)(sqlite3_context*),
   void (*xDestroy)(void *)
 ){
-  int rc;
+  int rc = SQLITE_ERROR;
   FuncDestructor *pArg = 0;
   sqlite3_mutex_enter(db->mutex);
   if( xDestroy ){
@@ -1298,7 +1298,10 @@ int sqlite3WalDefaultHook(
 ** configured by this function.
 */
 int sqlite3_wal_autocheckpoint(sqlite3 *db, int nFrame){
-#ifndef SQLITE_OMIT_WAL
+#ifdef SQLITE_OMIT_WAL
+  UNUSED_PARAMETER(db);
+  UNUSED_PARAMETER(nFrame);
+#else
   if( nFrame>0 ){
     sqlite3_wal_hook(db, sqlite3WalDefaultHook, SQLITE_INT_TO_PTR(nFrame));
   }else{

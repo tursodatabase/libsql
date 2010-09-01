@@ -2478,7 +2478,7 @@ int sqlite3WalFrames(
       return rc;
     }
   }
-  assert( pWal->szPage==szPage );
+  assert( (int)pWal->szPage==szPage );
 
   /* Write the log file. */
   for(p=pList; p; p=p->pDirty){

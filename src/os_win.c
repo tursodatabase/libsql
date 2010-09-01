@@ -2033,19 +2033,25 @@ static int winOpen(
   char zTmpname[MAX_PATH+1];     /* Buffer used to create temp filename */
 
   int rc = SQLITE_OK;            /* Function Return Code */
+#if !defined(NDEBUG) || SQLITE_OS_WINCE
   int eType = flags&0xFFFFFF00;  /* Type of file to open */
+#endif
 
   int isExclusive  = (flags & SQLITE_OPEN_EXCLUSIVE);
   int isDelete     = (flags & SQLITE_OPEN_DELETEONCLOSE);
   int isCreate     = (flags & SQLITE_OPEN_CREATE);
+#ifndef NDEBUG
   int isReadonly   = (flags & SQLITE_OPEN_READONLY);
+#endif
   int isReadWrite  = (flags & SQLITE_OPEN_READWRITE);
 
+#ifndef NDEBUG
   int isOpenJournal = (isCreate && (
         eType==SQLITE_OPEN_MASTER_JOURNAL 
      || eType==SQLITE_OPEN_MAIN_JOURNAL 
      || eType==SQLITE_OPEN_WAL
   ));
+#endif
 
   /* Check the following statements are true: 
   **

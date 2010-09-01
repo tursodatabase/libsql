@@ -1,5 +1,5 @@
-C Ensure\srandomly\sgenerated\srowids\snever\sgo\snegative.
-D 2010-09-01T02:37:56
+C Fix\ssome\scompiler\swarnings\sunder\sMSVC.
+D 2010-09-01T02:38:22
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -116,7 +116,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c d5b0137bc20327af08c14772227cc35134839c30
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c 175495bf9a377a5526c82450dc2ce069a974e61c
+F src/btree.c d878577184112d982d00ea05afcc7487cd9f06f5
 F src/btree.h 2d1a83ad509047e8cc314fda7e054f99ff52414d
 F src/btreeInt.h c424f2f131cc61ddf130f9bd736b3df12c8a51f0
 F src/build.c 5acc8a7d79ca81102a5d020fbafb7a4162f96d1d
@@ -138,7 +138,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 6d422ea91cf3d2d00408c5a8f2391cd458da85f8
-F src/main.c 4965866d307ecb99f2830ae98ec50520551ad293
+F src/main.c b92c6c9a302999975897730b2808708fbf531a56
 F src/malloc.c d9fcf07f366a29d45d4c3157323074578912b83c
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 00bd8265c81abb665c48fea1e0c234eb3b922206
@@ -147,7 +147,7 @@ F src/mem3.c 9b237d911ba9904142a804be727cc6664873f8a3
 F src/mem5.c 6fe00f46997bebb690397cb029719f711e7640e3
 F src/memjournal.c 4a93a25ad9f76c40afa070ffd7187eb3a5fd7aee
 F src/mutex.c 6949180803ff05a7d0e2b9334a95b4fb5a00e23f
-F src/mutex.h 6fde601e55fa6c3fae768783c439797ab84c87c6
+F src/mutex.h fe2ef5e1c4dae531d5a544f9241f19c56d26803d
 F src/mutex_noop.c d5cfbca87168c661a0b118cd8e329a908e453151
 F src/mutex_os2.c 6a62583e374ba3ac1a3fcc0da2bfdac7d3942689
 F src/mutex_unix.c abb8c98a6c27c57280e71522d059e929c708d019
@@ -158,13 +158,13 @@ F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c 11194cbcf6a57456e58022dc537ab8c3497d9bb9
-F src/os_win.c 718a48ca09d1bb747acb6b76e6a7e20eab182a7e
+F src/os_win.c 6fb3447ffe56df0dbb2d1ac93f75c9c748e009e1
 F src/pager.c 51d77a9df463f77bf214f32bb2dbc2d0da41fc3e
 F src/pager.h 8167a1e720d0b7a2790079007128e594010220ad
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
-F src/pcache1.c 7d94fd171b5f49921f1582655911c5c5aad0f628
+F src/pcache1.c d090673e7489940dfaddf3fb72ab550c409b2744
 F src/pragma.c 8b24ce00a93de345b6c3bd1e1e2cfba9f63d2325
 F src/prepare.c ce4c35a2b1d5fe916e4a46b70d24a6e997d7c4c6
 F src/printf.c 8ae5082dd38a1b5456030c3755ec3a392cd51506
@@ -208,7 +208,7 @@ F src/test_mutex.c ce06b59aca168cd8c520b77159a24352a7469bd3
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
 F src/test_osinst.c f408c6a181f2fb04c56273afd5c3e1e82f60392c
 F src/test_pcache.c 7bf828972ac0d2403f5cfa4cd14da41f8ebe73d8
-F src/test_rtree.c f0476682986e7d3b04919432020b91bde4aaa925
+F src/test_rtree.c e957a603a98871dcf005c1e96ae791cfe74eb7f6
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c bbba05c144b5fc4b52ff650a4328027b3fa5fcc6
 F src/test_stat.c f682704b5d1ba8e1d4e7e882a6d7922e2dcf066c
@@ -231,7 +231,7 @@ F src/vdbeblob.c 258a6010ba7a82b72b327fb24c55790655689256
 F src/vdbemem.c e5673f81a2381b35c60e73ef0a8502be2ab1041e
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c 0e8e0cb30dffb078367e843e84e37ef99236c7e4
-F src/wal.c 5ac2119e23ee4424599d4275b66dc88d612a0543
+F src/wal.c 7081f148cb52b0cf2280e6384196402dc58130a3
 F src/wal.h 96669b645e27cd5a111ba59f0cae7743a207bc3c
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 7db3e41c2a846f9deeb24f1bbb75461b4010b7b5
@@ -851,7 +851,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c2a84430d3b6bb53b19af9294973575178290f93
-R dfa25dc2885cfefe1659176091b19b37
+P 631423677bd7043e99987edc633005443125181c
+R 05e5b03d9444a84913fc1df09eed54da
 U shaneh
-Z 79cc05c849b02833caa229e781acac58
+Z d536f60f29570cdd4e12c9463729e891
