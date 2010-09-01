@@ -65,7 +65,7 @@ struct quotaGroup {
   void *pArg;                    /* Third argument to the xCallback() */
   void (*xDestroy)(void*);       /* Optional destructor for pArg */
   quotaGroup *pNext, **ppPrev;   /* Doubly linked list of all quota objects */
-  quotaFile *pFile;              /* Files within this group */
+  quotaFile *pFiles;             /* Files within this group */
 };
 
 /*
@@ -78,7 +78,7 @@ struct quotaGroup {
 */
 struct quotaFile {
   char *zFilename;                /* Name of this file */
-  quotaGroup *pGroup;             /* Upper bound on file size */
+  quotaGroup *pGroup;             /* Quota group to which this file belongs */
   sqlite3_int64 iSize;            /* Current size of this file */
   int nRef;                       /* Number of times this file is open */
   quotaFile *pNext, **ppPrev;     /* Linked list of files in the same group */
@@ -154,12 +154,12 @@ static void quotaLeave(void){ sqlite3_mutex_leave(gQuota.pMutex); }
 /* If the reference count and threshold for a quotaGroup are both
 ** zero, then destroy the quotaGroup.
 */
-static void quotaGroupDeref(quotaGroup *p){
-  if( p->pFile==0 && p->iLimit==0 ){
-    if( p->pNext ) p->pNext->ppPrev = p->ppPrev;
-    if( p->ppPrev ) *p->ppPrev = p->pNext;
-    if( p->xDestroy ) p->xDestroy(p->pArg);
-    sqlite3_free(p);
+static void quotaGroupDeref(quotaGroup *pGroup){
+  if( pGroup->pFiles==0 && pGroup->iLimit==0 ){
+    if( pGroup->pNext ) pGroup->pNext->ppPrev = pGroup->ppPrev;
+    if( pGroup->ppPrev ) *pGroup->ppPrev = pGroup->pNext;
+    if( pGroup->xDestroy ) pGroup->xDestroy(pGroup->pArg);
+    sqlite3_free(pGroup);
   }
 }
 
@@ -305,7 +305,7 @@ static int quotaOpen(
     pSubOpen = quotaSubOpen(pConn);
     rc = pOrigVfs->xOpen(pOrigVfs, zName, pSubOpen, flags, pOutFlags);
     if( rc==SQLITE_OK ){
-      for(pFile=pGroup->pFile; pFile && strcmp(pFile->zFilename, zName);
+      for(pFile=pGroup->pFiles; pFile && strcmp(pFile->zFilename, zName);
           pFile=pFile->pNext){}
       if( pFile==0 ){
         int nName = strlen(zName);
@@ -318,10 +318,10 @@ static int quotaOpen(
         memset(pFile, 0, sizeof(*pFile));
         pFile->zFilename = (char*)&pFile[1];
         memcpy(pFile->zFilename, zName, nName+1);
-        pFile->pNext = pGroup->pFile;
-        if( pGroup->pFile ) pGroup->pFile->ppPrev = &pFile->pNext;
-        pFile->ppPrev = &pGroup->pFile;
-        pGroup->pFile = pFile;
+        pFile->pNext = pGroup->pFiles;
+        if( pGroup->pFiles ) pGroup->pFiles->ppPrev = &pFile->pNext;
+        pFile->ppPrev = &pGroup->pFiles;
+        pGroup->pFiles = pFile;
         pFile->pGroup = pGroup;
       }
       pFile->nRef++;
@@ -607,15 +607,15 @@ int sqlite3_quota_initialize(const char *zOrigVfsName, int makeDefault){
 ** shutting down in order to free all remaining quota groups.
 */
 int sqlite3_quota_shutdown(void){
-  quotaGroup *p;
+  quotaGroup *pGroup;
   if( gQuota.isInitialized==0 ) return SQLITE_MISUSE;
-  for(p=gQuota.pGroup; p; p=p->pNext){
-    if( p->pFile ) return SQLITE_MISUSE;
+  for(pGroup=gQuota.pGroup; pGroup; pGroup=pGroup->pNext){
+    if( pGroup->pFiles ) return SQLITE_MISUSE;
   }
   while( gQuota.pGroup ){
-    quotaGroup *p = gQuota.pGroup;
-    gQuota.pGroup = p->pNext;
-    sqlite3_free(p);
+    pGroup = gQuota.pGroup;
+    gQuota.pGroup = pGroup->pNext;
+    sqlite3_free(pGroup);
   }
   gQuota.isInitialized = 0;
   sqlite3_mutex_free(gQuota.pMutex);
@@ -883,7 +883,7 @@ static int test_quota_dump(
           Tcl_NewWideIntObj(pGroup->iLimit));
     Tcl_ListObjAppendElement(interp, pGroupTerm,
           Tcl_NewWideIntObj(pGroup->iSize));
-    for(pFile=pGroup->pFile; pFile; pFile=pFile->pNext){
+    for(pFile=pGroup->pFiles; pFile; pFile=pFile->pNext){
       pFileTerm = Tcl_NewObj();
       Tcl_ListObjAppendElement(interp, pFileTerm,
             Tcl_NewStringObj(pFile->zFilename, -1));
