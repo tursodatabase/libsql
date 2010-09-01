@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Update\sthe\squota\sshim\sso\sthat\swhen\sthe\ssame\sfile\sis\sopened\smultiple\stimes,\nits\ssize\sonly\scounts\sagainst\sthe\squota\sonce.
-D 2010-09-01T12:50:54
+C Clean\sup\scomments\sin\sthe\stest_quota.c\ssource\sfile.
+D 2010-09-01T13:09:57
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -211,7 +211,7 @@ F src/test_mutex.c ce06b59aca168cd8c520b77159a24352a7469bd3
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
 F src/test_osinst.c f408c6a181f2fb04c56273afd5c3e1e82f60392c
 F src/test_pcache.c 7bf828972ac0d2403f5cfa4cd14da41f8ebe73d8
-F src/test_quota.c 3bd9629e4b88d1aa7086a987a7eaee35d8683280
+F src/test_quota.c e542d96d5e0ad7bbc064ab9912da3d8ed65cbe28
 F src/test_rtree.c e957a603a98871dcf005c1e96ae791cfe74eb7f6
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c bbba05c144b5fc4b52ff650a4328027b3fa5fcc6
@@ -856,14 +856,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 383eb87bbf560b20682dd5be0e18ddadf762f415
-R b5a4d36b9d6562d3c3442739bfabc1f0
+P f5d263803084107389c5541face8d536b62fffe3
+R 35c143fcc0c1d935b095e49fe0b10b28
 U drh
-Z 71992168532d47edde2bb9ee2fe75389
+Z 22044fa4707460c35e1dd2a52d813a99
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMfkwxoxKgR168RlERAgANAJ9B4KtMV72Ji0JYDm0FJNxZrpK+kwCfT8lT
-0hQEz4MNPkLhC93D3DNoV70=
-=rL9o
+iD8DBQFMflCroxKgR168RlERAupSAJ41VgmVbutErFMPzEt158JfEp4N/gCeLiry
+ne2YPJhXeQQSv7tL27HzCOk=
+=nNgv
 -----END PGP SIGNATURE-----

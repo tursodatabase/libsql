@@ -39,16 +39,18 @@ typedef struct quotaOpen quotaOpen;
 typedef struct quotaFile quotaFile;
 
 /*
-** This module contains a table of filename patterns that have size
-** quotas.  The quota applies to the sum of the sizes of all open
-** database files whose names match the GLOB pattern.
+** A "quota group" is a collection of files whose collective size we want
+** to limit.  Each quota group is defined by a GLOB pattern.
 **
-** Each quota is an instance of the following object.  Quotas must
-** be established (using sqlite3_quota_set()) prior to opening any
-** of the database connections that access files governed by the
-** quota.
+** There is an instance of the following object for each defined quota
+** group.  This object records the GLOB pattern that defines which files
+** belong to the quota group.  The object also remembers the size limit
+** for the group (the quota) and the callback to be invoked when the
+** sum of the sizes of the files within the group goes over the limit.
 **
-** Each entry in the quota table is an instance of the following object.
+** A quota group must be established (using sqlite3_quota_set(...))
+** prior to opening any of the database connections that access files
+** within the quota group.
 */
 struct quotaGroup {
   const char *zPattern;          /* Filename pattern to be quotaed */
@@ -69,7 +71,7 @@ struct quotaGroup {
 ** An instance of this structure represents a single file that is part
 ** of a quota group.  A single file can be opened multiple times.  In
 ** order keep multiple openings of the same file from causing the size
-** of the file counting against the quota multiple times, each file
+** of the file to count against the quota multiple times, each file
 ** has a unique instance of this object and multiple open connections
 ** to the same file each point to a single instance of this object.
 */
@@ -83,8 +85,9 @@ struct quotaFile {
 
 /*
 ** An instance of the following object represents each open connection
-** to a file that participates in quota tracking.  The sqlite3_file object
-** for the underlying VFS is appended to this structure.
+** to a file that participates in quota tracking.  This object is a 
+** subclass of sqlite3_file.  The sqlite3_file object for the underlying
+** VFS is appended to this structure.
 */
 struct quotaOpen {
   sqlite3_file base;              /* Base class - must be first */
@@ -98,7 +101,7 @@ struct quotaOpen {
 ** gQuota structure.
 */
 static struct {
-  /* The pOrigVfs is a pointer to the real underlying VFS implementation.
+  /* The pOrigVfs is the real, original underlying VFS implementation.
   ** Most operations pass-through to the real VFS.  This value is read-only
   ** during operation.  It is only modified at start-time and thus does not
   ** require a mutex.
@@ -249,7 +252,7 @@ static quotaGroup *quotaGroupFind(const char *zFilename){
 }
 
 /* Translate an sqlite3_file* that is really a quotaOpen* into
-** an sqlite3_file* for the underlying original VFS.
+** the sqlite3_file* for the underlying original VFS.
 */
 static sqlite3_file *quotaSubOpen(sqlite3_file *pOpen){
   quotaOpen *p = (quotaOpen*)pOpen;
@@ -261,22 +264,22 @@ static sqlite3_file *quotaSubOpen(sqlite3_file *pOpen){
 ** This is the xOpen method used for the "quota" VFS.
 **
 ** Most of the work is done by the underlying original VFS.  This method
-** simply links the new file into the quota group if it is a file that
-** needs to be tracked.
+** simply links the new file into the appropriate quota group if it is a
+** file that needs to be tracked.
 */
 static int quotaxOpen(
-  sqlite3_vfs *pVfs,
-  const char *zName,
-  sqlite3_file *pOpen,
-  int flags,
-  int *pOutFlags
+  sqlite3_vfs *pVfs,          /* The quota VFS */
+  const char *zName,          /* Name of file to be opened */
+  sqlite3_file *pOpen,        /* Fill in this file descriptor */
+  int flags,                  /* Flags to control the opening */
+  int *pOutFlags              /* Flags showing results of opening */
 ){
-  int rc;
-  quotaOpen *pQuotaOpen;
-  quotaFile *pFile;
-  quotaGroup *pGroup;
-  sqlite3_file *pSubOpen;
-  sqlite3_vfs *pOrigVfs = gQuota.pOrigVfs;
+  int rc;                                    /* Result code */         
+  quotaOpen *pQuotaOpen;                     /* The new quota file descriptor */
+  quotaFile *pFile;                          /* Corresponding quotaFile obj */
+  quotaGroup *pGroup;                        /* The group file belongs to */
+  sqlite3_file *pSubOpen;                    /* Real file descriptor */
+  sqlite3_vfs *pOrigVfs = gQuota.pOrigVfs;   /* Real VFS */
 
   /* If the file is not a main database file or a WAL, then use the
   ** normal xOpen method.
