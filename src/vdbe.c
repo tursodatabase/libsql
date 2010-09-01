@@ -3719,18 +3719,24 @@ case OP_NewRowid: {           /* out2-prerelease */
       */
       assert( pOp->p3==0 );  /* We cannot be in random rowid mode if this is
                              ** an AUTOINCREMENT table. */
+      /* on the first attempt, simply do one more than previous */
       v = db->lastRowid;
+      v &= (MAX_ROWID>>1); /* ensure doesn't go negative */
+      v++; /* ensure non-zero */
       cnt = 0;
-      do{
-        if( cnt==0 && (v&0xffffff)==v ){
-          v++;
+      while(   ((rc = sqlite3BtreeMovetoUnpacked(pC->pCursor, 0, (u64)v, 0, &res))==SQLITE_OK)
+            && (res==0)
+            && (++cnt<100)){
+        /* collision - try another random rowid */
+        sqlite3_randomness(sizeof(v), &v);
+        if( cnt<5 ){
+          /* try "small" random rowids for the initial attempts */
+          v &= 0xffffff;
         }else{
-          sqlite3_randomness(sizeof(v), &v);
-          if( cnt<5 ) v &= 0xffffff;
+          v &= (MAX_ROWID>>1); /* ensure doesn't go negative */
         }
-        rc = sqlite3BtreeMovetoUnpacked(pC->pCursor, 0, (u64)v, 0, &res);
-        cnt++;
-      }while( cnt<100 && rc==SQLITE_OK && res==0 );
+        v++; /* ensure non-zero */
+      }
       if( rc==SQLITE_OK && res==0 ){
         rc = SQLITE_FULL;   /* IMP: R-38219-53002 */
         goto abort_due_to_error;
