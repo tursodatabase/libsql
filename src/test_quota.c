@@ -832,6 +832,7 @@ static int test_quota_set(
   TclQuotaCallback *p;            /* Callback object */
   int nScript;                    /* Length of callback script */
   void (*xDestroy)(void*);        /* Optional destructor for pArg */
+  void (*xCallback)(const char *, sqlite3_int64 *, sqlite3_int64, void *);
 
   /* Process arguments */
   if( objc!=4 ){
@@ -855,13 +856,15 @@ static int test_quota_set(
     Tcl_IncrRefCount(pScript);
     p->pScript = pScript;
     xDestroy = tclCallbackDestructor;
+    xCallback = tclQuotaCallback;
   }else{
     p = 0;
     xDestroy = 0;
+    xCallback = 0;
   }
 
   /* Invoke sqlite3_quota_set() */
-  rc = sqlite3_quota_set(zPattern, iLimit, tclQuotaCallback, (void*)p,xDestroy);
+  rc = sqlite3_quota_set(zPattern, iLimit, xCallback, (void*)p, xDestroy);
 
   Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_STATIC);
   return TCL_OK;
