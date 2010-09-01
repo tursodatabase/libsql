@@ -17,8 +17,8 @@
 ** database files are in a "quota group" that is defined by a GLOB
 ** pattern.  A quota is set for the combined size of all files in the
 ** the group.  A quota of zero means "no limit".  If the total size
-** of all files in the quota group is greater than or equal to the limit,
-** then write requests that attempt to enlarge a file fail with SQLITE_FULL.
+** of all files in the quota group is greater than the limit, then
+** write requests that attempt to enlarge a file fail with SQLITE_FULL.
 **
 ** However, before returning SQLITE_FULL, the write requests invoke
 ** a callback function that is configurable for each quota group.
