@@ -156,8 +156,8 @@ static void quotaLeave(void){ sqlite3_mutex_leave(gQuota.pMutex); }
 */
 static void quotaGroupDeref(quotaGroup *pGroup){
   if( pGroup->pFiles==0 && pGroup->iLimit==0 ){
+    *pGroup->ppPrev = pGroup->pNext;
     if( pGroup->pNext ) pGroup->pNext->ppPrev = pGroup->ppPrev;
-    if( pGroup->ppPrev ) *pGroup->ppPrev = pGroup->pNext;
     if( pGroup->xDestroy ) pGroup->xDestroy(pGroup->pArg);
     sqlite3_free(pGroup);
   }
@@ -615,7 +615,8 @@ int sqlite3_quota_shutdown(void){
   while( gQuota.pGroup ){
     pGroup = gQuota.pGroup;
     gQuota.pGroup = pGroup->pNext;
-    sqlite3_free(pGroup);
+    pGroup->iLimit = 0;
+    quotaGroupDeref(pGroup);
   }
   gQuota.isInitialized = 0;
   sqlite3_mutex_free(gQuota.pMutex);
@@ -759,7 +760,7 @@ static void tclCallbackDestructor(void *pObj){
   TclQuotaCallback *p = (TclQuotaCallback*)pObj;
   if( p ){
     Tcl_DecrRefCount(p->pScript);
-    ckfree((char *)p);
+    sqlite3_free((char *)p);
   }
 }
 
@@ -830,6 +831,7 @@ static int test_quota_set(
   int rc;                         /* Value returned by quota_set() */
   TclQuotaCallback *p;            /* Callback object */
   int nScript;                    /* Length of callback script */
+  void (*xDestroy)(void*);        /* Optional destructor for pArg */
 
   /* Process arguments */
   if( objc!=4 ){
@@ -843,17 +845,23 @@ static int test_quota_set(
 
   if( nScript>0 ){
     /* Allocate a TclQuotaCallback object */
-    p = (TclQuotaCallback *)ckalloc(sizeof(TclQuotaCallback));
+    p = (TclQuotaCallback *)sqlite3_malloc(sizeof(TclQuotaCallback));
+    if( !p ){
+      Tcl_SetResult(interp, (char *)"SQLITE_NOMEM", TCL_STATIC);
+      return TCL_OK;
+    }
     memset(p, 0, sizeof(TclQuotaCallback));
     p->interp = interp;
     Tcl_IncrRefCount(pScript);
     p->pScript = pScript;
+    xDestroy = tclCallbackDestructor;
   }else{
     p = 0;
+    xDestroy = 0;
   }
+
   /* Invoke sqlite3_quota_set() */
-  rc = sqlite3_quota_set(zPattern, iLimit, tclQuotaCallback,
-                         (void*)p, tclCallbackDestructor);
+  rc = sqlite3_quota_set(zPattern, iLimit, tclQuotaCallback, (void*)p,xDestroy);
 
   Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_STATIC);
   return TCL_OK;
