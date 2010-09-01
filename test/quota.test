@@ -167,6 +167,18 @@ do_test quota-4.2 {
   sqlite3_quota_set *test.db 4096 {}
   quota_list
 } {*test.db}
+do_test quota-4.3 {
+  sqlite3_quota_set *test2.db 0 {}
+  quota_list
+} {*test.db}
+do_test quota-4.4 {
+  sqlite3_quota_set *test2.db 12345 {}
+  quota_list
+} {*test.db *test2.db}
+do_test quota-4.5 {
+  sqlite3_quota_set *test.db 0 {}
+  quota_list
+} {*test2.db}
 
 
 sqlite3_quota_shutdown 

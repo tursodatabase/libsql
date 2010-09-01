@@ -178,7 +178,7 @@ static void quotaGroupDeref(quotaGroup *p){
 **     [^...]     Matches one character not in the enclosed list.
 **
 */
-static int strglob(const char *zGlob, const char *z){
+static int quotaStrglob(const char *zGlob, const char *z){
   int c, c2;
   int invert;
   int seen;
@@ -191,7 +191,7 @@ static int strglob(const char *zGlob, const char *z){
       if( c==0 ){
         return 1;
       }else if( c=='[' ){
-        while( *z && strglob(zGlob-1,z)==0 ){
+        while( *z && quotaStrglob(zGlob-1,z)==0 ){
           z++;
         }
         return (*z)!=0;
@@ -201,7 +201,7 @@ static int strglob(const char *zGlob, const char *z){
           c2 = *(z++);
           if( c2==0 ) return 0;
         }
-        if( strglob(zGlob,z) ) return 1;
+        if( quotaStrglob(zGlob,z) ) return 1;
       }
       return 0;
     }else if( c=='?' ){
@@ -249,7 +249,8 @@ static int strglob(const char *zGlob, const char *z){
 */
 static quotaGroup *quotaGroupFind(const char *zFilename){
   quotaGroup *p;
-  for(p=gQuota.pGroup; p && strglob(p->zPattern, zFilename)==0; p=p->pNext){}
+  for(p=gQuota.pGroup; p && quotaStrglob(p->zPattern, zFilename)==0;
+      p=p->pNext){}
   return p;
 }
 
@@ -661,8 +662,12 @@ int sqlite3_quota_set(
   while( pGroup && strcmp(pGroup->zPattern, zPattern)!=0 ){
     pGroup = pGroup->pNext;
   }
-  if( pGroup==0 && iLimit>0 ){
+  if( pGroup==0 ){
     int nPattern = strlen(zPattern);
+    if( iLimit<=0 ){
+      quotaLeave();
+      return SQLITE_OK;
+    }
     pGroup = sqlite3_malloc( sizeof(*pGroup) + nPattern + 1 );
     if( pGroup==0 ){
       quotaLeave();
