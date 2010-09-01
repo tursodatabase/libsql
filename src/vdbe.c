@@ -3712,11 +3712,10 @@ case OP_NewRowid: {           /* out2-prerelease */
       sqlite3BtreeSetCachedRowid(pC->pCursor, v<MAX_ROWID ? v+1 : 0);
     }
     if( pC->useRandomRowid ){
-      /* IMPLEMENTATION-OF: R-48598-02938 If the largest ROWID is equal to the
+      /* IMPLEMENTATION-OF: R-07677-41881 If the largest ROWID is equal to the
       ** largest possible integer (9223372036854775807) then the database
-      ** engine starts picking candidate ROWIDs at random until it finds one
-      ** that is not previously used.
-      */
+      ** engine starts picking positive candidate ROWIDs at random until
+      ** it finds one that is not previously used. */
       assert( pOp->p3==0 );  /* We cannot be in random rowid mode if this is
                              ** an AUTOINCREMENT table. */
       /* on the first attempt, simply do one more than previous */
@@ -3724,7 +3723,8 @@ case OP_NewRowid: {           /* out2-prerelease */
       v &= (MAX_ROWID>>1); /* ensure doesn't go negative */
       v++; /* ensure non-zero */
       cnt = 0;
-      while(   ((rc = sqlite3BtreeMovetoUnpacked(pC->pCursor, 0, (u64)v, 0, &res))==SQLITE_OK)
+      while(   ((rc = sqlite3BtreeMovetoUnpacked(pC->pCursor, 0, (u64)v,
+                                                 0, &res))==SQLITE_OK)
             && (res==0)
             && (++cnt<100)){
         /* collision - try another random rowid */
@@ -3741,6 +3741,7 @@ case OP_NewRowid: {           /* out2-prerelease */
         rc = SQLITE_FULL;   /* IMP: R-38219-53002 */
         goto abort_due_to_error;
       }
+      assert( v>0 );  /* EV: R-40812-03570 */
     }
     pC->rowidIsValid = 0;
     pC->deferredMoveto = 0;
