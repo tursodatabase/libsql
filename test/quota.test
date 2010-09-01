@@ -159,6 +159,7 @@ proc quota_list {} {
   }
   return [lsort $allq]
 }
+
 do_test quota-4.1 {
   sqlite3_quota_set *test.db 0 {}
   quota_list
@@ -172,13 +173,41 @@ do_test quota-4.3 {
   quota_list
 } {*test.db}
 do_test quota-4.4 {
-  sqlite3_quota_set *test2.db 12345 {}
+  sqlite3_quota_set *test2.db 100000 {}
   quota_list
 } {*test.db *test2.db}
 do_test quota-4.5 {
   sqlite3_quota_set *test.db 0 {}
   quota_list
 } {*test2.db}
+do_test quota-4.6 {
+  file delete -force test2.db test2.db-journal test2.db-wal
+  sqlite3 db test2.db
+  db eval {CREATE TABLE t2(x); INSERT INTO t2 VALUES('tab-t2');}
+  quota_list
+} {*test2.db}
+do_test quota-4.7 {
+  catchsql {INSERT INTO t2 VALUES(zeroblob(200000))}
+} {1 {database or disk is full}}
+do_test quota-4.8 {
+  sqlite3 db2 test2.db
+  db2 eval {SELECT * FROM t2}
+} {tab-t2}
+do_test quota-4.9 {
+  sqlite3_quota_set *test2.db 0 {}
+  catchsql {INSERT INTO t2 VALUES(zeroblob(200000))}
+} {0 {}}
+do_test quota-4.10 {
+  quota_list
+} {*test2.db}
+do_test quota-4.11 {
+  db2 close
+  quota_list
+} {*test2.db}
+do_test quota-4.12 {
+  db close
+  quota_list
+} {}
 
 
 sqlite3_quota_shutdown 

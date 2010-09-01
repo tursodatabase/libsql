@@ -726,6 +726,7 @@ static void tclQuotaCallback(
   int rc;                         /* Tcl error code */
 
   p = (TclQuotaCallback *)pArg;
+  if( p==0 ) return;
 
   pVarname = Tcl_NewStringObj("::piLimit_", -1);
   Tcl_IncrRefCount(pVarname);

@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Variable\sname\sand\scomment\schanges\sto\stest_quota.c\sfor\sclearer\spresentation.
-D 2010-09-01T14:58:11
+C Fix\sthe\sTCL\sinterface\sto\stest_quota.c\sso\sthat\sit\sworks\swith\sempty\scallback\nscripts.
+D 2010-09-01T15:11:39
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -211,7 +211,7 @@ F src/test_mutex.c ce06b59aca168cd8c520b77159a24352a7469bd3
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
 F src/test_osinst.c f408c6a181f2fb04c56273afd5c3e1e82f60392c
 F src/test_pcache.c 7bf828972ac0d2403f5cfa4cd14da41f8ebe73d8
-F src/test_quota.c 303e68971829ed6c7058f982e7361b967344abda
+F src/test_quota.c 875292fc8a731d6d35eeb637c70b834b75f9b479
 F src/test_rtree.c e957a603a98871dcf005c1e96ae791cfe74eb7f6
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c bbba05c144b5fc4b52ff650a4328027b3fa5fcc6
@@ -565,7 +565,7 @@ F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
-F test/quota.test a2faf03b630bf9d6dc03d5f4cf18ddb7ef1b2372
+F test/quota.test d406716c5e91df17ef7821facae6a9aefaa4dd91
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/randexpr1.tcl 40dec52119ed3a2b8b2a773bce24b63a3a746459
 F test/randexpr1.test 1084050991e9ba22c1c10edd8d84673b501cc25a
@@ -856,14 +856,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c0d0fc3a1cca7ee28db8add745c71baf0545776c
-R 5150c60917fb33e6d6c75a2627b04e72
+P 38ed1992c800cb1d1ca67977d704df73d97c78d7
+R b0e1f5354d97250a31257e5a21d367a2
 U drh
-Z 293ea454d360072e187630189bf4cbd5
+Z 77e1612242203a9e9c25a20eeda4feae
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMfmoGoxKgR168RlERAo+aAJ9FtwNxBNFRgcjszaS9G+1zDHJu5ACeLSkW
-b7HAKmHRdtJZIZFAnlXrRmk=
-=zaPS
+iD8DBQFMfm0uoxKgR168RlERAoI8AKCOKs12QYn4Q1N8Y7BoPjxhD0VzxQCfVXt0
+LDxzSW3L5N21o+i8h29WkWg=
+=8m6y
 -----END PGP SIGNATURE-----
