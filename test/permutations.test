@@ -587,6 +587,7 @@ ifcapable mem5 {
   } -initialize {
     catch {db close}
     sqlite3_shutdown
+    sqlite3_config_memstatus 0
     sqlite3_config_heap 40000000 16
     sqlite3_config_lookaside 0 0
     install_malloc_faultsim 1 

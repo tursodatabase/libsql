@@ -352,17 +352,21 @@ void *sqlite3ScratchMalloc(int n){
     mem0.nScratchFree--;
     sqlite3StatusAdd(SQLITE_STATUS_SCRATCH_USED, 1);
     sqlite3StatusSet(SQLITE_STATUS_SCRATCH_SIZE, n);
+    sqlite3_mutex_leave(mem0.mutex);
   }else{
     if( sqlite3GlobalConfig.bMemstat ){
       sqlite3StatusSet(SQLITE_STATUS_SCRATCH_SIZE, n);
       n = mallocWithAlarm(n, &p);
       if( p ) sqlite3StatusAdd(SQLITE_STATUS_SCRATCH_OVERFLOW, n);
+      sqlite3_mutex_leave(mem0.mutex);
     }else{
+      sqlite3_mutex_leave(mem0.mutex);
       p = sqlite3GlobalConfig.m.xMalloc(n);
     }
     sqlite3MemdebugSetType(p, MEMTYPE_SCRATCH);
   }
-  sqlite3_mutex_leave(mem0.mutex);
+  assert( !sqlite3_mutex_held(mem0.mutex) );
+
 
 #if SQLITE_THREADSAFE==0 && !defined(NDEBUG)
   /* Verify that no more than two scratch allocations per thread
