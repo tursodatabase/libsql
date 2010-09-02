@@ -127,7 +127,7 @@ int sqlite3MallocInit(void){
     mem0.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MEM);
   }
   if( sqlite3GlobalConfig.pScratch && sqlite3GlobalConfig.szScratch>=100
-      && sqlite3GlobalConfig.nScratch>=0 ){
+      && sqlite3GlobalConfig.nScratch>0 ){
     int i, n, sz;
     ScratchFreeslot *pSlot;
     sz = ROUNDDOWN8(sqlite3GlobalConfig.szScratch);
