@@ -744,7 +744,39 @@ do_test wal3-9.4 {
   byte_is_zero test.db [expr $sz-1024]
 } {0}
 
-db close
+do_multiclient_test tn {
+  do_test wal3-10.$tn.1 {
+    sql1 {
+      PRAGMA page_size = 1024;
+      CREATE TABLE t1(x);
+      PRAGMA journal_mode = WAL;
+      PRAGMA wal_autocheckpoint = 100000;
+      BEGIN;
+        INSERT INTO t1 VALUES(randomblob(800));
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   -- 2
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   -- 4
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   -- 8
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   -- 16
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   -- 32
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   -- 64
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   -- 128
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   -- 256
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   -- 512
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   -- 1024
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   -- 2048
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   -- 4096
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   -- 8192
+      COMMIT;
+      CREATE INDEX i1 ON t1(x);
+    }
+
+    expr {[file size test.db-wal] > [expr 1032*9000]}
+  } 1
+
+  do_test wal3-10.$tn.2 {
+    sql2 {PRAGMA integrity_check}
+  } {ok}
+}
 
 finish_test
 
