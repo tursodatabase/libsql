@@ -17,6 +17,17 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/malloc_common.tcl
 
+
+proc do_expr_test {tn expr type value} {
+  uplevel do_execsql_test $tn [list "SELECT typeof($expr), $expr"] [
+    list [list $type $value]
+  ]
+}
+
+proc do_qexpr_test {tn expr value} {
+  uplevel do_execsql_test $tn [list "SELECT quote($expr)"] [list $value]
+}
+
 # Set up three global variables:
 #
 #   ::opname         An array mapping from SQL operator to an easy to parse
@@ -1399,15 +1410,6 @@ do_execsql_test e_expr-27.1.2 {
     typeof(CAST(4.5 as INTEGER)), CAST(4.5 as INTEGER)
 } {text UVU real 1.23 integer 4}
 
-proc do_expr_test {tn expr type value} {
-  uplevel do_execsql_test $tn [list "SELECT typeof($expr), $expr"] [
-    list [list $type $value]
-  ]
-}
-proc do_qexpr_test {tn expr value} {
-  uplevel do_execsql_test $tn [list "SELECT quote($expr)"] [list $value]
-}
-
 # EVIDENCE-OF: R-27225-65050 If the value of <expr> is NULL, then
 # the result of the CAST expression is also NULL.
 #
@@ -1647,4 +1649,91 @@ db1 close
 db2 close
 db3 close
 
+#-------------------------------------------------------------------------
+# Test statements related to the EXISTS and NOT EXISTS operators.
+#
+catch { db close }
+file delete -force test.db
+sqlite3 db test.db
+
+do_execsql_test e_expr-34.1 {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(1, 2);
+  INSERT INTO t1 VALUES(NULL, 2);
+  INSERT INTO t1 VALUES(1, NULL);
+  INSERT INTO t1 VALUES(NULL, NULL);
+} {}
+
+# EVIDENCE-OF: R-25588-27181 The EXISTS operator always evaluates to one
+# of the integer values 0 and 1.
+#
+# This statement is not tested by itself. Instead, all e_expr-34.* tests 
+# following this point explicitly test that specific invocations of EXISTS
+# return either integer 0 or integer 1.
+#
+
+# EVIDENCE-OF: R-58553-63740 If executing the SELECT statement specified
+# as the right-hand operand of the EXISTS operator would return one or
+# more rows, then the EXISTS operator evaluates to 1.
+#
+foreach {tn expr} {
+    1 { EXISTS ( SELECT a FROM t1 ) }
+    2 { EXISTS ( SELECT b FROM t1 ) }
+    3 { EXISTS ( SELECT 24 ) }
+    4 { EXISTS ( SELECT NULL ) }
+    5 { EXISTS ( SELECT a FROM t1 WHERE a IS NULL ) }
+} {
+  do_expr_test e_expr-34.2.$tn $expr integer 1
+}
+
+# EVIDENCE-OF: R-19673-40972 If executing the SELECT would return no
+# rows at all, then the EXISTS operator evaluates to 0.
+#
+foreach {tn expr} {
+    1 { EXISTS ( SELECT a FROM t1 WHERE 0) }
+    2 { EXISTS ( SELECT b FROM t1 WHERE a = 5) }
+    3 { EXISTS ( SELECT 24 WHERE 0) }
+    4 { EXISTS ( SELECT NULL WHERE 1=2) }
+} {
+  do_expr_test e_expr-34.3.$tn $expr integer 0
+}
+
+# EVIDENCE-OF: R-35109-49139 The number of columns in each row returned
+# by the SELECT statement (if any) and the specific values returned have
+# no effect on the results of the EXISTS operator.
+#
+foreach {tn expr res} {
+    1 { EXISTS ( SELECT * FROM t1 ) }                          1
+    2 { EXISTS ( SELECT *, *, * FROM t1 ) }                    1
+    3 { EXISTS ( SELECT 24, 25 ) }                             1
+    4 { EXISTS ( SELECT NULL, NULL, NULL ) }                   1
+    5 { EXISTS ( SELECT a,b,a||b FROM t1 WHERE a IS NULL ) }   1
+
+    6 { EXISTS ( SELECT a, a FROM t1 WHERE 0) }                0
+    7 { EXISTS ( SELECT b, b, a FROM t1 WHERE a = 5) }         0
+    8 { EXISTS ( SELECT 24, 46, 89 WHERE 0) }                  0
+    9 { EXISTS ( SELECT NULL, NULL WHERE 1=2) }                0
+} {
+  do_expr_test e_expr-34.4.$tn $expr integer $res
+}
+
+# EVIDENCE-OF: R-10645-12439 In particular, rows containing NULL values
+# are not handled any differently from rows without NULL values.
+#
+foreach {tn e1 e2} {
+  1 { EXISTS (SELECT 'not null') }    { EXISTS (SELECT NULL) }
+  2 { EXISTS (SELECT NULL FROM t1) }  { EXISTS (SELECT 'bread' FROM t1) }
+} {
+  set res [db one "SELECT $e1"]
+  do_expr_test e_expr-34.5.${tn}a $e1 integer $res
+  do_expr_test e_expr-34.5.${tn}b $e2 integer $res
+}
+
+
+
+#-------------------------------------------------------------------------
+# Test statements related to the IN and NOT IN operators.
+#
+
 finish_test
+
