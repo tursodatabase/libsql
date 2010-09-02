@@ -5183,7 +5183,7 @@ int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
 **
 ** ^(<dt>SQLITE_STATUS_PAGECACHE_OVERFLOW</dt>
 ** <dd>This parameter returns the number of bytes of page cache
-** allocation which could not be statisfied by the [SQLITE_CONFIG_PAGECACHE]
+** allocation which could not be satisfied by the [SQLITE_CONFIG_PAGECACHE]
 ** buffer and where forced to overflow to [sqlite3_malloc()].  The
 ** returned value includes allocations that overflowed because they
 ** where too large (they were larger than the "sz" parameter to
@@ -5206,7 +5206,7 @@ int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
 **
 ** ^(<dt>SQLITE_STATUS_SCRATCH_OVERFLOW</dt>
 ** <dd>This parameter returns the number of bytes of scratch memory
-** allocation which could not be statisfied by the [SQLITE_CONFIG_SCRATCH]
+** allocation which could not be satisfied by the [SQLITE_CONFIG_SCRATCH]
 ** buffer and where forced to overflow to [sqlite3_malloc()].  The values
 ** returned include overflows because the requested allocation was too
 ** larger (that is, because the requested allocation was larger than the
