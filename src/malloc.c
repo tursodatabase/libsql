@@ -365,7 +365,7 @@ void *sqlite3ScratchMalloc(int n){
     }
     sqlite3MemdebugSetType(p, MEMTYPE_SCRATCH);
   }
-  assert( !sqlite3_mutex_held(mem0.mutex) );
+  assert( sqlite3_mutex_notheld(mem0.mutex) );
 
 
 #if SQLITE_THREADSAFE==0 && !defined(NDEBUG)
