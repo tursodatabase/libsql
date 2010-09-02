@@ -3626,6 +3626,15 @@ int sqlite3Select(
   v = sqlite3GetVdbe(pParse);
   if( v==0 ) goto select_end;
 
+  /* If writing to memory or generating a set
+  ** only a single column may be output.
+  */
+#ifndef SQLITE_OMIT_SUBQUERY
+  if( checkForMultiColumnSelectError(pParse, pDest, pEList->nExpr) ){
+    goto select_end;
+  }
+#endif
+
   /* Generate code for all sub-queries in the FROM clause
   */
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
@@ -3696,15 +3705,6 @@ int sqlite3Select(
       }
     }
     return multiSelect(pParse, p, pDest);
-  }
-#endif
-
-  /* If writing to memory or generating a set
-  ** only a single column may be output.
-  */
-#ifndef SQLITE_OMIT_SUBQUERY
-  if( checkForMultiColumnSelectError(pParse, pDest, pEList->nExpr) ){
-    goto select_end;
   }
 #endif
 
