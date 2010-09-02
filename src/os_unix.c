@@ -3559,7 +3559,7 @@ static int unixShmMap(
     pShmNode->apRegion = apNew;
     while(pShmNode->nRegion<=iRegion){
       void *pMem = mmap(0, szRegion, PROT_READ|PROT_WRITE, 
-          MAP_SHARED, pShmNode->h, iRegion*szRegion
+          MAP_SHARED, pShmNode->h, pShmNode->nRegion*szRegion
       );
       if( pMem==MAP_FAILED ){
         rc = SQLITE_IOERR;
