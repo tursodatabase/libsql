@@ -1415,8 +1415,14 @@ struct sqlite3_mem_methods {
 ** or equal to the product of the second and third arguments.  The buffer
 ** must be aligned to an 8-byte boundary.  ^If the second argument to
 ** SQLITE_DBCONFIG_LOOKASIDE is not a multiple of 8, it is internally
-** rounded down to the next smaller
-** multiple of 8.  See also: [SQLITE_CONFIG_LOOKASIDE]</dd>
+** rounded down to the next smaller multiple of 8.  ^(The lookaside memory
+** configuration for a database connection can only be changed when that
+** connection is not currently using lookaside memory, or in other words
+** when the "current value" returned by
+** [sqlite3_db_status](D,[SQLITE_CONFIG_LOOKASIDE],...) is zero.
+** Any attempt to change the lookaside memory configuration when lookaside
+** memory is in use leaves the configuration unchanged and returns 
+** [SQLITE_BUSY].)^</dd>
 **
 ** </dl>
 */
@@ -5141,7 +5147,7 @@ int sqlite3_test_control(int op, ...);
 ** ^(Other parameters record only the highwater mark and not the current
 ** value.  For these latter parameters nothing is written into *pCurrent.)^
 **
-** ^The sqlite3_db_status() routine returns SQLITE_OK on success and a
+** ^The sqlite3_status() routine returns SQLITE_OK on success and a
 ** non-zero [error code] on failure.
 **
 ** This routine is threadsafe but is not atomic.  This routine can be
@@ -5262,6 +5268,9 @@ int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
 ** and the highest instantaneous value is written into *pHiwtr.  ^If
 ** the resetFlg is true, then the highest instantaneous value is
 ** reset back down to the current value.
+**
+** ^The sqlite3_db_status() routine returns SQLITE_OK on success and a
+** non-zero [error code] on failure.
 **
 ** See also: [sqlite3_status()] and [sqlite3_stmt_status()].
 */
