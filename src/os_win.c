@@ -1212,6 +1212,14 @@ static int winDeviceCharacteristics(sqlite3_file *id){
 
 #ifndef SQLITE_OMIT_WAL
 
+/* 
+** Windows will only let you create file view mappings
+** on allocation size granularity boundaries.
+** During sqlite3_os_init() we do a GetSystemInfo()
+** to get the granularity size.
+*/
+SYSTEM_INFO winSysInfo;
+
 /*
 ** Helper functions to obtain and relinquish the global mutex. The
 ** global mutex is used to protect the winLockInfo objects used by 
@@ -1380,6 +1388,7 @@ static int winDelete(sqlite3_vfs *,const char*,int);
 static void winShmPurge(sqlite3_vfs *pVfs, int deleteFlag){
   winShmNode **pp;
   winShmNode *p;
+  BOOL bRc;
   assert( winShmMutexHeld() );
   pp = &winShmNodeList;
   while( (p = *pp)!=0 ){
@@ -1387,8 +1396,14 @@ static void winShmPurge(sqlite3_vfs *pVfs, int deleteFlag){
       int i;
       if( p->mutex ) sqlite3_mutex_free(p->mutex);
       for(i=0; i<p->nRegion; i++){
-        UnmapViewOfFile(p->aRegion[i].pMap);
-        CloseHandle(p->aRegion[i].hMap);
+        bRc = UnmapViewOfFile(p->aRegion[i].pMap);
+        OSTRACE(("SHM-PURGE pid-%d unmap region=%d %s\n",
+                 (int)GetCurrentProcessId(), i,
+                 bRc ? "ok" : "failed"));
+        bRc = CloseHandle(p->aRegion[i].hMap);
+        OSTRACE(("SHM-PURGE pid-%d close region=%d %s\n",
+                 (int)GetCurrentProcessId(), i,
+                 bRc ? "ok" : "failed"));
       }
       if( p->hFile.h != INVALID_HANDLE_VALUE ){
         SimulateIOErrorBenign(1);
@@ -1465,6 +1480,7 @@ static int winOpenSharedMemory(winFile *pDbFd){
       rc = SQLITE_NOMEM;
       goto shm_open_err;
     }
+
     rc = winOpen(pDbFd->pVfs,
                  pShmNode->zFilename,             /* Name of the file (UTF-8) */
                  (sqlite3_file*)&pShmNode->hFile,  /* File handle here */
@@ -1776,10 +1792,18 @@ static int winShmMap(
       hMap = CreateFileMapping(pShmNode->hFile.h, 
           NULL, PAGE_READWRITE, 0, nByte, NULL
       );
+      OSTRACE(("SHM-MAP pid-%d create region=%d nbyte=%d %s\n",
+               (int)GetCurrentProcessId(), pShmNode->nRegion, nByte,
+               hMap ? "ok" : "failed"));
       if( hMap ){
+        int iOffset = pShmNode->nRegion*szRegion;
+        int iOffsetShift = iOffset % winSysInfo.dwAllocationGranularity;
         pMap = MapViewOfFile(hMap, FILE_MAP_WRITE | FILE_MAP_READ,
-            0, 0, nByte
+            0, iOffset - iOffsetShift, szRegion + iOffsetShift
         );
+        OSTRACE(("SHM-MAP pid-%d map region=%d offset=%d size=%d %s\n",
+                 (int)GetCurrentProcessId(), pShmNode->nRegion, iOffset, szRegion,
+                 pMap ? "ok" : "failed"));
       }
       if( !pMap ){
         pShmNode->lastErrno = GetLastError();
@@ -1796,8 +1820,10 @@ static int winShmMap(
 
 shmpage_out:
   if( pShmNode->nRegion>iRegion ){
+    int iOffset = iRegion*szRegion;
+    int iOffsetShift = iOffset % winSysInfo.dwAllocationGranularity;
     char *p = (char *)pShmNode->aRegion[iRegion].pMap;
-    *pp = (void *)&p[iRegion*szRegion];
+    *pp = (void *)&p[iOffsetShift];
   }else{
     *pp = 0;
   }
@@ -2737,6 +2763,13 @@ int sqlite3_os_init(void){
     winGetLastError,     /* xGetLastError */
     winCurrentTimeInt64, /* xCurrentTimeInt64 */
   };
+
+#ifndef SQLITE_OMIT_WAL
+  /* get memory map allocation granularity */
+  memset(&winSysInfo, 0, sizeof(SYSTEM_INFO));
+  GetSystemInfo(&winSysInfo);
+  assert(winSysInfo.dwAllocationGranularity > 0);
+#endif
 
   sqlite3_vfs_register(&winVfs, 1);
   return SQLITE_OK; 
