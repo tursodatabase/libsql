@@ -2816,6 +2816,8 @@ int sqlite3_clear_bindings(sqlite3_stmt*);
 ** ^Return the number of columns in the result set returned by the
 ** [prepared statement]. ^This routine returns 0 if pStmt is an SQL
 ** statement that does not return data (for example an [UPDATE]).
+**
+** See also: [sqlite3_data_count()]
 */
 int sqlite3_column_count(sqlite3_stmt *pStmt);
 
@@ -3006,8 +3008,14 @@ int sqlite3_step(sqlite3_stmt*);
 /*
 ** CAPI3REF: Number of columns in a result set
 **
-** ^The sqlite3_data_count(P) the number of columns in the
-** of the result set of [prepared statement] P.
+** ^The sqlite3_data_count(P) interface returns the number of columns in the
+** current row of the result set of [prepared statement] P.
+** ^If prepared statement P does not have results ready to return
+** (via calls to the [sqlite3_column_int | sqlite3_column_*()] of
+** interfaces) then sqlite3_data_count(P) returns 0.
+** ^The sqlite3_data_count(P) routine also returns 0 if P is a NULL pointer.
+**
+** See also: [sqlite3_column_count()]
 */
 int sqlite3_data_count(sqlite3_stmt *pStmt);
 
