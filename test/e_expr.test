@@ -1768,6 +1768,9 @@ do_expr_test e_expr-35.1.6 {
 # EVIDENCE-OF: R-46899-53765 A SELECT used as a scalar quantity must
 # return a result set with a single column.
 #
+# The following block tests that errors are returned in a bunch of cases
+# where a subquery returns more than one column.
+#
 set M {only a single result allowed for a SELECT that is part of an expression}
 foreach {tn sql} {
   1     { SELECT (SELECT * FROM t2 UNION SELECT a+1, b+1 FROM t2) }
@@ -1779,6 +1782,45 @@ foreach {tn sql} {
 } {
   do_catchsql_test e_expr-35.2.$tn $sql [list 1 $M]
 }
+
+# EVIDENCE-OF: R-35764-28041 The result of the expression is the value
+# of the only column in the first row returned by the SELECT statement.
+#
+# EVIDENCE-OF: R-41898-06686 If the SELECT yields more than one result
+# row, all rows after the first are ignored.
+#
+do_execsql_test e_expr-36.3.1 {
+  CREATE TABLE t4(x, y);
+  INSERT INTO t4 VALUES(1, 'one');
+  INSERT INTO t4 VALUES(2, 'two');
+  INSERT INTO t4 VALUES(3, 'three');
+} {}
+
+foreach {tn expr restype resval} {
+    2  { ( SELECT x FROM t4 ORDER BY x )      }        integer 1
+    3  { ( SELECT x FROM t4 ORDER BY y )      }        integer 1
+    4  { ( SELECT x FROM t4 ORDER BY x DESC ) }        integer 3
+    5  { ( SELECT x FROM t4 ORDER BY y DESC ) }        integer 2
+    6  { ( SELECT y FROM t4 ORDER BY y DESC ) }        text    two
+
+    7  { ( SELECT sum(x) FROM t4 )           }         integer 6
+    8  { ( SELECT group_concat(y,'') FROM t4 ) }       text    onetwothree
+    9  { ( SELECT max(x) FROM t4 WHERE y LIKE '___') } integer 2 
+
+} {
+  do_expr_test e_expr-36.3.$tn $expr $restype $resval
+}
+
+# EVIDENCE-OF: R-25492-41572 If the SELECT yields no rows, then the
+# value of the expression is NULL.
+#
+foreach {tn expr} {
+    1  { ( SELECT x FROM t4 WHERE x>3 ORDER BY x )      }
+    2  { ( SELECT x FROM t4 WHERE y<'one' ORDER BY y )  }
+} {
+  do_expr_test e_expr-36.4.$tn $expr null {}
+}
+
 
 finish_test
 

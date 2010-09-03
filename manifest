@@ -1,5 +1,5 @@
-C Reduce\sthe\samount\sof\smemory\staken\sup\sby\sWAL\smmaped\sregions\sunder\sWindows.
-D 2010-09-03T04:29:31
+C Add\sa\sfew\smore\ssubquery\stests\sto\se_expr.test.
+D 2010-09-03T10:58:47
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -346,7 +346,7 @@ F test/descidx2.test 9f1a0c83fd57f8667c82310ca21b30a350888b5d
 F test/descidx3.test fe720e8b37d59f4cef808b0bf4e1b391c2e56b6f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
-F test/e_expr.test 1aef3ba4a140487cf5b452f04e261f26e99f9fe5
+F test/e_expr.test 164e87c1d7b40ceb47c57c3bffa384c81d009aa7
 F test/e_fkey.test 6721a741c6499b3ab7e5385923233343c8f1ad05
 F test/e_fts3.test 75bb0aee26384ef586165e21018a17f7cd843469
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
@@ -853,7 +853,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f483be441323e1cb91516964cd6ab0edecad4366
-R fea23b14c42fedda7d16ff1cb4b9cee7
-U shaneh
-Z 0fd3f5ddcf6cc38ff6e323baec639592
+P f213e133f6e69b0edd73d96142014bdcab9dfe41
+R 4840eab4671662ef903de303cfd3b278
+U dan
+Z e60132511cfbf6157149a68a152e2582
