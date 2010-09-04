@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Documentation\senhancements\sfor\ssqlite3_db_status().\s\sEvidence\smarks\son\nthe\sSQL\sfunction\scall\sintrface.
-D 2010-09-03T18:50:49
+C Add\stest\sfile\se_select.test.
+D 2010-09-04T18:52:30
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -352,6 +349,7 @@ F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_expr.test 164e87c1d7b40ceb47c57c3bffa384c81d009aa7
 F test/e_fkey.test 6721a741c6499b3ab7e5385923233343c8f1ad05
 F test/e_fts3.test 75bb0aee26384ef586165e21018a17f7cd843469
+F test/e_select.test f2469d2c2081610c3f85f2b85dda9026d343393f
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
@@ -856,14 +854,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 0593373d4bf4f3451b41810513fd12cd8ebd0395
-R 32cd5b7a1b387673472bd5f9ae3eecc2
-U drh
-Z 08ba64448263f8fb86ddcfbd2162f09d
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMgUOMoxKgR168RlERAk7zAKCKyhwR1lNBXcJvJNOoNtnJk7FfEQCfdcYb
-YWj0MhV07vpCPxDnCO5bB1M=
-=1z53
------END PGP SIGNATURE-----
+P f06c7b1973d64a6a1a1db2b44df2a4eb0ece0077
+R ff12553912aafce92749cd560cb5ebc9
+U dan
+Z a3043953a2e784f32d9ae6b144aa3d3f
