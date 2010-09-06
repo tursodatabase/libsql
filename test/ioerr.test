@@ -136,7 +136,7 @@ ifcapable attach {
 # Test IO errors when replaying two hot journals from a 2-file 
 # transaction. This test only runs on UNIX.
 ifcapable crashtest&&attach {
-  if {![catch {sqlite3 -has_codec} r] && !$r} {
+  if {![catch {sqlite3 -has-codec} r] && !$r} {
     do_ioerr_test ioerr-6 -ckrefcount true -tclprep {
       execsql {
         ATTACH 'test2.db' as aux;

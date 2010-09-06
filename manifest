@@ -1,5 +1,8 @@
-C Add\stest\scases\sto\se_select.test.
-D 2010-09-06T18:50:55
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C In\sthe\stest\sscripts,\schanges\sinstances\sof\sthe\sTCL\sinterface\s\noption\s"-has_codec"\sinto\sthe\scorrect\s"-has-codec".
+D 2010-09-06T20:28:29
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -240,9 +243,9 @@ F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 6745008c144bd2956d58864d21f7b304689c1cce
 F test/alter.test 15f9224868b290d6bf7a63f31437f31aee070636
-F test/alter2.test 52096b711afe5f219e575c6db7a70f7a35df4f63
-F test/alter3.test 25b95a136708f22b87184fa6a4309eea03d65153
-F test/alter4.test 9386ffd1e9c7245f43eca412b2058d747509cc1f
+F test/alter2.test 75f731508f1bf27ba09a6075c66cd02216ba464b
+F test/alter3.test 8677e48d95536f7a6ed86a1a774744dadcc22b07
+F test/alter4.test 1e5dd6b951e9f65ca66422edff02e56df82dd403
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/analyze.test bf692e7db414f268a136bade16c03a1bdbb9240c
 F test/analyze2.test 59dac6c399c0c5d1a90a11ee7cc606743fb6db93
@@ -465,7 +468,7 @@ F test/intarray.test 066b7d7ac38d25bf96f87f1b017bfc687551cdd4
 F test/interrupt.test 42e7cf98646fd9cb4a3b131a93ed3c50b9e149f1
 F test/intpkey.test 537669fd535f62632ca64828e435b9e54e8d677f
 F test/io.test 1b895d6774491895cbc75659969f07ca01860c88
-F test/ioerr.test 390785ec65f10aa58a82b048ee12e9052d783fa8
+F test/ioerr.test e124b97c13e6fe8eac9b892b82ef3541c2cea9c7
 F test/ioerr2.test 1b56cb80d5b0726ee3ba325ca175734541e32955
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/ioerr4.test fc6eddfec2efc2f1ed217b9eae4c1c1d3516ce86
@@ -856,7 +859,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e1d4a87e4e195b3a217f6d8a15d6beceb7c22a53
-R 0534cdf52440ad0ba2335607dfae2462
-U dan
-Z 0301c14d315e0aaf5f3d743cbab168a6
+P 9db26d5ef5a4c6f9fe0adf2ff306f6f07b6cc60c
+R e10932862ba72a33ff6a8f87f9116f0d
+U drh
+Z 024219aeef705f0a0432a5942a4c1267
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMhU7woxKgR168RlERAgD3AJwLUlw4+NeqWzbperlczwJDR543RgCfW9rR
+AqJ2Ft2qX3hILCNxsekQRaI=
+=prxb
+-----END PGP SIGNATURE-----

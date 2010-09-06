@@ -28,7 +28,7 @@ ifcapable !altertable {
 
 # Determine if there is a codec available on this test.
 #
-if {[catch {sqlite3 -has_codec} r] || $r} {
+if {[catch {sqlite3 -has-codec} r] || $r} {
   set has_codec 1
 } else {
   set has_codec 0
@@ -55,6 +55,7 @@ proc get_file_format {{fname test.db}} {
 
 do_test alter3-1.1 {
   execsql {
+    PRAGMA legacy_file_format=ON;
     CREATE TABLE abc(a, b, c);
     SELECT sql FROM sqlite_master;
   }
@@ -198,6 +199,7 @@ do_test alter3-4.1 {
   file delete -force test.db
   set ::DB [sqlite3 db test.db]
   execsql {
+    PRAGMA legacy_file_format=ON;
     CREATE TABLE t1(a, b);
     INSERT INTO t1 VALUES(1, 100);
     INSERT INTO t1 VALUES(2, 300);
