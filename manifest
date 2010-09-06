@@ -1,5 +1,8 @@
-C Add\stest\sfile\se_select.test.
-D 2010-09-04T18:52:30
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Remove\sproprietary\sinformation\sfrom\sthe\sreleasetest.tcl\sscript\sand\sadd\sit\nto\sthe\spublic\srepository.
+D 2010-09-06T18:44:14
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -569,6 +572,8 @@ F test/randexpr1.tcl 40dec52119ed3a2b8b2a773bce24b63a3a746459
 F test/randexpr1.test 1084050991e9ba22c1c10edd8d84673b501cc25a
 F test/rdonly.test c267d050a1d9a6a321de502b737daf28821a518d
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
+F test/releasetest.mk 2eced2f9ae701fd0a29e714a241760503ccba25a
+F test/releasetest.tcl 138b6fb0c5054114903a8d9862130f7f6aa9cf35
 F test/rollback.test 1a83118ea6db4e7d8c10eaa63871b5e90502ffdc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test e58e0acef38b527ed1b0b70d3ada588f804af287
@@ -854,7 +859,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f06c7b1973d64a6a1a1db2b44df2a4eb0ece0077
-R ff12553912aafce92749cd560cb5ebc9
-U dan
-Z a3043953a2e784f32d9ae6b144aa3d3f
+P 8b9d8c226e5d95584c1e61a796dc23b780a300cb
+R 98dea5240f80f8174c5125044e6828fb
+U drh
+Z 0392d0f0caa40596afb3d46f32529306
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMhTaBoxKgR168RlERAn1UAJwNSxNdDB4M8CdfcOLn13Q/PByDLwCfTCOc
+2twVoGYmMf1gW4MdyOjJ5f0=
+=zO5S
+-----END PGP SIGNATURE-----
