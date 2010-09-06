@@ -51,6 +51,50 @@ set t1_cross_t1 [list                  \
 ]
 
 
+# This proc is a specialized version of [do_execsql_test].
+#
+# The second argument to this proc must be a SELECT statement that 
+# features a cross join of some time. Instead of the usual ",", 
+# "CROSS JOIN" or "INNER JOIN" join-op, the string %JOIN% must be 
+# substituted.
+#
+# This test runs the SELECT three times - once with:
+#
+#   * s/%JOIN%/,/
+#   * s/%JOIN%/INNER JOIN/
+#   * s/%JOIN%/CROSS JOIN/
+#
+# and checks that each time the results of the SELECT are $res.
+#
+proc do_join_test {tn select res} {
+  foreach {tn2 joinop} [list    1 ,    2 "CROSS JOIN"    3 "INNER JOIN"] {
+    set S [string map [list %JOIN% $joinop] $select]
+    uplevel do_execsql_test $tn.$tn2 [list $S] [list $res]
+  }
+}
+
+#-------------------------------------------------------------------------
+# The following tests check that all paths on the syntax diagrams on
+# the lang_select.html page may be taken.
+#
+# EVIDENCE-OF: R-18428-22111 -- syntax diagram join-constraint
+#
+do_join_test e_select-0.1.1 {
+  SELECT count(*) FROM t1 %JOIN% t2 ON (t1.a=t2.a)
+} {3}
+do_join_test e_select-0.1.2 {
+  SELECT count(*) FROM t1 %JOIN% t2 USING (a)
+} {3}
+do_join_test e_select-0.1.3 {
+  SELECT count(*) FROM t1 %JOIN% t2
+} {9}
+do_catchsql_test e_select-0.1.4 {
+  SELECT count(*) FROM t1, t2 ON (t1.a=t2.a) USING (a)
+} {1 {cannot have both ON and USING clauses in the same join}}
+do_catchsql_test e_select-0.1.5 {
+  SELECT count(*) FROM t1, t2 USING (a) ON (t1.a=t2.a)
+} {1 {near "ON": syntax error}}
+
 #-------------------------------------------------------------------------
 # The following tests focus on FROM clause (join) processing.
 #
@@ -105,10 +149,7 @@ foreach {tn select res} [list                                              \
         FROM t1 %JOIN% t2 ON (CASE WHEN t1.a = 'a' THEN NULL ELSE 1 END) } \
       {two I two II two III three I three II three III}                    \
 ] {
-  foreach {tn2 joinop} [list    1 ,    2 "CROSS JOIN"    3 "INNER JOIN"] {
-    set S [string map [list %JOIN% $joinop] $select]
-    do_execsql_test e_select-1.3.$tn.$tn2 $S $res
-  }
+  do_join_test e_select-1.3.$tn $select $res
 }
 
 # EVIDENCE-OF: R-63358-54862 If there is a USING clause specified as
@@ -163,22 +204,155 @@ foreach {tn select res} {
     {aa cc cc bb DD dd}
   4 { SELECT * FROM t5 %JOIN% t6 USING (a,b) } {AA cc}
   5 { SELECT * FROM t6 %JOIN% t5 USING (a,b) } {}
-
 } {
-  foreach {tn2 joinop} [list    1 ,    2 "CROSS JOIN"    3 "INNER JOIN"] {
-    set S [string map [list %JOIN% $joinop] $select]
-    do_execsql_test e_select-1.6.$tn.$tn2 $S $res
-  }
+  do_join_test e_select-1.6.$tn $select $res
 }
 
+# EVIDENCE-OF: R-57047-10461 For each pair of columns identified by a
+# USING clause, the column from the right-hand dataset is omitted from
+# the joined dataset.
+#
+# EVIDENCE-OF: R-56132-15700 This is the only difference between a USING
+# clause and its equivalent ON constraint.
+#
+foreach {tn select res} {
+  1a { SELECT * FROM t1 %JOIN% t2 USING (a)      } 
+     {a one I b two II c three III}
+  1b { SELECT * FROM t1 %JOIN% t2 ON (t1.a=t2.a) }
+     {a one a I b two b II c three c III}
 
+  2a { SELECT * FROM t3 %JOIN% t4 USING (a)      }  
+     {a 1 {} b 2 2}
+  2b { SELECT * FROM t3 %JOIN% t4 ON (t3.a=t4.a) } 
+     {a 1 a {} b 2 b 2}
 
+  3a { SELECT * FROM t3 %JOIN% t4 USING (a,c)                  } {b 2}
+  3b { SELECT * FROM t3 %JOIN% t4 ON (t3.a=t4.a AND t3.c=t4.c) } {b 2 b 2}
 
+  4a { SELECT * FROM (SELECT a COLLATE nocase, b FROM t6) AS x 
+       %JOIN% t5 USING (a) } 
+     {aa cc cc bb DD dd}
+  4b { SELECT * FROM (SELECT a COLLATE nocase, b FROM t6) AS x
+       %JOIN% t5 ON (x.a=t5.a) } 
+     {aa cc AA cc bb DD BB dd}
+} {
+  do_join_test e_select-1.7.$tn $select $res
+}
 
+# EVIDENCE-OF: R-04095-00676 If the join-op is a "LEFT JOIN" or "LEFT
+# OUTER JOIN", then the composite dataset is created as for an "INNER
+# JOIN". Except, after the ON or USING filtering clauses have been
+# applied, an extra row is added to the output for each row in the
+# original left-hand input dataset (if any) that corresponds to no rows
+# at all in the composite dataset.
+#
+do_execsql_test e_select-1.8.0 {
+  CREATE TABLE t7(a, b, c);
+  CREATE TABLE t8(a, d, e);
 
+  INSERT INTO t7 VALUES('x', 'ex',  24);
+  INSERT INTO t7 VALUES('y', 'why', 25);
 
+  INSERT INTO t8 VALUES('x', 'abc', 24);
+  INSERT INTO t8 VALUES('z', 'ghi', 26);
+} {}
 
+do_execsql_test e_select-1.8.1a {
+  SELECT count(*) FROM t7 JOIN t8 ON (t7.a=t8.a)
+} {1}
+do_execsql_test e_select-1.8.1b {
+  SELECT count(*) FROM t7 LEFT JOIN t8 ON (t7.a=t8.a)
+} {2}
 
+do_execsql_test e_select-1.8.2a {
+  SELECT count(*) FROM t7 JOIN t8 USING (a)
+} {1}
+do_execsql_test e_select-1.8.2b {
+  SELECT count(*) FROM t7 LEFT JOIN t8 USING (a)
+} {2}
+
+# EVIDENCE-OF: R-15607-52988 The added rows contain NULL values in the
+# columns that would normally contain values copied from the right-hand
+# input dataset.
+#
+do_execsql_test e_select-1.9.1a {
+  SELECT * FROM t7 JOIN t8 ON (t7.a=t8.a)
+} {x ex 24 x abc 24}
+do_execsql_test e_select-1.9.1b {
+  SELECT * FROM t7 LEFT JOIN t8 ON (t7.a=t8.a)
+} {x ex 24 x abc 24 y why 25 {} {} {}}
+
+do_execsql_test e_select-1.9.2a {
+  SELECT * FROM t7 JOIN t8 USING (a)
+} {x ex 24 abc 24}
+do_execsql_test e_select-1.9.2b {
+  SELECT * FROM t7 LEFT JOIN t8 USING (a)
+} {x ex 24 abc 24 y why 25 {} {}}
+
+# EVIDENCE-OF: R-01809-52134 If the NATURAL keyword is added to any of
+# the join-ops, then an implicit USING clause is added to the
+# join-constraints. The implicit USING clause contains each of the
+# column names that appear in both the left and right-hand input
+# datasets.
+#
+foreach {tn s1 s2 res} {
+  1 { SELECT * FROM t7 JOIN t8 USING (a) }
+    { SELECT * FROM t7 NATURAL JOIN t8 }
+    {x ex 24 abc 24}
+
+  2 { SELECT * FROM t8 JOIN t7 USING (a) }
+    { SELECT * FROM t8 NATURAL JOIN t7 }
+    {x abc 24 ex 24}
+
+  3 { SELECT * FROM t7 LEFT JOIN t8 USING (a) }
+    { SELECT * FROM t7 NATURAL LEFT JOIN t8 }
+    {x ex 24 abc 24 y why 25 {} {}}
+
+  4 { SELECT * FROM t8 LEFT JOIN t7 USING (a) }
+    { SELECT * FROM t8 NATURAL LEFT JOIN t7 }
+    {x abc 24 ex 24 z ghi 26 {} {}}
+
+  5 { SELECT * FROM t3 JOIN t4 USING (a,c) }
+    { SELECT * FROM t3 NATURAL JOIN t4 }
+    {b 2}
+
+  6 { SELECT * FROM t3 LEFT JOIN t4 USING (a,c) }
+    { SELECT * FROM t3 NATURAL LEFT JOIN t4 }
+    {a 1 b 2}
+} {
+  do_execsql_test e_select-1.10.${tn}a $s1 $res
+  do_execsql_test e_select-1.10.${tn}b $s2 $res
+}
+
+# EVIDENCE-OF: R-49566-01570 If the left and right-hand input datasets
+# feature no common column names, then the NATURAL keyword has no effect
+# on the results of the join.
+#
+do_execsql_test e_select-1.11.0 {
+  CREATE TABLE t10(x, y);
+  INSERT INTO t10 VALUES(1, 'true');
+  INSERT INTO t10 VALUES(0, 'false');
+} {}
+foreach {tn s1 s2 res} {
+  1 { SELECT a, x FROM t1 CROSS JOIN t10 }
+    { SELECT a, x FROM t1 NATURAL CROSS JOIN t10 }
+    {a 1 a 0 b 1 b 0 c 1 c 0}
+} {
+  do_execsql_test e_select-1.11.${tn}a $s1 $res
+  do_execsql_test e_select-1.11.${tn}b $s2 $res
+}
+
+# EVIDENCE-OF: R-39625-59133 A USING or ON clause may not be added to a
+# join that specifies the NATURAL keyword.
+#
+foreach {tn sql} {
+  1 {SELECT * FROM t1 NATURAL LEFT JOIN t2 USING (a)}
+  2 {SELECT * FROM t1 NATURAL LEFT JOIN t2 ON (t1.a=t2.a)}
+  3 {SELECT * FROM t1 NATURAL LEFT JOIN t2 ON (45)}
+} {
+  do_catchsql_test e_select-1.12.$tn "
+    $sql
+  " {1 {a NATURAL join may not have an ON or USING clause}}
+}
 
 finish_test
-
