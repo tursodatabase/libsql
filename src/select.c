@@ -491,11 +491,13 @@ static void codeDistinct(
   sqlite3ReleaseTempReg(pParse, r1);
 }
 
+#ifndef SQLITE_OMIT_SUBQUERY
 /*
 ** Generate an error message when a SELECT is used within a subexpression
 ** (example:  "a IN (SELECT * FROM table)") but it has more than 1 result
-** column.  We do this in a subroutine because the error occurs in multiple
-** places.
+** column.  We do this in a subroutine because the error used to occur
+** in multiple places.  (The error only occurs in one place now, but we
+** retain the subroutine to minimize code disruption.)
 */
 static int checkForMultiColumnSelectError(
   Parse *pParse,       /* Parse context. */
@@ -511,6 +513,7 @@ static int checkForMultiColumnSelectError(
     return 0;
   }
 }
+#endif
 
 /*
 ** This routine generates the code for the inside of the inner loop
@@ -588,10 +591,6 @@ static void selectInnerLoop(
     if( pOrderBy==0 ){
       codeOffset(v, p, iContinue);
     }
-  }
-
-  if( checkForMultiColumnSelectError(pParse, pDest, pEList->nExpr) ){
-    return;
   }
 
   switch( eDest ){
