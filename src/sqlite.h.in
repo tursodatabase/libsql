@@ -2457,7 +2457,9 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 **
 ** ^(<dt>SQLITE_LIMIT_VDBE_OP</dt>
 ** <dd>The maximum number of instructions in a virtual machine program
-** used to implement an SQL statement.</dd>)^
+** used to implement an SQL statement.  This limit is not currently
+** enforced, though that might be added in some future release of
+** SQLite.</dd>)^
 **
 ** ^(<dt>SQLITE_LIMIT_FUNCTION_ARG</dt>
 ** <dd>The maximum number of arguments on a function.</dd>)^
