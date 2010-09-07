@@ -1673,17 +1673,39 @@ static const int aHardLimit[] = {
 */
 int sqlite3_limit(sqlite3 *db, int limitId, int newLimit){
   int oldLimit;
+
+
+  /* EVIDENCE-OF: R-30189-54097 For each limit category SQLITE_LIMIT_NAME
+  ** there is a hard upper bound set at compile-time by a C preprocessor
+  ** macro called SQLITE_MAX_NAME. (The "_LIMIT_" in the name is changed to
+  ** "_MAX_".)
+  */
+  assert( aHardLimit[SQLITE_LIMIT_LENGTH]==SQLITE_MAX_LENGTH );
+  assert( aHardLimit[SQLITE_LIMIT_SQL_LENGTH]==SQLITE_MAX_SQL_LENGTH );
+  assert( aHardLimit[SQLITE_LIMIT_COLUMN]==SQLITE_MAX_COLUMN );
+  assert( aHardLimit[SQLITE_LIMIT_EXPR_DEPTH]==SQLITE_MAX_EXPR_DEPTH );
+  assert( aHardLimit[SQLITE_LIMIT_COMPOUND_SELECT]==SQLITE_MAX_COMPOUND_SELECT);
+  assert( aHardLimit[SQLITE_LIMIT_VDBE_OP]==SQLITE_MAX_VDBE_OP );
+  assert( aHardLimit[SQLITE_LIMIT_FUNCTION_ARG]==SQLITE_MAX_FUNCTION_ARG );
+  assert( aHardLimit[SQLITE_LIMIT_ATTACHED]==SQLITE_MAX_ATTACHED );
+  assert( aHardLimit[SQLITE_LIMIT_LIKE_PATTERN_LENGTH]==
+                                               SQLITE_MAX_LIKE_PATTERN_LENGTH );
+  assert( aHardLimit[SQLITE_LIMIT_VARIABLE_NUMBER]==SQLITE_MAX_VARIABLE_NUMBER);
+  assert( aHardLimit[SQLITE_LIMIT_TRIGGER_DEPTH]==SQLITE_MAX_TRIGGER_DEPTH );
+  assert( SQLITE_LIMIT_TRIGGER_DEPTH==(SQLITE_N_LIMIT-1) );
+
+
   if( limitId<0 || limitId>=SQLITE_N_LIMIT ){
     return -1;
   }
   oldLimit = db->aLimit[limitId];
-  if( newLimit>=0 ){
+  if( newLimit>=0 ){                   /* IMP: R-52476-28732 */
     if( newLimit>aHardLimit[limitId] ){
-      newLimit = aHardLimit[limitId];
+      newLimit = aHardLimit[limitId];  /* IMP: R-51463-25634 */
     }
     db->aLimit[limitId] = newLimit;
   }
-  return oldLimit;
+  return oldLimit;                     /* IMP: R-53341-35419 */
 }
 
 /*

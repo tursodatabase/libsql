@@ -2395,16 +2395,21 @@ typedef struct sqlite3_stmt sqlite3_stmt;
 ** [database connection] whose limit is to be set or queried.  The
 ** second parameter is one of the [limit categories] that define a
 ** class of constructs to be size limited.  The third parameter is the
-** new limit for that construct.  The function returns the old limit.)^
+** new limit for that construct.)^
 **
 ** ^If the new limit is a negative number, the limit is unchanged.
-** ^(For the limit category of SQLITE_LIMIT_XYZ there is a 
+** ^(For each limit category SQLITE_LIMIT_<i>NAME</i> there is a 
 ** [limits | hard upper bound]
-** set by a compile-time C preprocessor macro named 
-** [limits | SQLITE_MAX_XYZ].
+** set at compile-time by a C preprocessor macro called
+** [limits | SQLITE_MAX_<i>NAME</i>].
 ** (The "_LIMIT_" in the name is changed to "_MAX_".))^
 ** ^Attempts to increase a limit above its hard upper bound are
 ** silently truncated to the hard upper bound.
+**
+** ^Regardless of whether or not the limit was changed, the 
+** [sqlite3_limit()] interface returns the prior value of the limit.
+** ^Hence, to find the current value of a limit without changing it,
+** simply invoke this interface with the third parameter set to -1.
 **
 ** Run-time limits are intended for use in applications that manage
 ** both their own internal database and also databases that are controlled
@@ -2434,7 +2439,7 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 **
 ** <dl>
 ** ^(<dt>SQLITE_LIMIT_LENGTH</dt>
-** <dd>The maximum size of any string or BLOB or table row.<dd>)^
+** <dd>The maximum size of any string or BLOB or table row, in bytes.<dd>)^
 **
 ** ^(<dt>SQLITE_LIMIT_SQL_LENGTH</dt>
 ** <dd>The maximum length of an SQL statement, in bytes.</dd>)^
@@ -2465,8 +2470,7 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** [GLOB] operators.</dd>)^
 **
 ** ^(<dt>SQLITE_LIMIT_VARIABLE_NUMBER</dt>
-** <dd>The maximum number of variables in an SQL statement that can
-** be bound.</dd>)^
+** <dd>The maximum index number of any [parameter] in an SQL statement.)^
 **
 ** ^(<dt>SQLITE_LIMIT_TRIGGER_DEPTH</dt>
 ** <dd>The maximum depth of recursion for triggers.</dd>)^
