@@ -355,4 +355,240 @@ foreach {tn sql} {
   " {1 {a NATURAL join may not have an ON or USING clause}}
 }
 
+
+#-------
+# Usage:   tcl_join <table-data1> <table-data2> <join spec>...
+#
+# Where a join-spec is an optional list of arguments as follows:
+#
+#   ?-left? 
+#   ?-using colname-list using-expr-proc?
+#   ?-on on-expr-proc?
+#
+proc tcl_join {data1 data2 args} {
+
+  set testproc ""
+  set usinglist [list]
+  set isleft 0
+  for {set i 0} {$i < [llength $args]} {incr i} {
+    set a [lindex $args $i]
+    switch -- $a {
+      -on { set testproc [lindex $args [incr i]] }
+      -using { 
+        set usinglist [lindex $args [incr i]]
+      }
+      -left {
+        set isleft 1
+      }
+
+      default {
+        error "Unknown argument: $a"
+      }
+    }
+  }
+
+  set c1 [lindex $data1 0]
+  set c2 [lindex $data2 0]
+  set omitlist [list]
+  set nullrowlist [list]
+  set cret $c1
+
+  set cidx 0
+  foreach col $c2 {
+    set idx [lsearch $usinglist $col]
+    if {$idx>=0} {lappend omitlist $cidx}
+    if {$idx<0} {
+      lappend nullrowlist {NULL {}}
+      lappend cret $col
+    }
+    incr cidx
+  }
+  set omitlist [lsort -integer -decreasing $omitlist]
+
+
+  set rret [list]
+  foreach r1 [lindex $data1 1] {
+    set one 0
+    foreach r2 [lindex $data2 1] {
+      set ok 1
+      if {$testproc != ""} {
+        set ok [eval $testproc [list $c1 $r1 $c2 $r2]]
+      }
+      if {$ok} {
+        set one 1
+        foreach idx $omitlist {set r2 [lreplace $r2 $idx $idx]}
+        lappend rret [concat $r1 $r2]
+      }
+    }
+
+    if {$isleft && $one==0} {
+      lappend rret [concat $r1 $nullrowlist]
+    }
+  }
+  
+  list $cret $rret
+}
+
+proc tcl_tbljoin {db t1 t2 args} {
+  tcl_join [tcl_read_tbl $db $t1] [tcl_read_tbl $db $t2] {*}$args
+}
+
+#----------
+# te_equals ?SWITCHES? c1 c2 cols1 row1 cols2 row2
+#
+proc te_equals {args} {
+
+  if {[llength $args]<6} {error "invalid arguments to te_equals"}
+  foreach {c1 c2 cols1 row1 cols2 row2} [lrange $args end-5 end] break
+
+  set nocase 0
+
+  foreach a [lrange $args 0 end-6] {
+    switch -- $a {
+      -nocase {
+        set nocase 1
+      }
+      default {
+        error "invalid arguments to te_equals"
+      }
+    }
+  }
+
+  set idx1 [lsearch $cols1 $c1]
+  set idx2 [lsearch $cols2 $c2]
+
+  set t1 [lindex $row1 $idx1 0]
+  set t2 [lindex $row2 $idx2 0]
+  set v1 [lindex $row1 $idx1 1]
+  set v2 [lindex $row2 $idx2 1]
+
+  if {$t1 == "NULL" || $t2 == "NULL"} { return 0 }
+  if {$nocase && $t1 == "TEXT"} { set v1 [string tolower $v1] }
+  if {$nocase && $t2 == "TEXT"} { set v2 [string tolower $v2] }
+  return [expr {$t1 == $t2 && $v1 == $v2}]
+}
+
+proc te_and {args} {
+  foreach a [lrange $args 0 end-4] {
+    set res [eval $a [lrange $args end-3 end]]
+    if {$res == 0} {return 0}
+  }
+  return 1
+}
+
+# Read the
+#
+# Table data format:
+#
+#   * List of column names.
+#
+#   * List of rows. Each row is a list of values. Each value is a list of
+#     2 elements - the value type and string representation.
+#
+proc tcl_read_tbl {db tbl} { tcl_read_sql $db "SELECT * FROM $tbl" }
+
+proc tcl_read_sql {db sql} {
+  set S [sqlite3_prepare_v2 $db $sql -1 DUMMY]
+
+  set cols [list]
+  for {set i 0} {$i < [sqlite3_column_count $S]} {incr i} {
+    lappend cols [sqlite3_column_name $S $i]
+  }
+
+  set rows [list]
+  while {[sqlite3_step $S] == "SQLITE_ROW"} {
+    set r [list]
+    for {set i 0} {$i < [sqlite3_column_count $S]} {incr i} {
+      lappend r [list [sqlite3_column_type $S $i] [sqlite3_column_text $S $i]]
+    }
+    lappend rows $r
+  }
+  sqlite3_finalize $S
+
+  return [list $cols $rows]
+}
+
+drop_all_tables
+do_execsql_test e_select-2.0 {
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(a, b);
+  CREATE TABLE t3(b COLLATE nocase);
+
+  INSERT INTO t1 VALUES(1, 'A');
+  INSERT INTO t1 VALUES(2, 'B');
+  INSERT INTO t1 VALUES(3, NULL);
+  INSERT INTO t1 VALUES(4, 'D');
+  INSERT INTO t1 VALUES(NULL, NULL);
+
+  INSERT INTO t2 VALUES(1, 'A');
+  INSERT INTO t2 VALUES(2, NULL);
+  INSERT INTO t2 VALUES(3, 'C');
+  INSERT INTO t2 VALUES(5, 'E');
+  INSERT INTO t2 VALUES(NULL, NULL);
+
+  INSERT INTO t3 VALUES('a');
+  INSERT INTO t3 VALUES('b');
+  INSERT INTO t3 VALUES('c');
+} {}
+
+foreach {tn sqljoin tbljoinargs} {
+  1     "t1, t2"                         {t1 t2}
+  2     "t1, t2 ON (t1.a=t2.a)"          {t1 t2 -on {te_equals a a}}
+  3     "t1 LEFT JOIN t2 ON (t1.a=t2.a)" {t1 t2 -left -on {te_equals a a}}
+  4     "t1 LEFT JOIN t2 USING (a)"      
+          {t1 t2 -left -using a -on {te_equals a a}}
+
+  5     "t1 CROSS JOIN t2 USING(b, a)" 
+        {t1 t2 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}}
+
+  6     "t1 NATURAL JOIN t2" 
+        {t1 t2 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}}
+  7     "t1 NATURAL INNER JOIN t2" 
+        {t1 t2 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}}
+  8     "t1 NATURAL CROSS JOIN t2" 
+        {t1 t2 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}}
+  9     "t1 NATURAL INNER JOIN t2" 
+        {t1 t2 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}}
+  10    "t1 NATURAL LEFT JOIN t2" 
+        {t1 t2 -left -using {a b} -on {te_and {te_equals a a} {te_equals b b}}}
+  11    "t1 NATURAL LEFT OUTER JOIN t2" 
+        {t1 t2 -left -using {a b} -on {te_and {te_equals a a} {te_equals b b}}}
+
+  12    "t2 NATURAL JOIN t1" 
+        {t2 t1 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}}
+  13    "t2 NATURAL INNER JOIN t1" 
+        {t2 t1 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}}
+  14    "t2 NATURAL CROSS JOIN t1" 
+        {t2 t1 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}}
+  15    "t2 NATURAL INNER JOIN t1" 
+        {t2 t1 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}}
+  16    "t2 NATURAL LEFT JOIN t1" 
+        {t2 t1 -left -using {a b} -on {te_and {te_equals a a} {te_equals b b}}}
+  17    "t2 NATURAL LEFT OUTER JOIN t1" 
+        {t2 t1 -left -using {a b} -on {te_and {te_equals a a} {te_equals b b}}}
+
+  18    "t1 LEFT JOIN t2 USING (b)"      
+        {t1 t2 -left -using b -on {te_equals b b}}
+
+  19    "t1 JOIN t3 USING(b)" {t1 t3 -using b -on {te_equals b b}}
+  20    "t3 JOIN t1 USING(b)" {t3 t1 -using b -on {te_equals -nocase b b}}
+  21    "t1 NATURAL JOIN t3"  {t1 t3 -using b -on {te_equals b b}}
+  22    "t3 NATURAL JOIN t1"  {t3 t1 -using b -on {te_equals -nocase b b}}
+  23    "t1 NATURAL LEFT JOIN t3"  {t1 t3 -left -using b -on {te_equals b b}}
+  24    "t3 NATURAL LEFT JOIN t1"  
+        {t3 t1 -left -using b -on {te_equals -nocase b b}}
+
+  25    "t1 LEFT JOIN t3 ON (t3.b=t1.b)" 
+        {t1 t3 -left -on {te_equals -nocase b b}}
+  26    "t1 LEFT JOIN t3 ON (t1.b=t3.b)"  
+        {t1 t3 -left -on {te_equals b b}}
+
+} {
+
+  do_test e_select-2.1.$tn [list tcl_read_sql db "SELECT * FROM $sqljoin"
+  ] [tcl_tbljoin db {*}$tbljoinargs]
+
+}
+
 finish_test
+

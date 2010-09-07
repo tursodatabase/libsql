@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Revised\sdocumentation\sfor\ssqlite3_limit().\s\sAdded\ssome\sevidence\smarks\sand\nassert()\sstatements\sto\sverify\ssqlite3_limit()\sbehavior.
-D 2010-09-07T14:59:16
+C Add\stests\sto\se_select.test.
+D 2010-09-07T19:05:28
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -353,7 +350,7 @@ F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_expr.test 164e87c1d7b40ceb47c57c3bffa384c81d009aa7
 F test/e_fkey.test 6721a741c6499b3ab7e5385923233343c8f1ad05
 F test/e_fts3.test 75bb0aee26384ef586165e21018a17f7cd843469
-F test/e_select.test 0c491c94d69adad307fbd331530c012f64984b7a
+F test/e_select.test 844c606826d19583ca6230575bc9685a4124c19c
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
@@ -860,14 +857,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P bd700794678613c1fb78ef9fcf2bcd6d48f70dc0
-R 69716d22de4bcacc6f3b2e000a39c9a7
-U drh
-Z 5525c419763660d5eabe8aec9d844974
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMhlNHoxKgR168RlERAob+AJ9myxkLwt0lv7Z/fVE48Z/mxrAPdQCeKHEr
-v8vaa6Ji96D59ok+PxHqpsk=
-=85Kf
------END PGP SIGNATURE-----
+P 883b9b7441593200def05d8a482bc92d3dc0e96b
+R 8b30d0d15d657e8276f598400d6535e3
+U dan
+Z 9e885c5619cc6ac3f51310d78881d4f0
