@@ -61,6 +61,7 @@ set t1_cross_t1 [list                  \
 # This test runs the SELECT three times - once with:
 #
 #   * s/%JOIN%/,/
+#   * s/%JOIN%/JOIN/
 #   * s/%JOIN%/INNER JOIN/
 #   * s/%JOIN%/CROSS JOIN/
 #
@@ -98,38 +99,201 @@ do_catchsql_test e_select-0.1.5 {
 #-------------------------------------------------------------------------
 # The following tests focus on FROM clause (join) processing.
 #
-# EVIDENCE-OF: R-26491-65072 If the join-op is a comma (","), then the
-# composite dataset is the cartesian product of the sets of records from
-# the left and right sides of the join-op.
-#
-do_execsql_test e_select-1.1.2 { SELECT * FROM t1, t2 } $t1_cross_t2
-do_execsql_test e_select-1.1.3 { SELECT * FROM t1 AS x, t1 AS y} $t1_cross_t1
 
-
-# EVIDENCE-OF: R-22228-15000 If the join-op is a "CROSS JOIN" or "INNER
-# JOIN", then the composite dataset is created in the same way as for
-# the comma join-op.
+# EVIDENCE-OF: R-16074-54196 If the FROM clause is omitted from a simple
+# SELECT statement, then the input data is implicitly a single row zero
+# columns wide
 #
+do_execsql_test e_select-1.1.1 { SELECT 'abc' }            {abc}
+do_execsql_test e_select-1.1.2 { SELECT 'abc' WHERE NULL } {}
+do_execsql_test e_select-1.1.3 { SELECT NULL }             {{}}
+do_execsql_test e_select-1.1.4 { SELECT count(*) }         {1}
+do_execsql_test e_select-1.1.5 { SELECT count(*) WHERE 0 } {0}
+do_execsql_test e_select-1.1.6 { SELECT count(*) WHERE 1 } {1}
+
+# EVIDENCE-OF: R-48114-33255 If there is only a single table in the
+# join-source following the FROM clause, then the input data used by the
+# SELECT statement is the contents of the named table.
+#
+#   The results of the SELECT queries suggest that they are operating on the
+#   contents of the table 'xx'.
+#
+do_execsql_test e_select-1.2.1 {
+  CREATE TABLE xx(x, y);
+  INSERT INTO xx VALUES('IiJlsIPepMuAhU', X'10B00B897A15BAA02E3F98DCE8F2');
+  INSERT INTO xx VALUES(NULL, -16.87);
+  INSERT INTO xx VALUES(-17.89, 'linguistically');
+} {}
+do_execsql_test e_select-1.2.2 { 
+  SELECT quote(x), quote(y) FROM xx
+} [list \
+  'IiJlsIPepMuAhU' X'10B00B897A15BAA02E3F98DCE8F2' \
+  NULL             -16.87                          \
+  -17.89           'linguistically'                \
+]
+do_execsql_test e_select-1.2.3 { 
+  SELECT count(*), count(x), count(y) FROM xx
+} {3 2 3}
+do_execsql_test e_select-1.2.4 { 
+  SELECT sum(x), sum(y) FROM xx
+} {-17.89 -16.87}
+
+# EVIDENCE-OF: R-23593-12456 If there is more than one table specified
+# as part of the join-source following the FROM keyword, then the
+# contents of each named table are joined into a single dataset for the
+# simple SELECT statement to operate on.
+#
+#   There are more detailed tests for subsequent requirements that add 
+#   more detail to this idea. We just add a single test that shows that
+#   data is coming from each of the three tables following the FROM clause
+#   here to show that the statement, vague as it is, is not incorrect.
+#
+do_execsql_test e_select-1.3.1 {
+  SELECT * FROM t1, t2, t3
+} [list a one a I a 1 a one a I b 2 a one b II a 1 a one b II b 2 a one c III a 1 a one c III b 2 b two a I a 1 b two a I b 2 b two b II a 1 b two b II b 2 b two c III a 1 b two c III b 2 c three a I a 1 c three a I b 2 c three b II a 1 c three b II b 2 c three c III a 1 c three c III b 2]
+
+#
+# The following block of tests - e_select-1.4.* - test that the description
+# of cartesian joins in the SELECT documentation is consistent with SQLite.
+# In doing so, we test the following three requirements as a side-effect:
+#
+# EVIDENCE-OF: R-46122-14930 If the join-op is "CROSS JOIN", "INNER
+# JOIN", "JOIN" or a comma (",") and there is no ON or USING clause,
+# then the result of the join is simply the cartesian product of the
+# left and right-hand datasets.
+#
+#    The tests are built on this assertion. Really, they test that the output
+#    of a CROSS JOIN, JOIN, INNER JOIN or "," join matches the expected result
+#    of calculating the cartesian product of the left and right-hand datasets. 
+#
+# EVIDENCE-OF: R-46256-57243 There is no difference between the "INNER
+# JOIN", "JOIN" and "," join operators.
+#
+# EVIDENCE-OF: R-07544-24155 The "CROSS JOIN" join operator produces the
+# same data as the "INNER JOIN", "JOIN" and "," operators
+#
+#    All tests are run 4 times, with the only difference in each run being
+#    which of the 4 equivalent cartesian product join operators are used.
+#    Since the output data is the same in all cases, we consider that this
+#    qualifies as testing the two statements above.
+#
+do_execsql_test e_select-1.4.0 {
+  CREATE TABLE x1(a, b);
+  CREATE TABLE x2(c, d, e);
+  CREATE TABLE x3(f, g, h, i);
+
+  -- x1: 3 rows, 2 columns
+  INSERT INTO x1 VALUES(24, 'converging');
+  INSERT INTO x1 VALUES(NULL, X'CB71');
+  INSERT INTO x1 VALUES('blonds', 'proprietary');
+
+  -- x2: 2 rows, 3 columns
+  INSERT INTO x2 VALUES(-60.06, NULL, NULL);
+  INSERT INTO x2 VALUES(-58, NULL, 1.21);
+
+  -- x3: 5 rows, 4 columns
+  INSERT INTO x3 VALUES(-39.24, NULL, 'encompass', -1);
+  INSERT INTO x3 VALUES('presenting', 51, 'reformation', 'dignified');
+  INSERT INTO x3 VALUES('conducting', -87.24, 37.56, NULL);
+  INSERT INTO x3 VALUES('coldest', -96, 'dramatists', 82.3);
+  INSERT INTO x3 VALUES('alerting', NULL, -93.79, NULL);
+} {}
+
+# EVIDENCE-OF: R-59089-25828 The columns of the cartesian product
+# dataset are, in order, all the columns of the left-hand dataset
+# followed by all the columns of the right-hand dataset.
+#
+do_join_test e_select-1.4.1.1 {
+  SELECT * FROM x1 %JOIN% x2 LIMIT 1
+} [concat {24 converging} {-60.06 {} {}}]
+
+do_join_test e_select-1.4.1.2 {
+  SELECT * FROM x2 %JOIN% x1 LIMIT 1
+} [concat {-60.06 {} {}} {24 converging}]
+
+do_join_test e_select-1.4.1.3 {
+  SELECT * FROM x3 %JOIN% x2 LIMIT 1
+} [concat {-39.24 {} encompass -1} {-60.06 {} {}}]
+
+do_join_test e_select-1.4.1.4 {
+  SELECT * FROM x2 %JOIN% x3 LIMIT 1
+} [concat {-60.06 {} {}} {-39.24 {} encompass -1}]
+
+# EVIDENCE-OF: R-44414-54710 There is a row in the cartesian product
+# dataset formed by combining each unique combination of a row from the
+# left-hand and right-hand datasets.
+#
+do_join_test e_select-1.4.2.1 {
+  SELECT * FROM x2 %JOIN% x3
+} [list -60.06 {} {}      -39.24 {} encompass -1                 \
+        -60.06 {} {}      presenting 51 reformation dignified    \
+        -60.06 {} {}      conducting -87.24 37.56 {}             \
+        -60.06 {} {}      coldest -96 dramatists 82.3            \
+        -60.06 {} {}      alerting {} -93.79 {}                  \
+        -58 {} 1.21       -39.24 {} encompass -1                 \
+        -58 {} 1.21       presenting 51 reformation dignified    \
+        -58 {} 1.21       conducting -87.24 37.56 {}             \
+        -58 {} 1.21       coldest -96 dramatists 82.3            \
+        -58 {} 1.21       alerting {} -93.79 {}                  \
+]
+# TODO: Come back and add a few more like the above.
+
+# EVIDENCE-OF: R-20659-43267 In other words, if the left-hand dataset
+# consists of Nlhs rows of Mlhs columns, and the right-hand dataset of
+# Nrhs rows of Mrhs columns, then the cartesian product is a dataset of
+# Nlhs.Nrhs rows, each containing Mlhs+Mrhs columns.
+#
+# x1, x2    (Nlhs=3, Nrhs=2)   (Mlhs=2, Mrhs=3)
+do_join_test e_select-1.4.3.1 { 
+  SELECT count(*) FROM x1 %JOIN% x2 
+} [expr 3*2]
+do_test e_select-1.4.3.2 { 
+  expr {[llength [execsql {SELECT * FROM x1, x2}]] / 6}
+} [expr 2+3]
+
+# x2, x3    (Nlhs=2, Nrhs=5)   (Mlhs=3, Mrhs=4)
+do_join_test e_select-1.4.3.3 { 
+  SELECT count(*) FROM x2 %JOIN% x3 
+} [expr 2*5]
+do_test e_select-1.4.3.4 { 
+  expr {[llength [execsql {SELECT * FROM x2 JOIN x3}]] / 10}
+} [expr 3+4]
+
+# x3, x1    (Nlhs=5, Nrhs=3)   (Mlhs=4, Mrhs=2)
+do_join_test e_select-1.4.3.5 { 
+  SELECT count(*) FROM x3 %JOIN% x1 
+} [expr 5*3]
+do_test e_select-1.4.3.6 { 
+  expr {[llength [execsql {SELECT * FROM x3 CROSS JOIN x1}]] / 15}
+} [expr 4+2]
+
+# x3, x3    (Nlhs=5, Nrhs=5)   (Mlhs=4, Mrhs=4)
+do_join_test e_select-1.4.3.7 { 
+  SELECT count(*) FROM x3 %JOIN% x3 
+} [expr 5*5]
+do_test e_select-1.4.3.8 { 
+  expr {[llength [execsql {SELECT * FROM x3 INNER JOIN x3 AS x4}]] / 25}
+} [expr 4+4]
+
+# Some extra cartesian product tests using tables t1 and t2.
+#
+do_execsql_test e_select-1.4.4.1 { SELECT * FROM t1, t2 } $t1_cross_t2
+do_execsql_test e_select-1.4.4.2 { SELECT * FROM t1 AS x, t1 AS y} $t1_cross_t1
 foreach {tn select res} [list \
     1 { SELECT * FROM t1 CROSS JOIN t2 }           $t1_cross_t2        \
     2 { SELECT * FROM t1 AS y CROSS JOIN t1 AS x } $t1_cross_t1        \
     3 { SELECT * FROM t1 INNER JOIN t2 }           $t1_cross_t2        \
     4 { SELECT * FROM t1 AS y INNER JOIN t1 AS x } $t1_cross_t1        \
 ] {
-  do_execsql_test e_select-1.2.$tn $select $res
+  do_execsql_test e_select-1.4.5.$tn $select $res
 }
 
 
-# EVIDENCE-OF: R-00387-12725 If there is an ON clause specified, then
+# EVIDENCE-OF: R-45641-53865 If there is an ON clause specified, then
 # the ON expression is evaluated for each row of the cartesian product
 # and the result cast to a numeric value as if by a CAST expression. All
 # rows for which the expression evaluates to NULL or zero (integer value
-# 0 or real value 0.0) are excluded from the composite dataset.
-#
-# Each of the SELECT statements below is executed three times - once with
-# the string %JOIN% replaced with a comma, once with "CROSS JOIN" and once
-# with "INNER JOIN". The test shows that the results of the query are the
-# same in each case.
+# 0 or real value 0.0) are excluded from the dataset.
 #
 foreach {tn select res} [list                                              \
     1 { SELECT * FROM t1 %JOIN% t2 ON (1) }       $t1_cross_t2             \
@@ -239,12 +403,11 @@ foreach {tn select res} {
   do_join_test e_select-1.7.$tn $select $res
 }
 
-# EVIDENCE-OF: R-04095-00676 If the join-op is a "LEFT JOIN" or "LEFT
-# OUTER JOIN", then the composite dataset is created as for an "INNER
-# JOIN". Except, after the ON or USING filtering clauses have been
+# EVIDENCE-OF: R-41434-12448 If the join-op is a "LEFT JOIN" or "LEFT
+# OUTER JOIN", then after the ON or USING filtering clauses have been
 # applied, an extra row is added to the output for each row in the
-# original left-hand input dataset (if any) that corresponds to no rows
-# at all in the composite dataset.
+# original left-hand input dataset that corresponds to no rows at all in
+# the composite dataset (if any).
 #
 do_execsql_test e_select-1.8.0 {
   CREATE TABLE t7(a, b, c);
@@ -355,17 +518,130 @@ foreach {tn sql} {
   " {1 {a NATURAL join may not have an ON or USING clause}}
 }
 
+#-------------------------------------------------------------------------
+# te_* commands:
+#
+#
+#   te_read_sql DB SELECT-STATEMENT
+#   te_read_tbl DB TABLENAME
+#
+# These two commands are used to read a dataset from the database. A dataset
+# consists of N rows of M named columns of values each, where each value has a
+# type (null, integer, real, text or blob) and a value within the types domain.
+# The tcl format for a "dataset" is a list of two elements:
+#
+#   * A list of the column names.
+#   * A list of data rows. Each row is itself a list, where each element is
+#     the contents of a column of the row. Each of these is a list of two
+#     elements, the type name and the actual value.
+#
+# For example, the contents of table [t1] as a dataset is:
+#
+#   CREATE TABLE t1(a, b);
+#   INSERT INTO t1 VALUES('abc', NULL);
+#   INSERT INTO t1 VALUES(43.1, 22);
+#
+#   {a b} {{{TEXT abc} {NULL {}}} {{REAL 43.1} {INTEGER 22}}}
+#
+# The [te_read_tbl] command returns a dataset read from a table. The
+# [te_read_sql] returns the dataset that results from executing a SELECT
+# command.
+#
+#
+#   te_tbljoin ?SWITCHES? LHS-TABLE RHS-TABLE
+#   te_join ?SWITCHES? LHS-DATASET RHS-DATASET
+#
+# This command joins the two datasets and returns the resulting dataset. If 
+# there are no switches specified, then the results is the cartesian product
+# of the two inputs.  The [te_tbljoin] command reads the left and right-hand
+# datasets from the specified tables. The [te_join] command is passed the
+# datasets directly.
+#
+# Optional switches are as follows:
+#
+#   -on SCRIPT
+#   -using COLUMN-LIST
+#   -left
+#
+# The -on option specifies a tcl script that is executed for each row in the
+# cartesian product of the two datasets. The script has 4 arguments appended
+# to it, in the following order:
+#
+#   * The list of column-names from the left-hand dataset.
+#   * A single row from the left-hand dataset (one "data row" list as 
+#     described above.
+#   * The list of column-names from the right-hand dataset.
+#   * A single row from the right-hand dataset.
+#
+# The script must return a boolean value - true if the combination of rows
+# should be included in the output dataset, or false otherwise.
+#
+# The -using option specifies a list of the columns from the right-hand
+# dataset that should be omitted from the output dataset.
+#
+# If the -left option is present, the join is done LEFT JOIN style. 
+# Specifically, an extra row is inserted if after the -on script is run there
+# exist rows in the left-hand dataset that have no corresponding rows in
+# the output. See the implementation for more specific comments.
+#
+#
+#   te_equals ?SWITCHES? COLNAME1 COLNAME2 <-on script args>
+#
+# The only supported switch is "-nocase". If it is present, then text values
+# are compared in a case-independent fashion. Otherwise, they are compared
+# as if using the SQLite BINARY collation sequence.
+#
+#
+#   te_and ONSCRIPT1 ONSCRIPT2...
+#
+#
+
+
+#
+#   te_read_tbl DB TABLENAME
+#   te_read_sql DB SELECT-STATEMENT
+#
+# These two procs are used to extract datasets from the database, either
+# by reading the contents of a named table (te_read_tbl), or by executing
+# a SELECT statement (t3_read_sql).  
+#
+# See the comment above, describing "te_* commands", for details of the
+# return values.
+#
+proc te_read_tbl {db tbl} {
+ te_read_sql $db "SELECT * FROM $tbl"
+}
+proc te_read_sql {db sql} {
+  set S [sqlite3_prepare_v2 $db $sql -1 DUMMY]
+
+  set cols [list]
+  for {set i 0} {$i < [sqlite3_column_count $S]} {incr i} {
+    lappend cols [sqlite3_column_name $S $i]
+  }
+
+  set rows [list]
+  while {[sqlite3_step $S] == "SQLITE_ROW"} {
+    set r [list]
+    for {set i 0} {$i < [sqlite3_column_count $S]} {incr i} {
+      lappend r [list [sqlite3_column_type $S $i] [sqlite3_column_text $S $i]]
+    }
+    lappend rows $r
+  }
+  sqlite3_finalize $S
+
+  return [list $cols $rows]
+}
 
 #-------
-# Usage:   tcl_join <table-data1> <table-data2> <join spec>...
+# Usage:   te_join <table-data1> <table-data2> <join spec>...
 #
 # Where a join-spec is an optional list of arguments as follows:
 #
-#   ?-left? 
-#   ?-using colname-list using-expr-proc?
+#   ?-left?
+#   ?-using colname-list?
 #   ?-on on-expr-proc?
 #
-proc tcl_join {data1 data2 args} {
+proc te_join {data1 data2 args} {
 
   set testproc ""
   set usinglist [list]
@@ -373,14 +649,9 @@ proc tcl_join {data1 data2 args} {
   for {set i 0} {$i < [llength $args]} {incr i} {
     set a [lindex $args $i]
     switch -- $a {
-      -on { set testproc [lindex $args [incr i]] }
-      -using { 
-        set usinglist [lindex $args [incr i]]
-      }
-      -left {
-        set isleft 1
-      }
-
+      -on     { set testproc [lindex $args [incr i]] }
+      -using  { set usinglist [lindex $args [incr i]] }
+      -left   { set isleft 1 }
       default {
         error "Unknown argument: $a"
       }
@@ -429,8 +700,8 @@ proc tcl_join {data1 data2 args} {
   list $cret $rret
 }
 
-proc tcl_tbljoin {db t1 t2 args} {
-  tcl_join [tcl_read_tbl $db $t1] [tcl_read_tbl $db $t2] {*}$args
+proc te_tbljoin {db t1 t2 args} {
+  te_join [te_read_tbl $db $t1] [te_read_tbl $db $t2] {*}$args
 }
 
 #----------
@@ -454,8 +725,8 @@ proc te_equals {args} {
     }
   }
 
-  set idx1 [lsearch $cols1 $c1]
-  set idx2 [lsearch $cols2 $c2]
+  set idx2 [if {[string is integer $c2]} { set c2 } else { lsearch $cols2 $c2 }]
+  set idx1 [if {[string is integer $c1]} { set c1 } else { lsearch $cols1 $c1 }]
 
   set t1 [lindex $row1 $idx1 0]
   set t2 [lindex $row2 $idx2 0]
@@ -468,6 +739,9 @@ proc te_equals {args} {
   return [expr {$t1 == $t2 && $v1 == $v2}]
 }
 
+proc te_false {args} { return 0 }
+proc te_true  {args} { return 1 }
+
 proc te_and {args} {
   foreach a [lrange $args 0 end-4] {
     set res [eval $a [lrange $args end-3 end]]
@@ -476,36 +750,32 @@ proc te_and {args} {
   return 1
 }
 
-# Read the
-#
-# Table data format:
-#
-#   * List of column names.
-#
-#   * List of rows. Each row is a list of values. Each value is a list of
-#     2 elements - the value type and string representation.
-#
-proc tcl_read_tbl {db tbl} { tcl_read_sql $db "SELECT * FROM $tbl" }
 
-proc tcl_read_sql {db sql} {
-  set S [sqlite3_prepare_v2 $db $sql -1 DUMMY]
+proc te_dataset_eq {testname got expected} {
+  uplevel #0 [list do_test $testname [list set {} $got] $expected]
+}
+proc te_dataset_eq_unordered {testname got expected} {
+  lset got      1 [lsort [lindex $got 1]]
+  lset expected 1 [lsort [lindex $expected 1]]
+  te_dataset_eq $testname $got $expected
+}
 
-  set cols [list]
-  for {set i 0} {$i < [sqlite3_column_count $S]} {incr i} {
-    lappend cols [sqlite3_column_name $S $i]
-  }
+proc te_dataset_ne {testname got unexpected} {
+  uplevel #0 [list do_test $testname [list string equal $got $unexpected] 0]
+}
+proc te_dataset_ne_unordered {testname got unexpected} {
+  lset got      1 [lsort [lindex $got 1]]
+  lset unexpected 1 [lsort [lindex $unexpected 1]]
+  te_dataset_ne $testname $got $unexpected
+}
 
-  set rows [list]
-  while {[sqlite3_step $S] == "SQLITE_ROW"} {
-    set r [list]
-    for {set i 0} {$i < [sqlite3_column_count $S]} {incr i} {
-      lappend r [list [sqlite3_column_type $S $i] [sqlite3_column_text $S $i]]
-    }
-    lappend rows $r
-  }
-  sqlite3_finalize $S
 
-  return [list $cols $rows]
+#-------------------------------------------------------------------------
+#
+proc test_join {tn sqljoin tbljoinargs} {
+  set sql [te_read_sql db "SELECT * FROM $sqljoin"]
+  set te  [te_tbljoin db {*}$tbljoinargs]
+  te_dataset_eq_unordered $tn $sql $te
 }
 
 drop_all_tables
@@ -514,80 +784,201 @@ do_execsql_test e_select-2.0 {
   CREATE TABLE t2(a, b);
   CREATE TABLE t3(b COLLATE nocase);
 
-  INSERT INTO t1 VALUES(1, 'A');
   INSERT INTO t1 VALUES(2, 'B');
-  INSERT INTO t1 VALUES(3, NULL);
+  INSERT INTO t1 VALUES(1, 'A');
   INSERT INTO t1 VALUES(4, 'D');
   INSERT INTO t1 VALUES(NULL, NULL);
+  INSERT INTO t1 VALUES(3, NULL);
 
   INSERT INTO t2 VALUES(1, 'A');
   INSERT INTO t2 VALUES(2, NULL);
-  INSERT INTO t2 VALUES(3, 'C');
   INSERT INTO t2 VALUES(5, 'E');
   INSERT INTO t2 VALUES(NULL, NULL);
+  INSERT INTO t2 VALUES(3, 'C');
 
   INSERT INTO t3 VALUES('a');
-  INSERT INTO t3 VALUES('b');
   INSERT INTO t3 VALUES('c');
+  INSERT INTO t3 VALUES('b');
 } {}
 
-foreach {tn sqljoin tbljoinargs} {
-  1     "t1, t2"                         {t1 t2}
-  2     "t1, t2 ON (t1.a=t2.a)"          {t1 t2 -on {te_equals a a}}
-  3     "t1 LEFT JOIN t2 ON (t1.a=t2.a)" {t1 t2 -left -on {te_equals a a}}
-  4     "t1 LEFT JOIN t2 USING (a)"      
-          {t1 t2 -left -using a -on {te_equals a a}}
-
-  5     "t1 CROSS JOIN t2 USING(b, a)" 
-        {t1 t2 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}}
-
-  6     "t1 NATURAL JOIN t2" 
-        {t1 t2 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}}
-  7     "t1 NATURAL INNER JOIN t2" 
-        {t1 t2 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}}
-  8     "t1 NATURAL CROSS JOIN t2" 
-        {t1 t2 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}}
-  9     "t1 NATURAL INNER JOIN t2" 
-        {t1 t2 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}}
-  10    "t1 NATURAL LEFT JOIN t2" 
-        {t1 t2 -left -using {a b} -on {te_and {te_equals a a} {te_equals b b}}}
-  11    "t1 NATURAL LEFT OUTER JOIN t2" 
-        {t1 t2 -left -using {a b} -on {te_and {te_equals a a} {te_equals b b}}}
-
-  12    "t2 NATURAL JOIN t1" 
-        {t2 t1 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}}
-  13    "t2 NATURAL INNER JOIN t1" 
-        {t2 t1 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}}
-  14    "t2 NATURAL CROSS JOIN t1" 
-        {t2 t1 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}}
-  15    "t2 NATURAL INNER JOIN t1" 
-        {t2 t1 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}}
-  16    "t2 NATURAL LEFT JOIN t1" 
-        {t2 t1 -left -using {a b} -on {te_and {te_equals a a} {te_equals b b}}}
-  17    "t2 NATURAL LEFT OUTER JOIN t1" 
-        {t2 t1 -left -using {a b} -on {te_and {te_equals a a} {te_equals b b}}}
-
-  18    "t1 LEFT JOIN t2 USING (b)"      
-        {t1 t2 -left -using b -on {te_equals b b}}
-
-  19    "t1 JOIN t3 USING(b)" {t1 t3 -using b -on {te_equals b b}}
-  20    "t3 JOIN t1 USING(b)" {t3 t1 -using b -on {te_equals -nocase b b}}
-  21    "t1 NATURAL JOIN t3"  {t1 t3 -using b -on {te_equals b b}}
-  22    "t3 NATURAL JOIN t1"  {t3 t1 -using b -on {te_equals -nocase b b}}
-  23    "t1 NATURAL LEFT JOIN t3"  {t1 t3 -left -using b -on {te_equals b b}}
-  24    "t3 NATURAL LEFT JOIN t1"  
-        {t3 t1 -left -using b -on {te_equals -nocase b b}}
-
-  25    "t1 LEFT JOIN t3 ON (t3.b=t1.b)" 
-        {t1 t3 -left -on {te_equals -nocase b b}}
-  26    "t1 LEFT JOIN t3 ON (t1.b=t3.b)"  
-        {t1 t3 -left -on {te_equals b b}}
-
+foreach {tn indexes} {
+  e_select-2.1 { }
+  e_select-2.2 { CREATE INDEX i1 ON t1(a) }
+  e_select-2.3 { CREATE INDEX i1 ON t2(a) }
+  e_select-2.4 { CREATE INDEX i1 ON t3(b) }
 } {
 
-  do_test e_select-2.1.$tn [list tcl_read_sql db "SELECT * FROM $sqljoin"
-  ] [tcl_tbljoin db {*}$tbljoinargs]
+  catchsql { DROP INDEX i1 }
+  catchsql { DROP INDEX i2 }
+  catchsql { DROP INDEX i3 }
+  execsql $indexes
 
+  # EVIDENCE-OF: R-46122-14930 If the join-op is "CROSS JOIN", "INNER
+  # JOIN", "JOIN" or a comma (",") and there is no ON or USING clause,
+  # then the result of the join is simply the cartesian product of the
+  # left and right-hand datasets.
+  #
+  # EVIDENCE-OF: R-46256-57243 There is no difference between the "INNER
+  # JOIN", "JOIN" and "," join operators.
+  #
+  # EVIDENCE-OF: R-07544-24155 The "CROSS JOIN" join operator produces the
+  # same data as the "INNER JOIN", "JOIN" and "," operators
+  #
+  test_join $tn.1.1  "t1, t2"                {t1 t2}
+  test_join $tn.1.2  "t1 INNER JOIN t2"      {t1 t2}
+  test_join $tn.1.3  "t1 CROSS JOIN t2"      {t1 t2}
+  test_join $tn.1.4  "t1 JOIN t2"            {t1 t2}
+  test_join $tn.1.5  "t2, t3"                {t2 t3}
+  test_join $tn.1.6  "t2 INNER JOIN t3"      {t2 t3}
+  test_join $tn.1.7  "t2 CROSS JOIN t3"      {t2 t3}
+  test_join $tn.1.8  "t2 JOIN t3"            {t2 t3}
+  test_join $tn.1.9  "t2, t2 AS x"           {t2 t2}
+  test_join $tn.1.10 "t2 INNER JOIN t2 AS x" {t2 t2}
+  test_join $tn.1.11 "t2 CROSS JOIN t2 AS x" {t2 t2}
+  test_join $tn.1.12 "t2 JOIN t2 AS x"       {t2 t2}
+
+  # EVIDENCE-OF: R-45641-53865 If there is an ON clause specified, then
+  # the ON expression is evaluated for each row of the cartesian product
+  # and the result cast to a numeric value as if by a CAST expression. All
+  # rows for which the expression evaluates to NULL or zero (integer value
+  # 0 or real value 0.0) are excluded from the dataset.
+  #
+  test_join $tn.2.1  "t1, t2 ON (t1.a=t2.a)"  {t1 t2 -on {te_equals a a}}
+  test_join $tn.2.2  "t2, t1 ON (t1.a=t2.a)"  {t2 t1 -on {te_equals a a}}
+  test_join $tn.2.3  "t2, t1 ON (1)"          {t2 t1 -on te_true}
+  test_join $tn.2.4  "t2, t1 ON (NULL)"       {t2 t1 -on te_false}
+  test_join $tn.2.5  "t2, t1 ON (1.1-1.1)"    {t2 t1 -on te_false}
+  test_join $tn.2.6  "t1, t2 ON (1.1-1.0)"    {t1 t2 -on te_true}
+
+
+  test_join 3 "t1 LEFT JOIN t2 ON (t1.a=t2.a)" {t1 t2 -left -on {te_equals a a}}
+  test_join 4 "t1 LEFT JOIN t2 USING (a)" {
+    t1 t2 -left -using a -on {te_equals a a}
+  }
+  test_join 5 "t1 CROSS JOIN t2 USING(b, a)" {
+    t1 t2 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}
+  }
+  test_join 6 "t1 NATURAL JOIN t2" {
+    t1 t2 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}
+  }
+  test_join 7 "t1 NATURAL INNER JOIN t2" {
+    t1 t2 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}
+  }
+  test_join 8 "t1 NATURAL CROSS JOIN t2" {
+    t1 t2 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}
+  }
+  test_join 9 "t1 NATURAL INNER JOIN t2" {
+    t1 t2 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}
+  }
+  test_join 10 "t1 NATURAL LEFT JOIN t2" {
+    t1 t2 -left -using {a b} -on {te_and {te_equals a a} {te_equals b b}}
+  }
+  test_join 11 "t1 NATURAL LEFT OUTER JOIN t2" {
+    t1 t2 -left -using {a b} -on {te_and {te_equals a a} {te_equals b b}}
+  }
+  test_join 12 "t2 NATURAL JOIN t1" {
+    t2 t1 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}
+  }
+  test_join 13 "t2 NATURAL INNER JOIN t1" {
+    t2 t1 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}
+  }
+  test_join 14 "t2 NATURAL CROSS JOIN t1" {
+    t2 t1 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}
+  }
+  test_join 15 "t2 NATURAL INNER JOIN t1" {
+    t2 t1 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}
+  }
+  test_join 16 "t2 NATURAL LEFT JOIN t1" {
+    t2 t1 -left -using {a b} -on {te_and {te_equals a a} {te_equals b b}}
+  }
+  test_join 17 "t2 NATURAL LEFT OUTER JOIN t1" {
+    t2 t1 -left -using {a b} -on {te_and {te_equals a a} {te_equals b b}}
+  }
+  test_join 18 "t1 LEFT JOIN t2 USING (b)" {
+    t1 t2 -left -using b -on {te_equals b b}
+  }
+  test_join 19 "t1 JOIN t3 USING(b)" {t1 t3 -using b -on {te_equals b b}}
+  test_join 20 "t3 JOIN t1 USING(b)" {
+    t3 t1 -using b -on {te_equals -nocase b b}
+  }
+  test_join 21 "t1 NATURAL JOIN t3"  {
+    t1 t3 -using b -on {te_equals b b}
+  }
+  test_join 22 "t3 NATURAL JOIN t1"  {
+    t3 t1 -using b -on {te_equals -nocase b b}
+  }
+  test_join 23 "t1 NATURAL LEFT JOIN t3" {
+    t1 t3 -left -using b -on {te_equals b b}
+  }
+  test_join 24 "t3 NATURAL LEFT JOIN t1" {
+    t3 t1 -left -using b -on {te_equals -nocase b b}
+  }
+  test_join 25 "t1 LEFT JOIN t3 ON (t3.b=t1.b)" {
+    t1 t3 -left -on {te_equals -nocase b b}
+  }
+  test_join 26 "t1 LEFT JOIN t3 ON (t1.b=t3.b)" {
+    t1 t3 -left -on {te_equals b b}
+  }
+  test_join 27 "t1 JOIN t3 ON (t1.b=t3.b)" { t1 t3 -on {te_equals b b} }
+
+  # EVIDENCE-OF: R-28760-53843 When more than two tables are joined
+  # together as part of a FROM clause, the join operations are processed
+  # in order from left to right. In other words, the FROM clause (A
+  # join-op-1 B join-op-2 C) is computed as ((A join-op-1 B) join-op-2 C).
+  #
+  #   Tests 28a and 28b show that the statement above is true for this case.
+  #   Test 28c shows that if the parenthesis force a different order of
+  #   evaluation the result is different. Test 28d verifies that the result
+  #   of the query with the parenthesis forcing a different order of evaluation
+  #   is as calculated by the [te_*] procs.
+  #
+  set t3_natural_left_join_t2 [
+    te_tbljoin db t3 t2 -left -using {b} -on {te_equals -nocase b b}
+  ]
+  set t1 [te_read_tbl db t1]
+  te_dataset_eq_unordered $tn.28a [
+    te_read_sql db "SELECT * FROM t3 NATURAL LEFT JOIN t2 NATURAL JOIN t1"
+  ] [te_join $t3_natural_left_join_t2 $t1                                \
+      -using {a b} -on {te_and {te_equals a a} {te_equals -nocase b b}}  \
+  ]
+
+  te_dataset_eq_unordered $tn.28b [
+    te_read_sql db "SELECT * FROM (t3 NATURAL LEFT JOIN t2) NATURAL JOIN t1"
+  ] [te_join $t3_natural_left_join_t2 $t1                                \
+      -using {a b} -on {te_and {te_equals a a} {te_equals -nocase b b}}  \
+  ]
+
+  te_dataset_ne_unordered $tn.28c [
+    te_read_sql db "SELECT * FROM (t3 NATURAL LEFT JOIN t2) NATURAL JOIN t1"
+  ] [
+    te_read_sql db "SELECT * FROM t3 NATURAL LEFT JOIN (t2 NATURAL JOIN t1)"
+  ]
+
+  set t2_natural_join_t1 [te_tbljoin db t2 t1 -using {a b}                 \
+        -using {a b} -on {te_and {te_equals a a} {te_equals -nocase b b}}  \
+  ]
+  set t3 [te_read_tbl db t3]
+  te_dataset_eq_unordered $tn.28d [
+    te_read_sql db "SELECT * FROM t3 NATURAL LEFT JOIN (t2 NATURAL JOIN t1)"
+  ] [te_join $t3 $t2_natural_join_t1                                       \
+      -left -using {b} -on {te_equals -nocase b b}                         \
+  ]
+}
+
+# XXXEVIDENCE-OF: R-55824-40976 A sub-select specified in the join-source
+# following the FROM clause in a simple SELECT statement is handled as
+# if it was a table containing the data returned by executing the
+# sub-select statement.
+#
+proc test_subselect_join {tn subselect select script} {
+  1   "SELECT * FROM t2"   "SELECT * FROM t1 JOIN (%ss%)" 
+    {t1 %ss%}
+} {
+  execsql "CREATE TEMP TABLE sstemp AS $subselect"
+  set ssdata [te_read_tbl db sstemp]
+  execsql "DROP TABLE sstemp"
+
+  
 }
 
 finish_test
