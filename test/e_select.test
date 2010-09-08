@@ -851,75 +851,75 @@ foreach {tn indexes} {
   test_join $tn.2.6  "t1, t2 ON (1.1-1.0)"    {t1 t2 -on te_true}
 
 
-  test_join 3 "t1 LEFT JOIN t2 ON (t1.a=t2.a)" {t1 t2 -left -on {te_equals a a}}
-  test_join 4 "t1 LEFT JOIN t2 USING (a)" {
+  test_join $tn.3 "t1 LEFT JOIN t2 ON (t1.a=t2.a)" {t1 t2 -left -on {te_equals a a}}
+  test_join $tn.4 "t1 LEFT JOIN t2 USING (a)" {
     t1 t2 -left -using a -on {te_equals a a}
   }
-  test_join 5 "t1 CROSS JOIN t2 USING(b, a)" {
+  test_join $tn.5 "t1 CROSS JOIN t2 USING(b, a)" {
     t1 t2 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}
   }
-  test_join 6 "t1 NATURAL JOIN t2" {
+  test_join $tn.6 "t1 NATURAL JOIN t2" {
     t1 t2 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}
   }
-  test_join 7 "t1 NATURAL INNER JOIN t2" {
+  test_join $tn.7 "t1 NATURAL INNER JOIN t2" {
     t1 t2 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}
   }
-  test_join 8 "t1 NATURAL CROSS JOIN t2" {
+  test_join $tn.8 "t1 NATURAL CROSS JOIN t2" {
     t1 t2 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}
   }
-  test_join 9 "t1 NATURAL INNER JOIN t2" {
+  test_join $tn.9 "t1 NATURAL INNER JOIN t2" {
     t1 t2 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}
   }
-  test_join 10 "t1 NATURAL LEFT JOIN t2" {
+  test_join $tn.10 "t1 NATURAL LEFT JOIN t2" {
     t1 t2 -left -using {a b} -on {te_and {te_equals a a} {te_equals b b}}
   }
-  test_join 11 "t1 NATURAL LEFT OUTER JOIN t2" {
+  test_join $tn.11 "t1 NATURAL LEFT OUTER JOIN t2" {
     t1 t2 -left -using {a b} -on {te_and {te_equals a a} {te_equals b b}}
   }
-  test_join 12 "t2 NATURAL JOIN t1" {
+  test_join $tn.12 "t2 NATURAL JOIN t1" {
     t2 t1 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}
   }
-  test_join 13 "t2 NATURAL INNER JOIN t1" {
+  test_join $tn.13 "t2 NATURAL INNER JOIN t1" {
     t2 t1 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}
   }
-  test_join 14 "t2 NATURAL CROSS JOIN t1" {
+  test_join $tn.14 "t2 NATURAL CROSS JOIN t1" {
     t2 t1 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}
   }
-  test_join 15 "t2 NATURAL INNER JOIN t1" {
+  test_join $tn.15 "t2 NATURAL INNER JOIN t1" {
     t2 t1 -using {a b} -on {te_and {te_equals a a} {te_equals b b}}
   }
-  test_join 16 "t2 NATURAL LEFT JOIN t1" {
+  test_join $tn.16 "t2 NATURAL LEFT JOIN t1" {
     t2 t1 -left -using {a b} -on {te_and {te_equals a a} {te_equals b b}}
   }
-  test_join 17 "t2 NATURAL LEFT OUTER JOIN t1" {
+  test_join $tn.17 "t2 NATURAL LEFT OUTER JOIN t1" {
     t2 t1 -left -using {a b} -on {te_and {te_equals a a} {te_equals b b}}
   }
-  test_join 18 "t1 LEFT JOIN t2 USING (b)" {
+  test_join $tn.18 "t1 LEFT JOIN t2 USING (b)" {
     t1 t2 -left -using b -on {te_equals b b}
   }
-  test_join 19 "t1 JOIN t3 USING(b)" {t1 t3 -using b -on {te_equals b b}}
-  test_join 20 "t3 JOIN t1 USING(b)" {
+  test_join $tn.19 "t1 JOIN t3 USING(b)" {t1 t3 -using b -on {te_equals b b}}
+  test_join $tn.20 "t3 JOIN t1 USING(b)" {
     t3 t1 -using b -on {te_equals -nocase b b}
   }
-  test_join 21 "t1 NATURAL JOIN t3"  {
+  test_join $tn.21 "t1 NATURAL JOIN t3"  {
     t1 t3 -using b -on {te_equals b b}
   }
-  test_join 22 "t3 NATURAL JOIN t1"  {
+  test_join $tn.22 "t3 NATURAL JOIN t1"  {
     t3 t1 -using b -on {te_equals -nocase b b}
   }
-  test_join 23 "t1 NATURAL LEFT JOIN t3" {
+  test_join $tn.23 "t1 NATURAL LEFT JOIN t3" {
     t1 t3 -left -using b -on {te_equals b b}
   }
-  test_join 24 "t3 NATURAL LEFT JOIN t1" {
+  test_join $tn.24 "t3 NATURAL LEFT JOIN t1" {
     t3 t1 -left -using b -on {te_equals -nocase b b}
   }
-  test_join 25 "t1 LEFT JOIN t3 ON (t3.b=t1.b)" {
+  test_join $tn.25 "t1 LEFT JOIN t3 ON (t3.b=t1.b)" {
     t1 t3 -left -on {te_equals -nocase b b}
   }
-  test_join 26 "t1 LEFT JOIN t3 ON (t1.b=t3.b)" {
+  test_join $tn.26 "t1 LEFT JOIN t3 ON (t1.b=t3.b)" {
     t1 t3 -left -on {te_equals b b}
   }
-  test_join 27 "t1 JOIN t3 ON (t1.b=t3.b)" { t1 t3 -on {te_equals b b} }
+  test_join $tn.27 "t1 JOIN t3 ON (t1.b=t3.b)" { t1 t3 -on {te_equals b b} }
 
   # EVIDENCE-OF: R-28760-53843 When more than two tables are joined
   # together as part of a FROM clause, the join operations are processed
@@ -970,7 +970,7 @@ foreach {tn indexes} {
 # if it was a table containing the data returned by executing the
 # sub-select statement.
 #
-proc test_subselect_join {tn subselect select script} {
+foreach {tn subselect select script} {
   1   "SELECT * FROM t2"   "SELECT * FROM t1 JOIN (%ss%)" 
     {t1 %ss%}
 } {
