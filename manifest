@@ -1,5 +1,5 @@
-C Add\stests\sfor\ssub-select\sstatements\sin\sthe\sFROM\sclause\sof\sa\sSELECT\sto\se_select.test.
-D 2010-09-09T10:00:44
+C Add\sWHERE\sclause\stests\sto\se_select.test.
+D 2010-09-09T11:33:09
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -350,7 +350,7 @@ F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_expr.test 164e87c1d7b40ceb47c57c3bffa384c81d009aa7
 F test/e_fkey.test 6721a741c6499b3ab7e5385923233343c8f1ad05
 F test/e_fts3.test 75bb0aee26384ef586165e21018a17f7cd843469
-F test/e_select.test 1adce7a2fcb698518eedddf3bc729c039e6bbedd
+F test/e_select.test a3f2bc8bf21f189bec90008d883ae86448d291c9
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
@@ -857,7 +857,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8fe34faf6b8ddbb8ddd23418163650e846104328
-R 9bfaedbd899efa5c6570049f959ec78c
+P 2c6b1ca952be9979b8079431c2abad28419b6256
+R b6f7deab8c7be4f26ac3335bb0b04fd4
 U dan
-Z 71f159ae174766adb4ac41d95f0a3515
+Z 4c41231d0dc68008d74e0f7cc7244851

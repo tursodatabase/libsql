@@ -1080,5 +1080,56 @@ foreach {tn subselect select spec} {
   ] $te
 }
 
+#-------------------------------------------------------------------------
+# The next block of tests - e_select-3.* - concentrate on verifying 
+# statements made regarding WHERE clause processing.
+#
+drop_all_tables
+do_execsql_test e_select-3.0 {
+  CREATE TABLE x1(k, x, y, z);
+  INSERT INTO x1 VALUES(1, 'relinquished', 'aphasia', 78.43);
+  INSERT INTO x1 VALUES(2, X'A8E8D66F',    X'07CF',   -81);
+  INSERT INTO x1 VALUES(3, -22,            -27.57,    NULL);
+  INSERT INTO x1 VALUES(4, NULL,           'bygone',  'picky');
+  INSERT INTO x1 VALUES(5, NULL,           96.28,     NULL);
+  INSERT INTO x1 VALUES(6, 0,              1,         2);
+
+  CREATE TABLE x2(k, x, y2);
+  INSERT INTO x2 VALUES(1, 50, X'B82838');
+  INSERT INTO x2 VALUES(5, 84.79, 65.88);
+  INSERT INTO x2 VALUES(3, -22, X'0E1BE452A393');
+  INSERT INTO x2 VALUES(7, 'mistrusted', 'standardized');
+} {}
+
+# EVIDENCE-OF: R-22873-49686 If a WHERE clause is specified, the WHERE
+# expression is evaluated for each row in the input data and the result
+# cast to a numeric value. All rows for which the WHERE clause
+# expression evaluates to a NULL value or to zero (integer value 0 or
+# real value 0.0) are excluded from the dataset before continuing.
+#
+do_execsql_test e_select-3.1.1 { SELECT k FROM x1 WHERE x }         {3}
+do_execsql_test e_select-3.1.2 { SELECT k FROM x1 WHERE y }         {3 5 6}
+do_execsql_test e_select-3.1.3 { SELECT k FROM x1 WHERE z }         {1 2 6}
+do_execsql_test e_select-3.1.4 { SELECT k FROM x1 WHERE '1'||z    } {1 2 4 6}
+do_execsql_test e_select-3.1.5 { SELECT k FROM x1 WHERE x IS NULL } {4 5}
+do_execsql_test e_select-3.1.6 { SELECT k FROM x1 WHERE z - 78.43 } {2 4 6}
+
+do_execsql_test e_select-3.2.1a {
+  SELECT k FROM x1 LEFT JOIN x2 USING(k)
+} {1 2 3 4 5 6}
+do_execsql_test e_select-3.2.1b {
+  SELECT k FROM x1 LEFT JOIN x2 USING(k) WHERE x2.k
+} {1 3 5}
+do_execsql_test e_select-3.2.2 {
+  SELECT k FROM x1 LEFT JOIN x2 USING(k) WHERE x2.k IS NULL
+} {2 4 6}
+
+do_execsql_test e_select-3.2.3 {
+  SELECT k FROM x1 NATURAL JOIN x2 WHERE x2.k
+} {3}
+do_execsql_test e_select-3.2.4 {
+  SELECT k FROM x1 NATURAL JOIN x2 WHERE x2.k-3
+} {}
+
 finish_test
 
