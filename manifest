@@ -1,5 +1,8 @@
-C Add\sWHERE\sclause\stests\sto\se_select.test.
-D 2010-09-09T11:33:09
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Updates\sto\sthe\ssqlite3_pcache_methods\sdocumentation.
+D 2010-09-09T15:48:21
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,7 +177,7 @@ F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c b0b124781474e4e0c8f64022875e5e2009e13443
 F src/shell.c 8517fc1f9c59ae4007e6cc8b9af91ab231ea2056
-F src/sqlite.h.in 0e98e780993e6cf185bd228f275b959a5aef86c6
+F src/sqlite.h.in b89e75082482613994267333e7c0be1b5e33a788
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
 F src/sqliteInt.h 81343db96497aebf81dff9c695dfd29699b377b3
 F src/sqliteLimit.h a17dcd3fb775d63b64a43a55c54cb282f9726f44
@@ -857,7 +860,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 2c6b1ca952be9979b8079431c2abad28419b6256
-R b6f7deab8c7be4f26ac3335bb0b04fd4
-U dan
-Z 4c41231d0dc68008d74e0f7cc7244851
+P 721b73fa5c5898f6c6d5946e1c70ccd2d0b0dccc
+R cbbf9e5140816a6f83795c0332dd3e6e
+U drh
+Z 74027c69905e1ff505b64e9812591b2f
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMiQHJoxKgR168RlERAh0tAJ9SNKXu692V3wFNhD4OrbnaYo0azACfaJuF
+JHEOkaCKu3GeiSh9DjF/ixg=
+=IXg9
+-----END PGP SIGNATURE-----
