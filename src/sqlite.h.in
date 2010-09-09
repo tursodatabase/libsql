@@ -5441,9 +5441,9 @@ typedef struct sqlite3_pcache sqlite3_pcache;
 ** method is passed a copy of the sqlite3_pcache_methods.pArg value.)^
 ** The intent of the xInit() method is to set up global data structures 
 ** required by the custom page cache implementation. 
-** ^(If the xInit() method is NULL, then the call to
-** [sqlite3_config]([SQLITE_CONFIG_PCACHE],...) will install the
-** built-in default page cache.)^
+** ^(If the xInit() method is NULL, then the 
+** built-in default page cache is used instead of the application defined
+** page cache.)^
 **
 ** ^The xShutdown() method is called by [sqlite3_shutdown()].
 ** It can be used to clean up 
@@ -5488,21 +5488,21 @@ typedef struct sqlite3_pcache sqlite3_pcache;
 ** parameter, the implementation is not required to do anything with this
 ** value; it is advisory only.
 **
-** ^The xPagecount() method must return the number of pages currently
+** The xPagecount() method must return the number of pages currently
 ** stored in the cache, both pinned and unpinned.
 ** 
-** ^The xFetch() method locates a page in the cache and returns a pointer to 
+** The xFetch() method locates a page in the cache and returns a pointer to 
 ** the page, or a NULL pointer.
-** ^A 'page', in this context, is a buffer of szPage bytes aligned at an
-** 8-byte boundary. ^The page to be fetched is determined by the key. ^The
-** mimimum key value is 1.  ^After it has been retrieved using xFetch, the page 
+** A "page", in this context, means a buffer of szPage bytes aligned at an
+** 8-byte boundary. The page to be fetched is determined by the key. ^The
+** mimimum key value is 1.  After it has been retrieved using xFetch, the page 
 ** is considered to be "pinned".
 **
-** ^If the requested page is already in the page cache, then the page cache
+** If the requested page is already in the page cache, then the page cache
 ** implementation must return a pointer to the page buffer with its content
-** intact.  ^(If the requested page is not already in the cache, then the
-** behavior of the cache implementation is determined by the value of the
-** createFlag parameter passed to xFetch, according to the following table:
+** intact.  If the requested page is not already in the cache, then the
+** behavior of the cache implementation should use the value of the createFlag
+** parameter to help it determined what action to take:
 **
 ** <table border=1 width=85% align=center>
 ** <tr><th> createFlag <th> Behaviour when page is not already in cache
@@ -5511,37 +5511,35 @@ typedef struct sqlite3_pcache sqlite3_pcache;
 **                 Otherwise return NULL.
 ** <tr><td> 2 <td> Make every effort to allocate a new page.  Only return
 **                 NULL if allocating a new page is effectively impossible.
-** </table>)^
+** </table>
 **
-** SQLite will normally invoke xFetch() with a createFlag of 0 or 1.  If
-** a call to xFetch() with createFlag==1 returns NULL, then SQLite may
+** ^(SQLite will normally invoke xFetch() with a createFlag of 0 or 1.  SQLite
+** will only use a createFlag of 2 after a prior call with a createFlag of 1
+** failed.)^  In between the to xFetch() calls, SQLite may
 ** attempt to unpin one or more cache pages by spilling the content of
-** pinned pages to disk and synching the operating system disk cache. After
-** attempting to unpin pages, the xFetch() method may be invoked again with
-** a createFlag of 2.
+** pinned pages to disk and synching the operating system disk cache.
 **
 ** ^xUnpin() is called by SQLite with a pointer to a currently pinned page
-** as its second argument. ^(If the third parameter, discard, is non-zero,
-** then the page should be evicted from the cache. In this case SQLite 
-** assumes that the next time the page is retrieved from the cache using
-** the xFetch() method, it will be zeroed.)^ If the discard parameter is
+** as its second argument.  If the third parameter, discard, is non-zero,
+** then the page must be evicted from the cache.
+** ^If the discard parameter is
 ** zero, then the page may be discarded or retained at the discretion of
-** page cache implementation. The page cache implementation
+** page cache implementation. ^The page cache implementation
 ** may choose to evict unpinned pages at any time.
 **
-** ^(The cache must not perform any reference counting. A single 
+** The cache must not perform any reference counting. A single 
 ** call to xUnpin() unpins the page regardless of the number of prior calls 
-** to xFetch().)^
+** to xFetch().
 **
-** ^The xRekey() method is used to change the key value associated with the
-** page passed as the second argument. ^If the cache
+** The xRekey() method is used to change the key value associated with the
+** page passed as the second argument. If the cache
 ** previously contains an entry associated with newKey, it must be
 ** discarded. ^Any prior cache entry associated with newKey is guaranteed not
 ** to be pinned.
 **
-** ^When SQLite calls the xTruncate() method, the cache must discard all
+** When SQLite calls the xTruncate() method, the cache must discard all
 ** existing cache entries with page numbers (keys) greater than or equal
-** to the value of the iLimit parameter passed to xTruncate(). ^If any
+** to the value of the iLimit parameter passed to xTruncate(). If any
 ** of these pages are pinned, they are implicitly unpinned, meaning that
 ** they can be safely discarded.
 **

@@ -142,12 +142,16 @@ static void pcacheUnpin(PgHdr *p){
 */
 int sqlite3PcacheInitialize(void){
   if( sqlite3GlobalConfig.pcache.xInit==0 ){
+    /* IMPLEMENTATION-OF: R-26801-64137 If the xInit() method is NULL, then the
+    ** built-in default page cache is used instead of the application defined
+    ** page cache. */
     sqlite3PCacheSetDefault();
   }
   return sqlite3GlobalConfig.pcache.xInit(sqlite3GlobalConfig.pcache.pArg);
 }
 void sqlite3PcacheShutdown(void){
   if( sqlite3GlobalConfig.pcache.xShutdown ){
+    /* IMPLEMENTATION-OF: R-26000-56589 The xShutdown() method may be NULL. */
     sqlite3GlobalConfig.pcache.xShutdown(sqlite3GlobalConfig.pcache.pArg);
   }
 }

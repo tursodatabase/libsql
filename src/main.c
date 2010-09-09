@@ -173,6 +173,13 @@ int sqlite3_initialize(void){
   ** sqlite3_initialize().  The recursive calls normally come through
   ** sqlite3_os_init() when it invokes sqlite3_vfs_register(), but other
   ** recursive calls might also be possible.
+  **
+  ** IMPLEMENTATION-OF: R-00140-37445 SQLite automatically serializes calls
+  ** to the xInit method, so the xInit method need not be threadsafe.
+  **
+  ** The following mutex is what serializes access to the appdef pcache xInit
+  ** methods.  The sqlite3_pcache_methods.xInit() all is embedded in the
+  ** call to sqlite3PcacheInitialize().
   */
   sqlite3_mutex_enter(sqlite3GlobalConfig.pInitMutex);
   if( sqlite3GlobalConfig.isInit==0 && sqlite3GlobalConfig.inProgress==0 ){
