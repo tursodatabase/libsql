@@ -1,5 +1,5 @@
-C The\smerge\sfor\scheck-in\s[415c448dc4]\sdid\snot\sdo\sexactly\swrite,\sresulting\sin\na\ssubtle\sbug\sin\sthe\sSQLITE_FCNTL_SIZE_HINT\slogic.\s\sThis\scheck-in\sis\sthe\nfix.
-D 2010-09-09T23:31:37
+C Make\ssure\sMEMSTATUS\sis\senabled\sat\sthe\sbeginning\sof\sthe\smemsubsys2.test\nscript.
+D 2010-09-09T23:40:43
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c58f7d37ad0f9b28655ba4e28c6cb0f879569cd7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -524,7 +524,7 @@ F test/manydb.test 7faa0df55bbab2b14c25f323801db336c4e7ce3a
 F test/memdb.test f773146f66ee2c635854a8264317f39a6cc3e18c
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
 F test/memsubsys1.test 98d5ff4c9f534cc863c07b74043bd44921893f29
-F test/memsubsys2.test 72a731225997ad5e8df89fdbeae9224616b6aecc
+F test/memsubsys2.test ddbd4af61d17f065726afe6e63d48fdcdb347e4b
 F test/minmax.test 722d80816f7e096bf2c04f4111f1a6c1ba65453d
 F test/minmax2.test 33504c01a03bd99226144e4b03f7631a274d66e0
 F test/minmax3.test 66a60eb0f20281b0753249d347c5de0766954cee
@@ -851,7 +851,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 02ee0bd5a305e3a6cd76f2e304f8a7effacd8433
-R e9511b8a271e179a742ba24baba54996
+P badaaa18fd4a4402add6ae1b3ecadbb79f91fe37
+R 2540d626eb84e9a6d51dbc0771d2ea7e
 U drh
-Z 2c112256f89d0489a6f7ef317020165a
+Z 633fde3ef8c0013ae6412ea4a1a82a67
