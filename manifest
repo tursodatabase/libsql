@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Merge\sin\sthe\sR-tree\sfix\sfrom\sthe\strunk.
-D 2010-08-24T01:51:07
+C The\smerge\sfor\scheck-in\s[415c448dc4]\sdid\snot\sdo\sexactly\swrite,\sresulting\sin\na\ssubtle\sbug\sin\sthe\sSQLITE_FCNTL_SIZE_HINT\slogic.\s\sThis\scheck-in\sis\sthe\nfix.
+D 2010-09-09T23:31:37
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c58f7d37ad0f9b28655ba4e28c6cb0f879569cd7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -162,7 +159,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c 3853edc254c464c040232a0b422b8f513205399a
 F src/os_win.c 51cb62f76262d961ea4249489383d714501315a7
-F src/pager.c 8f6ff6ca8e7d478016fe1a28d270377066f4baf7
+F src/pager.c a5f5d9787b11dfb0b6082e6f5846d00b459a8e19
 F src/pager.h ef8c8f71ab022cc2fff768a1175dd32355be9dcd
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
@@ -854,14 +851,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 415c448dc45a297bd1b0bbce25c4572eeab286f0 7f2f71cc9e3c39093f09231f448576cff6afb5fe
-R a5989b39fa52f0620b0851b6f3c872a9
+P 02ee0bd5a305e3a6cd76f2e304f8a7effacd8433
+R e9511b8a271e179a742ba24baba54996
 U drh
-Z e8776a8fd86a44ef5757f798d9dc8b80
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMcyWOoxKgR168RlERAqbDAJ45pfKsU4ofV34wUA8rb3Q7JjhdFACfWukV
-aiZS9mIwn46DtBOb8pfJwlM=
-=f9ny
------END PGP SIGNATURE-----
+Z 2c112256f89d0489a6f7ef317020165a

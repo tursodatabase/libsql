@@ -3908,24 +3908,11 @@ static int pager_write_pagelist(Pager *pPager, PgHdr *pList){
     rc = pagerOpentemp(pPager, pPager->fd, pPager->vfsFlags);
   }
 
-#if 0
   /* Before the first write, give the VFS a hint of what the final
   ** file size will be.
   */
   assert( rc!=SQLITE_OK || isOpen(pPager->fd) );
   if( rc==SQLITE_OK && pPager->dbSize>pPager->dbHintSize ){
-    sqlite3_int64 szFile = pPager->pageSize * (sqlite3_int64)pPager->dbSize;
-    sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_SIZE_HINT, &szFile);
-  }
-#endif
-
-  /* Before the first write, give the VFS a hint of what the final
-  ** file size will be.
-  */
-  if( rc==SQLITE_OK
-   && pPager->dbSize>(pPager->dbFileSize+1)
-   && isOpen(pPager->fd)
-  ){
     sqlite3_int64 szFile = pPager->pageSize * (sqlite3_int64)pPager->dbSize;
     sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_SIZE_HINT, &szFile);
     pPager->dbHintSize = pPager->dbSize;
