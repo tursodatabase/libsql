@@ -609,7 +609,7 @@ foreach {tn sql} {
 # return values.
 #
 proc te_read_tbl {db tbl} {
- te_read_sql $db "SELECT * FROM $tbl"
+ te_read_sql $db "SELECT * FROM '$tbl'"
 }
 proc te_read_sql {db sql} {
   set S [sqlite3_prepare_v2 $db $sql -1 DUMMY]
@@ -704,6 +704,28 @@ proc te_tbljoin {db t1 t2 args} {
   te_join [te_read_tbl $db $t1] [te_read_tbl $db $t2] {*}$args
 }
 
+proc te_apply_affinity {affinity typevar valvar} {
+  upvar $typevar type
+  upvar $valvar val
+
+  switch -- $affinity {
+    integer {
+      if {[string is double $val]} { set type REAL }
+      if {[string is wideinteger $val]} { set type INTEGER }
+      if {$type == "REAL" && int($val)==$val} { 
+        set type INTEGER 
+        set val [expr {int($val)}]
+      }
+    }
+    text {
+      set type TEXT
+    }
+    none { }
+
+    default { error "invalid affinity: $affinity" }
+  }
+}
+
 #----------
 # te_equals ?SWITCHES? c1 c2 cols1 row1 cols2 row2
 #
@@ -713,11 +735,16 @@ proc te_equals {args} {
   foreach {c1 c2 cols1 row1 cols2 row2} [lrange $args end-5 end] break
 
   set nocase 0
+  set affinity none
 
-  foreach a [lrange $args 0 end-6] {
+  for {set i 0} {$i < ([llength $args]-6)} {incr i} {
+    set a [lindex $args $i]
     switch -- $a {
       -nocase {
         set nocase 1
+      }
+      -affinity {
+        set affinity [string tolower [lindex $args [incr i]]]
       }
       default {
         error "invalid arguments to te_equals"
@@ -733,10 +760,16 @@ proc te_equals {args} {
   set v1 [lindex $row1 $idx1 1]
   set v2 [lindex $row2 $idx2 1]
 
+  te_apply_affinity $affinity t1 v1
+  te_apply_affinity $affinity t2 v2
+
   if {$t1 == "NULL" || $t2 == "NULL"} { return 0 }
   if {$nocase && $t1 == "TEXT"} { set v1 [string tolower $v1] }
   if {$nocase && $t2 == "TEXT"} { set v2 [string tolower $v2] }
-  return [expr {$t1 == $t2 && $v1 == $v2}]
+
+
+  set res [expr {$t1 == $t2 && [string equal $v1 $v2]}]
+  return $res
 }
 
 proc te_false {args} { return 0 }
@@ -802,10 +835,10 @@ do_execsql_test e_select-2.0 {
 } {}
 
 foreach {tn indexes} {
-  e_select-2.1 { }
-  e_select-2.2 { CREATE INDEX i1 ON t1(a) }
-  e_select-2.3 { CREATE INDEX i1 ON t2(a) }
-  e_select-2.4 { CREATE INDEX i1 ON t3(b) }
+  e_select-2.1.1 { }
+  e_select-2.1.2 { CREATE INDEX i1 ON t1(a) }
+  e_select-2.1.3 { CREATE INDEX i1 ON t2(a) }
+  e_select-2.1.4 { CREATE INDEX i1 ON t3(b) }
 } {
 
   catchsql { DROP INDEX i1 }
@@ -965,20 +998,86 @@ foreach {tn indexes} {
   ]
 }
 
-# XXXEVIDENCE-OF: R-55824-40976 A sub-select specified in the join-source
+do_execsql_test e_select-2.2.0 {
+  CREATE TABLE t4(x TEXT COLLATE nocase);
+  CREATE TABLE t5(y INTEGER, z TEXT COLLATE binary);
+
+  INSERT INTO t4 VALUES('2.0');
+  INSERT INTO t4 VALUES('TWO');
+  INSERT INTO t5 VALUES(2, 'two');
+} {}
+
+# EVIDENCE-OF: R-55824-40976 A sub-select specified in the join-source
 # following the FROM clause in a simple SELECT statement is handled as
 # if it was a table containing the data returned by executing the
 # sub-select statement.
 #
-foreach {tn subselect select script} {
-  1   "SELECT * FROM t2"   "SELECT * FROM t1 JOIN (%ss%)" 
-    {t1 %ss%}
-} {
-  execsql "CREATE TEMP TABLE sstemp AS $subselect"
-  set ssdata [te_read_tbl db sstemp]
-  execsql "DROP TABLE sstemp"
+# EVIDENCE-OF: R-42612-06757 Each column of the sub-select dataset
+# inherits the collation sequence and affinity of the corresponding
+# expression in the sub-select statement.
+#
+foreach {tn subselect select spec} {
+  1   "SELECT * FROM t2"   "SELECT * FROM t1 JOIN %ss%" 
+      {t1 %ss%}
 
-  
+  2   "SELECT * FROM t2"   "SELECT * FROM t1 JOIN %ss% AS x ON (t1.a=x.a)" 
+      {t1 %ss% -on {te_equals 0 0}}
+
+  3   "SELECT * FROM t2"   "SELECT * FROM %ss% AS x JOIN t1 ON (t1.a=x.a)" 
+      {%ss% t1 -on {te_equals 0 0}}
+
+  4   "SELECT * FROM t1, t2" "SELECT * FROM %ss% AS x JOIN t3"
+      {%ss% t3}
+
+  5   "SELECT * FROM t1, t2" "SELECT * FROM %ss% NATURAL JOIN t3"
+      {%ss% t3 -using b -on {te_equals 1 0}}
+
+  6   "SELECT * FROM t1, t2" "SELECT * FROM t3 NATURAL JOIN %ss%"
+      {t3 %ss% -using b -on {te_equals -nocase 0 1}}
+
+  7   "SELECT * FROM t1, t2" "SELECT * FROM t3 NATURAL LEFT JOIN %ss%"
+      {t3 %ss% -left -using b -on {te_equals -nocase 0 1}}
+
+  8   "SELECT count(*) AS y FROM t4"   "SELECT * FROM t5, %ss% USING (y)"
+      {t5 %ss% -using y -on {te_equals -affinity text 0 0}}
+
+  9   "SELECT count(*) AS y FROM t4"   "SELECT * FROM %ss%, t5 USING (y)"
+      {%ss% t5 -using y -on {te_equals -affinity text 0 0}}
+
+  10  "SELECT x AS y FROM t4"   "SELECT * FROM %ss% JOIN t5 USING (y)"
+      {%ss% t5 -using y -on {te_equals -nocase -affinity integer 0 0}}
+
+  11  "SELECT x AS y FROM t4"   "SELECT * FROM t5 JOIN %ss% USING (y)"
+      {t5 %ss% -using y -on {te_equals -nocase -affinity integer 0 0}}
+
+  12  "SELECT y AS x FROM t5"   "SELECT * FROM %ss% JOIN t4 USING (x)"
+      {%ss% t4 -using x -on {te_equals -nocase -affinity integer 0 0}}
+
+  13  "SELECT y AS x FROM t5"   "SELECT * FROM t4 JOIN %ss% USING (x)"
+      {t4 %ss% -using x -on {te_equals -nocase -affinity integer 0 0}}
+
+  14  "SELECT +y AS x FROM t5"   "SELECT * FROM %ss% JOIN t4 USING (x)"
+      {%ss% t4 -using x -on {te_equals -nocase -affinity text 0 0}}
+
+  15  "SELECT +y AS x FROM t5"   "SELECT * FROM t4 JOIN %ss% USING (x)"
+      {t4 %ss% -using x -on {te_equals -nocase -affinity text 0 0}}
+} {
+
+  # Create a temporary table named %ss% containing the data returned by
+  # the sub-select. Then have the [te_tbljoin] proc use this table to
+  # compute the expected results of the $select query. Drop the temporary
+  # table before continuing.
+  #
+  execsql "CREATE TEMP TABLE '%ss%' AS $subselect"
+  set te [eval te_tbljoin db $spec]
+  execsql "DROP TABLE '%ss%'"
+
+  # Check that the actual data returned by the $select query is the same
+  # as the expected data calculated using [te_tbljoin] above.
+  #
+  te_dataset_eq_unordered e_select-2.2.1.$tn [
+    te_read_sql db [string map [list %ss% "($subselect)"] $select]
+  ] $te
 }
 
 finish_test
