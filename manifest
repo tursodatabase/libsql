@@ -1,5 +1,5 @@
-C Make\ssure\sMEMSTATUS\sis\senabled\sat\sthe\sbeginning\sof\sthe\smemsubsys2.test\nscript.
-D 2010-09-09T23:40:43
+C Make\ssure\sSQLite\sis\srunning\swith\sMEMSTATUS\senabled\sat\sthe\sbeginning\sof\severy\ntest\sscript.
+D 2010-09-10T00:18:13
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c58f7d37ad0f9b28655ba4e28c6cb0f879569cd7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -524,7 +524,7 @@ F test/manydb.test 7faa0df55bbab2b14c25f323801db336c4e7ce3a
 F test/memdb.test f773146f66ee2c635854a8264317f39a6cc3e18c
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
 F test/memsubsys1.test 98d5ff4c9f534cc863c07b74043bd44921893f29
-F test/memsubsys2.test ddbd4af61d17f065726afe6e63d48fdcdb347e4b
+F test/memsubsys2.test 72a731225997ad5e8df89fdbeae9224616b6aecc
 F test/minmax.test 722d80816f7e096bf2c04f4111f1a6c1ba65453d
 F test/minmax2.test 33504c01a03bd99226144e4b03f7631a274d66e0
 F test/minmax3.test 66a60eb0f20281b0753249d347c5de0766954cee
@@ -627,7 +627,7 @@ F test/tclsqlite.test 8c154101e704170c2be10f137a5499ac2c6da8d3
 F test/tempdb.test 285dda9fdf10730702549e8aa19c9258bbf753b8
 F test/temptable.test f42121a0d29a62f00f93274464164177ab1cc24a
 F test/temptrigger.test b0273db072ce5f37cf19140ceb1f0d524bbe9f05
-F test/tester.tcl fc391eaf41d13b83084b2433abfbe3228ff92b30
+F test/tester.tcl f0dd6c80ec062e2d1a76b8b21ecff36ade1e4a2d
 F test/thread001.test a3e6a7254d1cb057836cb3145b60c10bf5b7e60f
 F test/thread002.test afd20095e6e845b405df4f2c920cb93301ca69db
 F test/thread003.test b824d4f52b870ae39fc5bae4d8070eca73085dca
@@ -851,7 +851,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P badaaa18fd4a4402add6ae1b3ecadbb79f91fe37
-R 2540d626eb84e9a6d51dbc0771d2ea7e
+P cf23a354975f581c2cf2299e2b2a4e00819830ad
+R 3c3ac2bdf6b980eb2b6650224c262a0a
 U drh
-Z 633fde3ef8c0013ae6412ea4a1a82a67
+Z 85f119d8bca7ec3dcce819a40a5ee998
