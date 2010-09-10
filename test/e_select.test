@@ -1257,8 +1257,8 @@ do_execsql_test e_select-4.4.3 {
 # result-set is evaluated once across the entire dataset.
 #
 foreach {tn select res} {
-  5.1 "SELECT count(a), max(a), count(b), max(b) FROM z1" {5 63 5 born}
-  5.2 "SELECT count(*), max(1)"                           {1 1}
+  5.1 "SELECT count(a), max(a), count(b), max(b) FROM z1"      {5 63 5 born}
+  5.2 "SELECT count(*), max(1)"                                {1 1}
 
   5.3 "SELECT sum(b+1) FROM z1 NATURAL LEFT JOIN z3"           {-43.06}
   5.4 "SELECT sum(b+2) FROM z1 NATURAL LEFT JOIN z3"           {-38.06}
@@ -1267,9 +1267,210 @@ foreach {tn select res} {
   do_execsql_test e_select-4.$tn $select [list {*}$res]
 }
 
+# EVIDENCE-OF: R-26684-40576 Each non-aggregate expression in the
+# result-set is evaluated once for an arbitrarily selected row of the
+# dataset.
+#
+# EVIDENCE-OF: R-27994-60376 The same arbitrarily selected row is used
+# for each non-aggregate expression.
+#
+#   Note: The results of many of the queries in this block of tests are
+#   technically undefined, as the documentation does not specify which row
+#   SQLite will arbitrarily select to use for the evaluation of the
+#   non-aggregate expressions.
+#
+drop_all_tables
+do_execsql_test e_select-4.6.0 {
+  CREATE TABLE a1(one PRIMARY KEY, two);
+  INSERT INTO a1 VALUES(1, 1);
+  INSERT INTO a1 VALUES(2, 3);
+  INSERT INTO a1 VALUES(3, 6);
+  INSERT INTO a1 VALUES(4, 10);
 
+  CREATE TABLE a2(one PRIMARY KEY, three);
+  INSERT INTO a2 VALUES(1, 1);
+  INSERT INTO a2 VALUES(3, 2);
+  INSERT INTO a2 VALUES(6, 3);
+  INSERT INTO a2 VALUES(10, 4);
+} {}
+foreach {tn select res} {
+  6.1 "SELECT one, two, count(*) FROM a1"                        {4 10 4} 
+  6.2 "SELECT one, two, count(*) FROM a1 WHERE one<3"            {2 3 2} 
+  6.3 "SELECT one, two, count(*) FROM a1 WHERE one>3"            {4 10 1} 
+  6.4 "SELECT *, count(*) FROM a1 JOIN a2"                       {4 10 10 4 16} 
+  6.5 "SELECT *, sum(three) FROM a1 NATURAL JOIN a2"             {3 6 2 3}
+  6.6 "SELECT *, sum(three) FROM a1 NATURAL JOIN a2"             {3 6 2 3}
+  6.7 "SELECT group_concat(three, ''), a1.* FROM a1 NATURAL JOIN a2" {12 3 6}
+} {
+  do_execsql_test e_select-4.$tn $select [list {*}$res]
+}
+
+# EVIDENCE-OF: R-04486-07266 Or, if the dataset contains zero rows, then
+# each non-aggregate expression is evaluated against a row consisting
+# entirely of NULL values.
+#
+foreach {tn select res} {
+  7.1  "SELECT one, two, count(*) FROM a1 WHERE 0"           {{} {} 0}
+  7.2  "SELECT sum(two), * FROM a1, a2 WHERE three>5"        {{} {} {} {} {}}
+  7.3  "SELECT max(one) IS NULL, one IS NULL, two IS NULL FROM a1 WHERE two=7" {
+    1 1 1
+  }
+} {
+  do_execsql_test e_select-4.$tn $select [list {*}$res]
+}  
+
+# EVIDENCE-OF: R-64138-28774 An aggregate query without a GROUP BY
+# clause always returns exactly one row of data, even if there are zero
+# rows of input data.
+#
+foreach {tn select} {
+  8.1  "SELECT count(*) FROM a1"
+  8.2  "SELECT count(*) FROM a1 WHERE 0"
+  8.3  "SELECT count(*) FROM a1 WHERE 1"
+  8.4  "SELECT max(a1.one)+min(two), a1.one, two, * FROM a1, a2 WHERE 1"
+  8.5  "SELECT max(a1.one)+min(two), a1.one, two, * FROM a1, a2 WHERE 0"
+} {
+  # Set $nRow to the number of rows returned by $select:
+  set ::stmt [sqlite3_prepare_v2 db $select -1 DUMMY]
+  set nRow 0
+  while {"SQLITE_ROW" == [sqlite3_step $::stmt]} { incr nRow }
+  set rc [sqlite3_finalize $::stmt]
+
+  # Test that $nRow==1 and that statement execution was successful 
+  # (rc==SQLITE_OK).
+  do_test e_select-4.$tn [list list $rc $nRow] {SQLITE_OK 1}
+}
+
+drop_all_tables
+do_execsql_test e_select-4.9.0 {
+  CREATE TABLE b1(one PRIMARY KEY, two);
+  INSERT INTO b1 VALUES(1, 'o');
+  INSERT INTO b1 VALUES(4, 'f');
+  INSERT INTO b1 VALUES(3, 't');
+  INSERT INTO b1 VALUES(2, 't');
+  INSERT INTO b1 VALUES(5, 'f');
+  INSERT INTO b1 VALUES(7, 's');
+  INSERT INTO b1 VALUES(6, 's');
+
+  CREATE TABLE b2(x, y);
+  INSERT INTO b2 VALUES(NULL, 0);
+  INSERT INTO b2 VALUES(NULL, 1);
+  INSERT INTO b2 VALUES('xyz', 2);
+  INSERT INTO b2 VALUES('abc', 3);
+  INSERT INTO b2 VALUES('xyz', 4);
+
+  CREATE TABLE b3(a COLLATE nocase, b COLLATE binary);
+  INSERT INTO b3 VALUES('abc', 'abc');
+  INSERT INTO b3 VALUES('aBC', 'aBC');
+  INSERT INTO b3 VALUES('Def', 'Def');
+  INSERT INTO b3 VALUES('dEF', 'dEF');
+} {}
+
+# EVIDENCE-OF: R-57754-57109 If the SELECT statement is an aggregate
+# query with a GROUP BY clause, then each of the expressions specified
+# as part of the GROUP BY clause is evaluated for each row of the
+# dataset. Each row is then assigned to a "group" based on the results;
+# rows for which the results of evaluating the GROUP BY expressions are
+# the same are assigned to the same group.
+#
+foreach {tn select res} {
+  9.1  "SELECT group_concat(one), two FROM b1 GROUP BY two" {
+    4,5 f   1 o   7,6   s 3,2 t
+  }
+  9.2  "SELECT group_concat(one), sum(one) FROM b1 GROUP BY (one>4)" {
+    1,4,3,2 10    5,7,6 18
+  }
+  9.3  "SELECT group_concat(one) FROM b1 GROUP BY (two>'o'), one%2" {
+    4  1,5    2,6   3,7
+  }
+  9.4  "SELECT group_concat(one) FROM b1 GROUP BY (one==2 OR two=='o')" {
+    4,3,5,7,6    1,2
+  }
+} {
+  do_execsql_test e_select-4.$tn $select [list {*}$res]
+}  
+
+# EVIDENCE-OF: R-14926-50129 For the purposes of grouping rows, NULL
+# values are considered equal.
+#
+foreach {tn select res} {
+  10.1  "SELECT group_concat(y) FROM b2 GROUP BY x" {0,1   3   2,4}
+  10.2  "SELECT count(*) FROM b2 GROUP BY CASE WHEN y<4 THEN NULL ELSE 0 END" {
+    4 1
+  }
+} {
+  do_execsql_test e_select-4.$tn $select [list {*}$res]
+}  
+
+# EVIDENCE-OF: R-10470-30318 The usual rules for selecting a collation
+# sequence with which to compare text values apply when evaluating
+# expressions in a GROUP BY clause.
+#
+foreach {tn select res} {
+  11.1  "SELECT count(*) FROM b3 GROUP BY b"      {1 1 1 1}
+  11.2  "SELECT count(*) FROM b3 GROUP BY a"      {2 2}
+  11.3  "SELECT count(*) FROM b3 GROUP BY +b"     {1 1 1 1}
+  11.4  "SELECT count(*) FROM b3 GROUP BY +a"     {2 2}
+  11.5  "SELECT count(*) FROM b3 GROUP BY b||''"  {1 1 1 1}
+  11.6  "SELECT count(*) FROM b3 GROUP BY a||''"  {1 1 1 1}
+} {
+  do_execsql_test e_select-4.$tn $select [list {*}$res]
+}
+
+# EVIDENCE-OF: R-63573-50730 The expressions in a GROUP BY clause may
+# not be aggregate expressions.
+#
+foreach {tn select} {
+  12.1  "SELECT * FROM b3 GROUP BY count(*)"
+  12.2  "SELECT max(a) FROM b3 GROUP BY max(b)"
+  12.3  "SELECT group_concat(a) FROM b3 GROUP BY a, max(b)"
+} {
+  set res {1 {aggregate functions are not allowed in the GROUP BY clause}}
+  do_catchsql_test e_select-4.$tn $select $res
+}
+
+# EVIDENCE-OF: R-40359-04817 If a HAVING clause is specified, it is
+# evaluated once for each group of rows and cast to an integer value. If
+# the result of evaluating the HAVING clause is NULL or zero (integer
+# value 0), the group is discarded.
+#
+#   This requirement is tested by all e_select-4.13.* tests.
+#
+# EVIDENCE-OF: R-04132-09474 If the HAVING clause is an aggregate
+# expression, it is evaluated across all rows in the group.
+#
+#   Tested by e_select-4.13.1.*
+#
+# EVIDENCE-OF: R-28262-47447 If a HAVING clause is a non-aggregate
+# expression, it is evaluated with respect to an arbitrarily selected
+# row from the group.
+#
+#   Tested by e_select-4.13.2.*
+#
+do_execsql_test e_select-4.13.0 {
+  CREATE TABLE c1(up, down);
+  INSERT INTO c1 VALUES('x', 1);
+  INSERT INTO c1 VALUES('x', 2);
+  INSERT INTO c1 VALUES('x', 4);
+  INSERT INTO c1 VALUES('x', 8);
+  INSERT INTO c1 VALUES('y', 16);
+  INSERT INTO c1 VALUES('y', 32);
+} {}
+
+foreach {tn select res} {
+  13.1.1  "SELECT up FROM c1 GROUP BY up HAVING count(*)>3" {x}
+  13.1.2  "SELECT up FROM c1 GROUP BY up HAVING sum(down)>16" {y}
+  13.1.3  "SELECT up FROM c1 GROUP BY up HAVING sum(down)<16" {x}
+  13.1.3  "SELECT up||down FROM c1 GROUP BY (down<5) HAVING max(down)<10" {x4}
+
+  13.2.1  "SELECT up FROM c1 GROUP BY up HAVING down>10" {y}
+  13.2.2  "SELECT up FROM c1 GROUP BY up HAVING up='y'"  {y}
+} {
+  do_execsql_test e_select-4.$tn $select [list {*}$res]
+}
 
 
 
 finish_test
+
 
