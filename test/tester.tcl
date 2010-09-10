@@ -245,6 +245,10 @@ reset_db
 #
 if {[info exists TC(count)]} return
 
+# Make sure memory statistics are enabled.
+#
+sqlite3_config_memstatus 1
+
 # Initialize the test counters and set up commands to access them.
 # Or, if this is a slave interpreter, set up aliases to write the
 # counters in the parent interpreter.
