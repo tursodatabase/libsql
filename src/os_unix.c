@@ -2808,6 +2808,12 @@ int sqlite3_fullsync_count = 0;
 # define HAVE_FULLFSYNC 0
 #endif
 
+#ifdef SQLITE_USE_REQUEST_FULLFSYNC
+#import <notify.h>
+#import <libkern/OSAtomic.h>
+static OSSpinLock notify_lock = 0;
+#define REQUEST_FULLSYNC_NOTIFICATION    "com.apple.reqsync"
+#endif
 
 /*
 ** The fsync() system call does not work as advertised on many
@@ -2867,7 +2873,16 @@ static int full_fsync(int fd, int fullSync, int dataOnly){
   rc = SQLITE_OK;
 #elif HAVE_FULLFSYNC
   if( fullSync ){
+#ifdef SQLITE_USE_REQUEST_FULLFSYNC
+    rc = fsync(fd);
+    if (!rc) {
+      OSSpinLockLock(&notify_lock);
+      rc = notify_post(REQUEST_FULLSYNC_NOTIFICATION);
+      OSSpinLockUnlock(&notify_lock);
+    }
+#else
     rc = fcntl(fd, F_FULLFSYNC, 0);
+#endif
   }else{
     rc = 1;
   }
@@ -5555,6 +5570,7 @@ static int proxyCreateUnixFile(
     terrno = errno;
   }
   if( fd<0 ){
+    sqlite3_free(pUnused);
     if( islockfile ){
       return SQLITE_BUSY;
     }
@@ -5585,6 +5601,7 @@ static int proxyCreateUnixFile(
     *ppFile = pNew;
     return SQLITE_OK;
   }
+  sqlite3_free(pNew->pUnused);
 end_create_proxy:    
   close(fd); /* silently leak fd if error, we're already in error */
   sqlite3_free(pNew);

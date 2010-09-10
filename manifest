@@ -1,5 +1,5 @@
-C replaced\srelative\slock\sproxy\spaths\swith\sabsolute
-D 2010-09-10T20:19:07
+C fixed\smemory\sleak\sin\sproxy\slock\sfile\serror\shandling
+D 2010-09-10T23:16:17
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c58f7d37ad0f9b28655ba4e28c6cb0f879569cd7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -157,7 +157,7 @@ F src/os.c 60178f518c4d6c0dcb59f7292232281d7bea2dcf
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
-F src/os_unix.c 3853edc254c464c040232a0b422b8f513205399a
+F src/os_unix.c e10e9f086dcf83b6a7cb997edd97a1e3edb92f44
 F src/os_win.c 51cb62f76262d961ea4249489383d714501315a7
 F src/pager.c a5f5d9787b11dfb0b6082e6f5846d00b459a8e19
 F src/pager.h ef8c8f71ab022cc2fff768a1175dd32355be9dcd
@@ -851,7 +851,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6a88cd46aeef3c50c91d5aadc61dd0b0982f8a4f
-R 3c96862866cafb29045b2c4ff2d61f84
+P 782c33512ab2b677b0734c591fcecddc5a655203
+R 467c6229a39e637a404ffbb673aa3796
 U adam
-Z 83868dd0097a338719a36f9cf13f13c4
+Z da8ed86c71f33338841987133c20b65c
