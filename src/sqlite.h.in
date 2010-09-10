@@ -3290,21 +3290,22 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 ** KEYWORDS: {application-defined SQL function}
 ** KEYWORDS: {application-defined SQL functions}
 **
-** ^These two functions (collectively known as "function creation routines")
+** ^These functions (collectively known as "function creation routines")
 ** are used to add SQL functions or aggregates or to redefine the behavior
-** of existing SQL functions or aggregates.  The only difference between the
-** two is that the second parameter, the name of the (scalar) function or
-** aggregate, is encoded in UTF-8 for sqlite3_create_function() and UTF-16
-** for sqlite3_create_function16().
+** of existing SQL functions or aggregates.  The only differences between
+** these routines are the text encoding expected for
+** the the second parameter (the name of the function being created)
+** and the presence or absence of a destructor callback for
+** the application data pointer.
 **
 ** ^The first parameter is the [database connection] to which the SQL
 ** function is to be added.  ^If an application uses more than one database
 ** connection then application-defined SQL functions must be added
 ** to each database connection separately.
 **
-** The second parameter is the name of the SQL function to be created or
+** ^The second parameter is the name of the SQL function to be created or
 ** redefined.  ^The length of the name is limited to 255 bytes, exclusive of
-** the zero-terminator.  Note that the name length limit is in bytes, not
+** the zero-terminator.  ^Note that the name length limit is in bytes, not
 ** characters.  ^Any attempt to create a function with a longer name
 ** will result in [SQLITE_ERROR] being returned.
 **
@@ -3316,7 +3317,7 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 ** parameter is less than -1 or greater than 127 then the behavior is
 ** undefined.
 **
-** The fourth parameter, eTextRep, specifies what
+** ^The fourth parameter, eTextRep, specifies what
 ** [SQLITE_UTF8 | text encoding] this SQL function prefers for
 ** its parameters.  Any SQL function implementation should be able to work
 ** work with UTF-8, UTF-16le, or UTF-16be.  But some implementations may be
@@ -3331,13 +3332,14 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 ** ^(The fifth parameter is an arbitrary pointer.  The implementation of the
 ** function can gain access to this pointer using [sqlite3_user_data()].)^
 **
-** The seventh, eighth and ninth parameters, xFunc, xStep and xFinal, are
+** ^The seventh, eighth and ninth parameters, xFunc, xStep and xFinal, are
 ** pointers to C-language functions that implement the SQL function or
 ** aggregate. ^A scalar SQL function requires an implementation of the xFunc
-** callback only; NULL pointers should be passed as the xStep and xFinal
+** callback only; NULL pointers must be passed as the xStep and xFinal
 ** parameters. ^An aggregate SQL function requires an implementation of xStep
-** and xFinal and NULL should be passed for xFunc. ^To delete an existing
-** SQL function or aggregate, pass NULL for all three function callbacks.
+** and xFinal and NULL pointer must be passed for xFunc. ^To delete an existing
+** SQL function or aggregate, pass NULL poiners for all three function
+** callbacks.
 **
 ** ^It is permitted to register multiple implementations of the same
 ** functions with the same name but with either differing numbers of
