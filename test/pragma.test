@@ -1307,22 +1307,17 @@ ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
 
   sqlite3 db test.db
   # set lock proxy name and then query it via pragma interface
+  set lpp [pwd]/proxyfile_1
   do_test pragma-16.1 {
-    execsql {
-      PRAGMA lock_proxy_file="mylittleproxy";
-      select * from sqlite_master;
-    }
-    execsql {
-      PRAGMA lock_proxy_file;
-    } 
-  } {mylittleproxy}
+    execsql "PRAGMA lock_proxy_file='$lpp'"
+    execsql "select * from sqlite_master"
+    execsql "PRAGMA lock_proxy_file"
+  } $lpp
 
   # 2 database connections can share a lock proxy file
   do_test pragma-16.2 {
     sqlite3 db2 test.db
-    execsql {
-      PRAGMA lock_proxy_file="mylittleproxy";
-    } db2
+    execsql "PRAGMA lock_proxy_file='$lpp'" db2
   } {}
 
   db2 close
@@ -1333,34 +1328,32 @@ ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
       PRAGMA lock_proxy_file=":auto:";
       select * from sqlite_master;
     } db2
-    execsql {
-      PRAGMA lock_proxy_file;
-    } db2
-  } {mylittleproxy}
+    execsql "PRAGMA lock_proxy_file" db2
+  } $lpp
 
   db2 close
+  set lpp2 [pwd]/proxyfile_2
+
   # 2nd database connection cannot override the lock proxy file
   do_test pragma-16.3 {
     sqlite3 db2 test.db
-    execsql {
-      PRAGMA lock_proxy_file="myotherproxy";
-    } db2
+    execsql "PRAGMA lock_proxy_file='$lpp2'" db2
     catchsql {
       select * from sqlite_master;
     } db2
   } {1 {database is locked}}
+
+  set lpp3 [pwd]/unused_proxyfile
 
   # lock proxy file can be renamed if no other connections are active
   do_test pragma-16.4 {
     db2 close
     db close
     sqlite3 db2 test.db
-    execsql {
-      PRAGMA lock_proxy_file="myoriginalproxy";
-      PRAGMA lock_proxy_file="myotherproxy";
-      PRAGMA lock_proxy_file;
-    } db2
-  } {myotherproxy}
+    execsql "PRAGMA lock_proxy_file='$lpp3'" db2
+    execsql "PRAGMA lock_proxy_file='$lpp2'" db2
+    execsql "PRAGMA lock_proxy_file" db2
+  } $lpp2
 
   db2 close
   set env(SQLITE_FORCE_PROXY_LOCKING) "1"
@@ -1371,7 +1364,7 @@ ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
       PRAGMA lock_proxy_file=":auto:";
       PRAGMA lock_proxy_file;
     } db2
-  } {myotherproxy}
+  } $lpp2
   
   # auto-naming a new proxy should use a predictable & unique name
   do_test pragma-16.6 {
@@ -1406,16 +1399,15 @@ ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
   } {1 {database is locked}}
 
   db2 close
+  set lpp4 [pwd]/proxyfile_4
+
   # check that db is unlocked after first host connection closes 
   do_test pragma-16.8.1 {
-    execsql {
-      PRAGMA lock_proxy_file="yetanotherproxy";
-      select * from sqlite_master;
-    }
-    execsql {
-      PRAGMA lock_proxy_file;
-    } 
-  } {yetanotherproxy}
+    execsql "PRAGMA lock_proxy_file='$lpp4'" 
+    execsql "select * from sqlite_master"
+    execsql "PRAGMA lock_proxy_file"
+  } $lpp4
+  
   do_test pragma-16.8.2 {
     execsql {
       create table if not exists mine(x);
@@ -1436,12 +1428,13 @@ ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
   } {1}
 
   # ensure creating directories for a lock proxy file works
+  set lpp5 [pwd]/proxytest/sub/dir/lock
   db close
   file delete -force proxytest
   do_test pragma-16.10.1 {
     sqlite3 db proxytest.db
+    execsql "PRAGMA lock_proxy_file='$lpp5'" 
     set lockpath2 [execsql {
-      PRAGMA lock_proxy_file="./proxytest/sub/dir/lock";
       PRAGMA lock_proxy_file;
     } db]
     string match "*proxytest/sub/dir/lock" $lockpath2
@@ -1476,12 +1469,13 @@ ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
   } {1}
 
   # make sure we can deal with ugly file paths correctly
+  set lpp6 [pwd]/./././////./proxytest/../proxytest/sub/dir/lock
   db close
   file delete -force proxytest
   do_test pragma-16.10.4 {
     sqlite3 db proxytest.db
+    execsql "PRAGMA lock_proxy_file='$lpp6'" 
     set lockpath2 [execsql {
-      PRAGMA lock_proxy_file="./././////./proxytest/../proxytest/sub/dir/lock";
       create table if not exists aa(bb);
       PRAGMA lock_proxy_file;
     } db]
@@ -1493,8 +1487,8 @@ ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
   file delete -force proxytest
   do_test pragma-16.10.5 {
     sqlite3 db proxytest.db
+    execsql "PRAGMA lock_proxy_file='$lpp5'" 
     execsql {
-      PRAGMA lock_proxy_file="./proxytest/sub/dir/lock";
       create table if not exists bb(bb);
     }
     db close
@@ -1514,8 +1508,8 @@ ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
   db close
   do_test pragma-16.10.6 {
     sqlite3 db proxytest.db
+    execsql "PRAGMA lock_proxy_file='$lpp5'" 
     catchsql {
-      PRAGMA lock_proxy_file="./proxytest/sub/dir/lock";
       create table if not exists faily(y);
       PRAGMA lock_proxy_file;
     } db
