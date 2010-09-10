@@ -3304,10 +3304,11 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 ** to each database connection separately.
 **
 ** ^The second parameter is the name of the SQL function to be created or
-** redefined.  ^The length of the name is limited to 255 bytes, exclusive of
-** the zero-terminator.  ^Note that the name length limit is in bytes, not
-** characters.  ^Any attempt to create a function with a longer name
-** will result in [SQLITE_ERROR] being returned.
+** redefined.  ^The length of the name is limited to 255 bytes in a UTF-8
+** representation, exclusive of the zero-terminator.  ^Note that the name
+** length limit is in UTF-8 bytes, not characters nor UTF-16 bytes.  
+** ^Any attempt to create a function with a longer name
+** will result in [SQLITE_MISUSE] being returned.
 **
 ** ^The third parameter (nArg)
 ** is the number of arguments that the SQL function or
