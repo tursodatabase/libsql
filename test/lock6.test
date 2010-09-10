@@ -126,9 +126,10 @@ ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
     set lockpath
   } {{:auto: (not held)}}
 
+  set lpp [pwd]/notmine
   do_test lock6-1.4.1 {
+    execsql "PRAGMA lock_proxy_file='$lpp'"
     catchsql {
-      PRAGMA lock_proxy_file="notmine";
       select * from sqlite_master;
     } db
   } {1 {database is locked}}
@@ -137,7 +138,7 @@ ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
     execsql {
       PRAGMA lock_proxy_file;
     } db
-  } {notmine}
+  } $lpp
     
   do_test lock6-1.5 {
     testfixture $::tf1 {
@@ -150,9 +151,10 @@ ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
 
   catch {testfixture $::tf1 {db close}}
 
+  set lpp [pwd]/mine
   do_test lock6-1.6 {
+    execsql "PRAGMA lock_proxy_file='$lpp'"
     execsql {
-      PRAGMA lock_proxy_file="mine";
       select * from sqlite_master;
     } db
   } {}
