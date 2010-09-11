@@ -293,7 +293,9 @@ static int mallocWithAlarm(int n, void **pp){
 */
 void *sqlite3Malloc(int n){
   void *p;
-  if( n<=0 || n>=0x7fffff00 ){
+  if( n<=0               /* IMP: R-65312-04917 */ 
+   || n>=0x7fffff00
+  ){
     /* A memory allocation of a number of bytes which is near the maximum
     ** signed integer value might cause an integer overflow inside of the
     ** xMalloc().  Hence we limit the maximum size to 0x7fffff00, giving
@@ -459,7 +461,7 @@ int sqlite3DbMallocSize(sqlite3 *db, void *p){
 ** Free memory previously obtained from sqlite3Malloc().
 */
 void sqlite3_free(void *p){
-  if( p==0 ) return;
+  if( p==0 ) return;  /* IMP: R-49053-54554 */
   assert( sqlite3MemdebugNoType(p, MEMTYPE_DB) );
   assert( sqlite3MemdebugHasType(p, MEMTYPE_HEAP) );
   if( sqlite3GlobalConfig.bMemstat ){
@@ -506,10 +508,10 @@ void *sqlite3Realloc(void *pOld, int nBytes){
   int nOld, nNew;
   void *pNew;
   if( pOld==0 ){
-    return sqlite3Malloc(nBytes);
+    return sqlite3Malloc(nBytes); /* IMP: R-28354-25769 */
   }
   if( nBytes<=0 ){
-    sqlite3_free(pOld);
+    sqlite3_free(pOld); /* IMP: R-31593-10574 */
     return 0;
   }
   if( nBytes>=0x7fffff00 ){
