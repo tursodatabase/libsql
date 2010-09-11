@@ -1455,22 +1455,180 @@ do_execsql_test e_select-4.13.0 {
   INSERT INTO c1 VALUES('x', 8);
   INSERT INTO c1 VALUES('y', 16);
   INSERT INTO c1 VALUES('y', 32);
+
+  CREATE TABLE c2(i, j);
+  INSERT INTO c2 VALUES(1, 0);
+  INSERT INTO c2 VALUES(2, 1);
+  INSERT INTO c2 VALUES(3, 3);
+  INSERT INTO c2 VALUES(4, 6);
+  INSERT INTO c2 VALUES(5, 10);
+  INSERT INTO c2 VALUES(6, 15);
+  INSERT INTO c2 VALUES(7, 21);
+  INSERT INTO c2 VALUES(8, 28);
+  INSERT INTO c2 VALUES(9, 36);
+
+  CREATE TABLE c3(i PRIMARY KEY, k TEXT);
+  INSERT INTO c3 VALUES(1,  'hydrogen');
+  INSERT INTO c3 VALUES(2,  'helium');
+  INSERT INTO c3 VALUES(3,  'lithium');
+  INSERT INTO c3 VALUES(4,  'beryllium');
+  INSERT INTO c3 VALUES(5,  'boron');
+  INSERT INTO c3 VALUES(94, 'plutonium');
 } {}
 
 foreach {tn select res} {
   13.1.1  "SELECT up FROM c1 GROUP BY up HAVING count(*)>3" {x}
   13.1.2  "SELECT up FROM c1 GROUP BY up HAVING sum(down)>16" {y}
   13.1.3  "SELECT up FROM c1 GROUP BY up HAVING sum(down)<16" {x}
-  13.1.3  "SELECT up||down FROM c1 GROUP BY (down<5) HAVING max(down)<10" {x4}
+  13.1.4  "SELECT up||down FROM c1 GROUP BY (down<5) HAVING max(down)<10" {x4}
 
   13.2.1  "SELECT up FROM c1 GROUP BY up HAVING down>10" {y}
   13.2.2  "SELECT up FROM c1 GROUP BY up HAVING up='y'"  {y}
+
+  13.2.3  "SELECT i, j FROM c2 GROUP BY i>4 HAVING i>6"  {9 36}
 } {
   do_execsql_test e_select-4.$tn $select [list {*}$res]
 }
 
+# EVIDENCE-OF: R-23927-54081 Each expression in the result-set is then
+# evaluated once for each group of rows.
+#
+# EVIDENCE-OF: R-53735-47017 If the expression is an aggregate
+# expression, it is evaluated across all rows in the group.
+#
+foreach {tn select res} {
+  14.1  "SELECT sum(down) FROM c1 GROUP BY up" {15 48}
+  14.2  "SELECT sum(j), max(j) FROM c2 GROUP BY (i%3)"     {54 36 27 21 39 28}
+  14.3  "SELECT sum(j), max(j) FROM c2 GROUP BY (j%2)"     {80 36 40 21}
+  14.4  "SELECT 1+sum(j), max(j)+1 FROM c2 GROUP BY (j%2)" {81 37 41 22}
+  14.5  "SELECT count(*), round(avg(i),2) FROM c1, c2 ON (i=down) GROUP BY j%2"
+        {3 4.33 1 2.0}
+} {
+  do_execsql_test e_select-4.$tn $select [list {*}$res]
+}
 
+# EVIDENCE-OF: R-62913-19830 Otherwise, it is evaluated against a single
+# arbitrarily chosen row from within the group.
+#
+# EVIDENCE-OF: R-53924-08809 If there is more than one non-aggregate
+# expression in the result-set, then all such expressions are evaluated
+# for the same row.
+#
+foreach {tn select res} {
+  15.1  "SELECT i, j FROM c2 GROUP BY i%2"             {8 28   9 36}
+  15.2  "SELECT i, j FROM c2 GROUP BY i%2 HAVING j<30" {8 28}
+  15.3  "SELECT i, j FROM c2 GROUP BY i%2 HAVING j>30" {9 36}
+  15.4  "SELECT i, j FROM c2 GROUP BY i%2 HAVING j>30" {9 36}
+  15.5  "SELECT count(*), i, k FROM c2 NATURAL JOIN c3 GROUP BY substr(k, 1, 1)"
+        {2 5 boron   2 2 helium   1 3 lithium}
+} {
+  do_execsql_test e_select-4.$tn $select [list {*}$res]
+}
+
+# EVIDENCE-OF: R-19334-12811 Each group of input dataset rows
+# contributes a single row to the set of result rows.
+#
+# EVIDENCE-OF: R-02223-49279 Subject to filtering associated with the
+# DISTINCT keyword, the number of rows returned by an aggregate query
+# with a GROUP BY clause is the same as the number of groups of rows
+# produced by applying the GROUP BY and HAVING clauses to the filtered
+# input dataset.
+#
+foreach {tn select nRow} {
+  16.1  "SELECT i, j FROM c2 GROUP BY i%2"          2
+  16.2  "SELECT i, j FROM c2 GROUP BY i"            9
+  16.3  "SELECT i, j FROM c2 GROUP BY i HAVING i<5" 4
+} {
+  set rows 0
+  db eval $select {incr rows}
+  do_test e_select-4.$tn [list set rows] $nRow
+}
+
+#-------------------------------------------------------------------------
+# The following tests attempt to verify statements made regarding the ALL
+# and DISTINCT keywords.
+#
+drop_all_tables
+do_execsql_test e_select-5.1.0 {
+  CREATE TABLE h1(a, b);
+  INSERT INTO h1 VALUES(1, 'one');
+  INSERT INTO h1 VALUES(1, 'I');
+  INSERT INTO h1 VALUES(1, 'i');
+  INSERT INTO h1 VALUES(4, 'four');
+  INSERT INTO h1 VALUES(4, 'IV');
+  INSERT INTO h1 VALUES(4, 'iv');
+
+  CREATE TABLE h2(x COLLATE nocase);
+  INSERT INTO h2 VALUES('One');
+  INSERT INTO h2 VALUES('Two');
+  INSERT INTO h2 VALUES('Three');
+  INSERT INTO h2 VALUES('Four');
+  INSERT INTO h2 VALUES('one');
+  INSERT INTO h2 VALUES('two');
+  INSERT INTO h2 VALUES('three');
+  INSERT INTO h2 VALUES('four');
+
+  CREATE TABLE h3(c, d);
+  INSERT INTO h3 VALUES(1, NULL);
+  INSERT INTO h3 VALUES(2, NULL);
+  INSERT INTO h3 VALUES(3, NULL);
+  INSERT INTO h3 VALUES(4, '2');
+  INSERT INTO h3 VALUES(5, NULL);
+  INSERT INTO h3 VALUES(6, '2,3');
+  INSERT INTO h3 VALUES(7, NULL);
+  INSERT INTO h3 VALUES(8, '2,4');
+  INSERT INTO h3 VALUES(9, '3');
+} {}
+
+# EVIDENCE-OF: R-60770-10612 One of the ALL or DISTINCT keywords may
+# follow the SELECT keyword in a simple SELECT statement.
+#
+do_execsql_test e_select-5.1.1 { SELECT ALL a FROM h1      } {1 1 1 4 4 4}
+do_execsql_test e_select-5.1.2 { SELECT DISTINCT a FROM h1 } {1 4}
+
+# EVIDENCE-OF: R-08861-34280 If the simple SELECT is a SELECT ALL, then
+# the entire set of result rows are returned by the SELECT.
+#
+# EVIDENCE-OF: R-47911-02086 If neither ALL or DISTINCT are present,
+# then the behaviour is as if ALL were specified.
+#
+# EVIDENCE-OF: R-14442-41305 If the simple SELECT is a SELECT DISTINCT,
+# then duplicate rows are removed from the set of result rows before it
+# is returned.
+#
+#   The three testable statements above are tested by e_select-5.2.*,
+#   5.3.* and 5.4.* respectively.
+#
+foreach {tn select res} {
+  3.1 "SELECT ALL x FROM h2" {One Two Three Four one two three four}
+  3.2 "SELECT ALL x FROM h1, h2 ON (x=b)" {One one Four four}
+
+  3.1 "SELECT x FROM h2" {One Two Three Four one two three four}
+  3.2 "SELECT x FROM h1, h2 ON (x=b)" {One one Four four}
+
+  4.1 "SELECT DISTINCT x FROM h2" {four one three two}
+  4.2 "SELECT DISTINCT x FROM h1, h2 ON (x=b)" {four one}
+} {
+  do_execsql_test e_select-5.$tn $select [list {*}$res]
+}
+
+# EVIDENCE-OF: R-02054-15343 For the purposes of detecting duplicate
+# rows, two NULL values are considered to be equal.
+#
+do_execsql_test e_select-5.5.1 { SELECT DISTINCT d FROM h3 } {{} 2 2,3 2,4 3}
+
+# EVIDENCE-OF: R-58359-52112 The normal rules for selecting a collation
+# sequence to compare text values with apply.
+#
+foreach {tn select res} {
+  6.1  "SELECT DISTINCT b FROM h1"                  {I IV four i iv one}
+  6.2  "SELECT DISTINCT b COLLATE nocase FROM h1"   {four i iv one}
+  6.3  "SELECT DISTINCT x FROM h2"                  {four one three two}
+  6.4  "SELECT DISTINCT x COLLATE binary FROM h2"   {
+    Four One Three Two four one three two
+  }
+} {
+  do_execsql_test e_select-5.$tn $select [list {*}$res]
+}
 
 finish_test
-
-
