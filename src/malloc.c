@@ -309,7 +309,7 @@ void *sqlite3Malloc(int n){
   }else{
     p = sqlite3GlobalConfig.m.xMalloc(n);
   }
-  assert( EIGHT_BYTE_ALIGNMENT(p) );  /* IMP: R-36023-12588 */
+  assert( EIGHT_BYTE_ALIGNMENT(p) );  /* IMP: R-04675-44850 */
   return p;
 }
 
@@ -547,7 +547,7 @@ void *sqlite3Realloc(void *pOld, int nBytes){
   }else{
     pNew = sqlite3GlobalConfig.m.xRealloc(pOld, nNew);
   }
-  assert( EIGHT_BYTE_ALIGNMENT(pNew) ); /* IMP: R-36023-12588 */
+  assert( EIGHT_BYTE_ALIGNMENT(pNew) ); /* IMP: R-04675-44850 */
   return pNew;
 }
 

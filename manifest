@@ -1,5 +1,8 @@
-C Additional\sevidence\smarks\son\sthe\smalloc()\simplementation.\s\sUpdate\sthe\s\ndocumentation\sto\sexplain\sthat\smallocs\sare\snot\snecessarily\s8-byte\saligned\nif\sthe\sSQLITE_4_BYTE_ALIGNED_MALLOC\scompile-time\soption\sis\sused.
-D 2010-09-11T16:15:56
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Fix\sa\scouple\sof\sincorrect\sevidence\smarks\son\smalloc().
+D 2010-09-11T16:25:43
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -140,7 +143,7 @@ F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 6d422ea91cf3d2d00408c5a8f2391cd458da85f8
 F src/main.c da74b2269470d97a702d2956eeeb691a5e3a68c3
-F src/malloc.c 44a50eb10bb755a7b27799b41b874e53bd6e24e3
+F src/malloc.c 579a6eee344a63c607c4b2933e9258708d0f6cc7
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 00bd8265c81abb665c48fea1e0c234eb3b922206
 F src/mem2.c e307323e86b5da1853d7111b68fd6b84ad6f09cf
@@ -857,7 +860,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 305cc4e6c1164b1ede0c3177e3c0f9b8644df0f6
-R d4739e5fcf915e019da850204032c340
+P 42b4bf9e72501cf228b4086437c7660443933f74
+R 02842908c71434dfd48b3d12f71c7ce4
 U drh
-Z 342cca73834b234d21ed5424a5f029e5
+Z 89e17357ae4594472aa1432bdf4145bd
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (Darwin)
+
+iEYEARECAAYFAkyLrYcACgkQoxKgR168RlGFEgCghibqg9PjE+oX345EOAHijLn6
+iVEAnA4DX4kEG/ViEAgOvP/d6Ckpzf6B
+=HUXW
+-----END PGP SIGNATURE-----
