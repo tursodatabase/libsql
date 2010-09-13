@@ -523,6 +523,17 @@ soaktest:	testfixture$(EXE) sqlite3$(EXE)
 test:	testfixture$(EXE) sqlite3$(EXE)
 	./testfixture$(EXE) $(TOP)/test/veryquick.test
 
+# The next two rules are used to support the "threadtest" target. Building
+# threadtest runs a few thread-safety tests that are implemented in C. This
+# target is invoked by the releasetest.tcl script.
+# 
+threadtest3$(EXE): sqlite3.c $(TOP)/test/threadtest3.c
+	$(TCCX) -O2 sqlite3.c $(TOP)/test/threadtest3.c \
+		-o threadtest3$(EXE) $(THREADLIB)
+
+threadtest: threadtest3$(EXE)
+	./threadtest3$(EXE)
+
 sqlite3_analyzer$(EXE):	$(TOP)/src/tclsqlite.c sqlite3.c $(TESTSRC) \
 			$(TOP)/tool/spaceanal.tcl
 	sed \

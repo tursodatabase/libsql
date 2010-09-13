@@ -1,5 +1,5 @@
-C Alter\ssome\sconfigurations\sin\sreleasetest.tcl.\sPrint\sout\sthe\swall-clock\stime\staken\sfor\seach\stest\safter\sit\sis\sexecuted.
-D 2010-09-13T11:29:02
+C Run\sthe\smulti-threaded\stests\sin\stest/threadtest3.c\sas\spart\sof\sreleasetest.tcl.\sRemove\sthe\sOMIT_BUILTIN_TEST\ssymbol\sfrom\sthe\s"Device-Two"\sconfiguration.
+D 2010-09-13T12:15:37
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -97,7 +97,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk 1c6b2152dab78cc0c9f74958968c87fea232254c
+F main.mk fb18cac178225dca49b2a159f9d6bac3889429b2
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -571,7 +571,7 @@ F test/randexpr1.test 1084050991e9ba22c1c10edd8d84673b501cc25a
 F test/rdonly.test c267d050a1d9a6a321de502b737daf28821a518d
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
 F test/releasetest.mk 2eced2f9ae701fd0a29e714a241760503ccba25a
-F test/releasetest.tcl 24c71eef618f08d5f36f073897ff58591872c17c
+F test/releasetest.tcl 627ccd04a113a193c375594bd5d6d051d8220658
 F test/rollback.test 1a83118ea6db4e7d8c10eaa63871b5e90502ffdc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test e58e0acef38b527ed1b0b70d3ada588f804af287
@@ -857,7 +857,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 43a99d9a88b1c3a6978e79ca21d49de6be2c9def
-R 825050fe30dfe1f265882fd9381bc39f
+P a91c5af3b033e326b868c3e6782650f6fe055b49
+R 9670e24acf30f41811da05ce30106d39
 U dan
-Z 742ab6b2a27fd40befa8ffdda2ed4654
+Z b8743623569d5bd7abbd9137a51a5792

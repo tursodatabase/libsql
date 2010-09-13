@@ -119,7 +119,6 @@ array set ::Configs {
     -DSQLITE_ENABLE_RTREE=1
     -DSQLITE_MAX_COMPOUND_SELECT=50
     -DSQLITE_MAX_PAGE_SIZE=32768
-    -DSQLITE_OMIT_BUILTIN_TEST=1
     -DSQLITE_OMIT_TRACE=1
     -DSQLITE_TEMP_STORE=3
     -DSQLITE_THREADSAFE=2
@@ -157,18 +156,18 @@ array set ::Platforms {
     "Debug-One"               test
     "Extra-Robustness"        test
     "Device-Two"              test
-    "Default"                 test
+    "Default"                 "threadtest test"
     "Device-One"              fulltest
   }
   Linux-i686 {
     "Unlock-Notify"           "QUICKTEST_INCLUDE=notify2.test test"
-    "Device-Two"              test
     "Device-One"              test
-    "Default"                 fulltest
+    "Device-Two"              test
+    "Default"                 "threadtest fulltest"
   }
   Darwin-i386 {
     "Locking-Style"           test
-    "OS-X"                    fulltest
+    "OS-X"                    "threadtest fulltest"
   }
 }
 
