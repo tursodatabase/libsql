@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\stest\sfiles\sso\sthat\sthey\swork\swith\sDEFAULT_AUTOVACUUM.
-D 2010-09-13T14:38:19
+C Add\stests\sfor\scompound\sSELECT\sstatements\sto\se_select.test.
+D 2010-09-13T18:58:33
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -350,7 +350,7 @@ F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_expr.test 164e87c1d7b40ceb47c57c3bffa384c81d009aa7
 F test/e_fkey.test 6721a741c6499b3ab7e5385923233343c8f1ad05
 F test/e_fts3.test 75bb0aee26384ef586165e21018a17f7cd843469
-F test/e_select.test b033fb107c7f8becd68b688ec9c98329142de68d
+F test/e_select.test d2c9d044811e93580f5743228a84f9627e7a6756
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
@@ -857,7 +857,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 3f5406e3231fbe84659712c9383b3e04cc6c11a8
-R c8fba6049d8d526de70cafa93adbbc04
+P 8cb39306f4bd9104c9d15d5ee98ec1252e798997
+R ea7890a7325b1ef483fb569c05bb662a
 U dan
-Z 6e9bdacc0eb9bafd55e318a6d36e9d2e
+Z 4d374c026bd8b69bfc76d182067e92a2

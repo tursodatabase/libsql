@@ -1631,4 +1631,231 @@ foreach {tn select res} {
   do_execsql_test e_select-5.$tn $select [list {*}$res]
 }
 
+#-------------------------------------------------------------------------
+# The following tests - e_select-7.* - test that statements made to do
+# with compound SELECT statements are correct.
+#
+
+# EVIDENCE-OF: R-39368-64333 In a compound SELECT, all the constituent
+# SELECTs must return the same number of result columns.
+#
+#   All the other tests in this section use compound SELECTs created
+#   using component SELECTs that do return the same number of columns.
+#   So the tests here just show that it is an error to attempt otherwise.
+#
+drop_all_tables
+do_execsql_test e_select-7.1.0 {
+  CREATE TABLE j1(a, b, c);
+  CREATE TABLE j2(e, f);
+  CREATE TABLE j3(g);
+} {}
+foreach {tn select op} {
+  1   "SELECT a, b FROM j1    UNION ALL SELECT g FROM j3"    {UNION ALL}
+  2   "SELECT *    FROM j1    UNION ALL SELECT * FROM j3"    {UNION ALL}
+  3   "SELECT a, b FROM j1    UNION ALL SELECT g FROM j3"    {UNION ALL}
+  4   "SELECT a, b FROM j1    UNION ALL SELECT * FROM j3,j2" {UNION ALL}
+  5   "SELECT *    FROM j3,j2 UNION ALL SELECT a, b FROM j1" {UNION ALL}
+
+  6   "SELECT a, b FROM j1    UNION SELECT g FROM j3"        {UNION}
+  7   "SELECT *    FROM j1    UNION SELECT * FROM j3"        {UNION}
+  8   "SELECT a, b FROM j1    UNION SELECT g FROM j3"        {UNION}
+  9   "SELECT a, b FROM j1    UNION SELECT * FROM j3,j2"     {UNION}
+  10  "SELECT *    FROM j3,j2 UNION SELECT a, b FROM j1"     {UNION}
+
+  11  "SELECT a, b FROM j1    INTERSECT SELECT g FROM j3"    {INTERSECT}
+  12  "SELECT *    FROM j1    INTERSECT SELECT * FROM j3"    {INTERSECT}
+  13  "SELECT a, b FROM j1    INTERSECT SELECT g FROM j3"    {INTERSECT}
+  14  "SELECT a, b FROM j1    INTERSECT SELECT * FROM j3,j2" {INTERSECT}
+  15  "SELECT *    FROM j3,j2 INTERSECT SELECT a, b FROM j1" {INTERSECT}
+
+  16  "SELECT a, b FROM j1    EXCEPT SELECT g FROM j3"       {EXCEPT}
+  17  "SELECT *    FROM j1    EXCEPT SELECT * FROM j3"       {EXCEPT}
+  18  "SELECT a, b FROM j1    EXCEPT SELECT g FROM j3"       {EXCEPT}
+  19  "SELECT a, b FROM j1    EXCEPT SELECT * FROM j3,j2"    {EXCEPT}
+  20  "SELECT *    FROM j3,j2 EXCEPT SELECT a, b FROM j1"    {EXCEPT}
+} {
+  set    err "SELECTs to the left and right of "
+  append err $op
+  append err " do not have the same number of result columns"
+  do_catchsql_test e_select-7.1.$tn $select [list 1 $err]
+}
+
+# EVIDENCE-OF: R-01450-11152 As the components of a compound SELECT must
+# be simple SELECT statements, they may not contain ORDER BY or LIMIT
+# clauses.
+# 
+foreach {tn select op1 op2} {
+  1   "SELECT * FROM j1 ORDER BY a UNION ALL SELECT * FROM j2,j3" 
+      {ORDER BY} {UNION ALL}
+  2   "SELECT count(*) FROM j1 ORDER BY 1 UNION ALL SELECT max(e) FROM j2"
+      {ORDER BY} {UNION ALL}
+  3   "SELECT count(*), * FROM j1 ORDER BY 1,2,3 UNION ALL SELECT *,* FROM j2"
+      {ORDER BY} {UNION ALL}
+  4   "SELECT * FROM j1 LIMIT 10 UNION ALL SELECT * FROM j2,j3" 
+      LIMIT {UNION ALL}
+  5   "SELECT * FROM j1 LIMIT 10 OFFSET 5 UNION ALL SELECT * FROM j2,j3" 
+      LIMIT {UNION ALL}
+  6   "SELECT a FROM j1 LIMIT (SELECT e FROM j2) UNION ALL SELECT g FROM j2,j3" 
+      LIMIT {UNION ALL}
+
+  7   "SELECT * FROM j1 ORDER BY a UNION SELECT * FROM j2,j3" 
+      {ORDER BY} {UNION}
+  8   "SELECT count(*) FROM j1 ORDER BY 1 UNION SELECT max(e) FROM j2"
+      {ORDER BY} {UNION}
+  9   "SELECT count(*), * FROM j1 ORDER BY 1,2,3 UNION SELECT *,* FROM j2"
+      {ORDER BY} {UNION}
+  10  "SELECT * FROM j1 LIMIT 10 UNION SELECT * FROM j2,j3" 
+      LIMIT {UNION}
+  11  "SELECT * FROM j1 LIMIT 10 OFFSET 5 UNION SELECT * FROM j2,j3" 
+      LIMIT {UNION}
+  12  "SELECT a FROM j1 LIMIT (SELECT e FROM j2) UNION SELECT g FROM j2,j3" 
+      LIMIT {UNION}
+
+  13  "SELECT * FROM j1 ORDER BY a EXCEPT SELECT * FROM j2,j3" 
+      {ORDER BY} {EXCEPT}
+  14  "SELECT count(*) FROM j1 ORDER BY 1 EXCEPT SELECT max(e) FROM j2"
+      {ORDER BY} {EXCEPT}
+  15  "SELECT count(*), * FROM j1 ORDER BY 1,2,3 EXCEPT SELECT *,* FROM j2"
+      {ORDER BY} {EXCEPT}
+  16  "SELECT * FROM j1 LIMIT 10 EXCEPT SELECT * FROM j2,j3" 
+      LIMIT {EXCEPT}
+  17  "SELECT * FROM j1 LIMIT 10 OFFSET 5 EXCEPT SELECT * FROM j2,j3" 
+      LIMIT {EXCEPT}
+  18  "SELECT a FROM j1 LIMIT (SELECT e FROM j2) EXCEPT SELECT g FROM j2,j3" 
+      LIMIT {EXCEPT}
+
+  19  "SELECT * FROM j1 ORDER BY a INTERSECT SELECT * FROM j2,j3" 
+      {ORDER BY} {INTERSECT}
+  20  "SELECT count(*) FROM j1 ORDER BY 1 INTERSECT SELECT max(e) FROM j2"
+      {ORDER BY} {INTERSECT}
+  21  "SELECT count(*), * FROM j1 ORDER BY 1,2,3 INTERSECT SELECT *,* FROM j2"
+      {ORDER BY} {INTERSECT}
+  22  "SELECT * FROM j1 LIMIT 10 INTERSECT SELECT * FROM j2,j3" 
+      LIMIT {INTERSECT}
+  23  "SELECT * FROM j1 LIMIT 10 OFFSET 5 INTERSECT SELECT * FROM j2,j3" 
+      LIMIT {INTERSECT}
+  24  "SELECT a FROM j1 LIMIT (SELECT e FROM j2) INTERSECT SELECT g FROM j2,j3" 
+      LIMIT {INTERSECT}
+} {
+  set err "$op1 clause should come after $op2 not before"
+  do_catchsql_test e_select-7.2.$tn $select [list 1 $err]
+}
+
+# EVIDENCE-OF: R-22874-32655 ORDER BY and LIMIT clauses may only occur
+# at the end of the entire compound SELECT.
+#
+foreach {tn select} {
+  1   "SELECT * FROM j1 UNION ALL SELECT * FROM j2,j3 ORDER BY a"
+  2   "SELECT count(*) FROM j1 UNION ALL SELECT max(e) FROM j2 ORDER BY 1"
+  3   "SELECT count(*), * FROM j1 UNION ALL SELECT *,* FROM j2 ORDER BY 1,2,3"
+  4   "SELECT * FROM j1 UNION ALL SELECT * FROM j2,j3 LIMIT 10" 
+  5   "SELECT * FROM j1 UNION ALL SELECT * FROM j2,j3 LIMIT 10 OFFSET 5" 
+  6   "SELECT a FROM j1 UNION ALL SELECT g FROM j2,j3 LIMIT (SELECT 10)" 
+
+  7   "SELECT * FROM j1 UNION SELECT * FROM j2,j3 ORDER BY a"
+  8   "SELECT count(*) FROM j1 UNION SELECT max(e) FROM j2 ORDER BY 1"
+  9   "SELECT count(*), * FROM j1 UNION SELECT *,* FROM j2 ORDER BY 1,2,3"
+  10  "SELECT * FROM j1 UNION SELECT * FROM j2,j3 LIMIT 10" 
+  11  "SELECT * FROM j1 UNION SELECT * FROM j2,j3 LIMIT 10 OFFSET 5" 
+  12  "SELECT a FROM j1 UNION SELECT g FROM j2,j3 LIMIT (SELECT 10)" 
+
+  13  "SELECT * FROM j1 EXCEPT SELECT * FROM j2,j3 ORDER BY a"
+  14  "SELECT count(*) FROM j1 EXCEPT SELECT max(e) FROM j2 ORDER BY 1"
+  15  "SELECT count(*), * FROM j1 EXCEPT SELECT *,* FROM j2 ORDER BY 1,2,3"
+  16  "SELECT * FROM j1 EXCEPT SELECT * FROM j2,j3 LIMIT 10" 
+  17  "SELECT * FROM j1 EXCEPT SELECT * FROM j2,j3 LIMIT 10 OFFSET 5" 
+  18  "SELECT a FROM j1 EXCEPT SELECT g FROM j2,j3 LIMIT (SELECT 10)" 
+
+  19  "SELECT * FROM j1 INTERSECT SELECT * FROM j2,j3 ORDER BY a"
+  20  "SELECT count(*) FROM j1 INTERSECT SELECT max(e) FROM j2 ORDER BY 1"
+  21  "SELECT count(*), * FROM j1 INTERSECT SELECT *,* FROM j2 ORDER BY 1,2,3"
+  22  "SELECT * FROM j1 INTERSECT SELECT * FROM j2,j3 LIMIT 10" 
+  23  "SELECT * FROM j1 INTERSECT SELECT * FROM j2,j3 LIMIT 10 OFFSET 5" 
+  24  "SELECT a FROM j1 INTERSECT SELECT g FROM j2,j3 LIMIT (SELECT 10)" 
+} {
+  do_test e_select-7.3.$tn { catch {execsql $select} msg } 0
+}
+
+# EVIDENCE-OF: R-08531-36543 A compound SELECT created using UNION ALL
+# operator returns all the rows from the SELECT to the left of the UNION
+# ALL operator, and all the rows from the SELECT to the right of it.
+#
+drop_all_tables
+do_execsql_test e_select-7.4.0 {
+  CREATE TABLE q1(a TEXT, b INTEGER, c);
+  CREATE TABLE q2(d NUMBER, e BLOB);
+
+  INSERT INTO q1 VALUES(16, -87.66, NULL);
+  INSERT INTO q1 VALUES('legible', 94, -42.47);
+  INSERT INTO q1 VALUES('beauty', 36, NULL);
+
+  INSERT INTO q2 VALUES('legible', 1);
+  INSERT INTO q2 VALUES('beauty', 2);
+  INSERT INTO q2 VALUES(-65.91, 4);
+  INSERT INTO q2 VALUES('emanating', -16.56);
+  INSERT INTO q2 VALUES(NULL, -22.82);
+  INSERT INTO q2 VALUES(7.48, 'example');
+} {}
+foreach {tn select res} {
+  1   "SELECT a FROM q1 UNION ALL SELECT d FROM q2" 
+      {16 legible beauty legible beauty -65.91 emanating {} 7.48}
+
+  2   "SELECT * FROM q1 WHERE a=16 UNION ALL SELECT 'x', * FROM q2 WHERE oid=1" 
+      {16 -87.66 {} x legible 1}
+
+  3   "SELECT count(*) FROM q1 UNION ALL SELECT min(e) FROM q2" {3 -22.82}
+} {
+  do_execsql_test e_select-7.4.$tn $select [list {*}$res]
+}
+
+
+# EVIDENCE-OF: R-32562-20566 When three or more simple SELECTs are
+# connected into a compound SELECT, they group from left to right. In
+# other words, if "A", "B" and "C" are all simple SELECT statements, (A
+# op B op C) is processed as ((A op B) op C).
+#
+#   e_select-7.X.1: Precedence of UNION vs. INTERSECT 
+#   e_select-7.X.2: Precedence of UNION vs. UNION ALL 
+#   e_select-7.X.3: Precedence of UNION vs. EXCEPT
+#   e_select-7.X.4: Precedence of INTERSECT vs. UNION ALL 
+#   e_select-7.X.5: Precedence of INTERSECT vs. EXCEPT
+#   e_select-7.X.6: Precedence of UNION ALL vs. EXCEPT
+#   e_select-7.X.7: Check that "a EXCEPT b EXCEPT c" is processed as 
+#                   "(a EXCEPT b) EXCEPT c".
+#
+# The INTERSECT and EXCEPT operations are mutually commutative. So
+# the e_select-7.X.5 test cases do not prove very much.
+#
+drop_all_tables
+do_execsql_test e_select-7.X.0 {
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES(1);
+  INSERT INTO t1 VALUES(2);
+  INSERT INTO t1 VALUES(3);
+} {}
+foreach {tn select res} {
+  1a "(1,2) INTERSECT (1)   UNION     (3)"   {1 3}
+  1b "(3)   UNION     (1,2) INTERSECT (1)"   {1}
+
+  2a "(1,2) UNION     (3)   UNION ALL (1)"   {1 2 3 1}
+  2b "(1)   UNION ALL (3)   UNION     (1,2)" {1 2 3}
+
+  3a "(1,2) UNION     (3)   EXCEPT    (1)"   {2 3}
+  3b "(1,2) EXCEPT    (3)   UNION     (1)"   {1 2}
+
+  4a "(1,2) INTERSECT (1)   UNION ALL (3)"   {1 3}
+  4b "(3)   UNION     (1,2) INTERSECT (1)"   {1}
+
+  5a "(1,2) INTERSECT (2)   EXCEPT    (2)"   {}
+  5b "(2,3) EXCEPT    (2)   INTERSECT (2)"   {}
+
+  6a "(2)   UNION ALL (2)   EXCEPT    (2)"   {}
+  6b "(2)   EXCEPT    (2)   UNION ALL (2)"   {2}
+
+  7  "(2,3) EXCEPT    (2)   EXCEPT    (3)"   {}
+} {
+  set select [string map {( {SELECT x FROM t1 WHERE x IN (}} $select]
+  do_execsql_test e_select-7.X.$tn $select [list {*}$res]
+}
+
 finish_test
