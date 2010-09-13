@@ -1,5 +1,5 @@
-C Run\sthe\smulti-threaded\stests\sin\stest/threadtest3.c\sas\spart\sof\sreleasetest.tcl.\sRemove\sthe\sOMIT_BUILTIN_TEST\ssymbol\sfrom\sthe\s"Device-Two"\sconfiguration.
-D 2010-09-13T12:15:37
+C Fix\sa\scouple\sof\stest\sfiles\sso\sthat\sthey\swork\swith\sDEFAULT_AUTOVACUUM.
+D 2010-09-13T14:38:19
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -526,7 +526,7 @@ F test/malloc_common.tcl 9b032b2e9172952400be0910d28f1852d5ca1ed1
 F test/manydb.test b3d3bc4c25657e7f68d157f031eb4db7b3df0d3c
 F test/memdb.test 0825155b2290e900264daaaf0334b6dfe69ea498
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
-F test/memsubsys1.test ef3d2af85bd55b8136e7fffd3b66e38e7864f32c
+F test/memsubsys1.test e1f7c4231b89923a67b7c593e544e2eeb86259cd
 F test/memsubsys2.test 72a731225997ad5e8df89fdbeae9224616b6aecc
 F test/minmax.test 722d80816f7e096bf2c04f4111f1a6c1ba65453d
 F test/minmax2.test 33504c01a03bd99226144e4b03f7631a274d66e0
@@ -621,7 +621,7 @@ F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
 F test/sqllimits1.test e90a0ed94452076f6a10209d378e06b5f75ef0a0
-F test/stat.test 3c18f0698e1a56c67e75b55c398332a3ffba579a
+F test/stat.test c7b20ea43003dc2dc33335e231c27be8284c4a2a
 F test/stmt.test 7915bd3e8380b956c095f40f41a775a30716e649
 F test/subquery.test b524f57c9574b2c0347045b4510ef795d4686796
 F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
@@ -857,7 +857,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a91c5af3b033e326b868c3e6782650f6fe055b49
-R 9670e24acf30f41811da05ce30106d39
+P 3f5406e3231fbe84659712c9383b3e04cc6c11a8
+R c8fba6049d8d526de70cafa93adbbc04
 U dan
-Z b8743623569d5bd7abbd9137a51a5792
+Z 6e9bdacc0eb9bafd55e318a6d36e9d2e
