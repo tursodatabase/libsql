@@ -89,69 +89,86 @@ array set ::Configs {
     -DSQLITE_ENABLE_MEMSYS3=1
     -DSQLITE_ENABLE_COLUMN_METADATA=1
   }
-  "Memory-Leak" {
-    -O2
-    -DSQLITE_DEBUG=1
-    -DSQLITE_MEMDEBUG=1
-    -DSQLITE_OMIT_LOOKASIDE=1
-    -DSQLITE_ENABLE_ASYNCIO=1
-    -DSQLITE_TCL_DEFAULT_FULLMUTEX=1
-  }
   "Device-One" {
     -O2
     -DSQLITE_DEBUG=1
-    -DSQLITE_ENABLE_MEMORY_MANAGEMENT=1
-    -DSQLITE_DISABLE_LFS=1
     -DSQLITE_DEFAULT_AUTOVACUUM=1
-    -DSQLITE_DEFAULT_PAGE_SIZE=1024
-    -DSQLITE_MAX_PAGE_SIZE=4096
     -DSQLITE_DEFAULT_CACHE_SIZE=64
+    -DSQLITE_DEFAULT_PAGE_SIZE=1024
     -DSQLITE_DEFAULT_TEMP_CACHE_SIZE=32
-    -DSQLITE_TEMP_STORE=3
-    -DSQLITE_OMIT_PROGRESS_CALLBACK=1
-    -DSQLITE_OMIT_LOAD_EXTENSION=1
-    -DSQLITE_OMIT_VIRTUALTABLE=1
-    -DSQLITE_ENABLE_IOTRACE=1
+    -DSQLITE_DISABLE_LFS=1
     -DSQLITE_ENABLE_ATOMIC_WRITE=1
+    -DSQLITE_ENABLE_IOTRACE=1
+    -DSQLITE_ENABLE_MEMORY_MANAGEMENT=1
+    -DSQLITE_MAX_PAGE_SIZE=4096
+    -DSQLITE_OMIT_LOAD_EXTENSION=1
+    -DSQLITE_OMIT_PROGRESS_CALLBACK=1
+    -DSQLITE_OMIT_VIRTUALTABLE=1
+    -DSQLITE_TEMP_STORE=3
+  }
+  "Device-Two" {
+    -DSQLITE_4_BYTE_ALIGNED_MALLOC=1
+    -DSQLITE_DEFAULT_AUTOVACUUM=1
+    -DSQLITE_DEFAULT_CACHE_SIZE=1000
+    -DSQLITE_DEFAULT_LOCKING_MODE=0
+    -DSQLITE_DEFAULT_PAGE_SIZE=1024
+    -DSQLITE_DEFAULT_TEMP_CACHE_SIZE=1000
+    -DSQLITE_DISABLE_LFS=1
+    -DSQLITE_ENABLE_FTS3=1
+    -DSQLITE_ENABLE_MEMORY_MANAGEMENT=1
+    -DSQLITE_ENABLE_RTREE=1
+    -DSQLITE_MAX_COMPOUND_SELECT=50
+    -DSQLITE_MAX_PAGE_SIZE=32768
+    -DSQLITE_OMIT_BUILTIN_TEST=1
+    -DSQLITE_OMIT_TRACE=1
+    -DSQLITE_TEMP_STORE=3
+    -DSQLITE_THREADSAFE=2
   }
   "Locking-Style" {
     -O2
     -DSQLITE_ENABLE_LOCKING_STYLE=1
   }
   "OS-X" {
+    -DSQLITE_OMIT_LOAD_EXTENSION=1
+    -DSQLITE_DEFAULT_MEMSTATUS=0
+    -DSQLITE_THREADSAFE=2
+    -DSQLITE_OS_UNIX=1
     -DSQLITE_ENABLE_LOCKING_STYLE=1
-    -DSQLITE_TCL_DEFAULT_FULLMUTEX=1
+    -DUSE_PREAD=1
+    -DSQLITE_ENABLE_RTREE=1
+    -DSQLITE_ENABLE_FTS3=1
+    -DSQLITE_ENABLE_FTS3_PARENTHESIS=1
+    -DSQLITE_DEFAULT_CACHE_SIZE=1000
+    -DSQLITE_MAX_LENGTH=2147483645
+    -DSQLITE_MAX_VARIABLE_NUMBER=500000
+    -DSQLITE_DEBUG=1 
+    -DSQLITE_PREFER_PROXY_LOCKING=1
   }
   "Extra-Robustness" {
     -DSQLITE_ENABLE_OVERSIZE_CELL_CHECK=1
   }
-  "Coverage" {
-    -O0
-    -fprofile-arcs
-    -ftest-coverage
-    -DSQLITE_COVERAGE_TEST=1
-  } 
 }
 
 array set ::Platforms {
   Linux-x86_64 {
     "Secure-Delete"           test
     "Unlock-Notify"           "QUICKTEST_INCLUDE=notify2.test test"
-    "Device-One"              fulltest
     "Update-Delete-Limit"     test
     "Debug-One"               test
     "Extra-Robustness"        test
-    "Memory-Leak"             fulltest
+    "Device-Two"              test
     "Default"                 test
-  }
-  Linux-i686 {
-    "Default"                 test
-    "Unlock-Notify"           "QUICKTEST_INCLUDE=notify2.test test"
     "Device-One"              fulltest
   }
+  Linux-i686 {
+    "Unlock-Notify"           "QUICKTEST_INCLUDE=notify2.test test"
+    "Device-Two"              test
+    "Device-One"              test
+    "Default"                 fulltest
+  }
   Darwin-i386 {
-    "OS-X"                    test
-    "Locking-Style"           fulltest
+    "Locking-Style"           test
+    "OS-X"                    fulltest
   }
 }
 
@@ -213,10 +230,16 @@ proc run_test_suite {name testtarget config} {
     $testtarget                                        \
     [list CFLAGS=$cflags OPTS=$opts >& $dir/test.log]  \
   ]
-  set rc [catch $makecmd]
 
+  set tm1 [clock seconds] 
+  set rc [catch $makecmd]
+  set tm2 [clock seconds]
+
+  set minutes [expr {($tm2-$tm1)/60}]
+  set seconds [expr {($tm2-$tm1)%60}]
+  puts -nonewline [format " (%d:%.2d) " $minutes $seconds]
   if {$rc} {
-    puts " FAILED."
+    puts "FAILED."
   } else {
     puts "Ok."
   }
