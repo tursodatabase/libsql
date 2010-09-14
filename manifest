@@ -1,5 +1,5 @@
-C Fix\swalmode.test\sso\sthat\sall\stests\spass\swith\sSQLITE_TEMP_STORE=3.
-D 2010-09-13T19:03:38
+C Fix\ssome\stest\sfailures\sfound\srunning\sreleasetest.tcl.
+D 2010-09-14T10:53:46
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -356,7 +356,7 @@ F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
 F test/eval.test bc269c365ba877554948441e91ad5373f9f91be3
 F test/exclusive.test 0ba00fb15aeec1eba3d4b03a271b5081e21c35be
-F test/exclusive2.test fcbb1c9ca9739292a0a22a3763243ad6d868086b
+F test/exclusive2.test 76e63c05349cb70d09d60b99d2ae625525ff5155
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/expr.test 9f521ae22f00e074959f72ce2e55d46b9ed23f68
 F test/fallocate.test 43dc34b8c24be6baffadc3b4401ee15710ce83c6
@@ -446,7 +446,7 @@ F test/in.test 19b642bb134308980a92249750ea4ce3f6c75c2d
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
 F test/in4.test 64f3cc1acde1b9161ccdd8e5bde3daefdb5b2617
-F test/incrblob.test e557f262cd2cc088e6bb4d154575a1bbe242edcd
+F test/incrblob.test fa2cd937f59f5231bfdc2aa152ee184bf254ca02
 F test/incrblob2.test edc3a96e557bd61fb39acc8d2edd43371fbbaa19
 F test/incrblob_err.test c577c91d4ed9e8336cdb188b15d6ee2a6fe9604e
 F test/incrvacuum.test 453d1e490d8f5ad2c9b3a54282a0690d6ae56462
@@ -551,13 +551,13 @@ F test/openv2.test af02ed0a9cbc0d2a61b8f35171d4d117e588e4ec
 F test/pager1.test 12ad20280db1ba25f1f0d7ddebf0971a305d8f80
 F test/pager2.test 0fbb6b6dc40ce1fecfe758c555a748ad2e9beaa3
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
-F test/pagerfault.test 90f7c65b750def13d4f673ff8bef2446e886517d
+F test/pagerfault.test 3cd3537bf2efb4baef26c74878718f4a32926da4
 F test/pagerfault2.test 1f79ea40d1133b2683a2f811b00f2399f7ec2401
 F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test 4118a183908ecaed343a06fcef3ba82e87e0129d
 F test/pcache2.test 0d85f2ab6963aee28c671d4c71bec038c00a1d16
-F test/permutations.test 9c73c6524ad0603b9f6ab3d49c77ac5a94919732
+F test/permutations.test ca1c985cf68c692096d0325b33c62f2b576446a5
 F test/pragma.test ed78d200f65c6998df51196cb8c39d5300570f24
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
@@ -857,7 +857,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8b0b009f292e0b52bffb08662aef67d9465e5a0a
-R 543bdeb104c741398b4c52508ded2b55
+P 6ba6e59a9d528fb1bdc530d48ab96a2de6e190d6
+R 9391d10b44cd28a1b6ec0c0ec67ccf03
 U dan
-Z 3a31e4f571c8c095188e7b06c7f17753
+Z b678b2a32447a7b3c62dfb66bd5817c3

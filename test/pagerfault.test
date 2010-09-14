@@ -674,21 +674,29 @@ do_faultsim_test pagerfault-14a -prep {
   faultsim_test_result {0 {}} {1 {}} {1 {SQL logic error or missing database}}
 }
 
-do_faultsim_test pagerfault-14b -prep {
-  catch { db2 close }
-  faultsim_restore_and_reopen
-  sqlite3 db2 ""
-  db2 eval { PRAGMA page_size = 4096; CREATE TABLE xx(a) }
-} -body {
-  sqlite3_backup B db2 main db main
-  B step 200
-  set rc [B finish]
-  if {[string match SQLITE_IOERR_* $rc]} {set rc SQLITE_IOERR}
-  if {$rc != "SQLITE_OK"} { error [sqlite3_test_errstr $rc] }
-  set {} {}
-} -test {
-  faultsim_test_result {0 {}} {1 {sqlite3_backup_init() failed}}
+# If TEMP_STORE is 2 or greater, then the database [db2] will be created
+# as an in-memory database. This test will not work in that case, as it
+# is not possible to change the page-size of an in-memory database. Even
+# using the backup API.
+#
+if {$TEMP_STORE<2} {
+  do_faultsim_test pagerfault-14b -prep {
+    catch { db2 close }
+    faultsim_restore_and_reopen
+    sqlite3 db2 ""
+    db2 eval { PRAGMA page_size = 4096; CREATE TABLE xx(a) }
+  } -body {
+    sqlite3_backup B db2 main db main
+    B step 200
+    set rc [B finish]
+    if {[string match SQLITE_IOERR_* $rc]} {set rc SQLITE_IOERR}
+    if {$rc != "SQLITE_OK"} { error [sqlite3_test_errstr $rc] }
+    set {} {}
+  } -test {
+    faultsim_test_result {0 {}} {1 {sqlite3_backup_init() failed}}
+  }
 }
+
 do_faultsim_test pagerfault-14c -prep {
   catch { db2 close }
   faultsim_restore_and_reopen

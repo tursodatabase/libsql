@@ -83,7 +83,7 @@ do_test exclusive2-1.0 {
 # The following tests - exclusive2-1.X - check that:
 #
 # 1-3:   Build a database with connection 1, calculate a signature.
-# 4-9:   Modify the database using a second connection in a way that
+# 4-7:   Modify the database using a second connection in a way that
 #        does not modify the freelist, then reset the pager change-counter
 #        to the value it had before the modifications.
 # 8:     Check that using the first connection, the database signature
@@ -98,6 +98,11 @@ do_test exclusive2-1.0 {
 # the entire database. In the case of 1024 byte pages, this means
 # the cache size must be at least 17. Otherwise, some pages will be
 # loaded from the database file in step 8.
+#
+# For similar reasons, this test does not work with the memsubsys1 permutation.
+# Permutation memsubsys1 configures the pcache subsystem to use a static
+# allocation of 24 pages (shared between all pagers). This is not enough for
+# this test.
 #
 do_test exclusive2-1.1 {
   execsql {
@@ -146,10 +151,12 @@ do_test exclusive2-1.6 {
 do_test exclusive2-1.7 {
   pagerChangeCounter test.db 1
 } {1}
-do_test exclusive2-1.9 {
-  t1sig
-  expr {[t1sig] eq $::sig}
-} {1}
+if {[permutation] != "memsubsys1"} {
+  do_test exclusive2-1.9 {
+    t1sig
+    expr {[t1sig] eq $::sig}
+  } {1}
+}
 do_test exclusive2-1.10 {
   pagerChangeCounter test.db 2
 } {2}
