@@ -1784,6 +1784,7 @@ drop_all_tables
 do_execsql_test e_select-7.4.0 {
   CREATE TABLE q1(a TEXT, b INTEGER, c);
   CREATE TABLE q2(d NUMBER, e BLOB);
+  CREATE TABLE q3(f REAL, g);
 
   INSERT INTO q1 VALUES(16, -87.66, NULL);
   INSERT INTO q1 VALUES('legible', 94, -42.47);
@@ -1793,19 +1794,169 @@ do_execsql_test e_select-7.4.0 {
   INSERT INTO q2 VALUES('beauty', 2);
   INSERT INTO q2 VALUES(-65.91, 4);
   INSERT INTO q2 VALUES('emanating', -16.56);
-  INSERT INTO q2 VALUES(NULL, -22.82);
-  INSERT INTO q2 VALUES(7.48, 'example');
+
+  INSERT INTO q3 VALUES('beauty', 2);
+  INSERT INTO q3 VALUES('beauty', 2);
 } {}
 foreach {tn select res} {
-  1   "SELECT a FROM q1 UNION ALL SELECT d FROM q2" 
-      {16 legible beauty legible beauty -65.91 emanating {} 7.48}
+  1   {SELECT a FROM q1 UNION ALL SELECT d FROM q2}
+      {16 legible beauty legible beauty -65.91 emanating}
 
-  2   "SELECT * FROM q1 WHERE a=16 UNION ALL SELECT 'x', * FROM q2 WHERE oid=1" 
+  2   {SELECT * FROM q1 WHERE a=16 UNION ALL SELECT 'x', * FROM q2 WHERE oid=1}
       {16 -87.66 {} x legible 1}
 
-  3   "SELECT count(*) FROM q1 UNION ALL SELECT min(e) FROM q2" {3 -22.82}
+  3   {SELECT count(*) FROM q1 UNION ALL SELECT min(e) FROM q2} 
+      {3 -16.56}
+
+  4   {SELECT * FROM q2 UNION ALL SELECT * FROM q3} 
+      {legible 1 beauty 2 -65.91 4 emanating -16.56 beauty 2 beauty 2}
 } {
   do_execsql_test e_select-7.4.$tn $select [list {*}$res]
+}
+
+# EVIDENCE-OF: R-20560-39162 The UNION operator works the same way as
+# UNION ALL, except that duplicate rows are removed from the final
+# result set.
+#
+foreach {tn select res} {
+  1   {SELECT a FROM q1 UNION SELECT d FROM q2}
+      {-65.91 16 beauty emanating legible}
+
+  2   {SELECT * FROM q1 WHERE a=16 UNION SELECT 'x', * FROM q2 WHERE oid=1}
+      {16 -87.66 {} x legible 1}
+
+  3   {SELECT count(*) FROM q1 UNION SELECT min(e) FROM q2} 
+      {-16.56 3}
+
+  4   {SELECT * FROM q2 UNION SELECT * FROM q3} 
+      {-65.91 4 beauty 2 emanating -16.56 legible 1}
+} {
+  do_execsql_test e_select-7.5.$tn $select [list {*}$res]
+}
+
+# EVIDENCE-OF: R-45764-31737 The INTERSECT operator returns the
+# intersection of the results of the left and right SELECTs.
+#
+foreach {tn select res} {
+  1   {SELECT a FROM q1 INTERSECT SELECT d FROM q2} {beauty legible}
+  2   {SELECT * FROM q2 INTERSECT SELECT * FROM q3} {beauty 2}
+} {
+  do_execsql_test e_select-7.6.$tn $select [list {*}$res]
+}
+
+# EVIDENCE-OF: R-25787-28949 The EXCEPT operator returns the subset of
+# rows returned by the left SELECT that are not also returned by the
+# right-hand SELECT.
+#
+foreach {tn select res} {
+  1   {SELECT a FROM q1 EXCEPT SELECT d FROM q2} {16}
+
+  2   {SELECT * FROM q2 EXCEPT SELECT * FROM q3} 
+      {-65.91 4 emanating -16.56 legible 1}
+} {
+  do_execsql_test e_select-7.7.$tn $select [list {*}$res]
+}
+
+# EVIDENCE-OF: R-40729-56447 Duplicate rows are removed from the results
+# of INTERSECT and EXCEPT operators before the result set is returned.
+#
+foreach {tn select res} {
+  0   {SELECT * FROM q3} {beauty 2 beauty 2}
+
+  1   {SELECT * FROM q3 INTERSECT SELECT * FROM q3} {beauty 2}
+  2   {SELECT * FROM q3 EXCEPT SELECT a,b FROM q1}  {beauty 2}
+} {
+  do_execsql_test e_select-7.8.$tn $select [list {*}$res]
+}
+
+# EVIDENCE-OF: R-46765-43362 For the purposes of determining duplicate
+# rows for the results of compound SELECT operators, NULL values are
+# considered equal to other NULL values and distinct from all non-NULL
+# values.
+#
+db nullvalue null
+foreach {tn select res} {
+  1   {SELECT NULL UNION ALL SELECT NULL} {null null}
+  2   {SELECT NULL UNION     SELECT NULL} {null}
+  3   {SELECT NULL INTERSECT SELECT NULL} {null}
+  4   {SELECT NULL EXCEPT    SELECT NULL} {}
+
+  5   {SELECT NULL UNION ALL SELECT 'ab'} {null ab}
+  6   {SELECT NULL UNION     SELECT 'ab'} {null ab}
+  7   {SELECT NULL INTERSECT SELECT 'ab'} {}
+  8   {SELECT NULL EXCEPT    SELECT 'ab'} {null}
+
+  9   {SELECT NULL UNION ALL SELECT 0} {null 0}
+  10  {SELECT NULL UNION     SELECT 0} {null 0}
+  11  {SELECT NULL INTERSECT SELECT 0} {}
+  12  {SELECT NULL EXCEPT    SELECT 0} {null}
+
+  13  {SELECT c FROM q1 UNION ALL SELECT g FROM q3} {null -42.47 null 2 2}
+  14  {SELECT c FROM q1 UNION     SELECT g FROM q3} {null -42.47 2}
+  15  {SELECT c FROM q1 INTERSECT SELECT g FROM q3} {}
+  16  {SELECT c FROM q1 EXCEPT    SELECT g FROM q3} {null -42.47}
+} {
+  do_execsql_test e_select-7.9.$tn $select [list {*}$res]
+}
+db nullvalue {} 
+
+# EVIDENCE-OF: R-51232-50224 The collation sequence used to compare two
+# text values is determined as if the columns of the left and right-hand
+# SELECT statements were the left and right-hand operands of the equals
+# (=) operator, except that greater precedence is not assigned to a
+# collation sequence specified with the postfix COLLATE operator.
+#
+drop_all_tables
+do_execsql_test e_select-7.10.0 {
+  CREATE TABLE y1(a COLLATE nocase, b COLLATE binary, c);
+  INSERT INTO y1 VALUES('Abc', 'abc', 'aBC');
+} {}
+foreach {tn select res} {
+  1   {SELECT 'abc'                UNION SELECT 'ABC'} {ABC abc}
+  2   {SELECT 'abc' COLLATE nocase UNION SELECT 'ABC'} {ABC}
+  3   {SELECT 'abc'                UNION SELECT 'ABC' COLLATE nocase} {ABC}
+  4   {SELECT 'abc' COLLATE binary UNION SELECT 'ABC' COLLATE nocase} {ABC abc}
+  5   {SELECT 'abc' COLLATE nocase UNION SELECT 'ABC' COLLATE binary} {ABC}
+
+  6   {SELECT a FROM y1 UNION SELECT b FROM y1}                {abc}
+  7   {SELECT b FROM y1 UNION SELECT a FROM y1}                {Abc abc}
+  8   {SELECT a FROM y1 UNION SELECT c FROM y1}                {aBC}
+
+  9   {SELECT a FROM y1 UNION SELECT c COLLATE binary FROM y1} {aBC}
+
+} {
+  do_execsql_test e_select-7.10.$tn $select [list {*}$res]
+}
+
+# EVIDENCE-OF: R-32706-07403 No affinity transformations are applied to
+# any values when comparing rows as part of a compound SELECT.
+#
+drop_all_tables
+do_execsql_test e_select-7.10.0 {
+  CREATE TABLE w1(a TEXT, b NUMBER);
+  CREATE TABLE w2(a, b TEXT);
+
+  INSERT INTO w1 VALUES('1', 4.1);
+  INSERT INTO w2 VALUES(1, 4.1);
+} {}
+
+foreach {tn select res} {
+  1  { SELECT a FROM w1 UNION SELECT a FROM w2 } {1 1}
+  2  { SELECT a FROM w2 UNION SELECT a FROM w1 } {1 1}
+  3  { SELECT b FROM w1 UNION SELECT b FROM w2 } {4.1 4.1}
+  4  { SELECT b FROM w2 UNION SELECT b FROM w1 } {4.1 4.1}
+
+  5  { SELECT a FROM w1 INTERSECT SELECT a FROM w2 } {}
+  6  { SELECT a FROM w2 INTERSECT SELECT a FROM w1 } {}
+  7  { SELECT b FROM w1 INTERSECT SELECT b FROM w2 } {}
+  8  { SELECT b FROM w2 INTERSECT SELECT b FROM w1 } {}
+
+  9  { SELECT a FROM w1 EXCEPT SELECT a FROM w2 } {1}
+  10 { SELECT a FROM w2 EXCEPT SELECT a FROM w1 } {1}
+  11 { SELECT b FROM w1 EXCEPT SELECT b FROM w2 } {4.1}
+  12 { SELECT b FROM w2 EXCEPT SELECT b FROM w1 } {4.1}
+} {
+  do_execsql_test e_select-7.11.$tn $select [list {*}$res]
 }
 
 
@@ -1814,20 +1965,20 @@ foreach {tn select res} {
 # other words, if "A", "B" and "C" are all simple SELECT statements, (A
 # op B op C) is processed as ((A op B) op C).
 #
-#   e_select-7.X.1: Precedence of UNION vs. INTERSECT 
-#   e_select-7.X.2: Precedence of UNION vs. UNION ALL 
-#   e_select-7.X.3: Precedence of UNION vs. EXCEPT
-#   e_select-7.X.4: Precedence of INTERSECT vs. UNION ALL 
-#   e_select-7.X.5: Precedence of INTERSECT vs. EXCEPT
-#   e_select-7.X.6: Precedence of UNION ALL vs. EXCEPT
-#   e_select-7.X.7: Check that "a EXCEPT b EXCEPT c" is processed as 
+#   e_select-7.12.1: Precedence of UNION vs. INTERSECT 
+#   e_select-7.12.2: Precedence of UNION vs. UNION ALL 
+#   e_select-7.12.3: Precedence of UNION vs. EXCEPT
+#   e_select-7.12.4: Precedence of INTERSECT vs. UNION ALL 
+#   e_select-7.12.5: Precedence of INTERSECT vs. EXCEPT
+#   e_select-7.12.6: Precedence of UNION ALL vs. EXCEPT
+#   e_select-7.12.7: Check that "a EXCEPT b EXCEPT c" is processed as 
 #                   "(a EXCEPT b) EXCEPT c".
 #
 # The INTERSECT and EXCEPT operations are mutually commutative. So
-# the e_select-7.X.5 test cases do not prove very much.
+# the e_select-7.12.5 test cases do not prove very much.
 #
 drop_all_tables
-do_execsql_test e_select-7.X.0 {
+do_execsql_test e_select-7.12.0 {
   CREATE TABLE t1(x);
   INSERT INTO t1 VALUES(1);
   INSERT INTO t1 VALUES(2);
@@ -1855,7 +2006,7 @@ foreach {tn select res} {
   7  "(2,3) EXCEPT    (2)   EXCEPT    (3)"   {}
 } {
   set select [string map {( {SELECT x FROM t1 WHERE x IN (}} $select]
-  do_execsql_test e_select-7.X.$tn $select [list {*}$res]
+  do_execsql_test e_select-7.12.$tn $select [list {*}$res]
 }
 
 finish_test
