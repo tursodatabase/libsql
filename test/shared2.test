@@ -13,6 +13,8 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+source $testdir/malloc_common.tcl
 db close
 
 ifcapable !shared_cache {
@@ -165,6 +167,15 @@ do_test shared2-5.1 {
 
 db close
 db2 close
+
+# The following test verifies that shared-cache mode does not automatically
+# turn on exclusive-locking mode for some reason.
+do_multiclient_test {tn} {
+  sql1 { CREATE TABLE t1(a, b) }
+  sql2 { CREATE TABLE t2(a, b) }
+  do_test shared2-6.$tn.1 { sql1 { SELECT * FROM t2 } } {}
+  do_test shared2-6.$tn.2 { sql2 { SELECT * FROM t1 } } {}
+}
 
 sqlite3_enable_shared_cache $::enable_shared_cache
 finish_test

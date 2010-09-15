@@ -1026,6 +1026,7 @@ do_multiclient_test tn {
 # (even though it had been removed from the database by the ROLLBACK 
 # command).
 #
+sqlite3 db test.db
 do_execsql_test savepoint-17.1 {
   BEGIN;
     CREATE TABLE t6(a, b);

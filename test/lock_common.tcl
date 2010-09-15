@@ -58,6 +58,7 @@ proc do_multiclient_test {varname script} {
     code3 { db3 close }
     catch { close $::code2_chan }
     catch { close $::code3_chan }
+    catch { db close }
   }
 }
 
