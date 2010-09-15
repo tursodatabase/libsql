@@ -16,46 +16,6 @@
 #include <stdarg.h>
 
 /*
-** This routine runs when the memory allocator sees that the
-** total memory allocation is about to exceed the soft heap
-** limit.
-*/
-static void softHeapLimitEnforcer(
-  void *NotUsed, 
-  sqlite3_int64 NotUsed2,
-  int allocSize
-){
-  UNUSED_PARAMETER2(NotUsed, NotUsed2);
-  sqlite3_release_memory(allocSize);
-}
-
-/*
-** Set the soft heap-size limit for the library. Passing a zero or 
-** negative value indicates no limit.
-*/
-void sqlite3_soft_heap_limit(int n){
-  sqlite3_uint64 iLimit;
-  int overage;
-  if( n<0 ){
-    iLimit = 0;
-  }else{
-    iLimit = n;
-  }
-#ifndef SQLITE_OMIT_AUTOINIT
-  sqlite3_initialize();
-#endif
-  if( iLimit>0 ){
-    sqlite3MemoryAlarm(softHeapLimitEnforcer, 0, iLimit);
-  }else{
-    sqlite3MemoryAlarm(0, 0, 0);
-  }
-  overage = (int)(sqlite3_memory_used() - (i64)n);
-  if( overage>0 ){
-    sqlite3_release_memory(overage);
-  }
-}
-
-/*
 ** Attempt to release up to n bytes of non-essential memory currently
 ** held by SQLite. An example of non-essential memory is memory used to
 ** cache database pages that are not currently in use.
@@ -114,6 +74,81 @@ static SQLITE_WSD struct Mem0Global {
 } mem0 = { 0, 0, 0, 0, 0, 0, 0 };
 
 #define mem0 GLOBAL(struct Mem0Global, mem0)
+
+/*
+** This routine runs when the memory allocator sees that the
+** total memory allocation is about to exceed the soft heap
+** limit.
+*/
+static void softHeapLimitEnforcer(
+  void *NotUsed, 
+  sqlite3_int64 NotUsed2,
+  int allocSize
+){
+  UNUSED_PARAMETER2(NotUsed, NotUsed2);
+  sqlite3_release_memory(allocSize);
+}
+
+/*
+** Change the alarm callback
+*/
+static int sqlite3MemoryAlarm(
+  void(*xCallback)(void *pArg, sqlite3_int64 used,int N),
+  void *pArg,
+  sqlite3_int64 iThreshold
+){
+  int nUsed;
+  sqlite3_mutex_enter(mem0.mutex);
+  mem0.alarmCallback = xCallback;
+  mem0.alarmArg = pArg;
+  mem0.alarmThreshold = iThreshold;
+  nUsed = sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED);
+  mem0.nearlyFull = (iThreshold>0 && iThreshold<=nUsed);
+  sqlite3_mutex_leave(mem0.mutex);
+  return SQLITE_OK;
+}
+
+#ifndef SQLITE_OMIT_DEPRECATED
+/*
+** Deprecated external interface.  Internal/core SQLite code
+** should call sqlite3MemoryAlarm.
+*/
+int sqlite3_memory_alarm(
+  void(*xCallback)(void *pArg, sqlite3_int64 used,int N),
+  void *pArg,
+  sqlite3_int64 iThreshold
+){
+  return sqlite3MemoryAlarm(xCallback, pArg, iThreshold);
+}
+#endif
+
+/*
+** Set the soft heap-size limit for the library. Passing a zero or 
+** negative value indicates no limit.
+*/
+sqlite3_int64 sqlite3_soft_heap_limit64(sqlite3_int64 n){
+  sqlite3_int64 priorLimit;
+  sqlite3_int64 excess;
+#ifndef SQLITE_OMIT_AUTOINIT
+  sqlite3_initialize();
+#endif
+  sqlite3_mutex_enter(mem0.mutex);
+  priorLimit = mem0.alarmThreshold;
+  sqlite3_mutex_leave(mem0.mutex);
+  if( n<0 ) return priorLimit;
+  if( n>0 ){
+    sqlite3MemoryAlarm(softHeapLimitEnforcer, 0, n);
+  }else{
+    sqlite3MemoryAlarm(0, 0, 0);
+  }
+  excess = sqlite3_memory_used() - n;
+  if( excess>0 ) sqlite3_release_memory(excess & 0x7fffffff);
+  return priorLimit;
+}
+void sqlite3_soft_heap_limit(int n){
+  if( n<0 ) n = 0;
+  sqlite3_soft_heap_limit64(n);
+}
 
 /*
 ** Initialize the memory allocation subsystem.
@@ -199,39 +234,6 @@ sqlite3_int64 sqlite3_memory_highwater(int resetFlag){
   res = (sqlite3_int64)mx;  /* Work around bug in Borland C. Ticket #3216 */
   return res;
 }
-
-/*
-** Change the alarm callback
-*/
-int sqlite3MemoryAlarm(
-  void(*xCallback)(void *pArg, sqlite3_int64 used,int N),
-  void *pArg,
-  sqlite3_int64 iThreshold
-){
-  int nUsed;
-  sqlite3_mutex_enter(mem0.mutex);
-  mem0.alarmCallback = xCallback;
-  mem0.alarmArg = pArg;
-  mem0.alarmThreshold = iThreshold;
-  nUsed = sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED);
-  mem0.nearlyFull = (iThreshold>0 && iThreshold<=nUsed);
-  sqlite3_mutex_leave(mem0.mutex);
-  return SQLITE_OK;
-}
-
-#ifndef SQLITE_OMIT_DEPRECATED
-/*
-** Deprecated external interface.  Internal/core SQLite code
-** should call sqlite3MemoryAlarm.
-*/
-int sqlite3_memory_alarm(
-  void(*xCallback)(void *pArg, sqlite3_int64 used,int N),
-  void *pArg,
-  sqlite3_int64 iThreshold
-){
-  return sqlite3MemoryAlarm(xCallback, pArg, iThreshold);
-}
-#endif
 
 /*
 ** Trigger the alarm 

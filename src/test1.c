@@ -4390,20 +4390,17 @@ static int test_soft_heap_limit(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  static int softHeapLimit = 0;
-  int amt;
+  sqlite3_int64 amt;
+  sqlite3_int64 N = -1;
   if( objc!=1 && objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "?N?");
     return TCL_ERROR;
   }
-  amt = softHeapLimit;
   if( objc==2 ){
-    int N;
-    if( Tcl_GetIntFromObj(interp, objv[1], &N) ) return TCL_ERROR;
-    sqlite3_soft_heap_limit(N);
-    softHeapLimit = N;
+    if( Tcl_GetWideIntFromObj(interp, objv[1], &N) ) return TCL_ERROR;
   }
-  Tcl_SetObjResult(interp, Tcl_NewIntObj(amt));
+  amt = sqlite3_soft_heap_limit64(N);
+  Tcl_SetObjResult(interp, Tcl_NewWideIntObj(amt));
   return TCL_OK;
 }
 
