@@ -2009,4 +2009,293 @@ foreach {tn select res} {
   do_execsql_test e_select-7.12.$tn $select [list {*}$res]
 }
 
+
+#-------------------------------------------------------------------------
+# ORDER BY clauses
+#
+
+drop_all_tables
+do_execsql_test e_select-8.1.0 {
+  CREATE TABLE d1(x, y, z);
+
+  INSERT INTO d1 VALUES(1, 2, 3);
+  INSERT INTO d1 VALUES(2, 5, -1);
+  INSERT INTO d1 VALUES(1, 2, 8);
+  INSERT INTO d1 VALUES(1, 2, 7);
+  INSERT INTO d1 VALUES(2, 4, 93);
+  INSERT INTO d1 VALUES(1, 2, -20);
+  INSERT INTO d1 VALUES(1, 4, 93);
+  INSERT INTO d1 VALUES(1, 5, -1);
+
+  CREATE TABLE d2(a, b);
+  INSERT INTO d2 VALUES('gently', 'failings');
+  INSERT INTO d2 VALUES('commercials', 'bathrobe');
+  INSERT INTO d2 VALUES('iterate', 'sexton');
+  INSERT INTO d2 VALUES('babied', 'charitableness');
+  INSERT INTO d2 VALUES('solemnness', 'annexed');
+  INSERT INTO d2 VALUES('rejoicing', 'liabilities');
+  INSERT INTO d2 VALUES('pragmatist', 'guarded');
+  INSERT INTO d2 VALUES('barked', 'interrupted');
+  INSERT INTO d2 VALUES('reemphasizes', 'reply');
+  INSERT INTO d2 VALUES('lad', 'relenting');
+} {}
+
+# EVIDENCE-OF: R-44988-41064 Rows are first sorted based on the results
+# of evaluating the left-most expression in the ORDER BY list, then ties
+# are broken by evaluating the second left-most expression and so on.
+#
+foreach {tn select res} {
+  1  "SELECT * FROM d1 ORDER BY x, y, z" {
+     1 2 -20    1 2 3    1 2 7    1 2 8    
+     1 4  93    1 5 -1   2 4 93   2 5 -1
+  }
+} {
+  do_execsql_test e_select-8.1.$tn $select [list {*}$res]
+}
+
+# EVIDENCE-OF: R-06617-54588 Each ORDER BY expression may be optionally
+# followed by one of the keywords ASC (smaller values are returned
+# first) or DESC (larger values are returned first).
+#
+#   Test cases e_select-8.2.* test the above.
+#
+# EVIDENCE-OF: R-18705-33393 If neither ASC or DESC are specified, rows
+# are sorted in ascending (smaller values first) order by default.
+#
+#   Test cases e_select-8.3.* test the above. All 8.3 test cases are
+#   copies of 8.2 test cases with the explicit "ASC" removed.
+#
+foreach {tn select res} {
+  2.1  "SELECT * FROM d1 ORDER BY x ASC, y ASC, z ASC" {
+     1 2 -20    1 2 3    1 2 7    1 2 8    
+     1 4  93    1 5 -1   2 4 93   2 5 -1
+  }
+  2.2  "SELECT * FROM d1 ORDER BY x DESC, y DESC, z DESC" {
+     2 5 -1     2 4 93   1 5 -1   1 4  93    
+     1 2 8      1 2 7    1 2 3    1 2 -20    
+  }
+  2.3 "SELECT * FROM d1 ORDER BY x DESC, y ASC, z DESC" {
+     2 4 93   2 5 -1     1 2 8      1 2 7    
+     1 2 3    1 2 -20    1 4  93    1 5 -1   
+  }
+  2.4  "SELECT * FROM d1 ORDER BY x DESC, y ASC, z ASC" {
+     2 4 93   2 5 -1     1 2 -20    1 2 3    
+     1 2 7    1 2 8      1 4  93    1 5 -1   
+  }
+
+  3.1  "SELECT * FROM d1 ORDER BY x, y, z" {
+     1 2 -20    1 2 3    1 2 7    1 2 8    
+     1 4  93    1 5 -1   2 4 93   2 5 -1
+  }
+  3.3  "SELECT * FROM d1 ORDER BY x DESC, y, z DESC" {
+     2 4 93   2 5 -1     1 2 8      1 2 7    
+     1 2 3    1 2 -20    1 4  93    1 5 -1   
+  }
+  3.4 "SELECT * FROM d1 ORDER BY x DESC, y, z" {
+     2 4 93   2 5 -1     1 2 -20    1 2 3    
+     1 2 7    1 2 8      1 4  93    1 5 -1   
+  }
+} {
+  do_execsql_test e_select-8.$tn $select [list {*}$res]
+}
+
+# EVIDENCE-OF: R-29779-04281 If the ORDER BY expression is a constant
+# integer K then the expression is considered an alias for the K-th
+# column of the result set (columns are numbered from left to right
+# starting with 1).
+#
+foreach {tn select res} {
+  1  "SELECT * FROM d1 ORDER BY 1 ASC, 2 ASC, 3 ASC" {
+     1 2 -20    1 2 3    1 2 7    1 2 8    
+     1 4  93    1 5 -1   2 4 93   2 5 -1
+  }
+  2  "SELECT * FROM d1 ORDER BY 1 DESC, 2 DESC, 3 DESC" {
+     2 5 -1     2 4 93   1 5 -1   1 4  93    
+     1 2 8      1 2 7    1 2 3    1 2 -20    
+  }
+  3 "SELECT * FROM d1 ORDER BY 1 DESC, 2 ASC, 3 DESC" {
+     2 4 93   2 5 -1     1 2 8      1 2 7    
+     1 2 3    1 2 -20    1 4  93    1 5 -1   
+  }
+  4  "SELECT * FROM d1 ORDER BY 1 DESC, 2 ASC, 3 ASC" {
+     2 4 93   2 5 -1     1 2 -20    1 2 3    
+     1 2 7    1 2 8      1 4  93    1 5 -1   
+  }
+  5  "SELECT * FROM d1 ORDER BY 1, 2, 3" {
+     1 2 -20    1 2 3    1 2 7    1 2 8    
+     1 4  93    1 5 -1   2 4 93   2 5 -1
+  }
+  6  "SELECT * FROM d1 ORDER BY 1 DESC, 2, 3 DESC" {
+     2 4 93   2 5 -1     1 2 8      1 2 7    
+     1 2 3    1 2 -20    1 4  93    1 5 -1   
+  }
+  7  "SELECT * FROM d1 ORDER BY 1 DESC, 2, 3" {
+     2 4 93   2 5 -1     1 2 -20    1 2 3    
+     1 2 7    1 2 8      1 4  93    1 5 -1   
+  }
+  8  "SELECT z, x FROM d1 ORDER BY 2" {
+     3 1     8 1    7 1   -20 1 
+     93 1   -1 1   -1 2   93 2
+  }
+  9  "SELECT z, x FROM d1 ORDER BY 1" {
+     -20 1  -1 2   -1 1   3 1     
+     7 1     8 1   93 2   93 1   
+  }
+} {
+  do_execsql_test e_select-8.4.$tn $select [list {*}$res]
+}
+
+# EVIDENCE-OF: R-63286-51977 If the ORDER BY expression is an identifier
+# that corresponds to the alias of one of the output columns, then the
+# expression is considered an alias for that column.
+#
+foreach {tn select res} {
+  1   "SELECT z+1 AS abc FROM d1 ORDER BY abc" {
+    -19 0 0 4 8 9 94 94
+  }
+  2   "SELECT z+1 AS abc FROM d1 ORDER BY abc DESC" {
+    94 94 9 8 4 0 0 -19
+  }
+  3  "SELECT z AS x, x AS z FROM d1 ORDER BY z" {
+    3 1    8 1    7 1    -20 1    93 1    -1 1    -1 2    93 2
+  }
+  4  "SELECT z AS x, x AS z FROM d1 ORDER BY x" {
+    -20 1    -1 2    -1 1    3 1    7 1    8 1    93 2    93 1
+  }
+} {
+  do_execsql_test e_select-8.5.$tn $select [list {*}$res]
+}
+
+# EVIDENCE-OF: R-27923-38747 Otherwise, if the ORDER BY expression is
+# any other expression, it is evaluated and the the returned value used
+# to order the output rows.
+#
+# EVIDENCE-OF: R-03421-57988 If the SELECT statement is a simple SELECT,
+# then an ORDER BY may contain any arbitrary expressions.
+#
+foreach {tn select res} {
+  1   "SELECT * FROM d1 ORDER BY x+y+z" {
+    1 2 -20    1 5 -1    1 2 3    2 5 -1 
+    1 2 7      1 2 8     1 4 93   2 4 93
+  }
+  2   "SELECT * FROM d1 ORDER BY x*z" {
+    1 2 -20    2 5 -1    1 5 -1    1 2 3 
+    1 2 7      1 2 8     1 4 93    2 4 93
+  }
+  3   "SELECT * FROM d1 ORDER BY y*z" {
+    1 2 -20    2 5 -1    1 5 -1    1 2 3 
+    1 2 7      1 2 8     2 4 93    1 4 93
+  }
+} {
+  do_execsql_test e_select-8.6.$tn $select [list {*}$res]
+}
+
+# EVIDENCE-OF: R-28853-08147 However, if the SELECT is a compound
+# SELECT, then ORDER BY expressions that are not aliases to output
+# columns must be exactly the same as an expression used as an output
+# column.
+#
+foreach {tn select violation} {
+  1   "SELECT x FROM d1 UNION ALL SELECT a FROM d2 ORDER BY x*z"        1st
+  2   "SELECT x,z FROM d1 UNION ALL SELECT a,b FROM d2 ORDER BY x, x/z" 2nd
+} {
+  set err "$violation ORDER BY term does not match any column in the result set"
+  do_catchsql_test e_select-8.7.1.$tn $select [list 1 $err]
+}
+foreach {tn select res} {
+  1   "SELECT x*z FROM d1 UNION ALL SELECT a FROM d2 ORDER BY x*z" {
+    -20 -2 -1 3 7 8 93 186 babied barked commercials gently 
+    iterate lad pragmatist reemphasizes rejoicing solemnness
+  }
+  2   "SELECT x, x/z FROM d1 UNION ALL SELECT a,b FROM d2 ORDER BY x, x/z" {
+    1 -1 1 0 1 0 1 0 1 0 1 0 2 -2 2 0 
+    babied charitableness barked interrupted commercials bathrobe gently
+    failings iterate sexton lad relenting pragmatist guarded reemphasizes reply
+    rejoicing liabilities solemnness annexed
+  }
+} {
+  do_execsql_test e_select-8.7.2.$tn $select [list {*}$res]
+}
+
+do_execsql_test e_select-8.8.0 {
+  CREATE TABLE d3(a);
+  INSERT INTO d3 VALUES('text');
+  INSERT INTO d3 VALUES(14.1);
+  INSERT INTO d3 VALUES(13);
+  INSERT INTO d3 VALUES(X'78787878');
+  INSERT INTO d3 VALUES(15);
+  INSERT INTO d3 VALUES(12.9);
+  INSERT INTO d3 VALUES(null);
+
+  CREATE TABLE d4(x COLLATE nocase);
+  INSERT INTO d4 VALUES('abc');
+  INSERT INTO d4 VALUES('ghi');
+  INSERT INTO d4 VALUES('DEF');
+  INSERT INTO d4 VALUES('JKL');
+} {}
+
+# EVIDENCE-OF: R-10883-17697 For the purposes of sorting rows, values
+# are compared in the same way as for comparison expressions.
+#
+#   The following tests verify that values of different types are sorted
+#   correctly, and that mixed real and integer values are compared properly.
+#
+do_execsql_test e_select-8.8.1 {
+  SELECT a FROM d3 ORDER BY a
+} {{} 12.9 13 14.1 15 text xxxx}
+do_execsql_test e_select-8.8.2 {
+  SELECT a FROM d3 ORDER BY a DESC
+} {xxxx text 15 14.1 13 12.9 {}}
+
+
+# EVIDENCE-OF: R-64199-22471 If the ORDER BY expression is assigned a
+# collation sequence using the postfix COLLATE operator, then the
+# specified collation sequence is used.
+#
+do_execsql_test e_select-8.9.1 {
+  SELECT x FROM d4 ORDER BY 1 COLLATE binary
+} {DEF JKL abc ghi}
+do_execsql_test e_select-8.9.2 {
+  SELECT x COLLATE binary FROM d4 ORDER BY 1 COLLATE nocase
+} {abc DEF ghi JKL}
+
+# EVIDENCE-OF: R-09398-26102 Otherwise, if the ORDER BY expression is 
+# an alias to an expression that has been assigned a collation sequence 
+# using the postfix COLLATE operator, then the collation sequence 
+# assigned to the aliased expression is used.
+#
+#   In the test 8.10.2, the only result-column expression has no alias. So the
+#   ORDER BY expression is not a reference to it and therefore does not inherit
+#   the collation sequence. In test 8.10.3, "x" is the alias (as well as the
+#   column name), so the ORDER BY expression is interpreted as an alias and the
+#   collation sequence attached to the result column is used for sorting.
+#
+do_execsql_test e_select-8.10.1 {
+  SELECT x COLLATE binary FROM d4 ORDER BY 1
+} {DEF JKL abc ghi}
+do_execsql_test e_select-8.10.2 {
+  SELECT x COLLATE binary FROM d4 ORDER BY x
+} {abc DEF ghi JKL}
+do_execsql_test e_select-8.10.3 {
+  SELECT x COLLATE binary AS x FROM d4 ORDER BY x
+} {DEF JKL abc ghi}
+
+# EVIDENCE-OF: R-27301-09658 Otherwise, if the ORDER BY expression is a
+# column or an alias of an expression that is a column, then the default
+# collation sequence for the column is used.
+#
+do_execsql_test e_select-8.11.1 {
+  SELECT x AS y FROM d4 ORDER BY y
+} {abc DEF ghi JKL}
+do_execsql_test e_select-8.11.2 {
+  SELECT x||'' FROM d4 ORDER BY x
+} {abc DEF ghi JKL}
+
+# EVIDENCE-OF: R-49925-55905 Otherwise, the BINARY collation sequence is
+# used.
+#
+do_execsql_test e_select-8.12.1 {
+  SELECT x FROM d4 ORDER BY x||''
+} {DEF JKL abc ghi}
+
 finish_test
