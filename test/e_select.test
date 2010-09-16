@@ -2298,4 +2298,291 @@ do_execsql_test e_select-8.12.1 {
   SELECT x FROM d4 ORDER BY x||''
 } {DEF JKL abc ghi}
 
+# EVIDENCE-OF: R-44130-32593 If an ORDER BY expression is not an integer
+# alias, then SQLite searches the left-most SELECT in the compound for a
+# result column that matches either the second or third rules above. If
+# a match is found, the search stops and the expression is handled as an
+# alias for the result column that it has been matched against.
+# Otherwise, the next SELECT to the right is tried, and so on.
+#
+do_execsql_test e_select-8.13.0 {
+  CREATE TABLE d5(a, b);
+  CREATE TABLE d6(c, d);
+  CREATE TABLE d7(e, f);
+ 
+  INSERT INTO d5 VALUES(1, 'f');
+  INSERT INTO d6 VALUES(2, 'e');
+  INSERT INTO d7 VALUES(3, 'd');
+  INSERT INTO d5 VALUES(4, 'c');
+  INSERT INTO d6 VALUES(5, 'b');
+  INSERT INTO d7 VALUES(6, 'a');
+
+  CREATE TABLE d8(x COLLATE nocase);
+  CREATE TABLE d9(y COLLATE nocase);
+
+  INSERT INTO d8 VALUES('a');
+  INSERT INTO d9 VALUES('B');
+  INSERT INTO d8 VALUES('c');
+  INSERT INTO d9 VALUES('D');
+} {}
+foreach {tn select res} {
+  1   { SELECT a FROM d5 UNION ALL SELECT c FROM d6 UNION ALL SELECT e FROM d7
+         ORDER BY a
+      } {1 2 3 4 5 6}
+  2   { SELECT a FROM d5 UNION ALL SELECT c FROM d6 UNION ALL SELECT e FROM d7
+         ORDER BY c
+      } {1 2 3 4 5 6}
+  3   { SELECT a FROM d5 UNION ALL SELECT c FROM d6 UNION ALL SELECT e FROM d7
+         ORDER BY e
+      } {1 2 3 4 5 6}
+  4   { SELECT a FROM d5 UNION ALL SELECT c FROM d6 UNION ALL SELECT e FROM d7
+         ORDER BY 1
+      } {1 2 3 4 5 6}
+
+  5   { SELECT a, b FROM d5 UNION ALL SELECT b, a FROM d5 ORDER BY b } 
+      {f 1   c 4   4 c   1 f}
+  6   { SELECT a, b FROM d5 UNION ALL SELECT b, a FROM d5 ORDER BY 2 } 
+      {f 1   c 4   4 c   1 f}
+
+  7   { SELECT a, b FROM d5 UNION ALL SELECT b, a FROM d5 ORDER BY a } 
+      {1 f   4 c   c 4   f 1}
+  8   { SELECT a, b FROM d5 UNION ALL SELECT b, a FROM d5 ORDER BY 1 } 
+      {1 f   4 c   c 4   f 1}
+
+  9   { SELECT a, b FROM d5 UNION ALL SELECT b, a+1 FROM d5 ORDER BY a+1 } 
+      {f 2   c 5   4 c   1 f}
+  10  { SELECT a, b FROM d5 UNION ALL SELECT b, a+1 FROM d5 ORDER BY 2 } 
+      {f 2   c 5   4 c   1 f}
+
+  11  { SELECT a+1, b FROM d5 UNION ALL SELECT b, a+1 FROM d5 ORDER BY a+1 } 
+      {2 f   5 c   c 5   f 2}
+  12  { SELECT a+1, b FROM d5 UNION ALL SELECT b, a+1 FROM d5 ORDER BY 1 } 
+      {2 f   5 c   c 5   f 2}
+
+} {
+  do_execsql_test e_select-8.13.$tn $select [list {*}$res]
+}
+
+# EVIDENCE-OF: R-39265-04070 If no matching expression can be found in
+# the result columns of any constituent SELECT, it is an error.
+#
+foreach {tn select idx} {
+  1   { SELECT a FROM d5 UNION SELECT c FROM d6 ORDER BY a+1 }          1st
+  2   { SELECT a FROM d5 UNION SELECT c FROM d6 ORDER BY a, a+1 }       2nd
+  3   { SELECT * FROM d5 INTERSECT SELECT * FROM d6 ORDER BY 'hello' }  1st
+  4   { SELECT * FROM d5 INTERSECT SELECT * FROM d6 ORDER BY blah    }  1st
+  5   { SELECT * FROM d5 INTERSECT SELECT * FROM d6 ORDER BY c,d,c+d }  3rd
+  6   { SELECT * FROM d5 EXCEPT SELECT * FROM d7 ORDER BY 1,2,b,a/b  }  4th
+} {
+  set err "$idx ORDER BY term does not match any column in the result set"
+  do_catchsql_test e_select-8.14.$tn $select [list 1 $err]
+}
+
+# EVIDENCE-OF: R-03407-11483 Each term of the ORDER BY clause is
+# processed separately and may be matched against result columns from
+# different SELECT statements in the compound.
+# 
+foreach {tn select res} {
+  1  { SELECT a, b FROM d5 UNION ALL SELECT c-1, d FROM d6 ORDER BY a, d }
+     {1 e   1 f   4 b   4 c}
+  2  { SELECT a, b FROM d5 UNION ALL SELECT c-1, d FROM d6 ORDER BY c-1, b }
+     {1 e   1 f   4 b   4 c}
+  3  { SELECT a, b FROM d5 UNION ALL SELECT c-1, d FROM d6 ORDER BY 1, 2 }
+     {1 e   1 f   4 b   4 c}
+} {
+  do_execsql_test e_select-8.15.$tn $select [list {*}$res]
+}
+
+
+#-------------------------------------------------------------------------
+# Tests related to statements made about the LIMIT/OFFSET clause.
+#
+do_execsql_test e_select-9.0 {
+  CREATE TABLE f1(a, b);
+  INSERT INTO f1 VALUES(26, 'z');
+  INSERT INTO f1 VALUES(25, 'y');
+  INSERT INTO f1 VALUES(24, 'x');
+  INSERT INTO f1 VALUES(23, 'w');
+  INSERT INTO f1 VALUES(22, 'v');
+  INSERT INTO f1 VALUES(21, 'u');
+  INSERT INTO f1 VALUES(20, 't');
+  INSERT INTO f1 VALUES(19, 's');
+  INSERT INTO f1 VALUES(18, 'r');
+  INSERT INTO f1 VALUES(17, 'q');
+  INSERT INTO f1 VALUES(16, 'p');
+  INSERT INTO f1 VALUES(15, 'o');
+  INSERT INTO f1 VALUES(14, 'n');
+  INSERT INTO f1 VALUES(13, 'm');
+  INSERT INTO f1 VALUES(12, 'l');
+  INSERT INTO f1 VALUES(11, 'k');
+  INSERT INTO f1 VALUES(10, 'j');
+  INSERT INTO f1 VALUES(9, 'i');
+  INSERT INTO f1 VALUES(8, 'h');
+  INSERT INTO f1 VALUES(7, 'g');
+  INSERT INTO f1 VALUES(6, 'f');
+  INSERT INTO f1 VALUES(5, 'e');
+  INSERT INTO f1 VALUES(4, 'd');
+  INSERT INTO f1 VALUES(3, 'c');
+  INSERT INTO f1 VALUES(2, 'b');
+  INSERT INTO f1 VALUES(1, 'a');
+} {}
+
+# EVIDENCE-OF: R-30481-56627 Any scalar expression may be used in the
+# LIMIT clause, so long as it evaluates to an integer or a value that
+# can be losslessly converted to an integer.
+#
+foreach {tn select res} {
+  1  { SELECT b FROM f1 ORDER BY a LIMIT 5 } {a b c d e}
+  2  { SELECT b FROM f1 ORDER BY a LIMIT 2+3 } {a b c d e}
+  3  { SELECT b FROM f1 ORDER BY a LIMIT (SELECT a FROM f1 WHERE b = 'e') } 
+     {a b c d e}
+  4  { SELECT b FROM f1 ORDER BY a LIMIT 5.0 } {a b c d e}
+  5  { SELECT b FROM f1 ORDER BY a LIMIT '5' } {a b c d e}
+} {
+  do_execsql_test e_select-9.1.$tn $select [list {*}$res]
+}
+
+# EVIDENCE-OF: R-46155-47219 If the expression evaluates to a NULL value
+# or any other value that cannot be losslessly converted to an integer,
+# an error is returned.
+#
+foreach {tn select} {
+  1  { SELECT b FROM f1 ORDER BY a LIMIT 'hello' } 
+  2  { SELECT b FROM f1 ORDER BY a LIMIT NULL } 
+  3  { SELECT b FROM f1 ORDER BY a LIMIT X'ABCD' } 
+  4  { SELECT b FROM f1 ORDER BY a LIMIT 5.1 } 
+  5  { SELECT b FROM f1 ORDER BY a LIMIT (SELECT group_concat(b) FROM f1) } 
+} {
+  do_catchsql_test e_select-9.2.$tn $select {1 {datatype mismatch}}
+}
+
+# EVIDENCE-OF: R-03014-26414 If the LIMIT expression evaluates to a
+# negative value, then there is no upper bound on the number of rows
+# returned.
+#
+foreach {tn select res} {
+  1  { SELECT b FROM f1 ORDER BY a LIMIT -1 } 
+     {a b c d e f g h i j k l m n o p q r s t u v w x y z}
+  2  { SELECT b FROM f1 ORDER BY a LIMIT length('abc')-100 } 
+     {a b c d e f g h i j k l m n o p q r s t u v w x y z}
+  3  { SELECT b FROM f1 ORDER BY a LIMIT (SELECT count(*) FROM f1)/2 - 14 }
+     {a b c d e f g h i j k l m n o p q r s t u v w x y z}
+} {
+  do_execsql_test e_select-9.4.$tn $select [list {*}$res]
+}
+
+# EVIDENCE-OF: R-33750-29536 Otherwise, the SELECT returns the first N
+# rows of its result set only, where N is the value that the LIMIT
+# expression evaluates to.
+#
+foreach {tn select res} {
+  1  { SELECT b FROM f1 ORDER BY a LIMIT 0 } {}
+  2  { SELECT b FROM f1 ORDER BY a DESC LIMIT 4 } {z y x w}
+  3  { SELECT b FROM f1 ORDER BY a DESC LIMIT 8 } {z y x w v u t s}
+  4  { SELECT b FROM f1 ORDER BY a DESC LIMIT '12.0' } {z y x w v u t s r q p o}
+} {
+  do_execsql_test e_select-9.5.$tn $select [list {*}$res]
+}
+
+# EVIDENCE-OF: R-54935-19057 Or, if the SELECT statement would return
+# less than N rows without a LIMIT clause, then the entire result set is
+# returned.
+#
+foreach {tn select res} {
+  1  { SELECT b FROM f1 WHERE a>21 ORDER BY a LIMIT 10 } {v w x y z}
+  2  { SELECT count(*) FROM f1 GROUP BY a/5 ORDER BY 1 LIMIT 10 } {2 4 5 5 5 5}
+} {
+  do_execsql_test e_select-9.6.$tn $select [list {*}$res]
+}
+
+
+# EVIDENCE-OF: R-24188-24349 The expression attached to the optional
+# OFFSET clause that may follow a LIMIT clause must also evaluate to an
+# integer, or a value that can be losslessly converted to an integer.
+#
+foreach {tn select} {
+  1  { SELECT b FROM f1 ORDER BY a LIMIT 2 OFFSET 'hello' } 
+  2  { SELECT b FROM f1 ORDER BY a LIMIT 2 OFFSET NULL } 
+  3  { SELECT b FROM f1 ORDER BY a LIMIT 2 OFFSET X'ABCD' } 
+  4  { SELECT b FROM f1 ORDER BY a LIMIT 2 OFFSET 5.1 } 
+  5  { SELECT b FROM f1 ORDER BY a 
+       LIMIT 2 OFFSET (SELECT group_concat(b) FROM f1) 
+  } 
+} {
+  do_catchsql_test e_select-9.7.$tn $select {1 {datatype mismatch}}
+}
+
+# EVIDENCE-OF: R-20467-43422 If an expression has an OFFSET clause, then
+# the first M rows are omitted from the result set returned by the
+# SELECT statement and the next N rows are returned, where M and N are
+# the values that the OFFSET and LIMIT clauses evaluate to,
+# respectively.
+#
+foreach {tn select res} {
+  1  { SELECT b FROM f1 ORDER BY a LIMIT 10 OFFSET 5} {f g h i j k l m n o}
+  2  { SELECT b FROM f1 ORDER BY a LIMIT 2+3 OFFSET 10} {k l m n o}
+  3  { SELECT b FROM f1 ORDER BY a 
+       LIMIT  (SELECT a FROM f1 WHERE b='j') 
+       OFFSET (SELECT a FROM f1 WHERE b='b') 
+     } {c d e f g h i j k l}
+  4  { SELECT b FROM f1 ORDER BY a LIMIT '5' OFFSET 3.0 } {d e f g h}
+  5  { SELECT b FROM f1 ORDER BY a LIMIT '5' OFFSET 0 } {a b c d e}
+  6  { SELECT b FROM f1 ORDER BY a LIMIT 0 OFFSET 10 } {}
+  7  { SELECT b FROM f1 ORDER BY a LIMIT 3 OFFSET '1'||'5' } {p q r}
+} {
+  do_execsql_test e_select-9.8.$tn $select [list {*}$res]
+}
+
+# EVIDENCE-OF: R-34648-44875 Or, if the SELECT would return less than
+# M+N rows if it did not have a LIMIT clause, then the first M rows are
+# skipped and the remaining rows (if any) are returned.
+#
+foreach {tn select res} {
+  1  { SELECT b FROM f1 ORDER BY a LIMIT 10 OFFSET 20} {u v w x y z}
+  2  { SELECT a FROM f1 ORDER BY a DESC LIMIT 100 OFFSET 18+4} {4 3 2 1}
+} {
+  do_execsql_test e_select-9.9.$tn $select [list {*}$res]
+}
+
+
+# EVIDENCE-OF: R-23293-62447 If the OFFSET clause evaluates to a
+# negative value, the results are the same as if it had evaluated to
+# zero.
+#
+foreach {tn select res} {
+  1  { SELECT b FROM f1 ORDER BY a LIMIT 5 OFFSET -1 } {a b c d e}
+  2  { SELECT b FROM f1 ORDER BY a LIMIT 5 OFFSET -500 } {a b c d e}
+  3  { SELECT b FROM f1 ORDER BY a LIMIT 5 OFFSET 0  } {a b c d e}
+} {
+  do_execsql_test e_select-9.10.$tn $select [list {*}$res]
+}
+
+# EVIDENCE-OF: R-19509-40356 Instead of a separate OFFSET clause, the
+# LIMIT clause may specify two scalar expressions separated by a comma.
+#
+# EVIDENCE-OF: R-33788-46243 In this case, the first expression is used
+# as the OFFSET expression and the second as the LIMIT expression.
+#
+foreach {tn select res} {
+  1  { SELECT b FROM f1 ORDER BY a LIMIT 5, 10 } {f g h i j k l m n o}
+  2  { SELECT b FROM f1 ORDER BY a LIMIT 10, 2+3 } {k l m n o}
+  3  { SELECT b FROM f1 ORDER BY a 
+       LIMIT (SELECT a FROM f1 WHERE b='b'), (SELECT a FROM f1 WHERE b='j') 
+     } {c d e f g h i j k l}
+  4  { SELECT b FROM f1 ORDER BY a LIMIT 3.0, '5' } {d e f g h}
+  5  { SELECT b FROM f1 ORDER BY a LIMIT 0, '5' } {a b c d e}
+  6  { SELECT b FROM f1 ORDER BY a LIMIT 10, 0 } {}
+  7  { SELECT b FROM f1 ORDER BY a LIMIT '1'||'5', 3 } {p q r}
+
+  8  { SELECT b FROM f1 ORDER BY a LIMIT 20, 10 } {u v w x y z}
+  9  { SELECT a FROM f1 ORDER BY a DESC LIMIT 18+4, 100 } {4 3 2 1}
+
+  10 { SELECT b FROM f1 ORDER BY a LIMIT -1, 5 } {a b c d e}
+  11 { SELECT b FROM f1 ORDER BY a LIMIT -500, 5 } {a b c d e}
+  12 { SELECT b FROM f1 ORDER BY a LIMIT 0, 5 } {a b c d e}
+} {
+  do_execsql_test e_select-9.11.$tn $select [list {*}$res]
+}
+
+
 finish_test
