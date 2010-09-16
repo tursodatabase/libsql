@@ -3333,8 +3333,8 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 **
 ** ^The fourth parameter, eTextRep, specifies what
 ** [SQLITE_UTF8 | text encoding] this SQL function prefers for
-** its parameters.  Any SQL function implementation should be able to work
-** work with UTF-8, UTF-16le, or UTF-16be.  But some implementations may be
+** its parameters.  Every SQL function implementation must be able to work
+** with UTF-8, UTF-16le, or UTF-16be.  But some implementations may be
 ** more efficient with one encoding than another.  ^An application may
 ** invoke sqlite3_create_function() or sqlite3_create_function16() multiple
 ** times with the same function but with different values of eTextRep.
@@ -3355,6 +3355,13 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 ** SQL function or aggregate, pass NULL poiners for all three function
 ** callbacks.
 **
+** ^If the tenth parameter to sqlite3_create_function_v2() is not NULL,
+** then it is invoked when the function is deleted, either by being
+** overloaded or when the database connection closes.
+** ^When the destructure callback of the tenth parameter is invoked, it
+** is passed a single argument which is a copy of the pointer which was
+** the fifth parameter to sqlite3_create_function_v2().
+**
 ** ^It is permitted to register multiple implementations of the same
 ** functions with the same name but with either differing numbers of
 ** arguments or differing preferred text encodings.  ^SQLite will use
@@ -3369,11 +3376,6 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 ** between UTF8 and UTF16.
 **
 ** ^Built-in functions may be overloaded by new application-defined functions.
-** ^The first application-defined function with a given name overrides all
-** built-in functions in the same [database connection] with the same name.
-** ^Subsequent application-defined functions of the same name only override 
-** prior application-defined functions that are an exact match for the
-** number of parameters and preferred encoding.
 **
 ** ^An application-defined function is permitted to call other
 ** SQLite interfaces.  However, such calls must not
