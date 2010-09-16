@@ -611,9 +611,10 @@ proc forcedelete {filename} {
   #
   set nRetry  50                  ;# Maximum number of retries.
   set nDelay 100                  ;# Delay in ms before retrying.
-  set rc 1
-  for {set i 0} {$i<$nRetry && $rc} {incr i} {
+  for {set i 0} {$i<$nRetry} {incr i} {
     set rc [catch {file delete -force $filename} msg]
+    if {$rc==0} continue
+    after $nDelay
   }
   if {$rc} { error $msg }
 }
