@@ -601,9 +601,21 @@ proc stepsql {dbptr sql} {
 # Delete a file or directory
 #
 proc forcedelete {filename} {
-  if {[catch {file delete -force $filename}]} {
-    exec rm -rf $filename
+  # On windows, sometimes even a [file delete -force] can fail just after
+  # a file is closed. The cause is usually "tag-alongs" - programs like
+  # anti-virus software, automatic backup tools and various explorer
+  # extensions that keep a file open a little longer than we expect, causing
+  # the delete to fail.
+  #
+  # The solution is to wait a short amount of time before retrying the delete.
+  #
+  set nRetry  50                  ;# Maximum number of retries.
+  set nDelay 100                  ;# Delay in ms before retrying.
+  set rc 1
+  for {set i 0} {$i<$nRetry && $rc} {incr i} {
+    set rc [catch {file delete -force $filename} msg]
   }
+  if {$rc} { error $msg }
 }
 
 # Do an integrity check of the entire database

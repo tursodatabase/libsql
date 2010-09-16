@@ -143,7 +143,7 @@ proc do_faultsim_test {name args} {
 #   faultsim_delete_and_reopen
 #
 proc faultsim_save {} {
-  foreach f [glob -nocomplain sv_test.db*] { file delete -force $f }
+  foreach f [glob -nocomplain sv_test.db*] { forcedelete $f }
   foreach f [glob -nocomplain test.db*] {
     set f2 "sv_$f"
     file copy -force $f $f2
@@ -155,7 +155,7 @@ proc faultsim_save_and_close {} {
   return ""
 }
 proc faultsim_restore {} {
-  foreach f [glob -nocomplain test.db*] { file delete -force $f }
+  foreach f [glob -nocomplain test.db*] { forcedelete $f }
   foreach f2 [glob -nocomplain sv_test.db*] {
     set f [string range $f2 3 end]
     file copy -force $f2 $f
@@ -422,12 +422,12 @@ proc do_malloc_test {tn args} {
         # 
         catch {db close} 
         catch {db2 close} 
-        catch {file delete -force test.db}
-        catch {file delete -force test.db-journal}
-        catch {file delete -force test.db-wal}
-        catch {file delete -force test2.db}
-        catch {file delete -force test2.db-journal}
-        catch {file delete -force test2.db-wal}
+        forcedelete test.db
+        forcedelete test.db-journal
+        forcedelete test.db-wal
+        forcedelete test2.db
+        forcedelete test2.db-journal
+        forcedelete test2.db-wal
         if {[info exists ::mallocopts(-testdb)]} {
           file copy $::mallocopts(-testdb) test.db
         }
