@@ -613,7 +613,7 @@ proc forcedelete {filename} {
   set nDelay 100                  ;# Delay in ms before retrying.
   for {set i 0} {$i<$nRetry} {incr i} {
     set rc [catch {file delete -force $filename} msg]
-    if {$rc==0} continue
+    if {$rc==0} break
     after $nDelay
   }
   if {$rc} { error $msg }
