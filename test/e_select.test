@@ -96,6 +96,134 @@ do_catchsql_test e_select-0.1.5 {
   SELECT count(*) FROM t1, t2 USING (a) ON (t1.a=t2.a)
 } {1 {near "ON": syntax error}}
 
+# EVIDENCE-OF: R-44854-11739 -- syntax diagram select-core
+#
+#   0: SELECT ...
+#   1: SELECT DISTINCT ...
+#   2: SELECT ALL ...
+#
+#   0: No FROM clause
+#   1: Has FROM clause
+#
+#   0: No WHERE clause
+#   1: Has WHERE clause
+#
+#   0: No GROUP BY clause
+#   1: Has GROUP BY clause
+#   2: Has GROUP BY and HAVING clauses
+#
+foreach {tn select res} {
+    0000.1  "SELECT 1, 2, 3 " {1 2 3}
+    1000.1  "SELECT DISTINCT 1, 2, 3 " {1 2 3}
+    2000.1  "SELECT ALL 1, 2, 3 " {1 2 3}
+    
+    0100.1  "SELECT a, b, a||b FROM t1 " {
+      a one aone b two btwo c three cthree
+    }
+    1100.1  "SELECT DISTINCT a, b, a||b FROM t1 " {
+      a one aone b two btwo c three cthree
+    }
+    1200.1  "SELECT ALL a, b, a||b FROM t1 " {
+      a one aone b two btwo c three cthree
+    }
+
+    0010.1  "SELECT 1, 2, 3 WHERE 1 " {1 2 3}
+    0010.2  "SELECT 1, 2, 3 WHERE 0 " {}
+    0010.3  "SELECT 1, 2, 3 WHERE NULL " {}
+
+    1010.1  "SELECT DISTINCT 1, 2, 3 WHERE 1 " {1 2 3}
+
+    2010.1  "SELECT ALL 1, 2, 3 WHERE 1 " {1 2 3}
+
+    0110.1  "SELECT a, b, a||b FROM t1 WHERE a!='x' " {
+      a one aone b two btwo c three cthree
+    }
+    0110.2  "SELECT a, b, a||b FROM t1 WHERE a=='x'" {}
+
+    1110.1  "SELECT DISTINCT a, b, a||b FROM t1 WHERE a!='x' " {
+      a one aone b two btwo c three cthree
+    }
+
+    2110.0  "SELECT ALL a, b, a||b FROM t1 WHERE a=='x'" {}
+
+    0001.1  "SELECT 1, 2, 3 GROUP BY 2" {1 2 3}
+    0002.1  "SELECT 1, 2, 3 GROUP BY 2 HAVING count(*)=1" {1 2 3}
+    0002.2  "SELECT 1, 2, 3 GROUP BY 2 HAVING count(*)>1" {}
+
+    1001.1  "SELECT DISTINCT 1, 2, 3 GROUP BY 2" {1 2 3}
+    1002.1  "SELECT DISTINCT 1, 2, 3 GROUP BY 2 HAVING count(*)=1" {1 2 3}
+    1002.2  "SELECT DISTINCT 1, 2, 3 GROUP BY 2 HAVING count(*)>1" {}
+
+    2001.1  "SELECT ALL 1, 2, 3 GROUP BY 2" {1 2 3}
+    2002.1  "SELECT ALL 1, 2, 3 GROUP BY 2 HAVING count(*)=1" {1 2 3}
+    2002.2  "SELECT ALL 1, 2, 3 GROUP BY 2 HAVING count(*)>1" {}
+
+    0101.1  "SELECT count(*), max(a) FROM t1 GROUP BY b" {1 a 1 c 1 b}
+    0102.1  "SELECT count(*), max(a) FROM t1 GROUP BY b HAVING count(*)=1" {
+      1 a 1 c 1 b
+    }
+    0102.2  "SELECT count(*), max(a) FROM t1 GROUP BY b HAVING count(*)=2" { }
+
+    1101.1  "SELECT DISTINCT count(*), max(a) FROM t1 GROUP BY b" {1 a 1 c 1 b}
+    1102.1  "SELECT DISTINCT count(*), max(a) FROM t1 
+             GROUP BY b HAVING count(*)=1" {
+      1 a 1 c 1 b
+    }
+    1102.2  "SELECT DISTINCT count(*), max(a) FROM t1 
+             GROUP BY b HAVING count(*)=2" { 
+    }
+
+    2101.1  "SELECT ALL count(*), max(a) FROM t1 GROUP BY b" {1 a 1 c 1 b}
+    2102.1  "SELECT ALL count(*), max(a) FROM t1 
+             GROUP BY b HAVING count(*)=1" {
+      1 a 1 c 1 b
+    }
+    2102.2  "SELECT ALL count(*), max(a) FROM t1 
+             GROUP BY b HAVING count(*)=2" { 
+    }
+
+    0011.1  "SELECT 1, 2, 3 WHERE 1 GROUP BY 2" {1 2 3}
+    0012.1  "SELECT 1, 2, 3 WHERE 0 GROUP BY 2 HAVING count(*)=1" {}
+    0012.2  "SELECT 1, 2, 3 WHERE 0 GROUP BY 2 HAVING count(*)>1" {}
+
+    1011.1  "SELECT DISTINCT 1, 2, 3 WHERE 0 GROUP BY 2" {}
+    1012.1  "SELECT DISTINCT 1, 2, 3 WHERE 1 GROUP BY 2 HAVING count(*)=1" 
+            {1 2 3}
+    1012.2  "SELECT DISTINCT 1, 2, 3 WHERE NULL GROUP BY 2 HAVING count(*)>1" {}
+
+    2011.1  "SELECT ALL 1, 2, 3 WHERE 1 GROUP BY 2" {1 2 3}
+    2012.1  "SELECT ALL 1, 2, 3 WHERE 0 GROUP BY 2 HAVING count(*)=1" {}
+    2012.2  "SELECT ALL 1, 2, 3 WHERE 'abc' GROUP BY 2 HAVING count(*)>1" {}
+
+    0111.1  "SELECT count(*), max(a) FROM t1 WHERE a='a' GROUP BY b" {1 a}
+    0112.1  "SELECT count(*), max(a) FROM t1 
+             WHERE a='c' GROUP BY b HAVING count(*)=1" {1 c}
+    0112.2  "SELECT count(*), max(a) FROM t1 
+             WHERE 0 GROUP BY b HAVING count(*)=2" { }
+    1111.1  "SELECT DISTINCT count(*), max(a) FROM t1 WHERE a<'c' GROUP BY b" 
+            {1 a 1 b}
+    1112.1  "SELECT DISTINCT count(*), max(a) FROM t1 WHERE a>'a'
+             GROUP BY b HAVING count(*)=1" {
+      1 c 1 b
+    }
+    1112.2  "SELECT DISTINCT count(*), max(a) FROM t1 WHERE 0
+             GROUP BY b HAVING count(*)=2" { 
+    }
+
+    2111.1  "SELECT ALL count(*), max(a) FROM t1 WHERE b>'one' GROUP BY b" 
+            {1 c 1 b}
+    2112.1  "SELECT ALL count(*), max(a) FROM t1 WHERE a!='b'
+             GROUP BY b HAVING count(*)=1" {
+      1 a 1 c
+    }
+    2112.2  "SELECT ALL count(*), max(a) FROM t1 
+             WHERE 0 GROUP BY b HAVING count(*)=2" { }
+} {
+  do_execsql_test e_select-0.2.$tn $select [list {*}$res]
+}
+
+
+
 #-------------------------------------------------------------------------
 # The following tests focus on FROM clause (join) processing.
 #
@@ -1231,7 +1359,8 @@ foreach {tn select nCol} {
 #
 #   By other definitions in lang_select.html, a non-aggregate query is
 #   any simple SELECT that has no GROUP BY clause and no aggregate expressions
-#   in the result expression list.
+#   in the result expression list. These tests also verify (in a way) that
+#   that definition is consistent:
 #
 do_execsql_test e_select-4.4.1 {
   SELECT a, b FROM z1
