@@ -29,7 +29,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <ctype.h>
 
 #include "fts2_tokenizer.h"
 
@@ -89,7 +88,8 @@ static int simpleCreate(
     /* Mark non-alphanumeric ASCII characters as delimiters */
     int i;
     for(i=1; i<0x80; i++){
-      t->delim[i] = !isalnum(i);
+      t->delim[i] = !((i>='0' && i<='9') || (i>='A' && i<='Z') ||
+                      (i>='a' && i<='z'));
     }
   }
 
@@ -191,7 +191,7 @@ static int simpleNext(
         ** case-insensitivity.
         */
         unsigned char ch = p[iStartOffset+i];
-        c->pToken[i] = ch<0x80 ? tolower(ch) : ch;
+        c->pToken[i] = (ch>='A' && ch<='Z') ? (ch - 'A' + 'a') : ch;
       }
       *ppToken = c->pToken;
       *pnBytes = n;
