@@ -2203,6 +2203,9 @@ static int fts3FilterMethod(
       return rc;
     }
 
+    rc = sqlite3Fts3ReadLock(p);
+    if( rc!=SQLITE_OK ) return rc;
+
     rc = evalFts3Expr(p, pCsr->pExpr, &pCsr->aDoclist, &pCsr->nDoclist, 0);
     pCsr->pNextId = pCsr->aDoclist;
     pCsr->iPrevId = 0;

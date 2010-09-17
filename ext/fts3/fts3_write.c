@@ -323,6 +323,36 @@ int sqlite3Fts3ReadBlock(
 }
 
 /*
+** This function ensures that the caller has obtained a shared-cache
+** table-lock on the %_content table. This is required before reading
+** data from the fts3 table. If this lock is not acquired first, then
+** the caller may end up holding read-locks on the %_segments and %_segdir
+** tables, but no read-lock on the %_content table. If this happens 
+** a second connection will be able to write to the fts3 table, but
+** attempting to commit those writes might return SQLITE_LOCKED or
+** SQLITE_LOCKED_SHAREDCACHE (because the commit attempts to obtain 
+** write-locks on the %_segments and %_segdir ** tables). 
+**
+** We try to avoid this because if FTS3 returns any error when committing
+** a transaction, the whole transaction will be rolled back. And this is
+** not what users expect when they get SQLITE_LOCKED_SHAREDCACHE. It can
+** still happen if the user reads data directly from the %_segments or
+** %_segdir tables instead of going through FTS3 though.
+*/
+int sqlite3Fts3ReadLock(Fts3Table *p){
+  int rc;                         /* Return code */
+  sqlite3_stmt *pStmt;            /* Statement used to obtain lock */
+
+  rc = fts3SqlStmt(p, SQL_SELECT_CONTENT_BY_ROWID, &pStmt, 0);
+  if( rc==SQLITE_OK ){
+    sqlite3_bind_null(pStmt, 1);
+    sqlite3_step(pStmt);
+    rc = sqlite3_reset(pStmt);
+  }
+  return rc;
+}
+
+/*
 ** Set *ppStmt to a statement handle that may be used to iterate through
 ** all rows in the %_segdir table, from oldest to newest. If successful,
 ** return SQLITE_OK. If an error occurs while preparing the statement, 

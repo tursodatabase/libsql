@@ -273,6 +273,7 @@ int sqlite3Fts3ReadBlock(Fts3Table*, sqlite3_int64, char const**, int*);
 int sqlite3Fts3AllSegdirs(Fts3Table*, sqlite3_stmt **);
 int sqlite3Fts3MatchinfoDocsizeLocal(Fts3Cursor*, u32*);
 int sqlite3Fts3MatchinfoDocsizeGlobal(Fts3Cursor*, u32*);
+int sqlite3Fts3ReadLock(Fts3Table *);
 
 /* Flags allowed as part of the 4th argument to SegmentReaderIterate() */
 #define FTS3_SEGMENT_REQUIRE_POS   0x00000001
