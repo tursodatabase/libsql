@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sa\scomment\stypo\sin\smemjournal.c
-D 2010-09-16T23:18:57
+C Completely\sremove\sall\strace\sof\sctype.h\sfrom\sFTS2.
+D 2010-09-17T01:07:54
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -51,7 +51,7 @@ F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F ext/fts2/README.tokenizers 21e3684ea5a095b55d70f6878b4ce6af5932dfb7
 F ext/fts2/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts2/fts2.c 6cbd0fbdfe4699c108199e3c8f7e76f71d597335
+F ext/fts2/fts2.c 238e9e19158ef75fb4155613a870443394fbf7da
 F ext/fts2/fts2.h da5f76c65163301d1068a971fd32f4119e3c95fa
 F ext/fts2/fts2_hash.c 2689e42e1107ea67207f725cf69cf8972d00cf93
 F ext/fts2/fts2_hash.h 9a5b1be94664139f93217a0770d7144425cffb3a
@@ -860,14 +860,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f03c608993d1c37b45ba8e0a6a4e941bdcb57ffa
-R 53b761d0a11b018f0fac87afc7389e73
+P 9b272ed46fc704cb818b71d18ae8ee73a752a881
+R ec9abff0e1e30c45c3aa3ccb3e02d4e5
 U drh
-Z 2a5aa4f2e3f494f30e7bd321180ffc11
+Z eaed35cb764a960456de79e5b47e09e6
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMkqXkoxKgR168RlERAkUiAJ0VtmIa5Xilm19+b8aGM3+qs/9MsACdFmdu
-QtJnrT5lnlHdM2VACjo4gh0=
-=M+84
+iD8DBQFMkr9toxKgR168RlERAqDrAJ0UIliZKF7boeq4kfRQpga7FkaNtACfdx1m
+EV1qqSjczz5T1tIS01ADlXI=
+=CBtt
 -----END PGP SIGNATURE-----
