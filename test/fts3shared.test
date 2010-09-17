@@ -1,0 +1,72 @@
+# 2010 September 17
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+ifcapable !fts3||!shared_cache {
+  finish_test
+  return
+}
+
+db close
+set ::enable_shared_cache [sqlite3_enable_shared_cache 1]
+
+# Open two connections to the database in shared-cache mode.
+#
+sqlite3 db test.db
+sqlite3 db2 test.db
+
+# Create a virtual FTS3 table. Populate it with some initial data.
+#
+do_execsql_test fts3shared-1.1 {
+  CREATE VIRTUAL TABLE t1 USING fts3(x);
+  BEGIN;
+  INSERT INTO t1 VALUES('We listened and looked sideways up!');
+  INSERT INTO t1 VALUES('Fear at my heart, as at a cup,');
+  INSERT INTO t1 VALUES('My life-blood seemed to sip!');
+  INSERT INTO t1 VALUES('The stars were dim, and thick the night');
+  COMMIT;
+} {}
+
+# Open a write transaction and insert rows into the FTS3 table. This takes
+# a write-lock on the underlying t1_content table.
+#
+do_execsql_test fts3shared-1.2 {
+  BEGIN;
+    INSERT INTO t1 VALUES('The steersman''s face by his lamp gleamed white;');
+} {}
+
+# Now try a SELECT on the full-text table. This particular SELECT does not
+# read data from the %_content table. But it still attempts to obtain a lock
+# on that table and so the SELECT fails.
+#
+do_test fts3shared-1.3 {
+  catchsql {  
+    BEGIN;
+      SELECT rowid FROM t1 WHERE t1 MATCH 'stars' 
+  } db2
+} {1 {database table is locked}}
+
+# Verify that the first connection can commit its transaction.
+#
+do_test fts3shared-1.4 { sqlite3_get_autocommit db } 0
+do_execsql_test fts3shared-1.5 { COMMIT } {}
+do_test fts3shared-1.6 { sqlite3_get_autocommit db } 1
+
+# Verify that the second connection still has an open transaction.
+#
+do_test fts3shared-1.6 { sqlite3_get_autocommit db2 } 0
+
+db close
+db2 close
+
+sqlite3_enable_shared_cache $::enable_shared_cache
+finish_test
+
