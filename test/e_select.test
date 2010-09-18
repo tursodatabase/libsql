@@ -74,6 +74,55 @@ proc do_join_test {tn select res} {
   }
 }
 
+#
+#   Usage: do_select_tests PREFIX ?SWITCHES? TESTLIST
+#
+# Where switches are:
+#
+#   -errorformat FMTSTRING
+#
+proc do_select_tests {prefix args} {
+
+  set testlist [lindex $args end]
+  set switches [lrange $args 0 end-1]
+
+  set errfmt ""
+  set countonly 0
+
+  for {set i 0} {$i < [llength $switches]} {incr i} {
+    set s [lindex $switches $i]
+    set n [string length $s]
+    if {$n>=2 && [string equal -length $n $s "-errorformat"]} {
+      set errfmt [lindex $switches [incr i]]
+    } elseif {$n>=2 && [string equal -length $n $s "-count"]} {
+      set countonly 1
+    } else {
+      error "unknown switch: $s"
+    }
+  }
+
+  if {$countonly && $errfmt!=""} {
+    error "Cannot use -count and -errorformat together"
+  }
+  set nTestlist [llength $testlist]
+  if {$nTestlist%3 || $nTestlist==0 } {
+    error "SELECT test list contains [llength $testlist] elements"
+  }
+
+  foreach {tn sql res} $testlist {
+    if {$countonly} {
+      set nRow 0
+      db eval $sql {incr nRow}
+      uplevel do_test ${prefix}.$tn [list [list set {} $nRow]] [list $res]
+    } elseif {$errfmt==""} {
+      uplevel do_execsql_test ${prefix}.${tn} [list $sql] [list [list {*}$res]]
+    } else {
+      set res [list 1 [string trim [format $errfmt $res]]]
+      uplevel do_catchsql_test ${prefix}.${tn} [list $sql] [list $res]
+    }
+  }
+}
+
 #-------------------------------------------------------------------------
 # The following tests check that all paths on the syntax diagrams on
 # the lang_select.html page may be taken.
@@ -112,117 +161,202 @@ do_catchsql_test e_select-0.1.5 {
 #   1: Has GROUP BY clause
 #   2: Has GROUP BY and HAVING clauses
 #
-foreach {tn select res} {
-    0000.1  "SELECT 1, 2, 3 " {1 2 3}
-    1000.1  "SELECT DISTINCT 1, 2, 3 " {1 2 3}
-    2000.1  "SELECT ALL 1, 2, 3 " {1 2 3}
-    
-    0100.1  "SELECT a, b, a||b FROM t1 " {
-      a one aone b two btwo c three cthree
-    }
-    1100.1  "SELECT DISTINCT a, b, a||b FROM t1 " {
-      a one aone b two btwo c three cthree
-    }
-    1200.1  "SELECT ALL a, b, a||b FROM t1 " {
-      a one aone b two btwo c three cthree
-    }
+do_select_tests e_select-0.2 {
+  0000.1  "SELECT 1, 2, 3 " {1 2 3}
+  1000.1  "SELECT DISTINCT 1, 2, 3 " {1 2 3}
+  2000.1  "SELECT ALL 1, 2, 3 " {1 2 3}
+  
+  0100.1  "SELECT a, b, a||b FROM t1 " {
+    a one aone b two btwo c three cthree
+  }
+  1100.1  "SELECT DISTINCT a, b, a||b FROM t1 " {
+    a one aone b two btwo c three cthree
+  }
+  1200.1  "SELECT ALL a, b, a||b FROM t1 " {
+    a one aone b two btwo c three cthree
+  }
 
-    0010.1  "SELECT 1, 2, 3 WHERE 1 " {1 2 3}
-    0010.2  "SELECT 1, 2, 3 WHERE 0 " {}
-    0010.3  "SELECT 1, 2, 3 WHERE NULL " {}
+  0010.1  "SELECT 1, 2, 3 WHERE 1 " {1 2 3}
+  0010.2  "SELECT 1, 2, 3 WHERE 0 " {}
+  0010.3  "SELECT 1, 2, 3 WHERE NULL " {}
 
-    1010.1  "SELECT DISTINCT 1, 2, 3 WHERE 1 " {1 2 3}
+  1010.1  "SELECT DISTINCT 1, 2, 3 WHERE 1 " {1 2 3}
 
-    2010.1  "SELECT ALL 1, 2, 3 WHERE 1 " {1 2 3}
+  2010.1  "SELECT ALL 1, 2, 3 WHERE 1 " {1 2 3}
 
-    0110.1  "SELECT a, b, a||b FROM t1 WHERE a!='x' " {
-      a one aone b two btwo c three cthree
-    }
-    0110.2  "SELECT a, b, a||b FROM t1 WHERE a=='x'" {}
+  0110.1  "SELECT a, b, a||b FROM t1 WHERE a!='x' " {
+    a one aone b two btwo c three cthree
+  }
+  0110.2  "SELECT a, b, a||b FROM t1 WHERE a=='x'" {}
 
-    1110.1  "SELECT DISTINCT a, b, a||b FROM t1 WHERE a!='x' " {
-      a one aone b two btwo c three cthree
-    }
+  1110.1  "SELECT DISTINCT a, b, a||b FROM t1 WHERE a!='x' " {
+    a one aone b two btwo c three cthree
+  }
 
-    2110.0  "SELECT ALL a, b, a||b FROM t1 WHERE a=='x'" {}
+  2110.0  "SELECT ALL a, b, a||b FROM t1 WHERE a=='x'" {}
 
-    0001.1  "SELECT 1, 2, 3 GROUP BY 2" {1 2 3}
-    0002.1  "SELECT 1, 2, 3 GROUP BY 2 HAVING count(*)=1" {1 2 3}
-    0002.2  "SELECT 1, 2, 3 GROUP BY 2 HAVING count(*)>1" {}
+  0001.1  "SELECT 1, 2, 3 GROUP BY 2" {1 2 3}
+  0002.1  "SELECT 1, 2, 3 GROUP BY 2 HAVING count(*)=1" {1 2 3}
+  0002.2  "SELECT 1, 2, 3 GROUP BY 2 HAVING count(*)>1" {}
 
-    1001.1  "SELECT DISTINCT 1, 2, 3 GROUP BY 2" {1 2 3}
-    1002.1  "SELECT DISTINCT 1, 2, 3 GROUP BY 2 HAVING count(*)=1" {1 2 3}
-    1002.2  "SELECT DISTINCT 1, 2, 3 GROUP BY 2 HAVING count(*)>1" {}
+  1001.1  "SELECT DISTINCT 1, 2, 3 GROUP BY 2" {1 2 3}
+  1002.1  "SELECT DISTINCT 1, 2, 3 GROUP BY 2 HAVING count(*)=1" {1 2 3}
+  1002.2  "SELECT DISTINCT 1, 2, 3 GROUP BY 2 HAVING count(*)>1" {}
 
-    2001.1  "SELECT ALL 1, 2, 3 GROUP BY 2" {1 2 3}
-    2002.1  "SELECT ALL 1, 2, 3 GROUP BY 2 HAVING count(*)=1" {1 2 3}
-    2002.2  "SELECT ALL 1, 2, 3 GROUP BY 2 HAVING count(*)>1" {}
+  2001.1  "SELECT ALL 1, 2, 3 GROUP BY 2" {1 2 3}
+  2002.1  "SELECT ALL 1, 2, 3 GROUP BY 2 HAVING count(*)=1" {1 2 3}
+  2002.2  "SELECT ALL 1, 2, 3 GROUP BY 2 HAVING count(*)>1" {}
 
-    0101.1  "SELECT count(*), max(a) FROM t1 GROUP BY b" {1 a 1 c 1 b}
-    0102.1  "SELECT count(*), max(a) FROM t1 GROUP BY b HAVING count(*)=1" {
-      1 a 1 c 1 b
-    }
-    0102.2  "SELECT count(*), max(a) FROM t1 GROUP BY b HAVING count(*)=2" { }
+  0101.1  "SELECT count(*), max(a) FROM t1 GROUP BY b" {1 a 1 c 1 b}
+  0102.1  "SELECT count(*), max(a) FROM t1 GROUP BY b HAVING count(*)=1" {
+    1 a 1 c 1 b
+  }
+  0102.2  "SELECT count(*), max(a) FROM t1 GROUP BY b HAVING count(*)=2" { }
 
-    1101.1  "SELECT DISTINCT count(*), max(a) FROM t1 GROUP BY b" {1 a 1 c 1 b}
-    1102.1  "SELECT DISTINCT count(*), max(a) FROM t1 
-             GROUP BY b HAVING count(*)=1" {
-      1 a 1 c 1 b
-    }
-    1102.2  "SELECT DISTINCT count(*), max(a) FROM t1 
-             GROUP BY b HAVING count(*)=2" { 
-    }
+  1101.1  "SELECT DISTINCT count(*), max(a) FROM t1 GROUP BY b" {1 a 1 c 1 b}
+  1102.1  "SELECT DISTINCT count(*), max(a) FROM t1 
+           GROUP BY b HAVING count(*)=1" {
+    1 a 1 c 1 b
+  }
+  1102.2  "SELECT DISTINCT count(*), max(a) FROM t1 
+           GROUP BY b HAVING count(*)=2" { 
+  }
 
-    2101.1  "SELECT ALL count(*), max(a) FROM t1 GROUP BY b" {1 a 1 c 1 b}
-    2102.1  "SELECT ALL count(*), max(a) FROM t1 
-             GROUP BY b HAVING count(*)=1" {
-      1 a 1 c 1 b
-    }
-    2102.2  "SELECT ALL count(*), max(a) FROM t1 
-             GROUP BY b HAVING count(*)=2" { 
-    }
+  2101.1  "SELECT ALL count(*), max(a) FROM t1 GROUP BY b" {1 a 1 c 1 b}
+  2102.1  "SELECT ALL count(*), max(a) FROM t1 
+           GROUP BY b HAVING count(*)=1" {
+    1 a 1 c 1 b
+  }
+  2102.2  "SELECT ALL count(*), max(a) FROM t1 
+           GROUP BY b HAVING count(*)=2" { 
+  }
 
-    0011.1  "SELECT 1, 2, 3 WHERE 1 GROUP BY 2" {1 2 3}
-    0012.1  "SELECT 1, 2, 3 WHERE 0 GROUP BY 2 HAVING count(*)=1" {}
-    0012.2  "SELECT 1, 2, 3 WHERE 0 GROUP BY 2 HAVING count(*)>1" {}
+  0011.1  "SELECT 1, 2, 3 WHERE 1 GROUP BY 2" {1 2 3}
+  0012.1  "SELECT 1, 2, 3 WHERE 0 GROUP BY 2 HAVING count(*)=1" {}
+  0012.2  "SELECT 1, 2, 3 WHERE 0 GROUP BY 2 HAVING count(*)>1" {}
 
-    1011.1  "SELECT DISTINCT 1, 2, 3 WHERE 0 GROUP BY 2" {}
-    1012.1  "SELECT DISTINCT 1, 2, 3 WHERE 1 GROUP BY 2 HAVING count(*)=1" 
-            {1 2 3}
-    1012.2  "SELECT DISTINCT 1, 2, 3 WHERE NULL GROUP BY 2 HAVING count(*)>1" {}
+  1011.1  "SELECT DISTINCT 1, 2, 3 WHERE 0 GROUP BY 2" {}
+  1012.1  "SELECT DISTINCT 1, 2, 3 WHERE 1 GROUP BY 2 HAVING count(*)=1" 
+          {1 2 3}
+  1012.2  "SELECT DISTINCT 1, 2, 3 WHERE NULL GROUP BY 2 HAVING count(*)>1" {}
 
-    2011.1  "SELECT ALL 1, 2, 3 WHERE 1 GROUP BY 2" {1 2 3}
-    2012.1  "SELECT ALL 1, 2, 3 WHERE 0 GROUP BY 2 HAVING count(*)=1" {}
-    2012.2  "SELECT ALL 1, 2, 3 WHERE 'abc' GROUP BY 2 HAVING count(*)>1" {}
+  2011.1  "SELECT ALL 1, 2, 3 WHERE 1 GROUP BY 2" {1 2 3}
+  2012.1  "SELECT ALL 1, 2, 3 WHERE 0 GROUP BY 2 HAVING count(*)=1" {}
+  2012.2  "SELECT ALL 1, 2, 3 WHERE 'abc' GROUP BY 2 HAVING count(*)>1" {}
 
-    0111.1  "SELECT count(*), max(a) FROM t1 WHERE a='a' GROUP BY b" {1 a}
-    0112.1  "SELECT count(*), max(a) FROM t1 
-             WHERE a='c' GROUP BY b HAVING count(*)=1" {1 c}
-    0112.2  "SELECT count(*), max(a) FROM t1 
-             WHERE 0 GROUP BY b HAVING count(*)=2" { }
-    1111.1  "SELECT DISTINCT count(*), max(a) FROM t1 WHERE a<'c' GROUP BY b" 
-            {1 a 1 b}
-    1112.1  "SELECT DISTINCT count(*), max(a) FROM t1 WHERE a>'a'
-             GROUP BY b HAVING count(*)=1" {
-      1 c 1 b
-    }
-    1112.2  "SELECT DISTINCT count(*), max(a) FROM t1 WHERE 0
-             GROUP BY b HAVING count(*)=2" { 
-    }
+  0111.1  "SELECT count(*), max(a) FROM t1 WHERE a='a' GROUP BY b" {1 a}
+  0112.1  "SELECT count(*), max(a) FROM t1 
+           WHERE a='c' GROUP BY b HAVING count(*)=1" {1 c}
+  0112.2  "SELECT count(*), max(a) FROM t1 
+           WHERE 0 GROUP BY b HAVING count(*)=2" { }
+  1111.1  "SELECT DISTINCT count(*), max(a) FROM t1 WHERE a<'c' GROUP BY b" 
+          {1 a 1 b}
+  1112.1  "SELECT DISTINCT count(*), max(a) FROM t1 WHERE a>'a'
+           GROUP BY b HAVING count(*)=1" {
+    1 c 1 b
+  }
+  1112.2  "SELECT DISTINCT count(*), max(a) FROM t1 WHERE 0
+           GROUP BY b HAVING count(*)=2" { 
+  }
 
-    2111.1  "SELECT ALL count(*), max(a) FROM t1 WHERE b>'one' GROUP BY b" 
-            {1 c 1 b}
-    2112.1  "SELECT ALL count(*), max(a) FROM t1 WHERE a!='b'
-             GROUP BY b HAVING count(*)=1" {
-      1 a 1 c
-    }
-    2112.2  "SELECT ALL count(*), max(a) FROM t1 
-             WHERE 0 GROUP BY b HAVING count(*)=2" { }
-} {
-  do_execsql_test e_select-0.2.$tn $select [list {*}$res]
+  2111.1  "SELECT ALL count(*), max(a) FROM t1 WHERE b>'one' GROUP BY b" 
+          {1 c 1 b}
+  2112.1  "SELECT ALL count(*), max(a) FROM t1 WHERE a!='b'
+           GROUP BY b HAVING count(*)=1" {
+    1 a 1 c
+  }
+  2112.2  "SELECT ALL count(*), max(a) FROM t1 
+           WHERE 0 GROUP BY b HAVING count(*)=2" { }
 }
 
 
+# EVIDENCE-OF: R-23316-20169 -- syntax diagram result-column
+#
+do_select_tests e_select-0.3 {
+  1  "SELECT * FROM t1" {a one b two c three}
+  2  "SELECT t1.* FROM t1" {a one b two c three}
+  3  "SELECT 'x'||a||'x' FROM t1" {xax xbx xcx}
+  4  "SELECT 'x'||a||'x' alias FROM t1" {xax xbx xcx}
+  5  "SELECT 'x'||a||'x' AS alias FROM t1" {xax xbx xcx}
+}
+
+# EVIDENCE-OF: R-41233-21397 -- syntax diagram join-source
+#
+# EVIDENCE-OF: R-62821-57533 -- syntax diagram join-op
+#
+do_select_tests e_select-0.4 {
+  1  "SELECT t1.rowid FROM t1" {1 2 3}
+  2  "SELECT t1.rowid FROM t1,t2" {1 1 1 2 2 2 3 3 3}
+  3  "SELECT t1.rowid FROM t1,t2,t3" {1 1 1 1 1 1 2 2 2 2 2 2 3 3 3 3 3 3}
+
+  4  "SELECT t1.rowid FROM t1" {1 2 3}
+  5  "SELECT t1.rowid FROM t1 JOIN t2" {1 1 1 2 2 2 3 3 3}
+  6  "SELECT t1.rowid FROM t1 JOIN t2 JOIN t3" 
+     {1 1 1 1 1 1 2 2 2 2 2 2 3 3 3 3 3 3}
+
+  7  "SELECT t1.rowid FROM t1 NATURAL JOIN t3" {1 2}
+  8  "SELECT t1.rowid FROM t1 NATURAL LEFT OUTER JOIN t3" {1 2 3}
+  9  "SELECT t1.rowid FROM t1 NATURAL INNER JOIN t3" {1 2}
+  10 "SELECT t1.rowid FROM t1 NATURAL CROSS JOIN t3" {1 2}
+
+  11 "SELECT t1.rowid FROM t1 JOIN t3" {1 1 2 2 3 3}
+  12 "SELECT t1.rowid FROM t1 LEFT OUTER JOIN t3" {1 1 2 2 3 3}
+  13 "SELECT t1.rowid FROM t1 INNER JOIN t3" {1 1 2 2 3 3}
+  14 "SELECT t1.rowid FROM t1 CROSS JOIN t3" {1 1 2 2 3 3}
+}
+
+# EVIDENCE-OF: R-56911-63533 -- syntax diagram compound-operator
+#
+do_select_tests e_select-0.5 {
+  1  "SELECT rowid FROM t1 UNION ALL SELECT rowid+2 FROM t4" {1 2 3 3 4}
+  2  "SELECT rowid FROM t1 UNION     SELECT rowid+2 FROM t4" {1 2 3 4}
+  3  "SELECT rowid FROM t1 INTERSECT SELECT rowid+2 FROM t4" {3}
+  4  "SELECT rowid FROM t1 EXCEPT    SELECT rowid+2 FROM t4" {1 2}
+}
+
+# EVIDENCE-OF: R-60388-27458 -- syntax diagram ordering-term
+#
+do_select_tests e_select-0.6 {
+  1  "SELECT b||a FROM t1 ORDER BY b||a"                  {onea threec twob}
+  2  "SELECT b||a FROM t1 ORDER BY (b||a) COLLATE nocase" {onea threec twob}
+  3  "SELECT b||a FROM t1 ORDER BY (b||a) ASC"            {onea threec twob}
+  4  "SELECT b||a FROM t1 ORDER BY (b||a) DESC"           {twob threec onea}
+}
+
+# EVIDENCE-OF: R-35843-38195 -- syntax diagram select-stmt
+#
+do_select_tests e_select-0.7 {
+  1  "SELECT * FROM t1" {a one b two c three}
+  2  "SELECT * FROM t1 ORDER BY b" {a one c three b two}
+  3  "SELECT * FROM t1 ORDER BY b, a" {a one c three b two}
+
+  4  "SELECT * FROM t1 LIMIT 10" {a one b two c three}
+  5  "SELECT * FROM t1 LIMIT 10 OFFSET 5" {}
+  6  "SELECT * FROM t1 LIMIT 10, 5" {}
+
+  7  "SELECT * FROM t1 ORDER BY a LIMIT 10" {a one b two c three}
+  8  "SELECT * FROM t1 ORDER BY b LIMIT 10 OFFSET 5" {}
+  9  "SELECT * FROM t1 ORDER BY a,b LIMIT 10, 5" {}
+
+  10  "SELECT * FROM t1 UNION SELECT b, a FROM t1" 
+     {a one b two c three one a three c two b}
+  11  "SELECT * FROM t1 UNION SELECT b, a FROM t1 ORDER BY b" 
+     {one a two b three c a one c three b two}
+  12  "SELECT * FROM t1 UNION SELECT b, a FROM t1 ORDER BY b, a" 
+     {one a two b three c a one c three b two}
+  13  "SELECT * FROM t1 UNION SELECT b, a FROM t1 LIMIT 10" 
+     {a one b two c three one a three c two b}
+  14  "SELECT * FROM t1 UNION SELECT b, a FROM t1 LIMIT 10 OFFSET 5" 
+     {two b}
+  15  "SELECT * FROM t1 UNION SELECT b, a FROM t1 LIMIT 10, 5" 
+     {}
+  16  "SELECT * FROM t1 UNION SELECT b, a FROM t1 ORDER BY a LIMIT 10" 
+     {a one b two c three one a three c two b}
+  17  "SELECT * FROM t1 UNION SELECT b, a FROM t1 ORDER BY b LIMIT 10 OFFSET 5" 
+     {b two}
+  18  "SELECT * FROM t1 UNION SELECT b, a FROM t1 ORDER BY a,b LIMIT 10, 5" 
+     {}
+}
 
 #-------------------------------------------------------------------------
 # The following tests focus on FROM clause (join) processing.
@@ -232,12 +366,14 @@ foreach {tn select res} {
 # SELECT statement, then the input data is implicitly a single row zero
 # columns wide
 #
-do_execsql_test e_select-1.1.1 { SELECT 'abc' }            {abc}
-do_execsql_test e_select-1.1.2 { SELECT 'abc' WHERE NULL } {}
-do_execsql_test e_select-1.1.3 { SELECT NULL }             {{}}
-do_execsql_test e_select-1.1.4 { SELECT count(*) }         {1}
-do_execsql_test e_select-1.1.5 { SELECT count(*) WHERE 0 } {0}
-do_execsql_test e_select-1.1.6 { SELECT count(*) WHERE 1 } {1}
+do_select_tests e_select-1.1 {
+  1 "SELECT 'abc'"            {abc}
+  2 "SELECT 'abc' WHERE NULL" {}
+  3 "SELECT NULL"             {{}}
+  4 "SELECT count(*)"         {1}
+  5 "SELECT count(*) WHERE 0" {0}
+  6 "SELECT count(*) WHERE 1" {1}
+}
 
 # EVIDENCE-OF: R-48114-33255 If there is only a single table in the
 # join-source following the FROM clause, then the input data used by the
@@ -246,25 +382,22 @@ do_execsql_test e_select-1.1.6 { SELECT count(*) WHERE 1 } {1}
 #   The results of the SELECT queries suggest that they are operating on the
 #   contents of the table 'xx'.
 #
-do_execsql_test e_select-1.2.1 {
+do_execsql_test e_select-1.2.0 {
   CREATE TABLE xx(x, y);
   INSERT INTO xx VALUES('IiJlsIPepMuAhU', X'10B00B897A15BAA02E3F98DCE8F2');
   INSERT INTO xx VALUES(NULL, -16.87);
   INSERT INTO xx VALUES(-17.89, 'linguistically');
 } {}
-do_execsql_test e_select-1.2.2 { 
-  SELECT quote(x), quote(y) FROM xx
-} [list \
-  'IiJlsIPepMuAhU' X'10B00B897A15BAA02E3F98DCE8F2' \
-  NULL             -16.87                          \
-  -17.89           'linguistically'                \
-]
-do_execsql_test e_select-1.2.3 { 
-  SELECT count(*), count(x), count(y) FROM xx
-} {3 2 3}
-do_execsql_test e_select-1.2.4 { 
-  SELECT sum(x), sum(y) FROM xx
-} {-17.89 -16.87}
+do_select_tests e_select-1.2 {
+  1  "SELECT quote(x), quote(y) FROM xx" {
+     'IiJlsIPepMuAhU' X'10B00B897A15BAA02E3F98DCE8F2' 
+     NULL             -16.87                          
+     -17.89           'linguistically'                
+  }
+
+  2  "SELECT count(*), count(x), count(y) FROM xx" {3 2 3}
+  3  "SELECT sum(x), sum(y) FROM xx"               {-17.89 -16.87}
+}
 
 # EVIDENCE-OF: R-23593-12456 If there is more than one table specified
 # as part of the join-source following the FROM keyword, then the
@@ -276,9 +409,16 @@ do_execsql_test e_select-1.2.4 {
 #   data is coming from each of the three tables following the FROM clause
 #   here to show that the statement, vague as it is, is not incorrect.
 #
-do_execsql_test e_select-1.3.1 {
-  SELECT * FROM t1, t2, t3
-} [list a one a I a 1 a one a I b 2 a one b II a 1 a one b II b 2 a one c III a 1 a one c III b 2 b two a I a 1 b two a I b 2 b two b II a 1 b two b II b 2 b two c III a 1 b two c III b 2 c three a I a 1 c three a I b 2 c three b II a 1 c three b II b 2 c three c III a 1 c three c III b 2]
+do_select_tests e_select-1.3 {
+  1 "SELECT * FROM t1, t2, t3" {
+      a one a I a 1 a one a I b 2 a one b II a 1 
+      a one b II b 2 a one c III a 1 a one c III b 2 
+      b two a I a 1 b two a I b 2 b two b II a 1 
+      b two b II b 2 b two c III a 1 b two c III b 2 
+      c three a I a 1 c three a I b 2 c three b II a 1 
+      c three b II b 2 c three c III a 1 c three c III b 2
+  }
+}
 
 #
 # The following block of tests - e_select-1.4.* - test that the description
@@ -407,14 +547,13 @@ do_test e_select-1.4.3.8 {
 #
 do_execsql_test e_select-1.4.4.1 { SELECT * FROM t1, t2 } $t1_cross_t2
 do_execsql_test e_select-1.4.4.2 { SELECT * FROM t1 AS x, t1 AS y} $t1_cross_t1
-foreach {tn select res} [list \
+
+do_select_tests e_select-1.4.5 [list                                   \
     1 { SELECT * FROM t1 CROSS JOIN t2 }           $t1_cross_t2        \
     2 { SELECT * FROM t1 AS y CROSS JOIN t1 AS x } $t1_cross_t1        \
     3 { SELECT * FROM t1 INNER JOIN t2 }           $t1_cross_t2        \
     4 { SELECT * FROM t1 AS y INNER JOIN t1 AS x } $t1_cross_t1        \
-] {
-  do_execsql_test e_select-1.4.5.$tn $select $res
-}
+]
 
 
 # EVIDENCE-OF: R-45641-53865 If there is an ON clause specified, then
@@ -448,14 +587,13 @@ foreach {tn select res} [list                                              \
 # part of the join-constraint, then each of the column names specified
 # must exist in the datasets to both the left and right of the join-op.
 #
-foreach {tn select col} {
+do_select_tests e_select-1.4 -error {
+  cannot join using column %s - column not present in both tables
+} {
   1 { SELECT * FROM t1, t3 USING (b) }   "b"
   2 { SELECT * FROM t3, t1 USING (c) }   "c"
   3 { SELECT * FROM t3, (SELECT a AS b, b AS c FROM t1) USING (a) }   "a"
-} {
-  set err "cannot join using column $col - column not present in both tables"
-  do_catchsql_test e_select-1.4.$tn $select [list 1 $err]
-}
+} 
 
 # EVIDENCE-OF: R-42568-37000 For each pair of namesake columns, the
 # expression "lhs.X = rhs.X" is evaluated for each row of the cartesian
@@ -463,12 +601,10 @@ foreach {tn select col} {
 # or more of the expressions evaluates to NULL or zero are excluded from
 # the result set.
 #
-foreach {tn select res} {
+do_select_tests e_select-1.5 {
   1 { SELECT * FROM t1, t3 USING (a)   }  {a one 1 b two 2}
   2 { SELECT * FROM t3, t4 USING (a,c) }  {b 2}
-} {
-  do_execsql_test e_select-1.5.$tn $select $res
-}
+} 
 
 # EVIDENCE-OF: R-54046-48600 When comparing values as a result of a
 # USING clause, the normal rules for handling affinities, collation
@@ -548,37 +684,25 @@ do_execsql_test e_select-1.8.0 {
   INSERT INTO t8 VALUES('z', 'ghi', 26);
 } {}
 
-do_execsql_test e_select-1.8.1a {
-  SELECT count(*) FROM t7 JOIN t8 ON (t7.a=t8.a)
-} {1}
-do_execsql_test e_select-1.8.1b {
-  SELECT count(*) FROM t7 LEFT JOIN t8 ON (t7.a=t8.a)
-} {2}
+do_select_tests e_select-1.8 {
+  1a "SELECT count(*) FROM t7 JOIN t8 ON (t7.a=t8.a)" {1}
+  1b "SELECT count(*) FROM t7 LEFT JOIN t8 ON (t7.a=t8.a)" {2}
+  2a "SELECT count(*) FROM t7 JOIN t8 USING (a)" {1}
+  2b "SELECT count(*) FROM t7 LEFT JOIN t8 USING (a)" {2}
+}
 
-do_execsql_test e_select-1.8.2a {
-  SELECT count(*) FROM t7 JOIN t8 USING (a)
-} {1}
-do_execsql_test e_select-1.8.2b {
-  SELECT count(*) FROM t7 LEFT JOIN t8 USING (a)
-} {2}
 
 # EVIDENCE-OF: R-15607-52988 The added rows contain NULL values in the
 # columns that would normally contain values copied from the right-hand
 # input dataset.
 #
-do_execsql_test e_select-1.9.1a {
-  SELECT * FROM t7 JOIN t8 ON (t7.a=t8.a)
-} {x ex 24 x abc 24}
-do_execsql_test e_select-1.9.1b {
-  SELECT * FROM t7 LEFT JOIN t8 ON (t7.a=t8.a)
-} {x ex 24 x abc 24 y why 25 {} {} {}}
-
-do_execsql_test e_select-1.9.2a {
-  SELECT * FROM t7 JOIN t8 USING (a)
-} {x ex 24 abc 24}
-do_execsql_test e_select-1.9.2b {
-  SELECT * FROM t7 LEFT JOIN t8 USING (a)
-} {x ex 24 abc 24 y why 25 {} {}}
+do_select_tests e_select-1.9 {
+  1a "SELECT * FROM t7 JOIN t8 ON (t7.a=t8.a)" {x ex 24 x abc 24}
+  1b "SELECT * FROM t7 LEFT JOIN t8 ON (t7.a=t8.a)" 
+     {x ex 24 x abc 24 y why 25 {} {} {}}
+  2a "SELECT * FROM t7 JOIN t8 USING (a)" {x ex 24 abc 24}
+  2b "SELECT * FROM t7 LEFT JOIN t8 USING (a)" {x ex 24 abc 24 y why 25 {} {}}
+}
 
 # EVIDENCE-OF: R-01809-52134 If the NATURAL keyword is added to any of
 # the join-ops, then an implicit USING clause is added to the
@@ -586,34 +710,25 @@ do_execsql_test e_select-1.9.2b {
 # column names that appear in both the left and right-hand input
 # datasets.
 #
-foreach {tn s1 s2 res} {
-  1 { SELECT * FROM t7 JOIN t8 USING (a) }
-    { SELECT * FROM t7 NATURAL JOIN t8 }
-    {x ex 24 abc 24}
+do_select_tests e_select-1-10 {
+  1a "SELECT * FROM t7 JOIN t8 USING (a)"        {x ex 24 abc 24}
+  1b "SELECT * FROM t7 NATURAL JOIN t8"          {x ex 24 abc 24}
 
-  2 { SELECT * FROM t8 JOIN t7 USING (a) }
-    { SELECT * FROM t8 NATURAL JOIN t7 }
-    {x abc 24 ex 24}
+  2a "SELECT * FROM t8 JOIN t7 USING (a)"        {x abc 24 ex 24}
+  2b "SELECT * FROM t8 NATURAL JOIN t7"          {x abc 24 ex 24}
 
-  3 { SELECT * FROM t7 LEFT JOIN t8 USING (a) }
-    { SELECT * FROM t7 NATURAL LEFT JOIN t8 }
-    {x ex 24 abc 24 y why 25 {} {}}
+  3a "SELECT * FROM t7 LEFT JOIN t8 USING (a)"   {x ex 24 abc 24 y why 25 {} {}}
+  3b "SELECT * FROM t7 NATURAL LEFT JOIN t8"     {x ex 24 abc 24 y why 25 {} {}}
 
-  4 { SELECT * FROM t8 LEFT JOIN t7 USING (a) }
-    { SELECT * FROM t8 NATURAL LEFT JOIN t7 }
-    {x abc 24 ex 24 z ghi 26 {} {}}
+  4a "SELECT * FROM t8 LEFT JOIN t7 USING (a)"   {x abc 24 ex 24 z ghi 26 {} {}}
+  4b "SELECT * FROM t8 NATURAL LEFT JOIN t7"     {x abc 24 ex 24 z ghi 26 {} {}}
 
-  5 { SELECT * FROM t3 JOIN t4 USING (a,c) }
-    { SELECT * FROM t3 NATURAL JOIN t4 }
-    {b 2}
+  5a "SELECT * FROM t3 JOIN t4 USING (a,c)"      {b 2}
+  5b "SELECT * FROM t3 NATURAL JOIN t4"          {b 2}
 
-  6 { SELECT * FROM t3 LEFT JOIN t4 USING (a,c) }
-    { SELECT * FROM t3 NATURAL LEFT JOIN t4 }
-    {a 1 b 2}
-} {
-  do_execsql_test e_select-1.10.${tn}a $s1 $res
-  do_execsql_test e_select-1.10.${tn}b $s2 $res
-}
+  6a "SELECT * FROM t3 LEFT JOIN t4 USING (a,c)" {a 1 b 2}
+  6b "SELECT * FROM t3 NATURAL LEFT JOIN t4"     {a 1 b 2}
+} 
 
 # EVIDENCE-OF: R-49566-01570 If the left and right-hand input datasets
 # feature no common column names, then the NATURAL keyword has no effect
@@ -624,13 +739,9 @@ do_execsql_test e_select-1.11.0 {
   INSERT INTO t10 VALUES(1, 'true');
   INSERT INTO t10 VALUES(0, 'false');
 } {}
-foreach {tn s1 s2 res} {
-  1 { SELECT a, x FROM t1 CROSS JOIN t10 }
-    { SELECT a, x FROM t1 NATURAL CROSS JOIN t10 }
-    {a 1 a 0 b 1 b 0 c 1 c 0}
-} {
-  do_execsql_test e_select-1.11.${tn}a $s1 $res
-  do_execsql_test e_select-1.11.${tn}b $s2 $res
+do_select_tests e_select-1-11 {
+  1a "SELECT a, x FROM t1 CROSS JOIN t10" {a 1 a 0 b 1 b 0 c 1 c 0}
+  1b "SELECT a, x FROM t1 NATURAL CROSS JOIN t10" {a 1 a 0 b 1 b 0 c 1 c 0}
 }
 
 # EVIDENCE-OF: R-39625-59133 A USING or ON clause may not be added to a
@@ -1292,7 +1403,7 @@ do_execsql_test e_select-4.0 {
 # or subquery in the FROM clause followed by ".*" then all columns from
 # the named table or subquery are substituted for the single expression.
 #
-foreach {tn select res} {
+do_select_tests e_select-4.1 {
   1  "SELECT * FROM z1 LIMIT 1"             {51.65 -59.58 belfries}
   2  "SELECT * FROM z1,z2 LIMIT 1"          {51.65 -59.58 belfries {} 21}
   3  "SELECT z1.* FROM z1,z2 LIMIT 1"       {51.65 -59.58 belfries}
@@ -1309,8 +1420,6 @@ foreach {tn select res} {
   10 "SELECT z1.*,z1.* FROM z2,z1 LIMIT 1" {        
      51.65 -59.58 belfries 51.65 -59.58 belfries
   }
-} {
-  do_execsql_test e_select-4.1.$tn $select [list {*}$res]
 }
 
 # EVIDENCE-OF: R-61869-22578 It is an error to use a "*" or "alias.*"
@@ -1353,47 +1462,63 @@ foreach {tn select nCol} {
   sqlite3_finalize $::stmt
 }
 
+
+
+# In lang_select.html, a non-aggregate query is defined as any simple SELECT
+# that has no GROUP BY clause and no aggregate expressions in the result
+# expression list. Other queries are aggregate queries. Test cases
+# e_select-4.4.* through e_select-4.12.*, inclusive, which test the part of
+# simple SELECT that is different for aggregate and non-aggregate queries
+# verify (in a way) that these definitions are consistent:
+#
+# EVIDENCE-OF: R-20637-43463 A simple SELECT statement is an aggregate
+# query if it contains either a GROUP BY clause or one or more aggregate
+# functions in the result-set.
+#
+# EVIDENCE-OF: R-23155-55597 Otherwise, if a simple SELECT contains no
+# aggregate functions or a GROUP BY clause, it is a non-aggregate query.
+#
+
 # EVIDENCE-OF: R-44050-47362 If the SELECT statement is a non-aggregate
 # query, then each expression in the result expression list is evaluated
 # for each row in the dataset filtered by the WHERE clause.
 #
-#   By other definitions in lang_select.html, a non-aggregate query is
-#   any simple SELECT that has no GROUP BY clause and no aggregate expressions
-#   in the result expression list. These tests also verify (in a way) that
-#   that definition is consistent:
-#
-do_execsql_test e_select-4.4.1 {
-  SELECT a, b FROM z1
-} {51.65 -59.58 -5 {} -2.2 -23.18 {} 67 -1.04 -32.3 63 born}
+do_select_tests e_select-4.4 {
+  1 "SELECT a, b FROM z1"
+    {51.65 -59.58 -5 {} -2.2 -23.18 {} 67 -1.04 -32.3 63 born}
 
-do_execsql_test e_select-4.4.2 {
-  SELECT a IS NULL, b+1, * FROM z1
-} [list {*}{
+  2 "SELECT a IS NULL, b+1, * FROM z1" {
         0 -58.58   51.65 -59.58 belfries
         0 {}       -5 {} 75            
         0 -22.18   -2.2 -23.18 suiters
         1 68       {} 67 quartets    
         0 -31.3    -1.04 -32.3 aspen
         0 1        63 born -26
-}]
+  }
 
-do_execsql_test e_select-4.4.3 {
-  SELECT 32*32, d||e FROM z2
-} {1024 {} 1024 366}
+  3 "SELECT 32*32, d||e FROM z2" {1024 {} 1024 366}
+}
+
+
+# Test cases e_select-4.5.* and e_select-4.6.* together show that:
+#
+# EVIDENCE-OF: R-51988-01124 The single row of result-set data created
+# by evaluating the aggregate and non-aggregate expressions in the
+# result-set forms the result of an aggregate query without a GROUP BY
+# clause.
+#
 
 # EVIDENCE-OF: R-57629-25253 If the SELECT statement is an aggregate
 # query without a GROUP BY clause, then each aggregate expression in the
 # result-set is evaluated once across the entire dataset.
 #
-foreach {tn select res} {
-  5.1 "SELECT count(a), max(a), count(b), max(b) FROM z1"      {5 63 5 born}
-  5.2 "SELECT count(*), max(1)"                                {1 1}
+do_select_tests e_select-4.5 {
+  1 "SELECT count(a), max(a), count(b), max(b) FROM z1"      {5 63 5 born}
+  2 "SELECT count(*), max(1)"                                {1 1}
 
-  5.3 "SELECT sum(b+1) FROM z1 NATURAL LEFT JOIN z3"           {-43.06}
-  5.4 "SELECT sum(b+2) FROM z1 NATURAL LEFT JOIN z3"           {-38.06}
-  5.5 "SELECT sum(b IS NOT NULL) FROM z1 NATURAL LEFT JOIN z3" {5}
-} {
-  do_execsql_test e_select-4.$tn $select [list {*}$res]
+  3 "SELECT sum(b+1) FROM z1 NATURAL LEFT JOIN z3"           {-43.06}
+  4 "SELECT sum(b+2) FROM z1 NATURAL LEFT JOIN z3"           {-38.06}
+  5 "SELECT sum(b IS NOT NULL) FROM z1 NATURAL LEFT JOIN z3" {5}
 }
 
 # EVIDENCE-OF: R-26684-40576 Each non-aggregate expression in the
@@ -1422,31 +1547,27 @@ do_execsql_test e_select-4.6.0 {
   INSERT INTO a2 VALUES(6, 3);
   INSERT INTO a2 VALUES(10, 4);
 } {}
-foreach {tn select res} {
-  6.1 "SELECT one, two, count(*) FROM a1"                        {4 10 4} 
-  6.2 "SELECT one, two, count(*) FROM a1 WHERE one<3"            {2 3 2} 
-  6.3 "SELECT one, two, count(*) FROM a1 WHERE one>3"            {4 10 1} 
-  6.4 "SELECT *, count(*) FROM a1 JOIN a2"                       {4 10 10 4 16} 
-  6.5 "SELECT *, sum(three) FROM a1 NATURAL JOIN a2"             {3 6 2 3}
-  6.6 "SELECT *, sum(three) FROM a1 NATURAL JOIN a2"             {3 6 2 3}
-  6.7 "SELECT group_concat(three, ''), a1.* FROM a1 NATURAL JOIN a2" {12 3 6}
-} {
-  do_execsql_test e_select-4.$tn $select [list {*}$res]
+do_select_tests e_select-4.6 {
+  1 "SELECT one, two, count(*) FROM a1"                        {4 10 4} 
+  2 "SELECT one, two, count(*) FROM a1 WHERE one<3"            {2 3 2} 
+  3 "SELECT one, two, count(*) FROM a1 WHERE one>3"            {4 10 1} 
+  4 "SELECT *, count(*) FROM a1 JOIN a2"                       {4 10 10 4 16} 
+  5 "SELECT *, sum(three) FROM a1 NATURAL JOIN a2"             {3 6 2 3}
+  6 "SELECT *, sum(three) FROM a1 NATURAL JOIN a2"             {3 6 2 3}
+  7 "SELECT group_concat(three, ''), a1.* FROM a1 NATURAL JOIN a2" {12 3 6}
 }
 
 # EVIDENCE-OF: R-04486-07266 Or, if the dataset contains zero rows, then
 # each non-aggregate expression is evaluated against a row consisting
 # entirely of NULL values.
 #
-foreach {tn select res} {
-  7.1  "SELECT one, two, count(*) FROM a1 WHERE 0"           {{} {} 0}
-  7.2  "SELECT sum(two), * FROM a1, a2 WHERE three>5"        {{} {} {} {} {}}
-  7.3  "SELECT max(one) IS NULL, one IS NULL, two IS NULL FROM a1 WHERE two=7" {
+do_select_tests e_select-4.7 {
+  1  "SELECT one, two, count(*) FROM a1 WHERE 0"           {{} {} 0}
+  2  "SELECT sum(two), * FROM a1, a2 WHERE three>5"        {{} {} {} {} {}}
+  3  "SELECT max(one) IS NULL, one IS NULL, two IS NULL FROM a1 WHERE two=7" {
     1 1 1
   }
-} {
-  do_execsql_test e_select-4.$tn $select [list {*}$res]
-}  
+} 
 
 # EVIDENCE-OF: R-64138-28774 An aggregate query without a GROUP BY
 # clause always returns exactly one row of data, even if there are zero
@@ -1502,48 +1623,45 @@ do_execsql_test e_select-4.9.0 {
 # rows for which the results of evaluating the GROUP BY expressions are
 # the same are assigned to the same group.
 #
-foreach {tn select res} {
-  9.1  "SELECT group_concat(one), two FROM b1 GROUP BY two" {
+#   These tests also show that the following is not untrue:
+#
+# EVIDENCE-OF: R-25883-55063 The expressions in the GROUP BY clause do
+# not have to be expressions that appear in the result.
+#
+do_select_tests e_select-4.9 {
+  1  "SELECT group_concat(one), two FROM b1 GROUP BY two" {
     4,5 f   1 o   7,6   s 3,2 t
   }
-  9.2  "SELECT group_concat(one), sum(one) FROM b1 GROUP BY (one>4)" {
+  2  "SELECT group_concat(one), sum(one) FROM b1 GROUP BY (one>4)" {
     1,4,3,2 10    5,7,6 18
   }
-  9.3  "SELECT group_concat(one) FROM b1 GROUP BY (two>'o'), one%2" {
+  3  "SELECT group_concat(one) FROM b1 GROUP BY (two>'o'), one%2" {
     4  1,5    2,6   3,7
   }
-  9.4  "SELECT group_concat(one) FROM b1 GROUP BY (one==2 OR two=='o')" {
+  4  "SELECT group_concat(one) FROM b1 GROUP BY (one==2 OR two=='o')" {
     4,3,5,7,6    1,2
   }
-} {
-  do_execsql_test e_select-4.$tn $select [list {*}$res]
-}  
+}
 
 # EVIDENCE-OF: R-14926-50129 For the purposes of grouping rows, NULL
 # values are considered equal.
 #
-foreach {tn select res} {
-  10.1  "SELECT group_concat(y) FROM b2 GROUP BY x" {0,1   3   2,4}
-  10.2  "SELECT count(*) FROM b2 GROUP BY CASE WHEN y<4 THEN NULL ELSE 0 END" {
-    4 1
-  }
-} {
-  do_execsql_test e_select-4.$tn $select [list {*}$res]
-}  
+do_select_tests e_select-4.10 {
+  1  "SELECT group_concat(y) FROM b2 GROUP BY x" {0,1   3   2,4}
+  2  "SELECT count(*) FROM b2 GROUP BY CASE WHEN y<4 THEN NULL ELSE 0 END" {4 1}
+} 
 
 # EVIDENCE-OF: R-10470-30318 The usual rules for selecting a collation
 # sequence with which to compare text values apply when evaluating
 # expressions in a GROUP BY clause.
 #
-foreach {tn select res} {
-  11.1  "SELECT count(*) FROM b3 GROUP BY b"      {1 1 1 1}
-  11.2  "SELECT count(*) FROM b3 GROUP BY a"      {2 2}
-  11.3  "SELECT count(*) FROM b3 GROUP BY +b"     {1 1 1 1}
-  11.4  "SELECT count(*) FROM b3 GROUP BY +a"     {2 2}
-  11.5  "SELECT count(*) FROM b3 GROUP BY b||''"  {1 1 1 1}
-  11.6  "SELECT count(*) FROM b3 GROUP BY a||''"  {1 1 1 1}
-} {
-  do_execsql_test e_select-4.$tn $select [list {*}$res]
+do_select_tests e_select-4.11 {
+  1  "SELECT count(*) FROM b3 GROUP BY b"      {1 1 1 1}
+  2  "SELECT count(*) FROM b3 GROUP BY a"      {2 2}
+  3  "SELECT count(*) FROM b3 GROUP BY +b"     {1 1 1 1}
+  4  "SELECT count(*) FROM b3 GROUP BY +a"     {2 2}
+  5  "SELECT count(*) FROM b3 GROUP BY b||''"  {1 1 1 1}
+  6  "SELECT count(*) FROM b3 GROUP BY a||''"  {1 1 1 1}
 }
 
 # EVIDENCE-OF: R-63573-50730 The expressions in a GROUP BY clause may
@@ -1576,6 +1694,11 @@ foreach {tn select} {
 #
 #   Tested by e_select-4.13.2.*
 #
+#   Tests in this block also show that this is not untrue:
+#
+# EVIDENCE-OF: R-55403-13450 The HAVING expression may refer to values,
+# even aggregate functions, that are not in the result.
+#
 do_execsql_test e_select-4.13.0 {
   CREATE TABLE c1(up, down);
   INSERT INTO c1 VALUES('x', 1);
@@ -1605,18 +1728,16 @@ do_execsql_test e_select-4.13.0 {
   INSERT INTO c3 VALUES(94, 'plutonium');
 } {}
 
-foreach {tn select res} {
-  13.1.1  "SELECT up FROM c1 GROUP BY up HAVING count(*)>3" {x}
-  13.1.2  "SELECT up FROM c1 GROUP BY up HAVING sum(down)>16" {y}
-  13.1.3  "SELECT up FROM c1 GROUP BY up HAVING sum(down)<16" {x}
-  13.1.4  "SELECT up||down FROM c1 GROUP BY (down<5) HAVING max(down)<10" {x4}
+do_select_tests e_select-4.13 {
+  1.1  "SELECT up FROM c1 GROUP BY up HAVING count(*)>3" {x}
+  1.2  "SELECT up FROM c1 GROUP BY up HAVING sum(down)>16" {y}
+  1.3  "SELECT up FROM c1 GROUP BY up HAVING sum(down)<16" {x}
+  1.4  "SELECT up||down FROM c1 GROUP BY (down<5) HAVING max(down)<10" {x4}
 
-  13.2.1  "SELECT up FROM c1 GROUP BY up HAVING down>10" {y}
-  13.2.2  "SELECT up FROM c1 GROUP BY up HAVING up='y'"  {y}
+  2.1  "SELECT up FROM c1 GROUP BY up HAVING down>10" {y}
+  2.2  "SELECT up FROM c1 GROUP BY up HAVING up='y'"  {y}
 
-  13.2.3  "SELECT i, j FROM c2 GROUP BY i>4 HAVING i>6"  {9 36}
-} {
-  do_execsql_test e_select-4.$tn $select [list {*}$res]
+  2.3  "SELECT i, j FROM c2 GROUP BY i>4 HAVING i>6"  {9 36}
 }
 
 # EVIDENCE-OF: R-23927-54081 Each expression in the result-set is then
@@ -1625,16 +1746,14 @@ foreach {tn select res} {
 # EVIDENCE-OF: R-53735-47017 If the expression is an aggregate
 # expression, it is evaluated across all rows in the group.
 #
-foreach {tn select res} {
-  14.1  "SELECT sum(down) FROM c1 GROUP BY up" {15 48}
-  14.2  "SELECT sum(j), max(j) FROM c2 GROUP BY (i%3)"     {54 36 27 21 39 28}
-  14.3  "SELECT sum(j), max(j) FROM c2 GROUP BY (j%2)"     {80 36 40 21}
-  14.4  "SELECT 1+sum(j), max(j)+1 FROM c2 GROUP BY (j%2)" {81 37 41 22}
-  14.5  "SELECT count(*), round(avg(i),2) FROM c1, c2 ON (i=down) GROUP BY j%2"
+do_select_tests e_select-4.15 {
+  1  "SELECT sum(down) FROM c1 GROUP BY up" {15 48}
+  2  "SELECT sum(j), max(j) FROM c2 GROUP BY (i%3)"     {54 36 27 21 39 28}
+  3  "SELECT sum(j), max(j) FROM c2 GROUP BY (j%2)"     {80 36 40 21}
+  4  "SELECT 1+sum(j), max(j)+1 FROM c2 GROUP BY (j%2)" {81 37 41 22}
+  5  "SELECT count(*), round(avg(i),2) FROM c1, c2 ON (i=down) GROUP BY j%2"
         {3 4.33 1 2.0}
-} {
-  do_execsql_test e_select-4.$tn $select [list {*}$res]
-}
+} 
 
 # EVIDENCE-OF: R-62913-19830 Otherwise, it is evaluated against a single
 # arbitrarily chosen row from within the group.
@@ -1643,16 +1762,14 @@ foreach {tn select res} {
 # expression in the result-set, then all such expressions are evaluated
 # for the same row.
 #
-foreach {tn select res} {
-  15.1  "SELECT i, j FROM c2 GROUP BY i%2"             {8 28   9 36}
-  15.2  "SELECT i, j FROM c2 GROUP BY i%2 HAVING j<30" {8 28}
-  15.3  "SELECT i, j FROM c2 GROUP BY i%2 HAVING j>30" {9 36}
-  15.4  "SELECT i, j FROM c2 GROUP BY i%2 HAVING j>30" {9 36}
-  15.5  "SELECT count(*), i, k FROM c2 NATURAL JOIN c3 GROUP BY substr(k, 1, 1)"
+do_select_tests e_select-4.15 {
+  1  "SELECT i, j FROM c2 GROUP BY i%2"             {8 28   9 36}
+  2  "SELECT i, j FROM c2 GROUP BY i%2 HAVING j<30" {8 28}
+  3  "SELECT i, j FROM c2 GROUP BY i%2 HAVING j>30" {9 36}
+  4  "SELECT i, j FROM c2 GROUP BY i%2 HAVING j>30" {9 36}
+  5  "SELECT count(*), i, k FROM c2 NATURAL JOIN c3 GROUP BY substr(k, 1, 1)"
         {2 5 boron   2 2 helium   1 3 lithium}
-} {
-  do_execsql_test e_select-4.$tn $select [list {*}$res]
-}
+} 
 
 # EVIDENCE-OF: R-19334-12811 Each group of input dataset rows
 # contributes a single row to the set of result rows.
@@ -1663,15 +1780,11 @@ foreach {tn select res} {
 # produced by applying the GROUP BY and HAVING clauses to the filtered
 # input dataset.
 #
-foreach {tn select nRow} {
-  16.1  "SELECT i, j FROM c2 GROUP BY i%2"          2
-  16.2  "SELECT i, j FROM c2 GROUP BY i"            9
-  16.3  "SELECT i, j FROM c2 GROUP BY i HAVING i<5" 4
-} {
-  set rows 0
-  db eval $select {incr rows}
-  do_test e_select-4.$tn [list set rows] $nRow
-}
+do_select_tests e_select.4.16 -count {
+  1  "SELECT i, j FROM c2 GROUP BY i%2"          2
+  2  "SELECT i, j FROM c2 GROUP BY i"            9
+  3  "SELECT i, j FROM c2 GROUP BY i HAVING i<5" 4
+} 
 
 #-------------------------------------------------------------------------
 # The following tests attempt to verify statements made regarding the ALL
@@ -1712,8 +1825,10 @@ do_execsql_test e_select-5.1.0 {
 # EVIDENCE-OF: R-60770-10612 One of the ALL or DISTINCT keywords may
 # follow the SELECT keyword in a simple SELECT statement.
 #
-do_execsql_test e_select-5.1.1 { SELECT ALL a FROM h1      } {1 1 1 4 4 4}
-do_execsql_test e_select-5.1.2 { SELECT DISTINCT a FROM h1 } {1 4}
+do_select_tests e_select-5.1 {
+  1   "SELECT ALL a FROM h1"      {1 1 1 4 4 4}
+  2   "SELECT DISTINCT a FROM h1" {1 4}
+}
 
 # EVIDENCE-OF: R-08861-34280 If the simple SELECT is a SELECT ALL, then
 # the entire set of result rows are returned by the SELECT.
@@ -1728,7 +1843,7 @@ do_execsql_test e_select-5.1.2 { SELECT DISTINCT a FROM h1 } {1 4}
 #   The three testable statements above are tested by e_select-5.2.*,
 #   5.3.* and 5.4.* respectively.
 #
-foreach {tn select res} {
+do_select_tests e_select-5 {
   3.1 "SELECT ALL x FROM h2" {One Two Three Four one two three four}
   3.2 "SELECT ALL x FROM h1, h2 ON (x=b)" {One one Four four}
 
@@ -1737,27 +1852,25 @@ foreach {tn select res} {
 
   4.1 "SELECT DISTINCT x FROM h2" {four one three two}
   4.2 "SELECT DISTINCT x FROM h1, h2 ON (x=b)" {four one}
-} {
-  do_execsql_test e_select-5.$tn $select [list {*}$res]
-}
+} 
 
 # EVIDENCE-OF: R-02054-15343 For the purposes of detecting duplicate
 # rows, two NULL values are considered to be equal.
 #
-do_execsql_test e_select-5.5.1 { SELECT DISTINCT d FROM h3 } {{} 2 2,3 2,4 3}
+do_select_tests e_select-5.5 {
+  1  "SELECT DISTINCT d FROM h3" {{} 2 2,3 2,4 3}
+}
 
 # EVIDENCE-OF: R-58359-52112 The normal rules for selecting a collation
 # sequence to compare text values with apply.
 #
-foreach {tn select res} {
-  6.1  "SELECT DISTINCT b FROM h1"                  {I IV four i iv one}
-  6.2  "SELECT DISTINCT b COLLATE nocase FROM h1"   {four i iv one}
-  6.3  "SELECT DISTINCT x FROM h2"                  {four one three two}
-  6.4  "SELECT DISTINCT x COLLATE binary FROM h2"   {
+do_select_tests e_select-5.6 {
+  1  "SELECT DISTINCT b FROM h1"                  {I IV four i iv one}
+  2  "SELECT DISTINCT b COLLATE nocase FROM h1"   {four i iv one}
+  3  "SELECT DISTINCT x FROM h2"                  {four one three two}
+  4  "SELECT DISTINCT x COLLATE binary FROM h2"   {
     Four One Three Two four one three two
   }
-} {
-  do_execsql_test e_select-5.$tn $select [list {*}$res]
 }
 
 #-------------------------------------------------------------------------
@@ -1778,7 +1891,9 @@ do_execsql_test e_select-7.1.0 {
   CREATE TABLE j2(e, f);
   CREATE TABLE j3(g);
 } {}
-foreach {tn select op} {
+do_select_tests e_select-7.1 -error {
+  SELECTs to the left and right of %s do not have the same number of result columns
+} {
   1   "SELECT a, b FROM j1    UNION ALL SELECT g FROM j3"    {UNION ALL}
   2   "SELECT *    FROM j1    UNION ALL SELECT * FROM j3"    {UNION ALL}
   3   "SELECT a, b FROM j1    UNION ALL SELECT g FROM j3"    {UNION ALL}
@@ -1802,12 +1917,7 @@ foreach {tn select op} {
   18  "SELECT a, b FROM j1    EXCEPT SELECT g FROM j3"       {EXCEPT}
   19  "SELECT a, b FROM j1    EXCEPT SELECT * FROM j3,j2"    {EXCEPT}
   20  "SELECT *    FROM j3,j2 EXCEPT SELECT a, b FROM j1"    {EXCEPT}
-} {
-  set    err "SELECTs to the left and right of "
-  append err $op
-  append err " do not have the same number of result columns"
-  do_catchsql_test e_select-7.1.$tn $select [list 1 $err]
-}
+} 
 
 # EVIDENCE-OF: R-01450-11152 As the components of a compound SELECT must
 # be simple SELECT statements, they may not contain ORDER BY or LIMIT
@@ -1927,7 +2037,7 @@ do_execsql_test e_select-7.4.0 {
   INSERT INTO q3 VALUES('beauty', 2);
   INSERT INTO q3 VALUES('beauty', 2);
 } {}
-foreach {tn select res} {
+do_select_tests e_select-7.4 {
   1   {SELECT a FROM q1 UNION ALL SELECT d FROM q2}
       {16 legible beauty legible beauty -65.91 emanating}
 
@@ -1939,15 +2049,13 @@ foreach {tn select res} {
 
   4   {SELECT * FROM q2 UNION ALL SELECT * FROM q3} 
       {legible 1 beauty 2 -65.91 4 emanating -16.56 beauty 2 beauty 2}
-} {
-  do_execsql_test e_select-7.4.$tn $select [list {*}$res]
-}
+} 
 
 # EVIDENCE-OF: R-20560-39162 The UNION operator works the same way as
 # UNION ALL, except that duplicate rows are removed from the final
 # result set.
 #
-foreach {tn select res} {
+do_select_tests e_select-7.5 {
   1   {SELECT a FROM q1 UNION SELECT d FROM q2}
       {-65.91 16 beauty emanating legible}
 
@@ -1959,43 +2067,35 @@ foreach {tn select res} {
 
   4   {SELECT * FROM q2 UNION SELECT * FROM q3} 
       {-65.91 4 beauty 2 emanating -16.56 legible 1}
-} {
-  do_execsql_test e_select-7.5.$tn $select [list {*}$res]
-}
+} 
 
 # EVIDENCE-OF: R-45764-31737 The INTERSECT operator returns the
 # intersection of the results of the left and right SELECTs.
 #
-foreach {tn select res} {
+do_select_tests e_select-7.6 {
   1   {SELECT a FROM q1 INTERSECT SELECT d FROM q2} {beauty legible}
   2   {SELECT * FROM q2 INTERSECT SELECT * FROM q3} {beauty 2}
-} {
-  do_execsql_test e_select-7.6.$tn $select [list {*}$res]
 }
 
 # EVIDENCE-OF: R-25787-28949 The EXCEPT operator returns the subset of
 # rows returned by the left SELECT that are not also returned by the
 # right-hand SELECT.
 #
-foreach {tn select res} {
+do_select_tests e_select-7.7 {
   1   {SELECT a FROM q1 EXCEPT SELECT d FROM q2} {16}
 
   2   {SELECT * FROM q2 EXCEPT SELECT * FROM q3} 
       {-65.91 4 emanating -16.56 legible 1}
-} {
-  do_execsql_test e_select-7.7.$tn $select [list {*}$res]
 }
 
 # EVIDENCE-OF: R-40729-56447 Duplicate rows are removed from the results
 # of INTERSECT and EXCEPT operators before the result set is returned.
 #
-foreach {tn select res} {
+do_select_tests e_select-7.8 {
   0   {SELECT * FROM q3} {beauty 2 beauty 2}
 
   1   {SELECT * FROM q3 INTERSECT SELECT * FROM q3} {beauty 2}
   2   {SELECT * FROM q3 EXCEPT SELECT a,b FROM q1}  {beauty 2}
-} {
-  do_execsql_test e_select-7.8.$tn $select [list {*}$res]
 }
 
 # EVIDENCE-OF: R-46765-43362 For the purposes of determining duplicate
@@ -2004,7 +2104,7 @@ foreach {tn select res} {
 # values.
 #
 db nullvalue null
-foreach {tn select res} {
+do_select_tests e_select-7.9 {
   1   {SELECT NULL UNION ALL SELECT NULL} {null null}
   2   {SELECT NULL UNION     SELECT NULL} {null}
   3   {SELECT NULL INTERSECT SELECT NULL} {null}
@@ -2024,8 +2124,6 @@ foreach {tn select res} {
   14  {SELECT c FROM q1 UNION     SELECT g FROM q3} {null -42.47 2}
   15  {SELECT c FROM q1 INTERSECT SELECT g FROM q3} {}
   16  {SELECT c FROM q1 EXCEPT    SELECT g FROM q3} {null -42.47}
-} {
-  do_execsql_test e_select-7.9.$tn $select [list {*}$res]
 }
 db nullvalue {} 
 
@@ -2040,7 +2138,7 @@ do_execsql_test e_select-7.10.0 {
   CREATE TABLE y1(a COLLATE nocase, b COLLATE binary, c);
   INSERT INTO y1 VALUES('Abc', 'abc', 'aBC');
 } {}
-foreach {tn select res} {
+do_select_tests e_select-7.10 {
   1   {SELECT 'abc'                UNION SELECT 'ABC'} {ABC abc}
   2   {SELECT 'abc' COLLATE nocase UNION SELECT 'ABC'} {ABC}
   3   {SELECT 'abc'                UNION SELECT 'ABC' COLLATE nocase} {ABC}
@@ -2052,9 +2150,6 @@ foreach {tn select res} {
   8   {SELECT a FROM y1 UNION SELECT c FROM y1}                {aBC}
 
   9   {SELECT a FROM y1 UNION SELECT c COLLATE binary FROM y1} {aBC}
-
-} {
-  do_execsql_test e_select-7.10.$tn $select [list {*}$res]
 }
 
 # EVIDENCE-OF: R-32706-07403 No affinity transformations are applied to
@@ -2069,7 +2164,7 @@ do_execsql_test e_select-7.10.0 {
   INSERT INTO w2 VALUES(1, 4.1);
 } {}
 
-foreach {tn select res} {
+do_select_tests e_select-7.11 {
   1  { SELECT a FROM w1 UNION SELECT a FROM w2 } {1 1}
   2  { SELECT a FROM w2 UNION SELECT a FROM w1 } {1 1}
   3  { SELECT b FROM w1 UNION SELECT b FROM w2 } {4.1 4.1}
@@ -2084,8 +2179,6 @@ foreach {tn select res} {
   10 { SELECT a FROM w2 EXCEPT SELECT a FROM w1 } {1}
   11 { SELECT b FROM w1 EXCEPT SELECT b FROM w2 } {4.1}
   12 { SELECT b FROM w2 EXCEPT SELECT b FROM w1 } {4.1}
-} {
-  do_execsql_test e_select-7.11.$tn $select [list {*}$res]
 }
 
 
@@ -2173,13 +2266,11 @@ do_execsql_test e_select-8.1.0 {
 # of evaluating the left-most expression in the ORDER BY list, then ties
 # are broken by evaluating the second left-most expression and so on.
 #
-foreach {tn select res} {
+do_select_tests e_select-8.1 {
   1  "SELECT * FROM d1 ORDER BY x, y, z" {
      1 2 -20    1 2 3    1 2 7    1 2 8    
      1 4  93    1 5 -1   2 4 93   2 5 -1
   }
-} {
-  do_execsql_test e_select-8.1.$tn $select [list {*}$res]
 }
 
 # EVIDENCE-OF: R-06617-54588 Each ORDER BY expression may be optionally
@@ -2194,7 +2285,7 @@ foreach {tn select res} {
 #   Test cases e_select-8.3.* test the above. All 8.3 test cases are
 #   copies of 8.2 test cases with the explicit "ASC" removed.
 #
-foreach {tn select res} {
+do_select_tests e_select-8 {
   2.1  "SELECT * FROM d1 ORDER BY x ASC, y ASC, z ASC" {
      1 2 -20    1 2 3    1 2 7    1 2 8    
      1 4  93    1 5 -1   2 4 93   2 5 -1
@@ -2224,8 +2315,6 @@ foreach {tn select res} {
      2 4 93   2 5 -1     1 2 -20    1 2 3    
      1 2 7    1 2 8      1 4  93    1 5 -1   
   }
-} {
-  do_execsql_test e_select-8.$tn $select [list {*}$res]
 }
 
 # EVIDENCE-OF: R-29779-04281 If the ORDER BY expression is a constant
@@ -2233,7 +2322,7 @@ foreach {tn select res} {
 # column of the result set (columns are numbered from left to right
 # starting with 1).
 #
-foreach {tn select res} {
+do_select_tests e_select-8.4 {
   1  "SELECT * FROM d1 ORDER BY 1 ASC, 2 ASC, 3 ASC" {
      1 2 -20    1 2 3    1 2 7    1 2 8    
      1 4  93    1 5 -1   2 4 93   2 5 -1
@@ -2270,15 +2359,13 @@ foreach {tn select res} {
      -20 1  -1 2   -1 1   3 1     
      7 1     8 1   93 2   93 1   
   }
-} {
-  do_execsql_test e_select-8.4.$tn $select [list {*}$res]
 }
 
 # EVIDENCE-OF: R-63286-51977 If the ORDER BY expression is an identifier
 # that corresponds to the alias of one of the output columns, then the
 # expression is considered an alias for that column.
 #
-foreach {tn select res} {
+do_select_tests e_select-8.5 {
   1   "SELECT z+1 AS abc FROM d1 ORDER BY abc" {
     -19 0 0 4 8 9 94 94
   }
@@ -2291,8 +2378,6 @@ foreach {tn select res} {
   4  "SELECT z AS x, x AS z FROM d1 ORDER BY x" {
     -20 1    -1 2    -1 1    3 1    7 1    8 1    93 2    93 1
   }
-} {
-  do_execsql_test e_select-8.5.$tn $select [list {*}$res]
 }
 
 # EVIDENCE-OF: R-27923-38747 Otherwise, if the ORDER BY expression is
@@ -2302,7 +2387,7 @@ foreach {tn select res} {
 # EVIDENCE-OF: R-03421-57988 If the SELECT statement is a simple SELECT,
 # then an ORDER BY may contain any arbitrary expressions.
 #
-foreach {tn select res} {
+do_select_tests e_select-8.6 {
   1   "SELECT * FROM d1 ORDER BY x+y+z" {
     1 2 -20    1 5 -1    1 2 3    2 5 -1 
     1 2 7      1 2 8     1 4 93   2 4 93
@@ -2315,8 +2400,6 @@ foreach {tn select res} {
     1 2 -20    2 5 -1    1 5 -1    1 2 3 
     1 2 7      1 2 8     2 4 93    1 4 93
   }
-} {
-  do_execsql_test e_select-8.6.$tn $select [list {*}$res]
 }
 
 # EVIDENCE-OF: R-28853-08147 However, if the SELECT is a compound
@@ -2324,14 +2407,14 @@ foreach {tn select res} {
 # columns must be exactly the same as an expression used as an output
 # column.
 #
-foreach {tn select violation} {
+do_select_tests e_select-8.7.1 -error {
+  %s ORDER BY term does not match any column in the result set
+} {
   1   "SELECT x FROM d1 UNION ALL SELECT a FROM d2 ORDER BY x*z"        1st
   2   "SELECT x,z FROM d1 UNION ALL SELECT a,b FROM d2 ORDER BY x, x/z" 2nd
-} {
-  set err "$violation ORDER BY term does not match any column in the result set"
-  do_catchsql_test e_select-8.7.1.$tn $select [list 1 $err]
-}
-foreach {tn select res} {
+} 
+
+do_select_tests e_select-8.7.2 {
   1   "SELECT x*z FROM d1 UNION ALL SELECT a FROM d2 ORDER BY x*z" {
     -20 -2 -1 3 7 8 93 186 babied barked commercials gently 
     iterate lad pragmatist reemphasizes rejoicing solemnness
@@ -2342,9 +2425,7 @@ foreach {tn select res} {
     failings iterate sexton lad relenting pragmatist guarded reemphasizes reply
     rejoicing liabilities solemnness annexed
   }
-} {
-  do_execsql_test e_select-8.7.2.$tn $select [list {*}$res]
-}
+} 
 
 do_execsql_test e_select-8.8.0 {
   CREATE TABLE d3(a);
@@ -2454,7 +2535,7 @@ do_execsql_test e_select-8.13.0 {
   INSERT INTO d8 VALUES('c');
   INSERT INTO d9 VALUES('D');
 } {}
-foreach {tn select res} {
+do_select_tests e_select-8.13 {
   1   { SELECT a FROM d5 UNION ALL SELECT c FROM d6 UNION ALL SELECT e FROM d7
          ORDER BY a
       } {1 2 3 4 5 6}
@@ -2487,40 +2568,34 @@ foreach {tn select res} {
       {2 f   5 c   c 5   f 2}
   12  { SELECT a+1, b FROM d5 UNION ALL SELECT b, a+1 FROM d5 ORDER BY 1 } 
       {2 f   5 c   c 5   f 2}
-
-} {
-  do_execsql_test e_select-8.13.$tn $select [list {*}$res]
-}
+} 
 
 # EVIDENCE-OF: R-39265-04070 If no matching expression can be found in
 # the result columns of any constituent SELECT, it is an error.
 #
-foreach {tn select idx} {
+do_select_tests e_select-8.14 -error {
+  %s ORDER BY term does not match any column in the result set
+} {
   1   { SELECT a FROM d5 UNION SELECT c FROM d6 ORDER BY a+1 }          1st
   2   { SELECT a FROM d5 UNION SELECT c FROM d6 ORDER BY a, a+1 }       2nd
   3   { SELECT * FROM d5 INTERSECT SELECT * FROM d6 ORDER BY 'hello' }  1st
   4   { SELECT * FROM d5 INTERSECT SELECT * FROM d6 ORDER BY blah    }  1st
   5   { SELECT * FROM d5 INTERSECT SELECT * FROM d6 ORDER BY c,d,c+d }  3rd
   6   { SELECT * FROM d5 EXCEPT SELECT * FROM d7 ORDER BY 1,2,b,a/b  }  4th
-} {
-  set err "$idx ORDER BY term does not match any column in the result set"
-  do_catchsql_test e_select-8.14.$tn $select [list 1 $err]
-}
+} 
 
 # EVIDENCE-OF: R-03407-11483 Each term of the ORDER BY clause is
 # processed separately and may be matched against result columns from
 # different SELECT statements in the compound.
 # 
-foreach {tn select res} {
+do_select_tests e_select-8.15 {
   1  { SELECT a, b FROM d5 UNION ALL SELECT c-1, d FROM d6 ORDER BY a, d }
      {1 e   1 f   4 b   4 c}
   2  { SELECT a, b FROM d5 UNION ALL SELECT c-1, d FROM d6 ORDER BY c-1, b }
      {1 e   1 f   4 b   4 c}
   3  { SELECT a, b FROM d5 UNION ALL SELECT c-1, d FROM d6 ORDER BY 1, 2 }
      {1 e   1 f   4 b   4 c}
-} {
-  do_execsql_test e_select-8.15.$tn $select [list {*}$res]
-}
+} 
 
 
 #-------------------------------------------------------------------------
@@ -2560,69 +2635,60 @@ do_execsql_test e_select-9.0 {
 # LIMIT clause, so long as it evaluates to an integer or a value that
 # can be losslessly converted to an integer.
 #
-foreach {tn select res} {
+do_select_tests e_select-9.1 {
   1  { SELECT b FROM f1 ORDER BY a LIMIT 5 } {a b c d e}
   2  { SELECT b FROM f1 ORDER BY a LIMIT 2+3 } {a b c d e}
   3  { SELECT b FROM f1 ORDER BY a LIMIT (SELECT a FROM f1 WHERE b = 'e') } 
      {a b c d e}
   4  { SELECT b FROM f1 ORDER BY a LIMIT 5.0 } {a b c d e}
   5  { SELECT b FROM f1 ORDER BY a LIMIT '5' } {a b c d e}
-} {
-  do_execsql_test e_select-9.1.$tn $select [list {*}$res]
 }
 
 # EVIDENCE-OF: R-46155-47219 If the expression evaluates to a NULL value
 # or any other value that cannot be losslessly converted to an integer,
 # an error is returned.
 #
-foreach {tn select} {
-  1  { SELECT b FROM f1 ORDER BY a LIMIT 'hello' } 
-  2  { SELECT b FROM f1 ORDER BY a LIMIT NULL } 
-  3  { SELECT b FROM f1 ORDER BY a LIMIT X'ABCD' } 
-  4  { SELECT b FROM f1 ORDER BY a LIMIT 5.1 } 
-  5  { SELECT b FROM f1 ORDER BY a LIMIT (SELECT group_concat(b) FROM f1) } 
-} {
-  do_catchsql_test e_select-9.2.$tn $select {1 {datatype mismatch}}
-}
+
+do_select_tests e_select-9.2 -error "datatype mismatch" {
+  1  { SELECT b FROM f1 ORDER BY a LIMIT 'hello' } {}
+  2  { SELECT b FROM f1 ORDER BY a LIMIT NULL } {}
+  3  { SELECT b FROM f1 ORDER BY a LIMIT X'ABCD' } {}
+  4  { SELECT b FROM f1 ORDER BY a LIMIT 5.1 } {}
+  5  { SELECT b FROM f1 ORDER BY a LIMIT (SELECT group_concat(b) FROM f1) } {}
+} 
 
 # EVIDENCE-OF: R-03014-26414 If the LIMIT expression evaluates to a
 # negative value, then there is no upper bound on the number of rows
 # returned.
 #
-foreach {tn select res} {
+do_select_tests e_select-9.4 {
   1  { SELECT b FROM f1 ORDER BY a LIMIT -1 } 
      {a b c d e f g h i j k l m n o p q r s t u v w x y z}
   2  { SELECT b FROM f1 ORDER BY a LIMIT length('abc')-100 } 
      {a b c d e f g h i j k l m n o p q r s t u v w x y z}
   3  { SELECT b FROM f1 ORDER BY a LIMIT (SELECT count(*) FROM f1)/2 - 14 }
      {a b c d e f g h i j k l m n o p q r s t u v w x y z}
-} {
-  do_execsql_test e_select-9.4.$tn $select [list {*}$res]
 }
 
 # EVIDENCE-OF: R-33750-29536 Otherwise, the SELECT returns the first N
 # rows of its result set only, where N is the value that the LIMIT
 # expression evaluates to.
 #
-foreach {tn select res} {
+do_select_tests e_select-9.5 {
   1  { SELECT b FROM f1 ORDER BY a LIMIT 0 } {}
   2  { SELECT b FROM f1 ORDER BY a DESC LIMIT 4 } {z y x w}
   3  { SELECT b FROM f1 ORDER BY a DESC LIMIT 8 } {z y x w v u t s}
   4  { SELECT b FROM f1 ORDER BY a DESC LIMIT '12.0' } {z y x w v u t s r q p o}
-} {
-  do_execsql_test e_select-9.5.$tn $select [list {*}$res]
 }
 
 # EVIDENCE-OF: R-54935-19057 Or, if the SELECT statement would return
 # less than N rows without a LIMIT clause, then the entire result set is
 # returned.
 #
-foreach {tn select res} {
+do_select_tests e_select-9.6 {
   1  { SELECT b FROM f1 WHERE a>21 ORDER BY a LIMIT 10 } {v w x y z}
   2  { SELECT count(*) FROM f1 GROUP BY a/5 ORDER BY 1 LIMIT 10 } {2 4 5 5 5 5}
-} {
-  do_execsql_test e_select-9.6.$tn $select [list {*}$res]
-}
+} 
 
 
 # EVIDENCE-OF: R-24188-24349 The expression attached to the optional
@@ -2647,7 +2713,7 @@ foreach {tn select} {
 # the values that the OFFSET and LIMIT clauses evaluate to,
 # respectively.
 #
-foreach {tn select res} {
+do_select_tests e_select-9.8 {
   1  { SELECT b FROM f1 ORDER BY a LIMIT 10 OFFSET 5} {f g h i j k l m n o}
   2  { SELECT b FROM f1 ORDER BY a LIMIT 2+3 OFFSET 10} {k l m n o}
   3  { SELECT b FROM f1 ORDER BY a 
@@ -2658,19 +2724,15 @@ foreach {tn select res} {
   5  { SELECT b FROM f1 ORDER BY a LIMIT '5' OFFSET 0 } {a b c d e}
   6  { SELECT b FROM f1 ORDER BY a LIMIT 0 OFFSET 10 } {}
   7  { SELECT b FROM f1 ORDER BY a LIMIT 3 OFFSET '1'||'5' } {p q r}
-} {
-  do_execsql_test e_select-9.8.$tn $select [list {*}$res]
 }
 
 # EVIDENCE-OF: R-34648-44875 Or, if the SELECT would return less than
 # M+N rows if it did not have a LIMIT clause, then the first M rows are
 # skipped and the remaining rows (if any) are returned.
 #
-foreach {tn select res} {
+do_select_tests e_select-9.9 {
   1  { SELECT b FROM f1 ORDER BY a LIMIT 10 OFFSET 20} {u v w x y z}
   2  { SELECT a FROM f1 ORDER BY a DESC LIMIT 100 OFFSET 18+4} {4 3 2 1}
-} {
-  do_execsql_test e_select-9.9.$tn $select [list {*}$res]
 }
 
 
@@ -2678,13 +2740,11 @@ foreach {tn select res} {
 # negative value, the results are the same as if it had evaluated to
 # zero.
 #
-foreach {tn select res} {
+do_select_tests e_select-9.10 {
   1  { SELECT b FROM f1 ORDER BY a LIMIT 5 OFFSET -1 } {a b c d e}
   2  { SELECT b FROM f1 ORDER BY a LIMIT 5 OFFSET -500 } {a b c d e}
   3  { SELECT b FROM f1 ORDER BY a LIMIT 5 OFFSET 0  } {a b c d e}
-} {
-  do_execsql_test e_select-9.10.$tn $select [list {*}$res]
-}
+} 
 
 # EVIDENCE-OF: R-19509-40356 Instead of a separate OFFSET clause, the
 # LIMIT clause may specify two scalar expressions separated by a comma.
@@ -2692,7 +2752,7 @@ foreach {tn select res} {
 # EVIDENCE-OF: R-33788-46243 In this case, the first expression is used
 # as the OFFSET expression and the second as the LIMIT expression.
 #
-foreach {tn select res} {
+do_select_tests e_select-9.11 {
   1  { SELECT b FROM f1 ORDER BY a LIMIT 5, 10 } {f g h i j k l m n o}
   2  { SELECT b FROM f1 ORDER BY a LIMIT 10, 2+3 } {k l m n o}
   3  { SELECT b FROM f1 ORDER BY a 
@@ -2709,8 +2769,6 @@ foreach {tn select res} {
   10 { SELECT b FROM f1 ORDER BY a LIMIT -1, 5 } {a b c d e}
   11 { SELECT b FROM f1 ORDER BY a LIMIT -500, 5 } {a b c d e}
   12 { SELECT b FROM f1 ORDER BY a LIMIT 0, 5 } {a b c d e}
-} {
-  do_execsql_test e_select-9.11.$tn $select [list {*}$res]
 }
 
 
