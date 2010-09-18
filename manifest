@@ -1,5 +1,8 @@
-C Add\snew\stest\sfile\se_insert.test.
-D 2010-09-18T19:00:13
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Make\ssure\sthe\spager\scache\sis\scleared\sif\sthere\sis\sany\sdifficulty\sstarting\na\snew\sread\stransaction\sin\sWAL\smode.\s\sTicket\s[313723c356483eff2a4c4bdd2c].
+D 2010-09-18T19:36:41
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -160,7 +163,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c 6152042c3a619fbc390eeb59a8eecafa40afc2e4
 F src/os_win.c 2f90f7bdec714fad51cd31b4ecad3cc1b4bb5aad
-F src/pager.c 51d77a9df463f77bf214f32bb2dbc2d0da41fc3e
+F src/pager.c 4760042267a002216c208aeaa7fc6d0a85df94a5
 F src/pager.h 8167a1e720d0b7a2790079007128e594010220ad
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 09d38c44ab275db581f7a2f6ff8b9bc7f8c0faaa
@@ -859,7 +862,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 14227724a81c31c6bb9381b210f8fabf4b1154fd
-R 436252de876752929fe669b19572343f
-U dan
-Z 0eab070401d21ee3c063299339d2883e
+P 8023a3091b32d304eaf7be41bb1d0bd33517e5f6
+R 71507bc0bee3e21d8f1063eb5b34b00d
+U drh
+Z 75f1079ea36b18df2c2f1d4f3849b1f3
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMlRTMoxKgR168RlERAvt8AJ4qlP0X/B/7EIGHxORIF283C0nZ0QCfZegu
+ygy7EBpTSYM3XEOt+BtY5zQ=
+=lbvT
+-----END PGP SIGNATURE-----

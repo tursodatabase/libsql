@@ -2971,7 +2971,7 @@ static int pagerBeginReadTransaction(Pager *pPager){
   sqlite3WalEndReadTransaction(pPager->pWal);
 
   rc = sqlite3WalBeginReadTransaction(pPager->pWal, &changed);
-  if( rc==SQLITE_OK && changed ){
+  if( rc!=SQLITE_OK || changed ){
     pager_reset(pPager);
   }
 
