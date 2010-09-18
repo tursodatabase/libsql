@@ -343,6 +343,56 @@ proc do_catchsql_test {testname sql result} {
   uplevel do_test $testname [list "catchsql {$sql}"] [list $result]
 }
 
+#-------------------------------------------------------------------------
+#   Usage: do_select_tests PREFIX ?SWITCHES? TESTLIST
+#
+# Where switches are:
+#
+#   -errorformat FMTSTRING
+#   -count
+#
+proc do_select_tests {prefix args} {
+
+  set testlist [lindex $args end]
+  set switches [lrange $args 0 end-1]
+
+  set errfmt ""
+  set countonly 0
+
+  for {set i 0} {$i < [llength $switches]} {incr i} {
+    set s [lindex $switches $i]
+    set n [string length $s]
+    if {$n>=2 && [string equal -length $n $s "-errorformat"]} {
+      set errfmt [lindex $switches [incr i]]
+    } elseif {$n>=2 && [string equal -length $n $s "-count"]} {
+      set countonly 1
+    } else {
+      error "unknown switch: $s"
+    }
+  }
+
+  if {$countonly && $errfmt!=""} {
+    error "Cannot use -count and -errorformat together"
+  }
+  set nTestlist [llength $testlist]
+  if {$nTestlist%3 || $nTestlist==0 } {
+    error "SELECT test list contains [llength $testlist] elements"
+  }
+
+  foreach {tn sql res} $testlist {
+    if {$countonly} {
+      set nRow 0
+      db eval $sql {incr nRow}
+      uplevel do_test ${prefix}.$tn [list [list set {} $nRow]] [list $res]
+    } elseif {$errfmt==""} {
+      uplevel do_execsql_test ${prefix}.${tn} [list $sql] [list [list {*}$res]]
+    } else {
+      set res [list 1 [string trim [format $errfmt {*}$res]]]
+      uplevel do_catchsql_test ${prefix}.${tn} [list $sql] [list $res]
+    }
+  }
+}
+
 
 # Run an SQL script.  
 # Return the number of microseconds per statement.

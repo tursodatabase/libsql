@@ -74,55 +74,6 @@ proc do_join_test {tn select res} {
   }
 }
 
-#
-#   Usage: do_select_tests PREFIX ?SWITCHES? TESTLIST
-#
-# Where switches are:
-#
-#   -errorformat FMTSTRING
-#
-proc do_select_tests {prefix args} {
-
-  set testlist [lindex $args end]
-  set switches [lrange $args 0 end-1]
-
-  set errfmt ""
-  set countonly 0
-
-  for {set i 0} {$i < [llength $switches]} {incr i} {
-    set s [lindex $switches $i]
-    set n [string length $s]
-    if {$n>=2 && [string equal -length $n $s "-errorformat"]} {
-      set errfmt [lindex $switches [incr i]]
-    } elseif {$n>=2 && [string equal -length $n $s "-count"]} {
-      set countonly 1
-    } else {
-      error "unknown switch: $s"
-    }
-  }
-
-  if {$countonly && $errfmt!=""} {
-    error "Cannot use -count and -errorformat together"
-  }
-  set nTestlist [llength $testlist]
-  if {$nTestlist%3 || $nTestlist==0 } {
-    error "SELECT test list contains [llength $testlist] elements"
-  }
-
-  foreach {tn sql res} $testlist {
-    if {$countonly} {
-      set nRow 0
-      db eval $sql {incr nRow}
-      uplevel do_test ${prefix}.$tn [list [list set {} $nRow]] [list $res]
-    } elseif {$errfmt==""} {
-      uplevel do_execsql_test ${prefix}.${tn} [list $sql] [list [list {*}$res]]
-    } else {
-      set res [list 1 [string trim [format $errfmt $res]]]
-      uplevel do_catchsql_test ${prefix}.${tn} [list $sql] [list $res]
-    }
-  }
-}
-
 #-------------------------------------------------------------------------
 # The following tests check that all paths on the syntax diagrams on
 # the lang_select.html page may be taken.
@@ -1894,11 +1845,11 @@ do_execsql_test e_select-7.1.0 {
 do_select_tests e_select-7.1 -error {
   SELECTs to the left and right of %s do not have the same number of result columns
 } {
-  1   "SELECT a, b FROM j1    UNION ALL SELECT g FROM j3"    {UNION ALL}
-  2   "SELECT *    FROM j1    UNION ALL SELECT * FROM j3"    {UNION ALL}
-  3   "SELECT a, b FROM j1    UNION ALL SELECT g FROM j3"    {UNION ALL}
-  4   "SELECT a, b FROM j1    UNION ALL SELECT * FROM j3,j2" {UNION ALL}
-  5   "SELECT *    FROM j3,j2 UNION ALL SELECT a, b FROM j1" {UNION ALL}
+  1   "SELECT a, b FROM j1    UNION ALL SELECT g FROM j3"    {{UNION ALL}}
+  2   "SELECT *    FROM j1    UNION ALL SELECT * FROM j3"    {{UNION ALL}}
+  3   "SELECT a, b FROM j1    UNION ALL SELECT g FROM j3"    {{UNION ALL}}
+  4   "SELECT a, b FROM j1    UNION ALL SELECT * FROM j3,j2" {{UNION ALL}}
+  5   "SELECT *    FROM j3,j2 UNION ALL SELECT a, b FROM j1" {{UNION ALL}}
 
   6   "SELECT a, b FROM j1    UNION SELECT g FROM j3"        {UNION}
   7   "SELECT *    FROM j1    UNION SELECT * FROM j3"        {UNION}
