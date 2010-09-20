@@ -1,5 +1,5 @@
-C Add\sa\stest\scase\sto\sverify\sthat\sbug\s[313723c356]\shas\sbeen\sfixed.
-D 2010-09-20T08:47:01
+C Add\sfurther\stests\sto\se_insert.test.
+D 2010-09-20T14:05:52
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -350,7 +350,7 @@ F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_expr.test 164e87c1d7b40ceb47c57c3bffa384c81d009aa7
 F test/e_fkey.test 6721a741c6499b3ab7e5385923233343c8f1ad05
 F test/e_fts3.test 75bb0aee26384ef586165e21018a17f7cd843469
-F test/e_insert.test 066926c10eeffbde3890a84d5f8b63dbbb2b6aa9
+F test/e_insert.test 9c72d3c255310ab8c64cd825a8a384fb7eb69109
 F test/e_select.test 64b9cc44f8df454f45bc8df032e12032c8bf8670
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
@@ -860,7 +860,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e14ef0e8b4a27dbd58338214242eb3928404b176
-R c7291b56f5740f90d8dcf09aabde4142
+P 4ea134a84c264b55cdb6f6f8e740b252278ce792
+R 1dd2a51aedf94ac559de0c255b3913ec
 U dan
-Z bea42f9bac10fe0c0c7da75967ce3ee2
+Z 0a43987fd63a2fd5993e6c4cc09d002d
