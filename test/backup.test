@@ -177,7 +177,7 @@ foreach nPagePerStep {1 200} {
   # page size is the same as the source page size (in this case 1024 bytes).
   #
   set isMemDest [expr {
-    $zDestFile eq ":memory:" || $file_dest eq "temp" && $TEMP_STORE==3
+    $zDestFile eq ":memory:" || $file_dest eq "temp" && $TEMP_STORE>=2
   }]
 
   if { $isMemDest==0 || $pgsz_dest == 1024 } {

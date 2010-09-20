@@ -307,7 +307,7 @@ foreach {i conf1 cmd t0 t1 t2 t3 t4} {
  16 {}       {UPDATE OR ROLLBACK}    1 {1 2 3 4}  0 0 0
 } {
   if {$t0} {set t1 {column a is not unique}}
-  if {[info exists TEMP_STORE] && $TEMP_STORE>=2} {
+  if {[info exists TEMP_STORE] && $TEMP_STORE==3} {
     set t3 0
   } else {
     set t3 [expr {$t3+$t4}]

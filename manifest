@@ -1,5 +1,5 @@
-C Add\sfurther\stests\sto\se_insert.test.
-D 2010-09-20T14:05:52
+C Changes\sto\stest\sscripts\sto\swork\swith\sSQLITE_TEMP_STORE=2.
+D 2010-09-20T14:55:34
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -266,7 +266,7 @@ F test/autovacuum.test bb7c0885e6f8f1d633045de48f2b66082162766d
 F test/autovacuum_ioerr2.test 598b0663074d3673a9c1bc9a16e80971313bafe6
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
 F test/backcompat.test 49bd844eb245f0b2b6f2a3f8bebad0065403a9a7
-F test/backup.test 200e64bd91244b73ca8094bc1e03dfc83cc94c2e
+F test/backup.test 004d3b78bffd990741ab50133ed4347c25c172b1
 F test/backup2.test b7c69f937c912e85ac8a5dbd1e1cf290302b2d49
 F test/backup_ioerr.test 1f012e692f42c0442ae652443258f70e9f20fa38
 F test/backup_malloc.test 7162d604ec2b4683c4b3799a48657fb8b5e2d450
@@ -308,7 +308,7 @@ F test/collate9.test 3adcc799229545940df2f25308dd1ad65869145a
 F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/colmeta.test 087c42997754b8c648819832241daf724f813322
 F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
-F test/conflict.test f2f2b2950730a9532e11e468070cebf389f5c375
+F test/conflict.test cabc41f7616675df71b4fddabca3bd5d9221915a
 F test/corrupt.test 1a5bef8b2d178859af69814ecedcd37219a89968
 F test/corrupt2.test 808a28d0ca3b97e9aa8c91cd2b485ea2700b76d1
 F test/corrupt3.test a399dacccb91c732f6b071c913e70d195af8c058
@@ -493,7 +493,7 @@ F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/limit.test 2db7b3b34fb925b8e847d583d2eb67531d0ce67e
 F test/loadext.test 0393ce12d9616aa87597dd0ec88181de181f6db0
 F test/loadext2.test 0bcaeb4d81cd5b6e883fdfea3c1bdbe1f173cbca
-F test/lock.test 842e80b6be816c79525a20b098cca066989feed7
+F test/lock.test db74fdf5a73bad29ab3d862ea78bf1068972cc1d
 F test/lock2.test 5242d8ac4e2d59c403aebff606af449b455aceff
 F test/lock3.test f271375930711ae044080f4fe6d6eda930870d00
 F test/lock4.test c82268c031d39345d05efa672f80b025481b3ae5
@@ -624,7 +624,7 @@ F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
 F test/sqllimits1.test e90a0ed94452076f6a10209d378e06b5f75ef0a0
 F test/stat.test c7b20ea43003dc2dc33335e231c27be8284c4a2a
-F test/stmt.test 7915bd3e8380b956c095f40f41a775a30716e649
+F test/stmt.test 25d64e3dbf9a3ce89558667d7f39d966fe2a71b9
 F test/subquery.test b524f57c9574b2c0347045b4510ef795d4686796
 F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
@@ -632,7 +632,7 @@ F test/sync.test ded6b39d8d8ca3c0c5518516c6371b3316d3e3a3
 F test/table.test 04ba066432430657712d167ebf28080fe878d305
 F test/tableapi.test 7262a8cbaa9965d429f1cbd2747edc185fa56516
 F test/tclsqlite.test 8c154101e704170c2be10f137a5499ac2c6da8d3
-F test/tempdb.test 800c36623d67a2ad1f58784b9c5644e0405af6e6
+F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test f42121a0d29a62f00f93274464164177ab1cc24a
 F test/temptrigger.test b0273db072ce5f37cf19140ceb1f0d524bbe9f05
 F test/tester.tcl 4c7bf5a1a9382de2ebd5d072c08aca909cc5ac2b
@@ -860,7 +860,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 4ea134a84c264b55cdb6f6f8e740b252278ce792
-R 1dd2a51aedf94ac559de0c255b3913ec
+P eb3d0d8bb78aa7132f842480bc88621b1573f19c
+R 526c5d29822caa13cd1e244bf387f56e
 U dan
-Z 0a43987fd63a2fd5993e6c4cc09d002d
+Z d0d466bfe229524bb776615c546e9dfd

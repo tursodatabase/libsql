@@ -59,7 +59,7 @@ do_test tempdb-2.1 {
   # number of open files in the test cases below.
   #
   set jrnl_in_memory [expr {[permutation] eq "inmemory_journal"}]
-  set subj_in_memory [expr {$jrnl_in_memory || $TEMP_STORE == 3}]
+  set subj_in_memory [expr {$jrnl_in_memory || $TEMP_STORE>=2}]
 
   db close
   sqlite3 db test.db
