@@ -1,0 +1,304 @@
+# 2010 September 20
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file implements tests to verify that the "testable statements" in 
+# the lang_update.html document are correct.
+#
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+forcedelete test.db2
+
+do_execsql_test e_update-0.0 {
+  CREATE TABLE t1(a, b);
+
+  ATTACH 'test.db2' AS aux;
+  CREATE TABLE aux.t1(a, b);
+
+  CREATE TABLE t2(a, b, c);
+
+  CREATE TABLE t3(a, b UNIQUE);
+} {}
+
+proc do_update_tests {args} {
+  uplevel do_select_tests $args
+}
+
+# EVIDENCE-OF: R-05685-44205 -- syntax diagram update-stmt
+#
+do_update_tests e_update-0 {
+  1    "UPDATE t1 SET a=10" {}
+  2    "UPDATE t1 SET a=10, b=5" {}
+  3    "UPDATE t1 SET a=10 WHERE b=5" {}
+  4    "UPDATE t1 SET b=5,a=10 WHERE 1" {}
+  5    "UPDATE main.t1 SET a=10" {}
+  6    "UPDATE main.t1 SET a=10, b=5" {}
+  7    "UPDATE main.t1 SET a=10 WHERE b=5" {}
+  9    "UPDATE OR ROLLBACK t1 SET a=10" {}
+  10   "UPDATE OR ROLLBACK t1 SET a=10, b=5" {}
+  11   "UPDATE OR ROLLBACK t1 SET a=10 WHERE b=5" {}
+  12   "UPDATE OR ROLLBACK t1 SET b=5,a=10 WHERE 1" {}
+  13   "UPDATE OR ROLLBACK main.t1 SET a=10" {}
+  14   "UPDATE OR ROLLBACK main.t1 SET a=10, b=5" {}
+  15   "UPDATE OR ROLLBACK main.t1 SET a=10 WHERE b=5" {}
+  16   "UPDATE OR ROLLBACK main.t1 SET b=5,a=10 WHERE 1" {}
+  17   "UPDATE OR ABORT t1 SET a=10" {}
+  18   "UPDATE OR ABORT t1 SET a=10, b=5" {}
+  19   "UPDATE OR ABORT t1 SET a=10 WHERE b=5" {}
+  20   "UPDATE OR ABORT t1 SET b=5,a=10 WHERE 1" {}
+  21   "UPDATE OR ABORT main.t1 SET a=10" {}
+  22   "UPDATE OR ABORT main.t1 SET a=10, b=5" {}
+  23   "UPDATE OR ABORT main.t1 SET a=10 WHERE b=5" {}
+  24   "UPDATE OR ABORT main.t1 SET b=5,a=10 WHERE 1" {}
+  25   "UPDATE OR REPLACE t1 SET a=10" {}
+  26   "UPDATE OR REPLACE t1 SET a=10, b=5" {}
+  27   "UPDATE OR REPLACE t1 SET a=10 WHERE b=5" {}
+  28   "UPDATE OR REPLACE t1 SET b=5,a=10 WHERE 1" {}
+  29   "UPDATE OR REPLACE main.t1 SET a=10" {}
+  30   "UPDATE OR REPLACE main.t1 SET a=10, b=5" {}
+  31   "UPDATE OR REPLACE main.t1 SET a=10 WHERE b=5" {}
+  32   "UPDATE OR REPLACE main.t1 SET b=5,a=10 WHERE 1" {}
+  33   "UPDATE OR FAIL t1 SET a=10" {}
+  34   "UPDATE OR FAIL t1 SET a=10, b=5" {}
+  35   "UPDATE OR FAIL t1 SET a=10 WHERE b=5" {}
+  36   "UPDATE OR FAIL t1 SET b=5,a=10 WHERE 1" {}
+  37   "UPDATE OR FAIL main.t1 SET a=10" {}
+  38   "UPDATE OR FAIL main.t1 SET a=10, b=5" {}
+  39   "UPDATE OR FAIL main.t1 SET a=10 WHERE b=5" {}
+  40   "UPDATE OR FAIL main.t1 SET b=5,a=10 WHERE 1" {}
+  41   "UPDATE OR IGNORE t1 SET a=10" {}
+  42   "UPDATE OR IGNORE t1 SET a=10, b=5" {}
+  43   "UPDATE OR IGNORE t1 SET a=10 WHERE b=5" {}
+  44   "UPDATE OR IGNORE t1 SET b=5,a=10 WHERE 1" {}
+  45   "UPDATE OR IGNORE main.t1 SET a=10" {}
+  46   "UPDATE OR IGNORE main.t1 SET a=10, b=5" {}
+  47   "UPDATE OR IGNORE main.t1 SET a=10 WHERE b=5" {}
+  48   "UPDATE OR IGNORE main.t1 SET b=5,a=10 WHERE 1" {}
+}
+
+# EVIDENCE-OF: R-38515-45264 An UPDATE statement is used to modify a
+# subset of the values stored in zero or more rows of the database table
+# identified by the qualified-table-name specified as part of the UPDATE
+# statement.
+#
+#     Test cases e_update-1.1.1.* test the "identified by the
+#     qualified-table-name" part of the statement above. Tests 
+#     e_update-1.1.2.* show that the "zero or more rows" part is 
+#     accurate.
+#
+do_execsql_test e_update-1.1.0 {
+  INSERT INTO main.t1 VALUES(1, 'i');
+  INSERT INTO main.t1 VALUES(2, 'ii');
+  INSERT INTO main.t1 VALUES(3, 'iii');
+
+  INSERT INTO aux.t1 VALUES(1, 'I');
+  INSERT INTO aux.t1 VALUES(2, 'II');
+  INSERT INTO aux.t1 VALUES(3, 'III');
+} {}
+do_update_tests e_update-1.1 {
+  1.1  "UPDATE t1 SET a = a+1; SELECT * FROM t1"             {2 i  3 ii  4 iii}
+  1.2  "UPDATE main.t1 SET a = a+1; SELECT * FROM main.t1"   {3 i  4 ii  5 iii}
+  1.3  "UPDATE aux.t1 SET a = a+1; SELECT * FROM aux.t1"     {2 I  3 II  4 III}
+
+  2.1  "UPDATE t1 SET a = a+1 WHERE a = 1; SELECT * FROM t1" {3 i  4 ii  5 iii}
+  2.2  "UPDATE t1 SET a = a+1 WHERE a = 4; SELECT * FROM t1" {3 i  5 ii  5 iii}
+}
+
+# EVIDENCE-OF: R-55869-30521 If the UPDATE statement does not have a
+# WHERE clause, all rows in the table are modified by the UPDATE.
+#
+do_execsql_test e_update-1.2.0 {
+  DELETE FROM main.t1;
+  INSERT INTO main.t1 VALUES(1, 'i');
+  INSERT INTO main.t1 VALUES(2, 'ii');
+  INSERT INTO main.t1 VALUES(3, 'iii');
+} {}
+do_update_tests e_update-1.2 {
+  1  "UPDATE t1 SET b = 'roman' ; SELECT * FROM t1"
+     {1 roman  2 roman  3 roman}
+
+  2  "UPDATE t1 SET a = 'greek' ; SELECT * FROM t1"
+     {greek roman  greek roman  greek roman}
+}
+
+# EVIDENCE-OF: R-41754-00978 Otherwise, the UPDATE affects only those
+# rows for which evaluating the WHERE clause expression and casting the
+# result to a NUMERIC value produces a value other than NULL or zero
+# (integer value 0 or real value 0.0).
+#
+do_execsql_test e_update-1.3.0 {
+  DELETE FROM main.t1;
+  INSERT INTO main.t1 VALUES(NULL, '');
+  INSERT INTO main.t1 VALUES(1, 'i');
+  INSERT INTO main.t1 VALUES(2, 'ii');
+  INSERT INTO main.t1 VALUES(3, 'iii');
+} {}
+do_update_tests e_update-1.3 {
+  1  "UPDATE t1 SET b = 'roman' WHERE a<2 ; SELECT * FROM t1"
+     {{} {}  1 roman  2 ii  3 iii}
+
+  2  "UPDATE t1 SET b = 'egyptian' WHERE (a-3)/10.0 ; SELECT * FROM t1"
+     {{} {}  1 egyptian  2 egyptian  3 iii}
+
+  3  "UPDATE t1 SET b = 'macedonian' WHERE a; SELECT * FROM t1"
+     {{} {}  1 macedonian  2 macedonian  3 macedonian}
+
+  4  "UPDATE t1 SET b = 'lithuanian' WHERE a IS NULL; SELECT * FROM t1"
+     {{} lithuanian  1 macedonian  2 macedonian  3 macedonian}
+}
+
+# EVIDENCE-OF: R-61178-36001 It is not an error if the WHERE clause does
+# not evaluate to a non-NULL, non-zero value for any row in the table -
+# this just means that the UPDATE statement affects zero rows.
+#
+do_execsql_test e_update-1.4.0 {
+  DELETE FROM main.t1;
+  INSERT INTO main.t1 VALUES(NULL, '');
+  INSERT INTO main.t1 VALUES(1, 'i');
+  INSERT INTO main.t1 VALUES(2, 'ii');
+  INSERT INTO main.t1 VALUES(3, 'iii');
+} {}
+do_update_tests e_update-1.4 -query {
+  SELECT * FROM t1
+} {
+  1  "UPDATE t1 SET b = 'burmese' WHERE a=5" {{} {}  1 i  2 ii  3 iii}
+
+  2  "UPDATE t1 SET b = 'burmese' WHERE length(b)<1 AND a IS NOT NULL"
+     {{} {}  1 i  2 ii  3 iii}
+
+  3  "UPDATE t1 SET b = 'burmese' WHERE 0" {{} {}  1 i  2 ii  3 iii}
+
+  4  "UPDATE t1 SET b = 'burmese' WHERE (SELECT a FROM t1 WHERE rowid=1)"
+     {{} {}  1 i  2 ii  3 iii}
+}
+
+# EVIDENCE-OF: R-40598-36595 For each affected row, the named columns
+# are set to the values found by evaluating the corresponding scalar
+# expressions.
+#
+# EVIDENCE-OF: R-40472-60438 Columns that do not appear in the list of
+# assignments are left unmodified.
+#
+do_execsql_test e_update-2.1.0 {
+  INSERT INTO t2(rowid, a, b, c) VALUES(1,  3, 1, 4);
+  INSERT INTO t2(rowid, a, b, c) VALUES(2,  1, 5, 9);
+  INSERT INTO t2(rowid, a, b, c) VALUES(3,  2, 6, 5);
+} {}
+do_update_tests e_update-2.1 -query {
+  SELECT * FROM t2
+} {
+  1   "UPDATE t2 SET c = 1+1 WHERE a=2" 
+      {3 1 4   1 5 9   2 6 2}
+
+  2   "UPDATE t2 SET b = 4/2, c=CAST((0.4*5) AS INTEGER) WHERE a<3"
+      {3 1 4   1 2 2   2 2 2}
+
+  3   "UPDATE t2 SET a = 1"
+      {1 1 4   1 2 2   1 2 2}
+
+  4   "UPDATE t2 SET b = (SELECT count(*)+2 FROM t2), c = 24/3+1 WHERE rowid=2"
+      {1 1 4   1 5 9   1 2 2}
+
+  5   "UPDATE t2 SET a = 3 WHERE c = 4"
+      {3 1 4   1 5 9   1 2 2}
+
+  6   "UPDATE t2 SET a = b WHERE rowid>2"
+      {3 1 4   1 5 9   2 2 2}
+
+  6   "UPDATE t2 SET b=6, c=5 WHERE a=b AND b=c"
+      {3 1 4   1 5 9   2 6 5}
+}
+
+# EVIDENCE-OF: R-09060-20018 If a single column-name appears more than
+# once in the list of assignment expressions, all but the rightmost
+# occurence is ignored.
+#
+do_update_tests e_update-2.1 -query {
+  SELECT * FROM t2
+} {
+  1   "UPDATE t2 SET c=5, c=6, c=7 WHERE rowid=1" {3 1 7   1 5 9   2 6 5}
+  2   "UPDATE t2 SET c=7, c=6, c=5 WHERE rowid=1" {3 1 5   1 5 9   2 6 5}
+  3   "UPDATE t2 SET c=5, b=6, c=7 WHERE rowid=1" {3 6 7   1 5 9   2 6 5}
+}
+
+# EVIDENCE-OF: R-36239-04077 The scalar expressions may refer to columns
+# of the row being updated.
+#
+# EVIDENCE-OF: R-04558-24451 In this case all scalar expressions are
+# evaluated before any assignments are made.
+#
+do_execsql_test e_update-2.2.0 {
+  DELETE FROM t2;
+  INSERT INTO t2(rowid, a, b, c) VALUES(1,  3, 1, 4);
+  INSERT INTO t2(rowid, a, b, c) VALUES(2,  1, 5, 9);
+  INSERT INTO t2(rowid, a, b, c) VALUES(3,  2, 6, 5);
+} {}
+do_update_tests e_update-2.2 -query {
+  SELECT * FROM t2
+} {
+  1   "UPDATE t2 SET a=b+c"          {5 1 4     14 5 9   11  6 5}
+  2   "UPDATE t2 SET a=b, b=a"       {1 5 4     5 14 9    6 11 5}
+  3   "UPDATE t2 SET a=c||c, c=NULL" {44 5 {}  99 14 {}  55 11 {}}
+}
+
+# EVIDENCE-OF: R-12619-24112 The optional conflict-clause allows the
+# user to nominate a specific constraint conflict resolution algorithm
+# to use during this one UPDATE command.
+#
+do_execsql_test e_update-2.2.0 {
+  DELETE FROM t3;
+  INSERT INTO t3 VALUES(1, 'one');
+  INSERT INTO t3 VALUES(2, 'two');
+  INSERT INTO t3 VALUES(3, 'three');
+  INSERT INTO t3 VALUES(4, 'four');
+} {}
+foreach {tn sql error ac data } {
+  1  "UPDATE t3 SET b='one' WHERE a=3" 
+     {column b is not unique} 1 {1 one 2 two 3 three 4 four}
+
+  2  "UPDATE OR REPLACE t3 SET b='one' WHERE a=3" 
+     {} 1 {2 two 3 one 4 four}
+
+  3  "UPDATE OR FAIL t3 SET b='three'"
+     {column b is not unique} 1 {2 three 3 one 4 four}
+
+  4  "UPDATE OR IGNORE t3 SET b='three' WHERE a=3" 
+     {} 1 {2 three 3 one 4 four}
+
+  5  "UPDATE OR ABORT t3 SET b='three' WHERE a=3" 
+     {column b is not unique} 1 {2 three 3 one 4 four}
+
+  6  "BEGIN" {} 0 {2 three 3 one 4 four}
+
+  7  "UPDATE t3 SET b='three' WHERE a=3" 
+     {column b is not unique} 0 {2 three 3 one 4 four}
+
+  8  "UPDATE OR ABORT t3 SET b='three' WHERE a=3" 
+     {column b is not unique} 0 {2 three 3 one 4 four}
+
+  9  "UPDATE OR FAIL t3 SET b='two'"
+     {column b is not unique} 0 {2 two 3 one 4 four}
+
+  10 "UPDATE OR IGNORE t3 SET b='four' WHERE a=3"
+     {} 0 {2 two 3 one 4 four}
+
+  11 "UPDATE OR REPLACE t3 SET b='four' WHERE a=3"
+     {} 0 {2 two 3 four}
+
+  12 "UPDATE OR ROLLBACK t3 SET b='four'"
+     {column b is not unique} 1 {2 three 3 one 4 four}
+} {
+  do_catchsql_test e_update-2.3.$tn.1 $sql [list [expr {$error!=""}] $error]
+  do_execsql_test  e_update-2.3.$tn.2 {SELECT * FROM t3} [list {*}$data]
+  do_test          e_update-2.3.$tn.3 {sqlite3_get_autocommit db} $ac
+}
+
+finish_test

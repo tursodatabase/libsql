@@ -350,6 +350,7 @@ proc do_catchsql_test {testname sql result} {
 #
 #   -errorformat FMTSTRING
 #   -count
+#   -query SQL
 #
 proc do_select_tests {prefix args} {
 
@@ -358,11 +359,14 @@ proc do_select_tests {prefix args} {
 
   set errfmt ""
   set countonly 0
+  set query ""
 
   for {set i 0} {$i < [llength $switches]} {incr i} {
     set s [lindex $switches $i]
     set n [string length $s]
-    if {$n>=2 && [string equal -length $n $s "-errorformat"]} {
+    if {$n>=2 && [string equal -length $n $s "-query"]} {
+      set query [lindex $switches [incr i]]
+    } elseif {$n>=2 && [string equal -length $n $s "-errorformat"]} {
       set errfmt [lindex $switches [incr i]]
     } elseif {$n>=2 && [string equal -length $n $s "-count"]} {
       set countonly 1
@@ -380,6 +384,11 @@ proc do_select_tests {prefix args} {
   }
 
   foreach {tn sql res} $testlist {
+    if {$query != ""} {
+      execsql $sql
+      set sql $query
+    }
+
     if {$countonly} {
       set nRow 0
       db eval $sql {incr nRow}
