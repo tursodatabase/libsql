@@ -402,6 +402,11 @@ proc do_select_tests {prefix args} {
   }
 }
 
+proc delete_all_data {} {
+  db eval {SELECT tbl_name AS t FROM sqlite_master WHERE type = 'table'} {
+    db eval "DELETE FROM '[string map {' ''} $t]'"
+  }
+}
 
 # Run an SQL script.  
 # Return the number of microseconds per statement.

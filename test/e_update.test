@@ -15,17 +15,34 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+#--------------------
+# Test organization:
+#
+#   e_update-1.*: Test statements describing the workings of UPDATE statements.
+#
+#   e_update-2.*: Test the restrictions on the UPDATE statement syntax that
+#                 can be used within triggers.
+#
+#   e_update-3.*: Test the special LIMIT/OFFSET and ORDER BY clauses that can
+#                 be used with UPDATE when SQLite is compiled with
+#                 SQLITE_ENABLE_UPDATE_DELETE_LIMIT.
+#
+
 forcedelete test.db2
 
 do_execsql_test e_update-0.0 {
-  CREATE TABLE t1(a, b);
-
   ATTACH 'test.db2' AS aux;
-  CREATE TABLE aux.t1(a, b);
-
+  CREATE TABLE t1(a, b);
   CREATE TABLE t2(a, b, c);
-
   CREATE TABLE t3(a, b UNIQUE);
+  CREATE TABLE t6(x, y);
+  CREATE INDEX i1 ON t1(a);
+
+  CREATE TEMP TABLE t4(x, y);
+  CREATE TEMP TABLE t6(x, y);
+
+  CREATE TABLE aux.t1(a, b);
+  CREATE TABLE aux.t5(a, b);
 } {}
 
 proc do_update_tests {args} {
@@ -187,12 +204,12 @@ do_update_tests e_update-1.4 -query {
 # EVIDENCE-OF: R-40472-60438 Columns that do not appear in the list of
 # assignments are left unmodified.
 #
-do_execsql_test e_update-2.1.0 {
+do_execsql_test e_update-1.5.0 {
   INSERT INTO t2(rowid, a, b, c) VALUES(1,  3, 1, 4);
   INSERT INTO t2(rowid, a, b, c) VALUES(2,  1, 5, 9);
   INSERT INTO t2(rowid, a, b, c) VALUES(3,  2, 6, 5);
 } {}
-do_update_tests e_update-2.1 -query {
+do_update_tests e_update-1.5 -query {
   SELECT * FROM t2
 } {
   1   "UPDATE t2 SET c = 1+1 WHERE a=2" 
@@ -221,7 +238,7 @@ do_update_tests e_update-2.1 -query {
 # once in the list of assignment expressions, all but the rightmost
 # occurence is ignored.
 #
-do_update_tests e_update-2.1 -query {
+do_update_tests e_update-1.6 -query {
   SELECT * FROM t2
 } {
   1   "UPDATE t2 SET c=5, c=6, c=7 WHERE rowid=1" {3 1 7   1 5 9   2 6 5}
@@ -235,13 +252,13 @@ do_update_tests e_update-2.1 -query {
 # EVIDENCE-OF: R-04558-24451 In this case all scalar expressions are
 # evaluated before any assignments are made.
 #
-do_execsql_test e_update-2.2.0 {
+do_execsql_test e_update-1.7.0 {
   DELETE FROM t2;
   INSERT INTO t2(rowid, a, b, c) VALUES(1,  3, 1, 4);
   INSERT INTO t2(rowid, a, b, c) VALUES(2,  1, 5, 9);
   INSERT INTO t2(rowid, a, b, c) VALUES(3,  2, 6, 5);
 } {}
-do_update_tests e_update-2.2 -query {
+do_update_tests e_update-1.7 -query {
   SELECT * FROM t2
 } {
   1   "UPDATE t2 SET a=b+c"          {5 1 4     14 5 9   11  6 5}
@@ -253,7 +270,7 @@ do_update_tests e_update-2.2 -query {
 # user to nominate a specific constraint conflict resolution algorithm
 # to use during this one UPDATE command.
 #
-do_execsql_test e_update-2.2.0 {
+do_execsql_test e_update-1.8.0 {
   DELETE FROM t3;
   INSERT INTO t3 VALUES(1, 'one');
   INSERT INTO t3 VALUES(2, 'two');
@@ -296,9 +313,297 @@ foreach {tn sql error ac data } {
   12 "UPDATE OR ROLLBACK t3 SET b='four'"
      {column b is not unique} 1 {2 three 3 one 4 four}
 } {
-  do_catchsql_test e_update-2.3.$tn.1 $sql [list [expr {$error!=""}] $error]
-  do_execsql_test  e_update-2.3.$tn.2 {SELECT * FROM t3} [list {*}$data]
-  do_test          e_update-2.3.$tn.3 {sqlite3_get_autocommit db} $ac
+  do_catchsql_test e_update-1.8.$tn.1 $sql [list [expr {$error!=""}] $error]
+  do_execsql_test  e_update-1.8.$tn.2 {SELECT * FROM t3} [list {*}$data]
+  do_test          e_update-1.8.$tn.3 {sqlite3_get_autocommit db} $ac
 }
 
+
+
+# EVIDENCE-OF: R-12123-54095 The table-name specified as part of an
+# UPDATE statement within a trigger body must be unqualified.
+#
+# EVIDENCE-OF: R-09690-36749 In other words, the database-name. prefix
+# on the table name of the UPDATE is not allowed within triggers.
+#
+do_update_tests e_update-2.1 -error {
+  qualified table names are not allowed on INSERT, UPDATE, and DELETE statements within triggers
+} {
+  1 {
+      CREATE TRIGGER tr1 AFTER INSERT ON t1 BEGIN
+        UPDATE main.t2 SET a=1, b=2, c=3;
+      END;
+  } {}
+
+  2 {
+      CREATE TRIGGER tr1 BEFORE UPDATE ON t2 BEGIN
+        UPDATE aux.t1 SET a=1, b=2;
+      END;
+  } {}
+
+  3 {
+      CREATE TRIGGER tr1 AFTER DELETE ON t4 BEGIN
+        UPDATE main.t1 SET a=1, b=2;
+      END;
+  } {}
+}
+
+# EVIDENCE-OF: R-06085-13761 Unless the table to which the trigger is
+# attached is in the TEMP database, the table being updated by the
+# trigger program must reside in the same database as it.
+#
+do_update_tests e_update-2.2 -error {
+  no such table: %s
+} {
+  1 {
+      CREATE TRIGGER tr1 AFTER INSERT ON t1 BEGIN
+        UPDATE t4 SET x=x+1;
+      END;
+      INSERT INTO t1 VALUES(1, 2);
+  } "main.t4"
+
+  2 {
+      CREATE TRIGGER aux.tr1 AFTER INSERT ON t5 BEGIN
+        UPDATE t4 SET x=x+1;
+      END;
+      INSERT INTO t5 VALUES(1, 2);
+  } "aux.t4"
+}
+do_execsql_test e_update-2.2.X {
+  DROP TRIGGER tr1;
+  DROP TRIGGER aux.tr1;
+} {}
+
+# EVIDENCE-OF: R-29512-54644 If the table to which the trigger is
+# attached is in the TEMP database, then the unqualified name of the
+# table being updated is resolved in the same way as it is for a
+# top-level statement (by searching first the TEMP database, then the
+# main database, then any other databases in the order they were
+# attached).
+#
+do_execsql_test e_update-2.3.0 {
+  SELECT 'main', tbl_name FROM main.sqlite_master WHERE type = 'table'
+    UNION ALL
+  SELECT 'temp', tbl_name FROM sqlite_temp_master WHERE type = 'table'
+    UNION ALL
+  SELECT 'aux', tbl_name FROM aux.sqlite_master WHERE type = 'table'
+} [list {*}{
+    main t1
+    main t2
+    main t3
+    main t6
+    temp t4
+    temp t6
+    aux  t1
+    aux  t5
+}]
+do_execsql_test e_update-2.3.1 {
+  DELETE FROM main.t6;
+  DELETE FROM temp.t6;
+  INSERT INTO main.t6 VALUES(1, 2);
+  INSERT INTO temp.t6 VALUES(1, 2);
+
+  CREATE TRIGGER temp.tr1 AFTER INSERT ON t4 BEGIN
+    UPDATE t6 SET x=x+1;
+  END;
+
+  INSERT INTO t4 VALUES(1, 2);
+  SELECT * FROM main.t6;
+  SELECT * FROM temp.t6;
+} {1 2 2 2}
+do_execsql_test e_update-2.3.2 {
+  DELETE FROM main.t1;
+  DELETE FROM aux.t1;
+  INSERT INTO main.t1 VALUES(1, 2);
+  INSERT INTO aux.t1 VALUES(1, 2);
+
+  CREATE TRIGGER temp.tr2 AFTER DELETE ON t4 BEGIN
+    UPDATE t1 SET a=a+1;
+  END;
+
+  DELETE FROM t4;
+  SELECT * FROM main.t1;
+  SELECT * FROM aux.t1;
+} {2 2 1 2}
+do_execsql_test e_update-2.3.3 {
+  DELETE FROM aux.t5;
+  INSERT INTO aux.t5 VALUES(1, 2);
+
+  INSERT INTO t4 VALUES('x', 'y');
+  CREATE TRIGGER temp.tr3 AFTER UPDATE ON t4 BEGIN
+    UPDATE t5 SET a=a+1;
+  END;
+
+  UPDATE t4 SET x=10;
+  SELECT * FROM aux.t5;
+} {2 2}
+
+# EVIDENCE-OF: R-19619-42762 The INDEXED BY and NOT INDEXED clauses are
+# not allowed on UPDATE statements within triggers.
+#
+do_update_tests e_update-2.4 -error {
+  the %s %s clause is not allowed on UPDATE or DELETE statements within triggers
+} {
+  1 {
+      CREATE TRIGGER tr1 AFTER INSERT ON t2 BEGIN
+        UPDATE t1 INDEXED BY i1 SET a=a+1;
+      END;
+  } {INDEXED BY}
+
+  2 {
+      CREATE TRIGGER tr1 AFTER INSERT ON t2 BEGIN
+        UPDATE t1 NOT INDEXED SET a=a+1;
+      END;
+  } {NOT INDEXED}
+}
+
+ifcapable update_delete_limit {
+
+# EVIDENCE-OF: R-57359-59558 The LIMIT and ORDER BY clauses for UPDATE
+# are unsupported within triggers, regardless of the compilation options
+# used to build SQLite.
+#
+do_update_tests e_update-2.5 -error {
+  near "%s": syntax error
+} {
+  1 {
+      CREATE TRIGGER tr1 AFTER INSERT ON t2 BEGIN
+        UPDATE t1 SET a=a+1 LIMIT 10;
+      END;
+  } {LIMIT}
+
+  2 {
+      CREATE TRIGGER tr1 AFTER INSERT ON t2 BEGIN
+        UPDATE t1 SET a=a+1 ORDER BY a LIMIT 10;
+      END;
+  } {ORDER}
+
+  3 {
+      CREATE TRIGGER tr1 AFTER INSERT ON t2 BEGIN
+        UPDATE t1 SET a=a+1 ORDER BY a LIMIT 10 OFFSET 2;
+      END;
+  } {ORDER}
+
+  4 {
+      CREATE TRIGGER tr1 AFTER INSERT ON t2 BEGIN
+        UPDATE t1 SET a=a+1 LIMIT 10 OFFSET 2;
+      END;
+  } {LIMIT}
+}
+
+# EVIDENCE-OF: R-59581-44104 If SQLite is built with the
+# SQLITE_ENABLE_UPDATE_DELETE_LIMIT compile-time option then the syntax
+# of the UPDATE statement is extended with optional ORDER BY and LIMIT
+# clauses
+#
+# EVIDENCE-OF: R-07033-64910 -- syntax diagram update-stmt-limited
+#
+do_update_tests e_update-3.0 {
+  1   "UPDATE t1 SET a=b LIMIT 5"                                    {}
+  2   "UPDATE t1 SET a=b LIMIT 5-1 OFFSET 2+2"                       {}
+  3   "UPDATE t1 SET a=b LIMIT 2+2, 16/4"                            {}
+  4   "UPDATE t1 SET a=b ORDER BY a LIMIT 5"                         {}
+  5   "UPDATE t1 SET a=b ORDER BY a LIMIT 5-1 OFFSET 2+2"            {}
+  6   "UPDATE t1 SET a=b ORDER BY a LIMIT 2+2, 16/4"                 {}
+  7   "UPDATE t1 SET a=b WHERE a>2 LIMIT 5"                          {}
+  8   "UPDATE t1 SET a=b WHERE a>2 LIMIT 5-1 OFFSET 2+2"             {}
+  9   "UPDATE t1 SET a=b WHERE a>2 LIMIT 2+2, 16/4"                  {}
+  10  "UPDATE t1 SET a=b WHERE a>2 ORDER BY a LIMIT 5"               {}
+  11  "UPDATE t1 SET a=b WHERE a>2 ORDER BY a LIMIT 5-1 OFFSET 2+2"  {}
+  12  "UPDATE t1 SET a=b WHERE a>2 ORDER BY a LIMIT 2+2, 16/4"       {}
+}
+
+do_execsql_test e_update-3.1.0 {
+  CREATE TABLE t7(q, r, s);
+  INSERT INTO t7 VALUES(1, 'one',   'X');
+  INSERT INTO t7 VALUES(2, 'two',   'X');
+  INSERT INTO t7 VALUES(3, 'three', 'X');
+  INSERT INTO t7 VALUES(4, 'four',  'X');
+  INSERT INTO t7 VALUES(5, 'five',  'X');
+  INSERT INTO t7 VALUES(6, 'six',   'X');
+  INSERT INTO t7 VALUES(7, 'seven', 'X');
+  INSERT INTO t7 VALUES(8, 'eight', 'X');
+  INSERT INTO t7 VALUES(9, 'nine',  'X');
+  INSERT INTO t7 VALUES(10, 'ten',  'X');
+} {}
+
+# EVIDENCE-OF: R-58862-44169 If an UPDATE statement has a LIMIT clause,
+# the maximum number of rows that will be updated is found by evaluating
+# the accompanying expression and casting it to an integer value.
+#
+do_update_tests e_update-3.1 -query { SELECT s FROM t7 } {
+  1   "UPDATE t7 SET s = q LIMIT 5"            {1 2 3 4 5 X X X X X}
+  2   "UPDATE t7 SET s = r WHERE q>2 LIMIT 4"  {1 2 three four five six X X X X}
+  3   "UPDATE t7 SET s = q LIMIT 0"            {1 2 three four five six X X X X}
+}
+
+# EVIDENCE-OF: R-63582-45120 A negative value is interpreted as "no limit".
+#
+do_update_tests e_update-3.2 -query { SELECT s FROM t7 } {
+  1   "UPDATE t7 SET s = q LIMIT -1"              {1 2 3 4 5 6 7 8 9 10}
+  2   "UPDATE t7 SET s = r WHERE q>4 LIMIT -1"  
+      {1 2 3 4 five six seven eight nine ten}
+  3   "UPDATE t7 SET s = 'X' LIMIT -1"            {X X X X X X X X X X}
+}
+
+# EVIDENCE-OF: R-18628-11938 If the LIMIT expression evaluates to
+# non-negative value N and the UPDATE statement has an ORDER BY clause,
+# then all rows that would be updated in the absence of the LIMIT clause
+# are sorted according to the ORDER BY and the first N updated.
+#
+do_update_tests e_update-3.3 -query { SELECT s FROM t7 } {
+  1   "UPDATE t7 SET s = q ORDER BY r LIMIT 3"      {X X X 4 5 X X 8 X X}
+  2   "UPDATE t7 SET s = r ORDER BY r DESC LIMIT 2" {X two three 4 5 X X 8 X X}
+  3   "UPDATE t7 SET s = q ORDER BY q DESC LIMIT 5" {X two three 4 5 6 7 8 9 10}
+
+  X   "UPDATE t7 SET s = 'X'"                       {X X X X X X X X X X}
+}
+
+# EVIDENCE-OF: R-30955-38324 If the UPDATE statement also has an OFFSET
+# clause, then it is similarly evaluated and cast to an integer value.
+# If the OFFSET expression evaluates to a non-negative value M, then the
+# first M rows are skipped and the following N rows updated instead.
+#
+do_update_tests e_update-3.3 -query { SELECT s FROM t7 } {
+  1   "UPDATE t7 SET s = q ORDER BY q LIMIT 3 OFFSET 2"  {X X 3 4 5 X X X X X}
+  2   "UPDATE t7 SET s = q ORDER BY q DESC LIMIT 2, 3 "  {X X 3 4 5 6 7 8 X X}
+
+  X   "UPDATE t7 SET s = 'X'"                       {X X X X X X X X X X}
+}
+
+# EVIDENCE-OF: R-19486-35828 If the UPDATE statement has no ORDER BY
+# clause, then all rows that would be updated in the absence of the
+# LIMIT clause are assembled in an arbitrary order before applying the
+# LIMIT and OFFSET clauses to determine which are actually updated.
+#
+#     In practice, "arbitrary order" is rowid order. This is also tested
+#     by e_update-3.2.* above.
+#
+do_update_tests e_update-3.4 -query { SELECT s FROM t7 } {
+  1   "UPDATE t7 SET s = q LIMIT 4, 2"        {X X X X 5 6 X X X X}
+  2   "UPDATE t7 SET s = q LIMIT 2 OFFSET 7"  {X X X X 5 6 X 8 9 X}
+}
+
+# EVIDENCE-OF: R-10927-26133 The ORDER BY clause on an UPDATE statement
+# is used only to determine which rows fall within the LIMIT. The order
+# in which rows are modified is arbitrary and is not influenced by the
+# ORDER BY clause.
+#
+do_execsql_test e_update-3.5.0 {
+  CREATE TABLE t8(x);
+  CREATE TRIGGER tr7 BEFORE UPDATE ON t7 BEGIN
+    INSERT INTO t8 VALUES(old.q);
+  END;
+} {}
+do_update_tests e_update-3.5 -query { SELECT x FROM t8 ; DELETE FROM t8 } {
+  1   "UPDATE t7 SET s = q ORDER BY r LIMIT -1"        {1 2 3 4 5 6 7 8 9 10}
+  2   "UPDATE t7 SET s = q ORDER BY r ASC LIMIT -1"    {1 2 3 4 5 6 7 8 9 10}
+  3   "UPDATE t7 SET s = q ORDER BY r DESC LIMIT -1"   {1 2 3 4 5 6 7 8 9 10}
+  4   "UPDATE t7 SET s = q ORDER BY q DESC LIMIT 5"    {6 7 8 9 10}
+}
+
+
+} ;# ifcapable update_delete_limit
+ 
 finish_test
+

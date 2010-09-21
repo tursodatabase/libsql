@@ -38,12 +38,6 @@ do_execsql_test e_insert-0.0 {
   CREATE TABLE a4(c UNIQUE, d);
 } {}
 
-proc delete_all_data {} {
-  db eval {SELECT tbl_name AS t FROM sqlite_master WHERE type = 'table'} {
-    db eval "DELETE FROM '[string map {' ''} $t]'"
-  }
-}
-
 proc do_insert_tests {args} {
   uplevel do_select_tests $args
 }
