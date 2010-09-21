@@ -1,0 +1,47 @@
+# 2010 September 21
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file implements tests to verify that the "testable statements" in 
+# the lang_delete.html document are correct.
+#
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+proc do_delete_tests {args} {
+  uplevel do_select_tests $args
+}
+
+do_execsql_test e_delete-0.0 {
+  CREATE TABLE t1(a, b);
+  CREATE INDEX i1 ON t1(a);
+} {}
+
+# EVIDENCE-OF: R-24177-52883 -- syntax diagram delete-stmt
+#
+# EVIDENCE-OF: R-12802-60464 -- syntax diagram qualified-table-name
+#
+do_delete_tests e_delete-0.1 {
+  1  "DELETE FROM t1"                              {}
+  2  "DELETE FROM t1 INDEXED BY i1"                {}
+  3  "DELETE FROM t1 NOT INDEXED"                  {}
+  4  "DELETE FROM main.t1"                         {}
+  5  "DELETE FROM main.t1 INDEXED BY i1"           {}
+  6  "DELETE FROM main.t1 NOT INDEXED"             {}
+  7  "DELETE FROM t1 WHERE a>2"                    {}
+  8  "DELETE FROM t1 INDEXED BY i1 WHERE a>2"      {}
+  9  "DELETE FROM t1 NOT INDEXED WHERE a>2"        {}
+  10 "DELETE FROM main.t1 WHERE a>2"               {}
+  11 "DELETE FROM main.t1 INDEXED BY i1 WHERE a>2" {}
+  12 "DELETE FROM main.t1 NOT INDEXED WHERE a>2"   {}
+}
+ 
+finish_test
+
