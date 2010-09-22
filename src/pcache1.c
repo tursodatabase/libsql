@@ -767,6 +767,7 @@ static void pcache1Truncate(sqlite3_pcache *p, unsigned int iLimit){
 */
 static void pcache1Destroy(sqlite3_pcache *p){
   PCache1 *pCache = (PCache1 *)p;
+  assert( pCache->bPurgeable || (pCache->nMax==0 && pCache->nMin==0) );
   pcache1EnterMutex();
   pcache1TruncateUnsafe(pCache, 0);
   pcache1.nMaxPage -= pCache->nMax;

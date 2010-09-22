@@ -462,6 +462,7 @@ nodeAcquire(
   RtreeNode **ppNode         /* OUT: Acquired node */
 ){
   int rc;
+  int rc2 = SQLITE_OK;
   RtreeNode *pNode;
 
   /* Check if the requested node is already in the hash table. If so,
@@ -485,7 +486,7 @@ nodeAcquire(
     if( pRtree->iNodeSize==sqlite3_column_bytes(pRtree->pReadNode, 0) ){
       pNode = (RtreeNode *)sqlite3_malloc(sizeof(RtreeNode)+pRtree->iNodeSize);
       if( !pNode ){
-        rc = SQLITE_NOMEM;
+        rc2 = SQLITE_NOMEM;
       }else{
         pNode->pParent = pParent;
         pNode->zData = (u8 *)&pNode[1];
@@ -499,6 +500,7 @@ nodeAcquire(
     }
   }
   rc = sqlite3_reset(pRtree->pReadNode);
+  if( rc==SQLITE_OK ) rc = rc2;
 
   /* If the root node was just loaded, set pRtree->iDepth to the height
   ** of the r-tree structure. A height of zero means all data is stored on
@@ -1043,24 +1045,34 @@ static int descendToCell(
 ** One of the cells in node pNode is guaranteed to have a 64-bit 
 ** integer value equal to iRowid. Return the index of this cell.
 */
-static int nodeRowidIndex(Rtree *pRtree, RtreeNode *pNode, i64 iRowid){
+static int nodeRowidIndex(
+  Rtree *pRtree, 
+  RtreeNode *pNode, 
+  i64 iRowid,
+  int *piIndex
+){
   int ii;
-  for(ii=0; nodeGetRowid(pRtree, pNode, ii)!=iRowid; ii++){
-    assert( ii<(NCELL(pNode)-1) );
+  int nCell = NCELL(pNode);
+  for(ii=0; ii<nCell; ii++){
+    if( nodeGetRowid(pRtree, pNode, ii)==iRowid ){
+      *piIndex = ii;
+      return SQLITE_OK;
+    }
   }
-  return ii;
+  return SQLITE_CORRUPT;
 }
 
 /*
 ** Return the index of the cell containing a pointer to node pNode
 ** in its parent. If pNode is the root node, return -1.
 */
-static int nodeParentIndex(Rtree *pRtree, RtreeNode *pNode){
+static int nodeParentIndex(Rtree *pRtree, RtreeNode *pNode, int *piIndex){
   RtreeNode *pParent = pNode->pParent;
   if( pParent ){
-    return nodeRowidIndex(pRtree, pParent, pNode->iNode);
+    return nodeRowidIndex(pRtree, pParent, pNode->iNode, piIndex);
   }
-  return -1;
+  *piIndex = -1;
+  return SQLITE_OK;
 }
 
 /* 
@@ -1095,7 +1107,10 @@ static int rtreeNext(sqlite3_vtab_cursor *pVtabCursor){
         }
       }
       pCsr->pNode = pNode->pParent;
-      pCsr->iCell = nodeParentIndex(pRtree, pNode);
+      rc = nodeParentIndex(pRtree, pNode, &pCsr->iCell);
+      if( rc!=SQLITE_OK ){
+        return rc;
+      }
       nodeReference(pCsr->pNode);
       nodeRelease(pRtree, pNode);
       iHeight++;
@@ -1237,7 +1252,7 @@ static int rtreeFilter(
     pCsr->pNode = pLeaf; 
     if( pLeaf ){
       assert( rc==SQLITE_OK );
-      pCsr->iCell = nodeRowidIndex(pRtree, pLeaf, iRowid);
+      rc = nodeRowidIndex(pRtree, pLeaf, iRowid, &pCsr->iCell);
     }
   }else{
     /* Normal case - r-tree scan. Set up the RtreeCursor.aConstraint array 
@@ -1654,16 +1669,20 @@ static int ChooseLeaf(
 ** the node pNode. This function updates the bounding box cells in
 ** all ancestor elements.
 */
-static void AdjustTree(
+static int AdjustTree(
   Rtree *pRtree,                    /* Rtree table */
   RtreeNode *pNode,                 /* Adjust ancestry of this node. */
   RtreeCell *pCell                  /* This cell was just inserted */
 ){
   RtreeNode *p = pNode;
   while( p->pParent ){
-    RtreeCell cell;
     RtreeNode *pParent = p->pParent;
-    int iCell = nodeParentIndex(pRtree, p);
+    RtreeCell cell;
+    int iCell;
+
+    if( nodeParentIndex(pRtree, p, &iCell) ){
+      return SQLITE_CORRUPT;
+    }
 
     nodeGetCell(pRtree, pParent, iCell, &cell);
     if( !cellContains(pRtree, &cell, pCell) ){
@@ -1673,6 +1692,7 @@ static void AdjustTree(
  
     p = pParent;
   }
+  return SQLITE_OK;
 }
 
 /*
@@ -2246,9 +2266,15 @@ static int SplitNode(
     }
   }else{
     RtreeNode *pParent = pLeft->pParent;
-    int iCell = nodeParentIndex(pRtree, pLeft);
-    nodeOverwriteCell(pRtree, pParent, &leftbbox, iCell);
-    AdjustTree(pRtree, pParent, &leftbbox);
+    int iCell;
+    rc = nodeParentIndex(pRtree, pLeft, &iCell);
+    if( rc==SQLITE_OK ){
+      nodeOverwriteCell(pRtree, pParent, &leftbbox, iCell);
+      rc = AdjustTree(pRtree, pParent, &leftbbox);
+    }
+    if( rc!=SQLITE_OK ){
+      goto splitnode_out;
+    }
   }
   if( (rc = rtreeInsertCell(pRtree, pRight->pParent, &rightbbox, iHeight+1)) ){
     goto splitnode_out;
@@ -2293,29 +2319,29 @@ splitnode_out:
 }
 
 /*
-** If node pLeaf is not the root of the r-tree and its pParent
-** pointer is still NULL, locate the parent node of pLeaf and populate 
-** pLeaf->pParent.
+** If node pLeaf is not the root of the r-tree and its pParent pointer is 
+** still NULL, load all ancestor nodes of pLeaf into memory and populate
+** the pLeaf->pParent chain all the way up to the root node.
 */
 static int fixLeafParent(Rtree *pRtree, RtreeNode *pLeaf){
   int rc = SQLITE_OK;
-  if( pLeaf->iNode!=1 && pLeaf->pParent==0 ){
-    int rc2;                      /* sqlite3_reset() return code */
-    sqlite3_bind_int64(pRtree->pReadParent, 1, pLeaf->iNode);
+  RtreeNode *pChild = pLeaf;
+  while( rc==SQLITE_OK && pChild->iNode!=1 && pChild->pParent==0 ){
+    int rc2 = SQLITE_OK;          /* sqlite3_reset() return code */
+    sqlite3_bind_int64(pRtree->pReadParent, 1, pChild->iNode);
     rc = sqlite3_step(pRtree->pReadParent);
     if( rc==SQLITE_ROW ){
+      RtreeNode *pTest;
       i64 iNode = sqlite3_column_int64(pRtree->pReadParent, 0);
-      rc = nodeAcquire(pRtree, iNode, 0, &pLeaf->pParent);
-    }else if( rc==SQLITE_DONE ){
-      rc = SQLITE_CORRUPT;
+      for(pTest=pLeaf; pTest && pTest->iNode!=iNode; pTest=pTest->pParent);
+      if( !pTest ){
+        rc2 = nodeAcquire(pRtree, iNode, 0, &pChild->pParent);
+      }
     }
-    rc2 = sqlite3_reset(pRtree->pReadParent);
-    if( rc==SQLITE_OK ){
-      rc = rc2;
-    }
-    if( rc==SQLITE_OK ){
-      rc = fixLeafParent(pRtree, pLeaf->pParent);
-    }
+    rc = sqlite3_reset(pRtree->pReadParent);
+    if( rc==SQLITE_OK ) rc = rc2;
+    if( rc==SQLITE_OK && !pChild->pParent ) rc = SQLITE_CORRUPT;
+    pChild = pChild->pParent;
   }
   return rc;
 }
@@ -2331,10 +2357,12 @@ static int removeNode(Rtree *pRtree, RtreeNode *pNode, int iHeight){
   assert( pNode->nRef==1 );
 
   /* Remove the entry in the parent cell. */
-  iCell = nodeParentIndex(pRtree, pNode);
-  pParent = pNode->pParent;
-  pNode->pParent = 0;
-  rc = deleteCell(pRtree, pParent, iCell, iHeight+1);
+  rc = nodeParentIndex(pRtree, pNode, &iCell);
+  if( rc==SQLITE_OK ){
+    pParent = pNode->pParent;
+    pNode->pParent = 0;
+    rc = deleteCell(pRtree, pParent, iCell, iHeight+1);
+  }
   rc2 = nodeRelease(pRtree, pParent);
   if( rc==SQLITE_OK ){
     rc = rc2;
@@ -2369,8 +2397,9 @@ static int removeNode(Rtree *pRtree, RtreeNode *pNode, int iHeight){
   return SQLITE_OK;
 }
 
-static void fixBoundingBox(Rtree *pRtree, RtreeNode *pNode){
+static int fixBoundingBox(Rtree *pRtree, RtreeNode *pNode){
   RtreeNode *pParent = pNode->pParent;
+  int rc = SQLITE_OK; 
   if( pParent ){
     int ii; 
     int nCell = NCELL(pNode);
@@ -2382,10 +2411,13 @@ static void fixBoundingBox(Rtree *pRtree, RtreeNode *pNode){
       cellUnion(pRtree, &box, &cell);
     }
     box.iRowid = pNode->iNode;
-    ii = nodeParentIndex(pRtree, pNode);
-    nodeOverwriteCell(pRtree, pParent, &box, ii);
-    fixBoundingBox(pRtree, pParent);
+    rc = nodeParentIndex(pRtree, pNode, &ii);
+    if( rc==SQLITE_OK ){
+      nodeOverwriteCell(pRtree, pParent, &box, ii);
+      rc = fixBoundingBox(pRtree, pParent);
+    }
   }
+  return rc;
 }
 
 /*
@@ -2416,7 +2448,7 @@ static int deleteCell(Rtree *pRtree, RtreeNode *pNode, int iCell, int iHeight){
     if( NCELL(pNode)<RTREE_MINCELLS(pRtree) ){
       rc = removeNode(pRtree, pNode, iHeight);
     }else{
-      fixBoundingBox(pRtree, pNode);
+      rc = fixBoundingBox(pRtree, pNode);
     }
   }
 
@@ -2499,7 +2531,7 @@ static int Reinsert(
     }
   }
   if( rc==SQLITE_OK ){
-    fixBoundingBox(pRtree, pNode);
+    rc = fixBoundingBox(pRtree, pNode);
   }
   for(; rc==SQLITE_OK && ii<nCell; ii++){
     /* Find a node to store this cell in. pNode->iNode currently contains
@@ -2553,11 +2585,13 @@ static int rtreeInsertCell(
     rc = SplitNode(pRtree, pNode, pCell, iHeight);
 #endif
   }else{
-    AdjustTree(pRtree, pNode, pCell);
-    if( iHeight==0 ){
-      rc = rowidWrite(pRtree, pCell->iRowid, pNode->iNode);
-    }else{
-      rc = parentWrite(pRtree, pCell->iRowid, pNode->iNode);
+    rc = AdjustTree(pRtree, pNode, pCell);
+    if( rc==SQLITE_OK ){
+      if( iHeight==0 ){
+        rc = rowidWrite(pRtree, pCell->iRowid, pNode->iNode);
+      }else{
+        rc = parentWrite(pRtree, pCell->iRowid, pNode->iNode);
+      }
     }
   }
   return rc;
@@ -2652,8 +2686,10 @@ static int rtreeUpdate(
     /* Delete the cell in question from the leaf node. */
     if( rc==SQLITE_OK ){
       int rc2;
-      iCell = nodeRowidIndex(pRtree, pLeaf, iDelete);
-      rc = deleteCell(pRtree, pLeaf, iCell, 0);
+      rc = nodeRowidIndex(pRtree, pLeaf, iDelete, &iCell);
+      if( rc==SQLITE_OK ){
+        rc = deleteCell(pRtree, pLeaf, iCell, 0);
+      }
       rc2 = nodeRelease(pRtree, pLeaf);
       if( rc==SQLITE_OK ){
         rc = rc2;

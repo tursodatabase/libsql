@@ -184,7 +184,6 @@ populate_t1
 do_test rtreeA-4.1.0 { 
   set_entry_count t1 1 4000
 } {4000}
-breakpoint
 do_corruption_tests rtreeA-4.1 {
   1   "SELECT * FROM t1"
   2   "SELECT * FROM t1 WHERE rowid=5"
@@ -203,5 +202,18 @@ do_corruption_tests rtreeA-5.1 {
   1   "DELETE FROM t1 WHERE rowid = 5"
   2   "DELETE FROM t1"
 }
+
+#-------------------------------------------------------------------------
+# Add some bad entries to the %_parent table.
+#
+create_t1
+populate_t1
+do_execsql_test rtreeA-6.1.0 { 
+  UPDATE t1_parent set parentnode = parentnode+1
+} {}
+do_corruption_tests rtreeA-6.1 {
+  1   "DELETE FROM t1 WHERE rowid = 5"
+}
+
 
 finish_test
