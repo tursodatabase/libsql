@@ -1,5 +1,5 @@
-C Add\snew\sfile\se_delete.test.
-D 2010-09-21T19:00:46
+C Add\snew\sfile\srtreeA.test,\sto\stest\sthat\sthe\sr-tree\sextension\sdoesn't\scrash\sif\sit\sencounters\sa\scorrupt\sor\sinconsistent\sdatabase.
+D 2010-09-22T14:19:53
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -79,7 +79,7 @@ F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c 850e9a36567bbcce6bd85a4b68243cad8e3c2de2
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c a1a1202ac87be4e17969f1b26ac1bd26a804205f
+F ext/rtree/rtree.c 3733ff121035e83b598089d398293015c4102e6d
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test dbd4250ac0ad367a262eb9676f7e3080b0368206
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -90,6 +90,7 @@ F ext/rtree/rtree6.test 1ebe0d632a7501cc80ba5a225f028fd4f0fdda08
 F ext/rtree/rtree7.test bcb647b42920b3b5d025846689147778485cc318
 F ext/rtree/rtree8.test 9772e16da71e17e02bdebf0a5188590f289ab37d
 F ext/rtree/rtree9.test df9843d1a9195249c8d3b4ea6aedda2d5c73e9c2
+F ext/rtree/rtreeA.test 2c6c7742957a9970a625762fee625444412b0a89
 F ext/rtree/rtree_perf.tcl 6c18c1f23cd48e0f948930c98dfdd37dfccb5195
 F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 1af0899c63a688e272d69d8e746f24e76f10a3f0
@@ -862,7 +863,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 528f71e29c5422af778dbae2c1dce3b0ee289750
-R d64850457ce5c89ffc8e7b8d8754b194
+P 14e8659e576258b64d67cb3f1222f173089d5127
+R f765e03b8b7edfbba31db768fa2c7c43
 U dan
-Z 698ce76efbb1df140642fe36b4a58abb
+Z 161dee882fd7434c2ba579743fed4212

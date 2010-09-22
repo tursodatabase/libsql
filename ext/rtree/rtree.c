@@ -13,6 +13,45 @@
 ** algorithms packaged as an SQLite virtual table module.
 */
 
+/*
+** Database Format of R-Tree Tables
+** --------------------------------
+**
+** The data structure for a single virtual r-tree table is stored in three 
+** native SQLite tables declared as follows. In each case, the '%' character
+** in the table name is replaced with the user-supplied name of the r-tree
+** table.
+**
+**   CREATE TABLE %_node(nodeno INTEGER PRIMARY KEY, data BLOB)
+**   CREATE TABLE %_parent(nodeno INTEGER PRIMARY KEY, parentnode INTEGER)
+**   CREATE TABLE %_rowid(rowid INTEGER PRIMARY KEY, nodeno INTEGER)
+**
+** The data for each node of the r-tree structure is stored in the %_node
+** table. For each node that is not the root node of the r-tree, there is
+** an entry in the %_parent table associating the node with its parent.
+** And for each row of data in the table, there is an entry in the %_rowid
+** table that maps from the entries rowid to the id of the node that it
+** is stored on.
+**
+** The root node of an r-tree always exists, even if the r-tree table is
+** empty. The nodeno of the root node is always 1. All other nodes in the
+** table must be the same size as the root node. The content of each node
+** is formatted as follows:
+**
+**   1. If the node is the root node (node 1), then the first 2 bytes
+**      of the node contain the tree depth as a big-endian integer.
+**      For non-root nodes, the first 2 bytes are left unused.
+**
+**   2. The next 2 bytes contain the number of entries currently 
+**      stored in the node.
+**
+**   3. The remainder of the node contains the node entries. Each entry
+**      consists of a single 8-byte integer followed by an even number
+**      of 4-byte coordinates. For leaf nodes the integer is the rowid
+**      of a record. For internal nodes it is the node number of a
+**      child page.
+*/
+
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_RTREE)
 
 /*
@@ -150,6 +189,15 @@ struct Rtree {
 #define RTREE_REINSERT(p) RTREE_MINCELLS(p)
 #define RTREE_MAXCELLS 51
 
+/*
+** The smallest possible node-size is (512-64)==448 bytes. And the largest
+** supported cell size is 48 bytes (8 byte rowid + ten 4 byte coordinates).
+** Therefore all non-root nodes must contain at least 3 entries. Since 
+** 2^40 is greater than 2^64, an r-tree structure always has a depth of
+** 40 or less.
+*/
+#define RTREE_MAX_DEPTH 40
+
 /* 
 ** An rtree cursor object.
 */
@@ -199,21 +247,6 @@ struct RtreeConstraint {
 
 /* 
 ** An rtree structure node.
-**
-** Data format (RtreeNode.zData):
-**
-**   1. If the node is the root node (node 1), then the first 2 bytes
-**      of the node contain the tree depth as a big-endian integer.
-**      For non-root nodes, the first 2 bytes are left unused.
-**
-**   2. The next 2 bytes contain the number of entries currently 
-**      stored in the node.
-**
-**   3. The remainder of the node contains the node entries. Each entry
-**      consists of a single 8-byte integer followed by an even number
-**      of 4-byte coordinates. For leaf nodes the integer is the rowid
-**      of a record. For internal nodes it is the node number of a
-**      child page.
 */
 struct RtreeNode {
   RtreeNode *pParent;               /* Parent node */
@@ -370,7 +403,6 @@ static int nodeHash(i64 iNode){
 */
 static RtreeNode *nodeHashLookup(Rtree *pRtree, i64 iNode){
   RtreeNode *p;
-  assert( iNode!=0 );
   for(p=pRtree->aHash[nodeHash(iNode)]; p && p->iNode!=iNode; p=p->pNext);
   return p;
 }
@@ -446,41 +478,61 @@ nodeAcquire(
     return SQLITE_OK;
   }
 
-  pNode = (RtreeNode *)sqlite3_malloc(sizeof(RtreeNode) + pRtree->iNodeSize);
-  if( !pNode ){
-    *ppNode = 0;
-    return SQLITE_NOMEM;
-  }
-  pNode->pParent = pParent;
-  pNode->zData = (u8 *)&pNode[1];
-  pNode->nRef = 1;
-  pNode->iNode = iNode;
-  pNode->isDirty = 0;
-  pNode->pNext = 0;
-
   sqlite3_bind_int64(pRtree->pReadNode, 1, iNode);
   rc = sqlite3_step(pRtree->pReadNode);
   if( rc==SQLITE_ROW ){
     const u8 *zBlob = sqlite3_column_blob(pRtree->pReadNode, 0);
-    assert( sqlite3_column_bytes(pRtree->pReadNode, 0)==pRtree->iNodeSize );
-    memcpy(pNode->zData, zBlob, pRtree->iNodeSize);
-    nodeReference(pParent);
-  }else{
-    sqlite3_free(pNode);
-    pNode = 0;
+    if( pRtree->iNodeSize==sqlite3_column_bytes(pRtree->pReadNode, 0) ){
+      pNode = (RtreeNode *)sqlite3_malloc(sizeof(RtreeNode)+pRtree->iNodeSize);
+      if( !pNode ){
+        rc = SQLITE_NOMEM;
+      }else{
+        pNode->pParent = pParent;
+        pNode->zData = (u8 *)&pNode[1];
+        pNode->nRef = 1;
+        pNode->iNode = iNode;
+        pNode->isDirty = 0;
+        pNode->pNext = 0;
+        memcpy(pNode->zData, zBlob, pRtree->iNodeSize);
+        nodeReference(pParent);
+      }
+    }
   }
-
-  *ppNode = pNode;
   rc = sqlite3_reset(pRtree->pReadNode);
 
+  /* If the root node was just loaded, set pRtree->iDepth to the height
+  ** of the r-tree structure. A height of zero means all data is stored on
+  ** the root node. A height of one means the children of the root node
+  ** are the leaves, and so on. If the depth as specified on the root node
+  ** is greater than RTREE_MAX_DEPTH, the r-tree structure must be corrupt.
+  */
   if( pNode && iNode==1 ){
     pRtree->iDepth = readInt16(pNode->zData);
+    if( pRtree->iDepth>RTREE_MAX_DEPTH ){
+      rc = SQLITE_CORRUPT;
+    }
   }
 
-  if( pNode!=0 ){
-    nodeHashInsert(pRtree, pNode);
-  }else if( rc==SQLITE_OK ){
-    rc = SQLITE_CORRUPT;
+  /* If no error has occurred so far, check if the "number of entries"
+  ** field on the node is too large. If so, set the return code to 
+  ** SQLITE_CORRUPT.
+  */
+  if( pNode && rc==SQLITE_OK ){
+    if( NCELL(pNode)>((pRtree->iNodeSize-4)/pRtree->nBytesPerCell) ){
+      rc = SQLITE_CORRUPT;
+    }
+  }
+
+  if( rc==SQLITE_OK ){
+    if( pNode!=0 ){
+      nodeHashInsert(pRtree, pNode);
+    }else{
+      rc = SQLITE_CORRUPT;
+    }
+    *ppNode = pNode;
+  }else{
+    sqlite3_free(pNode);
+    *ppNode = 0;
   }
 
   return rc;
@@ -534,8 +586,7 @@ nodeInsertCell(
   nMaxCell = (pRtree->iNodeSize-4)/pRtree->nBytesPerCell;
   nCell = NCELL(pNode);
 
-  assert(nCell<=nMaxCell);
-
+  assert( nCell<=nMaxCell );
   if( nCell<nMaxCell ){
     nodeOverwriteCell(pRtree, pNode, pCell, nCell);
     writeInt16(&pNode->zData[2], nCell+1);
@@ -2576,9 +2627,6 @@ static int rtreeUpdate(
   rtreeReference(pRtree);
 
   assert(nData>=1);
-#if 0
-  assert(hashIsEmpty(pRtree));
-#endif
 
   /* If azData[0] is not an SQL NULL value, it is the rowid of a
   ** record to delete from the r-tree table. The following block does
