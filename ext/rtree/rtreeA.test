@@ -24,6 +24,7 @@ proc create_t1 {} {
   forcedelete test.db
   sqlite3 db test.db
   execsql {
+    PRAGMA page_size = 1024;
     CREATE VIRTUAL TABLE t1 USING rtree(id, x1, x2, y1, y2);
   }
 }
@@ -71,7 +72,6 @@ proc set_entry_count {tbl nodeno {newvalue ""}} {
   db eval "UPDATE ${tbl}_node SET data = \$blob WHERE nodeno=$nodeno"
   return [set_entry_count $tbl $nodeno]
 }
-
 
 
 proc do_corruption_tests {prefix args} {
@@ -213,6 +213,7 @@ do_execsql_test rtreeA-6.1.0 {
 } {}
 do_corruption_tests rtreeA-6.1 {
   1   "DELETE FROM t1 WHERE rowid = 5"
+  2   "UPDATE t1 SET x1=x1+1, x2=x2+1"
 }
 
 

@@ -351,6 +351,7 @@ proc do_catchsql_test {testname sql result} {
 #   -errorformat FMTSTRING
 #   -count
 #   -query SQL
+#   -repair TCL
 #
 proc do_select_tests {prefix args} {
 
@@ -360,6 +361,7 @@ proc do_select_tests {prefix args} {
   set errfmt ""
   set countonly 0
   set query ""
+  set repair ""
 
   for {set i 0} {$i < [llength $switches]} {incr i} {
     set s [lindex $switches $i]
@@ -368,6 +370,8 @@ proc do_select_tests {prefix args} {
       set query [lindex $switches [incr i]]
     } elseif {$n>=2 && [string equal -length $n $s "-errorformat"]} {
       set errfmt [lindex $switches [incr i]]
+    } elseif {$n>=2 && [string equal -length $n $s "-repair"]} {
+      set repair [lindex $switches [incr i]]
     } elseif {$n>=2 && [string equal -length $n $s "-count"]} {
       set countonly 1
     } else {
@@ -383,6 +387,7 @@ proc do_select_tests {prefix args} {
     error "SELECT test list contains [llength $testlist] elements"
   }
 
+  eval $repair
   foreach {tn sql res} $testlist {
     if {$query != ""} {
       execsql $sql
@@ -399,7 +404,9 @@ proc do_select_tests {prefix args} {
       set res [list 1 [string trim [format $errfmt {*}$res]]]
       uplevel do_catchsql_test ${prefix}.${tn} [list $sql] [list $res]
     }
+    eval $repair
   }
+
 }
 
 proc delete_all_data {} {

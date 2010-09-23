@@ -2322,6 +2322,12 @@ splitnode_out:
 ** If node pLeaf is not the root of the r-tree and its pParent pointer is 
 ** still NULL, load all ancestor nodes of pLeaf into memory and populate
 ** the pLeaf->pParent chain all the way up to the root node.
+**
+** This operation is required when a row is deleted (or updated - an update
+** is implemented as a delete followed by an insert). SQLite provides the
+** rowid of the row to delete, which can be used to find the leaf on which
+** the entry resides (argument pLeaf). Once the leaf is located, this 
+** function is called to determine its ancestry.
 */
 static int fixLeafParent(Rtree *pRtree, RtreeNode *pLeaf){
   int rc = SQLITE_OK;
@@ -2331,8 +2337,15 @@ static int fixLeafParent(Rtree *pRtree, RtreeNode *pLeaf){
     sqlite3_bind_int64(pRtree->pReadParent, 1, pChild->iNode);
     rc = sqlite3_step(pRtree->pReadParent);
     if( rc==SQLITE_ROW ){
-      RtreeNode *pTest;
-      i64 iNode = sqlite3_column_int64(pRtree->pReadParent, 0);
+      RtreeNode *pTest;           /* Used to test for reference loops */
+      i64 iNode;                  /* Node number of parent node */
+
+      /* Before setting pChild->pParent, test that we are not creating a
+      ** loop of references (as we would if, say, pChild==pParent). We don't
+      ** want to do this as it leads to a memory leak when trying to delete
+      ** the referenced counted node structures.
+      */
+      iNode = sqlite3_column_int64(pRtree->pReadParent, 0);
       for(pTest=pLeaf; pTest && pTest->iNode!=iNode; pTest=pTest->pParent);
       if( !pTest ){
         rc2 = nodeAcquire(pRtree, iNode, 0, &pChild->pParent);
