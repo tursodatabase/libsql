@@ -182,4 +182,45 @@ ifcapable autovacuum {
   } {2}
 }
 
+
+#-------------------------------------------------------------------------
+# The following block of tests verify the behaviour of the library when
+# a database is VACUUMed when there are one or more unfinalized SQL 
+# statements reading the same database using the same db handle.
+#
+db close
+forcedelete test.db
+sqlite3 db test.db
+do_execsql_test vacuum2-5.1 {
+  CREATE TABLE t1(a PRIMARY KEY, b UNIQUE);
+  INSERT INTO t1 VALUES(1, randomblob(500));
+  INSERT INTO t1 SELECT a+1, randomblob(500) FROM t1;      -- 2
+  INSERT INTO t1 SELECT a+2, randomblob(500) FROM t1;      -- 4 
+  INSERT INTO t1 SELECT a+4, randomblob(500) FROM t1;      -- 8 
+  INSERT INTO t1 SELECT a+8, randomblob(500) FROM t1;      -- 16 
+} {}
+
+do_test vacuum2-5.2 {
+  list [catch {
+    db eval {SELECT a, b FROM t1} { if {$a == 8} { execsql VACUUM } }
+  } msg] $msg
+} {1 {cannot VACUUM - SQL statements in progress}}
+
+do_test vacuum2-5.3 {
+  list [catch {
+    db eval {SELECT 1, 2, 3} { execsql VACUUM }
+  } msg] $msg
+} {1 {cannot VACUUM - SQL statements in progress}}
+
+do_test vacuum2-5.4 {
+  set res ""
+  set res2 ""
+  db eval {SELECT a, b FROM t1 WHERE a<=10} {
+    if {$a==6} { set res [catchsql VACUUM] }
+    lappend res2 $a
+  }
+  lappend res2 $res
+} {1 2 3 4 5 6 7 8 9 10 {1 {cannot VACUUM - SQL statements in progress}}}
+
+
 finish_test
