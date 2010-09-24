@@ -495,7 +495,7 @@ do_update_tests e_update-2.5 -error {
 # of the UPDATE statement is extended with optional ORDER BY and LIMIT
 # clauses
 #
-# EVIDENCE-OF: R-07033-64910 -- syntax diagram update-stmt-limited
+# EVIDENCE-OF: R-08948-01887 -- syntax diagram update-stmt-limited
 #
 do_update_tests e_update-3.0 {
   1   "UPDATE t1 SET a=b LIMIT 5"                                    {}

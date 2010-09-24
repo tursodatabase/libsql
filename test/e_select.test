@@ -274,7 +274,7 @@ do_select_tests e_select-0.6 {
   4  "SELECT b||a FROM t1 ORDER BY (b||a) DESC"           {twob threec onea}
 }
 
-# EVIDENCE-OF: R-32629-22838 -- syntax diagram select-stmt
+# EVIDENCE-OF: R-36494-33519 -- syntax diagram select-stmt
 #
 do_select_tests e_select-0.7 {
   1  "SELECT * FROM t1" {a one b two c three}
