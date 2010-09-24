@@ -146,10 +146,9 @@ do_update_tests e_update-1.2 {
      {greek roman  greek roman  greek roman}
 }
 
-# EVIDENCE-OF: R-41754-00978 Otherwise, the UPDATE affects only those
-# rows for which evaluating the WHERE clause expression and casting the
-# result to a NUMERIC value produces a value other than NULL or zero
-# (integer value 0 or real value 0.0).
+# EVIDENCE-OF: R-42117-40023 Otherwise, the UPDATE affects only those
+# rows for which the result of evaluating the WHERE clause expression as
+# a boolean expression is true.
 #
 do_execsql_test e_update-1.3.0 {
   DELETE FROM main.t1;
@@ -172,9 +171,9 @@ do_update_tests e_update-1.3 {
      {{} lithuanian  1 macedonian  2 macedonian  3 macedonian}
 }
 
-# EVIDENCE-OF: R-61178-36001 It is not an error if the WHERE clause does
-# not evaluate to a non-NULL, non-zero value for any row in the table -
-# this just means that the UPDATE statement affects zero rows.
+# EVIDENCE-OF: R-58129-20729 It is not an error if the WHERE clause does
+# not evaluate to true for any row in the table - this just means that
+# the UPDATE statement affects zero rows.
 #
 do_execsql_test e_update-1.4.0 {
   DELETE FROM main.t1;

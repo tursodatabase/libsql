@@ -507,11 +507,10 @@ do_select_tests e_select-1.4.5 [list                                   \
 ]
 
 
-# EVIDENCE-OF: R-45641-53865 If there is an ON clause specified, then
+# EVIDENCE-OF: R-22775-56496 If there is an ON clause specified, then
 # the ON expression is evaluated for each row of the cartesian product
-# and the result cast to a numeric value as if by a CAST expression. All
-# rows for which the expression evaluates to NULL or zero (integer value
-# 0 or real value 0.0) are excluded from the dataset.
+# as a boolean expression. All rows for which the expression evaluates
+# to false are excluded from the dataset.
 #
 foreach {tn select res} [list                                              \
     1 { SELECT * FROM t1 %JOIN% t2 ON (1) }       $t1_cross_t2             \
@@ -546,11 +545,10 @@ do_select_tests e_select-1.4 -error {
   3 { SELECT * FROM t3, (SELECT a AS b, b AS c FROM t1) USING (a) }   "a"
 } 
 
-# EVIDENCE-OF: R-42568-37000 For each pair of namesake columns, the
+# EVIDENCE-OF: R-55987-04584 For each pair of namesake columns, the
 # expression "lhs.X = rhs.X" is evaluated for each row of the cartesian
-# product and the result cast to a numeric value. All rows for which one
-# or more of the expressions evaluates to NULL or zero are excluded from
-# the result set.
+# product as a boolean expression. All rows for which one or more of the
+# expressions evaluates to false are excluded from the result set.
 #
 do_select_tests e_select-1.5 {
   1 { SELECT * FROM t1, t3 USING (a)   }  {a one 1 b two 2}
@@ -1060,11 +1058,10 @@ foreach {tn indexes} {
   test_join $tn.1.11 "t2 CROSS JOIN t2 AS x" {t2 t2}
   test_join $tn.1.12 "t2 JOIN t2 AS x"       {t2 t2}
 
-  # EVIDENCE-OF: R-45641-53865 If there is an ON clause specified, then
+  # EVIDENCE-OF: R-22775-56496 If there is an ON clause specified, then
   # the ON expression is evaluated for each row of the cartesian product
-  # and the result cast to a numeric value as if by a CAST expression. All
-  # rows for which the expression evaluates to NULL or zero (integer value
-  # 0 or real value 0.0) are excluded from the dataset.
+  # as a boolean expression. All rows for which the expression evaluates
+  # to false are excluded from the dataset.
   #
   test_join $tn.2.1  "t1, t2 ON (t1.a=t2.a)"  {t1 t2 -on {te_equals a a}}
   test_join $tn.2.2  "t2, t1 ON (t1.a=t2.a)"  {t2 t1 -on {te_equals a a}}
@@ -1291,11 +1288,10 @@ do_execsql_test e_select-3.0 {
   INSERT INTO x2 VALUES(7, 'mistrusted', 'standardized');
 } {}
 
-# EVIDENCE-OF: R-22873-49686 If a WHERE clause is specified, the WHERE
-# expression is evaluated for each row in the input data and the result
-# cast to a numeric value. All rows for which the WHERE clause
-# expression evaluates to a NULL value or to zero (integer value 0 or
-# real value 0.0) are excluded from the dataset before continuing.
+# EVIDENCE-OF: R-06999-14330 If a WHERE clause is specified, the WHERE
+# expression is evaluated for each row in the input data as a boolean
+# expression. All rows for which the WHERE clause expression evaluates
+# to false are excluded from the dataset before continuing.
 #
 do_execsql_test e_select-3.1.1 { SELECT k FROM x1 WHERE x }         {3}
 do_execsql_test e_select-3.1.2 { SELECT k FROM x1 WHERE y }         {3 5 6}
@@ -1627,10 +1623,10 @@ foreach {tn select} {
   do_catchsql_test e_select-4.$tn $select $res
 }
 
-# EVIDENCE-OF: R-40359-04817 If a HAVING clause is specified, it is
-# evaluated once for each group of rows and cast to an integer value. If
-# the result of evaluating the HAVING clause is NULL or zero (integer
-# value 0), the group is discarded.
+# EVIDENCE-OF: R-31537-00101 If a HAVING clause is specified, it is
+# evaluated once for each group of rows as a boolean expression. If the
+# result of evaluating the HAVING clause is false, the group is
+# discarded.
 #
 #   This requirement is tested by all e_select-4.13.* tests.
 #

@@ -66,10 +66,9 @@ do_delete_tests e_delete-1.1 {
   2  "DELETE FROM main.t2  ; SELECT * FROM t2"       {}
 }
 
-# EVIDENCE-OF: R-25092-63878 If a WHERE clause is supplied, then only
-# those rows for which evaluating the WHERE clause and casting the
-# result to a NUMERIC value produces a result other than NULL or zero
-# (integer value 0 or real value 0.0).
+# EVIDENCE-OF: R-30203-16177 If a WHERE clause is supplied, then only
+# those rows for which the result of evaluating the WHERE clause as a
+# boolean expression is true are deleted.
 #
 do_delete_tests e_delete-1.2 {
   1  "DELETE FROM t3 WHERE 1       ; SELECT x FROM t3"       {}
