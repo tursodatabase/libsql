@@ -5382,6 +5382,8 @@ static int proxyGetHostID(unsigned char *pHostID, int *pError){
   
   assert(PROXY_HOSTIDLEN == sizeof(uuid_t));
   memset(pHostID, 0, PROXY_HOSTIDLEN);
+#if defined(__MAX_OS_X_VERSION_MIN_REQUIRED)\
+               && __MAC_OS_X_VERSION_MIN_REQUIRED<1050
   if( gethostuuid(pHostID, &timeout) ){
     int err = errno;
     if( pError ){
@@ -5389,6 +5391,7 @@ static int proxyGetHostID(unsigned char *pHostID, int *pError){
     }
     return SQLITE_IOERR;
   }
+#endif
 #ifdef SQLITE_TEST
   /* simulate multiple hosts by creating unique hostid file paths */
   if( sqlite3_hostid_num != 0){
