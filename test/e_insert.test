@@ -9,8 +9,11 @@
 #
 #***********************************************************************
 #
-# This file implements tests to verify that the "testable statements" in 
-# the lang_insert.html document are correct.
+# The majority of this file implements tests to verify that the "testable
+# statements" in the lang_insert.html document are correct.
+#
+# Also, it contains tests to verify the statements in (the very short)
+# lang_replace.html.
 #
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -330,6 +333,13 @@ do_insert_tests e_insert-3.2 {
 #
 #    The two requirements above are tested by e_select-4.1.* and
 #    e_select-4.2.*, respectively.
+#
+# EVIDENCE-OF: R-03421-22330 The REPLACE command is an alias for the
+# "INSERT OR REPLACE" variant of the INSERT command.
+#
+#    This is a dup of R-23110-47146. Therefore it is also verified 
+#    by e_select-4.2.*. This requirement is the only one from
+#    lang_replace.html.
 #
 do_execsql_test e_insert-4.1.0 {
   INSERT INTO a4 VALUES(1, 'a');

@@ -1,0 +1,311 @@
+# 2010 September 25
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file implements tests to verify that the "testable statements" in 
+# the lang_createtable.html document are correct.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+proc do_createtable_tests {nm args} {
+  uplevel do_select_tests [list e_createtable-$nm] $args
+}
+
+# EVIDENCE-OF: R-25262-01881 -- syntax diagram type-name
+#
+do_createtable_tests 0.1.1 -repair {
+  drop_all_tables
+} {
+  1   "CREATE TABLE t1(c1 one)"                        {}
+  2   "CREATE TABLE t1(c1 one two)"                    {}
+  3   "CREATE TABLE t1(c1 one two three)"              {}
+  4   "CREATE TABLE t1(c1 one two three four)"         {}
+  5   "CREATE TABLE t1(c1 one two three four(14))"     {}
+  6   "CREATE TABLE t1(c1 one two three four(14, 22))" {}
+  7   "CREATE TABLE t1(c1 var(+14, -22.3))"            {}
+  8   "CREATE TABLE t1(c1 var(1.0e10))"                {}
+}
+do_createtable_tests 0.1.2 -error {
+  near "%s": syntax error
+} {
+  1   "CREATE TABLE t1(c1 one(number))"                {number}
+}
+
+
+# EVIDENCE-OF: R-18762-12428 -- syntax diagram column-constraint
+#
+#   Note: Not shown in the syntax diagram is the "NULL" constraint. This
+#         is the opposite of "NOT NULL" - it implies that the column may
+#         take a NULL value. This is the default anyway, so this type of
+#         constraint is rarely used.
+#
+do_createtable_tests 0.2.1 -repair {
+  drop_all_tables 
+  execsql { CREATE TABLE t2(x PRIMARY KEY) }
+} {
+  1.1   "CREATE TABLE t1(c1 text PRIMARY KEY)"                         {}
+  1.2   "CREATE TABLE t1(c1 text PRIMARY KEY ASC)"                     {}
+  1.3   "CREATE TABLE t1(c1 text PRIMARY KEY DESC)"                    {}
+  1.4   "CREATE TABLE t1(c1 text CONSTRAINT cons PRIMARY KEY DESC)"    {}
+
+  2.1   "CREATE TABLE t1(c1 text NOT NULL)"                            {}
+  2.2   "CREATE TABLE t1(c1 text CONSTRAINT nm NOT NULL)"              {}
+  2.3   "CREATE TABLE t1(c1 text NULL)"                                {}
+  2.4   "CREATE TABLE t1(c1 text CONSTRAINT nm NULL)"                  {}
+
+  3.1   "CREATE TABLE t1(c1 text UNIQUE)"                              {}
+  3.2   "CREATE TABLE t1(c1 text CONSTRAINT un UNIQUE)"                {}
+
+  4.1   "CREATE TABLE t1(c1 text CHECK(c1!=0))"                        {}
+  4.2   "CREATE TABLE t1(c1 text CONSTRAINT chk CHECK(c1!=0))"         {}
+
+  5.1   "CREATE TABLE t1(c1 text DEFAULT 1)"                           {}
+  5.2   "CREATE TABLE t1(c1 text DEFAULT -1)"                          {}
+  5.3   "CREATE TABLE t1(c1 text DEFAULT +1)"                          {}
+  5.4   "CREATE TABLE t1(c1 text DEFAULT -45.8e22)"                    {}
+  5.5   "CREATE TABLE t1(c1 text DEFAULT (1+1))"                       {}
+  5.6   "CREATE TABLE t1(c1 text CONSTRAINT \"1 2\" DEFAULT (1+1))"    {}
+
+  6.1   "CREATE TABLE t1(c1 text COLLATE nocase)"        {}
+  6.2   "CREATE TABLE t1(c1 text CONSTRAINT 'a x' COLLATE nocase)"     {}
+
+  7.1   "CREATE TABLE t1(c1 REFERENCES t2)"                            {}
+  7.2   "CREATE TABLE t1(c1 CONSTRAINT abc REFERENCES t2)"             {}
+
+  8.1   {
+    CREATE TABLE t1(c1 
+      PRIMARY KEY NOT NULL UNIQUE CHECK(c1 IS 'ten') DEFAULT 123 REFERENCES t1
+    );
+  } {}
+  8.2   {
+    CREATE TABLE t1(c1 
+      REFERENCES t1 DEFAULT 123 CHECK(c1 IS 'ten') UNIQUE NOT NULL PRIMARY KEY 
+    );
+  } {}
+}
+
+# EVIDENCE-OF: R-17905-31923 -- syntax diagram table-constraint
+#
+do_createtable_tests 0.3.1 -repair {
+  drop_all_tables 
+  execsql { CREATE TABLE t2(x PRIMARY KEY) }
+} {
+  1.1   "CREATE TABLE t1(c1, c2, PRIMARY KEY(c1))"                         {}
+  1.2   "CREATE TABLE t1(c1, c2, PRIMARY KEY(c1, c2))"                     {}
+  1.3   "CREATE TABLE t1(c1, c2, PRIMARY KEY(c1, c2) ON CONFLICT IGNORE)"  {}
+
+  2.1   "CREATE TABLE t1(c1, c2, UNIQUE(c1))"                              {}
+  2.2   "CREATE TABLE t1(c1, c2, UNIQUE(c1, c2))"                          {}
+  2.3   "CREATE TABLE t1(c1, c2, UNIQUE(c1, c2) ON CONFLICT IGNORE)"       {}
+
+  3.1   "CREATE TABLE t1(c1, c2, CHECK(c1 IS NOT c2))"                     {}
+
+  4.1   "CREATE TABLE t1(c1, c2, FOREIGN KEY(c1) REFERENCES t2)"           {}
+}
+
+# EVIDENCE-OF: R-18765-31171 -- syntax diagram column-def
+#
+do_createtable_tests 0.4.1 -repair {
+  drop_all_tables 
+} {
+  1     {CREATE TABLE t1(
+           col1,
+           col2 TEXT,
+           col3 INTEGER UNIQUE,
+           col4 VARCHAR(10, 10) PRIMARY KEY,
+           "name with spaces" REFERENCES t1
+         );
+        } {}
+}
+
+# EVIDENCE-OF: R-59573-11075 -- syntax diagram create-table-stmt
+#
+do_createtable_tests 0.5.1 -repair {
+  drop_all_tables 
+  execsql { CREATE TABLE t2(a, b, c) }
+} {
+  1     "CREATE TABLE t1(a, b, c)"                                    {}
+  2     "CREATE TEMP TABLE t1(a, b, c)"                               {}
+  3     "CREATE TEMPORARY TABLE t1(a, b, c)"                          {}
+  4     "CREATE TABLE IF NOT EXISTS t1(a, b, c)"                      {}
+  5     "CREATE TEMP TABLE IF NOT EXISTS t1(a, b, c)"                 {}
+  6     "CREATE TEMPORARY TABLE IF NOT EXISTS t1(a, b, c)"            {}
+
+  7     "CREATE TABLE main.t1(a, b, c)"                               {}
+  8     "CREATE TEMP TABLE temp.t1(a, b, c)"                          {}
+  9     "CREATE TEMPORARY TABLE temp.t1(a, b, c)"                     {}
+  10    "CREATE TABLE IF NOT EXISTS main.t1(a, b, c)"                 {}
+  11    "CREATE TEMP TABLE IF NOT EXISTS temp.t1(a, b, c)"            {}
+  12    "CREATE TEMPORARY TABLE IF NOT EXISTS temp.t1(a, b, c)"       {}
+
+  13    "CREATE TABLE t1 AS SELECT * FROM t2"                         {}
+  14    "CREATE TEMP TABLE t1 AS SELECT c, b, a FROM t2"              {}
+  15    "CREATE TABLE t1 AS SELECT count(*), max(b), min(a) FROM t2"  {}
+}
+
+# EVIDENCE-OF: R-32138-02228 -- syntax diagram foreign-key-clause
+#
+#   1:         Explicit parent-key columns.
+#   2:         Implicit child-key columns.
+#
+#   1:         MATCH FULL
+#   2:         MATCH PARTIAL
+#   3:         MATCH SIMPLE
+#   4:         MATCH STICK
+#   5:         
+#
+#   1:         ON DELETE SET NULL
+#   2:         ON DELETE SET DEFAULT
+#   3:         ON DELETE CASCADE
+#   4:         ON DELETE RESTRICT
+#   5:         ON DELETE NO ACTION
+#   6:
+#
+#   1:         ON UPDATE SET NULL
+#   2:         ON UPDATE SET DEFAULT
+#   3:         ON UPDATE CASCADE
+#   4:         ON UPDATE RESTRICT
+#   5:         ON UPDATE NO ACTION
+#   6:
+#
+#   1:         NOT DEFERRABLE INITIALLY DEFERRED
+#   2:         NOT DEFERRABLE INITIALLY IMMEDIATE
+#   3:         NOT DEFERRABLE
+#   4:         DEFERRABLE INITIALLY DEFERRED
+#   5:         DEFERRABLE INITIALLY IMMEDIATE
+#   6:         DEFERRABLE
+#   7:         
+#
+do_createtable_tests 0.6.1 -repair {
+  drop_all_tables 
+  execsql { CREATE TABLE t2(x PRIMARY KEY, y) }
+  execsql { CREATE TABLE t3(i, j, UNIQUE(i, j) ) }
+} {
+  11146 { CREATE TABLE t1(a 
+    REFERENCES t2(x) MATCH FULL 
+    ON DELETE SET NULL ON UPDATE RESTRICT DEFERRABLE
+  )} {}
+  11412 { CREATE TABLE t1(a 
+    REFERENCES t2(x) 
+    ON DELETE RESTRICT ON UPDATE SET NULL MATCH FULL 
+    NOT DEFERRABLE INITIALLY IMMEDIATE
+  )} {}
+  12135 { CREATE TABLE t1(a 
+    REFERENCES t2(x) MATCH PARTIAL 
+    ON DELETE SET NULL ON UPDATE CASCADE DEFERRABLE INITIALLY IMMEDIATE
+  )} {}
+  12427 { CREATE TABLE t1(a 
+    REFERENCES t2(x) MATCH PARTIAL 
+    ON DELETE RESTRICT ON UPDATE SET DEFAULT 
+  )} {}
+  12446 { CREATE TABLE t1(a 
+    REFERENCES t2(x) MATCH PARTIAL 
+    ON DELETE RESTRICT ON UPDATE RESTRICT DEFERRABLE
+  )} {}
+  12522 { CREATE TABLE t1(a 
+    REFERENCES t2(x) MATCH PARTIAL 
+    ON DELETE NO ACTION ON UPDATE SET DEFAULT NOT DEFERRABLE INITIALLY IMMEDIATE
+  )} {}
+  13133 { CREATE TABLE t1(a 
+    REFERENCES t2(x) MATCH SIMPLE 
+    ON DELETE SET NULL ON UPDATE CASCADE NOT DEFERRABLE
+  )} {}
+  13216 { CREATE TABLE t1(a 
+    REFERENCES t2(x) MATCH SIMPLE 
+    ON DELETE SET DEFAULT ON UPDATE SET NULL DEFERRABLE
+  )} {}
+  13263 { CREATE TABLE t1(a 
+    REFERENCES t2(x) MATCH SIMPLE 
+    ON DELETE SET DEFAULT  NOT DEFERRABLE
+  )} {}
+  13421 { CREATE TABLE t1(a 
+    REFERENCES t2(x) MATCH SIMPLE 
+    ON DELETE RESTRICT ON UPDATE SET DEFAULT NOT DEFERRABLE INITIALLY DEFERRED
+  )} {}
+  13432 { CREATE TABLE t1(a 
+    REFERENCES t2(x) MATCH SIMPLE 
+    ON DELETE RESTRICT ON UPDATE CASCADE NOT DEFERRABLE INITIALLY IMMEDIATE
+  )} {}
+  13523 { CREATE TABLE t1(a 
+    REFERENCES t2(x) MATCH SIMPLE 
+    ON DELETE NO ACTION ON UPDATE SET DEFAULT NOT DEFERRABLE
+  )} {}
+  14336 { CREATE TABLE t1(a 
+    REFERENCES t2(x) MATCH STICK 
+    ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE
+  )} {}
+  14611 { CREATE TABLE t1(a 
+    REFERENCES t2(x) MATCH STICK 
+    ON UPDATE SET NULL NOT DEFERRABLE INITIALLY DEFERRED
+  )} {}
+  15155 { CREATE TABLE t1(a 
+    REFERENCES t2(x)
+    ON DELETE SET NULL ON UPDATE NO ACTION DEFERRABLE INITIALLY IMMEDIATE
+  )} {}
+  15453 { CREATE TABLE t1(a 
+    REFERENCES t2(x) ON DELETE RESTRICT ON UPDATE NO ACTION NOT DEFERRABLE
+  )} {}
+  15661 { CREATE TABLE t1(a 
+    REFERENCES t2(x) NOT DEFERRABLE INITIALLY DEFERRED
+  )} {}
+  21115 { CREATE TABLE t1(a 
+    REFERENCES t2 MATCH FULL 
+    ON DELETE SET NULL ON UPDATE SET NULL DEFERRABLE INITIALLY IMMEDIATE
+  )} {}
+  21123 { CREATE TABLE t1(a 
+    REFERENCES t2 MATCH FULL 
+    ON DELETE SET NULL ON UPDATE SET DEFAULT NOT DEFERRABLE
+  )} {}
+  21217 { CREATE TABLE t1(a 
+    REFERENCES t2 MATCH FULL ON DELETE SET DEFAULT ON UPDATE SET NULL 
+  )} {}
+  21362 { CREATE TABLE t1(a 
+    REFERENCES t2 MATCH FULL 
+    ON DELETE CASCADE NOT DEFERRABLE INITIALLY IMMEDIATE
+  )} {}
+  22143 { CREATE TABLE t1(a 
+    REFERENCES t2 MATCH PARTIAL 
+    ON DELETE SET NULL ON UPDATE RESTRICT NOT DEFERRABLE
+  )} {}
+  22156 { CREATE TABLE t1(a 
+    REFERENCES t2 MATCH PARTIAL 
+    ON DELETE SET NULL ON UPDATE NO ACTION DEFERRABLE
+  )} {}
+  22327 { CREATE TABLE t1(a 
+    REFERENCES t2 MATCH PARTIAL ON DELETE CASCADE ON UPDATE SET DEFAULT 
+  )} {}
+  22663 { CREATE TABLE t1(a 
+    REFERENCES t2 MATCH PARTIAL NOT DEFERRABLE
+  )} {}
+  23236 { CREATE TABLE t1(a 
+    REFERENCES t2 MATCH SIMPLE 
+    ON DELETE SET DEFAULT ON UPDATE CASCADE DEFERRABLE
+  )} {}
+  24155 { CREATE TABLE t1(a 
+    REFERENCES t2 MATCH STICK 
+    ON DELETE SET NULL ON UPDATE NO ACTION DEFERRABLE INITIALLY IMMEDIATE
+  )} {}
+  24522 { CREATE TABLE t1(a 
+    REFERENCES t2 MATCH STICK 
+    ON DELETE NO ACTION ON UPDATE SET DEFAULT NOT DEFERRABLE INITIALLY IMMEDIATE
+  )} {}
+  24625 { CREATE TABLE t1(a 
+    REFERENCES t2 MATCH STICK 
+    ON UPDATE SET DEFAULT DEFERRABLE INITIALLY IMMEDIATE
+  )} {}
+  25454 { CREATE TABLE t1(a 
+    REFERENCES t2 
+    ON DELETE RESTRICT ON UPDATE NO ACTION DEFERRABLE INITIALLY DEFERRED
+  )} {}
+}
+
+finish_test
