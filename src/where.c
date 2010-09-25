@@ -1706,7 +1706,7 @@ static void bestAutomaticIndex(
 
   assert( pParse->nQueryLoop >= (double)1 );
   pTable = pSrc->pTab;
-  nTableRow = pTable->pIndex ? pTable->pIndex->aiRowEst[0] : 1000000;
+  nTableRow = pTable->nRowEst;
   logN = estLog(nTableRow);
   costTempIdx = 2*logN*(nTableRow/pParse->nQueryLoop + 1);
   if( costTempIdx>=pCost->rCost ){
@@ -2513,22 +2513,13 @@ static void bestBtreeIndex(
     sPk.nColumn = 1;
     sPk.aiColumn = &aiColumnPk;
     sPk.aiRowEst = aiRowEstPk;
-    aiRowEstPk[1] = 1;
     sPk.onError = OE_Replace;
     sPk.pTable = pSrc->pTab;
+    aiRowEstPk[0] = pSrc->pTab->nRowEst;
+    aiRowEstPk[1] = 1;
     pFirst = pSrc->pTab->pIndex;
     if( pSrc->notIndexed==0 ){
       sPk.pNext = pFirst;
-    }
-    /* The aiRowEstPk[0] is an estimate of the total number of rows in the
-    ** table.  Get this information from the ANALYZE information if it is
-    ** available.  If not available, assume the table 1 million rows in size.
-    */
-    if( pFirst ){
-      assert( pFirst->aiRowEst!=0 ); /* Allocated together with pFirst */
-      aiRowEstPk[0] = pFirst->aiRowEst[0];
-    }else{
-      aiRowEstPk[0] = 1000000;
     }
     pProbe = &sPk;
     wsFlagMask = ~(
@@ -4103,7 +4094,7 @@ WhereInfo *sqlite3WhereBegin(
     **
     ** The best strategy is to iterate through table t1 first. However it
     ** is not possible to determine this with a simple greedy algorithm.
-    ** However, since the cost of a linear scan through table t2 is the same 
+    ** Since the cost of a linear scan through table t2 is the same 
     ** as the cost of a linear scan through table t1, a simple greedy 
     ** algorithm may choose to use t2 for the outer loop, which is a much
     ** costlier approach.

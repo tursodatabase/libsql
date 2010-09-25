@@ -802,6 +802,7 @@ void sqlite3StartTable(
   pTable->iPKey = -1;
   pTable->pSchema = db->aDb[iDb].pSchema;
   pTable->nRef = 1;
+  pTable->nRowEst = 1000000;
   assert( pParse->pNewTable==0 );
   pParse->pNewTable = pTable;
 
@@ -2830,14 +2831,14 @@ exit_create_index:
 void sqlite3DefaultRowEst(Index *pIdx){
   unsigned *a = pIdx->aiRowEst;
   int i;
+  unsigned n;
   assert( a!=0 );
-  a[0] = 1000000;
-  for(i=pIdx->nColumn; i>=5; i--){
-    a[i] = 5;
-  }
-  while( i>=1 ){
-    a[i] = 11 - i;
-    i--;
+  a[0] = pIdx->pTable->nRowEst;
+  if( a[0]<10 ) a[0] = 10;
+  n = 10;
+  for(i=1; i<=pIdx->nColumn; i++){
+    a[i] = n;
+    if( n>5 ) n--;
   }
   if( pIdx->onError!=OE_None ){
     a[pIdx->nColumn] = 1;
