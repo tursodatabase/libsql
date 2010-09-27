@@ -2235,73 +2235,6 @@ static int usedAsColumnCache(Parse *pParse, int iFrom, int iTo){
 #endif /* SQLITE_DEBUG || SQLITE_COVERAGE_TEST */
 
 /*
-** If the last instruction coded is an ephemeral copy of any of
-** the registers in the nReg registers beginning with iReg, then
-** convert the last instruction from OP_SCopy to OP_Copy.
-*/
-void sqlite3ExprHardCopy(Parse *pParse, int iReg, int nReg){
-  VdbeOp *pOp;
-  Vdbe *v;
-
-  assert( pParse->db->mallocFailed==0 );
-  v = pParse->pVdbe;
-  assert( v!=0 );
-  pOp = sqlite3VdbeGetOp(v, -1);
-  assert( pOp!=0 );
-  if( pOp->opcode==OP_SCopy && pOp->p1>=iReg && pOp->p1<iReg+nReg ){
-    pOp->opcode = OP_Copy;
-  }
-}
-
-/*
-** Generate code to store the value of the iAlias-th alias in register
-** target.  The first time this is called, pExpr is evaluated to compute
-** the value of the alias.  The value is stored in an auxiliary register
-** and the number of that register is returned.  On subsequent calls,
-** the register number is returned without generating any code.
-**
-** Note that in order for this to work, code must be generated in the
-** same order that it is executed.
-**
-** Aliases are numbered starting with 1.  So iAlias is in the range
-** of 1 to pParse->nAlias inclusive.  
-**
-** pParse->aAlias[iAlias-1] records the register number where the value
-** of the iAlias-th alias is stored.  If zero, that means that the
-** alias has not yet been computed.
-*/
-static int codeAlias(Parse *pParse, int iAlias, Expr *pExpr, int target){
-#if 0
-  sqlite3 *db = pParse->db;
-  int iReg;
-  if( pParse->nAliasAlloc<pParse->nAlias ){
-    pParse->aAlias = sqlite3DbReallocOrFree(db, pParse->aAlias,
-                                 sizeof(pParse->aAlias[0])*pParse->nAlias );
-    testcase( db->mallocFailed && pParse->nAliasAlloc>0 );
-    if( db->mallocFailed ) return 0;
-    memset(&pParse->aAlias[pParse->nAliasAlloc], 0,
-           (pParse->nAlias-pParse->nAliasAlloc)*sizeof(pParse->aAlias[0]));
-    pParse->nAliasAlloc = pParse->nAlias;
-  }
-  assert( iAlias>0 && iAlias<=pParse->nAlias );
-  iReg = pParse->aAlias[iAlias-1];
-  if( iReg==0 ){
-    if( pParse->iCacheLevel>0 ){
-      iReg = sqlite3ExprCodeTarget(pParse, pExpr, target);
-    }else{
-      iReg = ++pParse->nMem;
-      sqlite3ExprCode(pParse, pExpr, iReg);
-      pParse->aAlias[iAlias-1] = iReg;
-    }
-  }
-  return iReg;
-#else
-  UNUSED_PARAMETER(iAlias);
-  return sqlite3ExprCodeTarget(pParse, pExpr, target);
-#endif
-}
-
-/*
 ** Generate code into the current Vdbe to evaluate the given
 ** expression.  Attempt to store the results in register "target".
 ** Return the register where results are stored.
@@ -2409,7 +2342,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       break;
     }
     case TK_AS: {
-      inReg = codeAlias(pParse, pExpr->iTable, pExpr->pLeft, target);
+      inReg = sqlite3ExprCodeTarget(pParse, pExpr->pLeft, target);
       break;
     }
 #ifndef SQLITE_OMIT_CAST
@@ -3112,17 +3045,12 @@ int sqlite3ExprCodeExprList(
   assert( target>0 );
   n = pList->nExpr;
   for(pItem=pList->a, i=0; i<n; i++, pItem++){
-    if( pItem->iAlias ){
-      int iReg = codeAlias(pParse, pItem->iAlias, pItem->pExpr, target+i);
-      Vdbe *v = sqlite3GetVdbe(pParse);
-      if( iReg!=target+i ){
-        sqlite3VdbeAddOp2(v, OP_SCopy, iReg, target+i);
-      }
-    }else{
-      sqlite3ExprCode(pParse, pItem->pExpr, target+i);
-    }
-    if( doHardCopy && !pParse->db->mallocFailed ){
-      sqlite3ExprHardCopy(pParse, target, n);
+    Expr *pExpr = pItem->pExpr;
+    int inReg = sqlite3ExprCodeTarget(pParse, pExpr, target+i);
+    assert( pParse->pVdbe || pParse->db->mallocFailed );
+    if( inReg!=target+i && pParse->pVdbe ){
+      sqlite3VdbeAddOp2(pParse->pVdbe, doHardCopy ? OP_Copy : OP_SCopy,
+                        inReg, target+i);
     }
   }
   return n;
