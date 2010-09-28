@@ -189,14 +189,14 @@ do_test e_vacuum-1.3.3.2 {
 # EVIDENCE-OF: R-38001-03952 VACUUM only works on the main database. It
 # is not possible to VACUUM an attached database file.
 forcedelete test.db2
-create_db
+create_db { PRAGMA auto_vacuum = NONE }
 do_execsql_test e_vacuum-2.1.1 {
   ATTACH 'test.db2' AS aux;
   PRAGMA aux.page_size = 1024;
   CREATE TABLE aux.t3 AS SELECT * FROM t1;
   DELETE FROM t3;
 } {}
-do_test e_vacuum-2.1.2 { expr { ([file size test.db2] / 1024)>50 } } 1
+set original_size [file size test.db2]
 
 # Try everything we can think of to get the aux database vacuumed:
 do_execsql_test e_vacuum-2.1.3 { VACUUM } {}
@@ -204,7 +204,7 @@ do_execsql_test e_vacuum-2.1.4 { VACUUM aux } {}
 do_execsql_test e_vacuum-2.1.5 { VACUUM 'test.db2' } {}
 
 # Despite our efforts, space in the aux database has not been reclaimed:
-do_test e_vacuum-2.1.6 { expr { ([file size test.db2] / 1024)>50 } } 1
+do_test e_vacuum-2.1.6 { expr {[file size test.db2]==$::original_size} } 1
 
 # EVIDENCE-OF: R-17495-17419 The VACUUM command may change the ROWIDs of
 # entries in any tables that do not have an explicit INTEGER PRIMARY
