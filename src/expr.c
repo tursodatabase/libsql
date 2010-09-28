@@ -2867,10 +2867,14 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
   int inReg;
 
   assert( target>0 && target<=pParse->nMem );
-  inReg = sqlite3ExprCodeTarget(pParse, pExpr, target);
-  assert( pParse->pVdbe || pParse->db->mallocFailed );
-  if( inReg!=target && pParse->pVdbe ){
-    sqlite3VdbeAddOp2(pParse->pVdbe, OP_SCopy, inReg, target);
+  if( pExpr && pExpr->op==TK_REGISTER ){
+    sqlite3VdbeAddOp2(pParse->pVdbe, OP_Copy, pExpr->iTable, target);
+  }else{
+    inReg = sqlite3ExprCodeTarget(pParse, pExpr, target);
+    assert( pParse->pVdbe || pParse->db->mallocFailed );
+    if( inReg!=target && pParse->pVdbe ){
+      sqlite3VdbeAddOp2(pParse->pVdbe, OP_SCopy, inReg, target);
+    }
   }
   return target;
 }

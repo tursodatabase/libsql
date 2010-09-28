@@ -1142,7 +1142,7 @@ case OP_ResultRow: {
   pMem = p->pResultSet = &aMem[pOp->p1];
   for(i=0; i<pOp->p2; i++){
     assert( memIsValid(&pMem[i]) );
-    memAboutToChange(p, &pMem[i]);
+    Deephemeralize(&pMem[i]);
     sqlite3VdbeMemNulTerminate(&pMem[i]);
     sqlite3VdbeMemStoreType(&pMem[i]);
     REGISTER_TRACE(pOp->p1+i, &pMem[i]);
@@ -1368,6 +1368,9 @@ case OP_Function: {
   n = pOp->p5;
   apVal = p->apArg;
   assert( apVal || n==0 );
+  assert( pOp->p3>0 && pOp->p3<=p->nMem );
+  pOut = &aMem[pOp->p3];
+  memAboutToChange(p, pOut);
 
   assert( n==0 || (pOp->p2>0 && pOp->p2+n<=p->nMem+1) );
   assert( pOp->p3<pOp->p2 || pOp->p3>=pOp->p2+n );
@@ -1375,7 +1378,7 @@ case OP_Function: {
   for(i=0; i<n; i++, pArg++){
     assert( memIsValid(pArg) );
     apVal[i] = pArg;
-    memAboutToChange(p, pArg);
+    Deephemeralize(pArg);
     sqlite3VdbeMemStoreType(pArg);
     REGISTER_TRACE(pOp->p2+i, pArg);
   }
@@ -1389,9 +1392,6 @@ case OP_Function: {
     ctx.pFunc = ctx.pVdbeFunc->pFunc;
   }
 
-  assert( pOp->p3>0 && pOp->p3<=p->nMem );
-  pOut = &aMem[pOp->p3];
-  memAboutToChange(p, pOut);
   ctx.s.flags = MEM_Null;
   ctx.s.db = db;
   ctx.s.xDel = 0;

@@ -132,6 +132,9 @@ int sqlite3VdbeMemMakeWriteable(Mem *pMem){
     pMem->z[pMem->n] = 0;
     pMem->z[pMem->n+1] = 0;
     pMem->flags |= MEM_Term;
+#ifdef SQLITE_DEBUG
+    pMem->pScopyFrom = 0;
+#endif
   }
 
   return SQLITE_OK;
