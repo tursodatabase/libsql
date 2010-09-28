@@ -3484,7 +3484,7 @@ case OP_Found: {        /* jump, in3 */
       pIdxKey = &r;
     }else{
       assert( pIn3->flags & MEM_Blob );
-      ExpandBlob(pIn3);
+      assert( (pIn3->flags & MEM_Zero)==0 );  /* zeroblobs already expanded */
       pIdxKey = sqlite3VdbeRecordUnpack(pC->pKeyInfo, pIn3->n, pIn3->z,
                                         aTempRec, sizeof(aTempRec));
       if( pIdxKey==0 ){

@@ -3052,8 +3052,7 @@ int sqlite3ExprCodeExprList(
   int i, n;
   assert( pList!=0 );
   assert( target>0 );
-  assert( pParse->pVdbe || pParse->db->mallocFailed );
-  if( pParse->pVdbe==0 ) return 0;
+  assert( pParse->pVdbe!=0 );  /* Never gets this far otherwise */
   n = pList->nExpr;
   for(pItem=pList->a, i=0; i<n; i++, pItem++){
     Expr *pExpr = pItem->pExpr;
