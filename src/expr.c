@@ -2774,6 +2774,11 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         opCompare.op = TK_EQ;
         opCompare.pLeft = &cacheX;
         pTest = &opCompare;
+        /* Ticket b351d95f9cd5ef17e9d9dbae18f5ca8611190001:
+        ** The value in regFree1 might get SCopy-ed into the file result.
+        ** So make sure that the regFree1 register is not reused for other
+        ** purposes and possibly overwritten.  */
+        regFree1 = 0;
       }
       for(i=0; i<nExpr; i=i+2){
         sqlite3ExprCachePush(pParse);
