@@ -113,7 +113,7 @@ static void analyzeOneTable(
   int i;                       /* Loop counter */
   int topOfLoop;               /* The top of the loop */
   int endOfLoop;               /* The end of the loop */
-  int addr;                    /* The address of an instruction */
+  int addr = 0;                /* The address of an instruction */
   int jZeroRows = 0;           /* Jump from here if number of rows is zero */
   int iDb;                     /* Index of database containing pTab */
   int regTabname = iMem++;     /* Register containing table name */
