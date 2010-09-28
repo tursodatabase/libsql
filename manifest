@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Update\sthe\sversion\snumber\sto\s3.7.3\sin\spreparation\sfor\sthe\snext\srelease.
-D 2010-09-28T07:24:50
+C Updates\sto\sthe\ssqlite3_get_table()\sdocumentation.
+D 2010-09-28T13:12:51
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -178,7 +178,7 @@ F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c cf3013b1953348c7c6ff9636342e87b9fda68466
 F src/shell.c 8517fc1f9c59ae4007e6cc8b9af91ab231ea2056
-F src/sqlite.h.in dae3f74d7b2b516967ede39b8e503718b571d9da
+F src/sqlite.h.in 4d59b9292a52d5601a050e29a3508e5c0a2821fa
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
 F src/sqliteInt.h 224c8e31f88489ea015c695bcf1877f3701b404c
 F src/sqliteLimit.h a17dcd3fb775d63b64a43a55c54cb282f9726f44
@@ -871,14 +871,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1f7ef0af8d9e41cd41f9046d198132eabd89ab18
-R c1de76a1e20bf82edb6f300a802e755a
+P 88108fff672b6012ffe87ba4b1efe6d5a07037d1
+R 62eb83ce7402078eda4d46a3720d1bc0
 U drh
-Z cfe1b7fddad23a17ff19d611bd0a56de
+Z e1fc9f70b217665fc93baf8f4f7536cd
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMoZhFoxKgR168RlERAg8aAJ4muhcUyw4IlMoQ+uexHKZh/O9mPACeLhtt
-jdkGg7eouzypFikYLrYAMrI=
-=ICt4
+iD8DBQFMoenWoxKgR168RlERAp4pAJ0T37hXwFJQ2aW/fE3pt0QiFBp7lwCcCaGF
+XLDtZ232M8EgPmyFmr14UCk=
+=+VhH
 -----END PGP SIGNATURE-----

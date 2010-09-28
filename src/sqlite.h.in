@@ -1731,6 +1731,9 @@ int sqlite3_busy_timeout(sqlite3*, int ms);
 /*
 ** CAPI3REF: Convenience Routines For Running Queries
 **
+** This is a legacy interface that is preserved for backwards compatibility.
+** Use of this interface is not recommended.
+**
 ** Definition: A <b>result table</b> is memory data structure created by the
 ** [sqlite3_get_table()] interface.  A result table records the
 ** complete query results from one or more queries.
@@ -1751,7 +1754,7 @@ int sqlite3_busy_timeout(sqlite3*, int ms);
 ** It is not safe to pass a result table directly to [sqlite3_free()].
 ** A result table should be deallocated using [sqlite3_free_table()].
 **
-** As an example of the result table format, suppose a query result
+** ^(As an example of the result table format, suppose a query result
 ** is as follows:
 **
 ** <blockquote><pre>
@@ -1775,7 +1778,7 @@ int sqlite3_busy_timeout(sqlite3*, int ms);
 **        azResult&#91;5] = "28";
 **        azResult&#91;6] = "Cindy";
 **        azResult&#91;7] = "21";
-** </pre></blockquote>
+** </pre></blockquote>)^
 **
 ** ^The sqlite3_get_table() function evaluates one or more
 ** semicolon-separated SQL statements in the zero-terminated UTF-8
@@ -1783,19 +1786,19 @@ int sqlite3_busy_timeout(sqlite3*, int ms);
 ** pointer given in its 3rd parameter.
 **
 ** After the application has finished with the result from sqlite3_get_table(),
-** it should pass the result table pointer to sqlite3_free_table() in order to
+** it must pass the result table pointer to sqlite3_free_table() in order to
 ** release the memory that was malloced.  Because of the way the
 ** [sqlite3_malloc()] happens within sqlite3_get_table(), the calling
 ** function must not try to call [sqlite3_free()] directly.  Only
 ** [sqlite3_free_table()] is able to release the memory properly and safely.
 **
-** ^(The sqlite3_get_table() interface is implemented as a wrapper around
+** The sqlite3_get_table() interface is implemented as a wrapper around
 ** [sqlite3_exec()].  The sqlite3_get_table() routine does not have access
 ** to any internal data structures of SQLite.  It uses only the public
 ** interface defined here.  As a consequence, errors that occur in the
 ** wrapper layer outside of the internal [sqlite3_exec()] call are not
 ** reflected in subsequent calls to [sqlite3_errcode()] or
-** [sqlite3_errmsg()].)^
+** [sqlite3_errmsg()].
 */
 int sqlite3_get_table(
   sqlite3 *db,          /* An open database */
