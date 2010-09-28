@@ -1,14 +1,14 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Merge\sfixes\sfor\sticket\s[b351d95f9cd5ef17e9d9dbae18f5ca8611190001]\sinto\s\nthe\strunk.
-D 2010-09-28T07:14:03
+C Update\sthe\sversion\snumber\sto\s3.7.3\sin\spreparation\sfor\sthe\snext\srelease.
+D 2010-09-28T07:24:50
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.vxworks c85ec1d8597fe2f7bc225af12ac1666e21379151
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
-F VERSION 6062e0026a5ab33dabb4efae38604d40115819ec
+F VERSION d4880b389d411f2bc7e78f62049da2a2b89ebab3
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 17dc593f791f874d2c23a0f9360850ded0286531
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -871,14 +871,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 53f5cfe11516d0496c7760378b6305c3088d479f 88b84bf18a4b27626f8a0a2d313706ddd4f13749
-R 37b3df62f8033aa4a27c3e8908502e88
+P 1f7ef0af8d9e41cd41f9046d198132eabd89ab18
+R c1de76a1e20bf82edb6f300a802e755a
 U drh
-Z 5aec910a47bbe2ec6ed86e77486c7a25
+Z cfe1b7fddad23a17ff19d611bd0a56de
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMoZXEoxKgR168RlERAhhPAJ4jyC+TGxv3hBPL9D1deKDUOxZxAwCeMIr1
-zHDW5Z+/417ZSlRcozRFPLA=
-=wL0e
+iD8DBQFMoZhFoxKgR168RlERAg8aAJ4muhcUyw4IlMoQ+uexHKZh/O9mPACeLhtt
+jdkGg7eouzypFikYLrYAMrI=
+=ICt4
 -----END PGP SIGNATURE-----
