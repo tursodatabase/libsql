@@ -136,8 +136,8 @@ static void analyzeOneTable(
   if( v==0 || NEVER(pTab==0) ){
     return;
   }
-  if( pTab->pSelect ){
-    /* Do not gather statistics on views */
+  if( pTab->tnum==0 ){
+    /* Do not gather statistics on views or virtual tables */
     return;
   }
   if( memcmp(pTab->zName, "sqlite_", 7)==0 ){
