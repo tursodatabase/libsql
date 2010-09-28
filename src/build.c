@@ -776,17 +776,18 @@ void sqlite3StartTable(
   ** collisions.
   */
   if( !IN_DECLARE_VTAB ){
+    char *zDb = db->aDb[iDb].zName;
     if( SQLITE_OK!=sqlite3ReadSchema(pParse) ){
       goto begin_table_error;
     }
-    pTable = sqlite3FindTable(db, zName, db->aDb[iDb].zName);
+    pTable = sqlite3FindTable(db, zName, zDb);
     if( pTable ){
       if( !noErr ){
         sqlite3ErrorMsg(pParse, "table %T already exists", pName);
       }
       goto begin_table_error;
     }
-    if( sqlite3FindIndex(db, zName, 0)!=0 && (iDb==0 || !db->init.busy) ){
+    if( sqlite3FindIndex(db, zName, zDb)!=0 && (iDb==0 || !db->init.busy) ){
       sqlite3ErrorMsg(pParse, "there is already an index named %s", zName);
       goto begin_table_error;
     }

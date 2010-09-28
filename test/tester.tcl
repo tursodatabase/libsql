@@ -351,6 +351,7 @@ proc do_catchsql_test {testname sql result} {
 #   -errorformat FMTSTRING
 #   -count
 #   -query SQL
+#   -tclquery TCL
 #   -repair TCL
 #
 proc do_select_tests {prefix args} {
@@ -360,14 +361,16 @@ proc do_select_tests {prefix args} {
 
   set errfmt ""
   set countonly 0
-  set query ""
+  set tclquery ""
   set repair ""
 
   for {set i 0} {$i < [llength $switches]} {incr i} {
     set s [lindex $switches $i]
     set n [string length $s]
     if {$n>=2 && [string equal -length $n $s "-query"]} {
-      set query [lindex $switches [incr i]]
+      set tclquery [list execsql [lindex $switches [incr i]]]
+    } elseif {$n>=2 && [string equal -length $n $s "-tclquery"]} {
+      set tclquery [lindex $switches [incr i]]
     } elseif {$n>=2 && [string equal -length $n $s "-errorformat"]} {
       set errfmt [lindex $switches [incr i]]
     } elseif {$n>=2 && [string equal -length $n $s "-repair"]} {
@@ -389,12 +392,10 @@ proc do_select_tests {prefix args} {
 
   eval $repair
   foreach {tn sql res} $testlist {
-    if {$query != ""} {
+    if {$tclquery != ""} {
       execsql $sql
-      set sql $query
-    }
-
-    if {$countonly} {
+      uplevel do_test ${prefix}.$tn [list $tclquery] [list [list {*}$res]]
+    } elseif {$countonly} {
       set nRow 0
       db eval $sql {incr nRow}
       uplevel do_test ${prefix}.$tn [list [list set {} $nRow]] [list $res]
@@ -671,23 +672,26 @@ proc stepsql {dbptr sql} {
 
 # Delete a file or directory
 #
-proc forcedelete {filename} {
-  # On windows, sometimes even a [file delete -force] can fail just after
-  # a file is closed. The cause is usually "tag-alongs" - programs like
-  # anti-virus software, automatic backup tools and various explorer
-  # extensions that keep a file open a little longer than we expect, causing
-  # the delete to fail.
-  #
-  # The solution is to wait a short amount of time before retrying the delete.
-  #
-  set nRetry  50                  ;# Maximum number of retries.
-  set nDelay 100                  ;# Delay in ms before retrying.
-  for {set i 0} {$i<$nRetry} {incr i} {
-    set rc [catch {file delete -force $filename} msg]
-    if {$rc==0} break
-    after $nDelay
+proc forcedelete {args} {
+  foreach filename $args {
+    # On windows, sometimes even a [file delete -force] can fail just after
+    # a file is closed. The cause is usually "tag-alongs" - programs like
+    # anti-virus software, automatic backup tools and various explorer
+    # extensions that keep a file open a little longer than we expect, causing
+    # the delete to fail.
+    #
+    # The solution is to wait a short amount of time before retrying the 
+    # delete.
+    #
+    set nRetry  50                  ;# Maximum number of retries.
+    set nDelay 100                  ;# Delay in ms before retrying.
+    for {set i 0} {$i<$nRetry} {incr i} {
+      set rc [catch {file delete -force $filename} msg]
+      if {$rc==0} break
+      after $nDelay
+    }
+    if {$rc} { error $msg }
   }
-  if {$rc} { error $msg }
 }
 
 # Do an integrity check of the entire database
@@ -1188,9 +1192,9 @@ proc drop_all_tables {{db db}} {
     }
     foreach {t type} [$db eval "
       SELECT name, type FROM $master
-      WHERE type IN('table', 'view') AND name NOT like 'sqlite_%'
+      WHERE type IN('table', 'view') AND name NOT LIKE 'sqliteX_%' ESCAPE 'X'
     "] {
-      $db eval "DROP $type $t"
+      $db eval "DROP $type \"$t\""
     }
   }
   ifcapable trigger&&foreignkey {

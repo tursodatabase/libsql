@@ -1,5 +1,5 @@
-C Disallow\sstatements\sof\sthe\sform\s"CREATE\sTEMP\sTABLE\smain.t1\s...".
-D 2010-09-28T15:55:48
+C Add\stests\sto\se_createtable.test.\sAllow\sa\stable\sto\sbe\screated\sif\sthere\sis\san\sindex\sof\sthe\ssame\sname\sin\sa\sdifferent\sattached\sdatabase.
+D 2010-09-28T17:37:28
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -121,7 +121,7 @@ F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
 F src/btree.c d878577184112d982d00ea05afcc7487cd9f06f5
 F src/btree.h 2d1a83ad509047e8cc314fda7e054f99ff52414d
 F src/btreeInt.h c424f2f131cc61ddf130f9bd736b3df12c8a51f0
-F src/build.c 907385634c73be72acabfd902dfa6f65a429d8c0
+F src/build.c 0451673aeae6606d349c8760a0606ab9523a6fb4
 F src/callback.c a1d1b1c9c85415dff013af033e2fed9c8382d33b
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 4f3aadad62c6c9f0d4e5a96718516ac4e3c598df
@@ -348,7 +348,7 @@ F test/descidx2.test 9f1a0c83fd57f8667c82310ca21b30a350888b5d
 F test/descidx3.test fe720e8b37d59f4cef808b0bf4e1b391c2e56b6f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
-F test/e_createtable.test 2b3257a5b74a4993574f321fb85f063ce1d38241
+F test/e_createtable.test 089acf08bb2ecae3858f1ecdc2fe1705e906a408
 F test/e_delete.test 55d868b647acc091c261a10b9b0cb0ab660a6acb
 F test/e_expr.test 164e87c1d7b40ceb47c57c3bffa384c81d009aa7
 F test/e_fkey.test 6721a741c6499b3ab7e5385923233343c8f1ad05
@@ -642,7 +642,7 @@ F test/tclsqlite.test 8c154101e704170c2be10f137a5499ac2c6da8d3
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test f42121a0d29a62f00f93274464164177ab1cc24a
 F test/temptrigger.test b0273db072ce5f37cf19140ceb1f0d524bbe9f05
-F test/tester.tcl 5a9b8727747f76c18e3a1bf3f0ed16f57a546265
+F test/tester.tcl 74d64ca2730b512b2adaa5e74a07533f7ac6ad9e
 F test/thread001.test a3e6a7254d1cb057836cb3145b60c10bf5b7e60f
 F test/thread002.test afd20095e6e845b405df4f2c920cb93301ca69db
 F test/thread003.test b824d4f52b870ae39fc5bae4d8070eca73085dca
@@ -868,7 +868,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 890816c52d688f01be9a8abd8b4c9375eed4de7e
-R bb6d7614396bfdf34c844eda2125719d
+P dd1b34bab7edaaedd985882f6e16b16940a46d38
+R 9a005e09da83e134e84a9a0916725a2c
 U dan
-Z 79640b932b15b5e171373f446f6cc41b
+Z d38832569685f81301ba56b0f91fcdf4

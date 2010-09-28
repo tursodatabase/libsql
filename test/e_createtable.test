@@ -16,6 +16,16 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# Test organization:
+#
+#   e_createtable-0.*: Test that the syntax diagrams are correct.
+#
+#   e_createtable-1.*: Test statements related to table and database names, 
+#       the TEMP and TEMPORARY keywords, and the IF NOT EXISTS clause.
+#
+#
+#
+
 proc do_createtable_tests {nm args} {
   uplevel do_select_tests [list e_createtable-$nm] $args
 }
@@ -308,4 +318,272 @@ do_createtable_tests 0.6.1 -repair {
   )} {}
 }
 
+#-------------------------------------------------------------------------
+# Test cases e_createtable-1.* - test statements related to table and
+# database names, the TEMP and TEMPORARY keywords, and the IF NOT EXISTS
+# clause.
+#
+drop_all_tables
+forcedelete test.db2 test.db3
+
+do_execsql_test e_createtable-1.0 {
+  ATTACH 'test.db2' AS auxa;
+  ATTACH 'test.db3' AS auxb;
+} {}
+
+# EVIDENCE-OF: R-17899-04554 Table names that begin with "sqlite_" are
+# reserved for internal use. It is an error to attempt to create a table
+# with a name that starts with "sqlite_".
+#
+do_createtable_tests 1.1.1 -error {
+  object name reserved for internal use: %s
+} {
+  1    "CREATE TABLE sqlite_abc(a, b, c)"        sqlite_abc
+  2    "CREATE TABLE temp.sqlite_helloworld(x)"  sqlite_helloworld
+  3    {CREATE TABLE auxa."sqlite__"(x, y)}      sqlite__
+  4    {CREATE TABLE auxb."sqlite_"(z)}          sqlite_
+  5    {CREATE TABLE "SQLITE_TBL"(z)}            SQLITE_TBL
+}
+do_createtable_tests 1.1.2 {
+  1    "CREATE TABLE sqlit_abc(a, b, c)"         {}
+  2    "CREATE TABLE temp.sqlitehelloworld(x)"   {}
+  3    {CREATE TABLE auxa."sqlite"(x, y)}        {}
+  4    {CREATE TABLE auxb."sqlite-"(z)}          {}
+  5    {CREATE TABLE "SQLITE-TBL"(z)}            {}
+}
+
+
+proc table_list {} {
+  set res [list]
+  db eval { pragma database_list } a {
+    set dbname $a(name)
+    set master $a(name).sqlite_master
+    if {$dbname == "temp"} { set master sqlite_temp_master }
+    lappend res $dbname [
+      db eval "SELECT DISTINCT tbl_name FROM $master ORDER BY tbl_name"
+    ]
+  }
+  set res
+}
+
+# EVIDENCE-OF: R-10195-31023 If a <database-name> is specified, it
+# must be either "main", "temp", or the name of an attached database.
+#
+# EVIDENCE-OF: R-39822-07822 In this case the new table is created in
+# the named database.
+#
+#   Test cases 1.2.* test the first of the two requirements above. The
+#   second is verified by cases 1.3.*.
+#
+do_createtable_tests 1.2.1 -error {
+  unknown database %s
+} {
+  1    "CREATE TABLE george.t1(a, b)"            george
+  2    "CREATE TABLE _.t1(a, b)"                 _
+}
+do_createtable_tests 1.2.2 {
+  1    "CREATE TABLE main.abc(a, b, c)"          {}
+  2    "CREATE TABLE temp.helloworld(x)"         {}
+  3    {CREATE TABLE auxa."t 1"(x, y)}           {}
+  4    {CREATE TABLE auxb.xyz(z)}                {}
+}
+drop_all_tables
+do_createtable_tests 1.3 -tclquery {
+  unset -nocomplain X
+  array set X [table_list]
+  list $X(main) $X(temp) $X(auxa) $X(auxb)
+} {
+  1    "CREATE TABLE main.abc(a, b, c)"  {abc {} {} {}}
+  2    "CREATE TABLE main.t1(a, b, c)"   {{abc t1} {} {} {}}
+  3    "CREATE TABLE temp.tmp(a, b, c)"  {{abc t1} tmp {} {}}
+  4    "CREATE TABLE auxb.tbl(x, y)"     {{abc t1} tmp {} tbl}
+  5    "CREATE TABLE auxb.t1(k, v)"      {{abc t1} tmp {} {t1 tbl}}
+  6    "CREATE TABLE auxa.next(c, d)"    {{abc t1} tmp next {t1 tbl}}
+}
+
+# EVIDENCE-OF: R-18895-27365 If the "TEMP" or "TEMPORARY" keyword occurs
+# between the "CREATE" and "TABLE" then the new table is created in the
+# temp database.
+#
+drop_all_tables
+do_createtable_tests 1.4 -tclquery {
+  unset -nocomplain X
+  array set X [table_list]
+  list $X(main) $X(temp) $X(auxa) $X(auxb)
+} {
+  1    "CREATE TEMP TABLE t1(a, b)"      {{} t1 {} {}}
+  2    "CREATE TEMPORARY TABLE t2(a, b)" {{} {t1 t2} {} {}}
+}
+
+# EVIDENCE-OF: R-49439-47561 It is an error to specify both a
+# <database-name> and the TEMP or TEMPORARY keyword, unless the
+# <database-name> is "temp".
+#
+drop_all_tables
+do_createtable_tests 1.5.1 -error {
+  temporary table name must be unqualified
+} {
+  1    "CREATE TEMP TABLE main.t1(a, b)"        {}
+  2    "CREATE TEMPORARY TABLE auxa.t2(a, b)"   {}
+  3    "CREATE TEMP TABLE auxb.t3(a, b)"        {}
+  4    "CREATE TEMPORARY TABLE main.xxx(x)"     {}
+}
+drop_all_tables
+do_createtable_tests 1.5.2 -tclquery {
+  unset -nocomplain X
+  array set X [table_list]
+  list $X(main) $X(temp) $X(auxa) $X(auxb)
+} {
+  1    "CREATE TEMP TABLE temp.t1(a, b)"        {{} t1 {} {}}
+  2    "CREATE TEMPORARY TABLE temp.t2(a, b)"   {{} {t1 t2} {} {}}
+  3    "CREATE TEMP TABLE TEMP.t3(a, b)"        {{} {t1 t2 t3} {} {}}
+  4    "CREATE TEMPORARY TABLE TEMP.xxx(x)"     {{} {t1 t2 t3 xxx} {} {}}
+}
+
+# EVIDENCE-OF: R-00917-09393 If no database name is specified and the
+# TEMP keyword is not present then the table is created in the main
+# database.
+#
+drop_all_tables
+do_createtable_tests 1.6 -tclquery {
+  unset -nocomplain X
+  array set X [table_list]
+  list $X(main) $X(temp) $X(auxa) $X(auxb)
+} {
+  1    "CREATE TABLE t1(a, b)"   {t1 {} {} {}}
+  2    "CREATE TABLE t2(a, b)"   {{t1 t2} {} {} {}}
+  3    "CREATE TABLE t3(a, b)"   {{t1 t2 t3} {} {} {}}
+  4    "CREATE TABLE xxx(x)"     {{t1 t2 t3 xxx} {} {} {}}
+}
+
+drop_all_tables
+do_execsql_test e_createtable-1.7.0 {
+  CREATE TABLE t1(x, y);
+  CREATE INDEX i1 ON t1(x);
+  CREATE VIEW  v1 AS SELECT * FROM t1;
+
+  CREATE TABLE auxa.tbl1(x, y);
+  CREATE INDEX auxa.idx1 ON tbl1(x);
+  CREATE VIEW auxa.view1 AS SELECT * FROM tbl1;
+} {}
+
+# EVIDENCE-OF: R-01232-54838 It is usually an error to attempt to create
+# a new table in a database that already contains a table, index or view
+# of the same name.
+#
+#   Test cases 1.7.1.* verify that creating a table in a database with a
+#   table/index/view of the same name does fail. 1.7.2.* tests that creating
+#   a table with the same name as a table/index/view in a different database
+#   is Ok.
+#
+do_createtable_tests 1.7.1 -error { %s } {
+  1    "CREATE TABLE t1(a, b)"   {{table t1 already exists}}
+  2    "CREATE TABLE i1(a, b)"   {{there is already an index named i1}}
+  3    "CREATE TABLE v1(a, b)"   {{table v1 already exists}}
+  4    "CREATE TABLE auxa.tbl1(a, b)"   {{table tbl1 already exists}}
+  5    "CREATE TABLE auxa.idx1(a, b)"   {{there is already an index named idx1}}
+  6    "CREATE TABLE auxa.view1(a, b)"  {{table view1 already exists}}
+}
+do_createtable_tests 1.7.2 {
+  1    "CREATE TABLE auxa.t1(a, b)"   {}
+  2    "CREATE TABLE auxa.i1(a, b)"   {}
+  3    "CREATE TABLE auxa.v1(a, b)"   {}
+  4    "CREATE TABLE tbl1(a, b)"      {}
+  5    "CREATE TABLE idx1(a, b)"      {}
+  6    "CREATE TABLE view1(a, b)"     {}
+}
+
+# EVIDENCE-OF: R-33917-24086 However, if the "IF NOT EXISTS" clause is
+# specified as part of the CREATE TABLE statement and a table or view of
+# the same name already exists, the CREATE TABLE command simply has no
+# effect (and no error message is returned).
+#
+drop_all_tables
+do_execsql_test e_createtable-1.8.0 {
+  CREATE TABLE t1(x, y);
+  CREATE INDEX i1 ON t1(x);
+  CREATE VIEW  v1 AS SELECT * FROM t1;
+  CREATE TABLE auxa.tbl1(x, y);
+  CREATE INDEX auxa.idx1 ON tbl1(x);
+  CREATE VIEW auxa.view1 AS SELECT * FROM tbl1;
+} {}
+do_createtable_tests 1.8 {
+  1    "CREATE TABLE IF NOT EXISTS t1(a, b)"          {}
+  2    "CREATE TABLE IF NOT EXISTS auxa.tbl1(a, b)"   {}
+  3    "CREATE TABLE IF NOT EXISTS v1(a, b)"          {}
+  4    "CREATE TABLE IF NOT EXISTS auxa.view1(a, b)"  {}
+}
+
+# EVIDENCE-OF: R-16465-40078 An error is still returned if the table
+# cannot be created because of an existing index, even if the "IF NOT
+# EXISTS" clause is specified.
+#
+do_createtable_tests 1.9 -error { %s } {
+  1    "CREATE TABLE IF NOT EXISTS i1(a, b)"   
+       {{there is already an index named i1}}
+  2    "CREATE TABLE IF NOT EXISTS auxa.idx1(a, b)"   
+       {{there is already an index named idx1}}
+}
+
+# EVIDENCE-OF: R-05513-33819 It is not an error to create a table that
+# has the same name as an existing trigger.
+#
+drop_all_tables
+do_execsql_test e_createtable-1.10.0 {
+  CREATE TABLE t1(x, y);
+  CREATE TABLE auxb.t2(x, y);
+
+  CREATE TRIGGER tr1 AFTER INSERT ON t1 BEGIN
+    SELECT 1;
+  END;
+  CREATE TRIGGER auxb.tr2 AFTER INSERT ON t2 BEGIN
+    SELECT 1;
+  END;
+} {}
+do_createtable_tests 1.10 {
+  1    "CREATE TABLE tr1(a, b)"          {}
+  2    "CREATE TABLE tr2(a, b)"          {}
+  3    "CREATE TABLE auxb.tr1(a, b)"     {}
+  4    "CREATE TABLE auxb.tr2(a, b)"     {}
+}
+
+# EVIDENCE-OF: R-22283-14179 Tables are removed using the DROP TABLE
+# statement.
+#
+drop_all_tables
+do_execsql_test e_createtable-1.11.0 {
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(a, b);
+  CREATE TABLE auxa.t3(a, b);
+  CREATE TABLE auxa.t4(a, b);
+} {}
+
+do_execsql_test e_createtable-1.11.1.1 {
+  SELECT * FROM t1;
+  SELECT * FROM t2;
+  SELECT * FROM t3;
+  SELECT * FROM t4;
+} {}
+do_execsql_test  e_createtable-1.11.1.2 { DROP TABLE t1 } {}
+do_catchsql_test e_createtable-1.11.1.3 { 
+  SELECT * FROM t1 
+} {1 {no such table: t1}}
+do_execsql_test  e_createtable-1.11.1.4 { DROP TABLE t3 } {}
+do_catchsql_test e_createtable-1.11.1.5 { 
+  SELECT * FROM t3 
+} {1 {no such table: t3}}
+
+do_execsql_test e_createtable-1.11.2.1 {
+  SELECT name FROM sqlite_master;
+  SELECT name FROM auxa.sqlite_master;
+} {t2 t4}
+do_execsql_test  e_createtable-1.11.2.2 { DROP TABLE t2 } {}
+do_execsql_test  e_createtable-1.11.2.3 { DROP TABLE t4 } {}
+do_execsql_test e_createtable-1.11.2.4 {
+  SELECT name FROM sqlite_master;
+  SELECT name FROM auxa.sqlite_master;
+} {}
+
+
 finish_test
+
