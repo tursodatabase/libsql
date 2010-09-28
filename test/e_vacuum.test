@@ -122,26 +122,28 @@ foreach {tn avmode sz} {
 #   e_vacuum-1.2.4 - Verify that t1 and its indexes are now much 
 #                    less fragmented.
 #
-create_db 
-register_dbstat_vtab db
-do_execsql_test e_vacuum-1.2.1 {
-  DELETE FROM t1 WHERE a%2;
-  INSERT INTO t1 SELECT b, a FROM t2 WHERE a%2;
-  UPDATE t1 SET b=randomblob(600) WHERE (a%2)==0;
-} {}
-
-do_test e_vacuum-1.2.2.1 { expr [fragment_count t1]>100 } 1
-do_test e_vacuum-1.2.2.2 { expr [fragment_count sqlite_autoindex_t1_1]>100 } 1
-do_test e_vacuum-1.2.2.3 { expr [fragment_count sqlite_autoindex_t1_2]>100 } 1
-
-do_execsql_test e_vacuum-1.2.3 { VACUUM } {}
-
-# In practice, the tables and indexes each end up stored as two fragments -
-# one containing the root page and another containing all other pages.
-#
-do_test e_vacuum-1.2.4.1 { fragment_count t1 }                    2
-do_test e_vacuum-1.2.4.2 { fragment_count sqlite_autoindex_t1_1 } 2
-do_test e_vacuum-1.2.4.3 { fragment_count sqlite_autoindex_t1_2 } 2
+ifcapable vtab {
+  create_db 
+  register_dbstat_vtab db
+  do_execsql_test e_vacuum-1.2.1 {
+    DELETE FROM t1 WHERE a%2;
+    INSERT INTO t1 SELECT b, a FROM t2 WHERE a%2;
+    UPDATE t1 SET b=randomblob(600) WHERE (a%2)==0;
+  } {}
+  
+  do_test e_vacuum-1.2.2.1 { expr [fragment_count t1]>100 } 1
+  do_test e_vacuum-1.2.2.2 { expr [fragment_count sqlite_autoindex_t1_1]>100 } 1
+  do_test e_vacuum-1.2.2.3 { expr [fragment_count sqlite_autoindex_t1_2]>100 } 1
+  
+  do_execsql_test e_vacuum-1.2.3 { VACUUM } {}
+  
+  # In practice, the tables and indexes each end up stored as two fragments -
+  # one containing the root page and another containing all other pages.
+  #
+  do_test e_vacuum-1.2.4.1 { fragment_count t1 }                    2
+  do_test e_vacuum-1.2.4.2 { fragment_count sqlite_autoindex_t1_1 } 2
+  do_test e_vacuum-1.2.4.3 { fragment_count sqlite_autoindex_t1_2 } 2
+}
 
 # EVIDENCE-OF: R-20474-44465 Normally, the database page_size and
 # whether or not the database supports auto_vacuum must be configured
