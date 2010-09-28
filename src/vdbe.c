@@ -1143,6 +1143,8 @@ case OP_ResultRow: {
   for(i=0; i<pOp->p2; i++){
     assert( memIsValid(&pMem[i]) );
     Deephemeralize(&pMem[i]);
+    assert( (pMem[i].flags & MEM_Ephem)==0
+            || (pMem[i].flags & (MEM_Str|MEM_Blob))==0 );
     sqlite3VdbeMemNulTerminate(&pMem[i]);
     sqlite3VdbeMemStoreType(&pMem[i]);
     REGISTER_TRACE(pOp->p1+i, &pMem[i]);

@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Test\scase\sand\sfix\sfor\sthe\sspecific\sfailure\sof\sticket\s[b351d95f9cd5ef17e9d9dbae].
-D 2010-09-28T04:14:04
+C Tweaks\sto\shelp\sfacilitate\sstructural\stest\scoverage.
+D 2010-09-28T06:00:48
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -130,7 +130,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 4f3aadad62c6c9f0d4e5a96718516ac4e3c598df
 F src/date.c 5dd8448a0bfea8d31fb14cff487d0c06ff8c8b20
 F src/delete.c 7ed8a8c8b5f748ece92df173d7e0f7810c899ebd
-F src/expr.c 7b45c50fc28df4d97db66900f1f9f04cf6db956d
+F src/expr.c 0525659674b59a642a1a185490ed228cc131fd28
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 17950a28f28b23e8ad3feaac5fc88c324d2f600a
 F src/func.c caa6c5134106d95cced4db80ce3fdcdde4f6c8d4
@@ -228,7 +228,7 @@ F src/update.c 227e6cd512108b84f69421fc6c7aa1b83d60d6e0
 F src/utf.c 1baeeac91707a4df97ccc6141ec0f808278af685
 F src/util.c 5f5f4db4e799224713582bb49124827b16aa8e54
 F src/vacuum.c 924bd1bcee2dfb05376f79845bd3b4cec7b54b2f
-F src/vdbe.c 56e4697a5f5f0fa874c5e4279e3debf2ed2cd4c8
+F src/vdbe.c 4b1e4b893918228fad23cb0560246de5f2150bb0
 F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
 F src/vdbeInt.h 7f4cf1b2b69bef3a432b1f23dfebef57275436b4
 F src/vdbeapi.c 14040ffad59a9961468a457754d30266e71ebb2d
@@ -871,14 +871,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a5eefd5239bf5b4f9d0bdfb312f5b33c0a196178
-R 36856028231c92221c652d29d4159436
+P 57789cfe674dbbd4d5e4663774d1e7c541f7bdc4
+R 679596ccadeda6ed8832f202f65719f1
 U drh
-Z f0e3dfbf24a2c49fc97160b41987fc03
+Z 3ce026c9389fd73dbbccea39f7a202c7
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMoWuSoxKgR168RlERAnDOAJwOLuUj1ayfQejwg1yHNLdmppbBugCfYcmv
-yrg5uSJhrvomshkiSCVsgBk=
-=6EL+
+iD8DBQFMoYSWoxKgR168RlERAky+AJ4ilSIIiHEcqFHusNFadoalL6dzUACfTnbZ
+2+TJRjFJzBkiiYYbyCm9hxM=
+=S4YP
 -----END PGP SIGNATURE-----

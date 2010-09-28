@@ -3052,12 +3052,13 @@ int sqlite3ExprCodeExprList(
   int i, n;
   assert( pList!=0 );
   assert( target>0 );
+  assert( pParse->pVdbe || pParse->db->mallocFailed );
+  if( pParse->pVdbe==0 ) return 0;
   n = pList->nExpr;
   for(pItem=pList->a, i=0; i<n; i++, pItem++){
     Expr *pExpr = pItem->pExpr;
     int inReg = sqlite3ExprCodeTarget(pParse, pExpr, target+i);
-    assert( pParse->pVdbe || pParse->db->mallocFailed );
-    if( inReg!=target+i && pParse->pVdbe ){
+    if( inReg!=target+i ){
       sqlite3VdbeAddOp2(pParse->pVdbe, doHardCopy ? OP_Copy : OP_SCopy,
                         inReg, target+i);
     }
