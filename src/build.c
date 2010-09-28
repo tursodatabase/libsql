@@ -787,7 +787,7 @@ void sqlite3StartTable(
       }
       goto begin_table_error;
     }
-    if( sqlite3FindIndex(db, zName, zDb)!=0 && (iDb==0 || !db->init.busy) ){
+    if( sqlite3FindIndex(db, zName, zDb)!=0 ){
       sqlite3ErrorMsg(pParse, "there is already an index named %s", zName);
       goto begin_table_error;
     }
