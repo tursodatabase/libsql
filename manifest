@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Merge\saccidental\sfork.
-D 2010-09-28T17:37:44
+C Fix\ssome\sproblems\sthat\scan\soccur\sif\sa\strigger\shas\sthe\ssame\sname\sas\sanother\sdatabase\sobject.
+D 2010-09-29T07:16:47
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -114,7 +111,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
-F src/alter.c 8dc27638e7e2553e80b2b621f232be5eb1e85ef3
+F src/alter.c 6a0c176e64a34929a4436048066a84ef4f1445b3
 F src/analyze.c 1ea594a912a14138e20a05db09d9065e46f29a2a
 F src/attach.c 252c4f7e36cc219349451ed63e278c60e80b26f3
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
@@ -124,7 +121,7 @@ F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
 F src/btree.c d878577184112d982d00ea05afcc7487cd9f06f5
 F src/btree.h 2d1a83ad509047e8cc314fda7e054f99ff52414d
 F src/btreeInt.h c424f2f131cc61ddf130f9bd736b3df12c8a51f0
-F src/build.c 0451673aeae6606d349c8760a0606ab9523a6fb4
+F src/build.c e70451e17a84afd84ed03c9b6c9afcf7c353a11e
 F src/callback.c a1d1b1c9c85415dff013af033e2fed9c8382d33b
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 4f3aadad62c6c9f0d4e5a96718516ac4e3c598df
@@ -236,7 +233,7 @@ F src/vdbeaux.c de0b06b11a25293e820a49159eca9f1c51a64716
 F src/vdbeblob.c 258a6010ba7a82b72b327fb24c55790655689256
 F src/vdbemem.c 8ff4f80a35d51f3690c191ec44778ef4bf949ac0
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
-F src/vtab.c 0e8e0cb30dffb078367e843e84e37ef99236c7e4
+F src/vtab.c 6c90e3e65b2f026fc54703a8f3c917155f419d87
 F src/wal.c 7081f148cb52b0cf2280e6384196402dc58130a3
 F src/wal.h 96669b645e27cd5a111ba59f0cae7743a207bc3c
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
@@ -597,6 +594,7 @@ F test/savepoint6.test 76d3948568b2cdc0c13a671cadcae75009b183d6
 F test/schema.test 8f7999be894260f151adf15c2c7540f1c6d6a481
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/schema3.test 1bc1008e1f8cb5654b248c55f27249366eb7ed38
+F test/schema4.test e6a66e20cc69f0e306667c08be7fda3d11707dc5
 F test/securedel.test 328d2921c0ca49bdd3352e516b0377fc07143254
 F test/select1.test f67ca2dfc05df41c7b86eb32ca409b427a5f43b0
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
@@ -871,14 +869,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6251e587403eed822b9011ed25a3a807e8fa2a6f b7a26427afc43c9bbdf365b775379eb57187bc97
-R 2150b8665a4d77e688c620ae74088521
-U drh
-Z 4d3d211ea9c5b7e168f16846e8aa0e05
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMoifwoxKgR168RlERAthxAJ9/+RgDqmxkVpzT2RPcQd3+CRfM5ACcC32K
-xVhEbt+a4I3tqHSMWTuKYOw=
-=ku2K
------END PGP SIGNATURE-----
+P 33c8b9c710db6a1a987c11ab6f3a6bc120257ce9
+R 38dc5bfefb0ef5eb542c703ca4f2f41a
+U dan
+Z 185a440a4979b85c6b3575ef1db29431
