@@ -23,12 +23,38 @@ source $testdir/tester.tcl
 #   e_createtable-1.*: Test statements related to table and database names, 
 #       the TEMP and TEMPORARY keywords, and the IF NOT EXISTS clause.
 #
-#
+#   e_createtable-2.*: Test "CREATE TABLE AS" statements.
 #
 
 proc do_createtable_tests {nm args} {
   uplevel do_select_tests [list e_createtable-$nm] $args
 }
+
+
+#-------------------------------------------------------------------------
+# This command returns a serialized tcl array mapping from the name of
+# each attached database to a list of tables in that database. For example,
+# if the database schema is created with:
+#
+#   CREATE TABLE t1(x);
+#   CREATE TEMP TABLE t2(x);
+#   CREATE TEMP TABLE t3(x);
+#
+# Then this command returns "main t1 temp {t2 t3}".
+#
+proc table_list {} {
+  set res [list]
+  db eval { pragma database_list } a {
+    set dbname $a(name)
+    set master $a(name).sqlite_master
+    if {$dbname == "temp"} { set master sqlite_temp_master }
+    lappend res $dbname [
+      db eval "SELECT DISTINCT tbl_name FROM $master ORDER BY tbl_name"
+    ]
+  }
+  set res
+}
+
 
 # EVIDENCE-OF: R-25262-01881 -- syntax diagram type-name
 #
@@ -353,19 +379,6 @@ do_createtable_tests 1.1.2 {
 }
 
 
-proc table_list {} {
-  set res [list]
-  db eval { pragma database_list } a {
-    set dbname $a(name)
-    set master $a(name).sqlite_master
-    if {$dbname == "temp"} { set master sqlite_temp_master }
-    lappend res $dbname [
-      db eval "SELECT DISTINCT tbl_name FROM $master ORDER BY tbl_name"
-    ]
-  }
-  set res
-}
-
 # EVIDENCE-OF: R-10195-31023 If a <database-name> is specified, it
 # must be either "main", "temp", or the name of an attached database.
 #
@@ -584,6 +597,180 @@ do_execsql_test e_createtable-1.11.2.4 {
   SELECT name FROM auxa.sqlite_master;
 } {}
 
+#-------------------------------------------------------------------------
+# Test cases e_createtable-2.* - test statements related to the CREATE
+# TABLE AS ... SELECT statement.
+#
+
+# Three Tcl commands:
+#
+#   select_column_names SQL
+#     The argument must be a SELECT statement. Return a list of the names
+#     of the columns of the result-set that would be returned by executing
+#     the SELECT.
+#
+#   table_column_names TBL
+#     The argument must be a table name. Return a list of column names, from
+#     left to right, for the table.
+#
+#   table_column_decltypes TBL
+#     The argument must be a table name. Return a list of column declared
+#     types, from left to right, for the table.
+#
+proc sci {select cmd} {
+  set res [list]
+  set STMT [sqlite3_prepare_v2 db $select -1 dummy]
+  for {set i 0} {$i < [sqlite3_column_count $STMT]} {incr i} {
+    lappend res [$cmd $STMT $i]
+  }
+  sqlite3_finalize $STMT
+  set res
+}
+proc tci {tbl cmd} { sci "SELECT * FROM $tbl" $cmd }
+proc select_column_names    {sql} { sci $sql sqlite3_column_name }
+proc table_column_names     {tbl} { tci $tbl sqlite3_column_name }
+proc table_column_decltypes {tbl} { tci $tbl sqlite3_column_decltype }
+
+# Create a database schema. This schema is used by tests 2.1.* through 2.3.*.
+#
+drop_all_tables
+do_execsql_test e_createtable-2.0 {
+  CREATE TABLE t1(a, b, c);
+  CREATE TABLE t2(d, e, f);
+  CREATE TABLE t3(g BIGINT, h VARCHAR(10));
+  CREATE TABLE t4(i BLOB, j ANYOLDATA);
+  CREATE TABLE t5(k FLOAT, l INTEGER);
+  CREATE TABLE t6(m DEFAULT 10, n DEFAULT 5, PRIMARY KEY(m, n));
+  CREATE TABLE t7(x INTEGER PRIMARY KEY);
+  CREATE TABLE t8(o COLLATE nocase DEFAULT 'abc');
+  CREATE TABLE t9(p NOT NULL, q DOUBLE CHECK (q!=0), r STRING UNIQUE);
+} {}
+
+# EVIDENCE-OF: R-64828-59568 The table has the same number of columns as
+# the rows returned by the SELECT statement. The name of each column is
+# the same as the name of the corresponding column in the result set of
+# the SELECT statement.
+#
+do_createtable_tests 2.1 -tclquery {
+  table_column_names x1
+} -repair {
+  catchsql { DROP TABLE x1 }
+} {
+  1    "CREATE TABLE x1 AS SELECT * FROM t1"                     {a b c}
+  2    "CREATE TABLE x1 AS SELECT c, b, a FROM t1"               {c b a}
+  3    "CREATE TABLE x1 AS SELECT * FROM t1, t2"                 {a b c d e f}
+  4    "CREATE TABLE x1 AS SELECT count(*) FROM t1"              {count(*)}
+  5    "CREATE TABLE x1 AS SELECT count(a) AS a, max(b) FROM t1" {a max(b)}
+}
+
+# EVIDENCE-OF: R-37111-22855 The declared type of each column is
+# determined by the expression affinity of the corresponding expression
+# in the result set of the SELECT statement, as follows: Expression
+# Affinity Column Declared Type TEXT "TEXT" NUMERIC "NUM" INTEGER "INT"
+# REAL "REAL" NONE "" (empty string)
+#
+do_createtable_tests 2.2 -tclquery {
+  table_column_decltypes x1
+} -repair {
+  catchsql { DROP TABLE x1 }
+} {
+  1    "CREATE TABLE x1 AS SELECT a FROM t1"     {""}
+  2    "CREATE TABLE x1 AS SELECT * FROM t3"     {INT TEXT}
+  3    "CREATE TABLE x1 AS SELECT * FROM t4"     {"" NUM}
+  4    "CREATE TABLE x1 AS SELECT * FROM t5"     {REAL INT}
+}
+
+# EVIDENCE-OF: R-16667-09772 A table created using CREATE TABLE AS has
+# no PRIMARY KEY and no constraints of any kind. The default value of
+# each column is NULL. The default collation sequence for each column of
+# the new table is BINARY.
+#
+#   The following tests create tables based on SELECT statements that read
+#   from tables that have primary keys, constraints and explicit default 
+#   collation sequences. None of this is transfered to the definition of
+#   the new table as stored in the sqlite_master table.
+#
+#   Tests 2.3.2.* show that the default value of each column is NULL.
+#
+do_createtable_tests 2.3.1 -query {
+  SELECT sql FROM sqlite_master ORDER BY rowid DESC LIMIT 1
+} {
+  1    "CREATE TABLE x1 AS SELECT * FROM t6" {{CREATE TABLE x1(m,n)}}
+  2    "CREATE TABLE x2 AS SELECT * FROM t7" {{CREATE TABLE x2(x INT)}}
+  3    "CREATE TABLE x3 AS SELECT * FROM t8" {{CREATE TABLE x3(o)}}
+  4    "CREATE TABLE x4 AS SELECT * FROM t9" {{CREATE TABLE x4(p,q REAL,r NUM)}}
+}
+do_execsql_test e_createtable-2.3.2.1 {
+  INSERT INTO x1 DEFAULT VALUES;
+  INSERT INTO x2 DEFAULT VALUES;
+  INSERT INTO x3 DEFAULT VALUES;
+  INSERT INTO x4 DEFAULT VALUES;
+} {}
+db nullvalue null
+do_execsql_test e_createtable-2.3.2.2 { SELECT * FROM x1 } {null null}
+do_execsql_test e_createtable-2.3.2.3 { SELECT * FROM x2 } {null}
+do_execsql_test e_createtable-2.3.2.4 { SELECT * FROM x3 } {null}
+do_execsql_test e_createtable-2.3.2.5 { SELECT * FROM x4 } {null null null}
+db nullvalue {}
+
+drop_all_tables
+do_execsql_test e_createtable-2.4.0 {
+  CREATE TABLE t1(x, y);
+  INSERT INTO t1 VALUES('i',   'one');
+  INSERT INTO t1 VALUES('ii',  'two');
+  INSERT INTO t1 VALUES('iii', 'three');
+} {}
+
+# EVIDENCE-OF: R-24153-28352 Tables created using CREATE TABLE AS are
+# initially populated with the rows of data returned by the SELECT
+# statement.
+#
+# EVIDENCE-OF: R-08224-30249 Rows are assigned contiguously ascending
+# rowid values, starting with 1, in the order that they are returned by
+# the SELECT statement.
+#
+#   Each test case below is specified as the name of a table to create
+#   using "CREATE TABLE ... AS SELECT ..." and a SELECT statement to use in
+#   creating it. The table is created. 
+#
+#   Test cases 2.4.*.1 check that after it has been created, the data in the
+#   table is the same as the data returned by the SELECT statement executed as
+#   a standalone command, verifying the first testable statement above.
+#
+#   Test cases 2.4.*.2 check that the rowids were allocated contiguously
+#   as required by the second testable statement above. That the rowids
+#   from the contiguous block were allocated to rows in the order rows are
+#   returned by the SELECT statement is verified by 2.4.*.1.
+#
+# EVIDENCE-OF: R-32365-09043 A "CREATE TABLE ... AS SELECT" statement
+# creates and populates a database table based on the results of a
+# SELECT statement.
+#
+#   The above is also considered to be tested by the following. It is
+#   clear that tables are being created and populated by the command in
+#   question.
+#
+foreach {tn tbl select} {
+  1   x1   "SELECT * FROM t1"
+  2   x2   "SELECT * FROM t1 ORDER BY x DESC"
+  3   x3   "SELECT * FROM t1 ORDER BY x ASC"
+} {
+  # Create the table using a "CREATE TABLE ... AS SELECT ..." command.
+  execsql [subst {CREATE TABLE $tbl AS $select}]
+
+  # Check that the rows inserted into the table, sorted in ascending rowid
+  # order, match those returned by executing the SELECT statement as a
+  # standalone command.
+  do_execsql_test e_createtable-2.4.$tn.1 [subst {
+    SELECT * FROM $tbl ORDER BY rowid;
+  }] [execsql $select]
+
+  # Check that the rowids in the new table are a contiguous block starting
+  # with rowid 1. Note that this will fail if SELECT statement $select 
+  # returns 0 rows (as max(rowid) will be NULL).
+  do_execsql_test e_createtable-2.4.$tn.2 [subst {
+    SELECT min(rowid), count(rowid)==max(rowid) FROM $tbl
+  }] {1 1}
+}
 
 finish_test
-
