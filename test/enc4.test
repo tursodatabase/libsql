@@ -31,7 +31,7 @@ db close
 set encodings [list UTF-8 UTF-16le UTF-16be]
 
 # initial value to use in SELECT
-set inits [list 1 1.0]
+set inits [list 1 1.0 1. 1e0]
 
 # vals
 set vals [list\
@@ -100,25 +100,38 @@ do_test enc4-4.1 {
   db eval "select 1+1."
 } {2.0}
 
-do_test enc4-4.2 {
+do_test enc4-4.2.1 {
   set S [sqlite3_prepare_v2 db "SELECT 1+1." -1 dummy]
   sqlite3_step $S
   sqlite3_column_text $S 0
 } {2.0}
 
-do_test enc4-4.3 {
+do_test enc4-4.2.2 {
+  sqlite3_finalize $S
+} {SQLITE_OK}
+
+do_test enc4-4.3.1 {
   set S [sqlite3_prepare_v2 db "SELECT 1+?" -1 dummy]
   sqlite3_bind_text $S 1 "1." 2
   sqlite3_step $S
   sqlite3_column_text $S 0
 } {2.0}
 
-do_test enc4-4.4 {
+do_test enc4-4.3.2 {
+  sqlite3_finalize $S
+} {SQLITE_OK}
+
+do_test enc4-4.4.1 {
   set S [sqlite3_prepare_v2 db "SELECT 1+?" -1 dummy]
   sqlite3_bind_text $S 1 "1.0" 2
   sqlite3_step $S
   sqlite3_column_text $S 0
 } {2.0}
 
+do_test enc4-4.4.2 {
+  sqlite3_finalize $S
+} {SQLITE_OK}
+
+db close
 
 finish_test
