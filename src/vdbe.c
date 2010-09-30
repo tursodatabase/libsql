@@ -249,31 +249,17 @@ static VdbeCursor *allocateCursor(
 */
 static void applyNumericAffinity(Mem *pRec){
   if( (pRec->flags & (MEM_Real|MEM_Int))==0 ){
-    int realnum;
+    double rValue;
+    i64 iValue;
     u8 enc = pRec->enc;
-    sqlite3VdbeMemNulTerminate(pRec);
-    if( (pRec->flags&MEM_Str) && sqlite3IsNumber(pRec->z, &realnum, enc) ){
-      i64 value;
-      char *zUtf8 = pRec->z;
-#ifndef SQLITE_OMIT_UTF16
-      if( enc!=SQLITE_UTF8 ){
-        assert( pRec->db );
-        zUtf8 = sqlite3Utf16to8(pRec->db, pRec->z, pRec->n, enc);
-        if( !zUtf8 ) return;
-      }
-#endif
-      if( !realnum && sqlite3Atoi64(zUtf8, &value) ){
-        pRec->u.i = value;
-        MemSetTypeFlag(pRec, MEM_Int);
-      }else{
-        sqlite3AtoF(zUtf8, &pRec->r);
-        MemSetTypeFlag(pRec, MEM_Real);
-      }
-#ifndef SQLITE_OMIT_UTF16
-      if( enc!=SQLITE_UTF8 ){
-        sqlite3DbFree(pRec->db, zUtf8);
-      }
-#endif
+    if( (pRec->flags&MEM_Str)==0 ) return;
+    if( sqlite3AtoF(pRec->z, &rValue, pRec->n, enc)==0 ) return;
+    if( sqlite3Atoi64(pRec->z, &iValue, pRec->n, enc) ){
+      pRec->u.i = iValue;
+      pRec->flags |= MEM_Int;
+    }else{
+      pRec->r = rValue;
+      pRec->flags |= MEM_Real;
     }
   }
 }

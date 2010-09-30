@@ -555,7 +555,7 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
     /* Wildcard of the form "?nnn".  Convert "nnn" to an integer and
     ** use it as the variable number */
     i64 i;
-    int bOk = sqlite3Atoi64(&z[1], &i);
+    int bOk = sqlite3Atoi64(&z[1], &i, sqlite3Strlen30(&z[1]), SQLITE_UTF8);
     pExpr->iColumn = (ynVar)i;
     testcase( i==0 );
     testcase( i==1 );
@@ -1918,7 +1918,7 @@ static void codeReal(Vdbe *v, const char *z, int negateFlag, int iMem){
   if( ALWAYS(z!=0) ){
     double value;
     char *zV;
-    sqlite3AtoF(z, &value);
+    sqlite3AtoF(z, &value, sqlite3Strlen30(z), SQLITE_UTF8);
     assert( !sqlite3IsNaN(value) ); /* The new AtoF never returns NaN */
     if( negateFlag ) value = -value;
     zV = dup8bytes(v, (char*)&value);
@@ -1948,7 +1948,7 @@ static void codeInteger(Parse *pParse, Expr *pExpr, int negFlag, int iMem){
     if( sqlite3FitsIn64Bits(z, negFlag) ){
       i64 value;
       char *zV;
-      sqlite3Atoi64(z, &value);
+      sqlite3Atoi64(z, &value, sqlite3Strlen30(z), SQLITE_UTF8);
       if( negFlag ) value = -value;
       zV = dup8bytes(v, (char*)&value);
       sqlite3VdbeAddOp4(v, OP_Int64, 0, iMem, 0, zV, P4_INT64);

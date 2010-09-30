@@ -134,12 +134,6 @@ end_getDigits:
 }
 
 /*
-** Read text from z[] and convert into a floating point number.  Return
-** the number of digits converted.
-*/
-#define getValue sqlite3AtoF
-
-/*
 ** Parse a timezone extension on the end of a date-time.
 ** The extension is of the form:
 **
@@ -340,7 +334,7 @@ static int parseDateOrTime(
   const char *zDate, 
   DateTime *p
 ){
-  int isRealNum;    /* Return from sqlite3IsNumber().  Not used */
+  double r;
   if( parseYyyyMmDd(zDate,p)==0 ){
     return 0;
   }else if( parseHhMmSs(zDate, p)==0 ){
@@ -348,9 +342,7 @@ static int parseDateOrTime(
   }else if( sqlite3StrICmp(zDate,"now")==0){
     setDateTimeToCurrent(context, p);
     return 0;
-  }else if( sqlite3IsNumber(zDate, &isRealNum, SQLITE_UTF8) ){
-    double r;
-    getValue(zDate, &r);
+  }else if( sqlite3AtoF(zDate, &r, sqlite3Strlen30(zDate), SQLITE_UTF8) ){
     p->iJD = (sqlite3_int64)(r*86400000.0 + 0.5);
     p->validJD = 1;
     return 0;
@@ -571,8 +563,9 @@ static int parseModifier(const char *zMod, DateTime *p){
       ** weekday N where 0==Sunday, 1==Monday, and so forth.  If the
       ** date is already on the appropriate weekday, this is a no-op.
       */
-      if( strncmp(z, "weekday ", 8)==0 && getValue(&z[8],&r)>0
-                 && (n=(int)r)==r && n>=0 && r<7 ){
+      if( strncmp(z, "weekday ", 8)==0
+               && sqlite3AtoF(&z[8], &r, sqlite3Strlen30(&z[8]), SQLITE_UTF8)
+               && (n=(int)r)==r && n>=0 && r<7 ){
         sqlite3_int64 Z;
         computeYMD_HMS(p);
         p->validTZ = 0;
@@ -627,8 +620,11 @@ static int parseModifier(const char *zMod, DateTime *p){
     case '8':
     case '9': {
       double rRounder;
-      n = getValue(z, &r);
-      assert( n>=1 );
+      for(n=1; z[n] && z[n]!=':' && !sqlite3Isspace(z[n]); n++){}
+      if( !sqlite3AtoF(z, &r, n, SQLITE_UTF8) ){
+        rc = 1;
+        break;
+      }
       if( z[n]==':' ){
         /* A modifier of the form (+|-)HH:MM:SS.FFF adds (or subtracts) the
         ** specified number of hours, minutes, seconds, and fractional seconds

@@ -368,13 +368,9 @@ i64 sqlite3VdbeIntValue(Mem *pMem){
     return doubleToInt64(pMem->r);
   }else if( flags & (MEM_Str|MEM_Blob) ){
     i64 value;
-    pMem->flags |= MEM_Str;
-    if( sqlite3VdbeChangeEncoding(pMem, SQLITE_UTF8)
-       || sqlite3VdbeMemNulTerminate(pMem) ){
-      return 0;
-    }
-    assert( pMem->z );
-    sqlite3Atoi64(pMem->z, &value);
+    assert( pMem->z || pMem->n==0 );
+    testcase( pMem->z==0 );
+    sqlite3Atoi64(pMem->z, &value, pMem->n, pMem->enc);
     return value;
   }else{
     return 0;
@@ -404,7 +400,7 @@ double sqlite3VdbeRealValue(Mem *pMem){
       return (double)0;
     }
     assert( pMem->z );
-    sqlite3AtoF(pMem->z, &val);
+    sqlite3AtoF(pMem->z, &val, pMem->n, SQLITE_UTF8);
     return val;
   }else{
     /* (double)0 In case of SQLITE_OMIT_FLOATING_POINT... */
@@ -485,7 +481,7 @@ int sqlite3VdbeMemNumerify(Mem *pMem){
   if( rc ) return rc;
   rc = sqlite3VdbeMemNulTerminate(pMem);
   if( rc ) return rc;
-  if( sqlite3Atoi64(pMem->z, &pMem->u.i) ){
+  if( sqlite3Atoi64(pMem->z, &pMem->u.i, pMem->n, SQLITE_UTF8) ){
     MemSetTypeFlag(pMem, MEM_Int);
   }else{
     pMem->r = sqlite3VdbeRealValue(pMem);
