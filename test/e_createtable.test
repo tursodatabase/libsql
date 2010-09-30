@@ -16,6 +16,8 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+set ::testprefix e_createtable
+
 # Test organization:
 #
 #   e_createtable-0.*: Test that the syntax diagrams are correct.
@@ -1053,4 +1055,232 @@ do_createtable_tests 3.9 {
   5    "SELECT d FROM t8 ORDER BY d, rowid"    {ABC {ABC  } abc {abc  }}
 }
 
+# EVIDENCE-OF: R-25473-20557 The number of columns in a table is limited
+# by the SQLITE_MAX_COLUMN compile-time parameter.
+#
+proc columns {n} {
+  set res [list]
+  for {set i 0} {$i < $n} {incr i} { lappend res "c$i" }
+  join $res ", "
+}
+do_execsql_test e_createtable-3.10.1 [subst {
+  CREATE TABLE t9([columns $::SQLITE_MAX_COLUMN]);
+}] {}
+do_catchsql_test e_createtable-3.10.2 [subst {
+  CREATE TABLE t10([columns [expr $::SQLITE_MAX_COLUMN+1]]);
+}] {1 {too many columns on t10}}
+
+# EVIDENCE-OF: R-27775-64721 Both of these limits can be lowered at
+# runtime using the sqlite3_limit() C/C++ interface.
+#
+#   A 30,000 byte blob consumes 30,003 bytes of record space. A record 
+#   that contains 3 such blobs consumes (30,000*3)+1 bytes of space. Tests
+#   3.11.4 and 3.11.5, which verify that SQLITE_MAX_LENGTH may be lowered
+#   at runtime, are based on this calculation.
+#
+sqlite3_limit db SQLITE_LIMIT_COLUMN 500
+do_execsql_test e_createtable-3.11.1 [subst {
+  CREATE TABLE t10([columns 500]);
+}] {}
+do_catchsql_test e_createtable-3.11.2 [subst {
+  CREATE TABLE t11([columns 501]);
+}] {1 {too many columns on t11}}
+
+# Check that it is not possible to raise the column limit above its 
+# default compile time value.
+#
+sqlite3_limit db SQLITE_LIMIT_COLUMN [expr $::SQLITE_MAX_COLUMN+2]
+do_catchsql_test e_createtable-3.11.3 [subst {
+  CREATE TABLE t11([columns [expr $::SQLITE_MAX_COLUMN+1]]);
+}] {1 {too many columns on t11}}
+
+sqlite3_limit db SQLITE_LIMIT_LENGTH 90010
+do_execsql_test e_createtable-3.11.4 {
+  CREATE TABLE t12(a, b, c);
+  INSERT INTO t12 VALUES(randomblob(30000),randomblob(30000),randomblob(30000));
+} {}
+do_catchsql_test e_createtable-3.11.5 {
+  INSERT INTO t12 VALUES(randomblob(30001),randomblob(30000),randomblob(30000));
+} {1 {string or blob too big}}
+
+#-------------------------------------------------------------------------
+# Tests for statements regarding constraints (PRIMARY KEY, UNIQUE, NOT 
+# NULL and CHECK constraints).
+#
+
+# EVIDENCE-OF: R-52382-54248 Each table in SQLite may have at most one
+# PRIMARY KEY.
+# 
+# EVIDENCE-OF: R-18080-47271 If there is more than one PRIMARY KEY
+# clause in a single CREATE TABLE statement, it is an error.
+#
+#     To test the two above, show that zero primary keys is Ok, one primary
+#     key is Ok, and two or more primary keys is an error.
+#
+drop_all_tables
+do_createtable_tests 4.1.1 {
+  1    "CREATE TABLE t1(a, b, c)"                                        {}
+  2    "CREATE TABLE t2(a PRIMARY KEY, b, c)"                            {}
+  3    "CREATE TABLE t3(a, b, c, PRIMARY KEY(a))"                        {}
+  4    "CREATE TABLE t4(a, b, c, PRIMARY KEY(c,b,a))"                    {}
+}
+do_createtable_tests 4.1.2 -error {
+  table "t5" has more than one primary key
+} {
+  1    "CREATE TABLE t5(a PRIMARY KEY, b PRIMARY KEY, c)"                {}
+  2    "CREATE TABLE t5(a, b PRIMARY KEY, c, PRIMARY KEY(a))"            {}
+  3    "CREATE TABLE t5(a INTEGER PRIMARY KEY, b PRIMARY KEY, c)"        {}
+  4    "CREATE TABLE t5(a INTEGER PRIMARY KEY, b, c, PRIMARY KEY(b, c))" {}
+  5    "CREATE TABLE t5(a PRIMARY KEY, b, c, PRIMARY KEY(a))"            {}
+  6    "CREATE TABLE t5(a INTEGER PRIMARY KEY, b, c, PRIMARY KEY(a))"    {}
+}
+
+proc table_pk {tbl} { 
+  set pk [list]
+  db eval "pragma table_info($tbl)" a {
+    if {$a(pk)} { lappend pk $a(name) }
+  }
+  set pk
+}
+
+# EVIDENCE-OF: R-41411-18837 If the keywords PRIMARY KEY are added to a
+# column definition, then the primary key for the table consists of that
+# single column.
+#
+#     The above is tested by 4.2.1.*
+#
+# EVIDENCE-OF: R-31775-48204 Or, if a PRIMARY KEY clause is specified as
+# a table-constraint, then the primary key of the table consists of the
+# list of columns specified as part of the PRIMARY KEY clause.
+#
+#     The above is tested by 4.2.2.*
+#
+do_createtable_tests 4.2 -repair {
+  catchsql { DROP TABLE t5 }
+} -tclquery {
+  table_pk t5
+} {
+  1.1    "CREATE TABLE t5(a, b INTEGER PRIMARY KEY, c)"       {b}
+  1.2    "CREATE TABLE t5(a PRIMARY KEY, b, c)"               {a}
+
+  2.1    "CREATE TABLE t5(a, b, c, PRIMARY KEY(a))"           {a}
+  2.2    "CREATE TABLE t5(a, b, c, PRIMARY KEY(c,b,a))"       {a b c}
+  2.3    "CREATE TABLE t5(a, b INTEGER PRIMARY KEY, c)"       {b}
+}
+
+# EVIDENCE-OF: R-33986-09410 Each row in a table with a primary key must
+# feature a unique combination of values in its primary key columns.
+#
+# EVIDENCE-OF: R-39102-06737 If an INSERT or UPDATE statement attempts
+# to modify the table content so that two or more rows feature identical
+# primary key values, it is a constraint violation.
+#
+drop_all_tables
+do_execsql_test 4.3.0 {
+  CREATE TABLE t1(x PRIMARY KEY, y);
+  INSERT INTO t1 VALUES(0,          'zero');
+  INSERT INTO t1 VALUES(45.5,       'one');
+  INSERT INTO t1 VALUES('brambles', 'two');
+  INSERT INTO t1 VALUES(X'ABCDEF',  'three');
+
+  CREATE TABLE t2(x, y, PRIMARY KEY(x, y));
+  INSERT INTO t2 VALUES(0,          'zero');
+  INSERT INTO t2 VALUES(45.5,       'one');
+  INSERT INTO t2 VALUES('brambles', 'two');
+  INSERT INTO t2 VALUES(X'ABCDEF',  'three');
+} {}
+
+do_createtable_tests 4.3.1 -error { %s not unique } {
+  1    "INSERT INTO t1 VALUES(0, 0)"                 {"column x is"}
+  2    "INSERT INTO t1 VALUES(45.5, 'abc')"          {"column x is"}
+  3    "INSERT INTO t1 VALUES(0.0, 'abc')"           {"column x is"}
+  4    "INSERT INTO t1 VALUES('brambles', 'abc')"    {"column x is"}
+  5    "INSERT INTO t1 VALUES(X'ABCDEF', 'abc')"     {"column x is"}
+
+  6    "INSERT INTO t2 VALUES(0, 'zero')"            {"columns x, y are"}
+  7    "INSERT INTO t2 VALUES(45.5, 'one')"          {"columns x, y are"}
+  8    "INSERT INTO t2 VALUES(0.0, 'zero')"          {"columns x, y are"}
+  9    "INSERT INTO t2 VALUES('brambles', 'two')"    {"columns x, y are"}
+  10   "INSERT INTO t2 VALUES(X'ABCDEF', 'three')"   {"columns x, y are"}
+}
+do_createtable_tests 4.3.2 {
+  1    "INSERT INTO t1 VALUES(-1, 0)"                {}
+  2    "INSERT INTO t1 VALUES(45.2, 'abc')"          {}
+  3    "INSERT INTO t1 VALUES(0.01, 'abc')"          {}
+  4    "INSERT INTO t1 VALUES('bramble', 'abc')"     {}
+  5    "INSERT INTO t1 VALUES(X'ABCDEE', 'abc')"     {}
+
+  6    "INSERT INTO t2 VALUES(0, 0)"                 {}
+  7    "INSERT INTO t2 VALUES(45.5, 'abc')"          {}
+  8    "INSERT INTO t2 VALUES(0.0, 'abc')"           {}
+  9    "INSERT INTO t2 VALUES('brambles', 'abc')"    {}
+  10   "INSERT INTO t2 VALUES(X'ABCDEF', 'abc')"     {}
+}
+do_createtable_tests 4.3.3 -error { %s not unique } {
+  1    "UPDATE t1 SET x=0           WHERE y='two'"    {"column x is"}
+  2    "UPDATE t1 SET x='brambles'  WHERE y='three'"  {"column x is"}
+  3    "UPDATE t1 SET x=45.5        WHERE y='zero'"   {"column x is"}
+  4    "UPDATE t1 SET x=X'ABCDEF'   WHERE y='one'"    {"column x is"}
+  5    "UPDATE t1 SET x=0.0         WHERE y='three'"  {"column x is"}
+
+  6    "UPDATE t2 SET x=0, y='zero' WHERE y='two'"    {"columns x, y are"}
+  7    "UPDATE t2 SET x='brambles', y='two' WHERE y='three'"  
+       {"columns x, y are"}
+  8    "UPDATE t2 SET x=45.5, y='one' WHERE y='zero'" {"columns x, y are"}
+  9    "UPDATE t2 SET x=X'ABCDEF', y='three' WHERE y='one'" 
+       {"columns x, y are"}
+  10   "UPDATE t2 SET x=0.0, y='zero'        WHERE y='three'"  
+       {"columns x, y are"}
+}
+
+
+# EVIDENCE-OF: R-52572-02078 For the purposes of determining the
+# uniqueness of primary key values, NULL values are considered distinct
+# from all other values, including other NULLs.
+#
+do_createtable_tests 4.4 {
+  1    "INSERT INTO t1 VALUES(NULL, 0)"              {}
+  2    "INSERT INTO t1 VALUES(NULL, 0)"              {}
+  3    "INSERT INTO t1 VALUES(NULL, 0)"              {}
+
+  4    "INSERT INTO t2 VALUES(NULL, 'zero')"         {}
+  5    "INSERT INTO t2 VALUES(NULL, 'one')"          {}
+  6    "INSERT INTO t2 VALUES(NULL, 'two')"          {}
+  7    "INSERT INTO t2 VALUES(NULL, 'three')"        {}
+
+  8    "INSERT INTO t2 VALUES(0, NULL)"              {}
+  9    "INSERT INTO t2 VALUES(45.5, NULL)"           {}
+  10   "INSERT INTO t2 VALUES(0.0, NULL)"            {}
+  11   "INSERT INTO t2 VALUES('brambles', NULL)"     {}
+  12   "INSERT INTO t2 VALUES(X'ABCDEF', NULL)"      {}
+
+  13   "INSERT INTO t2 VALUES(NULL, NULL)"           {}
+  14   "INSERT INTO t2 VALUES(NULL, NULL)"           {}
+}
+
+# EVIDENCE-OF: R-61866-38053 Unless the column is an INTEGER PRIMARY KEY
+# SQLite allows NULL values in a PRIMARY KEY column.
+#
+#     If the column is an integer primary key, attempting to insert a NULL
+#     into the column triggers the auto-increment behaviour. Attempting
+#     to use UPDATE to set an ipk column to a NULL value is an error.
+#
+do_createtable_tests 4.5.1 {
+  1    "SELECT count(*) FROM t1 WHERE x IS NULL"                   3
+  2    "SELECT count(*) FROM t2 WHERE x IS NULL"                   6
+  3    "SELECT count(*) FROM t2 WHERE y IS NULL"                   7
+  4    "SELECT count(*) FROM t2 WHERE x IS NULL AND y IS NULL"     2
+}
+do_execsql_test 4.5.2 {
+  CREATE TABLE t3(s, u INTEGER PRIMARY KEY, v);
+  INSERT INTO t3 VALUES(1, NULL, 2);
+  INSERT INTO t3 VALUES('x', NULL, 'y');
+  SELECT u FROM t3;
+} {1 2}
+do_catchsql_test 4.5.3 {
+  INSERT INTO t3 VALUES(2, 5, 3);
+  UPDATE t3 SET u = NULL WHERE s = 2;
+} {1 {datatype mismatch}}
+
 finish_test
+

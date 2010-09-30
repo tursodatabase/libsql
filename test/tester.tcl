@@ -335,11 +335,22 @@ proc do_test {name cmd expected} {
   }
   flush stdout
 }
+
+proc fix_testname {varname} {
+  upvar $varname testname
+  if {[info exists ::testprefix] 
+   && [string is digit [string range $testname 0 0]]
+  } {
+    set testname "${::testprefix}-$testname"
+  }
+}
     
 proc do_execsql_test {testname sql result} {
+  fix_testname testname
   uplevel do_test $testname [list "execsql {$sql}"] [list $result]
 }
 proc do_catchsql_test {testname sql result} {
+  fix_testname testname
   uplevel do_test $testname [list "catchsql {$sql}"] [list $result]
 }
 
