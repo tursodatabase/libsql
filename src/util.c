@@ -238,121 +238,111 @@ int sqlite3_strnicmp(const char *zLeft, const char *zRight, int N){
 }
 
 /*
-** Return TRUE if z is a pure numeric string.  Return FALSE and leave
-** *realnum unchanged if the string contains any character which is not
-** part of a number.
+** The string z[] is an text representation of a real number.
+** Convert this string to a double and write it into *pResult.
 **
-** If the string is pure numeric, set *realnum to TRUE if the string
-** contains the '.' character or an "E+000" style exponentiation suffix.
-** Otherwise set *realnum to FALSE.  Note that just becaue *realnum is
-** false does not mean that the number can be successfully converted into
-** an integer - it might be too big.
+** The string z[] is length bytes in length (bytes, not characters) and
+** uses the encoding enc.  The string is not necessarily zero-terminated.
 **
-** An empty string is considered non-numeric.
+** Return TRUE if the result is a valid real number (or integer) and FALSE
+** if the string is empty or contains extraneous text.  Valid numbers
+** are in one of these formats:
+**
+**    [+-]digits[E[+-]digits]
+**    [+-]digits.[digits][E[+-]digits]
+**    [+-].digits[E[+-]digits]
+**
+** Leading and trailing whitespace is ignored for the purpose of determining
+** validity.
+**
+** If some prefix of the input string is a valid number, this routine
+** returns FALSE but it still converts the prefix and writes the result
+** into *pResult.
 */
-int sqlite3IsNumber(const char *z, int *realnum, u8 enc){
+int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
+#ifndef SQLITE_OMIT_FLOATING_POINT
   int incr = (enc==SQLITE_UTF8?1:2);
-  if( enc==SQLITE_UTF16BE ) z++;
-  if( *z=='-' || *z=='+' ) z += incr;
-  if( !sqlite3Isdigit(*z) ){
-    return 0;
-  }
-  z += incr;
-  *realnum = 0;
-  while( sqlite3Isdigit(*z) ){ z += incr; }
-#ifndef SQLITE_OMIT_FLOATING_POINT
-  if( *z=='.' ){
-    z += incr;
-    if( !sqlite3Isdigit(*z) ) return 0;
-    while( sqlite3Isdigit(*z) ){ z += incr; }
-    *realnum = 1;
-  }
-  if( *z=='e' || *z=='E' ){
-    z += incr;
-    if( *z=='+' || *z=='-' ) z += incr;
-    if( !sqlite3Isdigit(*z) ) return 0;
-    while( sqlite3Isdigit(*z) ){ z += incr; }
-    *realnum = 1;
-  }
-#endif
-  return *z==0;
-}
-
-/*
-** The string z[] is an ASCII representation of a real number.
-** Convert this string to a double.
-**
-** This routine assumes that z[] really is a valid number.  If it
-** is not, the result is undefined.
-**
-** This routine is used instead of the library atof() function because
-** the library atof() might want to use "," as the decimal point instead
-** of "." depending on how locale is set.  But that would cause problems
-** for SQL.  So this routine always uses "." regardless of locale.
-*/
-int sqlite3AtoF(const char *z, double *pResult){
-#ifndef SQLITE_OMIT_FLOATING_POINT
-  const char *zBegin = z;
+  const char *zEnd = z + length;
   /* sign * significand * (10 ^ (esign * exponent)) */
-  int sign = 1;   /* sign of significand */
-  i64 s = 0;      /* significand */
-  int d = 0;      /* adjust exponent for shifting decimal point */
-  int esign = 1;  /* sign of exponent */
-  int e = 0;      /* exponent */
+  int sign = 1;    /* sign of significand */
+  i64 s = 0;       /* significand */
+  int d = 0;       /* adjust exponent for shifting decimal point */
+  int esign = 1;   /* sign of exponent */
+  int e = 0;       /* exponent */
+  int eValid = 1;  /* True exponent is either not used or is well-formed */
   double result;
   int nDigits = 0;
 
+  *pResult = 0.0;   /* Default return value, in case of an error */
+
+  if( enc==SQLITE_UTF16BE ) z++;
+
   /* skip leading spaces */
-  while( sqlite3Isspace(*z) ) z++;
+  while( z<zEnd && sqlite3Isspace(*z) ) z+=incr;
+  if( z>=zEnd ) return 0;
+
   /* get sign of significand */
   if( *z=='-' ){
     sign = -1;
-    z++;
+    z+=incr;
   }else if( *z=='+' ){
-    z++;
+    z+=incr;
   }
+
   /* skip leading zeroes */
-  while( z[0]=='0' ) z++, nDigits++;
+  while( z<zEnd && z[0]=='0' ) z+=incr, nDigits++;
 
   /* copy max significant digits to significand */
-  while( sqlite3Isdigit(*z) && s<((LARGEST_INT64-9)/10) ){
+  while( z<zEnd && sqlite3Isdigit(*z) && s<((LARGEST_INT64-9)/10) ){
     s = s*10 + (*z - '0');
-    z++, nDigits++;
+    z+=incr, nDigits++;
   }
+
   /* skip non-significant significand digits
   ** (increase exponent by d to shift decimal left) */
-  while( sqlite3Isdigit(*z) ) z++, nDigits++, d++;
+  while( z<zEnd && sqlite3Isdigit(*z) ) z+=incr, nDigits++, d++;
+  if( z>=zEnd ) goto do_atof_calc;
 
   /* if decimal point is present */
   if( *z=='.' ){
-    z++;
+    z+=incr;
     /* copy digits from after decimal to significand
     ** (decrease exponent by d to shift decimal right) */
-    while( sqlite3Isdigit(*z) && s<((LARGEST_INT64-9)/10) ){
+    while( z<zEnd && sqlite3Isdigit(*z) && s<((LARGEST_INT64-9)/10) ){
       s = s*10 + (*z - '0');
-      z++, nDigits++, d--;
+      z+=incr, nDigits++, d--;
     }
     /* skip non-significant digits */
-    while( sqlite3Isdigit(*z) ) z++, nDigits++;
+    while( z<zEnd && sqlite3Isdigit(*z) ) z+=incr, nDigits++;
   }
+  if( z>=zEnd ) goto do_atof_calc;
 
   /* if exponent is present */
   if( *z=='e' || *z=='E' ){
-    z++;
+    z+=incr;
+    eValid = 0;
+    if( z>=zEnd ) goto do_atof_calc;
     /* get sign of exponent */
     if( *z=='-' ){
       esign = -1;
-      z++;
+      z+=incr;
     }else if( *z=='+' ){
-      z++;
+      z+=incr;
     }
     /* copy digits to exponent */
-    while( sqlite3Isdigit(*z) ){
+    while( z<zEnd && sqlite3Isdigit(*z) ){
       e = e*10 + (*z - '0');
-      z++;
+      z+=incr;
+      eValid = 1;
     }
   }
 
+  /* skip trailing spaces */
+  if( nDigits && eValid ){
+    while( z<zEnd && sqlite3Isspace(*z) ) z+=incr;
+  }
+
+do_atof_calc:
   /* adjust exponent by d, and update sign */
   e = (e*esign) + d;
   if( e<0 ) {
@@ -411,10 +401,10 @@ int sqlite3AtoF(const char *z, double *pResult){
   /* store the result */
   *pResult = result;
 
-  /* return number of characters used */
-  return (int)(z - zBegin);
+  /* return true if number and no extra non-whitespace chracters after */
+  return z>=zEnd && nDigits>0 && eValid;
 #else
-  return sqlite3Atoi64(z, pResult);
+  return !sqlite3Atoi64(z, pResult, length, enc);
 #endif /* SQLITE_OMIT_FLOATING_POINT */
 }
 
@@ -422,20 +412,26 @@ int sqlite3AtoF(const char *z, double *pResult){
 ** Compare the 19-character string zNum against the text representation
 ** value 2^63:  9223372036854775808.  Return negative, zero, or positive
 ** if zNum is less than, equal to, or greater than the string.
+** Note that zNum must contain exactly 19 characters.
 **
 ** Unlike memcmp() this routine is guaranteed to return the difference
 ** in the values of the last digit if the only difference is in the
 ** last digit.  So, for example,
 **
-**      compare2pow63("9223372036854775800")
+**      compare2pow63("9223372036854775800", 1)
 **
 ** will return -8.
 */
-static int compare2pow63(const char *zNum){
-  int c;
-  c = memcmp(zNum,"922337203685477580",18)*10;
+static int compare2pow63(const char *zNum, int incr){
+  int c = 0;
+  int i;
+                    /* 012345678901234567 */
+  const char *pow63 = "922337203685477580";
+  for(i=0; c==0 && i<18; i++){
+    c = (zNum[i*incr]-pow63[i])*10;
+  }
   if( c==0 ){
-    c = zNum[18] - '8';
+    c = zNum[18*incr] - '8';
     testcase( c==(-1) );
     testcase( c==0 );
     testcase( c==(+1) );
@@ -445,94 +441,60 @@ static int compare2pow63(const char *zNum){
 
 
 /*
-** Return TRUE if zNum is a 64-bit signed integer and write
-** the value of the integer into *pNum.  If zNum is not an integer
-** or is an integer that is too large to be expressed with 64 bits,
-** then return false.
+** Convert zNum to a 64-bit signed integer and write
+** the value of the integer into *pNum.
+** If zNum is exactly 9223372036854665808, return 2.
+** This is a special case as the context will determine
+** if it is too big (used as a negative).
+** If zNum is not an integer or is an integer that 
+** is too large to be expressed with 64 bits,
+** then return 1.  Otherwise return 0.
 **
-** When this routine was originally written it dealt with only
-** 32-bit numbers.  At that time, it was much faster than the
-** atoi() library routine in RedHat 7.2.
+** length is the number of bytes in the string (bytes, not characters).
+** The string is not necessarily zero-terminated.  The encoding is
+** given by enc.
 */
-int sqlite3Atoi64(const char *zNum, i64 *pNum){
+int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
+  int incr = (enc==SQLITE_UTF8?1:2);
   i64 v = 0;
-  int neg;
-  int i, c;
+  int neg = 0; /* assume positive */
+  int i;
+  int c = 0;
   const char *zStart;
-  while( sqlite3Isspace(*zNum) ) zNum++;
+  const char *zEnd = zNum + length;
+  if( enc==SQLITE_UTF16BE ) zNum++;
+  while( zNum<zEnd && sqlite3Isspace(*zNum) ) zNum+=incr;
+  if( zNum>=zEnd ) goto do_atoi_calc;
   if( *zNum=='-' ){
     neg = 1;
-    zNum++;
+    zNum+=incr;
   }else if( *zNum=='+' ){
-    neg = 0;
-    zNum++;
-  }else{
-    neg = 0;
+    zNum+=incr;
   }
+do_atoi_calc:
   zStart = zNum;
-  while( zNum[0]=='0' ){ zNum++; } /* Skip over leading zeros. Ticket #2454 */
-  for(i=0; (c=zNum[i])>='0' && c<='9'; i++){
+  while( zNum<zEnd && zNum[0]=='0' ){ zNum+=incr; } /* Skip leading zeros. */
+  for(i=0; &zNum[i]<zEnd && (c=zNum[i])>='0' && c<='9'; i+=incr){
     v = v*10 + c - '0';
   }
   *pNum = neg ? -v : v;
   testcase( i==18 );
   testcase( i==19 );
   testcase( i==20 );
-  if( c!=0 || (i==0 && zStart==zNum) || i>19 ){
+  if( (c!=0 && &zNum[i]<zEnd) || (i==0 && zStart==zNum) || i>19*incr ){
     /* zNum is empty or contains non-numeric text or is longer
-    ** than 19 digits (thus guaranting that it is too large) */
-    return 0;
-  }else if( i<19 ){
-    /* Less than 19 digits, so we know that it fits in 64 bits */
+    ** than 19 digits (thus guaranteeing that it is too large) */
     return 1;
+  }else if( i<19*incr ){
+    /* Less than 19 digits, so we know that it fits in 64 bits */
+    return 0;
   }else{
     /* 19-digit numbers must be no larger than 9223372036854775807 if positive
     ** or 9223372036854775808 if negative.  Note that 9223372036854665808
-    ** is 2^63. */
-    return compare2pow63(zNum)<neg;
-  }
-}
-
-/*
-** The string zNum represents an unsigned integer.  The zNum string
-** consists of one or more digit characters and is terminated by
-** a zero character.  Any stray characters in zNum result in undefined
-** behavior.
-**
-** If the unsigned integer that zNum represents will fit in a
-** 64-bit signed integer, return TRUE.  Otherwise return FALSE.
-**
-** If the negFlag parameter is true, that means that zNum really represents
-** a negative number.  (The leading "-" is omitted from zNum.)  This
-** parameter is needed to determine a boundary case.  A string
-** of "9223373036854775808" returns false if negFlag is false or true
-** if negFlag is true.
-**
-** Leading zeros are ignored.
-*/
-int sqlite3FitsIn64Bits(const char *zNum, int negFlag){
-  int i;
-  int neg = 0;
-
-  assert( zNum[0]>='0' && zNum[0]<='9' ); /* zNum is an unsigned number */
-
-  if( negFlag ) neg = 1-neg;
-  while( *zNum=='0' ){
-    zNum++;   /* Skip leading zeros.  Ticket #2454 */
-  }
-  for(i=0; zNum[i]; i++){ assert( zNum[i]>='0' && zNum[i]<='9' ); }
-  testcase( i==18 );
-  testcase( i==19 );
-  testcase( i==20 );
-  if( i<19 ){
-    /* Guaranteed to fit if less than 19 digits */
-    return 1;
-  }else if( i>19 ){
-    /* Guaranteed to be too big if greater than 19 digits */
-    return 0;
-  }else{
-    /* Compare against 2^63. */
-    return compare2pow63(zNum)<neg;
+    ** is 2^63. Return 1 if to large */
+    c=compare2pow63(zNum, incr);
+    if( c==0 && neg==0 ) return 2; /* too big, exactly 9223372036854665808 */
+    return c<neg ? 0 : 1;
   }
 }
 

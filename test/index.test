@@ -532,10 +532,19 @@ do_test index-15.2 {
     INSERT INTO t1 VALUES('+',9);
     INSERT INTO t1 VALUES('+12347.E+02',10);
     INSERT INTO t1 VALUES('+12347E+02',11);
-    SELECT b FROM t1 ORDER BY a;
+    INSERT INTO t1 VALUES('+.125E+04',12);
+    INSERT INTO t1 VALUES('-.125E+04',13);
+    INSERT INTO t1 VALUES('.125E+0',14);
+    INSERT INTO t1 VALUES('.125',15);
+    SELECT b FROM t1 ORDER BY a, b;
   }
-} {8 5 2 1 3 6 11 9 10 4 7}
-integrity_check index-15.1
+} {13 14 15 12 8 5 2 1 3 6 10 11 9 4 7}
+do_test index-15.3 {
+  execsql {
+    SELECT b FROM t1 WHERE typeof(a) IN ('integer','real') ORDER BY b;
+  }
+} {1 2 3 5 6 8 10 11 12 13 14 15}
+integrity_check index-15.4
 
 # The following tests - index-16.* - test that when a table definition
 # includes qualifications that specify the same constraint twice only a

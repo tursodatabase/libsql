@@ -249,31 +249,17 @@ static VdbeCursor *allocateCursor(
 */
 static void applyNumericAffinity(Mem *pRec){
   if( (pRec->flags & (MEM_Real|MEM_Int))==0 ){
-    int realnum;
+    double rValue;
+    i64 iValue;
     u8 enc = pRec->enc;
-    sqlite3VdbeMemNulTerminate(pRec);
-    if( (pRec->flags&MEM_Str) && sqlite3IsNumber(pRec->z, &realnum, enc) ){
-      i64 value;
-      char *zUtf8 = pRec->z;
-#ifndef SQLITE_OMIT_UTF16
-      if( enc!=SQLITE_UTF8 ){
-        assert( pRec->db );
-        zUtf8 = sqlite3Utf16to8(pRec->db, pRec->z, pRec->n, enc);
-        if( !zUtf8 ) return;
-      }
-#endif
-      if( !realnum && sqlite3Atoi64(zUtf8, &value) ){
-        pRec->u.i = value;
-        MemSetTypeFlag(pRec, MEM_Int);
-      }else{
-        sqlite3AtoF(zUtf8, &pRec->r);
-        MemSetTypeFlag(pRec, MEM_Real);
-      }
-#ifndef SQLITE_OMIT_UTF16
-      if( enc!=SQLITE_UTF8 ){
-        sqlite3DbFree(pRec->db, zUtf8);
-      }
-#endif
+    if( (pRec->flags&MEM_Str)==0 ) return;
+    if( sqlite3AtoF(pRec->z, &rValue, pRec->n, enc)==0 ) return;
+    if( 0==sqlite3Atoi64(pRec->z, &iValue, pRec->n, enc) ){
+      pRec->u.i = iValue;
+      pRec->flags |= MEM_Int;
+    }else{
+      pRec->r = rValue;
+      pRec->flags |= MEM_Real;
     }
   }
 }
@@ -1555,7 +1541,6 @@ case OP_MustBeInt: {            /* jump, in1 */
 */
 case OP_RealAffinity: {                  /* in1 */
   pIn1 = &aMem[pOp->p1];
-  memAboutToChange(p, pIn1);
   if( pIn1->flags & MEM_Int ){
     sqlite3VdbeMemRealify(pIn1);
   }
@@ -1598,7 +1583,6 @@ case OP_ToText: {                  /* same as TK_TO_TEXT, in1 */
 */
 case OP_ToBlob: {                  /* same as TK_TO_BLOB, in1 */
   pIn1 = &aMem[pOp->p1];
-  memAboutToChange(p, pIn1);
   if( pIn1->flags & MEM_Null ) break;
   if( (pIn1->flags & MEM_Blob)==0 ){
     applyAffinity(pIn1, SQLITE_AFF_TEXT, encoding);
@@ -1623,10 +1607,7 @@ case OP_ToBlob: {                  /* same as TK_TO_BLOB, in1 */
 */
 case OP_ToNumeric: {                  /* same as TK_TO_NUMERIC, in1 */
   pIn1 = &aMem[pOp->p1];
-  memAboutToChange(p, pIn1);
-  if( (pIn1->flags & (MEM_Null|MEM_Int|MEM_Real))==0 ){
-    sqlite3VdbeMemNumerify(pIn1);
-  }
+  sqlite3VdbeMemNumerify(pIn1);
   break;
 }
 #endif /* SQLITE_OMIT_CAST */
@@ -1642,7 +1623,6 @@ case OP_ToNumeric: {                  /* same as TK_TO_NUMERIC, in1 */
 */
 case OP_ToInt: {                  /* same as TK_TO_INT, in1 */
   pIn1 = &aMem[pOp->p1];
-  memAboutToChange(p, pIn1);
   if( (pIn1->flags & MEM_Null)==0 ){
     sqlite3VdbeMemIntegerify(pIn1);
   }
@@ -1754,8 +1734,6 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
 
   pIn1 = &aMem[pOp->p1];
   pIn3 = &aMem[pOp->p3];
-  memAboutToChange(p, pIn1);
-  memAboutToChange(p, pIn3);
   flags1 = pIn1->flags;
   flags3 = pIn3->flags;
   if( (pIn1->flags | pIn3->flags)&MEM_Null ){
@@ -2378,7 +2356,6 @@ case OP_Affinity: {
   while( (cAff = *(zAffinity++))!=0 ){
     assert( pIn1 <= &p->aMem[p->nMem] );
     assert( memIsValid(pIn1) );
-    memAboutToChange(p, pIn1);
     ExpandBlob(pIn1);
     applyAffinity(pIn1, cAff, encoding);
     pIn1++;
@@ -2456,7 +2433,6 @@ case OP_MakeRecord: {
   for(pRec=pData0; pRec<=pLast; pRec++){
     assert( memIsValid(pRec) );
     if( zAffinity ){
-      memAboutToChange(p, pRec);
       applyAffinity(pRec, zAffinity[pRec-pData0], encoding);
     }
     if( pRec->flags&MEM_Zero && pRec->n>0 ){

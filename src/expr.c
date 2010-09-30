@@ -555,7 +555,7 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
     /* Wildcard of the form "?nnn".  Convert "nnn" to an integer and
     ** use it as the variable number */
     i64 i;
-    int bOk = sqlite3Atoi64(&z[1], &i);
+    int bOk = 0==sqlite3Atoi64(&z[1], &i, sqlite3Strlen30(&z[1]), SQLITE_UTF8);
     pExpr->iColumn = (ynVar)i;
     testcase( i==0 );
     testcase( i==1 );
@@ -1918,7 +1918,7 @@ static void codeReal(Vdbe *v, const char *z, int negateFlag, int iMem){
   if( ALWAYS(z!=0) ){
     double value;
     char *zV;
-    sqlite3AtoF(z, &value);
+    sqlite3AtoF(z, &value, sqlite3Strlen30(z), SQLITE_UTF8);
     assert( !sqlite3IsNaN(value) ); /* The new AtoF never returns NaN */
     if( negateFlag ) value = -value;
     zV = dup8bytes(v, (char*)&value);
@@ -1932,9 +1932,7 @@ static void codeReal(Vdbe *v, const char *z, int negateFlag, int iMem){
 ** Generate an instruction that will put the integer describe by
 ** text z[0..n-1] into register iMem.
 **
-** The z[] string will probably not be zero-terminated.  But the 
-** z[n] character is guaranteed to be something that does not look
-** like the continuation of the number.
+** Expr.u.zToken is always UTF8 and zero-terminated.
 */
 static void codeInteger(Parse *pParse, Expr *pExpr, int negFlag, int iMem){
   Vdbe *v = pParse->pVdbe;
@@ -1943,13 +1941,14 @@ static void codeInteger(Parse *pParse, Expr *pExpr, int negFlag, int iMem){
     if( negFlag ) i = -i;
     sqlite3VdbeAddOp2(v, OP_Integer, i, iMem);
   }else{
+    int c;
+    i64 value;
     const char *z = pExpr->u.zToken;
     assert( z!=0 );
-    if( sqlite3FitsIn64Bits(z, negFlag) ){
-      i64 value;
+    c = sqlite3Atoi64(z, &value, sqlite3Strlen30(z), SQLITE_UTF8);
+    if( c==0 || (c==2 && negFlag) ){
       char *zV;
-      sqlite3Atoi64(z, &value);
-      if( negFlag ) value = -value;
+      if( negFlag ){ value = -value; }
       zV = dup8bytes(v, (char*)&value);
       sqlite3VdbeAddOp4(v, OP_Int64, 0, iMem, 0, zV, P4_INT64);
     }else{

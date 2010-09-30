@@ -368,13 +368,9 @@ i64 sqlite3VdbeIntValue(Mem *pMem){
     return doubleToInt64(pMem->r);
   }else if( flags & (MEM_Str|MEM_Blob) ){
     i64 value;
-    pMem->flags |= MEM_Str;
-    if( sqlite3VdbeChangeEncoding(pMem, SQLITE_UTF8)
-       || sqlite3VdbeMemNulTerminate(pMem) ){
-      return 0;
-    }
-    assert( pMem->z );
-    sqlite3Atoi64(pMem->z, &value);
+    assert( pMem->z || pMem->n==0 );
+    testcase( pMem->z==0 );
+    sqlite3Atoi64(pMem->z, &value, pMem->n, pMem->enc);
     return value;
   }else{
     return 0;
@@ -404,7 +400,7 @@ double sqlite3VdbeRealValue(Mem *pMem){
       return (double)0;
     }
     assert( pMem->z );
-    sqlite3AtoF(pMem->z, &val);
+    sqlite3AtoF(pMem->z, &val, pMem->n, SQLITE_UTF8);
     return val;
   }else{
     /* (double)0 In case of SQLITE_OMIT_FLOATING_POINT... */
@@ -477,21 +473,19 @@ int sqlite3VdbeMemRealify(Mem *pMem){
 ** as much of the string as we can and ignore the rest.
 */
 int sqlite3VdbeMemNumerify(Mem *pMem){
-  int rc;
-  assert( (pMem->flags & (MEM_Int|MEM_Real|MEM_Null))==0 );
-  assert( (pMem->flags & (MEM_Blob|MEM_Str))!=0 );
-  assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
-  rc = sqlite3VdbeChangeEncoding(pMem, SQLITE_UTF8);
-  if( rc ) return rc;
-  rc = sqlite3VdbeMemNulTerminate(pMem);
-  if( rc ) return rc;
-  if( sqlite3Atoi64(pMem->z, &pMem->u.i) ){
-    MemSetTypeFlag(pMem, MEM_Int);
-  }else{
-    pMem->r = sqlite3VdbeRealValue(pMem);
-    MemSetTypeFlag(pMem, MEM_Real);
-    sqlite3VdbeIntegerAffinity(pMem);
+  if( (pMem->flags & (MEM_Int|MEM_Real|MEM_Null))==0 ){
+    assert( (pMem->flags & (MEM_Blob|MEM_Str))!=0 );
+    assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
+    if( 0==sqlite3Atoi64(pMem->z, &pMem->u.i, pMem->n, pMem->enc) ){
+      MemSetTypeFlag(pMem, MEM_Int);
+    }else{
+      pMem->r = sqlite3VdbeRealValue(pMem);
+      MemSetTypeFlag(pMem, MEM_Real);
+      sqlite3VdbeIntegerAffinity(pMem);
+    }
   }
+  assert( (pMem->flags & (MEM_Int|MEM_Real|MEM_Null))!=0 );
+  pMem->flags &= ~(MEM_Str|MEM_Blob);
   return SQLITE_OK;
 }
 
@@ -1034,6 +1028,8 @@ int sqlite3ValueFromExpr(
   int op;
   char *zVal = 0;
   sqlite3_value *pVal = 0;
+  int negInt = 1;
+  const char *zNeg = "";
 
   if( !pExpr ){
     *ppVal = 0;
@@ -1051,13 +1047,24 @@ int sqlite3ValueFromExpr(
   if( NEVER(op==TK_REGISTER) ) op = pExpr->op2;
 #endif
 
+  /* Handle negative integers in a single step.  This is needed in the
+  ** case when the value is -9223372036854775808.
+  */
+  if( op==TK_UMINUS
+   && (pExpr->pLeft->op==TK_INTEGER || pExpr->pLeft->op==TK_FLOAT) ){
+    pExpr = pExpr->pLeft;
+    op = pExpr->op;
+    negInt = -1;
+    zNeg = "-";
+  }
+
   if( op==TK_STRING || op==TK_FLOAT || op==TK_INTEGER ){
     pVal = sqlite3ValueNew(db);
     if( pVal==0 ) goto no_mem;
     if( ExprHasProperty(pExpr, EP_IntValue) ){
-      sqlite3VdbeMemSetInt64(pVal, (i64)pExpr->u.iValue);
+      sqlite3VdbeMemSetInt64(pVal, (i64)pExpr->u.iValue*negInt);
     }else{
-      zVal = sqlite3DbStrDup(db, pExpr->u.zToken);
+      zVal = sqlite3MPrintf(db, "%s%s", zNeg, pExpr->u.zToken);
       if( zVal==0 ) goto no_mem;
       sqlite3ValueSetStr(pVal, -1, zVal, SQLITE_UTF8, SQLITE_DYNAMIC);
       if( op==TK_FLOAT ) pVal->type = SQLITE_FLOAT;
@@ -1067,14 +1074,18 @@ int sqlite3ValueFromExpr(
     }else{
       sqlite3ValueApplyAffinity(pVal, affinity, SQLITE_UTF8);
     }
+    if( pVal->flags & (MEM_Int|MEM_Real) ) pVal->flags &= ~MEM_Str;
     if( enc!=SQLITE_UTF8 ){
       sqlite3VdbeChangeEncoding(pVal, enc);
     }
   }else if( op==TK_UMINUS ) {
+    /* This branch happens for multiple negative signs.  Ex: -(-5) */
     if( SQLITE_OK==sqlite3ValueFromExpr(db,pExpr->pLeft,enc,affinity,&pVal) ){
+      sqlite3VdbeMemNumerify(pVal);
       pVal->u.i = -1 * pVal->u.i;
       /* (double)-1 In case of SQLITE_OMIT_FLOATING_POINT... */
       pVal->r = (double)-1 * pVal->r;
+      sqlite3ValueApplyAffinity(pVal, affinity, enc);
     }
   }
 #ifndef SQLITE_OMIT_BLOB_LITERAL
