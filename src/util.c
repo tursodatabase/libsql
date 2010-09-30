@@ -382,10 +382,10 @@ do_atof_calc:
   /* store the result */
   *pResult = result;
 
-  /* return number of bytes used */
+  /* return true if number and no extra chracters after */
   return z>=zEnd && sqlite3Isdigit(z[-incr]);
 #else
-  return sqlite3Atoi64(z, pResult, length, enc);
+  return !sqlite3Atoi64(z, pResult, length, enc);
 #endif /* SQLITE_OMIT_FLOATING_POINT */
 }
 
@@ -393,6 +393,7 @@ do_atof_calc:
 ** Compare the 19-character string zNum against the text representation
 ** value 2^63:  9223372036854775808.  Return negative, zero, or positive
 ** if zNum is less than, equal to, or greater than the string.
+** Note that zNum must contain exactly 19 characters.
 **
 ** Unlike memcmp() this routine is guaranteed to return the difference
 ** in the values of the last digit if the only difference is in the
@@ -421,10 +422,14 @@ static int compare2pow63(const char *zNum, int incr){
 
 
 /*
-** Return TRUE if zNum is a 64-bit signed integer and write
-** the value of the integer into *pNum.  If zNum is not an integer
-** or is an integer that is too large to be expressed with 64 bits,
-** then return false.
+** Convert zNum to a 64-bit signed integer and write
+** the value of the integer into *pNum.
+** If zNum is exactly 9223372036854665808, return 2.
+** This is a special case as the context will determine
+** if it is too big (used as a negative).
+** If zNum is not an integer or is an integer that 
+** is too large to be expressed with 64 bits,
+** then return 1.  Otherwise return 0.
 **
 ** length is the number of bytes in the string (bytes, not characters).
 ** The string is not necessarily zero-terminated.  The encoding is
@@ -433,7 +438,7 @@ static int compare2pow63(const char *zNum, int incr){
 int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
   int incr = (enc==SQLITE_UTF8?1:2);
   i64 v = 0;
-  int neg = 0;
+  int neg = 0; /* assume positive */
   int i;
   int c = 0;
   const char *zStart;
@@ -445,10 +450,7 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
     neg = 1;
     zNum+=incr;
   }else if( *zNum=='+' ){
-    neg = 0;
     zNum+=incr;
-  }else{
-    neg = 0;
   }
 do_atoi_calc:
   zStart = zNum;
@@ -462,59 +464,18 @@ do_atoi_calc:
   testcase( i==20 );
   if( (c!=0 && &zNum[i]<zEnd) || (i==0 && zStart==zNum) || i>19*incr ){
     /* zNum is empty or contains non-numeric text or is longer
-    ** than 19 digits (thus guaranting that it is too large) */
-    return 0;
+    ** than 19 digits (thus guaranteeing that it is too large) */
+    return 1;
   }else if( i<19*incr ){
     /* Less than 19 digits, so we know that it fits in 64 bits */
-    return 1;
+    return 0;
   }else{
     /* 19-digit numbers must be no larger than 9223372036854775807 if positive
     ** or 9223372036854775808 if negative.  Note that 9223372036854665808
-    ** is 2^63. */
-    return compare2pow63(zNum, incr)<neg;
-  }
-}
-
-/*
-** The string zNum represents an unsigned integer.  The zNum string
-** consists of one or more digit characters and is terminated by
-** a zero character.  Any stray characters in zNum result in undefined
-** behavior.
-**
-** If the unsigned integer that zNum represents will fit in a
-** 64-bit signed integer, return TRUE.  Otherwise return FALSE.
-**
-** If the negFlag parameter is true, that means that zNum really represents
-** a negative number.  (The leading "-" is omitted from zNum.)  This
-** parameter is needed to determine a boundary case.  A string
-** of "9223373036854775808" returns false if negFlag is false or true
-** if negFlag is true.
-**
-** Leading zeros are ignored.
-*/
-int sqlite3FitsIn64Bits(const char *zNum, int negFlag){
-  int i;
-  int neg = 0;
-
-  assert( zNum[0]>='0' && zNum[0]<='9' ); /* zNum is an unsigned number */
-
-  if( negFlag ) neg = 1-neg;
-  while( *zNum=='0' ){
-    zNum++;   /* Skip leading zeros.  Ticket #2454 */
-  }
-  for(i=0; zNum[i]; i++){ assert( zNum[i]>='0' && zNum[i]<='9' ); }
-  testcase( i==18 );
-  testcase( i==19 );
-  testcase( i==20 );
-  if( i<19 ){
-    /* Guaranteed to fit if less than 19 digits */
-    return 1;
-  }else if( i>19 ){
-    /* Guaranteed to be too big if greater than 19 digits */
-    return 0;
-  }else{
-    /* Compare against 2^63. */
-    return compare2pow63(zNum, 1)<neg;
+    ** is 2^63. Return 1 if to large */
+    c=compare2pow63(zNum, incr);
+    if( c==0 && neg==0 ) return 2; /* too big, exactly 9223372036854665808 */
+    return c<neg ? 0 : 1;
   }
 }
 

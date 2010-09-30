@@ -1235,7 +1235,7 @@ static int sqlite3_mprintf_int64(
     return TCL_ERROR;
   }
   for(i=2; i<5; i++){
-    if( !sqlite3Atoi64(argv[i], &a[i-2], 1000000, SQLITE_UTF8) ){
+    if( sqlite3Atoi64(argv[i], &a[i-2], 1000000, SQLITE_UTF8) ){
       Tcl_AppendResult(interp, "argument is not a valid 64-bit integer", 0);
       return TCL_ERROR;
     }

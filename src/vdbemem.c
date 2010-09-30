@@ -476,7 +476,7 @@ int sqlite3VdbeMemNumerify(Mem *pMem){
   if( (pMem->flags & (MEM_Int|MEM_Real|MEM_Null))==0 ){
     assert( (pMem->flags & (MEM_Blob|MEM_Str))!=0 );
     assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
-    if( sqlite3Atoi64(pMem->z, &pMem->u.i, pMem->n, pMem->enc) ){
+    if( 0==sqlite3Atoi64(pMem->z, &pMem->u.i, pMem->n, pMem->enc) ){
       MemSetTypeFlag(pMem, MEM_Int);
     }else{
       pMem->r = sqlite3VdbeRealValue(pMem);
