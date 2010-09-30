@@ -1541,7 +1541,6 @@ case OP_MustBeInt: {            /* jump, in1 */
 */
 case OP_RealAffinity: {                  /* in1 */
   pIn1 = &aMem[pOp->p1];
-  memAboutToChange(p, pIn1);
   if( pIn1->flags & MEM_Int ){
     sqlite3VdbeMemRealify(pIn1);
   }
@@ -1584,7 +1583,6 @@ case OP_ToText: {                  /* same as TK_TO_TEXT, in1 */
 */
 case OP_ToBlob: {                  /* same as TK_TO_BLOB, in1 */
   pIn1 = &aMem[pOp->p1];
-  memAboutToChange(p, pIn1);
   if( pIn1->flags & MEM_Null ) break;
   if( (pIn1->flags & MEM_Blob)==0 ){
     applyAffinity(pIn1, SQLITE_AFF_TEXT, encoding);
@@ -1609,7 +1607,6 @@ case OP_ToBlob: {                  /* same as TK_TO_BLOB, in1 */
 */
 case OP_ToNumeric: {                  /* same as TK_TO_NUMERIC, in1 */
   pIn1 = &aMem[pOp->p1];
-  memAboutToChange(p, pIn1);
   sqlite3VdbeMemNumerify(pIn1);
   break;
 }
@@ -1626,7 +1623,6 @@ case OP_ToNumeric: {                  /* same as TK_TO_NUMERIC, in1 */
 */
 case OP_ToInt: {                  /* same as TK_TO_INT, in1 */
   pIn1 = &aMem[pOp->p1];
-  memAboutToChange(p, pIn1);
   if( (pIn1->flags & MEM_Null)==0 ){
     sqlite3VdbeMemIntegerify(pIn1);
   }
@@ -1738,8 +1734,6 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
 
   pIn1 = &aMem[pOp->p1];
   pIn3 = &aMem[pOp->p3];
-  memAboutToChange(p, pIn1);
-  memAboutToChange(p, pIn3);
   flags1 = pIn1->flags;
   flags3 = pIn3->flags;
   if( (pIn1->flags | pIn3->flags)&MEM_Null ){
@@ -2362,7 +2356,6 @@ case OP_Affinity: {
   while( (cAff = *(zAffinity++))!=0 ){
     assert( pIn1 <= &p->aMem[p->nMem] );
     assert( memIsValid(pIn1) );
-    memAboutToChange(p, pIn1);
     ExpandBlob(pIn1);
     applyAffinity(pIn1, cAff, encoding);
     pIn1++;
@@ -2440,7 +2433,6 @@ case OP_MakeRecord: {
   for(pRec=pData0; pRec<=pLast; pRec++){
     assert( memIsValid(pRec) );
     if( zAffinity ){
-      memAboutToChange(p, pRec);
       applyAffinity(pRec, zAffinity[pRec-pData0], encoding);
     }
     if( pRec->flags&MEM_Zero && pRec->n>0 ){
