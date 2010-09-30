@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Rework\sthe\stext\sto\snumeric\sconversion\sroutines\sso\sthat\sthey\swork\swith\seither\nUTF8\sor\sUTF16\sand\sdo\snot\srequire\sa\sNULL\sterminator.\s\sThis\sallowed\stext\sto\nnumeric\sconversion\swithout\sreallocating\sthe\sstring.
-D 2010-09-30T00:50:50
+C Fix\sthe\shandling\sof\sdefault\svalues\sfor\sALTER\sTABLE\sADD\sCOLUMN\scolumns\sso\nthat\sis\sable\sto\sdeal\swith\snegative\snumbers,\sincluding\slarge\snegative\snumbers.\nTicket\s[8454a207b9fd2243c4]
+D 2010-09-30T14:48:06
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -228,13 +228,13 @@ F src/update.c 227e6cd512108b84f69421fc6c7aa1b83d60d6e0
 F src/utf.c 1baeeac91707a4df97ccc6141ec0f808278af685
 F src/util.c 7a5fb16c0b9a3e4c9fa6c375c8f514bc3bb155b6
 F src/vacuum.c 924bd1bcee2dfb05376f79845bd3b4cec7b54b2f
-F src/vdbe.c 04cf7c1b0b7a7dc825ddde202307ca15c1115fbb
+F src/vdbe.c 597ef9aceeb4d695eb65a61453dc1139175cf893
 F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
 F src/vdbeInt.h 7f4cf1b2b69bef3a432b1f23dfebef57275436b4
 F src/vdbeapi.c 03cddfa4f85cadf608c0d28ff6b622b7da432446
 F src/vdbeaux.c de0b06b11a25293e820a49159eca9f1c51a64716
 F src/vdbeblob.c 258a6010ba7a82b72b327fb24c55790655689256
-F src/vdbemem.c cfb178242f38fb03a44672268afa05716d55e769
+F src/vdbemem.c 09b637201d66dae067f2beb838996a7e8adae44f
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c 6c90e3e65b2f026fc54703a8f3c917155f419d87
 F src/wal.c 7081f148cb52b0cf2280e6384196402dc58130a3
@@ -669,6 +669,7 @@ F test/tkt-5e10420e8d.test 904d1687b3c06d43e5b3555bbcf6802e7c0ffd84
 F test/tkt-5ee23731f.test 3581260f2a71e51db94e1506ba6b0f7311d002a9
 F test/tkt-78e04e52ea.test fb5430c675e708f5cbafdf3e7e5593da5145a527
 F test/tkt-80e031a00f.test 9a154173461a4dbe2de49cda73963e04842d52f7
+F test/tkt-8454a207b9.test c583a9f814a82a2b5ba95207f55001c9f0cd816c
 F test/tkt-94c04eaadb.test be5ea61cb04dfdc047d19b5c5a9e75fa3da67a7f
 F test/tkt-9d68c883.test 458f7d82a523d7644b54b497c986378a7d8c8b67
 F test/tkt-b351d95f9.test d14a503c414c5c58fdde3e80f9a3cfef986498c0
@@ -872,18 +873,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f34dc54d46d05adf1f52db51442195b3285a26b9
-R 5e9e2523f82be46cc8ebbb892165bffa
-T *bgcolor * #c0ffc0
-T *branch * experimental
-T *sym-experimental *
-T -sym-trunk *
+P 14eed3a0e0a45c6f2904a3a134aa27c159916f7b
+R 4d517dec75ee1dd489234109dd0359e9
 U drh
-Z 0c6ebf88312d1668689f16e4194172bb
+Z 470c7c5b24a8c0836423cc96a5b1f790
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMo97toxKgR168RlERAi5jAJsFDVqJu9wdOQNwlT2y3q2TNuHUGQCdFwrP
-sR9IRwN4k3Y2ZVtzQE0tnsY=
-=6xoC
+iD8DBQFMpKMqoxKgR168RlERAvkLAJ0XiYNxedhD7GFhtTggvRsz2xpfLQCgjac7
+zIAfAuf6n9xnxhw6RMuzDI0=
+=1JR8
 -----END PGP SIGNATURE-----

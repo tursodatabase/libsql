@@ -1610,9 +1610,7 @@ case OP_ToBlob: {                  /* same as TK_TO_BLOB, in1 */
 case OP_ToNumeric: {                  /* same as TK_TO_NUMERIC, in1 */
   pIn1 = &aMem[pOp->p1];
   memAboutToChange(p, pIn1);
-  if( (pIn1->flags & (MEM_Null|MEM_Int|MEM_Real))==0 ){
-    sqlite3VdbeMemNumerify(pIn1);
-  }
+  sqlite3VdbeMemNumerify(pIn1);
   break;
 }
 #endif /* SQLITE_OMIT_CAST */
