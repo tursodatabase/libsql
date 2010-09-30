@@ -239,35 +239,47 @@ int sqlite3_strnicmp(const char *zLeft, const char *zRight, int N){
 
 /*
 ** The string z[] is an text representation of a real number.
-** Convert this string to a double.
+** Convert this string to a double and write it into *pResult.
 **
 ** The string z[] is length bytes in length (bytes, not characters) and
 ** uses the encoding enc.  The string is not necessarily zero-terminated.
 **
 ** Return TRUE if the result is a valid real number (or integer) and FALSE
-** if the string is empty or contains extraneous text.
+** if the string is empty or contains extraneous text.  Valid numbers
+** are in one of these formats:
+**
+**    [+-]digits[E[+-]digits]
+**    [+-]digits.[digits][E[+-]digits]
+**    [+-].digits[E[+-]digits]
+**
+** Leading and trailing whitespace is ignored for the purpose of determining
+** validity.
+**
+** If some prefix of the input string is a valid number, this routine
+** returns FALSE but it still converts the prefix and writes the result
+** into *pResult.
 */
 int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
 #ifndef SQLITE_OMIT_FLOATING_POINT
   int incr = (enc==SQLITE_UTF8?1:2);
   const char *zEnd = z + length;
   /* sign * significand * (10 ^ (esign * exponent)) */
-  int sign = 1;   /* sign of significand */
-  i64 s = 0;      /* significand */
-  int d = 0;      /* adjust exponent for shifting decimal point */
-  int esign = 1;  /* sign of exponent */
-  int e = 0;      /* exponent */
+  int sign = 1;    /* sign of significand */
+  i64 s = 0;       /* significand */
+  int d = 0;       /* adjust exponent for shifting decimal point */
+  int esign = 1;   /* sign of exponent */
+  int e = 0;       /* exponent */
+  int eValid = 1;  /* True exponent is either not used or is well-formed */
   double result;
   int nDigits = 0;
+
+  *pResult = 0.0;   /* Default return value, in case of an error */
 
   if( enc==SQLITE_UTF16BE ) z++;
 
   /* skip leading spaces */
   while( z<zEnd && sqlite3Isspace(*z) ) z+=incr;
-  if( z>=zEnd ){
-    *pResult = 0.0;
-    return 0;
-  }
+  if( z>=zEnd ) return 0;
 
   /* get sign of significand */
   if( *z=='-' ){
@@ -308,6 +320,7 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   /* if exponent is present */
   if( *z=='e' || *z=='E' ){
     z+=incr;
+    eValid = 0;
     if( z>=zEnd ) goto do_atof_calc;
     /* get sign of exponent */
     if( *z=='-' ){
@@ -320,7 +333,13 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
     while( z<zEnd && sqlite3Isdigit(*z) ){
       e = e*10 + (*z - '0');
       z+=incr;
+      eValid = 1;
     }
+  }
+
+  /* skip trailing spaces */
+  if( nDigits && eValid ){
+    while( z<zEnd && sqlite3Isspace(*z) ) z+=incr;
   }
 
 do_atof_calc:
@@ -382,8 +401,8 @@ do_atof_calc:
   /* store the result */
   *pResult = result;
 
-  /* return true if number and no extra chracters after */
-  return z>=zEnd && sqlite3Isdigit(z[-incr]);
+  /* return true if number and no extra non-whitespace chracters after */
+  return z>=zEnd && nDigits>0 && eValid;
 #else
   return !sqlite3Atoi64(z, pResult, length, enc);
 #endif /* SQLITE_OMIT_FLOATING_POINT */
