@@ -63,6 +63,8 @@ foreach enc $encodings {
     foreach val $vals {
       for {set x 1} {$x<18} {incr x} {
         set part [expr $init + [string range $val 0 [expr $x-1]]]
+        regsub {e\+0} $part {e+} part
+        regsub {^1e} $part {1.0e} part
 
         do_test enc4-$i.$j.$k.3.$x {
           sqlite3_reset $S
