@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Updates\sto\sthe\sshowjournal.c\sutility\sin\sorder\sto\sbring\sit\sup\sto\sversion\s3.
-D 2010-10-01T13:28:43
+C Add\s#ifndef\sUSE_SYSTEM_SQLITE...#endif\saround\sthe\sbundled\sSQLite\slibrary\s\nfor\sthe\sTCL\sbindings.
+D 2010-10-01T17:23:46
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -101,7 +101,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk fb18cac178225dca49b2a159f9d6bac3889429b2
+F main.mk bcbaa8d5dbdf49c35c506321850158e1237563c1
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -875,14 +875,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 07ee080ec4527fd2191f41231208da66b3f6b955
-R 9f2a4041fba267d551d8b2ff622f8fd7
+P fa97d895463be6fd963c29b4525c2664193e36ec
+R cee57623d0da94ad287120e52bf09dfd
 U drh
-Z f01f039ec8bab3da1a3e09c88186de66
+Z 94aa2d05ef6169308b4b7ecdfc934a7a
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMpeIPoxKgR168RlERAoriAJ9XVMPUnrT7ry8RAodedHBJKebqlgCfZklw
-+EI4nS9fr/f+845hG1I3k0k=
-=lgHj
+iD8DBQFMphkmoxKgR168RlERAkoUAJ9D2EvLvDcG6vJ7CRGWxEjsFtif3QCgiTP1
+GWgaXFeonOK9mgFVngfb0pQ=
+=GZN0
 -----END PGP SIGNATURE-----
