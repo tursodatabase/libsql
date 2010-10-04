@@ -424,8 +424,7 @@ do_execsql_test e_expr-10.1.3 { SELECT typeof('5.1')   } {text}
 do_execsql_test e_expr-10.1.4 { SELECT typeof(X'ABCD') } {blob}
 do_execsql_test e_expr-10.1.5 { SELECT typeof(NULL)    } {null}
 
-# EVIDENCE-OF: R-26921-59298 Scientific notation is supported for
-# floating point literal values.
+# "Scientific notation is supported for point literal values."
 #
 do_execsql_test e_expr-10.2.1 { SELECT typeof(3.4e-02)    } {real}
 do_execsql_test e_expr-10.2.2 { SELECT typeof(3e+5)       } {real}
@@ -628,7 +627,7 @@ do_test e_expr-11.7.1 { sqlite3_finalize $stmt } SQLITE_OK
 #-------------------------------------------------------------------------
 # "Test" the syntax diagrams in lang_expr.html.
 #
-# EVIDENCE-OF: R-04177-20688 -- syntax diagram signed-number
+# EVIDENCE-OF: R-62067-43884 -- syntax diagram signed-number
 #
 do_execsql_test e_expr-12.1.1 { SELECT 0, +0, -0 } {0 0 0}
 do_execsql_test e_expr-12.1.2 { SELECT 1, +1, -1 } {1 1 -1}
@@ -643,7 +642,7 @@ do_execsql_test e_expr-12.1.6 {
   SELECT 0.0001, +0.0001, -0.0001 
 } {0.0001 0.0001 -0.0001}
 
-# EVIDENCE-OF: R-30740-26723 -- syntax diagram literal-value
+# EVIDENCE-OF: R-21258-25489 -- syntax diagram literal-value
 #
 set sqlite_current_time 1
 do_execsql_test e_expr-12.2.1 {SELECT 123}               {123}

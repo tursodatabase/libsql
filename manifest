@@ -1,5 +1,5 @@
-C Add\stests\sfor\stable-constraints\sto\se_createtable.test.
-D 2010-10-04T10:45:32
+C Fix\sbroken\sevidence\smarks\sin\se_expr.test.
+D 2010-10-04T11:01:18
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -350,7 +350,7 @@ F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_createtable.test 9c7921d3e422215fa674ff864b985ffa503e2e33
 F test/e_delete.test 55d868b647acc091c261a10b9b0cb0ab660a6acb
-F test/e_expr.test 164e87c1d7b40ceb47c57c3bffa384c81d009aa7
+F test/e_expr.test 0fdf503f955389aec497eb27983385cb540fb307
 F test/e_fkey.test 6721a741c6499b3ab7e5385923233343c8f1ad05
 F test/e_fts3.test 75bb0aee26384ef586165e21018a17f7cd843469
 F test/e_insert.test 7390c2da39f16a134dc9a439144768c727757d2c
@@ -872,7 +872,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P fb8db5581d884e5eb380480bc08d2106bfb6a9fc
-R e5a577d05a3137b3a436f501e7a009aa
+P 70f511872e938e096537fb0ca097ccdd3b33becc
+R 7644a9438430bba38c1e4757af53d104
 U dan
-Z c8b07f597c48900b43f6b7fa7a1d000c
+Z bfe6c46a25cfa7c78b09b27fcc3de0d8
