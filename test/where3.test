@@ -261,4 +261,72 @@ do_test where3-4.2 {
   }
 } {0 0 {TABLE t400} 1 1 {TABLE t401} 2 2 {TABLE t402}}
 
+# Verify that a performance regression encountered by firefox
+# has been fixed.
+#
+do_test where3-5.0 {
+  execsql {
+     CREATE TABLE aaa (id INTEGER PRIMARY KEY, type INTEGER,
+                       fk INTEGER DEFAULT NULL, parent INTEGER,
+                       position INTEGER, title LONGVARCHAR,
+                       keyword_id INTEGER, folder_type TEXT,
+                       dateAdded INTEGER, lastModified INTEGER);
+     CREATE INDEX aaa_111 ON aaa (fk, type);
+     CREATE INDEX aaa_222 ON aaa (parent, position);
+     CREATE INDEX aaa_333 ON aaa (fk, lastModified);
+     CREATE TABLE bbb (id INTEGER PRIMARY KEY, type INTEGER,
+                       fk INTEGER DEFAULT NULL, parent INTEGER,
+                       position INTEGER, title LONGVARCHAR,
+                       keyword_id INTEGER, folder_type TEXT,
+                       dateAdded INTEGER, lastModified INTEGER);
+     CREATE INDEX bbb_111 ON bbb (fk, type);
+     CREATE INDEX bbb_222 ON bbb (parent, position);
+     CREATE INDEX bbb_333 ON bbb (fk, lastModified);
+  }
+
+  execsql {
+    EXPLAIN QUERY PLAN
+     SELECT bbb.title AS tag_title 
+       FROM aaa JOIN bbb ON bbb.id = aaa.parent  
+      WHERE aaa.fk = 'constant'
+        AND LENGTH(bbb.title) > 0
+        AND bbb.parent = 4
+      ORDER BY bbb.title COLLATE NOCASE ASC;
+  }
+} {0 0 {TABLE aaa WITH INDEX aaa_333} 1 1 {TABLE bbb USING PRIMARY KEY}}
+do_test where3-5.1 {
+  execsql {
+    EXPLAIN QUERY PLAN
+     SELECT bbb.title AS tag_title 
+       FROM aaa JOIN aaa AS bbb ON bbb.id = aaa.parent  
+      WHERE aaa.fk = 'constant'
+        AND LENGTH(bbb.title) > 0
+        AND bbb.parent = 4
+      ORDER BY bbb.title COLLATE NOCASE ASC;
+  }
+} {0 0 {TABLE aaa WITH INDEX aaa_333} 1 1 {TABLE aaa AS bbb USING PRIMARY KEY}}
+do_test where3-5.2 {
+  execsql {
+    EXPLAIN QUERY PLAN
+     SELECT bbb.title AS tag_title 
+       FROM bbb JOIN aaa ON bbb.id = aaa.parent  
+      WHERE aaa.fk = 'constant'
+        AND LENGTH(bbb.title) > 0
+        AND bbb.parent = 4
+      ORDER BY bbb.title COLLATE NOCASE ASC;
+  }
+} {0 1 {TABLE aaa WITH INDEX aaa_333} 1 0 {TABLE bbb USING PRIMARY KEY}}
+do_test where3-5.3 {
+  execsql {
+    EXPLAIN QUERY PLAN
+     SELECT bbb.title AS tag_title 
+       FROM aaa AS bbb JOIN aaa ON bbb.id = aaa.parent  
+      WHERE aaa.fk = 'constant'
+        AND LENGTH(bbb.title) > 0
+        AND bbb.parent = 4
+      ORDER BY bbb.title COLLATE NOCASE ASC;
+  }
+} {0 1 {TABLE aaa WITH INDEX aaa_333} 1 0 {TABLE aaa AS bbb USING PRIMARY KEY}}
+
+
 finish_test
