@@ -1,5 +1,5 @@
-C Fix\sbroken\sevidence\smarks\sin\se_expr.test.
-D 2010-10-04T11:01:18
+C Warning\scleanup\sfrom\sMSVC.
+D 2010-10-04T14:11:55
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -141,7 +141,7 @@ F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 6d422ea91cf3d2d00408c5a8f2391cd458da85f8
 F src/main.c da74b2269470d97a702d2956eeeb691a5e3a68c3
-F src/malloc.c 455f9d671a3798b7678e081283fbd42ccc2bf5d4
+F src/malloc.c 3d7284cd9346ab6e3945535761e68c23c6cf40ef
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 00bd8265c81abb665c48fea1e0c234eb3b922206
 F src/mem2.c e307323e86b5da1853d7111b68fd6b84ad6f09cf
@@ -872,7 +872,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 70f511872e938e096537fb0ca097ccdd3b33becc
-R 7644a9438430bba38c1e4757af53d104
-U dan
-Z bfe6c46a25cfa7c78b09b27fcc3de0d8
+P 37ff94cec8a50d42c18f2253541bbcb0a6dfd0c3
+R 72991b4ede8e55d39ffb9e07792fd2bb
+U shaneh
+Z 79d1b17c2284822681a738edba5666f3

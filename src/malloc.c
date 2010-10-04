@@ -142,7 +142,7 @@ sqlite3_int64 sqlite3_soft_heap_limit64(sqlite3_int64 n){
     sqlite3MemoryAlarm(0, 0, 0);
   }
   excess = sqlite3_memory_used() - n;
-  if( excess>0 ) sqlite3_release_memory(excess & 0x7fffffff);
+  if( excess>0 ) sqlite3_release_memory((int)(excess & 0x7fffffff));
   return priorLimit;
 }
 void sqlite3_soft_heap_limit(int n){
