@@ -1443,4 +1443,194 @@ do_createtable_tests 4.12 {
   3b    "INSERT INTO t2 VALUES(1, 'abc')"       {}
 }
 
+# EVIDENCE-OF: R-02060-64547 A NOT NULL constraint may only be attached
+# to a column definition, not specified as a table constraint.
+#
+drop_all_tables
+do_createtable_tests 4.13.1 {
+  1     "CREATE TABLE t1(a NOT NULL, b)"                               {}
+  2     "CREATE TABLE t2(a PRIMARY KEY NOT NULL, b)"                   {}
+  3     "CREATE TABLE t3(a NOT NULL, b NOT NULL, c NOT NULL UNIQUE)"   {}
+}
+do_createtable_tests 4.13.2 -error {
+  near "NOT": syntax error
+} {
+  1     "CREATE TABLE t4(a, b, NOT NULL(a))"                   {}
+  2     "CREATE TABLE t4(a PRIMARY KEY, b, NOT NULL(a))"       {}
+  3     "CREATE TABLE t4(a, b, c UNIQUE, NOT NULL(a, b, c))"   {}
+}
+
+# EVIDENCE-OF: R-31795-57643 a NOT NULL constraint dictates that the
+# associated column may not contain a NULL value. Attempting to set the
+# column value to NULL when inserting a new row or updating an existing
+# one causes a constraint violation.
+#
+#     These tests use the tables created by 4.13.
+#
+do_execsql_test 4.14.0 {
+  INSERT INTO t1 VALUES('x', 'y');
+  INSERT INTO t1 VALUES('z', NULL);
+
+  INSERT INTO t2 VALUES('x', 'y');
+  INSERT INTO t2 VALUES('z', NULL);
+
+  INSERT INTO t3 VALUES('x', 'y', 'z');
+  INSERT INTO t3 VALUES(1, 2, 3);
+}
+do_createtable_tests 4.14 -error {
+  %s may not be NULL
+} {
+  1    "INSERT INTO t1 VALUES(NULL, 'a')"         {t1.a}
+  2    "INSERT INTO t2 VALUES(NULL, 'b')"         {t2.a}
+  3    "INSERT INTO t3 VALUES('c', 'd', NULL)"    {t3.c}
+  4    "INSERT INTO t3 VALUES('e', NULL, 'f')"    {t3.b}
+  5    "INSERT INTO t3 VALUES(NULL, 'g', 'h')"    {t3.a}
+}
+
+# EVIDENCE-OF: R-42511-39459 PRIMARY KEY, UNIQUE and NOT NULL
+# constraints may be explicitly assigned a default conflict resolution
+# algorithm by including a conflict-clause in their definitions.
+#
+#     Conflict clauses: ABORT, ROLLBACK, IGNORE, FAIL, REPLACE
+#
+#     Test cases 4.15.*, 4.16.* and 4.17.* focus on PRIMARY KEY, NOT NULL
+#     and UNIQUE constraints, respectively.
+#
+drop_all_tables
+do_execsql_test 4.15.0 {
+  CREATE TABLE t1_ab(a PRIMARY KEY ON CONFLICT ABORT, b);
+  CREATE TABLE t1_ro(a PRIMARY KEY ON CONFLICT ROLLBACK, b);
+  CREATE TABLE t1_ig(a PRIMARY KEY ON CONFLICT IGNORE, b);
+  CREATE TABLE t1_fa(a PRIMARY KEY ON CONFLICT FAIL, b);
+  CREATE TABLE t1_re(a PRIMARY KEY ON CONFLICT REPLACE, b);
+  CREATE TABLE t1_xx(a PRIMARY KEY, b);
+
+  INSERT INTO t1_ab VALUES(1, 'one');
+  INSERT INTO t1_ab VALUES(2, 'two');
+  INSERT INTO t1_ro SELECT * FROM t1_ab;
+  INSERT INTO t1_ig SELECT * FROM t1_ab;
+  INSERT INTO t1_fa SELECT * FROM t1_ab;
+  INSERT INTO t1_re SELECT * FROM t1_ab;
+  INSERT INTO t1_xx SELECT * FROM t1_ab;
+
+  CREATE TABLE t2_ab(a, b NOT NULL ON CONFLICT ABORT);
+  CREATE TABLE t2_ro(a, b NOT NULL ON CONFLICT ROLLBACK);
+  CREATE TABLE t2_ig(a, b NOT NULL ON CONFLICT IGNORE);
+  CREATE TABLE t2_fa(a, b NOT NULL ON CONFLICT FAIL);
+  CREATE TABLE t2_re(a, b NOT NULL ON CONFLICT REPLACE);
+  CREATE TABLE t2_xx(a, b NOT NULL);
+
+  INSERT INTO t2_ab VALUES(1, 'one');
+  INSERT INTO t2_ab VALUES(2, 'two');
+  INSERT INTO t2_ro SELECT * FROM t2_ab;
+  INSERT INTO t2_ig SELECT * FROM t2_ab;
+  INSERT INTO t2_fa SELECT * FROM t2_ab;
+  INSERT INTO t2_re SELECT * FROM t2_ab;
+  INSERT INTO t2_xx SELECT * FROM t2_ab;
+
+  CREATE TABLE t3_ab(a, b, UNIQUE(a, b) ON CONFLICT ABORT);
+  CREATE TABLE t3_ro(a, b, UNIQUE(a, b) ON CONFLICT ROLLBACK);
+  CREATE TABLE t3_ig(a, b, UNIQUE(a, b) ON CONFLICT IGNORE);
+  CREATE TABLE t3_fa(a, b, UNIQUE(a, b) ON CONFLICT FAIL);
+  CREATE TABLE t3_re(a, b, UNIQUE(a, b) ON CONFLICT REPLACE);
+  CREATE TABLE t3_xx(a, b, UNIQUE(a, b));
+
+  INSERT INTO t3_ab VALUES(1, 'one');
+  INSERT INTO t3_ab VALUES(2, 'two');
+  INSERT INTO t3_ro SELECT * FROM t3_ab;
+  INSERT INTO t3_ig SELECT * FROM t3_ab;
+  INSERT INTO t3_fa SELECT * FROM t3_ab;
+  INSERT INTO t3_re SELECT * FROM t3_ab;
+  INSERT INTO t3_xx SELECT * FROM t3_ab;
+}
+
+foreach {tn tbl res ac data} {
+  1   t1_ab    {1 {column a is not unique}} 0 {1 one 2 two 3 three}
+  2   t1_ro    {1 {column a is not unique}} 1 {1 one 2 two}
+  3   t1_fa    {1 {column a is not unique}} 0 {1 one 2 two 3 three 4 string}
+  4   t1_ig    {0 {}} 0 {1 one 2 two 3 three 4 string 6 string}
+  5   t1_re    {0 {}} 0 {1 one 2 two 4 string 3 string 6 string}
+  6   t1_xx    {1 {column a is not unique}} 0 {1 one 2 two 3 three}
+} {
+  catchsql COMMIT
+  do_execsql_test  4.15.$tn.1 "BEGIN; INSERT INTO $tbl VALUES(3, 'three')"
+
+  do_catchsql_test 4.15.$tn.2 " 
+    INSERT INTO $tbl SELECT ((a%2)*a+3), 'string' FROM $tbl;
+  " $res
+
+  do_test e_createtable-4.15.$tn.3 { sqlite3_get_autocommit db } $ac
+  do_execsql_test 4.15.$tn.4 "SELECT * FROM $tbl" $data
+}
+foreach {tn tbl res ac data} {
+  1   t2_ab    {1 {t2_ab.b may not be NULL}} 0 {1 one 2 two 3 three}
+  2   t2_ro    {1 {t2_ro.b may not be NULL}} 1 {1 one 2 two}
+  3   t2_fa    {1 {t2_fa.b may not be NULL}} 0 {1 one 2 two 3 three 4 xx}
+  4   t2_ig    {0 {}} 0 {1 one 2 two 3 three 4 xx 6 xx}
+  5   t2_re    {1 {t2_re.b may not be NULL}} 0 {1 one 2 two 3 three}
+  6   t2_xx    {1 {t2_xx.b may not be NULL}} 0 {1 one 2 two 3 three}
+} {
+  catchsql COMMIT
+  do_execsql_test  4.16.$tn.1 "BEGIN; INSERT INTO $tbl VALUES(3, 'three')"
+
+  do_catchsql_test 4.16.$tn.2 " 
+    INSERT INTO $tbl SELECT a+3, CASE a WHEN 2 THEN NULL ELSE 'xx' END FROM $tbl
+  " $res
+
+  do_test e_createtable-4.16.$tn.3 { sqlite3_get_autocommit db } $ac
+  do_execsql_test 4.16.$tn.4 "SELECT * FROM $tbl" $data
+}
+foreach {tn tbl res ac data} {
+  1   t3_ab    {1 {columns a, b are not unique}} 0 {1 one 2 two 3 three}
+  2   t3_ro    {1 {columns a, b are not unique}} 1 {1 one 2 two}
+  3   t3_fa    {1 {columns a, b are not unique}} 0 {1 one 2 two 3 three 4 three}
+  4   t3_ig    {0 {}} 0 {1 one 2 two 3 three 4 three 6 three}
+  5   t3_re    {0 {}} 0 {1 one 2 two 4 three 3 three 6 three}
+  6   t3_xx    {1 {columns a, b are not unique}} 0 {1 one 2 two 3 three}
+} {
+  catchsql COMMIT
+  do_execsql_test  4.17.$tn.1 "BEGIN; INSERT INTO $tbl VALUES(3, 'three')"
+
+  do_catchsql_test 4.17.$tn.2 " 
+    INSERT INTO $tbl SELECT ((a%2)*a+3), 'three' FROM $tbl
+  " $res
+
+  do_test e_createtable-4.17.$tn.3 { sqlite3_get_autocommit db } $ac
+  do_execsql_test 4.17.$tn.4 "SELECT * FROM $tbl" $data
+}
+catchsql COMMIT
+
+# EVIDENCE-OF: R-12645-39772 Or, if a constraint definition does not
+# include a conflict-clause or it is a CHECK constraint, the default
+# conflict resolution algorithm is ABORT.
+#
+#     The first half of the above is tested along with explicit ON 
+#     CONFLICT clauses above (specifically, the tests involving t1_xx, t2_xx
+#     and t3_xx). The following just tests that the default conflict
+#     handling for CHECK constraints is ABORT.
+#
+do_execsql_test 4.18.1 {
+  CREATE TABLE t4(a, b CHECK (b!=10));
+  INSERT INTO t4 VALUES(1, 2);
+  INSERT INTO t4 VALUES(3, 4);
+}
+do_execsql_test  4.18.2 { BEGIN; INSERT INTO t4 VALUES(5, 6) }
+do_catchsql_test 4.18.3 { 
+  INSERT INTO t4 SELECT a+4, b+4 FROM t4
+} {1 {constraint failed}}
+do_test e_createtable-4.18.4 { sqlite3_get_autocommit db } 0
+do_execsql_test 4.18.5 { SELECT * FROM t4 } {1 2 3 4 5 6}
+
+# EVIDENCE-OF: R-19114-56113 Different constraints within the same table
+# may have different default conflict resolution algorithms.
+#
+do_execsql_test 4.19.0 {
+  CREATE TABLE t5(a NOT NULL ON CONFLICT IGNORE, b NOT NULL ON CONFLICT ABORT);
+}
+do_catchsql_test 4.19.1 { INSERT INTO t5 VALUES(NULL, 'not null') } {0 {}}
+do_execsql_test  4.19.2 { SELECT * FROM t5 } {}
+do_catchsql_test 4.19.3 { INSERT INTO t5 VALUES('not null', NULL) } \
+  {1 {t5.b may not be NULL}}
+do_execsql_test  4.19.4 { SELECT * FROM t5 } {}
+
 finish_test
