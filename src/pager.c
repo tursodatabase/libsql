@@ -5205,29 +5205,29 @@ static int pager_write(PgHdr *pPg){
 
   CHECK_PAGE(pPg);
 
+  /* The journal file needs to be opened. Higher level routines have already
+  ** obtained the necessary locks to begin the write-transaction, but the
+  ** rollback journal might not yet be open. Open it now if this is the case.
+  **
+  ** This is done before calling sqlite3PcacheMakeDirty() on the page. 
+  ** Otherwise, if it were done after calling sqlite3PcacheMakeDirty(), then
+  ** an error might occur and the pager would end up in WRITER_LOCKED state
+  ** with pages marked as dirty in the cache.
+  */
+  if( pPager->eState==PAGER_WRITER_LOCKED ){
+    rc = pager_open_journal(pPager);
+    if( rc!=SQLITE_OK ) return rc;
+  }
+  assert( pPager->eState>=PAGER_WRITER_CACHEMOD );
+  assert( assert_pager_state(pPager) );
+
   /* Mark the page as dirty.  If the page has already been written
   ** to the journal then we can return right away.
   */
   sqlite3PcacheMakeDirty(pPg);
   if( pageInJournal(pPg) && !subjRequiresPage(pPg) ){
     assert( !pagerUseWal(pPager) );
-    assert( pPager->eState>=PAGER_WRITER_CACHEMOD );
   }else{
-
-    /* If we get this far, it means that the page needs to be
-    ** written to the transaction journal or the checkpoint journal
-    ** or both.
-    **
-    ** Higher level routines have already obtained the necessary locks
-    ** to begin the write-transaction, but the rollback journal might not 
-    ** yet be open. Open it now if this is the case.
-    */
-    if( pPager->eState==PAGER_WRITER_LOCKED ){
-      rc = pager_open_journal(pPager);
-      if( rc!=SQLITE_OK ) return rc;
-    }
-    assert( pPager->eState>=PAGER_WRITER_CACHEMOD );
-    assert( assert_pager_state(pPager) );
   
     /* The transaction journal now exists and we have a RESERVED or an
     ** EXCLUSIVE lock on the main database file.  Write the current page to

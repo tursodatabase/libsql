@@ -655,7 +655,7 @@ sqlite3 db test.db
 sqlite3_extended_result_codes db 1
 set ::DB [sqlite3_connection_pointer db]
 
-# Turn of the Tcl interface's prepared statement caching facility in
+# Turn off the Tcl interface's prepared statement caching facility in
 # the new connnection. Then run the tests with "transient" malloc failures.
 db cache size 0
 run_test $::run_test_script 0
