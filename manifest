@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Avoid\sall\smemory\sallocation\s(and\shence\sthe\spossiblitity\sof\sOOM\sfailure)\nin\ssqlite3_value_double()\sand\ssqlite3_column_double().
-D 2010-10-05T12:05:32
+C If\swalLockExclusive()\sfails\sfor\sreasons\sother\sthan\sSQLITE_BUSY\sinside\sof\nwalRestartLog()\sthen\spropagate\sthat\serror\sback\sup\sto\sthe\sapplication.
+D 2010-10-05T15:41:06
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -237,7 +237,7 @@ F src/vdbeblob.c 258a6010ba7a82b72b327fb24c55790655689256
 F src/vdbemem.c 23723a12cd3ba7ab3099193094cbb2eb78956aa9
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c 6c90e3e65b2f026fc54703a8f3c917155f419d87
-F src/wal.c 7081f148cb52b0cf2280e6384196402dc58130a3
+F src/wal.c 0dc7eb9e907a2c280cdcde876d313e07ea4ad811
 F src/wal.h 96669b645e27cd5a111ba59f0cae7743a207bc3c
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 204cdfb66eb82ee17a8fc0a9b12c1ab402755cbb
@@ -875,14 +875,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P dca8763872aa6244cb1a0f519167b360a6372d0d
-R bae0674e9979ea2336e70aa2a90e681b
+P 4afdf9705a7c2b67aea31c5d51b9c295867d62d1
+R 0b598db9d15663b9eac0eb9608cf219e
 U drh
-Z 3cc43a3d192c810caec2858798f1930c
+Z 4912e1202186b273f4e8ef7f3dd0f8e0
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMqxSPoxKgR168RlERApxjAJ4uviGlguL/jbkr0aZy/Gya+iIP3QCfbJJB
-GXkhyKKKYg66Eo0bQBXwWfk=
-=4i7X
+iD8DBQFMq0cVoxKgR168RlERAvcDAJ4iltbS62O/tU0jHhSrStG3EtEbrQCfTkH/
+ai1cUz4PA5aKqP9WWoZrWbA=
+=vRiW
 -----END PGP SIGNATURE-----

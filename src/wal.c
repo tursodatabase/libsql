@@ -2366,7 +2366,7 @@ int sqlite3WalSavepointUndo(Wal *pWal, u32 *aWalData){
 **
 ** SQLITE_OK is returned if no error is encountered (regardless of whether
 ** or not pWal->hdr.mxFrame is modified). An SQLite error code is returned
-** if some error 
+** if an error occurs.
 */
 static int walRestartLog(Wal *pWal){
   int rc = SQLITE_OK;
@@ -2399,6 +2399,8 @@ static int walRestartLog(Wal *pWal){
         for(i=1; i<WAL_NREADER; i++) pInfo->aReadMark[i] = READMARK_NOT_USED;
         assert( pInfo->aReadMark[0]==0 );
         walUnlockExclusive(pWal, WAL_READ_LOCK(1), WAL_NREADER-1);
+      }else if( rc!=SQLITE_BUSY ){
+        return rc;
       }
     }
     walUnlockShared(pWal, WAL_READ_LOCK(0));
