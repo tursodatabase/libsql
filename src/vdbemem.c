@@ -393,14 +393,7 @@ double sqlite3VdbeRealValue(Mem *pMem){
   }else if( pMem->flags & (MEM_Str|MEM_Blob) ){
     /* (double)0 In case of SQLITE_OMIT_FLOATING_POINT... */
     double val = (double)0;
-    pMem->flags |= MEM_Str;
-    if( sqlite3VdbeChangeEncoding(pMem, SQLITE_UTF8)
-       || sqlite3VdbeMemNulTerminate(pMem) ){
-      /* (double)0 In case of SQLITE_OMIT_FLOATING_POINT... */
-      return (double)0;
-    }
-    assert( pMem->z );
-    sqlite3AtoF(pMem->z, &val, pMem->n, SQLITE_UTF8);
+    sqlite3AtoF(pMem->z, &val, pMem->n, pMem->enc);
     return val;
   }else{
     /* (double)0 In case of SQLITE_OMIT_FLOATING_POINT... */
