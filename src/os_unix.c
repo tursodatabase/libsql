@@ -4077,11 +4077,20 @@ static int fillInUnixFile(
   */
   UNUSED_PARAMETER(isDelete);
 
+  /* Usually the path zFilename should not be a relative pathname. The
+  ** exception is when opening the proxy "conch" file in builds that
+  ** include the special Apple locking styles.
+  */
+  assert( zFilename==0 || zFilename[0]=='/' 
+#if defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE
+    || pVfs->pAppData==(void*)&autolockIoFinder
+#endif
+  );
+
   OSTRACE(("OPEN    %-3d %s\n", h, zFilename));
   pNew->h = h;
   pNew->dirfd = dirfd;
   pNew->fileFlags = 0;
-  assert( zFilename==0 || zFilename[0]=='/' );  /* Never a relative pathname */
   pNew->zPath = zFilename;
 
 #if OS_VXWORKS
