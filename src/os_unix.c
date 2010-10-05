@@ -4081,11 +4081,12 @@ static int fillInUnixFile(
   ** exception is when opening the proxy "conch" file in builds that
   ** include the special Apple locking styles.
   */
-  assert( zFilename==0 || zFilename[0]=='/' 
 #if defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE
-    || pVfs->pAppData==(void*)&autolockIoFinder
+  assert( zFilename==0 || zFilename[0]=='/' 
+    || pVfs->pAppData==(void*)&autolockIoFinder );
+#else
+  assert( zFilename==0 || zFilename[0]=='/' );
 #endif
-  );
 
   OSTRACE(("OPEN    %-3d %s\n", h, zFilename));
   pNew->h = h;
