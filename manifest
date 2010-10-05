@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Fix\sa\sperformance\sregression\s(relative\sto\sversion\s3.6.23.1)\scaused\sby\sthe\nquery\splanner\staking\sinto\saccount\snon-indexable\sWHERE\sclause\sterms\sto\sselect\nthe\soutermost\sjoin\sloops\swhen\sit\sshould\sbe\sselecting\stables\sfor\sthe\soutermost\nloop\sthat\sdo\snot\sbenefit\sfrom\sbeing\sin\san\sinner\sloop.
-D 2010-10-04T23:55:51
+C Prevent\sbackcompat.test\sfrom\smistaking\sdirectories\sfor\sbinary\sexecutables.
+D 2010-10-05T08:13:44
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -269,7 +266,7 @@ F test/autoindex1.test 7df441bf0e7a88644eb80993339dbf1db3a12c68
 F test/autovacuum.test bb7c0885e6f8f1d633045de48f2b66082162766d
 F test/autovacuum_ioerr2.test 598b0663074d3673a9c1bc9a16e80971313bafe6
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
-F test/backcompat.test 49bd844eb245f0b2b6f2a3f8bebad0065403a9a7
+F test/backcompat.test 5f3ba113147cfe5620006f457302ec2b95c46913
 F test/backup.test 004d3b78bffd990741ab50133ed4347c25c172b1
 F test/backup2.test b7c69f937c912e85ac8a5dbd1e1cf290302b2d49
 F test/backup_ioerr.test 1f012e692f42c0442ae652443258f70e9f20fa38
@@ -875,14 +872,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P dd106901407a4d98644dd614e16e9fdc10cd7423
-R cdc7b980473125bc516a169d40b86103
-U drh
-Z 6ab09c962683b0c7fab62719b77e8d38
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMqmmLoxKgR168RlERAp+nAJoD7LopkWFS5QUzO6hLt0RvySH/QACcDbon
-33RkCFR9+ouK2CTDhFfslEU=
-=Nqov
------END PGP SIGNATURE-----
+P ece641eb8951c6314cedbdb3243f91cb199c3239
+R dc67a24b400f49df7bb254ce9f771e51
+U dan
+Z 587203dfa138eccd760d5a9e6f1cf6e1
