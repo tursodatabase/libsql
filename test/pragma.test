@@ -1379,21 +1379,21 @@ ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
   
   set sqlite_hostid_num 2
   do_test pragma-16.7 {
-    sqlite3 db test2.db
-    execsql {
-      PRAGMA lock_proxy_file=":auto:";
-    } 
-    catchsql {
-      select * from sqlite_master;
-    }
+    list [catch {
+      sqlite3 db test2.db
+      execsql { 
+        PRAGMA lock_proxy_file=":auto:";
+        select * from sqlite_master;
+      }
+    } msg] $msg
   } {1 {database is locked}}
   db close
   
   do_test pragma-16.8 {
-    sqlite3 db test2.db
-    catchsql {
-      select * from sqlite_master;
-    } 
+    list [catch {
+      sqlite3 db test2.db
+      execsql { select * from sqlite_master } 
+    } msg] $msg
   } {1 {database is locked}}
 
   db2 close
