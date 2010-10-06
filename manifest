@@ -1,5 +1,8 @@
-C Fix\sminor\stest\ssuite\sproblems\scausing\serrors\son\sOSX.
-D 2010-10-06T16:42:53
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Fix\slong-standing\sbugs\swith\sthe\shandling\sof\sLIMIT\sclausing\sin\ncompound\sSELECT\sstatements\swith\sFROM\sclause\ssubqueries.\nTicket\s[38cb5df375078d3f9].
+D 2010-10-06T18:55:37
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c599a15d268b1db2aeadea19df2adc3bf2eb6bee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +176,7 @@ F src/printf.c 8ae5082dd38a1b5456030c3755ec3a392cd51506
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
-F src/select.c cf3013b1953348c7c6ff9636342e87b9fda68466
+F src/select.c 6a5c72fb0e8dc7f6133f5a9d7a747130ef0a00ea
 F src/shell.c 8517fc1f9c59ae4007e6cc8b9af91ab231ea2056
 F src/sqlite.h.in a5b50e1bc4d4d9a3cc95386747220a839d0c40f7
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
@@ -661,6 +664,7 @@ F test/tkt-26ff0c2d1e.test 888324e751512972c6e0d1a09df740d8f5aaf660
 F test/tkt-2ea2425d34.test 1cf13e6f75d149b3209a0cb32927a82d3d79fb28
 F test/tkt-31338dca7e.test 5741cd48de500347a437ba1be58c8335e83c5a5e
 F test/tkt-313723c356.test c47f8a9330523e6f35698bf4489bcb29609b53ac
+F test/tkt-38cb5df375.test 9e9b19857dba0896a8efdaf334d405ba423492f2
 F test/tkt-3998683a16.test 6d1d04d551ed1704eb3396ca87bb9ccc8c5c1eb7
 F test/tkt-3fe897352e.test 10de1a67bd5c66b238a4c96abe55531b37bb4f00
 F test/tkt-4a03edc4c8.test 2865e4edbc075b954daa82f8da7cc973033ec76e
@@ -872,7 +876,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f29da7bec68fa2cdd97c75b30f7ab25c96f8d49a
-R f6ee88c33c88377138fd0e936582123a
-U dan
-Z 0a6a348b6e59062f1f3c2d42f48437e9
+P 759c954fee215a64f21fe13491515eebebbc6d01
+R 1213c6239354252d04636f6e595a524d
+U drh
+Z ad83a95e895864b36d1472aba689aee3
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMrMYsoxKgR168RlERAphrAJsHgOTi3yKaSdMCDuDixyFjVCs2qACffar6
+94VTw5iNsyxG/DDO3oJrUTk=
+=3769
+-----END PGP SIGNATURE-----
