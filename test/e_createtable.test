@@ -1633,4 +1633,298 @@ do_catchsql_test 4.19.3 { INSERT INTO t5 VALUES('not null', NULL) } \
   {1 {t5.b may not be NULL}}
 do_execsql_test  4.19.4 { SELECT * FROM t5 } {}
 
+#------------------------------------------------------------------------
+# Tests for INTEGER PRIMARY KEY and rowid related statements.
+#
+
+# EVIDENCE-OF: R-52584-04009 The rowid value can be accessed using one
+# of the special case-independent names "rowid", "oid", or "_rowid_" in
+# place of a column name.
+#
+drop_all_tables
+do_execsql_test 5.1.0 {
+  CREATE TABLE t1(x, y);
+  INSERT INTO t1 VALUES('one', 'first');
+  INSERT INTO t1 VALUES('two', 'second');
+  INSERT INTO t1 VALUES('three', 'third');
+}
+do_createtable_tests 5.1 {
+  1   "SELECT rowid FROM t1"        {1 2 3}
+  2   "SELECT oid FROM t1"          {1 2 3}
+  3   "SELECT _rowid_ FROM t1"      {1 2 3}
+  4   "SELECT ROWID FROM t1"        {1 2 3}
+  5   "SELECT OID FROM t1"          {1 2 3}
+  6   "SELECT _ROWID_ FROM t1"      {1 2 3}
+  7   "SELECT RoWiD FROM t1"        {1 2 3}
+  8   "SELECT OiD FROM t1"          {1 2 3}
+  9   "SELECT _RoWiD_ FROM t1"      {1 2 3}
+}
+
+# EVIDENCE-OF: R-26501-17306 If a table contains a user defined column
+# named "rowid", "oid" or "_rowid_", then that name always refers the
+# explicitly declared column and cannot be used to retrieve the integer
+# rowid value.
+#
+do_execsql_test 5.2.0 {
+  CREATE TABLE t2(oid, b);
+  CREATE TABLE t3(a, _rowid_);
+  CREATE TABLE t4(a, b, rowid);
+
+  INSERT INTO t2 VALUES('one', 'two');
+  INSERT INTO t2 VALUES('three', 'four');
+
+  INSERT INTO t3 VALUES('five', 'six');
+  INSERT INTO t3 VALUES('seven', 'eight');
+
+  INSERT INTO t4 VALUES('nine', 'ten', 'eleven');
+  INSERT INTO t4 VALUES('twelve', 'thirteen', 'fourteen');
+}
+do_createtable_tests 5.2 {
+  1   "SELECT oid, rowid, _rowid_ FROM t2"   {one 1 1      three 2 2}
+  2   "SELECT oid, rowid, _rowid_ FROM t3"   {1 1 six      2 2 eight} 
+  3   "SELECT oid, rowid, _rowid_ FROM t4"   {1 eleven 1   2 fourteen 2}
+}
+
+
+# Argument $tbl is the name of a table in the database. Argument $col is
+# the name of one of the tables columns. Return 1 if $col is an alias for
+# the rowid, or 0 otherwise.
+#
+proc is_integer_primary_key {tbl col} {
+  lindex [db eval [subst {
+    DELETE FROM $tbl;
+    INSERT INTO $tbl ($col) VALUES(0);
+    SELECT (rowid==$col) FROM $tbl;
+    DELETE FROM $tbl;
+  }]] 0
+}
+
+# EVIDENCE-OF: R-53738-31673 With one exception, if a table has a
+# primary key that consists of a single column, and the declared type of
+# that column is "INTEGER" in any mixture of upper and lower case, then
+# the column becomes an alias for the rowid.
+#
+# EVIDENCE-OF: R-45951-08347 if the declaration of a column with
+# declared type "INTEGER" includes an "PRIMARY KEY DESC" clause, it does
+# not become an alias for the rowid and is not classified as an integer
+# primary key.
+#
+do_createtable_tests 5.3 -tclquery { 
+  is_integer_primary_key t5 pk
+} -repair {
+  catchsql { DROP TABLE t5 }
+} {
+  1   "CREATE TABLE t5(pk integer primary key)"                         1
+  2   "CREATE TABLE t5(pk integer, primary key(pk))"                    1
+  3   "CREATE TABLE t5(pk integer, v integer, primary key(pk))"         1
+  4   "CREATE TABLE t5(pk integer, v integer, primary key(pk, v))"      0
+  5   "CREATE TABLE t5(pk int, v integer, primary key(pk, v))"          0
+  6   "CREATE TABLE t5(pk int, v integer, primary key(pk))"             0
+  7   "CREATE TABLE t5(pk int primary key, v integer)"                  0
+  8   "CREATE TABLE t5(pk inTEger primary key)"                         1
+  9   "CREATE TABLE t5(pk inteGEr, primary key(pk))"                    1
+  10  "CREATE TABLE t5(pk INTEGER, v integer, primary key(pk))"         1
+}
+
+# EVIDENCE-OF: R-41444-49665 Other integer type names like "INT" or
+# "BIGINT" or "SHORT INTEGER" or "UNSIGNED INTEGER" causes the primary
+# key column to behave as an ordinary table column with integer affinity
+# and a unique index, not as an alias for the rowid.
+#
+do_execsql_test 5.4.1 {
+  CREATE TABLE t6(pk INT primary key);
+  CREATE TABLE t7(pk BIGINT primary key);
+  CREATE TABLE t8(pk SHORT INTEGER primary key);
+  CREATE TABLE t9(pk UNSIGNED INTEGER primary key);
+} 
+do_test e_createtable-5.4.2.1 { is_integer_primary_key t6 pk } 0
+do_test e_createtable-5.4.2.2 { is_integer_primary_key t7 pk } 0
+do_test e_createtable-5.4.2.3 { is_integer_primary_key t8 pk } 0
+do_test e_createtable-5.4.2.4 { is_integer_primary_key t9 pk } 0
+
+do_execsql_test 5.4.3 {
+  INSERT INTO t6 VALUES('2.0');
+  INSERT INTO t7 VALUES('2.0');
+  INSERT INTO t8 VALUES('2.0');
+  INSERT INTO t9 VALUES('2.0');
+  SELECT typeof(pk), pk FROM t6;
+  SELECT typeof(pk), pk FROM t7;
+  SELECT typeof(pk), pk FROM t8;
+  SELECT typeof(pk), pk FROM t9;
+} {integer 2 integer 2 integer 2 integer 2}
+
+do_catchsql_test 5.4.4.1 { 
+  INSERT INTO t6 VALUES(2) 
+} {1 {column pk is not unique}}
+do_catchsql_test 5.4.4.2 { 
+  INSERT INTO t7 VALUES(2) 
+} {1 {column pk is not unique}}
+do_catchsql_test 5.4.4.3 { 
+  INSERT INTO t8 VALUES(2) 
+} {1 {column pk is not unique}}
+do_catchsql_test 5.4.4.4 { 
+  INSERT INTO t9 VALUES(2) 
+} {1 {column pk is not unique}}
+
+# EVIDENCE-OF: R-56094-57830 the following three table declarations all
+# cause the column "x" to be an alias for the rowid (an integer primary
+# key): CREATE TABLE t(x INTEGER PRIMARY KEY ASC, y, z); CREATE TABLE
+# t(x INTEGER, y, z, PRIMARY KEY(x ASC)); CREATE TABLE t(x INTEGER, y,
+# z, PRIMARY KEY(x DESC));
+#
+# EVIDENCE-OF: R-20149-25884 the following declaration does not result
+# in "x" being an alias for the rowid: CREATE TABLE t(x INTEGER PRIMARY
+# KEY DESC, y, z);
+#
+do_createtable_tests 5 -tclquery { 
+  is_integer_primary_key t x
+} -repair {
+  catchsql { DROP TABLE t }
+} {
+  5.1    "CREATE TABLE t(x INTEGER PRIMARY KEY ASC, y, z)"      1
+  5.2    "CREATE TABLE t(x INTEGER, y, z, PRIMARY KEY(x ASC))"  1
+  5.3    "CREATE TABLE t(x INTEGER, y, z, PRIMARY KEY(x DESC))" 1
+  6.1    "CREATE TABLE t(x INTEGER PRIMARY KEY DESC, y, z)"     0
+}
+
+# EVIDENCE-OF: R-03733-29734 Rowid values may be modified using an
+# UPDATE statement in the same way as any other column value can, either
+# using one of the built-in aliases ("rowid", "oid" or "_rowid_") or by
+# using an alias created by an integer primary key.
+#
+do_execsql_test 5.7.0 {
+  CREATE TABLE t10(a, b);
+  INSERT INTO t10 VALUES('ten', 10);
+
+  CREATE TABLE t11(a, b INTEGER PRIMARY KEY);
+  INSERT INTO t11 VALUES('ten', 10);
+}
+do_createtable_tests 5.7.1 -query { 
+  SELECT rowid, _rowid_, oid FROM t10;
+} {
+  1    "UPDATE t10 SET rowid = 5"   {5 5 5}
+  2    "UPDATE t10 SET _rowid_ = 6" {6 6 6}
+  3    "UPDATE t10 SET oid = 7"     {7 7 7}
+}
+do_createtable_tests 5.7.2 -query { 
+  SELECT rowid, _rowid_, oid, b FROM t11;
+} {
+  1    "UPDATE t11 SET rowid = 5"   {5 5 5 5}
+  2    "UPDATE t11 SET _rowid_ = 6" {6 6 6 6}
+  3    "UPDATE t11 SET oid = 7"     {7 7 7 7}
+  4    "UPDATE t11 SET b = 8"       {8 8 8 8}
+}
+
+# EVIDENCE-OF: R-58706-14229 Similarly, an INSERT statement may provide
+# a value to use as the rowid for each row inserted.
+#
+do_createtable_tests 5.8.1 -query { 
+  SELECT rowid, _rowid_, oid FROM t10;
+} -repair { 
+  execsql { DELETE FROM t10 } 
+} {
+  1    "INSERT INTO t10(oid) VALUES(15)"           {15 15 15}
+  2    "INSERT INTO t10(rowid) VALUES(16)"         {16 16 16}
+  3    "INSERT INTO t10(_rowid_) VALUES(17)"       {17 17 17}
+  4    "INSERT INTO t10(a, b, oid) VALUES(1,2,3)"  {3 3 3}
+}
+do_createtable_tests 5.8.2 -query { 
+  SELECT rowid, _rowid_, oid, b FROM t11;
+} -repair { 
+  execsql { DELETE FROM t11 } 
+} {
+  1    "INSERT INTO t11(oid) VALUES(15)"           {15 15 15 15}
+  2    "INSERT INTO t11(rowid) VALUES(16)"         {16 16 16 16}
+  3    "INSERT INTO t11(_rowid_) VALUES(17)"       {17 17 17 17}
+  4    "INSERT INTO t11(a, b) VALUES(1,2)"         {2 2 2 2}
+}
+
+# EVIDENCE-OF: R-32326-44592 Unlike normal SQLite columns, an integer
+# primary key or rowid column must contain integer values. Integer
+# primary key or rowid columns are not able to hold floating point
+# values, strings, BLOBs, or NULLs.
+#
+#     This is considered by the tests for the following 3 statements,
+#     which show that:
+#
+#       1. Attempts to UPDATE a rowid column to a non-integer value fail,
+#       2. Attempts to INSERT a real, string or blob value into a rowid 
+#          column fail, and
+#       3. Attempting to INSERT a NULL value into a rowid column causes the
+#          system to automatically select an integer value to use.
+#
+
+
+# EVIDENCE-OF: R-64224-62578 If an UPDATE statement attempts to set an
+# integer primary key or rowid column to a NULL or blob value, or to a
+# string or real value that cannot be losslessly converted to an
+# integer, a "datatype mismatch" error occurs and the statement is
+# aborted.
+#
+drop_all_tables
+do_execsql_test 5.9.0 {
+  CREATE TABLE t12(x INTEGER PRIMARY KEY, y);
+  INSERT INTO t12 VALUES(5, 'five');
+}
+do_createtable_tests 5.9.1 -query { SELECT typeof(x), x FROM t12 } {
+  1   "UPDATE t12 SET x = 4"       {integer 4}
+  2   "UPDATE t12 SET x = 10.0"    {integer 10}
+  3   "UPDATE t12 SET x = '12.0'"  {integer 12}
+  4   "UPDATE t12 SET x = '-15.0'" {integer -15}
+}
+do_createtable_tests 5.9.2 -error {
+  datatype mismatch
+} {
+  1   "UPDATE t12 SET x = 4.1"         {}
+  2   "UPDATE t12 SET x = 'hello'"     {}
+  3   "UPDATE t12 SET x = NULL"        {}
+  4   "UPDATE t12 SET x = X'ABCD'"     {}
+  5   "UPDATE t12 SET x = X'3900'"     {}
+  6   "UPDATE t12 SET x = X'39'"       {}
+}
+
+# EVIDENCE-OF: R-05734-13629 If an INSERT statement attempts to insert a
+# blob value, or a string or real value that cannot be losslessly
+# converted to an integer into an integer primary key or rowid column, a
+# "datatype mismatch" error occurs and the statement is aborted.
+#
+do_execsql_test 5.10.0 { DELETE FROM t12 }
+do_createtable_tests 5.10.1 -error { 
+  datatype mismatch
+} {
+  1   "INSERT INTO t12(x) VALUES(4.1)"     {}
+  2   "INSERT INTO t12(x) VALUES('hello')" {}
+  3   "INSERT INTO t12(x) VALUES(X'ABCD')" {}
+  4   "INSERT INTO t12(x) VALUES(X'3900')" {}
+  5   "INSERT INTO t12(x) VALUES(X'39')"   {}
+}
+do_createtable_tests 5.10.2 -query { 
+  SELECT typeof(x), x FROM t12 
+} -repair {
+  execsql { DELETE FROM t12 }
+} {
+  1   "INSERT INTO t12(x) VALUES(4)"       {integer 4}
+  2   "INSERT INTO t12(x) VALUES(10.0)"    {integer 10}
+  3   "INSERT INTO t12(x) VALUES('12.0')"  {integer 12}
+  4   "INSERT INTO t12(x) VALUES('4e3')"   {integer 4000}
+  5   "INSERT INTO t12(x) VALUES('-14.0')" {integer -14}
+}
+
+# EVIDENCE-OF: R-07986-46024 If an INSERT statement attempts to insert a
+# NULL value into a rowid or integer primary key column, the system
+# chooses an integer value to use as the rowid automatically.
+#
+do_execsql_test 5.11.0 { DELETE FROM t12 }
+do_createtable_tests 5.11 -query { 
+  SELECT typeof(x), x FROM t12 WHERE y IS (SELECT max(y) FROM t12)
+} {
+  1   "INSERT INTO t12 DEFAULT VALUES"                {integer 1}
+  2   "INSERT INTO t12(y)   VALUES(5)"                {integer 2}
+  3   "INSERT INTO t12(x,y) VALUES(NULL, 10)"         {integer 3}
+  4   "INSERT INTO t12(x,y) SELECT NULL, 15 FROM t12" 
+      {integer 4 integer 5 integer 6}
+  5   "INSERT INTO t12(y) SELECT 20 FROM t12 LIMIT 3"
+      {integer 7 integer 8 integer 9}
+}
+
 finish_test

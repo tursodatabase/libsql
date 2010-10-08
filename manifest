@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Version\s3.7.3
-D 2010-10-08T02:34:02
+C Add\stests\sto\se_createtable.test.
+D 2010-10-08T16:09:44
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b01fdfcfecf8a0716c29867a67959f6148b79961
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -351,7 +348,7 @@ F test/descidx2.test 9f1a0c83fd57f8667c82310ca21b30a350888b5d
 F test/descidx3.test fe720e8b37d59f4cef808b0bf4e1b391c2e56b6f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
-F test/e_createtable.test 9c7921d3e422215fa674ff864b985ffa503e2e33
+F test/e_createtable.test 049dcbd95e66bc3255338db30b375b825d894f7a
 F test/e_delete.test 55d868b647acc091c261a10b9b0cb0ab660a6acb
 F test/e_expr.test 0fdf503f955389aec497eb27983385cb540fb307
 F test/e_fkey.test 6721a741c6499b3ab7e5385923233343c8f1ad05
@@ -647,7 +644,7 @@ F test/tclsqlite.test 8c154101e704170c2be10f137a5499ac2c6da8d3
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test f42121a0d29a62f00f93274464164177ab1cc24a
 F test/temptrigger.test b0273db072ce5f37cf19140ceb1f0d524bbe9f05
-F test/tester.tcl 6d862da591d5d5e4b2e22bb1e8a7c4ed95580b45
+F test/tester.tcl 0c6264937643072fdc3cfa893b10e3cc61b27e3b
 F test/thread001.test a3e6a7254d1cb057836cb3145b60c10bf5b7e60f
 F test/thread002.test afd20095e6e845b405df4f2c920cb93301ca69db
 F test/thread003.test b824d4f52b870ae39fc5bae4d8070eca73085dca
@@ -876,14 +873,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e55ada89246d4cc5f476891c70572dc7c1c3643e
-R 7723ac384e1a6db8f40224b6d9a06216
-U drh
-Z 51dc28c4109ceec51426d10a132773ef
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMroMeoxKgR168RlERAjO4AJ0RDmJuB/957mPhqJrJ5ow+pN1wpQCfRtD2
-PJGHl2bflDougAfG//UuBKc=
-=dYof
------END PGP SIGNATURE-----
+P 2677848087c9c090efb17c1893e77d6136a9111d
+R 6e044b7c4a85e0cb47fea90114e6a2e3
+U dan
+Z dc00dd7a16b0fb33265130607425eef7

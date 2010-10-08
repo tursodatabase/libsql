@@ -444,6 +444,7 @@ proc speed_trial {name numstmt units sql} {
   puts [format {%12d uS %s %s} $tm $rate $u2]
   global total_time
   set total_time [expr {$total_time+$tm}]
+  lappend ::speed_trial_times $name $tm
 }
 proc speed_trial_tcl {name numstmt units script} {
   puts -nonewline [format {%-21.21s } $name...]
@@ -459,10 +460,12 @@ proc speed_trial_tcl {name numstmt units script} {
   puts [format {%12d uS %s %s} $tm $rate $u2]
   global total_time
   set total_time [expr {$total_time+$tm}]
+  lappend ::speed_trial_times $name $tm
 }
 proc speed_trial_init {name} {
   global total_time
   set total_time 0
+  set ::speed_trial_times [list]
   sqlite3 versdb :memory:
   set vers [versdb one {SELECT sqlite_source_id()}]
   versdb close
@@ -471,6 +474,16 @@ proc speed_trial_init {name} {
 proc speed_trial_summary {name} {
   global total_time
   puts [format {%-21.21s %12d uS TOTAL} $name $total_time]
+
+  if { 0 } {
+    sqlite3 versdb :memory:
+    set vers [lindex [versdb one {SELECT sqlite_source_id()}] 0]
+    versdb close
+    puts "CREATE TABLE IF NOT EXISTS time(version, script, test, us);"
+    foreach {test us} $::speed_trial_times {
+      puts "INSERT INTO time VALUES('$vers', '$name', '$test', $us);"
+    }
+  }
 }
 
 # Run this routine last
