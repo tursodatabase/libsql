@@ -1602,13 +1602,12 @@ static int createCollation(
   }
 
   pColl = sqlite3FindCollSeq(db, (u8)enc2, zName, 1);
-  if( pColl ){
-    pColl->xCmp = xCompare;
-    pColl->pUser = pCtx;
-    pColl->xDel = xDel;
-    pColl->enc = (u8)(enc2 | (enc & SQLITE_UTF16_ALIGNED));
-    pColl->type = collType;
-  }
+  if( pColl==0 ) return SQLITE_NOMEM;
+  pColl->xCmp = xCompare;
+  pColl->pUser = pCtx;
+  pColl->xDel = xDel;
+  pColl->enc = (u8)(enc2 | (enc & SQLITE_UTF16_ALIGNED));
+  pColl->type = collType;
   sqlite3Error(db, SQLITE_OK, 0);
   return SQLITE_OK;
 }
