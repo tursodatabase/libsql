@@ -1022,6 +1022,8 @@ static int bindText(
       rc = sqlite3ApiExit(p->db, rc);
     }
     sqlite3_mutex_leave(p->db->mutex);
+  }else if( xDel ){
+    xDel((void*)zData);
   }
   return rc;
 }
