@@ -3167,8 +3167,8 @@ static void btreeEndTransaction(Btree *p){
 ** are no active cursors, it also releases the read lock.
 */
 int sqlite3BtreeCommitPhaseTwo(Btree *p){
-  BtShared *pBt = p->pBt;
 
+  if( p->inTrans==TRANS_NONE ) return SQLITE_OK;
   sqlite3BtreeEnter(p);
   btreeIntegrity(p);
 
@@ -3177,6 +3177,7 @@ int sqlite3BtreeCommitPhaseTwo(Btree *p){
   */
   if( p->inTrans==TRANS_WRITE ){
     int rc;
+    BtShared *pBt = p->pBt;
     assert( pBt->inTransaction==TRANS_WRITE );
     assert( pBt->nTransaction>0 );
     rc = sqlite3PagerCommitPhaseTwo(pBt->pPager);
