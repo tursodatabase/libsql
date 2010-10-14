@@ -1022,7 +1022,7 @@ static int bindText(
       rc = sqlite3ApiExit(p->db, rc);
     }
     sqlite3_mutex_leave(p->db->mutex);
-  }else if( xDel ){
+  }else if( xDel!=SQLITE_STATIC && xDel!=SQLITE_TRANSIENT ){
     xDel((void*)zData);
   }
   return rc;
