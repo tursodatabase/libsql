@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C An\simprovement\sto\sthe\sSQLITE_FCNTL_SIZE_HINT\schange\sthat\sinvokes\sthe\shint\nless\soften\sand\sonly\swhen\sreally\sneeded.
-D 2010-05-17T15:52:44
+C Cherry-pick\sthe\schange\sat\s[2d4505510032bf9]\sinto\sthe\s3.6.1\sbranch.
+D 2010-10-15T14:45:13
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2713ea64947be3b35f35d9a3158bb8299c90b019
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -193,7 +193,7 @@ F src/vdbeapi.c 803f365b77a22c1b2680a0dee9202bc75c02bf4a
 F src/vdbeaux.c 21126e0d319e19125f5e42fceafb17eafe58721c
 F src/vdbeblob.c f93110888ddc246215e9ba1f831d3d375bfd8355
 F src/vdbefifo.c 20fda2a7c4c0bcee1b90eb7e545fefcdbf2e1de7
-F src/vdbemem.c c37b2a266a49eaf0c0f5080157f9f1a908fdaac3
+F src/vdbemem.c d637ff35a41aea7b72977488284ffc52e3791495
 F src/vtab.c 9c1bbb54d8b29a3412bff4eee32e9be309d85727
 F src/where.c a800184a2d023b15d6f2758b7a6c7ab011258fee
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
@@ -620,14 +620,14 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 9a083711712d652613c93b3ad96d4f7361376c7f
-R aea3444cc6c24b1c4506b5c6f93e797e
+P a1d20ceb9c195ea96f09c2a40c898ca75f504ee1
+R 8cc8bdc0c3cf81de99cf2e9284984853
 U drh
-Z 528ef0641d2748215fd8a1354579cc0a
+Z 856d63ea9343214cf010214001f60c6f
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD4DBQFL8WZPoxKgR168RlERAsElAJdzpp/0CbCiHpVVmJdP1OrACx5BAJ9I1u53
-hQ/7mwNPgaNvk1lSyt7EQQ==
-=34QZ
+iD8DBQFMuGj9oxKgR168RlERAnT+AJ0clrambnDmJWe9bQ41R0Ug9lDU/gCff9WO
+Cmyzo0wAPkXuY5XqauECLuk=
+=Rzx0
 -----END PGP SIGNATURE-----
