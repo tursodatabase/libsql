@@ -526,7 +526,7 @@ proc do_malloc_test {tn args} {
 # match the expected results passed via parameter $result.
 #
 proc do_select_test {name sql result} {
-  uplevel [list doPassiveTest 0 $name $sql [list 0 $result]]
+  uplevel [list doPassiveTest 0 $name $sql [list 0 [list {*}$result]]]
 }
 
 proc do_restart_select_test {name sql result} {
@@ -539,6 +539,12 @@ proc do_error_test {name sql error} {
 
 proc doPassiveTest {isRestart name sql catchres} {
   if {![info exists ::DO_MALLOC_TEST]} { set ::DO_MALLOC_TEST 1 }
+
+  if {[info exists ::testprefix] 
+   && [string is integer [string range $name 0 0]]
+  } {
+    set name $::testprefix.$name
+  }
 
   switch $::DO_MALLOC_TEST {
     0 { # No malloc failures.

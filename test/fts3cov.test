@@ -82,27 +82,28 @@ do_test fts3cov-2.1 {
       INSERT INTO t1 VALUES('And she in the midnight wood will pray');
       INSERT INTO t1 VALUES('For the weal of her lover that''s far away.');
     COMMIT;
-
+  }
+  execsql {
     INSERT INTO t1(t1) VALUES('optimize');
     SELECT substr(hex(root), 1, 2) FROM t1_segdir;
   }
 } {03}
 
 # Test the "missing entry" case:
-do_test fts3cov-2.1 {
+do_test fts3cov-2.2 {
   set root [db one {SELECT root FROM t1_segdir}]
   read_fts3varint [string range $root 1 end] left_child
   execsql { DELETE FROM t1_segments WHERE blockid = $left_child }
 } {}
-do_error_test fts3cov-2.2 {
+do_error_test fts3cov-2.3 {
   SELECT * FROM t1 WHERE t1 MATCH 'c*'
 } {database disk image is malformed}
 
 # Test the "replaced with NULL" case:
-do_test fts3cov-2.3 {
+do_test fts3cov-2.4 {
   execsql { INSERT INTO t1_segments VALUES($left_child, NULL) }
 } {}
-do_error_test fts3cov-2.4 {
+do_error_test fts3cov-2.5 {
   SELECT * FROM t1 WHERE t1 MATCH 'cloud'
 } {database disk image is malformed}
 

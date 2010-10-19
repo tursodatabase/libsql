@@ -24,7 +24,7 @@
 */
 typedef struct LoadDoclistCtx LoadDoclistCtx;
 struct LoadDoclistCtx {
-  Fts3Table *pTab;                /* FTS3 Table */
+  Fts3Cursor *pCsr;               /* FTS3 Cursor */
   int nPhrase;                    /* Number of phrases seen so far */
   int nToken;                     /* Number of tokens seen so far */
 };
@@ -218,7 +218,7 @@ static int fts3ExprLoadDoclistsCb1(Fts3Expr *pExpr, int iPhrase, void *ctx){
   p->nToken += pExpr->pPhrase->nToken;
 
   if( pExpr->isLoaded==0 ){
-    rc = sqlite3Fts3ExprLoadDoclist(p->pTab, pExpr);
+    rc = sqlite3Fts3ExprLoadDoclist(p->pCsr, pExpr);
     pExpr->isLoaded = 1;
     if( rc==SQLITE_OK ){
       rc = fts3ExprNearTrim(pExpr);
@@ -261,7 +261,7 @@ static int fts3ExprLoadDoclists(
 ){
   int rc;                         /* Return Code */
   LoadDoclistCtx sCtx = {0,0,0};  /* Context for fts3ExprIterate() */
-  sCtx.pTab = (Fts3Table *)pCsr->base.pVtab;
+  sCtx.pCsr = pCsr;
   rc = fts3ExprIterate(pCsr->pExpr, fts3ExprLoadDoclistsCb1, (void *)&sCtx);
   if( rc==SQLITE_OK ){
     (void)fts3ExprIterate(pCsr->pExpr, fts3ExprLoadDoclistsCb2, 0);

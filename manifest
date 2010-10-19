@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Avoid\staking\slocks\son\sunused\sdatabase\sconnections\swhen\scommitting\sa\nread\stransaction.
-D 2010-10-14T01:17:30
+C Experimental\schanges\sto\sfts4\sto\stry\sto\sselectively\savoid\sloading\svery\slarge\sdoclists.
+D 2010-10-19T14:08:00
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b01fdfcfecf8a0716c29867a67959f6148b79961
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -64,19 +61,20 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 03be86c59ac1a60d448c6eda460a8975ff2f170d
+F ext/fts3/fts3.c 9d4ccf3b7bbfbeeef03dba91377c4d72b757dcb9
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h b4f0b05ccafe1e5b4be2f052e9840dbd78a0395f
-F ext/fts3/fts3_expr.c 42d5697731cd30fbeabd081bb3e6d3df5531f606
+F ext/fts3/fts3Int.h a640e4fbdb2fcab1457f87993ca3f4ceaa31e776
+F ext/fts3/fts3_expr.c a5aee50edde20e5c9116199bd58be869a3a22c9f
 F ext/fts3/fts3_hash.c 3c8f6387a4a7f5305588b203fa7c887d753e1f1c
 F ext/fts3/fts3_hash.h 8331fb2206c609f9fc4c4735b9ab5ad6137c88ec
 F ext/fts3/fts3_icu.c ac494aed69835008185299315403044664bda295
 F ext/fts3/fts3_porter.c 8df6f6efcc4e9e31f8bf73a4007c2e9abca1dfba
-F ext/fts3/fts3_snippet.c 2c4c921155e4b6befd272041fb903d999ac07d30
+F ext/fts3/fts3_snippet.c 474c11e718610cade73e6009f75ffc173d4c42c5
 F ext/fts3/fts3_tokenizer.c b4f2d01c24573852755bc92864816785dae39318
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 6e5cbaa588924ac578263a598e4fb9f5c9bb179d
-F ext/fts3/fts3_write.c 97a583b9e1d23d5af4278f3ee3c16a37c3e077f4
+F ext/fts3/fts3_write.c 29b63a98de55d4eb34b7fc6fd90b3224d6cdc7ff
+F ext/fts3/fts3speed.tcl 71b9cdc8f499822124a9eef42003e31a88f26f16
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c 850e9a36567bbcce6bd85a4b68243cad8e3c2de2
@@ -422,7 +420,7 @@ F test/fts3ad.test e40570cb6f74f059129ad48bcef3d7cbc20dda49
 F test/fts3ae.test ce32a13b34b0260928e4213b4481acf801533bda
 F test/fts3af.test d394978c534eabf22dd0837e718b913fd66b499c
 F test/fts3ag.test 0b7d303f61ae5d620c4efb5e825713ea34ff9441
-F test/fts3ah.test ba181d6a3dee0c929f0d69df67cac9c47cda6bff
+F test/fts3ah.test 3c5a1bd49979d7b5b5ed9fdbcdd14a7bfe5a5ff9
 F test/fts3ai.test d29cee6ed653e30de478066881cec8aa766531b2
 F test/fts3aj.test 584facbc9ac4381a7ec624bfde677340ffc2a5a4
 F test/fts3ak.test bd14deafe9d1586e8e9bf032411026ac4f8c925d
@@ -433,8 +431,9 @@ F test/fts3ao.test 8fee868a0e131b98ce3e8907dc69936278e8b29a
 F test/fts3atoken.test 25c2070e1e8755d414bf9c8200427b277a9f99fa
 F test/fts3b.test e93bbb653e52afde110ad53bbd793f14fe7a8984
 F test/fts3c.test fc723a9cf10b397fdfc2b32e73c53c8b1ec02958
-F test/fts3cov.test 3a9d8618a3107166530c447e808f8992372e0415
+F test/fts3cov.test 6f1ff88ff6b5abcfff6979098cb9d0c68a69202e
 F test/fts3d.test 95fb3c862cbc4297c93fceb9a635543744e9ef52
+F test/fts3defer.test a9f81bba6e1132dd6a2ad3cf11e4628733975c8c
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3expr.test 5e745b2b6348499d9ef8d59015de3182072c564c
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
@@ -535,7 +534,7 @@ F test/mallocH.test 79b65aed612c9b3ed2dcdaa727c85895fd1bfbdb
 F test/mallocI.test a88c2b9627c8506bf4703d8397420043a786cdb6
 F test/mallocJ.test b5d1839da331d96223e5f458856f8ffe1366f62e
 F test/mallocK.test d79968641d1b70d88f6c01bdb9a7eb4a55582cc9
-F test/malloc_common.tcl cda732c0d2365a058c2a73778cf6b6da6db54452
+F test/malloc_common.tcl 9dfb33f12173f9a8b029dae0443c569b59b980b6
 F test/manydb.test b3d3bc4c25657e7f68d157f031eb4db7b3df0d3c
 F test/memdb.test 0825155b2290e900264daaaf0334b6dfe69ea498
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
@@ -570,7 +569,7 @@ F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test 4118a183908ecaed343a06fcef3ba82e87e0129d
 F test/pcache2.test 0d85f2ab6963aee28c671d4c71bec038c00a1d16
-F test/permutations.test ca1c985cf68c692096d0325b33c62f2b576446a5
+F test/permutations.test ec9b2ebd52ff43c5a3bec4723098fab1ef29d944
 F test/pragma.test fdfc09067ea104a0c247a1a79d8093b56656f850
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
@@ -876,14 +875,11 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ea8c2f5f8a890dcb422e9e46298ae6ca378c74b7
-R 03d2b3a92f9647a3db71aa9ca75489f4
-U drh
-Z c2cdb52e62b9c570a5e1c8427f4ce5c4
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMtlotoxKgR168RlERAuf0AJ96F+hVDOt4y4GU2wooqTHtO4kKZgCeKIVj
-dUPTQwgWJgqAaN5BweGLucY=
-=QYIr
------END PGP SIGNATURE-----
+P c0ee614fd988f445c4884a37f494479bdd669185
+R 0c4aebbf44d624104504e37bec992917
+T *bgcolor * #c0ffc0
+T *branch * experimental
+T *sym-experimental *
+T -sym-trunk *
+U dan
+Z c2b99a58ccad27405ff8b0fcedef5c33

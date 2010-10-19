@@ -223,7 +223,7 @@ static int getNextString(
       rc = pModule->xNext(pCursor, &zToken, &nToken, &iBegin, &iEnd, &iPos);
       if( rc==SQLITE_OK ){
         int nByte = sizeof(Fts3Expr) + sizeof(Fts3Phrase);
-        p = fts3ReallocOrFree(p, nByte+ii*sizeof(struct PhraseToken));
+        p = fts3ReallocOrFree(p, nByte+ii*sizeof(Fts3PhraseToken));
         zTemp = fts3ReallocOrFree(zTemp, nTemp + nToken);
         if( !p || !zTemp ){
           goto no_mem;
@@ -235,6 +235,8 @@ static int getNextString(
         p->pPhrase = (Fts3Phrase *)&p[1];
         p->pPhrase->nToken = ii+1;
         p->pPhrase->aToken[ii].n = nToken;
+        p->pPhrase->aToken[ii].pDeferred = 0;
+        p->pPhrase->aToken[ii].pArray = 0;
         memcpy(&zTemp[nTemp], zToken, nToken);
         nTemp += nToken;
         if( iEnd<nInput && zInput[iEnd]=='*' ){
@@ -254,7 +256,7 @@ static int getNextString(
     char *zNew = NULL;
     int nNew = 0;
     int nByte = sizeof(Fts3Expr) + sizeof(Fts3Phrase);
-    nByte += (p?(p->pPhrase->nToken-1):0) * sizeof(struct PhraseToken);
+    nByte += (p?(p->pPhrase->nToken-1):0) * sizeof(Fts3PhraseToken);
     p = fts3ReallocOrFree(p, nByte + nTemp);
     if( !p ){
       goto no_mem;
