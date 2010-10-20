@@ -268,6 +268,7 @@ static int fts3ExprLoadDoclists(
   }
   if( pnPhrase ) *pnPhrase = sCtx.nPhrase;
   if( pnToken ) *pnToken = sCtx.nToken;
+  sqlite3Fts3SegmentsClose((Fts3Table *)pCsr->base.pVtab);
   return rc;
 }
 

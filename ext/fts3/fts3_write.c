@@ -807,29 +807,51 @@ static int fts3AllocateSegdirIdx(Fts3Table *p, int iLevel, int *piIdx){
 ** The %_segments table is declared as follows:
 **
 **   CREATE TABLE %_segments(blockid INTEGER PRIMARY KEY, block BLOB)
-**
-** This function opens a read-only blob handle on the "block" column of
-** row iSegment of the %_segments table associated with FTS3 table p.
-**
-** If all goes well, SQLITE_OK is returned and *ppBlob set to the 
-** read-only blob handle. It is the responsibility of the caller to call
-** sqlite3_blob_close() on the blob handle. Or, if an error occurs, an
-** SQLite error code is returned and *ppBlob is either not modified or
-** set to 0.
 */
-static int fts3OpenSegmentsBlob(
-  Fts3Table *p,                   /* FTS3 table handle */
-  sqlite3_int64 iSegment,         /* Rowid in %_segments table */
-  sqlite3_blob **ppBlob           /* OUT: Read-only blob handle */
+static int fts3SegmentsBlob(
+  Fts3Table *p,
+  sqlite3_int64 iSegment,
+  char **paBlob,
+  int *pnBlob
 ){
-  if( 0==p->zSegmentsTbl
-   && 0==(p->zSegmentsTbl = sqlite3_mprintf("%s_segments", p->zName))
-  ) {
-    return SQLITE_NOMEM;
+  int rc;
+
+  if( p->pSegments ){
+    rc = sqlite3_blob_reopen(p->pSegments, iSegment);
+  }else{
+    if( 0==p->zSegmentsTbl ){
+      p->zSegmentsTbl = sqlite3_mprintf("%s_segments", p->zName);
+      if( 0==p->zSegmentsTbl ) return SQLITE_NOMEM;
+    }
+    rc = sqlite3_blob_open(
+       p->db, p->zDb, p->zSegmentsTbl, "block", iSegment, 0, &p->pSegments
+    );
   }
-  return sqlite3_blob_open(
-     p->db, p->zDb, p->zSegmentsTbl, "block", iSegment, 0, ppBlob
-  );
+
+  if( rc==SQLITE_OK ){
+    int nByte = sqlite3_blob_bytes(p->pSegments);
+    if( paBlob ){
+      char *aByte = sqlite3_malloc(nByte);
+      if( !aByte ){
+        rc = SQLITE_NOMEM;
+      }else{
+        rc = sqlite3_blob_read(p->pSegments, aByte, nByte, 0);
+        if( rc!=SQLITE_OK ){
+          sqlite3_free(aByte);
+          aByte = 0;
+        }
+      }
+      *paBlob = aByte;
+    }
+    *pnBlob = nByte;
+  }
+
+  return rc;
+}
+
+void sqlite3Fts3SegmentsClose(Fts3Table *p){
+  sqlite3_blob_close(p->pSegments);
+  p->pSegments = 0;
 }
 
 
@@ -880,17 +902,9 @@ static int fts3SegReaderNext(Fts3Table *p, Fts3SegReader *pReader){
       return SQLITE_OK;
     }
 
-    rc = fts3OpenSegmentsBlob(p, ++pReader->iCurrentBlock, &pBlob);
-    if( rc==SQLITE_OK ){
-      pReader->nNode = sqlite3_blob_bytes(pBlob);
-      pReader->aNode = (char *)sqlite3_malloc(pReader->nNode);
-      if( pReader->aNode ){
-        rc = sqlite3_blob_read(pBlob, pReader->aNode, pReader->nNode, 0);
-      }else{
-        rc = SQLITE_NOMEM;
-      }
-      sqlite3_blob_close(pBlob);
-    }
+    rc = fts3SegmentsBlob(
+        p, ++pReader->iCurrentBlock, &pReader->aNode, &pReader->nNode
+    );
 
     if( rc!=SQLITE_OK ){
       return rc;
@@ -1008,7 +1022,8 @@ int sqlite3Fts3SegReaderCost(
    && !fts3SegReaderIsPending(pReader) 
    && !fts3SegReaderIsRootOnly(pReader) 
   ){
-    sqlite3_blob *pBlob = 0;
+    int nBlob = 0;
+    sqlite3_int64 iBlock;
 
     if( pCsr->nRowAvg==0 ){
       /* The average document size, which is required to calculate the cost
@@ -1045,20 +1060,18 @@ int sqlite3Fts3SegReaderCost(
       if( rc!=SQLITE_OK || pCsr->nRowAvg==0 ) return rc;
     }
 
-    rc = fts3OpenSegmentsBlob(p, pReader->iStartBlock, &pBlob);
-    if( rc==SQLITE_OK ){
-      /* Assume that a blob flows over onto overflow pages if it is larger
-      ** than (pgsz-35) bytes in size (the file-format documentation
-      ** confirms this).
-      */
-      int nBlob = sqlite3_blob_bytes(pBlob);
+    /* Assume that a blob flows over onto overflow pages if it is larger
+    ** than (pgsz-35) bytes in size (the file-format documentation
+    ** confirms this).
+    */
+    for(iBlock=pReader->iStartBlock; iBlock<=pReader->iLeafEndBlock; iBlock++){
+      rc = fts3SegmentsBlob(p, iBlock, 0, &nBlob);
+      if( rc!=SQLITE_OK ) break;
       if( (nBlob+35)>pgsz ){
         int nOvfl = (nBlob + 34)/pgsz;
         nCost += ((nOvfl + pCsr->nRowAvg - 1)/pCsr->nRowAvg);
       }
     }
-    assert( rc==SQLITE_OK || pBlob==0 );
-    sqlite3_blob_close(pBlob);
   }
 
   *pnCost += nCost;
@@ -1096,6 +1109,7 @@ int sqlite3Fts3SegReaderNew(
   Fts3SegReader *pReader;         /* Newly allocated SegReader object */
   int nExtra = 0;                 /* Bytes to allocate segment root node */
 
+  assert( iStartLeaf<=iEndLeaf );
   if( iStartLeaf==0 ){
     nExtra = nRoot;
   }
@@ -2619,6 +2633,7 @@ static int fts3SpecialInsert(Fts3Table *p, sqlite3_value *pVal){
     rc = SQLITE_ERROR;
   }
 
+  sqlite3Fts3SegmentsClose(p);
   return rc;
 }
 
@@ -2787,6 +2802,7 @@ int sqlite3Fts3UpdateMethod(
   u32 *aSzDel;                    /* Sizes of deleted documents */
   int nChng = 0;                  /* Net change in number of documents */
 
+  assert( p->pSegments==0 );
 
   /* Allocate space to hold the change in document sizes */
   aSzIns = sqlite3_malloc( sizeof(aSzIns[0])*p->nColumn*2 );
@@ -2842,6 +2858,7 @@ int sqlite3Fts3UpdateMethod(
   }
 
   sqlite3_free(aSzIns);
+  sqlite3Fts3SegmentsClose(p);
   return rc;
 }
 
@@ -2865,6 +2882,7 @@ int sqlite3Fts3Optimize(Fts3Table *p){
       sqlite3_exec(p->db, "RELEASE fts3", 0, 0, 0);
     }
   }
+  sqlite3Fts3SegmentsClose(p);
   return rc;
 }
 

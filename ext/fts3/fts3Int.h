@@ -130,6 +130,8 @@ struct Fts3Table {
   u8 bHasContent;                 /* True if %_content table exists */
   u8 bHasDocsize;                 /* True if %_docsize table exists */
 
+  sqlite3_blob *pSegments;        /* Blob handle open on %_segments table */
+
   /* The following hash table is used to buffer pending index updates during
   ** transactions. Variable nPendingData estimates the memory size of the 
   ** pending data, including hash table overhead, but not malloc overhead. 
@@ -286,6 +288,8 @@ int sqlite3Fts3DeferToken(Fts3Cursor *, Fts3PhraseToken *, int);
 int sqlite3Fts3CacheDeferredDoclists(Fts3Cursor *);
 void sqlite3Fts3FreeDeferredDoclists(Fts3Cursor *);
 char *sqlite3Fts3DeferredDoclist(Fts3DeferredToken *, int *);
+
+void sqlite3Fts3SegmentsClose(Fts3Table *);
 
 /* Flags allowed as part of the 4th argument to SegmentReaderIterate() */
 #define FTS3_SEGMENT_REQUIRE_POS   0x00000001

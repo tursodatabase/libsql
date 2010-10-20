@@ -18,6 +18,8 @@ ifcapable !fts3 {
   return
 }
 
+set sqlite_fts3_enable_parentheses 1
+
 set ::testprefix fts3defer
 
 #--------------------------------------------------------------------------
@@ -187,7 +189,14 @@ lappend data {*}{
   "srwwnezqk csjqxhgj rbwzuf nvfasfh jcpiwj xldlpy nvfasfh jk vgsld wjybxmieki"
 }
 
+#set e [list]
+#foreach d $data {set e [concat $e $d]}
+#puts [lsort -unique $e]
+#exit
 
+set zero_long_doclists {
+  UPDATE t1_segments SET block=zeroblob(length(block)) WHERE length(block)>10000
+}
 
 foreach {tn setup} {
   1 {
@@ -204,11 +213,14 @@ foreach {tn setup} {
     set dmt_modes {0 1 2}
     execsql { CREATE VIRTUAL TABLE t1 USING FTS4 }
     foreach doc $data { execsql { INSERT INTO t1 VALUES($doc) } }
-    execsql {
-      UPDATE t1_segments
-      SET block = zeroblob(length(block)) 
-      WHERE length(block)>10000;
-    }
+    execsql $zero_long_doclists
+  }
+  4 {
+    set dmt_modes 0
+    execsql { CREATE VIRTUAL TABLE t1 USING FTS4 }
+    foreach doc $data { execsql { INSERT INTO t1 VALUES($doc) } }
+    execsql "INSERT INTO t1(t1) VALUES('optimize')"
+    execsql $zero_long_doclists
   }
 } {
 
@@ -270,6 +282,17 @@ foreach {tn setup} {
   do_select_test 2.7 {
     SELECT rowid FROM t1 WHERE t1 MATCH '"zm jk vgsld"'
   } {13 17}
+
+  do_select_test 2.8 {
+    SELECT rowid FROM t1 WHERE t1 MATCH 'z* vgsld'
+  } {10 13 17 31 35 51 58 88 89 90 93 100}
+  do_select_test 2.9 {
+    SELECT rowid FROM t1 
+    WHERE t1 MATCH '(
+      zdu OR zexh OR zf OR zhbrzadb OR zidhxhbtv OR 
+      zk OR zkhdvkw OR zm OR zsmhnf
+    ) vgsld'
+  } {10 13 17 31 35 51 58 88 89 90 93 100}
 
   do_select_test 3.1 {
     SELECT snippet(t1, '[', ']') FROM t1 WHERE t1 MATCH '"zm agmckuiu"'

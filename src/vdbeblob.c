@@ -26,10 +26,60 @@ struct Incrblob {
   int flags;              /* Copy of "flags" passed to sqlite3_blob_open() */
   int nByte;              /* Size of open blob, in bytes */
   int iOffset;            /* Byte offset of blob in cursor data */
+  int iCol;               /* Table column this handle is open on */
   BtCursor *pCsr;         /* Cursor pointing at blob row */
   sqlite3_stmt *pStmt;    /* Statement holding cursor open */
   sqlite3 *db;            /* The associated database */
 };
+
+
+static int blobSeekToRow(Incrblob *p, sqlite3_int64 iRow, char **pzErr){
+  int rc;                         /* Error code */
+  char *zErr = 0;                 /* Error message */
+  Vdbe *v = (Vdbe *)p->pStmt;
+
+  v->aVar[0].u.i = iRow;
+  rc = sqlite3_step(p->pStmt);
+
+  if( rc==SQLITE_ROW ){
+    Vdbe *v = (Vdbe *)p->pStmt;
+    u32 type = v->apCsr[0]->aType[p->iCol];
+    if( type<12 ){
+      zErr = sqlite3MPrintf(p->db, "cannot open value of type %s",
+          type==0?"null": type==7?"real": "integer"
+      );
+      rc = SQLITE_ERROR;
+      sqlite3_finalize(p->pStmt);
+      p->pStmt = 0;
+    }else{
+      p->iOffset = v->apCsr[0]->aOffset[p->iCol];
+      p->nByte = sqlite3VdbeSerialTypeLen(type);
+      p->pCsr =  v->apCsr[0]->pCursor;
+      sqlite3BtreeEnterCursor(p->pCsr);
+      sqlite3BtreeCacheOverflow(p->pCsr);
+      sqlite3BtreeLeaveCursor(p->pCsr);
+    }
+  }
+
+  if( rc==SQLITE_ROW ){
+    rc = SQLITE_OK;
+  }else if( p->pStmt ){
+    rc = sqlite3_finalize(p->pStmt);
+    p->pStmt = 0;
+    if( rc==SQLITE_OK ){
+      zErr = sqlite3MPrintf(p->db, "no such rowid: %lld", iRow);
+      rc = SQLITE_ERROR;
+    }else{
+      zErr = sqlite3MPrintf(p->db, "%s", sqlite3_errmsg(p->db));
+    }
+  }
+
+  assert( rc!=SQLITE_OK || zErr==0 );
+  assert( rc!=SQLITE_ROW && rc!=SQLITE_DONE );
+
+  *pzErr = zErr;
+  return rc;
+}
 
 /*
 ** Open a blob handle.
@@ -71,11 +121,12 @@ int sqlite3_blob_open(
     {OP_OpenWrite, 0, 0, 0},       /* 4: Open cursor 0 for read/write */
 
     {OP_Variable, 1, 1, 1},        /* 5: Push the rowid to the stack */
-    {OP_NotExists, 0, 9, 1},       /* 6: Seek the cursor */
+    {OP_NotExists, 0, 10, 1},      /* 6: Seek the cursor */
     {OP_Column, 0, 0, 1},          /* 7  */
     {OP_ResultRow, 1, 0, 0},       /* 8  */
-    {OP_Close, 0, 0, 0},           /* 9  */
-    {OP_Halt, 0, 0, 0},            /* 10 */
+    {OP_Goto, 0, 5, 0},            /* 9  */
+    {OP_Close, 0, 0, 0},           /* 10 */
+    {OP_Halt, 0, 0, 0},            /* 11 */
   };
 
   Vdbe *v = 0;
@@ -83,14 +134,20 @@ int sqlite3_blob_open(
   char *zErr = 0;
   Table *pTab;
   Parse *pParse;
+  Incrblob *pBlob;
 
+  flags = !!flags;                /* flags = (flags ? 1 : 0); */
   *ppBlob = 0;
+
   sqlite3_mutex_enter(db->mutex);
+
+  pBlob = (Incrblob *)sqlite3DbMallocZero(db, sizeof(Incrblob));
   pParse = sqlite3StackAllocRaw(db, sizeof(*pParse));
-  if( pParse==0 ){
-    rc = SQLITE_NOMEM;
+  if( pParse==0 || pBlob==0 ){
+    assert( db->mallocFailed );
     goto blob_open_out;
   }
+
   do {
     memset(pParse, 0, sizeof(Parse));
     pParse->db = db;
@@ -177,7 +234,6 @@ int sqlite3_blob_open(
     if( v ){
       int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
       sqlite3VdbeAddOpList(v, sizeof(openBlob)/sizeof(VdbeOpList), openBlob);
-      flags = !!flags;                 /* flags = (flags ? 1 : 0); */
 
       /* Configure the OP_Transaction */
       sqlite3VdbeChangeP1(v, 0, iDb);
@@ -220,65 +276,30 @@ int sqlite3_blob_open(
       }
     }
    
-    sqlite3BtreeLeaveAll(db);
-    if( db->mallocFailed ){
-      goto blob_open_out;
-    }
-
-    sqlite3_bind_int64((sqlite3_stmt *)v, 1, iRow);
-    rc = sqlite3_step((sqlite3_stmt *)v);
-    if( rc!=SQLITE_ROW ){
-      nAttempt++;
-      rc = sqlite3_finalize((sqlite3_stmt *)v);
-      sqlite3DbFree(db, zErr);
-      zErr = sqlite3MPrintf(db, sqlite3_errmsg(db));
-      v = 0;
-    }
-  } while( nAttempt<5 && rc==SQLITE_SCHEMA );
-
-  if( rc==SQLITE_ROW ){
-    /* The row-record has been opened successfully. Check that the
-    ** column in question contains text or a blob. If it contains
-    ** text, it is up to the caller to get the encoding right.
-    */
-    Incrblob *pBlob;
-    u32 type = v->apCsr[0]->aType[iCol];
-
-    if( type<12 ){
-      sqlite3DbFree(db, zErr);
-      zErr = sqlite3MPrintf(db, "cannot open value of type %s",
-          type==0?"null": type==7?"real": "integer"
-      );
-      rc = SQLITE_ERROR;
-      goto blob_open_out;
-    }
-    pBlob = (Incrblob *)sqlite3DbMallocZero(db, sizeof(Incrblob));
-    if( db->mallocFailed ){
-      sqlite3DbFree(db, pBlob);
-      goto blob_open_out;
-    }
     pBlob->flags = flags;
-    pBlob->pCsr =  v->apCsr[0]->pCursor;
-    sqlite3BtreeEnterCursor(pBlob->pCsr);
-    sqlite3BtreeCacheOverflow(pBlob->pCsr);
-    sqlite3BtreeLeaveCursor(pBlob->pCsr);
     pBlob->pStmt = (sqlite3_stmt *)v;
-    pBlob->iOffset = v->apCsr[0]->aOffset[iCol];
-    pBlob->nByte = sqlite3VdbeSerialTypeLen(type);
+    pBlob->iCol = iCol;
     pBlob->db = db;
-    *ppBlob = (sqlite3_blob *)pBlob;
-    rc = SQLITE_OK;
-  }else if( rc==SQLITE_OK ){
-    sqlite3DbFree(db, zErr);
-    zErr = sqlite3MPrintf(db, "no such rowid: %lld", iRow);
-    rc = SQLITE_ERROR;
-  }
+    sqlite3BtreeLeaveAll(db);
+    v = 0;
+    if( db->mallocFailed ){
+      goto blob_open_out;
+    }
+
+    sqlite3_bind_int64(pBlob->pStmt, 1, iRow);
+    rc = blobSeekToRow(pBlob, iRow, &zErr);
+  } while( (++nAttempt)<5 && rc==SQLITE_SCHEMA );
 
 blob_open_out:
-  if( v && (rc!=SQLITE_OK || db->mallocFailed) ){
-    sqlite3VdbeFinalize(v);
+  if( rc==SQLITE_OK && db->mallocFailed==0 ){
+    *ppBlob = (sqlite3_blob *)pBlob;
+  }else{
+    if( v ) sqlite3VdbeFinalize(v);
+    if( pBlob && pBlob->pStmt ) sqlite3VdbeFinalize((Vdbe *)pBlob->pStmt);
+    sqlite3DbFree(db, pBlob);
   }
-  sqlite3Error(db, rc, zErr);
+
+  sqlite3Error(db, rc, (zErr ? "%s" : 0), zErr);
   sqlite3DbFree(db, zErr);
   sqlite3StackFree(db, pParse);
   rc = sqlite3ApiExit(db, rc);
@@ -331,7 +352,7 @@ static int blobReadWrite(
     /* Request is out of range. Return a transient error. */
     rc = SQLITE_ERROR;
     sqlite3Error(db, SQLITE_ERROR, 0);
-  } else if( v==0 ){
+  }else if( v==0 ){
     /* If there is no statement handle, then the blob-handle has
     ** already been invalidated. Return SQLITE_ABORT in this case.
     */
@@ -380,6 +401,45 @@ int sqlite3_blob_write(sqlite3_blob *pBlob, const void *z, int n, int iOffset){
 int sqlite3_blob_bytes(sqlite3_blob *pBlob){
   Incrblob *p = (Incrblob *)pBlob;
   return p ? p->nByte : 0;
+}
+
+/*
+** Move an existing blob handle to point to a different row of the same
+** database table.
+**
+** If an error occurs, or if the specified row does not exist or does not
+** contain a blob or text value, then an error code is returned and the
+** database handle error code and message set. If this happens, then all 
+** subsequent calls to sqlite3_blob_xxx() functions (except blob_close()) 
+** immediately return SQLITE_ABORT.
+*/
+int sqlite3_blob_reopen(sqlite3_blob *pBlob, sqlite3_int64 iRow){
+  int rc;
+  Incrblob *p = (Incrblob *)pBlob;
+  sqlite3 *db;
+
+  if( p==0 ) return SQLITE_MISUSE_BKPT;
+  db = p->db;
+  sqlite3_mutex_enter(db->mutex);
+
+  if( p->pStmt==0 ){
+    /* If there is no statement handle, then the blob-handle has
+    ** already been invalidated. Return SQLITE_ABORT in this case.
+    */
+    rc = SQLITE_ABORT;
+  }else{
+    char *zErr;
+    rc = blobSeekToRow(p, iRow, &zErr);
+    if( rc!=SQLITE_OK ){
+      sqlite3Error(db, rc, (zErr ? "%s" : 0), zErr);
+      sqlite3DbFree(db, zErr);
+    }
+    assert( rc!=SQLITE_SCHEMA );
+  }
+
+  rc = sqlite3ApiExit(db, rc);
+  sqlite3_mutex_leave(db->mutex);
+  return rc;
 }
 
 #endif /* #ifndef SQLITE_OMIT_INCRBLOB */

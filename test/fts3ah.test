@@ -56,15 +56,15 @@ do_test fts3ah-1.2 {
   execsql {SELECT rowid FROM t1 WHERE t1 MATCH $aterm}
 } {1 3}
 
-do_test fts3ah-1.2 {
+do_test fts3ah-1.3 {
   execsql {SELECT rowid FROM t1 WHERE t1 MATCH $xterm}
 } {}
 
-do_test fts3ah-1.3 {
+do_test fts3ah-1.4 {
   execsql "SELECT rowid FROM t1 WHERE t1 MATCH '$aterm -$xterm'"
 } {1 3}
 
-do_test fts3ah-1.4 {
+do_test fts3ah-1.5 {
   execsql "SELECT rowid FROM t1 WHERE t1 MATCH '\"$aterm $bterm\"'"
 } {1}
 

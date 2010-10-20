@@ -18,7 +18,7 @@
 set VOCAB_SIZE  2000
 set DOC_SIZE     100
 
-set NUM_INSERTS 1000
+set NUM_INSERTS 100000
 set NUM_SELECTS 1000
 
 # Force everything in this script to be deterministic.
@@ -74,8 +74,7 @@ proc test_1 {nInsert} {
   sql "CREATE VIRTUAL TABLE t1 USING fts4;"
   for {set i 0} {$i < $nInsert} {incr i} {
     set doc [select_doc $::DOC_SIZE]
-    #sql "INSERT INTO t1 VALUES('$doc');"
-    sql "\"$doc\""
+    sql "INSERT INTO t1 VALUES('$doc');"
   }
 }
 

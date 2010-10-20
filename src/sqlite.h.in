@@ -4791,6 +4791,11 @@ int sqlite3_blob_open(
 );
 
 /*
+** CAPI3REF: Move a BLOB Handle
+*/
+SQLITE_EXPERIMENTAL int sqlite3_blob_reopen(sqlite3_blob *, sqlite3_int64);
+
+/*
 ** CAPI3REF: Close A BLOB Handle
 **
 ** ^Closes an open [BLOB handle].

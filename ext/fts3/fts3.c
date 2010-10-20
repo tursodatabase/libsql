@@ -926,8 +926,9 @@ static int fts3OpenMethod(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCsr){
 ** Close the cursor.  For additional information see the documentation
 ** on the xClose method of the virtual table interface.
 */
-static int fulltextClose(sqlite3_vtab_cursor *pCursor){
+static int fts3CloseMethod(sqlite3_vtab_cursor *pCursor){
   Fts3Cursor *pCsr = (Fts3Cursor *)pCursor;
+  assert( ((Fts3Table *)pCsr->base.pVtab)->pSegments==0 );
   sqlite3_finalize(pCsr->pStmt);
   sqlite3Fts3ExprFree(pCsr->pExpr);
   sqlite3Fts3FreeDeferredTokens(pCsr);
@@ -969,6 +970,84 @@ static int fts3CursorSeek(sqlite3_context *pContext, Fts3Cursor *pCsr){
 }
 
 
+static int fts3ScanInteriorNode(
+  Fts3Table *p,                   /* Virtual table handle */
+  const char *zTerm,              /* Term to select leaves for */
+  int nTerm,                      /* Size of term zTerm in bytes */
+  const char *zNode,              /* Buffer containing segment interior node */
+  int nNode,                      /* Size of buffer at zNode */
+  sqlite3_int64 *piFirst,         /* OUT: Selected child node */
+  sqlite3_int64 *piLast           /* OUT: Selected child node */
+){
+  int rc = SQLITE_OK;             /* Return code */
+  const char *zCsr = zNode;       /* Cursor to iterate through node */
+  const char *zEnd = &zCsr[nNode];/* End of interior node buffer */
+  char *zBuffer = 0;              /* Buffer to load terms into */
+  int nAlloc = 0;                 /* Size of allocated buffer */
+
+  int isFirstTerm = 1;          /* True when processing first term on page */
+  int dummy;
+  sqlite3_int64 iChild;         /* Block id of child node to descend to */
+  int nBlock;                   /* Size of child node in bytes */
+
+  zCsr += sqlite3Fts3GetVarint32(zCsr, &dummy);
+  zCsr += sqlite3Fts3GetVarint(zCsr, &iChild);
+  
+  while( zCsr<zEnd && (piFirst || piLast) ){
+    int cmp;                    /* memcmp() result */
+    int nSuffix;                /* Size of term suffix */
+    int nPrefix = 0;            /* Size of term prefix */
+    int nBuffer;                /* Total term size */
+  
+    /* Load the next term on the node into zBuffer */
+    if( !isFirstTerm ){
+      zCsr += sqlite3Fts3GetVarint32(zCsr, &nPrefix);
+    }
+    isFirstTerm = 0;
+    zCsr += sqlite3Fts3GetVarint32(zCsr, &nSuffix);
+    if( nPrefix+nSuffix>nAlloc ){
+      char *zNew;
+      nAlloc = (nPrefix+nSuffix) * 2;
+      zNew = (char *)sqlite3_realloc(zBuffer, nAlloc);
+      if( !zNew ){
+        sqlite3_free(zBuffer);
+        return SQLITE_NOMEM;
+      }
+      zBuffer = zNew;
+    }
+    memcpy(&zBuffer[nPrefix], zCsr, nSuffix);
+    nBuffer = nPrefix + nSuffix;
+    zCsr += nSuffix;
+
+    /* Compare the term we are searching for with the term just loaded from
+    ** the interior node. If the specified term is greater than or equal
+    ** to the term from the interior node, then all terms on the sub-tree 
+    ** headed by node iChild are smaller than zTerm. No need to search 
+    ** iChild.
+    **
+    ** If the interior node term is larger than the specified term, then
+    ** the tree headed by iChild may contain the specified term.
+    */
+    cmp = memcmp(zTerm, zBuffer, (nBuffer>nTerm ? nTerm : nBuffer));
+    if( piFirst && (cmp<0 || (cmp==0 && nBuffer>nTerm)) ){
+      *piFirst = iChild;
+      piFirst = 0;
+    }
+
+    if( piLast && cmp<0 ){
+      *piLast = iChild;
+      piLast = 0;
+    }
+
+    iChild++;
+  };
+
+  if( piFirst ) *piFirst = iChild;
+  if( piLast ) *piLast = iChild;
+
+  sqlite3_free(zBuffer);
+  return rc;
+}
 
 
 /*
@@ -993,77 +1072,33 @@ static int fts3SelectLeaf(
   int nTerm,                      /* Size of term zTerm in bytes */
   const char *zNode,              /* Buffer containing segment interior node */
   int nNode,                      /* Size of buffer at zNode */
-  sqlite3_int64 *piLeaf           /* Selected leaf node */
+  sqlite3_int64 *piLeaf,          /* Selected leaf node */
+  sqlite3_int64 *piLeaf2          /* Selected leaf node */
 ){
-  int rc = SQLITE_OK;             /* Return code */
-  const char *zCsr = zNode;       /* Cursor to iterate through node */
-  const char *zEnd = &zCsr[nNode];/* End of interior node buffer */
-  char *zBuffer = 0;              /* Buffer to load terms into */
-  int nAlloc = 0;                 /* Size of allocated buffer */
+  int rc;                         /* Return code */
+  int iHeight;                    /* Height of this node in tree */
 
-  while( 1 ){
-    int isFirstTerm = 1;          /* True when processing first term on page */
-    int iHeight;                  /* Height of this node in tree */
-    sqlite3_int64 iChild;         /* Block id of child node to descend to */
-    int nBlock;                   /* Size of child node in bytes */
+  sqlite3Fts3GetVarint32(zNode, &iHeight);
+  rc = fts3ScanInteriorNode(p, zTerm, nTerm, zNode, nNode, piLeaf, piLeaf2);
+  
+  if( rc==SQLITE_OK && iHeight>1 ){
+    const char *zBlob;
+    int nBlob;
 
-    zCsr += sqlite3Fts3GetVarint32(zCsr, &iHeight);
-    zCsr += sqlite3Fts3GetVarint(zCsr, &iChild);
-  
-    while( zCsr<zEnd ){
-      int cmp;                    /* memcmp() result */
-      int nSuffix;                /* Size of term suffix */
-      int nPrefix = 0;            /* Size of term prefix */
-      int nBuffer;                /* Total term size */
-  
-      /* Load the next term on the node into zBuffer */
-      if( !isFirstTerm ){
-        zCsr += sqlite3Fts3GetVarint32(zCsr, &nPrefix);
+    if( piLeaf && piLeaf2 && (*piLeaf!=*piLeaf2) ){
+      rc = sqlite3Fts3ReadBlock(p, *piLeaf, &zBlob, &nBlob);
+      if( rc==SQLITE_OK ){
+        rc = fts3SelectLeaf(p, zTerm, nTerm, zBlob, nBlob, piLeaf, 0);
       }
-      isFirstTerm = 0;
-      zCsr += sqlite3Fts3GetVarint32(zCsr, &nSuffix);
-      if( nPrefix+nSuffix>nAlloc ){
-        char *zNew;
-        nAlloc = (nPrefix+nSuffix) * 2;
-        zNew = (char *)sqlite3_realloc(zBuffer, nAlloc);
-        if( !zNew ){
-          sqlite3_free(zBuffer);
-          return SQLITE_NOMEM;
-        }
-        zBuffer = zNew;
-      }
-      memcpy(&zBuffer[nPrefix], zCsr, nSuffix);
-      nBuffer = nPrefix + nSuffix;
-      zCsr += nSuffix;
-  
-      /* Compare the term we are searching for with the term just loaded from
-      ** the interior node. If the specified term is greater than or equal
-      ** to the term from the interior node, then all terms on the sub-tree 
-      ** headed by node iChild are smaller than zTerm. No need to search 
-      ** iChild.
-      **
-      ** If the interior node term is larger than the specified term, then
-      ** the tree headed by iChild may contain the specified term.
-      */
-      cmp = memcmp(zTerm, zBuffer, (nBuffer>nTerm ? nTerm : nBuffer));
-      if( cmp<0 || (cmp==0 && nBuffer>nTerm) ) break;
-      iChild++;
-    };
-
-    /* If (iHeight==1), the children of this interior node are leaves. The
-    ** specified term may be present on leaf node iChild.
-    */
-    if( iHeight==1 ){
-      *piLeaf = iChild;
-      break;
+      piLeaf = 0;
     }
 
-    /* Descend to interior node iChild. */
-    rc = sqlite3Fts3ReadBlock(p, iChild, &zCsr, &nBlock);
-    if( rc!=SQLITE_OK ) break;
-    zEnd = &zCsr[nBlock];
+    rc = sqlite3Fts3ReadBlock(p, piLeaf ? *piLeaf : *piLeaf2, &zBlob, &nBlob);
+    if( rc==SQLITE_OK ){
+      rc = fts3SelectLeaf(p, zTerm, nTerm, zBlob, nBlob, piLeaf, piLeaf2);
+    }
   }
-  sqlite3_free(zBuffer);
+
   return rc;
 }
 
@@ -1506,7 +1541,8 @@ static int fts3DoclistMerge(
   char *a1,                       /* Buffer containing first doclist */
   int n1,                         /* Size of buffer a1 */
   char *a2,                       /* Buffer containing second doclist */
-  int n2                          /* Size of buffer a2 */
+  int n2,                         /* Size of buffer a2 */
+  int *pnDoc                      /* OUT: Number of docids in output */
 ){
   sqlite3_int64 i1 = 0;
   sqlite3_int64 i2 = 0;
@@ -1517,6 +1553,7 @@ static int fts3DoclistMerge(
   char *p2 = a2;
   char *pEnd1 = &a1[n1];
   char *pEnd2 = &a2[n2];
+  int nDoc = 0;
 
   assert( mergetype==MERGE_OR     || mergetype==MERGE_POS_OR 
        || mergetype==MERGE_AND    || mergetype==MERGE_NOT
@@ -1560,6 +1597,7 @@ static int fts3DoclistMerge(
           fts3PutDeltaVarint(&p, &iPrev, i1);
           fts3GetDeltaVarint2(&p1, pEnd1, &i1);
           fts3GetDeltaVarint2(&p2, pEnd2, &i2);
+          nDoc++;
         }else if( i1<i2 ){
           fts3GetDeltaVarint2(&p1, pEnd1, &i1);
         }else{
@@ -1593,6 +1631,8 @@ static int fts3DoclistMerge(
           if( 0==fts3PoslistPhraseMerge(ppPos, nParam1, 0, 1, &p1, &p2) ){
             p = pSave;
             iPrev = iPrevSave;
+          }else{
+            nDoc++;
           }
           fts3GetDeltaVarint2(&p1, pEnd1, &i1);
           fts3GetDeltaVarint2(&p2, pEnd2, &i2);
@@ -1645,6 +1685,7 @@ static int fts3DoclistMerge(
     }
   }
 
+  if( pnDoc ) *pnDoc = nDoc;
   *pnBuffer = (int)(p-aBuffer);
   return SQLITE_OK;
 }
@@ -1692,7 +1733,7 @@ static int fts3TermSelectMerge(TermSelect *pTS){
           return SQLITE_NOMEM;
         }
         fts3DoclistMerge(mergetype, 0, 0,
-            aNew, &nNew, pTS->aaOutput[i], pTS->anOutput[i], aOut, nOut
+            aNew, &nNew, pTS->aaOutput[i], pTS->anOutput[i], aOut, nOut, 0
         );
         sqlite3_free(pTS->aaOutput[i]);
         sqlite3_free(aOut);
@@ -1763,8 +1804,8 @@ static int fts3TermSelectCb(
         }
         return SQLITE_NOMEM;
       }
-      fts3DoclistMerge(mergetype, 0, 0,
-          aNew, &nNew, pTS->aaOutput[iOut], pTS->anOutput[iOut], aMerge, nMerge
+      fts3DoclistMerge(mergetype, 0, 0, aNew, &nNew, 
+          pTS->aaOutput[iOut], pTS->anOutput[iOut], aMerge, nMerge, 0
       );
 
       if( iOut>0 ) sqlite3_free(aMerge);
@@ -1905,10 +1946,11 @@ static int fts3TermSegReaderArray(
       rc = sqlite3Fts3SegReaderNew(p, iAge, 0, 0, 0, zRoot, nRoot, &pNew);
     }else{
       int rc2;                    /* Return value of sqlite3Fts3ReadBlock() */
-      sqlite3_int64 i1;           /* Blockid of leaf that may contain zTerm */
-      rc = fts3SelectLeaf(p, zTerm, nTerm, zRoot, nRoot, &i1);
+      sqlite3_int64 i1;           /* First leaf that may contain zTerm */
+      sqlite3_int64 i2;           /* Last leaf that may contain zTerm */
+      rc = fts3SelectLeaf(p, zTerm, nTerm, zRoot, nRoot, &i1, (isPrefix?&i2:0));
+      if( isPrefix==0 ) i2 = i1;
       if( rc==SQLITE_OK ){
-        sqlite3_int64 i2 = sqlite3_column_int64(pStmt, 2);
         rc = sqlite3Fts3SegReaderNew(p, iAge, i1, i2, 0, 0, 0, &pNew);
       }
 
@@ -2008,17 +2050,34 @@ static int fts3TermSelect(
   return rc;
 }
 
+/*
+** This function counts the total number of docids in the doclist stored
+** in buffer aList[], size nList bytes.
+**
+** If the isPoslist argument is true, then it is assumed that the doclist
+** contains a position-list following each docid. Otherwise, it is assumed
+** that the doclist is simply a list of docids stored as delta encoded 
+** varints.
+*/
 static int fts3DoclistCountDocids(int isPoslist, char *aList, int nList){
   int nDoc = 0;                   /* Return value */
+
   if( aList ){
     char *aEnd = &aList[nList];   /* Pointer to one byte after EOF */
     char *p = aList;              /* Cursor */
-    sqlite3_int64 dummy;          /* For Fts3GetVarint() */
-  
-    while( p<aEnd ){
-      nDoc++;
-      p += sqlite3Fts3GetVarint(p, &dummy);
-      if( isPoslist ) fts3PoslistCopy(0, &p);
+    if( !isPoslist ){
+      /* The number of docids in the list is the same as the number of 
+      ** varints. In FTS3 a varint consists of a single byte with the 0x80 
+      ** bit cleared and zero or more bytes with the 0x80 bit set. So to
+      ** count the varints in the buffer, just count the number of bytes
+      ** with the 0x80 bit clear.  */
+      while( p<aEnd ) nDoc += (((*p++)&0x80)==0);
+    }else{
+      while( p<aEnd ){
+        nDoc++;
+        while( (*p++)&0x80 );     /* Skip docid varint */
+        fts3PoslistCopy(0, &p);   /* Skip over position list */
+      }
     }
   }
 
@@ -2160,6 +2219,9 @@ static int fts3PhraseSelect(
     if( ii==0 ){
       pOut = pList;
       nOut = nList;
+      if( pCsr->doDeferred==0 && pPhrase->nToken>1 ){
+        nDoc = fts3DoclistCountDocids(1, pOut, nOut);
+      }
     }else{
       /* Merge the new term list and the current output. */
       char *aLeft, *aRight;
@@ -2189,14 +2251,14 @@ static int fts3PhraseSelect(
         nDist = iPrevTok-iTok;
       }
       pOut = aRight;
-     
-      fts3DoclistMerge(mt, nDist, 0, pOut, &nOut, aLeft, nLeft, aRight, nRight);
+      fts3DoclistMerge(
+          mt, nDist, 0, pOut, &nOut, aLeft, nLeft, aRight, nRight, &nDoc
+      );
       sqlite3_free(aLeft);
     }
     assert( nOut==0 || pOut!=0 );
 
     iPrevTok = iTok;
-    nDoc = fts3DoclistCountDocids(ii<(pPhrase->nToken-1), pOut, nOut);
   }
 
   if( rc==SQLITE_OK ){
@@ -2234,7 +2296,7 @@ static int fts3NearMerge(
     rc = SQLITE_NOMEM;
   }else{
     rc = fts3DoclistMerge(mergetype, nNear+nTokenRight, nNear+nTokenLeft, 
-      aOut, pnOut, aLeft, nLeft, aRight, nRight
+      aOut, pnOut, aLeft, nLeft, aRight, nRight, 0
     );
     if( rc!=SQLITE_OK ){
       sqlite3_free(aOut);
@@ -2442,13 +2504,15 @@ static int fts3EvalExpr(
             if( ii==0 ){
               aRet = aNew;
               nRet = nNew;
+              if( nExpr>1 ){
+                nDoc = fts3DoclistCountDocids(0, aRet, nRet);
+              }
             }else{
               fts3DoclistMerge(
-                  MERGE_AND, 0, 0, aRet, &nRet, aRet, nRet, aNew, nNew
+                  MERGE_AND, 0, 0, aRet, &nRet, aRet, nRet, aNew, nNew, &nDoc
               );
               sqlite3_free(aNew);
             }
-            nDoc = fts3DoclistCountDocids(0, aRet, nRet);
           }
         }
       }
@@ -2507,7 +2571,7 @@ static int fts3EvalExpr(
             */
             char *aBuffer = sqlite3_malloc(nRight+nLeft+1);
             rc = fts3DoclistMerge(MERGE_OR, 0, 0, aBuffer, pnOut,
-                aLeft, nLeft, aRight, nRight
+                aLeft, nLeft, aRight, nRight, 0
             );
             *paOut = aBuffer;
             sqlite3_free(aLeft);
@@ -2517,7 +2581,7 @@ static int fts3EvalExpr(
           default: {
             assert( FTSQUERY_NOT==MERGE_NOT && FTSQUERY_AND==MERGE_AND );
             fts3DoclistMerge(pExpr->eType, 0, 0, aLeft, pnOut,
-                aLeft, nLeft, aRight, nRight
+                aLeft, nLeft, aRight, nRight, 0
             );
             *paOut = aLeft;
             break;
@@ -2597,7 +2661,6 @@ static int fts3NextMethod(sqlite3_vtab_cursor *pCursor){
   return rc;
 }
 
-
 /*
 ** This is the xFilter interface for the virtual table.  See
 ** the virtual table xFilter method documentation for additional
@@ -2641,6 +2704,7 @@ static int fts3FilterMethod(
   assert( idxNum>=0 && idxNum<=(FTS3_FULLTEXT_SEARCH+p->nColumn) );
   assert( nVal==0 || nVal==1 );
   assert( (nVal==0)==(idxNum==FTS3_FULLSCAN_SEARCH) );
+  assert( p->pSegments==0 );
 
   /* In case the cursor has been used before, clear it now. */
   sqlite3_finalize(pCsr->pStmt);
@@ -2671,6 +2735,7 @@ static int fts3FilterMethod(
     if( rc!=SQLITE_OK ) return rc;
 
     rc = fts3EvalExpr(pCsr, pCsr->pExpr, &pCsr->aDoclist, &pCsr->nDoclist, 0);
+    sqlite3Fts3SegmentsClose(p);
     if( rc!=SQLITE_OK ) return rc;
     pCsr->pNextId = pCsr->aDoclist;
     pCsr->iPrevId = 0;
@@ -2782,7 +2847,9 @@ static int fts3UpdateMethod(
 ** hash-table to the database.
 */
 static int fts3SyncMethod(sqlite3_vtab *pVtab){
-  return sqlite3Fts3PendingTermsFlush((Fts3Table *)pVtab);
+  int rc = sqlite3Fts3PendingTermsFlush((Fts3Table *)pVtab);
+  sqlite3Fts3SegmentsClose((Fts3Table *)pVtab);
+  return rc;
 }
 
 /*
@@ -3116,7 +3183,7 @@ static const sqlite3_module fts3Module = {
   /* xDisconnect   */ fts3DisconnectMethod,
   /* xDestroy      */ fts3DestroyMethod,
   /* xOpen         */ fts3OpenMethod,
-  /* xClose        */ fulltextClose,
+  /* xClose        */ fts3CloseMethod,
   /* xFilter       */ fts3FilterMethod,
   /* xNext         */ fts3NextMethod,
   /* xEof          */ fts3EofMethod,

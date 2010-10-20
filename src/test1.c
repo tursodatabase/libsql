@@ -1703,6 +1703,51 @@ static int test_blob_write(
 
   return (rc==SQLITE_OK ? TCL_OK : TCL_ERROR);
 }
+
+static int test_blob_reopen(
+  ClientData clientData, /* Not used */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  Tcl_WideInt iRowid;
+  Tcl_Channel channel;
+  ClientData instanceData;
+  sqlite3_blob *pBlob;
+  int notUsed;
+  int rc;
+
+  unsigned char *zBuf;
+  int nBuf;
+  
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "CHANNEL ROWID");
+    return TCL_ERROR;
+  }
+
+  channel = Tcl_GetChannel(interp, Tcl_GetString(objv[1]), &notUsed);
+  if( !channel || TCL_OK!=Tcl_GetWideIntFromObj(interp, objv[2], &iRowid) ){ 
+    return TCL_ERROR;
+  }
+
+  if( TCL_OK!=(rc = Tcl_Flush(channel)) ){
+    return rc;
+  }
+  if( TCL_OK!=(rc = Tcl_Seek(channel, 0, SEEK_SET)) ){
+    return rc;
+  }
+
+  instanceData = Tcl_GetChannelInstanceData(channel);
+  pBlob = *((sqlite3_blob **)instanceData);
+
+  rc = sqlite3_blob_reopen(pBlob, iRowid);
+  if( rc!=SQLITE_OK ){
+    Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
+  }
+
+  return (rc==SQLITE_OK ? TCL_OK : TCL_ERROR);
+}
+
 #endif
 
 /*
@@ -5328,6 +5373,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #ifndef SQLITE_OMIT_INCRBLOB
      { "sqlite3_blob_read",  test_blob_read, 0  },
      { "sqlite3_blob_write", test_blob_write, 0  },
+     { "sqlite3_blob_reopen", test_blob_reopen, 0  },
 #endif
      { "pcache_stats",       test_pcache_stats, 0  },
 #ifdef SQLITE_ENABLE_UNLOCK_NOTIFY
