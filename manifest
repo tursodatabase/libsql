@@ -1,5 +1,8 @@
-C Fix\ssome\ssegfaults\sthat\scould\soccur\sin\sobscure\scircumstances\swhere\serror\smessages\scontained\scharacters\sthat\scould\sbe\smistaken\sfor\sprintf\sformat\sspecifiers.
-D 2010-10-21T15:12:44
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Make\ssure\sthe\sestimated\srow\scount\sfor\sephemeral\stables\sis\sinitialized\sso\sthat\nautomatic\sindices\scan\sbe\sused\son\sthose\stables.
+D 2010-10-21T22:58:25
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2c8cefd962eca0147132c7cf9eaa4bb24c656f3f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +176,7 @@ F src/printf.c 8ae5082dd38a1b5456030c3755ec3a392cd51506
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
-F src/select.c 6a5c72fb0e8dc7f6133f5a9d7a747130ef0a00ea
+F src/select.c a03ec6a313ef8311f081ee478f96ae04ff691608
 F src/shell.c 8517fc1f9c59ae4007e6cc8b9af91ab231ea2056
 F src/sqlite.h.in 13f219b9ab78f22603019fd193f09d5c8913795a
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
@@ -262,7 +265,7 @@ F test/auth.test 26cc6f219580191539bf335abe03e55e49310846
 F test/auth2.test 270baddc8b9c273682760cffba6739d907bd2882
 F test/auth3.test a4755e6a2a2fea547ffe63c874eb569e60a28eb5
 F test/autoinc.test 85ef3180a737e6580086a018c09c6f1a52759b46
-F test/autoindex1.test 7df441bf0e7a88644eb80993339dbf1db3a12c68
+F test/autoindex1.test 744ad86deb6d323236dad23364fbd6465bddb7cd
 F test/autovacuum.test bb7c0885e6f8f1d633045de48f2b66082162766d
 F test/autovacuum_ioerr2.test 598b0663074d3673a9c1bc9a16e80971313bafe6
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
@@ -873,7 +876,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 2c3c4ba035e548e97101142692133cf685da16bc
-R 18a7b139ced85b4a9a48c95f0f44b0f9
-U dan
-Z ed59bb88307b21a6af9f1327c9400518
+P f91471e7234db490f97298b1ccb8d6c7fc45b089
+R 4d8246ae58093be6315b04c48bfab4bb
+U drh
+Z aea84f4f863865a8d59d0384e4d2a41c
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMwMWVoxKgR168RlERAhouAKCN7hcg9Q/00nAYD194ZTr73s9vcQCcCAs+
+QaWdxMwZcfCGWAw0Hk8qif8=
+=89cr
+-----END PGP SIGNATURE-----
