@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Fix\sa\stypo-bug\sthat\sprevented\s--disable-amalgamation\sfrom\sworking\sin\nMakefile.in.\s\sAlso\sfix\san\soverly\slong\sline\sin\sMakfile.in.
-D 2010-10-21T12:34:30
+C Fix\ssome\ssegfaults\sthat\scould\soccur\sin\sobscure\scircumstances\swhere\serror\smessages\scontained\scharacters\sthat\scould\sbe\smistaken\sfor\sprintf\sformat\sspecifiers.
+D 2010-10-21T15:12:44
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2c8cefd962eca0147132c7cf9eaa4bb24c656f3f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -233,10 +230,10 @@ F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
 F src/vdbeInt.h 7f4cf1b2b69bef3a432b1f23dfebef57275436b4
 F src/vdbeapi.c 5368714fa750270cf6430160287c21adff44582d
 F src/vdbeaux.c de0b06b11a25293e820a49159eca9f1c51a64716
-F src/vdbeblob.c 258a6010ba7a82b72b327fb24c55790655689256
+F src/vdbeblob.c 6e10c214efa3514ca2f1714773cc4cc5c7b05175
 F src/vdbemem.c 23723a12cd3ba7ab3099193094cbb2eb78956aa9
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
-F src/vtab.c 6c90e3e65b2f026fc54703a8f3c917155f419d87
+F src/vtab.c b297e8fa656ab5e66244ab15680d68db0adbec30
 F src/wal.c 0dc7eb9e907a2c280cdcde876d313e07ea4ad811
 F src/wal.h 96669b645e27cd5a111ba59f0cae7743a207bc3c
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
@@ -459,7 +456,7 @@ F test/in.test 19b642bb134308980a92249750ea4ce3f6c75c2d
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
 F test/in4.test 64f3cc1acde1b9161ccdd8e5bde3daefdb5b2617
-F test/incrblob.test fa2cd937f59f5231bfdc2aa152ee184bf254ca02
+F test/incrblob.test 76e787ca3301d9bfa6906031c626d26f8dd707de
 F test/incrblob2.test edc3a96e557bd61fb39acc8d2edd43371fbbaa19
 F test/incrblob_err.test c577c91d4ed9e8336cdb188b15d6ee2a6fe9604e
 F test/incrvacuum.test 453d1e490d8f5ad2c9b3a54282a0690d6ae56462
@@ -797,7 +794,7 @@ F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 7701bb609fe8bf6535514e8b849a309e8f00573b
 F test/view.test 45f518205ecdb6dd23a86dd4a99bb4ae945e625d
-F test/vtab1.test 9bc4a349a1989bcd064eb3b8fac2f06aca64297a
+F test/vtab1.test 7b79832824cbae37ff01a06ed155027f7c15bf9e
 F test/vtab2.test 7bcffc050da5c68f4f312e49e443063e2d391c0d
 F test/vtab3.test baad99fd27217f5d6db10660522e0b7192446de1
 F test/vtab4.test 942f8b8280b3ea8a41dae20e7822d065ca1cb275
@@ -876,14 +873,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1e0db99797be2821716de7138931ebd5cf8fa63b
-R 27c980fabcc9224b8f93e2c194859c02
-U drh
-Z 5cd8cc8e5437bb048203dc5411dcdfb2
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD4DBQFMwDNdoxKgR168RlERAhyoAJ9KXMEZDSgWeuiZ9fcEOsaX+xwW5ACYv6SC
-dUoJE9sYCjU60A5b4LhubA==
-=UcdN
------END PGP SIGNATURE-----
+P 2c3c4ba035e548e97101142692133cf685da16bc
+R 18a7b139ced85b4a9a48c95f0f44b0f9
+U dan
+Z ed59bb88307b21a6af9f1327c9400518

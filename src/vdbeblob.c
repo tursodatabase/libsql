@@ -231,7 +231,7 @@ int sqlite3_blob_open(
       nAttempt++;
       rc = sqlite3_finalize((sqlite3_stmt *)v);
       sqlite3DbFree(db, zErr);
-      zErr = sqlite3MPrintf(db, sqlite3_errmsg(db));
+      zErr = sqlite3MPrintf(db, "%s", sqlite3_errmsg(db));
       v = 0;
     }
   } while( nAttempt<5 && rc==SQLITE_SCHEMA );
@@ -278,7 +278,7 @@ blob_open_out:
   if( v && (rc!=SQLITE_OK || db->mallocFailed) ){
     sqlite3VdbeFinalize(v);
   }
-  sqlite3Error(db, rc, zErr);
+  sqlite3Error(db, rc, (zErr ? "%s" : 0), zErr);
   sqlite3DbFree(db, zErr);
   sqlite3StackFree(db, pParse);
   rc = sqlite3ApiExit(db, rc);
