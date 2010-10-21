@@ -235,7 +235,7 @@ struct WhereCost {
 #define WHERE_COLUMN_IN    0x00040000  /* x IN (...) */
 #define WHERE_COLUMN_NULL  0x00080000  /* x IS NULL */
 #define WHERE_INDEXED      0x000f0000  /* Anything that uses an index */
-#define WHERE_NOT_FULLSCAN 0x000f3000  /* Does not do a full table scan */
+#define WHERE_NOT_FULLSCAN 0x100f3000  /* Does not do a full table scan */
 #define WHERE_IN_ABLE      0x000f1000  /* Able to support an IN operator */
 #define WHERE_TOP_LIMIT    0x00100000  /* x<EXPR or x<=EXPR constraint */
 #define WHERE_BTM_LIMIT    0x00200000  /* x>EXPR or x>=EXPR constraint */
@@ -1581,8 +1581,9 @@ static void bestOrClauseIndex(
   WhereTerm * const pWCEnd = &pWC->a[pWC->nTerm];        /* End of pWC->a[] */
   WhereTerm *pTerm;                 /* A single term of the WHERE clause */
 
-  /* No OR-clause optimization allowed if the NOT INDEXED clause is used */
-  if( pSrc->notIndexed ){
+  /* No OR-clause optimization allowed if the INDEXED BY or NOT INDEXED clauses
+  ** are used */
+  if( pSrc->notIndexed || pSrc->pIndex!=0 ){
     return;
   }
 
