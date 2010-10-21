@@ -1,7 +1,7 @@
-C Updates\sto\sFTS4\sto\simprove\sperformance\sand\smake\smore\saccurate\scost\sestimates\sfor\sprefix\sterms.
-D 2010-10-20T18:56:04
+C Merge\strunk\schanges\sinto\sexperimental\sbranch.
+D 2010-10-21T15:49:47
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in b01fdfcfecf8a0716c29867a67959f6148b79961
+F Makefile.in 2c8cefd962eca0147132c7cf9eaa4bb24c656f3f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.vxworks c85ec1d8597fe2f7bc225af12ac1666e21379151
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
@@ -61,9 +61,9 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c ce7bcd1f42e74912149fe6201fc63a6ac0db42a8
+F ext/fts3/fts3.c f423181b76fc35c38c4dcf4d8aac012813817f34
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 9fbe422f7d0e005371702acaa3cd44283a67c389
+F ext/fts3/fts3Int.h f80be5abfb24e51cb816287230c0d0c8f1712f59
 F ext/fts3/fts3_expr.c a5aee50edde20e5c9116199bd58be869a3a22c9f
 F ext/fts3/fts3_hash.c 3c8f6387a4a7f5305588b203fa7c887d753e1f1c
 F ext/fts3/fts3_hash.h 8331fb2206c609f9fc4c4735b9ab5ad6137c88ec
@@ -231,14 +231,14 @@ F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
 F src/vdbeInt.h 7f4cf1b2b69bef3a432b1f23dfebef57275436b4
 F src/vdbeapi.c 5368714fa750270cf6430160287c21adff44582d
 F src/vdbeaux.c de0b06b11a25293e820a49159eca9f1c51a64716
-F src/vdbeblob.c c8cbe6ce28cc8bf806ea0818b5167dd9a27c48a3
+F src/vdbeblob.c e6e485934fcc9201dd1bfd65864be2bb14243b5d
 F src/vdbemem.c 23723a12cd3ba7ab3099193094cbb2eb78956aa9
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
-F src/vtab.c 6c90e3e65b2f026fc54703a8f3c917155f419d87
+F src/vtab.c b297e8fa656ab5e66244ab15680d68db0adbec30
 F src/wal.c 0dc7eb9e907a2c280cdcde876d313e07ea4ad811
 F src/wal.h 96669b645e27cd5a111ba59f0cae7743a207bc3c
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 204cdfb66eb82ee17a8fc0a9b12c1ab402755cbb
+F src/where.c d9a31eb3d59466b6c53567c8c9a6c2fe68bbd565
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 6745008c144bd2956d58864d21f7b304689c1cce
@@ -458,7 +458,7 @@ F test/in.test 19b642bb134308980a92249750ea4ce3f6c75c2d
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
 F test/in4.test 64f3cc1acde1b9161ccdd8e5bde3daefdb5b2617
-F test/incrblob.test fa2cd937f59f5231bfdc2aa152ee184bf254ca02
+F test/incrblob.test 76e787ca3301d9bfa6906031c626d26f8dd707de
 F test/incrblob2.test edc3a96e557bd61fb39acc8d2edd43371fbbaa19
 F test/incrblob_err.test c577c91d4ed9e8336cdb188b15d6ee2a6fe9604e
 F test/incrvacuum.test 453d1e490d8f5ad2c9b3a54282a0690d6ae56462
@@ -796,7 +796,7 @@ F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 7701bb609fe8bf6535514e8b849a309e8f00573b
 F test/view.test 45f518205ecdb6dd23a86dd4a99bb4ae945e625d
-F test/vtab1.test 9bc4a349a1989bcd064eb3b8fac2f06aca64297a
+F test/vtab1.test 7b79832824cbae37ff01a06ed155027f7c15bf9e
 F test/vtab2.test 7bcffc050da5c68f4f312e49e443063e2d391c0d
 F test/vtab3.test baad99fd27217f5d6db10660522e0b7192446de1
 F test/vtab4.test 942f8b8280b3ea8a41dae20e7822d065ca1cb275
@@ -835,7 +835,7 @@ F test/where3.test 3a72db38e8804b210e9f72001ea16830fea74b4b
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
-F test/where7.test a0a92b8ce48d9c027fbdd7b764c7de1e1213575a
+F test/where7.test 221fd05b26be4529647c72ef7de5df646482c675
 F test/where8.test a6c740fd286d7883e274e17b6230a9d672a7ab1f
 F test/where8m.test da346596e19d54f0aba35ebade032a7c47d79739
 F test/where9.test be19e1a92f80985c1a121b4678bf7d2123eaa623
@@ -875,7 +875,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 5ae0ba447a561e3b6637b52f9b83a9fc683d2572
-R acd75bd5094c2beea7f56f4633b47ea2
+P d0a450ce78e99f55c862f26f9332786660007a0a f91471e7234db490f97298b1ccb8d6c7fc45b089
+R 3c9178950d1e4be3aecf1d9f3dffa25a
 U dan
-Z 910cba31e6572b93e93d39c91f91b9da
+Z 5bbfebd98739f68617c4d86986bdd88f

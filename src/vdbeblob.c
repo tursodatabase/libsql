@@ -285,7 +285,6 @@ int sqlite3_blob_open(
     if( db->mallocFailed ){
       goto blob_open_out;
     }
-
     sqlite3_bind_int64(pBlob->pStmt, 1, iRow);
     rc = blobSeekToRow(pBlob, iRow, &zErr);
   } while( (++nAttempt)<5 && rc==SQLITE_SCHEMA );
@@ -298,7 +297,6 @@ blob_open_out:
     if( pBlob && pBlob->pStmt ) sqlite3VdbeFinalize((Vdbe *)pBlob->pStmt);
     sqlite3DbFree(db, pBlob);
   }
-
   sqlite3Error(db, rc, (zErr ? "%s" : 0), zErr);
   sqlite3DbFree(db, zErr);
   sqlite3StackFree(db, pParse);

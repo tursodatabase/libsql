@@ -441,6 +441,7 @@ static int fts3DisconnectMethod(sqlite3_vtab *pVtab){
   int i;
 
   assert( p->nPendingData==0 );
+  assert( p->pSegments==0 );
 
   /* Free any prepared statements held */
   for(i=0; i<SizeofArray(p->aStmt); i++){
@@ -2061,7 +2062,6 @@ static int fts3TermSelect(
 */
 static int fts3DoclistCountDocids(int isPoslist, char *aList, int nList){
   int nDoc = 0;                   /* Return value */
-
   if( aList ){
     char *aEnd = &aList[nList];   /* Pointer to one byte after EOF */
     char *p = aList;              /* Cursor */

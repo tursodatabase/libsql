@@ -129,7 +129,6 @@ struct Fts3Table {
   int nNodeSize;                  /* Soft limit for node size */
   u8 bHasContent;                 /* True if %_content table exists */
   u8 bHasDocsize;                 /* True if %_docsize table exists */
-
   sqlite3_blob *pSegments;        /* Blob handle open on %_segments table */
 
   /* The following hash table is used to buffer pending index updates during
