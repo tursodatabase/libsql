@@ -4067,6 +4067,7 @@ WhereInfo *sqlite3WhereBegin(
 
     memset(&bestPlan, 0, sizeof(bestPlan));
     bestPlan.rCost = SQLITE_BIG_DBL;
+    WHERETRACE(("*** Begin search for loop %d ***\n", i));
 
     /* Loop through the remaining entries in the FROM clause to find the
     ** next nested loop. The loop tests all FROM clause entries
@@ -4131,6 +4132,8 @@ WhereInfo *sqlite3WhereBegin(
         pOrderBy = ((i==0 && ppOrderBy )?*ppOrderBy:0);
         if( pTabItem->pIndex==0 ) nUnconstrained++;
   
+        WHERETRACE(("=== trying table %d with isOptimal=%d ===\n",
+                    j, isOptimal));
         assert( pTabItem->pTab );
 #ifndef SQLITE_OMIT_VIRTUALTABLE
         if( IsVirtual(pTabItem->pTab) ){
@@ -4183,8 +4186,9 @@ WhereInfo *sqlite3WhereBegin(
             && (bestJ<0 || sCost.rCost<bestPlan.rCost      /* (4) */
                 || (sCost.rCost<=bestPlan.rCost && sCost.nRow<bestPlan.nRow))
         ){
-          WHERETRACE(("... best so far with cost=%g and nRow=%g\n",
-                      sCost.rCost, sCost.nRow));
+          WHERETRACE(("=== table %d is best so far"
+                      " with cost=%g and nRow=%g\n",
+                      j, sCost.rCost, sCost.nRow));
           bestPlan = sCost;
           bestJ = j;
         }
@@ -4193,8 +4197,9 @@ WhereInfo *sqlite3WhereBegin(
     }
     assert( bestJ>=0 );
     assert( notReady & getMask(pMaskSet, pTabList->a[bestJ].iCursor) );
-    WHERETRACE(("*** Optimizer selects table %d for loop %d\n", bestJ,
-           pLevel-pWInfo->a));
+    WHERETRACE(("*** Optimizer selects table %d for loop %d"
+                " with cost=%g and nRow=%g\n",
+                bestJ, pLevel-pWInfo->a, bestPlan.rCost, bestPlan.nRow));
     if( (bestPlan.plan.wsFlags & WHERE_ORDERBY)!=0 ){
       *ppOrderBy = 0;
     }

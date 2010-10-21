@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sthe\squery\splanner\sso\sthat\sit\suses\sthe\smulti-index\sOR-clause\ssolution\sif\nthat\sis\sthe\slowest\scost\sestimate.\s\sA\sprior\sbug\scause\sthe\smulti-index\ssolution\nto\sbe\signored\sin\ssome\scircumstances.
-D 2010-10-21T02:05:06
+C Add\snew\sWHERETRACE\smacros\sfor\sbetter\sdiagnostics\sof\sthe\squery\splanner.\nAdded\sa\snew\stest\scase\sfor\sthe\sperformance\sregression\sfixed\sby\sthe\sprevious\ncheck-in.
+D 2010-10-21T03:13:59
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b01fdfcfecf8a0716c29867a67959f6148b79961
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -240,7 +240,7 @@ F src/vtab.c 6c90e3e65b2f026fc54703a8f3c917155f419d87
 F src/wal.c 0dc7eb9e907a2c280cdcde876d313e07ea4ad811
 F src/wal.h 96669b645e27cd5a111ba59f0cae7743a207bc3c
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 4ca22dea63424d61680021ebdc9248b4f5797666
+F src/where.c d9a31eb3d59466b6c53567c8c9a6c2fe68bbd565
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 6745008c144bd2956d58864d21f7b304689c1cce
@@ -836,7 +836,7 @@ F test/where3.test 3a72db38e8804b210e9f72001ea16830fea74b4b
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
-F test/where7.test a0a92b8ce48d9c027fbdd7b764c7de1e1213575a
+F test/where7.test 221fd05b26be4529647c72ef7de5df646482c675
 F test/where8.test a6c740fd286d7883e274e17b6230a9d672a7ab1f
 F test/where8m.test da346596e19d54f0aba35ebade032a7c47d79739
 F test/where9.test be19e1a92f80985c1a121b4678bf7d2123eaa623
@@ -876,14 +876,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c0ee614fd988f445c4884a37f494479bdd669185
-R 6e8c0a60de16e5bdb6a605bd3f1b39aa
+P 28ba6255282b1419b8b165e8461018d257b1f6c2
+R 356faab25a033ed6868509f3a1892bd9
 U drh
-Z b859e44913d29246f2a51ec2ec0453b6
+Z 6b64c97bbd923b9a49e2113bdc5fc21f
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMv5/WoxKgR168RlERAgmkAKCN96esWxQzRMXwPF6yb6e9uTWrlQCfYhIV
-wi7V06O0ntyNXUrzsFmI5dw=
-=a2Wv
+iD8DBQFMv6/7oxKgR168RlERArQqAJsHLWslgz2gwl1++DmjsYaRL73uAgCghxuU
+YoUJK40zLY6RYViwah2V2A4=
+=KADs
 -----END PGP SIGNATURE-----
