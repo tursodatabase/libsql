@@ -4524,7 +4524,7 @@ static int hasHotJournal(Pager *pPager, int *pExists){
           sqlite3BeginBenignMalloc();
           if( pagerLockDb(pPager, RESERVED_LOCK)==SQLITE_OK ){
             sqlite3OsDelete(pVfs, pPager->zJournal, 0);
-            pagerUnlockDb(pPager, SHARED_LOCK);
+            if( !pPager->exclusiveMode ) pagerUnlockDb(pPager, SHARED_LOCK);
           }
           sqlite3EndBenignMalloc();
         }else{

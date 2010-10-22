@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Make\ssure\sthe\sestimated\srow\scount\sfor\sephemeral\stables\sis\sinitialized\sso\sthat\nautomatic\sindices\scan\sbe\sused\son\sthose\stables.
-D 2010-10-21T22:58:25
+C Prevent\san\sassert\sfrom\sfailing\swhen\sopening\sa\szero-length\sdatabase\sfile\swith\san\sapparently\shot\sjournal\swith\slocking_mode=exclusive\sset.
+D 2010-10-22T13:55:51
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2c8cefd962eca0147132c7cf9eaa4bb24c656f3f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -164,7 +161,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c 00a4a84aba46b61439913bebf0c10d408e42a630
 F src/os_win.c 2f90f7bdec714fad51cd31b4ecad3cc1b4bb5aad
-F src/pager.c 6c6dde871c540438862d5169650544d843e5b7f7
+F src/pager.c d9858b47b216e3bcb0431bd50ef17d070ac0b92c
 F src/pager.h 8167a1e720d0b7a2790079007128e594010220ad
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 09d38c44ab275db581f7a2f6ff8b9bc7f8c0faaa
@@ -367,7 +364,7 @@ F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
 F test/enc4.test 4b575ef09e0eff896e73bd24076f96c2aa6a42de
 F test/eval.test bc269c365ba877554948441e91ad5373f9f91be3
-F test/exclusive.test 0ba00fb15aeec1eba3d4b03a271b5081e21c35be
+F test/exclusive.test 8624f2d5c6a770b3d7f03acb7622b33201eabec9
 F test/exclusive2.test 76e63c05349cb70d09d60b99d2ae625525ff5155
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/expr.test 620a636cf7b7d4e5834a0b9d83a4da372e24a7b7
@@ -876,14 +873,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f91471e7234db490f97298b1ccb8d6c7fc45b089
-R 4d8246ae58093be6315b04c48bfab4bb
-U drh
-Z aea84f4f863865a8d59d0384e4d2a41c
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMwMWVoxKgR168RlERAhouAKCN7hcg9Q/00nAYD194ZTr73s9vcQCcCAs+
-QaWdxMwZcfCGWAw0Hk8qif8=
-=89cr
------END PGP SIGNATURE-----
+P d30f7b2deffdba373a2e0988f433c631c790a7b5
+R cf57ced11aacf0208551629553db4816
+U dan
+Z 9caac11e4cccaa2af272b1a8dc9b12c0

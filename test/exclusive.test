@@ -469,4 +469,41 @@ do_test exclusive-5.7 {
   expr $sqlite_open_file_count-$extrafds
 } {1}
 
+#-------------------------------------------------------------------------
+
+do_execsql_test exclusive-6.1 {
+  CREATE TABLE t4(a, b);
+  INSERT INTO t4 VALUES('Eden', 1955);
+  BEGIN;
+    INSERT INTO t4 VALUES('Macmillan', 1957);
+    INSERT INTO t4 VALUES('Douglas-Home', 1963);
+    INSERT INTO t4 VALUES('Wilson', 1964);
+}
+do_test exclusive-6.2 {
+  forcedelete test2.db test2.db-journal
+  file copy test.db test2.db
+  file copy test.db-journal test2.db-journal
+  sqlite3 db test2.db
+} {}
+
+do_execsql_test exclusive-6.3 {
+  PRAGMA locking_mode = EXCLUSIVE;
+  SELECT * FROM t4;
+} {exclusive Eden 1955}
+
+do_test exclusive-6.4 {
+  db close
+  forcedelete test.db test.db-journal
+  set fd [open test.db-journal w]
+  puts $fd x
+  close $fd
+  sqlite3 db test.db
+} {}
+
+do_execsql_test exclusive-6.5 {
+  PRAGMA locking_mode = EXCLUSIVE;
+  SELECT * FROM sqlite_master;
+} {}
+
 finish_test
+
