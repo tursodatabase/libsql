@@ -1,5 +1,5 @@
-C Add\smissing\scomments\sand\sfix\scompiler\swarnings\sin\snew\sFTS3/4\scode.\sOther\sminor\sfixes\stoo.
-D 2010-10-22T16:44:39
+C Add\snew\stest\sfile\sfts3defer2.test.
+D 2010-10-22T19:03:34
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2c8cefd962eca0147132c7cf9eaa4bb24c656f3f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -434,6 +434,7 @@ F test/fts3c.test fc723a9cf10b397fdfc2b32e73c53c8b1ec02958
 F test/fts3cov.test 54cf1f98c72abee246447cd688590898c9ecbaf7
 F test/fts3d.test 95fb3c862cbc4297c93fceb9a635543744e9ef52
 F test/fts3defer.test cf66bf69afcc2fb8373d3aed31c55399409e83f2
+F test/fts3defer2.test 98259e5d7fa16b2d275d9b6a6c0c972e285fa18c
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3expr.test 5e745b2b6348499d9ef8d59015de3182072c564c
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
@@ -875,7 +876,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P fd1e5cade04961c2f5438a1dfcc2e15eafb4503f
-R 206dc3599103f123f01ecb7943eabb05
+P 1c9c70fec3c88319f7b2efe5316694a6ce0ab1a5
+R d4195a622cd830429b9e32aeb4872a48
 U dan
-Z dd51b6660510db15d5633c2bf486673b
+Z 7c9af859e7e36df7363e90eaf6cd38eb
