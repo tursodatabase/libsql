@@ -122,13 +122,13 @@ struct Fts3Table {
   /* Precompiled statements used by the implementation. Each of these 
   ** statements is run and reset within a single virtual table API call. 
   */
-  sqlite3_stmt *aStmt[25];
+  sqlite3_stmt *aStmt[24];
 
-  char *zSegmentsTbl;             /* Name of %_segments table */
-  int nPgsz;                      /* Page size for host database */
   int nNodeSize;                  /* Soft limit for node size */
   u8 bHasContent;                 /* True if %_content table exists */
   u8 bHasDocsize;                 /* True if %_docsize table exists */
+  int nPgsz;                      /* Page size for host database */
+  char *zSegmentsTbl;             /* Name of %_segments table */
   sqlite3_blob *pSegments;        /* Blob handle open on %_segments table */
 
   /* The following hash table is used to buffer pending index updates during
@@ -163,7 +163,6 @@ struct Fts3Cursor {
   int nDoclist;                   /* Size of buffer at aDoclist */
   int isMatchinfoNeeded;          /* True when aMatchinfo[] needs filling in */
   u32 *aMatchinfo;                /* Information about most recent match */
-
   int doDeferred;
   int nRowAvg;                    /* Average size of database rows, in pages */
 };
@@ -193,13 +192,12 @@ struct Fts3Cursor {
 ** For a sequence of tokens contained in double-quotes (i.e. "one two three")
 ** nToken will be the number of tokens in the string.
 */
-
 struct Fts3PhraseToken {
   char *z;                        /* Text of the token */
   int n;                          /* Number of bytes in buffer z */
   int isPrefix;                   /* True if token ends with a "*" character */
-  Fts3SegReaderArray *pArray;
-  Fts3DeferredToken *pDeferred;
+  Fts3SegReaderArray *pArray;     /* Segment-reader for this token */
+  Fts3DeferredToken *pDeferred;   /* Deferred token object for this token */
 };
 
 struct Fts3Phrase {
@@ -258,11 +256,6 @@ struct Fts3Expr {
 #define FTSQUERY_PHRASE 5
 
 
-/* fts3_init.c */
-int sqlite3Fts3DeleteVtab(int, sqlite3_vtab *);
-int sqlite3Fts3InitVtab(int, sqlite3*, void*, int, const char*const*, 
-                        sqlite3_vtab **, char **);
-
 /* fts3_write.c */
 int sqlite3Fts3UpdateMethod(sqlite3_vtab*,int,sqlite3_value**,sqlite3_int64*);
 int sqlite3Fts3PendingTermsFlush(Fts3Table *);
@@ -276,11 +269,12 @@ int sqlite3Fts3SegReaderIterate(
   Fts3Table *, Fts3SegReader **, int, Fts3SegFilter *,
   int (*)(Fts3Table *, void *, char *, int, char *, int),  void *
 );
-int sqlite3Fts3ReadBlock(Fts3Table*, sqlite3_int64, char const**, int*);
+int sqlite3Fts3SegReaderCost(Fts3Cursor *, Fts3SegReader *, int *);
 int sqlite3Fts3AllSegdirs(Fts3Table*, sqlite3_stmt **);
 int sqlite3Fts3MatchinfoDocsizeLocal(Fts3Cursor*, u32*);
 int sqlite3Fts3MatchinfoDocsizeGlobal(Fts3Cursor*, u32*);
 int sqlite3Fts3ReadLock(Fts3Table *);
+int sqlite3Fts3ReadBlock(Fts3Table*, sqlite3_int64, char **, int*);
 
 void sqlite3Fts3FreeDeferredTokens(Fts3Cursor *);
 int sqlite3Fts3DeferToken(Fts3Cursor *, Fts3PhraseToken *, int);

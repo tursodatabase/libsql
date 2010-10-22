@@ -1,5 +1,5 @@
-C Merge\strunk\schanges\sinto\sexperimental\sbranch.
-D 2010-10-21T15:49:47
+C Add\smissing\scomments\sand\sfix\scompiler\swarnings\sin\snew\sFTS3/4\scode.\sOther\sminor\sfixes\stoo.
+D 2010-10-22T16:44:39
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2c8cefd962eca0147132c7cf9eaa4bb24c656f3f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -61,9 +61,9 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c f423181b76fc35c38c4dcf4d8aac012813817f34
+F ext/fts3/fts3.c e2f031ea6b213371a31cc5bf181c2177fef86aad
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h f80be5abfb24e51cb816287230c0d0c8f1712f59
+F ext/fts3/fts3Int.h 068d80157cc7a4bf674d2df817f3b427001ad94a
 F ext/fts3/fts3_expr.c a5aee50edde20e5c9116199bd58be869a3a22c9f
 F ext/fts3/fts3_hash.c 3c8f6387a4a7f5305588b203fa7c887d753e1f1c
 F ext/fts3/fts3_hash.h 8331fb2206c609f9fc4c4735b9ab5ad6137c88ec
@@ -73,7 +73,7 @@ F ext/fts3/fts3_snippet.c ca60a2a47de5e7abb22a804ccd1a743f81c2fe3e
 F ext/fts3/fts3_tokenizer.c b4f2d01c24573852755bc92864816785dae39318
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 6e5cbaa588924ac578263a598e4fb9f5c9bb179d
-F ext/fts3/fts3_write.c be47d30cf80bc91e050ece18e2de7e207432be1a
+F ext/fts3/fts3_write.c 54ddeed7323f62af6e55162f0d4102822b991684
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
@@ -431,7 +431,7 @@ F test/fts3ao.test 8fee868a0e131b98ce3e8907dc69936278e8b29a
 F test/fts3atoken.test 25c2070e1e8755d414bf9c8200427b277a9f99fa
 F test/fts3b.test e93bbb653e52afde110ad53bbd793f14fe7a8984
 F test/fts3c.test fc723a9cf10b397fdfc2b32e73c53c8b1ec02958
-F test/fts3cov.test 6f1ff88ff6b5abcfff6979098cb9d0c68a69202e
+F test/fts3cov.test 54cf1f98c72abee246447cd688590898c9ecbaf7
 F test/fts3d.test 95fb3c862cbc4297c93fceb9a635543744e9ef52
 F test/fts3defer.test cf66bf69afcc2fb8373d3aed31c55399409e83f2
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
@@ -875,7 +875,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P d0a450ce78e99f55c862f26f9332786660007a0a f91471e7234db490f97298b1ccb8d6c7fc45b089
-R 3c9178950d1e4be3aecf1d9f3dffa25a
+P fd1e5cade04961c2f5438a1dfcc2e15eafb4503f
+R 206dc3599103f123f01ecb7943eabb05
 U dan
-Z 5bbfebd98739f68617c4d86986bdd88f
+Z dd51b6660510db15d5633c2bf486673b

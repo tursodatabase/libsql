@@ -6,9 +6,7 @@
 #
 #***********************************************************************
 #
-# The tests in this file are structural coverage tests. They are designed
-# to complement the tests in fts3rnd.test and fts3doc.test. Between them,
-# the three files should provide full coverage of the fts3 extension code.
+# The tests in this file are structural coverage tests for FTS3.
 #
 
 set testdir [file dirname $argv0]
@@ -97,7 +95,7 @@ do_test fts3cov-2.2 {
 } {}
 do_error_test fts3cov-2.3 {
   SELECT * FROM t1 WHERE t1 MATCH 'c*'
-} {database disk image is malformed}
+} {SQL logic error or missing database}
 
 # Test the "replaced with NULL" case:
 do_test fts3cov-2.4 {
@@ -105,7 +103,7 @@ do_test fts3cov-2.4 {
 } {}
 do_error_test fts3cov-2.5 {
   SELECT * FROM t1 WHERE t1 MATCH 'cloud'
-} {database disk image is malformed}
+} {SQL logic error or missing database}
 
 #--------------------------------------------------------------------------
 # The following tests are to test the effects of OOM errors while storing
