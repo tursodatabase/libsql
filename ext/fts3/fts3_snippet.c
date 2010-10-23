@@ -268,7 +268,6 @@ static int fts3ExprLoadDoclists(
   }
   if( pnPhrase ) *pnPhrase = sCtx.nPhrase;
   if( pnToken ) *pnToken = sCtx.nToken;
-  sqlite3Fts3SegmentsClose((Fts3Table *)pCsr->base.pVtab);
   return rc;
 }
 
@@ -793,20 +792,47 @@ static int fts3ExprGlobalMatchinfoCb(
   void *pCtx                      /* Pointer to MatchInfo structure */
 ){
   MatchInfo *p = (MatchInfo *)pCtx;
-  char *pCsr;
+  Fts3Cursor *pCsr = p->pCursor;
+  char *pIter;
   char *pEnd;
+  char *pFree = 0;
   const int iStart = 2 + (iPhrase * p->nCol * 3) + 1;
 
   assert( pExpr->isLoaded );
+  assert( pExpr->eType==FTSQUERY_PHRASE );
 
-  /* Fill in the global hit count matrix row for this phrase. */
-  pCsr = pExpr->aDoclist;
-  pEnd = &pExpr->aDoclist[pExpr->nDoclist];
-  while( pCsr<pEnd ){
-    while( *pCsr++ & 0x80 );      /* Skip past docid. */
-    fts3LoadColumnlistCounts(&pCsr, &p->aMatchinfo[iStart], 1);
+  if( pCsr->pDeferred ){
+    Fts3Phrase *pPhrase = pExpr->pPhrase;
+    int ii;
+    for(ii=0; ii<pPhrase->nToken; ii++){
+      if( pPhrase->aToken[ii].bFulltext ) break;
+    }
+    if( ii<pPhrase->nToken ){
+      int nFree = 0;
+      int rc = sqlite3Fts3ExprLoadFtDoclist(pCsr, pExpr, &pFree, &nFree);
+      if( rc!=SQLITE_OK ) return rc;
+      pIter = pFree;
+      pEnd = &pFree[nFree];
+    }else{
+      int nDoc = p->aMatchinfo[2 + 3*p->nCol*p->aMatchinfo[0]];
+      for(ii=0; ii<p->nCol; ii++){
+        p->aMatchinfo[iStart + ii*3] = nDoc;
+        p->aMatchinfo[iStart + ii*3 + 1] = nDoc;
+      }
+      return SQLITE_OK;
+    }
+  }else{
+    pIter = pExpr->aDoclist;
+    pEnd = &pExpr->aDoclist[pExpr->nDoclist];
   }
 
+  /* Fill in the global hit count matrix row for this phrase. */
+  while( pIter<pEnd ){
+    while( *pIter++ & 0x80 );      /* Skip past docid. */
+    fts3LoadColumnlistCounts(&pIter, &p->aMatchinfo[iStart], 1);
+  }
+
+  sqlite3_free(pFree);
   return SQLITE_OK;
 }
 
@@ -875,15 +901,14 @@ static int fts3GetMatchinfo(Fts3Cursor *pCsr){
     }
     memset(sInfo.aMatchinfo, 0, sizeof(u32)*nMatchinfo);
 
-
     /* First element of match-info is the number of phrases in the query */
     sInfo.aMatchinfo[0] = nPhrase;
     sInfo.aMatchinfo[1] = sInfo.nCol;
-    (void)fts3ExprIterate(pCsr->pExpr, fts3ExprGlobalMatchinfoCb,(void*)&sInfo);
     if( pTab->bHasDocsize ){
       int ofst = 2 + 3*sInfo.aMatchinfo[0]*sInfo.aMatchinfo[1];
       rc = sqlite3Fts3MatchinfoDocsizeGlobal(pCsr, &sInfo.aMatchinfo[ofst]);
     }
+    (void)fts3ExprIterate(pCsr->pExpr, fts3ExprGlobalMatchinfoCb,(void*)&sInfo);
     pCsr->aMatchinfo = sInfo.aMatchinfo;
     pCsr->isMatchinfoNeeded = 1;
   }
@@ -993,6 +1018,7 @@ void sqlite3Fts3Snippet(
   }
 
  snippet_out:
+  sqlite3Fts3SegmentsClose(pTab);
   if( rc!=SQLITE_OK ){
     sqlite3_result_error_code(pCtx, rc);
     sqlite3_free(res.z);
@@ -1172,6 +1198,7 @@ void sqlite3Fts3Offsets(
  offsets_out:
   sqlite3_free(sCtx.aTerm);
   assert( rc!=SQLITE_DONE );
+  sqlite3Fts3SegmentsClose(pTab);
   if( rc!=SQLITE_OK ){
     sqlite3_result_error_code(pCtx,  rc);
     sqlite3_free(res.z);
@@ -1191,6 +1218,7 @@ void sqlite3Fts3Matchinfo(sqlite3_context *pContext, Fts3Cursor *pCsr){
     return;
   }
   rc = fts3GetMatchinfo(pCsr);
+  sqlite3Fts3SegmentsClose((Fts3Table *)pCsr->base.pVtab );
   if( rc!=SQLITE_OK ){
     sqlite3_result_error_code(pContext, rc);
   }else{

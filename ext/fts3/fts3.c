@@ -2108,7 +2108,6 @@ static int fts3DeferExpression(Fts3Cursor *pCsr, Fts3Expr *pExpr){
     if( pExpr->eType==FTSQUERY_PHRASE ){
       int iCol = pExpr->pPhrase->iColumn;
       int i;
-      pExpr->bDeferred = 1;
       for(i=0; rc==SQLITE_OK && i<pExpr->pPhrase->nToken; i++){
         Fts3PhraseToken *pToken = &pExpr->pPhrase->aToken[i];
         if( pToken->pDeferred==0 ){
@@ -2170,22 +2169,28 @@ static int fts3PhraseSelect(
   int iCol = pPhrase->iColumn;
   int isTermPos = (pPhrase->nToken>1 || isReqPos);
   Fts3Table *p = (Fts3Table *)pCsr->base.pVtab;
+  int isFirst = 1;
 
   int iPrevTok = 0;
   int nDoc = 0;
 
   /* If this is an xFilter() evaluation, create a segment-reader for each
-  ** phrase token. Or, if this is an xNest() or snippet/offsets/matchinfo
+  ** phrase token. Or, if this is an xNext() or snippet/offsets/matchinfo
   ** evaluation, only create segment-readers if there are no Fts3DeferredToken
   ** objects attached to the phrase-tokens.
   */
   for(ii=0; ii<pPhrase->nToken; ii++){
     Fts3PhraseToken *pTok = &pPhrase->aToken[ii];
-    if( pTok->pArray==0 && (pCsr->doDeferred==0 || pTok->pDeferred==0) ){
-      rc = fts3TermSegReaderArray(
-          pCsr, pTok->z, pTok->n, pTok->isPrefix, &pTok->pArray
-      );
-      if( rc!=SQLITE_OK ) return rc;
+    if( pTok->pArray==0 ){
+      if( (pCsr->eEvalmode==FTS3_EVAL_FILTER)
+       || (pCsr->eEvalmode==FTS3_EVAL_NEXT && pCsr->pDeferred==0) 
+       || (pCsr->eEvalmode==FTS3_EVAL_MATCHINFO && pTok->bFulltext) 
+      ){
+        rc = fts3TermSegReaderArray(
+            pCsr, pTok->z, pTok->n, pTok->isPrefix, &pTok->pArray
+        );
+        if( rc!=SQLITE_OK ) return rc;
+      }
     }
   }
 
@@ -2199,7 +2204,12 @@ static int fts3PhraseSelect(
     ** are processed in order from least to most costly. Otherwise, tokens 
     ** are processed in the order in which they occur in the phrase.
     */
-    if( pCsr->doDeferred || isReqPos ){
+    if( pCsr->eEvalmode==FTS3_EVAL_MATCHINFO ){
+      assert( isReqPos );
+      iTok = ii;
+      pTok = &pPhrase->aToken[iTok];
+      if( pTok->bFulltext==0 ) continue;
+    }else if( pCsr->eEvalmode==FTS3_EVAL_NEXT || isReqPos ){
       iTok = ii;
       pTok = &pPhrase->aToken[iTok];
     }else{
@@ -2227,21 +2237,23 @@ static int fts3PhraseSelect(
       }
     }
 
-    if( pCsr->doDeferred && pTok->pDeferred ){
+    if( pCsr->eEvalmode==FTS3_EVAL_NEXT && pTok->pDeferred ){
       rc = fts3DeferredTermSelect(pTok->pDeferred, isTermPos, &nList, &pList);
     }else{
       assert( pTok->pArray );
       rc = fts3TermSelect(p, pTok, iCol, isTermPos, &nList, &pList);
+      pTok->bFulltext = 1;
     }
-    assert( rc!=SQLITE_OK || pCsr->doDeferred || pTok->pArray==0 );
+    assert( rc!=SQLITE_OK || pCsr->eEvalmode || pTok->pArray==0 );
     if( rc!=SQLITE_OK ) break;
 
-    if( ii==0 ){
+    if( isFirst ){
       pOut = pList;
       nOut = nList;
-      if( pCsr->doDeferred==0 && pPhrase->nToken>1 ){
+      if( pCsr->eEvalmode==FTS3_EVAL_FILTER && pPhrase->nToken>1 ){
         nDoc = fts3DoclistCountDocids(1, pOut, nOut);
       }
+      isFirst = 0;
     }else{
       /* Merge the new term list and the current output. */
       char *aLeft, *aRight;
@@ -2282,8 +2294,8 @@ static int fts3PhraseSelect(
   }
 
   if( rc==SQLITE_OK ){
-    if( ii!=pPhrase->nToken ){
-      assert( pCsr->doDeferred==0 && isReqPos==0 );
+    if( ii!=pPhrase->nToken && pCsr->eEvalmode==FTS3_EVAL_FILTER ){
+      assert( pCsr->eEvalmode==FTS3_EVAL_FILTER && isReqPos==0 );
       fts3DoclistStripPositions(pOut, &nOut);
     }
     *paOut = pOut;
@@ -2398,7 +2410,8 @@ static int fts3ExprAllocateSegReaders(
 ){
   int rc = SQLITE_OK;             /* Return code */
 
-  if( pCsr->doDeferred ) return SQLITE_OK;
+  assert( pCsr->eEvalmode!=FTS3_EVAL_MATCHINFO );
+  if( pCsr->eEvalmode==FTS3_EVAL_NEXT ) return SQLITE_OK;
   if( pnExpr && pExpr->eType!=FTSQUERY_AND ){
     (*pnExpr)++;
     pnExpr = 0;
@@ -2559,7 +2572,7 @@ static int fts3EvalExpr(
           paOut, pnOut
       );
       fts3ExprFreeSegReaders(pExpr);
-    }else if( p->doDeferred==0 && pExpr->eType==FTSQUERY_AND ){
+    }else if( p->eEvalmode==FTS3_EVAL_FILTER && pExpr->eType==FTSQUERY_AND ){
       ExprAndCost *aExpr = 0;     /* Array of AND'd expressions and costs */
       int nExpr = 0;              /* Size of aExpr[] */
       char *aRet = 0;             /* Doclist to return to caller */
@@ -2628,7 +2641,7 @@ static int fts3EvalExpr(
       assert( pExpr->eType==FTSQUERY_NEAR 
            || pExpr->eType==FTSQUERY_OR
            || pExpr->eType==FTSQUERY_NOT
-           || (pExpr->eType==FTSQUERY_AND && p->doDeferred)
+           || (pExpr->eType==FTSQUERY_AND && p->eEvalmode==FTS3_EVAL_NEXT)
       );
 
       if( 0==(rc = fts3EvalExpr(p, pExpr->pRight, &aRight, &nRight, isReqPos))
@@ -2725,9 +2738,7 @@ static int fts3EvalDeferred(
     if( rc==SQLITE_OK ){
       char *a = 0;
       int n = 0;
-      pCsr->doDeferred = 1;
       rc = fts3EvalExpr(pCsr, pCsr->pExpr, &a, &n, 0);
-      pCsr->doDeferred = 0;
       assert( n>=0 );
       *pbRes = (n>0);
       sqlite3_free(a);
@@ -2752,6 +2763,7 @@ static int fts3NextMethod(sqlite3_vtab_cursor *pCursor){
   int rc = SQLITE_OK;             /* Return code */
   Fts3Cursor *pCsr = (Fts3Cursor *)pCursor;
 
+  pCsr->eEvalmode = FTS3_EVAL_NEXT;
   do {
     if( pCsr->aDoclist==0 ){
       if( SQLITE_ROW!=sqlite3_step(pCsr->pStmt) ){
@@ -3003,9 +3015,24 @@ static int fts3RollbackMethod(sqlite3_vtab *pVtab){
 */
 int sqlite3Fts3ExprLoadDoclist(Fts3Cursor *pCsr, Fts3Expr *pExpr){
   int rc;
-  pCsr->doDeferred = 1;
+  assert( pExpr->eType==FTSQUERY_PHRASE && pExpr->pPhrase );
+  assert( pCsr->eEvalmode==FTS3_EVAL_NEXT );
   rc = fts3EvalExpr(pCsr, pExpr, &pExpr->aDoclist, &pExpr->nDoclist, 1);
-  pCsr->doDeferred = 0;
+  return rc;
+}
+
+int sqlite3Fts3ExprLoadFtDoclist(
+  Fts3Cursor *pCsr, 
+  Fts3Expr *pExpr,
+  char **paDoclist,
+  int *pnDoclist
+){
+  int rc;
+  assert( pCsr->eEvalmode==FTS3_EVAL_NEXT );
+  assert( pExpr->eType==FTSQUERY_PHRASE && pExpr->pPhrase );
+  pCsr->eEvalmode = FTS3_EVAL_MATCHINFO;
+  rc = fts3EvalExpr(pCsr, pExpr, paDoclist, pnDoclist, 1);
+  pCsr->eEvalmode = FTS3_EVAL_NEXT;
   return rc;
 }
 

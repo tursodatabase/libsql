@@ -163,9 +163,13 @@ struct Fts3Cursor {
   int nDoclist;                   /* Size of buffer at aDoclist */
   int isMatchinfoNeeded;          /* True when aMatchinfo[] needs filling in */
   u32 *aMatchinfo;                /* Information about most recent match */
-  int doDeferred;
+  int eEvalmode;                  /* An FTS3_EVAL_XX constant */
   int nRowAvg;                    /* Average size of database rows, in pages */
 };
+
+#define FTS3_EVAL_FILTER    0
+#define FTS3_EVAL_NEXT      1
+#define FTS3_EVAL_MATCHINFO 2
 
 /*
 ** The Fts3Cursor.eSearch member is always set to one of the following.
@@ -191,16 +195,24 @@ struct Fts3Cursor {
 ** sequence.  A single token is the base case and the most common case.
 ** For a sequence of tokens contained in double-quotes (i.e. "one two three")
 ** nToken will be the number of tokens in the string.
+**
+** The nDocMatch and nMatch variables contain data that may be used by the
+** matchinfo() function. They are populated when the full-text index is 
+** queried for hits on the phrase. If one or more tokens in the phrase
+** are deferred, the nDocMatch and nMatch variables are populated based
+** on the assumption that the 
 */
 struct Fts3PhraseToken {
   char *z;                        /* Text of the token */
   int n;                          /* Number of bytes in buffer z */
   int isPrefix;                   /* True if token ends with a "*" character */
+  int bFulltext;                  /* True if full-text index was used */
   Fts3SegReaderArray *pArray;     /* Segment-reader for this token */
   Fts3DeferredToken *pDeferred;   /* Deferred token object for this token */
 };
 
 struct Fts3Phrase {
+  /* Variables populated by fts3_expr.c when parsing a MATCH expression */
   int nToken;                /* Number of tokens in the phrase */
   int iColumn;               /* Index of column this phrase must match */
   int isNot;                 /* Phrase prefixed by unary not (-) operator */
@@ -227,8 +239,6 @@ struct Fts3Expr {
   Fts3Expr *pLeft;           /* Left operand */
   Fts3Expr *pRight;          /* Right operand */
   Fts3Phrase *pPhrase;       /* Valid if eType==FTSQUERY_PHRASE */
-
-  int bDeferred;
 
   int isLoaded;              /* True if aDoclist/nDoclist are initialized. */
   char *aDoclist;            /* Buffer containing doclist */
@@ -307,6 +317,7 @@ void sqlite3Fts3Dequote(char *);
 
 char *sqlite3Fts3FindPositions(Fts3Expr *, sqlite3_int64, int);
 int sqlite3Fts3ExprLoadDoclist(Fts3Cursor *, Fts3Expr *);
+int sqlite3Fts3ExprLoadFtDoclist(Fts3Cursor *, Fts3Expr *, char **, int *);
 int sqlite3Fts3ExprNearTrim(Fts3Expr *, Fts3Expr *, int);
 
 /* fts3_tokenizer.c */

@@ -2644,7 +2644,7 @@ static void fts3DeferredDoclistClear(Fts3Expr *pExpr){
   if( pExpr ){
     fts3DeferredDoclistClear(pExpr->pLeft);
     fts3DeferredDoclistClear(pExpr->pRight);
-    if( pExpr->bDeferred && pExpr->isLoaded ){
+    if( pExpr->isLoaded ){
       sqlite3_free(pExpr->aDoclist);
       pExpr->isLoaded = 0;
       pExpr->aDoclist = 0;
@@ -2665,7 +2665,9 @@ void sqlite3Fts3FreeDeferredDoclists(Fts3Cursor *pCsr){
     sqlite3_free(pDef->pList);
     pDef->pList = 0;
   }
-  fts3DeferredDoclistClear(pCsr->pExpr);
+  if( pCsr->pDeferred ){
+    fts3DeferredDoclistClear(pCsr->pExpr);
+  }
 }
 
 /*
