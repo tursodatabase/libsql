@@ -210,7 +210,7 @@ foreach {tn setup} {
     foreach doc $data { execsql { INSERT INTO t1 VALUES($doc) } }
   }
   3 {
-    set dmt_modes {0 1 2}
+    #set dmt_modes {0 1 2}
     execsql { CREATE VIRTUAL TABLE t1 USING FTS4 }
     foreach doc $data { execsql { INSERT INTO t1 VALUES($doc) } }
     execsql $zero_long_doclists
@@ -260,6 +260,16 @@ foreach {tn setup} {
   do_select_test 1.9 {
     SELECT rowid FROM t1 WHERE t1 MATCH 'zm ubwrfqnbjf'
   } {7 70 98}
+  do_select_test 1.10 {
+    SELECT rowid FROM t1 WHERE t1 MATCH 'z* vgsld'
+  } {10 13 17 31 35 51 58 88 89 90 93 100}
+  do_select_test 1.11 {
+    SELECT rowid FROM t1 
+    WHERE t1 MATCH '(
+      zdu OR zexh OR zf OR zhbrzadb OR zidhxhbtv OR 
+      zk OR zkhdvkw OR zm OR zsmhnf
+    ) vgsld'
+  } {10 13 17 31 35 51 58 88 89 90 93 100}
 
   do_select_test 2.1 {
     SELECT rowid FROM t1 WHERE t1 MATCH '"zm agmckuiu"'
@@ -282,17 +292,9 @@ foreach {tn setup} {
   do_select_test 2.7 {
     SELECT rowid FROM t1 WHERE t1 MATCH '"zm jk vgsld"'
   } {13 17}
-
   do_select_test 2.8 {
-    SELECT rowid FROM t1 WHERE t1 MATCH 'z* vgsld'
-  } {10 13 17 31 35 51 58 88 89 90 93 100}
-  do_select_test 2.9 {
-    SELECT rowid FROM t1 
-    WHERE t1 MATCH '(
-      zdu OR zexh OR zf OR zhbrzadb OR zidhxhbtv OR 
-      zk OR zkhdvkw OR zm OR zsmhnf
-    ) vgsld'
-  } {10 13 17 31 35 51 58 88 89 90 93 100}
+    SELECT rowid FROM t1 WHERE t1 MATCH '"zm jk vgsld lkjlkjlkj"'
+  } {}
 
   do_select_test 3.1 {
     SELECT snippet(t1, '[', ']') FROM t1 WHERE t1 MATCH '"zm agmckuiu"'
@@ -389,7 +391,37 @@ foreach {tn setup} {
     SELECT rowid FROM t1 
     WHERE t1 MATCH 'vgsld (hrlipdm OR (aayxpmve duszemmzl))'
   } {10}
+  do_select_test 6.2.1 {
+    SELECT rowid FROM t1 WHERE t1 MATCH '"jk jcpiwj"'
+  } {39 40}
+  do_select_test 6.2.2 {
+    SELECT rowid FROM t1 WHERE t1 MATCH '"zm xnxhf"'
+  } {40 47}
+  do_select_test 6.2.3 {
+    SELECT rowid FROM t1 WHERE t1 MATCH '"jk jcpiwj" OR "zm xnxhf"'
+  } {39 40 47}
 }
+
+set testprefix fts3defer
+
+do_execsql_test 3.1 {
+  CREATE VIRTUAL TABLE x1 USING fts4(a, b);
+  INSERT INTO x1 VALUES('a b c', 'd e f');
+  INSERT INTO x1 SELECT * FROM x1;
+  INSERT INTO x1 SELECT * FROM x1;
+  INSERT INTO x1 SELECT * FROM x1;
+  INSERT INTO x1 SELECT * FROM x1;
+}
+do_execsql_test 3.2 "
+  INSERT INTO x1 VALUES(
+    '[string repeat {d } 3000]', '[string repeat {f } 30000]'
+  );
+  INSERT INTO x1(x1) VALUES('optimize');
+"
+
+do_execsql_test 3.3 {
+  SELECT count(*) FROM x1 WHERE x1 MATCH '"d e f"'
+} {16}
 
 
 finish_test

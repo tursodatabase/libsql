@@ -173,7 +173,6 @@ do_execsql_test 6.1 {
   CREATE VIRTUAL TABLE t3 USING FTS4(a, b);
   INSERT INTO t3 VALUES('no gestures', 'another intriguing discovery by observing the hand gestures (called beats) people make while speaking. Research has shown that such gestures do more than add visual emphasis to our words (many people gesture while they''re on the telephone, for example); it seems they actually help our brains find words');
 }
-
 do_select_tests 6.2 {
   1 "SELECT snippet(t3) FROM t3 WHERE t3 MATCH 'gestures'"
   {{<b>...</b>hand <b>gestures</b> (called beats) people make while speaking. Research has shown that such <b>gestures</b> do<b>...</b>}}
@@ -196,6 +195,7 @@ do_select_tests 6.2 {
   7 "SELECT snippet(t3, 'XXX', 'YYY', 'ZZZ', 1, 5) FROM t3 WHERE t3 MATCH 'gestures'" 
   {{ZZZthe hand XXXgesturesYYY (called beatsZZZ}}
 }
+
 
 finish_test
 

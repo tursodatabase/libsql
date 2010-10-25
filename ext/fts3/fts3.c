@@ -560,21 +560,19 @@ static int fts3CreateTables(Fts3Table *p){
   sqlite3 *db = p->db;            /* The database connection */
 
   /* Create a list of user columns for the content table */
-  if( p->bHasContent ){
-    zContentCols = sqlite3_mprintf("docid INTEGER PRIMARY KEY");
-    for(i=0; zContentCols && i<p->nColumn; i++){
-      char *z = p->azColumn[i];
-      zContentCols = sqlite3_mprintf("%z, 'c%d%q'", zContentCols, i, z);
-    }
-    if( zContentCols==0 ) rc = SQLITE_NOMEM;
-
-    /* Create the content table */
-    fts3DbExec(&rc, db, 
-       "CREATE TABLE %Q.'%q_content'(%s)",
-       p->zDb, p->zName, zContentCols
-    );
-    sqlite3_free(zContentCols);
+  zContentCols = sqlite3_mprintf("docid INTEGER PRIMARY KEY");
+  for(i=0; zContentCols && i<p->nColumn; i++){
+    char *z = p->azColumn[i];
+    zContentCols = sqlite3_mprintf("%z, 'c%d%q'", zContentCols, i, z);
   }
+  if( zContentCols==0 ) rc = SQLITE_NOMEM;
+
+  /* Create the content table */
+  fts3DbExec(&rc, db, 
+     "CREATE TABLE %Q.'%q_content'(%s)",
+     p->zDb, p->zName, zContentCols
+  );
+  sqlite3_free(zContentCols);
   /* Create other tables */
   fts3DbExec(&rc, db, 
       "CREATE TABLE %Q.'%q_segments'(blockid INTEGER PRIMARY KEY, block BLOB);",
@@ -1103,7 +1101,8 @@ static int fts3SelectLeaf(
 
   sqlite3Fts3GetVarint32(zNode, &iHeight);
   rc = fts3ScanInteriorNode(p, zTerm, nTerm, zNode, nNode, piLeaf, piLeaf2);
-  
+  assert( !piLeaf2 || !piLeaf || rc!=SQLITE_OK || (*piLeaf<=*piLeaf2) );
+
   if( rc==SQLITE_OK && iHeight>1 ){
     char *zBlob = 0;              /* Blob read from %_segments table */
     int nBlob;                    /* Size of zBlob in bytes */
@@ -1118,7 +1117,9 @@ static int fts3SelectLeaf(
       zBlob = 0;
     }
 
-    rc = sqlite3Fts3ReadBlock(p, piLeaf ? *piLeaf : *piLeaf2, &zBlob, &nBlob);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3Fts3ReadBlock(p, piLeaf ? *piLeaf : *piLeaf2, &zBlob, &nBlob);
+    }
     if( rc==SQLITE_OK ){
       rc = fts3SelectLeaf(p, zTerm, nTerm, zBlob, nBlob, piLeaf, piLeaf2);
     }
@@ -1750,7 +1751,7 @@ static int fts3TermSelectMerge(TermSelect *pTS){
       if( !aOut ){
         aOut = pTS->aaOutput[i];
         nOut = pTS->anOutput[i];
-        pTS->aaOutput[0] = 0;
+        pTS->aaOutput[i] = 0;
       }else{
         int nNew = nOut + pTS->anOutput[i];
         char *aNew = sqlite3_malloc(nNew);
@@ -2254,6 +2255,7 @@ static int fts3PhraseSelect(
         nDoc = fts3DoclistCountDocids(1, pOut, nOut);
       }
       isFirst = 0;
+      iPrevTok = iTok;
     }else{
       /* Merge the new term list and the current output. */
       char *aLeft, *aRight;
@@ -2275,6 +2277,7 @@ static int fts3PhraseSelect(
         aRight = pList;
         nRight = nList;
         nDist = iTok-iPrevTok;
+        iPrevTok = iTok;
       }else{
         aRight = pOut;
         nRight = nOut;
@@ -2289,8 +2292,6 @@ static int fts3PhraseSelect(
       sqlite3_free(aLeft);
     }
     assert( nOut==0 || pOut!=0 );
-
-    iPrevTok = iTok;
   }
 
   if( rc==SQLITE_OK ){

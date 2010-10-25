@@ -1,0 +1,129 @@
+# 2010 June 15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+set ::testprefix fts3fault
+
+# Test error handling in the sqlite3Fts3Init() function. This is the 
+# function that registers the FTS3 module and various support functions
+# with SQLite.
+#
+do_faultsim_test 1 -body { 
+  sqlite3 db test.db 
+  expr 0
+} -test {
+  catch { db close }
+}
+
+# Test error handling in an "ALTER TABLE ... RENAME TO" statement on an
+# FTS3 table. Specifically, test renaming the table within a transaction
+# after it has been written to.
+#
+faultsim_delete_and_reopen
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE t1 USING fts3;
+  INSERT INTO t1 VALUES('test renaming the table');
+  INSERT INTO t1 VALUES(' after it has been written');
+}
+do_faultsim_test 2 -prep { 
+  sqlite3 db test.db
+  execsql {
+    BEGIN;
+      INSERT INTO t1 VALUES('registers the FTS3 module');
+      INSERT INTO t1 VALUES('various support functions');
+  }
+} -body {
+  execsql { ALTER TABLE t1 RENAME TO t2 }
+} -test {
+  faultsim_test_result {0 {}} 
+}
+
+# Test error handling in the special case where a single prefix query 
+# matches terms that reside on a large range of leaf nodes.
+#
+do_test fts3fault-3.0 {
+  sqlite3 db test.db
+  execsql { CREATE VIRTUAL TABLE t3 USING fts4; }
+  execsql { INSERT INTO t3(t3) VALUES('nodesize=50') }
+  execsql { BEGIN }
+  for {set i 0} {$i < 1000} {incr i} {
+    execsql { INSERT INTO t3 VALUES('aaa' || $i) }
+  }
+  execsql { COMMIT }
+} {}
+
+do_faultsim_test 3 -faults oom-transient -prep { 
+  sqlite3 db test.db
+  execsql { SELECT * FROM t3 WHERE t3 MATCH 'x' }
+} -body {
+  execsql { SELECT count(rowid) FROM t3 WHERE t3 MATCH 'aa*' }
+} -test {
+  faultsim_test_result {0 1000} 
+}
+
+do_test fts3fault-4.0 {
+  faultsim_delete_and_reopen
+  execsql { 
+    CREATE VIRTUAL TABLE t4 USING fts4; 
+    INSERT INTO t4 VALUES('The British Government called on');
+    INSERT INTO t4 VALUES('as pesetas then became much');
+  }
+} {}
+faultsim_save_and_close
+do_faultsim_test 4 -prep { 
+  faultsim_restore_and_reopen
+  execsql { SELECT content FROM t4 }
+} -body {
+  execsql { SELECT optimize(t4) FROM t4 LIMIT 1 }
+} -test {
+  faultsim_test_result {0 {{Index optimized}}}
+}
+
+do_test fts3fault-5.0 {
+  faultsim_delete_and_reopen
+  execsql { 
+    CREATE VIRTUAL TABLE t5 USING fts4; 
+    INSERT INTO t5 VALUES('The British Government called on');
+    INSERT INTO t5 VALUES('as pesetas then became much');
+  }
+} {}
+faultsim_save_and_close
+do_faultsim_test 5 -prep { 
+  faultsim_restore_and_reopen
+  execsql { 
+    BEGIN;
+      INSERT INTO t5 VALUES('influential in shaping his future outlook');
+      INSERT INTO t5 VALUES('might be acceptable to the British electorate');
+  }
+} -body {
+  execsql { SELECT rowid FROM t5 WHERE t5 MATCH 'british' }
+} -test {
+  faultsim_test_result {0 {1 4}}
+}
+
+do_test fts3fault-6.0 {
+  faultsim_delete_and_reopen
+  execsql { CREATE VIRTUAL TABLE t6 USING fts4 }
+} {}
+faultsim_save_and_close
+do_faultsim_test 6 -prep { 
+  faultsim_restore_and_reopen
+  execsql { SELECT rowid FROM t6 }
+} -body {
+  execsql { DROP TABLE t6 }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+finish_test

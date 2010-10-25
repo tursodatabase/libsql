@@ -1,5 +1,5 @@
-C Test\scoverage\simprovements\sfor\sfts3.c.
-D 2010-10-25T12:47:43
+C Further\simprovements\sto\scoverage\sof\sfts3.c.\sFixes\sfor\sbugs\srevealed\sby\sthe\ssame.
+D 2010-10-25T19:01:25
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2c8cefd962eca0147132c7cf9eaa4bb24c656f3f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -61,7 +61,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 8a3b4144b604e18a6736eb3a5812d07e5bc2cfef
+F ext/fts3/fts3.c 989ab87071f160f1459359058e629ca00cb13f70
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 11fa12ce041bacbc6ac53db127eb0bcc0538af51
 F ext/fts3/fts3_expr.c ee48b9278b8b2432a05a03320fbcacba151dbaa5
@@ -431,16 +431,17 @@ F test/fts3ao.test b83f99f70e9eec85f27d75801a974b3f820e01f9
 F test/fts3atoken.test 25c2070e1e8755d414bf9c8200427b277a9f99fa
 F test/fts3b.test e93bbb653e52afde110ad53bbd793f14fe7a8984
 F test/fts3c.test fc723a9cf10b397fdfc2b32e73c53c8b1ec02958
-F test/fts3cov.test 54cf1f98c72abee246447cd688590898c9ecbaf7
+F test/fts3cov.test a02a9abee9e40a8e964e015e8e76abeacd1ea7e1
 F test/fts3d.test 95fb3c862cbc4297c93fceb9a635543744e9ef52
-F test/fts3defer.test bfd84a3110bf336c3799607c9708e171979736e5
+F test/fts3defer.test 422566346d8f2da95dc5be9b0d3ddae86990240a
 F test/fts3defer2.test 1a9f213ca79509b60d81460febc7e4e5b64af95c
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3expr.test 5e745b2b6348499d9ef8d59015de3182072c564c
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
+F test/fts3fault.test c45707ac123b511e4d8291ca3d84e25fd5029b43
 F test/fts3malloc.test 9c8cc3f885bb4dfc66d0460c52f68f45e4710d1b
 F test/fts3near.test 2e318ee434d32babd27c167142e2b94ddbab4844
-F test/fts3query.test 464bc03de219f9601d94e37872fae4a763a0e9a8
+F test/fts3query.test 724a662dbbec4e9dbef66a1389588aa29aeb9b27
 F test/fts3rnd.test 707533ce943f490443ce5e696236bb1675a37635
 F test/fts3shared.test 8bb266521d7c5495c0ae522bb4d376ad5387d4a2
 F test/fts3snippet.test a12f22a3ba4dd59751a57c79b031d07ab5f51ddd
@@ -876,7 +877,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 80a54ebc41e4224ab93d92cb390524db1c398155
-R 6df91aa7490a2de6b071469ff6d77a7d
+P a8b1d99899678b72c2a487909eabed321593d55f
+R b112f25d96f2f7bfd00311268c363283
 U dan
-Z 56215669c25140b5bc6688ab1e20262b
+Z e6dd64e790348520f70c858c0027a456
