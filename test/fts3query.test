@@ -24,6 +24,8 @@ source $testdir/malloc_common.tcl
 source $testdir/fts3_common.tcl
 set DO_MALLOC_TEST 0
 
+set testprefix fts3query
+
 do_test fts3query-1.1 {
   execsql {
     CREATE VIRTUAL TABLE t1 USING fts3(x);
@@ -129,6 +131,71 @@ do_test fts3query-4.5 {
   eqp "SELECT t1.number FROM bt, t1 WHERE t1.number=bt.rowid ORDER BY t1.date"
 } {0 1 {TABLE t1 WITH INDEX i1 ORDER BY} 1 0 {TABLE bt USING PRIMARY KEY}}
 
+
+# Test that calling matchinfo() with the wrong number of arguments, or with
+# an invalid argument returns an error.
+#
+do_execsql_test 5.1 {
+  CREATE VIRTUAL TABLE t2 USING FTS4;
+  INSERT INTO t2 VALUES('it was the first time in history');
+}
+do_select_tests 5.2 -errorformat {
+  wrong number of arguments to function %s()
+} {
+  1 "SELECT matchinfo() FROM t2 WHERE t2 MATCH 'history'"       matchinfo
+  2 "SELECT matchinfo(t2, t2) FROM t2 WHERE t2 MATCH 'history'" matchinfo
+
+  3 "SELECT snippet(t2, 1, 2, 3, 4, 5, 6) FROM t2 WHERE t2 MATCH 'history'" 
+    snippet
+}
+do_select_tests 5.3 -errorformat {
+  illegal first argument to %s
+} {
+  1 "SELECT matchinfo(content) FROM t2 WHERE t2 MATCH 'history'" matchinfo
+  2 "SELECT offsets(content) FROM t2 WHERE t2 MATCH 'history'"   offsets
+  3 "SELECT snippet(content) FROM t2 WHERE t2 MATCH 'history'"   snippet
+  4 "SELECT optimize(content) FROM t2 WHERE t2 MATCH 'history'"  optimize
+}
+do_execsql_test 5.4.0 { UPDATE t2_content SET c0content = X'1234' }
+do_select_tests 5.4 -errorformat {
+  illegal first argument to %s
+} {
+  1 "SELECT matchinfo(content) FROM t2 WHERE t2 MATCH 'history'" matchinfo
+  2 "SELECT offsets(content) FROM t2 WHERE t2 MATCH 'history'"   offsets
+  3 "SELECT snippet(content) FROM t2 WHERE t2 MATCH 'history'"   snippet
+  4 "SELECT optimize(content) FROM t2 WHERE t2 MATCH 'history'"  optimize
+}
+do_execsql_test 5.5 { DROP TABLE t2 }
+
+# Test the snippet() function with 1 to 6 arguments.
+# 
+do_execsql_test 6.1 {
+  CREATE VIRTUAL TABLE t3 USING FTS4(a, b);
+  INSERT INTO t3 VALUES('no gestures', 'another intriguing discovery by observing the hand gestures (called beats) people make while speaking. Research has shown that such gestures do more than add visual emphasis to our words (many people gesture while they''re on the telephone, for example); it seems they actually help our brains find words');
+}
+
+do_select_tests 6.2 {
+  1 "SELECT snippet(t3) FROM t3 WHERE t3 MATCH 'gestures'"
+  {{<b>...</b>hand <b>gestures</b> (called beats) people make while speaking. Research has shown that such <b>gestures</b> do<b>...</b>}}
+
+  2 "SELECT snippet(t3, 'XXX') FROM t3 WHERE t3 MATCH 'gestures'" 
+  {{<b>...</b>hand XXXgestures</b> (called beats) people make while speaking. Research has shown that such XXXgestures</b> do<b>...</b>}}
+
+  3 "SELECT snippet(t3, 'XXX', 'YYY') FROM t3 WHERE t3 MATCH 'gestures'" 
+  {{<b>...</b>hand XXXgesturesYYY (called beats) people make while speaking. Research has shown that such XXXgesturesYYY do<b>...</b>}}
+
+  4 "SELECT snippet(t3, 'XXX', 'YYY', 'ZZZ') FROM t3 WHERE t3 MATCH 'gestures'" 
+  {{ZZZhand XXXgesturesYYY (called beats) people make while speaking. Research has shown that such XXXgesturesYYY doZZZ}}
+
+  5 "SELECT snippet(t3, 'XXX', 'YYY', 'ZZZ', 1) FROM t3 WHERE t3 MATCH 'gestures'" 
+  {{ZZZhand XXXgesturesYYY (called beats) people make while speaking. Research has shown that such XXXgesturesYYY doZZZ}}
+
+  6 "SELECT snippet(t3, 'XXX', 'YYY', 'ZZZ', 0) FROM t3 WHERE t3 MATCH 'gestures'" 
+  {{no XXXgesturesYYY}}
+
+  7 "SELECT snippet(t3, 'XXX', 'YYY', 'ZZZ', 1, 5) FROM t3 WHERE t3 MATCH 'gestures'" 
+  {{ZZZthe hand XXXgesturesYYY (called beatsZZZ}}
+}
 
 finish_test
 

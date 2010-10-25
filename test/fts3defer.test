@@ -331,6 +331,11 @@ foreach {tn setup} {
     {0 1 17 2 0 1 20 2 0 1 26 2 0 0 29 9 0 2 39 8}
   }
 
+  do_select_test 4.3 {
+    SELECT offsets(t1) FROM t1 
+    WHERE t1 MATCH 'vgsld (hrlipdm OR (aapmve NEAR duszemmzl))'
+  } {{0 0 0 5 0 1 15 7 0 0 36 5}}
+
   # The following block of tests runs normally with FTS3 or FTS4 without the
   # long doclists zeroed. And with OOM-injection for FTS4 with long doclists
   # zeroed. Change this by messing with the [set dmt_modes] commands above.
@@ -376,7 +381,14 @@ foreach {tn setup} {
     } {
       {0 0 0 2 0 0 6 2 0 0 9 2 0 1 12 8}
     }
+
+    set DO_MALLOC_TEST 0
   }
+
+  do_select_test 6.1 {
+    SELECT rowid FROM t1 
+    WHERE t1 MATCH 'vgsld (hrlipdm OR (aayxpmve duszemmzl))'
+  } {10}
 }
 
 

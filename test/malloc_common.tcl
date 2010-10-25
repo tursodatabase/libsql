@@ -114,6 +114,8 @@ proc do_faultsim_test {name args} {
   set DEFAULT(-body)          ""
   set DEFAULT(-test)          ""
 
+  fix_testname name
+
   array set O [array get DEFAULT]
   array set O $args
   foreach o [array names O] {

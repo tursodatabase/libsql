@@ -2294,7 +2294,7 @@ static int fts3PhraseSelect(
   }
 
   if( rc==SQLITE_OK ){
-    if( ii!=pPhrase->nToken && pCsr->eEvalmode==FTS3_EVAL_FILTER ){
+    if( ii!=pPhrase->nToken ){
       assert( pCsr->eEvalmode==FTS3_EVAL_FILTER && isReqPos==0 );
       fts3DoclistStripPositions(pOut, &nOut);
     }
@@ -2410,8 +2410,7 @@ static int fts3ExprAllocateSegReaders(
 ){
   int rc = SQLITE_OK;             /* Return code */
 
-  assert( pCsr->eEvalmode!=FTS3_EVAL_MATCHINFO );
-  if( pCsr->eEvalmode==FTS3_EVAL_NEXT ) return SQLITE_OK;
+  assert( pCsr->eEvalmode==FTS3_EVAL_FILTER );
   if( pnExpr && pExpr->eType!=FTSQUERY_AND ){
     (*pnExpr)++;
     pnExpr = 0;
@@ -2561,10 +2560,7 @@ static int fts3EvalExpr(
          || pExpr->eType==FTSQUERY_AND    || pExpr->eType==FTSQUERY_NOT
          || pExpr->eType==FTSQUERY_PHRASE
     );
-    assert( pExpr->eType==FTSQUERY_PHRASE 
-         || pExpr->eType==FTSQUERY_NEAR 
-         || isReqPos==0
-    );
+    assert( pExpr->eType==FTSQUERY_PHRASE || isReqPos==0 );
 
     if( pExpr->eType==FTSQUERY_PHRASE ){
       rc = fts3PhraseSelect(p, pExpr->pPhrase,
@@ -2583,6 +2579,7 @@ static int fts3EvalExpr(
 
       rc = fts3ExprAllocateSegReaders(p, pExpr, &nExpr);
       if( rc==SQLITE_OK ){
+        assert( nExpr>1 );
         aExpr = sqlite3_malloc(sizeof(ExprAndCost) * nExpr);
         if( !aExpr ) rc = SQLITE_NOMEM;
       }
@@ -2614,9 +2611,7 @@ static int fts3EvalExpr(
             if( ii==0 ){
               aRet = aNew;
               nRet = nNew;
-              if( nExpr>1 ){
-                nDoc = fts3DoclistCountDocids(0, aRet, nRet);
-              }
+              nDoc = fts3DoclistCountDocids(0, aRet, nRet);
             }else{
               fts3DoclistMerge(
                   MERGE_AND, 0, 0, aRet, &nRet, aRet, nRet, aNew, nNew, &nDoc
@@ -2651,8 +2646,7 @@ static int fts3EvalExpr(
           case FTSQUERY_NEAR: {
             Fts3Expr *pLeft;
             Fts3Expr *pRight;
-            int mergetype = isReqPos ? MERGE_POS_NEAR : MERGE_NEAR;
-           
+            int mergetype = MERGE_NEAR;
             if( pExpr->pParent && pExpr->pParent->eType==FTSQUERY_NEAR ){
               mergetype = MERGE_POS_NEAR;
             }
@@ -2860,10 +2854,6 @@ static int fts3FilterMethod(
     if( rc!=SQLITE_OK ) return rc;
     pCsr->pNextId = pCsr->aDoclist;
     pCsr->iPrevId = 0;
-    if( pCsr->nDoclist<0 ){
-      assert( pCsr->aDoclist==0 );
-      idxNum = FTS3_FULLSCAN_SEARCH;
-    }
   }
 
   /* Compile a SELECT statement for this cursor. For a full-table-scan, the
@@ -3099,7 +3089,7 @@ static int fts3FunctionArg(
   sqlite3_context *pContext,      /* SQL function call context */
   const char *zFunc,              /* Function name */
   sqlite3_value *pVal,            /* argv[0] passed to function */
-  Fts3Cursor **ppCsr         /* OUT: Store cursor handle here */
+  Fts3Cursor **ppCsr              /* OUT: Store cursor handle here */
 ){
   Fts3Cursor *pRet;
   if( sqlite3_value_type(pVal)!=SQLITE_BLOB 
@@ -3225,13 +3215,7 @@ static void fts3MatchinfoFunc(
   sqlite3_value **apVal           /* Array of arguments */
 ){
   Fts3Cursor *pCsr;               /* Cursor handle passed through apVal[0] */
-
-  if( nVal!=1 ){
-    sqlite3_result_error(pContext,
-        "wrong number of arguments to function matchinfo()", -1);
-    return;
-  }
-
+  assert( nVal==1 );
   if( SQLITE_OK==fts3FunctionArg(pContext, "matchinfo", apVal[0], &pCsr) ){
     sqlite3Fts3Matchinfo(pContext, pCsr);
   }
@@ -3294,7 +3278,6 @@ static int fts3RenameMethod(
     "ALTER TABLE %Q.'%q_content'  RENAME TO '%q_content';",
     p->zDb, p->zName, zName
   );
-  if( rc==SQLITE_ERROR ) rc = SQLITE_OK;
   if( p->bHasDocsize ){
     fts3DbExec(&rc, db,
       "ALTER TABLE %Q.'%q_docsize'  RENAME TO '%q_docsize';",
@@ -3420,7 +3403,7 @@ int sqlite3Fts3Init(sqlite3 *db){
    && SQLITE_OK==(rc = sqlite3Fts3InitHashTable(db, pHash, "fts3_tokenizer"))
    && SQLITE_OK==(rc = sqlite3_overload_function(db, "snippet", -1))
    && SQLITE_OK==(rc = sqlite3_overload_function(db, "offsets", 1))
-   && SQLITE_OK==(rc = sqlite3_overload_function(db, "matchinfo", -1))
+   && SQLITE_OK==(rc = sqlite3_overload_function(db, "matchinfo", 1))
    && SQLITE_OK==(rc = sqlite3_overload_function(db, "optimize", 1))
   ){
     rc = sqlite3_create_module_v2(

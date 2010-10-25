@@ -20,7 +20,6 @@ source $testdir/tester.tcl
 # If SQLITE_ENABLE_FTS3 is not defined, omit this file.
 ifcapable !fts3 { finish_test ; return }
 source $testdir/fts3_common.tcl
-source $testdir/malloc_common.tcl
 
 set sqlite_fts3_enable_parentheses 1
 set DO_MALLOC_TEST 0
@@ -459,7 +458,6 @@ foreach {DO_MALLOC_TEST enc} {
     SELECT length(matchinfo(ft)), typeof(matchinfo(ft)) FROM ft WHERE rowid = $r
   } {0 blob}
 }
-
 
 set sqlite_fts3_enable_parentheses 0
 finish_test
