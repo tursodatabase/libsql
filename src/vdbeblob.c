@@ -33,16 +33,37 @@ struct Incrblob {
 };
 
 
+/*
+** This function is used by both blob_open() and blob_reopen(). It seeks
+** the b-tree cursor associated with blob handle p to point to row iRow.
+** If successful, SQLITE_OK is returned and subsequent calls to
+** sqlite3_blob_read() or sqlite3_blob_write() access the specified row.
+**
+** If an error occurs, or if the specified row does not exist or does not
+** contain a value of type TEXT or BLOB in the column nominated when the
+** blob handle was opened, then an error code is returned and *pzErr may
+** be set to point to a buffer containing an error message. It is the
+** responsibility of the caller to free the error message buffer using
+** sqlite3DbFree().
+**
+** If an error does occur, then the b-tree cursor is closed. All subsequent
+** calls to sqlite3_blob_read(), blob_write() or blob_reopen() will 
+** immediately return SQLITE_ABORT.
+*/
 static int blobSeekToRow(Incrblob *p, sqlite3_int64 iRow, char **pzErr){
   int rc;                         /* Error code */
   char *zErr = 0;                 /* Error message */
   Vdbe *v = (Vdbe *)p->pStmt;
 
+  /* Set the value of the SQL statements only variable to integer iRow. 
+  ** This is done directly instead of using sqlite3_bind_int64() to avoid 
+  ** triggering asserts related to mutexes.
+  */
+  assert( v->aVar[0].flags&MEM_Int );
   v->aVar[0].u.i = iRow;
-  rc = sqlite3_step(p->pStmt);
 
+  rc = sqlite3_step(p->pStmt);
   if( rc==SQLITE_ROW ){
-    Vdbe *v = (Vdbe *)p->pStmt;
     u32 type = v->apCsr[0]->aType[p->iCol];
     if( type<12 ){
       zErr = sqlite3MPrintf(p->db, "cannot open value of type %s",
