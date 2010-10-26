@@ -1590,6 +1590,82 @@ static int test_table_column_metadata(
 
 #ifndef SQLITE_OMIT_INCRBLOB
 
+static int blobHandleFromObj(
+  Tcl_Interp *interp, 
+  Tcl_Obj *pObj,
+  sqlite3_blob **ppBlob
+){
+  char *z;
+  int n;
+
+  z = Tcl_GetStringFromObj(pObj, &n);
+  if( n==0 ){
+    *ppBlob = 0;
+  }else{
+    int notUsed;
+    Tcl_Channel channel;
+    ClientData instanceData;
+    
+    channel = Tcl_GetChannel(interp, z, &notUsed);
+    if( !channel ) return TCL_ERROR;
+
+    Tcl_Flush(channel);
+    Tcl_Seek(channel, 0, SEEK_SET);
+
+    instanceData = Tcl_GetChannelInstanceData(channel);
+    *ppBlob = *((sqlite3_blob **)instanceData);
+  }
+
+  return TCL_OK;
+}
+
+/*
+** sqlite3_blob_bytes  CHANNEL
+*/
+static int test_blob_bytes(
+  ClientData clientData, /* Not used */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3_blob *pBlob;
+  int nByte;
+  
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "CHANNEL");
+    return TCL_ERROR;
+  }
+
+  if( blobHandleFromObj(interp, objv[1], &pBlob) ) return TCL_ERROR;
+  nByte = sqlite3_blob_bytes(pBlob);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(nByte));
+
+  return TCL_OK;
+}
+
+/*
+** sqlite3_blob_close  CHANNEL
+*/
+static int test_blob_close(
+  ClientData clientData, /* Not used */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3_blob *pBlob;
+  int nByte;
+  
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "CHANNEL");
+    return TCL_ERROR;
+  }
+
+  if( blobHandleFromObj(interp, objv[1], &pBlob) ) return TCL_ERROR;
+  sqlite3_blob_close(pBlob);
+
+  return TCL_OK;
+}
+
 /*
 ** sqlite3_blob_read  CHANNEL OFFSET N
 **
@@ -1611,10 +1687,7 @@ static int test_blob_read(
   int objc,              /* Number of arguments */
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
-  Tcl_Channel channel;
-  ClientData instanceData;
   sqlite3_blob *pBlob;
-  int notUsed;
   int nByte;
   int iOffset;
   unsigned char *zBuf;
@@ -1625,17 +1698,12 @@ static int test_blob_read(
     return TCL_ERROR;
   }
 
-  channel = Tcl_GetChannel(interp, Tcl_GetString(objv[1]), &notUsed);
-  if( !channel
-   || TCL_OK!=Tcl_GetIntFromObj(interp, objv[2], &iOffset)
+  if( blobHandleFromObj(interp, objv[1], &pBlob) ) return TCL_ERROR;
+  if( TCL_OK!=Tcl_GetIntFromObj(interp, objv[2], &iOffset)
    || TCL_OK!=Tcl_GetIntFromObj(interp, objv[3], &nByte)
-   || nByte<0 || iOffset<0
   ){ 
     return TCL_ERROR;
   }
-
-  instanceData = Tcl_GetChannelInstanceData(channel);
-  pBlob = *((sqlite3_blob **)instanceData);
 
   zBuf = (unsigned char *)Tcl_Alloc(nByte);
   rc = sqlite3_blob_read(pBlob, zBuf, nByte, iOffset);
@@ -1669,10 +1737,7 @@ static int test_blob_write(
   int objc,              /* Number of arguments */
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
-  Tcl_Channel channel;
-  ClientData instanceData;
   sqlite3_blob *pBlob;
-  int notUsed;
   int iOffset;
   int rc;
 
@@ -1684,13 +1749,10 @@ static int test_blob_write(
     return TCL_ERROR;
   }
 
-  channel = Tcl_GetChannel(interp, Tcl_GetString(objv[1]), &notUsed);
-  if( !channel || TCL_OK!=Tcl_GetIntFromObj(interp, objv[2], &iOffset) ){ 
+  if( blobHandleFromObj(interp, objv[1], &pBlob) ) return TCL_ERROR;
+  if( TCL_OK!=Tcl_GetIntFromObj(interp, objv[2], &iOffset) ){ 
     return TCL_ERROR;
   }
-
-  instanceData = Tcl_GetChannelInstanceData(channel);
-  pBlob = *((sqlite3_blob **)instanceData);
 
   zBuf = Tcl_GetByteArrayFromObj(objv[3], &nBuf);
   if( objc==5 && Tcl_GetIntFromObj(interp, objv[4], &nBuf) ){
@@ -1711,10 +1773,7 @@ static int test_blob_reopen(
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
   Tcl_WideInt iRowid;
-  Tcl_Channel channel;
-  ClientData instanceData;
   sqlite3_blob *pBlob;
-  int notUsed;
   int rc;
 
   unsigned char *zBuf;
@@ -1725,20 +1784,8 @@ static int test_blob_reopen(
     return TCL_ERROR;
   }
 
-  channel = Tcl_GetChannel(interp, Tcl_GetString(objv[1]), &notUsed);
-  if( !channel || TCL_OK!=Tcl_GetWideIntFromObj(interp, objv[2], &iRowid) ){ 
-    return TCL_ERROR;
-  }
-
-  if( TCL_OK!=(rc = Tcl_Flush(channel)) ){
-    return rc;
-  }
-  if( TCL_OK!=(rc = Tcl_Seek(channel, 0, SEEK_SET)) ){
-    return rc;
-  }
-
-  instanceData = Tcl_GetChannelInstanceData(channel);
-  pBlob = *((sqlite3_blob **)instanceData);
+  if( blobHandleFromObj(interp, objv[1], &pBlob) ) return TCL_ERROR;
+  if( Tcl_GetWideIntFromObj(interp, objv[2], &iRowid) ) return TCL_ERROR;
 
   rc = sqlite3_blob_reopen(pBlob, iRowid);
   if( rc!=SQLITE_OK ){
@@ -5371,9 +5418,11 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_table_column_metadata", test_table_column_metadata, 0  },
 #endif
 #ifndef SQLITE_OMIT_INCRBLOB
-     { "sqlite3_blob_read",  test_blob_read, 0  },
-     { "sqlite3_blob_write", test_blob_write, 0  },
+     { "sqlite3_blob_read",   test_blob_read, 0  },
+     { "sqlite3_blob_write",  test_blob_write, 0  },
      { "sqlite3_blob_reopen", test_blob_reopen, 0  },
+     { "sqlite3_blob_bytes",  test_blob_bytes, 0  },
+     { "sqlite3_blob_close",  test_blob_close, 0  },
 #endif
      { "pcache_stats",       test_pcache_stats, 0  },
 #ifdef SQLITE_ENABLE_UNLOCK_NOTIFY

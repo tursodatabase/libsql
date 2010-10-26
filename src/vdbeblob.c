@@ -150,12 +150,11 @@ int sqlite3_blob_open(
     {OP_Halt, 0, 0, 0},            /* 11 */
   };
 
-  Vdbe *v = 0;
   int rc = SQLITE_OK;
   char *zErr = 0;
   Table *pTab;
-  Parse *pParse;
-  Incrblob *pBlob;
+  Parse *pParse = 0;
+  Incrblob *pBlob = 0;
 
   flags = !!flags;                /* flags = (flags ? 1 : 0); */
   *ppBlob = 0;
@@ -163,15 +162,15 @@ int sqlite3_blob_open(
   sqlite3_mutex_enter(db->mutex);
 
   pBlob = (Incrblob *)sqlite3DbMallocZero(db, sizeof(Incrblob));
+  if( !pBlob ) goto blob_open_out;
   pParse = sqlite3StackAllocRaw(db, sizeof(*pParse));
-  if( pParse==0 || pBlob==0 ){
-    assert( db->mallocFailed );
-    goto blob_open_out;
-  }
+  if( !pParse ) goto blob_open_out;
 
   do {
     memset(pParse, 0, sizeof(Parse));
     pParse->db = db;
+    sqlite3DbFree(db, zErr);
+    zErr = 0;
 
     sqlite3BtreeEnterAll(db);
     pTab = sqlite3LocateTable(pParse, 0, zTable, zDb);
@@ -197,7 +196,7 @@ int sqlite3_blob_open(
     }
 
     /* Now search pTab for the exact column. */
-    for(iCol=0; iCol < pTab->nCol; iCol++) {
+    for(iCol=0; iCol<pTab->nCol; iCol++) {
       if( sqlite3StrICmp(pTab->aCol[iCol].zName, zColumn)==0 ){
         break;
       }
@@ -251,10 +250,14 @@ int sqlite3_blob_open(
       }
     }
 
-    v = sqlite3VdbeCreate(db);
-    if( v ){
+    pBlob->pStmt = (sqlite3_stmt *)sqlite3VdbeCreate(db);
+    assert( pBlob->pStmt || db->mallocFailed );
+    if( pBlob->pStmt ){
+      Vdbe *v = (Vdbe *)pBlob->pStmt;
       int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+
       sqlite3VdbeAddOpList(v, sizeof(openBlob)/sizeof(VdbeOpList), openBlob);
+
 
       /* Configure the OP_Transaction */
       sqlite3VdbeChangeP1(v, 0, iDb);
@@ -298,11 +301,9 @@ int sqlite3_blob_open(
     }
    
     pBlob->flags = flags;
-    pBlob->pStmt = (sqlite3_stmt *)v;
     pBlob->iCol = iCol;
     pBlob->db = db;
     sqlite3BtreeLeaveAll(db);
-    v = 0;
     if( db->mallocFailed ){
       goto blob_open_out;
     }
@@ -314,7 +315,6 @@ blob_open_out:
   if( rc==SQLITE_OK && db->mallocFailed==0 ){
     *ppBlob = (sqlite3_blob *)pBlob;
   }else{
-    if( v ) sqlite3VdbeFinalize(v);
     if( pBlob && pBlob->pStmt ) sqlite3VdbeFinalize((Vdbe *)pBlob->pStmt);
     sqlite3DbFree(db, pBlob);
   }
