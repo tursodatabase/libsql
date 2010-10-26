@@ -77,8 +77,14 @@
 ** Macros indicating that conditional expressions are always true or
 ** false.
 */
+#ifdef SQLITE_COVERAGE_TEST
+# define ALWAYS(x) (1)
+# define NEVER(X)  (0)
+#else
 # define ALWAYS(x) (x)
 # define NEVER(X)  (x)
+#endif
+
 /*
 ** Internal types used by SQLite.
 */

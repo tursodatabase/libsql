@@ -415,6 +415,18 @@ do_catchsql_test 16.2 {
   SELECT * FROM t16 WHERE t16 MATCH 'invisible'
 } {1 {database disk image is malformed}}
 
+# And another corruption test case.
+#
+do_execsql_test 17.1 {
+  CREATE VIRTUAL TABLE t17 USING fts4;
+  INSERT INTO t17(content) VALUES('one one one');
+  UPDATE t17_segdir SET root = X'00036F6E65FFFFFFFFFFFFFFFFFFFFFF02030300'
+} {}
+do_catchsql_test 17.2 {
+  SELECT * FROM t17 WHERE t17 MATCH 'one'
+} {1 {database disk image is malformed}}
+
+
 
 
 finish_test

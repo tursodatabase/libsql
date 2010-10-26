@@ -210,7 +210,7 @@ foreach {tn setup} {
     foreach doc $data { execsql { INSERT INTO t1 VALUES($doc) } }
   }
   3 {
-    #set dmt_modes {0 1 2}
+    set dmt_modes {0 1 2}
     execsql { CREATE VIRTUAL TABLE t1 USING FTS4 }
     foreach doc $data { execsql { INSERT INTO t1 VALUES($doc) } }
     execsql $zero_long_doclists
@@ -392,14 +392,14 @@ foreach {tn setup} {
     WHERE t1 MATCH 'vgsld (hrlipdm OR (aayxpmve duszemmzl))'
   } {10}
   do_select_test 6.2.1 {
-    SELECT rowid FROM t1 WHERE t1 MATCH '"jk jcpiwj"'
-  } {39 40}
+    SELECT rowid FROM t1 WHERE t1 MATCH '"jk xduvfhk"'
+  } {8}
   do_select_test 6.2.2 {
-    SELECT rowid FROM t1 WHERE t1 MATCH '"zm xnxhf"'
-  } {40 47}
+    SELECT rowid FROM t1 WHERE t1 MATCH '"zm azavwm"'
+  } {15 26 92 96}
   do_select_test 6.2.3 {
-    SELECT rowid FROM t1 WHERE t1 MATCH '"jk jcpiwj" OR "zm xnxhf"'
-  } {39 40 47}
+    SELECT rowid FROM t1 WHERE t1 MATCH '"jk xduvfhk" OR "zm azavwm"'
+  } {8 15 26 92 96}
 }
 
 set testprefix fts3defer

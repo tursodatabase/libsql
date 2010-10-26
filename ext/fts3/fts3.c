@@ -658,9 +658,8 @@ static void fts3DatabasePageSize(int *pRc, Fts3Table *p){
     }else{
       rc = sqlite3_prepare(p->db, zSql, -1, &pStmt, 0);
       if( rc==SQLITE_OK ){
-        if( SQLITE_ROW==sqlite3_step(pStmt) ){
-          p->nPgsz = sqlite3_column_int(pStmt, 0);
-        }
+        sqlite3_step(pStmt);
+        p->nPgsz = sqlite3_column_int(pStmt, 0);
         rc = sqlite3_finalize(pStmt);
       }
     }
