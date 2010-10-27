@@ -916,9 +916,19 @@ static int fts3SegReaderNext(Fts3Table *p, Fts3SegReader *pReader){
   pReader->nTerm = nPrefix+nSuffix;
   pNext += nSuffix;
   pNext += sqlite3Fts3GetVarint32(pNext, &pReader->nDoclist);
-  assert( pNext<&pReader->aNode[pReader->nNode] );
   pReader->aDoclist = pNext;
   pReader->pOffsetList = 0;
+
+  /* Check that the doclist does not appear to extend past the end of the
+  ** b-tree node. And that the final byte of the doclist is either an 0x00 
+  ** or 0x01. If either of these statements is untrue, then the data structure 
+  ** is corrupt.
+  */
+  if( &pReader->aDoclist[pReader->nDoclist]>&pReader->aNode[pReader->nNode] 
+   || (pReader->aDoclist[pReader->nDoclist-1]&0xFE)!=0
+  ){
+    return SQLITE_CORRUPT;
+  }
   return SQLITE_OK;
 }
 

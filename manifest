@@ -1,5 +1,5 @@
-C In\sfts4,\sstore\sthe\stotal\snumber\sof\sbytes\sof\sfor\sall\srecords\sin\sthe\stable\sin\sthe\s%_stat\stable.
-D 2010-10-27T10:55:54
+C Fix\sa\sbuffer\soverread\sin\sfts3\sthat\scan\soccur\sif\sthe\sdatabase\sis\scorrupt.
+D 2010-10-27T16:52:27
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2c8cefd962eca0147132c7cf9eaa4bb24c656f3f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -73,7 +73,7 @@ F ext/fts3/fts3_snippet.c 300c12b7f0a2a6ae0491bb2d00e2d5ff9c28f685
 F ext/fts3/fts3_tokenizer.c b4f2d01c24573852755bc92864816785dae39318
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 6e5cbaa588924ac578263a598e4fb9f5c9bb179d
-F ext/fts3/fts3_write.c 943216b144447a1fbadef373cbd2b7eb3fd17a65
+F ext/fts3/fts3_write.c a9189fa8719158b695f33e1490f56256308e2525
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
@@ -431,10 +431,11 @@ F test/fts3ao.test b83f99f70e9eec85f27d75801a974b3f820e01f9
 F test/fts3atoken.test 25c2070e1e8755d414bf9c8200427b277a9f99fa
 F test/fts3b.test e93bbb653e52afde110ad53bbd793f14fe7a8984
 F test/fts3c.test fc723a9cf10b397fdfc2b32e73c53c8b1ec02958
+F test/fts3corrupt.test 8d2ef629be9eff997db32ec3f0f7b53b0c61d086
 F test/fts3cov.test e0fb00d8b715ddae4a94c305992dfc3ef70353d7
 F test/fts3d.test 95fb3c862cbc4297c93fceb9a635543744e9ef52
 F test/fts3defer.test eab4f24c8402fb4e1e6aad44bcdfbe5bf42160b2
-F test/fts3defer2.test 1a9f213ca79509b60d81460febc7e4e5b64af95c
+F test/fts3defer2.test d3c7db6584aab06a2781b8de58747c33b23cb19c
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3expr.test 5e745b2b6348499d9ef8d59015de3182072c564c
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
@@ -879,7 +880,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 97c6b2616ddcce2337778c6ee88a973cc4fe999d
-R 8864817f6f3963775cfdd60519bb3822
+P 941647d121ac60e2eabc998cfe79b157fb918d7e
+R 4228d3b4dbf28842cbc96083972fc4a8
 U dan
-Z 890501f0776b5167d933a1fceff6796c
+Z 82331704b60d2b02d0a92d3a85b091f9
