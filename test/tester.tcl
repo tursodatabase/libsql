@@ -1375,3 +1375,4 @@ proc sql36231 {sql} {
 set AUTOVACUUM $sqlite_options(default_autovacuum)
 
 source $testdir/thread_common.tcl
+source $testdir/malloc_common.tcl

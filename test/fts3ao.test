@@ -23,6 +23,8 @@ ifcapable !fts3 {
   return
 }
 
+set ::testprefix fts3ao
+
 #---------------------------------------------------------------------
 # These tests, fts3ao-1.*, test that ticket #2429 is fixed.
 #
@@ -198,6 +200,21 @@ do_test fts3ao-4.7 {
     SELECT * FROM t5;
   }
 } {{the quick brown fox} {jumped over the} {lazy dog}}
+
+# Test that it is possible to rename an FTS4 table. Renaming an FTS4 table
+# involves renaming the extra %_docsize and %_stat tables.
+#
+do_execsql_test 5.1 {
+  CREATE VIRTUAL TABLE t7 USING FTS4;
+  INSERT INTO t7 VALUES('coined by a German clinician');
+  SELECT count(*) FROM sqlite_master WHERE name LIKE 't7%';
+  SELECT count(*) FROM sqlite_master WHERE name LIKE 't8%';
+} {6 0}
+do_execsql_test 5.2 {
+  ALTER TABLE t7 RENAME TO t8;
+  SELECT count(*) FROM sqlite_master WHERE name LIKE 't7%';
+  SELECT count(*) FROM sqlite_master WHERE name LIKE 't8%';
+} {0 6}
 
 finish_test
 

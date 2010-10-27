@@ -159,14 +159,16 @@ test_suite "threads" -prefix "" -description {
 }
 
 test_suite "fts3" -prefix "" -description {
-  All FTS3 tests except fts3malloc.test and fts3rnd.test.
+  All FTS3 tests except fts3rnd.test.
 } -files {
   fts3aa.test fts3ab.test fts3ac.test fts3ad.test fts3ae.test
   fts3af.test fts3ag.test fts3ah.test fts3ai.test fts3aj.test
   fts3ak.test fts3al.test fts3am.test fts3an.test fts3ao.test
   fts3atoken.test fts3b.test fts3c.test fts3cov.test fts3d.test
-  fts3e.test fts3expr.test fts3expr2.test fts3near.test 
-  fts3query.test fts3snippet.test
+  fts3defer.test fts3defer2.test fts3e.test fts3expr.test fts3expr2.test 
+  fts3near.test fts3query.test fts3shared.test fts3snippet.test 
+
+  fts3fault.test fts3malloc.test
 }
 
 

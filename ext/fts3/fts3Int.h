@@ -77,8 +77,14 @@
 ** Macros indicating that conditional expressions are always true or
 ** false.
 */
+#ifdef SQLITE_COVERAGE_TEST
+# define ALWAYS(x) (1)
+# define NEVER(X)  (0)
+#else
 # define ALWAYS(x) (x)
 # define NEVER(X)  (x)
+#endif
+
 /*
 ** Internal types used by SQLite.
 */
@@ -96,8 +102,12 @@ typedef struct Fts3Table Fts3Table;
 typedef struct Fts3Cursor Fts3Cursor;
 typedef struct Fts3Expr Fts3Expr;
 typedef struct Fts3Phrase Fts3Phrase;
-typedef struct Fts3SegReader Fts3SegReader;
+typedef struct Fts3PhraseToken Fts3PhraseToken;
+
 typedef struct Fts3SegFilter Fts3SegFilter;
+typedef struct Fts3DeferredToken Fts3DeferredToken;
+typedef struct Fts3SegReader Fts3SegReader;
+typedef struct Fts3SegReaderArray Fts3SegReaderArray;
 
 /*
 ** A connection to a fulltext index is an instance of the following
@@ -118,22 +128,14 @@ struct Fts3Table {
   /* Precompiled statements used by the implementation. Each of these 
   ** statements is run and reset within a single virtual table API call. 
   */
-  sqlite3_stmt *aStmt[25];
-
-  /* Pointer to string containing the SQL:
-  **
-  ** "SELECT block FROM %_segments WHERE blockid BETWEEN ? AND ? 
-  **    ORDER BY blockid"
-  */
-  char *zSelectLeaves;
-  int nLeavesStmt;                /* Valid statements in aLeavesStmt */
-  int nLeavesTotal;               /* Total number of prepared leaves stmts */
-  int nLeavesAlloc;               /* Allocated size of aLeavesStmt */
-  sqlite3_stmt **aLeavesStmt;     /* Array of prepared zSelectLeaves stmts */
+  sqlite3_stmt *aStmt[24];
 
   int nNodeSize;                  /* Soft limit for node size */
   u8 bHasContent;                 /* True if %_content table exists */
   u8 bHasDocsize;                 /* True if %_docsize table exists */
+  int nPgsz;                      /* Page size for host database */
+  char *zSegmentsTbl;             /* Name of %_segments table */
+  sqlite3_blob *pSegments;        /* Blob handle open on %_segments table */
 
   /* The following hash table is used to buffer pending index updates during
   ** transactions. Variable nPendingData estimates the memory size of the 
@@ -160,13 +162,20 @@ struct Fts3Cursor {
   u8 isRequireSeek;               /* True if must seek pStmt to %_content row */
   sqlite3_stmt *pStmt;            /* Prepared statement in use by the cursor */
   Fts3Expr *pExpr;                /* Parsed MATCH query string */
+  Fts3DeferredToken *pDeferred;   /* Deferred search tokens, if any */
   sqlite3_int64 iPrevId;          /* Previous id read from aDoclist */
   char *pNextId;                  /* Pointer into the body of aDoclist */
   char *aDoclist;                 /* List of docids for full-text queries */
   int nDoclist;                   /* Size of buffer at aDoclist */
   int isMatchinfoNeeded;          /* True when aMatchinfo[] needs filling in */
   u32 *aMatchinfo;                /* Information about most recent match */
+  int eEvalmode;                  /* An FTS3_EVAL_XX constant */
+  int nRowAvg;                    /* Average size of database rows, in pages */
 };
+
+#define FTS3_EVAL_FILTER    0
+#define FTS3_EVAL_NEXT      1
+#define FTS3_EVAL_MATCHINFO 2
 
 /*
 ** The Fts3Cursor.eSearch member is always set to one of the following.
@@ -190,18 +199,30 @@ struct Fts3Cursor {
 /*
 ** A "phrase" is a sequence of one or more tokens that must match in
 ** sequence.  A single token is the base case and the most common case.
-** For a sequence of tokens contained in "...", nToken will be the number
-** of tokens in the string.
+** For a sequence of tokens contained in double-quotes (i.e. "one two three")
+** nToken will be the number of tokens in the string.
+**
+** The nDocMatch and nMatch variables contain data that may be used by the
+** matchinfo() function. They are populated when the full-text index is 
+** queried for hits on the phrase. If one or more tokens in the phrase
+** are deferred, the nDocMatch and nMatch variables are populated based
+** on the assumption that the 
 */
+struct Fts3PhraseToken {
+  char *z;                        /* Text of the token */
+  int n;                          /* Number of bytes in buffer z */
+  int isPrefix;                   /* True if token ends with a "*" character */
+  int bFulltext;                  /* True if full-text index was used */
+  Fts3SegReaderArray *pArray;     /* Segment-reader for this token */
+  Fts3DeferredToken *pDeferred;   /* Deferred token object for this token */
+};
+
 struct Fts3Phrase {
+  /* Variables populated by fts3_expr.c when parsing a MATCH expression */
   int nToken;                /* Number of tokens in the phrase */
   int iColumn;               /* Index of column this phrase must match */
   int isNot;                 /* Phrase prefixed by unary not (-) operator */
-  struct PhraseToken {
-    char *z;                 /* Text of the token */
-    int n;                   /* Number of bytes in buffer pointed to by z */
-    int isPrefix;            /* True if token ends in with a "*" character */
-  } aToken[1];               /* One entry for each token in the phrase */
+  Fts3PhraseToken aToken[1]; /* One entry for each token in the phrase */
 };
 
 /*
@@ -251,11 +272,6 @@ struct Fts3Expr {
 #define FTSQUERY_PHRASE 5
 
 
-/* fts3_init.c */
-int sqlite3Fts3DeleteVtab(int, sqlite3_vtab *);
-int sqlite3Fts3InitVtab(int, sqlite3*, void*, int, const char*const*, 
-                        sqlite3_vtab **, char **);
-
 /* fts3_write.c */
 int sqlite3Fts3UpdateMethod(sqlite3_vtab*,int,sqlite3_value**,sqlite3_int64*);
 int sqlite3Fts3PendingTermsFlush(Fts3Table *);
@@ -269,11 +285,20 @@ int sqlite3Fts3SegReaderIterate(
   Fts3Table *, Fts3SegReader **, int, Fts3SegFilter *,
   int (*)(Fts3Table *, void *, char *, int, char *, int),  void *
 );
-int sqlite3Fts3ReadBlock(Fts3Table*, sqlite3_int64, char const**, int*);
+int sqlite3Fts3SegReaderCost(Fts3Cursor *, Fts3SegReader *, int *);
 int sqlite3Fts3AllSegdirs(Fts3Table*, sqlite3_stmt **);
 int sqlite3Fts3MatchinfoDocsizeLocal(Fts3Cursor*, u32*);
 int sqlite3Fts3MatchinfoDocsizeGlobal(Fts3Cursor*, u32*);
 int sqlite3Fts3ReadLock(Fts3Table *);
+int sqlite3Fts3ReadBlock(Fts3Table*, sqlite3_int64, char **, int*);
+
+void sqlite3Fts3FreeDeferredTokens(Fts3Cursor *);
+int sqlite3Fts3DeferToken(Fts3Cursor *, Fts3PhraseToken *, int);
+int sqlite3Fts3CacheDeferredDoclists(Fts3Cursor *);
+void sqlite3Fts3FreeDeferredDoclists(Fts3Cursor *);
+char *sqlite3Fts3DeferredDoclist(Fts3DeferredToken *, int *);
+
+void sqlite3Fts3SegmentsClose(Fts3Table *);
 
 /* Flags allowed as part of the 4th argument to SegmentReaderIterate() */
 #define FTS3_SEGMENT_REQUIRE_POS   0x00000001
@@ -297,7 +322,8 @@ int sqlite3Fts3VarintLen(sqlite3_uint64);
 void sqlite3Fts3Dequote(char *);
 
 char *sqlite3Fts3FindPositions(Fts3Expr *, sqlite3_int64, int);
-int sqlite3Fts3ExprLoadDoclist(Fts3Table *, Fts3Expr *);
+int sqlite3Fts3ExprLoadDoclist(Fts3Cursor *, Fts3Expr *);
+int sqlite3Fts3ExprLoadFtDoclist(Fts3Cursor *, Fts3Expr *, char **, int *);
 int sqlite3Fts3ExprNearTrim(Fts3Expr *, Fts3Expr *, int);
 
 /* fts3_tokenizer.c */

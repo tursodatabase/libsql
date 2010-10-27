@@ -441,16 +441,13 @@ static int fts3DisconnectMethod(sqlite3_vtab *pVtab){
   int i;
 
   assert( p->nPendingData==0 );
+  assert( p->pSegments==0 );
 
   /* Free any prepared statements held */
   for(i=0; i<SizeofArray(p->aStmt); i++){
     sqlite3_finalize(p->aStmt[i]);
   }
-  for(i=0; i<p->nLeavesStmt; i++){
-    sqlite3_finalize(p->aLeavesStmt[i]);
-  }
-  sqlite3_free(p->zSelectLeaves);
-  sqlite3_free(p->aLeavesStmt);
+  sqlite3_free(p->zSegmentsTbl);
 
   /* Invoke the tokenizer destructor to free the tokenizer. */
   p->pTokenizer->pModule->xDestroy(p->pTokenizer);
@@ -461,7 +458,7 @@ static int fts3DisconnectMethod(sqlite3_vtab *pVtab){
 
 /*
 ** Construct one or more SQL statements from the format string given
-** and then evaluate those statements.  The success code is writting
+** and then evaluate those statements. The success code is written
 ** into *pRc.
 **
 ** If *pRc is initially non-zero then this routine is a no-op.
@@ -513,33 +510,38 @@ static int fts3DestroyMethod(sqlite3_vtab *pVtab){
 ** Invoke sqlite3_declare_vtab() to declare the schema for the FTS3 table
 ** passed as the first argument. This is done as part of the xConnect()
 ** and xCreate() methods.
+**
+** If *pRc is non-zero when this function is called, it is a no-op. 
+** Otherwise, if an error occurs, an SQLite error code is stored in *pRc
+** before returning.
 */
-static int fts3DeclareVtab(Fts3Table *p){
-  int i;                          /* Iterator variable */
-  int rc;                         /* Return code */
-  char *zSql;                     /* SQL statement passed to declare_vtab() */
-  char *zCols;                    /* List of user defined columns */
+static void fts3DeclareVtab(int *pRc, Fts3Table *p){
+  if( *pRc==SQLITE_OK ){
+    int i;                        /* Iterator variable */
+    int rc;                       /* Return code */
+    char *zSql;                   /* SQL statement passed to declare_vtab() */
+    char *zCols;                  /* List of user defined columns */
 
-  /* Create a list of user columns for the virtual table */
-  zCols = sqlite3_mprintf("%Q, ", p->azColumn[0]);
-  for(i=1; zCols && i<p->nColumn; i++){
-    zCols = sqlite3_mprintf("%z%Q, ", zCols, p->azColumn[i]);
+    /* Create a list of user columns for the virtual table */
+    zCols = sqlite3_mprintf("%Q, ", p->azColumn[0]);
+    for(i=1; zCols && i<p->nColumn; i++){
+      zCols = sqlite3_mprintf("%z%Q, ", zCols, p->azColumn[i]);
+    }
+
+    /* Create the whole "CREATE TABLE" statement to pass to SQLite */
+    zSql = sqlite3_mprintf(
+        "CREATE TABLE x(%s %Q HIDDEN, docid HIDDEN)", zCols, p->zName
+    );
+    if( !zCols || !zSql ){
+      rc = SQLITE_NOMEM;
+    }else{
+      rc = sqlite3_declare_vtab(p->db, zSql);
+    }
+
+    sqlite3_free(zSql);
+    sqlite3_free(zCols);
+    *pRc = rc;
   }
-
-  /* Create the whole "CREATE TABLE" statement to pass to SQLite */
-  zSql = sqlite3_mprintf(
-      "CREATE TABLE x(%s %Q HIDDEN, docid HIDDEN)", zCols, p->zName
-  );
-
-  if( !zCols || !zSql ){
-    rc = SQLITE_NOMEM;
-  }else{
-    rc = sqlite3_declare_vtab(p->db, zSql);
-  }
-
-  sqlite3_free(zSql);
-  sqlite3_free(zCols);
-  return rc;
 }
 
 /*
@@ -558,21 +560,19 @@ static int fts3CreateTables(Fts3Table *p){
   sqlite3 *db = p->db;            /* The database connection */
 
   /* Create a list of user columns for the content table */
-  if( p->bHasContent ){
-    zContentCols = sqlite3_mprintf("docid INTEGER PRIMARY KEY");
-    for(i=0; zContentCols && i<p->nColumn; i++){
-      char *z = p->azColumn[i];
-      zContentCols = sqlite3_mprintf("%z, 'c%d%q'", zContentCols, i, z);
-    }
-    if( zContentCols==0 ) rc = SQLITE_NOMEM;
-
-    /* Create the content table */
-    fts3DbExec(&rc, db, 
-       "CREATE TABLE %Q.'%q_content'(%s)",
-       p->zDb, p->zName, zContentCols
-    );
-    sqlite3_free(zContentCols);
+  zContentCols = sqlite3_mprintf("docid INTEGER PRIMARY KEY");
+  for(i=0; zContentCols && i<p->nColumn; i++){
+    char *z = p->azColumn[i];
+    zContentCols = sqlite3_mprintf("%z, 'c%d%q'", zContentCols, i, z);
   }
+  if( zContentCols==0 ) rc = SQLITE_NOMEM;
+
+  /* Create the content table */
+  fts3DbExec(&rc, db, 
+     "CREATE TABLE %Q.'%q_content'(%s)",
+     p->zDb, p->zName, zContentCols
+  );
+  sqlite3_free(zContentCols);
   /* Create other tables */
   fts3DbExec(&rc, db, 
       "CREATE TABLE %Q.'%q_segments'(blockid INTEGER PRIMARY KEY, block BLOB);",
@@ -637,6 +637,36 @@ static void fts3TableExists(
   sqlite3_free(zSql);
   *pResult = (u8)(res & 0xff);
   if( rc!=SQLITE_ABORT ) *pRc = rc;
+}
+
+/*
+** Store the current database page-size in bytes in p->nPgsz.
+**
+** If *pRc is non-zero when this function is called, it is a no-op. 
+** Otherwise, if an error occurs, an SQLite error code is stored in *pRc
+** before returning.
+*/
+static void fts3DatabasePageSize(int *pRc, Fts3Table *p){
+  if( *pRc==SQLITE_OK ){
+    int rc;                       /* Return code */
+    char *zSql;                   /* SQL text "PRAGMA %Q.page_size" */
+    sqlite3_stmt *pStmt;          /* Compiled "PRAGMA %Q.page_size" statement */
+  
+    zSql = sqlite3_mprintf("PRAGMA %Q.page_size", p->zDb);
+    if( !zSql ){
+      rc = SQLITE_NOMEM;
+    }else{
+      rc = sqlite3_prepare(p->db, zSql, -1, &pStmt, 0);
+      if( rc==SQLITE_OK ){
+        sqlite3_step(pStmt);
+        p->nPgsz = sqlite3_column_int(pStmt, 0);
+        rc = sqlite3_finalize(pStmt);
+      }
+    }
+    assert( p->nPgsz>0 || rc!=SQLITE_OK );
+    sqlite3_free(zSql);
+    *pRc = rc;
+  }
 }
 
 /*
@@ -763,12 +793,15 @@ static int fts3InitVtab(
     fts3TableExists(&rc, db, argv[1], argv[2], "_content", &p->bHasContent);
     fts3TableExists(&rc, db, argv[1], argv[2], "_docsize", &p->bHasDocsize);
   }
-  if( rc!=SQLITE_OK ) goto fts3_init_out;
 
-  rc = fts3DeclareVtab(p);
-  if( rc!=SQLITE_OK ) goto fts3_init_out;
+  /* Figure out the page-size for the database. This is required in order to
+  ** estimate the cost of loading large doclists from the database (see 
+  ** function sqlite3Fts3SegReaderCost() for details).
+  */
+  fts3DatabasePageSize(&rc, p);
 
-  *ppVTab = &p->base;
+  /* Declare the table schema to SQLite. */
+  fts3DeclareVtab(&rc, p);
 
 fts3_init_out:
   assert( p || (pTokenizer && rc!=SQLITE_OK) );
@@ -778,6 +811,8 @@ fts3_init_out:
     }else{
       pTokenizer->pModule->xDestroy(pTokenizer);
     }
+  }else{
+    *ppVTab = &p->base;
   }
   return rc;
 }
@@ -889,10 +924,12 @@ static int fts3OpenMethod(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCsr){
 ** Close the cursor.  For additional information see the documentation
 ** on the xClose method of the virtual table interface.
 */
-static int fulltextClose(sqlite3_vtab_cursor *pCursor){
+static int fts3CloseMethod(sqlite3_vtab_cursor *pCursor){
   Fts3Cursor *pCsr = (Fts3Cursor *)pCursor;
+  assert( ((Fts3Table *)pCsr->base.pVtab)->pSegments==0 );
   sqlite3_finalize(pCsr->pStmt);
   sqlite3Fts3ExprFree(pCsr->pExpr);
+  sqlite3Fts3FreeDeferredTokens(pCsr);
   sqlite3_free(pCsr->aDoclist);
   sqlite3_free(pCsr->aMatchinfo);
   sqlite3_free(pCsr);
@@ -931,50 +968,119 @@ static int fts3CursorSeek(sqlite3_context *pContext, Fts3Cursor *pCsr){
 }
 
 /*
-** Advance the cursor to the next row in the %_content table that
-** matches the search criteria.  For a MATCH search, this will be
-** the next row that matches.  For a full-table scan, this will be
-** simply the next row in the %_content table.  For a docid lookup,
-** this routine simply sets the EOF flag.
+** This function is used to process a single interior node when searching
+** a b-tree for a term or term prefix. The node data is passed to this 
+** function via the zNode/nNode parameters. The term to search for is
+** passed in zTerm/nTerm.
 **
-** Return SQLITE_OK if nothing goes wrong.  SQLITE_OK is returned
-** even if we reach end-of-file.  The fts3EofMethod() will be called
-** subsequently to determine whether or not an EOF was hit.
+** If piFirst is not NULL, then this function sets *piFirst to the blockid
+** of the child node that heads the sub-tree that may contain the term.
+**
+** If piLast is not NULL, then *piLast is set to the right-most child node
+** that heads a sub-tree that may contain a term for which zTerm/nTerm is
+** a prefix.
+**
+** If an OOM error occurs, SQLITE_NOMEM is returned. Otherwise, SQLITE_OK.
 */
-static int fts3NextMethod(sqlite3_vtab_cursor *pCursor){
+static int fts3ScanInteriorNode(
+  Fts3Table *p,                   /* Virtual table handle */
+  const char *zTerm,              /* Term to select leaves for */
+  int nTerm,                      /* Size of term zTerm in bytes */
+  const char *zNode,              /* Buffer containing segment interior node */
+  int nNode,                      /* Size of buffer at zNode */
+  sqlite3_int64 *piFirst,         /* OUT: Selected child node */
+  sqlite3_int64 *piLast           /* OUT: Selected child node */
+){
   int rc = SQLITE_OK;             /* Return code */
-  Fts3Cursor *pCsr = (Fts3Cursor *)pCursor;
+  const char *zCsr = zNode;       /* Cursor to iterate through node */
+  const char *zEnd = &zCsr[nNode];/* End of interior node buffer */
+  char *zBuffer = 0;              /* Buffer to load terms into */
+  int nAlloc = 0;                 /* Size of allocated buffer */
+  int isFirstTerm = 1;            /* True when processing first term on page */
+  sqlite3_int64 iChild;           /* Block id of child node to descend to */
 
-  if( pCsr->aDoclist==0 ){
-    if( SQLITE_ROW!=sqlite3_step(pCsr->pStmt) ){
-      pCsr->isEof = 1;
-      rc = sqlite3_reset(pCsr->pStmt);
+  /* Skip over the 'height' varint that occurs at the start of every 
+  ** interior node. Then load the blockid of the left-child of the b-tree
+  ** node into variable iChild.  */
+  zCsr += sqlite3Fts3GetVarint(zCsr, &iChild);
+  zCsr += sqlite3Fts3GetVarint(zCsr, &iChild);
+  
+  while( zCsr<zEnd && (piFirst || piLast) ){
+    int cmp;                      /* memcmp() result */
+    int nSuffix;                  /* Size of term suffix */
+    int nPrefix = 0;              /* Size of term prefix */
+    int nBuffer;                  /* Total term size */
+  
+    /* Load the next term on the node into zBuffer. Use realloc() to expand
+    ** the size of zBuffer if required.  */
+    if( !isFirstTerm ){
+      zCsr += sqlite3Fts3GetVarint32(zCsr, &nPrefix);
     }
-  }else if( pCsr->pNextId>=&pCsr->aDoclist[pCsr->nDoclist] ){
-    pCsr->isEof = 1;
-  }else{
-    sqlite3_reset(pCsr->pStmt);
-    fts3GetDeltaVarint(&pCsr->pNextId, &pCsr->iPrevId);
-    pCsr->isRequireSeek = 1;
-    pCsr->isMatchinfoNeeded = 1;
-  }
+    isFirstTerm = 0;
+    zCsr += sqlite3Fts3GetVarint32(zCsr, &nSuffix);
+    if( nPrefix+nSuffix>nAlloc ){
+      char *zNew;
+      nAlloc = (nPrefix+nSuffix) * 2;
+      zNew = (char *)sqlite3_realloc(zBuffer, nAlloc);
+      if( !zNew ){
+        sqlite3_free(zBuffer);
+        return SQLITE_NOMEM;
+      }
+      zBuffer = zNew;
+    }
+    memcpy(&zBuffer[nPrefix], zCsr, nSuffix);
+    nBuffer = nPrefix + nSuffix;
+    zCsr += nSuffix;
+
+    /* Compare the term we are searching for with the term just loaded from
+    ** the interior node. If the specified term is greater than or equal
+    ** to the term from the interior node, then all terms on the sub-tree 
+    ** headed by node iChild are smaller than zTerm. No need to search 
+    ** iChild.
+    **
+    ** If the interior node term is larger than the specified term, then
+    ** the tree headed by iChild may contain the specified term.
+    */
+    cmp = memcmp(zTerm, zBuffer, (nBuffer>nTerm ? nTerm : nBuffer));
+    if( piFirst && (cmp<0 || (cmp==0 && nBuffer>nTerm)) ){
+      *piFirst = iChild;
+      piFirst = 0;
+    }
+
+    if( piLast && cmp<0 ){
+      *piLast = iChild;
+      piLast = 0;
+    }
+
+    iChild++;
+  };
+
+  if( piFirst ) *piFirst = iChild;
+  if( piLast ) *piLast = iChild;
+
+  sqlite3_free(zBuffer);
   return rc;
 }
 
 
 /*
-** The buffer pointed to by argument zNode (size nNode bytes) contains the
-** root node of a b-tree segment. The segment is guaranteed to be at least
-** one level high (i.e. the root node is not also a leaf). If successful,
-** this function locates the leaf node of the segment that may contain the 
-** term specified by arguments zTerm and nTerm and writes its block number 
-** to *piLeaf.
+** The buffer pointed to by argument zNode (size nNode bytes) contains an
+** interior node of a b-tree segment. The zTerm buffer (size nTerm bytes)
+** contains a term. This function searches the sub-tree headed by the zNode
+** node for the range of leaf nodes that may contain the specified term
+** or terms for which the specified term is a prefix.
 **
-** It is possible that the returned leaf node does not contain the specified
-** term. However, if the segment does contain said term, it is stored on
-** the identified leaf node. Because this function only inspects interior
-** segment nodes (and never loads leaf nodes into memory), it is not possible
-** to be sure.
+** If piLeaf is not NULL, then *piLeaf is set to the blockid of the 
+** left-most leaf node in the tree that may contain the specified term.
+** If piLeaf2 is not NULL, then *piLeaf2 is set to the blockid of the
+** right-most leaf node that may contain a term for which the specified
+** term is a prefix.
+**
+** It is possible that the range of returned leaf nodes does not contain 
+** the specified term or any terms for which it is a prefix. However, if the 
+** segment does contain any such terms, they are stored within the identified
+** range. Because this function only inspects interior segment nodes (and
+** never loads leaf nodes into memory), it is not possible to be sure.
 **
 ** If an error occurs, an error code other than SQLITE_OK is returned.
 */ 
@@ -984,77 +1090,41 @@ static int fts3SelectLeaf(
   int nTerm,                      /* Size of term zTerm in bytes */
   const char *zNode,              /* Buffer containing segment interior node */
   int nNode,                      /* Size of buffer at zNode */
-  sqlite3_int64 *piLeaf           /* Selected leaf node */
+  sqlite3_int64 *piLeaf,          /* Selected leaf node */
+  sqlite3_int64 *piLeaf2          /* Selected leaf node */
 ){
-  int rc = SQLITE_OK;             /* Return code */
-  const char *zCsr = zNode;       /* Cursor to iterate through node */
-  const char *zEnd = &zCsr[nNode];/* End of interior node buffer */
-  char *zBuffer = 0;              /* Buffer to load terms into */
-  int nAlloc = 0;                 /* Size of allocated buffer */
+  int rc;                         /* Return code */
+  int iHeight;                    /* Height of this node in tree */
 
-  while( 1 ){
-    int isFirstTerm = 1;          /* True when processing first term on page */
-    int iHeight;                  /* Height of this node in tree */
-    sqlite3_int64 iChild;         /* Block id of child node to descend to */
-    int nBlock;                   /* Size of child node in bytes */
+  assert( piLeaf || piLeaf2 );
 
-    zCsr += sqlite3Fts3GetVarint32(zCsr, &iHeight);
-    zCsr += sqlite3Fts3GetVarint(zCsr, &iChild);
-  
-    while( zCsr<zEnd ){
-      int cmp;                    /* memcmp() result */
-      int nSuffix;                /* Size of term suffix */
-      int nPrefix = 0;            /* Size of term prefix */
-      int nBuffer;                /* Total term size */
-  
-      /* Load the next term on the node into zBuffer */
-      if( !isFirstTerm ){
-        zCsr += sqlite3Fts3GetVarint32(zCsr, &nPrefix);
+  sqlite3Fts3GetVarint32(zNode, &iHeight);
+  rc = fts3ScanInteriorNode(p, zTerm, nTerm, zNode, nNode, piLeaf, piLeaf2);
+  assert( !piLeaf2 || !piLeaf || rc!=SQLITE_OK || (*piLeaf<=*piLeaf2) );
+
+  if( rc==SQLITE_OK && iHeight>1 ){
+    char *zBlob = 0;              /* Blob read from %_segments table */
+    int nBlob;                    /* Size of zBlob in bytes */
+
+    if( piLeaf && piLeaf2 && (*piLeaf!=*piLeaf2) ){
+      rc = sqlite3Fts3ReadBlock(p, *piLeaf, &zBlob, &nBlob);
+      if( rc==SQLITE_OK ){
+        rc = fts3SelectLeaf(p, zTerm, nTerm, zBlob, nBlob, piLeaf, 0);
       }
-      isFirstTerm = 0;
-      zCsr += sqlite3Fts3GetVarint32(zCsr, &nSuffix);
-      if( nPrefix+nSuffix>nAlloc ){
-        char *zNew;
-        nAlloc = (nPrefix+nSuffix) * 2;
-        zNew = (char *)sqlite3_realloc(zBuffer, nAlloc);
-        if( !zNew ){
-          sqlite3_free(zBuffer);
-          return SQLITE_NOMEM;
-        }
-        zBuffer = zNew;
-      }
-      memcpy(&zBuffer[nPrefix], zCsr, nSuffix);
-      nBuffer = nPrefix + nSuffix;
-      zCsr += nSuffix;
-  
-      /* Compare the term we are searching for with the term just loaded from
-      ** the interior node. If the specified term is greater than or equal
-      ** to the term from the interior node, then all terms on the sub-tree 
-      ** headed by node iChild are smaller than zTerm. No need to search 
-      ** iChild.
-      **
-      ** If the interior node term is larger than the specified term, then
-      ** the tree headed by iChild may contain the specified term.
-      */
-      cmp = memcmp(zTerm, zBuffer, (nBuffer>nTerm ? nTerm : nBuffer));
-      if( cmp<0 || (cmp==0 && nBuffer>nTerm) ) break;
-      iChild++;
-    };
-
-    /* If (iHeight==1), the children of this interior node are leaves. The
-    ** specified term may be present on leaf node iChild.
-    */
-    if( iHeight==1 ){
-      *piLeaf = iChild;
-      break;
+      sqlite3_free(zBlob);
+      piLeaf = 0;
+      zBlob = 0;
     }
 
-    /* Descend to interior node iChild. */
-    rc = sqlite3Fts3ReadBlock(p, iChild, &zCsr, &nBlock);
-    if( rc!=SQLITE_OK ) break;
-    zEnd = &zCsr[nBlock];
+    if( rc==SQLITE_OK ){
+      rc = sqlite3Fts3ReadBlock(p, piLeaf ? *piLeaf : *piLeaf2, &zBlob, &nBlob);
+    }
+    if( rc==SQLITE_OK ){
+      rc = fts3SelectLeaf(p, zTerm, nTerm, zBlob, nBlob, piLeaf, piLeaf2);
+    }
+    sqlite3_free(zBlob);
   }
-  sqlite3_free(zBuffer);
+
   return rc;
 }
 
@@ -1286,20 +1356,44 @@ static void fts3PoslistMerge(
 
 /*
 ** nToken==1 searches for adjacent positions.
+**
+** This function is used to merge two position lists into one. When it is
+** called, *pp1 and *pp2 must both point to position lists. A position-list is
+** the part of a doclist that follows each document id. For example, if a row
+** contains:
+**
+**     'a b c'|'x y z'|'a b b a'
+**
+** Then the position list for this row for token 'b' would consist of:
+**
+**     0x02 0x01 0x02 0x03 0x03 0x00
+**
+** When this function returns, both *pp1 and *pp2 are left pointing to the
+** byte following the 0x00 terminator of their respective position lists.
+**
+** If isSaveLeft is 0, an entry is added to the output position list for 
+** each position in *pp2 for which there exists one or more positions in
+** *pp1 so that (pos(*pp2)>pos(*pp1) && pos(*pp2)-pos(*pp1)<=nToken). i.e.
+** when the *pp1 token appears before the *pp2 token, but not more than nToken
+** slots before it.
 */
 static int fts3PoslistPhraseMerge(
-  char **pp,                      /* Output buffer */
+  char **pp,                      /* IN/OUT: Preallocated output buffer */
   int nToken,                     /* Maximum difference in token positions */
   int isSaveLeft,                 /* Save the left position */
-  char **pp1,                     /* Left input list */
-  char **pp2                      /* Right input list */
+  int isExact,                    /* If *pp1 is exactly nTokens before *pp2 */
+  char **pp1,                     /* IN/OUT: Left input list */
+  char **pp2                      /* IN/OUT: Right input list */
 ){
   char *p = (pp ? *pp : 0);
   char *p1 = *pp1;
   char *p2 = *pp2;
-
   int iCol1 = 0;
   int iCol2 = 0;
+
+  /* Never set both isSaveLeft and isExact for the same invocation. */
+  assert( isSaveLeft==0 || isExact==0 );
+
   assert( *p1!=0 && *p2!=0 );
   if( *p1==POS_COLUMN ){ 
     p1++;
@@ -1328,7 +1422,9 @@ static int fts3PoslistPhraseMerge(
       fts3GetDeltaVarint(&p2, &iPos2); iPos2 -= 2;
 
       while( 1 ){
-        if( iPos2>iPos1 && iPos2<=iPos1+nToken ){
+        if( iPos2==iPos1+nToken 
+         || (isExact==0 && iPos2>iPos1 && iPos2<=iPos1+nToken) 
+        ){
           sqlite3_int64 iSave;
           if( !pp ){
             fts3PoslistCopy(0, &p2);
@@ -1411,21 +1507,21 @@ static int fts3PoslistNearMerge(
   char *p2 = *pp2;
 
   if( !pp ){
-    if( fts3PoslistPhraseMerge(0, nRight, 0, pp1, pp2) ) return 1;
+    if( fts3PoslistPhraseMerge(0, nRight, 0, 0, pp1, pp2) ) return 1;
     *pp1 = p1;
     *pp2 = p2;
-    return fts3PoslistPhraseMerge(0, nLeft, 0, pp2, pp1);
+    return fts3PoslistPhraseMerge(0, nLeft, 0, 0, pp2, pp1);
   }else{
     char *pTmp1 = aTmp;
     char *pTmp2;
     char *aTmp2;
     int res = 1;
 
-    fts3PoslistPhraseMerge(&pTmp1, nRight, 0, pp1, pp2);
+    fts3PoslistPhraseMerge(&pTmp1, nRight, 0, 0, pp1, pp2);
     aTmp2 = pTmp2 = pTmp1;
     *pp1 = p1;
     *pp2 = p2;
-    fts3PoslistPhraseMerge(&pTmp2, nLeft, 1, pp2, pp1);
+    fts3PoslistPhraseMerge(&pTmp2, nLeft, 1, 0, pp2, pp1);
     if( pTmp1!=aTmp && pTmp2!=aTmp2 ){
       fts3PoslistMerge(pp, &aTmp, &aTmp2);
     }else if( pTmp1!=aTmp ){
@@ -1471,7 +1567,8 @@ static int fts3DoclistMerge(
   char *a1,                       /* Buffer containing first doclist */
   int n1,                         /* Size of buffer a1 */
   char *a2,                       /* Buffer containing second doclist */
-  int n2                          /* Size of buffer a2 */
+  int n2,                         /* Size of buffer a2 */
+  int *pnDoc                      /* OUT: Number of docids in output */
 ){
   sqlite3_int64 i1 = 0;
   sqlite3_int64 i2 = 0;
@@ -1482,6 +1579,7 @@ static int fts3DoclistMerge(
   char *p2 = a2;
   char *pEnd1 = &a1[n1];
   char *pEnd2 = &a2[n2];
+  int nDoc = 0;
 
   assert( mergetype==MERGE_OR     || mergetype==MERGE_POS_OR 
        || mergetype==MERGE_AND    || mergetype==MERGE_NOT
@@ -1525,6 +1623,7 @@ static int fts3DoclistMerge(
           fts3PutDeltaVarint(&p, &iPrev, i1);
           fts3GetDeltaVarint2(&p1, pEnd1, &i1);
           fts3GetDeltaVarint2(&p2, pEnd2, &i2);
+          nDoc++;
         }else if( i1<i2 ){
           fts3GetDeltaVarint2(&p1, pEnd1, &i1);
         }else{
@@ -1555,9 +1654,11 @@ static int fts3DoclistMerge(
           char *pSave = p;
           sqlite3_int64 iPrevSave = iPrev;
           fts3PutDeltaVarint(&p, &iPrev, i1);
-          if( 0==fts3PoslistPhraseMerge(ppPos, 1, 0, &p1, &p2) ){
+          if( 0==fts3PoslistPhraseMerge(ppPos, nParam1, 0, 1, &p1, &p2) ){
             p = pSave;
             iPrev = iPrevSave;
+          }else{
+            nDoc++;
           }
           fts3GetDeltaVarint2(&p1, pEnd1, &i1);
           fts3GetDeltaVarint2(&p2, pEnd2, &i2);
@@ -1610,6 +1711,7 @@ static int fts3DoclistMerge(
     }
   }
 
+  if( pnDoc ) *pnDoc = nDoc;
   *pnBuffer = (int)(p-aBuffer);
   return SQLITE_OK;
 }
@@ -1648,7 +1750,7 @@ static int fts3TermSelectMerge(TermSelect *pTS){
       if( !aOut ){
         aOut = pTS->aaOutput[i];
         nOut = pTS->anOutput[i];
-        pTS->aaOutput[0] = 0;
+        pTS->aaOutput[i] = 0;
       }else{
         int nNew = nOut + pTS->anOutput[i];
         char *aNew = sqlite3_malloc(nNew);
@@ -1657,7 +1759,7 @@ static int fts3TermSelectMerge(TermSelect *pTS){
           return SQLITE_NOMEM;
         }
         fts3DoclistMerge(mergetype, 0, 0,
-            aNew, &nNew, pTS->aaOutput[i], pTS->anOutput[i], aOut, nOut
+            aNew, &nNew, pTS->aaOutput[i], pTS->anOutput[i], aOut, nOut, 0
         );
         sqlite3_free(pTS->aaOutput[i]);
         sqlite3_free(aOut);
@@ -1728,8 +1830,8 @@ static int fts3TermSelectCb(
         }
         return SQLITE_NOMEM;
       }
-      fts3DoclistMerge(mergetype, 0, 0,
-          aNew, &nNew, pTS->aaOutput[iOut], pTS->anOutput[iOut], aMerge, nMerge
+      fts3DoclistMerge(mergetype, 0, 0, aNew, &nNew, 
+          pTS->aaOutput[iOut], pTS->anOutput[iOut], aMerge, nMerge, 0
       );
 
       if( iOut>0 ) sqlite3_free(aMerge);
@@ -1747,6 +1849,161 @@ static int fts3TermSelectCb(
   return SQLITE_OK;
 }
 
+static int fts3DeferredTermSelect(
+  Fts3DeferredToken *pToken,      /* Phrase token */
+  int isTermPos,                  /* True to include positions */
+  int *pnOut,                     /* OUT: Size of list */
+  char **ppOut                    /* OUT: Body of list */
+){
+  char *aSource;
+  int nSource;
+
+  aSource = sqlite3Fts3DeferredDoclist(pToken, &nSource);
+  if( !aSource ){
+    *pnOut = 0;
+    *ppOut = 0;
+  }else if( isTermPos ){
+    *ppOut = sqlite3_malloc(nSource);
+    if( !*ppOut ) return SQLITE_NOMEM;
+    memcpy(*ppOut, aSource, nSource);
+    *pnOut = nSource;
+  }else{
+    sqlite3_int64 docid;
+    *pnOut = sqlite3Fts3GetVarint(aSource, &docid);
+    *ppOut = sqlite3_malloc(*pnOut);
+    if( !*ppOut ) return SQLITE_NOMEM;
+    sqlite3Fts3PutVarint(*ppOut, docid);
+  }
+
+  return SQLITE_OK;
+}
+
+/*
+** An Fts3SegReaderArray is used to store an array of Fts3SegReader objects.
+** Elements are added to the array using fts3SegReaderArrayAdd(). 
+*/
+struct Fts3SegReaderArray {
+  int nSegment;                   /* Number of valid entries in apSegment[] */
+  int nAlloc;                     /* Allocated size of apSegment[] */
+  int nCost;                      /* The cost of executing SegReaderIterate() */
+  Fts3SegReader *apSegment[1];    /* Array of seg-reader objects */
+};
+
+
+/*
+** Free an Fts3SegReaderArray object. Also free all seg-readers in the
+** array (using sqlite3Fts3SegReaderFree()).
+*/
+static void fts3SegReaderArrayFree(Fts3SegReaderArray *pArray){
+  if( pArray ){
+    int i;
+    for(i=0; i<pArray->nSegment; i++){
+      sqlite3Fts3SegReaderFree(0, pArray->apSegment[i]);
+    }
+    sqlite3_free(pArray);
+  }
+}
+
+static int fts3SegReaderArrayAdd(
+  Fts3SegReaderArray **ppArray, 
+  Fts3SegReader *pNew
+){
+  Fts3SegReaderArray *pArray = *ppArray;
+
+  if( !pArray || pArray->nAlloc==pArray->nSegment ){
+    int nNew = (pArray ? pArray->nAlloc+16 : 16);
+    pArray = (Fts3SegReaderArray *)sqlite3_realloc(pArray, 
+        sizeof(Fts3SegReaderArray) + (nNew-1) * sizeof(Fts3SegReader*)
+    );
+    if( !pArray ){
+      sqlite3Fts3SegReaderFree(0, pNew);
+      return SQLITE_NOMEM;
+    }
+    if( nNew==16 ){
+      pArray->nSegment = 0;
+      pArray->nCost = 0;
+    }
+    pArray->nAlloc = nNew;
+    *ppArray = pArray;
+  }
+
+  pArray->apSegment[pArray->nSegment++] = pNew;
+  return SQLITE_OK;
+}
+
+static int fts3TermSegReaderArray(
+  Fts3Cursor *pCsr,               /* Virtual table cursor handle */
+  const char *zTerm,              /* Term to query for */
+  int nTerm,                      /* Size of zTerm in bytes */
+  int isPrefix,                   /* True for a prefix search */
+  Fts3SegReaderArray **ppArray    /* OUT: Allocated seg-reader array */
+){
+  Fts3Table *p = (Fts3Table *)pCsr->base.pVtab;
+  int rc;                         /* Return code */
+  Fts3SegReaderArray *pArray = 0; /* Array object to build */
+  Fts3SegReader *pReader = 0;     /* Seg-reader to add to pArray */ 
+  sqlite3_stmt *pStmt = 0;        /* SQL statement to scan %_segdir table */
+  int iAge = 0;                   /* Used to assign ages to segments */
+
+  /* Allocate a seg-reader to scan the pending terms, if any. */
+  rc = sqlite3Fts3SegReaderPending(p, zTerm, nTerm, isPrefix, &pReader);
+  if( rc==SQLITE_OK && pReader ) {
+    rc = fts3SegReaderArrayAdd(&pArray, pReader);
+  }
+
+  /* Loop through the entire %_segdir table. For each segment, create a
+  ** Fts3SegReader to iterate through the subset of the segment leaves
+  ** that may contain a term that matches zTerm/nTerm. For non-prefix
+  ** searches, this is always a single leaf. For prefix searches, this
+  ** may be a contiguous block of leaves.
+  */
+  if( rc==SQLITE_OK ){
+    rc = sqlite3Fts3AllSegdirs(p, &pStmt);
+  }
+  while( rc==SQLITE_OK && SQLITE_ROW==(rc = sqlite3_step(pStmt)) ){
+    Fts3SegReader *pNew = 0;
+    int nRoot = sqlite3_column_bytes(pStmt, 4);
+    char const *zRoot = sqlite3_column_blob(pStmt, 4);
+    if( sqlite3_column_int64(pStmt, 1)==0 ){
+      /* The entire segment is stored on the root node (which must be a
+      ** leaf). Do not bother inspecting any data in this case, just
+      ** create a Fts3SegReader to scan the single leaf. 
+      */
+      rc = sqlite3Fts3SegReaderNew(p, iAge, 0, 0, 0, zRoot, nRoot, &pNew);
+    }else{
+      sqlite3_int64 i1;           /* First leaf that may contain zTerm */
+      sqlite3_int64 i2;           /* Final leaf that may contain zTerm */
+      rc = fts3SelectLeaf(p, zTerm, nTerm, zRoot, nRoot, &i1, (isPrefix?&i2:0));
+      if( isPrefix==0 ) i2 = i1;
+      if( rc==SQLITE_OK ){
+        rc = sqlite3Fts3SegReaderNew(p, iAge, i1, i2, 0, 0, 0, &pNew);
+      }
+    }
+    assert( (pNew==0)==(rc!=SQLITE_OK) );
+
+    /* If a new Fts3SegReader was allocated, add it to the array. */
+    if( rc==SQLITE_OK ){
+      rc = fts3SegReaderArrayAdd(&pArray, pNew);
+    }
+    if( rc==SQLITE_OK ){
+      rc = sqlite3Fts3SegReaderCost(pCsr, pNew, &pArray->nCost);
+    }
+    iAge++;
+  }
+
+  if( rc==SQLITE_DONE ){
+    rc = sqlite3_reset(pStmt);
+  }else{
+    sqlite3_reset(pStmt);
+  }
+  if( rc!=SQLITE_OK ){
+    fts3SegReaderArrayFree(pArray);
+    pArray = 0;
+  }
+  *ppArray = pArray;
+  return rc;
+}
+
 /*
 ** This function retreives the doclist for the specified term (or term
 ** prefix) from the database. 
@@ -1760,112 +2017,31 @@ static int fts3TermSelectCb(
 */
 static int fts3TermSelect(
   Fts3Table *p,                   /* Virtual table handle */
+  Fts3PhraseToken *pTok,          /* Token to query for */
   int iColumn,                    /* Column to query (or -ve for all columns) */
-  const char *zTerm,              /* Term to query for */
-  int nTerm,                      /* Size of zTerm in bytes */
-  int isPrefix,                   /* True for a prefix search */
   int isReqPos,                   /* True to include position lists in output */
   int *pnOut,                     /* OUT: Size of buffer at *ppOut */
   char **ppOut                    /* OUT: Malloced result buffer */
 ){
-  int i;
-  TermSelect tsc;
-  Fts3SegFilter filter;           /* Segment term filter configuration */
-  Fts3SegReader **apSegment;      /* Array of segments to read data from */
-  int nSegment = 0;               /* Size of apSegment array */
-  int nAlloc = 16;                /* Allocated size of segment array */
   int rc;                         /* Return code */
-  sqlite3_stmt *pStmt = 0;        /* SQL statement to scan %_segdir table */
-  int iAge = 0;                   /* Used to assign ages to segments */
+  Fts3SegReaderArray *pArray;     /* Seg-reader array for this term */
+  TermSelect tsc;               /* Context object for fts3TermSelectCb() */
+  Fts3SegFilter filter;         /* Segment term filter configuration */
 
-  apSegment = (Fts3SegReader **)sqlite3_malloc(sizeof(Fts3SegReader*)*nAlloc);
-  if( !apSegment ) return SQLITE_NOMEM;
-  rc = sqlite3Fts3SegReaderPending(p, zTerm, nTerm, isPrefix, &apSegment[0]);
-  if( rc!=SQLITE_OK ) goto finished;
-  if( apSegment[0] ){
-    nSegment = 1;
-  }
-
-  /* Loop through the entire %_segdir table. For each segment, create a
-  ** Fts3SegReader to iterate through the subset of the segment leaves
-  ** that may contain a term that matches zTerm/nTerm. For non-prefix
-  ** searches, this is always a single leaf. For prefix searches, this
-  ** may be a contiguous block of leaves.
-  **
-  ** The code in this loop does not actually load any leaves into memory
-  ** (unless the root node happens to be a leaf). It simply examines the
-  ** b-tree structure to determine which leaves need to be inspected.
-  */
-  rc = sqlite3Fts3AllSegdirs(p, &pStmt);
-  while( rc==SQLITE_OK && SQLITE_ROW==(rc = sqlite3_step(pStmt)) ){
-    Fts3SegReader *pNew = 0;
-    int nRoot = sqlite3_column_bytes(pStmt, 4);
-    char const *zRoot = sqlite3_column_blob(pStmt, 4);
-    if( sqlite3_column_int64(pStmt, 1)==0 ){
-      /* The entire segment is stored on the root node (which must be a
-      ** leaf). Do not bother inspecting any data in this case, just
-      ** create a Fts3SegReader to scan the single leaf. 
-      */
-      rc = sqlite3Fts3SegReaderNew(p, iAge, 0, 0, 0, zRoot, nRoot, &pNew);
-    }else{
-      int rc2;                    /* Return value of sqlite3Fts3ReadBlock() */
-      sqlite3_int64 i1;           /* Blockid of leaf that may contain zTerm */
-      rc = fts3SelectLeaf(p, zTerm, nTerm, zRoot, nRoot, &i1);
-      if( rc==SQLITE_OK ){
-        sqlite3_int64 i2 = sqlite3_column_int64(pStmt, 2);
-        rc = sqlite3Fts3SegReaderNew(p, iAge, i1, i2, 0, 0, 0, &pNew);
-      }
-
-      /* The following call to ReadBlock() serves to reset the SQL statement
-      ** used to retrieve blocks of data from the %_segments table. If it is
-      ** not reset here, then it may remain classified as an active statement 
-      ** by SQLite, which may lead to "DROP TABLE" or "DETACH" commands 
-      ** failing.
-      */ 
-      rc2 = sqlite3Fts3ReadBlock(p, 0, 0, 0);
-      if( rc==SQLITE_OK ){
-        rc = rc2;
-      }
-    }
-    iAge++;
-
-    /* If a new Fts3SegReader was allocated, add it to the apSegment array. */
-    assert( pNew!=0 || rc!=SQLITE_OK );
-    if( pNew ){
-      if( nSegment==nAlloc ){
-        Fts3SegReader **pArray;
-        nAlloc += 16;
-        pArray = (Fts3SegReader **)sqlite3_realloc(
-            apSegment, nAlloc*sizeof(Fts3SegReader *)
-        );
-        if( !pArray ){
-          sqlite3Fts3SegReaderFree(p, pNew);
-          rc = SQLITE_NOMEM;
-          goto finished;
-        }
-        apSegment = pArray;
-      }
-      apSegment[nSegment++] = pNew;
-    }
-  }
-  if( rc!=SQLITE_DONE ){
-    assert( rc!=SQLITE_OK );
-    goto finished;
-  }
-
+  pArray = pTok->pArray;
   memset(&tsc, 0, sizeof(TermSelect));
   tsc.isReqPos = isReqPos;
 
   filter.flags = FTS3_SEGMENT_IGNORE_EMPTY 
-        | (isPrefix ? FTS3_SEGMENT_PREFIX : 0)
+        | (pTok->isPrefix ? FTS3_SEGMENT_PREFIX : 0)
         | (isReqPos ? FTS3_SEGMENT_REQUIRE_POS : 0)
         | (iColumn<p->nColumn ? FTS3_SEGMENT_COLUMN_FILTER : 0);
   filter.iCol = iColumn;
-  filter.zTerm = zTerm;
-  filter.nTerm = nTerm;
+  filter.zTerm = pTok->z;
+  filter.nTerm = pTok->n;
 
-  rc = sqlite3Fts3SegReaderIterate(p, apSegment, nSegment, &filter,
-      fts3TermSelectCb, (void *)&tsc
+  rc = sqlite3Fts3SegReaderIterate(p, pArray->apSegment, pArray->nSegment, 
+      &filter, fts3TermSelectCb, (void *)&tsc
   );
   if( rc==SQLITE_OK ){
     rc = fts3TermSelectMerge(&tsc);
@@ -1875,26 +2051,112 @@ static int fts3TermSelect(
     *ppOut = tsc.aaOutput[0];
     *pnOut = tsc.anOutput[0];
   }else{
+    int i;
     for(i=0; i<SizeofArray(tsc.aaOutput); i++){
       sqlite3_free(tsc.aaOutput[i]);
     }
   }
 
-finished:
-  sqlite3_reset(pStmt);
-  for(i=0; i<nSegment; i++){
-    sqlite3Fts3SegReaderFree(p, apSegment[i]);
-  }
-  sqlite3_free(apSegment);
+  fts3SegReaderArrayFree(pArray);
+  pTok->pArray = 0;
   return rc;
 }
 
+/*
+** This function counts the total number of docids in the doclist stored
+** in buffer aList[], size nList bytes.
+**
+** If the isPoslist argument is true, then it is assumed that the doclist
+** contains a position-list following each docid. Otherwise, it is assumed
+** that the doclist is simply a list of docids stored as delta encoded 
+** varints.
+*/
+static int fts3DoclistCountDocids(int isPoslist, char *aList, int nList){
+  int nDoc = 0;                   /* Return value */
+  if( aList ){
+    char *aEnd = &aList[nList];   /* Pointer to one byte after EOF */
+    char *p = aList;              /* Cursor */
+    if( !isPoslist ){
+      /* The number of docids in the list is the same as the number of 
+      ** varints. In FTS3 a varint consists of a single byte with the 0x80 
+      ** bit cleared and zero or more bytes with the 0x80 bit set. So to
+      ** count the varints in the buffer, just count the number of bytes
+      ** with the 0x80 bit clear.  */
+      while( p<aEnd ) nDoc += (((*p++)&0x80)==0);
+    }else{
+      while( p<aEnd ){
+        nDoc++;
+        while( (*p++)&0x80 );     /* Skip docid varint */
+        fts3PoslistCopy(0, &p);   /* Skip over position list */
+      }
+    }
+  }
+
+  return nDoc;
+}
+
+/*
+** Call sqlite3Fts3DeferToken() for each token in the expression pExpr.
+*/
+static int fts3DeferExpression(Fts3Cursor *pCsr, Fts3Expr *pExpr){
+  int rc = SQLITE_OK;
+  if( pExpr ){
+    rc = fts3DeferExpression(pCsr, pExpr->pLeft);
+    if( rc==SQLITE_OK ){
+      rc = fts3DeferExpression(pCsr, pExpr->pRight);
+    }
+    if( pExpr->eType==FTSQUERY_PHRASE ){
+      int iCol = pExpr->pPhrase->iColumn;
+      int i;
+      for(i=0; rc==SQLITE_OK && i<pExpr->pPhrase->nToken; i++){
+        Fts3PhraseToken *pToken = &pExpr->pPhrase->aToken[i];
+        if( pToken->pDeferred==0 ){
+          rc = sqlite3Fts3DeferToken(pCsr, pToken, iCol);
+        }
+      }
+    }
+  }
+  return rc;
+}
+
+/*
+** This function removes the position information from a doclist. When
+** called, buffer aList (size *pnList bytes) contains a doclist that includes
+** position information. This function removes the position information so
+** that aList contains only docids, and adjusts *pnList to reflect the new
+** (possibly reduced) size of the doclist.
+*/
+static void fts3DoclistStripPositions(
+  char *aList,                    /* IN/OUT: Buffer containing doclist */
+  int *pnList                     /* IN/OUT: Size of doclist in bytes */
+){
+  if( aList ){
+    char *aEnd = &aList[*pnList]; /* Pointer to one byte after EOF */
+    char *p = aList;              /* Input cursor */
+    char *pOut = aList;           /* Output cursor */
+  
+    while( p<aEnd ){
+      sqlite3_int64 delta;
+      p += sqlite3Fts3GetVarint(p, &delta);
+      fts3PoslistCopy(0, &p);
+      pOut += sqlite3Fts3PutVarint(pOut, delta);
+    }
+
+    *pnList = (pOut - aList);
+  }
+}
 
 /* 
 ** Return a DocList corresponding to the phrase *pPhrase.
+**
+** If this function returns SQLITE_OK, but *pnOut is set to a negative value,
+** then no tokens in the phrase were looked up in the full-text index. This
+** is only possible when this function is called from within xFilter(). The
+** caller should assume that all documents match the phrase. The actual
+** filtering will take place in xNext().
 */
 static int fts3PhraseSelect(
-  Fts3Table *p,                   /* Virtual table handle */
+  Fts3Cursor *pCsr,               /* Virtual table cursor handle */
   Fts3Phrase *pPhrase,            /* Phrase to return a doclist for */
   int isReqPos,                   /* True if output should contain positions */
   char **paOut,                   /* OUT: Pointer to malloc'd result buffer */
@@ -1906,42 +2168,136 @@ static int fts3PhraseSelect(
   int ii;
   int iCol = pPhrase->iColumn;
   int isTermPos = (pPhrase->nToken>1 || isReqPos);
+  Fts3Table *p = (Fts3Table *)pCsr->base.pVtab;
+  int isFirst = 1;
+
+  int iPrevTok = 0;
+  int nDoc = 0;
+
+  /* If this is an xFilter() evaluation, create a segment-reader for each
+  ** phrase token. Or, if this is an xNext() or snippet/offsets/matchinfo
+  ** evaluation, only create segment-readers if there are no Fts3DeferredToken
+  ** objects attached to the phrase-tokens.
+  */
+  for(ii=0; ii<pPhrase->nToken; ii++){
+    Fts3PhraseToken *pTok = &pPhrase->aToken[ii];
+    if( pTok->pArray==0 ){
+      if( (pCsr->eEvalmode==FTS3_EVAL_FILTER)
+       || (pCsr->eEvalmode==FTS3_EVAL_NEXT && pCsr->pDeferred==0) 
+       || (pCsr->eEvalmode==FTS3_EVAL_MATCHINFO && pTok->bFulltext) 
+      ){
+        rc = fts3TermSegReaderArray(
+            pCsr, pTok->z, pTok->n, pTok->isPrefix, &pTok->pArray
+        );
+        if( rc!=SQLITE_OK ) return rc;
+      }
+    }
+  }
 
   for(ii=0; ii<pPhrase->nToken; ii++){
-    struct PhraseToken *pTok = &pPhrase->aToken[ii];
-    char *z = pTok->z;            /* Next token of the phrase */
-    int n = pTok->n;              /* Size of z in bytes */
-    int isPrefix = pTok->isPrefix;/* True if token is a prefix */
+    Fts3PhraseToken *pTok;        /* Token to find doclist for */
+    int iTok;                     /* The token being queried this iteration */
     char *pList;                  /* Pointer to token doclist */
     int nList;                    /* Size of buffer at pList */
 
-    rc = fts3TermSelect(p, iCol, z, n, isPrefix, isTermPos, &nList, &pList);
+    /* Select a token to process. If this is an xFilter() call, then tokens 
+    ** are processed in order from least to most costly. Otherwise, tokens 
+    ** are processed in the order in which they occur in the phrase.
+    */
+    if( pCsr->eEvalmode==FTS3_EVAL_MATCHINFO ){
+      assert( isReqPos );
+      iTok = ii;
+      pTok = &pPhrase->aToken[iTok];
+      if( pTok->bFulltext==0 ) continue;
+    }else if( pCsr->eEvalmode==FTS3_EVAL_NEXT || isReqPos ){
+      iTok = ii;
+      pTok = &pPhrase->aToken[iTok];
+    }else{
+      int nMinCost = 0x7FFFFFFF;
+      int jj;
+
+      /* Find the remaining token with the lowest cost. */
+      for(jj=0; jj<pPhrase->nToken; jj++){
+        Fts3SegReaderArray *pArray = pPhrase->aToken[jj].pArray;
+        if( pArray && pArray->nCost<nMinCost ){
+          iTok = jj;
+          nMinCost = pArray->nCost;
+        }
+      }
+      pTok = &pPhrase->aToken[iTok];
+
+      /* This branch is taken if it is determined that loading the doclist
+      ** for the next token would require more IO than loading all documents
+      ** currently identified by doclist pOut/nOut. No further doclists will
+      ** be loaded from the full-text index for this phrase.
+      */
+      if( nMinCost>nDoc && ii>0 ){
+        rc = fts3DeferExpression(pCsr, pCsr->pExpr);
+        break;
+      }
+    }
+
+    if( pCsr->eEvalmode==FTS3_EVAL_NEXT && pTok->pDeferred ){
+      rc = fts3DeferredTermSelect(pTok->pDeferred, isTermPos, &nList, &pList);
+    }else{
+      assert( pTok->pArray );
+      rc = fts3TermSelect(p, pTok, iCol, isTermPos, &nList, &pList);
+      pTok->bFulltext = 1;
+    }
+    assert( rc!=SQLITE_OK || pCsr->eEvalmode || pTok->pArray==0 );
     if( rc!=SQLITE_OK ) break;
 
-    if( ii==0 ){
+    if( isFirst ){
       pOut = pList;
       nOut = nList;
-    }else{
-      /* Merge the new term list and the current output. If this is the
-      ** last term in the phrase, and positions are not required in the
-      ** output of this function, the positions can be dropped as part
-      ** of this merge. Either way, the result of this merge will be
-      ** smaller than nList bytes. The code in fts3DoclistMerge() is written
-      ** so that it is safe to use pList as the output as well as an input
-      ** in this case.
-      */
-      int mergetype = MERGE_POS_PHRASE;
-      if( ii==pPhrase->nToken-1 && !isReqPos ){
-        mergetype = MERGE_PHRASE;
+      if( pCsr->eEvalmode==FTS3_EVAL_FILTER && pPhrase->nToken>1 ){
+        nDoc = fts3DoclistCountDocids(1, pOut, nOut);
       }
-      fts3DoclistMerge(mergetype, 0, 0, pList, &nOut, pOut, nOut, pList, nList);
-      sqlite3_free(pOut);
-      pOut = pList;
+      isFirst = 0;
+      iPrevTok = iTok;
+    }else{
+      /* Merge the new term list and the current output. */
+      char *aLeft, *aRight;
+      int nLeft, nRight;
+      int nDist;
+      int mt;
+
+      /* If this is the final token of the phrase, and positions were not
+      ** requested by the caller, use MERGE_PHRASE instead of POS_PHRASE.
+      ** This drops the position information from the output list.
+      */
+      mt = MERGE_POS_PHRASE;
+      if( ii==pPhrase->nToken-1 && !isReqPos ) mt = MERGE_PHRASE;
+
+      assert( iPrevTok!=iTok );
+      if( iPrevTok<iTok ){
+        aLeft = pOut;
+        nLeft = nOut;
+        aRight = pList;
+        nRight = nList;
+        nDist = iTok-iPrevTok;
+        iPrevTok = iTok;
+      }else{
+        aRight = pOut;
+        nRight = nOut;
+        aLeft = pList;
+        nLeft = nList;
+        nDist = iPrevTok-iTok;
+      }
+      pOut = aRight;
+      fts3DoclistMerge(
+          mt, nDist, 0, pOut, &nOut, aLeft, nLeft, aRight, nRight, &nDoc
+      );
+      sqlite3_free(aLeft);
     }
     assert( nOut==0 || pOut!=0 );
   }
 
   if( rc==SQLITE_OK ){
+    if( ii!=pPhrase->nToken ){
+      assert( pCsr->eEvalmode==FTS3_EVAL_FILTER && isReqPos==0 );
+      fts3DoclistStripPositions(pOut, &nOut);
+    }
     *paOut = pOut;
     *pnOut = nOut;
   }else{
@@ -1950,6 +2306,14 @@ static int fts3PhraseSelect(
   return rc;
 }
 
+/*
+** This function merges two doclists according to the requirements of a
+** NEAR operator.
+**
+** Both input doclists must include position information. The output doclist 
+** includes position information if the first argument to this function
+** is MERGE_POS_NEAR, or does not if it is MERGE_NEAR.
+*/
 static int fts3NearMerge(
   int mergetype,                  /* MERGE_POS_NEAR or MERGE_NEAR */
   int nNear,                      /* Parameter to NEAR operator */
@@ -1962,8 +2326,8 @@ static int fts3NearMerge(
   char **paOut,                   /* OUT: Results of merge (malloced) */
   int *pnOut                      /* OUT: Sized of output buffer */
 ){
-  char *aOut;
-  int rc;
+  char *aOut;                     /* Buffer to write output doclist to */
+  int rc;                         /* Return code */
 
   assert( mergetype==MERGE_POS_NEAR || MERGE_NEAR );
 
@@ -1972,7 +2336,7 @@ static int fts3NearMerge(
     rc = SQLITE_NOMEM;
   }else{
     rc = fts3DoclistMerge(mergetype, nNear+nTokenRight, nNear+nTokenLeft, 
-      aOut, pnOut, aLeft, nLeft, aRight, nRight
+      aOut, pnOut, aLeft, nLeft, aRight, nRight, 0
     );
     if( rc!=SQLITE_OK ){
       sqlite3_free(aOut);
@@ -1984,8 +2348,23 @@ static int fts3NearMerge(
   return rc;
 }
 
+/*
+** This function is used as part of the processing for the snippet() and
+** offsets() functions.
+**
+** Both pLeft and pRight are expression nodes of type FTSQUERY_PHRASE. Both
+** have their respective doclists (including position information) loaded
+** in Fts3Expr.aDoclist/nDoclist. This function removes all entries from
+** each doclist that are not within nNear tokens of a corresponding entry
+** in the other doclist.
+*/
 int sqlite3Fts3ExprNearTrim(Fts3Expr *pLeft, Fts3Expr *pRight, int nNear){
-  int rc;
+  int rc;                         /* Return code */
+
+  assert( pLeft->eType==FTSQUERY_PHRASE );
+  assert( pRight->eType==FTSQUERY_PHRASE );
+  assert( pLeft->isLoaded && pRight->isLoaded );
+
   if( pLeft->aDoclist==0 || pRight->aDoclist==0 ){
     sqlite3_free(pLeft->aDoclist);
     sqlite3_free(pRight->aDoclist);
@@ -1993,8 +2372,8 @@ int sqlite3Fts3ExprNearTrim(Fts3Expr *pLeft, Fts3Expr *pRight, int nNear){
     pLeft->aDoclist = 0;
     rc = SQLITE_OK;
   }else{
-    char *aOut;
-    int nOut;
+    char *aOut;                   /* Buffer in which to assemble new doclist */
+    int nOut;                     /* Size of buffer aOut in bytes */
 
     rc = fts3NearMerge(MERGE_POS_NEAR, nNear, 
         pLeft->pPhrase->nToken, pLeft->aDoclist, pLeft->nDoclist,
@@ -2018,14 +2397,153 @@ int sqlite3Fts3ExprNearTrim(Fts3Expr *pLeft, Fts3Expr *pRight, int nNear){
   return rc;
 }
 
+
 /*
-** Evaluate the full-text expression pExpr against fts3 table pTab. Store
-** the resulting doclist in *paOut and *pnOut.  This routine mallocs for
-** the space needed to store the output.  The caller is responsible for
-** freeing the space when it has finished.
+** Allocate an Fts3SegReaderArray for each token in the expression pExpr. 
+** The allocated objects are stored in the Fts3PhraseToken.pArray member
+** variables of each token structure.
 */
-static int evalFts3Expr(
-  Fts3Table *p,                   /* Virtual table handle */
+static int fts3ExprAllocateSegReaders(
+  Fts3Cursor *pCsr,               /* FTS3 table */
+  Fts3Expr *pExpr,                /* Expression to create seg-readers for */
+  int *pnExpr                     /* OUT: Number of AND'd expressions */
+){
+  int rc = SQLITE_OK;             /* Return code */
+
+  assert( pCsr->eEvalmode==FTS3_EVAL_FILTER );
+  if( pnExpr && pExpr->eType!=FTSQUERY_AND ){
+    (*pnExpr)++;
+    pnExpr = 0;
+  }
+
+  if( pExpr->eType==FTSQUERY_PHRASE ){
+    Fts3Phrase *pPhrase = pExpr->pPhrase;
+    int ii;
+
+    for(ii=0; rc==SQLITE_OK && ii<pPhrase->nToken; ii++){
+      Fts3PhraseToken *pTok = &pPhrase->aToken[ii];
+      if( pTok->pArray==0 ){
+        rc = fts3TermSegReaderArray(
+            pCsr, pTok->z, pTok->n, pTok->isPrefix, &pTok->pArray
+        );
+      }
+    }
+  }else{ 
+    rc = fts3ExprAllocateSegReaders(pCsr, pExpr->pLeft, pnExpr);
+    if( rc==SQLITE_OK ){
+      rc = fts3ExprAllocateSegReaders(pCsr, pExpr->pRight, pnExpr);
+    }
+  }
+  return rc;
+}
+
+/*
+** Free the Fts3SegReaderArray objects associated with each token in the
+** expression pExpr. In other words, this function frees the resources
+** allocated by fts3ExprAllocateSegReaders().
+*/
+static void fts3ExprFreeSegReaders(Fts3Expr *pExpr){
+  if( pExpr ){
+    Fts3Phrase *pPhrase = pExpr->pPhrase;
+    if( pPhrase ){
+      int kk;
+      for(kk=0; kk<pPhrase->nToken; kk++){
+        fts3SegReaderArrayFree(pPhrase->aToken[kk].pArray);
+        pPhrase->aToken[kk].pArray = 0;
+      }
+    }
+    fts3ExprFreeSegReaders(pExpr->pLeft);
+    fts3ExprFreeSegReaders(pExpr->pRight);
+  }
+}
+
+/*
+** Return the sum of the costs of all tokens in the expression pExpr. This
+** function must be called after Fts3SegReaderArrays have been allocated
+** for all tokens using fts3ExprAllocateSegReaders().
+*/
+int fts3ExprCost(Fts3Expr *pExpr){
+  int nCost;                      /* Return value */
+  if( pExpr->eType==FTSQUERY_PHRASE ){
+    Fts3Phrase *pPhrase = pExpr->pPhrase;
+    int ii;
+    nCost = 0;
+    for(ii=0; ii<pPhrase->nToken; ii++){
+      nCost += pPhrase->aToken[ii].pArray->nCost;
+    }
+  }else{
+    nCost = fts3ExprCost(pExpr->pLeft) + fts3ExprCost(pExpr->pRight);
+  }
+  return nCost;
+}
+
+/*
+** The following is a helper function (and type) for fts3EvalExpr(). It
+** must be called after Fts3SegReaders have been allocated for every token
+** in the expression. See the context it is called from in fts3EvalExpr()
+** for further explanation.
+*/
+typedef struct ExprAndCost ExprAndCost;
+struct ExprAndCost {
+  Fts3Expr *pExpr;
+  int nCost;
+};
+static void fts3ExprAssignCosts(
+  Fts3Expr *pExpr,                /* Expression to create seg-readers for */
+  ExprAndCost **ppExprCost        /* OUT: Write to *ppExprCost */
+){
+  if( pExpr->eType==FTSQUERY_AND ){
+    fts3ExprAssignCosts(pExpr->pLeft, ppExprCost);
+    fts3ExprAssignCosts(pExpr->pRight, ppExprCost);
+  }else{
+    (*ppExprCost)->pExpr = pExpr;
+    (*ppExprCost)->nCost = fts3ExprCost(pExpr);;
+    (*ppExprCost)++;
+  }
+}
+
+/*
+** Evaluate the full-text expression pExpr against FTS3 table pTab. Store
+** the resulting doclist in *paOut and *pnOut. This routine mallocs for
+** the space needed to store the output. The caller is responsible for
+** freeing the space when it has finished.
+**
+** This function is called in two distinct contexts:
+**
+**   * From within the virtual table xFilter() method. In this case, the
+**     output doclist contains entries for all rows in the table, based on
+**     data read from the full-text index.
+**
+**     In this case, if the query expression contains one or more tokens that 
+**     are very common, then the returned doclist may contain a superset of 
+**     the documents that actually match the expression.
+**
+**   * From within the virtual table xNext() method. This call is only made
+**     if the call from within xFilter() found that there were very common 
+**     tokens in the query expression and did return a superset of the 
+**     matching documents. In this case the returned doclist contains only
+**     entries that correspond to the current row of the table. Instead of
+**     reading the data for each token from the full-text index, the data is
+**     already available in-memory in the Fts3PhraseToken.pDeferred structures.
+**     See fts3EvalDeferred() for how it gets there.
+**
+** In the first case above, Fts3Cursor.doDeferred==0. In the second (if it is
+** required) Fts3Cursor.doDeferred==1.
+**
+** If the SQLite invokes the snippet(), offsets() or matchinfo() function
+** as part of a SELECT on an FTS3 table, this function is called on each
+** individual phrase expression in the query. If there were very common tokens
+** found in the xFilter() call, then this function is called once for phrase
+** for each row visited, and the returned doclist contains entries for the
+** current row only. Otherwise, if there were no very common tokens, then this
+** function is called once only for each phrase in the query and the returned
+** doclist contains entries for all rows of the table.
+**
+** Fts3Cursor.doDeferred==1 when this function is called on phrases as a
+** result of a snippet(), offsets() or matchinfo() invocation.
+*/
+static int fts3EvalExpr(
+  Fts3Cursor *p,                  /* Virtual table cursor handle */
   Fts3Expr *pExpr,                /* Parsed fts3 expression */
   char **paOut,                   /* OUT: Pointer to malloc'd result buffer */
   int *pnOut,                     /* OUT: Size of buffer at *paOut */
@@ -2038,33 +2556,97 @@ static int evalFts3Expr(
   *pnOut = 0;
 
   if( pExpr ){
-    assert( pExpr->eType==FTSQUERY_PHRASE 
-         || pExpr->eType==FTSQUERY_NEAR 
-         || isReqPos==0
+    assert( pExpr->eType==FTSQUERY_NEAR   || pExpr->eType==FTSQUERY_OR     
+         || pExpr->eType==FTSQUERY_AND    || pExpr->eType==FTSQUERY_NOT
+         || pExpr->eType==FTSQUERY_PHRASE
     );
+    assert( pExpr->eType==FTSQUERY_PHRASE || isReqPos==0 );
+
     if( pExpr->eType==FTSQUERY_PHRASE ){
-      rc = fts3PhraseSelect(p, pExpr->pPhrase, 
+      rc = fts3PhraseSelect(p, pExpr->pPhrase,
           isReqPos || (pExpr->pParent && pExpr->pParent->eType==FTSQUERY_NEAR),
           paOut, pnOut
       );
+      fts3ExprFreeSegReaders(pExpr);
+    }else if( p->eEvalmode==FTS3_EVAL_FILTER && pExpr->eType==FTSQUERY_AND ){
+      ExprAndCost *aExpr = 0;     /* Array of AND'd expressions and costs */
+      int nExpr = 0;              /* Size of aExpr[] */
+      char *aRet = 0;             /* Doclist to return to caller */
+      int nRet = 0;               /* Length of aRet[] in bytes */
+      int nDoc = 0x7FFFFFFF;
+
+      assert( !isReqPos );
+
+      rc = fts3ExprAllocateSegReaders(p, pExpr, &nExpr);
+      if( rc==SQLITE_OK ){
+        assert( nExpr>1 );
+        aExpr = sqlite3_malloc(sizeof(ExprAndCost) * nExpr);
+        if( !aExpr ) rc = SQLITE_NOMEM;
+      }
+      if( rc==SQLITE_OK ){
+        int ii;                   /* Used to iterate through expressions */
+
+        fts3ExprAssignCosts(pExpr, &aExpr);
+        aExpr -= nExpr;
+        for(ii=0; ii<nExpr; ii++){
+          char *aNew;
+          int nNew;
+          int jj;
+          ExprAndCost *pBest = 0;
+  
+          for(jj=0; jj<nExpr; jj++){
+            ExprAndCost *pCand = &aExpr[jj];
+            if( pCand->pExpr && (pBest==0 || pCand->nCost<pBest->nCost) ){
+              pBest = pCand;
+            }
+          }
+  
+          if( pBest->nCost>nDoc ){
+            rc = fts3DeferExpression(p, p->pExpr);
+            break;
+          }else{
+            rc = fts3EvalExpr(p, pBest->pExpr, &aNew, &nNew, 0);
+            if( rc!=SQLITE_OK ) break;
+            pBest->pExpr = 0;
+            if( ii==0 ){
+              aRet = aNew;
+              nRet = nNew;
+              nDoc = fts3DoclistCountDocids(0, aRet, nRet);
+            }else{
+              fts3DoclistMerge(
+                  MERGE_AND, 0, 0, aRet, &nRet, aRet, nRet, aNew, nNew, &nDoc
+              );
+              sqlite3_free(aNew);
+            }
+          }
+        }
+      }
+
+      *paOut = aRet;
+      *pnOut = nRet;
+      sqlite3_free(aExpr);
+      fts3ExprFreeSegReaders(pExpr);
+
     }else{
       char *aLeft;
       char *aRight;
       int nLeft;
       int nRight;
 
-      if( 0==(rc = evalFts3Expr(p, pExpr->pRight, &aRight, &nRight, isReqPos))
-       && 0==(rc = evalFts3Expr(p, pExpr->pLeft, &aLeft, &nLeft, isReqPos))
+      assert( pExpr->eType==FTSQUERY_NEAR 
+           || pExpr->eType==FTSQUERY_OR
+           || pExpr->eType==FTSQUERY_NOT
+           || (pExpr->eType==FTSQUERY_AND && p->eEvalmode==FTS3_EVAL_NEXT)
+      );
+
+      if( 0==(rc = fts3EvalExpr(p, pExpr->pRight, &aRight, &nRight, isReqPos))
+       && 0==(rc = fts3EvalExpr(p, pExpr->pLeft, &aLeft, &nLeft, isReqPos))
       ){
-        assert( pExpr->eType==FTSQUERY_NEAR || pExpr->eType==FTSQUERY_OR     
-            || pExpr->eType==FTSQUERY_AND  || pExpr->eType==FTSQUERY_NOT
-        );
         switch( pExpr->eType ){
           case FTSQUERY_NEAR: {
             Fts3Expr *pLeft;
             Fts3Expr *pRight;
-            int mergetype = isReqPos ? MERGE_POS_NEAR : MERGE_NEAR;
-           
+            int mergetype = MERGE_NEAR;
             if( pExpr->pParent && pExpr->pParent->eType==FTSQUERY_NEAR ){
               mergetype = MERGE_POS_NEAR;
             }
@@ -2093,7 +2675,7 @@ static int evalFts3Expr(
             */
             char *aBuffer = sqlite3_malloc(nRight+nLeft+1);
             rc = fts3DoclistMerge(MERGE_OR, 0, 0, aBuffer, pnOut,
-                aLeft, nLeft, aRight, nRight
+                aLeft, nLeft, aRight, nRight, 0
             );
             *paOut = aBuffer;
             sqlite3_free(aLeft);
@@ -2103,7 +2685,7 @@ static int evalFts3Expr(
           default: {
             assert( FTSQUERY_NOT==MERGE_NOT && FTSQUERY_AND==MERGE_AND );
             fts3DoclistMerge(pExpr->eType, 0, 0, aLeft, pnOut,
-                aLeft, nLeft, aRight, nRight
+                aLeft, nLeft, aRight, nRight, 0
             );
             *paOut = aLeft;
             break;
@@ -2113,6 +2695,88 @@ static int evalFts3Expr(
       sqlite3_free(aRight);
     }
   }
+
+  return rc;
+}
+
+/*
+** This function is called from within xNext() for each row visited by
+** an FTS3 query. If evaluating the FTS3 query expression within xFilter()
+** was able to determine the exact set of matching rows, this function sets
+** *pbRes to true and returns SQLITE_IO immediately.
+**
+** Otherwise, if evaluating the query expression within xFilter() returned a
+** superset of the matching documents instead of an exact set (this happens
+** when the query includes very common tokens and it is deemed too expensive to
+** load their doclists from disk), this function tests if the current row
+** really does match the FTS3 query.
+**
+** If an error occurs, an SQLite error code is returned. Otherwise, SQLITE_OK
+** is returned and *pbRes is set to true if the current row matches the
+** FTS3 query (and should be included in the results returned to SQLite), or
+** false otherwise.
+*/
+static int fts3EvalDeferred(
+  Fts3Cursor *pCsr,               /* FTS3 cursor pointing at row to test */
+  int *pbRes                      /* OUT: Set to true if row is a match */
+){
+  int rc = SQLITE_OK;
+  if( pCsr->pDeferred==0 ){
+    *pbRes = 1;
+  }else{
+    rc = fts3CursorSeek(0, pCsr);
+    if( rc==SQLITE_OK ){
+      sqlite3Fts3FreeDeferredDoclists(pCsr);
+      rc = sqlite3Fts3CacheDeferredDoclists(pCsr);
+    }
+    if( rc==SQLITE_OK ){
+      char *a = 0;
+      int n = 0;
+      rc = fts3EvalExpr(pCsr, pCsr->pExpr, &a, &n, 0);
+      assert( n>=0 );
+      *pbRes = (n>0);
+      sqlite3_free(a);
+    }
+  }
+  return rc;
+}
+
+/*
+** Advance the cursor to the next row in the %_content table that
+** matches the search criteria.  For a MATCH search, this will be
+** the next row that matches. For a full-table scan, this will be
+** simply the next row in the %_content table.  For a docid lookup,
+** this routine simply sets the EOF flag.
+**
+** Return SQLITE_OK if nothing goes wrong.  SQLITE_OK is returned
+** even if we reach end-of-file.  The fts3EofMethod() will be called
+** subsequently to determine whether or not an EOF was hit.
+*/
+static int fts3NextMethod(sqlite3_vtab_cursor *pCursor){
+  int res;
+  int rc = SQLITE_OK;             /* Return code */
+  Fts3Cursor *pCsr = (Fts3Cursor *)pCursor;
+
+  pCsr->eEvalmode = FTS3_EVAL_NEXT;
+  do {
+    if( pCsr->aDoclist==0 ){
+      if( SQLITE_ROW!=sqlite3_step(pCsr->pStmt) ){
+        pCsr->isEof = 1;
+        rc = sqlite3_reset(pCsr->pStmt);
+        break;
+      }
+      pCsr->iPrevId = sqlite3_column_int64(pCsr->pStmt, 0);
+    }else{
+      if( pCsr->pNextId>=&pCsr->aDoclist[pCsr->nDoclist] ){
+        pCsr->isEof = 1;
+        break;
+      }
+      sqlite3_reset(pCsr->pStmt);
+      fts3GetDeltaVarint(&pCsr->pNextId, &pCsr->iPrevId);
+      pCsr->isRequireSeek = 1;
+      pCsr->isMatchinfoNeeded = 1;
+    }
+  }while( SQLITE_OK==(rc = fts3EvalDeferred(pCsr, &res)) && res==0 );
 
   return rc;
 }
@@ -2132,11 +2796,6 @@ static int evalFts3Expr(
 ** column on the left-hand side of the MATCH operator is column
 ** number idxNum-FTS3_FULLTEXT_SEARCH, 0 indexed.  argv[0] is the right-hand
 ** side of the MATCH operator.
-*/
-/* TODO(shess) Upgrade the cursor initialization and destruction to
-** account for fts3FilterMethod() being called multiple times on the
-** same cursor. The current solution is very fragile. Apply fix to
-** fts3 as appropriate.
 */
 static int fts3FilterMethod(
   sqlite3_vtab_cursor *pCursor,   /* The cursor used for this query */
@@ -2160,6 +2819,7 @@ static int fts3FilterMethod(
   assert( idxNum>=0 && idxNum<=(FTS3_FULLTEXT_SEARCH+p->nColumn) );
   assert( nVal==0 || nVal==1 );
   assert( (nVal==0)==(idxNum==FTS3_FULLSCAN_SEARCH) );
+  assert( p->pSegments==0 );
 
   /* In case the cursor has been used before, clear it now. */
   sqlite3_finalize(pCsr->pStmt);
@@ -2167,24 +2827,7 @@ static int fts3FilterMethod(
   sqlite3Fts3ExprFree(pCsr->pExpr);
   memset(&pCursor[1], 0, sizeof(Fts3Cursor)-sizeof(sqlite3_vtab_cursor));
 
-  /* Compile a SELECT statement for this cursor. For a full-table-scan, the
-  ** statement loops through all rows of the %_content table. For a
-  ** full-text query or docid lookup, the statement retrieves a single
-  ** row by docid.
-  */
-  zSql = sqlite3_mprintf(azSql[idxNum==FTS3_FULLSCAN_SEARCH], p->zDb, p->zName);
-  if( !zSql ){
-    rc = SQLITE_NOMEM;
-  }else{
-    rc = sqlite3_prepare_v2(p->db, zSql, -1, &pCsr->pStmt, 0);
-    sqlite3_free(zSql);
-  }
-  if( rc!=SQLITE_OK ) return rc;
-  pCsr->eSearch = (i16)idxNum;
-
-  if( idxNum==FTS3_DOCID_SEARCH ){
-    rc = sqlite3_bind_value(pCsr->pStmt, 1, apVal[0]);
-  }else if( idxNum!=FTS3_FULLSCAN_SEARCH ){
+  if( idxNum!=FTS3_DOCID_SEARCH && idxNum!=FTS3_FULLSCAN_SEARCH ){
     int iCol = idxNum-FTS3_FULLTEXT_SEARCH;
     const char *zQuery = (const char *)sqlite3_value_text(apVal[0]);
 
@@ -2206,10 +2849,29 @@ static int fts3FilterMethod(
     rc = sqlite3Fts3ReadLock(p);
     if( rc!=SQLITE_OK ) return rc;
 
-    rc = evalFts3Expr(p, pCsr->pExpr, &pCsr->aDoclist, &pCsr->nDoclist, 0);
+    rc = fts3EvalExpr(pCsr, pCsr->pExpr, &pCsr->aDoclist, &pCsr->nDoclist, 0);
+    sqlite3Fts3SegmentsClose(p);
+    if( rc!=SQLITE_OK ) return rc;
     pCsr->pNextId = pCsr->aDoclist;
     pCsr->iPrevId = 0;
   }
+
+  /* Compile a SELECT statement for this cursor. For a full-table-scan, the
+  ** statement loops through all rows of the %_content table. For a
+  ** full-text query or docid lookup, the statement retrieves a single
+  ** row by docid.
+  */
+  zSql = sqlite3_mprintf(azSql[idxNum==FTS3_FULLSCAN_SEARCH], p->zDb, p->zName);
+  if( !zSql ){
+    rc = SQLITE_NOMEM;
+  }else{
+    rc = sqlite3_prepare_v2(p->db, zSql, -1, &pCsr->pStmt, 0);
+    sqlite3_free(zSql);
+  }
+  if( rc==SQLITE_OK && idxNum==FTS3_DOCID_SEARCH ){
+    rc = sqlite3_bind_value(pCsr->pStmt, 1, apVal[0]);
+  }
+  pCsr->eSearch = (i16)idxNum;
 
   if( rc!=SQLITE_OK ) return rc;
   return fts3NextMethod(pCursor);
@@ -2234,6 +2896,11 @@ static int fts3RowidMethod(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){
   if( pCsr->aDoclist ){
     *pRowid = pCsr->iPrevId;
   }else{
+    /* This branch runs if the query is implemented using a full-table scan
+    ** (not using the full-text index). In this case grab the rowid from the
+    ** SELECT statement.
+    */
+    assert( pCsr->isRequireSeek==0 );
     *pRowid = sqlite3_column_int64(pCsr->pStmt, 0);
   }
   return SQLITE_OK;
@@ -2296,7 +2963,9 @@ static int fts3UpdateMethod(
 ** hash-table to the database.
 */
 static int fts3SyncMethod(sqlite3_vtab *pVtab){
-  return sqlite3Fts3PendingTermsFlush((Fts3Table *)pVtab);
+  int rc = sqlite3Fts3PendingTermsFlush((Fts3Table *)pVtab);
+  sqlite3Fts3SegmentsClose((Fts3Table *)pVtab);
+  return rc;
 }
 
 /*
@@ -2334,8 +3003,27 @@ static int fts3RollbackMethod(sqlite3_vtab *pVtab){
 ** This is used by the matchinfo(), snippet() and offsets() auxillary
 ** functions.
 */
-int sqlite3Fts3ExprLoadDoclist(Fts3Table *pTab, Fts3Expr *pExpr){
-  return evalFts3Expr(pTab, pExpr, &pExpr->aDoclist, &pExpr->nDoclist, 1);
+int sqlite3Fts3ExprLoadDoclist(Fts3Cursor *pCsr, Fts3Expr *pExpr){
+  int rc;
+  assert( pExpr->eType==FTSQUERY_PHRASE && pExpr->pPhrase );
+  assert( pCsr->eEvalmode==FTS3_EVAL_NEXT );
+  rc = fts3EvalExpr(pCsr, pExpr, &pExpr->aDoclist, &pExpr->nDoclist, 1);
+  return rc;
+}
+
+int sqlite3Fts3ExprLoadFtDoclist(
+  Fts3Cursor *pCsr, 
+  Fts3Expr *pExpr,
+  char **paDoclist,
+  int *pnDoclist
+){
+  int rc;
+  assert( pCsr->eEvalmode==FTS3_EVAL_NEXT );
+  assert( pExpr->eType==FTSQUERY_PHRASE && pExpr->pPhrase );
+  pCsr->eEvalmode = FTS3_EVAL_MATCHINFO;
+  rc = fts3EvalExpr(pCsr, pExpr, paDoclist, pnDoclist, 1);
+  pCsr->eEvalmode = FTS3_EVAL_NEXT;
+  return rc;
 }
 
 /*
@@ -2401,7 +3089,7 @@ static int fts3FunctionArg(
   sqlite3_context *pContext,      /* SQL function call context */
   const char *zFunc,              /* Function name */
   sqlite3_value *pVal,            /* argv[0] passed to function */
-  Fts3Cursor **ppCsr         /* OUT: Store cursor handle here */
+  Fts3Cursor **ppCsr              /* OUT: Store cursor handle here */
 ){
   Fts3Cursor *pRet;
   if( sqlite3_value_type(pVal)!=SQLITE_BLOB 
@@ -2527,13 +3215,7 @@ static void fts3MatchinfoFunc(
   sqlite3_value **apVal           /* Array of arguments */
 ){
   Fts3Cursor *pCsr;               /* Cursor handle passed through apVal[0] */
-
-  if( nVal!=1 ){
-    sqlite3_result_error(pContext,
-        "wrong number of arguments to function matchinfo()", -1);
-    return;
-  }
-
+  assert( nVal==1 );
   if( SQLITE_OK==fts3FunctionArg(pContext, "matchinfo", apVal[0], &pCsr) ){
     sqlite3Fts3Matchinfo(pContext, pCsr);
   }
@@ -2596,7 +3278,6 @@ static int fts3RenameMethod(
     "ALTER TABLE %Q.'%q_content'  RENAME TO '%q_content';",
     p->zDb, p->zName, zName
   );
-  if( rc==SQLITE_ERROR ) rc = SQLITE_OK;
   if( p->bHasDocsize ){
     fts3DbExec(&rc, db,
       "ALTER TABLE %Q.'%q_docsize'  RENAME TO '%q_docsize';",
@@ -2626,7 +3307,7 @@ static const sqlite3_module fts3Module = {
   /* xDisconnect   */ fts3DisconnectMethod,
   /* xDestroy      */ fts3DestroyMethod,
   /* xOpen         */ fts3OpenMethod,
-  /* xClose        */ fulltextClose,
+  /* xClose        */ fts3CloseMethod,
   /* xFilter       */ fts3FilterMethod,
   /* xNext         */ fts3NextMethod,
   /* xEof          */ fts3EofMethod,
@@ -2653,19 +3334,20 @@ static void hashDestroy(void *p){
 }
 
 /*
-** The fts3 built-in tokenizers - "simple" and "porter" - are implemented
-** in files fts3_tokenizer1.c and fts3_porter.c respectively. The following
-** two forward declarations are for functions declared in these files
-** used to retrieve the respective implementations.
+** The fts3 built-in tokenizers - "simple", "porter" and "icu"- are 
+** implemented in files fts3_tokenizer1.c, fts3_porter.c and fts3_icu.c
+** respectively. The following three forward declarations are for functions
+** declared in these files used to retrieve the respective implementations.
 **
 ** Calling sqlite3Fts3SimpleTokenizerModule() sets the value pointed
 ** to by the argument to point to the "simple" tokenizer implementation.
-** Function ...PorterTokenizerModule() sets *pModule to point to the
-** porter tokenizer/stemmer implementation.
+** And so on.
 */
 void sqlite3Fts3SimpleTokenizerModule(sqlite3_tokenizer_module const**ppModule);
 void sqlite3Fts3PorterTokenizerModule(sqlite3_tokenizer_module const**ppModule);
+#ifdef SQLITE_ENABLE_ICU
 void sqlite3Fts3IcuTokenizerModule(sqlite3_tokenizer_module const**ppModule);
+#endif
 
 /*
 ** Initialise the fts3 extension. If this extension is built as part
@@ -2721,7 +3403,7 @@ int sqlite3Fts3Init(sqlite3 *db){
    && SQLITE_OK==(rc = sqlite3Fts3InitHashTable(db, pHash, "fts3_tokenizer"))
    && SQLITE_OK==(rc = sqlite3_overload_function(db, "snippet", -1))
    && SQLITE_OK==(rc = sqlite3_overload_function(db, "offsets", 1))
-   && SQLITE_OK==(rc = sqlite3_overload_function(db, "matchinfo", -1))
+   && SQLITE_OK==(rc = sqlite3_overload_function(db, "matchinfo", 1))
    && SQLITE_OK==(rc = sqlite3_overload_function(db, "optimize", 1))
   ){
     rc = sqlite3_create_module_v2(

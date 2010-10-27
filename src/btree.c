@@ -8096,8 +8096,7 @@ int sqlite3BtreePutData(BtCursor *pCsr, u32 offset, u32 amt, void *z){
 void sqlite3BtreeCacheOverflow(BtCursor *pCur){
   assert( cursorHoldsMutex(pCur) );
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
-  assert(!pCur->isIncrblobHandle);
-  assert(!pCur->aOverflow);
+  invalidateOverflowCache(pCur);
   pCur->isIncrblobHandle = 1;
 }
 #endif

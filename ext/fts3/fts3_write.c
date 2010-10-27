@@ -42,6 +42,17 @@ struct PendingList {
   sqlite3_int64 iLastPos;
 };
 
+
+/*
+** Each cursor has a (possibly empty) linked list of the following objects.
+*/
+struct Fts3DeferredToken {
+  Fts3PhraseToken *pToken;        /* Pointer to corresponding expr token */
+  int iCol;                       /* Column token must occur in */
+  Fts3DeferredToken *pNext;       /* Next in list of deferred tokens */
+  PendingList *pList;             /* Doclist is assembled here */
+};
+
 /*
 ** An instance of this structure is used to iterate through the terms on
 ** a contiguous set of segment b-tree leaf nodes. Although the details of
@@ -51,6 +62,7 @@ struct PendingList {
 **
 **   sqlite3Fts3SegReaderNew()
 **   sqlite3Fts3SegReaderFree()
+**   sqlite3Fts3SegReaderCost()
 **   sqlite3Fts3SegReaderIterate()
 **
 ** Methods used to manipulate Fts3SegReader structures:
@@ -61,12 +73,14 @@ struct PendingList {
 */
 struct Fts3SegReader {
   int iIdx;                       /* Index within level, or 0x7FFFFFFF for PT */
-  sqlite3_int64 iStartBlock;
-  sqlite3_int64 iEndBlock;
-  sqlite3_stmt *pStmt;            /* SQL Statement to access leaf nodes */
+
+  sqlite3_int64 iStartBlock;      /* Rowid of first leaf block to traverse */
+  sqlite3_int64 iLeafEndBlock;    /* Rowid of final leaf block to traverse */
+  sqlite3_int64 iEndBlock;        /* Rowid of final block in segment (or 0) */
+  sqlite3_int64 iCurrentBlock;    /* Current leaf block (or 0) */
+
   char *aNode;                    /* Pointer to node data (or NULL) */
   int nNode;                      /* Size of buffer at aNode (or 0) */
-  int nTermAlloc;                 /* Allocated size of zTerm buffer */
   Fts3HashElem **ppNextElem;
 
   /* Variables set by fts3SegReaderNext(). These may be read directly
@@ -76,6 +90,7 @@ struct Fts3SegReader {
   */
   int nTerm;                      /* Number of bytes in current term */
   char *zTerm;                    /* Pointer to current term */
+  int nTermAlloc;                 /* Allocated size of zTerm buffer */
   char *aDoclist;                 /* Pointer to doclist of current entry */
   int nDoclist;                   /* Size of doclist in current entry */
 
@@ -85,6 +100,7 @@ struct Fts3SegReader {
 };
 
 #define fts3SegReaderIsPending(p) ((p)->ppNextElem!=0)
+#define fts3SegReaderIsRootOnly(p) ((p)->aNode==(char *)&(p)[1])
 
 /*
 ** An instance of this structure is used to create a segment b-tree in the
@@ -153,12 +169,11 @@ struct SegmentNode {
 #define SQL_DELETE_SEGDIR_BY_LEVEL    16
 #define SQL_DELETE_SEGMENTS_RANGE     17
 #define SQL_CONTENT_INSERT            18
-#define SQL_GET_BLOCK                 19
-#define SQL_DELETE_DOCSIZE            20
-#define SQL_REPLACE_DOCSIZE           21
-#define SQL_SELECT_DOCSIZE            22
-#define SQL_SELECT_DOCTOTAL           23
-#define SQL_REPLACE_DOCTOTAL          24
+#define SQL_DELETE_DOCSIZE            19
+#define SQL_REPLACE_DOCSIZE           20
+#define SQL_SELECT_DOCSIZE            21
+#define SQL_SELECT_DOCTOTAL           22
+#define SQL_REPLACE_DOCTOTAL          23
 
 /*
 ** This function is used to obtain an SQLite prepared statement handle
@@ -203,12 +218,11 @@ static int fts3SqlStmt(
 /* 16 */  "DELETE FROM %Q.'%q_segdir' WHERE level = ?",
 /* 17 */  "DELETE FROM %Q.'%q_segments' WHERE blockid BETWEEN ? AND ?",
 /* 18 */  "INSERT INTO %Q.'%q_content' VALUES(%z)",
-/* 19 */  "SELECT block FROM %Q.'%q_segments' WHERE blockid = ?",
-/* 20 */  "DELETE FROM %Q.'%q_docsize' WHERE docid = ?",
-/* 21 */  "REPLACE INTO %Q.'%q_docsize' VALUES(?,?)",
-/* 22 */  "SELECT size FROM %Q.'%q_docsize' WHERE docid=?",
-/* 23 */  "SELECT value FROM %Q.'%q_stat' WHERE id=0",
-/* 24 */  "REPLACE INTO %Q.'%q_stat' VALUES(0,?)",
+/* 19 */  "DELETE FROM %Q.'%q_docsize' WHERE docid = ?",
+/* 20 */  "REPLACE INTO %Q.'%q_docsize' VALUES(?,?)",
+/* 21 */  "SELECT size FROM %Q.'%q_docsize' WHERE docid=?",
+/* 22 */  "SELECT value FROM %Q.'%q_stat' WHERE id=0",
+/* 23 */  "REPLACE INTO %Q.'%q_stat' VALUES(0,?)",
   };
   int rc = SQLITE_OK;
   sqlite3_stmt *pStmt;
@@ -282,45 +296,6 @@ static void fts3SqlExec(
   *pRC = rc;
 }
 
-
-/*
-** Read a single block from the %_segments table. If the specified block
-** does not exist, return SQLITE_CORRUPT. If some other error (malloc, IO 
-** etc.) occurs, return the appropriate SQLite error code.
-**
-** Otherwise, if successful, set *pzBlock to point to a buffer containing
-** the block read from the database, and *pnBlock to the size of the read
-** block in bytes.
-**
-** WARNING: The returned buffer is only valid until the next call to 
-** sqlite3Fts3ReadBlock().
-*/
-int sqlite3Fts3ReadBlock(
-  Fts3Table *p,
-  sqlite3_int64 iBlock,
-  char const **pzBlock,
-  int *pnBlock
-){
-  sqlite3_stmt *pStmt;
-  int rc = fts3SqlStmt(p, SQL_GET_BLOCK, &pStmt, 0);
-  if( rc!=SQLITE_OK ) return rc;
-  sqlite3_reset(pStmt);
-
-  if( pzBlock ){
-    sqlite3_bind_int64(pStmt, 1, iBlock);
-    rc = sqlite3_step(pStmt); 
-    if( rc!=SQLITE_ROW ){
-      return (rc==SQLITE_DONE ? SQLITE_CORRUPT : rc);
-    }
-  
-    *pnBlock = sqlite3_column_bytes(pStmt, 0);
-    *pzBlock = (char *)sqlite3_column_blob(pStmt, 0);
-    if( sqlite3_column_type(pStmt, 0)!=SQLITE_BLOB ){
-      return SQLITE_CORRUPT;
-    }
-  }
-  return SQLITE_OK;
-}
 
 /*
 ** This function ensures that the caller has obtained a shared-cache
@@ -490,10 +465,10 @@ static int fts3PendingListAppend(
 ** If successful, SQLITE_OK is returned. Otherwise, an SQLite error code.
 */
 static int fts3PendingTermsAdd(
-  Fts3Table *p,          /* FTS table into which text will be inserted */
-  const char *zText,     /* Text of document to be inseted */
-  int iCol,              /* Column number into which text is inserted */
-  u32 *pnWord            /* OUT: Number of tokens inserted */
+  Fts3Table *p,                   /* Table into which text will be inserted */
+  const char *zText,              /* Text of document to be inserted */
+  int iCol,                       /* Column into which text is being inserted */
+  u32 *pnWord                     /* OUT: Number of tokens inserted */
 ){
   int rc;
   int iStart;
@@ -578,6 +553,9 @@ static int fts3PendingTermsDocid(Fts3Table *p, sqlite_int64 iDocid){
   return SQLITE_OK;
 }
 
+/*
+** Discard the contents of the pending-terms hash table. 
+*/
 void sqlite3Fts3PendingTermsClear(Fts3Table *p){
   Fts3HashElem *pElem;
   for(pElem=fts3HashFirst(&p->pendingTerms); pElem; pElem=fts3HashNext(pElem)){
@@ -605,6 +583,7 @@ static int fts3InsertTerms(Fts3Table *p, sqlite3_value **apVal, u32 *aSz){
         return rc;
       }
     }
+    aSz[p->nColumn] += sqlite3_value_bytes(apVal[i]);
   }
   return SQLITE_OK;
 }
@@ -702,7 +681,7 @@ static int fts3DeleteAll(Fts3Table *p){
 ** (an integer) of a row about to be deleted. Remove all terms from the
 ** full-text index.
 */
-static void fts3DeleteTerms(
+static void fts3DeleteTerms( 
   int *pRC,               /* Result code */
   Fts3Table *p,           /* The FTS table to delete from */
   sqlite3_value **apVal,  /* apVal[] contains the docid to be deleted */
@@ -724,6 +703,7 @@ static void fts3DeleteTerms(
           *pRC = rc;
           return;
         }
+        aSz[p->nColumn] += sqlite3_column_bytes(pSelect, i);
       }
     }
     rc = sqlite3_reset(pSelect);
@@ -787,11 +767,91 @@ static int fts3AllocateSegdirIdx(Fts3Table *p, int iLevel, int *piIdx){
 }
 
 /*
+** The %_segments table is declared as follows:
+**
+**   CREATE TABLE %_segments(blockid INTEGER PRIMARY KEY, block BLOB)
+**
+** This function reads data from a single row of the %_segments table. The
+** specific row is identified by the iBlockid parameter. If paBlob is not
+** NULL, then a buffer is allocated using sqlite3_malloc() and populated
+** with the contents of the blob stored in the "block" column of the 
+** identified table row is. Whether or not paBlob is NULL, *pnBlob is set
+** to the size of the blob in bytes before returning.
+**
+** If an error occurs, or the table does not contain the specified row,
+** an SQLite error code is returned. Otherwise, SQLITE_OK is returned. If
+** paBlob is non-NULL, then it is the responsibility of the caller to
+** eventually free the returned buffer.
+**
+** This function may leave an open sqlite3_blob* handle in the
+** Fts3Table.pSegments variable. This handle is reused by subsequent calls
+** to this function. The handle may be closed by calling the
+** sqlite3Fts3SegmentsClose() function. Reusing a blob handle is a handy
+** performance improvement, but the blob handle should always be closed
+** before control is returned to the user (to prevent a lock being held
+** on the database file for longer than necessary). Thus, any virtual table
+** method (xFilter etc.) that may directly or indirectly call this function
+** must call sqlite3Fts3SegmentsClose() before returning.
+*/
+int sqlite3Fts3ReadBlock(
+  Fts3Table *p,                   /* FTS3 table handle */
+  sqlite3_int64 iBlockid,         /* Access the row with blockid=$iBlockid */
+  char **paBlob,                  /* OUT: Blob data in malloc'd buffer */
+  int *pnBlob                     /* OUT: Size of blob data */
+){
+  int rc;                         /* Return code */
+
+  /* pnBlob must be non-NULL. paBlob may be NULL or non-NULL. */
+  assert( pnBlob);
+
+  if( p->pSegments ){
+    rc = sqlite3_blob_reopen(p->pSegments, iBlockid);
+  }else{
+    if( 0==p->zSegmentsTbl ){
+      p->zSegmentsTbl = sqlite3_mprintf("%s_segments", p->zName);
+      if( 0==p->zSegmentsTbl ) return SQLITE_NOMEM;
+    }
+    rc = sqlite3_blob_open(
+       p->db, p->zDb, p->zSegmentsTbl, "block", iBlockid, 0, &p->pSegments
+    );
+  }
+
+  if( rc==SQLITE_OK ){
+    int nByte = sqlite3_blob_bytes(p->pSegments);
+    if( paBlob ){
+      char *aByte = sqlite3_malloc(nByte);
+      if( !aByte ){
+        rc = SQLITE_NOMEM;
+      }else{
+        rc = sqlite3_blob_read(p->pSegments, aByte, nByte, 0);
+        if( rc!=SQLITE_OK ){
+          sqlite3_free(aByte);
+          aByte = 0;
+        }
+      }
+      *paBlob = aByte;
+    }
+    *pnBlob = nByte;
+  }
+
+  return rc;
+}
+
+/*
+** Close the blob handle at p->pSegments, if it is open. See comments above
+** the sqlite3Fts3ReadBlock() function for details.
+*/
+void sqlite3Fts3SegmentsClose(Fts3Table *p){
+  sqlite3_blob_close(p->pSegments);
+  p->pSegments = 0;
+}
+
+/*
 ** Move the iterator passed as the first argument to the next term in the
 ** segment. If successful, SQLITE_OK is returned. If there is no next term,
 ** SQLITE_DONE. Otherwise, an SQLite error code.
 */
-static int fts3SegReaderNext(Fts3SegReader *pReader){
+static int fts3SegReaderNext(Fts3Table *p, Fts3SegReader *pReader){
   char *pNext;                    /* Cursor variable */
   int nPrefix;                    /* Number of bytes in term prefix */
   int nSuffix;                    /* Number of bytes in term suffix */
@@ -803,7 +863,8 @@ static int fts3SegReaderNext(Fts3SegReader *pReader){
   }
 
   if( !pNext || pNext>=&pReader->aNode[pReader->nNode] ){
-    int rc;
+    int rc;                       /* Return code from Fts3ReadBlock() */
+
     if( fts3SegReaderIsPending(pReader) ){
       Fts3HashElem *pElem = *(pReader->ppNextElem);
       if( pElem==0 ){
@@ -819,17 +880,23 @@ static int fts3SegReaderNext(Fts3SegReader *pReader){
       }
       return SQLITE_OK;
     }
-    if( !pReader->pStmt ){
-      pReader->aNode = 0;
+
+    if( !fts3SegReaderIsRootOnly(pReader) ){
+      sqlite3_free(pReader->aNode);
+    }
+    pReader->aNode = 0;
+
+    /* If iCurrentBlock>=iLeafEndBlock, this is an EOF condition. All leaf 
+    ** blocks have already been traversed.  */
+    assert( pReader->iCurrentBlock<=pReader->iLeafEndBlock );
+    if( pReader->iCurrentBlock>=pReader->iLeafEndBlock ){
       return SQLITE_OK;
     }
-    rc = sqlite3_step(pReader->pStmt);
-    if( rc!=SQLITE_ROW ){
-      pReader->aNode = 0;
-      return (rc==SQLITE_DONE ? SQLITE_OK : rc);
-    }
-    pReader->nNode = sqlite3_column_bytes(pReader->pStmt, 0);
-    pReader->aNode = (char *)sqlite3_column_blob(pReader->pStmt, 0);
+
+    rc = sqlite3Fts3ReadBlock(
+        p, ++pReader->iCurrentBlock, &pReader->aNode, &pReader->nNode
+    );
+    if( rc!=SQLITE_OK ) return rc;
     pNext = pReader->aNode;
   }
   
@@ -849,9 +916,19 @@ static int fts3SegReaderNext(Fts3SegReader *pReader){
   pReader->nTerm = nPrefix+nSuffix;
   pNext += nSuffix;
   pNext += sqlite3Fts3GetVarint32(pNext, &pReader->nDoclist);
-  assert( pNext<&pReader->aNode[pReader->nNode] );
   pReader->aDoclist = pNext;
   pReader->pOffsetList = 0;
+
+  /* Check that the doclist does not appear to extend past the end of the
+  ** b-tree node. And that the final byte of the doclist is either an 0x00 
+  ** or 0x01. If either of these statements is untrue, then the data structure 
+  ** is corrupt.
+  */
+  if( &pReader->aDoclist[pReader->nDoclist]>&pReader->aNode[pReader->nNode] 
+   || (pReader->aDoclist[pReader->nDoclist-1]&0xFE)!=0
+  ){
+    return SQLITE_CORRUPT;
+  }
   return SQLITE_OK;
 }
 
@@ -915,24 +992,99 @@ static void fts3SegReaderNextDocid(
 }
 
 /*
+** This function is called to estimate the amount of data that will be 
+** loaded from the disk If SegReaderIterate() is called on this seg-reader,
+** in units of average document size.
+** 
+** This can be used as follows: If the caller has a small doclist that 
+** contains references to N documents, and is considering merging it with
+** a large doclist (size X "average documents"), it may opt not to load
+** the large doclist if X>N.
+*/
+int sqlite3Fts3SegReaderCost(
+  Fts3Cursor *pCsr,               /* FTS3 cursor handle */
+  Fts3SegReader *pReader,         /* Segment-reader handle */
+  int *pnCost                     /* IN/OUT: Number of bytes read */
+){
+  Fts3Table *p = (Fts3Table*)pCsr->base.pVtab;
+  int rc = SQLITE_OK;             /* Return code */
+  int nCost = 0;                  /* Cost in bytes to return */
+  int pgsz = p->nPgsz;            /* Database page size */
+
+  /* If this seg-reader is reading the pending-terms table, or if all data
+  ** for the segment is stored on the root page of the b-tree, then the cost
+  ** is zero. In this case all required data is already in main memory.
+  */
+  if( p->bHasDocsize 
+   && !fts3SegReaderIsPending(pReader) 
+   && !fts3SegReaderIsRootOnly(pReader) 
+  ){
+    int nBlob = 0;
+    sqlite3_int64 iBlock;
+
+    if( pCsr->nRowAvg==0 ){
+      /* The average document size, which is required to calculate the cost
+      ** of each doclist, has not yet been determined. Read the required 
+      ** data from the %_stat table to calculate it.
+      **
+      ** Entry 0 of the %_stat table is a blob containing (nCol+1) FTS3 
+      ** varints, where nCol is the number of columns in the FTS3 table.
+      ** The first varint is the number of documents currently stored in
+      ** the table. The following nCol varints contain the total amount of
+      ** data stored in all rows of each column of the table, from left
+      ** to right.
+      */
+      sqlite3_stmt *pStmt;
+      rc = fts3SqlStmt(p, SQL_SELECT_DOCTOTAL, &pStmt, 0);
+      if( rc ) return rc;
+      if( sqlite3_step(pStmt)==SQLITE_ROW ){
+        sqlite3_int64 nDoc = 0;
+        sqlite3_int64 nByte = 0;
+        const char *a = sqlite3_column_blob(pStmt, 0);
+        if( a ){
+          const char *pEnd = &a[sqlite3_column_bytes(pStmt, 0)];
+          a += sqlite3Fts3GetVarint(a, &nDoc);
+          while( a<pEnd ){
+            a += sqlite3Fts3GetVarint(a, &nByte);
+          }
+        }
+
+        pCsr->nRowAvg = (((nByte / nDoc) + pgsz - 1) / pgsz);
+      }
+      rc = sqlite3_reset(pStmt);
+      if( rc!=SQLITE_OK || pCsr->nRowAvg==0 ) return rc;
+    }
+
+    /* Assume that a blob flows over onto overflow pages if it is larger
+    ** than (pgsz-35) bytes in size (the file-format documentation
+    ** confirms this).
+    */
+    for(iBlock=pReader->iStartBlock; iBlock<=pReader->iLeafEndBlock; iBlock++){
+      rc = sqlite3Fts3ReadBlock(p, iBlock, 0, &nBlob);
+      if( rc!=SQLITE_OK ) break;
+      if( (nBlob+35)>pgsz ){
+        int nOvfl = (nBlob + 34)/pgsz;
+        nCost += ((nOvfl + pCsr->nRowAvg - 1)/pCsr->nRowAvg);
+      }
+    }
+  }
+
+  *pnCost += nCost;
+  return rc;
+}
+
+/*
 ** Free all allocations associated with the iterator passed as the 
 ** second argument.
 */
 void sqlite3Fts3SegReaderFree(Fts3Table *p, Fts3SegReader *pReader){
-  if( pReader ){
-    if( pReader->pStmt ){
-      /* Move the leaf-range SELECT statement to the aLeavesStmt[] array,
-      ** so that it can be reused when required by another query.
-      */
-      assert( p->nLeavesStmt<p->nLeavesTotal );
-      sqlite3_reset(pReader->pStmt);
-      p->aLeavesStmt[p->nLeavesStmt++] = pReader->pStmt;
+  if( pReader && !fts3SegReaderIsPending(pReader) ){
+    sqlite3_free(pReader->zTerm);
+    if( !fts3SegReaderIsRootOnly(pReader) ){
+      sqlite3_free(pReader->aNode);
     }
-    if( !fts3SegReaderIsPending(pReader) ){
-      sqlite3_free(pReader->zTerm);
-    }
-    sqlite3_free(pReader);
   }
+  sqlite3_free(pReader);
 }
 
 /*
@@ -952,6 +1104,7 @@ int sqlite3Fts3SegReaderNew(
   Fts3SegReader *pReader;         /* Newly allocated SegReader object */
   int nExtra = 0;                 /* Bytes to allocate segment root node */
 
+  assert( iStartLeaf<=iEndLeaf );
   if( iStartLeaf==0 ){
     nExtra = nRoot;
   }
@@ -961,8 +1114,9 @@ int sqlite3Fts3SegReaderNew(
     return SQLITE_NOMEM;
   }
   memset(pReader, 0, sizeof(Fts3SegReader));
-  pReader->iStartBlock = iStartLeaf;
   pReader->iIdx = iAge;
+  pReader->iStartBlock = iStartLeaf;
+  pReader->iLeafEndBlock = iEndLeaf;
   pReader->iEndBlock = iEndBlock;
 
   if( nExtra ){
@@ -971,54 +1125,10 @@ int sqlite3Fts3SegReaderNew(
     pReader->nNode = nRoot;
     memcpy(pReader->aNode, zRoot, nRoot);
   }else{
-    /* If the text of the SQL statement to iterate through a contiguous
-    ** set of entries in the %_segments table has not yet been composed,
-    ** compose it now.
-    */
-    if( !p->zSelectLeaves ){
-      p->zSelectLeaves = sqlite3_mprintf(
-          "SELECT block FROM %Q.'%q_segments' WHERE blockid BETWEEN ? AND ? "
-          "ORDER BY blockid", p->zDb, p->zName
-      );
-      if( !p->zSelectLeaves ){
-        rc = SQLITE_NOMEM;
-        goto finished;
-      }
-    }
-
-    /* If there are no free statements in the aLeavesStmt[] array, prepare
-    ** a new statement now. Otherwise, reuse a prepared statement from
-    ** aLeavesStmt[].
-    */
-    if( p->nLeavesStmt==0 ){
-      if( p->nLeavesTotal==p->nLeavesAlloc ){
-        int nNew = p->nLeavesAlloc + 16;
-        sqlite3_stmt **aNew = (sqlite3_stmt **)sqlite3_realloc(
-            p->aLeavesStmt, nNew*sizeof(sqlite3_stmt *)
-        );
-        if( !aNew ){
-          rc = SQLITE_NOMEM;
-          goto finished;
-        }
-        p->nLeavesAlloc = nNew;
-        p->aLeavesStmt = aNew;
-      }
-      rc = sqlite3_prepare_v2(p->db, p->zSelectLeaves, -1, &pReader->pStmt, 0);
-      if( rc!=SQLITE_OK ){
-        goto finished;
-      }
-      p->nLeavesTotal++;
-    }else{
-      pReader->pStmt = p->aLeavesStmt[--p->nLeavesStmt];
-    }
-
-    /* Bind the start and end leaf blockids to the prepared SQL statement. */
-    sqlite3_bind_int64(pReader->pStmt, 1, iStartLeaf);
-    sqlite3_bind_int64(pReader->pStmt, 2, iEndLeaf);
+    pReader->iCurrentBlock = iStartLeaf-1;
   }
-  rc = fts3SegReaderNext(pReader);
+  rc = fts3SegReaderNext(p, pReader);
 
- finished:
   if( rc==SQLITE_OK ){
     *ppReader = pReader;
   }else{
@@ -1113,7 +1223,7 @@ int sqlite3Fts3SegReaderPending(
       pReader->iIdx = 0x7FFFFFFF;
       pReader->ppNextElem = (Fts3HashElem **)&pReader[1];
       memcpy(pReader->ppNextElem, aElem, nElem*sizeof(Fts3HashElem *));
-      fts3SegReaderNext(pReader);
+      fts3SegReaderNext(p, pReader);
     }
   }
 
@@ -1355,7 +1465,7 @@ static int fts3PrefixCompress(
 ** (according to memcmp) than the previous term.
 */
 static int fts3NodeAddTerm(
-  Fts3Table *p,               /* Virtual table handle */
+  Fts3Table *p,                   /* Virtual table handle */
   SegmentNode **ppTree,           /* IN/OUT: SegmentNode handle */ 
   int isCopyTerm,                 /* True if zTerm/nTerm is transient */
   const char *zTerm,              /* Pointer to buffer containing term */
@@ -1991,7 +2101,7 @@ int sqlite3Fts3SegReaderIterate(
     for(i=0; i<nSegment; i++){
       Fts3SegReader *pSeg = apSegment[i];
       while( fts3SegReaderTermCmp(pSeg, zTerm, nTerm)<0 ){
-        rc = fts3SegReaderNext(pSeg);
+        rc = fts3SegReaderNext(p, pSeg);
         if( rc!=SQLITE_OK ) goto finished; }
     }
   }
@@ -2102,7 +2212,7 @@ int sqlite3Fts3SegReaderIterate(
     }
 
     for(i=0; i<nMerge; i++){
-      rc = fts3SegReaderNext(apSegment[i]);
+      rc = fts3SegReaderNext(p, apSegment[i]);
       if( rc!=SQLITE_OK ) goto finished;
     }
     fts3SegReaderSort(apSegment, nSegment, nMerge, fts3SegReaderCmp);
@@ -2128,7 +2238,7 @@ static int fts3SegmentMerge(Fts3Table *p, int iLevel){
   int i;                          /* Iterator variable */
   int rc;                         /* Return code */
   int iIdx;                       /* Index of new segment */
-  int iNewLevel;                  /* Level to create new segment at */
+  int iNewLevel = 0;              /* Level to create new segment at */
   sqlite3_stmt *pStmt = 0;
   SegmentWriter *pWriter = 0;
   int nSegment = 0;               /* Number of segments being merged */
@@ -2417,16 +2527,26 @@ static void fts3InsertDocsize(
 }
 
 /*
-** Update the 0 record of the %_stat table so that it holds a blob
-** which contains the document count followed by the cumulative
-** document sizes for all columns.
+** Record 0 of the %_stat table contains a blob consisting of N varints,
+** where N is the number of user defined columns in the fts3 table plus
+** two. If nCol is the number of user defined columns, then values of the 
+** varints are set as follows:
+**
+**   Varint 0:       Total number of rows in the table.
+**
+**   Varint 1..nCol: For each column, the total number of tokens stored in
+**                   the column for all rows of the table.
+**
+**   Varint 1+nCol:  The total size, in bytes, of all text values in all
+**                   columns of all rows of the table.
+**
 */
 static void fts3UpdateDocTotals(
-  int *pRC,       /* The result code */
-  Fts3Table *p,   /* Table being updated */
-  u32 *aSzIns,    /* Size increases */
-  u32 *aSzDel,    /* Size decreases */
-  int nChng       /* Change in the number of documents */
+  int *pRC,                       /* The result code */
+  Fts3Table *p,                   /* Table being updated */
+  u32 *aSzIns,                    /* Size increases */
+  u32 *aSzDel,                    /* Size decreases */
+  int nChng                       /* Change in the number of documents */
 ){
   char *pBlob;             /* Storage for BLOB written into %_stat */
   int nBlob;               /* Size of BLOB written into %_stat */
@@ -2435,13 +2555,15 @@ static void fts3UpdateDocTotals(
   int i;                   /* Loop counter */
   int rc;                  /* Result code from subfunctions */
 
+  const int nStat = p->nColumn+2;
+
   if( *pRC ) return;
-  a = sqlite3_malloc( (sizeof(u32)+10)*(p->nColumn+1) );
+  a = sqlite3_malloc( (sizeof(u32)+10)*nStat );
   if( a==0 ){
     *pRC = SQLITE_NOMEM;
     return;
   }
-  pBlob = (char*)&a[p->nColumn+1];
+  pBlob = (char*)&a[nStat];
   rc = fts3SqlStmt(p, SQL_SELECT_DOCTOTAL, &pStmt, 0);
   if( rc ){
     sqlite3_free(a);
@@ -2449,11 +2571,11 @@ static void fts3UpdateDocTotals(
     return;
   }
   if( sqlite3_step(pStmt)==SQLITE_ROW ){
-    fts3DecodeIntArray(p->nColumn+1, a,
+    fts3DecodeIntArray(nStat, a,
          sqlite3_column_blob(pStmt, 0),
          sqlite3_column_bytes(pStmt, 0));
   }else{
-    memset(a, 0, sizeof(u32)*(p->nColumn+1) );
+    memset(a, 0, sizeof(u32)*(nStat) );
   }
   sqlite3_reset(pStmt);
   if( nChng<0 && a[0]<(u32)(-nChng) ){
@@ -2461,7 +2583,7 @@ static void fts3UpdateDocTotals(
   }else{
     a[0] += nChng;
   }
-  for(i=0; i<p->nColumn; i++){
+  for(i=0; i<p->nColumn+1; i++){
     u32 x = a[i+1];
     if( x+aSzIns[i] < aSzDel[i] ){
       x = 0;
@@ -2470,7 +2592,7 @@ static void fts3UpdateDocTotals(
     }
     a[i+1] = x;
   }
-  fts3EncodeIntArray(p->nColumn+1, a, pBlob, &nBlob);
+  fts3EncodeIntArray(nStat, a, pBlob, &nBlob);
   rc = fts3SqlStmt(p, SQL_REPLACE_DOCTOTAL, &pStmt, 0);
   if( rc ){
     sqlite3_free(a);
@@ -2517,8 +2639,158 @@ static int fts3SpecialInsert(Fts3Table *p, sqlite3_value *pVal){
     rc = SQLITE_ERROR;
   }
 
+  sqlite3Fts3SegmentsClose(p);
   return rc;
 }
+
+/*
+** Return the deferred doclist associated with deferred token pDeferred.
+** This function assumes that sqlite3Fts3CacheDeferredDoclists() has already
+** been called to allocate and populate the doclist.
+*/
+char *sqlite3Fts3DeferredDoclist(Fts3DeferredToken *pDeferred, int *pnByte){
+  if( pDeferred->pList ){
+    *pnByte = pDeferred->pList->nData;
+    return pDeferred->pList->aData;
+  }
+  *pnByte = 0;
+  return 0;
+}
+
+/*
+** Helper fucntion for FreeDeferredDoclists(). This function removes all
+** references to deferred doclists from within the tree of Fts3Expr 
+** structures headed by 
+*/
+static void fts3DeferredDoclistClear(Fts3Expr *pExpr){
+  if( pExpr ){
+    fts3DeferredDoclistClear(pExpr->pLeft);
+    fts3DeferredDoclistClear(pExpr->pRight);
+    if( pExpr->isLoaded ){
+      sqlite3_free(pExpr->aDoclist);
+      pExpr->isLoaded = 0;
+      pExpr->aDoclist = 0;
+      pExpr->nDoclist = 0;
+      pExpr->pCurrent = 0;
+      pExpr->iCurrent = 0;
+    }
+  }
+}
+
+/*
+** Delete all cached deferred doclists. Deferred doclists are cached
+** (allocated) by the sqlite3Fts3CacheDeferredDoclists() function.
+*/
+void sqlite3Fts3FreeDeferredDoclists(Fts3Cursor *pCsr){
+  Fts3DeferredToken *pDef;
+  for(pDef=pCsr->pDeferred; pDef; pDef=pDef->pNext){
+    sqlite3_free(pDef->pList);
+    pDef->pList = 0;
+  }
+  if( pCsr->pDeferred ){
+    fts3DeferredDoclistClear(pCsr->pExpr);
+  }
+}
+
+/*
+** Free all entries in the pCsr->pDeffered list. Entries are added to 
+** this list using sqlite3Fts3DeferToken().
+*/
+void sqlite3Fts3FreeDeferredTokens(Fts3Cursor *pCsr){
+  Fts3DeferredToken *pDef;
+  Fts3DeferredToken *pNext;
+  for(pDef=pCsr->pDeferred; pDef; pDef=pNext){
+    pNext = pDef->pNext;
+    sqlite3_free(pDef->pList);
+    sqlite3_free(pDef);
+  }
+  pCsr->pDeferred = 0;
+}
+
+/*
+** Generate deferred-doclists for all tokens in the pCsr->pDeferred list
+** based on the row that pCsr currently points to.
+**
+** A deferred-doclist is like any other doclist with position information
+** included, except that it only contains entries for a single row of the
+** table, not for all rows.
+*/
+int sqlite3Fts3CacheDeferredDoclists(Fts3Cursor *pCsr){
+  int rc = SQLITE_OK;             /* Return code */
+  if( pCsr->pDeferred ){
+    int i;                        /* Used to iterate through table columns */
+    sqlite3_int64 iDocid;         /* Docid of the row pCsr points to */
+    Fts3DeferredToken *pDef;      /* Used to iterate through deferred tokens */
+  
+    Fts3Table *p = (Fts3Table *)pCsr->base.pVtab;
+    sqlite3_tokenizer *pT = p->pTokenizer;
+    sqlite3_tokenizer_module const *pModule = pT->pModule;
+   
+    assert( pCsr->isRequireSeek==0 );
+    iDocid = sqlite3_column_int64(pCsr->pStmt, 0);
+  
+    for(i=0; i<p->nColumn && rc==SQLITE_OK; i++){
+      const char *zText = (const char *)sqlite3_column_text(pCsr->pStmt, i+1);
+      sqlite3_tokenizer_cursor *pTC = 0;
+  
+      rc = pModule->xOpen(pT, zText, -1, &pTC);
+      while( rc==SQLITE_OK ){
+        char const *zToken;       /* Buffer containing token */
+        int nToken;               /* Number of bytes in token */
+        int iDum1, iDum2;         /* Dummy variables */
+        int iPos;                 /* Position of token in zText */
+  
+        pTC->pTokenizer = pT;
+        rc = pModule->xNext(pTC, &zToken, &nToken, &iDum1, &iDum2, &iPos);
+        for(pDef=pCsr->pDeferred; pDef && rc==SQLITE_OK; pDef=pDef->pNext){
+          Fts3PhraseToken *pPT = pDef->pToken;
+          if( (pDef->iCol>=p->nColumn || pDef->iCol==i)
+           && (pPT->n==nToken || (pPT->isPrefix && pPT->n<nToken))
+           && (0==memcmp(zToken, pPT->z, pPT->n))
+          ){
+            fts3PendingListAppend(&pDef->pList, iDocid, i, iPos, &rc);
+          }
+        }
+      }
+      if( pTC ) pModule->xClose(pTC);
+      if( rc==SQLITE_DONE ) rc = SQLITE_OK;
+    }
+  
+    for(pDef=pCsr->pDeferred; pDef && rc==SQLITE_OK; pDef=pDef->pNext){
+      if( pDef->pList ){
+        rc = fts3PendingListAppendVarint(&pDef->pList, 0);
+      }
+    }
+  }
+
+  return rc;
+}
+
+/*
+** Add an entry for token pToken to the pCsr->pDeferred list.
+*/
+int sqlite3Fts3DeferToken(
+  Fts3Cursor *pCsr,               /* Fts3 table cursor */
+  Fts3PhraseToken *pToken,        /* Token to defer */
+  int iCol                        /* Column that token must appear in (or -1) */
+){
+  Fts3DeferredToken *pDeferred;
+  pDeferred = sqlite3_malloc(sizeof(*pDeferred));
+  if( !pDeferred ){
+    return SQLITE_NOMEM;
+  }
+  memset(pDeferred, 0, sizeof(*pDeferred));
+  pDeferred->pToken = pToken;
+  pDeferred->pNext = pCsr->pDeferred; 
+  pDeferred->iCol = iCol;
+  pCsr->pDeferred = pDeferred;
+
+  assert( pToken->pDeferred==0 );
+  pToken->pDeferred = pDeferred;
+
+  return SQLITE_OK;
+}
+
 
 /*
 ** This function does the work for the xUpdate method of FTS3 virtual
@@ -2538,16 +2810,17 @@ int sqlite3Fts3UpdateMethod(
   u32 *aSzDel;                    /* Sizes of deleted documents */
   int nChng = 0;                  /* Net change in number of documents */
 
+  assert( p->pSegments==0 );
 
   /* Allocate space to hold the change in document sizes */
-  aSzIns = sqlite3_malloc( sizeof(aSzIns[0])*p->nColumn*2 );
+  aSzIns = sqlite3_malloc( sizeof(aSzIns[0])*(p->nColumn+1)*2 );
   if( aSzIns==0 ) return SQLITE_NOMEM;
-  aSzDel = &aSzIns[p->nColumn];
-  memset(aSzIns, 0, sizeof(aSzIns[0])*p->nColumn*2);
+  aSzDel = &aSzIns[p->nColumn+1];
+  memset(aSzIns, 0, sizeof(aSzIns[0])*(p->nColumn+1)*2);
 
   /* If this is a DELETE or UPDATE operation, remove the old record. */
   if( sqlite3_value_type(apVal[0])!=SQLITE_NULL ){
-    int isEmpty;
+    int isEmpty = 0;
     rc = fts3IsEmpty(p, apVal, &isEmpty);
     if( rc==SQLITE_OK ){
       if( isEmpty ){
@@ -2593,6 +2866,7 @@ int sqlite3Fts3UpdateMethod(
   }
 
   sqlite3_free(aSzIns);
+  sqlite3Fts3SegmentsClose(p);
   return rc;
 }
 
@@ -2616,6 +2890,7 @@ int sqlite3Fts3Optimize(Fts3Table *p){
       sqlite3_exec(p->db, "RELEASE fts3", 0, 0, 0);
     }
   }
+  sqlite3Fts3SegmentsClose(p);
   return rc;
 }
 

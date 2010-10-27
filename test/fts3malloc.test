@@ -44,7 +44,6 @@ proc normal_list {l} {
   set ret
 }
 
-
 do_write_test fts3_malloc-1.1 sqlite_master {
   CREATE VIRTUAL TABLE ft1 USING fts3(a, b)
 }
