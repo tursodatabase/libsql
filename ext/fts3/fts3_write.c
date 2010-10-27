@@ -583,6 +583,7 @@ static int fts3InsertTerms(Fts3Table *p, sqlite3_value **apVal, u32 *aSz){
         return rc;
       }
     }
+    aSz[p->nColumn] += sqlite3_value_bytes(apVal[i]);
   }
   return SQLITE_OK;
 }
@@ -680,7 +681,7 @@ static int fts3DeleteAll(Fts3Table *p){
 ** (an integer) of a row about to be deleted. Remove all terms from the
 ** full-text index.
 */
-static void fts3DeleteTerms(
+static void fts3DeleteTerms( 
   int *pRC,               /* Result code */
   Fts3Table *p,           /* The FTS table to delete from */
   sqlite3_value **apVal,  /* apVal[] contains the docid to be deleted */
@@ -702,6 +703,7 @@ static void fts3DeleteTerms(
           *pRC = rc;
           return;
         }
+        aSz[p->nColumn] += sqlite3_column_bytes(pSelect, i);
       }
     }
     rc = sqlite3_reset(pSelect);
@@ -1033,9 +1035,7 @@ int sqlite3Fts3SegReaderCost(
           const char *pEnd = &a[sqlite3_column_bytes(pStmt, 0)];
           a += sqlite3Fts3GetVarint(a, &nDoc);
           while( a<pEnd ){
-            sqlite3_int64 nVarint;
-            a += sqlite3Fts3GetVarint(a, &nVarint);
-            nByte += nVarint;
+            a += sqlite3Fts3GetVarint(a, &nByte);
           }
         }
 
@@ -2517,16 +2517,26 @@ static void fts3InsertDocsize(
 }
 
 /*
-** Update the 0 record of the %_stat table so that it holds a blob
-** which contains the document count followed by the cumulative
-** document sizes for all columns.
+** Record 0 of the %_stat table contains a blob consisting of N varints,
+** where N is the number of user defined columns in the fts3 table plus
+** two. If nCol is the number of user defined columns, then values of the 
+** varints are set as follows:
+**
+**   Varint 0:       Total number of rows in the table.
+**
+**   Varint 1..nCol: For each column, the total number of tokens stored in
+**                   the column for all rows of the table.
+**
+**   Varint 1+nCol:  The total size, in bytes, of all text values in all
+**                   columns of all rows of the table.
+**
 */
 static void fts3UpdateDocTotals(
-  int *pRC,       /* The result code */
-  Fts3Table *p,   /* Table being updated */
-  u32 *aSzIns,    /* Size increases */
-  u32 *aSzDel,    /* Size decreases */
-  int nChng       /* Change in the number of documents */
+  int *pRC,                       /* The result code */
+  Fts3Table *p,                   /* Table being updated */
+  u32 *aSzIns,                    /* Size increases */
+  u32 *aSzDel,                    /* Size decreases */
+  int nChng                       /* Change in the number of documents */
 ){
   char *pBlob;             /* Storage for BLOB written into %_stat */
   int nBlob;               /* Size of BLOB written into %_stat */
@@ -2535,13 +2545,15 @@ static void fts3UpdateDocTotals(
   int i;                   /* Loop counter */
   int rc;                  /* Result code from subfunctions */
 
+  const int nStat = p->nColumn+2;
+
   if( *pRC ) return;
-  a = sqlite3_malloc( (sizeof(u32)+10)*(p->nColumn+1) );
+  a = sqlite3_malloc( (sizeof(u32)+10)*nStat );
   if( a==0 ){
     *pRC = SQLITE_NOMEM;
     return;
   }
-  pBlob = (char*)&a[p->nColumn+1];
+  pBlob = (char*)&a[nStat];
   rc = fts3SqlStmt(p, SQL_SELECT_DOCTOTAL, &pStmt, 0);
   if( rc ){
     sqlite3_free(a);
@@ -2549,11 +2561,11 @@ static void fts3UpdateDocTotals(
     return;
   }
   if( sqlite3_step(pStmt)==SQLITE_ROW ){
-    fts3DecodeIntArray(p->nColumn+1, a,
+    fts3DecodeIntArray(nStat, a,
          sqlite3_column_blob(pStmt, 0),
          sqlite3_column_bytes(pStmt, 0));
   }else{
-    memset(a, 0, sizeof(u32)*(p->nColumn+1) );
+    memset(a, 0, sizeof(u32)*(nStat) );
   }
   sqlite3_reset(pStmt);
   if( nChng<0 && a[0]<(u32)(-nChng) ){
@@ -2561,7 +2573,7 @@ static void fts3UpdateDocTotals(
   }else{
     a[0] += nChng;
   }
-  for(i=0; i<p->nColumn; i++){
+  for(i=0; i<p->nColumn+1; i++){
     u32 x = a[i+1];
     if( x+aSzIns[i] < aSzDel[i] ){
       x = 0;
@@ -2570,7 +2582,7 @@ static void fts3UpdateDocTotals(
     }
     a[i+1] = x;
   }
-  fts3EncodeIntArray(p->nColumn+1, a, pBlob, &nBlob);
+  fts3EncodeIntArray(nStat, a, pBlob, &nBlob);
   rc = fts3SqlStmt(p, SQL_REPLACE_DOCTOTAL, &pStmt, 0);
   if( rc ){
     sqlite3_free(a);
@@ -2791,10 +2803,10 @@ int sqlite3Fts3UpdateMethod(
   assert( p->pSegments==0 );
 
   /* Allocate space to hold the change in document sizes */
-  aSzIns = sqlite3_malloc( sizeof(aSzIns[0])*p->nColumn*2 );
+  aSzIns = sqlite3_malloc( sizeof(aSzIns[0])*(p->nColumn+1)*2 );
   if( aSzIns==0 ) return SQLITE_NOMEM;
-  aSzDel = &aSzIns[p->nColumn];
-  memset(aSzIns, 0, sizeof(aSzIns[0])*p->nColumn*2);
+  aSzDel = &aSzIns[p->nColumn+1];
+  memset(aSzIns, 0, sizeof(aSzIns[0])*(p->nColumn+1)*2);
 
   /* If this is a DELETE or UPDATE operation, remove the old record. */
   if( sqlite3_value_type(apVal[0])!=SQLITE_NULL ){
