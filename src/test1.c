@@ -1690,7 +1690,7 @@ static int test_blob_read(
   sqlite3_blob *pBlob;
   int nByte;
   int iOffset;
-  unsigned char *zBuf;
+  unsigned char *zBuf = 0;
   int rc;
   
   if( objc!=4 ){
@@ -1705,7 +1705,9 @@ static int test_blob_read(
     return TCL_ERROR;
   }
 
-  zBuf = (unsigned char *)Tcl_Alloc(nByte);
+  if( nByte>0 ){
+    zBuf = (unsigned char *)Tcl_Alloc(nByte);
+  }
   rc = sqlite3_blob_read(pBlob, zBuf, nByte, iOffset);
   if( rc==SQLITE_OK ){
     Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(zBuf, nByte));
