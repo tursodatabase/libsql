@@ -670,6 +670,7 @@ static void DbUpdateHandler(
   Tcl_ListObjAppendElement(0, pCmd, Tcl_NewStringObj(zTbl, -1));
   Tcl_ListObjAppendElement(0, pCmd, Tcl_NewWideIntObj(rowid));
   Tcl_EvalObjEx(pDb->interp, pCmd, TCL_EVAL_DIRECT);
+  Tcl_DecrRefCount(pCmd);
 }
 
 static void tclCollateNeeded(
