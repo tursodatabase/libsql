@@ -484,6 +484,9 @@ Expr *sqlite3PExpr(
 ){
   Expr *p = sqlite3ExprAlloc(pParse->db, op, pToken, 1);
   sqlite3ExprAttachSubtrees(pParse->db, p, pLeft, pRight);
+  if( p ) {
+    sqlite3ExprCheckHeight(pParse, p->nHeight);
+  }
   return p;
 }
 

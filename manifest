@@ -1,5 +1,5 @@
-C Avoid\strying\sto\sallocate\sa\snegative\snumber\sof\sbytes\sof\smemory\sin\sthe\stest\swrapper\sfor\ssqlite3_blob_read().
-D 2010-10-27T19:08:26
+C Enforce\sthe\sMAX_EXPR_DEPTH\slimit\swhile\sbuilding\sexpression\strees\sduring\sSQL\sparsing.
+D 2010-10-28T11:31:23
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2c8cefd962eca0147132c7cf9eaa4bb24c656f3f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -128,7 +128,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 4f3aadad62c6c9f0d4e5a96718516ac4e3c598df
 F src/date.c 1548fdac51377e4e7833251de878b4058c148e1b
 F src/delete.c 7ed8a8c8b5f748ece92df173d7e0f7810c899ebd
-F src/expr.c c5749e45576a58d9de27e6a8462fa84eac0b32fd
+F src/expr.c ee36af9aa54ba841c1253edc4d9036ef47f57377
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 17950a28f28b23e8ad3feaac5fc88c324d2f600a
 F src/func.c 2b7cf54d2569c2eba42fe81165d1932b546681a3
@@ -880,7 +880,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 988164cf485300fb3d189fd1453c23c48e737e24
-R 7f00b1d83127946c3e57acc8fa5e5a02
+P 739b5d9aa4eaa4191ca512d0dbf94a6bdbb12d97
+R 7d13c78e61246d2ffda39eef845308b8
 U dan
-Z 0a6cfcbb0bc0bdb5791d47cd98e60b3a
+Z 089b9ce90fd6493612af9b7c95a2cded
