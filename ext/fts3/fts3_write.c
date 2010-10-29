@@ -24,6 +24,18 @@
 #include <assert.h>
 #include <stdlib.h>
 
+/*
+** When full-text index nodes are loaded from disk, the buffer that they
+** are loaded into has the following number of bytes of padding at the end 
+** of it. i.e. if a full-text index node is 900 bytes in size, then a buffer
+** of 920 bytes is allocated for it.
+**
+** This means that if we have a pointer into a buffer containing node data,
+** it is always safe to read up to two varints from it without risking an
+** overread, even if the node data is corrupted.
+*/
+#define FTS3_NODE_PADDING (FTS3_VARINT_MAX*2)
+
 typedef struct PendingList PendingList;
 typedef struct SegmentNode SegmentNode;
 typedef struct SegmentWriter SegmentWriter;
@@ -819,7 +831,7 @@ int sqlite3Fts3ReadBlock(
   if( rc==SQLITE_OK ){
     int nByte = sqlite3_blob_bytes(p->pSegments);
     if( paBlob ){
-      char *aByte = sqlite3_malloc(nByte);
+      char *aByte = sqlite3_malloc(nByte + FTS3_NODE_PADDING);
       if( !aByte ){
         rc = SQLITE_NOMEM;
       }else{
@@ -900,8 +912,16 @@ static int fts3SegReaderNext(Fts3Table *p, Fts3SegReader *pReader){
     pNext = pReader->aNode;
   }
   
+  /* Because of the FTS3_NODE_PADDING bytes of padding, the following is 
+  ** safe (no risk of overread) even if the node data is corrupted.  
+  */
   pNext += sqlite3Fts3GetVarint32(pNext, &nPrefix);
   pNext += sqlite3Fts3GetVarint32(pNext, &nSuffix);
+  if( nPrefix<0 || nSuffix<=0 
+   || &pNext[nSuffix]>&pReader->aNode[pReader->nNode] 
+  ){
+    return SQLITE_CORRUPT;
+  }
 
   if( nPrefix+nSuffix>pReader->nTermAlloc ){
     int nNew = (nPrefix+nSuffix)*2;
@@ -920,12 +940,11 @@ static int fts3SegReaderNext(Fts3Table *p, Fts3SegReader *pReader){
   pReader->pOffsetList = 0;
 
   /* Check that the doclist does not appear to extend past the end of the
-  ** b-tree node. And that the final byte of the doclist is either an 0x00 
-  ** or 0x01. If either of these statements is untrue, then the data structure 
-  ** is corrupt.
+  ** b-tree node. And that the final byte of the doclist is 0x00. If either 
+  ** of these statements is untrue, then the data structure is corrupt.
   */
   if( &pReader->aDoclist[pReader->nDoclist]>&pReader->aNode[pReader->nNode] 
-   || (pReader->aDoclist[pReader->nDoclist-1]&0xFE)!=0
+   || pReader->aDoclist[pReader->nDoclist-1]
   ){
     return SQLITE_CORRUPT;
   }
@@ -1106,7 +1125,7 @@ int sqlite3Fts3SegReaderNew(
 
   assert( iStartLeaf<=iEndLeaf );
   if( iStartLeaf==0 ){
-    nExtra = nRoot;
+    nExtra = nRoot + FTS3_NODE_PADDING;
   }
 
   pReader = (Fts3SegReader *)sqlite3_malloc(sizeof(Fts3SegReader) + nExtra);
@@ -1127,7 +1146,6 @@ int sqlite3Fts3SegReaderNew(
   }else{
     pReader->iCurrentBlock = iStartLeaf-1;
   }
-  rc = fts3SegReaderNext(p, pReader);
 
   if( rc==SQLITE_OK ){
     *ppReader = pReader;
@@ -1223,7 +1241,6 @@ int sqlite3Fts3SegReaderPending(
       pReader->iIdx = 0x7FFFFFFF;
       pReader->ppNextElem = (Fts3HashElem **)&pReader[1];
       memcpy(pReader->ppNextElem, aElem, nElem*sizeof(Fts3HashElem *));
-      fts3SegReaderNext(p, pReader);
     }
   }
 
@@ -2095,15 +2112,14 @@ int sqlite3Fts3SegReaderIterate(
   ** unnecessary merge/sort operations for the case where single segment
   ** b-tree leaf nodes contain more than one term.
   */
-  if( pFilter->zTerm ){
+  for(i=0; i<nSegment; i++){
     int nTerm = pFilter->nTerm;
     const char *zTerm = pFilter->zTerm;
-    for(i=0; i<nSegment; i++){
-      Fts3SegReader *pSeg = apSegment[i];
-      while( fts3SegReaderTermCmp(pSeg, zTerm, nTerm)<0 ){
-        rc = fts3SegReaderNext(p, pSeg);
-        if( rc!=SQLITE_OK ) goto finished; }
-    }
+    Fts3SegReader *pSeg = apSegment[i];
+    do {
+      rc = fts3SegReaderNext(p, pSeg);
+      if( rc!=SQLITE_OK ) goto finished;
+    }while( zTerm && fts3SegReaderTermCmp(pSeg, zTerm, nTerm)<0 );
   }
 
   fts3SegReaderSort(apSegment, nSegment, nSegment, fts3SegReaderCmp);
