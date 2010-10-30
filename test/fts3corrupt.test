@@ -88,8 +88,48 @@ do_catchsql_test 3.2 {
 } {1 {database disk image is malformed}}
 
 
+do_execsql_test 4.0 {
+  DROP TABLE t1;
+  CREATE VIRTUAL TABLE t1 USING fts3;
+  INSERT INTO t1(t1) VALUES('nodesize=24');
+}
+do_test fts3corrupt-4.1 {
+  execsql BEGIN
+  foreach s {
+     "amxtvoo adqwroyhz auq aithtir avniqnuynvf axp ahibayfynig agbicpm"
+     "ajdtebs anteaxr aieynenwmd awpl alo akxcrwow aoxftge aoqvgul"
+     "amcfvdr auz apu aebelm ahuxyz aqc asyafdb agulvhvqu"
+     "apepwfyz azkhdvkw aenyelxzbk aslnitbyet aycdsdcpgr aqzzdbc agfi axnypydou"
+     "aaqrzzcm apcxdxo atumltzj aevvivo aodknoft aqoyytoz alobx apldt"
+  } {
+    execsql { INSERT INTO t1 VALUES($s) }
+  }
+  execsql COMMIT
+} {}
 
+do_catchsql_test 4.2 {
+  UPDATE t1_segdir SET root = X'FFFFFFFFFFFFFFFF';
+  SELECT rowid FROM t1 WHERE t1 MATCH 'world';
+} {1 {database disk image is malformed}}
 
+set    blob [binary format cca*cca*cca*cca*cca*cca*cca*cca*cca*cca*a* \
+  22 120 [string repeat a 120]  \
+  22 120 [string repeat b 120]  \
+  22 120 [string repeat c 120]  \
+  22 120 [string repeat d 120]  \
+  22 120 [string repeat e 120]  \
+  22 120 [string repeat f 120]  \
+  22 120 [string repeat g 120]  \
+  22 120 [string repeat h 120]  \
+  22 120 [string repeat i 120]  \
+  22 120 [string repeat j 120]  \
+  "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
+]
+
+do_catchsql_test 4.3 {
+  UPDATE t1_segdir SET root = $blob;
+  SELECT rowid FROM t1 WHERE t1 MATCH 'world';
+} {1 {database disk image is malformed}}
 
 finish_test
 

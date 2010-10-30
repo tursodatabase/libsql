@@ -1001,9 +1001,22 @@ static int fts3ScanInteriorNode(
 
   /* Skip over the 'height' varint that occurs at the start of every 
   ** interior node. Then load the blockid of the left-child of the b-tree
-  ** node into variable iChild.  */
+  ** node into variable iChild.  
+  **
+  ** Even if the data structure on disk is corrupted, this (reading two
+  ** varints from the buffer) does not risk an overread. If zNode is a
+  ** root node, then the buffer comes from a SELECT statement. SQLite does
+  ** not make this guarantee explicitly, but in practice there are always
+  ** either more than 20 bytes of allocated space following the nNode bytes of
+  ** contents, or two zero bytes. Or, if the node is read from the %_segments
+  ** table, then there are always 20 bytes of zeroed padding following the
+  ** nNode bytes of content (see sqlite3Fts3ReadBlock() for details).
+  */
   zCsr += sqlite3Fts3GetVarint(zCsr, &iChild);
   zCsr += sqlite3Fts3GetVarint(zCsr, &iChild);
+  if( zCsr>=zEnd ){
+    return SQLITE_CORRUPT;
+  }
   
   while( zCsr<zEnd && (piFirst || piLast) ){
     int cmp;                      /* memcmp() result */
@@ -1018,13 +1031,18 @@ static int fts3ScanInteriorNode(
     }
     isFirstTerm = 0;
     zCsr += sqlite3Fts3GetVarint32(zCsr, &nSuffix);
+    
+    if( nPrefix<0 || nSuffix<0 || &zCsr[nSuffix]>zEnd ){
+      rc = SQLITE_CORRUPT;
+      goto finish_scan;
+    }
     if( nPrefix+nSuffix>nAlloc ){
       char *zNew;
       nAlloc = (nPrefix+nSuffix) * 2;
       zNew = (char *)sqlite3_realloc(zBuffer, nAlloc);
       if( !zNew ){
-        sqlite3_free(zBuffer);
-        return SQLITE_NOMEM;
+        rc = SQLITE_NOMEM;
+        goto finish_scan;
       }
       zBuffer = zNew;
     }
@@ -1058,6 +1076,7 @@ static int fts3ScanInteriorNode(
   if( piFirst ) *piFirst = iChild;
   if( piLast ) *piLast = iChild;
 
+ finish_scan:
   sqlite3_free(zBuffer);
   return rc;
 }

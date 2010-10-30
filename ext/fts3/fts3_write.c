@@ -836,6 +836,7 @@ int sqlite3Fts3ReadBlock(
         rc = SQLITE_NOMEM;
       }else{
         rc = sqlite3_blob_read(p->pSegments, aByte, nByte, 0);
+        memset(&aByte[nByte], 0, FTS3_NODE_PADDING);
         if( rc!=SQLITE_OK ){
           sqlite3_free(aByte);
           aByte = 0;
@@ -1143,6 +1144,7 @@ int sqlite3Fts3SegReaderNew(
     pReader->aNode = (char *)&pReader[1];
     pReader->nNode = nRoot;
     memcpy(pReader->aNode, zRoot, nRoot);
+    memset(&pReader->aNode[nRoot], 0, FTS3_NODE_PADDING);
   }else{
     pReader->iCurrentBlock = iStartLeaf-1;
   }
