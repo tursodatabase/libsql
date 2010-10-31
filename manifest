@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sa\stypo\sin\sa\scomment\sinserted\sby\sthe\samalgamation\sbuilder.\nTypo\sreported\son\sthe\smailing\slist.
-D 2010-10-31T22:42:27
+C Fix\sa\stest\smodule\scomment\stypo\sreported\son\sthe\smailing\slist.
+D 2010-10-31T22:47:15
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2c8cefd962eca0147132c7cf9eaa4bb24c656f3f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -215,7 +215,7 @@ F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
 F src/test_osinst.c f408c6a181f2fb04c56273afd5c3e1e82f60392c
 F src/test_pcache.c 7bf828972ac0d2403f5cfa4cd14da41f8ebe73d8
 F src/test_quota.c 6d32dd5885777f432db91e3a6c9e39008dd67d86
-F src/test_rtree.c e957a603a98871dcf005c1e96ae791cfe74eb7f6
+F src/test_rtree.c 30c981837445a4e187ee850a49c4760d9642f7c3
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c bbba05c144b5fc4b52ff650a4328027b3fa5fcc6
 F src/test_stat.c f682704b5d1ba8e1d4e7e882a6d7922e2dcf066c
@@ -884,14 +884,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b770290561f5450e4d985ca0050ef5eb01657c80
-R 0066c7507b3787484199d5713e301eba
+P 6a6bb6ce733b421b42fa251dbda7fb19f72361ff
+R d373befb55b19ec60898bfda2a3a57e2
 U drh
-Z 518abb20b907452fefb0bf3d4e5be8b2
+Z 108ce7056f6a397642c5fc598182edda
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMzfDXoxKgR168RlERAptCAJ0bpJnnbN7s+ELi5G7I2VyamJbWmwCgiWIX
-eybVTpD92vr0uRS5dIlQM6I=
-=rz7q
+iD8DBQFMzfH2oxKgR168RlERAhDSAKCJEs+OJ0+A+cdG7wT6UdR2+5c6qQCeK3Dh
+9J8MR/QqB5772xH73YsP9g8=
+=I2ha
 -----END PGP SIGNATURE-----

@@ -77,7 +77,7 @@ static int circle_geom(
 
     /* Record the center and radius of the circular region. One way that
     ** tested bounding boxes that intersect the circular region are detected
-    ** is by testing if each corner of the bounding box likes within radius
+    ** is by testing if each corner of the bounding box lies within radius
     ** units of the center of the circle. */
     pCircle->centerx = p->aParam[0];
     pCircle->centery = p->aParam[1];
@@ -292,4 +292,3 @@ int Sqlitetestrtree_Init(Tcl_Interp *interp){
   Tcl_CreateObjCommand(interp, "register_circle_geom",register_circle_geom,0,0);
   return TCL_OK;
 }
-
