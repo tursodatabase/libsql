@@ -54,7 +54,7 @@ puts $out [subst \
 ** single large file, the entire code can be compiled as a one translation
 ** unit.  This allows many compilers to do optimizations that would not be
 ** possible if the files were compiled separately.  Performance improvements
-** of 5% are more are commonly seen when SQLite is compiled as a single
+** of 5% or more are commonly seen when SQLite is compiled as a single
 ** translation unit.
 **
 ** This file is all you need to compile SQLite.  To use SQLite in other
