@@ -503,7 +503,7 @@ do_test exclusive-6.4 {
 do_execsql_test exclusive-6.5 {
   PRAGMA locking_mode = EXCLUSIVE;
   SELECT * FROM sqlite_master;
-} {}
+} {exclusive}
 
 finish_test
 

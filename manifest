@@ -1,5 +1,5 @@
-C Changes\sto\stest\sscripts\sso\sthat\sthey\swork\swith\sSQLITE_ENABLE_ICU.
-D 2010-11-01T05:42:26
+C Fix\sa\sbroken\stest\scase\sin\sexclusive.test.
+D 2010-11-01T05:54:07
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2c8cefd962eca0147132c7cf9eaa4bb24c656f3f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -365,7 +365,7 @@ F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
 F test/enc4.test 4b575ef09e0eff896e73bd24076f96c2aa6a42de
 F test/eval.test bc269c365ba877554948441e91ad5373f9f91be3
-F test/exclusive.test 8624f2d5c6a770b3d7f03acb7622b33201eabec9
+F test/exclusive.test 53e1841b422e554cecf0160f937c473d6d0e3062
 F test/exclusive2.test 76e63c05349cb70d09d60b99d2ae625525ff5155
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/expr.test 620a636cf7b7d4e5834a0b9d83a4da372e24a7b7
@@ -881,7 +881,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 87eb1f04d2dd06f34f1385006bf42ae6c8903d46
-R 7e6ef1c4f4527e005e9665f2c6f5a09a
+P 465c819fdb601961eddb7304642c823d78111992
+R 8481e91f9ee96e311db8332bcbdf2be6
 U dan
-Z 1f5eb3b573143a999e1300a942bd7e90
+Z c4dc839e029ef87ef9eb4ebb56717995
