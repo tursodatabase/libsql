@@ -1107,10 +1107,10 @@ ifcapable wal {
       COMMIT;
     } {1 2} 0 -1
   
-    4  { PRAGMA journal_mode = WAL }    wal    -1 -1
-    5  { INSERT INTO t1 VALUES(3, 4) }  {}     -1 [wal_file_size 1 1024]
-    6  { PRAGMA locking_mode = NORMAL } normal -1 [wal_file_size 1 1024]
-    7  { INSERT INTO t1 VALUES(5, 6); } {}     -1 [wal_file_size 2 1024]
+    4  { PRAGMA journal_mode = WAL }    wal       -1 -1
+    5  { INSERT INTO t1 VALUES(3, 4) }  {}        -1 [wal_file_size 1 1024]
+    6  { PRAGMA locking_mode = NORMAL } exclusive -1 [wal_file_size 1 1024]
+    7  { INSERT INTO t1 VALUES(5, 6); } {}        -1 [wal_file_size 2 1024]
   
     8  { PRAGMA journal_mode = TRUNCATE } truncate          0 -1
     9  { INSERT INTO t1 VALUES(7, 8) }    {}                0 -1

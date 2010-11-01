@@ -26,6 +26,7 @@
 **   -default    BOOLEAN        (True to make the vfs default. Default false)
 **   -szosfile   INTEGER        (Value for sqlite3_vfs.szOsFile)
 **   -mxpathname INTEGER        (Value for sqlite3_vfs.mxPathname)
+**   -iversion   INTEGER        (Value for sqlite3_vfs.iVersion)
 */
 
 #include "sqlite3.h"

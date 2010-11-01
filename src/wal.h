@@ -35,6 +35,7 @@
 # define sqlite3WalCheckpoint(u,v,w,x)         0
 # define sqlite3WalCallback(z)                 0
 # define sqlite3WalExclusiveMode(y,z)          0
+# define sqlite3WalHeapMemory(z)               0
 #else
 
 #define WAL_SAVEPOINT_NDATA 4
@@ -45,7 +46,7 @@
 typedef struct Wal Wal;
 
 /* Open and close a connection to a write-ahead log. */
-int sqlite3WalOpen(sqlite3_vfs*, sqlite3_file*, const char *zName, Wal**);
+int sqlite3WalOpen(sqlite3_vfs*, sqlite3_file*, const char *zName, int, Wal**);
 int sqlite3WalClose(Wal *pWal, int sync_flags, int, u8 *);
 
 /* Used by readers to open (lock) and close (unlock) a snapshot.  A 
@@ -101,6 +102,12 @@ int sqlite3WalCallback(Wal *pWal);
 ** by the pager layer on the database file.
 */
 int sqlite3WalExclusiveMode(Wal *pWal, int op);
+
+/* Return true if the argument is non-NULL and the WAL module is using
+** heap-memory for the wal-index. Otherwise, if the argument is NULL or the
+** WAL module is using shared-memory, return false. 
+*/
+int sqlite3WalHeapMemory(Wal *pWal);
 
 #endif /* ifndef SQLITE_OMIT_WAL */
 #endif /* _WAL_H_ */

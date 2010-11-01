@@ -303,6 +303,8 @@ proc do_test {name cmd expected} {
 
   global argv cmdlinearg
 
+  fix_testname name
+
   sqlite3_memdebug_settitle $name
 
 #  if {[llength $argv]==0} { 

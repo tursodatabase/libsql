@@ -430,13 +430,16 @@ do_test wal2-6.1.1 {
   sqlite3 db test.db
   execsql {
     Pragma Journal_Mode = Wal;
-    Pragma Locking_Mode = Exclusive;
   }
-} {wal exclusive}
+} {wal}
 do_test wal2-6.1.2 {
   execsql { PRAGMA lock_status }
 } {main unlocked temp closed}
 do_test wal2-6.1.3 {
+  execsql {
+    SELECT * FROM sqlite_master;
+    Pragma Locking_Mode = Exclusive;
+  }
   execsql {
     BEGIN;
       CREATE TABLE t1(a, b);
@@ -486,6 +489,7 @@ do_test wal2-6.2.2 {
 do_test wal2-6.2.3 {
   db close
   sqlite3 db test.db
+  execsql { SELECT * FROM sqlite_master }
   execsql { PRAGMA LOCKING_MODE = EXCLUSIVE }
 } {exclusive}
 do_test wal2-6.2.4 {
@@ -732,6 +736,7 @@ do_test wal2-6.6.1 {
   T script lock_control
   T filter {}
   sqlite3 db test.db -vfs T
+  execsql { SELECT * FROM sqlite_master }
   execsql { PRAGMA locking_mode = exclusive }
   execsql { INSERT INTO t2 VALUES('V', 'VI') }
 } {}
@@ -755,7 +760,7 @@ do_test wal2-6.6.2 {
   T filter {}
   execsql { INSERT INTO t2 VALUES('IX', 'X') }
 } {}
-do_test wal2-6.6.3 {
+do_test wal2-6.6.4 {
   # This time, we have successfully exited exclusive mode. So the second
   # connection can read the database.
   sqlite3 db2 test.db -vfs T
