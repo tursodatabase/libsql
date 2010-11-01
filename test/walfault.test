@@ -515,4 +515,33 @@ do_faultsim_test walfault-13.3 -prep {
   if {!(($nRow==2 && $testrc) || $nRow==3)} { error "Bad db content" }
 }
 
+#-------------------------------------------------------------------------
+# Test fault-handling when wrapping around to the start of a WAL file.
+#
+do_test walfault-14-pre {
+  faultsim_delete_and_reopen
+  execsql {
+    PRAGMA journal_mode = WAL;
+    BEGIN;
+      CREATE TABLE abc(a PRIMARY KEY);
+      INSERT INTO abc VALUES(randomblob(1500));
+      INSERT INTO abc VALUES(randomblob(1500));
+    COMMIT;
+  }
+  faultsim_save_and_close
+} {}
+do_faultsim_test walfault-14 -prep {
+  faultsim_restore_and_reopen
+} -body {
+  db eval { 
+    PRAGMA wal_checkpoint;
+    INSERT INTO abc VALUES(randomblob(1500));
+  }
+} -test {
+  faultsim_test_result {0 {}}
+  faultsim_integrity_check
+  set nRow [db eval {SELECT count(*) FROM abc}]
+  if {!(($nRow==2 && $testrc) || $nRow==3)} { error "Bad db content" }
+}
+
 finish_test

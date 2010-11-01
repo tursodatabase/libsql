@@ -140,7 +140,45 @@ do_test 2.2.6 {
 } {a b c d e f g h}
 
 db2 close
+db close
 
+#-------------------------------------------------------------------------
+#
+# 3.1: Test that if locking_mode=EXCLUSIVE is set after the wal file is
+#      opened, it is possible to drop back to locking_mode=NORMAL.
+#
+# 3.2: Test that if locking_mode=EXCLUSIVE is set before the wal file is
+#      opened, it is not.
+#
+do_test 3.1 {
+  sqlite3 db test.db -vfs tvfsshm
+  execsql { 
+    SELECT * FROM t1;
+    PRAGMA locking_mode = EXCLUSIVE;
+    INSERT INTO t1 VALUES(5, 6);
+    PRAGMA locking_mode = NORMAL;
+    INSERT INTO t1 VALUES(7, 8);
+  }
+  sqlite3 db2 test.db -vfs tvfsshm
+  execsql { SELECT * FROM t1 } db2
+} {1 2 3 4 5 6 7 8}
+db close
+db2 close
+do_test 3.2 {
+  sqlite3 db  test.db -vfs tvfsshm
+  execsql { 
+    PRAGMA locking_mode = EXCLUSIVE;
+    INSERT INTO t1 VALUES(9, 10);
+    PRAGMA locking_mode = NORMAL;
+    INSERT INTO t1 VALUES(11, 12);
+  }
+  sqlite3 db2 test.db -vfs tvfsshm
+  catchsql { SELECT * FROM t1 } db2
+} {1 {database is locked}}
+db close
+db2 close
+
+tvfs delete
+tvfsshm delete
 
 finish_test
-

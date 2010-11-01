@@ -2353,5 +2353,62 @@ do_test pager1-29.2 {
   file size test.db
 } [expr 4096*3]
 
+#-------------------------------------------------------------------------
+# Test that if an empty database file (size 0 bytes) is opened in 
+# exclusive-locking mode, any journal file is deleted from the file-system
+# without being rolled back. And that the RESERVED lock obtained while
+# doing this is not released.
+#
+do_test pager1-30.1 {
+  db close
+  file delete test.db
+  file delete test.db-journal
+  set fd [open test.db-journal w]
+  seek $fd [expr 512+1032*2]
+  puts -nonewline $fd x
+  close $fd
+
+  sqlite3 db test.db
+  execsql {
+    PRAGMA locking_mode=EXCLUSIVE;
+    SELECT count(*) FROM sqlite_master;
+    PRAGMA lock_status;
+  }
+} {exclusive 0 main reserved temp closed}
+
+#-------------------------------------------------------------------------
+# Test that if the "page-size" field in a journal-header is 0, the journal
+# file can still be rolled back. This is required for backward compatibility -
+# versions of SQLite prior to 3.5.8 always set this field to zero.
+#
+do_test pager1-31.1 {
+  faultsim_delete_and_reopen
+  execsql {
+    PRAGMA cache_size = 10;
+    PRAGMA page_size = 1024;
+    CREATE TABLE t1(x, y, UNIQUE(x, y));
+    INSERT INTO t1 VALUES(randomblob(1500), randomblob(1500));
+    INSERT INTO t1 SELECT randomblob(1500), randomblob(1500) FROM t1;
+    INSERT INTO t1 SELECT randomblob(1500), randomblob(1500) FROM t1;
+    INSERT INTO t1 SELECT randomblob(1500), randomblob(1500) FROM t1;
+    INSERT INTO t1 SELECT randomblob(1500), randomblob(1500) FROM t1;
+    INSERT INTO t1 SELECT randomblob(1500), randomblob(1500) FROM t1;
+    INSERT INTO t1 SELECT randomblob(1500), randomblob(1500) FROM t1;
+    INSERT INTO t1 SELECT randomblob(1500), randomblob(1500) FROM t1;
+    INSERT INTO t1 SELECT randomblob(1500), randomblob(1500) FROM t1;
+    INSERT INTO t1 SELECT randomblob(1500), randomblob(1500) FROM t1;
+    INSERT INTO t1 SELECT randomblob(1500), randomblob(1500) FROM t1;
+    BEGIN;
+      UPDATE t1 SET y = randomblob(1499);
+  }
+  file copy test.db test.db2
+  file copy test.db-journal test.db2-journal
+  
+  hexio_write test.db2-journal 24 00000000
+  sqlite3 db2 test.db2
+  execsql { PRAGMA integrity_check } db2
+} {ok}
+
+
 
 finish_test
