@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Fix\sa\stest\smodule\scomment\stypo\sreported\son\sthe\smailing\slist.
-D 2010-10-31T22:47:15
+C Changes\sto\stest\sscripts\sso\sthat\sthey\swork\swith\sSQLITE_ENABLE_ICU.
+D 2010-11-01T05:42:26
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2c8cefd962eca0147132c7cf9eaa4bb24c656f3f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -354,7 +351,7 @@ F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_createtable.test 049dcbd95e66bc3255338db30b375b825d894f7a
 F test/e_delete.test 55d868b647acc091c261a10b9b0cb0ab660a6acb
-F test/e_expr.test 0fdf503f955389aec497eb27983385cb540fb307
+F test/e_expr.test 4e004d1f5187d4bbc9ca3d55660a8d164dd59f4e
 F test/e_fkey.test 6721a741c6499b3ab7e5385923233343c8f1ad05
 F test/e_fts3.test 75bb0aee26384ef586165e21018a17f7cd843469
 F test/e_insert.test 7390c2da39f16a134dc9a439144768c727757d2c
@@ -507,7 +504,7 @@ F test/jrnlmode3.test cfcdb12b90e640a23b92785a002d96c0624c8710
 F test/keyword1.test a2400977a2e4fde43bf33754c2929fda34dbca05
 F test/lastinsert.test 474d519c68cb79d07ecae56a763aa7f322c72f51
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
-F test/like.test 565d240313f15a8afa8d7098dc9fe303c1e2a496
+F test/like.test 0f64aeaed50b6e3ebaef3af0b3b8f894aed5acca
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/limit.test 2db7b3b34fb925b8e847d583d2eb67531d0ce67e
 F test/loadext.test 0393ce12d9616aa87597dd0ec88181de181f6db0
@@ -884,14 +881,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6a6bb6ce733b421b42fa251dbda7fb19f72361ff
-R d373befb55b19ec60898bfda2a3a57e2
-U drh
-Z 108ce7056f6a397642c5fc598182edda
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMzfH2oxKgR168RlERAhDSAKCJEs+OJ0+A+cdG7wT6UdR2+5c6qQCeK3Dh
-9J8MR/QqB5772xH73YsP9g8=
-=I2ha
------END PGP SIGNATURE-----
+P 87eb1f04d2dd06f34f1385006bf42ae6c8903d46
+R 7e6ef1c4f4527e005e9665f2c6f5a09a
+U dan
+Z 1f5eb3b573143a999e1300a942bd7e90

@@ -937,8 +937,14 @@ do_execsql_test e_expr-14.4.3 { SELECT 'ac'  LIKE 'aBc' } 0
 # 'a'&nbsp;LIKE&nbsp;'A' is TRUE but
 # '&aelig;'&nbsp;LIKE&nbsp;'&AElig;' is FALSE.
 #
+#   The restriction to ASCII characters does not apply if the ICU
+#   library is compiled in. When ICU is enabled SQLite does not act
+#   as it does "by default".
+#
 do_execsql_test e_expr-14.5.1 { SELECT 'A' LIKE 'a'         } 1
-do_execsql_test e_expr-14.5.2 "SELECT '\u00c6' LIKE '\u00e6'" 0
+ifcapable !icu {
+  do_execsql_test e_expr-14.5.2 "SELECT '\u00c6' LIKE '\u00e6'" 0
+}
 
 # EVIDENCE-OF: R-56683-13731 If the optional ESCAPE clause is present,
 # then the expression following the ESCAPE keyword must evaluate to a
@@ -985,7 +991,8 @@ proc likefunc {args} {
   eval lappend ::likeargs $args
   return 1
 }
-db func like likefunc
+db func like -argcount 2 likefunc
+db func like -argcount 3 likefunc
 set ::likeargs [list]
 do_execsql_test e_expr-15.1.1 { SELECT 'abc' LIKE 'def' } 1
 do_test         e_expr-15.1.2 { set likeargs } {def abc}
@@ -1056,12 +1063,16 @@ sqlite3 db test.db
 # default and so use of the REGEXP operator will normally result in an
 # error message.
 #
-do_catchsql_test e_expr-18.1.1 { 
-  SELECT regexp('abc', 'def') 
-} {1 {no such function: regexp}}
-do_catchsql_test e_expr-18.1.2 { 
-  SELECT 'abc' REGEXP 'def'
-} {1 {no such function: REGEXP}}
+#   There is a regexp function if ICU is enabled though.
+#
+ifcapable !icu {
+  do_catchsql_test e_expr-18.1.1 { 
+    SELECT regexp('abc', 'def') 
+  } {1 {no such function: regexp}}
+  do_catchsql_test e_expr-18.1.2 { 
+    SELECT 'abc' REGEXP 'def'
+  } {1 {no such function: REGEXP}}
+}
 
 # EVIDENCE-OF: R-33693-50180 The REGEXP operator is a special syntax for
 # the regexp() user function.
