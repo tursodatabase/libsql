@@ -1,11 +1,14 @@
-C Fix\sa\sbroken\stest\scase\sin\sexclusive.test.
-D 2010-11-01T05:54:07
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Change\sthe\sversion\snumber\sto\s3.7.4.
+D 2010-11-01T14:34:31
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2c8cefd962eca0147132c7cf9eaa4bb24c656f3f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.vxworks c85ec1d8597fe2f7bc225af12ac1666e21379151
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
-F VERSION d4880b389d411f2bc7e78f62049da2a2b89ebab3
+F VERSION 3466c92381170cedd7c04fc6ac2760b53a61cde9
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 17dc593f791f874d2c23a0f9360850ded0286531
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -881,7 +884,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 465c819fdb601961eddb7304642c823d78111992
-R 8481e91f9ee96e311db8332bcbdf2be6
-U dan
-Z c4dc839e029ef87ef9eb4ebb56717995
+P 582db83294599ffd7265d3ab2db2765e7e4fbb8d
+R a1ed7a266761633aef3d19047277de6a
+U drh
+Z 4f48c9a1b8040f4fd58227e590b304c6
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMzs/6oxKgR168RlERAuCbAJ9uimmTB547wDq4mUtvniDAfA0HTwCeNbhj
+lkScdJYDKuse8cKgqrNrUF4=
+=7Gng
+-----END PGP SIGNATURE-----
