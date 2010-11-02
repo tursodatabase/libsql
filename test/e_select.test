@@ -233,7 +233,7 @@ do_select_tests e_select-0.3 {
 
 # EVIDENCE-OF: R-41233-21397 -- syntax diagram join-source
 #
-# EVIDENCE-OF: R-28036-03696 -- syntax diagram join-op
+# EVIDENCE-OF: R-45040-11121 -- syntax diagram join-op
 #
 do_select_tests e_select-0.4 {
   1  "SELECT t1.rowid FROM t1" {1 2 3}
@@ -247,13 +247,15 @@ do_select_tests e_select-0.4 {
 
   7  "SELECT t1.rowid FROM t1 NATURAL JOIN t3" {1 2}
   8  "SELECT t1.rowid FROM t1 NATURAL LEFT OUTER JOIN t3" {1 2 3}
-  9  "SELECT t1.rowid FROM t1 NATURAL INNER JOIN t3" {1 2}
-  10 "SELECT t1.rowid FROM t1 NATURAL CROSS JOIN t3" {1 2}
+  9  "SELECT t1.rowid FROM t1 NATURAL LEFT JOIN t3" {1 2 3}
+  10 "SELECT t1.rowid FROM t1 NATURAL INNER JOIN t3" {1 2}
+  11 "SELECT t1.rowid FROM t1 NATURAL CROSS JOIN t3" {1 2}
 
-  11 "SELECT t1.rowid FROM t1 JOIN t3" {1 1 2 2 3 3}
-  12 "SELECT t1.rowid FROM t1 LEFT OUTER JOIN t3" {1 1 2 2 3 3}
-  13 "SELECT t1.rowid FROM t1 INNER JOIN t3" {1 1 2 2 3 3}
-  14 "SELECT t1.rowid FROM t1 CROSS JOIN t3" {1 1 2 2 3 3}
+  12 "SELECT t1.rowid FROM t1 JOIN t3" {1 1 2 2 3 3}
+  13 "SELECT t1.rowid FROM t1 LEFT OUTER JOIN t3" {1 1 2 2 3 3}
+  14 "SELECT t1.rowid FROM t1 LEFT JOIN t3" {1 1 2 2 3 3}
+  15 "SELECT t1.rowid FROM t1 INNER JOIN t3" {1 1 2 2 3 3}
+  16 "SELECT t1.rowid FROM t1 CROSS JOIN t3" {1 1 2 2 3 3}
 }
 
 # EVIDENCE-OF: R-56911-63533 -- syntax diagram compound-operator

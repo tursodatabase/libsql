@@ -1653,7 +1653,6 @@ static int test_blob_close(
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
   sqlite3_blob *pBlob;
-  int nByte;
   
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "CHANNEL");
@@ -1778,9 +1777,6 @@ static int test_blob_reopen(
   sqlite3_blob *pBlob;
   int rc;
 
-  unsigned char *zBuf;
-  int nBuf;
-  
   if( objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "CHANNEL ROWID");
     return TCL_ERROR;
