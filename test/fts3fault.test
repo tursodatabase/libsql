@@ -126,4 +126,30 @@ do_faultsim_test 6 -prep {
   faultsim_test_result {0 {}}
 }
 
+# Test various malloc failures while processing FTS4 parameters.
+#
+do_faultsim_test 7.1 -prep { 
+  faultsim_delete_and_reopen
+} -body {
+  execsql { CREATE VIRTUAL TABLE t1 USING fts4(a, b, matchinfo=fts3) }
+} -test {
+  faultsim_test_result {0 {}}
+}
+do_faultsim_test 7.2 -prep { 
+  faultsim_delete_and_reopen
+} -body {
+  execsql { CREATE VIRTUAL TABLE t1 USING fts4(a, b, matchinfo=fs3) }
+} -test {
+  faultsim_test_result {1 {unrecognized matchinfo: fs3}} \
+                       {1 {vtable constructor failed: t1}}
+}
+do_faultsim_test 7.3 -prep { 
+  faultsim_delete_and_reopen
+} -body {
+  execsql { CREATE VIRTUAL TABLE t1 USING fts4(a, b, matchnfo=fts3) }
+} -test {
+  faultsim_test_result {1 {unrecognized parameter: matchnfo=fts3}} \
+                       {1 {vtable constructor failed: t1}}
+}
+
 finish_test

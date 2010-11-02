@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Add\sevidence\smarks\sfor\sthe\ssqlite3_blob_reopen()\sinterface.\s\sFix\scompiler\nwarnings\sin\stest1.c.\s\sFix\sincorrect\sevidence\smarks\son\se_select.tcl.
-D 2010-11-02T15:26:24
+C Changes\sto\sallow\sFTS4\stables\sto\sbe\screated\swithout\sthe\sunderlying\s%_docsize\stable\s(in\sorder\sto\ssave\sspace).
+D 2010-11-02T17:41:53
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2c8cefd962eca0147132c7cf9eaa4bb24c656f3f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -64,19 +61,19 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 48c37f640fb5837dcdbd04ef2d51ec40c8637503
+F ext/fts3/fts3.c 9da9f1d5bc4b087540255ffdb7a4428fe708edf0
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 819bc2661c8f3b46221d146f1810dc6741819f55
+F ext/fts3/fts3Int.h bbcd6d671228c9ae2ed5514723fcc6217821d0a6
 F ext/fts3/fts3_expr.c ee48b9278b8b2432a05a03320fbcacba151dbaa5
 F ext/fts3/fts3_hash.c 3c8f6387a4a7f5305588b203fa7c887d753e1f1c
 F ext/fts3/fts3_hash.h 8331fb2206c609f9fc4c4735b9ab5ad6137c88ec
 F ext/fts3/fts3_icu.c ac494aed69835008185299315403044664bda295
 F ext/fts3/fts3_porter.c 8df6f6efcc4e9e31f8bf73a4007c2e9abca1dfba
 F ext/fts3/fts3_snippet.c 300c12b7f0a2a6ae0491bb2d00e2d5ff9c28f685
-F ext/fts3/fts3_tokenizer.c b4f2d01c24573852755bc92864816785dae39318
+F ext/fts3/fts3_tokenizer.c 1301b0ee3ef414caae3257a702215925cc48cd9c
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 6e5cbaa588924ac578263a598e4fb9f5c9bb179d
-F ext/fts3/fts3_write.c 01478ee63bb321f240bb5565d9e36e8641b33928
+F ext/fts3/fts3_write.c 3d12dad6cbe788ff7214ef227520fb6600ff5112
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
@@ -438,13 +435,14 @@ F test/fts3corrupt.test d874ba27975aa8e5514bf58bf97b473404de0dbb
 F test/fts3corrupt2.test 6d96efae2f8a6af3eeaf283aba437e6d0e5447ba
 F test/fts3cov.test e0fb00d8b715ddae4a94c305992dfc3ef70353d7
 F test/fts3d.test 95fb3c862cbc4297c93fceb9a635543744e9ef52
-F test/fts3defer.test eab4f24c8402fb4e1e6aad44bcdfbe5bf42160b2
+F test/fts3defer.test d6cb0db9b5997ecf863d96ff419f83f8f2c87f4f
 F test/fts3defer2.test d3c7db6584aab06a2781b8de58747c33b23cb19c
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3expr.test 5e745b2b6348499d9ef8d59015de3182072c564c
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
-F test/fts3fault.test c45707ac123b511e4d8291ca3d84e25fd5029b43
+F test/fts3fault.test 2c8c26f9002be900056b63996a2891a043775f7b
 F test/fts3malloc.test 9c8cc3f885bb4dfc66d0460c52f68f45e4710d1b
+F test/fts3matchinfo.test 5ded93253526033c662ec49c696e936da4e8885d
 F test/fts3near.test 2e318ee434d32babd27c167142e2b94ddbab4844
 F test/fts3query.test 724a662dbbec4e9dbef66a1389588aa29aeb9b27
 F test/fts3rnd.test 707533ce943f490443ce5e696236bb1675a37635
@@ -578,7 +576,7 @@ F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test 4118a183908ecaed343a06fcef3ba82e87e0129d
 F test/pcache2.test 0d85f2ab6963aee28c671d4c71bec038c00a1d16
-F test/permutations.test e54d5fc34708ecb4a67f2a18f7b8719b175a1652
+F test/permutations.test 193238b7828759805091ecddd9a0912767f236a4
 F test/pragma.test fdfc09067ea104a0c247a1a79d8093b56656f850
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
@@ -885,14 +883,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6cae552927392d8b735aa118c318d7468097ebeb
-R 99d449c40cc2af47a17f6b479744ba94
-U drh
-Z e0eff9674ebb6295f2b6870d990e3417
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFM0C2qoxKgR168RlERAtsWAJ0c+Qg4qImQebinYShOYuBIEoXfRwCfQdMI
-MPI2wIAAWE4t5rkTCaRo+NI=
-=5kvu
------END PGP SIGNATURE-----
+P 3771faa88eda3eb91264ce0982e22f53596abd4b
+R 1930e53dc41c38f7661c545902820ee1
+U dan
+Z d5d5199f8f8688f85abc4cc6dcb16369

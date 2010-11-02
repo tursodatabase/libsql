@@ -595,6 +595,8 @@ static int fts3CreateTables(Fts3Table *p){
         "CREATE TABLE %Q.'%q_docsize'(docid INTEGER PRIMARY KEY, size BLOB);",
         p->zDb, p->zName
     );
+  }
+  if( p->bHasStat ){
     fts3DbExec(&rc, db, 
         "CREATE TABLE %Q.'%q_stat'(id INTEGER PRIMARY KEY, value BLOB);",
         p->zDb, p->zName
@@ -670,6 +672,36 @@ static void fts3DatabasePageSize(int *pRc, Fts3Table *p){
 }
 
 /*
+** "Special" FTS4 arguments are column specifications of the following form:
+**
+**   <key> = <value>
+**
+** There may not be whitespace surrounding the "=" character. The <value> 
+** term may be quoted, but the <key> may not.
+*/
+static int fts3IsSpecialColumn(
+  const char *z, 
+  int *pnKey,
+  char **pzValue
+){
+  char *zValue;
+  const char *zCsr = z;
+
+  while( *zCsr!='=' ){
+    if( *zCsr=='\0' ) return 0;
+    zCsr++;
+  }
+
+  *pnKey = zCsr-z;
+  zValue = sqlite3_mprintf("%s", &zCsr[1]);
+  if( zValue ){
+    sqlite3Fts3Dequote(zValue);
+  }
+  *pzValue = zValue;
+  return 1;
+}
+
+/*
 ** This function is the implementation of both the xConnect and xCreate
 ** methods of the FTS3 virtual table.
 **
@@ -690,8 +722,8 @@ static int fts3InitVtab(
   char **pzErr                    /* Write any error message here */
 ){
   Fts3Hash *pHash = (Fts3Hash *)pAux;
-  Fts3Table *p;                   /* Pointer to allocated vtab */
-  int rc;                         /* Return code */
+  Fts3Table *p = 0;               /* Pointer to allocated vtab */
+  int rc = SQLITE_OK;             /* Return code */
   int i;                          /* Iterator variable */
   int nByte;                      /* Size of allocation used for *p */
   int iCol;                       /* Column index */
@@ -700,34 +732,89 @@ static int fts3InitVtab(
   char *zCsr;                     /* Space for holding column names */
   int nDb;                        /* Bytes required to hold database name */
   int nName;                      /* Bytes required to hold table name */
-
-  const char *zTokenizer = 0;               /* Name of tokenizer to use */
+  int isFts4 = (argv[0][3]=='4'); /* True for FTS4, false for FTS3 */
+  int bNoDocsize = 0;             /* True to omit %_docsize table */
+  const char **aCol;              /* Array of column names */
   sqlite3_tokenizer *pTokenizer = 0;        /* Tokenizer for this table */
+
+  assert( strlen(argv[0])==4 );
+  assert( (sqlite3_strnicmp(argv[0], "fts4", 4)==0 && isFts4)
+       || (sqlite3_strnicmp(argv[0], "fts3", 4)==0 && !isFts4)
+  );
 
   nDb = (int)strlen(argv[1]) + 1;
   nName = (int)strlen(argv[2]) + 1;
-  for(i=3; i<argc; i++){
+
+  aCol = (const char **)sqlite3_malloc(sizeof(const char *) * (argc-2) );
+  if( !aCol ) return SQLITE_NOMEM;
+  memset(aCol, 0, sizeof(const char *) * (argc-2));
+
+  /* Loop through all of the arguments passed by the user to the FTS3/4
+  ** module (i.e. all the column names and special arguments). This loop
+  ** does the following:
+  **
+  **   + Figures out the number of columns the FTSX table will have, and
+  **     the number of bytes of space that must be allocated to store copies
+  **     of the column names.
+  **
+  **   + If there is a tokenizer specification included in the arguments,
+  **     initializes the tokenizer pTokenizer.
+  */
+  for(i=3; rc==SQLITE_OK && i<argc; i++){
     char const *z = argv[i];
-    rc = sqlite3Fts3InitTokenizer(pHash, z, &pTokenizer, &zTokenizer, pzErr);
-    if( rc!=SQLITE_OK ){
-      return rc;
+    int nKey;
+    char *zVal;
+
+    /* Check if this is a tokenizer specification */
+    if( !pTokenizer 
+     && strlen(z)>8
+     && 0==sqlite3_strnicmp(z, "tokenize", 8) 
+     && 0==sqlite3Fts3IsIdChar(z[8])
+    ){
+      rc = sqlite3Fts3InitTokenizer(pHash, &z[9], &pTokenizer, pzErr);
     }
-    if( z!=zTokenizer ){
+
+    /* Check if it is an FTS4 special argument. */
+    else if( isFts4 && fts3IsSpecialColumn(z, &nKey, &zVal) ){
+      if( !zVal ){
+        rc = SQLITE_NOMEM;
+        goto fts3_init_out;
+      }
+      if( nKey==9 && 0==sqlite3_strnicmp(z, "matchinfo", 9) ){
+        if( strlen(zVal)==4 && 0==sqlite3_strnicmp(zVal, "fts3", 4) ){
+          bNoDocsize = 1;
+        }else{
+          *pzErr = sqlite3_mprintf("unrecognized matchinfo: %s", zVal);
+          rc = SQLITE_ERROR;
+        }
+      }else{
+        *pzErr = sqlite3_mprintf("unrecognized parameter: %s", z);
+        rc = SQLITE_ERROR;
+      }
+      sqlite3_free(zVal);
+    }
+
+    /* Otherwise, the argument is a column name. */
+    else {
       nString += (int)(strlen(z) + 1);
+      aCol[nCol++] = z;
     }
   }
-  nCol = argc - 3 - (zTokenizer!=0);
-  if( zTokenizer==0 ){
-    rc = sqlite3Fts3InitTokenizer(pHash, 0, &pTokenizer, 0, pzErr);
-    if( rc!=SQLITE_OK ){
-      return rc;
-    }
-    assert( pTokenizer );
-  }
+  if( rc!=SQLITE_OK ) goto fts3_init_out;
 
   if( nCol==0 ){
+    assert( nString==0 );
+    aCol[0] = "content";
+    nString = 8;
     nCol = 1;
   }
+
+  if( pTokenizer==0 ){
+    rc = sqlite3Fts3InitTokenizer(pHash, "simple", &pTokenizer, pzErr);
+    if( rc!=SQLITE_OK ) goto fts3_init_out;
+  }
+  assert( pTokenizer );
+
 
   /* Allocate and populate the Fts3Table structure. */
   nByte = sizeof(Fts3Table) +              /* Fts3Table */
@@ -741,7 +828,6 @@ static int fts3InitVtab(
     goto fts3_init_out;
   }
   memset(p, 0, nByte);
-
   p->db = db;
   p->nColumn = nCol;
   p->nPendingData = 0;
@@ -749,11 +835,12 @@ static int fts3InitVtab(
   p->pTokenizer = pTokenizer;
   p->nNodeSize = 1000;
   p->nMaxPendingData = FTS3_MAX_PENDING_DATA;
-  zCsr = (char *)&p->azColumn[nCol];
-
+  p->bHasDocsize = (isFts4 && bNoDocsize==0);
+  p->bHasStat = isFts4;
   fts3HashInit(&p->pendingTerms, FTS3_HASH_STRING, 1);
 
   /* Fill in the zName and zDb fields of the vtab structure. */
+  zCsr = (char *)&p->azColumn[nCol];
   p->zName = zCsr;
   memcpy(zCsr, argv[2], nName);
   zCsr += nName;
@@ -762,36 +849,23 @@ static int fts3InitVtab(
   zCsr += nDb;
 
   /* Fill in the azColumn array */
-  iCol = 0;
-  for(i=3; i<argc; i++){
-    if( argv[i]!=zTokenizer ){
-      char *z; 
-      int n;
-      z = (char *)sqlite3Fts3NextToken(argv[i], &n);
-      memcpy(zCsr, z, n);
-      zCsr[n] = '\0';
-      sqlite3Fts3Dequote(zCsr);
-      p->azColumn[iCol++] = zCsr;
-      zCsr += n+1;
-      assert( zCsr <= &((char *)p)[nByte] );
-    }
-  }
-  if( iCol==0 ){
-    assert( nCol==1 );
-    p->azColumn[0] = "content";
+  for(iCol=0; iCol<nCol; iCol++){
+    char *z; 
+    int n;
+    z = (char *)sqlite3Fts3NextToken(aCol[iCol], &n);
+    memcpy(zCsr, z, n);
+    zCsr[n] = '\0';
+    sqlite3Fts3Dequote(zCsr);
+    p->azColumn[iCol] = zCsr;
+    zCsr += n+1;
+    assert( zCsr <= &((char *)p)[nByte] );
   }
 
   /* If this is an xCreate call, create the underlying tables in the 
   ** database. TODO: For xConnect(), it could verify that said tables exist.
   */
   if( isCreate ){
-    p->bHasContent = 1;
-    p->bHasDocsize = argv[0][3]=='4';
     rc = fts3CreateTables(p);
-  }else{
-    rc = SQLITE_OK;
-    fts3TableExists(&rc, db, argv[1], argv[2], "_content", &p->bHasContent);
-    fts3TableExists(&rc, db, argv[1], argv[2], "_docsize", &p->bHasDocsize);
   }
 
   /* Figure out the page-size for the database. This is required in order to
@@ -804,11 +878,12 @@ static int fts3InitVtab(
   fts3DeclareVtab(&rc, p);
 
 fts3_init_out:
-  assert( p || (pTokenizer && rc!=SQLITE_OK) );
+
+  sqlite3_free(aCol);
   if( rc!=SQLITE_OK ){
     if( p ){
       fts3DisconnectMethod((sqlite3_vtab *)p);
-    }else{
+    }else if( pTokenizer ){
       pTokenizer->pModule->xDestroy(pTokenizer);
     }
   }else{
@@ -3302,6 +3377,8 @@ static int fts3RenameMethod(
       "ALTER TABLE %Q.'%q_docsize'  RENAME TO '%q_docsize';",
       p->zDb, p->zName, zName
     );
+  }
+  if( p->bHasStat ){
     fts3DbExec(&rc, db,
       "ALTER TABLE %Q.'%q_stat'  RENAME TO '%q_stat';",
       p->zDb, p->zName, zName

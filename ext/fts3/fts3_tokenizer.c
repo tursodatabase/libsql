@@ -97,7 +97,7 @@ static void scalarFunc(
   sqlite3_result_blob(context, (void *)&pPtr, sizeof(pPtr), SQLITE_TRANSIENT);
 }
 
-static int fts3IsIdChar(char c){
+int sqlite3Fts3IsIdChar(char c){
   static const char isFtsIdChar[] = {
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /* 0x */
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /* 1x */
@@ -135,9 +135,9 @@ const char *sqlite3Fts3NextToken(const char *zStr, int *pn){
         break;
 
       default:
-        if( fts3IsIdChar(*z1) ){
+        if( sqlite3Fts3IsIdChar(*z1) ){
           z2 = &z1[1];
-          while( fts3IsIdChar(*z2) ) z2++;
+          while( sqlite3Fts3IsIdChar(*z2) ) z2++;
         }else{
           z1++;
         }
@@ -150,9 +150,8 @@ const char *sqlite3Fts3NextToken(const char *zStr, int *pn){
 
 int sqlite3Fts3InitTokenizer(
   Fts3Hash *pHash,                /* Tokenizer hash table */
-  const char *zArg,               /* Possible tokenizer specification */
+  const char *zArg,               /* Tokenizer name */
   sqlite3_tokenizer **ppTok,      /* OUT: Tokenizer (if applicable) */
-  const char **pzTokenizer,       /* OUT: Set to zArg if is tokenizer */
   char **pzErr                    /* OUT: Set to malloced error message */
 ){
   int rc;
@@ -162,26 +161,15 @@ int sqlite3Fts3InitTokenizer(
   char *zEnd;                     /* Pointer to nul-term of zCopy */
   sqlite3_tokenizer_module *m;
 
-  if( !z ){
-    zCopy = sqlite3_mprintf("simple");
-  }else{
-    if( sqlite3_strnicmp(z, "tokenize", 8) || fts3IsIdChar(z[8])){
-      return SQLITE_OK;
-    }
-    zCopy = sqlite3_mprintf("%s", &z[8]);
-    *pzTokenizer = zArg;
-  }
-  if( !zCopy ){
-    return SQLITE_NOMEM;
-  }
-
+  zCopy = sqlite3_mprintf("%s", zArg);
+  if( !zCopy ) return SQLITE_NOMEM;
   zEnd = &zCopy[strlen(zCopy)];
 
   z = (char *)sqlite3Fts3NextToken(zCopy, &n);
   z[n] = '\0';
   sqlite3Fts3Dequote(z);
 
-  m = (sqlite3_tokenizer_module *)sqlite3Fts3HashFind(pHash, z, (int)strlen(z)+1);
+  m = (sqlite3_tokenizer_module *)sqlite3Fts3HashFind(pHash,z,(int)strlen(z)+1);
   if( !m ){
     *pzErr = sqlite3_mprintf("unknown tokenizer: %s", z);
     rc = SQLITE_ERROR;

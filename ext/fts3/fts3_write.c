@@ -683,6 +683,8 @@ static int fts3DeleteAll(Fts3Table *p){
   fts3SqlExec(&rc, p, SQL_DELETE_ALL_SEGDIR, 0);
   if( p->bHasDocsize ){
     fts3SqlExec(&rc, p, SQL_DELETE_ALL_DOCSIZE, 0);
+  }
+  if( p->bHasStat ){
     fts3SqlExec(&rc, p, SQL_DELETE_ALL_STAT, 0);
   }
   return rc;
@@ -1035,7 +1037,7 @@ int sqlite3Fts3SegReaderCost(
   ** for the segment is stored on the root page of the b-tree, then the cost
   ** is zero. In this case all required data is already in main memory.
   */
-  if( p->bHasDocsize 
+  if( p->bHasStat 
    && !fts3SegReaderIsPending(pReader) 
    && !fts3SegReaderIsRootOnly(pReader) 
   ){
@@ -2855,8 +2857,8 @@ int sqlite3Fts3UpdateMethod(
         fts3SqlExec(&rc, p, SQL_DELETE_CONTENT, apVal);
         if( p->bHasDocsize ){
           fts3SqlExec(&rc, p, SQL_DELETE_DOCSIZE, apVal);
-          nChng--;
         }
+        nChng--;
       }
     }
   }else if( sqlite3_value_type(apVal[p->nColumn+2])!=SQLITE_NULL ){
@@ -2874,12 +2876,12 @@ int sqlite3Fts3UpdateMethod(
       rc = fts3InsertTerms(p, apVal, aSzIns);
     }
     if( p->bHasDocsize ){
-      nChng++;
       fts3InsertDocsize(&rc, p, aSzIns);
     }
+    nChng++;
   }
 
-  if( p->bHasDocsize ){
+  if( p->bHasStat ){
     fts3UpdateDocTotals(&rc, p, aSzIns, aSzDel, nChng);
   }
 

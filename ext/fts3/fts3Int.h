@@ -131,7 +131,7 @@ struct Fts3Table {
   sqlite3_stmt *aStmt[24];
 
   int nNodeSize;                  /* Soft limit for node size */
-  u8 bHasContent;                 /* True if %_content table exists */
+  u8 bHasStat;                    /* True if %_stat table exists */
   u8 bHasDocsize;                 /* True if %_docsize table exists */
   int nPgsz;                      /* Page size for host database */
   char *zSegmentsTbl;             /* Name of %_segments table */
@@ -329,9 +329,10 @@ int sqlite3Fts3ExprNearTrim(Fts3Expr *, Fts3Expr *, int);
 /* fts3_tokenizer.c */
 const char *sqlite3Fts3NextToken(const char *, int *);
 int sqlite3Fts3InitHashTable(sqlite3 *, Fts3Hash *, const char *);
-int sqlite3Fts3InitTokenizer(Fts3Hash *pHash, 
-  const char *, sqlite3_tokenizer **, const char **, char **
+int sqlite3Fts3InitTokenizer(Fts3Hash *pHash, const char *, 
+    sqlite3_tokenizer **, char **
 );
+int sqlite3Fts3IsIdChar(char);
 
 /* fts3_snippet.c */
 void sqlite3Fts3Offsets(sqlite3_context*, Fts3Cursor*);

@@ -1,0 +1,68 @@
+# 2010 November 02
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for the FTS3 module. The focus
+# of this file is tables created with the "matchinfo=fts3" option.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+set testprefix fts3matchinfo
+
+proc mit {blob} {
+  set scan(littleEndian) i*
+  set scan(bigEndian) I*
+  binary scan $blob $scan($::tcl_platform(byteOrder)) r
+  return $r
+}
+db func mit mit
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t1 USING fts4(matchinfo=fts3);
+  SELECT name FROM sqlite_master WHERE type = 'table';
+} {t1 t1_content t1_segments t1_segdir t1_stat}
+
+do_execsql_test 1.1 {
+  INSERT INTO t1(content) VALUES('I wandered lonely as a cloud');
+  INSERT INTO t1(content) VALUES('That floats on high o''er vales and hills,');
+  INSERT INTO t1(content) VALUES('When all at once I saw a crowd,');
+  INSERT INTO t1(content) VALUES('A host, of golden daffodils,');
+  SELECT mit(matchinfo(t1)) FROM t1 WHERE t1 MATCH 'I';
+} {{1 1 1 2 2} {1 1 1 2 2}}
+
+# Now create an FTS4 table that does not specify matchinfo=fts3. The 
+# %_docsize table is created in this case and the array of integers returned
+# by matchinfo() includes the extra data.
+#
+do_execsql_test 1.2 {
+  CREATE VIRTUAL TABLE t2 USING fts4;
+  INSERT INTO t2 SELECT * FROM t1;
+  SELECT mit(matchinfo(t2)) FROM t2 WHERE t2 MATCH 'I';
+} {{1 1 1 2 2 4 7 6} {1 1 1 2 2 4 7 8}}
+
+# Test some syntax-error handling.
+#
+do_catchsql_test 2.0 {
+  CREATE VIRTUAL TABLE x1 USING fts4(matchinfo=fs3);
+} {1 {unrecognized matchinfo: fs3}}
+do_catchsql_test 2.1 {
+  CREATE VIRTUAL TABLE x2 USING fts4(mtchinfo=fts3);
+} {1 {unrecognized parameter: mtchinfo=fts3}}
+
+# Check that with fts3, the "=" character is permitted in column definitions.
+#
+do_execsql_test 3.1 {
+  CREATE VIRTUAL TABLE t3 USING fts3(mtchinfo=fts3);
+  INSERT INTO t3(mtchinfo) VALUES('Beside the lake, beneath the trees');
+  SELECT mtchinfo FROM t3;
+} {{Beside the lake, beneath the trees}}
+
+finish_test

@@ -233,6 +233,13 @@ foreach {tn setup} {
     execsql "INSERT INTO t1(t1) VALUES('optimize')"
     execsql $zero_long_doclists
   }
+  5 {
+    set dmt_modes 0
+    execsql { CREATE VIRTUAL TABLE t1 USING FTS4(matchinfo=fts3) }
+    foreach doc $data { execsql { INSERT INTO t1 VALUES($doc) } }
+    add_empty_records 1000
+    execsql $zero_long_doclists
+  }
 } {
 
   execsql { DROP TABLE IF EXISTS t1 }
