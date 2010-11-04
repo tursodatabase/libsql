@@ -1,5 +1,5 @@
-C Updates\sfor\sWindows.
-D 2010-11-04T20:46:09
+C Fix\ssize\sso\sit's\sreally\s32x32.
+D 2010-11-04T20:47:44
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2c8cefd962eca0147132c7cf9eaa4bb24c656f3f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -16,7 +16,7 @@ F art/SQLite_big.gif 2b8e4603b91ba2a2c7062a82ff570d945034bb30
 F art/nocopy.gif 716aa07d4bb7250d4e75756073bf8ef9f56bec8f
 F art/powered_by_sqlite.gif 7fbcd7d3675391fd3d21672c14c05f5999eb60d1
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
-F art/sqlite370.ico fc0ea882452f713e0f5326d18d840169744e7482
+F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
@@ -883,7 +883,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 3104f17e5dd0be4f176905dde6df3be50ba28702
-R 204c56acbc1eb9022da7f25a997c6f09
+P cc9d9a12c3b19320b0ecfa78a6cee3d668004988
+R 0b84c10fec00628f99d964887ecf071d
 U shaneh
-Z ed2bea2e97360a4a06430cbd8896f083
+Z 2c70e7d440c064ec216e31a9c4e6aaa8
