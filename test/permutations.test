@@ -771,15 +771,9 @@ proc run_tests {name args} {
 
   uplevel $options(-initialize)
 
-  # uncomment stuff here to skip to a particular test
-  set skip_to_file "pagerfault.test"
-  set skip 1
   foreach file [lsort $options(-files)] {
-    if {[file tail $file] == $skip_to_file} { set skip 0 }
-    if {$skip == 0} {
-      if {[file tail $file] == $file} { set file [file join $::testdir $file] }
-      slave_test_file $file
-    }
+    if {[file tail $file] == $file} { set file [file join $::testdir $file] }
+    slave_test_file $file
   }
 
   uplevel $options(-shutdown)
