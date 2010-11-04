@@ -926,7 +926,9 @@ static int assert_pager_state(Pager *p){
 
   return 1;
 }
+#endif /* ifndef NDEBUG */
 
+#ifdef SQLITE_DEBUG 
 /*
 ** Return a pointer to a human readable string in a static buffer
 ** containing the state of the Pager object passed as an argument. This
