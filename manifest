@@ -1,5 +1,5 @@
-C More\stests\sand\sadded\ssupport\sfor\sxDelete\sin\smultiplex\sVFS.
-D 2010-11-05T17:51:25
+C Fix\sos_unix.c\sso\sthat\sit\sworks\swith\sthe\stest_multiplex\smodule.
+D 2010-11-05T18:07:37
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e7a59672eaeb04408d1fa8501618d7501a3c5e39
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -160,7 +160,7 @@ F src/os.c 22ac61d06e72a0dac900400147333b07b13d8e1d
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
-F src/os_unix.c 00a4a84aba46b61439913bebf0c10d408e42a630
+F src/os_unix.c de5be4cdbf3d07018059934eaf7e5d8d594a895c
 F src/os_win.c 2f90f7bdec714fad51cd31b4ecad3cc1b4bb5aad
 F src/pager.c 1b0e87deb3994abf12e967ef5b9adc950bf85460
 F src/pager.h 8167a1e720d0b7a2790079007128e594010220ad
@@ -885,7 +885,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1ab9a59237bed6d03b55153a67588486f9adc67b
-R e3f2efd9b864f5e92369281a6cf12f95
-U shaneh
-Z 1f717c7c3b7e6be23615db108e9ab753
+P f2004b44bfba62a7a2296b161a25aefdf55e035a
+R e27a910072d0609871439f0ab30ee53c
+U dan
+Z c8e41ce82005a005e1344343badd82a1

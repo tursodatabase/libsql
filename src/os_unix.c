@@ -4431,9 +4431,24 @@ static int findCreateFileMode(
     int nDb;                      /* Number of valid bytes in zDb */
     struct stat sStat;            /* Output of stat() on database file */
 
-    nDb = sqlite3Strlen30(zPath) - ((flags & SQLITE_OPEN_WAL) ? 4 : 8);
+    /* zPath is a path to a WAL or journal file. The following block derives
+    ** the path to the associated database file from zPath. This block handles
+    ** the following naming conventions:
+    **
+    **   "<path to db>-journal"
+    **   "<path to db>-wal"
+    **   "<path to db>-journal-NNNN"
+    **   "<path to db>-wal-NNNN"
+    **
+    ** where NNNN is a 4 digit decimal number. The NNNN naming schemes are 
+    ** used by the test_multiplex.c module.
+    */
+    nDb = sqlite3Strlen30(zPath) - 1; 
+    while( nDb>0 && zPath[nDb]!='l' ) nDb--;
+    nDb -= ((flags & SQLITE_OPEN_WAL) ? 3 : 7);
     memcpy(zDb, zPath, nDb);
     zDb[nDb] = '\0';
+
     if( 0==stat(zDb, &sStat) ){
       *pMode = sStat.st_mode & 0777;
     }else{
