@@ -26,7 +26,7 @@
 
 /************************ Shim Definitions ******************************/
 
-#define SQLITE_MULTIPLEX_CHUNK_SIZE 0x80000000
+#define SQLITE_MULTIPLEX_CHUNK_SIZE 0x40000000
 #define SQLITE_MULTIPLEX_MAX_CHUNKS 32
 
 /************************ Object Definitions ******************************/
@@ -112,6 +112,11 @@ static struct {
   int nChunkSize;
   int nMaxChunks;
 
+  /* Storage for temp file names.  Allocated during 
+  ** initialization to the max pathname of the underlying VFS.
+  */
+  char *zName;
+
 } gMultiplex;
 
 /************************* Utility Routines *********************************/
@@ -143,11 +148,12 @@ static sqlite3_file *multiplexSubOpen(multiplexConn *pConn, int iChunk, int *rc,
     *rc = SQLITE_OK;
     return pSubOpen;
   }
-  *rc = SQLITE_ERROR;
+  *rc = SQLITE_FULL;
   return NULL;
 }
 
 /************************* VFS Method Wrappers *****************************/
+
 /*
 ** This is the xOpen method used for the "multiplex" VFS.
 **
@@ -171,13 +177,6 @@ static int multiplexOpen(
   int i;
 
   UNUSED_PARAMETER(pVfs);
-
-  /* If the file is not a main database file or a WAL, then use the
-  ** normal xOpen method.
-  */
-  if( (flags & (SQLITE_OPEN_MAIN_DB|SQLITE_OPEN_WAL|SQLITE_OPEN_MAIN_JOURNAL))==0 ){
-    return pOrigVfs->xOpen(pOrigVfs, zName, pConn, flags, pOutFlags);
-  }
 
   /* We need to create a group structure and manage
   ** access to this group of files.
@@ -220,6 +219,43 @@ static int multiplexOpen(
   return rc;
 }
 
+/*
+** This is the xDelete method used for the "multiplex" VFS.
+** It attempts to delete the filename specified, as well
+** as addiitional files with the "-####" extension.
+*/
+static int multiplexDelete(
+  sqlite3_vfs *pVfs,         /* The multiplex VFS */
+  const char *zName,         /* Name of file to delete */
+  int syncDir
+){
+  sqlite3_vfs *pOrigVfs = gMultiplex.pOrigVfs;   /* Real VFS */
+  int rc = SQLITE_OK;
+  int nName = sqlite3Strlen30(zName);
+  int i;
+
+  UNUSED_PARAMETER(pVfs);
+
+  multiplexEnter();
+  memcpy(gMultiplex.zName, zName, nName+1);
+  for(i=0; i<gMultiplex.nMaxChunks; i++){
+    int rc2;
+    int exists = 0;
+    if( i ) sqlite3_snprintf(nName+6, gMultiplex.zName+nName, "-%04d", i);
+    rc2 = pOrigVfs->xAccess(pOrigVfs, gMultiplex.zName, SQLITE_ACCESS_EXISTS, &exists);
+    if( rc2==SQLITE_OK && exists){
+      /* if it exists, delete it */
+      rc2 = pOrigVfs->xDelete(pOrigVfs, gMultiplex.zName, syncDir);
+      if( rc2!=SQLITE_OK ) rc = rc2;
+    }else{
+      /* stop at first "gap" */
+      break;
+    }
+  }
+  multiplexLeave();
+  return rc;
+}
+
 /************************ I/O Method Wrappers *******************************/
 
 /* xClose requests get passed through to the original VFS.
@@ -233,6 +269,7 @@ static int multiplexClose(sqlite3_file *pConn){
   int rc = SQLITE_OK;
   int i;
   multiplexEnter();
+  /* close any open handles */
   for(i=0; i<gMultiplex.nMaxChunks; i++){
     if( pGroup->bOpen[i] ){
       sqlite3_file *pSubOpen = pGroup->pReal[i];
@@ -241,6 +278,7 @@ static int multiplexClose(sqlite3_file *pConn){
       pGroup->bOpen[i] = 0;
     }
   }
+  /* remove from linked list */
   if( pGroup->pNext ) pGroup->pNext->pPrev = pGroup->pPrev;
   if( pGroup->pPrev ){
     pGroup->pPrev->pNext = pGroup->pNext;
@@ -576,6 +614,11 @@ int sqlite3_multiplex_initialize(const char *zOrigVfsName, int makeDefault){
   if( !gMultiplex.pMutex ){
     return SQLITE_NOMEM;
   }
+  gMultiplex.zName = sqlite3_malloc(pOrigVfs->mxPathname);
+  if( !gMultiplex.zName ){
+    sqlite3_mutex_free(gMultiplex.pMutex);
+    return SQLITE_NOMEM;
+  }
   gMultiplex.nChunkSize = SQLITE_MULTIPLEX_CHUNK_SIZE;
   gMultiplex.nMaxChunks = SQLITE_MULTIPLEX_MAX_CHUNKS;
   gMultiplex.pGroups = NULL;
@@ -585,6 +628,7 @@ int sqlite3_multiplex_initialize(const char *zOrigVfsName, int makeDefault){
   gMultiplex.sThisVfs.szOsFile += sizeof(multiplexConn);
   gMultiplex.sThisVfs.zName = "multiplex";
   gMultiplex.sThisVfs.xOpen = multiplexOpen;
+  gMultiplex.sThisVfs.xDelete = multiplexDelete;
   gMultiplex.sIoMethodsV1.iVersion = 1;
   gMultiplex.sIoMethodsV1.xClose = multiplexClose;
   gMultiplex.sIoMethodsV1.xRead = multiplexRead;
@@ -621,6 +665,7 @@ int sqlite3_multiplex_shutdown(void){
   if( gMultiplex.isInitialized==0 ) return SQLITE_MISUSE;
   if( gMultiplex.pGroups ) return SQLITE_MISUSE;
   gMultiplex.isInitialized = 0;
+  sqlite3_free(gMultiplex.zName);
   sqlite3_mutex_free(gMultiplex.pMutex);
   sqlite3_vfs_unregister(&gMultiplex.sThisVfs);
   memset(&gMultiplex, 0, sizeof(gMultiplex));

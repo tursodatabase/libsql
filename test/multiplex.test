@@ -14,13 +14,27 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/malloc_common.tcl
 
+set g_chunk_size 2147483648
+set g_max_chunks 32
+
+proc multiplex_set {chunk_size max_chunks} {
+  global g_chunk_size
+  global g_max_chunks
+  set g_chunk_size $chunk_size
+  set g_max_chunks $max_chunks
+  sqlite3_multiplex_set $chunk_size $max_chunks
+}
+
 proc multiplex_delete {name} {
-  file delete -force $name
-  file delete -force $name-journal
-  file delete -force $name-wal
-  for {set i 1} {$i<=15} {incr i} {
-    file delete -force $name-000$i
-    file delete -force $name-00$i
+  global g_max_chunks
+  forcedelete $name
+  forcedelete $name-journal
+  forcedelete $name-wal
+  for {set i 1} {$i<$g_max_chunks} {incr i} {
+    set num [format "%04d" $i]
+    forcedelete $name-$num
+    forcedelete $name-journal-$num
+    forcedelete $name-wal-$num
   }
 }
 
@@ -40,11 +54,11 @@ do_test multiplex-1.7 { sqlite3_multiplex_initialize "" 1 }        {SQLITE_OK}
 do_test multiplex-1.8 { sqlite3_multiplex_shutdown }               {SQLITE_OK}
 
 do_test multiplex-1.9  { sqlite3_multiplex_initialize "" 1 }       {SQLITE_OK}
-do_test multiplex-1.10.1 { sqlite3_multiplex_set 0x8000 16 }       {SQLITE_OK}
-do_test multiplex-1.10.2 { sqlite3_multiplex_set 0x8000 -1 }       {SQLITE_MISUSE}
-do_test multiplex-1.10.3 { sqlite3_multiplex_set -1 16 }           {SQLITE_MISUSE}
-do_test multiplex-1.10.4 { sqlite3_multiplex_set 31 16 }           {SQLITE_MISUSE}
-do_test multiplex-1.10.5 { sqlite3_multiplex_set 0x8000 33 }       {SQLITE_MISUSE}
+do_test multiplex-1.10.1 { multiplex_set 32768 16 }                {SQLITE_OK}
+do_test multiplex-1.10.2 { multiplex_set 32768 -1 }                {SQLITE_MISUSE}
+do_test multiplex-1.10.3 { multiplex_set -1 16 }                   {SQLITE_MISUSE}
+do_test multiplex-1.10.4 { multiplex_set 31 16 }                   {SQLITE_MISUSE}
+do_test multiplex-1.10.5 { multiplex_set 32768 33 }                {SQLITE_MISUSE}
 do_test multiplex-1.11 { sqlite3_multiplex_shutdown }              {SQLITE_OK}
 
 
@@ -63,10 +77,12 @@ do_test multiplex-1.11 { sqlite3_multiplex_shutdown }              {SQLITE_OK}
 #                afterwards. Then close the database and successfully shut
 #                down the multiplex system.
 #
-#   multiplex-2.5.*: More reading/writing with small chunk size.
+#   multiplex-2.5.*: More reading/writing.
+#
+#   multiplex-2.6.*: More reading/writing with varying small chunk sizes.
 
 sqlite3_multiplex_initialize "" 1
-sqlite3_multiplex_set 0x8000 16
+multiplex_set 32768 16
 
 do_test multiplex-2.1.2 {
   sqlite3 db test.db
@@ -112,7 +128,7 @@ do_test multiplex-2.4.99 {
 do_test multiplex-2.5.1 {
   multiplex_delete test.db
   sqlite3_multiplex_initialize "" 1
-  sqlite3_multiplex_set 0x1000 16
+  multiplex_set 4096 16
 } {SQLITE_OK}
 
 do_test multiplex-2.5.2 {
@@ -155,10 +171,56 @@ do_test multiplex-2.5.8 {
   db eval {SELECT a,length(b) FROM t1 WHERE a=4}
 } {4 4000}
 
+do_test multiplex-2.5.9 { file size test.db } [list $g_chunk_size]
+do_test multiplex-2.5.10 { file size test.db-0001 } [list $g_chunk_size]
+
 do_test multiplex-2.5.99 {
   db close
   sqlite3_multiplex_shutdown
 } {SQLITE_OK}
+
+
+for {set sz 151} {$sz<8000} {set sz [expr $sz+419]} {
+
+  do_test multiplex-2.6.1.$sz {
+    multiplex_delete test.db
+    sqlite3_multiplex_initialize "" 1
+    multiplex_set $sz 32
+  } {SQLITE_OK}
+
+  do_test multiplex-2.6.2.$sz {
+    sqlite3 db test.db
+    execsql {
+      PRAGMA page_size = 1024;
+      PRAGMA journal_mode = delete;
+      PRAGMA auto_vacuum = off;
+      CREATE TABLE t1(a PRIMARY KEY, b);
+    }
+  } {delete}
+
+  do_test multiplex-2.6.3.$sz { 
+    execsql { 
+      INSERT INTO t1 VALUES(1, 'one');
+      INSERT INTO t1 VALUES(2, randomblob($g_chunk_size));
+    }
+  } {}
+
+  do_test multiplex-2.6.4.$sz {
+    db eval {SELECT b FROM t1 WHERE a=1}
+  } {one}
+
+  do_test multiplex-2.6.5.$sz {
+    db eval {SELECT length(b) FROM t1 WHERE a=2}
+  } [list $g_chunk_size]
+
+  do_test multiplex-2.6.6.$sz { file size test.db } [list $g_chunk_size]
+
+  do_test multiplex-2.6.99.$sz {
+    db close
+    sqlite3_multiplex_shutdown
+  } {SQLITE_OK}
+
+}
 
 #-------------------------------------------------------------------------
 # Try some tests with more than one connection to a database file. Still
@@ -172,7 +234,7 @@ do_test multiplex-2.5.99 {
 do_test multiplex-3.1.1 {
   multiplex_delete test.db
   sqlite3_multiplex_initialize "" 1
-  sqlite3_multiplex_set 0x8000 16
+  multiplex_set 32768 16
 } {SQLITE_OK}
 do_test multiplex-3.1.2 {
   sqlite3 db test.db
@@ -258,7 +320,7 @@ do_test multiplex-3.2.X {
 #
 
 sqlite3_multiplex_initialize "" 1
-sqlite3_multiplex_set 0x8000 16
+multiplex_set 32768 16
 
 # Return a list of all currently defined multiplexs.
 proc multiplex_list {} {
@@ -320,7 +382,7 @@ do_test multiplex-4.1.12 {
 #
 
 sqlite3_multiplex_initialize "" 1
-sqlite3_multiplex_set 0x8000 16
+multiplex_set 32768 16
 
 do_faultsim_test multiplex-5.1 -prep {
   catch {db close}
@@ -335,6 +397,7 @@ do_faultsim_test multiplex-5.2 -prep {
 
 catch { db close }
 multiplex_delete test.db
+multiplex_delete test2.db
 
 do_test multiplex-5.3.prep {
   sqlite3 db test.db
@@ -358,12 +421,13 @@ do_test multiplex-5.4.1 {
   file mkdir test.db
   list [catch { sqlite3 db test.db } msg] $msg
 } {1 {unable to open database file}}
+catch { file delete test.db }
 
 do_faultsim_test multiplex-5.5 -prep {
   catch { sqlite3_multiplex_shutdown }
 } -body {
   sqlite3_multiplex_initialize "" 1
-  sqlite3_multiplex_set 0x8000 16
+  multiplex_set 32768 16
 }
 
 catch { sqlite3_multiplex_shutdown }
