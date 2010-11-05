@@ -79,7 +79,8 @@ do_test multiplex-1.11 { sqlite3_multiplex_shutdown }              {SQLITE_OK}
 #
 #   multiplex-2.5.*: More reading/writing.
 #
-#   multiplex-2.6.*: More reading/writing with varying small chunk sizes.
+#   multiplex-2.6.*: More reading/writing with varying small chunk sizes, as
+#                well as varying journal mode.
 
 sqlite3_multiplex_initialize "" 1
 multiplex_set 32768 16
@@ -180,46 +181,49 @@ do_test multiplex-2.5.99 {
 } {SQLITE_OK}
 
 
-for {set sz 151} {$sz<8000} {set sz [expr $sz+419]} {
+set all_journal_modes {delete persist truncate memory off}
+foreach jmode $all_journal_modes {
+  for {set sz 151} {$sz<8000} {set sz [expr $sz+419]} {
 
-  do_test multiplex-2.6.1.$sz {
-    multiplex_delete test.db
-    sqlite3_multiplex_initialize "" 1
-    multiplex_set $sz 32
-  } {SQLITE_OK}
+    do_test multiplex-2.6.1.$sz.$jmode {
+      multiplex_delete test.db
+      sqlite3_multiplex_initialize "" 1
+      multiplex_set $sz 32
+    } {SQLITE_OK}
 
-  do_test multiplex-2.6.2.$sz {
-    sqlite3 db test.db
-    execsql {
-      PRAGMA page_size = 1024;
-      PRAGMA journal_mode = delete;
-      PRAGMA auto_vacuum = off;
-      CREATE TABLE t1(a PRIMARY KEY, b);
-    }
-  } {delete}
+    do_test multiplex-2.6.2.$sz.$jmode {
+      sqlite3 db test.db
+      db eval {
+        PRAGMA page_size = 1024;
+        PRAGMA auto_vacuum = off;
+      }
+      db eval "PRAGMA journal_mode = $jmode;"
+    } $jmode
 
-  do_test multiplex-2.6.3.$sz { 
-    execsql { 
-      INSERT INTO t1 VALUES(1, 'one');
-      INSERT INTO t1 VALUES(2, randomblob($g_chunk_size));
-    }
-  } {}
+    do_test multiplex-2.6.3.$sz.$jmode { 
+      execsql { 
+        CREATE TABLE t1(a PRIMARY KEY, b);
+        INSERT INTO t1 VALUES(1, 'one');
+        INSERT INTO t1 VALUES(2, randomblob($g_chunk_size));
+      }
+    } {}
 
-  do_test multiplex-2.6.4.$sz {
-    db eval {SELECT b FROM t1 WHERE a=1}
-  } {one}
+    do_test multiplex-2.6.4.$sz.$jmode {
+      db eval {SELECT b FROM t1 WHERE a=1}
+    } {one}
 
-  do_test multiplex-2.6.5.$sz {
-    db eval {SELECT length(b) FROM t1 WHERE a=2}
-  } [list $g_chunk_size]
+    do_test multiplex-2.6.5.$sz.$jmode {
+      db eval {SELECT length(b) FROM t1 WHERE a=2}
+    } [list $g_chunk_size]
 
-  do_test multiplex-2.6.6.$sz { file size test.db } [list $g_chunk_size]
+    do_test multiplex-2.6.6.$sz.$jmode { file size test.db } [list $g_chunk_size]
 
-  do_test multiplex-2.6.99.$sz {
-    db close
-    sqlite3_multiplex_shutdown
-  } {SQLITE_OK}
+    do_test multiplex-2.6.99.$sz.$jmode {
+      db close
+      sqlite3_multiplex_shutdown
+    } {SQLITE_OK}
 
+  }
 }
 
 #-------------------------------------------------------------------------

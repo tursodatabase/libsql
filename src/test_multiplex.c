@@ -28,6 +28,7 @@
 
 #define SQLITE_MULTIPLEX_CHUNK_SIZE 0x40000000
 #define SQLITE_MULTIPLEX_MAX_CHUNKS 32
+#define SQLITE_MULTIPLEX_EXT_FMT    "-%04d"
 
 /************************ Object Definitions ******************************/
 
@@ -137,7 +138,7 @@ static sqlite3_file *multiplexSubOpen(multiplexConn *pConn, int iChunk, int *rc,
     sqlite3_file *pSubOpen = pGroup->pReal[iChunk];    /* Real file descriptor */
     if( !pGroup->bOpen[iChunk] ){
       pGroup->zName[pGroup->nName] = '\0';
-      if( iChunk ) sqlite3_snprintf(pGroup->nName+6, pGroup->zName+pGroup->nName, "-%04d", iChunk);
+      if( iChunk ) sqlite3_snprintf(pGroup->nName+6, pGroup->zName+pGroup->nName, SQLITE_MULTIPLEX_EXT_FMT, iChunk);
       *rc = pOrigVfs->xOpen(pOrigVfs, pGroup->zName, pSubOpen, pGroup->flags, pOutFlags);
       if( *rc==SQLITE_OK ){
         pGroup->bOpen[iChunk] = -1;
@@ -241,7 +242,7 @@ static int multiplexDelete(
   for(i=0; i<gMultiplex.nMaxChunks; i++){
     int rc2;
     int exists = 0;
-    if( i ) sqlite3_snprintf(nName+6, gMultiplex.zName+nName, "-%04d", i);
+    if( i ) sqlite3_snprintf(nName+6, gMultiplex.zName+nName, SQLITE_MULTIPLEX_EXT_FMT, i);
     rc2 = pOrigVfs->xAccess(pOrigVfs, gMultiplex.zName, SQLITE_ACCESS_EXISTS, &exists);
     if( rc2==SQLITE_OK && exists){
       /* if it exists, delete it */
@@ -378,8 +379,9 @@ static int multiplexTruncate(sqlite3_file *pConn, sqlite3_int64 size){
       pSubOpen = pGroup->pReal[i];
       rc2 = pSubOpen->pMethods->xClose(pSubOpen);
       if( rc2!=SQLITE_OK ) rc = SQLITE_IOERR_TRUNCATE;
+      pGroup->bOpen[i] = 0;
     }
-    sqlite3_snprintf(pGroup->nName+6, pGroup->zName+pGroup->nName, "-%04d", i);
+    sqlite3_snprintf(pGroup->nName+6, pGroup->zName+pGroup->nName, SQLITE_MULTIPLEX_EXT_FMT, i);
     rc2 = pOrigVfs->xDelete(pOrigVfs, pGroup->zName, 0);
     if( rc2!=SQLITE_OK ) rc = SQLITE_IOERR_TRUNCATE;
   }
@@ -434,7 +436,7 @@ static int multiplexFileSize(sqlite3_file *pConn, sqlite3_int64 *pSize){
       sqlite3_vfs *pOrigVfs = gMultiplex.pOrigVfs;   /* Real VFS */
       int exists = 0;
       pGroup->zName[pGroup->nName] = '\0';
-      if( i ) sqlite3_snprintf(pGroup->nName+6, pGroup->zName+pGroup->nName, "-%04d", i);
+      if( i ) sqlite3_snprintf(pGroup->nName+6, pGroup->zName+pGroup->nName, SQLITE_MULTIPLEX_EXT_FMT, i);
       rc2 = pOrigVfs->xAccess(pOrigVfs, pGroup->zName, SQLITE_ACCESS_EXISTS, &exists);
       if( rc2==SQLITE_OK && exists){
         /* if it exists, open it */
