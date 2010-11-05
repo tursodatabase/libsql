@@ -1,7 +1,10 @@
-C Include\sthe\sprint_pager_state()\sfunction\sonly\sif\sSQLITE_DEBUG\sis\sdefined.
-D 2010-11-04T04:47:43
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Merge\sthe\smultiplexer\sVFS\sdemo\sinto\sthe\strunk.
+D 2010-11-05T00:01:40
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 2c8cefd962eca0147132c7cf9eaa4bb24c656f3f
+F Makefile.in e7a59672eaeb04408d1fa8501618d7501a3c5e39
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.vxworks c85ec1d8597fe2f7bc225af12ac1666e21379151
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
@@ -16,7 +19,7 @@ F art/SQLite_big.gif 2b8e4603b91ba2a2c7062a82ff570d945034bb30
 F art/nocopy.gif 716aa07d4bb7250d4e75756073bf8ef9f56bec8f
 F art/powered_by_sqlite.gif 7fbcd7d3675391fd3d21672c14c05f5999eb60d1
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
-F art/sqlite370.ico fc0ea882452f713e0f5326d18d840169744e7482
+F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
@@ -99,7 +102,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk bcbaa8d5dbdf49c35c506321850158e1237563c1
+F main.mk 497c8cb6ae132c88fa184e5e454b0e6336da5693
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -182,7 +185,7 @@ F src/sqliteInt.h c63b0340dfdfde18ff255ddccf004edd2d073288
 F src/sqliteLimit.h a17dcd3fb775d63b64a43a55c54cb282f9726f44
 F src/status.c 496913d4e8441195f6f2a75b1c95993a45b9b30b
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c dc71e2bd0f16dbb9106c1f5e257a64b783574f26
+F src/tclsqlite.c e1c485fa323e3ef02e5b10fe6a016e7638013eb9
 F src/test1.c 9e1fe842f72aa41af48ab7b21c3a12975b4c5b37
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 056093cfef69ff4227a6bdb9108564dc7f45e4bc
@@ -207,6 +210,7 @@ F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c 785edd54f963aefb3c1628124170a56697c68c70
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c 09a88f0c111201dc4f8c20470aa1b5f611d59200
+F src/test_multiplex.c be9c1445dca81ab9c77278b85b827cd446c656a8
 F src/test_mutex.c ce06b59aca168cd8c520b77159a24352a7469bd3
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
 F src/test_osinst.c f408c6a181f2fb04c56273afd5c3e1e82f60392c
@@ -258,7 +262,7 @@ F test/async5.test f3592d79c84d6e83a5f50d3fd500445f7d97dfdf
 F test/attach.test ce9660e51768fab93cf129787be886c5d6c4fd81
 F test/attach2.test a295d2d7061adcee5884ef4a93c7c96a82765437
 F test/attach3.test bd9830bc3a0d22ed1310c9bff6896927937017dc
-F test/attachmalloc.test 38d2da5fdaf09ba0add57296967a3061e5842584
+F test/attachmalloc.test 1d5b821a676f7bf0b00d87cc106b78966789ba57
 F test/auth.test 26cc6f219580191539bf335abe03e55e49310846
 F test/auth2.test 270baddc8b9c273682760cffba6739d907bd2882
 F test/auth3.test a4755e6a2a2fea547ffe63c874eb569e60a28eb5
@@ -558,6 +562,7 @@ F test/misc5.test 45b2e3ed5f79af2b4f38ae362eaf4c49674575bd
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test c5f4e6a82e04e71820c0f9f64f6733f04c8ae0ae
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
+F test/multiplex.test 257af7decc32a50814adffbb6865e1a7eb9f42c3
 F test/mutex1.test 5b71777fc127509cd257910c8db799de557a02de
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test a44e04df1486fcfb02d32468cbcd3c8e1e433723
@@ -570,7 +575,7 @@ F test/openv2.test af02ed0a9cbc0d2a61b8f35171d4d117e588e4ec
 F test/pager1.test 07b06b89d50bc38bb118a18b99c7bee645b315de
 F test/pager2.test 0fbb6b6dc40ce1fecfe758c555a748ad2e9beaa3
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
-F test/pagerfault.test 3cd3537bf2efb4baef26c74878718f4a32926da4
+F test/pagerfault.test 9de4d3e0c59970b4c6cb8dac511fa242f335d8a7
 F test/pagerfault2.test 1f79ea40d1133b2683a2f811b00f2399f7ec2401
 F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
@@ -883,7 +888,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 31989b18f53d97eddfb39660ef04fbf9463583e0
-R 77870c9f645f63161c757949a10d4b5d
-U dan
-Z 5b77deb3710cb464f4b30c8cda028e60
+P 3104f17e5dd0be4f176905dde6df3be50ba28702 54e2efb6679433e48106247ed6ea0d4c029438b8
+R fca1c48d8560f11cfa1d07bdc32e8cdd
+U drh
+Z 9a0ee5ff975b9a22db7a6e4c3241a331
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFM00lnoxKgR168RlERAo2tAJsEk/+2OmtLWL5TSWwbV+4qIjsDeACaAjit
+Ngc6/LFXcBDXn+DkNaIFpQc=
+=oUO7
+-----END PGP SIGNATURE-----
