@@ -1,10 +1,10 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Back\sout\san\sunintended\schange\sto\spermutations.test.
-D 2010-11-04T21:14:12
+C Fix\sthe\sMakefile.in\sso\sthat\sit\sworks\swith\sthe\smultiplexer\sVFS.
+D 2010-11-05T00:00:42
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 2c8cefd962eca0147132c7cf9eaa4bb24c656f3f
+F Makefile.in e7a59672eaeb04408d1fa8501618d7501a3c5e39
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.vxworks c85ec1d8597fe2f7bc225af12ac1666e21379151
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
@@ -888,14 +888,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 2625886b1997dc92e7c3669a4f6ccf3560a4dd80
-R ba80a8678c054bde8d19a3f9af46b7a6
+P 57fe35357dba7ebb382486b916004004b35f8c55
+R fca1c48d8560f11cfa1d07bdc32e8cdd
 U drh
-Z 68b693a3e08d7570b522142ee63f38e7
+Z ab9bd238c44353ca360ff24c77c3e9fd
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFM0yInoxKgR168RlERAjqLAJsGnSKxOXreiILlp/S3zhtXVgGdWgCeIKmM
-Uv+GoGls+jLaQnNG4zcm9ZI=
-=5V/P
+iD8DBQFM00kvoxKgR168RlERAsLGAJ46/bkp8EV92Er1LghqUZG9wo+4YgCgjGl9
+RBoxPM5PzTRFK2P31tRourI=
+=LWOS
 -----END PGP SIGNATURE-----
