@@ -341,7 +341,7 @@ static int multiplexTruncate(sqlite3_file *pConn, sqlite3_int64 size){
       rc2 = pSubOpen->pMethods->xClose(pSubOpen);
       if( rc2!=SQLITE_OK ) rc = SQLITE_IOERR_TRUNCATE;
     }
-    if( i ) sqlite3_snprintf(pGroup->nName+6, pGroup->zName+pGroup->nName, "-%04d", i);
+    sqlite3_snprintf(pGroup->nName+6, pGroup->zName+pGroup->nName, "-%04d", i);
     rc2 = pOrigVfs->xDelete(pOrigVfs, pGroup->zName, 0);
     if( rc2!=SQLITE_OK ) rc = SQLITE_IOERR_TRUNCATE;
   }
@@ -638,6 +638,8 @@ int sqlite3_multiplex_set(
 ){
   if( !gMultiplex.isInitialized ) return SQLITE_MISUSE;
   if( gMultiplex.pGroups ) return SQLITE_MISUSE;
+  if( nChunkSize<32 ) return SQLITE_MISUSE;
+  if( nMaxChunks<1 ) return SQLITE_MISUSE;
   if( nMaxChunks>SQLITE_MULTIPLEX_MAX_CHUNKS ) return SQLITE_MISUSE;
   multiplexEnter();
   gMultiplex.nChunkSize = nChunkSize;
@@ -731,11 +733,6 @@ static int test_multiplex_set(
   }
   if( Tcl_GetIntFromObj(interp, objv[1], &nChunkSize) ) return TCL_ERROR;
   if( Tcl_GetIntFromObj(interp, objv[2], &nMaxChunks) ) return TCL_ERROR;
-
-  if( nMaxChunks>SQLITE_MULTIPLEX_MAX_CHUNKS ){
-    Tcl_WrongNumArgs(interp, 1, objv, "MAX_CHUNKS > SQLITE_MULTIPLEX_MAX_CHUNKS");
-    return TCL_ERROR;
-  }
 
   /* Invoke sqlite3_multiplex_set() */
   rc = sqlite3_multiplex_set(nChunkSize, nMaxChunks);

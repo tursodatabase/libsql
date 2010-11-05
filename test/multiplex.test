@@ -39,6 +39,14 @@ do_test multiplex-1.6 { sqlite3_multiplex_shutdown }               {SQLITE_OK}
 do_test multiplex-1.7 { sqlite3_multiplex_initialize "" 1 }        {SQLITE_OK}
 do_test multiplex-1.8 { sqlite3_multiplex_shutdown }               {SQLITE_OK}
 
+do_test multiplex-1.9  { sqlite3_multiplex_initialize "" 1 }       {SQLITE_OK}
+do_test multiplex-1.10.1 { sqlite3_multiplex_set 0x8000 16 }       {SQLITE_OK}
+do_test multiplex-1.10.2 { sqlite3_multiplex_set 0x8000 -1 }       {SQLITE_MISUSE}
+do_test multiplex-1.10.3 { sqlite3_multiplex_set -1 16 }           {SQLITE_MISUSE}
+do_test multiplex-1.10.4 { sqlite3_multiplex_set 31 16 }           {SQLITE_MISUSE}
+do_test multiplex-1.10.5 { sqlite3_multiplex_set 0x8000 33 }       {SQLITE_MISUSE}
+do_test multiplex-1.11 { sqlite3_multiplex_shutdown }              {SQLITE_OK}
+
 
 #-------------------------------------------------------------------------
 # Some simple warm-body tests with a single database file in rollback 

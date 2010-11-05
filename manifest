@@ -1,5 +1,5 @@
-C Additional\stests\sand\scommenting\sfor\sthe\smultiplex\sVFS.
-D 2010-11-05T03:43:55
+C Additional\serror\schecking\sand\stests.
+D 2010-11-05T03:58:59
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e7a59672eaeb04408d1fa8501618d7501a3c5e39
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -207,7 +207,7 @@ F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c 785edd54f963aefb3c1628124170a56697c68c70
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c 09a88f0c111201dc4f8c20470aa1b5f611d59200
-F src/test_multiplex.c 8103a0ae1b36cdaf63ef620233e62b786c585d08
+F src/test_multiplex.c 197ff9d3b55ea11fbfd73f7840d5d0956a37f49a
 F src/test_mutex.c ce06b59aca168cd8c520b77159a24352a7469bd3
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
 F src/test_osinst.c f408c6a181f2fb04c56273afd5c3e1e82f60392c
@@ -559,7 +559,7 @@ F test/misc5.test 45b2e3ed5f79af2b4f38ae362eaf4c49674575bd
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test c5f4e6a82e04e71820c0f9f64f6733f04c8ae0ae
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
-F test/multiplex.test 2f6830ad67e0a26d28658b4ed3ff07c909075eb8
+F test/multiplex.test 201607f360704f2a34a43116e239cf68d5229544
 F test/mutex1.test 5b71777fc127509cd257910c8db799de557a02de
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test a44e04df1486fcfb02d32468cbcd3c8e1e433723
@@ -885,7 +885,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 18a73795b427e3d04a8a437410a271a50bbe32e4
-R 7a583acd4959f9dd49542ab66e09f45d
+P 8ed944ba74566c6241d655a39801ad192c61219a
+R 2e87de5f11b0bd307c5994f0595baf10
 U shaneh
-Z 0c53acc363de7c9bf67ad1c52d50bdb6
+Z 00935f175454b7260c72ad18880a1123
