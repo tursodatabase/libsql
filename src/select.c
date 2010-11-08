@@ -771,6 +771,19 @@ static KeyInfo *keyInfoFromExprList(Parse *pParse, ExprList *pList){
   return pInfo;
 }
 
+#ifndef SQLITE_OMIT_EXPLAIN
+static void explainTempTable(Parse *pParse, const char *zUsage){
+  if( pParse->explain==2 ){
+    Vdbe *v = pParse->pVdbe;
+    char *zMsg = sqlite3MPrintf(pParse->db, "USE TEMP B-TREE FOR %s", zUsage);
+    sqlite3VdbeAddOp4(v, OP_Explain, pParse->iSelectId, 0, 0, zMsg, P4_DYNAMIC);
+  }
+}
+# define explainRestoreSelectId() pParse->iSelectId = iRestoreSelectId
+#else
+# define explainRestoreSelectId()
+# define explainTempTable(y,z)
+#endif
 
 /*
 ** If the inner loop was generated using a non-null pOrderBy argument,
@@ -3590,6 +3603,11 @@ int sqlite3Select(
   int iEnd;              /* Address of the end of the query */
   sqlite3 *db;           /* The database connection */
 
+#ifndef SQLITE_OMIT_EXPLAIN
+  int iRestoreSelectId = pParse->iSelectId;
+  pParse->iSelectId = pParse->iNextSelectId++;
+#endif
+
   db = pParse->db;
   if( p==0 || db->mallocFailed || pParse->nErr ){
     return 1;
@@ -3696,9 +3714,10 @@ int sqlite3Select(
       mxSelect = db->aLimit[SQLITE_LIMIT_COMPOUND_SELECT];
       if( mxSelect && cnt>mxSelect ){
         sqlite3ErrorMsg(pParse, "too many terms in compound SELECT");
-        return 1;
+        goto select_end;
       }
     }
+    explainRestoreSelectId();
     return multiSelect(pParse, p, pDest);
   }
 #endif
@@ -3711,7 +3730,6 @@ int sqlite3Select(
     p->pGroupBy = sqlite3ExprListDup(db, p->pEList, 0);
     pGroupBy = p->pGroupBy;
     p->selFlags &= ~SF_Distinct;
-    isDistinct = 0;
   }
 
   /* If there is both a GROUP BY and an ORDER BY clause and they are
@@ -3758,7 +3776,7 @@ int sqlite3Select(
 
   /* Open a virtual index to use for the distinct set.
   */
-  if( isDistinct ){
+  if( p->selFlags & SF_Distinct ){
     KeyInfo *pKeyInfo;
     assert( isAgg || pGroupBy );
     distinct = pParse->nTab++;
@@ -3916,6 +3934,9 @@ int sqlite3Select(
         int regRecord;
         int nCol;
         int nGroupBy;
+
+        explainTempTable(pParse, 
+            isDistinct && !(p->selFlags&SF_Distinct)?"DISTINCT":"GROUP BY");
 
         groupBySort = 1;
         nGroupBy = pGroupBy->nExpr;
@@ -4178,10 +4199,15 @@ int sqlite3Select(
     
   } /* endif aggregate query */
 
+  if( distinct>=0 ){
+    explainTempTable(pParse, "DISTINCT");
+  }
+
   /* If there is an ORDER BY clause, then we need to sort the results
   ** and send them to the callback one by one.
   */
   if( pOrderBy ){
+    explainTempTable(pParse, "ORDER BY");
     generateSortTail(pParse, p, v, pEList->nExpr, pDest);
   }
 
@@ -4198,6 +4224,7 @@ int sqlite3Select(
   ** successful coding of the SELECT.
   */
 select_end:
+  explainRestoreSelectId();
 
   /* Identify column names if results of the SELECT are to be output.
   */
