@@ -126,8 +126,6 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
   return 0;
 }
 
-extern int pagerUseWal(Pager *p);
-
 /*
 ** Attempt to read the database schema and initialize internal
 ** data structures for a single database file.  The index of the
@@ -305,12 +303,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
     rc = SQLITE_ERROR;
     goto initone_error_out;
   }
-#ifndef SQLITE_OMIT_WAL
-  if( pagerUseWal((Pager *)pDb->pBt) ){
-    db->flags |= SQLITE_FullFSync;
-  }
-#endif
-  
+
   /* Ticket #2804:  When we open a database in the newer file format,
   ** clear the legacy_file_format pragma flag so that a VACUUM will
   ** not downgrade the database and thus invalidate any descending

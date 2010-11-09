@@ -779,7 +779,7 @@ static const unsigned char aJournalMagic[] = {
 ** rollback journal. Otherwise false.
 */
 #ifndef SQLITE_OMIT_WAL
-int pagerUseWal(Pager *pPager){
+static int pagerUseWal(Pager *pPager){
   return (pPager->pWal!=0);
 }
 #else
@@ -5649,8 +5649,8 @@ int sqlite3PagerCommitPhaseOne(
     if( pagerUseWal(pPager) ){
       PgHdr *pList = sqlite3PcacheDirtyList(pPager->pPCache);
       if( pList ){
-       // rc = pagerWalFrames(pPager, pList, pPager->dbSize, 1, (pPager->fullSync ? pPager->sync_flags : 0)
-        rc = pagerWalFrames(pPager, pList, pPager->dbSize, 1, 0        
+        rc = pagerWalFrames(pPager, pList, pPager->dbSize, 1, 
+            (pPager->fullSync ? pPager->sync_flags : 0)
         );
       }
       if( rc==SQLITE_OK ){

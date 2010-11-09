@@ -569,10 +569,6 @@ void sqlite3Pragma(
       iDb = 0;
       pId2->n = 1;
     }
-    if (eMode == PAGER_JOURNALMODE_WAL) {
-      db->flags |= SQLITE_FullFSync;
-      sqlite3VdbeAddOp2(v, OP_Expire, 0, 0);
-    }
     for(ii=db->nDb-1; ii>=0; ii--){
       if( db->aDb[ii].pBt && (ii==iDb || pId2->n==0) ){
         sqlite3VdbeUsesBtree(v, ii);

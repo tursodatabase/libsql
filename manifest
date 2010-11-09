@@ -1,5 +1,8 @@
-C Experimental\schanges\sto\stest\sdefaulting\sto\sfullfsync\sfor\sWAL\smode
-D 2010-11-09T00:47:46
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Back\sout\sthe\sprior\sattempt\sto\senable\sfull-fsync\sfor\sWAL\sand\sattempt\sthe\ssame\nthing\susing\sa\scompletely\sdifferent\sapproach.
+D 2010-11-09T01:53:48
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c58f7d37ad0f9b28655ba4e28c6cb0f879569cd7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -159,14 +162,14 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c 79cf726c9a0bcc4691a01389031513c10bf15bed
 F src/os_win.c 51cb62f76262d961ea4249489383d714501315a7
-F src/pager.c 58befaf9251febd8d70a91d65e994f602b838cf0
+F src/pager.c a5f5d9787b11dfb0b6082e6f5846d00b459a8e19
 F src/pager.h ef8c8f71ab022cc2fff768a1175dd32355be9dcd
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c e921e8a1d52c93abde63cb6dad1fa39770410c52
-F src/pragma.c bbc722cbf73faeadcc650075609e7ceeaffedce2
-F src/prepare.c 70d261ec8e3b7a55dd3a1470e953be0ac3da34af
+F src/pragma.c 3dbb254a99d7a5ccaff8eb1f8689556ff82fe6d0
+F src/prepare.c 23b5da0608820c9f76aa61d4955ebdbd23ffda36
 F src/printf.c 8ae5082dd38a1b5456030c3755ec3a392cd51506
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
@@ -231,7 +234,7 @@ F src/vdbeblob.c 258a6010ba7a82b72b327fb24c55790655689256
 F src/vdbemem.c e5673f81a2381b35c60e73ef0a8502be2ab1041e
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c 0e8e0cb30dffb078367e843e84e37ef99236c7e4
-F src/wal.c 5ac2119e23ee4424599d4275b66dc88d612a0543
+F src/wal.c 419914f47fe2c632d62e2e8f68917683b7e81500
 F src/wal.h 96669b645e27cd5a111ba59f0cae7743a207bc3c
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 7db3e41c2a846f9deeb24f1bbb75461b4010b7b5
@@ -851,10 +854,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P fd4d38fa66de85676189ff4922fb1bf5f8cac9c4
-R c98bc3ea3fd9fcd44a0bbad595d43ad1
-T *branch * apple-osx-exp
-T *sym-apple-osx-exp *
-T -sym-apple-osx *
-U adam
-Z 06fc038b80ed13bd5b68fa3606bfbfea
+P 77b343cfc3bef9b1a99e98fec6073626dab05657 fd4d38fa66de85676189ff4922fb1bf5f8cac9c4
+R 3023c4e1d42906020afbe1f5e513b1f2
+U drh
+Z 0b9563616992466c031d218f11922948
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFM2KmwoxKgR168RlERAiauAKCI1qDSxQkR6dO7p8jSJgiwE1ynBACeL7xT
+D2mdq8GqQe7zmNxnxNVQVBs=
+=Tv5T
+-----END PGP SIGNATURE-----
