@@ -772,6 +772,16 @@ static KeyInfo *keyInfoFromExprList(Parse *pParse, ExprList *pList){
 }
 
 #ifndef SQLITE_OMIT_EXPLAIN
+/*
+** Unless an "EXPLAIN QUERY PLAN" command is being processed, this function
+** is a no-op. Otherwise, it adds a single row of output to the EQP result,
+** where the caption is of the form:
+**
+**   "USE TEMP B-TREE FOR xxx"
+**
+** where xxx is one of "DISTINCT", "ORDER BY" or "GROUP BY". Exactly which
+** is determined by the zUsage argument.
+*/
 static void explainTempTable(Parse *pParse, const char *zUsage){
   if( pParse->explain==2 ){
     Vdbe *v = pParse->pVdbe;
@@ -779,12 +789,20 @@ static void explainTempTable(Parse *pParse, const char *zUsage){
     sqlite3VdbeAddOp4(v, OP_Explain, pParse->iSelectId, 0, 0, zMsg, P4_DYNAMIC);
   }
 }
-# define explainRestoreSelectId() pParse->iSelectId = iRestoreSelectId
-# define explainAssignSelectId(pItem, id) pItem->iSelectId = id
+
+/*
+** Assign expression b to lvalue a. A second, no-op, version of this macro
+** is provided when SQLITE_OMIT_EXPLAIN is defined. This allows the code
+** in sqlite3Select() to assign values to structure member variables that
+** only exist if SQLITE_OMIT_EXPLAIN is not defined without polluting the
+** code with #ifndef directives.
+*/
+# define explainSetInteger(a, b) a = b
+
 #else
-# define explainRestoreSelectId()
+/* No-op versions of the explainXXX() functions and macros. */
 # define explainTempTable(y,z)
-# define explainAssignSelectId(y,z)
+# define explainSetInteger(y,z)
 #endif
 
 /*
@@ -3681,7 +3699,7 @@ int sqlite3Select(
     }else{
       sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
       assert( pItem->isPopulated==0 );
-      explainAssignSelectId(pItem, pParse->iNextSelectId);
+      explainSetInteger(pItem->iSelectId, pParse->iNextSelectId);
       sqlite3Select(pParse, pSub, &dest);
       pItem->isPopulated = 1;
     }
@@ -3720,7 +3738,7 @@ int sqlite3Select(
         goto select_end;
       }
     }
-    explainRestoreSelectId();
+    explainSetInteger(pParse->iSelectId, iRestoreSelectId);
     return multiSelect(pParse, p, pDest);
   }
 #endif
@@ -4227,7 +4245,7 @@ int sqlite3Select(
   ** successful coding of the SELECT.
   */
 select_end:
-  explainRestoreSelectId();
+  explainSetInteger(pParse->iSelectId, iRestoreSelectId);
 
   /* Identify column names if results of the SELECT are to be output.
   */

@@ -3131,7 +3131,26 @@ static int codeAllEqualityTerms(
 }
 
 #ifndef SQLITE_OMIT_EXPLAIN
-static char *indexRangeText(sqlite3 *db, WhereLevel *pLevel, Table *pTab){
+/*
+** Argument pLevel describes a strategy for scanning table pTab. This 
+** function returns a pointer to a string buffer containing a description
+** of the subset of table rows scanned by the strategy in the form of an
+** SQL expression. Or, if all rows are scanned, NULL is returned.
+**
+** For example, if the query:
+**
+**   SELECT * FROM t1 WHERE a=1 AND b>2;
+**
+** is run and there is an index on (a, b), then this function returns a
+** string similar to:
+**
+**   "a=? AND b>?"
+**
+** The returned pointer points to memory obtained from sqlite3DbMalloc().
+** It is the responsibility of the caller to free the buffer when it is
+** no longer required.
+*/
+static char *explainIndexRange(sqlite3 *db, WhereLevel *pLevel, Table *pTab){
   WherePlan *pPlan = &pLevel->plan;
   Index *pIndex = pPlan->u.pIdx;
   int nEq = pPlan->nEq;
@@ -3160,7 +3179,13 @@ static char *indexRangeText(sqlite3 *db, WhereLevel *pLevel, Table *pTab){
   return zRet;
 }
 
-static void codeOneLoopExplain(
+/*
+** This function is a no-op unless currently processing an EXPLAIN QUERY PLAN
+** command. If the query being compiled is an EXPLAIN QUERY PLAN, a single
+** record is added to the output to describe the table scan strategy in 
+** pLevel.
+*/
+static void explainOneScan(
   Parse *pParse,                  /* Parse context */
   SrcList *pTabList,              /* Table list this loop refers to */
   WhereLevel *pLevel,             /* Scan to write OP_Explain opcode for */
@@ -3171,9 +3196,9 @@ static void codeOneLoopExplain(
   if( pParse->explain==2 ){
     u32 flags = pLevel->plan.wsFlags;
     struct SrcList_item *pItem = &pTabList->a[pLevel->iFrom];
-    Vdbe *v = pParse->pVdbe;
-    sqlite3 *db = pParse->db;
-    char *zMsg;
+    Vdbe *v = pParse->pVdbe;      /* VM being constructed */
+    sqlite3 *db = pParse->db;     /* Database handle */
+    char *zMsg;                   /* Text to add to EQP output */
     sqlite3_int64 nRow;           /* Expected number of rows visited by scan */
     int iId = pParse->iSelectId;  /* Select id (left-most output column) */
 
@@ -3189,7 +3214,7 @@ static void codeOneLoopExplain(
       zMsg = sqlite3MAppendf(db, zMsg, "%s AS %s", zMsg, pItem->zAlias);
     }
     if( (flags & WHERE_INDEXED)!=0 ){
-      char *zWhere = indexRangeText(db, pLevel, pItem->pTab);
+      char *zWhere = explainIndexRange(db, pLevel, pItem->pTab);
       zMsg = sqlite3MAppendf(db, zMsg, "%s BY %s%sINDEX%s%s%s", zMsg, 
           ((flags & WHERE_TEMP_INDEX)?"AUTOMATIC ":""),
           ((flags & WHERE_IDX_ONLY)?"COVERING ":""),
@@ -3228,7 +3253,7 @@ static void codeOneLoopExplain(
   }
 }
 #else
-# define codeOneLoopExplain(u,v,w,x,y,z)
+# define explainOneScan(u,v,w,x,y,z)
 #endif /* SQLITE_OMIT_EXPLAIN */
 
 
@@ -3773,7 +3798,7 @@ static Bitmask codeOneLoopStart(
                         WHERE_OMIT_OPEN | WHERE_OMIT_CLOSE |
                         WHERE_FORCE_TABLE | WHERE_ONETABLE_ONLY);
         if( pSubWInfo ){
-          codeOneLoopExplain(
+          explainOneScan(
               pParse, pOrTab, &pSubWInfo->a[0], iLevel, pLevel->iFrom, 0
           );
           if( (wctrlFlags & WHERE_DUPLICATES_OK)==0 ){
@@ -4432,7 +4457,7 @@ WhereInfo *sqlite3WhereBegin(
   notReady = ~(Bitmask)0;
   for(i=0; i<nTabList; i++){
     WhereLevel *pLevel = &pWInfo->a[i];
-    codeOneLoopExplain(pParse, pTabList, pLevel, i, pLevel->iFrom, wctrlFlags);
+    explainOneScan(pParse, pTabList, pLevel, i, pLevel->iFrom, wctrlFlags);
     notReady = codeOneLoopStart(pWInfo, i, wctrlFlags, notReady);
     pWInfo->iContinue = pLevel->addrCont;
   }
