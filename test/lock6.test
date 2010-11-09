@@ -126,7 +126,7 @@ ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
     set lockpath
   } {{:auto: (not held)}}
 
-  set lpp [pwd]/notmine
+  set lpp [exec mktemp -t fail]
   do_test lock6-1.4.1 {
     execsql "PRAGMA lock_proxy_file='$lpp'"
     catchsql {
@@ -151,7 +151,7 @@ ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
 
   catch {testfixture $::tf1 {db close}}
 
-  set lpp [pwd]/mine
+  set lpp [exec mktemp -t ok]
   do_test lock6-1.6 {
     execsql "PRAGMA lock_proxy_file='$lpp'"
     execsql {

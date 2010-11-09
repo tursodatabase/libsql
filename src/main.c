@@ -1666,7 +1666,7 @@ int sqlite3_limit(sqlite3 *db, int limitId, int newLimit){
   return oldLimit;
 }
 #if defined(SQLITE_ENABLE_AUTO_PROFILE)
-static void profile_sql(void *aux, const char *sql, uint64_t ns) {
+static void profile_sql(void *aux, const char *sql, u64 ns) {
 #pragma unused(aux)
 	fprintf(stderr, "Query: %s\n Execution Time: %llu ms\n", sql, ns / 1000000);
 }

@@ -35,7 +35,7 @@ ifcapable !wal {
   finish_test
   return
 }
-if { ![wal_is_ok] } {
+if { ![wal_is_ok] && ![path_is_dos "."]} {
   do_test walmode-0.1 {
     execsql { PRAGMA journal_mode = wal }
   } {delete}

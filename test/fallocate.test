@@ -76,6 +76,7 @@ set skipwaltests [expr {
   [permutation]=="journaltest" || [permutation]=="inmemory_journal"
 }]
 ifcapable !wal { set skipwaltests 1 }
+if {![wal_is_ok]} { set skipwaltests 1 }
 
 if {!$skipwaltests} {
   db close

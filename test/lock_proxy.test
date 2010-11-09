@@ -27,7 +27,7 @@ db close
 file delete -force test.db.lock
 
 #####################################################################
-ifcapable lock_proxy_pragmas {
+ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
   set ::using_proxy 0
   foreach {name value} [array get env SQLITE_FORCE_PROXY_LOCKING] {
     set ::using_proxy $value
@@ -135,7 +135,7 @@ ifcapable lock_proxy_pragmas {
 
 file delete -force test.db
 
-ifcapable lock_proxy_pragmas {
+ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
   set env(SQLITE_FORCE_PROXY_LOCKING) $::using_proxy
 }
 

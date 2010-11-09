@@ -3569,6 +3569,9 @@ static void unixShmPurge(unixFile *pFd){
   }
 }
 
+static int isProxyLockingMode(unixFile *);
+static const char *proxySharedMemoryBasePath(unixFile *);
+
 /*
 ** Open a shared-memory area associated with open database file pDbFd.  
 ** This particular implementation uses mmapped files.
@@ -3631,10 +3634,24 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
       goto shm_open_err;
     }
 
+    const char *zBasePath = pDbFd->zPath;
+#if defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE
+    /* If pDbFd is configured with proxy locking mode, use the local 
+     ** lock file path to determine the -shm file path
+     */
+    if( isProxyLockingMode(pDbFd) ){
+      zBasePath = proxySharedMemoryBasePath(pDbFd);
+      if( !zBasePath ){
+        rc = SQLITE_CANTOPEN_BKPT;
+        goto shm_open_err;
+      }
+    }
+#endif
+    
 #ifdef SQLITE_SHM_DIRECTORY
     nShmFilename = sizeof(SQLITE_SHM_DIRECTORY) + 30;
 #else
-    nShmFilename = 5 + (int)strlen(pDbFd->zPath);
+    nShmFilename = 5 + (int)strlen(zBasePath);
 #endif
     pShmNode = sqlite3_malloc( sizeof(*pShmNode) + nShmFilename );
     if( pShmNode==0 ){
@@ -3648,7 +3665,7 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
                      SQLITE_SHM_DIRECTORY "/sqlite-shm-%x-%x",
                      (u32)sStat.st_ino, (u32)sStat.st_dev);
 #else
-    sqlite3_snprintf(nShmFilename, zShmFilename, "%s-shm", pDbFd->zPath);
+    sqlite3_snprintf(nShmFilename, zShmFilename, "%s-shm", zBasePath);
 #endif
     pShmNode->h = -1;
     pDbFd->pInode->pShmNode = pShmNode;
@@ -4150,7 +4167,7 @@ static int proxyCheckReservedLock(sqlite3_file*, int*);
 IOMETHODS(
   proxyIoFinder,            /* Finder function name */
   proxyIoMethods,           /* sqlite3_io_methods object name */
-  1,                        /* shared memory is disabled */
+  2,                        /* shared memory is enabled */
   proxyClose,               /* xClose method */
   proxyLock,                /* xLock method */
   proxyUnlock,              /* xUnlock method */
@@ -4888,23 +4905,6 @@ static int unixOpen(
     if( envforce!=NULL ){
       useProxy = atoi(envforce)>0;
     }else{
-      struct statfs fsInfo;
-      if( statfs(zPath, &fsInfo) == -1 ){
-        /* In theory, the close(fd) call is sub-optimal. If the file opened
-        ** with fd is a database file, and there are other connections open
-        ** on that file that are currently holding advisory locks on it,
-        ** then the call to close() will cancel those locks. In practice,
-        ** we're assuming that statfs() doesn't fail very often. At least
-        ** not while other file descriptors opened by the same process on
-        ** the same file are working.  */
-        p->lastErrno = errno;
-        if( dirfd>=0 ){
-          close(dirfd); /* silently leak if fail, in error */
-        }
-        close(fd); /* silently leak if fail, in error */
-        rc = SQLITE_IOERR_ACCESS;
-        goto open_finished;
-      }
       useProxy = !(fsInfo.f_flags&MNT_LOCAL);
     }
     if( useProxy ){
@@ -5519,6 +5519,28 @@ static int proxyCreateLockPath(const char *lockPath){
   return 0;
 }
 
+static int isProxyLockingMode(unixFile *pFile) {
+  return (pFile->pMethod == &proxyIoMethods) ? 1 : 0;
+}
+
+/*
+** Return the shared memory base path based on the lock proxy file if the 
+** lock proxy file is hosted on a shared memory compatible FS
+*/
+static const char *proxySharedMemoryBasePath(unixFile *pFile) {
+  proxyLockingContext *pCtx;
+  unixFile *pLockFile;
+  
+  assert(pFile!=NULL && pFile->lockingContext!=NULL);
+  assert(pFile->pMethod == &proxyIoMethods);
+  pCtx = ((proxyLockingContext *)(pFile->lockingContext));
+  pLockFile = pCtx->lockProxy;
+  if( pLockFile->pMethod->iVersion>=2 && pLockFile->pMethod->xShmMap!=0 ){
+    return pCtx->lockProxyPath;
+  }
+  return NULL;
+}
+
 /*
 ** Create a new VFS file descriptor (stored in memory obtained from
 ** sqlite3_malloc) and open the file named "path" in the file descriptor.
@@ -5601,7 +5623,6 @@ static int proxyCreateUnixFile(
     *ppFile = pNew;
     return SQLITE_OK;
   }
-  sqlite3_free(pNew->pUnused);
 end_create_proxy:    
   close(fd); /* silently leak fd if error, we're already in error */
   sqlite3_free(pNew);
@@ -6245,7 +6266,7 @@ static int proxyFileControl(sqlite3_file *id, int op, void *pArg){
   switch( op ){
     case SQLITE_GET_LOCKPROXYFILE: {
       unixFile *pFile = (unixFile*)id;
-      if( pFile->pMethod == &proxyIoMethods ){
+      if( isProxyLockingMode(pFile) ){
         proxyLockingContext *pCtx = (proxyLockingContext*)pFile->lockingContext;
         proxyTakeConch(pFile);
         if( pCtx->lockProxyPath ){
@@ -6261,10 +6282,13 @@ static int proxyFileControl(sqlite3_file *id, int op, void *pArg){
     case SQLITE_SET_LOCKPROXYFILE: {
       unixFile *pFile = (unixFile*)id;
       int rc = SQLITE_OK;
-      int isProxyStyle = (pFile->pMethod == &proxyIoMethods);
+      int isProxyStyle = isProxyLockingMode(pFile);
       if( pArg==NULL || (const char *)pArg==0 ){
         if( isProxyStyle ){
-          /* turn off proxy locking - not supported */
+          /* turn off proxy locking - not supported.  If support is added for
+          ** switching proxy locking mode off then it will need to fail if
+          ** the journal mode is WAL mode. 
+          */
           rc = SQLITE_ERROR /*SQLITE_PROTOCOL? SQLITE_MISUSE?*/;
         }else{
           /* turn off proxy locking - already off - NOOP */

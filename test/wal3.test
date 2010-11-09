@@ -617,7 +617,7 @@ T delete
 #-------------------------------------------------------------------------
 # 
 do_test wal3-8.1 {
-  file delete -force test.db test.db-journal test.db wal
+  file delete -force test.db test.db-journal test.db wal .test.db-conch
   sqlite3 db test.db
   sqlite3 db2 test.db
   execsql {

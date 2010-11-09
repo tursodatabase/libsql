@@ -1130,10 +1130,6 @@ if { $do_wal_tests } {
       do_test pager1-7.1.$tn.2 { list $J $W } [list $js $ws]
     }
   }
-} else {
-  do_test pager1-7.1.wal_is_not_ok {
-    execsql { PRAGMA journal_mode = WAL }
-  } {delete}
 }
 
 do_test pager1-7.2.1 {
@@ -2276,24 +2272,26 @@ do_test pager1.27.1 {
 # the same database.
 #
 catch { db close }
-do_multiclient_test tn {
-  do_test pager1-28.$tn.1 {
-    sql1 { 
-      PRAGMA journal_mode = WAL;
-      CREATE TABLE t1(a, b);
-      INSERT INTO t1 VALUES('a', 'b');
-    }
-  } {wal}
-  do_test pager1-28.$tn.2 { sql2 { SELECT * FROM t1 } } {a b}
+if {[wal_is_ok]} {
+  do_multiclient_test tn {
+    do_test pager1-28.$tn.1 {
+      sql1 { 
+        PRAGMA journal_mode = WAL;
+        CREATE TABLE t1(a, b);
+        INSERT INTO t1 VALUES('a', 'b');
+      }
+    } {wal}
+    do_test pager1-28.$tn.2 { sql2 { SELECT * FROM t1 } } {a b}
 
-  do_test pager1-28.$tn.3 { sql1 { PRAGMA locking_mode=exclusive } } {exclusive}
-  do_test pager1-28.$tn.4 { 
-    csql1 { BEGIN; INSERT INTO t1 VALUES('c', 'd'); }
-  } {1 {database is locked}}
-  code2 { db2 close ; sqlite3 db2 test.db }
-  do_test pager1-28.$tn.4 { 
-    sql1 { INSERT INTO t1 VALUES('c', 'd'); COMMIT }
-  } {}
+    do_test pager1-28.$tn.3 { sql1 { PRAGMA locking_mode=exclusive } } {exclusive}
+    do_test pager1-28.$tn.4 { 
+      csql1 { BEGIN; INSERT INTO t1 VALUES('c', 'd'); }
+    } {1 {database is locked}}
+    code2 { db2 close ; sqlite3 db2 test.db }
+    do_test pager1-28.$tn.4 { 
+      sql1 { INSERT INTO t1 VALUES('c', 'd'); COMMIT }
+    } {}
+  }
 }
 
 #-------------------------------------------------------------------------

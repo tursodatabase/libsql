@@ -1183,7 +1183,7 @@ proc forced_proxy_locking {} {
 
 proc wal_is_ok {} {
   if { [forced_proxy_locking] } {
-    return 0
+    return 1
   }
   if { ![path_is_local "."] } {
     return 0

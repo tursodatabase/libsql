@@ -1292,7 +1292,12 @@ sqlite3 dbX :memory:
 dbX eval {PRAGMA temp_store_directory = ""}
 dbX close
 
-ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
+set skip_lock_proxy_tests [path_is_dos "."]
+ifcapable !lock_proxy_pragmas&&prefer_proxy_locking {
+  set skip_lock_proxy_tests 1
+}
+
+if !$skip_lock_proxy_tests {
   set sqlite_hostid_num 1
 
   set using_proxy 0
@@ -1307,7 +1312,7 @@ ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
 
   sqlite3 db test.db
   # set lock proxy name and then query it via pragma interface
-  set lpp [pwd]/proxyfile_1
+  set lpp [exec mktemp -t 'proxy1']
   do_test pragma-16.1 {
     execsql "PRAGMA lock_proxy_file='$lpp'"
     execsql "select * from sqlite_master"
@@ -1332,7 +1337,7 @@ ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
   } $lpp
 
   db2 close
-  set lpp2 [pwd]/proxyfile_2
+  set lpp2 [exec mktemp -t 'proxy2']
 
   # 2nd database connection cannot override the lock proxy file
   do_test pragma-16.3 {
@@ -1343,7 +1348,7 @@ ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
     } db2
   } {1 {database is locked}}
 
-  set lpp3 [pwd]/unused_proxyfile
+  set lpp3 [exec mktemp -t 'proxy3']
 
   # lock proxy file can be renamed if no other connections are active
   do_test pragma-16.4 {
@@ -1399,7 +1404,7 @@ ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
   } {1 {database is locked}}
 
   db2 close
-  set lpp4 [pwd]/proxyfile_4
+  set lpp4 [exec mktemp -t 'proxy4']
 
   # check that db is unlocked after first host connection closes 
   do_test pragma-16.8.1 {
@@ -1428,7 +1433,7 @@ ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
   } {1}
 
   # ensure creating directories for a lock proxy file works
-  set lpp5 [pwd]/proxytest/sub/dir/lock
+  set lpp5 [exec mktemp -d -t "proxy5"]/sub/dir/lock
   db close
   file delete -force proxytest
   do_test pragma-16.10.1 {
@@ -1437,7 +1442,7 @@ ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
     set lockpath2 [execsql {
       PRAGMA lock_proxy_file;
     } db]
-    string match "*proxytest/sub/dir/lock" $lockpath2
+    string match "*sub/dir/lock" $lockpath2
   } {1}
 
   # ensure that after deleting the path, setting ":auto:" works correctly
@@ -1445,12 +1450,12 @@ ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
   file delete -force proxytest
   do_test pragma-16.10.2 {
     sqlite3 db proxytest.db
-    set lockpath2 [execsql {
+    set lockpath3 [execsql {
       PRAGMA lock_proxy_file=":auto:";
       create table if not exists pt(y);
       PRAGMA lock_proxy_file;
     } db]
-    string match "*proxytest/sub/dir/lock" $lockpath2
+    string match "*sub/dir/lock" $lockpath3
   } {1}
 
   # ensure that if the path can not be created (file instead of dir)
@@ -1469,17 +1474,17 @@ ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
   } {1}
 
   # make sure we can deal with ugly file paths correctly
-  set lpp6 [pwd]/./././////./proxytest/../proxytest/sub/dir/lock
+  set lpp6 [exec mktemp -d -t "proxy6"]/./././////./proxytest/../proxytest/sub/dir/lock
   db close
   file delete -force proxytest
   do_test pragma-16.10.4 {
     sqlite3 db proxytest.db
     execsql "PRAGMA lock_proxy_file='$lpp6'" 
-    set lockpath2 [execsql {
+    set lockpath4 [execsql {
       create table if not exists aa(bb);
       PRAGMA lock_proxy_file;
     } db]
-    string match "*proxytest/sub/dir/lock" $lockpath2
+    string match "*proxytest/sub/dir/lock" $lockpath4
   } {1}
 
   # ensure that if the path can not be created (perm), setting :auto: deals
@@ -1496,12 +1501,12 @@ ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
     file mkdir proxytest
     file attributes proxytest -permission 0000
     sqlite3 db proxytest.db
-    set lockpath2 [execsql {
+    set lockpath5 [execsql {
       PRAGMA lock_proxy_file=":auto:";
       create table if not exists cc(bb);
       PRAGMA lock_proxy_file;
     } db]
-    string match "*proxytest.db:auto:" $lockpath2
+    string match "*proxytest.db:auto:" $lockpath5
   } {1}
 
   # ensure that if the path can not be created, locking fails
