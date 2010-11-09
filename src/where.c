@@ -3165,7 +3165,8 @@ static void codeOneLoopExplain(
   SrcList *pTabList,              /* Table list this loop refers to */
   WhereLevel *pLevel,             /* Scan to write OP_Explain opcode for */
   int iLevel,                     /* Value for "level" column of output */
-  int iFrom                       /* Value for "from" column of output */
+  int iFrom,                      /* Value for "from" column of output */
+  u16 wctrlFlags                  /* Flags passed to sqlite3WhereBegin() */
 ){
   if( pParse->explain==2 ){
     u32 flags = pLevel->plan.wsFlags;
@@ -3173,16 +3174,23 @@ static void codeOneLoopExplain(
     Vdbe *v = pParse->pVdbe;
     sqlite3 *db = pParse->db;
     char *zMsg;
+    sqlite3_int64 nRow;           /* Expected number of rows visited by scan */
+    int iId = pParse->iSelectId;  /* Select id (left-most output column) */
 
-    if( flags & WHERE_MULTI_OR ) return;
+    if( (flags&WHERE_MULTI_OR) || (wctrlFlags&WHERE_ONETABLE_ONLY) ) return;
 
-    zMsg = sqlite3MPrintf(db, "TABLE %s", pItem->zName);
+    if( pItem->pSelect ){
+      zMsg = sqlite3MPrintf(db, "SCAN SUBQUERY %d", pItem->iSelectId);
+    }else{
+      zMsg = sqlite3MPrintf(db, "SCAN TABLE %s", pItem->zName);
+    }
+
     if( pItem->zAlias ){
       zMsg = sqlite3MAppendf(db, zMsg, "%s AS %s", zMsg, pItem->zAlias);
     }
     if( (flags & WHERE_INDEXED)!=0 ){
       char *zWhere = indexRangeText(db, pLevel, pItem->pTab);
-      zMsg = sqlite3MAppendf(db, zMsg, "%s WITH %s%sINDEX%s%s%s", zMsg, 
+      zMsg = sqlite3MAppendf(db, zMsg, "%s BY %s%sINDEX%s%s%s", zMsg, 
           ((flags & WHERE_TEMP_INDEX)?"AUTOMATIC ":""),
           ((flags & WHERE_IDX_ONLY)?"COVERING ":""),
           ((flags & WHERE_TEMP_INDEX)?"":" "),
@@ -3191,7 +3199,7 @@ static void codeOneLoopExplain(
       );
       sqlite3DbFree(db, zWhere);
     }else if( flags & (WHERE_ROWID_EQ|WHERE_ROWID_RANGE) ){
-      zMsg = sqlite3MAppendf(db, zMsg, "%s USING INTEGER PRIMARY KEY", zMsg);
+      zMsg = sqlite3MAppendf(db, zMsg, "%s BY INTEGER PRIMARY KEY", zMsg);
 
       if( flags&WHERE_ROWID_EQ ){
         zMsg = sqlite3MAppendf(db, zMsg, "%s (rowid=?)", zMsg);
@@ -3210,15 +3218,17 @@ static void codeOneLoopExplain(
                   pVtabIdx->idxNum, pVtabIdx->idxStr);
     }
 #endif
-    zMsg = sqlite3MAppendf(db, zMsg, 
-        "%s (~%lld rows)", zMsg, (sqlite3_int64)(pLevel->plan.nRow)
-    );
-    sqlite3VdbeAddOp4(
-        v, OP_Explain, pParse->iSelectId, iLevel, iFrom, zMsg, P4_DYNAMIC);
+    if( wctrlFlags&(WHERE_ORDERBY_MIN|WHERE_ORDERBY_MAX) ){
+      nRow = 1;
+    }else{
+      nRow = (sqlite3_int64)pLevel->plan.nRow;
+    }
+    zMsg = sqlite3MAppendf(db, zMsg, "%s (~%lld rows)", zMsg, nRow);
+    sqlite3VdbeAddOp4(v, OP_Explain, iId, iLevel, iFrom, zMsg, P4_DYNAMIC);
   }
 }
 #else
-# define codeOneLoopExplain(w,x,y.z)
+# define codeOneLoopExplain(u,v,w,x,y,z)
 #endif /* SQLITE_OMIT_EXPLAIN */
 
 
@@ -3764,7 +3774,7 @@ static Bitmask codeOneLoopStart(
                         WHERE_FORCE_TABLE | WHERE_ONETABLE_ONLY);
         if( pSubWInfo ){
           codeOneLoopExplain(
-              pParse, pOrTab, &pSubWInfo->a[0], iLevel, pLevel->iFrom
+              pParse, pOrTab, &pSubWInfo->a[0], iLevel, pLevel->iFrom, 0
           );
           if( (wctrlFlags & WHERE_DUPLICATES_OK)==0 ){
             int iSet = ((ii==pOrWc->nTerm-1)?-1:ii);
@@ -4421,11 +4431,10 @@ WhereInfo *sqlite3WhereBegin(
   */
   notReady = ~(Bitmask)0;
   for(i=0; i<nTabList; i++){
-    if( (wctrlFlags&WHERE_ONETABLE_ONLY)==0 ){
-      codeOneLoopExplain(pParse, pTabList, &pWInfo->a[i],i,pWInfo->a[i].iFrom);
-    }
+    WhereLevel *pLevel = &pWInfo->a[i];
+    codeOneLoopExplain(pParse, pTabList, pLevel, i, pLevel->iFrom, wctrlFlags);
     notReady = codeOneLoopStart(pWInfo, i, wctrlFlags, notReady);
-    pWInfo->iContinue = pWInfo->a[i].addrCont;
+    pWInfo->iContinue = pLevel->addrCont;
   }
 
 #ifdef SQLITE_TEST  /* For testing and debugging use only */

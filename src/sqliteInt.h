@@ -1827,6 +1827,9 @@ struct SrcList {
     Bitmask colUsed;  /* Bit N (1<<N) set if column N of pTab is used */
     char *zIndex;     /* Identifier from "INDEXED BY <zIndex>" clause */
     Index *pIndex;    /* Index structure corresponding to zIndex, if any */
+#ifndef SQLITE_OMIT_EXPLAIN
+    int iSelectId;    /* If pSelect!=0, the id of the sub-select in EQP */
+#endif
   } a[1];             /* One entry for each identifier on the list */
 };
 

@@ -780,9 +780,11 @@ static void explainTempTable(Parse *pParse, const char *zUsage){
   }
 }
 # define explainRestoreSelectId() pParse->iSelectId = iRestoreSelectId
+# define explainAssignSelectId(pItem, id) pItem->iSelectId = id
 #else
 # define explainRestoreSelectId()
 # define explainTempTable(y,z)
+# define explainAssignSelectId(y,z)
 #endif
 
 /*
@@ -3679,6 +3681,7 @@ int sqlite3Select(
     }else{
       sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
       assert( pItem->isPopulated==0 );
+      explainAssignSelectId(pItem, pParse->iNextSelectId);
       sqlite3Select(pParse, pSub, &dest);
       pItem->isPopulated = 1;
     }

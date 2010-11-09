@@ -1600,6 +1600,16 @@ int sqlite3CodeSubselect(
     assert( testAddr>0 || pParse->db->mallocFailed );
   }
 
+#ifndef SQLITE_OMIT_EXPLAIN
+  if( pParse->explain==2 ){
+    char *zMsg = sqlite3MPrintf(
+        pParse->db, "EXECUTE %s%s SUBQUERY %d", testAddr?"":"CORRELATED ",
+        pExpr->op==TK_IN?"LIST":"SCALAR", pParse->iNextSelectId
+    );
+    sqlite3VdbeAddOp4(v, OP_Explain, pParse->iSelectId, 0, 0, zMsg, P4_DYNAMIC);
+  }
+#endif
+
   switch( pExpr->op ){
     case TK_IN: {
       char affinity;              /* Affinity of the LHS of the IN */
