@@ -6571,7 +6571,7 @@ static int pagerOpenWal(Pager *pPager){
   int rc = SQLITE_OK;
 
   assert( pPager->pWal==0 && pPager->tempFile==0 );
-  assert( pPager->eLock==SHARED_LOCK || pPager->eLock==EXCLUSIVE_LOCK );
+  assert( pPager->eLock==SHARED_LOCK || pPager->eLock==EXCLUSIVE_LOCK || pPager->noReadlock);
 
   /* If the pager is already in exclusive-mode, the WAL module will use 
   ** heap-memory for the wal-index instead of the VFS shared-memory 
