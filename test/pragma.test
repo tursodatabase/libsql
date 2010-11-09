@@ -1293,7 +1293,7 @@ dbX eval {PRAGMA temp_store_directory = ""}
 dbX close
 
 set skip_lock_proxy_tests [path_is_dos "."]
-ifcapable !lock_proxy_pragmas&&prefer_proxy_locking {
+ifcapable !lock_proxy_pragmas||prefer_proxy_locking {
   set skip_lock_proxy_tests 1
 }
 

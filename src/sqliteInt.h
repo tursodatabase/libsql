@@ -914,6 +914,7 @@ struct sqlite3 {
 #define SQLITE_ForeignKeys    0x04000000  /* Enforce foreign key constraints  */
 #define SQLITE_AutoIndex      0x08000000  /* Enable automatic indexes */
 #define SQLITE_PreferBuiltin  0x10000000  /* Preference to built-in funcs */
+#define SQLITE_CkptFullFSync  0x20000000  /* Use full fsync on checkpoint */
 
 /*
 ** Bits of the sqlite3.flags field that are used by the

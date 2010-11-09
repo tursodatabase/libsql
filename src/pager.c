@@ -619,6 +619,7 @@ struct Pager {
   u8 tempFile;                /* zFilename is a temporary file */
   u8 readOnly;                /* True for a read-only database */
   u8 memDb;                   /* True to inhibit all file I/O */
+  u8 ckptFullSync;            /* True to pass SYNC_FULL to WalCheckpoint() */
 
   /**************************************************************************
   ** The following block contains those class members that change during
@@ -3082,6 +3083,19 @@ static int pagerOpenWalIfPresent(Pager *pPager){
   }
   return rc;
 }
+
+/*
+** Return the value of the flags parameter that should be passed to
+** sqlite3OsSync() when checkpointing a WAL file.
+*/
+static int walCkptSyncFlags(Pager *pPager){
+  int flags = 0;
+  if( pPager->noSync==0 ){
+    flags = pPager->sync_flags | (pPager->ckptFullSync?SQLITE_SYNC_FULL:0);
+  }
+  return flags;
+}
+
 #endif
 
 /*
@@ -3262,10 +3276,16 @@ void sqlite3PagerSetCachesize(Pager *pPager, int mxPage){
 ** and FULL=3.
 */
 #ifndef SQLITE_OMIT_PAGER_PRAGMAS
-void sqlite3PagerSetSafetyLevel(Pager *pPager, int level, int bFullFsync){
+void sqlite3PagerSetSafetyLevel(Pager *pPager, int level, int fullFsync){
+  assert( 0==(fullFsync & ~(SQLITE_FullFSync|SQLITE_CkptFullFSync)) );
   pPager->noSync =  (level==1 || pPager->tempFile) ?1:0;
   pPager->fullSync = (level==3 && !pPager->tempFile) ?1:0;
-  pPager->sync_flags = (bFullFsync?SQLITE_SYNC_FULL:SQLITE_SYNC_NORMAL);
+  if( fullFsync & SQLITE_FullFSync ){
+    pPager->sync_flags = SQLITE_SYNC_FULL;
+  }else{
+    pPager->sync_flags = SQLITE_SYNC_NORMAL;
+  }
+  pPager->ckptFullSync = (fullFsync & SQLITE_CkptFullFSync)!=0;
 }
 #endif
 
@@ -3651,8 +3671,7 @@ int sqlite3PagerClose(Pager *pPager){
   /* pPager->errCode = 0; */
   pPager->exclusiveMode = 0;
 #ifndef SQLITE_OMIT_WAL
-  sqlite3WalClose(pPager->pWal,
-    (pPager->noSync ? 0 : pPager->sync_flags), 
+  sqlite3WalClose(pPager->pWal, walCkptSyncFlags(pPager),
     pPager->pageSize, pTmp
   );
   pPager->pWal = 0;
@@ -6521,10 +6540,8 @@ int sqlite3PagerCheckpoint(Pager *pPager){
   int rc = SQLITE_OK;
   if( pPager->pWal ){
     u8 *zBuf = (u8 *)pPager->pTmpSpace;
-    rc = sqlite3WalCheckpoint(pPager->pWal,
-        (pPager->noSync ? 0 : pPager->sync_flags),
-        pPager->pageSize, zBuf
-    );
+    int flags = walCkptSyncFlags(pPager);
+    rc = sqlite3WalCheckpoint(pPager->pWal, flags, pPager->pageSize, zBuf);
   }
   return rc;
 }
@@ -6629,9 +6646,8 @@ int sqlite3PagerCloseWal(Pager *pPager){
   if( rc==SQLITE_OK && pPager->pWal ){
     rc = pagerLockDb(pPager, EXCLUSIVE_LOCK);
     if( rc==SQLITE_OK ){
-      rc = sqlite3WalClose(pPager->pWal,
-                           (pPager->noSync ? 0 : pPager->sync_flags), 
-        pPager->pageSize, (u8*)pPager->pTmpSpace
+      rc = sqlite3WalClose(pPager->pWal, walCkptSyncFlags(pPager),
+          pPager->pageSize, (u8*)pPager->pTmpSpace
       );
       pPager->pWal = 0;
     }else{
