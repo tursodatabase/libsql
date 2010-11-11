@@ -23343,7 +23343,7 @@ do_execsql_test where7-3.1 {
 } {
   0 0 1 {SCAN TABLE t301 BY COVERING INDEX t301_c4 (c4=?) (~10 rows)} 
   0 0 1 {SCAN TABLE t301 BY INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
-  0 1 0 {SCAN TABLE t302 BY INDEX t302_c8_c3 (c8=? AND c8>?) (~2 rows)} 
+  0 1 0 {SCAN TABLE t302 BY INDEX t302_c8_c3 (c8=? AND c3>?) (~2 rows)} 
   0 0 0 {USE TEMP B-TREE FOR ORDER BY}
 }
 

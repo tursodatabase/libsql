@@ -1,5 +1,5 @@
-C Modifications\sto\stest\scases\sto\saccount\sfor\snew\sEXPLAIN\sQUERY\sPLAN\soutput.
-D 2010-11-11T10:36:26
+C Fix\sa\sbug\sin\sthe\sEXPLAIN\sQUERY\sPLAN\scode.
+D 2010-11-11T11:43:01
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e7a59672eaeb04408d1fa8501618d7501a3c5e39
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -239,7 +239,7 @@ F src/vtab.c b297e8fa656ab5e66244ab15680d68db0adbec30
 F src/wal.c f26b8d297bd11cb792e609917f9d4c6718ac8e0e
 F src/wal.h c1aac6593a0b02b15dc625987e619edeab39292e
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 2b69056fb5a9c271af4cf3d24112e9413b43d6ad
+F src/where.c 6c1905c835935d6915ccd24506a3acbdc3eba784
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 6745008c144bd2956d58864d21f7b304689c1cce
@@ -264,7 +264,7 @@ F test/auth.test 26cc6f219580191539bf335abe03e55e49310846
 F test/auth2.test 270baddc8b9c273682760cffba6739d907bd2882
 F test/auth3.test a4755e6a2a2fea547ffe63c874eb569e60a28eb5
 F test/autoinc.test 85ef3180a737e6580086a018c09c6f1a52759b46
-F test/autoindex1.test 4400c3e123c25b83d48974ad612c4d2e9e6fa940
+F test/autoindex1.test c00ee946c4a16bef593e104d8ea81370ff8e5a37
 F test/autovacuum.test bb7c0885e6f8f1d633045de48f2b66082162766d
 F test/autovacuum_ioerr2.test 598b0663074d3673a9c1bc9a16e80971313bafe6
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
@@ -350,7 +350,7 @@ F test/descidx2.test 9f1a0c83fd57f8667c82310ca21b30a350888b5d
 F test/descidx3.test fe720e8b37d59f4cef808b0bf4e1b391c2e56b6f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
-F test/e_createtable.test 0aa5dadca80684d6f497d706ac69112019f6704b
+F test/e_createtable.test 5fd86f532e3c50fca6bbaab78ab0b0f8b9c7533c
 F test/e_delete.test 55d868b647acc091c261a10b9b0cb0ab660a6acb
 F test/e_expr.test 4e004d1f5187d4bbc9ca3d55660a8d164dd59f4e
 F test/e_fkey.test 64e69327091444471a14f854b2e297c5039c47ab
@@ -442,7 +442,7 @@ F test/fts3defer2.test d3c7db6584aab06a2781b8de58747c33b23cb19c
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3expr.test 5e745b2b6348499d9ef8d59015de3182072c564c
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
-F test/fts3fault.test 2c8c26f9002be900056b63996a2891a043775f7b
+F test/fts3fault.test 81fd40ceb12f33f9d16c5637d0f8d95d4556c456
 F test/fts3malloc.test 9c8cc3f885bb4dfc66d0460c52f68f45e4710d1b
 F test/fts3matchinfo.test 211b04434926bce9cc2b3cc5f58725affefe5165
 F test/fts3near.test 2e318ee434d32babd27c167142e2b94ddbab4844
@@ -846,10 +846,10 @@ F test/where3.test 6fc33631b7350b2c4066f835d4f994149ddd0a1d
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
-F test/where7.test 23ad8b8bee5f2feb3f0118b09fe9ef5fcfa5a944
+F test/where7.test 2707b476dbf752f8cdc986212373700f703a6527
 F test/where8.test a6c740fd286d7883e274e17b6230a9d672a7ab1f
 F test/where8m.test da346596e19d54f0aba35ebade032a7c47d79739
-F test/where9.test 2fa750f5f38375f4553b629d76d4dd903224150e
+F test/where9.test 576ce5bf3bf5d2cefe4dcea9c2e8fc69d1a7ec8f
 F test/whereA.test 24c234263c8fe358f079d5e57d884fb569d2da0a
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
@@ -886,7 +886,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 4b5c93bc7c43c80962ddae65c58037bf5977b94b
-R abe563ec3b08e8fc639bf3759f538194
+P 30904ef8412348464e893e9e1551ef22cad24a3e
+R ad4bf36ec916b4929497eadda39bfc05
 U dan
-Z ed52cc8c7203a66253060e18a9474729
+Z fb3b99730d456e246e3837735140f4ed

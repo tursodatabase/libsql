@@ -241,9 +241,9 @@ do_execsql_test autoindex1-600 {
    ORDER BY x.registering_flock;
 } {
   1 0 0 {SCAN TABLE sheep AS s (~1000000 rows)} 
-  1 1 1 {SCAN TABLE flock_owner AS prev BY INDEX sqlite_autoindex_flock_owner_1 (flock_no=? AND flock_no<?) (~2 rows)} 
+  1 1 1 {SCAN TABLE flock_owner AS prev BY INDEX sqlite_autoindex_flock_owner_1 (flock_no=? AND owner_change_date<?) (~2 rows)} 
   1 0 0 {EXECUTE CORRELATED SCALAR SUBQUERY 2} 
-  2 0 0 {SCAN TABLE flock_owner AS later BY COVERING INDEX sqlite_autoindex_flock_owner_1 (flock_no=? AND flock_no>? AND flock_no<?) (~1 rows)} 
+  2 0 0 {SCAN TABLE flock_owner AS later BY COVERING INDEX sqlite_autoindex_flock_owner_1 (flock_no=? AND owner_change_date>? AND owner_change_date<?) (~1 rows)} 
   0 0 0 {SCAN TABLE sheep AS x BY INDEX sheep_reg_flock_index (~1000000 rows)} 
   0 1 1 {SCAN SUBQUERY 1 AS y BY AUTOMATIC COVERING INDEX (sheep_no=?) (~7 rows)}
 }

@@ -3158,18 +3158,23 @@ static char *explainIndexRange(sqlite3 *db, WhereLevel *pLevel, Table *pTab){
   int i;
 
   for(i=0; i<nEq; i++){
-    char *zCol = pTab->aCol[pIndex->aiColumn[i]].zName;
     zRet = sqlite3MAppendf(db, zRet, 
-        "%s%s%s=?", (zRet?zRet:""), (zRet?" AND ":""), zCol);
+        "%s%s%s=?", (zRet?zRet:""), (zRet?" AND ":""), 
+        pTab->aCol[pIndex->aiColumn[i]].zName
+    );
   }
 
   if( pPlan->wsFlags&WHERE_BTM_LIMIT ){
     zRet = sqlite3MAppendf(db, zRet,
-        "%s%s%s>?", (zRet?zRet:""), (zRet?" AND ":""), pTab->aCol[nEq].zName);
+        "%s%s%s>?", (zRet?zRet:""), (zRet?" AND ":""),
+        pTab->aCol[pIndex->aiColumn[i]].zName
+    );
   }
   if( pPlan->wsFlags&WHERE_TOP_LIMIT ){
     zRet = sqlite3MAppendf(db, zRet,
-        "%s%s%s<?", (zRet?zRet:""), (zRet?" AND ":""), pTab->aCol[nEq].zName);
+        "%s%s%s<?", (zRet?zRet:""), (zRet?" AND ":""), 
+        pTab->aCol[pIndex->aiColumn[i]].zName
+    );
   }
 
   if( zRet ){
