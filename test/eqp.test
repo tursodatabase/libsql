@@ -24,7 +24,6 @@ set testprefix eqp
 #
 
 proc do_eqp_test {name sql res} {
-  set res [list {*}$res]
   uplevel do_execsql_test $name [list "EXPLAIN QUERY PLAN $sql"] [list $res]
 }
 proc det {args} { uplevel do_eqp_test $args }
@@ -218,6 +217,7 @@ do_eqp_test 4.1.1 {
 } {
   1 0 0 {SCAN TABLE t1 (~1000000 rows)} 
   2 0 0 {SCAN TABLE t2 (~1000000 rows)} 
+  0 0 0 {COMPOSITE SUBQUERIES 1 AND 2 (UNION ALL)} 
 }
 do_eqp_test 4.1.2 {
   SELECT * FROM t1 UNION ALL SELECT * FROM t2 ORDER BY 2
@@ -226,6 +226,7 @@ do_eqp_test 4.1.2 {
   1 0 0 {USE TEMP B-TREE FOR ORDER BY}
   2 0 0 {SCAN TABLE t2 (~1000000 rows)} 
   2 0 0 {USE TEMP B-TREE FOR ORDER BY}
+  0 0 0 {COMPOSITE SUBQUERIES 1 AND 2 (UNION ALL)} 
 }
 do_eqp_test 4.1.3 {
   SELECT * FROM t1 UNION SELECT * FROM t2 ORDER BY 2
@@ -234,6 +235,7 @@ do_eqp_test 4.1.3 {
   1 0 0 {USE TEMP B-TREE FOR ORDER BY}
   2 0 0 {SCAN TABLE t2 (~1000000 rows)} 
   2 0 0 {USE TEMP B-TREE FOR ORDER BY}
+  0 0 0 {COMPOSITE SUBQUERIES 1 AND 2 (UNION)} 
 }
 do_eqp_test 4.1.4 {
   SELECT * FROM t1 INTERSECT SELECT * FROM t2 ORDER BY 2
@@ -242,6 +244,7 @@ do_eqp_test 4.1.4 {
   1 0 0 {USE TEMP B-TREE FOR ORDER BY}
   2 0 0 {SCAN TABLE t2 (~1000000 rows)} 
   2 0 0 {USE TEMP B-TREE FOR ORDER BY}
+  0 0 0 {COMPOSITE SUBQUERIES 1 AND 2 (INTERSECT)} 
 }
 do_eqp_test 4.1.5 {
   SELECT * FROM t1 EXCEPT SELECT * FROM t2 ORDER BY 2
@@ -250,6 +253,7 @@ do_eqp_test 4.1.5 {
   1 0 0 {USE TEMP B-TREE FOR ORDER BY}
   2 0 0 {SCAN TABLE t2 (~1000000 rows)} 
   2 0 0 {USE TEMP B-TREE FOR ORDER BY}
+  0 0 0 {COMPOSITE SUBQUERIES 1 AND 2 (EXCEPT)} 
 }
 
 do_eqp_test 4.2.2 {
@@ -258,6 +262,7 @@ do_eqp_test 4.2.2 {
   1 0 0 {SCAN TABLE t1 (~1000000 rows)} 
   1 0 0 {USE TEMP B-TREE FOR ORDER BY}
   2 0 0 {SCAN TABLE t2 BY INDEX t2i1 (~1000000 rows)} 
+  0 0 0 {COMPOSITE SUBQUERIES 1 AND 2 (UNION ALL)} 
 }
 do_eqp_test 4.2.3 {
   SELECT * FROM t1 UNION SELECT * FROM t2 ORDER BY 1
@@ -266,6 +271,7 @@ do_eqp_test 4.2.3 {
   1 0 0 {USE TEMP B-TREE FOR ORDER BY}
   2 0 0 {SCAN TABLE t2 (~1000000 rows)} 
   2 0 0 {USE TEMP B-TREE FOR ORDER BY}
+  0 0 0 {COMPOSITE SUBQUERIES 1 AND 2 (UNION)} 
 }
 do_eqp_test 4.2.4 {
   SELECT * FROM t1 INTERSECT SELECT * FROM t2 ORDER BY 1
@@ -274,6 +280,7 @@ do_eqp_test 4.2.4 {
   1 0 0 {USE TEMP B-TREE FOR ORDER BY}
   2 0 0 {SCAN TABLE t2 (~1000000 rows)} 
   2 0 0 {USE TEMP B-TREE FOR ORDER BY}
+  0 0 0 {COMPOSITE SUBQUERIES 1 AND 2 (INTERSECT)} 
 }
 do_eqp_test 4.2.5 {
   SELECT * FROM t1 EXCEPT SELECT * FROM t2 ORDER BY 1
@@ -282,6 +289,7 @@ do_eqp_test 4.2.5 {
   1 0 0 {USE TEMP B-TREE FOR ORDER BY}
   2 0 0 {SCAN TABLE t2 (~1000000 rows)} 
   2 0 0 {USE TEMP B-TREE FOR ORDER BY}
+  0 0 0 {COMPOSITE SUBQUERIES 1 AND 2 (EXCEPT)} 
 }
 
 do_eqp_test 4.3.1 {
@@ -289,6 +297,28 @@ do_eqp_test 4.3.1 {
 } {
   1 0 0 {SCAN TABLE t1 (~1000000 rows)} 
   2 0 0 {SCAN TABLE t2 (~1000000 rows)} 
+  0 0 0 {COMPOSITE SUBQUERIES 1 AND 2 USING TEMP B-TREE (UNION)} 
+}
+
+do_eqp_test 4.3.2 {
+  SELECT x FROM t1 UNION SELECT x FROM t2 UNION SELECT x FROM t1
+} {
+  2 0 0 {SCAN TABLE t1 (~1000000 rows)} 
+  3 0 0 {SCAN TABLE t2 (~1000000 rows)} 
+  1 0 0 {COMPOSITE SUBQUERIES 2 AND 3 USING TEMP B-TREE (UNION)}
+  4 0 0 {SCAN TABLE t1 (~1000000 rows)} 
+  0 0 0 {COMPOSITE SUBQUERIES 1 AND 4 USING TEMP B-TREE (UNION)}
+}
+do_eqp_test 4.3.3 {
+  SELECT x FROM t1 UNION SELECT x FROM t2 UNION SELECT x FROM t1 ORDER BY 1
+} {
+  2 0 0 {SCAN TABLE t1 (~1000000 rows)} 
+  2 0 0 {USE TEMP B-TREE FOR ORDER BY} 
+  3 0 0 {SCAN TABLE t2 BY COVERING INDEX t2i1 (~1000000 rows)} 
+  1 0 0 {COMPOSITE SUBQUERIES 2 AND 3 (UNION)} 
+  4 0 0 {SCAN TABLE t1 (~1000000 rows)} 
+  4 0 0 {USE TEMP B-TREE FOR ORDER BY} 
+  0 0 0 {COMPOSITE SUBQUERIES 1 AND 4 (UNION)}
 }
 
 finish_test
