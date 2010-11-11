@@ -1,5 +1,5 @@
-C Add\sa\srow\sof\sEXPLAIN\sQUERY\sPLAN\soutput\sfor\seach\scomposite\sselect\soperation\s(UNION,\sEXCEPT\setc.)\sin\sthe\squery.
-D 2010-11-11T16:46:40
+C Use\s"COMPOUND"\sinstead\sof\s"COMPOSITE"\sin\sthe\sEXPLAIN\sQUERY\sPLAN\soutput\sto\sdescribe\sUNION,\sUNION\sALL,\sEXCEPT\sand\sINTERSECT\soperations.
+D 2010-11-11T17:48:51
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e7a59672eaeb04408d1fa8501618d7501a3c5e39
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,7 +174,7 @@ F src/printf.c 8ae5082dd38a1b5456030c3755ec3a392cd51506
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
-F src/select.c de0cf4881f3503a72fba7a2cf59dc56dd563c5a5
+F src/select.c a88ad1cb4af99e47548760d4dd400d2405baff3c
 F src/shell.c 8517fc1f9c59ae4007e6cc8b9af91ab231ea2056
 F src/sqlite.h.in f47e09412fc9a129f759fa4d96ef21f4b3d529eb
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
@@ -365,7 +365,7 @@ F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
 F test/enc4.test 4b575ef09e0eff896e73bd24076f96c2aa6a42de
-F test/eqp.test d4a411b212a687115a6efb7e0e143cf6592ce8af
+F test/eqp.test 13c875a9a6b4e6fcdd36895d7791db6a7f124215
 F test/eval.test bc269c365ba877554948441e91ad5373f9f91be3
 F test/exclusive.test 53e1841b422e554cecf0160f937c473d6d0e3062
 F test/exclusive2.test 76e63c05349cb70d09d60b99d2ae625525ff5155
@@ -886,7 +886,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 7ae068952fba4395b4aa437613a5ed2bd9ddf941
-R e485a0cebad0641fc6f1d38e91a1d634
+P 00fb8468b5f2c48a3c91b86803bf306a0331496f
+R 64ead24f61500a4f0593c355fdf08678
 U dan
-Z c839f7f76a308e5561815c81b3e77973
+Z a73a264298070e2a412f911e555db5e3
