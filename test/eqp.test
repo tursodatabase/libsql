@@ -188,6 +188,28 @@ det 3.2.2 {
   0 0 0 {USE TEMP B-TREE FOR ORDER BY}
 }
 
+det 3.3.1 {
+  SELECT * FROM t1 WHERE y IN (SELECT y FROM t2)
+} {
+  0 0 0 {SCAN TABLE t1 (~100000 rows)} 
+  0 0 0 {EXECUTE LIST SUBQUERY 1} 
+  1 0 0 {SCAN TABLE t2 (~1000000 rows)}
+}
+det 3.3.2 {
+  SELECT * FROM t1 WHERE y IN (SELECT y FROM t2 WHERE t1.x!=t2.x)
+} {
+  0 0 0 {SCAN TABLE t1 (~500000 rows)} 
+  0 0 0 {EXECUTE CORRELATED LIST SUBQUERY 1} 
+  1 0 0 {SCAN TABLE t2 (~500000 rows)}
+}
+det 3.3.3 {
+  SELECT * FROM t1 WHERE EXISTS (SELECT y FROM t2 WHERE t1.x!=t2.x)
+} {
+  0 0 0 {SCAN TABLE t1 (~500000 rows)} 
+  0 0 0 {EXECUTE CORRELATED SCALAR SUBQUERY 1} 
+  1 0 0 {SCAN TABLE t2 (~500000 rows)}
+}
+
 #-------------------------------------------------------------------------
 # Test cases eqp-4.* - tests for composite select statements.
 #

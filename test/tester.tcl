@@ -349,7 +349,7 @@ proc fix_testname {varname} {
     
 proc do_execsql_test {testname sql {result {}}} {
   fix_testname testname
-  uplevel do_test $testname [list "execsql {$sql}"] [list $result]
+  uplevel do_test $testname [list "execsql {$sql}"] [list [list {*}$result]]
 }
 proc do_catchsql_test {testname sql result} {
   fix_testname testname
