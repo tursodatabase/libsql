@@ -3132,6 +3132,26 @@ static int codeAllEqualityTerms(
 
 #ifndef SQLITE_OMIT_EXPLAIN
 /*
+** This routine is a helper for explainIndexRange() below
+**
+** pStr holds the text of an expression that we are building up one term
+** at a time.  This routine adds a new term to the end of the expression.
+** Terms are separated by AND so add the "AND" text for second and subsequent
+** terms only.
+*/
+static void explainAppendTerm(
+  StrAccum *pStr,             /* The text expression being built */
+  int iTerm,                  /* Index of this term.  First is zero */
+  const char *zColumn,        /* Name of the column */
+  const char *zOp             /* Name of the operator */
+){
+  if( iTerm ) sqlite3StrAccumAppend(pStr, " AND ", 5);
+  sqlite3StrAccumAppend(pStr, zColumn, -1);
+  sqlite3StrAccumAppend(pStr, zOp, 1);
+  sqlite3StrAccumAppend(pStr, "?", 1);
+}
+
+/*
 ** Argument pLevel describes a strategy for scanning table pTab. This 
 ** function returns a pointer to a string buffer containing a description
 ** of the subset of table rows scanned by the strategy in the form of an
@@ -3154,34 +3174,29 @@ static char *explainIndexRange(sqlite3 *db, WhereLevel *pLevel, Table *pTab){
   WherePlan *pPlan = &pLevel->plan;
   Index *pIndex = pPlan->u.pIdx;
   int nEq = pPlan->nEq;
-  char *zRet = 0;
-  int i;
+  int i, j;
+  Column *aCol = pTab->aCol;
+  int *aiColumn = pIndex->aiColumn;
+  StrAccum txt;
 
+  if( nEq==0 && (pPlan->wsFlags & (WHERE_BTM_LIMIT|WHERE_TOP_LIMIT))==0 ){
+    return 0;
+  }
+  sqlite3StrAccumInit(&txt, 0, 0, SQLITE_MAX_LENGTH);
+  sqlite3StrAccumAppend(&txt, " (", 2);
   for(i=0; i<nEq; i++){
-    zRet = sqlite3MAppendf(db, zRet, 
-        "%s%s%s=?", (zRet?zRet:""), (zRet?" AND ":""), 
-        pTab->aCol[pIndex->aiColumn[i]].zName
-    );
+    explainAppendTerm(&txt, i, aCol[aiColumn[i]].zName, "=");
   }
 
+  j = i;
   if( pPlan->wsFlags&WHERE_BTM_LIMIT ){
-    zRet = sqlite3MAppendf(db, zRet,
-        "%s%s%s>?", (zRet?zRet:""), (zRet?" AND ":""),
-        pTab->aCol[pIndex->aiColumn[i]].zName
-    );
+    explainAppendTerm(&txt, i++, aCol[aiColumn[j]].zName, ">");
   }
   if( pPlan->wsFlags&WHERE_TOP_LIMIT ){
-    zRet = sqlite3MAppendf(db, zRet,
-        "%s%s%s<?", (zRet?zRet:""), (zRet?" AND ":""), 
-        pTab->aCol[pIndex->aiColumn[i]].zName
-    );
+    explainAppendTerm(&txt, i, aCol[aiColumn[j]].zName, "<");
   }
-
-  if( zRet ){
-    zRet = sqlite3MAppendf(db, zRet, " (%s)", zRet);
-  }
-
-  return zRet;
+  sqlite3StrAccumAppend(&txt, ")", 1);
+  return sqlite3StrAccumFinish(&txt);
 }
 
 /*

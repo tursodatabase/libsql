@@ -1,5 +1,8 @@
-C Use\s"COMPOUND"\sinstead\sof\s"COMPOSITE"\sin\sthe\sEXPLAIN\sQUERY\sPLAN\soutput\sto\sdescribe\sUNION,\sUNION\sALL,\sEXCEPT\sand\sINTERSECT\soperations.
-D 2010-11-11T17:48:51
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Reduce\sthe\snumber\sof\sbranches\sthat\sneed\sto\sbe\stested\sin\sthe\nexplainIndexRange()\sfunction\sof\swhere.c.
+D 2010-11-12T15:36:00
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e7a59672eaeb04408d1fa8501618d7501a3c5e39
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -239,7 +242,7 @@ F src/vtab.c b297e8fa656ab5e66244ab15680d68db0adbec30
 F src/wal.c f26b8d297bd11cb792e609917f9d4c6718ac8e0e
 F src/wal.h c1aac6593a0b02b15dc625987e619edeab39292e
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 6c1905c835935d6915ccd24506a3acbdc3eba784
+F src/where.c 2a5a0c68cc6c646f5835d484416480f25c9235e9
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 6745008c144bd2956d58864d21f7b304689c1cce
@@ -886,7 +889,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 00fb8468b5f2c48a3c91b86803bf306a0331496f
-R 64ead24f61500a4f0593c355fdf08678
-U dan
-Z a73a264298070e2a412f911e555db5e3
+P 28643b85d93d27a44b9370e4087efa8fa2af7f8e
+R 25128c3b1a26bfb5be33069710cfa1ff
+U drh
+Z 1b2d006e34f432619cd673c63b9961c1
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFM3V7koxKgR168RlERAgxFAJ9v6b1y9uIi2fQKQ0CrbcPW8tmodACfVVag
+Rh8WHmMKMaxcSxUJii+hZlQ=
+=KoLX
+-----END PGP SIGNATURE-----
