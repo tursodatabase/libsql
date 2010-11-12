@@ -305,6 +305,40 @@ static int multiplexDelete(
   return rc;
 }
 
+static int multiplexAccess(sqlite3_vfs *a, const char *b, int c, int *d){
+  return gMultiplex.pOrigVfs->xAccess(gMultiplex.pOrigVfs, b, c, d);
+}
+static int multiplexFullPathname(sqlite3_vfs *a, const char *b, int c, char *d){
+  return gMultiplex.pOrigVfs->xFullPathname(gMultiplex.pOrigVfs, b, c, d);
+}
+static void *multiplexDlOpen(sqlite3_vfs *a, const char *b){
+  return gMultiplex.pOrigVfs->xDlOpen(gMultiplex.pOrigVfs, b);
+}
+static void multiplexDlError(sqlite3_vfs *a, int b, char *c){
+  gMultiplex.pOrigVfs->xDlError(gMultiplex.pOrigVfs, b, c);
+}
+static void (*multiplexDlSym(sqlite3_vfs *a, void *b, const char *c))(void){
+  return gMultiplex.pOrigVfs->xDlSym(gMultiplex.pOrigVfs, b, c);
+}
+static void multiplexDlClose(sqlite3_vfs *a, void *b){
+  gMultiplex.pOrigVfs->xDlClose(gMultiplex.pOrigVfs, b);
+}
+static int multiplexRandomness(sqlite3_vfs *a, int b, char *c){
+  return gMultiplex.pOrigVfs->xRandomness(gMultiplex.pOrigVfs, b, c);
+}
+static int multiplexSleep(sqlite3_vfs *a, int b){
+  return gMultiplex.pOrigVfs->xSleep(gMultiplex.pOrigVfs, b);
+}
+static int multiplexCurrentTime(sqlite3_vfs *a, double *b){
+  return gMultiplex.pOrigVfs->xCurrentTime(gMultiplex.pOrigVfs, b);
+}
+static int multiplexGetLastError(sqlite3_vfs *a, int b, char *c){
+  return gMultiplex.pOrigVfs->xGetLastError(gMultiplex.pOrigVfs, b, c);
+}
+static int multiplexCurrentTimeInt64(sqlite3_vfs *a, sqlite3_int64 *b){
+  return gMultiplex.pOrigVfs->xCurrentTimeInt64(gMultiplex.pOrigVfs, b);
+}
+
 /************************ I/O Method Wrappers *******************************/
 
 /* xClose requests get passed through to the original VFS.
@@ -691,6 +725,18 @@ int sqlite3_multiplex_initialize(const char *zOrigVfsName, int makeDefault){
   gMultiplex.sThisVfs.zName = "multiplex";
   gMultiplex.sThisVfs.xOpen = multiplexOpen;
   gMultiplex.sThisVfs.xDelete = multiplexDelete;
+  gMultiplex.sThisVfs.xAccess = multiplexAccess;
+  gMultiplex.sThisVfs.xFullPathname = multiplexFullPathname;
+  gMultiplex.sThisVfs.xDlOpen = multiplexDlOpen;
+  gMultiplex.sThisVfs.xDlError = multiplexDlError;
+  gMultiplex.sThisVfs.xDlSym = multiplexDlSym;
+  gMultiplex.sThisVfs.xDlClose = multiplexDlClose;
+  gMultiplex.sThisVfs.xRandomness = multiplexRandomness;
+  gMultiplex.sThisVfs.xSleep = multiplexSleep;
+  gMultiplex.sThisVfs.xCurrentTime = multiplexCurrentTime;
+  gMultiplex.sThisVfs.xGetLastError = multiplexGetLastError;
+  gMultiplex.sThisVfs.xCurrentTimeInt64 = multiplexCurrentTimeInt64;
+
   gMultiplex.sIoMethodsV1.iVersion = 1;
   gMultiplex.sIoMethodsV1.xClose = multiplexClose;
   gMultiplex.sIoMethodsV1.xRead = multiplexRead;
