@@ -1099,14 +1099,14 @@ do_execsql_test e_fkey-27.3 {
   EXPLAIN QUERY PLAN UPDATE artist SET artistid = ?, artistname = ?
 } {
   0 0 0 {SCAN TABLE artist (~1000000 rows)} 
-  0 0 0 {SCAN TABLE track BY COVERING INDEX trackindex (trackartist=?) (~10 rows)} 
-  0 0 0 {SCAN TABLE track BY COVERING INDEX trackindex (trackartist=?) (~10 rows)}
+  0 0 0 {SEARCH TABLE track USING COVERING INDEX trackindex (trackartist=?) (~10 rows)} 
+  0 0 0 {SEARCH TABLE track USING COVERING INDEX trackindex (trackartist=?) (~10 rows)}
 }
 do_execsql_test e_fkey-27.4 {
   EXPLAIN QUERY PLAN DELETE FROM artist
 } {
   0 0 0 {SCAN TABLE artist (~1000000 rows)} 
-  0 0 0 {SCAN TABLE track BY COVERING INDEX trackindex (trackartist=?) (~10 rows)}
+  0 0 0 {SEARCH TABLE track USING COVERING INDEX trackindex (trackartist=?) (~10 rows)}
 }
 
 

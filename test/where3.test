@@ -226,14 +226,14 @@ do_execsql_test where3-3.0 {
   explain query plan SELECT * FROM t302, t301 WHERE t302.x=5 AND t301.a=t302.y;
 } {
   0 0 0 {SCAN TABLE t302 (~0 rows)} 
-  0 1 1 {SCAN TABLE t301 BY INTEGER PRIMARY KEY (rowid=?) (~1 rows)}
+  0 1 1 {SEARCH TABLE t301 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}
 }
 do_execsql_test where3-3.1 {
   explain query plan
   SELECT * FROM t301, t302 WHERE t302.x=5 AND t301.a=t302.y;
 } {
   0 0 1 {SCAN TABLE t302 (~0 rows)} 
-  0 1 0 {SCAN TABLE t301 BY INTEGER PRIMARY KEY (rowid=?) (~1 rows)}
+  0 1 0 {SEARCH TABLE t301 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}
 }
 
 # Verify that when there are multiple tables in a join which must be
@@ -297,8 +297,8 @@ do_execsql_test where3-5.0 {
       AND bbb.parent = 4
     ORDER BY bbb.title COLLATE NOCASE ASC;
 } {
-  0 0 0 {SCAN TABLE aaa BY INDEX aaa_333 (fk=?) (~10 rows)} 
-  0 1 1 {SCAN TABLE bbb BY INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
+  0 0 0 {SEARCH TABLE aaa USING INDEX aaa_333 (fk=?) (~10 rows)} 
+  0 1 1 {SEARCH TABLE bbb USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
   0 0 0 {USE TEMP B-TREE FOR ORDER BY}
 }
 do_execsql_test where3-5.1 {
@@ -310,8 +310,8 @@ do_execsql_test where3-5.1 {
       AND bbb.parent = 4
     ORDER BY bbb.title COLLATE NOCASE ASC;
 } {
-  0 0 0 {SCAN TABLE aaa BY INDEX aaa_333 (fk=?) (~10 rows)} 
-  0 1 1 {SCAN TABLE aaa AS bbb BY INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
+  0 0 0 {SEARCH TABLE aaa USING INDEX aaa_333 (fk=?) (~10 rows)} 
+  0 1 1 {SEARCH TABLE aaa AS bbb USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
   0 0 0 {USE TEMP B-TREE FOR ORDER BY}
 }
 do_execsql_test where3-5.2 {
@@ -323,8 +323,8 @@ do_execsql_test where3-5.2 {
       AND bbb.parent = 4
     ORDER BY bbb.title COLLATE NOCASE ASC;
 } {
-  0 0 1 {SCAN TABLE aaa BY INDEX aaa_333 (fk=?) (~10 rows)} 
-  0 1 0 {SCAN TABLE bbb BY INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
+  0 0 1 {SEARCH TABLE aaa USING INDEX aaa_333 (fk=?) (~10 rows)} 
+  0 1 0 {SEARCH TABLE bbb USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
   0 0 0 {USE TEMP B-TREE FOR ORDER BY}
 }
 do_execsql_test where3-5.3 {
@@ -336,8 +336,8 @@ do_execsql_test where3-5.3 {
       AND bbb.parent = 4
     ORDER BY bbb.title COLLATE NOCASE ASC;
 } {
-  0 0 1 {SCAN TABLE aaa BY INDEX aaa_333 (fk=?) (~10 rows)} 
-  0 1 0 {SCAN TABLE aaa AS bbb BY INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
+  0 0 1 {SEARCH TABLE aaa USING INDEX aaa_333 (fk=?) (~10 rows)} 
+  0 1 0 {SEARCH TABLE aaa AS bbb USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
   0 0 0 {USE TEMP B-TREE FOR ORDER BY}
 }
 

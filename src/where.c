@@ -3221,13 +3221,17 @@ static void explainOneScan(
     char *zMsg;                   /* Text to add to EQP output */
     sqlite3_int64 nRow;           /* Expected number of rows visited by scan */
     int iId = pParse->iSelectId;  /* Select id (left-most output column) */
+    int isSearch;                 /* True for a SEARCH. False for SCAN. */
 
     if( (flags&WHERE_MULTI_OR) || (wctrlFlags&WHERE_ONETABLE_ONLY) ) return;
 
+    isSearch = (pLevel->plan.nEq>0 || flags&(WHERE_BTM_LIMIT|WHERE_TOP_LIMIT));
+
+    zMsg = sqlite3MPrintf(db, "%s", isSearch?"SEARCH":"SCAN");
     if( pItem->pSelect ){
-      zMsg = sqlite3MPrintf(db, "SCAN SUBQUERY %d", pItem->iSelectId);
+      zMsg = sqlite3MAppendf(db, zMsg, "%s SUBQUERY %d", zMsg,pItem->iSelectId);
     }else{
-      zMsg = sqlite3MPrintf(db, "SCAN TABLE %s", pItem->zName);
+      zMsg = sqlite3MAppendf(db, zMsg, "%s TABLE %s", zMsg, pItem->zName);
     }
 
     if( pItem->zAlias ){
@@ -3235,7 +3239,7 @@ static void explainOneScan(
     }
     if( (flags & WHERE_INDEXED)!=0 ){
       char *zWhere = explainIndexRange(db, pLevel, pItem->pTab);
-      zMsg = sqlite3MAppendf(db, zMsg, "%s BY %s%sINDEX%s%s%s", zMsg, 
+      zMsg = sqlite3MAppendf(db, zMsg, "%s USING %s%sINDEX%s%s%s", zMsg, 
           ((flags & WHERE_TEMP_INDEX)?"AUTOMATIC ":""),
           ((flags & WHERE_IDX_ONLY)?"COVERING ":""),
           ((flags & WHERE_TEMP_INDEX)?"":" "),
@@ -3244,7 +3248,7 @@ static void explainOneScan(
       );
       sqlite3DbFree(db, zWhere);
     }else if( flags & (WHERE_ROWID_EQ|WHERE_ROWID_RANGE) ){
-      zMsg = sqlite3MAppendf(db, zMsg, "%s BY INTEGER PRIMARY KEY", zMsg);
+      zMsg = sqlite3MAppendf(db, zMsg, "%s USING INTEGER PRIMARY KEY", zMsg);
 
       if( flags&WHERE_ROWID_EQ ){
         zMsg = sqlite3MAppendf(db, zMsg, "%s (rowid=?)", zMsg);
