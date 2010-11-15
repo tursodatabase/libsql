@@ -114,10 +114,10 @@ det 2.2.6 "SELECT DISTINCT t2.x FROM t1, t2 ORDER BY t2.x" {
 }
 
 det 2.3.1 "SELECT max(x) FROM t2" {
-  0 0 0 {SCAN TABLE t2 USING COVERING INDEX t2i1 (~1 rows)}
+  0 0 0 {SEARCH TABLE t2 USING COVERING INDEX t2i1 (~1 rows)}
 }
 det 2.3.2 "SELECT min(x) FROM t2" {
-  0 0 0 {SCAN TABLE t2 USING COVERING INDEX t2i1 (~1 rows)}
+  0 0 0 {SEARCH TABLE t2 USING COVERING INDEX t2i1 (~1 rows)}
 }
 det 2.3.3 "SELECT min(x), max(x) FROM t2" {
   0 0 0 {SCAN TABLE t2 (~1000000 rows)}
@@ -494,4 +494,3 @@ do_peqp_test 6.1 {
 
 
 finish_test
-

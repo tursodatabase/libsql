@@ -238,6 +238,7 @@ struct WhereCost {
 #define WHERE_IN_ABLE      0x000f1000  /* Able to support an IN operator */
 #define WHERE_TOP_LIMIT    0x00100000  /* x<EXPR or x<=EXPR constraint */
 #define WHERE_BTM_LIMIT    0x00200000  /* x>EXPR or x>=EXPR constraint */
+#define WHERE_BOTH_LIMIT   0x00300000  /* Both x>EXPR and x<EXPR */
 #define WHERE_IDX_ONLY     0x00800000  /* Use index only - omit table */
 #define WHERE_ORDERBY      0x01000000  /* Output will appear in correct order */
 #define WHERE_REVERSE      0x02000000  /* Scan in reverse order */
@@ -3226,7 +3227,9 @@ static void explainOneScan(
 
     if( (flags&WHERE_MULTI_OR) || (wctrlFlags&WHERE_ONETABLE_ONLY) ) return;
 
-    isSearch = (pLevel->plan.nEq>0 || flags&(WHERE_BTM_LIMIT|WHERE_TOP_LIMIT));
+    isSearch = (pLevel->plan.nEq>0)
+             || (flags&(WHERE_BTM_LIMIT|WHERE_TOP_LIMIT))!=0
+             || (wctrlFlags&(WHERE_ORDERBY_MIN|WHERE_ORDERBY_MAX));
 
     zMsg = sqlite3MPrintf(db, "%s", isSearch?"SEARCH":"SCAN");
     if( pItem->pSelect ){
@@ -3253,7 +3256,7 @@ static void explainOneScan(
 
       if( flags&WHERE_ROWID_EQ ){
         zMsg = sqlite3MAppendf(db, zMsg, "%s (rowid=?)", zMsg);
-      }else if( flags&WHERE_BTM_LIMIT && flags&WHERE_TOP_LIMIT ){
+      }else if( (flags&WHERE_BOTH_LIMIT)==WHERE_BOTH_LIMIT ){
         zMsg = sqlite3MAppendf(db, zMsg, "%s (rowid>? AND rowid<?)", zMsg);
       }else if( flags&WHERE_BTM_LIMIT ){
         zMsg = sqlite3MAppendf(db, zMsg, "%s (rowid>?)", zMsg);
@@ -3269,6 +3272,7 @@ static void explainOneScan(
     }
 #endif
     if( wctrlFlags&(WHERE_ORDERBY_MIN|WHERE_ORDERBY_MAX) ){
+      testcase( wctrlFlags & WHERE_ORDERBY_MIN );
       nRow = 1;
     }else{
       nRow = (sqlite3_int64)pLevel->plan.nRow;
@@ -3689,7 +3693,7 @@ static Bitmask codeOneLoopStart(
     r1 = sqlite3GetTempReg(pParse);
     testcase( pLevel->plan.wsFlags & WHERE_BTM_LIMIT );
     testcase( pLevel->plan.wsFlags & WHERE_TOP_LIMIT );
-    if( pLevel->plan.wsFlags & (WHERE_BTM_LIMIT|WHERE_TOP_LIMIT) ){
+    if( (pLevel->plan.wsFlags & (WHERE_BTM_LIMIT|WHERE_TOP_LIMIT))!=0 ){
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, nEq, r1);
       sqlite3VdbeAddOp2(v, OP_IsNull, r1, addrCont);
     }
