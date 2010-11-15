@@ -5231,6 +5231,64 @@ static int runAsObjProc(
   return cmdInfo.objProc(cmdInfo.objClientData, interp, objc-1, objv+1);
 }
 
+#ifndef SQLITE_OMIT_EXPLAIN
+/*
+** WARNING: The following function, printExplainQueryPlan() is an exact
+** copy of example code from eqp.in (eqp.html). If this code is modified,
+** then the documentation copy needs to be modified as well.
+*/
+/*
+** Argument pStmt is a prepared SQL statement. This function compiles
+** an EXPLAIN QUERY PLAN command to report on the prepared statement,
+** and prints the report to stdout using printf().
+*/
+int printExplainQueryPlan(sqlite3_stmt *pStmt){
+  const char *zSql;               /* Input SQL */
+  char *zExplain;                 /* SQL with EXPLAIN QUERY PLAN prepended */
+  sqlite3_stmt *pExplain;         /* Compiled EXPLAIN QUERY PLAN command */
+  int rc;                         /* Return code from sqlite3_prepare_v2() */
+
+  zSql = sqlite3_sql(pStmt);
+  if( zSql==0 ) return SQLITE_ERROR;
+
+  zExplain = sqlite3_mprintf("EXPLAIN QUERY PLAN %s", zSql);
+  if( zExplain==0 ) return SQLITE_NOMEM;
+
+  rc = sqlite3_prepare_v2(sqlite3_db_handle(pStmt), zExplain, -1, &pExplain, 0);
+  sqlite3_free(zExplain);
+  if( rc!=SQLITE_OK ) return rc;
+
+  while( SQLITE_ROW==sqlite3_step(pExplain) ){
+    int iSelectid = sqlite3_column_int(pExplain, 0);
+    int iOrder = sqlite3_column_int(pExplain, 1);
+    int iFrom = sqlite3_column_int(pExplain, 2);
+    const char *zDetail = (const char *)sqlite3_column_text(pExplain, 3);
+
+    printf("%d %d %d %s\n", iSelectid, iOrder, iFrom, zDetail);
+  }
+
+  return sqlite3_finalize(pExplain);
+}
+
+static int test_print_eqp(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc;
+  sqlite3_stmt *pStmt;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "STMT");
+    return TCL_ERROR;
+  }
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  rc = printExplainQueryPlan(pStmt);
+  Tcl_SetResult(interp, (char *)t1ErrorName(rc), 0);
+  return TCL_OK;
+}
+#endif /* SQLITE_OMIT_EXPLAIN */
 
 /*
 ** Register commands with the TCL interpreter.
@@ -5426,8 +5484,9 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #ifdef SQLITE_ENABLE_UNLOCK_NOTIFY
      { "sqlite3_unlock_notify", test_unlock_notify, 0  },
 #endif
-     { "sqlite3_wal_checkpoint", test_wal_checkpoint, 0  },
-     { "test_sqlite3_log",     test_sqlite3_log, 0  },
+     { "sqlite3_wal_checkpoint",   test_wal_checkpoint, 0  },
+     { "test_sqlite3_log",         test_sqlite3_log, 0  },
+     { "print_explain_query_plan", test_print_eqp, 0  },
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   int i;

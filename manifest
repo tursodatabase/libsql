@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Merge\sthe\sEXPLAIN\sQUERY\sPLAN\schanges\sfrom\sexperimental\sinto\strunk.
-D 2010-11-15T14:44:30
+C Test\ssome\sexample\scode\sfrom\sdocumentation\spage\seqp.html.
+D 2010-11-15T14:51:33
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e7a59672eaeb04408d1fa8501618d7501a3c5e39
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -186,7 +183,7 @@ F src/sqliteLimit.h a17dcd3fb775d63b64a43a55c54cb282f9726f44
 F src/status.c 496913d4e8441195f6f2a75b1c95993a45b9b30b
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c e1c485fa323e3ef02e5b10fe6a016e7638013eb9
-F src/test1.c 9e1fe842f72aa41af48ab7b21c3a12975b4c5b37
+F src/test1.c a1339ecea631f3287b7dafcc8d55d343f7c5d193
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 056093cfef69ff4227a6bdb9108564dc7f45e4bc
 F src/test4.c 0528360b5025688002a5feb6be906ddce52eaaee
@@ -368,7 +365,7 @@ F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
 F test/enc4.test 4b575ef09e0eff896e73bd24076f96c2aa6a42de
-F test/eqp.test 8f8e8ca502267bd34841f66564c1154aecc4fcc4
+F test/eqp.test 32567e06a0dc02a158d93571fdc843bb33824fc7
 F test/eval.test bc269c365ba877554948441e91ad5373f9f91be3
 F test/exclusive.test 53e1841b422e554cecf0160f937c473d6d0e3062
 F test/exclusive2.test 76e63c05349cb70d09d60b99d2ae625525ff5155
@@ -889,14 +886,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a397ed162246fef32b8c5db36d995bf9a8005a2e 6611b76b0296875fb9903b25dfaa783a9c12eaa1
-R 1e73ae4c8823ab0663e26456987bae7c
-U drh
-Z b8229a6177e36bec8618f3cb97f45755
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFM4UdRoxKgR168RlERAqhcAKCDlGd+bkF6B7sQTpZQqbxAI/toQgCfXUHJ
-Rco8nRCLvqh3phYwbsb2VlE=
-=MBq+
------END PGP SIGNATURE-----
+P ce27bf38405ce805dad95ec22cbe68ddc7af544a
+R 1facb0207f6324270040270a0296fb61
+U dan
+Z d4c8887d4bb41a227b698c81727e9001
