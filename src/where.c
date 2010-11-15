@@ -3183,6 +3183,7 @@ static char *explainIndexRange(sqlite3 *db, WhereLevel *pLevel, Table *pTab){
     return 0;
   }
   sqlite3StrAccumInit(&txt, 0, 0, SQLITE_MAX_LENGTH);
+  txt.db = db;
   sqlite3StrAccumAppend(&txt, " (", 2);
   for(i=0; i<nEq; i++){
     explainAppendTerm(&txt, i, aCol[aiColumn[i]].zName, "=");
