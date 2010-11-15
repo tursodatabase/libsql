@@ -15,6 +15,9 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# If SQLITE_ENABLE_FTS3 is not defined, omit this file.
+ifcapable !fts3 { finish_test ; return }
+
 set testprefix fts3matchinfo
 
 proc mit {blob} {

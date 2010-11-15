@@ -628,13 +628,13 @@ static int sqlite3Prepare(
   if( rc==SQLITE_OK && pParse->pVdbe && pParse->explain ){
     static const char * const azColName[] = {
        "addr", "opcode", "p1", "p2", "p3", "p4", "p5", "comment",
-       "order", "from", "detail"
+       "selectid", "order", "from", "detail"
     };
     int iFirst, mx;
     if( pParse->explain==2 ){
-      sqlite3VdbeSetNumCols(pParse->pVdbe, 3);
+      sqlite3VdbeSetNumCols(pParse->pVdbe, 4);
       iFirst = 8;
-      mx = 11;
+      mx = 12;
     }else{
       sqlite3VdbeSetNumCols(pParse->pVdbe, 8);
       iFirst = 0;
