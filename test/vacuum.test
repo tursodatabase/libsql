@@ -300,14 +300,38 @@ do_test vacuum-7.0 {
     CREATE TABLE t1(t);
     VACUUM;
   } db2
+} {}
+do_test vacuum-7.1 {
   execsql {
     CREATE TABLE t2(t);
     CREATE TABLE t3(t);
     DROP TABLE t2;
+    PRAGMA freelist_count;
+  }
+} {1}
+do_test vacuum-7.2 {
+  execsql {
     VACUUM;
     pragma integrity_check;
   } db2
 } {ok}
+do_test vacuum-7.3 {
+  execsql { PRAGMA freelist_count; } db2
+} {0}
+ifcapable autovacuum {
+  do_test vacuum-7.4 {
+    execsql { PRAGMA auto_vacuum } db2
+  } {0}
+  do_test vacuum-7.5 {
+    execsql { PRAGMA auto_vacuum = 1} db2
+    execsql { PRAGMA auto_vacuum } db2
+  } {0}
+  do_test vacuum-7.6 {
+    execsql { PRAGMA auto_vacuum = 1} db2
+    execsql { VACUUM } db2
+    execsql { PRAGMA auto_vacuum } db2
+  } {1}
+}
 db2 close
 
 # Ticket #873.  VACUUM a database that has ' in its name.
