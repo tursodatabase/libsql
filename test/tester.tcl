@@ -355,6 +355,9 @@ proc do_catchsql_test {testname sql result} {
   fix_testname testname
   uplevel do_test $testname [list "catchsql {$sql}"] [list $result]
 }
+proc do_eqp_test {name sql res} {
+  uplevel do_execsql_test $name [list "EXPLAIN QUERY PLAN $sql"] [list $res]
+}
 
 #-------------------------------------------------------------------------
 #   Usage: do_select_tests PREFIX ?SWITCHES? TESTLIST

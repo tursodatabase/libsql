@@ -23,9 +23,6 @@ set testprefix eqp
 # eqp-4.*:        Compound select statements.
 #
 
-proc do_eqp_test {name sql res} {
-  uplevel do_execsql_test $name [list "EXPLAIN QUERY PLAN $sql"] [list $res]
-}
 proc det {args} { uplevel do_eqp_test $args }
 
 do_execsql_test 1.1 {

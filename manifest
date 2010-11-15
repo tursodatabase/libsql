@@ -1,5 +1,5 @@
-C Test\ssome\sexample\scode\sfrom\sdocumentation\spage\seqp.html.
-D 2010-11-15T14:51:33
+C Change\ssome\stest\scases\sto\saccount\sfor\sthe\snew\sEXPLAIN\sQUERY\sPLAN\soutput.
+D 2010-11-15T16:12:59
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e7a59672eaeb04408d1fa8501618d7501a3c5e39
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -87,7 +87,7 @@ F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
 F ext/rtree/rtree3.test a494da55c30ee0bc9b01a91c80c81b387b22d2dc
 F ext/rtree/rtree4.test 0061e6f464fd3dc6a79f82454c5a1c3dadbe42af
 F ext/rtree/rtree5.test ce3d7ccae2cfd9d2e1052b462424964c9bdcda12
-F ext/rtree/rtree6.test 1ebe0d632a7501cc80ba5a225f028fd4f0fdda08
+F ext/rtree/rtree6.test 309806a2a27ef5897d4dd6aee2e8006bf754cc22
 F ext/rtree/rtree7.test bcb647b42920b3b5d025846689147778485cc318
 F ext/rtree/rtree8.test 9772e16da71e17e02bdebf0a5188590f289ab37d
 F ext/rtree/rtree9.test df9843d1a9195249c8d3b4ea6aedda2d5c73e9c2
@@ -249,8 +249,8 @@ F test/alter3.test 8677e48d95536f7a6ed86a1a774744dadcc22b07
 F test/alter4.test 1e5dd6b951e9f65ca66422edff02e56df82dd403
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/analyze.test c1eb87067fc16ece7c07e823d6395fd831b270c5
-F test/analyze2.test 59dac6c399c0c5d1a90a11ee7cc606743fb6db93
-F test/analyze3.test 6d4f4b0929545a9d1af803a0608a0c51b92a3537
+F test/analyze2.test 3bde8f0879d9c1f2df3af21fcf42e706d8ee1e43
+F test/analyze3.test 820ddfb7591b49607fbaf77240c7955ac3cabb04
 F test/async.test ad4ba51b77cd118911a3fe1356b0809da9c108c3
 F test/async2.test bf5e2ca2c96763b4cba3d016249ad7259a5603b6
 F test/async3.test 93edaa9122f498e56ea98c36c72abc407f4fb11e
@@ -365,7 +365,7 @@ F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
 F test/enc4.test 4b575ef09e0eff896e73bd24076f96c2aa6a42de
-F test/eqp.test 32567e06a0dc02a158d93571fdc843bb33824fc7
+F test/eqp.test 0a76679df56eba3709fa9f6ce6761a6c6f8401e7
 F test/eval.test bc269c365ba877554948441e91ad5373f9f91be3
 F test/exclusive.test 53e1841b422e554cecf0160f937c473d6d0e3062
 F test/exclusive2.test 76e63c05349cb70d09d60b99d2ae625525ff5155
@@ -446,7 +446,7 @@ F test/fts3fault.test 81fd40ceb12f33f9d16c5637d0f8d95d4556c456
 F test/fts3malloc.test 9c8cc3f885bb4dfc66d0460c52f68f45e4710d1b
 F test/fts3matchinfo.test 211b04434926bce9cc2b3cc5f58725affefe5165
 F test/fts3near.test 2e318ee434d32babd27c167142e2b94ddbab4844
-F test/fts3query.test 724a662dbbec4e9dbef66a1389588aa29aeb9b27
+F test/fts3query.test df864f4c9b14927daa7199242d82cff44599327b
 F test/fts3rnd.test 707533ce943f490443ce5e696236bb1675a37635
 F test/fts3shared.test 8bb266521d7c5495c0ae522bb4d376ad5387d4a2
 F test/fts3snippet.test a12f22a3ba4dd59751a57c79b031d07ab5f51ddd
@@ -656,7 +656,7 @@ F test/tclsqlite.test 8c154101e704170c2be10f137a5499ac2c6da8d3
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test f42121a0d29a62f00f93274464164177ab1cc24a
 F test/temptrigger.test b0273db072ce5f37cf19140ceb1f0d524bbe9f05
-F test/tester.tcl 8c26ecddb981aba189edad7ca1e6d780306ccca4
+F test/tester.tcl 45e8f7b56ef93c5c66886f1bbd05dda78d248d86
 F test/thread001.test a3e6a7254d1cb057836cb3145b60c10bf5b7e60f
 F test/thread002.test afd20095e6e845b405df4f2c920cb93301ca69db
 F test/thread003.test b824d4f52b870ae39fc5bae4d8070eca73085dca
@@ -886,7 +886,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ce27bf38405ce805dad95ec22cbe68ddc7af544a
-R 1facb0207f6324270040270a0296fb61
+P 547bc2c232cbf7b7ff295287ab8fddb880e517f9
+R 863ad3e83f428e5bfb8e9c7834fdadd1
 U dan
-Z d4c8887d4bb41a227b698c81727e9001
+Z a86da5f4e7ed6219a15e362cd53c69a5
