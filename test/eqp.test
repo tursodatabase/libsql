@@ -71,6 +71,45 @@ do_eqp_test 1.6 {
   0 0 0 {USE TEMP B-TREE FOR DISTINCT}
 }
 
+do_eqp_test 1.7 {
+  SELECT * FROM t3 JOIN (SELECT 1)
+} {
+  0 0 1 {SCAN SUBQUERY 1 (~1 rows)}
+  0 1 0 {SCAN TABLE t3 (~1000000 rows)}
+}
+do_eqp_test 1.8 {
+  SELECT * FROM t3 JOIN (SELECT 1 UNION SELECT 2)
+} {
+  1 0 0 {COMPOUND SUBQUERIES 2 AND 3 USING TEMP B-TREE (UNION)}
+  0 0 1 {SCAN SUBQUERY 1 (~2 rows)}
+  0 1 0 {SCAN TABLE t3 (~1000000 rows)}
+}
+do_eqp_test 1.9 {
+  SELECT * FROM t3 JOIN (SELECT 1 EXCEPT SELECT a FROM t3 LIMIT 17)
+} {
+  3 0 0 {SCAN TABLE t3 (~1000000 rows)}
+  1 0 0 {COMPOUND SUBQUERIES 2 AND 3 USING TEMP B-TREE (EXCEPT)}
+  0 0 1 {SCAN SUBQUERY 1 (~17 rows)}
+  0 1 0 {SCAN TABLE t3 (~1000000 rows)}
+}
+do_eqp_test 1.10 {
+  SELECT * FROM t3 JOIN (SELECT 1 INTERSECT SELECT a FROM t3 LIMIT 17)
+} {
+  3 0 0 {SCAN TABLE t3 (~1000000 rows)}
+  1 0 0 {COMPOUND SUBQUERIES 2 AND 3 USING TEMP B-TREE (INTERSECT)}
+  0 0 1 {SCAN SUBQUERY 1 (~1 rows)}
+  0 1 0 {SCAN TABLE t3 (~1000000 rows)}
+}
+
+do_eqp_test 1.11 {
+  SELECT * FROM t3 JOIN (SELECT 1 UNION ALL SELECT a FROM t3 LIMIT 17)
+} {
+  3 0 0 {SCAN TABLE t3 (~1000000 rows)}
+  1 0 0 {COMPOUND SUBQUERIES 2 AND 3 (UNION ALL)}
+  0 0 1 {SCAN SUBQUERY 1 (~17 rows)}
+  0 1 0 {SCAN TABLE t3 (~1000000 rows)}
+}
+
 #-------------------------------------------------------------------------
 # Test cases eqp-2.* - tests for single select statements.
 #
@@ -167,7 +206,7 @@ det 3.2.1 {
 } {
   1 0 0 {SCAN TABLE t1 (~1000000 rows)} 
   1 0 0 {USE TEMP B-TREE FOR ORDER BY} 
-  0 0 0 {SCAN SUBQUERY 1 (~1000000 rows)} 
+  0 0 0 {SCAN SUBQUERY 1 (~10 rows)} 
   0 0 0 {USE TEMP B-TREE FOR ORDER BY}
 }
 det 3.2.2 {
@@ -179,8 +218,8 @@ det 3.2.2 {
   1 0 0 {SCAN TABLE t1 (~1000000 rows)} 
   1 0 0 {USE TEMP B-TREE FOR ORDER BY} 
   2 0 0 {SCAN TABLE t2 USING INDEX t2i1 (~1000000 rows)} 
-  0 0 0 {SCAN SUBQUERY 1 AS x1 (~1000000 rows)} 
-  0 1 1 {SCAN SUBQUERY 2 AS x2 (~1000000 rows)} 
+  0 0 0 {SCAN SUBQUERY 1 AS x1 (~10 rows)} 
+  0 1 1 {SCAN SUBQUERY 2 AS x2 (~10 rows)} 
   0 0 0 {USE TEMP B-TREE FOR ORDER BY}
 }
 
@@ -416,7 +455,7 @@ det 5.10 {
   SELECT count(*) FROM (SELECT max(b) AS x FROM t1 GROUP BY a) GROUP BY x
 } {
   1 0 0 {SCAN TABLE t1 USING COVERING INDEX i2 (~1000000 rows)}
-  0 0 0 {SCAN SUBQUERY 1 (~1000000 rows)}
+  0 0 0 {SCAN SUBQUERY 1 (~100 rows)}
   0 0 0 {USE TEMP B-TREE FOR GROUP BY}
 }
 
