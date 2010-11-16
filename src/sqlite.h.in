@@ -2629,6 +2629,21 @@ int sqlite3_prepare16_v2(
 const char *sqlite3_sql(sqlite3_stmt *pStmt);
 
 /*
+** CAPI3REF: Determine If An SQL Statement Writes The Database
+**
+** ^The sqlite3_stmt_readonly(X) interface returns true (non-zero) if
+** the [prepared statement] X is guaranteed to leave the database file
+** unmodified.  ^If the sqlite3_stmt_readonly(X) interface returns false (zero)
+** then evaluating the statement might change the database file, but this
+** is not guaranteed as the write operation might be conditional and the
+** condition might not be met.  ^If X is a NULL pointer then
+** sqlite3_stmt_readonly(X) returns true.  If X is a non-NULL pointer but
+** is not a pointer to a valid, unfinalized prepared statement, then the
+** behavior is undefined and probably harmful.
+*/
+int sqlite3_stmt_readonly(sqlite3_stmt *pStmt);
+
+/*
 ** CAPI3REF: Dynamically Typed Value Object
 ** KEYWORDS: {protected sqlite3_value} {unprotected sqlite3_value}
 **
