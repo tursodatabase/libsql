@@ -5216,13 +5216,13 @@ case OP_AggFinal: {
 }
 
 #ifndef SQLITE_OMIT_WAL
-/* Opcode: Checkpoint P1 * * * *
+/* Opcode: Checkpoint P1 P2 * * *
 **
 ** Checkpoint database P1. This is a no-op if P1 is not currently in
-** WAL mode.
+** WAL mode. If P2 is non-zero, this is a blocking checkpoint.
 */
 case OP_Checkpoint: {
-  rc = sqlite3Checkpoint(db, pOp->p1);
+  rc = sqlite3Checkpoint(db, pOp->p1, pOp->p2);
   break;
 };  
 #endif

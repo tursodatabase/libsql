@@ -1361,7 +1361,7 @@ int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb){
     rc = SQLITE_ERROR;
     sqlite3Error(db, SQLITE_ERROR, "unknown database: %s", zDb);
   }else{
-    rc = sqlite3Checkpoint(db, iDb);
+    rc = sqlite3Checkpoint(db, iDb, 0);
     sqlite3Error(db, rc, 0);
   }
   rc = sqlite3ApiExit(db, rc);
@@ -1387,8 +1387,11 @@ int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb){
 ** If iDb is passed SQLITE_MAX_ATTACHED, then all attached databases are
 ** checkpointed. If an error is encountered it is returned immediately -
 ** no attempt is made to checkpoint any remaining databases.
+**
+** Parameter bBlock is true for a blocking-checkpoint, false for an 
+** ordinary, non-blocking, checkpoint.
 */
-int sqlite3Checkpoint(sqlite3 *db, int iDb){
+int sqlite3Checkpoint(sqlite3 *db, int iDb, int bBlock){
   int rc = SQLITE_OK;             /* Return code */
   int i;                          /* Used to iterate through attached dbs */
 
@@ -1396,7 +1399,7 @@ int sqlite3Checkpoint(sqlite3 *db, int iDb){
 
   for(i=0; i<db->nDb && rc==SQLITE_OK; i++){
     if( i==iDb || iDb==SQLITE_MAX_ATTACHED ){
-      rc = sqlite3BtreeCheckpoint(db->aDb[i].pBt);
+      rc = sqlite3BtreeCheckpoint(db->aDb[i].pBt, bBlock);
     }
   }
 

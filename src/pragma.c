@@ -1394,12 +1394,18 @@ void sqlite3Pragma(
 #ifndef SQLITE_OMIT_WAL
   /*
   **   PRAGMA [database.]wal_checkpoint
+  **   PRAGMA [database.]wal_blocking_checkpoint
   **
   ** Checkpoint the database.
   */
-  if( sqlite3StrICmp(zLeft, "wal_checkpoint")==0 ){
+  if( sqlite3StrICmp(zLeft, "wal_checkpoint")==0 
+   || sqlite3StrICmp(zLeft, "wal_blocking_checkpoint")==0 
+  ){
+    int bBlock = (zLeft[14]!=0);
+    int iBt = (pId2->z?iDb:SQLITE_MAX_ATTACHED);
+    assert( bBlock==(sqlite3StrICmp(zLeft, "wal_checkpoint")!=0) );
     if( sqlite3ReadSchema(pParse) ) goto pragma_out;
-    sqlite3VdbeAddOp3(v, OP_Checkpoint, pId2->z?iDb:SQLITE_MAX_ATTACHED, 0, 0);
+    sqlite3VdbeAddOp2(v, OP_Checkpoint, iBt, bBlock);
   }else
 
   /*

@@ -32,7 +32,7 @@
 # define sqlite3WalSavepoint(y,z)
 # define sqlite3WalSavepointUndo(y,z)          0
 # define sqlite3WalFrames(u,v,w,x,y,z)         0
-# define sqlite3WalCheckpoint(u,v,w,x)         0
+# define sqlite3WalCheckpoint(u,v,w,x,y,z)     0
 # define sqlite3WalCallback(z)                 0
 # define sqlite3WalExclusiveMode(y,z)          0
 # define sqlite3WalHeapMemory(z)               0
@@ -86,6 +86,8 @@ int sqlite3WalFrames(Wal *pWal, int, PgHdr *, Pgno, int, int);
 /* Copy pages from the log to the database file */ 
 int sqlite3WalCheckpoint(
   Wal *pWal,                      /* Write-ahead log connection */
+  int (*xBusy)(void*),            /* Function to call when busy */
+  void *pBusyArg,                 /* Context argument for xBusyHandler */
   int sync_flags,                 /* Flags to sync db file with (or 0) */
   int nBuf,                       /* Size of buffer nBuf */
   u8 *zBuf                        /* Temporary buffer to use */

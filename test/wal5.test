@@ -1,0 +1,118 @@
+# 2010 April 13
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the operation of "blocking-checkpoint"
+# operations.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+source $testdir/wal_common.tcl
+ifcapable !wal {finish_test ; return }
+
+set testprefix wal5
+
+do_multiclient_test tn {
+
+  proc db_page_count  {} { expr [file size test.db] / 1024 }
+  proc wal_page_count {} { wal_frame_count test.db-wal 1024 }
+
+  set ::nBusyHandler 0
+  set ::busy_handler_script ""
+  proc busyhandler {n} {
+    incr ::nBusyHandler 
+    eval $::busy_handler_script
+    return 0
+  }
+
+  proc reopen_all {} {
+    code1 {db close}
+    code2 {db2 close}
+    code3 {db3 close}
+    code1 {sqlite3 db test.db}
+    code2 {sqlite3 db2 test.db}
+    code3 {sqlite3 db3 test.db}
+    sql1  { PRAGMA synchronous = NORMAL }
+    code1 { db busy busyhandler }
+  }
+
+  do_test 1.$tn.1 {
+    reopen_all
+    sql1 {
+      PRAGMA page_size = 1024;
+      PRAGMA auto_vacuum = 0;
+      CREATE TABLE t1(x, y);
+      PRAGMA journal_mode = WAL;
+      INSERT INTO t1 VALUES(1, zeroblob(1200));
+      INSERT INTO t1 VALUES(2, zeroblob(1200));
+      INSERT INTO t1 VALUES(3, zeroblob(1200));
+    }
+    expr [file size test.db] / 1024
+  } {2}
+
+  # Have connection 2 grab a read-lock on the current snapshot.
+  do_test 1.$tn.2 { sql2 { BEGIN; SELECT x FROM t1 } } {1 2 3}
+
+  # Attempt a checkpoint.
+  do_test 1.$tn.3 {
+    sql1 { PRAGMA wal_checkpoint }
+    list [db_page_count] [wal_page_count]
+  } {5 9}
+
+  # Write to the db again. The log cannot wrap because of the lock still
+  # held by connection 2. The busy-handler has not yet been invoked.
+  do_test 1.$tn.4 {
+    sql1 { INSERT INTO t1 VALUES(4, zeroblob(1200)) }
+    list [db_page_count] [wal_page_count] $::nBusyHandler
+  } {5 12 0}
+
+  # Now do a blocking-checkpoint. Set the busy-handler up so that connection
+  # 2 releases its lock on the 6th invocation. The checkpointer should then
+  # proceed to checkpoint the entire log file. Next write should go to the 
+  # start of the log file.
+  #
+  set ::busy_handler_script { if {$n==5} { sql2 COMMIT } }
+  do_test 1.$tn.5 {
+    sql1 { PRAGMA wal_blocking_checkpoint }
+    list [db_page_count] [wal_page_count] $::nBusyHandler
+  } {6 12 6}
+  do_test 1.$tn.6 {
+    set ::nBusyHandler 0
+    sql1 { INSERT INTO t1 VALUES(5, zeroblob(1200)) }
+    list [db_page_count] [wal_page_count] $::nBusyHandler
+  } {6 12 0}
+
+  do_test 1.$tn.7 {
+    reopen_all
+    list [db_page_count] [wal_page_count] $::nBusyHandler
+  } {7 0 0}
+
+  do_test 1.$tn.8  { sql2 { BEGIN ; SELECT x FROM t1 } } {1 2 3 4 5}
+  do_test 1.$tn.9  {
+    sql1 { INSERT INTO t1 VALUES(6, zeroblob(1200)) }
+    list [db_page_count] [wal_page_count] $::nBusyHandler
+  } {7 5 0}
+  do_test 1.$tn.10 { sql3 { BEGIN ; SELECT x FROM t1 } } {1 2 3 4 5 6}
+
+  set ::busy_handler_script { 
+    if {$n==5} { sql2 COMMIT } 
+    if {$n==6} { set ::db_file_size [db_page_count] }
+    if {$n==7} { sql3 COMMIT }
+  }
+  do_test 1.$tn.11 {
+    sql1 { PRAGMA wal_blocking_checkpoint }
+    list [db_page_count] [wal_page_count] $::nBusyHandler
+  } {10 5 8}
+  do_test 1.$tn.12 { set ::db_file_size } 10
+}
+
+finish_test

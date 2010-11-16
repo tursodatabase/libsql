@@ -18,7 +18,9 @@ proc wal_file_size {nFrame pgsz} {
 }
 
 proc wal_frame_count {zFile pgsz} {
+  if {[file exists $zFile]==0} { return 0 }
   set f [file size $zFile]
+  if {$f < 32} { return 0 }
   expr {($f - 32) / ($pgsz+24)}
 }
 

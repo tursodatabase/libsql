@@ -207,7 +207,7 @@ void sqlite3BtreeCursorList(Btree*);
 #endif
 
 #ifndef SQLITE_OMIT_WAL
-  int sqlite3BtreeCheckpoint(Btree*);
+  int sqlite3BtreeCheckpoint(Btree*, int);
 #endif
 
 /*
