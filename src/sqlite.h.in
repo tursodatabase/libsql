@@ -2632,14 +2632,13 @@ const char *sqlite3_sql(sqlite3_stmt *pStmt);
 ** CAPI3REF: Determine If An SQL Statement Writes The Database
 **
 ** ^The sqlite3_stmt_readonly(X) interface returns true (non-zero) if
-** the [prepared statement] X is guaranteed to leave the database file
-** unmodified.  ^If the sqlite3_stmt_readonly(X) interface returns false (zero)
-** then evaluating the statement might change the database file, but this
-** is not guaranteed as the write operation might be conditional and the
-** condition might not be met.  ^If X is a NULL pointer then
-** sqlite3_stmt_readonly(X) returns true.  If X is a non-NULL pointer but
-** is not a pointer to a valid, unfinalized prepared statement, then the
-** behavior is undefined and probably harmful.
+** the [prepared statement] X is [SELECT] statement and false (zero) if
+** X is an [INSERT], [UPDATE], [DELETE], CREATE, DROP, [ANALYZE],
+** [ALTER], or [REINDEX] statement.
+** If X is a NULL pointer or any other kind of statement, including but
+** not limited to [ATTACH], [DETACH], [COMMIT], [ROLLBACK], [RELEASE],
+** [SAVEPOINT], [PRAGMA], or [VACUUM] the result of sqlite3_stmt_readonly(X) is
+** undefined.
 */
 int sqlite3_stmt_readonly(sqlite3_stmt *pStmt);
 
