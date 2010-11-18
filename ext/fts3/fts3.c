@@ -606,42 +606,6 @@ static int fts3CreateTables(Fts3Table *p){
 }
 
 /*
-** An sqlite3_exec() callback for fts3TableExists.
-*/
-static int fts3TableExistsCallback(void *pArg, int n, char **pp1, char **pp2){
-  UNUSED_PARAMETER(n);
-  UNUSED_PARAMETER(pp1);
-  UNUSED_PARAMETER(pp2);
-  *(int*)pArg = 1;
-  return 1;
-}
-
-/*
-** Determine if a table currently exists in the database.
-*/
-static void fts3TableExists(
-  int *pRc,             /* Success code */
-  sqlite3 *db,          /* The database connection to test */
-  const char *zDb,      /* ATTACHed database within the connection */
-  const char *zName,    /* Name of the FTS3 table */
-  const char *zSuffix,  /* Shadow table extension */
-  u8 *pResult           /* Write results here */
-){
-  int rc = SQLITE_OK;
-  int res = 0;
-  char *zSql;
-  if( *pRc ) return;
-  zSql = sqlite3_mprintf(
-    "SELECT 1 FROM %Q.sqlite_master WHERE name='%q%s'",
-    zDb, zName, zSuffix
-  );    
-  rc = sqlite3_exec(db, zSql, fts3TableExistsCallback, &res, 0);
-  sqlite3_free(zSql);
-  *pResult = (u8)(res & 0xff);
-  if( rc!=SQLITE_ABORT ) *pRc = rc;
-}
-
-/*
 ** Store the current database page-size in bytes in p->nPgsz.
 **
 ** If *pRc is non-zero when this function is called, it is a no-op. 
@@ -2556,7 +2520,7 @@ static void fts3ExprFreeSegReaders(Fts3Expr *pExpr){
 ** function must be called after Fts3SegReaderArrays have been allocated
 ** for all tokens using fts3ExprAllocateSegReaders().
 */
-int fts3ExprCost(Fts3Expr *pExpr){
+static int fts3ExprCost(Fts3Expr *pExpr){
   int nCost;                      /* Return value */
   if( pExpr->eType==FTSQUERY_PHRASE ){
     Fts3Phrase *pPhrase = pExpr->pPhrase;

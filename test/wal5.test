@@ -109,7 +109,6 @@ do_multiclient_test tn {
     if {$n==7} { sql3 COMMIT }
   }
   do_test 1.$tn.11 {
-breakpoint
     sql1 { PRAGMA wal_checkpoint = RESTART }
     list [db_page_count] [wal_page_count] $::nBusyHandler
   } {10 5 8}

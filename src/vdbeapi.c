@@ -1267,6 +1267,14 @@ sqlite3 *sqlite3_db_handle(sqlite3_stmt *pStmt){
 }
 
 /*
+** Return true if the prepared statement is guaranteed to not modify the
+** database.
+*/
+int sqlite3_stmt_readonly(sqlite3_stmt *pStmt){
+  return pStmt ? ((Vdbe*)pStmt)->readOnly : 1;
+}
+
+/*
 ** Return a pointer to the next prepared statement after pStmt associated
 ** with database connection pDb.  If pStmt is NULL, return the first
 ** prepared statement for the database connection.  Return NULL if there

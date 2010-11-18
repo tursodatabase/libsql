@@ -4487,7 +4487,7 @@ WhereInfo *sqlite3WhereBegin(
   */
   notReady = ~(Bitmask)0;
   for(i=0; i<nTabList; i++){
-    WhereLevel *pLevel = &pWInfo->a[i];
+    pLevel = &pWInfo->a[i];
     explainOneScan(pParse, pTabList, pLevel, i, pLevel->iFrom, wctrlFlags);
     notReady = codeOneLoopStart(pWInfo, i, wctrlFlags, notReady);
     pWInfo->iContinue = pLevel->addrCont;

@@ -2629,6 +2629,20 @@ int sqlite3_prepare16_v2(
 const char *sqlite3_sql(sqlite3_stmt *pStmt);
 
 /*
+** CAPI3REF: Determine If An SQL Statement Writes The Database
+**
+** ^The sqlite3_stmt_readonly(X) interface returns true (non-zero) if
+** the [prepared statement] X is [SELECT] statement and false (zero) if
+** X is an [INSERT], [UPDATE], [DELETE], CREATE, DROP, [ANALYZE],
+** [ALTER], or [REINDEX] statement.
+** If X is a NULL pointer or any other kind of statement, including but
+** not limited to [ATTACH], [DETACH], [COMMIT], [ROLLBACK], [RELEASE],
+** [SAVEPOINT], [PRAGMA], or [VACUUM] the result of sqlite3_stmt_readonly(X) is
+** undefined.
+*/
+int sqlite3_stmt_readonly(sqlite3_stmt *pStmt);
+
+/*
 ** CAPI3REF: Dynamically Typed Value Object
 ** KEYWORDS: {protected sqlite3_value} {unprotected sqlite3_value}
 **
