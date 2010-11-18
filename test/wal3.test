@@ -427,7 +427,7 @@ do_test wal3-6.1.2 {
 } {o t t f}
 do_test wal3-6.1.3 {
   execsql { PRAGMA wal_checkpoint } db2
-} {}
+} {0 7 7}
 
 # At this point the log file has been fully checkpointed. However, 
 # connection [db3] holds a lock that prevents the log from being wrapped.
@@ -515,7 +515,7 @@ proc lock_callback {method file handle spec} {
 }
 do_test wal3-6.2.2 {
   execsql { PRAGMA wal_checkpoint }
-} {}
+} {0 7 7}
 do_test wal3-6.2.3 {
   set ::R
 } {h h l b}
@@ -624,7 +624,7 @@ do_test wal3-8.1 {
     INSERT INTO b VALUES('Markazi');
     PRAGMA wal_checkpoint;
   }
-} {wal}
+} {wal 0 9 9}
 do_test wal3-8.2 {
   execsql { SELECT * FROM b }
 } {Tehran Qom Markazi}

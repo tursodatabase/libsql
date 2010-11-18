@@ -287,8 +287,8 @@ do_test wal-4.6.1 {
         INSERT INTO t2 VALUES('y', 'z');
       ROLLBACK TO save;
     COMMIT;
-    SELECT * FROM t2;
   }
+  execsql { SELECT * FROM t2 }
 } {w x}
 
 
@@ -542,7 +542,7 @@ do_multiclient_test tn {
   } {1 2 3 4 5 6 7 8 9 10}
   do_test wal-10.$tn.12 {
     catchsql { PRAGMA wal_checkpoint } 
-  } {0 {}}   ;# Reader no longer block checkpoints
+  } {0 {0 13 13}}   ;# Reader no longer block checkpoints
   do_test wal-10.$tn.13 {
     execsql { INSERT INTO t1 VALUES(11, 12) }
     sql2 {SELECT * FROM t1}
@@ -552,7 +552,7 @@ do_multiclient_test tn {
   #
   do_test wal-10.$tn.14 {
     catchsql { PRAGMA wal_checkpoint } 
-  } {0 {}}
+  } {0 {0 15 13}}
 
   # The following series of test cases used to verify another blocking
   # case in WAL - a case which no longer blocks.
@@ -562,10 +562,10 @@ do_multiclient_test tn {
   } {1 2 3 4 5 6 7 8 9 10 11 12}
   do_test wal-10.$tn.16 {
     catchsql { PRAGMA wal_checkpoint } 
-  } {0 {}}
+  } {0 {0 15 15}}
   do_test wal-10.$tn.17 {
     execsql { PRAGMA wal_checkpoint } 
-  } {}
+  } {0 15 15}
   do_test wal-10.$tn.18 {
     sql3 { BEGIN; SELECT * FROM t1 }
   } {1 2 3 4 5 6 7 8 9 10 11 12}
@@ -588,13 +588,13 @@ do_multiclient_test tn {
   #
   do_test wal-10.$tn.23 {
     execsql { PRAGMA wal_checkpoint }
-  } {}
+  } {0 17 17}
   do_test wal-10.$tn.24 {
     sql2 { BEGIN; SELECT * FROM t1; }
   } {1 2 3 4 5 6 7 8 9 10 11 12 13 14}
   do_test wal-10.$tn.25 {
     execsql { PRAGMA wal_checkpoint }
-  } {}
+  } {0 17 17}
   do_test wal-10.$tn.26 {
     catchsql { INSERT INTO t1 VALUES(15, 16) }
   } {0 {}}
@@ -611,11 +611,11 @@ do_multiclient_test tn {
   do_test wal-10.$tn.29 {
     execsql { INSERT INTO t1 VALUES(19, 20) }
     catchsql { PRAGMA wal_checkpoint }
-  } {0 {}}
+  } {0 {0 6 0}}
   do_test wal-10.$tn.30 {
     code3 { sqlite3_finalize $::STMT }
     execsql { PRAGMA wal_checkpoint }
-  } {}
+  } {0 6 0}
 
   # At one point, if a reader failed to upgrade to a writer because it
   # was reading an old snapshot, the write-locks were not being released.
@@ -654,7 +654,7 @@ do_multiclient_test tn {
   } {a b c d}
   do_test wal-10.$tn.36 {
     catchsql { PRAGMA wal_checkpoint }
-  } {0 {}}
+  } {0 {0 16 16}}
   do_test wal-10.$tn.36 {
     sql3 { INSERT INTO t1 VALUES('e', 'f') }
     sql2 { SELECT * FROM t1 }
@@ -662,7 +662,7 @@ do_multiclient_test tn {
   do_test wal-10.$tn.37 {
     sql2 COMMIT
     execsql { PRAGMA wal_checkpoint }
-  } {}
+  } {0 18 18}
 }
 
 #-------------------------------------------------------------------------
@@ -797,8 +797,8 @@ do_test wal-12.5 {
     UPDATE t1 SET y = 1 WHERE x = 'A';
     PRAGMA wal_checkpoint;
     UPDATE t1 SET y = 0 WHERE x = 'A';
-    SELECT * FROM t2;
   }
+  execsql {  SELECT * FROM t2 }
 } {B 2}
 do_test wal-12.6 {
   file copy -force test.db test2.db
@@ -1029,14 +1029,14 @@ catch { db close }
 foreach {tn ckpt_cmd ckpt_res ckpt_main ckpt_aux} {
   1 {sqlite3_wal_checkpoint db}              SQLITE_OK     1 1
   2 {sqlite3_wal_checkpoint db ""}           SQLITE_OK     1 1
-  3 {db eval "PRAGMA wal_checkpoint"}        {}            1 1
+  3 {db eval "PRAGMA wal_checkpoint"}        {0 16 16}     1 1
 
   4 {sqlite3_wal_checkpoint db main}         SQLITE_OK     1 0
   5 {sqlite3_wal_checkpoint db aux}          SQLITE_OK     0 1
   6 {sqlite3_wal_checkpoint db temp}         SQLITE_OK     0 0
-  7 {db eval "PRAGMA main.wal_checkpoint"}   {}            1 0
-  8 {db eval "PRAGMA aux.wal_checkpoint"}    {}            0 1
-  9 {db eval "PRAGMA temp.wal_checkpoint"}   {}            0 0
+  7 {db eval "PRAGMA main.wal_checkpoint"}   {0 10 10}     1 0
+  8 {db eval "PRAGMA aux.wal_checkpoint"}    {0 16 16}     0 1
+  9 {db eval "PRAGMA temp.wal_checkpoint"}   {0 -1 -1}     0 0
 } {
   do_test wal-16.$tn.1 {
     file delete -force test2.db test2.db-wal test2.db-journal
@@ -1400,10 +1400,8 @@ do_test wal-20.2 {
 } {0}
 do_test wal-20.3 {
   close $::buddy
-  execsql {
-    PRAGMA wal_checkpoint;
-    SELECT count(*) FROM t1;
-  }
+  execsql { PRAGMA wal_checkpoint }
+  execsql { SELECT count(*) FROM t1 }
 } {16384}
 do_test wal-20.4 {
   db close
@@ -1437,8 +1435,8 @@ do_test wal-21.2 {
         INSERT INTO t1 SELECT randomblob(900), randomblob(900) FROM t1;
       ROLLBACK TO s;
     COMMIT;
-    SELECT * FROM t1;
   }
+  execsql { SELECT * FROM t1 }
 } {1 2 3 4 5 6 7 8 9 10 11 12}
 do_test wal-21.3 {
   execsql { PRAGMA integrity_check }

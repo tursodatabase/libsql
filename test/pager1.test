@@ -1992,7 +1992,7 @@ do_test pager1-22.1.1 {
     INSERT INTO ko DEFAULT VALUES;
   }
   execsql { PRAGMA wal_checkpoint }
-} {}
+} {0 -1 -1}
 do_test pager1-22.2.1 {
   testvfs tv -default 1
   tv filter xSync
