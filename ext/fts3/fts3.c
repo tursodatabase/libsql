@@ -2520,7 +2520,7 @@ static void fts3ExprFreeSegReaders(Fts3Expr *pExpr){
 ** function must be called after Fts3SegReaderArrays have been allocated
 ** for all tokens using fts3ExprAllocateSegReaders().
 */
-int fts3ExprCost(Fts3Expr *pExpr){
+static int fts3ExprCost(Fts3Expr *pExpr){
   int nCost;                      /* Return value */
   if( pExpr->eType==FTSQUERY_PHRASE ){
     Fts3Phrase *pPhrase = pExpr->pPhrase;
