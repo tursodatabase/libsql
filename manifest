@@ -1,5 +1,5 @@
-C Add\sexperimental\scommand\s"PRAGMA\swal_blocking_checkpoint",\swhich\suses\sthe\sbusy-handler\sto\sblock\suntil\sall\sreaders\shave\sfinished\sin\sorder\sto\sensure\sthe\snext\swriter\swill\sbe\sable\sto\swrap\saround\sto\sthe\sstart\sof\sthe\slog\sfile.
-D 2010-11-16T18:56:51
+C Modify\sthe\sinterface\sto\sthe\sblocking\swal-checkpoint\sfunctionality.
+D 2010-11-18T12:11:05
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e7a59672eaeb04408d1fa8501618d7501a3c5e39
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -119,8 +119,8 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c d5b0137bc20327af08c14772227cc35134839c30
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c 444aae4fc60cc57d6c97615358e1020f6884cca6
-F src/btree.h d1144d38d790a8b7b2e215043f8d068f4f37de07
+F src/btree.c d90149f6e0a6f715b58b272ef1028fa249a2a088
+F src/btree.h 1d62748eb7d129292782cf65b891b85cbfa024d4
 F src/btreeInt.h c424f2f131cc61ddf130f9bd736b3df12c8a51f0
 F src/build.c 00a327120d81ace6267e714ae8010c997d55de5d
 F src/callback.c a1d1b1c9c85415dff013af033e2fed9c8382d33b
@@ -141,7 +141,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 8af9fcc75708d60b88636ccba38b4a7b3c155c3e
-F src/main.c 89c658ae9a610a61ff856a110bda50606e9227d6
+F src/main.c 91465f2658911ddb51be89e7b8ee01af8584308f
 F src/malloc.c 3d7284cd9346ab6e3945535761e68c23c6cf40ef
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 00bd8265c81abb665c48fea1e0c234eb3b922206
@@ -162,13 +162,13 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c de5be4cdbf3d07018059934eaf7e5d8d594a895c
 F src/os_win.c 2f90f7bdec714fad51cd31b4ecad3cc1b4bb5aad
-F src/pager.c 7f7587c2f11126d13ee1925ac8960a9e7ab13e8a
-F src/pager.h ad7d8db0fbcee7546dbc02ffe0d0d44ea868ef52
+F src/pager.c b46a78a196d99bc855eec3c602777a1bc8db5122
+F src/pager.h e2485f2f2fa5264f2bb68d1783c149d3d57d3637
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 09d38c44ab275db581f7a2f6ff8b9bc7f8c0faaa
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c e9578a3beac26f229ee558a4e16c863f2498185f
-F src/pragma.c 66a8b53d1e74635011fbb0bb54b7ecc402684bae
+F src/pragma.c f843c877845ddbb911f10eea50c9290bc8354b03
 F src/prepare.c c2b318037d626fed27905c9446730b560637217a
 F src/printf.c 8ae5082dd38a1b5456030c3755ec3a392cd51506
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -176,9 +176,9 @@ F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 550d67688f5e8bc8022faf6d014838afba1415af
 F src/shell.c 8517fc1f9c59ae4007e6cc8b9af91ab231ea2056
-F src/sqlite.h.in f47e09412fc9a129f759fa4d96ef21f4b3d529eb
+F src/sqlite.h.in 4645a3bddf4481fcc9422ba41acf4e71c1c81e22
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
-F src/sqliteInt.h fe1cb073b2707001985f06dee9ee256247e4d0ce
+F src/sqliteInt.h 4e7045f17606296bc8e7898d69567fc3cd06b761
 F src/sqliteLimit.h a17dcd3fb775d63b64a43a55c54cb282f9726f44
 F src/status.c 496913d4e8441195f6f2a75b1c95993a45b9b30b
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -227,7 +227,7 @@ F src/update.c 227e6cd512108b84f69421fc6c7aa1b83d60d6e0
 F src/utf.c 1baeeac91707a4df97ccc6141ec0f808278af685
 F src/util.c cd78524566fe45671863eee78685969a4bfd4e4c
 F src/vacuum.c 924bd1bcee2dfb05376f79845bd3b4cec7b54b2f
-F src/vdbe.c b86b09beb3dcf2e6d5922acee48b8a1c16b68bfd
+F src/vdbe.c 4bec828e70654c698ef843c29b557bee2c8a0a00
 F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
 F src/vdbeInt.h 7f4cf1b2b69bef3a432b1f23dfebef57275436b4
 F src/vdbeapi.c 5368714fa750270cf6430160287c21adff44582d
@@ -236,8 +236,8 @@ F src/vdbeblob.c e0ce3c54cc0c183af2ec67b63a289acf92251df4
 F src/vdbemem.c 23723a12cd3ba7ab3099193094cbb2eb78956aa9
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c b297e8fa656ab5e66244ab15680d68db0adbec30
-F src/wal.c 400624ce58acce44f0bf0d47ed2f435da290fb04
-F src/wal.h d5bbc11242d7fd14e9dc6a74f68d3ccaf01a9e48
+F src/wal.c 8eca619a28a70a667c913e5927131250836377a2
+F src/wal.h 7a5fbb00114b7f2cd40c7e1003d4c41ce9d26840
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c d5cc65f51661a038a2c6a663a945d5cf4c277b81
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -827,7 +827,7 @@ F test/wal.test 70227190e713b3e7eb2a7d5ec3510b66db01f327
 F test/wal2.test c794b8b257af54190bb913678ad3984cbf3311b9
 F test/wal3.test 957a5f2a8fe8a6ff01de1a15285ecf2f376fcaf8
 F test/wal4.test 3404b048fa5e10605facaf70384e6d2943412e30
-F test/wal5.test e0f1abdff4f76d3a8531f5d0f4cb237e5eff891c
+F test/wal5.test 4e2854d7584dd97a73e7ce0f47bcbbe5c592fe29
 F test/wal_common.tcl a98f17fba96206122eff624db0ab13ec377be4fe
 F test/walbak.test 4df1c7369da0301caeb9a48fa45997fd592380e4
 F test/walbig.test e882bc1d014afffbfa2b6ba36e0f07d30a633ad0
@@ -887,10 +887,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 56bbc539246a6dc9f1ae1edb898db7a4f6f6d322
-R 75a04ae738d792c76538f98d6f9ad655
-T *branch * experimental
-T *sym-experimental *
-T -sym-trunk *
+P 7e3fc2c833a5baa08820c499867b6902bdc2ed5a
+R 1672f1722e4277222ee64bddb8543abf
 U dan
-Z b1cbb492cf90106bd968e524fdd11e16
+Z 2e080f5eeb72d6f9662d3b3c376a7b7c

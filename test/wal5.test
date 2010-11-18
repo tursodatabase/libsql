@@ -82,7 +82,7 @@ do_multiclient_test tn {
   #
   set ::busy_handler_script { if {$n==5} { sql2 COMMIT } }
   do_test 1.$tn.5 {
-    sql1 { PRAGMA wal_blocking_checkpoint }
+    sql1 { PRAGMA wal_checkpoint = RESTART }
     list [db_page_count] [wal_page_count] $::nBusyHandler
   } {6 12 6}
   do_test 1.$tn.6 {
@@ -109,7 +109,8 @@ do_multiclient_test tn {
     if {$n==7} { sql3 COMMIT }
   }
   do_test 1.$tn.11 {
-    sql1 { PRAGMA wal_blocking_checkpoint }
+breakpoint
+    sql1 { PRAGMA wal_checkpoint = RESTART }
     list [db_page_count] [wal_page_count] $::nBusyHandler
   } {10 5 8}
   do_test 1.$tn.12 { set ::db_file_size } 10

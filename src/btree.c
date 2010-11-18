@@ -7936,14 +7936,9 @@ int sqlite3BtreeIsInTrans(Btree *p){
 ** Return SQLITE_LOCKED if this or any other connection has an open 
 ** transaction on the shared-cache the argument Btree is connected to.
 **
-** If parameter bBlock is true, then the layers below invoke the 
-** busy-handler callback while waiting for readers to release locks so
-** that the entire WAL can be checkpointed. If it is false, then as
-** much as possible of the WAL is checkpointed without waiting for readers
-** to finish. bBlock is true for "PRAGMA wal_blocking_checkpoint" and false
-** for "PRAGMA wal_checkpoint".
+** Parameter eMode is one of SQLITE_CHECKPOINT_PASSIVE, FULL or RESTART.
 */
-int sqlite3BtreeCheckpoint(Btree *p, int bBlock){
+int sqlite3BtreeCheckpoint(Btree *p, int eMode, int *pnLog, int *pnCkpt){
   int rc = SQLITE_OK;
   if( p ){
     BtShared *pBt = p->pBt;
@@ -7951,7 +7946,7 @@ int sqlite3BtreeCheckpoint(Btree *p, int bBlock){
     if( pBt->inTransaction!=TRANS_NONE ){
       rc = SQLITE_LOCKED;
     }else{
-      rc = sqlite3PagerCheckpoint(pBt->pPager, bBlock);
+      rc = sqlite3PagerCheckpoint(pBt->pPager, eMode, pnLog, pnCkpt);
     }
     sqlite3BtreeLeave(p);
   }

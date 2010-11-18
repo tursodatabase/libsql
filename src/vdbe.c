@@ -5216,13 +5216,33 @@ case OP_AggFinal: {
 }
 
 #ifndef SQLITE_OMIT_WAL
-/* Opcode: Checkpoint P1 P2 * * *
+/* Opcode: Checkpoint P1 P2 P3 * *
 **
 ** Checkpoint database P1. This is a no-op if P1 is not currently in
-** WAL mode. If P2 is non-zero, this is a blocking checkpoint.
+** WAL mode. Parameter P2 is one of SQLITE_CHECKPOINT_PASSIVE, FULL
+** or RESTART.
 */
 case OP_Checkpoint: {
-  rc = sqlite3Checkpoint(db, pOp->p1, pOp->p2);
+  int nLog = -1;                  /* Number of pages in WAL log */
+  int nCkpt = -1;                 /* Number of checkpointed pages */
+  int bBusy = 0;
+  assert( pOp->p2==SQLITE_CHECKPOINT_PASSIVE
+       || pOp->p2==SQLITE_CHECKPOINT_FULL
+       || pOp->p2==SQLITE_CHECKPOINT_RESTART
+  );
+  rc = sqlite3Checkpoint(db, pOp->p1, pOp->p2, &nLog, &nCkpt);
+  if( rc==SQLITE_BUSY ){
+    rc = SQLITE_OK;
+    bBusy = 1;
+  }
+
+  aMem[1].u.i = bBusy;
+  aMem[2].u.i = nLog;
+  aMem[3].u.i = nCkpt;
+  MemSetTypeFlag(&aMem[1], MEM_Int);
+  MemSetTypeFlag(&aMem[2], MEM_Int);
+  MemSetTypeFlag(&aMem[3], MEM_Int);
+
   break;
 };  
 #endif

@@ -6520,17 +6520,16 @@ sqlite3_backup **sqlite3PagerBackupPtr(Pager *pPager){
 ** "PRAGMA wal_blocking_checkpoint" or calls the sqlite3_wal_checkpoint()
 ** or wal_blocking_checkpoint() API functions.
 **
-** Parameter bBlock is true for a blocking-checkpoint, false for an 
-** ordinary, non-blocking, checkpoint.
+** Parameter eMode is one of SQLITE_CHECKPOINT_PASSIVE, FULL or RESTART.
 */
-int sqlite3PagerCheckpoint(Pager *pPager, int bBlock){
+int sqlite3PagerCheckpoint(Pager *pPager, int eMode, int *pnLog, int *pnCkpt){
   int rc = SQLITE_OK;
   if( pPager->pWal ){
-    u8 *zBuf = (u8 *)pPager->pTmpSpace;
-    rc = sqlite3WalCheckpoint(pPager->pWal,
-        (bBlock ? pPager->xBusyHandler : 0), pPager->pBusyHandlerArg,
+    rc = sqlite3WalCheckpoint(pPager->pWal, eMode,
+        pPager->xBusyHandler, pPager->pBusyHandlerArg,
         (pPager->noSync ? 0 : pPager->sync_flags),
-        pPager->pageSize, zBuf
+        pPager->pageSize, (u8 *)pPager->pTmpSpace,
+        pnLog, pnCkpt
     );
   }
   return rc;
