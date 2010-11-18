@@ -311,13 +311,13 @@ static void applyAffinity(
 ** into a numeric representation.  Use either INTEGER or REAL whichever
 ** is appropriate.  But only do the conversion if it is possible without
 ** loss of information and return the revised type of the argument.
-**
-** This is an EXPERIMENTAL api and is subject to change or removal.
 */
 int sqlite3_value_numeric_type(sqlite3_value *pVal){
   Mem *pMem = (Mem*)pVal;
-  applyNumericAffinity(pMem);
-  sqlite3VdbeMemStoreType(pMem);
+  if( pMem->type==SQLITE_TEXT ){
+    applyNumericAffinity(pMem);
+    sqlite3VdbeMemStoreType(pMem);
+  }
   return pMem->type;
 }
 

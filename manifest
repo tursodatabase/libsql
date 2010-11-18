@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Restrict\sthe\sscope\sof\sthe\ssqlite3_stmt_readonly()\sinterface\sto\sa\sspecific\nsubset\sof\sprepared\sstatement\stypes.
-D 2010-11-17T02:02:45
+C Prevent\sa\spossible\ssegfault\swhen\sthe\ssqlite3_value_numeric_type()\sinterface\sis\nmisused\sto\stry\sto\sdetermine\sthe\snumeric\stype\sof\sthe\sNULL\svalue\sreturned\nfrom\ssqlite3_column_value()\swith\san\sinvalid\scolumn\snumber.
+D 2010-11-18T12:31:24
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e7a59672eaeb04408d1fa8501618d7501a3c5e39
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -230,7 +230,7 @@ F src/update.c 227e6cd512108b84f69421fc6c7aa1b83d60d6e0
 F src/utf.c 1baeeac91707a4df97ccc6141ec0f808278af685
 F src/util.c cd78524566fe45671863eee78685969a4bfd4e4c
 F src/vacuum.c 924bd1bcee2dfb05376f79845bd3b4cec7b54b2f
-F src/vdbe.c e1aa917961e69f71c80f46ce231b496d3c841ae1
+F src/vdbe.c 63bb1e56a035bc65b20d6f9c7d7c876f19b4605f
 F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
 F src/vdbeInt.h 7f4cf1b2b69bef3a432b1f23dfebef57275436b4
 F src/vdbeapi.c fb0036185b3c56e15916a5ee96309cd4acf6818f
@@ -889,14 +889,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P fd5b2f23dd5111d2f0934dd828bae36b755024c1
-R 04175f994d2ff5506b0ca53f6db141f4
+P 919b06c3a803abb9236606a9b5885f0d8181e730
+R f97c8e924509d527d263305f6db2ea8c
 U drh
-Z d3d5e28e20342a905a65b4d0c97cc8b0
+Z cdfd67772a9f3b2481027958d7a1c7cc
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFM4zfIoxKgR168RlERAmoJAJ41/nrY6W9922DAT1NyVkj5MHWhBQCbBEkI
-2Mj3PkQzdDaLvqg80qEt7sc=
-=l7B2
+iD8DBQFM5RyfoxKgR168RlERAk12AKCFZ9RAxJldNTKoz5+tmS7oBoyIwQCfQTx6
+ziVsVfEF14r8UoUq+M0FtUk=
+=ZxBI
 -----END PGP SIGNATURE-----
