@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Prevent\sa\spossible\ssegfault\swhen\sthe\ssqlite3_value_numeric_type()\sinterface\sis\nmisused\sto\stry\sto\sdetermine\sthe\snumeric\stype\sof\sthe\sNULL\svalue\sreturned\nfrom\ssqlite3_column_value()\swith\san\sinvalid\scolumn\snumber.
-D 2010-11-18T12:31:24
+C Fix\scompiler\swarnings.
+D 2010-11-18T13:47:51
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e7a59672eaeb04408d1fa8501618d7501a3c5e39
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -64,7 +64,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 9da9f1d5bc4b087540255ffdb7a4428fe708edf0
+F ext/fts3/fts3.c 98e6f7c094060b47c5660e8779d883219da10e5d
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h bbcd6d671228c9ae2ed5514723fcc6217821d0a6
 F ext/fts3/fts3_expr.c ee48b9278b8b2432a05a03320fbcacba151dbaa5
@@ -83,7 +83,7 @@ F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c 850e9a36567bbcce6bd85a4b68243cad8e3c2de2
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 7dffd6d90dac2e504b7315572f49c754772525dc
+F ext/rtree/rtree.c 1a15546893b4c05df810ebc18d3bf910ac8ca601
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test dbd4250ac0ad367a262eb9676f7e3080b0368206
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -242,7 +242,7 @@ F src/vtab.c b297e8fa656ab5e66244ab15680d68db0adbec30
 F src/wal.c f26b8d297bd11cb792e609917f9d4c6718ac8e0e
 F src/wal.h c1aac6593a0b02b15dc625987e619edeab39292e
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c d5cc65f51661a038a2c6a663a945d5cf4c277b81
+F src/where.c fa22d45b2577c77146f2e894d58011d472d64103
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 6745008c144bd2956d58864d21f7b304689c1cce
@@ -889,14 +889,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 919b06c3a803abb9236606a9b5885f0d8181e730
-R f97c8e924509d527d263305f6db2ea8c
+P 501b743bcb60cda0acf63bcf8a4abbf00797b347
+R eaffc000adc323845124c605d8131353
 U drh
-Z cdfd67772a9f3b2481027958d7a1c7cc
+Z 129e4da2047508451bbae193888369af
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFM5RyfoxKgR168RlERAk12AKCFZ9RAxJldNTKoz5+tmS7oBoyIwQCfQTx6
-ziVsVfEF14r8UoUq+M0FtUk=
-=ZxBI
+iD8DBQFM5S6KoxKgR168RlERAlxMAKCCj1He0nir70Dh29Hs1JaoNodGdQCggzyL
+124Zyx5njb0rKyAwAZS9FWs=
+=7jLu
 -----END PGP SIGNATURE-----

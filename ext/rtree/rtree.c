@@ -2649,16 +2649,6 @@ static int newRowid(Rtree *pRtree, i64 *piRowid){
   return rc;
 }
 
-#ifndef NDEBUG
-static int hashIsEmpty(Rtree *pRtree){
-  int ii;
-  for(ii=0; ii<HASHSIZE; ii++){
-    assert( !pRtree->aHash[ii] );
-  }
-  return 1;
-}
-#endif
-
 /*
 ** The xUpdate method for rtree module virtual tables.
 */
