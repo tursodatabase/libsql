@@ -21,10 +21,12 @@ ifcapable !wal {finish_test ; return }
 
 set testprefix wal5
 
+proc db_page_count  {{file test.db}} { expr [file size $file] / 1024 }
+proc wal_page_count {{file test.db}} { wal_frame_count ${file}-wal 1024 }
+
+
 do_multiclient_test tn {
 
-  proc db_page_count  {} { expr [file size test.db] / 1024 }
-  proc wal_page_count {} { wal_frame_count test.db-wal 1024 }
 
   set ::nBusyHandler 0
   set ::busy_handler_script ""
@@ -114,5 +116,88 @@ do_multiclient_test tn {
   } {10 5 8}
   do_test 1.$tn.12 { set ::db_file_size } 10
 }
+
+
+#-------------------------------------------------------------------------
+# This block of tests explores checkpoint operations on more than one 
+# database file.
+#
+proc setup_and_attach_aux {} {
+  sql1 { ATTACH 'test.db2' AS aux }
+  sql2 { ATTACH 'test.db2' AS aux }
+  sql3 { ATTACH 'test.db2' AS aux }
+  sql1 {
+    PRAGMA main.page_size=1024; PRAGMA main.journal_mode=WAL;
+    PRAGMA aux.page_size=1024;  PRAGMA aux.journal_mode=WAL;
+  }
+}
+
+proc file_page_counts {} {
+  list [db_page_count  test.db ] \
+       [wal_page_count test.db ] \
+       [db_page_count  test.db2] \
+       [wal_page_count test.db2]
+}
+
+do_multiclient_test tn {
+  setup_and_attach_aux
+  do_test 2.1.$tn.1 {
+    sql1 {
+      CREATE TABLE t1(a, b);
+      INSERT INTO t1 VALUES(1, 2);
+      CREATE TABLE aux.t2(a, b);
+      INSERT INTO t2 VALUES(1, 2);
+    }
+  } {}
+
+  do_test 2.2.$tn.2 { file_page_counts } {1 5 1 5}
+  do_test 2.1.$tn.3 { sql1 { PRAGMA wal_checkpoint } } {0 5 5}
+  do_test 2.1.$tn.4 { file_page_counts } {2 5 2 5}
+}
+
+do_multiclient_test tn {
+
+  setup_and_attach_aux
+
+  do_test 2.2.$tn.1 {
+    execsql {
+      CREATE TABLE t1(a, b);
+      INSERT INTO t1 VALUES(1, 2);
+      CREATE TABLE aux.t2(a, b);
+      INSERT INTO t2 VALUES(1, 2);
+      INSERT INTO t2 VALUES(3, 4);
+    }
+  } {}
+
+  do_test 2.2.$tn.2 { file_page_counts } {1 5 1 7}
+  do_test 2.2.$tn.3 { sql2 { BEGIN; SELECT * FROM t1 } } {1 2}
+  do_test 2.2.$tn.4 { sql1 { PRAGMA wal_checkpoint = RESTART } } {1 5 5}
+  do_test 2.2.$tn.5 { file_page_counts } {2 5 2 7}
+}
+
+do_multiclient_test tn {
+
+  setup_and_attach_aux
+
+  do_test 2.3.$tn.1 {
+    execsql {
+      CREATE TABLE t1(a, b);
+      INSERT INTO t1 VALUES(1, 2);
+      CREATE TABLE aux.t2(a, b);
+      INSERT INTO t2 VALUES(1, 2);
+    }
+  } {}
+
+  do_test 2.3.$tn.2 { file_page_counts } {1 5 1 5}
+  do_test 2.3.$tn.3 { sql2 { BEGIN; SELECT * FROM t1 } } {1 2}
+  do_test 2.3.$tn.4 { sql1 { INSERT INTO t1 VALUES(3, 4) } } {}
+  do_test 2.3.$tn.5 { sql1 { INSERT INTO t2 VALUES(3, 4) } } {}
+  do_test 2.3.$tn.6 { file_page_counts } {1 7 1 7}
+
+  do_test 2.3.$tn.7 { sql1 { PRAGMA wal_checkpoint = FULL } } {1 7 5}
+  do_test 2.3.$tn.8 { file_page_counts } {1 7 2 7}
+}
+
+
 
 finish_test
