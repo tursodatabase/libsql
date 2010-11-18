@@ -1,5 +1,5 @@
-C Added\ssome\stests\sto\scheck\sthat\sumlaut\scharacters\sare\ssupported\sin\sfilenames.
-D 2010-11-18T15:44:59
+C Ensure\stcl\sis\susing\sutf-8\sas\sthe\ssystem\sencoding\swhen\srunning\scapi3e.test.
+D 2010-11-18T16:58:49
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e7a59672eaeb04408d1fa8501618d7501a3c5e39
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -296,7 +296,7 @@ F test/capi3.test 1945a2ba75e3f4c49d5beb8fc092115b6292d471
 F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
 F test/capi3c.test bea67403a5e37a4b33230ee4723e315a2ffb31e7
 F test/capi3d.test cd36571f014f34bdc4421967f6453cbb597d5d16
-F test/capi3e.test f57488502e00902e6a1f560a0620a96dcc0b8efb
+F test/capi3e.test 4fda47388ddfbfe807987aa62f46fcbceec9327f
 F test/cast.test 166951664a0b0a2e0f8fb5997a152490c6363932
 F test/check.test db2b29d557544347d28e25b8406f5d5ecc3d1bc3
 F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
@@ -887,7 +887,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 76681870a4705179f78976e7fda638a6fea0b9f9
-R 919bf4eab147c8998416dfbf378b675b
-U shaneh
-Z aafd80be2caa03cdbfe5df1baca3e3f0
+P c36f275d70ec8f6dead6adac02885026fdff9666
+R 94e5b29a1e7d3e1ce1116e4aa76418d2
+U dan
+Z 48483be6d4c72d388a7a44154f6792c7
