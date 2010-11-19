@@ -110,6 +110,10 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
     sqlite3SetString(pzErrMsg, db, "cannot VACUUM from within a transaction");
     return SQLITE_ERROR;
   }
+  if( db->activeVdbeCnt>1 ){
+    sqlite3SetString(pzErrMsg, db,"cannot VACUUM - SQL statements in progress");
+    return SQLITE_ERROR;
+  }
 
   /* Save the current value of the database flags so that it can be 
   ** restored before returning. Then set the writable-schema flag, and

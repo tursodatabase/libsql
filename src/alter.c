@@ -313,6 +313,11 @@ static char *whereTempTriggers(Parse *pParse, Table *pTab){
       }
     }
   }
+  if( zWhere ){
+    char *zNew = sqlite3MPrintf(pParse->db, "type='trigger' AND (%s)", zWhere);
+    sqlite3DbFree(pParse->db, zWhere);
+    zWhere = zNew;
+  }
   return zWhere;
 }
 

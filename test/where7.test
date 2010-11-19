@@ -23299,6 +23299,52 @@ do_test where7-2.1001.2 {
          OR a=91
   }
 } {2 22 23 28 54 80 91 scan 0 sort 0}
-finish_test
+
+# test case for the performance regression fixed by
+# check-in 28ba6255282b on 2010-10-21 02:05:06
+#
+# The test case that follows is code from an actual
+# application with identifiers change and unused columns
+# remove.
+#
+do_execsql_test where7-3.1 {
+  CREATE TABLE t301 (
+      c8 INTEGER PRIMARY KEY,
+      c6 INTEGER,
+      c4 INTEGER,
+      c7 INTEGER,
+      FOREIGN KEY (c4) REFERENCES series(c4)
+  );
+  CREATE INDEX t301_c6 on t301(c6);
+  CREATE INDEX t301_c4 on t301(c4);
+  CREATE INDEX t301_c7 on t301(c7);
+  
+  CREATE TABLE t302 (
+      c1 INTEGER PRIMARY KEY,
+      c8 INTEGER,
+      c5 INTEGER,
+      c3 INTEGER,
+      c2 INTEGER,
+      c4 INTEGER,
+      FOREIGN KEY (c8) REFERENCES t301(c8)
+  );
+  CREATE INDEX t302_c3 on t302(c3);
+  CREATE INDEX t302_c8_c3 on t302(c8, c3);
+  CREATE INDEX t302_c5 on t302(c5);
+  
+  EXPLAIN QUERY PLAN
+  SELECT t302.c1 
+    FROM t302 JOIN t301 ON t302.c8 = t301.c8
+    WHERE t302.c2 = 19571
+      AND t302.c3 > 1287603136
+      AND (t301.c4 = 1407449685622784
+           OR t301.c8 = 1407424651264000)
+   ORDER BY t302.c5 LIMIT 200;
+} {
+  0 0 1 {SEARCH TABLE t301 USING COVERING INDEX t301_c4 (c4=?) (~10 rows)} 
+  0 0 1 {SEARCH TABLE t301 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
+  0 1 0 {SEARCH TABLE t302 USING INDEX t302_c8_c3 (c8=? AND c3>?) (~2 rows)} 
+  0 0 0 {USE TEMP B-TREE FOR ORDER BY}
+}
 
 finish_test

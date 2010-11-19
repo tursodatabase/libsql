@@ -6,9 +6,7 @@
 #
 #***********************************************************************
 #
-# The tests in this file are structural coverage tests. They are designed
-# to complement the tests in fts3rnd.test and fts3doc.test. Between them,
-# the three files should provide full coverage of the fts3 extension code.
+# The tests in this file are structural coverage tests for FTS3.
 #
 
 set testdir [file dirname $argv0]
@@ -21,6 +19,7 @@ source $testdir/fts3_common.tcl
 source $testdir/malloc_common.tcl
 
 set DO_MALLOC_TEST 0
+set testprefix fts3cov
 
 #--------------------------------------------------------------------------
 # When it first needs to read a block from the %_segments table, the FTS3 
@@ -82,29 +81,30 @@ do_test fts3cov-2.1 {
       INSERT INTO t1 VALUES('And she in the midnight wood will pray');
       INSERT INTO t1 VALUES('For the weal of her lover that''s far away.');
     COMMIT;
-
+  }
+  execsql {
     INSERT INTO t1(t1) VALUES('optimize');
     SELECT substr(hex(root), 1, 2) FROM t1_segdir;
   }
 } {03}
 
 # Test the "missing entry" case:
-do_test fts3cov-2.1 {
+do_test fts3cov-2.2 {
   set root [db one {SELECT root FROM t1_segdir}]
   read_fts3varint [string range $root 1 end] left_child
   execsql { DELETE FROM t1_segments WHERE blockid = $left_child }
 } {}
-do_error_test fts3cov-2.2 {
+do_error_test fts3cov-2.3 {
   SELECT * FROM t1 WHERE t1 MATCH 'c*'
-} {database disk image is malformed}
+} {SQL logic error or missing database}
 
 # Test the "replaced with NULL" case:
-do_test fts3cov-2.3 {
+do_test fts3cov-2.4 {
   execsql { INSERT INTO t1_segments VALUES($left_child, NULL) }
 } {}
-do_error_test fts3cov-2.4 {
+do_error_test fts3cov-2.5 {
   SELECT * FROM t1 WHERE t1 MATCH 'cloud'
-} {database disk image is malformed}
+} {SQL logic error or missing database}
 
 #--------------------------------------------------------------------------
 # The following tests are to test the effects of OOM errors while storing
@@ -369,5 +369,64 @@ do_malloc_test fts3cov-13 -sqlprep {
   SELECT snippet(t13, '%%', '%%') FROM t13 WHERE t13 MATCH 'two';
   SELECT snippet(t13, '%%') FROM t13 WHERE t13 MATCH 'two';
 }
+
+do_execsql_test 14.0 {
+  CREATE VIRTUAL TABLE t14 USING fts4(a, b);
+  INSERT INTO t14 VALUES('one two three', 'one three four');
+  INSERT INTO t14 VALUES('a b c', 'd e a');
+}
+do_execsql_test 14.1 {
+  SELECT rowid FROM t14 WHERE t14 MATCH '"one two three"'
+} {1}
+do_execsql_test 14.2 {
+  SELECT rowid FROM t14 WHERE t14 MATCH '"one four"'
+} {}
+do_execsql_test 14.3 {
+  SELECT rowid FROM t14 WHERE t14 MATCH '"e a"'
+} {2}
+do_execsql_test 14.5 {
+  SELECT rowid FROM t14 WHERE t14 MATCH '"e b"'
+} {}
+do_catchsql_test 14.6 {
+  SELECT rowid FROM t14 WHERE rowid MATCH 'one'
+} {1 {unable to use function MATCH in the requested context}}
+do_catchsql_test 14.7 {
+  SELECT rowid FROM t14 WHERE docid MATCH 'one'
+} {1 {unable to use function MATCH in the requested context}}
+
+do_execsql_test 15.0 {
+  CREATE VIRTUAL TABLE t15 USING fts4(a, b, c);
+  INSERT INTO t15 VALUES('abc def ghi', 'abc2 def2 ghi2', 'abc3 def3 ghi3');
+  INSERT INTO t15 VALUES('abc2 def2 ghi2', 'abc2 def2 ghi2', 'abc def3 ghi3');
+}
+do_execsql_test 15.1 {
+  SELECT rowid FROM t15 WHERE t15 MATCH '"abc* def2"'
+} {1 2}
+
+# Test a corruption case.
+#
+do_execsql_test 16.1 {
+  CREATE VIRTUAL TABLE t16 USING fts4;
+  INSERT INTO t16 VALUES('theoretical work to examine the relationship');
+  INSERT INTO t16 VALUES('solution of our problems on the invisible');
+  DELETE FROM t16_content WHERE rowid = 2;
+}
+do_catchsql_test 16.2 {
+  SELECT * FROM t16 WHERE t16 MATCH 'invisible'
+} {1 {database disk image is malformed}}
+
+# And another corruption test case.
+#
+do_execsql_test 17.1 {
+  CREATE VIRTUAL TABLE t17 USING fts4;
+  INSERT INTO t17(content) VALUES('one one one');
+  UPDATE t17_segdir SET root = X'00036F6E65FFFFFFFFFFFFFFFFFFFFFF02030300'
+} {}
+do_catchsql_test 17.2 {
+  SELECT * FROM t17 WHERE t17 MATCH 'one'
+} {1 {database disk image is malformed}}
+
+
+
 
 finish_test

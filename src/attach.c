@@ -124,9 +124,8 @@ static void attachFunc(
   ** it to obtain the database schema. At this point the schema may
   ** or may not be initialised.
   */
-  rc = sqlite3BtreeFactory(db, zFile, 0, SQLITE_DEFAULT_CACHE_SIZE,
-                           db->openFlags | SQLITE_OPEN_MAIN_DB,
-                           &aNew->pBt);
+  rc = sqlite3BtreeOpen(zFile, db, &aNew->pBt, 0,
+                        db->openFlags | SQLITE_OPEN_MAIN_DB);
   db->nDb++;
   if( rc==SQLITE_CONSTRAINT ){
     rc = SQLITE_ERROR;
@@ -367,7 +366,8 @@ void sqlite3Detach(Parse *pParse, Expr *pDbname){
     0,                /* xStep */
     0,                /* xFinalize */
     "sqlite_detach",  /* zName */
-    0                 /* pHash */
+    0,                /* pHash */
+    0                 /* pDestructor */
   };
   codeAttach(pParse, SQLITE_DETACH, &detach_func, pDbname, 0, 0, pDbname);
 }
@@ -388,7 +388,8 @@ void sqlite3Attach(Parse *pParse, Expr *p, Expr *pDbname, Expr *pKey){
     0,                /* xStep */
     0,                /* xFinalize */
     "sqlite_attach",  /* zName */
-    0                 /* pHash */
+    0,                /* pHash */
+    0                 /* pDestructor */
   };
   codeAttach(pParse, SQLITE_ATTACH, &attach_func, p, p, pDbname, pKey);
 }

@@ -140,30 +140,112 @@ do_test autoindex1-401 {
 # Make sure automatic indices are not created for the RHS of an IN expression
 # that is not a correlated subquery.
 #
-do_test autoindex1-500 {
-  db eval {
-    CREATE TABLE t501(a INTEGER PRIMARY KEY, b);
-    CREATE TABLE t502(x INTEGER PRIMARY KEY, y);
-    EXPLAIN QUERY PLAN
-    SELECT b FROM t501
-     WHERE t501.a IN (SELECT x FROM t502 WHERE y=?);
-  }
-} {0 0 {TABLE t501 USING PRIMARY KEY} 0 0 {TABLE t502}}
-do_test autoindex1-501 {
-  db eval {
-    EXPLAIN QUERY PLAN
-    SELECT b FROM t501
-     WHERE t501.a IN (SELECT x FROM t502 WHERE y=t501.b);
-  }
-} {0 0 {TABLE t501} 0 0 {TABLE t502 WITH AUTOMATIC INDEX}}
-do_test autoindex1-502 {
-  db eval {
-    EXPLAIN QUERY PLAN
-    SELECT b FROM t501
-     WHERE t501.a=123
-       AND t501.a IN (SELECT x FROM t502 WHERE y=t501.b);
-  }
-} {0 0 {TABLE t501 USING PRIMARY KEY} 0 0 {TABLE t502}}
-    
+do_execsql_test autoindex1-500 {
+  CREATE TABLE t501(a INTEGER PRIMARY KEY, b);
+  CREATE TABLE t502(x INTEGER PRIMARY KEY, y);
+  EXPLAIN QUERY PLAN
+  SELECT b FROM t501
+   WHERE t501.a IN (SELECT x FROM t502 WHERE y=?);
+} {
+  0 0 0 {SEARCH TABLE t501 USING INTEGER PRIMARY KEY (rowid=?) (~25 rows)} 
+  0 0 0 {EXECUTE LIST SUBQUERY 1} 
+  1 0 0 {SCAN TABLE t502 (~100000 rows)}
+}
+do_execsql_test autoindex1-501 {
+  EXPLAIN QUERY PLAN
+  SELECT b FROM t501
+   WHERE t501.a IN (SELECT x FROM t502 WHERE y=t501.b);
+} {
+  0 0 0 {SCAN TABLE t501 (~500000 rows)} 
+  0 0 0 {EXECUTE CORRELATED LIST SUBQUERY 1} 
+  1 0 0 {SEARCH TABLE t502 USING AUTOMATIC COVERING INDEX (y=?) (~7 rows)}
+}
+do_execsql_test autoindex1-502 {
+  EXPLAIN QUERY PLAN
+  SELECT b FROM t501
+   WHERE t501.a=123
+     AND t501.a IN (SELECT x FROM t502 WHERE y=t501.b);
+} {
+  0 0 0 {SEARCH TABLE t501 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
+  0 0 0 {EXECUTE CORRELATED LIST SUBQUERY 1} 
+  1 0 0 {SCAN TABLE t502 (~100000 rows)}
+}
+
+
+# The following code checks a performance regression reported on the
+# mailing list on 2010-10-19.  The problem is that the nRowEst field
+# of ephermeral tables was not being initialized correctly and so no
+# automatic index was being created for the emphemeral table when it was
+# used as part of a join.
+#
+do_execsql_test autoindex1-600 {
+  CREATE TABLE flock_owner(
+    owner_rec_id INTEGER CONSTRAINT flock_owner_key PRIMARY KEY,
+    flock_no VARCHAR(6) NOT NULL REFERENCES flock (flock_no),
+    owner_person_id INTEGER NOT NULL REFERENCES person (person_id),
+    owner_change_date TEXT, last_changed TEXT NOT NULL,
+    CONSTRAINT fo_owner_date UNIQUE (flock_no, owner_change_date)
+  );
+  CREATE TABLE sheep (
+    Sheep_No char(7) NOT NULL,
+    Date_of_Birth char(8),
+    Sort_DoB text,
+    Flock_Book_Vol char(2),
+    Breeder_No char(6),
+    Breeder_Person integer,
+    Originating_Flock char(6),
+    Registering_Flock char(6),
+    Tag_Prefix char(9),
+    Tag_No char(15),
+    Sort_Tag_No integer,
+    Breeders_Temp_Tag char(15),
+    Sex char(1),
+    Sheep_Name char(32),
+    Sire_No char(7),
+    Dam_No char(7),
+    Register_Code char(1),
+    Colour char(48),
+    Colour_Code char(2),
+    Pattern_Code char(8),
+    Horns char(1),
+    Litter_Size char(1),
+    Coeff_of_Inbreeding real,
+    Date_of_Registration text,
+    Date_Last_Changed text,
+    UNIQUE(Sheep_No));
+  CREATE INDEX fo_flock_no_index  
+              ON flock_owner (flock_no);
+  CREATE INDEX fo_owner_change_date_index  
+              ON flock_owner (owner_change_date);
+  CREATE INDEX fo_owner_person_id_index  
+              ON flock_owner (owner_person_id);
+  CREATE INDEX sheep_org_flock_index  
+           ON sheep (originating_flock);
+  CREATE INDEX sheep_reg_flock_index  
+           ON sheep (registering_flock);
+  EXPLAIN QUERY PLAN
+  SELECT x.sheep_no, x.registering_flock, x.date_of_registration
+   FROM sheep x LEFT JOIN
+       (SELECT s.sheep_no, prev.flock_no, prev.owner_person_id,
+       s.date_of_registration, prev.owner_change_date
+       FROM sheep s JOIN flock_owner prev ON s.registering_flock =
+   prev.flock_no
+       AND (prev.owner_change_date <= s.date_of_registration || ' 00:00:00')
+       WHERE NOT EXISTS
+           (SELECT 'x' FROM flock_owner later
+           WHERE prev.flock_no = later.flock_no
+           AND later.owner_change_date > prev.owner_change_date
+           AND later.owner_change_date <= s.date_of_registration||' 00:00:00')
+       ) y ON x.sheep_no = y.sheep_no
+   WHERE y.sheep_no IS NULL
+   ORDER BY x.registering_flock;
+} {
+  1 0 0 {SCAN TABLE sheep AS s (~1000000 rows)} 
+  1 1 1 {SEARCH TABLE flock_owner AS prev USING INDEX sqlite_autoindex_flock_owner_1 (flock_no=? AND owner_change_date<?) (~2 rows)} 
+  1 0 0 {EXECUTE CORRELATED SCALAR SUBQUERY 2} 
+  2 0 0 {SEARCH TABLE flock_owner AS later USING COVERING INDEX sqlite_autoindex_flock_owner_1 (flock_no=? AND owner_change_date>? AND owner_change_date<?) (~1 rows)} 
+  0 0 0 {SCAN TABLE sheep AS x USING INDEX sheep_reg_flock_index (~1000000 rows)} 
+  0 1 1 {SEARCH SUBQUERY 1 AS y USING AUTOMATIC COVERING INDEX (sheep_no=?) (~8 rows)}
+}
 
 finish_test

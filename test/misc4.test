@@ -151,7 +151,7 @@ ifcapable subquery {
       
       select a.*, x.*
         from a, (select key,sum(period) from b group by key) as x
-        where a.key=x.key;
+        where a.key=x.key order by 1 desc;
     }
   } {01 data01 01 3 +1 data+1 +1 7}
 

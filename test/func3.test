@@ -1,0 +1,71 @@
+# 2010 August 27
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library. The
+# focus of this file is testing that destructor functions associated
+# with functions created using sqlite3_create_function_v2() is 
+# correctly invoked.
+#
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+
+do_test func3-1.1 {
+  set destroyed 0
+  proc destroy {} { set ::destroyed 1 }
+  sqlite3_create_function_v2 db f2 -1 any -func f2 -destroy destroy
+  set destroyed
+} 0
+do_test func3-1.2 {
+  sqlite3_create_function_v2 db f2 -1 utf8 -func f2
+  set destroyed
+} 0
+do_test func3-1.3 {
+  sqlite3_create_function_v2 db f2 -1 utf16le -func f2
+  set destroyed
+} 0
+do_test func3-1.4 {
+  sqlite3_create_function_v2 db f2 -1 utf16be -func f2
+  set destroyed
+} 1
+
+do_test func3-2.1 {
+  set destroyed 0
+  proc destroy {} { set ::destroyed 1 }
+  sqlite3_create_function_v2 db f3 -1 utf8 -func f3 -destroy destroy
+  set destroyed
+} 0
+do_test func3-2.2 {
+  sqlite3_create_function_v2 db f3 -1 utf8 -func f3
+  set destroyed
+} 1
+
+do_test func3-3.1 {
+  set destroyed 0
+  proc destroy {} { set ::destroyed 1 }
+  sqlite3_create_function_v2 db f3 -1 any -func f3 -destroy destroy
+  set destroyed
+} 0
+do_test func3-3.2 {
+  db close
+  set destroyed
+} 1
+
+sqlite3 db test.db
+do_test func3-4.1 {
+  set destroyed 0
+  set rc [catch { 
+    sqlite3_create_function_v2 db f3 -1 any -func f3 -step f3 -destroy destroy
+  } msg]
+  list $rc $msg
+} {1 SQLITE_MISUSE}
+do_test func3-4.2 { set destroyed } 1
+
+finish_test

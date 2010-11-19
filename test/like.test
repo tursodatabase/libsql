@@ -115,7 +115,7 @@ do_test like-2.1 {
   proc test_regexp {a b} {
     return [regexp $a $b]
   }
-  db function regexp test_regexp
+  db function regexp -argcount 2 test_regexp
   execsql {
     SELECT x FROM t1 WHERE x REGEXP 'abc' ORDER BY 1;
   }
@@ -608,7 +608,7 @@ do_test like-8.4 {
 } {1 abcdef 1 ghijkl 1 mnopqr 2 abcdef 2 ghijkl 2 mnopqr}
 
 
-ifcapable like_opt {
+ifcapable like_opt&&!icu {
   # Evaluate SQL.  Return the result set followed by the
   # and the number of full-scan steps.
   #
@@ -673,110 +673,110 @@ ifcapable like_opt {
       regexp {INDEX i2} $res
     } {1}
   }
-}
 
-# Do an SQL statement.  Append the search count to the end of the result.
-#
-proc count sql {
-  set ::sqlite_search_count 0
-  set ::sqlite_like_count 0
-  return [concat [execsql $sql] scan $::sqlite_search_count \
-           like $::sqlite_like_count]
-}
+  # Do an SQL statement.  Append the search count to the end of the result.
+  #
+  proc count sql {
+    set ::sqlite_search_count 0
+    set ::sqlite_like_count 0
+    return [concat [execsql $sql] scan $::sqlite_search_count \
+             like $::sqlite_like_count]
+  }
 
-# The LIKE and GLOB optimizations do not work on columns with
-# affinity other than TEXT.
-# Ticket #3901
-#
-do_test like-10.1 {
-  db close
-  sqlite3 db test.db
-  execsql {
-    CREATE TABLE t10(
-      a INTEGER PRIMARY KEY,
-      b INTEGER COLLATE nocase UNIQUE,
-      c NUMBER COLLATE nocase UNIQUE,
-      d BLOB COLLATE nocase UNIQUE,
-      e COLLATE nocase UNIQUE,
-      f TEXT COLLATE nocase UNIQUE
-    );
-    INSERT INTO t10 VALUES(1,1,1,1,1,1);
-    INSERT INTO t10 VALUES(12,12,12,12,12,12);
-    INSERT INTO t10 VALUES(123,123,123,123,123,123);
-    INSERT INTO t10 VALUES(234,234,234,234,234,234);
-    INSERT INTO t10 VALUES(345,345,345,345,345,345);
-    INSERT INTO t10 VALUES(45,45,45,45,45,45);
-  }
-  count {
-    SELECT a FROM t10 WHERE b LIKE '12%' ORDER BY a;
-  }
-} {12 123 scan 5 like 6}
-do_test like-10.2 {
-  count {
-    SELECT a FROM t10 WHERE c LIKE '12%' ORDER BY a;
-  }
-} {12 123 scan 5 like 6}
-do_test like-10.3 {
-  count {
-    SELECT a FROM t10 WHERE d LIKE '12%' ORDER BY a;
-  }
-} {12 123 scan 5 like 6}
-do_test like-10.4 {
-  count {
-    SELECT a FROM t10 WHERE e LIKE '12%' ORDER BY a;
-  }
-} {12 123 scan 5 like 6}
-do_test like-10.5 {
-  count {
-    SELECT a FROM t10 WHERE f LIKE '12%' ORDER BY a;
-  }
-} {12 123 scan 3 like 0}
-do_test like-10.6 {
-  count {
-    SELECT a FROM t10 WHERE a LIKE '12%' ORDER BY a;
-  }
-} {12 123 scan 5 like 6}
-do_test like-10.10 {
-  execsql {
-    CREATE TABLE t10b(
-      a INTEGER PRIMARY KEY,
-      b INTEGER UNIQUE,
-      c NUMBER UNIQUE,
-      d BLOB UNIQUE,
-      e UNIQUE,
-      f TEXT UNIQUE
-    );
-    INSERT INTO t10b SELECT * FROM t10;
-  }
-  count {
-    SELECT a FROM t10b WHERE b GLOB '12*' ORDER BY a;
-  }
-} {12 123 scan 5 like 6}
-do_test like-10.11 {
-  count {
-    SELECT a FROM t10b WHERE c GLOB '12*' ORDER BY a;
-  }
-} {12 123 scan 5 like 6}
-do_test like-10.12 {
-  count {
-    SELECT a FROM t10b WHERE d GLOB '12*' ORDER BY a;
-  }
-} {12 123 scan 5 like 6}
-do_test like-10.13 {
-  count {
-    SELECT a FROM t10b WHERE e GLOB '12*' ORDER BY a;
-  }
-} {12 123 scan 5 like 6}
-do_test like-10.14 {
-  count {
-    SELECT a FROM t10b WHERE f GLOB '12*' ORDER BY a;
-  }
-} {12 123 scan 3 like 0}
-do_test like-10.15 {
-  count {
-    SELECT a FROM t10b WHERE a GLOB '12*' ORDER BY a;
-  }
-} {12 123 scan 5 like 6}
+  # The LIKE and GLOB optimizations do not work on columns with
+  # affinity other than TEXT.
+  # Ticket #3901
+  #
+  do_test like-10.1 {
+    db close
+    sqlite3 db test.db
+    execsql {
+      CREATE TABLE t10(
+        a INTEGER PRIMARY KEY,
+        b INTEGER COLLATE nocase UNIQUE,
+        c NUMBER COLLATE nocase UNIQUE,
+        d BLOB COLLATE nocase UNIQUE,
+        e COLLATE nocase UNIQUE,
+        f TEXT COLLATE nocase UNIQUE
+      );
+      INSERT INTO t10 VALUES(1,1,1,1,1,1);
+      INSERT INTO t10 VALUES(12,12,12,12,12,12);
+      INSERT INTO t10 VALUES(123,123,123,123,123,123);
+      INSERT INTO t10 VALUES(234,234,234,234,234,234);
+      INSERT INTO t10 VALUES(345,345,345,345,345,345);
+      INSERT INTO t10 VALUES(45,45,45,45,45,45);
+    }
+    count {
+      SELECT a FROM t10 WHERE b LIKE '12%' ORDER BY a;
+    }
+  } {12 123 scan 5 like 6}
+  do_test like-10.2 {
+    count {
+      SELECT a FROM t10 WHERE c LIKE '12%' ORDER BY a;
+    }
+  } {12 123 scan 5 like 6}
+  do_test like-10.3 {
+    count {
+      SELECT a FROM t10 WHERE d LIKE '12%' ORDER BY a;
+    }
+  } {12 123 scan 5 like 6}
+  do_test like-10.4 {
+    count {
+      SELECT a FROM t10 WHERE e LIKE '12%' ORDER BY a;
+    }
+  } {12 123 scan 5 like 6}
+  do_test like-10.5 {
+    count {
+      SELECT a FROM t10 WHERE f LIKE '12%' ORDER BY a;
+    }
+  } {12 123 scan 3 like 0}
+  do_test like-10.6 {
+    count {
+      SELECT a FROM t10 WHERE a LIKE '12%' ORDER BY a;
+    }
+  } {12 123 scan 5 like 6}
+  do_test like-10.10 {
+    execsql {
+      CREATE TABLE t10b(
+        a INTEGER PRIMARY KEY,
+        b INTEGER UNIQUE,
+        c NUMBER UNIQUE,
+        d BLOB UNIQUE,
+        e UNIQUE,
+        f TEXT UNIQUE
+      );
+      INSERT INTO t10b SELECT * FROM t10;
+    }
+    count {
+      SELECT a FROM t10b WHERE b GLOB '12*' ORDER BY a;
+    }
+  } {12 123 scan 5 like 6}
+  do_test like-10.11 {
+    count {
+      SELECT a FROM t10b WHERE c GLOB '12*' ORDER BY a;
+    }
+  } {12 123 scan 5 like 6}
+  do_test like-10.12 {
+    count {
+      SELECT a FROM t10b WHERE d GLOB '12*' ORDER BY a;
+    }
+  } {12 123 scan 5 like 6}
+  do_test like-10.13 {
+    count {
+      SELECT a FROM t10b WHERE e GLOB '12*' ORDER BY a;
+    }
+  } {12 123 scan 5 like 6}
+  do_test like-10.14 {
+    count {
+      SELECT a FROM t10b WHERE f GLOB '12*' ORDER BY a;
+    }
+  } {12 123 scan 3 like 0}
+  do_test like-10.15 {
+    count {
+      SELECT a FROM t10b WHERE a GLOB '12*' ORDER BY a;
+    }
+  } {12 123 scan 5 like 6}
+}
 
 # LIKE and GLOB where the default collating sequence is not appropriate
 # but an index with the appropriate collating sequence exists.

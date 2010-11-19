@@ -26,8 +26,9 @@ ifcapable !memdebug||!attach {
 source $testdir/malloc_common.tcl
 
 do_malloc_test attachmalloc-1 -tclprep {
-  db close
+  catch { db close }
   for {set i 2} {$i<=4} {incr i} {
+    catch { db$i close }
     file delete -force test$i.db
     file delete -force test$i.db-journal
   }
@@ -61,13 +62,13 @@ do_malloc_test attachmalloc-2 -tclprep {
 }
 
 set enable_shared_cache [sqlite3_enable_shared_cache 1]
-sqlite3 dbaux test2.db
+sqlite3 dbaux test3.db
 dbaux eval {SELECT * FROM sqlite_master}
 do_malloc_test attachmalloc-3 -sqlbody {
   SELECT * FROM sqlite_master;
-  ATTACH 'test2.db' AS two;
+  ATTACH 'test3.db' AS three;
 } -cleanup {
-  db eval { DETACH two }
+  db eval { DETACH three }
 }
 dbaux close
 sqlite3_enable_shared_cache $enable_shared_cache

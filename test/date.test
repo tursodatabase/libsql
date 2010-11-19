@@ -84,7 +84,7 @@ for {set i 0} {$i<1000} {incr i} {
 datetest 2.3 {date('2003-10-22','weekday 0')} 2003-10-26
 datetest 2.4 {date('2003-10-22','weekday 1')} 2003-10-27
 datetest 2.4a {date('2003-10-22','weekday  1')} 2003-10-27
-datetest 2.4b {date('2003-10-22','weekday  1x')} 2003-10-27
+datetest 2.4b {date('2003-10-22','weekday  1x')} NULL
 datetest 2.4c {date('2003-10-22','weekday  -1')} NULL
 datetest 2.4d {date('2003-10-22','weakday  1x')} NULL
 datetest 2.4e {date('2003-10-22','weekday ')} NULL

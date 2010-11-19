@@ -420,86 +420,94 @@ unset -nocomplain ::text
 #     after the transaction is commited and the blob channel 
 #     closed.
 #
-sqlite3_soft_heap_limit 0
-do_test incrblob-6.1 {
-  sqlite3 db2 test.db
-  execsql {
-    BEGIN;
-    INSERT INTO blobs(k, v, i) VALUES('a', 'different', 'connection');
-  } db2
-} {}
-do_test incrblob-6.2 {
-  execsql {
-    SELECT rowid FROM blobs
-  }
-} {1 2 3}
-do_test incrblob-6.3 {
-  set rc [catch {
-    db incrblob blobs v 1
-  } msg]
-  list $rc $msg
-} {1 {database is locked}}
-do_test incrblob-6.4 {
-  set rc [catch {
-    db incrblob blobs v 3
-  } msg]
-  list $rc $msg
-} {1 {database is locked}}
-do_test incrblob-6.5 {
-  set ::blob [db incrblob -readonly blobs v 3]
-  read $::blob
-} {hello}
-do_test incrblob-6.6 {
-  close $::blob
-} {}
-
-do_test incrblob-6.7 {
-  set ::blob [db2 incrblob blobs i 4]
-  gets $::blob
-} {connection}
-do_test incrblob-6.8 {
-  tell $::blob
-} {10}
-do_test incrblob-6.9 {
-  seek $::blob 0
-  puts -nonewline $::blob "invocation"
-  flush $::blob
-} {}
-
-# At this point rollback should be illegal (because 
-# there is an open blob channel).  But commit is also illegal because
-# the open blob is read-write.
+#     This test does not work with the "memsubsys1" configuration.
+#     Permutation memsubsys1 configures a very small static allocation 
+#     for use as page-cache memory. This causes SQLite to upgrade
+#     to an exclusive lock when writing earlier than usual, which
+#     makes some of these tests fail.
 #
-do_test incrblob-6.10 {
-  catchsql {
-    ROLLBACK;
-  } db2
-} {1 {cannot rollback transaction - SQL statements in progress}}
-do_test incrblob-6.11 {
-  catchsql {
-    COMMIT;
-  } db2
-} {1 {cannot commit transaction - SQL statements in progress}}
-
-do_test incrblob-6.12 {
-  execsql {
-    SELECT * FROM blobs WHERE rowid = 4;
-  }
-} {}
-do_test incrblob-6.13 {
-  close $::blob
-} {}
-do_test incrblob-6.14 {
-  catchsql {
-    COMMIT;
-  } db2
-} {0 {}}
-do_test incrblob-6.15 {
-  execsql {
-    SELECT * FROM blobs WHERE rowid = 4;
-  }
-} {a different invocation}
-db2 close
+sqlite3_soft_heap_limit 0
+if {[permutation] != "memsubsys1"} {
+  do_test incrblob-6.1 {
+    sqlite3 db2 test.db
+    execsql {
+      BEGIN;
+      INSERT INTO blobs(k, v, i) VALUES('a', 'different', 'connection');
+    } db2
+  } {}
+  do_test incrblob-6.2 {
+    execsql {
+      SELECT rowid FROM blobs
+    }
+  } {1 2 3}
+  do_test incrblob-6.3 {
+    set rc [catch {
+      db incrblob blobs v 1
+    } msg]
+    list $rc $msg
+  } {1 {database is locked}}
+  do_test incrblob-6.4 {
+    set rc [catch {
+      db incrblob blobs v 3
+    } msg]
+    list $rc $msg
+  } {1 {database is locked}}
+  do_test incrblob-6.5 {
+    set ::blob [db incrblob -readonly blobs v 3]
+    read $::blob
+  } {hello}
+  do_test incrblob-6.6 {
+    close $::blob
+  } {}
+  
+  do_test incrblob-6.7 {
+    set ::blob [db2 incrblob blobs i 4]
+    gets $::blob
+  } {connection}
+  do_test incrblob-6.8 {
+    tell $::blob
+  } {10}
+  do_test incrblob-6.9 {
+    seek $::blob 0
+    puts -nonewline $::blob "invocation"
+    flush $::blob
+  } {}
+  
+  # At this point rollback should be illegal (because 
+  # there is an open blob channel).  But commit is also illegal because
+  # the open blob is read-write.
+  #
+  do_test incrblob-6.10 {
+    catchsql {
+      ROLLBACK;
+    } db2
+  } {1 {cannot rollback transaction - SQL statements in progress}}
+  do_test incrblob-6.11 {
+    catchsql {
+      COMMIT;
+    } db2
+  } {1 {cannot commit transaction - SQL statements in progress}}
+  
+  do_test incrblob-6.12 {
+    execsql {
+      SELECT * FROM blobs WHERE rowid = 4;
+    }
+  } {}
+  do_test incrblob-6.13 {
+    close $::blob
+  } {}
+  do_test incrblob-6.14 {
+    catchsql {
+      COMMIT;
+    } db2
+  } {0 {}}
+  do_test incrblob-6.15 {
+    execsql {
+      SELECT * FROM blobs WHERE rowid = 4;
+    }
+  } {a different invocation}
+  db2 close
+}
 sqlite3_soft_heap_limit $cmdlinearg(soft-heap-limit)
 
 #-----------------------------------------------------------------------
@@ -668,6 +676,15 @@ do_test incrblob-8.6 {
 do_test incrblob-8.7 {
   execsql {SELECT b FROM t1 WHERE a = 314159}
 } {etilqs}
+
+# The following test case exposes an instance in the blob code where
+# an error message was set using a call similar to sqlite3_mprintf(zErr),
+# where zErr is an arbitrary string. This is no good if the string contains
+# characters that can be mistaken for printf() formatting directives.
+#
+do_test incrblob-9.1 {
+  list [catch { db incrblob t1 "A tricky column name %s%s" 1 } msg] $msg
+} {1 {no such column: "A tricky column name %s%s"}}
 
 
 finish_test

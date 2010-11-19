@@ -95,12 +95,12 @@ do_test analyze3-1.1.1 {
   }
 } {}
 
-do_test analyze3-1.1.2 {
-  eqp { SELECT sum(y) FROM t1 WHERE x>200 AND x<300 }
-} {0 0 {TABLE t1 WITH INDEX i1}}
-do_test analyze3-1.1.3 {
-  eqp { SELECT sum(y) FROM t1 WHERE x>0 AND x<1100 }
-} {0 0 {TABLE t1}}
+do_eqp_test analyze3-1.1.2 {
+  SELECT sum(y) FROM t1 WHERE x>200 AND x<300
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (x>? AND x<?) (~100 rows)}}
+do_eqp_test analyze3-1.1.3 {
+  SELECT sum(y) FROM t1 WHERE x>0 AND x<1100 
+} {0 0 0 {SCAN TABLE t1 (~111 rows)}}
 
 do_test analyze3-1.1.4 {
   sf_execsql { SELECT sum(y) FROM t1 WHERE x>200 AND x<300 }
@@ -144,12 +144,12 @@ do_test analyze3-1.2.1 {
     ANALYZE;
   }
 } {}
-do_test analyze3-1.2.2 {
-  eqp { SELECT sum(y) FROM t2 WHERE x>1 AND x<2 }
-} {0 0 {TABLE t2 WITH INDEX i2}}
-do_test analyze3-1.2.3 {
-  eqp { SELECT sum(y) FROM t2 WHERE x>0 AND x<99 }
-} {0 0 {TABLE t2}}
+do_eqp_test analyze3-1.2.2 {
+  SELECT sum(y) FROM t2 WHERE x>1 AND x<2
+} {0 0 0 {SEARCH TABLE t2 USING INDEX i2 (x>? AND x<?) (~200 rows)}}
+do_eqp_test analyze3-1.2.3 {
+  SELECT sum(y) FROM t2 WHERE x>0 AND x<99
+} {0 0 0 {SCAN TABLE t2 (~111 rows)}}
 do_test analyze3-1.2.4 {
   sf_execsql { SELECT sum(y) FROM t2 WHERE x>12 AND x<20 }
 } {161 0 4760}
@@ -191,12 +191,12 @@ do_test analyze3-1.3.1 {
     ANALYZE;
   }
 } {}
-do_test analyze3-1.3.2 {
-  eqp { SELECT sum(y) FROM t3 WHERE x>200 AND x<300 }
-} {0 0 {TABLE t3 WITH INDEX i3}}
-do_test analyze3-1.3.3 {
-  eqp { SELECT sum(y) FROM t3 WHERE x>0 AND x<1100 }
-} {0 0 {TABLE t3}}
+do_eqp_test analyze3-1.3.2 {
+  SELECT sum(y) FROM t3 WHERE x>200 AND x<300
+} {0 0 0 {SEARCH TABLE t3 USING INDEX i3 (x>? AND x<?) (~100 rows)}}
+do_eqp_test analyze3-1.3.3 {
+  SELECT sum(y) FROM t3 WHERE x>0 AND x<1100
+} {0 0 0 {SCAN TABLE t3 (~111 rows)}}
 
 do_test analyze3-1.3.4 {
   sf_execsql { SELECT sum(y) FROM t3 WHERE x>200 AND x<300 }
@@ -246,12 +246,12 @@ do_test analyze3-2.1 {
   }
   execsql COMMIT
 } {}
-do_test analyze3-2.2 {
-  eqp { SELECT count(a) FROM t1 WHERE b LIKE 'a%' }
-} {0 0 {TABLE t1 WITH INDEX i1}}
-do_test analyze3-2.3 {
-  eqp { SELECT count(a) FROM t1 WHERE b LIKE '%a' }
-} {0 0 {TABLE t1}}
+do_eqp_test analyze3-2.2 {
+  SELECT count(a) FROM t1 WHERE b LIKE 'a%'
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (b>? AND b<?) (~55000 rows)}}
+do_eqp_test analyze3-2.3 {
+  SELECT count(a) FROM t1 WHERE b LIKE '%a'
+} {0 0 0 {SCAN TABLE t1 (~500000 rows)}}
 
 do_test analyze3-2.4 {
   sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE 'a%' }

@@ -73,7 +73,7 @@ do_test analyze-1.6.3 {
 } {1 {table sqlite_stat1 may not be indexed}}
 do_test analyze-1.7 {
   execsql {
-    SELECT * FROM sqlite_stat1
+    SELECT * FROM sqlite_stat1 WHERE idx NOT NULL
   }
 } {}
 do_test analyze-1.8 {
@@ -83,7 +83,7 @@ do_test analyze-1.8 {
 } {0 {}}
 do_test analyze-1.9 {
   execsql {
-    SELECT * FROM sqlite_stat1
+    SELECT * FROM sqlite_stat1 WHERE idx NOT NULL
   }
 } {}
 do_test analyze-1.10 {
@@ -96,7 +96,7 @@ do_test analyze-1.11 {
   execsql {
     SELECT * FROM sqlite_stat1
   }
-} {}
+} {t1 {} 0}
 do_test analyze-1.12 {
   catchsql {
     ANALYZE t1;
@@ -106,7 +106,7 @@ do_test analyze-1.13 {
   execsql {
     SELECT * FROM sqlite_stat1
   }
-} {}
+} {t1 {} 0}
 
 # Create some indices that can be analyzed.  But do not yet add
 # data.  Without data in the tables, no analysis is done.
@@ -117,21 +117,21 @@ do_test analyze-2.1 {
     ANALYZE main.t1;
     SELECT * FROM sqlite_stat1 ORDER BY idx;
   }
-} {}
+} {t1 {} 0}
 do_test analyze-2.2 {
   execsql {
     CREATE INDEX t1i2 ON t1(b);
     ANALYZE t1;
     SELECT * FROM sqlite_stat1 ORDER BY idx;
   }
-} {}
+} {t1 {} 0}
 do_test analyze-2.3 {
   execsql {
     CREATE INDEX t1i3 ON t1(a,b);
     ANALYZE main;
     SELECT * FROM sqlite_stat1 ORDER BY idx;
   }
-} {}
+} {t1 {} 0}
 
 # Start adding data to the table.  Verify that the analysis
 # is done correctly.

@@ -26,14 +26,6 @@ ifcapable !altertable {
   return
 }
 
-# Determine if there is a codec available on this test.
-#
-if {[catch {sqlite3 -has_codec} r] || $r} {
-  set has_codec 1
-} else {
-  set has_codec 0
-}
-
 
 # Test Organisation:
 # ------------------
@@ -46,12 +38,6 @@ if {[catch {sqlite3 -has_codec} r] || $r} {
 # alter4-6.*: Test that temp triggers are not accidentally dropped.
 # alter4-7.*: Test that VACUUM resets the file-format.
 #
-
-# This procedure returns the value of the file-format in file 'test.db'.
-# 
-proc get_file_format {{fname test.db}} {
-  return [hexio_get_int [hexio_read $fname 44 4]]
-}
 
 do_test alter4-1.1 {
   execsql {
@@ -182,11 +168,6 @@ do_test alter4-3.2 {
     SELECT * FROM t1;
   }
 } {1 100 {} 2 300 {}}
-if {!$has_codec} {
-  do_test alter4-3.3 {
-    get_file_format
-  } {3}
-}
 ifcapable schema_version {
   do_test alter4-3.4 {
     execsql {
@@ -217,11 +198,6 @@ do_test alter4-4.2 {
     SELECT * FROM t1;
   }
 } {1 100 {hello world} 2 300 {hello world}}
-if {!$has_codec} {
-  do_test alter4-4.3 {
-    get_file_format
-  } {3}
-}
 ifcapable schema_version {
   do_test alter4-4.4 {
     execsql {
@@ -266,11 +242,6 @@ ifcapable attach {
         PRAGMA aux.schema_version;
       }
     } {31}
-  }
-  if {!$has_codec} {
-    do_test alter4-5.5 {
-      list [get_file_format test2.db] [get_file_format]
-    } {2 3}
   }
   do_test alter4-5.6 {
     execsql {
@@ -331,42 +302,6 @@ ifcapable trigger&&tempdb {
       SELECT * FROM log;
     }
   } {b 1 2 a 1 2 b 3 4 a 3 4}
-}
-
-if {!$has_codec} {
-  ifcapable vacuum {
-    do_test alter4-7.1 {
-      execsql {
-        VACUUM;
-      }
-      get_file_format
-    } {1}
-    do_test alter4-7.2 {
-      execsql {
-        CREATE TEMP TABLE abc(a, b, c);
-        ALTER TABLE abc ADD d DEFAULT NULL;
-      }
-      get_file_format
-    } {2}
-    do_test alter4-7.3 {
-      execsql {
-        ALTER TABLE abc ADD e DEFAULT 10;
-      }
-      get_file_format
-    } {3}
-    do_test alter4-7.4 {
-      execsql {
-        ALTER TABLE abc ADD f DEFAULT NULL;
-      }
-      get_file_format
-    } {3}
-    do_test alter4-7.5 {
-      execsql {
-        VACUUM;
-      }
-      get_file_format
-    } {1}
-  }
 }
 
 # Ticket #1183 - Make sure adding columns to large tables does not cause

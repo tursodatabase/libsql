@@ -1,3 +1,4 @@
+# 2008 June 23
 #
 #    May you do good and not evil.
 #    May you find forgiveness for yourself and forgive others.
@@ -6,34 +7,12 @@
 #***********************************************************************
 # This file runs all rtree related tests.
 #
-# $Id: rtree.test,v 1.3 2009/05/25 14:17:35 drh Exp $
 
 set testdir [file dirname $argv0]
-source $testdir/tester.tcl
+source $testdir/permutations.test
 
-rename finish_test rtree_finish_test
-proc finish_test {} {}
-
-set RTREE_EXCLUDE { }
-if {[info exists G(isquick)] && $G(isquick)} { 
-  set RTREE_EXCLUDE rtree3.test
+ifcapable rtree {
+  run_test_suite rtree
 }
 
-set rtreedir [file join $testdir .. ext rtree]
-
-foreach testfile [lsort -dictionary [glob -nocomplain $rtreedir/*.test]] {
-  set tail [file tail $testfile]
-  if {[lsearch -exact $RTREE_EXCLUDE $tail]>=0} continue
-  source $testfile
-  catch {db close}
-  if {$sqlite_open_file_count>0} {
-    puts "$tail did not close all files: $sqlite_open_file_count"
-    fail_test $tail
-    set sqlite_open_file_count 0
-  }
-}
-
-set sqlite_open_file_count 0
-rtree_finish_test
-rename finish_test {}
-rename rtree_finish_test finish_test
+finish_test

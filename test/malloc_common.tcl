@@ -114,6 +114,8 @@ proc do_faultsim_test {name args} {
   set DEFAULT(-body)          ""
   set DEFAULT(-test)          ""
 
+  fix_testname name
+
   array set O [array get DEFAULT]
   array set O $args
   foreach o [array names O] {
@@ -143,7 +145,7 @@ proc do_faultsim_test {name args} {
 #   faultsim_delete_and_reopen
 #
 proc faultsim_save {} {
-  foreach f [glob -nocomplain sv_test.db*] { file delete -force $f }
+  foreach f [glob -nocomplain sv_test.db*] { forcedelete $f }
   foreach f [glob -nocomplain test.db*] {
     set f2 "sv_$f"
     file copy -force $f $f2
@@ -155,7 +157,7 @@ proc faultsim_save_and_close {} {
   return ""
 }
 proc faultsim_restore {} {
-  foreach f [glob -nocomplain test.db*] { file delete -force $f }
+  foreach f [glob -nocomplain test.db*] { forcedelete $f }
   foreach f2 [glob -nocomplain sv_test.db*] {
     set f [string range $f2 3 end]
     file copy -force $f2 $f
@@ -185,7 +187,7 @@ proc faultsim_delete_and_reopen {{file test.db}} {
 # injecting OOM faults into test cases.
 #
 proc oom_injectstart {nRepeat iFail} {
-  sqlite3_memdebug_fail $iFail -repeat $nRepeat
+  sqlite3_memdebug_fail [expr $iFail-1] -repeat $nRepeat
 }
 proc oom_injectstop {} {
   sqlite3_memdebug_fail -1
@@ -422,12 +424,12 @@ proc do_malloc_test {tn args} {
         # 
         catch {db close} 
         catch {db2 close} 
-        catch {file delete -force test.db}
-        catch {file delete -force test.db-journal}
-        catch {file delete -force test.db-wal}
-        catch {file delete -force test2.db}
-        catch {file delete -force test2.db-journal}
-        catch {file delete -force test2.db-wal}
+        forcedelete test.db
+        forcedelete test.db-journal
+        forcedelete test.db-wal
+        forcedelete test2.db
+        forcedelete test2.db-journal
+        forcedelete test2.db-wal
         if {[info exists ::mallocopts(-testdb)]} {
           file copy $::mallocopts(-testdb) test.db
         }
@@ -526,7 +528,7 @@ proc do_malloc_test {tn args} {
 # match the expected results passed via parameter $result.
 #
 proc do_select_test {name sql result} {
-  uplevel [list doPassiveTest 0 $name $sql [list 0 $result]]
+  uplevel [list doPassiveTest 0 $name $sql [list 0 [list {*}$result]]]
 }
 
 proc do_restart_select_test {name sql result} {
@@ -539,6 +541,12 @@ proc do_error_test {name sql error} {
 
 proc doPassiveTest {isRestart name sql catchres} {
   if {![info exists ::DO_MALLOC_TEST]} { set ::DO_MALLOC_TEST 1 }
+
+  if {[info exists ::testprefix] 
+   && [string is integer [string range $name 0 0]]
+  } {
+    set name $::testprefix.$name
+  }
 
   switch $::DO_MALLOC_TEST {
     0 { # No malloc failures.

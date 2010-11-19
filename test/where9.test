@@ -358,32 +358,25 @@ do_test where9-2.8 {
 
 
 ifcapable explain {
-  do_test where9-3.1 {
-    set r [db eval {
-      EXPLAIN QUERY PLAN
-      SELECT t2.a FROM t1, t2
-       WHERE t1.a=80
-         AND ((t1.c=t2.c AND t1.d=t2.d) OR t1.f=t2.f)
-    }]
-    set a [expr {[lsearch $r {TABLE t2 VIA MULTI-INDEX UNION}]>=0}]
-    set b [expr {[lsearch $r {TABLE t2 WITH INDEX t2f}]>=0}]
-    set c [expr {([lsearch $r {TABLE t2 WITH INDEX t2c}]>=0)+
-                  [lsearch $r {TABLE t2 WITH INDEX t2d}]>=0}]
-    concat $a $b $c
-  } {1 1 1}
-  do_test where9-3.2 {
-    set r [db eval {
-      EXPLAIN QUERY PLAN
-      SELECT coalesce(t2.a,9999)
-        FROM t1 LEFT JOIN t2 ON (t1.c+1=t2.c AND t1.d=t2.d) OR (t1.f||'x')=t2.f
-       WHERE t1.a=80
-    }]
-    set a [expr {[lsearch $r {TABLE t2 VIA MULTI-INDEX UNION}]>=0}]
-    set b [expr {[lsearch $r {TABLE t2 WITH INDEX t2f}]>=0}]
-    set c [expr {([lsearch $r {TABLE t2 WITH INDEX t2c}]>=0)+
-                  [lsearch $r {TABLE t2 WITH INDEX t2d}]>=0}]
-    concat $a $b $c
-  } {1 1 1}
+  do_execsql_test where9-3.1 {
+    EXPLAIN QUERY PLAN
+    SELECT t2.a FROM t1, t2
+    WHERE t1.a=80 AND ((t1.c=t2.c AND t1.d=t2.d) OR t1.f=t2.f)
+  } {
+    0 0 0 {SEARCH TABLE t1 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
+    0 1 1 {SEARCH TABLE t2 USING INDEX t2d (d=?) (~2 rows)} 
+    0 1 1 {SEARCH TABLE t2 USING COVERING INDEX t2f (f=?) (~10 rows)}
+  }
+  do_execsql_test where9-3.2 {
+    EXPLAIN QUERY PLAN
+    SELECT coalesce(t2.a,9999)
+    FROM t1 LEFT JOIN t2 ON (t1.c+1=t2.c AND t1.d=t2.d) OR (t1.f||'x')=t2.f
+    WHERE t1.a=80
+  } {
+    0 0 0 {SEARCH TABLE t1 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
+    0 1 1 {SEARCH TABLE t2 USING INDEX t2d (d=?) (~2 rows)} 
+    0 1 1 {SEARCH TABLE t2 USING COVERING INDEX t2f (f=?) (~10 rows)}
+  }
 } 
 
 # Make sure that INDEXED BY and multi-index OR clauses play well with
@@ -458,46 +451,29 @@ ifcapable explain {
   # The (c=31031 OR d IS NULL) clause is preferred over b>1000 because
   # the former is an equality test which is expected to return fewer rows.
   #
-  do_test where9-5.1 {
-    set r [db eval {
-      EXPLAIN QUERY PLAN
-      SELECT a FROM t1
-       WHERE b>1000
-         AND (c=31031 OR d IS NULL)
-    }]
-    set a [expr {[lsearch $r {TABLE t1 VIA MULTI-INDEX UNION}]>=0}]
-    set b [expr {[lsearch $r {TABLE t1 WITH INDEX t1b}]>=0}]
-    concat $a $b
-  } {1 0}
+  do_execsql_test where9-5.1 {
+    EXPLAIN QUERY PLAN SELECT a FROM t1 WHERE b>1000 AND (c=31031 OR d IS NULL)
+  } {
+    0 0 0 {SEARCH TABLE t1 USING INDEX t1c (c=?) (~10 rows)} 
+    0 0 0 {SEARCH TABLE t1 USING INDEX t1d (d=?) (~10 rows)}
+  }
 
   # In contrast, b=1000 is preferred over any OR-clause.
   #
-  do_test where9-5.2 {
-    set r [db eval {
-      EXPLAIN QUERY PLAN
-      SELECT a FROM t1
-       WHERE b=1000
-         AND (c=31031 OR d IS NULL)
-    }]
-    set a [expr {[lsearch $r {TABLE t1 VIA MULTI-INDEX UNION}]>=0}]
-    set b [expr {[lsearch $r {TABLE t1 WITH INDEX t1b}]>=0}]
-    concat $a $b
-  } {0 1}
+  do_execsql_test where9-5.2 {
+    EXPLAIN QUERY PLAN SELECT a FROM t1 WHERE b=1000 AND (c=31031 OR d IS NULL)
+  } {
+    0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b=?) (~5 rows)}
+  }
 
   # Likewise, inequalities in an AND are preferred over inequalities in
   # an OR.
   #
-  do_test where9-5.3 {
-    set r [db eval {
-      EXPLAIN QUERY PLAN
-      SELECT a FROM t1
-       WHERE b>1000
-         AND (c>=31031 OR d IS NULL)
-    }]
-    set a [expr {[lsearch $r {TABLE t1 VIA MULTI-INDEX UNION}]>=0}]
-    set b [expr {[lsearch $r {TABLE t1 WITH INDEX t1b}]>=0}]
-    concat $a $b
-  } {0 1}
+  do_execsql_test where9-5.3 {
+    EXPLAIN QUERY PLAN SELECT a FROM t1 WHERE b>1000 AND (c>=31031 OR d IS NULL)
+  } {
+    0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b>?) (~165000 rows)}
+  }
 }
 
 ############################################################################

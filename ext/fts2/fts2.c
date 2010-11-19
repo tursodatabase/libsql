@@ -306,8 +306,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <ctype.h>
-
 #include "fts2.h"
 #include "fts2_hash.h"
 #include "fts2_tokenizer.h"
@@ -345,13 +343,13 @@ SQLITE_EXTENSION_INIT1
 */
 /* TODO(shess) Is __isascii() a portable version of (c&0x80)==0? */
 static int safe_isspace(char c){
-  return (c&0x80)==0 ? isspace(c) : 0;
+  return c==' ' || c=='\t' || c=='\n' || c=='\r' || c=='\v' || c=='\f';
 }
 static int safe_tolower(char c){
-  return (c&0x80)==0 ? tolower(c) : c;
+  return (c>='A' && c<='Z') ? (c - 'A' + 'a') : c;
 }
 static int safe_isalnum(char c){
-  return (c&0x80)==0 ? isalnum(c) : 0;
+  return (c>='0' && c<='9') || (c>='A' && c<='Z') || (c>='a' && c<='z');
 }
 
 typedef enum DocListType {

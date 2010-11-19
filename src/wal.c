@@ -429,6 +429,13 @@ struct Wal {
 };
 
 /*
+** Candidate values for Wal.exclusiveMode.
+*/
+#define WAL_NORMAL_MODE     0
+#define WAL_EXCLUSIVE_MODE  1     
+#define WAL_HEAPMEMORY_MODE 2
+
+/*
 ** Each page of the wal-index mapping contains a hash-table made up of
 ** an array of HASHTABLE_NSLOT elements of the following type.
 */
@@ -514,9 +521,14 @@ static int walIndexPage(Wal *pWal, int iPage, volatile u32 **ppPage){
 
   /* Request a pointer to the required page from the VFS */
   if( pWal->apWiData[iPage]==0 ){
-    rc = sqlite3OsShmMap(pWal->pDbFd, iPage, WALINDEX_PGSZ, 
-        pWal->writeLock, (void volatile **)&pWal->apWiData[iPage]
-    );
+    if( pWal->exclusiveMode==WAL_HEAPMEMORY_MODE ){
+      pWal->apWiData[iPage] = (u32 volatile *)sqlite3MallocZero(WALINDEX_PGSZ);
+      if( !pWal->apWiData[iPage] ) rc = SQLITE_NOMEM;
+    }else{
+      rc = sqlite3OsShmMap(pWal->pDbFd, iPage, WALINDEX_PGSZ, 
+          pWal->writeLock, (void volatile **)&pWal->apWiData[iPage]
+      );
+    }
   }
 
   *ppPage = pWal->apWiData[iPage];
@@ -599,6 +611,12 @@ static void walChecksumBytes(
   aOut[1] = s2;
 }
 
+static void walShmBarrier(Wal *pWal){
+  if( pWal->exclusiveMode!=WAL_HEAPMEMORY_MODE ){
+    sqlite3OsShmBarrier(pWal->pDbFd);
+  }
+}
+
 /*
 ** Write the header information in pWal->hdr into the wal-index.
 **
@@ -613,7 +631,7 @@ static void walIndexWriteHdr(Wal *pWal){
   pWal->hdr.iVersion = WALINDEX_MAX_VERSION;
   walChecksumBytes(1, (u8*)&pWal->hdr, nCksum, 0, pWal->hdr.aCksum);
   memcpy((void *)&aHdr[1], (void *)&pWal->hdr, sizeof(WalIndexHdr));
-  sqlite3OsShmBarrier(pWal->pDbFd);
+  walShmBarrier(pWal);
   memcpy((void *)&aHdr[0], (void *)&pWal->hdr, sizeof(WalIndexHdr));
 }
 
@@ -1185,7 +1203,15 @@ recovery_error:
 ** Close an open wal-index.
 */
 static void walIndexClose(Wal *pWal, int isDelete){
-  sqlite3OsShmUnmap(pWal->pDbFd, isDelete);
+  if( pWal->exclusiveMode==WAL_HEAPMEMORY_MODE ){
+    int i;
+    for(i=0; i<pWal->nWiData; i++){
+      sqlite3_free((void *)pWal->apWiData[i]);
+      pWal->apWiData[i] = 0;
+    }
+  }else{
+    sqlite3OsShmUnmap(pWal->pDbFd, isDelete);
+  }
 }
 
 /* 
@@ -1207,6 +1233,7 @@ int sqlite3WalOpen(
   sqlite3_vfs *pVfs,              /* vfs module to open wal and wal-index */
   sqlite3_file *pDbFd,            /* The open database file */
   const char *zWalName,           /* Name of the WAL file */
+  int bNoShm,                     /* True to run in heap-memory mode */
   Wal **ppWal                     /* OUT: Allocated Wal handle */
 ){
   int rc;                         /* Return Code */
@@ -1240,6 +1267,7 @@ int sqlite3WalOpen(
   pRet->pDbFd = pDbFd;
   pRet->readLock = -1;
   pRet->zWalName = zWalName;
+  pRet->exclusiveMode = (bNoShm ? WAL_HEAPMEMORY_MODE: WAL_NORMAL_MODE);
 
   /* Open file handle on the write-ahead log file. */
   flags = (SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_WAL);
@@ -1673,7 +1701,9 @@ int sqlite3WalClose(
     */
     rc = sqlite3OsLock(pWal->pDbFd, SQLITE_LOCK_EXCLUSIVE);
     if( rc==SQLITE_OK ){
-      pWal->exclusiveMode = 1;
+      if( pWal->exclusiveMode==WAL_NORMAL_MODE ){
+        pWal->exclusiveMode = WAL_EXCLUSIVE_MODE;
+      }
       rc = sqlite3WalCheckpoint(pWal, sync_flags, nBuf, zBuf);
       if( rc==SQLITE_OK ){
         isDelete = 1;
@@ -1729,7 +1759,7 @@ static int walIndexTryHdr(Wal *pWal, int *pChanged){
   */
   aHdr = walIndexHdr(pWal);
   memcpy(&h1, (void *)&aHdr[0], sizeof(h1));
-  sqlite3OsShmBarrier(pWal->pDbFd);
+  walShmBarrier(pWal);
   memcpy(&h2, (void *)&aHdr[1], sizeof(h2));
 
   if( memcmp(&h1, &h2, sizeof(h1))!=0 ){
@@ -1930,7 +1960,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     ** and can be safely ignored.
     */
     rc = walLockShared(pWal, WAL_READ_LOCK(0));
-    sqlite3OsShmBarrier(pWal->pDbFd);
+    walShmBarrier(pWal);
     if( rc==SQLITE_OK ){
       if( memcmp((void *)walIndexHdr(pWal), &pWal->hdr, sizeof(WalIndexHdr)) ){
         /* It is not safe to allow the reader to continue here if frames
@@ -2024,7 +2054,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     ** log-wrap (either of which would require an exclusive lock on
     ** WAL_READ_LOCK(mxI)) has not occurred since the snapshot was valid.
     */
-    sqlite3OsShmBarrier(pWal->pDbFd);
+    walShmBarrier(pWal);
     if( pInfo->aReadMark[mxI]!=mxReadMark
      || memcmp((void *)walIndexHdr(pWal), &pWal->hdr, sizeof(WalIndexHdr))
     ){
@@ -2366,7 +2396,7 @@ int sqlite3WalSavepointUndo(Wal *pWal, u32 *aWalData){
 **
 ** SQLITE_OK is returned if no error is encountered (regardless of whether
 ** or not pWal->hdr.mxFrame is modified). An SQLite error code is returned
-** if some error 
+** if an error occurs.
 */
 static int walRestartLog(Wal *pWal){
   int rc = SQLITE_OK;
@@ -2399,6 +2429,8 @@ static int walRestartLog(Wal *pWal){
         for(i=1; i<WAL_NREADER; i++) pInfo->aReadMark[i] = READMARK_NOT_USED;
         assert( pInfo->aReadMark[0]==0 );
         walUnlockExclusive(pWal, WAL_READ_LOCK(1), WAL_NREADER-1);
+      }else if( rc!=SQLITE_BUSY ){
+        return rc;
       }
     }
     walUnlockShared(pWal, WAL_READ_LOCK(0));
@@ -2478,7 +2510,7 @@ int sqlite3WalFrames(
       return rc;
     }
   }
-  assert( pWal->szPage==szPage );
+  assert( (int)pWal->szPage==szPage );
 
   /* Write the log file. */
   for(p=pList; p; p=p->pDirty){
@@ -2665,13 +2697,14 @@ int sqlite3WalCallback(Wal *pWal){
 ** on the main database file before invoking this operation.
 **
 ** If op is negative, then do a dry-run of the op==1 case but do
-** not actually change anything.  The pager uses this to see if it
+** not actually change anything. The pager uses this to see if it
 ** should acquire the database exclusive lock prior to invoking
 ** the op==1 case.
 */
 int sqlite3WalExclusiveMode(Wal *pWal, int op){
   int rc;
   assert( pWal->writeLock==0 );
+  assert( pWal->exclusiveMode!=WAL_HEAPMEMORY_MODE || op==-1 );
 
   /* pWal->readLock is usually set, but might be -1 if there was a 
   ** prior error while attempting to acquire are read-lock. This cannot 
@@ -2703,6 +2736,15 @@ int sqlite3WalExclusiveMode(Wal *pWal, int op){
     rc = pWal->exclusiveMode==0;
   }
   return rc;
+}
+
+/* 
+** Return true if the argument is non-NULL and the WAL module is using
+** heap-memory for the wal-index. Otherwise, if the argument is NULL or the
+** WAL module is using shared-memory, return false. 
+*/
+int sqlite3WalHeapMemory(Wal *pWal){
+  return (pWal && pWal->exclusiveMode==WAL_HEAPMEMORY_MODE );
 }
 
 #endif /* #ifndef SQLITE_OMIT_WAL */

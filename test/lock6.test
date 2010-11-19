@@ -112,10 +112,10 @@ ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
 
   sqlite3_soft_heap_limit 0
   do_test lock6-1.3 {
-    sqlite3 db test.db
-    catchsql {
-      select * from sqlite_master;
-    } 
+    list [catch {
+      sqlite3 db test.db
+      execsql { select * from sqlite_master } 
+    } msg] $msg
   } {1 {database is locked}}
 
   do_test lock6-1.4 {

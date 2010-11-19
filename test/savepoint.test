@@ -1019,4 +1019,27 @@ do_multiclient_test tn {
   } {1 2 3 4}
 }
 
+#-------------------------------------------------------------------------
+# This next block of tests verifies that a problem reported on the mailing
+# list has been resolved. At one point the second "CREATE TABLE t6" would
+# fail as table t6 still existed in the internal cache of the db schema
+# (even though it had been removed from the database by the ROLLBACK 
+# command).
+#
+sqlite3 db test.db
+do_execsql_test savepoint-17.1 {
+  BEGIN;
+    CREATE TABLE t6(a, b);
+    INSERT INTO t6 VALUES(1, 2);
+    SAVEPOINT one;
+      INSERT INTO t6 VALUES(3, 4);
+    ROLLBACK TO one;
+    SELECT * FROM t6;
+  ROLLBACK;
+} {1 2}
+
+do_execsql_test savepoint-17.2 {
+  CREATE TABLE t6(a, b);
+} {}
+
 finish_test

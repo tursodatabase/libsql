@@ -67,16 +67,15 @@ int sqlite3BtreeOpen(
 ** NOTE:  These values must match the corresponding PAGER_ values in
 ** pager.h.
 */
-#define BTREE_OMIT_JOURNAL  1  /* Do not use journal.  No argument */
+#define BTREE_OMIT_JOURNAL  1  /* Do not create or use a rollback journal */
 #define BTREE_NO_READLOCK   2  /* Omit readlocks on readonly files */
-#define BTREE_MEMORY        4  /* In-memory DB.  No argument */
-#define BTREE_READONLY      8  /* Open the database in read-only mode */
-#define BTREE_READWRITE    16  /* Open for both reading and writing */
-#define BTREE_CREATE       32  /* Create the database if it does not exist */
+#define BTREE_MEMORY        4  /* This is an in-memory DB */
+#define BTREE_SINGLE        8  /* The file contains at most 1 b-tree */
+#define BTREE_UNORDERED    16  /* Use of a hash implementation is OK */
 
 int sqlite3BtreeClose(Btree*);
 int sqlite3BtreeSetCacheSize(Btree*,int);
-int sqlite3BtreeSetSafetyLevel(Btree*,int,int);
+int sqlite3BtreeSetSafetyLevel(Btree*,int,int,int);
 int sqlite3BtreeSyncDisabled(Btree*);
 int sqlite3BtreeSetPageSize(Btree *p, int nPagesize, int nReserve, int eFix);
 int sqlite3BtreeGetPageSize(Btree*);
@@ -108,11 +107,17 @@ int sqlite3BtreeCopyFile(Btree *, Btree *);
 int sqlite3BtreeIncrVacuum(Btree *);
 
 /* The flags parameter to sqlite3BtreeCreateTable can be the bitwise OR
-** of the following flags:
+** of the flags shown below.
+**
+** Every SQLite table must have either BTREE_INTKEY or BTREE_BLOBKEY set.
+** With BTREE_INTKEY, the table key is a 64-bit integer and arbitrary data
+** is stored in the leaves.  (BTREE_INTKEY is used for SQL tables.)  With
+** BTREE_BLOBKEY, the key is an arbitrary BLOB and no content is stored
+** anywhere - the key is the content.  (BTREE_BLOBKEY is used for SQL
+** indices.)
 */
 #define BTREE_INTKEY     1    /* Table has only 64-bit signed integer keys */
-#define BTREE_ZERODATA   2    /* Table has keys only - no data */
-#define BTREE_LEAFDATA   4    /* Data stored in leaves only.  Implies INTKEY */
+#define BTREE_BLOBKEY    2    /* Table has keys only - no data */
 
 int sqlite3BtreeDropTable(Btree*, int, int*);
 int sqlite3BtreeClearTable(Btree*, int, int*);

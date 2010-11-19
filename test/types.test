@@ -135,7 +135,7 @@ execsql {
 # level. Return a list that is the length of each record
 # in the table, in the tables default scanning order.
 proc record_sizes {rootpage} {
-  set bt [btree_open test.db 10 0]
+  set bt [btree_open test.db 10]
   btree_begin_transaction $bt
   set c [btree_cursor $bt $rootpage 0]
   btree_first $c

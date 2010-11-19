@@ -3,74 +3,137 @@
 */
 #include <stdio.h>
 #include <ctype.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
 
+/*
+** state information
+*/
+static int pageSize = 1024;
+static int sectorSize = 512;
+static FILE *db = 0;
+static int showPageContent = 0;
+static int fileSize = 0;
+static unsigned cksumNonce = 0;
 
-static int pagesize = 1024;
-static int db = -1;
-static int mxPage = 0;
-
+/* Report a memory allocation error */
 static void out_of_memory(void){
   fprintf(stderr,"Out of memory...\n");
   exit(1);
 }
 
-static print_page(int iPg){
-  unsigned char *aData;
-  int i, j;
-  aData = malloc(pagesize);
-  if( aData==0 ) out_of_memory();
-  read(db, aData, pagesize);
-  fprintf(stdout, "Page %d:\n", iPg);
-  for(i=0; i<pagesize; i += 16){
-    fprintf(stdout, " %03x: ",i);
-    for(j=0; j<16; j++){
-      fprintf(stdout,"%02x ", aData[i+j]);
-    }
-    for(j=0; j<16; j++){
-      fprintf(stdout,"%c", isprint(aData[i+j]) ? aData[i+j] : '.');
-    }
-    fprintf(stdout,"\n");
+/*
+** Read N bytes of memory starting at iOfst into space obtained
+** from malloc().
+*/
+static char *read_content(int N, int iOfst){
+  int got;
+  char *pBuf = malloc(N);
+  if( pBuf==0 ) out_of_memory();
+  fseek(db, iOfst, SEEK_SET);
+  got = fread(pBuf, 1, N, db);
+  if( got<0 ){
+    fprintf(stderr, "I/O error reading %d bytes from %d\n", N, iOfst);
+    memset(pBuf, 0, N);
+  }else if( got<N ){
+    fprintf(stderr, "Short read: got only %d of %d bytes from %d\n",
+                     got, N, iOfst);
+    memset(&pBuf[got], 0, N-got);
   }
+  return pBuf;
+}
+
+/* Print a line of decode output showing a 4-byte integer.
+*/
+static unsigned print_decode_line(
+  unsigned char *aData,      /* Content being decoded */
+  int ofst, int nByte,       /* Start and size of decode */
+  const char *zMsg           /* Message to append */
+){
+  int i, j;
+  unsigned val = aData[ofst];
+  char zBuf[100];
+  sprintf(zBuf, " %03x: %02x", ofst, aData[ofst]);
+  i = strlen(zBuf);
+  for(j=1; j<4; j++){
+    if( j>=nByte ){
+      sprintf(&zBuf[i], "   ");
+    }else{
+      sprintf(&zBuf[i], " %02x", aData[ofst+j]);
+      val = val*256 + aData[ofst+j];
+    }
+    i += strlen(&zBuf[i]);
+  }
+  sprintf(&zBuf[i], "   %10u", val);
+  printf("%s  %s\n", zBuf, zMsg);
+  return val;
+}
+
+/*
+** Read and print a journal header.  Store key information (page size, etc)
+** in global variables.
+*/
+static unsigned decode_journal_header(int iOfst){
+  char *pHdr = read_content(64, iOfst);
+  unsigned nPage;
+  printf("Header at offset %d:\n", iOfst);
+  print_decode_line(pHdr, 0, 4, "Header part 1 (3654616569)");
+  print_decode_line(pHdr, 4, 4, "Header part 2 (547447767)");
+  nPage =
+  print_decode_line(pHdr, 8, 4, "page count");
+  cksumNonce =
+  print_decode_line(pHdr, 12, 4, "chksum nonce");
+  print_decode_line(pHdr, 16, 4, "initial database size in pages");
+  sectorSize =
+  print_decode_line(pHdr, 20, 4, "sector size");
+  pageSize =
+  print_decode_line(pHdr, 24, 4, "page size");
+  print_decode_line(pHdr, 28, 4, "zero");
+  print_decode_line(pHdr, 32, 4, "zero");
+  print_decode_line(pHdr, 36, 4, "zero");
+  print_decode_line(pHdr, 40, 4, "zero");
+  free(pHdr);
+  return nPage;
+}
+
+static void print_page(int iOfst){
+  unsigned char *aData;
+  char zTitle[50];
+  aData = read_content(pageSize+8, iOfst);
+  sprintf(zTitle, "page number for page at offset %d", iOfst);
+  print_decode_line(aData, 0, 4, zTitle);
   free(aData);
 }
 
 int main(int argc, char **argv){
-  struct stat sbuf;
-  unsigned int u;
   int rc;
-  unsigned char zBuf[10];
-  unsigned char zBuf2[sizeof(u)];
+  int nPage, cnt;
+  int iOfst;
   if( argc!=2 ){
     fprintf(stderr,"Usage: %s FILENAME\n", argv[0]);
     exit(1);
   }
-  db = open(argv[1], O_RDONLY);
-  if( db<0 ){
+  db = fopen(argv[1], "rb");
+  if( db==0 ){
     fprintf(stderr,"%s: can't open %s\n", argv[0], argv[1]);
     exit(1);
   }
-  read(db, zBuf, 8);
-  if( zBuf[7]==0xd6 ){
-    read(db, &u, sizeof(u));
-    printf("Records in Journal: %u\n", u);
-    read(db, &u, sizeof(u));
-    printf("Magic Number: 0x%08x\n", u);
-  }
-  read(db, zBuf2, sizeof(zBuf2));
-  u = zBuf2[0]<<24 | zBuf2[1]<<16 | zBuf2[2]<<8 | zBuf2[3];
-  printf("Database Size: %u\n", u);
-  while( read(db, zBuf2, sizeof(zBuf2))==sizeof(zBuf2) ){
-    u = zBuf2[0]<<24 | zBuf2[1]<<16 | zBuf2[2]<<8 | zBuf2[3];
-    print_page(u);
-    if( zBuf[7]==0xd6 ){
-      read(db, &u, sizeof(u));
-      printf("Checksum: 0x%08x\n", u);
+  fseek(db, 0, SEEK_END);
+  fileSize = ftell(db);
+  printf("journal file size: %d bytes\n", fileSize);
+  fseek(db, 0, SEEK_SET);
+  iOfst = 0;
+  while( iOfst<fileSize ){
+    cnt = nPage = (int)decode_journal_header(iOfst);
+    if( cnt==0 ){
+      cnt = (fileSize - sectorSize)/(pageSize+8);
     }
+    iOfst += sectorSize;
+    while( cnt && iOfst<fileSize ){
+      print_page(iOfst);
+      iOfst += pageSize+8;
+    }
+    iOfst = (iOfst/sectorSize + 1)*sectorSize;
   }
-  close(db);
+  fclose(db);
 }

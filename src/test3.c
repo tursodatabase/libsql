@@ -53,7 +53,7 @@ static sqlite3 sDb;
 static int nRefSqlite3 = 0;
 
 /*
-** Usage:   btree_open FILENAME NCACHE FLAGS
+** Usage:   btree_open FILENAME NCACHE
 **
 ** Open a new database
 */
@@ -64,22 +64,21 @@ static int btree_open(
   const char **argv      /* Text of each argument */
 ){
   Btree *pBt;
-  int rc, nCache, flags;
+  int rc, nCache;
   char zBuf[100];
-  if( argc!=4 ){
+  if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
        " FILENAME NCACHE FLAGS\"", 0);
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[2], &nCache) ) return TCL_ERROR;
-  if( Tcl_GetInt(interp, argv[3], &flags) ) return TCL_ERROR;
   nRefSqlite3++;
   if( nRefSqlite3==1 ){
     sDb.pVfs = sqlite3_vfs_find(0);
     sDb.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_RECURSIVE);
     sqlite3_mutex_enter(sDb.mutex);
   }
-  rc = sqlite3BtreeOpen(argv[1], &sDb, &pBt, flags,
+  rc = sqlite3BtreeOpen(argv[1], &sDb, &pBt, 0, 
      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MAIN_DB);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);

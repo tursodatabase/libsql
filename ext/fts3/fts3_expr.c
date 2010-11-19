@@ -107,6 +107,18 @@ static int fts3isspace(char c){
 }
 
 /*
+** Allocate nByte bytes of memory using sqlite3_malloc(). If successful,
+** zero the memory before returning a pointer to it. If unsuccessful, 
+** return NULL.
+*/
+static void *fts3MallocZero(int nByte){
+  void *pRet = sqlite3_malloc(nByte);
+  if( pRet ) memset(pRet, 0, nByte);
+  return pRet;
+}
+
+
+/*
 ** Extract the next token from buffer z (length n) using the tokenizer
 ** and other information (column names etc.) in pParse. Create an Fts3Expr
 ** structure of type FTSQUERY_PHRASE containing a phrase consisting of this
@@ -143,11 +155,10 @@ static int getNextToken(
 
     if( rc==SQLITE_OK ){
       nByte = sizeof(Fts3Expr) + sizeof(Fts3Phrase) + nToken;
-      pRet = (Fts3Expr *)sqlite3_malloc(nByte);
+      pRet = (Fts3Expr *)fts3MallocZero(nByte);
       if( !pRet ){
         rc = SQLITE_NOMEM;
       }else{
-        memset(pRet, 0, nByte);
         pRet->eType = FTSQUERY_PHRASE;
         pRet->pPhrase = (Fts3Phrase *)&pRet[1];
         pRet->pPhrase->nToken = 1;
@@ -223,7 +234,7 @@ static int getNextString(
       rc = pModule->xNext(pCursor, &zToken, &nToken, &iBegin, &iEnd, &iPos);
       if( rc==SQLITE_OK ){
         int nByte = sizeof(Fts3Expr) + sizeof(Fts3Phrase);
-        p = fts3ReallocOrFree(p, nByte+ii*sizeof(struct PhraseToken));
+        p = fts3ReallocOrFree(p, nByte+ii*sizeof(Fts3PhraseToken));
         zTemp = fts3ReallocOrFree(zTemp, nTemp + nToken);
         if( !p || !zTemp ){
           goto no_mem;
@@ -233,6 +244,7 @@ static int getNextString(
           p->pPhrase = (Fts3Phrase *)&p[1];
         }
         p->pPhrase = (Fts3Phrase *)&p[1];
+        memset(&p->pPhrase->aToken[ii], 0, sizeof(Fts3PhraseToken));
         p->pPhrase->nToken = ii+1;
         p->pPhrase->aToken[ii].n = nToken;
         memcpy(&zTemp[nTemp], zToken, nToken);
@@ -254,7 +266,7 @@ static int getNextString(
     char *zNew = NULL;
     int nNew = 0;
     int nByte = sizeof(Fts3Expr) + sizeof(Fts3Phrase);
-    nByte += (p?(p->pPhrase->nToken-1):0) * sizeof(struct PhraseToken);
+    nByte += (p?(p->pPhrase->nToken-1):0) * sizeof(Fts3PhraseToken);
     p = fts3ReallocOrFree(p, nByte + nTemp);
     if( !p ){
       goto no_mem;
@@ -372,11 +384,10 @@ static int getNextNode(
       if( fts3isspace(cNext) 
        || cNext=='"' || cNext=='(' || cNext==')' || cNext==0
       ){
-        pRet = (Fts3Expr *)sqlite3_malloc(sizeof(Fts3Expr));
+        pRet = (Fts3Expr *)fts3MallocZero(sizeof(Fts3Expr));
         if( !pRet ){
           return SQLITE_NOMEM;
         }
-        memset(pRet, 0, sizeof(Fts3Expr));
         pRet->eType = pKey->eType;
         pRet->nNear = nNear;
         *ppExpr = pRet;
@@ -552,13 +563,12 @@ static int fts3ExprParse(
        && p->eType==FTSQUERY_PHRASE && p->pPhrase->isNot 
       ){
         /* Create an implicit NOT operator. */
-        Fts3Expr *pNot = sqlite3_malloc(sizeof(Fts3Expr));
+        Fts3Expr *pNot = fts3MallocZero(sizeof(Fts3Expr));
         if( !pNot ){
           sqlite3Fts3ExprFree(p);
           rc = SQLITE_NOMEM;
           goto exprparse_out;
         }
-        memset(pNot, 0, sizeof(Fts3Expr));
         pNot->eType = FTSQUERY_NOT;
         pNot->pRight = p;
         if( pNotBranch ){
@@ -586,13 +596,12 @@ static int fts3ExprParse(
           /* Insert an implicit AND operator. */
           Fts3Expr *pAnd;
           assert( pRet && pPrev );
-          pAnd = sqlite3_malloc(sizeof(Fts3Expr));
+          pAnd = fts3MallocZero(sizeof(Fts3Expr));
           if( !pAnd ){
             sqlite3Fts3ExprFree(p);
             rc = SQLITE_NOMEM;
             goto exprparse_out;
           }
-          memset(pAnd, 0, sizeof(Fts3Expr));
           pAnd->eType = FTSQUERY_AND;
           insertBinaryOperator(&pRet, pPrev, pAnd);
           pPrev = pAnd;

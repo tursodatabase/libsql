@@ -217,48 +217,129 @@ do_test where3-2.7 {
 # the planner into use a table for the outer loop that might be indexable
 # if held until an inner loop.
 # 
-do_test where3-3.0 {
-  execsql {
-    CREATE TABLE t301(a INTEGER PRIMARY KEY,b,c);
-    CREATE INDEX t301c ON t301(c);
-    INSERT INTO t301 VALUES(1,2,3);
-    CREATE TABLE t302(x, y);
-    ANALYZE;
-    explain query plan
-    SELECT * FROM t302, t301 WHERE t302.x=5 AND t301.a=t302.y;
-  }
-} {0 0 {TABLE t302} 1 1 {TABLE t301 USING PRIMARY KEY}}
-do_test where3-3.1 {
-  execsql {
-    explain query plan
-    SELECT * FROM t301, t302 WHERE t302.x=5 AND t301.a=t302.y;
-  }
-} {0 1 {TABLE t302} 1 0 {TABLE t301 USING PRIMARY KEY}}
+do_execsql_test where3-3.0 {
+  CREATE TABLE t301(a INTEGER PRIMARY KEY,b,c);
+  CREATE INDEX t301c ON t301(c);
+  INSERT INTO t301 VALUES(1,2,3);
+  CREATE TABLE t302(x, y);
+  ANALYZE;
+  explain query plan SELECT * FROM t302, t301 WHERE t302.x=5 AND t301.a=t302.y;
+} {
+  0 0 0 {SCAN TABLE t302 (~0 rows)} 
+  0 1 1 {SEARCH TABLE t301 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}
+}
+do_execsql_test where3-3.1 {
+  explain query plan
+  SELECT * FROM t301, t302 WHERE t302.x=5 AND t301.a=t302.y;
+} {
+  0 0 1 {SCAN TABLE t302 (~0 rows)} 
+  0 1 0 {SEARCH TABLE t301 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}
+}
 
 # Verify that when there are multiple tables in a join which must be
 # full table scans that the query planner attempts put the table with
 # the fewest number of output rows as the outer loop.
 #
-do_test where3-4.0 {
-  execsql {
-    CREATE TABLE t400(a INTEGER PRIMARY KEY, b, c);
-    CREATE TABLE t401(p INTEGER PRIMARY KEY, q, r);
-    CREATE TABLE t402(x INTEGER PRIMARY KEY, y, z);
-    EXPLAIN QUERY PLAN
-    SELECT * FROM t400, t401, t402 WHERE t402.z GLOB 'abc*';
-  }
-} {0 2 {TABLE t402} 1 0 {TABLE t400} 2 1 {TABLE t401}}
-do_test where3-4.1 {
-  execsql {
-    EXPLAIN QUERY PLAN
-    SELECT * FROM t400, t401, t402 WHERE t401.r GLOB 'abc*';
-  }
-} {0 1 {TABLE t401} 1 0 {TABLE t400} 2 2 {TABLE t402}}
-do_test where3-4.2 {
-  execsql {
-    EXPLAIN QUERY PLAN
-    SELECT * FROM t400, t401, t402 WHERE t400.c GLOB 'abc*';
-  }
-} {0 0 {TABLE t400} 1 1 {TABLE t401} 2 2 {TABLE t402}}
+do_execsql_test where3-4.0 {
+  CREATE TABLE t400(a INTEGER PRIMARY KEY, b, c);
+  CREATE TABLE t401(p INTEGER PRIMARY KEY, q, r);
+  CREATE TABLE t402(x INTEGER PRIMARY KEY, y, z);
+  EXPLAIN QUERY PLAN
+  SELECT * FROM t400, t401, t402 WHERE t402.z GLOB 'abc*';
+} {
+  0 0 2 {SCAN TABLE t402 (~500000 rows)} 
+  0 1 0 {SCAN TABLE t400 (~1000000 rows)} 
+  0 2 1 {SCAN TABLE t401 (~1000000 rows)}
+}
+do_execsql_test where3-4.1 {
+  EXPLAIN QUERY PLAN
+  SELECT * FROM t400, t401, t402 WHERE t401.r GLOB 'abc*';
+} {
+  0 0 1 {SCAN TABLE t401 (~500000 rows)} 
+  0 1 0 {SCAN TABLE t400 (~1000000 rows)} 
+  0 2 2 {SCAN TABLE t402 (~1000000 rows)}
+}
+do_execsql_test where3-4.2 {
+  EXPLAIN QUERY PLAN
+  SELECT * FROM t400, t401, t402 WHERE t400.c GLOB 'abc*';
+} {
+  0 0 0 {SCAN TABLE t400 (~500000 rows)} 
+  0 1 1 {SCAN TABLE t401 (~1000000 rows)} 
+  0 2 2 {SCAN TABLE t402 (~1000000 rows)}
+}
+
+# Verify that a performance regression encountered by firefox
+# has been fixed.
+#
+do_execsql_test where3-5.0 {
+  CREATE TABLE aaa (id INTEGER PRIMARY KEY, type INTEGER,
+                    fk INTEGER DEFAULT NULL, parent INTEGER,
+                    position INTEGER, title LONGVARCHAR,
+                    keyword_id INTEGER, folder_type TEXT,
+                    dateAdded INTEGER, lastModified INTEGER);
+  CREATE INDEX aaa_111 ON aaa (fk, type);
+  CREATE INDEX aaa_222 ON aaa (parent, position);
+  CREATE INDEX aaa_333 ON aaa (fk, lastModified);
+  CREATE TABLE bbb (id INTEGER PRIMARY KEY, type INTEGER,
+                    fk INTEGER DEFAULT NULL, parent INTEGER,
+                    position INTEGER, title LONGVARCHAR,
+                    keyword_id INTEGER, folder_type TEXT,
+                    dateAdded INTEGER, lastModified INTEGER);
+  CREATE INDEX bbb_111 ON bbb (fk, type);
+  CREATE INDEX bbb_222 ON bbb (parent, position);
+  CREATE INDEX bbb_333 ON bbb (fk, lastModified);
+
+  EXPLAIN QUERY PLAN
+   SELECT bbb.title AS tag_title 
+     FROM aaa JOIN bbb ON bbb.id = aaa.parent  
+    WHERE aaa.fk = 'constant'
+      AND LENGTH(bbb.title) > 0
+      AND bbb.parent = 4
+    ORDER BY bbb.title COLLATE NOCASE ASC;
+} {
+  0 0 0 {SEARCH TABLE aaa USING INDEX aaa_333 (fk=?) (~10 rows)} 
+  0 1 1 {SEARCH TABLE bbb USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
+  0 0 0 {USE TEMP B-TREE FOR ORDER BY}
+}
+do_execsql_test where3-5.1 {
+  EXPLAIN QUERY PLAN
+   SELECT bbb.title AS tag_title 
+     FROM aaa JOIN aaa AS bbb ON bbb.id = aaa.parent  
+    WHERE aaa.fk = 'constant'
+      AND LENGTH(bbb.title) > 0
+      AND bbb.parent = 4
+    ORDER BY bbb.title COLLATE NOCASE ASC;
+} {
+  0 0 0 {SEARCH TABLE aaa USING INDEX aaa_333 (fk=?) (~10 rows)} 
+  0 1 1 {SEARCH TABLE aaa AS bbb USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
+  0 0 0 {USE TEMP B-TREE FOR ORDER BY}
+}
+do_execsql_test where3-5.2 {
+  EXPLAIN QUERY PLAN
+   SELECT bbb.title AS tag_title 
+     FROM bbb JOIN aaa ON bbb.id = aaa.parent  
+    WHERE aaa.fk = 'constant'
+      AND LENGTH(bbb.title) > 0
+      AND bbb.parent = 4
+    ORDER BY bbb.title COLLATE NOCASE ASC;
+} {
+  0 0 1 {SEARCH TABLE aaa USING INDEX aaa_333 (fk=?) (~10 rows)} 
+  0 1 0 {SEARCH TABLE bbb USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
+  0 0 0 {USE TEMP B-TREE FOR ORDER BY}
+}
+do_execsql_test where3-5.3 {
+  EXPLAIN QUERY PLAN
+   SELECT bbb.title AS tag_title 
+     FROM aaa AS bbb JOIN aaa ON bbb.id = aaa.parent  
+    WHERE aaa.fk = 'constant'
+      AND LENGTH(bbb.title) > 0
+      AND bbb.parent = 4
+    ORDER BY bbb.title COLLATE NOCASE ASC;
+} {
+  0 0 1 {SEARCH TABLE aaa USING INDEX aaa_333 (fk=?) (~10 rows)} 
+  0 1 0 {SEARCH TABLE aaa AS bbb USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
+  0 0 0 {USE TEMP B-TREE FOR ORDER BY}
+}
+
 
 finish_test

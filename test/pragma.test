@@ -1293,7 +1293,7 @@ dbX eval {PRAGMA temp_store_directory = ""}
 dbX close
 
 set skip_lock_proxy_tests [path_is_dos "."]
-ifcapable !lock_proxy_pragmas&&prefer_proxy_locking {
+ifcapable !(lock_proxy_pragmas&&prefer_proxy_locking) {
   set skip_lock_proxy_tests 1
 }
 
@@ -1385,22 +1385,22 @@ if !$skip_lock_proxy_tests {
   set sqlite_hostid_num 2
   # db access should be limited to one host at a time (simulate 2nd host id)
   do_test pragma-16.7 {
-    sqlite3 db test2.db
-    execsql {
-      PRAGMA lock_proxy_file=":auto:";
-    } 
-    catchsql {
-      select * from sqlite_master;
-    }
+    list [catch {
+      sqlite3 db test2.db
+      execsql { 
+        PRAGMA lock_proxy_file=":auto:";
+        select * from sqlite_master;
+      }
+    } msg] $msg
   } {1 {database is locked}}
   db close
   
   # default to using proxy locking (simulate network file system detection)
   do_test pragma-16.8 {
-    sqlite3 db test2.db
-    catchsql {
-      select * from sqlite_master;
-    } 
+    list [catch {
+      sqlite3 db test2.db
+      execsql { select * from sqlite_master } 
+    } msg] $msg
   } {1 {database is locked}}
 
   db2 close

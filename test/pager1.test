@@ -15,7 +15,7 @@ source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 source $testdir/malloc_common.tcl
 source $testdir/wal_common.tcl
- 
+
 # Do not use a codec for tests in this file, as the database file is
 # manipulated directly using tcl scripts (using the [hexio_write] command).
 #
@@ -540,11 +540,7 @@ foreach {tn1 tcl} {
     # a valid page record (if the file page-size is 512 bytes). So as to
     # make sure SQLite doesn't get confused by this.
     #
-    set target_length 511
-    if { [forced_proxy_locking] } {
-      set target_length 255
-    }
-    set nPadding [expr $target_length - $::mj_filename_length]
+    set nPadding [expr 511 - $::mj_filename_length]
     if {$tcl_platform(platform)=="windows"} {
       # TBD need to figure out how to do this correctly for Windows!!!
       set nPadding [expr 255 - $::mj_filename_length]
@@ -565,7 +561,6 @@ foreach {tn1 tcl} {
 
     set padding [string repeat x [expr $nPadding %32]]
     set prefix "test.db${padding}"
-    set prefix
   }
 } {
   eval $tcl
@@ -1086,49 +1081,46 @@ do_execsql_test pager1-6.12 { PRAGMA max_page_count }      {11}
 #   $ws:  The expected size of the WAL file, in bytes, after executing
 #         the SQL script. Or -1 if the WAL is not expected to exist.
 #
-set do_wal_tests [wal_is_ok]
-if { $do_wal_tests } {
-  ifcapable wal {
-    faultsim_delete_and_reopen
-    foreach {tn sql res js ws} [subst {
-    
-      1  {
-        CREATE TABLE t1(a, b);
-        PRAGMA auto_vacuum=OFF;
-        PRAGMA synchronous=NORMAL;
-        PRAGMA page_size=1024;
-        PRAGMA locking_mode=EXCLUSIVE;
-        PRAGMA journal_mode=TRUNCATE;
-        INSERT INTO t1 VALUES(1, 2);
-      } {exclusive truncate} 0 -1
-    
-      2  {
-        BEGIN IMMEDIATE;
-          SELECT * FROM t1;
-        COMMIT;
-      } {1 2} 0 -1
-    
-      3  {
-        BEGIN;
-          SELECT * FROM t1;
-        COMMIT;
-      } {1 2} 0 -1
-    
-      4  { PRAGMA journal_mode = WAL }    wal    -1 -1
-      5  { INSERT INTO t1 VALUES(3, 4) }  {}     -1 [wal_file_size 1 1024]
-      6  { PRAGMA locking_mode = NORMAL } normal -1 [wal_file_size 1 1024]
-      7  { INSERT INTO t1 VALUES(5, 6); } {}     -1 [wal_file_size 2 1024]
-    
-      8  { PRAGMA journal_mode = TRUNCATE } truncate          0 -1
-      9  { INSERT INTO t1 VALUES(7, 8) }    {}                0 -1
-      10 { SELECT * FROM t1 }               {1 2 3 4 5 6 7 8} 0 -1
-    
-    }] {
-      do_execsql_test pager1-7.1.$tn.1 $sql $res
-      catch { set J -1 ; set J [file size test.db-journal] }
-      catch { set W -1 ; set W [file size test.db-wal] }
-      do_test pager1-7.1.$tn.2 { list $J $W } [list $js $ws]
-    }
+ifcapable wal {
+  faultsim_delete_and_reopen
+  foreach {tn sql res js ws} [subst {
+  
+    1  {
+      CREATE TABLE t1(a, b);
+      PRAGMA auto_vacuum=OFF;
+      PRAGMA synchronous=NORMAL;
+      PRAGMA page_size=1024;
+      PRAGMA locking_mode=EXCLUSIVE;
+      PRAGMA journal_mode=TRUNCATE;
+      INSERT INTO t1 VALUES(1, 2);
+    } {exclusive truncate} 0 -1
+  
+    2  {
+      BEGIN IMMEDIATE;
+        SELECT * FROM t1;
+      COMMIT;
+    } {1 2} 0 -1
+  
+    3  {
+      BEGIN;
+        SELECT * FROM t1;
+      COMMIT;
+    } {1 2} 0 -1
+  
+    4  { PRAGMA journal_mode = WAL }    wal       -1 -1
+    5  { INSERT INTO t1 VALUES(3, 4) }  {}        -1 [wal_file_size 1 1024]
+    6  { PRAGMA locking_mode = NORMAL } exclusive -1 [wal_file_size 1 1024]
+    7  { INSERT INTO t1 VALUES(5, 6); } {}        -1 [wal_file_size 2 1024]
+  
+    8  { PRAGMA journal_mode = TRUNCATE } truncate          0 -1
+    9  { INSERT INTO t1 VALUES(7, 8) }    {}                0 -1
+    10 { SELECT * FROM t1 }               {1 2 3 4 5 6 7 8} 0 -1
+  
+  }] {
+    do_execsql_test pager1-7.1.$tn.1 $sql $res
+    catch { set J -1 ; set J [file size test.db-journal] }
+    catch { set W -1 ; set W [file size test.db-wal] }
+    do_test pager1-7.1.$tn.2 { list $J $W } [list $js $ws]
   }
 }
 
@@ -1302,15 +1294,9 @@ do_test pager1-9.4.1 {
   sqlite3_backup B db2 main db main
   list [B step 10000] [B finish]
 } {SQLITE_DONE SQLITE_OK}
-if { [path_is_dos "."] } {
-  do_test pager1-9.4.2_dos {
-    list [file size test.db2] [file size test.db]
-  } {0 1}
-} else {
-  do_test pager1-9.4.2 {
-    list [file size test.db2] [file size test.db]
-  } {0 0}
-}
+do_test pager1-9.4.2 {
+  list [file size test.db2] [file size test.db]
+} {0 0}
 db2 close
 
 #-------------------------------------------------------------------------
@@ -1933,7 +1919,7 @@ do_test pager1-20.2.2 {
   }
 } {}
 
-if { $do_wal_tests } {
+ifcapable wal {
   do_test pager1-20.3.1 {
     faultsim_delete_and_reopen
     db func a_string a_string
@@ -1968,7 +1954,7 @@ if { $do_wal_tests } {
 #   pager1-21.1.*: The VFS has an iVersion less than 2, or
 #   pager1-21.2.*: The VFS does not provide xShmXXX() methods.
 #
-if { $do_wal_tests } {
+ifcapable wal {
   do_test pager1-21.0 {
     faultsim_delete_and_reopen
     execsql {
@@ -2272,7 +2258,7 @@ do_test pager1.27.1 {
 # the same database.
 #
 catch { db close }
-if {[wal_is_ok]} {
+ifcapable wal {
   do_multiclient_test tn {
     do_test pager1-28.$tn.1 {
       sql1 { 
@@ -2366,6 +2352,63 @@ do_test pager1-29.2 {
   }
   file size test.db
 } [expr 4096*3]
+
+#-------------------------------------------------------------------------
+# Test that if an empty database file (size 0 bytes) is opened in 
+# exclusive-locking mode, any journal file is deleted from the file-system
+# without being rolled back. And that the RESERVED lock obtained while
+# doing this is not released.
+#
+do_test pager1-30.1 {
+  db close
+  file delete test.db
+  file delete test.db-journal
+  set fd [open test.db-journal w]
+  seek $fd [expr 512+1032*2]
+  puts -nonewline $fd x
+  close $fd
+
+  sqlite3 db test.db
+  execsql {
+    PRAGMA locking_mode=EXCLUSIVE;
+    SELECT count(*) FROM sqlite_master;
+    PRAGMA lock_status;
+  }
+} {exclusive 0 main reserved temp closed}
+
+#-------------------------------------------------------------------------
+# Test that if the "page-size" field in a journal-header is 0, the journal
+# file can still be rolled back. This is required for backward compatibility -
+# versions of SQLite prior to 3.5.8 always set this field to zero.
+#
+do_test pager1-31.1 {
+  faultsim_delete_and_reopen
+  execsql {
+    PRAGMA cache_size = 10;
+    PRAGMA page_size = 1024;
+    CREATE TABLE t1(x, y, UNIQUE(x, y));
+    INSERT INTO t1 VALUES(randomblob(1500), randomblob(1500));
+    INSERT INTO t1 SELECT randomblob(1500), randomblob(1500) FROM t1;
+    INSERT INTO t1 SELECT randomblob(1500), randomblob(1500) FROM t1;
+    INSERT INTO t1 SELECT randomblob(1500), randomblob(1500) FROM t1;
+    INSERT INTO t1 SELECT randomblob(1500), randomblob(1500) FROM t1;
+    INSERT INTO t1 SELECT randomblob(1500), randomblob(1500) FROM t1;
+    INSERT INTO t1 SELECT randomblob(1500), randomblob(1500) FROM t1;
+    INSERT INTO t1 SELECT randomblob(1500), randomblob(1500) FROM t1;
+    INSERT INTO t1 SELECT randomblob(1500), randomblob(1500) FROM t1;
+    INSERT INTO t1 SELECT randomblob(1500), randomblob(1500) FROM t1;
+    INSERT INTO t1 SELECT randomblob(1500), randomblob(1500) FROM t1;
+    BEGIN;
+      UPDATE t1 SET y = randomblob(1499);
+  }
+  file copy test.db test.db2
+  file copy test.db-journal test.db2-journal
+  
+  hexio_write test.db2-journal 24 00000000
+  sqlite3 db2 test.db2
+  execsql { PRAGMA integrity_check } db2
+} {ok}
+
 
 
 finish_test

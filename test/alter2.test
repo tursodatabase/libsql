@@ -27,11 +27,6 @@ ifcapable {!pragma} return
 #
 do_not_use_codec
 
-# These tests do not work if there is a codec. 
-#
-#if {[catch {sqlite3 -has_codec} r] || $r} return
-#
-
 # The file format change affects the way row-records stored in tables (but 
 # not indices) are interpreted. Before version 3.1.3, a row-record for a 
 # table with N columns was guaranteed to contain exactly N fields. As

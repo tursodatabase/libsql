@@ -12,7 +12,7 @@
 #
 
 if {![info exists testdir]} {
-  set testdir [file join [file dirname $argv0] .. .. test]
+  set testdir [file join [file dirname [info script]] .. .. test]
 } 
 source $testdir/tester.tcl
 
@@ -71,39 +71,39 @@ do_test rtree6-1.5 {
   rtree_strategy {SELECT * FROM t1,t2 WHERE k=+ii AND x1<10}
 } {Ca}
 
-do_test rtree6.2.1 {
-  query_plan {SELECT * FROM t1,t2 WHERE k=+ii AND x1<10}
-} [list \
-  {TABLE t1 VIRTUAL TABLE INDEX 2:Ca} \
-  {TABLE t2 USING PRIMARY KEY}        \
-]
+do_eqp_test rtree6.2.1 {
+  SELECT * FROM t1,t2 WHERE k=+ii AND x1<10
+} {
+  0 0 0 {SCAN TABLE t1 VIRTUAL TABLE INDEX 2:Ca (~0 rows)} 
+  0 1 1 {SEARCH TABLE t2 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}
+}
 
-do_test rtree6.2.2 {
-  query_plan {SELECT * FROM t1,t2 WHERE k=ii AND x1<10}
-} [list \
-  {TABLE t1 VIRTUAL TABLE INDEX 2:Ca} \
-  {TABLE t2 USING PRIMARY KEY}        \
-]
+do_eqp_test rtree6.2.2 {
+  SELECT * FROM t1,t2 WHERE k=ii AND x1<10
+} {
+  0 0 0 {SCAN TABLE t1 VIRTUAL TABLE INDEX 2:Ca (~0 rows)} 
+  0 1 1 {SEARCH TABLE t2 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}
+}
 
-do_test rtree6.2.3 {
-  query_plan {SELECT * FROM t1,t2 WHERE k=ii}
-} [list \
-  {TABLE t1 VIRTUAL TABLE INDEX 2:}   \
-  {TABLE t2 USING PRIMARY KEY}        \
-]
+do_eqp_test rtree6.2.3 {
+  SELECT * FROM t1,t2 WHERE k=ii
+} {
+  0 0 0 {SCAN TABLE t1 VIRTUAL TABLE INDEX 2: (~0 rows)} 
+  0 1 1 {SEARCH TABLE t2 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}
+}
 
-do_test rtree6.2.4 {
-  query_plan {SELECT * FROM t1,t2 WHERE v=10 and x1<10 and x2>10}
-} [list \
-  {TABLE t1 VIRTUAL TABLE INDEX 2:CaEb}   \
-  {TABLE t2}                              \
-]
+do_eqp_test rtree6.2.4 {
+  SELECT * FROM t1,t2 WHERE v=10 and x1<10 and x2>10
+} {
+  0 0 0 {SCAN TABLE t1 VIRTUAL TABLE INDEX 2:CaEb (~0 rows)} 
+  0 1 1 {SCAN TABLE t2 (~100000 rows)}
+}
 
-do_test rtree6.2.5 {
-  query_plan {SELECT * FROM t1,t2 WHERE k=ii AND x1<v}
-} [list \
-  {TABLE t1 VIRTUAL TABLE INDEX 2:}   \
-  {TABLE t2 USING PRIMARY KEY}        \
-]
+do_eqp_test rtree6.2.5 {
+  SELECT * FROM t1,t2 WHERE k=ii AND x1<v
+} {
+  0 0 0 {SCAN TABLE t1 VIRTUAL TABLE INDEX 2: (~0 rows)} 
+  0 1 1 {SEARCH TABLE t2 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}
+}
 
 finish_test

@@ -1272,6 +1272,129 @@ static void cgt_pager_1(int nMs){
   print_and_free_err(&err);
 }
 
+/*------------------------------------------------------------------------
+** Test case "dynamic_triggers"
+**
+**   Two threads executing statements that cause deeply nested triggers
+**   to fire. And one thread busily creating and deleting triggers. This
+**   is an attempt to find a bug reported to us.
+*/
+
+static char *dynamic_triggers_1(int iTid, int iArg){
+  Error err = {0};                /* Error code and message */
+  Sqlite db = {0};                /* SQLite database connection */
+  int nDrop = 0;
+  int nCreate = 0;
+
+  opendb(&err, &db, "test.db", 0);
+  while( !timetostop(&err) ){
+    int i;
+
+    for(i=1; i<9; i++){
+      char *zSql = sqlite3_mprintf(
+        "CREATE TRIGGER itr%d BEFORE INSERT ON t%d BEGIN "
+          "INSERT INTO t%d VALUES(new.x, new.y);"
+        "END;", i, i, i+1
+      );
+      execsql(&err, &db, zSql);
+      sqlite3_free(zSql);
+      nCreate++;
+    }
+
+    for(i=1; i<9; i++){
+      char *zSql = sqlite3_mprintf(
+        "CREATE TRIGGER dtr%d BEFORE DELETE ON t%d BEGIN "
+          "DELETE FROM t%d WHERE x = old.x; "
+        "END;", i, i, i+1
+      );
+      execsql(&err, &db, zSql);
+      sqlite3_free(zSql);
+      nCreate++;
+    }
+
+    for(i=1; i<9; i++){
+      char *zSql = sqlite3_mprintf("DROP TRIGGER itr%d", i);
+      execsql(&err, &db, zSql);
+      sqlite3_free(zSql);
+      nDrop++;
+    }
+
+    for(i=1; i<9; i++){
+      char *zSql = sqlite3_mprintf("DROP TRIGGER dtr%d", i);
+      execsql(&err, &db, zSql);
+      sqlite3_free(zSql);
+      nDrop++;
+    }
+  }
+
+  print_and_free_err(&err);
+  return sqlite3_mprintf("%d created, %d dropped", nCreate, nDrop);
+}
+
+static char *dynamic_triggers_2(int iTid, int iArg){
+  Error err = {0};                /* Error code and message */
+  Sqlite db = {0};                /* SQLite database connection */
+  i64 iVal = 0;
+  int nInsert = 0;
+  int nDelete = 0;
+
+  opendb(&err, &db, "test.db", 0);
+  while( !timetostop(&err) ){
+    do {
+      iVal = (iVal+1)%100;
+      execsql(&err, &db, "INSERT INTO t1 VALUES(:iX, :iY+1)", &iVal, &iVal);
+      nInsert++;
+    } while( iVal );
+
+    do {
+      iVal = (iVal+1)%100;
+      execsql(&err, &db, "DELETE FROM t1 WHERE x = :iX", &iVal);
+      nDelete++;
+    } while( iVal );
+  }
+
+  print_and_free_err(&err);
+  return sqlite3_mprintf("%d inserts, %d deletes", nInsert, nDelete);
+}
+
+static void dynamic_triggers(int nMs){
+  Error err = {0};
+  Sqlite db = {0};
+  Threadset threads = {0};
+
+  opendb(&err, &db, "test.db", 1);
+  sql_script(&err, &db, 
+      "PRAGMA page_size = 1024;"
+      "PRAGMA journal_mode = WAL;"
+      "CREATE TABLE t1(x, y);"
+      "CREATE TABLE t2(x, y);"
+      "CREATE TABLE t3(x, y);"
+      "CREATE TABLE t4(x, y);"
+      "CREATE TABLE t5(x, y);"
+      "CREATE TABLE t6(x, y);"
+      "CREATE TABLE t7(x, y);"
+      "CREATE TABLE t8(x, y);"
+      "CREATE TABLE t9(x, y);"
+  );
+
+  setstoptime(&err, nMs);
+
+  sqlite3_enable_shared_cache(1);
+  launch_thread(&err, &threads, dynamic_triggers_2, 0);
+  launch_thread(&err, &threads, dynamic_triggers_2, 0);
+  sqlite3_enable_shared_cache(0);
+
+  sleep(2);
+
+  launch_thread(&err, &threads, dynamic_triggers_2, 0);
+  launch_thread(&err, &threads, dynamic_triggers_1, 0);
+
+  join_all_threads(&err, &threads);
+
+  print_and_free_err(&err);
+}
+
+
 int main(int argc, char **argv){
   struct ThreadTest {
     void (*xTest)(int);
@@ -1286,6 +1409,7 @@ int main(int argc, char **argv){
     { walthread5, "walthread5",  1000 },
     
     { cgt_pager_1, "cgt_pager_1", 0 },
+    { dynamic_triggers, "dynamic_triggers", 20000 },
   };
 
   int i;

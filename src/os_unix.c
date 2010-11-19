@@ -3810,7 +3810,7 @@ static int unixShmMap(
     pShmNode->apRegion = apNew;
     while(pShmNode->nRegion<=iRegion){
       void *pMem = mmap(0, szRegion, PROT_READ|PROT_WRITE, 
-          MAP_SHARED, pShmNode->h, iRegion*szRegion
+          MAP_SHARED, pShmNode->h, pShmNode->nRegion*szRegion
       );
       if( pMem==MAP_FAILED ){
         rc = SQLITE_IOERR;
@@ -4328,11 +4328,21 @@ static int fillInUnixFile(
   */
   UNUSED_PARAMETER(isDelete);
 
+  /* Usually the path zFilename should not be a relative pathname. The
+  ** exception is when opening the proxy "conch" file in builds that
+  ** include the special Apple locking styles.
+  */
+#if defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE
+  assert( zFilename==0 || zFilename[0]=='/' 
+    || pVfs->pAppData==(void*)&autolockIoFinder );
+#else
+  assert( zFilename==0 || zFilename[0]=='/' );
+#endif
+
   OSTRACE(("OPEN    %-3d %s\n", h, zFilename));
   pNew->h = h;
   pNew->dirfd = dirfd;
   pNew->fileFlags = 0;
-  assert( zFilename==0 || zFilename[0]=='/' );  /* Never a relative pathname */
   pNew->zPath = zFilename;
 
 #if OS_VXWORKS
@@ -4672,9 +4682,24 @@ static int findCreateFileMode(
     int nDb;                      /* Number of valid bytes in zDb */
     struct stat sStat;            /* Output of stat() on database file */
 
-    nDb = sqlite3Strlen30(zPath) - ((flags & SQLITE_OPEN_WAL) ? 4 : 8);
+    /* zPath is a path to a WAL or journal file. The following block derives
+    ** the path to the associated database file from zPath. This block handles
+    ** the following naming conventions:
+    **
+    **   "<path to db>-journal"
+    **   "<path to db>-wal"
+    **   "<path to db>-journal-NNNN"
+    **   "<path to db>-wal-NNNN"
+    **
+    ** where NNNN is a 4 digit decimal number. The NNNN naming schemes are 
+    ** used by the test_multiplex.c module.
+    */
+    nDb = sqlite3Strlen30(zPath) - 1; 
+    while( nDb>0 && zPath[nDb]!='l' ) nDb--;
+    nDb -= ((flags & SQLITE_OPEN_WAL) ? 3 : 7);
     memcpy(zDb, zPath, nDb);
     zDb[nDb] = '\0';
+
     if( 0==stat(zDb, &sStat) ){
       *pMode = sStat.st_mode & 0777;
     }else{
@@ -5648,6 +5673,8 @@ static int proxyGetHostID(unsigned char *pHostID, int *pError){
   
   assert(PROXY_HOSTIDLEN == sizeof(uuid_t));
   memset(pHostID, 0, PROXY_HOSTIDLEN);
+#if defined(__MAX_OS_X_VERSION_MIN_REQUIRED)\
+               && __MAC_OS_X_VERSION_MIN_REQUIRED<1050
   if( gethostuuid(pHostID, &timeout) ){
     int err = errno;
     if( pError ){
@@ -5655,6 +5682,7 @@ static int proxyGetHostID(unsigned char *pHostID, int *pError){
     }
     return SQLITE_IOERR;
   }
+#endif
 #ifdef SQLITE_TEST
   /* simulate multiple hosts by creating unique hostid file paths */
   if( sqlite3_hostid_num != 0){

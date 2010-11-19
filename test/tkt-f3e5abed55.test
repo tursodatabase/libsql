@@ -61,52 +61,56 @@ db2 close
 # file "test.db-journal", a snapshot of the current file-system contents
 # is taken.
 #
-testvfs tvfs -default 1
-tvfs script xDelete
-tvfs filter xDelete
-proc xDelete {method file args} {
-  if {[file tail $file] == "test.db-journal"} {
-    faultsim_save
-    tvfs filter {}
+# This test will not work with an in-memory journal.
+#
+if {[permutation]!="inmemory_journal"} {
+  testvfs tvfs -default 1
+  tvfs script xDelete
+  tvfs filter xDelete
+  proc xDelete {method file args} {
+    if {[file tail $file] == "test.db-journal"} {
+      faultsim_save
+      tvfs filter {}
+    }
+    return "SQLITE_OK"
   }
-  return "SQLITE_OK"
+  
+  sqlite3 db  test.db
+  sqlite3 db2 test.db
+  do_test tkt-f3e5abed55-2.1 {
+    execsql {
+      ATTACH 'test.db2' AS aux;
+      BEGIN;
+        INSERT INTO t1 VALUES(3, 4);
+        INSERT INTO t2 VALUES(3, 4);
+    }
+  } {}
+  do_test tkt-f3e5abed55-2.2 {
+    execsql { BEGIN; SELECT * FROM t1 } db2
+  } {1 2}
+  do_test tkt-f3e5abed55-2.3 {
+    catchsql COMMIT
+  } {1 {database is locked}}
+  
+  do_test tkt-f3e5abed55-2.4 {
+    execsql COMMIT db2
+    execsql {
+      COMMIT;
+      SELECT * FROM t1;
+      SELECT * FROM t2;
+    }
+  } {1 2 3 4 1 2 3 4}
+  do_test tkt-f3e5abed55-2.5 {
+    db close
+    db2 close
+    faultsim_restore_and_reopen
+    execsql {
+      ATTACH 'test.db2' AS aux;
+      SELECT * FROM t1;
+      SELECT * FROM t2;
+    }
+  } {1 2 3 4 1 2 3 4}
 }
-
-sqlite3 db  test.db
-sqlite3 db2 test.db
-do_test tkt-f3e5abed55-2.1 {
-  execsql {
-    ATTACH 'test.db2' AS aux;
-    BEGIN;
-      INSERT INTO t1 VALUES(3, 4);
-      INSERT INTO t2 VALUES(3, 4);
-  }
-} {}
-do_test tkt-f3e5abed55-2.2 {
-  execsql { BEGIN; SELECT * FROM t1 } db2
-} {1 2}
-do_test tkt-f3e5abed55-2.3 {
-  catchsql COMMIT
-} {1 {database is locked}}
-
-do_test tkt-f3e5abed55-2.4 {
-  execsql COMMIT db2
-  execsql {
-    COMMIT;
-    SELECT * FROM t1;
-    SELECT * FROM t2;
-  }
-} {1 2 3 4 1 2 3 4}
-do_test tkt-f3e5abed55-2.5 {
-  db close
-  db2 close
-  faultsim_restore_and_reopen
-  execsql {
-    ATTACH 'test.db2' AS aux;
-    SELECT * FROM t1;
-    SELECT * FROM t2;
-  }
-} {1 2 3 4 1 2 3 4}
 
 
 finish_test

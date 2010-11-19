@@ -15,6 +15,13 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# Memory statistics must be enabled for this test.
+db close
+sqlite3_shutdown
+sqlite3_config_memstatus 1
+sqlite3_initialize
+sqlite3 db test.db
+
 
 # Make sure sqlite3_db_config() and sqlite3_db_status are working.
 #

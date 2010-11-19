@@ -16,6 +16,66 @@
 #include <stdarg.h>
 
 /*
+** Attempt to release up to n bytes of non-essential memory currently
+** held by SQLite. An example of non-essential memory is memory used to
+** cache database pages that are not currently in use.
+*/
+int sqlite3_release_memory(int n){
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+  return sqlite3PcacheReleaseMemory(n);
+#else
+  /* IMPLEMENTATION-OF: R-34391-24921 The sqlite3_release_memory() routine
+  ** is a no-op returning zero if SQLite is not compiled with
+  ** SQLITE_ENABLE_MEMORY_MANAGEMENT. */
+  UNUSED_PARAMETER(n);
+  return 0;
+#endif
+}
+
+/*
+** An instance of the following object records the location of
+** each unused scratch buffer.
+*/
+typedef struct ScratchFreeslot {
+  struct ScratchFreeslot *pNext;   /* Next unused scratch buffer */
+} ScratchFreeslot;
+
+/*
+** State information local to the memory allocation subsystem.
+*/
+static SQLITE_WSD struct Mem0Global {
+  sqlite3_mutex *mutex;         /* Mutex to serialize access */
+
+  /*
+  ** The alarm callback and its arguments.  The mem0.mutex lock will
+  ** be held while the callback is running.  Recursive calls into
+  ** the memory subsystem are allowed, but no new callbacks will be
+  ** issued.
+  */
+  sqlite3_int64 alarmThreshold;
+  void (*alarmCallback)(void*, sqlite3_int64,int);
+  void *alarmArg;
+
+  /*
+  ** Pointers to the end of sqlite3GlobalConfig.pScratch memory
+  ** (so that a range test can be used to determine if an allocation
+  ** being freed came from pScratch) and a pointer to the list of
+  ** unused scratch allocations.
+  */
+  void *pScratchEnd;
+  ScratchFreeslot *pScratchFree;
+  u32 nScratchFree;
+
+  /*
+  ** True if heap is nearly "full" where "full" is defined by the
+  ** sqlite3_soft_heap_limit() setting.
+  */
+  int nearlyFull;
+} mem0 = { 0, 0, 0, 0, 0, 0, 0, 0 };
+
+#define mem0 GLOBAL(struct Mem0Global, mem0)
+
+/*
 ** This routine runs when the memory allocator sees that the
 ** total memory allocation is about to exceed the soft heap
 ** limit.
@@ -30,77 +90,65 @@ static void softHeapLimitEnforcer(
 }
 
 /*
+** Change the alarm callback
+*/
+static int sqlite3MemoryAlarm(
+  void(*xCallback)(void *pArg, sqlite3_int64 used,int N),
+  void *pArg,
+  sqlite3_int64 iThreshold
+){
+  int nUsed;
+  sqlite3_mutex_enter(mem0.mutex);
+  mem0.alarmCallback = xCallback;
+  mem0.alarmArg = pArg;
+  mem0.alarmThreshold = iThreshold;
+  nUsed = sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED);
+  mem0.nearlyFull = (iThreshold>0 && iThreshold<=nUsed);
+  sqlite3_mutex_leave(mem0.mutex);
+  return SQLITE_OK;
+}
+
+#ifndef SQLITE_OMIT_DEPRECATED
+/*
+** Deprecated external interface.  Internal/core SQLite code
+** should call sqlite3MemoryAlarm.
+*/
+int sqlite3_memory_alarm(
+  void(*xCallback)(void *pArg, sqlite3_int64 used,int N),
+  void *pArg,
+  sqlite3_int64 iThreshold
+){
+  return sqlite3MemoryAlarm(xCallback, pArg, iThreshold);
+}
+#endif
+
+/*
 ** Set the soft heap-size limit for the library. Passing a zero or 
 ** negative value indicates no limit.
 */
-void sqlite3_soft_heap_limit(int n){
-  sqlite3_uint64 iLimit;
-  int overage;
-  if( n<0 ){
-    iLimit = 0;
-  }else{
-    iLimit = n;
-  }
+sqlite3_int64 sqlite3_soft_heap_limit64(sqlite3_int64 n){
+  sqlite3_int64 priorLimit;
+  sqlite3_int64 excess;
 #ifndef SQLITE_OMIT_AUTOINIT
   sqlite3_initialize();
 #endif
-  if( iLimit>0 ){
-    sqlite3MemoryAlarm(softHeapLimitEnforcer, 0, iLimit);
+  sqlite3_mutex_enter(mem0.mutex);
+  priorLimit = mem0.alarmThreshold;
+  sqlite3_mutex_leave(mem0.mutex);
+  if( n<0 ) return priorLimit;
+  if( n>0 ){
+    sqlite3MemoryAlarm(softHeapLimitEnforcer, 0, n);
   }else{
     sqlite3MemoryAlarm(0, 0, 0);
   }
-  overage = (int)(sqlite3_memory_used() - (i64)n);
-  if( overage>0 ){
-    sqlite3_release_memory(overage);
-  }
+  excess = sqlite3_memory_used() - n;
+  if( excess>0 ) sqlite3_release_memory((int)(excess & 0x7fffffff));
+  return priorLimit;
 }
-
-/*
-** Attempt to release up to n bytes of non-essential memory currently
-** held by SQLite. An example of non-essential memory is memory used to
-** cache database pages that are not currently in use.
-*/
-int sqlite3_release_memory(int n){
-#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
-  int nRet = 0;
-  nRet += sqlite3PcacheReleaseMemory(n-nRet);
-  return nRet;
-#else
-  UNUSED_PARAMETER(n);
-  return SQLITE_OK;
-#endif
+void sqlite3_soft_heap_limit(int n){
+  if( n<0 ) n = 0;
+  sqlite3_soft_heap_limit64(n);
 }
-
-/*
-** State information local to the memory allocation subsystem.
-*/
-static SQLITE_WSD struct Mem0Global {
-  /* Number of free pages for scratch and page-cache memory */
-  u32 nScratchFree;
-  u32 nPageFree;
-
-  sqlite3_mutex *mutex;         /* Mutex to serialize access */
-
-  /*
-  ** The alarm callback and its arguments.  The mem0.mutex lock will
-  ** be held while the callback is running.  Recursive calls into
-  ** the memory subsystem are allowed, but no new callbacks will be
-  ** issued.
-  */
-  sqlite3_int64 alarmThreshold;
-  void (*alarmCallback)(void*, sqlite3_int64,int);
-  void *alarmArg;
-
-  /*
-  ** Pointers to the end of sqlite3GlobalConfig.pScratch and
-  ** sqlite3GlobalConfig.pPage to a block of memory that records
-  ** which pages are available.
-  */
-  u32 *aScratchFree;
-  u32 *aPageFree;
-} mem0 = { 0, 0, 0, 0, 0, 0, 0, 0 };
-
-#define mem0 GLOBAL(struct Mem0Global, mem0)
 
 /*
 ** Initialize the memory allocation subsystem.
@@ -114,34 +162,43 @@ int sqlite3MallocInit(void){
     mem0.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MEM);
   }
   if( sqlite3GlobalConfig.pScratch && sqlite3GlobalConfig.szScratch>=100
-      && sqlite3GlobalConfig.nScratch>=0 ){
-    int i;
-    sqlite3GlobalConfig.szScratch = ROUNDDOWN8(sqlite3GlobalConfig.szScratch-4);
-    mem0.aScratchFree = (u32*)&((char*)sqlite3GlobalConfig.pScratch)
-                  [sqlite3GlobalConfig.szScratch*sqlite3GlobalConfig.nScratch];
-    for(i=0; i<sqlite3GlobalConfig.nScratch; i++){ mem0.aScratchFree[i] = i; }
-    mem0.nScratchFree = sqlite3GlobalConfig.nScratch;
+      && sqlite3GlobalConfig.nScratch>0 ){
+    int i, n, sz;
+    ScratchFreeslot *pSlot;
+    sz = ROUNDDOWN8(sqlite3GlobalConfig.szScratch);
+    sqlite3GlobalConfig.szScratch = sz;
+    pSlot = (ScratchFreeslot*)sqlite3GlobalConfig.pScratch;
+    n = sqlite3GlobalConfig.nScratch;
+    mem0.pScratchFree = pSlot;
+    mem0.nScratchFree = n;
+    for(i=0; i<n-1; i++){
+      pSlot->pNext = (ScratchFreeslot*)(sz+(char*)pSlot);
+      pSlot = pSlot->pNext;
+    }
+    pSlot->pNext = 0;
+    mem0.pScratchEnd = (void*)&pSlot[1];
   }else{
+    mem0.pScratchEnd = 0;
     sqlite3GlobalConfig.pScratch = 0;
     sqlite3GlobalConfig.szScratch = 0;
+    sqlite3GlobalConfig.nScratch = 0;
   }
-  if( sqlite3GlobalConfig.pPage && sqlite3GlobalConfig.szPage>=512
-      && sqlite3GlobalConfig.nPage>=1 ){
-    int i;
-    int overhead;
-    int sz = ROUNDDOWN8(sqlite3GlobalConfig.szPage);
-    int n = sqlite3GlobalConfig.nPage;
-    overhead = (4*n + sz - 1)/sz;
-    sqlite3GlobalConfig.nPage -= overhead;
-    mem0.aPageFree = (u32*)&((char*)sqlite3GlobalConfig.pPage)
-                  [sqlite3GlobalConfig.szPage*sqlite3GlobalConfig.nPage];
-    for(i=0; i<sqlite3GlobalConfig.nPage; i++){ mem0.aPageFree[i] = i; }
-    mem0.nPageFree = sqlite3GlobalConfig.nPage;
-  }else{
+  if( sqlite3GlobalConfig.pPage==0 || sqlite3GlobalConfig.szPage<512
+      || sqlite3GlobalConfig.nPage<1 ){
     sqlite3GlobalConfig.pPage = 0;
     sqlite3GlobalConfig.szPage = 0;
+    sqlite3GlobalConfig.nPage = 0;
   }
   return sqlite3GlobalConfig.m.xInit(sqlite3GlobalConfig.m.pAppData);
+}
+
+/*
+** Return true if the heap is currently under memory pressure - in other
+** words if the amount of heap used is close to the limit set by
+** sqlite3_soft_heap_limit().
+*/
+int sqlite3HeapNearlyFull(void){
+  return mem0.nearlyFull;
 }
 
 /*
@@ -179,36 +236,6 @@ sqlite3_int64 sqlite3_memory_highwater(int resetFlag){
 }
 
 /*
-** Change the alarm callback
-*/
-int sqlite3MemoryAlarm(
-  void(*xCallback)(void *pArg, sqlite3_int64 used,int N),
-  void *pArg,
-  sqlite3_int64 iThreshold
-){
-  sqlite3_mutex_enter(mem0.mutex);
-  mem0.alarmCallback = xCallback;
-  mem0.alarmArg = pArg;
-  mem0.alarmThreshold = iThreshold;
-  sqlite3_mutex_leave(mem0.mutex);
-  return SQLITE_OK;
-}
-
-#ifndef SQLITE_OMIT_DEPRECATED
-/*
-** Deprecated external interface.  Internal/core SQLite code
-** should call sqlite3MemoryAlarm.
-*/
-int sqlite3_memory_alarm(
-  void(*xCallback)(void *pArg, sqlite3_int64 used,int N),
-  void *pArg,
-  sqlite3_int64 iThreshold
-){
-  return sqlite3MemoryAlarm(xCallback, pArg, iThreshold);
-}
-#endif
-
-/*
 ** Trigger the alarm 
 */
 static void sqlite3MallocAlarm(int nByte){
@@ -240,14 +267,19 @@ static int mallocWithAlarm(int n, void **pp){
   if( mem0.alarmCallback!=0 ){
     int nUsed = sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED);
     if( nUsed+nFull >= mem0.alarmThreshold ){
+      mem0.nearlyFull = 1;
       sqlite3MallocAlarm(nFull);
+    }else{
+      mem0.nearlyFull = 0;
     }
   }
   p = sqlite3GlobalConfig.m.xMalloc(nFull);
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   if( p==0 && mem0.alarmCallback ){
     sqlite3MallocAlarm(nFull);
     p = sqlite3GlobalConfig.m.xMalloc(nFull);
   }
+#endif
   if( p ){
     nFull = sqlite3MallocSize(p);
     sqlite3StatusAdd(SQLITE_STATUS_MEMORY_USED, nFull);
@@ -263,7 +295,9 @@ static int mallocWithAlarm(int n, void **pp){
 */
 void *sqlite3Malloc(int n){
   void *p;
-  if( n<=0 || n>=0x7fffff00 ){
+  if( n<=0               /* IMP: R-65312-04917 */ 
+   || n>=0x7fffff00
+  ){
     /* A memory allocation of a number of bytes which is near the maximum
     ** signed integer value might cause an integer overflow inside of the
     ** xMalloc().  Hence we limit the maximum size to 0x7fffff00, giving
@@ -277,6 +311,7 @@ void *sqlite3Malloc(int n){
   }else{
     p = sqlite3GlobalConfig.m.xMalloc(n);
   }
+  assert( EIGHT_BYTE_ALIGNMENT(p) );  /* IMP: R-04675-44850 */
   return p;
 }
 
@@ -315,59 +350,65 @@ void *sqlite3ScratchMalloc(int n){
   void *p;
   assert( n>0 );
 
+  sqlite3_mutex_enter(mem0.mutex);
+  if( mem0.nScratchFree && sqlite3GlobalConfig.szScratch>=n ){
+    p = mem0.pScratchFree;
+    mem0.pScratchFree = mem0.pScratchFree->pNext;
+    mem0.nScratchFree--;
+    sqlite3StatusAdd(SQLITE_STATUS_SCRATCH_USED, 1);
+    sqlite3StatusSet(SQLITE_STATUS_SCRATCH_SIZE, n);
+    sqlite3_mutex_leave(mem0.mutex);
+  }else{
+    if( sqlite3GlobalConfig.bMemstat ){
+      sqlite3StatusSet(SQLITE_STATUS_SCRATCH_SIZE, n);
+      n = mallocWithAlarm(n, &p);
+      if( p ) sqlite3StatusAdd(SQLITE_STATUS_SCRATCH_OVERFLOW, n);
+      sqlite3_mutex_leave(mem0.mutex);
+    }else{
+      sqlite3_mutex_leave(mem0.mutex);
+      p = sqlite3GlobalConfig.m.xMalloc(n);
+    }
+    sqlite3MemdebugSetType(p, MEMTYPE_SCRATCH);
+  }
+  assert( sqlite3_mutex_notheld(mem0.mutex) );
+
+
 #if SQLITE_THREADSAFE==0 && !defined(NDEBUG)
-  /* Verify that no more than two scratch allocation per thread
-  ** is outstanding at one time.  (This is only checked in the
+  /* Verify that no more than two scratch allocations per thread
+  ** are outstanding at one time.  (This is only checked in the
   ** single-threaded case since checking in the multi-threaded case
   ** would be much more complicated.) */
   assert( scratchAllocOut<=1 );
-#endif
-
-  if( sqlite3GlobalConfig.szScratch<n ){
-    goto scratch_overflow;
-  }else{  
-    sqlite3_mutex_enter(mem0.mutex);
-    if( mem0.nScratchFree==0 ){
-      sqlite3_mutex_leave(mem0.mutex);
-      goto scratch_overflow;
-    }else{
-      int i;
-      i = mem0.aScratchFree[--mem0.nScratchFree];
-      i *= sqlite3GlobalConfig.szScratch;
-      sqlite3StatusAdd(SQLITE_STATUS_SCRATCH_USED, 1);
-      sqlite3StatusSet(SQLITE_STATUS_SCRATCH_SIZE, n);
-      sqlite3_mutex_leave(mem0.mutex);
-      p = (void*)&((char*)sqlite3GlobalConfig.pScratch)[i];
-      assert(  (((u8*)p - (u8*)0) & 7)==0 );
-    }
-  }
-#if SQLITE_THREADSAFE==0 && !defined(NDEBUG)
-  scratchAllocOut = p!=0;
+  if( p ) scratchAllocOut++;
 #endif
 
   return p;
-
-scratch_overflow:
-  if( sqlite3GlobalConfig.bMemstat ){
-    sqlite3_mutex_enter(mem0.mutex);
-    sqlite3StatusSet(SQLITE_STATUS_SCRATCH_SIZE, n);
-    n = mallocWithAlarm(n, &p);
-    if( p ) sqlite3StatusAdd(SQLITE_STATUS_SCRATCH_OVERFLOW, n);
-    sqlite3_mutex_leave(mem0.mutex);
-  }else{
-    p = sqlite3GlobalConfig.m.xMalloc(n);
-  }
-  sqlite3MemdebugSetType(p, MEMTYPE_SCRATCH);
-#if SQLITE_THREADSAFE==0 && !defined(NDEBUG)
-  scratchAllocOut = p!=0;
-#endif
-  return p;    
 }
 void sqlite3ScratchFree(void *p){
   if( p ){
-    if( sqlite3GlobalConfig.pScratch==0
-           || p<sqlite3GlobalConfig.pScratch
-           || p>=(void*)mem0.aScratchFree ){
+
+#if SQLITE_THREADSAFE==0 && !defined(NDEBUG)
+    /* Verify that no more than two scratch allocation per thread
+    ** is outstanding at one time.  (This is only checked in the
+    ** single-threaded case since checking in the multi-threaded case
+    ** would be much more complicated.) */
+    assert( scratchAllocOut>=1 && scratchAllocOut<=2 );
+    scratchAllocOut--;
+#endif
+
+    if( p>=sqlite3GlobalConfig.pScratch && p<mem0.pScratchEnd ){
+      /* Release memory from the SQLITE_CONFIG_SCRATCH allocation */
+      ScratchFreeslot *pSlot;
+      pSlot = (ScratchFreeslot*)p;
+      sqlite3_mutex_enter(mem0.mutex);
+      pSlot->pNext = mem0.pScratchFree;
+      mem0.pScratchFree = pSlot;
+      mem0.nScratchFree++;
+      assert( mem0.nScratchFree<=sqlite3GlobalConfig.nScratch );
+      sqlite3StatusAdd(SQLITE_STATUS_SCRATCH_USED, -1);
+      sqlite3_mutex_leave(mem0.mutex);
+    }else{
+      /* Release memory back to the heap */
       assert( sqlite3MemdebugHasType(p, MEMTYPE_SCRATCH) );
       assert( sqlite3MemdebugNoType(p, ~MEMTYPE_SCRATCH) );
       sqlite3MemdebugSetType(p, MEMTYPE_HEAP);
@@ -382,26 +423,6 @@ void sqlite3ScratchFree(void *p){
       }else{
         sqlite3GlobalConfig.m.xFree(p);
       }
-    }else{
-      int i;
-      i = (int)((u8*)p - (u8*)sqlite3GlobalConfig.pScratch);
-      i /= sqlite3GlobalConfig.szScratch;
-      assert( i>=0 && i<sqlite3GlobalConfig.nScratch );
-      sqlite3_mutex_enter(mem0.mutex);
-      assert( mem0.nScratchFree<(u32)sqlite3GlobalConfig.nScratch );
-      mem0.aScratchFree[mem0.nScratchFree++] = i;
-      sqlite3StatusAdd(SQLITE_STATUS_SCRATCH_USED, -1);
-      sqlite3_mutex_leave(mem0.mutex);
-
-#if SQLITE_THREADSAFE==0 && !defined(NDEBUG)
-    /* Verify that no more than two scratch allocation per thread
-    ** is outstanding at one time.  (This is only checked in the
-    ** single-threaded case since checking in the multi-threaded case
-    ** would be much more complicated.) */
-    assert( scratchAllocOut>=1 && scratchAllocOut<=2 );
-    scratchAllocOut = 0;
-#endif
-
     }
   }
 }
@@ -442,7 +463,7 @@ int sqlite3DbMallocSize(sqlite3 *db, void *p){
 ** Free memory previously obtained from sqlite3Malloc().
 */
 void sqlite3_free(void *p){
-  if( p==0 ) return;
+  if( p==0 ) return;  /* IMP: R-49053-54554 */
   assert( sqlite3MemdebugNoType(p, MEMTYPE_DB) );
   assert( sqlite3MemdebugHasType(p, MEMTYPE_HEAP) );
   if( sqlite3GlobalConfig.bMemstat ){
@@ -489,10 +510,10 @@ void *sqlite3Realloc(void *pOld, int nBytes){
   int nOld, nNew;
   void *pNew;
   if( pOld==0 ){
-    return sqlite3Malloc(nBytes);
+    return sqlite3Malloc(nBytes); /* IMP: R-28354-25769 */
   }
   if( nBytes<=0 ){
-    sqlite3_free(pOld);
+    sqlite3_free(pOld); /* IMP: R-31593-10574 */
     return 0;
   }
   if( nBytes>=0x7fffff00 ){
@@ -500,6 +521,9 @@ void *sqlite3Realloc(void *pOld, int nBytes){
     return 0;
   }
   nOld = sqlite3MallocSize(pOld);
+  /* IMPLEMENTATION-OF: R-46199-30249 SQLite guarantees that the second
+  ** argument to xRealloc is always a value returned by a prior call to
+  ** xRoundup. */
   nNew = sqlite3GlobalConfig.m.xRoundup(nBytes);
   if( nOld==nNew ){
     pNew = pOld;
@@ -525,6 +549,7 @@ void *sqlite3Realloc(void *pOld, int nBytes){
   }else{
     pNew = sqlite3GlobalConfig.m.xRealloc(pOld, nNew);
   }
+  assert( EIGHT_BYTE_ALIGNMENT(pNew) ); /* IMP: R-04675-44850 */
   return pNew;
 }
 

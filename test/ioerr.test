@@ -135,8 +135,13 @@ ifcapable attach {
 
 # Test IO errors when replaying two hot journals from a 2-file 
 # transaction. This test only runs on UNIX.
+#
+# It cannot be run under the "exclusive" permutation. In that case, the
+# locks held by the connection in the local (this) process prevent a 
+# second connection from attempting the multi-file transaction.
+#
 ifcapable crashtest&&attach {
-  if {![catch {sqlite3 -has_codec} r] && !$r} {
+  if {![catch {sqlite3 -has-codec} r] && !$r && [permutation]!="exclusive"} {
     do_ioerr_test ioerr-6 -ckrefcount true -tclprep {
       execsql {
         ATTACH 'test2.db' as aux;

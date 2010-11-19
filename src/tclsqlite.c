@@ -670,6 +670,7 @@ static void DbUpdateHandler(
   Tcl_ListObjAppendElement(0, pCmd, Tcl_NewStringObj(zTbl, -1));
   Tcl_ListObjAppendElement(0, pCmd, Tcl_NewWideIntObj(rowid));
   Tcl_EvalObjEx(pDb->interp, pCmd, TCL_EVAL_DIRECT);
+  Tcl_DecrRefCount(pCmd);
 }
 
 static void tclCollateNeeded(
@@ -3014,22 +3015,31 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 ** if the extension only supplies one new name!)  The "sqlite" command is
 ** used to open a new SQLite database.  See the DbMain() routine above
 ** for additional information.
+**
+** The EXTERN macros are required by TCL in order to work on windows.
 */
-int Sqlite3_Init(Tcl_Interp *interp){
+EXTERN int Sqlite3_Init(Tcl_Interp *interp){
   Tcl_InitStubs(interp, "8.4", 0);
   Tcl_CreateObjCommand(interp, "sqlite3", (Tcl_ObjCmdProc*)DbMain, 0, 0);
   Tcl_PkgProvide(interp, "sqlite3", PACKAGE_VERSION);
+
+#ifndef SQLITE_3_SUFFIX_ONLY
+  /* The "sqlite" alias is undocumented.  It is here only to support
+  ** legacy scripts.  All new scripts should use only the "sqlite3"
+  ** command.
+  */
   Tcl_CreateObjCommand(interp, "sqlite", (Tcl_ObjCmdProc*)DbMain, 0, 0);
-  Tcl_PkgProvide(interp, "sqlite", PACKAGE_VERSION);
+#endif
+
   return TCL_OK;
 }
-int Tclsqlite3_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp); }
-int Sqlite3_SafeInit(Tcl_Interp *interp){ return TCL_OK; }
-int Tclsqlite3_SafeInit(Tcl_Interp *interp){ return TCL_OK; }
-int Sqlite3_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
-int Tclsqlite3_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
-int Sqlite3_SafeUnload(Tcl_Interp *interp, int flags){ return TCL_OK; }
-int Tclsqlite3_SafeUnload(Tcl_Interp *interp, int flags){ return TCL_OK;}
+EXTERN int Tclsqlite3_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp); }
+EXTERN int Sqlite3_SafeInit(Tcl_Interp *interp){ return TCL_OK; }
+EXTERN int Tclsqlite3_SafeInit(Tcl_Interp *interp){ return TCL_OK; }
+EXTERN int Sqlite3_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
+EXTERN int Tclsqlite3_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
+EXTERN int Sqlite3_SafeUnload(Tcl_Interp *interp, int flags){ return TCL_OK; }
+EXTERN int Tclsqlite3_SafeUnload(Tcl_Interp *interp, int flags){ return TCL_OK;}
 
 
 #ifndef SQLITE_3_SUFFIX_ONLY
@@ -3567,6 +3577,10 @@ static void init_all(Tcl_Interp *interp){
     extern int Sqlitetestintarray_Init(Tcl_Interp*);
     extern int Sqlitetestvfs_Init(Tcl_Interp *);
     extern int SqlitetestStat_Init(Tcl_Interp*);
+    extern int Sqlitetestrtree_Init(Tcl_Interp*);
+    extern int Sqlitequota_Init(Tcl_Interp*);
+    extern int Sqlitemultiplex_Init(Tcl_Interp*);
+    extern int SqliteSuperlock_Init(Tcl_Interp*);
 
     Sqliteconfig_Init(interp);
     Sqlitetest1_Init(interp);
@@ -3595,6 +3609,10 @@ static void init_all(Tcl_Interp *interp){
     Sqlitetestintarray_Init(interp);
     Sqlitetestvfs_Init(interp);
     SqlitetestStat_Init(interp);
+    Sqlitetestrtree_Init(interp);
+    Sqlitequota_Init(interp);
+    Sqlitemultiplex_Init(interp);
+    SqliteSuperlock_Init(interp);
 
     Tcl_CreateObjCommand(interp,"load_testfixture_extensions",init_all_cmd,0,0);
 

@@ -13,7 +13,7 @@
 #
 
 if {![info exists testdir]} {
-  set testdir [file join [file dirname $argv0] .. .. test]
+  set testdir [file join [file dirname [info script]] .. .. test]
 } 
 source $testdir/tester.tcl
 
@@ -23,7 +23,7 @@ ifcapable !rtree {
 }
 
 set ::NROW 2500
-if {[info exists ISQUICK] && $ISQUICK} {
+if {[info exists G(isquick)] && $G(isquick)} {
   set ::NROW 250
 }
 
@@ -93,7 +93,7 @@ for {set nDim 1} {$nDim<=5} {incr nDim} {
   for {set i 1} {$i<$::NROW} {incr i} {
     # Do a random insert
     #
-    do_test rtree-$nDim.2.$i.1 {
+    do_test rtree4-$nDim.2.$i.1 {
       set vlist {}
       for {set j 0} {$j<$nDim} {incr j} {
         set mn [rand 10000]
@@ -113,7 +113,7 @@ for {set nDim 1} {$nDim<=5} {incr nDim} {
       lappend where mn$j>=$mn mx$j<=$mx
     }
     set where "WHERE [join $where { AND }]"
-    do_test rtree-$nDim.2.$i.2 {
+    do_test rtree4-$nDim.2.$i.2 {
       list $where [db eval "SELECT id FROM rx $where ORDER BY id"]
     } [list $where [db eval "SELECT id FROM bx $where ORDER BY id"]]
 
@@ -126,7 +126,7 @@ for {set nDim 1} {$nDim<=5} {incr nDim} {
       lappend where mx$j>=$mn mn$j<=$mx
     }
     set where "WHERE [join $where { AND }]"
-    do_test rtree-$nDim.2.$i.3 {
+    do_test rtree4-$nDim.2.$i.3 {
       list $where [db eval "SELECT id FROM rx $where ORDER BY id"]
     } [list $where [db eval "SELECT id FROM bx $where ORDER BY id"]]
 
@@ -143,7 +143,7 @@ for {set nDim 1} {$nDim<=5} {incr nDim} {
       lappend where mn$j>=$mn mx$j<=$mx
     }
     set where "WHERE [join $where { AND }]"
-    do_test rtree-$nDim.2.$i.3 {
+    do_test rtree4-$nDim.2.$i.3 {
       list $where [db eval "SELECT id FROM rx $where ORDER BY id"]
     } [list $where [db eval "SELECT id FROM bx $where ORDER BY id"]]
 
@@ -160,7 +160,7 @@ for {set nDim 1} {$nDim<=5} {incr nDim} {
       lappend where mx$j>$mn mn$j<$mx
     }
     set where "WHERE [join $where { AND }]"
-    do_test rtree-$nDim.2.$i.4 {
+    do_test rtree4-$nDim.2.$i.4 {
       list $where [db eval "SELECT id FROM rx $where ORDER BY id"]
     } [list $where [db eval "SELECT id FROM bx $where ORDER BY id"]]
 
@@ -176,7 +176,7 @@ for {set nDim 1} {$nDim<=5} {incr nDim} {
       lappend where mn$j>=-10000 mx$j<10000
     }
     set where "WHERE [join $where { AND }]"
-    do_test rtree-$nDim.2.$i.5 {
+    do_test rtree4-$nDim.2.$i.5 {
       list $where [db eval "SELECT id FROM rx $where ORDER BY id"]
     } [list $where [db eval "SELECT id FROM bx $where ORDER BY id"]]
 
@@ -192,7 +192,7 @@ for {set nDim 1} {$nDim<=5} {incr nDim} {
       lappend where mx$j>-10000 mn$j<=10000
     }
     set where "WHERE [join $where { AND }]"
-    do_test rtree-$nDim.2.$i.6 {
+    do_test rtree4-$nDim.2.$i.6 {
       list $where [db eval "SELECT id FROM rx $where ORDER BY id"]
     } [list $where [db eval "SELECT id FROM bx $where ORDER BY id"]]
 
@@ -208,7 +208,7 @@ for {set nDim 1} {$nDim<=5} {incr nDim} {
       lappend where mn$j>=$mn1 mn$j>$mn2 mx$j<$mx1 mx$j<=$mx2
     }
     set where "WHERE [join [scramble $where] { AND }]"
-    do_test rtree-$nDim.2.$i.7 {
+    do_test rtree4-$nDim.2.$i.7 {
       list $where [db eval "SELECT id FROM rx $where ORDER BY id"]
     } [list $where [db eval "SELECT id FROM bx $where ORDER BY id"]]
 
@@ -224,7 +224,7 @@ for {set nDim 1} {$nDim<=5} {incr nDim} {
       lappend where mx$j>=$mn1 mx$j>$mn2 mn$j<$mx1 mn$j<=$mx2
     }
     set where "WHERE [join [scramble $where] { AND }]"
-    do_test rtree-$nDim.2.$i.8 {
+    do_test rtree4-$nDim.2.$i.8 {
       list $where [db eval "SELECT id FROM rx $where ORDER BY id"]
     } [list $where [db eval "SELECT id FROM bx $where ORDER BY id"]]
   }

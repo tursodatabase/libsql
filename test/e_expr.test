@@ -17,6 +17,17 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/malloc_common.tcl
 
+
+proc do_expr_test {tn expr type value} {
+  uplevel do_execsql_test $tn [list "SELECT typeof($expr), $expr"] [
+    list [list $type $value]
+  ]
+}
+
+proc do_qexpr_test {tn expr value} {
+  uplevel do_execsql_test $tn [list "SELECT quote($expr)"] [list $value]
+}
+
 # Set up three global variables:
 #
 #   ::opname         An array mapping from SQL operator to an easy to parse
@@ -413,8 +424,7 @@ do_execsql_test e_expr-10.1.3 { SELECT typeof('5.1')   } {text}
 do_execsql_test e_expr-10.1.4 { SELECT typeof(X'ABCD') } {blob}
 do_execsql_test e_expr-10.1.5 { SELECT typeof(NULL)    } {null}
 
-# EVIDENCE-OF: R-26921-59298 Scientific notation is supported for
-# floating point literal values.
+# "Scientific notation is supported for point literal values."
 #
 do_execsql_test e_expr-10.2.1 { SELECT typeof(3.4e-02)    } {real}
 do_execsql_test e_expr-10.2.2 { SELECT typeof(3e+5)       } {real}
@@ -617,7 +627,7 @@ do_test e_expr-11.7.1 { sqlite3_finalize $stmt } SQLITE_OK
 #-------------------------------------------------------------------------
 # "Test" the syntax diagrams in lang_expr.html.
 #
-# EVIDENCE-OF: R-04177-20688 -- syntax diagram signed-number
+# EVIDENCE-OF: R-62067-43884 -- syntax diagram signed-number
 #
 do_execsql_test e_expr-12.1.1 { SELECT 0, +0, -0 } {0 0 0}
 do_execsql_test e_expr-12.1.2 { SELECT 1, +1, -1 } {1 1 -1}
@@ -632,7 +642,7 @@ do_execsql_test e_expr-12.1.6 {
   SELECT 0.0001, +0.0001, -0.0001 
 } {0.0001 0.0001 -0.0001}
 
-# EVIDENCE-OF: R-30740-26723 -- syntax diagram literal-value
+# EVIDENCE-OF: R-21258-25489 -- syntax diagram literal-value
 #
 set sqlite_current_time 1
 do_execsql_test e_expr-12.2.1 {SELECT 123}               {123}
@@ -927,8 +937,14 @@ do_execsql_test e_expr-14.4.3 { SELECT 'ac'  LIKE 'aBc' } 0
 # 'a'&nbsp;LIKE&nbsp;'A' is TRUE but
 # '&aelig;'&nbsp;LIKE&nbsp;'&AElig;' is FALSE.
 #
+#   The restriction to ASCII characters does not apply if the ICU
+#   library is compiled in. When ICU is enabled SQLite does not act
+#   as it does "by default".
+#
 do_execsql_test e_expr-14.5.1 { SELECT 'A' LIKE 'a'         } 1
-do_execsql_test e_expr-14.5.2 "SELECT '\u00c6' LIKE '\u00e6'" 0
+ifcapable !icu {
+  do_execsql_test e_expr-14.5.2 "SELECT '\u00c6' LIKE '\u00e6'" 0
+}
 
 # EVIDENCE-OF: R-56683-13731 If the optional ESCAPE clause is present,
 # then the expression following the ESCAPE keyword must evaluate to a
@@ -975,7 +991,8 @@ proc likefunc {args} {
   eval lappend ::likeargs $args
   return 1
 }
-db func like likefunc
+db func like -argcount 2 likefunc
+db func like -argcount 3 likefunc
 set ::likeargs [list]
 do_execsql_test e_expr-15.1.1 { SELECT 'abc' LIKE 'def' } 1
 do_test         e_expr-15.1.2 { set likeargs } {def abc}
@@ -1046,12 +1063,16 @@ sqlite3 db test.db
 # default and so use of the REGEXP operator will normally result in an
 # error message.
 #
-do_catchsql_test e_expr-18.1.1 { 
-  SELECT regexp('abc', 'def') 
-} {1 {no such function: regexp}}
-do_catchsql_test e_expr-18.1.2 { 
-  SELECT 'abc' REGEXP 'def'
-} {1 {no such function: REGEXP}}
+#   There is a regexp function if ICU is enabled though.
+#
+ifcapable !icu {
+  do_catchsql_test e_expr-18.1.1 { 
+    SELECT regexp('abc', 'def') 
+  } {1 {no such function: regexp}}
+  do_catchsql_test e_expr-18.1.2 { 
+    SELECT 'abc' REGEXP 'def'
+  } {1 {no such function: REGEXP}}
+}
 
 # EVIDENCE-OF: R-33693-50180 The REGEXP operator is a special syntax for
 # the regexp() user function.
@@ -1102,5 +1123,714 @@ do_execsql_test e_expr-19.2.3 { SELECT 'X' NOT MATCH 'Y' } 0
 do_test         e_expr-19.2.4 { set matchargs } {Y X}
 sqlite3 db test.db
 
+#-------------------------------------------------------------------------
+# Test cases for the testable statements related to the CASE expression.
+#
+# EVIDENCE-OF: R-15199-61389 There are two basic forms of the CASE
+# expression: those with a base expression and those without.
+#
+do_execsql_test e_expr-20.1 {
+  SELECT CASE WHEN 1 THEN 'true' WHEN 0 THEN 'false' ELSE 'else' END;
+} {true}
+do_execsql_test e_expr-20.2 {
+  SELECT CASE 0 WHEN 1 THEN 'true' WHEN 0 THEN 'false' ELSE 'else' END;
+} {false}
+
+proc var {nm} {
+  lappend ::varlist $nm
+  return [set "::$nm"]
+}
+db func var var
+
+# EVIDENCE-OF: R-30638-59954 In a CASE without a base expression, each
+# WHEN expression is evaluated and the result treated as a boolean,
+# starting with the leftmost and continuing to the right.
+#
+foreach {a b c} {0 0 0} break
+set varlist [list]
+do_execsql_test e_expr-21.1.1 {
+  SELECT CASE WHEN var('a') THEN 'A' 
+              WHEN var('b') THEN 'B' 
+              WHEN var('c') THEN 'C' END
+} {{}}
+do_test e_expr-21.1.2 { set varlist } {a b c}
+set varlist [list]
+do_execsql_test e_expr-21.1.3 {
+  SELECT CASE WHEN var('c') THEN 'C' 
+              WHEN var('b') THEN 'B' 
+              WHEN var('a') THEN 'A' 
+              ELSE 'no result'
+  END
+} {{no result}}
+do_test e_expr-21.1.4 { set varlist } {c b a}
+
+# EVIDENCE-OF: R-39009-25596 The result of the CASE expression is the
+# evaluation of the THEN expression that corresponds to the first WHEN
+# expression that evaluates to true.
+#
+foreach {a b c} {0 1 0} break
+do_execsql_test e_expr-21.2.1 {
+  SELECT CASE WHEN var('a') THEN 'A' 
+              WHEN var('b') THEN 'B' 
+              WHEN var('c') THEN 'C' 
+              ELSE 'no result'
+  END
+} {B}
+foreach {a b c} {0 1 1} break
+do_execsql_test e_expr-21.2.2 {
+  SELECT CASE WHEN var('a') THEN 'A' 
+              WHEN var('b') THEN 'B' 
+              WHEN var('c') THEN 'C'
+              ELSE 'no result'
+  END
+} {B}
+foreach {a b c} {0 0 1} break
+do_execsql_test e_expr-21.2.3 {
+  SELECT CASE WHEN var('a') THEN 'A' 
+              WHEN var('b') THEN 'B' 
+              WHEN var('c') THEN 'C'
+              ELSE 'no result'
+  END
+} {C}
+
+# EVIDENCE-OF: R-24227-04807 Or, if none of the WHEN expressions
+# evaluate to true, the result of evaluating the ELSE expression, if
+# any.
+#
+foreach {a b c} {0 0 0} break
+do_execsql_test e_expr-21.3.1 {
+  SELECT CASE WHEN var('a') THEN 'A' 
+              WHEN var('b') THEN 'B' 
+              WHEN var('c') THEN 'C'
+              ELSE 'no result'
+  END
+} {{no result}}
+
+# EVIDENCE-OF: R-14168-07579 If there is no ELSE expression and none of
+# the WHEN expressions are true, then the overall result is NULL.
+#
+db nullvalue null
+do_execsql_test e_expr-21.3.2 {
+  SELECT CASE WHEN var('a') THEN 'A' 
+              WHEN var('b') THEN 'B' 
+              WHEN var('c') THEN 'C'
+  END
+} {null}
+db nullvalue {}
+
+# EVIDENCE-OF: R-13943-13592 A NULL result is considered untrue when
+# evaluating WHEN terms.
+#
+do_execsql_test e_expr-21.4.1 {
+  SELECT CASE WHEN NULL THEN 'A' WHEN 1 THEN 'B' END
+} {B}
+do_execsql_test e_expr-21.4.2 {
+  SELECT CASE WHEN 0 THEN 'A' WHEN NULL THEN 'B' ELSE 'C' END
+} {C}
+
+# EVIDENCE-OF: R-38620-19499 In a CASE with a base expression, the base
+# expression is evaluated just once and the result is compared against
+# the evaluation of each WHEN expression from left to right.
+#
+# Note: This test case tests the "evaluated just once" part of the above
+# statement. Tests associated with the next two statements test that the
+# comparisons take place.
+#
+foreach {a b c} [list [expr 3] [expr 4] [expr 5]] break
+set ::varlist [list]
+do_execsql_test e_expr-22.1.1 {
+  SELECT CASE var('a') WHEN 1 THEN 'A' WHEN 2 THEN 'B' WHEN 3 THEN 'C' END
+} {C}
+do_test e_expr-22.1.2 { set ::varlist } {a}
+
+# EVIDENCE-OF: R-07667-49537 The result of the CASE expression is the
+# evaluation of the THEN expression that corresponds to the first WHEN
+# expression for which the comparison is true.
+#
+do_execsql_test e_expr-22.2.1 {
+  SELECT CASE 23 WHEN 1 THEN 'A' WHEN 23 THEN 'B' WHEN 23 THEN 'C' END
+} {B}
+do_execsql_test e_expr-22.2.2 {
+  SELECT CASE 1 WHEN 1 THEN 'A' WHEN 23 THEN 'B' WHEN 23 THEN 'C' END
+} {A}
+
+# EVIDENCE-OF: R-47543-32145 Or, if none of the WHEN expressions
+# evaluate to a value equal to the base expression, the result of
+# evaluating the ELSE expression, if any.
+#
+do_execsql_test e_expr-22.3.1 {
+  SELECT CASE 24 WHEN 1 THEN 'A' WHEN 23 THEN 'B' WHEN 23 THEN 'C' ELSE 'D' END
+} {D}
+
+# EVIDENCE-OF: R-54721-48557 If there is no ELSE expression and none of
+# the WHEN expressions produce a result equal to the base expression,
+# the overall result is NULL.
+#
+do_execsql_test e_expr-22.4.1 {
+  SELECT CASE 24 WHEN 1 THEN 'A' WHEN 23 THEN 'B' WHEN 23 THEN 'C' END
+} {{}}
+db nullvalue null
+do_execsql_test e_expr-22.4.2 {
+  SELECT CASE 24 WHEN 1 THEN 'A' WHEN 23 THEN 'B' WHEN 23 THEN 'C' END
+} {null}
+db nullvalue {}
+
+# EVIDENCE-OF: R-11479-62774 When comparing a base expression against a
+# WHEN expression, the same collating sequence, affinity, and
+# NULL-handling rules apply as if the base expression and WHEN
+# expression are respectively the left- and right-hand operands of an =
+# operator.
+#
+proc rev {str} {
+  set ret ""
+  set chars [split $str]
+  for {set i [expr [llength $chars]-1]} {$i>=0} {incr i -1} {
+    append ret [lindex $chars $i]
+  }
+  set ret
+}
+proc reverse {lhs rhs} {
+  string compare [rev $lhs] [ref $rhs]
+}
+db collate reverse reverse
+do_execsql_test e_expr-23.1.1 {
+  CREATE TABLE t1(
+    a TEXT     COLLATE NOCASE,
+    b          COLLATE REVERSE,
+    c INTEGER,
+    d BLOB
+  );
+  INSERT INTO t1 VALUES('abc', 'cba', 55, 34.5);
+} {}
+do_execsql_test e_expr-23.1.2 {
+  SELECT CASE a WHEN 'xyz' THEN 'A' WHEN 'AbC' THEN 'B' END FROM t1
+} {B}
+do_execsql_test e_expr-23.1.3 {
+  SELECT CASE 'AbC' WHEN 'abc' THEN 'A' WHEN a THEN 'B' END FROM t1
+} {B}
+do_execsql_test e_expr-23.1.4 {
+  SELECT CASE a WHEN b THEN 'A' ELSE 'B' END FROM t1
+} {B}
+do_execsql_test e_expr-23.1.5 {
+  SELECT CASE b WHEN a THEN 'A' ELSE 'B' END FROM t1
+} {A}
+do_execsql_test e_expr-23.1.6 {
+  SELECT CASE 55 WHEN '55' THEN 'A' ELSE 'B' END
+} {B}
+do_execsql_test e_expr-23.1.7 {
+  SELECT CASE c WHEN '55' THEN 'A' ELSE 'B' END FROM t1
+} {A}
+do_execsql_test e_expr-23.1.8 {
+  SELECT CASE '34.5' WHEN d THEN 'A' ELSE 'B' END FROM t1
+} {B}
+do_execsql_test e_expr-23.1.9 {
+  SELECT CASE NULL WHEN NULL THEN 'A' ELSE 'B' END
+} {B}
+
+# EVIDENCE-OF: R-37304-39405 If the base expression is NULL then the
+# result of the CASE is always the result of evaluating the ELSE
+# expression if it exists, or NULL if it does not.
+#
+do_execsql_test e_expr-24.1.1 {
+  SELECT CASE NULL WHEN 'abc' THEN 'A' WHEN 'def' THEN 'B' END;
+} {{}}
+do_execsql_test e_expr-24.1.2 {
+  SELECT CASE NULL WHEN 'abc' THEN 'A' WHEN 'def' THEN 'B' ELSE 'C' END;
+} {C}
+
+# EVIDENCE-OF: R-56280-17369 Both forms of the CASE expression use lazy,
+# or short-circuit, evaluation.
+#
+set varlist [list]
+foreach {a b c} {0 1 0} break
+do_execsql_test e_expr-25.1.1 {
+  SELECT CASE WHEN var('a') THEN 'A' 
+              WHEN var('b') THEN 'B' 
+              WHEN var('c') THEN 'C' 
+  END
+} {B}
+do_test e_expr-25.1.2 { set ::varlist } {a b}
+set varlist [list]
+do_execsql_test e_expr-25.1.3 {
+  SELECT CASE '0' WHEN var('a') THEN 'A' 
+                  WHEN var('b') THEN 'B' 
+                  WHEN var('c') THEN 'C' 
+  END
+} {A}
+do_test e_expr-25.1.4 { set ::varlist } {a}
+
+# EVIDENCE-OF: R-34773-62253 The only difference between the following
+# two CASE expressions is that the x expression is evaluated exactly
+# once in the first example but might be evaluated multiple times in the
+# second: CASE x WHEN w1 THEN r1 WHEN w2 THEN r2 ELSE r3 END CASE WHEN
+# x=w1 THEN r1 WHEN x=w2 THEN r2 ELSE r3 END
+#
+proc ceval {x} {
+  incr ::evalcount
+  return $x
+}
+db func ceval ceval
+set ::evalcount 0
+
+do_execsql_test e_expr-26.1.1 {
+  CREATE TABLE t2(x, w1, r1, w2, r2, r3);
+  INSERT INTO t2 VALUES(1, 1, 'R1', 2, 'R2', 'R3');
+  INSERT INTO t2 VALUES(2, 1, 'R1', 2, 'R2', 'R3');
+  INSERT INTO t2 VALUES(3, 1, 'R1', 2, 'R2', 'R3');
+} {}
+do_execsql_test e_expr-26.1.2 {
+  SELECT CASE x WHEN w1 THEN r1 WHEN w2 THEN r2 ELSE r3 END FROM t2
+} {R1 R2 R3}
+do_execsql_test e_expr-26.1.3 {
+  SELECT CASE WHEN x=w1 THEN r1 WHEN x=w2 THEN r2 ELSE r3 END FROM t2
+} {R1 R2 R3}
+
+do_execsql_test e_expr-26.1.4 {
+  SELECT CASE ceval(x) WHEN w1 THEN r1 WHEN w2 THEN r2 ELSE r3 END FROM t2
+} {R1 R2 R3}
+do_test e_expr-26.1.5 { set ::evalcount } {3}
+set ::evalcount 0
+do_execsql_test e_expr-26.1.6 {
+  SELECT CASE 
+    WHEN ceval(x)=w1 THEN r1 
+    WHEN ceval(x)=w2 THEN r2 
+    ELSE r3 END 
+  FROM t2
+} {R1 R2 R3}
+do_test e_expr-26.1.6 { set ::evalcount } {5}
+
+
+#-------------------------------------------------------------------------
+# Test statements related to CAST expressions.
+#
+# EVIDENCE-OF: R-65079-31758 Application of a CAST expression is
+# different to application of a column affinity, as with a CAST
+# expression the storage class conversion is forced even if it is lossy
+# and irrreversible.
+#
+do_execsql_test e_expr-27.1.1 {
+  CREATE TABLE t3(a TEXT, b REAL, c INTEGER);
+  INSERT INTO t3 VALUES(X'555655', '1.23abc', 4.5);
+  SELECT typeof(a), a, typeof(b), b, typeof(c), c FROM t3;
+} {blob UVU text 1.23abc real 4.5}
+do_execsql_test e_expr-27.1.2 {
+  SELECT 
+    typeof(CAST(X'555655' as TEXT)), CAST(X'555655' as TEXT),
+    typeof(CAST('1.23abc' as REAL)), CAST('1.23abc' as REAL),
+    typeof(CAST(4.5 as INTEGER)), CAST(4.5 as INTEGER)
+} {text UVU real 1.23 integer 4}
+
+# EVIDENCE-OF: R-27225-65050 If the value of <expr> is NULL, then
+# the result of the CAST expression is also NULL.
+#
+do_expr_test e_expr-27.2.1 { CAST(NULL AS integer) } null {}
+do_expr_test e_expr-27.2.2 { CAST(NULL AS text) }    null {}
+do_expr_test e_expr-27.2.3 { CAST(NULL AS blob) }    null {}
+do_expr_test e_expr-27.2.4 { CAST(NULL AS number) }  null {}
+
+# EVIDENCE-OF: R-31076-23575 Casting a value to a <type-name> with
+# no affinity causes the value to be converted into a BLOB.
+#
+do_expr_test e_expr-27.3.1 { CAST('abc' AS blob)       } blob abc
+do_expr_test e_expr-27.3.2 { CAST('def' AS shobblob_x) } blob def
+do_expr_test e_expr-27.3.3 { CAST('ghi' AS abbLOb10)   } blob ghi
+
+# EVIDENCE-OF: R-22956-37754 Casting to a BLOB consists of first casting
+# the value to TEXT in the encoding of the database connection, then
+# interpreting the resulting byte sequence as a BLOB instead of as TEXT.
+#
+do_qexpr_test e_expr-27.4.1 { CAST('ghi' AS blob) } X'676869'
+do_qexpr_test e_expr-27.4.2 { CAST(456 AS blob) }   X'343536'
+do_qexpr_test e_expr-27.4.3 { CAST(1.78 AS blob) }  X'312E3738'
+rename db db2
+sqlite3 db :memory:
+db eval { PRAGMA encoding = 'utf-16le' }
+do_qexpr_test e_expr-27.4.4 { CAST('ghi' AS blob) } X'670068006900'
+do_qexpr_test e_expr-27.4.5 { CAST(456 AS blob) }   X'340035003600'
+do_qexpr_test e_expr-27.4.6 { CAST(1.78 AS blob) }  X'31002E0037003800'
+db close
+sqlite3 db :memory:
+db eval { PRAGMA encoding = 'utf-16be' }
+do_qexpr_test e_expr-27.4.7 { CAST('ghi' AS blob) } X'006700680069'
+do_qexpr_test e_expr-27.4.8 { CAST(456 AS blob) }   X'003400350036'
+do_qexpr_test e_expr-27.4.9 { CAST(1.78 AS blob) }  X'0031002E00370038'
+db close
+rename db2 db
+
+# EVIDENCE-OF: R-04207-37981 To cast a BLOB value to TEXT, the sequence
+# of bytes that make up the BLOB is interpreted as text encoded using
+# the database encoding.
+#
+do_expr_test e_expr-28.1.1 { CAST (X'676869' AS text) } text ghi
+do_expr_test e_expr-28.1.2 { CAST (X'670068006900' AS text) } text g
+rename db db2
+sqlite3 db :memory:
+db eval { PRAGMA encoding = 'utf-16le' }
+do_expr_test e_expr-28.1.3 { CAST (X'676869' AS text) == 'ghi' } integer 0
+do_expr_test e_expr-28.1.4 { CAST (X'670068006900' AS text) } text ghi
+db close
+rename db2 db
+
+# EVIDENCE-OF: R-22235-47006 Casting an INTEGER or REAL value into TEXT
+# renders the value as if via sqlite3_snprintf() except that the
+# resulting TEXT uses the encoding of the database connection.
+#
+do_expr_test e_expr-28.2.1 { CAST (1 AS text)   }     text 1
+do_expr_test e_expr-28.2.2 { CAST (45 AS text)  }     text 45
+do_expr_test e_expr-28.2.3 { CAST (-45 AS text) }     text -45
+do_expr_test e_expr-28.2.4 { CAST (8.8 AS text)    }  text 8.8
+do_expr_test e_expr-28.2.5 { CAST (2.3e+5 AS text) }  text 230000.0
+do_expr_test e_expr-28.2.6 { CAST (-2.3e-5 AS text) } text -2.3e-05
+do_expr_test e_expr-28.2.7 { CAST (0.0 AS text) }     text 0.0
+do_expr_test e_expr-28.2.7 { CAST (0 AS text) }       text 0
+
+# EVIDENCE-OF: R-26346-36443 When casting a BLOB value to a REAL, the
+# value is first converted to TEXT.
+#
+do_expr_test e_expr-29.1.1 { CAST (X'312E3233' AS REAL) } real 1.23
+do_expr_test e_expr-29.1.2 { CAST (X'3233302E30' AS REAL) } real 230.0
+do_expr_test e_expr-29.1.3 { CAST (X'2D392E3837' AS REAL) } real -9.87
+do_expr_test e_expr-29.1.4 { CAST (X'302E30303031' AS REAL) } real 0.0001
+rename db db2
+sqlite3 db :memory:
+db eval { PRAGMA encoding = 'utf-16le' }
+do_expr_test e_expr-29.1.5 { 
+    CAST (X'31002E0032003300' AS REAL) } real 1.23
+do_expr_test e_expr-29.1.6 { 
+    CAST (X'3200330030002E003000' AS REAL) } real 230.0
+do_expr_test e_expr-29.1.7 { 
+    CAST (X'2D0039002E0038003700' AS REAL) } real -9.87
+do_expr_test e_expr-29.1.8 { 
+    CAST (X'30002E003000300030003100' AS REAL) } real 0.0001
+db close
+rename db2 db
+
+# EVIDENCE-OF: R-54898-34554 When casting a TEXT value to REAL, the
+# longest possible prefix of the value that can be interpreted as a real
+# number is extracted from the TEXT value and the remainder ignored.
+#
+do_expr_test e_expr-29.2.1 { CAST('1.23abcd' AS REAL) } real 1.23
+do_expr_test e_expr-29.2.2 { CAST('1.45.23abcd' AS REAL) } real 1.45
+do_expr_test e_expr-29.2.3 { CAST('-2.12e-01ABC' AS REAL) } real -0.212
+do_expr_test e_expr-29.2.4 { CAST('1 2 3 4' AS REAL) } real 1.0
+
+# EVIDENCE-OF: R-11321-47427 Any leading spaces in the TEXT value are
+# ignored when converging from TEXT to REAL.
+#
+do_expr_test e_expr-29.3.1 { CAST(' 1.23abcd' AS REAL) } real 1.23
+do_expr_test e_expr-29.3.2 { CAST('    1.45.23abcd' AS REAL) } real 1.45
+do_expr_test e_expr-29.3.3 { CAST('   -2.12e-01ABC' AS REAL) } real -0.212
+do_expr_test e_expr-29.3.4 { CAST(' 1 2 3 4' AS REAL) } real 1.0
+
+# EVIDENCE-OF: R-22662-28218 If there is no prefix that can be
+# interpreted as a real number, the result of the conversion is 0.0.
+#
+do_expr_test e_expr-29.4.1 { CAST('' AS REAL) } real 0.0
+do_expr_test e_expr-29.4.2 { CAST('not a number' AS REAL) } real 0.0
+do_expr_test e_expr-29.4.3 { CAST('XXI' AS REAL) } real 0.0
+
+# EVIDENCE-OF: R-21829-14563 When casting a BLOB value to INTEGER, the
+# value is first converted to TEXT.
+#
+do_expr_test e_expr-30.1.1 { CAST(X'313233' AS INTEGER) } integer 123
+do_expr_test e_expr-30.1.2 { CAST(X'2D363738' AS INTEGER) } integer -678
+do_expr_test e_expr-30.1.3 { 
+  CAST(X'31303030303030' AS INTEGER) 
+} integer 1000000
+do_expr_test e_expr-30.1.4 { 
+  CAST(X'2D31313235383939393036383432363234' AS INTEGER) 
+} integer -1125899906842624
+
+rename db db2
+sqlite3 db :memory:
+execsql { PRAGMA encoding = 'utf-16be' }
+do_expr_test e_expr-30.1.5 { CAST(X'003100320033' AS INTEGER) } integer 123
+do_expr_test e_expr-30.1.6 { CAST(X'002D003600370038' AS INTEGER) } integer -678
+do_expr_test e_expr-30.1.7 { 
+  CAST(X'0031003000300030003000300030' AS INTEGER) 
+} integer 1000000
+do_expr_test e_expr-30.1.8 { 
+  CAST(X'002D0031003100320035003800390039003900300036003800340032003600320034' AS INTEGER) 
+} integer -1125899906842624
+db close
+rename db2 db
+
+# EVIDENCE-OF: R-47612-45842 When casting a TEXT value to INTEGER, the
+# longest possible prefix of the value that can be interpreted as an
+# integer number is extracted from the TEXT value and the remainder
+# ignored.
+#
+do_expr_test e_expr-30.2.1 { CAST('123abcd' AS INT) } integer 123
+do_expr_test e_expr-30.2.2 { CAST('14523abcd' AS INT) } integer 14523
+do_expr_test e_expr-30.2.3 { CAST('-2.12e-01ABC' AS INT) } integer -2
+do_expr_test e_expr-30.2.4 { CAST('1 2 3 4' AS INT) } integer 1
+
+# EVIDENCE-OF: R-34400-33772 Any leading spaces in the TEXT value when
+# converting from TEXT to INTEGER are ignored.
+#
+do_expr_test e_expr-30.3.1 { CAST('   123abcd' AS INT) } integer 123
+do_expr_test e_expr-30.3.2 { CAST('  14523abcd' AS INT) } integer 14523
+do_expr_test e_expr-30.3.3 { CAST(' -2.12e-01ABC' AS INT) } integer -2
+do_expr_test e_expr-30.3.4 { CAST('     1 2 3 4' AS INT) } integer 1
+
+# EVIDENCE-OF: R-43164-44276 If there is no prefix that can be
+# interpreted as an integer number, the result of the conversion is 0.
+#
+do_expr_test e_expr-30.4.1 { CAST('' AS INTEGER) } integer 0
+do_expr_test e_expr-30.4.2 { CAST('not a number' AS INTEGER) } integer 0
+do_expr_test e_expr-30.4.3 { CAST('XXI' AS INTEGER) } integer 0
+
+# EVIDENCE-OF: R-00741-38776 A cast of a REAL value into an INTEGER will
+# truncate the fractional part of the REAL.
+#
+do_expr_test e_expr-31.1.1 { CAST(3.14159 AS INTEGER) } integer 3
+do_expr_test e_expr-31.1.2 { CAST(1.99999 AS INTEGER) } integer 1
+do_expr_test e_expr-31.1.3 { CAST(-1.99999 AS INTEGER) } integer -1
+do_expr_test e_expr-31.1.4 { CAST(-0.99999 AS INTEGER) } integer 0
+
+# EVIDENCE-OF: R-06126-36021 If an REAL is too large to be represented
+# as an INTEGER then the result of the cast is the largest negative
+# integer: -9223372036854775808.
+#
+do_expr_test e_expr-31.2.1 { CAST(2e+50 AS INT) } integer -9223372036854775808
+do_expr_test e_expr-31.2.2 { CAST(-2e+50 AS INT) } integer -9223372036854775808
+do_expr_test e_expr-31.2.3 { 
+  CAST(-9223372036854775809.0 AS INT)
+} integer -9223372036854775808
+do_expr_test e_expr-31.2.4 { 
+  CAST(9223372036854775809.0 AS INT)
+} integer -9223372036854775808
+
+
+# EVIDENCE-OF: R-09295-61337 Casting a TEXT or BLOB value into NUMERIC
+# first does a forced conversion into REAL but then further converts the
+# result into INTEGER if and only if the conversion from REAL to INTEGER
+# is lossless and reversible.
+#
+do_expr_test e_expr-32.1.1 { CAST('45'   AS NUMERIC)  } integer 45
+do_expr_test e_expr-32.1.2 { CAST('45.0' AS NUMERIC)  } integer 45
+do_expr_test e_expr-32.1.3 { CAST('45.2' AS NUMERIC)  } real 45.2
+do_expr_test e_expr-32.1.4 { CAST('11abc' AS NUMERIC) } integer 11
+do_expr_test e_expr-32.1.5 { CAST('11.1abc' AS NUMERIC) } real 11.1
+
+# EVIDENCE-OF: R-30347-18702 Casting a REAL or INTEGER value to NUMERIC
+# is a no-op, even if a real value could be losslessly converted to an
+# integer.
+#
+do_expr_test e_expr-32.2.1 { CAST(13.0 AS NUMERIC) } real 13.0
+do_expr_test e_expr-32.2.2 { CAST(13.5 AS NUMERIC) } real 13.5
+
+do_expr_test e_expr-32.2.3 { 
+  CAST(-9223372036854775808 AS NUMERIC)
+} integer -9223372036854775808
+do_expr_test e_expr-32.2.4 { 
+  CAST(9223372036854775807 AS NUMERIC)
+} integer 9223372036854775807
+
+# EVIDENCE-OF: R-64550-29191 Note that the result from casting any
+# non-BLOB value into a BLOB and the result from casting any BLOB value
+# into a non-BLOB value may be different depending on whether the
+# database encoding is UTF-8, UTF-16be, or UTF-16le.
+#
+sqlite3 db1 :memory: ; db1 eval { PRAGMA encoding = 'utf-8' }
+sqlite3 db2 :memory: ; db2 eval { PRAGMA encoding = 'utf-16le' }
+sqlite3 db3 :memory: ; db3 eval { PRAGMA encoding = 'utf-16be' }
+foreach {tn castexpr differs} {
+  1 { CAST(123 AS BLOB)    } 1
+  2 { CAST('' AS BLOB)     } 0
+  3 { CAST('abcd' AS BLOB) } 1
+
+  4 { CAST(X'abcd' AS TEXT) } 1
+  5 { CAST(X'' AS TEXT)     } 0
+} {
+  set r1 [db1 eval "SELECT typeof($castexpr), quote($castexpr)"]
+  set r2 [db2 eval "SELECT typeof($castexpr), quote($castexpr)"]
+  set r3 [db3 eval "SELECT typeof($castexpr), quote($castexpr)"]
+
+  if {$differs} {
+    set res [expr {$r1!=$r2 && $r2!=$r3}]
+  } else {
+    set res [expr {$r1==$r2 && $r2==$r3}]
+  }
+
+  do_test e_expr-33.1.$tn {set res} 1
+}
+db1 close
+db2 close
+db3 close
+
+#-------------------------------------------------------------------------
+# Test statements related to the EXISTS and NOT EXISTS operators.
+#
+catch { db close }
+file delete -force test.db
+sqlite3 db test.db
+
+do_execsql_test e_expr-34.1 {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(1, 2);
+  INSERT INTO t1 VALUES(NULL, 2);
+  INSERT INTO t1 VALUES(1, NULL);
+  INSERT INTO t1 VALUES(NULL, NULL);
+} {}
+
+# EVIDENCE-OF: R-25588-27181 The EXISTS operator always evaluates to one
+# of the integer values 0 and 1.
+#
+# This statement is not tested by itself. Instead, all e_expr-34.* tests 
+# following this point explicitly test that specific invocations of EXISTS
+# return either integer 0 or integer 1.
+#
+
+# EVIDENCE-OF: R-58553-63740 If executing the SELECT statement specified
+# as the right-hand operand of the EXISTS operator would return one or
+# more rows, then the EXISTS operator evaluates to 1.
+#
+foreach {tn expr} {
+    1 { EXISTS ( SELECT a FROM t1 ) }
+    2 { EXISTS ( SELECT b FROM t1 ) }
+    3 { EXISTS ( SELECT 24 ) }
+    4 { EXISTS ( SELECT NULL ) }
+    5 { EXISTS ( SELECT a FROM t1 WHERE a IS NULL ) }
+} {
+  do_expr_test e_expr-34.2.$tn $expr integer 1
+}
+
+# EVIDENCE-OF: R-19673-40972 If executing the SELECT would return no
+# rows at all, then the EXISTS operator evaluates to 0.
+#
+foreach {tn expr} {
+    1 { EXISTS ( SELECT a FROM t1 WHERE 0) }
+    2 { EXISTS ( SELECT b FROM t1 WHERE a = 5) }
+    3 { EXISTS ( SELECT 24 WHERE 0) }
+    4 { EXISTS ( SELECT NULL WHERE 1=2) }
+} {
+  do_expr_test e_expr-34.3.$tn $expr integer 0
+}
+
+# EVIDENCE-OF: R-35109-49139 The number of columns in each row returned
+# by the SELECT statement (if any) and the specific values returned have
+# no effect on the results of the EXISTS operator.
+#
+foreach {tn expr res} {
+    1 { EXISTS ( SELECT * FROM t1 ) }                          1
+    2 { EXISTS ( SELECT *, *, * FROM t1 ) }                    1
+    3 { EXISTS ( SELECT 24, 25 ) }                             1
+    4 { EXISTS ( SELECT NULL, NULL, NULL ) }                   1
+    5 { EXISTS ( SELECT a,b,a||b FROM t1 WHERE a IS NULL ) }   1
+
+    6 { EXISTS ( SELECT a, a FROM t1 WHERE 0) }                0
+    7 { EXISTS ( SELECT b, b, a FROM t1 WHERE a = 5) }         0
+    8 { EXISTS ( SELECT 24, 46, 89 WHERE 0) }                  0
+    9 { EXISTS ( SELECT NULL, NULL WHERE 1=2) }                0
+} {
+  do_expr_test e_expr-34.4.$tn $expr integer $res
+}
+
+# EVIDENCE-OF: R-10645-12439 In particular, rows containing NULL values
+# are not handled any differently from rows without NULL values.
+#
+foreach {tn e1 e2} {
+  1 { EXISTS (SELECT 'not null') }    { EXISTS (SELECT NULL) }
+  2 { EXISTS (SELECT NULL FROM t1) }  { EXISTS (SELECT 'bread' FROM t1) }
+} {
+  set res [db one "SELECT $e1"]
+  do_expr_test e_expr-34.5.${tn}a $e1 integer $res
+  do_expr_test e_expr-34.5.${tn}b $e2 integer $res
+}
+
+#-------------------------------------------------------------------------
+# Test statements related to scalar sub-queries.
+#
+
+catch { db close }
+file delete -force test.db
+sqlite3 db test.db
+do_test e_expr-35.0 {
+  execsql {
+    CREATE TABLE t2(a, b);
+    INSERT INTO t2 VALUES('one', 'two');
+    INSERT INTO t2 VALUES('three', NULL);
+    INSERT INTO t2 VALUES(4, 5.0);
+  }
+} {}
+
+# EVIDENCE-OF: R-00980-39256 A SELECT statement enclosed in parentheses
+# may appear as a scalar quantity.
+#
+# EVIDENCE-OF: R-56294-03966 All types of SELECT statement, including
+# aggregate and compound SELECT queries (queries with keywords like
+# UNION or EXCEPT) are allowed as scalar subqueries.
+#
+do_expr_test e_expr-35.1.1 { (SELECT 35)   } integer 35
+do_expr_test e_expr-35.1.2 { (SELECT NULL) } null {}
+
+do_expr_test e_expr-35.1.3 { (SELECT count(*) FROM t2) } integer 3
+do_expr_test e_expr-35.1.4 { (SELECT 4 FROM t2) } integer 4
+
+do_expr_test e_expr-35.1.5 { 
+  (SELECT b FROM t2 UNION SELECT a+1 FROM t2)
+} null {}
+do_expr_test e_expr-35.1.6 { 
+  (SELECT a FROM t2 UNION SELECT COALESCE(b, 55) FROM t2 ORDER BY 1)
+} integer 4
+
+# EVIDENCE-OF: R-46899-53765 A SELECT used as a scalar quantity must
+# return a result set with a single column.
+#
+# The following block tests that errors are returned in a bunch of cases
+# where a subquery returns more than one column.
+#
+set M {only a single result allowed for a SELECT that is part of an expression}
+foreach {tn sql} {
+  1     { SELECT (SELECT * FROM t2 UNION SELECT a+1, b+1 FROM t2) }
+  2     { SELECT (SELECT * FROM t2 UNION SELECT a+1, b+1 FROM t2 ORDER BY 1) }
+  3     { SELECT (SELECT 1, 2) }
+  4     { SELECT (SELECT NULL, NULL, NULL) }
+  5     { SELECT (SELECT * FROM t2) }
+  6     { SELECT (SELECT * FROM (SELECT 1, 2, 3)) }
+} {
+  do_catchsql_test e_expr-35.2.$tn $sql [list 1 $M]
+}
+
+# EVIDENCE-OF: R-35764-28041 The result of the expression is the value
+# of the only column in the first row returned by the SELECT statement.
+#
+# EVIDENCE-OF: R-41898-06686 If the SELECT yields more than one result
+# row, all rows after the first are ignored.
+#
+do_execsql_test e_expr-36.3.1 {
+  CREATE TABLE t4(x, y);
+  INSERT INTO t4 VALUES(1, 'one');
+  INSERT INTO t4 VALUES(2, 'two');
+  INSERT INTO t4 VALUES(3, 'three');
+} {}
+
+foreach {tn expr restype resval} {
+    2  { ( SELECT x FROM t4 ORDER BY x )      }        integer 1
+    3  { ( SELECT x FROM t4 ORDER BY y )      }        integer 1
+    4  { ( SELECT x FROM t4 ORDER BY x DESC ) }        integer 3
+    5  { ( SELECT x FROM t4 ORDER BY y DESC ) }        integer 2
+    6  { ( SELECT y FROM t4 ORDER BY y DESC ) }        text    two
+
+    7  { ( SELECT sum(x) FROM t4 )           }         integer 6
+    8  { ( SELECT group_concat(y,'') FROM t4 ) }       text    onetwothree
+    9  { ( SELECT max(x) FROM t4 WHERE y LIKE '___') } integer 2 
+
+} {
+  do_expr_test e_expr-36.3.$tn $expr $restype $resval
+}
+
+# EVIDENCE-OF: R-25492-41572 If the SELECT yields no rows, then the
+# value of the expression is NULL.
+#
+foreach {tn expr} {
+    1  { ( SELECT x FROM t4 WHERE x>3 ORDER BY x )      }
+    2  { ( SELECT x FROM t4 WHERE y<'one' ORDER BY y )  }
+} {
+  do_expr_test e_expr-36.4.$tn $expr null {}
+}
+
 
 finish_test
+
