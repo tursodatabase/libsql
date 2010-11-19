@@ -914,13 +914,14 @@ struct sqlite3 {
 #define SQLITE_ReadUncommitted 0x0080000  /* For shared-cache mode */
 #define SQLITE_LegacyFileFmt  0x00100000  /* Create new databases in format 1 */
 #define SQLITE_FullFSync      0x00200000  /* Use full fsync on the backend */
-#define SQLITE_LoadExtension  0x00400000  /* Enable load_extension */
+#define SQLITE_CkptFullFSync  0x00400000  /* Use full fsync for checkpoint */
 #define SQLITE_RecoveryMode   0x00800000  /* Ignore schema errors */
 #define SQLITE_ReverseOrder   0x01000000  /* Reverse unordered SELECTs */
 #define SQLITE_RecTriggers    0x02000000  /* Enable recursive triggers */
 #define SQLITE_ForeignKeys    0x04000000  /* Enforce foreign key constraints  */
 #define SQLITE_AutoIndex      0x08000000  /* Enable automatic indexes */
 #define SQLITE_PreferBuiltin  0x10000000  /* Preference to built-in funcs */
+#define SQLITE_LoadExtension  0x20000000  /* Enable load_extension */
 
 /*
 ** Bits of the sqlite3.flags field that are used by the

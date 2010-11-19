@@ -1,5 +1,8 @@
-C Add\sfile\stest/tt3_checkpoint.c\sthat\sadds\sa\smulti-threaded\stest\sfor\sblocking\scheckpoints\sto\sthreadtest3.
-D 2010-11-19T09:58:11
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Merge\sthe\scheckpoint_fullfsync\spragma\sand\sthe\ssuperlock\sdemonstration\sinto\nthe\scheckpoint-v2\sexperimental\sbranch.
+D 2010-11-19T18:51:31
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e7a59672eaeb04408d1fa8501618d7501a3c5e39
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -99,7 +102,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk 2c360958d2981a394ce021a9dfc842577f7935df
+F main.mk 731380a234515bd21ba4f930e12041ed3acfcc3a
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -119,8 +122,8 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c d5b0137bc20327af08c14772227cc35134839c30
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c d90149f6e0a6f715b58b272ef1028fa249a2a088
-F src/btree.h 1d62748eb7d129292782cf65b891b85cbfa024d4
+F src/btree.c 3578a5e812ab9b434b1b705aad547939a055be11
+F src/btree.h e2f2cd9933bf30724f53ffa12c4c5a3a864bbd6e
 F src/btreeInt.h c424f2f131cc61ddf130f9bd736b3df12c8a51f0
 F src/build.c 00a327120d81ace6267e714ae8010c997d55de5d
 F src/callback.c a1d1b1c9c85415dff013af033e2fed9c8382d33b
@@ -141,7 +144,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 8af9fcc75708d60b88636ccba38b4a7b3c155c3e
-F src/main.c 5927ac9ca30c46df68148ad68227329d1be41a21
+F src/main.c 84fdf5b2d823641f6bb394a81e467b6d7ff9b7ec
 F src/malloc.c 3d7284cd9346ab6e3945535761e68c23c6cf40ef
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 00bd8265c81abb665c48fea1e0c234eb3b922206
@@ -162,13 +165,13 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c de5be4cdbf3d07018059934eaf7e5d8d594a895c
 F src/os_win.c 2f90f7bdec714fad51cd31b4ecad3cc1b4bb5aad
-F src/pager.c b46a78a196d99bc855eec3c602777a1bc8db5122
-F src/pager.h e2485f2f2fa5264f2bb68d1783c149d3d57d3637
+F src/pager.c b3e86e5d27c04e05a73a55ce2c79bb6028196431
+F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 09d38c44ab275db581f7a2f6ff8b9bc7f8c0faaa
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c e9578a3beac26f229ee558a4e16c863f2498185f
-F src/pragma.c f843c877845ddbb911f10eea50c9290bc8354b03
+F src/pragma.c 900f480cc266428218d1a745a3e670fbd33cf12d
 F src/prepare.c c2b318037d626fed27905c9446730b560637217a
 F src/printf.c 8ae5082dd38a1b5456030c3755ec3a392cd51506
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -176,13 +179,13 @@ F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 550d67688f5e8bc8022faf6d014838afba1415af
 F src/shell.c 8517fc1f9c59ae4007e6cc8b9af91ab231ea2056
-F src/sqlite.h.in 0dc08ed5d4decf11002e5fee2be0d6ef87798960
+F src/sqlite.h.in daa5e94df834537708afb917e9b4cc4489c63c00
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
-F src/sqliteInt.h 4e7045f17606296bc8e7898d69567fc3cd06b761
+F src/sqliteInt.h eea368b138c8c90ea1aef8f06f49ec29aacb2a8b
 F src/sqliteLimit.h a17dcd3fb775d63b64a43a55c54cb282f9726f44
 F src/status.c 496913d4e8441195f6f2a75b1c95993a45b9b30b
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c e1c485fa323e3ef02e5b10fe6a016e7638013eb9
+F src/tclsqlite.c 77c5c4b8ac7b2d94ee480e1ad626fbd921d948e4
 F src/test1.c c2aa29d0fd6db7506fb7f0de7bff1386078296df
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 056093cfef69ff4227a6bdb9108564dc7f45e4bc
@@ -217,6 +220,7 @@ F src/test_rtree.c 30c981837445a4e187ee850a49c4760d9642f7c3
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c bbba05c144b5fc4b52ff650a4328027b3fa5fcc6
 F src/test_stat.c f682704b5d1ba8e1d4e7e882a6d7922e2dcf066c
+F src/test_superlock.c 714bb877e599f96a4923b5429ab36737c3166b09
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c bedd05cad673dba53326f3aa468cc803038896c0
 F src/test_vfs.c e10fcca756cafa89438311b31522ac1f95bf784b
@@ -650,6 +654,7 @@ F test/stmt.test 25d64e3dbf9a3ce89558667d7f39d966fe2a71b9
 F test/subquery.test b524f57c9574b2c0347045b4510ef795d4686796
 F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
+F test/superlock.test f9241e8738fe8d05655fd096e4c8a88ee22d8990
 F test/sync.test ded6b39d8d8ca3c0c5518516c6371b3316d3e3a3
 F test/table.test 04ba066432430657712d167ebf28080fe878d305
 F test/tableapi.test 7262a8cbaa9965d429f1cbd2747edc185fa56516
@@ -889,7 +894,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ac348ae25cb0239dc525bb473cc83cdb1b3de205
-R d259a6023fb0ad6db4b616b7c9bd726d
-U dan
-Z 699d2f3824e67293f11a7075160f739b
+P 648dd157ef3b7b790764698fd4dd7107c25212c9 570e79a8eb3bb2d2a15c46c55fbf52c9dd3e3ae8
+R 29ee6d2e4bc9e75a0c4b1469b6aa491c
+U drh
+Z 62a52f8bb2681a24e7959006560a6980
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFM5sdNoxKgR168RlERAn8IAJ4xAREF+dTwudzwR6tkh9wg+ffZegCeIyuW
+SnmYKb+i1Y56lE+LONz+l/g=
+=HICj
+-----END PGP SIGNATURE-----
