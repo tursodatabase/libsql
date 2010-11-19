@@ -20,7 +20,7 @@
 #endif
 
 #ifdef __WIN32__
-extern int access();
+extern int access(const char *path, int mode);
 #else
 #include <unistd.h>
 #endif

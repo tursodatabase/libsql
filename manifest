@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fixed\scompiler\swarning\son\sVisual\sStudio.
-D 2010-03-03T17:09:01
+C Lemon:\sPatched\sto\scompile\swith\sVisual\sStudio.
+D 2010-11-19T03:55:53
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -770,7 +770,7 @@ F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
-F tool/lemon.c 6958cb9935be265bf51dbc718ef325e3b77685b6
+F tool/lemon.c 0fd01011bf19113ee50347cd510659b9c28051a5
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkkeywordhash.c d2e6b4a5965e23afb80fbe74bb54648cd371f309
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
@@ -795,24 +795,24 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 643728003218c9841425dffb6fe506763859fd37
-R 88162007d47a23ce8840be57770bbe94
+P 83495128c820e963c70d11c3196f81d8cf01f867
+R a05e9239b70e5c9f4987302315cc55a0
 U icculus
-Z 5062e0d6c2809b73b8e0e67b25c9222f
+Z fd3f5d3e69bd2c090ed5f29ce3deb673
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG/MacGPG2 v2.0.14 (Darwin)
 
-iQIcBAEBAgAGBQJLjpetAAoJEDDcKcGyC63VEzEQAKFGgN98bElxiUheG0Y+nIug
-6LqhN/lZAznL1q4t1TgJdHBtsZnBEtEzz0qmjneq68i2WRqADJAaavoqpgwuaoo8
-U6RhPJMxO/40OUNangbj9dPFZRpkPepGWr3akOGR+0EldIcdoD6j4qRpB33Sz8BK
-lc27s2tXtv3MgOnpYaONkjiOLeGj9K6OQJ6jwQoWMSwLbF2M1iZz6q1PS6teS0qw
-awfNOBpugn3PVES47ePR2+s7/4rzL/AiAlUBmcr9B7MdIO29p5hVktKizx53OYyd
-bueKRyH1KxIOGQdo/VBKJejF1eVcz+XnICwT1rytx46EB0AI6Y/F94SYoJETdkP3
-XXgC5zzVxKVdjlHdqWbdYCKLNIfLQvUH+DJkchOO817YjEKeb36zlyNQePup+qm8
-17jxHYejWiHKvB3/tjHo2WgJasaDjyLhe4h7w2/UBx2rkKtR3W3eta/guljwnQ+C
-GexcgCzxS1QzwNB1F6+Awpu2P2fkN1l4Vmxg5aNGU6br4zntNKgTedDD7tVfUHVW
-L8uPJBH0NCMgWHRKMcWSZvLSEZTY5A5OKgpteoIKHq23bTYNEBnYIsd6Qy7sF4Ez
-3eBwLKqOIzh687Nq2OJ5mzgeuGIlrfTaaek06d3gHCmeCKCUaIwElaz2r1pn+AgT
-8Ht2heYwOrxkQbqQA0Iv
-=gus5
+iQIcBAEBAgAGBQJM5fVRAAoJEDDcKcGyC63V8+8P/0EyJzKZbAcOZsVgEQcl5+d3
+75awFenMsZs28t5+EH9Sbuq1CPaGc2yu86oHTc2fg8HH+MM/8OBsUZdXQpMLspIl
+nRiudIKlILUcV4sUD041aNktll5maZj8POe8P87PfjMorTpKGDn1iPdAE+kD+iLE
+VIgMo4K540H79GYlkqDPwnrJWI5zh9jR9pSlbvzGtLvwIgb3rKasdXjj7iYlN2QK
+o4bzAjlbBc2aqHPtmD1Yxq70G+uVnKh159c/IV2+2jFc5oZlEh+a1m2ec1v7AgRk
+VbdQnt/BvS+Yx2djrf6nIBJUpEJWSNLWKvaTiIK1xYZG/spoIBCtQQWmE04rD46p
+PgkfRUPCzXq9dABKFfXJVQl7Oq0v48JTutI/8ICdiP9iEASa6G26lBycnBbR9Blo
+G2RNICG/ZDprC0NtaRG+hPnjOvl0vjDTqTK6ybivjqIa9aZXqq7J+zTiPOmtGKy8
+8GfRn71DADFT/oy6EyzBauZIuxVCedZ5oVgMlEf6CafybH4Tar8XwcjM1YjRVeor
+Gxt1Zeb2A308gZ62hbOukiS6Yp90IyWMCGqvcr9d06DGoWr/M5Z+MVQ00qhgHHoD
+slCw9IiODPXb+2Yy+O4u9rLZmV28e5Ja4n8YdY6gl/oTC+UOcKPoz75UeFhO+eXa
+lsgjovj5g42r33ns5BuZ
+=Cs3V
 -----END PGP SIGNATURE-----
