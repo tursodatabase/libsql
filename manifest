@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Merge\sin\sthe\ssuperlock\sdemonstration\schanges.
-D 2010-11-19T18:36:45
+C Add\stests\sfor\s"PRAGMA\scheckpoint_fullfsync".
+D 2010-11-19T18:48:10
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e7a59672eaeb04408d1fa8501618d7501a3c5e39
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -830,7 +827,7 @@ F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
 F test/wal.test 70227190e713b3e7eb2a7d5ec3510b66db01f327
-F test/wal2.test c794b8b257af54190bb913678ad3984cbf3311b9
+F test/wal2.test f4ad3095da5269c89c823e7090ba2c116cdd1d63
 F test/wal3.test 957a5f2a8fe8a6ff01de1a15285ecf2f376fcaf8
 F test/wal4.test 3404b048fa5e10605facaf70384e6d2943412e30
 F test/wal_common.tcl 895d76138043b86bdccf36494054bdabcf65837b
@@ -892,14 +889,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a069867301de3ca2e1753bd4d2e426d27365be4c 1a3e7417a2184188fe21c3284e58720da9ca11cf
-R 612a5c6e6ceeba977718ef175cdd20b9
-U drh
-Z f6076b0dc8e47c984cebf6ec68cb33ea
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFM5sO/oxKgR168RlERAjMvAJ46ffI5I7vl/OKgwTBinI+EBDsO5QCeLCGK
-6NmdlpkMD1RVx2Ohr0Mr5i0=
-=Nkm+
------END PGP SIGNATURE-----
+P 570e79a8eb3bb2d2a15c46c55fbf52c9dd3e3ae8
+R a950411020f2e9a3c9e01441aa43e538
+U dan
+Z 40fbbee993478998a34279e6b6efa9ec
