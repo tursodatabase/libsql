@@ -705,6 +705,8 @@ struct sqlite3_io_methods {
 #define SQLITE_LAST_ERRNO             4
 #define SQLITE_FCNTL_SIZE_HINT        5
 #define SQLITE_FCNTL_CHUNK_SIZE       6
+#define SQLITE_FCNTL_FILE_POINTER     7
+
 
 /*
 ** CAPI3REF: Mutex Handle
@@ -5234,7 +5236,7 @@ sqlite3_mutex *sqlite3_db_mutex(sqlite3*);
 ** ^The [sqlite3_file_control()] interface makes a direct call to the
 ** xFileControl method for the [sqlite3_io_methods] object associated
 ** with a particular database identified by the second argument. ^The
-** name of the database "main" for the main database or "temp" for the
+** name of the database is "main" for the main database or "temp" for the
 ** TEMP database, or the name that appears after the AS keyword for
 ** databases that are added using the [ATTACH] SQL command.
 ** ^A NULL pointer can be used in place of "main" to refer to the
@@ -5243,6 +5245,12 @@ sqlite3_mutex *sqlite3_db_mutex(sqlite3*);
 ** are passed directly through to the second and third parameters of
 ** the xFileControl method.  ^The return value of the xFileControl
 ** method becomes the return value of this routine.
+**
+** ^The SQLITE_FCNTL_FILE_POINTER value for the op parameter causes
+** a pointer to the underlying [sqlite3_file] object to be written into
+** the space pointed to by the 4th parameter.  ^The SQLITE_FCNTL_FILE_POINTER
+** case is a short-circuit path which does not actually invoke the
+** underlying sqlite3_io_methods.xFileControl method.
 **
 ** ^If the second parameter (zDbName) does not match the name of any
 ** open database file, then SQLITE_ERROR is returned.  ^This error
