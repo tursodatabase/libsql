@@ -1394,6 +1394,7 @@ static void dynamic_triggers(int nMs){
   print_and_free_err(&err);
 }
 
+#include "tt3_checkpoint.c"
 
 int main(int argc, char **argv){
   struct ThreadTest {
@@ -1408,8 +1409,11 @@ int main(int argc, char **argv){
     { walthread5, "walthread5",  1000 },
     { walthread5, "walthread5",  1000 },
     
-    { cgt_pager_1, "cgt_pager_1", 0 },
+    { cgt_pager_1,      "cgt_pager_1", 0 },
     { dynamic_triggers, "dynamic_triggers", 20000 },
+
+    { checkpoint_starvation_1, "checkpoint_starvation_1", 10000 },
+    { checkpoint_starvation_2, "checkpoint_starvation_2", 10000 },
   };
 
   int i;

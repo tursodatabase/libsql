@@ -207,6 +207,9 @@ do_multiclient_test tn {
 #      database file, RESTART checkpoints block until readers using any part
 #      of the log file have finished.
 #
+# This test case involves running a checkpoint while there exist other 
+# processes holding all three types of locks.
+#
 foreach {tn1 checkpoint busy_on ckpt_expected expected} {
   1   PASSIVE   -   {0 5 5}   -
   2   TYPO      -   {0 5 5}   -

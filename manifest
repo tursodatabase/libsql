@@ -1,5 +1,5 @@
-C Add\sextra\stest\scases\sfor\sblocking\scheckpoints.
-D 2010-11-19T07:17:10
+C Add\sfile\stest/tt3_checkpoint.c\sthat\sadds\sa\smulti-threaded\stest\sfor\sblocking\scheckpoints\sto\sthreadtest3.
+D 2010-11-19T09:58:11
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e7a59672eaeb04408d1fa8501618d7501a3c5e39
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -99,7 +99,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk 497c8cb6ae132c88fa184e5e454b0e6336da5693
+F main.mk 2c360958d2981a394ce021a9dfc842577f7935df
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -668,7 +668,7 @@ F test/thread2.test e08034b83fe9693ade77049732518e5b3d2d700d
 F test/thread_common.tcl 2aa6f2fdcd4d6e461169c3e5ca098eebf643b863
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c ace893054fa134af3fc8d6e7cfecddb8e3acefb9
-F test/threadtest3.c d6d209190c7110f9a7e6a8154bdc3260efdbf8b7
+F test/threadtest3.c 0ed13e09690f6204d7455fac3b0e8ece490f6eef
 F test/tkt-02a8e81d44.test 58494de77be2cf249228ada3f313fa399821c6ab
 F test/tkt-26ff0c2d1e.test 888324e751512972c6e0d1a09df740d8f5aaf660
 F test/tkt-2ea2425d34.test 1cf13e6f75d149b3209a0cb32927a82d3d79fb28
@@ -794,6 +794,7 @@ F test/triggerA.test eaf11a29db2a11967d2d4b49d37f92bce598194e
 F test/triggerB.test 56780c031b454abac2340dbb3b71ac5c56c3d7fe
 F test/triggerC.test 2a23edcc00684d084902ba5ec93e721775c3a70a
 F test/triggerD.test c6add3817351451e419f6ff9e9a259b02b6e2de7
+F test/tt3_checkpoint.c 415eccce672d681b297485fc20f44cdf0eac93af
 F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
 F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
 F test/types3.test a0f66bf12f80fad89493535474f7a6d16fa58150
@@ -828,7 +829,7 @@ F test/wal.test f060cae4b2164c4375109a8f803873187234661d
 F test/wal2.test 894d55dda774340fe7bebe239bed9b6130ff23d7
 F test/wal3.test 55529a3fbf0a04670558dbf0b06f04a2f3508db4
 F test/wal4.test 3404b048fa5e10605facaf70384e6d2943412e30
-F test/wal5.test b467d39f88ce0e814a3cf381f0f6a014664d2e85
+F test/wal5.test 1f99651d856c8b9e1376781c981d1b903e93a478
 F test/wal_common.tcl a98f17fba96206122eff624db0ab13ec377be4fe
 F test/walbak.test 4df1c7369da0301caeb9a48fa45997fd592380e4
 F test/walbig.test e882bc1d014afffbfa2b6ba36e0f07d30a633ad0
@@ -888,7 +889,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 4c663a4dcc77e00558edd94f58410605b95db33a
-R d43362578e7138fb690b169b023fbca4
+P ac348ae25cb0239dc525bb473cc83cdb1b3de205
+R d259a6023fb0ad6db4b616b7c9bd726d
 U dan
-Z c818aa76c45599e0e0a501a870acd353
+Z 699d2f3824e67293f11a7075160f739b
