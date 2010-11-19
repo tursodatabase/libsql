@@ -1,5 +1,5 @@
-C Fixes\sfor\sSQLITE_BUSY\shandling\sin\sblocking\scheckpoint\scode.
-D 2010-11-18T19:28:02
+C Add\sextra\stest\scases\sfor\sblocking\scheckpoints.
+D 2010-11-19T07:17:10
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e7a59672eaeb04408d1fa8501618d7501a3c5e39
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -828,7 +828,7 @@ F test/wal.test f060cae4b2164c4375109a8f803873187234661d
 F test/wal2.test 894d55dda774340fe7bebe239bed9b6130ff23d7
 F test/wal3.test 55529a3fbf0a04670558dbf0b06f04a2f3508db4
 F test/wal4.test 3404b048fa5e10605facaf70384e6d2943412e30
-F test/wal5.test 79963972107e4cabda4c4b44a64e89c3e9af463d
+F test/wal5.test b467d39f88ce0e814a3cf381f0f6a014664d2e85
 F test/wal_common.tcl a98f17fba96206122eff624db0ab13ec377be4fe
 F test/walbak.test 4df1c7369da0301caeb9a48fa45997fd592380e4
 F test/walbig.test e882bc1d014afffbfa2b6ba36e0f07d30a633ad0
@@ -888,7 +888,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a8910e89dee326d7788b29e77820eb1e114739ca
-R a15fbbfd076e96cb91858a5a2944b7af
+P 4c663a4dcc77e00558edd94f58410605b95db33a
+R d43362578e7138fb690b169b023fbca4
 U dan
-Z 77692281a1477b941972542152e8834d
+Z c818aa76c45599e0e0a501a870acd353
