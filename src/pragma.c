@@ -172,6 +172,7 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
     { "empty_result_callbacks",   SQLITE_NullCallback  },
     { "legacy_file_format",       SQLITE_LegacyFileFmt },
     { "fullfsync",                SQLITE_FullFSync     },
+    { "checkpoint_fullfsync",     SQLITE_CkptFullFSync },
     { "reverse_unordered_selects", SQLITE_ReverseOrder  },
 #ifndef SQLITE_OMIT_AUTOMATIC_INDEX
     { "automatic_index",          SQLITE_AutoIndex     },
@@ -1503,7 +1504,8 @@ void sqlite3Pragma(
 #ifndef SQLITE_OMIT_PAGER_PRAGMAS
   if( db->autoCommit ){
     sqlite3BtreeSetSafetyLevel(pDb->pBt, pDb->safety_level,
-               (db->flags&SQLITE_FullFSync)!=0);
+               (db->flags&SQLITE_FullFSync)!=0,
+               (db->flags&SQLITE_CkptFullFSync)!=0);
   }
 #endif
 pragma_out:

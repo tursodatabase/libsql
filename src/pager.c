@@ -615,7 +615,8 @@ struct Pager {
   u8 noReadlock;              /* Do not bother to obtain readlocks */
   u8 noSync;                  /* Do not sync the journal if true */
   u8 fullSync;                /* Do extra syncs of the journal for robustness */
-  u8 sync_flags;              /* One of SYNC_NORMAL or SYNC_FULL */
+  u8 ckptSyncFlags;           /* SYNC_NORMAL or SYNC_FULL for checkpoint */
+  u8 syncFlags;               /* SYNC_NORMAL or SYNC_FULL otherwise */
   u8 tempFile;                /* zFilename is a temporary file */
   u8 readOnly;                /* True for a read-only database */
   u8 memDb;                   /* True to inhibit all file I/O */
@@ -1299,7 +1300,7 @@ static int zeroJournalHdr(Pager *pPager, int doTruncate){
       rc = sqlite3OsWrite(pPager->jfd, zeroHdr, sizeof(zeroHdr), 0);
     }
     if( rc==SQLITE_OK && !pPager->noSync ){
-      rc = sqlite3OsSync(pPager->jfd, SQLITE_SYNC_DATAONLY|pPager->sync_flags);
+      rc = sqlite3OsSync(pPager->jfd, SQLITE_SYNC_DATAONLY|pPager->syncFlags);
     }
 
     /* At this point the transaction is committed but the write lock 
@@ -2751,7 +2752,7 @@ end_playback:
   if( rc==SQLITE_OK && !pPager->noSync 
    && (pPager->eState>=PAGER_WRITER_DBMOD || pPager->eState==PAGER_OPEN)
   ){
-    rc = sqlite3OsSync(pPager->fd, pPager->sync_flags);
+    rc = sqlite3OsSync(pPager->fd, pPager->syncFlags);
   }
   if( rc==SQLITE_OK ){
     rc = pager_end_transaction(pPager, zMaster[0]!='\0');
@@ -2925,13 +2926,13 @@ static int pagerWalFrames(
   PgHdr *pList,                   /* List of frames to log */
   Pgno nTruncate,                 /* Database size after this commit */
   int isCommit,                   /* True if this is a commit */
-  int sync_flags                  /* Flags to pass to OsSync() (or 0) */
+  int syncFlags                   /* Flags to pass to OsSync() (or 0) */
 ){
   int rc;                         /* Return code */
 
   assert( pPager->pWal );
   rc = sqlite3WalFrames(pPager->pWal, 
-      pPager->pageSize, pList, nTruncate, isCommit, sync_flags
+      pPager->pageSize, pList, nTruncate, isCommit, syncFlags
   );
   if( rc==SQLITE_OK && pPager->pBackup ){
     PgHdr *p;
@@ -3261,14 +3262,49 @@ void sqlite3PagerSetCachesize(Pager *pPager, int mxPage){
 **              assurance that the journal will not be corrupted to the
 **              point of causing damage to the database during rollback.
 **
+** The above is for a rollback-journal mode.  For WAL mode, OFF continues
+** to mean that no syncs ever occur.  NORMAL means that the WAL is synced
+** prior to the start of checkpoint and that the database file is synced
+** at the conclusion of the checkpoint if the entire content of the WAL
+** was written back into the database.  But no sync operations occur for
+** an ordinary commit in NORMAL mode with WAL.  FULL means that the WAL
+** file is synced following each commit operation, in addition to the
+** syncs associated with NORMAL.
+**
+** Do not confuse synchronous=FULL with SQLITE_SYNC_FULL.  The
+** SQLITE_SYNC_FULL macro means to use the MacOSX-style full-fsync
+** using fcntl(F_FULLFSYNC).  SQLITE_SYNC_NORMAL means to do an
+** ordinary fsync() call.  There is no difference between SQLITE_SYNC_FULL
+** and SQLITE_SYNC_NORMAL on platforms other than MacOSX.  But the
+** synchronous=FULL versus synchronous=NORMAL setting determines when
+** the xSync primitive is called and is relevant to all platforms.
+**
 ** Numeric values associated with these states are OFF==1, NORMAL=2,
 ** and FULL=3.
 */
 #ifndef SQLITE_OMIT_PAGER_PRAGMAS
-void sqlite3PagerSetSafetyLevel(Pager *pPager, int level, int bFullFsync){
+void sqlite3PagerSetSafetyLevel(
+  Pager *pPager,        /* The pager to set safety level for */
+  int level,            /* PRAGMA synchronous.  1=OFF, 2=NORMAL, 3=FULL */  
+  int bFullFsync,       /* PRAGMA fullfsync */
+  int bCkptFullFsync    /* PRAGMA checkpoint_fullfsync */
+){
+  assert( level>=1 && level<=3 );
   pPager->noSync =  (level==1 || pPager->tempFile) ?1:0;
   pPager->fullSync = (level==3 && !pPager->tempFile) ?1:0;
-  pPager->sync_flags = (bFullFsync?SQLITE_SYNC_FULL:SQLITE_SYNC_NORMAL);
+  if( pPager->noSync ){
+    pPager->syncFlags = 0;
+    pPager->ckptSyncFlags = 0;
+  }else if( bFullFsync ){
+    pPager->syncFlags = SQLITE_SYNC_FULL;
+    pPager->ckptSyncFlags = SQLITE_SYNC_FULL;
+  }else if( bCkptFullFsync ){
+    pPager->syncFlags = SQLITE_SYNC_NORMAL;
+    pPager->ckptSyncFlags = SQLITE_SYNC_FULL;
+  }else{
+    pPager->syncFlags = SQLITE_SYNC_NORMAL;
+    pPager->ckptSyncFlags = SQLITE_SYNC_NORMAL;
+  }
 }
 #endif
 
@@ -3654,10 +3690,7 @@ int sqlite3PagerClose(Pager *pPager){
   /* pPager->errCode = 0; */
   pPager->exclusiveMode = 0;
 #ifndef SQLITE_OMIT_WAL
-  sqlite3WalClose(pPager->pWal,
-    (pPager->noSync ? 0 : pPager->sync_flags), 
-    pPager->pageSize, pTmp
-  );
+  sqlite3WalClose(pPager->pWal, pPager->ckptSyncFlags, pPager->pageSize, pTmp);
   pPager->pWal = 0;
 #endif
   pager_reset(pPager);
@@ -3823,7 +3856,7 @@ static int syncJournal(Pager *pPager, int newHdr){
         if( pPager->fullSync && 0==(iDc&SQLITE_IOCAP_SEQUENTIAL) ){
           PAGERTRACE(("SYNC journal of %d\n", PAGERID(pPager)));
           IOTRACE(("JSYNC %p\n", pPager))
-          rc = sqlite3OsSync(pPager->jfd, pPager->sync_flags);
+          rc = sqlite3OsSync(pPager->jfd, pPager->syncFlags);
           if( rc!=SQLITE_OK ) return rc;
         }
         IOTRACE(("JHDR %p %lld\n", pPager, pPager->journalHdr));
@@ -3835,8 +3868,8 @@ static int syncJournal(Pager *pPager, int newHdr){
       if( 0==(iDc&SQLITE_IOCAP_SEQUENTIAL) ){
         PAGERTRACE(("SYNC journal of %d\n", PAGERID(pPager)));
         IOTRACE(("JSYNC %p\n", pPager))
-        rc = sqlite3OsSync(pPager->jfd, pPager->sync_flags| 
-          (pPager->sync_flags==SQLITE_SYNC_FULL?SQLITE_SYNC_DATAONLY:0)
+        rc = sqlite3OsSync(pPager->jfd, pPager->syncFlags| 
+          (pPager->syncFlags==SQLITE_SYNC_FULL?SQLITE_SYNC_DATAONLY:0)
         );
         if( rc!=SQLITE_OK ) return rc;
       }
@@ -4426,7 +4459,8 @@ int sqlite3PagerOpen(
   assert( useJournal || pPager->tempFile );
   pPager->noSync = pPager->tempFile;
   pPager->fullSync = pPager->noSync ?0:1;
-  pPager->sync_flags = SQLITE_SYNC_NORMAL;
+  pPager->syncFlags = pPager->noSync ? 0 : SQLITE_SYNC_NORMAL;
+  pPager->ckptSyncFlags = pPager->syncFlags;
   /* pPager->pFirst = 0; */
   /* pPager->pFirstSynced = 0; */
   /* pPager->pLast = 0; */
@@ -5549,10 +5583,10 @@ static int pager_incr_changecounter(Pager *pPager, int isDirectMode){
 }
 
 /*
-** Sync the pager file to disk. This is a no-op for in-memory files
+** Sync the database file to disk. This is a no-op for in-memory databases
 ** or pages with the Pager.noSync flag set.
 **
-** If successful, or called on a pager for which it is a no-op, this
+** If successful, or if called on a pager for which it is a no-op, this
 ** function returns SQLITE_OK. Otherwise, an IO error code is returned.
 */
 int sqlite3PagerSync(Pager *pPager){
@@ -5561,7 +5595,7 @@ int sqlite3PagerSync(Pager *pPager){
   if( pPager->noSync ){
     rc = SQLITE_OK;
   }else{
-    rc = sqlite3OsSync(pPager->fd, pPager->sync_flags);
+    rc = sqlite3OsSync(pPager->fd, pPager->syncFlags);
   }
   return rc;
 }
@@ -5650,7 +5684,7 @@ int sqlite3PagerCommitPhaseOne(
       PgHdr *pList = sqlite3PcacheDirtyList(pPager->pPCache);
       if( pList ){
         rc = pagerWalFrames(pPager, pList, pPager->dbSize, 1, 
-            (pPager->fullSync ? pPager->sync_flags : 0)
+            (pPager->fullSync ? pPager->syncFlags : 0)
         );
       }
       if( rc==SQLITE_OK ){
@@ -5781,7 +5815,7 @@ int sqlite3PagerCommitPhaseOne(
   
       /* Finally, sync the database file. */
       if( !pPager->noSync && !noSync ){
-        rc = sqlite3OsSync(pPager->fd, pPager->sync_flags);
+        rc = sqlite3OsSync(pPager->fd, pPager->syncFlags);
       }
       IOTRACE(("DBSYNC %p\n", pPager))
     }
@@ -6522,10 +6556,8 @@ int sqlite3PagerCheckpoint(Pager *pPager){
   int rc = SQLITE_OK;
   if( pPager->pWal ){
     u8 *zBuf = (u8 *)pPager->pTmpSpace;
-    rc = sqlite3WalCheckpoint(pPager->pWal,
-        (pPager->noSync ? 0 : pPager->sync_flags),
-        pPager->pageSize, zBuf
-    );
+    rc = sqlite3WalCheckpoint(pPager->pWal, pPager->ckptSyncFlags,
+                              pPager->pageSize, zBuf);
   }
   return rc;
 }
@@ -6677,10 +6709,8 @@ int sqlite3PagerCloseWal(Pager *pPager){
   if( rc==SQLITE_OK && pPager->pWal ){
     rc = pagerExclusiveLock(pPager);
     if( rc==SQLITE_OK ){
-      rc = sqlite3WalClose(pPager->pWal,
-          (pPager->noSync ? 0 : pPager->sync_flags), 
-          pPager->pageSize, (u8*)pPager->pTmpSpace
-      );
+      rc = sqlite3WalClose(pPager->pWal, pPager->ckptSyncFlags,
+                           pPager->pageSize, (u8*)pPager->pTmpSpace);
       pPager->pWal = 0;
     }
   }
