@@ -20,7 +20,13 @@
 #endif
 
 #ifdef __WIN32__
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern int access(const char *path, int mode);
+#ifdef __cplusplus
+}
+#endif
 #else
 #include <unistd.h>
 #endif
