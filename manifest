@@ -1,5 +1,5 @@
-C Add\sextra\stests\sfor\stest_superlock.c.
-D 2010-11-20T10:57:45
+C Extra\stests\sfor\s"PRAGMA\scheckpoint_fullfsync".
+D 2010-11-20T12:01:35
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e7a59672eaeb04408d1fa8501618d7501a3c5e39
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -827,7 +827,7 @@ F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
 F test/wal.test 70227190e713b3e7eb2a7d5ec3510b66db01f327
-F test/wal2.test f4ad3095da5269c89c823e7090ba2c116cdd1d63
+F test/wal2.test 3de797854de175323e7351b5f2514a30d1ee1410
 F test/wal3.test 957a5f2a8fe8a6ff01de1a15285ecf2f376fcaf8
 F test/wal4.test 3404b048fa5e10605facaf70384e6d2943412e30
 F test/wal_common.tcl 895d76138043b86bdccf36494054bdabcf65837b
@@ -889,7 +889,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 765aa1b862fa38cede89bafe0e10c094e0544b7e
-R 27d92142897c9c2c878d22b56828d49b
+P 1c4e58e7211522f0e7dfddd3a2b52f1d0c5421e7
+R 4649b295d741e65ee02f98dbf236e8f0
 U dan
-Z 81c82ffdb9a719f67547d604c72658bc
+Z dd0957804bd79388ac36a7f3739f3c85

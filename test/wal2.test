@@ -19,6 +19,8 @@ source $testdir/lock_common.tcl
 source $testdir/malloc_common.tcl
 source $testdir/wal_common.tcl
 
+set testprefix wal2
+
 ifcapable !wal {finish_test ; return }
 
 proc set_tvfs_hdr {file args} {
@@ -1205,6 +1207,72 @@ foreach {tn sql reslist} {
     db close
     list $sqlite_sync_count $sqlite_fullsync_count
   } [lrange $reslist 4 5]
+}
+
+catch { db close }
+
+# PRAGMA checkpoint_fullsync
+# PRAGMA fullfsync
+# PRAGMA synchronous
+#
+foreach {tn settings commit_sync ckpt_sync} {
+  1  {0 0 off}     {0 0}  {0 0}
+  2  {0 0 normal}  {0 0}  {2 0}
+  3  {0 0 full}    {1 0}  {2 0}
+
+  4  {0 1 off}     {0 0}  {0 0}
+  5  {0 1 normal}  {0 0}  {0 2}
+  6  {0 1 full}    {0 1}  {0 2}
+
+  7  {1 0 off}     {0 0}  {0 0}
+  8  {1 0 normal}  {0 0}  {0 2}
+  9  {1 0 full}    {1 0}  {0 2}
+
+  10 {1 1 off}     {0 0}  {0 0}
+  11 {1 1 normal}  {0 0}  {0 2}
+  12 {1 1 full}    {0 1}  {0 2}
+} {
+  forcedelete test.db
+
+  testvfs tvfs -default 1
+  tvfs filter xSync
+  tvfs script xSyncCb
+  proc xSyncCb {method file fileid flags} {
+    incr ::sync($flags)
+  }
+
+  sqlite3 db test.db
+  do_execsql_test 15.$tn.1 "
+    CREATE TABLE t1(x);
+    PRAGMA journal_mode = WAL;
+    PRAGMA checkpoint_fullfsync = [lindex $settings 0];
+    PRAGMA fullfsync = [lindex $settings 1];
+    PRAGMA synchronous = [lindex $settings 2];
+  " {wal}
+
+  do_test 15.$tn.2 {
+    set sync(normal) 0
+    set sync(full) 0
+    execsql { INSERT INTO t1 VALUES('abc') }
+    list $::sync(normal) $::sync(full)
+  } $commit_sync
+
+  do_test 15.$tn.3 {
+    set sync(normal) 0
+    set sync(full) 0
+    execsql { INSERT INTO t1 VALUES('def') }
+    list $::sync(normal) $::sync(full)
+  } $commit_sync
+
+  do_test 15.$tn.4 {
+    set sync(normal) 0
+    set sync(full) 0
+    execsql { PRAGMA wal_checkpoint }
+    list $::sync(normal) $::sync(full)
+  } $ckpt_sync
+  
+  db close
+  tvfs delete
 }
 
 
