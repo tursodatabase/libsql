@@ -79,7 +79,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
 
     assert( db->init.busy );
     db->init.iDb = iDb;
-    db->init.newTnum = atoi(argv[1]);
+    db->init.newTnum = sqlite3Atoi(argv[1]);
     db->init.orphanTrigger = 0;
     TESTONLY(rcp = ) sqlite3_prepare(db, argv[2], -1, &pStmt, 0);
     rc = db->errCode;

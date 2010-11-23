@@ -5788,6 +5788,26 @@ case OP_Pagecount: {            /* out2-prerelease */
 }
 #endif
 
+
+#ifndef  SQLITE_OMIT_PAGER_PRAGMAS
+/* Opcode: MaxPgcnt P1 P2 P3 * *
+**
+** Try to set the maximum page count for database P1 to the value in P3.
+** Do not let the maximum page count fall below the current page count.
+** Store the maximum page count after the change in register P2.
+*/
+case OP_MaxPgcnt: {            /* out2-prerelease */
+  unsigned int pgcnt;
+  Btree *pBt;
+
+  pBt = db->aDb[pOp->p1].pBt;
+  pgcnt = sqlite3BtreeLastPage(pBt);
+  pOut->u.i = sqlite3BtreeMaxPageCount(pBt, pOp->p3<pgcnt ? pgcnt : pOp->p3);
+  break;
+}
+#endif
+
+
 #ifndef SQLITE_OMIT_TRACE
 /* Opcode: Trace * * * P4 *
 **

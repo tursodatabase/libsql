@@ -542,6 +542,16 @@ int sqlite3GetInt32(const char *zNum, int *pValue){
 }
 
 /*
+** Return a 32-bit integer value extracted from a string.  If the
+** string is not an integer, just return 0.
+*/
+int sqlite3Atoi(const char *z){
+  int x = 0;
+  if( z ) sqlite3GetInt32(z, &x);
+  return x;
+}
+
+/*
 ** The variable-length integer encoding is as follows:
 **
 ** KEY:
