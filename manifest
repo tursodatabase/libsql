@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C The\sprevious\scheck-in\swith\schanges\sto\sthe\smax_page_count\spragma\swas\snot\nquite\scorrect.\s\sThis\scheck-in\sfixes\sthe\sproblem.
-D 2010-11-23T20:25:09
+C Cherry-pick\sthe\slemon.c\supdates\sout\sof\sthe\slemon-update-2010\sbranch\sinto\nthe\strunk.
+D 2010-11-23T20:55:28
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e7a59672eaeb04408d1fa8501618d7501a3c5e39
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -864,7 +864,7 @@ F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
-F tool/lemon.c fe890e2d8d2db1e3f57e2a22503dbb0f6843e517
+F tool/lemon.c dfd81a51b6e27e469ba21d01a75ddf092d429027
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkkeywordhash.c d2e6b4a5965e23afb80fbe74bb54648cd371f309
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
@@ -892,14 +892,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 2031974b606ef713b5f34522b2221470d98687c5
-R d34b2457d9d1035e2a60e5eb06d21569
+P 30c26c3b13b29ce57683e91ac11641d4eb4d678f
+R 72283ec8f14296c59c33e7774336f275
 U drh
-Z fbb01e8d56a3856140a9dad516cc6382
+Z 7e739e5816a1584d8ca3b44183fb81cf
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFM7CMooxKgR168RlERArRvAJwMEwsEjVQudcr0WDhJNGbD2Xz8awCggZh7
-Kv4Hy5tb/qCjHMEPNCrNPgI=
-=AK9d
+iD8DBQFM7CpEoxKgR168RlERAlpwAKCEXdv2H49b7AUwYJOI3caaskaLhgCdGk48
+r7jQLf8ZaN8Ct1Qy/4IOIYc=
+=CyGg
 -----END PGP SIGNATURE-----
