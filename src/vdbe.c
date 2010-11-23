@@ -5793,16 +5793,22 @@ case OP_Pagecount: {            /* out2-prerelease */
 /* Opcode: MaxPgcnt P1 P2 P3 * *
 **
 ** Try to set the maximum page count for database P1 to the value in P3.
-** Do not let the maximum page count fall below the current page count.
+** Do not let the maximum page count fall below the current page count and
+** do not change the maximum page count value if P3==0.
+**
 ** Store the maximum page count after the change in register P2.
 */
 case OP_MaxPgcnt: {            /* out2-prerelease */
-  unsigned int pgcnt;
+  unsigned int newMax;
   Btree *pBt;
 
   pBt = db->aDb[pOp->p1].pBt;
-  pgcnt = sqlite3BtreeLastPage(pBt);
-  pOut->u.i = sqlite3BtreeMaxPageCount(pBt, pOp->p3<pgcnt ? pgcnt : pOp->p3);
+  newMax = 0;
+  if( pOp->p3 ){
+    newMax = sqlite3BtreeLastPage(pBt);
+    if( pOp->p3>newMax ) newMax = pOp->p3;
+  }
+  pOut->u.i = sqlite3BtreeMaxPageCount(pBt, newMax);
   break;
 }
 #endif

@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sthe\smax_page_count\spragma\sso\sthat\sit\swill\snot\sset\sto\sa\svalue\ssmaller\nthan\sthe\scurrent\sdatabase\ssize,\sas\sthe\sdocumentation\srequires.\s\sAlso,\nremove\sall\soccurances\sof\satoi()\sfrom\sthe\score.
-D 2010-11-23T18:59:28
+C The\sprevious\scheck-in\swith\schanges\sto\sthe\smax_page_count\spragma\swas\snot\nquite\scorrect.\s\sThis\scheck-in\sfixes\sthe\sproblem.
+D 2010-11-23T20:25:09
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e7a59672eaeb04408d1fa8501618d7501a3c5e39
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +165,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c 6bbb2ac121efad111c8955d03d667946c73b1b42
 F src/os_win.c 2f90f7bdec714fad51cd31b4ecad3cc1b4bb5aad
-F src/pager.c a8b36940ca8afcb45224e0017669782b3b2c90a3
+F src/pager.c c0aca5c733c15a16fe158c3215d857841a4e5381
 F src/pager.h 0ea59db2a33bc6c2c02cae34de33367e1effdf76
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 09d38c44ab275db581f7a2f6ff8b9bc7f8c0faaa
@@ -231,7 +231,7 @@ F src/update.c 227e6cd512108b84f69421fc6c7aa1b83d60d6e0
 F src/utf.c 1baeeac91707a4df97ccc6141ec0f808278af685
 F src/util.c ab1c92426494f499f42b9e307537b03e923d75c1
 F src/vacuum.c 924bd1bcee2dfb05376f79845bd3b4cec7b54b2f
-F src/vdbe.c c7e4f78c4dd263241b24d164351b8d9cdb50e3c8
+F src/vdbe.c 7aef0a9e174099a0b2d6b940ca9d3ae9833fd014
 F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
 F src/vdbeInt.h 7f4cf1b2b69bef3a432b1f23dfebef57275436b4
 F src/vdbeapi.c fb0036185b3c56e15916a5ee96309cd4acf6818f
@@ -892,14 +892,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 3df3e79b56821201b4f5ecd23f94d485745c48c3
-R d6d12a53ba894b3f7fea4dc3bcc807a0
+P 2031974b606ef713b5f34522b2221470d98687c5
+R d34b2457d9d1035e2a60e5eb06d21569
 U drh
-Z 1d6a40ca5db70d8ab4bdb6ba9632081d
+Z fbb01e8d56a3856140a9dad516cc6382
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFM7A8UoxKgR168RlERAiLFAJwN4OTIE38FGud8XoxtDlxqTpHsigCfT9xh
-qywgx7z1po++UXATymbWvhQ=
-=FWyf
+iD8DBQFM7CMooxKgR168RlERArRvAJwMEwsEjVQudcr0WDhJNGbD2Xz8awCggZh7
+Kv4Hy5tb/qCjHMEPNCrNPgI=
+=AK9d
 -----END PGP SIGNATURE-----
