@@ -41,15 +41,13 @@ do_execsql_test 1.1 {
   SELECT mit(matchinfo(t1)) FROM t1 WHERE t1 MATCH 'I';
 } {{1 1 1 2 2} {1 1 1 2 2}}
 
-# Now create an FTS4 table that does not specify matchinfo=fts3. The 
-# %_docsize table is created in this case and the array of integers returned
-# by matchinfo() includes the extra data.
+# Now create an FTS4 table that does not specify matchinfo=fts3.
 #
 do_execsql_test 1.2 {
   CREATE VIRTUAL TABLE t2 USING fts4;
   INSERT INTO t2 SELECT * FROM t1;
   SELECT mit(matchinfo(t2)) FROM t2 WHERE t2 MATCH 'I';
-} {{1 1 1 2 2 4 7 6} {1 1 1 2 2 4 7 8}}
+} {{1 1 1 2 2} {1 1 1 2 2}}
 
 # Test some syntax-error handling.
 #

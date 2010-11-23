@@ -283,6 +283,51 @@ static int fts3SqlStmt(
   return rc;
 }
 
+static int fts3SelectDocsize(
+  Fts3Table *pTab,                /* FTS3 table handle */
+  int eStmt,                      /* Either SQL_SELECT_DOCSIZE or DOCTOTAL */
+  sqlite3_int64 iDocid,           /* Docid to bind for SQL_SELECT_DOCSIZE */
+  sqlite3_stmt **ppStmt           /* OUT: Statement handle */
+){
+  sqlite3_stmt *pStmt = 0;        /* Statement requested from fts3SqlStmt() */
+  int rc;                         /* Return code */
+
+  assert( eStmt==SQL_SELECT_DOCSIZE || eStmt==SQL_SELECT_DOCTOTAL );
+
+  rc = fts3SqlStmt(pTab, eStmt, &pStmt, 0);
+  if( rc==SQLITE_OK ){
+    if( eStmt==SQL_SELECT_DOCSIZE ){
+      sqlite3_bind_int64(pStmt, 1, iDocid);
+    }
+    rc = sqlite3_step(pStmt);
+    if( rc!=SQLITE_ROW ){
+      rc = sqlite3_reset(pStmt);
+      if( rc==SQLITE_OK ) rc = SQLITE_CORRUPT;
+      pStmt = 0;
+    }else{
+      rc = SQLITE_OK;
+    }
+  }
+
+  *ppStmt = pStmt;
+  return rc;
+}
+
+int sqlite3Fts3SelectDoctotal(
+  Fts3Table *pTab,                /* Fts3 table handle */
+  sqlite3_stmt **ppStmt           /* OUT: Statement handle */
+){
+  return fts3SelectDocsize(pTab, SQL_SELECT_DOCTOTAL, 0, ppStmt);
+}
+
+int sqlite3Fts3SelectDocsize(
+  Fts3Table *pTab,                /* Fts3 table handle */
+  sqlite3_int64 iDocid,           /* Docid to read size data for */
+  sqlite3_stmt **ppStmt           /* OUT: Statement handle */
+){
+  return fts3SelectDocsize(pTab, SQL_SELECT_DOCSIZE, iDocid, ppStmt);
+}
+
 /*
 ** Similar to fts3SqlStmt(). Except, after binding the parameters in
 ** array apVal[] to the SQL statement identified by eStmt, the statement

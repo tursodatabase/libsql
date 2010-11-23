@@ -17,6 +17,22 @@
 #include <string.h>
 #include <assert.h>
 
+/*
+** Characters that may appear in the second argument to matchinfo().
+*/
+#define FTS3_MATCHINFO_NPHRASE   'p'        /* 1 value */
+#define FTS3_MATCHINFO_NCOL      'c'        /* 1 value */
+#define FTS3_MATCHINFO_NDOC      'n'        /* 1 value */
+#define FTS3_MATCHINFO_AVGLENGTH 'a'        /* nCol values */
+#define FTS3_MATCHINFO_LENGTH    'l'        /* nCol values */
+#define FTS3_MATCHINFO_LCS       's'        /* nCol values */
+#define FTS3_MATCHINFO_HITS      'x'        /* 3*nCol*nPhrase values */
+
+/*
+** The default value for the second argument to matchinfo(). 
+*/
+#define FTS3_MATCHINFO_DEFAULT   "pcx"
+
 
 /*
 ** Used as an fts3ExprIterate() context when loading phrase doclists to
@@ -70,6 +86,8 @@ typedef struct MatchInfo MatchInfo;
 struct MatchInfo {
   Fts3Cursor *pCursor;            /* FTS3 Cursor */
   int nCol;                       /* Number of columns in table */
+  int nPhrase;                    /* Number of matchable phrases in query */
+  sqlite3_int64 nDoc;             /* Number of docs in database */
   u32 *aMatchinfo;                /* Pre-allocated buffer */
 };
 
@@ -783,10 +801,26 @@ static void fts3LoadColumnlistCounts(char **pp, u32 *aOut, int isGlobal){
 
 /*
 ** fts3ExprIterate() callback used to collect the "global" matchinfo stats
-** for a single query. The "global" stats are those elements of the matchinfo
-** array that are constant for all rows returned by the current query.
+** for a single query. 
+**
+** fts3ExprIterate() callback to load the 'global' elements of a
+** FTS3_MATCHINFO_HITS matchinfo array. The global stats are those elements 
+** of the matchinfo array that are constant for all rows returned by the 
+** current query.
+**
+** Argument pCtx is actually a pointer to a struct of type MatchInfo. This
+** function populates Matchinfo.aMatchinfo[] as follows:
+**
+**   for(iCol=0; iCol<nCol; iCol++){
+**     aMatchinfo[3*iPhrase*nCol + 3*iCol + 1] = X;
+**     aMatchinfo[3*iPhrase*nCol + 3*iCol + 2] = Y;
+**   }
+**
+** where X is the number of matches for phrase iPhrase is column iCol of all
+** rows of the table. Y is the number of rows for which column iCol contains
+** at least one instance of phrase iPhrase.
 */
-static int fts3ExprGlobalMatchinfoCb(
+static int fts3ExprGlobalHitsCb(
   Fts3Expr *pExpr,                /* Phrase expression node */
   int iPhrase,                    /* Phrase number (numbered from zero) */
   void *pCtx                      /* Pointer to MatchInfo structure */
@@ -796,7 +830,7 @@ static int fts3ExprGlobalMatchinfoCb(
   char *pIter;
   char *pEnd;
   char *pFree = 0;
-  const int iStart = 2 + (iPhrase * p->nCol * 3) + 1;
+  u32 *aOut = &p->aMatchinfo[3*iPhrase*p->nCol];
 
   assert( pExpr->isLoaded );
   assert( pExpr->eType==FTSQUERY_PHRASE );
@@ -814,10 +848,10 @@ static int fts3ExprGlobalMatchinfoCb(
       pIter = pFree;
       pEnd = &pFree[nFree];
     }else{
-      int nDoc = p->aMatchinfo[2 + 3*p->nCol*p->aMatchinfo[0]];
-      for(ii=0; ii<p->nCol; ii++){
-        p->aMatchinfo[iStart + ii*3] = nDoc;
-        p->aMatchinfo[iStart + ii*3 + 1] = nDoc;
+      int iCol;                   /* Column index */
+      for(iCol=0; iCol<p->nCol; iCol++){
+        aOut[iCol*3 + 1] = (u32)p->nDoc;
+        aOut[iCol*3 + 2] = (u32)p->nDoc;
       }
       return SQLITE_OK;
     }
@@ -829,7 +863,7 @@ static int fts3ExprGlobalMatchinfoCb(
   /* Fill in the global hit count matrix row for this phrase. */
   while( pIter<pEnd ){
     while( *pIter++ & 0x80 );      /* Skip past docid. */
-    fts3LoadColumnlistCounts(&pIter, &p->aMatchinfo[iStart], 1);
+    fts3LoadColumnlistCounts(&pIter, &aOut[1], 1);
   }
 
   sqlite3_free(pFree);
@@ -837,11 +871,11 @@ static int fts3ExprGlobalMatchinfoCb(
 }
 
 /*
-** fts3ExprIterate() callback used to collect the "local" matchinfo stats
-** for a single query. The "local" stats are those elements of the matchinfo
+** fts3ExprIterate() callback used to collect the "local" part of the
+** FTS3_MATCHINFO_HITS array. The local stats are those elements of the 
 ** array that are different for each row returned by the query.
 */
-static int fts3ExprLocalMatchinfoCb(
+static int fts3ExprLocalHitsCb(
   Fts3Expr *pExpr,                /* Phrase expression node */
   int iPhrase,                    /* Phrase number */
   void *pCtx                      /* Pointer to MatchInfo structure */
@@ -850,7 +884,7 @@ static int fts3ExprLocalMatchinfoCb(
 
   if( pExpr->aDoclist ){
     char *pCsr;
-    int iStart = 2 + (iPhrase * p->nCol * 3);
+    int iStart = iPhrase * p->nCol * 3;
     int i;
 
     for(i=0; i<p->nCol; i++) p->aMatchinfo[iStart+i*3] = 0;
@@ -864,66 +898,230 @@ static int fts3ExprLocalMatchinfoCb(
   return SQLITE_OK;
 }
 
+static int fts3MatchinfoCheck(
+  Fts3Table *pTab, 
+  char cArg,
+  char **pzErr
+){
+  if( cArg==FTS3_MATCHINFO_NPHRASE
+   || cArg==FTS3_MATCHINFO_NCOL
+   || cArg==FTS3_MATCHINFO_NDOC && pTab->bHasStat
+   || cArg==FTS3_MATCHINFO_AVGLENGTH && pTab->bHasStat
+   || cArg==FTS3_MATCHINFO_LENGTH && pTab->bHasDocsize
+   || cArg==FTS3_MATCHINFO_LCS
+   || cArg==FTS3_MATCHINFO_HITS
+  ){
+    return SQLITE_OK;
+  }
+  *pzErr = sqlite3_mprintf("unrecognized matchinfo request: %c", cArg);
+  return SQLITE_ERROR;
+}
+
+static int fts3MatchinfoSize(MatchInfo *pInfo, char cArg){
+  int nVal;                       /* Number of integers output by cArg */
+
+  switch( cArg ){
+    case FTS3_MATCHINFO_NDOC:
+    case FTS3_MATCHINFO_NPHRASE: 
+    case FTS3_MATCHINFO_NCOL: 
+      nVal = 1;
+      break;
+
+    case FTS3_MATCHINFO_AVGLENGTH:
+    case FTS3_MATCHINFO_LENGTH:
+    case FTS3_MATCHINFO_LCS:
+      nVal = pInfo->nCol;
+      break;
+
+    case FTS3_MATCHINFO_HITS:
+      nVal = pInfo->nCol * pInfo->nPhrase * 3;
+      break;
+  }
+
+  return nVal;
+}
+
+static int fts3MatchinfoSelectDoctotal(
+  Fts3Table *pTab,
+  sqlite3_stmt **ppStmt,
+  sqlite3_int64 *pnDoc,
+  const char **paLen
+){
+  sqlite3_stmt *pStmt;
+  const char *a;
+  sqlite3_int64 nDoc;
+
+  if( !*ppStmt ){
+    int rc = sqlite3Fts3SelectDoctotal(pTab, ppStmt);
+    if( rc!=SQLITE_OK ) return rc;
+  }
+  pStmt = *ppStmt;
+
+  a = sqlite3_column_blob(pStmt, 0);
+  a += sqlite3Fts3GetVarint(a, &nDoc);
+  *pnDoc = (u32)nDoc;
+
+  if( paLen ) *paLen = a;
+  return SQLITE_OK;
+}
+  
+
+static int fts3MatchinfoValues(
+  Fts3Cursor *pCsr,               /* FTS3 cursor object */
+  int bGlobal,                    /* True to grab the global stats */
+  MatchInfo *pInfo,               /* Matchinfo context object */
+  const char *zArg                /* Matchinfo format string */
+){
+  int rc = SQLITE_OK;
+  int i;
+  Fts3Table *pTab = (Fts3Table *)pCsr->base.pVtab;
+
+  sqlite3_stmt *pSelect = 0;
+
+  for(i=0; zArg[i]; i++){
+
+    switch( zArg[i] ){
+      case FTS3_MATCHINFO_NPHRASE: 
+        if( bGlobal ) pInfo->aMatchinfo[0] = pInfo->nPhrase;
+        break;
+
+      case FTS3_MATCHINFO_NCOL: 
+        if( bGlobal ) pInfo->aMatchinfo[0] = pInfo->nCol;
+        break;
+        
+      case FTS3_MATCHINFO_NDOC:
+        if( bGlobal ){
+          sqlite3_int64 nDoc;
+          rc = fts3MatchinfoSelectDoctotal(pTab, &pSelect, &nDoc, 0);
+          pInfo->aMatchinfo[0] = (u32)nDoc;
+        }
+        break;
+
+      case FTS3_MATCHINFO_AVGLENGTH: 
+        if( bGlobal ){
+          sqlite3_int64 nDoc;     /* Number of rows in table */
+          const char *a;          /* Aggregate column length array */
+
+          rc = fts3MatchinfoSelectDoctotal(pTab, &pSelect, &nDoc, &a);
+          if( rc==SQLITE_OK ){
+            int iCol;
+            for(iCol=0; iCol<pInfo->nCol; iCol++){
+              sqlite3_int64 nToken;
+              a += sqlite3Fts3GetVarint(a, &nToken);
+              pInfo->aMatchinfo[iCol] = ((u32)(nToken&0xffffffff)+nDoc/2)/nDoc;
+            }
+          }
+        }
+        break;
+
+      case FTS3_MATCHINFO_LENGTH: {
+        sqlite3_stmt *pSelectDocsize = 0;
+        rc = sqlite3Fts3SelectDocsize(pTab, pCsr->iPrevId, &pSelectDocsize);
+        if( rc==SQLITE_OK ){
+          int iCol;
+          const char *a = sqlite3_column_blob(pSelectDocsize, 0);
+          for(iCol=0; iCol<pInfo->nCol; iCol++){
+            sqlite3_int64 nToken;
+            a += sqlite3Fts3GetVarint(a, &nToken);
+            pInfo->aMatchinfo[iCol] = (u32)nToken;
+          }
+        }
+        sqlite3_reset(pSelectDocsize);
+        break;
+      }
+
+      case FTS3_MATCHINFO_HITS: {
+        Fts3Expr *pExpr = pCsr->pExpr;
+        if( bGlobal ){
+          if( pCsr->pDeferred ){
+            rc = fts3MatchinfoSelectDoctotal(pTab, &pSelect, &pInfo->nDoc, 0);
+          }
+          (void)fts3ExprIterate(pExpr, fts3ExprGlobalHitsCb,(void*)pInfo);
+        }
+        (void)fts3ExprIterate(pExpr, fts3ExprLocalHitsCb,(void*)pInfo);
+        break;
+      }
+
+
+      default: 
+        assert( zArg[i]==FTS3_MATCHINFO_LCS );
+    }
+
+    pInfo->aMatchinfo += fts3MatchinfoSize(pInfo, zArg[i]);
+  }
+
+  sqlite3_reset(pSelect);
+  return rc;
+}
+
+
 /*
 ** Populate pCsr->aMatchinfo[] with data for the current row. The 
 ** 'matchinfo' data is an array of 32-bit unsigned integers (C type u32).
 */
-static int fts3GetMatchinfo(Fts3Cursor *pCsr){
+static int fts3GetMatchinfo(
+  Fts3Cursor *pCsr,               /* FTS3 Cursor object */
+  const char *zArg                /* Second argument to matchinfo() function */
+){
   MatchInfo sInfo;
   Fts3Table *pTab = (Fts3Table *)pCsr->base.pVtab;
   int rc = SQLITE_OK;
+  int bGlobal = 0;                /* Collect 'global' stats as well as local */
 
+  memset(&sInfo, 0, sizeof(MatchInfo));
   sInfo.pCursor = pCsr;
   sInfo.nCol = pTab->nColumn;
 
+  /* If there is cached matchinfo() data, but the format string for the 
+  ** cache does not match the format string for this request, discard 
+  ** the cached data. */
+  if( pCsr->zMatchinfo && strcmp(pCsr->zMatchinfo, zArg) ){
+    assert( pCsr->aMatchinfo );
+    sqlite3_free(pCsr->aMatchinfo);
+    pCsr->zMatchinfo = 0;
+    pCsr->aMatchinfo = 0;
+  }
+
+  /* If Fts3Cursor.aMatchinfo[] is NULL, then this is the first time the
+  ** matchinfo function has been called for this query. In this case 
+  ** allocate the array used to accumulate the matchinfo data and
+  ** initialize those elements that are constant for every row.
+  */
   if( pCsr->aMatchinfo==0 ){
-    /* If Fts3Cursor.aMatchinfo[] is NULL, then this is the first time the
-    ** matchinfo function has been called for this query. In this case 
-    ** allocate the array used to accumulate the matchinfo data and
-    ** initialize those elements that are constant for every row.
-    */
-    int nPhrase;                  /* Number of phrases */
-    int nMatchinfo;               /* Number of u32 elements in match-info */
+    int nMatchinfo = 0;           /* Number of u32 elements in match-info */
+    int nArg;                     /* Bytes in zArg */
+    int i;                        /* Used to iterate through zArg */
 
     /* Load doclists for each phrase in the query. */
-    rc = fts3ExprLoadDoclists(pCsr, &nPhrase, 0);
-    if( rc!=SQLITE_OK ){
-      return rc;
-    }
-    nMatchinfo = 2 + 3*sInfo.nCol*nPhrase;
-    if( pTab->bHasDocsize ){
-      nMatchinfo += 1 + 2*pTab->nColumn;
+    rc = fts3ExprLoadDoclists(pCsr, &pCsr->nPhrase, 0);
+    if( rc!=SQLITE_OK ) return rc;
+    sInfo.nPhrase = pCsr->nPhrase;
+
+    for(i=0; zArg[i]; i++){
+      nMatchinfo += fts3MatchinfoSize(&sInfo, zArg[i]);
     }
 
-    sInfo.aMatchinfo = (u32 *)sqlite3_malloc(sizeof(u32)*nMatchinfo);
-    if( !sInfo.aMatchinfo ){ 
-      return SQLITE_NOMEM;
-    }
-    memset(sInfo.aMatchinfo, 0, sizeof(u32)*nMatchinfo);
+    /* Allocate space for Fts3Cursor.aMatchinfo[] and Fts3Cursor.zMatchinfo. */
+    nArg = strlen(zArg);
+    pCsr->aMatchinfo = (u32 *)sqlite3_malloc(sizeof(u32)*nMatchinfo + nArg + 1);
+    if( !pCsr->aMatchinfo ) return SQLITE_NOMEM;
 
-    /* First element of match-info is the number of phrases in the query */
-    sInfo.aMatchinfo[0] = nPhrase;
-    sInfo.aMatchinfo[1] = sInfo.nCol;
-    if( pTab->bHasDocsize ){
-      int ofst = 2 + 3*sInfo.aMatchinfo[0]*sInfo.aMatchinfo[1];
-      rc = sqlite3Fts3MatchinfoDocsizeGlobal(pCsr, &sInfo.aMatchinfo[ofst]);
-    }
-    (void)fts3ExprIterate(pCsr->pExpr, fts3ExprGlobalMatchinfoCb,(void*)&sInfo);
-    pCsr->aMatchinfo = sInfo.aMatchinfo;
+    pCsr->zMatchinfo = (char *)&pCsr->aMatchinfo[nMatchinfo];
+    pCsr->nMatchinfo = nMatchinfo;
+    memcpy(pCsr->zMatchinfo, zArg, nArg+1);
+    memset(pCsr->aMatchinfo, 0, sizeof(u32)*nMatchinfo);
     pCsr->isMatchinfoNeeded = 1;
+    bGlobal = 1;
   }
 
   sInfo.aMatchinfo = pCsr->aMatchinfo;
+  sInfo.nPhrase = pCsr->nPhrase;
   if( rc==SQLITE_OK && pCsr->isMatchinfoNeeded ){
-    (void)fts3ExprIterate(pCsr->pExpr, fts3ExprLocalMatchinfoCb, (void*)&sInfo);
-    if( pTab->bHasDocsize ){
-      int ofst = 2 + 3*sInfo.aMatchinfo[0]*sInfo.aMatchinfo[1];
-      rc = sqlite3Fts3MatchinfoDocsizeLocal(pCsr, &sInfo.aMatchinfo[ofst]);
-    }
+    rc = fts3MatchinfoValues(pCsr, bGlobal, &sInfo, zArg);
     pCsr->isMatchinfoNeeded = 0;
   }
 
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
@@ -1211,22 +1409,43 @@ void sqlite3Fts3Offsets(
 /*
 ** Implementation of matchinfo() function.
 */
-void sqlite3Fts3Matchinfo(sqlite3_context *pContext, Fts3Cursor *pCsr){
+void sqlite3Fts3Matchinfo(
+  sqlite3_context *pContext,      /* Function call context */
+  Fts3Cursor *pCsr,               /* FTS3 table cursor */
+  const char *zArg                /* Second arg to matchinfo() function */
+){
+  Fts3Table *pTab = (Fts3Table *)pCsr->base.pVtab;
   int rc;
+  int i;
+  const char *zFormat;
+
+  if( zArg ){
+    for(i=0; zArg[i]; i++){
+      char *zErr = 0;
+      if( fts3MatchinfoCheck(pTab, zArg[i], &zErr) ){
+        sqlite3_result_error(pContext, zErr, -1);
+        sqlite3_free(zErr);
+        return;
+      }
+    }
+    zFormat = zArg;
+  }else{
+    zFormat = FTS3_MATCHINFO_DEFAULT;
+  }
+
   if( !pCsr->pExpr ){
     sqlite3_result_blob(pContext, "", 0, SQLITE_STATIC);
     return;
   }
-  rc = fts3GetMatchinfo(pCsr);
-  sqlite3Fts3SegmentsClose((Fts3Table *)pCsr->base.pVtab );
+
+  /* Retrieve matchinfo() data. */
+  rc = fts3GetMatchinfo(pCsr, zFormat);
+  sqlite3Fts3SegmentsClose(pTab);
+
   if( rc!=SQLITE_OK ){
     sqlite3_result_error_code(pContext, rc);
   }else{
-    Fts3Table *pTab = (Fts3Table*)pCsr->base.pVtab;
-    int n = sizeof(u32)*(2+pCsr->aMatchinfo[0]*pCsr->aMatchinfo[1]*3);
-    if( pTab->bHasDocsize ){
-      n += sizeof(u32)*(1 + 2*pTab->nColumn);
-    }
+    int n = pCsr->nMatchinfo * sizeof(u32);
     sqlite3_result_blob(pContext, pCsr->aMatchinfo, n, SQLITE_TRANSIENT);
   }
 }
