@@ -2255,8 +2255,8 @@ static int fts3PhraseSelect(
   for(ii=0; ii<pPhrase->nToken; ii++){
     Fts3PhraseToken *pTok;        /* Token to find doclist for */
     int iTok;                     /* The token being queried this iteration */
-    char *pList;                  /* Pointer to token doclist */
-    int nList;                    /* Size of buffer at pList */
+    char *pList = 0;              /* Pointer to token doclist */
+    int nList = 0;                /* Size of buffer at pList */
 
     /* Select a token to process. If this is an xFilter() call, then tokens 
     ** are processed in order from least to most costly. Otherwise, tokens 
@@ -3275,7 +3275,10 @@ static void fts3MatchinfoFunc(
   Fts3Cursor *pCsr;               /* Cursor handle passed through apVal[0] */
   assert( nVal==1 || nVal==2 );
   if( SQLITE_OK==fts3FunctionArg(pContext, "matchinfo", apVal[0], &pCsr) ){
-    const char *zArg = (nVal>1 ? sqlite3_value_text(apVal[1]) : 0);
+    const char *zArg = 0;
+    if( nVal>1 ){
+      zArg = (const char *)sqlite3_value_text(apVal[1]);
+    }
     sqlite3Fts3Matchinfo(pContext, pCsr, zArg);
   }
 }

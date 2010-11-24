@@ -819,6 +819,12 @@ static void fts3LoadColumnlistCounts(char **pp, u32 *aOut, int isGlobal){
 ** where X is the number of matches for phrase iPhrase is column iCol of all
 ** rows of the table. Y is the number of rows for which column iCol contains
 ** at least one instance of phrase iPhrase.
+**
+** If the phrase pExpr consists entirely of deferred tokens, then all X and
+** Y values are set to nDoc, where nDoc is the number of documents in the 
+** file system. This is done because the full-text index doclist is required
+** to calculate these values properly, and the full-text index doclist is
+** not available for deferred tokens.
 */
 static int fts3ExprGlobalHitsCb(
   Fts3Expr *pExpr,                /* Phrase expression node */
@@ -903,13 +909,13 @@ static int fts3MatchinfoCheck(
   char cArg,
   char **pzErr
 ){
-  if( cArg==FTS3_MATCHINFO_NPHRASE
-   || cArg==FTS3_MATCHINFO_NCOL
-   || cArg==FTS3_MATCHINFO_NDOC && pTab->bHasStat
-   || cArg==FTS3_MATCHINFO_AVGLENGTH && pTab->bHasStat
-   || cArg==FTS3_MATCHINFO_LENGTH && pTab->bHasDocsize
-   || cArg==FTS3_MATCHINFO_LCS
-   || cArg==FTS3_MATCHINFO_HITS
+  if( (cArg==FTS3_MATCHINFO_NPHRASE)
+   || (cArg==FTS3_MATCHINFO_NCOL)
+   || (cArg==FTS3_MATCHINFO_NDOC && pTab->bHasStat)
+   || (cArg==FTS3_MATCHINFO_AVGLENGTH && pTab->bHasStat)
+   || (cArg==FTS3_MATCHINFO_LENGTH && pTab->bHasDocsize)
+   || (cArg==FTS3_MATCHINFO_LCS)
+   || (cArg==FTS3_MATCHINFO_HITS)
   ){
     return SQLITE_OK;
   }
@@ -1182,7 +1188,7 @@ void sqlite3Fts3Snippet(
       ** columns of the FTS3 table. Otherwise, only column iCol is considered.
       */
       for(iRead=0; iRead<pTab->nColumn; iRead++){
-        SnippetFragment sF;
+        SnippetFragment sF = {0, 0, 0, 0};
         int iS;
         if( iCol>=0 && iRead!=iCol ) continue;
 

@@ -291,8 +291,6 @@ int sqlite3Fts3SegReaderIterate(
 );
 int sqlite3Fts3SegReaderCost(Fts3Cursor *, Fts3SegReader *, int *);
 int sqlite3Fts3AllSegdirs(Fts3Table*, sqlite3_stmt **);
-int sqlite3Fts3MatchinfoDocsizeLocal(Fts3Cursor*, u32*);
-int sqlite3Fts3MatchinfoDocsizeGlobal(Fts3Cursor*, u32*);
 int sqlite3Fts3ReadLock(Fts3Table *);
 int sqlite3Fts3ReadBlock(Fts3Table*, sqlite3_int64, char **, int*);
 
