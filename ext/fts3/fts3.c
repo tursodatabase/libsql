@@ -2298,8 +2298,9 @@ static int fts3PhraseSelect(
     if( pCsr->eEvalmode==FTS3_EVAL_NEXT && pTok->pDeferred ){
       rc = fts3DeferredTermSelect(pTok->pDeferred, isTermPos, &nList, &pList);
     }else{
-      assert( pTok->pArray );
-      rc = fts3TermSelect(p, pTok, iCol, isTermPos, &nList, &pList);
+      if( pTok->pArray ){
+        rc = fts3TermSelect(p, pTok, iCol, isTermPos, &nList, &pList);
+      }
       pTok->bFulltext = 1;
     }
     assert( rc!=SQLITE_OK || pCsr->eEvalmode || pTok->pArray==0 );
@@ -2527,7 +2528,10 @@ static int fts3ExprCost(Fts3Expr *pExpr){
     int ii;
     nCost = 0;
     for(ii=0; ii<pPhrase->nToken; ii++){
-      nCost += pPhrase->aToken[ii].pArray->nCost;
+      Fts3SegReaderArray *pArray = pPhrase->aToken[ii].pArray;
+      if( pArray ){
+        nCost += pPhrase->aToken[ii].pArray->nCost;
+      }
     }
   }else{
     nCost = fts3ExprCost(pExpr->pLeft) + fts3ExprCost(pExpr->pRight);
@@ -2555,7 +2559,7 @@ static void fts3ExprAssignCosts(
     fts3ExprAssignCosts(pExpr->pRight, ppExprCost);
   }else{
     (*ppExprCost)->pExpr = pExpr;
-    (*ppExprCost)->nCost = fts3ExprCost(pExpr);;
+    (*ppExprCost)->nCost = fts3ExprCost(pExpr);
     (*ppExprCost)++;
   }
 }
