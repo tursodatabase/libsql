@@ -181,6 +181,7 @@ do_execsql_test 4.1.0 {
   INSERT INTO t4 VALUES('a b c d e', 'f g h i j');
   INSERT INTO t4 VALUES('f g h i j', 'a b c d e');
 }
+
 do_matchinfo_test 4.1.1 t4 {t4 MATCH 'a b c'} {
   p {3 3}
   c {2 2}
@@ -192,8 +193,12 @@ do_matchinfo_test 4.1.1 t4 {t4 MATCH 'a b c'} {
   l {{5 5} {5 5}}
   a {{5 5} {5 5}}
 
+  s {{3 0} {0 3}}
+
   xxxxxxxxxxxxxxxxxx - pcx - xpc - ccc - pppxpcpcx - laxnpc -
+  xpxsscplax -
 }
+
 do_matchinfo_test 4.1.2 t4 {t4 MATCH '"g h i"'} {
   p {1 1}
   c {2 2}
@@ -205,8 +210,53 @@ do_matchinfo_test 4.1.2 t4 {t4 MATCH '"g h i"'} {
   l {{5 5} {5 5}}
   a {{5 5} {5 5}}
 
+  s {{0 1} {1 0}}
+
   xxxxxxxxxxxxxxxxxx - pcx - xpc - ccc - pppxpcpcx - laxnpc -
+  sxsxs -
 }
+
+do_matchinfo_test 4.1.3 t4 {t4 MATCH 'a b'}     { s {{2 0} {0 2}} }
+do_matchinfo_test 4.1.4 t4 {t4 MATCH '"a b" c'} { s {{2 0} {0 2}} }
+do_matchinfo_test 4.1.5 t4 {t4 MATCH 'a "b c"'} { s {{2 0} {0 2}} }
+do_matchinfo_test 4.1.6 t4 {t4 MATCH 'd d'}     { s {{1 0} {0 1}} }
+
+do_execsql_test 4.2.0 {
+  CREATE VIRTUAL TABLE t5 USING fts4;
+  INSERT INTO t5 VALUES('a a a a a');
+  INSERT INTO t5 VALUES('a b a b a');
+  INSERT INTO t5 VALUES('c b c b c');
+}
+do_matchinfo_test 4.2.1 t5 {t5 MATCH 'a a'}         { s {2 1} }
+do_matchinfo_test 4.2.2 t5 {t5 MATCH 'a b'}         { s {2} }
+do_matchinfo_test 4.2.3 t5 {t5 MATCH 'a b a'}       { s {3} }
+do_matchinfo_test 4.2.4 t5 {t5 MATCH 'a a a'}       { s {3 1} }
+do_matchinfo_test 4.2.5 t5 {t5 MATCH '"a b" "a b"'} { s {2} }
+do_matchinfo_test 4.2.6 t5 {t5 MATCH 'a OR b'}      { s {1 2 1} }
+
+do_execsql_test 4.3.0 "INSERT INTO t5 VALUES('x y [string repeat {b } 50000]')";
+do_execsql_test 4.3.0 "INSERT INTO t5 VALUES('x y [string repeat {x } 50000]')";
+
+#do_matchinfo_test 4.3.1 t5 {t5 MATCH 'a a'}         { s {2 1} }
+#do_matchinfo_test 4.3.2 t5 {t5 MATCH 'a b'}         { s {2} }
+#do_matchinfo_test 4.3.3 t5 {t5 MATCH 'a b a'}       { s {3} }
+#do_matchinfo_test 4.3.4 t5 {t5 MATCH 'a a a'}       { s {3 1} }
+#do_matchinfo_test 4.3.5 t5 {t5 MATCH '"a b" "a b"'} { s {2} }
+#do_matchinfo_test 4.3.6 t5 {t5 MATCH 'a OR b'}      { s {1 2 1 1} }
+#
+#do_execsql_test 4.4.0 {
+#  UPDATE t5_segments 
+#  SET block = zeroblob(length(block)) 
+#  WHERE length(block)>10000;
+#}
+#
+#do_matchinfo_test 4.4.1 t5 {t5 MATCH 'a a'}         { s {2 1} }
+#do_matchinfo_test 4.4.2 t5 {t5 MATCH 'a b'}         { s {2} }
+#do_matchinfo_test 4.4.3 t5 {t5 MATCH 'a b a'}       { s {3} }
+#do_matchinfo_test 4.4.4 t5 {t5 MATCH 'a a a'}       { s {3 1} }
+#do_matchinfo_test 4.4.5 t5 {t5 MATCH '"a b" "a b"'} { s {2} }
+#do_matchinfo_test 4.4.6 t5 {t5 MATCH 'a OR b'}      { s {1 2 1 1} }
 
 
 finish_test
+

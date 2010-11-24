@@ -328,6 +328,9 @@ int sqlite3Fts3SelectDocsize(
   return fts3SelectDocsize(pTab, SQL_SELECT_DOCSIZE, iDocid, ppStmt);
 }
 
+void sqlite3Fts3MatchinfoLcs(Fts3Expr *pExpr, u32 *aOut){
+}
+
 /*
 ** Similar to fts3SqlStmt(). Except, after binding the parameters in
 ** array apVal[] to the SQL statement identified by eStmt, the statement

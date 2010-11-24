@@ -970,7 +970,123 @@ static int fts3MatchinfoSelectDoctotal(
   if( paLen ) *paLen = a;
   return SQLITE_OK;
 }
+
+typedef struct LcsIterator LcsIterator;
+struct LcsIterator {
+  Fts3Expr *pExpr;                /* Pointer to phrase expression */
+  char *pRead;                    /* Cursor used to iterate through aDoclist */
+  int iPosOffset;                 /* Tokens count up to end of this phrase */
+  int iCol;                       /* Current column number */
+  int iPos;                       /* Current position */
+};
+
+#define LCS_ITERATOR_FINISHED 0x7FFFFFFF;
+
+static int fts3MatchinfoLcsCb(
+  Fts3Expr *pExpr,                /* Phrase expression node */
+  int iPhrase,                    /* Phrase number (numbered from zero) */
+  void *pCtx                      /* Pointer to MatchInfo structure */
+){
+  LcsIterator *aIter = (LcsIterator *)pCtx;
+  aIter[iPhrase].pExpr = pExpr;
+  return SQLITE_OK;
+}
+
+static int fts3LcsIteratorAdvance(LcsIterator *pIter){
+  char *pRead = pIter->pRead;
+  sqlite3_int64 iRead;
+  int rc = 0;
+
+  pRead += sqlite3Fts3GetVarint(pRead, &iRead);
+  if( iRead==0 ){
+    pIter->iCol = LCS_ITERATOR_FINISHED;
+    rc = 1;
+  }else{
+    if( iRead==1 ){
+      pRead += sqlite3Fts3GetVarint(pRead, &iRead);
+      pIter->iCol = iRead;
+      pIter->iPos = pIter->iPosOffset;
+      pRead += sqlite3Fts3GetVarint(pRead, &iRead);
+      rc = 1;
+    }
+    pIter->iPos += (iRead-2);
+  }
+
+  pIter->pRead = pRead;
+  return rc;
+}
   
+static int fts3MatchinfoLcs(Fts3Cursor *pCsr, MatchInfo *pInfo){
+  LcsIterator *aIter;
+  int i;
+  int iCol;
+  int nToken = 0;
+
+  /* Allocate and populate the array of LcsIterator objects. The array
+  ** contains one element for each matchable phrase in the query.
+  **/
+  aIter = sqlite3_malloc(sizeof(LcsIterator) * pCsr->nPhrase);
+  if( !aIter ) return SQLITE_NOMEM;
+  memset(aIter, 0, sizeof(LcsIterator) * pCsr->nPhrase);
+  (void)fts3ExprIterate(pCsr->pExpr, fts3MatchinfoLcsCb, (void*)aIter);
+
+  for(i=0; i<pInfo->nPhrase; i++){
+    LcsIterator *pIter = &aIter[i];
+    nToken -= pIter->pExpr->pPhrase->nToken;
+    pIter->iPosOffset = nToken;
+    pIter->pRead = sqlite3Fts3FindPositions(pIter->pExpr, pCsr->iPrevId, -1);
+    if( pIter->pRead ){
+      pIter->iPos = pIter->iPosOffset;
+      fts3LcsIteratorAdvance(&aIter[i]);
+    }else{
+      pIter->iCol = LCS_ITERATOR_FINISHED;
+    }
+  }
+
+  for(iCol=0; iCol<pInfo->nCol; iCol++){
+    int nLcs = 0;
+    int nLive = 0;
+
+    for(i=0; i<pInfo->nPhrase; i++){
+      assert( aIter[i].iCol>=iCol );
+      if( aIter[i].iCol==iCol ) nLive++;
+    }
+
+    while( nLive>0 ){
+      LcsIterator *pAdv = 0;
+      int nThisLcs = 0;
+      char *aRead;
+      sqlite3_int64 iRead;
+
+      for(i=0; i<pInfo->nPhrase; i++){
+        LcsIterator *pIter = &aIter[i];
+        int nToken = pIter->pExpr->pPhrase->nToken;
+
+        if( iCol!=pIter->iCol ){  
+          nThisLcs = 0;
+          continue;
+        }
+
+        if( pAdv==0 || pIter->iPos<pAdv->iPos ){
+          pAdv = pIter;
+        }
+
+        if( nThisLcs==0 || pIter->iPos==pIter[-1].iPos ){
+          nThisLcs++;
+        }else{
+          nThisLcs = 1;
+        }
+
+        if( nThisLcs>nLcs ) nLcs = nThisLcs;
+      }
+      if( fts3LcsIteratorAdvance(pAdv) ) nLive--;
+    }
+
+    pInfo->aMatchinfo[iCol] = nLcs;
+  }
+
+  sqlite3_free(aIter);
+}
 
 static int fts3MatchinfoValues(
   Fts3Cursor *pCsr,               /* FTS3 cursor object */
@@ -1048,9 +1164,12 @@ static int fts3MatchinfoValues(
         break;
       }
 
+      case FTS3_MATCHINFO_LCS:
+        fts3MatchinfoLcs(pCsr, pInfo);
+        break;
 
-      default: 
-        assert( zArg[i]==FTS3_MATCHINFO_LCS );
+      default:
+        assert( !"this cannot happen" );
     }
 
     pInfo->aMatchinfo += fts3MatchinfoSize(pInfo, zArg[i]);

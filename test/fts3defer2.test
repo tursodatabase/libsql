@@ -91,6 +91,7 @@ foreach {tn sql} {
   }
 } {
   execsql $sql
+
   do_execsql_test 2.2.$tn {
     SELECT mit(matchinfo(t2, 'pcxnal')) FROM t2 WHERE t2 MATCH 'a b';
   } [list                                          \
