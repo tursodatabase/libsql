@@ -1154,18 +1154,24 @@ static int fts3MatchinfoValues(
 
       case FTS3_MATCHINFO_HITS: {
         Fts3Expr *pExpr = pCsr->pExpr;
-        if( bGlobal ){
-          if( pCsr->pDeferred ){
-            rc = fts3MatchinfoSelectDoctotal(pTab, &pSelect, &pInfo->nDoc, 0);
+        rc = fts3ExprLoadDoclists(pCsr, 0, 0);
+        if( rc==SQLITE_OK ){
+          if( bGlobal ){
+            if( pCsr->pDeferred ){
+              rc = fts3MatchinfoSelectDoctotal(pTab, &pSelect, &pInfo->nDoc, 0);
+            }
+            (void)fts3ExprIterate(pExpr, fts3ExprGlobalHitsCb,(void*)pInfo);
           }
-          (void)fts3ExprIterate(pExpr, fts3ExprGlobalHitsCb,(void*)pInfo);
+          (void)fts3ExprIterate(pExpr, fts3ExprLocalHitsCb,(void*)pInfo);
         }
-        (void)fts3ExprIterate(pExpr, fts3ExprLocalHitsCb,(void*)pInfo);
         break;
       }
 
       case FTS3_MATCHINFO_LCS:
-        fts3MatchinfoLcs(pCsr, pInfo);
+        rc = fts3ExprLoadDoclists(pCsr, 0, 0);
+        if( rc==SQLITE_OK ){
+          fts3MatchinfoLcs(pCsr, pInfo);
+        }
         break;
 
       default:
