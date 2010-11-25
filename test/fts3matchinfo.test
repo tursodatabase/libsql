@@ -265,6 +265,57 @@ do_matchinfo_test 4.4.3 t5 {t5 MATCH 'a b a'}       { s {3} }
 do_matchinfo_test 4.4.4 t5 {t5 MATCH 'a a a'}       { s {3 1} }
 do_matchinfo_test 4.4.5 t5 {t5 MATCH '"a b" "a b"'} { s {2} }
 
+do_execsql_test 4.5.0 {
+  CREATE VIRTUAL TABLE t6 USING fts4(a, b, c);
+  INSERT INTO t6 VALUES('a', 'b', 'c');
+}
+do_matchinfo_test 4.5.1 t6 {t6 MATCH 'a b c'}       { s {{1 1 1}} }
+
+
+#-------------------------------------------------------------------------
+# Check the following restrictions:
+#
+#   + Matchinfo flags 'a', 'l' and 'n' can only be used with fts4, not fts3.
+#   + Matchinfo flag 'l' cannot be used with matchinfo=fts3.
+#
+do_execsql_test 5.1 {
+  CREATE VIRTUAL TABLE t7 USING fts3(a, b);
+  INSERT INTO t7 VALUES('u v w', 'x y z');
+
+  CREATE VIRTUAL TABLE t8 USING fts4(a, b, matchinfo=fts3);
+  INSERT INTO t8 VALUES('u v w', 'x y z');
+}
+
+do_catchsql_test 5.2.1 { 
+  SELECT matchinfo(t7, 'a') FROM t7 WHERE t7 MATCH 'x y'
+} {1 {unrecognized matchinfo request: a}}
+do_catchsql_test 5.2.2 { 
+  SELECT matchinfo(t7, 'l') FROM t7 WHERE t7 MATCH 'x y'
+} {1 {unrecognized matchinfo request: l}}
+do_catchsql_test 5.2.3 { 
+  SELECT matchinfo(t7, 'n') FROM t7 WHERE t7 MATCH 'x y'
+} {1 {unrecognized matchinfo request: n}}
+
+do_catchsql_test 5.3.1 { 
+  SELECT matchinfo(t8, 'l') FROM t8 WHERE t8 MATCH 'x y'
+} {1 {unrecognized matchinfo request: l}}
+
+#-------------------------------------------------------------------------
+# Test that the offsets() function handles corruption in the %_content
+# table correctly.
+#
+do_execsql_test 6.1 {
+  CREATE VIRTUAL TABLE t9 USING fts4;
+  INSERT INTO t9 VALUES(
+    'this record is used to try to dectect corruption'
+  );
+  SELECT offsets(t9) FROM t9 WHERE t9 MATCH 'to';
+} {{0 0 20 2 0 0 27 2}}
+
+do_catchsql_test 6.2 {
+  UPDATE t9_content SET c0content = 'this record is used to'; 
+  SELECT offsets(t9) FROM t9 WHERE t9 MATCH 'to';
+} {1 {database disk image is malformed}}
 
 finish_test
 

@@ -18,6 +18,8 @@ set ::testprefix fts3fault
 # If SQLITE_ENABLE_FTS3 is not defined, omit this file.
 ifcapable !fts3 { finish_test ; return }
 
+if 1 {
+
 # Test error handling in the sqlite3Fts3Init() function. This is the 
 # function that registers the FTS3 module and various support functions
 # with SQLite.
@@ -153,6 +155,79 @@ do_faultsim_test 7.3 -prep {
 } -test {
   faultsim_test_result {1 {unrecognized parameter: matchnfo=fts3}} \
                        {1 {vtable constructor failed: t1}}
+}
+
+}
+
+proc mit {blob} {
+  set scan(littleEndian) i*
+  set scan(bigEndian) I*
+  binary scan $blob $scan($::tcl_platform(byteOrder)) r
+  return $r
+}
+
+do_test 8.0 {
+  faultsim_delete_and_reopen
+  execsql { CREATE VIRTUAL TABLE t8 USING fts4 }
+  execsql "INSERT INTO t8 VALUES('a b c')"
+  execsql "INSERT INTO t8 VALUES('b b b')"
+  execsql "INSERT INTO t8 VALUES('[string repeat {c } 50000]')"
+  execsql "INSERT INTO t8 VALUES('d d d')"
+  execsql "INSERT INTO t8 VALUES('e e e')"
+  execsql "INSERT INTO t8(t8) VALUES('optimize')"
+  faultsim_save_and_close
+} {}
+
+do_faultsim_test 8.1 -prep { 
+  faultsim_restore_and_reopen
+  db func mit mit
+} -body {
+  execsql { SELECT mit(matchinfo(t8, 'x')) FROM t8 WHERE t8 MATCH 'a b c' }
+} -test {
+  faultsim_test_result {0 {{1 1 1 1 4 2 1 5 5}}}
+}
+do_faultsim_test 8.2 -faults oom-t* -prep { 
+  faultsim_restore_and_reopen
+  db func mit mit
+} -body {
+  execsql { SELECT mit(matchinfo(t8, 's')) FROM t8 WHERE t8 MATCH 'a b c' }
+} -test {
+  faultsim_test_result {0 3}
+}
+do_faultsim_test 8.3 -prep { 
+  faultsim_restore_and_reopen
+  db func mit mit
+} -body {
+  execsql { SELECT mit(matchinfo(t8, 'a')) FROM t8 WHERE t8 MATCH 'a b c' }
+} -test {
+  faultsim_test_result {0 10002}
+}
+do_faultsim_test 8.4 -prep { 
+  faultsim_restore_and_reopen
+  db func mit mit
+} -body {
+  execsql { SELECT mit(matchinfo(t8, 'l')) FROM t8 WHERE t8 MATCH 'a b c' }
+} -test {
+  faultsim_test_result {0 3}
+}
+
+do_test 9.0 {
+  faultsim_delete_and_reopen
+  execsql {
+    CREATE VIRTUAL TABLE t9 USING fts4(tokenize=porter);
+    INSERT INTO t9 VALUES(
+      'this record is used toooooooooooooooooooooooooooooooooooooo try to'
+    );
+    SELECT offsets(t9) FROM t9 WHERE t9 MATCH 'to*';
+  }
+  faultsim_save_and_close
+} {}
+do_faultsim_test 9.1 -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { SELECT offsets(t9) FROM t9 WHERE t9 MATCH 'to*' }
+} -test {
+  faultsim_test_result {0 {{0 0 20 39 0 0 64 2}}}
 }
 
 finish_test
