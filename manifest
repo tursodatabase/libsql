@@ -1,5 +1,8 @@
-C Fix\san\suninitialized\svariable\sin\sfts3.c.
-D 2010-11-26T16:31:44
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Fix\svarious\scompiler\swarnings.
+D 2010-11-26T16:49:59
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4547616ad2286053af6ccccefa242dc925e49bf0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -61,26 +64,26 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 7fda91bbe8d6e4a84bed15c38c1e5768347c3609
+F ext/fts3/fts3.c bae65cf771cd2c1dbcc972b064f770737cdbfca4
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 52c818623c60943bc4ac4a22d77b2e8f28395e78
-F ext/fts3/fts3_expr.c ee48b9278b8b2432a05a03320fbcacba151dbaa5
+F ext/fts3/fts3Int.h a6c69c1c5e2c8c19172ddff42d262c087dcd7337
+F ext/fts3/fts3_expr.c f1cd71e78f73c99341d979619c14cac8b5c4f56f
 F ext/fts3/fts3_hash.c 3c8f6387a4a7f5305588b203fa7c887d753e1f1c
 F ext/fts3/fts3_hash.h 8331fb2206c609f9fc4c4735b9ab5ad6137c88ec
 F ext/fts3/fts3_icu.c ac494aed69835008185299315403044664bda295
-F ext/fts3/fts3_porter.c 8df6f6efcc4e9e31f8bf73a4007c2e9abca1dfba
-F ext/fts3/fts3_snippet.c e8a952d5de28950c91bbfed3d75b77ae2c3977ce
-F ext/fts3/fts3_tokenizer.c 1301b0ee3ef414caae3257a702215925cc48cd9c
+F ext/fts3/fts3_porter.c d61cfd81fb0fd8fbcb25adcaee0ba671aefaa5c2
+F ext/fts3/fts3_snippet.c 1d827175e9bf3ae58d608a43ce2a7ac89d5bbe0c
+F ext/fts3/fts3_tokenizer.c 055f3dc7369585350b28db1ee0f3b214dca6724d
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 6e5cbaa588924ac578263a598e4fb9f5c9bb179d
-F ext/fts3/fts3_write.c b4e5b4c74f755a6f494dab9c131ad9bb04bab50c
+F ext/fts3/fts3_write.c 9d254e1baf4ed7ebebef8dbf1ec21cbdb611d1f6
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c 850e9a36567bbcce6bd85a4b68243cad8e3c2de2
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 1a15546893b4c05df810ebc18d3bf910ac8ca601
+F ext/rtree/rtree.c e1a2d0fd4b38200bf09d417e4c9400f62c981391
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test dbd4250ac0ad367a262eb9676f7e3080b0368206
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -228,7 +231,7 @@ F src/update.c 227e6cd512108b84f69421fc6c7aa1b83d60d6e0
 F src/utf.c 1baeeac91707a4df97ccc6141ec0f808278af685
 F src/util.c ab1c92426494f499f42b9e307537b03e923d75c1
 F src/vacuum.c 924bd1bcee2dfb05376f79845bd3b4cec7b54b2f
-F src/vdbe.c 7aef0a9e174099a0b2d6b940ca9d3ae9833fd014
+F src/vdbe.c 21a9285fedf2e310ffc4bad27b828645dc2b20bb
 F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
 F src/vdbeInt.h 7f4cf1b2b69bef3a432b1f23dfebef57275436b4
 F src/vdbeapi.c fb0036185b3c56e15916a5ee96309cd4acf6818f
@@ -889,7 +892,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 7d660b91b748126c499285713bd0237530a1a601
-R bf3c79b7317123c38edff4a337096bab
-U dan
-Z e6c80a7ed69438f59cf0d2cdb47a5fa6
+P 3c3d076b42da36cd5413749ec022d0349325edfa
+R 6eb1d3796cc6e7f30b85a46219b5a41c
+U drh
+Z dad7028ef2a2e95ebd4d4284381d5339
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFM7+U6oxKgR168RlERArCCAJ9Ms95IkrYzcyhjnhaA4kTfC+owCwCdG6XU
+6RTdcghjuTo4XsP3zh0JwEk=
+=o/S3
+-----END PGP SIGNATURE-----

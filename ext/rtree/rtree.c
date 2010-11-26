@@ -113,6 +113,12 @@ typedef unsigned char u8;
 typedef unsigned int u32;
 #endif
 
+/*  The following macro is used to suppress compiler warnings.
+*/
+#ifndef UNUSED_PARAMETER
+# define UNUSED_PARAMETER(x) (void)(x)
+#endif
+
 typedef struct Rtree Rtree;
 typedef struct RtreeCursor RtreeCursor;
 typedef struct RtreeNode RtreeNode;
@@ -1194,7 +1200,7 @@ static int deserializeGeometry(sqlite3_value *pValue, RtreeConstraint *pCons){
 
   /* Check that the blob is roughly the right size. */
   nBlob = sqlite3_value_bytes(pValue);
-  if( nBlob<sizeof(RtreeMatchArg) 
+  if( nBlob<(int)sizeof(RtreeMatchArg) 
    || ((nBlob-sizeof(RtreeMatchArg))%sizeof(double))!=0
   ){
     return SQLITE_ERROR;
@@ -1209,7 +1215,7 @@ static int deserializeGeometry(sqlite3_value *pValue, RtreeConstraint *pCons){
 
   memcpy(p, sqlite3_value_blob(pValue), nBlob);
   if( p->magic!=RTREE_GEOMETRY_MAGIC 
-   || nBlob!=(sizeof(RtreeMatchArg) + (p->nParam-1)*sizeof(double))
+   || nBlob!=(int)(sizeof(RtreeMatchArg) + (p->nParam-1)*sizeof(double))
   ){
     sqlite3_free(pGeom);
     return SQLITE_ERROR;
@@ -1355,6 +1361,7 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   int iIdx = 0;
   char zIdxStr[RTREE_MAX_DIMENSIONS*8+1];
   memset(zIdxStr, 0, sizeof(zIdxStr));
+  UNUSED_PARAMETER(tab);
 
   assert( pIdxInfo->idxStr==0 );
   for(ii=0; ii<pIdxInfo->nConstraint; ii++){
@@ -1528,6 +1535,7 @@ static float cellOverlap(
     if( ii!=iExclude )
 #else
     assert( iExclude==-1 );
+    UNUSED_PARAMETER(iExclude);
 #endif
     {
       int jj;
@@ -3114,6 +3122,7 @@ static void rtreenode(sqlite3_context *ctx, int nArg, sqlite3_value **apArg){
   Rtree tree;
   int ii;
 
+  UNUSED_PARAMETER(nArg);
   memset(&node, 0, sizeof(RtreeNode));
   memset(&tree, 0, sizeof(Rtree));
   tree.nDim = sqlite3_value_int(apArg[0]);
@@ -3147,6 +3156,7 @@ static void rtreenode(sqlite3_context *ctx, int nArg, sqlite3_value **apArg){
 }
 
 static void rtreedepth(sqlite3_context *ctx, int nArg, sqlite3_value **apArg){
+  UNUSED_PARAMETER(nArg);
   if( sqlite3_value_type(apArg[0])!=SQLITE_BLOB 
    || sqlite3_value_bytes(apArg[0])<2
   ){
@@ -3168,7 +3178,6 @@ int sqlite3RtreeInit(sqlite3 *db){
 
   rc = sqlite3_create_function(db, "rtreenode", 2, utf8, 0, rtreenode, 0, 0);
   if( rc==SQLITE_OK ){
-    int utf8 = SQLITE_UTF8;
     rc = sqlite3_create_function(db, "rtreedepth", 1, utf8, 0,rtreedepth, 0, 0);
   }
   if( rc==SQLITE_OK ){

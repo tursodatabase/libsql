@@ -1022,7 +1022,6 @@ static int fts3CursorSeek(sqlite3_context *pContext, Fts3Cursor *pCsr){
 ** If an OOM error occurs, SQLITE_NOMEM is returned. Otherwise, SQLITE_OK.
 */
 static int fts3ScanInteriorNode(
-  Fts3Table *p,                   /* Virtual table handle */
   const char *zTerm,              /* Term to select leaves for */
   int nTerm,                      /* Size of term zTerm in bytes */
   const char *zNode,              /* Buffer containing segment interior node */
@@ -1157,7 +1156,7 @@ static int fts3SelectLeaf(
   assert( piLeaf || piLeaf2 );
 
   sqlite3Fts3GetVarint32(zNode, &iHeight);
-  rc = fts3ScanInteriorNode(p, zTerm, nTerm, zNode, nNode, piLeaf, piLeaf2);
+  rc = fts3ScanInteriorNode(zTerm, nTerm, zNode, nNode, piLeaf, piLeaf2);
   assert( !piLeaf2 || !piLeaf || rc!=SQLITE_OK || (*piLeaf<=*piLeaf2) );
 
   if( rc==SQLITE_OK && iHeight>1 ){
@@ -1956,7 +1955,7 @@ static void fts3SegReaderArrayFree(Fts3SegReaderArray *pArray){
   if( pArray ){
     int i;
     for(i=0; i<pArray->nSegment; i++){
-      sqlite3Fts3SegReaderFree(0, pArray->apSegment[i]);
+      sqlite3Fts3SegReaderFree(pArray->apSegment[i]);
     }
     sqlite3_free(pArray);
   }
@@ -1974,7 +1973,7 @@ static int fts3SegReaderArrayAdd(
         sizeof(Fts3SegReaderArray) + (nNew-1) * sizeof(Fts3SegReader*)
     );
     if( !pArray ){
-      sqlite3Fts3SegReaderFree(0, pNew);
+      sqlite3Fts3SegReaderFree(pNew);
       return SQLITE_NOMEM;
     }
     if( nNew==16 ){
@@ -2027,14 +2026,14 @@ static int fts3TermSegReaderArray(
       ** leaf). Do not bother inspecting any data in this case, just
       ** create a Fts3SegReader to scan the single leaf. 
       */
-      rc = sqlite3Fts3SegReaderNew(p, iAge, 0, 0, 0, zRoot, nRoot, &pNew);
+      rc = sqlite3Fts3SegReaderNew(iAge, 0, 0, 0, zRoot, nRoot, &pNew);
     }else{
       sqlite3_int64 i1;           /* First leaf that may contain zTerm */
       sqlite3_int64 i2;           /* Final leaf that may contain zTerm */
       rc = fts3SelectLeaf(p, zTerm, nTerm, zRoot, nRoot, &i1, (isPrefix?&i2:0));
       if( isPrefix==0 ) i2 = i1;
       if( rc==SQLITE_OK ){
-        rc = sqlite3Fts3SegReaderNew(p, iAge, i1, i2, 0, 0, 0, &pNew);
+        rc = sqlite3Fts3SegReaderNew(iAge, i1, i2, 0, 0, 0, &pNew);
       }
     }
     assert( (pNew==0)==(rc!=SQLITE_OK) );

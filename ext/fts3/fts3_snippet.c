@@ -291,6 +291,8 @@ static int fts3ExprLoadDoclists(
 
 static int fts3ExprPhraseCountCb(Fts3Expr *pExpr, int iPhrase, void *ctx){
   (*(int *)ctx)++;
+  UNUSED_PARAMETER(pExpr);
+  UNUSED_PARAMETER(iPhrase);
   return SQLITE_OK;
 }
 static int fts3ExprPhraseCount(Fts3Expr *pExpr){
@@ -1214,8 +1216,9 @@ static int fts3MatchinfoValues(
         break;
 
       default: {
+        Fts3Expr *pExpr;
         assert( zArg[i]==FTS3_MATCHINFO_HITS );
-        Fts3Expr *pExpr = pCsr->pExpr;
+        pExpr = pCsr->pExpr;
         rc = fts3ExprLoadDoclists(pCsr, 0, 0);
         if( rc!=SQLITE_OK ) break;
         if( bGlobal ){

@@ -5806,7 +5806,7 @@ case OP_MaxPgcnt: {            /* out2-prerelease */
   newMax = 0;
   if( pOp->p3 ){
     newMax = sqlite3BtreeLastPage(pBt);
-    if( pOp->p3>newMax ) newMax = pOp->p3;
+    if( newMax < (unsigned)pOp->p3 ) newMax = (unsigned)pOp->p3;
   }
   pOut->u.i = sqlite3BtreeMaxPageCount(pBt, newMax);
   break;

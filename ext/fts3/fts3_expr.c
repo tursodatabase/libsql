@@ -405,7 +405,6 @@ static int getNextNode(
   if( sqlite3_fts3_enable_parentheses ){
     if( *zInput=='(' ){
       int nConsumed;
-      int rc;
       pParse->nNest++;
       rc = fts3ExprParse(pParse, &zInput[1], nInput-1, ppExpr, &nConsumed);
       if( rc==SQLITE_OK && !*ppExpr ){

@@ -328,9 +328,6 @@ int sqlite3Fts3SelectDocsize(
   return fts3SelectDocsize(pTab, SQL_SELECT_DOCSIZE, iDocid, ppStmt);
 }
 
-void sqlite3Fts3MatchinfoLcs(Fts3Expr *pExpr, u32 *aOut){
-}
-
 /*
 ** Similar to fts3SqlStmt(). Except, after binding the parameters in
 ** array apVal[] to the SQL statement identified by eStmt, the statement
@@ -1147,7 +1144,7 @@ int sqlite3Fts3SegReaderCost(
 ** Free all allocations associated with the iterator passed as the 
 ** second argument.
 */
-void sqlite3Fts3SegReaderFree(Fts3Table *p, Fts3SegReader *pReader){
+void sqlite3Fts3SegReaderFree(Fts3SegReader *pReader){
   if( pReader && !fts3SegReaderIsPending(pReader) ){
     sqlite3_free(pReader->zTerm);
     if( !fts3SegReaderIsRootOnly(pReader) ){
@@ -1161,7 +1158,6 @@ void sqlite3Fts3SegReaderFree(Fts3Table *p, Fts3SegReader *pReader){
 ** Allocate a new SegReader object.
 */
 int sqlite3Fts3SegReaderNew(
-  Fts3Table *p,                   /* Virtual table handle */
   int iAge,                       /* Segment "age". */
   sqlite3_int64 iStartLeaf,       /* First leaf to traverse */
   sqlite3_int64 iEndLeaf,         /* Final leaf to traverse */
@@ -1202,7 +1198,7 @@ int sqlite3Fts3SegReaderNew(
   if( rc==SQLITE_OK ){
     *ppReader = pReader;
   }else{
-    sqlite3Fts3SegReaderFree(p, pReader);
+    sqlite3Fts3SegReaderFree(pReader);
   }
   return rc;
 }
@@ -1325,12 +1321,11 @@ int sqlite3Fts3SegReaderPending(
 ** code is returned.
 */
 static int fts3SegReaderNew(
-  Fts3Table *p,                   /* Virtual table handle */
   sqlite3_stmt *pStmt,            /* See above */
   int iAge,                       /* Segment "age". */
   Fts3SegReader **ppReader        /* OUT: Allocated Fts3SegReader */
 ){
-  return sqlite3Fts3SegReaderNew(p, iAge, 
+  return sqlite3Fts3SegReaderNew(iAge, 
       sqlite3_column_int64(pStmt, 1),
       sqlite3_column_int64(pStmt, 2),
       sqlite3_column_int64(pStmt, 3),
@@ -2361,7 +2356,7 @@ static int fts3SegmentMerge(Fts3Table *p, int iLevel){
   if( rc!=SQLITE_OK ) goto finished;
   sqlite3_bind_int(pStmt, 1, iLevel);
   for(i=0; SQLITE_ROW==(sqlite3_step(pStmt)); i++){
-    rc = fts3SegReaderNew(p, pStmt, i, &apSegment[i]);
+    rc = fts3SegReaderNew(pStmt, i, &apSegment[i]);
     if( rc!=SQLITE_OK ){
       goto finished;
     }
@@ -2391,11 +2386,11 @@ static int fts3SegmentMerge(Fts3Table *p, int iLevel){
   fts3SegWriterFree(pWriter);
   if( apSegment ){
     for(i=0; i<nSegment; i++){
-      sqlite3Fts3SegReaderFree(p, apSegment[i]);
+      sqlite3Fts3SegReaderFree(apSegment[i]);
     }
     sqlite3_free(apSegment);
   }
-  sqlite3Fts3SegReaderFree(p, pPending);
+  sqlite3Fts3SegReaderFree(pPending);
   sqlite3_reset(pStmt);
   return rc;
 }
@@ -2448,7 +2443,7 @@ int sqlite3Fts3PendingTermsFlush(Fts3Table *p){
     rc = fts3SegWriterFlush(p, pWriter, 0, idx);
   }
   fts3SegWriterFree(pWriter);
-  sqlite3Fts3SegReaderFree(p, pReader);
+  sqlite3Fts3SegReaderFree(pReader);
 
   if( rc==SQLITE_OK ){
     sqlite3Fts3PendingTermsClear(p);
