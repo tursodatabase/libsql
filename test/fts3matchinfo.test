@@ -317,5 +317,26 @@ do_catchsql_test 6.2 {
   SELECT offsets(t9) FROM t9 WHERE t9 MATCH 'to';
 } {1 {database disk image is malformed}}
 
+#-------------------------------------------------------------------------
+# Test the outcome of matchinfo() when used within a query that does not
+# use the full-text index (i.e. lookup by rowid or full-table scan).
+#
+do_execsql_test 7.1 {
+  CREATE VIRTUAL TABLE t10 USING fts4;
+  INSERT INTO t10 VALUES('first record');
+  INSERT INTO t10 VALUES('second record');
+}
+do_execsql_test 7.2 {
+  SELECT typeof(matchinfo(t10)), length(matchinfo(t10)) FROM t10;
+} {blob 0 blob 0}
+do_execsql_test 7.3 {
+  SELECT typeof(matchinfo(t10)), length(matchinfo(t10)) FROM t10 WHERE docid=1;
+} {blob 0}
+do_execsql_test 7.4 {
+  SELECT typeof(matchinfo(t10)), length(matchinfo(t10)) 
+  FROM t10 WHERE t10 MATCH 'record'
+} {blob 20 blob 20}
+
+
 finish_test
 

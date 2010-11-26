@@ -2254,7 +2254,7 @@ static int fts3PhraseSelect(
 
   for(ii=0; ii<pPhrase->nToken; ii++){
     Fts3PhraseToken *pTok;        /* Token to find doclist for */
-    int iTok;                     /* The token being queried this iteration */
+    int iTok = 0;                 /* The token being queried this iteration */
     char *pList = 0;              /* Pointer to token doclist */
     int nList = 0;                /* Size of buffer at pList */
 
