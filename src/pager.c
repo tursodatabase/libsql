@@ -3483,9 +3483,8 @@ int sqlite3PagerMaxPageCount(Pager *pPager, int mxPage){
   if( mxPage>0 ){
     pPager->mxPgno = mxPage;
   }
-  if( pPager->eState!=PAGER_OPEN && pPager->mxPgno<pPager->dbSize ){
-    pPager->mxPgno = pPager->dbSize;
-  }
+  assert( pPager->eState!=PAGER_OPEN );      /* Called only by OP_MaxPgcnt */
+  assert( pPager->mxPgno>=pPager->dbSize );  /* OP_MaxPgcnt enforces this */
   return pPager->mxPgno;
 }
 

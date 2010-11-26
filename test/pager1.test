@@ -1062,7 +1062,7 @@ do_execsql_test pager1-6.8 {
 } {11}
 do_execsql_test pager1-6.9 { COMMIT } {}
 
-do_execsql_test pager1-6.10 { PRAGMA max_page_count = 10 } {10}
+do_execsql_test pager1-6.10 { PRAGMA max_page_count = 10 } {11}
 do_execsql_test pager1-6.11 { SELECT * FROM t11 }          {1 2 3 4}
 do_execsql_test pager1-6.12 { PRAGMA max_page_count }      {11}
 
