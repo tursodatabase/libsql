@@ -982,6 +982,12 @@ static int fts3MatchinfoSelectDoctotal(
   return SQLITE_OK;
 }
 
+/*
+** An instance of the following structure is used to store state while 
+** iterating through a multi-column position-list corresponding to the
+** hits for a single phrase on a single row in order to calculate the
+** values for a matchinfo() FTS3_MATCHINFO_LCS request.
+*/
 typedef struct LcsIterator LcsIterator;
 struct LcsIterator {
   Fts3Expr *pExpr;                /* Pointer to phrase expression */
@@ -991,6 +997,10 @@ struct LcsIterator {
   int iPos;                       /* Current position */
 };
 
+/* 
+** If LcsIterator.iCol is set to the following value, the iterator has
+** finished iterating through all offsets for all columns.
+*/
 #define LCS_ITERATOR_FINISHED 0x7FFFFFFF;
 
 static int fts3MatchinfoLcsCb(
@@ -1003,6 +1013,11 @@ static int fts3MatchinfoLcsCb(
   return SQLITE_OK;
 }
 
+/*
+** Advance the iterator passed as an argument to the next position. Return
+** 1 if the iterator is at EOF or if it now points to the start of the
+** position list for the next column.
+*/
 static int fts3LcsIteratorAdvance(LcsIterator *pIter){
   char *pRead = pIter->pRead;
   sqlite3_int64 iRead;
@@ -1027,6 +1042,17 @@ static int fts3LcsIteratorAdvance(LcsIterator *pIter){
   return rc;
 }
   
+/*
+** This function implements the FTS3_MATCHINFO_LCS matchinfo() flag. 
+**
+** If the call is successful, the longest-common-substring lengths for each
+** column are written into the first nCol elements of the pInfo->aMatchinfo[] 
+** array before returning. SQLITE_OK is returned in this case.
+**
+** Otherwise, if an error occurs, an SQLite error code is returned and the
+** data written to the first nCol elements of pInfo->aMatchinfo[] is 
+** undefined.
+*/
 static int fts3MatchinfoLcs(Fts3Cursor *pCsr, MatchInfo *pInfo){
   LcsIterator *aIter;
   int i;
@@ -1040,7 +1066,6 @@ static int fts3MatchinfoLcs(Fts3Cursor *pCsr, MatchInfo *pInfo){
   if( !aIter ) return SQLITE_NOMEM;
   memset(aIter, 0, sizeof(LcsIterator) * pCsr->nPhrase);
   (void)fts3ExprIterate(pCsr->pExpr, fts3MatchinfoLcsCb, (void*)aIter);
-
   for(i=0; i<pInfo->nPhrase; i++){
     LcsIterator *pIter = &aIter[i];
     nToken -= pIter->pExpr->pPhrase->nToken;
@@ -1055,37 +1080,41 @@ static int fts3MatchinfoLcs(Fts3Cursor *pCsr, MatchInfo *pInfo){
   }
 
   for(iCol=0; iCol<pInfo->nCol; iCol++){
-    int nLcs = 0;
-    int nLive = 0;
+    int nLcs = 0;                 /* LCS value for this column */
+    int nLive = 0;                /* Number of iterators in aIter not at EOF */
 
+    /* Loop through the iterators in aIter[]. Set nLive to the number of
+    ** iterators that point to a position-list corresponding to column iCol.
+    */
     for(i=0; i<pInfo->nPhrase; i++){
       assert( aIter[i].iCol>=iCol );
       if( aIter[i].iCol==iCol ) nLive++;
     }
 
+    /* The following loop runs until all iterators in aIter[] have finished
+    ** iterating through positions in column iCol. Exactly one of the 
+    ** iterators is advanced each time the body of the loop is run.
+    */
     while( nLive>0 ){
-      LcsIterator *pAdv = 0;
-      int nThisLcs = 0;
+      LcsIterator *pAdv = 0;      /* The iterator to advance by one position */
+      int nThisLcs = 0;           /* LCS for the current iterator positions */
 
       for(i=0; i<pInfo->nPhrase; i++){
         LcsIterator *pIter = &aIter[i];
-
         if( iCol!=pIter->iCol ){  
+          /* This iterator is already at EOF for this column. */
           nThisLcs = 0;
-          continue;
-        }
-
-        if( pAdv==0 || pIter->iPos<pAdv->iPos ){
-          pAdv = pIter;
-        }
-
-        if( nThisLcs==0 || pIter->iPos==pIter[-1].iPos ){
-          nThisLcs++;
         }else{
-          nThisLcs = 1;
+          if( pAdv==0 || pIter->iPos<pAdv->iPos ){
+            pAdv = pIter;
+          }
+          if( nThisLcs==0 || pIter->iPos==pIter[-1].iPos ){
+            nThisLcs++;
+          }else{
+            nThisLcs = 1;
+          }
+          if( nThisLcs>nLcs ) nLcs = nThisLcs;
         }
-
-        if( nThisLcs>nLcs ) nLcs = nThisLcs;
       }
       if( fts3LcsIteratorAdvance(pAdv) ) nLive--;
     }
@@ -1097,6 +1126,23 @@ static int fts3MatchinfoLcs(Fts3Cursor *pCsr, MatchInfo *pInfo){
   return SQLITE_OK;
 }
 
+/*
+** Populate the buffer pInfo->aMatchinfo[] with an array of integers to
+** be returned by the matchinfo() function. Argument zArg contains the 
+** format string passed as the second argument to matchinfo (or the
+** default value "pcx" if no second argument was specified). The format
+** string has already been validated and the pInfo->aMatchinfo[] array
+** is guaranteed to be large enough for the output.
+**
+** If bGlobal is true, then populate all fields of the matchinfo() output.
+** If it is false, then assume that those fields that do not change between
+** rows (i.e. FTS3_MATCHINFO_NPHRASE, NCOL, NDOC, AVGLENGTH and part of HITS)
+** have already been populated.
+**
+** Return SQLITE_OK if successful, or an SQLite error code if an error 
+** occurs. If a value other than SQLITE_OK is returned, the state the
+** pInfo->aMatchinfo[] buffer is left in is undefined.
+*/
 static int fts3MatchinfoValues(
   Fts3Cursor *pCsr,               /* FTS3 cursor object */
   int bGlobal,                    /* True to grab the global stats */
@@ -1106,17 +1152,16 @@ static int fts3MatchinfoValues(
   int rc = SQLITE_OK;
   int i;
   Fts3Table *pTab = (Fts3Table *)pCsr->base.pVtab;
-
   sqlite3_stmt *pSelect = 0;
 
   for(i=0; rc==SQLITE_OK && zArg[i]; i++){
 
     switch( zArg[i] ){
-      case FTS3_MATCHINFO_NPHRASE: 
+      case FTS3_MATCHINFO_NPHRASE:
         if( bGlobal ) pInfo->aMatchinfo[0] = pInfo->nPhrase;
         break;
 
-      case FTS3_MATCHINFO_NCOL: 
+      case FTS3_MATCHINFO_NCOL:
         if( bGlobal ) pInfo->aMatchinfo[0] = pInfo->nCol;
         break;
         
@@ -1231,10 +1276,11 @@ static int fts3GetMatchinfo(
     int nArg;                     /* Bytes in zArg */
     int i;                        /* Used to iterate through zArg */
 
-    /* Load doclists for each phrase in the query. */
+    /* Determine the number of phrases in the query */
     pCsr->nPhrase = fts3ExprPhraseCount(pCsr->pExpr);
     sInfo.nPhrase = pCsr->nPhrase;
 
+    /* Determine the number of integers in the buffer returned by this call. */
     for(i=0; zArg[i]; i++){
       nMatchinfo += fts3MatchinfoSize(&sInfo, zArg[i]);
     }
