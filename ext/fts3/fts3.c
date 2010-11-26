@@ -2255,8 +2255,8 @@ static int fts3PhraseSelect(
   for(ii=0; ii<pPhrase->nToken; ii++){
     Fts3PhraseToken *pTok;        /* Token to find doclist for */
     int iTok;                     /* The token being queried this iteration */
-    char *pList;                  /* Pointer to token doclist */
-    int nList;                    /* Size of buffer at pList */
+    char *pList = 0;              /* Pointer to token doclist */
+    int nList = 0;                /* Size of buffer at pList */
 
     /* Select a token to process. If this is an xFilter() call, then tokens 
     ** are processed in order from least to most costly. Otherwise, tokens 
@@ -2298,8 +2298,9 @@ static int fts3PhraseSelect(
     if( pCsr->eEvalmode==FTS3_EVAL_NEXT && pTok->pDeferred ){
       rc = fts3DeferredTermSelect(pTok->pDeferred, isTermPos, &nList, &pList);
     }else{
-      assert( pTok->pArray );
-      rc = fts3TermSelect(p, pTok, iCol, isTermPos, &nList, &pList);
+      if( pTok->pArray ){
+        rc = fts3TermSelect(p, pTok, iCol, isTermPos, &nList, &pList);
+      }
       pTok->bFulltext = 1;
     }
     assert( rc!=SQLITE_OK || pCsr->eEvalmode || pTok->pArray==0 );
@@ -2527,7 +2528,10 @@ static int fts3ExprCost(Fts3Expr *pExpr){
     int ii;
     nCost = 0;
     for(ii=0; ii<pPhrase->nToken; ii++){
-      nCost += pPhrase->aToken[ii].pArray->nCost;
+      Fts3SegReaderArray *pArray = pPhrase->aToken[ii].pArray;
+      if( pArray ){
+        nCost += pPhrase->aToken[ii].pArray->nCost;
+      }
     }
   }else{
     nCost = fts3ExprCost(pExpr->pLeft) + fts3ExprCost(pExpr->pRight);
@@ -2555,7 +2559,7 @@ static void fts3ExprAssignCosts(
     fts3ExprAssignCosts(pExpr->pRight, ppExprCost);
   }else{
     (*ppExprCost)->pExpr = pExpr;
-    (*ppExprCost)->nCost = fts3ExprCost(pExpr);;
+    (*ppExprCost)->nCost = fts3ExprCost(pExpr);
     (*ppExprCost)++;
   }
 }
@@ -3273,9 +3277,13 @@ static void fts3MatchinfoFunc(
   sqlite3_value **apVal           /* Array of arguments */
 ){
   Fts3Cursor *pCsr;               /* Cursor handle passed through apVal[0] */
-  assert( nVal==1 );
+  assert( nVal==1 || nVal==2 );
   if( SQLITE_OK==fts3FunctionArg(pContext, "matchinfo", apVal[0], &pCsr) ){
-    sqlite3Fts3Matchinfo(pContext, pCsr);
+    const char *zArg = 0;
+    if( nVal>1 ){
+      zArg = (const char *)sqlite3_value_text(apVal[1]);
+    }
+    sqlite3Fts3Matchinfo(pContext, pCsr, zArg);
   }
 }
 
@@ -3464,6 +3472,7 @@ int sqlite3Fts3Init(sqlite3 *db){
    && SQLITE_OK==(rc = sqlite3_overload_function(db, "snippet", -1))
    && SQLITE_OK==(rc = sqlite3_overload_function(db, "offsets", 1))
    && SQLITE_OK==(rc = sqlite3_overload_function(db, "matchinfo", 1))
+   && SQLITE_OK==(rc = sqlite3_overload_function(db, "matchinfo", 2))
    && SQLITE_OK==(rc = sqlite3_overload_function(db, "optimize", 1))
   ){
     rc = sqlite3_create_module_v2(

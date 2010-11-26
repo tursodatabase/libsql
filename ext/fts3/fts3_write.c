@@ -283,6 +283,54 @@ static int fts3SqlStmt(
   return rc;
 }
 
+static int fts3SelectDocsize(
+  Fts3Table *pTab,                /* FTS3 table handle */
+  int eStmt,                      /* Either SQL_SELECT_DOCSIZE or DOCTOTAL */
+  sqlite3_int64 iDocid,           /* Docid to bind for SQL_SELECT_DOCSIZE */
+  sqlite3_stmt **ppStmt           /* OUT: Statement handle */
+){
+  sqlite3_stmt *pStmt = 0;        /* Statement requested from fts3SqlStmt() */
+  int rc;                         /* Return code */
+
+  assert( eStmt==SQL_SELECT_DOCSIZE || eStmt==SQL_SELECT_DOCTOTAL );
+
+  rc = fts3SqlStmt(pTab, eStmt, &pStmt, 0);
+  if( rc==SQLITE_OK ){
+    if( eStmt==SQL_SELECT_DOCSIZE ){
+      sqlite3_bind_int64(pStmt, 1, iDocid);
+    }
+    rc = sqlite3_step(pStmt);
+    if( rc!=SQLITE_ROW ){
+      rc = sqlite3_reset(pStmt);
+      if( rc==SQLITE_OK ) rc = SQLITE_CORRUPT;
+      pStmt = 0;
+    }else{
+      rc = SQLITE_OK;
+    }
+  }
+
+  *ppStmt = pStmt;
+  return rc;
+}
+
+int sqlite3Fts3SelectDoctotal(
+  Fts3Table *pTab,                /* Fts3 table handle */
+  sqlite3_stmt **ppStmt           /* OUT: Statement handle */
+){
+  return fts3SelectDocsize(pTab, SQL_SELECT_DOCTOTAL, 0, ppStmt);
+}
+
+int sqlite3Fts3SelectDocsize(
+  Fts3Table *pTab,                /* Fts3 table handle */
+  sqlite3_int64 iDocid,           /* Docid to read size data for */
+  sqlite3_stmt **ppStmt           /* OUT: Statement handle */
+){
+  return fts3SelectDocsize(pTab, SQL_SELECT_DOCSIZE, iDocid, ppStmt);
+}
+
+void sqlite3Fts3MatchinfoLcs(Fts3Expr *pExpr, u32 *aOut){
+}
+
 /*
 ** Similar to fts3SqlStmt(). Except, after binding the parameters in
 ** array apVal[] to the SQL statement identified by eStmt, the statement
@@ -2441,75 +2489,6 @@ static void fts3DecodeIntArray(
     assert(j<=nBuf);
     a[i] = (u32)(x & 0xffffffff);
   }
-}
-
-/*
-** Fill in the document size auxiliary information for the matchinfo
-** structure.  The auxiliary information is:
-**
-**    N     Total number of documents in the full-text index
-**    a0    Average length of column 0 over the whole index
-**    n0    Length of column 0 on the matching row
-**    ...
-**    aM    Average length of column M over the whole index
-**    nM    Length of column M on the matching row
-**
-** The fts3MatchinfoDocsizeLocal() routine fills in the nX values.
-** The fts3MatchinfoDocsizeGlobal() routine fills in N and the aX values.
-*/
-int sqlite3Fts3MatchinfoDocsizeLocal(Fts3Cursor *pCur, u32 *a){
-  const char *pBlob;       /* The BLOB holding %_docsize info */
-  int nBlob;               /* Size of the BLOB */
-  sqlite3_stmt *pStmt;     /* Statement for reading and writing */
-  int i, j;                /* Loop counters */
-  sqlite3_int64 x;         /* Varint value */
-  int rc;                  /* Result code from subfunctions */
-  Fts3Table *p;            /* The FTS table */
-
-  p = (Fts3Table*)pCur->base.pVtab;
-  rc = fts3SqlStmt(p, SQL_SELECT_DOCSIZE, &pStmt, 0);
-  if( rc ){
-    return rc;
-  }
-  sqlite3_bind_int64(pStmt, 1, pCur->iPrevId);
-  if( sqlite3_step(pStmt)==SQLITE_ROW ){
-    nBlob = sqlite3_column_bytes(pStmt, 0);
-    pBlob = (const char*)sqlite3_column_blob(pStmt, 0);
-    for(i=j=0; i<p->nColumn && j<nBlob; i++){
-      j = sqlite3Fts3GetVarint(&pBlob[j], &x);
-      a[2+i*2] = (u32)(x & 0xffffffff);
-    }
-  }
-  sqlite3_reset(pStmt);
-  return SQLITE_OK; 
-}
-int sqlite3Fts3MatchinfoDocsizeGlobal(Fts3Cursor *pCur, u32 *a){
-  const char *pBlob;       /* The BLOB holding %_stat info */
-  int nBlob;               /* Size of the BLOB */
-  sqlite3_stmt *pStmt;     /* Statement for reading and writing */
-  int i, j;                /* Loop counters */
-  sqlite3_int64 x;         /* Varint value */
-  int nDoc;                /* Number of documents */
-  int rc;                  /* Result code from subfunctions */
-  Fts3Table *p;            /* The FTS table */
-
-  p = (Fts3Table*)pCur->base.pVtab;
-  rc = fts3SqlStmt(p, SQL_SELECT_DOCTOTAL, &pStmt, 0);
-  if( rc ){
-    return rc;
-  }
-  if( sqlite3_step(pStmt)==SQLITE_ROW ){
-    nBlob = sqlite3_column_bytes(pStmt, 0);
-    pBlob = (const char*)sqlite3_column_blob(pStmt, 0);
-    j = sqlite3Fts3GetVarint(pBlob, &x);
-    a[0] = nDoc = (u32)(x & 0xffffffff);
-    for(i=0; i<p->nColumn && j<nBlob; i++){
-      j = sqlite3Fts3GetVarint(&pBlob[j], &x);
-      a[1+i*2] = ((u32)(x & 0xffffffff) + nDoc/2)/nDoc;
-    }
-  }
-  sqlite3_reset(pStmt);
-  return SQLITE_OK; 
 }
 
 /*

@@ -162,15 +162,19 @@ struct Fts3Cursor {
   u8 isRequireSeek;               /* True if must seek pStmt to %_content row */
   sqlite3_stmt *pStmt;            /* Prepared statement in use by the cursor */
   Fts3Expr *pExpr;                /* Parsed MATCH query string */
+  int nPhrase;                    /* Number of matchable phrases in query */
   Fts3DeferredToken *pDeferred;   /* Deferred search tokens, if any */
   sqlite3_int64 iPrevId;          /* Previous id read from aDoclist */
   char *pNextId;                  /* Pointer into the body of aDoclist */
   char *aDoclist;                 /* List of docids for full-text queries */
   int nDoclist;                   /* Size of buffer at aDoclist */
-  int isMatchinfoNeeded;          /* True when aMatchinfo[] needs filling in */
-  u32 *aMatchinfo;                /* Information about most recent match */
   int eEvalmode;                  /* An FTS3_EVAL_XX constant */
   int nRowAvg;                    /* Average size of database rows, in pages */
+
+  int isMatchinfoNeeded;          /* True when aMatchinfo[] needs filling in */
+  u32 *aMatchinfo;                /* Information about most recent match */
+  int nMatchinfo;                 /* Number of elements in aMatchinfo[] */
+  char *zMatchinfo;               /* Matchinfo specification */
 };
 
 #define FTS3_EVAL_FILTER    0
@@ -287,10 +291,11 @@ int sqlite3Fts3SegReaderIterate(
 );
 int sqlite3Fts3SegReaderCost(Fts3Cursor *, Fts3SegReader *, int *);
 int sqlite3Fts3AllSegdirs(Fts3Table*, sqlite3_stmt **);
-int sqlite3Fts3MatchinfoDocsizeLocal(Fts3Cursor*, u32*);
-int sqlite3Fts3MatchinfoDocsizeGlobal(Fts3Cursor*, u32*);
 int sqlite3Fts3ReadLock(Fts3Table *);
 int sqlite3Fts3ReadBlock(Fts3Table*, sqlite3_int64, char **, int*);
+
+int sqlite3Fts3SelectDoctotal(Fts3Table *, sqlite3_stmt **);
+int sqlite3Fts3SelectDocsize(Fts3Table *, sqlite3_int64, sqlite3_stmt **);
 
 void sqlite3Fts3FreeDeferredTokens(Fts3Cursor *);
 int sqlite3Fts3DeferToken(Fts3Cursor *, Fts3PhraseToken *, int);
@@ -339,7 +344,7 @@ void sqlite3Fts3Offsets(sqlite3_context*, Fts3Cursor*);
 void sqlite3Fts3Snippet(sqlite3_context *, Fts3Cursor *, const char *,
   const char *, const char *, int, int
 );
-void sqlite3Fts3Matchinfo(sqlite3_context *, Fts3Cursor *);
+void sqlite3Fts3Matchinfo(sqlite3_context *, Fts3Cursor *, const char *);
 
 /* fts3_expr.c */
 int sqlite3Fts3ExprParse(sqlite3_tokenizer *, 
