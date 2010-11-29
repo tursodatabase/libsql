@@ -1,5 +1,5 @@
-C Add\snew\stest\sfile\se_droptrigger.test.
-D 2010-11-29T12:06:45
+C Add\stests\sfor\svery\ssmall\scache-sizes\s(less\sthan\s10\spages).
+D 2010-11-29T16:10:02
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4547616ad2286053af6ccccefa242dc925e49bf0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -291,7 +291,7 @@ F test/boundary3.test 56ef82096b4329aca2be74fa1e2b0f762ea0eb45
 F test/boundary4.tcl 0bb4b1a94f4fc5ae59b79b9a2b7a140c405e2983
 F test/boundary4.test 89e02fa66397b8a325d5eb102b5806f961f8ec4b
 F test/busy.test 76b4887f8b9160ba903c1ac22e8ff406ad6ae2f0
-F test/cache.test c4288607b54f2702858492fc4b92828336a1812f
+F test/cache.test 754baab2f18089fc9bcba7afaeb4dc907c6c6de2
 F test/capi2.test 00032d7504b9c14f1b36331670c5e7b0f73e3c5d
 F test/capi3.test 1945a2ba75e3f4c49d5beb8fc092115b6292d471
 F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
@@ -890,7 +890,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c412f61229b6ab1ac90b932afd56f7c5e3ba1cfe
-R f6821cb801bbf518113f282c058b1797
+P d23ef9b88c6705219e5138e50f0f351f6401c401
+R 546e2f66b6314089f25fcec06a2c561d
 U dan
-Z 0f3972e8a27cc6750e06c0fccb7d1885
+Z cb014287023453ee46a4e79687ff5135
