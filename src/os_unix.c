@@ -4863,7 +4863,7 @@ static void *unixDlOpen(sqlite3_vfs *NotUsed, const char *zFilename){
 ** error message.
 */
 static void unixDlError(sqlite3_vfs *NotUsed, int nBuf, char *zBufOut){
-  char *zErr;
+  const char *zErr;
   UNUSED_PARAMETER(NotUsed);
   unixEnterMutex();
   zErr = dlerror();

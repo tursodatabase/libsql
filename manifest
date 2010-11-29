@@ -1,5 +1,5 @@
-C On\s*BSD\ssystems,\sreduce\sthe\snumber\sof\sopen\sconnections\sused\sby\swal3.test\sto\savoid\srunning\sout\sof\sfile-descriptors.
-D 2010-11-29T18:22:44
+C Fix\sa\swarning\sin\sos_unix.c.
+D 2010-11-29T18:36:23
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4547616ad2286053af6ccccefa242dc925e49bf0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -160,7 +160,7 @@ F src/os.c 22ac61d06e72a0dac900400147333b07b13d8e1d
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
-F src/os_unix.c b392967bbf41f0563fdd8ad8bace6267db61270f
+F src/os_unix.c 0240c5b547b4cf585c8cac351a95c3e85ce00772
 F src/os_win.c 2f90f7bdec714fad51cd31b4ecad3cc1b4bb5aad
 F src/pager.c c0aca5c733c15a16fe158c3215d857841a4e5381
 F src/pager.h 0ea59db2a33bc6c2c02cae34de33367e1effdf76
@@ -890,7 +890,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 5602ec95aa2a74d0624bb6c7d53e7a0d35536253
-R 6323c27334aa4baa5510beb33a9bf604
+P 0a3cba95a14ae7a24b2d268567a02d651ab278dc
+R e401f90ddb8266a3429b5e6c7d3e2f82
 U dan
-Z 2046d4f1cadea8b761c8f47a277e38b8
+Z bef9d0b466eb5f68fca05b419b07c81c
