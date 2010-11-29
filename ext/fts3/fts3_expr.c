@@ -785,47 +785,53 @@ static int queryTestTokenizer(
 }
 
 /*
-** This function is part of the test interface for the query parser. It
-** writes a text representation of the query expression pExpr into the
-** buffer pointed to by argument zBuf. It is assumed that zBuf is large 
-** enough to store the required text representation.
+** Return a pointer to a buffer containing a text representation of the
+** expression passed as the first argument. The buffer is obtained from
+** sqlite3_malloc(). It is the responsibility of the caller to use 
+** sqlite3_free() to release the memory. If an OOM condition is encountered,
+** NULL is returned.
+**
+** If the second argument is not NULL, then its contents are prepended to 
+** the returned expression text and then freed using sqlite3_free().
 */
-static void exprToString(Fts3Expr *pExpr, char *zBuf){
+static char *exprToString(Fts3Expr *pExpr, char *zBuf){
   switch( pExpr->eType ){
     case FTSQUERY_PHRASE: {
       Fts3Phrase *pPhrase = pExpr->pPhrase;
       int i;
-      zBuf += sprintf(zBuf, "PHRASE %d %d", pPhrase->iColumn, pPhrase->isNot);
-      for(i=0; i<pPhrase->nToken; i++){
-        zBuf += sprintf(zBuf," %.*s",pPhrase->aToken[i].n,pPhrase->aToken[i].z);
-        zBuf += sprintf(zBuf,"%s", (pPhrase->aToken[i].isPrefix?"+":""));
+      zBuf = sqlite3_mprintf(
+          "%zPHRASE %d %d", zBuf, pPhrase->iColumn, pPhrase->isNot);
+      for(i=0; zBuf && i<pPhrase->nToken; i++){
+        zBuf = sqlite3_mprintf("%z %.*s%s", zBuf, 
+            pPhrase->aToken[i].n, pPhrase->aToken[i].z,
+            (pPhrase->aToken[i].isPrefix?"+":"")
+        );
       }
-      return;
+      return zBuf;
     }
 
     case FTSQUERY_NEAR:
-      zBuf += sprintf(zBuf, "NEAR/%d ", pExpr->nNear);
+      zBuf = sqlite3_mprintf("%zNEAR/%d ", zBuf, pExpr->nNear);
       break;
     case FTSQUERY_NOT:
-      zBuf += sprintf(zBuf, "NOT ");
+      zBuf = sqlite3_mprintf("%zNOT ", zBuf);
       break;
     case FTSQUERY_AND:
-      zBuf += sprintf(zBuf, "AND ");
+      zBuf = sqlite3_mprintf("%zAND ", zBuf);
       break;
     case FTSQUERY_OR:
-      zBuf += sprintf(zBuf, "OR ");
+      zBuf = sqlite3_mprintf("%zOR ", zBuf);
       break;
   }
 
-  zBuf += sprintf(zBuf, "{");
-  exprToString(pExpr->pLeft, zBuf);
-  zBuf += strlen(zBuf);
-  zBuf += sprintf(zBuf, "} ");
+  if( zBuf ) zBuf = sqlite3_mprintf("%z{", zBuf);
+  if( zBuf ) zBuf = exprToString(pExpr->pLeft, zBuf);
+  if( zBuf ) zBuf = sqlite3_mprintf("%z} {", zBuf);
 
-  zBuf += sprintf(zBuf, "{");
-  exprToString(pExpr->pRight, zBuf);
-  zBuf += strlen(zBuf);
-  zBuf += sprintf(zBuf, "}");
+  if( zBuf ) zBuf = exprToString(pExpr->pRight, zBuf);
+  if( zBuf ) zBuf = sqlite3_mprintf("%z}", zBuf);
+
+  return zBuf;
 }
 
 /*
@@ -856,6 +862,7 @@ static void fts3ExprTest(
   int nCol;
   int ii;
   Fts3Expr *pExpr;
+  char *zBuf = 0;
   sqlite3 *db = sqlite3_context_db_handle(context);
 
   if( argc<3 ){
@@ -898,17 +905,16 @@ static void fts3ExprTest(
   rc = sqlite3Fts3ExprParse(
       pTokenizer, azCol, nCol, nCol, zExpr, nExpr, &pExpr
   );
-  if( rc==SQLITE_NOMEM ){
-    sqlite3_result_error_nomem(context);
-    goto exprtest_out;
-  }else if( rc==SQLITE_OK ){
-    char zBuf[4096];
-    exprToString(pExpr, zBuf);
-    sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
-    sqlite3Fts3ExprFree(pExpr);
-  }else{
+  if( rc!=SQLITE_OK && rc!=SQLITE_NOMEM ){
     sqlite3_result_error(context, "Error parsing expression", -1);
+  }else if( rc==SQLITE_NOMEM || !(zBuf = exprToString(pExpr, 0)) ){
+    sqlite3_result_error_nomem(context);
+  }else{
+    sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
+    sqlite3_free(zBuf);
   }
+
+  sqlite3Fts3ExprFree(pExpr);
 
 exprtest_out:
   if( pModule && pTokenizer ){

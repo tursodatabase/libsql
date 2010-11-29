@@ -5457,27 +5457,27 @@ static int proxyBreakConchLock(unixFile *pFile, uuid_t myHostID){
   pathLen = strlcpy(tPath, cPath, MAXPATHLEN);
   if( pathLen>MAXPATHLEN || pathLen<6 || 
      (strlcpy(&tPath[pathLen-5], "break", 6) != 5) ){
-    sprintf(errmsg, "path error (len %d)", (int)pathLen);
+    sqlite3_snprintf(sizeof(errmsg),errmsg,"path error (len %d)",(int)pathLen);
     goto end_breaklock;
   }
   /* read the conch content */
   readLen = pread(conchFile->h, buf, PROXY_MAXCONCHLEN, 0);
   if( readLen<PROXY_PATHINDEX ){
-    sprintf(errmsg, "read error (len %d)", (int)readLen);
+    sqlite3_snprintf(sizeof(errmsg),errmsg,"read error (len %d)",(int)readLen);
     goto end_breaklock;
   }
   /* write it out to the temporary break file */
   fd = open(tPath, (O_RDWR|O_CREAT|O_EXCL), SQLITE_DEFAULT_FILE_PERMISSIONS);
   if( fd<0 ){
-    sprintf(errmsg, "create failed (%d)", errno);
+    sqlite3_snprintf(sizeof(errmsg), errmsg, "create failed (%d)", errno);
     goto end_breaklock;
   }
   if( pwrite(fd, buf, readLen, 0) != (ssize_t)readLen ){
-    sprintf(errmsg, "write failed (%d)", errno);
+    sqlite3_snprintf(sizeof(errmsg), errmsg, "write failed (%d)", errno);
     goto end_breaklock;
   }
   if( rename(tPath, cPath) ){
-    sprintf(errmsg, "rename failed (%d)", errno);
+    sqlite3_snprintf(sizeof(errmsg), errmsg, "rename failed (%d)", errno);
     goto end_breaklock;
   }
   rc = 0;
