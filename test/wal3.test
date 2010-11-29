@@ -703,6 +703,8 @@ T delete
 # the client takes a shared-lock on a slot without modifying the value
 # and continues.
 #
+set nConn 50
+if { [string match *BSD $tcl_platform(os)] } { set nConn 35 }
 do_test wal3-9.0 {
   file delete -force test.db test.db-journal test.db wal
   sqlite3 db test.db
@@ -713,7 +715,7 @@ do_test wal3-9.0 {
     INSERT INTO whoami VALUES('nobody');
   }
 } {wal}
-for {set i 0} {$i < 50} {incr i} {
+for {set i 0} {$i < $nConn} {incr i} {
   set c db$i
   do_test wal3-9.1.$i {
     sqlite3 $c test.db
@@ -724,7 +726,7 @@ for {set i 0} {$i < 50} {incr i} {
     } $c
   } $c
 }
-for {set i 0} {$i < 50} {incr i} {
+for {set i 0} {$i < $nConn} {incr i} {
   set c db$i
   do_test wal3-9.2.$i {
     execsql { SELECT * FROM whoami } $c
@@ -733,12 +735,12 @@ for {set i 0} {$i < 50} {incr i} {
 
 set sz [expr 1024 * (2+$AUTOVACUUM)]
 do_test wal3-9.3 {
-  for {set i 0} {$i < 49} {incr i} { db$i close }
+  for {set i 0} {$i < ($nConn-1)} {incr i} { db$i close }
   execsql { PRAGMA wal_checkpoint } 
   byte_is_zero test.db [expr $sz-1024]
 } {1}
 do_test wal3-9.4 {
-  db49 close
+  db[expr $nConn-1] close
   execsql { PRAGMA wal_checkpoint } 
   set sz2 [file size test.db]
   byte_is_zero test.db [expr $sz-1024]
