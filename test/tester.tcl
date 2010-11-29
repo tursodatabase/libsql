@@ -1375,6 +1375,36 @@ proc sql36231 {sql} {
   return ""
 }
 
+proc db_save {} {
+  foreach f [glob -nocomplain sv_test.db*] { forcedelete $f }
+  foreach f [glob -nocomplain test.db*] {
+    set f2 "sv_$f"
+    file copy -force $f $f2
+  }
+}
+proc db_save_and_close {} {
+  db_save
+  catch { db close }
+  return ""
+}
+proc db_restore {} {
+  foreach f [glob -nocomplain test.db*] { forcedelete $f }
+  foreach f2 [glob -nocomplain sv_test.db*] {
+    set f [string range $f2 3 end]
+    file copy -force $f2 $f
+  }
+}
+proc db_restore_and_reopen {{dbfile test.db}} {
+  catch { db close }
+  db_restore
+  sqlite3 db $dbfile
+}
+proc db_delete_and_reopen {{file test.db}} {
+  catch { db close }
+  foreach f [glob -nocomplain test.db*] { file delete -force $f }
+  sqlite3 db $file
+}
+
 # If the library is compiled with the SQLITE_DEFAULT_AUTOVACUUM macro set
 # to non-zero, then set the global variable $AUTOVACUUM to 1.
 set AUTOVACUUM $sqlite_options(default_autovacuum)

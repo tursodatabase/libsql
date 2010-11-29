@@ -196,9 +196,32 @@ do_test fts3aa-6.2 {
 do_test fts3aa-6.3 {
   execsql {SELECT content FROM t1 WHERE rowid = -1}
 } {{three four}}
-breakpoint
 do_test fts3aa-6.4 {
   execsql {SELECT rowid FROM t1 WHERE t1 MATCH 'four'}
 } {-1 0 8 9 10 11 12 13 14 15 24 25 26 27 28 29 30 31}
 
+# Test creation of FTS3 and FTS4 tables with columns that contain
+# an "=" character.
+#
+do_execsql_test fts3aa-7.1 {
+  CREATE VIRTUAL TABLE t2 USING fts3(xyz=abc);
+  SELECT xyz FROM t2;
+} {}
+do_catchsql_test fts3aa-7.2 {
+  CREATE VIRTUAL TABLE t3 USING fts4(xyz=abc);
+} {1 {unrecognized parameter: xyz=abc}}
+do_catchsql_test fts3aa-7.3 {
+  CREATE VIRTUAL TABLE t3 USING fts4(xyz = abc);
+} {1 {unrecognized parameter: xyz = abc}}
+
+do_execsql_test fts3aa-7.4 {
+  CREATE VIRTUAL TABLE t3 USING fts3(tokenize=simple, tokenize=simple);
+  SELECT tokenize FROM t3;
+} {}
+do_catchsql_test fts3aa-7.5 {
+  CREATE VIRTUAL TABLE t4 USING fts4(tokenize=simple, tokenize=simple);
+} {1 {unrecognized parameter: tokenize=simple}}
+
+
 finish_test
+
