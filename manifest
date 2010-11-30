@@ -1,5 +1,5 @@
-C Fix\sa\swarning\sin\sos_unix.c.
-D 2010-11-29T18:36:23
+C Add\stest\sfile\se_dropview.test.
+D 2010-11-30T12:12:25
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4547616ad2286053af6ccccefa242dc925e49bf0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -354,7 +354,8 @@ F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_createtable.test b8f5286879315d5b7f4cc5ead1afda4846f0c0bb
 F test/e_delete.test 55d868b647acc091c261a10b9b0cb0ab660a6acb
-F test/e_droptrigger.test 0b96c0df9b6390c728d9e15ff046419b678ddf44
+F test/e_droptrigger.test ddd4b28ed8a3d81bd5153fa0ab7559529a2ca03a
+F test/e_dropview.test b347bab30fc8de67b131594b3cd6f3d3bdaa753d
 F test/e_expr.test 4e004d1f5187d4bbc9ca3d55660a8d164dd59f4e
 F test/e_fkey.test 38039b840ab19331000b0f0eb1d82baa7208a67a
 F test/e_fts3.test 75bb0aee26384ef586165e21018a17f7cd843469
@@ -890,7 +891,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 0a3cba95a14ae7a24b2d268567a02d651ab278dc
-R e401f90ddb8266a3429b5e6c7d3e2f82
+P ee8dc8c87ed15b76ba437df23e1d7b1b7fa30296
+R 4a3bff37fc4c660278f60fbda77a6338
 U dan
-Z bef9d0b466eb5f68fca05b419b07c81c
+Z 27edb6190ff4f86a8a8a1f3444932c26

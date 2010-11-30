@@ -15,11 +15,11 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set ::testprefix e_createtable
+set ::testprefix e_droptrigger
 
 ifcapable !trigger { finish_test ; return }
 
-proc do_droptable_tests {nm args} {
+proc do_droptrigger_tests {nm args} {
   uplevel do_select_tests [list e_createtable-$nm] $args
 }
 
@@ -71,7 +71,7 @@ proc droptrigger_reopen_db {{event INSERT}} {
 
 # EVIDENCE-OF: R-52650-16855 -- syntax diagram drop-trigger-stmt
 #
-do_droptable_tests 1.1 -repair {
+do_droptrigger_tests 1.1 -repair {
   droptrigger_reopen_db
 } -tclquery {
   list_all_triggers 
