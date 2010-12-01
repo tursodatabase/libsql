@@ -937,6 +937,18 @@ do_test triggerC-12.2 {
   execsql { SELECT count(*) FROM sqlite_master }
 } {1}
 
+do_execsql_test triggerC-13.1 {
+  PRAGMA recursive_triggers = ON;
+  CREATE TABLE t12(a, b);
+  INSERT INTO t12 VALUES(1, 2);
+  CREATE TRIGGER tr12 AFTER UPDATE ON t12 BEGIN
+    UPDATE t12 SET a=new.a+1, b=new.b+1;
+  END;
+} {}
+do_catchsql_test triggerC-13.2 {
+  UPDATE t12 SET a=a+1, b=b+1;
+} {1 {too many levels of trigger recursion}}
+
 
 
 finish_test

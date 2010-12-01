@@ -1,5 +1,5 @@
-C Add\stest\sfile\se_dropview.test.
-D 2010-11-30T12:12:25
+C Avoid\srecursive\scalls\sto\ssqlite3VdbeMemRelease()\swhen\sdeleting\sVM\sframes\sused\sby\strigger\sprograms.
+D 2010-12-01T08:04:48
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4547616ad2286053af6ccccefa242dc925e49bf0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -230,11 +230,11 @@ F src/util.c ab1c92426494f499f42b9e307537b03e923d75c1
 F src/vacuum.c 924bd1bcee2dfb05376f79845bd3b4cec7b54b2f
 F src/vdbe.c 21a9285fedf2e310ffc4bad27b828645dc2b20bb
 F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
-F src/vdbeInt.h 7f4cf1b2b69bef3a432b1f23dfebef57275436b4
+F src/vdbeInt.h 1f2137b905969f4de0648256aeb73abdf88f9213
 F src/vdbeapi.c fb0036185b3c56e15916a5ee96309cd4acf6818f
-F src/vdbeaux.c 762c2b146cf5fe7a7f743af1bbfed4a966aa937a
+F src/vdbeaux.c b810a66902ee40c71cdb9c64f43760da516c91df
 F src/vdbeblob.c e0ce3c54cc0c183af2ec67b63a289acf92251df4
-F src/vdbemem.c 23723a12cd3ba7ab3099193094cbb2eb78956aa9
+F src/vdbemem.c 411649a35686f54268ccabeda175322c4697f5a6
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c b297e8fa656ab5e66244ab15680d68db0adbec30
 F src/wal.c f26b8d297bd11cb792e609917f9d4c6718ac8e0e
@@ -796,7 +796,7 @@ F test/trigger8.test 30cb0530bd7c4728055420e3f739aa00412eafa4
 F test/trigger9.test 5b0789f1c5c4600961f8e68511b825b87be53e31
 F test/triggerA.test eaf11a29db2a11967d2d4b49d37f92bce598194e
 F test/triggerB.test 56780c031b454abac2340dbb3b71ac5c56c3d7fe
-F test/triggerC.test 2a23edcc00684d084902ba5ec93e721775c3a70a
+F test/triggerC.test 8a691ff6dd47df2e57395bbec4b62101fac0f363
 F test/triggerD.test c6add3817351451e419f6ff9e9a259b02b6e2de7
 F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
 F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
@@ -891,7 +891,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ee8dc8c87ed15b76ba437df23e1d7b1b7fa30296
-R 4a3bff37fc4c660278f60fbda77a6338
+P 6197822cc8310fd7e1d7151683833e8b39fe631a
+R 1616ff1293fc577a7a9463bdfe77090f
 U dan
-Z 27edb6190ff4f86a8a8a1f3444932c26
+Z 6b55fe83d9e16cee919cd05f710b1461

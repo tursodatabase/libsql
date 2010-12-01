@@ -487,7 +487,9 @@ int sqlite3VdbeMemNumerify(Mem *pMem){
 */
 void sqlite3VdbeMemSetNull(Mem *pMem){
   if( pMem->flags & MEM_Frame ){
-    sqlite3VdbeFrameDelete(pMem->u.pFrame);
+    VdbeFrame *pFrame = pMem->u.pFrame;
+    pFrame->pParent = pFrame->v->pDelFrame;
+    pFrame->v->pDelFrame = pFrame;
   }
   if( pMem->flags & MEM_RowSet ){
     sqlite3RowSetClear(pMem->u.pRowSet);
