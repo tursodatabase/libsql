@@ -451,5 +451,42 @@ do_faultsim_test multiplex-5.5 -prep {
   multiplex_set 32768 16
 }
 
+# test that mismatch filesize is detected
+set all_journal_modes {delete persist truncate memory off}
+foreach jmode $all_journal_modes {
+  do_test multiplex-5.6.1.$jmode {
+    sqlite3_multiplex_shutdown
+    multiplex_delete test.db
+    sqlite3 db test.db
+    db eval {
+      PRAGMA page_size = 1024;
+      PRAGMA auto_vacuum = off;
+    }
+    db eval "PRAGMA journal_mode = $jmode;"
+  } $jmode
+  do_test multiplex-5.6.2.$jmode {
+    execsql {
+      CREATE TABLE t1(a, b);
+      INSERT INTO t1 VALUES(1, randomblob(1100));
+      INSERT INTO t1 VALUES(2, randomblob(1100));
+      INSERT INTO t1 VALUES(3, randomblob(1100));
+      INSERT INTO t1 VALUES(4, randomblob(1100));
+      INSERT INTO t1 VALUES(5, randomblob(1100));
+    }
+    db close
+    sqlite3_multiplex_initialize "" 1
+    multiplex_set 4096 16
+    sqlite3 db test.db
+  } {}
+  do_test multiplex-5.6.3.$jmode {
+    catchsql {
+      INSERT INTO t1 VALUES(6, randomblob(1100));
+    }
+  } {1 {disk I/O error}}
+  do_test multiplex-5.6.4.$jmode {
+    db close
+  } {}
+}
+
 catch { sqlite3_multiplex_shutdown }
 finish_test

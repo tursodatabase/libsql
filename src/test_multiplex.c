@@ -545,8 +545,10 @@ static int multiplexFileSize(sqlite3_file *pConn, sqlite3_int64 *pSize){
       if( rc2!=SQLITE_OK ){
         rc = rc2;
       }else{
+        if( sz>gMultiplex.nChunkSize ){
+          rc = SQLITE_IOERR_FSTAT;
+        }
         *pSize += sz;
-        assert(sz<=gMultiplex.nChunkSize);
       }
     }else{
       break;
