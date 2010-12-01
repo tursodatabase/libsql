@@ -1,0 +1,90 @@
+# 2010 December 1
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the operation of the library in
+# "PRAGMA journal_mode=WAL" mode.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+source $testdir/wal_common.tcl
+source $testdir/malloc_common.tcl
+ifcapable !wal {finish_test ; return }
+
+#-------------------------------------------------------------------------
+# Changing to WAL mode in one connection forces the change in others.
+#
+db close
+forcedelete test.db
+
+set all_journal_modes {delete persist truncate memory off}
+foreach jmode $all_journal_modes {
+
+	do_test wal6-1.0.$jmode {
+    sqlite3 db test.db
+    execsql "PRAGMA journal_mode = $jmode;"
+	} $jmode
+
+	do_test wal6-1.1.$jmode {
+	  execsql {
+	    CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+	    INSERT INTO t1 VALUES(1,2);
+	    SELECT * FROM t1;
+	  }
+	} {1 2}
+
+# Under Windows, you'll get an error trying to delete
+# a file this is already opened.  For now, make sure 
+# we get that error, then close the first connection
+# so the other tests work.
+if {$tcl_platform(platform)=="windows"} {
+  if {$jmode=="persist" || $jmode=="truncate"} {
+	  do_test wal6-1.2.$jmode.win {
+	    sqlite3 db2 test.db
+	    catchsql {
+		    PRAGMA journal_mode=WAL;
+	    } db2
+	  } {1 {disk I/O error}}
+  	db2 close
+	  db close
+  }
+}
+
+	do_test wal6-1.2.$jmode {
+	  sqlite3 db2 test.db
+	  execsql {
+		PRAGMA journal_mode=WAL;
+		INSERT INTO t1 VALUES(3,4);
+		SELECT * FROM t1 ORDER BY a;
+	  } db2
+	} {wal 1 2 3 4}
+
+if {$tcl_platform(platform)=="windows"} {
+  if {$jmode=="persist" || $jmode=="truncate"} {
+	  sqlite3 db test.db
+  }
+}
+
+	do_test wal6-1.3.$jmode {
+	  execsql {
+		  SELECT * FROM t1 ORDER BY a;
+	  }
+	} {1 2 3 4}
+
+	db close
+	db2 close
+  forcedelete test.db
+
+}
+
+finish_test
+
