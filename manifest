@@ -1,5 +1,5 @@
-C Fix\ssome\swarnings\sunder\sMSVC\sin\sfts3\smodule.
-D 2010-12-01T15:36:01
+C Change\sthe\stype\sof\sa\svariable\sin\sstruct\sSrcList\sso\sthat\sit\sfits\sin\sa\s100\sbyte\slookaside\sbuffer\son\sa\s64-bit\sarchitecture.
+D 2010-12-01T19:00:48
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4547616ad2286053af6ccccefa242dc925e49bf0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -22,7 +22,7 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure daed6cfdb4c1449a4335b3eeddc0d836e33fb54e
+F configure daed6cfdb4c1449a4335b3eeddc0d836e33fb54e x
 F configure.ac 699040cc9abb7465dca5a2972bc89d227fd8f734
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -97,7 +97,7 @@ F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 1af0899c63a688e272d69d8e746f24e76f10a3f0
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
-F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
+F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F main.mk 05d0f3475dd331896bd607cfb45c5e21b94589ad
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
@@ -174,11 +174,11 @@ F src/printf.c 8ae5082dd38a1b5456030c3755ec3a392cd51506
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
-F src/select.c 550d67688f5e8bc8022faf6d014838afba1415af
+F src/select.c 8a7ba246b0b4bb45df7fbc52681728a0e3deaaa7
 F src/shell.c 8517fc1f9c59ae4007e6cc8b9af91ab231ea2056
 F src/sqlite.h.in e6e87d10e6a3756b8c7e9a11703716b6a1575a40
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
-F src/sqliteInt.h 7739098f7b8c9e83ed46f75744138921136ed4b8
+F src/sqliteInt.h 5cfee93885789f174df186409b81812ee189e44f
 F src/sqliteLimit.h a17dcd3fb775d63b64a43a55c54cb282f9726f44
 F src/status.c 496913d4e8441195f6f2a75b1c95993a45b9b30b
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -892,7 +892,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6858df9c72b1e9fb6c1a0050035b11822f87a5a7
-R a2456c787087ecdfc1bfcb7b9831ea34
-U shaneh
-Z b6022cecd366b0ea4a947c5fe471bbc9
+P c7771c0b22f2b45a47070cf84b9ecf1011e40404
+R 22c229b9d69b45b89e7c33c525b6a0ed
+U dan
+Z 92bb18f7bd9a0390422e9261529a2255
