@@ -54,6 +54,9 @@ proc multiplex_delete {name} {
 
 db close
 
+multiplex_delete test.db
+multiplex_delete test2.db
+
 #-------------------------------------------------------------------------
 #   multiplex-1.1.*: Test initialize and shutdown.
 
@@ -123,7 +126,7 @@ do_test multiplex-2.2.1 {
 do_test multiplex-2.2.3 { file size [multiplex_name test.db 0] } {6144}
 
 do_test multiplex-2.3.1 {
-  sqlite3 db2 bak.db
+  sqlite3 db2 test2.db
   db2 close
 } {}
 
