@@ -1116,7 +1116,7 @@ int sqlite3Fts3SegReaderCost(
           }
         }
 
-        pCsr->nRowAvg = (((nByte / nDoc) + pgsz - 1) / pgsz);
+        pCsr->nRowAvg = (int)(((nByte / nDoc) + pgsz - 1) / pgsz);
       }
       rc = sqlite3_reset(pStmt);
       if( rc!=SQLITE_OK || pCsr->nRowAvg==0 ) return rc;

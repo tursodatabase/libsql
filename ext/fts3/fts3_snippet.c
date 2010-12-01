@@ -1032,12 +1032,12 @@ static int fts3LcsIteratorAdvance(LcsIterator *pIter){
   }else{
     if( iRead==1 ){
       pRead += sqlite3Fts3GetVarint(pRead, &iRead);
-      pIter->iCol = iRead;
+      pIter->iCol = (int)iRead;
       pIter->iPos = pIter->iPosOffset;
       pRead += sqlite3Fts3GetVarint(pRead, &iRead);
       rc = 1;
     }
-    pIter->iPos += (iRead-2);
+    pIter->iPos += (int)(iRead-2);
   }
 
   pIter->pRead = pRead;
@@ -1186,7 +1186,7 @@ static int fts3MatchinfoValues(
             for(iCol=0; iCol<pInfo->nCol; iCol++){
               sqlite3_int64 nToken;
               a += sqlite3Fts3GetVarint(a, &nToken);
-              pInfo->aMatchinfo[iCol] = ((u32)(nToken&0xffffffff)+nDoc/2)/nDoc;
+              pInfo->aMatchinfo[iCol] = (u32)(((u32)(nToken&0xffffffff)+nDoc/2)/nDoc);
             }
           }
         }
@@ -1289,7 +1289,7 @@ static int fts3GetMatchinfo(
     }
 
     /* Allocate space for Fts3Cursor.aMatchinfo[] and Fts3Cursor.zMatchinfo. */
-    nArg = strlen(zArg);
+    nArg = (int)strlen(zArg);
     pCsr->aMatchinfo = (u32 *)sqlite3_malloc(sizeof(u32)*nMatchinfo + nArg + 1);
     if( !pCsr->aMatchinfo ) return SQLITE_NOMEM;
 

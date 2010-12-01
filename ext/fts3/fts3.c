@@ -656,7 +656,7 @@ static int fts3IsSpecialColumn(
     zCsr++;
   }
 
-  *pnKey = zCsr-z;
+  *pnKey = (int)(zCsr-z);
   zValue = sqlite3_mprintf("%s", &zCsr[1]);
   if( zValue ){
     sqlite3Fts3Dequote(zValue);
@@ -711,7 +711,7 @@ static int fts3InitVtab(
 
   aCol = (const char **)sqlite3_malloc(sizeof(const char *) * (argc-2) );
   if( !aCol ) return SQLITE_NOMEM;
-  memset(aCol, 0, sizeof(const char *) * (argc-2));
+  memset((void *)aCol, 0, sizeof(const char *) * (argc-2));
 
   /* Loop through all of the arguments passed by the user to the FTS3/4
   ** module (i.e. all the column names and special arguments). This loop
@@ -843,7 +843,7 @@ static int fts3InitVtab(
 
 fts3_init_out:
 
-  sqlite3_free(aCol);
+  sqlite3_free((void *)aCol);
   if( rc!=SQLITE_OK ){
     if( p ){
       fts3DisconnectMethod((sqlite3_vtab *)p);
@@ -2199,7 +2199,7 @@ static void fts3DoclistStripPositions(
       pOut += sqlite3Fts3PutVarint(pOut, delta);
     }
 
-    *pnList = (pOut - aList);
+    *pnList = (int)(pOut - aList);
   }
 }
 
