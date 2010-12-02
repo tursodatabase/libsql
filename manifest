@@ -1,5 +1,5 @@
-C Exclude\sa\stest\scase\sfrom\sthe\sinmemory_journal\spermutation\sof\smultiplex.test.
-D 2010-12-02T14:47:06
+C Fix\sa\sbug\scausing\sfts3\sto\sincorrectly\sreturn\sSQLITE_CORRUPT.
+D 2010-12-02T17:39:26
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4547616ad2286053af6ccccefa242dc925e49bf0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -61,7 +61,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c c354e8a4110c781cecfcba2f25026087159d5e47
+F ext/fts3/fts3.c bb233da09f1ec8e52717167cd42b7c7cbd98a58c
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h a6c69c1c5e2c8c19172ddff42d262c087dcd7337
 F ext/fts3/fts3_expr.c 5f49e0deaf723724b08100bb3ff40aab02ad0c93
@@ -452,7 +452,7 @@ F test/fts3malloc.test 9c8cc3f885bb4dfc66d0460c52f68f45e4710d1b
 F test/fts3matchinfo.test ae910aa666285e14743a80799214bfb3f1aab8f2
 F test/fts3near.test 2e318ee434d32babd27c167142e2b94ddbab4844
 F test/fts3query.test ef79d31fdb355d094baec1c1b24b60439a1fb8a2
-F test/fts3rnd.test 707533ce943f490443ce5e696236bb1675a37635
+F test/fts3rnd.test 2b1a579be557ab8ac54a51b39caa4aa8043cc4ad
 F test/fts3shared.test 8bb266521d7c5495c0ae522bb4d376ad5387d4a2
 F test/fts3snippet.test a12f22a3ba4dd59751a57c79b031d07ab5f51ddd
 F test/fts4aa.test eadf85621c0a113d4c7ad3ccbf8441130e007b8f
@@ -893,7 +893,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a94b9a395e0be9549d8c28e2b86b995c73c7b671
-R 741b538e8e95750c9262dc17abfd3a28
+P 474196d6452f5868a712a9b0116d5f64c90d67c1
+R adbfa1a9f70157ddb61fd4c028295042
 U dan
-Z 849f041b0ecb0da6b497679389cd2d3a
+Z ed86013c21e878d00fdc8f86e5e497fd

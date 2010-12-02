@@ -1052,7 +1052,7 @@ static int fts3ScanInteriorNode(
   */
   zCsr += sqlite3Fts3GetVarint(zCsr, &iChild);
   zCsr += sqlite3Fts3GetVarint(zCsr, &iChild);
-  if( zCsr>=zEnd ){
+  if( zCsr>zEnd ){
     return SQLITE_CORRUPT;
   }
   
