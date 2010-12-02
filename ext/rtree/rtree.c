@@ -893,6 +893,7 @@ static int testRtreeCell(Rtree *pRtree, RtreeCursor *pCursor, int *pbEof){
   RtreeCell cell;
   int ii;
   int bRes = 0;
+  int rc = SQLITE_OK;
 
   nodeGetCell(pRtree, pCursor->pNode, pCursor->iCell, &cell);
   for(ii=0; bRes==0 && ii<pCursor->nConstraint; ii++){
@@ -918,12 +919,8 @@ static int testRtreeCell(Rtree *pRtree, RtreeCursor *pCursor, int *pbEof){
         break;
 
       default: {
-        int rc;
         assert( p->op==RTREE_MATCH );
         rc = testRtreeGeom(pRtree, p, &cell, &bRes);
-        if( rc!=SQLITE_OK ){
-          return rc;
-        }
         bRes = !bRes;
         break;
       }
@@ -931,7 +928,7 @@ static int testRtreeCell(Rtree *pRtree, RtreeCursor *pCursor, int *pbEof){
   }
 
   *pbEof = bRes;
-  return SQLITE_OK;
+  return rc;
 }
 
 /* 
@@ -1014,14 +1011,13 @@ static int descendToCell(
     rc = testRtreeCell(pRtree, pCursor, &isEof);
   }
   if( rc!=SQLITE_OK || isEof || iHeight==0 ){
-    *pEof = isEof;
-    return rc;
+    goto descend_to_cell_out;
   }
 
   iRowid = nodeGetRowid(pRtree, pCursor->pNode, pCursor->iCell);
   rc = nodeAcquire(pRtree, iRowid, pCursor->pNode, &pChild);
   if( rc!=SQLITE_OK ){
-    return rc;
+    goto descend_to_cell_out;
   }
 
   nodeRelease(pRtree, pCursor->pNode);
@@ -1031,7 +1027,7 @@ static int descendToCell(
     pCursor->iCell = ii;
     rc = descendToCell(pRtree, pCursor, iHeight-1, &isEof);
     if( rc!=SQLITE_OK ){
-      return rc;
+      goto descend_to_cell_out;
     }
   }
 
@@ -1043,8 +1039,9 @@ static int descendToCell(
     pCursor->iCell = iSavedCell;
   }
 
+descend_to_cell_out:
   *pEof = isEof;
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
