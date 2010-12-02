@@ -259,24 +259,22 @@ file delete -force test.db-journal
 sqlite3 db test.db
 
 ifcapable explain {
-  do_test misc7-14.1 {
-    execsql {
-      CREATE TABLE abc(a PRIMARY KEY, b, c);
-    }
-    execsql {
-      EXPLAIN QUERY PLAN SELECT * FROM abc AS t2 WHERE rowid = 1;
-    }
-  } {0 0 {TABLE abc AS t2 USING PRIMARY KEY}}
-  do_test misc7-14.2 {
-    execsql {
-      EXPLAIN QUERY PLAN SELECT * FROM abc AS t2 WHERE a = 1;
-    }
-  } {0 0 {TABLE abc AS t2 WITH INDEX sqlite_autoindex_abc_1}}
-  do_test misc7-14.3 {
-    execsql {
-      EXPLAIN QUERY PLAN SELECT * FROM abc AS t2 ORDER BY a;
-    }
-  } {0 0 {TABLE abc AS t2 WITH INDEX sqlite_autoindex_abc_1 ORDER BY}}
+  do_execsql_test misc7-14.1 {
+    CREATE TABLE abc(a PRIMARY KEY, b, c);
+    EXPLAIN QUERY PLAN SELECT * FROM abc AS t2 WHERE rowid = 1;
+  } {
+    0 0 0 {SEARCH TABLE abc AS t2 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}
+  }
+  do_execsql_test misc7-14.2 {
+    EXPLAIN QUERY PLAN SELECT * FROM abc AS t2 WHERE a = 1;
+  } {0 0 0 
+     {SEARCH TABLE abc AS t2 USING INDEX sqlite_autoindex_abc_1 (a=?) (~1 rows)}
+  }
+  do_execsql_test misc7-14.3 {
+    EXPLAIN QUERY PLAN SELECT * FROM abc AS t2 ORDER BY a;
+  } {0 0 0 
+     {SCAN TABLE abc AS t2 USING INDEX sqlite_autoindex_abc_1 (~1000000 rows)}
+  }
 }
 
 db close
