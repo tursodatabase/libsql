@@ -271,4 +271,102 @@ do_allbackcompat_test {
   }
 }
 
+#-------------------------------------------------------------------------
+# Test that FTS3 tables may be read/written by different versions of 
+# SQLite. 
+#
+set contents {
+  CREATE VIRTUAL TABLE t1 USING fts3(a, b);
+}
+foreach {num doc} {
+  one "jk zm jk eczkjblu urvysbnykk sk gnl jk ttvgf hmjf"
+  two "jk bnhc jjrxpjkb mjpavjuhw fibokdry igju jk zm zm xh"
+  three "wxe ogttbykvt uhzq xr iaf zf urvysbnykk aayxpmve oacaxgjoo mjpavjuhw"
+  four "gazrt jk ephknonq myjp uenvbm wuvajhwqz jk zm xnxhf nvfasfh"
+  five "zm aayxpmve csjqxhgj xnxhf xr jk aayxpmve xnxhf zm zm"
+  six "sokcyf zm ogyavjvv jk zm fibokdry zm jk igju igju"
+  seven "vgsld bvgimjik xuprtlyle jk akmikrqyt jk aayxpmve hkfoudzftq ddjj"
+  eight "zm uhzq ovkyevlgv zk uenvbm csjqxhgj jk vgsld pgybs jk"
+  nine  "zm agmckuiu zexh fibokdry jk uhzq bu tugflixoex xnxhf sk"
+} {
+  append contents "INSERT INTO t1 VALUES('$num', '$doc');"
+}
+do_allbackcompat_test {
+  if {[code1 {set ::sqlite_options(fts3)}]
+   && [code2 {set ::sqlite_options(fts3)}]
+  } {
+
+    do_test backcompat-3.1 { sql1 $contents } {}
+
+    foreach {n q} {
+      1    "SELECT * FROM t1 ORDER BY a, b"
+      2    "SELECT rowid FROM t1 WHERE a MATCH 'five'"
+      3    "SELECT * FROM t1 WHERE a MATCH 'five'"
+      4    "SELECT offsets(t1) FROM t1 WHERE t1 MATCH 'jk'"
+      5    "SELECT offsets(t1) FROM t1 WHERE t1 MATCH 'tug* OR eight'"
+    } {
+      do_test backcompat-3.2 [list sql1 $q] [sql2 $q]
+    }
+
+    do_test backcompat-3.3 { sql1 {
+      INSERT INTO t1 SELECT * FROM t1;
+      INSERT INTO t1 SELECT * FROM t1;
+      INSERT INTO t1 SELECT * FROM t1;
+      INSERT INTO t1 SELECT * FROM t1;
+      INSERT INTO t1 SELECT * FROM t1;
+      INSERT INTO t1 SELECT * FROM t1;
+      INSERT INTO t1 SELECT * FROM t1;
+      INSERT INTO t1 SELECT * FROM t1;
+    } } {}
+
+    foreach {n q} {
+      1    "SELECT * FROM t1 ORDER BY a, b"
+      2    "SELECT rowid FROM t1 WHERE a MATCH 'five'"
+      3    "SELECT * FROM t1 WHERE a MATCH 'five'"
+      4    "SELECT offsets(t1) FROM t1 WHERE t1 MATCH 'jk'"
+      5    "SELECT offsets(t1) FROM t1 WHERE t1 MATCH 'tug* OR eight'"
+    } {
+      do_test backcompat-3.4 [list sql1 $q] [sql2 $q]
+    }
+
+    set alphabet "a b c d e f g h i j k l m n o p q r s t u v w x y z 1 2 3 4"
+    for {set i 0} {$i < 900} {incr i} {
+      set term "[lindex $alphabet [expr $i/30]][lindex $alphabet [expr $i%30]] "
+      sql1 "INSERT INTO t1 VALUES($i, '[string repeat $term 14]')"
+    }
+
+    foreach {n q} {
+      1    "SELECT * FROM t1 ORDER BY a, b"
+      2    "SELECT rowid FROM t1 WHERE a MATCH 'five'"
+      3    "SELECT * FROM t1 WHERE a MATCH 'five'"
+      4    "SELECT offsets(t1) FROM t1 WHERE t1 MATCH 'jk'"
+      5    "SELECT offsets(t1) FROM t1 WHERE t1 MATCH 'tug* OR eight'"
+
+      6    "SELECT offsets(t1) FROM t1 WHERE t1 MATCH 'aa'"
+      7    "SELECT offsets(t1) FROM t1 WHERE t1 MATCH '44'"
+      8    "SELECT offsets(t1) FROM t1 WHERE t1 MATCH 'a*'"
+    } {
+      do_test backcompat-3.5 [list sql1 $q] [sql2 $q]
+    }
+
+    do_test backcompat-3.6 { 
+      sql1 "SELECT optimize(t1) FROM t1 LIMIT 1" 
+    } {{Index optimized}}
+
+    foreach {n q} {
+      1    "SELECT * FROM t1 ORDER BY a, b"
+      2    "SELECT rowid FROM t1 WHERE a MATCH 'five'"
+      3    "SELECT * FROM t1 WHERE a MATCH 'five'"
+      4    "SELECT offsets(t1) FROM t1 WHERE t1 MATCH 'jk'"
+      5    "SELECT offsets(t1) FROM t1 WHERE t1 MATCH 'tug* OR eight'"
+
+      6    "SELECT offsets(t1) FROM t1 WHERE t1 MATCH 'aa'"
+      7    "SELECT offsets(t1) FROM t1 WHERE t1 MATCH '44'"
+      8    "SELECT offsets(t1) FROM t1 WHERE t1 MATCH 'a*'"
+    } {
+      do_test backcompat-3.7 [list sql1 $q] [sql2 $q]
+    }
+  }
+}
+
 finish_test
