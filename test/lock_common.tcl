@@ -16,6 +16,7 @@
 proc do_multiclient_test {varname script} {
 
   foreach code [list {
+    if {[info exists ::G(valgrind)]} { db close ; continue }
     set ::code2_chan [launch_testfixture]
     set ::code3_chan [launch_testfixture]
     proc code2 {tcl} { testfixture $::code2_chan $tcl }
