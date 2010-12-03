@@ -1,5 +1,8 @@
-C Add\stests\sfor\sfts3\sto\sbackcompat.test.
-D 2010-12-03T15:04:26
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Version\s3.7.4\srelease\scandidate\s1
+D 2010-12-03T15:41:58
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4547616ad2286053af6ccccefa242dc925e49bf0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -893,7 +896,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 49531300676b303f2ccec8d8d587b389c9eae98b
+P b4eafde823bf30ebbb9232a88c9ddfa52f3cbabf
 R cfcb30493f9b700ca917c02b66c4bbdb
-U dan
-Z 13986d8a8faf0a59e119a319b30374dc
+U drh
+Z f856ce6e5b3d1df379dcd7eb4998633b
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFM+Q/JoxKgR168RlERAp5lAJ4kPHFF72lGIi8c8Orw+l8fc1KlgwCdHkY3
+jXhDultFHg79573V87b71lo=
+=g/nZ
+-----END PGP SIGNATURE-----
