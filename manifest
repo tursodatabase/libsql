@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Version\s3.7.4\srelease\scandidate\s1
-D 2010-12-03T15:41:58
+C Remove\san\sover-zealous\scall\sto\smemAboutToChange()\sfrom\sOP_MustBeInt.\nOP_MustBeInt\swill\snever\sinvalidate\sthe\sMem.z\spointer\sso\sthe\smemAboutToChange()\ncall\sis\snot\snecessary.
+D 2010-12-03T18:57:18
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4547616ad2286053af6ccccefa242dc925e49bf0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -231,7 +231,7 @@ F src/update.c 227e6cd512108b84f69421fc6c7aa1b83d60d6e0
 F src/utf.c 1baeeac91707a4df97ccc6141ec0f808278af685
 F src/util.c ab1c92426494f499f42b9e307537b03e923d75c1
 F src/vacuum.c 924bd1bcee2dfb05376f79845bd3b4cec7b54b2f
-F src/vdbe.c 21a9285fedf2e310ffc4bad27b828645dc2b20bb
+F src/vdbe.c 5d310eaf1a4d8383602126fa82e01291ab7d3cf3
 F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
 F src/vdbeInt.h 1f2137b905969f4de0648256aeb73abdf88f9213
 F src/vdbeapi.c fb0036185b3c56e15916a5ee96309cd4acf6818f
@@ -896,14 +896,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b4eafde823bf30ebbb9232a88c9ddfa52f3cbabf
-R cfcb30493f9b700ca917c02b66c4bbdb
+P 2e800cb87ded1a080469ea46878ac61f945f789e
+R 0305b455a681c9cda96b07aa02494a33
 U drh
-Z f856ce6e5b3d1df379dcd7eb4998633b
+Z 8033f986d410d173570ae1d2cc4587d6
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFM+Q/JoxKgR168RlERAp5lAJ4kPHFF72lGIi8c8Orw+l8fc1KlgwCdHkY3
-jXhDultFHg79573V87b71lo=
-=g/nZ
+iD8DBQFM+T2RoxKgR168RlERAk/OAJ9PTxhYXVCTAiWa/S8boSTCXET++ACghJyR
+1zkq1FytFinYYQb/2XlEFz0=
+=u7bI
 -----END PGP SIGNATURE-----
