@@ -2683,8 +2683,13 @@ static int fts3EvalExpr(
         }
       }
 
-      *paOut = aRet;
-      *pnOut = nRet;
+      if( rc==SQLITE_OK ){
+        *paOut = aRet;
+        *pnOut = nRet;
+      }else{
+        assert( *paOut==0 );
+        sqlite3_free(aRet);
+      }
       sqlite3_free(aExpr);
       fts3ExprFreeSegReaders(pExpr);
 
@@ -2757,6 +2762,7 @@ static int fts3EvalExpr(
     }
   }
 
+  assert( rc==SQLITE_OK || *paOut==0 );
   return rc;
 }
 
