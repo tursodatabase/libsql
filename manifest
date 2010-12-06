@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Add\sthe\sability\sto\sdisable\sconstant\sfactoring\susing\ssqlite3_test_control().\nAdd\sa\sTCL\sinterface\sto\sthis\snew\scapability\sand\sadd\stests\scases\sto\sthe\sTCL\ntest\sscripts\sto\sactually\suse\sthe\snew\scapability.
-D 2010-12-06T21:06:09
+C Fix\sthe\sbuild\sso\sthat\sit\sonce\sagain\sworks\swith\sSQLITE_OMIT_SHARED_CACHE\nand\sSQLITE_OMIT_AUTOVACUUM.
+D 2010-12-06T21:09:59
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4547616ad2286053af6ccccefa242dc925e49bf0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -122,7 +122,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c d5b0137bc20327af08c14772227cc35134839c30
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c ccafb8a86e9837daabe89ec590862907a669ecad
+F src/btree.c b70bf1dc563ec532851715ce51aa1ea0c0c592b9
 F src/btree.h 10f9296bf4edf034f5adce921b7b4383a56a1c90
 F src/btreeInt.h c424f2f131cc61ddf130f9bd736b3df12c8a51f0
 F src/build.c 00a327120d81ace6267e714ae8010c997d55de5d
@@ -897,14 +897,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P fa9eef865f2f399870305bef82296db25e5b3e90
-R adc371a70378ff8785a66a8184809cd8
+P ad8bc68197f2b47435149c3dbc035f4e7210fc76
+R 4b664154e6f347208b2861ee9c998570
 U drh
-Z 8093631df4d65f06b173b4129fbe870c
+Z 4a3c7cadea77cbd775c498c77a581cba
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFM/VBEoxKgR168RlERAqlBAJ9ypWriiT3TGhHuFN/JhWSodYBScwCeObWR
-24IrqP1lO8pMhydpHueuRoA=
-=C+pp
+iD8DBQFM/VEqoxKgR168RlERAgXIAJwM/TycNiJyhMNbNqXiGSf83rEVJwCfazZZ
+iNcjqzcUUyMybJuVyQGnSDY=
+=QnBb
 -----END PGP SIGNATURE-----
