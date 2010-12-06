@@ -39,6 +39,35 @@ do_test tkt-80ba2-101 {
         OR (a='A' AND EXISTS (SELECT * FROM t3 WHERE c='C'));
   }
 } {A B}
+do_test tkt-80ba2-102 {
+  optimization_control db factor-constants 0
+  db cache flush
+  db eval {
+    SELECT * FROM t1, t2
+     WHERE (a='A' AND b='X')
+        OR (a='A' AND EXISTS (SELECT * FROM t3 WHERE c='C'));
+  }
+} {A B}
+optimization_control db all 1
+
+# Verify that the optimization_control command is actually working
+#
+do_test tkt-80ba2-150 {
+  optimization_control db factor-constants 1
+  db cache flush
+  set x1 [db eval {EXPLAIN 
+    SELECT * FROM t1, t2
+     WHERE (a='A' AND b='X')
+        OR (a='A' AND EXISTS (SELECT * FROM t3 WHERE c='C'));}]
+  optimization_control db factor-constants 0
+  db cache flush
+  set x2 [db eval {EXPLAIN 
+    SELECT * FROM t1, t2
+     WHERE (a='A' AND b='X')
+        OR (a='A' AND EXISTS (SELECT * FROM t3 WHERE c='C'));}]
+
+  expr {$x1==$x2}
+} {0}
 
 do_test tkt-80ba2-200 {
   db eval {
@@ -81,6 +110,21 @@ do_test tkt-80ba2-200 {
 do_test tkt-80ba2-201 {
   db eval {
     CREATE INDEX timeline_entry_id_idx on timeline(entry_id);
+    SELECT entry_type,
+           entry_types.name,
+           entry_id
+      FROM timeline JOIN entry_types ON entry_type = entry_types.id
+     WHERE (entry_types.name = 'cli_command' AND entry_id=2114)
+        OR (entry_types.name = 'object_change'
+             AND entry_id IN (SELECT change_id
+                              FROM object_changes
+                               WHERE obj_context = 'exported_pools'));
+  }
+} {300 object_change 2048}
+do_test tkt-80ba2-202 {
+  optimization_control db factor-constants 0
+  db cache flush
+  db eval {
     SELECT entry_type,
            entry_types.name,
            entry_id

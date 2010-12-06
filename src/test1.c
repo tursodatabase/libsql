@@ -5318,6 +5318,64 @@ static int test_print_eqp(
 #endif /* SQLITE_OMIT_EXPLAIN */
 
 /*
+**      optimization_control DB OPT BOOLEAN
+**
+** Enable or disable query optimizations using the sqlite3_test_control()
+** interface.  Disable if BOOLEAN is false and enable if BOOLEAN is true.
+** OPT is the name of the optimization to be disabled.
+*/
+static int optimization_control(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int i;
+  sqlite3 *db;
+  const char *zOpt;
+  int onoff;
+  int mask;
+  static const struct {
+    const char *zOptName;
+    int mask;
+  } aOpt[] = {
+    { "all",              SQLITE_OptMask        },
+    { "query-flattener",  SQLITE_QueryFlattener },
+    { "column-cache",     SQLITE_ColumnCache    },
+    { "index-sort",       SQLITE_IndexSort      },
+    { "index-search",     SQLITE_IndexSearch    },
+    { "index-cover",      SQLITE_IndexCover     },
+    { "groupby-order",    SQLITE_GroupByOrder   },
+    { "factor-constants", SQLITE_FactorOutConst },
+  };
+
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB OPT BOOLEAN");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  if( Tcl_GetBooleanFromObj(interp, objv[3], &onoff) ) return TCL_ERROR;
+  zOpt = Tcl_GetString(objv[2]);
+  for(i=0; i<sizeof(aOpt)/sizeof(aOpt[0]); i++){
+    if( strcmp(zOpt, aOpt[i].zOptName)==0 ){
+      mask = aOpt[i].mask;
+      break;
+    }
+  }
+  if( onoff ) mask = ~mask;
+  if( i>=sizeof(aOpt)/sizeof(aOpt[0]) ){
+    Tcl_AppendResult(interp, "unknown optimization - should be one of:",
+                     (char*)0);
+    for(i=0; i<sizeof(aOpt)/sizeof(aOpt[0]); i++){
+      Tcl_AppendResult(interp, " ", aOpt[i].zOptName);
+    }
+    return TCL_ERROR;
+  }
+  sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS, db, mask);
+  return TCL_OK;
+}
+
+/*
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest1_Init(Tcl_Interp *interp){
@@ -5434,6 +5492,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "save_prng_state",               save_prng_state,    0 },
      { "restore_prng_state",            restore_prng_state, 0 },
      { "reset_prng_state",              reset_prng_state,   0 },
+     { "optimization_control",          optimization_control,0},
      { "tcl_objproc",                   runAsObjProc,       0 },
 
      /* sqlite3_column_*() API */

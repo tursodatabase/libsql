@@ -3040,10 +3040,22 @@ static int evalConstExpr(Walker *pWalker, Expr *pExpr){
 ** Preevaluate constant subexpressions within pExpr and store the
 ** results in registers.  Modify pExpr so that the constant subexpresions
 ** are TK_REGISTER opcodes that refer to the precomputed values.
+**
+** This routine is a no-op if the jump to the cookie-check code has
+** already occur.  Since the cookie-check jump is generated prior to
+** any other serious processing, this check ensures that there is no
+** way to accidently bypass the constant initializations.
+**
+** This routine is also a no-op if the SQLITE_FactorOutConst optimization
+** is disabled via the sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS)
+** interface.  This allows test logic to verify that the same answer is
+** obtained for queries regardless of whether or not constants are
+** precomputed into registers or if they are inserted in-line.
 */
 void sqlite3ExprCodeConstants(Parse *pParse, Expr *pExpr){
   Walker w;
   if( pParse->cookieGoto ) return;
+  if( (pParse->db->flags & SQLITE_FactorOutConst)!=0 ) return;
   w.xExprCallback = evalConstExpr;
   w.xSelectCallback = 0;
   w.pParse = pParse;

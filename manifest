@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Back\sout\spart\sof\sthe\sprevious\schange\sthat\swas\snot\sreally\snecessary\sin\sorder\nto\sfix\s[80ba201079ea60],\sand\swhich\sin\sfact\sserves\sno\suseful\spurpose.
-D 2010-12-06T18:59:14
+C Add\sthe\sability\sto\sdisable\sconstant\sfactoring\susing\ssqlite3_test_control().\nAdd\sa\sTCL\sinterface\sto\sthis\snew\scapability\sand\sadd\stests\scases\sto\sthe\sTCL\ntest\sscripts\sto\sactually\suse\sthe\snew\scapability.
+D 2010-12-06T21:06:09
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4547616ad2286053af6ccccefa242dc925e49bf0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -131,7 +131,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 4f3aadad62c6c9f0d4e5a96718516ac4e3c598df
 F src/date.c 1548fdac51377e4e7833251de878b4058c148e1b
 F src/delete.c 7ed8a8c8b5f748ece92df173d7e0f7810c899ebd
-F src/expr.c 325f49c99d982fdea3867d9fff8bec0c3e5d19aa
+F src/expr.c 1810f3056b11de99cc10e24629edf00e5fbd3a75
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 17950a28f28b23e8ad3feaac5fc88c324d2f600a
 F src/func.c 2b7cf54d2569c2eba42fe81165d1932b546681a3
@@ -181,12 +181,12 @@ F src/select.c 8a7ba246b0b4bb45df7fbc52681728a0e3deaaa7
 F src/shell.c 8517fc1f9c59ae4007e6cc8b9af91ab231ea2056
 F src/sqlite.h.in b7e8a4e4749cfae9c99e1fbe3f9f87763cbbf7a2
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
-F src/sqliteInt.h 5cfee93885789f174df186409b81812ee189e44f
+F src/sqliteInt.h b96d5ddb8b419a2ed7cf69a7778b53872d73e8a7
 F src/sqliteLimit.h a17dcd3fb775d63b64a43a55c54cb282f9726f44
 F src/status.c 496913d4e8441195f6f2a75b1c95993a45b9b30b
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 77c5c4b8ac7b2d94ee480e1ad626fbd921d948e4
-F src/test1.c c2aa29d0fd6db7506fb7f0de7bff1386078296df
+F src/test1.c 397809a3069c171a507a49b6f6edfc4255b0afbc
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 056093cfef69ff4227a6bdb9108564dc7f45e4bc
 F src/test4.c 0528360b5025688002a5feb6be906ddce52eaaee
@@ -689,7 +689,7 @@ F test/tkt-4a03edc4c8.test 2865e4edbc075b954daa82f8da7cc973033ec76e
 F test/tkt-5e10420e8d.test 904d1687b3c06d43e5b3555bbcf6802e7c0ffd84
 F test/tkt-5ee23731f.test 3581260f2a71e51db94e1506ba6b0f7311d002a9
 F test/tkt-78e04e52ea.test ab52f0c1e2de6e46c910f4cc16b086bba05952b7
-F test/tkt-80ba201079.test 29357d3008cbd9c7d031884a9e8ed609ed0b022c
+F test/tkt-80ba201079.test 5618c9ae2dee98215b2e4b9eee0d08228c05f1c7
 F test/tkt-80e031a00f.test 9a154173461a4dbe2de49cda73963e04842d52f7
 F test/tkt-8454a207b9.test c583a9f814a82a2b5ba95207f55001c9f0cd816c
 F test/tkt-94c04eaadb.test be5ea61cb04dfdc047d19b5c5a9e75fa3da67a7f
@@ -897,14 +897,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c5c53152d68218bb5e7f922271dd7c50da2361c1
-R 1dcb2efdd5f0c7709490525224087ff2
+P fa9eef865f2f399870305bef82296db25e5b3e90
+R adc371a70378ff8785a66a8184809cd8
 U drh
-Z 1d03f4cb6f394055496ff40462427480
+Z 8093631df4d65f06b173b4129fbe870c
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFM/TKFoxKgR168RlERAs0NAJ9DYT7vr59wTUtfXYJEEy+jTlAYTQCgjZ0A
-Sk/Mz8OxzQFizI7ulUt5ljU=
-=Pk08
+iD8DBQFM/VBEoxKgR168RlERAqlBAJ9ypWriiT3TGhHuFN/JhWSodYBScwCeObWR
+24IrqP1lO8pMhydpHueuRoA=
+=C+pp
 -----END PGP SIGNATURE-----
