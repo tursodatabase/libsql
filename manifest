@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Initialize\sall\sconstants\sat\sthe\svery\sbeginning\sof\sa\sprepared\sstatement.\nDo\snot\sallow\sconstant\sinitialization\sto\soccur\sonce\scontrol\sflow\shas\sa\schance\nto\sdiverge,\sto\savoid\sthe\spossibility\sof\shaving\suninitialized\sregisters.\nTicket\s[80ba201079ea60807].
-D 2010-12-06T18:50:32
+C Back\sout\spart\sof\sthe\sprevious\schange\sthat\swas\snot\sreally\snecessary\sin\sorder\nto\sfix\s[80ba201079ea60],\sand\swhich\sin\sfact\sserves\sno\suseful\spurpose.
+D 2010-12-06T18:59:14
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4547616ad2286053af6ccccefa242dc925e49bf0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -131,7 +131,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 4f3aadad62c6c9f0d4e5a96718516ac4e3c598df
 F src/date.c 1548fdac51377e4e7833251de878b4058c148e1b
 F src/delete.c 7ed8a8c8b5f748ece92df173d7e0f7810c899ebd
-F src/expr.c c5e0aeea657a9ac1833627ac311ab3c089dd88f9
+F src/expr.c 325f49c99d982fdea3867d9fff8bec0c3e5d19aa
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 17950a28f28b23e8ad3feaac5fc88c324d2f600a
 F src/func.c 2b7cf54d2569c2eba42fe81165d1932b546681a3
@@ -897,14 +897,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 476a8b492124d31e0656e61a6183ab55684c0bdf
-R 8559757604122a388646d1db8088502e
+P c5c53152d68218bb5e7f922271dd7c50da2361c1
+R 1dcb2efdd5f0c7709490525224087ff2
 U drh
-Z 3d041e2a96b40fadb27ae2c6d8beb056
+Z 1d03f4cb6f394055496ff40462427480
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFM/TB7oxKgR168RlERAvdiAJ9Fn33s0eMo+xn0azLYTv5ssqLbpQCfW1fO
-miPMMLqlO8YnOnBLErdqUhE=
-=5ZIS
+iD8DBQFM/TKFoxKgR168RlERAs0NAJ9DYT7vr59wTUtfXYJEEy+jTlAYTQCgjZ0A
+Sk/Mz8OxzQFizI7ulUt5ljU=
+=Pk08
 -----END PGP SIGNATURE-----
