@@ -419,7 +419,7 @@ int sqlite3_blob_write(sqlite3_blob *pBlob, const void *z, int n, int iOffset){
 */
 int sqlite3_blob_bytes(sqlite3_blob *pBlob){
   Incrblob *p = (Incrblob *)pBlob;
-  return p ? p->nByte : 0;
+  return (p && p->pStmt) ? p->nByte : 0;
 }
 
 /*
@@ -457,6 +457,7 @@ int sqlite3_blob_reopen(sqlite3_blob *pBlob, sqlite3_int64 iRow){
   }
 
   rc = sqlite3ApiExit(db, rc);
+  assert( rc==SQLITE_OK || p->pStmt==0 );
   sqlite3_mutex_leave(db->mutex);
   return rc;
 }
