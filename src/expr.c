@@ -1655,6 +1655,7 @@ int sqlite3CodeSubselect(
         sqlite3SelectDestInit(&dest, SRT_Set, pExpr->iTable);
         dest.affinity = (u8)affinity;
         assert( (pExpr->iTable&0x0000FFFF)==pExpr->iTable );
+        pExpr->x.pSelect->iLimit = 0;
         if( sqlite3Select(pParse, pExpr->x.pSelect, &dest) ){
           return 0;
         }
@@ -1755,6 +1756,7 @@ int sqlite3CodeSubselect(
       sqlite3ExprDelete(pParse->db, pSel->pLimit);
       pSel->pLimit = sqlite3PExpr(pParse, TK_INTEGER, 0, 0,
                                   &sqlite3IntTokens[1]);
+      pSel->iLimit = 0;
       if( sqlite3Select(pParse, pSel, &dest) ){
         return 0;
       }
@@ -3034,6 +3036,17 @@ static int evalConstExpr(Walker *pWalker, Expr *pExpr){
   return WRC_Continue;
 }
 
+/* This routine is part of the parse-tree walker for
+** sqlite3ExprCodeConstants().  Simply return WRC_Continue so that
+** tree walker logic will extend constant extraction and precoding
+** into subqueires.
+*/
+static int evalConstSelect(Walker *pNotUsed1, Select *pNotUsed2){
+  UNUSED_PARAMETER(pNotUsed1);
+  UNUSED_PARAMETER(pNotUsed2);
+  return WRC_Continue;
+}
+
 /*
 ** Preevaluate constant subexpressions within pExpr and store the
 ** results in registers.  Modify pExpr so that the constant subexpresions
@@ -3041,8 +3054,9 @@ static int evalConstExpr(Walker *pWalker, Expr *pExpr){
 */
 void sqlite3ExprCodeConstants(Parse *pParse, Expr *pExpr){
   Walker w;
+  if( pParse->cookieGoto ) return;
   w.xExprCallback = evalConstExpr;
-  w.xSelectCallback = 0;
+  w.xSelectCallback = evalConstSelect;
   w.pParse = pParse;
   sqlite3WalkExpr(&w, pExpr);
 }
