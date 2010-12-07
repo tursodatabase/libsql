@@ -1,5 +1,8 @@
-C Run\ssome\sof\sthe\sexisting\stest\sscripts\swith\soptimizations\sdisabled\sas\spart\sof\sall.test.
-D 2010-12-07T14:32:29
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Version\s3.7.4\srelease\scandidate\s3
+D 2010-12-07T14:59:22
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4547616ad2286053af6ccccefa242dc925e49bf0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -894,7 +897,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c370338c772bcd0797a23f83c3f6dc019640c6dd
+P b0634d2f909fb192d20315e59fa31fcd8f316541
 R c899dedfcbfad993e519fd17027aa5c1
-U dan
-Z 85d014326478c03ad494360917cb8b7d
+U drh
+Z e558719848264f114302cf252022d7ad
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFM/kvQoxKgR168RlERAihjAJ483qru/mKHGZtSh1P4zl69jepBKwCfe11S
+MaOtcUGzrbyHLk/lC2rzkPk=
+=bBvs
+-----END PGP SIGNATURE-----
