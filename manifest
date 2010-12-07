@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Fix\sthe\sbuild\sso\sthat\sit\sonce\sagain\sworks\swith\sSQLITE_OMIT_SHARED_CACHE\nand\sSQLITE_OMIT_AUTOVACUUM.
-D 2010-12-06T21:09:59
+C Add\stests\sto\stkt-80ba201079.test.
+D 2010-12-07T07:57:50
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4547616ad2286053af6ccccefa242dc925e49bf0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -689,7 +686,7 @@ F test/tkt-4a03edc4c8.test 2865e4edbc075b954daa82f8da7cc973033ec76e
 F test/tkt-5e10420e8d.test 904d1687b3c06d43e5b3555bbcf6802e7c0ffd84
 F test/tkt-5ee23731f.test 3581260f2a71e51db94e1506ba6b0f7311d002a9
 F test/tkt-78e04e52ea.test ab52f0c1e2de6e46c910f4cc16b086bba05952b7
-F test/tkt-80ba201079.test 5618c9ae2dee98215b2e4b9eee0d08228c05f1c7
+F test/tkt-80ba201079.test a09684db1a0bd55b8838f606adccee456a51ddbf
 F test/tkt-80e031a00f.test 9a154173461a4dbe2de49cda73963e04842d52f7
 F test/tkt-8454a207b9.test c583a9f814a82a2b5ba95207f55001c9f0cd816c
 F test/tkt-94c04eaadb.test be5ea61cb04dfdc047d19b5c5a9e75fa3da67a7f
@@ -897,14 +894,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ad8bc68197f2b47435149c3dbc035f4e7210fc76
-R 4b664154e6f347208b2861ee9c998570
-U drh
-Z 4a3c7cadea77cbd775c498c77a581cba
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFM/VEqoxKgR168RlERAgXIAJwM/TycNiJyhMNbNqXiGSf83rEVJwCfazZZ
-iNcjqzcUUyMybJuVyQGnSDY=
-=QnBb
------END PGP SIGNATURE-----
+P fabcb6b95e1d4059d1e6c6183f65846f6cbd5749
+R a62680e5755d8abc6c8d1de652b8a83d
+U dan
+Z 863ac080b5a3ea11bc9de517f38f2c30
