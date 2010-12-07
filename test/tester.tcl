@@ -109,6 +109,10 @@ if {[info command sqlite_orig]==""} {
       if {[info exists ::G(perm:presql)]} {
         [lindex $args 0] eval $::G(perm:presql)
       }
+      if {[info exists ::G(perm:dbconfig)]} {
+        set ::dbhandle [lindex $args 0]
+        uplevel #0 $::G(perm:dbconfig)
+      }
       set res
     } else {
       # This command is not opening a new database connection. Pass the 

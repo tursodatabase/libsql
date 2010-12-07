@@ -25,6 +25,7 @@ db close
 #       -presql      SQL                    (default "")
 #       -files       LIST-OF-FILES          (default $::ALLTESTS)
 #       -prefix      NAME                   (default "$::NAME.")
+#       -dbconfig    SCRIPT                 (default "")
 #
 proc test_suite {name args} {
 
@@ -34,6 +35,7 @@ proc test_suite {name args} {
   set default(-description) "no description supplied (fixme)"
   set default(-files)       ""
   set default(-prefix)      "${name}."
+  set default(-dbconfig)    ""
 
   array set options [array get default]
   if {[llength $args]%2} {
@@ -48,7 +50,6 @@ proc test_suite {name args} {
 
   set     ::testspec($name) [array get options]
   lappend ::testsuitelist $name
-
 }
 
 #-------------------------------------------------------------------------
@@ -758,6 +759,19 @@ test_suite "rtree" -description {
   All R-tree related tests. Provides coverage of source file rtree.c.
 } -files [glob -nocomplain $::testdir/../ext/rtree/*.test]
 
+test_suite "no_optimization" -description {
+  Run test scripts with optimizations disabled using the
+  sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS) interface.
+} -files {
+  where.test where2.test where3.test where4.test where5.test
+  where6.test where7.test where8.test where9.test
+  whereA.test whereB.test wherelimit.test
+  select1.test select2.test select3.test select4.test select5.test
+  select7.test select8.test selectA.test selectC.test
+} -dbconfig {
+  optimization_control $::dbhandle all 0
+}
+
 # End of tests
 #############################################################################
 
@@ -779,6 +793,7 @@ proc run_tests {name args} {
   set ::G(perm:prefix)       $options(-prefix)
   set ::G(perm:presql)       $options(-presql)
   set ::G(isquick)           1
+  set ::G(perm:dbconfig)     $options(-dbconfig)
 
   uplevel $options(-initialize)
 
@@ -792,6 +807,7 @@ proc run_tests {name args} {
   unset ::G(perm:name)
   unset ::G(perm:prefix)
   unset ::G(perm:presql)
+  unset ::G(perm:dbconfig)
 }
 
 proc run_test_suite {name} {

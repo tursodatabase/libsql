@@ -16,6 +16,7 @@ source $testdir/permutations.test
 
 run_test_suite full
 
+run_test_suite no_optimization 
 run_test_suite memsubsys1 
 run_test_suite memsubsys2 
 run_test_suite singlethread 
