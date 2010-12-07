@@ -151,10 +151,14 @@ static int superlockWalLock(
 void sqlite3demo_superunlock(void *pLock){
   Superlock *p = (Superlock *)pLock;
   if( p->bWal ){
+    int rc;                         /* Return code */
     int flags = SQLITE_SHM_UNLOCK | SQLITE_SHM_EXCLUSIVE;
     sqlite3_file *fd = 0;
-    sqlite3_file_control(p->db, "main", SQLITE_FCNTL_FILE_POINTER, (void *)&fd);
-    fd->pMethods->xShmLock(fd, 2, SQLITE_SHM_NLOCK-2, flags);
+    rc = sqlite3_file_control(p->db, "main", SQLITE_FCNTL_FILE_POINTER, (void *)&fd);
+    if( rc==SQLITE_OK ){
+      fd->pMethods->xShmLock(fd, 2, 1, flags);
+      fd->pMethods->xShmLock(fd, 3, SQLITE_SHM_NLOCK-3, flags);
+    }
   }
   sqlite3_close(p->db);
   sqlite3_free(p);
