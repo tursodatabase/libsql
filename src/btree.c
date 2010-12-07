@@ -1711,17 +1711,13 @@ int sqlite3BtreeOpen(
   const int isTempDb = zFilename==0 || zFilename[0]==0;
 
   /* Set the variable isMemdb to true for an in-memory database, or 
-  ** false for a file-based database. This symbol is only required if
-  ** either of the shared-data or autovacuum features are compiled 
-  ** into the library.
+  ** false for a file-based database.
   */
-#if !defined(SQLITE_OMIT_SHARED_CACHE) || !defined(SQLITE_OMIT_AUTOVACUUM)
-  #ifdef SQLITE_OMIT_MEMORYDB
-    const int isMemdb = 0;
-  #else
-    const int isMemdb = (zFilename && strcmp(zFilename, ":memory:")==0)
-                         || (isTempDb && sqlite3TempInMemory(db));
-  #endif
+#ifdef SQLITE_OMIT_MEMORYDB
+  const int isMemdb = 0;
+#else
+  const int isMemdb = (zFilename && strcmp(zFilename, ":memory:")==0)
+                       || (isTempDb && sqlite3TempInMemory(db));
 #endif
 
   assert( db!=0 );

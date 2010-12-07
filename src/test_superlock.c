@@ -102,7 +102,6 @@ static int superlockWalLock(
   int rc;                         /* Return code */
   sqlite3_file *fd = 0;           /* Main database file handle */
   void volatile *p = 0;           /* Pointer to first page of shared memory */
-  int nBusy = 0;                  /* Number of calls already made to xBusy */
 
   /* Obtain a pointer to the sqlite3_file object open on the main db file. */
   rc = sqlite3_file_control(db, "main", SQLITE_FCNTL_FILE_POINTER, (void *)&fd);
@@ -311,6 +310,7 @@ static int superlock_cmd(
   assert( rc!=SQLITE_OK || pLock!=0 );
 
   if( rc!=SQLITE_OK ){
+    extern const char *sqlite3ErrStr(int);
     Tcl_ResetResult(interp);
     Tcl_AppendResult(interp, sqlite3ErrStr(rc), 0);
     return TCL_ERROR;

@@ -152,8 +152,6 @@ do_select_tests 5.2 -errorformat {
   wrong number of arguments to function %s()
 } {
   1 "SELECT matchinfo() FROM t2 WHERE t2 MATCH 'history'"       matchinfo
-  2 "SELECT matchinfo(t2, t2) FROM t2 WHERE t2 MATCH 'history'" matchinfo
-
   3 "SELECT snippet(t2, 1, 2, 3, 4, 5, 6) FROM t2 WHERE t2 MATCH 'history'" 
     snippet
 }
@@ -174,7 +172,12 @@ do_select_tests 5.4 -errorformat {
   3 "SELECT snippet(content) FROM t2 WHERE t2 MATCH 'history'"   snippet
   4 "SELECT optimize(content) FROM t2 WHERE t2 MATCH 'history'"  optimize
 }
+do_catchsql_test 5.5.1 {
+  SELECT matchinfo(t2, 'abc') FROM t2 WHERE t2 MATCH 'history'
+} {1 {unrecognized matchinfo request: b}}
+
 do_execsql_test 5.5 { DROP TABLE t2 }
+
 
 # Test the snippet() function with 1 to 6 arguments.
 # 

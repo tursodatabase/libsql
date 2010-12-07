@@ -306,6 +306,10 @@ foreach nodesize {50 500 1000 2000} {
       delete_row $iDelete
     if {0==($iTest%2)} { execsql COMMIT }
 
+    if {0==($iTest%2)} { 
+      do_test fts3rnd-1.$nodesize.$iTest.0 { fts3_integrity_check t1 } ok 
+    }
+
     # Pick 10 terms from the vocabulary. Check that the results of querying
     # the database for the set of documents containing each of these terms
     # is the same as the result obtained by scanning the contents of the Tcl 
@@ -379,7 +383,6 @@ foreach nodesize {50 500 1000 2000} {
       set terms [list [random_term] [random_term] [random_term]]
       set nNear 11
       set match [join $terms " NEAR/$nNear "]
-      set fts3 [execsql { SELECT docid FROM t1 WHERE t1 MATCH $match }]
       do_select_test fts3rnd-1.$nodesize.$iTest.7.$i {
         SELECT docid FROM t1 WHERE t1 MATCH $match
       } [simple_near $terms $nNear]

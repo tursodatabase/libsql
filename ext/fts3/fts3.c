@@ -656,7 +656,7 @@ static int fts3IsSpecialColumn(
     zCsr++;
   }
 
-  *pnKey = zCsr-z;
+  *pnKey = (int)(zCsr-z);
   zValue = sqlite3_mprintf("%s", &zCsr[1]);
   if( zValue ){
     sqlite3Fts3Dequote(zValue);
@@ -711,7 +711,7 @@ static int fts3InitVtab(
 
   aCol = (const char **)sqlite3_malloc(sizeof(const char *) * (argc-2) );
   if( !aCol ) return SQLITE_NOMEM;
-  memset(aCol, 0, sizeof(const char *) * (argc-2));
+  memset((void *)aCol, 0, sizeof(const char *) * (argc-2));
 
   /* Loop through all of the arguments passed by the user to the FTS3/4
   ** module (i.e. all the column names and special arguments). This loop
@@ -843,7 +843,7 @@ static int fts3InitVtab(
 
 fts3_init_out:
 
-  sqlite3_free(aCol);
+  sqlite3_free((void *)aCol);
   if( rc!=SQLITE_OK ){
     if( p ){
       fts3DisconnectMethod((sqlite3_vtab *)p);
@@ -1022,7 +1022,6 @@ static int fts3CursorSeek(sqlite3_context *pContext, Fts3Cursor *pCsr){
 ** If an OOM error occurs, SQLITE_NOMEM is returned. Otherwise, SQLITE_OK.
 */
 static int fts3ScanInteriorNode(
-  Fts3Table *p,                   /* Virtual table handle */
   const char *zTerm,              /* Term to select leaves for */
   int nTerm,                      /* Size of term zTerm in bytes */
   const char *zNode,              /* Buffer containing segment interior node */
@@ -1053,7 +1052,7 @@ static int fts3ScanInteriorNode(
   */
   zCsr += sqlite3Fts3GetVarint(zCsr, &iChild);
   zCsr += sqlite3Fts3GetVarint(zCsr, &iChild);
-  if( zCsr>=zEnd ){
+  if( zCsr>zEnd ){
     return SQLITE_CORRUPT;
   }
   
@@ -1157,7 +1156,7 @@ static int fts3SelectLeaf(
   assert( piLeaf || piLeaf2 );
 
   sqlite3Fts3GetVarint32(zNode, &iHeight);
-  rc = fts3ScanInteriorNode(p, zTerm, nTerm, zNode, nNode, piLeaf, piLeaf2);
+  rc = fts3ScanInteriorNode(zTerm, nTerm, zNode, nNode, piLeaf, piLeaf2);
   assert( !piLeaf2 || !piLeaf || rc!=SQLITE_OK || (*piLeaf<=*piLeaf2) );
 
   if( rc==SQLITE_OK && iHeight>1 ){
@@ -1956,7 +1955,7 @@ static void fts3SegReaderArrayFree(Fts3SegReaderArray *pArray){
   if( pArray ){
     int i;
     for(i=0; i<pArray->nSegment; i++){
-      sqlite3Fts3SegReaderFree(0, pArray->apSegment[i]);
+      sqlite3Fts3SegReaderFree(pArray->apSegment[i]);
     }
     sqlite3_free(pArray);
   }
@@ -1974,7 +1973,7 @@ static int fts3SegReaderArrayAdd(
         sizeof(Fts3SegReaderArray) + (nNew-1) * sizeof(Fts3SegReader*)
     );
     if( !pArray ){
-      sqlite3Fts3SegReaderFree(0, pNew);
+      sqlite3Fts3SegReaderFree(pNew);
       return SQLITE_NOMEM;
     }
     if( nNew==16 ){
@@ -2027,14 +2026,14 @@ static int fts3TermSegReaderArray(
       ** leaf). Do not bother inspecting any data in this case, just
       ** create a Fts3SegReader to scan the single leaf. 
       */
-      rc = sqlite3Fts3SegReaderNew(p, iAge, 0, 0, 0, zRoot, nRoot, &pNew);
+      rc = sqlite3Fts3SegReaderNew(iAge, 0, 0, 0, zRoot, nRoot, &pNew);
     }else{
       sqlite3_int64 i1;           /* First leaf that may contain zTerm */
       sqlite3_int64 i2;           /* Final leaf that may contain zTerm */
       rc = fts3SelectLeaf(p, zTerm, nTerm, zRoot, nRoot, &i1, (isPrefix?&i2:0));
       if( isPrefix==0 ) i2 = i1;
       if( rc==SQLITE_OK ){
-        rc = sqlite3Fts3SegReaderNew(p, iAge, i1, i2, 0, 0, 0, &pNew);
+        rc = sqlite3Fts3SegReaderNew(iAge, i1, i2, 0, 0, 0, &pNew);
       }
     }
     assert( (pNew==0)==(rc!=SQLITE_OK) );
@@ -2200,7 +2199,7 @@ static void fts3DoclistStripPositions(
       pOut += sqlite3Fts3PutVarint(pOut, delta);
     }
 
-    *pnList = (pOut - aList);
+    *pnList = (int)(pOut - aList);
   }
 }
 
@@ -2254,9 +2253,9 @@ static int fts3PhraseSelect(
 
   for(ii=0; ii<pPhrase->nToken; ii++){
     Fts3PhraseToken *pTok;        /* Token to find doclist for */
-    int iTok;                     /* The token being queried this iteration */
-    char *pList;                  /* Pointer to token doclist */
-    int nList;                    /* Size of buffer at pList */
+    int iTok = 0;                 /* The token being queried this iteration */
+    char *pList = 0;              /* Pointer to token doclist */
+    int nList = 0;                /* Size of buffer at pList */
 
     /* Select a token to process. If this is an xFilter() call, then tokens 
     ** are processed in order from least to most costly. Otherwise, tokens 
@@ -2298,8 +2297,9 @@ static int fts3PhraseSelect(
     if( pCsr->eEvalmode==FTS3_EVAL_NEXT && pTok->pDeferred ){
       rc = fts3DeferredTermSelect(pTok->pDeferred, isTermPos, &nList, &pList);
     }else{
-      assert( pTok->pArray );
-      rc = fts3TermSelect(p, pTok, iCol, isTermPos, &nList, &pList);
+      if( pTok->pArray ){
+        rc = fts3TermSelect(p, pTok, iCol, isTermPos, &nList, &pList);
+      }
       pTok->bFulltext = 1;
     }
     assert( rc!=SQLITE_OK || pCsr->eEvalmode || pTok->pArray==0 );
@@ -2527,7 +2527,10 @@ static int fts3ExprCost(Fts3Expr *pExpr){
     int ii;
     nCost = 0;
     for(ii=0; ii<pPhrase->nToken; ii++){
-      nCost += pPhrase->aToken[ii].pArray->nCost;
+      Fts3SegReaderArray *pArray = pPhrase->aToken[ii].pArray;
+      if( pArray ){
+        nCost += pPhrase->aToken[ii].pArray->nCost;
+      }
     }
   }else{
     nCost = fts3ExprCost(pExpr->pLeft) + fts3ExprCost(pExpr->pRight);
@@ -2555,7 +2558,7 @@ static void fts3ExprAssignCosts(
     fts3ExprAssignCosts(pExpr->pRight, ppExprCost);
   }else{
     (*ppExprCost)->pExpr = pExpr;
-    (*ppExprCost)->nCost = fts3ExprCost(pExpr);;
+    (*ppExprCost)->nCost = fts3ExprCost(pExpr);
     (*ppExprCost)++;
   }
 }
@@ -2680,8 +2683,13 @@ static int fts3EvalExpr(
         }
       }
 
-      *paOut = aRet;
-      *pnOut = nRet;
+      if( rc==SQLITE_OK ){
+        *paOut = aRet;
+        *pnOut = nRet;
+      }else{
+        assert( *paOut==0 );
+        sqlite3_free(aRet);
+      }
       sqlite3_free(aExpr);
       fts3ExprFreeSegReaders(pExpr);
 
@@ -2754,6 +2762,7 @@ static int fts3EvalExpr(
     }
   }
 
+  assert( rc==SQLITE_OK || *paOut==0 );
   return rc;
 }
 
@@ -3273,9 +3282,13 @@ static void fts3MatchinfoFunc(
   sqlite3_value **apVal           /* Array of arguments */
 ){
   Fts3Cursor *pCsr;               /* Cursor handle passed through apVal[0] */
-  assert( nVal==1 );
+  assert( nVal==1 || nVal==2 );
   if( SQLITE_OK==fts3FunctionArg(pContext, "matchinfo", apVal[0], &pCsr) ){
-    sqlite3Fts3Matchinfo(pContext, pCsr);
+    const char *zArg = 0;
+    if( nVal>1 ){
+      zArg = (const char *)sqlite3_value_text(apVal[1]);
+    }
+    sqlite3Fts3Matchinfo(pContext, pCsr, zArg);
   }
 }
 
@@ -3464,6 +3477,7 @@ int sqlite3Fts3Init(sqlite3 *db){
    && SQLITE_OK==(rc = sqlite3_overload_function(db, "snippet", -1))
    && SQLITE_OK==(rc = sqlite3_overload_function(db, "offsets", 1))
    && SQLITE_OK==(rc = sqlite3_overload_function(db, "matchinfo", 1))
+   && SQLITE_OK==(rc = sqlite3_overload_function(db, "matchinfo", 2))
    && SQLITE_OK==(rc = sqlite3_overload_function(db, "optimize", 1))
   ){
     rc = sqlite3_create_module_v2(

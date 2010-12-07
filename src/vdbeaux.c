@@ -1537,6 +1537,11 @@ static void closeAllCursors(Vdbe *p){
   if( p->aMem ){
     releaseMemArray(&p->aMem[1], p->nMem);
   }
+  while( p->pDelFrame ){
+    VdbeFrame *pDel = p->pDelFrame;
+    p->pDelFrame = pDel->pParent;
+    sqlite3VdbeFrameDelete(pDel);
+  }
 }
 
 /*

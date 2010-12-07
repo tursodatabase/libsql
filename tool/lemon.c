@@ -20,7 +20,13 @@
 #endif
 
 #ifdef __WIN32__
-extern int access();
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern int access(const char *path, int mode);
+#ifdef __cplusplus
+}
+#endif
 #else
 #include <unistd.h>
 #endif
@@ -3263,7 +3269,7 @@ PRIVATE char *append_str(const char *zText, int n, int p1, int p2){
     }
     n = lemonStrlen(zText);
   }
-  if( n+sizeof(zInt)*2+used >= alloced ){
+  if( (int) (n+sizeof(zInt)*2+used) >= alloced ){
     alloced = n + sizeof(zInt)*2 + used + 200;
     z = (char *) realloc(z,  alloced);
   }

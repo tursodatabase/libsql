@@ -3765,7 +3765,7 @@ int sqlite3Select(
     }else{
       sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
       assert( pItem->isPopulated==0 );
-      explainSetInteger(pItem->iSelectId, pParse->iNextSelectId);
+      explainSetInteger(pItem->iSelectId, (u8)pParse->iNextSelectId);
       sqlite3Select(pParse, pSub, &dest);
       pItem->isPopulated = 1;
       pItem->pTab->nRowEst = (unsigned)pSub->nSelectRow;

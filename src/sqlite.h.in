@@ -4835,7 +4835,8 @@ int sqlite3_blob_open(
 ** SQLite error code is returned and the blob handle is considered aborted.
 ** ^All subsequent calls to [sqlite3_blob_read()], [sqlite3_blob_write()] or
 ** [sqlite3_blob_reopen()] on an aborted blob handle immediately return
-** SQLITE_ABORT.
+** SQLITE_ABORT. ^Calling [sqlite3_blob_bytes()] on an aborted blob handle
+** always returns zero.
 **
 ** ^This function sets the database handle error code and message.
 */

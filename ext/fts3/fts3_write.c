@@ -283,6 +283,51 @@ static int fts3SqlStmt(
   return rc;
 }
 
+static int fts3SelectDocsize(
+  Fts3Table *pTab,                /* FTS3 table handle */
+  int eStmt,                      /* Either SQL_SELECT_DOCSIZE or DOCTOTAL */
+  sqlite3_int64 iDocid,           /* Docid to bind for SQL_SELECT_DOCSIZE */
+  sqlite3_stmt **ppStmt           /* OUT: Statement handle */
+){
+  sqlite3_stmt *pStmt = 0;        /* Statement requested from fts3SqlStmt() */
+  int rc;                         /* Return code */
+
+  assert( eStmt==SQL_SELECT_DOCSIZE || eStmt==SQL_SELECT_DOCTOTAL );
+
+  rc = fts3SqlStmt(pTab, eStmt, &pStmt, 0);
+  if( rc==SQLITE_OK ){
+    if( eStmt==SQL_SELECT_DOCSIZE ){
+      sqlite3_bind_int64(pStmt, 1, iDocid);
+    }
+    rc = sqlite3_step(pStmt);
+    if( rc!=SQLITE_ROW ){
+      rc = sqlite3_reset(pStmt);
+      if( rc==SQLITE_OK ) rc = SQLITE_CORRUPT;
+      pStmt = 0;
+    }else{
+      rc = SQLITE_OK;
+    }
+  }
+
+  *ppStmt = pStmt;
+  return rc;
+}
+
+int sqlite3Fts3SelectDoctotal(
+  Fts3Table *pTab,                /* Fts3 table handle */
+  sqlite3_stmt **ppStmt           /* OUT: Statement handle */
+){
+  return fts3SelectDocsize(pTab, SQL_SELECT_DOCTOTAL, 0, ppStmt);
+}
+
+int sqlite3Fts3SelectDocsize(
+  Fts3Table *pTab,                /* Fts3 table handle */
+  sqlite3_int64 iDocid,           /* Docid to read size data for */
+  sqlite3_stmt **ppStmt           /* OUT: Statement handle */
+){
+  return fts3SelectDocsize(pTab, SQL_SELECT_DOCSIZE, iDocid, ppStmt);
+}
+
 /*
 ** Similar to fts3SqlStmt(). Except, after binding the parameters in
 ** array apVal[] to the SQL statement identified by eStmt, the statement
@@ -1071,7 +1116,7 @@ int sqlite3Fts3SegReaderCost(
           }
         }
 
-        pCsr->nRowAvg = (((nByte / nDoc) + pgsz - 1) / pgsz);
+        pCsr->nRowAvg = (int)(((nByte / nDoc) + pgsz - 1) / pgsz);
       }
       rc = sqlite3_reset(pStmt);
       if( rc!=SQLITE_OK || pCsr->nRowAvg==0 ) return rc;
@@ -1099,7 +1144,7 @@ int sqlite3Fts3SegReaderCost(
 ** Free all allocations associated with the iterator passed as the 
 ** second argument.
 */
-void sqlite3Fts3SegReaderFree(Fts3Table *p, Fts3SegReader *pReader){
+void sqlite3Fts3SegReaderFree(Fts3SegReader *pReader){
   if( pReader && !fts3SegReaderIsPending(pReader) ){
     sqlite3_free(pReader->zTerm);
     if( !fts3SegReaderIsRootOnly(pReader) ){
@@ -1113,7 +1158,6 @@ void sqlite3Fts3SegReaderFree(Fts3Table *p, Fts3SegReader *pReader){
 ** Allocate a new SegReader object.
 */
 int sqlite3Fts3SegReaderNew(
-  Fts3Table *p,                   /* Virtual table handle */
   int iAge,                       /* Segment "age". */
   sqlite3_int64 iStartLeaf,       /* First leaf to traverse */
   sqlite3_int64 iEndLeaf,         /* Final leaf to traverse */
@@ -1154,7 +1198,7 @@ int sqlite3Fts3SegReaderNew(
   if( rc==SQLITE_OK ){
     *ppReader = pReader;
   }else{
-    sqlite3Fts3SegReaderFree(p, pReader);
+    sqlite3Fts3SegReaderFree(pReader);
   }
   return rc;
 }
@@ -1277,12 +1321,11 @@ int sqlite3Fts3SegReaderPending(
 ** code is returned.
 */
 static int fts3SegReaderNew(
-  Fts3Table *p,                   /* Virtual table handle */
   sqlite3_stmt *pStmt,            /* See above */
   int iAge,                       /* Segment "age". */
   Fts3SegReader **ppReader        /* OUT: Allocated Fts3SegReader */
 ){
-  return sqlite3Fts3SegReaderNew(p, iAge, 
+  return sqlite3Fts3SegReaderNew(iAge, 
       sqlite3_column_int64(pStmt, 1),
       sqlite3_column_int64(pStmt, 2),
       sqlite3_column_int64(pStmt, 3),
@@ -2313,7 +2356,7 @@ static int fts3SegmentMerge(Fts3Table *p, int iLevel){
   if( rc!=SQLITE_OK ) goto finished;
   sqlite3_bind_int(pStmt, 1, iLevel);
   for(i=0; SQLITE_ROW==(sqlite3_step(pStmt)); i++){
-    rc = fts3SegReaderNew(p, pStmt, i, &apSegment[i]);
+    rc = fts3SegReaderNew(pStmt, i, &apSegment[i]);
     if( rc!=SQLITE_OK ){
       goto finished;
     }
@@ -2343,11 +2386,11 @@ static int fts3SegmentMerge(Fts3Table *p, int iLevel){
   fts3SegWriterFree(pWriter);
   if( apSegment ){
     for(i=0; i<nSegment; i++){
-      sqlite3Fts3SegReaderFree(p, apSegment[i]);
+      sqlite3Fts3SegReaderFree(apSegment[i]);
     }
     sqlite3_free(apSegment);
   }
-  sqlite3Fts3SegReaderFree(p, pPending);
+  sqlite3Fts3SegReaderFree(pPending);
   sqlite3_reset(pStmt);
   return rc;
 }
@@ -2400,7 +2443,7 @@ int sqlite3Fts3PendingTermsFlush(Fts3Table *p){
     rc = fts3SegWriterFlush(p, pWriter, 0, idx);
   }
   fts3SegWriterFree(pWriter);
-  sqlite3Fts3SegReaderFree(p, pReader);
+  sqlite3Fts3SegReaderFree(pReader);
 
   if( rc==SQLITE_OK ){
     sqlite3Fts3PendingTermsClear(p);
@@ -2441,75 +2484,6 @@ static void fts3DecodeIntArray(
     assert(j<=nBuf);
     a[i] = (u32)(x & 0xffffffff);
   }
-}
-
-/*
-** Fill in the document size auxiliary information for the matchinfo
-** structure.  The auxiliary information is:
-**
-**    N     Total number of documents in the full-text index
-**    a0    Average length of column 0 over the whole index
-**    n0    Length of column 0 on the matching row
-**    ...
-**    aM    Average length of column M over the whole index
-**    nM    Length of column M on the matching row
-**
-** The fts3MatchinfoDocsizeLocal() routine fills in the nX values.
-** The fts3MatchinfoDocsizeGlobal() routine fills in N and the aX values.
-*/
-int sqlite3Fts3MatchinfoDocsizeLocal(Fts3Cursor *pCur, u32 *a){
-  const char *pBlob;       /* The BLOB holding %_docsize info */
-  int nBlob;               /* Size of the BLOB */
-  sqlite3_stmt *pStmt;     /* Statement for reading and writing */
-  int i, j;                /* Loop counters */
-  sqlite3_int64 x;         /* Varint value */
-  int rc;                  /* Result code from subfunctions */
-  Fts3Table *p;            /* The FTS table */
-
-  p = (Fts3Table*)pCur->base.pVtab;
-  rc = fts3SqlStmt(p, SQL_SELECT_DOCSIZE, &pStmt, 0);
-  if( rc ){
-    return rc;
-  }
-  sqlite3_bind_int64(pStmt, 1, pCur->iPrevId);
-  if( sqlite3_step(pStmt)==SQLITE_ROW ){
-    nBlob = sqlite3_column_bytes(pStmt, 0);
-    pBlob = (const char*)sqlite3_column_blob(pStmt, 0);
-    for(i=j=0; i<p->nColumn && j<nBlob; i++){
-      j = sqlite3Fts3GetVarint(&pBlob[j], &x);
-      a[2+i*2] = (u32)(x & 0xffffffff);
-    }
-  }
-  sqlite3_reset(pStmt);
-  return SQLITE_OK; 
-}
-int sqlite3Fts3MatchinfoDocsizeGlobal(Fts3Cursor *pCur, u32 *a){
-  const char *pBlob;       /* The BLOB holding %_stat info */
-  int nBlob;               /* Size of the BLOB */
-  sqlite3_stmt *pStmt;     /* Statement for reading and writing */
-  int i, j;                /* Loop counters */
-  sqlite3_int64 x;         /* Varint value */
-  int nDoc;                /* Number of documents */
-  int rc;                  /* Result code from subfunctions */
-  Fts3Table *p;            /* The FTS table */
-
-  p = (Fts3Table*)pCur->base.pVtab;
-  rc = fts3SqlStmt(p, SQL_SELECT_DOCTOTAL, &pStmt, 0);
-  if( rc ){
-    return rc;
-  }
-  if( sqlite3_step(pStmt)==SQLITE_ROW ){
-    nBlob = sqlite3_column_bytes(pStmt, 0);
-    pBlob = (const char*)sqlite3_column_blob(pStmt, 0);
-    j = sqlite3Fts3GetVarint(pBlob, &x);
-    a[0] = nDoc = (u32)(x & 0xffffffff);
-    for(i=0; i<p->nColumn && j<nBlob; i++){
-      j = sqlite3Fts3GetVarint(&pBlob[j], &x);
-      a[1+i*2] = ((u32)(x & 0xffffffff) + nDoc/2)/nDoc;
-    }
-  }
-  sqlite3_reset(pStmt);
-  return SQLITE_OK; 
 }
 
 /*
