@@ -2650,14 +2650,31 @@ const char *sqlite3_sql(sqlite3_stmt *pStmt);
 /*
 ** CAPI3REF: Determine If An SQL Statement Writes The Database
 **
-** ^The sqlite3_stmt_readonly(X) interface returns true (non-zero) if
-** the [prepared statement] X is [SELECT] statement and false (zero) if
-** X is an [INSERT], [UPDATE], [DELETE], CREATE, DROP, [ANALYZE],
-** [ALTER], or [REINDEX] statement.
-** If X is a NULL pointer or any other kind of statement, including but
-** not limited to [ATTACH], [DETACH], [COMMIT], [ROLLBACK], [RELEASE],
-** [SAVEPOINT], [PRAGMA], or [VACUUM] the result of sqlite3_stmt_readonly(X) is
-** undefined.
+** ^The sqlite3_stmt_readonly(X) interface returns true (non-zero) if 
+** and only if the [prepared statement] X is makes no direct changes to
+** the content of the database file.
+**
+** Note that [application-defined SQL functions] or
+** [virtual tables] might change the database indirectly as a side effect.  
+** ^(For example, if an application defines a function "eval()" that 
+** calls [sqlite3_exec()], then the following SQL statement would
+** change the database file through side-effects:
+**
+** <blockquote><pre>
+**    SELECT eval('DELETE FROM t1') FROM t2;
+** </pre></blockquote>
+**
+** But because the [SELECT] statement does not change the database file
+** directly, sqlite3_stmt_readonly() would still return true.)^
+**
+** ^Transaction control statements such as [BEGIN], [COMMIT], [ROLLBACK],
+** [SAVEPOINT], and [RELEASE] cause sqlite3_stmt_readonly() to return true,
+** since the statements themselves do not actually modify the database but
+** rather they control the timing of when other statements modify the 
+** database.  ^The [ATTACH] and [DETACH] statements also cause
+** sqlite3_stmt_readonly() to return true since, while those statements
+** change the configuration of a database connection, they do not make 
+** changes to the content of the database files on disk.
 */
 int sqlite3_stmt_readonly(sqlite3_stmt *pStmt);
 
