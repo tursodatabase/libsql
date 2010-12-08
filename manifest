@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Improved\sdocumentation\sfor\sSQLITE_FCNTL_FILE_POINTER.
-D 2010-12-07T23:24:00
+C Changes\sto\sthe\sshell\swhich\sshould,\sin\stheory,\sallow\sit\sto\swork\swith\nlibeditline\sas\san\salternative\sto\slibreadline.
+D 2010-12-08T00:02:26
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4547616ad2286053af6ccccefa242dc925e49bf0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -178,7 +178,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 8a7ba246b0b4bb45df7fbc52681728a0e3deaaa7
-F src/shell.c 8517fc1f9c59ae4007e6cc8b9af91ab231ea2056
+F src/shell.c 7b429fc7441594abcc5b97b4756a5f0a0a098e1b
 F src/sqlite.h.in d0cd88c447f25ead403bca04ebd8fe93e035f820
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
 F src/sqliteInt.h b96d5ddb8b419a2ed7cf69a7778b53872d73e8a7
@@ -897,14 +897,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a586a4deeb25330037a49df295b36aaf624d0f45
-R 3ba386f2c8b25a73fb57f972152ce3ef
+P 43935548ae79d4d1a71549820a77368cda77104a
+R fd202792c0017998f8a242e921dc5a93
 U drh
-Z 390cd6512179f591600a20e0c1174f61
+Z 6ca1c6e52bb72fad878f40ab29ea43f7
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFM/sIUoxKgR168RlERAjAdAJ9Bc1SGQwJEVJ0ZfAySqiDTMFxl5QCeLRfO
-Kwt1ARzpSbUsTRztqDWiNdo=
-=QYvM
+iD8DBQFM/ssWoxKgR168RlERArYWAJ9xDo6ujSZYl3PfXvHcS3k6gSuHwACdHVf9
+uErtwsOokR+Gj4AK0f8GS0M=
+=EZ4n
 -----END PGP SIGNATURE-----

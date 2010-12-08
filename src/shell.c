@@ -38,10 +38,14 @@
 # include <unistd.h>
 #endif
 
+#ifdef HAVE_EDITLINE
+# include <editline/editline.h>
+#endif
 #if defined(HAVE_READLINE) && HAVE_READLINE==1
 # include <readline/readline.h>
 # include <readline/history.h>
-#else
+#endif
+#if !defined(HAVE_EDITLINE) && (!defined(HAVE_READLINE) || HAVE_READLINE!=1)
 # define readline(p) local_getline(p,stdin)
 # define add_history(X)
 # define read_history(X)
