@@ -2727,11 +2727,7 @@ int main(int argc, char **argv){
   }
   set_table_name(&data, 0);
   if( data.db ){
-    if( sqlite3_close(data.db)!=SQLITE_OK ){
-      fprintf(stderr,"Error: cannot close database \"%s\"\n",
-              sqlite3_errmsg(db));
-      rc++;
-    }
+    sqlite3_close(data.db);
   }
   return rc;
 }
