@@ -6180,7 +6180,8 @@ void *sqlite3_wal_hook(
 ** from SQL.
 **
 ** ^Every new [database connection] defaults to having the auto-checkpoint
-** enabled with a threshold of 1000 pages.  The use of this interface
+** enabled with a threshold of 1000 or [SQLITE_DEFAULT_WAL_AUTOCHECKPOINT]
+** pages.  The use of this interface
 ** is only necessary if the default setting is found to be suboptimal
 ** for a particular application.
 */
