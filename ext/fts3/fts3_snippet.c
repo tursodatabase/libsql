@@ -226,7 +226,7 @@ static int fts3ExprNearTrim(Fts3Expr *pExpr){
 ** for each phrase into Fts3Expr.aDoclist[]/nDoclist. See also
 ** fts3ExprLoadDoclists().
 */
-static int fts3ExprLoadDoclistsCb1(Fts3Expr *pExpr, int iPhrase, void *ctx){
+static int fts3ExprLoadDoclistsCb(Fts3Expr *pExpr, int iPhrase, void *ctx){
   int rc = SQLITE_OK;
   LoadDoclistCtx *p = (LoadDoclistCtx *)ctx;
 
@@ -247,22 +247,6 @@ static int fts3ExprLoadDoclistsCb1(Fts3Expr *pExpr, int iPhrase, void *ctx){
 }
 
 /*
-** This is an fts3ExprIterate() callback used while loading the doclists
-** for each phrase into Fts3Expr.aDoclist[]/nDoclist. See also
-** fts3ExprLoadDoclists().
-*/
-static int fts3ExprLoadDoclistsCb2(Fts3Expr *pExpr, int iPhrase, void *ctx){
-  UNUSED_PARAMETER(iPhrase);
-  UNUSED_PARAMETER(ctx);
-  if( pExpr->aDoclist ){
-    pExpr->pCurrent = pExpr->aDoclist;
-    pExpr->iCurrent = 0;
-    pExpr->pCurrent += sqlite3Fts3GetVarint(pExpr->pCurrent, &pExpr->iCurrent);
-  }
-  return SQLITE_OK;
-}
-
-/*
 ** Load the doclists for each phrase in the query associated with FTS3 cursor
 ** pCsr. 
 **
@@ -280,10 +264,7 @@ static int fts3ExprLoadDoclists(
   int rc;                         /* Return Code */
   LoadDoclistCtx sCtx = {0,0,0};  /* Context for fts3ExprIterate() */
   sCtx.pCsr = pCsr;
-  rc = fts3ExprIterate(pCsr->pExpr, fts3ExprLoadDoclistsCb1, (void *)&sCtx);
-  if( rc==SQLITE_OK ){
-    (void)fts3ExprIterate(pCsr->pExpr, fts3ExprLoadDoclistsCb2, 0);
-  }
+  rc = fts3ExprIterate(pCsr->pExpr, fts3ExprLoadDoclistsCb, (void *)&sCtx);
   if( pnPhrase ) *pnPhrase = sCtx.nPhrase;
   if( pnToken ) *pnToken = sCtx.nToken;
   return rc;
