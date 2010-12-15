@@ -458,14 +458,14 @@ typedef u16 ht_slot;
 */
 struct WalIterator {
   int iPrior;                     /* Last result returned from the iterator */
-  int nSegment;                   /* Size of the aSegment[] array */
+  int nSegment;                   /* Number of entries in aSegment[] */
   struct WalSegment {
     int iNext;                    /* Next slot in aIndex[] not yet returned */
     ht_slot *aIndex;              /* i0, i1, i2... such that aPgno[iN] ascend */
     u32 *aPgno;                   /* Array of page numbers. */
-    int nEntry;                   /* Max size of aPgno[] and aIndex[] arrays */
+    int nEntry;                   /* Nr. of entries in aPgno[] and aIndex[] */
     int iZero;                    /* Frame number associated with aPgno[0] */
-  } aSegment[1];                  /* One for every 32KB page in the WAL */
+  } aSegment[1];                  /* One for every 32KB page in the wal-index */
 };
 
 /*
@@ -1329,9 +1329,29 @@ static int walIteratorNext(
 
 /*
 ** This function merges two sorted lists into a single sorted list.
+**
+** aLeft[] and aRight[] are arrays of indices.  The sort key is
+** aContent[aLeft[]] and aContent[aRight[]].  Upon entry, the following
+** is guaranteed for all J<K:
+**
+**        aContent[aLeft[J]] < aContent[aLeft[K]]
+**        aContent[aRight[J]] < aContent[aRight[K]]
+**
+** This routine overwrites aRight[] with a new (probably longer) sequence
+** of indices such that the aRight[] contains every index that appears in
+** either aLeft[] or the old aRight[] and such that the second condition
+** above is still met.
+**
+** The aContent[aLeft[X]] values will be unique for all X.  And the
+** aContent[aRight[X]] values will be unique too.  But there might be
+** one or more combinations of X and Y such that
+**
+**      aLeft[X]!=aRight[Y]  &&  aContent[aLeft[X]] == aContent[aRight[Y]]
+**
+** When that happens, omit the aLeft[X] and use the aRight[Y] index.
 */
 static void walMerge(
-  u32 *aContent,                  /* Pages in wal */
+  const u32 *aContent,            /* Pages in wal - keys for the sort */
   ht_slot *aLeft,                 /* IN: Left hand input list */
   int nLeft,                      /* IN: Elements in array *paLeft */
   ht_slot **paRight,              /* IN/OUT: Right hand input list */
@@ -1371,10 +1391,24 @@ static void walMerge(
 }
 
 /*
-** Sort the elements in list aList, removing any duplicates.
+** Sort the elements in list aList using aContent[] as the sort key.
+** Remove elements with duplicate keys, preferring to keep the
+** larger aList[] values.
+**
+** The aList[] entries are indices into aContent[].  The values in
+** aList[] are to be sorted so that for all J<K:
+**
+**      aContent[aList[J]] < aContent[aList[K]]
+**
+** For any X and Y such that
+**
+**      aContent[aList[X]] == aContent[aList[Y]]
+**
+** Keep the larger of the two values aList[X] and aList[Y] and discard
+** the smaller.
 */
 static void walMergesort(
-  u32 *aContent,                  /* Pages in wal */
+  const u32 *aContent,            /* Pages in wal */
   ht_slot *aBuffer,               /* Buffer of at least *pnList items to use */
   ht_slot *aList,                 /* IN/OUT: List to sort */
   int *pnList                     /* IN/OUT: Number of elements in aList[] */
@@ -1439,6 +1473,7 @@ static void walIteratorFree(WalIterator *p){
 /*
 ** Construct a WalInterator object that can be used to loop over all 
 ** pages in the WAL in ascending order. The caller must hold the checkpoint
+** lock.
 **
 ** On success, make *pp point to the newly allocated WalInterator object
 ** return SQLITE_OK. Otherwise, return an error code. If this routine
