@@ -5783,11 +5783,12 @@ typedef struct sqlite3_backup sqlite3_backup;
 **
 ** See Also: [Using the SQLite Online Backup API]
 **
-** ^Exclusive access is required to the destination database for the 
-** duration of the operation. ^However the source database is only
-** read-locked while it is actually being read; it is not locked
-** continuously for the entire backup operation. ^Thus, the backup may be
-** performed on a live source database without preventing other users from
+** ^SQLite holds a write transaction open on the destination database file
+** for the duration of the backup operation.
+** ^The source database is read-locked only while it is being read;
+** it is not locked continuously for the entire backup operation.
+** ^Thus, the backup may be performed on a live source database without
+** preventing other database connections from
 ** reading or writing to the source database while the backup is underway.
 ** 
 ** ^(To perform a backup operation: 
@@ -5835,7 +5836,7 @@ typedef struct sqlite3_backup sqlite3_backup;
 ** the source and destination databases specified by [sqlite3_backup] object B.
 ** ^If N is negative, all remaining source pages are copied. 
 ** ^If sqlite3_backup_step(B,N) successfully copies N pages and there
-** are still more pages to be copied, then the function resturns [SQLITE_OK].
+** are still more pages to be copied, then the function returns [SQLITE_OK].
 ** ^If sqlite3_backup_step(B,N) successfully finishes copying all pages
 ** from source to destination, then it returns [SQLITE_DONE].
 ** ^If an error occurs while running sqlite3_backup_step(B,N),
