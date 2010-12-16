@@ -2315,10 +2315,9 @@ static int valueFromExpr(
   u8 aff, 
   sqlite3_value **pp
 ){
-  /* The evalConstExpr() function will have already converted any TK_VARIABLE
-  ** expression involved in an comparison into a TK_REGISTER. */
-  assert( pExpr->op!=TK_VARIABLE );
-  if( pExpr->op==TK_REGISTER && pExpr->op2==TK_VARIABLE ){
+  if( pExpr->op==TK_VARIABLE
+   || (pExpr->op==TK_REGISTER && pExpr->op2==TK_VARIABLE)
+  ){
     int iVar = pExpr->iColumn;
     sqlite3VdbeSetVarmask(pParse->pVdbe, iVar); /* IMP: R-23257-02778 */
     *pp = sqlite3VdbeGetValue(pParse->pReprepare, iVar, aff);
