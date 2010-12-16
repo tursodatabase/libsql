@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Enhanced\scomments\sin\swal.c\sand\sdeclare\ssome\sprocedure\sparameters\s"const".\nNo\schanges\sto\sthe\sgenerated\scode.
-D 2010-12-15T21:02:06
+C Make\swal_checkpoint\sa\sno-op\sif\sa\sprior\scheckpoint\shas\salready\scopied\sall\s\nWAL\scontent\sinto\sthe\sdatabase.\s\sThis\sprevents\sa\sconcurrent\swrite\sto\sthe\ndatabase\sfrom\sresetting\sthe\swal-index\sout\sfrom\sunder\sthe\sWalIterator\sof\nthe\scheckpoint\sas\sit\sis\sinitializing.
+D 2010-12-16T02:06:30
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4547616ad2286053af6ccccefa242dc925e49bf0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -240,7 +240,7 @@ F src/vdbeblob.c 18955f0ee6b133cd08e1592010cb9a6b11e9984c
 F src/vdbemem.c 411649a35686f54268ccabeda175322c4697f5a6
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c b297e8fa656ab5e66244ab15680d68db0adbec30
-F src/wal.c 1c846e56cb271675304c0152cea91f4c2ecf5111
+F src/wal.c dbca424f71678f663a286ab2a98f947af1d412a7
 F src/wal.h c1aac6593a0b02b15dc625987e619edeab39292e
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c fa22d45b2577c77146f2e894d58011d472d64103
@@ -897,14 +897,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e1660764f20fed3fe92156d2b7f06075ff6ac145
-R 1109917c271937e015845cf31d3c184d
+P d0e4375b8a784d4e4ae66caababac919edd61883
+R 80db019f1fe0898e29ee135039b02e42
 U drh
-Z 64f2fa76dd6cb11cf7eb68fbbec80d5e
+Z b7c01cb05c8175ac2d3c285f2b41993d
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNCSzRoxKgR168RlERAuCpAJ9yUwv8k5HtKXw8KEgKm4OKZcQUiwCfRCV0
-zLsoQIm1ng13QYFi6EqUsyY=
-=j104
+iD8DBQFNCXQpoxKgR168RlERAvhYAJ9VEC5cEqFcvoO8pUyjLqrkEx8osgCePOvl
+dryfAhOPr5nP5lktpU/6FWo=
+=UvbB
 -----END PGP SIGNATURE-----

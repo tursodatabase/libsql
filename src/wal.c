@@ -1608,7 +1608,8 @@ static int walCheckpoint(
   szPage = (pWal->hdr.szPage&0xfe00) + ((pWal->hdr.szPage&0x0001)<<16);
   testcase( szPage<=32768 );
   testcase( szPage>=65536 );
-  if( pWal->hdr.mxFrame==0 ) return SQLITE_OK;
+  pInfo = walCkptInfo(pWal);
+  if( pInfo->nBackfill>=pWal->hdr.mxFrame ) return SQLITE_OK;
 
   /* Allocate the iterator */
   rc = walIteratorInit(pWal, &pIter);
@@ -1630,7 +1631,6 @@ static int walCheckpoint(
   */
   mxSafeFrame = pWal->hdr.mxFrame;
   mxPage = pWal->hdr.nPage;
-  pInfo = walCkptInfo(pWal);
   for(i=1; i<WAL_NREADER; i++){
     u32 y = pInfo->aReadMark[i];
     if( mxSafeFrame>=y ){
