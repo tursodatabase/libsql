@@ -2542,6 +2542,7 @@ int main(int argc, char **argv){
 
   /* Do an initial pass through the command-line argument to locate
   ** the name of the database file, the name of the initialization file,
+  ** the size of the alternative malloc heap,
   ** and the first command to execute.
   */
   for(i=1; i<argc-1; i++){
@@ -2560,6 +2561,22 @@ int main(int argc, char **argv){
     */
     }else if( strcmp(argv[i],"-batch")==0 ){
       stdin_is_interactive = 0;
+    }else if( strcmp(argv[i],"-heap")==0 ){
+      int j, c;
+      const char *zSize;
+      sqlite3_int64 szHeap;
+
+      zSize = argv[++i];
+      szHeap = atoi(zSize);
+      for(j=0; (c = zSize[j])!=0; j++){
+        if( c=='M' ){ szHeap *= 1000000; break; }
+        if( c=='K' ){ szHeap *= 1000; break; }
+        if( c=='G' ){ szHeap *= 1000000000; break; }
+      }
+      if( szHeap>0x7fff0000 ) szHeap = 0x7fff0000;
+#if defined(SQLITE_ENABLE_MEMSYS3) || defined(SQLITE_ENABLE_MEMSYS5)
+      sqlite3_config(SQLITE_CONFIG_HEAP, malloc((int)szHeap), (int)szHeap, 64);
+#endif
     }
   }
   if( i<argc ){
@@ -2666,6 +2683,8 @@ int main(int argc, char **argv){
       stdin_is_interactive = 1;
     }else if( strcmp(z,"-batch")==0 ){
       stdin_is_interactive = 0;
+    }else if( strcmp(z,"-heap")==0 ){
+      i++;
     }else if( strcmp(z,"-help")==0 || strcmp(z, "--help")==0 ){
       usage(1);
     }else{
