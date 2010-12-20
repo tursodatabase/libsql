@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Add\sthe\s"-heap"\soption\sto\sthe\scommand-line\sshell\s-\sto\sallocate\sa\sfixed\sheap\nfor\suse\swith\sSQLITE_ENABLE_MEMSYS5.
-D 2010-12-17T14:03:02
+C Clarify\sthe\sdocumentation\sof\sthe\sSQLITE_STATUS_MALLOC_COUNT\sparameter\sto\nsqlite3_status().
+D 2010-12-20T17:00:28
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4547616ad2286053af6ccccefa242dc925e49bf0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -179,7 +179,7 @@ F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 8a7ba246b0b4bb45df7fbc52681728a0e3deaaa7
 F src/shell.c 9afa9bdd62142e254b4581a77b43080d3ffd4ef4
-F src/sqlite.h.in 83fed95ea6acbac51c48eba5bd93933f3795ee91
+F src/sqlite.h.in 2d24126d553904fa0d9207e2424109ae2369a707
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
 F src/sqliteInt.h b96d5ddb8b419a2ed7cf69a7778b53872d73e8a7
 F src/sqliteLimit.h a17dcd3fb775d63b64a43a55c54cb282f9726f44
@@ -897,14 +897,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P df430be59d0766a34a94ab85fec9aa3c3baeb740
-R 393588dace853776e15dcf6aab702ada
+P 74fff692345fed4b247e2b34c1e63b4d50cddfd4
+R 05696043bb691972743f116032eb7cc7
 U drh
-Z 6ec40d9633f2b97ac37609013c97cbd2
+Z 0d94f4cb1ba5a4f17daf853cca6b2b1d
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNC22aoxKgR168RlERAm4mAJ9G1zGhPNOGmUpwiD7fc9SFGpgP5ACeMlV3
-fsznZTHZc81uTNgquU68if8=
-=DrJ4
+iD8DBQFND4uvoxKgR168RlERAmboAJ9ECncAj8L2uNPORTjmNgH2KLgLGQCfTHpL
+w2fdORwbJsTAnpJEGct6W7Q=
+=6J0C
 -----END PGP SIGNATURE-----

@@ -5403,7 +5403,8 @@ int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
 ** The value written into the *pCurrent parameter is undefined.</dd>)^
 **
 ** ^(<dt>SQLITE_STATUS_MALLOC_COUNT</dt>
-** <dd>This parameter records the number of separate memory allocations.</dd>)^
+** <dd>This parameter records the number of separate memory allocations
+** currently checked out.</dd>)^
 **
 ** ^(<dt>SQLITE_STATUS_PAGECACHE_USED</dt>
 ** <dd>This parameter returns the number of pages used out of the
