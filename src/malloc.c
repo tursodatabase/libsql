@@ -616,14 +616,20 @@ void *sqlite3DbMallocRaw(sqlite3 *db, int n){
     if( db->mallocFailed ){
       return 0;
     }
-    if( db->lookaside.bEnabled && n<=db->lookaside.sz
-         && (pBuf = db->lookaside.pFree)!=0 ){
-      db->lookaside.pFree = pBuf->pNext;
-      db->lookaside.nOut++;
-      if( db->lookaside.nOut>db->lookaside.mxOut ){
-        db->lookaside.mxOut = db->lookaside.nOut;
+    if( db->lookaside.bEnabled ){
+      if( n>db->lookaside.sz ){
+        db->lookaside.anStat[1]++;
+      }else if( (pBuf = db->lookaside.pFree)==0 ){
+        db->lookaside.anStat[2]++;
+      }else{
+        db->lookaside.pFree = pBuf->pNext;
+        db->lookaside.nOut++;
+        db->lookaside.anStat[0]++;
+        if( db->lookaside.nOut>db->lookaside.mxOut ){
+          db->lookaside.mxOut = db->lookaside.nOut;
+        }
+        return (void*)pBuf;
       }
-      return (void*)pBuf;
     }
   }
 #else
