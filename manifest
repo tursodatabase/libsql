@@ -1,7 +1,10 @@
-C Rearrange\sa\svariable\sdeclaration\sin\sthe\sproxy\slocking\scode\sto\savoid\sa\sharmless\ncompiler\swarning\son\srecent\sMacOS\sversions.
-D 2010-12-21T00:16:40
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Remove\sthe\sobsolete\scompile-time\soption\sSQLITE_THREAD_OVERRIDE_LOCK\nfrom\sthe\sautoconf\smakefile.\s\sNeeded\sonly\sfor\sLinuxThreads,\swhich\swe\sno\nlonger\ssupport.
+D 2010-12-21T00:20:54
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 4547616ad2286053af6ccccefa242dc925e49bf0
+F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.vxworks c85ec1d8597fe2f7bc225af12ac1666e21379151
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
@@ -22,8 +25,8 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure daed6cfdb4c1449a4335b3eeddc0d836e33fb54e x
-F configure.ac 699040cc9abb7465dca5a2972bc89d227fd8f734
+F configure 4d325bb1fd4064fc4b8a2102e47e3c8966bbe2cf x
+F configure.ac 87a3c71bbe9c925381c154413eea7f3cdc397244
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/pager-invariants.txt 870107036470d7c419e93768676fae2f8749cf9e
@@ -894,7 +897,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 3b41bcc3e36a9ef0146bc2f6ae86377bd1700afd
-R 1a70a1f19194c16e9b9725927017bb71
+P 39bbd35599e735b32f7ed18143073165b805dd98
+R 80b3317d427aed8936aa381a5ad6ed6c
 U drh
-Z 9866ee9011213cea3ec50de8e4d375c6
+Z 50f3f1b11bd7b6b561a6a28e34c75c73
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFND/LpoxKgR168RlERAjN/AJ9GW7kKHV8mhDRU/MIZoIFYemwlJQCfS21P
+RmgCdBRtWA88sFD1ddbbF+c=
+=PAHS
+-----END PGP SIGNATURE-----

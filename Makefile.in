@@ -59,10 +59,6 @@ LIBREADLINE = @TARGET_READLINE_LIBS@
 #
 TCC += -DSQLITE_THREADSAFE=@SQLITE_THREADSAFE@
 
-# Do threads override each others locks by default (1), or do we test (-1)
-#
-TCC += -DSQLITE_THREAD_OVERRIDE_LOCK=@THREADSOVERRIDELOCKS@
-
 # Any target libraries which libsqlite must be linked against
 # 
 TLIBS = @LIBS@
