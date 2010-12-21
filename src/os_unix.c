@@ -5403,18 +5403,19 @@ extern int gethostuuid(uuid_t id, const struct timespec *wait);
 ** bytes of writable memory.
 */
 static int proxyGetHostID(unsigned char *pHostID, int *pError){
-  struct timespec timeout = {1, 0}; /* 1 sec timeout */
-  
   assert(PROXY_HOSTIDLEN == sizeof(uuid_t));
   memset(pHostID, 0, PROXY_HOSTIDLEN);
 #if defined(__MAX_OS_X_VERSION_MIN_REQUIRED)\
                && __MAC_OS_X_VERSION_MIN_REQUIRED<1050
-  if( gethostuuid(pHostID, &timeout) ){
-    int err = errno;
-    if( pError ){
-      *pError = err;
+  {
+    static const struct timespec timeout = {1, 0}; /* 1 sec timeout */
+    if( gethostuuid(pHostID, &timeout) ){
+      int err = errno;
+      if( pError ){
+        *pError = err;
+      }
+      return SQLITE_IOERR;
     }
-    return SQLITE_IOERR;
   }
 #endif
 #ifdef SQLITE_TEST
