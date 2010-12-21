@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Merge\sinto\sthe\strunk\sthe\sexperimental\senhancements\sto\ssqlite3_db_status()\s\nfor\smeasuring\slookaside\smemory\sallocator\sperformance.
-D 2010-12-21T20:36:46
+C Add\stest\scases\sfor\sthe\snew\slookaside\shit\sand\smiss\sstatus\soutputs.\s\sAdd\nthe\soutput\sof\slookaside\shit\sand\smiss\sto\sthe\scommand-line\sshell\sstatistics.
+D 2010-12-21T21:28:38
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -178,7 +178,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 8a7ba246b0b4bb45df7fbc52681728a0e3deaaa7
-F src/shell.c 9afa9bdd62142e254b4581a77b43080d3ffd4ef4
+F src/shell.c 83c6f0cc5a79a081c7b9ddfe4f557b47e0bad976
 F src/sqlite.h.in 54dd12d0dd8b6a4afd7b3d5a03d36ec64a67b641
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
 F src/sqliteInt.h 3ef5fc89a4c9755a08a68de107493785a284e27c
@@ -209,7 +209,7 @@ F src/test_intarray.c d879bbf8e4ce085ab966d1f3c896a7c8b4f5fc99
 F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c 785edd54f963aefb3c1628124170a56697c68c70
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
-F src/test_malloc.c 09a88f0c111201dc4f8c20470aa1b5f611d59200
+F src/test_malloc.c fd6188b1501c0010fb4241ddc9f0d5ac402c688d
 F src/test_multiplex.c 5990431a852aa21c9a67da748f23d2cf1e21f8fc
 F src/test_mutex.c ce06b59aca168cd8c520b77159a24352a7469bd3
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
@@ -528,7 +528,7 @@ F test/lock5.test b2abb5e711bc59b0eae00f6c97a36ec9f458fada
 F test/lock6.test ad5b387a3a8096afd3c68a55b9535056431b0cf5
 F test/lock7.test 64006c84c1c616657e237c7ad6532b765611cf64
 F test/lock_common.tcl d279887a0ab16cdb6d935c1203e64113c5a000e9
-F test/lookaside.test 382e7bc2fab23d902c8eafb1b9ed7ababfff75a6
+F test/lookaside.test 93f07bac140c5bb1d49f3892d2684decafdc7af2
 F test/main.test 9d7bbfcc1b52c88ba7b2ba6554068ecf9939f252
 F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
 F test/malloc.test 927e6c8668a1d48c23aa6189bda02aff5a1b83de
@@ -897,14 +897,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 09f6c053ff9239c22ecf527ae579446c6e21e550 34613f1dc54c638531ca2f5907b71fbe8841233e
-R 70bb859101c53c246dfc4f574be27803
+P 8c3b06c299554759b67437e09ee7ef6420dacafc
+R 3d2dc28d218eda07e432c06d2acaf490
 U drh
-Z a58574a5d2655de53c943a82d61ee0c4
+Z 978ce4a1633e46da2aa79d83b4cbd5d5
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNEQ/hoxKgR168RlERAlduAKCC7Lj51Ln8aN6aJlGCTwPg8olPygCghFCt
-2eqZ3E29sKKFSCheCCAI7u0=
-=jBul
+iD8DBQFNERwJoxKgR168RlERAicZAJwKgYzQDbPRBPAlwwf+g1uwhrnDewCePClG
+nEAmUkNjgcw8rSbTLPArTDg=
+=3YUL
 -----END PGP SIGNATURE-----

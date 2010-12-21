@@ -984,7 +984,7 @@ static int display_stats(
     fprintf(pArg->out, "Memory Used:                         %d (max %d) bytes\n", iCur, iHiwtr);
     iHiwtr = iCur = -1;
     sqlite3_status(SQLITE_STATUS_MALLOC_COUNT, &iCur, &iHiwtr, bReset);
-    fprintf(pArg->out, "Number of Allocations:               %d (max %d)\n", iCur, iHiwtr);
+    fprintf(pArg->out, "Number of Outstanding Allocations:   %d (max %d)\n", iCur, iHiwtr);
 /*
 ** Not currently used by the CLI.
 **    iHiwtr = iCur = -1;
@@ -1023,6 +1023,12 @@ static int display_stats(
     iHiwtr = iCur = -1;
     sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_USED, &iCur, &iHiwtr, bReset);
     fprintf(pArg->out, "Lookaside Slots Used:                %d (max %d)\n", iCur, iHiwtr);
+    sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_HIT, &iCur, &iHiwtr, bReset);
+    fprintf(pArg->out, "Successful lookaside attempts:       %d\n", iHiwtr);
+    sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_MISS_SIZE, &iCur, &iHiwtr, bReset);
+    fprintf(pArg->out, "Lookaside failures due to size:      %d\n", iHiwtr);
+    sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_MISS_FULL, &iCur, &iHiwtr, bReset);
+    fprintf(pArg->out, "Lookaside failures due to OOM:       %d\n", iHiwtr);
     iHiwtr = iCur = -1;
     sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_USED, &iCur, &iHiwtr, bReset);
     fprintf(pArg->out, "Pager Heap Usage:                    %d bytes\n", iCur); 

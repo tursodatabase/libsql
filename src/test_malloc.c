@@ -1290,10 +1290,13 @@ static int test_db_status(
     const char *zName;
     int op;
   } aOp[] = {
-    { "SQLITE_DBSTATUS_LOOKASIDE_USED",    SQLITE_DBSTATUS_LOOKASIDE_USED   },
-    { "SQLITE_DBSTATUS_CACHE_USED",        SQLITE_DBSTATUS_CACHE_USED       },
-    { "SQLITE_DBSTATUS_SCHEMA_USED",       SQLITE_DBSTATUS_SCHEMA_USED      },
-    { "SQLITE_DBSTATUS_STMT_USED",         SQLITE_DBSTATUS_STMT_USED        }
+    { "LOOKASIDE_USED",      SQLITE_DBSTATUS_LOOKASIDE_USED      },
+    { "CACHE_USED",          SQLITE_DBSTATUS_CACHE_USED          },
+    { "SCHEMA_USED",         SQLITE_DBSTATUS_SCHEMA_USED         },
+    { "STMT_USED",           SQLITE_DBSTATUS_STMT_USED           },
+    { "LOOKASIDE_HIT",       SQLITE_DBSTATUS_LOOKASIDE_HIT       },
+    { "LOOKASIDE_MISS_SIZE", SQLITE_DBSTATUS_LOOKASIDE_MISS_SIZE },
+    { "LOOKASIDE_MISS_FULL", SQLITE_DBSTATUS_LOOKASIDE_MISS_FULL }
   };
   Tcl_Obj *pResult;
   if( objc!=4 ){
@@ -1302,6 +1305,8 @@ static int test_db_status(
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
   zOpName = Tcl_GetString(objv[2]);
+  if( memcmp(zOpName, "SQLITE_", 7)==0 ) zOpName += 7;
+  if( memcmp(zOpName, "DBSTATUS_", 9)==0 ) zOpName += 9;
   for(i=0; i<ArraySize(aOp); i++){
     if( strcmp(aOp[i].zName, zOpName)==0 ){
       op = aOp[i].op;
