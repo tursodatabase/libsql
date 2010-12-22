@@ -119,7 +119,9 @@
 #include <time.h>
 #include <sys/time.h>
 #include <errno.h>
+#ifndef SQLITE_OMIT_WAL
 #include <sys/mman.h>
+#endif
 
 #if SQLITE_ENABLE_LOCKING_STYLE
 # include <sys/ioctl.h>
