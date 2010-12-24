@@ -2240,7 +2240,7 @@ int sqlite3Fts3SegReaderIterate(
           nByte = sqlite3Fts3VarintLen(iDocid-iPrev) + (isRequirePos?nList+1:0);
           if( nDoclist+nByte>nAlloc ){
             char *aNew;
-            nAlloc = nDoclist+nByte*2;
+            nAlloc = (nDoclist+nByte)*2;
             aNew = sqlite3_realloc(aBuffer, nAlloc);
             if( !aNew ){
               rc = SQLITE_NOMEM;

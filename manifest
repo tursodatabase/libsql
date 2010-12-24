@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Do\snot\sinclude\s&lt;sys/mmap.h&gt;\sif\sSQLITE_OMIT_WAL\sis\sdefined.
-D 2010-12-22T21:48:51
+C Reduce\sthe\snumber\sof\scalls\sto\ssqlite3_realloc()\smade\sby\sfts3\swhen\squerying\sfor\sposition\sinformation\sof\sa\sterm\sprefix.
+D 2010-12-24T15:49:28
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -76,7 +73,7 @@ F ext/fts3/fts3_snippet.c 3a26a835732619b62f3af1b73f96d017f8651f9f
 F ext/fts3/fts3_tokenizer.c 055f3dc7369585350b28db1ee0f3b214dca6724d
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 6e5cbaa588924ac578263a598e4fb9f5c9bb179d
-F ext/fts3/fts3_write.c 13012755d59e5d4f09a41fd3b5ad17de7dafe3e7
+F ext/fts3/fts3_write.c 1fd0988538fb3b40009a99068148e63cec7426aa
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
@@ -100,7 +97,7 @@ F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 1af0899c63a688e272d69d8e746f24e76f10a3f0
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
-F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
+F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F main.mk 05d0f3475dd331896bd607cfb45c5e21b94589ad
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
@@ -591,7 +588,7 @@ F test/permutations.test c0ce0f3b741dd92a6d4c2671dbacba4b92dd81eb
 F test/pragma.test fdfc09067ea104a0c247a1a79d8093b56656f850
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
-F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301
+F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
 F test/quota.test ddafe133653093eb9a99ccd6264884ae43f9c9b8
@@ -872,7 +869,7 @@ F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/lemon.c dfd81a51b6e27e469ba21d01a75ddf092d429027
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkkeywordhash.c d2e6b4a5965e23afb80fbe74bb54648cd371f309
-F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
+F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c.tcl e0db70c2c52b0e3d0867ca931229e5b90ffe7837
 F tool/mksqlite3h.tcl 03b6ca938c833814923674d8a160e91fcedb4571
@@ -897,14 +894,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b0888047bb6d9ac55e29b9224df2ff650728bb78
-R 0a946df43b3c238f90360fc25b951e41
-U drh
-Z 3ea172d138576a025bf2ce93fc7e3eec
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFNEnJJoxKgR168RlERAn0IAJ4p+41yKye5mYGJ8Gy2zjNRxLR9cACff/OG
-IVGOq0B0rEJQ0tWbOl8FLrM=
-=3XEk
------END PGP SIGNATURE-----
+P b82e85ece94c8e25c1dc3251f5444a295fbf8c89
+R ce7cb30b15477376bb0e944cbe48b806
+U dan
+Z 4a4d34a31e9e8331938c1d98dd8bbb1f
