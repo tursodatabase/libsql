@@ -3411,7 +3411,7 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 ** ^(The fifth parameter is an arbitrary pointer.  The implementation of the
 ** function can gain access to this pointer using [sqlite3_user_data()].)^
 **
-** ^The seventh, eighth and ninth parameters, xFunc, xStep and xFinal, are
+** ^The sixth, seventh and eighth parameters, xFunc, xStep and xFinal, are
 ** pointers to C-language functions that implement the SQL function or
 ** aggregate. ^A scalar SQL function requires an implementation of the xFunc
 ** callback only; NULL pointers must be passed as the xStep and xFinal
@@ -3420,7 +3420,7 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 ** SQL function or aggregate, pass NULL poiners for all three function
 ** callbacks.
 **
-** ^(If the tenth parameter to sqlite3_create_function_v2() is not NULL,
+** ^(If the ninth parameter to sqlite3_create_function_v2() is not NULL,
 ** then it is destructor for the application data pointer. 
 ** The destructor is invoked when the function is deleted, either by being
 ** overloaded or when the database connection closes.)^
@@ -3524,7 +3524,7 @@ SQLITE_DEPRECATED int sqlite3_memory_alarm(void(*)(void*,sqlite3_int64,int),void
 ** The xFunc (for scalar functions) or xStep (for aggregates) parameters
 ** to [sqlite3_create_function()] and [sqlite3_create_function16()]
 ** define callbacks that implement the SQL functions and aggregates.
-** The 4th parameter to these callbacks is an array of pointers to
+** The 3rd parameter to these callbacks is an array of pointers to
 ** [protected sqlite3_value] objects.  There is one [sqlite3_value] object for
 ** each parameter to the SQL function.  These routines are used to
 ** extract values from the [sqlite3_value] objects.
