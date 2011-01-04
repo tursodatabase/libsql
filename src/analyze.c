@@ -234,8 +234,8 @@ static void analyzeOneTable(
 
     for(i=0; i<nCol; i++){
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, regCol);
-#ifdef SQLITE_ENABLE_STAT2
       if( i==0 ){
+#ifdef SQLITE_ENABLE_STAT2
         /* Check if the record that cursor iIdxCur points to contains a
         ** value that should be stored in the sqlite_stat2 table. If so,
         ** store it.  */
@@ -264,12 +264,14 @@ static void analyzeOneTable(
 
         sqlite3VdbeJumpHere(v, ne);
         sqlite3VdbeAddOp2(v, OP_AddImm, regRecno, 1);
-      }
 #endif
 
+        /* Always record the very first row */
+        sqlite3VdbeAddOp1(v, OP_IfNot, iMem+1);
+      }
       sqlite3VdbeAddOp3(v, OP_Ne, regCol, 0, iMem+nCol+i+1);
       /**** TODO:  add collating sequence *****/
-      sqlite3VdbeChangeP5(v, SQLITE_JUMPIFNULL);
+      sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
     }
     if( db->mallocFailed ){
       /* If a malloc failure has occurred, then the result of the expression 
@@ -280,7 +282,11 @@ static void analyzeOneTable(
     }
     sqlite3VdbeAddOp2(v, OP_Goto, 0, endOfLoop);
     for(i=0; i<nCol; i++){
-      sqlite3VdbeJumpHere(v, sqlite3VdbeCurrentAddr(v)-(nCol*2));
+      int addr = sqlite3VdbeCurrentAddr(v) - (nCol*2);
+      if( i==0 ){
+        sqlite3VdbeJumpHere(v, addr-1);  /* Set jump dest for the OP_IfNot */
+      }
+      sqlite3VdbeJumpHere(v, addr);      /* Set jump dest for the OP_Ne */
       sqlite3VdbeAddOp2(v, OP_AddImm, iMem+i+1, 1);
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, iMem+nCol+i+1);
     }
