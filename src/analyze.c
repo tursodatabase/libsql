@@ -233,6 +233,7 @@ static void analyzeOneTable(
     sqlite3VdbeAddOp2(v, OP_AddImm, iMem, 1);
 
     for(i=0; i<nCol; i++){
+      CollSeq *pColl;
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, regCol);
       if( i==0 ){
 #ifdef SQLITE_ENABLE_STAT2
@@ -269,8 +270,11 @@ static void analyzeOneTable(
         /* Always record the very first row */
         sqlite3VdbeAddOp1(v, OP_IfNot, iMem+1);
       }
-      sqlite3VdbeAddOp3(v, OP_Ne, regCol, 0, iMem+nCol+i+1);
-      /**** TODO:  add collating sequence *****/
+      assert( pIdx->azColl!=0 );
+      assert( pIdx->azColl[i]!=0 );
+      pColl = sqlite3LocateCollSeq(pParse, pIdx->azColl[i]);
+      sqlite3VdbeAddOp4(v, OP_Ne, regCol, 0, iMem+nCol+i+1,
+                       (char*)pColl, P4_COLLSEQ);
       sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
     }
     if( db->mallocFailed ){
