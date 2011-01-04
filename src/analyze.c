@@ -636,8 +636,11 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
 
     if( rc==SQLITE_OK ){
       while( sqlite3_step(pStmt)==SQLITE_ROW ){
-        char *zIndex = (char *)sqlite3_column_text(pStmt, 0);
-        Index *pIdx = sqlite3FindIndex(db, zIndex, sInfo.zDatabase);
+        char *zIndex;   /* Index name */
+        Index *pIdx;    /* Pointer to the index object */
+
+        zIndex = (char *)sqlite3_column_text(pStmt, 0);
+        pIdx = zIndex ? sqlite3FindIndex(db, zIndex, sInfo.zDatabase) : 0;
         if( pIdx ){
           int iSample = sqlite3_column_int(pStmt, 1);
           if( iSample<SQLITE_INDEX_SAMPLES && iSample>=0 ){

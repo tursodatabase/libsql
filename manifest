@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sthe\sANALYZE\scommand\sso\sthat\sit\stakes\scollating\ssequences\sinto\saccount\nwhen\sgathering\sindex\sstatistics.
-D 2011-01-04T19:01:27
+C Fix\sa\snull-pointer\sdereference\sthat\scan\soccur\son\san\sOOM\serror\swhile\srunning\nANALYZE\swith\sSQLITE_ENABLE_STAT2.
+D 2011-01-04T20:06:33
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -116,7 +116,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c 6a0c176e64a34929a4436048066a84ef4f1445b3
-F src/analyze.c a2257126f629615fee6381526d928487b44d628f
+F src/analyze.c 3af3fdb5edea9e69496b078935a3e6a2a1118b30
 F src/attach.c 252c4f7e36cc219349451ed63e278c60e80b26f3
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c d5b0137bc20327af08c14772227cc35134839c30
@@ -898,14 +898,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 824c8dd3015bbd5c8a1dd661cfe09fe5bf7a80d3
-R d21b60403fa8454869264e5a7d85a460
+P a5867cfc4c9b9155fa345247dec29e38fffa8002
+R 33920abd29ec7da3a05c7b6407d444e4
 U drh
-Z 85dcf9c1c5d1988281920e678e21e010
+Z fee44c23be46975276d6ff90647b1cd8
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNI26OoxKgR168RlERAjyZAJ0cxp7jjQMaSBHHPEQ/Ng2xxCrQ6QCeJqqw
-pD4g20IkcXJp5ot9VEJNDSI=
-=6TbT
+iD8DBQFNI348oxKgR168RlERArxzAJ48mvtLODhvrcwzodfd2cfkKQoKAgCfTW4G
+KYtbHKKaTCI2uRFS5jBRYsE=
+=uWmE
 -----END PGP SIGNATURE-----
