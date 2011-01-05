@@ -934,21 +934,28 @@ char *sqlite3_mprintf(const char *zFormat, ...){
 ** current locale settings.  This is important for SQLite because we
 ** are not able to use a "," as the decimal point in place of "." as
 ** specified by some locales.
+**
+** Oops:  The first two arguments of sqlite3_snprintf() are backwards
+** from the snprintf() standard.  Unfortunately, it is too late to change
+** this without breaking compatibility, so we just have to live with the
+** mistake.
+**
+** sqlite3_vsnprintf() is the varargs version.
 */
+char *sqlite3_vsnprintf(int n, char *zBuf, const char *zFormat, va_list ap){
+  StrAccum acc;
+  if( n<=0 ) return zBuf;
+  sqlite3StrAccumInit(&acc, zBuf, n, 0);
+  acc.useMalloc = 0;
+  sqlite3VXPrintf(&acc, 0, zFormat, ap);
+  return sqlite3StrAccumFinish(&acc);
+}
 char *sqlite3_snprintf(int n, char *zBuf, const char *zFormat, ...){
   char *z;
   va_list ap;
-  StrAccum acc;
-
-  if( n<=0 ){
-    return zBuf;
-  }
-  sqlite3StrAccumInit(&acc, zBuf, n, 0);
-  acc.useMalloc = 0;
   va_start(ap,zFormat);
-  sqlite3VXPrintf(&acc, 0, zFormat, ap);
+  z = sqlite3_vsnprintf(n, zBuf, zFormat, ap);
   va_end(ap);
-  z = sqlite3StrAccumFinish(&acc);
   return z;
 }
 

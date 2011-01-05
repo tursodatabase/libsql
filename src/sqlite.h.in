@@ -1861,6 +1861,8 @@ void sqlite3_free_table(char **result);
 ** the zero terminator.  So the longest string that can be completely
 ** written will be n-1 characters.
 **
+** ^The sqlite3_vsnprintf() routine is a varargs version of sqlite3_snprintf().
+**
 ** These routines all implement some additional formatting
 ** options that are useful for constructing SQL statements.
 ** All of the usual printf() formatting options apply.  In addition, there
@@ -1924,6 +1926,7 @@ void sqlite3_free_table(char **result);
 char *sqlite3_mprintf(const char*,...);
 char *sqlite3_vmprintf(const char*, va_list);
 char *sqlite3_snprintf(int,char*,const char*, ...);
+char *sqlite3_vsnprintf(int,char*,const char*, va_list);
 
 /*
 ** CAPI3REF: Memory Allocation Subsystem
