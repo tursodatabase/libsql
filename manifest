@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Enhancements\sto\sthe\s"showdb"\sdebugging\stool.\s\sAdd\sthe\sability\sto\sdisplay\nthe\scontent\sof\sa\scell.
-D 2011-01-05T21:20:52
+C Fix\sa\sbug\sin\sthe\sshowdb\sutility:\sthe\sserial\stypes\sfor\sBLOB\sand\sTEXT\swhere\nreversed.
+D 2011-01-05T21:46:53
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -886,7 +886,7 @@ F tool/shell2.test 5dc76b8005b465f420fed8241621da7513060ff3
 F tool/shell3.test 4fad469e8003938426355afdf34155f08c587836
 F tool/shell4.test 35f9c3d452b4e76d5013c63e1fd07478a62f14ce
 F tool/shell5.test 62bfaf9267296da1b91e4b1c03e44e7b393f6a94
-F tool/showdb.c 1496ea81d21072633fd559e3f39262d2392dc069
+F tool/showdb.c 2f4d20922d1047530f3c6843a8d5973dbc7d8216
 F tool/showjournal.c b62cecaab86a4053d944c276bb5232e4d17ece02
 F tool/showwal.c f09e5a80a293919290ec85a6a37c85a5ddcf37d9
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
@@ -898,14 +898,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 9ec3896e2fda5b04e609300463dc5b6e79d6cff1
-R e186367957c82f3f2e1fafed8df69dbf
+P e9023a4e1edd552a81dcb2dcd5a996edfa167709
+R 8dba7658a57757c37f21c1db4903dcb5
 U drh
-Z cd277adeb367840ebc217b239c3df117
+Z df7dfd891fb3ff873623731883eb9291
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNJOC3oxKgR168RlERAqoaAJ0WxGOj5UtyDg8CWCSQ3WoqPL2v+ACggqUJ
-bS9FcHu8epTJHsJhYAEdEvE=
-=TSIi
+iD8DBQFNJObRoxKgR168RlERAlvgAJwJBI65HjFeJ29eAiEYGnhONZD3qgCff9Rz
+zfYRaCzJT4SENwO7E6/i8Qk=
+=/6Az
 -----END PGP SIGNATURE-----

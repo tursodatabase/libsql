@@ -227,7 +227,7 @@ static int describeContent(
       sprintf(zDesc, "1");
     }else if( x>=12 ){
       int size = (x-12)/2;
-      if( x&1 ){
+      if( (x&1)==0 ){
         sprintf(zDesc, "blob(%d)", size);
       }else{
         sprintf(zDesc, "text(%d)", size);
