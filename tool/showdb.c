@@ -181,37 +181,108 @@ static void print_db_header(void){
 }
 
 /*
+** Describe cell content.
+*/
+static int describeContent(
+  unsigned char *a,
+  char *zDesc
+){
+  int nDesc = 0;
+  int n, i, j;
+  i64 x, v;
+  const unsigned char *pData;
+  char sep = ' ';
+
+  n = decodeVarint(a, &x);
+  pData = &a[x];
+  a += n;
+  i = x - n;
+  while( i>0 ){
+    n = decodeVarint(a, &x);
+    a += n;
+    i -= n;
+    zDesc[0] = sep;
+    sep = ',';
+    nDesc++;
+    zDesc++;
+    if( x==0 ){
+      sprintf(zDesc, "null");
+    }else if( x>=1 && x<=6 ){
+      v = (signed char)pData[0];
+      pData++;
+      switch( x ){
+        case 6:  v = (v<<16) + (pData[0]<<8) + pData[1];  pData += 2;
+        case 5:  v = (v<<16) + (pData[0]<<8) + pData[1];  pData += 2;
+        case 4:  v = (v<<8) + pData[0];  pData++;
+        case 3:  v = (v<<8) + pData[0];  pData++;
+        case 2:  v = (v<<8) + pData[0];  pData++;
+      }
+      sprintf(zDesc, "%lld", v);
+    }else if( x==7 ){
+      sprintf(zDesc, "real");
+      pData += 8;
+    }else if( x==8 ){
+      sprintf(zDesc, "0");
+    }else if( x==9 ){
+      sprintf(zDesc, "1");
+    }else if( x>=12 ){
+      int size = (x-12)/2;
+      if( x&1 ){
+        sprintf(zDesc, "blob(%d)", size);
+      }else{
+        sprintf(zDesc, "text(%d)", size);
+      }
+      pData += size;
+    }
+    j = strlen(zDesc);
+    zDesc += j;
+    nDesc += j;
+  }
+  return nDesc;
+}
+  
+
+/*
 ** Create a description for a single cell.
 */
-static int describeCell(unsigned char cType, unsigned char *a, char **pzDesc){
+static int describeCell(
+  unsigned char cType,    /* Page type */
+  unsigned char *a,       /* Cell content */
+  int showCellContent,    /* Show cell content if true */
+  char **pzDesc           /* Store description here */
+){
   int i;
   int nDesc = 0;
   int n = 0;
   int leftChild;
   i64 nPayload;
   i64 rowid;
-  static char zDesc[100];
+  int nLocal;
+  static char zDesc[1000];
   i = 0;
   if( cType<=5 ){
     leftChild = ((a[0]*256 + a[1])*256 + a[2])*256 + a[3];
     a += 4;
     n += 4;
-    sprintf(zDesc, "left-child: %d ", leftChild);
+    sprintf(zDesc, "lx: %d ", leftChild);
     nDesc = strlen(zDesc);
   }
   if( cType!=5 ){
     i = decodeVarint(a, &nPayload);
     a += i;
     n += i;
-    sprintf(&zDesc[nDesc], "sz: %lld ", nPayload);
+    sprintf(&zDesc[nDesc], "n: %lld ", nPayload);
     nDesc += strlen(&zDesc[nDesc]);
   }
   if( cType==5 || cType==13 ){
     i = decodeVarint(a, &rowid);
     a += i;
     n += i;
-    sprintf(&zDesc[nDesc], "rowid: %lld ", rowid);
+    sprintf(&zDesc[nDesc], "r: %lld ", rowid);
     nDesc += strlen(&zDesc[nDesc]);
+  }
+  if( showCellContent && cType!=5 ){
+    nDesc += describeContent(a, &zDesc[nDesc]);
   }
   *pzDesc = zDesc;
   return n;
@@ -220,16 +291,28 @@ static int describeCell(unsigned char cType, unsigned char *a, char **pzDesc){
 /*
 ** Decode a btree page
 */
-static void decode_btree_page(unsigned char *a, int pgno, int hdrSize){
+static void decode_btree_page(
+  unsigned char *a,   /* Page content */
+  int pgno,           /* Page number */
+  int hdrSize,        /* Size of the page header.  0 or 100 */
+  char *zArgs         /* Flags to control formatting */
+){
   const char *zType = "unknown";
   int nCell;
   int i;
   int iCellPtr;
+  int showCellContent = 0;
   switch( a[0] ){
     case 2:  zType = "index interior node";  break;
     case 5:  zType = "table interior node";  break;
     case 10: zType = "index leaf";           break;
     case 13: zType = "table leaf";           break;
+  }
+  while( zArgs[0] ){
+    switch( zArgs[0] ){
+      case 'c': showCellContent = 1;  break;
+    }
+    zArgs++;
   }
   printf("Decode of btree page %d:\n", pgno);
   print_decode_line(a, 0, 1, zType);
@@ -238,6 +321,9 @@ static void decode_btree_page(unsigned char *a, int pgno, int hdrSize){
   nCell = a[3]*256 + a[4];
   print_decode_line(a, 5, 2, "Offset to cell content area");
   print_decode_line(a, 7, 1, "Fragmented byte count");
+  if( nCell>0 ){
+    printf(" key: lx=left-child n=payload-size r=rowid\n");
+  }
   if( a[0]==2 || a[0]==5 ){
     print_decode_line(a, 8, 4, "Right child");
     iCellPtr = 12;
@@ -248,7 +334,7 @@ static void decode_btree_page(unsigned char *a, int pgno, int hdrSize){
     int cofst = iCellPtr + i*2;
     char *zDesc;
     cofst = a[cofst]*256 + a[cofst+1];
-    describeCell(a[0], &a[cofst-hdrSize], &zDesc);
+    describeCell(a[0], &a[cofst-hdrSize], showCellContent, &zDesc);
     printf(" %03x: cell[%d] %s\n", cofst, i, zDesc);
   }
 }
@@ -361,7 +447,7 @@ int main(int argc, char **argv){
           nByte = pagesize;
         }
         a = getContent(ofst, nByte);
-        decode_btree_page(a, iStart, hdrSize);
+        decode_btree_page(a, iStart, hdrSize, &zLeft[1]);
         free(a);
         continue;
       }else if( zLeft && zLeft[0]=='t' ){
