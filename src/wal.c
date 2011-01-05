@@ -254,6 +254,21 @@ int sqlite3WalTrace = 0;
 #endif
 
 /*
+** WAL tracing logic added to search for an SQLITE_PROTOCOL error.
+*/
+static void walTrace(const char *zFormat, ...){
+  va_list ap;
+  char zMsg[100];
+  va_start(ap, zFormat);
+  sqlite3_vsnprintf(sizeof(zMsg), zMsg, zFormat, ap);
+  va_end(ap);
+#ifdef SQLITE_WAL_TRACE
+  fprintf(stdout, "WALTRACE: [%s]\n", zMsg); fflush(stdout);
+#endif
+  sqlite3_log(99, "%s", zMsg);
+}
+
+/*
 ** The maximum (and only) versions of the wal and wal-index formats
 ** that may be interpreted by this version of SQLite.
 **
@@ -511,6 +526,7 @@ static int walIndexPage(Wal *pWal, int iPage, volatile u32 **ppPage){
     apNew = (volatile u32 **)sqlite3_realloc((void *)pWal->apWiData, nByte);
     if( !apNew ){
       *ppPage = 0;
+      walTrace("realloc(%d) in walIndexPage()", nByte);
       return SQLITE_NOMEM;
     }
     memset((void*)&apNew[pWal->nWiData], 0,
@@ -529,6 +545,7 @@ static int walIndexPage(Wal *pWal, int iPage, volatile u32 **ppPage){
           pWal->writeLock, (void volatile **)&pWal->apWiData[iPage]
       );
     }
+    if( rc ) walTrace("xShmMap():%d in walIndexPage(iPage=%d)",rc,iPage);
   }
 
   *ppPage = pWal->apWiData[iPage];
@@ -1860,6 +1877,7 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
   assert( badHdr==0 || pWal->writeLock==0 );
   if( badHdr && SQLITE_OK==(rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1)) ){
     pWal->writeLock = 1;
+    walTrace("trying walIndexTryHdr w/lock");
     if( SQLITE_OK==(rc = walIndexPage(pWal, 0, &page0)) ){
       badHdr = walIndexTryHdr(pWal, pChanged);
       if( badHdr ){
@@ -1867,13 +1885,16 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
         ** a WRITE lock, it can only mean that the header is corrupted and
         ** needs to be reconstructed.  So run recovery to do exactly that.
         */
+        walTrace("walIndexTryHdr() failed w/lock");
         rc = walIndexRecover(pWal);
+        if( rc ) walTrace("walIndexRecover():%d", rc);
         *pChanged = 1;
       }
     }
     pWal->writeLock = 0;
     walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
   }
+  else if(badHdr) walTrace("walLockExcl():%d in walIndexReadHdr()", rc);
 
   /* If the header is read successfully, check the version number to make
   ** sure the wal-index was not constructed with some future format that
@@ -1953,6 +1974,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
 
   /* Take steps to avoid spinning forever if there is a protocol error. */
   if( cnt>5 ){
+    walTrace("cnt=%d",cnt);
     if( cnt>100 ) return SQLITE_PROTOCOL;
     sqlite3OsSleep(pWal->pVfs, 1);
   }
@@ -2011,12 +2033,14 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
         ** have started to backfill the appended frames but crashed before
         ** it finished. Leaving a corrupt image in the database file.
         */
+        walTrace("wal read/write race - writer won"); 
         walUnlockShared(pWal, WAL_READ_LOCK(0));
         return WAL_RETRY;
       }
       pWal->readLock = 0;
       return SQLITE_OK;
     }else if( rc!=SQLITE_BUSY ){
+      walTrace("walLockShared(0):%d in walTryBeginRead", rc);
       return rc;
     }
   }
@@ -2046,8 +2070,10 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
       pInfo->aReadMark[1] = pWal->hdr.mxFrame;
       walUnlockExclusive(pWal, WAL_READ_LOCK(1), 1);
       rc = WAL_RETRY;
+      walTrace("aReadMark[1] <- %d", pWal->hdr.mxFrame);
     }else if( rc==SQLITE_BUSY ){
       rc = WAL_RETRY;
+      walTrace("aReadMark[1] is busy");
     }
     return rc;
   }else{
@@ -2060,6 +2086,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
           walUnlockExclusive(pWal, WAL_READ_LOCK(i), 1);
           break;
         }else if( rc!=SQLITE_BUSY ){
+          walTrace("walLockExclusive(%d):%d", i, rc);
           return rc;
         }
       }
@@ -2067,6 +2094,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
 
     rc = walLockShared(pWal, WAL_READ_LOCK(mxI));
     if( rc ){
+      walTrace("walLockShared(mxI=%d):%d", mxI, rc);
       return rc==SQLITE_BUSY ? WAL_RETRY : rc;
     }
     /* Now that the read-lock has been obtained, check that neither the
