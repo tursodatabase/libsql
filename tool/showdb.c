@@ -59,6 +59,7 @@ static unsigned char *getContent(int ofst, int nByte){
   unsigned char *aData;
   aData = malloc(nByte+32);
   if( aData==0 ) out_of_memory();
+  memset(aData, 0, nByte+32);
   lseek(db, ofst, SEEK_SET);
   read(db, aData, nByte);
   return aData;
@@ -319,6 +320,14 @@ static int describeCell(
     n += i;
     sprintf(&zDesc[nDesc], "r: %lld ", rowid);
     nDesc += strlen(&zDesc[nDesc]);
+  }
+  if( nLocal<nPayload ){
+    int ovfl;
+    unsigned char *b = &a[nLocal];
+    ovfl = ((b[0]*256 + b[1])*256 + b[2])*256 + b[3];
+    sprintf(&zDesc[nDesc], "ov: %d ", ovfl);
+    nDesc += strlen(&zDesc[nDesc]);
+    n += 4;
   }
   if( showCellContent && cType!=5 ){
     nDesc += describeContent(a, nLocal, &zDesc[nDesc-1]);

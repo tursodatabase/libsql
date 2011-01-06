@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Enhance\sthe\sshowdb\stool\sto\sshow\sa\sbtree\spage\slayout.\s\sAdd\slimit\schecks\sso\sthat\noverflow\scontent\sdoes\snot\soverflow\sthe\sbuffer.
-D 2011-01-06T01:26:38
+C Enhance\sthe\sshowdb\stool\sto\sshow\soverflow\spage\spointers\sat\sthe\send\sof\noverflow\scells.
+D 2011-01-06T15:51:19
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -886,7 +886,7 @@ F tool/shell2.test 5dc76b8005b465f420fed8241621da7513060ff3
 F tool/shell3.test 4fad469e8003938426355afdf34155f08c587836
 F tool/shell4.test 35f9c3d452b4e76d5013c63e1fd07478a62f14ce
 F tool/shell5.test 62bfaf9267296da1b91e4b1c03e44e7b393f6a94
-F tool/showdb.c 65c209d59aa1e5d6c43e8d5f3a1a5d1521b83bd1
+F tool/showdb.c 471c0f8fa472e71bb7654500096a5bdb4ea1fb2a
 F tool/showjournal.c b62cecaab86a4053d944c276bb5232e4d17ece02
 F tool/showwal.c f09e5a80a293919290ec85a6a37c85a5ddcf37d9
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
@@ -898,14 +898,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 65a13faf1e3cd18f3459cd410f65d334cfa7c376
-R 80317cc5c88d48103f5881daa67068e5
+P 57ffa07e26a26d2f4527c8e6d7a9c1f48f380bf7
+R d89e08a20775097580ea6af4c734a279
 U drh
-Z 959c94bb95cb816dc6454b5126d5e277
+Z 423cd0f908ca695200442e25ae6188b4
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNJRpRoxKgR168RlERAneLAJ0Ubz3gvmcO85uJHJOXqW1k9GkMcwCdE1AW
-B34z8WqDcDzvAiuG+61UwD4=
-=HyMh
+iD8DBQFNJeT6oxKgR168RlERAqIMAJ0R7uEoG6ZDNI1Fi1NrZqeT9QSTlACfX5On
+3pJ6qRdQvw3bEFgCv0on13s=
+=XUQa
 -----END PGP SIGNATURE-----
