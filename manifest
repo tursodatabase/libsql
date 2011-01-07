@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Enhance\sthe\sshowdb\stool\sto\sshow\soverflow\spage\spointers\sat\sthe\send\sof\noverflow\scells.
-D 2011-01-06T15:51:19
+C Reorder\sthe\sfields\sin\sprivate\sstructures\sin\san\seffort\sto\sreduce\salignment\ngaps\sand\sthus\smake\sthe\sstructures\ssmaller,\sand\sto\sput\sfrequently\saccessed\nfields\sfirst.\s\sAlso\supdate\ssome\sobsolete\scomments.\s\sValgrind\sshows\sa\svery\nslight\sperformance\simprovement.
+D 2011-01-07T02:50:40
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -124,7 +124,7 @@ F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
 F src/btree.c b70bf1dc563ec532851715ce51aa1ea0c0c592b9
 F src/btree.h 10f9296bf4edf034f5adce921b7b4383a56a1c90
-F src/btreeInt.h c424f2f131cc61ddf130f9bd736b3df12c8a51f0
+F src/btreeInt.h 20f73dc93b1eeb83afd7259fbc6bd7dcf2df7fe4
 F src/build.c 00a327120d81ace6267e714ae8010c997d55de5d
 F src/callback.c a1d1b1c9c85415dff013af033e2fed9c8382d33b
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
@@ -233,8 +233,8 @@ F src/util.c ab1c92426494f499f42b9e307537b03e923d75c1
 F src/vacuum.c 924bd1bcee2dfb05376f79845bd3b4cec7b54b2f
 F src/vdbe.c 5d310eaf1a4d8383602126fa82e01291ab7d3cf3
 F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
-F src/vdbeInt.h 1f2137b905969f4de0648256aeb73abdf88f9213
-F src/vdbeapi.c fb0036185b3c56e15916a5ee96309cd4acf6818f
+F src/vdbeInt.h 6e6f28e9bccc6c703dca1372fd661c57b5c15fb0
+F src/vdbeapi.c 0f898cc77099f0b0b4d6a045e905c3501f9c8b27
 F src/vdbeaux.c 33448d23b857654dd69ed2103611f5c733606f68
 F src/vdbeblob.c 18955f0ee6b133cd08e1592010cb9a6b11e9984c
 F src/vdbemem.c 411649a35686f54268ccabeda175322c4697f5a6
@@ -898,14 +898,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 57ffa07e26a26d2f4527c8e6d7a9c1f48f380bf7
-R d89e08a20775097580ea6af4c734a279
+P cda5eab18f48d3836dfd3e1f8c76e5f83b43485f
+R b6bb91d8008f3bd40fbfcc333ed6ae8d
 U drh
-Z 423cd0f908ca695200442e25ae6188b4
+Z b9332de9f4f0b427c676c0d723aec735
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNJeT6oxKgR168RlERAqIMAJ0R7uEoG6ZDNI1Fi1NrZqeT9QSTlACfX5On
-3pJ6qRdQvw3bEFgCv0on13s=
-=XUQa
+iD8DBQFNJn+EoxKgR168RlERArozAJ488YVf31pNpQTakJkJq0sV2ZJnxQCfW6sh
+hZ8upDwsMRzRPHR7Truah5Q=
+=G69s
 -----END PGP SIGNATURE-----
