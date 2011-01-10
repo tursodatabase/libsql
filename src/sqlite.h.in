@@ -5692,11 +5692,13 @@ typedef struct sqlite3_pcache sqlite3_pcache;
 ** first parameter, szPage, is the size in bytes of the pages that must
 ** be allocated by the cache.  ^szPage will not be a power of two.  ^szPage
 ** will the page size of the database file that is to be cached plus an
-** increment (here called "R") of about 100 or 200.  SQLite will use the
+** increment (here called "R") of less than 250.  SQLite will use the
 ** extra R bytes on each page to store metadata about the underlying
 ** database page on disk.  The value of R depends
 ** on the SQLite version, the target platform, and how SQLite was compiled.
-** ^R is constant for a particular build of SQLite.  ^The second argument to
+** ^(R is constant for a particular build of SQLite. Except, there are two
+** distinct values of R when SQLite is compiled with the proprietary
+** ZIPVFS extension.)^  ^The second argument to
 ** xCreate(), bPurgeable, is true if the cache being created will
 ** be used to cache database pages of a file stored on disk, or
 ** false if it is used for an in-memory database. The cache implementation
