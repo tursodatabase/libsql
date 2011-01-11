@@ -5926,7 +5926,17 @@ int sqlite3PagerRollback(Pager *pPager){
     rc2 = pager_end_transaction(pPager, pPager->setMaster);
     if( rc==SQLITE_OK ) rc = rc2;
   }else if( !isOpen(pPager->jfd) || pPager->eState==PAGER_WRITER_LOCKED ){
+    int eState = pPager->eState;
     rc = pager_end_transaction(pPager, 0);
+    if( !MEMDB && eState>PAGER_WRITER_LOCKED ){
+      /* This can happen using journal_mode=off. Move the pager to the error 
+      ** state to indicate that the contents of the cache may not be trusted.
+      ** Any active readers will get SQLITE_ABORT.
+      */
+      pPager->errCode = SQLITE_ABORT;
+      pPager->eState = PAGER_ERROR;
+      return rc;
+    }
   }else{
     rc = pager_playback(pPager, 0);
   }
