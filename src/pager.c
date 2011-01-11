@@ -2749,10 +2749,10 @@ end_playback:
     rc = readMasterJournal(pPager->jfd, zMaster, pPager->pVfs->mxPathname+1);
     testcase( rc!=SQLITE_OK );
   }
-  if( rc==SQLITE_OK && !pPager->noSync 
+  if( rc==SQLITE_OK
    && (pPager->eState>=PAGER_WRITER_DBMOD || pPager->eState==PAGER_OPEN)
   ){
-    rc = sqlite3OsSync(pPager->fd, pPager->syncFlags);
+    rc = sqlite3PagerSync(pPager);
   }
   if( rc==SQLITE_OK ){
     rc = pager_end_transaction(pPager, zMaster[0]!='\0');
@@ -5596,6 +5596,9 @@ int sqlite3PagerSync(Pager *pPager){
   }else{
     rc = sqlite3OsSync(pPager->fd, pPager->syncFlags);
   }
+  if( isOpen(pPager->fd) ){
+    sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_SYNC, (void *)&rc);
+  }
   return rc;
 }
 
@@ -5813,8 +5816,8 @@ int sqlite3PagerCommitPhaseOne(
       }
   
       /* Finally, sync the database file. */
-      if( !pPager->noSync && !noSync ){
-        rc = sqlite3OsSync(pPager->fd, pPager->syncFlags);
+      if( !noSync ){
+        rc = sqlite3PagerSync(pPager);
       }
       IOTRACE(("DBSYNC %p\n", pPager))
     }

@@ -133,7 +133,7 @@ do_test pager2-2.1 {
     ROLLBACK;
     SELECT * FROM t1;
   }
-} {off 1 2}
+} {off}
 do_test pager2-2.2 {
   faultsim_delete_and_reopen
   execsql {
