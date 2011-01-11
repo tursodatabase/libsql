@@ -344,12 +344,18 @@ static int sqlite3Step(Vdbe *p){
 
   assert(p);
   if( p->magic!=VDBE_MAGIC_RUN ){
-    /* We used to require that sqlite3_reset() be called before retrying
-    ** sqlite3_step() after any error.  But after 3.6.23, we changed this
-    ** so that sqlite3_reset() would be called automatically instead of
-    ** throwing the error.
-    */
-    sqlite3_reset((sqlite3_stmt*)p);
+    if( p->rc==SQLITE_BUSY || p->rc==SQLITE_LOCKED ){
+      /* We used to require that sqlite3_reset() be called before retrying
+      ** sqlite3_step() after any error.  But after 3.6.23, we changed this
+      ** so that sqlite3_reset() would be called automatically instead of
+      ** throwing the error.  Then for 3.7.5 we change it again so that
+      ** sqlite3_reset() would be automatically called only after BUSY and
+      ** LOCKED errors.
+      */
+      sqlite3_reset((sqlite3_stmt*)p);
+    }else{
+      return SQLITE_MISUSE_BKPT;
+    }
   }
 
   /* Check that malloc() has not failed. If it has, return early. */
