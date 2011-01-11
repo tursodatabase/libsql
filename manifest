@@ -1,5 +1,8 @@
-C If\sa\srollback\sis\sattempted\sin\sjournal_mode=off\smode,\sforce\sSQLite\sto\sdiscard\sthe\scontents\sof\sthe\spager\scache\sbefore\sprocessing\sany\ssubsequent\squeries.
-D 2011-01-11T16:09:55
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Change\sthe\spage\ssize\sof\sthe\sdestination\sdatabase\sin\sa\sbackup,\sif\sit\sis\nchangeable,\sprior\sto\sstarting\sthe\sbackup.
+D 2011-01-11T17:38:03.635
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -97,7 +100,7 @@ F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 1af0899c63a688e272d69d8e746f24e76f10a3f0
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
-F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
+F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F main.mk 05d0f3475dd331896bd607cfb45c5e21b94589ad
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
@@ -116,7 +119,7 @@ F src/alter.c 6a0c176e64a34929a4436048066a84ef4f1445b3
 F src/analyze.c 3af3fdb5edea9e69496b078935a3e6a2a1118b30
 F src/attach.c 252c4f7e36cc219349451ed63e278c60e80b26f3
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
-F src/backup.c d5b0137bc20327af08c14772227cc35134839c30
+F src/backup.c ce552d975069f65ab1fc798950ff3582d8e76d58
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
 F src/btree.c b70bf1dc563ec532851715ce51aa1ea0c0c592b9
@@ -589,7 +592,7 @@ F test/permutations.test c0ce0f3b741dd92a6d4c2671dbacba4b92dd81eb
 F test/pragma.test fdfc09067ea104a0c247a1a79d8093b56656f850
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
-F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
+F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
 F test/quota.test ddafe133653093eb9a99ccd6264884ae43f9c9b8
@@ -870,7 +873,7 @@ F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/lemon.c dfd81a51b6e27e469ba21d01a75ddf092d429027
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkkeywordhash.c d2e6b4a5965e23afb80fbe74bb54648cd371f309
-F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
+F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c.tcl e0db70c2c52b0e3d0867ca931229e5b90ffe7837
 F tool/mksqlite3h.tcl d76c226a5e8e1f3b5f6593bcabe5e98b3b1ec9ff
@@ -895,7 +898,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 3513bf6ee090d9be97f60e12a4b39f4361ee17b7
-R dfc530d225d0c020fd7d8a2cd613ee21
-U dan
-Z 8c19b076e4fa90af7411920026738949
+P ece7efce2733b4fdd71db385abebbde464ac8f30
+R 29f54f2120ae55006ec20805de522720
+U drh
+Z 2c38d84c8992f6e0694f158dc2a7fcb7
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFNLJV+oxKgR168RlERAi/rAJ4/03yY93qaERvdXQ29IRVWFKS4bACbB68f
+I9vtcTSZhseoWr42H7VDbvY=
+=uS6P
+-----END PGP SIGNATURE-----
