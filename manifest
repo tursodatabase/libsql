@@ -1,5 +1,5 @@
-C Fix\sa\ssegfault\sthat\scan\soccur\sin\smatchinfo\sif\san\sfts4\stable\scontains\smostly\szero-length\sdocuments.\sSpecifically,\sif\sthe\stable\scontains\smore\srows\sthan\sit\sdoes\sbytes\sof\stext.
-D 2011-01-13T10:58:27
+C Fix\sa\scouple\sof\scrashes\sin\sfts3\sthat\scan\soccur\sif\sthe\sdatabase\scontents\sare\sinconsistent.
+D 2011-01-13T11:20:04
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -73,7 +73,7 @@ F ext/fts3/fts3_snippet.c 196c5e6cde57bfc1907c2d60e9c29590e4f93fb6
 F ext/fts3/fts3_tokenizer.c 055f3dc7369585350b28db1ee0f3b214dca6724d
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 6e5cbaa588924ac578263a598e4fb9f5c9bb179d
-F ext/fts3/fts3_write.c 9f3545ae27c13553a6f433fa0ec260fe8bf0cf2f
+F ext/fts3/fts3_write.c 3eea26b9ca4219e1711b0db74fd5a9d448a6afbb
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
@@ -450,7 +450,7 @@ F test/fts3expr.test 5e745b2b6348499d9ef8d59015de3182072c564c
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
 F test/fts3fault.test f83e556465bb69dc8bc676339eca408dce4ca246
 F test/fts3malloc.test 9c8cc3f885bb4dfc66d0460c52f68f45e4710d1b
-F test/fts3matchinfo.test 32e31467963698cc7fa311e9a61f99d7d06cf72b
+F test/fts3matchinfo.test cc0b009edbbf575283d5fdb53271179e0d8019ba
 F test/fts3near.test 2e318ee434d32babd27c167142e2b94ddbab4844
 F test/fts3query.test ef79d31fdb355d094baec1c1b24b60439a1fb8a2
 F test/fts3rnd.test 2b1a579be557ab8ac54a51b39caa4aa8043cc4ad
@@ -895,7 +895,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 114640d920e16c85de90b19d53c485135875de5b
-R f5eb10b21437fad711a6b9be4e7a8db9
+P fe9047668eaaf76e7aa1ef1f32dec7c7c4226e45
+R 92da6ba399b108dc3885073a225af042
 U dan
-Z a737930e0e8a10b4bde0b31ffbd88e53
+Z 1a6f8ebc8ef3ebfc6cb5f32bb01c2e00

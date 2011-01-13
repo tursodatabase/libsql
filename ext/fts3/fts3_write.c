@@ -1102,25 +1102,28 @@ int sqlite3Fts3SegReaderCost(
       ** to right.
       */
       sqlite3_stmt *pStmt;
-      rc = fts3SqlStmt(p, SQL_SELECT_DOCTOTAL, &pStmt, 0);
+      sqlite3_int64 nDoc = 0;
+      sqlite3_int64 nByte = 0;
+      const char *a;
+      rc = sqlite3Fts3SelectDoctotal(p, &pStmt);
       if( rc ) return rc;
-      if( sqlite3_data_count(pStmt) || sqlite3_step(pStmt)==SQLITE_ROW ){
-        sqlite3_int64 nDoc = 0;
-        sqlite3_int64 nByte = 0;
-        const char *a = sqlite3_column_blob(pStmt, 0);
-        if( a ){
-          const char *pEnd = &a[sqlite3_column_bytes(pStmt, 0)];
-          a += sqlite3Fts3GetVarint(a, &nDoc);
-          while( a<pEnd ){
-            a += sqlite3Fts3GetVarint(a, &nByte);
-          }
+      a = sqlite3_column_blob(pStmt, 0);
+      if( a ){
+        const char *pEnd = &a[sqlite3_column_bytes(pStmt, 0)];
+        a += sqlite3Fts3GetVarint(a, &nDoc);
+        while( a<pEnd ){
+          a += sqlite3Fts3GetVarint(a, &nByte);
         }
-
-        pCsr->nRowAvg = (int)(((nByte / nDoc) + pgsz) / pgsz);
-        assert( pCsr->nRowAvg>0 ); 
       }
+      if( nDoc==0 || nByte==0 ){
+        sqlite3_reset(pStmt);
+        return SQLITE_CORRUPT;
+      }
+
+      pCsr->nRowAvg = (int)(((nByte / nDoc) + pgsz) / pgsz);
+      assert( pCsr->nRowAvg>0 ); 
       rc = sqlite3_reset(pStmt);
-      if( rc!=SQLITE_OK || pCsr->nRowAvg==0 ) return rc;
+      if( rc!=SQLITE_OK ) return rc;
     }
 
     /* Assume that a blob flows over onto overflow pages if it is larger
