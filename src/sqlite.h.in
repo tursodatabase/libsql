@@ -2311,7 +2311,7 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 ** case the database must already exist, otherwise an error is returned.</dd>)^
 **
 ** ^(<dt>[SQLITE_OPEN_READWRITE] | [SQLITE_OPEN_CREATE]</dt>
-** <dd>The database is opened for reading and writing, and is creates it if
+** <dd>The database is opened for reading and writing, and is created if
 ** it does not already exist. This is the behavior that is always used for
 ** sqlite3_open() and sqlite3_open16().</dd>)^
 ** </dl>

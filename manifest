@@ -1,5 +1,8 @@
-C Fix\sa\scouple\sof\scrashes\sin\sfts3\sthat\scan\soccur\sif\sthe\sdatabase\scontents\sare\sinconsistent.
-D 2011-01-13T11:20:04
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Fix\sa\stypo\son\sthe\ssqlite3_open_v2()\sdocumentation.
+D 2011-01-13T16:10:58.039
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -97,7 +100,7 @@ F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 1af0899c63a688e272d69d8e746f24e76f10a3f0
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
-F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
+F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F main.mk 05d0f3475dd331896bd607cfb45c5e21b94589ad
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
@@ -176,7 +179,7 @@ F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 8a7ba246b0b4bb45df7fbc52681728a0e3deaaa7
 F src/shell.c 83c6f0cc5a79a081c7b9ddfe4f557b47e0bad976
-F src/sqlite.h.in 584410ebff31c8d1ca7cac5ddc9f0fa00e9b21c8
+F src/sqlite.h.in 90674938b3da90bc8c652d3cc8919bb5e59fca3a
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
 F src/sqliteInt.h 3ef5fc89a4c9755a08a68de107493785a284e27c
 F src/sqliteLimit.h a17dcd3fb775d63b64a43a55c54cb282f9726f44
@@ -589,7 +592,7 @@ F test/permutations.test c0ce0f3b741dd92a6d4c2671dbacba4b92dd81eb
 F test/pragma.test fdfc09067ea104a0c247a1a79d8093b56656f850
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
-F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
+F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
 F test/quota.test ddafe133653093eb9a99ccd6264884ae43f9c9b8
@@ -870,7 +873,7 @@ F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/lemon.c dfd81a51b6e27e469ba21d01a75ddf092d429027
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkkeywordhash.c d2e6b4a5965e23afb80fbe74bb54648cd371f309
-F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
+F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c.tcl e0db70c2c52b0e3d0867ca931229e5b90ffe7837
 F tool/mksqlite3h.tcl d76c226a5e8e1f3b5f6593bcabe5e98b3b1ec9ff
@@ -895,7 +898,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P fe9047668eaaf76e7aa1ef1f32dec7c7c4226e45
-R 92da6ba399b108dc3885073a225af042
-U dan
-Z 1a6f8ebc8ef3ebfc6cb5f32bb01c2e00
+P 811e12cddfb3246c6cf3d5085bd9b72b12e05550
+R 4db09cc2d3d25cf2af107cc1bd614955
+U drh
+Z f696e8356dbd05649a93c3ef6bad0b51
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFNLyQVoxKgR168RlERAtTYAJ4vasQs4AbrNNxcwuyEckmjClcwJwCfcTEV
+E1HYpfcH5ZGZGtGR544ndQ4=
+=qmdL
+-----END PGP SIGNATURE-----
