@@ -1104,7 +1104,7 @@ int sqlite3Fts3SegReaderCost(
       sqlite3_stmt *pStmt;
       rc = fts3SqlStmt(p, SQL_SELECT_DOCTOTAL, &pStmt, 0);
       if( rc ) return rc;
-      if( sqlite3_step(pStmt)==SQLITE_ROW ){
+      if( sqlite3_data_count(pStmt) || sqlite3_step(pStmt)==SQLITE_ROW ){
         sqlite3_int64 nDoc = 0;
         sqlite3_int64 nByte = 0;
         const char *a = sqlite3_column_blob(pStmt, 0);
@@ -1116,7 +1116,8 @@ int sqlite3Fts3SegReaderCost(
           }
         }
 
-        pCsr->nRowAvg = (int)(((nByte / nDoc) + pgsz - 1) / pgsz);
+        pCsr->nRowAvg = (int)(((nByte / nDoc) + pgsz) / pgsz);
+        assert( pCsr->nRowAvg>0 ); 
       }
       rc = sqlite3_reset(pStmt);
       if( rc!=SQLITE_OK || pCsr->nRowAvg==0 ) return rc;
