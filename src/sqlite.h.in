@@ -5737,7 +5737,7 @@ typedef struct sqlite3_pcache sqlite3_pcache;
 ** If the requested page is already in the page cache, then the page cache
 ** implementation must return a pointer to the page buffer with its content
 ** intact.  If the requested page is not already in the cache, then the
-** behavior of the cache implementation should use the value of the createFlag
+** cache implementation should use the value of the createFlag
 ** parameter to help it determined what action to take:
 **
 ** <table border=1 width=85% align=center>

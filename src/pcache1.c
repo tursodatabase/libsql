@@ -688,11 +688,7 @@ static void pcache1Unpin(sqlite3_pcache *p, void *pPg, int reuseUnlikely){
     pcache1RemoveFromHash(pPage);
     pcache1FreePage(pPage);
   }else{
-    /* Add the page to the global LRU list. Normally, the page is added to
-    ** the head of the list (last page to be recycled). However, if the 
-    ** reuseUnlikely flag passed to this function is true, the page is added
-    ** to the tail of the list (first page to be recycled).
-    */
+    /* Add the page to the global LRU list. */
     if( pcache1.pLruHead ){
       pcache1.pLruHead->pLruPrev = pPage;
       pPage->pLruNext = pcache1.pLruHead;
