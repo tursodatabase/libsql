@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Increment\sthe\schange\scounter\sand\supdate\sthe\sSQLite\sversion\snumber\swhenever\npage\s1\sis\sadded\sto\sthe\sWAL.\s\sTicket\s[5d863f876ee9561b9]
-D 2011-01-15T17:12:59.482
+C Fix\sthe\schange-counter\sincrement\sfor\sWAL\spages\sso\sthat\sit\sworks\seven\swhen\ninvoked\sfrom\sxStress.\s\sTicket\s[5d863f876ee9561b95e2].
+D 2011-01-15T18:11:12.573
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +165,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c aeaf65d261219ad96c021cfd0672509d83c005e4
 F src/os_win.c 2f90f7bdec714fad51cd31b4ecad3cc1b4bb5aad
-F src/pager.c 737025a2e7457ae7cfd4fe1f0cc69f69d88b29b4
+F src/pager.c 3e3e5cd39724107dc98edb39c1528b2d250c7b9a
 F src/pager.h 0ea59db2a33bc6c2c02cae34de33367e1effdf76
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 09d38c44ab275db581f7a2f6ff8b9bc7f8c0faaa
@@ -899,14 +899,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P af54963f0fa0afafbc2d0847f30543c041b182ec
-R 2e070d9bb52da592e341dbace3cf5d95
+P c1e0d09cd3f5feae123468a35f147021d839641c
+R f10af8d4a2b23d5e0a4042a0305ee5bd
 U drh
-Z 2f025605b789f039118b3a16146dfc2d
+Z e0ffffbf7b453d6eb6ed50379cb7cd3c
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNMdWfoxKgR168RlERAmfoAJ9Y78wB/3baCsxKX+NyeGTMQLqGDACeOyQw
-/EmrRAxlTmynxXA/PJ4j5Yo=
-=dp+d
+iD8DBQFNMeNDoxKgR168RlERAhpGAJ4lGMlKMGe3/3RAk9NL9lmCoMpu8wCfey5w
+R2+PVnRtF1tBrMlvNBy+MRg=
+=rI++
 -----END PGP SIGNATURE-----
