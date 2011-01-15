@@ -2915,11 +2915,17 @@ static int pagerRollbackWal(Pager *pPager){
   return rc;
 }
 
+/* Forward declaration */
+static int pager_incr_changecounter(Pager*,int);
+
 /*
 ** This function is a wrapper around sqlite3WalFrames(). As well as logging
 ** the contents of the list of pages headed by pList (connected by pDirty),
 ** this function notifies any active backup processes that the pages have
-** changed. 
+** changed.
+**
+** The list of pages passed into this routine is always sorted by page number.
+** Hence, if page 1 appears anywhere on the list, it will be the first page.
 */ 
 static int pagerWalFrames(
   Pager *pPager,                  /* Pager object */
@@ -2929,8 +2935,23 @@ static int pagerWalFrames(
   int syncFlags                   /* Flags to pass to OsSync() (or 0) */
 ){
   int rc;                         /* Return code */
+#if defined(SQLITE_DEBUG) || defined(SQLITE_CHECK_PAGES)
+  PgHdr *p;                       /* For looping over pages */
+#endif
 
   assert( pPager->pWal );
+#ifdef SQLITE_DEBUG
+  /* Verify that the page list is in accending order */
+  for(p=pList; p && p->pDirty; p=p->pDirty){
+    assert( p->pgno < p->pDirty->pgno );
+  }
+#endif
+
+  if( pList->pgno==1 ){
+    pPager->changeCountDone = 0;
+    pager_incr_changecounter(pPager,0);
+    pPager->changeCountDone = 0;
+  }
   rc = sqlite3WalFrames(pPager->pWal, 
       pPager->pageSize, pList, nTruncate, isCommit, syncFlags
   );
@@ -2942,9 +2963,8 @@ static int pagerWalFrames(
   }
 
 #ifdef SQLITE_CHECK_PAGES
-  {
-    PgHdr *p;
-    for(p=pList; p; p=p->pDirty) pager_set_pagehash(p);
+  for(p=pList; p; p=p->pDirty){
+    pager_set_pagehash(p);
   }
 #endif
 
