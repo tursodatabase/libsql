@@ -2915,11 +2915,37 @@ static int pagerRollbackWal(Pager *pPager){
   return rc;
 }
 
+
+/*
+** Update the value of the change-counter at offsets 24 and 92 in
+** the header and the sqlite version number at offset 96.
+**
+** This is an unconditional update.  See also the pager_incr_changecounter()
+** routine which only updates the change-counter if the update is actually
+** needed, as determined by the pPager->changeCountDone state variable.
+*/
+static void pager_write_changecounter(PgHdr *pPg){
+  u32 change_counter;
+
+  /* Increment the value just read and write it back to byte 24. */
+  change_counter = sqlite3Get4byte((u8*)pPg->pPager->dbFileVers)+1;
+  put32bits(((char*)pPg->pData)+24, change_counter);
+
+  /* Also store the SQLite version number in bytes 96..99 and in
+  ** bytes 92..95 store the change counter for which the version number
+  ** is valid. */
+  put32bits(((char*)pPg->pData)+92, change_counter);
+  put32bits(((char*)pPg->pData)+96, SQLITE_VERSION_NUMBER);
+}
+
 /*
 ** This function is a wrapper around sqlite3WalFrames(). As well as logging
 ** the contents of the list of pages headed by pList (connected by pDirty),
 ** this function notifies any active backup processes that the pages have
-** changed. 
+** changed.
+**
+** The list of pages passed into this routine is always sorted by page number.
+** Hence, if page 1 appears anywhere on the list, it will be the first page.
 */ 
 static int pagerWalFrames(
   Pager *pPager,                  /* Pager object */
@@ -2929,8 +2955,19 @@ static int pagerWalFrames(
   int syncFlags                   /* Flags to pass to OsSync() (or 0) */
 ){
   int rc;                         /* Return code */
+#if defined(SQLITE_DEBUG) || defined(SQLITE_CHECK_PAGES)
+  PgHdr *p;                       /* For looping over pages */
+#endif
 
   assert( pPager->pWal );
+#ifdef SQLITE_DEBUG
+  /* Verify that the page list is in accending order */
+  for(p=pList; p && p->pDirty; p=p->pDirty){
+    assert( p->pgno < p->pDirty->pgno );
+  }
+#endif
+
+  if( pList->pgno==1 ) pager_write_changecounter(pList);
   rc = sqlite3WalFrames(pPager->pWal, 
       pPager->pageSize, pList, nTruncate, isCommit, syncFlags
   );
@@ -2942,9 +2979,8 @@ static int pagerWalFrames(
   }
 
 #ifdef SQLITE_CHECK_PAGES
-  {
-    PgHdr *p;
-    for(p=pList; p; p=p->pDirty) pager_set_pagehash(p);
+  for(p=pList; p; p=p->pDirty){
+    pager_set_pagehash(p);
   }
 #endif
 
@@ -5489,7 +5525,13 @@ void sqlite3PagerDontWrite(PgHdr *pPg){
 /*
 ** This routine is called to increment the value of the database file 
 ** change-counter, stored as a 4-byte big-endian integer starting at 
-** byte offset 24 of the pager file.
+** byte offset 24 of the pager file.  The secondary change counter at
+** 92 is also updated, as is the SQLite version number at offset 96.
+**
+** But this only happens if the pPager->changeCountDone flag is false.
+** To avoid excess churning of page 1, the update only happens once.
+** See also the pager_write_changecounter() routine that does an 
+** unconditional update of the change counters.
 **
 ** If the isDirectMode flag is zero, then this is done by calling 
 ** sqlite3PagerWrite() on page 1, then modifying the contents of the
@@ -5530,7 +5572,6 @@ static int pager_incr_changecounter(Pager *pPager, int isDirectMode){
 
   if( !pPager->changeCountDone && pPager->dbSize>0 ){
     PgHdr *pPgHdr;                /* Reference to page 1 */
-    u32 change_counter;           /* Initial value of change-counter field */
 
     assert( !pPager->tempFile && isOpen(pPager->fd) );
 
@@ -5548,16 +5589,8 @@ static int pager_incr_changecounter(Pager *pPager, int isDirectMode){
     }
 
     if( rc==SQLITE_OK ){
-      /* Increment the value just read and write it back to byte 24. */
-      change_counter = sqlite3Get4byte((u8*)pPager->dbFileVers);
-      change_counter++;
-      put32bits(((char*)pPgHdr->pData)+24, change_counter);
-
-      /* Also store the SQLite version number in bytes 96..99 and in
-      ** bytes 92..95 store the change counter for which the version number
-      ** is valid. */
-      put32bits(((char*)pPgHdr->pData)+92, change_counter);
-      put32bits(((char*)pPgHdr->pData)+96, SQLITE_VERSION_NUMBER);
+      /* Actually do the update of the change counter */
+      pager_write_changecounter(pPgHdr);
 
       /* If running in direct mode, write the contents of page 1 to the file. */
       if( DIRECT_MODE ){
