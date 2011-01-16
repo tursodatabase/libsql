@@ -441,31 +441,33 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
         */
         const i64 iSize = (i64)pgszSrc * (i64)nSrcPage;
         sqlite3_file * const pFile = sqlite3PagerFile(pDestPager);
+        i64 iOff;
+        i64 iEnd;
 
         assert( pFile );
         assert( (i64)nDestTruncate*(i64)pgszDest >= iSize || (
               nDestTruncate==(int)(PENDING_BYTE_PAGE(p->pDest->pBt)-1)
            && iSize>=PENDING_BYTE && iSize<=PENDING_BYTE+pgszDest
         ));
-        if( SQLITE_OK==(rc = sqlite3PagerCommitPhaseOne(pDestPager, 0, 1))
-         && SQLITE_OK==(rc = backupTruncateFile(pFile, iSize))
-         && SQLITE_OK==(rc = sqlite3PagerSync(pDestPager))
+        iEnd = MIN(PENDING_BYTE + pgszDest, iSize);
+        for(
+          iOff=PENDING_BYTE+pgszSrc; 
+          rc==SQLITE_OK && iOff<iEnd; 
+          iOff+=pgszSrc
         ){
-          i64 iOff;
-          i64 iEnd = MIN(PENDING_BYTE + pgszDest, iSize);
-          for(
-            iOff=PENDING_BYTE+pgszSrc; 
-            rc==SQLITE_OK && iOff<iEnd; 
-            iOff+=pgszSrc
-          ){
-            PgHdr *pSrcPg = 0;
-            const Pgno iSrcPg = (Pgno)((iOff/pgszSrc)+1);
-            rc = sqlite3PagerGet(pSrcPager, iSrcPg, &pSrcPg);
-            if( rc==SQLITE_OK ){
-              u8 *zData = sqlite3PagerGetData(pSrcPg);
-              rc = sqlite3OsWrite(pFile, zData, pgszSrc, iOff);
-            }
-            sqlite3PagerUnref(pSrcPg);
+          PgHdr *pSrcPg = 0;
+          const Pgno iSrcPg = (Pgno)((iOff/pgszSrc)+1);
+          rc = sqlite3PagerGet(pSrcPager, iSrcPg, &pSrcPg);
+          if( rc==SQLITE_OK ){
+            u8 *zData = sqlite3PagerGetData(pSrcPg);
+            rc = sqlite3OsWrite(pFile, zData, pgszSrc, iOff);
+          }
+          sqlite3PagerUnref(pSrcPg);
+        }
+        if( rc==SQLITE_OK ){
+          rc = sqlite3PagerCommitPhaseOne(pDestPager, 0, 1);
+          if( rc==SQLITE_OK ){
+            rc = backupTruncateFile(pFile, iSize);
           }
         }
       }else{

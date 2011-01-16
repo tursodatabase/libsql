@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Make\ssure\sthe\schange-counter\sand\sSQLite-version\sfields\sof\sthe\sheader\sare\nset\scorrectly\seven\swhen\sdoing\sa\sVACUUM\swith\slocking_mode=EXCLUSIVE.\nTicket\s[5d863f876ee9561b].
-D 2011-01-16T00:56:19.189
+C On\sa\sbackup\sfrom\sa\ssmaller\sto\sa\slarger\spage\ssize,\sdo\snot\sbegin\scommitting\nthe\stransaction\suntil\sthe\ssource\spages\safter\sthe\spending\sbyte\shave\sbeen\ncopied.
+D 2011-01-16T22:37:09.511
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -119,7 +119,7 @@ F src/alter.c 6a0c176e64a34929a4436048066a84ef4f1445b3
 F src/analyze.c 3af3fdb5edea9e69496b078935a3e6a2a1118b30
 F src/attach.c 252c4f7e36cc219349451ed63e278c60e80b26f3
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
-F src/backup.c ce552d975069f65ab1fc798950ff3582d8e76d58
+F src/backup.c 8c39a1ebba1e9dc385519cc4d434c7b0cab6638c
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
 F src/btree.c a27c3b41082889fc258278ba501ff2594dda2a41
@@ -899,14 +899,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 0be92a75769dbafbc08c3b229089aaac03a9a907
-R d8d7beadfbe9f74ad99892b81bbe4834
+P 04fa1e16905183b948ee6456675799a873d5f97d
+R 3d005f718593bfc47c66fc1735978f86
 U drh
-Z 3a8faf9676cfe40a39d768a062675239
+Z 78481d4f7ffafe220d59a58e27e67e91
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNMkI4oxKgR168RlERAiL1AJ4+ojIGGkSFg5PKjeVFo2Q3S5VKTwCghUnC
-uUw3JTyu+W3ezvTZ0vpp/zI=
-=Qcvp
+iD8DBQFNM3MZoxKgR168RlERAgouAJ9jAfVlLbWbhs2V9PnGaztVeVe3PACggVMY
+rNuHhMxi5oUQ5cjcmZrMH5g=
+=1Q7m
 -----END PGP SIGNATURE-----
