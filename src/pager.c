@@ -4005,6 +4005,7 @@ static int pager_write_pagelist(Pager *pPager, PgHdr *pList){
       char *pData;                                   /* Data to write */    
 
       assert( (pList->flags&PGHDR_NEED_SYNC)==0 );
+      if( pList->pgno==1 ) pager_write_changecounter(pList);
 
       /* Encode the database */
       CODEC2(pPager, pList->pData, pgno, 6, return SQLITE_NOMEM, pData);
@@ -5584,7 +5585,7 @@ static int pager_incr_changecounter(Pager *pPager, int isDirectMode){
     ** direct mode, page 1 is always held in cache and hence the PagerGet()
     ** above is always successful - hence the ALWAYS on rc==SQLITE_OK.
     */
-    if( !DIRECT_MODE && ALWAYS(rc==SQLITE_OK) ){
+    if( !DIRECT_MODE && rc==SQLITE_OK ){
       rc = sqlite3PagerWrite(pPgHdr);
     }
 

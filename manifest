@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Make\ssure\sthe\schange\scounter\sand\sSQLite\sversion\snumbers\sin\sthe\sheader\sare\nset\scorrectly,\seven\swhen\srunning\sin\sWAL\smode\sand\swhen\sVACUUMing\sin\sWAL\smode.\nTicket\s[5d863f876ee9561b9].
-D 2011-01-15T21:42:23.957
+C Make\ssure\sthe\schange-counter\sand\sSQLite-version\sfields\sof\sthe\sheader\sare\nset\scorrectly\seven\swhen\sdoing\sa\sVACUUM\swith\slocking_mode=EXCLUSIVE.\nTicket\s[5d863f876ee9561b].
+D 2011-01-16T00:56:19.189
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +165,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c aeaf65d261219ad96c021cfd0672509d83c005e4
 F src/os_win.c 2f90f7bdec714fad51cd31b4ecad3cc1b4bb5aad
-F src/pager.c 3e3e5cd39724107dc98edb39c1528b2d250c7b9a
+F src/pager.c 8b6eb723cbf0774892a99465f7ddcf105c418638
 F src/pager.h 0ea59db2a33bc6c2c02cae34de33367e1effdf76
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 09d38c44ab275db581f7a2f6ff8b9bc7f8c0faaa
@@ -377,7 +377,7 @@ F test/enc4.test 4b575ef09e0eff896e73bd24076f96c2aa6a42de
 F test/eqp.test 69670e7919030f21de29fb99bf1d68f97aedcbdb
 F test/eval.test bc269c365ba877554948441e91ad5373f9f91be3
 F test/exclusive.test 53e1841b422e554cecf0160f937c473d6d0e3062
-F test/exclusive2.test 76e63c05349cb70d09d60b99d2ae625525ff5155
+F test/exclusive2.test c2f2b2242dc436a12df8dd531e06843053bd3b9a
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/expr.test 620a636cf7b7d4e5834a0b9d83a4da372e24a7b7
 F test/fallocate.test 43dc34b8c24be6baffadc3b4401ee15710ce83c6
@@ -899,14 +899,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P af54963f0fa0afafbc2d0847f30543c041b182ec 228e7c34c64114670fe015747d47fdaa3b7e1270
-R f10af8d4a2b23d5e0a4042a0305ee5bd
+P 0be92a75769dbafbc08c3b229089aaac03a9a907
+R d8d7beadfbe9f74ad99892b81bbe4834
 U drh
-Z 6e401d9f8e8005a2d1afa0f68cfb5791
+Z 3a8faf9676cfe40a39d768a062675239
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNMhTEoxKgR168RlERAjWBAJwKez7r0WMgO4GDogJLKl9yAXwcqwCfZJEp
-E+BxZJyeorWZrtHPF69nj0g=
-=h8z+
+iD8DBQFNMkI4oxKgR168RlERAiL1AJ4+ojIGGkSFg5PKjeVFo2Q3S5VKTwCghUnC
+uUw3JTyu+W3ezvTZ0vpp/zI=
+=Qcvp
 -----END PGP SIGNATURE-----
