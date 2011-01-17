@@ -74,9 +74,15 @@ do_test capi2-1.7 {
 
 # This used to be SQLITE_MISUSE.  But now we automatically reset prepared
 # statements.
-do_test capi2-1.8 {
-  sqlite3_step $VM
-} {SQLITE_ROW}
+ifcapable autoreset {
+  do_test capi2-1.8 {
+    sqlite3_step $VM
+  } {SQLITE_ROW}
+} else {
+  do_test capi2-1.8 {
+    sqlite3_step $VM
+  } {SQLITE_MISUSE}
+}
 
 # Update: In v2, once SQLITE_MISUSE is returned the statement handle cannot
 # be interrogated for more information. However in v3, since the column
