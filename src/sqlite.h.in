@@ -2661,7 +2661,7 @@ const char *sqlite3_sql(sqlite3_stmt *pStmt);
 ** CAPI3REF: Determine If An SQL Statement Writes The Database
 **
 ** ^The sqlite3_stmt_readonly(X) interface returns true (non-zero) if 
-** and only if the [prepared statement] X is makes no direct changes to
+** and only if the [prepared statement] X makes no direct changes to
 ** the content of the database file.
 **
 ** Note that [application-defined SQL functions] or
