@@ -5585,7 +5585,7 @@ static int pager_incr_changecounter(Pager *pPager, int isDirectMode){
     ** direct mode, page 1 is always held in cache and hence the PagerGet()
     ** above is always successful - hence the ALWAYS on rc==SQLITE_OK.
     */
-    if( !DIRECT_MODE && rc==SQLITE_OK ){
+    if( !DIRECT_MODE && ALWAYS(rc==SQLITE_OK) ){
       rc = sqlite3PagerWrite(pPgHdr);
     }
 

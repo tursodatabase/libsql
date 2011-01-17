@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C On\sa\sbackup\sfrom\sa\ssmaller\sto\sa\slarger\spage\ssize,\sdo\snot\sbegin\scommitting\nthe\stransaction\suntil\sthe\ssource\spages\safter\sthe\spending\sbyte\shave\sbeen\ncopied.
-D 2011-01-16T22:37:09.511
+C Add\sback\san\sALWAYS()\sto\sregain\sfull\stest\scoverage.
+D 2011-01-17T02:24:12.610
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +165,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c aeaf65d261219ad96c021cfd0672509d83c005e4
 F src/os_win.c 2f90f7bdec714fad51cd31b4ecad3cc1b4bb5aad
-F src/pager.c 8b6eb723cbf0774892a99465f7ddcf105c418638
+F src/pager.c 60d79b73d9fa7adce29e55231597416f1511d975
 F src/pager.h 0ea59db2a33bc6c2c02cae34de33367e1effdf76
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 09d38c44ab275db581f7a2f6ff8b9bc7f8c0faaa
@@ -899,14 +899,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 04fa1e16905183b948ee6456675799a873d5f97d
-R 3d005f718593bfc47c66fc1735978f86
+P 612e2599d3e1a17c268402fce018a53dee6dffe1
+R abd1ddc0cbd80cba70c03c409d8a0a78
 U drh
-Z 78481d4f7ffafe220d59a58e27e67e91
+Z 5deab45f651e1cc367fa113ca51b94f5
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNM3MZoxKgR168RlERAgouAJ9jAfVlLbWbhs2V9PnGaztVeVe3PACggVMY
-rNuHhMxi5oUQ5cjcmZrMH5g=
-=1Q7m
+iD8DBQFNM6hQoxKgR168RlERAnmGAJ9VtK6Ab9TW+dU+V6QdM+ALE833cQCfSTjg
++uTHGM0YHNJB4Zg+fvaxE9U=
+=b8FC
 -----END PGP SIGNATURE-----
