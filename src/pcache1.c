@@ -514,7 +514,7 @@ static int pcache1Init(void *NotUsed){
   memset(&pcache1, 0, sizeof(pcache1));
   if( sqlite3GlobalConfig.bCoreMutex ){
     pcache1.grp.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU);
-    pcache1.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM2);
+    pcache1.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_PMEM);
   }
   pcache1.isInit = 1;
   return SQLITE_OK;

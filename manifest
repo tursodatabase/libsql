@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Here\sis\sa\scompletely\snew\simplementation\sof\sthe\smutex-free-pcache.\s\sThis\none\suses\sa\scommon\scode\sbase\sand\sautomatically\sselects\swhether\sor\snot\sto\s\nuse\smutexes\sdepending\son\scompile-time\sand\sstart-time\soptions.
-D 2011-01-17T21:32:24.379
+C Do\snot\suse\sSQLITE_MUTEX_STATIC_MEM2\ssince\sit\shas\sbeen\sreused\sas\sSTATIC_OPEN.\nInstead,\screate\sa\snew\sstatic\smutex\sSTATIC_PMEM\swhich\sis\san\salias\sfor\sthe\nunused\sSTATIC_LRU2.
+D 2011-01-18T15:17:57.523
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -170,7 +170,7 @@ F src/pager.h 0ea59db2a33bc6c2c02cae34de33367e1effdf76
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 09d38c44ab275db581f7a2f6ff8b9bc7f8c0faaa
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
-F src/pcache1.c 35f4d8d3e876708fa5b2174d32ce0b996470c88d
+F src/pcache1.c b02aafb8e6e83cf1e49321bdd53926f430beb4b6
 F src/pragma.c 8a6cd3c787f882fa44f6490d2411fc26839ce8f3
 F src/prepare.c c8b877b80721d70b68053fd9ae30ec6d63eeeadc
 F src/printf.c 37e8bfd4c5a04eae4960adbe776b0f1fc4cad674
@@ -179,7 +179,7 @@ F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 8a7ba246b0b4bb45df7fbc52681728a0e3deaaa7
 F src/shell.c 83c6f0cc5a79a081c7b9ddfe4f557b47e0bad976
-F src/sqlite.h.in 18a60e7e9f846fce21081b58d0f172dc5f3ee8ef
+F src/sqlite.h.in 45ae5d463b5b341420b3cbc236fb1dfb5c0cd1a8
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
 F src/sqliteInt.h 3ef5fc89a4c9755a08a68de107493785a284e27c
 F src/sqliteLimit.h a17dcd3fb775d63b64a43a55c54cb282f9726f44
@@ -899,18 +899,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 56417a3386fc84dd36bf1488e88149b1ac6a0d02
-R 983645a96ff6d3f0292bd851bc48a03a
-T *bgcolor * #a8d3c0
-T *branch * mutex-free-pcache
-T *sym-mutex-free-pcache *
-T -sym-trunk *
+P d094a1bfb7569a52b637fe9ba5d3fa6ce5ea6d94
+R 5a6f30062ab18eb4f0689f1eb22606f0
 U drh
-Z a140fb68339099588b73b5639a289144
+Z 4ecccd4a56daba874bbeeabc61f35710
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD4DBQFNNLVroxKgR168RlERAujGAJiIbOhYAepMRCuh0ytKZr7hYPulAKCJCvYa
-QRfjhT9WvrqQrKNgWqHNNA==
-=eKGZ
+iD8DBQFNNa8poxKgR168RlERApBYAJ0f/N4hkLyYC7T/pc8MNg5yYDKMUgCfTraD
+26V7hw0ncBtQ25UIXFz1wYg=
+=AgYe
 -----END PGP SIGNATURE-----
