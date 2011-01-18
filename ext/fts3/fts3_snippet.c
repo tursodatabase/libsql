@@ -956,6 +956,7 @@ static int fts3MatchinfoSelectDoctotal(
     if( rc!=SQLITE_OK ) return rc;
   }
   pStmt = *ppStmt;
+  assert( sqlite3_data_count(pStmt)==1 );
 
   a = sqlite3_column_blob(pStmt, 0);
   a += sqlite3Fts3GetVarint(a, &nDoc);

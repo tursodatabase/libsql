@@ -345,11 +345,30 @@ static int sqlite3Step(Vdbe *p){
   assert(p);
   if( p->magic!=VDBE_MAGIC_RUN ){
     /* We used to require that sqlite3_reset() be called before retrying
-    ** sqlite3_step() after any error.  But after 3.6.23, we changed this
-    ** so that sqlite3_reset() would be called automatically instead of
-    ** throwing the error.
+    ** sqlite3_step() after any error or after SQLITE_DONE.  But beginning
+    ** with version 3.7.0, we changed this so that sqlite3_reset() would
+    ** be called automatically instead of throwing the SQLITE_MISUSE error.
+    ** This "automatic-reset" change is not technically an incompatibility, 
+    ** since any application that receives an SQLITE_MISUSE is broken by
+    ** definition.
+    **
+    ** Nevertheless, some published applications that were originally written
+    ** for version 3.6.23 or earlier do in fact depend on SQLITE_MISUSE 
+    ** returns, and the so were broken by the automatic-reset change.  As a
+    ** a work-around, the SQLITE_OMIT_AUTORESET compile-time restores the
+    ** legacy behavior of returning SQLITE_MISUSE for cases where the 
+    ** previous sqlite3_step() returned something other than a SQLITE_LOCKED
+    ** or SQLITE_BUSY error.
     */
+#ifdef SQLITE_OMIT_AUTORESET
+    if( p->rc==SQLITE_BUSY || p->rc==SQLITE_LOCKED ){
+      sqlite3_reset((sqlite3_stmt*)p);
+    }else{
+      return SQLITE_MISUSE_BKPT;
+    }
+#else
     sqlite3_reset((sqlite3_stmt*)p);
+#endif
   }
 
   /* Check that malloc() has not failed. If it has, return early. */
@@ -685,7 +704,7 @@ static Mem *columnMem(sqlite3_stmt *pStmt, int i){
 #if defined(SQLITE_DEBUG) && defined(__GNUC__)
       __attribute__((aligned(8))) 
 #endif
-      = {{0}, (double)0, 0, "", 0, MEM_Null, SQLITE_NULL, 0, 0, 0 };
+      = {0, "", (double)0, {0}, 0, MEM_Null, SQLITE_NULL, 0, 0, 0 };
 
     if( pVm && ALWAYS(pVm->db) ){
       sqlite3_mutex_enter(pVm->db->mutex);
