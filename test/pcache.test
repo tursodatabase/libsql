@@ -21,6 +21,14 @@ source $testdir/tester.tcl
 #
 do_not_use_codec
 
+# Only works with a mode-2 pcache where all pcaches share a single set
+# of pages.
+#
+ifcapable {!memorymanage && threadsafe} {
+  finish_test
+  return
+}
+
 # The pcache module limits the number of pages available to purgeable
 # caches to the sum of the 'cache_size' values for the set of open
 # caches. This block of tests, pcache-1.*, test that the library behaves
