@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Do\snot\suse\smutexes\sin\sthe\spcache\simplementation\sunless\nSQLITE_ENABLE_MEMORY_MANAGMENT\sis\sdefined.\s\sThis\sis\sa\sperformance\senhancement.\nA\sside\seffect\sis\sthat\spcaches\swill\snot\ssteal\spages\sfrom\sone\sanother\sunless\nENABLE_MEMORY_MANAGEMENT\sis\sset,\sor\sunless\sSQLITE_THREADSAFE=0.
-D 2011-01-18T17:03:26.554
+C Comment\simprovements\sin\spcache1.c.\s\sNo\schanges\sto\scode.
+D 2011-01-19T21:58:56.344
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -170,7 +170,7 @@ F src/pager.h 0ea59db2a33bc6c2c02cae34de33367e1effdf76
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 09d38c44ab275db581f7a2f6ff8b9bc7f8c0faaa
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
-F src/pcache1.c b02aafb8e6e83cf1e49321bdd53926f430beb4b6
+F src/pcache1.c 2610bcebf127df5ff82730c0c130cb35d4d6debe
 F src/pragma.c 8a6cd3c787f882fa44f6490d2411fc26839ce8f3
 F src/prepare.c c8b877b80721d70b68053fd9ae30ec6d63eeeadc
 F src/printf.c 37e8bfd4c5a04eae4960adbe776b0f1fc4cad674
@@ -899,14 +899,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 56417a3386fc84dd36bf1488e88149b1ac6a0d02 2dc98d29995bef51108e99aa8f7a56427cf9e1d7
-R ae7dd673c03c5cec18f064cfaf72f5a8
+P e5ca59e63b18ac45a8c82ca39dc8cce1c4ce903c
+R 246c042190fbeb83b3f1f3c471b7048c
 U drh
-Z 325abbc955397207600330822401f3ff
+Z d4b4af53a8b712c86792c5f30e91ad66
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNNcfhoxKgR168RlERAkQlAJ4goobzjFc2tVGaK8jIdVviHMW2TwCfYV8B
-rrsRGD/Sjq/hNYcI1Uavg6U=
-=JG+V
+iD8DBQFNN16joxKgR168RlERApzpAJ9ub7vBM3MbU8WJio56+Ng2W8PfBQCeLClb
+tiAK9YA5ekgfGTTQ91uwQlY=
+=gzKU
 -----END PGP SIGNATURE-----

@@ -674,18 +674,19 @@ static void *pcache1Fetch(sqlite3_pcache *p, unsigned int iKey, int createFlag){
   pcache1EnterMutex(pGroup);
   if( createFlag==1 ) sqlite3BeginBenignMalloc();
 
-  /* Search the hash table for an existing entry. */
+  /* Step 1: Search the hash table for an existing entry. */
   if( pCache->nHash>0 ){
     unsigned int h = iKey % pCache->nHash;
     for(pPage=pCache->apHash[h]; pPage&&pPage->iKey!=iKey; pPage=pPage->pNext);
   }
 
+  /* Step 2: Abort if no existing page is found and createFlag is 0 */
   if( pPage || createFlag==0 ){
     pcache1PinPage(pPage);
     goto fetch_out;
   }
 
-  /* Step 3 of header comment. */
+  /* Step 3: Abort if createFlag is 1 but the cache is nearly full */
   nPinned = pCache->nPage - pCache->nRecyclable;
   if( createFlag==1 && (
         nPinned>=(pGroup->nMaxPage+pCache->nMin-pGroup->nMinPage)
@@ -699,7 +700,7 @@ static void *pcache1Fetch(sqlite3_pcache *p, unsigned int iKey, int createFlag){
     goto fetch_out;
   }
 
-  /* Step 4. Try to recycle a page buffer if appropriate. */
+  /* Step 4. Try to recycle a page. */
   if( pCache->bPurgeable && pGroup->pLruTail && (
          (pCache->nPage+1>=pCache->nMax)
       || pGroup->nCurrentPage>=pGroup->nMaxPage
