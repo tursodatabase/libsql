@@ -2461,6 +2461,51 @@ range_est_fallback:
   return rc;
 }
 
+#ifdef SQLITE_ENABLE_STAT2
+/*
+** Estimate the number of rows that will be returned based on
+** an equality constraint x=VALUE and where that VALUE occurs in
+** the histogram data.  This only works when x is the left-most
+** column of an index and sqlite_stat2 histogram data is available
+** for that index.
+**
+** Write the estimated row count into *pnRow.  If unable to make
+** an estimate, leave *pnRow unchanged.
+*/
+void whereEqScanEst(
+  Parse *pParse,       /* Parsing & code generating context */
+  Index *p,            /* The index whose left-most column is pTerm */
+  WhereTerm *pTerm,    /* The x=VALUE constraint */
+  double *pnRow        /* Write the revised row estimate here */
+){
+  sqlite3_value *pRhs = 0;  /* VALUE on right-hand side of pTerm */
+  int iLower, iUpper;       /* Range of histogram regions containing pRhs */
+  u8 aff;                   /* Column affinity */
+  int rc;                   /* Subfunction return code */
+  double nRowEst;           /* New estimate of the number of rows */
+
+  assert( p->aSample!=0 );
+  assert( pTerm->eOperator==WO_EQ );
+  aff = p->pTable->aCol[p->aiColumn[0]].affinity;
+  rc = valueFromExpr(pParse, pTerm->pExpr->pRight, aff, &pRhs);
+  if( rc ) goto whereEqScanEst_cancel;
+  rc = whereRangeRegion(pParse, p, pRhs, 0, &iLower);
+  if( rc ) goto whereEqScanEst_cancel;
+  rc = whereRangeRegion(pParse, p, pRhs, 1, &iUpper);
+  if( rc ) goto whereEqScanEst_cancel;
+  if( iLower>=iUpper ){
+    nRowEst = p->aiRowEst[0]/(SQLITE_INDEX_SAMPLES*2);
+    if( nRowEst<*pnRow ) *pnRow = nRowEst;
+  }else{
+    nRowEst = (iUpper-iLower)*p->aiRowEst[0]/SQLITE_INDEX_SAMPLES;
+    *pnRow = nRowEst;
+  }
+
+whereEqScanEst_cancel:
+  sqlite3ValueFree(pRhs);
+}
+#endif /* defined(SQLITE_ENABLE_STAT2) */
+
 
 /*
 ** Find the query plan for accessing a particular table.  Write the
@@ -2624,10 +2669,13 @@ static void bestBtreeIndex(
     int bInEst = 0;
     int nInMul = 1;
     int estBound = 100;
-    int nBound = 0;             /* Number of range constraints seen */
+    int nBound = 0;               /* Number of range constraints seen */
     int bSort = 0;
     int bLookup = 0;
-    WhereTerm *pTerm;           /* A single term of the WHERE clause */
+    WhereTerm *pTerm;             /* A single term of the WHERE clause */
+#ifdef SQLITE_ENABLE_STAT2
+    WhereTerm *pFirstEqTerm = 0;  /* First WO_EQ term */
+#endif
 
     /* Determine the values of nEq and nInMul */
     for(nEq=0; nEq<pProbe->nColumn; nEq++){
@@ -2647,6 +2695,11 @@ static void bestBtreeIndex(
       }else if( pTerm->eOperator & WO_ISNULL ){
         wsFlags |= WHERE_COLUMN_NULL;
       }
+#ifdef SQLITE_ENABLE_STAT2
+      else if( nEq==0 && pProbe->aSample ){
+        pFirstEqTerm = pTerm;
+      }
+#endif
       used |= pTerm->prereqRight;
     }
 
@@ -2722,6 +2775,17 @@ static void bestBtreeIndex(
       nRow = aiRowEst[0]/2;
       nInMul = (int)(nRow / aiRowEst[nEq]);
     }
+
+#ifdef SQLITE_ENABLE_STAT2
+    /* If the constraint is of the form x=VALUE and histogram
+    ** data is available for column x, then it might be possible
+    ** to get a better estimate on the number of rows based on
+    ** VALUE and how common that value is according to the histogram.
+    */
+    if( nRow>(double)1 && nEq==1 && pFirstEqTerm!=0 ){
+      whereEqScanEst(pParse, pProbe, pFirstEqTerm, &nRow);
+    }
+#endif /* SQLITE_ENABLE_STAT2 */
 
     /* Assume constant cost to access a row and logarithmic cost to
     ** do a binary search.  Hence, the initial cost is the number of output

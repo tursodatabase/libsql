@@ -214,6 +214,14 @@ foreach {testid where rows} {
  20  {y>=0 AND y<'charlie'}          700
  21  {y>=0 AND y<='charlie'}         900
  22  {y>=0 AND y<'delta'}            900
+ 23  {y>'alpha' AND y<x'00'}         600
+ 24  {y>='bravo' AND y<x'00'}        600
+ 25  {y>'bravo' AND y<x'00'}         300
+ 26  {y>='charlie' AND y<x'00'}      300
+ 27  {y>'charlie' AND y<x'00'}       100
+ 28  {y>='delta' AND y<x'00'}        100
+ 29  {y>'delta' AND y<x'00'}          50
+ 30  {y>='echo' AND y<x'00'}          50
 } {
   do_test analyze5-3.$testid {
     eqp "SELECT * FROM t1 WHERE $where"
