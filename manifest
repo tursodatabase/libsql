@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Comment\simprovements\sin\spcache1.c.\s\sNo\schanges\sto\scode.
-D 2011-01-19T21:58:56.344
+C The\sfirst\sof\sa\splanned\sseries\sof\senhancements\sto\sthe\squery\splanner\sthat\nenable\sit\sto\smake\sbetter\suse\sof\ssqlite_stat2\shistograms\swhen\sthe\stable\nhas\smany\srepeated\svalues.
+D 2011-01-20T02:56:37.736
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -243,7 +243,7 @@ F src/vtab.c b297e8fa656ab5e66244ab15680d68db0adbec30
 F src/wal.c dbca424f71678f663a286ab2a98f947af1d412a7
 F src/wal.h c1aac6593a0b02b15dc625987e619edeab39292e
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c af069e6b53234118014dabfece96a9515b69d76b
+F src/where.c 5cd6b88d57bfc816ba7f753a3cdf03686d954b8a
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 51756962d522e474338e9b2ebb26e7364d4aa125
@@ -253,9 +253,10 @@ F test/alter3.test 8677e48d95536f7a6ed86a1a774744dadcc22b07
 F test/alter4.test 1e5dd6b951e9f65ca66422edff02e56df82dd403
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/analyze.test c1eb87067fc16ece7c07e823d6395fd831b270c5
-F test/analyze2.test 3bde8f0879d9c1f2df3af21fcf42e706d8ee1e43
+F test/analyze2.test f45ac8d54bdad822139e53fc6307fc6b5ee41c69
 F test/analyze3.test 820ddfb7591b49607fbaf77240c7955ac3cabb04
 F test/analyze4.test 757b37875cf9bb528d46f74497bc789c88365045
+F test/analyze5.test 18987796646efdf009ca0b8c8f060874a8fe57fb
 F test/async.test ad4ba51b77cd118911a3fe1356b0809da9c108c3
 F test/async2.test bf5e2ca2c96763b4cba3d016249ad7259a5603b6
 F test/async3.test 93edaa9122f498e56ea98c36c72abc407f4fb11e
@@ -899,14 +900,18 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e5ca59e63b18ac45a8c82ca39dc8cce1c4ce903c
-R 246c042190fbeb83b3f1f3c471b7048c
+P 9660a0a22547656cc3765b673d0cee9e1dd829ef
+R 9ff1bb21abd03a28e074b829beb25c52
+T *bgcolor * #a8c7d3
+T *branch * stat2-enhancement
+T *sym-stat2-enhancement *
+T -sym-trunk *
 U drh
-Z d4b4af53a8b712c86792c5f30e91ad66
+Z f191562671825ddb731a0f83c41674dd
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNN16joxKgR168RlERApzpAJ9ub7vBM3MbU8WJio56+Ng2W8PfBQCeLClb
-tiAK9YA5ekgfGTTQ91uwQlY=
-=gzKU
+iD8DBQFNN6RpoxKgR168RlERAtbyAJ4tlGP5CKHBEdaaRtF9LD6pnMJo9QCaAnxY
+oc508+oZBxzr/UoIZL3o+G4=
+=2eyE
 -----END PGP SIGNATURE-----
