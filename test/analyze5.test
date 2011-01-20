@@ -117,6 +117,40 @@ foreach {testid where rows} {
   } [format {0 0 0 {SEARCH TABLE t1 USING INDEX t1z (z>? AND z<?) (~%d rows)}} \
        $rows]
 }
+foreach {testid where rows} {
+  101  {z=-1}           50
+  102  {z=0}            400
+  103  {z=1}            300
+  104  {z=2}            200
+  105  {z=3}            100
+  106  {z=4}             50
+  107  {z=-10.0}         50
+  108  {z=0.0}          400
+  109  {z=1.0}          300
+  110  {z=2.0}          200
+  111  {z=3.0}          100
+  112  {z=4.0}           50
+  113  {z=1.5}           50
+  114  {z=2.5}           50
+} {
+  do_test analyze5-1.$testid {
+    eqp "SELECT * FROM t1 WHERE $where"
+  } [format {0 0 0 {SEARCH TABLE t1 USING INDEX t1z (z=?) (~%d rows)}} $rows]
+}
+
+# For the t1.y column, most entries are known to be zero.  So do a 
+# full table scan for y=0 but use the index for any other constraint on
+# y.
+#
+do_test analyze5-201 {
+  eqp {SELECT * FROM t1 WHERE y=0}
+} {0 0 0 {SCAN TABLE t1 (~100 rows)}}
+do_test analyze5-202 {
+  eqp {SELECT * FROM t1 WHERE y=1}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX t1y (y=?) (~50 rows)}}
+do_test analyze5-203 {
+  eqp {SELECT * FROM t1 WHERE y=0.1}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX t1y (y=?) (~50 rows)}}
 
 # Change the table values from integer to floating point and then
 # repeat the same sequence of tests.  We should get the same results.
@@ -180,6 +214,27 @@ foreach {testid where rows} {
   } [format {0 0 0 {SEARCH TABLE t1 USING INDEX t1z (z>? AND z<?) (~%d rows)}} \
        $rows]
 }
+foreach {testid where rows} {
+  101  {z=-1}           50
+  102  {z=0}            400
+  103  {z=1}            300
+  104  {z=2}            200
+  105  {z=3}            100
+  106  {z=4}             50
+  107  {z=-10.0}         50
+  108  {z=0.0}          400
+  109  {z=1.0}          300
+  110  {z=2.0}          200
+  111  {z=3.0}          100
+  112  {z=4.0}           50
+  113  {z=1.5}           50
+  114  {z=2.5}           50
+} {
+  do_test analyze5-2.$testid {
+    eqp "SELECT * FROM t1 WHERE $where"
+  } [format {0 0 0 {SEARCH TABLE t1 USING INDEX t1z (z=?) (~%d rows)}} $rows]
+}
+
 
 # Repeat the same range query tests using TEXT columns.
 #
@@ -227,6 +282,20 @@ foreach {testid where rows} {
     eqp "SELECT * FROM t1 WHERE $where"
   } [format {0 0 0 {SEARCH TABLE t1 USING INDEX t1y (y>? AND y<?) (~%d rows)}} \
        $rows]
+}
+foreach {testid where rows} {
+  101  {y=0}                  50
+  102  {y='alpha'}            400
+  103  {y='bravo'}            300
+  104  {y='charlie'}          200
+  105  {y='delta'}            100
+  106  {y='echo'}             50
+  107  {y=''}                 50
+  108  {y=x'0102'}            50
+} {
+  do_test analyze5-3.$testid {
+    eqp "SELECT * FROM t1 WHERE $where"
+  } [format {0 0 0 {SEARCH TABLE t1 USING INDEX t1y (y=?) (~%d rows)}} $rows]
 }
 
 
