@@ -118,7 +118,7 @@ foreach {testid where rows} {
        $rows]
 }
 foreach {testid where rows} {
-  101  {z=-1}           50
+  101  {z=-1}            50
   102  {z=0}            400
   103  {z=1}            300
   104  {z=2}            200
@@ -136,6 +136,38 @@ foreach {testid where rows} {
   do_test analyze5-1.$testid {
     eqp "SELECT * FROM t1 WHERE $where"
   } [format {0 0 0 {SEARCH TABLE t1 USING INDEX t1z (z=?) (~%d rows)}} $rows]
+}
+
+# for the next sequence of tests a value of rows<=0 means a full-table scan
+# is used.
+#
+#set sqlite_where_trace 1
+foreach {testid where rows} {
+  201  {z IN (-1)}            50
+  202  {z IN (0)}            400
+  203  {z IN (1)}            300
+  204  {z IN (2)}            200
+  205  {z IN (3)}            100
+  206  {z IN (4)}             50
+  207  {z IN (0.5)}           50
+  208  {z IN (0,1)}          700
+  209  {z IN (0,1,2)}        900
+  210  {z IN (0,1,2,3)}        0
+  211  {z IN (0,1,2,3,4,5)}    0
+  212  {z IN (1,2)}          500
+  213  {z IN (2,3)}          300
+  214  {z=3 OR z=2}          300
+  215  {z IN (-1,3)}         150
+  216  {z=-1 OR z=3}         150
+} {
+  if {$rows<=0} {
+    set ans {SCAN TABLE t1 (~100 rows)}
+  } else {
+    set ans [format {SEARCH TABLE t1 USING INDEX t1z (z=?) (~%d rows)} $rows]
+  }
+  do_test analyze5-1.$testid {
+    lindex [eqp "SELECT * FROM t1 WHERE $where"] 3
+  } $ans
 }
 
 # For the t1.y column, most entries are known to be zero.  So do a 

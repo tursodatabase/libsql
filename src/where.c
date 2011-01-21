@@ -117,6 +117,7 @@ struct WhereTerm {
 #define TERM_ORINFO     0x10   /* Need to free the WhereTerm.u.pOrInfo object */
 #define TERM_ANDINFO    0x20   /* Need to free the WhereTerm.u.pAndInfo obj */
 #define TERM_OR_OK      0x40   /* Used during OR-clause processing */
+#define TERM_NOHELP     0x80   /* This term does not reduce the search space */
 
 /*
 ** An instance of the following structure holds all information about a
@@ -1060,6 +1061,7 @@ static void exprAnalyzeOrTerm(
       }else{
         sqlite3ExprListDelete(db, pList);
       }
+      pTerm->wtFlags |= TERM_NOHELP;
       pTerm->eOperator = 0;  /* case 1 trumps case 2 */
     }
   }
@@ -2523,8 +2525,10 @@ whereEqualScanEst_cancel:
 #ifdef SQLITE_ENABLE_STAT2
 /*
 ** Estimate the number of rows that will be returned based on
-** an IN constraint "x IN (V1,V2,V3,...)" where the right-hand side
-** of the IN operator is a list of values.
+** an IN constraint where the right-hand side of the IN operator
+** is a list of values.  Example:
+**
+**        WHERE x IN (1,2,3,4)
 **
 ** Write the estimated row count into *pnRow and return SQLITE_OK. 
 ** If unable to make an estimate, leave *pnRow unchanged and return
@@ -2544,22 +2548,24 @@ int whereInScanEst(
   sqlite3_value *pVal = 0;  /* One value from list */
   int iLower, iUpper;       /* Range of histogram regions containing pRhs */
   u8 aff;                   /* Column affinity */
-  int rc;                   /* Subfunction return code */
+  int rc = SQLITE_OK;       /* Subfunction return code */
   double nRowEst;           /* New estimate of the number of rows */
-  int nRegion = 0;          /* Number of histogram regions spanned */
-  int nSingle = 0;          /* Count of values contained within one region */
+  int nSpan = 0;            /* Number of histogram regions spanned */
+  int nSingle = 0;          /* Histogram regions hit by a single value */
   int nNotFound = 0;        /* Count of values that are not constants */
-  int i;                            /* Loop counter */
-  u8 aHit[SQLITE_INDEX_SAMPLES+1];  /* Histogram regions that are spanned */
+  int i;                               /* Loop counter */
+  u8 aSpan[SQLITE_INDEX_SAMPLES+1];    /* Histogram regions that are spanned */
+  u8 aSingle[SQLITE_INDEX_SAMPLES+1];  /* Histogram regions hit once */
 
   assert( p->aSample!=0 );
   aff = p->pTable->aCol[p->aiColumn[0]].affinity;
-  memset(aHit, 0, sizeof(aHit));
+  memset(aSpan, 0, sizeof(aSpan));
+  memset(aSingle, 0, sizeof(aSingle));
   for(i=0; i<pList->nExpr; i++){
     sqlite3ValueFree(pVal);
     rc = valueFromExpr(pParse, pList->a[i].pExpr, aff, &pVal);
     if( rc ) break;
-    if( pVal==0 ){
+    if( pVal==0 || sqlite3_value_type(pVal)==SQLITE_NULL ){
       nNotFound++;
       continue;
     }
@@ -2568,19 +2574,26 @@ int whereInScanEst(
     rc = whereRangeRegion(pParse, p, pVal, 1, &iUpper);
     if( rc ) break;
     if( iLower>=iUpper ){
-      nSingle++;
+      aSingle[iLower] = 1;
+    }else{
+      assert( iLower>=0 && iUpper<=SQLITE_INDEX_SAMPLES );
+      while( iLower<iUpper ) aSpan[iLower++] = 1;
     }
-    assert( iLower>=0 && iUpper<=SQLITE_INDEX_SAMPLES );
-    while( iLower<=iUpper ) aHit[iLower++] = 1;
   }
   if( rc==SQLITE_OK ){
-    for(i=nRegion=0; i<ArraySize(aHit); i++) nRegion += aHit[i];
-    nRowEst = nRegion*p->aiRowEst[0]/(SQLITE_INDEX_SAMPLES+1)
+    for(i=nSpan=0; i<=SQLITE_INDEX_SAMPLES; i++){
+      if( aSpan[i] ){
+        nSpan++;
+      }else if( aSingle[i] ){
+        nSingle++;
+      }
+    }
+    nRowEst = (nSpan*2+nSingle)*p->aiRowEst[0]/(2*SQLITE_INDEX_SAMPLES)
                + nNotFound*p->aiRowEst[1];
     if( nRowEst > p->aiRowEst[0] ) nRowEst = p->aiRowEst[0];
     *pnRow = nRowEst;
-    WHERETRACE(("IN row estimate: nRegion=%d, nSingle=%d, nNotFound=%d\n",
-                 nRegion, nSingle, nNotFound));
+    WHERETRACE(("IN row estimate: nSpan=%d, nSingle=%d, nNotFound=%d, est=%g\n",
+                 nSpan, nSingle, nNotFound, nRowEst));
   }
   sqlite3ValueFree(pVal);
   return rc;
@@ -2923,7 +2936,7 @@ static void bestBtreeIndex(
 
       thisTab = getMask(pWC->pMaskSet, iCur);
       for(pTerm=pWC->a, k=pWC->nTerm; nRow>2 && k; k--, pTerm++){
-        if( pTerm->wtFlags & TERM_VIRTUAL ) continue;
+        if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_NOHELP) ) continue;
         if( (pTerm->prereqAll & notValid)!=thisTab ) continue;
         if( pTerm->eOperator & (WO_EQ|WO_IN|WO_ISNULL) ){
           if( nSkipEq ){
@@ -2937,7 +2950,7 @@ static void bestBtreeIndex(
           }
         }else if( pTerm->eOperator & (WO_LT|WO_LE|WO_GT|WO_GE) ){
           if( nSkipRange ){
-            /* Ignore the first nBound range constraints since the index
+            /* Ignore the first nSkipRange range constraints since the index
             ** has already accounted for these */
             nSkipRange--;
           }else{
