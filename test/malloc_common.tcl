@@ -106,6 +106,10 @@ set FAULTSIM(cantopen-persistent) [list      \
 #
 #     -test             Script to execute after -body.
 #
+#     -install          Script to execute after faultsim -injectinstall
+#
+#     -uninstall        Script to execute after faultsim -uninjectinstall
+#
 proc do_faultsim_test {name args} {
   global FAULTSIM
   
@@ -113,6 +117,8 @@ proc do_faultsim_test {name args} {
   set DEFAULT(-prep)          ""
   set DEFAULT(-body)          ""
   set DEFAULT(-test)          ""
+  set DEFAULT(-install)          ""
+  set DEFAULT(-uninstall)          ""
 
   fix_testname name
 
@@ -129,7 +135,9 @@ proc do_faultsim_test {name args} {
     set faultlist [concat $faultlist $flist]
   }
 
-  set testspec [list -prep $O(-prep) -body $O(-body) -test $O(-test)]
+  set testspec [list -prep $O(-prep) -body $O(-body) \
+      -test $O(-test) -install $O(-install) -uninstall $O(-uninstall)
+  ]
   foreach f [lsort -unique $faultlist] {
     eval do_one_faultsim_test "$name-$f" $FAULTSIM($f) $testspec
   }
@@ -294,6 +302,8 @@ proc do_one_faultsim_test {testname args} {
   set DEFAULT(-prep)            ""
   set DEFAULT(-body)            ""
   set DEFAULT(-test)            ""
+  set DEFAULT(-install)         ""
+  set DEFAULT(-uninstall)       ""
 
   array set O [array get DEFAULT]
   array set O $args
@@ -307,6 +317,7 @@ proc do_one_faultsim_test {testname args} {
   "
 
   eval $O(-injectinstall)
+  eval $O(-install)
 
   set stop 0
   for {set iFail 1} {!$stop} {incr iFail} {
@@ -338,6 +349,7 @@ proc do_one_faultsim_test {testname args} {
     if {$nfail==0} { set stop 1 }
   }
 
+  eval $O(-uninstall)
   eval $O(-injectuninstall)
 }
 

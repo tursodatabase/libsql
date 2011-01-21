@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Comment\simprovements\sin\spcache1.c.\s\sNo\schanges\sto\scode.
-D 2011-01-19T21:58:56.344
+C Add\soptions\sto\stest\scommand\s[do_faultsim_test]\sto\ssupport\stesting\sVFS\simplementations.
+D 2011-01-21T15:52:02
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -100,7 +97,7 @@ F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 1af0899c63a688e272d69d8e746f24e76f10a3f0
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
-F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
+F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F main.mk 05d0f3475dd331896bd607cfb45c5e21b94589ad
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
@@ -552,7 +549,7 @@ F test/mallocH.test 79b65aed612c9b3ed2dcdaa727c85895fd1bfbdb
 F test/mallocI.test a88c2b9627c8506bf4703d8397420043a786cdb6
 F test/mallocJ.test b5d1839da331d96223e5f458856f8ffe1366f62e
 F test/mallocK.test d79968641d1b70d88f6c01bdb9a7eb4a55582cc9
-F test/malloc_common.tcl 27087a2bfad8f695ca6f8b463ecac5d71b9b0712
+F test/malloc_common.tcl 660b82ab528521cc4a48ff6df05ca3b6a00d47c5
 F test/manydb.test b3d3bc4c25657e7f68d157f031eb4db7b3df0d3c
 F test/memdb.test 0825155b2290e900264daaaf0334b6dfe69ea498
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
@@ -899,14 +896,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e5ca59e63b18ac45a8c82ca39dc8cce1c4ce903c
-R 246c042190fbeb83b3f1f3c471b7048c
-U drh
-Z d4b4af53a8b712c86792c5f30e91ad66
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFNN16joxKgR168RlERApzpAJ9ub7vBM3MbU8WJio56+Ng2W8PfBQCeLClb
-tiAK9YA5ekgfGTTQ91uwQlY=
-=gzKU
------END PGP SIGNATURE-----
+P 9660a0a22547656cc3765b673d0cee9e1dd829ef
+R f0e13f37f9a89d0d9982d76b8e865005
+U dan
+Z 235ffebf829319266e0bdfb46955a46a
