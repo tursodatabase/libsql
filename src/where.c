@@ -2475,18 +2475,19 @@ range_est_fallback:
 ** column of an index and sqlite_stat2 histogram data is available
 ** for that index.
 **
-** Write the estimated row count into *pnRow.  If unable to make
-** an estimate, leave *pnRow unchanged.
+** Write the estimated row count into *pnRow and return SQLITE_OK. 
+** If unable to make an estimate, leave *pnRow unchanged and return
+** non-zero.
 **
 ** This routine can fail if it is unable to load a collating sequence
 ** required for string comparison, or if unable to allocate memory
 ** for a UTF conversion required for comparison.  The error is stored
 ** in the pParse structure.
 */
-void whereEqScanEst(
+int whereEqualScanEst(
   Parse *pParse,       /* Parsing & code generating context */
   Index *p,            /* The index whose left-most column is pTerm */
-  WhereTerm *pTerm,    /* The x=VALUE constraint */
+  Expr *pExpr,         /* Expression for VALUE in the x=VALUE constraint */
   double *pnRow        /* Write the revised row estimate here */
 ){
   sqlite3_value *pRhs = 0;  /* VALUE on right-hand side of pTerm */
@@ -2496,14 +2497,14 @@ void whereEqScanEst(
   double nRowEst;           /* New estimate of the number of rows */
 
   assert( p->aSample!=0 );
-  assert( pTerm->eOperator==WO_EQ );
   aff = p->pTable->aCol[p->aiColumn[0]].affinity;
-  rc = valueFromExpr(pParse, pTerm->pExpr->pRight, aff, &pRhs);
-  if( rc ) goto whereEqScanEst_cancel;
+  rc = valueFromExpr(pParse, pExpr, aff, &pRhs);
+  if( rc ) goto whereEqualScanEst_cancel;
+  if( pRhs==0 ) return SQLITE_NOTFOUND;
   rc = whereRangeRegion(pParse, p, pRhs, 0, &iLower);
-  if( rc ) goto whereEqScanEst_cancel;
+  if( rc ) goto whereEqualScanEst_cancel;
   rc = whereRangeRegion(pParse, p, pRhs, 1, &iUpper);
-  if( rc ) goto whereEqScanEst_cancel;
+  if( rc ) goto whereEqualScanEst_cancel;
   WHERETRACE(("equality scan regions: %d..%d\n", iLower, iUpper));
   if( iLower>=iUpper ){
     nRowEst = p->aiRowEst[0]/(SQLITE_INDEX_SAMPLES*2);
@@ -2513,8 +2514,76 @@ void whereEqScanEst(
     *pnRow = nRowEst;
   }
 
-whereEqScanEst_cancel:
+whereEqualScanEst_cancel:
   sqlite3ValueFree(pRhs);
+  return rc;
+}
+#endif /* defined(SQLITE_ENABLE_STAT2) */
+
+#ifdef SQLITE_ENABLE_STAT2
+/*
+** Estimate the number of rows that will be returned based on
+** an IN constraint "x IN (V1,V2,V3,...)" where the right-hand side
+** of the IN operator is a list of values.
+**
+** Write the estimated row count into *pnRow and return SQLITE_OK. 
+** If unable to make an estimate, leave *pnRow unchanged and return
+** non-zero.
+**
+** This routine can fail if it is unable to load a collating sequence
+** required for string comparison, or if unable to allocate memory
+** for a UTF conversion required for comparison.  The error is stored
+** in the pParse structure.
+*/
+int whereInScanEst(
+  Parse *pParse,       /* Parsing & code generating context */
+  Index *p,            /* The index whose left-most column is pTerm */
+  ExprList *pList,     /* The value list on the RHS of "x IN (v1,v2,v3,...)" */
+  double *pnRow        /* Write the revised row estimate here */
+){
+  sqlite3_value *pVal = 0;  /* One value from list */
+  int iLower, iUpper;       /* Range of histogram regions containing pRhs */
+  u8 aff;                   /* Column affinity */
+  int rc;                   /* Subfunction return code */
+  double nRowEst;           /* New estimate of the number of rows */
+  int nRegion = 0;          /* Number of histogram regions spanned */
+  int nSingle = 0;          /* Count of values contained within one region */
+  int nNotFound = 0;        /* Count of values that are not constants */
+  int i;                            /* Loop counter */
+  u8 aHit[SQLITE_INDEX_SAMPLES+1];  /* Histogram regions that are spanned */
+
+  assert( p->aSample!=0 );
+  aff = p->pTable->aCol[p->aiColumn[0]].affinity;
+  memset(aHit, 0, sizeof(aHit));
+  for(i=0; i<pList->nExpr; i++){
+    sqlite3ValueFree(pVal);
+    rc = valueFromExpr(pParse, pList->a[i].pExpr, aff, &pVal);
+    if( rc ) break;
+    if( pVal==0 ){
+      nNotFound++;
+      continue;
+    }
+    rc = whereRangeRegion(pParse, p, pVal, 0, &iLower);
+    if( rc ) break;
+    rc = whereRangeRegion(pParse, p, pVal, 1, &iUpper);
+    if( rc ) break;
+    if( iLower>=iUpper ){
+      nSingle++;
+    }
+    assert( iLower>=0 && iUpper<=SQLITE_INDEX_SAMPLES );
+    while( iLower<=iUpper ) aHit[iLower++] = 1;
+  }
+  if( rc==SQLITE_OK ){
+    for(i=nRegion=0; i<ArraySize(aHit); i++) nRegion += aHit[i];
+    nRowEst = nRegion*p->aiRowEst[0]/(SQLITE_INDEX_SAMPLES+1)
+               + nNotFound*p->aiRowEst[1];
+    if( nRowEst > p->aiRowEst[0] ) nRowEst = p->aiRowEst[0];
+    *pnRow = nRowEst;
+    WHERETRACE(("IN row estimate: nRegion=%d, nSingle=%d, nNotFound=%d\n",
+                 nRegion, nSingle, nNotFound));
+  }
+  sqlite3ValueFree(pVal);
+  return rc;
 }
 #endif /* defined(SQLITE_ENABLE_STAT2) */
 
@@ -2686,7 +2755,7 @@ static void bestBtreeIndex(
     int bLookup = 0;
     WhereTerm *pTerm;             /* A single term of the WHERE clause */
 #ifdef SQLITE_ENABLE_STAT2
-    WhereTerm *pFirstEqTerm = 0;  /* First WO_EQ term */
+    WhereTerm *pFirstTerm = 0;    /* First term matching the index */
 #endif
 
     /* Determine the values of nEq and nInMul */
@@ -2710,9 +2779,7 @@ static void bestBtreeIndex(
         wsFlags |= WHERE_COLUMN_NULL;
       }
 #ifdef SQLITE_ENABLE_STAT2
-      else if( nEq==0 && pProbe->aSample ){
-        pFirstEqTerm = pTerm;
-      }
+      if( nEq==0 && pProbe->aSample ) pFirstTerm = pTerm;
 #endif
       used |= pTerm->prereqRight;
     }
@@ -2796,8 +2863,12 @@ static void bestBtreeIndex(
     ** to get a better estimate on the number of rows based on
     ** VALUE and how common that value is according to the histogram.
     */
-    if( nRow>(double)1 && nEq==1 && pFirstEqTerm!=0 ){
-      whereEqScanEst(pParse, pProbe, pFirstEqTerm, &nRow);
+    if( nRow>(double)1 && nEq==1 && pFirstTerm!=0 ){
+      if( pFirstTerm->eOperator==WO_EQ ){
+        whereEqualScanEst(pParse, pProbe, pFirstTerm->pExpr->pRight, &nRow);
+      }else if( pFirstTerm->eOperator==WO_IN && bInEst==0 ){
+        whereInScanEst(pParse, pProbe, pFirstTerm->pExpr->x.pList, &nRow);
+      }
     }
 #endif /* SQLITE_ENABLE_STAT2 */
 
