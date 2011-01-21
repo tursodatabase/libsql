@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Update\sANALYZE\stest\scases\sto\scheck\sout\sthe\suse\sof\shistograms\sfor\sequality\nconstraints.
-D 2011-01-20T20:36:13.223
+C Add\sthe\sability\sto\suse\sindices\swhen\sa\srange\scontraint\sis\sbounded\son\nthe\slower\send\sby\sNULL.
+D 2011-01-21T14:37:04.663
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -237,13 +237,13 @@ F src/vdbeInt.h 6e6f28e9bccc6c703dca1372fd661c57b5c15fb0
 F src/vdbeapi.c 69c82283ab2b64c0c37a07799d771d4058330743
 F src/vdbeaux.c 33448d23b857654dd69ed2103611f5c733606f68
 F src/vdbeblob.c 18955f0ee6b133cd08e1592010cb9a6b11e9984c
-F src/vdbemem.c 411649a35686f54268ccabeda175322c4697f5a6
+F src/vdbemem.c c011228c6fb1b5df924e4584765b16bde863c9c6
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c b297e8fa656ab5e66244ab15680d68db0adbec30
 F src/wal.c dbca424f71678f663a286ab2a98f947af1d412a7
 F src/wal.h c1aac6593a0b02b15dc625987e619edeab39292e
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 068ecc5195578aed083a4314e572de9979a489e5
+F src/where.c cf219a4275cf430d0e7df9d2db04e9ba29702f8e
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 51756962d522e474338e9b2ebb26e7364d4aa125
@@ -900,14 +900,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6bfc5c69eb22938972bbf4e60179952dc215f770
-R 2f06d09a87a4d54539d7aa2af234aaef
+P c7b59afaf0c0bf85dbaf0a122cc8d65fca93680f
+R 07d2f363ee58370384294fd182ee30ff
 U drh
-Z 7d948c493671d8082107f9a1879413d8
+Z 32ed47abc5f3838cb9feba0ba8b99416
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNOJzAoxKgR168RlERAtM4AJwMzXlyhMoDKbExZY4UcDKSjGIdkwCcDJv7
-Vr+PmfFc04BsuQfthFYbAv4=
-=9ci9
+iD8DBQFNOZoToxKgR168RlERAkh6AJ4kec2vRcpVEtGIXoGz4TjpsHbYigCeMtj1
+RYqs8Oaohb8CL1KIU7eSI9Q=
+=lXJE
 -----END PGP SIGNATURE-----

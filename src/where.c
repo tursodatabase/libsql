@@ -2245,6 +2245,11 @@ static int whereRangeRegion(
           if( aSample[i].u.r>=r ) break;
         }
       }
+    }else if( eType==SQLITE_NULL ){
+      i = 0;
+      if( roundUp ){
+        while( i<SQLITE_INDEX_SAMPLES && aSample[i].eType==SQLITE_NULL ) i++;
+      }
     }else{ 
       sqlite3 *db = pParse->db;
       CollSeq *pColl;
@@ -2433,6 +2438,7 @@ static int whereRangeScanEst(
         rc = whereRangeRegion(pParse, p, pLowerVal, roundUpLower, &iLower);
       }
     }
+    WHERETRACE(("range scan regions: %d..%d\n", iLower, iUpper));
 
     iEst = iUpper - iLower;
     testcase( iEst==SQLITE_INDEX_SAMPLES );
@@ -2471,6 +2477,11 @@ range_est_fallback:
 **
 ** Write the estimated row count into *pnRow.  If unable to make
 ** an estimate, leave *pnRow unchanged.
+**
+** This routine can fail if it is unable to load a collating sequence
+** required for string comparison, or if unable to allocate memory
+** for a UTF conversion required for comparison.  The error is stored
+** in the pParse structure.
 */
 void whereEqScanEst(
   Parse *pParse,       /* Parsing & code generating context */
@@ -2493,6 +2504,7 @@ void whereEqScanEst(
   if( rc ) goto whereEqScanEst_cancel;
   rc = whereRangeRegion(pParse, p, pRhs, 1, &iUpper);
   if( rc ) goto whereEqScanEst_cancel;
+  WHERETRACE(("equality scan regions: %d..%d\n", iLower, iUpper));
   if( iLower>=iUpper ){
     nRowEst = p->aiRowEst[0]/(SQLITE_INDEX_SAMPLES*2);
     if( nRowEst<*pnRow ) *pnRow = nRowEst;
@@ -2687,9 +2699,11 @@ static void bestBtreeIndex(
         Expr *pExpr = pTerm->pExpr;
         wsFlags |= WHERE_COLUMN_IN;
         if( ExprHasProperty(pExpr, EP_xIsSelect) ){
+          /* "x IN (SELECT ...)":  Assume the SELECT returns 25 rows */
           nInMul *= 25;
           bInEst = 1;
         }else if( ALWAYS(pExpr->x.pList) ){
+          /* "x IN (value, value, ...)" */
           nInMul *= pExpr->x.pList->nExpr + 1;
         }
       }else if( pTerm->eOperator & WO_ISNULL ){
@@ -2767,8 +2781,8 @@ static void bestBtreeIndex(
     }
 
     /*
-    ** Estimate the number of rows of output.  For an IN operator,
-    ** do not let the estimate exceed half the rows in the table.
+    ** Estimate the number of rows of output.  For an "x IN (SELECT...)"
+    ** constraint, do not let the estimate exceed half the rows in the table.
     */
     nRow = (double)(aiRowEst[nEq] * nInMul);
     if( bInEst && nRow*2>aiRowEst[0] ){
