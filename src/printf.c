@@ -763,6 +763,7 @@ void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
         return;
       }
     }else{
+      char *zOld = (p->zText==p->zBase ? 0 : p->zText);
       i64 szNew = p->nChar;
       szNew += N + 1;
       if( szNew > p->mxAlloc ){
@@ -773,13 +774,12 @@ void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
         p->nAlloc = (int)szNew;
       }
       if( p->useMalloc==1 ){
-        zNew = sqlite3DbMallocRaw(p->db, p->nAlloc );
+        zNew = sqlite3DbRealloc(p->db, zOld, p->nAlloc);
       }else{
-        zNew = sqlite3_malloc(p->nAlloc);
+        zNew = sqlite3_realloc(zOld, p->nAlloc);
       }
       if( zNew ){
-        memcpy(zNew, p->zText, p->nChar);
-        sqlite3StrAccumReset(p);
+        if( zOld==0 ) memcpy(zNew, p->zText, p->nChar);
         p->zText = zNew;
       }else{
         p->mallocFailed = 1;

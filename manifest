@@ -1,5 +1,5 @@
-C Add\soptions\sto\stest\scommand\s[do_faultsim_test]\sto\ssupport\stesting\sVFS\simplementations.
-D 2011-01-21T15:52:02
+C Change\ssqlite3StrAccumAppend()\sto\suse\srealloc\sinstead\sof\smalloc.
+D 2011-01-21T18:25:30
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -170,7 +170,7 @@ F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c 2610bcebf127df5ff82730c0c130cb35d4d6debe
 F src/pragma.c 8a6cd3c787f882fa44f6490d2411fc26839ce8f3
 F src/prepare.c c8b877b80721d70b68053fd9ae30ec6d63eeeadc
-F src/printf.c 37e8bfd4c5a04eae4960adbe776b0f1fc4cad674
+F src/printf.c df2ff3bb5409e8958136933342c46464fbd017e7
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
@@ -896,7 +896,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 9660a0a22547656cc3765b673d0cee9e1dd829ef
-R f0e13f37f9a89d0d9982d76b8e865005
+P 503ad889da675b3dd83da7338e2902e42f69acac
+R 581c91bca4bed9e9c246127dfff2a86d
 U dan
-Z 235ffebf829319266e0bdfb46955a46a
+Z 1951ee9d42233f0fe4bd03e6cd0ae9e1
