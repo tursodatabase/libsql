@@ -816,6 +816,7 @@ struct sqlite3 {
   struct Vdbe *pVdbe;           /* List of active virtual machines */
   int activeVdbeCnt;            /* Number of VDBEs currently executing */
   int writeVdbeCnt;             /* Number of active VDBEs that are writing */
+  int vdbeExecCnt;              /* Number of nested calls to VdbeExec() */
   void (*xTrace)(void*,const char*);        /* Trace function */
   void *pTraceArg;                          /* Argument to the trace function */
   void (*xProfile)(void*,const char*,u64);  /* Profiling function */

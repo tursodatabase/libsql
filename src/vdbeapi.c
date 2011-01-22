@@ -410,7 +410,9 @@ static int sqlite3Step(Vdbe *p){
   }else
 #endif /* SQLITE_OMIT_EXPLAIN */
   {
+    db->vdbeExecCnt++;
     rc = sqlite3VdbeExec(p);
+    db->vdbeExecCnt--;
   }
 
 #ifndef SQLITE_OMIT_TRACE
