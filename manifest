@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Adjustments\sto\sthe\sresult\srow\sestimator\sfor\sthe\sIN\soperator\sso\sthat\sit\sgives\nthe\ssame\sestimates\sas\sthe\sequivalent\sOR\soperator.\s\sTest\scases\sfor\sthe\ssame.
-D 2011-01-21T18:18:13.960
+C Add\sthe\sability\sto\suse\sindices\sfor\sconstraints\sof\sthe\sform\s"x\sIS\sNOT\sNULL"\nwhen\ssqlite_stat2\sis\savailable\sand\smost\sentries\sfor\scolumn\sx\sare\sNULL.
+D 2011-01-22T00:10:45.721
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -243,7 +243,7 @@ F src/vtab.c b297e8fa656ab5e66244ab15680d68db0adbec30
 F src/wal.c dbca424f71678f663a286ab2a98f947af1d412a7
 F src/wal.h c1aac6593a0b02b15dc625987e619edeab39292e
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 2de6723cfb051bcfcfd3d3ca1ac04bb1388ba530
+F src/where.c 99a9ea77114b649d68d01127331119f6785a80f1
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 51756962d522e474338e9b2ebb26e7364d4aa125
@@ -900,14 +900,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P fd3977a27ae68e694df12a4713e55515c1e87c5d
-R cea6312924a8fb4373e961fbaf9716e5
+P c82cb9c028b3ba5463ae50c30196dbf157a7a305
+R 8c710a35ac2f95522b4422902520d5c8
 U drh
-Z d2cdc178cbf264c31de567c61a7d5758
+Z 5feaab9c960a4232f37e5b9d507f4c5a
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNOc3poxKgR168RlERAkIwAKCEe6e9BZEE6g3M5kOLzfgzYu8BvQCghsyD
-JkbODaFMx8NcwWU/YYsOcuo=
-=cn1U
+iD8DBQFNOiCJoxKgR168RlERAvjuAKCFxe3Zz4WQnNCqaR5BtD/txHvS9QCePp1G
+iZQ2yz7nxUFtZ+UwOppTLQo=
+=91DY
 -----END PGP SIGNATURE-----
