@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sa\stypo\sin\sthe\sdocumentation\sfor\ssqlite3_snprintf().\s\sNo\schanges\sto\scode.
-D 2011-01-24T19:45:07.502
+C Modify\sthe\stest_quote.c\sdemonstration\sshim\sso\sthat\sit\sworks\swhen\nSQLITE_THREADSAFE=0\sis\sdefined.
+D 2011-01-24T20:18:05.760
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -215,7 +215,7 @@ F src/test_mutex.c ce06b59aca168cd8c520b77159a24352a7469bd3
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
 F src/test_osinst.c f408c6a181f2fb04c56273afd5c3e1e82f60392c
 F src/test_pcache.c 7bf828972ac0d2403f5cfa4cd14da41f8ebe73d8
-F src/test_quota.c 6d32dd5885777f432db91e3a6c9e39008dd67d86
+F src/test_quota.c b5576f17d701af461effd7ca1e71f0d100071192
 F src/test_rtree.c 30c981837445a4e187ee850a49c4760d9642f7c3
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c bbba05c144b5fc4b52ff650a4328027b3fa5fcc6
@@ -900,14 +900,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a1ad7fb38bb38909ca2fddee31c7a8001f10686f
-R 349ecc89f1fc661fb811143965f431fa
+P 8d1065411aadf189880606c48ab63dd2a56b9793
+R 0d85535bc15a93b18012673a71c32db9
 U drh
-Z 11b3511f8e54d33bab682c0aeff495b5
+Z 70d633de5e7a3d8ed3285ad89550ec3c
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNPdbJoxKgR168RlERAljmAJ4ykVtcrE3jjcqoYkrf9IqX5cS8kwCdGgj/
-VuPr3CWSSz8fpBDULaW48ZA=
-=9CR2
+iD8DBQFNPd6AoxKgR168RlERAv1EAJsHL7T752myN3OrKk+lrXEgPoRywwCffQlq
+RmLBh/72A/WvCFzCC21cc98=
+=oeId
 -----END PGP SIGNATURE-----
