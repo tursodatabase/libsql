@@ -2919,31 +2919,29 @@ static void bestBtreeIndex(
     }
 #endif /* SQLITE_ENABLE_STAT2 */
 
-    /* Assume constant cost to access a row and logarithmic cost to
-    ** do a binary search.  Hence, the initial cost is the number of output
-    ** rows plus log2(table-size) times the number of binary searches.
-    */
-    cost = nRow + nInMul*estLog(aiRowEst[0]);
-
     /* Adjust the number of rows and the cost downward to reflect rows
     ** that are excluded by range constraints.
     */
     nRow = (nRow * (double)estBound) / (double)100;
-    cost = (cost * (double)estBound) / (double)100;
 
-    /* Add in the estimated cost of sorting the result
+    /* Assume constant cost to access a row and logarithmic cost to
+    ** do a binary search.  Hence, the initial cost is the number of output
+    ** rows plus log2(table-size) times the number of binary searches.
+    */
+    if( pIdx && bLookup ){
+      cost = nRow + (nInMul+nRow)*estLog(aiRowEst[0]);
+    }else{
+      cost = nRow + nInMul*estLog(aiRowEst[0]);
+    }
+
+    /* Add in the estimated cost of sorting the result.  This cost is expanded
+    ** by a fudge factor of 3.0 to account for the fact that a sorting step 
+    ** involves a write and is thus more expensive than a lookup step.
     */
     if( bSort ){
-      cost += cost*estLog(cost);
+      cost += nRow*estLog(nRow)*(double)3;
     }
 
-    /* If all information can be taken directly from the index, we avoid
-    ** doing table lookups.  This reduces the cost by half.  (Not really -
-    ** this needs to be fixed.)
-    */
-    if( pIdx && bLookup==0 ){
-      cost /= (double)2;
-    }
     /**** Cost of using this index has now been computed ****/
 
     /* If there are additional constraints on this table that cannot

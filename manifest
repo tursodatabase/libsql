@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Add\sthe\sability\sto\suse\sindices\sfor\sconstraints\sof\sthe\sform\s"x\sIS\sNOT\sNULL"\nwhen\ssqlite_stat2\sis\savailable\sand\smost\sentries\sfor\scolumn\sx\sare\sNULL.
-D 2011-01-22T00:10:45.721
+C Change\sthe\scost\sestimator\sin\sthe\squery\splanner\sto\stake\sinto\saccount\sthe\nlogN\srowid\slookup\scost\swhen\sgoing\sfrom\san\sindex\sto\sa\stable.
+D 2011-01-24T15:11:23.443
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -243,7 +243,7 @@ F src/vtab.c b297e8fa656ab5e66244ab15680d68db0adbec30
 F src/wal.c dbca424f71678f663a286ab2a98f947af1d412a7
 F src/wal.h c1aac6593a0b02b15dc625987e619edeab39292e
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 99a9ea77114b649d68d01127331119f6785a80f1
+F src/where.c 87de2616150606fd1b61d7c88afdb90089ddd53d
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 51756962d522e474338e9b2ebb26e7364d4aa125
@@ -900,14 +900,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c82cb9c028b3ba5463ae50c30196dbf157a7a305
-R 8c710a35ac2f95522b4422902520d5c8
+P 5d5bddd290e71a7b03bcc23ff29881c23233cbff
+R 803835303ce0b4a50432effc77dd4645
 U drh
-Z 5feaab9c960a4232f37e5b9d507f4c5a
+Z 6e3a0f2d24eebc65cc3b5cda90be2fe9
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNOiCJoxKgR168RlERAvjuAKCFxe3Zz4WQnNCqaR5BtD/txHvS9QCePp1G
-iZQ2yz7nxUFtZ+UwOppTLQo=
-=91DY
+iD4DBQFNPZaeoxKgR168RlERAhweAJipv5VYvhXPpe7yt5oZmj9HR78gAJ9JRIoC
+ox/GIojaWZ/2rYPgDsVVnQ==
+=pp6G
 -----END PGP SIGNATURE-----
