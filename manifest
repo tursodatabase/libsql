@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Change\sthe\scost\sestimator\sin\sthe\squery\splanner\sto\stake\sinto\saccount\sthe\nlogN\srowid\slookup\scost\swhen\sgoing\sfrom\san\sindex\sto\sa\stable.
-D 2011-01-24T15:11:23.443
+C Restructuring\sand\sgeneralizing\sanalyze5.test.\s\s\sThe\swhole\sscript\sis\ncurrently\sdisabled\sand\swill\sneed\sto\sbe\sreenabled\sprior\sto\smerging\swith\strunk.
+D 2011-01-24T17:46:35.872
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -256,7 +256,7 @@ F test/analyze.test c1eb87067fc16ece7c07e823d6395fd831b270c5
 F test/analyze2.test f45ac8d54bdad822139e53fc6307fc6b5ee41c69
 F test/analyze3.test 820ddfb7591b49607fbaf77240c7955ac3cabb04
 F test/analyze4.test 757b37875cf9bb528d46f74497bc789c88365045
-F test/analyze5.test c19fe600c48dade660eb374fa7209435463c2d4a
+F test/analyze5.test 12df6def85e21971888f8be3c1867a505f1bf587
 F test/async.test ad4ba51b77cd118911a3fe1356b0809da9c108c3
 F test/async2.test bf5e2ca2c96763b4cba3d016249ad7259a5603b6
 F test/async3.test 93edaa9122f498e56ea98c36c72abc407f4fb11e
@@ -900,14 +900,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 5d5bddd290e71a7b03bcc23ff29881c23233cbff
-R 803835303ce0b4a50432effc77dd4645
+P b442525b0ba642bb8d57b87b7b9e373b6046454a
+R ebf83ed63e8d1b48962a32de01a8b2cc
 U drh
-Z 6e3a0f2d24eebc65cc3b5cda90be2fe9
+Z a63bcf5b3583a55e26e7d3f132337aba
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD4DBQFNPZaeoxKgR168RlERAhweAJipv5VYvhXPpe7yt5oZmj9HR78gAJ9JRIoC
-ox/GIojaWZ/2rYPgDsVVnQ==
-=pp6G
+iD8DBQFNPbr/oxKgR168RlERAhb1AJ99UR+RTzr0SNXjxuLAr4iQrdLWlQCcC8Ik
+EMLXFqheBOQt775+utT5Fjc=
+=NdWh
 -----END PGP SIGNATURE-----
