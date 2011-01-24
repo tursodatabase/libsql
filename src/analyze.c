@@ -286,11 +286,11 @@ static void analyzeOneTable(
     }
     sqlite3VdbeAddOp2(v, OP_Goto, 0, endOfLoop);
     for(i=0; i<nCol; i++){
-      int addr = sqlite3VdbeCurrentAddr(v) - (nCol*2);
+      int addr2 = sqlite3VdbeCurrentAddr(v) - (nCol*2);
       if( i==0 ){
-        sqlite3VdbeJumpHere(v, addr-1);  /* Set jump dest for the OP_IfNot */
+        sqlite3VdbeJumpHere(v, addr2-1);  /* Set jump dest for the OP_IfNot */
       }
-      sqlite3VdbeJumpHere(v, addr);      /* Set jump dest for the OP_Ne */
+      sqlite3VdbeJumpHere(v, addr2);      /* Set jump dest for the OP_Ne */
       sqlite3VdbeAddOp2(v, OP_AddImm, iMem+i+1, 1);
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, iMem+nCol+i+1);
     }
