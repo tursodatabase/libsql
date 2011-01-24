@@ -1,5 +1,5 @@
-C Modify\sthe\strace\scallback\smechanism\sso\sthat\sSQL\scommands\sexecuted\sfrom\swithin\svirtual\stable\sor\suser\sfunction\scallbacks\sare\spassed\sto\sthe\strace\scallback\swithout\sparameter\sexpansion\sand\senclosed\sin\sSQL\scomments.
-D 2011-01-22T13:32:30
+C Ensure\sthat\sif\sa\sdeferred\sFK\sconstraint\sis\sviolated\sby\sa\sstatement\sthat\screates\sits\sown\simplicit\stransaction,\sthe\sstatement\sis\snot\san\s"active-write"\safter\ssqlite3_step()\sreturns.
+D 2011-01-24T16:00:59
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -232,7 +232,7 @@ F src/vdbe.c 5d310eaf1a4d8383602126fa82e01291ab7d3cf3
 F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
 F src/vdbeInt.h 6e6f28e9bccc6c703dca1372fd661c57b5c15fb0
 F src/vdbeapi.c 8e9324fd35eb70d0b5904bd1af40f2598744dc4d
-F src/vdbeaux.c 33448d23b857654dd69ed2103611f5c733606f68
+F src/vdbeaux.c 521b954f21ec15aee2ba5a0af8a1526bdd71e45e
 F src/vdbeblob.c 18955f0ee6b133cd08e1592010cb9a6b11e9984c
 F src/vdbemem.c 411649a35686f54268ccabeda175322c4697f5a6
 F src/vdbetrace.c 3ba13bc32bdf16d2bdea523245fd16736bed67b5
@@ -897,7 +897,10 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 380f61df0754ceec6b3f6a758d04e951cce8c3d9
-R 90a5119ad79fbdf46155bfdda925f6c3
+P a764915b87564fa91ee68e9b1f41394ce0f1fc7e
+R e8885ee042476ced2c7dfa4c7a736076
+T *branch * deferred-fk-quirk
+T *sym-deferred-fk-quirk *
+T -sym-trunk *
 U dan
-Z 22ba801a4079136db1b6273b2820344e
+Z 2132121d7c9351a52aa9ba299c7514e3
