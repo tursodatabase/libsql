@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\smemsubsys1.test.\sModifications\sto\stest\scode\sonly.
-D 2011-01-25T09:54:53
+C Fix\sa\sbroken\sassert()\sin\spager.c.
+D 2011-01-25T11:33:01
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -162,7 +162,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c aeaf65d261219ad96c021cfd0672509d83c005e4
 F src/os_win.c 2f90f7bdec714fad51cd31b4ecad3cc1b4bb5aad
-F src/pager.c 60d79b73d9fa7adce29e55231597416f1511d975
+F src/pager.c eb355fc87cd84b47f70b479569f1ad1338fb4e2d
 F src/pager.h 0ea59db2a33bc6c2c02cae34de33367e1effdf76
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 09d38c44ab275db581f7a2f6ff8b9bc7f8c0faaa
@@ -897,7 +897,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e14649301138b6840e24a4bbd2cf5205c0f72409
-R 2b26f3944d156c9f7b61f43415a5078b
+P 7ef3f7cba768ef0c4782a6c80424833b4df6a059
+R ba7b28c2183cb4939792757ce9044a5a
 U dan
-Z a2506a0b9867e8f31ef3ef0d39599052
+Z 1be8a639466ca213ddcd4aee76a16760
