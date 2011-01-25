@@ -99,7 +99,7 @@ build_test_db memsubsys1-2 {PRAGMA page_size=1024}
 set MEMORY_MANAGEMENT $sqlite_options(memorymanage)
 do_test memsubsys1-2.3 {
   set pg_ovfl [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_OVERFLOW 0] 2]
-} [expr ($AUTOVACUUM+$TEMP_STORE+$MEMORY_MANAGEMENT>=3)*1024]
+} [expr ($TEMP_STORE>1 || $MEMORY_MANAGEMENT==0)*1024]
 do_test memsubsys1-2.4 {
   set pg_used [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_USED 0] 2]
 } 20

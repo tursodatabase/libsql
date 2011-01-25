@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Shave\sa\sfew\scycles\sso\sthat\sperformance\sis\sbetter\sthan\s3.7.4\sin\sspeed\stests.
-D 2011-01-25T04:34:51.468
+C Fix\sa\sproblem\sin\smemsubsys1.test.\sModifications\sto\stest\scode\sonly.
+D 2011-01-25T09:54:53
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -556,7 +553,7 @@ F test/malloc_common.tcl 660b82ab528521cc4a48ff6df05ca3b6a00d47c5
 F test/manydb.test b3d3bc4c25657e7f68d157f031eb4db7b3df0d3c
 F test/memdb.test 0825155b2290e900264daaaf0334b6dfe69ea498
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
-F test/memsubsys1.test 66bf4e153e0eccc08c3b6af3641eb4f42d391c32
+F test/memsubsys1.test 679db68394a5692791737b150852173b3e2fea10
 F test/memsubsys2.test 72a731225997ad5e8df89fdbeae9224616b6aecc
 F test/minmax.test 722d80816f7e096bf2c04f4111f1a6c1ba65453d
 F test/minmax2.test 33504c01a03bd99226144e4b03f7631a274d66e0
@@ -900,14 +897,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b70bcccaf5597c8a59cccb64fb997523f7b8fe4f
-R db20a3af8ef33b3a30d380bbda0431c6
-U drh
-Z 4ead49fabdd8a6e774c2367e68e73ca5
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFNPlLvoxKgR168RlERApslAJ9T2ytfJxLqucALSfvcNNpr6129cACfegvL
-qPLVUx7DCZ7ypVE082HOjX8=
-=7+yb
------END PGP SIGNATURE-----
+P e14649301138b6840e24a4bbd2cf5205c0f72409
+R 2b26f3944d156c9f7b61f43415a5078b
+U dan
+Z a2506a0b9867e8f31ef3ef0d39599052
