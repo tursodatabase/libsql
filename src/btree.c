@@ -918,14 +918,9 @@ static void btreeParseCellPtr(
     /* This is the (easy) common case where the entire payload fits
     ** on the local page.  No overflow is required.
     */
-    int nSize;          /* Total size of cell content in bytes */
-    nSize = nPayload + n;
+    if( (pInfo->nSize = (u16)(n+nPayload))<4 ) pInfo->nSize = 4;
     pInfo->nLocal = (u16)nPayload;
     pInfo->iOverflow = 0;
-    if( (nSize & ~3)==0 ){
-      nSize = 4;        /* Minimum cell size is 4 */
-    }
-    pInfo->nSize = (u16)nSize;
   }else{
     /* If the payload will not fit completely on the local page, we have
     ** to decide how much to store locally and how much to spill onto

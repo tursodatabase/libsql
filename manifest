@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Modify\sthe\stest_quote.c\sdemonstration\sshim\sso\sthat\sit\sworks\swhen\nSQLITE_THREADSAFE=0\sis\sdefined.
-D 2011-01-24T20:18:05.760
+C Shave\sa\sfew\scycles\sso\sthat\sperformance\sis\sbetter\sthan\s3.7.4\sin\sspeed\stests.
+D 2011-01-25T04:34:51.468
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -122,7 +122,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 8c39a1ebba1e9dc385519cc4d434c7b0cab6638c
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c a27c3b41082889fc258278ba501ff2594dda2a41
+F src/btree.c 9004c98fc576306eee4fc0562ffeb362ef53912c
 F src/btree.h 10f9296bf4edf034f5adce921b7b4383a56a1c90
 F src/btreeInt.h 20f73dc93b1eeb83afd7259fbc6bd7dcf2df7fe4
 F src/build.c 00a327120d81ace6267e714ae8010c997d55de5d
@@ -170,7 +170,7 @@ F src/pager.h 0ea59db2a33bc6c2c02cae34de33367e1effdf76
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 09d38c44ab275db581f7a2f6ff8b9bc7f8c0faaa
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
-F src/pcache1.c 2610bcebf127df5ff82730c0c130cb35d4d6debe
+F src/pcache1.c 54401ef4ea296b5bc2950bfbf5e68d6e931ab676
 F src/pragma.c 8a6cd3c787f882fa44f6490d2411fc26839ce8f3
 F src/prepare.c c8b877b80721d70b68053fd9ae30ec6d63eeeadc
 F src/printf.c df2ff3bb5409e8958136933342c46464fbd017e7
@@ -900,14 +900,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8d1065411aadf189880606c48ab63dd2a56b9793
-R 0d85535bc15a93b18012673a71c32db9
+P b70bcccaf5597c8a59cccb64fb997523f7b8fe4f
+R db20a3af8ef33b3a30d380bbda0431c6
 U drh
-Z 70d633de5e7a3d8ed3285ad89550ec3c
+Z 4ead49fabdd8a6e774c2367e68e73ca5
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNPd6AoxKgR168RlERAv1EAJsHL7T752myN3OrKk+lrXEgPoRywwCffQlq
-RmLBh/72A/WvCFzCC21cc98=
-=oeId
+iD8DBQFNPlLvoxKgR168RlERApslAJ9T2ytfJxLqucALSfvcNNpr6129cACfegvL
+qPLVUx7DCZ7ypVE082HOjX8=
+=7+yb
 -----END PGP SIGNATURE-----

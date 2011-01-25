@@ -50,6 +50,7 @@ struct PGroup {
   sqlite3_mutex *mutex;          /* MUTEX_STATIC_LRU or NULL */
   int nMaxPage;                  /* Sum of nMax for purgeable caches */
   int nMinPage;                  /* Sum of nMin for purgeable caches */
+  int mxPinned;                  /* nMaxpage + 10 - nMinPage */
   int nCurrentPage;              /* Number of purgeable pages allocated */
   PgHdr1 *pLruHead, *pLruTail;   /* LRU list of unpinned pages */
 };
@@ -73,6 +74,7 @@ struct PCache1 {
   int bPurgeable;                     /* True if cache is purgeable */
   unsigned int nMin;                  /* Minimum number of pages reserved */
   unsigned int nMax;                  /* Configured "cache_size" value */
+  unsigned int mxPinned;              /* nMax*9/10 */
 
   /* Hash table of all pages. The following variables may only be accessed
   ** when the accessor is holding the PGroup mutex.
@@ -516,6 +518,7 @@ static int pcache1Init(void *NotUsed){
     pcache1.grp.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU);
     pcache1.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_PMEM);
   }
+  pcache1.grp.mxPinned = 10;
   pcache1.isInit = 1;
   return SQLITE_OK;
 }
@@ -565,6 +568,7 @@ static sqlite3_pcache *pcache1Create(int szPage, int bPurgeable){
     memset(pCache, 0, sz);
     if( separateCache ){
       pGroup = (PGroup*)&pCache[1];
+      pGroup->mxPinned = 10;
     }else{
       pGroup = &pcache1_g.grp;
     }
@@ -575,6 +579,7 @@ static sqlite3_pcache *pcache1Create(int szPage, int bPurgeable){
       pCache->nMin = 10;
       pcache1EnterMutex(pGroup);
       pGroup->nMinPage += pCache->nMin;
+      pGroup->mxPinned = pGroup->nMaxPage + 10 - pGroup->nMinPage;
       pcache1LeaveMutex(pGroup);
     }
   }
@@ -592,7 +597,9 @@ static void pcache1Cachesize(sqlite3_pcache *p, int nMax){
     PGroup *pGroup = pCache->pGroup;
     pcache1EnterMutex(pGroup);
     pGroup->nMaxPage += (nMax - pCache->nMax);
+    pGroup->mxPinned = pGroup->nMaxPage + 10 - pGroup->nMinPage;
     pCache->nMax = nMax;
+    pCache->mxPinned = nMax*9/10;
     pcache1EnforceMaxPage(pGroup);
     pcache1LeaveMutex(pGroup);
   }
@@ -667,12 +674,14 @@ static int pcache1Pagecount(sqlite3_pcache *p){
 static void *pcache1Fetch(sqlite3_pcache *p, unsigned int iKey, int createFlag){
   unsigned int nPinned;
   PCache1 *pCache = (PCache1 *)p;
-  PGroup *pGroup = pCache->pGroup;
+  PGroup *pGroup;
   PgHdr1 *pPage = 0;
 
   assert( pCache->bPurgeable || createFlag!=1 );
-  pcache1EnterMutex(pGroup);
-  if( createFlag==1 ) sqlite3BeginBenignMalloc();
+  assert( pCache->bPurgeable || pCache->nMin==0 );
+  assert( pCache->bPurgeable==0 || pCache->nMin==10 );
+  assert( pCache->nMin==0 || pCache->bPurgeable );
+  pcache1EnterMutex(pGroup = pCache->pGroup);
 
   /* Step 1: Search the hash table for an existing entry. */
   if( pCache->nHash>0 ){
@@ -686,11 +695,25 @@ static void *pcache1Fetch(sqlite3_pcache *p, unsigned int iKey, int createFlag){
     goto fetch_out;
   }
 
+  /* The pGroup local variable will normally be initialized by the
+  ** pcache1EnterMutex() macro above.  But if SQLITE_MUTEX_OMIT is defined,
+  ** then pcache1EnterMutex() is a no-op, so we have to initialize the
+  ** local variable here.  Delaying the initialization of pGroup is an
+  ** optimization:  The common case is to exit the module before reaching
+  ** this point.
+  */
+#ifdef SQLITE_MUTEX_OMIT
+  pGroup = pCache->pGroup;
+#endif
+
+
   /* Step 3: Abort if createFlag is 1 but the cache is nearly full */
   nPinned = pCache->nPage - pCache->nRecyclable;
+  assert( pGroup->mxPinned == pGroup->nMaxPage + 10 - pGroup->nMinPage );
+  assert( pCache->mxPinned == pCache->nMax*9/10 );
   if( createFlag==1 && (
-        nPinned>=(pGroup->nMaxPage+pCache->nMin-pGroup->nMinPage)
-     || nPinned>=(pCache->nMax * 9 / 10)
+        nPinned>=pGroup->mxPinned
+     || nPinned>=pCache->mxPinned
      || pcache1UnderMemoryPressure(pCache)
   )){
     goto fetch_out;
@@ -706,15 +729,16 @@ static void *pcache1Fetch(sqlite3_pcache *p, unsigned int iKey, int createFlag){
       || pGroup->nCurrentPage>=pGroup->nMaxPage
       || pcache1UnderMemoryPressure(pCache)
   )){
+    PCache1 *pOtherCache;
     pPage = pGroup->pLruTail;
     pcache1RemoveFromHash(pPage);
     pcache1PinPage(pPage);
-    if( pPage->pCache->szPage!=pCache->szPage ){
+    if( (pOtherCache = pPage->pCache)->szPage!=pCache->szPage ){
       pcache1FreePage(pPage);
       pPage = 0;
     }else{
       pGroup->nCurrentPage -= 
-               (pPage->pCache->bPurgeable - pCache->bPurgeable);
+               (pOtherCache->bPurgeable - pCache->bPurgeable);
     }
   }
 
@@ -722,9 +746,11 @@ static void *pcache1Fetch(sqlite3_pcache *p, unsigned int iKey, int createFlag){
   ** attempt to allocate a new one. 
   */
   if( !pPage ){
+    if( createFlag==1 ) sqlite3BeginBenignMalloc();
     pcache1LeaveMutex(pGroup);
     pPage = pcache1AllocPage(pCache);
     pcache1EnterMutex(pGroup);
+    if( createFlag==1 ) sqlite3EndBenignMalloc();
   }
 
   if( pPage ){
@@ -743,7 +769,6 @@ fetch_out:
   if( pPage && iKey>pCache->iMaxKey ){
     pCache->iMaxKey = iKey;
   }
-  if( createFlag==1 ) sqlite3EndBenignMalloc();
   pcache1LeaveMutex(pGroup);
   return (pPage ? PGHDR1_TO_PAGE(pPage) : 0);
 }
@@ -853,6 +878,7 @@ static void pcache1Destroy(sqlite3_pcache *p){
   pcache1TruncateUnsafe(pCache, 0);
   pGroup->nMaxPage -= pCache->nMax;
   pGroup->nMinPage -= pCache->nMin;
+  pGroup->mxPinned = pGroup->nMaxPage + 10 - pGroup->nMinPage;
   pcache1EnforceMaxPage(pGroup);
   pcache1LeaveMutex(pGroup);
   sqlite3_free(pCache->apHash);
