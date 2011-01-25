@@ -672,7 +672,7 @@ static int pcache1Pagecount(sqlite3_pcache *p){
 **   5. Otherwise, allocate and return a new page buffer.
 */
 static void *pcache1Fetch(sqlite3_pcache *p, unsigned int iKey, int createFlag){
-  unsigned int nPinned;
+  int nPinned;
   PCache1 *pCache = (PCache1 *)p;
   PGroup *pGroup;
   PgHdr1 *pPage = 0;
@@ -713,7 +713,7 @@ static void *pcache1Fetch(sqlite3_pcache *p, unsigned int iKey, int createFlag){
   assert( pCache->mxPinned == pCache->nMax*9/10 );
   if( createFlag==1 && (
         nPinned>=pGroup->mxPinned
-     || nPinned>=pCache->mxPinned
+     || nPinned>=(int)pCache->mxPinned
      || pcache1UnderMemoryPressure(pCache)
   )){
     goto fetch_out;
