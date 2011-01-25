@@ -449,6 +449,16 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
               nDestTruncate==(int)(PENDING_BYTE_PAGE(p->pDest->pBt)-1)
            && iSize>=PENDING_BYTE && iSize<=PENDING_BYTE+pgszDest
         ));
+
+        /* This call ensures that all data required to recreate the original
+        ** database has been stored in the journal for pDestPager and the
+        ** journal synced to disk. So at this point we may safely modify
+        ** the database file in any way, knowing that if a power failure
+        ** occurs, the original database will be reconstructed from the 
+        ** journal file.  */
+        rc = sqlite3PagerCommitPhaseOne(pDestPager, 0, 1);
+
+        /* Write the extra pages and truncate the database file as required. */
         iEnd = MIN(PENDING_BYTE + pgszDest, iSize);
         for(
           iOff=PENDING_BYTE+pgszSrc; 
@@ -465,10 +475,12 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
           sqlite3PagerUnref(pSrcPg);
         }
         if( rc==SQLITE_OK ){
-          rc = sqlite3PagerCommitPhaseOne(pDestPager, 0, 1);
-          if( rc==SQLITE_OK ){
-            rc = backupTruncateFile(pFile, iSize);
-          }
+          rc = backupTruncateFile(pFile, iSize);
+        }
+
+        /* Sync the database file to disk. */
+        if( rc==SQLITE_OK ){
+          rc = sqlite3PagerSync(pDestPager);
         }
       }else{
         rc = sqlite3PagerCommitPhaseOne(pDestPager, 0, 0);

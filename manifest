@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Make\ssure\sthe\sreturn\scode\sfrom\sdoing\san\sxSync\sis\scorrectly\sinitialized\nso\sthat\sa\svalid\sreturn\scode\sis\sproduced\sregardless\sof\sthe\spath\staken\sthrough\nthe\slogic.
-D 2011-01-25T16:48:56.989
+C Add\sa\smissing\scall\sto\ssqlite3PagerSync()\sremoved\sby\s[ce552d975]\sto\sthe\sbackup\scode.
+D 2011-01-25T18:19:25
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -119,7 +116,7 @@ F src/alter.c 6a0c176e64a34929a4436048066a84ef4f1445b3
 F src/analyze.c a038162344265ac21dfb24b3fcc06c666ebb9c07
 F src/attach.c 252c4f7e36cc219349451ed63e278c60e80b26f3
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
-F src/backup.c 8c39a1ebba1e9dc385519cc4d434c7b0cab6638c
+F src/backup.c 6728d6d48d55b449af76a3e51c0808849cb32a2e
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
 F src/btree.c 9004c98fc576306eee4fc0562ffeb362ef53912c
@@ -900,14 +897,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 64914980855dbbf19512642836ca962a507b3ddb
-R 9dfb3a97b26cb66f3555d49b9adf879c
-U drh
-Z 00c400aa2e34e8badd39b4e9068a7ec7
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFNPv77oxKgR168RlERAl9SAJwJ3rffv8HI7U1fymg0vldV7CNxRwCcDVQE
-5HWPR+CixXdxSOos4b+wQvs=
-=F9X2
------END PGP SIGNATURE-----
+P f12b5d76854c2f294ac60afe38a6dac37eb5b174
+R 085f3541c695880a57ad39b45c4ccb90
+U dan
+Z d44ae9b8b3c13e9672f7c0d2b1c1ba1f
