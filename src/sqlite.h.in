@@ -716,11 +716,15 @@ struct sqlite3_io_methods {
 ** connection.  See the [sqlite3_file_control()] documentation for
 ** additional information.
 **
-** The [SQLITE_FCNTL_SYNC] opcode is used internally. SQLite calls
-** the file-control method with this opcode immediately after the database
-** file is synced, or if the database is running in synchronous=off mode
-** immediately after it would have been synced otherwise. This makes it
-** easier to write special VFS modules that depend on the xSync call.
+** ^(The [SQLITE_FCNTL_SYNC_OMITTED] opcode is generated internally by
+** SQLite and sent to all VFSes in place of a call to the xSync method
+** when the database connection has [PRAGMA synchronous] set to OFF.)^
+** Some specialized VFSes need this signal in order to operate correctly
+** when [PRAGMA synchronous | PRAGMA synchronous=OFF] is set, but most 
+** VFSes do not need this signal and should silently ignore this opcode.
+** Applications should not call [sqlite3_file_control()] with this
+** opcode as doing so may disrupt the operation of the specilized VFSes
+** that do require it.  
 */
 #define SQLITE_FCNTL_LOCKSTATE        1
 #define SQLITE_GET_LOCKPROXYFILE      2
@@ -729,7 +733,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_SIZE_HINT        5
 #define SQLITE_FCNTL_CHUNK_SIZE       6
 #define SQLITE_FCNTL_FILE_POINTER     7
-#define SQLITE_FCNTL_SYNC             8
+#define SQLITE_FCNTL_SYNC_OMITTED     8
 
 
 /*

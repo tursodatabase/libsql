@@ -5624,15 +5624,14 @@ static int pager_incr_changecounter(Pager *pPager, int isDirectMode){
 */
 int sqlite3PagerSync(Pager *pPager){
   int rc;                              /* Return code */
-  if( pPager->noSync ){
-    rc = SQLITE_OK;
-  }else{
+  if( !pPager->noSync ){
     assert( !MEMDB );
     rc = sqlite3OsSync(pPager->fd, pPager->syncFlags);
-  }
-  if( isOpen(pPager->fd) ){
+  }else if( isOpen(pPager->fd) ){
     assert( !MEMDB );
-    sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_SYNC, (void *)&rc);
+    sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_SYNC_OMITTED, (void *)&rc);
+  }else{
+    rc = SQLITE_OK;
   }
   return rc;
 }

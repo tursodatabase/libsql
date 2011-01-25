@@ -1,5 +1,8 @@
-C Fix\sa\scouple\sof\stypos\sin\scomments.\sNo\schanges\sto\sactual\scode.
-D 2011-01-25T13:43:35
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Change\sthe\sname\sof\sSQLITE_FCNTL_SYNC\sto\sSQLITE_FCNTL_SYNC_OMITTED\sand\sonly\nsend\sit\swhen\sPRAGMA\ssynchronous=OFF.\s\sAdd\sbetter\sdocumentation\sto\sexplain\nwhat\sthat\sfile-control\sopcode\sis\sused\sfor.
+D 2011-01-25T16:20:16.289
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -162,7 +165,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c aeaf65d261219ad96c021cfd0672509d83c005e4
 F src/os_win.c 2f90f7bdec714fad51cd31b4ecad3cc1b4bb5aad
-F src/pager.c eb355fc87cd84b47f70b479569f1ad1338fb4e2d
+F src/pager.c c8975ac965895d507daa6b3e4e0aca8b4aaf629b
 F src/pager.h 0ea59db2a33bc6c2c02cae34de33367e1effdf76
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 09d38c44ab275db581f7a2f6ff8b9bc7f8c0faaa
@@ -176,7 +179,7 @@ F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 8a7ba246b0b4bb45df7fbc52681728a0e3deaaa7
 F src/shell.c 83c6f0cc5a79a081c7b9ddfe4f557b47e0bad976
-F src/sqlite.h.in da5f52960e61bd8940413bd07da0e8150531552d
+F src/sqlite.h.in a059e7c0128a656adeb923c34e99a117de99c23d
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
 F src/sqliteInt.h 45926deaf59b1ce3f55d21d5f91a8cecb6a7eb4c
 F src/sqliteLimit.h a17dcd3fb775d63b64a43a55c54cb282f9726f44
@@ -897,7 +900,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 13108ce13c281f31aa60b403567710ae3d925797
-R 65a9c8caa43f6ab5a0a574c1c511a44f
-U dan
-Z e065b48f5c532f6c7bd5d8c0c158d9e1
+P 9167fdb3560b1567a0bdc9a1906a87ec98e161f1
+R 96da40f86ab20bb4a774456ca34a544b
+U drh
+Z c8970634e68cbff2a072ebb3d5e57cae
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFNPvhDoxKgR168RlERAqjUAJ9akpjzOSwn0PlU/phdYvzW8+YrjQCghpGF
+iTJlh/160LuCnZw69rf6DrI=
+=E72H
+-----END PGP SIGNATURE-----
