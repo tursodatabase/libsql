@@ -1,5 +1,5 @@
-C Fix\sa\sbroken\sassert()\sin\spager.c.
-D 2011-01-25T11:33:01
+C Fix\sa\scouple\sof\stypos\sin\scomments.\sNo\schanges\sto\sactual\scode.
+D 2011-01-25T13:43:35
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -169,7 +169,7 @@ F src/pcache.c 09d38c44ab275db581f7a2f6ff8b9bc7f8c0faaa
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c 54401ef4ea296b5bc2950bfbf5e68d6e931ab676
 F src/pragma.c 8a6cd3c787f882fa44f6490d2411fc26839ce8f3
-F src/prepare.c c8b877b80721d70b68053fd9ae30ec6d63eeeadc
+F src/prepare.c 395b3fab1b93f45b6aa194b23ebc201221c47b99
 F src/printf.c df2ff3bb5409e8958136933342c46464fbd017e7
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
@@ -897,7 +897,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 7ef3f7cba768ef0c4782a6c80424833b4df6a059
-R ba7b28c2183cb4939792757ce9044a5a
+P 13108ce13c281f31aa60b403567710ae3d925797
+R 65a9c8caa43f6ab5a0a574c1c511a44f
 U dan
-Z 1be8a639466ca213ddcd4aee76a16760
+Z e065b48f5c532f6c7bd5d8c0c158d9e1

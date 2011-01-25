@@ -784,7 +784,7 @@ int sqlite3_prepare_v2(
 */
 static int sqlite3Prepare16(
   sqlite3 *db,              /* Database handle. */ 
-  const void *zSql,         /* UTF-8 encoded SQL statement. */
+  const void *zSql,         /* UTF-16 encoded SQL statement. */
   int nBytes,               /* Length of zSql in bytes. */
   int saveSqlFlag,          /* True to save SQL text into the sqlite3_stmt */
   sqlite3_stmt **ppStmt,    /* OUT: A pointer to the prepared statement */
@@ -834,7 +834,7 @@ static int sqlite3Prepare16(
 */
 int sqlite3_prepare16(
   sqlite3 *db,              /* Database handle. */ 
-  const void *zSql,         /* UTF-8 encoded SQL statement. */
+  const void *zSql,         /* UTF-16 encoded SQL statement. */
   int nBytes,               /* Length of zSql in bytes. */
   sqlite3_stmt **ppStmt,    /* OUT: A pointer to the prepared statement */
   const void **pzTail       /* OUT: End of parsed string */
@@ -846,7 +846,7 @@ int sqlite3_prepare16(
 }
 int sqlite3_prepare16_v2(
   sqlite3 *db,              /* Database handle. */ 
-  const void *zSql,         /* UTF-8 encoded SQL statement. */
+  const void *zSql,         /* UTF-16 encoded SQL statement. */
   int nBytes,               /* Length of zSql in bytes. */
   sqlite3_stmt **ppStmt,    /* OUT: A pointer to the prepared statement */
   const void **pzTail       /* OUT: End of parsed string */
