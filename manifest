@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Change\sthe\sname\sof\sSQLITE_FCNTL_SYNC\sto\sSQLITE_FCNTL_SYNC_OMITTED\sand\sonly\nsend\sit\swhen\sPRAGMA\ssynchronous=OFF.\s\sAdd\sbetter\sdocumentation\sto\sexplain\nwhat\sthat\sfile-control\sopcode\sis\sused\sfor.
-D 2011-01-25T16:20:16.289
+C Make\ssure\sthe\sreturn\scode\sfrom\sdoing\san\sxSync\sis\scorrectly\sinitialized\nso\sthat\sa\svalid\sreturn\scode\sis\sproduced\sregardless\sof\sthe\spath\staken\sthrough\nthe\slogic.
+D 2011-01-25T16:48:56.989
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +165,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
 F src/os_unix.c aeaf65d261219ad96c021cfd0672509d83c005e4
 F src/os_win.c 2f90f7bdec714fad51cd31b4ecad3cc1b4bb5aad
-F src/pager.c c8975ac965895d507daa6b3e4e0aca8b4aaf629b
+F src/pager.c 37696d876b1c23aa95d8ad7e4afd72d8675984fa
 F src/pager.h 0ea59db2a33bc6c2c02cae34de33367e1effdf76
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 09d38c44ab275db581f7a2f6ff8b9bc7f8c0faaa
@@ -900,14 +900,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 9167fdb3560b1567a0bdc9a1906a87ec98e161f1
-R 96da40f86ab20bb4a774456ca34a544b
+P 64914980855dbbf19512642836ca962a507b3ddb
+R 9dfb3a97b26cb66f3555d49b9adf879c
 U drh
-Z c8970634e68cbff2a072ebb3d5e57cae
+Z 00c400aa2e34e8badd39b4e9068a7ec7
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNPvhDoxKgR168RlERAqjUAJ9akpjzOSwn0PlU/phdYvzW8+YrjQCghpGF
-iTJlh/160LuCnZw69rf6DrI=
-=E72H
+iD8DBQFNPv77oxKgR168RlERAl9SAJwJ3rffv8HI7U1fymg0vldV7CNxRwCcDVQE
+5HWPR+CixXdxSOos4b+wQvs=
+=F9X2
 -----END PGP SIGNATURE-----

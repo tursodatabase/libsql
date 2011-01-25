@@ -5623,15 +5623,13 @@ static int pager_incr_changecounter(Pager *pPager, int isDirectMode){
 ** function returns SQLITE_OK. Otherwise, an IO error code is returned.
 */
 int sqlite3PagerSync(Pager *pPager){
-  int rc;                              /* Return code */
+  int rc = SQLITE_OK;
   if( !pPager->noSync ){
     assert( !MEMDB );
     rc = sqlite3OsSync(pPager->fd, pPager->syncFlags);
   }else if( isOpen(pPager->fd) ){
     assert( !MEMDB );
     sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_SYNC_OMITTED, (void *)&rc);
-  }else{
-    rc = SQLITE_OK;
   }
   return rc;
 }
