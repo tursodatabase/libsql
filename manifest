@@ -1,5 +1,8 @@
-C Update\smutex1.test\sso\sthat\sit\sworks\swith\sthe\smemsubsys1\spermutation\s(pagecache\smemory).\sChange\sa\sfew\sinstances\sof\sSQLITE_MUTEX_STATIC_LRU2\sin\scomments\sand\stest\scode\sto\sSTATIC_PMEM.
-D 2011-01-26T07:25:33
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Add\sa\smutex\saround\san\ssqlite3StatusAdd()\scall\sto\sprevent\sthe\spagecount\noverflow\smeasurements\sfrom\sgetting\soff\sin\smultithreaded\sapplications.
+D 2011-01-26T13:24:40.120
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -167,7 +170,7 @@ F src/pager.h 0ea59db2a33bc6c2c02cae34de33367e1effdf76
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 09d38c44ab275db581f7a2f6ff8b9bc7f8c0faaa
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
-F src/pcache1.c 6901229309a7896e7635ca404f224a0a591bdfb2
+F src/pcache1.c a3665bec02fd1859a448685bb9f62ddf75dafe7d
 F src/pragma.c 8a6cd3c787f882fa44f6490d2411fc26839ce8f3
 F src/prepare.c 395b3fab1b93f45b6aa194b23ebc201221c47b99
 F src/printf.c df2ff3bb5409e8958136933342c46464fbd017e7
@@ -897,7 +900,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 84b0c2bc7125623be2ee526b5ca75e1b72debb93
-R 8125a99a44546cc6d7303e50e91f7f22
-U dan
-Z 3df0eeee4d5857c3b53d4734fc7e090b
+P 456bd5c63b41bae8e389df81e318b830aa314000
+R e9ff079b5376d2fdaa7dd27f5d3aa591
+U drh
+Z 0347c394dd69de4fec8d697e37a04dc3
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFNQCCboxKgR168RlERAgYTAJ949Xo1bAfltv62PyaX5TgKLvA4aACfTdqt
+FRsrM3bWeZxqlcofaLsFcCo=
+=atuH
+-----END PGP SIGNATURE-----

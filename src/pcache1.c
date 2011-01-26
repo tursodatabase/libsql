@@ -228,7 +228,9 @@ static void *pcache1Alloc(int nByte){
     p = sqlite3Malloc(nByte);
     if( p ){
       int sz = sqlite3MallocSize(p);
+      sqlite3_mutex_enter(pcache1.mutex);
       sqlite3StatusAdd(SQLITE_STATUS_PAGECACHE_OVERFLOW, sz);
+      sqlite3_mutex_leave(pcache1.mutex);
     }
     sqlite3MemdebugSetType(p, MEMTYPE_PCACHE);
   }
