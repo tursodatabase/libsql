@@ -1183,8 +1183,11 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       SimulateIOErrorBenign(0);
       return SQLITE_OK;
     }
+    case SQLITE_FCNTL_SYNC_OMITTED: {
+      return SQLITE_OK;
+    }
   }
-  return SQLITE_ERROR;
+  return SQLITE_NOTFOUND;
 }
 
 /*

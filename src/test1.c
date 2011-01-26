@@ -4801,13 +4801,13 @@ static int file_control_test(
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
   rc = sqlite3_file_control(db, 0, 0, &iArg);
-  assert( rc==SQLITE_ERROR );
+  assert( rc==SQLITE_NOTFOUND );
   rc = sqlite3_file_control(db, "notadatabase", SQLITE_FCNTL_LOCKSTATE, &iArg);
   assert( rc==SQLITE_ERROR );
   rc = sqlite3_file_control(db, "main", -1, &iArg);
-  assert( rc==SQLITE_ERROR );
+  assert( rc==SQLITE_NOTFOUND );
   rc = sqlite3_file_control(db, "temp", -1, &iArg);
-  assert( rc==SQLITE_ERROR );
+  assert( rc==SQLITE_NOTFOUND || rc==SQLITE_ERROR );
 
   return TCL_OK;
 }

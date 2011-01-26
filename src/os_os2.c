@@ -533,7 +533,7 @@ static int os2FileControl(sqlite3_file *id, int op, void *pArg){
       return SQLITE_OK;
     }
   }
-  return SQLITE_ERROR;
+  return SQLITE_NOTFOUND;
 }
 
 /*

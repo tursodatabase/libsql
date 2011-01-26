@@ -3135,8 +3135,11 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       return proxyFileControl(id,op,pArg);
     }
 #endif /* SQLITE_ENABLE_LOCKING_STYLE && defined(__APPLE__) */
+    case SQLITE_FCNTL_SYNC_OMITTED: {
+      return SQLITE_OK;  /* A no-op */
+    }
   }
-  return SQLITE_ERROR;
+  return SQLITE_NOTFOUND;
 }
 
 /*
