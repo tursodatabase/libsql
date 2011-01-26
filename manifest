@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C More\smutexes\saround\sanother\ssqlite3StatusAdd()\scall.
-D 2011-01-26T13:28:06.817
+C Update\stest\sfile\smutex1.test\sto\saccount\sfor\s[e3b500fb5d].
+D 2011-01-26T15:23:23
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -570,7 +567,7 @@ F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test 29032efcd3d826fbd409e2a7af873e7939f4a4e3
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/multiplex.test 92a4839213fd8cba8b59f86d42b7a1da1857db39
-F test/mutex1.test 82327b00f725342ac037fa04f26abd188bf3d29f
+F test/mutex1.test 78b2b9bb320e51d156c4efdb71b99b051e7a4b41
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test a44e04df1486fcfb02d32468cbcd3c8e1e433723
 F test/notify1.test 8433bc74bd952fb8a6e3f8d7a4c2b28dfd69e310
@@ -900,14 +897,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 3d8b298dc24fe13a3f390da41f79b8613a6f25a7
-R 8bec252fd5dcf071b20c7cceab03d8a2
-U drh
-Z 3c6d45926fd8efb972d0995d2c3bad6a
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFNQCFqoxKgR168RlERAiwGAJ0cBumTFjZ5105DfX3qiQyGjRZTKACghazJ
-nCeAfq7e8ZlzhwHXe9OFZXA=
-=p/dR
------END PGP SIGNATURE-----
+P e3b500fb5d93d98e6e1ddf6d494a841274d1b68d
+R ec3d93ba029710ba4b26f6ed28374b0b
+U dan
+Z fe9e3186d44ef416a58b3439b4308b42
