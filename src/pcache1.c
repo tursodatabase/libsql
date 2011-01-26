@@ -258,7 +258,9 @@ static void pcache1Free(void *p){
     assert( sqlite3MemdebugHasType(p, MEMTYPE_PCACHE) );
     sqlite3MemdebugSetType(p, MEMTYPE_HEAP);
     iSize = sqlite3MallocSize(p);
+    sqlite3_mutex_enter(pcache1.mutex);
     sqlite3StatusAdd(SQLITE_STATUS_PAGECACHE_OVERFLOW, -iSize);
+    sqlite3_mutex_leave(pcache1.mutex);
     sqlite3_free(p);
   }
 }
