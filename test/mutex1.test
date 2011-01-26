@@ -101,9 +101,21 @@ ifcapable threadsafe&&shared_cache {
   set enable_shared_cache [sqlite3_enable_shared_cache 1]
   foreach {mode mutexes} {
     singlethread {}
-    multithread  {fast static_lru static_master static_mem static_open static_prng }
-    serialized  {fast recursive static_lru static_master static_mem static_open static_prng}
+    multithread  {
+      fast static_lru static_master static_mem static_open static_prng 
+    }
+    serialized  {
+      fast recursive static_lru static_master static_mem static_open static_prng
+    }
   } {
+
+    # Permutation "memsubsys1" configures a block of PAGECACHE memory. In
+    # multi-threaded and serialized modes, this causes SQLite to use the 
+    # STATIC_PMEM mutex as well.
+    #
+    if {[permutation] == "memsubsys1" && $mode != "singlethread"} {
+      lappend mutexes static_pmem
+    }
 
     do_test mutex1.2.$mode.1 {
       catch {db close}

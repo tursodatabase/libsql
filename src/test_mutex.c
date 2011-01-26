@@ -247,7 +247,7 @@ static int test_read_mutex_counters(
   int ii;
   char *aName[8] = {
     "fast",        "recursive",   "static_master", "static_mem", 
-    "static_open", "static_prng", "static_lru",    "static_lru2"
+    "static_open", "static_prng", "static_lru",    "static_pmem"
   };
 
   if( objc!=1 ){

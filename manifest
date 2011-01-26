@@ -1,5 +1,5 @@
-C Changes\sto\sexclusive2.test\sto\smake\sit\smore\sdeterministic.
-D 2011-01-26T06:13:15
+C Update\smutex1.test\sso\sthat\sit\sworks\swith\sthe\smemsubsys1\spermutation\s(pagecache\smemory).\sChange\sa\sfew\sinstances\sof\sSQLITE_MUTEX_STATIC_LRU2\sin\scomments\sand\stest\scode\sto\sSTATIC_PMEM.
+D 2011-01-26T07:25:33
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -153,8 +153,8 @@ F src/mutex.c 6949180803ff05a7d0e2b9334a95b4fb5a00e23f
 F src/mutex.h fe2ef5e1c4dae531d5a544f9241f19c56d26803d
 F src/mutex_noop.c d5cfbca87168c661a0b118cd8e329a908e453151
 F src/mutex_os2.c 6a62583e374ba3ac1a3fcc0da2bfdac7d3942689
-F src/mutex_unix.c abb8c98a6c27c57280e71522d059e929c708d019
-F src/mutex_w32.c b7ed3366a1d44a62a17d4eaefdaa2e7c25f944c2
+F src/mutex_unix.c b4f4e923bb8de93ec3f251fadb50855f23df9579
+F src/mutex_w32.c 3ade5ae71449d1d023f0ebb3184c2ae6aa9307e4
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c 22ac61d06e72a0dac900400147333b07b13d8e1d
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
@@ -208,7 +208,7 @@ F src/test_journal.c 785edd54f963aefb3c1628124170a56697c68c70
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c fd6188b1501c0010fb4241ddc9f0d5ac402c688d
 F src/test_multiplex.c 5990431a852aa21c9a67da748f23d2cf1e21f8fc
-F src/test_mutex.c ce06b59aca168cd8c520b77159a24352a7469bd3
+F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
 F src/test_osinst.c f408c6a181f2fb04c56273afd5c3e1e82f60392c
 F src/test_pcache.c 7bf828972ac0d2403f5cfa4cd14da41f8ebe73d8
@@ -567,7 +567,7 @@ F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test 29032efcd3d826fbd409e2a7af873e7939f4a4e3
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/multiplex.test 92a4839213fd8cba8b59f86d42b7a1da1857db39
-F test/mutex1.test 2fe5d592763e1aad6612b59fd862c8b1b0e0304b
+F test/mutex1.test 82327b00f725342ac037fa04f26abd188bf3d29f
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test a44e04df1486fcfb02d32468cbcd3c8e1e433723
 F test/notify1.test 8433bc74bd952fb8a6e3f8d7a4c2b28dfd69e310
@@ -897,7 +897,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c85202baac49b22a4be36b9733d44f01d83edb28
-R 85ac3b6bb904f05f09996814ba9f096b
+P 84b0c2bc7125623be2ee526b5ca75e1b72debb93
+R 8125a99a44546cc6d7303e50e91f7f22
 U dan
-Z 780b8c90621146e71b5a8492b6618973
+Z 3df0eeee4d5857c3b53d4734fc7e090b
