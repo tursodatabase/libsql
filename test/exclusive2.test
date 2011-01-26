@@ -163,6 +163,7 @@ do_test exclusive2-1.10 {
 do_test exclusive2-1.11 {
   expr {[t1sig] eq $::sig}
 } {0}
+db2 close
 
 #--------------------------------------------------------------------
 # These tests - exclusive2-2.X - are similar to exclusive2-1.X, 
@@ -252,7 +253,6 @@ do_test exclusive2-2.8 {
 #
 
 db close
-db2 close
 catch {close $::fd}
 file delete -force test.db
 file delete -force test.db-journal
@@ -262,50 +262,51 @@ do_test exclusive2-3.0 {
   execsql {
     BEGIN;
     CREATE TABLE t1(a UNIQUE);
-    INSERT INTO t1 VALUES(randstr(10, 400));
-    INSERT INTO t1 VALUES(randstr(10, 400));
+    INSERT INTO t1 VALUES(randstr(200, 200));
+    INSERT INTO t1 VALUES(randstr(200, 200));
     COMMIT;
   }
   readPagerChangeCounter test.db
 } {1}
 do_test exclusive2-3.1 {
   execsql {
-    INSERT INTO t1 VALUES(randstr(10, 400));
+    INSERT INTO t1 VALUES(randstr(200, 200));
   }
   readPagerChangeCounter test.db
 } {2}
 do_test exclusive2-3.2 {
   execsql {
-    INSERT INTO t1 VALUES(randstr(10, 400));
+    INSERT INTO t1 VALUES(randstr(200, 200));
   }
   readPagerChangeCounter test.db
 } {3}
 do_test exclusive2-3.3 {
   execsql {
     PRAGMA locking_mode = exclusive;
-    INSERT INTO t1 VALUES(randstr(10, 400));
+    INSERT INTO t1 VALUES(randstr(200, 200));
   }
   readPagerChangeCounter test.db
 } {4}
 do_test exclusive2-3.4 {
+breakpoint
   execsql {
-    INSERT INTO t1 VALUES(randstr(10, 400));
+    INSERT INTO t1 VALUES(randstr(200, 200));
   }
   readPagerChangeCounter test.db
 } {4}
 do_test exclusive2-3.5 {
   execsql {
     PRAGMA locking_mode = normal;
-    INSERT INTO t1 VALUES(randstr(10, 400));
+    INSERT INTO t1 VALUES(randstr(200, 200));
+  }
+  readPagerChangeCounter test.db
+} {4}
+do_test exclusive2-3.6 {
+  execsql {
+    INSERT INTO t1 VALUES(randstr(200, 200));
   }
   readPagerChangeCounter test.db
 } {5}
-do_test exclusive2-3.6 {
-  execsql {
-    INSERT INTO t1 VALUES(randstr(10, 400));
-  }
-  readPagerChangeCounter test.db
-} {6}
 sqlite3_soft_heap_limit $cmdlinearg(soft-heap-limit)
 
 finish_test
