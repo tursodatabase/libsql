@@ -74,7 +74,7 @@ struct PCache1 {
   int bPurgeable;                     /* True if cache is purgeable */
   unsigned int nMin;                  /* Minimum number of pages reserved */
   unsigned int nMax;                  /* Configured "cache_size" value */
-  unsigned int mxPinned;              /* nMax*9/10 */
+  unsigned int n90pct;                /* nMax*9/10 */
 
   /* Hash table of all pages. The following variables may only be accessed
   ** when the accessor is holding the PGroup mutex.
@@ -599,7 +599,7 @@ static void pcache1Cachesize(sqlite3_pcache *p, int nMax){
     pGroup->nMaxPage += (nMax - pCache->nMax);
     pGroup->mxPinned = pGroup->nMaxPage + 10 - pGroup->nMinPage;
     pCache->nMax = nMax;
-    pCache->mxPinned = nMax*9/10;
+    pCache->n90pct = pCache->nMax*9/10;
     pcache1EnforceMaxPage(pGroup);
     pcache1LeaveMutex(pGroup);
   }
@@ -709,11 +709,12 @@ static void *pcache1Fetch(sqlite3_pcache *p, unsigned int iKey, int createFlag){
 
   /* Step 3: Abort if createFlag is 1 but the cache is nearly full */
   nPinned = pCache->nPage - pCache->nRecyclable;
+  assert( nPinned>=0 );
   assert( pGroup->mxPinned == pGroup->nMaxPage + 10 - pGroup->nMinPage );
-  assert( pCache->mxPinned == pCache->nMax*9/10 );
+  assert( pCache->n90pct == pCache->nMax*9/10 );
   if( createFlag==1 && (
         nPinned>=pGroup->mxPinned
-     || nPinned>=(int)pCache->mxPinned
+     || nPinned>=(int)pCache->n90pct
      || pcache1UnderMemoryPressure(pCache)
   )){
     goto fetch_out;
