@@ -3582,6 +3582,11 @@ static void init_all(Tcl_Interp *interp){
     extern int Sqlitemultiplex_Init(Tcl_Interp*);
     extern int SqliteSuperlock_Init(Tcl_Interp*);
 
+#ifdef SQLITE_ENABLE_ZIPVFS
+    extern int Zipvfs_Init(Tcl_Interp*);
+    Zipvfs_Init(interp);
+#endif
+
     Sqliteconfig_Init(interp);
     Sqlitetest1_Init(interp);
     Sqlitetest2_Init(interp);

@@ -540,6 +540,7 @@ static int tvfsOpen(
   pFd->zFilename = zName;
   pFd->pVfs = pVfs;
   pFd->pReal = (sqlite3_file *)&pFd[1];
+  memset(pTestfile, 0, sizeof(TestvfsFile));
   pTestfile->pFd = pFd;
 
   /* Evaluate the Tcl script: 

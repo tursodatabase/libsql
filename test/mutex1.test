@@ -101,8 +101,14 @@ ifcapable threadsafe&&shared_cache {
   set enable_shared_cache [sqlite3_enable_shared_cache 1]
   foreach {mode mutexes} {
     singlethread {}
-    multithread  {fast static_lru static_master static_mem static_open static_prng }
-    serialized  {fast recursive static_lru static_master static_mem static_open static_prng}
+    multithread  {
+      fast static_lru static_master static_mem static_open static_prng 
+      static_pmem
+    }
+    serialized  {
+      fast recursive static_lru static_master static_mem static_open 
+      static_prng static_pmem
+    }
   } {
 
     do_test mutex1.2.$mode.1 {
@@ -120,7 +126,9 @@ ifcapable threadsafe&&shared_cache {
         INSERT INTO abc VALUES(1, 2, 3);
       }
     } {}
-  
+    ifcapable !memorymanage {
+      regsub { static_lru} $mutexes {} mutexes
+    }
     do_test mutex1.2.$mode.3 {
       mutex_counters counters
   

@@ -3106,9 +3106,16 @@ char *sqlite3Fts3FindPositions(
   assert( pExpr->isLoaded );
   if( pExpr->aDoclist ){
     char *pEnd = &pExpr->aDoclist[pExpr->nDoclist];
-    char *pCsr = pExpr->pCurrent;
+    char *pCsr;
 
+    if( pExpr->pCurrent==0 ){
+      pExpr->pCurrent = pExpr->aDoclist;
+      pExpr->iCurrent = 0;
+      pExpr->pCurrent += sqlite3Fts3GetVarint(pExpr->pCurrent,&pExpr->iCurrent);
+    }
+    pCsr = pExpr->pCurrent;
     assert( pCsr );
+
     while( pCsr<pEnd ){
       if( pExpr->iCurrent<iDocid ){
         fts3PoslistCopy(0, &pCsr);

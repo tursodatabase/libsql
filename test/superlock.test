@@ -143,6 +143,15 @@ do_multiclient_test tn {
     list [catch {sqlite3demo_superlock unlock test.db} msg] $msg
   } {0 unlock}
   unlock
+
+
+  do_test 5.$tn.13 { sql1 { SELECT * FROM t1 } } {1 2 3 4 5 6}
+  do_test 5.$tn.14 { sql2 { SELECT * FROM t1 } } {1 2 3 4 5 6}
+  do_test 5.$tn.15 { sqlite3demo_superlock unlock test.db } {unlock}
+  do_test 5.$tn.16 { unlock } {}
+  do_test 5.$tn.17 { sql2 { SELECT * FROM t1 } } {1 2 3 4 5 6}
+  do_test 5.$tn.18 { sql1 { SELECT * FROM t1 } } {1 2 3 4 5 6}
+  do_test 5.$tn.19 { sql2 { SELECT * FROM t1 } } {1 2 3 4 5 6}
 }
 
 proc read_content {file} {

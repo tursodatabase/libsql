@@ -119,7 +119,9 @@
 #include <time.h>
 #include <sys/time.h>
 #include <errno.h>
+#ifndef SQLITE_OMIT_WAL
 #include <sys/mman.h>
+#endif
 
 #if SQLITE_ENABLE_LOCKING_STYLE
 # include <sys/ioctl.h>
@@ -3367,8 +3369,11 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       return rc;
     }
 #endif /* (SQLITE_ENABLE_APPLE_SPI>0) && defined(__APPLE__) */
+    case SQLITE_FCNTL_SYNC_OMITTED: {
+      return SQLITE_OK;  /* A no-op */
+    }
   }
-  return SQLITE_ERROR;
+  return SQLITE_NOTFOUND;
 }
 
 /*
@@ -5669,18 +5674,19 @@ extern int gethostuuid(uuid_t id, const struct timespec *wait);
 ** bytes of writable memory.
 */
 static int proxyGetHostID(unsigned char *pHostID, int *pError){
-  struct timespec timeout = {1, 0}; /* 1 sec timeout */
-  
   assert(PROXY_HOSTIDLEN == sizeof(uuid_t));
   memset(pHostID, 0, PROXY_HOSTIDLEN);
 #if defined(__MAX_OS_X_VERSION_MIN_REQUIRED)\
                && __MAC_OS_X_VERSION_MIN_REQUIRED<1050
-  if( gethostuuid(pHostID, &timeout) ){
-    int err = errno;
-    if( pError ){
-      *pError = err;
+  {
+    static const struct timespec timeout = {1, 0}; /* 1 sec timeout */
+    if( gethostuuid(pHostID, &timeout) ){
+      int err = errno;
+      if( pError ){
+        *pError = err;
+      }
+      return SQLITE_IOERR;
     }
-    return SQLITE_IOERR;
   }
 #endif
 #ifdef SQLITE_TEST

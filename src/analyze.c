@@ -233,9 +233,10 @@ static void analyzeOneTable(
     sqlite3VdbeAddOp2(v, OP_AddImm, iMem, 1);
 
     for(i=0; i<nCol; i++){
+      CollSeq *pColl;
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, regCol);
-#ifdef SQLITE_ENABLE_STAT2
       if( i==0 ){
+#ifdef SQLITE_ENABLE_STAT2
         /* Check if the record that cursor iIdxCur points to contains a
         ** value that should be stored in the sqlite_stat2 table. If so,
         ** store it.  */
@@ -264,12 +265,17 @@ static void analyzeOneTable(
 
         sqlite3VdbeJumpHere(v, ne);
         sqlite3VdbeAddOp2(v, OP_AddImm, regRecno, 1);
-      }
 #endif
 
-      sqlite3VdbeAddOp3(v, OP_Ne, regCol, 0, iMem+nCol+i+1);
-      /**** TODO:  add collating sequence *****/
-      sqlite3VdbeChangeP5(v, SQLITE_JUMPIFNULL);
+        /* Always record the very first row */
+        sqlite3VdbeAddOp1(v, OP_IfNot, iMem+1);
+      }
+      assert( pIdx->azColl!=0 );
+      assert( pIdx->azColl[i]!=0 );
+      pColl = sqlite3LocateCollSeq(pParse, pIdx->azColl[i]);
+      sqlite3VdbeAddOp4(v, OP_Ne, regCol, 0, iMem+nCol+i+1,
+                       (char*)pColl, P4_COLLSEQ);
+      sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
     }
     if( db->mallocFailed ){
       /* If a malloc failure has occurred, then the result of the expression 
@@ -280,7 +286,11 @@ static void analyzeOneTable(
     }
     sqlite3VdbeAddOp2(v, OP_Goto, 0, endOfLoop);
     for(i=0; i<nCol; i++){
-      sqlite3VdbeJumpHere(v, sqlite3VdbeCurrentAddr(v)-(nCol*2));
+      int addr2 = sqlite3VdbeCurrentAddr(v) - (nCol*2);
+      if( i==0 ){
+        sqlite3VdbeJumpHere(v, addr2-1);  /* Set jump dest for the OP_IfNot */
+      }
+      sqlite3VdbeJumpHere(v, addr2);      /* Set jump dest for the OP_Ne */
       sqlite3VdbeAddOp2(v, OP_AddImm, iMem+i+1, 1);
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, iMem+nCol+i+1);
     }
@@ -626,8 +636,11 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
 
     if( rc==SQLITE_OK ){
       while( sqlite3_step(pStmt)==SQLITE_ROW ){
-        char *zIndex = (char *)sqlite3_column_text(pStmt, 0);
-        Index *pIdx = sqlite3FindIndex(db, zIndex, sInfo.zDatabase);
+        char *zIndex;   /* Index name */
+        Index *pIdx;    /* Pointer to the index object */
+
+        zIndex = (char *)sqlite3_column_text(pStmt, 0);
+        pIdx = zIndex ? sqlite3FindIndex(db, zIndex, sInfo.zDatabase) : 0;
         if( pIdx ){
           int iSample = sqlite3_column_int(pStmt, 1);
           if( iSample<SQLITE_INDEX_SAMPLES && iSample>=0 ){

@@ -414,12 +414,12 @@ struct BtShared {
   u8 autoVacuum;        /* True if auto-vacuum is enabled */
   u8 incrVacuum;        /* True if incr-vacuum is enabled */
 #endif
+  u8 inTransaction;     /* Transaction state */
+  u8 doNotUseWAL;       /* If true, do not open write-ahead-log file */
   u16 maxLocal;         /* Maximum local payload in non-LEAFDATA tables */
   u16 minLocal;         /* Minimum local payload in non-LEAFDATA tables */
   u16 maxLeaf;          /* Maximum local payload in a LEAFDATA table */
   u16 minLeaf;          /* Minimum local payload in a LEAFDATA table */
-  u8 inTransaction;     /* Transaction state */
-  u8 doNotUseWAL;       /* If true, do not open write-ahead-log file */
   u32 pageSize;         /* Total number of bytes on a page */
   u32 usableSize;       /* Number of usable bytes on each page */
   int nTransaction;     /* Number of open transactions (read + write) */
@@ -446,8 +446,8 @@ struct BtShared {
 */
 typedef struct CellInfo CellInfo;
 struct CellInfo {
-  u8 *pCell;     /* Pointer to the start of cell content */
   i64 nKey;      /* The key for INTKEY tables, or number of bytes in key */
+  u8 *pCell;     /* Pointer to the start of cell content */
   u32 nData;     /* Number of bytes of data */
   u32 nPayload;  /* Total amount of payload */
   u16 nHeader;   /* Size of the cell content header in bytes */
@@ -489,20 +489,20 @@ struct BtCursor {
   Pgno pgnoRoot;            /* The root page of this tree */
   sqlite3_int64 cachedRowid; /* Next rowid cache.  0 means not valid */
   CellInfo info;            /* A parse of the cell we are pointing at */
+  i64 nKey;        /* Size of pKey, or last integer key */
+  void *pKey;      /* Saved key that was cursor's last known position */
+  int skipNext;    /* Prev() is noop if negative. Next() is noop if positive */
   u8 wrFlag;                /* True if writable */
   u8 atLast;                /* Cursor pointing to the last entry */
   u8 validNKey;             /* True if info.nKey is valid */
   u8 eState;                /* One of the CURSOR_XXX constants (see below) */
-  void *pKey;      /* Saved key that was cursor's last known position */
-  i64 nKey;        /* Size of pKey, or last integer key */
-  int skipNext;    /* Prev() is noop if negative. Next() is noop if positive */
 #ifndef SQLITE_OMIT_INCRBLOB
-  u8 isIncrblobHandle;      /* True if this cursor is an incr. io handle */
   Pgno *aOverflow;          /* Cache of overflow page locations */
+  u8 isIncrblobHandle;      /* True if this cursor is an incr. io handle */
 #endif
   i16 iPage;                            /* Index of current page in apPage */
-  MemPage *apPage[BTCURSOR_MAX_DEPTH];  /* Pages from root to current page */
   u16 aiIdx[BTCURSOR_MAX_DEPTH];        /* Current index in apPage[i] */
+  MemPage *apPage[BTCURSOR_MAX_DEPTH];  /* Pages from root to current page */
 };
 
 /*

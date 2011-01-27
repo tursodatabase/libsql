@@ -39,16 +39,14 @@ typedef unsigned char Bool;
 ** 
 ** Every cursor that the virtual machine has open is represented by an
 ** instance of the following structure.
-**
-** If the VdbeCursor.isTriggerRow flag is set it means that this cursor is
-** really a single row that represents the NEW or OLD pseudo-table of
-** a row trigger.  The data for the row is stored in VdbeCursor.pData and
-** the rowid is in VdbeCursor.iKey.
 */
 struct VdbeCursor {
   BtCursor *pCursor;    /* The cursor structure of the backend */
+  Btree *pBt;           /* Separate file holding temporary table */
+  KeyInfo *pKeyInfo;    /* Info about index keys needed by index cursors */
   int iDb;              /* Index of cursor database in db->aDb[] (or -1) */
-  i64 lastRowid;        /* Last rowid from a Next or NextIdx operation */
+  int pseudoTableReg;   /* Register holding pseudotable content. */
+  int nField;           /* Number of fields in the header */
   Bool zeroed;          /* True if zeroed out and ready for reuse */
   Bool rowidIsValid;    /* True if lastRowid is valid */
   Bool atFirst;         /* True if pointing to first entry */
@@ -58,14 +56,11 @@ struct VdbeCursor {
   Bool isTable;         /* True if a table requiring integer keys */
   Bool isIndex;         /* True if an index containing keys only - no data */
   Bool isOrdered;       /* True if the underlying table is BTREE_UNORDERED */
-  i64 movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
-  Btree *pBt;           /* Separate file holding temporary table */
-  int pseudoTableReg;   /* Register holding pseudotable content. */
-  KeyInfo *pKeyInfo;    /* Info about index keys needed by index cursors */
-  int nField;           /* Number of fields in the header */
-  i64 seqCount;         /* Sequence counter */
   sqlite3_vtab_cursor *pVtabCursor;  /* The cursor for a virtual table */
   const sqlite3_module *pModule;     /* Module for cursor pVtabCursor */
+  i64 seqCount;         /* Sequence counter */
+  i64 movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
+  i64 lastRowid;        /* Last rowid from a Next or NextIdx operation */
 
   /* Result of last sqlite3BtreeMoveto() done by an OP_NotExists or 
   ** OP_IsUnique opcode on this cursor. */
@@ -137,25 +132,19 @@ struct VdbeFrame {
 /*
 ** Internally, the vdbe manipulates nearly all SQL values as Mem
 ** structures. Each Mem struct may cache multiple representations (string,
-** integer etc.) of the same value.  A value (and therefore Mem structure)
-** has the following properties:
-**
-** Each value has a manifest type. The manifest type of the value stored
-** in a Mem struct is returned by the MemType(Mem*) macro. The type is
-** one of SQLITE_NULL, SQLITE_INTEGER, SQLITE_REAL, SQLITE_TEXT or
-** SQLITE_BLOB.
+** integer etc.) of the same value.
 */
 struct Mem {
+  sqlite3 *db;        /* The associated database connection */
+  char *z;            /* String or BLOB value */
+  double r;           /* Real value */
   union {
-    i64 i;              /* Integer value. */
+    i64 i;              /* Integer value used when MEM_Int is set in flags */
     int nZero;          /* Used when bit MEM_Zero is set in flags */
     FuncDef *pDef;      /* Used only when flags==MEM_Agg */
     RowSet *pRowSet;    /* Used only when flags==MEM_RowSet */
     VdbeFrame *pFrame;  /* Used when flags==MEM_Frame */
   } u;
-  double r;           /* Real value */
-  sqlite3 *db;        /* The associated database connection */
-  char *z;            /* String or BLOB value */
   int n;              /* Number of characters in string value, excluding '\0' */
   u16 flags;          /* Some combination of MEM_Null, MEM_Str, MEM_Dyn, etc. */
   u8  type;           /* One of SQLITE_NULL, SQLITE_TEXT, SQLITE_INTEGER, etc */
@@ -179,9 +168,6 @@ struct Mem {
 ** database (see below for exceptions). If the MEM_Term flag is also
 ** set, then the string is nul terminated. The MEM_Int and MEM_Real 
 ** flags may coexist with the MEM_Str flag.
-**
-** Multiple of these values can appear in Mem.flags.  But only one
-** at a time can appear in Mem.type.
 */
 #define MEM_Null      0x0001   /* Value is NULL */
 #define MEM_Str       0x0002   /* Value is a string */
@@ -265,22 +251,10 @@ struct sqlite3_context {
 };
 
 /*
-** A Set structure is used for quick testing to see if a value
-** is part of a small set.  Sets are used to implement code like
-** this:
-**            x.y IN ('hi','hoo','hum')
-*/
-typedef struct Set Set;
-struct Set {
-  Hash hash;             /* A set is just a hash table */
-  HashElem *prev;        /* Previously accessed hash elemen */
-};
-
-/*
 ** An instance of the virtual machine.  This structure contains the complete
 ** state of the virtual machine.
 **
-** The "sqlite3_stmt" structure pointer that is returned by sqlite3_compile()
+** The "sqlite3_stmt" structure pointer that is returned by sqlite3_prepare()
 ** is really a pointer to an instance of this structure.
 **
 ** The Vdbe.inVtabMethod variable is set to non-zero for the duration of
@@ -293,31 +267,31 @@ struct Set {
 */
 struct Vdbe {
   sqlite3 *db;            /* The database connection that owns this statement */
-  Vdbe *pPrev,*pNext;     /* Linked list of VDBEs with the same Vdbe.db */
-  int nOp;                /* Number of instructions in the program */
-  int nOpAlloc;           /* Number of slots allocated for aOp[] */
   Op *aOp;                /* Space to hold the virtual machine's program */
-  int nLabel;             /* Number of labels used */
-  int nLabelAlloc;        /* Number of slots allocated in aLabel[] */
-  int *aLabel;            /* Space to hold the labels */
+  Mem *aMem;              /* The memory locations */
   Mem **apArg;            /* Arguments to currently executing user function */
   Mem *aColName;          /* Column names to return */
   Mem *pResultSet;        /* Pointer to an array of results */
+  int nMem;               /* Number of memory locations currently allocated */
+  int nOp;                /* Number of instructions in the program */
+  int nOpAlloc;           /* Number of slots allocated for aOp[] */
+  int nLabel;             /* Number of labels used */
+  int nLabelAlloc;        /* Number of slots allocated in aLabel[] */
+  int *aLabel;            /* Space to hold the labels */
   u16 nResColumn;         /* Number of columns in one row of the result set */
   u16 nCursor;            /* Number of slots in apCsr[] */
+  u32 magic;              /* Magic number for sanity checking */
+  char *zErrMsg;          /* Error message written here */
+  Vdbe *pPrev,*pNext;     /* Linked list of VDBEs with the same Vdbe.db */
   VdbeCursor **apCsr;     /* One element of this array for each open cursor */
-  u8 errorAction;         /* Recovery action to do in case of an error */
-  u8 okVar;               /* True if azVar[] has been initialized */
-  ynVar nVar;             /* Number of entries in aVar[] */
   Mem *aVar;              /* Values for the OP_Variable opcode. */
   char **azVar;           /* Name of variables */
-  u32 magic;              /* Magic number for sanity checking */
-  int nMem;               /* Number of memory locations currently allocated */
-  Mem *aMem;              /* The memory locations */
+  ynVar nVar;             /* Number of entries in aVar[] */
   u32 cacheCtr;           /* VdbeCursor row cache generation counter */
   int pc;                 /* The program counter */
   int rc;                 /* Value to return */
-  char *zErrMsg;          /* Error message written here */
+  u8 errorAction;         /* Recovery action to do in case of an error */
+  u8 okVar;               /* True if azVar[] has been initialized */
   u8 explain;             /* True if EXPLAIN present on SQL command */
   u8 changeCntOn;         /* True to update the change-counter */
   u8 expired;             /* True if the VM needs to be recompiled */
@@ -329,14 +303,16 @@ struct Vdbe {
   u8 isPrepareV2;         /* True if prepared with prepare_v2() */
   int nChange;            /* Number of db changes made since last reset */
   int btreeMask;          /* Bitmask of db->aDb[] entries referenced */
-  i64 startTime;          /* Time when query started - used for profiling */
-  BtreeMutexArray aMutex; /* An array of Btree used here and needing locks */
+  int iStatement;         /* Statement number (or 0 if has not opened stmt) */
   int aCounter[3];        /* Counters used by sqlite3_stmt_status() */
-  char *zSql;             /* Text of the SQL statement that generated this */
-  void *pFree;            /* Free this when deleting the vdbe */
+  BtreeMutexArray aMutex; /* An array of Btree used here and needing locks */
+#ifndef SQLITE_OMIT_TRACE
+  i64 startTime;          /* Time when query started - used for profiling */
+#endif
   i64 nFkConstraint;      /* Number of imm. FK constraints this VM */
   i64 nStmtDefCons;       /* Number of def. constraints when stmt started */
-  int iStatement;         /* Statement number (or 0 if has not opened stmt) */
+  char *zSql;             /* Text of the SQL statement that generated this */
+  void *pFree;            /* Free this when deleting the vdbe */
 #ifdef SQLITE_DEBUG
   FILE *trace;            /* Write an execution trace here, if not NULL */
 #endif

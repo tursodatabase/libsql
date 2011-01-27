@@ -44,9 +44,12 @@ static int findNextHostParameter(const char *zSql, int *pnToken){
 }
 
 /*
-** Return a pointer to a string in memory obtained form sqlite3DbMalloc() which
-** holds a copy of zRawSql but with host parameters expanded to their
-** current bindings.
+** This function returns a pointer to a nul-terminated string in memory
+** obtained from sqlite3DbMalloc(). If sqlite3.vdbeExecCnt is 1, then the
+** string contains a copy of zRawSql but with host parameters expanded to 
+** their current bindings. Or, if sqlite3.vdbeExecCnt is greater than 1, 
+** then the returned string holds a copy of zRawSql with "-- " prepended
+** to each line of text.
 **
 ** The calling function is responsible for making sure the memory returned
 ** is eventually freed.
@@ -77,63 +80,72 @@ char *sqlite3VdbeExpandSql(
   sqlite3StrAccumInit(&out, zBase, sizeof(zBase), 
                       db->aLimit[SQLITE_LIMIT_LENGTH]);
   out.db = db;
-  while( zRawSql[0] ){
-    n = findNextHostParameter(zRawSql, &nToken);
-    assert( n>0 );
-    sqlite3StrAccumAppend(&out, zRawSql, n);
-    zRawSql += n;
-    assert( zRawSql[0] || nToken==0 );
-    if( nToken==0 ) break;
-    if( zRawSql[0]=='?' ){
-      if( nToken>1 ){
-        assert( sqlite3Isdigit(zRawSql[1]) );
-        sqlite3GetInt32(&zRawSql[1], &idx);
-      }else{
-        idx = nextIndex;
-      }
-    }else{
-      assert( zRawSql[0]==':' || zRawSql[0]=='$' || zRawSql[0]=='@' );
-      testcase( zRawSql[0]==':' );
-      testcase( zRawSql[0]=='$' );
-      testcase( zRawSql[0]=='@' );
-      idx = sqlite3VdbeParameterIndex(p, zRawSql, nToken);
-      assert( idx>0 );
+  if( db->vdbeExecCnt>1 ){
+    while( *zRawSql ){
+      const char *zStart = zRawSql;
+      while( *(zRawSql++)!='\n' && *zRawSql );
+      sqlite3StrAccumAppend(&out, "-- ", 3);
+      sqlite3StrAccumAppend(&out, zStart, zRawSql-zStart);
     }
-    zRawSql += nToken;
-    nextIndex = idx + 1;
-    assert( idx>0 && idx<=p->nVar );
-    pVar = &p->aVar[idx-1];
-    if( pVar->flags & MEM_Null ){
-      sqlite3StrAccumAppend(&out, "NULL", 4);
-    }else if( pVar->flags & MEM_Int ){
-      sqlite3XPrintf(&out, "%lld", pVar->u.i);
-    }else if( pVar->flags & MEM_Real ){
-      sqlite3XPrintf(&out, "%!.15g", pVar->r);
-    }else if( pVar->flags & MEM_Str ){
+  }else{
+    while( zRawSql[0] ){
+      n = findNextHostParameter(zRawSql, &nToken);
+      assert( n>0 );
+      sqlite3StrAccumAppend(&out, zRawSql, n);
+      zRawSql += n;
+      assert( zRawSql[0] || nToken==0 );
+      if( nToken==0 ) break;
+      if( zRawSql[0]=='?' ){
+        if( nToken>1 ){
+          assert( sqlite3Isdigit(zRawSql[1]) );
+          sqlite3GetInt32(&zRawSql[1], &idx);
+        }else{
+          idx = nextIndex;
+        }
+      }else{
+        assert( zRawSql[0]==':' || zRawSql[0]=='$' || zRawSql[0]=='@' );
+        testcase( zRawSql[0]==':' );
+        testcase( zRawSql[0]=='$' );
+        testcase( zRawSql[0]=='@' );
+        idx = sqlite3VdbeParameterIndex(p, zRawSql, nToken);
+        assert( idx>0 );
+      }
+      zRawSql += nToken;
+      nextIndex = idx + 1;
+      assert( idx>0 && idx<=p->nVar );
+      pVar = &p->aVar[idx-1];
+      if( pVar->flags & MEM_Null ){
+        sqlite3StrAccumAppend(&out, "NULL", 4);
+      }else if( pVar->flags & MEM_Int ){
+        sqlite3XPrintf(&out, "%lld", pVar->u.i);
+      }else if( pVar->flags & MEM_Real ){
+        sqlite3XPrintf(&out, "%!.15g", pVar->r);
+      }else if( pVar->flags & MEM_Str ){
 #ifndef SQLITE_OMIT_UTF16
-      u8 enc = ENC(db);
-      if( enc!=SQLITE_UTF8 ){
-        Mem utf8;
-        memset(&utf8, 0, sizeof(utf8));
-        utf8.db = db;
-        sqlite3VdbeMemSetStr(&utf8, pVar->z, pVar->n, enc, SQLITE_STATIC);
-        sqlite3VdbeChangeEncoding(&utf8, SQLITE_UTF8);
-        sqlite3XPrintf(&out, "'%.*q'", utf8.n, utf8.z);
-        sqlite3VdbeMemRelease(&utf8);
-      }else
+        u8 enc = ENC(db);
+        if( enc!=SQLITE_UTF8 ){
+          Mem utf8;
+          memset(&utf8, 0, sizeof(utf8));
+          utf8.db = db;
+          sqlite3VdbeMemSetStr(&utf8, pVar->z, pVar->n, enc, SQLITE_STATIC);
+          sqlite3VdbeChangeEncoding(&utf8, SQLITE_UTF8);
+          sqlite3XPrintf(&out, "'%.*q'", utf8.n, utf8.z);
+          sqlite3VdbeMemRelease(&utf8);
+        }else
 #endif
-      {
-        sqlite3XPrintf(&out, "'%.*q'", pVar->n, pVar->z);
+        {
+          sqlite3XPrintf(&out, "'%.*q'", pVar->n, pVar->z);
+        }
+      }else if( pVar->flags & MEM_Zero ){
+        sqlite3XPrintf(&out, "zeroblob(%d)", pVar->u.nZero);
+      }else{
+        assert( pVar->flags & MEM_Blob );
+        sqlite3StrAccumAppend(&out, "x'", 2);
+        for(i=0; i<pVar->n; i++){
+          sqlite3XPrintf(&out, "%02x", pVar->z[i]&0xff);
+        }
+        sqlite3StrAccumAppend(&out, "'", 1);
       }
-    }else if( pVar->flags & MEM_Zero ){
-      sqlite3XPrintf(&out, "zeroblob(%d)", pVar->u.nZero);
-    }else{
-      assert( pVar->flags & MEM_Blob );
-      sqlite3StrAccumAppend(&out, "x'", 2);
-      for(i=0; i<pVar->n; i++){
-        sqlite3XPrintf(&out, "%02x", pVar->z[i]&0xff);
-      }
-      sqlite3StrAccumAppend(&out, "'", 1);
     }
   }
   return sqlite3StrAccumFinish(&out);

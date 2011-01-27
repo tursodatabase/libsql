@@ -118,6 +118,16 @@ static Btree *findBtree(sqlite3 *pErrorDb, sqlite3 *pDb, const char *zDb){
 }
 
 /*
+** Attempt to set the page size of the destination to match the page size
+** of the source.
+*/
+static int setDestPgsz(sqlite3_backup *p){
+  int rc;
+  rc = sqlite3BtreeSetPageSize(p->pDest,sqlite3BtreeGetPageSize(p->pSrc),-1,0);
+  return rc;
+}
+
+/*
 ** Create an sqlite3_backup process to copy the contents of zSrcDb from
 ** connection handle pSrcDb to zDestDb in pDestDb. If successful, return
 ** a pointer to the new sqlite3_backup object.
@@ -170,10 +180,11 @@ sqlite3_backup *sqlite3_backup_init(
     p->iNext = 1;
     p->isAttached = 0;
 
-    if( 0==p->pSrc || 0==p->pDest ){
-      /* One (or both) of the named databases did not exist. An error has
-      ** already been written into the pDestDb handle. All that is left
-      ** to do here is free the sqlite3_backup structure.
+    if( 0==p->pSrc || 0==p->pDest || setDestPgsz(p)==SQLITE_NOMEM ){
+      /* One (or both) of the named databases did not exist or an OOM
+      ** error was hit.  The error has already been written into the
+      ** pDestDb handle.  All that is left to do here is free the
+      ** sqlite3_backup structure.
       */
       sqlite3_free(p);
       p = 0;
@@ -430,32 +441,46 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
         */
         const i64 iSize = (i64)pgszSrc * (i64)nSrcPage;
         sqlite3_file * const pFile = sqlite3PagerFile(pDestPager);
+        i64 iOff;
+        i64 iEnd;
 
         assert( pFile );
         assert( (i64)nDestTruncate*(i64)pgszDest >= iSize || (
               nDestTruncate==(int)(PENDING_BYTE_PAGE(p->pDest->pBt)-1)
            && iSize>=PENDING_BYTE && iSize<=PENDING_BYTE+pgszDest
         ));
-        if( SQLITE_OK==(rc = sqlite3PagerCommitPhaseOne(pDestPager, 0, 1))
-         && SQLITE_OK==(rc = backupTruncateFile(pFile, iSize))
-         && SQLITE_OK==(rc = sqlite3PagerSync(pDestPager))
+
+        /* This call ensures that all data required to recreate the original
+        ** database has been stored in the journal for pDestPager and the
+        ** journal synced to disk. So at this point we may safely modify
+        ** the database file in any way, knowing that if a power failure
+        ** occurs, the original database will be reconstructed from the 
+        ** journal file.  */
+        rc = sqlite3PagerCommitPhaseOne(pDestPager, 0, 1);
+
+        /* Write the extra pages and truncate the database file as required. */
+        iEnd = MIN(PENDING_BYTE + pgszDest, iSize);
+        for(
+          iOff=PENDING_BYTE+pgszSrc; 
+          rc==SQLITE_OK && iOff<iEnd; 
+          iOff+=pgszSrc
         ){
-          i64 iOff;
-          i64 iEnd = MIN(PENDING_BYTE + pgszDest, iSize);
-          for(
-            iOff=PENDING_BYTE+pgszSrc; 
-            rc==SQLITE_OK && iOff<iEnd; 
-            iOff+=pgszSrc
-          ){
-            PgHdr *pSrcPg = 0;
-            const Pgno iSrcPg = (Pgno)((iOff/pgszSrc)+1);
-            rc = sqlite3PagerGet(pSrcPager, iSrcPg, &pSrcPg);
-            if( rc==SQLITE_OK ){
-              u8 *zData = sqlite3PagerGetData(pSrcPg);
-              rc = sqlite3OsWrite(pFile, zData, pgszSrc, iOff);
-            }
-            sqlite3PagerUnref(pSrcPg);
+          PgHdr *pSrcPg = 0;
+          const Pgno iSrcPg = (Pgno)((iOff/pgszSrc)+1);
+          rc = sqlite3PagerGet(pSrcPager, iSrcPg, &pSrcPg);
+          if( rc==SQLITE_OK ){
+            u8 *zData = sqlite3PagerGetData(pSrcPg);
+            rc = sqlite3OsWrite(pFile, zData, pgszSrc, iOff);
           }
+          sqlite3PagerUnref(pSrcPg);
+        }
+        if( rc==SQLITE_OK ){
+          rc = backupTruncateFile(pFile, iSize);
+        }
+
+        /* Sync the database file to disk. */
+        if( rc==SQLITE_OK ){
+          rc = sqlite3PagerSync(pDestPager);
         }
       }else{
         rc = sqlite3PagerCommitPhaseOne(pDestPager, 0, 0);

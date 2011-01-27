@@ -38,10 +38,14 @@
 # include <unistd.h>
 #endif
 
+#ifdef HAVE_EDITLINE
+# include <editline/editline.h>
+#endif
 #if defined(HAVE_READLINE) && HAVE_READLINE==1
 # include <readline/readline.h>
 # include <readline/history.h>
-#else
+#endif
+#if !defined(HAVE_EDITLINE) && (!defined(HAVE_READLINE) || HAVE_READLINE!=1)
 # define readline(p) local_getline(p,stdin)
 # define add_history(X)
 # define read_history(X)
@@ -980,7 +984,7 @@ static int display_stats(
     fprintf(pArg->out, "Memory Used:                         %d (max %d) bytes\n", iCur, iHiwtr);
     iHiwtr = iCur = -1;
     sqlite3_status(SQLITE_STATUS_MALLOC_COUNT, &iCur, &iHiwtr, bReset);
-    fprintf(pArg->out, "Number of Allocations:               %d (max %d)\n", iCur, iHiwtr);
+    fprintf(pArg->out, "Number of Outstanding Allocations:   %d (max %d)\n", iCur, iHiwtr);
 /*
 ** Not currently used by the CLI.
 **    iHiwtr = iCur = -1;
@@ -1019,6 +1023,12 @@ static int display_stats(
     iHiwtr = iCur = -1;
     sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_USED, &iCur, &iHiwtr, bReset);
     fprintf(pArg->out, "Lookaside Slots Used:                %d (max %d)\n", iCur, iHiwtr);
+    sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_HIT, &iCur, &iHiwtr, bReset);
+    fprintf(pArg->out, "Successful lookaside attempts:       %d\n", iHiwtr);
+    sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_MISS_SIZE, &iCur, &iHiwtr, bReset);
+    fprintf(pArg->out, "Lookaside failures due to size:      %d\n", iHiwtr);
+    sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_MISS_FULL, &iCur, &iHiwtr, bReset);
+    fprintf(pArg->out, "Lookaside failures due to OOM:       %d\n", iHiwtr);
     iHiwtr = iCur = -1;
     sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_USED, &iCur, &iHiwtr, bReset);
     fprintf(pArg->out, "Pager Heap Usage:                    %d bytes\n", iCur); 
@@ -2538,6 +2548,7 @@ int main(int argc, char **argv){
 
   /* Do an initial pass through the command-line argument to locate
   ** the name of the database file, the name of the initialization file,
+  ** the size of the alternative malloc heap,
   ** and the first command to execute.
   */
   for(i=1; i<argc-1; i++){
@@ -2556,6 +2567,22 @@ int main(int argc, char **argv){
     */
     }else if( strcmp(argv[i],"-batch")==0 ){
       stdin_is_interactive = 0;
+    }else if( strcmp(argv[i],"-heap")==0 ){
+      int j, c;
+      const char *zSize;
+      sqlite3_int64 szHeap;
+
+      zSize = argv[++i];
+      szHeap = atoi(zSize);
+      for(j=0; (c = zSize[j])!=0; j++){
+        if( c=='M' ){ szHeap *= 1000000; break; }
+        if( c=='K' ){ szHeap *= 1000; break; }
+        if( c=='G' ){ szHeap *= 1000000000; break; }
+      }
+      if( szHeap>0x7fff0000 ) szHeap = 0x7fff0000;
+#if defined(SQLITE_ENABLE_MEMSYS3) || defined(SQLITE_ENABLE_MEMSYS5)
+      sqlite3_config(SQLITE_CONFIG_HEAP, malloc((int)szHeap), (int)szHeap, 64);
+#endif
     }
   }
   if( i<argc ){
@@ -2662,6 +2689,8 @@ int main(int argc, char **argv){
       stdin_is_interactive = 1;
     }else if( strcmp(z,"-batch")==0 ){
       stdin_is_interactive = 0;
+    }else if( strcmp(z,"-heap")==0 ){
+      i++;
     }else if( strcmp(z,"-help")==0 || strcmp(z, "--help")==0 ){
       usage(1);
     }else{
@@ -2723,11 +2752,7 @@ int main(int argc, char **argv){
   }
   set_table_name(&data, 0);
   if( data.db ){
-    if( sqlite3_close(data.db)!=SQLITE_OK ){
-      fprintf(stderr,"Error: cannot close database \"%s\"\n",
-              sqlite3_errmsg(db));
-      rc++;
-    }
+    sqlite3_close(data.db);
   }
   return rc;
 }

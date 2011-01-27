@@ -823,7 +823,7 @@ const char *sqlite3ErrStr(int rc){
     /* SQLITE_INTERRUPT   */ "interrupted",
     /* SQLITE_IOERR       */ "disk I/O error",
     /* SQLITE_CORRUPT     */ "database disk image is malformed",
-    /* SQLITE_NOTFOUND    */ 0,
+    /* SQLITE_NOTFOUND    */ "unknown operation",
     /* SQLITE_FULL        */ "database or disk is full",
     /* SQLITE_CANTOPEN    */ "unable to open database file",
     /* SQLITE_PROTOCOL    */ "locking protocol",
@@ -1835,6 +1835,9 @@ static int openDatabase(
 #if SQLITE_DEFAULT_RECURSIVE_TRIGGERS
                  | SQLITE_RecTriggers
 #endif
+#if defined(SQLITE_DEFAULT_FOREIGN_KEYS) && SQLITE_DEFAULT_FOREIGN_KEYS
+                 | SQLITE_ForeignKeys
+#endif
       ;
   sqlite3HashInit(&db->aCollSeq);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -2386,6 +2389,8 @@ int sqlite3_file_control(sqlite3 *db, const char *zDbName, int op, void *pArg){
         rc = SQLITE_OK;
       }else if( fd->pMethods ){
         rc = sqlite3OsFileControl(fd, op, pArg);
+      }else{
+        rc = SQLITE_NOTFOUND;
       }
       sqlite3BtreeLeave(pBtree);
     }

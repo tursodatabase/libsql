@@ -116,6 +116,22 @@ int sqlite3_db_status(
       break;
     }
 
+    case SQLITE_DBSTATUS_LOOKASIDE_HIT:
+    case SQLITE_DBSTATUS_LOOKASIDE_MISS_SIZE:
+    case SQLITE_DBSTATUS_LOOKASIDE_MISS_FULL: {
+      testcase( op==SQLITE_DBSTATUS_LOOKASIDE_HIT );
+      testcase( op==SQLITE_DBSTATUS_LOOKASIDE_MISS_SIZE );
+      testcase( op==SQLITE_DBSTATUS_LOOKASIDE_MISS_FULL );
+      assert( (op-SQLITE_DBSTATUS_LOOKASIDE_HIT)>=0 );
+      assert( (op-SQLITE_DBSTATUS_LOOKASIDE_HIT)<3 );
+      *pCurrent = 0;
+      *pHighwater = db->lookaside.anStat[op - SQLITE_DBSTATUS_LOOKASIDE_HIT];
+      if( resetFlag ){
+        db->lookaside.anStat[op - SQLITE_DBSTATUS_LOOKASIDE_HIT] = 0;
+      }
+      break;
+    }
+
     /* 
     ** Return an approximation for the amount of memory currently used
     ** by all pagers associated with the given database connection.  The
