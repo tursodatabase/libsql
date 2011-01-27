@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Update\sall\sbuilt-in\sVFSes\sto\sreturn\sSQLITE_OK\sfor\sthe\nSQLITE_FCNTL_SYNC_OMITTED\sfile-control\soperation.\s\sAlso\schange\sthe\s\nxFileControl\smethods\sto\sreturn\sSQLITE_NOTFOUND\sfor\sunrecognized\noperation\scodes.
-D 2011-01-26T19:46:22.347
+C SQLite\sversion\s3.7.5\srelease\scandidate\s1
+D 2011-01-27T14:35:01.967
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -900,14 +900,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c86e46f4fd8f485fa1d34c70e17ea3aa1b334ce3
+P 6f2c72a0f6579db3f40c079436ca40e3e52bd6d9
 R 59a65e1de1a8ae7d9445e2c547dd8236
 U drh
-Z d8fa84947260f63199b6f3837560c0db
+Z 98b20f33ccda8aca8fd5329534c7e6b1
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNQHoRoxKgR168RlERAvFoAJ9x71MhbzYFoS1hvlkP0CNPkaWXTgCdFiTy
-LQ5ls4HAbAwWN5puhiqiVhM=
-=VwZX
+iD8DBQFNQYKZoxKgR168RlERAoZXAJwJ1Csq9EFTXieXNgpSf4QMSqUs5QCfcNG/
+DEbh0HvWPBsaT4iBPcr+lKE=
+=bDRk
 -----END PGP SIGNATURE-----
