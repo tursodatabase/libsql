@@ -14,8 +14,6 @@
 # with many repeated values and only a few distinct values.
 #
 
-return
-
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
@@ -104,8 +102,8 @@ foreach {testid where index rows} {
    18  {z>=-100 AND z<0}     t1z   50
    19  {z>=-100 AND z<=1}    t1z  700
    20  {z>=-100 AND z<2}     t1z  700
-   21  {z>=-100 AND z<=2}    t1z  900
-   22  {z>=-100 AND z<3}     t1z  900
+   21  {z>=-100 AND z<=2}    {}   111
+   22  {z>=-100 AND z<3}     {}   111
   
    31  {z>=0.0 AND z<=0.0}   t1z  400
    32  {z>=1.0 AND z<=1.0}   t1z  300
@@ -127,8 +125,8 @@ foreach {testid where index rows} {
    48  {z>=-100 AND z<0.0}   t1z   50
    49  {z>=-100 AND z<=1.0}  t1z  700
    50  {z>=-100 AND z<2.0}   t1z  700
-   51  {z>=-100 AND z<=2.0}  t1z  900
-   52  {z>=-100 AND z<3.0}   t1z  900
+   51  {z>=-100 AND z<=2.0}  {}   111
+   52  {z>=-100 AND z<3.0}   {}   111
   
   101  {z=-1}                t1z   50
   102  {z=0}                 t1z  400
@@ -153,7 +151,7 @@ foreach {testid where index rows} {
   206  {z IN (4)}            t1z   50
   207  {z IN (0.5)}          t1z   50
   208  {z IN (0,1)}          t1z  700
-  209  {z IN (0,1,2)}        t1z  900
+  209  {z IN (0,1,2)}        {}   100
   210  {z IN (0,1,2,3)}      {}   100
   211  {z IN (0,1,2,3,4,5)}  {}   100
   212  {z IN (1,2)}          t1z  500
@@ -190,153 +188,6 @@ foreach {testid where index rows} {
     }
     set res
   } {ok}
-}
-exit
-
-# Change the table values from integer to floating point and then
-# repeat the same sequence of tests.  We should get the same results.
-#
-do_test analyze5-2.0 {
-  db eval {
-    UPDATE t1 SET z=z+0.0;
-    ANALYZE;
-    SELECT sample FROM sqlite_stat2 WHERE idx='t1z' ORDER BY sampleno;
-  }
-} {0.0 0.0 0.0 0.0 1.0 1.0 1.0 2.0 2.0 3.0}
-foreach {testid where rows} {
-  1  {z>=0 AND z<=0}     400
-  2  {z>=1 AND z<=1}     300
-  3  {z>=2 AND z<=2}     200
-  4  {z>=3 AND z<=3}     100
-  5  {z>=4 AND z<=4}      50
-  6  {z>=-1 AND z<=-1}    50
-  7  {z>1 AND z<3}       200
-  8  {z>0 AND z<100}     600
-  9  {z>=1 AND z<100}    600
- 10  {z>1 AND z<100}     300
- 11  {z>=2 AND z<100}    300
- 12  {z>2 AND z<100}     100
- 13  {z>=3 AND z<100}    100
- 14  {z>3 AND z<100}      50
- 15  {z>=4 AND z<100}     50
- 16  {z>=-100 AND z<=-1}  50
- 17  {z>=-100 AND z<=0}  400
- 18  {z>=-100 AND z<0}    50
- 19  {z>=-100 AND z<=1}  700
- 20  {z>=-100 AND z<2}   700
- 21  {z>=-100 AND z<=2}  900
- 22  {z>=-100 AND z<3}   900
-
- 31  {z>=0.0 AND z<=0.0}   400
- 32  {z>=1.0 AND z<=1.0}   300
- 33  {z>=2.0 AND z<=2.0}   200
- 34  {z>=3.0 AND z<=3.0}   100
- 35  {z>=4.0 AND z<=4.0}    50
- 36  {z>=-1.0 AND z<=-1.0}  50
- 37  {z>1.5 AND z<3.0}     200
- 38  {z>0.5 AND z<100}     600
- 39  {z>=1.0 AND z<100}    600
- 40  {z>1.5 AND z<100}     300
- 41  {z>=2.0 AND z<100}    300
- 42  {z>2.1 AND z<100}     100
- 43  {z>=3.0 AND z<100}    100
- 44  {z>3.2 AND z<100}      50
- 45  {z>=4.0 AND z<100}     50
- 46  {z>=-100 AND z<=-1.0}  50
- 47  {z>=-100 AND z<=0.0}  400
- 48  {z>=-100 AND z<0.0}    50
- 49  {z>=-100 AND z<=1.0}  700
- 50  {z>=-100 AND z<2.0}   700
- 51  {z>=-100 AND z<=2.0}  900
- 52  {z>=-100 AND z<3.0}   900
-} {
-  do_test analyze5-2.$testid {
-    eqp "SELECT * FROM t1 WHERE $where"
-  } [format {0 0 0 {SEARCH TABLE t1 USING INDEX t1z (z>? AND z<?) (~%d rows)}} \
-       $rows]
-}
-foreach {testid where rows} {
-  101  {z=-1}           50
-  102  {z=0}            400
-  103  {z=1}            300
-  104  {z=2}            200
-  105  {z=3}            100
-  106  {z=4}             50
-  107  {z=-10.0}         50
-  108  {z=0.0}          400
-  109  {z=1.0}          300
-  110  {z=2.0}          200
-  111  {z=3.0}          100
-  112  {z=4.0}           50
-  113  {z=1.5}           50
-  114  {z=2.5}           50
-} {
-  do_test analyze5-2.$testid {
-    eqp "SELECT * FROM t1 WHERE $where"
-  } [format {0 0 0 {SEARCH TABLE t1 USING INDEX t1z (z=?) (~%d rows)}} $rows]
-}
-
-
-# Repeat the same range query tests using TEXT columns.
-#
-do_test analyze5-3.0 {
-  db eval {
-    UPDATE t1 SET y=CASE z WHEN 0 THEN 'alpha' WHEN 1 THEN 'bravo'
-                           WHEN 2 THEN 'charlie' ELSE 'delta' END;
-    ANALYZE;
-    SELECT sample FROM sqlite_stat2 WHERE idx='t1y' ORDER BY sampleno;
-  }
-} {alpha alpha alpha alpha bravo bravo bravo charlie charlie delta}
-foreach {testid where rows} {
-  1  {y>='alpha' AND y<='alpha'}     400
-  2  {y>='bravo' AND y<='bravo'}     300
-  3  {y>='charlie' AND y<='charlie'} 200
-  4  {y>='delta' AND y<='delta'}     100
-  5  {y>='echo' AND y<='echo'}        50
-  6  {y>='' AND y<=''}                50
-  7  {y>'bravo' AND y<'delta'}       200
-  8  {y>'alpha' AND y<'zzz'}         600
-  9  {y>='bravo' AND y<'zzz'}        600
- 10  {y>'bravo' AND y<'zzz'}         300
- 11  {y>='charlie' AND y<'zzz'}      300
- 12  {y>'charlie' AND y<'zzz'}       100
- 13  {y>='delta' AND y<'zzz'}        100
- 14  {y>'delta' AND y<'zzz'}          50
- 15  {y>='echo' AND y<'zzz'}          50
- 16  {y>=0 AND y<=''}                 50
- 17  {y>=0 AND y<='alpha'}           400
- 18  {y>=0 AND y<'alpha'}             50
- 19  {y>=0 AND y<='bravo'}           700
- 20  {y>=0 AND y<'charlie'}          700
- 21  {y>=0 AND y<='charlie'}         900
- 22  {y>=0 AND y<'delta'}            900
- 23  {y>'alpha' AND y<x'00'}         600
- 24  {y>='bravo' AND y<x'00'}        600
- 25  {y>'bravo' AND y<x'00'}         300
- 26  {y>='charlie' AND y<x'00'}      300
- 27  {y>'charlie' AND y<x'00'}       100
- 28  {y>='delta' AND y<x'00'}        100
- 29  {y>'delta' AND y<x'00'}          50
- 30  {y>='echo' AND y<x'00'}          50
-} {
-  do_test analyze5-3.$testid {
-    eqp "SELECT * FROM t1 WHERE $where"
-  } [format {0 0 0 {SEARCH TABLE t1 USING INDEX t1y (y>? AND y<?) (~%d rows)}} \
-       $rows]
-}
-foreach {testid where rows} {
-  101  {y=0}                  50
-  102  {y='alpha'}            400
-  103  {y='bravo'}            300
-  104  {y='charlie'}          200
-  105  {y='delta'}            100
-  106  {y='echo'}             50
-  107  {y=''}                 50
-  108  {y=x'0102'}            50
-} {
-  do_test analyze5-3.$testid {
-    eqp "SELECT * FROM t1 WHERE $where"
-  } [format {0 0 0 {SEARCH TABLE t1 USING INDEX t1y (y=?) (~%d rows)}} $rows]
 }
 
 

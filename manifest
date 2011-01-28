@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Change\sthe\sweighting\sof\sbinary\ssearches\son\stables\sto\s1/10th\sthe\scost\sof\sa\nsearch\son\san\sindex.\s\sChange\sthe\sassumed\sreduction\sin\ssearch\sspace\sfrom\sa\nindexed\srange\sconstraint\sfrom\s1/3rd\sto\s1/4th.\s\sDo\snot\slet\sthe\sestimated\s\nnumber\sof\srows\sdrop\sbelow\s1.
-D 2011-01-28T01:57:41.767
+C Reactivate\sthe\sanalyze5.test\sscript.
+D 2011-01-28T03:13:58.522
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -256,7 +256,7 @@ F test/analyze.test c1eb87067fc16ece7c07e823d6395fd831b270c5
 F test/analyze2.test 8f2b1534d43f5547ce9a6b736c021d4192c75be3
 F test/analyze3.test d61f55d8b472fc6e713160b1e577f7a68e63f38b
 F test/analyze4.test 757b37875cf9bb528d46f74497bc789c88365045
-F test/analyze5.test 12df6def85e21971888f8be3c1867a505f1bf587
+F test/analyze5.test 18659612dd854330b9f2a0bf4c90658f3739fd67
 F test/async.test ad4ba51b77cd118911a3fe1356b0809da9c108c3
 F test/async2.test bf5e2ca2c96763b4cba3d016249ad7259a5603b6
 F test/async3.test 93edaa9122f498e56ea98c36c72abc407f4fb11e
@@ -900,14 +900,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 31fcc7067bd76da4bf19232811b90cf8b76eed74
-R f9a9d7b39b29b332b353f1913f9309e4
+P 4847c6cb71423248b186ab7842b97c83e2f5fefd
+R 2a7cda6de985ac7d8bc394704ea20bbe
 U drh
-Z 1ad30d06ebdb0226c333d2dcf85b95e8
+Z 90a99f0eefff820df6066cb462690f7d
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNQiKZoxKgR168RlERAjJeAJ9DU+63Qt3QOlsjnHQ7MP5GX/m8egCfe8c1
-SQn1lZ3E7QkvjZ3JOaQppDw=
-=0Mzf
+iD8DBQFNQjR5oxKgR168RlERArUiAJ91iPioq77gB015ZhcABywWj5kEnACghSgp
+HH7RJ7G2ecFXfbSqcbfkm08=
+=pv9L
 -----END PGP SIGNATURE-----
