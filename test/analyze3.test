@@ -248,7 +248,7 @@ do_test analyze3-2.1 {
 } {}
 do_eqp_test analyze3-2.2 {
   SELECT count(a) FROM t1 WHERE b LIKE 'a%'
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (b>? AND b<?) (~55000 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (b>? AND b<?) (~30000 rows)}}
 do_eqp_test analyze3-2.3 {
   SELECT count(a) FROM t1 WHERE b LIKE '%a'
 } {0 0 0 {SCAN TABLE t1 (~500000 rows)}}

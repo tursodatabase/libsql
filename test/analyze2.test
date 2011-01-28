@@ -242,10 +242,12 @@ do_test analyze2-4.1 {
 } {}
 do_test analyze2-4.2 {
   execsql { 
+    PRAGMA automatic_index=OFF;
     SELECT tbl,idx,group_concat(sample,' ') 
     FROM sqlite_stat2 
     WHERE idx = 't3a' 
-    GROUP BY tbl,idx
+    GROUP BY tbl,idx;
+    PRAGMA automatic_index=ON;
   }
 } {t3 t3a {AfA bEj CEj dEj EEj fEj GEj hEj IEj jEj}}
 do_test analyze2-4.3 {
@@ -408,7 +410,7 @@ do_test analyze2-6.2.1 {
         t5.a>1 AND t5.a<15 AND
         t6.a>1
   }
-} {0 0 0 {SEARCH TABLE t5 USING COVERING INDEX t5i (a>? AND a<?) (~110000 rows)} 0 1 1 {SEARCH TABLE t6 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
+} {0 0 0 {SEARCH TABLE t5 USING COVERING INDEX t5i (a>? AND a<?) (~60000 rows)} 0 1 1 {SEARCH TABLE t6 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
 do_test analyze2-6.2.2 {
   db cache flush
   execsql ANALYZE
@@ -434,7 +436,7 @@ do_test analyze2-6.2.4 {
         t5.a>1 AND t5.a<15 AND
         t6.a>1
   }
-} {0 0 0 {SEARCH TABLE t5 USING COVERING INDEX t5i (a>? AND a<?) (~110000 rows)} 0 1 1 {SEARCH TABLE t6 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
+} {0 0 0 {SEARCH TABLE t5 USING COVERING INDEX t5i (a>? AND a<?) (~60000 rows)} 0 1 1 {SEARCH TABLE t6 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
 do_test analyze2-6.2.5 {
   execsql { 
     PRAGMA writable_schema = 1;
@@ -445,7 +447,7 @@ do_test analyze2-6.2.5 {
         t5.a>1 AND t5.a<15 AND
         t6.a>1
   }
-} {0 0 0 {SEARCH TABLE t5 USING COVERING INDEX t5i (a>? AND a<?) (~110000 rows)} 0 1 1 {SEARCH TABLE t6 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
+} {0 0 0 {SEARCH TABLE t5 USING COVERING INDEX t5i (a>? AND a<?) (~60000 rows)} 0 1 1 {SEARCH TABLE t6 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
 do_test analyze2-6.2.6 {
   execsql { 
     PRAGMA writable_schema = 1;
@@ -542,7 +544,7 @@ ifcapable shared_cache {
           t5.a>1 AND t5.a<15 AND
           t6.a>1
     } db1
-  } {0 0 0 {SEARCH TABLE t5 USING COVERING INDEX t5i (a>? AND a<?) (~2 rows)} 0 1 1 {SEARCH TABLE t6 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
+  } {0 0 0 {SEARCH TABLE t5 USING COVERING INDEX t5i (a>? AND a<?) (~1 rows)} 0 1 1 {SEARCH TABLE t6 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
 
   db1 close
   db2 close

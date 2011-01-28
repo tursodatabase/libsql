@@ -2421,9 +2421,9 @@ static int valueFromExpr(
 ** constraints.
 **
 ** In the absence of sqlite_stat2 ANALYZE data, each range inequality
-** reduces the search space by 2/3rds.  Hence a single constraint (x>?)
-** results in a return of 33 and a range constraint (x>? AND x<?) results
-** in a return of 11.
+** reduces the search space by 3/4ths.  Hence a single constraint (x>?)
+** results in a return of 25 and a range constraint (x>? AND x<?) results
+** in a return of 6.
 */
 static int whereRangeScanEst(
   Parse *pParse,       /* Parsing & code generating context */
@@ -2498,8 +2498,8 @@ range_est_fallback:
 #endif
   assert( pLower || pUpper );
   *piEst = 100;
-  if( pLower && (pLower->wtFlags & TERM_VNULL)==0 ) *piEst /= 3;
-  if( pUpper ) *piEst /= 3;
+  if( pLower && (pLower->wtFlags & TERM_VNULL)==0 ) *piEst /= 4;
+  if( pUpper ) *piEst /= 4;
   return rc;
 }
 
@@ -2636,12 +2636,12 @@ int whereInScanEst(
 
 
 /*
-** Find the query plan for accessing a particular table.  Write the
+** Find the best query plan for accessing a particular table.  Write the
 ** best query plan and its cost into the WhereCost object supplied as the
 ** last parameter.
 **
 ** The lowest cost plan wins.  The cost is an estimate of the amount of
-** CPU and disk I/O need to process the request using the selected plan.
+** CPU and disk I/O needed to process the requested result.
 ** Factors that influence cost include:
 **
 **    *  The estimated number of rows that will be retrieved.  (The
@@ -2660,7 +2660,7 @@ int whereInScanEst(
 **
 ** If a NOT INDEXED clause (pSrc->notIndexed!=0) was attached to the table 
 ** in the SELECT statement, then no indexes are considered. However, the 
-** selected plan may still take advantage of the tables built-in rowid
+** selected plan may still take advantage of the built-in rowid primary key
 ** index.
 */
 static void bestBtreeIndex(
@@ -2703,9 +2703,11 @@ static void bestBtreeIndex(
     wsFlagMask = ~(WHERE_ROWID_EQ|WHERE_ROWID_RANGE);
     eqTermMask = idxEqTermMask;
   }else{
-    /* There is no INDEXED BY clause.  Create a fake Index object to
-    ** represent the primary key */
-    Index *pFirst;                /* Any other index on the table */
+    /* There is no INDEXED BY clause.  Create a fake Index object in local
+    ** variable sPk to represent the rowid primary key index.  Make this
+    ** fake index the first in a chain of Index objects with all of the real
+    ** indices to follow */
+    Index *pFirst;                  /* First of real indices on the table */
     memset(&sPk, 0, sizeof(Index));
     sPk.nColumn = 1;
     sPk.aiColumn = &aiColumnPk;
@@ -2716,6 +2718,8 @@ static void bestBtreeIndex(
     aiRowEstPk[1] = 1;
     pFirst = pSrc->pTab->pIndex;
     if( pSrc->notIndexed==0 ){
+      /* The real indices of the table are only considered if the
+      ** NOT INDEXED qualifier is omitted from the FROM clause */
       sPk.pNext = pFirst;
     }
     pProbe = &sPk;
@@ -2733,15 +2737,18 @@ static void bestBtreeIndex(
     double cost;                /* Cost of using pProbe */
     double nRow;                /* Estimated number of rows in result set */
     int rev;                    /* True to scan in reverse order */
+    double nSearch;             /* Estimated number of binary searches */
     int wsFlags = 0;
     Bitmask used = 0;
 
     /* The following variables are populated based on the properties of
-    ** scan being evaluated. They are then used to determine the expected
+    ** index being evaluated. They are then used to determine the expected
     ** cost and number of rows returned.
     **
     **  nEq: 
     **    Number of equality terms that can be implemented using the index.
+    **    In other words, the number of initial fields in the index that
+    **    are used in == or IN or NOT NULL constraints of the WHERE clause.
     **
     **  nInMul:  
     **    The "in-multiplier". This is an estimate of how many seek operations 
@@ -2765,7 +2772,9 @@ static void bestBtreeIndex(
     **
     **  bInEst:  
     **    Set to true if there was at least one "x IN (SELECT ...)" term used 
-    **    in determining the value of nInMul.
+    **    in determining the value of nInMul.  Note that the RHS of the
+    **    IN operator must be a SELECT, not a value list, for this variable
+    **    to be true.
     **
     **  estBound:
     **    An estimate on the amount of the table that must be searched.  A
@@ -2773,8 +2782,8 @@ static void bestBtreeIndex(
     **    might reduce this to a value less than 100 to indicate that only
     **    a fraction of the table needs searching.  In the absence of
     **    sqlite_stat2 ANALYZE data, a single inequality reduces the search
-    **    space to 1/3rd its original size.  So an x>? constraint reduces
-    **    estBound to 33.  Two constraints (x>? AND x<?) reduce estBound to 11.
+    **    space to 1/4rd its original size.  So an x>? constraint reduces
+    **    estBound to 25.  Two constraints (x>? AND x<?) reduce estBound to 6.
     **
     **  bSort:   
     **    Boolean. True if there is an ORDER BY clause that will require an 
@@ -2782,24 +2791,27 @@ static void bestBtreeIndex(
     **    correctly order records).
     **
     **  bLookup: 
-    **    Boolean. True if for each index entry visited a lookup on the 
-    **    corresponding table b-tree is required. This is always false 
-    **    for the rowid index. For other indexes, it is true unless all the 
-    **    columns of the table used by the SELECT statement are present in 
-    **    the index (such an index is sometimes described as a covering index).
+    **    Boolean. True if a table lookup is required for each index entry
+    **    visited.  In other words, true if this is not a covering index.
+    **    This is always false for the rowid primary key index of a table.
+    **    For other indexes, it is true unless all the columns of the table
+    **    used by the SELECT statement are present in the index (such an
+    **    index is sometimes described as a covering index).
     **    For example, given the index on (a, b), the second of the following 
-    **    two queries requires table b-tree lookups, but the first does not.
+    **    two queries requires table b-tree lookups in order to find the value
+    **    of column c, but the first does not because columns a and b are
+    **    both available in the index.
     **
     **             SELECT a, b    FROM tbl WHERE a = 1;
     **             SELECT a, b, c FROM tbl WHERE a = 1;
     */
-    int nEq;
-    int bInEst = 0;
-    int nInMul = 1;
-    int estBound = 100;
+    int nEq;                      /* Number of == or IN terms matching index */
+    int bInEst = 0;               /* True if "x IN (SELECT...)" seen */
+    int nInMul = 1;               /* Number of distinct equalities to lookup */
+    int estBound = 100;           /* Estimated reduction in search space */
     int nBound = 0;               /* Number of range constraints seen */
-    int bSort = 0;
-    int bLookup = 0;
+    int bSort = 0;                /* True if external sort required */
+    int bLookup = 0;              /* True if not a covering index */
     WhereTerm *pTerm;             /* A single term of the WHERE clause */
 #ifdef SQLITE_ENABLE_STAT2
     WhereTerm *pFirstTerm = 0;    /* First term matching the index */
@@ -2818,9 +2830,9 @@ static void bestBtreeIndex(
           /* "x IN (SELECT ...)":  Assume the SELECT returns 25 rows */
           nInMul *= 25;
           bInEst = 1;
-        }else if( ALWAYS(pExpr->x.pList) ){
+        }else if( ALWAYS(pExpr->x.pList && pExpr->x.pList->nExpr) ){
           /* "x IN (value, value, ...)" */
-          nInMul *= pExpr->x.pList->nExpr + 1;
+          nInMul *= pExpr->x.pList->nExpr;
         }
       }else if( pTerm->eOperator & WO_ISNULL ){
         wsFlags |= WHERE_COLUMN_NULL;
@@ -2923,16 +2935,41 @@ static void bestBtreeIndex(
     ** that are excluded by range constraints.
     */
     nRow = (nRow * (double)estBound) / (double)100;
+    if( nRow<1 ) nRow = 1;
 
-    /* Assume constant cost to access a row and logarithmic cost to
-    ** do a binary search.  Hence, the initial cost is the number of output
-    ** rows plus log2(table-size) times the number of binary searches.
+    /* Assume constant cost to advance from one row to the next and
+    ** logarithmic cost to do a binary search.  Hence, the initial cost
+    ** is the number of output rows plus log2(table-size) times the
+    ** number of binary searches.
+    **
+    ** Because fan-out on tables is so much higher than the fan-out on
+    ** indices (because table btrees contain only integer keys in non-leaf
+    ** nodes) we weight the cost of a table binary search as 1/10th the
+    ** cost of an index binary search.
     */
-    if( pIdx && bLookup ){
-      cost = nRow + (nInMul+nRow)*estLog(aiRowEst[0]);
+    if( pIdx ){
+      if( bLookup ){
+        /* For an index lookup followed by a table lookup:
+        **    nInMul index searches to find the start of each index range
+        **  + nRow steps through the index
+        **  + nRow table searches to lookup the table entry using the rowid
+        */
+        nSearch = nInMul + nRow/10;
+      }else{
+        /* For a covering index:
+        **     nInMul binary searches to find the initial entry 
+        **   + nRow steps through the index
+        */
+        nSearch = nInMul;
+      }
     }else{
-      cost = nRow + nInMul*estLog(aiRowEst[0]);
+      /* For a rowid primary key lookup:
+      **    nInMult binary searches to find the initial entry scaled by 1/10th
+      **  + nRow steps through the table
+      */
+      nSearch = nInMul/10;
     }
+    cost = nRow + nSearch*estLog(aiRowEst[0]);
 
     /* Add in the estimated cost of sorting the result.  This cost is expanded
     ** by a fudge factor of 3.0 to account for the fact that a sorting step 
@@ -2987,7 +3024,11 @@ static void bestBtreeIndex(
             nSkipRange--;
           }else{
             /* Assume each additional range constraint reduces the result
-            ** set size by a factor of 3 */
+            ** set size by a factor of 3.  Indexed range constraints reduce
+            ** the search space by a larger factor: 4.  We make indexed range
+            ** more selective intentionally because of the subjective 
+            ** observation that indexed range constraints really are more
+            ** selective in practice, on average. */
             nRow /= 3;
           }
         }else if( pTerm->eOperator!=WO_NOOP ){

@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Restructuring\sand\sgeneralizing\sanalyze5.test.\s\s\sThe\swhole\sscript\sis\ncurrently\sdisabled\sand\swill\sneed\sto\sbe\sreenabled\sprior\sto\smerging\swith\strunk.
-D 2011-01-24T17:46:35.872
+C Change\sthe\sweighting\sof\sbinary\ssearches\son\stables\sto\s1/10th\sthe\scost\sof\sa\nsearch\son\san\sindex.\s\sChange\sthe\sassumed\sreduction\sin\ssearch\sspace\sfrom\sa\nindexed\srange\sconstraint\sfrom\s1/3rd\sto\s1/4th.\s\sDo\snot\slet\sthe\sestimated\s\nnumber\sof\srows\sdrop\sbelow\s1.
+D 2011-01-28T01:57:41.767
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -243,7 +243,7 @@ F src/vtab.c b297e8fa656ab5e66244ab15680d68db0adbec30
 F src/wal.c dbca424f71678f663a286ab2a98f947af1d412a7
 F src/wal.h c1aac6593a0b02b15dc625987e619edeab39292e
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 87de2616150606fd1b61d7c88afdb90089ddd53d
+F src/where.c f4915ac03e5e42c8416b35ca3ba34af841c00d12
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 51756962d522e474338e9b2ebb26e7364d4aa125
@@ -253,8 +253,8 @@ F test/alter3.test 8677e48d95536f7a6ed86a1a774744dadcc22b07
 F test/alter4.test 1e5dd6b951e9f65ca66422edff02e56df82dd403
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/analyze.test c1eb87067fc16ece7c07e823d6395fd831b270c5
-F test/analyze2.test f45ac8d54bdad822139e53fc6307fc6b5ee41c69
-F test/analyze3.test 820ddfb7591b49607fbaf77240c7955ac3cabb04
+F test/analyze2.test 8f2b1534d43f5547ce9a6b736c021d4192c75be3
+F test/analyze3.test d61f55d8b472fc6e713160b1e577f7a68e63f38b
 F test/analyze4.test 757b37875cf9bb528d46f74497bc789c88365045
 F test/analyze5.test 12df6def85e21971888f8be3c1867a505f1bf587
 F test/async.test ad4ba51b77cd118911a3fe1356b0809da9c108c3
@@ -357,7 +357,7 @@ F test/descidx2.test 9f1a0c83fd57f8667c82310ca21b30a350888b5d
 F test/descidx3.test fe720e8b37d59f4cef808b0bf4e1b391c2e56b6f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
-F test/e_createtable.test b8f5286879315d5b7f4cc5ead1afda4846f0c0bb
+F test/e_createtable.test b40fc61bc4f1ad2a3c84590bd1d711507263d921
 F test/e_delete.test 55d868b647acc091c261a10b9b0cb0ab660a6acb
 F test/e_droptrigger.test ddd4b28ed8a3d81bd5153fa0ab7559529a2ca03a
 F test/e_dropview.test b347bab30fc8de67b131594b3cd6f3d3bdaa753d
@@ -375,7 +375,7 @@ F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
 F test/enc4.test 4b575ef09e0eff896e73bd24076f96c2aa6a42de
-F test/eqp.test 69670e7919030f21de29fb99bf1d68f97aedcbdb
+F test/eqp.test 8f535d902b2df780d22edb95113880480664f976
 F test/eval.test bc269c365ba877554948441e91ad5373f9f91be3
 F test/exclusive.test 53e1841b422e554cecf0160f937c473d6d0e3062
 F test/exclusive2.test c2f2b2242dc436a12df8dd531e06843053bd3b9a
@@ -486,7 +486,7 @@ F test/incrvacuum_ioerr.test 57d2f5777ab13fa03b87b262a4ea1bad5cfc0291
 F test/index.test df7c00c6edd9504ab71c83a9514f1c5ca0fa54d8
 F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
 F test/index3.test 423a25c789fc8cc51aaf2a4370bbdde2d9e9eed7
-F test/indexedby.test d7367c5a0e8ed8db642824a68126753e0808c706
+F test/indexedby.test be501e381b82b2f8ab406309ba7aac46e221f4ad
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
 F test/insert.test aef273dd1cee84cc92407469e6bd1b3cdcb76908
 F test/insert2.test 4f3a04d168c728ed5ec2c88842e772606c7ce435
@@ -517,7 +517,7 @@ F test/jrnlmode3.test c6522b276ba315fd1416198de6fc1da9e72409fb
 F test/keyword1.test a2400977a2e4fde43bf33754c2929fda34dbca05
 F test/lastinsert.test 474d519c68cb79d07ecae56a763aa7f322c72f51
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
-F test/like.test 0f64aeaed50b6e3ebaef3af0b3b8f894aed5acca
+F test/like.test a47f52692aac96ba82508efba74819214cdebc17
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/limit.test 2db7b3b34fb925b8e847d583d2eb67531d0ce67e
 F test/loadext.test 0393ce12d9616aa87597dd0ec88181de181f6db0
@@ -561,7 +561,7 @@ F test/memsubsys1.test 66bf4e153e0eccc08c3b6af3641eb4f42d391c32
 F test/memsubsys2.test 72a731225997ad5e8df89fdbeae9224616b6aecc
 F test/minmax.test 722d80816f7e096bf2c04f4111f1a6c1ba65453d
 F test/minmax2.test 33504c01a03bd99226144e4b03f7631a274d66e0
-F test/minmax3.test 66a60eb0f20281b0753249d347c5de0766954cee
+F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
 F test/misc1.test e56baf44656dd68d6475a4b44521045a60241e9b
 F test/misc2.test a628db7b03e18973e5d446c67696b03de718c9fd
 F test/misc3.test 72c5dc87a78e7865c5ec7a969fc572913dbe96b6
@@ -856,14 +856,14 @@ F test/walslow.test d21625e2e99e11c032ce949e8a94661576548933
 F test/walthread.test a25a393c068a2b42b44333fa3fdaae9072f1617c
 F test/where.test de337a3fe0a459ec7c93db16a519657a90552330
 F test/where2.test 43d4becaf5a5df854e6c21d624a1cb84c6904554
-F test/where3.test 8ebedae552e13fc7f2b4e8df6cbe72a095347400
+F test/where3.test 858d089cc4bf9aa0b06917a02abd5fd198655c96
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
 F test/where7.test aa4cfcd6f66e2a4ef87b6717327325bf4d547502
 F test/where8.test a6c740fd286d7883e274e17b6230a9d672a7ab1f
 F test/where8m.test da346596e19d54f0aba35ebade032a7c47d79739
-F test/where9.test 7ee38c3fd67e76789a6ec769f62f6433d3d4a5cf
+F test/where9.test 24f19ad14bb1b831564ced5273e681e495662848
 F test/whereA.test 24c234263c8fe358f079d5e57d884fb569d2da0a
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
@@ -900,14 +900,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b442525b0ba642bb8d57b87b7b9e373b6046454a
-R ebf83ed63e8d1b48962a32de01a8b2cc
+P 31fcc7067bd76da4bf19232811b90cf8b76eed74
+R f9a9d7b39b29b332b353f1913f9309e4
 U drh
-Z a63bcf5b3583a55e26e7d3f132337aba
+Z 1ad30d06ebdb0226c333d2dcf85b95e8
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNPbr/oxKgR168RlERAhb1AJ99UR+RTzr0SNXjxuLAr4iQrdLWlQCcC8Ik
-EMLXFqheBOQt775+utT5Fjc=
-=NdWh
+iD8DBQFNQiKZoxKgR168RlERAjJeAJ9DU+63Qt3QOlsjnHQ7MP5GX/m8egCfe8c1
+SQn1lZ3E7QkvjZ3JOaQppDw=
+=0Mzf
 -----END PGP SIGNATURE-----
