@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Change\spager_truncate()\sto\sa\sdifferent\smethod\sfor\sextending\sfiles\swhile\nalso\sensuring\sthat\swrites\sare\spage-size\sand\spage-aligned.
-D 2011-01-28T15:46:14.305
+C Add\stest\sscript\spagerfault3.test.\sNo\schanges\sto\scode\sor\sexisting\stests.
+D 2011-01-28T16:45:42
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -584,6 +581,7 @@ F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
 F test/pagerfault.test 9de4d3e0c59970b4c6cb8dac511fa242f335d8a7
 F test/pagerfault2.test 1f79ea40d1133b2683a2f811b00f2399f7ec2401
+F test/pagerfault3.test 9b413f48a3e9a9a8c26968118f8db19fd7bfb8c7
 F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
@@ -900,14 +898,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 58577135a81d3f19667b1de6167d2e3f1b74cd53
-R a0c65f35bd8df31841c75a033fdc54e1
-U drh
-Z afe8bfe1fbfd780cf630a681a38fd2a0
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFNQuTKoxKgR168RlERArXfAJ9CQ6LWQKMuWD1biGnn8WGHHeKjNwCdFcPT
-8yNpIIrDf9AAFFFQY8m1usg=
-=moCk
------END PGP SIGNATURE-----
+P 874bc8844f6494cdbf700bd884dee67d40f11fc0
+R 7fccaf9f7c013ddef8926255f6aeb773
+U dan
+Z e47f3048cf481b2c6910abb96c4e1648
