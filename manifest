@@ -1,5 +1,8 @@
-C Add\stest\sscript\spagerfault3.test.\sNo\schanges\sto\scode\sor\sexisting\stests.
-D 2011-01-28T16:45:42
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C SQLite\sversion\s3.7.5\srelease\scandidate\s2
+D 2011-01-28T17:03:50.592
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -898,7 +901,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 874bc8844f6494cdbf700bd884dee67d40f11fc0
+P 682fe41efd3578e8c9abc7138b61f361c3adbe95
 R 7fccaf9f7c013ddef8926255f6aeb773
-U dan
-Z e47f3048cf481b2c6910abb96c4e1648
+U drh
+Z 4223173e58f25d45d236e232b9c90989
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFNQvb6oxKgR168RlERAtOTAJ9BaewewKXL3RGZUy5ycaHwjeEmJACeOPbw
+/JKqOugR+37RH7HnLCo9DBk=
+=kgPx
+-----END PGP SIGNATURE-----
