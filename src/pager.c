@@ -2485,7 +2485,12 @@ static int pager_truncate(Pager *pPager, Pgno nPage){
       if( currentSize>newSize ){
         rc = sqlite3OsTruncate(pPager->fd, newSize);
       }else{
-        rc = sqlite3OsWrite(pPager->fd, "", 1, newSize-1);
+        char *pTmp = pPager->pTmpSpace;
+        memset(pTmp, 0, pPager->pageSize);
+        while( currentSize<newSize ){
+          rc = sqlite3OsWrite(pPager->fd, pTmp, pPager->pageSize, currentSize);
+          currentSize += pPager->pageSize;
+        }
       }
       if( rc==SQLITE_OK ){
         pPager->dbFileSize = nPage;

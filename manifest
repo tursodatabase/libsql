@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C SQLite\sversion\s3.7.5\srelease\scandidate\s1
-D 2011-01-27T14:35:01.967
+C When\sextending\sa\sdatabase\sfile,\sdo\sso\sby\swriting\sone\sor\smore\spage-size\schunks\sof\sdata\sto\sthe\sfile,\sinstead\sof\sjust\sa\ssingle\sbyte\sto\sthe\send.
+D 2011-01-28T15:07:56
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +162,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 2e452c9f2ca507623ad351c33a8a8b27849b1863
 F src/os_unix.c 1be46a35bad4bec5171e4de88aaff817260eb378
 F src/os_win.c 9abdcdd925416d854eabb0996c96debd92abfef5
-F src/pager.c 37696d876b1c23aa95d8ad7e4afd72d8675984fa
+F src/pager.c 3327c903932466adead8b4f4e9c6e5f958cae2a9
 F src/pager.h 0ea59db2a33bc6c2c02cae34de33367e1effdf76
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 09d38c44ab275db581f7a2f6ff8b9bc7f8c0faaa
@@ -900,14 +897,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6f2c72a0f6579db3f40c079436ca40e3e52bd6d9
-R 59a65e1de1a8ae7d9445e2c547dd8236
-U drh
-Z 98b20f33ccda8aca8fd5329534c7e6b1
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFNQYKZoxKgR168RlERAoZXAJwJ1Csq9EFTXieXNgpSf4QMSqUs5QCfcNG/
-DEbh0HvWPBsaT4iBPcr+lKE=
-=bDRk
------END PGP SIGNATURE-----
+P 35ac78f55159705af140b949ee33852aedd62816
+R 5a38d0e5da35229b881ee437e0399faf
+U dan
+Z ba9abebf804867e3ebdd758398513a6b
