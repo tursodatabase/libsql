@@ -294,6 +294,7 @@ foreach file {
    notify.c
 
    fts3.c
+   fts3_aux.c
    fts3_expr.c
    fts3_hash.c
    fts3_porter.c
