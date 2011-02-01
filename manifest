@@ -1,5 +1,5 @@
-C Fix\sa\scase\sin\sfts4\swhere\sa\scorrupt\s%_stat\stable\scould\slead\sto\sa\scrash.
-D 2011-02-01T17:55:48.046
+C Fix\sa\sproblem\scausing\sbuilds\swith\sSQLITE_OMIT_WAL\sdefined\sto\sfail.
+D 2011-02-01T18:00:43.271
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -162,7 +162,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 2e452c9f2ca507623ad351c33a8a8b27849b1863
 F src/os_unix.c 1be46a35bad4bec5171e4de88aaff817260eb378
 F src/os_win.c 9abdcdd925416d854eabb0996c96debd92abfef5
-F src/pager.c b0fcbe3038fd08b111e1cf1deddd5f42418004d8
+F src/pager.c c22b8531596c984dcc6b90645714b7ed951023fe
 F src/pager.h 0ea59db2a33bc6c2c02cae34de33367e1effdf76
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 09d38c44ab275db581f7a2f6ff8b9bc7f8c0faaa
@@ -900,7 +900,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b010ddcc52889160af2183a33c5f483bb0ae91b9
-R 6357f23d94d26bf10b5519ed6d9a80e0
+P 4ade96ce974244fc34bb97713d3cba10e3d33056
+R cf616bd9d5d6b4778f7580e251dfc563
 U dan
-Z 1245dae65401ccee7f129f9a4e09755d
+Z c6308069adad7ddbe7a456bda546fcf0
