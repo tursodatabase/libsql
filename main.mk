@@ -53,7 +53,7 @@ TCCX += -I$(TOP)/ext/async
 LIBOBJ+= alter.o analyze.o attach.o auth.o \
          backup.o bitvec.o btmutex.o btree.o build.o \
          callback.o complete.o ctime.o date.o delete.o expr.o fault.o fkey.o \
-         fts3.o fts3_expr.o fts3_hash.o fts3_icu.o fts3_porter.o \
+         fts3.o fts3_aux.o fts3_expr.o fts3_hash.o fts3_icu.o fts3_porter.o \
          fts3_snippet.o fts3_tokenizer.o fts3_tokenizer1.o fts3_write.o \
          func.o global.o hash.o \
          icu.o insert.o journal.o legacy.o loadext.o \
@@ -187,6 +187,7 @@ SRC += \
   $(TOP)/ext/fts3/fts3.c \
   $(TOP)/ext/fts3/fts3.h \
   $(TOP)/ext/fts3/fts3Int.h \
+  $(TOP)/ext/fts3/fts3_aux.c \
   $(TOP)/ext/fts3/fts3_expr.c \
   $(TOP)/ext/fts3/fts3_hash.c \
   $(TOP)/ext/fts3/fts3_hash.h \
@@ -293,6 +294,7 @@ TESTSRC2 = \
   $(TOP)/src/where.c \
   parse.c \
   $(TOP)/ext/fts3/fts3.c \
+  $(TOP)/ext/fts3/fts3_aux.c \
   $(TOP)/ext/fts3/fts3_expr.c \
   $(TOP)/ext/fts3/fts3_tokenizer.c \
   $(TOP)/ext/fts3/fts3_write.c \
@@ -461,6 +463,9 @@ fts2_tokenizer1.o:	$(TOP)/ext/fts2/fts2_tokenizer1.c $(HDR) $(EXTHDR)
 
 fts3.o:	$(TOP)/ext/fts3/fts3.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3.c
+
+fts3_aux.o:	$(TOP)/ext/fts3/fts3_aux.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_aux.c
 
 fts3_expr.o:	$(TOP)/ext/fts3/fts3_expr.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_expr.c

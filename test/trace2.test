@@ -128,7 +128,7 @@ ifcapable fts3 {
     INSERT INTO x1 VALUES('North northwest wind between 8 and 14 mph');
   } {
     "INSERT INTO x1 VALUES('North northwest wind between 8 and 14 mph');" 
-    "-- INSERT INTO 'main'.'x1_content' VALUES(?,?)" 
+    "-- INSERT INTO 'main'.'x1_content' VALUES(?,(?))" 
     "-- REPLACE INTO 'main'.'x1_docsize' VALUES(?,?)" 
     "-- SELECT value FROM 'main'.'x1_stat' WHERE id=0" 
     "-- REPLACE INTO 'main'.'x1_stat' VALUES(0,?)" 
@@ -141,8 +141,8 @@ ifcapable fts3 {
     INSERT INTO x1(x1) VALUES('optimize');
   } {
     "INSERT INTO x1(x1) VALUES('optimize');"
-    "-- SELECT count(*), max(level) FROM 'main'.'x1_segdir'"
     "-- SELECT idx, start_block, leaves_end_block, end_block, root FROM 'main'.'x1_segdir' ORDER BY level DESC, idx ASC"
+    "-- SELECT count(*), max(level) FROM 'main'.'x1_segdir'"
     "-- SELECT coalesce((SELECT max(blockid) FROM 'main'.'x1_segments') + 1, 1)"
     "-- DELETE FROM 'main'.'x1_segdir'"
     "-- INSERT INTO 'main'.'x1_segdir' VALUES(?,?,?,?,?,?)"
