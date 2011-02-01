@@ -289,7 +289,7 @@ static int fts3SelectDocsize(
       sqlite3_bind_int64(pStmt, 1, iDocid);
     }
     rc = sqlite3_step(pStmt);
-    if( rc!=SQLITE_ROW ){
+    if( rc!=SQLITE_ROW || sqlite3_column_type(pStmt, 0)!=SQLITE_BLOB ){
       rc = sqlite3_reset(pStmt);
       if( rc==SQLITE_OK ) rc = SQLITE_CORRUPT;
       pStmt = 0;
@@ -1102,16 +1102,18 @@ int sqlite3Fts3SegReaderCost(
       sqlite3_stmt *pStmt;
       sqlite3_int64 nDoc = 0;
       sqlite3_int64 nByte = 0;
+      const char *pEnd;
       const char *a;
+
       rc = sqlite3Fts3SelectDoctotal(p, &pStmt);
-      if( rc ) return rc;
+      if( rc!=SQLITE_OK ) return rc;
       a = sqlite3_column_blob(pStmt, 0);
-      if( a ){
-        const char *pEnd = &a[sqlite3_column_bytes(pStmt, 0)];
-        a += sqlite3Fts3GetVarint(a, &nDoc);
-        while( a<pEnd ){
-          a += sqlite3Fts3GetVarint(a, &nByte);
-        }
+      assert( a );
+
+      pEnd = &a[sqlite3_column_bytes(pStmt, 0)];
+      a += sqlite3Fts3GetVarint(a, &nDoc);
+      while( a<pEnd ){
+        a += sqlite3Fts3GetVarint(a, &nByte);
       }
       if( nDoc==0 || nByte==0 ){
         sqlite3_reset(pStmt);
