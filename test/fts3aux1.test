@@ -56,4 +56,272 @@ do_execsql_test 1.4 {
   SELECT * FROM terms;
 } {a 256 1024    b 256 768}
 
+#-------------------------------------------------------------------------
+# The following tests verify that the fts4aux module uses the full-text
+# index to reduce the number of rows scanned in the following circumstances:
+#
+#   * when there is equality comparison against the term column using the 
+#     BINARY collating sequence. 
+#
+#   * when there is a range constraint on the term column using the BINARY 
+#     collating sequence. 
+#
+# And also uses the full-text index to optimize ORDER BY clauses of the 
+# form "ORDER BY term ASC" or equivalent.
+#
+# Test organization is:
+#
+#   fts3aux1-2.1.*: equality constraints.
+#   fts3aux1-2.2.*: range constraints.
+#   fts3aux1-2.3.*: ORDER BY optimization.
+# 
+
+do_execsql_test 2.0 {
+  DROP TABLE t1;
+  DROP TABLE terms;
+
+  CREATE VIRTUAL TABLE x1 USING fts4(x);
+  INSERT INTO x1(x1) VALUES('nodesize=24');
+  CREATE VIRTUAL TABLE terms USING fts4aux(x1);
+
+  INSERT INTO x1 VALUES('braes brag bragged bragger bragging');
+  INSERT INTO x1 VALUES('brags braid braided braiding braids');
+  INSERT INTO x1 VALUES('brain brainchild brained braining brains');
+  INSERT INTO x1 VALUES('brainstem brainstems brainstorm brainstorms'); 
+}
+
+proc rec {varname x} {
+  global $varname
+  incr $varname
+  return 1
+}
+db func rec rec
+
+# Use EQP to show that the WHERE expression "term='braid'" uses a different
+# index number (1) than "+term='braid'" (0).
+#
+do_execsql_test 2.1.1.1 {
+  EXPLAIN QUERY PLAN SELECT * FROM terms WHERE term='braid'
+} { 0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 1: (~0 rows)} }
+do_execsql_test 2.1.1.2 {
+  EXPLAIN QUERY PLAN SELECT * FROM terms WHERE +term='braid'
+} {0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 0: (~0 rows)}}
+
+# Now show that using "term='braid'" means the virtual table returns
+# only 1 row to SQLite, but "+term='braid'" means all 19 are returned.
+#
+do_test 2.1.2.1 {
+  set cnt 0
+  execsql { SELECT * FROM terms WHERE rec('cnt', term) AND term='braid' }
+  set cnt
+} {1}
+do_test 2.1.2.2 {
+  set cnt 0
+  execsql { SELECT * FROM terms WHERE rec('cnt', term) AND +term='braid' }
+  set cnt
+} {19}
+
+# Similar to the test immediately above, but using a term ("breakfast") that 
+# is not featured in the dataset.
+#
+do_test 2.1.3.1 {
+  set cnt 0
+  execsql { SELECT * FROM terms WHERE rec('cnt', term) AND term='breakfast' }
+  set cnt
+} {0}
+do_test 2.1.3.2 {
+  set cnt 0
+  execsql { SELECT * FROM terms WHERE rec('cnt', term) AND +term='breakfast' }
+  set cnt
+} {19}
+
+do_execsql_test 2.1.4.1 { SELECT * FROM terms WHERE term='braid'  } {braid 1 1}
+do_execsql_test 2.1.4.2 { SELECT * FROM terms WHERE +term='braid' } {braid 1 1}
+do_execsql_test 2.1.4.3 { SELECT * FROM terms WHERE term='breakfast'  } {}
+do_execsql_test 2.1.4.4 { SELECT * FROM terms WHERE +term='breakfast' } {}
+
+do_execsql_test 2.1.4.5 { SELECT * FROM terms WHERE term='cba'  } {}
+do_execsql_test 2.1.4.6 { SELECT * FROM terms WHERE +term='cba' } {}
+do_execsql_test 2.1.4.7 { SELECT * FROM terms WHERE term='abc'  } {}
+do_execsql_test 2.1.4.8 { SELECT * FROM terms WHERE +term='abc' } {}
+
+do_execsql_test 2.2.1.1 {
+  EXPLAIN QUERY PLAN SELECT * FROM terms WHERE term>'brain'
+} { 0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 2: (~0 rows)} }
+do_execsql_test 2.2.1.2 {
+  EXPLAIN QUERY PLAN SELECT * FROM terms WHERE +term>'brain'
+} { 0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 0: (~0 rows)} }
+
+do_execsql_test 2.2.1.3 {
+  EXPLAIN QUERY PLAN SELECT * FROM terms WHERE term<'brain'
+} { 0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 4: (~0 rows)} }
+do_execsql_test 2.2.1.4 {
+  EXPLAIN QUERY PLAN SELECT * FROM terms WHERE +term<'brain'
+} { 0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 0: (~0 rows)} }
+
+do_execsql_test 2.2.1.5 {
+  EXPLAIN QUERY PLAN SELECT * FROM terms WHERE term BETWEEN 'brags' AND 'brain'
+} { 0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 6: (~0 rows)} }
+do_execsql_test 2.2.1.6 {
+  EXPLAIN QUERY PLAN SELECT * FROM terms WHERE +term BETWEEN 'brags' AND 'brain'
+} { 0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 0: (~0 rows)} }
+
+do_test 2.2.2.1 {
+  set cnt 0
+  execsql { SELECT * FROM terms WHERE rec('cnt', term) AND term>'brain' }
+  set cnt
+} {9}
+do_test 2.2.2.2 {
+  set cnt 0
+  execsql { SELECT * FROM terms WHERE rec('cnt', term) AND +term>'brain' }
+  set cnt
+} {19}
+do_execsql_test 2.2.2.3 {
+  SELECT * FROM terms WHERE rec('cnt', term) AND term>'brain'
+} {
+  brainchild 1 1 brained 1 1 braining 1 1 brains 1 1 
+  brainstem 1 1 brainstems 1 1 brainstorm 1 1 brainstorms 1 1
+}
+do_execsql_test 2.2.2.4 {
+  SELECT * FROM terms WHERE rec('cnt', term) AND +term>'brain'
+} {
+  brainchild 1 1 brained 1 1 braining 1 1 brains 1 1 
+  brainstem 1 1 brainstems 1 1 brainstorm 1 1 brainstorms 1 1
+}
+do_execsql_test 2.2.2.5 {
+  SELECT * FROM terms WHERE rec('cnt', term) AND term>='brain'
+} {
+  brain 1 1
+  brainchild 1 1 brained 1 1 braining 1 1 brains 1 1 
+  brainstem 1 1 brainstems 1 1 brainstorm 1 1 brainstorms 1 1
+}
+do_execsql_test 2.2.2.6 {
+  SELECT * FROM terms WHERE rec('cnt', term) AND +term>='brain'
+} {
+  brain 1 1
+  brainchild 1 1 brained 1 1 braining 1 1 brains 1 1 
+  brainstem 1 1 brainstems 1 1 brainstorm 1 1 brainstorms 1 1
+}
+
+do_execsql_test 2.2.2.7 {
+  SELECT * FROM terms WHERE term>='abc'
+} {
+  braes 1 1 brag 1 1 bragged 1 1 bragger 1 1 
+  bragging 1 1 brags 1 1 braid 1 1 braided 1 1 
+  braiding 1 1 braids 1 1 brain 1 1 brainchild 1 1 
+  brained 1 1 braining 1 1 brains 1 1 brainstem 1 1 
+  brainstems 1 1 brainstorm 1 1 brainstorms 1 1
+}
+do_execsql_test 2.2.2.8 {
+  SELECT * FROM terms WHERE +term>='abc'
+} {
+  braes 1 1 brag 1 1 bragged 1 1 bragger 1 1 
+  bragging 1 1 brags 1 1 braid 1 1 braided 1 1 
+  braiding 1 1 braids 1 1 brain 1 1 brainchild 1 1 
+  brained 1 1 braining 1 1 brains 1 1 brainstem 1 1 
+  brainstems 1 1 brainstorm 1 1 brainstorms 1 1
+}
+
+do_execsql_test 2.2.2.9 {
+  SELECT * FROM terms WHERE term>='brainstorms'
+} {brainstorms 1 1}
+do_execsql_test 2.2.2.10 {
+  SELECT * FROM terms WHERE term>='brainstorms'
+} {brainstorms 1 1}
+do_execsql_test 2.2.2.11 { SELECT * FROM terms WHERE term>'brainstorms' } {}
+do_execsql_test 2.2.2.12 { SELECT * FROM terms WHERE term>'brainstorms' } {}
+
+do_execsql_test 2.2.2.13 { SELECT * FROM terms WHERE term>'cba' } {}
+do_execsql_test 2.2.2.14 { SELECT * FROM terms WHERE term>'cba' } {}
+
+do_test 2.2.3.1 {
+  set cnt 0
+  execsql { SELECT * FROM terms WHERE rec('cnt', term) AND term<'brain' }
+  set cnt
+} {11}
+do_test 2.2.3.2 {
+  set cnt 0
+  execsql { SELECT * FROM terms WHERE rec('cnt', term) AND +term<'brain' }
+  set cnt
+} {19}
+do_execsql_test 2.2.3.3 {
+  SELECT * FROM terms WHERE rec('cnt', term) AND term<'brain'
+} {
+  braes 1 1 brag 1 1 bragged 1 1 bragger 1 1 bragging 1 1 
+  brags 1 1 braid 1 1 braided 1 1 braiding 1 1 braids 1 1
+}
+do_execsql_test 2.2.3.4 {
+  SELECT * FROM terms WHERE rec('cnt', term) AND +term<'brain'
+} {
+  braes 1 1 brag 1 1 bragged 1 1 bragger 1 1 bragging 1 1 
+  brags 1 1 braid 1 1 braided 1 1 braiding 1 1 braids 1 1
+}
+do_execsql_test 2.2.3.5 {
+  SELECT * FROM terms WHERE rec('cnt', term) AND term<='brain'
+} {
+  braes 1 1 brag 1 1 bragged 1 1 bragger 1 1 bragging 1 1 
+  brags 1 1 braid 1 1 braided 1 1 braiding 1 1 braids 1 1
+  brain 1 1
+}
+do_execsql_test 2.2.3.6 {
+  SELECT * FROM terms WHERE rec('cnt', term) AND +term<='brain'
+} {
+  braes 1 1 brag 1 1 bragged 1 1 bragger 1 1 bragging 1 1 
+  brags 1 1 braid 1 1 braided 1 1 braiding 1 1 braids 1 1
+  brain 1 1
+}
+
+do_test 2.2.4.1 {
+  set cnt 0
+  execsql { 
+    SELECT * FROM terms 
+    WHERE rec('cnt', term) AND term BETWEEN 'brags' AND 'brain' 
+  }
+  set cnt
+} {6}
+do_test 2.2.4.2 {
+  set cnt 0
+  execsql { 
+    SELECT * FROM terms 
+    WHERE rec('cnt', term) AND +term BETWEEN 'brags' AND 'brain' 
+  }
+  set cnt
+} {19}
+do_execsql_test 2.2.4.3 {
+  SELECT * FROM terms 
+  WHERE rec('cnt', term) AND term BETWEEN 'brags' AND 'brain' 
+} {
+  brags 1 1 braid 1 1 braided 1 1 braiding 1 1 braids 1 1 brain 1 1 
+}
+do_execsql_test 2.2.4.4 {
+  SELECT * FROM terms 
+  WHERE rec('cnt', term) AND +term BETWEEN 'brags' AND 'brain' 
+} {
+  brags 1 1 braid 1 1 braided 1 1 braiding 1 1 braids 1 1 brain 1 1 
+}
+do_execsql_test 2.2.4.5 {
+  SELECT * FROM terms 
+  WHERE rec('cnt', term) AND term > 'brags' AND term < 'brain' 
+} {
+  braid 1 1 braided 1 1 braiding 1 1 braids 1 1
+}
+do_execsql_test 2.2.4.6 {
+  SELECT * FROM terms 
+  WHERE rec('cnt', term) AND +term > 'brags' AND +term < 'brain' 
+} {
+  braid 1 1 braided 1 1 braiding 1 1 braids 1 1
+}
+
+do_execsql_test 2.3.1.1 {
+  EXPLAIN QUERY PLAN SELECT * FROM terms ORDER BY term ASC;
+} {
+  0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 0: (~0 rows)} 
+}
+do_execsql_test 2.3.1.2 {
+  EXPLAIN QUERY PLAN SELECT * FROM terms ORDER BY term DESC;
+} {
+  0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 0: (~0 rows)} 
+  0 0 0 {USE TEMP B-TREE FOR ORDER BY}
+}
+
 finish_test

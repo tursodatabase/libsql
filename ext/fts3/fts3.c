@@ -2052,6 +2052,7 @@ int sqlite3Fts3SegReaderCursor(
   const char *zTerm,              /* Term to query for */
   int nTerm,                      /* Size of zTerm in bytes */
   int isPrefix,                   /* True for a prefix search */
+  int isScan,                     /* True to scan from zTerm to EOF */
   Fts3SegReaderCursor *pCsr       /* Cursor object to populate */
 ){
   int rc = SQLITE_OK;
@@ -2067,11 +2068,14 @@ int sqlite3Fts3SegReaderCursor(
   assert( FTS3_SEGCURSOR_PENDING<0 );
   assert( FTS3_SEGCURSOR_ALL<0 );
   assert( iLevel==FTS3_SEGCURSOR_ALL || (zTerm==0 && isPrefix==1) );
+  assert( isPrefix==0 || isScan==0 );
+
 
   memset(pCsr, 0, sizeof(Fts3SegReaderCursor));
 
   /* If iLevel is less than 0, include a seg-reader for the pending-terms. */
-  if( iLevel<0 ){
+  assert( isScan==0 || fts3HashCount(&p->pendingTerms)==0 );
+  if( iLevel<0 && isScan==0 ){
     rc = sqlite3Fts3SegReaderPending(p, zTerm, nTerm, isPrefix, &pPending);
     if( rc==SQLITE_OK && pPending ){
       int nByte = (sizeof(Fts3SegReader *) * 16);
@@ -2117,9 +2121,9 @@ int sqlite3Fts3SegReaderCursor(
         sqlite3_int64 *pi = (isPrefix ? &iLeavesEndBlock : 0);
         rc = fts3SelectLeaf(p, zTerm, nTerm, zRoot, nRoot, &iStartBlock, pi);
         if( rc!=SQLITE_OK ) goto finished;
-        if( isPrefix==0 ) iLeavesEndBlock = iStartBlock;
+        if( isPrefix==0 && isScan==0 ) iLeavesEndBlock = iStartBlock;
       }
-  
+ 
       rc = sqlite3Fts3SegReaderNew(iAge, iStartBlock, iLeavesEndBlock,
           iEndBlock, zRoot, nRoot, &pCsr->apSegment[pCsr->nSegment]
       );
@@ -2154,7 +2158,7 @@ static int fts3TermSegReaderCursor(
     int i;
     int nCost = 0;
     rc = sqlite3Fts3SegReaderCursor(
-        p, FTS3_SEGCURSOR_ALL, zTerm, nTerm, isPrefix, pSegcsr);
+        p, FTS3_SEGCURSOR_ALL, zTerm, nTerm, isPrefix, 0, pSegcsr);
   
     for(i=0; rc==SQLITE_OK && i<pSegcsr->nSegment; i++){
       rc = sqlite3Fts3SegReaderCost(pCsr, pSegcsr->apSegment[i], &nCost);

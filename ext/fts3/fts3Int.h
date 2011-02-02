@@ -310,13 +310,14 @@ int sqlite3Fts3SegReaderStart(Fts3Table*, Fts3SegReaderCursor*, Fts3SegFilter*);
 int sqlite3Fts3SegReaderStep(Fts3Table *, Fts3SegReaderCursor *);
 void sqlite3Fts3SegReaderFinish(Fts3SegReaderCursor *);
 int sqlite3Fts3SegReaderCursor(
-    Fts3Table *, int, const char *, int, int, Fts3SegReaderCursor *);
+    Fts3Table *, int, const char *, int, int, int, Fts3SegReaderCursor *);
 
 /* Flags allowed as part of the 4th argument to SegmentReaderIterate() */
 #define FTS3_SEGMENT_REQUIRE_POS   0x00000001
 #define FTS3_SEGMENT_IGNORE_EMPTY  0x00000002
 #define FTS3_SEGMENT_COLUMN_FILTER 0x00000004
 #define FTS3_SEGMENT_PREFIX        0x00000008
+#define FTS3_SEGMENT_SCAN          0x00000010
 
 /* Type passed as 4th argument to SegmentReaderIterate() */
 struct Fts3SegFilter {

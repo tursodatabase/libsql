@@ -28,11 +28,11 @@ struct Fts3auxTable {
 
 struct Fts3auxCursor {
   sqlite3_vtab_cursor base;       /* Base class used by SQLite core */
-
+  Fts3SegReaderCursor csr;        /* Must be right after "base" */
   Fts3SegFilter filter;
-  Fts3SegReaderCursor csr;
+  char *zStop;
+  int nStop;
   int isEof;
-
   sqlite3_int64 iRowid;
   sqlite3_int64 nDoc;
   sqlite3_int64 nOcc;
@@ -114,6 +114,10 @@ static int fts3auxDisconnectMethod(sqlite3_vtab *pVtab){
   return SQLITE_OK;
 }
 
+#define FTS4AUX_EQ_CONSTRAINT 1
+#define FTS4AUX_GE_CONSTRAINT 2
+#define FTS4AUX_LE_CONSTRAINT 4
+
 /*
 ** xBestIndex - Analyze a WHERE and ORDER BY clause.
 */
@@ -121,6 +125,10 @@ static int fts3auxBestIndexMethod(
   sqlite3_vtab *pVTab, 
   sqlite3_index_info *pInfo
 ){
+  int i;
+  int iEq = -1;
+  int iGe = -1;
+  int iLe = -1;
 
   /* This vtab delivers always results in "ORDER BY term ASC" order. */
   if( pInfo->nOrderBy==1 
@@ -128,6 +136,33 @@ static int fts3auxBestIndexMethod(
    && pInfo->aOrderBy[0].desc==0
   ){
     pInfo->orderByConsumed = 1;
+  }
+
+  /* Search for equality and range constraints on the "term" column. */
+  for(i=0; i<pInfo->nConstraint; i++){
+    if( pInfo->aConstraint[i].usable && pInfo->aConstraint[i].iColumn==0 ){
+      int op = pInfo->aConstraint[i].op;
+      if( op==SQLITE_INDEX_CONSTRAINT_EQ ) iEq = i;
+      if( op==SQLITE_INDEX_CONSTRAINT_LT ) iLe = i;
+      if( op==SQLITE_INDEX_CONSTRAINT_LE ) iLe = i;
+      if( op==SQLITE_INDEX_CONSTRAINT_GT ) iGe = i;
+      if( op==SQLITE_INDEX_CONSTRAINT_GE ) iGe = i;
+    }
+  }
+
+  if( iEq>=0 ){
+    pInfo->idxNum = FTS4AUX_EQ_CONSTRAINT;
+    pInfo->aConstraintUsage[iEq].argvIndex = 1;
+  }else{
+    pInfo->idxNum = 0;
+    if( iGe>=0 ){
+      pInfo->idxNum += FTS4AUX_GE_CONSTRAINT;
+      pInfo->aConstraintUsage[iGe].argvIndex = 1;
+    }
+    if( iLe>=0 ){
+      pInfo->idxNum += FTS4AUX_LE_CONSTRAINT;
+      pInfo->aConstraintUsage[iLe].argvIndex = 1 + (iGe>=0);
+    }
   }
 
   pInfo->estimatedCost = 20000;
@@ -157,6 +192,8 @@ static int fts3auxCloseMethod(sqlite3_vtab_cursor *pCursor){
 
   sqlite3Fts3SegmentsClose(pFts3);
   sqlite3Fts3SegReaderFinish(&pCsr->csr);
+  sqlite3_free((void *)pCsr->filter.zTerm);
+  sqlite3_free(pCsr->zStop);
   sqlite3_free(pCsr);
   return SQLITE_OK;
 }
@@ -175,6 +212,15 @@ static int fts3auxNextMethod(sqlite3_vtab_cursor *pCursor){
     int isIgnore = 1;
     int nDoclist = pCsr->csr.nDoclist;
     char *aDoclist = pCsr->csr.aDoclist;
+
+    if( pCsr->zStop ){
+      int n = (pCsr->nStop<pCsr->csr.nTerm) ? pCsr->nStop : pCsr->csr.nTerm;
+      int mc = memcmp(pCsr->zStop, pCsr->csr.zTerm, n);
+      if( mc<0 || (mc==0 && pCsr->csr.nTerm>pCsr->nStop) ){
+        pCsr->isEof = 1;
+        return SQLITE_OK;
+      }
+    }
 
     /* Now count the number of documents and positions in the doclist
     ** in pCsr->csr.aDoclist[]. Store the number of documents in pCsr->nDoc
@@ -216,14 +262,42 @@ static int fts3auxFilterMethod(
   Fts3auxCursor *pCsr = (Fts3auxCursor *)pCursor;
   Fts3Table *pFts3 = ((Fts3auxTable *)pCursor->pVtab)->pFts3Tab;
   int rc;
+  int isScan;
 
+  assert( idxStr==0 );
+  assert( idxNum==FTS4AUX_EQ_CONSTRAINT || idxNum==0
+       || idxNum==FTS4AUX_LE_CONSTRAINT || idxNum==FTS4AUX_GE_CONSTRAINT
+       || idxNum==(FTS4AUX_LE_CONSTRAINT|FTS4AUX_GE_CONSTRAINT)
+  );
+  isScan = (idxNum!=FTS4AUX_EQ_CONSTRAINT);
+
+  /* In case this cursor is being reused, close and zero it. */
+  testcase(pCsr->filter.zTerm);
   sqlite3Fts3SegReaderFinish(&pCsr->csr);
-  memset(&pCsr->csr, 0, sizeof(Fts3SegReaderCursor));
-  pCsr->isEof = 0;
-  pCsr->iRowid = 0;
-  pCsr->filter.flags = FTS3_SEGMENT_REQUIRE_POS|FTS3_SEGMENT_IGNORE_EMPTY;
+  sqlite3_free((void *)pCsr->filter.zTerm);
+  memset(&pCsr->csr, 0, ((u8*)&pCsr[1]) - (u8*)&pCsr->csr);
 
-  rc = sqlite3Fts3SegReaderCursor(pFts3, FTS3_SEGCURSOR_ALL, 0, 0,1,&pCsr->csr);
+  pCsr->filter.flags = FTS3_SEGMENT_REQUIRE_POS|FTS3_SEGMENT_IGNORE_EMPTY;
+  if( isScan ) pCsr->filter.flags |= FTS3_SEGMENT_SCAN;
+
+  if( idxNum&(FTS4AUX_EQ_CONSTRAINT|FTS4AUX_GE_CONSTRAINT) ){
+    const char *zStr = sqlite3_value_text(apVal[0]);
+    if( zStr ){
+      pCsr->filter.zTerm = sqlite3_mprintf("%s", zStr);
+      pCsr->filter.nTerm = sqlite3_value_bytes(apVal[0]);
+      if( pCsr->filter.zTerm==0 ) return SQLITE_NOMEM;
+    }
+  }
+  if( idxNum&FTS4AUX_LE_CONSTRAINT ){
+    int iIdx = (idxNum&FTS4AUX_GE_CONSTRAINT) ? 1 : 0;
+    pCsr->zStop = sqlite3_mprintf("%s", sqlite3_value_text(apVal[iIdx]));
+    pCsr->nStop = sqlite3_value_bytes(apVal[iIdx]);
+    if( pCsr->zStop==0 ) return SQLITE_NOMEM;
+  }
+
+  rc = sqlite3Fts3SegReaderCursor(pFts3, FTS3_SEGCURSOR_ALL,
+      pCsr->filter.zTerm, pCsr->filter.nTerm, 0, isScan, &pCsr->csr
+  );
   if( rc==SQLITE_OK ){
     rc = sqlite3Fts3SegReaderStart(pFts3, &pCsr->csr, &pCsr->filter);
   }

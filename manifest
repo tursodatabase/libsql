@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Merge\sin\sthe\sblocking-checkpoint\senhancement,\sincluding\sthe\snew\nsqlite3_wal_checkpoint_v2()\sinterface\sand\sthe\nPRAGMA\swal_checkpoint(full)\sstatement.
-D 2011-02-02T16:34:08.739
+C Optimize\shandling\sof\sequality\sand\srange\sconstraints\son\sthe\s"term"\scolumn\sof\san\sfts4aux\stable.
+D 2011-02-02T17:30:43.438
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -64,10 +61,10 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 871600c06569af007c9f7d46786a6a8618140862
+F ext/fts3/fts3.c f93f5d614e92b0221e954ea3bd800f11f6f00191
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h d833c1df0dc9d1b3c9069981001e6db16bf241ce
-F ext/fts3/fts3_aux.c d7f99095879d68b3b14b48a5370d9c6188566ecc
+F ext/fts3/fts3Int.h 945926ea4b6a686c3e9834640a252d9870b7191e
+F ext/fts3/fts3_aux.c 03bc785b04965325ac48a6a6fb0e7babb7751298
 F ext/fts3/fts3_expr.c 5f49e0deaf723724b08100bb3ff40aab02ad0c93
 F ext/fts3/fts3_hash.c 3c8f6387a4a7f5305588b203fa7c887d753e1f1c
 F ext/fts3/fts3_hash.h 8331fb2206c609f9fc4c4735b9ab5ad6137c88ec
@@ -77,7 +74,7 @@ F ext/fts3/fts3_snippet.c bfefb42b5debf8725a30fd5122572aaeedc99397
 F ext/fts3/fts3_tokenizer.c 055f3dc7369585350b28db1ee0f3b214dca6724d
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 6e5cbaa588924ac578263a598e4fb9f5c9bb179d
-F ext/fts3/fts3_write.c 58a4d891bd438ee279e82be7f2188b1885f56873
+F ext/fts3/fts3_write.c 8cf14b0e1eee656cda0197e99754f980c216dd9a
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
@@ -441,7 +438,7 @@ F test/fts3am.test 218aa6ba0dfc50c7c16b2022aac5c6be593d08d8
 F test/fts3an.test a49ccadc07a2f7d646ec1b81bc09da2d85a85b18
 F test/fts3ao.test b83f99f70e9eec85f27d75801a974b3f820e01f9
 F test/fts3atoken.test 25c2070e1e8755d414bf9c8200427b277a9f99fa
-F test/fts3aux1.test 9cf2e8499a494b92b77aaf1e5e1f50e4c4389549
+F test/fts3aux1.test 709323862e88b3e4be8278151bee2c56087feeed
 F test/fts3b.test e93bbb653e52afde110ad53bbd793f14fe7a8984
 F test/fts3c.test fc723a9cf10b397fdfc2b32e73c53c8b1ec02958
 F test/fts3comp1.test ef36e5ddf9811c9801f52b2988bca1fce7dc8ce8
@@ -906,14 +903,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c6d9f7d8c48e1ff405e1c1d98a166974fc829f58 ebf74015f09fe241c1c6902dc8954f2b59ab41ec
-R 0634baae0b43c2b82e8b9905e8c6ee5b
-U drh
-Z d29f42a4b972ec3903a5f796629ef74c
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (Darwin)
-
-iEYEARECAAYFAk1Jh4EACgkQoxKgR168RlEDdgCfTySKHScQj7r5Q2WPZ7harLi+
-uBIAn0+3gnlHjhVd4fzemcV4FGDrMm/Y
-=REwF
------END PGP SIGNATURE-----
+P bac7342c368a7c4f5f2878e08d9581dcbf57dd58
+R c5cbd8730aa7fc425fd495ad36fc71db
+U dan
+Z 56b8613b352790d458992ad5625bb3db

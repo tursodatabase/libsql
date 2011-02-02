@@ -2066,6 +2066,7 @@ int sqlite3Fts3SegReaderStep(
   int isRequirePos =   (pCsr->pFilter->flags & FTS3_SEGMENT_REQUIRE_POS);
   int isColFilter =    (pCsr->pFilter->flags & FTS3_SEGMENT_COLUMN_FILTER);
   int isPrefix =       (pCsr->pFilter->flags & FTS3_SEGMENT_PREFIX);
+  int isScan =         (pCsr->pFilter->flags & FTS3_SEGMENT_SCAN);
 
   Fts3SegReader **apSegment = pCsr->apSegment;
   int nSegment = pCsr->nSegment;
@@ -2101,7 +2102,7 @@ int sqlite3Fts3SegReaderStep(
     ** Similarly, if this is a search for an exact match, and the first term
     ** of segment apSegment[0] is not a match, exit early.
     */
-    if( pFilter->zTerm ){
+    if( pFilter->zTerm && !isScan ){
       if( pCsr->nTerm<pFilter->nTerm 
        || (!isPrefix && pCsr->nTerm>pFilter->nTerm)
        || memcmp(pCsr->zTerm, pFilter->zTerm, pFilter->nTerm) 
@@ -2228,7 +2229,7 @@ static int fts3SegmentMerge(Fts3Table *p, int iLevel){
   Fts3SegFilter filter;           /* Segment term filter condition */
   Fts3SegReaderCursor csr;        /* Cursor to iterate through level(s) */
 
-  rc = sqlite3Fts3SegReaderCursor(p, iLevel, 0, 0, 1, &csr);
+  rc = sqlite3Fts3SegReaderCursor(p, iLevel, 0, 0, 1, 0, &csr);
   if( rc!=SQLITE_OK || csr.nSegment==0 ) goto finished;
 
   if( iLevel==FTS3_SEGCURSOR_ALL ){
