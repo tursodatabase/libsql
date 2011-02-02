@@ -1,5 +1,5 @@
-C Remove\sextra\sinstances\sof\sthe\stext\s"checked\sout."\sfrom\ssqlite.h.in.\sAlso\sadd\snew\sfile\sfts3_aux.c\sto\smksqlite3c.tcl.
-D 2011-02-01T18:59:34.035
+C Add\smissing\sfile\sfts3_aux.c.
+D 2011-02-02T04:26:46.725
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -64,6 +64,7 @@ F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts3/fts3.c 871600c06569af007c9f7d46786a6a8618140862
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h d833c1df0dc9d1b3c9069981001e6db16bf241ce
+F ext/fts3/fts3_aux.c d7f99095879d68b3b14b48a5370d9c6188566ecc
 F ext/fts3/fts3_expr.c 5f49e0deaf723724b08100bb3ff40aab02ad0c93
 F ext/fts3/fts3_hash.c 3c8f6387a4a7f5305588b203fa7c887d753e1f1c
 F ext/fts3/fts3_hash.h 8331fb2206c609f9fc4c4735b9ab5ad6137c88ec
@@ -900,7 +901,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b9b48dd8ddceec009b5a22a3699e1524542c004a
-R 622aceea1d56ea439d2ecbf642323605
+P 9897da22c5b51611597350efbe8d5dcaf39d748b
+R 531c9b98b4934054a140000876bf40a8
 U dan
-Z a779252ff2db0dcc3441f04cdb450265
+Z 4420e6d7471052847a2c86252d61b29e
