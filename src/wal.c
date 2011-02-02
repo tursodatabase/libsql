@@ -1641,6 +1641,7 @@ static int walCheckpoint(
   testcase( szPage<=32768 );
   testcase( szPage>=65536 );
   pInfo = walCkptInfo(pWal);
+  if( pnCkpt ) *pnCkpt = pInfo->nBackfill;
   if( pInfo->nBackfill>=pWal->hdr.mxFrame ) return SQLITE_OK;
 
   /* Allocate the iterator */
@@ -1650,9 +1651,7 @@ static int walCheckpoint(
   }
   assert( pIter );
 
-  pInfo = walCkptInfo(pWal);
   mxPage = pWal->hdr.nPage;
-  if( pnCkpt ) *pnCkpt = pInfo->nBackfill;
   if( eMode!=SQLITE_CHECKPOINT_PASSIVE ) xBusy = xBusyCall;
 
   /* Compute in mxSafeFrame the index of the last frame of the WAL that is

@@ -1182,7 +1182,7 @@ foreach {tn sql reslist} {
       INSERT INTO t1 VALUES(5, 6);
     COMMIT;                               -- 1 wal sync
     PRAGMA wal_checkpoint;                -- 1 wal sync, 1 db sync
-  } {10}
+  } {10 0 5 5 0 2 2}
 
   do_test wal2-14.$tn.3 {
     list $sqlite_sync_count $sqlite_fullsync_count
