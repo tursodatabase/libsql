@@ -835,4 +835,5 @@ do_test attach-10.2 {
     PRAGMA database_list;
   }] 9 end
 } {4 noname {} 5 inmem {}}
+
 finish_test

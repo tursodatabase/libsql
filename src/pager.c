@@ -2947,7 +2947,7 @@ static int pagerRollbackWal(Pager *pPager){
 ** This function is a wrapper around sqlite3WalFrames(). As well as logging
 ** the contents of the list of pages headed by pList (connected by pDirty),
 ** this function notifies any active backup processes that the pages have
-** changed.
+** changed. 
 **
 ** The list of pages passed into this routine is always sorted by page number.
 ** Hence, if page 1 appears anywhere on the list, it will be the first page.
@@ -6599,14 +6599,20 @@ sqlite3_backup **sqlite3PagerBackupPtr(Pager *pPager){
 
 #ifndef SQLITE_OMIT_WAL
 /*
-** This function is called when the user invokes "PRAGMA checkpoint".
+** This function is called when the user invokes "PRAGMA wal_checkpoint",
+** "PRAGMA wal_blocking_checkpoint" or calls the sqlite3_wal_checkpoint()
+** or wal_blocking_checkpoint() API functions.
+**
+** Parameter eMode is one of SQLITE_CHECKPOINT_PASSIVE, FULL or RESTART.
 */
-int sqlite3PagerCheckpoint(Pager *pPager){
+int sqlite3PagerCheckpoint(Pager *pPager, int eMode, int *pnLog, int *pnCkpt){
   int rc = SQLITE_OK;
   if( pPager->pWal ){
-    u8 *zBuf = (u8 *)pPager->pTmpSpace;
-    rc = sqlite3WalCheckpoint(pPager->pWal, pPager->ckptSyncFlags,
-                              pPager->pageSize, zBuf);
+    rc = sqlite3WalCheckpoint(pPager->pWal, eMode,
+        pPager->xBusyHandler, pPager->pBusyHandlerArg,
+        pPager->ckptSyncFlags, pPager->pageSize, (u8 *)pPager->pTmpSpace,
+        pnLog, pnCkpt
+    );
   }
   return rc;
 }

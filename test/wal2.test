@@ -348,7 +348,7 @@ do_test wal2-4.1 {
     INSERT INTO data VALUES('need xShmOpen to see this');
     PRAGMA wal_checkpoint;
   }
-} {wal}
+} {wal 0 5 5}
 do_test wal2-4.2 {
   db close
   testvfs tvfs -noshm 1
@@ -714,7 +714,7 @@ do_test wal2-6.5.1 {
     INSERT INTO t2 VALUES('I', 'II');
     PRAGMA journal_mode;
   }
-} {wal exclusive wal}
+} {wal exclusive 0 3 3 wal}
 do_test wal2-6.5.2 {
   execsql {
     PRAGMA locking_mode = normal;
@@ -725,7 +725,7 @@ do_test wal2-6.5.2 {
 } {normal exclusive I II III IV}
 do_test wal2-6.5.3 {
   execsql { PRAGMA wal_checkpoint }
-} {}
+} {0 4 4}
 db close
 
 proc lock_control {method filename handle spec} {
@@ -809,9 +809,9 @@ do_test wal2-8.1.2 {
     CREATE TABLE t1(x);
     INSERT INTO t1 VALUES(zeroblob(8188*1020));
     CREATE TABLE t2(y);
+    PRAGMA wal_checkpoint;
   }
   execsql {
-    PRAGMA wal_checkpoint;
     SELECT rootpage>=8192 FROM sqlite_master WHERE tbl_name = 't2';
   }
 } {1}
@@ -1154,7 +1154,7 @@ if {$::tcl_platform(platform) == "unix"} {
     }
     catch { db close }
   }
-} 
+}
 
 #-------------------------------------------------------------------------
 # Test that "PRAGMA checkpoint_fullsync" appears to be working.
