@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C SQLite\sversion\s3.7.5\srelease\scandidate\s2
-D 2011-01-28T17:03:50.592
+C Merge\sfts4aux\sbranch.
+D 2011-02-02T04:40:07.295
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -64,19 +61,20 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 28ada7d1c700e57b072b2c95d70565b05925fa46
+F ext/fts3/fts3.c 871600c06569af007c9f7d46786a6a8618140862
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h a6c69c1c5e2c8c19172ddff42d262c087dcd7337
+F ext/fts3/fts3Int.h d833c1df0dc9d1b3c9069981001e6db16bf241ce
+F ext/fts3/fts3_aux.c d7f99095879d68b3b14b48a5370d9c6188566ecc
 F ext/fts3/fts3_expr.c 5f49e0deaf723724b08100bb3ff40aab02ad0c93
 F ext/fts3/fts3_hash.c 3c8f6387a4a7f5305588b203fa7c887d753e1f1c
 F ext/fts3/fts3_hash.h 8331fb2206c609f9fc4c4735b9ab5ad6137c88ec
 F ext/fts3/fts3_icu.c ac494aed69835008185299315403044664bda295
 F ext/fts3/fts3_porter.c d61cfd81fb0fd8fbcb25adcaee0ba671aefaa5c2
-F ext/fts3/fts3_snippet.c 196c5e6cde57bfc1907c2d60e9c29590e4f93fb6
+F ext/fts3/fts3_snippet.c bfefb42b5debf8725a30fd5122572aaeedc99397
 F ext/fts3/fts3_tokenizer.c 055f3dc7369585350b28db1ee0f3b214dca6724d
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 6e5cbaa588924ac578263a598e4fb9f5c9bb179d
-F ext/fts3/fts3_write.c 3eea26b9ca4219e1711b0db74fd5a9d448a6afbb
+F ext/fts3/fts3_write.c 58a4d891bd438ee279e82be7f2188b1885f56873
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
@@ -102,7 +100,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk 05d0f3475dd331896bd607cfb45c5e21b94589ad
+F main.mk 589cd0fdc9d9bf7a8220511ff5db5bd57efe3558
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -165,7 +163,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 2e452c9f2ca507623ad351c33a8a8b27849b1863
 F src/os_unix.c 1be46a35bad4bec5171e4de88aaff817260eb378
 F src/os_win.c 9abdcdd925416d854eabb0996c96debd92abfef5
-F src/pager.c b0fcbe3038fd08b111e1cf1deddd5f42418004d8
+F src/pager.c c22b8531596c984dcc6b90645714b7ed951023fe
 F src/pager.h 0ea59db2a33bc6c2c02cae34de33367e1effdf76
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 09d38c44ab275db581f7a2f6ff8b9bc7f8c0faaa
@@ -179,7 +177,7 @@ F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 8a7ba246b0b4bb45df7fbc52681728a0e3deaaa7
 F src/shell.c 83c6f0cc5a79a081c7b9ddfe4f557b47e0bad976
-F src/sqlite.h.in 76955fcd1c5371268ecc8afe0ce6c49ea750ae38
+F src/sqlite.h.in 7599c4975cd0d0fff8d8d8cd3e423ca893b48f47
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
 F src/sqliteInt.h 45926deaf59b1ce3f55d21d5f91a8cecb6a7eb4c
 F src/sqliteLimit.h a17dcd3fb775d63b64a43a55c54cb282f9726f44
@@ -440,9 +438,11 @@ F test/fts3am.test 218aa6ba0dfc50c7c16b2022aac5c6be593d08d8
 F test/fts3an.test a49ccadc07a2f7d646ec1b81bc09da2d85a85b18
 F test/fts3ao.test b83f99f70e9eec85f27d75801a974b3f820e01f9
 F test/fts3atoken.test 25c2070e1e8755d414bf9c8200427b277a9f99fa
+F test/fts3aux1.test 9cf2e8499a494b92b77aaf1e5e1f50e4c4389549
 F test/fts3b.test e93bbb653e52afde110ad53bbd793f14fe7a8984
 F test/fts3c.test fc723a9cf10b397fdfc2b32e73c53c8b1ec02958
-F test/fts3corrupt.test d874ba27975aa8e5514bf58bf97b473404de0dbb
+F test/fts3comp1.test ef36e5ddf9811c9801f52b2988bca1fce7dc8ce8
+F test/fts3corrupt.test 7890cc202406858386ddf390a879dcf80bc10abf
 F test/fts3corrupt2.test 6d96efae2f8a6af3eeaf283aba437e6d0e5447ba
 F test/fts3cov.test e0fb00d8b715ddae4a94c305992dfc3ef70353d7
 F test/fts3d.test 95fb3c862cbc4297c93fceb9a635543744e9ef52
@@ -589,7 +589,7 @@ F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
 F test/pcache2.test 0d85f2ab6963aee28c671d4c71bec038c00a1d16
-F test/permutations.test c0ce0f3b741dd92a6d4c2671dbacba4b92dd81eb
+F test/permutations.test e34aacdc97dfcf83e246a08917a98f610fd1340a
 F test/pragma.test fdfc09067ea104a0c247a1a79d8093b56656f850
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
@@ -790,7 +790,7 @@ F test/tkt3997.test a335fa41ca3985660a139df7b734a26ef53284bd
 F test/tkt4018.test 7c2c9ba4df489c676a0a7a0e809a1fb9b2185bd1
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 4b36a41a3e9c7842151af6da5998f5080cdad9e5
-F test/trace2.test 092bc2c5776272700450d60a36919921095bdc21
+F test/trace2.test 0ce11265c83333d8f5beeca19e71ed93a88d386c
 F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
 F test/trans2.test d5337e61de45e66b1fcbf9db833fa8c82e624b22
 F test/trans3.test d728abaa318ca364dc370e06576aa7e5fbed7e97
@@ -878,7 +878,7 @@ F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkkeywordhash.c d2e6b4a5965e23afb80fbe74bb54648cd371f309
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
-F tool/mksqlite3c.tcl e0db70c2c52b0e3d0867ca931229e5b90ffe7837
+F tool/mksqlite3c.tcl cf44512a48112b1ba09590548660a5a6877afdb3
 F tool/mksqlite3h.tcl d76c226a5e8e1f3b5f6593bcabe5e98b3b1ec9ff
 F tool/mksqlite3internalh.tcl 7b43894e21bcb1bb39e11547ce7e38a063357e87
 F tool/omittest.tcl 27d6f6e3b1e95aeb26a1c140e6eb57771c6d794a
@@ -901,14 +901,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 682fe41efd3578e8c9abc7138b61f361c3adbe95
-R 7fccaf9f7c013ddef8926255f6aeb773
-U drh
-Z 4223173e58f25d45d236e232b9c90989
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFNQvb6oxKgR168RlERAtOTAJ9BaewewKXL3RGZUy5ycaHwjeEmJACeOPbw
-/JKqOugR+37RH7HnLCo9DBk=
-=kgPx
------END PGP SIGNATURE-----
+P ed759d5a9edb3bba5f48f243df47be29e3fe8cd7 0147d9739f318a02721d3ae0e7be339a19231f60
+R 531c9b98b4934054a140000876bf40a8
+U dan
+Z d29ed65f9181e7ba0766a4c73453d1ce

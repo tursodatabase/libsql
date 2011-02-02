@@ -1,0 +1,78 @@
+# 2011 January 27
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is testing the FTS3 module.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+ifcapable !fts3 { finish_test ; return }
+set ::testprefix fts3comp1
+
+set next_x 0
+proc zip {x} {
+ incr ::next_x
+ set ::strings($::next_x) $x
+ return $::next_x
+}
+proc unzip {x} {
+  return $::strings($x)
+}
+
+db func zip zip
+db func unzip unzip
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t1 USING fts4(
+    a, b, 
+    compress=zip, uncompress=unzip
+  );
+  INSERT INTO t1 VALUES('one two three', 'two four six');
+}
+
+do_execsql_test 1.1 {
+  SELECT a, b FROM t1;
+} {{one two three} {two four six}}
+
+do_execsql_test 1.2 {
+  SELECT c0a, c1b FROM t1_content;
+} {1 2}
+
+do_execsql_test 1.3 {
+  INSERT INTO t1 VALUES('three six nine', 'four eight twelve');
+  SELECT a, b FROM t1;
+} {{one two three} {two four six} {three six nine} {four eight twelve}}
+
+do_execsql_test 1.4 {
+  SELECT c0a, c1b FROM t1_content;
+} {1 2 3 4}
+
+do_execsql_test 1.5 {
+  CREATE VIRTUAL TABLE terms USING fts4aux(t1);
+  SELECT * FROM terms;
+} {
+  eight 1 1    four 2 2    nine 1 1    one 1 1 
+  six 2 2      three 2 2   twelve 1 1  two 1 2
+}
+
+do_execsql_test 1.6 {
+  DELETE FROM t1 WHERE docid = 1;
+  SELECT * FROM terms;
+} {
+  eight 1 1   four 1 1    nine 1 1 
+  six 1 1     three 1 1   twelve 1 1
+}
+
+do_execsql_test 1.7 {
+  SELECT c0a, c1b FROM t1_content;
+} {3 4}
+
+finish_test
