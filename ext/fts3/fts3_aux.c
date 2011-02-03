@@ -66,7 +66,9 @@ static int fts3auxConnectMethod(
 
   /* The user should specify a single argument - the name of an fts3 table. */
   if( argc!=4 ){
-    *pzErr = sqlite3_mprintf("wrong number of arguments");
+    *pzErr = sqlite3_mprintf(
+        "wrong number of arguments to fts4aux constructor"
+    );
     return SQLITE_ERROR;
   }
 
@@ -153,19 +155,22 @@ static int fts3auxBestIndexMethod(
   if( iEq>=0 ){
     pInfo->idxNum = FTS4AUX_EQ_CONSTRAINT;
     pInfo->aConstraintUsage[iEq].argvIndex = 1;
+    pInfo->estimatedCost = 5;
   }else{
     pInfo->idxNum = 0;
+    pInfo->estimatedCost = 20000;
     if( iGe>=0 ){
       pInfo->idxNum += FTS4AUX_GE_CONSTRAINT;
       pInfo->aConstraintUsage[iGe].argvIndex = 1;
+      pInfo->estimatedCost /= 2;
     }
     if( iLe>=0 ){
       pInfo->idxNum += FTS4AUX_LE_CONSTRAINT;
       pInfo->aConstraintUsage[iLe].argvIndex = 1 + (iGe>=0);
+      pInfo->estimatedCost /= 2;
     }
   }
 
-  pInfo->estimatedCost = 20000;
   return SQLITE_OK;
 }
 
@@ -281,7 +286,7 @@ static int fts3auxFilterMethod(
   if( isScan ) pCsr->filter.flags |= FTS3_SEGMENT_SCAN;
 
   if( idxNum&(FTS4AUX_EQ_CONSTRAINT|FTS4AUX_GE_CONSTRAINT) ){
-    const char *zStr = sqlite3_value_text(apVal[0]);
+    const unsigned char *zStr = sqlite3_value_text(apVal[0]);
     if( zStr ){
       pCsr->filter.zTerm = sqlite3_mprintf("%s", zStr);
       pCsr->filter.nTerm = sqlite3_value_bytes(apVal[0]);

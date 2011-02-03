@@ -145,6 +145,10 @@ do_execsql_test 2.1.4.6 { SELECT * FROM terms WHERE +term='cba' } {}
 do_execsql_test 2.1.4.7 { SELECT * FROM terms WHERE term='abc'  } {}
 do_execsql_test 2.1.4.8 { SELECT * FROM terms WHERE +term='abc' } {}
 
+# Special case: term=NULL
+#
+do_execsql_test 2.1.5 { SELECT * FROM terms WHERE term=NULL } {}
+
 do_execsql_test 2.2.1.1 {
   EXPLAIN QUERY PLAN SELECT * FROM terms WHERE term>'brain'
 } { 0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 2: (~0 rows)} }
@@ -312,16 +316,123 @@ do_execsql_test 2.2.4.6 {
   braid 1 1 braided 1 1 braiding 1 1 braids 1 1
 }
 
-do_execsql_test 2.3.1.1 {
-  EXPLAIN QUERY PLAN SELECT * FROM terms ORDER BY term ASC;
+# Check that "ORDER BY term ASC" and equivalents are sorted by the
+# virtual table implementation. Any other ORDER BY clause requires
+# SQLite to sort results using a temporary b-tree.
+#
+foreach {tn sort orderby} {
+  1    0    "ORDER BY term ASC"
+  2    0    "ORDER BY term"
+  3    1    "ORDER BY term DESC"
+  4    1    "ORDER BY documents ASC"
+  5    1    "ORDER BY documents"
+  6    1    "ORDER BY documents DESC"
+  7    1    "ORDER BY occurrences ASC"
+  8    1    "ORDER BY occurrences"
+  9    1    "ORDER BY occurrences DESC"
+} {
+
+  set res [list 0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 0: (~0 rows)}]
+  if {$sort} { lappend res 0 0 0 {USE TEMP B-TREE FOR ORDER BY} }
+
+  set sql "SELECT * FROM terms $orderby"
+  do_execsql_test 2.3.1.$tn "EXPLAIN QUERY PLAN $sql" $res
+}
+
+#-------------------------------------------------------------------------
+# The next set of tests, fts3aux1-3.*, test error conditions in the 
+# fts4aux module. Except, fault injection testing (OOM, IO error etc.) is 
+# done in fts3fault2.test
+#
+
+do_execsql_test 3.1.1 {
+  CREATE VIRTUAL TABLE t2 USING fts4;
+}
+
+do_catchsql_test 3.1.2 {
+  CREATE VIRTUAL TABLE terms2 USING fts4aux;
+} {1 {wrong number of arguments to fts4aux constructor}}
+do_catchsql_test 3.1.3 {
+  CREATE VIRTUAL TABLE terms2 USING fts4aux(t2, t2);
+} {1 {wrong number of arguments to fts4aux constructor}}
+
+do_execsql_test 3.2.1 {
+  CREATE VIRTUAL TABLE terms3 USING fts4aux(does_not_exist)
+}
+do_catchsql_test 3.2.2 {
+  SELECT * FROM terms3
+} {1 {SQL logic error or missing database}}
+do_catchsql_test 3.2.3 {
+  SELECT * FROM terms3 WHERE term = 'abc'
+} {1 {SQL logic error or missing database}}
+
+do_catchsql_test 3.3.1 {
+  INSERT INTO terms VALUES(1,2,3);
+} {1 {table terms may not be modified}}
+do_catchsql_test 3.3.2 {
+  DELETE FROM terms
+} {1 {table terms may not be modified}}
+do_catchsql_test 3.3.3 {
+  UPDATE terms set documents = documents+1;
+} {1 {table terms may not be modified}}
+
+
+#-------------------------------------------------------------------------
+#
+db close
+forcedelete test.db
+sqlite3 db test.db
+do_execsql_test 4.1 {
+  CREATE VIRTUAL TABLE x1 USING fts4(x);
+  CREATE VIRTUAL TABLE terms USING fts4aux(x1);
+  CREATE TABLE x2(y);
+  CREATE TABLE x3(y);
+  CREATE INDEX i1 ON x3(y);
+
+  INSERT INTO x1 VALUES('a b c d e');
+  INSERT INTO x1 VALUES('f g h i j');
+  INSERT INTO x1 VALUES('k k l l a');
+
+  INSERT INTO x2 SELECT term FROM terms;
+  INSERT INTO x3 SELECT term FROM terms;
+}
+
+proc do_plansql_test {tn sql r} {
+  uplevel do_execsql_test $tn [list "EXPLAIN QUERY PLAN $sql ; $sql"] [list $r]
+}
+
+
+do_plansql_test 4.2 {
+  SELECT y FROM x2, terms WHERE y = term
+} {
+  0 0 0 {SCAN TABLE x2 (~1000000 rows)} 
+  0 1 1 {SCAN TABLE terms VIRTUAL TABLE INDEX 1: (~0 rows)} 
+  a b c d e f g h i j k l
+}
+
+do_plansql_test 4.3 {
+  SELECT y FROM terms, x2 WHERE y = term
+} {
+  0 0 1 {SCAN TABLE x2 (~1000000 rows)} 
+  0 1 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 1: (~0 rows)} 
+  a b c d e f g h i j k l
+}
+
+do_plansql_test 4.4 {
+  SELECT y FROM x3, terms WHERE y = term
+} {
+  0 0 1 {SCAN TABLE terms VIRTUAL TABLE INDEX 0: (~0 rows)} 
+  0 1 0 {SEARCH TABLE x3 USING COVERING INDEX i1 (y=?) (~10 rows)}
+  a b c d e f g h i j k l
+}
+
+do_plansql_test 4.5 {
+  SELECT y FROM terms, x3 WHERE y = term AND occurrences>1
 } {
   0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 0: (~0 rows)} 
+  0 1 1 {SEARCH TABLE x3 USING COVERING INDEX i1 (y=?) (~10 rows)}
+  a k l
 }
-do_execsql_test 2.3.1.2 {
-  EXPLAIN QUERY PLAN SELECT * FROM terms ORDER BY term DESC;
-} {
-  0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 0: (~0 rows)} 
-  0 0 0 {USE TEMP B-TREE FOR ORDER BY}
-}
+
 
 finish_test
