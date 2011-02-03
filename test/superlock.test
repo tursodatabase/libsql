@@ -220,7 +220,7 @@ db_swap test.db2 test.db
 do_catchsql_test 6.4 { SELECT * FROM t1 } {0 {1 2 3 4}}
 do_catchsql_test 6.5 { SELECT * FROM t2 } {1 {no such table: t2}}
 
-do_execsql_test  6.6 { PRAGMA wal_checkpoint }
+do_execsql_test  6.6 { PRAGMA wal_checkpoint } {0 -1 -1}
 
 db_swap test.db2 test.db
 do_catchsql_test 6.7 { SELECT * FROM t1 } {1 {no such table: t1}}

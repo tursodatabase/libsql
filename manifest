@@ -1,5 +1,8 @@
-C Fix\sminor\sproblems\swith\sthe\soutput\sof\s"PRAGMA\swal_checkpoint".\sIn\sboth\scode\sand\stests.
-D 2011-02-02T19:17:39.762
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Fix\sa\ssuperlock\stest\scase\sto\sconform\sto\sthe\snew\swal_checkpoint\sreturns.
+D 2011-02-03T01:26:32.247
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -659,7 +662,7 @@ F test/stmt.test 25d64e3dbf9a3ce89558667d7f39d966fe2a71b9
 F test/subquery.test b524f57c9574b2c0347045b4510ef795d4686796
 F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
-F test/superlock.test 038aba769467f861d1e0945cc26725da12a63fee
+F test/superlock.test f66a8f26dcd390c115bb732a2ea4638ab8204b13
 F test/sync.test ded6b39d8d8ca3c0c5518516c6371b3316d3e3a3
 F test/table.test 04ba066432430657712d167ebf28080fe878d305
 F test/tableapi.test 7262a8cbaa9965d429f1cbd2747edc185fa56516
@@ -903,7 +906,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 386701ded2bcee5309ec9f285d94e6eb1eade193
-R 7e672e0107589bffcd23d7a25c26b2d0
-U dan
-Z b41f526f757a6ac93b8eba0099837247
+P aef61036b31963e4c3ff4e8acf8c1734dc9394af
+R 89ebf5c5b7c59e9a79de525a6ebb77b1
+U drh
+Z 5699430fdf5a52fd056eaf0d48c3354d
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (Darwin)
+
+iEYEARECAAYFAk1KBEgACgkQoxKgR168RlGuLgCfTeoTY7w4JwnLR7XHUbjNF+o1
+Ui8An2r3tegTKD67g40gncFgB71KrDyc
+=cJV+
+-----END PGP SIGNATURE-----
