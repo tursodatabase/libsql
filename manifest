@@ -1,5 +1,5 @@
-C Extra\stests\sfor\sthe\sfts4aux\smodule.
-D 2011-02-03T10:56:00.411
+C Extra\stests\sfor\sfts4\scompress/uncompress\shooks.\sFix\ssome\sminor\sproblems\swith\sthe\ssame.
+D 2011-02-03T12:48:17.458
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -61,7 +61,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c f93f5d614e92b0221e954ea3bd800f11f6f00191
+F ext/fts3/fts3.c 5653c5654ac9b65bf3646af7e1d695c7e9b991a0
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 945926ea4b6a686c3e9834640a252d9870b7191e
 F ext/fts3/fts3_aux.c 233a9f0bd8fa336d78f5905b2c94c8860d237dd9
@@ -441,7 +441,7 @@ F test/fts3atoken.test 25c2070e1e8755d414bf9c8200427b277a9f99fa
 F test/fts3aux1.test 6145608289e8a6337acb3432d592e57b8e46ad35
 F test/fts3b.test e93bbb653e52afde110ad53bbd793f14fe7a8984
 F test/fts3c.test fc723a9cf10b397fdfc2b32e73c53c8b1ec02958
-F test/fts3comp1.test ef36e5ddf9811c9801f52b2988bca1fce7dc8ce8
+F test/fts3comp1.test dab659038f2e0e2f5807d51da4dde38e213e28da
 F test/fts3corrupt.test 7890cc202406858386ddf390a879dcf80bc10abf
 F test/fts3corrupt2.test 6d96efae2f8a6af3eeaf283aba437e6d0e5447ba
 F test/fts3cov.test e0fb00d8b715ddae4a94c305992dfc3ef70353d7
@@ -904,7 +904,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8bf2d51b6a50da84cf6b0d2bd78e633d6810160b
-R ddc2098046dae72dcd5cb0c3ae07050f
+P cfc475690d85ea7e3547424289d9837f46ab7ef4
+R 88eebeb229dec71bb74cda54c9987bad
 U dan
-Z 24b73331b8700cbc651162882517a9c3
+Z cc8e3364f71d0c95c8a268f7f131b691

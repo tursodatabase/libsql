@@ -693,6 +693,35 @@ static void fts3Appendf(
 }
 
 /*
+** Return a copy of input string zInput enclosed in double-quotes (") and
+** with all double quote characters escaped. For example:
+**
+**     fts3QuoteId("un \"zip\"")   ->    "un \"\"zip\"\""
+**
+** The pointer returned points to memory obtained from sqlite3_malloc(). It
+** is the callers responsibility to call sqlite3_free() to release this
+** memory.
+*/
+static char *fts3QuoteId(char const *zInput){
+  int nRet;
+  char *zRet;
+  nRet = 2 + strlen(zInput)*2 + 1;
+  zRet = sqlite3_malloc(nRet);
+  if( zRet ){
+    int i;
+    char *z = zRet;
+    *(z++) = '"';
+    for(i=0; zInput[i]; i++){
+      if( zInput[i]=='"' ) *(z++) = '"';
+      *(z++) = zInput[i];
+    }
+    *(z++) = '"';
+    *(z++) = '\0';
+  }
+  return zRet;
+}
+
+/*
 ** Return a list of comma separated SQL expressions that could be used
 ** in a SELECT statement such as the following:
 **
@@ -717,12 +746,20 @@ static void fts3Appendf(
 */
 static char *fts3ReadExprList(Fts3Table *p, const char *zFunc, int *pRc){
   char *zRet = 0;
+  char *zFree = 0;
+  char *zFunction;
   int i;
-  if( !zFunc ) zFunc = "";
+
+  if( !zFunc ){
+    zFunction = "";
+  }else{
+    zFree = zFunction = fts3QuoteId(zFunc);
+  }
   fts3Appendf(pRc, &zRet, "docid");
   for(i=0; i<p->nColumn; i++){
-    fts3Appendf(pRc, &zRet, ",%s(x.'c%d%q')", zFunc, i, p->azColumn[i]);
+    fts3Appendf(pRc, &zRet, ",%s(x.'c%d%q')", zFunction, i, p->azColumn[i]);
   }
+  sqlite3_free(zFree);
   return zRet;
 }
 
@@ -748,12 +785,20 @@ static char *fts3ReadExprList(Fts3Table *p, const char *zFunc, int *pRc){
 */
 static char *fts3WriteExprList(Fts3Table *p, const char *zFunc, int *pRc){
   char *zRet = 0;
+  char *zFree = 0;
+  char *zFunction;
   int i;
-  if( !zFunc ) zFunc = "";
+
+  if( !zFunc ){
+    zFunction = "";
+  }else{
+    zFree = zFunction = fts3QuoteId(zFunc);
+  }
   fts3Appendf(pRc, &zRet, "?");
   for(i=0; i<p->nColumn; i++){
-    fts3Appendf(pRc, &zRet, ",%s(?)", zFunc);
+    fts3Appendf(pRc, &zRet, ",%s(?)", zFunction);
   }
+  sqlite3_free(zFree);
   return zRet;
 }
 
@@ -927,9 +972,9 @@ static int fts3InitVtab(
   }
 
   if( (zCompress==0)!=(zUncompress==0) ){
-    char const *zMissing = (zCompress==0 ? "compress" : "uncompress");
+    char const *zMiss = (zCompress==0 ? "compress" : "uncompress");
     rc = SQLITE_ERROR;
-    *pzErr = sqlite3_mprintf("missing %s parameter", zMissing);
+    *pzErr = sqlite3_mprintf("missing %s parameter in fts4 constructor", zMiss);
   }
   p->zReadExprlist = fts3ReadExprList(p, zUncompress, &rc);
   p->zWriteExprlist = fts3WriteExprList(p, zCompress, &rc);
