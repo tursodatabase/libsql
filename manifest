@@ -1,5 +1,8 @@
-C Extra\stests\sfor\sfts4\scompress/uncompress\shooks.\sFix\ssome\sminor\sproblems\swith\sthe\ssame.
-D 2011-02-03T12:48:17.458
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Fix\sthe\sATTACH\scommand\sso\sthat\sthe\sfilename\sargument\scan\sbe\sany\sexpression\nand\sso\sthat\sif\sauthorizer\scallback\sgets\sa\sNULL\spointer\sfor\sthe\sfilename\nif\sthe\sfilename\sargument\sis\sanything\sother\sthan\sa\sstring\sliteral.\nTicket\s[9013e13dba5b58c7]
+D 2011-02-04T00:51:16.779
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -115,7 +118,7 @@ F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c 6a0c176e64a34929a4436048066a84ef4f1445b3
 F src/analyze.c a038162344265ac21dfb24b3fcc06c666ebb9c07
-F src/attach.c 252c4f7e36cc219349451ed63e278c60e80b26f3
+F src/attach.c 438ea6f6b5d5961c1f49b737f2ce0f14ce7c6877
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 6728d6d48d55b449af76a3e51c0808849cb32a2e
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
@@ -263,7 +266,7 @@ F test/attach.test f2b4ac6931f45695082b9f02be959c9c262e4f4d
 F test/attach2.test a295d2d7061adcee5884ef4a93c7c96a82765437
 F test/attach3.test bd9830bc3a0d22ed1310c9bff6896927937017dc
 F test/attachmalloc.test 1d5b821a676f7bf0b00d87cc106b78966789ba57
-F test/auth.test 26cc6f219580191539bf335abe03e55e49310846
+F test/auth.test b047105c32da7db70b842fd24056723125ecc2ff
 F test/auth2.test 270baddc8b9c273682760cffba6739d907bd2882
 F test/auth3.test a4755e6a2a2fea547ffe63c874eb569e60a28eb5
 F test/autoinc.test 85ef3180a737e6580086a018c09c6f1a52759b46
@@ -904,7 +907,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P cfc475690d85ea7e3547424289d9837f46ab7ef4
-R 88eebeb229dec71bb74cda54c9987bad
-U dan
-Z cc8e3364f71d0c95c8a268f7f131b691
+P 80225abe79b0a7723b922ec129954438af95855a
+R 9134f5db8961067a7ad82064d56946c9
+U drh
+Z 7f194afc366d2267b4ef7a641cbf9923
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (Darwin)
+
+iEYEARECAAYFAk1LTYQACgkQoxKgR168RlH97QCeM1UBJYsYMQZNJnbRrKh8f7uy
+FdEAn2U2U1OAUNrDlkTLscL5hpCzQ3Wk
+=NxZv
+-----END PGP SIGNATURE-----
