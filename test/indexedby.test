@@ -154,10 +154,10 @@ do_test indexedby-4.4 {
 do_execsql_test indexedby-5.1 {
   CREATE VIEW v2 AS SELECT * FROM t1 INDEXED BY i1 WHERE a > 5;
   EXPLAIN QUERY PLAN SELECT * FROM v2 
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a>?) (~330000 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a>?) (~250000 rows)}}
 do_execsql_test indexedby-5.2 {
   EXPLAIN QUERY PLAN SELECT * FROM v2 WHERE b = 10 
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a>?) (~33000 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a>?) (~25000 rows)}}
 do_test indexedby-5.3 {
   execsql { DROP INDEX i1 }
   catchsql { SELECT * FROM v2 }

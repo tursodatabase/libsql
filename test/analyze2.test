@@ -154,22 +154,22 @@ do_eqp_test 2.6 {
 do_eqp_test 2.7 {
   SELECT * FROM t1 WHERE x BETWEEN -400 AND -300 AND y BETWEEN 100 AND 300
 } {
-  0 0 0 {SEARCH TABLE t1 USING INDEX t1_x (x>? AND x<?) (~25 rows)}
+  0 0 0 {SEARCH TABLE t1 USING INDEX t1_x (x>? AND x<?) (~12 rows)}
 }
 do_eqp_test 2.8 {
   SELECT * FROM t1 WHERE x BETWEEN 100 AND 300 AND y BETWEEN -400 AND -300
 } {
-  0 0 0 {SEARCH TABLE t1 USING INDEX t1_y (y>? AND y<?) (~25 rows)}
+  0 0 0 {SEARCH TABLE t1 USING INDEX t1_y (y>? AND y<?) (~12 rows)}
 }
 do_eqp_test 2.9 {
   SELECT * FROM t1 WHERE x BETWEEN 500 AND 100 AND y BETWEEN 100 AND 300
 } {
-  0 0 0 {SEARCH TABLE t1 USING INDEX t1_x (x>? AND x<?) (~25 rows)}
+  0 0 0 {SEARCH TABLE t1 USING INDEX t1_x (x>? AND x<?) (~12 rows)}
 }
 do_eqp_test 2.10 {
   SELECT * FROM t1 WHERE x BETWEEN 100 AND 300 AND y BETWEEN 500 AND 100
 } {
-  0 0 0 {SEARCH TABLE t1 USING INDEX t1_y (y>? AND y<?) (~25 rows)}
+  0 0 0 {SEARCH TABLE t1 USING INDEX t1_y (y>? AND y<?) (~12 rows)}
 }
 
 do_test analyze2-3.1 {
@@ -207,7 +207,7 @@ do_eqp_test 3.3 {
 do_eqp_test 3.4 {
   SELECT * FROM t1 WHERE x BETWEEN 100 AND 400 AND y BETWEEN 'a' AND 'h'
 } {
-  0 0 0 {SEARCH TABLE t1 USING INDEX t1_x (x>? AND x<?) (~50 rows)}
+  0 0 0 {SEARCH TABLE t1 USING INDEX t1_x (x>? AND x<?) (~100 rows)}
 }
 do_eqp_test 3.5 {
   SELECT * FROM t1 WHERE x<'a' AND y>'h'
@@ -242,10 +242,12 @@ do_test analyze2-4.1 {
 } {}
 do_test analyze2-4.2 {
   execsql { 
+    PRAGMA automatic_index=OFF;
     SELECT tbl,idx,group_concat(sample,' ') 
     FROM sqlite_stat2 
     WHERE idx = 't3a' 
-    GROUP BY tbl,idx
+    GROUP BY tbl,idx;
+    PRAGMA automatic_index=ON;
   }
 } {t3 t3a {AfA bEj CEj dEj EEj fEj GEj hEj IEj jEj}}
 do_test analyze2-4.3 {
@@ -408,7 +410,7 @@ do_test analyze2-6.2.1 {
         t5.a>1 AND t5.a<15 AND
         t6.a>1
   }
-} {0 0 0 {SEARCH TABLE t5 USING COVERING INDEX t5i (a>? AND a<?) (~110000 rows)} 0 1 1 {SEARCH TABLE t6 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
+} {0 0 0 {SEARCH TABLE t5 USING COVERING INDEX t5i (a>? AND a<?) (~60000 rows)} 0 1 1 {SEARCH TABLE t6 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
 do_test analyze2-6.2.2 {
   db cache flush
   execsql ANALYZE
@@ -416,14 +418,14 @@ do_test analyze2-6.2.2 {
         t5.a>1 AND t5.a<15 AND
         t6.a>1
   }
-} {0 0 1 {SEARCH TABLE t6 USING COVERING INDEX t6i (a>?) (~2 rows)} 0 1 0 {SEARCH TABLE t5 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
+} {0 0 1 {SEARCH TABLE t6 USING COVERING INDEX t6i (a>?) (~1 rows)} 0 1 0 {SEARCH TABLE t5 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
 do_test analyze2-6.2.3 {
   sqlite3 db test.db
   eqp { SELECT * FROM t5,t6 WHERE t5.rowid=t6.rowid AND 
         t5.a>1 AND t5.a<15 AND
         t6.a>1
   }
-} {0 0 1 {SEARCH TABLE t6 USING COVERING INDEX t6i (a>?) (~2 rows)} 0 1 0 {SEARCH TABLE t5 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
+} {0 0 1 {SEARCH TABLE t6 USING COVERING INDEX t6i (a>?) (~1 rows)} 0 1 0 {SEARCH TABLE t5 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
 do_test analyze2-6.2.4 {
   execsql { 
     PRAGMA writable_schema = 1;
@@ -434,7 +436,7 @@ do_test analyze2-6.2.4 {
         t5.a>1 AND t5.a<15 AND
         t6.a>1
   }
-} {0 0 0 {SEARCH TABLE t5 USING COVERING INDEX t5i (a>? AND a<?) (~110000 rows)} 0 1 1 {SEARCH TABLE t6 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
+} {0 0 0 {SEARCH TABLE t5 USING COVERING INDEX t5i (a>? AND a<?) (~60000 rows)} 0 1 1 {SEARCH TABLE t6 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
 do_test analyze2-6.2.5 {
   execsql { 
     PRAGMA writable_schema = 1;
@@ -445,7 +447,7 @@ do_test analyze2-6.2.5 {
         t5.a>1 AND t5.a<15 AND
         t6.a>1
   }
-} {0 0 0 {SEARCH TABLE t5 USING COVERING INDEX t5i (a>? AND a<?) (~110000 rows)} 0 1 1 {SEARCH TABLE t6 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
+} {0 0 0 {SEARCH TABLE t5 USING COVERING INDEX t5i (a>? AND a<?) (~60000 rows)} 0 1 1 {SEARCH TABLE t6 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
 do_test analyze2-6.2.6 {
   execsql { 
     PRAGMA writable_schema = 1;
@@ -457,7 +459,7 @@ do_test analyze2-6.2.6 {
         t5.a>1 AND t5.a<15 AND
         t6.a>1
   }
-} {0 0 1 {SEARCH TABLE t6 USING COVERING INDEX t6i (a>?) (~2 rows)} 0 1 0 {SEARCH TABLE t5 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
+} {0 0 1 {SEARCH TABLE t6 USING COVERING INDEX t6i (a>?) (~1 rows)} 0 1 0 {SEARCH TABLE t5 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
 
 #--------------------------------------------------------------------
 # These tests, analyze2-7.*, test that the sqlite_stat2 functionality
@@ -501,7 +503,7 @@ ifcapable shared_cache {
           t5.a>1 AND t5.a<15 AND
           t6.a>1
     } db1
-  } {0 0 1 {SEARCH TABLE t6 USING COVERING INDEX t6i (a>?) (~2 rows)} 0 1 0 {SEARCH TABLE t5 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
+  } {0 0 1 {SEARCH TABLE t6 USING COVERING INDEX t6i (a>?) (~1 rows)} 0 1 0 {SEARCH TABLE t5 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
   do_test analyze2-7.6 {
     incr_schema_cookie test.db
     execsql { SELECT * FROM sqlite_master } db2
@@ -509,7 +511,7 @@ ifcapable shared_cache {
           t5.a>1 AND t5.a<15 AND
           t6.a>1
     } db2
-  } {0 0 1 {SEARCH TABLE t6 USING COVERING INDEX t6i (a>?) (~2 rows)} 0 1 0 {SEARCH TABLE t5 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
+  } {0 0 1 {SEARCH TABLE t6 USING COVERING INDEX t6i (a>?) (~1 rows)} 0 1 0 {SEARCH TABLE t5 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
   do_test analyze2-7.7 {
     incr_schema_cookie test.db
     execsql { SELECT * FROM sqlite_master } db1
@@ -517,7 +519,7 @@ ifcapable shared_cache {
           t5.a>1 AND t5.a<15 AND
           t6.a>1
     } db1
-  } {0 0 1 {SEARCH TABLE t6 USING COVERING INDEX t6i (a>?) (~2 rows)} 0 1 0 {SEARCH TABLE t5 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
+  } {0 0 1 {SEARCH TABLE t6 USING COVERING INDEX t6i (a>?) (~1 rows)} 0 1 0 {SEARCH TABLE t5 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
 
   do_test analyze2-7.8 {
     execsql { DELETE FROM sqlite_stat2 } db2
@@ -526,14 +528,14 @@ ifcapable shared_cache {
           t5.a>1 AND t5.a<15 AND
           t6.a>1
     } db1
-  } {0 0 1 {SEARCH TABLE t6 USING COVERING INDEX t6i (a>?) (~2 rows)} 0 1 0 {SEARCH TABLE t5 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
+  } {0 0 1 {SEARCH TABLE t6 USING COVERING INDEX t6i (a>?) (~1 rows)} 0 1 0 {SEARCH TABLE t5 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
   do_test analyze2-7.9 {
     execsql { SELECT * FROM sqlite_master } db2
     eqp { SELECT * FROM t5,t6 WHERE t5.rowid=t6.rowid AND 
           t5.a>1 AND t5.a<15 AND
           t6.a>1
     } db2
-  } {0 0 1 {SEARCH TABLE t6 USING COVERING INDEX t6i (a>?) (~2 rows)} 0 1 0 {SEARCH TABLE t5 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
+  } {0 0 1 {SEARCH TABLE t6 USING COVERING INDEX t6i (a>?) (~1 rows)} 0 1 0 {SEARCH TABLE t5 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
 
   do_test analyze2-7.10 {
     incr_schema_cookie test.db
@@ -542,7 +544,7 @@ ifcapable shared_cache {
           t5.a>1 AND t5.a<15 AND
           t6.a>1
     } db1
-  } {0 0 0 {SEARCH TABLE t5 USING COVERING INDEX t5i (a>? AND a<?) (~2 rows)} 0 1 1 {SEARCH TABLE t6 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
+  } {0 0 0 {SEARCH TABLE t5 USING COVERING INDEX t5i (a>? AND a<?) (~1 rows)} 0 1 1 {SEARCH TABLE t6 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
 
   db1 close
   db2 close

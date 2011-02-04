@@ -472,7 +472,7 @@ ifcapable explain {
   do_execsql_test where9-5.3 {
     EXPLAIN QUERY PLAN SELECT a FROM t1 WHERE b>1000 AND (c>=31031 OR d IS NULL)
   } {
-    0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b>?) (~165000 rows)}
+    0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b>?) (~125000 rows)}
   }
 }
 

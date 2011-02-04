@@ -1082,6 +1082,8 @@ int sqlite3ValueFromExpr(
       pVal->r = (double)-1 * pVal->r;
       sqlite3ValueApplyAffinity(pVal, affinity, enc);
     }
+  }else if( op==TK_NULL ){
+    pVal = sqlite3ValueNew(db);
   }
 #ifndef SQLITE_OMIT_BLOB_LITERAL
   else if( op==TK_BLOB ){
