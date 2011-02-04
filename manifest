@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sthe\sATTACH\scommand\sso\sthat\sthe\sfilename\sargument\scan\sbe\sany\sexpression\nand\sso\sthat\sif\sauthorizer\scallback\sgets\sa\sNULL\spointer\sfor\sthe\sfilename\nif\sthe\sfilename\sargument\sis\sanything\sother\sthan\sa\sstring\sliteral.\nTicket\s[9013e13dba5b58c7]
-D 2011-02-04T00:51:16.779
+C If\sa\sdeferred\sforeign\skey\sconstraint\sfails\son\sa\sstatement\sthat\sis\snot\spart\nof\sa\slarger\stransation,\smake\ssure\sthat\sthe\sstatement\sfully\sends\sso\sthat\nsubsequent\sinvocations\sof\sthe\ssame\sstatement\swill\snot\spass\sthe\sconstraint\nbecause\sthey\sthink\sthe\stransaction\sis\snot\sclosed.\s\sThis\sis\sa\smerge\sof\nthe\sdeferred-fk-quirk\sbranch\stogether\swith\sa\stest\scase.
+D 2011-02-04T05:47:51.496
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -236,7 +236,7 @@ F src/vdbe.c 7f54982de40509458ee7ede8e356dccc19f5b161
 F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
 F src/vdbeInt.h 6e6f28e9bccc6c703dca1372fd661c57b5c15fb0
 F src/vdbeapi.c 8e9324fd35eb70d0b5904bd1af40f2598744dc4d
-F src/vdbeaux.c 33448d23b857654dd69ed2103611f5c733606f68
+F src/vdbeaux.c 521b954f21ec15aee2ba5a0af8a1526bdd71e45e
 F src/vdbeblob.c 18955f0ee6b133cd08e1592010cb9a6b11e9984c
 F src/vdbemem.c 411649a35686f54268ccabeda175322c4697f5a6
 F src/vdbetrace.c 3ba13bc32bdf16d2bdea523245fd16736bed67b5
@@ -387,6 +387,7 @@ F test/filefmt.test f77c92141960b7933bc6691631d2ad62257ef40a
 F test/fkey1.test 01c7de578e11747e720c2d9aeef27f239853c4da
 F test/fkey2.test 080969fe219b3b082b0e097ac18c6af2e5b0631f
 F test/fkey3.test 42f88d6048d8dc079e2a8cf7baad1cc1483a7620
+F test/fkey4.test c6c8f9f9be885f95c85c7bceb26f243ad906fd49
 F test/fkey_malloc.test a5ede29bd2f6e56dea78c3d43fb86dd696c068c8
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
 F test/fts1a.test 46090311f85da51bb33bd5ce84f7948359c6d8d7
@@ -907,14 +908,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 80225abe79b0a7723b922ec129954438af95855a
-R 9134f5db8961067a7ad82064d56946c9
+P e64e1453a9c204d93de1af92dc0b3ca26762b024 8063197ef141c0c62ba710efdd2b3421fbee4e5d
+R 69d3f0356b4d8f9e9f40d56c45da6c25
 U drh
-Z 7f194afc366d2267b4ef7a641cbf9923
+Z 9ed074a22966ce70581904f84a2ffc62
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.10 (Darwin)
 
-iEYEARECAAYFAk1LTYQACgkQoxKgR168RlH97QCeM1UBJYsYMQZNJnbRrKh8f7uy
-FdEAn2U2U1OAUNrDlkTLscL5hpCzQ3Wk
-=NxZv
+iEYEARECAAYFAk1LkwcACgkQoxKgR168RlE5awCdFnaZrUhXoj6KrFZElnyy4f9M
+kbMAn19H8xD5tiM5UH35kU9mL5D0eNXv
+=9S5i
 -----END PGP SIGNATURE-----

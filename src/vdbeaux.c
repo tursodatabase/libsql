@@ -2108,16 +2108,21 @@ int sqlite3VdbeHalt(Vdbe *p){
      && db->writeVdbeCnt==(p->readOnly==0) 
     ){
       if( p->rc==SQLITE_OK || (p->errorAction==OE_Fail && !isSpecialError) ){
-        if( sqlite3VdbeCheckFk(p, 1) ){
-          sqlite3BtreeMutexArrayLeave(&p->aMutex);
-          return SQLITE_ERROR;
+        rc = sqlite3VdbeCheckFk(p, 1);
+        if( rc!=SQLITE_OK ){
+          if( p->readOnly ){
+            sqlite3BtreeMutexArrayLeave(&p->aMutex);
+            return SQLITE_ERROR;
+          }
+          rc = SQLITE_CONSTRAINT;
+        }else{ 
+          /* The auto-commit flag is true, the vdbe program was successful 
+          ** or hit an 'OR FAIL' constraint and there are no deferred foreign
+          ** key constraints to hold up the transaction. This means a commit 
+          ** is required. */
+          rc = vdbeCommit(db, p);
         }
-        /* The auto-commit flag is true, the vdbe program was successful 
-        ** or hit an 'OR FAIL' constraint and there are no deferred foreign
-        ** key constraints to hold up the transaction. This means a commit 
-        ** is required.  */
-        rc = vdbeCommit(db, p);
-        if( rc==SQLITE_BUSY ){
+        if( rc==SQLITE_BUSY && p->readOnly ){
           sqlite3BtreeMutexArrayLeave(&p->aMutex);
           return SQLITE_BUSY;
         }else if( rc!=SQLITE_OK ){
@@ -2216,7 +2221,7 @@ int sqlite3VdbeHalt(Vdbe *p){
   }
 
   assert( db->activeVdbeCnt>0 || db->autoCommit==0 || db->nStatement==0 );
-  return SQLITE_OK;
+  return (p->rc==SQLITE_BUSY ? SQLITE_BUSY : SQLITE_OK);
 }
 
 
