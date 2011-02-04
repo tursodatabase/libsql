@@ -2223,7 +2223,7 @@ void sqlite3Fts3SegReaderFinish(
 */
 static int fts3SegmentMerge(Fts3Table *p, int iLevel){
   int rc;                         /* Return code */
-  int iIdx;                       /* Index of new segment */
+  int iIdx = 0;                   /* Index of new segment */
   int iNewLevel = 0;              /* Level to create new segment at */
   SegmentWriter *pWriter = 0;     /* Used to write the new, merged, segment */
   Fts3SegFilter filter;           /* Segment term filter condition */
@@ -2242,7 +2242,6 @@ static int fts3SegmentMerge(Fts3Table *p, int iLevel){
       rc = SQLITE_DONE;
       goto finished;
     }
-    iIdx = 0;
     rc = fts3SegmentCountMax(p, &nDummy, &iNewLevel);
   }else{
     /* This call is to merge all segments at level iLevel. Find the next

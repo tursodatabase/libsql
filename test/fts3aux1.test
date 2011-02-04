@@ -24,7 +24,7 @@ do_execsql_test 1.1 {
   INSERT INTO t1 VALUES('one three five seven');
 
   CREATE VIRTUAL TABLE terms USING fts4aux(t1);
-  SELECT * FROM terms;
+  SELECT term, documents, occurrences FROM terms WHERE col = '*';
 } {
   five  2 2     four  2 2     one   2 2     seven 1 1 
   six   1 1     three 3 3     two   1 1
@@ -32,7 +32,7 @@ do_execsql_test 1.1 {
 
 do_execsql_test 1.2 {
   INSERT INTO t1 VALUES('one one one three three three');
-  SELECT * FROM terms;
+  SELECT term, documents, occurrences FROM terms WHERE col = '*';
 } { 
   five  2 2     four  2 2     one   3 5     seven 1 1 
   six   1 1     three 4 6     two   1 1
@@ -40,7 +40,7 @@ do_execsql_test 1.2 {
 
 do_execsql_test 1.3 {
   DELETE FROM t1;
-  SELECT * FROM terms;
+  SELECT term, documents, occurrences FROM terms WHERE col = '*';
 } {}
 
 do_execsql_test 1.4 {
@@ -53,7 +53,7 @@ do_execsql_test 1.4 {
   INSERT INTO t1 SELECT * FROM t1;
   INSERT INTO t1 SELECT * FROM t1;
   INSERT INTO t1 SELECT * FROM t1;
-  SELECT * FROM terms;
+  SELECT term, documents, occurrences FROM terms WHERE col = '*';
 } {a 256 1024    b 256 768}
 
 #-------------------------------------------------------------------------
@@ -84,6 +84,9 @@ do_execsql_test 2.0 {
   INSERT INTO x1(x1) VALUES('nodesize=24');
   CREATE VIRTUAL TABLE terms USING fts4aux(x1);
 
+  CREATE VIEW terms_v AS 
+  SELECT term, documents, occurrences FROM terms WHERE col = '*';
+
   INSERT INTO x1 VALUES('braes brag bragged bragger bragging');
   INSERT INTO x1 VALUES('brags braid braided braiding braids');
   INSERT INTO x1 VALUES('brain brainchild brained braining brains');
@@ -112,38 +115,38 @@ do_execsql_test 2.1.1.2 {
 #
 do_test 2.1.2.1 {
   set cnt 0
-  execsql { SELECT * FROM terms WHERE rec('cnt', term) AND term='braid' }
+  execsql { SELECT * FROM terms_v WHERE rec('cnt', term) AND term='braid' }
   set cnt
-} {1}
+} {2}
 do_test 2.1.2.2 {
   set cnt 0
-  execsql { SELECT * FROM terms WHERE rec('cnt', term) AND +term='braid' }
+  execsql { SELECT * FROM terms_v WHERE rec('cnt', term) AND +term='braid' }
   set cnt
-} {19}
+} {38}
 
 # Similar to the test immediately above, but using a term ("breakfast") that 
 # is not featured in the dataset.
 #
 do_test 2.1.3.1 {
   set cnt 0
-  execsql { SELECT * FROM terms WHERE rec('cnt', term) AND term='breakfast' }
+  execsql { SELECT * FROM terms_v WHERE rec('cnt', term) AND term='breakfast' }
   set cnt
 } {0}
 do_test 2.1.3.2 {
   set cnt 0
-  execsql { SELECT * FROM terms WHERE rec('cnt', term) AND +term='breakfast' }
+  execsql { SELECT * FROM terms_v WHERE rec('cnt', term) AND +term='breakfast' }
   set cnt
-} {19}
+} {38}
 
-do_execsql_test 2.1.4.1 { SELECT * FROM terms WHERE term='braid'  } {braid 1 1}
-do_execsql_test 2.1.4.2 { SELECT * FROM terms WHERE +term='braid' } {braid 1 1}
-do_execsql_test 2.1.4.3 { SELECT * FROM terms WHERE term='breakfast'  } {}
-do_execsql_test 2.1.4.4 { SELECT * FROM terms WHERE +term='breakfast' } {}
+do_execsql_test 2.1.4.1 { SELECT * FROM terms_v WHERE term='braid' } {braid 1 1}
+do_execsql_test 2.1.4.2 { SELECT * FROM terms_v WHERE +term='braid'} {braid 1 1}
+do_execsql_test 2.1.4.3 { SELECT * FROM terms_v WHERE term='breakfast'  } {}
+do_execsql_test 2.1.4.4 { SELECT * FROM terms_v WHERE +term='breakfast' } {}
 
-do_execsql_test 2.1.4.5 { SELECT * FROM terms WHERE term='cba'  } {}
-do_execsql_test 2.1.4.6 { SELECT * FROM terms WHERE +term='cba' } {}
-do_execsql_test 2.1.4.7 { SELECT * FROM terms WHERE term='abc'  } {}
-do_execsql_test 2.1.4.8 { SELECT * FROM terms WHERE +term='abc' } {}
+do_execsql_test 2.1.4.5 { SELECT * FROM terms_v WHERE term='cba'  } {}
+do_execsql_test 2.1.4.6 { SELECT * FROM terms_v WHERE +term='cba' } {}
+do_execsql_test 2.1.4.7 { SELECT * FROM terms_v WHERE term='abc'  } {}
+do_execsql_test 2.1.4.8 { SELECT * FROM terms_v WHERE +term='abc' } {}
 
 # Special case: term=NULL
 #
@@ -174,33 +177,33 @@ do_test 2.2.2.1 {
   set cnt 0
   execsql { SELECT * FROM terms WHERE rec('cnt', term) AND term>'brain' }
   set cnt
-} {9}
+} {18}
 do_test 2.2.2.2 {
   set cnt 0
   execsql { SELECT * FROM terms WHERE rec('cnt', term) AND +term>'brain' }
   set cnt
-} {19}
+} {38}
 do_execsql_test 2.2.2.3 {
-  SELECT * FROM terms WHERE rec('cnt', term) AND term>'brain'
+  SELECT term, documents, occurrences FROM terms_v WHERE term>'brain'
 } {
   brainchild 1 1 brained 1 1 braining 1 1 brains 1 1 
   brainstem 1 1 brainstems 1 1 brainstorm 1 1 brainstorms 1 1
 }
 do_execsql_test 2.2.2.4 {
-  SELECT * FROM terms WHERE rec('cnt', term) AND +term>'brain'
+  SELECT term, documents, occurrences FROM terms_v WHERE +term>'brain'
 } {
   brainchild 1 1 brained 1 1 braining 1 1 brains 1 1 
   brainstem 1 1 brainstems 1 1 brainstorm 1 1 brainstorms 1 1
 }
 do_execsql_test 2.2.2.5 {
-  SELECT * FROM terms WHERE rec('cnt', term) AND term>='brain'
+  SELECT term, documents, occurrences FROM terms_v WHERE term>='brain'
 } {
   brain 1 1
   brainchild 1 1 brained 1 1 braining 1 1 brains 1 1 
   brainstem 1 1 brainstems 1 1 brainstorm 1 1 brainstorms 1 1
 }
 do_execsql_test 2.2.2.6 {
-  SELECT * FROM terms WHERE rec('cnt', term) AND +term>='brain'
+  SELECT term, documents, occurrences FROM terms_v WHERE +term>='brain'
 } {
   brain 1 1
   brainchild 1 1 brained 1 1 braining 1 1 brains 1 1 
@@ -208,7 +211,7 @@ do_execsql_test 2.2.2.6 {
 }
 
 do_execsql_test 2.2.2.7 {
-  SELECT * FROM terms WHERE term>='abc'
+  SELECT term, documents, occurrences FROM terms_v WHERE term>='abc'
 } {
   braes 1 1 brag 1 1 bragged 1 1 bragger 1 1 
   bragging 1 1 brags 1 1 braid 1 1 braided 1 1 
@@ -217,7 +220,7 @@ do_execsql_test 2.2.2.7 {
   brainstems 1 1 brainstorm 1 1 brainstorms 1 1
 }
 do_execsql_test 2.2.2.8 {
-  SELECT * FROM terms WHERE +term>='abc'
+  SELECT term, documents, occurrences FROM terms_v WHERE +term>='abc'
 } {
   braes 1 1 brag 1 1 bragged 1 1 bragger 1 1 
   bragging 1 1 brags 1 1 braid 1 1 braided 1 1 
@@ -227,48 +230,48 @@ do_execsql_test 2.2.2.8 {
 }
 
 do_execsql_test 2.2.2.9 {
-  SELECT * FROM terms WHERE term>='brainstorms'
+  SELECT term, documents, occurrences FROM terms_v WHERE term>='brainstorms'
 } {brainstorms 1 1}
 do_execsql_test 2.2.2.10 {
-  SELECT * FROM terms WHERE term>='brainstorms'
+  SELECT term, documents, occurrences FROM terms_v WHERE term>='brainstorms'
 } {brainstorms 1 1}
-do_execsql_test 2.2.2.11 { SELECT * FROM terms WHERE term>'brainstorms' } {}
-do_execsql_test 2.2.2.12 { SELECT * FROM terms WHERE term>'brainstorms' } {}
+do_execsql_test 2.2.2.11 { SELECT * FROM terms_v WHERE term>'brainstorms' } {}
+do_execsql_test 2.2.2.12 { SELECT * FROM terms_v WHERE term>'brainstorms' } {}
 
-do_execsql_test 2.2.2.13 { SELECT * FROM terms WHERE term>'cba' } {}
-do_execsql_test 2.2.2.14 { SELECT * FROM terms WHERE term>'cba' } {}
+do_execsql_test 2.2.2.13 { SELECT * FROM terms_v WHERE term>'cba' } {}
+do_execsql_test 2.2.2.14 { SELECT * FROM terms_v WHERE term>'cba' } {}
 
 do_test 2.2.3.1 {
   set cnt 0
   execsql { SELECT * FROM terms WHERE rec('cnt', term) AND term<'brain' }
   set cnt
-} {11}
+} {22}
 do_test 2.2.3.2 {
   set cnt 0
   execsql { SELECT * FROM terms WHERE rec('cnt', term) AND +term<'brain' }
   set cnt
-} {19}
+} {38}
 do_execsql_test 2.2.3.3 {
-  SELECT * FROM terms WHERE rec('cnt', term) AND term<'brain'
+  SELECT term, documents, occurrences FROM terms_v WHERE term<'brain'
 } {
   braes 1 1 brag 1 1 bragged 1 1 bragger 1 1 bragging 1 1 
   brags 1 1 braid 1 1 braided 1 1 braiding 1 1 braids 1 1
 }
 do_execsql_test 2.2.3.4 {
-  SELECT * FROM terms WHERE rec('cnt', term) AND +term<'brain'
+  SELECT term, documents, occurrences FROM terms_v WHERE +term<'brain'
 } {
   braes 1 1 brag 1 1 bragged 1 1 bragger 1 1 bragging 1 1 
   brags 1 1 braid 1 1 braided 1 1 braiding 1 1 braids 1 1
 }
 do_execsql_test 2.2.3.5 {
-  SELECT * FROM terms WHERE rec('cnt', term) AND term<='brain'
+  SELECT term, documents, occurrences FROM terms_v WHERE term<='brain'
 } {
   braes 1 1 brag 1 1 bragged 1 1 bragger 1 1 bragging 1 1 
   brags 1 1 braid 1 1 braided 1 1 braiding 1 1 braids 1 1
   brain 1 1
 }
 do_execsql_test 2.2.3.6 {
-  SELECT * FROM terms WHERE rec('cnt', term) AND +term<='brain'
+  SELECT term, documents, occurrences FROM terms_v WHERE +term<='brain'
 } {
   braes 1 1 brag 1 1 bragged 1 1 bragger 1 1 bragging 1 1 
   brags 1 1 braid 1 1 braided 1 1 braiding 1 1 braids 1 1
@@ -278,39 +281,39 @@ do_execsql_test 2.2.3.6 {
 do_test 2.2.4.1 {
   set cnt 0
   execsql { 
-    SELECT * FROM terms 
+    SELECT term, documents, occurrences FROM terms 
     WHERE rec('cnt', term) AND term BETWEEN 'brags' AND 'brain' 
   }
   set cnt
-} {6}
+} {12}
 do_test 2.2.4.2 {
   set cnt 0
   execsql { 
-    SELECT * FROM terms 
+    SELECT term, documents, occurrences FROM terms 
     WHERE rec('cnt', term) AND +term BETWEEN 'brags' AND 'brain' 
   }
   set cnt
-} {19}
+} {38}
 do_execsql_test 2.2.4.3 {
-  SELECT * FROM terms 
+  SELECT term, documents, occurrences FROM terms_v 
   WHERE rec('cnt', term) AND term BETWEEN 'brags' AND 'brain' 
 } {
   brags 1 1 braid 1 1 braided 1 1 braiding 1 1 braids 1 1 brain 1 1 
 }
 do_execsql_test 2.2.4.4 {
-  SELECT * FROM terms 
+  SELECT term, documents, occurrences FROM terms_v 
   WHERE rec('cnt', term) AND +term BETWEEN 'brags' AND 'brain' 
 } {
   brags 1 1 braid 1 1 braided 1 1 braiding 1 1 braids 1 1 brain 1 1 
 }
 do_execsql_test 2.2.4.5 {
-  SELECT * FROM terms 
+  SELECT term, documents, occurrences FROM terms_v 
   WHERE rec('cnt', term) AND term > 'brags' AND term < 'brain' 
 } {
   braid 1 1 braided 1 1 braiding 1 1 braids 1 1
 }
 do_execsql_test 2.2.4.6 {
-  SELECT * FROM terms 
+  SELECT term, documents, occurrences FROM terms_v 
   WHERE rec('cnt', term) AND +term > 'brags' AND +term < 'brain' 
 } {
   braid 1 1 braided 1 1 braiding 1 1 braids 1 1
@@ -393,8 +396,8 @@ do_execsql_test 4.1 {
   INSERT INTO x1 VALUES('f g h i j');
   INSERT INTO x1 VALUES('k k l l a');
 
-  INSERT INTO x2 SELECT term FROM terms;
-  INSERT INTO x3 SELECT term FROM terms;
+  INSERT INTO x2 SELECT term FROM terms WHERE col = '*';
+  INSERT INTO x3 SELECT term FROM terms WHERE col = '*';
 }
 
 proc do_plansql_test {tn sql r} {
@@ -403,7 +406,7 @@ proc do_plansql_test {tn sql r} {
 
 
 do_plansql_test 4.2 {
-  SELECT y FROM x2, terms WHERE y = term
+  SELECT y FROM x2, terms WHERE y = term AND col = '*'
 } {
   0 0 0 {SCAN TABLE x2 (~1000000 rows)} 
   0 1 1 {SCAN TABLE terms VIRTUAL TABLE INDEX 1: (~0 rows)} 
@@ -411,7 +414,7 @@ do_plansql_test 4.2 {
 }
 
 do_plansql_test 4.3 {
-  SELECT y FROM terms, x2 WHERE y = term
+  SELECT y FROM terms, x2 WHERE y = term AND col = '*'
 } {
   0 0 1 {SCAN TABLE x2 (~1000000 rows)} 
   0 1 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 1: (~0 rows)} 
@@ -419,7 +422,7 @@ do_plansql_test 4.3 {
 }
 
 do_plansql_test 4.4 {
-  SELECT y FROM x3, terms WHERE y = term
+  SELECT y FROM x3, terms WHERE y = term AND col = '*'
 } {
   0 0 1 {SCAN TABLE terms VIRTUAL TABLE INDEX 0: (~0 rows)} 
   0 1 0 {SEARCH TABLE x3 USING COVERING INDEX i1 (y=?) (~10 rows)}
@@ -427,7 +430,7 @@ do_plansql_test 4.4 {
 }
 
 do_plansql_test 4.5 {
-  SELECT y FROM terms, x3 WHERE y = term AND occurrences>1
+  SELECT y FROM terms, x3 WHERE y = term AND occurrences>1 AND col = '*'
 } {
   0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 0: (~0 rows)} 
   0 1 1 {SEARCH TABLE x3 USING COVERING INDEX i1 (y=?) (~10 rows)}

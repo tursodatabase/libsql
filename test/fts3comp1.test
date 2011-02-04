@@ -88,14 +88,14 @@ foreach {tn zip unzip} {
   #
   do_execsql_test 1.$tn.7 {
     CREATE VIRTUAL TABLE terms USING fts4aux(t1);
-    SELECT * FROM terms;
+    SELECT term, documents, occurrences FROM terms WHERE col = '*';
   } {
     eight 1 1    four 2 2    nine 1 1    one 1 1 
     six 2 2      three 2 2   twelve 1 1  two 1 2
   }
   do_execsql_test 1.$tn.8 {
     DELETE FROM t1 WHERE docid = 1;
-    SELECT * FROM terms;
+    SELECT term, documents, occurrences FROM terms WHERE col = '*';
   } {
     eight 1 1   four 1 1    nine 1 1 
     six 1 1     three 1 1   twelve 1 1
