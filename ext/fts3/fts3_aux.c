@@ -97,6 +97,7 @@ static int fts3auxConnectMethod(
 
   memcpy((char *)p->pFts3Tab->zDb, zDb, nDb);
   memcpy((char *)p->pFts3Tab->zName, zFts3, nFts3);
+  sqlite3Fts3Dequote((char *)p->pFts3Tab->zName);
 
   *ppVtab = (sqlite3_vtab *)p;
   return SQLITE_OK;

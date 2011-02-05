@@ -381,6 +381,9 @@ do_catchsql_test 3.3.3 {
 
 
 #-------------------------------------------------------------------------
+# The following tests - fts4aux-4.* - test that joins work with fts4aux
+# tables. And that fts4aux provides reasonably sane cost information via
+# xBestIndex to the query planner.
 #
 db close
 forcedelete test.db
@@ -403,7 +406,6 @@ do_execsql_test 4.1 {
 proc do_plansql_test {tn sql r} {
   uplevel do_execsql_test $tn [list "EXPLAIN QUERY PLAN $sql ; $sql"] [list $r]
 }
-
 
 do_plansql_test 4.2 {
   SELECT y FROM x2, terms WHERE y = term AND col = '*'
@@ -436,6 +438,25 @@ do_plansql_test 4.5 {
   0 1 1 {SEARCH TABLE x3 USING COVERING INDEX i1 (y=?) (~10 rows)}
   a k l
 }
+
+#-------------------------------------------------------------------------
+# The following tests check that fts4aux can handle an fts table with an
+# odd name (one that requires quoting for use in SQL statements). And that
+# the argument to the fts4aux constructor is properly dequoted before use.
+#
+#
+do_execsql_test 5.1 {
+  CREATE VIRTUAL TABLE "abc '!' def" USING fts4(x, y);
+  INSERT INTO "abc '!' def" VALUES('XX', 'YY');
+
+  CREATE VIRTUAL TABLE terms3 USING fts4aux("abc '!' def");
+  SELECT * FROM terms3;
+} {xx * 1 1 xx 0 1 1 yy * 1 1 yy 1 1 1}
+
+do_execsql_test 5.2 {
+  CREATE VIRTUAL TABLE "%%^^%%" USING fts4aux('abc ''!'' def');
+  SELECT * FROM "%%^^%%";
+} {xx * 1 1 xx 0 1 1 yy * 1 1 yy 1 1 1}
 
 
 finish_test
