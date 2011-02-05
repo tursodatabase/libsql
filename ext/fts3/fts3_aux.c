@@ -302,7 +302,7 @@ static int fts3auxNextMethod(sqlite3_vtab_cursor *pCursor){
           break;
 
         /* State 3. The integer just read is a column number. */
-        case 3:
+        default: assert( eState==3 );
           iCol = (int)v;
           if( fts3auxGrowStatArray(pCsr, iCol+2) ) return SQLITE_NOMEM;
           pCsr->aStat[iCol+1].nDoc++;
