@@ -5219,29 +5219,32 @@ case OP_AggFinal: {
 **
 ** Checkpoint database P1. This is a no-op if P1 is not currently in
 ** WAL mode. Parameter P2 is one of SQLITE_CHECKPOINT_PASSIVE, FULL
-** or RESTART.
+** or RESTART.  Write 1 or 0 into mem[P3] if the checkpoint returns
+** SQLITE_BUSY or not, respectively.  Write the number of pages in the
+** WAL after the checkpoint into mem[P3+1] and the number of pages
+** in the WAL that have been checkpointed after the checkpoint
+** completes into mem[P3+2].  However on an error, mem[P3+1] and
+** mem[P3+2] are initialized to -1.
 */
 case OP_Checkpoint: {
-  int nLog = -1;                  /* Number of pages in WAL log */
-  int nCkpt = -1;                 /* Number of checkpointed pages */
-  int bBusy = 0;
+  int i;                          /* Loop counter */
+  int aRes[3];                    /* Results */
+  Mem *pMem;                      /* Write results here */
+
+  aRes[0] = 0;
+  aRes[1] = aRes[2] = -1;
   assert( pOp->p2==SQLITE_CHECKPOINT_PASSIVE
        || pOp->p2==SQLITE_CHECKPOINT_FULL
        || pOp->p2==SQLITE_CHECKPOINT_RESTART
   );
-  rc = sqlite3Checkpoint(db, pOp->p1, pOp->p2, &nLog, &nCkpt);
+  rc = sqlite3Checkpoint(db, pOp->p1, pOp->p2, &aRes[1], &aRes[2]);
   if( rc==SQLITE_BUSY ){
     rc = SQLITE_OK;
-    bBusy = 1;
+    aRes[0] = 1;
   }
-
-  aMem[1].u.i = bBusy;
-  aMem[2].u.i = nLog;
-  aMem[3].u.i = nCkpt;
-  MemSetTypeFlag(&aMem[1], MEM_Int);
-  MemSetTypeFlag(&aMem[2], MEM_Int);
-  MemSetTypeFlag(&aMem[3], MEM_Int);
-
+  for(i=0, pMem = &aMem[pOp->p3]; i<3; i++, pMem++){
+    sqlite3VdbeMemSetInt64(pMem, (i64)aRes[i]);
+  }    
   break;
 };  
 #endif

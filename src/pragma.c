@@ -1407,7 +1407,7 @@ void sqlite3Pragma(
     sqlite3VdbeSetColName(v, 1, COLNAME_NAME, "log", SQLITE_STATIC);
     sqlite3VdbeSetColName(v, 2, COLNAME_NAME, "checkpointed", SQLITE_STATIC);
 
-    sqlite3VdbeAddOp2(v, OP_Checkpoint, iBt, eMode);
+    sqlite3VdbeAddOp3(v, OP_Checkpoint, iBt, eMode, 1);
     sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 3);
   }else
 

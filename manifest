@@ -1,5 +1,8 @@
-C Fix\ssome\stest\scases\sin\swalfault.test.\sExtend\sone\stest\scase\sto\srestore\scode\scoverage.\sAdd\swal5.test\sto\sthe\s"coverage-wal"\spermutation.
-D 2011-02-07T16:24:39.731
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Cleanup\sto\sthe\sOP_Checkpoint\sopcode.
+D 2011-02-07T23:56:01.776
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -169,7 +172,7 @@ F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 09d38c44ab275db581f7a2f6ff8b9bc7f8c0faaa
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c d548e31beafa792d1994b663a29a5303569efc4e
-F src/pragma.c 3d48a7f0a90bae8740adcc0d86e583b79da57f5b
+F src/pragma.c a83f320497aee18eda60fc8d854df5897906c2b1
 F src/prepare.c 395b3fab1b93f45b6aa194b23ebc201221c47b99
 F src/printf.c df2ff3bb5409e8958136933342c46464fbd017e7
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -229,7 +232,7 @@ F src/update.c 227e6cd512108b84f69421fc6c7aa1b83d60d6e0
 F src/utf.c 1baeeac91707a4df97ccc6141ec0f808278af685
 F src/util.c ab1c92426494f499f42b9e307537b03e923d75c1
 F src/vacuum.c 924bd1bcee2dfb05376f79845bd3b4cec7b54b2f
-F src/vdbe.c 7f54982de40509458ee7ede8e356dccc19f5b161
+F src/vdbe.c 167432ac0db5820b886685a7a6ad8f39520db4fb
 F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
 F src/vdbeInt.h 6e6f28e9bccc6c703dca1372fd661c57b5c15fb0
 F src/vdbeapi.c 8e9324fd35eb70d0b5904bd1af40f2598744dc4d
@@ -906,7 +909,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 5a4b6652cf3780ffed6fe0fe669e8090b0b71e81
-R d8e3b7dc9ee829705f21f80baf365b1e
-U dan
-Z a9734195708d8a3e3714a424a8d821c7
+P f83b07ace340c9dd3e0cbe3cd3c106db003b0bd4
+R 9dff0923b368f38852a045e469f02e78
+U drh
+Z 6b35d5e6fad59de45e9947a1e34c052b
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFNUIaUoxKgR168RlERAlSZAJ0VEHxRU9y2VR34VGKpOjMwCIDtOwCZAc54
+Vv+GWj7csdaDbvii+wYkKCc=
+=OT7F
+-----END PGP SIGNATURE-----
