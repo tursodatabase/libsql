@@ -1,5 +1,5 @@
-C Change\sblocking-checkpoint\stests\sso\sthat\sthey\srun\sonce\susing\s"PRAGMA\swal_checkpoint"\sand\sonce\susing\scalls\sto\ssqlite3_wal_checkpoint_v2().\sAlso\sfix\sedge\scases\ssurrounding\sthe\soutput\svariables\sset\sby\swal_checkpoint_v2().
-D 2011-02-07T15:12:12.557
+C Fix\ssome\stest\scases\sin\swalfault.test.\sExtend\sone\stest\scase\sto\srestore\scode\scoverage.\sAdd\swal5.test\sto\sthe\s"coverage-wal"\spermutation.
+D 2011-02-07T16:24:39.731
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -592,7 +592,7 @@ F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
 F test/pcache2.test 0d85f2ab6963aee28c671d4c71bec038c00a1d16
-F test/permutations.test e34aacdc97dfcf83e246a08917a98f610fd1340a
+F test/permutations.test 5b2a4cb756ffb2407cb4743163668d1d769febb6
 F test/pragma.test fdfc09067ea104a0c247a1a79d8093b56656f850
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
@@ -853,7 +853,7 @@ F test/walbig.test e882bc1d014afffbfa2b6ba36e0f07d30a633ad0
 F test/walcksum.test a37b36375c595e61bdb7e1ec49b5f0979b6fc7ce
 F test/walcrash.test e763841551d6b23677ccb419797c1589dcbdbaf5
 F test/walcrash2.test 019d60b89d96c1937adb2b30b850ac7e86e5a142
-F test/walfault.test 81ed760def1c1573151d416b0d09178cf006f9fd
+F test/walfault.test bf3808895f3b0751f6b0dbf52bb6d2e3a7b76a9d
 F test/walhook.test ed00a40ba7255da22d6b66433ab61fab16a63483
 F test/walmode.test 22ddccd073c817ac9ead62b88ac446e8dedc7d2c
 F test/walnoshm.test a074428046408f4eb5c6a00e09df8cc97ff93317
@@ -906,7 +906,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 929d62e496bb36a3ee0e19ec4609329d79aaeddc
-R 5272b64137511ea0a87063bfd04f9af5
+P 5a4b6652cf3780ffed6fe0fe669e8090b0b71e81
+R d8e3b7dc9ee829705f21f80baf365b1e
 U dan
-Z 8b5f17a482d9dd489ee7270bd10b0d2b
+Z a9734195708d8a3e3714a424a8d821c7
