@@ -5187,6 +5187,73 @@ static int test_wal_checkpoint(
 }
 
 /*
+** tclcmd:  sqlite3_wal_checkpoint_v2 db MODE ?NAME?
+**
+** This command calls the wal_checkpoint_v2() function with the specified
+** mode argument (passive, full or restart). If present, the database name
+** NAME is passed as the second argument to wal_checkpoint_v2(). If it the
+** NAME argument is not present, a NULL pointer is passed instead.
+**
+** If wal_checkpoint_v2() returns any value other than SQLITE_BUSY or
+** SQLITE_OK, then this command returns TCL_ERROR. The Tcl result is set
+** to the error message obtained from sqlite3_errmsg().
+**
+** Otherwise, this command returns a list of three integers. The first integer
+** is 1 if SQLITE_BUSY was returned, or 0 otherwise. The following two integers
+** are the values returned via the output paramaters by wal_checkpoint_v2() -
+** the number of frames in the log and the number of frames in the log
+** that have been checkpointed.
+*/
+static int test_wal_checkpoint_v2(
+  ClientData clientData, /* Unused */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  char *zDb = 0;
+  sqlite3 *db;
+  int rc;
+
+  int eMode;
+  int nLog = -555;
+  int nCkpt = -555;
+  Tcl_Obj *pRet;
+
+  const char * aMode[] = { "passive", "full", "restart", 0 };
+  assert( SQLITE_CHECKPOINT_PASSIVE==0 );
+  assert( SQLITE_CHECKPOINT_FULL==1 );
+  assert( SQLITE_CHECKPOINT_RESTART==2 );
+
+  if( objc!=3 && objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB MODE ?NAME?");
+    return TCL_ERROR;
+  }
+
+  if( objc==4 ){
+    zDb = Tcl_GetString(objv[3]);
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db)
+   || Tcl_GetIndexFromObj(interp, objv[2], aMode, "mode", 0, &eMode) 
+  ){
+    return TCL_ERROR;
+  }
+
+  rc = sqlite3_wal_checkpoint_v2(db, zDb, eMode, &nLog, &nCkpt);
+  if( rc!=SQLITE_OK && rc!=SQLITE_BUSY ){
+    Tcl_SetResult(interp, (char *)sqlite3_errmsg(db), TCL_VOLATILE);
+    return TCL_ERROR;
+  }
+
+  pRet = Tcl_NewObj();
+  Tcl_ListObjAppendElement(interp, pRet, Tcl_NewIntObj(rc==SQLITE_BUSY?1:0));
+  Tcl_ListObjAppendElement(interp, pRet, Tcl_NewIntObj(nLog));
+  Tcl_ListObjAppendElement(interp, pRet, Tcl_NewIntObj(nCkpt));
+  Tcl_SetObjResult(interp, pRet);
+
+  return TCL_OK;
+}
+
+/*
 ** tclcmd:  test_sqlite3_log ?SCRIPT?
 */
 static struct LogCallback {
@@ -5572,6 +5639,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_unlock_notify", test_unlock_notify, 0  },
 #endif
      { "sqlite3_wal_checkpoint",   test_wal_checkpoint, 0  },
+     { "sqlite3_wal_checkpoint_v2",test_wal_checkpoint_v2, 0  },
      { "test_sqlite3_log",         test_sqlite3_log, 0  },
      { "print_explain_query_plan", test_print_eqp, 0  },
   };

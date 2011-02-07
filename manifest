@@ -1,5 +1,5 @@
-C Ensure\sfts4aux\scan\shandle\sa\stable\sname\sin\ssingle\sor\sdouble\squotes\sas\sa\sconstructor\sargument.
-D 2011-02-05T15:47:12.471
+C Change\sblocking-checkpoint\stests\sso\sthat\sthey\srun\sonce\susing\s"PRAGMA\swal_checkpoint"\sand\sonce\susing\scalls\sto\ssqlite3_wal_checkpoint_v2().\sAlso\sfix\sedge\scases\ssurrounding\sthe\soutput\svariables\sset\sby\swal_checkpoint_v2().
+D 2011-02-07T15:12:12.557
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -142,7 +142,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 8af9fcc75708d60b88636ccba38b4a7b3c155c3e
-F src/main.c 1b04ef67eb03d026c8cc2d438c61635163153c24
+F src/main.c bc1c822dafa9a6c6c43179c0cbd3f1ce686a84c6
 F src/malloc.c 92d59a007d7a42857d4e9454aa25b6b703286be1
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 00bd8265c81abb665c48fea1e0c234eb3b922206
@@ -184,7 +184,7 @@ F src/sqliteLimit.h a17dcd3fb775d63b64a43a55c54cb282f9726f44
 F src/status.c 4997380fbb915426fef9e500b4872e79c99267fc
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 549859dc2c143f3deb6a92636a2d27973652c164
-F src/test1.c 771407a49ae199241f0efb7055634e4a1899c026
+F src/test1.c ddbfff546e22e5c31204c973fdd805a4eda3e208
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 056093cfef69ff4227a6bdb9108564dc7f45e4bc
 F src/test4.c 0528360b5025688002a5feb6be906ddce52eaaee
@@ -238,7 +238,7 @@ F src/vdbeblob.c 18955f0ee6b133cd08e1592010cb9a6b11e9984c
 F src/vdbemem.c c011228c6fb1b5df924e4584765b16bde863c9c6
 F src/vdbetrace.c 3ba13bc32bdf16d2bdea523245fd16736bed67b5
 F src/vtab.c b297e8fa656ab5e66244ab15680d68db0adbec30
-F src/wal.c 8704a563b37c0c48b6a65d49da5d5656568abfc6
+F src/wal.c aca10a60655e103fc8630a75345000f43c6d47ca
 F src/wal.h 7a5fbb00114b7f2cd40c7e1003d4c41ce9d26840
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c f4915ac03e5e42c8416b35ca3ba34af841c00d12
@@ -662,7 +662,7 @@ F test/stmt.test 25d64e3dbf9a3ce89558667d7f39d966fe2a71b9
 F test/subquery.test b524f57c9574b2c0347045b4510ef795d4686796
 F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
-F test/superlock.test f66a8f26dcd390c115bb732a2ea4638ab8204b13
+F test/superlock.test 5d7a4954b0059c903f82c7b67867bc5451a7c082
 F test/sync.test ded6b39d8d8ca3c0c5518516c6371b3316d3e3a3
 F test/table.test 04ba066432430657712d167ebf28080fe878d305
 F test/tableapi.test 7262a8cbaa9965d429f1cbd2747edc185fa56516
@@ -845,7 +845,7 @@ F test/wal.test f060cae4b2164c4375109a8f803873187234661d
 F test/wal2.test 57a218446654ed3e3592c925762633c1d1e85636
 F test/wal3.test ec87d9dd9e9cebabed4024064e8ff531d336ead2
 F test/wal4.test 3404b048fa5e10605facaf70384e6d2943412e30
-F test/wal5.test 1f99651d856c8b9e1376781c981d1b903e93a478
+F test/wal5.test 3fef990d256cd9e95e9ad97e5dfdf3f150743fce
 F test/wal6.test 07aa31ca8892d0527f2c5c5a9a2a87aa421dfaa8
 F test/wal_common.tcl a98f17fba96206122eff624db0ab13ec377be4fe
 F test/walbak.test 4df1c7369da0301caeb9a48fa45997fd592380e4
@@ -906,7 +906,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P dc511e60a65232a7087e12ff40b63506cf37a634
-R 8b6bef7500d37a03d9cad23f74319954
+P 929d62e496bb36a3ee0e19ec4609329d79aaeddc
+R 5272b64137511ea0a87063bfd04f9af5
 U dan
-Z 659706e533fac6825c1f6da67c2f77f1
+Z 8b5f17a482d9dd489ee7270bd10b0d2b

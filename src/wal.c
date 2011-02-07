@@ -1623,8 +1623,7 @@ static int walCheckpoint(
   int (*xBusyCall)(void*),        /* Function to call when busy */
   void *pBusyArg,                 /* Context argument for xBusyHandler */
   int sync_flags,                 /* Flags for OsSync() (or 0) */
-  u8 *zBuf,                       /* Temporary buffer to use */
-  int *pnCkpt                     /* Total frames checkpointed */
+  u8 *zBuf                        /* Temporary buffer to use */
 ){
   int rc;                         /* Return code */
   int szPage;                     /* Database page-size */
@@ -1641,7 +1640,6 @@ static int walCheckpoint(
   testcase( szPage<=32768 );
   testcase( szPage>=65536 );
   pInfo = walCkptInfo(pWal);
-  if( pnCkpt ) *pnCkpt = pInfo->nBackfill;
   if( pInfo->nBackfill>=pWal->hdr.mxFrame ) return SQLITE_OK;
 
   /* Allocate the iterator */
@@ -1727,7 +1725,6 @@ static int walCheckpoint(
       }
       if( rc==SQLITE_OK ){
         pInfo->nBackfill = mxSafeFrame;
-        if( pnCkpt ) *pnCkpt = mxSafeFrame;
       }
     }
 
@@ -2764,12 +2761,17 @@ int sqlite3WalCheckpoint(
   }
 
   /* Copy data from the log to the database file. */
-  if( rc==SQLITE_OK && pWal->hdr.mxFrame ){
-    if( walPagesize(pWal)!=nBuf ){
+  if( rc==SQLITE_OK ){
+    if( pWal->hdr.mxFrame && walPagesize(pWal)!=nBuf ){
       rc = SQLITE_CORRUPT_BKPT;
     }else{
+      rc = walCheckpoint(pWal, eMode2, xBusy, pBusyArg, sync_flags, zBuf);
+    }
+
+    /* If no error occurred, set the output variables. */
+    if( rc==SQLITE_OK || rc==SQLITE_BUSY ){
       if( pnLog ) *pnLog = (int)pWal->hdr.mxFrame;
-      rc = walCheckpoint(pWal, eMode2, xBusy, pBusyArg, sync_flags,zBuf,pnCkpt);
+      if( pnCkpt ) *pnCkpt = (int)(walCkptInfo(pWal)->nBackfill);
     }
   }
 
