@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Cleanup\sto\sthe\sOP_Checkpoint\sopcode.
-D 2011-02-07T23:56:01.776
+C Simplifications\sto\sthe\ssqlite3_wal_checkpoint_v2()\slogic.
+D 2011-02-09T03:03:16.067
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -145,7 +145,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 8af9fcc75708d60b88636ccba38b4a7b3c155c3e
-F src/main.c bc1c822dafa9a6c6c43179c0cbd3f1ce686a84c6
+F src/main.c 3be0ccf84c92da06aae7f56cf39a9ee7bfddf799
 F src/malloc.c 92d59a007d7a42857d4e9454aa25b6b703286be1
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 00bd8265c81abb665c48fea1e0c234eb3b922206
@@ -909,14 +909,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f83b07ace340c9dd3e0cbe3cd3c106db003b0bd4
-R 9dff0923b368f38852a045e469f02e78
+P f611a5a879b7dec1ed1d8bf32413c8a6b81c3172
+R 9eb1d838d1c9a6fbbece39c189fe6c11
 U drh
-Z 6b35d5e6fad59de45e9947a1e34c052b
+Z e85349cf8286d1975032a9f080ac1cff
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNUIaUoxKgR168RlERAlSZAJ0VEHxRU9y2VR34VGKpOjMwCIDtOwCZAc54
-Vv+GWj7csdaDbvii+wYkKCc=
-=OT7F
+iD8DBQFNUgP3oxKgR168RlERArjhAJ96GiP4XsmJ4dEmAmrcql1CFdWpdgCfQCol
+GiaXt0mATDvm3Lt3VJZa5pQ=
+=b8rA
 -----END PGP SIGNATURE-----
