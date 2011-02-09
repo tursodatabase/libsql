@@ -193,4 +193,24 @@ db close
 sqlite3 db test.db
 integrity_check filefmt-2.2.7
 
+#--------------------------------------------------------------------------
+# Check that ticket 89b8c9ac54 is fixed. Before the fix, the SELECT 
+# statement would return SQLITE_CORRUPT. The database file was not actually
+# corrupted, but SQLite was reporting that it was.
+#
+db close
+forcedelete test.db
+sqlite3 db test.db
+do_execsql_test filefmt-3.1 {
+  PRAGMA auto_vacuum = 1;
+  CREATE TABLE t1(a, b);
+} {}
+do_test filefmt-3.2 { 
+  sql36231 { DROP TABLE t1 } 
+} {}
+do_execsql_test filefmt-3.3 {
+  SELECT * FROM sqlite_master;
+  PRAGMA integrity_check;
+} {ok}
+
 finish_test
