@@ -8,9 +8,11 @@ This Tcl script is used to test the various compile time options
 available for omitting code (the SQLITE_OMIT_xxx options). It
 should be invoked as follows:
 
-    <script> ?-makefile PATH-TO-MAKEFILE?
+    <script> ?-makefile PATH-TO-MAKEFILE? ?-skip_run?
 
 The default value for ::MAKEFILE is "../Makefile.linux.gcc".
+
+If -skip_run option is given then only the compile part is attempted.
 
 This script builds the testfixture program and runs the SQLite test suite
 once with each SQLITE_OMIT_ option defined and then once with all options
@@ -46,10 +48,12 @@ they do not respect the OPTS variable.
 #
 #
 proc run_quick_test {dir omit_symbol_list} {
+  set target "testfixture"
   # Compile the value of the OPTS Makefile variable.
   set opts "-DSQLITE_MEMDEBUG -DSQLITE_DEBUG -DSQLITE_NO_SYNC" 
   if {$::tcl_platform(platform)=="windows"} {
     append opts " -DSQLITE_OS_WIN=1"
+    set target "testfixture.exe"
   } elseif {$::tcl_platform(platform)=="os2"} {
     append opts " -DSQLITE_OS_OS2=1"
   } else {
@@ -69,7 +73,7 @@ catch {
   file copy -force ./libtool $dir
 }
   set rc [catch {
-    exec make -C $dir -f $::MAKEFILE testfixture OPTS=$opts >& $dir/build.log
+    exec make -C $dir -f $::MAKEFILE $target OPTS=$opts >& $dir/build.log
   }]
   if {$rc} {
     puts "No good. See $dir/build.log."
@@ -91,16 +95,20 @@ catch {
     close $wr
   }
 
-  # Run the test suite.
-  puts -nonewline "Testing $dir..."
-  flush stdout
-  set rc [catch {
-    exec make -C $dir -f $::MAKEFILE test OPTS=$opts >& $dir/test.log
-  }]
-  if {$rc} {
-    puts "No good. See $dir/test.log."
+  if {$::SKIP_RUN} {
+      puts "Skip testing $dir."
   } else {
-    puts "Ok"
+    # Run the test suite.
+    puts -nonewline "Testing $dir..."
+    flush stdout
+    set rc [catch {
+      exec make -C $dir -f $::MAKEFILE test OPTS=$opts >& $dir/test.log
+    }]
+    if {$rc} {
+      puts "No good. See $dir/test.log."
+    } else {
+      puts "Ok"
+    }
   }
 }
 
@@ -112,10 +120,12 @@ catch {
 #
 proc process_options {argv} {
   if {$::tcl_platform(platform)=="windows" || $::tcl_platform(platform)=="os2"} {
-      set ::MAKEFILE ../Makefile                        ;# Default value
+      set ::MAKEFILE ./Makefile                         ;# Default value
   } else {
-      set ::MAKEFILE ../Makefile.linux-gcc              ;# Default value
+      set ::MAKEFILE ./Makefile.linux-gcc               ;# Default value
   }
+  set ::SKIP_RUN 0                                      ;# Default to attempt test
+
   for {set i 0} {$i < [llength $argv]} {incr i} {
     switch -- [lindex $argv $i] {
       -makefile {
@@ -123,6 +133,11 @@ proc process_options {argv} {
         set ::MAKEFILE [lindex $argv $i]
       }
   
+      -skip_run {
+        incr i
+        set ::SKIP_RUN 1
+      }
+
       default {
         puts stderr [string trim $::USAGE_MESSAGE]
         exit -1
@@ -137,67 +152,100 @@ proc process_options {argv} {
 
 proc main {argv} {
   # List of SQLITE_OMIT_XXX symbols supported by SQLite.
-  set ::SYMBOLS [list                  \
-    SQLITE_OMIT_ALTERTABLE             \
-    SQLITE_OMIT_ANALYZE                \
-    SQLITE_OMIT_ATTACH                 \
-    SQLITE_OMIT_AUTHORIZATION          \
-    SQLITE_OMIT_AUTOINCREMENT          \
-    SQLITE_OMIT_AUTOINIT               \
-    SQLITE_OMIT_AUTOVACUUM             \
-    SQLITE_OMIT_BETWEEN_OPTIMIZATION   \
-    SQLITE_OMIT_BLOB_LITERAL           \
-    SQLITE_OMIT_BUILTIN_TEST           \
-    SQLITE_OMIT_CAST                   \
-    SQLITE_OMIT_CHECK                  \
-    SQLITE_OMIT_COMPLETE               \
-    SQLITE_OMIT_COMPOUND_SELECT        \
-    SQLITE_OMIT_CONFLICT_CLAUSE        \
-    SQLITE_OMIT_DATETIME_FUNCS         \
-    SQLITE_OMIT_DECLTYPE               \
-    off_SQLITE_OMIT_DISKIO                 \
-    SQLITE_OMIT_EXPLAIN                \
-    SQLITE_OMIT_FLAG_PRAGMAS           \
-    SQLITE_OMIT_FLOATING_POINT         \
-    SQLITE_OMIT_FOREIGN_KEY            \
-    SQLITE_OMIT_GET_TABLE              \
-    SQLITE_OMIT_GLOBALRECOVER          \
-    SQLITE_OMIT_INCRBLOB               \
-    SQLITE_OMIT_INTEGRITY_CHECK        \
-    SQLITE_OMIT_LIKE_OPTIMIZATION      \
-    SQLITE_OMIT_LOAD_EXTENSION         \
-    SQLITE_OMIT_LOCALTIME              \
-    SQLITE_OMIT_MEMORYDB               \
-    SQLITE_OMIT_OR_OPTIMIZATION        \
-    SQLITE_OMIT_PAGER_PRAGMAS          \
-    SQLITE_OMIT_PRAGMA                 \
-    SQLITE_OMIT_PROGRESS_CALLBACK      \
-    SQLITE_OMIT_QUICKBALANCE           \
-    SQLITE_OMIT_REINDEX                \
-    SQLITE_OMIT_SCHEMA_PRAGMAS         \
+  set ::OMIT_SYMBOLS [list \
+    SQLITE_OMIT_ALTERTABLE \
+    SQLITE_OMIT_ANALYZE \
+    SQLITE_OMIT_ATTACH \
+    SQLITE_OMIT_AUTHORIZATION \
+    SQLITE_OMIT_AUTOINCREMENT \
+    SQLITE_OMIT_AUTOINIT \
+    SQLITE_OMIT_AUTOMATIC_INDEX \
+    SQLITE_OMIT_AUTORESET \
+    SQLITE_OMIT_AUTOVACUUM \
+    SQLITE_OMIT_BETWEEN_OPTIMIZATION \
+    SQLITE_OMIT_BLOB_LITERAL \
+    SQLITE_OMIT_BTREECOUNT \
+    SQLITE_OMIT_BUILTIN_TEST \
+    SQLITE_OMIT_CAST \
+    SQLITE_OMIT_CHECK \
+    SQLITE_OMIT_COMPILEOPTION_DIAGS \
+    SQLITE_OMIT_COMPLETE \
+    SQLITE_OMIT_COMPOUND_SELECT \
+    SQLITE_OMIT_DATETIME_FUNCS \
+    SQLITE_OMIT_DECLTYPE \
+    SQLITE_OMIT_DEPRECATED \
+    xxxSQLITE_OMIT_DISKIO \
+    SQLITE_OMIT_EXPLAIN \
+    SQLITE_OMIT_FLAG_PRAGMAS \
+    SQLITE_OMIT_FLOATING_POINT \
+    SQLITE_OMIT_FOREIGN_KEY \
+    SQLITE_OMIT_GET_TABLE \
+    SQLITE_OMIT_INCRBLOB \
+    SQLITE_OMIT_INTEGRITY_CHECK \
+    SQLITE_OMIT_LIKE_OPTIMIZATION \
+    SQLITE_OMIT_LOAD_EXTENSION \
+    SQLITE_OMIT_LOCALTIME \
+    SQLITE_OMIT_LOOKASIDE \
+    SQLITE_OMIT_MEMORYDB \
+    SQLITE_OMIT_OR_OPTIMIZATION \
+    SQLITE_OMIT_PAGER_PRAGMAS \
+    SQLITE_OMIT_PRAGMA \
+    SQLITE_OMIT_PROGRESS_CALLBACK \
+    SQLITE_OMIT_QUICKBALANCE \
+    SQLITE_OMIT_REINDEX \
+    SQLITE_OMIT_SCHEMA_PRAGMAS \
     SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS \
-    SQLITE_OMIT_SHARED_CACHE           \
-    SQLITE_OMIT_SUBQUERY               \
-    SQLITE_OMIT_TCL_VARIABLE           \
-    SQLITE_OMIT_TEMPDB                 \
-    SQLITE_OMIT_TRACE                  \
-    SQLITE_OMIT_TRIGGER                \
-    SQLITE_OMIT_UTF16                  \
-    SQLITE_OMIT_VACUUM                 \
-    SQLITE_OMIT_VIEW                   \
-    SQLITE_OMIT_VIRTUALTABLE           \
-    SQLITE_OMIT_XFER_OPT               \
+    SQLITE_OMIT_SHARED_CACHE \
+    SQLITE_OMIT_SUBQUERY \
+    SQLITE_OMIT_TCL_VARIABLE \
+    SQLITE_OMIT_TEMPDB \
+    SQLITE_OMIT_TRACE \
+    SQLITE_OMIT_TRIGGER \
+    SQLITE_OMIT_TRUNCATE_OPTIMIZATION \
+    SQLITE_OMIT_UTF16 \
+    SQLITE_OMIT_VACUUM \
+    SQLITE_OMIT_VIEW \
+    SQLITE_OMIT_VIRTUALTABLE \
+    SQLITE_OMIT_WAL \
+    SQLITE_OMIT_WSD \
+    SQLITE_OMIT_XFER_OPT \
+  ]
+
+  set ::ENABLE_SYMBOLS [list \
+    SQLITE_DISABLE_DIRSYNC \
+    SQLITE_DISABLE_LFS \
+    SQLITE_ENABLE_ATOMIC_WRITE \
+    xxxSQLITE_ENABLE_CEROD \
+    SQLITE_ENABLE_COLUMN_METADATA \
+    SQLITE_ENABLE_EXPENSIVE_ASSERT \
+    xxxSQLITE_ENABLE_FTS1 \
+    xxxSQLITE_ENABLE_FTS2 \
+    SQLITE_ENABLE_FTS3 \
+    SQLITE_ENABLE_FTS3_PARENTHESIS \
+    SQLITE_ENABLE_FTS4 \
+    xxxSQLITE_ENABLE_ICU \
+    SQLITE_ENABLE_IOTRACE \
+    SQLITE_ENABLE_LOAD_EXTENSION \
+    SQLITE_ENABLE_LOCKING_STYLE \
+    SQLITE_ENABLE_MEMORY_MANAGEMENT \
+    SQLITE_ENABLE_MEMSYS3 \
+    SQLITE_ENABLE_MEMSYS5 \
+    SQLITE_ENABLE_OVERSIZE_CELL_CHECK \
+    SQLITE_ENABLE_RTREE \
+    SQLITE_ENABLE_STAT2 \
+    SQLITE_ENABLE_UNLOCK_NOTIFY \
+    SQLITE_ENABLE_UPDATE_DELETE_LIMIT \
   ]
 
   # Process any command line options.
   process_options $argv
-  
+
   # First try a test with all OMIT symbols except SQLITE_OMIT_FLOATING_POINT 
   # and SQLITE_OMIT_PRAGMA defined. The former doesn't work (causes segfaults)
   # and the latter is currently incompatible with the test suite (this should
   # be fixed, but it will be a lot of work).
   set allsyms [list]
-  foreach s $::SYMBOLS {
+  foreach s $::OMIT_SYMBOLS {
     if {$s!="SQLITE_OMIT_FLOATING_POINT" && $s!="SQLITE_OMIT_PRAGMA"} {
       lappend allsyms $s
     }
@@ -207,7 +255,14 @@ proc main {argv} {
   # Now try one quick.test with each of the OMIT symbols defined. Included
   # are the OMIT_FLOATING_POINT and OMIT_PRAGMA symbols, even though we
   # know they will fail. It's good to be reminded of this from time to time.
-  foreach sym $::SYMBOLS {
+  foreach sym $::OMIT_SYMBOLS {
+    set dirname "test_[string range $sym 7 end]"
+    run_quick_test $dirname $sym
+  }
+
+  # Try the ENABLE/DISABLE symbols one at a time.  
+  # We don't do them all at once since some are conflicting.
+  foreach sym $::ENABLE_SYMBOLS {
     set dirname "test_[string range $sym 7 end]"
     run_quick_test $dirname $sym
   }

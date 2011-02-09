@@ -24,6 +24,20 @@
 #include <assert.h>
 #include "sqliteInt.h"
 
+/*
+** For a build without mutexes, no-op the mutex calls.
+*/
+#if defined(SQLITE_THREADSAFE) && SQLITE_THREADSAFE==0
+#define sqlite3_mutex_alloc(X)    ((sqlite3_mutex*)8)
+#define sqlite3_mutex_free(X)
+#define sqlite3_mutex_enter(X)
+#define sqlite3_mutex_try(X)      SQLITE_OK
+#define sqlite3_mutex_leave(X)
+#define sqlite3_mutex_held(X)     ((void)(X),1)
+#define sqlite3_mutex_notheld(X)  ((void)(X),1)
+#endif /* SQLITE_THREADSAFE==0 */
+
+
 /************************ Shim Definitions ******************************/
 
 /* This is the limit on the chunk size.  It may be changed by calling
@@ -64,7 +78,7 @@ typedef struct multiplexConn multiplexConn;
 */
 struct multiplexGroup {
   sqlite3_file **pReal;            /* Handles to each chunk */
-  char *bOpen;                     /* 0 if chunk not opened */
+  char *bOpen;                     /* array of bools - 0 if chunk not opened */
   char *zName;                     /* Base filename of this group */
   int nName;                       /* Length of base filename */
   int flags;                       /* Flags used for original opening */

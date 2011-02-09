@@ -5641,7 +5641,9 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_wal_checkpoint",   test_wal_checkpoint, 0  },
      { "sqlite3_wal_checkpoint_v2",test_wal_checkpoint_v2, 0  },
      { "test_sqlite3_log",         test_sqlite3_log, 0  },
+#ifndef SQLITE_OMIT_EXPLAIN
      { "print_explain_query_plan", test_print_eqp, 0  },
+#endif
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   int i;
