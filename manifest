@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Simplifications\sto\sthe\ssqlite3_wal_checkpoint_v2()\slogic.
-D 2011-02-09T03:03:16.067
+C Use\smacros\sto\sdefine\sthe\srelative\scosts\sof\ssearch\sand\sseek\soperations\swhen\ncomputing\scosts\sin\sthe\squery\splanner.\s\sCurrent\sconstants\sseems\swrong\sand\nneed\sto\sbe\sfixed,\sbut\sdoing\sso\swill\salter\stest\sresults.\s\sNeed\smore\nexperimentation\sto\sdetermine\saccurate\srelative\scosts.
+D 2011-02-09T03:04:27.847
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -244,7 +244,7 @@ F src/vtab.c b297e8fa656ab5e66244ab15680d68db0adbec30
 F src/wal.c aca10a60655e103fc8630a75345000f43c6d47ca
 F src/wal.h 7a5fbb00114b7f2cd40c7e1003d4c41ce9d26840
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c f4915ac03e5e42c8416b35ca3ba34af841c00d12
+F src/where.c 0ff78ba4787cfc6895be1faed5b4ea98b7af7cfe
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 51756962d522e474338e9b2ebb26e7364d4aa125
@@ -909,14 +909,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f611a5a879b7dec1ed1d8bf32413c8a6b81c3172
-R 9eb1d838d1c9a6fbbece39c189fe6c11
+P 652b8835c58fc9d474c9837fc966d8857bec4a91
+R dc10e138c11d2df9e091fafd8b2305be
 U drh
-Z e85349cf8286d1975032a9f080ac1cff
+Z c827e0483e5251e34ceea49900655182
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNUgP3oxKgR168RlERArjhAJ96GiP4XsmJ4dEmAmrcql1CFdWpdgCfQCol
-GiaXt0mATDvm3Lt3VJZa5pQ=
-=b8rA
+iD8DBQFNUgQ/oxKgR168RlERAsnhAKCNq6HCp8DfmhZXl1Ls31douSQsIgCeNpoe
+cLzGC6C2mFonzZxCo59TByY=
+=JI+r
 -----END PGP SIGNATURE-----

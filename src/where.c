@@ -18,6 +18,41 @@
 */
 #include "sqliteInt.h"
 
+
+/*
+** The following parameter define the relative cost of various
+** search operations.  These parameters are used to estimate query
+** plan costs and to select the query plan with the lowest estimated
+** cost.
+**
+** Let the cost of moving from one row in a table or index to the next
+** or previous row be SEEK_COST.
+**
+** Let the base-10 logarithm of the number of rows in a table or
+** index be L.  The estLog() function below will estimate this
+** numbmer given the number of rows in the table.
+**
+** The cost of doing a lookup of an index will be IDX_LKUP_COST*L.
+**
+** The cost of doing a lookup on a table is TBL_LKUP_COST*L.
+**
+** The cost of sorting a result set of N rows is assumed to be
+** N*log10(N)*SORT_COST.
+*/
+#if defined(SEEK_COST)
+  /* Assume that IDX_LKUP_COST, TBL_LKUP_COST, and SORT_COST are also defined */
+#elif !defined(SQLITE_OMIT_FLOATING_POINT)
+#  define SEEK_COST     1.0
+#  define IDX_LKUP_COST 1.0
+#  define TBL_LKUP_COST 0.1
+#  define SORT_COST     3.0
+#else
+#  define SEEK_COST     10
+#  define IDX_LKUP_COST 10
+#  define TBL_LKUP_COST 1
+#  define SORT_COST     30
+#endif
+
 /*
 ** Trace output macros
 */
@@ -1760,7 +1795,7 @@ static void bestAutomaticIndex(
   pWCEnd = &pWC->a[pWC->nTerm];
   for(pTerm=pWC->a; pTerm<pWCEnd; pTerm++){
     if( termCanDriveIndex(pTerm, pSrc, notReady) ){
-      WHERETRACE(("auto-index reduces cost from %.2f to %.2f\n",
+      WHERETRACE(("auto-index reduces cost from %.1f to %.1f\n",
                     pCost->rCost, costTempIdx));
       pCost->rCost = costTempIdx;
       pCost->plan.nRow = logN + 1;
@@ -2736,8 +2771,9 @@ static void bestBtreeIndex(
     const unsigned int * const aiRowEst = pProbe->aiRowEst;
     double cost;                /* Cost of using pProbe */
     double nRow;                /* Estimated number of rows in result set */
+    double nTabSrch;            /* Est number of table searches */
+    double nIdxSrch;            /* Est number of index searches */
     int rev;                    /* True to scan in reverse order */
-    double nSearch;             /* Estimated number of binary searches */
     int wsFlags = 0;
     Bitmask used = 0;
 
@@ -2954,29 +2990,33 @@ static void bestBtreeIndex(
         **  + nRow steps through the index
         **  + nRow table searches to lookup the table entry using the rowid
         */
-        nSearch = nInMul + nRow/10;
+        nIdxSrch = nInMul;
+        nTabSrch = nRow;
       }else{
         /* For a covering index:
-        **     nInMul binary searches to find the initial entry 
+        **     nInMul index searches to find the initial entry 
         **   + nRow steps through the index
         */
-        nSearch = nInMul;
+        nIdxSrch = nInMul;
+        nTabSrch = 0;
       }
     }else{
       /* For a rowid primary key lookup:
-      **    nInMult binary searches to find the initial entry scaled by 1/10th
+      **    nInMult table searches to find the initial entry for each range
       **  + nRow steps through the table
       */
-      nSearch = nInMul/10;
+      nIdxSrch = 0;
+      nTabSrch = nInMul;
     }
-    cost = nRow + nSearch*estLog(aiRowEst[0]);
+    cost = nRow + (nIdxSrch*IDX_LKUP_COST + nTabSrch*TBL_LKUP_COST)
+                      *estLog(aiRowEst[0])/SEEK_COST;
 
     /* Add in the estimated cost of sorting the result.  This cost is expanded
     ** by a fudge factor of 3.0 to account for the fact that a sorting step 
     ** involves a write and is thus more expensive than a lookup step.
     */
     if( bSort ){
-      cost += nRow*estLog(nRow)*(double)3;
+      cost += nRow*estLog(nRow)*SORT_COST/SEEK_COST;
     }
 
     /**** Cost of using this index has now been computed ****/
@@ -3042,10 +3082,11 @@ static void bestBtreeIndex(
 
     WHERETRACE((
       "%s(%s): nEq=%d nInMul=%d estBound=%d bSort=%d bLookup=%d wsFlags=0x%x\n"
-      "         notReady=0x%llx nRow=%.2f cost=%.2f used=0x%llx\n",
+      "         notReady=0x%llx nTSrch=%.1f nISrch=%.1f nRow=%.1f\n"
+      "         estLog=%.1f cost=%.1f used=0x%llx\n",
       pSrc->pTab->zName, (pIdx ? pIdx->zName : "ipk"), 
       nEq, nInMul, estBound, bSort, bLookup, wsFlags,
-      notReady, nRow, cost, used
+      notReady, nTabSrch, nIdxSrch, nRow, estLog(aiRowEst[0]), cost, used
     ));
 
     /* If this index is the best we have seen so far, then record this
