@@ -2477,15 +2477,21 @@ static int pager_truncate(Pager *pPager, Pgno nPage){
    && (pPager->eState>=PAGER_WRITER_DBMOD || pPager->eState==PAGER_OPEN) 
   ){
     i64 currentSize, newSize;
+    int szPage = pPager->pageSize;
     assert( pPager->eLock==EXCLUSIVE_LOCK );
     /* TODO: Is it safe to use Pager.dbFileSize here? */
     rc = sqlite3OsFileSize(pPager->fd, &currentSize);
-    newSize = pPager->pageSize*(i64)nPage;
+    newSize = szPage*(i64)nPage;
     if( rc==SQLITE_OK && currentSize!=newSize ){
       if( currentSize>newSize ){
         rc = sqlite3OsTruncate(pPager->fd, newSize);
       }else{
-        rc = sqlite3OsWrite(pPager->fd, "", 1, newSize-1);
+        char *pTmp = pPager->pTmpSpace;
+        memset(pTmp, 0, szPage);
+        testcase( (newSize-szPage) <  currentSize );
+        testcase( (newSize-szPage) == currentSize );
+        testcase( (newSize-szPage) >  currentSize );
+        rc = sqlite3OsWrite(pPager->fd, pTmp, szPage, newSize-szPage);
       }
       if( rc==SQLITE_OK ){
         pPager->dbFileSize = nPage;

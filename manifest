@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Pull\sin\sall\sthe\schanges\sfrom\strunk\sup\sthrough\sthe\sversion\s3.7.5\s\nrelease\scandidate\s1.
-D 2011-01-27T18:48:02.799
+C This\sis\sa\sversion\sof\sthe\sSQLite\s3.7.5\srelease\swith\sApple's\schanges\sfor\sMacOS.
+D 2011-02-10T01:49:18.286
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0df5f50f0d224a6265a2922f8922cda77b02c89a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 2e452c9f2ca507623ad351c33a8a8b27849b1863
 F src/os_unix.c 9b2e17514578abddb9b6577424de39577a3e48f0
 F src/os_win.c 9abdcdd925416d854eabb0996c96debd92abfef5
-F src/pager.c 37696d876b1c23aa95d8ad7e4afd72d8675984fa
+F src/pager.c b0fcbe3038fd08b111e1cf1deddd5f42418004d8
 F src/pager.h 0ea59db2a33bc6c2c02cae34de33367e1effdf76
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 09d38c44ab275db581f7a2f6ff8b9bc7f8c0faaa
@@ -589,6 +589,7 @@ F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
 F test/pagerfault.test bea066b9162e1ab6843c2c1524ebb0965715e956
 F test/pagerfault2.test 1f79ea40d1133b2683a2f811b00f2399f7ec2401
+F test/pagerfault3.test 9b413f48a3e9a9a8c26968118f8db19fd7bfb8c7
 F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
@@ -905,14 +906,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P d2ccf7fc0673e875ff7b84cd37b89c65df4bec7f 35ac78f55159705af140b949ee33852aedd62816
-R 4156a032d04be89bfd81b2f0d3b7a3a1
+P 09d6c91dcff0699daec02de0cfd1cdc4e61b4f6b ed759d5a9edb3bba5f48f243df47be29e3fe8cd7
+R d7600af83b21d6c58e9f46b92ab932a6
 U drh
-Z 3878aa782505f9e49d943ef2cef669a8
+Z f3b0c5cf2c174ccd832cd370332f35ff
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNQb3moxKgR168RlERAqESAJ910BVGm3bFKLOAlkRsiysh65xHwQCeNSAx
-HeSBjjtzBA0KoGQfQkL0aKA=
-=epZr
+iD8DBQFNU0QhoxKgR168RlERAihVAJ9u5iAV3TqmB75uUGWDZXKRno5kRwCfaVoJ
+0i0nYIgHaDL9cSkjG+mmaX0=
+=1/ln
 -----END PGP SIGNATURE-----
