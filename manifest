@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Split\sthe\sdocumentation\sfor\ssqlite3_wal_checkpoint_v2()\sand\sits\sconstants\nonto\sseparate\spages.\s\sNo\schanges\sto\scode.
-D 2011-02-10T18:56:09.384
+C Add\s.testctrl\soption\sto\sCLI.
+D 2011-02-10T21:08:58
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -25,7 +22,7 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure c38c1947db7ed4adaed2affcb09cea9d3acd5a9a x
+F configure c38c1947db7ed4adaed2affcb09cea9d3acd5a9a
 F configure.ac 87a3c71bbe9c925381c154413eea7f3cdc397244
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -101,7 +98,7 @@ F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 1af0899c63a688e272d69d8e746f24e76f10a3f0
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
-F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
+F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F main.mk 54190fab7cdba523e311c274c95ea480f32abfb5
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
@@ -179,7 +176,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 8a7ba246b0b4bb45df7fbc52681728a0e3deaaa7
-F src/shell.c 83c6f0cc5a79a081c7b9ddfe4f557b47e0bad976
+F src/shell.c 649c51979812f77f97507024a4cea480c6862b8b
 F src/sqlite.h.in 388fca88d54577f671dc98bd805ff16085eabac1
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
 F src/sqliteInt.h 4290fff17fabc6e07fc4338233df0e39e6350ca1
@@ -909,14 +906,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f01030a0df4f94f886ab209ee8766b095da28c1e
-R 2590b9c422d45b3d68d0b1f0556faac2
-U drh
-Z 8f35992af258613e67fb2f7479d0acfe
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFNVDTQoxKgR168RlERAgszAJ9/65Cz9Wl3XuCrc/sDPkoI0E48AACdERjU
-2WQDB8UTlGsMf+tt4Cs6v4w=
-=jtEL
------END PGP SIGNATURE-----
+P 0ef8ffd12fce47c3c89e851e5116e2777ea9f435
+R 4437e53e14dbc4b7ac5c52d6271d4ae5
+U shaneh
+Z b1f21a25be3f68d4c976ca556987e3ea

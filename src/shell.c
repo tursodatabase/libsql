@@ -2171,6 +2171,107 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     sqlite3_free_table(azResult);
   }else
 
+  if( c=='t' && n>=8 && strncmp(azArg[0], "testctrl", n)==0 && nArg>=2 ){
+    int testctrl = -1;
+    int rc = 0;
+    open_db(p);
+
+    /* convert testctrl text option to value. allow only the first 
+    ** three characters of the option to be used or the numerical 
+    ** value. */
+         if( strncmp( azArg[1], "prng_save", 6 )==0 )            testctrl = SQLITE_TESTCTRL_PRNG_SAVE;                        
+    else if( strncmp( azArg[1], "prng_restore", 10 )==0 )        testctrl = SQLITE_TESTCTRL_PRNG_RESTORE;        
+    else if( strncmp( azArg[1], "prng_reset", 10 )==0 )          testctrl = SQLITE_TESTCTRL_PRNG_RESET;          
+    else if( strncmp( azArg[1], "bitvec_test", 6 )==3 )          testctrl = SQLITE_TESTCTRL_BITVEC_TEST;         
+    else if( strncmp( azArg[1], "fault_install", 6 )==3 )        testctrl = SQLITE_TESTCTRL_FAULT_INSTALL;       
+    else if( strncmp( azArg[1], "benign_malloc_hooks", 3 )==0 )  testctrl = SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS; 
+    else if( strncmp( azArg[1], "pending_byte", 3 )==0 )         testctrl = SQLITE_TESTCTRL_PENDING_BYTE;        
+    else if( strncmp( azArg[1], "assert", 3 )==0 )               testctrl = SQLITE_TESTCTRL_ASSERT;              
+    else if( strncmp( azArg[1], "always", 3 )==0 )               testctrl = SQLITE_TESTCTRL_ALWAYS;              
+    else if( strncmp( azArg[1], "reserve", 3 )==0 )              testctrl = SQLITE_TESTCTRL_RESERVE;             
+    else if( strncmp( azArg[1], "optimizations", 3 )==0 )        testctrl = SQLITE_TESTCTRL_OPTIMIZATIONS;       
+    else if( strncmp( azArg[1], "iskeyword", 3 )==0 )            testctrl = SQLITE_TESTCTRL_ISKEYWORD;           
+    else if( strncmp( azArg[1], "pghdrsz", 3 )==0 )              testctrl = SQLITE_TESTCTRL_PGHDRSZ;             
+    else if( strncmp( azArg[1], "scratchmalloc", 3 )==0 )        testctrl = SQLITE_TESTCTRL_SCRATCHMALLOC;       
+    else                                                         testctrl = atoi(azArg[1]);
+
+    if( (testctrl<SQLITE_TESTCTRL_FIRST) || (testctrl>SQLITE_TESTCTRL_LAST) ){
+      fprintf(stderr,"Error: invalid testctrl option: %s\n", azArg[1]);
+    }else{
+      switch(testctrl){
+
+        /* sqlite3_test_control(int, db, int) */
+        case SQLITE_TESTCTRL_OPTIMIZATIONS:
+        case SQLITE_TESTCTRL_RESERVE:             
+          if( nArg==3 ){
+            int opt = (int)strtol(azArg[2], 0, 0);        
+            rc = sqlite3_test_control(testctrl, p->db, opt);
+            printf("%d (0x%08x)\n", rc, rc);
+          } else {
+            fprintf(stderr,"Error: testctrl %s takes a single int option\n", azArg[1]);
+          }
+          break;
+
+        /* sqlite3_test_control(int) */
+        case SQLITE_TESTCTRL_PRNG_SAVE:           
+        case SQLITE_TESTCTRL_PRNG_RESTORE:        
+        case SQLITE_TESTCTRL_PRNG_RESET:
+        case SQLITE_TESTCTRL_PGHDRSZ:             
+          if( nArg==2 ){
+            rc = sqlite3_test_control(testctrl);
+            printf("%d (0x%08x)\n", rc, rc);
+          } else {
+            fprintf(stderr,"Error: testctrl %s takes no options\n", azArg[1]);
+          }
+          break;
+
+        /* sqlite3_test_control(int, uint) */
+        case SQLITE_TESTCTRL_PENDING_BYTE:        
+          if( nArg==3 ){
+            unsigned int opt = (unsigned int)atoi(azArg[2]);        
+            rc = sqlite3_test_control(testctrl, opt);
+            printf("%d (0x%08x)\n", rc, rc);
+          } else {
+            fprintf(stderr,"Error: testctrl %s takes a single unsigned int option\n", azArg[1]);
+          }
+          break;
+          
+        /* sqlite3_test_control(int, int) */
+        case SQLITE_TESTCTRL_ASSERT:              
+        case SQLITE_TESTCTRL_ALWAYS:              
+          if( nArg==3 ){
+            int opt = atoi(azArg[2]);        
+            rc = sqlite3_test_control(testctrl, opt);
+            printf("%d (0x%08x)\n", rc, rc);
+          } else {
+            fprintf(stderr,"Error: testctrl %s takes a single int option\n", azArg[1]);
+          }
+          break;
+
+        /* sqlite3_test_control(int, char *) */
+#ifdef SQLITE_N_KEYWORD
+        case SQLITE_TESTCTRL_ISKEYWORD:           
+          if( nArg==3 ){
+            const char *opt = azArg[2];        
+            rc = sqlite3_test_control(testctrl, opt);
+            printf("%d (0x%08x)\n", rc, rc);
+          } else {
+            fprintf(stderr,"Error: testctrl %s takes a single char * option\n", azArg[1]);
+          }
+          break;
+#endif
+
+        case SQLITE_TESTCTRL_BITVEC_TEST:         
+        case SQLITE_TESTCTRL_FAULT_INSTALL:       
+        case SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS: 
+        case SQLITE_TESTCTRL_SCRATCHMALLOC:       
+        default:
+          fprintf(stderr,"Error: CLI support for testctrl %s not implemented\n", azArg[1]);
+          break;
+      }
+    }
+  }else
+
   if( c=='t' && n>4 && strncmp(azArg[0], "timeout", n)==0 && nArg==2 ){
     open_db(p);
     sqlite3_busy_timeout(p->db, atoi(azArg[1]));
