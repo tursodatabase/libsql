@@ -20,40 +20,6 @@
 
 
 /*
-** The following parameter define the relative cost of various
-** search operations.  These parameters are used to estimate query
-** plan costs and to select the query plan with the lowest estimated
-** cost.
-**
-** Let the cost of moving from one row in a table or index to the next
-** or previous row be SEEK_COST.
-**
-** Let the base-10 logarithm of the number of rows in a table or
-** index be L.  The estLog() function below will estimate this
-** numbmer given the number of rows in the table.
-**
-** The cost of doing a lookup of an index will be IDX_LKUP_COST*L.
-**
-** The cost of doing a lookup on a table is TBL_LKUP_COST*L.
-**
-** The cost of sorting a result set of N rows is assumed to be
-** N*log10(N)*SORT_COST.
-*/
-#if defined(SEEK_COST)
-  /* Assume that IDX_LKUP_COST, TBL_LKUP_COST, and SORT_COST are also defined */
-#elif !defined(SQLITE_OMIT_FLOATING_POINT)
-#  define SEEK_COST     1.0
-#  define IDX_LKUP_COST 1.0
-#  define TBL_LKUP_COST 0.1
-#  define SORT_COST     3.0
-#else
-#  define SEEK_COST     10
-#  define IDX_LKUP_COST 10
-#  define TBL_LKUP_COST 1
-#  define SORT_COST     30
-#endif
-
-/*
 ** Trace output macros
 */
 #if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
@@ -2771,8 +2737,7 @@ static void bestBtreeIndex(
     const unsigned int * const aiRowEst = pProbe->aiRowEst;
     double cost;                /* Cost of using pProbe */
     double nRow;                /* Estimated number of rows in result set */
-    double nTabSrch;            /* Est number of table searches */
-    double nIdxSrch;            /* Est number of index searches */
+    double log10N;              /* base-10 logarithm of nRow (inexact) */
     int rev;                    /* True to scan in reverse order */
     int wsFlags = 0;
     Bitmask used = 0;
@@ -2967,56 +2932,71 @@ static void bestBtreeIndex(
     }
 #endif /* SQLITE_ENABLE_STAT2 */
 
-    /* Adjust the number of rows and the cost downward to reflect rows
+    /* Adjust the number of output rows and downward to reflect rows
     ** that are excluded by range constraints.
     */
     nRow = (nRow * (double)estBound) / (double)100;
     if( nRow<1 ) nRow = 1;
 
-    /* Assume constant cost to advance from one row to the next and
-    ** logarithmic cost to do a binary search.  Hence, the initial cost
-    ** is the number of output rows plus log2(table-size) times the
-    ** number of binary searches.
+    /* Experiments run on real SQLite databases show that the time needed
+    ** to do a binary search to locate a row in a table or index is roughly
+    ** log10(N) times the time to move from one row to the next row within
+    ** a table or index.  The actual times can vary, with the size of
+    ** records being an important factor.  Both moves and searches are
+    ** slower with larger records, presumably because fewer records fit
+    ** on one page and hence more pages have to be fetched.
     **
-    ** Because fan-out on tables is so much higher than the fan-out on
-    ** indices (because table btrees contain only integer keys in non-leaf
-    ** nodes) we weight the cost of a table binary search as 1/10th the
-    ** cost of an index binary search.
+    ** The ANALYZE command and the sqlite_stat1 and sqlite_stat2 tables do
+    ** not give us data on the relative sizes of table and index records.
+    ** So this computation assumes table records are about twice as big
+    ** as index records
     */
-    if( pIdx ){
-      if( bLookup ){
-        /* For an index lookup followed by a table lookup:
-        **    nInMul index searches to find the start of each index range
-        **  + nRow steps through the index
-        **  + nRow table searches to lookup the table entry using the rowid
-        */
-        nIdxSrch = nInMul;
-        nTabSrch = nRow;
-      }else{
-        /* For a covering index:
-        **     nInMul index searches to find the initial entry 
-        **   + nRow steps through the index
-        */
-        nIdxSrch = nInMul;
-        nTabSrch = 0;
-      }
-    }else{
-      /* For a rowid primary key lookup:
-      **    nInMult table searches to find the initial entry for each range
-      **  + nRow steps through the table
+    if( (wsFlags & WHERE_NOT_FULLSCAN)==0 ){
+      /* The cost of a full table scan is a number of move operations equal
+      ** to the number of rows in the table.
+      **
+      ** We add an additional 4x penalty to full table scans.  This causes
+      ** the cost function to err on the side of choosing an index over
+      ** choosing a full scan.  This 4x full-scan penalty is an arguable
+      ** decision and one which we expect to revisit in the future.  But
+      ** it seems to be working well enough at the moment.
       */
-      nIdxSrch = 0;
-      nTabSrch = nInMul;
+      cost = aiRowEst[0]*4;
+    }else{
+      log10N = estLog(aiRowEst[0]);
+      cost = nRow;
+      if( pIdx ){
+        if( bLookup ){
+          /* For an index lookup followed by a table lookup:
+          **    nInMul index searches to find the start of each index range
+          **  + nRow steps through the index
+          **  + nRow table searches to lookup the table entry using the rowid
+          */
+          cost += (nInMul + nRow)*log10N;
+        }else{
+          /* For a covering index:
+          **     nInMul index searches to find the initial entry 
+          **   + nRow steps through the index
+          */
+          cost += nInMul*log10N;
+        }
+      }else{
+        /* For a rowid primary key lookup:
+        **    nInMult table searches to find the initial entry for each range
+        **  + nRow steps through the table
+        */
+        cost += nInMul*log10N;
+      }
     }
-    cost = nRow + (nIdxSrch*IDX_LKUP_COST + nTabSrch*TBL_LKUP_COST)
-                      *estLog(aiRowEst[0])/SEEK_COST;
 
-    /* Add in the estimated cost of sorting the result.  This cost is expanded
-    ** by a fudge factor of 3.0 to account for the fact that a sorting step 
-    ** involves a write and is thus more expensive than a lookup step.
+    /* Add in the estimated cost of sorting the result.  Actual experimental
+    ** measurements of sorting performance in SQLite show that sorting time
+    ** adds C*N*log10(N) to the cost, where N is the number of rows to be 
+    ** sorted and C is a factor between 1.95 and 4.3.  We will split the
+    ** difference and select C of 3.0.
     */
     if( bSort ){
-      cost += nRow*estLog(nRow)*SORT_COST/SEEK_COST;
+      cost += nRow*estLog(nRow)*3;
     }
 
     /**** Cost of using this index has now been computed ****/
@@ -3082,11 +3062,10 @@ static void bestBtreeIndex(
 
     WHERETRACE((
       "%s(%s): nEq=%d nInMul=%d estBound=%d bSort=%d bLookup=%d wsFlags=0x%x\n"
-      "         notReady=0x%llx nTSrch=%.1f nISrch=%.1f nRow=%.1f\n"
-      "         estLog=%.1f cost=%.1f used=0x%llx\n",
+      "         notReady=0x%llx log10N=%.1f nRow=%.1f cost=%.1f used=0x%llx\n",
       pSrc->pTab->zName, (pIdx ? pIdx->zName : "ipk"), 
       nEq, nInMul, estBound, bSort, bLookup, wsFlags,
-      notReady, nTabSrch, nIdxSrch, nRow, estLog(aiRowEst[0]), cost, used
+      notReady, log10N, nRow, cost, used
     ));
 
     /* If this index is the best we have seen so far, then record this

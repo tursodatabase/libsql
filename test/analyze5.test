@@ -102,8 +102,8 @@ foreach {testid where index rows} {
    18  {z>=-100 AND z<0}     t1z   50
    19  {z>=-100 AND z<=1}    t1z  700
    20  {z>=-100 AND z<2}     t1z  700
-   21  {z>=-100 AND z<=2}    {}   111
-   22  {z>=-100 AND z<3}     {}   111
+   21  {z>=-100 AND z<=2}    t1z  900
+   22  {z>=-100 AND z<3}     t1z  900
   
    31  {z>=0.0 AND z<=0.0}   t1z  400
    32  {z>=1.0 AND z<=1.0}   t1z  300
@@ -125,8 +125,8 @@ foreach {testid where index rows} {
    48  {z>=-100 AND z<0.0}   t1z   50
    49  {z>=-100 AND z<=1.0}  t1z  700
    50  {z>=-100 AND z<2.0}   t1z  700
-   51  {z>=-100 AND z<=2.0}  {}   111
-   52  {z>=-100 AND z<3.0}   {}   111
+   51  {z>=-100 AND z<=2.0}  t1z  900
+   52  {z>=-100 AND z<3.0}   t1z  900
   
   101  {z=-1}                t1z   50
   102  {z=0}                 t1z  400
@@ -151,7 +151,7 @@ foreach {testid where index rows} {
   206  {z IN (4)}            t1z   50
   207  {z IN (0.5)}          t1z   50
   208  {z IN (0,1)}          t1z  700
-  209  {z IN (0,1,2)}        {}   100
+  209  {z IN (0,1,2)}        t1z  900
   210  {z IN (0,1,2,3)}      {}   100
   211  {z IN (0,1,2,3,4,5)}  {}   100
   212  {z IN (1,2)}          t1z  500
