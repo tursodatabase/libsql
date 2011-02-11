@@ -1,5 +1,8 @@
-C Skip\sflattening\sif\ssubquery\shas\sLIMIT\sand\souter\squery\sis\sDISTINCT.\sFix\sfor\sticket\s752e1646fc.
-D 2011-02-11T20:52:21
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Add\sa\sNEVER()\saround\sa\stest\sthat\sis\sbelieved\sto\salways\sbe\sfalse.
+D 2011-02-11T22:54:28.272
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -22,7 +25,7 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure c38c1947db7ed4adaed2affcb09cea9d3acd5a9a
+F configure c38c1947db7ed4adaed2affcb09cea9d3acd5a9a x
 F configure.ac 87a3c71bbe9c925381c154413eea7f3cdc397244
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -98,7 +101,7 @@ F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 1af0899c63a688e272d69d8e746f24e76f10a3f0
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
-F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
+F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F main.mk 54190fab7cdba523e311c274c95ea480f32abfb5
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
@@ -233,7 +236,7 @@ F src/vdbe.c 167432ac0db5820b886685a7a6ad8f39520db4fb
 F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
 F src/vdbeInt.h 6e6f28e9bccc6c703dca1372fd661c57b5c15fb0
 F src/vdbeapi.c 8e9324fd35eb70d0b5904bd1af40f2598744dc4d
-F src/vdbeaux.c 521b954f21ec15aee2ba5a0af8a1526bdd71e45e
+F src/vdbeaux.c 5936a596324ad9f9aba02bdee8c8080d2a3264e1
 F src/vdbeblob.c 18955f0ee6b133cd08e1592010cb9a6b11e9984c
 F src/vdbemem.c c011228c6fb1b5df924e4584765b16bde863c9c6
 F src/vdbetrace.c 3ba13bc32bdf16d2bdea523245fd16736bed67b5
@@ -907,7 +910,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a5c36b9f39ab9629b857ec9c550f3892c0d94fb4
-R f86e610cb7886453b0877ffae9820a3c
-U shaneh
-Z ab745049ab8ef7250d0147c96f08f803
+P 559739998833643f589fa76d8360080691f83c18
+R 3f5b19b9fdaeed0c9a1e544cdd90ed14
+U drh
+Z 226a0fa1ae2a9e0748eda25192973dc9
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFNVb4noxKgR168RlERAvQ0AJ9AfVQ6sjzUkWSI5YTFhrB4aQPYDACfbb5E
+PUlDcsrBnP1q8syb8/AB5Hw=
+=8g1e
+-----END PGP SIGNATURE-----

@@ -2110,7 +2110,7 @@ int sqlite3VdbeHalt(Vdbe *p){
       if( p->rc==SQLITE_OK || (p->errorAction==OE_Fail && !isSpecialError) ){
         rc = sqlite3VdbeCheckFk(p, 1);
         if( rc!=SQLITE_OK ){
-          if( p->readOnly ){
+          if( NEVER(p->readOnly) ){
             sqlite3BtreeMutexArrayLeave(&p->aMutex);
             return SQLITE_ERROR;
           }
