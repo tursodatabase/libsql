@@ -1354,16 +1354,18 @@ static void exprAnalyze(
 
     idxNew = whereClauseInsert(pWC, pNewExpr,
                               TERM_VIRTUAL|TERM_DYNAMIC|TERM_VNULL);
-    testcase( idxNew==0 );
-    pNewTerm = &pWC->a[idxNew];
-    pNewTerm->leftCursor = pLeft->iTable;
-    pNewTerm->u.leftColumn = pLeft->iColumn;
-    pNewTerm->eOperator = WO_GT;
-    pNewTerm->iParent = idxTerm;
-    pTerm = &pWC->a[idxTerm];
-    pTerm->nChild = 1;
-    pTerm->wtFlags |= TERM_COPIED;
-    pNewTerm->prereqAll = pTerm->prereqAll;
+    if( idxNew ){
+      pNewTerm = &pWC->a[idxNew];
+      pNewTerm->prereqRight = 0;
+      pNewTerm->leftCursor = pLeft->iTable;
+      pNewTerm->u.leftColumn = pLeft->iColumn;
+      pNewTerm->eOperator = WO_GT;
+      pNewTerm->iParent = idxTerm;
+      pTerm = &pWC->a[idxTerm];
+      pTerm->nChild = 1;
+      pTerm->wtFlags |= TERM_COPIED;
+      pNewTerm->prereqAll = pTerm->prereqAll;
+    }
   }
 #endif /* SQLITE_ENABLE_STAT2 */
 
