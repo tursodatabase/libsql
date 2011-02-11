@@ -118,7 +118,11 @@ struct WhereTerm {
 #define TERM_ORINFO     0x10   /* Need to free the WhereTerm.u.pOrInfo object */
 #define TERM_ANDINFO    0x20   /* Need to free the WhereTerm.u.pAndInfo obj */
 #define TERM_OR_OK      0x40   /* Used during OR-clause processing */
-#define TERM_VNULL      0x80   /* Manufactured x>NULL or x<=NULL term */
+#ifdef SQLITE_ENABLE_STAT2
+#  define TERM_VNULL    0x80   /* Manufactured x>NULL or x<=NULL term */
+#else
+#  define TERM_VNULL    0x00   /* Disabled if not using stat2 */
+#endif
 
 /*
 ** An instance of the following structure holds all information about a
