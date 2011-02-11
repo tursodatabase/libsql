@@ -2652,6 +2652,9 @@ static void substSelect(
 **        appear as unmodified result columns in the outer query.  But
 **        have other optimizations in mind to deal with that case.
 **
+**  (21)  The subquery does not use LIMIT or the outer query is not
+**        DISTINCT.  (See ticket [752e1646fc]).
+**
 ** In this routine, the "p" parameter is a pointer to the outer query.
 ** The subquery is p->pSrc->a[iFrom].  isAgg is true if the outer query
 ** uses aggregates and subqueryIsAgg is true if the subquery uses aggregates.
@@ -2720,6 +2723,9 @@ static int flattenSubquery(
   }
   if( isAgg && pSub->pOrderBy ) return 0;                /* Restriction (16) */
   if( pSub->pLimit && p->pWhere ) return 0;              /* Restriction (19) */
+  if( pSub->pLimit && (p->selFlags & SF_Distinct)!=0 ){
+     return 0;         /* Restriction (21) */
+  }
 
   /* OBSOLETE COMMENT 1:
   ** Restriction 3:  If the subquery is a join, make sure the subquery is 

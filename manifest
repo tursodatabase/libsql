@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Fix\sa\sbug\sin\sthe\snew\sWHERE-clause\sprocessing\sthat\stries\sto\suse\san\nindex\sto\sresolve\sIS\sNOT\sNULL\sconstraints\swhen\sSQLITE_ENABLE_STAT2\sis\ndefined.\s\sThe\sbug\scould\scause\smemory\soverruns\sand\ssegfaults.\s\sThe\sbug\nwas\snew\sto\sthe\scode\sand\shas\snot\sappeared\sin\san\sofficial\srelease.\nFound\sduring\sstructural\stesting.
-D 2011-02-11T06:59:02.077
+C Skip\sflattening\sif\ssubquery\shas\sLIMIT\sand\souter\squery\sis\sDISTINCT.\sFix\sfor\sticket\s752e1646fc.
+D 2011-02-11T20:52:21
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -25,7 +22,7 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure c38c1947db7ed4adaed2affcb09cea9d3acd5a9a x
+F configure c38c1947db7ed4adaed2affcb09cea9d3acd5a9a
 F configure.ac 87a3c71bbe9c925381c154413eea7f3cdc397244
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -101,7 +98,7 @@ F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 1af0899c63a688e272d69d8e746f24e76f10a3f0
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
-F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
+F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F main.mk 54190fab7cdba523e311c274c95ea480f32abfb5
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
@@ -178,7 +175,7 @@ F src/printf.c df2ff3bb5409e8958136933342c46464fbd017e7
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
-F src/select.c 8a7ba246b0b4bb45df7fbc52681728a0e3deaaa7
+F src/select.c ae2f38effc99cfb9d8ebce36249d938487b3230d
 F src/shell.c 649c51979812f77f97507024a4cea480c6862b8b
 F src/sqlite.h.in 388fca88d54577f671dc98bd805ff16085eabac1
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
@@ -697,6 +694,7 @@ F test/tkt-4a03edc4c8.test 2865e4edbc075b954daa82f8da7cc973033ec76e
 F test/tkt-5d863f876e.test 884072c2de496ddbb90c387c9ebc0d4f44a91b8e
 F test/tkt-5e10420e8d.test 904d1687b3c06d43e5b3555bbcf6802e7c0ffd84
 F test/tkt-5ee23731f.test 3581260f2a71e51db94e1506ba6b0f7311d002a9
+F test/tkt-752e1646fc.test ea78d88d14fe9866bdd991c634483334639e13bf
 F test/tkt-78e04e52ea.test ab52f0c1e2de6e46c910f4cc16b086bba05952b7
 F test/tkt-80ba201079.test a09684db1a0bd55b8838f606adccee456a51ddbf
 F test/tkt-80e031a00f.test 9a154173461a4dbe2de49cda73963e04842d52f7
@@ -909,14 +907,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P d78949fc93077e1aa7f05cf9f7e947727939cc96
-R 8bf997eb58840da6ea5fc0460a5915e4
-U drh
-Z ecfd6670d90bd69fb37c6fe27914ad94
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFNVN45oxKgR168RlERAvEcAKCKMMGQphlQ+Hn4oqkHISuiniFSUwCfWmNB
-RyNIDwf8qVSXpFcCAhKBw4Q=
-=C6OR
------END PGP SIGNATURE-----
+P a5c36b9f39ab9629b857ec9c550f3892c0d94fb4
+R f86e610cb7886453b0877ffae9820a3c
+U shaneh
+Z ab745049ab8ef7250d0147c96f08f803
