@@ -35,9 +35,9 @@ do_test tkt3757-1.1 {
      CREATE TABLE t2(a INTEGER, b TEXT);
      INSERT INTO t2 VALUES(2, 'two');
      ANALYZE;
-     SELECT * FROM sqlite_stat1;
+     SELECT * FROM sqlite_stat1 ORDER BY 1, 2;
   }
-} {t1 t1i1 {1 1 1}}
+} {t1 t1i1 {1 1 1} t2 {} 1}
 
 # Modify statistics in order to make the optimizer then that:
 #

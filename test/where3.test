@@ -227,13 +227,13 @@ do_test where3-3.0 {
     explain query plan
     SELECT * FROM t302, t301 WHERE t302.x=5 AND t301.a=t302.y;
   }
-} {0 0 {TABLE t302} 1 1 {TABLE t301 USING PRIMARY KEY}}
+} {0 0 0 {SCAN TABLE t302 (~1 rows)} 0 1 1 {SEARCH TABLE t301 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
 do_test where3-3.1 {
   execsql {
     explain query plan
     SELECT * FROM t301, t302 WHERE t302.x=5 AND t301.a=t302.y;
   }
-} {0 1 {TABLE t302} 1 0 {TABLE t301 USING PRIMARY KEY}}
+} {0 0 1 {SCAN TABLE t302 (~1 rows)} 0 1 0 {SEARCH TABLE t301 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
 
 # Verify that when there are multiple tables in a join which must be
 # full table scans that the query planner attempts put the table with
@@ -247,18 +247,18 @@ do_test where3-4.0 {
     EXPLAIN QUERY PLAN
     SELECT * FROM t400, t401, t402 WHERE t402.z GLOB 'abc*';
   }
-} {0 2 {TABLE t402} 1 0 {TABLE t400} 2 1 {TABLE t401}}
+} {0 0 2 {SCAN TABLE t402 (~500000 rows)} 0 1 0 {SCAN TABLE t400 (~1000000 rows)} 0 2 1 {SCAN TABLE t401 (~1000000 rows)}}
 do_test where3-4.1 {
   execsql {
     EXPLAIN QUERY PLAN
     SELECT * FROM t400, t401, t402 WHERE t401.r GLOB 'abc*';
   }
-} {0 1 {TABLE t401} 1 0 {TABLE t400} 2 2 {TABLE t402}}
+} {0 0 1 {SCAN TABLE t401 (~500000 rows)} 0 1 0 {SCAN TABLE t400 (~1000000 rows)} 0 2 2 {SCAN TABLE t402 (~1000000 rows)}}
 do_test where3-4.2 {
   execsql {
     EXPLAIN QUERY PLAN
     SELECT * FROM t400, t401, t402 WHERE t400.c GLOB 'abc*';
   }
-} {0 0 {TABLE t400} 1 1 {TABLE t401} 2 2 {TABLE t402}}
+} {0 0 0 {SCAN TABLE t400 (~500000 rows)} 0 1 1 {SCAN TABLE t401 (~1000000 rows)} 0 2 2 {SCAN TABLE t402 (~1000000 rows)}}
 
 finish_test

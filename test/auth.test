@@ -1976,12 +1976,12 @@ ifcapable analyze {
       ANALYZE;
     }
     set ::authargs
-  } {t4 {} main {}}
+  } {t4 {} main {} t2 {} main {}}
   do_test auth-1.295 {
     execsql {
       SELECT count(*) FROM sqlite_stat1;
     }
-  } 2
+  } 3
   proc auth {code args} {
     if {$code=="SQLITE_ANALYZE"} {
       set ::authargs [concat $::authargs $args]
@@ -1999,7 +1999,7 @@ ifcapable analyze {
     execsql {
       SELECT count(*) FROM sqlite_stat1;
     }
-  } 2
+  } 3
 } ;# ifcapable analyze
 
 

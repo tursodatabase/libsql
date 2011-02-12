@@ -974,13 +974,13 @@ do_test e_fkey-25.2 {
     EXPLAIN QUERY PLAN DELETE FROM artist WHERE 1;
     EXPLAIN QUERY PLAN SELECT rowid FROM track WHERE trackartist = ?;
   }
-} {0 0 {TABLE artist} 0 0 {TABLE track}}
+} {0 0 0 {SCAN TABLE artist (~1000000 rows)} 0 0 0 {SCAN TABLE track (~100000 rows)}}
 do_test e_fkey-25.3 {
   execsql { 
     PRAGMA foreign_keys = ON;
     EXPLAIN QUERY PLAN DELETE FROM artist WHERE 1;
   }
-} {0 0 {TABLE artist} 0 0 {TABLE track}}
+} {0 0 0 {SCAN TABLE artist (~1000000 rows)} 0 0 0 {SCAN TABLE track (~100000 rows)}}
 do_test e_fkey-25.4 {
   execsql {
     INSERT INTO artist VALUES(5, 'artist 5');
@@ -1096,15 +1096,15 @@ do_test e_fkey-27.2 {
 do_test e_fkey-27.3 {
   eqp { UPDATE artist SET artistid = ?, artistname = ? }
 } [list \
-  0 0 {TABLE artist} \
-  0 0 {TABLE track WITH INDEX trackindex} \
-  0 0 {TABLE track WITH INDEX trackindex}
+  0 0 0 {SCAN TABLE artist (~1000000 rows)} \
+  0 0 0 {SEARCH TABLE track USING COVERING INDEX trackindex (trackartist=?) (~10 rows)} \
+  0 0 0 {SEARCH TABLE track USING COVERING INDEX trackindex (trackartist=?) (~10 rows)}
 ]
 do_test e_fkey-27.4 {
   eqp { DELETE FROM artist }
 } [list \
-  0 0 {TABLE artist} \
-  0 0 {TABLE track WITH INDEX trackindex}
+  0 0 0 {SCAN TABLE artist (~1000000 rows)} \
+  0 0 0 {SEARCH TABLE track USING COVERING INDEX trackindex (trackartist=?) (~10 rows)}
 ]
 
 

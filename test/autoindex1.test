@@ -124,7 +124,7 @@ do_test autoindex1-401 {
   db eval {
     SELECT count(*)
       FROM t4 AS x1
-/*      JOIN t4 AS x2 ON x2.a=x1.b
+      JOIN t4 AS x2 ON x2.a=x1.b
       JOIN t4 AS x3 ON x3.a=x2.b
       JOIN t4 AS x4 ON x4.a=x3.b
       JOIN t4 AS x5 ON x5.a=x4.b
@@ -132,9 +132,9 @@ do_test autoindex1-401 {
       JOIN t4 AS x7 ON x7.a=x6.b
       JOIN t4 AS x8 ON x8.a=x7.b
       JOIN t4 AS x9 ON x9.a=x8.b
-      JOIN t4 AS x10 ON x10.a=x9.b;*/
+      JOIN t4 AS x10 ON x10.a=x9.b;
   }
-} {4087 FIXME}
+} {4087}
 
 # Ticket [8011086c85c6c404014c947fcf3eb9f42b184a0d] from 2010-07-08
 # Make sure automatic indices are not created for the RHS of an IN expression
@@ -148,14 +148,14 @@ do_test autoindex1-500 {
     SELECT b FROM t501
      WHERE t501.a IN (SELECT x FROM t502 WHERE y=?);
   }
-} {0 0 {TABLE t501 USING PRIMARY KEY} 0 0 {TABLE t502}}
+} {0 0 0 {SEARCH TABLE t501 USING INTEGER PRIMARY KEY (rowid=?) (~25 rows)} 0 0 0 {SCAN TABLE t502 (~100000 rows)}}
 do_test autoindex1-501 {
   db eval {
     EXPLAIN QUERY PLAN
     SELECT b FROM t501
      WHERE t501.a IN (SELECT x FROM t502 WHERE y=t501.b);
   }
-} {0 0 {TABLE t501} 0 0 {TABLE t502 WITH AUTOMATIC INDEX}}
+} {0 0 0 {SCAN TABLE t501 (~500000 rows)} 0 0 0 {SEARCH TABLE t502 USING AUTOMATIC COVERING INDEX (y=?) (~7 rows)}}
 do_test autoindex1-502 {
   db eval {
     EXPLAIN QUERY PLAN
@@ -163,7 +163,6 @@ do_test autoindex1-502 {
      WHERE t501.a=123
        AND t501.a IN (SELECT x FROM t502 WHERE y=t501.b);
   }
-} {0 0 {TABLE t501 USING PRIMARY KEY} 0 0 {TABLE t502}}
-    
+} {0 0 0 {SEARCH TABLE t501 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 0 0 0 {SCAN TABLE t502 (~100000 rows)}}
 
 finish_test

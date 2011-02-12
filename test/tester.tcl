@@ -333,14 +333,17 @@ proc do_test {name cmd expected} {
 }
     
 proc do_execsql_test {testname sql result} {
-  uplevel do_test $testname [list "execsql {$sql}"] [list $result]
+  set r {}
+  foreach x $result {lappend r $x}
+  uplevel do_test $testname [list "execsql {$sql}"] [list $r]
 }
 proc do_catchsql_test {testname sql result} {
   uplevel do_test $testname [list "catchsql {$sql}"] [list $result]
 }
 proc do_eqp_test {name sql res} {
-  uplevel do_execsql_test $name [list "EXPLAIN QUERY PLAN $sql"] \
-     [list [string trim $res]]
+  set r {}
+  foreach x $res {lappend r $x}
+  uplevel do_execsql_test $name [list "EXPLAIN QUERY PLAN $sql"] [list $r]
 }
 
 

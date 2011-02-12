@@ -44,7 +44,7 @@ do_test tkt-78e04-1.4 {
   execsql {
     EXPLAIN QUERY PLAN SELECT * FROM "" WHERE "" LIKE 'abc%';
   }
-} {0 0 {TABLE }}
+} {0 0 0 {SCAN TABLE  (~500000 rows)}}
 do_test tkt-78e04-1.5 {
   execsql {
     DROP TABLE "";
@@ -57,12 +57,12 @@ do_test tkt-78e04-2.1 {
     CREATE INDEX "" ON t2(x);
     EXPLAIN QUERY PLAN SELECT * FROM t2 WHERE x=5;
   }
-} {0 0 {TABLE t2 WITH INDEX }}
+} {0 0 0 {SEARCH TABLE t2 USING COVERING INDEX  (x=?) (~10 rows)}}
 do_test tkt-78e04-2.2 {
   execsql {
     DROP INDEX "";
     EXPLAIN QUERY PLAN SELECT * FROM t2 WHERE x=2;
   }
-} {0 0 {TABLE t2}}
+} {0 0 0 {SCAN TABLE t2 (~100000 rows)}}
 
 finish_test
