@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Version\s3.7.2\srelease\scandidate\s1
-D 2010-08-23T18:52:01
+C This\sis\sthe\sbeginning\sof\san\sattempt\sto\sbackport\srecent\squery\splanner\nenhancements\sto\sversion\s3.7.2.\s\sThe\scode\sin\sthis\sversion\sbuilds\sand\sruns\sand\nseems\sto\sgive\scorrect\sanswers,\sbut\sit\sgenerates\ssuboptimal\squery\splans\sand\nhence\smany\sof\sthe\stest\scases\sfail.\s\sThe\stest\sscript\sgives\sup\safter\s1000\serrors.
+D 2011-02-12T01:59:22.979
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 543f91f24cd7fee774ecc0a61c19704c0c3e78fd
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -110,7 +110,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c 8dc27638e7e2553e80b2b621f232be5eb1e85ef3
-F src/analyze.c da65ce99bb159b10e85a1e460adbe53a88062500
+F src/analyze.c a038162344265ac21dfb24b3fcc06c666ebb9c07
 F src/attach.c 17bec1f18254d9341369f20f90ba24ce35d20d10
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 8ff0b7018df253c7f30d3f9702b0b16f19209d5c
@@ -175,7 +175,7 @@ F src/select.c 8add6cab889fc02e1492eda8dba462ccf11f51dd
 F src/shell.c 8517fc1f9c59ae4007e6cc8b9af91ab231ea2056
 F src/sqlite.h.in 2d72a6242df41c517e38eec8791abcf5484a36f1
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
-F src/sqliteInt.h e33b15e8176442bf7484f0e716edfd1ce03b2979
+F src/sqliteInt.h f419da0d4ca6f723aca055ef67e440723bc7c6ff
 F src/sqliteLimit.h a17dcd3fb775d63b64a43a55c54cb282f9726f44
 F src/status.c 496913d4e8441195f6f2a75b1c95993a45b9b30b
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -233,7 +233,7 @@ F src/vtab.c 0e8e0cb30dffb078367e843e84e37ef99236c7e4
 F src/wal.c 5ac2119e23ee4424599d4275b66dc88d612a0543
 F src/wal.h 96669b645e27cd5a111ba59f0cae7743a207bc3c
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 7db3e41c2a846f9deeb24f1bbb75461b4010b7b5
+F src/where.c 9c140acd52f4526983cba7203e6a5bb0ccadb5fb
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 6745008c144bd2956d58864d21f7b304689c1cce
@@ -258,7 +258,7 @@ F test/auth.test 8f21c160a4562f54f27618e85bac869efcecbcaf
 F test/auth2.test 270baddc8b9c273682760cffba6739d907bd2882
 F test/auth3.test a4755e6a2a2fea547ffe63c874eb569e60a28eb5
 F test/autoinc.test 85ef3180a737e6580086a018c09c6f1a52759b46
-F test/autoindex1.test 7df441bf0e7a88644eb80993339dbf1db3a12c68
+F test/autoindex1.test 53fdc13501a9d58ae049c0d39bb5c94389ff91bb
 F test/autovacuum.test bb7c0885e6f8f1d633045de48f2b66082162766d
 F test/autovacuum_ioerr2.test 598b0663074d3673a9c1bc9a16e80971313bafe6
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
@@ -849,14 +849,18 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 21a1e5961bba148fda50cc0b7d472ca74f90808a
-R aa9cc30f9dbcb7ea427137065cf4e4be
+P 42537b60566f288167f1b5864a5435986838e3a3
+R 911182819e6787775a4c401119b6d58c
+T *bgcolor * #d1d3a8
+T *branch * branch-3.7.2
+T *sym-branch-3.7.2 *
+T -sym-trunk *
 U drh
-Z e73ee740c6593b4458c2d23b6fa7b923
+Z 6673081ac69ed84639c088e8d1e7d477
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMcsNUoxKgR168RlERApyRAKCOHvk0Gn1uE2F8YVm3k/w13/3UugCeOh16
-bApiXjM1a7FP+Qr1HX5kWTQ=
-=L2Lf
+iD8DBQFNVel/oxKgR168RlERAmLzAJwLpY7ATRL1epv2W0jdVpK7vB8cTwCfT/I1
+KFlk2dAE9J/wYPCdpsrAlmY=
+=eWSL
 -----END PGP SIGNATURE-----

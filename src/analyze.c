@@ -113,7 +113,8 @@ static void analyzeOneTable(
   int i;                       /* Loop counter */
   int topOfLoop;               /* The top of the loop */
   int endOfLoop;               /* The end of the loop */
-  int addr;                    /* The address of an instruction */
+  int addr = 0;                /* The address of an instruction */
+  int jZeroRows = 0;           /* Jump from here if number of rows is zero */
   int iDb;                     /* Index of database containing pTab */
   int regTabname = iMem++;     /* Register containing table name */
   int regIdxname = iMem++;     /* Register containing index name */
@@ -132,8 +133,15 @@ static void analyzeOneTable(
 #endif
 
   v = sqlite3GetVdbe(pParse);
-  if( v==0 || NEVER(pTab==0) || pTab->pIndex==0 ){
-    /* Do no analysis for tables that have no indices */
+  if( v==0 || NEVER(pTab==0) ){
+    return;
+  }
+  if( pTab->tnum==0 ){
+    /* Do not gather statistics on views or virtual tables */
+    return;
+  }
+  if( memcmp(pTab->zName, "sqlite_", 7)==0 ){
+    /* Do not gather statistics on system tables */
     return;
   }
   assert( sqlite3BtreeHoldsAllMutexes(db) );
@@ -150,6 +158,7 @@ static void analyzeOneTable(
   sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
 
   iIdxCur = pParse->nTab++;
+  sqlite3VdbeAddOp4(v, OP_String8, 0, regTabname, 0, pTab->zName, 0);
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
     int nCol = pIdx->nColumn;
     KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIdx);
@@ -164,10 +173,7 @@ static void analyzeOneTable(
         (char *)pKey, P4_KEYINFO_HANDOFF);
     VdbeComment((v, "%s", pIdx->zName));
 
-    /* Populate the registers containing the table and index names. */
-    if( pTab->pIndex==pIdx ){
-      sqlite3VdbeAddOp4(v, OP_String8, 0, regTabname, 0, pTab->zName, 0);
-    }
+    /* Populate the register containing the index name. */
     sqlite3VdbeAddOp4(v, OP_String8, 0, regIdxname, 0, pIdx->zName, 0);
 
 #ifdef SQLITE_ENABLE_STAT2
@@ -227,9 +233,10 @@ static void analyzeOneTable(
     sqlite3VdbeAddOp2(v, OP_AddImm, iMem, 1);
 
     for(i=0; i<nCol; i++){
+      CollSeq *pColl;
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, regCol);
-#ifdef SQLITE_ENABLE_STAT2
       if( i==0 ){
+#ifdef SQLITE_ENABLE_STAT2
         /* Check if the record that cursor iIdxCur points to contains a
         ** value that should be stored in the sqlite_stat2 table. If so,
         ** store it.  */
@@ -258,12 +265,17 @@ static void analyzeOneTable(
 
         sqlite3VdbeJumpHere(v, ne);
         sqlite3VdbeAddOp2(v, OP_AddImm, regRecno, 1);
-      }
 #endif
 
-      sqlite3VdbeAddOp3(v, OP_Ne, regCol, 0, iMem+nCol+i+1);
-      /**** TODO:  add collating sequence *****/
-      sqlite3VdbeChangeP5(v, SQLITE_JUMPIFNULL);
+        /* Always record the very first row */
+        sqlite3VdbeAddOp1(v, OP_IfNot, iMem+1);
+      }
+      assert( pIdx->azColl!=0 );
+      assert( pIdx->azColl[i]!=0 );
+      pColl = sqlite3LocateCollSeq(pParse, pIdx->azColl[i]);
+      sqlite3VdbeAddOp4(v, OP_Ne, regCol, 0, iMem+nCol+i+1,
+                       (char*)pColl, P4_COLLSEQ);
+      sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
     }
     if( db->mallocFailed ){
       /* If a malloc failure has occurred, then the result of the expression 
@@ -274,7 +286,11 @@ static void analyzeOneTable(
     }
     sqlite3VdbeAddOp2(v, OP_Goto, 0, endOfLoop);
     for(i=0; i<nCol; i++){
-      sqlite3VdbeJumpHere(v, sqlite3VdbeCurrentAddr(v)-(nCol*2));
+      int addr2 = sqlite3VdbeCurrentAddr(v) - (nCol*2);
+      if( i==0 ){
+        sqlite3VdbeJumpHere(v, addr2-1);  /* Set jump dest for the OP_IfNot */
+      }
+      sqlite3VdbeJumpHere(v, addr2);      /* Set jump dest for the OP_Ne */
       sqlite3VdbeAddOp2(v, OP_AddImm, iMem+i+1, 1);
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, iMem+nCol+i+1);
     }
@@ -302,8 +318,10 @@ static void analyzeOneTable(
     ** If K>0 then it is always the case the D>0 so division by zero
     ** is never possible.
     */
-    addr = sqlite3VdbeAddOp1(v, OP_IfNot, iMem);
     sqlite3VdbeAddOp2(v, OP_SCopy, iMem, regSampleno);
+    if( jZeroRows==0 ){
+      jZeroRows = sqlite3VdbeAddOp1(v, OP_IfNot, iMem);
+    }
     for(i=0; i<nCol; i++){
       sqlite3VdbeAddOp4(v, OP_String8, 0, regTemp, 0, " ", 0);
       sqlite3VdbeAddOp3(v, OP_Concat, regTemp, regSampleno, regSampleno);
@@ -317,13 +335,35 @@ static void analyzeOneTable(
     sqlite3VdbeAddOp2(v, OP_NewRowid, iStatCur, regRowid);
     sqlite3VdbeAddOp3(v, OP_Insert, iStatCur, regRec, regRowid);
     sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
+  }
+
+  /* If the table has no indices, create a single sqlite_stat1 entry
+  ** containing NULL as the index name and the row count as the content.
+  */
+  if( pTab->pIndex==0 ){
+    sqlite3VdbeAddOp3(v, OP_OpenRead, iIdxCur, pTab->tnum, iDb);
+    VdbeComment((v, "%s", pTab->zName));
+    sqlite3VdbeAddOp2(v, OP_Count, iIdxCur, regSampleno);
+    sqlite3VdbeAddOp1(v, OP_Close, iIdxCur);
+  }else{
+    assert( jZeroRows>0 );
+    addr = sqlite3VdbeAddOp0(v, OP_Goto);
+    sqlite3VdbeJumpHere(v, jZeroRows);
+  }
+  sqlite3VdbeAddOp2(v, OP_Null, 0, regIdxname);
+  sqlite3VdbeAddOp4(v, OP_MakeRecord, regTabname, 3, regRec, "aaa", 0);
+  sqlite3VdbeAddOp2(v, OP_NewRowid, iStatCur, regRowid);
+  sqlite3VdbeAddOp3(v, OP_Insert, iStatCur, regRec, regRowid);
+  sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
+  if( pParse->nMem<regRec ) pParse->nMem = regRec;
+  if( jZeroRows ){
     sqlite3VdbeJumpHere(v, addr);
   }
 }
 
 /*
 ** Generate code that will cause the most recent index analysis to
-** be laoded into internal hash tables where is can be used.
+** be loaded into internal hash tables where is can be used.
 */
 static void loadAnalysis(Parse *pParse, int iDb){
   Vdbe *v = sqlite3GetVdbe(pParse);
@@ -453,33 +493,46 @@ struct analysisInfo {
 ** This callback is invoked once for each index when reading the
 ** sqlite_stat1 table.  
 **
-**     argv[0] = name of the index
-**     argv[1] = results of analysis - on integer for each column
+**     argv[0] = name of the table
+**     argv[1] = name of the index (might be NULL)
+**     argv[2] = results of analysis - on integer for each column
+**
+** Entries for which argv[1]==NULL simply record the number of rows in
+** the table.
 */
 static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
   analysisInfo *pInfo = (analysisInfo*)pData;
   Index *pIndex;
-  int i, c;
+  Table *pTable;
+  int i, c, n;
   unsigned int v;
   const char *z;
 
-  assert( argc==2 );
+  assert( argc==3 );
   UNUSED_PARAMETER2(NotUsed, argc);
 
-  if( argv==0 || argv[0]==0 || argv[1]==0 ){
+  if( argv==0 || argv[0]==0 || argv[2]==0 ){
     return 0;
   }
-  pIndex = sqlite3FindIndex(pInfo->db, argv[0], pInfo->zDatabase);
-  if( pIndex==0 ){
+  pTable = sqlite3FindTable(pInfo->db, argv[0], pInfo->zDatabase);
+  if( pTable==0 ){
     return 0;
   }
-  z = argv[1];
-  for(i=0; *z && i<=pIndex->nColumn; i++){
+  if( argv[1] ){
+    pIndex = sqlite3FindIndex(pInfo->db, argv[1], pInfo->zDatabase);
+  }else{
+    pIndex = 0;
+  }
+  n = pIndex ? pIndex->nColumn : 0;
+  z = argv[2];
+  for(i=0; *z && i<=n; i++){
     v = 0;
     while( (c=z[0])>='0' && c<='9' ){
       v = v*10 + c - '0';
       z++;
     }
+    if( i==0 ) pTable->nRowEst = v;
+    if( pIndex==0 ) break;
     pIndex->aiRowEst[i] = v;
     if( *z==' ' ) z++;
   }
@@ -555,7 +608,7 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
 
   /* Load new statistics out of the sqlite_stat1 table */
   zSql = sqlite3MPrintf(db, 
-      "SELECT idx, stat FROM %Q.sqlite_stat1", sInfo.zDatabase);
+      "SELECT tbl, idx, stat FROM %Q.sqlite_stat1", sInfo.zDatabase);
   if( zSql==0 ){
     rc = SQLITE_NOMEM;
   }else{
@@ -583,8 +636,11 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
 
     if( rc==SQLITE_OK ){
       while( sqlite3_step(pStmt)==SQLITE_ROW ){
-        char *zIndex = (char *)sqlite3_column_text(pStmt, 0);
-        Index *pIdx = sqlite3FindIndex(db, zIndex, sInfo.zDatabase);
+        char *zIndex;   /* Index name */
+        Index *pIdx;    /* Pointer to the index object */
+
+        zIndex = (char *)sqlite3_column_text(pStmt, 0);
+        pIdx = zIndex ? sqlite3FindIndex(db, zIndex, sInfo.zDatabase) : 0;
         if( pIdx ){
           int iSample = sqlite3_column_int(pStmt, 1);
           if( iSample<SQLITE_INDEX_SAMPLES && iSample>=0 ){
