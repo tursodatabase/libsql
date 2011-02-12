@@ -1995,6 +1995,7 @@ struct Select {
   Expr *pOffset;         /* OFFSET expression. NULL means not used. */
   int iLimit, iOffset;   /* Memory registers holding LIMIT & OFFSET counters */
   int addrOpenEphm[3];   /* OP_OpenEphem opcodes related to this select */
+  double nSelectRow;     /* Estimated number of result rows */
 };
 
 /*

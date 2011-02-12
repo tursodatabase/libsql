@@ -1182,12 +1182,10 @@ int sqlite3VdbeList(
     pMem->type = SQLITE_INTEGER;
     pMem++;
 
-    if( p->explain==1 ){
-      pMem->flags = MEM_Int;
-      pMem->u.i = pOp->p3;                          /* P3 */
-      pMem->type = SQLITE_INTEGER;
-      pMem++;
-    }
+    pMem->flags = MEM_Int;
+    pMem->u.i = pOp->p3;                          /* P3 */
+    pMem->type = SQLITE_INTEGER;
+    pMem++;
 
     if( sqlite3VdbeMemGrow(pMem, 32, 0) ){            /* P4 */
       assert( p->db->mallocFailed );
@@ -1232,7 +1230,7 @@ int sqlite3VdbeList(
       }
     }
 
-    p->nResColumn = 8 - 5*(p->explain-1);
+    p->nResColumn = 8 - 4*(p->explain-1);
     p->rc = SQLITE_OK;
     rc = SQLITE_ROW;
   }
