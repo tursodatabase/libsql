@@ -77,19 +77,21 @@ foreach name $names {
   } {1}
 }
 
-set i 0
-foreach name $names {
-  incr i
-  do_test capi3e-2.1.$i {
-    set db2 [sqlite3_open16 [utf16 $name] {}]
-    sqlite3_errcode $db2
-  } {SQLITE_OK}
-  do_test capi3e-2.2.$i {
-    sqlite3_close $db2
-  } {SQLITE_OK}
-  do_test capi3e-2.3.$i {
-    file isfile $name
-  } {1}
+ifcapable {utf16} {
+  set i 0
+  foreach name $names {
+    incr i
+    do_test capi3e-2.1.$i {
+      set db2 [sqlite3_open16 [utf16 $name] {}]
+      sqlite3_errcode $db2
+    } {SQLITE_OK}
+    do_test capi3e-2.2.$i {
+      sqlite3_close $db2
+    } {SQLITE_OK}
+    do_test capi3e-2.3.$i {
+      file isfile $name
+    } {1}
+  }
 }
 
 ifcapable attach {
