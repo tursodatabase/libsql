@@ -1,5 +1,5 @@
-C Skip\ssome\stests\sin\scapi3e.test\swhen\scompiled\swith\sSQLITE_OMIT_UTF16.
-D 2011-02-14T03:49:40
+C Add\s"do_not_use_codec"\slogic\sto\ssome\sof\sthe\sTCL\sbased\stest\scases\sthat\sread/write\sdirectly\sto\sthe\sDB.
+D 2011-02-16T01:23:51
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -319,17 +319,17 @@ F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
 F test/conflict.test cabc41f7616675df71b4fddabca3bd5d9221915a
 F test/corrupt.test 1a5bef8b2d178859af69814ecedcd37219a89968
 F test/corrupt2.test 808a28d0ca3b97e9aa8c91cd2b485ea2700b76d1
-F test/corrupt3.test a399dacccb91c732f6b071c913e70d195af8c058
+F test/corrupt3.test e3006aaf579d2ed7f1b94bf4cc695d3c784fa5af
 F test/corrupt4.test b963f9e01e0f92d15c76fb0747876fd4b96dc30a
 F test/corrupt5.test c23da7bfb20917cc7fdbb13ee25c7cc4e9fffeff
 F test/corrupt6.test 4e4161aef1f30b9f34582bb4142334b7f47eacae
 F test/corrupt7.test a90caf89c7d7cb7893ea4d92529bd0c129317ee4
 F test/corrupt8.test 48eb37ffb9a03bceada62219e2bd4c92f4b0cb75
 F test/corrupt9.test fad0bc26a5c972580a8d763c62f24094f4e8ef25
-F test/corruptA.test 38b4f81c16099f6d8fa8b37e188fde76b8243994
+F test/corruptA.test 856ea7a2eb5c1c767abbdf02679ac6cb158e4643
 F test/corruptB.test 44133515cf46c4d7bba691e3bcfa478080413af0
 F test/corruptC.test 483aa35dadfd96bdf549e38d75ffc2942576477e
-F test/corruptD.test 3ae6e2dc6e2226c6935a8a40d4b5ee3eba75f8c0
+F test/corruptD.test 63a449a3146b460231535d04a409d14ce71795ad
 F test/corruptE.test 7290b61145d954be549340e462ca84826d8a31a3
 F test/count.test 454e1ce985c94d13efeac405ce54439f49336163
 F test/crash.test 1b6ac8410689ff78028887f445062dc897c9ac89
@@ -376,7 +376,7 @@ F test/enc4.test 4b575ef09e0eff896e73bd24076f96c2aa6a42de
 F test/eqp.test 8f535d902b2df780d22edb95113880480664f976
 F test/eval.test bc269c365ba877554948441e91ad5373f9f91be3
 F test/exclusive.test 53e1841b422e554cecf0160f937c473d6d0e3062
-F test/exclusive2.test b65264c3e76e1db6c6eda15c02000a40743f6541
+F test/exclusive2.test 343d55130c12c67b8bf10407acec043a6c26c86b
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/expr.test 620a636cf7b7d4e5834a0b9d83a4da372e24a7b7
 F test/fallocate.test 43dc34b8c24be6baffadc3b4401ee15710ce83c6
@@ -819,7 +819,7 @@ F test/unique.test 083c7fff74695bcc27a71d75699deba3595bc9c2
 F test/update.test 8bc86fd7ef1a00014f76dc6a6a7c974df4aef172
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
 F test/vacuum.test 29b60e8cc9e573b39676df6c4a75fe9e02d04a09
-F test/vacuum2.test 2165164ed2463816e8c4648d0a779a863ce1a76c
+F test/vacuum2.test 91a84c9b08adfc4472097d2e8deb0150214e0e76
 F test/vacuum3.test f39ad1428347c5808cd2da7578c470f186a4d0ce
 F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
@@ -907,7 +907,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f7e2ea33d5b37e5b133d96e96a11d2842504355c
-R ffebcc687d81f6cc5775f994836234b8
+P b04304b9677b84c4bfca011bf7fa0488e7d56d08
+R f5c508e3981dfe53be4c1e6cf1a4617a
 U shaneh
-Z f8fe51827f910e65ed40e955ca4f658a
+Z 6021855b04e59da6d909bbaa9dd4e8d7
