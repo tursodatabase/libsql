@@ -2455,8 +2455,8 @@ static int whereRangeScanEst(
     int iEst;
     int iLower = 0;
     int iUpper = SQLITE_INDEX_SAMPLES;
-    int roundUpUpper;
-    int roundUpLower;
+    int roundUpUpper = 0;
+    int roundUpLower = 0;
     u8 aff = p->pTable->aCol[p->aiColumn[0]].affinity;
 
     if( pLower ){

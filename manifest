@@ -1,5 +1,8 @@
-C Add\s"do_not_use_codec"\slogic\sto\ssome\sof\sthe\sTCL\sbased\stest\scases\sthat\sread/write\sdirectly\sto\sthe\sDB.
-D 2011-02-16T01:23:51
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Fix\sharmless\scompiler\swarnings\sin\sthe\squery\splanner.
+D 2011-02-16T23:32:24.693
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -22,7 +25,7 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure c38c1947db7ed4adaed2affcb09cea9d3acd5a9a
+F configure c38c1947db7ed4adaed2affcb09cea9d3acd5a9a x
 F configure.ac 87a3c71bbe9c925381c154413eea7f3cdc397244
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -98,7 +101,7 @@ F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 1af0899c63a688e272d69d8e746f24e76f10a3f0
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
-F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
+F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F main.mk 54190fab7cdba523e311c274c95ea480f32abfb5
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
@@ -241,7 +244,7 @@ F src/vtab.c b297e8fa656ab5e66244ab15680d68db0adbec30
 F src/wal.c aca10a60655e103fc8630a75345000f43c6d47ca
 F src/wal.h 7a5fbb00114b7f2cd40c7e1003d4c41ce9d26840
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 9c140acd52f4526983cba7203e6a5bb0ccadb5fb
+F src/where.c ebc531430a2a80dc4e7aba96791260ad234beb2e
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 51756962d522e474338e9b2ebb26e7364d4aa125
@@ -907,7 +910,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b04304b9677b84c4bfca011bf7fa0488e7d56d08
-R f5c508e3981dfe53be4c1e6cf1a4617a
-U shaneh
-Z 6021855b04e59da6d909bbaa9dd4e8d7
+P edd27669f3d0ec8c878267fb5cae9b73fcdfd2b8
+R 3adf5eb23392f0fbbc13b12d50a2f740
+U drh
+Z b21e3a2f75b7c8f40bce529a5bd56853
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFNXF6MoxKgR168RlERAhCmAJ9zEWgErrYsnZcJxLaSDFx2flO/dgCfYiwX
++WWcBXqhSkkG7464HeZaMUY=
+=hNNp
+-----END PGP SIGNATURE-----
