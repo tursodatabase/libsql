@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sharmless\scompiler\swarnings\sin\sthe\squery\splanner.
-D 2011-02-16T23:32:24.693
+C Add\san\sALWAYS()\saround\sa\salways-true\stest\sin\swhere.c.
+D 2011-02-17T13:33:15.650
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -244,7 +244,7 @@ F src/vtab.c b297e8fa656ab5e66244ab15680d68db0adbec30
 F src/wal.c aca10a60655e103fc8630a75345000f43c6d47ca
 F src/wal.h 7a5fbb00114b7f2cd40c7e1003d4c41ce9d26840
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c ebc531430a2a80dc4e7aba96791260ad234beb2e
+F src/where.c 259a727427193c3406129bcb7920841252281451
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 51756962d522e474338e9b2ebb26e7364d4aa125
@@ -910,14 +910,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P edd27669f3d0ec8c878267fb5cae9b73fcdfd2b8
-R 3adf5eb23392f0fbbc13b12d50a2f740
+P 31fc4ba66e76876b2e7b6b2b74c07f47571938ce
+R 23e71ec97780c817f50641237bf58a7d
 U drh
-Z b21e3a2f75b7c8f40bce529a5bd56853
+Z e6c29c88c0f1167524f4bd1e4a5e8fb4
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNXF6MoxKgR168RlERAhCmAJ9zEWgErrYsnZcJxLaSDFx2flO/dgCfYiwX
-+WWcBXqhSkkG7464HeZaMUY=
-=hNNp
+iD8DBQFNXSOeoxKgR168RlERAnRuAKCIWlgAx2+sDKXDMivL2Tk9PhpNawCeP2K6
+b1PCeStoUkZM7/d1Nra15g4=
+=Lq3S
 -----END PGP SIGNATURE-----
