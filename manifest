@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Remove\san\sassert()\sthat\swas\smade\sredundant\sby\sthe\sprevious\scheckin.
-D 2011-02-17T13:52:02.520
+C Remove\sa\sno-op\scode\spath\sfrom\ssqlite3ExprIsInteger().\s\sReplace\sit\swith\san\nassert()\sthat\sproves\sit\salways\sdoes\snothing.
+D 2011-02-17T15:58:20.130
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -132,7 +132,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 7deec4534f3b5a0c3b4a4cbadf809d321f64f9c4
 F src/date.c 1548fdac51377e4e7833251de878b4058c148e1b
 F src/delete.c 7ed8a8c8b5f748ece92df173d7e0f7810c899ebd
-F src/expr.c 400e27db545e0d8b3b18043363294b525596f507
+F src/expr.c 8e2c607b3be87a35c75a1f5dac50c10666b083c0
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 17950a28f28b23e8ad3feaac5fc88c324d2f600a
 F src/func.c cb41f614edc43b00bfeb030f9768e80eaff47edd
@@ -910,14 +910,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8123283ee1a360586a1721a56b4db15718c25ee0
-R c2e67a3b57f0ef4f6dc1d1726173f5f3
+P 21db719156deef9fb26aff27a01e324da255c825
+R 23a37434fd8faae3ad4c47b661a2acd8
 U drh
-Z 13686355ba31a2a089ed7148c7a6f8d6
+Z f8600d32bda19f4f79a2c1d0f15407d3
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNXSgFoxKgR168RlERArWeAJ0bK+urBZ9r5HzL+NNrL0hmF9MHQwCeIzql
-RqRfQKsPFfT3VO9Hh6ohUt0=
-=/pbJ
+iD8DBQFNXUWfoxKgR168RlERAjLNAJoCNP7/L4dEG8QdCwAC/kTNv0d9+wCeJDW2
+vZfweaWxCskd2ZVbhdxtbGc=
+=zQyy
 -----END PGP SIGNATURE-----
