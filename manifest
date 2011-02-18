@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Remove\sa\sno-op\scode\spath\sfrom\ssqlite3ExprIsInteger().\s\sReplace\sit\swith\san\nassert()\sthat\sproves\sit\salways\sdoes\snothing.
-D 2011-02-17T15:58:20.130
+C Fix\sthe\ssqlite3ValueFromExpr()\sroutine\sso\sthat\sit\sreturns\sSQLITE_NOMEM\non\san\sOOM\swhen\strying\sto\sextract\sa\sNULL.
+D 2011-02-18T17:23:23.814
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -238,7 +238,7 @@ F src/vdbeInt.h 6e6f28e9bccc6c703dca1372fd661c57b5c15fb0
 F src/vdbeapi.c 8e9324fd35eb70d0b5904bd1af40f2598744dc4d
 F src/vdbeaux.c 5936a596324ad9f9aba02bdee8c8080d2a3264e1
 F src/vdbeblob.c 18955f0ee6b133cd08e1592010cb9a6b11e9984c
-F src/vdbemem.c c011228c6fb1b5df924e4584765b16bde863c9c6
+F src/vdbemem.c 0fa2ed786cd207d5b988afef3562a8e663a75b50
 F src/vdbetrace.c 3ba13bc32bdf16d2bdea523245fd16736bed67b5
 F src/vtab.c b297e8fa656ab5e66244ab15680d68db0adbec30
 F src/wal.c aca10a60655e103fc8630a75345000f43c6d47ca
@@ -910,14 +910,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 21db719156deef9fb26aff27a01e324da255c825
-R 23a37434fd8faae3ad4c47b661a2acd8
+P 7af66d1bd53fd5973281646511e4e1d3b16601a3
+R e75dfeaf15ceeab70c2b4dbe222b0382
 U drh
-Z f8600d32bda19f4f79a2c1d0f15407d3
+Z 046db8c28f608cee3392a3f51939415b
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNXUWfoxKgR168RlERAjLNAJoCNP7/L4dEG8QdCwAC/kTNv0d9+wCeJDW2
-vZfweaWxCskd2ZVbhdxtbGc=
-=zQyy
+iD8DBQFNXqsPoxKgR168RlERAjXBAJ4+kvGdLBXD8tI661f3I4ytuq209wCdEfwh
+jT0K+4lrw0YQZ0vO7PlbWzg=
+=JXFS
 -----END PGP SIGNATURE-----

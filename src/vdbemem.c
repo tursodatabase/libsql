@@ -1084,6 +1084,7 @@ int sqlite3ValueFromExpr(
     }
   }else if( op==TK_NULL ){
     pVal = sqlite3ValueNew(db);
+    if( pVal==0 ) goto no_mem;
   }
 #ifndef SQLITE_OMIT_BLOB_LITERAL
   else if( op==TK_BLOB ){
