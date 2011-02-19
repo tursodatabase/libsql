@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Changes\sto\smake\sWAL\smore\srobust\sagainst\sSQLITE_PROTOCOL\serrors.
-D 2011-02-19T15:22:14.943
+C Add\stestcase\smacros\sto\sverify\sthat\sall\sreturn\svalues\sfrom\nwalTryBeginRead()\sare\stested.
+D 2011-02-19T16:51:45.000
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -241,7 +241,7 @@ F src/vdbeblob.c 18955f0ee6b133cd08e1592010cb9a6b11e9984c
 F src/vdbemem.c 0fa2ed786cd207d5b988afef3562a8e663a75b50
 F src/vdbetrace.c 3ba13bc32bdf16d2bdea523245fd16736bed67b5
 F src/vtab.c b297e8fa656ab5e66244ab15680d68db0adbec30
-F src/wal.c 3502efa1febec082dc6e3b250e953a3fcd693ed5
+F src/wal.c c7edd9ba2716f564a1a8ba75b052a3d104a07b08
 F src/wal.h 7a5fbb00114b7f2cd40c7e1003d4c41ce9d26840
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c bf8c0f584a2c9becb9110c37e151f9d4f73fbf7e
@@ -910,14 +910,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1061e94fa983a441b289753b873559163ab849e6
-R 42e1e218d5ef655544f5720fcecf21cc
+P fd578a32f8e9f04957359e73f244a60f02afe08c
+R 58382681a6bc3d40322336bf76311291
 U drh
-Z d759351aea0417704913e3e155895457
+Z dd6a7bbabef46af40c891ba381b2d84a
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNX+AqoxKgR168RlERAtq4AJ9wJRqWuZkwAtFfACbDOwdLR1gr1QCfdXf6
-hBUDxFwiAsS1ijhWzM7O37s=
-=wKtJ
+iD8DBQFNX/UkoxKgR168RlERAjPlAJ9sfPOkj5Rw8Rpnnrs2JAxoI0a3YQCfYDlw
+WoykhOfkQSrNygYIYCRgG4A=
+=HPZj
 -----END PGP SIGNATURE-----

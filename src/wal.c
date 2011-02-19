@@ -2183,6 +2183,10 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
   do{
     rc = walTryBeginRead(pWal, pChanged, 0, ++cnt);
   }while( rc==WAL_RETRY );
+  testcase( (rc&0xff)==SQLITE_BUSY );
+  testcase( (rc&0xff)==SQLITE_IOERR );
+  testcase( rc==SQLITE_PROTOCOL );
+  testcase( rc==SQLITE_OK );
   return rc;
 }
 
@@ -2536,6 +2540,10 @@ static int walRestartLog(Wal *pWal){
       int notUsed;
       rc = walTryBeginRead(pWal, &notUsed, 1, ++cnt);
     }while( rc==WAL_RETRY );
+    testcase( (rc&0xff)==SQLITE_BUSY );
+    testcase( (rc&0xff)==SQLITE_IOERR );
+    testcase( rc==SQLITE_PROTOCOL );
+    testcase( rc==SQLITE_OK );
   }
   return rc;
 }
