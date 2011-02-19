@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Change\sa\stestcase()\sadded\sby\sthe\sprevious\scheckin\sinto\san\sassert().
-D 2011-02-19T17:02:44.481
+C An\sSQLITE_PROTOCOL\serror\scounts\sas\sa\slocking\serror\sfor\sverification\npurposes.
+D 2011-02-19T23:18:12.968
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -241,7 +241,7 @@ F src/vdbeblob.c 18955f0ee6b133cd08e1592010cb9a6b11e9984c
 F src/vdbemem.c 0fa2ed786cd207d5b988afef3562a8e663a75b50
 F src/vdbetrace.c 3ba13bc32bdf16d2bdea523245fd16736bed67b5
 F src/vtab.c b297e8fa656ab5e66244ab15680d68db0adbec30
-F src/wal.c 9025ab8d99627db31a39fdc4d0dba74c96e1472b
+F src/wal.c 5386fb5e13c2daa8ab9062597fdc17bd849da371
 F src/wal.h 7a5fbb00114b7f2cd40c7e1003d4c41ce9d26840
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c bf8c0f584a2c9becb9110c37e151f9d4f73fbf7e
@@ -910,14 +910,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 262b6fca0b7a251c02604c684a9f7e7a1434d630
-R afa023bf6effc498a62a857dffeb2f00
+P 6f3dad32aa0e1e9ee374302c82bea9bd60d5854b
+R 86390ecedcedb59a969c739855db603c
 U drh
-Z 78cc1535a8b0339f608a79a8d1f0f144
+Z 0eda2ef2b7ac0ef88e60eb9b30b8c952
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNX/e3oxKgR168RlERAghDAJ9nF5ta70Ns6hujTPahV4xOl+CdVgCgiXUE
-lSTNsJAglJ6A1HdP/6/42Oc=
-=2gJN
+iD8DBQFNYE+4oxKgR168RlERAmPGAJ4rDJ23k3TF0EXjOGmea9Lr0wfA5ACgidUP
+oQjTQQmYRNZjbFBXU3DJWCg=
+=FnVe
 -----END PGP SIGNATURE-----

@@ -2020,7 +2020,10 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   */
   if( cnt>5 ){
     int nDelay = 1;                      /* Pause time in microseconds */
-    if( cnt>100 ) return SQLITE_PROTOCOL;
+    if( cnt>100 ){
+      VVA_ONLY( pWal->lockError = 1; )
+      return SQLITE_PROTOCOL;
+    }
     if( cnt>=10 ) nDelay = (cnt-9)*238;  /* Max delay 21ms. Total delay 996ms */
     sqlite3OsSleep(pWal->pVfs, nDelay);
   }
