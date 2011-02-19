@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Pull\sover\sall\sthe\slatest\strunk\schanges.
-D 2011-01-18T17:34:39.027
+C Changes\swhich\sattempt\sto\saddress\san\sobscure\sSQLITE_PROTOCOL\serror.
+D 2011-02-19T14:19:17.314
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -240,7 +240,7 @@ F src/vdbeblob.c 18955f0ee6b133cd08e1592010cb9a6b11e9984c
 F src/vdbemem.c 411649a35686f54268ccabeda175322c4697f5a6
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c b297e8fa656ab5e66244ab15680d68db0adbec30
-F src/wal.c 2db71704aad93c8af510b9d03db7ff83cb72d262
+F src/wal.c cb338d8f80dece4189ce62b435b53528f4b2d2a7
 F src/wal.h c1aac6593a0b02b15dc625987e619edeab39292e
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c af069e6b53234118014dabfece96a9515b69d76b
@@ -899,14 +899,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 2c2afdd0adad7d364915ac200c71603deddf148e e5ca59e63b18ac45a8c82ca39dc8cce1c4ce903c
-R 76d6e877b8871a8c47492488f4bcacce
+P ca86d04be158df89f474e5b82ce3418d282074d7
+R 8b3d99323c46204fea0ea724d430cb5f
 U drh
-Z 1d0fe9ba31d5ff2a091cca17e43bc7c2
+Z 9d0e6478a1d3388663538b3f4c4b6e71
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNNc8yoxKgR168RlERApvvAJ4wiRnEhv7J9Ra0GfvLu5YHjC50gQCfV0Qc
-1z7PgObQXL+khH0VurTRvgc=
-=Jmg/
+iD8DBQFNX9FooxKgR168RlERAvuxAJ48VDRP7OeedmVUn0DlNMsLqhjIzACfXrx1
+rn10uZfDJ4qrpkis/50ZxM4=
+=24hC
 -----END PGP SIGNATURE-----
