@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sthe\ssqlite3ValueFromExpr()\sroutine\sso\sthat\sit\sreturns\sSQLITE_NOMEM\non\san\sOOM\swhen\strying\sto\sextract\sa\sNULL.
-D 2011-02-18T17:23:23.814
+C Changes\sto\smake\sWAL\smore\srobust\sagainst\sSQLITE_PROTOCOL\serrors.
+D 2011-02-19T15:22:14.943
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -241,7 +241,7 @@ F src/vdbeblob.c 18955f0ee6b133cd08e1592010cb9a6b11e9984c
 F src/vdbemem.c 0fa2ed786cd207d5b988afef3562a8e663a75b50
 F src/vdbetrace.c 3ba13bc32bdf16d2bdea523245fd16736bed67b5
 F src/vtab.c b297e8fa656ab5e66244ab15680d68db0adbec30
-F src/wal.c aca10a60655e103fc8630a75345000f43c6d47ca
+F src/wal.c 3502efa1febec082dc6e3b250e953a3fcd693ed5
 F src/wal.h 7a5fbb00114b7f2cd40c7e1003d4c41ce9d26840
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c bf8c0f584a2c9becb9110c37e151f9d4f73fbf7e
@@ -910,14 +910,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 7af66d1bd53fd5973281646511e4e1d3b16601a3
-R e75dfeaf15ceeab70c2b4dbe222b0382
+P 1061e94fa983a441b289753b873559163ab849e6
+R 42e1e218d5ef655544f5720fcecf21cc
 U drh
-Z 046db8c28f608cee3392a3f51939415b
+Z d759351aea0417704913e3e155895457
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNXqsPoxKgR168RlERAjXBAJ4+kvGdLBXD8tI661f3I4ytuq209wCdEfwh
-jT0K+4lrw0YQZ0vO7PlbWzg=
-=JXFS
+iD8DBQFNX+AqoxKgR168RlERAtq4AJ9wJRqWuZkwAtFfACbDOwdLR1gr1QCfdXf6
+hBUDxFwiAsS1ijhWzM7O37s=
+=wKtJ
 -----END PGP SIGNATURE-----
