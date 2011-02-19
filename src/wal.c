@@ -2540,7 +2540,7 @@ static int walRestartLog(Wal *pWal){
       int notUsed;
       rc = walTryBeginRead(pWal, &notUsed, 1, ++cnt);
     }while( rc==WAL_RETRY );
-    testcase( (rc&0xff)==SQLITE_BUSY );
+    assert( (rc&0xff)!=SQLITE_BUSY ); /* BUSY not possible when useWal==1 */
     testcase( (rc&0xff)==SQLITE_IOERR );
     testcase( rc==SQLITE_PROTOCOL );
     testcase( rc==SQLITE_OK );
