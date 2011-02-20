@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Backport\sthe\sSQLITE_PROTOCOL\sfix\sand\sthe\sextra\sdefensive\smeasure\sto\sversion\n3.7.4.
-D 2011-02-20T03:11:27.935
+C Backport\sthe\schanges\sof\scheckin\s[cf86affcb7d308949]\n("Make\swal_checkpoint\sa\sno-op\sif\sa\sprior\scheckpoint\shas\salready\scopied\nall\sWAL\scontent\sinto\sthe\sdatabase.")\sto\sthe\s3.7.4\srelease.
+D 2011-02-20T03:20:03.287
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4547616ad2286053af6ccccefa242dc925e49bf0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -240,7 +240,7 @@ F src/vdbeblob.c 18955f0ee6b133cd08e1592010cb9a6b11e9984c
 F src/vdbemem.c 411649a35686f54268ccabeda175322c4697f5a6
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c b297e8fa656ab5e66244ab15680d68db0adbec30
-F src/wal.c 20a07fb265abeae6d7a1908e9f7c50f2584a2dfa
+F src/wal.c 5b0f0a2a12208544721b5b46cc18f97efb203ea3
 F src/wal.h c1aac6593a0b02b15dc625987e619edeab39292e
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c fa22d45b2577c77146f2e894d58011d472d64103
@@ -897,18 +897,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a586a4deeb25330037a49df295b36aaf624d0f45
-R d771e0380dc80bd4c14fcbb1ae00b759
-T *bgcolor * #ffd0c0
-T *branch * branch-3.7.4
-T *sym-branch-3.7.4 *
-T -sym-trunk *
+P bcc22c4b800e1f5b5619193890548d2a6bc19280
+R 915f17568a7a0869f65f9007c0278ea5
 U drh
-Z af96b97a7d73ec7f5853e8cfa091cc04
+Z 63e4626d3314741f01416949756e845c
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNYIZkoxKgR168RlERAmtNAJwL9JL9iqNlElhdUnfzKoR8DfDpoACcD2V8
-Ukcg1He63egBJnFmVWmm6mY=
-=ngBz
+iD8DBQFNYIhmoxKgR168RlERArCeAJ9FTRQ1SHnENPOnuvjikmczocV0DQCfW8WH
+6llbqcmLE2Gou9q+3HfSJrk=
+=FYeT
 -----END PGP SIGNATURE-----
