@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C An\sSQLITE_PROTOCOL\serror\scounts\sas\sa\slocking\serror\sfor\sverification\npurposes.
-D 2011-02-19T23:18:12.968
+C Have\sos_unix.c\scall\ssqlite3_log()\sfollowing\serrors\sin\scertain\ssystem\scalls.
+D 2011-02-21T11:46:24
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -164,7 +161,7 @@ F src/os.c 22ac61d06e72a0dac900400147333b07b13d8e1d
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 2e452c9f2ca507623ad351c33a8a8b27849b1863
-F src/os_unix.c 1be46a35bad4bec5171e4de88aaff817260eb378
+F src/os_unix.c 0969a5921f2ff2a54c53d9b76eba9e4190ae9001
 F src/os_win.c 9abdcdd925416d854eabb0996c96debd92abfef5
 F src/pager.c d62dfc1d77168c4415e7f3e23c6dbee4f3fdff60
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
@@ -585,6 +582,7 @@ F test/notify3.test d60923e186e0900f4812a845fcdfd8eea096e33a
 F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test af02ed0a9cbc0d2a61b8f35171d4d117e588e4ec
+F test/oserror.test 5775264a41039856d211168713d916949227fedd
 F test/pager1.test d8672fd0af5f4f9b99b06283d00f01547809bebe
 F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
@@ -910,14 +908,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6f3dad32aa0e1e9ee374302c82bea9bd60d5854b
-R 86390ecedcedb59a969c739855db603c
-U drh
-Z 0eda2ef2b7ac0ef88e60eb9b30b8c952
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFNYE+4oxKgR168RlERAmPGAJ4rDJ23k3TF0EXjOGmea9Lr0wfA5ACgidUP
-oQjTQQmYRNZjbFBXU3DJWCg=
-=FnVe
------END PGP SIGNATURE-----
+P e87d499a4f8a456111c1f96ca6da31d0810fb7c8
+R fd86ed6c132ac26057f4026c493ad018
+U dan
+Z 2bb27580b8cb6c1cd91c27a584f12f47

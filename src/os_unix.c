@@ -739,6 +739,75 @@ struct unixInodeInfo {
 static unixInodeInfo *inodeList = 0;
 
 /*
+**
+** This function - unixLogError_x(), is only ever called via the macro
+** unixLogError().
+**
+** It is invoked after an error occurs in an OS function and errno has been
+** set. It logs a message using sqlite3_log() containing the current value of
+** errno and, if possible, the human-readable equivalent from strerror() or
+** strerror_r().
+**
+** The first argument passed to the macro should be the error code that
+** will be returned to SQLite (e.g. SQLITE_IOERR_DELETE, SQLITE_CANTOPEN). 
+** The two subsequent arguments should be the name of the OS function that
+** failed (e.g. "unlink", "open") and the the associated file-system path,
+** if any.
+*/
+#define unixLogError(a,b,c)     unixLogError_x(a,b,c,__LINE__)
+static int unixLogError_x(
+  int errcode,                    /* SQLite error code */
+  const char *zFunc,              /* Name of OS function that failed */
+  const char *zPath,              /* File path associated with error */
+  int iLine                       /* Source line number where error occurred */
+){
+  char *zErr;                     /* Message from strerror() or equivalent */
+
+  /* If this is not a threadsafe build (SQLITE_THREADSAFE==0), then use
+  ** the strerror() function to obtain the human-readable error message
+  ** equivalent to errno. Otherwise, use strerror_r().
+  */ 
+#if SQLITE_THREADSAFE && defined(HAVE_STRERROR_R)
+  char aErr[80];
+  memset(aErr, 0, sizeof(aErr));
+  zErr = aErr;
+
+  /* If STRERROR_R_CHAR_P (set by autoconf scripts) or __USE_GNU is defined,
+  ** assume that the system provides the the GNU version of strerror_r() that 
+  ** returns a pointer to a buffer containing the error message. That pointer 
+  ** may point to aErr[], or it may point to some static storage somewhere. 
+  ** Otherwise, assume that the system provides the POSIX version of 
+  ** strerror_r(), which always writes an error message into aErr[].
+  **
+  ** If the code incorrectly assumes that it is the POSIX version that is
+  ** available, the error message will often be an empty string. Not a
+  ** huge problem. Incorrectly concluding that the GNU version is available 
+  ** could lead to a segfault though.
+  */
+#if defined(STRERROR_R_CHAR_P) || defined(__USE_GNU)
+  zErr = 
+# endif
+  strerror_r(errno, aErr, sizeof(aErr)-1);
+
+#elif SQLITE_THREADSAFE
+  /* This is a threadsafe build, but strerror_r() is not available. */
+  zErr = "";
+#else
+  /* Non-threadsafe build, use strerror(). */
+  zErr = strerror(errno);
+#endif
+
+  assert( errcode!=SQLITE_OK );
+  sqlite3_log(errcode,
+      "os_unix.c: %s() at line %d - \"%s\" errno=%d path=%s",
+      zFunc, iLine, zErr, errno, (zPath ? zPath : "n/a")
+  );
+
+  return errcode;
+}
+
+
+/*
 ** Close all file descriptors accumuated in the unixInodeInfo->pUnused list.
 ** If all such file descriptors are closed without error, the list is
 ** cleared and SQLITE_OK returned.
@@ -757,7 +826,7 @@ static int closePendingFds(unixFile *pFile){
     pNext = p->pNext;
     if( close(p->fd) ){
       pFile->lastErrno = errno;
-      rc = SQLITE_IOERR_CLOSE;
+      rc = unixLogError(SQLITE_IOERR_CLOSE, "close", pFile->zPath);
       p->pNext = pError;
       pError = p;
     }else{
@@ -1410,7 +1479,7 @@ static int closeUnixFile(sqlite3_file *id){
       int err = close(pFile->dirfd);
       if( err ){
         pFile->lastErrno = errno;
-        return SQLITE_IOERR_DIR_CLOSE;
+        return unixLogError(SQLITE_IOERR_DIR_CLOSE, "close", pFile->zPath);
       }else{
         pFile->dirfd=-1;
       }
@@ -1419,7 +1488,7 @@ static int closeUnixFile(sqlite3_file *id){
       int err = close(pFile->h);
       if( err ){
         pFile->lastErrno = errno;
-        return SQLITE_IOERR_CLOSE;
+        return unixLogError(SQLITE_IOERR_CLOSE, "close", pFile->zPath);
       }
     }
 #if OS_VXWORKS
@@ -2941,7 +3010,7 @@ static int unixSync(sqlite3_file *id, int flags){
   SimulateIOError( rc=1 );
   if( rc ){
     pFile->lastErrno = errno;
-    return SQLITE_IOERR_FSYNC;
+    return unixLogError(SQLITE_IOERR_FSYNC, "full_fsync", pFile->zPath);
   }
   if( pFile->dirfd>=0 ){
     int err;
@@ -2968,7 +3037,7 @@ static int unixSync(sqlite3_file *id, int flags){
       pFile->dirfd = -1;
     }else{
       pFile->lastErrno = errno;
-      rc = SQLITE_IOERR_DIR_CLOSE;
+      rc = unixLogError(SQLITE_IOERR_DIR_CLOSE, "close", pFile->zPath);
     }
   }
   return rc;
@@ -2995,7 +3064,7 @@ static int unixTruncate(sqlite3_file *id, i64 nByte){
   rc = ftruncate(pFile->h, (off_t)nByte);
   if( rc ){
     pFile->lastErrno = errno;
-    return SQLITE_IOERR_TRUNCATE;
+    return unixLogError(SQLITE_IOERR_TRUNCATE, "ftruncate", pFile->zPath);
   }else{
 #ifndef NDEBUG
     /* If we are doing a normal write to a database file (as opposed to
@@ -3083,7 +3152,7 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
 
       if( ftruncate(pFile->h, nSize) ){
         pFile->lastErrno = errno;
-        return SQLITE_IOERR_TRUNCATE;
+        return unixLogError(SQLITE_IOERR_TRUNCATE, "ftruncate", pFile->zPath);
       }
       iWrite = ((buf.st_size + 2*nBlk - 1)/nBlk)*nBlk-1;
       do {
@@ -3432,7 +3501,7 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
 
     pShmNode->h = open(zShmFilename, O_RDWR|O_CREAT, (sStat.st_mode & 0777));
     if( pShmNode->h<0 ){
-      rc = SQLITE_CANTOPEN_BKPT;
+      rc = unixLogError(SQLITE_CANTOPEN_BKPT, "open", zShmFilename);
       goto shm_open_err;
     }
 
@@ -3442,7 +3511,7 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
     rc = SQLITE_OK;
     if( unixShmSystemLock(pShmNode, F_WRLCK, UNIX_SHM_DMS, 1)==SQLITE_OK ){
       if( ftruncate(pShmNode->h, 0) ){
-        rc = SQLITE_IOERR_SHMOPEN;
+        rc = unixLogError(SQLITE_IOERR_SHMOPEN, "ftruncate", zShmFilename);
       }
     }
     if( rc==SQLITE_OK ){
@@ -3548,7 +3617,7 @@ static int unixShmMap(
       */
       if( !bExtend ) goto shmpage_out;
       if( ftruncate(pShmNode->h, nByte) ){
-        rc = SQLITE_IOERR_SHMSIZE;
+        rc = unixLogError(SQLITE_IOERR_SHMSIZE,"ftruncate",pShmNode->zFilename);
         goto shmpage_out;
       }
     }
@@ -4267,7 +4336,7 @@ static int openDirectory(const char *zFilename, int *pFd){
     }
   }
   *pFd = fd;
-  return (fd>=0?SQLITE_OK:SQLITE_CANTOPEN_BKPT);
+  return (fd>=0?SQLITE_OK:unixLogError(SQLITE_CANTOPEN_BKPT, "open", zDirname));
 }
 
 /*
@@ -4608,7 +4677,7 @@ static int unixOpen(
       fd = open(zName, openFlags, openMode);
     }
     if( fd<0 ){
-      rc = SQLITE_CANTOPEN_BKPT;
+      rc = unixLogError(SQLITE_CANTOPEN_BKPT, "open", zName);
       goto open_finished;
     }
   }
@@ -4740,7 +4809,7 @@ static int unixDelete(
   UNUSED_PARAMETER(NotUsed);
   SimulateIOError(return SQLITE_IOERR_DELETE);
   if( unlink(zPath)==(-1) && errno!=ENOENT ){
-    return SQLITE_IOERR_DELETE;
+    return unixLogError(SQLITE_IOERR_DELETE, "unlink", zPath);
   }
 #ifndef SQLITE_DISABLE_DIRSYNC
   if( dirSync ){
@@ -4753,10 +4822,10 @@ static int unixDelete(
       if( fsync(fd) )
 #endif
       {
-        rc = SQLITE_IOERR_DIR_FSYNC;
+        rc = unixLogError(SQLITE_IOERR_DIR_FSYNC, "fsync", zPath);
       }
       if( close(fd)&&!rc ){
-        rc = SQLITE_IOERR_DIR_CLOSE;
+        rc = unixLogError(SQLITE_IOERR_DIR_CLOSE, "close", zPath);
       }
     }
   }
@@ -4840,7 +4909,7 @@ static int unixFullPathname(
   }else{
     int nCwd;
     if( getcwd(zOut, nOut-1)==0 ){
-      return SQLITE_CANTOPEN_BKPT;
+      return unixLogError(SQLITE_CANTOPEN_BKPT, "getcwd", zPath);
     }
     nCwd = (int)strlen(zOut);
     sqlite3_snprintf(nOut-nCwd, &zOut[nCwd], "/%s", zPath);
