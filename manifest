@@ -1,5 +1,8 @@
-C Pull\sin\sthe\sfix\sto\sSTAT2\sprocessing\sfrom\scheck-in\n[70a3d81742f].
-D 2011-02-20T21:03:04.537
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Backport\sthe\sos_unix.c\serror\slogging\senhancements\sfrom\ncheck-in\s[01076528a43b61a].
+D 2011-02-23T14:05:08.407
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4547616ad2286053af6ccccefa242dc925e49bf0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -160,7 +163,7 @@ F src/os.c 22ac61d06e72a0dac900400147333b07b13d8e1d
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 72d0b2e562952a2464308c4ce5f7913ac10bef3e
-F src/os_unix.c 0240c5b547b4cf585c8cac351a95c3e85ce00772
+F src/os_unix.c c9f2a09124d78e2accd5738c78aabbccc07cb2f4
 F src/os_win.c 2f90f7bdec714fad51cd31b4ecad3cc1b4bb5aad
 F src/pager.c 5b2210b4307c626a3b3ed7312161ec533958c094
 F src/pager.h 0ea59db2a33bc6c2c02cae34de33367e1effdf76
@@ -575,6 +578,7 @@ F test/notify3.test d60923e186e0900f4812a845fcdfd8eea096e33a
 F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test af02ed0a9cbc0d2a61b8f35171d4d117e588e4ec
+F test/oserror.test 5775264a41039856d211168713d916949227fedd
 F test/pager1.test e066fb2e2dc1ac1cd9ef2b44a28ae3cc79a9150f
 F test/pager2.test 0fbb6b6dc40ce1fecfe758c555a748ad2e9beaa3
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
@@ -894,7 +898,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e2616004dfaf61d776e448693971b6478552a635
-R d8e085383636be2d77c988420d503189
+P 692aafb17e7fca4e303ca14da2925cb95a22f71e
+R 6770e6a4b417ada2ff6c98dd3dca2daa
 U drh
-Z 0dcddd6d0b789a4a9ef8c5f0f596ab90
+Z 9c3c0b89eea505163f9778dd289c331f
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFNZRQXoxKgR168RlERAqTcAJ4i0CBz9MzbV5ibLtQ/BGYBaqlYuwCfXQoY
+oux3l0HUdLba9EsW1zRLA/k=
+=uIBr
+-----END PGP SIGNATURE-----
