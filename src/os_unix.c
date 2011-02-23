@@ -1813,7 +1813,7 @@ static int robust_flock(int fd, int op){
   return rc;
 }
 #else
-# define robust_flock(a,b) fclose(a,b)
+# define robust_flock(a,b) flock(a,b)
 #endif
      
 

@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Retry\sselected\ssystem\scalls\son\sunix\swhen\sthey\sfail\swith\sEINTR.
-D 2011-02-23T13:33:46.402
+C Fix\sa\stypo\sin\sthe\srobust_flock()\smacro\sfor\ssystems\swithout\sEINTR.
+D 2011-02-23T14:00:12.626
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -164,7 +164,7 @@ F src/os.c 22ac61d06e72a0dac900400147333b07b13d8e1d
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 2e452c9f2ca507623ad351c33a8a8b27849b1863
-F src/os_unix.c 866aa2d83fa6b03972abf4e721a1e08cdbecceac
+F src/os_unix.c 33c062c56cd8a7e91b58750bcac2543be525f8de
 F src/os_win.c 9abdcdd925416d854eabb0996c96debd92abfef5
 F src/pager.c d62dfc1d77168c4415e7f3e23c6dbee4f3fdff60
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
@@ -912,14 +912,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1bca0a7e198391202fd2bc1650c0a62028a9aaa5
-R 63cd7efdc2a9ee9a3a8f0df12af55205
+P b9d29ea385bafcf87c7dd07822ce9ec3d3892bd1
+R 8c830d401ce0cb1348099c3c471b15af
 U drh
-Z 6f6b7b9fb863cbdbaba6174b19832589
+Z 9ca7493e74d103b42f51528f83eaa247
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNZQy+oxKgR168RlERAtY5AKCNEQ7Cxp5ZJoBf1tnIV6tozsuDegCbBxJl
-KHpzjHN31kdIp0EO3b2jfgs=
-=cbOt
+iD8DBQFNZRLvoxKgR168RlERAoCzAJ4krAbov2L1xTZwjmz9V4sri0AYgwCghfOe
+/ATOOto8D0XuUEn4VIMmk/w=
+=+rra
 -----END PGP SIGNATURE-----
