@@ -396,6 +396,19 @@ static int lockTrace(int fd, int op, struct flock *p){
 #endif /* SQLITE_LOCK_TRACE */
 
 
+/*
+** Retry ftruncate() calls that fail due to EINTR
+*/
+#ifdef EINTR
+static int robust_ftruncate(int h, sqlite3_int64 sz){
+  int rc;
+  do{ rc = ftruncate(h,sz); }while( rc<0 && errno==EINTR );
+  return rc;
+}
+#else
+# define robust_ftruncate(a,b) ftruncate(a,b)
+#endif 
+
 
 /*
 ** This routine translates a standard POSIX errno code into something
@@ -914,7 +927,7 @@ static int findInodeInfo(
   ** the first page of the database, no damage is done.
   */
   if( statbuf.st_size==0 && (pFile->fsFlags & SQLITE_FSFLAGS_IS_MSDOS)!=0 ){
-    rc = write(fd, "S", 1);
+    do{ rc = write(fd, "S", 1); }while( rc<0 && errno==EINTR );
     if( rc!=1 ){
       pFile->lastErrno = errno;
       return SQLITE_IOERR;
@@ -1791,6 +1804,20 @@ static int dotlockClose(sqlite3_file *id) {
 #if SQLITE_ENABLE_LOCKING_STYLE && !OS_VXWORKS
 
 /*
+** Retry flock() calls that fail with EINTR
+*/
+#ifdef EINTR
+static int robust_flock(int fd, int op){
+  int rc;
+  do{ rc = flock(fd,op); }while( rc<0 && errno==EINTR );
+  return rc;
+}
+#else
+# define robust_flock(a,b) fclose(a,b)
+#endif
+     
+
+/*
 ** This routine checks if there is a RESERVED lock held on the specified
 ** file by this or any other process. If such a lock is held, set *pResOut
 ** to a non-zero value otherwise *pResOut is set to zero.  The return value
@@ -1813,10 +1840,10 @@ static int flockCheckReservedLock(sqlite3_file *id, int *pResOut){
   /* Otherwise see if some other process holds it. */
   if( !reserved ){
     /* attempt to get the lock */
-    int lrc = flock(pFile->h, LOCK_EX | LOCK_NB);
+    int lrc = robust_flock(pFile->h, LOCK_EX | LOCK_NB);
     if( !lrc ){
       /* got the lock, unlock it */
-      lrc = flock(pFile->h, LOCK_UN);
+      lrc = robust_flock(pFile->h, LOCK_UN);
       if ( lrc ) {
         int tErrno = errno;
         /* unlock failed with an error */
@@ -1893,7 +1920,7 @@ static int flockLock(sqlite3_file *id, int eFileLock) {
   
   /* grab an exclusive lock */
   
-  if (flock(pFile->h, LOCK_EX | LOCK_NB)) {
+  if (robust_flock(pFile->h, LOCK_EX | LOCK_NB)) {
     int tErrno = errno;
     /* didn't get, must be busy */
     rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_LOCK);
@@ -1942,7 +1969,7 @@ static int flockUnlock(sqlite3_file *id, int eFileLock) {
   }
   
   /* no, really, unlock. */
-  int rc = flock(pFile->h, LOCK_UN);
+  int rc = robust_flock(pFile->h, LOCK_UN);
   if (rc) {
     int r, tErrno = errno;
     r = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK);
@@ -2679,10 +2706,10 @@ static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
 #endif
   TIMER_START;
 #if defined(USE_PREAD)
-  got = pread(id->h, pBuf, cnt, offset);
+  do{ got = pread(id->h, pBuf, cnt, offset); }while( got<0 && errno==EINTR );
   SimulateIOError( got = -1 );
 #elif defined(USE_PREAD64)
-  got = pread64(id->h, pBuf, cnt, offset);
+  do{ got = pread64(id->h, pBuf, cnt, offset); }while( got<0 && errno==EINTR );
   SimulateIOError( got = -1 );
 #else
   newOffset = lseek(id->h, offset, SEEK_SET);
@@ -2695,7 +2722,7 @@ static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
     }
     return -1;
   }
-  got = read(id->h, pBuf, cnt);
+  do{ got = read(id->h, pBuf, cnt); }while( got<0 && errno==EINTR );
 #endif
   TIMER_END;
   if( got<0 ){
@@ -2757,9 +2784,9 @@ static int seekAndWrite(unixFile *id, i64 offset, const void *pBuf, int cnt){
 #endif
   TIMER_START;
 #if defined(USE_PREAD)
-  got = pwrite(id->h, pBuf, cnt, offset);
+  do{ got = pwrite(id->h, pBuf, cnt, offset); }while( got<0 && errno==EINTR );
 #elif defined(USE_PREAD64)
-  got = pwrite64(id->h, pBuf, cnt, offset);
+  do{ got = pwrite64(id->h, pBuf, cnt, offset); }while( got<0 && errno==EINTR );
 #else
   newOffset = lseek(id->h, offset, SEEK_SET);
   if( newOffset!=offset ){
@@ -2770,7 +2797,7 @@ static int seekAndWrite(unixFile *id, i64 offset, const void *pBuf, int cnt){
     }
     return -1;
   }
-  got = write(id->h, pBuf, cnt);
+  do{ got = write(id->h, pBuf, cnt); }while( got<0 && errno==EINTR );
 #endif
   TIMER_END;
   if( got<0 ){
@@ -3061,7 +3088,7 @@ static int unixTruncate(sqlite3_file *id, i64 nByte){
     nByte = ((nByte + pFile->szChunk - 1)/pFile->szChunk) * pFile->szChunk;
   }
 
-  rc = ftruncate(pFile->h, (off_t)nByte);
+  rc = robust_ftruncate(pFile->h, (off_t)nByte);
   if( rc ){
     pFile->lastErrno = errno;
     return unixLogError(SQLITE_IOERR_TRUNCATE, "ftruncate", pFile->zPath);
@@ -3136,9 +3163,11 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
     nSize = ((nByte+pFile->szChunk-1) / pFile->szChunk) * pFile->szChunk;
     if( nSize>(i64)buf.st_size ){
 #if defined(HAVE_POSIX_FALLOCATE) && HAVE_POSIX_FALLOCATE
-      if( posix_fallocate(pFile->h, buf.st_size, nSize-buf.st_size) ){
-        return SQLITE_IOERR_WRITE;
-      }
+      int rc;
+      do{
+        rc = posix_fallocate(pFile-.h, buf.st_size, nSize-buf.st_size;
+      }while( rc<0 && errno=EINTR );
+      if( rc ) return SQLITE_IOERR_WRITE;
 #else
       /* If the OS does not have posix_fallocate(), fake it. First use
       ** ftruncate() to set the file size, then write a single byte to
@@ -3150,7 +3179,7 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
       i64 iWrite;                 /* Next offset to write to */
       int nWrite;                 /* Return value from seekAndWrite() */
 
-      if( ftruncate(pFile->h, nSize) ){
+      if( robust_ftruncate(pFile->h, nSize) ){
         pFile->lastErrno = errno;
         return unixLogError(SQLITE_IOERR_TRUNCATE, "ftruncate", pFile->zPath);
       }
@@ -3510,7 +3539,7 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
     */
     rc = SQLITE_OK;
     if( unixShmSystemLock(pShmNode, F_WRLCK, UNIX_SHM_DMS, 1)==SQLITE_OK ){
-      if( ftruncate(pShmNode->h, 0) ){
+      if( robust_ftruncate(pShmNode->h, 0) ){
         rc = unixLogError(SQLITE_IOERR_SHMOPEN, "ftruncate", zShmFilename);
       }
     }
@@ -3616,7 +3645,7 @@ static int unixShmMap(
       ** the requested memory region.
       */
       if( !bExtend ) goto shmpage_out;
-      if( ftruncate(pShmNode->h, nByte) ){
+      if( robust_ftruncate(pShmNode->h, nByte) ){
         rc = unixLogError(SQLITE_IOERR_SHMSIZE,"ftruncate",pShmNode->zFilename);
         goto shmpage_out;
       }
@@ -5013,7 +5042,7 @@ static int unixRandomness(sqlite3_vfs *NotUsed, int nBuf, char *zBuf){
       assert( sizeof(t)+sizeof(pid)<=(size_t)nBuf );
       nBuf = sizeof(t) + sizeof(pid);
     }else{
-      nBuf = read(fd, zBuf, nBuf);
+      do{ nBuf = read(fd, zBuf, nBuf); }while( nBuf<0 && errno==EINTR );
       close(fd);
     }
   }
@@ -5774,7 +5803,7 @@ static int proxyTakeConch(unixFile *pFile){
           strlcpy(&writeBuffer[PROXY_PATHINDEX], tempLockPath, MAXPATHLEN);
         }
         writeSize = PROXY_PATHINDEX + strlen(&writeBuffer[PROXY_PATHINDEX]);
-        ftruncate(conchFile->h, writeSize);
+        robust_ftruncate(conchFile->h, writeSize);
         rc = unixWrite((sqlite3_file *)conchFile, writeBuffer, writeSize, 0);
         fsync(conchFile->h);
         /* If we created a new conch file (not just updated the contents of a 
@@ -5782,6 +5811,7 @@ static int proxyTakeConch(unixFile *pFile){
          */
         if( rc==SQLITE_OK && createConch ){
           struct stat buf;
+          int rc;
           int err = fstat(pFile->h, &buf);
           if( err==0 ){
             mode_t cmode = buf.st_mode&(S_IRUSR|S_IWUSR | S_IRGRP|S_IWGRP |
@@ -5790,7 +5820,10 @@ static int proxyTakeConch(unixFile *pFile){
 #ifndef SQLITE_PROXY_DEBUG
             fchmod(conchFile->h, cmode);
 #else
-            if( fchmod(conchFile->h, cmode)!=0 ){
+            do{
+              rc = fchmod(conchFile->h, cmode);
+            }while( rc==(-1) && errno==EINTR );
+            if( rc!=0 ){
               int code = errno;
               fprintf(stderr, "fchmod %o FAILED with %d %s\n",
                       cmode, code, strerror(code));
