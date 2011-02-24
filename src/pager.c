@@ -6640,8 +6640,8 @@ static int pagerExclusiveLock(Pager *pPager){
   assert( pPager->eLock==SHARED_LOCK || pPager->eLock==EXCLUSIVE_LOCK );
   rc = pagerLockDb(pPager, EXCLUSIVE_LOCK);
   if( rc!=SQLITE_OK ){
-    /* If the attempt to grab the pending lock failed, release the 
-    ** exclusive lock that may have been obtained instead.  */
+    /* If the attempt to grab the exclusive lock failed, release the 
+    ** pending lock that may have been obtained instead.  */
     pagerUnlockDb(pPager, SHARED_LOCK);
   }
 
