@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sa\stypo\sin\sa\scomment.\s\sNo\schanges\sto\scode.
-D 2011-02-24T21:10:00.747
+C Comment\sout\ssome\scode\sin\sos_unix.c\sthat\sonly\sruns\son\sMacOSX\swith\nSQLITE_ENABLE_LOCKING_STYLE.
+D 2011-02-25T03:25:07.454
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -164,7 +164,7 @@ F src/os.c 22ac61d06e72a0dac900400147333b07b13d8e1d
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 2e452c9f2ca507623ad351c33a8a8b27849b1863
-F src/os_unix.c 33c062c56cd8a7e91b58750bcac2543be525f8de
+F src/os_unix.c 64a2e0ebbb19765f97993b3920f795e6f38fd923
 F src/os_win.c 9abdcdd925416d854eabb0996c96debd92abfef5
 F src/pager.c 6aa906b60a59664ba58d3f746164bb010d407ce1
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
@@ -912,14 +912,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 9b9046546db5b060e37e7ba01c23bb7e9528d861
-R 71700e0b8dcb7b4be4cfe865cf8295cc
+P af4756184a255f5d8a5cd276bf9f2fc3b38d9169
+R 86eab7753acb1a027109135cae01654a
 U drh
-Z 5de97a851d3e5daf13c24fdbe242293d
+Z 475e4dbe6e8fc13f5f8796d1c18d588c
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNZskroxKgR168RlERAqu8AJ9ERkQz+lFEREyW9Q1ySDsl4Ec4gwCeI+8X
-d0mn1jsJFDHKj6omB9byn20=
-=d8oT
+iD8DBQFNZyEhoxKgR168RlERAohiAKCDC55xIULyuJJBl/uNZNCMqVF+ZgCeK05+
+18x49YRlHX+qQrvL/cMA0OY=
+=QUmN
 -----END PGP SIGNATURE-----

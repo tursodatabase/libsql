@@ -1349,6 +1349,11 @@ static int _posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
     **  4:   [RRRR.]
     */
     if( eFileLock==SHARED_LOCK ){
+
+#if !defined(__APPLE__) || !SQLITE_ENABLE_LOCKING_STYLE
+      assert( handleNFSUnlock==0 );
+#endif
+#if defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE
       if( handleNFSUnlock ){
         off_t divSize = SHARED_SIZE - 1;
         
@@ -1388,7 +1393,9 @@ static int _posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
           }
           goto end_unlock;
         }
-      }else{
+      }else
+#endif /* defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE */
+      {
         lock.l_type = F_RDLCK;
         lock.l_whence = SEEK_SET;
         lock.l_start = SHARED_FIRST;
