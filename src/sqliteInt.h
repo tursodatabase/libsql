@@ -619,6 +619,7 @@ typedef struct LookasideSlot LookasideSlot;
 typedef struct Module Module;
 typedef struct NameContext NameContext;
 typedef struct Parse Parse;
+typedef struct PreUpdate PreUpdate;
 typedef struct RowSet RowSet;
 typedef struct Savepoint Savepoint;
 typedef struct Select Select;
@@ -827,6 +828,11 @@ struct sqlite3 {
   void (*xRollbackCallback)(void*); /* Invoked at every commit. */
   void *pUpdateArg;
   void (*xUpdateCallback)(void*,int, const char*,const char*,sqlite_int64);
+  void *pPreUpdateArg;          /* First argument to xPreUpdateCallback */
+  void (*xPreUpdateCallback)(   /* Registered using sqlite3_preupdate_hook() */
+    void*,sqlite3*,int,char const*,char const*,sqlite3_int64,sqlite3_int64
+  );
+  PreUpdate *pPreUpdate;        /* Context for active pre-update callback */
 #ifndef SQLITE_OMIT_WAL
   int (*xWalCallback)(void *, sqlite3 *, const char *, int);
   void *pWalArg;
@@ -2254,6 +2260,7 @@ struct AuthContext {
 #define OPFLAG_APPEND        0x08    /* This is likely to be an append */
 #define OPFLAG_USESEEKRESULT 0x10    /* Try to avoid a seek in BtreeInsert() */
 #define OPFLAG_CLEARCACHE    0x20    /* Clear pseudo-table cache in OP_Column */
+#define OPFLAG_ISNOOP        0x40    /* OP_Delete does pre-update-hook only */
 
 /*
  * Each trigger present in the database schema is stored as an instance of

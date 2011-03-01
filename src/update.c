@@ -490,9 +490,16 @@ void sqlite3Update(
     j1 = sqlite3VdbeAddOp3(v, OP_NotExists, iCur, 0, regOldRowid);
     sqlite3GenerateRowIndexDelete(pParse, pTab, iCur, aRegIdx);
   
-    /* If changing the record number, delete the old record.  */
-    if( hasFK || chngRowid ){
-      sqlite3VdbeAddOp2(v, OP_Delete, iCur, 0);
+    /* If changing the rowid value, or if there are foreign key constraints
+    ** to process, delete the old record. Otherwise, add a noop OP_Delete
+    ** to invoke the pre-update hook.
+    */
+    sqlite3VdbeAddOp3(v, OP_Delete, iCur,
+        OPFLAG_ISUPDATE | ((hasFK || chngRowid) ? 0 : OPFLAG_ISNOOP),
+        regNewRowid
+    );
+    if( !pParse->nested ){
+      sqlite3VdbeChangeP4(v, -1, pTab->zName, P4_STATIC);
     }
     sqlite3VdbeJumpHere(v, j1);
 

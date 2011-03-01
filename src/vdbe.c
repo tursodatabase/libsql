@@ -3868,6 +3868,24 @@ case OP_InsertInt: {
     iKey = pOp->p3;
   }
 
+  if( pOp->p4.z && (db->xPreUpdateCallback || db->xUpdateCallback) ){
+    assert( pC->isTable );
+    assert( pC->iDb>=0 );
+    zDb = db->aDb[pC->iDb].zName;
+    zTbl = pOp->p4.z;
+    op = ((pOp->p5 & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_INSERT);
+  }
+
+  /* Invoke the pre-update hook, if any */
+  if( db->xPreUpdateCallback 
+   && pOp->p4.z 
+   && (!(pOp->p5 & OPFLAG_ISUPDATE) || pC->rowidIsValid==0)
+  ){
+    sqlite3VdbePreUpdateHook(p, pC,
+      pC->rowidIsValid ? op : SQLITE_INSERT, zDb, zTbl, iKey, iKey
+    );
+  }
+
   if( pOp->p5 & OPFLAG_NCHANGE ) p->nChange++;
   if( pOp->p5 & OPFLAG_LASTROWID ) db->lastRowid = iKey;
   if( pData->flags & MEM_Null ){
@@ -3893,17 +3911,12 @@ case OP_InsertInt: {
 
   /* Invoke the update-hook if required. */
   if( rc==SQLITE_OK && db->xUpdateCallback && pOp->p4.z ){
-    zDb = db->aDb[pC->iDb].zName;
-    zTbl = pOp->p4.z;
-    op = ((pOp->p5 & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_INSERT);
-    assert( pC->isTable );
     db->xUpdateCallback(db->pUpdateArg, op, zDb, zTbl, iKey);
-    assert( pC->iDb>=0 );
   }
   break;
 }
 
-/* Opcode: Delete P1 P2 * P4 *
+/* Opcode: Delete P1 P2 P3 P4 *
 **
 ** Delete the record at which the P1 cursor is currently pointing.
 **
@@ -3918,29 +3931,30 @@ case OP_InsertInt: {
 ** P1 must not be pseudo-table.  It has to be a real table with
 ** multiple rows.
 **
-** If P4 is not NULL, then it is the name of the table that P1 is
-** pointing to.  The update hook will be invoked, if it exists.
-** If P4 is not NULL then the P1 cursor must have been positioned
-** using OP_NotFound prior to invoking this opcode.
+** If P4 is not NULL then, either the update or pre-update hook, or both,
+** may be invoked. The P1 cursor must have been positioned using OP_NotFound 
+** prior to invoking this opcode in this case. Specifically, if one is 
+** configured, the pre-update hook is invoked if P4 is not NULL. The 
+** update-hook is invoked if one is configured, P4 is not NULL, and the 
+** OPFLAG_NCHANGE flag is set in P2.
+**
+** If the OPFLAG_ISUPDATE flag is set in P2, then P3 contains the address
+** of the memory cell that contains the value that the rowid of the row will
+** be set to by the update.
 */
 case OP_Delete: {
   i64 iKey;
   VdbeCursor *pC;
+  const char *zDb;
+  const char *zTbl;
+  int opflags;
 
+  opflags = pOp->p2;
   iKey = 0;
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   assert( pC->pCursor!=0 );  /* Only valid for real tables, no pseudotables */
-
-  /* If the update-hook will be invoked, set iKey to the rowid of the
-  ** row being deleted.
-  */
-  if( db->xUpdateCallback && pOp->p4.z ){
-    assert( pC->isTable );
-    assert( pC->rowidIsValid );  /* lastRowid set by previous OP_NotFound */
-    iKey = pC->lastRowid;
-  }
 
   /* The OP_Delete opcode always follows an OP_NotExists or OP_Last or
   ** OP_Column on the same table without any intervening operations that
@@ -3953,18 +3967,42 @@ case OP_Delete: {
   rc = sqlite3VdbeCursorMoveto(pC);
   if( NEVER(rc!=SQLITE_OK) ) goto abort_due_to_error;
 
+  /* If the update-hook or pre-update-hook will be invoked, set iKey to 
+  ** the rowid of the row being deleted. Set zDb and zTab as well.
+  */
+  if( pOp->p4.z && (db->xPreUpdateCallback || db->xUpdateCallback) ){
+    assert( pC->iDb>=0 );
+    assert( pC->isTable );
+    assert( pC->rowidIsValid );  /* lastRowid set by previous OP_NotFound */
+    iKey = pC->lastRowid;
+    zDb = db->aDb[pC->iDb].zName;
+    zTbl = pOp->p4.z;
+  }
+
+  /* Invoke the pre-update-hook if required. */
+  if( db->xPreUpdateCallback && pOp->p4.z ){
+    assert( !(opflags & OPFLAG_ISUPDATE) || (aMem[pOp->p3].flags & MEM_Int) );
+    sqlite3VdbePreUpdateHook(p, pC,
+        (opflags & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_DELETE, 
+        zDb, zTbl, iKey,
+        (opflags & OPFLAG_ISUPDATE) ? aMem[pOp->p3].u.i : iKey
+    );
+  }
+
+  if( opflags & OPFLAG_ISNOOP ) break;
+
   sqlite3BtreeSetCachedRowid(pC->pCursor, 0);
   rc = sqlite3BtreeDelete(pC->pCursor);
   pC->cacheStatus = CACHE_STALE;
 
-  /* Invoke the update-hook if required. */
-  if( rc==SQLITE_OK && db->xUpdateCallback && pOp->p4.z ){
-    const char *zDb = db->aDb[pC->iDb].zName;
-    const char *zTbl = pOp->p4.z;
-    db->xUpdateCallback(db->pUpdateArg, SQLITE_DELETE, zDb, zTbl, iKey);
-    assert( pC->iDb>=0 );
+  /* Update the change-counter and invoke the update-hook if required. */
+  if( opflags & OPFLAG_NCHANGE ){
+    p->nChange++;
+    assert( pOp->p4.z );
+    if( rc==SQLITE_OK && db->xUpdateCallback ){
+      db->xUpdateCallback(db->pUpdateArg, SQLITE_DELETE, zDb, zTbl, iKey);
+    }
   }
-  if( pOp->p2 & OPFLAG_NCHANGE ) p->nChange++;
   break;
 }
 /* Opcode: ResetCount * * * * *

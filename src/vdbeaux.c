@@ -2830,7 +2830,7 @@ void sqlite3VdbeDeleteUnpackedRecord(UnpackedRecord *p){
     ** strings and blobs static.  And none of the elements are
     ** ever transformed, so there is never anything to delete.
     */
-    if( NEVER(pMem->zMalloc) ) sqlite3VdbeMemRelease(pMem);
+    if( pMem->zMalloc ) sqlite3VdbeMemRelease(pMem);
   }
   if( p->flags & UNPACKED_NEED_FREE ){
     sqlite3DbFree(p->pKeyInfo->db, p);
@@ -3162,3 +3162,35 @@ void sqlite3VdbeSetVarmask(Vdbe *v, int iVar){
     v->expmask |= ((u32)1 << (iVar-1));
   }
 }
+
+/*
+** Invoke the pre-update hook. If this is an UPDATE or DELETE pre-update call,
+** then cursor passed as the second argument should point to the row about
+** to be update or deleted. If the application calls sqlite3_preupdate_old(),
+** the required value will be read from the row the cursor points to.
+*/
+void sqlite3VdbePreUpdateHook(
+  Vdbe *v,                        /* Vdbe pre-update hook is invoked by */
+  VdbeCursor *pCsr,               /* Cursor to grab old.* values from */
+  int op,                         /* SQLITE_INSERT, UPDATE or DELETE */
+  const char *zDb,                /* Database name */
+  const char *zTbl,               /* Table name */
+  i64 iKey1,                      /* Initial key value */
+  i64 iKey2                       /* Final key value */
+){
+  sqlite3 *db = v->db;
+
+  PreUpdate preupdate;
+  memset(&preupdate, 0, sizeof(PreUpdate));
+
+  preupdate.pCsr = pCsr;
+  preupdate.op = op;
+  db->pPreUpdate = &preupdate;
+  db->xPreUpdateCallback(db->pPreUpdateArg, db, op, zDb, zTbl, iKey1, iKey2);
+  db->pPreUpdate = 0;
+  sqlite3DbFree(db, preupdate.aRecord);
+  if( preupdate.pUnpacked ){
+    sqlite3VdbeDeleteUnpackedRecord(preupdate.pUnpacked);
+  }
+}
+

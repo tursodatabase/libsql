@@ -332,6 +332,17 @@ struct Vdbe {
 #define VDBE_MAGIC_DEAD     0xb606c3c8    /* The VDBE has been deallocated */
 
 /*
+** Structure used to store the context required by the 
+** sqlite3_preupdate_*() API functions.
+*/
+struct PreUpdate {
+  VdbeCursor *pCsr;               /* Cursor to read old values from */
+  int op;                         /* One of SQLITE_INSERT, UPDATE, DELETE */
+  u8 *aRecord;                    /* old.* database record */
+  UnpackedRecord *pUnpacked;      /* Unpacked version of aRecord[] */
+};
+
+/*
 ** Function prototypes
 */
 void sqlite3VdbeFreeCursor(Vdbe *, VdbeCursor*);
@@ -387,6 +398,8 @@ int sqlite3VdbeCloseStatement(Vdbe *, int);
 void sqlite3VdbeFrameDelete(VdbeFrame*);
 int sqlite3VdbeFrameRestore(VdbeFrame *);
 void sqlite3VdbeMemStoreType(Mem *pMem);
+void sqlite3VdbePreUpdateHook(
+    Vdbe *, VdbeCursor *, int, const char*, const char*, i64, i64);
 
 #ifdef SQLITE_DEBUG
 void sqlite3VdbeMemPrepareToChange(Vdbe*,Mem*);

@@ -1271,6 +1271,25 @@ void *sqlite3_rollback_hook(
   return pRet;
 }
 
+/*
+** Register a callback to be invoked each time a row is updated,
+** inserted or deleted using this database connection.
+*/
+void *sqlite3_preupdate_hook(
+  sqlite3 *db,              /* Attach the hook to this database */
+  void(*xCallback)(         /* Callback function */
+    void*,sqlite3*,int,char const*,char const*,sqlite3_int64,sqlite3_int64),
+  void *pArg                /* First callback argument */
+){
+  void *pRet;
+  sqlite3_mutex_enter(db->mutex);
+  pRet = db->pPreUpdateArg;
+  db->xPreUpdateCallback = xCallback;
+  db->pPreUpdateArg = pArg;
+  sqlite3_mutex_leave(db->mutex);
+  return pRet;
+}
+
 #ifndef SQLITE_OMIT_WAL
 /*
 ** The sqlite3_wal_hook() callback registered by sqlite3_wal_autocheckpoint().

@@ -6344,6 +6344,30 @@ int sqlite3_wal_checkpoint_v2(
 #define SQLITE_CHECKPOINT_FULL    1
 #define SQLITE_CHECKPOINT_RESTART 2
 
+void *sqlite3_preupdate_hook(
+  sqlite3 *db,
+  void(*xPreUpdate)(
+    void *pCtx,                   /* Copy of third arg to preupdate_hook() */
+    sqlite3 *db,                  /* Database handle */
+    int op,                       /* SQLITE_UPDATE, DELETE or INSERT */
+    char const *zDb,              /* Database name */
+    char const *zName,            /* Table name */
+    sqlite3_int64 iKey1,          /* Rowid of row about to be deleted/updated */
+    sqlite3_int64 iKey2           /* New rowid value (for a rowid UPDATE) */
+  ),
+  void*
+);
+
+/*
+** The following APIs may only be used from within a pre-update callback. More
+** specifically, the preupdate_old() API may only be used from within an
+** SQLITE_UPDATE or SQLITE_DELETE pre-update callback. The preupdate_modified()
+** API may only be used from within an SQLITE_UPDATE pre-update callback.
+*/
+int sqlite3_preupdate_old(sqlite3 *, int, sqlite3_value **);
+int sqlite3_preupdate_modified(sqlite3 *, int, int *);
+int sqlite3_preupdate_count(sqlite3 *);
+
 
 /*
 ** Undo the hack that converts floating point types to integer for

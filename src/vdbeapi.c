@@ -673,6 +673,26 @@ int sqlite3_data_count(sqlite3_stmt *pStmt){
   return pVm->nResColumn;
 }
 
+/*
+** Return a pointer to static memory containing an SQL NULL value.
+*/
+static const Mem *columnNullValue(void){
+  /* Even though the Mem structure contains an element
+  ** of type i64, on certain architecture (x86) with certain compiler
+  ** switches (-Os), gcc may align this Mem object on a 4-byte boundary
+  ** instead of an 8-byte one. This all works fine, except that when
+  ** running with SQLITE_DEBUG defined the SQLite code sometimes assert()s
+  ** that a Mem structure is located on an 8-byte boundary. To prevent
+  ** this assert() from failing, when building with SQLITE_DEBUG defined
+  ** using gcc, force nullMem to be 8-byte aligned using the magical
+  ** __attribute__((aligned(8))) macro.  */
+  static const Mem nullMem 
+#if defined(SQLITE_DEBUG) && defined(__GNUC__)
+  __attribute__((aligned(8))) 
+#endif
+    = {0, "", (double)0, {0}, 0, MEM_Null, SQLITE_NULL, 0, 0, 0 };
+  return &nullMem;
+}
 
 /*
 ** Check to see if column iCol of the given statement is valid.  If
@@ -692,27 +712,13 @@ static Mem *columnMem(sqlite3_stmt *pStmt, int i){
     pOut = &pVm->pResultSet[i];
   }else{
     /* If the value passed as the second argument is out of range, return
-    ** a pointer to the following static Mem object which contains the
-    ** value SQL NULL. Even though the Mem structure contains an element
-    ** of type i64, on certain architecture (x86) with certain compiler
-    ** switches (-Os), gcc may align this Mem object on a 4-byte boundary
-    ** instead of an 8-byte one. This all works fine, except that when
-    ** running with SQLITE_DEBUG defined the SQLite code sometimes assert()s
-    ** that a Mem structure is located on an 8-byte boundary. To prevent
-    ** this assert() from failing, when building with SQLITE_DEBUG defined
-    ** using gcc, force nullMem to be 8-byte aligned using the magical
-    ** __attribute__((aligned(8))) macro.  */
-    static const Mem nullMem 
-#if defined(SQLITE_DEBUG) && defined(__GNUC__)
-      __attribute__((aligned(8))) 
-#endif
-      = {0, "", (double)0, {0}, 0, MEM_Null, SQLITE_NULL, 0, 0, 0 };
-
+    ** a pointer to a static Mem object that contains the value SQL NULL. 
+    */
     if( pVm && ALWAYS(pVm->db) ){
       sqlite3_mutex_enter(pVm->db->mutex);
       sqlite3Error(pVm->db, SQLITE_RANGE, 0);
     }
-    pOut = (Mem*)&nullMem;
+    pOut = (Mem*)columnNullValue();
   }
   return pOut;
 }
@@ -1322,3 +1328,78 @@ int sqlite3_stmt_status(sqlite3_stmt *pStmt, int op, int resetFlag){
   if( resetFlag ) pVdbe->aCounter[op-1] = 0;
   return v;
 }
+
+int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
+  PreUpdate *p = db->pPreUpdate;
+  int rc = SQLITE_OK;
+
+  if( !p || p->op==SQLITE_INSERT ){
+    rc = SQLITE_MISUSE_BKPT;
+    goto preupdate_old_out;
+  }
+  if( iIdx>=p->pCsr->nField || iIdx<0 ){
+    rc = SQLITE_RANGE;
+    goto preupdate_old_out;
+  }
+
+  if( p->pUnpacked==0 ){
+    KeyInfo keyinfo;
+    u32 nRecord;
+    u8 *aRecord;
+
+    memset(&keyinfo, 0, sizeof(KeyInfo));
+    keyinfo.db = db;
+    keyinfo.enc = ENC(db);
+    keyinfo.nField = p->pCsr->nField;
+
+    rc = sqlite3BtreeDataSize(p->pCsr->pCursor, &nRecord);
+    if( rc!=SQLITE_OK ) goto preupdate_old_out;
+    aRecord = sqlite3DbMallocRaw(db, nRecord);
+    if( !aRecord ) goto preupdate_old_out;
+    rc = sqlite3BtreeData(p->pCsr->pCursor, 0, nRecord, aRecord);
+    if( rc!=SQLITE_OK ){
+      sqlite3DbFree(db, aRecord);
+      goto preupdate_old_out;
+    }
+
+    p->pUnpacked = sqlite3VdbeRecordUnpack(&keyinfo, nRecord, aRecord, 0, 0);
+    p->aRecord = aRecord;
+  }
+
+  if( iIdx>=p->pUnpacked->nField ){
+    *ppValue = (sqlite3_value *)columnNullValue();
+  }else{
+    *ppValue = &p->pUnpacked->aMem[iIdx];
+    sqlite3VdbeMemStoreType(*ppValue);
+  }
+
+ preupdate_old_out:
+  sqlite3Error(db, rc, 0);
+  return sqlite3ApiExit(db, rc);
+}
+
+int sqlite3_preupdate_count(sqlite3 *db){
+  PreUpdate *p = db->pPreUpdate;
+  return (p ? p->pCsr->nField : 0);
+}
+
+int sqlite3_preupdate_modified(sqlite3 *db, int iIdx, int *pbMod){
+  PreUpdate *p = db->pPreUpdate;
+  int rc = SQLITE_OK;
+
+  if( !p || p->op!=SQLITE_UPDATE ){
+    rc = SQLITE_MISUSE_BKPT;
+    goto preupdate_mod_out;
+  }
+  if( iIdx>=p->pCsr->nField || iIdx<0 ){
+    rc = SQLITE_RANGE;
+    goto preupdate_mod_out;
+  }
+  *pbMod = 1;
+
+ preupdate_mod_out:
+  sqlite3Error(db, rc, 0);
+  return sqlite3ApiExit(db, rc);
+}
+
+
