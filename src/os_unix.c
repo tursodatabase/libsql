@@ -767,14 +767,15 @@ static unixInodeInfo *inodeList = 0;
 ** failed (e.g. "unlink", "open") and the the associated file-system path,
 ** if any.
 */
-#define unixLogError(a,b,c)     unixLogError_x(a,b,c,__LINE__)
-static int unixLogError_x(
+#define unixLogError(a,b,c)     unixLogErrorAtLine(a,b,c,__LINE__)
+static int unixLogErrorAtLine(
   int errcode,                    /* SQLite error code */
   const char *zFunc,              /* Name of OS function that failed */
   const char *zPath,              /* File path associated with error */
   int iLine                       /* Source line number where error occurred */
 ){
   char *zErr;                     /* Message from strerror() or equivalent */
+  int iErrno = errno;             /* Saved syscall error number */
 
   /* If this is not a threadsafe build (SQLITE_THREADSAFE==0), then use
   ** the strerror() function to obtain the human-readable error message
@@ -800,54 +801,59 @@ static int unixLogError_x(
 #if defined(STRERROR_R_CHAR_P) || defined(__USE_GNU)
   zErr = 
 # endif
-  strerror_r(errno, aErr, sizeof(aErr)-1);
+  strerror_r(iErrno, aErr, sizeof(aErr)-1);
 
 #elif SQLITE_THREADSAFE
   /* This is a threadsafe build, but strerror_r() is not available. */
   zErr = "";
 #else
   /* Non-threadsafe build, use strerror(). */
-  zErr = strerror(errno);
+  zErr = strerror(iErrno);
 #endif
 
   assert( errcode!=SQLITE_OK );
+  if( zPath==0 ) zPath = "";
   sqlite3_log(errcode,
-      "os_unix.c: %s() at line %d - \"%s\" errno=%d path=%s",
-      zFunc, iLine, zErr, errno, (zPath ? zPath : "n/a")
+      "os_unix.c:%d: (%d) %s(%s) - %s",
+      iLine, iErrno, zFunc, zPath, zErr
   );
 
   return errcode;
 }
 
+/*
+** Close a file descriptor.
+**
+** We assume that close() almost always works, since it is only in a
+** very sick application or on a very sick platform that it might fail.
+** If it does fail, simply leak the file descriptor, but do log the
+** error.
+**
+** Note that it is not safe to retry close() after EINTR since the
+** file descriptor might have already been reused by another thread.
+** So we don't even try to recover from an EINTR.  Just log the error
+** and move on.
+*/
+static void robust_close(unixFile *pFile, int h, int lineno){
+  if( close(h) ){
+    unixLogErrorAtLine(SQLITE_IOERR_CLOSE, "close",
+                       pFile ? pFile->zPath : 0, lineno);
+  }
+}
 
 /*
 ** Close all file descriptors accumuated in the unixInodeInfo->pUnused list.
-** If all such file descriptors are closed without error, the list is
-** cleared and SQLITE_OK returned.
-**
-** Otherwise, if an error occurs, then successfully closed file descriptor
-** entries are removed from the list, and SQLITE_IOERR_CLOSE returned. 
-** not deleted and SQLITE_IOERR_CLOSE returned.
 */ 
-static int closePendingFds(unixFile *pFile){
-  int rc = SQLITE_OK;
+static void closePendingFds(unixFile *pFile){
   unixInodeInfo *pInode = pFile->pInode;
-  UnixUnusedFd *pError = 0;
   UnixUnusedFd *p;
   UnixUnusedFd *pNext;
   for(p=pInode->pUnused; p; p=pNext){
     pNext = p->pNext;
-    if( close(p->fd) ){
-      pFile->lastErrno = errno;
-      rc = unixLogError(SQLITE_IOERR_CLOSE, "close", pFile->zPath);
-      p->pNext = pError;
-      pError = p;
-    }else{
-      sqlite3_free(p);
-    }
+    robust_close(pFile, p->fd, __LINE__);
+    sqlite3_free(p);
   }
-  pInode->pUnused = pError;
-  return rc;
+  pInode->pUnused = 0;
 }
 
 /*
@@ -1458,10 +1464,7 @@ static int _posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
     pInode->nLock--;
     assert( pInode->nLock>=0 );
     if( pInode->nLock==0 ){
-      int rc2 = closePendingFds(pFile);
-      if( rc==SQLITE_OK ){
-        rc = rc2;
-      }
+      closePendingFds(pFile);
     }
   }
 	
@@ -1496,20 +1499,12 @@ static int closeUnixFile(sqlite3_file *id){
   unixFile *pFile = (unixFile*)id;
   if( pFile ){
     if( pFile->dirfd>=0 ){
-      int err = close(pFile->dirfd);
-      if( err ){
-        pFile->lastErrno = errno;
-        return unixLogError(SQLITE_IOERR_DIR_CLOSE, "close", pFile->zPath);
-      }else{
-        pFile->dirfd=-1;
-      }
+      robust_close(pFile, pFile->dirfd, __LINE__);
+      pFile->dirfd=-1;
     }
     if( pFile->h>=0 ){
-      int err = close(pFile->h);
-      if( err ){
-        pFile->lastErrno = errno;
-        return unixLogError(SQLITE_IOERR_CLOSE, "close", pFile->zPath);
-      }
+      robust_close(pFile, pFile->h, __LINE__);
+      pFile->h = -1;
     }
 #if OS_VXWORKS
     if( pFile->pId ){
@@ -1719,10 +1714,7 @@ static int dotlockLock(sqlite3_file *id, int eFileLock) {
     }
     return rc;
   } 
-  if( close(fd) ){
-    pFile->lastErrno = errno;
-    rc = SQLITE_IOERR_CLOSE;
-  }
+  robust_close(pFile, fd, __LINE__);
   
   /* got it, set the type and return ok */
   pFile->eFileLock = eFileLock;
@@ -2614,7 +2606,7 @@ static int afpUnlock(sqlite3_file *id, int eFileLock) {
       pInode->nLock--;
       assert( pInode->nLock>=0 );
       if( pInode->nLock==0 ){
-        rc = closePendingFds(pFile);
+        closePendingFds(pFile);
       }
     }
   }
@@ -3047,7 +3039,6 @@ static int unixSync(sqlite3_file *id, int flags){
     return unixLogError(SQLITE_IOERR_FSYNC, "full_fsync", pFile->zPath);
   }
   if( pFile->dirfd>=0 ){
-    int err;
     OSTRACE(("DIRSYNC %-3d (have_fullfsync=%d fullsync=%d)\n", pFile->dirfd,
             HAVE_FULLFSYNC, isFullsync));
 #ifndef SQLITE_DISABLE_DIRSYNC
@@ -3066,13 +3057,9 @@ static int unixSync(sqlite3_file *id, int flags){
        /* return SQLITE_IOERR; */
     }
 #endif
-    err = close(pFile->dirfd); /* Only need to sync once, so close the */
-    if( err==0 ){              /* directory when we are done */
-      pFile->dirfd = -1;
-    }else{
-      pFile->lastErrno = errno;
-      rc = unixLogError(SQLITE_IOERR_DIR_CLOSE, "close", pFile->zPath);
-    }
+    /* Only need to sync once, so close the  directory when we are done */
+    robust_close(pFile, pFile->dirfd, __LINE__);
+    pFile->dirfd = -1;
   }
   return rc;
 }
@@ -3439,7 +3426,10 @@ static void unixShmPurge(unixFile *pFd){
       munmap(p->apRegion[i], p->szRegion);
     }
     sqlite3_free(p->apRegion);
-    if( p->h>=0 ) close(p->h);
+    if( p->h>=0 ){
+      robust_close(pFd, p->h, __LINE__);
+      p->h = -1;
+    }
     p->pInode->pShmNode = 0;
     sqlite3_free(p);
   }
@@ -4250,7 +4240,7 @@ static int fillInUnixFile(
       ** implicit assumption here is that if fstat() fails, things are in
       ** such bad shape that dropping a lock or two doesn't matter much.
       */
-      close(h);
+      robust_close(pNew, h, __LINE__);
       h = -1;
     }
     unixLeaveMutex();
@@ -4276,7 +4266,7 @@ static int fillInUnixFile(
       rc = findInodeInfo(pNew, &pNew->pInode);
       if( rc!=SQLITE_OK ){
         sqlite3_free(pNew->lockingContext);
-        close(h);
+        robust_close(pNew, h, __LINE__);
         h = -1;
       }
       unixLeaveMutex();        
@@ -4327,7 +4317,7 @@ static int fillInUnixFile(
   pNew->lastErrno = 0;
 #if OS_VXWORKS
   if( rc!=SQLITE_OK ){
-    if( h>=0 ) close(h);
+    if( h>=0 ) robust_close(pNew, h, __LINE__);
     h = -1;
     unlink(zFilename);
     isDelete = 0;
@@ -4335,8 +4325,8 @@ static int fillInUnixFile(
   pNew->isDelete = isDelete;
 #endif
   if( rc!=SQLITE_OK ){
-    if( dirfd>=0 ) close(dirfd); /* silent leak if fail, already in error */
-    if( h>=0 ) close(h);
+    if( dirfd>=0 ) robust_close(pNew, dirfd, __LINE__);
+    if( h>=0 ) robust_close(pNew, h, __LINE__);
   }else{
     pNew->pMethod = pLockingStyle;
     OpenCounter(+1);
@@ -4748,7 +4738,7 @@ static int unixOpen(
       ** it would not be safe to close as this would release any locks held
       ** on the file by this process.  */
       assert( eType!=SQLITE_OPEN_MAIN_DB );
-      close(fd);             /* silently leak if fail, already in error */
+      robust_close(p, fd, __LINE__);
       goto open_finished;
     }
   }
@@ -4764,8 +4754,8 @@ static int unixOpen(
   struct statfs fsInfo;
   if( fstatfs(fd, &fsInfo) == -1 ){
     ((unixFile*)pFile)->lastErrno = errno;
-    if( dirfd>=0 ) close(dirfd); /* silently leak if fail, in error */
-    close(fd); /* silently leak if fail, in error */
+    if( dirfd>=0 ) robust_close(p, dirfd, __LINE__);
+    robust_close(p, fd, __LINE__);
     return SQLITE_IOERR_ACCESS;
   }
   if (0 == strncmp("msdos", fsInfo.f_fstypename, 5)) {
@@ -4797,9 +4787,9 @@ static int unixOpen(
         ** the same file are working.  */
         p->lastErrno = errno;
         if( dirfd>=0 ){
-          close(dirfd); /* silently leak if fail, in error */
+          robust_close(p, dirfd, __LINE__);
         }
-        close(fd); /* silently leak if fail, in error */
+        robust_close(p, fd, __LINE__);
         rc = SQLITE_IOERR_ACCESS;
         goto open_finished;
       }
@@ -4860,9 +4850,7 @@ static int unixDelete(
       {
         rc = unixLogError(SQLITE_IOERR_DIR_FSYNC, "fsync", zPath);
       }
-      if( close(fd)&&!rc ){
-        rc = unixLogError(SQLITE_IOERR_DIR_CLOSE, "close", zPath);
-      }
+      robust_close(0, fd, __LINE__);
     }
   }
 #endif
@@ -5050,7 +5038,7 @@ static int unixRandomness(sqlite3_vfs *NotUsed, int nBuf, char *zBuf){
       nBuf = sizeof(t) + sizeof(pid);
     }else{
       do{ nBuf = read(fd, zBuf, nBuf); }while( nBuf<0 && errno==EINTR );
-      close(fd);
+      robust_close(0, fd, __LINE__);
     }
   }
 #endif
@@ -5493,7 +5481,7 @@ static int proxyCreateUnixFile(
     return SQLITE_OK;
   }
 end_create_proxy:    
-  close(fd); /* silently leak fd if error, we're already in error */
+  robust_close(pNew, fd, __LINE__);
   sqlite3_free(pNew);
   sqlite3_free(pUnused);
   return rc;
@@ -5593,7 +5581,7 @@ static int proxyBreakConchLock(unixFile *pFile, uuid_t myHostID){
   }
   rc = 0;
   fprintf(stderr, "broke stale lock on %s\n", cPath);
-  close(conchFile->h);
+  robust_close(pFile, conchFile->h, __LINE__);
   conchFile->h = fd;
   conchFile->openFlags = O_RDWR | O_CREAT;
 
@@ -5601,7 +5589,7 @@ end_breaklock:
   if( rc ){
     if( fd>=0 ){
       unlink(tPath);
-      close(fd);
+      robust_close(pFile, fd, __LINE__);
     }
     fprintf(stderr, "failed to break stale lock on %s, %s\n", cPath, errmsg);
   }
@@ -5851,14 +5839,7 @@ static int proxyTakeConch(unixFile *pFile){
       OSTRACE(("TRANSPROXY: CLOSE  %d\n", pFile->h));
       if( rc==SQLITE_OK && pFile->openFlags ){
         if( pFile->h>=0 ){
-#ifdef STRICT_CLOSE_ERROR
-          if( close(pFile->h) ){
-            pFile->lastErrno = errno;
-            return SQLITE_IOERR_CLOSE;
-          }
-#else
-          close(pFile->h); /* silently leak fd if fail */
-#endif
+          robust_close(pFile, pFile->h, __LINE__) ){
         }
         pFile->h = -1;
         int fd = open(pCtx->dbPath, pFile->openFlags,
