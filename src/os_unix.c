@@ -323,9 +323,56 @@ static struct unix_syscall {
   { "ftruncate",    (void*)ftruncate,  0  },
 #define osFtruncate ((int(*)(int,off_t))aSyscall[6].pCurrent)
 
-  { "fcntl",        (void*)fcntl,    0  },
+  { "fcntl",        (void*)fcntl,      0  },
 #define osFcntl     ((int(*)(int,int,...))aSyscall[7].pCurrent)
-};
+
+  { "read",         (void*)read,       0  },
+#define osRead      ((ssize_t(*)(int,void*,size_t))aSyscall[8].pCurrent)
+
+#if defined(USE_PREAD) || defined(SQLITE_ENABLE_LOCKING_STYLE)
+  { "pread",        (void*)pread,      0  },
+#else
+  { "pread",        (void*)0,          0  },
+#endif
+#define osPread     ((ssize_t(*)(int,void*,size_t,off_t))aSyscall[9].pCurrent)
+
+#if defined(USE_PREAD64)
+  { "pread64",      (void*)pread64,    0  },
+#else
+  { "pread64",      (void*)0,          0  },
+#endif
+#define osPread64   ((ssize_t(*)(int,void*,size_t,off_t))aSyscall[10].pCurrent)
+
+  { "write",        (void*)write,      0  },
+#define osWrite     ((ssize_t(*)(int,const void*,size_t))aSyscall[11].pCurrent)
+
+#if defined(USE_PREAD) || defined(SQLITE_ENABLE_LOCKING_STYLE)
+  { "pwrite",       (void*)pwrite,     0  },
+#else
+  { "pwrite",       (void*)0,          0  },
+#endif
+#define osPwrite    ((ssize_t(*)(int,const void*,size_t,off_t))\
+                    aSyscall[12].pCurrent)
+
+#if defined(USE_PREAD64)
+  { "pwrite64",     (void*)pwrite64,   0  },
+#else
+  { "pwrite64",     (void*)0,          0  },
+#endif
+#define osPwrite64  ((ssize_t(*)(int,const void*,size_t,off_t))\
+                    aSyscall[13].pCurrent)
+
+  { "fchmod",       (void*)fchmod,     0  },
+#define osFchmod    ((int(*)(int,mode_t))aSyscall[14].pCurrent)
+
+#if defined(HAVE_POSIX_FALLOCATE) && HAVE_POSIX_FALLOCATE
+  { "fallocate",    (void*)posix_fallocate,  0 },
+#else
+  { "fallocate",    (void*)0,                0 },
+#endif
+#define osFallocate ((int(*)(int,off_t,off_t)aSyscall[15].pCurrent)
+
+}; /* End of the overrideable system calls */
 
 /*
 ** This is the xSetSystemCall() method of sqlite3_vfs for all of the
@@ -1011,7 +1058,7 @@ static int findInodeInfo(
   ** the first page of the database, no damage is done.
   */
   if( statbuf.st_size==0 && (pFile->fsFlags & SQLITE_FSFLAGS_IS_MSDOS)!=0 ){
-    do{ rc = write(fd, "S", 1); }while( rc<0 && errno==EINTR );
+    do{ rc = osWrite(fd, "S", 1); }while( rc<0 && errno==EINTR );
     if( rc!=1 ){
       pFile->lastErrno = errno;
       return SQLITE_IOERR;
@@ -2783,10 +2830,10 @@ static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
 #endif
   TIMER_START;
 #if defined(USE_PREAD)
-  do{ got = pread(id->h, pBuf, cnt, offset); }while( got<0 && errno==EINTR );
+  do{ got = osPread(id->h, pBuf, cnt, offset); }while( got<0 && errno==EINTR );
   SimulateIOError( got = -1 );
 #elif defined(USE_PREAD64)
-  do{ got = pread64(id->h, pBuf, cnt, offset); }while( got<0 && errno==EINTR );
+  do{ got = osPread64(id->h, pBuf, cnt, offset); }while( got<0 && errno==EINTR);
   SimulateIOError( got = -1 );
 #else
   newOffset = lseek(id->h, offset, SEEK_SET);
@@ -2799,7 +2846,7 @@ static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
     }
     return -1;
   }
-  do{ got = read(id->h, pBuf, cnt); }while( got<0 && errno==EINTR );
+  do{ got = osRead(id->h, pBuf, cnt); }while( got<0 && errno==EINTR );
 #endif
   TIMER_END;
   if( got<0 ){
@@ -2861,9 +2908,9 @@ static int seekAndWrite(unixFile *id, i64 offset, const void *pBuf, int cnt){
 #endif
   TIMER_START;
 #if defined(USE_PREAD)
-  do{ got = pwrite(id->h, pBuf, cnt, offset); }while( got<0 && errno==EINTR );
+  do{ got = osPwrite(id->h, pBuf, cnt, offset); }while( got<0 && errno==EINTR );
 #elif defined(USE_PREAD64)
-  do{ got = pwrite64(id->h, pBuf, cnt, offset); }while( got<0 && errno==EINTR );
+  do{ got = osPwrite64(id->h, pBuf, cnt, offset);}while( got<0 && errno==EINTR);
 #else
   newOffset = lseek(id->h, offset, SEEK_SET);
   if( newOffset!=offset ){
@@ -2874,7 +2921,7 @@ static int seekAndWrite(unixFile *id, i64 offset, const void *pBuf, int cnt){
     }
     return -1;
   }
-  do{ got = write(id->h, pBuf, cnt); }while( got<0 && errno==EINTR );
+  do{ got = osWrite(id->h, pBuf, cnt); }while( got<0 && errno==EINTR );
 #endif
   TIMER_END;
   if( got<0 ){
@@ -3237,7 +3284,7 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
 #if defined(HAVE_POSIX_FALLOCATE) && HAVE_POSIX_FALLOCATE
       int rc;
       do{
-        rc = posix_fallocate(pFile-.h, buf.st_size, nSize-buf.st_size;
+        rc = osFallocate(pFile->.h, buf.st_size, nSize-buf.st_size;
       }while( rc<0 && errno=EINTR );
       if( rc ) return SQLITE_IOERR_WRITE;
 #else
@@ -5115,7 +5162,7 @@ static int unixRandomness(sqlite3_vfs *NotUsed, int nBuf, char *zBuf){
       assert( sizeof(t)+sizeof(pid)<=(size_t)nBuf );
       nBuf = sizeof(t) + sizeof(pid);
     }else{
-      do{ nBuf = read(fd, zBuf, nBuf); }while( nBuf<0 && errno==EINTR );
+      do{ nBuf = osRead(fd, zBuf, nBuf); }while( nBuf<0 && errno==EINTR );
       robust_close(0, fd, __LINE__);
     }
   }
@@ -5638,7 +5685,7 @@ static int proxyBreakConchLock(unixFile *pFile, uuid_t myHostID){
     goto end_breaklock;
   }
   /* read the conch content */
-  readLen = pread(conchFile->h, buf, PROXY_MAXCONCHLEN, 0);
+  readLen = osPread(conchFile->h, buf, PROXY_MAXCONCHLEN, 0);
   if( readLen<PROXY_PATHINDEX ){
     sqlite3_snprintf(sizeof(errmsg),errmsg,"read error (len %d)",(int)readLen);
     goto end_breaklock;
@@ -5649,7 +5696,7 @@ static int proxyBreakConchLock(unixFile *pFile, uuid_t myHostID){
     sqlite3_snprintf(sizeof(errmsg), errmsg, "create failed (%d)", errno);
     goto end_breaklock;
   }
-  if( pwrite(fd, buf, readLen, 0) != (ssize_t)readLen ){
+  if( osPwrite(fd, buf, readLen, 0) != (ssize_t)readLen ){
     sqlite3_snprintf(sizeof(errmsg), errmsg, "write failed (%d)", errno);
     goto end_breaklock;
   }
@@ -5714,7 +5761,7 @@ static int proxyConchLock(unixFile *pFile, uuid_t myHostID, int lockType){
       
       if( nTries==2 ){  
         char tBuf[PROXY_MAXCONCHLEN];
-        int len = pread(conchFile->h, tBuf, PROXY_MAXCONCHLEN, 0);
+        int len = osPread(conchFile->h, tBuf, PROXY_MAXCONCHLEN, 0);
         if( len<0 ){
           pFile->lastErrno = errno;
           return SQLITE_IOERR_LOCK;
@@ -5884,17 +5931,16 @@ static int proxyTakeConch(unixFile *pFile){
          */
         if( rc==SQLITE_OK && createConch ){
           struct stat buf;
-          int rc;
           int err = osFstat(pFile->h, &buf);
           if( err==0 ){
             mode_t cmode = buf.st_mode&(S_IRUSR|S_IWUSR | S_IRGRP|S_IWGRP |
                                         S_IROTH|S_IWOTH);
             /* try to match the database file R/W permissions, ignore failure */
 #ifndef SQLITE_PROXY_DEBUG
-            fchmod(conchFile->h, cmode);
+            osFchmod(conchFile->h, cmode);
 #else
             do{
-              rc = fchmod(conchFile->h, cmode);
+              rc = osFchmod(conchFile->h, cmode);
             }while( rc==(-1) && errno==EINTR );
             if( rc!=0 ){
               int code = errno;
@@ -5917,7 +5963,7 @@ static int proxyTakeConch(unixFile *pFile){
       OSTRACE(("TRANSPROXY: CLOSE  %d\n", pFile->h));
       if( rc==SQLITE_OK && pFile->openFlags ){
         if( pFile->h>=0 ){
-          robust_close(pFile, pFile->h, __LINE__) ){
+          robust_close(pFile, pFile->h, __LINE__);
         }
         pFile->h = -1;
         int fd = osOpen(pCtx->dbPath, pFile->openFlags,
