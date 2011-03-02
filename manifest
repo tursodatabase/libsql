@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sbugs\sin\s[7b6e30e6a7]\sthat\sonly\sshow\sup\son\sMac.
-D 2011-03-02T17:54:32.411
+C Fix\squoting\sof\sthe\sresult\sin\srtreeB.test.
+D 2011-03-02T22:07:29.984
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -96,7 +96,7 @@ F ext/rtree/rtree7.test bcb647b42920b3b5d025846689147778485cc318
 F ext/rtree/rtree8.test 9772e16da71e17e02bdebf0a5188590f289ab37d
 F ext/rtree/rtree9.test df9843d1a9195249c8d3b4ea6aedda2d5c73e9c2
 F ext/rtree/rtreeA.test ace05e729a36e342d40cf94e9efc7b4723d9dcdf
-F ext/rtree/rtreeB.test cd45c955cd35a325545671723255f71f2ae9c2e7
+F ext/rtree/rtreeB.test b1916a9cecb86b02529c4cc5a546e8d6e7ff10da
 F ext/rtree/rtree_perf.tcl 6c18c1f23cd48e0f948930c98dfdd37dfccb5195
 F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 1af0899c63a688e272d69d8e746f24e76f10a3f0
@@ -913,14 +913,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 24602557fc3295fe2836d269175f12ec680ac011
-R e01d9f9e8e2dad85147f5fc5ffb976eb
+P ec55e8c6bb4f2419b3813aa2fd1a20d8f5016159
+R 4466b84201cf07d8b58b7f3df32e8610
 U drh
-Z c84f9d0b8eefba981fbaf57340fff3b5
+Z e51cd0af4553d3bdc1671b46c3024fc0
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (Darwin)
+Version: GnuPG v1.4.6 (GNU/Linux)
 
-iEYEARECAAYFAk1uhFgACgkQoxKgR168RlFREQCfT9Vnfu+FKv7ziCX9Y4ICLtOr
-MgsAnjKkrrgDNYH+MAY+dZUejwVsARq0
-=k7I4
+iD8DBQFNbr+loxKgR168RlERAifFAJ4rxcZg2GHVUmhY14d6bC3+WoLAOQCfYvQK
+lkhmZIcwz4BBbhXLINTF0CM=
+=JloW
 -----END PGP SIGNATURE-----
