@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Make\ssure\sthe\srtreenode()\stesting\sand\sanalysis\sroutine\sin\sthe\sRTREE\sextension\ncan\shandle\s64-bit\srowids.\s\sThis\sfix\sis\sin\sresponse\sto\sa\smessage\son\sthe\nmailing\slist.
-D 2011-03-02T15:44:35.295
+C Fix\sbugs\sin\s[7b6e30e6a7]\sthat\sonly\sshow\sup\son\sMac.
+D 2011-03-02T17:54:32.411
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +165,7 @@ F src/os.c 22ac61d06e72a0dac900400147333b07b13d8e1d
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 2e452c9f2ca507623ad351c33a8a8b27849b1863
-F src/os_unix.c 5e2e1187c19cc20798dd9a08bee841fab0929ccf
+F src/os_unix.c 54cd8b64e342984cb9a565d8bbd3d4ed4f6679ad
 F src/os_win.c 9abdcdd925416d854eabb0996c96debd92abfef5
 F src/pager.c 6aa906b60a59664ba58d3f746164bb010d407ce1
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
@@ -913,14 +913,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 7b6e30e6a712311d4ef275253b085b85e6e17116
-R 63d565910eebcf96c11d56306627df7f
+P 24602557fc3295fe2836d269175f12ec680ac011
+R e01d9f9e8e2dad85147f5fc5ffb976eb
 U drh
-Z 2af12a98c29451d1c2b224c4c90f7e19
+Z c84f9d0b8eefba981fbaf57340fff3b5
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
+Version: GnuPG v1.4.10 (Darwin)
 
-iD8DBQFNbmXmoxKgR168RlERAimaAKCH0J+I0G9ZlKd6ou2sHa7StAeC+ACfdyUs
-jKzM30hw9LfKyEheuhtOkXg=
-=RSS1
+iEYEARECAAYFAk1uhFgACgkQoxKgR168RlFREQCfT9Vnfu+FKv7ziCX9Y4ICLtOr
+MgsAnjKkrrgDNYH+MAY+dZUejwVsARq0
+=k7I4
 -----END PGP SIGNATURE-----

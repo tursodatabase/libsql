@@ -5806,7 +5806,6 @@ static int proxyTakeConch(unixFile *pFile){
          */
         if( rc==SQLITE_OK && createConch ){
           struct stat buf;
-          int rc;
           int err = fstat(pFile->h, &buf);
           if( err==0 ){
             mode_t cmode = buf.st_mode&(S_IRUSR|S_IWUSR | S_IRGRP|S_IWGRP |
@@ -5839,7 +5838,7 @@ static int proxyTakeConch(unixFile *pFile){
       OSTRACE(("TRANSPROXY: CLOSE  %d\n", pFile->h));
       if( rc==SQLITE_OK && pFile->openFlags ){
         if( pFile->h>=0 ){
-          robust_close(pFile, pFile->h, __LINE__) ){
+          robust_close(pFile, pFile->h, __LINE__);
         }
         pFile->h = -1;
         int fd = open(pCtx->dbPath, pFile->openFlags,
