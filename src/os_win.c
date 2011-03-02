@@ -2766,6 +2766,8 @@ int sqlite3_os_init(void){
     winGetLastError,     /* xGetLastError */
     winCurrentTimeInt64, /* xCurrentTimeInt64 */
     0,                   /* xSetSystemCall */
+    0,                   /* xGetSystemCall */
+    0,                   /* xNextSystemCall */
   };
 
 #ifndef SQLITE_OMIT_WAL

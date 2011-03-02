@@ -925,6 +925,8 @@ struct sqlite3_vfs {
   ** Those below are for version 3 and greater.
   */
   int (*xSetSystemCall)(sqlite3_vfs*, const char *zName, void *pFunc);
+  void *(*xGetSystemCall)(sqlite3_vfs*, const char *zName);
+  const char *(*xNextSystemCall)(sqlite3_vfs*, const char *zName);
   /*
   ** The methods above are in versions 1 through 3 of the sqlite_vfs object.
   ** New fields may be appended in figure versions.  The iVersion

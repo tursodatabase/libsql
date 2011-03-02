@@ -376,7 +376,9 @@ static struct unix_syscall {
 
 /*
 ** This is the xSetSystemCall() method of sqlite3_vfs for all of the
-** "unix" VFSes.
+** "unix" VFSes.  Return SQLITE_OK opon successfully updating the
+** system call pointer, or SQLITE_NOTFOUND if there is no configurable
+** system call named zName.
 */
 static int unixSetSystemCall(
   sqlite3_vfs *pNotUsed,     /* The VFS pointer.  Not used */
@@ -384,7 +386,7 @@ static int unixSetSystemCall(
   void *pNewFunc             /* Pointer to new system call value */
 ){
   int i;
-  int rc = 0;
+  int rc = SQLITE_NOTFOUND;
   if( zName==0 ){
     /* If no zName is given, restore all system calls to their default
     ** settings and return NULL
@@ -392,7 +394,7 @@ static int unixSetSystemCall(
     for(i=0; i<sizeof(aSyscall)/sizeof(aSyscall[0]); i++){
       if( aSyscall[i].pDefault ){
         aSyscall[i].pCurrent = aSyscall[i].pDefault;
-        rc = 1;
+        rc = SQLITE_OK;
       }
     }
   }else{
@@ -404,7 +406,7 @@ static int unixSetSystemCall(
         if( aSyscall[i].pDefault==0 ){
           aSyscall[i].pDefault = aSyscall[i].pCurrent;
         }
-        rc = 1;
+        rc = SQLITE_OK;
         if( pNewFunc==0 ) pNewFunc = aSyscall[i].pDefault;
         aSyscall[i].pCurrent = pNewFunc;
         break;
@@ -412,6 +414,40 @@ static int unixSetSystemCall(
     }
   }
   return rc;
+}
+
+/*
+** Return the value of a system call.  Return NULL if zName is not a
+** recognized system call name.  NULL is also returned if the system call
+** is currently undefined.
+*/
+static void *unixGetSystemCall(sqlite3_vfs *pNotUsed, const char *zName){
+  int i;
+  for(i=0; i<sizeof(aSyscall)/sizeof(aSyscall[0]); i++){
+    if( strcmp(zName, aSyscall[i].zName)==0 ) return aSyscall[i].pCurrent;
+  }
+  return 0;
+}
+
+/*
+** Return the name of the first system call after zName.  If zName==NULL
+** then return the name of the first system call.  Return NULL if zName
+** is the last system call or if zName is not the name of a valid
+** system call.
+*/
+static const char *unixNextSystemCall(sqlite3_vfs *p, const char *zName){
+  int i;
+  if( zName==0 ){
+    i = -1;
+  }else{
+    for(i=0; i<sizeof(aSyscall)/sizeof(aSyscall[0])-1; i++){
+      if( strcmp(zName, aSyscall[0].zName)==0 ) break;
+    }
+  }
+  for(i++; i<sizeof(aSyscall)/sizeof(aSyscall[0]); i++){
+    if( aSyscall[0].pCurrent!=0 ) return aSyscall[0].zName;
+  }
+  return 0;
 }
 
 
@@ -6497,6 +6533,8 @@ int sqlite3_os_init(void){
     unixGetLastError,     /* xGetLastError */               \
     unixCurrentTimeInt64, /* xCurrentTimeInt64 */           \
     unixSetSystemCall,    /* xSetSystemCall */              \
+    unixGetSystemCall,    /* xGetSystemCall */              \
+    unixNextSystemCall,   /* xNextSystemCall */             \
   }
 
   /*
