@@ -2746,7 +2746,7 @@ static int winGetLastError(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
 */
 int sqlite3_os_init(void){
   static sqlite3_vfs winVfs = {
-    2,                   /* iVersion */
+    3,                   /* iVersion */
     sizeof(winFile),     /* szOsFile */
     MAX_PATH,            /* mxPathname */
     0,                   /* pNext */
@@ -2765,6 +2765,7 @@ int sqlite3_os_init(void){
     winCurrentTime,      /* xCurrentTime */
     winGetLastError,     /* xGetLastError */
     winCurrentTimeInt64, /* xCurrentTimeInt64 */
+    0,                   /* xSetSystemCall */
   };
 
 #ifndef SQLITE_OMIT_WAL

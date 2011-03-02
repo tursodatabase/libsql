@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Log\sall\serror\sfrom\sclose()\sin\sos_unix.c\sto\ssqlite3_log()\sbut\sdo\snot\sattempt\sto\nreport\serrors\sback\sup\sto\sthe\sapplication.\s\sUpdate\sthe\sunix\serror\slogging\sto\nput\sthe\smost\simportant\sinformation\searlier\sin\sthe\smessage.
-D 2011-03-02T02:08:13.207
+C Proof-of-concept\sprototype\sfor\sthe\sproposed\sxSetSystemCall\sextension\smethod\non\sthe\sVFS.
+D 2011-03-02T15:09:07.461
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -164,8 +164,8 @@ F src/os.c 22ac61d06e72a0dac900400147333b07b13d8e1d
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 2e452c9f2ca507623ad351c33a8a8b27849b1863
-F src/os_unix.c 5e2e1187c19cc20798dd9a08bee841fab0929ccf
-F src/os_win.c 9abdcdd925416d854eabb0996c96debd92abfef5
+F src/os_unix.c 34f0341ab45ba2708714c8e3f7bd35c7ccb5e34d
+F src/os_win.c c2df806a8510ec8c2c2c30fb78b3a25bc1b2f325
 F src/pager.c 6aa906b60a59664ba58d3f746164bb010d407ce1
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -180,7 +180,7 @@ F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c d24406c45dd2442eb2eeaac413439066b149c944
 F src/shell.c 649c51979812f77f97507024a4cea480c6862b8b
-F src/sqlite.h.in ccb23cc9378874c7c72682b739f311474a80848d
+F src/sqlite.h.in a2115e725e77ea1284a4df51b39f94121f020ab8
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
 F src/sqliteInt.h 4290fff17fabc6e07fc4338233df0e39e6350ca1
 F src/sqliteLimit.h a17dcd3fb775d63b64a43a55c54cb282f9726f44
@@ -912,14 +912,18 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 4e50b0362ab6604a4b6c9f4ad849ec1733d6ce1a
-R a9b7ad5c14ea738e4f49c429699cb565
+P 7b6e30e6a712311d4ef275253b085b85e6e17116
+R b432d469c6ed4dca97f566fa093fcbff
+T *bgcolor * #a8d3c0
+T *branch * syscall-override
+T *sym-syscall-override *
+T -sym-trunk *
 U drh
-Z c02292224bfb7c5f15d6a63d1b16838a
+Z 9b09403dc20dd3b2e37d470a4feaa93c
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNbaaQoxKgR168RlERAshdAJ4iJDt6I1+oeLfL9JDapg61g0RrTgCfcFyC
-s4eiT7ukCDxc6MYErF6v4VI=
-=AyES
+iD8DBQFNbl2aoxKgR168RlERAnuDAJ9BNtRHzGqMMOlHR9sjdCvks/uYWQCgiUgt
+CkJFrHO5mCcgtbaMpvVY+k0=
+=K2zl
 -----END PGP SIGNATURE-----
