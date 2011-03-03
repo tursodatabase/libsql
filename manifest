@@ -1,5 +1,5 @@
-C Add\sthe\sexperimental\ssqlite3_preupdate_hook()\sAPI.
-D 2011-03-01T18:42:07
+C Add\sthe\sexperimental\ssqlite3_transaction_hook()\sAPI.
+D 2011-03-03T20:06:00
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -142,7 +142,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 8af9fcc75708d60b88636ccba38b4a7b3c155c3e
-F src/main.c 9ab948225b8c362cdd6902c447abbf218607e0f3
+F src/main.c 1a5cafdc1bee11f4322c837487bf6fa8e54b2f50
 F src/malloc.c 92d59a007d7a42857d4e9454aa25b6b703286be1
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 00bd8265c81abb665c48fea1e0c234eb3b922206
@@ -177,13 +177,13 @@ F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c d24406c45dd2442eb2eeaac413439066b149c944
 F src/shell.c 649c51979812f77f97507024a4cea480c6862b8b
-F src/sqlite.h.in 3a8a9f25a45735879cec195a2c129b48e34ebf8e
+F src/sqlite.h.in 992688609e9a0274b56c156d4800be96364b3590
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
-F src/sqliteInt.h 3a262a299fa5b1f6916157ec2302e8987e50bac9
+F src/sqliteInt.h 85e635183013e806069320ffa6080a77183f9225
 F src/sqliteLimit.h a17dcd3fb775d63b64a43a55c54cb282f9726f44
 F src/status.c 4997380fbb915426fef9e500b4872e79c99267fc
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c 20a3bf120f3bba1914f0e5132dbe937dee135f36
+F src/tclsqlite.c 64aeb4109ee2b38fd820b8e8de45b02377fcddc0
 F src/test1.c 9020310c7617234b33fd1c3064f89524db25f290
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 056093cfef69ff4227a6bdb9108564dc7f45e4bc
@@ -229,11 +229,11 @@ F src/update.c 1b9a82ede7df15e76ed86c6a3cbe4ce0f21eaa9b
 F src/utf.c 1baeeac91707a4df97ccc6141ec0f808278af685
 F src/util.c ab1c92426494f499f42b9e307537b03e923d75c1
 F src/vacuum.c 924bd1bcee2dfb05376f79845bd3b4cec7b54b2f
-F src/vdbe.c 4330cc94597b9c95853c5e8ff87776f1e6ceaa3f
+F src/vdbe.c 2c523bc17f915329f3db3745fc76ed9bfc5c26bb
 F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
 F src/vdbeInt.h 41b8e337332f279228196039ab86acd353ad0c6c
-F src/vdbeapi.c c407f3f0e21d5de68b1269bfa12315ef7ed6e3fd
-F src/vdbeaux.c 874e16966eb6e58183ee2746abb4e4c5238f2350
+F src/vdbeapi.c ea741433042d95c392b29397ac6c2b08f6106317
+F src/vdbeaux.c cc817d8597307a2be361c24f3b436a7e41fa67dc
 F src/vdbeblob.c 18955f0ee6b133cd08e1592010cb9a6b11e9984c
 F src/vdbemem.c 0fa2ed786cd207d5b988afef3562a8e663a75b50
 F src/vdbetrace.c 3ba13bc32bdf16d2bdea523245fd16736bed67b5
@@ -471,7 +471,7 @@ F test/fuzz2.test 207d0f9d06db3eaf47a6b7bfc835b8e2fc397167
 F test/fuzz3.test aec64345184d1662bd30e6a17851ff659d596dc5
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test dd7001ac86d09c154a7dff064f4739c60e2b312c
-F test/hook.test 5fd01c30f47896d88bed8a09bf7773cff218e8ff
+F test/hook.test a90748e44c7ca53da46f857616fc7ce18bf7be13
 F test/icu.test 70df4faca133254c042d02ae342c0a141f2663f4
 F test/in.test 19b642bb134308980a92249750ea4ce3f6c75c2d
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
@@ -667,7 +667,7 @@ F test/superlock.test 5d7a4954b0059c903f82c7b67867bc5451a7c082
 F test/sync.test ded6b39d8d8ca3c0c5518516c6371b3316d3e3a3
 F test/table.test 04ba066432430657712d167ebf28080fe878d305
 F test/tableapi.test 7262a8cbaa9965d429f1cbd2747edc185fa56516
-F test/tclsqlite.test 1ce9b6340d6d412420634e129a2e3722c651056a
+F test/tclsqlite.test 550f2268281d186b767b3ee14dd0be5f9e3ff25d
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test f42121a0d29a62f00f93274464164177ab1cc24a
 F test/temptrigger.test b0273db072ce5f37cf19140ceb1f0d524bbe9f05
@@ -909,10 +909,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 4e50b0362ab6604a4b6c9f4ad849ec1733d6ce1a
-R 0e3c3fa7441b432fef74ccddd445caf6
-T *branch * experimental
-T *sym-experimental *
-T -sym-trunk *
+P 6145d7b89f83500318713779c60f79a7ab2098ba
+R 2617e052d0e8716cc0b428f99022eddb
 U dan
-Z 1b63beda3df1a2343540c0064b366df4
+Z 24e44e929785c6b1d1f35eb2447fe0e7

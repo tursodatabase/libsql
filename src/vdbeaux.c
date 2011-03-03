@@ -1845,6 +1845,12 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
   }
 #endif
 
+  /* If a transaction-hook is configured, invoke it now to report on the
+  ** successful commit operation. */
+  if( rc==SQLITE_OK ){
+    sqlite3TransactionHook(db, SQLITE_COMMIT, 0);
+  }
+
   return rc;
 }
 
@@ -1946,6 +1952,9 @@ int sqlite3VdbeCloseStatement(Vdbe *p, int eOp){
       }
     }
     db->nStatement--;
+    assert( SAVEPOINT_ROLLBACK+1==SQLITE_ROLLBACK );
+    assert( SAVEPOINT_RELEASE+1==SQLITE_COMMIT );
+    sqlite3TransactionHook(db, eOp+1, p->iStatement);
     p->iStatement = 0;
 
     /* If the statement transaction is being rolled back, also restore the 

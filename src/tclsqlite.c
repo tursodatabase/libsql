@@ -124,6 +124,7 @@ struct SqliteDb {
   Tcl_Obj *pUpdateHook;      /* Update hook script (if any) */
   Tcl_Obj *pPreUpdateHook;   /* Pre-update hook script (if any) */
   Tcl_Obj *pRollbackHook;    /* Rollback hook script (if any) */
+  Tcl_Obj *pTransHook;       /* Transaction hook script (if any) */
   Tcl_Obj *pWalHook;         /* WAL hook script (if any) */
   Tcl_Obj *pUnlockNotify;    /* Unlock notify script (if any) */
   SqlCollate *pCollate;      /* List of SQL collation functions */
@@ -595,6 +596,30 @@ static void DbRollbackHandler(void *clientData){
   if( TCL_OK!=Tcl_EvalObjEx(pDb->interp, pDb->pRollbackHook, 0) ){
     Tcl_BackgroundError(pDb->interp);
   }
+}
+
+/*
+** sqlite3_transaction_hook() callback.
+*/
+static void DbTransHandler(void *clientData, int op, int iLevel){
+  static const char *azStr[] = { "BEGIN", "COMMIT", "ROLLBACK" };
+  SqliteDb *pDb = (SqliteDb*)clientData;
+  Tcl_Interp *interp = pDb->interp;
+  Tcl_Obj *pScript;
+
+  assert(pDb->pTransHook);
+  assert( SQLITE_BEGIN==1 );
+  assert( SQLITE_COMMIT==2 );
+  assert( SQLITE_ROLLBACK==3 );
+
+  pScript = Tcl_DuplicateObj(pDb->pTransHook);
+  Tcl_IncrRefCount(pScript);
+  Tcl_ListObjAppendElement(interp, pScript, Tcl_NewStringObj(azStr[op-1], -1));
+  Tcl_ListObjAppendElement(interp, pScript, Tcl_NewIntObj(iLevel));
+  if( TCL_OK!=Tcl_EvalObjEx(interp, pScript, 0) ){
+    Tcl_BackgroundError(interp);
+  }
+  Tcl_DecrRefCount(pScript);
 }
 
 /*
@@ -1628,6 +1653,7 @@ static void DbHookCmd(
   sqlite3_update_hook(db, (pDb->pUpdateHook?DbUpdateHandler:0), pDb);
   sqlite3_rollback_hook(db, (pDb->pRollbackHook?DbRollbackHandler:0), pDb);
   sqlite3_wal_hook(db, (pDb->pWalHook?DbWalHandler:0), pDb);
+  sqlite3_transaction_hook(db, (pDb->pTransHook?DbTransHandler:0), pDb);
 }
 
 /*
@@ -1659,7 +1685,8 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     "profile",            "progress",          "rekey",
     "restore",            "rollback_hook",     "status",
     "timeout",            "total_changes",     "trace",
-    "transaction",        "unlock_notify",     "update_hook",
+    "transaction",        "transaction_hook",
+    "unlock_notify",     "update_hook",
     "version",            "wal_hook",          0
   };
   enum DB_enum {
@@ -1674,7 +1701,8 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     DB_PROFILE,           DB_PROGRESS,         DB_REKEY,
     DB_RESTORE,           DB_ROLLBACK_HOOK,    DB_STATUS,
     DB_TIMEOUT,           DB_TOTAL_CHANGES,    DB_TRACE,
-    DB_TRANSACTION,       DB_UNLOCK_NOTIFY,    DB_UPDATE_HOOK,
+    DB_TRANSACTION,       DB_TRANSACTION_HOOK,
+    DB_UNLOCK_NOTIFY,     DB_UPDATE_HOOK,
     DB_VERSION,           DB_WAL_HOOK
   };
   /* don't leave trailing commas on DB_enum, it confuses the AIX xlc compiler */
@@ -2914,10 +2942,12 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   **    $db wal_hook ?script?
   **    $db update_hook ?script?
   **    $db rollback_hook ?script?
+  **    $db transaction_hook ?script?
   */
   case DB_WAL_HOOK: 
   case DB_UPDATE_HOOK: 
-  case DB_ROLLBACK_HOOK: {
+  case DB_ROLLBACK_HOOK:
+  case DB_TRANSACTION_HOOK: {
     sqlite3 *db = pDb->db;
 
     /* set ppHook to point at pUpdateHook or pRollbackHook, depending on 
@@ -2927,6 +2957,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     if( choice==DB_WAL_HOOK ) ppHook = &pDb->pWalHook;
     if( choice==DB_UPDATE_HOOK ) ppHook = &pDb->pUpdateHook;
     if( choice==DB_ROLLBACK_HOOK ) ppHook = &pDb->pRollbackHook;
+    if( choice==DB_TRANSACTION_HOOK ) ppHook = &pDb->pTransHook;
     if( objc>3 ){
        Tcl_WrongNumArgs(interp, 2, objv, "?SCRIPT?");
        return TCL_ERROR;

@@ -833,6 +833,9 @@ struct sqlite3 {
     void*,sqlite3*,int,char const*,char const*,sqlite3_int64,sqlite3_int64
   );
   PreUpdate *pPreUpdate;        /* Context for active pre-update callback */
+  void *pTransArg;              /* First argument to xTransCallback */
+  void (*xTransCallback)(void*,int,int);
+  int iOpenTrans;               /* Open transaction (xTransCallback) plus 1 */
 #ifndef SQLITE_OMIT_WAL
   int (*xWalCallback)(void *, sqlite3 *, const char *, int);
   void *pWalArg;
@@ -2748,6 +2751,7 @@ void sqlite3PrngSaveState(void);
 void sqlite3PrngRestoreState(void);
 void sqlite3PrngResetState(void);
 void sqlite3RollbackAll(sqlite3*);
+void sqlite3TransactionHook(sqlite3 *, int, int);
 void sqlite3CodeVerifySchema(Parse*, int);
 void sqlite3BeginTransaction(Parse*, int);
 void sqlite3CommitTransaction(Parse*);

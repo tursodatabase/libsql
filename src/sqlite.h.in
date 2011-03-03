@@ -6344,7 +6344,15 @@ int sqlite3_wal_checkpoint_v2(
 #define SQLITE_CHECKPOINT_FULL    1
 #define SQLITE_CHECKPOINT_RESTART 2
 
-void *sqlite3_preupdate_hook(
+
+/*
+** CAPI3REF: The pre-update hook.
+** 
+** The preupdate_old() API may only be used from within an SQLITE_UPDATE or
+** SQLITE_DELETE pre-update callback. The preupdate_modified() API may only 
+** be used from within an SQLITE_UPDATE pre-update callback.
+*/
+SQLITE_EXPERIMENTAL void *sqlite3_preupdate_hook(
   sqlite3 *db,
   void(*xPreUpdate)(
     void *pCtx,                   /* Copy of third arg to preupdate_hook() */
@@ -6357,16 +6365,19 @@ void *sqlite3_preupdate_hook(
   ),
   void*
 );
+SQLITE_EXPERIMENTAL int sqlite3_preupdate_old(sqlite3 *, int, sqlite3_value **);
+SQLITE_EXPERIMENTAL int sqlite3_preupdate_modified(sqlite3 *, int, int *);
+SQLITE_EXPERIMENTAL int sqlite3_preupdate_count(sqlite3 *);
 
 /*
-** The following APIs may only be used from within a pre-update callback. More
-** specifically, the preupdate_old() API may only be used from within an
-** SQLITE_UPDATE or SQLITE_DELETE pre-update callback. The preupdate_modified()
-** API may only be used from within an SQLITE_UPDATE pre-update callback.
+** CAPI3REF: The transaction hook.
 */
-int sqlite3_preupdate_old(sqlite3 *, int, sqlite3_value **);
-int sqlite3_preupdate_modified(sqlite3 *, int, int *);
-int sqlite3_preupdate_count(sqlite3 *);
+SQLITE_EXPERIMENTAL
+void *sqlite3_transaction_hook(sqlite3 *, void(*)(void *, int, int), void *);
+
+#define SQLITE_BEGIN    1
+#define SQLITE_COMMIT   2
+#define SQLITE_ROLLBACK 3
 
 
 /*
