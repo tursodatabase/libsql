@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sthe\sexpected\soutput\son\stests\sso\sthat\sit\scorresponds\sto\sthe\snew\squery\nplanner\sresults.\s\sAll\sof\sveryquick.test\sis\snow\spassing\swith\nSQLITE_ENABLE_STAT2.
-D 2011-02-12T14:23:48.545
+C Backport\sthe\squery\splanner\senhancement\sof\s[952f5e8c69904]\sto\sthe\n3.7.2\sbranch.
+D 2011-03-04T01:23:26.302
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 543f91f24cd7fee774ecc0a61c19704c0c3e78fd
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -233,7 +233,7 @@ F src/vtab.c 0e8e0cb30dffb078367e843e84e37ef99236c7e4
 F src/wal.c 5ac2119e23ee4424599d4275b66dc88d612a0543
 F src/wal.h 96669b645e27cd5a111ba59f0cae7743a207bc3c
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 9c140acd52f4526983cba7203e6a5bb0ccadb5fb
+F src/where.c 4d5918de315298d37919614c5e28ea1df1189ce2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 6745008c144bd2956d58864d21f7b304689c1cce
@@ -245,6 +245,7 @@ F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/analyze.test d21f2143664912a20d04b67baf4bed935e7b1b48
 F test/analyze2.test ea3df826879dd672031b27c6a845afc3a39f27d9
 F test/analyze3.test d61f55d8b472fc6e713160b1e577f7a68e63f38b
+F test/analyze6.test 1ba1aea8fad25a77ffd71f24522d1bb9ecc949fc
 F test/async.test ad4ba51b77cd118911a3fe1356b0809da9c108c3
 F test/async2.test bf5e2ca2c96763b4cba3d016249ad7259a5603b6
 F test/async3.test 93edaa9122f498e56ea98c36c72abc407f4fb11e
@@ -849,14 +850,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 9d2b0af266b85f10823e54ca6417e76950c1d531
-R 716c2554879c451567b11e004ed21569
+P f2a8b5ccfb46b6be5c8857bc495de14e55851bf4
+R 29aa41f4eb47cc16c6f41f19db3d3c2a
 U drh
-Z 4e672fc5ece21ffbe27c23d71389ecc8
+Z d9fbeee93e96963d1ad274f804dd71a0
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNVpf4oxKgR168RlERAnPNAJ47O1yXsq/ligOqmKbDGqny6c5lqgCeMySd
-2rRQeonIpwLNbwL34HKdnYA=
-=9LcO
+iD8DBQFNcD8RoxKgR168RlERAvEBAJ96NOTOeQfSdiUNyWHFey2MVEkE4gCeLMBe
+PM1svomrOJj0JmTwxjR3w0w=
+=ags1
 -----END PGP SIGNATURE-----
