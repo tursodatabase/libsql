@@ -450,6 +450,14 @@ static const char *unixNextSystemCall(sqlite3_vfs *p, const char *zName){
   return 0;
 }
 
+/*
+** Retry open() calls that fail due to EINTR
+*/
+static int robust_open(const char *z, int f, int m){
+  int rc;
+  do{ rc = osOpen(z,f,m); }while( rc<0 && errno==EINTR );
+  return rc;
+}
 
 /*
 ** Helper functions to obtain and relinquish the global mutex. The
@@ -556,20 +564,14 @@ static int lockTrace(int fd, int op, struct flock *p){
 #define osFcntl lockTrace
 #endif /* SQLITE_LOCK_TRACE */
 
-
 /*
 ** Retry ftruncate() calls that fail due to EINTR
 */
-#ifdef EINTR
 static int robust_ftruncate(int h, sqlite3_int64 sz){
   int rc;
   do{ rc = osFtruncate(h,sz); }while( rc<0 && errno==EINTR );
   return rc;
 }
-#else
-# define robust_ftruncate(a,b) osFtruncate(a,b)
-#endif 
-
 
 /*
 ** This routine translates a standard POSIX errno code into something
@@ -1861,7 +1863,7 @@ static int dotlockLock(sqlite3_file *id, int eFileLock) {
   }
   
   /* grab an exclusive lock */
-  fd = osOpen(zLockFile,O_RDONLY|O_CREAT|O_EXCL,0600);
+  fd = robust_open(zLockFile,O_RDONLY|O_CREAT|O_EXCL,0600);
   if( fd<0 ){
     /* failed to open/create the file, someone else may have stolen the lock */
     int tErrno = errno;
@@ -3686,7 +3688,8 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
       goto shm_open_err;
     }
 
-    pShmNode->h = osOpen(zShmFilename, O_RDWR|O_CREAT, (sStat.st_mode & 0777));
+    pShmNode->h = robust_open(zShmFilename, O_RDWR|O_CREAT,
+                             (sStat.st_mode & 0777));
     if( pShmNode->h<0 ){
       rc = unixLogError(SQLITE_CANTOPEN_BKPT, "open", zShmFilename);
       goto shm_open_err;
@@ -4514,7 +4517,7 @@ static int openDirectory(const char *zFilename, int *pFd){
   for(ii=(int)strlen(zDirname); ii>1 && zDirname[ii]!='/'; ii--);
   if( ii>0 ){
     zDirname[ii] = '\0';
-    fd = osOpen(zDirname, O_RDONLY|O_BINARY, 0);
+    fd = robust_open(zDirname, O_RDONLY|O_BINARY, 0);
     if( fd>=0 ){
 #ifdef FD_CLOEXEC
       osFcntl(fd, F_SETFD, osFcntl(fd, F_GETFD, 0) | FD_CLOEXEC);
@@ -4853,7 +4856,7 @@ static int unixOpen(
       assert( eType==SQLITE_OPEN_WAL || eType==SQLITE_OPEN_MAIN_JOURNAL );
       return rc;
     }
-    fd = osOpen(zName, openFlags, openMode);
+    fd = robust_open(zName, openFlags, openMode);
     OSTRACE(("OPENX   %-3d %s 0%o\n", fd, zName, openFlags));
     if( fd<0 && errno!=EISDIR && isReadWrite && !isExclusive ){
       /* Failed to open the file for read/write access. Try read-only. */
@@ -4861,7 +4864,7 @@ static int unixOpen(
       openFlags &= ~(O_RDWR|O_CREAT);
       flags |= SQLITE_OPEN_READONLY;
       openFlags |= O_RDONLY;
-      fd = osOpen(zName, openFlags, openMode);
+      fd = robust_open(zName, openFlags, openMode);
     }
     if( fd<0 ){
       rc = unixLogError(SQLITE_CANTOPEN_BKPT, "open", zName);
@@ -5188,7 +5191,7 @@ static int unixRandomness(sqlite3_vfs *NotUsed, int nBuf, char *zBuf){
 #if !defined(SQLITE_TEST)
   {
     int pid, fd;
-    fd = osOpen("/dev/urandom", O_RDONLY, 0);
+    fd = robust_open("/dev/urandom", O_RDONLY, 0);
     if( fd<0 ){
       time_t t;
       time(&t);
@@ -5597,17 +5600,17 @@ static int proxyCreateUnixFile(
     }
   }
   if( fd<0 ){
-    fd = osOpen(path, openFlags, SQLITE_DEFAULT_FILE_PERMISSIONS);
+    fd = robust_open(path, openFlags, SQLITE_DEFAULT_FILE_PERMISSIONS);
     terrno = errno;
     if( fd<0 && errno==ENOENT && islockfile ){
       if( proxyCreateLockPath(path) == SQLITE_OK ){
-        fd = osOpen(path, openFlags, SQLITE_DEFAULT_FILE_PERMISSIONS);
+        fd = robust_open(path, openFlags, SQLITE_DEFAULT_FILE_PERMISSIONS);
       }
     }
   }
   if( fd<0 ){
     openFlags = O_RDONLY;
-    fd = osOpen(path, openFlags, SQLITE_DEFAULT_FILE_PERMISSIONS);
+    fd = robust_open(path, openFlags, SQLITE_DEFAULT_FILE_PERMISSIONS);
     terrno = errno;
   }
   if( fd<0 ){
@@ -5727,7 +5730,8 @@ static int proxyBreakConchLock(unixFile *pFile, uuid_t myHostID){
     goto end_breaklock;
   }
   /* write it out to the temporary break file */
-  fd = osOpen(tPath, (O_RDWR|O_CREAT|O_EXCL), SQLITE_DEFAULT_FILE_PERMISSIONS);
+  fd = robust_open(tPath, (O_RDWR|O_CREAT|O_EXCL),
+                   SQLITE_DEFAULT_FILE_PERMISSIONS);
   if( fd<0 ){
     sqlite3_snprintf(sizeof(errmsg), errmsg, "create failed (%d)", errno);
     goto end_breaklock;
@@ -6002,7 +6006,7 @@ static int proxyTakeConch(unixFile *pFile){
           robust_close(pFile, pFile->h, __LINE__);
         }
         pFile->h = -1;
-        int fd = osOpen(pCtx->dbPath, pFile->openFlags,
+        int fd = robust_open(pCtx->dbPath, pFile->openFlags,
                       SQLITE_DEFAULT_FILE_PERMISSIONS);
         OSTRACE(("TRANSPROXY: OPEN  %d\n", fd));
         if( fd>=0 ){
