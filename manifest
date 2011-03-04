@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\squoting\sof\sthe\sresult\sin\srtreeB.test.
-D 2011-03-02T22:07:29.984
+C Do\sa\sbetter\sjob\sof\schoosing\sthe\sjoin\stable\sorder\swhen\sthe\stables\shaving\nvery\sdifferent\snumbers\sof\srows.
+D 2011-03-04T00:56:58.067
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -245,7 +245,7 @@ F src/vtab.c b297e8fa656ab5e66244ab15680d68db0adbec30
 F src/wal.c 5386fb5e13c2daa8ab9062597fdc17bd849da371
 F src/wal.h 7a5fbb00114b7f2cd40c7e1003d4c41ce9d26840
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c bf8c0f584a2c9becb9110c37e151f9d4f73fbf7e
+F src/where.c d7b073867e7bab0b851c659ad4899ce72cc9b81d
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 51756962d522e474338e9b2ebb26e7364d4aa125
@@ -259,6 +259,7 @@ F test/analyze2.test 8f2b1534d43f5547ce9a6b736c021d4192c75be3
 F test/analyze3.test d61f55d8b472fc6e713160b1e577f7a68e63f38b
 F test/analyze4.test 757b37875cf9bb528d46f74497bc789c88365045
 F test/analyze5.test 0618d2fe8982a5dae1d4e92152acc8ecbaf52be2
+F test/analyze6.test 1ba1aea8fad25a77ffd71f24522d1bb9ecc949fc
 F test/async.test ad4ba51b77cd118911a3fe1356b0809da9c108c3
 F test/async2.test bf5e2ca2c96763b4cba3d016249ad7259a5603b6
 F test/async3.test 93edaa9122f498e56ea98c36c72abc407f4fb11e
@@ -913,14 +914,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ec55e8c6bb4f2419b3813aa2fd1a20d8f5016159
-R 4466b84201cf07d8b58b7f3df32e8610
+P c6532b35cc5a81cc753a22e0165bfdd5143941f1
+R a3d7e872cd52f3bb8cff4bf51476ab7a
 U drh
-Z e51cd0af4553d3bdc1671b46c3024fc0
+Z 87aba3dd3051578a2e8c32390f315773
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNbr+loxKgR168RlERAifFAJ4rxcZg2GHVUmhY14d6bC3+WoLAOQCfYvQK
-lkhmZIcwz4BBbhXLINTF0CM=
-=JloW
+iD8DBQFNcDjeoxKgR168RlERAn2TAJ9XKohvD0kx5t1CAQmiI1sUD+1b8QCdFh0P
+RilThkZz6kdLZmkRZY4ir5s=
+=inuw
 -----END PGP SIGNATURE-----

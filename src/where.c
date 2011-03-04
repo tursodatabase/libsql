@@ -4610,8 +4610,8 @@ WhereInfo *sqlite3WhereBegin(
         **   (1) The table must not depend on other tables that have not
         **       yet run.
         **
-        **   (2) A full-table-scan plan cannot supercede another plan unless
-        **       it is an "optimal" plan as defined above.
+        **   (2) A full-table-scan plan cannot supercede indexed plan unless
+        **       the full-table-scan is an "optimal" plan as defined above.
         **
         **   (3) All tables have an INDEXED BY clause or this table lacks an
         **       INDEXED BY clause or this table uses the specific
@@ -4627,6 +4627,7 @@ WhereInfo *sqlite3WhereBegin(
         */
         if( (sCost.used&notReady)==0                       /* (1) */
             && (bestJ<0 || (notIndexed&m)!=0               /* (2) */
+                || (bestPlan.plan.wsFlags & WHERE_NOT_FULLSCAN)==0
                 || (sCost.plan.wsFlags & WHERE_NOT_FULLSCAN)!=0)
             && (nUnconstrained==0 || pTabItem->pIndex==0   /* (3) */
                 || NEVER((sCost.plan.wsFlags & WHERE_NOT_FULLSCAN)!=0))
