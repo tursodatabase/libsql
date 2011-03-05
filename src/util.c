@@ -475,9 +475,9 @@ do_atoi_calc:
   zStart = zNum;
   while( zNum<zEnd && zNum[0]=='0' ){ zNum+=incr; } /* Skip leading zeros. */
   for(i=0; &zNum[i]<zEnd && (c=zNum[i])>='0' && c<='9'; i+=incr){
-    v = v*10 + c - '0';
+    v = v*10 + c - '0';  /* CLANG */
   }
-  *pNum = neg ? -v : v;
+  *pNum = neg ? -v : v;  /* CLANG */
   testcase( i==18 );
   testcase( i==19 );
   testcase( i==20 );

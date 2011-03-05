@@ -400,7 +400,7 @@ void sqlite3VXPrintf(
             v = va_arg(ap,int);
           }
           if( v<0 ){
-            longvalue = -v;
+            longvalue = -v;  /* CLANG */
             prefix = '-';
           }else{
             longvalue = v;

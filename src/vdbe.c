@@ -1246,7 +1246,7 @@ case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
     iA = pIn1->u.i;
     iB = pIn2->u.i;
     switch( pOp->opcode ){
-      case OP_Add:         iB += iA;       break;
+      case OP_Add:         iB += iA;       break;   /* CLANG */
       case OP_Subtract:    iB -= iA;       break;
       case OP_Multiply:    iB *= iA;       break;
       case OP_Divide: {

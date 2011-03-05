@@ -1964,7 +1964,7 @@ static void codeInteger(Parse *pParse, Expr *pExpr, int negFlag, int iMem){
     c = sqlite3Atoi64(z, &value, sqlite3Strlen30(z), SQLITE_UTF8);
     if( c==0 || (c==2 && negFlag) ){
       char *zV;
-      if( negFlag ){ value = -value; }
+      if( negFlag ){ value = -value; } /* CLANG */
       zV = dup8bytes(v, (char*)&value);
       sqlite3VdbeAddOp4(v, OP_Int64, 0, iMem, 0, zV, P4_INT64);
     }else{
