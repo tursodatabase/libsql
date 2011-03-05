@@ -1121,15 +1121,13 @@ int sqlite3MulInt64(i64 *pA, i64 iB){
   i64 iA = *pA;
   i64 iA1, iA0, iB1, iB0, r;
 
-//  if( iB==1 ){ return 0; }
-//  if( iA==1 ){ *pA = iB; return 0; }
   iA1 = iA/TWOPOWER32;
   iA0 = iA % TWOPOWER32;
   iB1 = iB/TWOPOWER32;
   iB0 = iB % TWOPOWER32;
   if( iA1*iB1 != 0 ) return 1;
-  r = iA1*iB0;
-  if( sqlite3AddInt64(&r, iA0*iB1) ) return 1;
+  assert( iA1*iB0==0 || iA0*iB1==0 );
+  r = iA1*iB0 + iA0*iB1;
   testcase( r==(-TWOPOWER31)-1 );
   testcase( r==(-TWOPOWER31) );
   testcase( r==TWOPOWER31 );

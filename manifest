@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sall\sknown\sinstances\sof\ssigned-integer\soverflow.\s\sWithin\sSQL\sexpressions,\ninteger\soverflow\snow\sforces\scoercion\sto\sfloating\spoint.\s\sThe\sshift\soperators\nwork\swith\sany\sinteger\sright-hand\soperand\swith\snegative\svalues\sreversing\nthe\sdirection\sof\sthe\sshift.
-D 2011-03-05T20:59:46.394
+C Simplifications\sto\sthe\soverflow-free\smultiplier.\s\sAlso\sremove\ssome\scommented-out\ncode\sthat\swas\sleft\sin\sthat\ssubroutine\sby\smistake\son\sthe\sprevious\scheck-in.
+D 2011-03-05T21:41:34.187
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -231,7 +231,7 @@ F src/tokenize.c 604607d6813e9551cf5189d899e0a25c12681080
 F src/trigger.c b8bedb9c0084ceb51a40f54fcca2ce048c8de852
 F src/update.c c40aedd40baf460806f1c9f2cbe4a1dac445ee91
 F src/utf.c 1baeeac91707a4df97ccc6141ec0f808278af685
-F src/util.c c849a1e77d00a8a28429a22818155dbf9c311fee
+F src/util.c 0e04fb389132f3cfbd5ea69a096206da1cbf32de
 F src/vacuum.c 924bd1bcee2dfb05376f79845bd3b4cec7b54b2f
 F src/vdbe.c 038e5689e48cd6597158c5dc34f8d40a03a87ad7
 F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
@@ -914,14 +914,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 04abab71ecd52f6070b9f84781a3df3d6dba7722
-R dffbfc883d2df8713fd0ba30b453b561
+P abf21394124a0af46f072793718964cee2ce55d0
+R 24060eb83e7955ab55ced35ef7d2ddfd
 U drh
-Z e566f37c8f9e6003556e493773a7db62
+Z f1d3fbfcdf98a3d3e54748471aba836e
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNcqRGoxKgR168RlERAlK6AJ9gnf6EDR2ZKhaKkoiA1Nkl5MKeDgCeOJxY
-dz92w6QJZQImuyiplDh238s=
-=sTB2
+iD8DBQFNcq4RoxKgR168RlERAmdSAJ9o51MyoK1fC2ug7/Csp3X3zbAPjQCfdi/3
+uxlCQmct6yZ8VJBAl19dNj8=
+=owHF
 -----END PGP SIGNATURE-----
