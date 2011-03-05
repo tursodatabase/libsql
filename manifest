@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\san\sinstance\sof\ssigned\sarithmetic\soverflow\sand\san\sone\sbit-shift\soverflow.\nMark\ssix\sother\ssigned\sarithmetic\soverflow\slocations\sthat\sneed\sfixing.
-D 2011-03-05T13:54:15.956
+C Fix\sall\sknown\sinstances\sof\ssigned-integer\soverflow.\s\sWithin\sSQL\sexpressions,\ninteger\soverflow\snow\sforces\scoercion\sto\sfloating\spoint.\s\sThe\sshift\soperators\nwork\swith\sany\sinteger\sright-hand\soperand\swith\snegative\svalues\sreversing\nthe\sdirection\sof\sthe\sshift.
+D 2011-03-05T20:59:46.394
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -133,10 +133,10 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 7deec4534f3b5a0c3b4a4cbadf809d321f64f9c4
 F src/date.c 1548fdac51377e4e7833251de878b4058c148e1b
 F src/delete.c 7ed8a8c8b5f748ece92df173d7e0f7810c899ebd
-F src/expr.c 0afd6a93d95614e57b29d1c6da5f74be5a4d4fbd
+F src/expr.c 66c9383e5e1f5259c43ef3aa7883da66cfc0f492
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 17950a28f28b23e8ad3feaac5fc88c324d2f600a
-F src/func.c 9b88e09d238eecdb6242bd387901e6d9f7f64531
+F src/func.c 3a8cb2fb2de3e3aed7f39106daf4878d9d17fcce
 F src/global.c 02335177cf6946fe5525c6f0755cf181140debf3
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
@@ -175,7 +175,7 @@ F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c d548e31beafa792d1994b663a29a5303569efc4e
 F src/pragma.c a83f320497aee18eda60fc8d854df5897906c2b1
 F src/prepare.c 395b3fab1b93f45b6aa194b23ebc201221c47b99
-F src/printf.c 6eb5c70b531464cca4254e70aaafdf2e7da3a743
+F src/printf.c 585a36b6a963df832cfb69505afa3a34ed5ef8a1
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
@@ -183,7 +183,7 @@ F src/select.c d24406c45dd2442eb2eeaac413439066b149c944
 F src/shell.c 649c51979812f77f97507024a4cea480c6862b8b
 F src/sqlite.h.in ccb23cc9378874c7c72682b739f311474a80848d
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
-F src/sqliteInt.h 4290fff17fabc6e07fc4338233df0e39e6350ca1
+F src/sqliteInt.h 118481da7db00c4ae2709ed8af6498be900e6ae0
 F src/sqliteLimit.h a17dcd3fb775d63b64a43a55c54cb282f9726f44
 F src/status.c 4997380fbb915426fef9e500b4872e79c99267fc
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -231,15 +231,15 @@ F src/tokenize.c 604607d6813e9551cf5189d899e0a25c12681080
 F src/trigger.c b8bedb9c0084ceb51a40f54fcca2ce048c8de852
 F src/update.c c40aedd40baf460806f1c9f2cbe4a1dac445ee91
 F src/utf.c 1baeeac91707a4df97ccc6141ec0f808278af685
-F src/util.c 77572d1f37c5b319d9e735c745349304791f7ba5
+F src/util.c c849a1e77d00a8a28429a22818155dbf9c311fee
 F src/vacuum.c 924bd1bcee2dfb05376f79845bd3b4cec7b54b2f
-F src/vdbe.c 953d44f0fbd72bf73a278c10e7bdd9164235260d
+F src/vdbe.c 038e5689e48cd6597158c5dc34f8d40a03a87ad7
 F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
 F src/vdbeInt.h 6e6f28e9bccc6c703dca1372fd661c57b5c15fb0
 F src/vdbeapi.c 8e9324fd35eb70d0b5904bd1af40f2598744dc4d
 F src/vdbeaux.c 3ce2588ffe921e457d00baee7dd409afabe8c8af
 F src/vdbeblob.c 18955f0ee6b133cd08e1592010cb9a6b11e9984c
-F src/vdbemem.c 0fa2ed786cd207d5b988afef3562a8e663a75b50
+F src/vdbemem.c d8f713bcc3e176040d3e2bb4fbffc3b31faa4252
 F src/vdbetrace.c 3ba13bc32bdf16d2bdea523245fd16736bed67b5
 F src/vtab.c b297e8fa656ab5e66244ab15680d68db0adbec30
 F src/wal.c 5386fb5e13c2daa8ab9062597fdc17bd849da371
@@ -383,7 +383,7 @@ F test/eval.test bc269c365ba877554948441e91ad5373f9f91be3
 F test/exclusive.test 53e1841b422e554cecf0160f937c473d6d0e3062
 F test/exclusive2.test 343d55130c12c67b8bf10407acec043a6c26c86b
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
-F test/expr.test 620a636cf7b7d4e5834a0b9d83a4da372e24a7b7
+F test/expr.test 19e8ac40313e2282a47b586d11c4892040990d3a
 F test/fallocate.test 43dc34b8c24be6baffadc3b4401ee15710ce83c6
 F test/filectrl.test 97003734290887566e01dded09dc9e99cb937e9e
 F test/filefmt.test f178cfc29501a14565954c961b226e61877dd32c
@@ -914,14 +914,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 952f5e8c69904c48f2decfabf8ea60a2e9f3e134
-R c0946fb5d31ae3d41275b61febc12359
+P 04abab71ecd52f6070b9f84781a3df3d6dba7722
+R dffbfc883d2df8713fd0ba30b453b561
 U drh
-Z 4b81d66afc295ddd153d99c651678bf2
+Z e566f37c8f9e6003556e493773a7db62
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNckCLoxKgR168RlERAq5MAJwIkQItYpj2jIMbedpVkYZIN7SirACePysg
-Jf8UO88YpxqtY86joGQ7FqQ=
-=f5iN
+iD8DBQFNcqRGoxKgR168RlERAlK6AJ9gnf6EDR2ZKhaKkoiA1Nkl5MKeDgCeOJxY
+dz92w6QJZQImuyiplDh238s=
+=sTB2
 -----END PGP SIGNATURE-----

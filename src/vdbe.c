@@ -1246,19 +1246,12 @@ case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
     iA = pIn1->u.i;
     iB = pIn2->u.i;
     switch( pOp->opcode ){
-      case OP_Add:         iB += iA;       break;   /* CLANG */
-      case OP_Subtract:    iB -= iA;       break;
-      case OP_Multiply:    iB *= iA;       break;
+      case OP_Add:       if( sqlite3AddInt64(&iB,iA) ) goto fp_math;  break;
+      case OP_Subtract:  if( sqlite3SubInt64(&iB,iA) ) goto fp_math;  break;
+      case OP_Multiply:  if( sqlite3MulInt64(&iB,iA) ) goto fp_math;  break;
       case OP_Divide: {
         if( iA==0 ) goto arithmetic_result_is_null;
-        /* Dividing the largest possible negative 64-bit integer (1<<63) by 
-        ** -1 returns an integer too large to store in a 64-bit data-type. On
-        ** some architectures, the value overflows to (1<<63). On others,
-        ** a SIGFPE is issued. The following statement normalizes this
-        ** behavior so that all architectures behave as if integer 
-        ** overflow occurred.
-        */
-        if( iA==-1 && iB==SMALLEST_INT64 ) iA = 1;
+        if( iA==-1 && iB==SMALLEST_INT64 ) goto fp_math;
         iB /= iA;
         break;
       }
@@ -1272,6 +1265,7 @@ case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
     pOut->u.i = iB;
     MemSetTypeFlag(pOut, MEM_Int);
   }else{
+fp_math:
     rA = sqlite3VdbeRealValue(pIn1);
     rB = sqlite3VdbeRealValue(pIn2);
     switch( pOp->opcode ){
@@ -1466,8 +1460,10 @@ case OP_BitAnd:                 /* same as TK_BITAND, in1, in2, out3 */
 case OP_BitOr:                  /* same as TK_BITOR, in1, in2, out3 */
 case OP_ShiftLeft:              /* same as TK_LSHIFT, in1, in2, out3 */
 case OP_ShiftRight: {           /* same as TK_RSHIFT, in1, in2, out3 */
-  i64 a;
-  i64 b;
+  i64 iA;
+  u64 uA;
+  i64 iB;
+  u8 op;
 
   pIn1 = &aMem[pOp->p1];
   pIn2 = &aMem[pOp->p2];
@@ -1476,16 +1472,38 @@ case OP_ShiftRight: {           /* same as TK_RSHIFT, in1, in2, out3 */
     sqlite3VdbeMemSetNull(pOut);
     break;
   }
-  a = sqlite3VdbeIntValue(pIn2);
-  b = sqlite3VdbeIntValue(pIn1);
-  switch( pOp->opcode ){
-    case OP_BitAnd:      a &= b;     break;
-    case OP_BitOr:       a |= b;     break;
-    case OP_ShiftLeft:   a <<= b;    break;
-    default:  assert( pOp->opcode==OP_ShiftRight );
-                         a >>= b;    break;
+  iA = sqlite3VdbeIntValue(pIn2);
+  iB = sqlite3VdbeIntValue(pIn1);
+  op = pOp->opcode;
+  if( op==OP_BitAnd ){
+    iA &= iB;
+  }else if( op==OP_BitOr ){
+    iA |= iB;
+  }else if( iB!=0 ){
+    assert( op==OP_ShiftRight || op==OP_ShiftLeft );
+
+    /* If shifting by a negative amount, shift in the other direction */
+    if( iB<0 ){
+      assert( OP_ShiftRight==OP_ShiftLeft+1 );
+      op = 2*OP_ShiftLeft + 1 - op;
+      iB = iB>(-64) ? -iB : 64;
+    }
+
+    if( iB>=64 ){
+      iA = (iA>=0 || op==OP_ShiftLeft) ? 0 : -1;
+    }else{
+      memcpy(&uA, &iA, sizeof(uA));
+      if( op==OP_ShiftLeft ){
+        uA <<= iB;
+      }else{
+        uA >>= iB;
+        /* Sign-extend on a right shift of a negative number */
+        if( iA<0 ) uA |= ((((u64)0xffffffff)<<32)|0xffffffff) << (64-iB);
+      }
+      memcpy(&iA, &uA, sizeof(iA));
+    }
   }
-  pOut->u.i = a;
+  pOut->u.i = iA;
   MemSetTypeFlag(pOut, MEM_Int);
   break;
 }

@@ -441,14 +441,17 @@ static int compare2pow63(const char *zNum, int incr){
 
 
 /*
-** Convert zNum to a 64-bit signed integer and write
-** the value of the integer into *pNum.
-** If zNum is exactly 9223372036854665808, return 2.
-** This is a special case as the context will determine
-** if it is too big (used as a negative).
-** If zNum is not an integer or is an integer that 
-** is too large to be expressed with 64 bits,
-** then return 1.  Otherwise return 0.
+** Convert zNum to a 64-bit signed integer.
+**
+** If the zNum value is representable as a 64-bit twos-complement 
+** integer, then write that value into *pNum and return 0.
+**
+** If zNum is exactly 9223372036854665808, return 2.  This special
+** case is broken out because while 9223372036854665808 cannot be a 
+** signed 64-bit integer, its negative -9223372036854665808 can be.
+**
+** If zNum is too big for a 64-bit integer and is not
+** 9223372036854665808 then return 1.
 **
 ** length is the number of bytes in the string (bytes, not characters).
 ** The string is not necessarily zero-terminated.  The encoding is
@@ -456,7 +459,7 @@ static int compare2pow63(const char *zNum, int incr){
 */
 int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
   int incr = (enc==SQLITE_UTF8?1:2);
-  i64 v = 0;
+  u64 u = 0;
   int neg = 0; /* assume positive */
   int i;
   int c = 0;
@@ -464,20 +467,26 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
   const char *zEnd = zNum + length;
   if( enc==SQLITE_UTF16BE ) zNum++;
   while( zNum<zEnd && sqlite3Isspace(*zNum) ) zNum+=incr;
-  if( zNum>=zEnd ) goto do_atoi_calc;
-  if( *zNum=='-' ){
-    neg = 1;
-    zNum+=incr;
-  }else if( *zNum=='+' ){
-    zNum+=incr;
+  if( zNum<zEnd ){
+    if( *zNum=='-' ){
+      neg = 1;
+      zNum+=incr;
+    }else if( *zNum=='+' ){
+      zNum+=incr;
+    }
   }
-do_atoi_calc:
   zStart = zNum;
   while( zNum<zEnd && zNum[0]=='0' ){ zNum+=incr; } /* Skip leading zeros. */
   for(i=0; &zNum[i]<zEnd && (c=zNum[i])>='0' && c<='9'; i+=incr){
-    v = v*10 + c - '0';  /* CLANG */
+    u = u*10 + c - '0';
   }
-  *pNum = neg ? -v : v;  /* CLANG */
+  if( u>LARGEST_INT64 ){
+    *pNum = SMALLEST_INT64;
+  }else if( neg ){
+    *pNum = -(i64)u;
+  }else{
+    *pNum = (i64)u;
+  }
   testcase( i==18 );
   testcase( i==19 );
   testcase( i==20 );
@@ -487,14 +496,25 @@ do_atoi_calc:
     return 1;
   }else if( i<19*incr ){
     /* Less than 19 digits, so we know that it fits in 64 bits */
+    assert( u<=LARGEST_INT64 );
     return 0;
   }else{
-    /* 19-digit numbers must be no larger than 9223372036854775807 if positive
-    ** or 9223372036854775808 if negative.  Note that 9223372036854665808
-    ** is 2^63. Return 1 if to large */
-    c=compare2pow63(zNum, incr);
-    if( c==0 && neg==0 ) return 2; /* too big, exactly 9223372036854665808 */
-    return c<neg ? 0 : 1;
+    /* zNum is a 19-digit numbers.  Compare it against 9223372036854775808. */
+    c = compare2pow63(zNum, incr);
+    if( c<0 ){
+      /* zNum is less than 9223372036854775808 so it fits */
+      assert( u<=LARGEST_INT64 );
+      return 0;
+    }else if( c>0 ){
+      /* zNum is greater than 9223372036854775808 so it overflows */
+      return 1;
+    }else{
+      /* zNum is exactly 9223372036854775808.  Fits if negative.  The
+      ** special case 2 overflow if positive */
+      assert( u-1==LARGEST_INT64 );
+      assert( (*pNum)==SMALLEST_INT64 );
+      return neg ? 0 : 2;
+    }
   }
 }
 
@@ -1059,4 +1079,64 @@ int sqlite3SafetyCheckSickOrOk(sqlite3 *db){
   }else{
     return 1;
   }
+}
+
+/*
+** Attempt to add, substract, or multiply the 64-bit signed value iB against
+** the other 64-bit signed integer at *pA and store the result in *pA.
+** Return 0 on success.  Or if the operation would have resulted in an
+** overflow, leave *pA unchanged and return 1.
+*/
+int sqlite3AddInt64(i64 *pA, i64 iB){
+  i64 iA = *pA;
+  testcase( iA==0 ); testcase( iA==1 );
+  testcase( iB==-1 ); testcase( iB==0 );
+  if( iB>=0 ){
+    testcase( iA>0 && LARGEST_INT64 - iA == iB );
+    testcase( iA>0 && LARGEST_INT64 - iA == iB - 1 );
+    if( iA>0 && LARGEST_INT64 - iA < iB ) return 1;
+    *pA += iB;
+  }else{
+    testcase( iA<0 && -(iA + LARGEST_INT64) == iB + 1 );
+    testcase( iA<0 && -(iA + LARGEST_INT64) == iB + 2 );
+    if( iA<0 && -(iA + LARGEST_INT64) > iB + 1 ) return 1;
+    *pA += iB;
+  }
+  return 0; 
+}
+int sqlite3SubInt64(i64 *pA, i64 iB){
+  testcase( iB==SMALLEST_INT64+1 );
+  if( iB==SMALLEST_INT64 ){
+    testcase( (*pA)==(-1) ); testcase( (*pA)==0 );
+    if( (*pA)>=0 ) return 1;
+    *pA -= iB;
+    return 0;
+  }else{
+    return sqlite3AddInt64(pA, -iB);
+  }
+}
+#define TWOPOWER32 (((i64)1)<<32)
+#define TWOPOWER31 (((i64)1)<<31)
+int sqlite3MulInt64(i64 *pA, i64 iB){
+  i64 iA = *pA;
+  i64 iA1, iA0, iB1, iB0, r;
+
+//  if( iB==1 ){ return 0; }
+//  if( iA==1 ){ *pA = iB; return 0; }
+  iA1 = iA/TWOPOWER32;
+  iA0 = iA % TWOPOWER32;
+  iB1 = iB/TWOPOWER32;
+  iB0 = iB % TWOPOWER32;
+  if( iA1*iB1 != 0 ) return 1;
+  r = iA1*iB0;
+  if( sqlite3AddInt64(&r, iA0*iB1) ) return 1;
+  testcase( r==(-TWOPOWER31)-1 );
+  testcase( r==(-TWOPOWER31) );
+  testcase( r==TWOPOWER31 );
+  testcase( r==TWOPOWER31-1 );
+  if( r<(-TWOPOWER31) || r>=TWOPOWER31 ) return 1;
+  r *= TWOPOWER32;
+  if( sqlite3AddInt64(&r, iA0*iB0) ) return 1;
+  *pA = r;
+  return 0;
 }

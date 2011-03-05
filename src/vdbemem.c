@@ -367,7 +367,7 @@ i64 sqlite3VdbeIntValue(Mem *pMem){
   }else if( flags & MEM_Real ){
     return doubleToInt64(pMem->r);
   }else if( flags & (MEM_Str|MEM_Blob) ){
-    i64 value;
+    i64 value = 0;
     assert( pMem->z || pMem->n==0 );
     testcase( pMem->z==0 );
     sqlite3Atoi64(pMem->z, &value, pMem->n, pMem->enc);

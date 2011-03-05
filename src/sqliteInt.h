@@ -2903,6 +2903,9 @@ Expr *sqlite3ExprSetCollByToken(Parse *pParse, Expr*, Token*);
 int sqlite3CheckCollSeq(Parse *, CollSeq *);
 int sqlite3CheckObjectName(Parse *, const char *);
 void sqlite3VdbeSetChanges(sqlite3 *, int);
+int sqlite3AddInt64(i64*,i64);
+int sqlite3SubInt64(i64*,i64);
+int sqlite3MulInt64(i64*,i64);
 
 const void *sqlite3ValueText(sqlite3_value*, u8);
 int sqlite3ValueBytes(sqlite3_value*, u8);
