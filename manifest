@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Remove\sdead\scode\sidentified\sby\sthe\sclang\sstatic\sanalyzer.
-D 2011-03-06T21:28:32.373
+C Another\sminor\ssimplification\sbrought\sto\slight\sby\sclang.
+D 2011-03-06T21:54:33.572
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -237,7 +237,7 @@ F src/vdbe.c ac6e8b8264dcc0e4beea44307ff63b1275a9ca3e
 F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
 F src/vdbeInt.h 6e6f28e9bccc6c703dca1372fd661c57b5c15fb0
 F src/vdbeapi.c a09ad9164cafc505250d5dd6b69660c960f1308c
-F src/vdbeaux.c 3ce2588ffe921e457d00baee7dd409afabe8c8af
+F src/vdbeaux.c 00439455c80ff7b37d7f2e5be5c0cf02de732a42
 F src/vdbeblob.c 18955f0ee6b133cd08e1592010cb9a6b11e9984c
 F src/vdbemem.c d8f713bcc3e176040d3e2bb4fbffc3b31faa4252
 F src/vdbetrace.c 3ba13bc32bdf16d2bdea523245fd16736bed67b5
@@ -914,14 +914,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 55fc25fdab61e6094289e068c343e012fec10439
-R 12067f25ef6d42b31ec1713c62b3af5b
+P 01a79d5a7af48fb7e50291c0c7c6283d3fb359d0
+R f26f22d38e31d99ab2a9418e84c97bed
 U drh
-Z f391775b0fd982b73d9e78e75989978c
+Z a115c36c7eaf4f6e951cb7f5d4e94ec0
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNc/yDoxKgR168RlERAl2jAJ4kMYknXNTsPPqeB+kXrqAfSTDEfACdFMXH
-LGyAxYgzfXlJh1jt92GH+Uc=
-=iKUD
+iD8DBQFNdAKcoxKgR168RlERAtyUAJ9ywxjzGGZVVqunZ3Nt1qv9pd2YmgCfR7rm
+kZxrrIHa7TLJ4O/kbYiB2Mw=
+=Rm5M
 -----END PGP SIGNATURE-----

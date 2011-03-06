@@ -1517,7 +1517,7 @@ int sqlite3VdbeFrameRestore(VdbeFrame *pFrame){
 */
 static void closeAllCursors(Vdbe *p){
   if( p->pFrame ){
-    VdbeFrame *pFrame = p->pFrame;
+    VdbeFrame *pFrame;
     for(pFrame=p->pFrame; pFrame->pParent; pFrame=pFrame->pParent);
     sqlite3VdbeFrameRestore(pFrame);
   }
