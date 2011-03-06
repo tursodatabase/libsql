@@ -4047,7 +4047,6 @@ static Bitmask codeOneLoopStart(
     **
     */
     WhereClause *pOrWc;    /* The OR-clause broken out into subterms */
-    WhereTerm *pFinal;     /* Final subterm within the OR-clause. */
     SrcList *pOrTab;       /* Shortened table list or OR-clause generation */
 
     int regReturn = ++pParse->nMem;           /* Register used with OP_Gosub */
@@ -4063,7 +4062,6 @@ static Bitmask codeOneLoopStart(
     assert( pTerm->eOperator==WO_OR );
     assert( (pTerm->wtFlags & TERM_ORINFO)!=0 );
     pOrWc = &pTerm->u.pOrInfo->wc;
-    pFinal = &pOrWc->a[pOrWc->nTerm-1];
     pLevel->op = OP_Return;
     pLevel->p1 = regReturn;
 
@@ -4172,7 +4170,6 @@ static Bitmask codeOneLoopStart(
   ** the use of indices become tests that are evaluated against each row of
   ** the relevant input tables.
   */
-  k = 0;
   for(pTerm=pWC->a, j=pWC->nTerm; j>0; j--, pTerm++){
     Expr *pE;
     testcase( pTerm->wtFlags & TERM_VIRTUAL ); /* IMP: R-30575-11662 */
@@ -4190,7 +4187,6 @@ static Bitmask codeOneLoopStart(
       continue;
     }
     sqlite3ExprIfFalse(pParse, pE, addrCont, SQLITE_JUMPIFNULL);
-    k = 1;
     pTerm->wtFlags |= TERM_CODED;
   }
 
@@ -4498,8 +4494,6 @@ WhereInfo *sqlite3WhereBegin(
   ** clause.
   */
   notReady = ~(Bitmask)0;
-  pTabItem = pTabList->a;
-  pLevel = pWInfo->a;
   andFlags = ~0;
   WHERETRACE(("*** Optimizer Start ***\n"));
   for(i=iFrom=0, pLevel=pWInfo->a; i<nTabList; i++, pLevel++){

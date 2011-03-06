@@ -128,7 +128,6 @@ void sqlite3Update(
   int regNew;
   int regOld = 0;
   int regRowSet = 0;     /* Rowset of rows to be updated */
-  int regRec;            /* Register used for new table record to insert */
 
   memset(&sContext, 0, sizeof(sContext));
   db = pParse->db;
@@ -286,7 +285,6 @@ void sqlite3Update(
   }
   regNew = pParse->nMem + 1;
   pParse->nMem += pTab->nCol;
-  regRec = ++pParse->nMem;
 
   /* Start the view context. */
   if( isView ){

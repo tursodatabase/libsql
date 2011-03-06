@@ -2429,7 +2429,6 @@ case OP_MakeRecord: {
   */
   nData = 0;         /* Number of bytes of data space */
   nHdr = 0;          /* Number of bytes of header space */
-  nByte = 0;         /* Data space required for this record */
   nZero = 0;         /* Number of zero bytes at the end of the record */
   nField = pOp->p1;
   zAffinity = pOp->p4.z;
@@ -3703,7 +3702,6 @@ case OP_NewRowid: {           /* out2-prerelease */
     ** and try again, up to 100 times.
     */
     assert( pC->isTable );
-    cnt = 0;
 
 #ifdef SQLITE_32BIT_ROWID
 #   define MAX_ROWID 0x7fffffff

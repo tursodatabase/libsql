@@ -1649,7 +1649,6 @@ static int walCheckpoint(
   }
   assert( pIter );
 
-  mxPage = pWal->hdr.nPage;
   if( eMode!=SQLITE_CHECKPOINT_PASSIVE ) xBusy = xBusyCall;
 
   /* Compute in mxSafeFrame the index of the last frame of the WAL that is
