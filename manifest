@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Cherry-pick\sthe\schange\sat\s[2d4505510032bf9]\sinto\sthe\s3.6.1\sbranch.
-D 2010-10-15T14:45:13
+C Backport\sa\sfix\sfrom\s[6b0cabd017ed25]\s(version\s3.6.16\s-\s[2009-03-05])\sto\sthe\n3.6.1\sbranch,\sa\sfix\sthat\sprevents\sa\snull\spointer\sderef\sif\sone\sof\sthe\ncolumn\saccess\sroutines\ssuch\sas\ssqlite3_column_int()\sis\scalled\swith\sa\nNULL\sfirst\sparameter.
+D 2011-03-07T16:12:27.175
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2713ea64947be3b35f35d9a3158bb8299c90b019
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -77,7 +77,7 @@ F ext/rtree/rtree5.test 7d0643482829038f0263881ddf7e2d51bff1d60f
 F ext/rtree/rtree_perf.tcl 0fabb6d5c48cb8024e042ce5d4bb88998b6ec1cb
 F ext/rtree/rtree_util.tcl ee0a0311eb12175319d78bfb37302320496cee6e
 F ext/rtree/viewrtree.tcl 09526398dae87a5a87c5aac2b3854dbaf8376869
-F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
+F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 09fe5815427dc7d0abb188bbcdf0e34896577210
 F main.mk eace65a99d12045ca496069dc707405a63197006
 F mkdll.sh 79d1ed6ae221c10589dd969f130f8a3cccfffbb7
@@ -189,7 +189,7 @@ F src/vacuum.c ef342828002debc97514617af3424aea8ef8522c
 F src/vdbe.c 412c486b22f29cfdf922c6588c209f35127c3962
 F src/vdbe.h 647fcf33a551ba10a974162c56846cb9aef2276b
 F src/vdbeInt.h 6f04c2bf65a0d5c2bb8318b226278a35d1f7a8f5
-F src/vdbeapi.c 803f365b77a22c1b2680a0dee9202bc75c02bf4a
+F src/vdbeapi.c e61d3fffead73ae85df922fc4656793023f71b83
 F src/vdbeaux.c 21126e0d319e19125f5e42fceafb17eafe58721c
 F src/vdbeblob.c f93110888ddc246215e9ba1f831d3d375bfd8355
 F src/vdbefifo.c 20fda2a7c4c0bcee1b90eb7e545fefcdbf2e1de7
@@ -448,7 +448,7 @@ F test/permutations.test 4ad59e4489255b025aac0cc661789d35a83d87ec
 F test/pragma.test 2c675ed9a288094ed62bf55b35fbc749e25670fb
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 262a5acd3158f788e9bdf7f18d718f3af32ff6ef
-F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
+F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/quick.test 3dba257b9d4e06e1b0199bc1401052f554ab5f14
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
@@ -604,7 +604,7 @@ F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
 F tool/mkkeywordhash.c ef93810fc41fb3d3dbacf9a33a29be88ea99ffa9
-F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
+F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mksqlite3c.tcl bc5a951735e78eb37cd47f539b2400318c436872
 F tool/mksqlite3internalh.tcl 7b43894e21bcb1bb39e11547ce7e38a063357e87
 F tool/omittest.tcl 5a25ea687df5da8dd9b94bf1683f5cf2c210e51d
@@ -620,14 +620,14 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P a1d20ceb9c195ea96f09c2a40c898ca75f504ee1
-R 8cc8bdc0c3cf81de99cf2e9284984853
+P ecb1419e4b359e68d583b627ac40cff33cbc06b8
+R f4eb136dedf0796ff3d52b70df802286
 U drh
-Z 856d63ea9343214cf010214001f60c6f
+Z b8227083f3e49a4cb59e837a7075a68f
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMuGj9oxKgR168RlERAnT+AJ0clrambnDmJWe9bQ41R0Ug9lDU/gCff9WO
-Cmyzo0wAPkXuY5XqauECLuk=
-=Rzx0
+iD8DBQFNdQPvoxKgR168RlERAhu1AJsHEjp8iaJdPsdB7OI0p57Rezp/bgCePKIO
+88lrc0awe5uPsaCdvPInwzs=
+=1nqg
 -----END PGP SIGNATURE-----
