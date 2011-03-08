@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\stwo\scompiler\swarnings.\s\sNo\sfunctional\scode\schanges.
-D 2011-03-08T13:06:41.560
+C Unix\serrno\sinteger\scan\svary\sfrom\sone\ssystem\sto\sthe\snext.\s\sSo\sdo\snot\ndepend\son\sspecific\serrno\svalues\sin\stest\scases.
+D 2011-03-08T14:05:07.476
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -587,7 +587,7 @@ F test/notify3.test d60923e186e0900f4812a845fcdfd8eea096e33a
 F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test af02ed0a9cbc0d2a61b8f35171d4d117e588e4ec
-F test/oserror.test 8fc832600afe2b983f2347bfb3cbb88a80aeb347
+F test/oserror.test d1f085bdbac20456fccdf5877f52016453654fc3
 F test/pager1.test d8672fd0af5f4f9b99b06283d00f01547809bebe
 F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
@@ -914,14 +914,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 2d5800bd8cfc7d7f5578a71b1aeaa74b2ec4b372
-R 041c7b161bddb56919915095c6eecb0a
+P c829868aa2254c5e2268cdb803462cc6ec5cb71e
+R 8e95dcc047fadda9627799dfff537929
 U drh
-Z 4d3f158d515c892cb9d8cf0046e71654
+Z 37a2076ebac96d581357fbed13c5025e
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNdinkoxKgR168RlERAjW4AJ0VMtFmIHefKTsESvaC3Qf84rP9gwCdHHsc
-QH4FUHE8AWOo5yx+Cxq1TMw=
-=jciZ
+iD8DBQFNdjeWoxKgR168RlERAqe0AJ0VGxcf5Ph+FO32DM9O7OJzqJKoKgCgi6Pc
+n0W6zXncDy5KyrZP5XyTfdc=
+=lDvF
 -----END PGP SIGNATURE-----
