@@ -1357,6 +1357,7 @@ static int _posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
     if( eFileLock==SHARED_LOCK ){
 
 #if !defined(__APPLE__) || !SQLITE_ENABLE_LOCKING_STYLE
+      (void)handleNFSUnlock;
       assert( handleNFSUnlock==0 );
 #endif
 #if defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE

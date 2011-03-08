@@ -1145,6 +1145,6 @@ int sqlite3MulInt64(i64 *pA, i64 iB){
 */
 int sqlite3AbsInt32(int x){
   if( x>=0 ) return x;
-  if( x==0x80000000 ) return 0x7fffffff;
+  if( x==(int)0x80000000 ) return 0x7fffffff;
   return -x;
 }
