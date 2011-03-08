@@ -3194,6 +3194,9 @@ void sqlite3VdbePreUpdateHook(
 
   preupdate.pCsr = pCsr;
   preupdate.op = op;
+  preupdate.keyinfo.db = db;
+  preupdate.keyinfo.enc = ENC(db);
+  preupdate.keyinfo.nField = pCsr->nField;
   db->pPreUpdate = &preupdate;
   db->xPreUpdateCallback(db->pPreUpdateArg, db, op, zDb, zTbl, iKey1, iKey2);
   db->pPreUpdate = 0;

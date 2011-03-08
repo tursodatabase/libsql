@@ -1,0 +1,118 @@
+# 2011 March 07
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set ::testprefix session1
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(x, y);
+  INSERT INTO t1 VALUES('abc', 'def');
+}
+
+do_test 1.1 { sqlite3session S db main } {S}
+do_test 1.2 { S delete } {}
+do_test 1.3 { sqlite3session S db main } {S}
+do_test 1.4 { S attach t1 } {}
+do_test 1.5 { S delete } {}
+do_test 1.6 { sqlite3session S db main } {S}
+do_test 1.7 { S attach t1 ; S attach t2 ; S attach t3 } {}
+do_test 1.8 { S attach t1 ; S attach t2 ; S attach t3 } {}
+do_test 1.9 { S delete } {}
+do_test 1.10 {
+  sqlite3session S db main
+  S attach t1
+  execsql { INSERT INTO t1 VALUES('ghi', 'jkl') }
+} {}
+do_test 1.11 { S delete } {}
+do_test 1.12 {
+  sqlite3session S db main
+  S attach t1
+  execsql { INSERT INTO t1 VALUES('mno', 'pqr') }
+  execsql { UPDATE t1 SET x = 111 WHERE rowid = 1 }
+  execsql { DELETE FROM t1 WHERE rowid = 2 }
+} {}
+do_test 1.13 {
+  S changeset
+  S delete
+} {}
+
+proc do_changeset_test {tn session res} {
+  set r [list]
+  foreach x $res {lappend r $x}
+  uplevel do_test $tn [list [subst -nocommands {
+    set x [list]
+    sqlite3session_foreach c [$session changeset] { lappend x [set c] }
+    set x
+  }]] [list $r]
+}
+
+do_test 2.1.1 {
+  execsql { DELETE FROM t1 }
+  sqlite3session S db main
+  S attach t1
+  execsql { INSERT INTO t1 VALUES(1, 'Sukhothai') }
+  execsql { INSERT INTO t1 VALUES(2, 'Ayutthaya') }
+  execsql { INSERT INTO t1 VALUES(3, 'Thonburi') }
+} {}
+do_changeset_test 2.1.2 S {
+  {INSERT t1 {} {i 1 t Sukhothai}}
+  {INSERT t1 {} {i 2 t Ayutthaya}}
+  {INSERT t1 {} {i 3 t Thonburi}}
+}
+do_test 2.1.3 { S delete } {}
+
+do_test 2.2.1 {
+  sqlite3session S db main
+  S attach t1
+  execsql { DELETE FROM t1 WHERE 1 }
+} {}
+do_changeset_test 2.2.2 S {
+  {DELETE t1 {i 1 t Sukhothai} {}}
+  {DELETE t1 {i 2 t Ayutthaya} {}}
+  {DELETE t1 {i 3 t Thonburi} {}}
+}
+do_test 2.2.3 { S delete } {}
+
+do_test 2.3.1 {
+  sqlite3session S db main
+  execsql { INSERT INTO t1 VALUES(1, 'Sukhothai') }
+  execsql { INSERT INTO t1 VALUES(2, 'Ayutthaya') }
+  execsql { INSERT INTO t1 VALUES(3, 'Thonburi') }
+  S attach t1
+  execsql { 
+    UPDATE t1 SET x = 10 WHERE x = 1;
+    UPDATE t1 SET y = 'Surin' WHERE x = 2;
+    UPDATE t1 SET x = 20, y = 'Thapae' WHERE x = 3;
+  }
+} {}
+
+do_changeset_test 2.3.2 S {
+  {UPDATE t1 {i 1 {} {}} {i 10 {} {}}} 
+  {UPDATE t1 {{} {} t Ayutthaya} {{} {} t Surin}} 
+  {UPDATE t1 {i 3 t Thonburi} {i 20 t Thapae}}
+}
+do_test 2.3.3 { S delete } {}
+
+do_test 2.4.1 {
+  sqlite3session S db main
+  S attach t1
+  execsql { INSERT INTO t1 VALUES(100, 'Bangkok') }
+  execsql { DELETE FROM t1 WHERE x = 100 }
+} {}
+
+breakpoint
+do_changeset_test 2.4.2 S {}
+do_test 2.4.3 { S delete } {}
+
+finish_test

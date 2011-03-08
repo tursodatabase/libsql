@@ -1351,14 +1351,8 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
   }
 
   if( p->pUnpacked==0 ){
-    KeyInfo keyinfo;
     u32 nRecord;
     u8 *aRecord;
-
-    memset(&keyinfo, 0, sizeof(KeyInfo));
-    keyinfo.db = db;
-    keyinfo.enc = ENC(db);
-    keyinfo.nField = p->pCsr->nField;
 
     rc = sqlite3BtreeDataSize(p->pCsr->pCursor, &nRecord);
     if( rc!=SQLITE_OK ) goto preupdate_old_out;
@@ -1370,7 +1364,7 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
       goto preupdate_old_out;
     }
 
-    p->pUnpacked = sqlite3VdbeRecordUnpack(&keyinfo, nRecord, aRecord, 0, 0);
+    p->pUnpacked = sqlite3VdbeRecordUnpack(&p->keyinfo, nRecord, aRecord, 0, 0);
     p->aRecord = aRecord;
   }
 

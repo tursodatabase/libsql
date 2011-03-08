@@ -339,6 +339,7 @@ struct PreUpdate {
   VdbeCursor *pCsr;               /* Cursor to read old values from */
   int op;                         /* One of SQLITE_INSERT, UPDATE, DELETE */
   u8 *aRecord;                    /* old.* database record */
+  KeyInfo keyinfo;
   UnpackedRecord *pUnpacked;      /* Unpacked version of aRecord[] */
 };
 

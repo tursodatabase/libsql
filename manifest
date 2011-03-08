@@ -1,5 +1,5 @@
-C Add\sthe\sexperimental\ssqlite3_transaction_hook()\sAPI.
-D 2011-03-03T20:06:00
+C Add\sstart\sof\ssessions\sfeature.
+D 2011-03-08T19:22:51
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -98,9 +98,12 @@ F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 1af0899c63a688e272d69d8e746f24e76f10a3f0
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
+F ext/session/sqlite3session.c 88d87c48fde70fb03ae61b462527b82af561dda1
+F ext/session/sqlite3session.h b844cae3db05d2db363fd01050efe568b4e3ebec
+F ext/session/test_session.c 72b1af5ea65c91a14faa6524e284e101b6cee6ec
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk 54190fab7cdba523e311c274c95ea480f32abfb5
+F main.mk ae0868e05c76eaa8a0ae3d6927a949b1c8e810d7
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -183,7 +186,7 @@ F src/sqliteInt.h 85e635183013e806069320ffa6080a77183f9225
 F src/sqliteLimit.h a17dcd3fb775d63b64a43a55c54cb282f9726f44
 F src/status.c 4997380fbb915426fef9e500b4872e79c99267fc
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c 64aeb4109ee2b38fd820b8e8de45b02377fcddc0
+F src/tclsqlite.c b124fb73120d1bc4b78ae8153bce71dbd2d93db5
 F src/test1.c 9020310c7617234b33fd1c3064f89524db25f290
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 056093cfef69ff4227a6bdb9108564dc7f45e4bc
@@ -231,9 +234,9 @@ F src/util.c ab1c92426494f499f42b9e307537b03e923d75c1
 F src/vacuum.c 924bd1bcee2dfb05376f79845bd3b4cec7b54b2f
 F src/vdbe.c 2c523bc17f915329f3db3745fc76ed9bfc5c26bb
 F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
-F src/vdbeInt.h 41b8e337332f279228196039ab86acd353ad0c6c
-F src/vdbeapi.c ea741433042d95c392b29397ac6c2b08f6106317
-F src/vdbeaux.c cc817d8597307a2be361c24f3b436a7e41fa67dc
+F src/vdbeInt.h 9dd04435bd5a68e30cd07e7a91c17b062bf1c23d
+F src/vdbeapi.c 750dcdea999762adbac6eddde5bd790803911edf
+F src/vdbeaux.c 9ba08ed7de89e923ba6b95a5a75a460e6507a81f
 F src/vdbeblob.c 18955f0ee6b133cd08e1592010cb9a6b11e9984c
 F src/vdbemem.c 0fa2ed786cd207d5b988afef3562a8e663a75b50
 F src/vdbetrace.c 3ba13bc32bdf16d2bdea523245fd16736bed67b5
@@ -636,6 +639,7 @@ F test/selectA.test 06d1032fa9009314c95394f2ca2e60d9f7ae8532
 F test/selectB.test f305cc6660804cb239aab4e2f26b0e288b59958b
 F test/selectC.test f9bf1bc4581b5b8158caa6e4e4f682acb379fb25
 F test/server1.test f5b790d4c0498179151ca8a7715a65a7802c859c
+F test/session1.test eb069ae24c807089cdb42c06f156e6a4bc467e08
 F test/shared.test b9114eaea7e748a3a4c8ff7b9ca806c8f95cef3e
 F test/shared2.test 7f6ad2d857d0f4e5d6a0b9a897b5e56a6b6ea18c
 F test/shared3.test d69bdd5f156580876c5345652d21dc2092e85962
@@ -909,7 +913,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6145d7b89f83500318713779c60f79a7ab2098ba
-R 2617e052d0e8716cc0b428f99022eddb
+P 093d8cd8e2f3a6af5d40cf810e396f4919eb5cef
+R d2860e2d38705a211d32d9cfd0828f6b
 U dan
-Z 24e44e929785c6b1d1f35eb2447fe0e7
+Z 881eaac7f67a95dfac0116385a169f79
