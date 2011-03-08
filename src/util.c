@@ -1138,3 +1138,13 @@ int sqlite3MulInt64(i64 *pA, i64 iB){
   *pA = r;
   return 0;
 }
+
+/*
+** Compute the absolute value of a 32-bit signed integer, of possible.  Or 
+** if the integer has a value of -2147483648, return +2147483647
+*/
+int sqlite3AbsInt32(int x){
+  if( x>=0 ) return x;
+  if( x==0x80000000 ) return 0x7fffffff;
+  return -x;
+}
