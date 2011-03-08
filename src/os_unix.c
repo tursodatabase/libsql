@@ -271,16 +271,6 @@ struct unixFile {
 #endif
 
 /*
-** The DJGPP compiler environment looks mostly like Unix, but it
-** lacks the fcntl() system call.  So redefine fcntl() to be something
-** that always succeeds.  This means that locking does not occur under
-** DJGPP.  But it is DOS - what did you expect?
-*/
-#ifdef __DJGPP__
-# define fcntl(A,B,C) 0
-#endif
-
-/*
 ** The threadid macro resolves to the thread-id or to 0.  Used for
 ** testing and debugging only.
 */
@@ -290,6 +280,184 @@ struct unixFile {
 #define threadid 0
 #endif
 
+/*
+** Many system calls are accessed through pointer-to-functions so that
+** they may be overridden at runtime to facilitate fault injection during
+** testing and sandboxing.  The following array holds the names and pointers
+** to all overrideable system calls.
+*/
+static struct unix_syscall {
+  const char *zName;      /* Name of the sytem call */
+  void *pCurrent;         /* Current value of the system call */
+  void *pDefault;         /* Default value */
+} aSyscall[] = {
+  { "open",         (void*)open,       0  },
+#define osOpen      ((int(*)(const char*,int,int))aSyscall[0].pCurrent)
+
+  { "close",        (void*)close,      0  },
+#define osClose     ((int(*)(int))aSyscall[1].pCurrent)
+
+  { "access",       (void*)access,     0  },
+#define osAccess    ((int(*)(const char*,int))aSyscall[2].pCurrent)
+
+  { "getcwd",       (void*)getcwd,     0  },
+#define osGetcwd    ((char*(*)(char*,size_t))aSyscall[3].pCurrent)
+
+  { "stat",         (void*)stat,       0  },
+#define osStat      ((int(*)(const char*,struct stat*))aSyscall[4].pCurrent)
+
+/*
+** The DJGPP compiler environment looks mostly like Unix, but it
+** lacks the fcntl() system call.  So redefine fcntl() to be something
+** that always succeeds.  This means that locking does not occur under
+** DJGPP.  But it is DOS - what did you expect?
+*/
+#ifdef __DJGPP__
+  { "fstat",        0,                 0  },
+#define osFstat(a,b,c)    0
+#else     
+  { "fstat",        (void*)fstat,      0  },
+#define osFstat     ((int(*)(int,struct stat*))aSyscall[5].pCurrent)
+#endif
+
+  { "ftruncate",    (void*)ftruncate,  0  },
+#define osFtruncate ((int(*)(int,off_t))aSyscall[6].pCurrent)
+
+  { "fcntl",        (void*)fcntl,      0  },
+#define osFcntl     ((int(*)(int,int,...))aSyscall[7].pCurrent)
+
+  { "read",         (void*)read,       0  },
+#define osRead      ((ssize_t(*)(int,void*,size_t))aSyscall[8].pCurrent)
+
+#if defined(USE_PREAD) || defined(SQLITE_ENABLE_LOCKING_STYLE)
+  { "pread",        (void*)pread,      0  },
+#else
+  { "pread",        (void*)0,          0  },
+#endif
+#define osPread     ((ssize_t(*)(int,void*,size_t,off_t))aSyscall[9].pCurrent)
+
+#if defined(USE_PREAD64)
+  { "pread64",      (void*)pread64,    0  },
+#else
+  { "pread64",      (void*)0,          0  },
+#endif
+#define osPread64   ((ssize_t(*)(int,void*,size_t,off_t))aSyscall[10].pCurrent)
+
+  { "write",        (void*)write,      0  },
+#define osWrite     ((ssize_t(*)(int,const void*,size_t))aSyscall[11].pCurrent)
+
+#if defined(USE_PREAD) || defined(SQLITE_ENABLE_LOCKING_STYLE)
+  { "pwrite",       (void*)pwrite,     0  },
+#else
+  { "pwrite",       (void*)0,          0  },
+#endif
+#define osPwrite    ((ssize_t(*)(int,const void*,size_t,off_t))\
+                    aSyscall[12].pCurrent)
+
+#if defined(USE_PREAD64)
+  { "pwrite64",     (void*)pwrite64,   0  },
+#else
+  { "pwrite64",     (void*)0,          0  },
+#endif
+#define osPwrite64  ((ssize_t(*)(int,const void*,size_t,off_t))\
+                    aSyscall[13].pCurrent)
+
+  { "fchmod",       (void*)fchmod,     0  },
+#define osFchmod    ((int(*)(int,mode_t))aSyscall[14].pCurrent)
+
+#if defined(HAVE_POSIX_FALLOCATE) && HAVE_POSIX_FALLOCATE
+  { "fallocate",    (void*)posix_fallocate,  0 },
+#else
+  { "fallocate",    (void*)0,                0 },
+#endif
+#define osFallocate ((int(*)(int,off_t,off_t)aSyscall[15].pCurrent)
+
+}; /* End of the overrideable system calls */
+
+/*
+** This is the xSetSystemCall() method of sqlite3_vfs for all of the
+** "unix" VFSes.  Return SQLITE_OK opon successfully updating the
+** system call pointer, or SQLITE_NOTFOUND if there is no configurable
+** system call named zName.
+*/
+static int unixSetSystemCall(
+  sqlite3_vfs *pNotUsed,     /* The VFS pointer.  Not used */
+  const char *zName,         /* Name of system call to override */
+  void *pNewFunc             /* Pointer to new system call value */
+){
+  int i;
+  int rc = SQLITE_NOTFOUND;
+  if( zName==0 ){
+    /* If no zName is given, restore all system calls to their default
+    ** settings and return NULL
+    */
+    for(i=0; i<sizeof(aSyscall)/sizeof(aSyscall[0]); i++){
+      if( aSyscall[i].pDefault ){
+        aSyscall[i].pCurrent = aSyscall[i].pDefault;
+        rc = SQLITE_OK;
+      }
+    }
+  }else{
+    /* If zName is specified, operate on only the one system call
+    ** specified.
+    */
+    for(i=0; i<sizeof(aSyscall)/sizeof(aSyscall[0]); i++){
+      if( strcmp(zName, aSyscall[i].zName)==0 ){
+        if( aSyscall[i].pDefault==0 ){
+          aSyscall[i].pDefault = aSyscall[i].pCurrent;
+        }
+        rc = SQLITE_OK;
+        if( pNewFunc==0 ) pNewFunc = aSyscall[i].pDefault;
+        aSyscall[i].pCurrent = pNewFunc;
+        break;
+      }
+    }
+  }
+  return rc;
+}
+
+/*
+** Return the value of a system call.  Return NULL if zName is not a
+** recognized system call name.  NULL is also returned if the system call
+** is currently undefined.
+*/
+static void *unixGetSystemCall(sqlite3_vfs *pNotUsed, const char *zName){
+  int i;
+  for(i=0; i<sizeof(aSyscall)/sizeof(aSyscall[0]); i++){
+    if( strcmp(zName, aSyscall[i].zName)==0 ) return aSyscall[i].pCurrent;
+  }
+  return 0;
+}
+
+/*
+** Return the name of the first system call after zName.  If zName==NULL
+** then return the name of the first system call.  Return NULL if zName
+** is the last system call or if zName is not the name of a valid
+** system call.
+*/
+static const char *unixNextSystemCall(sqlite3_vfs *p, const char *zName){
+  int i;
+  if( zName==0 ){
+    i = -1;
+  }else{
+    for(i=0; i<sizeof(aSyscall)/sizeof(aSyscall[0])-1; i++){
+      if( strcmp(zName, aSyscall[0].zName)==0 ) break;
+    }
+  }
+  for(i++; i<sizeof(aSyscall)/sizeof(aSyscall[0]); i++){
+    if( aSyscall[0].pCurrent!=0 ) return aSyscall[0].zName;
+  }
+  return 0;
+}
+
+/*
+** Retry open() calls that fail due to EINTR
+*/
+static int robust_open(const char *z, int f, int m){
+  int rc;
+  do{ rc = osOpen(z,f,m); }while( rc<0 && errno==EINTR );
+  return rc;
+}
 
 /*
 ** Helper functions to obtain and relinquish the global mutex. The
@@ -354,7 +522,7 @@ static int lockTrace(int fd, int op, struct flock *p){
   }else if( op==F_SETLK ){
     zOpName = "SETLK";
   }else{
-    s = fcntl(fd, op, p);
+    s = osFcntl(fd, op, p);
     sqlite3DebugPrintf("fcntl unknown %d %d %d\n", fd, op, s);
     return s;
   }
@@ -368,7 +536,7 @@ static int lockTrace(int fd, int op, struct flock *p){
     assert( 0 );
   }
   assert( p->l_whence==SEEK_SET );
-  s = fcntl(fd, op, p);
+  s = osFcntl(fd, op, p);
   savedErrno = errno;
   sqlite3DebugPrintf("fcntl %d %d %s %s %d %d %d %d\n",
      threadid, fd, zOpName, zType, (int)p->l_start, (int)p->l_len,
@@ -376,7 +544,7 @@ static int lockTrace(int fd, int op, struct flock *p){
   if( s==(-1) && op==F_SETLK && (p->l_type==F_RDLCK || p->l_type==F_WRLCK) ){
     struct flock l2;
     l2 = *p;
-    fcntl(fd, F_GETLK, &l2);
+    osFcntl(fd, F_GETLK, &l2);
     if( l2.l_type==F_RDLCK ){
       zType = "RDLCK";
     }else if( l2.l_type==F_WRLCK ){
@@ -392,23 +560,18 @@ static int lockTrace(int fd, int op, struct flock *p){
   errno = savedErrno;
   return s;
 }
-#define fcntl lockTrace
+#undef osFcntl
+#define osFcntl lockTrace
 #endif /* SQLITE_LOCK_TRACE */
-
 
 /*
 ** Retry ftruncate() calls that fail due to EINTR
 */
-#ifdef EINTR
 static int robust_ftruncate(int h, sqlite3_int64 sz){
   int rc;
-  do{ rc = ftruncate(h,sz); }while( rc<0 && errno==EINTR );
+  do{ rc = osFtruncate(h,sz); }while( rc<0 && errno==EINTR );
   return rc;
 }
-#else
-# define robust_ftruncate(a,b) ftruncate(a,b)
-#endif 
-
 
 /*
 ** This routine translates a standard POSIX errno code into something
@@ -835,7 +998,7 @@ static int unixLogErrorAtLine(
 ** and move on.
 */
 static void robust_close(unixFile *pFile, int h, int lineno){
-  if( close(h) ){
+  if( osClose(h) ){
     unixLogErrorAtLine(SQLITE_IOERR_CLOSE, "close",
                        pFile ? pFile->zPath : 0, lineno);
   }
@@ -912,7 +1075,7 @@ static int findInodeInfo(
   ** create a unique name for the file.
   */
   fd = pFile->h;
-  rc = fstat(fd, &statbuf);
+  rc = osFstat(fd, &statbuf);
   if( rc!=0 ){
     pFile->lastErrno = errno;
 #ifdef EOVERFLOW
@@ -933,12 +1096,12 @@ static int findInodeInfo(
   ** the first page of the database, no damage is done.
   */
   if( statbuf.st_size==0 && (pFile->fsFlags & SQLITE_FSFLAGS_IS_MSDOS)!=0 ){
-    do{ rc = write(fd, "S", 1); }while( rc<0 && errno==EINTR );
+    do{ rc = osWrite(fd, "S", 1); }while( rc<0 && errno==EINTR );
     if( rc!=1 ){
       pFile->lastErrno = errno;
       return SQLITE_IOERR;
     }
-    rc = fstat(fd, &statbuf);
+    rc = osFstat(fd, &statbuf);
     if( rc!=0 ){
       pFile->lastErrno = errno;
       return SQLITE_IOERR;
@@ -1007,7 +1170,7 @@ static int unixCheckReservedLock(sqlite3_file *id, int *pResOut){
     lock.l_start = RESERVED_BYTE;
     lock.l_len = 1;
     lock.l_type = F_WRLCK;
-    if (-1 == fcntl(pFile->h, F_GETLK, &lock)) {
+    if (-1 == osFcntl(pFile->h, F_GETLK, &lock)) {
       int tErrno = errno;
       rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_CHECKRESERVEDLOCK);
       pFile->lastErrno = tErrno;
@@ -1160,7 +1323,7 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   ){
     lock.l_type = (eFileLock==SHARED_LOCK?F_RDLCK:F_WRLCK);
     lock.l_start = PENDING_BYTE;
-    s = fcntl(pFile->h, F_SETLK, &lock);
+    s = osFcntl(pFile->h, F_SETLK, &lock);
     if( s==(-1) ){
       tErrno = errno;
       rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_LOCK);
@@ -1182,14 +1345,14 @@ static int unixLock(sqlite3_file *id, int eFileLock){
     /* Now get the read-lock */
     lock.l_start = SHARED_FIRST;
     lock.l_len = SHARED_SIZE;
-    if( (s = fcntl(pFile->h, F_SETLK, &lock))==(-1) ){
+    if( (s = osFcntl(pFile->h, F_SETLK, &lock))==(-1) ){
       tErrno = errno;
     }
     /* Drop the temporary PENDING lock */
     lock.l_start = PENDING_BYTE;
     lock.l_len = 1L;
     lock.l_type = F_UNLCK;
-    if( fcntl(pFile->h, F_SETLK, &lock)!=0 ){
+    if( osFcntl(pFile->h, F_SETLK, &lock)!=0 ){
       if( s != -1 ){
         /* This could happen with a network mount */
         tErrno = errno; 
@@ -1232,7 +1395,7 @@ static int unixLock(sqlite3_file *id, int eFileLock){
       default:
         assert(0);
     }
-    s = fcntl(pFile->h, F_SETLK, &lock);
+    s = osFcntl(pFile->h, F_SETLK, &lock);
     if( s==(-1) ){
       tErrno = errno;
       rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_LOCK);
@@ -1368,7 +1531,7 @@ static int _posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
         lock.l_whence = SEEK_SET;
         lock.l_start = SHARED_FIRST;
         lock.l_len = divSize;
-        if( fcntl(h, F_SETLK, &lock)==(-1) ){
+        if( osFcntl(h, F_SETLK, &lock)==(-1) ){
           tErrno = errno;
           rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK);
           if( IS_LOCK_ERROR(rc) ){
@@ -1380,7 +1543,7 @@ static int _posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
         lock.l_whence = SEEK_SET;
         lock.l_start = SHARED_FIRST;
         lock.l_len = divSize;
-        if( fcntl(h, F_SETLK, &lock)==(-1) ){
+        if( osFcntl(h, F_SETLK, &lock)==(-1) ){
           tErrno = errno;
           rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_RDLOCK);
           if( IS_LOCK_ERROR(rc) ){
@@ -1392,7 +1555,7 @@ static int _posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
         lock.l_whence = SEEK_SET;
         lock.l_start = SHARED_FIRST+divSize;
         lock.l_len = SHARED_SIZE-divSize;
-        if( fcntl(h, F_SETLK, &lock)==(-1) ){
+        if( osFcntl(h, F_SETLK, &lock)==(-1) ){
           tErrno = errno;
           rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK);
           if( IS_LOCK_ERROR(rc) ){
@@ -1407,7 +1570,7 @@ static int _posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
         lock.l_whence = SEEK_SET;
         lock.l_start = SHARED_FIRST;
         lock.l_len = SHARED_SIZE;
-        if( fcntl(h, F_SETLK, &lock)==(-1) ){
+        if( osFcntl(h, F_SETLK, &lock)==(-1) ){
           tErrno = errno;
           rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_RDLOCK);
           if( IS_LOCK_ERROR(rc) ){
@@ -1421,7 +1584,7 @@ static int _posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
     lock.l_whence = SEEK_SET;
     lock.l_start = PENDING_BYTE;
     lock.l_len = 2L;  assert( PENDING_BYTE+1==RESERVED_BYTE );
-    if( fcntl(h, F_SETLK, &lock)!=(-1) ){
+    if( osFcntl(h, F_SETLK, &lock)!=(-1) ){
       pInode->eFileLock = SHARED_LOCK;
     }else{
       tErrno = errno;
@@ -1445,7 +1608,7 @@ static int _posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
       SimulateIOErrorBenign(1);
       SimulateIOError( h=(-1) )
       SimulateIOErrorBenign(0);
-      if( fcntl(h, F_SETLK, &lock)!=(-1) ){
+      if( osFcntl(h, F_SETLK, &lock)!=(-1) ){
         pInode->eFileLock = NO_LOCK;
       }else{
         tErrno = errno;
@@ -1647,7 +1810,7 @@ static int dotlockCheckReservedLock(sqlite3_file *id, int *pResOut) {
   }else{
     /* The lock is held if and only if the lockfile exists */
     const char *zLockFile = (const char*)pFile->lockingContext;
-    reserved = access(zLockFile, 0)==0;
+    reserved = osAccess(zLockFile, 0)==0;
   }
   OSTRACE(("TEST WR-LOCK %d %d %d (dotlock)\n", pFile->h, rc, reserved));
   *pResOut = reserved;
@@ -1701,7 +1864,7 @@ static int dotlockLock(sqlite3_file *id, int eFileLock) {
   }
   
   /* grab an exclusive lock */
-  fd = open(zLockFile,O_RDONLY|O_CREAT|O_EXCL,0600);
+  fd = robust_open(zLockFile,O_RDONLY|O_CREAT|O_EXCL,0600);
   if( fd<0 ){
     /* failed to open/create the file, someone else may have stolen the lock */
     int tErrno = errno;
@@ -2706,10 +2869,10 @@ static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
 #endif
   TIMER_START;
 #if defined(USE_PREAD)
-  do{ got = pread(id->h, pBuf, cnt, offset); }while( got<0 && errno==EINTR );
+  do{ got = osPread(id->h, pBuf, cnt, offset); }while( got<0 && errno==EINTR );
   SimulateIOError( got = -1 );
 #elif defined(USE_PREAD64)
-  do{ got = pread64(id->h, pBuf, cnt, offset); }while( got<0 && errno==EINTR );
+  do{ got = osPread64(id->h, pBuf, cnt, offset); }while( got<0 && errno==EINTR);
   SimulateIOError( got = -1 );
 #else
   newOffset = lseek(id->h, offset, SEEK_SET);
@@ -2722,7 +2885,7 @@ static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
     }
     return -1;
   }
-  do{ got = read(id->h, pBuf, cnt); }while( got<0 && errno==EINTR );
+  do{ got = osRead(id->h, pBuf, cnt); }while( got<0 && errno==EINTR );
 #endif
   TIMER_END;
   if( got<0 ){
@@ -2784,9 +2947,9 @@ static int seekAndWrite(unixFile *id, i64 offset, const void *pBuf, int cnt){
 #endif
   TIMER_START;
 #if defined(USE_PREAD)
-  do{ got = pwrite(id->h, pBuf, cnt, offset); }while( got<0 && errno==EINTR );
+  do{ got = osPwrite(id->h, pBuf, cnt, offset); }while( got<0 && errno==EINTR );
 #elif defined(USE_PREAD64)
-  do{ got = pwrite64(id->h, pBuf, cnt, offset); }while( got<0 && errno==EINTR );
+  do{ got = osPwrite64(id->h, pBuf, cnt, offset);}while( got<0 && errno==EINTR);
 #else
   newOffset = lseek(id->h, offset, SEEK_SET);
   if( newOffset!=offset ){
@@ -2797,7 +2960,7 @@ static int seekAndWrite(unixFile *id, i64 offset, const void *pBuf, int cnt){
     }
     return -1;
   }
-  do{ got = write(id->h, pBuf, cnt); }while( got<0 && errno==EINTR );
+  do{ got = osWrite(id->h, pBuf, cnt); }while( got<0 && errno==EINTR );
 #endif
   TIMER_END;
   if( got<0 ){
@@ -2965,7 +3128,7 @@ static int full_fsync(int fd, int fullSync, int dataOnly){
   rc = SQLITE_OK;
 #elif HAVE_FULLFSYNC
   if( fullSync ){
-    rc = fcntl(fd, F_FULLFSYNC, 0);
+    rc = osFcntl(fd, F_FULLFSYNC, 0);
   }else{
     rc = 1;
   }
@@ -3112,7 +3275,7 @@ static int unixFileSize(sqlite3_file *id, i64 *pSize){
   int rc;
   struct stat buf;
   assert( id );
-  rc = fstat(((unixFile*)id)->h, &buf);
+  rc = osFstat(((unixFile*)id)->h, &buf);
   SimulateIOError( rc=1 );
   if( rc!=0 ){
     ((unixFile*)id)->lastErrno = errno;
@@ -3153,14 +3316,14 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
     i64 nSize;                    /* Required file size */
     struct stat buf;              /* Used to hold return values of fstat() */
    
-    if( fstat(pFile->h, &buf) ) return SQLITE_IOERR_FSTAT;
+    if( osFstat(pFile->h, &buf) ) return SQLITE_IOERR_FSTAT;
 
     nSize = ((nByte+pFile->szChunk-1) / pFile->szChunk) * pFile->szChunk;
     if( nSize>(i64)buf.st_size ){
 #if defined(HAVE_POSIX_FALLOCATE) && HAVE_POSIX_FALLOCATE
       int rc;
       do{
-        rc = posix_fallocate(pFile-.h, buf.st_size, nSize-buf.st_size;
+        rc = osFallocate(pFile->.h, buf.st_size, nSize-buf.st_size;
       }while( rc<0 && errno=EINTR );
       if( rc ) return SQLITE_IOERR_WRITE;
 #else
@@ -3368,7 +3531,7 @@ static int unixShmSystemLock(
   f.l_start = ofst;
   f.l_len = n;
 
-  rc = fcntl(pShmNode->h, F_SETLK, &f);
+  rc = osFcntl(pShmNode->h, F_SETLK, &f);
   rc = (rc!=(-1)) ? SQLITE_OK : SQLITE_BUSY;
 
   /* Update the global lock state and do debug tracing */
@@ -3493,7 +3656,7 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
     ** with the same permissions. The actual permissions the file is created
     ** with are subject to the current umask setting.
     */
-    if( fstat(pDbFd->h, &sStat) ){
+    if( osFstat(pDbFd->h, &sStat) ){
       rc = SQLITE_IOERR_FSTAT;
       goto shm_open_err;
     }
@@ -3526,7 +3689,8 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
       goto shm_open_err;
     }
 
-    pShmNode->h = open(zShmFilename, O_RDWR|O_CREAT, (sStat.st_mode & 0777));
+    pShmNode->h = robust_open(zShmFilename, O_RDWR|O_CREAT,
+                             (sStat.st_mode & 0777));
     if( pShmNode->h<0 ){
       rc = unixLogError(SQLITE_CANTOPEN_BKPT, "open", zShmFilename);
       goto shm_open_err;
@@ -3630,7 +3794,7 @@ static int unixShmMap(
     ** Check to see if it has been allocated (i.e. if the wal-index file is
     ** large enough to contain the requested region).
     */
-    if( fstat(pShmNode->h, &sStat) ){
+    if( osFstat(pShmNode->h, &sStat) ){
       rc = SQLITE_IOERR_SHMSIZE;
       goto shmpage_out;
     }
@@ -4089,7 +4253,7 @@ static const sqlite3_io_methods *autolockIoFinderImpl(
   lockInfo.l_start = 0;
   lockInfo.l_whence = SEEK_SET;
   lockInfo.l_type = F_RDLCK;
-  if( fcntl(pNew->h, F_GETLK, &lockInfo)!=-1 ) {
+  if( osFcntl(pNew->h, F_GETLK, &lockInfo)!=-1 ) {
     if( strcmp(fsInfo.f_fstypename, "nfs")==0 ){
       return &nfsIoMethods;
     } else {
@@ -4131,7 +4295,7 @@ static const sqlite3_io_methods *autolockIoFinderImpl(
   lockInfo.l_start = 0;
   lockInfo.l_whence = SEEK_SET;
   lockInfo.l_type = F_RDLCK;
-  if( fcntl(pNew->h, F_GETLK, &lockInfo)!=-1 ) {
+  if( osFcntl(pNew->h, F_GETLK, &lockInfo)!=-1 ) {
     return &posixIoMethods;
   }else{
     return &semIoMethods;
@@ -4354,10 +4518,10 @@ static int openDirectory(const char *zFilename, int *pFd){
   for(ii=(int)strlen(zDirname); ii>1 && zDirname[ii]!='/'; ii--);
   if( ii>0 ){
     zDirname[ii] = '\0';
-    fd = open(zDirname, O_RDONLY|O_BINARY, 0);
+    fd = robust_open(zDirname, O_RDONLY|O_BINARY, 0);
     if( fd>=0 ){
 #ifdef FD_CLOEXEC
-      fcntl(fd, F_SETFD, fcntl(fd, F_GETFD, 0) | FD_CLOEXEC);
+      osFcntl(fd, F_SETFD, osFcntl(fd, F_GETFD, 0) | FD_CLOEXEC);
 #endif
       OSTRACE(("OPENDIR %-3d %s\n", fd, zDirname));
     }
@@ -4387,9 +4551,9 @@ static const char *unixTempFileDir(void){
   if( !azDirs[1] ) azDirs[1] = getenv("TMPDIR");
   for(i=0; i<sizeof(azDirs)/sizeof(azDirs[0]); zDir=azDirs[i++]){
     if( zDir==0 ) continue;
-    if( stat(zDir, &buf) ) continue;
+    if( osStat(zDir, &buf) ) continue;
     if( !S_ISDIR(buf.st_mode) ) continue;
-    if( access(zDir, 07) ) continue;
+    if( osAccess(zDir, 07) ) continue;
     break;
   }
   return zDir;
@@ -4432,7 +4596,7 @@ static int unixGetTempname(int nBuf, char *zBuf){
       zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
     }
     zBuf[j] = 0;
-  }while( access(zBuf,0)==0 );
+  }while( osAccess(zBuf,0)==0 );
   return SQLITE_OK;
 }
 
@@ -4693,7 +4857,7 @@ static int unixOpen(
       assert( eType==SQLITE_OPEN_WAL || eType==SQLITE_OPEN_MAIN_JOURNAL );
       return rc;
     }
-    fd = open(zName, openFlags, openMode);
+    fd = robust_open(zName, openFlags, openMode);
     OSTRACE(("OPENX   %-3d %s 0%o\n", fd, zName, openFlags));
     if( fd<0 && errno!=EISDIR && isReadWrite && !isExclusive ){
       /* Failed to open the file for read/write access. Try read-only. */
@@ -4701,7 +4865,7 @@ static int unixOpen(
       openFlags &= ~(O_RDWR|O_CREAT);
       flags |= SQLITE_OPEN_READONLY;
       openFlags |= O_RDONLY;
-      fd = open(zName, openFlags, openMode);
+      fd = robust_open(zName, openFlags, openMode);
     }
     if( fd<0 ){
       rc = unixLogError(SQLITE_CANTOPEN_BKPT, "open", zName);
@@ -4745,7 +4909,7 @@ static int unixOpen(
   }
 
 #ifdef FD_CLOEXEC
-  fcntl(fd, F_SETFD, fcntl(fd, F_GETFD, 0) | FD_CLOEXEC);
+  osFcntl(fd, F_SETFD, osFcntl(fd, F_GETFD, 0) | FD_CLOEXEC);
 #endif
 
   noLock = eType!=SQLITE_OPEN_MAIN_DB;
@@ -4891,7 +5055,7 @@ static int unixAccess(
     default:
       assert(!"Invalid flags argument");
   }
-  *pResOut = (access(zPath, amode)==0);
+  *pResOut = (osAccess(zPath, amode)==0);
   if( flags==SQLITE_ACCESS_EXISTS && *pResOut ){
     struct stat buf;
     if( 0==stat(zPath, &buf) && buf.st_size==0 ){
@@ -4933,7 +5097,7 @@ static int unixFullPathname(
     sqlite3_snprintf(nOut, zOut, "%s", zPath);
   }else{
     int nCwd;
-    if( getcwd(zOut, nOut-1)==0 ){
+    if( osGetcwd(zOut, nOut-1)==0 ){
       return unixLogError(SQLITE_CANTOPEN_BKPT, "getcwd", zPath);
     }
     nCwd = (int)strlen(zOut);
@@ -5028,7 +5192,7 @@ static int unixRandomness(sqlite3_vfs *NotUsed, int nBuf, char *zBuf){
 #if !defined(SQLITE_TEST)
   {
     int pid, fd;
-    fd = open("/dev/urandom", O_RDONLY);
+    fd = robust_open("/dev/urandom", O_RDONLY, 0);
     if( fd<0 ){
       time_t t;
       time(&t);
@@ -5038,7 +5202,7 @@ static int unixRandomness(sqlite3_vfs *NotUsed, int nBuf, char *zBuf){
       assert( sizeof(t)+sizeof(pid)<=(size_t)nBuf );
       nBuf = sizeof(t) + sizeof(pid);
     }else{
-      do{ nBuf = read(fd, zBuf, nBuf); }while( nBuf<0 && errno==EINTR );
+      do{ nBuf = osRead(fd, zBuf, nBuf); }while( nBuf<0 && errno==EINTR );
       robust_close(0, fd, __LINE__);
     }
   }
@@ -5437,17 +5601,17 @@ static int proxyCreateUnixFile(
     }
   }
   if( fd<0 ){
-    fd = open(path, openFlags, SQLITE_DEFAULT_FILE_PERMISSIONS);
+    fd = robust_open(path, openFlags, SQLITE_DEFAULT_FILE_PERMISSIONS);
     terrno = errno;
     if( fd<0 && errno==ENOENT && islockfile ){
       if( proxyCreateLockPath(path) == SQLITE_OK ){
-        fd = open(path, openFlags, SQLITE_DEFAULT_FILE_PERMISSIONS);
+        fd = robust_open(path, openFlags, SQLITE_DEFAULT_FILE_PERMISSIONS);
       }
     }
   }
   if( fd<0 ){
     openFlags = O_RDONLY;
-    fd = open(path, openFlags, SQLITE_DEFAULT_FILE_PERMISSIONS);
+    fd = robust_open(path, openFlags, SQLITE_DEFAULT_FILE_PERMISSIONS);
     terrno = errno;
   }
   if( fd<0 ){
@@ -5561,18 +5725,19 @@ static int proxyBreakConchLock(unixFile *pFile, uuid_t myHostID){
     goto end_breaklock;
   }
   /* read the conch content */
-  readLen = pread(conchFile->h, buf, PROXY_MAXCONCHLEN, 0);
+  readLen = osPread(conchFile->h, buf, PROXY_MAXCONCHLEN, 0);
   if( readLen<PROXY_PATHINDEX ){
     sqlite3_snprintf(sizeof(errmsg),errmsg,"read error (len %d)",(int)readLen);
     goto end_breaklock;
   }
   /* write it out to the temporary break file */
-  fd = open(tPath, (O_RDWR|O_CREAT|O_EXCL), SQLITE_DEFAULT_FILE_PERMISSIONS);
+  fd = robust_open(tPath, (O_RDWR|O_CREAT|O_EXCL),
+                   SQLITE_DEFAULT_FILE_PERMISSIONS);
   if( fd<0 ){
     sqlite3_snprintf(sizeof(errmsg), errmsg, "create failed (%d)", errno);
     goto end_breaklock;
   }
-  if( pwrite(fd, buf, readLen, 0) != (ssize_t)readLen ){
+  if( osPwrite(fd, buf, readLen, 0) != (ssize_t)readLen ){
     sqlite3_snprintf(sizeof(errmsg), errmsg, "write failed (%d)", errno);
     goto end_breaklock;
   }
@@ -5618,7 +5783,7 @@ static int proxyConchLock(unixFile *pFile, uuid_t myHostID, int lockType){
        * 3rd try: break the lock unless the mod time has changed.
        */
       struct stat buf;
-      if( fstat(conchFile->h, &buf) ){
+      if( osFstat(conchFile->h, &buf) ){
         pFile->lastErrno = errno;
         return SQLITE_IOERR_LOCK;
       }
@@ -5637,7 +5802,7 @@ static int proxyConchLock(unixFile *pFile, uuid_t myHostID, int lockType){
       
       if( nTries==2 ){  
         char tBuf[PROXY_MAXCONCHLEN];
-        int len = pread(conchFile->h, tBuf, PROXY_MAXCONCHLEN, 0);
+        int len = osPread(conchFile->h, tBuf, PROXY_MAXCONCHLEN, 0);
         if( len<0 ){
           pFile->lastErrno = errno;
           return SQLITE_IOERR_LOCK;
@@ -5807,16 +5972,16 @@ static int proxyTakeConch(unixFile *pFile){
          */
         if( rc==SQLITE_OK && createConch ){
           struct stat buf;
-          int err = fstat(pFile->h, &buf);
+          int err = osFstat(pFile->h, &buf);
           if( err==0 ){
             mode_t cmode = buf.st_mode&(S_IRUSR|S_IWUSR | S_IRGRP|S_IWGRP |
                                         S_IROTH|S_IWOTH);
             /* try to match the database file R/W permissions, ignore failure */
 #ifndef SQLITE_PROXY_DEBUG
-            fchmod(conchFile->h, cmode);
+            osFchmod(conchFile->h, cmode);
 #else
             do{
-              rc = fchmod(conchFile->h, cmode);
+              rc = osFchmod(conchFile->h, cmode);
             }while( rc==(-1) && errno==EINTR );
             if( rc!=0 ){
               int code = errno;
@@ -5842,7 +6007,7 @@ static int proxyTakeConch(unixFile *pFile){
           robust_close(pFile, pFile->h, __LINE__);
         }
         pFile->h = -1;
-        int fd = open(pCtx->dbPath, pFile->openFlags,
+        int fd = robust_open(pCtx->dbPath, pFile->openFlags,
                       SQLITE_DEFAULT_FILE_PERMISSIONS);
         OSTRACE(("TRANSPROXY: OPEN  %d\n", fd));
         if( fd>=0 ){
@@ -6068,7 +6233,7 @@ static int proxyTransformUnixFile(unixFile *pFile, const char *path) {
       struct stat conchInfo;
       int goLockless = 0;
 
-      if( stat(pCtx->conchFilePath, &conchInfo) == -1 ) {
+      if( osStat(pCtx->conchFilePath, &conchInfo) == -1 ) {
         int err = errno;
         if( (err==ENOENT) && (statfs(dbPath, &fsInfo) != -1) ){
           goLockless = (fsInfo.f_flags&MNT_RDONLY) == MNT_RDONLY;
@@ -6353,7 +6518,7 @@ int sqlite3_os_init(void){
   ** that filesystem time.
   */
   #define UNIXVFS(VFSNAME, FINDER) {                        \
-    2,                    /* iVersion */                    \
+    3,                    /* iVersion */                    \
     sizeof(unixFile),     /* szOsFile */                    \
     MAX_PATHNAME,         /* mxPathname */                  \
     0,                    /* pNext */                       \
@@ -6372,6 +6537,9 @@ int sqlite3_os_init(void){
     unixCurrentTime,      /* xCurrentTime */                \
     unixGetLastError,     /* xGetLastError */               \
     unixCurrentTimeInt64, /* xCurrentTimeInt64 */           \
+    unixSetSystemCall,    /* xSetSystemCall */              \
+    unixGetSystemCall,    /* xGetSystemCall */              \
+    unixNextSystemCall,   /* xNextSystemCall */             \
   }
 
   /*
