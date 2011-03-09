@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Updates\sto\sthe\sOS/2\simplementation\sfrom\sRich\sWalsh.
-D 2011-03-09T11:04:07.809
+C Omit\sunnecessary\sOP_Next\sand\sOP_Prev\soperators\swhen\suniqueness\sconstraints\nguarantee\sthat\sthe\scode\swill\sonly\smake\sone\spass\sthrough\sthe\sloop.
+D 2011-03-09T21:02:31.691
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -245,7 +245,7 @@ F src/vtab.c b297e8fa656ab5e66244ab15680d68db0adbec30
 F src/wal.c 7334009b396285b658a95a3b6bc6d2b016a1f794
 F src/wal.h 7a5fbb00114b7f2cd40c7e1003d4c41ce9d26840
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 3bc364eeff8625a8438f2bf3a6288c721c9ae475
+F src/where.c 27c2f4e249213faeab548f628e52c005623f195d
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 51756962d522e474338e9b2ebb26e7364d4aa125
@@ -490,7 +490,7 @@ F test/incrblobfault.test 917c0292224c64a56ef7215fd633a3a82f805be0
 F test/incrvacuum.test 453d1e490d8f5ad2c9b3a54282a0690d6ae56462
 F test/incrvacuum2.test 9e22a794899c91b7d8c8e12eaacac8df249faafe
 F test/incrvacuum_ioerr.test 57d2f5777ab13fa03b87b262a4ea1bad5cfc0291
-F test/index.test df7c00c6edd9504ab71c83a9514f1c5ca0fa54d8
+F test/index.test b5429732b3b983fa810e3ac867d7ca85dae35097
 F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
 F test/index3.test 423a25c789fc8cc51aaf2a4370bbdde2d9e9eed7
 F test/indexedby.test be501e381b82b2f8ab406309ba7aac46e221f4ad
@@ -914,14 +914,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 36d79e6f54cdc4129c6e6366a49722e2cf1cccbd
-R 2f4313abc92b495e5c25d9ed87ce7d46
+P dc46156a2237701679433779b871844f4f2abe4b
+R 6a96206125f553ae6e4986479b4fa19e
 U drh
-Z fe519f199afd232fa32e880111460489
+Z 3c4f85bbdfea18f22f89d0b2d92c8936
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNd16roxKgR168RlERAjIHAJsFi1zIg+NnkZ8ozYY79qgeXOHlWwCcDItu
-3AD87d08lqXy+gxk5jGCRwA=
-=eyUa
+iD8DBQFNd+rroxKgR168RlERAk+tAJ9jEIHTwnjObklOR5pMe4sV08k4IgCeI8br
+wFEqDe541wz3+xTQUIuHIUY=
+=D87j
 -----END PGP SIGNATURE-----

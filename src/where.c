@@ -4001,7 +4001,13 @@ static Bitmask codeOneLoopStart(
     /* Record the instruction used to terminate the loop. Disable 
     ** WHERE clause terms made redundant by the index range scan.
     */
-    pLevel->op = bRev ? OP_Prev : OP_Next;
+    if( pLevel->plan.wsFlags & WHERE_UNIQUE ){
+      pLevel->op = OP_Noop;
+    }else if( bRev ){
+      pLevel->op = OP_Prev;
+    }else{
+      pLevel->op = OP_Next;
+    }
     pLevel->p1 = iIdxCur;
   }else
 
