@@ -15,11 +15,35 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set ::testprefix session1
 
+proc do_changeset_test {tn session res} {
+  set r [list]
+  foreach x $res {lappend r $x}
+  uplevel do_test $tn [list [subst -nocommands {
+    set x [list]
+    sqlite3session_foreach c [$session changeset] { lappend x [set c] }
+    set x
+  }]] [list $r]
+}
+
+proc do_changeset_invert_test {tn session res} {
+  set r [list]
+  foreach x $res {lappend r $x}
+  uplevel do_test $tn [list [subst -nocommands {
+    set x [list]
+    set changeset [sqlite3changeset_invert [$session changeset]]
+    sqlite3session_foreach c [set changeset] { lappend x [set c] }
+    set x
+  }]] [list $r]
+}
+
 do_execsql_test 1.0 {
   CREATE TABLE t1(x, y);
   INSERT INTO t1 VALUES('abc', 'def');
 }
 
+#-------------------------------------------------------------------------
+# Test creating, attaching tables to and deleting session objects.
+#
 do_test 1.1 { sqlite3session S db main } {S}
 do_test 1.2 { S delete } {}
 do_test 1.3 { sqlite3session S db main } {S}
@@ -47,16 +71,10 @@ do_test 1.13 {
   S delete
 } {}
 
-proc do_changeset_test {tn session res} {
-  set r [list]
-  foreach x $res {lappend r $x}
-  uplevel do_test $tn [list [subst -nocommands {
-    set x [list]
-    sqlite3session_foreach c [$session changeset] { lappend x [set c] }
-    set x
-  }]] [list $r]
-}
-
+#-------------------------------------------------------------------------
+# Simple changeset tests. Also test the sqlite3changeset_invert() 
+# function.
+#
 do_test 2.1.1 {
   execsql { DELETE FROM t1 }
   sqlite3session S db main
@@ -70,7 +88,12 @@ do_changeset_test 2.1.2 S {
   {INSERT t1 {} {i 2 t Ayutthaya}}
   {INSERT t1 {} {i 3 t Thonburi}}
 }
-do_test 2.1.3 { S delete } {}
+do_changeset_invert_test 2.1.3 S {
+  {DELETE t1 {i 1 t Sukhothai} {}}
+  {DELETE t1 {i 2 t Ayutthaya} {}}
+  {DELETE t1 {i 3 t Thonburi} {}}
+}
+do_test 2.1.4 { S delete } {}
 
 do_test 2.2.1 {
   sqlite3session S db main
@@ -82,7 +105,12 @@ do_changeset_test 2.2.2 S {
   {DELETE t1 {i 2 t Ayutthaya} {}}
   {DELETE t1 {i 3 t Thonburi} {}}
 }
-do_test 2.2.3 { S delete } {}
+do_changeset_invert_test 2.2.3 S {
+  {INSERT t1 {} {i 1 t Sukhothai}}
+  {INSERT t1 {} {i 2 t Ayutthaya}}
+  {INSERT t1 {} {i 3 t Thonburi}}
+}
+do_test 2.2.4 { S delete } {}
 
 do_test 2.3.1 {
   sqlite3session S db main
@@ -102,7 +130,12 @@ do_changeset_test 2.3.2 S {
   {UPDATE t1 {{} {} t Ayutthaya} {{} {} t Surin}} 
   {UPDATE t1 {i 3 t Thonburi} {i 20 t Thapae}}
 }
-do_test 2.3.3 { S delete } {}
+do_changeset_invert_test 2.3.3 S {
+  {UPDATE t1 {i 10 {} {}} {i 1 {} {}}} 
+  {UPDATE t1 {{} {} t Surin} {{} {} t Ayutthaya}} 
+  {UPDATE t1 {i 20 t Thapae} {i 3 t Thonburi}}
+}
+do_test 2.3.4 { S delete } {}
 
 do_test 2.4.1 {
   sqlite3session S db main
@@ -110,9 +143,8 @@ do_test 2.4.1 {
   execsql { INSERT INTO t1 VALUES(100, 'Bangkok') }
   execsql { DELETE FROM t1 WHERE x = 100 }
 } {}
-
-breakpoint
 do_changeset_test 2.4.2 S {}
-do_test 2.4.3 { S delete } {}
+do_changeset_invert_test 2.4.3 S {}
+do_test 2.4.4 { S delete } {}
 
 finish_test

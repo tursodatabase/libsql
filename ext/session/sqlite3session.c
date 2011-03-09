@@ -839,28 +839,34 @@ static int sessionReadRecord(
 
   for(i=0; i<nCol; i++){
     int eType = *aRec++;
-    assert( apOut[i]==0 );
+    assert( !apOut || apOut[i]==0 );
     if( eType ){
-      apOut[i] = sqlite3ValueNew(0);
-      if( !apOut[i] ) return SQLITE_NOMEM;
+      if( apOut ){
+        apOut[i] = sqlite3ValueNew(0);
+        if( !apOut[i] ) return SQLITE_NOMEM;
+      }
 
       if( eType==SQLITE_TEXT || eType==SQLITE_BLOB ){
         int nByte;
         int enc = (eType==SQLITE_TEXT ? SQLITE_UTF8 : 0);
         aRec += sessionVarintGet(aRec, &nByte);
-        sqlite3ValueSetStr(apOut[i], nByte, aRec, enc, SQLITE_STATIC);
+        if( apOut ){
+          sqlite3ValueSetStr(apOut[i], nByte, aRec, enc, SQLITE_STATIC);
+        }
         aRec += nByte;
       }
       if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
-        sqlite3_int64 v = sessionGetI64(aRec);
-        aRec += 8;
-        if( eType==SQLITE_INTEGER ){
-          sqlite3VdbeMemSetInt64(apOut[i], v);
-        }else{
-          double d;
-          memcpy(&d, &i, 8);
-          sqlite3VdbeMemSetDouble(apOut[i], d);
+        if( apOut ){
+          sqlite3_int64 v = sessionGetI64(aRec);
+          if( eType==SQLITE_INTEGER ){
+            sqlite3VdbeMemSetInt64(apOut[i], v);
+          }else{
+            double d;
+            memcpy(&d, &i, 8);
+            sqlite3VdbeMemSetDouble(apOut[i], d);
+          }
         }
+        aRec += 8;
       }
     }
   }
@@ -989,5 +995,83 @@ int sqlite3changeset_finalize(sqlite3_changeset_iter *p){
   sqlite3_free(p);
   return rc;
 }
+
+/*
+** Invert a changeset object.
+*/
+int sqlite3changeset_invert(
+  int nChangeset,                 /* Number of bytes in input */
+  void *pChangeset,               /* Input changeset */
+  int *pnInverted,                /* OUT: Number of bytes in output changeset */
+  void **ppInverted               /* OUT: Inverse of pChangeset */
+){
+  u8 *aOut;
+  u8 *aIn;
+  int i;
+  int nCol = 0;
+
+  /* Zero the output variables in case an error occurs. */
+  *ppInverted = 0;
+  *pnInverted = 0;
+  if( nChangeset==0 ) return SQLITE_OK;
+
+  aOut = (u8 *)sqlite3_malloc(nChangeset);
+  if( !aOut ) return SQLITE_NOMEM;
+  aIn = (u8 *)pChangeset;
+
+  i = 0;
+  while( i<nChangeset ){
+    u8 eType = aIn[i];
+    switch( eType ){
+      case 'T': {
+        int nByte = 1 + sessionVarintGet(&aIn[i+1], &nCol);
+        nByte += 1 + strlen((char *)&aIn[i+nByte]);
+        memcpy(&aOut[i], &aIn[i], nByte);
+        i += nByte;
+        break;
+      }
+
+      case SQLITE_INSERT:
+      case SQLITE_DELETE: {
+        int nByte;
+        u8 *aEnd = &aIn[i+1];
+
+        sessionReadRecord(&aEnd, nCol, 0);
+        aOut[i] = (eType==SQLITE_DELETE ? SQLITE_INSERT : SQLITE_DELETE);
+        nByte = aEnd - &aIn[i+1];
+        memcpy(&aOut[i+1], &aIn[i+1], nByte);
+        i += 1 + nByte;
+        break;
+      }
+
+      case SQLITE_UPDATE: {
+        int nByte1;              /* Size of old.* record in bytes */
+        int nByte2;              /* Size of new.* record in bytes */
+        u8 *aEnd = &aIn[i+1];    
+
+        sessionReadRecord(&aEnd, nCol, 0);
+        nByte1 = aEnd - &aIn[i+1];
+        sessionReadRecord(&aEnd, nCol, 0);
+        nByte2 = aEnd - &aIn[i+1] - nByte1;
+
+        aOut[i] = SQLITE_UPDATE;
+        memcpy(&aOut[i+1], &aIn[i+1+nByte1], nByte2);
+        memcpy(&aOut[i+1+nByte2], &aIn[i+1], nByte1);
+
+        i += 1 + nByte1 + nByte2;
+        break;
+      }
+
+      default:
+        sqlite3_free(aOut);
+        return SQLITE_CORRUPT;
+    }
+  }
+
+  *pnInverted = nChangeset;
+  *ppInverted = (void *)aOut;
+  return SQLITE_OK;
+}
+
 
 #endif        /* #ifdef SQLITE_ENABLE_SESSION */

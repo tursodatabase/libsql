@@ -169,6 +169,35 @@ static void test_append_value(Tcl_Obj *pList, sqlite3_value *pVal){
 }
 
 /*
+** sqlite3changeset_invert CHANGESET
+*/
+static int test_sqlite3changeset_invert(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc;                         /* Return code from changeset_invert() */
+  void *aChangeset;               /* Input changeset */
+  int nChangeSet;                 /* Size of buffer aChangeset in bytes */
+  void *aOut;                     /* Output changeset */
+  int nOut;                       /* Size of buffer aOut in bytes */
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "CHANGESET");
+  }
+  aChangeset = (void *)Tcl_GetByteArrayFromObj(objv[1], &nChangeSet);
+
+  rc = sqlite3changeset_invert(nChangeSet, aChangeset, &nOut, &aOut);
+  if( rc!=SQLITE_OK ){
+    return test_session_error(interp, rc);
+  }
+  Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((unsigned char *)aOut, nOut));
+  sqlite3_free(aOut);
+  return TCL_OK;
+}
+
+/*
 ** sqlite3session_foreach VARNAME CHANGESET SCRIPT
 */
 static int test_sqlite3session_foreach(
@@ -250,6 +279,9 @@ int TestSession_Init(Tcl_Interp *interp){
   Tcl_CreateObjCommand(interp, "sqlite3session", test_sqlite3session, 0, 0);
   Tcl_CreateObjCommand(
       interp, "sqlite3session_foreach", test_sqlite3session_foreach, 0, 0
+  );
+  Tcl_CreateObjCommand(
+      interp, "sqlite3changeset_invert", test_sqlite3changeset_invert, 0, 0
   );
   return TCL_OK;
 }

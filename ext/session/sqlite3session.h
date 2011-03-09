@@ -121,5 +121,14 @@ int sqlite3changeset_new(
 */
 int sqlite3changeset_finalize(sqlite3_changeset_iter *pIter);
 
+/*
+** Invert a changeset object.
+*/
+int sqlite3changeset_invert(
+  int nIn, void *pIn,             /* Input changeset */
+  int *pnOut, void **ppOut        /* OUT: Inverse of input */
+);
+
+
 #endif
 
