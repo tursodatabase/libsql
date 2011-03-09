@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Omit\sunnecessary\sOP_Next\sand\sOP_Prev\soperators\swhen\suniqueness\sconstraints\nguarantee\sthat\sthe\scode\swill\sonly\smake\sone\spass\sthrough\sthe\sloop.
-D 2011-03-09T21:02:31.691
+C Fix\sissue\swith\smem5\sallocator\swhen\smin\srequest\ssize\sis\slarger\sthatn\s2^30.
+D 2011-03-09T21:36:17.288
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -146,13 +143,13 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 8af9fcc75708d60b88636ccba38b4a7b3c155c3e
-F src/main.c 93d0d967d6898fc0408ece248342342e312aa753
+F src/main.c b43dc11c8335ceb759d48358ddafe09f02b18a1d
 F src/malloc.c 92d59a007d7a42857d4e9454aa25b6b703286be1
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 00bd8265c81abb665c48fea1e0c234eb3b922206
 F src/mem2.c e307323e86b5da1853d7111b68fd6b84ad6f09cf
 F src/mem3.c 9b237d911ba9904142a804be727cc6664873f8a3
-F src/mem5.c 6fe00f46997bebb690397cb029719f711e7640e3
+F src/mem5.c ebc2530757a9b0f44b61a899aef0109effd55ce8
 F src/memjournal.c 0ebce851677a7ac035ba1512a7e65851b34530c6
 F src/mutex.c 6949180803ff05a7d0e2b9334a95b4fb5a00e23f
 F src/mutex.h fe2ef5e1c4dae531d5a544f9241f19c56d26803d
@@ -181,7 +178,7 @@ F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c d24406c45dd2442eb2eeaac413439066b149c944
 F src/shell.c 649c51979812f77f97507024a4cea480c6862b8b
-F src/sqlite.h.in 82274d7f4440b99a80d8cc4f077547fd0b596017
+F src/sqlite.h.in 369c767e6b9f101d63d8e4c5e40279f975ccec08
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
 F src/sqliteInt.h 2cea3e47997e3f4d9b4f1ce62f99c35be1b5a586
 F src/sqliteLimit.h a17dcd3fb775d63b64a43a55c54cb282f9726f44
@@ -562,6 +559,7 @@ F test/mallocJ.test b5d1839da331d96223e5f458856f8ffe1366f62e
 F test/mallocK.test d79968641d1b70d88f6c01bdb9a7eb4a55582cc9
 F test/malloc_common.tcl 660b82ab528521cc4a48ff6df05ca3b6a00d47c5
 F test/manydb.test b3d3bc4c25657e7f68d157f031eb4db7b3df0d3c
+F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
 F test/memdb.test 0825155b2290e900264daaaf0334b6dfe69ea498
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
 F test/memsubsys1.test 679db68394a5692791737b150852173b3e2fea10
@@ -914,14 +912,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P dc46156a2237701679433779b871844f4f2abe4b
-R 6a96206125f553ae6e4986479b4fa19e
-U drh
-Z 3c4f85bbdfea18f22f89d0b2d92c8936
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFNd+rroxKgR168RlERAk+tAJ9jEIHTwnjObklOR5pMe4sV08k4IgCeI8br
-wFEqDe541wz3+xTQUIuHIUY=
-=D87j
------END PGP SIGNATURE-----
+P f000c9b2b7348238fe2085140d2dd05294a19709
+R 5c4a42c07b3ab928630b72159bbdf550
+U shaneh
+Z 82918d77f73b87eb8c0dd11fedd7903d
