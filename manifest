@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Merge\sthe\ssyscall-override\schanges\sinto\strunk.
-D 2011-03-08T16:39:29.275
+C Updates\sto\sthe\sOS/2\simplementation\sfrom\sRich\sWalsh.
+D 2011-03-09T11:04:07.809
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -157,14 +157,14 @@ F src/memjournal.c 0ebce851677a7ac035ba1512a7e65851b34530c6
 F src/mutex.c 6949180803ff05a7d0e2b9334a95b4fb5a00e23f
 F src/mutex.h fe2ef5e1c4dae531d5a544f9241f19c56d26803d
 F src/mutex_noop.c d5cfbca87168c661a0b118cd8e329a908e453151
-F src/mutex_os2.c 6a62583e374ba3ac1a3fcc0da2bfdac7d3942689
+F src/mutex_os2.c f5d09e85b914643c230aa97db709fc0db370d93c
 F src/mutex_unix.c b4f4e923bb8de93ec3f251fadb50855f23df9579
 F src/mutex_w32.c 3ade5ae71449d1d023f0ebb3184c2ae6aa9307e4
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c 22ac61d06e72a0dac900400147333b07b13d8e1d
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
-F src/os_os2.c 2e452c9f2ca507623ad351c33a8a8b27849b1863
+F src/os_os2.c 2596fd2d5d0976c6c0c628d0c3c7c4e7a724f4cf
 F src/os_unix.c 58fe8845678f6a4e30ed6988c5df7327bc7bd69b
 F src/os_win.c 24d72407a90551969744cf9bcbb1b4c72c5fa845
 F src/pager.c 6aa906b60a59664ba58d3f746164bb010d407ce1
@@ -914,14 +914,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ddb747d33a004c7fe532a661e879ccba68c79c59 a7d176b27cd73791d45eb3a31df78187ae10ce20
-R f6d9df8153eea975bd4c019ada4938a6
+P 36d79e6f54cdc4129c6e6366a49722e2cf1cccbd
+R 2f4313abc92b495e5c25d9ed87ce7d46
 U drh
-Z a4115902c8e36dff16feb9c6102d7895
+Z fe519f199afd232fa32e880111460489
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNdlvEoxKgR168RlERAqctAJ0QkDzaXcGb8cYDn6Z1juSfygSdZgCcCoJg
-HYxK6HQIevTUFNLB5q3ux8E=
-=p3yO
+iD8DBQFNd16roxKgR168RlERAjIHAJsFi1zIg+NnkZ8ozYY79qgeXOHlWwCcDItu
+3AD87d08lqXy+gxk5jGCRwA=
+=eyUa
 -----END PGP SIGNATURE-----

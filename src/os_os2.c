@@ -646,19 +646,23 @@ char *convertCpPathToUtf8( const char *in ){
 ** sqlite3_file for os2.
 */
 static const sqlite3_io_methods os2IoMethod = {
-  1,                        /* iVersion */
-  os2Close,
-  os2Read,
-  os2Write,
-  os2Truncate,
-  os2Sync,
-  os2FileSize,
-  os2Lock,
-  os2Unlock,
-  os2CheckReservedLock,
-  os2FileControl,
-  os2SectorSize,
-  os2DeviceCharacteristics
+  1,                              /* iVersion */
+  os2Close,                       /* xClose */
+  os2Read,                        /* xRead */
+  os2Write,                       /* xWrite */
+  os2Truncate,                    /* xTruncate */
+  os2Sync,                        /* xSync */
+  os2FileSize,                    /* xFileSize */
+  os2Lock,                        /* xLock */
+  os2Unlock,                      /* xUnlock */
+  os2CheckReservedLock,           /* xCheckReservedLock */
+  os2FileControl,                 /* xFileControl */
+  os2SectorSize,                  /* xSectorSize */
+  os2DeviceCharacteristics,       /* xDeviceCharacteristics */
+  0,                              /* xShmMap */
+  0,                              /* xShmLock */
+  0,                              /* xShmBarrier */
+  0                               /* xShmUnmap */
 };
 
 /***************************************************************************
@@ -750,100 +754,137 @@ static int os2FullPathname(
 */
 static int os2Open(
   sqlite3_vfs *pVfs,            /* Not used */
-  const char *zName,            /* Name of the file */
+  const char *zName,            /* Name of the file (UTF-8) */
   sqlite3_file *id,             /* Write the SQLite file handle here */
   int flags,                    /* Open mode flags */
   int *pOutFlags                /* Status return flags */
 ){
   HFILE h;
-  ULONG ulFileAttribute = FILE_NORMAL;
   ULONG ulOpenFlags = 0;
   ULONG ulOpenMode = 0;
+  ULONG ulAction = 0;
+  ULONG rc;
   os2File *pFile = (os2File*)id;
-  APIRET rc = NO_ERROR;
-  ULONG ulAction;
+  const char *zUtf8Name = zName;
   char *zNameCp;
-  char zTmpname[CCHMAXPATH+1];    /* Buffer to hold name of temp file */
+  char  zTmpname[CCHMAXPATH];
+
+  int isExclusive  = (flags & SQLITE_OPEN_EXCLUSIVE);
+  int isDelete     = (flags & SQLITE_OPEN_DELETEONCLOSE);
+  int isCreate     = (flags & SQLITE_OPEN_CREATE);
+  int isReadWrite  = (flags & SQLITE_OPEN_READWRITE);
+#ifndef NDEBUG
+  int isReadonly   = (flags & SQLITE_OPEN_READONLY);
+  int eType        = (flags & 0xFFFFFF00);
+  int isOpenJournal = (isCreate && (
+        eType==SQLITE_OPEN_MASTER_JOURNAL 
+     || eType==SQLITE_OPEN_MAIN_JOURNAL 
+     || eType==SQLITE_OPEN_WAL
+  ));
+#endif
+
+  UNUSED_PARAMETER(pVfs);
+  assert( id!=0 );
+
+  /* Check the following statements are true: 
+  **
+  **   (a) Exactly one of the READWRITE and READONLY flags must be set, and 
+  **   (b) if CREATE is set, then READWRITE must also be set, and
+  **   (c) if EXCLUSIVE is set, then CREATE must also be set.
+  **   (d) if DELETEONCLOSE is set, then CREATE must also be set.
+  */
+  assert((isReadonly==0 || isReadWrite==0) && (isReadWrite || isReadonly));
+  assert(isCreate==0 || isReadWrite);
+  assert(isExclusive==0 || isCreate);
+  assert(isDelete==0 || isCreate);
+
+  /* The main DB, main journal, WAL file and master journal are never 
+  ** automatically deleted. Nor are they ever temporary files.  */
+  assert( (!isDelete && zName) || eType!=SQLITE_OPEN_MAIN_DB );
+  assert( (!isDelete && zName) || eType!=SQLITE_OPEN_MAIN_JOURNAL );
+  assert( (!isDelete && zName) || eType!=SQLITE_OPEN_MASTER_JOURNAL );
+  assert( (!isDelete && zName) || eType!=SQLITE_OPEN_WAL );
+
+  /* Assert that the upper layer has set one of the "file-type" flags. */
+  assert( eType==SQLITE_OPEN_MAIN_DB      || eType==SQLITE_OPEN_TEMP_DB 
+       || eType==SQLITE_OPEN_MAIN_JOURNAL || eType==SQLITE_OPEN_TEMP_JOURNAL 
+       || eType==SQLITE_OPEN_SUBJOURNAL   || eType==SQLITE_OPEN_MASTER_JOURNAL 
+       || eType==SQLITE_OPEN_TRANSIENT_DB || eType==SQLITE_OPEN_WAL
+  );
+
+  memset( pFile, 0, sizeof(*pFile) );
+  pFile->pMethod = &os2IoMethod;
 
   /* If the second argument to this function is NULL, generate a 
   ** temporary file name to use 
   */
-  if( !zName ){
-    int rc = getTempname(CCHMAXPATH+1, zTmpname);
+  if( !zUtf8Name ){
+    assert(isDelete && !isOpenJournal);
+    rc = getTempname(CCHMAXPATH, zTmpname);
     if( rc!=SQLITE_OK ){
       return rc;
     }
-    zName = zTmpname;
+    zUtf8Name = zTmpname;
   }
 
-
-  memset( pFile, 0, sizeof(*pFile) );
-
-  OSTRACE(( "OPEN want %d\n", flags ));
-
-  if( flags & SQLITE_OPEN_READWRITE ){
+  if( isReadWrite ){
     ulOpenMode |= OPEN_ACCESS_READWRITE;
-    OSTRACE(( "OPEN read/write\n" ));
   }else{
     ulOpenMode |= OPEN_ACCESS_READONLY;
-    OSTRACE(( "OPEN read only\n" ));
   }
 
-  if( flags & SQLITE_OPEN_CREATE ){
-    ulOpenFlags |= OPEN_ACTION_OPEN_IF_EXISTS | OPEN_ACTION_CREATE_IF_NEW;
-    OSTRACE(( "OPEN open new/create\n" ));
-  }else{
-    ulOpenFlags |= OPEN_ACTION_OPEN_IF_EXISTS | OPEN_ACTION_FAIL_IF_NEW;
-    OSTRACE(( "OPEN open existing\n" ));
-  }
-
-  if( flags & SQLITE_OPEN_MAIN_DB ){
-    ulOpenMode |= OPEN_SHARE_DENYNONE;
-    OSTRACE(( "OPEN share read/write\n" ));
-  }else{
-    ulOpenMode |= OPEN_SHARE_DENYWRITE;
-    OSTRACE(( "OPEN share read only\n" ));
-  }
-
-  if( flags & SQLITE_OPEN_DELETEONCLOSE ){
-    char pathUtf8[CCHMAXPATH];
-#ifdef NDEBUG /* when debugging we want to make sure it is deleted */
-    ulFileAttribute = FILE_HIDDEN;
-#endif
-    os2FullPathname( pVfs, zName, CCHMAXPATH, pathUtf8 );
-    pFile->pathToDel = convertUtf8PathToCp( pathUtf8 );
-    OSTRACE(( "OPEN hidden/delete on close file attributes\n" ));
-  }else{
-    pFile->pathToDel = NULL;
-    OSTRACE(( "OPEN normal file attribute\n" ));
-  }
-
-  /* always open in random access mode for possibly better speed */
+  /* Open in random access mode for possibly better speed.  Allow full
+  ** sharing because file locks will provide exclusive access when needed.
+  */
   ulOpenMode |= OPEN_FLAGS_RANDOM;
   ulOpenMode |= OPEN_FLAGS_FAIL_ON_ERROR;
   ulOpenMode |= OPEN_FLAGS_NOINHERIT;
+  ulOpenMode |= OPEN_SHARE_DENYNONE;
 
-  zNameCp = convertUtf8PathToCp( zName );
+  /* SQLITE_OPEN_EXCLUSIVE is used to make sure that a new file is 
+  ** created. SQLite doesn't use it to indicate "exclusive access" 
+  ** as it is usually understood.
+  */
+  if( isExclusive ){
+    /* Creates a new file, only if it does not already exist. */
+    /* If the file exists, it fails. */
+    ulOpenFlags |= OPEN_ACTION_CREATE_IF_NEW | OPEN_ACTION_FAIL_IF_EXISTS;
+  }else if( isCreate ){
+    /* Open existing file, or create if it doesn't exist */
+    ulOpenFlags |= OPEN_ACTION_CREATE_IF_NEW | OPEN_ACTION_OPEN_IF_EXISTS;
+  }else{
+    /* Opens a file, only if it exists. */
+    ulOpenFlags |= OPEN_ACTION_FAIL_IF_NEW | OPEN_ACTION_OPEN_IF_EXISTS;
+  }
+
+  /* For DELETEONCLOSE, save a pointer to the converted filename */
+  if( isDelete ){
+    char pathUtf8[CCHMAXPATH];
+    os2FullPathname( pVfs, zUtf8Name, CCHMAXPATH, pathUtf8 );
+    pFile->pathToDel = convertUtf8PathToCp( pathUtf8 );
+  }
+
+  zNameCp = convertUtf8PathToCp( zUtf8Name );
   rc = DosOpen( (PSZ)zNameCp,
                 &h,
                 &ulAction,
                 0L,
-                ulFileAttribute,
+                FILE_NORMAL,
                 ulOpenFlags,
                 ulOpenMode,
                 (PEAOP2)NULL );
   free( zNameCp );
+
   if( rc != NO_ERROR ){
-    OSTRACE(( "OPEN Invalid handle rc=%d: zName=%s, ulAction=%#lx, ulAttr=%#lx, ulFlags=%#lx, ulMode=%#lx\n",
-              rc, zName, ulAction, ulFileAttribute, ulOpenFlags, ulOpenMode ));
+    OSTRACE(( "OPEN Invalid handle rc=%d: zName=%s, ulAction=%#lx, ulFlags=%#lx, ulMode=%#lx\n",
+              rc, zUtf8Name, ulAction, ulOpenFlags, ulOpenMode ));
     if( pFile->pathToDel )
       free( pFile->pathToDel );
     pFile->pathToDel = NULL;
-    if( flags & SQLITE_OPEN_READWRITE ){
-      OSTRACE(( "OPEN %d Invalid handle\n",
-                ((flags | SQLITE_OPEN_READONLY) & ~SQLITE_OPEN_READWRITE) ));
+
+    if( isReadWrite ){
       return os2Open( pVfs, zName, id,
-                      ((flags | SQLITE_OPEN_READONLY) & ~SQLITE_OPEN_READWRITE),
+                      ((flags|SQLITE_OPEN_READONLY)&~(SQLITE_OPEN_CREATE|SQLITE_OPEN_READWRITE)),
                       pOutFlags );
     }else{
       return SQLITE_CANTOPEN;
@@ -851,10 +892,9 @@ static int os2Open(
   }
 
   if( pOutFlags ){
-    *pOutFlags = flags & SQLITE_OPEN_READWRITE ? SQLITE_OPEN_READWRITE : SQLITE_OPEN_READONLY;
+    *pOutFlags = isReadWrite ? SQLITE_OPEN_READWRITE : SQLITE_OPEN_READONLY;
   }
 
-  pFile->pMethod = &os2IoMethod;
   pFile->h = h;
   OpenCounter(+1);
   OSTRACE(( "OPEN %d pOutFlags=%d\n", pFile->h, pOutFlags ));
@@ -869,13 +909,16 @@ static int os2Delete(
   const char *zFilename,                 /* Name of file to delete */
   int syncDir                            /* Not used on os2 */
 ){
-  APIRET rc = NO_ERROR;
-  char *zFilenameCp = convertUtf8PathToCp( zFilename );
+  APIRET rc;
+  char *zFilenameCp;
   SimulateIOError( return SQLITE_IOERR_DELETE );
+  zFilenameCp = convertUtf8PathToCp( zFilename );
   rc = DosDelete( (PSZ)zFilenameCp );
   free( zFilenameCp );
   OSTRACE(( "DELETE \"%s\"\n", zFilename ));
-  return rc == NO_ERROR ? SQLITE_OK : SQLITE_IOERR_DELETE;
+  return (rc == NO_ERROR ||
+          rc == ERROR_FILE_NOT_FOUND ||
+          rc == ERROR_PATH_NOT_FOUND ) ? SQLITE_OK : SQLITE_IOERR_DELETE;
 }
 
 /*
@@ -940,7 +983,7 @@ static void *os2DlOpen(sqlite3_vfs *pVfs, const char *zFilename){
 static void os2DlError(sqlite3_vfs *pVfs, int nBuf, char *zBufOut){
 /* no-op */
 }
-static void *os2DlSym(sqlite3_vfs *pVfs, void *pHandle, const char *zSymbol){
+static void (*os2DlSym(sqlite3_vfs *pVfs, void *pHandle, const char *zSymbol))(void){
   PFN pfn;
   APIRET rc;
   rc = DosQueryProcAddr((HMODULE)pHandle, 0L, zSymbol, &pfn);
@@ -952,7 +995,7 @@ static void *os2DlSym(sqlite3_vfs *pVfs, void *pHandle, const char *zSymbol){
     strncat(_zSymbol, zSymbol, 255);
     rc = DosQueryProcAddr((HMODULE)pHandle, 0L, _zSymbol, &pfn);
   }
-  return rc != NO_ERROR ? 0 : (void*)pfn;
+  return rc != NO_ERROR ? 0 : (void(*)(void))pfn;
 }
 static void os2DlClose(sqlite3_vfs *pVfs, void *pHandle){
   DosFreeModule((HMODULE)pHandle);
@@ -1056,10 +1099,11 @@ int sqlite3_current_time = 0;
 int os2CurrentTime( sqlite3_vfs *pVfs, double *prNow ){
   double now;
   SHORT minute; /* needs to be able to cope with negative timezone offset */
-  USHORT second, hour,
+  USHORT hundredths, second, hour,
          day, month, year;
   DATETIME dt;
   DosGetDateTime( &dt );
+  hundredths = (USHORT)dt.hundredths;
   second = (USHORT)dt.seconds;
   minute = (SHORT)dt.minutes + dt.timezone;
   hour = (USHORT)dt.hours;
@@ -1079,12 +1123,29 @@ int os2CurrentTime( sqlite3_vfs *pVfs, double *prNow ){
   now += (hour + 12.0)/24.0;
   now += minute/1440.0;
   now += second/86400.0;
+  now += hundredths/8640000.0;
   *prNow = now;
 #ifdef SQLITE_TEST
   if( sqlite3_current_time ){
     *prNow = sqlite3_current_time/86400.0 + 2440587.5;
   }
 #endif
+  return 0;
+}
+
+/*
+** Find the current time (in Universal Coordinated Time).  Write into *piNow
+** the current time and date as a Julian Day number times 86_400_000.  In
+** other words, write into *piNow the number of milliseconds since the Julian
+** epoch of noon in Greenwich on November 24, 4714 B.C according to the
+** proleptic Gregorian calendar.
+**
+** On success, return 0.  Return 1 if the time and date cannot be found.
+*/
+static int os2CurrentTimeInt64(sqlite3_vfs *pVfs, sqlite3_int64 *piNow){
+  double now;
+  os2CurrentTime(pVfs, &now);
+  *piNow = now * 86400000;
   return 0;
 }
 
@@ -1097,7 +1158,7 @@ static int os2GetLastError(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
 */
 int sqlite3_os_init(void){
   static sqlite3_vfs os2Vfs = {
-    1,                 /* iVersion */
+    3,                 /* iVersion */
     sizeof(os2File),   /* szOsFile */
     CCHMAXPATH,        /* mxPathname */
     0,                 /* pNext */
@@ -1116,6 +1177,10 @@ int sqlite3_os_init(void){
     os2Sleep,          /* xSleep */
     os2CurrentTime,    /* xCurrentTime */
     os2GetLastError,   /* xGetLastError */
+    os2CurrentTimeInt64 /* xCurrentTimeInt64 */
+    0,                 /* xSetSystemCall */
+    0,                 /* xGetSystemCall */
+    0,                 /* xNextSystemCall */
   };
   sqlite3_vfs_register(&os2Vfs, 1);
   initUconvObjects();
