@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Backport\sthe\squery\splanner\senhancement\sof\s[952f5e8c69904]\sto\sthe\n3.7.2\sbranch.
-D 2011-03-04T01:23:26.302
+C Backport\sthe\sOP_Next\sand\sOP_Prev\sfor\sUNIQUE\sindices\spatch\sfrom\ncheckin\s[f000c9b2b7]\son\sthe\strunk.
+D 2011-03-09T22:09:32.107
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 543f91f24cd7fee774ecc0a61c19704c0c3e78fd
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -233,7 +233,7 @@ F src/vtab.c 0e8e0cb30dffb078367e843e84e37ef99236c7e4
 F src/wal.c 5ac2119e23ee4424599d4275b66dc88d612a0543
 F src/wal.h 96669b645e27cd5a111ba59f0cae7743a207bc3c
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 4d5918de315298d37919614c5e28ea1df1189ce2
+F src/where.c 124e56fc30ffc1d8284bcd60151829afb5d55a2f
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 6745008c144bd2956d58864d21f7b304689c1cce
@@ -448,7 +448,7 @@ F test/incrblob_err.test c577c91d4ed9e8336cdb188b15d6ee2a6fe9604e
 F test/incrvacuum.test 453d1e490d8f5ad2c9b3a54282a0690d6ae56462
 F test/incrvacuum2.test 9e22a794899c91b7d8c8e12eaacac8df249faafe
 F test/incrvacuum_ioerr.test 57d2f5777ab13fa03b87b262a4ea1bad5cfc0291
-F test/index.test cbf301cdb2da43e4eac636c3400c2439af1834ad
+F test/index.test 7c104b61d4cce9e9bf4d1eccdc9074befceee6d5
 F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
 F test/index3.test 423a25c789fc8cc51aaf2a4370bbdde2d9e9eed7
 F test/indexedby.test be501e381b82b2f8ab406309ba7aac46e221f4ad
@@ -850,14 +850,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f2a8b5ccfb46b6be5c8857bc495de14e55851bf4
-R 29aa41f4eb47cc16c6f41f19db3d3c2a
+P 440d995661c961257ca15833ab94c7ec7a5892c8
+R 0512033c30f28c260fba564d8ba18c22
 U drh
-Z d9fbeee93e96963d1ad274f804dd71a0
+Z b94a8a7377160219347c5558d6729f6c
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNcD8RoxKgR168RlERAvEBAJ96NOTOeQfSdiUNyWHFey2MVEkE4gCeLMBe
-PM1svomrOJj0JmTwxjR3w0w=
-=ags1
+iD8DBQFNd/qnoxKgR168RlERAsE8AKCADPQN2xr488gJH6K59ZWN2x7QZwCfXUH1
+oOrribX3yWOwHCagHmUiuvA=
+=ELlT
 -----END PGP SIGNATURE-----
