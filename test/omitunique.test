@@ -1,0 +1,170 @@
+# 2011 March 10
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the SQLITE_OMIT_UNIQUE_ENFORCEMENT
+# compiler option.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# table with UNIQUE keyword on column
+do_test omitunique-1.1.1 {
+  catchsql {CREATE TABLE t1(a TEXT UNIQUE);  }
+} {0 {}}
+do_test omitunique-1.1.2 {
+  catchsql {INSERT INTO t1(a) VALUES('abc'); }
+} {0 {}}
+do_test omitunique-1.1.3 {
+  catchsql {INSERT INTO t1(a) VALUES('123'); }
+} {0 {}}
+
+# table with UNIQUE index on column
+do_test omitunique-1.2.1 {
+  catchsql {
+    CREATE TABLE t2(a TEXT);
+    CREATE UNIQUE INDEX t2a ON t2(a);
+  }
+} {0 {}}
+do_test omitunique-1.2.2 {
+  catchsql {INSERT INTO t2(a) VALUES('abc'); }
+} {0 {}}
+do_test omitunique-1.2.3 {
+  catchsql {INSERT INTO t2(a) VALUES('123'); }
+} {0 {}}
+
+# table with regular index on column
+do_test omitunique-1.3.1 {
+  catchsql {
+    CREATE TABLE t3(a TEXT);
+    CREATE INDEX t3a ON t3(a);
+  }
+} {0 {}}
+do_test omitunique-1.3.2 {
+  catchsql {INSERT INTO t3(a) VALUES('abc'); }
+} {0 {}}
+do_test omitunique-1.3.3 {
+  catchsql {INSERT INTO t3(a) VALUES('123'); }
+} {0 {}}
+
+# table with no index on column
+do_test omitunique-1.4.1 {
+  catchsql {
+    CREATE TABLE t4(a TEXT);
+  }
+} {0 {}}
+do_test omitunique-1.4.2 {
+  catchsql {INSERT INTO t4(a) VALUES('abc'); }
+} {0 {}}
+do_test omitunique-1.4.3 {
+  catchsql {INSERT INTO t4(a) VALUES('123'); }
+} {0 {}}
+
+# run our tests using several table/index forms
+foreach {j tbl uniq cnt_enforce cnt_omit qp_est} {
+1 {t1} 1 1 9 1
+2 {t2} 1 1 9 1
+3 {t3} 0 9 9 10
+4 {t4} 0 9 9 100000
+} {
+
+  # check various INSERT commands
+  foreach {i cmd err} {
+    1 {INSERT}             1   
+    2 {INSERT OR IGNORE}   0 
+    3 {INSERT OR REPLACE}  0
+    4 {REPLACE}            0
+    5 {INSERT OR FAIL}     1
+    6 {INSERT OR ABORT}    1
+    7 {INSERT OR ROLLBACK} 1
+  } {
+
+    if { $uniq==0 || $err==0 } { 
+      set msg {0 {}} 
+    } {
+      set msg {1 {column a is not unique}}
+    }
+
+    ifcapable unique_enforcement {
+      ifcapable explain {
+        do_test omitunique-2.1.$j.$i.1 {
+          set x [execsql [ subst {EXPLAIN $cmd INTO $tbl (a) VALUES('abc')}]]
+          regexp { IsUnique } $x
+        } $uniq
+      }
+      do_test omitunique-2.1.$j.$i.2 {
+        catchsql [ subst {$cmd INTO $tbl (a) VALUES('abc')}]
+      } $msg
+    }
+    ifcapable !unique_enforcement {
+      ifcapable explain {
+        do_test omitunique-2.1.$j.$i.1 {
+          set x [execsql [ subst {EXPLAIN $cmd INTO $tbl (a) VALUES('abc')}]]
+          regexp { IsUnique } $x
+        } {0}
+      }
+      do_test omitunique-2.1.$j.$i.2 {
+        catchsql [ subst {$cmd INTO $tbl (a) VALUES('abc')}]
+      } {0 {}}
+    }
+
+  }
+  # end foreach cmd
+
+  # check UPDATE command
+  ifcapable unique_enforcement {
+    ifcapable explain {
+      do_test omitunique-2.2.$j.1 {
+        set x [execsql [ subst {EXPLAIN UPDATE $tbl SET a='abc'}]]
+        regexp { IsUnique } $x
+      } $uniq
+    }
+    do_test omitunique-2.2.$j.2 {
+      catchsql [ subst {UPDATE $tbl SET a='abc'}]
+    } $msg
+  }
+  ifcapable !unique_enforcement {
+    ifcapable explain {
+      do_test omitunique-2.2.$j.1 {
+        set x [execsql [ subst {EXPLAIN UPDATE $tbl SET a='abc'}]]
+        regexp { IsUnique } $x
+      } {0}
+    }
+    do_test omitunique-2.2.$j.2 {
+      catchsql [ subst {UPDATE $tbl SET a='abc' }]
+    } {0 {}}
+  }
+
+  # check record counts
+  ifcapable unique_enforcement {
+    do_test omitunique-2.3.$j {
+      execsql [ subst {SELECT count(*) FROM $tbl WHERE a='abc' }]
+    } $cnt_enforce
+  }
+  ifcapable !unique_enforcement {
+    do_test omitunique-2.3.$j {
+      execsql [ subst {SELECT count(*) FROM $tbl WHERE a='abc' }]
+    } $cnt_omit
+  }
+
+  # make sure the query planner row estimate not affected because of omit enforcement
+  ifcapable explain {
+    do_test omitunique-2.4.$j {
+      set x [execsql [ subst {EXPLAIN QUERY PLAN SELECT count(*) FROM $tbl WHERE a='abc' }]]
+      set y [ subst {~$qp_est row} ]
+      regexp $y $x
+    } {1}
+  }
+
+}
+# end foreach tbl
+
+finish_test
