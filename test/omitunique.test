@@ -16,6 +16,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+set uniq_enforced 1
+ifcapable !unique_enforcement {
+  set uniq_enforced 0
+}
+
 # table with UNIQUE keyword on column
 do_test omitunique-1.1.1 {
   catchsql {CREATE TABLE t1(a TEXT UNIQUE);  }
@@ -87,61 +92,65 @@ foreach {j tbl uniq cnt_enforce cnt_omit qp_est} {
     7 {INSERT OR ROLLBACK} 1
   } {
 
-    if { $uniq==0 || $err==0 } { 
-      set msg {0 {}} 
+    ifcapable explain {
+      ifcapable unique_enforcement {
+          do_test omitunique-2.1.$j.$i.1 {
+            set x [execsql [ subst {EXPLAIN $cmd INTO $tbl (a) VALUES('abc')}]]
+            regexp { IsUnique } $x
+          } $uniq
+      }
+      ifcapable !unique_enforcement {
+          do_test omitunique-2.1.$j.$i.1 {
+            set x [execsql [ subst {EXPLAIN $cmd INTO $tbl (a) VALUES('abc')}]]
+            regexp { IsUnique } $x
+          } {0}
+      }
+      do_test omitunique-2.1.$j.2 {
+        set x [execsql [ subst {EXPLAIN $cmd INTO $tbl (a) VALUES('abc')}]]
+        regexp { Next } $x
+      } {0}
+    }
+
+    if { $uniq_enforced==0 || $uniq==0 || $err==0 } { 
+      set msg {0 {}}
     } {
       set msg {1 {column a is not unique}}
     }
-
-    ifcapable unique_enforcement {
-      ifcapable explain {
-        do_test omitunique-2.1.$j.$i.1 {
-          set x [execsql [ subst {EXPLAIN $cmd INTO $tbl (a) VALUES('abc')}]]
-          regexp { IsUnique } $x
-        } $uniq
-      }
-      do_test omitunique-2.1.$j.$i.2 {
-        catchsql [ subst {$cmd INTO $tbl (a) VALUES('abc')}]
-      } $msg
-    }
-    ifcapable !unique_enforcement {
-      ifcapable explain {
-        do_test omitunique-2.1.$j.$i.1 {
-          set x [execsql [ subst {EXPLAIN $cmd INTO $tbl (a) VALUES('abc')}]]
-          regexp { IsUnique } $x
-        } {0}
-      }
-      do_test omitunique-2.1.$j.$i.2 {
-        catchsql [ subst {$cmd INTO $tbl (a) VALUES('abc')}]
-      } {0 {}}
-    }
+    do_test omitunique-2.1.$j.$i.3 {
+      catchsql [ subst {$cmd INTO $tbl (a) VALUES('abc')}]
+    } $msg
 
   }
   # end foreach cmd
 
   # check UPDATE command
-  ifcapable unique_enforcement {
-    ifcapable explain {
-      do_test omitunique-2.2.$j.1 {
-        set x [execsql [ subst {EXPLAIN UPDATE $tbl SET a='abc'}]]
-        regexp { IsUnique } $x
-      } $uniq
+  ifcapable explain {
+    ifcapable unique_enforcement {
+        do_test omitunique-2.2.$j.1 {
+          set x [execsql [ subst {EXPLAIN UPDATE $tbl SET a='abc'}]]
+          regexp { IsUnique } $x
+        } $uniq
     }
-    do_test omitunique-2.2.$j.2 {
-      catchsql [ subst {UPDATE $tbl SET a='abc'}]
-    } $msg
-  }
-  ifcapable !unique_enforcement {
-    ifcapable explain {
-      do_test omitunique-2.2.$j.1 {
-        set x [execsql [ subst {EXPLAIN UPDATE $tbl SET a='abc'}]]
-        regexp { IsUnique } $x
-      } {0}
+    ifcapable !unique_enforcement {
+        do_test omitunique-2.2.$j.1 {
+          set x [execsql [ subst {EXPLAIN UPDATE $tbl SET a='abc'}]]
+          regexp { IsUnique } $x
+        } {0}
     }
-    do_test omitunique-2.2.$j.2 {
-      catchsql [ subst {UPDATE $tbl SET a='abc' }]
-    } {0 {}}
+# comment out for now
+#    do_test omitunique-2.2.$j.2 {
+#      set x [execsql [ subst {EXPLAIN UPDATE $tbl SET a='abc' WHERE a<>'abc'}]]
+#      regexp { Next } $x
+#    } {0}
   }
+  if { $uniq_enforced==0 || $uniq==0 } { 
+    set msg {0 {}}
+  } {
+    set msg {1 {column a is not unique}}
+  }
+  do_test omitunique-2.2.$j.3 {
+    catchsql [ subst {UPDATE $tbl SET a='abc'}]
+  } $msg
 
   # check record counts
   ifcapable unique_enforcement {
@@ -158,7 +167,7 @@ foreach {j tbl uniq cnt_enforce cnt_omit qp_est} {
   # make sure the query planner row estimate not affected because of omit enforcement
   ifcapable explain {
     do_test omitunique-2.4.$j {
-      set x [execsql [ subst {EXPLAIN QUERY PLAN SELECT count(*) FROM $tbl WHERE a='abc' }]]
+      set x [ execsql [ subst {EXPLAIN QUERY PLAN SELECT count(*) FROM $tbl WHERE a='abc' }]]
       set y [ subst {~$qp_est row} ]
       regexp $y $x
     } {1}
