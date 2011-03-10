@@ -1,5 +1,5 @@
-C Fix\sissue\swith\smem5\sallocator\swhen\smin\srequest\ssize\sis\slarger\sthatn\s2^30.
-D 2011-03-09T21:36:17.288
+C Minor\sclean-up\sof\sprevious\smem5\sallocator\sfix.
+D 2011-03-10T03:54:55.462
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -149,7 +149,7 @@ F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 00bd8265c81abb665c48fea1e0c234eb3b922206
 F src/mem2.c e307323e86b5da1853d7111b68fd6b84ad6f09cf
 F src/mem3.c 9b237d911ba9904142a804be727cc6664873f8a3
-F src/mem5.c ebc2530757a9b0f44b61a899aef0109effd55ce8
+F src/mem5.c 72e0bc40f535ac38a11712aed01d0014f9300732
 F src/memjournal.c 0ebce851677a7ac035ba1512a7e65851b34530c6
 F src/mutex.c 6949180803ff05a7d0e2b9334a95b4fb5a00e23f
 F src/mutex.h fe2ef5e1c4dae531d5a544f9241f19c56d26803d
@@ -912,7 +912,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f000c9b2b7348238fe2085140d2dd05294a19709
-R 5c4a42c07b3ab928630b72159bbdf550
+P d7dae06fb2d57ed6b9555b774712f42077ae4155
+R 09ce3b3c494c7ecbffa2cbbcd0f16adf
 U shaneh
-Z 82918d77f73b87eb8c0dd11fedd7903d
+Z 8a07294df458a912085e72ad9cffeba4

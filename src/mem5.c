@@ -442,7 +442,7 @@ static int memsys5Roundup(int n){
 */
 static int memsys5Log(int iValue){
   int iLog;
-  for(iLog=0; (iLog<((sizeof(int)*8)-2)) && (1<<iLog)<iValue; iLog++);
+  for(iLog=0; (iLog<((sizeof(int)*8)-1)) && (1<<iLog)<iValue; iLog++);
   return iLog;
 }
 
@@ -474,9 +474,7 @@ static int memsys5Init(void *NotUsed){
   assert( zByte!=0 );  /* sqlite3_config() does not allow otherwise */
 
   /* boundaries on sqlite3GlobalConfig.mnReq are enforced in sqlite3_config() */
-  nMinLog = sqlite3GlobalConfig.mnReq;
-  assert( nMinLog>0 && nMinLog<=(1<<12) );
-  nMinLog = memsys5Log(nMinLog);
+  nMinLog = memsys5Log(sqlite3GlobalConfig.mnReq);
   mem5.szAtom = (1<<nMinLog);
   while( (int)sizeof(Mem5Link)>mem5.szAtom ){
     mem5.szAtom = mem5.szAtom << 1;
