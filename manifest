@@ -1,5 +1,8 @@
-C Simplification\sof\stests\sand\smore\sadded\sfor\sSQLITE_OMIT_UNIQUE_ENFORCEMENT\stests.
-D 2011-03-10T21:48:02.401
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Remove\san\sunused\sfield\sfrom\sthe\sunix\ssqlite3_file\sobject.
+D 2011-03-11T16:15:48.132
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -162,7 +165,7 @@ F src/os.c 22ac61d06e72a0dac900400147333b07b13d8e1d
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 2596fd2d5d0976c6c0c628d0c3c7c4e7a724f4cf
-F src/os_unix.c 58fe8845678f6a4e30ed6988c5df7327bc7bd69b
+F src/os_unix.c c4d50608133e16185dd2e120d2713c096f390260
 F src/os_win.c 24d72407a90551969744cf9bcbb1b4c72c5fa845
 F src/pager.c 6aa906b60a59664ba58d3f746164bb010d407ce1
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
@@ -913,7 +916,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ba85bf8cb88f7ae220d919f5c23f51d9dcedc843
-R 62d3b55d8406e6fbbc3a5bfec0a6bc04
-U shaneh
-Z 0d4d7d2864ef8876819acc631335ab7b
+P 75a38411a89bd2969ec5cecca13c13a390b3d478
+R 7f2984260ffacb3dffcb8dcb5c4023c8
+U drh
+Z d9c90b8af5c4c55409cdd40572c1521c
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFNekq3oxKgR168RlERAnw2AJwJjXruLGtJKxCByVRypbB2NPpZ+ACfTrqn
+vTIXWbkq8AxcjkytK9CY6es=
+=V2tY
+-----END PGP SIGNATURE-----

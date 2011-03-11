@@ -209,7 +209,6 @@ struct unixFile {
   int lastErrno;                      /* The unix errno from last I/O error */
   void *lockingContext;               /* Locking style specific state */
   UnixUnusedFd *pUnused;              /* Pre-allocated UnixUnusedFd */
-  int fileFlags;                      /* Miscellanous flags */
   const char *zPath;                  /* Name of the file */
   unixShm *pShm;                      /* Shared memory segment information */
   int szChunk;                        /* Configured by FCNTL_CHUNK_SIZE */
@@ -242,11 +241,6 @@ struct unixFile {
   char aPadding[32];
 #endif
 };
-
-/*
-** The following macros define bits in unixFile.fileFlags
-*/
-#define SQLITE_WHOLE_FILE_LOCKING  0x0001   /* Use whole-file locking */
 
 /*
 ** Include code that is common to all os_*.c files
@@ -4356,7 +4350,6 @@ static int fillInUnixFile(
   OSTRACE(("OPEN    %-3d %s\n", h, zFilename));
   pNew->h = h;
   pNew->dirfd = dirfd;
-  pNew->fileFlags = 0;
   pNew->zPath = zFilename;
 
 #if OS_VXWORKS
