@@ -168,6 +168,139 @@ static void test_append_value(Tcl_Obj *pList, sqlite3_value *pVal){
   }
 }
 
+typedef struct TestConflictHandler TestConflictHandler;
+struct TestConflictHandler {
+  Tcl_Interp *interp;
+  Tcl_Obj *pScript;
+};
+
+static int test_conflict_handler(
+  void *pCtx,                     /* Pointer to TestConflictHandler structure */
+  int eConf,                      /* DATA, MISSING, CONFLICT, CONSTRAINT */
+  sqlite3_changeset_iter *pIter   /* Handle describing change and conflict */
+){
+  TestConflictHandler *p = (TestConflictHandler *)pCtx;
+  Tcl_Obj *pEval;
+  Tcl_Interp *interp = p->interp;
+
+  int op;                         /* SQLITE_UPDATE, DELETE or INSERT */
+  const char *zTab;               /* Name of table conflict is on */
+  int nCol;                       /* Number of columns in table zTab */
+
+  pEval = Tcl_DuplicateObj(p->pScript);
+  Tcl_IncrRefCount(pEval);
+
+  sqlite3changeset_op(pIter, &zTab, &nCol, &op);
+
+  /* Append the operation type. */
+  Tcl_ListObjAppendElement(0, pEval, Tcl_NewStringObj(
+      op==SQLITE_INSERT ? "INSERT" :
+      op==SQLITE_UPDATE ? "UPDATE" : 
+      "DELETE", -1
+  ));
+
+  /* Append the table name. */
+  Tcl_ListObjAppendElement(0, pEval, Tcl_NewStringObj(zTab, -1));
+
+  /* Append the conflict type. */
+  switch( eConf ){
+    case SQLITE_CHANGESET_DATA:
+      Tcl_ListObjAppendElement(interp, pEval,Tcl_NewStringObj("DATA",-1));
+      break;
+    case SQLITE_CHANGESET_NOTFOUND:
+      Tcl_ListObjAppendElement(interp, pEval,Tcl_NewStringObj("NOTFOUND",-1));
+      break;
+    case SQLITE_CHANGESET_CONFLICT:
+      Tcl_ListObjAppendElement(interp, pEval,Tcl_NewStringObj("CONFLICT",-1));
+      break;
+    case SQLITE_CHANGESET_CONSTRAINT:
+      Tcl_ListObjAppendElement(interp, pEval,Tcl_NewStringObj("CONSTRAINT",-1));
+      break;
+  }
+
+  /* If this is not an INSERT, append the old row */
+  if( op!=SQLITE_INSERT ){
+    int i;
+    Tcl_Obj *pOld = Tcl_NewObj();
+    for(i=0; i<nCol; i++){
+      sqlite3_value *pVal;
+      sqlite3changeset_old(pIter, i, &pVal);
+      test_append_value(pOld, pVal);
+    }
+    Tcl_ListObjAppendElement(0, pEval, pOld);
+  }
+
+  /* If this is not a DELETE, append the new row */
+  if( op!=SQLITE_DELETE ){
+    int i;
+    Tcl_Obj *pNew = Tcl_NewObj();
+    for(i=0; i<nCol; i++){
+      sqlite3_value *pVal;
+      sqlite3changeset_new(pIter, i, &pVal);
+      test_append_value(pNew, pVal);
+    }
+    Tcl_ListObjAppendElement(0, pEval, pNew);
+  }
+
+  /* If this is a CHANGESET_DATA or CHANGESET_CONFLICT conflict, append
+  ** the conflicting row. */
+  if( eConf==SQLITE_CHANGESET_DATA || eConf==SQLITE_CHANGESET_CONFLICT ){
+    int i;
+    Tcl_Obj *pConflict = Tcl_NewObj();
+    for(i=0; i<nCol; i++){
+      sqlite3_value *pVal;
+      sqlite3changeset_conflict(pIter, i, &pVal);
+      test_append_value(pConflict, pVal);
+    }
+    Tcl_ListObjAppendElement(0, pEval, pConflict);
+  }
+
+  if( TCL_OK!=Tcl_EvalObjEx(interp, pEval, TCL_EVAL_GLOBAL) ){
+    Tcl_BackgroundError(interp);
+  }
+  Tcl_DecrRefCount(pEval);
+  return SQLITE_CHANGESET_OMIT;
+}
+
+/*
+** sqlite3changeset_apply DB CHANGESET SCRIPT
+*/
+static int test_sqlite3changeset_apply(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;                    /* Database handle */
+  Tcl_CmdInfo info;               /* Database Tcl command (objv[1]) info */
+  int rc;                         /* Return code from changeset_invert() */
+  void *pChangeset;               /* Buffer containing changeset */
+  int nChangeset;                 /* Size of buffer aChangeset in bytes */
+  TestConflictHandler ctx;
+
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB CHANGESET SCRIPT");
+    return TCL_ERROR;
+  }
+  if( 0==Tcl_GetCommandInfo(interp, Tcl_GetString(objv[1]), &info) ){
+    Tcl_AppendResult(interp, "no such handle: ", Tcl_GetString(objv[2]), 0);
+    return TCL_ERROR;
+  }
+  db = *(sqlite3 **)info.objClientData;
+  pChangeset = (void *)Tcl_GetByteArrayFromObj(objv[2], &nChangeset);
+  ctx.pScript = objv[3];
+  ctx.interp = interp;
+
+  rc = sqlite3changeset_apply(
+      db, nChangeset, pChangeset, test_conflict_handler, (void *)&ctx
+  );
+  if( rc!=SQLITE_OK ){
+    return test_session_error(interp, rc);
+  }
+  Tcl_ResetResult(interp);
+  return TCL_OK;
+}
+
 /*
 ** sqlite3changeset_invert CHANGESET
 */
@@ -185,6 +318,7 @@ static int test_sqlite3changeset_invert(
 
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "CHANGESET");
+    return TCL_ERROR;
   }
   aChangeset = (void *)Tcl_GetByteArrayFromObj(objv[1], &nChangeSet);
 
@@ -282,6 +416,9 @@ int TestSession_Init(Tcl_Interp *interp){
   );
   Tcl_CreateObjCommand(
       interp, "sqlite3changeset_invert", test_sqlite3changeset_invert, 0, 0
+  );
+  Tcl_CreateObjCommand(
+      interp, "sqlite3changeset_apply", test_sqlite3changeset_apply, 0, 0
   );
   return TCL_OK;
 }
