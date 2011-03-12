@@ -667,14 +667,14 @@ static void sessionAppendUpdate(
     u8 *pCsr = p->aRecord;
     sessionAppendByte(pBuf, SQLITE_UPDATE, pRc);
     for(i=0; i<sqlite3_column_count(pStmt); i++){
-      int nCopy = 0;
+      int bChanged = 0;
       int nAdvance;
       int eType = *pCsr;
       switch( eType ){
         case SQLITE_NULL:
           nAdvance = 1;
           if( sqlite3_column_type(pStmt, i)!=SQLITE_NULL ){
-            nCopy = 1;
+            bChanged = 1;
           }
           break;
 
@@ -691,7 +691,7 @@ static void sessionAppendUpdate(
               if( dVal==sqlite3_column_double(pStmt, i) ) break;
             }
           }
-          nCopy = 9;
+          bChanged = 1;
           break;
         }
 
@@ -706,21 +706,23 @@ static void sessionAppendUpdate(
           ){
             break;
           }
-          nCopy = nAdvance;
+          bChanged = 1;
         }
       }
-      if( abPK[i] ){
-        nCopy = nAdvance;
+
+      if( bChanged || abPK[i] ){
+        sessionAppendBlob(pBuf, pCsr, nAdvance, pRc);
+      }else{
+        sessionAppendByte(pBuf, 0, pRc);
       }
 
-      if( nCopy==0 ){
-        sessionAppendByte(pBuf, 0, pRc);
-        sessionAppendByte(&buf2, 0, pRc);
-      }else{
-        sessionAppendBlob(pBuf, pCsr, nCopy, pRc);
+      if( bChanged ){
         sessionAppendCol(&buf2, pStmt, i, pRc);
         bNoop = 0;
+      }else{
+        sessionAppendByte(&buf2, 0, pRc);
       }
+
       pCsr += nAdvance;
     }
 
@@ -1452,6 +1454,52 @@ static int sessionSelectRow(
   return rc;
 }
 
+static int sessionConstraintConflict(
+  sqlite3 *db,                    /* Database handle */
+  sqlite3_changeset_iter *pIter,  /* Changeset iterator */
+  u8 *abPK,                       /* Primary key flags array */
+  sqlite3_stmt *pSelect,          /* SELECT statement from sessionSelectRow() */
+  int(*xConflict)(void *, int, sqlite3_changeset_iter*),
+  void *pCtx
+){
+  int res;
+  int rc;
+  int i;
+  int nCol;
+  int op;
+  const char *zDummy;
+
+  sqlite3changeset_op(pIter, &zDummy, &nCol, &op);
+  assert( op==SQLITE_UPDATE || op==SQLITE_INSERT );
+
+  /* Bind the new.* PRIMARY KEY values to the SELECT statement. */
+  for(i=0; i<nCol; i++){
+    if( abPK[i] ){
+      sqlite3_value *pVal;
+      if( op==SQLITE_UPDATE ) rc = sqlite3changeset_old(pIter, i, &pVal);
+      else                    rc = sqlite3changeset_new(pIter, i, &pVal);
+      if( rc!=SQLITE_OK ) return rc;
+      sqlite3_bind_value(pSelect, i+1, pVal);
+    }
+  }
+
+  if( SQLITE_ROW==sqlite3_step(pSelect) ){
+    /* There exists another row with the new.* primary key. */
+    pIter->pConflict = pSelect;
+    res = xConflict(pCtx, SQLITE_CHANGESET_CONFLICT, pIter);
+    pIter->pConflict = 0;
+    sqlite3_reset(pSelect);
+  }else{
+    /* No other row with the new.* primary key. */
+    rc = sqlite3_reset(pSelect);
+    if( rc==SQLITE_OK ){
+      res = xConflict(pCtx, SQLITE_CHANGESET_CONSTRAINT, pIter);
+    }
+  }
+
+  return rc;
+}
+
 int sqlite3changeset_apply(
   sqlite3 *db,
   int nChangeset,
@@ -1479,6 +1527,8 @@ int sqlite3changeset_apply(
   sqlite3_stmt *pSelect = 0;      /* SELECT statement */
 
   rc = sqlite3_exec(db, "SAVEPOINT changeset_apply", 0, 0, 0);
+  if( rc!=SQLITE_OK ) return rc;
+
   sqlite3changeset_start(&pIter, nChangeset, pChangeset);
   while( SQLITE_ROW==sqlite3changeset_next(pIter) ){
     int op;
@@ -1494,6 +1544,13 @@ int sqlite3changeset_apply(
       sqlite3_finalize(pInsert);
       sqlite3_finalize(pSelect);
       pSelect = pUpdate = pInsert = pDelete = 0;
+
+      if( (rc = sessionSelectRow(db, zTab, nCol, azCol, abPK, &pSelect))
+       || (rc = sessionUpdateRow(db, zTab, nCol, azCol, abPK, &pUpdate))
+       || (rc = sessionDeleteRow(db, zTab, nCol, azCol, abPK, &pDelete))
+      ){
+        break;
+      }
     }
 
     if( op==SQLITE_DELETE ){
@@ -1559,7 +1616,7 @@ int sqlite3changeset_apply(
         if( rc==SQLITE_OK ){
           if( pOld ) sqlite3_bind_value(pUpdate, i*3+1, pOld);
           sqlite3_bind_int(pUpdate, i*3+2, !!pNew);
-          if( pNew ) sqlite3_bind_value(pUpdate, i*3+3, pOld);
+          if( pNew ) sqlite3_bind_value(pUpdate, i*3+3, pNew);
         }
       }
       if( rc==SQLITE_OK ) rc = sqlite3_bind_int(pUpdate, nCol*3+1, 0);
@@ -1592,7 +1649,32 @@ int sqlite3changeset_apply(
           }
         }
       }else if( rc==SQLITE_CONSTRAINT ){
-        assert(0);
+        /* This may be a CONSTRAINT or CONFLICT error. It is a CONFLICT if
+        ** the only problem is a duplicate PRIMARY KEY, or a CONSTRAINT 
+        ** otherwise. */
+        int bPKChange = 0;
+
+        /* Check if the PK has been modified. */
+        rc = SQLITE_OK;
+        for(i=0; i<nCol && rc==SQLITE_OK; i++){
+          if( abPK[i] ){
+            sqlite3_value *pNew;
+            rc = sqlite3changeset_new(pIter, i, &pNew);
+            if( rc==SQLITE_OK && pNew ){
+              bPKChange = 1;
+              break;
+            }
+          }
+        }
+
+        if( bPKChange ){
+          /* See if there exists a row with a duplicate primary key. */
+          rc = sessionConstraintConflict(
+              db, pIter, abPK, pSelect, xConflict, pCtx
+          );
+        }else{
+          res = xConflict(pCtx, SQLITE_CHANGESET_CONSTRAINT, pIter);
+        }
       }
 
     }else{
@@ -1624,29 +1706,9 @@ int sqlite3changeset_apply(
       sqlite3_step(pInsert);
       rc = sqlite3_reset(pInsert);
       if( rc==SQLITE_CONSTRAINT && xConflict ){
-        int res;
-
-        /* Figure out if this is a primary key or other constraint. */
-        rc = sessionSelectRow(db, zTab, nCol, azCol, abPK, &pSelect);
-        for(i=0; rc==SQLITE_OK && i<nCol; i++){
-          if( abPK[i] ){
-            sqlite3_value *pVal;
-            rc = sqlite3changeset_new(pIter, i, &pVal);
-            if( rc==SQLITE_OK ) sqlite3_bind_value(pSelect, i+1, pVal);
-          }
-        }
-        if( rc!=SQLITE_OK ) break;
-        if( SQLITE_ROW==sqlite3_step(pSelect) ){
-          pIter->pConflict = pSelect;
-          res = xConflict(pCtx, SQLITE_CHANGESET_CONFLICT, pIter);
-          pIter->pConflict = 0;
-          sqlite3_reset(pSelect);
-        }else{
-          rc = sqlite3_reset(pSelect);
-          if( rc==SQLITE_OK ){
-            res = xConflict(pCtx, SQLITE_CHANGESET_CONSTRAINT, pIter);
-          }
-        }
+        rc = sessionConstraintConflict(
+              db, pIter, abPK, pSelect, xConflict, pCtx
+        );
       }
     }
   }
