@@ -206,6 +206,7 @@ struct unixFile {
   int h;                              /* The file descriptor */
   int dirfd;                          /* File descriptor for the directory */
   unsigned char eFileLock;            /* The type of lock held on this fd */
+  unsigned char ctrlFlags;            /* Behavioral bits.  UNIXFILE_* flags */
   int lastErrno;                      /* The unix errno from last I/O error */
   void *lockingContext;               /* Locking style specific state */
   UnixUnusedFd *pUnused;              /* Pre-allocated UnixUnusedFd */
@@ -241,6 +242,11 @@ struct unixFile {
   char aPadding[32];
 #endif
 };
+
+/*
+** Allowed values for the unixFile.ctrlFlags bitmask:
+*/
+#define UNIXFILE_EXCL   0x01     /* Connections from one process only */
 
 /*
 ** Include code that is common to all os_*.c files
@@ -887,7 +893,8 @@ struct unixFileId {
 struct unixInodeInfo {
   struct unixFileId fileId;       /* The lookup key */
   int nShared;                    /* Number of SHARED locks held */
-  int eFileLock;                  /* One of SHARED_LOCK, RESERVED_LOCK etc. */
+  unsigned char eFileLock;        /* One of SHARED_LOCK, RESERVED_LOCK etc. */
+  unsigned char bProcessLock;     /* An exclusive process lock is held */
   int nRef;                       /* Number of pointers to this structure */
   unixShmNode *pShmNode;          /* Shared memory associated with this inode */
   int nLock;                      /* Number of outstanding file locks */
@@ -1158,7 +1165,7 @@ static int unixCheckReservedLock(sqlite3_file *id, int *pResOut){
   /* Otherwise see if some other process holds it.
   */
 #ifndef __DJGPP__
-  if( !reserved ){
+  if( !reserved && !pFile->pInode->bProcessLock ){
     struct flock lock;
     lock.l_whence = SEEK_SET;
     lock.l_start = RESERVED_BYTE;
@@ -1178,6 +1185,40 @@ static int unixCheckReservedLock(sqlite3_file *id, int *pResOut){
   OSTRACE(("TEST WR-LOCK %d %d %d (unix)\n", pFile->h, rc, reserved));
 
   *pResOut = reserved;
+  return rc;
+}
+
+/*
+** Attempt to set a system-lock on the file pFile.  The lock is 
+** described by pLock.
+**
+** If the pFile was opened from unix-excl, then the only lock ever
+** obtained is an exclusive lock, and it is obtained exactly once
+** the first time any lock is attempted.  All subsequent system locking
+** operations become no-ops.  Locking operations still happen internally,
+** in order to coordinate access between separate database connections
+** within this process, but all of that is handled in memory and the
+** operating system does not participate.
+*/
+static int unixFileLock(unixFile *pFile, struct flock *pLock){
+  int rc;
+  assert( unixMutexHeld() );
+  if( (pFile->ctrlFlags & UNIXFILE_EXCL)!=0 || pFile->pInode->bProcessLock ){
+    if( pFile->pInode->bProcessLock==0 ){
+      struct flock lock;
+      lock.l_whence = SEEK_SET;
+      lock.l_start = SHARED_FIRST;
+      lock.l_len = SHARED_SIZE;
+      lock.l_type = F_WRLCK;
+      rc = osFcntl(pFile->h, F_SETLK, &lock);
+      if( rc<0 ) return rc;
+      pFile->pInode->bProcessLock = 1;
+    }else{
+      rc = 0;
+    }
+  }else{
+    rc = osFcntl(pFile->h, F_SETLK, pLock);
+  }
   return rc;
 }
 
@@ -1317,7 +1358,7 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   ){
     lock.l_type = (eFileLock==SHARED_LOCK?F_RDLCK:F_WRLCK);
     lock.l_start = PENDING_BYTE;
-    s = osFcntl(pFile->h, F_SETLK, &lock);
+    s = unixFileLock(pFile, &lock);
     if( s==(-1) ){
       tErrno = errno;
       rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_LOCK);
@@ -1339,14 +1380,14 @@ static int unixLock(sqlite3_file *id, int eFileLock){
     /* Now get the read-lock */
     lock.l_start = SHARED_FIRST;
     lock.l_len = SHARED_SIZE;
-    if( (s = osFcntl(pFile->h, F_SETLK, &lock))==(-1) ){
+    if( (s = unixFileLock(pFile, &lock))==(-1) ){
       tErrno = errno;
     }
     /* Drop the temporary PENDING lock */
     lock.l_start = PENDING_BYTE;
     lock.l_len = 1L;
     lock.l_type = F_UNLCK;
-    if( osFcntl(pFile->h, F_SETLK, &lock)!=0 ){
+    if( unixFileLock(pFile, &lock)!=0 ){
       if( s != -1 ){
         /* This could happen with a network mount */
         tErrno = errno; 
@@ -1389,7 +1430,7 @@ static int unixLock(sqlite3_file *id, int eFileLock){
       default:
         assert(0);
     }
-    s = osFcntl(pFile->h, F_SETLK, &lock);
+    s = unixFileLock(pFile, &lock);
     if( s==(-1) ){
       tErrno = errno;
       rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_LOCK);
@@ -1458,7 +1499,7 @@ static void setPendingFd(unixFile *pFile){
 ** around a bug in BSD NFS lockd (also seen on MacOSX 10.3+) that fails to 
 ** remove the write lock on a region when a read lock is set.
 */
-static int _posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
+static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
   unixFile *pFile = (unixFile*)id;
   unixInodeInfo *pInode;
   struct flock lock;
@@ -1525,7 +1566,7 @@ static int _posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
         lock.l_whence = SEEK_SET;
         lock.l_start = SHARED_FIRST;
         lock.l_len = divSize;
-        if( osFcntl(h, F_SETLK, &lock)==(-1) ){
+        if( unixFileLock(pFile,, &lock)==(-1) ){
           tErrno = errno;
           rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK);
           if( IS_LOCK_ERROR(rc) ){
@@ -1537,7 +1578,7 @@ static int _posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
         lock.l_whence = SEEK_SET;
         lock.l_start = SHARED_FIRST;
         lock.l_len = divSize;
-        if( osFcntl(h, F_SETLK, &lock)==(-1) ){
+        if( unixFileLock(pFile, &lock)==(-1) ){
           tErrno = errno;
           rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_RDLOCK);
           if( IS_LOCK_ERROR(rc) ){
@@ -1549,7 +1590,7 @@ static int _posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
         lock.l_whence = SEEK_SET;
         lock.l_start = SHARED_FIRST+divSize;
         lock.l_len = SHARED_SIZE-divSize;
-        if( osFcntl(h, F_SETLK, &lock)==(-1) ){
+        if( unixFileLock(pFile, &lock)==(-1) ){
           tErrno = errno;
           rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK);
           if( IS_LOCK_ERROR(rc) ){
@@ -1564,7 +1605,7 @@ static int _posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
         lock.l_whence = SEEK_SET;
         lock.l_start = SHARED_FIRST;
         lock.l_len = SHARED_SIZE;
-        if( osFcntl(h, F_SETLK, &lock)==(-1) ){
+        if( unixFileLock(pFile, &lock)==(-1) ){
           tErrno = errno;
           rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_RDLOCK);
           if( IS_LOCK_ERROR(rc) ){
@@ -1578,7 +1619,7 @@ static int _posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
     lock.l_whence = SEEK_SET;
     lock.l_start = PENDING_BYTE;
     lock.l_len = 2L;  assert( PENDING_BYTE+1==RESERVED_BYTE );
-    if( osFcntl(h, F_SETLK, &lock)!=(-1) ){
+    if( unixFileLock(pFile, &lock)!=(-1) ){
       pInode->eFileLock = SHARED_LOCK;
     }else{
       tErrno = errno;
@@ -1602,7 +1643,7 @@ static int _posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
       SimulateIOErrorBenign(1);
       SimulateIOError( h=(-1) )
       SimulateIOErrorBenign(0);
-      if( osFcntl(h, F_SETLK, &lock)!=(-1) ){
+      if( unixFileLock(pFile, &lock)!=(-1) ){
         pInode->eFileLock = NO_LOCK;
       }else{
         tErrno = errno;
@@ -1640,7 +1681,7 @@ end_unlock:
 ** the requested locking level, this routine is a no-op.
 */
 static int unixUnlock(sqlite3_file *id, int eFileLock){
-  return _posixUnlock(id, eFileLock, 0);
+  return posixUnlock(id, eFileLock, 0);
 }
 
 /*
@@ -2821,7 +2862,7 @@ static int afpClose(sqlite3_file *id) {
  ** the requested locking level, this routine is a no-op.
  */
 static int nfsUnlock(sqlite3_file *id, int eFileLock){
-  return _posixUnlock(id, eFileLock, 1);
+  return posixUnlock(id, eFileLock, 1);
 }
 
 #endif /* defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE */
@@ -4351,6 +4392,11 @@ static int fillInUnixFile(
   pNew->h = h;
   pNew->dirfd = dirfd;
   pNew->zPath = zFilename;
+  if( memcmp(pVfs->zName,"unix-excl",10)==0 ){
+    pNew->ctrlFlags = UNIXFILE_EXCL;
+  }else{
+    pNew->ctrlFlags = 0;
+  }
 
 #if OS_VXWORKS
   pNew->pId = vxworksFindFileId(zFilename);
@@ -6550,6 +6596,7 @@ int sqlite3_os_init(void){
 #endif
     UNIXVFS("unix-none",     nolockIoFinder ),
     UNIXVFS("unix-dotfile",  dotlockIoFinder ),
+    UNIXVFS("unix-excl",     posixIoFinder ),
 #if OS_VXWORKS
     UNIXVFS("unix-namedsem", semIoFinder ),
 #endif
