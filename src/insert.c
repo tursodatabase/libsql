@@ -1331,7 +1331,6 @@ void sqlite3GenerateConstraintChecks(
     sqlite3ExprCacheAffinityChange(pParse, regIdx, pIdx->nColumn+1);
 
 #ifdef SQLITE_OMIT_UNIQUE_ENFORCEMENT
-    pIdx->onError = OE_None;
     sqlite3ReleaseTempRange(pParse, regIdx, pIdx->nColumn+1);
     continue;  /* Treat pIdx as if it is not a UNIQUE index */
 #else

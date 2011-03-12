@@ -22,64 +22,51 @@ ifcapable !unique_enforcement {
 }
 
 # table with UNIQUE keyword on column
-do_test omitunique-1.1.1 {
-  catchsql {CREATE TABLE t1(a TEXT UNIQUE);  }
+do_test omitunique-1.1 {
+  catchsql { CREATE TABLE t1(a TEXT UNIQUE); }
 } {0 {}}
-do_test omitunique-1.1.2 {
-  catchsql {INSERT INTO t1(a) VALUES('abc'); }
-} {0 {}}
-do_test omitunique-1.1.3 {
-  catchsql {INSERT INTO t1(a) VALUES('123'); }
+
+# table with UNIQUE clause on column
+do_test omitunique-1.2 {
+  catchsql { CREATE TABLE t2(a TEXT, UNIQUE(a)); }
 } {0 {}}
 
 # table with UNIQUE index on column
-do_test omitunique-1.2.1 {
+do_test omitunique-1.3 {
   catchsql {
-    CREATE TABLE t2(a TEXT);
-    CREATE UNIQUE INDEX t2a ON t2(a);
+    CREATE TABLE t3(a TEXT);
+    CREATE UNIQUE INDEX t3a ON t3(a);
   }
-} {0 {}}
-do_test omitunique-1.2.2 {
-  catchsql {INSERT INTO t2(a) VALUES('abc'); }
-} {0 {}}
-do_test omitunique-1.2.3 {
-  catchsql {INSERT INTO t2(a) VALUES('123'); }
 } {0 {}}
 
 # table with regular index on column
-do_test omitunique-1.3.1 {
+do_test omitunique-1.4 {
   catchsql {
-    CREATE TABLE t3(a TEXT);
-    CREATE INDEX t3a ON t3(a);
+    CREATE TABLE t4(a TEXT);
+    CREATE INDEX t4a ON t4(a);
   }
-} {0 {}}
-do_test omitunique-1.3.2 {
-  catchsql {INSERT INTO t3(a) VALUES('abc'); }
-} {0 {}}
-do_test omitunique-1.3.3 {
-  catchsql {INSERT INTO t3(a) VALUES('123'); }
 } {0 {}}
 
 # table with no index on column
-do_test omitunique-1.4.1 {
-  catchsql {
-    CREATE TABLE t4(a TEXT);
-  }
-} {0 {}}
-do_test omitunique-1.4.2 {
-  catchsql {INSERT INTO t4(a) VALUES('abc'); }
-} {0 {}}
-do_test omitunique-1.4.3 {
-  catchsql {INSERT INTO t4(a) VALUES('123'); }
+do_test omitunique-1.5 {
+  catchsql { CREATE TABLE t5(a TEXT); }
 } {0 {}}
 
 # run our tests using several table/index forms
-foreach {j tbl uniq cnt_enforce cnt_omit qp_est} {
-1 {t1} 1 1 9 1
-2 {t2} 1 1 9 1
-3 {t3} 0 9 9 10
-4 {t4} 0 9 9 100000
+foreach {j tbl uniq cnt qp_est stat_enforce stat_omit } {
+1 {t1} 1 1 1      {2 1} {9 9}
+2 {t2} 1 1 1      {2 1} {9 9}
+3 {t3} 1 1 1      {2 1} {9 9}
+4 {t4} 0 9 10     {9 9} {9 9}
+5 {t5} 0 9 100000 9     9
 } {
+
+  do_test omitunique-2.0.$j.1 {
+    catchsql [ subst {INSERT INTO $tbl (a) VALUES('abc'); }]
+  } {0 {}}
+  do_test omitunique-2.0.$j.2 {
+    catchsql [ subst {INSERT INTO $tbl (a) VALUES('123'); }]
+  } {0 {}}
 
   # check various INSERT commands
   foreach {i cmd err} {
@@ -93,22 +80,17 @@ foreach {j tbl uniq cnt_enforce cnt_omit qp_est} {
   } {
 
     ifcapable explain {
+      set x [execsql [ subst { EXPLAIN $cmd INTO $tbl (a) VALUES('abc'); }]]
       ifcapable unique_enforcement {
           do_test omitunique-2.1.$j.$i.1 {
-            set x [execsql [ subst {EXPLAIN $cmd INTO $tbl (a) VALUES('abc')}]]
             regexp { IsUnique } $x
           } $uniq
       }
       ifcapable !unique_enforcement {
           do_test omitunique-2.1.$j.$i.1 {
-            set x [execsql [ subst {EXPLAIN $cmd INTO $tbl (a) VALUES('abc')}]]
             regexp { IsUnique } $x
           } {0}
       }
-      do_test omitunique-2.1.$j.2 {
-        set x [execsql [ subst {EXPLAIN $cmd INTO $tbl (a) VALUES('abc')}]]
-        regexp { Next } $x
-      } {0}
     }
 
     if { $uniq_enforced==0 || $uniq==0 || $err==0 } { 
@@ -117,7 +99,7 @@ foreach {j tbl uniq cnt_enforce cnt_omit qp_est} {
       set msg {1 {column a is not unique}}
     }
     do_test omitunique-2.1.$j.$i.3 {
-      catchsql [ subst {$cmd INTO $tbl (a) VALUES('abc')}]
+      catchsql [ subst {$cmd INTO $tbl (a) VALUES('abc'); }]
     } $msg
 
   }
@@ -125,23 +107,17 @@ foreach {j tbl uniq cnt_enforce cnt_omit qp_est} {
 
   # check UPDATE command
   ifcapable explain {
+    set x [execsql [ subst { EXPLAIN UPDATE $tbl SET a='abc'; }]]
     ifcapable unique_enforcement {
         do_test omitunique-2.2.$j.1 {
-          set x [execsql [ subst {EXPLAIN UPDATE $tbl SET a='abc'}]]
           regexp { IsUnique } $x
         } $uniq
     }
     ifcapable !unique_enforcement {
         do_test omitunique-2.2.$j.1 {
-          set x [execsql [ subst {EXPLAIN UPDATE $tbl SET a='abc'}]]
           regexp { IsUnique } $x
         } {0}
     }
-# comment out for now
-#    do_test omitunique-2.2.$j.2 {
-#      set x [execsql [ subst {EXPLAIN UPDATE $tbl SET a='abc' WHERE a<>'abc'}]]
-#      regexp { Next } $x
-#    } {0}
   }
   if { $uniq_enforced==0 || $uniq==0 } { 
     set msg {0 {}}
@@ -149,28 +125,43 @@ foreach {j tbl uniq cnt_enforce cnt_omit qp_est} {
     set msg {1 {column a is not unique}}
   }
   do_test omitunique-2.2.$j.3 {
-    catchsql [ subst {UPDATE $tbl SET a='abc'}]
+    catchsql [ subst { UPDATE $tbl SET a='abc'; }]
   } $msg
 
   # check record counts
-  ifcapable unique_enforcement {
-    do_test omitunique-2.3.$j {
-      execsql [ subst {SELECT count(*) FROM $tbl WHERE a='abc' }]
-    } $cnt_enforce
-  }
-  ifcapable !unique_enforcement {
-    do_test omitunique-2.3.$j {
-      execsql [ subst {SELECT count(*) FROM $tbl WHERE a='abc' }]
-    } $cnt_omit
-  }
+  do_test omitunique-2.3.$j {
+    execsql [ subst { SELECT count(*) FROM $tbl WHERE a='abc'; }]
+  } $cnt
 
   # make sure the query planner row estimate not affected because of omit enforcement
   ifcapable explain {
     do_test omitunique-2.4.$j {
-      set x [ execsql [ subst {EXPLAIN QUERY PLAN SELECT count(*) FROM $tbl WHERE a='abc' }]]
+      set x [ execsql [ subst { EXPLAIN QUERY PLAN SELECT count(*) FROM $tbl WHERE a='abc'; }]]
       set y [ subst {~$qp_est row} ]
       regexp $y $x
     } {1}
+  }
+
+  # make sure we omit extra OP_Next opcodes when the UNIQUE constraints 
+  # mean there will only be a single pass through the code 
+  ifcapable explain {
+    set x [execsql [ subst { EXPLAIN SELECT * FROM $tbl WHERE a='abc'; }]]
+    do_test omitunique-2.5.$j {
+      if { [ regexp { Next } $x ] } { expr { 0 } } { expr { 1 } }
+    } $uniq
+  }
+
+  # make sure analyze index stats correct
+  ifcapable analyze {
+    if { $uniq_enforced==0 } { 
+      set msg [ list $stat_omit ]
+    } {
+      set msg [ list $stat_enforce ]
+    }
+    do_test omitunique-2.6.$j {
+      execsql [ subst { ANALYZE $tbl; } ]
+      execsql [ subst { SELECT stat FROM sqlite_stat1 WHERE tbl='$tbl'; } ]
+    } $msg
   }
 
 }
