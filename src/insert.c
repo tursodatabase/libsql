@@ -1312,7 +1312,9 @@ void sqlite3GenerateConstraintChecks(
   */
   for(iCur=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, iCur++){
     int regIdx;
+#ifndef SQLITE_OMIT_UNIQUE_ENFORCEMENT
     int regR;
+#endif
 
     if( aRegIdx[iCur]==0 ) continue;  /* Skip unused indices */
 
@@ -1330,6 +1332,11 @@ void sqlite3GenerateConstraintChecks(
     sqlite3VdbeAddOp3(v, OP_MakeRecord, regIdx, pIdx->nColumn+1, aRegIdx[iCur]);
     sqlite3VdbeChangeP4(v, -1, sqlite3IndexAffinityStr(v, pIdx), 0);
     sqlite3ExprCacheAffinityChange(pParse, regIdx, pIdx->nColumn+1);
+
+#ifdef SQLITE_OMIT_UNIQUE_ENFORCEMENT
+    sqlite3ReleaseTempRange(pParse, regIdx, pIdx->nColumn+1);
+    continue;  /* Treat pIdx as if it is not a UNIQUE index */
+#else
 
     /* Find out what action to take in case there is an indexing conflict */
     onError = pIdx->onError;
@@ -1404,6 +1411,7 @@ void sqlite3GenerateConstraintChecks(
     }
     sqlite3VdbeJumpHere(v, j3);
     sqlite3ReleaseTempReg(pParse, regR);
+#endif
   }
   
   if( pbMayReplace ){

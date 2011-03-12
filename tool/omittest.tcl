@@ -155,7 +155,7 @@ proc main {argv} {
     SQLITE_OMIT_CONFLICT_CLAUSE        \
     SQLITE_OMIT_DATETIME_FUNCS         \
     SQLITE_OMIT_DECLTYPE               \
-    off_SQLITE_OMIT_DISKIO                 \
+    off_SQLITE_OMIT_DISKIO             \
     SQLITE_OMIT_EXPLAIN                \
     SQLITE_OMIT_FLAG_PRAGMAS           \
     SQLITE_OMIT_FLOATING_POINT         \
@@ -182,11 +182,15 @@ proc main {argv} {
     SQLITE_OMIT_TEMPDB                 \
     SQLITE_OMIT_TRACE                  \
     SQLITE_OMIT_TRIGGER                \
-    SQLITE_OMIT_UTF16                  \
-    SQLITE_OMIT_VACUUM                 \
-    SQLITE_OMIT_VIEW                   \
-    SQLITE_OMIT_VIRTUALTABLE           \
-    SQLITE_OMIT_XFER_OPT               \
+    SQLITE_OMIT_TRUNCATE_OPTIMIZATION  \
+    SQLITE_OMIT_UNIQUE_ENFORCEMENT     \
+    SQLITE_OMIT_UTF16 \
+    SQLITE_OMIT_VACUUM \
+    SQLITE_OMIT_VIEW \
+    SQLITE_OMIT_VIRTUALTABLE \
+    SQLITE_OMIT_WAL \
+    SQLITE_OMIT_WSD \
+    SQLITE_OMIT_XFER_OPT \
   ]
 
   # Process any command line options.
