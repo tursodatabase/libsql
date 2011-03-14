@@ -148,7 +148,9 @@ do_changeset_invert_test 2.4.3 S {}
 do_test 2.4.4 { S delete } {}
 
 #-------------------------------------------------------------------------
-# Test the application of simple changesets.
+# Test the application of simple changesets. These tests also test that
+# the conflict callback is invoked correctly. For these tests, the 
+# conflict callback always returns OMIT.
 #
 db close
 forcedelete test.db test.db2
@@ -159,6 +161,8 @@ proc xConflict {args} {
   lappend ::xConflict $args
   return "" 
 }
+
+proc bgerror {args} { set ::background_error $args }
 
 proc do_conflict_test {tn args} {
   set O(-tables)    [list]
@@ -182,6 +186,9 @@ proc do_conflict_test {tn args} {
   foreach c $O(-conflicts) {
     lappend conflicts $c
   }
+
+  after 1 {set go 1}
+  vwait go
 
   uplevel do_test $tn [list { set ::xConflict }] [list $conflicts]
   S delete
@@ -279,10 +286,126 @@ do_conflict_test 3.3.3 -tables t4 -sql {
   {UPDATE t4 NOTFOUND {i 4 i 5 i 6} {i -1 {} {} {} {}}}
   {UPDATE t4 CONSTRAINT {i 7 i 8 i 9} {n {} {} {} {} {}}}
 }
-
 do_db2_test     3.3.4 { SELECT * FROM t4 } {0 2 3 4 5 7 7 8 9 x 11 12}
 do_execsql_test 3.3.5 { SELECT * FROM t4 } {-1 2 3 -1 5 6 {} 8 9 x 11 12}
 
+#-------------------------------------------------------------------------
+# This next block of tests verifies that values returned by the conflict
+# handler are intepreted correctly. The following cases are tested:
+#
+#     Test case   Operation   Conflict   Return Code
+#                 UPDATE      DATA       OMIT
+#                 UPDATE      DATA       REPLACE
+#
+
+proc test_reset {} {
+  db close
+  db2 close
+  forcedelete test.db test.db2
+  sqlite3 db test.db
+  sqlite3 db2 test.db2
+}
+
+proc xConflict {args} {
+  lappend ::xConflict $args
+  return $::conflict_return
+}
+
+foreach {tn conflict_return after} {
+  1 OMIT      {1 2 value1   4 5 7       7 8 9   10 x x}
+  2 REPLACE   {1 2 value1   4 5 value2          10 8 9}
+} {
+  test_reset
+
+  do_test 4.$tn.1 {
+    foreach db {db db2} {
+      execsql { 
+        CREATE TABLE t1(a, b, c, PRIMARY KEY(a));
+        INSERT INTO t1 VALUES(1, 2, 3);
+        INSERT INTO t1 VALUES(4, 5, 6);
+        INSERT INTO t1 VALUES(7, 8, 9);
+      } $db
+    }
+    execsql { 
+      REPLACE INTO t1 VALUES(4, 5, 7);
+      REPLACE INTO t1 VALUES(10, 'x', 'x');
+    } db2
+  } {}
+
+  do_conflict_test 4.$tn.2 -tables t1 -sql {
+    UPDATE t1 SET c = 'value1' WHERE a = 1;       -- no conflict
+    UPDATE t1 SET c = 'value2' WHERE a = 4;       -- DATA conflict
+    UPDATE t1 SET a = 10 WHERE a = 7;             -- CONFLICT conflict
+  } -conflicts {
+    {UPDATE t1 DATA {i 4 {} {} i 6} {{} {} {} {} t value2} {i 4 i 5 i 7}}
+    {UPDATE t1 CONFLICT {i 7 {} {} {} {}} {i 10 {} {} {} {}} {i 10 t x t x}}
+  }
+
+  do_db2_test 4.$tn.3 "SELECT * FROM t1 ORDER BY a" $after
+}
+
+foreach {tn conflict_return} {
+  1 OMIT
+  2 REPLACE
+} {
+  test_reset
+
+  do_test 5.$tn.1 {
+    # Create an identical schema in both databases.
+    set schema {
+      CREATE TABLE "'foolish name'"(x, y, z, PRIMARY KEY(x, y));
+    }
+    execsql $schema db
+    execsql $schema db2
+
+    # Add some rows to [db2]. These rows will cause conflicts later
+    # on when the changeset from [db] is applied to it.
+    execsql { 
+      INSERT INTO "'foolish name'" VALUES('one', 'one', 'ii');
+      INSERT INTO "'foolish name'" VALUES('one', 'two', 'i');
+      INSERT INTO "'foolish name'" VALUES('two', 'two', 'ii');
+    } db2
+
+  } {}
+
+  do_conflict_test 5.$tn.2 -tables {{'foolish name'}} -sql {
+    INSERT INTO "'foolish name'" VALUES('one', 'two', 2);
+  } -conflicts {
+    {INSERT {'foolish name'} CONFLICT {t one t two i 2} {t one t two t i}}
+  }
+
+  set res(REPLACE) {one one ii one two 2 two two ii}
+  set res(OMIT)    {one one ii one two i two two ii}
+  do_db2_test 5.$tn.3 {
+    SELECT * FROM "'foolish name'" ORDER BY x, y
+  } $res($conflict_return)
+
+
+  do_test 5.$tn.1 {
+    set schema {
+      CREATE TABLE d1("z""z" PRIMARY KEY, y);
+      INSERT INTO d1 VALUES(1, 'one');
+      INSERT INTO d1 VALUES(2, 'two');
+    }
+    execsql $schema db
+    execsql $schema db2
+
+    execsql { 
+      UPDATE d1 SET y = 'TWO' WHERE "z""z" = 2;
+    } db2
+
+  } {}
+
+  do_conflict_test 5.$tn.2 -tables d1 -sql {
+    DELETE FROM d1 WHERE "z""z" = 2;
+  } -conflicts {
+    {DELETE d1 DATA {i 2 t two} {i 2 t TWO}}
+  }
+
+  set res(REPLACE) {1 one}
+  set res(OMIT)    {1 one 2 TWO}
+  do_db2_test 5.$tn.3 "SELECT * FROM d1" $res($conflict_return)
+}
 
 catch { db2 close }
 finish_test

@@ -1279,6 +1279,19 @@ static void sessionUpdateDeleteWhere(
   }
 }
 
+
+typedef struct SessionApplyCtx SessionApplyCtx;
+struct SessionApplyCtx {
+  sqlite3 *db;
+  sqlite3_stmt *pDelete;          /* DELETE statement */
+  sqlite3_stmt *pUpdate;          /* DELETE statement */
+  sqlite3_stmt *pInsert;          /* INSERT statement */
+  sqlite3_stmt *pSelect;          /* SELECT statement */
+  int nCol;                       /* Size of azCol[] and abPK[] arrays */
+  const char **azCol;             /* Array of column names */
+  u8 *abPK;                       /* Boolean array - true if column is in PK */
+};
+
 /*
 ** Formulate a statement to DELETE a row from database db. Assuming a table
 ** structure like this:
@@ -1296,25 +1309,19 @@ static void sessionUpdateDeleteWhere(
 static int sessionDeleteRow(
   sqlite3 *db,                    /* Database handle */
   const char *zTab,               /* Table name */
-  int nCol,                       /* Number of entries in azCol and abPK */
-  const char **azCol,             /* Column names */
-  u8 *abPK,                       /* True for PK columns */ 
-  sqlite3_stmt **ppStmt           /* OUT: Compiled SELECT statement. */
+  SessionApplyCtx *p              /* Session changeset-apply context */
 ){
   int rc = SQLITE_OK;
-  if( *ppStmt==0 ){
-    SessionBuffer buf = {0, 0, 0};
+  SessionBuffer buf = {0, 0, 0};
 
-    sessionAppendStr(&buf, "DELETE FROM ", &rc);
-    sessionAppendIdent(&buf, zTab, &rc);
+  sessionAppendStr(&buf, "DELETE FROM ", &rc);
+  sessionAppendIdent(&buf, zTab, &rc);
+  sessionUpdateDeleteWhere(&buf, p->nCol, p->azCol, p->abPK, &rc);
 
-    sessionUpdateDeleteWhere(&buf, nCol, azCol, abPK, &rc);
-
-    if( rc==SQLITE_OK ){
-      rc = sqlite3_prepare_v2(db, (char *)buf.aBuf, buf.nBuf, ppStmt, 0);
-    }
-    sqlite3_free(buf.aBuf);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_prepare_v2(db, (char *)buf.aBuf, buf.nBuf, &p->pDelete, 0);
   }
+  sqlite3_free(buf.aBuf);
 
   return rc;
 }
@@ -1351,69 +1358,64 @@ static int sessionDeleteRow(
 static int sessionUpdateRow(
   sqlite3 *db,                    /* Database handle */
   const char *zTab,               /* Table name */
-  int nCol,                       /* Number of entries in azCol and abPK */
-  const char **azCol,             /* Column names */
-  u8 *abPK,                       /* True for PK columns */ 
-  sqlite3_stmt **ppStmt           /* OUT: Compiled SELECT statement. */
+  SessionApplyCtx *p              /* Session changeset-apply context */
 ){
   int rc = SQLITE_OK;
-  if( *ppStmt==0 ){
-    int i;
-    const char *zSep = "";
-    SessionBuffer buf = {0, 0, 0};
+  int i;
+  const char *zSep = "";
+  SessionBuffer buf = {0, 0, 0};
 
-    /* Append "UPDATE tbl SET " */
-    sessionAppendStr(&buf, "UPDATE ", &rc);
-    sessionAppendIdent(&buf, zTab, &rc);
-    sessionAppendStr(&buf, " SET ", &rc);
+  /* Append "UPDATE tbl SET " */
+  sessionAppendStr(&buf, "UPDATE ", &rc);
+  sessionAppendIdent(&buf, zTab, &rc);
+  sessionAppendStr(&buf, " SET ", &rc);
 
-    /* Append the assignments */
-    for(i=0; i<nCol; i++){
-      sessionAppendStr(&buf, zSep, &rc);
-      sessionAppendIdent(&buf, azCol[i], &rc);
-      sessionAppendStr(&buf, " = CASE WHEN ?", &rc);
-      sessionAppendInteger(&buf, i*3+2, &rc);
-      sessionAppendStr(&buf, " THEN ?", &rc);
-      sessionAppendInteger(&buf, i*3+3, &rc);
-      sessionAppendStr(&buf, " ELSE ", &rc);
-      sessionAppendIdent(&buf, azCol[i], &rc);
-      sessionAppendStr(&buf, " END", &rc);
-      zSep = ", ";
-    }
-
-    /* Append the PK part of the WHERE clause */
-    sessionAppendStr(&buf, " WHERE ", &rc);
-    for(i=0; i<nCol; i++){
-      if( abPK[i] ){
-        sessionAppendIdent(&buf, azCol[i], &rc);
-        sessionAppendStr(&buf, " = ?", &rc);
-        sessionAppendInteger(&buf, i*3+1, &rc);
-        sessionAppendStr(&buf, " AND ", &rc);
-      }
-    }
-
-    /* Append the non-PK part of the WHERE clause */
-    sessionAppendStr(&buf, " (?", &rc);
-    sessionAppendInteger(&buf, nCol*3+1, &rc);
-    sessionAppendStr(&buf, " OR 1", &rc);
-    for(i=0; i<nCol; i++){
-      if( !abPK[i] ){
-        sessionAppendStr(&buf, " AND (?", &rc);
-        sessionAppendInteger(&buf, i*3+2, &rc);
-        sessionAppendStr(&buf, "=0 OR ", &rc);
-        sessionAppendIdent(&buf, azCol[i], &rc);
-        sessionAppendStr(&buf, " IS ?", &rc);
-        sessionAppendInteger(&buf, i*3+1, &rc);
-        sessionAppendStr(&buf, ")", &rc);
-      }
-    }
-    sessionAppendStr(&buf, ")", &rc);
-
-    if( rc==SQLITE_OK ){
-      rc = sqlite3_prepare_v2(db, (char *)buf.aBuf, buf.nBuf, ppStmt, 0);
-    }
-    sqlite3_free(buf.aBuf);
+  /* Append the assignments */
+  for(i=0; i<p->nCol; i++){
+    sessionAppendStr(&buf, zSep, &rc);
+    sessionAppendIdent(&buf, p->azCol[i], &rc);
+    sessionAppendStr(&buf, " = CASE WHEN ?", &rc);
+    sessionAppendInteger(&buf, i*3+2, &rc);
+    sessionAppendStr(&buf, " THEN ?", &rc);
+    sessionAppendInteger(&buf, i*3+3, &rc);
+    sessionAppendStr(&buf, " ELSE ", &rc);
+    sessionAppendIdent(&buf, p->azCol[i], &rc);
+    sessionAppendStr(&buf, " END", &rc);
+    zSep = ", ";
   }
+
+  /* Append the PK part of the WHERE clause */
+  sessionAppendStr(&buf, " WHERE ", &rc);
+  for(i=0; i<p->nCol; i++){
+    if( p->abPK[i] ){
+      sessionAppendIdent(&buf, p->azCol[i], &rc);
+      sessionAppendStr(&buf, " = ?", &rc);
+      sessionAppendInteger(&buf, i*3+1, &rc);
+      sessionAppendStr(&buf, " AND ", &rc);
+    }
+  }
+
+  /* Append the non-PK part of the WHERE clause */
+  sessionAppendStr(&buf, " (?", &rc);
+  sessionAppendInteger(&buf, p->nCol*3+1, &rc);
+  sessionAppendStr(&buf, " OR 1", &rc);
+  for(i=0; i<p->nCol; i++){
+    if( !p->abPK[i] ){
+      sessionAppendStr(&buf, " AND (?", &rc);
+      sessionAppendInteger(&buf, i*3+2, &rc);
+      sessionAppendStr(&buf, "=0 OR ", &rc);
+      sessionAppendIdent(&buf, p->azCol[i], &rc);
+      sessionAppendStr(&buf, " IS ?", &rc);
+      sessionAppendInteger(&buf, i*3+1, &rc);
+      sessionAppendStr(&buf, ")", &rc);
+    }
+  }
+  sessionAppendStr(&buf, ")", &rc);
+
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_prepare_v2(db, (char *)buf.aBuf, buf.nBuf, &p->pUpdate, 0);
+  }
+  sqlite3_free(buf.aBuf);
 
   return rc;
 }
@@ -1421,79 +1423,279 @@ static int sessionUpdateRow(
 static int sessionSelectRow(
   sqlite3 *db,                    /* Database handle */
   const char *zTab,               /* Table name */
-  int nCol,                       /* Number of entries in azCol and abPK */
-  const char **azCol,             /* Column names */
-  u8 *abPK,                       /* True for PK columns */ 
-  sqlite3_stmt **ppStmt           /* OUT: Compiled SELECT statement. */
+  SessionApplyCtx *p              /* Session changeset-apply context */
 ){
   int rc = SQLITE_OK;
-  if( *ppStmt==0 ){
-    int i;
-    const char *zSep = "";
-    SessionBuffer buf = {0, 0, 0};
-  
-    sessionAppendStr(&buf, "SELECT * FROM ", &rc);
-    sessionAppendIdent(&buf, zTab, &rc);
-    sessionAppendStr(&buf, " WHERE ", &rc);
-  
-    for(i=0; i<nCol; i++){
-      if( abPK[i] ){
-        sessionAppendStr(&buf, zSep, &rc);
-        sessionAppendIdent(&buf, azCol[i], &rc);
-        sessionAppendStr(&buf, " = ?", &rc);
-        sessionAppendInteger(&buf, i+1, &rc);
-        zSep = " AND ";
-      }
+  int i;
+  const char *zSep = "";
+  SessionBuffer buf = {0, 0, 0};
+
+  sessionAppendStr(&buf, "SELECT * FROM ", &rc);
+  sessionAppendIdent(&buf, zTab, &rc);
+  sessionAppendStr(&buf, " WHERE ", &rc);
+  for(i=0; i<p->nCol; i++){
+    if( p->abPK[i] ){
+      sessionAppendStr(&buf, zSep, &rc);
+      sessionAppendIdent(&buf, p->azCol[i], &rc);
+      sessionAppendStr(&buf, " = ?", &rc);
+      sessionAppendInteger(&buf, i+1, &rc);
+      zSep = " AND ";
     }
-  
-    if( rc==SQLITE_OK ){
-      rc = sqlite3_prepare_v2(db, (char *)buf.aBuf, buf.nBuf, ppStmt, 0);
-    }
-    sqlite3_free(buf.aBuf);
   }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_prepare_v2(db, (char *)buf.aBuf, buf.nBuf, &p->pSelect, 0);
+  }
+  sqlite3_free(buf.aBuf);
   return rc;
 }
 
-static int sessionConstraintConflict(
+static int sessionInsertRow(
+  sqlite3 *db,                    /* Database handle */
+  const char *zTab,               /* Table name */
+  SessionApplyCtx *p              /* Session changeset-apply context */
+){
+  int rc = SQLITE_OK;
+  int i;
+  SessionBuffer buf = {0, 0, 0};
+
+  sessionAppendStr(&buf, "INSERT INTO main.", &rc);
+  sessionAppendIdent(&buf, zTab, &rc);
+  sessionAppendStr(&buf, " VALUES(?", &rc);
+  for(i=1; i<p->nCol; i++){
+    sessionAppendStr(&buf, ", ?", &rc);
+  }
+  sessionAppendStr(&buf, ")", &rc);
+
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_prepare_v2(db, (char *)buf.aBuf, buf.nBuf, &p->pInsert, 0);
+  }
+  sqlite3_free(buf.aBuf);
+  return rc;
+}
+
+static int sessionSeekToRow(
   sqlite3 *db,                    /* Database handle */
   sqlite3_changeset_iter *pIter,  /* Changeset iterator */
   u8 *abPK,                       /* Primary key flags array */
-  sqlite3_stmt *pSelect,          /* SELECT statement from sessionSelectRow() */
-  int(*xConflict)(void *, int, sqlite3_changeset_iter*),
-  void *pCtx
+  sqlite3_stmt *pSelect           /* SELECT statement from sessionSelectRow() */
 ){
-  int res;
-  int rc;
+  int rc = SQLITE_OK;
+
   int i;
   int nCol;
   int op;
   const char *zDummy;
 
   sqlite3changeset_op(pIter, &zDummy, &nCol, &op);
-  assert( op==SQLITE_UPDATE || op==SQLITE_INSERT );
 
-  /* Bind the new.* PRIMARY KEY values to the SELECT statement. */
-  for(i=0; i<nCol; i++){
+  for(i=0; rc==SQLITE_OK && i<nCol; i++){
     if( abPK[i] ){
-      sqlite3_value *pVal;
-      if( op==SQLITE_UPDATE ) rc = sqlite3changeset_old(pIter, i, &pVal);
-      else                    rc = sqlite3changeset_new(pIter, i, &pVal);
-      if( rc!=SQLITE_OK ) return rc;
-      sqlite3_bind_value(pSelect, i+1, pVal);
+      sqlite3_value *pVal = 0;
+      if( op!=SQLITE_DELETE ){
+        rc = sqlite3changeset_new(pIter, i, &pVal);
+      }
+      if( pVal==0 ){
+        rc = sqlite3changeset_old(pIter, i, &pVal);
+      }
+      if( rc==SQLITE_OK ){
+        rc = sqlite3_bind_value(pSelect, i+1, pVal);
+      }
     }
   }
 
-  if( SQLITE_ROW==sqlite3_step(pSelect) ){
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_step(pSelect);
+    if( rc!=SQLITE_ROW ) rc = sqlite3_reset(pSelect);
+  }
+
+  return rc;
+}
+
+static int sessionConflictHandler(
+  int eType,
+  SessionApplyCtx *p,
+  sqlite3_changeset_iter *pIter,  /* Changeset iterator */
+  int(*xConflict)(void *, int, sqlite3_changeset_iter*),
+  void *pCtx,
+  int *pbReplace
+){
+  int res;
+  int rc;
+  int nCol;
+  int op;
+  const char *zDummy;
+
+  sqlite3changeset_op(pIter, &zDummy, &nCol, &op);
+
+  assert( eType==SQLITE_CHANGESET_CONFLICT || eType==SQLITE_CHANGESET_DATA );
+  assert( SQLITE_CHANGESET_CONFLICT+1==SQLITE_CHANGESET_CONSTRAINT );
+  assert( SQLITE_CHANGESET_DATA+1==SQLITE_CHANGESET_NOTFOUND );
+
+  /* Bind the new.* PRIMARY KEY values to the SELECT statement. */
+  if( pbReplace ){
+    rc = sessionSeekToRow(p->db, pIter, p->abPK, p->pSelect);
+  }else{
+    rc = SQLITE_DONE;
+  }
+
+  if( rc==SQLITE_ROW ){
     /* There exists another row with the new.* primary key. */
-    pIter->pConflict = pSelect;
-    res = xConflict(pCtx, SQLITE_CHANGESET_CONFLICT, pIter);
+    pIter->pConflict = p->pSelect;
+    res = xConflict(pCtx, eType, pIter);
     pIter->pConflict = 0;
-    sqlite3_reset(pSelect);
+    rc = sqlite3_reset(p->pSelect);
   }else{
     /* No other row with the new.* primary key. */
-    rc = sqlite3_reset(pSelect);
+    rc = sqlite3_reset(p->pSelect);
     if( rc==SQLITE_OK ){
-      res = xConflict(pCtx, SQLITE_CHANGESET_CONSTRAINT, pIter);
+      res = xConflict(pCtx, eType+1, pIter);
+      if( res==SQLITE_CHANGESET_REPLACE ) rc = SQLITE_MISUSE;
+    }
+  }
+
+  if( rc==SQLITE_OK ){
+    switch( res ){
+      case SQLITE_CHANGESET_REPLACE:
+        if( pbReplace ) *pbReplace = 1;
+        break;
+
+      case SQLITE_CHANGESET_OMIT:
+        break;
+
+      case SQLITE_CHANGESET_ABORT:
+        rc = SQLITE_ABORT;
+        break;
+
+      default:
+        rc = SQLITE_MISUSE;
+        break;
+    }
+  }
+
+  return rc;
+}
+
+static int sessionApplyOneOp(
+  sqlite3_changeset_iter *pIter,
+  SessionApplyCtx *p,
+  int(*xConflict)(void *, int, sqlite3_changeset_iter *),
+  void *pCtx,
+  int *pbReplace,
+  int *pbRetry
+){
+  const char *zDummy;
+  int op;
+  int nCol;
+  int rc = SQLITE_OK;
+
+  assert( p->pDelete && p->pUpdate && p->pInsert && p->pSelect );
+  assert( p->azCol && p->abPK );
+  assert( !pbReplace || *pbReplace==0 );
+
+  sqlite3changeset_op(pIter, &zDummy, &nCol, &op);
+
+  if( op==SQLITE_DELETE ){
+    int i;
+
+    /* Bind values to the DELETE statement. */
+    for(i=0; rc==SQLITE_OK && i<nCol; i++){
+      sqlite3_value *pVal;
+      rc = sqlite3changeset_old(pIter, i, &pVal);
+      if( rc==SQLITE_OK ){
+        rc = sqlite3_bind_value(p->pDelete, i+1, pVal);
+      }
+    }
+    if( rc==SQLITE_OK ) rc = sqlite3_bind_int(p->pDelete, nCol+1, pbRetry==0);
+    if( rc!=SQLITE_OK ) return rc;
+
+    sqlite3_step(p->pDelete);
+    rc = sqlite3_reset(p->pDelete);
+    if( rc==SQLITE_OK && sqlite3_changes(p->db)==0 ){
+      rc = sessionConflictHandler(
+          SQLITE_CHANGESET_DATA, p, pIter, xConflict, pCtx, pbRetry
+      );
+    }else if( rc==SQLITE_CONSTRAINT ){
+      rc = sessionConflictHandler(
+          SQLITE_CHANGESET_CONFLICT, p, pIter, xConflict, pCtx, 0
+      );
+    }
+
+  }else if( op==SQLITE_UPDATE ){
+    int i;
+
+    /* Bind values to the UPDATE statement. */
+    for(i=0; rc==SQLITE_OK && i<nCol; i++){
+      sqlite3_value *pOld = 0;
+      sqlite3_value *pNew = 0;
+      rc = sqlite3changeset_old(pIter, i, &pOld);
+      if( rc==SQLITE_OK ){
+        rc = sqlite3changeset_new(pIter, i, &pNew);
+      }
+      if( rc==SQLITE_OK ){
+        if( pOld ) sqlite3_bind_value(p->pUpdate, i*3+1, pOld);
+        sqlite3_bind_int(p->pUpdate, i*3+2, !!pNew);
+        if( pNew ) sqlite3_bind_value(p->pUpdate, i*3+3, pNew);
+      }
+    }
+    if( rc==SQLITE_OK ) rc = sqlite3_bind_int(p->pUpdate, nCol*3+1, pbRetry==0);
+    if( rc!=SQLITE_OK ) return rc;
+
+    /* Attempt the UPDATE. In the case of a NOTFOUND or DATA conflict,
+    ** the result will be SQLITE_OK with 0 rows modified. */
+    sqlite3_step(p->pUpdate);
+    rc = sqlite3_reset(p->pUpdate);
+
+    if( rc==SQLITE_OK && sqlite3_changes(p->db)==0 ){
+      /* A NOTFOUND or DATA error. Search the table to see if it contains
+      ** a row with a matching primary key. If so, this is a DATA conflict.
+      ** Otherwise, if there is no primary key match, it is a NOTFOUND. */
+
+      rc = sessionConflictHandler(
+          SQLITE_CHANGESET_DATA, p, pIter, xConflict, pCtx, pbRetry
+      );
+
+    }else if( rc==SQLITE_CONSTRAINT ){
+      /* This may be a CONSTRAINT or CONFLICT error. It is a CONFLICT if
+      ** the only problem is a duplicate PRIMARY KEY, or a CONSTRAINT 
+      ** otherwise. */
+      int bPKChange = 0;
+
+      /* Check if the PK has been modified. */
+      rc = SQLITE_OK;
+      for(i=0; i<nCol && rc==SQLITE_OK; i++){
+        if( p->abPK[i] ){
+          sqlite3_value *pNew;
+          rc = sqlite3changeset_new(pIter, i, &pNew);
+          if( rc==SQLITE_OK && pNew ){
+            bPKChange = 1;
+            break;
+          }
+        }
+      }
+
+      rc = sessionConflictHandler(SQLITE_CHANGESET_CONFLICT, 
+          p, pIter, xConflict, pCtx, (bPKChange ? pbReplace : 0)
+      );
+    }
+
+  }else{
+    int i;
+    assert( op==SQLITE_INSERT );
+    for(i=0; rc==SQLITE_OK && i<nCol; i++){
+      sqlite3_value *pVal;
+      rc = sqlite3changeset_new(pIter, i, &pVal);
+      if( rc==SQLITE_OK ){
+        rc = sqlite3_bind_value(p->pInsert, i+1, pVal);
+      }
+    }
+    if( rc!=SQLITE_OK ) return rc;
+
+    sqlite3_step(p->pInsert);
+    rc = sqlite3_reset(p->pInsert);
+    if( rc==SQLITE_CONSTRAINT && xConflict ){
+      rc = sessionConflictHandler(
+          SQLITE_CHANGESET_CONFLICT, p, pIter, xConflict, pCtx, pbReplace
+      );
     }
   }
 
@@ -1511,209 +1713,90 @@ int sqlite3changeset_apply(
   ),
   void *pCtx
 ){
-  sqlite3_changeset_iter *pIter;
+  sqlite3_changeset_iter *pIter = 0;
   int rc;
   int rc2;
 
   const char *zTab = 0;           /* Name of current table */
   int nTab = 0;                   /* Result of strlen(zTab) */
-  int nCol = 0;                   /* Number of columns in table zTab */
-  const char **azCol = 0;         /* Array of column names */
-  u8 *abPK = 0;                   /* Boolean array - true if column is in PK */
 
-  sqlite3_stmt *pDelete = 0;      /* DELETE statement */
-  sqlite3_stmt *pUpdate = 0;      /* DELETE statement */
-  sqlite3_stmt *pInsert = 0;      /* INSERT statement */
-  sqlite3_stmt *pSelect = 0;      /* SELECT statement */
-
-  rc = sqlite3_exec(db, "SAVEPOINT changeset_apply", 0, 0, 0);
-  if( rc!=SQLITE_OK ) return rc;
+  SessionApplyCtx sApply;
+  memset(&sApply, 0, sizeof(sApply));
 
   sqlite3changeset_start(&pIter, nChangeset, pChangeset);
-  while( SQLITE_ROW==sqlite3changeset_next(pIter) ){
+
+  rc = sqlite3_exec(db, "SAVEPOINT changeset_apply", 0, 0, 0);
+  while( rc==SQLITE_OK && SQLITE_ROW==sqlite3changeset_next(pIter) ){
+    int nCol;
     int op;
-    const char *zThis;
-    sqlite3changeset_op(pIter, &zThis, &nCol, &op);
-    if( zTab==0 || sqlite3_strnicmp(zThis, zTab, nTab+1) ){
-      sqlite3_free(azCol);
-      rc = sessionTableInfo(db, zThis, nCol, &zTab, &azCol, &abPK);
-      nTab = strlen(zTab);
+    int bReplace = 0;
+    int bRetry = 0;
+    const char *zNew;
+    sqlite3changeset_op(pIter, &zNew, &nCol, &op);
 
-      sqlite3_finalize(pDelete);
-      sqlite3_finalize(pUpdate);
-      sqlite3_finalize(pInsert);
-      sqlite3_finalize(pSelect);
-      pSelect = pUpdate = pInsert = pDelete = 0;
+    if( zTab==0 || sqlite3_strnicmp(zNew, zTab, nTab+1) ){
+      sqlite3_free(sApply.azCol);
+      sqlite3_finalize(sApply.pDelete);
+      sqlite3_finalize(sApply.pUpdate); 
+      sqlite3_finalize(sApply.pInsert);
+      sqlite3_finalize(sApply.pSelect);
+      memset(&sApply, 0, sizeof(sApply));
+      sApply.db = db;
+      sApply.nCol = nCol;
 
-      if( (rc = sessionSelectRow(db, zTab, nCol, azCol, abPK, &pSelect))
-       || (rc = sessionUpdateRow(db, zTab, nCol, azCol, abPK, &pUpdate))
-       || (rc = sessionDeleteRow(db, zTab, nCol, azCol, abPK, &pDelete))
+      rc = sessionTableInfo(db, zNew, nCol, &zTab, &sApply.azCol, &sApply.abPK);
+
+      if( rc!=SQLITE_OK 
+       || (rc = sessionSelectRow(db, zTab, &sApply))
+       || (rc = sessionUpdateRow(db, zTab, &sApply))
+       || (rc = sessionDeleteRow(db, zTab, &sApply))
+       || (rc = sessionInsertRow(db, zTab, &sApply))
       ){
         break;
       }
+
+      nTab = strlen(zTab);
     }
 
-    if( op==SQLITE_DELETE ){
-      int res;
-      int i;
-      rc = sessionDeleteRow(db, zTab, nCol, azCol, abPK, &pDelete);
-      for(i=0; rc==SQLITE_OK && i<nCol; i++){
-        sqlite3_value *pVal;
-        rc = sqlite3changeset_old(pIter, i, &pVal);
-        if( rc==SQLITE_OK ){
-          rc = sqlite3_bind_value(pDelete, i+1, pVal);
-        }
-      }
-      if( rc==SQLITE_OK ) rc = sqlite3_bind_int(pDelete, nCol+1, 0);
-      if( rc!=SQLITE_OK ) break;
+    rc = sessionApplyOneOp(pIter, &sApply, xConflict, pCtx, &bReplace, &bRetry);
 
-      sqlite3_step(pDelete);
-      rc = sqlite3_reset(pDelete);
-      if( rc==SQLITE_OK && sqlite3_changes(db)==0 ){
+    if( rc==SQLITE_OK && bRetry ){
+      rc = sessionApplyOneOp(pIter, &sApply, xConflict, pCtx, &bReplace, 0);
+    }
 
-        /* A NOTFOUND or DATA error. Search the table to see if it contains
-        ** a row with a matching primary key. If so, this is a DATA conflict.
-        ** Otherwise, if there is no primary key match, it is a NOTFOUND. */
-        rc = sessionSelectRow(db, zTab, nCol, azCol, abPK, &pSelect);
-        for(i=0; rc==SQLITE_OK && i<nCol; i++){
-          if( abPK[i] ){
+    if( bReplace ){
+      rc = sqlite3_exec(db, "SAVEPOINT replace_op", 0, 0, 0);
+      if( rc==SQLITE_OK ){
+        int i;
+        for(i=0; i<sApply.nCol; i++){
+          if( sApply.abPK[i] ){
             sqlite3_value *pVal;
-            rc = sqlite3changeset_old(pIter, i, &pVal);
-            if( rc==SQLITE_OK ) sqlite3_bind_value(pSelect, i+1, pVal);
-          }
-        }
-        if( rc!=SQLITE_OK ) break;
-        if( SQLITE_ROW==sqlite3_step(pSelect) ){
-          pIter->pConflict = pSelect;
-          res = xConflict(pCtx, SQLITE_CHANGESET_DATA, pIter);
-          pIter->pConflict = 0;
-          sqlite3_reset(pSelect);
-        }else{
-          rc = sqlite3_reset(pSelect);
-          if( rc==SQLITE_OK ){
-            res = xConflict(pCtx, SQLITE_CHANGESET_NOTFOUND, pIter);
-          }
-        }
-
-      }else if( rc==SQLITE_CONSTRAINT ){
-        res = xConflict(pCtx, SQLITE_CHANGESET_CONSTRAINT, pIter);
-        rc = SQLITE_OK;
-      }
-
-      if( rc!=SQLITE_OK ) break;
-
-    }else if( op==SQLITE_UPDATE ){
-      int i;
-      int res;
-      rc = sessionUpdateRow(db, zTab, nCol, azCol, abPK, &pUpdate);
-      for(i=0; rc==SQLITE_OK && i<nCol; i++){
-        sqlite3_value *pOld = 0;
-        sqlite3_value *pNew = 0;
-        rc = sqlite3changeset_old(pIter, i, &pOld);
-        if( rc==SQLITE_OK ){
-          rc = sqlite3changeset_new(pIter, i, &pNew);
-        }
-        if( rc==SQLITE_OK ){
-          if( pOld ) sqlite3_bind_value(pUpdate, i*3+1, pOld);
-          sqlite3_bind_int(pUpdate, i*3+2, !!pNew);
-          if( pNew ) sqlite3_bind_value(pUpdate, i*3+3, pNew);
-        }
-      }
-      if( rc==SQLITE_OK ) rc = sqlite3_bind_int(pUpdate, nCol*3+1, 0);
-      if( rc!=SQLITE_OK ) break;
-
-      sqlite3_step(pUpdate);
-      rc = sqlite3_reset(pUpdate);
-      if( rc==SQLITE_OK && sqlite3_changes(db)==0 ){
-        /* A NOTFOUND or DATA error. Search the table to see if it contains
-        ** a row with a matching primary key. If so, this is a DATA conflict.
-        ** Otherwise, if there is no primary key match, it is a NOTFOUND. */
-        rc = sessionSelectRow(db, zTab, nCol, azCol, abPK, &pSelect);
-        for(i=0; rc==SQLITE_OK && i<nCol; i++){
-          if( abPK[i] ){
-            sqlite3_value *pVal;
-            rc = sqlite3changeset_old(pIter, i, &pVal);
-            if( rc==SQLITE_OK ) sqlite3_bind_value(pSelect, i+1, pVal);
-          }
-        }
-        if( rc!=SQLITE_OK ) break;
-        if( SQLITE_ROW==sqlite3_step(pSelect) ){
-          pIter->pConflict = pSelect;
-          res = xConflict(pCtx, SQLITE_CHANGESET_DATA, pIter);
-          pIter->pConflict = 0;
-          sqlite3_reset(pSelect);
-        }else{
-          rc = sqlite3_reset(pSelect);
-          if( rc==SQLITE_OK ){
-            res = xConflict(pCtx, SQLITE_CHANGESET_NOTFOUND, pIter);
-          }
-        }
-      }else if( rc==SQLITE_CONSTRAINT ){
-        /* This may be a CONSTRAINT or CONFLICT error. It is a CONFLICT if
-        ** the only problem is a duplicate PRIMARY KEY, or a CONSTRAINT 
-        ** otherwise. */
-        int bPKChange = 0;
-
-        /* Check if the PK has been modified. */
-        rc = SQLITE_OK;
-        for(i=0; i<nCol && rc==SQLITE_OK; i++){
-          if( abPK[i] ){
-            sqlite3_value *pNew;
-            rc = sqlite3changeset_new(pIter, i, &pNew);
-            if( rc==SQLITE_OK && pNew ){
-              bPKChange = 1;
-              break;
+            rc = sqlite3changeset_new(pIter, i, &pVal);
+            if( rc==SQLITE_OK && pVal==0 ){
+              rc = sqlite3changeset_old(pIter, i, &pVal);
+            }
+            if( rc==SQLITE_OK ){
+              rc = sqlite3_bind_value(sApply.pDelete, i+1, pVal);
             }
           }
         }
-
-        if( bPKChange ){
-          /* See if there exists a row with a duplicate primary key. */
-          rc = sessionConstraintConflict(
-              db, pIter, abPK, pSelect, xConflict, pCtx
-          );
-        }else{
-          res = xConflict(pCtx, SQLITE_CHANGESET_CONSTRAINT, pIter);
-        }
+        sqlite3_bind_int(sApply.pDelete, sApply.nCol+1, 1);
       }
-
-    }else{
-      int i;
-      assert( op==SQLITE_INSERT );
-      if( pInsert==0 ){
-        SessionBuffer buf = {0, 0, 0};
-        sessionAppendStr(&buf, "INSERT INTO main.", &rc);
-        sessionAppendIdent(&buf, zTab, &rc);
-        sessionAppendStr(&buf, " VALUES(?", &rc);
-        for(i=1; i<nCol; i++) sessionAppendStr(&buf, ", ?", &rc);
-        sessionAppendStr(&buf, ")", &rc);
-
-        if( rc==SQLITE_OK ){
-          rc = sqlite3_prepare_v2(db, (char *)buf.aBuf, buf.nBuf, &pInsert, 0);
-        }
-        sqlite3_free(buf.aBuf);
+      if( rc==SQLITE_OK ){
+        sqlite3_step(sApply.pDelete);
+        rc = sqlite3_reset(sApply.pDelete);
       }
-
-      for(i=0; rc==SQLITE_OK && i<nCol; i++){
-        sqlite3_value *pVal;
-        rc = sqlite3changeset_new(pIter, i, &pVal);
-        if( rc==SQLITE_OK ){
-          rc = sqlite3_bind_value(pInsert, i+1, pVal);
-        }
+      if( rc==SQLITE_OK ){
+        rc = sessionApplyOneOp(pIter, &sApply, xConflict, pCtx, 0, 0);
       }
-      if( rc!=SQLITE_OK ) break;
-
-      sqlite3_step(pInsert);
-      rc = sqlite3_reset(pInsert);
-      if( rc==SQLITE_CONSTRAINT && xConflict ){
-        rc = sessionConstraintConflict(
-              db, pIter, abPK, pSelect, xConflict, pCtx
-        );
+      if( rc==SQLITE_OK ){
+        rc = sqlite3_exec(db, "RELEASE replace_op", 0, 0, 0);
       }
     }
   }
+
   rc2 = sqlite3changeset_finalize(pIter);
-  if( rc==SQLITE_DONE ) rc = rc2;
+  if( rc==SQLITE_OK ) rc = rc2;
 
   if( rc==SQLITE_OK ){
     rc = sqlite3_exec(db, "RELEASE changeset_apply", 0, 0, 0);
@@ -1722,11 +1805,11 @@ int sqlite3changeset_apply(
     sqlite3_exec(db, "RELEASE changeset_apply", 0, 0, 0);
   }
 
-  sqlite3_finalize(pInsert);
-  sqlite3_finalize(pDelete);
-  sqlite3_finalize(pUpdate);
-  sqlite3_finalize(pSelect);
-  sqlite3_free(azCol);
+  sqlite3_finalize(sApply.pInsert);
+  sqlite3_finalize(sApply.pDelete);
+  sqlite3_finalize(sApply.pUpdate);
+  sqlite3_finalize(sApply.pSelect);
+  sqlite3_free(sApply.azCol);
   return rc;
 }
 

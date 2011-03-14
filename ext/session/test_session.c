@@ -174,6 +174,17 @@ struct TestConflictHandler {
   Tcl_Obj *pScript;
 };
 
+static int test_obj_eq_string(Tcl_Obj *p, const char *z){
+  int n;
+  int nObj;
+  char *zObj;
+
+  n = strlen(z);
+  zObj = Tcl_GetStringFromObj(p, &nObj);
+
+  return (nObj==n && (n==0 || 0==memcmp(zObj, z, n)));
+}
+
 static int test_conflict_handler(
   void *pCtx,                     /* Pointer to TestConflictHandler structure */
   int eConf,                      /* DATA, MISSING, CONFLICT, CONSTRAINT */
@@ -182,6 +193,7 @@ static int test_conflict_handler(
   TestConflictHandler *p = (TestConflictHandler *)pCtx;
   Tcl_Obj *pEval;
   Tcl_Interp *interp = p->interp;
+  int ret = 0;                    /* Return value */
 
   int op;                         /* SQLITE_UPDATE, DELETE or INSERT */
   const char *zTab;               /* Name of table conflict is on */
@@ -257,9 +269,27 @@ static int test_conflict_handler(
 
   if( TCL_OK!=Tcl_EvalObjEx(interp, pEval, TCL_EVAL_GLOBAL) ){
     Tcl_BackgroundError(interp);
+  }else{
+    Tcl_Obj *pRes = Tcl_GetObjResult(interp);
+    if( test_obj_eq_string(pRes, "OMIT") || test_obj_eq_string(pRes, "") ){
+      ret = SQLITE_CHANGESET_OMIT;
+    }else if( test_obj_eq_string(pRes, "REPLACE") ){
+      ret = SQLITE_CHANGESET_REPLACE;
+    }else if( test_obj_eq_string(pRes, "ABORT") ){
+      ret = SQLITE_CHANGESET_ABORT;
+    }else{
+      Tcl_IncrRefCount(pRes);
+      Tcl_ResetResult(interp);
+      Tcl_AppendResult(interp, "unrecognized conflict handler return: \"", 
+          Tcl_GetString(pRes), "\"", 0
+      );
+      Tcl_DecrRefCount(pRes);
+      Tcl_BackgroundError(interp);
+    }
   }
+
   Tcl_DecrRefCount(pEval);
-  return SQLITE_CHANGESET_OMIT;
+  return ret;
 }
 
 /*
