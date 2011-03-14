@@ -419,6 +419,7 @@ struct callback_data {
                          ** .explain ON */
   char outfile[FILENAME_MAX]; /* Filename for *out */
   const char *zDbFilename;    /* name of the database file */
+  const char *zVfs;           /* Name of VFS to use */
   sqlite3_stmt *pStmt;   /* Current statement if any. */
   FILE *pLog;            /* Write log output here */
 };
@@ -2600,6 +2601,7 @@ static const char zOptions[] =
   "   -stats               print memory stats before each finalize\n"
   "   -nullvalue 'text'    set text string for NULL values\n"
   "   -version             show SQLite version\n"
+  "   -vfs NAME            use NAME as the default VFS\n"
 ;
 static void usage(int showDetail){
   fprintf(stderr,
@@ -2684,6 +2686,15 @@ int main(int argc, char **argv){
 #if defined(SQLITE_ENABLE_MEMSYS3) || defined(SQLITE_ENABLE_MEMSYS5)
       sqlite3_config(SQLITE_CONFIG_HEAP, malloc((int)szHeap), (int)szHeap, 64);
 #endif
+    }else if( strcmp(argv[i],"-vfs")==0 ){
+      i++;
+      sqlite3_vfs *pVfs = sqlite3_vfs_find(argv[i]);
+      if( pVfs ){
+        sqlite3_vfs_register(pVfs, 1);
+      }else{
+        fprintf(stderr, "no such VFS: \"%s\"\n", argv[i]);
+        exit(1);
+      }
     }
   }
   if( i<argc ){
@@ -2791,6 +2802,8 @@ int main(int argc, char **argv){
     }else if( strcmp(z,"-batch")==0 ){
       stdin_is_interactive = 0;
     }else if( strcmp(z,"-heap")==0 ){
+      i++;
+    }else if( strcmp(z,"-vfs")==0 ){
       i++;
     }else if( strcmp(z,"-help")==0 || strcmp(z, "--help")==0 ){
       usage(1);
