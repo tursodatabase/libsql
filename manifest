@@ -1,5 +1,5 @@
-C Fix\scut-and-paste\stypo\sin\sdebugging\sprint\sstatement\sin\swinMutexTry().
-D 2011-03-15T02:55:28.657
+C Allow\smultiplex\sfile\snames\sto\sbe\spreceeded\sby\sprefix\sof\sthe\sform\s":multiplex:chunksize:maxchunks:"\s\nStill\swork\sto\sbe\sdone,\sthough\sit\scompiles\sand\sprefixes\sare\signored.
+D 2011-03-15T04:45:48.735
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -209,7 +209,7 @@ F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c 785edd54f963aefb3c1628124170a56697c68c70
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c fd6188b1501c0010fb4241ddc9f0d5ac402c688d
-F src/test_multiplex.c 655cb3b663f87db7d3d2427ea127c9daacae4abc
+F src/test_multiplex.c cf01141845d29639de2b6cdd6d7ef9dc0bce2888
 F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
 F src/test_osinst.c f408c6a181f2fb04c56273afd5c3e1e82f60392c
@@ -913,7 +913,10 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 3934b004e93852c89b937ec20431de96a2e99440
-R a3bacb1f22d0b4cfa6cea5cf5efe9cdf
+P def98fd23e42bda13547e38ab13fed0e6554ce99
+R 324244b8e2a2e32cd06c5dbee5aab290
+T *branch * experimental
+T *sym-experimental *
+T -sym-trunk *
 U shaneh
-Z 62a7f6dd55f1de5255b8d7f88e967001
+Z b5732ca362c3f4ec7a64142aa2707561

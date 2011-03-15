@@ -40,6 +40,8 @@
 
 /************************ Shim Definitions ******************************/
 
+#define SQLITE_MULTIPLEX_VFS_NAME "multiplex"
+
 /* This is the limit on the chunk size.  It may be changed by calling
 ** the sqlite3_multiplex_set() interface.
 */
@@ -191,6 +193,53 @@ static sqlite3_file *multiplexSubOpen(multiplexConn *pConn, int iChunk, int *rc,
   return NULL;
 }
 
+/*
+** If the given filename begins with a valid multiplex prefix, return
+** a pointer to the first character past the prefix.  Otherwise
+** return NULL pointer.  If optional chunk size and max chunk
+** values found, return them in int pointers.
+*/
+static const char *multiplexParsePrefix(const char *zName, int *pChunkSize, int *pMaxChunks){
+  int i;
+  int nChunkSize = 0;
+  int nMaxChunks = 0;
+  int lenPrefix = sqlite3Strlen30(SQLITE_MULTIPLEX_VFS_NAME)+2;
+  if( strncmp(zName, ":"SQLITE_MULTIPLEX_VFS_NAME":", lenPrefix)!=0 ) return 0;
+  /* if :multiplex: followed by ':' terminated string of digits, use
+  ** that value for the chunk size. */
+  for(i=lenPrefix; sqlite3Isdigit(zName[i]); i++){ }
+  if ( zName[i]==':' ){
+    if( pChunkSize ){
+      if( sqlite3GetInt32(&zName[lenPrefix], &nChunkSize) ){
+         *pChunkSize = nChunkSize;
+      }
+    }
+    lenPrefix = i+1;
+    /* if chunksize followed by ':' terminated string of digits, use
+    ** that value for the max chunks. */
+    for(i=lenPrefix; sqlite3Isdigit(zName[i]); i++){ }
+    if ( zName[i]==':' ) {
+      if( pMaxChunks ){
+        if( sqlite3GetInt32(&zName[lenPrefix], &nMaxChunks) ){
+           *pMaxChunks = nMaxChunks;
+        }
+      }
+      lenPrefix = i+1;
+    }
+  }
+  return &zName[lenPrefix];
+}
+
+/*
+** If the given filename that may or may not begin with a CEROD prefix, return
+** a pointer to the first character of the filename past the prefix.
+*/
+static const char *multiplexRootFilename(const char *zName){
+  const char *zRoot = multiplexParsePrefix(zName, NULL, NULL);
+  if( zRoot==0 ) zRoot = zName;
+  return zRoot;
+}
+
 /************************* VFS Method Wrappers *****************************/
 
 /*
@@ -305,10 +354,10 @@ static int multiplexDelete(
         sqlite3_snprintf(SQLITE_MULTIPLEX_EXT_SZ+1, gMultiplex.zName+nName, SQLITE_MULTIPLEX_EXT_FMT, i);
 #endif
     }
-    rc2 = pOrigVfs->xAccess(pOrigVfs, gMultiplex.zName, SQLITE_ACCESS_EXISTS, &exists);
+    rc2 = pOrigVfs->xAccess(pOrigVfs, multiplexRootFilename(gMultiplex.zName), SQLITE_ACCESS_EXISTS, &exists);
     if( rc2==SQLITE_OK && exists){
       /* if it exists, delete it */
-      rc2 = pOrigVfs->xDelete(pOrigVfs, gMultiplex.zName, syncDir);
+      rc2 = pOrigVfs->xDelete(pOrigVfs, multiplexRootFilename(gMultiplex.zName), syncDir);
       if( rc2!=SQLITE_OK ) rc = rc2;
     }else{
       /* stop at first "gap" */
@@ -319,11 +368,19 @@ static int multiplexDelete(
   return rc;
 }
 
-static int multiplexAccess(sqlite3_vfs *a, const char *b, int c, int *d){
-  return gMultiplex.pOrigVfs->xAccess(gMultiplex.pOrigVfs, b, c, d);
+static int multiplexAccess(sqlite3_vfs *pVfs, const char *zName,int flgs,int *pOut){
+  return gMultiplex.pOrigVfs->xAccess(gMultiplex.pOrigVfs, multiplexRootFilename(zName), flgs, pOut);
 }
-static int multiplexFullPathname(sqlite3_vfs *a, const char *b, int c, char *d){
-  return gMultiplex.pOrigVfs->xFullPathname(gMultiplex.pOrigVfs, b, c, d);
+static int multiplexFullPathname(sqlite3_vfs *pVfs, const char *zName, int nOut, char *zOut){
+  int n;
+  const char *zBase;
+  zBase = multiplexParsePrefix(zName, NULL, NULL);
+  if( zBase==0 ){
+    return gMultiplex.pOrigVfs->xFullPathname(gMultiplex.pOrigVfs, zName, nOut, zOut);
+  }
+  n = (int)(zBase - zName);
+  memcpy(zOut, zName, n);
+  return gMultiplex.pOrigVfs->xFullPathname(gMultiplex.pOrigVfs, zBase, nOut - n, &zOut[n]);
 }
 static void *multiplexDlOpen(sqlite3_vfs *a, const char *b){
   return gMultiplex.pOrigVfs->xDlOpen(gMultiplex.pOrigVfs, b);
@@ -483,7 +540,7 @@ static int multiplexTruncate(sqlite3_file *pConn, sqlite3_int64 size){
 #else
     sqlite3_snprintf(SQLITE_MULTIPLEX_EXT_SZ+1, gMultiplex.zName+pGroup->nName, SQLITE_MULTIPLEX_EXT_FMT, i);
 #endif
-    rc2 = pOrigVfs->xDelete(pOrigVfs, gMultiplex.zName, 0);
+    rc2 = pOrigVfs->xDelete(pOrigVfs, multiplexRootFilename(gMultiplex.zName), 0);
     if( rc2!=SQLITE_OK ) rc = SQLITE_IOERR_TRUNCATE;
   }
   pSubOpen = multiplexSubOpen(p, (int)(size/gMultiplex.nChunkSize), &rc2, NULL);
@@ -544,7 +601,7 @@ static int multiplexFileSize(sqlite3_file *pConn, sqlite3_int64 *pSize){
         sqlite3_snprintf(SQLITE_MULTIPLEX_EXT_SZ+1, gMultiplex.zName+pGroup->nName, SQLITE_MULTIPLEX_EXT_FMT, i);
 #endif
       }
-      rc2 = pOrigVfs->xAccess(pOrigVfs, gMultiplex.zName, SQLITE_ACCESS_EXISTS, &exists);
+      rc2 = pOrigVfs->xAccess(pOrigVfs, multiplexRootFilename(gMultiplex.zName), SQLITE_ACCESS_EXISTS, &exists);
       if( rc2==SQLITE_OK && exists){
         /* if it exists, open it */
         pSubOpen = multiplexSubOpen(p, i, &rc, NULL);
@@ -738,7 +795,7 @@ int sqlite3_multiplex_initialize(const char *zOrigVfsName, int makeDefault){
   gMultiplex.pOrigVfs = pOrigVfs;
   gMultiplex.sThisVfs = *pOrigVfs;
   gMultiplex.sThisVfs.szOsFile += sizeof(multiplexConn);
-  gMultiplex.sThisVfs.zName = "multiplex";
+  gMultiplex.sThisVfs.zName = SQLITE_MULTIPLEX_VFS_NAME;
   gMultiplex.sThisVfs.xOpen = multiplexOpen;
   gMultiplex.sThisVfs.xDelete = multiplexDelete;
   gMultiplex.sThisVfs.xAccess = multiplexAccess;
