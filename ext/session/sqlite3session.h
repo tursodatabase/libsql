@@ -69,7 +69,6 @@ int sqlite3session_changeset(
 */
 void sqlite3session_delete(sqlite3_session *pSession);
 
-
 /*
 ** Create an iterator used to iterate through the contents of a changeset.
 */
@@ -95,23 +94,22 @@ int sqlite3changeset_next(sqlite3_changeset_iter *pIter);
 ** has returned SQLITE_ROW.
 */
 int sqlite3changeset_op(
-  sqlite3_changeset_iter *pIter,      /* Iterator object */
-  const char **pzTab,                 /* OUT: Pointer to table name */
-  int *pnCol,                         /* OUT: Number of columns in table */
-  int *pOp                            /* OUT: SQLITE_INSERT, DELETE or UPDATE */
+  sqlite3_changeset_iter *pIter,  /* Iterator object */
+  const char **pzTab,             /* OUT: Pointer to table name */
+  int *pnCol,                     /* OUT: Number of columns in table */
+  int *pOp                        /* OUT: SQLITE_INSERT, DELETE or UPDATE */
 );
-
 int sqlite3changeset_old(
-  sqlite3_changeset_iter *pIter,
-  int iVal,
-  sqlite3_value **ppValue             /* OUT: Old value (or NULL pointer) */
+  sqlite3_changeset_iter *pIter,  /* Changeset iterator */
+  int iVal,                       /* Column number */
+  sqlite3_value **ppValue         /* OUT: Old value (or NULL pointer) */
+);
+int sqlite3changeset_new(
+  sqlite3_changeset_iter *pIter,  /* Changeset iterator */
+  int iVal,                       /* Column number */
+  sqlite3_value **ppValue         /* OUT: New value (or NULL pointer) */
 );
 
-int sqlite3changeset_new(
-  sqlite3_changeset_iter *pIter,
-  int iVal,
-  sqlite3_value **ppValue             /* OUT: New value (or NULL pointer) */
-);
 /*
 ** This function is only usable with sqlite3_changeset_iter objects passed
 ** to the xConflict callback by sqlite3changeset_apply(). It cannot be used
@@ -122,8 +120,8 @@ int sqlite3changeset_new(
 ** or SQLITE_CHANGESET_CONFLICT.
 */
 int sqlite3changeset_conflict(
-  sqlite3_changeset_iter *pIter,
-  int iVal,
+  sqlite3_changeset_iter *pIter,  /* Changeset iterator */
+  int iVal,                       /* Column number */
   sqlite3_value **ppValue         /* OUT: Value from conflicting row */
 );
 
@@ -153,15 +151,15 @@ int sqlite3changeset_invert(
 ** resolution strategy.
 */
 int sqlite3changeset_apply(
-  sqlite3 *db,
-  int nChangeset,
-  void *pChangeset,
+  sqlite3 *db,                    /* Apply change to "main" db of this handle */
+  int nChangeset,                 /* Size of changeset in bytes */
+  void *pChangeset,               /* Changeset blob */
   int(*xConflict)(
     void *pCtx,                   /* Copy of fifth arg to _apply() */
     int eConflict,                /* DATA, MISSING, CONFLICT, CONSTRAINT */
     sqlite3_changeset_iter *p     /* Handle describing change and conflict */
   ),
-  void *pCtx
+  void *pCtx                      /* First argument passed to xConflict */
 );
 
 /* 

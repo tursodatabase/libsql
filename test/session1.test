@@ -291,11 +291,7 @@ do_execsql_test 3.3.5 { SELECT * FROM t4 } {-1 2 3 -1 5 6 {} 8 9 x 11 12}
 
 #-------------------------------------------------------------------------
 # This next block of tests verifies that values returned by the conflict
-# handler are intepreted correctly. The following cases are tested:
-#
-#     Test case   Operation   Conflict   Return Code
-#                 UPDATE      DATA       OMIT
-#                 UPDATE      DATA       REPLACE
+# handler are intepreted correctly.
 #
 
 proc test_reset {} {
@@ -406,6 +402,35 @@ foreach {tn conflict_return} {
   set res(OMIT)    {1 one 2 TWO}
   do_db2_test 5.$tn.3 "SELECT * FROM d1" $res($conflict_return)
 }
+
+#-------------------------------------------------------------------------
+# Test that two tables can be monitored by a single session object.
+#
+test_reset
+set schema {
+  CREATE TABLE t1(a COLLATE nocase PRIMARY KEY, b);
+  CREATE TABLE t2(a, b PRIMARY KEY);
+}
+do_test 6.0 {
+  execsql $schema db
+  execsql $schema db2
+  execsql {
+    INSERT INTO t1 VALUES('a', 'b');
+    INSERT INTO t2 VALUES('a', 'b');
+  } db2
+} {}
+
+set conflict_return ""
+do_conflict_test 6.1 -tables {t1 t2} -sql {
+  INSERT INTO t1 VALUES('1', '2');
+  INSERT INTO t1 VALUES('A', 'B');
+  INSERT INTO t2 VALUES('A', 'B');
+} -conflicts {
+  {INSERT t1 CONFLICT {t A t B} {t a t b}}
+}
+
+do_db2_test 6.2 "SELECT * FROM t1" {a b 1 2}
+do_db2_test 6.3 "SELECT * FROM t2" {a b A B}
 
 catch { db2 close }
 finish_test
