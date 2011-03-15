@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\san\sout-of-order\svariable\sdeclaration\sin\sshell.c.
-D 2011-03-15T18:35:44.256
+C Make\sthe\s"unix-excl"\sVFS\swork\sexactly\slike\s"unix"\sif\sthe\sdatabase\nfile\sis\sread-only.
+D 2011-03-15T19:08:48.027
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +165,7 @@ F src/os.c 22ac61d06e72a0dac900400147333b07b13d8e1d
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 2596fd2d5d0976c6c0c628d0c3c7c4e7a724f4cf
-F src/os_unix.c 1debf5ea6efd0f35335a2a615198a7a1017ffd4b
+F src/os_unix.c 919972244dd7267815f9fc176b662390ff0b2348
 F src/os_win.c 24d72407a90551969744cf9bcbb1b4c72c5fa845
 F src/pager.c 6aa906b60a59664ba58d3f746164bb010d407ce1
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
@@ -916,14 +916,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P def98fd23e42bda13547e38ab13fed0e6554ce99
-R 2ceb7e2495de2e32fa2e2aca83b58f09
+P 725708465072fc63736e99610cc9cb0ac336145a
+R c6fd073182d6b083be2e4d503e5f99b8
 U drh
-Z e7ee1c18a6d623c4d19a0ae664dea8d8
+Z 981ae6e8a2633665045ed876d4741a1e
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNf7GDoxKgR168RlERAhc+AJ9qHfOaDlOtj2TqHpdpAXpIiMjRTwCeP6Tv
-esEJjmOwgIx+D+pi9BcOh8Y=
-=lte8
+iD8DBQFNf7lCoxKgR168RlERAhprAJkB1y4SWHLxKnmODUA6QMdw7pgj8wCgi+YB
+9Q1erlHqYv/DtUPtH7mUHBE=
+=2haN
 -----END PGP SIGNATURE-----

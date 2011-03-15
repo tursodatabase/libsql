@@ -247,6 +247,7 @@ struct unixFile {
 ** Allowed values for the unixFile.ctrlFlags bitmask:
 */
 #define UNIXFILE_EXCL   0x01     /* Connections from one process only */
+#define UNIXFILE_RDONLY 0x02     /* Connection is read only */
 
 /*
 ** Include code that is common to all os_*.c files
@@ -1192,20 +1193,26 @@ static int unixCheckReservedLock(sqlite3_file *id, int *pResOut){
 ** Attempt to set a system-lock on the file pFile.  The lock is 
 ** described by pLock.
 **
-** If the pFile was opened from unix-excl, then the only lock ever
-** obtained is an exclusive lock, and it is obtained exactly once
+** If the pFile was opened read/write from unix-excl, then the only lock
+** ever obtained is an exclusive lock, and it is obtained exactly once
 ** the first time any lock is attempted.  All subsequent system locking
 ** operations become no-ops.  Locking operations still happen internally,
 ** in order to coordinate access between separate database connections
 ** within this process, but all of that is handled in memory and the
 ** operating system does not participate.
+**
+** This function is a pass-through to fcntl(F_SETLK) if pFile is using
+** any VFS other than "unix-excl" or if pFile is opened on "unix-excl"
+** and is read-only.
 */
 static int unixFileLock(unixFile *pFile, struct flock *pLock){
   int rc;
   unixInodeInfo *pInode = pFile->pInode;
   assert( unixMutexHeld() );
   assert( pInode!=0 );
-  if( (pFile->ctrlFlags & UNIXFILE_EXCL)!=0 || pInode->bProcessLock ){
+  if( ((pFile->ctrlFlags & UNIXFILE_EXCL)!=0 || pInode->bProcessLock)
+   && ((pFile->ctrlFlags & UNIXFILE_RDONLY)==0)
+  ){
     if( pInode->bProcessLock==0 ){
       struct flock lock;
       assert( pInode->nLock==0 );
@@ -4402,7 +4409,8 @@ static int fillInUnixFile(
   sqlite3_file *pId,      /* Write to the unixFile structure here */
   const char *zFilename,  /* Name of the file being opened */
   int noLock,             /* Omit locking if true */
-  int isDelete            /* Delete on close if true */
+  int isDelete,           /* Delete on close if true */
+  int isReadOnly          /* True if the file is opened read-only */
 ){
   const sqlite3_io_methods *pLockingStyle;
   unixFile *pNew = (unixFile *)pId;
@@ -4434,6 +4442,9 @@ static int fillInUnixFile(
     pNew->ctrlFlags = UNIXFILE_EXCL;
   }else{
     pNew->ctrlFlags = 0;
+  }
+  if( isReadOnly ){
+    pNew->ctrlFlags |= UNIXFILE_RDONLY;
   }
 
 #if OS_VXWORKS
@@ -4942,6 +4953,7 @@ static int unixOpen(
       openFlags &= ~(O_RDWR|O_CREAT);
       flags |= SQLITE_OPEN_READONLY;
       openFlags |= O_RDONLY;
+      isReadonly = 1;
       fd = robust_open(zName, openFlags, openMode);
     }
     if( fd<0 ){
@@ -5038,7 +5050,8 @@ static int unixOpen(
       useProxy = !(fsInfo.f_flags&MNT_LOCAL);
     }
     if( useProxy ){
-      rc = fillInUnixFile(pVfs, fd, dirfd, pFile, zPath, noLock, isDelete);
+      rc = fillInUnixFile(pVfs, fd, dirfd, pFile, zPath, noLock,
+                          isDelete, isReadonly);
       if( rc==SQLITE_OK ){
         rc = proxyTransformUnixFile((unixFile*)pFile, ":auto:");
         if( rc!=SQLITE_OK ){
@@ -5055,7 +5068,8 @@ static int unixOpen(
   }
 #endif
   
-  rc = fillInUnixFile(pVfs, fd, dirfd, pFile, zPath, noLock, isDelete);
+  rc = fillInUnixFile(pVfs, fd, dirfd, pFile, zPath, noLock,
+                      isDelete, isReadonly);
 open_finished:
   if( rc!=SQLITE_OK ){
     sqlite3_free(p->pUnused);
@@ -5717,7 +5731,7 @@ static int proxyCreateUnixFile(
   pUnused->flags = openFlags;
   pNew->pUnused = pUnused;
   
-  rc = fillInUnixFile(&dummyVfs, fd, dirfd, (sqlite3_file*)pNew, path, 0, 0);
+  rc = fillInUnixFile(&dummyVfs, fd, dirfd, (sqlite3_file*)pNew, path, 0, 0, 0);
   if( rc==SQLITE_OK ){
     *ppFile = pNew;
     return SQLITE_OK;
