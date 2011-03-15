@@ -2687,8 +2687,7 @@ int main(int argc, char **argv){
       sqlite3_config(SQLITE_CONFIG_HEAP, malloc((int)szHeap), (int)szHeap, 64);
 #endif
     }else if( strcmp(argv[i],"-vfs")==0 ){
-      i++;
-      sqlite3_vfs *pVfs = sqlite3_vfs_find(argv[i]);
+      sqlite3_vfs *pVfs = sqlite3_vfs_find(argv[++i]);
       if( pVfs ){
         sqlite3_vfs_register(pVfs, 1);
       }else{
