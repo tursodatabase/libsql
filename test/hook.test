@@ -405,9 +405,15 @@ proc do_preupdate_test {tn sql x} {
 proc preupdate_hook {args} {
   set type [lindex $args 0]
   eval lappend ::preupdate $args
-  if {$type != "SQLITE_INSERT"} {
+  if {$type != "INSERT"} {
     for {set i 0} {$i < [db preupdate count]} {incr i} {
       lappend ::preupdate [db preupdate old $i]
+    }
+  }
+  if {$type != "DELETE"} {
+    for {set i 0} {$i < [db preupdate count]} {incr i} {
+      set rc [catch { db preupdate new $i } v]
+      lappend ::preupdate $v
     }
   }
 }
@@ -433,28 +439,28 @@ do_execsql_test 7.0 {
 
 do_preupdate_test 7.1.1 {
   INSERT INTO t1 VALUES('x', 'y')
-} {INSERT main t1 1 1}
+} {INSERT main t1 1 1  x y}
 
 # 7.1.2.1 does not use the xfer optimization. 7.1.2.2 does.
 do_preupdate_test 7.1.2.1 {
   INSERT INTO t1 SELECT y, x FROM t2;
-} {INSERT main t1 2 2 INSERT main t1 3 3}
+} {INSERT main t1 2 2 b a   INSERT main t1 3 3 d c}
 do_preupdate_test 7.1.2.2 {
   INSERT INTO t1 SELECT * FROM t2;
-} {INSERT main t1 4 4 INSERT main t1 5 5}
+} {INSERT main t1 4 4 a b   INSERT main t1 5 5 c d}
 
 do_preupdate_test 7.1.3 {
   REPLACE INTO t1(rowid, a, b) VALUES(1, 1, 1);
 } {
   DELETE main t1 1 1   x y
-  INSERT main t1 1 1
+  INSERT main t1 1 1   1 1
 }
 
 do_preupdate_test 7.1.4 {
   REPLACE INTO t3 VALUES(4, NULL);
 } {
   DELETE main t3 1 1   4 16
-  INSERT main t3 4 4
+  INSERT main t3 4 4   4 {}
 }
 
 do_preupdate_test 7.1.5 {
@@ -462,7 +468,7 @@ do_preupdate_test 7.1.5 {
 } {
   DELETE main t3 2 2  5 25
   DELETE main t3 3 3  6 36
-  INSERT main t3 2 2
+  INSERT main t3 2 2  6 {}
 }
 
 do_execsql_test 7.2.0 { SELECT rowid FROM t1 } {1 2 3 4 5}
@@ -497,29 +503,29 @@ do_execsql_test 7.3.0 {
 do_preupdate_test 7.3.1 {
   UPDATE t2 SET y = y||y;
 } {
-  UPDATE main t2 1 1   a b
-  UPDATE main t2 2 2   c d
+  UPDATE main t2 1 1   a b  a bb
+  UPDATE main t2 2 2   c d  c dd
 }
 
 do_preupdate_test 7.3.2 {
   UPDATE t2 SET rowid = rowid-1;
 } {
-  UPDATE main t2 1 0   a bb
-  UPDATE main t2 2 1   c dd
+  UPDATE main t2 1 0   a bb  a bb
+  UPDATE main t2 2 1   c dd  c dd
 }
 
 do_preupdate_test 7.3.3 {
   UPDATE OR REPLACE t2 SET rowid = 1 WHERE x = 'a'
 } {
   DELETE main t2 1 1   c dd
-  UPDATE main t2 0 1   a bb
+  UPDATE main t2 0 1   a bb  a bb
 }
 
 do_preupdate_test 7.3.4.1 {
   UPDATE OR REPLACE t3 SET i = 5 WHERE i = 6
 } {
   DELETE main t3 2 2   5 25
-  UPDATE main t3 3 3   6 36
+  UPDATE main t3 3 3   6 36  5 36
 }
 
 do_execsql_test 7.3.4.2 {
@@ -532,7 +538,7 @@ do_preupdate_test 7.3.5 {
 } {
   DELETE main t3 1 1    4  16
   DELETE main t3 3 3    5  36
-  UPDATE main t3 4 1   10 100
+  UPDATE main t3 4 1   10 100  5 100
 }
 
 do_execsql_test 7.4.1.0 {
@@ -577,7 +583,7 @@ do_preupdate_test 7.4.2.1 {
   UPDATE t5 SET b = 4 WHERE a = 'c'
 } {
   DELETE main t5 1 1   a 1
-  UPDATE main t5 3 3   c 3
+  UPDATE main t5 3 3   c 3  c 4
 }
 
 do_execsql_test 7.4.2.2 {
@@ -606,7 +612,7 @@ do_preupdate_test 7.5.1.1 {
 do_preupdate_test 7.5.1.2 {
   UPDATE t7 SET b = 'five'
 } {
-  UPDATE main t7 2 2   three four {}
+  UPDATE main t7 2 2   three four {}  three five {}
 }
 
 do_execsql_test 7.5.2.0 {
@@ -628,7 +634,7 @@ do_preupdate_test 7.5.2.1 {
 do_preupdate_test 7.5.2.2 {
   UPDATE t8 SET b = 'five'
 } {
-  UPDATE main t8 2 2   three four xxx
+  UPDATE main t8 2 2   three four xxx  three five xxx
 }
 
 finish_test

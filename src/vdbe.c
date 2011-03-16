@@ -3881,9 +3881,7 @@ case OP_InsertInt: {
    && pOp->p4.z 
    && (!(pOp->p5 & OPFLAG_ISUPDATE) || pC->rowidIsValid==0)
   ){
-    sqlite3VdbePreUpdateHook(p, pC,
-      pC->rowidIsValid ? op : SQLITE_INSERT, zDb, zTbl, iKey, iKey
-    );
+    sqlite3VdbePreUpdateHook(p, pC, SQLITE_INSERT, zDb, zTbl, iKey, pOp->p2);
   }
 
   if( pOp->p5 & OPFLAG_NCHANGE ) p->nChange++;
@@ -3985,7 +3983,7 @@ case OP_Delete: {
     sqlite3VdbePreUpdateHook(p, pC,
         (opflags & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_DELETE, 
         zDb, zTbl, iKey,
-        (opflags & OPFLAG_ISUPDATE) ? aMem[pOp->p3].u.i : iKey
+        pOp->p3
     );
   }
 

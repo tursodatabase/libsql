@@ -3176,15 +3176,24 @@ void sqlite3VdbePreUpdateHook(
   const char *zDb,                /* Database name */
   const char *zTbl,               /* Table name */
   i64 iKey1,                      /* Initial key value */
-  i64 iKey2                       /* Final key value */
+  int iReg                        /* Register for new.* record */
 ){
   sqlite3 *db = v->db;
+  i64 iKey2;
 
   PreUpdate preupdate;
   memset(&preupdate, 0, sizeof(PreUpdate));
 
+  if( op==SQLITE_UPDATE ){
+    iKey2 = v->aMem[iReg].u.i;
+  }else{
+    iKey2 = iKey1;
+  }
+
+  preupdate.v = v;
   preupdate.pCsr = pCsr;
   preupdate.op = op;
+  preupdate.iNewReg = iReg;
   preupdate.keyinfo.db = db;
   preupdate.keyinfo.enc = ENC(db);
   preupdate.keyinfo.nField = pCsr->nField;
@@ -3194,6 +3203,16 @@ void sqlite3VdbePreUpdateHook(
   sqlite3DbFree(db, preupdate.aRecord);
   if( preupdate.pUnpacked ){
     sqlite3VdbeDeleteUnpackedRecord(preupdate.pUnpacked);
+  }
+  if( preupdate.pNewUnpacked ){
+    sqlite3VdbeDeleteUnpackedRecord(preupdate.pNewUnpacked);
+  }
+  if( preupdate.aNew ){
+    int i;
+    for(i=0; i<pCsr->nField; i++){
+      sqlite3VdbeMemRelease(&preupdate.aNew[i]);
+    }
+    sqlite3_free(preupdate.aNew);
   }
 }
 

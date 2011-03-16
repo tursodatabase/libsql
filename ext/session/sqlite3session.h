@@ -15,14 +15,50 @@ typedef struct sqlite3_session sqlite3_session;
 typedef struct sqlite3_changeset_iter sqlite3_changeset_iter;
 
 /*
-** Create a session object. This session object will record changes to
-** database zDb attached to connection db.
+** Create a new session object attached to database handle db. If successful,
+** a pointer to the new object is written to *ppSession and SQLITE_OK is
+** returned. If an error occurs, *ppSession is set to NULL and an SQLite
+** error code (e.g. [SQLITE_NOMEM]) is returned.
+**
+** It is possible to create multiple session objects attached to a single
+** database handle.
+**
+** Session objects created using this function should be deleted using the
+** [sqlite3session_delete()] function before the database handle that they
+** are attached to is itself closed. If the database handle is closed before
+** the session object is deleted, then the results of calling any session
+** module function, including [sqlite3session_delete()] on the session object
+** are undefined.
+**
+** Because the session module uses the [sqlite3_preupdate_hook()] API, it
+** is not possible for an application to register a pre-update hook on a
+** database handle that has one or more session objects attached. Nor is
+** it possible to create a session object attached to a database handle for
+** which a pre-update hook is already defined. The results of attempting 
+** either of these things are undefined.
+**
+** The session object will be used to create changesets for tables in
+** database zDb, where zDb is either "main", or "temp", or the name of an
+** attached database. It is not an error if database zDb does not exist
+** to the database when the session object is created.
 */
 int sqlite3session_create(
   sqlite3 *db,                    /* Database handle */
   const char *zDb,                /* Name of db (e.g. "main") */
   sqlite3_session **ppSession     /* OUT: New session object */
 );
+
+/*
+** Delete a session object previously allocated using 
+** [sqlite3session_create()]. Once a session object has been deleted, the
+** results of attempting to use pSession with any other session module
+** function are undefined.
+**
+** Session objects must be deleted before the database handle to which they
+** are attached is closed. Refer to the documentation for 
+** [sqlite3session_create()] for details.
+*/
+void sqlite3session_delete(sqlite3_session *pSession);
 
 /*
 ** Enable or disable the recording of changes by a session object. When
@@ -52,22 +88,22 @@ int sqlite3session_attach(
 );
 
 /*
-** Obtain a changeset object containing all changes recorded by the 
-** session object passed as the first argument.
+** Obtain a changeset containing changes to the tables attached to the 
+** session object passed as the first argument. If successful, 
+** set *ppChangeset to point to a buffer containing the changeset 
+** and *pnChangeset to the size of the changeset in bytes before returning
+** SQLITE_OK. If an error occurs, set both *ppChangeset and *pnChangeset to
+** zero and return an SQLite error code.
 **
-** It is the responsibility of the caller to eventually free the buffer 
-** using sqlite3_free().
+** Following a successful call to this function, it is the responsibility of
+** the caller to eventually free the buffer that *ppChangeset points to using
+** [sqlite3_free()].
 */
 int sqlite3session_changeset(
   sqlite3_session *pSession,      /* Session object */
   int *pnChangeset,               /* OUT: Size of buffer at *ppChangeset */
   void **ppChangeset              /* OUT: Buffer containing changeset */
 );
-
-/*
-** Delete a session object previously allocated using sqlite3session_create().
-*/
-void sqlite3session_delete(sqlite3_session *pSession);
 
 /*
 ** Create an iterator used to iterate through the contents of a changeset.

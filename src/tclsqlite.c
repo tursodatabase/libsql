@@ -2846,9 +2846,9 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   }
 
   case DB_PREUPDATE: {
-    static const char *azSub[] = {"count", "hook", "modified", "old", 0};
+    static const char *azSub[] = {"count", "hook", "new", "old", 0};
     enum DbPreupdateSubCmd {
-      PRE_COUNT, PRE_HOOK, PRE_MODIFIED, PRE_OLD
+      PRE_COUNT, PRE_HOOK, PRE_NEW, PRE_OLD
     };
     int iSub;
 
@@ -2875,9 +2875,10 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
         break;
       }
 
-      case PRE_MODIFIED:
+      case PRE_NEW:
       case PRE_OLD: {
         int iIdx;
+        sqlite3_value *pValue;
         if( objc!=4 ){
           Tcl_WrongNumArgs(interp, 3, objv, "INDEX");
           return TCL_ERROR;
@@ -2886,21 +2887,17 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
           return TCL_ERROR;
         }
 
-        if( iSub==PRE_MODIFIED ){
-          int iRes;
-          rc = sqlite3_preupdate_modified(pDb->db, iIdx, &iRes);
-          if( rc==SQLITE_OK ) Tcl_SetObjResult(interp, Tcl_NewIntObj(iRes));
-        }else{
-          sqlite3_value *pValue;
-          assert( iSub==PRE_OLD );
+        if( iSub==PRE_OLD ){
           rc = sqlite3_preupdate_old(pDb->db, iIdx, &pValue);
-          if( rc==SQLITE_OK ){
-            Tcl_Obj *pObj = Tcl_NewStringObj(sqlite3_value_text(pValue), -1);
-            Tcl_SetObjResult(interp, pObj);
-          }
+        }else{
+          assert( iSub==PRE_NEW );
+          rc = sqlite3_preupdate_new(pDb->db, iIdx, &pValue);
         }
 
-        if( rc!=SQLITE_OK ){
+        if( rc==SQLITE_OK ){
+          Tcl_Obj *pObj = Tcl_NewStringObj(sqlite3_value_text(pValue), -1);
+          Tcl_SetObjResult(interp, pObj);
+        }else{
           Tcl_AppendResult(interp, sqlite3_errmsg(pDb->db), 0);
           return TCL_ERROR;
         }

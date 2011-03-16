@@ -336,11 +336,15 @@ struct Vdbe {
 ** sqlite3_preupdate_*() API functions.
 */
 struct PreUpdate {
+  Vdbe *v;
   VdbeCursor *pCsr;               /* Cursor to read old values from */
   int op;                         /* One of SQLITE_INSERT, UPDATE, DELETE */
   u8 *aRecord;                    /* old.* database record */
   KeyInfo keyinfo;
   UnpackedRecord *pUnpacked;      /* Unpacked version of aRecord[] */
+  UnpackedRecord *pNewUnpacked;   /* Unpacked version of new.* record */
+  int iNewReg;                    /* Register for new.* values */
+  Mem *aNew;                      /* Array of new.* values */
 };
 
 /*
@@ -400,7 +404,7 @@ void sqlite3VdbeFrameDelete(VdbeFrame*);
 int sqlite3VdbeFrameRestore(VdbeFrame *);
 void sqlite3VdbeMemStoreType(Mem *pMem);
 void sqlite3VdbePreUpdateHook(
-    Vdbe *, VdbeCursor *, int, const char*, const char*, i64, i64);
+    Vdbe *, VdbeCursor *, int, const char*, const char*, i64, int);
 
 #ifdef SQLITE_DEBUG
 void sqlite3VdbeMemPrepareToChange(Vdbe*,Mem*);

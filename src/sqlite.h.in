@@ -6366,8 +6366,8 @@ SQLITE_EXPERIMENTAL void *sqlite3_preupdate_hook(
   void*
 );
 SQLITE_EXPERIMENTAL int sqlite3_preupdate_old(sqlite3 *, int, sqlite3_value **);
-SQLITE_EXPERIMENTAL int sqlite3_preupdate_modified(sqlite3 *, int, int *);
 SQLITE_EXPERIMENTAL int sqlite3_preupdate_count(sqlite3 *);
+SQLITE_EXPERIMENTAL int sqlite3_preupdate_new(sqlite3 *, int, sqlite3_value **);
 
 /*
 ** Undo the hack that converts floating point types to integer for

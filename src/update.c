@@ -493,7 +493,13 @@ void sqlite3Update(
     /* If changing the rowid value, or if there are foreign key constraints
     ** to process, delete the old record. Otherwise, add a noop OP_Delete
     ** to invoke the pre-update hook.
+    **
+    ** That (regNew==regnewRowid+1) is true is also important for the 
+    ** pre-update hook. If hte caller invokes preupdate_new(), the returned
+    ** value is copied from memory cell (regNewRowid+1+iCol), where iCol
+    ** is the column index supplied by the user.
     */
+    assert( regNew==regNewRowid+1 );
     sqlite3VdbeAddOp3(v, OP_Delete, iCur,
         OPFLAG_ISUPDATE | ((hasFK || chngRowid) ? 0 : OPFLAG_ISNOOP),
         regNewRowid

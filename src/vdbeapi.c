@@ -1329,10 +1329,16 @@ int sqlite3_stmt_status(sqlite3_stmt *pStmt, int op, int resetFlag){
   return v;
 }
 
+/*
+** This function is called from within a pre-update callback to retrieve
+** a field of the row currently being updated or deleted.
+*/
 int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
   PreUpdate *p = db->pPreUpdate;
   int rc = SQLITE_OK;
 
+  /* Test that this call is being made from within an SQLITE_DELETE or
+  ** SQLITE_UPDATE pre-update callback, and that iIdx is within range. */
   if( !p || p->op==SQLITE_INSERT ){
     rc = SQLITE_MISUSE_BKPT;
     goto preupdate_old_out;
@@ -1342,6 +1348,7 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
     goto preupdate_old_out;
   }
 
+  /* If the old.* record has not yet been loaded into memory, do so now. */
   if( p->pUnpacked==0 ){
     u32 nRecord;
     u8 *aRecord;
@@ -1372,26 +1379,78 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
   return sqlite3ApiExit(db, rc);
 }
 
+/*
+** This function is called from within a pre-update callback to retrieve
+** the number of columns in the row being updated, deleted or inserted.
+*/
 int sqlite3_preupdate_count(sqlite3 *db){
   PreUpdate *p = db->pPreUpdate;
   return (p ? p->pCsr->nField : 0);
 }
 
-int sqlite3_preupdate_modified(sqlite3 *db, int iIdx, int *pbMod){
+/*
+** This function is called from within a pre-update callback to retrieve
+** a field of the row currently being updated or inserted.
+*/
+int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
   PreUpdate *p = db->pPreUpdate;
   int rc = SQLITE_OK;
+  Mem *pMem;
 
-  if( !p || p->op!=SQLITE_UPDATE ){
+  if( !p || p->op==SQLITE_DELETE ){
     rc = SQLITE_MISUSE_BKPT;
-    goto preupdate_mod_out;
+    goto preupdate_new_out;
   }
   if( iIdx>=p->pCsr->nField || iIdx<0 ){
     rc = SQLITE_RANGE;
-    goto preupdate_mod_out;
+    goto preupdate_new_out;
   }
-  *pbMod = 1;
 
- preupdate_mod_out:
+  if( p->op==SQLITE_INSERT ){
+    /* For an INSERT, memory cell p->iNewReg contains the serialized record
+    ** that is being inserted. Deserialize it. */
+    UnpackedRecord *pUnpack = p->pNewUnpacked;
+    if( !pUnpack ){
+      Mem *pData = &p->v->aMem[p->iNewReg];
+      rc = sqlite3VdbeMemExpandBlob(pData);
+      if( rc!=SQLITE_OK ) goto preupdate_new_out;
+      pUnpack = sqlite3VdbeRecordUnpack(&p->keyinfo, pData->n, pData->z, 0, 0);
+      if( !pUnpack ){
+        rc = SQLITE_NOMEM;
+        goto preupdate_new_out;
+      }
+      p->pNewUnpacked = pUnpack;
+    }
+    if( iIdx>=pUnpack->nField ){
+      pMem = (sqlite3_value *)columnNullValue();
+    }else{
+      pMem = &pUnpack->aMem[iIdx];
+      sqlite3VdbeMemStoreType(pMem);
+    }
+  }else{
+    /* For an UPDATE, memory cell (p->iNewReg+1+iIdx) contains the required
+    ** value. Make a copy of the cell contents and return a pointer to it.
+    ** It is not safe to return a pointer to the memory cell itself as the
+    ** caller may modify the value text encoding.
+    */
+    assert( p->op==SQLITE_UPDATE );
+    if( !p->aNew ){
+      p->aNew = (Mem *)sqlite3DbMallocZero(db, sizeof(Mem) * p->pCsr->nField);
+      if( !p->aNew ){
+        rc = SQLITE_NOMEM;
+        goto preupdate_new_out;
+      }
+    }
+    pMem = &p->aNew[iIdx];
+    if( pMem->flags==0 ){
+      rc = sqlite3VdbeMemCopy(pMem, &p->v->aMem[p->iNewReg+1+iIdx]);
+      if( rc!=SQLITE_OK ) goto preupdate_new_out;
+      sqlite3VdbeMemStoreType(pMem);
+    }
+  }
+  *ppValue = pMem;
+
+ preupdate_new_out:
   sqlite3Error(db, rc, 0);
   return sqlite3ApiExit(db, rc);
 }
