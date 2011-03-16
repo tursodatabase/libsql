@@ -2602,6 +2602,9 @@ static const char zOptions[] =
   "   -nullvalue 'text'    set text string for NULL values\n"
   "   -version             show SQLite version\n"
   "   -vfs NAME            use NAME as the default VFS\n"
+#ifdef SQLITE_ENABLE_VFSTRACE
+  "   -vfstrace            enable tracing of all VFS calls\n"
+#endif
 ;
 static void usage(int showDetail){
   fprintf(stderr,
@@ -2637,7 +2640,6 @@ int main(int argc, char **argv){
   char *zFirstCmd = 0;
   int i;
   int rc = 0;
-
 
   Argv0 = argv[0];
   main_init(&data);
@@ -2696,7 +2698,7 @@ int main(int argc, char **argv){
          void *pOutArg,
          int makeDefault
       );
-      vfstrace_register("trace",0,(int(*)(const char*,void*))fputs, stderr, 1);
+      vfstrace_register("trace",0,(int(*)(const char*,void*))fputs,stderr,1);
 #endif
     }else if( strcmp(argv[i],"-vfs")==0 ){
       sqlite3_vfs *pVfs = sqlite3_vfs_find(argv[++i]);
