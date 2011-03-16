@@ -2638,6 +2638,7 @@ int main(int argc, char **argv){
   int i;
   int rc = 0;
 
+
   Argv0 = argv[0];
   main_init(&data);
   stdin_is_interactive = isatty(0);
@@ -2685,6 +2686,17 @@ int main(int argc, char **argv){
       if( szHeap>0x7fff0000 ) szHeap = 0x7fff0000;
 #if defined(SQLITE_ENABLE_MEMSYS3) || defined(SQLITE_ENABLE_MEMSYS5)
       sqlite3_config(SQLITE_CONFIG_HEAP, malloc((int)szHeap), (int)szHeap, 64);
+#endif
+#ifdef SQLITE_ENABLE_VFSTRACE
+    }else if( strcmp(argv[i],"-vfstrace")==0 ){
+      extern int vfstrace_register(
+         const char *zTraceName,
+         const char *zOldVfsName,
+         int (*xOut)(const char*,void*),
+         void *pOutArg,
+         int makeDefault
+      );
+      vfstrace_register("trace",0,(int(*)(const char*,void*))fputs, stderr, 1);
 #endif
     }else if( strcmp(argv[i],"-vfs")==0 ){
       sqlite3_vfs *pVfs = sqlite3_vfs_find(argv[++i]);
@@ -2803,6 +2815,8 @@ int main(int argc, char **argv){
     }else if( strcmp(z,"-heap")==0 ){
       i++;
     }else if( strcmp(z,"-vfs")==0 ){
+      i++;
+    }else if( strcmp(z,"-vfstrace")==0 ){
       i++;
     }else if( strcmp(z,"-help")==0 || strcmp(z, "--help")==0 ){
       usage(1);
