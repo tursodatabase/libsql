@@ -2569,8 +2569,6 @@ case OP_Savepoint: {
           db->nSavepoint++;
         }
 
-        sqlite3TransactionHook(db, SQLITE_BEGIN, db->nSavepoint);
-    
         /* Link the new savepoint into the database handle's list. */
         pNew->pNext = db->pSavepoint;
         db->pSavepoint = pNew;
@@ -2636,13 +2634,6 @@ case OP_Savepoint: {
           sqlite3ExpirePreparedStatements(db);
           sqlite3ResetInternalSchema(db, 0);
           db->flags = (db->flags | SQLITE_InternChanges);
-        }
-
-        assert( SAVEPOINT_ROLLBACK+1==SQLITE_ROLLBACK );
-        assert( SAVEPOINT_RELEASE+1==SQLITE_COMMIT );
-        sqlite3TransactionHook(db, p1+1, iSavepoint+1);
-        if( p1==SAVEPOINT_ROLLBACK ){
-          sqlite3TransactionHook(db, SQLITE_BEGIN, iSavepoint+1);
         }
       }
   
@@ -2719,9 +2710,6 @@ case OP_AutoCommit: {
     }else if( (rc = sqlite3VdbeCheckFk(p, 1))!=SQLITE_OK ){
       goto vdbe_return;
     }else{
-      if( desiredAutoCommit==0 ){
-        sqlite3TransactionHook(db, SQLITE_BEGIN, 0);
-      }
       db->autoCommit = (u8)desiredAutoCommit;
       if( sqlite3VdbeHalt(p)==SQLITE_BUSY ){
         p->pc = pc;
@@ -2808,7 +2796,6 @@ case OP_Transaction: {
         p->iStatement = db->nSavepoint + db->nStatement;
       }
       rc = sqlite3BtreeBeginStmt(pBt, p->iStatement);
-      sqlite3TransactionHook(db, SQLITE_BEGIN, p->iStatement);
 
       /* Store the current value of the database handles deferred constraint
       ** counter. If the statement transaction needs to be rolled back,

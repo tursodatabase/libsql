@@ -764,26 +764,6 @@ int sqlite3_close(sqlite3 *db){
   return SQLITE_OK;
 }
 
-
-/*
-** Invoke the transaction-hook.
-*/
-void sqlite3TransactionHook(sqlite3 *db, int op, int iLevel){
-  assert( op==SQLITE_BEGIN || op==SQLITE_COMMIT || op==SQLITE_ROLLBACK );
-  assert( op==SQLITE_BEGIN || iLevel<db->iOpenTrans || iLevel==0 );
-  assert( op==SQLITE_BEGIN || iLevel<db->iOpenTrans || db->iOpenTrans==0 );
-  assert( op!=SQLITE_BEGIN || iLevel==db->iOpenTrans || iLevel==0 );
-  assert( op!=SQLITE_BEGIN || iLevel==db->iOpenTrans || db->iOpenTrans==1 );
-
-  if( op==SQLITE_BEGIN && iLevel!=db->iOpenTrans ) return;
-  if( op!=SQLITE_BEGIN && iLevel>=db->iOpenTrans ) return;
-
-  if( db->xTransCallback ){
-    db->xTransCallback(db->pTransArg, op, iLevel);
-  }
-  db->iOpenTrans = iLevel + (op==SQLITE_BEGIN);
-}
-
 /*
 ** Rollback all database files.
 */
@@ -816,10 +796,6 @@ void sqlite3RollbackAll(sqlite3 *db){
   if( db->xRollbackCallback && (inTrans || !db->autoCommit) ){
     db->xRollbackCallback(db->pRollbackArg);
   }
-
-  /* If a transaction-hook is configured, invoke it now to report on 
-  ** the rollback operation. */
-  sqlite3TransactionHook(db, SQLITE_ROLLBACK, 0);
 }
 
 /*
@@ -1310,24 +1286,6 @@ void *sqlite3_preupdate_hook(
   pRet = db->pPreUpdateArg;
   db->xPreUpdateCallback = xCallback;
   db->pPreUpdateArg = pArg;
-  sqlite3_mutex_leave(db->mutex);
-  return pRet;
-}
-
-/*
-** Register a callback to be invoked each time a transaction or savepoint
-** is opened, committed or rolled back.
-*/
-void *sqlite3_transaction_hook(
-  sqlite3 *db,                              /* Database handle */
-  void(*xCallback)(void *, int, int),       /* Callback function */
-  void *pArg                                /* First callback argument */
-){
-  void *pRet;
-  sqlite3_mutex_enter(db->mutex);
-  pRet = db->pTransArg;
-  db->xTransCallback = xCallback;
-  db->pTransArg = pArg;
   sqlite3_mutex_leave(db->mutex);
   return pRet;
 }

@@ -833,9 +833,6 @@ struct sqlite3 {
     void*,sqlite3*,int,char const*,char const*,sqlite3_int64,sqlite3_int64
   );
   PreUpdate *pPreUpdate;        /* Context for active pre-update callback */
-  void *pTransArg;              /* First argument to xTransCallback */
-  void (*xTransCallback)(void*,int,int);
-  int iOpenTrans;               /* Open transaction (xTransCallback) plus 1 */
 #ifndef SQLITE_OMIT_WAL
   int (*xWalCallback)(void *, sqlite3 *, const char *, int);
   void *pWalArg;

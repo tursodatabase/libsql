@@ -6370,17 +6370,6 @@ SQLITE_EXPERIMENTAL int sqlite3_preupdate_modified(sqlite3 *, int, int *);
 SQLITE_EXPERIMENTAL int sqlite3_preupdate_count(sqlite3 *);
 
 /*
-** CAPI3REF: The transaction hook.
-*/
-SQLITE_EXPERIMENTAL
-void *sqlite3_transaction_hook(sqlite3 *, void(*)(void *, int, int), void *);
-
-#define SQLITE_BEGIN    1
-#define SQLITE_COMMIT   2
-#define SQLITE_ROLLBACK 3
-
-
-/*
 ** Undo the hack that converts floating point types to integer for
 ** builds on processors without floating point support.
 */

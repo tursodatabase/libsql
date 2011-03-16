@@ -401,15 +401,7 @@ static int sqlite3Step(Vdbe *p){
 #endif
 
     db->activeVdbeCnt++;
-    if( p->readOnly==0 ){ 
-      /* If this statement will open an implicit transaction, invoke the
-      ** transaction-hook here. */
-      if( db->autoCommit && db->writeVdbeCnt==0 ){
-        assert( db->nSavepoint==0 );
-        sqlite3TransactionHook(db, SQLITE_BEGIN, 0);
-      }
-      db->writeVdbeCnt++;
-    }
+    if( p->readOnly==0 ) db->writeVdbeCnt++;
     p->pc = 0;
   }
 #ifndef SQLITE_OMIT_EXPLAIN
