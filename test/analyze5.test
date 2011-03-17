@@ -164,6 +164,8 @@ foreach {testid where index rows} {
   301  {y=1}                 t1y   50
   302  {y=0.1}               t1y   50
 
+  400  {x IS NULL}           t1x  400
+
 } {
   # Verify that the expected index is used with the expected row count
   do_test analyze5-1.${testid}a {
@@ -190,5 +192,48 @@ foreach {testid where index rows} {
   } {ok}
 }
 
+# Increase the number of NULLs in column x
+#
+db eval {
+   UPDATE t1 SET x=NULL;
+   UPDATE t1 SET x=rowid
+    WHERE rowid IN (SELECT rowid FROM t1 ORDER BY random() LIMIT 5);
+   ANALYZE;
+}
+
+# Verify that range queries generate the correct row count estimates
+#
+foreach {testid where index rows} {
+  500  {x IS NULL AND u='charlie'}         t1u  20
+  501  {x=1 AND u='charlie'}               t1x   5
+  502  {x IS NULL}                          {} 100
+  503  {x=1}                               t1x  50
+  504  {x IS NOT NULL}                     t1x  25
+
+} {
+  # Verify that the expected index is used with the expected row count
+  do_test analyze5-1.${testid}a {
+    set x [lindex [eqp "SELECT * FROM t1 WHERE $where"] 3]
+    set idx {}
+    regexp {INDEX (t1.) } $x all idx
+    regexp {~([0-9]+) rows} $x all nrow
+    list $idx $nrow
+  } [list $index $rows]
+
+  # Verify that the same result is achieved regardless of whether or not
+  # the index is used
+  do_test analyze5-1.${testid}b {
+    set w2 [string map {y +y z +z} $where]
+    set a1 [db eval "SELECT rowid FROM t1 NOT INDEXED WHERE $w2\
+                     ORDER BY +rowid"]
+    set a2 [db eval "SELECT rowid FROM t1 WHERE $where ORDER BY +rowid"]
+    if {$a1==$a2} {
+      set res ok
+    } else {
+      set res "a1=\[$a1\] a2=\[$a2\]"
+    }
+    set res
+  } {ok}
+}
 
 finish_test

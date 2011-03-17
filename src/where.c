@@ -2545,8 +2545,12 @@ int whereEqualScanEst(
 
   assert( p->aSample!=0 );
   aff = p->pTable->aCol[p->aiColumn[0]].affinity;
-  rc = valueFromExpr(pParse, pExpr, aff, &pRhs);
-  if( rc ) goto whereEqualScanEst_cancel;
+  if( pExpr ){
+    rc = valueFromExpr(pParse, pExpr, aff, &pRhs);
+    if( rc ) goto whereEqualScanEst_cancel;
+  }else{
+    pRhs = sqlite3ValueNew(pParse->db);
+  }
   if( pRhs==0 ) return SQLITE_NOTFOUND;
   rc = whereRangeRegion(pParse, p, pRhs, 0, &iLower);
   if( rc ) goto whereEqualScanEst_cancel;
@@ -2935,7 +2939,9 @@ static void bestBtreeIndex(
     ** VALUE and how common that value is according to the histogram.
     */
     if( nRow>(double)1 && nEq==1 && pFirstTerm!=0 ){
-      if( pFirstTerm->eOperator==WO_EQ ){
+      if( pFirstTerm->eOperator & (WO_EQ|WO_ISNULL) ){
+        testcase( pFirstTerm->eOperator==WO_EQ );
+        testcase( pFirstTerm->pOperator==WO_ISNULL );
         whereEqualScanEst(pParse, pProbe, pFirstTerm->pExpr->pRight, &nRow);
       }else if( pFirstTerm->eOperator==WO_IN && bInEst==0 ){
         whereInScanEst(pParse, pProbe, pFirstTerm->pExpr->x.pList, &nRow);

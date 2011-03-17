@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Additional\sinterpretation\sof\sflags\sand\sconstants\sin\sthe\sVFS\strace\soutput.
-D 2011-03-16T18:54:23.037
+C Enhances\sto\sthe\squery\splanner\ssuch\sthat\s"x\sIS\sNULL"\sconstraints\stake\sthe\nSTAT2\sstatistics\sinto\saccount,\sjust\slike\s"x=VALUE"\sconstraints.
+D 2011-03-17T01:34:26.570
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -102,7 +102,7 @@ F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 1af0899c63a688e272d69d8e746f24e76f10a3f0
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
-F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
+F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F main.mk 54190fab7cdba523e311c274c95ea480f32abfb5
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
@@ -246,7 +246,7 @@ F src/vtab.c b297e8fa656ab5e66244ab15680d68db0adbec30
 F src/wal.c 7334009b396285b658a95a3b6bc6d2b016a1f794
 F src/wal.h 7a5fbb00114b7f2cd40c7e1003d4c41ce9d26840
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 27c2f4e249213faeab548f628e52c005623f195d
+F src/where.c a41a1c64aceb4138a865e6dc939f781f53401d68
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 51756962d522e474338e9b2ebb26e7364d4aa125
@@ -259,7 +259,7 @@ F test/analyze.test c1eb87067fc16ece7c07e823d6395fd831b270c5
 F test/analyze2.test 8f2b1534d43f5547ce9a6b736c021d4192c75be3
 F test/analyze3.test d61f55d8b472fc6e713160b1e577f7a68e63f38b
 F test/analyze4.test 757b37875cf9bb528d46f74497bc789c88365045
-F test/analyze5.test 0618d2fe8982a5dae1d4e92152acc8ecbaf52be2
+F test/analyze5.test adc89b92fc9fee5ca1cb0bc8512f3206ad0fe5aa
 F test/analyze6.test 1ba1aea8fad25a77ffd71f24522d1bb9ecc949fc
 F test/async.test ad4ba51b77cd118911a3fe1356b0809da9c108c3
 F test/async2.test bf5e2ca2c96763b4cba3d016249ad7259a5603b6
@@ -605,7 +605,7 @@ F test/permutations.test 5b2a4cb756ffb2407cb4743163668d1d769febb6
 F test/pragma.test fdfc09067ea104a0c247a1a79d8093b56656f850
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
-F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
+F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
 F test/quota.test ddafe133653093eb9a99ccd6264884ae43f9c9b8
@@ -892,7 +892,7 @@ F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/lemon.c dfd81a51b6e27e469ba21d01a75ddf092d429027
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkkeywordhash.c d2e6b4a5965e23afb80fbe74bb54648cd371f309
-F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
+F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c.tcl cf44512a48112b1ba09590548660a5a6877afdb3
 F tool/mksqlite3h.tcl d76c226a5e8e1f3b5f6593bcabe5e98b3b1ec9ff
@@ -917,14 +917,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P baca45c549e1c144257ee657258939640120e094
-R ce715121c7ed754dc718fb1bfe515a2f
+P 3e984195f1f6d28734456dd726d226cedf207da2
+R 291ccee36a06fddbdbf66dee9d0c5dc8
 U drh
-Z 63d44dd1d9cda650862ed5c1ffde651b
+Z 44243678e5ac002f859d95b6693267ff
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNgQdioxKgR168RlERAjrWAJ0csO53SVkhS4LgdWU2TMBY3h2/owCfSmfo
-JE1tPjv0O+bB3lGc+tkEKvk=
-=czhw
+iD8DBQFNgWUmoxKgR168RlERArUBAJ9O6MIvLSm72rE66pJVBmPTs+4oyACdHack
+G7nsgBYo5KQjyDA5i3CGse8=
+=owlC
 -----END PGP SIGNATURE-----
