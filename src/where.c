@@ -2520,7 +2520,8 @@ range_est_fallback:
 ** an equality constraint x=VALUE and where that VALUE occurs in
 ** the histogram data.  This only works when x is the left-most
 ** column of an index and sqlite_stat2 histogram data is available
-** for that index.
+** for that index.  When pExpr==NULL that means the constraint is
+** "x IS NULL" instead of "x=VALUE".
 **
 ** Write the estimated row count into *pnRow and return SQLITE_OK. 
 ** If unable to make an estimate, leave *pnRow unchanged and return
