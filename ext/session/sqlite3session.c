@@ -8,7 +8,6 @@
 #include "sqliteInt.h"
 #include "vdbeInt.h"
 
-typedef struct RowChange RowChange;
 typedef struct SessionTable SessionTable;
 typedef struct SessionChange SessionChange;
 typedef struct SessionBuffer SessionBuffer;
@@ -57,6 +56,8 @@ struct SessionTable {
   SessionTable *pNext;
   char *zName;                    /* Local name of table */
   int nCol;                       /* Number of columns in table zName */
+  const char **azCol;             /* Column names */
+  u8 *abPK;                       /* Array of primary key flags */
   int nEntry;                     /* Total number of entries in hash table */
   int nChange;                    /* Size of apChange[] array */
   SessionChange **apChange;       /* Hash table buckets */
@@ -128,7 +129,7 @@ struct SessionTable {
 ** this structure stored in a SessionTable.aChange[] hash table.
 */
 struct SessionChange {
-  sqlite3_int64 iKey;             /* Key value */
+  int bInsert;                    /* True if row was inserted this session */
   int nRecord;                    /* Number of bytes in buffer aRecord[] */
   u8 *aRecord;                    /* Buffer containing old.* record */
   SessionChange *pNext;           /* For hash-table collisions */
@@ -264,12 +265,188 @@ static int sessionSerializeValue(
   return SQLITE_OK;
 }
 
+#define HASH_APPEND(hash, add) ((hash) << 3) ^ (hash) ^ (int)(add)
+static int sessionHashAppendI64(int h, i64 i){
+  h = HASH_APPEND(h, i & 0xFFFFFFFF);
+  return HASH_APPEND(h, (i>>32)&0xFFFFFFFF);
+}
+static int sessionHashAppendBlob(int h, int n, const u8 *z){
+  int i;
+  for(i=0; i<n; i++) h = HASH_APPEND(h, z[i]);
+  return h;
+}
+
 /*
-** Return the hash of iKey, assuming there are nBucket hash buckets in
-** the hash table.
+** This function calculates a hash based on the primary key values of
+** the old.* or new.* row currently available.
 */
-static int sessionKeyhash(int nBucket, sqlite3_int64 iKey){
-  return (iKey % nBucket);
+static int sessionPreupdateHash(
+  sqlite3 *db,                    /* Database handle */
+  SessionTable *pTab,             /* Session table handle */
+  int bNew,                       /* True to hash the new.* PK */
+  int *piHash                     /* OUT: Hash value */
+){
+  int h = 0;
+  int i;
+
+  assert( pTab->nCol==sqlite3_preupdate_count(db) );
+  for(i=0; i<pTab->nCol; i++){
+    if( pTab->abPK[i] ){
+      int rc;
+      int eType;
+      sqlite3_value *pVal;
+
+      if( bNew ){
+        rc = sqlite3_preupdate_new(db, i, &pVal);
+      }else{
+        rc = sqlite3_preupdate_old(db, i, &pVal);
+      }
+
+      eType = sqlite3_value_type(pVal);
+      h = HASH_APPEND(h, eType);
+      switch( eType ){
+        case SQLITE_INTEGER: 
+        case SQLITE_FLOAT: {
+          i64 iVal;
+          if( eType==SQLITE_INTEGER ){
+            iVal = sqlite3_value_int64(pVal);
+          }else{
+            double rVal = sqlite3_value_double(pVal);
+            assert( sizeof(iVal)==8 && sizeof(rVal)==8 );
+            memcpy(&iVal, &rVal, 8);
+          }
+          h = sessionHashAppendI64(h, iVal);
+          break;
+        }
+
+        case SQLITE_TEXT: 
+        case SQLITE_BLOB: {
+          int n = sqlite3_value_bytes(pVal);
+          const u8 *z = eType==SQLITE_TEXT ?
+            sqlite3_value_text(pVal) : sqlite3_value_blob(pVal);
+          h = sessionHashAppendBlob(h, n, z);
+          break;
+        }
+      }
+    }
+  }
+
+  *piHash = (h % pTab->nChange);
+  return SQLITE_OK;
+}
+
+static int sessionChangeHash(
+  sqlite3 *db,
+  SessionTable *pTab,
+  SessionChange *pChange,
+  int nBucket
+){
+  int h = 0;
+  int i;
+  u8 *a = pChange->aRecord;
+
+  for(i=0; i<pTab->nCol; i++){
+    int eType = *a++;
+    int isPK = pTab->abPK[i];
+
+    if( isPK ) h = HASH_APPEND(h, eType);
+    switch( eType ){
+      case SQLITE_INTEGER:
+      case SQLITE_FLOAT: {
+        if( isPK ){
+          i64 iVal = sessionGetI64(a);
+          h = sessionHashAppendI64(h, iVal);
+        }
+        a += 8;
+        break;
+      }
+      case SQLITE_TEXT:
+      case SQLITE_BLOB: {
+        int n;
+        a += sessionVarintGet(a, &n);
+        if( isPK ){
+          h = sessionHashAppendBlob(h, n, a);
+        }
+        a += n;
+        break;
+      }
+    }
+  }
+  return (h % nBucket);
+}
+
+static int sessionPreupdateEqual(
+  sqlite3 *db,
+  SessionTable *pTab,
+  SessionChange *pChange,
+  int bNew,
+  int *pbEqual
+){
+  int i;
+  u8 *a = pChange->aRecord;
+
+  *pbEqual = 0;
+
+  for(i=0; i<pTab->nCol; i++){
+    int eType = *a++;
+    if( !pTab->abPK[i] ){
+      switch( eType ){
+        case SQLITE_INTEGER: 
+        case SQLITE_FLOAT:
+          a += 8;
+          break;
+
+        case SQLITE_TEXT: 
+        case SQLITE_BLOB: {
+          int n;
+          a += sessionVarintGet(a, &n);
+          a += n;
+          break;
+        }
+      }
+    }else{
+      sqlite3_value *pVal;
+      int rc;
+      if( bNew ){
+        rc = sqlite3_preupdate_new(db, i, &pVal);
+      }else{
+        rc = sqlite3_preupdate_old(db, i, &pVal);
+      }
+      if( rc!=SQLITE_OK || sqlite3_value_type(pVal)!=eType ) return rc;
+
+      switch( eType ){
+        case SQLITE_INTEGER:
+        case SQLITE_FLOAT: {
+          i64 iVal = sessionGetI64(a);
+          a += 8;
+          if( eType==SQLITE_INTEGER ){
+            if( sqlite3_value_int64(pVal)!=iVal ) return SQLITE_OK;
+          }else{
+            double rVal;
+            assert( sizeof(iVal)==8 && sizeof(rVal)==8 );
+            memcpy(&rVal, &iVal, 8);
+            if( sqlite3_value_double(pVal)!=rVal ) return SQLITE_OK;
+          }
+          break;
+        }
+        case SQLITE_TEXT:
+        case SQLITE_BLOB: {
+          int n;
+          const u8 *z;
+          a += sessionVarintGet(a, &n);
+          if( sqlite3_value_bytes(pVal)!=n ) return SQLITE_OK;
+          z = eType==SQLITE_TEXT ? 
+            sqlite3_value_text(pVal) : sqlite3_value_blob(pVal);
+          if( memcmp(a, z, n) ) return SQLITE_OK;
+          a += n;
+          break;
+        }
+      }
+    }
+  }
+
+  *pbEqual = 1;
+  return SQLITE_OK;
 }
 
 /*
@@ -303,7 +480,7 @@ static int sessionGrowHash(sqlite3_session *pSession, SessionTable *pTab){
       SessionChange *p;
       SessionChange *pNext;
       for(p=pTab->apChange[i]; p; p=pNext){
-        int iHash = sessionKeyhash(nNew, p->iKey);
+        int iHash = sessionChangeHash(pSession->db, pTab, p, nNew);
         pNext = p->pNext;
         p->pNext = apNew[iHash];
         apNew[iHash] = p;
@@ -316,6 +493,130 @@ static int sessionGrowHash(sqlite3_session *pSession, SessionTable *pTab){
   }
 
   return SQLITE_OK;
+}
+
+/*
+** This function queries the database for the names of the columns of table
+** zThis, in schema zDb. It is expected that the table has nCol columns. If
+** not, SQLITE_SCHEMA is returned and none of the output variables are
+** populated.
+**
+** Otherwise, if it is not NULL, variable *pzTab is set to point to a
+** nul-terminated copy of the table name. *pazCol (if not NULL) is set to
+** point to an array of pointers to column names. And *pabPK (again, if not
+** NULL) is set to point to an array of booleans - true if the corresponding
+** column is part of the primary key.
+**
+** For example, if the table is declared as:
+**
+**     CREATE TABLE tbl1(w, x, y, z, PRIMARY KEY(w, z));
+**
+** Then the three output variables are populated as follows:
+**
+**     *pzTab  = "tbl1"
+**     *pazCol = {"w", "x", "y", "z"}
+**     *pabPK  = {1, 0, 0, 1}
+**
+** All returned buffers are part of the same single allocation, which must
+** be freed using sqlite3_free() by the caller. If pazCol was not NULL, then
+** pointer *pazCol should be freed to release all memory. Otherwise, pointer
+** *pabPK. It is illegal for both pazCol and pabPK to be NULL.
+*/
+static int sessionTableInfo(
+  sqlite3 *db,                    /* Database connection */
+  const char *zDb,                /* Name of attached database (e.g. "main") */
+  const char *zThis,              /* Table name */
+  int nCol,                       /* Expected number of columns */
+  const char **pzTab,             /* OUT: Copy of zThis */
+  const char ***pazCol,           /* OUT: Array of column names for table */
+  u8 **pabPK                      /* OUT: Array of booleans - true for PK col */
+){
+  char *zPragma;
+  sqlite3_stmt *pStmt;
+  int rc;
+  int nByte;
+  int nDbCol = 0;
+  int nThis;
+  int i;
+  u8 *pAlloc;
+  u8 *pFree = 0;
+  char **azCol;
+  u8 *abPK;
+
+  assert( pazCol || pabPK );
+
+  nThis = strlen(zThis);
+  zPragma = sqlite3_mprintf("PRAGMA '%q'.table_info('%q')", zDb, zThis);
+  if( !zPragma ) return SQLITE_NOMEM;
+
+  rc = sqlite3_prepare_v2(db, zPragma, -1, &pStmt, 0);
+  sqlite3_free(zPragma);
+  if( rc!=SQLITE_OK ) return rc;
+
+  nByte = nThis + 1;
+  while( SQLITE_ROW==sqlite3_step(pStmt) ){
+    nByte += sqlite3_column_bytes(pStmt, 1);
+    nDbCol++;
+  }
+  rc = sqlite3_reset(pStmt);
+
+  if( nDbCol!=nCol ){
+    rc = SQLITE_SCHEMA;
+  }
+  if( rc==SQLITE_OK ){
+    nByte += nDbCol * (sizeof(const char *) + sizeof(u8) + 1);
+    pAlloc = sqlite3_malloc(nByte);
+    if( pAlloc==0 ){
+      rc = SQLITE_NOMEM;
+    }
+  }
+  if( rc==SQLITE_OK ){
+    pFree = pAlloc;
+    if( pazCol ){
+      azCol = (char **)pAlloc;
+      pAlloc = (u8 *)&azCol[nCol];
+    }
+    if( pabPK ){
+      abPK = (u8 *)pAlloc;
+      pAlloc = &abPK[nCol];
+    }
+    if( pzTab ){
+      memcpy(pAlloc, zThis, nThis+1);
+      *pzTab = (char *)pAlloc;
+      pAlloc += nThis+1;
+    }
+  
+    i = 0;
+    while( SQLITE_ROW==sqlite3_step(pStmt) ){
+      int nName = sqlite3_column_bytes(pStmt, 1);
+      const unsigned char *zName = sqlite3_column_text(pStmt, 1);
+      if( zName==0 ) break;
+      if( pazCol ){
+        memcpy(pAlloc, zName, nName+1);
+        azCol[i] = (char *)pAlloc;
+        pAlloc += nName+1;
+      }
+      if( pabPK ) abPK[i] = sqlite3_column_int(pStmt, 5);
+      i++;
+    }
+    rc = sqlite3_reset(pStmt);
+  
+  }
+
+  /* If successful, populate the output variables. Otherwise, zero them and
+  ** free any allocation made. An error code will be returned in this case.
+  */
+  if( rc==SQLITE_OK ){
+    if( pazCol ) *pazCol = (const char **)azCol;
+    if( pabPK ) *pabPK = abPK;
+  }else{
+    if( pazCol ) *pazCol = 0;
+    if( pabPK ) *pabPK = 0;
+    if( pzTab ) *pzTab = 0;
+    sqlite3_free(pFree);
+  }
+  sqlite3_finalize(pStmt);
+  return rc;
 }
 
 /*
@@ -336,12 +637,104 @@ static int sessionGrowHash(sqlite3_session *pSession, SessionTable *pTab){
 */
 static int sessionInitTable(sqlite3_session *pSession, SessionTable *pTab){
   if( pTab->nCol==0 ){
+    assert( pTab->azCol==0 || pTab->abPK==0 );
     pTab->nCol = sqlite3_preupdate_count(pSession->db);
+    pSession->rc = sessionTableInfo(pSession->db, pSession->zDb, 
+        pTab->zName, pTab->nCol, 0, &pTab->azCol, &pTab->abPK
+    );
   }else if( pTab->nCol!=sqlite3_preupdate_count(pSession->db) ){
     pSession->rc = SQLITE_SCHEMA;
-    return SQLITE_ERROR;
   }
-  return SQLITE_OK;
+  return pSession->rc;
+}
+
+static void sessionPreupdateOneChange(
+  int op,
+  sqlite3_session *pSession,
+  SessionTable *pTab
+){
+  sqlite3 *db = pSession->db;
+  SessionChange *pChange;
+  SessionChange *pC;
+  int iHash; 
+  int rc = SQLITE_OK;
+
+  if( pSession->rc ) return;
+
+  /* Load table details if required */
+  if( sessionInitTable(pSession, pTab) ) return;
+
+  /* Grow the hash table if required */
+  if( sessionGrowHash(pSession, pTab) ) return;
+
+  /* Search the hash table for an existing entry for rowid=iKey2. If
+   ** one is found, store a pointer to it in pChange and unlink it from
+   ** the hash table. Otherwise, set pChange to NULL.
+   */
+  rc = sessionPreupdateHash(db, pTab, op==SQLITE_INSERT, &iHash);
+  for(pC=pTab->apChange[iHash]; rc==SQLITE_OK && pC; pC=pC->pNext){
+    int bEqual;
+    rc = sessionPreupdateEqual(db, pTab, pC, op==SQLITE_INSERT, &bEqual);
+    if( bEqual ) break;
+  }
+  if( pC==0 ){
+    /* Create a new change object containing all the old values (if
+     ** this is an SQLITE_UPDATE or SQLITE_DELETE), or just the PK
+     ** values (if this is an INSERT). */
+    int nByte;              /* Number of bytes to allocate */
+    int i;                  /* Used to iterate through columns */
+
+    pTab->nEntry++;
+
+    /* Figure out how large an allocation is required */
+    nByte = sizeof(SessionChange);
+    for(i=0; i<pTab->nCol && rc==SQLITE_OK; i++){
+      sqlite3_value *p = 0;
+      if( op!=SQLITE_INSERT ){
+        rc = sqlite3_preupdate_old(pSession->db, i, &p);
+      }else if( 1 || pTab->abPK[i] ){
+        rc = sqlite3_preupdate_new(pSession->db, i, &p);
+      }
+      if( p && rc==SQLITE_OK ){
+        rc = sessionSerializeValue(0, p, &nByte);
+      }
+    }
+
+    /* Allocate the change object */
+    pChange = (SessionChange *)sqlite3_malloc(nByte);
+    if( !pChange ){
+      rc = SQLITE_NOMEM;
+    }else{
+      memset(pChange, 0, sizeof(SessionChange));
+      pChange->aRecord = (u8 *)&pChange[1];
+    }
+
+    /* Populate the change object */
+    nByte = 0;
+    for(i=0; i<pTab->nCol && rc==SQLITE_OK; i++){
+      sqlite3_value *p = 0;
+      if( op!=SQLITE_INSERT ){
+        rc = sqlite3_preupdate_old(pSession->db, i, &p);
+      }else if( 1 || pTab->abPK[i] ){
+        rc = sqlite3_preupdate_new(pSession->db, i, &p);
+      }
+      if( p && rc==SQLITE_OK ){
+        rc = sessionSerializeValue(&pChange->aRecord[nByte], p, &nByte);
+      }
+    }
+    pChange->nRecord = nByte;
+
+    /* If an error has occurred, mark the session object as failed. */
+    if( rc!=SQLITE_OK ){
+      sqlite3_free(pChange);
+      pSession->rc = rc;
+    }else{
+      /* Add the change back to the hash-table */
+      pChange->bInsert = (op==SQLITE_INSERT);
+      pChange->pNext = pTab->apChange[iHash];
+      pTab->apChange[iHash] = pChange;
+    }
+  }
 }
 
 /*
@@ -363,93 +756,19 @@ static void xPreUpdate(
   for(pSession=(sqlite3_session *)pCtx; pSession; pSession=pSession->pNext){
     SessionTable *pTab;
 
-    /* If this session is already in the error-state, or if it is attached
-    ** to a different database ("main", "temp" etc.), or if it is not 
-    ** currently enabled, there is nothing to do. Skip to the next session
-    ** object attached to this database. */
+    /* If this session is attached to a different database ("main", "temp" 
+    ** etc.), or if it is not currently enabled, there is nothing to do. Skip 
+    ** to the next session object attached to this database. */
     if( pSession->bEnable==0 ) continue;
     if( pSession->rc ) continue;
     if( sqlite3_strnicmp(zDb, pSession->zDb, nDb+1) ) continue;
 
     for(pTab=pSession->pTable; pTab; pTab=pTab->pNext){
       if( 0==sqlite3_strnicmp(pTab->zName, zName, nName+1) ){
-        SessionChange *pChange;
-        SessionChange *pC;
-        int iHash; 
-        int rc = SQLITE_OK;
-
-        /* Load table details if required */
-        if( sessionInitTable(pSession, pTab) ) return;
-
-        /* Grow the hash table if required */
-        if( sessionGrowHash(pSession, pTab) ) return;
-
-        /* Search the hash table for an existing entry for rowid=iKey2. If
-        ** one is found, store a pointer to it in pChange and unlink it from
-        ** the hash table. Otherwise, set pChange to NULL.
-        */
-        iHash = sessionKeyhash(pTab->nChange, iKey2);
-        for(pC=pTab->apChange[iHash]; pC; pC=pC->pNext){
-          if( pC->iKey==iKey2 ) break;
+        sessionPreupdateOneChange(op, pSession, pTab);
+        if( op==SQLITE_UPDATE ){
+          sessionPreupdateOneChange(SQLITE_INSERT, pSession, pTab);
         }
-        if( pC ) continue;
-
-        pTab->nEntry++;
-
-        /* Create a new change object containing all the old values (if
-        ** this is an SQLITE_UPDATE or SQLITE_DELETE), or no record at
-        ** all (if this is an INSERT). */
-        if( op==SQLITE_INSERT ){
-          pChange = (SessionChange *)sqlite3_malloc(sizeof(SessionChange));
-          if( pChange ){
-            memset(pChange, 0, sizeof(SessionChange));
-          }
-        }else{
-          int nByte;              /* Number of bytes to allocate */
-          int i;                  /* Used to iterate through columns */
-
-          /* Figure out how large an allocation is required */
-          nByte = sizeof(SessionChange);
-          for(i=0; i<pTab->nCol && rc==SQLITE_OK; i++){
-            sqlite3_value *p;     /* old.* value */
-            rc = sqlite3_preupdate_old(pSession->db, i, &p);
-            if( rc==SQLITE_OK ){
-              rc = sessionSerializeValue(0, p, &nByte);
-            }
-          }
-
-          /* Allocate the change object */
-          pChange = (SessionChange *)sqlite3_malloc(nByte);
-          if( !pChange ){
-            rc = SQLITE_NOMEM;
-          }else{
-            memset(pChange, 0, sizeof(SessionChange));
-            pChange->aRecord = (u8 *)&pChange[1];
-          }
-
-          /* Populate the change object */
-          nByte = 0;
-          for(i=0; i<pTab->nCol && rc==SQLITE_OK; i++){
-            sqlite3_value *p;     /* old.* value */
-            rc = sqlite3_preupdate_old(pSession->db, i, &p);
-            if( rc==SQLITE_OK ){
-              rc = sessionSerializeValue(&pChange->aRecord[nByte], p, &nByte);
-            }
-          }
-          pChange->nRecord = nByte;
-        }
-
-        /* If an error has occurred, mark the session object as failed. */
-        if( rc!=SQLITE_OK ){
-          sqlite3_free(pChange);
-          pSession->rc = rc;
-          return;
-        }
-
-        /* Add the change back to the hash-table */
-        pChange->iKey = iKey2;
-        pChange->pNext = pTab->apChange[iHash];
-        pTab->apChange[iHash] = pChange;
         break;
       }
     }
@@ -524,6 +843,7 @@ void sqlite3session_delete(sqlite3_session *pSession){
         sqlite3_free(p);
       }
     }
+    sqlite3_free(pTab->azCol);
     sqlite3_free(pTab->apChange);
     sqlite3_free(pTab);
   }
@@ -852,127 +1172,99 @@ static void sessionAppendUpdate(
   }
 }
 
-/*
-** This function queries the database for the names of the columns of table
-** zThis, in schema zDb. It is expected that the table has nCol columns. If
-** not, SQLITE_SCHEMA is returned and none of the output variables are
-** populated.
-**
-** Otherwise, if it is not NULL, variable *pzTab is set to point to a
-** nul-terminated copy of the table name. *pazCol (if not NULL) is set to
-** point to an array of pointers to column names. And *pabPK (again, if not
-** NULL) is set to point to an array of booleans - true if the corresponding
-** column is part of the primary key.
-**
-** For example, if the table is declared as:
-**
-**     CREATE TABLE tbl1(w, x, y, z, PRIMARY KEY(w, z));
-**
-** Then the three output variables are populated as follows:
-**
-**     *pzTab  = "tbl1"
-**     *pazCol = {"w", "x", "y", "z"}
-**     *pabPK  = {1, 0, 0, 1}
-**
-** All returned buffers are part of the same single allocation, which must
-** be freed using sqlite3_free() by the caller. If pazCol was not NULL, then
-** pointer *pazCol should be freed to release all memory. Otherwise, pointer
-** *pabPK. It is illegal for both pazCol and pabPK to be NULL.
-*/
-static int sessionTableInfo(
-  sqlite3 *db,                    /* Database connection */
-  const char *zDb,                /* Name of attached database (e.g. "main") */
-  const char *zThis,              /* Table name */
-  int nCol,                       /* Expected number of columns */
-  const char **pzTab,             /* OUT: Copy of zThis */
-  const char ***pazCol,           /* OUT: Array of column names for table */
-  u8 **pabPK                      /* OUT: Array of booleans - true for PK col */
+static int sessionSelectStmt(
+  sqlite3 *db,                    /* Database handle */
+  const char *zTab,               /* Table name */
+  int nCol,
+  const char **azCol,
+  u8 *abPK,
+  sqlite3_stmt **ppStmt
 ){
-  char *zPragma;
-  sqlite3_stmt *pStmt;
-  int rc;
-  int nByte;
-  int nDbCol = 0;
-  int nThis;
+  int rc = SQLITE_OK;
   int i;
-  u8 *pAlloc;
-  u8 *pFree = 0;
-  char **azCol;
-  u8 *abPK;
+  const char *zSep = "";
+  SessionBuffer buf = {0, 0, 0};
 
-  assert( pazCol || pabPK );
-
-  nThis = strlen(zThis);
-  zPragma = sqlite3_mprintf("PRAGMA '%q'.table_info('%q')", zDb, zThis);
-  if( !zPragma ) return SQLITE_NOMEM;
-
-  rc = sqlite3_prepare_v2(db, zPragma, -1, &pStmt, 0);
-  sqlite3_free(zPragma);
-  if( rc!=SQLITE_OK ) return rc;
-
-  nByte = nThis + 1;
-  while( SQLITE_ROW==sqlite3_step(pStmt) ){
-    nByte += sqlite3_column_bytes(pStmt, 1);
-    nDbCol++;
-  }
-  rc = sqlite3_reset(pStmt);
-
-  if( nDbCol!=nCol ){
-    rc = SQLITE_SCHEMA;
-  }
-  if( rc==SQLITE_OK ){
-    nByte += nDbCol * (sizeof(const char *) + sizeof(u8) + 1);
-    pAlloc = sqlite3_malloc(nByte);
-    if( pAlloc==0 ){
-      rc = SQLITE_NOMEM;
+  sessionAppendStr(&buf, "SELECT * FROM ", &rc);
+  sessionAppendIdent(&buf, zTab, &rc);
+  sessionAppendStr(&buf, " WHERE ", &rc);
+  for(i=0; i<nCol; i++){
+    if( abPK[i] ){
+      sessionAppendStr(&buf, zSep, &rc);
+      sessionAppendIdent(&buf, azCol[i], &rc);
+      sessionAppendStr(&buf, " = ?", &rc);
+      sessionAppendInteger(&buf, i+1, &rc);
+      zSep = " AND ";
     }
   }
   if( rc==SQLITE_OK ){
-    pFree = pAlloc;
-    if( pazCol ){
-      azCol = (char **)pAlloc;
-      pAlloc = (u8 *)&azCol[nCol];
-    }
-    if( pabPK ){
-      abPK = (u8 *)pAlloc;
-      pAlloc = &abPK[nCol];
-    }
-    if( pzTab ){
-      memcpy(pAlloc, zThis, nThis+1);
-      *pzTab = (char *)pAlloc;
-      pAlloc += nThis+1;
-    }
-  
-    i = 0;
-    while( SQLITE_ROW==sqlite3_step(pStmt) ){
-      int nName = sqlite3_column_bytes(pStmt, 1);
-      const unsigned char *zName = sqlite3_column_text(pStmt, 1);
-      if( zName==0 ) break;
-      if( pazCol ){
-        memcpy(pAlloc, zName, nName+1);
-        azCol[i] = (char *)pAlloc;
-        pAlloc += nName+1;
+    rc = sqlite3_prepare_v2(db, (char *)buf.aBuf, buf.nBuf, ppStmt, 0);
+  }
+  sqlite3_free(buf.aBuf);
+  return rc;
+}
+
+static int sessionSelectBind(
+  sqlite3_stmt *pSelect,
+  int nCol,
+  u8 *abPK,
+  u8 *aRecord,
+  int nRecord
+){
+  int i;
+  int rc = SQLITE_OK;
+  u8 *a = aRecord;
+
+  for(i=0; i<nCol && rc==SQLITE_OK; i++){
+    int eType = *a++;
+
+    switch( eType ){
+      case SQLITE_NULL:
+        if( abPK[i] ) rc = sqlite3_bind_null(pSelect, i+1);
+        break;
+
+      case SQLITE_INTEGER: {
+        if( abPK[i] ){
+          i64 iVal = sessionGetI64(a);
+          rc = sqlite3_bind_int64(pSelect, i+1, iVal);
+        }
+        a += 8;
+        break;
       }
-      if( pabPK ) abPK[i] = sqlite3_column_int(pStmt, 5);
-      i++;
+
+      case SQLITE_FLOAT: {
+        if( abPK[i] ){
+          double rVal;
+          i64 iVal = sessionGetI64(a);
+          memcpy(&rVal, &iVal, 8);
+          rc = sqlite3_bind_int64(pSelect, i+1, rVal);
+        }
+        a += 8;
+        break;
+      }
+
+      case SQLITE_TEXT: {
+        int n;
+        a += sessionVarintGet(a, &n);
+        if( abPK[i] ){
+          rc = sqlite3_bind_text(pSelect, i+1, (char *)a, n, SQLITE_TRANSIENT);
+        }
+        a += n;
+        break;
+      }
+
+      case SQLITE_BLOB: {
+        int n;
+        a += sessionVarintGet(a, &n);
+        if( abPK[i] ){
+          rc = sqlite3_bind_blob(pSelect, i+1, a, n, SQLITE_TRANSIENT);
+        }
+        a += n;
+        break;
+      }
     }
-    rc = sqlite3_reset(pStmt);
-  
   }
 
-  /* If successful, populate the output variables. Otherwise, zero them and
-  ** free any allocation made. An error code will be returned in this case.
-  */
-  if( rc==SQLITE_OK ){
-    if( pazCol ) *pazCol = (const char **)azCol;
-    if( pabPK ) *pabPK = abPK;
-  }else{
-    if( pazCol ) *pazCol = 0;
-    if( pabPK ) *pabPK = 0;
-    if( pzTab ) *pzTab = 0;
-    sqlite3_free(pFree);
-  }
-  sqlite3_finalize(pStmt);
   return rc;
 }
 
@@ -1002,66 +1294,56 @@ int sqlite3session_changeset(
 
   for(pTab=pSession->pTable; rc==SQLITE_OK && pTab; pTab=pTab->pNext){
     if( pTab->nEntry ){
+      int nCol = pTab->nCol;      /* Local copy of member variable */
+      u8 *abPK = pTab->abPK;      /* Local copy of member variable */
       int i;
       sqlite3_stmt *pStmt = 0;
       int bNoop = 1;
       int nRewind = buf.nBuf;
-      u8 *abPK = 0;
 
       /* Write a table header */
       sessionAppendByte(&buf, 'T', &rc);
-      sessionAppendVarint(&buf, pTab->nCol, &rc);
+      sessionAppendVarint(&buf, nCol, &rc);
       sessionAppendBlob(&buf, (u8 *)pTab->zName, strlen(pTab->zName)+1, &rc);
 
       /* Build and compile a statement to execute: */
       if( rc==SQLITE_OK ){
-        char *zSql = sqlite3_mprintf("SELECT * FROM %Q.%Q WHERE _rowid_ = ?", 
-            pSession->zDb, pTab->zName
-        );
-        if( !zSql ){
-          rc = SQLITE_NOMEM;
-        }else{
-          rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
-        }
-        sqlite3_free(zSql);
+        rc = sessionSelectStmt(db, pTab->zName, nCol, pTab->azCol, abPK,&pStmt);
       }
 
-      if( rc==SQLITE_OK && pTab->nCol!=sqlite3_column_count(pStmt) ){
+      if( rc==SQLITE_OK && nCol!=sqlite3_column_count(pStmt) ){
         rc = SQLITE_SCHEMA;
       }
 
-      if( rc==SQLITE_OK ){
-        rc = sessionTableInfo(
-            db, pSession->zDb, pTab->zName, pTab->nCol, 0, 0, &abPK);
-      }
-
       for(i=0; i<pTab->nChange; i++){
-        SessionChange *p;
+        SessionChange *p;         /* Used to iterate through changes */
+
         for(p=pTab->apChange[i]; rc==SQLITE_OK && p; p=p->pNext){
-          sqlite3_bind_int64(pStmt, 1, p->iKey);
-          if( sqlite3_step(pStmt)==SQLITE_ROW ){
-            int iCol;
-            if( p->aRecord ){
-              sessionAppendUpdate(&buf, pStmt, p, abPK, &rc);
-            }else{
-              sessionAppendByte(&buf, SQLITE_INSERT, &rc);
-              for(iCol=0; iCol<pTab->nCol; iCol++){
-                sessionAppendCol(&buf, pStmt, iCol, &rc);
+          rc = sessionSelectBind(pStmt, nCol, abPK, p->aRecord, p->nRecord);
+          if( rc==SQLITE_OK ){
+            if( sqlite3_step(pStmt)==SQLITE_ROW ){
+              int iCol;
+              if( p->bInsert ){
+                sessionAppendByte(&buf, SQLITE_INSERT, &rc);
+                for(iCol=0; iCol<nCol; iCol++){
+                  sessionAppendCol(&buf, pStmt, iCol, &rc);
+                }
+              }else{
+                sessionAppendUpdate(&buf, pStmt, p, abPK, &rc);
               }
+              bNoop = 0;
+            }else if( !p->bInsert ){
+              /* A DELETE change */
+              sessionAppendByte(&buf, SQLITE_DELETE, &rc);
+              sessionAppendBlob(&buf, p->aRecord, p->nRecord, &rc);
+              bNoop = 0;
             }
-            bNoop = 0;
-          }else if( p->aRecord ){
-            /* A DELETE change */
-            sessionAppendByte(&buf, SQLITE_DELETE, &rc);
-            sessionAppendBlob(&buf, p->aRecord, p->nRecord, &rc);
-            bNoop = 0;
+            rc = sqlite3_reset(pStmt);
           }
-          rc = sqlite3_reset(pStmt);
         }
       }
 
       sqlite3_finalize(pStmt);
-      sqlite3_free(abPK);
 
       if( bNoop ){
         buf.nBuf = nRewind;
@@ -1632,28 +1914,7 @@ static int sessionSelectRow(
   const char *zTab,               /* Table name */
   SessionApplyCtx *p              /* Session changeset-apply context */
 ){
-  int rc = SQLITE_OK;
-  int i;
-  const char *zSep = "";
-  SessionBuffer buf = {0, 0, 0};
-
-  sessionAppendStr(&buf, "SELECT * FROM ", &rc);
-  sessionAppendIdent(&buf, zTab, &rc);
-  sessionAppendStr(&buf, " WHERE ", &rc);
-  for(i=0; i<p->nCol; i++){
-    if( p->abPK[i] ){
-      sessionAppendStr(&buf, zSep, &rc);
-      sessionAppendIdent(&buf, p->azCol[i], &rc);
-      sessionAppendStr(&buf, " = ?", &rc);
-      sessionAppendInteger(&buf, i+1, &rc);
-      zSep = " AND ";
-    }
-  }
-  if( rc==SQLITE_OK ){
-    rc = sqlite3_prepare_v2(db, (char *)buf.aBuf, buf.nBuf, &p->pSelect, 0);
-  }
-  sqlite3_free(buf.aBuf);
-  return rc;
+  return sessionSelectStmt(db, zTab, p->nCol, p->azCol, p->abPK, &p->pSelect);
 }
 
 /*

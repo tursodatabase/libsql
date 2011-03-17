@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_preupdate_new()\sAPI,\sfor\sretrieving\sthe\snew.*\svalues\sfrom\swithin\sa\spre-update\scallback.
-D 2011-03-16T19:59:19
+C Change\sto\sthe\ssession\smodule\sto\suse\suser-defined\sprimary\skeys\sinstead\sof\srowids\swhen\scollecting\schanges.
+D 2011-03-17T19:20:27
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -98,7 +98,7 @@ F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 1af0899c63a688e272d69d8e746f24e76f10a3f0
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
-F ext/session/sqlite3session.c 9b8d123418c024f6851163375fca99042757772f
+F ext/session/sqlite3session.c 4183792547af5b5d3ec1c8a3f858beb172682503
 F ext/session/sqlite3session.h 63045871564085669b5cb1fb92e6efc2e1b1120a
 F ext/session/test_session.c 2559ef68e421c7fb83e2c19ef08a17343b70d535
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
@@ -639,7 +639,7 @@ F test/selectA.test 06d1032fa9009314c95394f2ca2e60d9f7ae8532
 F test/selectB.test f305cc6660804cb239aab4e2f26b0e288b59958b
 F test/selectC.test f9bf1bc4581b5b8158caa6e4e4f682acb379fb25
 F test/server1.test f5b790d4c0498179151ca8a7715a65a7802c859c
-F test/session1.test 1e85c2eedb14587dff41901faa5a66c117fe0405
+F test/session1.test c6851e2e1066269cad5370566ce5494c7dbdfa7e
 F test/shared.test b9114eaea7e748a3a4c8ff7b9ca806c8f95cef3e
 F test/shared2.test 7f6ad2d857d0f4e5d6a0b9a897b5e56a6b6ea18c
 F test/shared3.test d69bdd5f156580876c5345652d21dc2092e85962
@@ -913,7 +913,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b0015a1cfe63c924ee5f250aa08460522882009b
-R 4b62a15aa3feb03b0e54e624839e53a1
+P 526545c49f64d9063d1b888cfc14ece62fa3c13c
+R cab2f9d8485568249e1bae732085445e
 U dan
-Z 0b4af75dcf5347bcbba47251e978ee95
+Z 0451d1109f54d52c16342adf23f8ece9
