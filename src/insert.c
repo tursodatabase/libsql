@@ -465,7 +465,6 @@ void sqlite3Insert(
   int regIns;           /* Block of regs holding rowid+data being inserted */
   int regRowid;         /* registers holding insert rowid */
   int regData;          /* register holding first column to insert */
-  int regRecord;        /* Holds the assemblied row record */
   int regEof = 0;       /* Register recording end of SELECT data */
   int *aRegIdx = 0;     /* One register allocated to each index */
 
@@ -794,7 +793,6 @@ void sqlite3Insert(
   /* Allocate registers for holding the rowid of the new row,
   ** the content of the new row, and the assemblied row record.
   */
-  regRecord = ++pParse->nMem;
   regRowid = regIns = pParse->nMem+1;
   pParse->nMem += pTab->nCol + 1;
   if( IsVirtual(pTab) ){
@@ -1188,7 +1186,7 @@ void sqlite3GenerateConstraintChecks(
       case OE_Rollback:
       case OE_Fail: {
         char *zMsg;
-        j1 = sqlite3VdbeAddOp3(v, OP_HaltIfNull,
+        sqlite3VdbeAddOp3(v, OP_HaltIfNull,
                                   SQLITE_CONSTRAINT, onError, regData+i);
         zMsg = sqlite3MPrintf(pParse->db, "%s.%s may not be NULL",
                               pTab->zName, pTab->aCol[i].zName);
@@ -1320,8 +1318,9 @@ void sqlite3GenerateConstraintChecks(
   */
   for(iCur=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, iCur++){
     int regIdx;
+#ifndef SQLITE_OMIT_UNIQUE_ENFORCEMENT
     int regR;
-
+#endif
     if( aRegIdx[iCur]==0 ) continue;  /* Skip unused indices */
 
     /* Create a key for accessing the index entry */
@@ -1338,6 +1337,11 @@ void sqlite3GenerateConstraintChecks(
     sqlite3VdbeAddOp3(v, OP_MakeRecord, regIdx, pIdx->nColumn+1, aRegIdx[iCur]);
     sqlite3VdbeChangeP4(v, -1, sqlite3IndexAffinityStr(v, pIdx), 0);
     sqlite3ExprCacheAffinityChange(pParse, regIdx, pIdx->nColumn+1);
+
+#ifdef SQLITE_OMIT_UNIQUE_ENFORCEMENT
+    sqlite3ReleaseTempRange(pParse, regIdx, pIdx->nColumn+1);
+    continue;  /* Treat pIdx as if it is not a UNIQUE index */
+#else
 
     /* Find out what action to take in case there is an indexing conflict */
     onError = pIdx->onError;
@@ -1412,6 +1416,7 @@ void sqlite3GenerateConstraintChecks(
     }
     sqlite3VdbeJumpHere(v, j3);
     sqlite3ReleaseTempReg(pParse, regR);
+#endif
   }
   
   if( pbMayReplace ){

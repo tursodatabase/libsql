@@ -419,6 +419,7 @@ struct callback_data {
                          ** .explain ON */
   char outfile[FILENAME_MAX]; /* Filename for *out */
   const char *zDbFilename;    /* name of the database file */
+  const char *zVfs;           /* Name of VFS to use */
   sqlite3_stmt *pStmt;   /* Current statement if any. */
   FILE *pLog;            /* Write log output here */
 };
@@ -2172,29 +2173,45 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   }else
 
   if( c=='t' && n>=8 && strncmp(azArg[0], "testctrl", n)==0 && nArg>=2 ){
+    static const struct {
+       const char *zCtrlName;   /* Name of a test-control option */
+       int ctrlCode;            /* Integer code for that option */
+    } aCtrl[] = {
+      { "prng_save",             SQLITE_TESTCTRL_PRNG_SAVE              },
+      { "prng_restore",          SQLITE_TESTCTRL_PRNG_RESTORE           },
+      { "prng_reset",            SQLITE_TESTCTRL_PRNG_RESET             },
+      { "bitvec_test",           SQLITE_TESTCTRL_BITVEC_TEST            },
+      { "fault_install",         SQLITE_TESTCTRL_FAULT_INSTALL          },
+      { "benign_malloc_hooks",   SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS    },
+      { "pending_byte",          SQLITE_TESTCTRL_PENDING_BYTE           },
+      { "assert",                SQLITE_TESTCTRL_ASSERT                 },
+      { "always",                SQLITE_TESTCTRL_ALWAYS                 },
+      { "reserve",               SQLITE_TESTCTRL_RESERVE                },
+      { "optimizations",         SQLITE_TESTCTRL_OPTIMIZATIONS          },
+      { "iskeyword",             SQLITE_TESTCTRL_ISKEYWORD              },
+      { "pghdrsz",               SQLITE_TESTCTRL_PGHDRSZ                },
+      { "scratchmalloc",         SQLITE_TESTCTRL_SCRATCHMALLOC          },
+    };
     int testctrl = -1;
     int rc = 0;
+    int i, n;
     open_db(p);
 
-    /* convert testctrl text option to value. allow only the first 
-    ** three characters of the option to be used or the numerical 
-    ** value. */
-         if( strncmp( azArg[1], "prng_save", 6 )==0 )            testctrl = SQLITE_TESTCTRL_PRNG_SAVE;                        
-    else if( strncmp( azArg[1], "prng_restore", 10 )==0 )        testctrl = SQLITE_TESTCTRL_PRNG_RESTORE;        
-    else if( strncmp( azArg[1], "prng_reset", 10 )==0 )          testctrl = SQLITE_TESTCTRL_PRNG_RESET;          
-    else if( strncmp( azArg[1], "bitvec_test", 6 )==3 )          testctrl = SQLITE_TESTCTRL_BITVEC_TEST;         
-    else if( strncmp( azArg[1], "fault_install", 6 )==3 )        testctrl = SQLITE_TESTCTRL_FAULT_INSTALL;       
-    else if( strncmp( azArg[1], "benign_malloc_hooks", 3 )==0 )  testctrl = SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS; 
-    else if( strncmp( azArg[1], "pending_byte", 3 )==0 )         testctrl = SQLITE_TESTCTRL_PENDING_BYTE;        
-    else if( strncmp( azArg[1], "assert", 3 )==0 )               testctrl = SQLITE_TESTCTRL_ASSERT;              
-    else if( strncmp( azArg[1], "always", 3 )==0 )               testctrl = SQLITE_TESTCTRL_ALWAYS;              
-    else if( strncmp( azArg[1], "reserve", 3 )==0 )              testctrl = SQLITE_TESTCTRL_RESERVE;             
-    else if( strncmp( azArg[1], "optimizations", 3 )==0 )        testctrl = SQLITE_TESTCTRL_OPTIMIZATIONS;       
-    else if( strncmp( azArg[1], "iskeyword", 3 )==0 )            testctrl = SQLITE_TESTCTRL_ISKEYWORD;           
-    else if( strncmp( azArg[1], "pghdrsz", 3 )==0 )              testctrl = SQLITE_TESTCTRL_PGHDRSZ;             
-    else if( strncmp( azArg[1], "scratchmalloc", 3 )==0 )        testctrl = SQLITE_TESTCTRL_SCRATCHMALLOC;       
-    else                                                         testctrl = atoi(azArg[1]);
-
+    /* convert testctrl text option to value. allow any unique prefix
+    ** of the option name, or a numerical value. */
+    n = strlen(azArg[1]);
+    for(i=0; i<sizeof(aCtrl)/sizeof(aCtrl[0]); i++){
+      if( strncmp(azArg[1], aCtrl[i].zCtrlName, n)==0 ){
+        if( testctrl<0 ){
+          testctrl = aCtrl[i].ctrlCode;
+        }else{
+          fprintf(stderr, "ambiguous option name: \"%s\"\n", azArg[i]);
+          testctrl = -1;
+          break;
+        }
+      }
+    }
+    if( testctrl<0 ) testctrl = atoi(azArg[1]);
     if( (testctrl<SQLITE_TESTCTRL_FIRST) || (testctrl>SQLITE_TESTCTRL_LAST) ){
       fprintf(stderr,"Error: invalid testctrl option: %s\n", azArg[1]);
     }else{
@@ -2208,7 +2225,8 @@ static int do_meta_command(char *zLine, struct callback_data *p){
             rc = sqlite3_test_control(testctrl, p->db, opt);
             printf("%d (0x%08x)\n", rc, rc);
           } else {
-            fprintf(stderr,"Error: testctrl %s takes a single int option\n", azArg[1]);
+            fprintf(stderr,"Error: testctrl %s takes a single int option\n",
+                    azArg[1]);
           }
           break;
 
@@ -2232,7 +2250,8 @@ static int do_meta_command(char *zLine, struct callback_data *p){
             rc = sqlite3_test_control(testctrl, opt);
             printf("%d (0x%08x)\n", rc, rc);
           } else {
-            fprintf(stderr,"Error: testctrl %s takes a single unsigned int option\n", azArg[1]);
+            fprintf(stderr,"Error: testctrl %s takes a single unsigned"
+                           " int option\n", azArg[1]);
           }
           break;
           
@@ -2244,7 +2263,8 @@ static int do_meta_command(char *zLine, struct callback_data *p){
             rc = sqlite3_test_control(testctrl, opt);
             printf("%d (0x%08x)\n", rc, rc);
           } else {
-            fprintf(stderr,"Error: testctrl %s takes a single int option\n", azArg[1]);
+            fprintf(stderr,"Error: testctrl %s takes a single int option\n",
+                            azArg[1]);
           }
           break;
 
@@ -2256,7 +2276,8 @@ static int do_meta_command(char *zLine, struct callback_data *p){
             rc = sqlite3_test_control(testctrl, opt);
             printf("%d (0x%08x)\n", rc, rc);
           } else {
-            fprintf(stderr,"Error: testctrl %s takes a single char * option\n", azArg[1]);
+            fprintf(stderr,"Error: testctrl %s takes a single char * option\n",
+                            azArg[1]);
           }
           break;
 #endif
@@ -2266,7 +2287,8 @@ static int do_meta_command(char *zLine, struct callback_data *p){
         case SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS: 
         case SQLITE_TESTCTRL_SCRATCHMALLOC:       
         default:
-          fprintf(stderr,"Error: CLI support for testctrl %s not implemented\n", azArg[1]);
+          fprintf(stderr,"Error: CLI support for testctrl %s not implemented\n",
+                  azArg[1]);
           break;
       }
     }
@@ -2277,7 +2299,9 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     sqlite3_busy_timeout(p->db, atoi(azArg[1]));
   }else
     
-  if( HAS_TIMER && c=='t' && n>=5 && strncmp(azArg[0], "timer", n)==0 && nArg==2 ){
+  if( HAS_TIMER && c=='t' && n>=5 && strncmp(azArg[0], "timer", n)==0
+   && nArg==2
+  ){
     enableTimer = booleanValue(azArg[1]);
   }else
   
@@ -2464,7 +2488,9 @@ static int process_input(struct callback_data *p, FILE *in){
     }
   }
   if( zSql ){
-    if( !_all_whitespace(zSql) ) fprintf(stderr, "Error: incomplete SQL: %s\n", zSql);
+    if( !_all_whitespace(zSql) ){
+      fprintf(stderr, "Error: incomplete SQL: %s\n", zSql);
+    }
     free(zSql);
   }
   free(zLine);
@@ -2600,6 +2626,10 @@ static const char zOptions[] =
   "   -stats               print memory stats before each finalize\n"
   "   -nullvalue 'text'    set text string for NULL values\n"
   "   -version             show SQLite version\n"
+  "   -vfs NAME            use NAME as the default VFS\n"
+#ifdef SQLITE_ENABLE_VFSTRACE
+  "   -vfstrace            enable tracing of all VFS calls\n"
+#endif
 ;
 static void usage(int showDetail){
   fprintf(stderr,
@@ -2684,6 +2714,25 @@ int main(int argc, char **argv){
 #if defined(SQLITE_ENABLE_MEMSYS3) || defined(SQLITE_ENABLE_MEMSYS5)
       sqlite3_config(SQLITE_CONFIG_HEAP, malloc((int)szHeap), (int)szHeap, 64);
 #endif
+#ifdef SQLITE_ENABLE_VFSTRACE
+    }else if( strcmp(argv[i],"-vfstrace")==0 ){
+      extern int vfstrace_register(
+         const char *zTraceName,
+         const char *zOldVfsName,
+         int (*xOut)(const char*,void*),
+         void *pOutArg,
+         int makeDefault
+      );
+      vfstrace_register("trace",0,(int(*)(const char*,void*))fputs,stderr,1);
+#endif
+    }else if( strcmp(argv[i],"-vfs")==0 ){
+      sqlite3_vfs *pVfs = sqlite3_vfs_find(argv[++i]);
+      if( pVfs ){
+        sqlite3_vfs_register(pVfs, 1);
+      }else{
+        fprintf(stderr, "no such VFS: \"%s\"\n", argv[i]);
+        exit(1);
+      }
     }
   }
   if( i<argc ){
@@ -2791,6 +2840,10 @@ int main(int argc, char **argv){
     }else if( strcmp(z,"-batch")==0 ){
       stdin_is_interactive = 0;
     }else if( strcmp(z,"-heap")==0 ){
+      i++;
+    }else if( strcmp(z,"-vfs")==0 ){
+      i++;
+    }else if( strcmp(z,"-vfstrace")==0 ){
       i++;
     }else if( strcmp(z,"-help")==0 || strcmp(z, "--help")==0 ){
       usage(1);
