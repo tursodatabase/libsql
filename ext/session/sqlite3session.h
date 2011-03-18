@@ -375,7 +375,24 @@ int sqlite3changeset_conflict(
 int sqlite3changeset_finalize(sqlite3_changeset_iter *pIter);
 
 /*
-** Invert a changeset object.
+** This function is used to "invert" a changeset object. Applying an inverted
+** changeset to a database reverses the effects of applying the uninverted
+** changeset. Specifically:
+**
+** <ul>
+**   <li> Each DELETE change is changed to an INSERT, and
+**   <li> Each INSERT change is changed to a DELETE, and
+**   <li> For each UPDATE change, the old.* and new.* values are exchanged.
+** </ul>
+**
+** If successful, a pointer to a buffer containing the inverted changeset
+** is stored in *ppOut, the size of the same buffer is stored in *pnOut, and
+** SQLITE_OK is returned. If an error occurs, both *pnOut and *ppOut are
+** zeroed and an SQLite error code returned.
+**
+** It is the responsibility of the caller to eventually call sqlite3_free()
+** on the *ppOut pointer to free the buffer allocation following a successful 
+** call to this function.
 */
 int sqlite3changeset_invert(
   int nIn, void *pIn,             /* Input changeset */
@@ -383,12 +400,124 @@ int sqlite3changeset_invert(
 );
 
 /*
-** Apply a changeset to a database.
+** Apply a changeset to a database. This function attempts to update the
+** "main" database attached to handle db with the changes found in the
+** changeset passed via the second and third arguments.
+**
+** For each change in the changeset, this function tests that the target
+** database contains a compatible table. A table is considered compatible
+** if all of the following are true:
+**
+** <ul>
+**   <li> The table has the same name as the name recorded in the 
+**        changeset, and
+**   <li> The table has the same number of columns as recorded in the 
+**        changeset, and
+**   <li> The table has primary key columns in the same position as 
+**        recorded in the changeset.
+** </ul>
+**
+** If there is no compatible table, it is not an error, but the change is
+** not applied. A warning message is issued via the sqlite3_log() mechanism
+** with the error code SQLITE_SCHEMA. At most one such warning is issued for
+** each table in the changeset.
+**
+** Otherwise, if there is a compatible table, an attempt is made to modify
+** the table contents according to the UPDATE, INSERT or DELETE change.
+** If a change cannot be applied cleanly, the conflict handler function
+** passed as the fourth argument to sqlite3changeset_apply() may be invoked.
+** A description of exactly when the conflict handler is invoked for each
+** type of change is below.
+**
+** Each time the conflict handler function is invoked, it must return one
+** of [SQLITE_CHANGESET_OMIT], [SQLITE_CHANGESET_ABORT] or 
+** [SQLITE_CHANGESET_REPLACE]. SQLITE_CHANGESET_REPLACE may only be returned
+** if the second argument passed to the conflict handler is either
+** SQLITE_CHANGESET_DATA or SQLITE_CHANGESET_CONFLICT. If the conflict-handler
+** returns an illegal value, any changes already made are rolled back and
+** the call to sqlite3changeset_apply() returns SQLITE_MISUSE. Different 
+** actions are taken by sqlite3changeset_apply() depending on the value
+** returned by each invocation of the conflict-handler function. Refer to
+** the documentation for the three 
+** [SQLITE_CHANGESET_OMIT|available return values] for details.
+**
+** <dl>
+** <dt>DELETE Changes<dd>
+**   For each DELETE change, this function checks if the target database 
+**   contains a row with the same primary key value (or values) as the 
+**   original row values stored in the changeset. If it does, and the values 
+**   stored in all non-primary key columns also match the values stored in 
+**   the changeset the row is deleted from the target database.
+**
+**   If a row with matching primary key values is found, but one or more of
+**   the non-primary key fields contains a value different from the original
+**   row value stored in the changeset, the conflict-handler function is
+**   invoked with [SQLITE_CHANGESET_DATA] as the second argument.
+**
+**   If no row with matching primary key values is found in the database,
+**   the conflict-handler function is invoked with [SQLITE_CHANGESET_NOTFOUND]
+**   passed as the second argument.
+**
+**   If the DELETE operation is attempted, but SQLite returns SQLITE_CONSTRAINT
+**   (which can only happen if a foreign key constraint is violated), the
+**   conflict-handler function is invoked with [SQLITE_CHANGESET_CONSTRAINT]
+**   passed as the second argument. This includes the case where the DELETE
+**   operation is attempted because an earlier call to the conflict handler
+**   function returned [SQLITE_CHANGESET_REPLACE].
+**
+** <dt>INSERT Changes<dd>
+**   For each INSERT change, an attempt is made to insert the new row into
+**   the database.
+**
+**   If the attempt to insert the row fails because the database already 
+**   contains a row with the same primary key values, the conflict handler
+**   function is invoked with the second argument set to 
+**   [SQLITE_CHANGESET_CONFLICT].
+**
+**   If the attempt to insert the row fails because of some other constraint
+**   violation (e.g. NOT NULL or UNIQUE), the conflict handler function is 
+**   invoked with the second argument set to [SQLITE_CHANGESET_CONSTRAINT].
+**   This includes the case where the INSERT operation is re-attempted because 
+**   an earlier call to the conflict handler function returned 
+**   [SQLITE_CHANGESET_REPLACE].
+**
+** <dt>UPDATE Changes<dd>
+**   For each DELETE change, this function checks if the target database 
+**   contains a row with the same primary key value (or values) as the 
+**   original row values stored in the changeset. If it does, and the values 
+**   stored in all non-primary key columns also match the values stored in 
+**   the changeset the row is updated within the target database.
+**
+**   If a row with matching primary key values is found, but one or more of
+**   the non-primary key fields contains a value different from an original
+**   row value stored in the changeset, the conflict-handler function is
+**   invoked with [SQLITE_CHANGESET_DATA] as the second argument. Since
+**   UPDATE changes only contain values for non-primary key fields that are
+**   to be modified, only those fields need to match the original values to
+**   avoid the SQLITE_CHANGESET_DATA conflict-handler callback.
+**
+**   If no row with matching primary key values is found in the database,
+**   the conflict-handler function is invoked with [SQLITE_CHANGESET_NOTFOUND]
+**   passed as the second argument.
+**
+**   If the UPDATE operation is attempted, but SQLite returns 
+**   SQLITE_CONSTRAINT, the conflict-handler function is invoked with 
+**   [SQLITE_CHANGESET_CONSTRAINT] passed as the second argument.
+**   This includes the case where the UPDATE operation is attempted after 
+**   an earlier call to the conflict handler function returned
+**   [SQLITE_CHANGESET_REPLACE].  
+** </dl>
 **
 ** It is safe to execute SQL statements, including those that write to the
 ** table that the callback related to, from within the xConflict callback.
 ** This can be used to further customize the applications conflict
 ** resolution strategy.
+**
+** All changes made by this function are enclosed in a savepoint transaction.
+** If any other error (aside from a constraint failure when attempting to
+** write to the target database) occurs, then the savepoint transaction is
+** rolled back, restoring the target database to its original state, and an 
+** SQLite error code returned.
 */
 int sqlite3changeset_apply(
   sqlite3 *db,                    /* Apply change to "main" db of this handle */
@@ -403,9 +532,10 @@ int sqlite3changeset_apply(
 );
 
 /* 
-** Values passed as the second argument to a conflict-handler.
+** Values that may be passed as the second argument to a conflict-handler.
 **
-** SQLITE_CHANGESET_DATA:
+** <dl>
+** <dt>SQLITE_CHANGESET_DATA<dd>
 **   The conflict handler is invoked with CHANGESET_DATA as the second argument
 **   when processing a DELETE or UPDATE change if a row with the required
 **   PRIMARY KEY fields is present in the database, but one or more other 
@@ -415,7 +545,7 @@ int sqlite3changeset_apply(
 **   The conflicting row, in this case, is the database row with the matching
 **   primary key.
 ** 
-** SQLITE_CHANGESET_NOTFOUND:
+** <dt>SQLITE_CHANGESET_NOTFOUND<dd>
 **   The conflict handler is invoked with CHANGESET_NOTFOUND as the second
 **   argument when processing a DELETE or UPDATE change if a row with the
 **   required PRIMARY KEY fields is not present in the database.
@@ -423,21 +553,22 @@ int sqlite3changeset_apply(
 **   There is no conflicting row in this case. The results of invoking the
 **   sqlite3changeset_conflict() API are undefined.
 ** 
-** SQLITE_CHANGESET_CONFLICT:
+** <dt>SQLITE_CHANGESET_CONFLICT<dd>
 **   CHANGESET_CONFLICT is passed as the second argument to the conflict
-**   handler while processing an UPDATE or an INSERT if the operation would
-**   result in duplicate primary key values.
+**   handler while processing an INSERT change if the operation would result 
+**   in duplicate primary key values.
 ** 
 **   The conflicting row in this case is the database row with the matching
 **   primary key.
 ** 
-** SQLITE_CHANGESET_CONSTRAINT:
+** <dt>SQLITE_CHANGESET_CONSTRAINT<dd>
 **   If any other constraint violation occurs while applying a change (i.e. 
 **   a FOREIGN KEY, UNIQUE, CHECK or NOT NULL constraint), the conflict 
 **   handler is invoked with CHANGESET_CONSTRAINT as the second argument.
 ** 
 **   There is no conflicting row in this case. The results of invoking the
 **   sqlite3changeset_conflict() API are undefined.
+** </dl>
 */
 #define SQLITE_CHANGESET_DATA       1
 #define SQLITE_CHANGESET_NOTFOUND   2
@@ -447,12 +578,13 @@ int sqlite3changeset_apply(
 /* 
 ** Valid return values from a conflict-handler.
 **
-** SQLITE_CHANGESET_OMIT:
+** <dl>
+** <dt>SQLITE_CHANGESET_OMIT<dd>
 **   If a conflict handler returns this value no special action is taken. The
-**   change is not applied. The session module continues to the next change
-**   in the changeset.
+**   change that caused the conflict is not applied. The session module 
+**   continues to the next change in the changeset.
 **
-** SQLITE_CHANGESET_REPLACE:
+** <dt>SQLITE_CHANGESET_REPLACE<dd>
 **   This value may only be returned if the second argument to the conflict
 **   handler was SQLITE_CHANGESET_DATA or SQLITE_CHANGESET_CONFLICT. If this
 **   is not the case, any changes applied so far are rolled back and the 
@@ -467,9 +599,10 @@ int sqlite3changeset_apply(
 **   second attempt to apply the change is made. If this second attempt fails,
 **   the original row is restored to the database before continuing.
 **
-** SQLITE_CHANGESET_ABORT:
+** <dt>SQLITE_CHANGESET_ABORT<dd>
 **   If this value is returned, any changes applied so far are rolled back 
-**   and the call to sqlite3changeset_apply() returns SQLITE_MISUSE.
+**   and the call to sqlite3changeset_apply() returns SQLITE_ABORT.
+** </dl>
 */
 #define SQLITE_CHANGESET_OMIT       0
 #define SQLITE_CHANGESET_REPLACE    1
