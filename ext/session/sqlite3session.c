@@ -752,7 +752,9 @@ static void xPreUpdate(
   sqlite3_session *pSession;
   int nDb = strlen(zDb);
   int nName = strlen(zDb);
- 
+
+  assert( sqlite3_mutex_held(db->mutex) );
+
   for(pSession=(sqlite3_session *)pCtx; pSession; pSession=pSession->pNext){
     SessionTable *pTab;
 
@@ -866,28 +868,34 @@ int sqlite3session_attach(
 ){
   SessionTable *pTab;             /* New table object (if required) */
   int nName;                      /* Number of bytes in string zName */
+  int rc = SQLITE_OK;
+
+  sqlite3_mutex_enter(sqlite3_db_mutex(pSession->db));
 
   /* First search for an existing entry. If one is found, this call is
   ** a no-op. Return early. */
   nName = strlen(zName);
   for(pTab=pSession->pTable; pTab; pTab=pTab->pNext){
-    if( 0==sqlite3_strnicmp(pTab->zName, zName, nName+1) ){
-      return SQLITE_OK;
+    if( 0==sqlite3_strnicmp(pTab->zName, zName, nName+1) ) break;
+  }
+
+  if( !pTab ){
+    /* Allocate new SessionTable object. */
+    pTab = (SessionTable *)sqlite3_malloc(sizeof(SessionTable) + nName + 1);
+    if( !pTab ){
+      rc = SQLITE_NOMEM;
+    }else{
+      /* Populate the new SessionTable object and link it into the list. */
+      memset(pTab, 0, sizeof(SessionTable));
+      pTab->zName = (char *)&pTab[1];
+      memcpy(pTab->zName, zName, nName+1);
+      pTab->pNext = pSession->pTable;
+      pSession->pTable = pTab;
     }
   }
 
-  /* Allocate new SessionTable object. */
-  pTab = (SessionTable *)sqlite3_malloc(sizeof(SessionTable) + nName + 1);
-  if( !pTab ) return SQLITE_NOMEM;
-
-  /* Populate the new SessionTable object and link it into the list. */
-  memset(pTab, 0, sizeof(SessionTable));
-  pTab->zName = (char *)&pTab[1];
-  memcpy(pTab->zName, zName, nName+1);
-  pTab->pNext = pSession->pTable;
-  pSession->pTable = pTab;
-
-  return SQLITE_OK;
+  sqlite3_mutex_leave(sqlite3_db_mutex(pSession->db));
+  return rc;
 }
 
 /*
@@ -1285,6 +1293,8 @@ int sqlite3session_changeset(
   SessionBuffer buf = {0,0,0};    /* Buffer in which to accumlate changeset */
   int rc;                         /* Return code */
 
+  sqlite3_mutex_enter(sqlite3_db_mutex(db));
+
   /* Zero the output variables in case an error occurs. If this session
   ** object is already in the error state (sqlite3_session.rc != SQLITE_OK),
   ** this call will be a no-op.  */
@@ -1357,6 +1367,8 @@ int sqlite3session_changeset(
   }else{
     sqlite3_free(buf.aBuf);
   }
+
+  sqlite3_mutex_leave(sqlite3_db_mutex(db));
   return rc;
 }
 
@@ -1364,10 +1376,14 @@ int sqlite3session_changeset(
 ** Enable or disable the session object passed as the first argument.
 */
 int sqlite3session_enable(sqlite3_session *pSession, int bEnable){
+  int ret;
+  sqlite3_mutex_enter(sqlite3_db_mutex(pSession->db));
   if( bEnable>=0 ){
     pSession->bEnable = bEnable;
   }
-  return pSession->bEnable;
+  ret = pSession->bEnable;
+  sqlite3_mutex_leave(sqlite3_db_mutex(pSession->db));
+  return ret;
 }
 
 /*
@@ -2277,6 +2293,7 @@ int sqlite3changeset_apply(
   memset(&sApply, 0, sizeof(sApply));
   sqlite3changeset_start(&pIter, nChangeset, pChangeset);
 
+  sqlite3_mutex_enter(sqlite3_db_mutex(db));
   rc = sqlite3_exec(db, "SAVEPOINT changeset_apply", 0, 0, 0);
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3changeset_next(pIter) ){
     int nCol;
@@ -2366,6 +2383,7 @@ int sqlite3changeset_apply(
   sqlite3_finalize(sApply.pUpdate);
   sqlite3_finalize(sApply.pSelect);
   sqlite3_free(sApply.azCol);
+  sqlite3_mutex_leave(sqlite3_db_mutex(db));
   return rc;
 }
 
