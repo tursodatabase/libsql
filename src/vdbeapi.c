@@ -1439,6 +1439,7 @@ int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
         goto preupdate_new_out;
       }
     }
+    assert( iIdx>=0 && iIdx<p->pCsr->nField );
     pMem = &p->aNew[iIdx];
     if( pMem->flags==0 ){
       rc = sqlite3VdbeMemCopy(pMem, &p->v->aMem[p->iNewReg+1+iIdx]);
@@ -1452,5 +1453,3 @@ int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
   sqlite3Error(db, rc, 0);
   return sqlite3ApiExit(db, rc);
 }
-
-

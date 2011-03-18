@@ -1655,12 +1655,12 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     "errorcode",          "eval",              "exists",
     "function",           "incrblob",          "interrupt",
     "last_insert_rowid",  "nullvalue",         "onecolumn",
-    "preupdate",
-    "profile",            "progress",          "rekey",
-    "restore",            "rollback_hook",     "status",
-    "timeout",            "total_changes",     "trace",
-    "transaction",        "unlock_notify",     "update_hook",
-    "version",            "wal_hook",          0
+    "preupdate",          "profile",           "progress",
+    "rekey",              "restore",           "rollback_hook",
+    "status",             "timeout",           "total_changes",
+    "trace",              "transaction",       "unlock_notify",
+    "update_hook",        "version",           "wal_hook",
+    0                    
   };
   enum DB_enum {
     DB_AUTHORIZER,        DB_BACKUP,           DB_BUSY,
@@ -1670,12 +1670,11 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     DB_ERRORCODE,         DB_EVAL,             DB_EXISTS,
     DB_FUNCTION,          DB_INCRBLOB,         DB_INTERRUPT,
     DB_LAST_INSERT_ROWID, DB_NULLVALUE,        DB_ONECOLUMN,
-    DB_PREUPDATE,
-    DB_PROFILE,           DB_PROGRESS,         DB_REKEY,
-    DB_RESTORE,           DB_ROLLBACK_HOOK,    DB_STATUS,
-    DB_TIMEOUT,           DB_TOTAL_CHANGES,    DB_TRACE,
-    DB_TRANSACTION,       DB_UNLOCK_NOTIFY,    DB_UPDATE_HOOK,
-    DB_VERSION,           DB_WAL_HOOK
+    DB_PREUPDATE,         DB_PROFILE,          DB_PROGRESS,
+    DB_REKEY,             DB_RESTORE,          DB_ROLLBACK_HOOK,
+    DB_STATUS,            DB_TIMEOUT,          DB_TOTAL_CHANGES,
+    DB_TRACE,             DB_TRANSACTION,      DB_UNLOCK_NOTIFY,
+    DB_UPDATE_HOOK,       DB_VERSION,          DB_WAL_HOOK,
   };
   /* don't leave trailing commas on DB_enum, it confuses the AIX xlc compiler */
 
@@ -2845,6 +2844,12 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     break;
   }
 
+  /*
+  **    $db preupdate_hook count
+  **    $db preupdate_hook hook ?SCRIPT?
+  **    $db preupdate_hook new INDEX
+  **    $db preupdate_hook old INDEX
+  */
   case DB_PREUPDATE: {
     static const char *azSub[] = {"count", "hook", "new", "old", 0};
     enum DbPreupdateSubCmd {
@@ -2895,7 +2900,8 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
         }
 
         if( rc==SQLITE_OK ){
-          Tcl_Obj *pObj = Tcl_NewStringObj(sqlite3_value_text(pValue), -1);
+          Tcl_Obj *pObj;
+          pObj = Tcl_NewStringObj((char*)sqlite3_value_text(pValue), -1);
           Tcl_SetObjResult(interp, pObj);
         }else{
           Tcl_AppendResult(interp, sqlite3_errmsg(pDb->db), 0);
@@ -2915,8 +2921,6 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   case DB_WAL_HOOK: 
   case DB_UPDATE_HOOK: 
   case DB_ROLLBACK_HOOK: {
-    sqlite3 *db = pDb->db;
-
     /* set ppHook to point at pUpdateHook or pRollbackHook, depending on 
     ** whether [$db update_hook] or [$db rollback_hook] was invoked.
     */

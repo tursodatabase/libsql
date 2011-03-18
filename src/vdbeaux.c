@@ -2813,6 +2813,7 @@ UnpackedRecord *sqlite3VdbeRecordUnpack(
     pMem->db = pKeyInfo->db;
     pMem->flags = 0;
     pMem->zMalloc = pMem->z = 0;
+    pMem->z = 0;
     d += sqlite3VdbeSerialGet(&aKey[d], serial_type, pMem);
     pMem++;
     u++;
@@ -3187,10 +3188,10 @@ void sqlite3VdbePreUpdateHook(
 ){
   sqlite3 *db = v->db;
   i64 iKey2;
-
   PreUpdate preupdate;
-  memset(&preupdate, 0, sizeof(PreUpdate));
 
+  assert( db->pPreUpdate==0 );
+  memset(&preupdate, 0, sizeof(PreUpdate));
   if( op==SQLITE_UPDATE ){
     iKey2 = v->aMem[iReg].u.i;
   }else{
