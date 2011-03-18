@@ -2812,7 +2812,7 @@ UnpackedRecord *sqlite3VdbeRecordUnpack(
     pMem->enc = pKeyInfo->enc;
     pMem->db = pKeyInfo->db;
     pMem->flags = 0;
-    pMem->zMalloc = 0;
+    pMem->zMalloc = pMem->z = 0;
     d += sqlite3VdbeSerialGet(&aKey[d], serial_type, pMem);
     pMem++;
     u++;
@@ -3219,7 +3219,6 @@ void sqlite3VdbePreUpdateHook(
     for(i=0; i<pCsr->nField; i++){
       sqlite3VdbeMemRelease(&preupdate.aNew[i]);
     }
-    sqlite3_free(preupdate.aNew);
+    sqlite3DbFree(db, preupdate.aNew);
   }
 }
-
