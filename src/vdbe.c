@@ -2890,10 +2890,12 @@ case OP_SetCookie: {       /* in3 */
   break;
 }
 
-/* Opcode: VerifyCookie P1 P2 *
+/* Opcode: VerifyCookie P1 P2 P3 * *
 **
 ** Check the value of global database parameter number 0 (the
-** schema version) and make sure it is equal to P2.  
+** schema version) and make sure it is equal to P2 and that the
+** generation counter on the local schema parse equals P3.
+**
 ** P1 is the database number which is 0 for the main database file
 ** and 1 for the file holding temporary tables and some higher number
 ** for auxiliary databases.
@@ -2908,16 +2910,19 @@ case OP_SetCookie: {       /* in3 */
 */
 case OP_VerifyCookie: {
   int iMeta;
+  int iGen;
   Btree *pBt;
+
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   assert( (p->btreeMask & (1<<pOp->p1))!=0 );
   pBt = db->aDb[pOp->p1].pBt;
   if( pBt ){
     sqlite3BtreeGetMeta(pBt, BTREE_SCHEMA_VERSION, (u32 *)&iMeta);
+    iGen = db->aDb[pOp->p1].pSchema->iGeneration;
   }else{
     iMeta = 0;
   }
-  if( iMeta!=pOp->p2 ){
+  if( iMeta!=pOp->p2 || iGen!=pOp->p3 ){
     sqlite3DbFree(db, p->zErrMsg);
     p->zErrMsg = sqlite3DbStrDup(db, "database schema has changed");
     /* If the schema-cookie from the database file matches the cookie 

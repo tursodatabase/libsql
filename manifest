@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Update\sthe\simplementation\sof\s".testctrl"\sin\sthe\scommand-line\sshell\sto\suse\na\slook-up\stable\srather\sthan\sa\slong\ssequence\sof\sif-elses.\s\sShorten\ssource\ncode\slines\sof\sshell.c\sto\s80\scharacters\sor\sless.
-D 2011-03-17T16:45:50.769
+C Add\sa\sgeneration\scounter\sto\sthe\sSchema\sobject\sand\senhance\sOP_VerifySchema\nto\salso\scheck\sthe\sSchema\sgeneration.\s\sFix\sfor\nticket\s[f7b4edece25c99].
+D 2011-03-18T21:55:46.167
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -127,8 +127,8 @@ F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
 F src/btree.c 43302cc4f3de6479b90fa6bb271b65d86333d00e
 F src/btree.h e2f2cd9933bf30724f53ffa12c4c5a3a864bbd6e
 F src/btreeInt.h 20f73dc93b1eeb83afd7259fbc6bd7dcf2df7fe4
-F src/build.c 00a327120d81ace6267e714ae8010c997d55de5d
-F src/callback.c a1d1b1c9c85415dff013af033e2fed9c8382d33b
+F src/build.c 3b86c8efc0cbe716d82c510463f448b9cdee0619
+F src/callback.c 5069f224882cbdccd559f591271d28d7f37745bc
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 52ff72f966cee3087e0138a3ec69371c22be3c01
 F src/date.c 1548fdac51377e4e7833251de878b4058c148e1b
@@ -183,7 +183,7 @@ F src/select.c d24406c45dd2442eb2eeaac413439066b149c944
 F src/shell.c 4a5e0ad845475c84881f0b25b1abba2ddaab0a72
 F src/sqlite.h.in 369c767e6b9f101d63d8e4c5e40279f975ccec08
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
-F src/sqliteInt.h 2cea3e47997e3f4d9b4f1ce62f99c35be1b5a586
+F src/sqliteInt.h 223159f987959f7ed55ebe5b5d175842ebb7647f
 F src/sqliteLimit.h a17dcd3fb775d63b64a43a55c54cb282f9726f44
 F src/status.c 4997380fbb915426fef9e500b4872e79c99267fc
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -234,12 +234,12 @@ F src/update.c 81911be16ece3c3e7716aa18565b4814ec41f8b9
 F src/utf.c 1baeeac91707a4df97ccc6141ec0f808278af685
 F src/util.c cd997077bad039efc0597eb027c929658f93c018
 F src/vacuum.c 924bd1bcee2dfb05376f79845bd3b4cec7b54b2f
-F src/vdbe.c ac6e8b8264dcc0e4beea44307ff63b1275a9ca3e
+F src/vdbe.c 8430780c643bf67d4b5da27f24d6ad39804fdaf4
 F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
 F src/vdbeInt.h 6e6f28e9bccc6c703dca1372fd661c57b5c15fb0
 F src/vdbeapi.c a09ad9164cafc505250d5dd6b69660c960f1308c
 F src/vdbeaux.c 00439455c80ff7b37d7f2e5be5c0cf02de732a42
-F src/vdbeblob.c 18955f0ee6b133cd08e1592010cb9a6b11e9984c
+F src/vdbeblob.c c3ccb7c8732858c680f442932e66ad06bb036562
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
 F src/vdbetrace.c 3ba13bc32bdf16d2bdea523245fd16736bed67b5
 F src/vtab.c b297e8fa656ab5e66244ab15680d68db0adbec30
@@ -302,7 +302,7 @@ F test/boundary4.test 89e02fa66397b8a325d5eb102b5806f961f8ec4b
 F test/busy.test 76b4887f8b9160ba903c1ac22e8ff406ad6ae2f0
 F test/cache.test 754baab2f18089fc9bcba7afaeb4dc907c6c6de2
 F test/capi2.test 835d4cee9f542ea50fa8d01f3fe6de80b0627360
-F test/capi3.test 1945a2ba75e3f4c49d5beb8fc092115b6292d471
+F test/capi3.test 5c1ea6c940f2d7c4d5af8ef1ec2f92a267d2e37a
 F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
 F test/capi3c.test bea67403a5e37a4b33230ee4723e315a2ffb31e7
 F test/capi3d.test cd36571f014f34bdc4421967f6453cbb597d5d16
@@ -917,14 +917,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 869f894798a65f8bc0e0b083866a784fa0189f68
-R a8def7fc552253bddf0337de8f57667b
+P 54bacb95dd6e2d6ac4971391a40484ccb9126d29
+R 6cc36086e25c2f0aadb53235734f400b
 U drh
-Z f32baca0676f04528da8db7e35d99aa0
+Z 47796039470a6db464668999e5623b15
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNgjx3oxKgR168RlERAkZlAJ9g0EAzYOwFcF/NGcxGCGlF65eaGACfcZkt
-bA9BP3Fet3XmbiRxAgQtxR0=
-=Yzeg
+iD8DBQFNg9TloxKgR168RlERAlluAJ9ySnRLNzrDaH+1ma2fpI9DsXAdUQCgi2GJ
+eyursVKuXpy0a1erVqsVqgQ=
+=lOQN
 -----END PGP SIGNATURE-----

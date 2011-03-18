@@ -651,11 +651,11 @@ do_test capi3-6.1 {
 } {SQLITE_BUSY}
 do_test capi3-6.2 {
   sqlite3_step $STMT
-} {SQLITE_ROW}
-check_data $STMT capi3-6.3 {INTEGER} {1} {1.0} {1}
+} {SQLITE_ERROR}
+#check_data $STMT capi3-6.3 {INTEGER} {1} {1.0} {1}
 do_test capi3-6.3 {
   sqlite3_finalize $STMT
-} {SQLITE_OK}
+} {SQLITE_SCHEMA}
 do_test capi3-6.4-misuse {
   db cache flush
   sqlite3_close $DB
