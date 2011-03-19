@@ -265,29 +265,31 @@ static int sessionSerializeValue(
   return SQLITE_OK;
 }
 
-#define HASH_APPEND(hash, add) ((hash) << 3) ^ (hash) ^ (int)(add)
-static int sessionHashAppendI64(int h, i64 i){
+#define HASH_APPEND(hash, add) ((hash) << 3) ^ (hash) ^ (unsigned int)(add)
+static unsigned int sessionHashAppendI64(unsigned int h, i64 i){
   h = HASH_APPEND(h, i & 0xFFFFFFFF);
   return HASH_APPEND(h, (i>>32)&0xFFFFFFFF);
 }
-static int sessionHashAppendBlob(int h, int n, const u8 *z){
+static unsigned int sessionHashAppendBlob(unsigned int h, int n, const u8 *z){
   int i;
   for(i=0; i<n; i++) h = HASH_APPEND(h, z[i]);
   return h;
 }
 
 /*
-** This function calculates a hash based on the primary key values of
-** the old.* or new.* row currently available.
+** This function may only be called from within a pre-update callback.
+** It calculates a hash based on the primary key values of the old.* or 
+** new.* row currently available. The value returned is guaranteed to
+** be less than pTab->nBucket.
 */
-static int sessionPreupdateHash(
+static unsigned int sessionPreupdateHash(
   sqlite3 *db,                    /* Database handle */
   SessionTable *pTab,             /* Session table handle */
   int bNew,                       /* True to hash the new.* PK */
   int *piHash                     /* OUT: Hash value */
 ){
-  int h = 0;
-  int i;
+  unsigned int h = 0;             /* Hash value to return */
+  int i;                          /* Used to iterate through columns */
 
   assert( pTab->nCol==sqlite3_preupdate_count(db) );
   for(i=0; i<pTab->nCol; i++){
@@ -335,15 +337,21 @@ static int sessionPreupdateHash(
   return SQLITE_OK;
 }
 
-static int sessionChangeHash(
-  sqlite3 *db,
-  SessionTable *pTab,
-  SessionChange *pChange,
-  int nBucket
+/*
+** Based on the primary key values stored in change pChange, calculate a
+** hash key, assuming the has table has nBucket buckets. The hash keys
+** calculated by this function are compatible with those calculated by
+** sessionPreupdateHash().
+*/
+static unsigned int sessionChangeHash(
+  sqlite3 *db,                    /* Database handle */
+  SessionTable *pTab,             /* Table handle */
+  SessionChange *pChange,         /* Change handle */
+  int nBucket                     /* Assume this many buckets in hash table */
 ){
-  int h = 0;
-  int i;
-  u8 *a = pChange->aRecord;
+  unsigned int h = 0;             /* Value to return */
+  int i;                          /* Used to iterate through columns */
+  u8 *a = pChange->aRecord;       /* Used to iterate through change record */
 
   for(i=0; i<pTab->nCol; i++){
     int eType = *a++;
