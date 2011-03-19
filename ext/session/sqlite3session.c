@@ -1115,6 +1115,7 @@ static void sessionAppendUpdate(
   if( *pRc==SQLITE_OK ){
     SessionBuffer buf2 = {0,0,0}; /* Buffer to accumulate new.* record in */
     int bNoop = 1;                /* Set to zero if any values are modified */
+    int nRewind = pBuf->nBuf;     /* Set to zero if any values are modified */
     int i;                        /* Used to iterate through columns */
     u8 *pCsr = p->aRecord;        /* Used to iterate through old.* values */
 
@@ -1180,11 +1181,11 @@ static void sessionAppendUpdate(
     }
 
     if( bNoop ){
-      pBuf->nBuf -= (1 + sqlite3_column_count(pStmt));
+      pBuf->nBuf = nRewind;
     }else{
       sessionAppendBlob(pBuf, buf2.aBuf, buf2.nBuf, pRc);
-      sqlite3_free(buf2.aBuf);
     }
+    sqlite3_free(buf2.aBuf);
   }
 }
 
@@ -1314,10 +1315,10 @@ int sqlite3session_changeset(
     if( pTab->nEntry ){
       int nCol = pTab->nCol;      /* Local copy of member variable */
       u8 *abPK = pTab->abPK;      /* Local copy of member variable */
-      int i;
-      sqlite3_stmt *pStmt = 0;
-      int bNoop = 1;
-      int nRewind = buf.nBuf;
+      int i;                      /* Used to iterate through hash buckets */
+      sqlite3_stmt *pSel = 0;     /* SELECT statement to query table pTab */
+      int nRewind = buf.nBuf;     /* Initial size of write buffer */
+      int nNoop;                  /* Size of buffer after writing tbl header */
 
       /* Write a table header */
       sessionAppendByte(&buf, 'T', &rc);
@@ -1326,44 +1327,43 @@ int sqlite3session_changeset(
 
       /* Build and compile a statement to execute: */
       if( rc==SQLITE_OK ){
-        rc = sessionSelectStmt(db, pTab->zName, nCol, pTab->azCol, abPK,&pStmt);
+        rc = sessionSelectStmt(db, pTab->zName, nCol, pTab->azCol, abPK, &pSel);
       }
 
-      if( rc==SQLITE_OK && nCol!=sqlite3_column_count(pStmt) ){
+      if( rc==SQLITE_OK && nCol!=sqlite3_column_count(pSel) ){
         rc = SQLITE_SCHEMA;
       }
 
+      nNoop = buf.nBuf;
       for(i=0; i<pTab->nChange; i++){
         SessionChange *p;         /* Used to iterate through changes */
 
         for(p=pTab->apChange[i]; rc==SQLITE_OK && p; p=p->pNext){
-          rc = sessionSelectBind(pStmt, nCol, abPK, p->aRecord, p->nRecord);
+          rc = sessionSelectBind(pSel, nCol, abPK, p->aRecord, p->nRecord);
           if( rc==SQLITE_OK ){
-            if( sqlite3_step(pStmt)==SQLITE_ROW ){
+            if( sqlite3_step(pSel)==SQLITE_ROW ){
               int iCol;
               if( p->bInsert ){
                 sessionAppendByte(&buf, SQLITE_INSERT, &rc);
                 for(iCol=0; iCol<nCol; iCol++){
-                  sessionAppendCol(&buf, pStmt, iCol, &rc);
+                  sessionAppendCol(&buf, pSel, iCol, &rc);
                 }
               }else{
-                sessionAppendUpdate(&buf, pStmt, p, abPK, &rc);
+                sessionAppendUpdate(&buf, pSel, p, abPK, &rc);
               }
-              bNoop = 0;
             }else if( !p->bInsert ){
               /* A DELETE change */
               sessionAppendByte(&buf, SQLITE_DELETE, &rc);
               sessionAppendBlob(&buf, p->aRecord, p->nRecord, &rc);
-              bNoop = 0;
             }
-            rc = sqlite3_reset(pStmt);
+            rc = sqlite3_reset(pSel);
           }
         }
       }
 
-      sqlite3_finalize(pStmt);
+      sqlite3_finalize(pSel);
 
-      if( bNoop ){
+      if( buf.nBuf==nNoop ){
         buf.nBuf = nRewind;
       }
     }

@@ -112,6 +112,11 @@ do_common_sql {
   CREATE TABLE t3(a, b, c, PRIMARY KEY(a, b));
 }
 
+# Execute each of the following blocks of SQL on database [db1]. Collect
+# changes using a session object. Apply the resulting changeset to
+# database [db2]. Then check that the contents of the two databases are
+# identical.
+#
 foreach {tn sql} {
   1 { INSERT INTO t1 VALUES(1, 2) } 
 
@@ -150,7 +155,23 @@ foreach {tn sql} {
     DELETE FROM t1 WHERE (rowid%3)==0;
   }
 
+  8 {
+    BEGIN;
+      INSERT INTO t1 SELECT randomblob(32), randomblob(32) FROM t1;
+    ROLLBACK;
+  }
+  9 {
+    BEGIN;
+      UPDATE t1 SET b = 'xxx';
+    ROLLBACK;
+  }
+  10 {
+    BEGIN;
+      DELETE FROM t1 WHERE 1;
+    ROLLBACK;
+  }
 } {
+if {$tn==9} breakpoint
   do_then_apply_sql $sql
   do_test $tn { compare_db db db2 } {}
 }
