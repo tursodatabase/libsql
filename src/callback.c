@@ -427,7 +427,10 @@ void sqlite3SchemaFree(void *p){
   sqlite3HashClear(&temp1);
   sqlite3HashClear(&pSchema->fkeyHash);
   pSchema->pSeqTab = 0;
-  pSchema->flags &= ~DB_SchemaLoaded;
+  if( pSchema->flags & DB_SchemaLoaded ){
+    pSchema->iGeneration++;
+    pSchema->flags &= ~DB_SchemaLoaded;
+  }
 }
 
 /*
