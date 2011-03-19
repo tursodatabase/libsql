@@ -1777,6 +1777,7 @@ static int sessionDeleteRow(
   const char *zSep = "";
   int rc = SQLITE_OK;
   SessionBuffer buf = {0, 0, 0};
+  int nPk = 0;
 
   sessionAppendStr(&buf, "DELETE FROM ", &rc);
   sessionAppendIdent(&buf, zTab, &rc);
@@ -1784,29 +1785,32 @@ static int sessionDeleteRow(
 
   for(i=0; i<p->nCol; i++){
     if( p->abPK[i] ){
+      nPk++;
       sessionAppendStr(&buf, zSep, &rc);
       sessionAppendIdent(&buf, p->azCol[i], &rc);
       sessionAppendStr(&buf, " = ?", &rc);
       sessionAppendInteger(&buf, i+1, &rc);
-      zSep = "AND ";
+      zSep = " AND ";
     }
   }
 
-  sessionAppendStr(&buf, " AND (?", &rc);
-  sessionAppendInteger(&buf, p->nCol+1, &rc);
-  sessionAppendStr(&buf, " OR ", &rc);
+  if( nPk<p->nCol ){
+    sessionAppendStr(&buf, " AND (?", &rc);
+    sessionAppendInteger(&buf, p->nCol+1, &rc);
+    sessionAppendStr(&buf, " OR ", &rc);
 
-  zSep = "";
-  for(i=0; i<p->nCol; i++){
-    if( !p->abPK[i] ){
-      sessionAppendStr(&buf, zSep, &rc);
-      sessionAppendIdent(&buf, p->azCol[i], &rc);
-      sessionAppendStr(&buf, " IS ?", &rc);
-      sessionAppendInteger(&buf, i+1, &rc);
-      zSep = "AND ";
+    zSep = "";
+    for(i=0; i<p->nCol; i++){
+      if( !p->abPK[i] ){
+        sessionAppendStr(&buf, zSep, &rc);
+        sessionAppendIdent(&buf, p->azCol[i], &rc);
+        sessionAppendStr(&buf, " IS ?", &rc);
+        sessionAppendInteger(&buf, i+1, &rc);
+        zSep = "AND ";
+      }
     }
+    sessionAppendStr(&buf, ")", &rc);
   }
-  sessionAppendStr(&buf, ")", &rc);
 
   if( rc==SQLITE_OK ){
     rc = sqlite3_prepare_v2(db, (char *)buf.aBuf, buf.nBuf, &p->pDelete, 0);
@@ -2171,7 +2175,9 @@ static int sessionApplyOneOp(
         rc = sqlite3_bind_value(p->pDelete, i+1, pVal);
       }
     }
-    if( rc==SQLITE_OK ) rc = sqlite3_bind_int(p->pDelete, nCol+1, pbRetry==0);
+    if( rc==SQLITE_OK && sqlite3_bind_parameter_count(p->pDelete)>nCol ){
+      rc = sqlite3_bind_int(p->pDelete, nCol+1, pbRetry==0);
+    }
     if( rc!=SQLITE_OK ) return rc;
 
     sqlite3_step(p->pDelete);

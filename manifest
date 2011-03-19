@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sINTEGER\sPRIMARY\sKEY\scolumns\sand\sthe\spre-update\shook.
-D 2011-03-19T08:38:50
+C Fix\ssome\sbugs\sin\ssqlite3changeset_apply().
+D 2011-03-19T15:37:02
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -99,7 +99,8 @@ F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 1af0899c63a688e272d69d8e746f24e76f10a3f0
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
-F ext/session/sqlite3session.c d4ba709d457a7b184a72ccd3ab07e5a1e9dd9196
+F ext/session/session2.test 72f5926805b46a9a5f240db856dab0e5f59fc693
+F ext/session/sqlite3session.c 6518a335592f4b118d9e6b9ed9dcbe27b0ebcda7
 F ext/session/sqlite3session.h 9551c002efd5fde07c52994c6b592308e0df2d6a
 F ext/session/test_session.c 2559ef68e421c7fb83e2c19ef08a17343b70d535
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
@@ -201,7 +202,7 @@ F src/test_async.c 0612a752896fad42d55c3999a5122af10dcf22ad
 F src/test_autoext.c 30e7bd98ab6d70a62bb9ba572e4c7df347fe645e
 F src/test_backup.c c129c91127e9b46e335715ae2e75756e25ba27de
 F src/test_btree.c 47cd771250f09cdc6e12dda5bc71bc0b3abc96e2
-F src/test_config.c 62f0f8f934b1d5c7e4cd4f506ae453a1117b47d7
+F src/test_config.c e9a4ce02dec5bcced1c13e0cf8b72edfd5903d74
 F src/test_demovfs.c 0aed671636735116fc872c5b03706fd5612488b5
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_func.c cbdec5cededa0761daedde5baf06004a9bf416b5
@@ -601,7 +602,7 @@ F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
 F test/pcache2.test 0d85f2ab6963aee28c671d4c71bec038c00a1d16
-F test/permutations.test 5b2a4cb756ffb2407cb4743163668d1d769febb6
+F test/permutations.test 1e35edce72e6d9e2e392420caed18652a97b1a95
 F test/pragma.test fdfc09067ea104a0c247a1a79d8093b56656f850
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
@@ -644,6 +645,7 @@ F test/selectA.test 06d1032fa9009314c95394f2ca2e60d9f7ae8532
 F test/selectB.test f305cc6660804cb239aab4e2f26b0e288b59958b
 F test/selectC.test f9bf1bc4581b5b8158caa6e4e4f682acb379fb25
 F test/server1.test f5b790d4c0498179151ca8a7715a65a7802c859c
+F test/session.test c1a17c11ef7d01c24fe2b9f7871190d949a8e718
 F test/session1.test c6851e2e1066269cad5370566ce5494c7dbdfa7e
 F test/shared.test b9114eaea7e748a3a4c8ff7b9ca806c8f95cef3e
 F test/shared2.test 7f6ad2d857d0f4e5d6a0b9a897b5e56a6b6ea18c
@@ -919,7 +921,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1b736ac2934f2361dee5062e9033cbf26b41fc3a
-R 162f72638a0f38fbe0fc1273d5b87dc2
+P 24d4d5dd007197a141555bcca6f2ac9ab47cde80
+R 985767b788ac43658b5fdac318a5d51e
 U dan
-Z 3b532fd3ba73ffa805a9d5e7143aadc5
+Z e6cf037758a8ddd02cc6b33f9980e9f6
