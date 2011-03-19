@@ -1191,6 +1191,7 @@ static void sessionAppendUpdate(
 
 static int sessionSelectStmt(
   sqlite3 *db,                    /* Database handle */
+  const char *zDb,                /* Database name */
   const char *zTab,               /* Table name */
   int nCol,
   const char **azCol,
@@ -1203,6 +1204,8 @@ static int sessionSelectStmt(
   SessionBuffer buf = {0, 0, 0};
 
   sessionAppendStr(&buf, "SELECT * FROM ", &rc);
+  sessionAppendIdent(&buf, zDb, &rc);
+  sessionAppendStr(&buf, ".", &rc);
   sessionAppendIdent(&buf, zTab, &rc);
   sessionAppendStr(&buf, " WHERE ", &rc);
   for(i=0; i<nCol; i++){
@@ -1313,6 +1316,7 @@ int sqlite3session_changeset(
 
   for(pTab=pSession->pTable; rc==SQLITE_OK && pTab; pTab=pTab->pNext){
     if( pTab->nEntry ){
+      const char *zName = pTab->zName;
       int nCol = pTab->nCol;      /* Local copy of member variable */
       u8 *abPK = pTab->abPK;      /* Local copy of member variable */
       int i;                      /* Used to iterate through hash buckets */
@@ -1323,11 +1327,12 @@ int sqlite3session_changeset(
       /* Write a table header */
       sessionAppendByte(&buf, 'T', &rc);
       sessionAppendVarint(&buf, nCol, &rc);
-      sessionAppendBlob(&buf, (u8 *)pTab->zName, strlen(pTab->zName)+1, &rc);
+      sessionAppendBlob(&buf, (u8 *)zName, strlen(zName)+1, &rc);
 
       /* Build and compile a statement to execute: */
       if( rc==SQLITE_OK ){
-        rc = sessionSelectStmt(db, pTab->zName, nCol, pTab->azCol, abPK, &pSel);
+        rc = sessionSelectStmt(
+            db, pSession->zDb, zName, nCol, pTab->azCol, abPK, &pSel);
       }
 
       if( rc==SQLITE_OK && nCol!=sqlite3_column_count(pSel) ){
@@ -1942,7 +1947,8 @@ static int sessionSelectRow(
   const char *zTab,               /* Table name */
   SessionApplyCtx *p              /* Session changeset-apply context */
 ){
-  return sessionSelectStmt(db, zTab, p->nCol, p->azCol, p->abPK, &p->pSelect);
+  return sessionSelectStmt(
+      db, "main", zTab, p->nCol, p->azCol, p->abPK, &p->pSelect);
 }
 
 /*

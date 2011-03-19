@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\schangeset\sgeneration\scode.
-D 2011-03-19T18:46:16
+C Fix\sa\sproblem\sinvolving\ssession\sobjects\sand\sattached\sdatabases.
+D 2011-03-19T19:19:26
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -100,8 +100,8 @@ F ext/rtree/sqlite3rtree.h 1af0899c63a688e272d69d8e746f24e76f10a3f0
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F ext/session/session1.test 3f982c74ee4ba97069917cc35aae25b4ed858e6a
-F ext/session/session2.test 09cbe57d949a315c68fb59822314990fd0e2af33
-F ext/session/sqlite3session.c 4cb15010040b093e452e6de52e8b5a9161032ebf
+F ext/session/session2.test 96ff08995ab9935d1992ac554a240052883a0ebc
+F ext/session/sqlite3session.c d211ce2e95483dfc144494f6c67879d85dddabfa
 F ext/session/sqlite3session.h 9551c002efd5fde07c52994c6b592308e0df2d6a
 F ext/session/test_session.c 2559ef68e421c7fb83e2c19ef08a17343b70d535
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
@@ -921,7 +921,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c4436a936ab302aec3b7f41a4552f69ad5815744
-R 633c4c2a52a8f04fd2ba1fea02dc8ad5
+P 825df75ba453c853953e17ec29653e11c46f92bb
+R 1e82a0bf18f9b8bb4d549f268721a5ef
 U dan
-Z 046a676deaa5ff1f82305a84f859a0a7
+Z 935cff1eff2f640f29c72314cdd47105
