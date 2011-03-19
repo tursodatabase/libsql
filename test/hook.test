@@ -622,7 +622,7 @@ do_execsql_test 7.5.2.0 {
   ALTER TABLE t8 ADD COLUMN c DEFAULT 'xxx';
 }
 
-# At time of writing, these two are broken. They demonstraight that the
+# At time of writing, these two are broken. They demonstrate that the
 # sqlite3_preupdate_old() method does not handle the case where ALTER TABLE
 # has been used to add a column with a default value other than NULL.
 #
@@ -636,6 +636,21 @@ do_preupdate_test 7.5.2.2 {
 } {
   UPDATE main t8 2 2   three four xxx  three five xxx
 }
+
+# This block of tests verifies that IPK values are correctly reported
+# by the sqlite3_preupdate_old() and sqlite3_preupdate_new() functions.
+#
+do_execsql_test 7.6.1 { CREATE TABLE t9(a, b INTEGER PRIMARY KEY, c) }
+do_preupdate_test 7.6.2 {
+  INSERT INTO t9 VALUES(1, 2, 3);
+  UPDATE t9 SET b = b+1, c = c+1;
+  DELETE FROM t9 WHERE a = 1;
+} {
+  INSERT main t9 2 2   1 2 3
+  UPDATE main t9 2 3   1 2 3   1 3 4
+  DELETE main t9 3 3   1 3 4
+}
+
 
 finish_test
 

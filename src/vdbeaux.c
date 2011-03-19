@@ -3182,13 +3182,14 @@ void sqlite3VdbePreUpdateHook(
   VdbeCursor *pCsr,               /* Cursor to grab old.* values from */
   int op,                         /* SQLITE_INSERT, UPDATE or DELETE */
   const char *zDb,                /* Database name */
-  const char *zTbl,               /* Table name */
+  Table *pTab,                    /* Modified table */
   i64 iKey1,                      /* Initial key value */
   int iReg                        /* Register for new.* record */
 ){
   sqlite3 *db = v->db;
   i64 iKey2;
   PreUpdate preupdate;
+  const char *zTbl = pTab->zName;
 
   assert( db->pPreUpdate==0 );
   memset(&preupdate, 0, sizeof(PreUpdate));
@@ -3205,6 +3206,10 @@ void sqlite3VdbePreUpdateHook(
   preupdate.keyinfo.db = db;
   preupdate.keyinfo.enc = ENC(db);
   preupdate.keyinfo.nField = pCsr->nField;
+  preupdate.iKey1 = iKey1;
+  preupdate.iKey2 = iKey2;
+  preupdate.iPKey = pTab->iPKey;
+
   db->pPreUpdate = &preupdate;
   db->xPreUpdateCallback(db->pPreUpdateArg, db, op, zDb, zTbl, iKey1, iKey2);
   db->pPreUpdate = 0;

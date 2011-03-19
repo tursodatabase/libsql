@@ -1369,6 +1369,9 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
     *ppValue = (sqlite3_value *)columnNullValue();
   }else{
     *ppValue = &p->pUnpacked->aMem[iIdx];
+    if( iIdx==p->iPKey ){
+      sqlite3VdbeMemSetInt64(*ppValue, p->iKey1);
+    }
     sqlite3VdbeMemStoreType(*ppValue);
   }
 
@@ -1423,6 +1426,9 @@ int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
       pMem = (sqlite3_value *)columnNullValue();
     }else{
       pMem = &pUnpack->aMem[iIdx];
+      if( iIdx==p->iPKey ){
+        sqlite3VdbeMemSetInt64(pMem, p->iKey2);
+      }
       sqlite3VdbeMemStoreType(pMem);
     }
   }else{
@@ -1442,8 +1448,12 @@ int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
     assert( iIdx>=0 && iIdx<p->pCsr->nField );
     pMem = &p->aNew[iIdx];
     if( pMem->flags==0 ){
-      rc = sqlite3VdbeMemCopy(pMem, &p->v->aMem[p->iNewReg+1+iIdx]);
-      if( rc!=SQLITE_OK ) goto preupdate_new_out;
+      if( iIdx==p->iPKey ){
+        sqlite3VdbeMemSetInt64(pMem, p->iKey2);
+      }else{
+        rc = sqlite3VdbeMemCopy(pMem, &p->v->aMem[p->iNewReg+1+iIdx]);
+        if( rc!=SQLITE_OK ) goto preupdate_new_out;
+      }
       sqlite3VdbeMemStoreType(pMem);
     }
   }

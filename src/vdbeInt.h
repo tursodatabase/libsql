@@ -344,6 +344,9 @@ struct PreUpdate {
   UnpackedRecord *pUnpacked;      /* Unpacked version of aRecord[] */
   UnpackedRecord *pNewUnpacked;   /* Unpacked version of new.* record */
   int iNewReg;                    /* Register for new.* values */
+  i64 iKey1;                      /* First key value passed to hook */
+  i64 iKey2;                      /* Second key value passed to hook */
+  int iPKey;                      /* If not negative index of IPK column */
   Mem *aNew;                      /* Array of new.* values */
 };
 
@@ -404,7 +407,7 @@ void sqlite3VdbeFrameDelete(VdbeFrame*);
 int sqlite3VdbeFrameRestore(VdbeFrame *);
 void sqlite3VdbeMemStoreType(Mem *pMem);
 void sqlite3VdbePreUpdateHook(
-    Vdbe *, VdbeCursor *, int, const char*, const char*, i64, int);
+    Vdbe *, VdbeCursor *, int, const char*, Table *, i64, int);
 
 #ifdef SQLITE_DEBUG
 void sqlite3VdbeMemPrepareToChange(Vdbe*,Mem*);

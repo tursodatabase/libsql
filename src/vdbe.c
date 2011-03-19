@@ -3838,9 +3838,9 @@ case OP_NewRowid: {           /* out2-prerelease */
 ** is part of an INSERT operation.  The difference is only important to
 ** the update hook.
 **
-** Parameter P4 may point to a string containing the table-name, or
-** may be NULL. If it is not NULL, then the update-hook 
-** (sqlite3.xUpdateCallback) is invoked following a successful insert.
+** Parameter P4 may point to a Table structure, or may be NULL. If it is 
+** not NULL, then the update-hook (sqlite3.xUpdateCallback) is invoked 
+** following a successful insert.
 **
 ** (WARNING/TODO: If P1 is a pseudo-cursor and P2 is dynamically
 ** allocated, then ownership of P2 is transferred to the pseudo-cursor
@@ -3865,7 +3865,7 @@ case OP_InsertInt: {
   int nZero;        /* Number of zero-bytes to append */
   int seekResult;   /* Result of prior seek or 0 if no USESEEKRESULT flag */
   const char *zDb;  /* database name - used by the update hook */
-  const char *zTbl; /* Table name - used by the opdate hook */
+  Table *pTab;      /* Table structure - used by update and pre-update hooks */
   int op;           /* Opcode for update hook: SQLITE_UPDATE or SQLITE_INSERT */
 
   pData = &aMem[pOp->p2];
@@ -3876,6 +3876,7 @@ case OP_InsertInt: {
   assert( pC->pCursor!=0 );
   assert( pC->pseudoTableReg==0 );
   assert( pC->isTable );
+  assert( pOp->p4type==P4_TABLE || pOp->p4type==P4_NOTUSED );
   REGISTER_TRACE(pOp->p2, pData);
 
   if( pOp->opcode==OP_Insert ){
@@ -3889,20 +3890,20 @@ case OP_InsertInt: {
     iKey = pOp->p3;
   }
 
-  if( pOp->p4.z && (db->xPreUpdateCallback || db->xUpdateCallback) ){
+  if( pOp->p4type==P4_TABLE && (db->xPreUpdateCallback||db->xUpdateCallback) ){
     assert( pC->isTable );
     assert( pC->iDb>=0 );
     zDb = db->aDb[pC->iDb].zName;
-    zTbl = pOp->p4.z;
+    pTab = pOp->p4.pTab;
     op = ((pOp->p5 & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_INSERT);
   }
 
   /* Invoke the pre-update hook, if any */
   if( db->xPreUpdateCallback 
-   && pOp->p4.z 
+   && pOp->p4type==P4_TABLE
    && (!(pOp->p5 & OPFLAG_ISUPDATE) || pC->rowidIsValid==0)
   ){
-    sqlite3VdbePreUpdateHook(p, pC, SQLITE_INSERT, zDb, zTbl, iKey, pOp->p2);
+    sqlite3VdbePreUpdateHook(p, pC, SQLITE_INSERT, zDb, pTab, iKey, pOp->p2);
   }
 
   if( pOp->p5 & OPFLAG_NCHANGE ) p->nChange++;
@@ -3930,7 +3931,7 @@ case OP_InsertInt: {
 
   /* Invoke the update-hook if required. */
   if( rc==SQLITE_OK && db->xUpdateCallback && pOp->p4.z ){
-    db->xUpdateCallback(db->pUpdateArg, op, zDb, zTbl, iKey);
+    db->xUpdateCallback(db->pUpdateArg, op, zDb, pTab->zName, iKey);
   }
   break;
 }
@@ -3950,12 +3951,12 @@ case OP_InsertInt: {
 ** P1 must not be pseudo-table.  It has to be a real table with
 ** multiple rows.
 **
-** If P4 is not NULL then, either the update or pre-update hook, or both,
-** may be invoked. The P1 cursor must have been positioned using OP_NotFound 
-** prior to invoking this opcode in this case. Specifically, if one is 
-** configured, the pre-update hook is invoked if P4 is not NULL. The 
-** update-hook is invoked if one is configured, P4 is not NULL, and the 
-** OPFLAG_NCHANGE flag is set in P2.
+** If P4 is not NULL then it points to a Table struture. In this case either 
+** the update or pre-update hook, or both, may be invoked. The P1 cursor must
+** have been positioned using OP_NotFound prior to invoking this opcode in 
+** this case. Specifically, if one is configured, the pre-update hook is 
+** invoked if P4 is not NULL. The update-hook is invoked if one is configured, 
+** P4 is not NULL, and the OPFLAG_NCHANGE flag is set in P2.
 **
 ** If the OPFLAG_ISUPDATE flag is set in P2, then P3 contains the address
 ** of the memory cell that contains the value that the rowid of the row will
@@ -3965,7 +3966,7 @@ case OP_Delete: {
   i64 iKey;
   VdbeCursor *pC;
   const char *zDb;
-  const char *zTbl;
+  Table *pTab;
   int opflags;
 
   opflags = pOp->p2;
@@ -3974,6 +3975,7 @@ case OP_Delete: {
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   assert( pC->pCursor!=0 );  /* Only valid for real tables, no pseudotables */
+  assert( pOp->p4type==P4_TABLE || pOp->p4type==P4_NOTUSED );
 
   /* The OP_Delete opcode always follows an OP_NotExists or OP_Last or
   ** OP_Column on the same table without any intervening operations that
@@ -3995,7 +3997,7 @@ case OP_Delete: {
     assert( pC->rowidIsValid );  /* lastRowid set by previous OP_NotFound */
     iKey = pC->lastRowid;
     zDb = db->aDb[pC->iDb].zName;
-    zTbl = pOp->p4.z;
+    pTab = pOp->p4.pTab;
   }
 
   /* Invoke the pre-update-hook if required. */
@@ -4003,7 +4005,7 @@ case OP_Delete: {
     assert( !(opflags & OPFLAG_ISUPDATE) || (aMem[pOp->p3].flags & MEM_Int) );
     sqlite3VdbePreUpdateHook(p, pC,
         (opflags & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_DELETE, 
-        zDb, zTbl, iKey,
+        zDb, pTab, iKey,
         pOp->p3
     );
   }
@@ -4019,7 +4021,7 @@ case OP_Delete: {
     p->nChange++;
     assert( pOp->p4.z );
     if( rc==SQLITE_OK && db->xUpdateCallback ){
-      db->xUpdateCallback(db->pUpdateArg, SQLITE_DELETE, zDb, zTbl, iKey);
+      db->xUpdateCallback(db->pUpdateArg, SQLITE_DELETE, zDb, pTab->zName,iKey);
     }
   }
   break;

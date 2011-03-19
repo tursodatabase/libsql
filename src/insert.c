@@ -1291,7 +1291,7 @@ void sqlite3GenerateConstraintChecks(
           ** OP_Insert replace the existing entry than it is to delete the
           ** existing entry and then insert a new one. */
           sqlite3VdbeAddOp2(v, OP_Delete, baseCur, OPFLAG_ISNOOP);
-          sqlite3VdbeChangeP4(v, -1, pTab->zName, P4_STATIC);
+          sqlite3VdbeChangeP4(v, -1, (char *)pTab, P4_TABLE);
           if( pTab->pIndex ){
             sqlite3MultiWrite(pParse);
             sqlite3GenerateRowIndexDelete(pParse, pTab, baseCur, 0);
@@ -1481,7 +1481,7 @@ void sqlite3CompleteInsertion(
   }
   sqlite3VdbeAddOp3(v, OP_Insert, baseCur, regRec, regRowid);
   if( !pParse->nested ){
-    sqlite3VdbeChangeP4(v, -1, pTab->zName, P4_STATIC);
+    sqlite3VdbeChangeP4(v, -1, (char *)pTab, P4_TABLE);
   }
   sqlite3VdbeChangeP5(v, pik_flags);
 }
@@ -1803,7 +1803,7 @@ static int xferOptimization(
   sqlite3VdbeAddOp2(v, OP_RowData, iSrc, regData);
   sqlite3VdbeAddOp3(v, OP_Insert, iDest, regData, regRowid);
   sqlite3VdbeChangeP5(v, OPFLAG_NCHANGE|OPFLAG_LASTROWID|OPFLAG_APPEND);
-  sqlite3VdbeChangeP4(v, -1, pDest->zName, 0);
+  sqlite3VdbeChangeP4(v, -1, (char *)pDest, P4_TABLE);
   sqlite3VdbeAddOp2(v, OP_Next, iSrc, addr1);
   for(pDestIdx=pDest->pIndex; pDestIdx; pDestIdx=pDestIdx->pNext){
     for(pSrcIdx=pSrc->pIndex; ALWAYS(pSrcIdx); pSrcIdx=pSrcIdx->pNext){
