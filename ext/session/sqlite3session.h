@@ -11,10 +11,19 @@ extern "C" {
 
 #include "sqlite3.h"
 
+/*
+** CAPI3REF: Session Object Handle
+*/
 typedef struct sqlite3_session sqlite3_session;
+
+/*
+** CAPI3REF: Changeset Iterator Handle
+*/
 typedef struct sqlite3_changeset_iter sqlite3_changeset_iter;
 
 /*
+** CAPI3REF: Create A New Session Object
+**
 ** Create a new session object attached to database handle db. If successful,
 ** a pointer to the new object is written to *ppSession and SQLITE_OK is
 ** returned. If an error occurs, *ppSession is set to NULL and an SQLite
@@ -49,6 +58,8 @@ int sqlite3session_create(
 );
 
 /*
+** CAPI3REF: Delete A Session Object
+**
 ** Delete a session object previously allocated using 
 ** [sqlite3session_create()]. Once a session object has been deleted, the
 ** results of attempting to use pSession with any other session module
@@ -61,6 +72,8 @@ int sqlite3session_create(
 void sqlite3session_delete(sqlite3_session *pSession);
 
 /*
+** CAPI3REF: Enable Or Disable A Session Object
+**
 ** Enable or disable the recording of changes by a session object. When
 ** enabled, a session object records changes made to the database. When
 ** disabled - it does not. A newly created session object is enabled.
@@ -78,6 +91,8 @@ void sqlite3session_delete(sqlite3_session *pSession);
 int sqlite3session_enable(sqlite3_session *pSession, int bEnable);
 
 /*
+** CAPI3REF: Attach a Table to a Session Object
+**
 ** Attach a table to a session. All subsequent changes made to the table
 ** while the session object is enabled will be recorded. See documentation
 ** for [sqlite3session_changeset()] for further details.
@@ -101,6 +116,8 @@ int sqlite3session_attach(
 );
 
 /*
+** CAPI3REF: Generate A Changeset From A Session Object
+**
 ** Obtain a changeset containing changes to the tables attached to the 
 ** session object passed as the first argument. If successful, 
 ** set *ppChangeset to point to a buffer containing the changeset 
@@ -120,14 +137,14 @@ int sqlite3session_attach(
 **
 ** The contents of a changeset may be traversed using an iterator created
 ** using the [sqlite3changeset_start()] API. A changeset may be applied to
-** a database with a compatible schema using the [sqlite3changset_apply()]
+** a database with a compatible schema using the [sqlite3changeset_apply()]
 ** API.
 **
 ** Following a successful call to this function, it is the responsibility of
 ** the caller to eventually free the buffer that *ppChangeset points to using
 ** [sqlite3_free()].
 **
-** <h2>Changeset Generation</h2>
+** <h3>Changeset Generation</h3>
 **
 ** Once a table has been attached to a session object, the session object
 ** records the primary key values of all new rows inserted into the table.
@@ -187,6 +204,8 @@ int sqlite3session_changeset(
 );
 
 /*
+** CAPI3REF: Create An Iterator To Traverse A Changeset 
+**
 ** Create an iterator used to iterate through the contents of a changeset.
 ** If successful, *pp is set to point to the iterator handle and SQLITE_OK
 ** is returned. Otherwise, if an error occurs, *pp is set to zero and an
@@ -214,6 +233,8 @@ int sqlite3changeset_start(
 );
 
 /*
+** CAPI3REF: Advance A Changeset Iterator
+**
 ** This function may only be used with iterators created by function
 ** [sqlite3changeset_start()]. If it is called on an iterator passed to
 ** a conflict-handler callback by [sqlite3changeset_apply()], SQLITE_MISUSE
@@ -236,6 +257,8 @@ int sqlite3changeset_start(
 int sqlite3changeset_next(sqlite3_changeset_iter *pIter);
 
 /*
+** CAPI3REF: Obtain The Current Operation From A Changeset Iterator
+**
 ** The pIter argument passed to this function may either be an iterator
 ** passed to a conflict-handler by [sqlite3changeset_apply()], or an iterator
 ** created by [sqlite3changeset_start()]. In the latter case, the most recent
@@ -264,6 +287,8 @@ int sqlite3changeset_op(
 );
 
 /*
+** CAPI3REF: Obtain old.* Values From A Changeset Iterator
+**
 ** The pIter argument passed to this function may either be an iterator
 ** passed to a conflict-handler by [sqlite3changeset_apply()], or an iterator
 ** created by [sqlite3changeset_start()]. In the latter case, the most recent
@@ -292,6 +317,8 @@ int sqlite3changeset_old(
 );
 
 /*
+** CAPI3REF: Obtain new.* Values From A Changeset Iterator
+**
 ** The pIter argument passed to this function may either be an iterator
 ** passed to a conflict-handler by [sqlite3changeset_apply()], or an iterator
 ** created by [sqlite3changeset_start()]. In the latter case, the most recent
@@ -323,6 +350,8 @@ int sqlite3changeset_new(
 );
 
 /*
+** CAPI3REF: Obtain Conflicting Row Values From A Changeset Iterator
+**
 ** This function should only be used with iterator objects passed to a
 ** conflict-handler callback by [sqlite3changeset_apply()] with either
 ** SQLITE_CHANGESET_DATA or SQLITE_CHANGESET_CONFLICT. If this function
@@ -349,7 +378,10 @@ int sqlite3changeset_conflict(
 
 
 /*
-** Finalize an iterator allocated with sqlite3changeset_start().
+** CAPI3REF: Finalize a Changeset Iterator
+**
+** This function is used to finalize an iterator allocated with
+** sqlite3changeset_start().
 **
 ** This function should only be called on iterators created using the
 ** [sqlite3changeset_start()] function. If an application calls this
@@ -375,6 +407,8 @@ int sqlite3changeset_conflict(
 int sqlite3changeset_finalize(sqlite3_changeset_iter *pIter);
 
 /*
+** CAPI3REF: Invert A Changeset
+**
 ** This function is used to "invert" a changeset object. Applying an inverted
 ** changeset to a database reverses the effects of applying the uninverted
 ** changeset. Specifically:
@@ -400,6 +434,8 @@ int sqlite3changeset_invert(
 );
 
 /*
+** CAPI3REF: Apply A Changeset To A Database
+**
 ** Apply a changeset to a database. This function attempts to update the
 ** "main" database attached to handle db with the changes found in the
 ** changeset passed via the second and third arguments.
@@ -482,7 +518,7 @@ int sqlite3changeset_invert(
 **   [SQLITE_CHANGESET_REPLACE].
 **
 ** <dt>UPDATE Changes<dd>
-**   For each DELETE change, this function checks if the target database 
+**   For each UPDATE change, this function checks if the target database 
 **   contains a row with the same primary key value (or values) as the 
 **   original row values stored in the changeset. If it does, and the values 
 **   stored in all non-primary key columns also match the values stored in 
@@ -532,6 +568,8 @@ int sqlite3changeset_apply(
 );
 
 /* 
+** CAPI3REF: Constants Passed to The Conflict Handler
+**
 ** Values that may be passed as the second argument to a conflict-handler.
 **
 ** <dl>
@@ -576,7 +614,9 @@ int sqlite3changeset_apply(
 #define SQLITE_CHANGESET_CONSTRAINT 4
 
 /* 
-** Valid return values from a conflict-handler.
+** CAPI3REF: Constants Returned By The Conflict Handler
+**
+** A conflict handler callback must return one of the following three values.
 **
 ** <dl>
 ** <dt>SQLITE_CHANGESET_OMIT<dd>
