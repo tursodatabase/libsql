@@ -262,8 +262,8 @@ int sqlite3changeset_next(sqlite3_changeset_iter *pIter);
 ** The pIter argument passed to this function may either be an iterator
 ** passed to a conflict-handler by [sqlite3changeset_apply()], or an iterator
 ** created by [sqlite3changeset_start()]. In the latter case, the most recent
-** call to [sqlite3changeset_next()] must have returned SQLITE_ROW. If this
-** is not the case, this function returns SQLITE_MISUSE.
+** call to [sqlite3changeset_next()] must have returned [SQLITE_ROW]. If this
+** is not the case, this function returns [SQLITE_MISUSE].
 **
 ** If argument pzTab is not NULL, then *pzTab is set to point to a
 ** nul-terminated utf-8 encoded string containing the name of the table
@@ -271,9 +271,9 @@ int sqlite3changeset_next(sqlite3_changeset_iter *pIter);
 ** sqlite3changeset_next() is called on the iterator or until the 
 ** conflict-handler function returns. If pnCol is not NULL, then *pnCol is 
 ** set to the number of columns in the table affected by the change. Finally,
-** if pOp is not NULL, then *pOp is set to one of SQLITE_INSERT, SQLITE_DELETE
-** or SQLITE_UPDATE, depending on the type of change that the iterator
-** currently points to.
+** if pOp is not NULL, then *pOp is set to one of [SQLITE_INSERT], 
+** [SQLITE_DELETE] or [SQLITE_UPDATE], depending on the type of change that 
+** the iterator currently points to.
 **
 ** If no error occurs, SQLITE_OK is returned. If an error does occur, an
 ** SQLite error code is returned. The values of the output variables may not
@@ -294,12 +294,12 @@ int sqlite3changeset_op(
 ** created by [sqlite3changeset_start()]. In the latter case, the most recent
 ** call to [sqlite3changeset_next()] must have returned SQLITE_ROW. 
 ** Furthermore, it may only be called if the type of change that the iterator
-** currently points to is either SQLITE_DELETE or SQLITE_UPDATE. Otherwise,
-** this function returns SQLITE_MISUSE and sets *ppValue to NULL.
+** currently points to is either [SQLITE_DELETE] or [SQLITE_UPDATE]. Otherwise,
+** this function returns [SQLITE_MISUSE] and sets *ppValue to NULL.
 **
 ** Argument iVal must be greater than or equal to 0, and less than the number
 ** of columns in the table affected by the current change. Otherwise,
-** SQLITE_RANGE is returned and *ppValue is set to NULL.
+** [SQLITE_RANGE] is returned and *ppValue is set to NULL.
 **
 ** If successful, this function sets *ppValue to point to a protected
 ** sqlite3_value object containing the iVal'th value from the vector of 
@@ -324,12 +324,12 @@ int sqlite3changeset_old(
 ** created by [sqlite3changeset_start()]. In the latter case, the most recent
 ** call to [sqlite3changeset_next()] must have returned SQLITE_ROW. 
 ** Furthermore, it may only be called if the type of change that the iterator
-** currently points to is either SQLITE_UPDATE or SQLITE_INSERT. Otherwise,
-** this function returns SQLITE_MISUSE and sets *ppValue to NULL.
+** currently points to is either [SQLITE_UPDATE] or [SQLITE_INSERT]. Otherwise,
+** this function returns [SQLITE_MISUSE] and sets *ppValue to NULL.
 **
 ** Argument iVal must be greater than or equal to 0, and less than the number
 ** of columns in the table affected by the current change. Otherwise,
-** SQLITE_RANGE is returned and *ppValue is set to NULL.
+** [SQLITE_RANGE] is returned and *ppValue is set to NULL.
 **
 ** If successful, this function sets *ppValue to point to a protected
 ** sqlite3_value object containing the iVal'th value from the vector of 
@@ -354,13 +354,13 @@ int sqlite3changeset_new(
 **
 ** This function should only be used with iterator objects passed to a
 ** conflict-handler callback by [sqlite3changeset_apply()] with either
-** SQLITE_CHANGESET_DATA or SQLITE_CHANGESET_CONFLICT. If this function
-** is called on any other iterator, SQLITE_MISUSE is returned and *ppValue
+** [SQLITE_CHANGESET_DATA] or [SQLITE_CHANGESET_CONFLICT]. If this function
+** is called on any other iterator, [SQLITE_MISUSE] is returned and *ppValue
 ** is set to NULL.
 **
 ** Argument iVal must be greater than or equal to 0, and less than the number
 ** of columns in the table affected by the current change. Otherwise,
-** SQLITE_RANGE is returned and *ppValue is set to NULL.
+** [SQLITE_RANGE] is returned and *ppValue is set to NULL.
 **
 ** If successful, this function sets *ppValue to point to a protected
 ** sqlite3_value object containing the iVal'th value from the 
@@ -381,17 +381,17 @@ int sqlite3changeset_conflict(
 ** CAPI3REF: Finalize a Changeset Iterator
 **
 ** This function is used to finalize an iterator allocated with
-** sqlite3changeset_start().
+** [sqlite3changeset_start()].
 **
 ** This function should only be called on iterators created using the
 ** [sqlite3changeset_start()] function. If an application calls this
 ** function with an iterator passed to a conflict-handler by
-** [sqlite3changeset_apply()], SQLITE_MISUSE is immediately returned and the
+** [sqlite3changeset_apply()], [SQLITE_MISUSE] is immediately returned and the
 ** call has no effect.
 **
 ** If an error was encountered within a call to an sqlite3changeset_xxx()
-** function (for example an SQLITE_CORRUPT in sqlite3changeset_next() or an 
-** SQLITE_NOMEM in sqlite3changeset_new()) then an error code corresponding
+** function (for example an [SQLITE_CORRUPT] in [sqlite3changeset_next()] or an 
+** [SQLITE_NOMEM] in [sqlite3changeset_new()]) then an error code corresponding
 ** to that error is returned by this function. Otherwise, SQLITE_OK is
 ** returned. This is to allow the following pattern (pseudo-code):
 **
