@@ -188,7 +188,6 @@ proc do_conflict_test {tn args} {
   sqlite3session S db main
   foreach t $O(-tables) { S attach $t }
   execsql $O(-sql)
-
   set ::xConflict [list]
   sqlite3changeset_apply db2 [S changeset] xConflict
 

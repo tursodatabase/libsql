@@ -82,4 +82,56 @@ do_faultsim_test pagerfault-2 -faults oom-* -prep {
   faultsim_integrity_check
 }
 
+catch { db close }
+catch { db2 close }
+forcedelete test.db2 test.db
+sqlite3 db2 test.db2
+sqlite3 db test.db
+
+proc xConflict {op tbl type args} {
+  if { $type=="CONFLICT" || $type=="DATA" } {
+    return "REPLACE"
+  }
+  return "OMIT"
+}
+
+do_test 3.0 {
+  execsql {
+    PRAGMA encoding = 'utf16';
+    CREATE TABLE t1(a PRIMARY KEY, b);
+    INSERT INTO t1 VALUES(5, 32);
+  }
+  execsql {
+    PRAGMA encoding = 'utf16';
+    CREATE TABLE t1(a PRIMARY KEY, b NOT NULL);
+    INSERT INTO t1 VALUES(1, 2);
+    INSERT INTO t1 VALUES(2, 4);
+    INSERT INTO t1 VALUES(4, 16);
+  } db2
+} {}
+
+faultsim_save_and_close
+db2 close
+
+do_faultsim_test pagerfault-3 -faults oom-transient -prep {
+  catch {db2 close}
+  catch {db close}
+  faultsim_restore_and_reopen
+  sqlite3 db2 test.db2
+  sqlite3session S db main
+  S attach t1
+  execsql {
+    INSERT INTO t1 VALUES(1, 45);
+    INSERT INTO t1 VALUES(2, 55);
+    INSERT INTO t1 VALUES(3, 55);
+    UPDATE t1 SET a = 4 WHERE a = 5;
+  }
+} -body {
+  sqlite3changeset_apply db2 [S changeset] xConflict
+} -test {
+  catch { S delete }
+  faultsim_test_result {0 {}} {1 SQLITE_NOMEM}
+  if {$testrc==0} { compare_db db db2 }
+}
+
 finish_test

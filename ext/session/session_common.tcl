@@ -83,7 +83,11 @@ proc compare_db {db1 db2} {
   set lot1 [$db1 eval $sql]
   set lot2 [$db2 eval $sql]
 
-  if {$lot1 != $lot2} { error "databases contain different tables" }
+  if {$lot1 != $lot2} { 
+    puts $lot1
+    puts $lot2
+    error "databases contain different tables" 
+  }
 
   foreach tbl $lot1 {
     set col1 [list]

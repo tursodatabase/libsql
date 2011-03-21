@@ -150,6 +150,13 @@ set set_of_tests {
     INSERT INTO %T1% SELECT a+8, b+8 FROM %T1%;
     INSERT INTO %T1% SELECT a+256, b+256 FROM %T1%;
   }
+
+  16 {
+    INSERT INTO %T4% VALUES('abc', 'def');
+    INSERT INTO %T4% VALUES('def', 'abc');
+  }
+  17 { UPDATE %T4% SET b = 1 }
+  18 { DELETE FROM %T4% WHERE 1 }
 }
 
 test_reset
@@ -157,9 +164,10 @@ do_common_sql {
   CREATE TABLE t1(a PRIMARY KEY, b);
   CREATE TABLE t2(a, b INTEGER PRIMARY KEY);
   CREATE TABLE t3(a, b, c, PRIMARY KEY(a, b));
+  CREATE TABLE t4(a, b, PRIMARY KEY(b, a));
 }
 
-foreach {tn sql} [string map {%T1% t1 %T2% t2 %T3% t3} $set_of_tests] {
+foreach {tn sql} [string map {%T1% t1 %T2% t2 %T3% t3 %T4% t4} $set_of_tests] {
   do_then_apply_sql $sql
   do_test 2.$tn { compare_db db db2 } {}
 }
@@ -182,21 +190,23 @@ do_test 3.0 {
     CREATE TABLE aux.t1(a PRIMARY KEY, b);
     CREATE TABLE aux.t2(a, b INTEGER PRIMARY KEY);
     CREATE TABLE aux.t3(a, b, c, PRIMARY KEY(a, b));
+    CREATE TABLE aux.t4(a, b, PRIMARY KEY(b, a));
   }
   execsql {
     CREATE TABLE t1(a PRIMARY KEY, b);
     CREATE TABLE t2(a, b INTEGER PRIMARY KEY);
     CREATE TABLE t3(a, b, c, PRIMARY KEY(a, b));
+    CREATE TABLE t4(a, b, PRIMARY KEY(b, a));
   } db2
 } {}
 
 proc xTrace {args} { puts $args }
 
 foreach {tn sql} [
-  string map {%T1% aux.t1 %T2% aux.t2 %T3% aux.t3} $set_of_tests
+  string map {%T1% aux.t1 %T2% aux.t2 %T3% aux.t3 %T4% aux.t4} $set_of_tests
 ] {
   do_then_apply_sql $sql aux
-  do_test 3.$tn { compare_db db3 db2 } {}
+  do_test 3.$tn { compare_db db2 db3 } {}
 }
 catch {db3 close}
 
