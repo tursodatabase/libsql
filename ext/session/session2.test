@@ -111,6 +111,75 @@ do_iterator_test 1.1 t1 {
   {INSERT t1 {} {f 1.5 f 99.9}}
 }
 
+# Execute each of the following blocks of SQL on database [db1]. Collect
+# changes using a session object. Apply the resulting changeset to
+# database [db2]. Then check that the contents of the two databases are
+# identical.
+#
+
+set set_of_tests {
+  1 { INSERT INTO %T1% VALUES(1, 2) } 
+
+  2 {
+    INSERT INTO %T2% VALUES(1, NULL);
+    INSERT INTO %T2% VALUES(2, NULL);
+    INSERT INTO %T2% VALUES(3, NULL);
+    DELETE FROM %T2% WHERE a = 2;
+    INSERT INTO %T2% VALUES(4, NULL);
+    UPDATE %T2% SET b=0 WHERE b=1;
+  } 
+
+  3 { INSERT INTO %T3% SELECT *, NULL FROM %T2% }
+
+  4 {
+    INSERT INTO %T3% SELECT a||a, b||b, NULL FROM %T3%;
+    DELETE FROM %T3% WHERE rowid%2;
+  }
+
+  5 { UPDATE %T3% SET c = a||b }
+
+  6 { UPDATE %T1% SET a = 32 }
+
+  7 { 
+    INSERT INTO %T1% SELECT randomblob(32), randomblob(32) FROM %T1%; 
+    INSERT INTO %T1% SELECT randomblob(32), randomblob(32) FROM %T1%; 
+    INSERT INTO %T1% SELECT randomblob(32), randomblob(32) FROM %T1%; 
+    INSERT INTO %T1% SELECT randomblob(32), randomblob(32) FROM %T1%; 
+    INSERT INTO %T1% SELECT randomblob(32), randomblob(32) FROM %T1%; 
+    INSERT INTO %T1% SELECT randomblob(32), randomblob(32) FROM %T1%; 
+    INSERT INTO %T1% SELECT randomblob(32), randomblob(32) FROM %T1%; 
+    INSERT INTO %T1% SELECT randomblob(32), randomblob(32) FROM %T1%; 
+    INSERT INTO %T1% SELECT randomblob(32), randomblob(32) FROM %T1%; 
+    INSERT INTO %T1% SELECT randomblob(32), randomblob(32) FROM %T1%; 
+    INSERT INTO %T1% SELECT randomblob(32), randomblob(32) FROM %T1%; 
+    DELETE FROM %T1% WHERE (rowid%3)==0;
+  }
+
+  8 {
+    BEGIN;
+      INSERT INTO %T1% SELECT randomblob(32), randomblob(32) FROM %T1%;
+    ROLLBACK;
+  }
+  9 {
+    BEGIN;
+      UPDATE %T1% SET b = 'xxx';
+    ROLLBACK;
+  }
+  10 {
+    BEGIN;
+      DELETE FROM %T1% WHERE 1;
+    ROLLBACK;
+  }
+  11 {
+    INSERT INTO %T1% VALUES(randomblob(21000), randomblob(0));
+    INSERT INTO %T1% VALUES(1.5, 1.5);
+    INSERT INTO %T1% VALUES(4.56, -99.999999999999999999999);
+  }
+  12 {
+    INSERT INTO %T2% VALUES(NULL, NULL);
+  }
+}
+
 test_reset
 do_common_sql {
   CREATE TABLE t1(a PRIMARY KEY, b);
@@ -118,65 +187,7 @@ do_common_sql {
   CREATE TABLE t3(a, b, c, PRIMARY KEY(a, b));
 }
 
-# Execute each of the following blocks of SQL on database [db1]. Collect
-# changes using a session object. Apply the resulting changeset to
-# database [db2]. Then check that the contents of the two databases are
-# identical.
-#
-foreach {tn sql} {
-  1 { INSERT INTO t1 VALUES(1, 2) } 
-
-  2 {
-    INSERT INTO t2 VALUES(1, NULL);
-    INSERT INTO t2 VALUES(2, NULL);
-    INSERT INTO t2 VALUES(3, NULL);
-    DELETE FROM t2 WHERE a = 2;
-    INSERT INTO t2 VALUES(4, NULL);
-    UPDATE t2 SET b=0 WHERE b=1;
-  } 
-
-  3 { INSERT INTO t3 SELECT *, NULL FROM t2 }
-
-  4 {
-    INSERT INTO t3 SELECT a||a, b||b, NULL FROM t3;
-    DELETE FROM t3 WHERE rowid%2;
-  }
-
-  5 { UPDATE t3 SET c = a||b }
-
-  6 { UPDATE t1 SET a = 32 }
-
-  7 { 
-    INSERT INTO t1 SELECT randomblob(32), randomblob(32) FROM t1; --    2
-    INSERT INTO t1 SELECT randomblob(32), randomblob(32) FROM t1; --    4
-    INSERT INTO t1 SELECT randomblob(32), randomblob(32) FROM t1; --    8
-    INSERT INTO t1 SELECT randomblob(32), randomblob(32) FROM t1; --   16
-    INSERT INTO t1 SELECT randomblob(32), randomblob(32) FROM t1; --   32
-    INSERT INTO t1 SELECT randomblob(32), randomblob(32) FROM t1; --   64
-    INSERT INTO t1 SELECT randomblob(32), randomblob(32) FROM t1; --  128
-    INSERT INTO t1 SELECT randomblob(32), randomblob(32) FROM t1; --  256
-    INSERT INTO t1 SELECT randomblob(32), randomblob(32) FROM t1; --  512
-    INSERT INTO t1 SELECT randomblob(32), randomblob(32) FROM t1; -- 1024
-    INSERT INTO t1 SELECT randomblob(32), randomblob(32) FROM t1; -- 2048
-    DELETE FROM t1 WHERE (rowid%3)==0;
-  }
-
-  8 {
-    BEGIN;
-      INSERT INTO t1 SELECT randomblob(32), randomblob(32) FROM t1;
-    ROLLBACK;
-  }
-  9 {
-    BEGIN;
-      UPDATE t1 SET b = 'xxx';
-    ROLLBACK;
-  }
-  10 {
-    BEGIN;
-      DELETE FROM t1 WHERE 1;
-    ROLLBACK;
-  }
-} {
+foreach {tn sql} [string map {%T1% t1 %T2% t2 %T3% t3} $set_of_tests] {
   do_then_apply_sql $sql
   do_test 1.$tn { compare_db db db2 } {}
 }
@@ -209,73 +220,61 @@ do_test 2.0 {
 
 proc xTrace {args} { puts $args }
 
-foreach {tn sql} {
-
-  1 { INSERT INTO aux.t1 VALUES(1, 2) } 
-
-  2 {
-    INSERT INTO aux.t2 VALUES(1, NULL);
-    INSERT INTO aux.t2 VALUES(2, NULL);
-    INSERT INTO aux.t2 VALUES(3, NULL);
-    DELETE FROM aux.t2 WHERE a = 2;
-    INSERT INTO aux.t2 VALUES(4, NULL);
-    UPDATE aux.t2 SET b=0 WHERE b=1;
-  } 
-
-  3 { INSERT INTO aux.t3 SELECT *, NULL FROM aux.t2 }
-
-  4 {
-    INSERT INTO aux.t3 SELECT a||a, b||b, NULL FROM aux.t3;
-    DELETE FROM aux.t3 WHERE rowid%2;
-  }
-
-  5 { UPDATE aux.t3 SET c = a||b }
-
-  6 { UPDATE aux.t1 SET a = 32 }
-
-  7 { 
-    INSERT INTO aux.t1 SELECT randomblob(32), randomblob(32) FROM aux.t1; 
-    INSERT INTO aux.t1 SELECT randomblob(32), randomblob(32) FROM aux.t1; 
-    INSERT INTO aux.t1 SELECT randomblob(32), randomblob(32) FROM aux.t1; 
-    INSERT INTO aux.t1 SELECT randomblob(32), randomblob(32) FROM aux.t1; 
-    INSERT INTO aux.t1 SELECT randomblob(32), randomblob(32) FROM aux.t1; 
-    INSERT INTO aux.t1 SELECT randomblob(32), randomblob(32) FROM aux.t1; 
-    INSERT INTO aux.t1 SELECT randomblob(32), randomblob(32) FROM aux.t1; 
-    INSERT INTO aux.t1 SELECT randomblob(32), randomblob(32) FROM aux.t1; 
-    INSERT INTO aux.t1 SELECT randomblob(32), randomblob(32) FROM aux.t1; 
-    INSERT INTO aux.t1 SELECT randomblob(32), randomblob(32) FROM aux.t1; 
-    INSERT INTO aux.t1 SELECT randomblob(32), randomblob(32) FROM aux.t1; 
-    DELETE FROM aux.t1 WHERE (rowid%3)==0;
-  }
-
-  8 {
-    BEGIN;
-      INSERT INTO aux.t1 SELECT randomblob(32), randomblob(32) FROM aux.t1;
-    ROLLBACK;
-  }
-  9 {
-    BEGIN;
-      UPDATE aux.t1 SET b = 'xxx';
-    ROLLBACK;
-  }
-  10 {
-    BEGIN;
-      DELETE FROM aux.t1 WHERE 1;
-    ROLLBACK;
-  }
-  11 {
-    INSERT INTO aux.t1 VALUES(randomblob(21000), randomblob(0));
-    INSERT INTO aux.t1 VALUES(1.5, 1.5);
-    INSERT INTO aux.t1 VALUES(4.56, -99.999999999999999999999);
-  }
-
-} {
+foreach {tn sql} [
+  string map {%T1% aux.t1 %T2% aux.t2 %T3% aux.t3} $set_of_tests
+] {
   do_then_apply_sql $sql aux
   do_test 2.$tn { compare_db db3 db2 } {}
 }
-
-
 catch {db3 close}
+
+
+#-------------------------------------------------------------------------
+# The following tests verify that NULL values in primary key columns are
+# handled correctly by the session module.
+#
+test_reset
+do_execsql_test 3.0 {
+  CREATE TABLE t1(a PRIMARY KEY);
+  CREATE TABLE t2(a, b, c, PRIMARY KEY(c, b));
+  CREATE TABLE t3(a, b INTEGER PRIMARY KEY);
+}
+
+foreach {tn sql changeset} {
+  1 {
+    INSERT INTO t1 VALUES(123);
+    INSERT INTO t1 VALUES(NULL);
+    INSERT INTO t1 VALUES(456);
+  } {
+    {INSERT t1 {} {i 456}} 
+    {INSERT t1 {} {i 123}}
+  }
+
+  2 {
+    UPDATE t1 SET a = NULL;
+  } {
+    {DELETE t1 {i 456} {}}
+    {DELETE t1 {i 123} {}}
+  }
+
+  3 { DELETE FROM t1 } { }
+
+  4 { 
+    INSERT INTO t3 VALUES(NULL, NULL)
+  } {
+    {INSERT t3 {} {n {} i 1}} 
+  }
+
+  5 { INSERT INTO t2 VALUES(1, 2, NULL) }    { }
+  6 { INSERT INTO t2 VALUES(1, NULL, 3) }    { }
+  7 { INSERT INTO t2 VALUES(1, NULL, NULL) } { }
+  8 { INSERT INTO t2 VALUES(1, 2, 3) }       { {INSERT t2 {} {i 1 i 2 i 3}} }
+  9 { DELETE FROM t2 WHERE 1 }               { {DELETE t2 {i 1 i 2 i 3} {}} }
+
+} {
+  do_iterator_test 3.$tn {t1 t2 t3} $sql $changeset
+}
+
 
 finish_test
 

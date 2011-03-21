@@ -106,6 +106,9 @@ int sqlite3session_enable(sqlite3_session *pSession, int bEnable);
 ** is it an error if the named table does not have a PRIMARY KEY. However,
 ** no changes will be recorded in either of these scenarios.
 **
+** Changes are not recorded for individual rows that have NULL values stored
+** in one or more of their PRIMARY KEY columns.
+**
 ** SQLITE_OK is returned if the table is successfully attached to the session
 ** object. Or, if an error occurs, an SQLite error code (e.g. SQLITE_NOMEM)
 ** is returned.
@@ -135,6 +138,16 @@ int sqlite3session_attach(
 ** modifies the values of primary key columns. If such a change is made, it
 ** is represented in a changeset as a DELETE followed by an INSERT.
 **
+** Changes are not recorded for rows that have NULL values stored in one or 
+** more of their PRIMARY KEY columns. If such a row is inserted or deleted,
+** no corresponding change is present in the changesets returned by this
+** function. If an existing row with one or more NULL values stored in
+** PRIMARY KEY columns is updated so that all PRIMARY KEY columns are non-NULL,
+** only an INSERT is appears in the changeset. Similarly, if an existing row
+** with non-NULL PRIMARY KEY values is updated so that one or more of its
+** PRIMARY KEY columns are set to NULL, the resulting changeset contains a
+** DELETE change only.
+**
 ** The contents of a changeset may be traversed using an iterator created
 ** using the [sqlite3changeset_start()] API. A changeset may be applied to
 ** a database with a compatible schema using the [sqlite3changeset_apply()]
@@ -152,6 +165,10 @@ int sqlite3session_attach(
 ** deleted or updated rows. For each unique primary key value, data is only
 ** recorded once - the first time a row with said primary key is inserted,
 ** updated or deleted in the lifetime of the session.
+**
+** There is one exception to the previous paragraph: when a row is inserted,
+** updated or deleted, if one or more of its primary key columns contains a
+** NULL value, no record of the change is made.
 **
 ** The session object therefore accumulates two types of records - those
 ** that consist of primary key values only (created when the user inserts

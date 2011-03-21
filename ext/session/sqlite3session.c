@@ -286,11 +286,13 @@ static unsigned int sessionPreupdateHash(
   sqlite3 *db,                    /* Database handle */
   SessionTable *pTab,             /* Session table handle */
   int bNew,                       /* True to hash the new.* PK */
-  int *piHash                     /* OUT: Hash value */
+  int *piHash,                    /* OUT: Hash value */
+  int *pbNullPK
 ){
   unsigned int h = 0;             /* Hash value to return */
   int i;                          /* Used to iterate through columns */
 
+  assert( *pbNullPK==0 );
   assert( pTab->nCol==sqlite3_preupdate_count(db) );
   for(i=0; i<pTab->nCol; i++){
     if( pTab->abPK[i] ){
@@ -329,6 +331,11 @@ static unsigned int sessionPreupdateHash(
           h = sessionHashAppendBlob(h, n, z);
           break;
         }
+
+        default:
+          assert( eType==SQLITE_NULL );
+          *pbNullPK = 1;
+          return SQLITE_OK;
       }
     }
   }
@@ -357,27 +364,22 @@ static unsigned int sessionChangeHash(
     int eType = *a++;
     int isPK = pTab->abPK[i];
 
+    /* It is not possible for eType to be SQLITE_NULL here. The session 
+    ** module does not record changes for rows with NULL values stored in
+    ** primary key columns. */
+    assert( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT 
+         || eType==SQLITE_TEXT || eType==SQLITE_BLOB 
+    );
+
     if( isPK ) h = HASH_APPEND(h, eType);
-    switch( eType ){
-      case SQLITE_INTEGER:
-      case SQLITE_FLOAT: {
-        if( isPK ){
-          i64 iVal = sessionGetI64(a);
-          h = sessionHashAppendI64(h, iVal);
-        }
-        a += 8;
-        break;
-      }
-      case SQLITE_TEXT:
-      case SQLITE_BLOB: {
-        int n;
-        a += sessionVarintGet(a, &n);
-        if( isPK ){
-          h = sessionHashAppendBlob(h, n, a);
-        }
-        a += n;
-        break;
-      }
+    if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
+      if( isPK ) h = sessionHashAppendI64(h, sessionGetI64(a));
+      a += 8;
+    }else{
+      int n; 
+      a += sessionVarintGet(a, &n);
+      if( isPK ) h = sessionHashAppendBlob(h, n, a);
+      a += n;
     }
   }
   return (h % nBucket);
@@ -665,6 +667,7 @@ static void sessionPreupdateOneChange(
   SessionChange *pChange;
   SessionChange *pC;
   int iHash; 
+  int bNullPk = 0; 
   int rc = SQLITE_OK;
 
   if( pSession->rc ) return;
@@ -676,71 +679,73 @@ static void sessionPreupdateOneChange(
   if( sessionGrowHash(pSession, pTab) ) return;
 
   /* Search the hash table for an existing entry for rowid=iKey2. If
-   ** one is found, store a pointer to it in pChange and unlink it from
-   ** the hash table. Otherwise, set pChange to NULL.
-   */
-  rc = sessionPreupdateHash(db, pTab, op==SQLITE_INSERT, &iHash);
-  for(pC=pTab->apChange[iHash]; rc==SQLITE_OK && pC; pC=pC->pNext){
-    int bEqual;
-    rc = sessionPreupdateEqual(db, pTab, pC, op==SQLITE_INSERT, &bEqual);
-    if( bEqual ) break;
-  }
-  if( pC==0 ){
-    /* Create a new change object containing all the old values (if
-     ** this is an SQLITE_UPDATE or SQLITE_DELETE), or just the PK
-     ** values (if this is an INSERT). */
-    int nByte;              /* Number of bytes to allocate */
-    int i;                  /* Used to iterate through columns */
-
-    pTab->nEntry++;
-
-    /* Figure out how large an allocation is required */
-    nByte = sizeof(SessionChange);
-    for(i=0; i<pTab->nCol && rc==SQLITE_OK; i++){
-      sqlite3_value *p = 0;
-      if( op!=SQLITE_INSERT ){
-        rc = sqlite3_preupdate_old(pSession->db, i, &p);
-      }else if( 1 || pTab->abPK[i] ){
-        rc = sqlite3_preupdate_new(pSession->db, i, &p);
-      }
-      if( p && rc==SQLITE_OK ){
-        rc = sessionSerializeValue(0, p, &nByte);
-      }
+  ** one is found, store a pointer to it in pChange and unlink it from
+  ** the hash table. Otherwise, set pChange to NULL.
+  */
+  rc = sessionPreupdateHash(db, pTab, op==SQLITE_INSERT, &iHash, &bNullPk);
+  if( bNullPk==0 ){
+    for(pC=pTab->apChange[iHash]; rc==SQLITE_OK && pC; pC=pC->pNext){
+      int bEqual;
+      rc = sessionPreupdateEqual(db, pTab, pC, op==SQLITE_INSERT, &bEqual);
+      if( bEqual ) break;
     }
-
-    /* Allocate the change object */
-    pChange = (SessionChange *)sqlite3_malloc(nByte);
-    if( !pChange ){
-      rc = SQLITE_NOMEM;
-    }else{
-      memset(pChange, 0, sizeof(SessionChange));
-      pChange->aRecord = (u8 *)&pChange[1];
-    }
-
-    /* Populate the change object */
-    nByte = 0;
-    for(i=0; i<pTab->nCol && rc==SQLITE_OK; i++){
-      sqlite3_value *p = 0;
-      if( op!=SQLITE_INSERT ){
-        rc = sqlite3_preupdate_old(pSession->db, i, &p);
-      }else if( 1 || pTab->abPK[i] ){
-        rc = sqlite3_preupdate_new(pSession->db, i, &p);
+    if( pC==0 ){
+      /* Create a new change object containing all the old values (if
+       ** this is an SQLITE_UPDATE or SQLITE_DELETE), or just the PK
+       ** values (if this is an INSERT). */
+      int nByte;              /* Number of bytes to allocate */
+      int i;                  /* Used to iterate through columns */
+  
+      pTab->nEntry++;
+  
+      /* Figure out how large an allocation is required */
+      nByte = sizeof(SessionChange);
+      for(i=0; i<pTab->nCol && rc==SQLITE_OK; i++){
+        sqlite3_value *p = 0;
+        if( op!=SQLITE_INSERT ){
+          rc = sqlite3_preupdate_old(pSession->db, i, &p);
+        }else if( 1 || pTab->abPK[i] ){
+          rc = sqlite3_preupdate_new(pSession->db, i, &p);
+        }
+        if( p && rc==SQLITE_OK ){
+          rc = sessionSerializeValue(0, p, &nByte);
+        }
       }
-      if( p && rc==SQLITE_OK ){
-        rc = sessionSerializeValue(&pChange->aRecord[nByte], p, &nByte);
+  
+      /* Allocate the change object */
+      pChange = (SessionChange *)sqlite3_malloc(nByte);
+      if( !pChange ){
+        rc = SQLITE_NOMEM;
+      }else{
+        memset(pChange, 0, sizeof(SessionChange));
+        pChange->aRecord = (u8 *)&pChange[1];
       }
-    }
-    pChange->nRecord = nByte;
-
-    /* If an error has occurred, mark the session object as failed. */
-    if( rc!=SQLITE_OK ){
-      sqlite3_free(pChange);
-      pSession->rc = rc;
-    }else{
-      /* Add the change back to the hash-table */
-      pChange->bInsert = (op==SQLITE_INSERT);
-      pChange->pNext = pTab->apChange[iHash];
-      pTab->apChange[iHash] = pChange;
+  
+      /* Populate the change object */
+      nByte = 0;
+      for(i=0; i<pTab->nCol && rc==SQLITE_OK; i++){
+        sqlite3_value *p = 0;
+        if( op!=SQLITE_INSERT ){
+          rc = sqlite3_preupdate_old(pSession->db, i, &p);
+        }else if( 1 || pTab->abPK[i] ){
+          rc = sqlite3_preupdate_new(pSession->db, i, &p);
+        }
+        if( p && rc==SQLITE_OK ){
+          rc = sessionSerializeValue(&pChange->aRecord[nByte], p, &nByte);
+        }
+      }
+      pChange->nRecord = nByte;
+  
+      /* If an error has occurred, mark the session object as failed. */
+      if( rc!=SQLITE_OK ){
+        sqlite3_free(pChange);
+        pSession->rc = rc;
+      }else{
+        /* Add the change back to the hash-table */
+        pChange->bInsert = (op==SQLITE_INSERT);
+        pChange->pNext = pTab->apChange[iHash];
+        pTab->apChange[iHash] = pChange;
+      }
     }
   }
 }
