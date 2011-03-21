@@ -1348,21 +1348,23 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
 
   /* If the old.* record has not yet been loaded into memory, do so now. */
   if( p->pUnpacked==0 ){
-    u32 nRecord;
-    u8 *aRecord;
+    u32 nRec;
+    u8 *aRec;
 
-    rc = sqlite3BtreeDataSize(p->pCsr->pCursor, &nRecord);
+    rc = sqlite3BtreeDataSize(p->pCsr->pCursor, &nRec);
     if( rc!=SQLITE_OK ) goto preupdate_old_out;
-    aRecord = sqlite3DbMallocRaw(db, nRecord);
-    if( !aRecord ) goto preupdate_old_out;
-    rc = sqlite3BtreeData(p->pCsr->pCursor, 0, nRecord, aRecord);
+    aRec = sqlite3DbMallocRaw(db, nRec);
+    if( !aRec ) goto preupdate_old_out;
+    rc = sqlite3BtreeData(p->pCsr->pCursor, 0, nRec, aRec);
+    if( rc==SQLITE_OK ){
+      p->pUnpacked = sqlite3VdbeRecordUnpack(&p->keyinfo, nRec, aRec, 0, 0);
+      if( !p->pUnpacked ) rc = SQLITE_NOMEM;
+    }
     if( rc!=SQLITE_OK ){
-      sqlite3DbFree(db, aRecord);
+      sqlite3DbFree(db, aRec);
       goto preupdate_old_out;
     }
-
-    p->pUnpacked = sqlite3VdbeRecordUnpack(&p->keyinfo, nRecord, aRecord, 0, 0);
-    p->aRecord = aRecord;
+    p->aRecord = aRec;
   }
 
   if( iIdx>=p->pUnpacked->nField ){

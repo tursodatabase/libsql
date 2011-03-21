@@ -28,67 +28,6 @@ proc test_reset {} {
   sqlite3 db2 test.db2
 }
 
-proc do_common_sql {sql} {
-  execsql $sql db
-  execsql $sql db2
-}
-proc xConflict args { return "OMIT" }
-
-proc do_then_apply_sql {sql {dbname main}} {
-
-  sqlite3session S db $dbname
-  db eval "SELECT name FROM $dbname.sqlite_master WHERE type = 'table'" {
-    S attach $name
-  }
-
-  db eval $sql
-  sqlite3changeset_apply db2 [S changeset] xConflict
-  S delete
-}
-
-proc do_iterator_test {tn tbl_list sql res} {
-  sqlite3session S db main
-  foreach t $tbl_list {S attach $t}
-  execsql $sql
-
-  set r [list]
-  foreach v $res { lappend r $v }
-
-  set x [list]
-  sqlite3session_foreach c [S changeset] { lappend x $c }
-  uplevel do_test $tn [list [list set {} $x]] [list $r]
-
-  S delete
-}
-
-# Compare the contents of all tables in [db1] and [db2]. Throw an error if 
-# they are not identical, or return an empty string if they are.
-#
-proc compare_db {db1 db2} {
-
-  set sql {SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name}
-  set lot1 [$db1 eval $sql]
-  set lot2 [$db2 eval $sql]
-
-  if {$lot1 != $lot2} { error "databases contain different tables" }
-
-  foreach tbl $lot1 {
-    set col1 [list]
-    set col2 [list]
-
-    $db1 eval "PRAGMA table_info = $tbl" { lappend col1 $name }
-    $db2 eval "PRAGMA table_info = $tbl" { lappend col2 $name }
-    if {$col1 != $col2} { error "table $tbl schema mismatch" }
-
-    set sql "SELECT * FROM $tbl ORDER BY [join $col1 ,]"
-    set data1 [$db1 eval $sql]
-    set data2 [$db2 eval $sql]
-    if {$data1 != $data2} { error "table $tbl data mismatch" }
-  }
-
-  return ""
-}
-
 ##########################################################################
 # End of proc definitions. Start of tests.
 ##########################################################################
@@ -105,11 +44,12 @@ do_iterator_test 1.1 t1 {
   {DELETE t1 {t i t one} {}} 
   {INSERT t1 {} {t ii t two}}
 }
-do_iterator_test 1.1 t1 {
+do_iterator_test 1.2 t1 {
   INSERT INTO t1 VALUES(1.5, 99.9)
 } {
   {INSERT t1 {} {f 1.5 f 99.9}}
 }
+
 
 # Execute each of the following blocks of SQL on database [db1]. Collect
 # changes using a session object. Apply the resulting changeset to
@@ -178,6 +118,38 @@ set set_of_tests {
   12 {
     INSERT INTO %T2% VALUES(NULL, NULL);
   }
+
+  13 {
+    DELETE FROM %T1% WHERE 1;
+
+    -- Insert many rows with real primary keys. Enough to force the session
+    -- objects hash table to resize. 
+    INSERT INTO %T1% VALUES(0.1, 0.1);
+    INSERT INTO %T1% SELECT a+0.1, b+0.1 FROM %T1%;
+    INSERT INTO %T1% SELECT a+0.2, b+0.2 FROM %T1%;
+    INSERT INTO %T1% SELECT a+0.4, b+0.4 FROM %T1%;
+    INSERT INTO %T1% SELECT a+0.8, b+0.8 FROM %T1%;
+    INSERT INTO %T1% SELECT a+1.6, b+1.6 FROM %T1%;
+    INSERT INTO %T1% SELECT a+3.2, b+3.2 FROM %T1%;
+    INSERT INTO %T1% SELECT a+6.4, b+6.4 FROM %T1%;
+    INSERT INTO %T1% SELECT a+12.8, b+12.8 FROM %T1%;
+    INSERT INTO %T1% SELECT a+25.6, b+25.6 FROM %T1%;
+    INSERT INTO %T1% SELECT a+51.2, b+51.2 FROM %T1%;
+    INSERT INTO %T1% SELECT a+102.4, b+102.4 FROM %T1%;
+    INSERT INTO %T1% SELECT a+204.8, b+204.8 FROM %T1%;
+  }
+
+  14 {
+    DELETE FROM %T1% WHERE 1;
+  }
+
+  15 {
+    INSERT INTO %T1% VALUES(1, 1);
+    INSERT INTO %T1% SELECT a+2, b+2 FROM %T1%;
+    INSERT INTO %T1% SELECT a+4, b+4 FROM %T1%;
+    INSERT INTO %T1% SELECT a+8, b+8 FROM %T1%;
+    INSERT INTO %T1% SELECT a+256, b+256 FROM %T1%;
+  }
 }
 
 test_reset
@@ -189,7 +161,7 @@ do_common_sql {
 
 foreach {tn sql} [string map {%T1% t1 %T2% t2 %T3% t3} $set_of_tests] {
   do_then_apply_sql $sql
-  do_test 1.$tn { compare_db db db2 } {}
+  do_test 2.$tn { compare_db db db2 } {}
 }
 
 # The following block of tests is similar to the last, except that the
@@ -200,7 +172,7 @@ foreach {tn sql} [string map {%T1% t1 %T2% t2 %T3% t3} $set_of_tests] {
 test_reset
 forcedelete test.db3
 sqlite3 db3 test.db3
-do_test 2.0 {
+do_test 3.0 {
   execsql {
     ATTACH 'test.db3' AS 'aux';
     CREATE TABLE t1(a, b PRIMARY KEY);
@@ -224,7 +196,7 @@ foreach {tn sql} [
   string map {%T1% aux.t1 %T2% aux.t2 %T3% aux.t3} $set_of_tests
 ] {
   do_then_apply_sql $sql aux
-  do_test 2.$tn { compare_db db3 db2 } {}
+  do_test 3.$tn { compare_db db3 db2 } {}
 }
 catch {db3 close}
 
@@ -234,7 +206,7 @@ catch {db3 close}
 # handled correctly by the session module.
 #
 test_reset
-do_execsql_test 3.0 {
+do_execsql_test 4.0 {
   CREATE TABLE t1(a PRIMARY KEY);
   CREATE TABLE t2(a, b, c, PRIMARY KEY(c, b));
   CREATE TABLE t3(a, b INTEGER PRIMARY KEY);
@@ -272,7 +244,7 @@ foreach {tn sql changeset} {
   9 { DELETE FROM t2 WHERE 1 }               { {DELETE t2 {i 1 i 2 i 3} {}} }
 
 } {
-  do_iterator_test 3.$tn {t1 t2 t3} $sql $changeset
+  do_iterator_test 4.$tn {t1 t2 t3} $sql $changeset
 }
 
 

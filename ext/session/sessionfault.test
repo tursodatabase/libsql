@@ -1,0 +1,85 @@
+# 2011 Mar 21
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# The focus of this file is testing the session module.
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+} 
+source [file join [file dirname [info script]] session_common.tcl]
+source $testdir/tester.tcl
+
+set testprefix sessionfault
+
+forcedelete test.db2
+sqlite3 db2 test.db2
+
+do_common_sql {
+  CREATE TABLE t1(a, b, c, PRIMARY KEY(a, b));
+  INSERT INTO t1 VALUES(1, 2, 3);
+  INSERT INTO t1 VALUES(4, 5, 6);
+}
+faultsim_save_and_close
+db2 close
+
+# Test OOM error handling when collecting and applying a simple changeset.
+#
+do_faultsim_test pagerfault-1 -faults oom-* -prep {
+  catch {db2 close}
+  catch {db close}
+  faultsim_restore_and_reopen
+  sqlite3 db2 test.db2
+} -body {
+  do_then_apply_sql {
+    INSERT INTO t1 VALUES(7, 8, 9);
+    UPDATE t1 SET c = 10 WHERE a = 1;
+    DELETE FROM t1 WHERE a = 4;
+  }
+} -test {
+  faultsim_test_result {0 {}} {1 SQLITE_NOMEM}
+  faultsim_integrity_check
+  if {$testrc==0} { compare_db db db2 }
+}
+
+# This test case is designed so that a malloc() failure occurs while
+# resizing the session object hash-table from 256 to 512 buckets. This
+# is not an error, just a sub-optimal condition.
+#
+do_faultsim_test pagerfault-2 -faults oom-* -prep {
+  catch {db2 close}
+  catch {db close}
+  faultsim_restore_and_reopen
+  sqlite3 db2 test.db2
+
+  sqlite3session S db main
+  S attach t1
+  execsql { BEGIN }
+  for {set i 0} {$i < 125} {incr i} {
+    execsql {INSERT INTO t1 VALUES(10+$i, 10+$i, 10+$i)}
+  }
+} -body {
+  for {set i 125} {$i < 133} {incr i} {
+    execsql {INSERT INTO t1 VALUES(10+$i, 10+$i, 1-+$i)}
+  }
+  S changeset
+  set {} {}
+} -test {
+  faultsim_test_result {0 {}} {1 SQLITE_NOMEM}
+  if {$testrc==0} { 
+    sqlite3changeset_apply db2 [S changeset] xConflict
+    compare_db db db2 
+  }
+  catch { S delete }
+  faultsim_integrity_check
+}
+
+finish_test

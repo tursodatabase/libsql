@@ -305,6 +305,7 @@ static unsigned int sessionPreupdateHash(
       }else{
         rc = sqlite3_preupdate_old(db, i, &pVal);
       }
+      if( rc!=SQLITE_OK ) return rc;
 
       eType = sqlite3_value_type(pVal);
       h = HASH_APPEND(h, eType);
@@ -424,33 +425,35 @@ static int sessionPreupdateEqual(
       }
       if( rc!=SQLITE_OK || sqlite3_value_type(pVal)!=eType ) return rc;
 
-      switch( eType ){
-        case SQLITE_INTEGER:
-        case SQLITE_FLOAT: {
-          i64 iVal = sessionGetI64(a);
-          a += 8;
-          if( eType==SQLITE_INTEGER ){
-            if( sqlite3_value_int64(pVal)!=iVal ) return SQLITE_OK;
-          }else{
-            double rVal;
-            assert( sizeof(iVal)==8 && sizeof(rVal)==8 );
-            memcpy(&rVal, &iVal, 8);
-            if( sqlite3_value_double(pVal)!=rVal ) return SQLITE_OK;
-          }
-          break;
+      /* A SessionChange object never has a NULL value in a PK column */
+      assert( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT
+           || eType==SQLITE_BLOB    || eType==SQLITE_TEXT
+      );
+
+      if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
+        i64 iVal = sessionGetI64(a);
+        a += 8;
+        if( eType==SQLITE_INTEGER ){
+          if( sqlite3_value_int64(pVal)!=iVal ) return SQLITE_OK;
+        }else{
+          double rVal;
+          assert( sizeof(iVal)==8 && sizeof(rVal)==8 );
+          memcpy(&rVal, &iVal, 8);
+          if( sqlite3_value_double(pVal)!=rVal ) return SQLITE_OK;
         }
-        case SQLITE_TEXT:
-        case SQLITE_BLOB: {
-          int n;
-          const u8 *z;
-          a += sessionVarintGet(a, &n);
-          if( sqlite3_value_bytes(pVal)!=n ) return SQLITE_OK;
-          z = eType==SQLITE_TEXT ? 
-            sqlite3_value_text(pVal) : sqlite3_value_blob(pVal);
-          if( memcmp(a, z, n) ) return SQLITE_OK;
-          a += n;
-          break;
+      }else{
+        int n;
+        const u8 *z;
+        a += sessionVarintGet(a, &n);
+        if( sqlite3_value_bytes(pVal)!=n ) return SQLITE_OK;
+        if( eType==SQLITE_TEXT ){
+          z = sqlite3_value_text(pVal);
+        }else{
+          z = sqlite3_value_blob(pVal);
         }
+        if( memcmp(a, z, n) ) return SQLITE_OK;
+        a += n;
+        break;
       }
     }
   }
@@ -734,19 +737,21 @@ static void sessionPreupdateOneChange(
           rc = sessionSerializeValue(&pChange->aRecord[nByte], p, &nByte);
         }
       }
-      pChange->nRecord = nByte;
-  
-      /* If an error has occurred, mark the session object as failed. */
-      if( rc!=SQLITE_OK ){
-        sqlite3_free(pChange);
-        pSession->rc = rc;
-      }else{
+      if( rc==SQLITE_OK ){
         /* Add the change back to the hash-table */
+        pChange->nRecord = nByte;
         pChange->bInsert = (op==SQLITE_INSERT);
         pChange->pNext = pTab->apChange[iHash];
         pTab->apChange[iHash] = pChange;
+      }else{
+        sqlite3_free(pChange);
       }
     }
+  }
+
+  /* If an error has occurred, mark the session object as failed. */
+  if( rc!=SQLITE_OK ){
+    pSession->rc = rc;
   }
 }
 
@@ -1345,7 +1350,7 @@ int sqlite3session_changeset(
       }
 
       nNoop = buf.nBuf;
-      for(i=0; i<pTab->nChange; i++){
+      for(i=0; i<pTab->nChange && rc==SQLITE_OK; i++){
         SessionChange *p;         /* Used to iterate through changes */
 
         for(p=pTab->apChange[i]; rc==SQLITE_OK && p; p=p->pNext){
@@ -1366,13 +1371,14 @@ int sqlite3session_changeset(
               sessionAppendByte(&buf, SQLITE_DELETE, &rc);
               sessionAppendBlob(&buf, p->aRecord, p->nRecord, &rc);
             }
-            rc = sqlite3_reset(pSel);
+            if( rc==SQLITE_OK ){
+              rc = sqlite3_reset(pSel);
+            }
           }
         }
       }
 
       sqlite3_finalize(pSel);
-
       if( buf.nBuf==nNoop ){
         buf.nBuf = nRewind;
       }
@@ -1674,7 +1680,9 @@ int sqlite3changeset_conflict(
 int sqlite3changeset_finalize(sqlite3_changeset_iter *p){
   int i;                          /* Used to iterate through p->apValue[] */
   int rc = p->rc;                 /* Return code */
-  for(i=0; i<p->nCol*2; i++) sqlite3ValueFree(p->apValue[i]);
+  if( p->apValue ){
+    for(i=0; i<p->nCol*2; i++) sqlite3ValueFree(p->apValue[i]);
+  }
   sqlite3_free(p->apValue);
   sqlite3_free(p);
   return rc;
@@ -2316,7 +2324,8 @@ int sqlite3changeset_apply(
   SessionApplyCtx sApply;         /* changeset_apply() context object */
 
   memset(&sApply, 0, sizeof(sApply));
-  sqlite3changeset_start(&pIter, nChangeset, pChangeset);
+  rc = sqlite3changeset_start(&pIter, nChangeset, pChangeset);
+  if( rc!=SQLITE_OK ) return rc;
 
   sqlite3_mutex_enter(sqlite3_db_mutex(db));
   rc = sqlite3_exec(db, "SAVEPOINT changeset_apply", 0, 0, 0);
