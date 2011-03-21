@@ -522,7 +522,35 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
       break;
     }
     default: {
+      static const struct {
+        int op;      /* The opcode */
+        u32 mask;    /* Mask of the bit in sqlite3.flags to set/clear */
+      } aFlagOp[] = {
+        { SQLITE_DBCONFIG_ENABLE_FKEY,    SQLITE_ForeignKeys    },
+        { SQLITE_DBCONFIG_ENABLE_TRIGGER, SQLITE_EnableTrigger  },
+      };
+      int i;
       rc = SQLITE_ERROR; /* IMP: R-42790-23372 */
+      for(i=0; i<ArraySize(aFlagOp); i++){
+        if( aFlagOp[i].op==op ){
+          int onoff = va_arg(ap, int);
+          int *pRes = va_arg(ap, int*);
+          u32 oldFlags = db->flags;
+          if( onoff>0 ){
+            db->flags |= aFlagOp[i].mask;
+          }else if( onoff==0 ){
+            db->flags &= ~aFlagOp[i].mask;
+          }
+          if( oldFlags!=db->flags ){
+            sqlite3ExpirePreparedStatements(db);
+          }
+          if( pRes ){
+            *pRes = (db->flags & aFlagOp[i].mask)!=0;
+          }
+          rc = SQLITE_OK;
+          break;
+        }
+      }
       break;
     }
   }
@@ -1855,7 +1883,7 @@ static int openDatabase(
   db->autoCommit = 1;
   db->nextAutovac = -1;
   db->nextPagesize = 0;
-  db->flags |= SQLITE_ShortColNames | SQLITE_AutoIndex
+  db->flags |= SQLITE_ShortColNames | SQLITE_AutoIndex | SQLITE_EnableTrigger
 #if SQLITE_DEFAULT_FILE_FORMAT<4
                  | SQLITE_LegacyFileFmt
 #endif

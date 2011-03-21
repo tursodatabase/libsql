@@ -623,8 +623,12 @@ Trigger *sqlite3TriggersExist(
   int *pMask              /* OUT: Mask of TRIGGER_BEFORE|TRIGGER_AFTER */
 ){
   int mask = 0;
-  Trigger *pList = sqlite3TriggerList(pParse, pTab);
+  Trigger *pList = 0;
   Trigger *p;
+
+  if( (pParse->db->flags & SQLITE_EnableTrigger)!=0 ){
+    pList = sqlite3TriggerList(pParse, pTab);
+  }
   assert( pList==0 || IsVirtual(pTab)==0 );
   for(p=pList; p; p=p->pNext){
     if( p->op==op && checkColumnOverlap(p->pColumns, pChanges) ){
