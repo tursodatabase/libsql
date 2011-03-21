@@ -105,6 +105,11 @@ do_iterator_test 1.1 t1 {
   {DELETE t1 {t i t one} {}} 
   {INSERT t1 {} {t ii t two}}
 }
+do_iterator_test 1.1 t1 {
+  INSERT INTO t1 VALUES(1.5, 99.9)
+} {
+  {INSERT t1 {} {f 1.5 f 99.9}}
+}
 
 test_reset
 do_common_sql {
@@ -202,7 +207,10 @@ do_test 2.0 {
   } db2
 } {}
 
+proc xTrace {args} { puts $args }
+
 foreach {tn sql} {
+
   1 { INSERT INTO aux.t1 VALUES(1, 2) } 
 
   2 {
@@ -255,6 +263,12 @@ foreach {tn sql} {
       DELETE FROM aux.t1 WHERE 1;
     ROLLBACK;
   }
+  11 {
+    INSERT INTO aux.t1 VALUES(randomblob(21000), randomblob(0));
+    INSERT INTO aux.t1 VALUES(1.5, 1.5);
+    INSERT INTO aux.t1 VALUES(4.56, -99.999999999999999999999);
+  }
+
 } {
   do_then_apply_sql $sql aux
   do_test 2.$tn { compare_db db3 db2 } {}

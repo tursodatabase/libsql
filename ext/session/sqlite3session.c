@@ -245,10 +245,10 @@ static int sessionSerializeValue(
       nByte = 9; 
       break;
 
-    case SQLITE_TEXT: 
-    case SQLITE_BLOB: {
+    default: {
       int n = sqlite3_value_bytes(pValue);
       int nVarint = sessionVarintLen(n);
+      assert( eType==SQLITE_TEXT || eType==SQLITE_BLOB );
       if( aBuf ){
         sessionVarintPut(&aBuf[1], n);
         memcpy(&aBuf[nVarint + 1], eType==SQLITE_TEXT ? 
@@ -1257,7 +1257,7 @@ static int sessionSelectBind(
           double rVal;
           i64 iVal = sessionGetI64(a);
           memcpy(&rVal, &iVal, 8);
-          rc = sqlite3_bind_int64(pSelect, i+1, rVal);
+          rc = sqlite3_bind_double(pSelect, i+1, rVal);
         }
         a += 8;
         break;
@@ -1481,7 +1481,7 @@ static int sessionReadRecord(
             sqlite3VdbeMemSetInt64(apOut[i], v);
           }else{
             double d;
-            memcpy(&d, &i, 8);
+            memcpy(&d, &v, 8);
             sqlite3VdbeMemSetDouble(apOut[i], d);
           }
         }
