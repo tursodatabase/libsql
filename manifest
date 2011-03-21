@@ -1,5 +1,8 @@
-C Add\sstart\sof\sfault-injection\stests\sfor\ssession\smodule.\sFix\ssome\sbugs\srelated\sto\sthe\ssame.
-D 2011-03-21T16:17:42
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Merge\sin\sthe\ssqlite3_db_config()\senhancements\sfor\senabling\sand\sdisabling\nFKs\sand\striggers\sfrom\strunk.
+D 2011-03-21T17:17:49.766
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -150,7 +153,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 8af9fcc75708d60b88636ccba38b4a7b3c155c3e
-F src/main.c 3c09359bbc8d6eae238a77e6a5cb2cbf1a41edb5
+F src/main.c 22e0f75c17164d4109644e8d623ccaa48a186632
 F src/malloc.c 92d59a007d7a42857d4e9454aa25b6b703286be1
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 00bd8265c81abb665c48fea1e0c234eb3b922206
@@ -185,9 +188,9 @@ F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c d24406c45dd2442eb2eeaac413439066b149c944
 F src/shell.c 4a5e0ad845475c84881f0b25b1abba2ddaab0a72
-F src/sqlite.h.in 208dc372c9b8d89ca962babcb7cb0c1b16d32bc4
+F src/sqlite.h.in 62de507787b39cb58b52002a1ee974e09dd5c83a
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
-F src/sqliteInt.h 6d71ab98edf64d1605d6b49ee1bd880d16be927e
+F src/sqliteInt.h 10707dc735a0077741e1b4b1550891abc26d7582
 F src/sqliteLimit.h a17dcd3fb775d63b64a43a55c54cb282f9726f44
 F src/status.c 4997380fbb915426fef9e500b4872e79c99267fc
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -233,7 +236,7 @@ F src/test_vfs.c 2ed8853c1e51ac6f9ea091f7ce4e0d618bba8b86
 F src/test_vfstrace.c f5c3b3b893d81a580d0f577e6d9bcfc1fd496136
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c 604607d6813e9551cf5189d899e0a25c12681080
-F src/trigger.c 95d2ff4b2996fabe886c9764b5978980e29f4afa
+F src/trigger.c ec4813709e990a169b6923293e839fa5dfd64282
 F src/update.c ca6d4ad2d87e743d22c47f1a6715cc5abf5cda05
 F src/utf.c 1baeeac91707a4df97ccc6141ec0f808278af685
 F src/util.c cd997077bad039efc0597eb027c929658f93c018
@@ -923,7 +926,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P aed4273054cbd150c86b36ea951d17c981633ba0
-R 3ee0056f48f594a086fa203e62ad6366
-U dan
-Z 9a232200bb7ff725d52774ff9ca627f1
+P 32e95164d1192b87b1ab019549fd2394642cd3fe 09e167f9c14625924b17bbb1f292f89ac9ddc93a
+R a0add848dadb7db1c3f35ed60dcfc8d8
+U drh
+Z 2f330aa02552b587cf8d8ca729d4e813
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFNh4hAoxKgR168RlERAlZKAJ9kBWPV0idzBc6FhOD1zal2v2X27gCfZtYB
+1RyGCy9Ef7CucSG+WlvrUDU=
+=TZ5z
+-----END PGP SIGNATURE-----
