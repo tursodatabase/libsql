@@ -781,7 +781,7 @@ static void xPreUpdate(
         /* This branch is taken if table zName has not yet been attached to
         ** this session and the auto-attach flag is set.  */
         pSession->rc = sqlite3session_attach(pSession,zName);
-        if( pSession->rc ) continue;
+        if( pSession->rc ) break;
         pTab = pSession->pTable;
         assert( 0==sqlite3_strnicmp(pTab->zName, zName, nName+1) );
       }
