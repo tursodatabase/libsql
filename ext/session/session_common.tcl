@@ -77,7 +77,9 @@ proc do_then_apply_sql {sql {dbname main}} {
 
 proc do_iterator_test {tn tbl_list sql res} {
   sqlite3session S db main
+  if {[llength $tbl_list]==0} { S attach * }
   foreach t $tbl_list {S attach $t}
+
   execsql $sql
 
   set r [list]

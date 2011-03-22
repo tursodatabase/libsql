@@ -54,11 +54,14 @@ static int test_session_cmd(
   }
 
   switch( iSub ){
-    case 0:        /* attach */
-      rc = sqlite3session_attach(pSession, Tcl_GetString(objv[2]));
+    case 0: {      /* attach */
+      char *zArg = Tcl_GetString(objv[2]);
+      if( zArg[0]=='*' && zArg[1]=='\0' ) zArg = 0;
+      rc = sqlite3session_attach(pSession, zArg);
       if( rc!=SQLITE_OK ){
         return test_session_error(interp, rc);
       }
+    }
       break;
 
     case 1: {      /* changeset */

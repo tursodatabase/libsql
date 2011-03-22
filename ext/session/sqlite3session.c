@@ -19,6 +19,7 @@ struct sqlite3_session {
   sqlite3 *db;                    /* Database handle session is attached to */
   char *zDb;                      /* Name of database session is attached to */
   int bEnable;                    /* True if currently recording */
+  int bAutoAttach;                /* True to auto-attach tables */
   int rc;                         /* Non-zero if an error has occurred */
   sqlite3_session *pNext;         /* Next session object on same db. */
   SessionTable *pTable;           /* List of attached tables */
@@ -775,7 +776,16 @@ static void xPreUpdate(
     if( pSession->rc ) continue;
     if( sqlite3_strnicmp(zDb, pSession->zDb, nDb+1) ) continue;
 
-    for(pTab=pSession->pTable; pTab; pTab=pTab->pNext){
+    for(pTab=pSession->pTable; pTab || pSession->bAutoAttach; pTab=pTab->pNext){
+      if( !pTab ){
+        /* This branch is taken if table zName has not yet been attached to
+        ** this session and the auto-attach flag is set.  */
+        pSession->rc = sqlite3session_attach(pSession,zName);
+        if( pSession->rc ) continue;
+        pTab = pSession->pTable;
+        assert( 0==sqlite3_strnicmp(pTab->zName, zName, nName+1) );
+      }
+
       if( 0==sqlite3_strnicmp(pTab->zName, zName, nName+1) ){
         sessionPreupdateOneChange(op, pSession, pTab);
         if( op==SQLITE_UPDATE ){
@@ -876,31 +886,35 @@ int sqlite3session_attach(
   sqlite3_session *pSession,      /* Session object */
   const char *zName               /* Table name */
 ){
-  SessionTable *pTab;             /* New table object (if required) */
-  int nName;                      /* Number of bytes in string zName */
   int rc = SQLITE_OK;
-
   sqlite3_mutex_enter(sqlite3_db_mutex(pSession->db));
 
-  /* First search for an existing entry. If one is found, this call is
-  ** a no-op. Return early. */
-  nName = strlen(zName);
-  for(pTab=pSession->pTable; pTab; pTab=pTab->pNext){
-    if( 0==sqlite3_strnicmp(pTab->zName, zName, nName+1) ) break;
-  }
+  if( !zName ){
+    pSession->bAutoAttach = 1;
+  }else{
+    SessionTable *pTab;           /* New table object (if required) */
+    int nName;                    /* Number of bytes in string zName */
 
-  if( !pTab ){
-    /* Allocate new SessionTable object. */
-    pTab = (SessionTable *)sqlite3_malloc(sizeof(SessionTable) + nName + 1);
+    /* First search for an existing entry. If one is found, this call is
+    ** a no-op. Return early. */
+    nName = strlen(zName);
+    for(pTab=pSession->pTable; pTab; pTab=pTab->pNext){
+      if( 0==sqlite3_strnicmp(pTab->zName, zName, nName+1) ) break;
+    }
+
     if( !pTab ){
-      rc = SQLITE_NOMEM;
-    }else{
-      /* Populate the new SessionTable object and link it into the list. */
-      memset(pTab, 0, sizeof(SessionTable));
-      pTab->zName = (char *)&pTab[1];
-      memcpy(pTab->zName, zName, nName+1);
-      pTab->pNext = pSession->pTable;
-      pSession->pTable = pTab;
+      /* Allocate new SessionTable object. */
+      pTab = (SessionTable *)sqlite3_malloc(sizeof(SessionTable) + nName + 1);
+      if( !pTab ){
+        rc = SQLITE_NOMEM;
+      }else{
+        /* Populate the new SessionTable object and link it into the list. */
+        memset(pTab, 0, sizeof(SessionTable));
+        pTab->zName = (char *)&pTab[1];
+        memcpy(pTab->zName, zName, nName+1);
+        pTab->pNext = pSession->pTable;
+        pSession->pTable = pTab;
+      }
     }
   }
 

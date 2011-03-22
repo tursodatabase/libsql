@@ -258,5 +258,29 @@ foreach {tn sql changeset} {
 }
 
 
+#-------------------------------------------------------------------------
+# Test that if NULL is passed to sqlite3session_attach(), all database
+# tables are attached to the session object.
+#
+test_reset
+do_execsql_test 5.0 {
+  CREATE TABLE t1(a PRIMARY KEY);
+  CREATE TABLE t2(x, y PRIMARY KEY);
+}
+
+foreach {tn sql changeset} {
+  1 { INSERT INTO t1 VALUES(35) }     { {INSERT t1 {} {i 35}} }
+  2 { INSERT INTO t2 VALUES(36, 37) } { {INSERT t2 {} {i 36 i 37}} }
+  3 { 
+    DELETE FROM t1 WHERE 1;
+    UPDATE t2 SET x = 34;
+  } { 
+    {UPDATE t2 {i 36 i 37} {i 34 {} {}}}
+    {DELETE t1 {i 35} {}}
+  }
+} {
+  do_iterator_test 5.$tn * $sql $changeset
+}
+
 finish_test
 

@@ -93,9 +93,15 @@ int sqlite3session_enable(sqlite3_session *pSession, int bEnable);
 /*
 ** CAPI3REF: Attach A Table To A Session Object
 **
-** Attach a table to a session. All subsequent changes made to the table
-** while the session object is enabled will be recorded. See documentation
-** for [sqlite3session_changeset()] for further details.
+** If argument zTab is not NULL, then it is the name of a table to attach
+** to the session object passed as the first argument. All subsequent changes 
+** made to the table while the session object is enabled will be recorded. See 
+** documentation for [sqlite3session_changeset()] for further details.
+**
+** Or, if argument zTab is NULL, then changes are recorded for all tables
+** in the database. If additional tables are added to the database (by 
+** executing "CREATE TABLE" statements) after this call is made, changes for 
+** the new tables are also recorded.
 **
 ** Changes can only be recorded for tables that have a PRIMARY KEY explicitly
 ** defined as part of their CREATE TABLE statement. It does not matter if the 
@@ -109,9 +115,8 @@ int sqlite3session_enable(sqlite3_session *pSession, int bEnable);
 ** Changes are not recorded for individual rows that have NULL values stored
 ** in one or more of their PRIMARY KEY columns.
 **
-** SQLITE_OK is returned if the table is successfully attached to the session
-** object. Or, if an error occurs, an SQLite error code (e.g. SQLITE_NOMEM)
-** is returned.
+** SQLITE_OK is returned if the call completes without error. Or, if an error 
+** occurs, an SQLite error code (e.g. SQLITE_NOMEM) is returned.
 */
 int sqlite3session_attach(
   sqlite3_session *pSession,      /* Session object */
