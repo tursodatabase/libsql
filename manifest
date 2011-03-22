@@ -1,5 +1,5 @@
-C Remove\ssome\sunreachable\scode\sin\ssqlite3session.c.\sAdd\stest\scases.
-D 2011-03-21T19:41:30
+C Fix\sa\scouple\stypos\sfor\sconsistency\sin\ssessions\sdocumentation.
+D 2011-03-22T02:03:23.754
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -104,7 +104,7 @@ F ext/session/session2.test 54c3a5ecdc60548a8ab0a86793b136de6f32a255
 F ext/session/session_common.tcl d7bb85c3fd76d53bd9b909da808d5c16f5213111
 F ext/session/sessionfault.test da234166d5d044c91964863174d7171b0561708b
 F ext/session/sqlite3session.c 1ca39db8a10b8bcb973b35a68c0924b6a64c4a97
-F ext/session/sqlite3session.h 2c071ee5925e82c21c7c9c296a0422c039607106
+F ext/session/sqlite3session.h 2b7b2b983bba8f7a299922056884912084b32c68
 F ext/session/test_session.c 2559ef68e421c7fb83e2c19ef08a17343b70d535
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
@@ -923,7 +923,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 2b3c8b9d9aa909f64a29ed8167de24c328c50d85
-R c6506b08e053cfdd0bd616ee1b17add6
-U dan
-Z 4cc9deaf80e50ac14cbc33555ec1ddf1
+P 39cdfa5324ae91bfbbac733b1e3e2d33ca883340
+R 7e8df5e06663856423ec54de25f0cd9f
+U shaneh
+Z a8ae98277851bb377ac869793dff328e

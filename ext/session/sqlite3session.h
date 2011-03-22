@@ -91,7 +91,7 @@ void sqlite3session_delete(sqlite3_session *pSession);
 int sqlite3session_enable(sqlite3_session *pSession, int bEnable);
 
 /*
-** CAPI3REF: Attach a Table to a Session Object
+** CAPI3REF: Attach A Table To A Session Object
 **
 ** Attach a table to a session. All subsequent changes made to the table
 ** while the session object is enabled will be recorded. See documentation
@@ -167,7 +167,7 @@ int sqlite3session_attach(
 ** updated or deleted in the lifetime of the session.
 **
 ** There is one exception to the previous paragraph: when a row is inserted,
-** updated or deleted, if one or more of its primary key columns contains a
+** updated or deleted, if one or more of its primary key columns contain a
 ** NULL value, no record of the change is made.
 **
 ** The session object therefore accumulates two types of records - those
@@ -197,7 +197,7 @@ int sqlite3session_attach(
 ** </ul>
 **
 ** This means, amongst other things, that if a row is inserted and then later
-** deleted while a session object is active, neither the insert or the delete
+** deleted while a session object is active, neither the insert nor the delete
 ** will be present in the changeset. Or if a row is deleted and then later a 
 ** row with the same primary key values inserted while a session object is
 ** active, the resulting changeset will contain an UPDATE change instead of
@@ -395,7 +395,7 @@ int sqlite3changeset_conflict(
 
 
 /*
-** CAPI3REF: Finalize a Changeset Iterator
+** CAPI3REF: Finalize A Changeset Iterator
 **
 ** This function is used to finalize an iterator allocated with
 ** [sqlite3changeset_start()].
@@ -585,7 +585,7 @@ int sqlite3changeset_apply(
 );
 
 /* 
-** CAPI3REF: Constants Passed to The Conflict Handler
+** CAPI3REF: Constants Passed To The Conflict Handler
 **
 ** Values that may be passed as the second argument to a conflict-handler.
 **
