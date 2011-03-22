@@ -42,9 +42,25 @@ proc do_common_sql {sql} {
   execsql $sql db2
 }
 
+proc changeset_from_sql {sql {dbname main}} {
+  set rc [catch {
+    sqlite3session S db $dbname
+    db eval "SELECT name FROM $dbname.sqlite_master WHERE type = 'table'" {
+      S attach $name
+    }
+    db eval $sql
+    S changeset
+  } changeset]
+  catch { S delete }
+
+  if {$rc} {
+    error $changeset
+  }
+  return $changeset
+}
+
 proc do_then_apply_sql {sql {dbname main}} {
   proc xConflict args { return "OMIT" }
-
   set rc [catch {
     sqlite3session S db $dbname
     db eval "SELECT name FROM $dbname.sqlite_master WHERE type = 'table'" {
@@ -100,7 +116,11 @@ proc compare_db {db1 db2} {
     set sql "SELECT * FROM $tbl ORDER BY [join $col1 ,]"
     set data1 [$db1 eval $sql]
     set data2 [$db2 eval $sql]
-    if {$data1 != $data2} { error "table $tbl data mismatch" }
+    if {$data1 != $data2} { 
+      puts "$data1"
+      puts "$data2"
+      error "table $tbl data mismatch" 
+    }
   }
 
   return ""

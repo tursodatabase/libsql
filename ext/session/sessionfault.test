@@ -22,7 +22,6 @@ set testprefix sessionfault
 
 forcedelete test.db2
 sqlite3 db2 test.db2
-
 do_common_sql {
   CREATE TABLE t1(a, b, c, PRIMARY KEY(a, b));
   INSERT INTO t1 VALUES(1, 2, 3);
@@ -31,6 +30,8 @@ do_common_sql {
 faultsim_save_and_close
 db2 close
 
+
+#-------------------------------------------------------------------------
 # Test OOM error handling when collecting and applying a simple changeset.
 #
 do_faultsim_test pagerfault-1 -faults oom-* -prep {
@@ -50,11 +51,58 @@ do_faultsim_test pagerfault-1 -faults oom-* -prep {
   if {$testrc==0} { compare_db db db2 }
 }
 
+#-------------------------------------------------------------------------
+# The following block of tests - pagerfault-2.* - are designed to check 
+# the handling of faults in the sqlite3changeset_apply() function.
+#
+catch {db close}
+catch {db2 close}
+forcedelete test.db2 test.db
+sqlite3 db2 test.db2
+sqlite3 db test.db
+do_common_sql {
+  CREATE TABLE t1(a, b, c, PRIMARY KEY(a, b));
+  INSERT INTO t1 VALUES('apple', 'orange', 'pear');
+
+  CREATE TABLE t2(x PRIMARY KEY, y);
+}
+db2 close
+faultsim_save_and_close
+
+
+foreach {tn conflict_policy sql sql2} {
+  1 OMIT { INSERT INTO t1 VALUES('one text', 'two text', X'00ff00') } {}
+  2 OMIT { DELETE FROM t1 WHERE a = 'apple' }                         {}
+  3 OMIT { UPDATE t1 SET c = 'banana' WHERE b = 'orange' }            {}
+  4 REPLACE { INSERT INTO t2 VALUES('keyvalue', 'value 1') } {
+    INSERT INTO t2 VALUES('keyvalue', 'value 2');
+  }
+} {
+  proc xConflict args [list return $conflict_policy]
+
+  do_faultsim_test pagerfault-2.$tn -faults oom-transient -prep {
+    catch {db2 close}
+    catch {db close}
+    faultsim_restore_and_reopen
+    set ::changeset [changeset_from_sql $::sql]
+    sqlite3 db2 test.db2
+    sqlite3_db_config_lookaside db2 0 0 0
+    execsql $::sql2 db2
+  } -body {
+    sqlite3changeset_apply db2 $::changeset xConflict
+  } -test {
+    faultsim_test_result {0 {}} {1 SQLITE_NOMEM}
+    faultsim_integrity_check
+    if {$testrc==0} { compare_db db db2 }
+  }
+}
+
+#-------------------------------------------------------------------------
 # This test case is designed so that a malloc() failure occurs while
 # resizing the session object hash-table from 256 to 512 buckets. This
 # is not an error, just a sub-optimal condition.
 #
-do_faultsim_test pagerfault-2 -faults oom-* -prep {
+do_faultsim_test pagerfault-3 -faults oom-* -prep {
   catch {db2 close}
   catch {db close}
   faultsim_restore_and_reopen
@@ -95,7 +143,7 @@ proc xConflict {op tbl type args} {
   return "OMIT"
 }
 
-do_test 3.0 {
+do_test 4.0 {
   execsql {
     PRAGMA encoding = 'utf16';
     CREATE TABLE t1(a PRIMARY KEY, b);
@@ -113,7 +161,7 @@ do_test 3.0 {
 faultsim_save_and_close
 db2 close
 
-do_faultsim_test pagerfault-3 -faults oom-transient -prep {
+do_faultsim_test pagerfault-4 -faults oom-* -prep {
   catch {db2 close}
   catch {db close}
   faultsim_restore_and_reopen
@@ -132,6 +180,45 @@ do_faultsim_test pagerfault-3 -faults oom-transient -prep {
   catch { S delete }
   faultsim_test_result {0 {}} {1 SQLITE_NOMEM}
   if {$testrc==0} { compare_db db db2 }
+}
+
+#-------------------------------------------------------------------------
+# This block of tests verifies that OOM faults in the 
+# sqlite3changeset_invert() function are handled correctly.
+#
+catch {db close}
+catch {db2 close}
+forcedelete test.db
+sqlite3 db test.db
+execsql {
+  CREATE TABLE t1(a, b, PRIMARY KEY(b));
+  CREATE TABLE t2(a PRIMARY KEY, b);
+  INSERT INTO t1 VALUES('string', 1);
+  INSERT INTO t1 VALUES(4, 2);
+  INSERT INTO t1 VALUES(X'FFAAFFAAFFAA', 3);
+}
+set changeset [changeset_from_sql {
+  INSERT INTO t1 VALUES('xxx', 'yyy');
+  DELETE FROM t1 WHERE a = 'string';
+  UPDATE t1 SET a = 20 WHERE b = 2;
+}]
+db close
+
+do_faultsim_test pagerfault-5 -faults oom* -body {
+  set ::inverse [sqlite3changeset_invert $::changeset]
+  set {} {}
+} -test {
+  faultsim_test_result {0 {}} {1 SQLITE_NOMEM}
+  if {$testrc==0} {
+    set x [list]
+    sqlite3session_foreach c $::inverse { lappend x $c }
+    foreach c {
+        {DELETE t1 {t xxx t yyy} {}} 
+        {INSERT t1 {} {t string i 1}} 
+        {UPDATE t1 {i 20 {} {}} {i 4 i 2}}
+    } { lappend y $c }
+    if {$x != $y} { error "changeset no good" }
+  }
 }
 
 finish_test

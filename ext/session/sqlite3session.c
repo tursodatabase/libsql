@@ -1638,6 +1638,14 @@ int sqlite3changeset_new(
 }
 
 /*
+** The following two macros are used internally. They are similar to the
+** sqlite3changeset_new() and sqlite3changeset_old() functions, except that
+** they omit all error checking and return a pointer to the requested value.
+*/
+#define sessionChangesetNew(pIter, iVal) (pIter)->apValue[(pIter)->nCol+(iVal)]
+#define sessionChangesetOld(pIter, iVal) (pIter)->apValue[(iVal)]
+
+/*
 ** This function may only be called with a changeset iterator that has been
 ** passed to an SQLITE_CHANGESET_DATA or SQLITE_CHANGESET_CONFLICT 
 ** conflict-handler function. Otherwise, SQLITE_MISUSE is returned.
@@ -1990,6 +1998,24 @@ static int sessionInsertRow(
 }
 
 /*
+** A wrapper around sqlite3_bind_value() that detects an extra problem. 
+** See comments in the body of this function for details.
+*/
+static int sessionBindValue(
+  sqlite3_stmt *pStmt,            /* Statement to bind value to */
+  int i,                          /* Parameter number to bind to */
+  sqlite3_value *pVal             /* Value to bind */
+){
+  if( (pVal->type==SQLITE_TEXT || pVal->type==SQLITE_BLOB) && pVal->z==0 ){
+    /* This condition occurs when an earlier OOM in a call to
+    ** sqlite3_value_text() or sqlite3_value_blob() (perhaps from within
+    ** a conflict-hanler) has zeroed the pVal->z pointer. Return NOMEM. */
+    return SQLITE_NOMEM;
+  }
+  return sqlite3_bind_value(pStmt, i, pVal);
+}
+
+/*
 ** Iterator pIter must point to an SQLITE_INSERT entry. This function 
 ** transfers new.* values from the current iterator entry to statement
 ** pStmt. The table being inserted into has nCol columns.
@@ -2003,22 +2029,27 @@ static int sessionInsertRow(
 **
 ** An SQLite error code is returned if an error occurs. Otherwise, SQLITE_OK.
 */
-static int sessionBindValues(
+static int sessionBindRow(
   sqlite3_changeset_iter *pIter,  /* Iterator to read values from */
-  int(*xIterValue)(sqlite3_changeset_iter *, int, sqlite3_value **),
+  int(*xValue)(sqlite3_changeset_iter *, int, sqlite3_value **),
   int nCol,                       /* Number of columns */
   u8 *abPK,                       /* If not NULL, bind only if true */
   sqlite3_stmt *pStmt             /* Bind values to this statement */
 ){
   int i;
   int rc = SQLITE_OK;
+
+  /* Neither sqlite3changeset_old or sqlite3changeset_new can fail if the
+  ** argument iterator points to a suitable entry. Make sure that xValue 
+  ** is one of these to guarantee that it is safe to ignore the return 
+  ** in the code below. */
+  assert( xValue==sqlite3changeset_old || xValue==sqlite3changeset_new );
+
   for(i=0; rc==SQLITE_OK && i<nCol; i++){
     if( !abPK || abPK[i] ){
       sqlite3_value *pVal;
-      rc = xIterValue(pIter, i, &pVal);
-      if( rc==SQLITE_OK ){
-        rc = sqlite3_bind_value(pStmt, i+1, pVal);
-      }
+      (void)xValue(pIter, i, &pVal);
+      rc = sessionBindValue(pStmt, i+1, pVal);
     }
   }
   return rc;
@@ -2031,7 +2062,11 @@ static int sessionBindValues(
 ** entry. If a row is found, the SELECT statement left pointing at the row 
 ** and SQLITE_ROW is returned. Otherwise, if no row is found and no error
 ** has occured, the statement is reset and SQLITE_OK is returned. If an
-** error occurs, an SQLite error code is returned.
+** error occurs, the statement is reset and an SQLite error code is returned.
+**
+** If this function returns SQLITE_ROW, the caller must eventually reset() 
+** statement pSelect. If any other value is returned, the statement does
+** not require a reset().
 **
 ** If the iterator currently points to an INSERT record, bind values from the
 ** new.* record to the SELECT statement. Or, if it points to a DELETE or
@@ -2043,13 +2078,13 @@ static int sessionSeekToRow(
   u8 *abPK,                       /* Primary key flags array */
   sqlite3_stmt *pSelect           /* SELECT statement from sessionSelectRow() */
 ){
-  int rc = SQLITE_OK;             /* Return code */
+  int rc;                         /* Return code */
   int nCol;                       /* Number of columns in table */
   int op;                         /* Changset operation (SQLITE_UPDATE etc.) */
   const char *zDummy;             /* Unused */
 
   sqlite3changeset_op(pIter, &zDummy, &nCol, &op);
-  rc = sessionBindValues(pIter, 
+  rc = sessionBindRow(pIter, 
       op==SQLITE_INSERT ? sqlite3changeset_new : sqlite3changeset_old,
       nCol, abPK, pSelect
   );
@@ -2132,11 +2167,8 @@ static int sessionConflictHandler(
     rc = sqlite3_reset(p->pSelect);
   }else if( rc==SQLITE_OK ){
     /* No other row with the new.* primary key. */
-    rc = sqlite3_reset(p->pSelect);
-    if( rc==SQLITE_OK ){
-      res = xConflict(pCtx, eType+1, pIter);
-      if( res==SQLITE_CHANGESET_REPLACE ) rc = SQLITE_MISUSE;
-    }
+    res = xConflict(pCtx, eType+1, pIter);
+    if( res==SQLITE_CHANGESET_REPLACE ) rc = SQLITE_MISUSE;
   }
 
   if( rc==SQLITE_OK ){
@@ -2207,7 +2239,7 @@ static int sessionApplyOneOp(
   if( op==SQLITE_DELETE ){
 
     /* Bind values to the DELETE statement. */
-    rc = sessionBindValues(pIter, sqlite3changeset_old, nCol, 0, p->pDelete);
+    rc = sessionBindRow(pIter, sqlite3changeset_old, nCol, 0, p->pDelete);
     if( rc==SQLITE_OK && sqlite3_bind_parameter_count(p->pDelete)>nCol ){
       rc = sqlite3_bind_int(p->pDelete, nCol+1, pbRetry==0);
     }
@@ -2230,19 +2262,18 @@ static int sessionApplyOneOp(
 
     /* Bind values to the UPDATE statement. */
     for(i=0; rc==SQLITE_OK && i<nCol; i++){
-      sqlite3_value *pOld = 0;
-      sqlite3_value *pNew = 0;
-      rc = sqlite3changeset_old(pIter, i, &pOld);
-      if( rc==SQLITE_OK ){
-        rc = sqlite3changeset_new(pIter, i, &pNew);
+      sqlite3_value *pOld = sessionChangesetOld(pIter, i);
+      sqlite3_value *pNew = sessionChangesetNew(pIter, i);
+
+      sqlite3_bind_int(p->pUpdate, i*3+2, !!pNew);
+      if( pOld ){
+        rc = sessionBindValue(p->pUpdate, i*3+1, pOld);
       }
-      if( rc==SQLITE_OK ){
-        if( pOld ) sqlite3_bind_value(p->pUpdate, i*3+1, pOld);
-        sqlite3_bind_int(p->pUpdate, i*3+2, !!pNew);
-        if( pNew ) sqlite3_bind_value(p->pUpdate, i*3+3, pNew);
+      if( rc==SQLITE_OK && pNew ){
+        rc = sessionBindValue(p->pUpdate, i*3+3, pNew);
       }
     }
-    if( rc==SQLITE_OK ) rc = sqlite3_bind_int(p->pUpdate, nCol*3+1, pbRetry==0);
+    if( rc==SQLITE_OK ) sqlite3_bind_int(p->pUpdate, nCol*3+1, pbRetry==0);
     if( rc!=SQLITE_OK ) return rc;
 
     /* Attempt the UPDATE. In the case of a NOTFOUND or DATA conflict,
@@ -2268,7 +2299,7 @@ static int sessionApplyOneOp(
 
   }else{
     assert( op==SQLITE_INSERT );
-    rc = sessionBindValues(pIter, sqlite3changeset_new, nCol, 0, p->pInsert);
+    rc = sessionBindRow(pIter, sqlite3changeset_new, nCol, 0, p->pInsert);
     if( rc!=SQLITE_OK ) return rc;
 
     sqlite3_step(p->pInsert);
@@ -2354,7 +2385,7 @@ int sqlite3changeset_apply(
       assert( pIter->op==SQLITE_INSERT );
       rc = sqlite3_exec(db, "SAVEPOINT replace_op", 0, 0, 0);
       if( rc==SQLITE_OK ){
-        rc = sessionBindValues(pIter, 
+        rc = sessionBindRow(pIter, 
             sqlite3changeset_new, sApply.nCol, sApply.abPK, sApply.pDelete);
         sqlite3_bind_int(sApply.pDelete, sApply.nCol+1, 1);
       }
