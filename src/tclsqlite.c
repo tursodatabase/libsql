@@ -2851,9 +2851,9 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   **    $db preupdate_hook old INDEX
   */
   case DB_PREUPDATE: {
-    static const char *azSub[] = {"count", "hook", "new", "old", 0};
+    static const char *azSub[] = {"count", "depth", "hook", "new", "old", 0};
     enum DbPreupdateSubCmd {
-      PRE_COUNT, PRE_HOOK, PRE_NEW, PRE_OLD
+      PRE_COUNT, PRE_DEPTH, PRE_HOOK, PRE_NEW, PRE_OLD
     };
     int iSub;
 
@@ -2877,6 +2877,17 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
           return TCL_ERROR;
         }
         DbHookCmd(interp, pDb, (objc==4 ? objv[3] : 0), &pDb->pPreUpdateHook);
+        break;
+      }
+
+      case PRE_DEPTH: {
+        Tcl_Obj *pRet;
+        if( objc!=3 ){
+          Tcl_WrongNumArgs(interp, 3, objv, "");
+          return TCL_ERROR;
+        }
+        pRet = Tcl_NewIntObj(sqlite3_preupdate_depth(pDb->db));
+        Tcl_SetObjResult(interp, pRet);
         break;
       }
 

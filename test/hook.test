@@ -651,6 +651,118 @@ do_preupdate_test 7.6.2 {
   DELETE main t9 3 3   1 3 4
 }
 
+#--------------------------------------------------------------------------
+# Test that the sqlite3_preupdate_depth() API seems to work.
+#
+proc preupdate_hook {args} {
+  set type [lindex $args 0]
+  eval lappend ::preupdate $args
+  eval lappend ::preupdate [db preupdate depth]
+
+  if {$type != "INSERT"} {
+    for {set i 0} {$i < [db preupdate count]} {incr i} {
+      lappend ::preupdate [db preupdate old $i]
+    }
+  }
+  if {$type != "DELETE"} {
+    for {set i 0} {$i < [db preupdate count]} {incr i} {
+      set rc [catch { db preupdate new $i } v]
+      lappend ::preupdate $v
+    }
+  }
+}
+
+db close
+forcedelete test.db
+sqlite3 db test.db
+db preupdate hook preupdate_hook
+
+do_execsql_test 7.6.1 { 
+  CREATE TABLE t1(x PRIMARY KEY);
+  CREATE TABLE t2(x PRIMARY KEY);
+  CREATE TABLE t3(x PRIMARY KEY);
+  CREATE TABLE t4(x PRIMARY KEY);
+
+  CREATE TRIGGER a AFTER INSERT ON t1 BEGIN INSERT INTO t2 VALUES(new.x); END;
+  CREATE TRIGGER b AFTER INSERT ON t2 BEGIN INSERT INTO t3 VALUES(new.x); END;
+  CREATE TRIGGER c AFTER INSERT ON t3 BEGIN INSERT INTO t4 VALUES(new.x); END;
+
+  CREATE TRIGGER d AFTER UPDATE ON t1 BEGIN UPDATE t2 SET x = new.x; END;
+  CREATE TRIGGER e AFTER UPDATE ON t2 BEGIN UPDATE t3 SET x = new.x; END;
+  CREATE TRIGGER f AFTER UPDATE ON t3 BEGIN UPDATE t4 SET x = new.x; END;
+
+  CREATE TRIGGER g AFTER DELETE ON t1 BEGIN DELETE FROM t2 WHERE 1; END;
+  CREATE TRIGGER h AFTER DELETE ON t2 BEGIN DELETE FROM t3 WHERE 1; END;
+  CREATE TRIGGER i AFTER DELETE ON t3 BEGIN DELETE FROM t4 WHERE 1; END;
+}
+
+do_preupdate_test 7.6.2 {
+  INSERT INTO t1 VALUES('xyz');
+} {
+  INSERT main t1 1 1   0      xyz
+  INSERT main t2 1 1   1      xyz
+  INSERT main t3 1 1   2      xyz
+  INSERT main t4 1 1   3      xyz
+}
+do_preupdate_test 7.6.3 {
+  UPDATE t1 SET x = 'abc';
+} {
+  UPDATE main t1 1 1   0      xyz abc
+  UPDATE main t2 1 1   1      xyz abc
+  UPDATE main t3 1 1   2      xyz abc
+  UPDATE main t4 1 1   3      xyz abc
+}
+do_preupdate_test 7.6.4 {
+  DELETE FROM t1 WHERE 1;
+} {
+  DELETE main t1 1 1   0      abc
+  DELETE main t2 1 1   1      abc
+  DELETE main t3 1 1   2      abc
+  DELETE main t4 1 1   3      abc
+}
+
+do_execsql_test 7.6.5 { 
+  DROP TRIGGER a; DROP TRIGGER b; DROP TRIGGER c;
+  DROP TRIGGER d; DROP TRIGGER e; DROP TRIGGER f;
+  DROP TRIGGER g; DROP TRIGGER h; DROP TRIGGER i;
+
+  CREATE TRIGGER a BEFORE INSERT ON t1 BEGIN INSERT INTO t2 VALUES(new.x); END;
+  CREATE TRIGGER b BEFORE INSERT ON t2 BEGIN INSERT INTO t3 VALUES(new.x); END;
+  CREATE TRIGGER c BEFORE INSERT ON t3 BEGIN INSERT INTO t4 VALUES(new.x); END;
+
+  CREATE TRIGGER d BEFORE UPDATE ON t1 BEGIN UPDATE t2 SET x = new.x; END;
+  CREATE TRIGGER e BEFORE UPDATE ON t2 BEGIN UPDATE t3 SET x = new.x; END;
+  CREATE TRIGGER f BEFORE UPDATE ON t3 BEGIN UPDATE t4 SET x = new.x; END;
+
+  CREATE TRIGGER g BEFORE DELETE ON t1 BEGIN DELETE FROM t2 WHERE 1; END;
+  CREATE TRIGGER h BEFORE DELETE ON t2 BEGIN DELETE FROM t3 WHERE 1; END;
+  CREATE TRIGGER i BEFORE DELETE ON t3 BEGIN DELETE FROM t4 WHERE 1; END;
+}
+
+do_preupdate_test 7.6.6 {
+  INSERT INTO t1 VALUES('xyz');
+} {
+  INSERT main t4 1 1   3      xyz
+  INSERT main t3 1 1   2      xyz
+  INSERT main t2 1 1   1      xyz
+  INSERT main t1 1 1   0      xyz
+}
+do_preupdate_test 7.6.3 {
+  UPDATE t1 SET x = 'abc';
+} {
+  UPDATE main t4 1 1   3      xyz abc
+  UPDATE main t3 1 1   2      xyz abc
+  UPDATE main t2 1 1   1      xyz abc
+  UPDATE main t1 1 1   0      xyz abc
+}
+do_preupdate_test 7.6.4 {
+  DELETE FROM t1 WHERE 1;
+} {
+  DELETE main t4 1 1   3      abc
+  DELETE main t3 1 1   2      abc
+  DELETE main t2 1 1   1      abc
+  DELETE main t1 1 1   0      abc
+}
 
 finish_test
 

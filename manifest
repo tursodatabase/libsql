@@ -1,5 +1,5 @@
-C Fix\sa\scrash\sthat\scan\sfollow\san\sOOM\swhen\s"all\stables"\sare\sregistered\swith\sa\ssession\smodule.
-D 2011-03-22T16:54:12
+C Add\sAPI\sfunction\ssqlite3_preupdate_depth(),\sfor\sdetermining\sthe\sdepth\sof\sthe\strigger\sstack\sfrom\swithin\sa\spre-update\scallback.
+D 2011-03-22T18:45:30
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -185,13 +185,13 @@ F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c d24406c45dd2442eb2eeaac413439066b149c944
 F src/shell.c 4a5e0ad845475c84881f0b25b1abba2ddaab0a72
-F src/sqlite.h.in 62de507787b39cb58b52002a1ee974e09dd5c83a
+F src/sqlite.h.in 6b93765e048e0023e23c1d9827a561d7ead7100a
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
 F src/sqliteInt.h 10707dc735a0077741e1b4b1550891abc26d7582
 F src/sqliteLimit.h a17dcd3fb775d63b64a43a55c54cb282f9726f44
 F src/status.c 4997380fbb915426fef9e500b4872e79c99267fc
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c 520e124994e68fd8804ade95b5d3e2e791d0958d
+F src/tclsqlite.c 78713534e628ea92b032bfa20ea8a1afc6cdb124
 F src/test1.c 9020310c7617234b33fd1c3064f89524db25f290
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 056093cfef69ff4227a6bdb9108564dc7f45e4bc
@@ -241,7 +241,7 @@ F src/vacuum.c 924bd1bcee2dfb05376f79845bd3b4cec7b54b2f
 F src/vdbe.c c90edafd941481506f001b17cd8523683fdac853
 F src/vdbe.h edef9c4f0be83e1f1dccd049da37b40e021b63d9
 F src/vdbeInt.h 2cf77c1d151a4a54facd596d52be6d60c1cb26e8
-F src/vdbeapi.c 3d620e00cb74b6034343009af42d5ff5eb7c19dc
+F src/vdbeapi.c e472b3e5985175e948e70025cb3bffa8a2e185c8
 F src/vdbeaux.c 0216b2c37509a44c3833b297765bee7bdd04fa2f
 F src/vdbeblob.c c3ccb7c8732858c680f442932e66ad06bb036562
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
@@ -481,7 +481,7 @@ F test/fuzz2.test 207d0f9d06db3eaf47a6b7bfc835b8e2fc397167
 F test/fuzz3.test aec64345184d1662bd30e6a17851ff659d596dc5
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test dd7001ac86d09c154a7dff064f4739c60e2b312c
-F test/hook.test d054aad1a3772dd9045510382875468a9dcae15f
+F test/hook.test 14b2439b878c9aae03a3684cba717be4bfdcc1c1
 F test/icu.test 70df4faca133254c042d02ae342c0a141f2663f4
 F test/in.test 19b642bb134308980a92249750ea4ce3f6c75c2d
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
@@ -923,7 +923,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e9037e4e4ccaa5c633759c4d041b60b631b92c6c
-R 93198cfc6613c93be1aa416f0de3d035
+P 183c236e991faaabdc768e52e926c52cf4a7abc9
+R 3714f49d9e3ab391fe868f9d204fa8d5
 U dan
-Z ee6ba5845d31702e943c5fa7b7c9db34
+Z 4e2f4fe62e6298f01b15895da5c35a23
