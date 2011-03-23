@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Add\sthe\sability\sto\senable\sand\sdisable\sforeign\skey\sconstraints\sand\striggers\nusing\scalls\sto\ssqlite3_db_config().
-D 2011-03-21T17:15:58.841
+C Change\sthe\srtree\smodule\sto\ssupport\squeries\swith\smultiple\scomparison\soperators\s(i.e.\s>\sor\s<)\sof\sthe\ssame\stype\son\sa\ssingle\scolumn.
+D 2011-03-23T10:38:50
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -84,14 +81,14 @@ F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c 850e9a36567bbcce6bd85a4b68243cad8e3c2de2
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 115b499415ddef9be75615ced99b11232826e64d
+F ext/rtree/rtree.c 48705ee892c30cc05cd40006d2509ad192530907
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test dbd4250ac0ad367a262eb9676f7e3080b0368206
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
 F ext/rtree/rtree3.test a494da55c30ee0bc9b01a91c80c81b387b22d2dc
 F ext/rtree/rtree4.test 0061e6f464fd3dc6a79f82454c5a1c3dadbe42af
 F ext/rtree/rtree5.test ce3d7ccae2cfd9d2e1052b462424964c9bdcda12
-F ext/rtree/rtree6.test 309806a2a27ef5897d4dd6aee2e8006bf754cc22
+F ext/rtree/rtree6.test 1edf30467ec39b2282874c2175b81b7690d2c706
 F ext/rtree/rtree7.test bcb647b42920b3b5d025846689147778485cc318
 F ext/rtree/rtree8.test 9772e16da71e17e02bdebf0a5188590f289ab37d
 F ext/rtree/rtree9.test df9843d1a9195249c8d3b4ea6aedda2d5c73e9c2
@@ -918,14 +915,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P eedbcf0a0ba91bb8b9cd3d115081ba297e9959fe
-R 280ad38169dd48b2d9e175160372c567
-U drh
-Z e8e199200b835ba249870038ad2cd6dc
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFNh4fToxKgR168RlERAhHRAJ4u99dZIoFOU0P2cr07ePpksHkgggCfST1g
-F/4WAG+YZz9MPVjqi2BaEUo=
-=dT9z
------END PGP SIGNATURE-----
+P 09e167f9c14625924b17bbb1f292f89ac9ddc93a
+R 52342b1b5ec5b2f1eb5941c495729364
+U dan
+Z a3dc1db2deb58c4b0fccde75b160266c
