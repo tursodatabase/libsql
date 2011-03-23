@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C In\sthe\sshell,\smake\ssure\sthe\s".log"\scommand\shas\sat\sleast\sone\sargument.
-D 2011-03-23T11:16:22.642
+C Fix\sa\sbug\sin\sfts4\sto\sdo\swith\smatchinfo\sand\sdeferred\stokens.
+D 2011-03-23T17:10:44
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -73,7 +70,7 @@ F ext/fts3/fts3_hash.c 3c8f6387a4a7f5305588b203fa7c887d753e1f1c
 F ext/fts3/fts3_hash.h 8331fb2206c609f9fc4c4735b9ab5ad6137c88ec
 F ext/fts3/fts3_icu.c ac494aed69835008185299315403044664bda295
 F ext/fts3/fts3_porter.c d61cfd81fb0fd8fbcb25adcaee0ba671aefaa5c2
-F ext/fts3/fts3_snippet.c bfefb42b5debf8725a30fd5122572aaeedc99397
+F ext/fts3/fts3_snippet.c e857c6a89d81d3b89df59f3b44b35c68d8ed5c62
 F ext/fts3/fts3_tokenizer.c 055f3dc7369585350b28db1ee0f3b214dca6724d
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 6e5cbaa588924ac578263a598e4fb9f5c9bb179d
@@ -455,7 +452,7 @@ F test/fts3corrupt2.test 6d96efae2f8a6af3eeaf283aba437e6d0e5447ba
 F test/fts3cov.test e0fb00d8b715ddae4a94c305992dfc3ef70353d7
 F test/fts3d.test 95fb3c862cbc4297c93fceb9a635543744e9ef52
 F test/fts3defer.test d6cb0db9b5997ecf863d96ff419f83f8f2c87f4f
-F test/fts3defer2.test da840efaedebfdd54293d04b36098e2d9872caa6
+F test/fts3defer2.test 288bef6de15557319b8c12d476ebdc83688ef96c
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3expr.test 5e745b2b6348499d9ef8d59015de3182072c564c
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
@@ -918,14 +915,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 0b7668a71ef8995ea0306c7d890f87761961426e
-R 88a09b7469ff1146f51987afec7567e4
-U drh
-Z f1bfc5b8226ce4dbe953fcf48ca565ea
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFNidaJoxKgR168RlERApqOAJwNgpXn213VO6fr+LnJXQLkyKs6wACePFP8
-pc1Sc0TC4VKU22K9u5+NaOQ=
-=M8WR
------END PGP SIGNATURE-----
+P 1ed5e361ca7bfa9226fec265704394e0f228f0c5
+R 2f8b1c68ec4ce4809965697dec333ba6
+U dan
+Z 998dcc0bc86840532e7dbf16c79e79d3

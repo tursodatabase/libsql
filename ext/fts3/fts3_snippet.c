@@ -880,13 +880,13 @@ static int fts3ExprLocalHitsCb(
   void *pCtx                      /* Pointer to MatchInfo structure */
 ){
   MatchInfo *p = (MatchInfo *)pCtx;
+  int iStart = iPhrase * p->nCol * 3;
+  int i;
+
+  for(i=0; i<p->nCol; i++) p->aMatchinfo[iStart+i*3] = 0;
 
   if( pExpr->aDoclist ){
     char *pCsr;
-    int iStart = iPhrase * p->nCol * 3;
-    int i;
-
-    for(i=0; i<p->nCol; i++) p->aMatchinfo[iStart+i*3] = 0;
 
     pCsr = sqlite3Fts3FindPositions(pExpr, p->pCursor->iPrevId, -1);
     if( pCsr ){
