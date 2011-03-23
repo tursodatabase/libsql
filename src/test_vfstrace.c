@@ -77,8 +77,8 @@ static int vfstraceSleep(sqlite3_vfs*, int microseconds);
 static int vfstraceCurrentTime(sqlite3_vfs*, double*);
 static int vfstraceGetLastError(sqlite3_vfs*, int, char*);
 static int vfstraceCurrentTimeInt64(sqlite3_vfs*, sqlite3_int64*);
-static int vfstraceSetSystemCall(sqlite3_vfs*, const char *zName, void *pFunc);
-static void *vfstraceGetSystemCall(sqlite3_vfs*, const char *zName);
+static int vfstraceSetSystemCall(sqlite3_vfs*,const char*, sqlite3_syscall_ptr);
+static sqlite3_syscall_ptr vfstraceGetSystemCall(sqlite3_vfs*, const char *);
 static const char *vfstraceNextSystemCall(sqlite3_vfs*, const char *zName);
 
 /*
@@ -682,13 +682,16 @@ static int vfstraceGetLastError(sqlite3_vfs *pVfs, int iErr, char *zErr){
 static int vfstraceSetSystemCall(
   sqlite3_vfs *pVfs,
   const char *zName,
-  void *pFunc
+  sqlite3_syscall_ptr pFunc
 ){
   vfstrace_info *pInfo = (vfstrace_info*)pVfs->pAppData;
   sqlite3_vfs *pRoot = pInfo->pRootVfs;
   return pRoot->xSetSystemCall(pRoot, zName, pFunc);
 }
-static void *vfstraceGetSystemCall(sqlite3_vfs *pVfs, const char *zName){
+static sqlite3_syscall_ptr vfstraceGetSystemCall(
+  sqlite3_vfs *pVfs,
+  const char *zName
+){
   vfstrace_info *pInfo = (vfstrace_info*)pVfs->pAppData;
   sqlite3_vfs *pRoot = pInfo->pRootVfs;
   return pRoot->xGetSystemCall(pRoot, zName);
