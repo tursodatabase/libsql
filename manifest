@@ -1,5 +1,5 @@
-C Add\sAPI\sfunction\ssqlite3_preupdate_depth(),\sfor\sdetermining\sthe\sdepth\sof\sthe\strigger\sstack\sfrom\swithin\sa\spre-update\scallback.
-D 2011-03-22T18:45:30
+C Add\sthe\s"indirect\sflag"\sto\sthe\schangeset\sblob\sformat.\sAlso\sthe\ssqlite3session_indirect()\sAPI.
+D 2011-03-23T16:03:12
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -99,13 +99,13 @@ F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 1af0899c63a688e272d69d8e746f24e76f10a3f0
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
-F ext/session/session1.test 1e8cda2cc8a60171dabc0fbec4124f9f7c943f23
-F ext/session/session2.test f993ee243db15025a7d9b1dae903fe3f82f04229
+F ext/session/session1.test bca38efbc34c0cdecc10e599246962860e3f664b
+F ext/session/session2.test b0d305ee1397d7c17f9743126f636e97ddf88542
 F ext/session/session_common.tcl fb91560b6dbd086010df8b3a137a452f1ac21a28
-F ext/session/sessionfault.test 495f87fb9bd764ae90d4b40d0c33a76d86d9063e
-F ext/session/sqlite3session.c ec0f440ae73229ae8ae307a31e631b9d71991cd4
-F ext/session/sqlite3session.h 5055e21ca0cb6ddacd46b773a15d90bc0298b0a2
-F ext/session/test_session.c d31fbf5902d0cff5e5495a5ce62efda77b596f2b
+F ext/session/sessionfault.test 4489a49d2d44c74c24251d5802b2cc011dbdac21
+F ext/session/sqlite3session.c 0c2e8f6a6d9872943edd04d0a19bf7b05db9df83
+F ext/session/sqlite3session.h 000c1ed86322d9d8e8118cd5ba815269aac608f2
+F ext/session/test_session.c 0fcfbd51e3f5885b958fbc8cdd8cba01b85b8b16
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F main.mk ae0868e05c76eaa8a0ae3d6927a949b1c8e810d7
@@ -923,7 +923,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 183c236e991faaabdc768e52e926c52cf4a7abc9
-R 3714f49d9e3ab391fe868f9d204fa8d5
+P bdea70895c2c686a4dd3f4bf0a475fd1501d9551
+R c02abbe676895f559af6fe54b071c0da
 U dan
-Z 4e2f4fe62e6298f01b15895da5c35a23
+Z 27e4954529d298836a72824c8b085018

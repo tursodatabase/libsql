@@ -38,7 +38,7 @@ db2 close
 # Whereas test 1.2 passes NULL to sqlite3session_attach() to attach all
 # tables.
 #
-do_faultsim_test pagerfault-1.1 -faults oom-* -prep {
+do_faultsim_test 1.1 -faults oom-* -prep {
   catch {db2 close}
   catch {db close}
   faultsim_restore_and_reopen
@@ -55,7 +55,7 @@ do_faultsim_test pagerfault-1.1 -faults oom-* -prep {
   if {$testrc==0} { compare_db db db2 }
 }
 
-do_faultsim_test pagerfault-1.2 -faults oom-* -prep {
+do_faultsim_test 1.2 -faults oom-* -prep {
   catch {db2 close}
   catch {db close}
   faultsim_restore_and_reopen
@@ -82,7 +82,7 @@ do_faultsim_test pagerfault-1.2 -faults oom-* -prep {
 }
 
 #-------------------------------------------------------------------------
-# The following block of tests - pagerfault-2.* - are designed to check 
+# The following block of tests - 2.* - are designed to check 
 # the handling of faults in the sqlite3changeset_apply() function.
 #
 catch {db close}
@@ -110,7 +110,7 @@ foreach {tn conflict_policy sql sql2} {
 } {
   proc xConflict args [list return $conflict_policy]
 
-  do_faultsim_test pagerfault-2.$tn -faults oom-transient -prep {
+  do_faultsim_test 2.$tn -faults oom-transient -prep {
     catch {db2 close}
     catch {db close}
     faultsim_restore_and_reopen
@@ -132,7 +132,7 @@ foreach {tn conflict_policy sql sql2} {
 # resizing the session object hash-table from 256 to 512 buckets. This
 # is not an error, just a sub-optimal condition.
 #
-do_faultsim_test pagerfault-3 -faults oom-* -prep {
+do_faultsim_test 3 -faults oom-* -prep {
   catch {db2 close}
   catch {db close}
   faultsim_restore_and_reopen
@@ -191,7 +191,7 @@ do_test 4.0 {
 faultsim_save_and_close
 db2 close
 
-do_faultsim_test pagerfault-4 -faults oom-* -prep {
+do_faultsim_test 4 -faults oom-* -prep {
   catch {db2 close}
   catch {db close}
   faultsim_restore_and_reopen
@@ -234,7 +234,7 @@ set changeset [changeset_from_sql {
 }]
 db close
 
-do_faultsim_test pagerfault-5 -faults oom* -body {
+do_faultsim_test 5 -faults oom* -body {
   set ::inverse [sqlite3changeset_invert $::changeset]
   set {} {}
 } -test {
@@ -243,9 +243,9 @@ do_faultsim_test pagerfault-5 -faults oom* -body {
     set x [list]
     sqlite3session_foreach c $::inverse { lappend x $c }
     foreach c {
-        {DELETE t1 {t xxx t yyy} {}} 
-        {INSERT t1 {} {t string i 1}} 
-        {UPDATE t1 {i 20 {} {}} {i 4 i 2}}
+        {DELETE t1 0 {t xxx t yyy} {}} 
+        {INSERT t1 0 {} {t string i 1}} 
+        {UPDATE t1 0 {i 20 {} {}} {i 4 i 2}}
     } { lappend y $c }
     if {$x != $y} { error "changeset no good" }
   }

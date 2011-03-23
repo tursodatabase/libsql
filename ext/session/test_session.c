@@ -17,6 +17,7 @@ static int test_session_error(Tcl_Interp *interp, int rc){
 **          $session changeset
 **          $session delete
 **          $session enable BOOL
+**          $session indirect BOOL
 */
 static int test_session_cmd(
   void *clientData,
@@ -34,7 +35,8 @@ static int test_session_cmd(
     { "attach",    1, "TABLE", }, /* 0 */
     { "changeset", 0, "",      }, /* 1 */
     { "delete",    0, "",      }, /* 2 */
-    { "enable",    1, "",      }, /* 3 */
+    { "enable",    1, "BOOL",  }, /* 3 */
+    { "indirect",  1, "BOOL",  }, /* 4 */
     { 0 }
   };
   int iSub;
@@ -85,6 +87,14 @@ static int test_session_cmd(
       int val;
       if( Tcl_GetBooleanFromObj(interp, objv[2], &val) ) return TCL_ERROR;
       val = sqlite3session_enable(pSession, val);
+      Tcl_SetObjResult(interp, Tcl_NewBooleanObj(val));
+      break;
+    }
+
+    case 4: {      /* indirect */
+      int val;
+      if( Tcl_GetBooleanFromObj(interp, objv[2], &val) ) return TCL_ERROR;
+      val = sqlite3session_indirect(pSession, val);
       Tcl_SetObjResult(interp, Tcl_NewBooleanObj(val));
       break;
     }
@@ -205,7 +215,7 @@ static int test_conflict_handler(
   pEval = Tcl_DuplicateObj(p->pScript);
   Tcl_IncrRefCount(pEval);
 
-  sqlite3changeset_op(pIter, &zTab, &nCol, &op);
+  sqlite3changeset_op(pIter, &zTab, &nCol, &op, 0);
 
   /* Append the operation type. */
   Tcl_ListObjAppendElement(0, pEval, Tcl_NewStringObj(
@@ -396,8 +406,9 @@ static int test_sqlite3session_foreach(
     Tcl_Obj *pVar;                /* Tcl value to set $VARNAME to */
     Tcl_Obj *pOld;                /* Vector of old.* values */
     Tcl_Obj *pNew;                /* Vector of new.* values */
+    int bIndirect;
 
-    sqlite3changeset_op(pIter, &zTab, &nCol, &op);
+    sqlite3changeset_op(pIter, &zTab, &nCol, &op, &bIndirect);
     pVar = Tcl_NewObj();
     Tcl_ListObjAppendElement(0, pVar, Tcl_NewStringObj(
           op==SQLITE_INSERT ? "INSERT" :
@@ -405,6 +416,7 @@ static int test_sqlite3session_foreach(
           "DELETE", -1
     ));
     Tcl_ListObjAppendElement(0, pVar, Tcl_NewStringObj(zTab, -1));
+    Tcl_ListObjAppendElement(0, pVar, Tcl_NewBooleanObj(bIndirect));
 
     pOld = Tcl_NewObj();
     if( op!=SQLITE_INSERT ){

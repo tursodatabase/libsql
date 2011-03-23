@@ -88,14 +88,14 @@ do_test 2.1.1 {
   execsql { INSERT INTO t1 VALUES(3, 'Thonburi') }
 } {}
 do_changeset_test 2.1.2 S {
-  {INSERT t1 {} {i 1 t Sukhothai}}
-  {INSERT t1 {} {i 2 t Ayutthaya}}
-  {INSERT t1 {} {i 3 t Thonburi}}
+  {INSERT t1 0 {} {i 1 t Sukhothai}}
+  {INSERT t1 0 {} {i 2 t Ayutthaya}}
+  {INSERT t1 0 {} {i 3 t Thonburi}}
 }
 do_changeset_invert_test 2.1.3 S {
-  {DELETE t1 {i 1 t Sukhothai} {}}
-  {DELETE t1 {i 2 t Ayutthaya} {}}
-  {DELETE t1 {i 3 t Thonburi} {}}
+  {DELETE t1 0 {i 1 t Sukhothai} {}}
+  {DELETE t1 0 {i 2 t Ayutthaya} {}}
+  {DELETE t1 0 {i 3 t Thonburi} {}}
 }
 do_test 2.1.4 { S delete } {}
 
@@ -105,14 +105,14 @@ do_test 2.2.1 {
   execsql { DELETE FROM t1 WHERE 1 }
 } {}
 do_changeset_test 2.2.2 S {
-  {DELETE t1 {i 1 t Sukhothai} {}}
-  {DELETE t1 {i 2 t Ayutthaya} {}}
-  {DELETE t1 {i 3 t Thonburi} {}}
+  {DELETE t1 0 {i 1 t Sukhothai} {}}
+  {DELETE t1 0 {i 2 t Ayutthaya} {}}
+  {DELETE t1 0 {i 3 t Thonburi} {}}
 }
 do_changeset_invert_test 2.2.3 S {
-  {INSERT t1 {} {i 1 t Sukhothai}}
-  {INSERT t1 {} {i 2 t Ayutthaya}}
-  {INSERT t1 {} {i 3 t Thonburi}}
+  {INSERT t1 0 {} {i 1 t Sukhothai}}
+  {INSERT t1 0 {} {i 2 t Ayutthaya}}
+  {INSERT t1 0 {} {i 3 t Thonburi}}
 }
 do_test 2.2.4 { S delete } {}
 
@@ -131,19 +131,19 @@ do_test 2.3.1 {
 } {}
 
 do_changeset_test 2.3.2 S {
-  {INSERT t1 {} {i 10 t Sukhothai}} 
-  {DELETE t1 {i 1 t Sukhothai} {}} 
-  {UPDATE t1 {i 2 t Ayutthaya} {{} {} t Surin}} 
-  {DELETE t1 {i 3 t Thonburi} {}} 
-  {INSERT t1 {} {i 20 t Thapae}} 
+  {INSERT t1 0 {} {i 10 t Sukhothai}} 
+  {DELETE t1 0 {i 1 t Sukhothai} {}} 
+  {UPDATE t1 0 {i 2 t Ayutthaya} {{} {} t Surin}} 
+  {DELETE t1 0 {i 3 t Thonburi} {}} 
+  {INSERT t1 0 {} {i 20 t Thapae}} 
 }
 
 do_changeset_invert_test 2.3.3 S {
-  {DELETE t1 {i 10 t Sukhothai} {}} 
-  {INSERT t1 {} {i 1 t Sukhothai}} 
-  {UPDATE t1 {{} {} t Surin} {i 2 t Ayutthaya}} 
-  {INSERT t1 {} {i 3 t Thonburi}} 
-  {DELETE t1 {i 20 t Thapae} {}}
+  {DELETE t1 0 {i 10 t Sukhothai} {}} 
+  {INSERT t1 0 {} {i 1 t Sukhothai}} 
+  {UPDATE t1 0 {{} {} t Surin} {i 2 t Ayutthaya}} 
+  {INSERT t1 0 {} {i 3 t Thonburi}} 
+  {DELETE t1 0 {i 20 t Thapae} {}}
 }
 do_test 2.3.4 { S delete } {}
 

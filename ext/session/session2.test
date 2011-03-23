@@ -41,13 +41,13 @@ do_iterator_test 1.1 t1 {
   DELETE FROM t1 WHERE a = 'i';
   INSERT INTO t1 VALUES('ii', 'two');
 } {
-  {DELETE t1 {t i t one} {}} 
-  {INSERT t1 {} {t ii t two}}
+  {DELETE t1 0 {t i t one} {}} 
+  {INSERT t1 0 {} {t ii t two}}
 }
 do_iterator_test 1.2 t1 {
   INSERT INTO t1 VALUES(1.5, 99.9)
 } {
-  {INSERT t1 {} {f 1.5 f 99.9}}
+  {INSERT t1 0 {} {f 1.5 f 99.9}}
 }
 
 
@@ -228,15 +228,15 @@ foreach {tn sql changeset} {
     INSERT INTO t1 VALUES(NULL);
     INSERT INTO t1 VALUES(456);
   } {
-    {INSERT t1 {} {i 456}} 
-    {INSERT t1 {} {i 123}}
+    {INSERT t1 0 {} {i 456}} 
+    {INSERT t1 0 {} {i 123}}
   }
 
   2 {
     UPDATE t1 SET a = NULL;
   } {
-    {DELETE t1 {i 456} {}}
-    {DELETE t1 {i 123} {}}
+    {DELETE t1 0 {i 456} {}}
+    {DELETE t1 0 {i 123} {}}
   }
 
   3 { DELETE FROM t1 } { }
@@ -244,14 +244,14 @@ foreach {tn sql changeset} {
   4 { 
     INSERT INTO t3 VALUES(NULL, NULL)
   } {
-    {INSERT t3 {} {n {} i 1}} 
+    {INSERT t3 0 {} {n {} i 1}} 
   }
 
   5 { INSERT INTO t2 VALUES(1, 2, NULL) }    { }
   6 { INSERT INTO t2 VALUES(1, NULL, 3) }    { }
   7 { INSERT INTO t2 VALUES(1, NULL, NULL) } { }
-  8 { INSERT INTO t2 VALUES(1, 2, 3) }       { {INSERT t2 {} {i 1 i 2 i 3}} }
-  9 { DELETE FROM t2 WHERE 1 }               { {DELETE t2 {i 1 i 2 i 3} {}} }
+  8 { INSERT INTO t2 VALUES(1, 2, 3) }       { {INSERT t2 0 {} {i 1 i 2 i 3}} }
+  9 { DELETE FROM t2 WHERE 1 }               { {DELETE t2 0 {i 1 i 2 i 3} {}} }
 
 } {
   do_iterator_test 4.$tn {t1 t2 t3} $sql $changeset
@@ -269,18 +269,112 @@ do_execsql_test 5.0 {
 }
 
 foreach {tn sql changeset} {
-  1 { INSERT INTO t1 VALUES(35) }     { {INSERT t1 {} {i 35}} }
-  2 { INSERT INTO t2 VALUES(36, 37) } { {INSERT t2 {} {i 36 i 37}} }
+  1 { INSERT INTO t1 VALUES(35) }     { {INSERT t1 0 {} {i 35}} }
+  2 { INSERT INTO t2 VALUES(36, 37) } { {INSERT t2 0 {} {i 36 i 37}} }
   3 { 
     DELETE FROM t1 WHERE 1;
     UPDATE t2 SET x = 34;
   } { 
-    {UPDATE t2 {i 36 i 37} {i 34 {} {}}}
-    {DELETE t1 {i 35} {}}
+    {UPDATE t2 0 {i 36 i 37} {i 34 {} {}}}
+    {DELETE t1 0 {i 35} {}}
   }
 } {
   do_iterator_test 5.$tn * $sql $changeset
 }
 
-finish_test
+#-------------------------------------------------------------------------
+# The next block of tests verify that the "indirect" flag is set 
+# correctly within changesets. The indirect flag is set for a change
+# if either of the following are true:
+#
+#   * The sqlite3session_indirect() API has been used to set the session
+#     indirect flag to true, or
+#   * The change was made by a trigger.
+#
+# If the same row is updated more than once during a session, then the 
+# change is considered indirect only if all changes meet the criteria 
+# above.
+#
+test_reset
+db function indirect [list S indirect]
 
+do_execsql_test 6.0 {
+  CREATE TABLE t1(a PRIMARY KEY, b, c);
+
+  CREATE TABLE t2(x PRIMARY KEY, y);
+  CREATE TRIGGER AFTER INSERT ON t2 WHEN new.x%2 BEGIN
+    INSERT INTO t2 VALUES(new.x+1, NULL);
+  END;
+}
+
+do_iterator_test 6.1.1 * {
+  INSERT INTO t1 VALUES(1, 'one', 'i');
+  SELECT indirect(1);
+  INSERT INTO t1 VALUES(2, 'two', 'ii');
+  SELECT indirect(0);
+  INSERT INTO t1 VALUES(3, 'three', 'iii');
+} {
+  {INSERT t1 0 {} {i 1 t one t i}}
+  {INSERT t1 1 {} {i 2 t two t ii}}
+  {INSERT t1 0 {} {i 3 t three t iii}}
+}
+
+do_iterator_test 6.1.2 * {
+  SELECT indirect(1);
+  UPDATE t1 SET c = 'I' WHERE a = 1;
+  SELECT indirect(0);
+} {
+  {UPDATE t1 1 {i 1 {} {} t i} {{} {} {} {} t I}}
+}
+do_iterator_test 6.1.3 * {
+  SELECT indirect(1);
+  UPDATE t1 SET c = '.' WHERE a = 1;
+  SELECT indirect(0);
+  UPDATE t1 SET c = 'o' WHERE a = 1;
+} {
+  {UPDATE t1 0 {i 1 {} {} t I} {{} {} {} {} t o}}
+}
+do_iterator_test 6.1.4 * {
+  SELECT indirect(0);
+  UPDATE t1 SET c = 'x' WHERE a = 1;
+  SELECT indirect(1);
+  UPDATE t1 SET c = 'i' WHERE a = 1;
+} {
+  {UPDATE t1 0 {i 1 {} {} t o} {{} {} {} {} t i}}
+}
+do_iterator_test 6.1.4 * {
+  SELECT indirect(1);
+  UPDATE t1 SET c = 'y' WHERE a = 1;
+  SELECT indirect(1);
+  UPDATE t1 SET c = 'I' WHERE a = 1;
+} {
+  {UPDATE t1 1 {i 1 {} {} t i} {{} {} {} {} t I}}
+}
+
+do_iterator_test 6.1.5 * {
+  INSERT INTO t2 VALUES(1, 'x');
+} {
+  {INSERT t2 0 {} {i 1 t x}}
+  {INSERT t2 1 {} {i 2 n {}}}
+}
+
+do_iterator_test 6.1.6 * {
+  SELECT indirect(1);
+  INSERT INTO t2 VALUES(3, 'x');
+  SELECT indirect(0);
+  UPDATE t2 SET y = 'y' WHERE x>2;
+} {
+  {INSERT t2 0 {} {i 3 t y}}
+  {INSERT t2 0 {} {i 4 t y}}
+}
+
+do_iterator_test 6.1.7 * {
+  SELECT indirect(1);
+  DELETE FROM t2 WHERE x = 4;
+  SELECT indirect(0);
+  INSERT INTO t2 VALUES(4, 'new');
+} {
+  {UPDATE t2 0 {i 4 t y} {{} {} t new}}
+}
+
+finish_test

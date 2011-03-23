@@ -91,6 +91,35 @@ void sqlite3session_delete(sqlite3_session *pSession);
 int sqlite3session_enable(sqlite3_session *pSession, int bEnable);
 
 /*
+** CAPI3REF: Set Or Clear the Indirect Change Flag
+**
+** Each change recorded by a session object is marked as either direct or
+** indirect. A change is marked as indirect if either:
+**
+** <ul>
+**   <li> The session object "indirect" flag is set when the change is
+**        made, or
+**   <li> The change is made by an SQL trigger or foreign key action 
+**        instead of directly as a result of a users SQL statement.
+** </ul>
+**
+** If a single row is affected by more than one operation within a session,
+** then the change is considered indirect if all operations meet the criteria
+** for an indirect change above, or direct otherwise.
+**
+** This function is used to set, clear or query the session object indirect
+** flag.  If the second argument passed to this function is zero, then the
+** indirect flag is cleared. If it is greater than zero, the indirect flag
+** is set. Passing a value less than zero does not modify the current value
+** of the indirect flag, and may be used to query the current state of the 
+** indirect flag for the specified session object.
+**
+** The return value indicates the final state of the indirect flag: 0 if 
+** it is clear, or 1 if it is set.
+*/
+int sqlite3session_indirect(sqlite3_session *pSession, int bIndirect);
+
+/*
 ** CAPI3REF: Attach A Table To A Session Object
 **
 ** If argument zTab is not NULL, then it is the name of a table to attach
@@ -292,10 +321,13 @@ int sqlite3changeset_next(sqlite3_changeset_iter *pIter);
 ** affected by the current change. The buffer remains valid until either
 ** sqlite3changeset_next() is called on the iterator or until the 
 ** conflict-handler function returns. If pnCol is not NULL, then *pnCol is 
-** set to the number of columns in the table affected by the change. Finally,
-** if pOp is not NULL, then *pOp is set to one of [SQLITE_INSERT], 
-** [SQLITE_DELETE] or [SQLITE_UPDATE], depending on the type of change that 
-** the iterator currently points to.
+** set to the number of columns in the table affected by the change. If
+** pbIncorrect is not NULL, then *pbIndirect is set to true (1) if the change
+** is an indirect change, or false (0) otherwise. See the documentation for
+** [sqlite3session_indirect()] for a description of direct and indirect
+** changes. Finally, if pOp is not NULL, then *pOp is set to one of 
+** [SQLITE_INSERT], [SQLITE_DELETE] or [SQLITE_UPDATE], depending on the 
+** type of change that the iterator currently points to.
 **
 ** If no error occurs, SQLITE_OK is returned. If an error does occur, an
 ** SQLite error code is returned. The values of the output variables may not
@@ -305,7 +337,8 @@ int sqlite3changeset_op(
   sqlite3_changeset_iter *pIter,  /* Iterator object */
   const char **pzTab,             /* OUT: Pointer to table name */
   int *pnCol,                     /* OUT: Number of columns in table */
-  int *pOp                        /* OUT: SQLITE_INSERT, DELETE or UPDATE */
+  int *pOp,                       /* OUT: SQLITE_INSERT, DELETE or UPDATE */
+  int *pbIndirect                 /* OUT: True for an 'indirect' change */
 );
 
 /*
