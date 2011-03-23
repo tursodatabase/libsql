@@ -950,8 +950,8 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
 ** in order (and released in reverse order) to avoid deadlocks.
 */
 void sqlite3VdbeUsesBtree(Vdbe *p, int i){
-  int mask;
-  assert( i>=0 && i<p->db->nDb && i<sizeof(u32)*8 );
+  tAttachMask mask;
+  assert( i>=0 && i<p->db->nDb && i<sizeof(tAttachMask)*8 );
   assert( i<(int)sizeof(p->btreeMask)*8 );
   mask = ((u32)1)<<i;
   if( (p->btreeMask & mask)==0 ){

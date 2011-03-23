@@ -302,7 +302,7 @@ struct Vdbe {
   u8 readOnly;            /* True for read-only statements */
   u8 isPrepareV2;         /* True if prepared with prepare_v2() */
   int nChange;            /* Number of db changes made since last reset */
-  int btreeMask;          /* Bitmask of db->aDb[] entries referenced */
+  tAttachMask btreeMask;  /* Bitmask of db->aDb[] entries referenced */
   int iStatement;         /* Statement number (or 0 if has not opened stmt) */
   int aCounter[3];        /* Counters used by sqlite3_stmt_status() */
   BtreeMutexArray aMutex; /* An array of Btree used here and needing locks */
