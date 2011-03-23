@@ -288,23 +288,23 @@ struct unixFile {
 ** to all overrideable system calls.
 */
 static struct unix_syscall {
-  const char *zName;      /* Name of the sytem call */
-  void *pCurrent;         /* Current value of the system call */
-  void *pDefault;         /* Default value */
+  const char *zName;            /* Name of the sytem call */
+  sqlite3_syscall_ptr pCurrent; /* Current value of the system call */
+  sqlite3_syscall_ptr pDefault; /* Default value */
 } aSyscall[] = {
-  { "open",         (void*)open,       0  },
+  { "open",         (sqlite3_syscall_ptr)open,       0  },
 #define osOpen      ((int(*)(const char*,int,int))aSyscall[0].pCurrent)
 
-  { "close",        (void*)close,      0  },
+  { "close",        (sqlite3_syscall_ptr)close,      0  },
 #define osClose     ((int(*)(int))aSyscall[1].pCurrent)
 
-  { "access",       (void*)access,     0  },
+  { "access",       (sqlite3_syscall_ptr)access,     0  },
 #define osAccess    ((int(*)(const char*,int))aSyscall[2].pCurrent)
 
-  { "getcwd",       (void*)getcwd,     0  },
+  { "getcwd",       (sqlite3_syscall_ptr)getcwd,     0  },
 #define osGetcwd    ((char*(*)(char*,size_t))aSyscall[3].pCurrent)
 
-  { "stat",         (void*)stat,       0  },
+  { "stat",         (sqlite3_syscall_ptr)stat,       0  },
 #define osStat      ((int(*)(const char*,struct stat*))aSyscall[4].pCurrent)
 
 /*
@@ -317,59 +317,59 @@ static struct unix_syscall {
   { "fstat",        0,                 0  },
 #define osFstat(a,b,c)    0
 #else     
-  { "fstat",        (void*)fstat,      0  },
+  { "fstat",        (sqlite3_syscall_ptr)fstat,      0  },
 #define osFstat     ((int(*)(int,struct stat*))aSyscall[5].pCurrent)
 #endif
 
-  { "ftruncate",    (void*)ftruncate,  0  },
+  { "ftruncate",    (sqlite3_syscall_ptr)ftruncate,  0  },
 #define osFtruncate ((int(*)(int,off_t))aSyscall[6].pCurrent)
 
-  { "fcntl",        (void*)fcntl,      0  },
+  { "fcntl",        (sqlite3_syscall_ptr)fcntl,      0  },
 #define osFcntl     ((int(*)(int,int,...))aSyscall[7].pCurrent)
 
-  { "read",         (void*)read,       0  },
+  { "read",         (sqlite3_syscall_ptr)read,       0  },
 #define osRead      ((ssize_t(*)(int,void*,size_t))aSyscall[8].pCurrent)
 
 #if defined(USE_PREAD) || defined(SQLITE_ENABLE_LOCKING_STYLE)
-  { "pread",        (void*)pread,      0  },
+  { "pread",        (sqlite3_syscall_ptr)pread,      0  },
 #else
-  { "pread",        (void*)0,          0  },
+  { "pread",        (sqlite3_syscall_ptr)0,          0  },
 #endif
 #define osPread     ((ssize_t(*)(int,void*,size_t,off_t))aSyscall[9].pCurrent)
 
 #if defined(USE_PREAD64)
-  { "pread64",      (void*)pread64,    0  },
+  { "pread64",      (sqlite3_syscall_ptr)pread64,    0  },
 #else
-  { "pread64",      (void*)0,          0  },
+  { "pread64",      (sqlite3_syscall_ptr)0,          0  },
 #endif
 #define osPread64   ((ssize_t(*)(int,void*,size_t,off_t))aSyscall[10].pCurrent)
 
-  { "write",        (void*)write,      0  },
+  { "write",        (sqlite3_syscall_ptr)write,      0  },
 #define osWrite     ((ssize_t(*)(int,const void*,size_t))aSyscall[11].pCurrent)
 
 #if defined(USE_PREAD) || defined(SQLITE_ENABLE_LOCKING_STYLE)
-  { "pwrite",       (void*)pwrite,     0  },
+  { "pwrite",       (sqlite3_syscall_ptr)pwrite,     0  },
 #else
-  { "pwrite",       (void*)0,          0  },
+  { "pwrite",       (sqlite3_syscall_ptr)0,          0  },
 #endif
 #define osPwrite    ((ssize_t(*)(int,const void*,size_t,off_t))\
                     aSyscall[12].pCurrent)
 
 #if defined(USE_PREAD64)
-  { "pwrite64",     (void*)pwrite64,   0  },
+  { "pwrite64",     (sqlite3_syscall_ptr)pwrite64,   0  },
 #else
-  { "pwrite64",     (void*)0,          0  },
+  { "pwrite64",     (sqlite3_syscall_ptr)0,          0  },
 #endif
 #define osPwrite64  ((ssize_t(*)(int,const void*,size_t,off_t))\
                     aSyscall[13].pCurrent)
 
-  { "fchmod",       (void*)fchmod,     0  },
+  { "fchmod",       (sqlite3_syscall_ptr)fchmod,     0  },
 #define osFchmod    ((int(*)(int,mode_t))aSyscall[14].pCurrent)
 
 #if defined(HAVE_POSIX_FALLOCATE) && HAVE_POSIX_FALLOCATE
-  { "fallocate",    (void*)posix_fallocate,  0 },
+  { "fallocate",    (sqlite3_syscall_ptr)posix_fallocate,  0 },
 #else
-  { "fallocate",    (void*)0,                0 },
+  { "fallocate",    (sqlite3_syscall_ptr)0,                0 },
 #endif
 #define osFallocate ((int(*)(int,off_t,off_t)aSyscall[15].pCurrent)
 
@@ -382,12 +382,14 @@ static struct unix_syscall {
 ** system call named zName.
 */
 static int unixSetSystemCall(
-  sqlite3_vfs *pNotUsed,     /* The VFS pointer.  Not used */
-  const char *zName,         /* Name of system call to override */
-  void *pNewFunc             /* Pointer to new system call value */
+  sqlite3_vfs *pNotUsed,        /* The VFS pointer.  Not used */
+  const char *zName,            /* Name of system call to override */
+  sqlite3_syscall_ptr pNewFunc  /* Pointer to new system call value */
 ){
-  int i;
+  unsigned int i;
   int rc = SQLITE_NOTFOUND;
+
+  UNUSED_PARAMETER(pNotUsed);
   if( zName==0 ){
     /* If no zName is given, restore all system calls to their default
     ** settings and return NULL
@@ -422,8 +424,13 @@ static int unixSetSystemCall(
 ** recognized system call name.  NULL is also returned if the system call
 ** is currently undefined.
 */
-static void *unixGetSystemCall(sqlite3_vfs *pNotUsed, const char *zName){
-  int i;
+static sqlite3_syscall_ptr unixGetSystemCall(
+  sqlite3_vfs *pNotUsed,
+  const char *zName
+){
+  unsigned int i;
+
+  UNUSED_PARAMETER(pNotUsed);
   for(i=0; i<sizeof(aSyscall)/sizeof(aSyscall[0]); i++){
     if( strcmp(zName, aSyscall[i].zName)==0 ) return aSyscall[i].pCurrent;
   }
@@ -437,7 +444,9 @@ static void *unixGetSystemCall(sqlite3_vfs *pNotUsed, const char *zName){
 ** system call.
 */
 static const char *unixNextSystemCall(sqlite3_vfs *p, const char *zName){
-  int i;
+  unsigned int i;
+
+  UNUSED_PARAMETER(p);
   if( zName==0 ){
     i = -1;
   }else{

@@ -529,7 +529,7 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
         { SQLITE_DBCONFIG_ENABLE_FKEY,    SQLITE_ForeignKeys    },
         { SQLITE_DBCONFIG_ENABLE_TRIGGER, SQLITE_EnableTrigger  },
       };
-      int i;
+      unsigned int i;
       rc = SQLITE_ERROR; /* IMP: R-42790-23372 */
       for(i=0; i<ArraySize(aFlagOp); i++){
         if( aFlagOp[i].op==op ){
