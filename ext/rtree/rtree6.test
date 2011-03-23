@@ -127,7 +127,7 @@ do_test rtree6.3.2 {
       x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 
   }
 } {EaEaEaEaEaEaEaEaEaEaEaEaEaEaEaEaEaEaEaEa}
-do_test rtree6.3.4 {
+do_test rtree6.3.3 {
   rtree_strategy {
     SELECT * FROM t3 WHERE 
       x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND 
@@ -138,6 +138,19 @@ do_test rtree6.3.4 {
       x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5
   }
 } {EaEaEaEaEaEaEaEaEaEaEaEaEaEaEaEaEaEaEaEa}
+
+do_execsql_test rtree6-3.4 {
+  SELECT * FROM t3 WHERE x1>0.5 AND x1>0.8 AND x1>1.1
+} {}
+do_execsql_test rtree6-3.5 {
+  SELECT * FROM t3 WHERE 
+    x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND 
+    x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND 
+    x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND 
+    x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND 
+    x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND 
+    x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>1.1
+} {}
 
 
 finish_test
