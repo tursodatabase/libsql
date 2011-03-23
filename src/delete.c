@@ -391,7 +391,7 @@ void sqlite3DeleteFrom(
     if( IsVirtual(pTab) ){
       const char *pVTab = (const char *)sqlite3GetVTable(db, pTab);
       sqlite3VtabMakeWritable(pParse, pTab);
-      sqlite3VdbeAddOp4(v, OP_VUpdate, 0, 1, iRowid, pVTab, P4_VTAB);
+      sqlite3VdbeAddOp4(v, OP_VUpdate, 0, 1, iRowid, (char*)pVTab, P4_VTAB);
       sqlite3MayAbort(pParse);
     }else
 #endif
@@ -542,7 +542,7 @@ void sqlite3GenerateRowDelete(
   if( pTab->pSelect==0 ){
     sqlite3GenerateRowIndexDelete(pParse, pTab, iCur, 0);
     sqlite3VdbeAddOp2(v, OP_Delete, iCur, (count?OPFLAG_NCHANGE:0));
-    sqlite3VdbeChangeP4(v, -1, pTab, P4_TABLE);
+    sqlite3VdbeChangeP4(v, -1, (char*)pTab, P4_TABLE);
   }
 
   /* Do any ON CASCADE, SET NULL or SET DEFAULT operations required to

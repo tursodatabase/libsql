@@ -503,7 +503,7 @@ void sqlite3Update(
         regNewRowid
     );
     if( !pParse->nested ){
-      sqlite3VdbeChangeP4(v, -1, pTab, P4_TABLE);
+      sqlite3VdbeChangeP4(v, -1, (char*)pTab, P4_TABLE);
     }
     sqlite3VdbeJumpHere(v, j1);
 

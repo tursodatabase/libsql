@@ -2131,6 +2131,13 @@ struct TriggerPrg {
   TriggerPrg *pNext;      /* Next entry in Parse.pTriggerPrg list */
 };
 
+/* Datatype for the bitmask of all attached databases */
+#if SQLITE_MAX_ATTACHED>30
+  typedef sqlite3_uint64 tAttachMask;
+#else
+  typedef unsigned int tAttachMask;
+#endif
+
 /*
 ** An SQL parser context.  A copy of this structure is passed through
 ** the parser and down into all the parser action routine in order to
@@ -2179,8 +2186,8 @@ struct Parse {
     int iReg;             /* Reg with value of this column. 0 means none. */
     int lru;              /* Least recently used entry has the smallest value */
   } aColCache[SQLITE_N_COLCACHE];  /* One for each column cache entry */
-  u32 writeMask;       /* Start a write transaction on these databases */
-  u32 cookieMask;      /* Bitmask of schema verified databases */
+  tAttachMask writeMask;  /* Start a write transaction on these databases */
+  tAttachMask cookieMask; /* Bitmask of schema verified databases */
   u8 isMultiWrite;     /* True if statement may affect/insert multiple rows */
   u8 mayAbort;         /* True if statement may throw an ABORT exception */
   int cookieGoto;      /* Address of OP_Goto to cookie verifier subroutine */

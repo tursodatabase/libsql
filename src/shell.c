@@ -1851,7 +1851,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   }else
 #endif
 
-  if( c=='l' && strncmp(azArg[0], "log", n)==0 && nArg>=1 ){
+  if( c=='l' && strncmp(azArg[0], "log", n)==0 && nArg>=2 ){
     const char *zFile = azArg[1];
     if( p->pLog && p->pLog!=stdout && p->pLog!=stderr ){
       fclose(p->pLog);
