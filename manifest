@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Update\sthe\stest_vfstrace.c\sshim\sto\sconform\sto\sthe\snew\sVFS\sinterface\sfor\nxSetSystemCall\sand\sxGetSystemCall.
-D 2011-03-23T22:51:46.061
+C Fix\sa\ssigned/unsigned\scomparison\scompiler\swarning.
+D 2011-03-23T22:54:59.680
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -146,7 +146,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 8af9fcc75708d60b88636ccba38b4a7b3c155c3e
-F src/main.c c4ecb1973419a1e2467cfea31054458da293a307
+F src/main.c c23c62e53d120c5eee086c0e2cc96cc9a691c50e
 F src/malloc.c 92d59a007d7a42857d4e9454aa25b6b703286be1
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 00bd8265c81abb665c48fea1e0c234eb3b922206
@@ -918,14 +918,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e059152adce3a8fb693f082b82b5669a238c8d6f
-R 75d6f66061beba76adb202eec759f027
+P ad4dc7b95f94fc9a5430c1305fb61d9de79b3365
+R 05f42cc00ab3cdb64365c2fe171fc56f
 U drh
-Z ff6f0ffde7e5c35f37c4810c75e3b0d4
+Z 644dd0f67efa20295e11832c3a2205f7
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNinmFoxKgR168RlERAg4aAJ0bc0wkWU8kJ2SehXvc1alhmb7iSQCfdz3j
-iMfJCE03+JzoqhiA/n+t9qM=
-=Mkm7
+iD8DBQFNinpHoxKgR168RlERAq2dAJ46tn1P78bk+fzSlMu9lZgNt93uXgCfdSxG
+aLd6ZyUVGNlmb+6ykQVFcwI=
+=8SNl
 -----END PGP SIGNATURE-----
