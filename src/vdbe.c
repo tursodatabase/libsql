@@ -4608,14 +4608,10 @@ case OP_CreateTable: {          /* out2-prerelease */
   break;
 }
 
-/* Opcode: ParseSchema P1 P2 * P4 *
+/* Opcode: ParseSchema P1 * * P4 *
 **
 ** Read and parse all entries from the SQLITE_MASTER table of database P1
-** that match the WHERE clause P4.  P2 is the "force" flag.   Always do
-** the parsing if P2 is true.  If P2 is false, then this routine is a
-** no-op if the schema is not currently loaded.  In other words, if P2
-** is false, the SQLITE_MASTER table is only parsed if the rest of the
-** schema is already loaded into the symbol table.
+** that match the WHERE clause P4. 
 **
 ** This opcode invokes the parser to create a new virtual machine,
 ** then runs the new virtual machine.  It is thus a re-entrant opcode.
@@ -4629,14 +4625,7 @@ case OP_ParseSchema: {
   iDb = pOp->p1;
   assert( iDb>=0 && iDb<db->nDb );
 
-  /* If pOp->p2 is 0, then this opcode is being executed to read a
-  ** single row, for example the row corresponding to a new index
-  ** created by this VDBE, from the sqlite_master table. It only
-  ** does this if the corresponding in-memory schema is currently
-  ** loaded. Otherwise, the new index definition can be loaded along
-  ** with the rest of the schema when it is required.
-  **
-  ** Although the mutex on the BtShared object that corresponds to
+  /* Although the mutex on the BtShared object that corresponds to
   ** database iDb (the database containing the sqlite_master table
   ** read by this instruction) is currently held, it is necessary to
   ** obtain the mutexes on all attached databases before checking if
@@ -4652,7 +4641,7 @@ case OP_ParseSchema: {
   */
   assert( sqlite3BtreeHoldsMutex(db->aDb[iDb].pBt) );
   sqlite3BtreeEnterAll(db);
-  if( pOp->p2 || DbHasProperty(db, iDb, DB_SchemaLoaded) ){
+  if( ALWAYS(DbHasProperty(db, iDb, DB_SchemaLoaded)) ){
     zMaster = SCHEMA_TABLE(iDb);
     initData.db = db;
     initData.iDb = pOp->p1;
