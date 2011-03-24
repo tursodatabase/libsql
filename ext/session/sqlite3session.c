@@ -544,7 +544,7 @@ static int sessionTableInfo(
   sqlite3 *db,                    /* Database connection */
   const char *zDb,                /* Name of attached database (e.g. "main") */
   const char *zThis,              /* Table name */
-  int nCol,                       /* Expected number of columns */
+  int *pnCol,                     /* OUT: number of columns */
   const char **pzTab,             /* OUT: Copy of zThis */
   const char ***pazCol,           /* OUT: Array of column names for table */
   u8 **pabPK                      /* OUT: Array of booleans - true for PK col */
@@ -577,9 +577,6 @@ static int sessionTableInfo(
   }
   rc = sqlite3_reset(pStmt);
 
-  if( nDbCol!=nCol ){
-    rc = SQLITE_SCHEMA;
-  }
   if( rc==SQLITE_OK ){
     nByte += nDbCol * (sizeof(const char *) + sizeof(u8) + 1);
     pAlloc = sqlite3_malloc(nByte);
@@ -589,9 +586,9 @@ static int sessionTableInfo(
   }
   if( rc==SQLITE_OK ){
     azCol = (char **)pAlloc;
-    pAlloc = (u8 *)&azCol[nCol];
+    pAlloc = (u8 *)&azCol[nDbCol];
     abPK = (u8 *)pAlloc;
-    pAlloc = &abPK[nCol];
+    pAlloc = &abPK[nDbCol];
     if( pzTab ){
       memcpy(pAlloc, zThis, nThis+1);
       *pzTab = (char *)pAlloc;
@@ -619,9 +616,11 @@ static int sessionTableInfo(
   if( rc==SQLITE_OK ){
     *pazCol = (const char **)azCol;
     *pabPK = abPK;
+    *pnCol = nDbCol;
   }else{
     *pazCol = 0;
     *pabPK = 0;
+    *pnCol = 0;
     if( pzTab ) *pzTab = 0;
     sqlite3_free(azCol);
   }
@@ -648,11 +647,13 @@ static int sessionTableInfo(
 static int sessionInitTable(sqlite3_session *pSession, SessionTable *pTab){
   if( pTab->nCol==0 ){
     assert( pTab->azCol==0 || pTab->abPK==0 );
-    pTab->nCol = sqlite3_preupdate_count(pSession->db);
     pSession->rc = sessionTableInfo(pSession->db, pSession->zDb, 
-        pTab->zName, pTab->nCol, 0, &pTab->azCol, &pTab->abPK
+        pTab->zName, &pTab->nCol, 0, &pTab->azCol, &pTab->abPK
     );
-  }else if( pTab->nCol!=sqlite3_preupdate_count(pSession->db) ){
+  }
+  if( pSession->rc==SQLITE_OK 
+   && pTab->nCol!=sqlite3_preupdate_count(pSession->db) 
+  ){
     pSession->rc = SQLITE_SCHEMA;
   }
   return pSession->rc;
@@ -2402,6 +2403,7 @@ int sqlite3changeset_apply(
   ),
   void *pCtx                      /* First argument passed to xConflict */
 ){
+  int schemaMismatch = 0;
   sqlite3_changeset_iter *pIter;  /* Iterator to skip through changeset */  
   int rc;                         /* Return code */
   const char *zTab = 0;           /* Name of current table */
@@ -2420,9 +2422,13 @@ int sqlite3changeset_apply(
     int bReplace = 0;
     int bRetry = 0;
     const char *zNew;
+    
     sqlite3changeset_op(pIter, &zNew, &nCol, &op, 0);
 
     if( zTab==0 || sqlite3_strnicmp(zNew, zTab, nTab+1) ){
+      u8 *abPK;
+
+      schemaMismatch = 0;
       sqlite3_free(sApply.azCol);
       sqlite3_finalize(sApply.pDelete);
       sqlite3_finalize(sApply.pUpdate); 
@@ -2430,22 +2436,46 @@ int sqlite3changeset_apply(
       sqlite3_finalize(sApply.pSelect);
       memset(&sApply, 0, sizeof(sApply));
       sApply.db = db;
-      sApply.nCol = nCol;
 
+      sqlite3changeset_pk(pIter, &abPK, 0);
       rc = sessionTableInfo(
-          db, "main", zNew, nCol, &zTab, &sApply.azCol, &sApply.abPK);
+          db, "main", zNew, &sApply.nCol, &zTab, &sApply.azCol, &sApply.abPK
+      );
+      if( rc!=SQLITE_OK ) break;
 
-      if( rc!=SQLITE_OK 
-       || (rc = sessionSelectRow(db, zTab, &sApply))
+      if( sApply.nCol==0 ){
+        schemaMismatch = 1;
+        sqlite3_log(SQLITE_SCHEMA, 
+            "sqlite3changeset_apply(): no such table: %s", zTab
+        );
+      }
+      else if( sApply.nCol!=nCol ){
+        schemaMismatch = 1;
+        sqlite3_log(SQLITE_SCHEMA, 
+            "sqlite3changeset_apply(): table %s has %d columns, expected %d", 
+            zTab, sApply.nCol, nCol
+        );
+      }
+      else if( memcmp(sApply.abPK, abPK, nCol)!=0 ){
+        schemaMismatch = 1;
+        sqlite3_log(SQLITE_SCHEMA, 
+            "sqlite3changeset_apply(): primary key mismatch for table %s", zTab
+        );
+      }
+      else if( 
+          (rc = sessionSelectRow(db, zTab, &sApply))
        || (rc = sessionUpdateRow(db, zTab, &sApply))
        || (rc = sessionDeleteRow(db, zTab, &sApply))
        || (rc = sessionInsertRow(db, zTab, &sApply))
       ){
         break;
       }
-
       nTab = strlen(zTab);
     }
+
+    /* If there is a schema mismatch on the current table, proceed to the
+    ** next change. A log message has already been issued. */
+    if( schemaMismatch ) continue;
 
     rc = sessionApplyOneOp(pIter, &sApply, xConflict, pCtx, &bReplace, &bRetry);
 

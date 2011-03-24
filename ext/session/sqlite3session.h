@@ -48,7 +48,7 @@ typedef struct sqlite3_changeset_iter sqlite3_changeset_iter;
 **
 ** The session object will be used to create changesets for tables in
 ** database zDb, where zDb is either "main", or "temp", or the name of an
-** attached database. It is not an error if database zDb does not exist
+** attached database. It is not an error if database zDb is not attached
 ** to the database when the session object is created.
 */
 int sqlite3session_create(
