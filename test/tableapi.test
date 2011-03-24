@@ -231,6 +231,14 @@ ifcapable schema_pragmas {
   } {0 1 1 user_version 0}
 }
 
+# do_malloc_test closes and deletes the usual db connections and files on
+# each iteration.  $::dbx is a seperate connection, and on Windows, will
+# cause the file deletion of test.db to fail, so we move the close of $::dbx
+# up to here before the do_malloc_test.
+do_test tableapi-99.0 {
+  sqlite3_close $::dbx
+} {SQLITE_OK}
+
 ifcapable memdebug {
   do_malloc_test tableapi-7 -sqlprep {
     DROP TABLE IF EXISTS t1;
@@ -244,9 +252,5 @@ ifcapable memdebug {
     if {[llength $r]<26} {error "out of memory"}
   }
 }
-
-do_test tableapi-99.0 {
-  sqlite3_close $::dbx
-} {SQLITE_OK}
 
 finish_test

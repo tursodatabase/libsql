@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C The\schanges\sto\sfix\s[f7b4edece25c9948]\smean\sthat\sthe\sschema\sis\salways\sloaded\nwhenever\sa\sprepared\sstatement\sis\srunning.\s\sThis\smeans\sthat\sa\scouple\sof\nbranches\scan\sbe\seliminated\sand\sone\soperand\sof\sOP_ParseSchema\scan\sbe\sremoved.
-D 2011-03-24T01:34:03.589
+C Fix\sproblem\swith\stableapi.test\son\sWindows.
+D 2011-03-24T17:37:24.174
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -674,7 +671,7 @@ F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
 F test/superlock.test 5d7a4954b0059c903f82c7b67867bc5451a7c082
 F test/sync.test ded6b39d8d8ca3c0c5518516c6371b3316d3e3a3
 F test/table.test 04ba066432430657712d167ebf28080fe878d305
-F test/tableapi.test 7262a8cbaa9965d429f1cbd2747edc185fa56516
+F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
 F test/tclsqlite.test 8c154101e704170c2be10f137a5499ac2c6da8d3
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test f42121a0d29a62f00f93274464164177ab1cc24a
@@ -918,14 +915,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c81da6f98d89935442c447a51736e11baf5a7bc1
-R 1385a7d5de36b79443cb7c3a0640b642
-U drh
-Z 543f2172a6c6f59b12f6f8179ba74ac8
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFNip+OoxKgR168RlERAscyAJwO5weMWphP/4h7v5yG5qbxBwjEmwCfWfm9
-6wa+RAcKUeSlgCixWI85G+0=
-=EvNb
------END PGP SIGNATURE-----
+P b6e268fce12829f058f1dfa223731ec8479493f8
+R c7f011955e8b01d6bf0bfb373d4d196c
+U shaneh
+Z fc0302ddf1dde83de45345457bb8eef1
