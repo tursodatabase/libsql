@@ -408,6 +408,10 @@ static int test_sqlite3session_foreach(
     Tcl_Obj *pNew;                /* Vector of new.* values */
     int bIndirect;
 
+    char *zPK;
+    unsigned char *abPK;
+    int i;
+
     sqlite3changeset_op(pIter, &zTab, &nCol, &op, &bIndirect);
     pVar = Tcl_NewObj();
     Tcl_ListObjAppendElement(0, pVar, Tcl_NewStringObj(
@@ -415,8 +419,18 @@ static int test_sqlite3session_foreach(
           op==SQLITE_UPDATE ? "UPDATE" : 
           "DELETE", -1
     ));
+
     Tcl_ListObjAppendElement(0, pVar, Tcl_NewStringObj(zTab, -1));
     Tcl_ListObjAppendElement(0, pVar, Tcl_NewBooleanObj(bIndirect));
+
+    zPK = ckalloc(nCol+1);
+    memset(zPK, 0, nCol+1);
+    sqlite3changeset_pk(pIter, &abPK, 0);
+    for(i=0; i<nCol; i++){
+      zPK[i] = (abPK[i] ? 'X' : '.');
+    }
+    Tcl_ListObjAppendElement(0, pVar, Tcl_NewStringObj(zPK, -1));
+    ckfree(zPK);
 
     pOld = Tcl_NewObj();
     if( op!=SQLITE_INSERT ){

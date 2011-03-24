@@ -39,6 +39,7 @@ struct sqlite3_changeset_iter {
   int nCol;                       /* Number of columns in zTab */
   int op;                         /* Current operation */
   int bIndirect;                  /* True if current change was indirect */
+  u8 *abPK;                       /* Primary key array */
   sqlite3_value **apValue;        /* old.* and new.* values */
 };
 
@@ -1357,6 +1358,7 @@ int sqlite3session_changeset(
       /* Write a table header */
       sessionAppendByte(&buf, 'T', &rc);
       sessionAppendVarint(&buf, nCol, &rc);
+      sessionAppendBlob(&buf, pTab->abPK, nCol, &rc);
       sessionAppendBlob(&buf, (u8 *)zName, strlen(zName)+1, &rc);
 
       /* Build and compile a statement to execute: */
@@ -1575,6 +1577,8 @@ int sqlite3changeset_next(sqlite3_changeset_iter *p){
   if( c=='T' ){
     int nByte;                    /* Bytes to allocate for apValue */
     aChange += sessionVarintGet(aChange, &p->nCol);
+    p->abPK = (u8 *)aChange;
+    aChange += p->nCol;
     p->zTab = (char *)aChange;
     aChange += (strlen((char *)aChange) + 1);
     p->op = *(aChange++);
@@ -1611,7 +1615,7 @@ int sqlite3changeset_next(sqlite3_changeset_iter *p){
 }
 
 /*
-** The following three functions extract information on the current change
+** The following function extracts information on the current change
 ** from a changeset iterator. They may only be called after changeset_next()
 ** has returned SQLITE_ROW.
 */
@@ -1626,6 +1630,16 @@ int sqlite3changeset_op(
   *pnCol = pIter->nCol;
   *pzTab = pIter->zTab;
   if( pbIndirect ) *pbIndirect = pIter->bIndirect;
+  return SQLITE_OK;
+}
+
+int sqlite3changeset_pk(
+  sqlite3_changeset_iter *pIter,  /* Iterator object */
+  unsigned char **pabPK,          /* OUT: Array of boolean - true for PK cols */
+  int *pnCol                      /* OUT: Number of entries in output array */
+){
+  *pabPK = pIter->abPK;
+  if( pnCol ) *pnCol = pIter->nCol;
   return SQLITE_OK;
 }
 
@@ -1764,7 +1778,15 @@ int sqlite3changeset_invert(
     u8 eType = aIn[i];
     switch( eType ){
       case 'T': {
+        /* A 'table' record consists of:
+        **
+        **   * A constant 'T' character,
+        **   * Number of columns in said table (a varint),
+        **   * An array of nCol bytes (abPK),
+        **   * A nul-terminated table name.
+        */
         int nByte = 1 + sessionVarintGet(&aIn[i+1], &nCol);
+        nByte += nCol;
         nByte += 1 + strlen((char *)&aIn[i+nByte]);
         memcpy(&aOut[i], &aIn[i], nByte);
         i += nByte;

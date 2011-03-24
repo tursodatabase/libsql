@@ -243,9 +243,9 @@ do_faultsim_test 5 -faults oom* -body {
     set x [list]
     sqlite3session_foreach c $::inverse { lappend x $c }
     foreach c {
-        {DELETE t1 0 {t xxx t yyy} {}} 
-        {INSERT t1 0 {} {t string i 1}} 
-        {UPDATE t1 0 {i 20 {} {}} {i 4 i 2}}
+        {DELETE t1 0 .X {t xxx t yyy} {}} 
+        {INSERT t1 0 .X {} {t string i 1}} 
+        {UPDATE t1 0 .X {i 20 {} {}} {i 4 i 2}}
     } { lappend y $c }
     if {$x != $y} { error "changeset no good" }
   }
