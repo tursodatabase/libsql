@@ -1349,12 +1349,19 @@ int sqlite3session_changeset(
   for(pTab=pSession->pTable; rc==SQLITE_OK && pTab; pTab=pTab->pNext){
     if( pTab->nEntry ){
       const char *zName = pTab->zName;
-      int nCol = pTab->nCol;      /* Local copy of member variable */
-      u8 *abPK = pTab->abPK;      /* Local copy of member variable */
+      int nCol;                   /* Number of columns in table */
+      u8 *abPK;                   /* Primary key array */
+      const char **azCol = 0;     /* Table columns */
       int i;                      /* Used to iterate through hash buckets */
       sqlite3_stmt *pSel = 0;     /* SELECT statement to query table pTab */
       int nRewind = buf.nBuf;     /* Initial size of write buffer */
       int nNoop;                  /* Size of buffer after writing tbl header */
+
+      /* Check the table schema is still Ok. */
+      rc = sessionTableInfo(db, pSession->zDb, zName, &nCol, 0, &azCol, &abPK);
+      if( !rc && (pTab->nCol!=nCol || memcmp(abPK, pTab->abPK, nCol)) ){
+        rc = SQLITE_SCHEMA;
+      }
 
       /* Write a table header */
       sessionAppendByte(&buf, 'T', &rc);
@@ -1365,7 +1372,7 @@ int sqlite3session_changeset(
       /* Build and compile a statement to execute: */
       if( rc==SQLITE_OK ){
         rc = sessionSelectStmt(
-            db, pSession->zDb, zName, nCol, pTab->azCol, abPK, &pSel);
+            db, pSession->zDb, zName, nCol, azCol, abPK, &pSel);
       }
 
       if( rc==SQLITE_OK && nCol!=sqlite3_column_count(pSel) ){
@@ -1407,6 +1414,7 @@ int sqlite3session_changeset(
       if( buf.nBuf==nNoop ){
         buf.nBuf = nRewind;
       }
+      sqlite3_free(azCol);
     }
   }
 
