@@ -8,8 +8,10 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
-# This file implements regression tests for the session module.
-#
+# This file implements regression tests for the session module. More
+# specifically, it focuses on testing the session modules response to
+# database schema modifications and mismatches.
+# 
 
 if {![info exists testdir]} {
   set testdir [file join [file dirname [info script]] .. .. test]

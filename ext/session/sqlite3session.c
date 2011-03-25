@@ -2255,7 +2255,8 @@ static int sessionConflictHandler(
   if( rc==SQLITE_OK ){
     switch( res ){
       case SQLITE_CHANGESET_REPLACE:
-        if( pbReplace ) *pbReplace = 1;
+        assert( pbReplace );
+        *pbReplace = 1;
         break;
 
       case SQLITE_CHANGESET_OMIT:

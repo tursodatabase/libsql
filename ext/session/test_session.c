@@ -17,7 +17,7 @@ static int test_session_error(Tcl_Interp *interp, int rc){
 **          $session changeset
 **          $session delete
 **          $session enable BOOL
-**          $session indirect BOOL
+**          $session indirect INTEGER
 */
 static int test_session_cmd(
   void *clientData,
@@ -93,7 +93,7 @@ static int test_session_cmd(
 
     case 4: {      /* indirect */
       int val;
-      if( Tcl_GetBooleanFromObj(interp, objv[2], &val) ) return TCL_ERROR;
+      if( Tcl_GetIntFromObj(interp, objv[2], &val) ) return TCL_ERROR;
       val = sqlite3session_indirect(pSession, val);
       Tcl_SetObjResult(interp, Tcl_NewBooleanObj(val));
       break;
@@ -268,17 +268,58 @@ static int test_conflict_handler(
   }
 
   /* If this is a CHANGESET_DATA or CHANGESET_CONFLICT conflict, append
-  ** the conflicting row. */
+  ** the conflicting row.  */
   if( eConf==SQLITE_CHANGESET_DATA || eConf==SQLITE_CHANGESET_CONFLICT ){
     int i;
     Tcl_Obj *pConflict = Tcl_NewObj();
     for(i=0; i<nCol; i++){
+      int rc;
       sqlite3_value *pVal;
-      sqlite3changeset_conflict(pIter, i, &pVal);
+      rc = sqlite3changeset_conflict(pIter, i, &pVal);
+      assert( rc==SQLITE_OK );
       test_append_value(pConflict, pVal);
     }
     Tcl_ListObjAppendElement(0, pEval, pConflict);
   }
+
+  /***********************************************************************
+  ** This block is purely for testing some error conditions.
+  */
+  if( eConf==SQLITE_CHANGESET_CONSTRAINT || eConf==SQLITE_CHANGESET_NOTFOUND ){
+    sqlite3_value *pVal;
+    int rc = sqlite3changeset_conflict(pIter, 0, &pVal);
+    assert( rc==SQLITE_MISUSE );
+  }else{
+    sqlite3_value *pVal;
+    int rc = sqlite3changeset_conflict(pIter, -1, &pVal);
+    assert( rc==SQLITE_RANGE );
+    rc = sqlite3changeset_conflict(pIter, nCol, &pVal);
+    assert( rc==SQLITE_RANGE );
+  }
+  if( op==SQLITE_DELETE ){
+    sqlite3_value *pVal;
+    int rc = sqlite3changeset_new(pIter, 0, &pVal);
+    assert( rc==SQLITE_MISUSE );
+  }else{
+    sqlite3_value *pVal;
+    int rc = sqlite3changeset_new(pIter, -1, &pVal);
+    assert( rc==SQLITE_RANGE );
+    rc = sqlite3changeset_new(pIter, nCol, &pVal);
+    assert( rc==SQLITE_RANGE );
+  }
+  if( op==SQLITE_INSERT ){
+    sqlite3_value *pVal;
+    int rc = sqlite3changeset_old(pIter, 0, &pVal);
+    assert( rc==SQLITE_MISUSE );
+  }else{
+    sqlite3_value *pVal;
+    int rc = sqlite3changeset_old(pIter, -1, &pVal);
+    assert( rc==SQLITE_RANGE );
+    rc = sqlite3changeset_old(pIter, nCol, &pVal);
+    assert( rc==SQLITE_RANGE );
+  }
+  /* End of testing block
+  ***********************************************************************/
 
   if( TCL_OK!=Tcl_EvalObjEx(interp, pEval, TCL_EVAL_GLOBAL) ){
     Tcl_BackgroundError(interp);
@@ -291,13 +332,7 @@ static int test_conflict_handler(
     }else if( test_obj_eq_string(pRes, "ABORT") ){
       ret = SQLITE_CHANGESET_ABORT;
     }else{
-      Tcl_IncrRefCount(pRes);
-      Tcl_ResetResult(interp);
-      Tcl_AppendResult(interp, "unrecognized conflict handler return: \"", 
-          Tcl_GetString(pRes), "\"", 0
-      );
-      Tcl_DecrRefCount(pRes);
-      Tcl_BackgroundError(interp);
+      Tcl_GetIntFromObj(0, pRes, &ret);
     }
   }
 

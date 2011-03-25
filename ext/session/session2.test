@@ -377,4 +377,149 @@ do_iterator_test 6.1.7 * {
   {UPDATE t2 0 X. {i 4 t y} {{} {} t new}}
 }
 
+sqlite3session S db main
+do_execsql_test 6.2.1 {
+  SELECT indirect(0);
+  SELECT indirect(-1);
+  SELECT indirect(45);
+  SELECT indirect(-100);
+} {0 0 1 1}
+S delete
+
+#-------------------------------------------------------------------------
+# Test that if a conflict-handler that has been passed either NOTFOUND or
+# CONSTRAINT returns REPLACE - the sqlite3changeset_apply() call returns
+# MISUSE and rolls back any changes made so far.
+#
+#   7.1.*: NOTFOUND conflict-callback.
+#   7.2.*: CONSTRAINT conflict-callback.
+#
+proc xConflict {args} {return REPLACE}
+test_reset
+
+do_execsql_test 7.1.1 {
+  CREATE TABLE t1(a PRIMARY KEY, b);
+  INSERT INTO t1 VALUES(1, 'one');
+  INSERT INTO t1 VALUES(2, 'two');
+}
+do_test 7.1.2 {
+  execsql {
+    CREATE TABLE t1(a PRIMARY KEY, b NOT NULL);
+    INSERT INTO t1 VALUES(1, 'one');
+  } db2
+} {}
+do_test 7.1.3 {
+  set changeset [changeset_from_sql {
+    UPDATE t1 SET b = 'five' WHERE a = 1;
+    UPDATE t1 SET b = 'six' WHERE a = 2;
+  }]
+  set x [list]
+  sqlite3session_foreach c $changeset { lappend x $c }
+  set x
+} [list \
+  {UPDATE t1 0 X. {i 1 t one} {{} {} t five}} \
+  {UPDATE t1 0 X. {i 2 t two} {{} {} t six}}  \
+]
+do_test 7.1.4 {
+  list [catch {sqlite3changeset_apply db2 $changeset xConflict} msg] $msg
+} {1 SQLITE_MISUSE}
+do_test 7.1.5 { execsql { SELECT * FROM t1 } db2 } {1 one}
+
+do_test 7.2.1 {
+  set changeset [changeset_from_sql { UPDATE t1 SET b = NULL WHERE a = 1 }]
+
+  set x [list]
+  sqlite3session_foreach c $changeset { lappend x $c }
+  set x
+} [list \
+  {UPDATE t1 0 X. {i 1 t five} {{} {} n {}}} \
+]
+do_test 7.2.2 {
+  list [catch {sqlite3changeset_apply db2 $changeset xConflict} msg] $msg
+} {1 SQLITE_MISUSE}
+do_test 7.2.3 { execsql { SELECT * FROM t1 } db2 } {1 one}
+
+#-------------------------------------------------------------------------
+# Test that if a conflict-handler returns ABORT, application of the 
+# changeset is rolled back and the sqlite3changeset_apply() method returns
+# SQLITE_ABORT.
+#
+# Also test that the same thing happens if a conflict handler returns an
+# unrecognized integer value. Except, in this case SQLITE_MISUSE is returned
+# instead of SQLITE_ABORT.
+#
+foreach {tn conflict_return apply_return} {
+  1    ABORT   SQLITE_ABORT
+  2    567     SQLITE_MISUSE
+} {
+  test_reset
+  proc xConflict {args} [list return $conflict_return]
+
+  do_test 8.$tn.0 {
+    do_common_sql { 
+      CREATE TABLE t1(x, y, PRIMARY KEY(x, y));
+      INSERT INTO t1 VALUES('x', 'y');
+    }
+    execsql { INSERT INTO t1 VALUES('w', 'w') }
+
+    set changeset [changeset_from_sql { DELETE FROM t1 WHERE 1 }]
+
+    set x [list]
+    sqlite3session_foreach c $changeset { lappend x $c }
+    set x
+  } [list \
+    {DELETE t1 0 XX {t w t w} {}} \
+    {DELETE t1 0 XX {t x t y} {}} \
+  ]
+
+  do_test 8.$tn.1 {
+    list [catch {sqlite3changeset_apply db2 $changeset xConflict} msg] $msg
+  } [list 1 $apply_return]
+
+  do_test 8.$tn.2 {
+    execsql {SELECT * FROM t1} db2
+  } {x y}
+}
+
+
+#-------------------------------------------------------------------------
+# Try to cause an infinite loop as follows:
+#
+#   1. Have a changeset insert a row that causes a CONFLICT callback,
+#   2. Have the conflict handler return REPLACE,
+#   3. After the session module deletes the conflicting row, have a trigger
+#      re-insert it.
+#   4. Goto step 1...
+#
+# This doesn't work, as the second invocation of the conflict handler is a
+# CONSTRAINT, not a CONFLICT. There is at most one CONFLICT callback for
+# each change in the changeset.
+#
+test_reset
+proc xConflict {type args} { 
+  if {$type == "CONFLICT"} { return REPLACE }
+  return OMIT
+}
+do_test 9.1 {
+  execsql {
+    CREATE TABLE t1(a PRIMARY KEY, b);
+  }
+  execsql {
+    CREATE TABLE t1(a PRIMARY KEY, b);
+    INSERT INTO t1 VALUES('x', 2);
+    CREATE TRIGGER tr1 AFTER DELETE ON t1 BEGIN
+      INSERT INTO t1 VALUES(old.a, old.b);
+    END;
+  } db2
+} {}
+do_test 9.2 {
+  set changeset [changeset_from_sql { INSERT INTO t1 VALUES('x', 1) }]
+  sqlite3changeset_apply db2 $changeset xConflict
+} {}
+do_test 9.3 {
+  execsql { SELECT * FROM t1 } db2
+} {x 2}
+
+
+
 finish_test
