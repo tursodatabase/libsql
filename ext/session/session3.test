@@ -146,7 +146,7 @@ do_test 2.3 {
   execsql {
     INSERT INTO t2 VALUES(1, 2);
     DROP TABLE t2;
-    CREATE TABLE t2(a PRIMARY KEY, b, c);
+    CREATE TABLE t2(a PRIMARY KEY, b);
   }
   list [catch { S changeset } msg] $msg
 } {1 SQLITE_SCHEMA}

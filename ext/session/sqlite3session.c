@@ -1181,10 +1181,10 @@ static void sessionAppendUpdate(
           break;
         }
 
-        case SQLITE_TEXT:
-        case SQLITE_BLOB: {
+        default: {
           int nByte;
           int nHdr = 1 + sessionVarintGet(&pCsr[1], &nByte);
+          assert( eType==SQLITE_TEXT || eType==SQLITE_BLOB );
           nAdvance = nHdr + nByte;
           if( eType==sqlite3_column_type(pStmt, i) 
            && nByte==sqlite3_column_bytes(pStmt, i) 
@@ -1260,19 +1260,18 @@ static int sessionSelectBind(
   sqlite3_stmt *pSelect,
   int nCol,
   u8 *abPK,
-  u8 *aRecord,
-  int nRecord
+  SessionChange *pChange
 ){
   int i;
   int rc = SQLITE_OK;
-  u8 *a = aRecord;
+  u8 *a = pChange->aRecord;
 
   for(i=0; i<nCol && rc==SQLITE_OK; i++){
     int eType = *a++;
 
     switch( eType ){
       case SQLITE_NULL:
-        if( abPK[i] ) rc = sqlite3_bind_null(pSelect, i+1);
+        assert( abPK[i]==0 );
         break;
 
       case SQLITE_INTEGER: {
@@ -1305,8 +1304,9 @@ static int sessionSelectBind(
         break;
       }
 
-      case SQLITE_BLOB: {
+      default: {
         int n;
+        assert( eType==SQLITE_BLOB );
         a += sessionVarintGet(a, &n);
         if( abPK[i] ){
           rc = sqlite3_bind_blob(pSelect, i+1, a, n, SQLITE_TRANSIENT);
@@ -1337,14 +1337,17 @@ int sqlite3session_changeset(
   SessionBuffer buf = {0,0,0};    /* Buffer in which to accumlate changeset */
   int rc;                         /* Return code */
 
-  sqlite3_mutex_enter(sqlite3_db_mutex(db));
-
   /* Zero the output variables in case an error occurs. If this session
   ** object is already in the error state (sqlite3_session.rc != SQLITE_OK),
   ** this call will be a no-op.  */
   *pnChangeset = 0;
   *ppChangeset = 0;
-  rc = pSession->rc;
+
+  if( pSession->rc ) return pSession->rc;
+  rc = sqlite3_exec(pSession->db, "SAVEPOINT changeset", 0, 0, 0);
+  if( rc!=SQLITE_OK ) return rc;
+
+  sqlite3_mutex_enter(sqlite3_db_mutex(db));
 
   for(pTab=pSession->pTable; rc==SQLITE_OK && pTab; pTab=pTab->pNext){
     if( pTab->nEntry ){
@@ -1375,37 +1378,31 @@ int sqlite3session_changeset(
             db, pSession->zDb, zName, nCol, azCol, abPK, &pSel);
       }
 
-      if( rc==SQLITE_OK && nCol!=sqlite3_column_count(pSel) ){
-        rc = SQLITE_SCHEMA;
-      }
-
       nNoop = buf.nBuf;
       for(i=0; i<pTab->nChange && rc==SQLITE_OK; i++){
         SessionChange *p;         /* Used to iterate through changes */
 
         for(p=pTab->apChange[i]; rc==SQLITE_OK && p; p=p->pNext){
-          rc = sessionSelectBind(pSel, nCol, abPK, p->aRecord, p->nRecord);
-          if( rc==SQLITE_OK ){
-            if( sqlite3_step(pSel)==SQLITE_ROW ){
-              int iCol;
-              if( p->bInsert ){
-                sessionAppendByte(&buf, SQLITE_INSERT, &rc);
-                sessionAppendByte(&buf, p->bIndirect, &rc);
-                for(iCol=0; iCol<nCol; iCol++){
-                  sessionAppendCol(&buf, pSel, iCol, &rc);
-                }
-              }else{
-                sessionAppendUpdate(&buf, pSel, p, abPK, &rc);
-              }
-            }else if( !p->bInsert ){
-              /* A DELETE change */
-              sessionAppendByte(&buf, SQLITE_DELETE, &rc);
+          rc = sessionSelectBind(pSel, nCol, abPK, p);
+          if( sqlite3_step(pSel)==SQLITE_ROW ){
+            int iCol;
+            if( p->bInsert ){
+              sessionAppendByte(&buf, SQLITE_INSERT, &rc);
               sessionAppendByte(&buf, p->bIndirect, &rc);
-              sessionAppendBlob(&buf, p->aRecord, p->nRecord, &rc);
+              for(iCol=0; iCol<nCol; iCol++){
+                sessionAppendCol(&buf, pSel, iCol, &rc);
+              }
+            }else{
+              sessionAppendUpdate(&buf, pSel, p, abPK, &rc);
             }
-            if( rc==SQLITE_OK ){
-              rc = sqlite3_reset(pSel);
-            }
+          }else if( !p->bInsert ){
+            /* A DELETE change */
+            sessionAppendByte(&buf, SQLITE_DELETE, &rc);
+            sessionAppendByte(&buf, p->bIndirect, &rc);
+            sessionAppendBlob(&buf, p->aRecord, p->nRecord, &rc);
+          }
+          if( rc==SQLITE_OK ){
+            rc = sqlite3_reset(pSel);
           }
         }
       }
@@ -1425,6 +1422,7 @@ int sqlite3session_changeset(
     sqlite3_free(buf.aBuf);
   }
 
+  sqlite3_exec(db, "RELEASE changeset", 0, 0, 0);
   sqlite3_mutex_leave(sqlite3_db_mutex(db));
   return rc;
 }

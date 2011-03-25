@@ -59,4 +59,9 @@ do_test 1.2 {
   list [catch { sqlite3changeset_invert $x } msg] $msg
 } {1 SQLITE_CORRUPT}
 
+do_test 1.3 {
+  set x [binary format "ca*" 0 [string range $changeset 1 end]]
+  list [catch { sqlite3changeset_apply db $x xConflict } msg] $msg
+} {1 SQLITE_CORRUPT}
+
 finish_test

@@ -85,7 +85,7 @@ static int test_session_cmd(
 
     case 3: {      /* enable */
       int val;
-      if( Tcl_GetBooleanFromObj(interp, objv[2], &val) ) return TCL_ERROR;
+      if( Tcl_GetIntFromObj(interp, objv[2], &val) ) return TCL_ERROR;
       val = sqlite3session_enable(pSession, val);
       Tcl_SetObjResult(interp, Tcl_NewBooleanObj(val));
       break;
@@ -436,6 +436,7 @@ static int test_sqlite3session_foreach(
 
   while( SQLITE_ROW==sqlite3changeset_next(pIter) ){
     int nCol;                     /* Number of columns in table */
+    int nCol2;                    /* Number of columns in table */
     int op;                       /* SQLITE_INSERT, UPDATE or DELETE */
     const char *zTab;             /* Name of table change applies to */
     Tcl_Obj *pVar;                /* Tcl value to set $VARNAME to */
@@ -460,7 +461,8 @@ static int test_sqlite3session_foreach(
 
     zPK = ckalloc(nCol+1);
     memset(zPK, 0, nCol+1);
-    sqlite3changeset_pk(pIter, &abPK, 0);
+    sqlite3changeset_pk(pIter, &abPK, &nCol2);
+    assert( nCol==nCol2 );
     for(i=0; i<nCol; i++){
       zPK[i] = (abPK[i] ? 'X' : '.');
     }
