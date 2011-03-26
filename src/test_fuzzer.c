@@ -29,38 +29,36 @@ typedef struct fuzzer_rule fuzzer_rule;
 typedef struct fuzzer_seen fuzzer_seen;
 typedef struct fuzzer_stem fuzzer_stem;
 
+/*
+** Type of the "cost" of an edit operation.  Might be changed to
+** "float" or "double" or "sqlite3_int64" in the future.
+*/
+typedef int fuzzer_cost;
+
 
 /*
 ** Each transformation rule is stored as an instance of this object.
 ** All rules are kept on a linked list sorted by rCost.
 */
 struct fuzzer_rule {
-  fuzzer_rule *pNext;   /* Next rule in order of increasing rCost */
-  float rCost;          /* Cost of this transformation */
-  char *zFrom;          /* Transform from */
-  char zTo[4];          /* Transform to (extra space appended) */
-};
-
-/*
-** When generating fuzzed words, we have to remember all previously
-** generated terms in order to suppress duplicates.  Each previously
-** generated term is an instance of the following structure.
-*/
-struct fuzzer_seen {
-  fuzzer_seen *pNext;    /* Next with the same hash */
-  char zWord[4];         /* The generated term. */
+  fuzzer_rule *pNext;        /* Next rule in order of increasing rCost */
+  fuzzer_cost rCost;         /* Cost of this transformation */
+  int nFrom, nTo;            /* Length of the zFrom and zTo strings */
+  char *zFrom;               /* Transform from */
+  char zTo[4];               /* Transform to (extra space appended) */
 };
 
 /*
 ** A stem object is used to generate variants.  
 */
 struct fuzzer_stem {
-  char *zBasis;           /* Word being fuzzed */
-  fuzzer_rule *pRule;     /* Next rule to apply */
-  int n;                  /* Apply rule at this character offset */
-  float rBaseCost;        /* Base cost of getting to zBasis */
-  float rCost;            /* rBaseCost + cost of applying pRule at n */
-  fuzzer_stem *pNext;     /* Next stem in rCost order */
+  char *zBasis;              /* Word being fuzzed */
+  int nBasis;                /* Length of the zBasis string */
+  const fuzzer_rule *pRule;  /* Current rule to apply */
+  int n;                     /* Apply pRule at this character offset */
+  fuzzer_cost rBaseCost;     /* Base cost of getting to zBasis */
+  fuzzer_stem *pNext;        /* Next stem in rCost order */
+  fuzzer_stem *pHash;        /* Next stem with same hash on zBasis */
 };
 
 /* 
@@ -74,14 +72,18 @@ struct fuzzer_vtab {
   int nCursor;               /* Number of active cursors */
 };
 
+#define FUZZER_HASH  4001    /* Hash table size */
+
 /* A fuzzer cursor object */
 struct fuzzer_cursor {
   sqlite3_vtab_cursor base;  /* Base class - must be first */
-  float rMax;                /* Maximum cost of any term */
+  fuzzer_vtab *pVtab;        /* The virtual table this cursor belongs to */
+  fuzzer_cost rLimit;        /* Maximum cost of any term */
   fuzzer_stem *pStem;        /* Sorted list of stems for generating new terms */
-  int nSeen;                 /* Number of terms already generated */
-  int nHash;                 /* Number of slots in apHash */
-  fuzzer_seen **apHash;      /* Hash table of previously generated terms */
+  fuzzer_stem *pDone;        /* Stems already processed to completion */
+  char *zBuf;                /* Temporary use buffer */
+  int nBuf;                  /* Bytes allocated for zBuf */
+  fuzzer_stem *apHash[FUZZER_HASH]; /* Hash of previously generated terms */
 };
 
 /* Methods for the fuzzer module */
@@ -93,7 +95,6 @@ static int fuzzerConnect(
   char **pzErr
 ){
   fuzzer_vtab *pNew;
-  char *zSql;
   int n;
   if( strcmp(argv[1],"temp")!=0 ){
     *pzErr = sqlite3_mprintf("%s virtual tables must be TEMP", argv[0]);
@@ -104,12 +105,7 @@ static int fuzzerConnect(
   if( pNew==0 ) return SQLITE_NOMEM;
   pNew->zClassName = (char*)&pNew[1];
   memcpy(pNew->zClassName, argv[0], n);
-  zSql = sqlite3_mprintf(
-     "CREATE TABLE x(word, distance, cFrom, cTo, cost, \"%w\" HIDDEN)",
-     argv[2]
-  );
-  sqlite3_declare_vtab(db, zSql);
-  sqlite3_free(zSql);
+  sqlite3_declare_vtab(db, "CREATE TABLE x(word,distance,cFrom,cTo,cost)");
   memset(pNew, 0, sizeof(*pNew));
   *ppVtab = &pNew->base;
   return SQLITE_OK;
@@ -173,7 +169,9 @@ static int fuzzerOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   pCur = sqlite3_malloc( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
+  pCur->pVtab = p;
   *ppCursor = &pCur->base;
+  p->nCursor++;
   if( p->nCursor==0 && p->pNewRule ){
     unsigned int i;
     fuzzer_rule *pX;
@@ -193,8 +191,26 @@ static int fuzzerOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
     }
     p->pRule = fuzzerMergeRules(p->pRule, pX);
   }
-   
   return SQLITE_OK;
+}
+
+/*
+** Free up all the memory allocated by a cursor.  Set it rLimit to 0
+** to indicate that it is at EOF.
+*/
+static void fuzzerClearCursor(fuzzer_cursor *pCur, int clearHash){
+  if( pCur->pStem==0 && pCur->pDone==0 ) clearHash = 0;
+  do{
+    while( pCur->pStem ){
+      fuzzer_stem *pStem = pCur->pStem;
+      pCur->pStem = pStem->pNext;
+      sqlite3_free(pStem);
+    }
+    pCur->pStem = pCur->pDone;
+    pCur->pDone = 0;
+  }while( pCur->pStem );
+  pCur->rLimit = (fuzzer_cost)0;
+  if( clearHash ) memset(pCur->apHash, 0, sizeof(pCur->apHash));
 }
 
 /*
@@ -202,55 +218,305 @@ static int fuzzerOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
 */
 static int fuzzerClose(sqlite3_vtab_cursor *cur){
   fuzzer_cursor *pCur = (fuzzer_cursor *)cur;
-  int i;
-  for(i=0; i<pCur->nHash; i++){
-    fuzzer_seen *pSeen = pCur->apHash[i];
-    while( pSeen ){
-      fuzzer_seen *pNext = pSeen->pNext;
-      sqlite3_free(pSeen);
-      pSeen = pNext;
-    }
-  }
-  sqlite3_free(pCur->apHash);
-  while( pCur->pStem ){
-    fuzzer_stem *pStem = pCur->pStem;
-    pCur->pStem = pStem->pNext;
-    sqlite3_free(pStem);
-  }
-  sqlite3_free(pCur);
+  fuzzerClearCursor(pCur, 0);
+  sqlite3_free(pCur->zBuf);
+  pCur->pVtab->nCursor--;
   return SQLITE_OK;
 }
 
-static int fuzzerNext(sqlite3_vtab_cursor *cur){
+/*
+** Compute the current output term for a fuzzer_stem.
+*/
+static int fuzzerComputeWord(
+  fuzzer_cursor *pCur,
+  fuzzer_stem *pStem
+){
+  const fuzzer_rule *pRule = pStem->pRule;
+  int n;
+
+  n = pStem->nBasis;
+  if( pStem->n>=0 ) n += pRule->nTo - pRule->nFrom;
+  if( pCur->nBuf<n+1 ){
+    pCur->zBuf = sqlite3_realloc(pCur->zBuf, n+100);
+    if( pCur->zBuf==0 ) return SQLITE_NOMEM;
+    pCur->nBuf = n+100;
+  }
+  n = pStem->n;
+  if( n<0 ){
+    memcpy(pCur->zBuf, pStem->zBasis, pStem->nBasis+1);
+  }else{
+    memcpy(pCur->zBuf, pStem->zBasis, n);
+    memcpy(&pCur->zBuf[n], pRule->zTo, pRule->nTo);
+    memcpy(&pCur->zBuf[n+pRule->nTo], &pStem->zBasis[n+pRule->nFrom], 
+           pStem->nBasis-n-pRule->nFrom+1);
+  }
+  return SQLITE_OK;
+}
+
+
+/*
+** Compute a hash on zBasis.
+*/
+static unsigned int fuzzerHash(const char *z){
+  unsigned int h = 0;
+  while( *z ){ h = (h<<3) ^ (h>>29) ^ *(z++); }
+  return h%10007;
+}
+
+/*
+** Current cost of a stem
+*/
+static fuzzer_cost fuzzerCost(fuzzer_stem *pStem){
+  return pStem->rBaseCost + pStem->pRule->rCost;
+}
+
+/*
+** Advance a fuzzer_stem to its next value.   Return 0 if there are
+** no more values that can be generated by this fuzzer_stem.
+*/
+static int fuzzerAdvance(fuzzer_cursor *pCur, fuzzer_stem *pStem){
+  const fuzzer_rule *pRule;
+  while( (pRule = pStem->pRule)!=0 ){
+    while( pStem->n < pStem->nBasis - pRule->nFrom ){
+      pStem->n++;
+      if( pRule->nFrom==0
+       || memcmp(&pStem->zBasis[pStem->n], pRule->zFrom, pRule->nFrom)==0
+      ){
+        /* Found a rewrite case.  Make sure it is not a duplicate */
+        unsigned int h;
+        fuzzer_stem *pLookup;
+
+        fuzzerComputeWord(pCur, pStem);
+        h = fuzzerHash(pCur->zBuf);
+        pLookup = pCur->apHash[h];
+        while( pLookup && strcmp(pLookup->zBasis, pCur->zBuf)!=0 ){
+          pLookup = pLookup->pHash;
+        }
+        if( pLookup==0 ) return 1;  /* A new output is found. */
+      }
+    }
+    pStem->n = -1;
+    pStem->pRule = pRule->pNext;
+    if( fuzzerCost(pStem)>pCur->rLimit ) pStem->pRule = 0;
+  }
   return 0;
 }
 
+/*
+** Insert pNew into the list at pList.  Return a pointer to the new
+** list.  The insert is done such the pNew is in the correct order
+** according to fuzzer_stem.zBaseCost+fuzzer_stem.pRule->rCost.
+*/
+static fuzzer_stem *fuzzerInsert(fuzzer_stem *pList, fuzzer_stem *pNew){
+  fuzzer_cost c1;
+
+  c1 = fuzzerCost(pNew);
+  if( c1 <= fuzzerCost(pList) ){
+    pNew->pNext = pList;
+    return pNew;
+  }else{
+    fuzzer_stem *pPrev;
+    pPrev = pList;
+    while( pPrev->pNext && fuzzerCost(pPrev->pNext)<c1 ){
+      pPrev = pPrev->pNext;
+    }
+    pNew->pNext = pPrev->pNext;
+    pPrev->pNext = pNew;
+    return pList;
+  }
+}
+
+/*
+** Allocate a new fuzzer_stem.  Add it to the hash table but do not
+** link it into either the pCur->pStem or pCur->pDone lists.
+*/
+static fuzzer_stem *fuzzerNewStem(
+  fuzzer_cursor *pCur,
+  const char *zWord,
+  fuzzer_cost rBaseCost
+){
+  fuzzer_stem *pNew;
+  unsigned int h;
+
+  pNew = sqlite3_malloc( sizeof(*pNew) + strlen(zWord) + 1 );
+  if( pNew==0 ) return 0;
+  memset(pNew, 0, sizeof(*pNew));
+  pNew->zBasis = (char*)&pNew[1];
+  pNew->nBasis = strlen(zWord);
+  memcpy(pNew->zBasis, zWord, pNew->nBasis+1);
+  pNew->pRule = pCur->pVtab->pRule;
+  pNew->n = -1;
+  pNew->rBaseCost = rBaseCost;
+  h = fuzzerHash(pNew->zBasis);
+  pNew->pHash = pCur->apHash[h];
+  pCur->apHash[h] = pNew;
+  return pNew;
+}
+
+
+/*
+** Advance a cursor to its next row of output
+*/
+static int fuzzerNext(sqlite3_vtab_cursor *cur){
+  fuzzer_cursor *pCur = (fuzzer_cursor*)pCur;
+  fuzzer_stem *pStem, *pNew;
+
+  /* Use the element the cursor is currently point to to create
+  ** a new stem and insert the new stem into the priority queue.
+  */
+  fuzzerComputeWord(pCur, pCur->pStem);
+  pNew = fuzzerNewStem(pCur, pCur->zBuf, fuzzerCost(pCur->pStem));
+  if( pNew ){
+    if( fuzzerAdvance(pCur, pNew)==0 ){
+      pNew->pNext = pCur->pDone;
+      pCur->pDone = pNew;
+    }else{
+      pCur->pStem = fuzzerInsert(pCur->pStem, pNew);
+    }
+  }
+
+  /* Adjust the priority queue so that the first element of the
+  ** stem list is the next lowest cost word.
+  */
+  while( (pStem = pCur->pStem)!=0 ){
+    if( fuzzerAdvance(pCur, pStem) ){
+      pCur->pStem = fuzzerInsert(pStem->pNext, pStem);
+      return SQLITE_OK;  /* New word found */
+    }
+    pCur->pStem = pStem->pNext;
+    pStem->pNext = pCur->pDone;
+    pCur->pDone = pStem;
+  }
+
+  /* Reach this point only if queue has been exhausted and there is
+  ** nothing left to be output. */
+  pCur->rLimit = (fuzzer_cost)0;
+  return SQLITE_OK;
+}
+
+/*
+** Called to "rewind" a cursor back to the beginning so that
+** it starts its output over again.  Always called at least once
+** prior to any fuzzerColumn, fuzzerRowid, or fuzzerEof call.
+*/
 static int fuzzerFilter(
   sqlite3_vtab_cursor *pVtabCursor, 
   int idxNum, const char *idxStr,
   int argc, sqlite3_value **argv
 ){
   fuzzer_cursor *pCur = (fuzzer_cursor *)pVtabCursor;
-  return fuzzerNext(pVtabCursor);
+  const char *zWord = 0;
+  pCur->rLimit = 2147483647;
+
+  fuzzerClearCursor(pCur, 1);
+  if( idxNum==1 ){
+    zWord = (const char*)sqlite3_value_text(argv[0]);
+  }else if( idxNum==2 ){
+    pCur->rLimit = (fuzzer_cost)sqlite3_value_int(argv[0]);
+  }else if( idxNum==3 ){
+    zWord = (const char*)sqlite3_value_text(argv[0]);
+    pCur->rLimit = (fuzzer_cost)sqlite3_value_int(argv[1]);
+  }
+  if( zWord==0 ) zWord = "";
+  pCur->pStem = fuzzerNewStem(pCur, zWord, (fuzzer_cost)0);
+  if( pCur->pStem==0 ) return SQLITE_NOMEM;
+  return SQLITE_OK;
 }
 
+/*
+** Only the word and distance columns have values.  All other columns
+** return NULL
+*/
 static int fuzzerColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
   fuzzer_cursor *pCur = (fuzzer_cursor*)cur;
+  if( i==0 ){
+    /* the "word" column */
+    if( fuzzerComputeWord(pCur, pCur->pStem)==SQLITE_NOMEM ){
+      return SQLITE_NOMEM;
+    }
+    sqlite3_result_text(ctx, pCur->zBuf, -1, SQLITE_TRANSIENT);
+  }else if( i==1 ){
+    /* the "distance" column */
+    sqlite3_result_int(ctx, fuzzerCost(pCur->pStem));
+  }else{
+    /* All other columns are NULL */
+    sqlite3_result_null(ctx);
+  }
   return SQLITE_OK;
 }
 
+/*
+** The rowid is always 0
+*/
 static int fuzzerRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
-  *pRowid = 0;
+  *pRowid = 0;  /* The rowid is always 0 */
   return SQLITE_OK;
 }
 
+/*
+** When the fuzzer_cursor.rLimit value is 0 or less, that is a signal
+** that the cursor has nothing more to output.
+*/
 static int fuzzerEof(sqlite3_vtab_cursor *cur){
   fuzzer_cursor *pCur = (fuzzer_cursor*)cur;
-  return 1;
+  return pCur->rLimit<=(fuzzer_cost)0;
 }
 
+/*
+** Search for terms of these forms:
+**
+**       word MATCH $str
+**       distance < $value
+**       distance <= $value
+**
+** The distance< and distance<= are both treated as distance<=.
+** The query plan number is as follows:
+**
+**   0:    None of the terms above are found
+**   1:    There is a "word MATCH" term with $str in filter.argv[0].
+**   2:    There is a "distance<" term with $value in filter.argv[0].
+**   3:    Both "word MATCH" and "distance<" with $str in argv[0] and
+**         $value in argv[1].
+*/
 static int fuzzerBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
-
+  int iPlan = 0;
+  int iDistTerm = -1;
+  int i;
+  const struct sqlite3_index_constraint *pConstraint;
+  pConstraint = pIdxInfo->aConstraint;
+  for(i=0; i<pIdxInfo->nConstraint; i++, pConstraint++){
+    if( pConstraint->usable==0 ) continue;
+    if( (iPlan & 1)==0 
+     && pConstraint->iColumn==0
+     && pConstraint->op==SQLITE_INDEX_CONSTRAINT_MATCH
+    ){
+      iPlan |= 1;
+      pIdxInfo->aConstraintUsage[i].argvIndex = 1;
+      pIdxInfo->aConstraintUsage[i].omit = 1;
+    }
+    if( (iPlan & 2)==0
+     && pConstraint->iColumn==1
+     && (pConstraint->op==SQLITE_INDEX_CONSTRAINT_LT
+           || pConstraint->op==SQLITE_INDEX_CONSTRAINT_LE)
+    ){
+      iPlan |= 2;
+      iDistTerm = i;
+    }
+  }
+  if( iPlan==2 ){
+    pIdxInfo->aConstraintUsage[iDistTerm].argvIndex = 1;
+  }else if( iPlan==3 ){
+    pIdxInfo->aConstraintUsage[iDistTerm].argvIndex = 2;
+  }
+  pIdxInfo->idxNum = iPlan;
+  if( pIdxInfo->nOrderBy==1
+   && pIdxInfo->aOrderBy[0].iColumn==1
+   && pIdxInfo->aOrderBy[0].desc==0
+  ){
+    pIdxInfo->orderByConsumed = 1;
+  }
+  pIdxInfo->estimatedCost = (double)10000;
+   
   return SQLITE_OK;
 }
 
@@ -274,8 +540,8 @@ static int fuzzerUpdate(
   int nFrom;
   const char *zTo;
   int nTo;
-  float rCost;
-  if( argc!=8 ){
+  fuzzer_cost rCost;
+  if( argc!=7 ){
     sqlite3_free(pVTab->zErrMsg);
     pVTab->zErrMsg = sqlite3_mprintf("cannot delete from a %s virtual table",
                                      p->zClassName);
@@ -295,7 +561,7 @@ static int fuzzerUpdate(
     /* Silently ignore null transformations */
     return SQLITE_OK;
   }
-  rCost = (float)sqlite3_value_double(argv[6]);
+  rCost = sqlite3_value_int(argv[6]);
   if( rCost<=0 ){
     sqlite3_free(pVTab->zErrMsg);
     pVTab->zErrMsg = sqlite3_mprintf("cost must be positive");
@@ -309,8 +575,10 @@ static int fuzzerUpdate(
     return SQLITE_NOMEM;
   }
   pRule->zFrom = &pRule->zTo[nTo];
+  pRule->nFrom = nFrom;
   memcpy(pRule->zFrom, zFrom, nFrom);
   memcpy(pRule->zTo, zTo, nTo);
+  pRule->nTo = nTo;
   pRule->rCost = rCost;
   pRule->pNext = p->pNewRule;
   p->pNewRule = pRule;

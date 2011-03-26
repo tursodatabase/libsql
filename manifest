@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Skeleton\scode\sfor\sthe\sword-fuzzer\svirtual\stable.
-D 2011-03-26T15:05:27.457
+C Added\smost\sof\sthe\slogic.\s\sSimple\stest\sruns\swithout\ssegfaulting\sbut\sdoes\snot\ngive\sthe\scorrect\sanswer.
+D 2011-03-26T19:04:47.346
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6c96e694f446500449f683070b906de9fce17b88
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -205,7 +205,7 @@ F src/test_config.c 62f0f8f934b1d5c7e4cd4f506ae453a1117b47d7
 F src/test_demovfs.c 0aed671636735116fc872c5b03706fd5612488b5
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_func.c cbdec5cededa0761daedde5baf06004a9bf416b5
-F src/test_fuzzer.c b09d2f47bc3ae1485100b323479c5d785d4f6e4b
+F src/test_fuzzer.c 133c830fdd4342b687910a04cf8e617e0f5f0e5f
 F src/test_hexio.c 1237f000ec7a491009b1233f5c626ea71bce1ea2
 F src/test_init.c 5d624ffd0409d424cf9adbfe1f056b200270077c
 F src/test_intarray.c d879bbf8e4ce085ab966d1f3c896a7c8b4f5fc99
@@ -479,7 +479,7 @@ F test/fuzz2.test 207d0f9d06db3eaf47a6b7bfc835b8e2fc397167
 F test/fuzz3.test aec64345184d1662bd30e6a17851ff659d596dc5
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test dd7001ac86d09c154a7dff064f4739c60e2b312c
-F test/fuzzer1.test 29120e10821e2d04887b39c6c1ae4ddcbd2bb7f6
+F test/fuzzer1.test e0fe96bb8d318250b35407954c7059eea8ea77b2
 F test/hook.test f04c3412463f8ec117c1c704c74ca0f627ce733a
 F test/icu.test 70df4faca133254c042d02ae342c0a141f2663f4
 F test/in.test 19b642bb134308980a92249750ea4ce3f6c75c2d
@@ -921,18 +921,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 7173b3929fae4e678223b0e978a2da7fa50a9005
-R 88772465d0029c6e2564e31a16d9e60f
-T *bgcolor * #b0b28e
-T *branch * word-fuzzer
-T *sym-word-fuzzer *
-T -sym-trunk *
+P ea3a4ee136ff6699c3099178f0efaa8bb517715f
+R 6a09f2dbc53bf6a269c56104914ae3e5
 U drh
-Z 56aa191286824371992372fc6a5d252f
+Z c40c33ca74d9ed106c795140b6ad71ee
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFNjgC7oxKgR168RlERAutAAJ0V6j75yMfG5zTEYnDlvPG7yBJM5ACfSqKu
-yFIOeN9GMM2kCskHQ5jGilY=
-=IVMz
+iD8DBQFNjjjSoxKgR168RlERAjfMAKCJigUMIbnNV83nhVCWCpDK5WxPFQCeLIbS
++J80DLXre8S3k4SR8glB8Jc=
+=nBDg
 -----END PGP SIGNATURE-----
