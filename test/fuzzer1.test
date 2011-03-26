@@ -1,0 +1,41 @@
+# 2011 March 25
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for TCL interface to the
+# SQLite library. 
+#
+# The focus of the tests is the word-fuzzer virtual table.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+ifcapable !vtab {
+  finish_test
+  return
+}
+
+register_fuzzer_module db
+do_test fuzzer1-1.0 {
+  catchsql {CREATE VIRTUAL TABLE fault1 USING fuzzer;}
+} {1 {fuzzer virtual tables must be TEMP}}
+do_test fuzzer1-1.1 {
+  db eval {CREATE VIRTUAL TABLE temp.f1 USING fuzzer;}
+} {}
+do_test fuzzer1-1.2 {
+  db eval {
+    INSERT INTO f1(cfrom, cto, cost) VALUES('e','a',0.1);
+    INSERT INTO f1(cfrom, cto, cost) VALUES('a','e',0.1);
+    INSERT INTO f1(cfrom, cto, cost) VALUES('e','o',0.1);
+  }
+} {}
+
+
+finish_test
