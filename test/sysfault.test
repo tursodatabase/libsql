@@ -1,0 +1,70 @@
+# 2011 March 28
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+source $testdir/malloc_common.tcl
+
+if {[llength [info commands test_syscall]]==0} {
+  finish_test
+  return
+} 
+
+set testprefix sysfault
+
+set FAULTSIM(vfsfault-transient) [list             \
+  -injectinstall   vfsfault_install                \
+  -injectstart     vfsfault_injectstart_t          \
+  -injectstop      vfsfault_injectstop             \
+  -injecterrlist   {}                              \
+  -injectuninstall {test_syscall uninstall}        \
+]
+set FAULTSIM(vfsfault-persistent) [list            \
+  -injectinstall   vfsfault_install                \
+  -injectstart     vfsfault_injectstart_p          \
+  -injectstop      vfsfault_injectstop             \
+  -injecterrlist   {}                              \
+  -injectuninstall {test_syscall uninstall}        \
+]
+
+proc vfsfault_injectstart_t {iFail} { test_syscall fault $iFail 0 }
+proc vfsfault_injectstart_p {iFail} { test_syscall fault $iFail 1 }
+proc vfsfault_injectstop    {}      { test_syscall fault }
+
+faultsim_save_and_close
+
+proc vfsfault_install {} { 
+  test_syscall install {open getcwd}
+}
+
+do_faultsim_test 1 -faults vfsfault-* -prep {
+  faultsim_restore
+} -body {
+  sqlite3 db test.db
+  db eval {
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, 2);
+    PRAGMA journal_mode = WAL;
+    INSERT INTO t1 VALUES(3, 4);
+    SELECT * FROM t1;
+    CREATE TEMP TABLE t2(x);
+    INSERT INTO t2 VALUES('y');
+  }
+} -test {
+  faultsim_test_result {0 {wal 1 2 3 4}}       \
+    {1 {unable to open database file}}         \
+    {1 {attempt to write a readonly database}}
+}
+
+finish_test
+
