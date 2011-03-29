@@ -66,5 +66,79 @@ do_faultsim_test 1 -faults vfsfault-* -prep {
     {1 {attempt to write a readonly database}}
 }
 
+#-------------------------------------------------------------------------
+# Check that a single EINTR error does not affect processing.
+#
+proc vfsfault_install {} { 
+  test_syscall reset
+  test_syscall install {open ftruncate close}
+}
+
+forcedelete test.db test.db2
+sqlite3 db test.db
+do_test 2.setup {
+  execsql {
+    CREATE TABLE t1(a, b, c, PRIMARY KEY(a));
+    INSERT INTO t1 VALUES('abc', 'def', 'ghi');
+    ATTACH 'test.db2' AS 'aux';
+    CREATE TABLE aux.t2(x);
+    INSERT INTO t2 VALUES(1);
+  }
+  faultsim_save_and_close
+} {}
+
+do_faultsim_test 2.1 -faults vfsfault-transient -prep {
+  catch { db close }
+  faultsim_restore
+} -body {
+  test_syscall errno open      EINTR
+  test_syscall errno ftruncate EINTR
+  test_syscall errno close     EINTR
+
+  sqlite3 db test.db
+  set res [db eval {
+    ATTACH 'test.db2' AS 'aux';
+    SELECT * FROM t1;
+    PRAGMA journal_mode = truncate;
+    BEGIN;
+      INSERT INTO t1 VALUES('jkl', 'mno', 'pqr');
+      UPDATE t2 SET x = 2;
+    COMMIT;
+    SELECT * FROM t1;
+    SELECT * FROM t2;
+  }]
+  db close
+  set res
+} -test {
+  faultsim_test_result {0 {abc def ghi truncate abc def ghi jkl mno pqr 2}}
+}
+
+do_faultsim_test 2.2 -faults vfsfault-* -prep {
+  catch { db close }
+  faultsim_restore
+} -body {
+  sqlite3 db test.db
+  set res [db eval {
+    ATTACH 'test.db2' AS 'aux';
+    SELECT * FROM t1;
+    PRAGMA journal_mode = truncate;
+    BEGIN;
+      INSERT INTO t1 VALUES('jkl', 'mno', 'pqr');
+      UPDATE t2 SET x = 2;
+    COMMIT;
+    SELECT * FROM t1;
+    SELECT * FROM t2;
+  }]
+  db close
+  set res
+} -test {
+  faultsim_test_result {0 {abc def ghi truncate abc def ghi jkl mno pqr 2}} \
+    {1 {unable to open database file}}                                      \
+    {1 {unable to open database: test.db2}}                                 \
+    {1 {attempt to write a readonly database}}                              \
+    {1 {disk I/O error}}                                                  
+}
+
+
 finish_test
 

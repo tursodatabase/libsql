@@ -59,4 +59,53 @@ set syscall_list [list                                \
 if {[test_syscall exists fallocate]} {lappend syscall_list fallocate}
 do_test 3.1 { test_syscall list } $syscall_list
 
+#-------------------------------------------------------------------------
+# This test verifies that if a call to open() fails and errno is set to
+# EINTR, the call is retried. If it succeeds, execution continues as if
+# nothing happened. 
+#
+test_syscall reset
+forcedelete test.db2
+do_execsql_test 4.1 {
+  CREATE TABLE t1(x, y);
+  INSERT INTO t1 VALUES(1, 2);
+  ATTACH 'test.db2' AS aux;
+  CREATE TABLE aux.t2(x, y);
+  INSERT INTO t2 VALUES(3, 4);
+}
+
+db_save_and_close
+test_syscall install open
+foreach jrnl [list wal delete] {
+  for {set i 1} {$i < 20} {incr i} {
+    db_restore_and_reopen
+    test_syscall fault $i 0
+    test_syscall errno open EINTR
+  
+    do_test 4.2.$jrnl.$i {
+      sqlite3 db test.db
+      execsql { ATTACH 'test.db2' AS aux }
+      execsql "PRAGMA main.journal_mode = $jrnl"
+      execsql "PRAGMA aux.journal_mode = $jrnl"
+      execsql {
+        BEGIN;
+          INSERT INTO t1 VALUES(5, 6);
+          INSERT INTO t2 VALUES(7, 8);
+        COMMIT;
+      }
+
+      db close
+      sqlite3 db test.db
+      execsql { ATTACH 'test.db2' AS aux }
+      execsql {
+        SELECT * FROM t1;
+        SELECT * FROM t2;
+      }
+    } {1 2 5 6 3 4 7 8}
+  }
+
+}
+
+
+
 finish_test

@@ -120,7 +120,7 @@ struct TestSyscallArray {
   /*  3 */ { "getcwd",    (sqlite3_syscall_ptr)ts_getcwd,    0, 0, 0 },
   /*  4 */ { "stat",      (sqlite3_syscall_ptr)ts_stat,      0, 0, 0 },
   /*  5 */ { "fstat",     (sqlite3_syscall_ptr)ts_fstat,     0, 0, 0 },
-  /*  6 */ { "ftruncate", (sqlite3_syscall_ptr)ts_ftruncate, 0, 0, 0 },
+  /*  6 */ { "ftruncate", (sqlite3_syscall_ptr)ts_ftruncate, 0, EIO, 0 },
   /*  7 */ { "fcntl",     (sqlite3_syscall_ptr)ts_fcntl,     0, 0, 0 },
   /*  8 */ { "read",      (sqlite3_syscall_ptr)ts_read,      0, 0, 0 },
   /*  9 */ { "pread",     (sqlite3_syscall_ptr)ts_pread,     0, 0, 0 },
@@ -151,7 +151,6 @@ struct TestSyscallArray {
                        aSyscall[13].xOrig)
 #define orig_fchmod    ((int(*)(int,mode_t))aSyscall[14].xOrig)
 #define orig_fallocate ((int(*)(int,off_t,off_t))aSyscall[15].xOrig)
-
 
 /*
 ** This function is called exactly once from within each invocation of a
@@ -264,7 +263,7 @@ static int ts_fstat(int fd, struct stat *p){
 ** A wrapper around ftruncate().
 */
 static int ts_ftruncate(int fd, off_t n){
-  if( tsIsFail() ){
+  if( tsIsFailErrno("ftruncate") ){
     return -1;
   }
   return orig_ftruncate(fd, n);
@@ -533,6 +532,8 @@ static int test_syscall_errno(
     int i;
   } aErrno[] = {
     { "EACCES", EACCES },
+    { "EINTR", EINTR },
+    { "EIO", EIO },
     { 0, 0 }
   };
 
