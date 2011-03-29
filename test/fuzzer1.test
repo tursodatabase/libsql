@@ -32,8 +32,8 @@ do_test fuzzer1-1.1 {
 do_test fuzzer1-1.2 {
   db eval {
     INSERT INTO f1(cfrom, cto, cost) VALUES('e','a',1);
-    INSERT INTO f1(cfrom, cto, cost) VALUES('a','e',1);
-    INSERT INTO f1(cfrom, cto, cost) VALUES('e','o',2);
+    INSERT INTO f1(cfrom, cto, cost) VALUES('a','e',10);
+    INSERT INTO f1(cfrom, cto, cost) VALUES('e','o',100);
   }
 } {}
 
