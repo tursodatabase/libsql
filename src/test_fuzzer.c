@@ -255,13 +255,16 @@ static int fuzzerRender(
   }
   n = pStem->n;
   z = *pzBuf;
-  memcpy(z, pStem->zBasis, n);
-  memcpy(&z[n], pRule->zTo, pRule->nTo);
-  memcpy(&z[n+pRule->nTo], &pStem->zBasis[n+pRule->nFrom], 
-         pStem->nBasis-n-pRule->nFrom+1);
+  if( n<0 ){
+    memcpy(z, pStem->zBasis, pStem->nBasis+1);
+  }else{
+    memcpy(z, pStem->zBasis, n);
+    memcpy(&z[n], pRule->zTo, pRule->nTo);
+    memcpy(&z[n+pRule->nTo], &pStem->zBasis[n+pRule->nFrom], 
+           pStem->nBasis-n-pRule->nFrom+1);
+  }
   return SQLITE_OK;
 }
-
 
 /*
 ** Compute a hash on zBasis.
@@ -278,6 +281,35 @@ static unsigned int fuzzerHash(const char *z){
 static fuzzer_cost fuzzerCost(fuzzer_stem *pStem){
   return pStem->rBaseCost + pStem->pRule->rCost;
 }
+
+#if 0
+/*
+** Print a description of a fuzzer_stem on stderr.
+*/
+static void fuzzerStemPrint(
+  const char *zPrefix,
+  fuzzer_stem *pStem,
+  const char *zSuffix
+){
+  if( pStem->n<0 ){
+    fprintf(stderr, "%s[%s](%d)-->self%s",
+       zPrefix,
+       pStem->zBasis, pStem->rBaseCost,
+       zSuffix
+    );
+  }else{
+    char *zBuf = 0;
+    int nBuf = 0;
+    if( fuzzerRender(pStem, &zBuf, &nBuf)!=SQLITE_OK ) return;
+    fprintf(stderr, "%s[%s](%d)-->{%s}(%d)%s",
+      zPrefix,
+      pStem->zBasis, pStem->rBaseCost, zBuf, fuzzerCost(pStem),
+      zSuffix
+    );
+    sqlite3_free(zBuf);
+  }
+}
+#endif
 
 /*
 ** Return 1 if the string to which the cursor is point has already
@@ -315,7 +347,9 @@ static int fuzzerAdvance(fuzzer_cursor *pCur, fuzzer_stem *pStem){
         /* Found a rewrite case.  Make sure it is not a duplicate */
         int rc = fuzzerSeen(pCur, pStem);
         if( rc<0 ) return -1;
-        if( rc==0 ) return 1;  
+        if( rc==0 ){
+          return 1;
+        }
       }
     }
     pStem->n = -1;
@@ -417,17 +451,23 @@ static int fuzzerNext(sqlite3_vtab_cursor *cur){
   */
   while( (pStem = pCur->pStem)!=0 ){
     if( fuzzerAdvance(pCur, pStem) ){
-      pCur->pStem = fuzzerInsert(pStem->pNext, pStem);
-      if( pCur->pStem!=pStem && (rc = fuzzerSeen(pCur, pStem))!=0 ){
+      pCur->pStem = pStem = fuzzerInsert(pStem->pNext, pStem);
+      if( (rc = fuzzerSeen(pCur, pStem))!=0 ){
         if( rc<0 ) return SQLITE_NOMEM;
         continue;
-      }else{
-        return SQLITE_OK;  /* New word found */
       }
+      return SQLITE_OK;  /* New word found */
     }
     pCur->pStem = pStem->pNext;
     pStem->pNext = pCur->pDone;
     pCur->pDone = pStem;
+    if( pCur->pStem ){
+      rc = fuzzerSeen(pCur, pCur->pStem);
+      if( rc<0 ) return SQLITE_NOMEM;
+      if( rc==0 ){
+        return SQLITE_OK;
+      }
+    }
   }
 
   /* Reach this point only if queue has been exhausted and there is
