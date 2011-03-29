@@ -2860,7 +2860,7 @@ static void bestBtreeIndex(
     }
 
     /* Determine the value of estBound. */
-    if( nEq<pProbe->nColumn ){
+    if( nEq<pProbe->nColumn && pProbe->bUnordered==0 ){
       int j = pProbe->aiColumn[nEq];
       if( findTerm(pWC, iCur, j, notReady, WO_LT|WO_LE|WO_GT|WO_GE, pIdx) ){
         WhereTerm *pTop = findTerm(pWC, iCur, j, notReady, WO_LT|WO_LE, pIdx);
@@ -2892,6 +2892,7 @@ static void bestBtreeIndex(
     ** will scan rows in a different order, set the bSort variable.  */
     if( pOrderBy ){
       if( (wsFlags & WHERE_COLUMN_IN)==0
+        && pProbe->bUnordered==0
         && isSortingIndex(pParse, pWC->pMaskSet, pProbe, iCur, pOrderBy,
                           nEq, wsFlags, &rev)
       ){
