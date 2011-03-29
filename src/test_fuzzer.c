@@ -86,6 +86,7 @@ struct fuzzer_vtab {
 /* A fuzzer cursor object */
 struct fuzzer_cursor {
   sqlite3_vtab_cursor base;  /* Base class - must be first */
+  sqlite3_int64 iRowid;      /* The rowid of the current word */
   fuzzer_vtab *pVtab;        /* The virtual table this cursor belongs to */
   fuzzer_cost rLimit;        /* Maximum cost of any term */
   fuzzer_stem *pStem;        /* Sorted list of stems for generating new terms */
@@ -423,6 +424,8 @@ static int fuzzerNext(sqlite3_vtab_cursor *cur){
   int rc;
   fuzzer_stem *pStem, *pNew;
 
+  pCur->iRowid++;
+
   /* Use the element the cursor is currently point to to create
   ** a new stem and insert the new stem into the priority queue.
   */
@@ -510,6 +513,7 @@ static int fuzzerFilter(
   pCur->nullRule.zFrom = "";
   pStem->pRule = &pCur->nullRule;
   pStem->n = pStem->nBasis;
+  pCur->iRowid = 1;
   return SQLITE_OK;
 }
 
@@ -536,10 +540,11 @@ static int fuzzerColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
 }
 
 /*
-** The rowid is always 0
+** The rowid.
 */
 static int fuzzerRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
-  *pRowid = 0;  /* The rowid is always 0 */
+  fuzzer_cursor *pCur = (fuzzer_cursor*)cur;
+  *pRowid = pCur->iRowid;
   return SQLITE_OK;
 }
 
