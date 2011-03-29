@@ -1,0 +1,62 @@
+# 2011 March 29
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+source $testdir/malloc_common.tcl
+
+if {[llength [info commands test_syscall]]==0} {
+  finish_test
+  return
+} 
+set testprefix syscall
+
+
+#-------------------------------------------------------------------------
+# Tests for the xSetSystemCall method.
+#
+do_test 1.1.1 {
+  list [catch { test_syscall reset open } msg] $msg
+} {0 {}}
+do_test 1.1.2 {
+  list [catch { test_syscall reset nosuchcall } msg] $msg
+} {1 SQLITE_NOTFOUND}
+do_test 1.1.3 {
+  list [catch { test_syscall reset open } msg] $msg
+} {0 {}}
+do_test 1.1.4 {
+  list [catch { test_syscall reset ""} msg] $msg
+} {1 SQLITE_NOTFOUND}
+
+do_test 1.2 { test_syscall reset } {}
+
+do_test 1.3.1 { test_syscall install {open getcwd access} } {}
+do_test 1.3.2 { test_syscall reset } {}
+
+#-------------------------------------------------------------------------
+# Tests for the xGetSystemCall method.
+#
+do_test 2.1.1 { test_syscall exists open } 1
+do_test 2.1.2 { test_syscall exists nosuchcall } 0
+
+#-------------------------------------------------------------------------
+# Tests for the xNextSystemCall method.
+#
+set syscall_list [list                                \
+    open close access getcwd stat fstat ftruncate     \
+    fcntl read pread write pwrite fchmod              \
+]
+if {[test_syscall exists fallocate]} {lappend syscall_list fallocate}
+do_test 3.1 { test_syscall list } $syscall_list
+
+finish_test

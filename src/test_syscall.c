@@ -46,6 +46,27 @@
 **     name (i.e. "EACCES"). Not all errno codes are supported. Add extra
 **     to the aErrno table in function test_syscall_errno() below as 
 **     required.
+**
+**   test_syscall reset ?SYSTEM-CALL?
+**     With no argument, this is an alias for the [uninstall] command. However,
+**     this command uses a VFS call of the form:
+**
+**       xSetSystemCall(pVfs, 0, 0);
+**
+**     To restore the default system calls. The [uninstall] command restores
+**     each system call individually by calling (i.e.):
+**
+**       xSetSystemCall(pVfs, "open", 0);
+**
+**     With an argument, this command attempts to reset the system call named
+**     by the parameter using the same method as [uninstall].
+**
+**   test_syscall exists SYSTEM-CALL
+**     Return true if the named system call exists. Or false otherwise.
+**
+**   test_syscall list
+**     Return a list of all system calls. The list is constructed using
+**     the xNextSystemCall() VFS method.
 */
 
 #include "sqlite3.h"
@@ -55,6 +76,9 @@
 #include <assert.h>
 
 #ifdef SQLITE_OS_UNIX
+
+/* From test1.c */
+extern const char *sqlite3TestErrorName(int);
 
 #include <sys/types.h>
 #include <errno.h>
@@ -399,10 +423,69 @@ static int test_syscall_uninstall(
   pVfs = sqlite3_vfs_find(0);
   for(i=0; aSyscall[i].zName; i++){
     if( aSyscall[i].xOrig ){
-      pVfs->xSetSystemCall(pVfs, aSyscall[i].zName, aSyscall[i].xOrig);
+      pVfs->xSetSystemCall(pVfs, aSyscall[i].zName, 0);
       aSyscall[i].xOrig = 0;
     }
   }
+  return TCL_OK;
+}
+
+static int test_syscall_reset(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_vfs *pVfs; 
+  int i;
+  int rc;
+
+  if( objc!=2 && objc!=3 ){
+    Tcl_WrongNumArgs(interp, 2, objv, "");
+    return TCL_ERROR;
+  }
+
+  pVfs = sqlite3_vfs_find(0);
+  if( objc==2 ){
+    rc = pVfs->xSetSystemCall(pVfs, 0, 0);
+    for(i=0; aSyscall[i].zName; i++) aSyscall[i].xOrig = 0;
+  }else{
+    int nFunc;
+    char *zFunc = Tcl_GetStringFromObj(objv[2], &nFunc);
+    rc = pVfs->xSetSystemCall(pVfs, Tcl_GetString(objv[2]), 0);
+    for(i=0; rc==SQLITE_OK && aSyscall[i].zName; i++){
+      if( strlen(aSyscall[i].zName)!=nFunc ) continue;
+      if( memcmp(aSyscall[i].zName, zFunc, nFunc) ) continue;
+      aSyscall[i].xOrig = 0;
+    }
+  }
+  if( rc!=SQLITE_OK ){
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3TestErrorName(rc), -1));
+    return TCL_ERROR;
+  }
+
+  Tcl_ResetResult(interp);
+  return TCL_OK;
+}
+
+static int test_syscall_exists(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_vfs *pVfs; 
+  sqlite3_syscall_ptr x;
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 2, objv, "");
+    return TCL_ERROR;
+  }
+
+  pVfs = sqlite3_vfs_find(0);
+  x = pVfs->xGetSystemCall(pVfs, Tcl_GetString(objv[2]));
+
+  Tcl_SetObjResult(interp, Tcl_NewBooleanObj(x!=0));
   return TCL_OK;
 }
 
@@ -471,6 +554,36 @@ static int test_syscall_errno(
   return TCL_OK;
 }
 
+static int test_syscall_list(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  const char *zSys;
+  sqlite3_vfs *pVfs; 
+  Tcl_Obj *pList;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 2, objv, "");
+    return TCL_ERROR;
+  }
+
+  pVfs = sqlite3_vfs_find(0);
+  pList = Tcl_NewObj();
+  Tcl_IncrRefCount(pList);
+  for(zSys = pVfs->xNextSystemCall(pVfs, 0); 
+      zSys!=0;
+      zSys = pVfs->xNextSystemCall(pVfs, zSys)
+  ){
+    Tcl_ListObjAppendElement(interp, pList, Tcl_NewStringObj(zSys, -1));
+  }
+
+  Tcl_SetObjResult(interp, pList);
+  Tcl_DecrRefCount(pList);
+  return TCL_OK;
+}
+
 static int test_syscall(
   void * clientData,
   Tcl_Interp *interp,
@@ -484,7 +597,10 @@ static int test_syscall(
     { "fault",     test_syscall_fault },
     { "install",   test_syscall_install },
     { "uninstall", test_syscall_uninstall },
+    { "reset",     test_syscall_reset },
     { "errno",     test_syscall_errno },
+    { "exists",    test_syscall_exists },
+    { "list",      test_syscall_list },
     { 0, 0 }
   };
   int iCmd;
