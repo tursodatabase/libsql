@@ -103,8 +103,96 @@ foreach jrnl [list wal delete] {
       }
     } {1 2 5 6 3 4 7 8}
   }
-
 }
+
+#-------------------------------------------------------------------------
+# This test verifies that closing database handles does not drop locks
+# held by other database handles in the same process on the same file.
+#
+# The os_unix.c module has to take precautions to prevent this as the
+# close() system call drops locks held by other file-descriptors on the
+# same file. From the Linux man page:
+#
+#   close() closes a file descriptor, so that it no longer refers to any file
+#   and may be reused. Any record locks (see fcntl(2)) held on the file it 
+#   was associated with, and owned by the process, are removed (regardless 
+#   of the file descriptor that was used to obtain the lock).
+#
+catch { db close }
+forcedelete test.db test.db2
+
+do_multiclient_test tn {
+  code1 {
+    sqlite3 dbX1 test.db
+    sqlite3 dbX2 test.db
+  }
+
+  do_test syscall-5.$tn.1 {
+    sql1 {
+      CREATE TABLE t1(a, b);
+      INSERT INTO t1 VALUES(1, 2);
+      BEGIN;
+        INSERT INTO t1 VALUES(3, 4);
+    }
+  } {}
+
+  do_test syscall-5.$tn.2 { sql2 { SELECT * FROM t1 } } {1 2}
+  do_test syscall-5.$tn.3 { 
+    csql2 { INSERT INTO t1 VALUES(5, 6) }
+  } {1 {database is locked}}
+
+  do_test syscall-5.$tn.4 { 
+    code1 {
+      dbX1 close
+      dbX2 close
+    }
+  } {}
+
+  do_test syscall-5.$tn.5 { 
+    csql2 { INSERT INTO t1 VALUES(5, 6) }
+  } {1 {database is locked}}
+
+  do_test syscall-5.$tn.6 { sql1 { COMMIT } } {}
+
+  do_test syscall-5.$tn.7 { 
+    csql2 { INSERT INTO t1 VALUES(5, 6) }
+  } {0 {}}
+}
+
+catch {db close}
+do_test 6.1 {
+  sqlite3 db1 test.db1
+  sqlite3 db2 test.db2
+  sqlite3 db3 test.db3
+  sqlite3 dbM ""
+
+  db2 close
+  db3 close
+  dbM close
+  db1 close
+} {}
+
+do_test 6.2 {
+  sqlite3 db test.db
+  execsql {
+    PRAGMA temp_store = file;
+
+    PRAGMA main.cache_size = 10;
+    PRAGMA temp.cache_size = 10;
+    CREATE TABLE temp.tt(a, b);
+    INSERT INTO tt VALUES(randomblob(500), randomblob(600));
+    INSERT INTO tt SELECT randomblob(500), randomblob(600) FROM tt;
+    INSERT INTO tt SELECT randomblob(500), randomblob(600) FROM tt;
+    INSERT INTO tt SELECT randomblob(500), randomblob(600) FROM tt;
+    INSERT INTO tt SELECT randomblob(500), randomblob(600) FROM tt;
+    INSERT INTO tt SELECT randomblob(500), randomblob(600) FROM tt;
+    INSERT INTO tt SELECT randomblob(500), randomblob(600) FROM tt;
+    INSERT INTO tt SELECT randomblob(500), randomblob(600) FROM tt;
+    INSERT INTO tt SELECT randomblob(500), randomblob(600) FROM tt;
+  }
+
+  db close
+} {}
 
 
 

@@ -253,7 +253,7 @@ static int ts_stat(const char *zPath, struct stat *p){
 ** A wrapper around fstat().
 */
 static int ts_fstat(int fd, struct stat *p){
-  if( tsIsFail() ){
+  if( tsIsFailErrno("fstat") ){
     return -1;
   }
   return orig_fstat(fd, p);
@@ -534,6 +534,8 @@ static int test_syscall_errno(
     { "EACCES", EACCES },
     { "EINTR", EINTR },
     { "EIO", EIO },
+    { "EOVERFLOW", EOVERFLOW },
+    { "ENOMEM", ENOMEM },
     { 0, 0 }
   };
 
