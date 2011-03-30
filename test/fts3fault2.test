@@ -14,6 +14,9 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set ::testprefix fts3fault2
 
+# If SQLITE_ENABLE_FTS3 is not defined, omit this file.
+ifcapable !fts3 { finish_test ; return }
+
 do_test 1.0 {
   execsql {
     CREATE VIRTUAL TABLE t1 USING fts4(x);

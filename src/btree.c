@@ -3160,10 +3160,21 @@ static void btreeEndTransaction(Btree *p){
 ** the rollback journal (which causes the transaction to commit) and
 ** drop locks.
 **
+** Normally, if an error occurs while the pager layer is attempting to 
+** finalize the underlying journal file, this function returns an error and
+** the upper layer will attempt a rollback. However, if the second argument
+** is non-zero then this b-tree transaction is part of a multi-file 
+** transaction. In this case, the transaction has already been committed 
+** (by deleting a master journal file) and the caller will ignore this 
+** functions return code. So, even if an error occurs in the pager layer,
+** reset the b-tree objects internal state to indicate that the write
+** transaction has been closed. This is quite safe, as the pager will have
+** transitioned to the error state.
+**
 ** This will release the write lock on the database file.  If there
 ** are no active cursors, it also releases the read lock.
 */
-int sqlite3BtreeCommitPhaseTwo(Btree *p){
+int sqlite3BtreeCommitPhaseTwo(Btree *p, int bCleanup){
 
   if( p->inTrans==TRANS_NONE ) return SQLITE_OK;
   sqlite3BtreeEnter(p);
@@ -3178,7 +3189,7 @@ int sqlite3BtreeCommitPhaseTwo(Btree *p){
     assert( pBt->inTransaction==TRANS_WRITE );
     assert( pBt->nTransaction>0 );
     rc = sqlite3PagerCommitPhaseTwo(pBt->pPager);
-    if( rc!=SQLITE_OK ){
+    if( rc!=SQLITE_OK && bCleanup==0 ){
       sqlite3BtreeLeave(p);
       return rc;
     }
@@ -3198,7 +3209,7 @@ int sqlite3BtreeCommit(Btree *p){
   sqlite3BtreeEnter(p);
   rc = sqlite3BtreeCommitPhaseOne(p, 0);
   if( rc==SQLITE_OK ){
-    rc = sqlite3BtreeCommitPhaseTwo(p);
+    rc = sqlite3BtreeCommitPhaseTwo(p, 0);
   }
   sqlite3BtreeLeave(p);
   return rc;

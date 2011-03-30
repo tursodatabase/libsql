@@ -371,7 +371,7 @@ static struct unix_syscall {
 #else
   { "fallocate",    (sqlite3_syscall_ptr)0,                0 },
 #endif
-#define osFallocate ((int(*)(int,off_t,off_t)aSyscall[15].pCurrent)
+#define osFallocate ((int(*)(int,off_t,off_t))aSyscall[15].pCurrent)
 
 }; /* End of the overrideable system calls */
 
@@ -444,18 +444,16 @@ static sqlite3_syscall_ptr unixGetSystemCall(
 ** system call.
 */
 static const char *unixNextSystemCall(sqlite3_vfs *p, const char *zName){
-  unsigned int i;
+  int i = -1;
 
   UNUSED_PARAMETER(p);
-  if( zName==0 ){
-    i = -1;
-  }else{
-    for(i=0; i<sizeof(aSyscall)/sizeof(aSyscall[0])-1; i++){
-      if( strcmp(zName, aSyscall[0].zName)==0 ) break;
+  if( zName ){
+    for(i=0; i<ArraySize(aSyscall)-1; i++){
+      if( strcmp(zName, aSyscall[i].zName)==0 ) break;
     }
   }
-  for(i++; i<sizeof(aSyscall)/sizeof(aSyscall[0]); i++){
-    if( aSyscall[0].pCurrent!=0 ) return aSyscall[0].zName;
+  for(i++; i<ArraySize(aSyscall); i++){
+    if( aSyscall[i].pCurrent!=0 ) return aSyscall[i].zName;
   }
   return 0;
 }
@@ -3380,8 +3378,8 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
 #if defined(HAVE_POSIX_FALLOCATE) && HAVE_POSIX_FALLOCATE
       int rc;
       do{
-        rc = osFallocate(pFile->.h, buf.st_size, nSize-buf.st_size;
-      }while( rc<0 && errno=EINTR );
+        rc = osFallocate(pFile->h, buf.st_size, nSize-buf.st_size);
+      }while( rc<0 && errno==EINTR );
       if( rc ) return SQLITE_IOERR_WRITE;
 #else
       /* If the OS does not have posix_fallocate(), fake it. First use
