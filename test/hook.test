@@ -481,10 +481,10 @@ do_preupdate_test 7.2.1 {
 do_preupdate_test 7.2.2 {
   DELETE FROM t1
 } {
-  DELETE main t3 1 1   1 1
-  DELETE main t3 2 2   b a
-  DELETE main t3 4 4   a b
-  DELETE main t3 5 5   c d
+  DELETE main t1 1 1   1 1
+  DELETE main t1 2 2   b a
+  DELETE main t1 4 4   a b
+  DELETE main t1 5 5   c d
 }
 
 do_execsql_test 7.3.0 { 
@@ -765,4 +765,3 @@ do_preupdate_test 7.6.4 {
 }
 
 finish_test
-

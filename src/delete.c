@@ -338,8 +338,13 @@ void sqlite3DeleteFrom(
   /* Special case: A DELETE without a WHERE clause deletes everything.
   ** It is easier just to erase the whole table. Prior to version 3.6.5,
   ** this optimization caused the row change count (the value returned by 
-  ** API function sqlite3_count_changes) to be set incorrectly.  */
-  if( rcauth==SQLITE_OK && pWhere==0 && !pTrigger && !IsVirtual(pTab) 
+  ** API function sqlite3_count_changes) to be set incorrectly.
+  */
+  if( rcauth==SQLITE_OK
+   && pWhere==0
+   && !pTrigger
+   && !IsVirtual(pTab) 
+   && db->xPreUpdateCallback==0
    && 0==sqlite3FkRequired(pParse, pTab, 0, 0)
   ){
     assert( !isView );
