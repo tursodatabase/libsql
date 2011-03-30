@@ -203,9 +203,6 @@ do_test multiplex-2.5.99 {
   sqlite3_multiplex_shutdown
 } {SQLITE_OK}
 
-return
-
-# TBD fix the below
 
 set all_journal_modes {delete persist truncate memory off}
 foreach jmode $all_journal_modes {
@@ -214,11 +211,11 @@ foreach jmode $all_journal_modes {
     do_test multiplex-2.6.1.$sz.$jmode {
       multiplex_delete test.db
       sqlite3_multiplex_initialize "" 1
+      sqlite3 db test.db
       multiplex_set db main $sz 32
     } {SQLITE_OK}
 
     do_test multiplex-2.6.2.$sz.$jmode {
-      sqlite3 db test.db
       db eval {
         PRAGMA page_size = 1024;
         PRAGMA auto_vacuum = off;
@@ -264,10 +261,10 @@ foreach jmode $all_journal_modes {
 do_test multiplex-3.1.1 {
   multiplex_delete test.db
   sqlite3_multiplex_initialize "" 1
+  sqlite3 db test.db
   multiplex_set db main 32768 16
 } {SQLITE_OK}
 do_test multiplex-3.1.2 {
-  sqlite3 db test.db
   execsql {
     PRAGMA page_size = 1024;
     PRAGMA journal_mode = delete;
@@ -490,9 +487,9 @@ if {0==[info exists ::G(perm:presql)] || $::G(perm:presql) == ""} {
       }
       db close
       sqlite3_multiplex_initialize "" 1
-      multiplex_set db main 4096 16
       sqlite3 db test.db
-    } {}
+      multiplex_set db main 4096 16
+    } {SQLITE_OK}
     do_test multiplex-5.6.3.$jmode {
       catchsql {
         INSERT INTO t1 VALUES(6, randomblob(1100));

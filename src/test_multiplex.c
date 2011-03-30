@@ -25,9 +25,6 @@
 #include "sqliteInt.h"
 #include "test_multiplex.h"
 
-#include "sqlite3ext.h"
-SQLITE_EXTENSION_INIT1
-
 /*
 ** For a build without mutexes, no-op the mutex calls.
 */
@@ -216,13 +213,12 @@ static void multiplexControlFunc(
 ** This is the entry point to register the extension for the multiplex_control() function.
 */
 static int multiplexFuncInit(
-  sqlite3 *db, 
-  char **pzErrMsg, 
-  const sqlite3_api_routines *pApi
+  sqlite3 *db
 ){
-  sqlite3_create_function(db, "multiplex_control", 2, SQLITE_ANY, 
+  int rc;
+  rc = sqlite3_create_function(db, "multiplex_control", 2, SQLITE_ANY, 
     db, multiplexControlFunc, 0, 0);
-  return 0;
+  return rc;
 }
 
 /************************* VFS Method Wrappers *****************************/
@@ -686,11 +682,16 @@ static int multiplexFileControl(sqlite3_file *pConn, int op, void *pArg){
         }
       }
       break;
+    case SQLITE_FCNTL_SIZE_HINT:
+    case SQLITE_FCNTL_CHUNK_SIZE:
+      /* no-op these */
+      rc = SQLITE_OK;
+      break;
     default:
-  pSubOpen = multiplexSubOpen(p, 0, &rc, NULL);
-  if( pSubOpen ){
+      pSubOpen = multiplexSubOpen(p, 0, &rc, NULL);
+      if( pSubOpen ){
         rc = pSubOpen->pMethods->xFileControl(pSubOpen, op, pArg);
-  }
+      }
       break;
   }
   return rc;
