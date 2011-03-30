@@ -1306,6 +1306,7 @@ void *sqlite3_rollback_hook(
   return pRet;
 }
 
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
 /*
 ** Register a callback to be invoked each time a row is updated,
 ** inserted or deleted using this database connection.
@@ -1324,6 +1325,7 @@ void *sqlite3_preupdate_hook(
   sqlite3_mutex_leave(db->mutex);
   return pRet;
 }
+#endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
 
 #ifndef SQLITE_OMIT_WAL
 /*

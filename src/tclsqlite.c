@@ -653,6 +653,7 @@ static void DbUnlockNotify(void **apArg, int nArg){
 }
 #endif
 
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
 /*
 ** Pre-update hook callback.
 */
@@ -686,6 +687,7 @@ static void DbPreUpdateHandler(
   Tcl_EvalObjEx(pDb->interp, pCmd, TCL_EVAL_DIRECT);
   Tcl_DecrRefCount(pCmd);
 }
+#endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
 
 static void DbUpdateHandler(
   void *p, 
@@ -1624,7 +1626,9 @@ static void DbHookCmd(
     }
   }
 
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
   sqlite3_preupdate_hook(db, (pDb->pPreUpdateHook?DbPreUpdateHandler:0), pDb);
+#endif
   sqlite3_update_hook(db, (pDb->pUpdateHook?DbUpdateHandler:0), pDb);
   sqlite3_rollback_hook(db, (pDb->pRollbackHook?DbRollbackHandler:0), pDb);
   sqlite3_wal_hook(db, (pDb->pWalHook?DbWalHandler:0), pDb);
@@ -2851,6 +2855,10 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   **    $db preupdate_hook old INDEX
   */
   case DB_PREUPDATE: {
+#ifndef SQLITE_ENABLE_PREUPDATE_HOOK
+    Tcl_AppendResult(interp, "preupdate_hook was omitted at compile-time");
+    rc = TCL_ERROR;
+#else
     static const char *azSub[] = {"count", "depth", "hook", "new", "old", 0};
     enum DbPreupdateSubCmd {
       PRE_COUNT, PRE_DEPTH, PRE_HOOK, PRE_NEW, PRE_OLD
@@ -2920,7 +2928,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
         }
       }
     }
-
+#endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
     break;
   }
 
@@ -3720,7 +3728,7 @@ static void init_all(Tcl_Interp *interp){
     extern int Sqlitemultiplex_Init(Tcl_Interp*);
     extern int SqliteSuperlock_Init(Tcl_Interp*);
     extern int SqlitetestSyscall_Init(Tcl_Interp*);
-#ifdef SQLITE_ENABLE_SESSION
+#if defined(SQLITE_ENABLE_SESSION) && defined(SQLITE_ENABLE_PREUPDATE_HOOK)
     extern int TestSession_Init(Tcl_Interp*);
 #endif
 #ifdef SQLITE_ENABLE_ZIPVFS
@@ -3760,7 +3768,7 @@ static void init_all(Tcl_Interp *interp){
     Sqlitemultiplex_Init(interp);
     SqliteSuperlock_Init(interp);
     SqlitetestSyscall_Init(interp);
-#ifdef SQLITE_ENABLE_SESSION
+#if defined(SQLITE_ENABLE_SESSION) && defined(SQLITE_ENABLE_PREUPDATE_HOOK)
     TestSession_Init(interp);
 #endif
 

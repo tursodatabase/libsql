@@ -18,6 +18,7 @@ if {![info exists testdir]} {
 } 
 source [file join [file dirname [info script]] session_common.tcl]
 source $testdir/tester.tcl
+ifcapable !session {finish_test; return}
 
 set testprefix session3
 
@@ -177,4 +178,3 @@ test_sqlite3_log
 sqlite3_initialize
 
 finish_test
-

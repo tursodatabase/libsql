@@ -16,6 +16,7 @@ if {![info exists testdir]} {
 } 
 source [file join [file dirname [info script]] session_common.tcl]
 source $testdir/tester.tcl
+ifcapable !session {finish_test; return}
 
 set testprefix session1
 
@@ -444,4 +445,3 @@ do_db2_test 6.3 "SELECT * FROM t2" {a b A B}
 
 catch { db2 close }
 finish_test
-

@@ -1,5 +1,6 @@
 
-#if defined(SQLITE_TEST) && defined(SQLITE_ENABLE_SESSION)
+#if defined(SQLITE_TEST) && defined(SQLITE_ENABLE_SESSION) \
+ && defined(SQLITE_ENABLE_PREUPDATE_HOOK)
 
 #include "sqlite3session.h"
 #include <assert.h>
@@ -519,5 +520,4 @@ int TestSession_Init(Tcl_Interp *interp){
   return TCL_OK;
 }
 
-#endif
-
+#endif /* SQLITE_TEST && SQLITE_SESSION && SQLITE_PREUPDATE_HOOK */

@@ -2812,7 +2812,7 @@ UnpackedRecord *sqlite3VdbeRecordUnpack(
     pMem->enc = pKeyInfo->enc;
     pMem->db = pKeyInfo->db;
     pMem->flags = 0;
-    pMem->zMalloc = pMem->z = 0;
+    pMem->zMalloc = 0;
     pMem->z = 0;
     d += sqlite3VdbeSerialGet(&aKey[d], serial_type, pMem);
     pMem++;
@@ -3171,6 +3171,7 @@ void sqlite3VdbeSetVarmask(Vdbe *v, int iVar){
   }
 }
 
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
 /*
 ** Invoke the pre-update hook. If this is an UPDATE or DELETE pre-update call,
 ** then cursor passed as the second argument should point to the row about
@@ -3228,3 +3229,4 @@ void sqlite3VdbePreUpdateHook(
     sqlite3DbFree(db, preupdate.aNew);
   }
 }
+#endif /* SQLITE_ENABLE_PREUPDATE_HOOK */

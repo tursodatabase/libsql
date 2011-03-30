@@ -108,6 +108,16 @@ static void updateMaxBlobsize(Mem *p){
 #endif
 
 /*
+** This macro evaluates to true if either the update hook or the preupdate
+** hook are enabled for database connect DB.
+*/
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+# define HAS_UPDATE_HOOK(DB)   ((DB)->xPreUpdateCallback||(DB)->xUpdateCallback)
+#else
+# define HAS_UPDATE_HOOK(DB)  ((DB)->xUpdateCallback)
+#endif
+
+/*
 ** The next global variable is incremented each type the OP_Found opcode
 ** is executed. This is used to test whether or not the foreign key
 ** operation implemented using OP_FkIsZero is working. This variable
@@ -3890,7 +3900,7 @@ case OP_InsertInt: {
     iKey = pOp->p3;
   }
 
-  if( pOp->p4type==P4_TABLE && (db->xPreUpdateCallback||db->xUpdateCallback) ){
+  if( pOp->p4type==P4_TABLE && HAS_UPDATE_HOOK(db) ){
     assert( pC->isTable );
     assert( pC->iDb>=0 );
     zDb = db->aDb[pC->iDb].zName;
@@ -3898,6 +3908,7 @@ case OP_InsertInt: {
     op = ((pOp->p5 & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_INSERT);
   }
 
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
   /* Invoke the pre-update hook, if any */
   if( db->xPreUpdateCallback 
    && pOp->p4type==P4_TABLE
@@ -3905,6 +3916,7 @@ case OP_InsertInt: {
   ){
     sqlite3VdbePreUpdateHook(p, pC, SQLITE_INSERT, zDb, pTab, iKey, pOp->p2);
   }
+#endif
 
   if( pOp->p5 & OPFLAG_NCHANGE ) p->nChange++;
   if( pOp->p5 & OPFLAG_LASTROWID ) db->lastRowid = iKey;
@@ -3991,7 +4003,7 @@ case OP_Delete: {
   /* If the update-hook or pre-update-hook will be invoked, set iKey to 
   ** the rowid of the row being deleted. Set zDb and zTab as well.
   */
-  if( pOp->p4.z && (db->xPreUpdateCallback || db->xUpdateCallback) ){
+  if( pOp->p4.z && HAS_UPDATE_HOOK(db) ){
     assert( pC->iDb>=0 );
     assert( pC->isTable );
     assert( pC->rowidIsValid );  /* lastRowid set by previous OP_NotFound */
@@ -4000,6 +4012,7 @@ case OP_Delete: {
     pTab = pOp->p4.pTab;
   }
 
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
   /* Invoke the pre-update-hook if required. */
   if( db->xPreUpdateCallback && pOp->p4.z ){
     assert( !(opflags & OPFLAG_ISUPDATE) || (aMem[pOp->p3].flags & MEM_Int) );
@@ -4009,6 +4022,7 @@ case OP_Delete: {
         pOp->p3
     );
   }
+#endif
 
   if( opflags & OPFLAG_ISNOOP ) break;
 

@@ -6392,6 +6392,9 @@ int sqlite3_wal_checkpoint_v2(
 ** CAPI3REF: The pre-update hook.
 ** EXPERIMENTAL
 **
+** ^These interfaces are only available if SQLite is compiled using the
+** [SQLITE_ENABLE_UPDATE_HOOK] compile-time option.
+**
 ** ^The [sqlite3_preupdate_hook()] interface registers a callback function
 ** that is invoked prior to each [INSERT], [UPDATE], and [DELETE] operation.
 ** ^At most one preupdate hook may be registered at a time on a single

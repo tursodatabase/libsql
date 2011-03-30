@@ -365,6 +365,11 @@ unset ::hooks
 #----------------------------------------------------------------------------
 # The following tests - hook-7.* - test the pre-update hook.
 #
+ifcapable !preupdate {
+  finish_test
+  return
+}
+#
 # 7.1.1 - INSERT statement.
 # 7.1.2 - INSERT INTO ... SELECT statement.
 # 7.1.3 - REPLACE INTO ... (rowid conflict)

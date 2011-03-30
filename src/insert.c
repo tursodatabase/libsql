@@ -1286,12 +1286,14 @@ void sqlite3GenerateConstraintChecks(
               pParse, pTab, baseCur, regRowid, 0, pTrigger, OE_Replace
           );
         }else{
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
           /* This OP_Delete opcode fires the pre-update-hook only. It does
           ** not modify the b-tree. It is more efficient to let the coming
           ** OP_Insert replace the existing entry than it is to delete the
           ** existing entry and then insert a new one. */
           sqlite3VdbeAddOp2(v, OP_Delete, baseCur, OPFLAG_ISNOOP);
           sqlite3VdbeChangeP4(v, -1, (char *)pTab, P4_TABLE);
+#endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
           if( pTab->pIndex ){
             sqlite3MultiWrite(pParse);
             sqlite3GenerateRowIndexDelete(pParse, pTab, baseCur, 0);

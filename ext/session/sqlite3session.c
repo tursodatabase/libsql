@@ -1,5 +1,5 @@
 
-#ifdef SQLITE_ENABLE_SESSION
+#if defined(SQLITE_ENABLE_SESSION) && defined(SQLITE_ENABLE_PREUPDATE_HOOK)
 
 #include "sqlite3session.h"
 #include <assert.h>
@@ -2533,4 +2533,4 @@ int sqlite3changeset_apply(
   return rc;
 }
 
-#endif        /* #ifdef SQLITE_ENABLE_SESSION */
+#endif /* SQLITE_ENABLE_SESSION && SQLITE_ENABLE_PREUPDATE_HOOK */

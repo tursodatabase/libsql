@@ -344,7 +344,9 @@ void sqlite3DeleteFrom(
    && pWhere==0
    && !pTrigger
    && !IsVirtual(pTab) 
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
    && db->xPreUpdateCallback==0
+#endif
    && 0==sqlite3FkRequired(pParse, pTab, 0, 0)
   ){
     assert( !isView );

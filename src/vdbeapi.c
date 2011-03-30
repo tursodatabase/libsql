@@ -1327,6 +1327,7 @@ int sqlite3_stmt_status(sqlite3_stmt *pStmt, int op, int resetFlag){
   return v;
 }
 
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
 /*
 ** This function is called from within a pre-update callback to retrieve
 ** a field of the row currently being updated or deleted.
@@ -1381,7 +1382,9 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
   sqlite3Error(db, rc, 0);
   return sqlite3ApiExit(db, rc);
 }
+#endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
 
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
 /*
 ** This function is called from within a pre-update callback to retrieve
 ** the number of columns in the row being updated, deleted or inserted.
@@ -1390,7 +1393,9 @@ int sqlite3_preupdate_count(sqlite3 *db){
   PreUpdate *p = db->pPreUpdate;
   return (p ? p->pCsr->nField : 0);
 }
+#endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
 
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
 /*
 ** This function is designed to be called from within a pre-update callback
 ** only. It returns zero if the change that caused the callback was made
@@ -1406,7 +1411,9 @@ int sqlite3_preupdate_depth(sqlite3 *db){
   PreUpdate *p = db->pPreUpdate;
   return (p ? p->v->nFrame : 0);
 }
+#endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
 
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
 /*
 ** This function is called from within a pre-update callback to retrieve
 ** a field of the row currently being updated or inserted.
@@ -1481,3 +1488,4 @@ int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
   sqlite3Error(db, rc, 0);
   return sqlite3ApiExit(db, rc);
 }
+#endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
