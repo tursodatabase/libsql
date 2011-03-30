@@ -1129,7 +1129,7 @@ int sqlite3_config(int, ...);
 ** [database connection] (specified in the first argument).
 **
 ** The second argument to sqlite3_db_config(D,V,...)  is the
-** [SQLITE_DBCONIG_LOOKASIDE | configuration verb] - an integer code 
+** [SQLITE_DBCONFIG_LOOKASIDE | configuration verb] - an integer code 
 ** that indicates what aspect of the [database connection] is being configured.
 ** Subsequent arguments vary depending on the configuration verb.
 **
@@ -4263,8 +4263,8 @@ void *sqlite3_rollback_hook(sqlite3*, void(*)(void *), void*);
 ** on the same [database connection] D, or NULL for
 ** the first call on D.
 **
-** See also the [sqlite3_commit_hook()] and [sqlite3_rollback_hook()]
-** interfaces.
+** See also the [sqlite3_commit_hook()], [sqlite3_rollback_hook()],
+** and [sqlite3_preupdate_hook()] interfaces.
 */
 void *sqlite3_update_hook(
   sqlite3*, 
@@ -6390,10 +6390,77 @@ int sqlite3_wal_checkpoint_v2(
 
 /*
 ** CAPI3REF: The pre-update hook.
-** 
-** The preupdate_old() API may only be used from within an SQLITE_UPDATE or
-** SQLITE_DELETE pre-update callback. The preupdate_modified() API may only 
-** be used from within an SQLITE_UPDATE pre-update callback.
+** EXPERIMENTAL
+**
+** ^The [sqlite3_preupdate_hook()] interface registers a callback function
+** that is invoked prior to each [INSERT], [UPDATE], and [DELETE] operation.
+** ^At most one preupdate hook may be registered at a time on a single
+** [database connection]; each call to [sqlite3_preupdate_hook()] overrides
+** the previous setting.
+** ^The preupdate hook is disabled by invoking [sqlite3_preupdate_hook()]
+** with a NULL pointer as the second parameter.
+** ^The third parameter to [sqlite3_preupdate_hook()] is passed through as
+** the first parameter to callbacks.
+**
+** ^The preupdate hook only fires for changes to real tables; the preupdate
+** hook is not invoked for changes to virtual tables.
+**
+** ^The second parameter to the preupdate callback is a pointer to
+** the [database connection] that registered the preupdate hook.
+** ^The third parameter to the preupdate callback is one of the constants
+** [SQLITE_INSERT], [SQLITE_DELETE], or [SQLITE_UPDATE] to indentify the
+** kind of update operation that is about to occur.
+** ^(The fourth parameter to the preupdate callback is the name of the
+** database within the database connection that is being modified.  This
+** will be "main" for the main database or "temp" for TEMP tables or 
+** the name given after the AS keyword in the [ATTACH] statement for attached
+** databases.)^
+** ^The fifth parameter to the preupdate callback is the name of the
+** table that is being modified.
+** ^The sixth parameter to the preupdate callback is the initial [rowid] of the
+** row being changes for SQLITE_UPDATE and SQLITE_DELETE changes and is
+** undefined for SQLITE_INSERT changes.
+** ^The seventh parameter to the preupdate callback is the final [rowid] of
+** the row being changed for SQLITE_UPDATE and SQLITE_INSERT changes and is
+** undefined for SQLITE_DELETE changes.
+**
+** The [sqlite3_preupdate_old()], [sqlite3_preupdate_new()],
+** [sqlite3_preupdate_count()], and [sqlite3_preupdate_depth()] interfaces
+** provide additional information about a preupdate event. These routines
+** may only be called from within a preupdate callback.  Invoking any of
+** these routines from outside of a preupdate callback or with a
+** [database connection] pointer that is different from the one supplied
+** to the preupdate callback results in undefined and probably undesirable
+** behavior.
+**
+** ^The [sqlite3_preupdate_count(D)] interface returns the number of columns
+** in the row that is being inserted, updated, or deleted.
+**
+** ^The [sqlite3_preupdate_old(D,N,P)] interface writes into P a pointer to
+** a [protected sqlite3_value] that contains the value of the Nth column of
+** the table row before it is updated.  The N parameter must be between 0
+** and one less than the number of columns or the behavior will be
+** undefined. This must only be used within SQLITE_UPDATE and SQLITE_DELETE
+** preupdate callbacks; if it is used by an SQLITE_INSERT callback then the
+** behavior is undefined.  The [sqlite3_value] that P points to
+** will be destroyed when the preupdate callback returns.
+**
+** ^The [sqlite3_preupdate_new(D,N,P)] interface writes into P a pointer to
+** a [protected sqlite3_value] that contains the value of the Nth column of
+** the table row after it is updated.  The N parameter must be between 0
+** and one less than the number of columns or the behavior will be
+** undefined. This must only be used within SQLITE_INSERT and SQLITE_UPDATE
+** preupdate callbacks; if it is used by an SQLITE_DELETE callback then the
+** behavior is undefined.  The [sqlite3_value] that P points to
+** will be destroyed when the preupdate callback returns.
+**
+** ^The [sqlite3_preupdate_depth(D)] interface returns 0 if the preupdate
+** callback was invoked as a result of a direct insert, update, or delete
+** operation; or 1 for inserts, updates, or deletes invoked by top-level 
+** triggers; or 2 for changes resulting from triggers called by top-level
+** triggers; and so forth.
+**
+** See also:  [sqlite3_update_hook()]
 */
 SQLITE_EXPERIMENTAL void *sqlite3_preupdate_hook(
   sqlite3 *db,
