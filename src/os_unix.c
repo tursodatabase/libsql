@@ -593,9 +593,22 @@ static int robust_ftruncate(int h, sqlite3_int64 sz){
 */
 static int sqliteErrorFromPosixError(int posixError, int sqliteIOErr) {
   switch (posixError) {
+#if 0
+  /* At one point this code was not commented out. In theory, this branch
+  ** should never be hit, as this function should only be called after
+  ** a locking-related function (i.e. fcntl()) has returned non-zero with
+  ** the value of errno as the first argument. Since a system call has failed,
+  ** errno should be non-zero.
+  **
+  ** Despite this, if errno really is zero, we still don't want to return
+  ** SQLITE_OK. The system call failed, and *some* SQLite error should be
+  ** propagated back to the caller. Commenting this branch out means errno==0
+  ** will be handled by the "default:" case below.
+  */
   case 0: 
     return SQLITE_OK;
-    
+#endif
+
   case EAGAIN:
   case ETIMEDOUT:
   case EBUSY:
@@ -1037,7 +1050,7 @@ static void closePendingFds(unixFile *pFile){
 static void releaseInodeInfo(unixFile *pFile){
   unixInodeInfo *pInode = pFile->pInode;
   assert( unixMutexHeld() );
-  if( pInode ){
+  if( ALWAYS(pInode) ){
     pInode->nRef--;
     if( pInode->nRef==0 ){
       assert( pInode->pShmNode==0 );
@@ -1211,6 +1224,9 @@ static int unixCheckReservedLock(sqlite3_file *id, int *pResOut){
 ** This function is a pass-through to fcntl(F_SETLK) if pFile is using
 ** any VFS other than "unix-excl" or if pFile is opened on "unix-excl"
 ** and is read-only.
+**
+** Zero is returned if the call completes successfully, or -1 if a call
+** to fcntl() fails. In this case, errno is set appropriately (by fcntl()).
 */
 static int unixFileLock(unixFile *pFile, struct flock *pLock){
   int rc;
@@ -1307,7 +1323,6 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   unixFile *pFile = (unixFile*)id;
   unixInodeInfo *pInode = pFile->pInode;
   struct flock lock;
-  int s = 0;
   int tErrno = 0;
 
   assert( pFile );
@@ -1376,11 +1391,10 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   ){
     lock.l_type = (eFileLock==SHARED_LOCK?F_RDLCK:F_WRLCK);
     lock.l_start = PENDING_BYTE;
-    s = unixFileLock(pFile, &lock);
-    if( s==(-1) ){
+    if( unixFileLock(pFile, &lock) ){
       tErrno = errno;
       rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_LOCK);
-      if( IS_LOCK_ERROR(rc) ){
+      if( rc!=SQLITE_BUSY ){
         pFile->lastErrno = tErrno;
       }
       goto end_lock;
@@ -1394,33 +1408,31 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   if( eFileLock==SHARED_LOCK ){
     assert( pInode->nShared==0 );
     assert( pInode->eFileLock==0 );
+    assert( rc==SQLITE_OK );
 
     /* Now get the read-lock */
     lock.l_start = SHARED_FIRST;
     lock.l_len = SHARED_SIZE;
-    if( (s = unixFileLock(pFile, &lock))==(-1) ){
+    if( unixFileLock(pFile, &lock) ){
       tErrno = errno;
+      rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_LOCK);
     }
+
     /* Drop the temporary PENDING lock */
     lock.l_start = PENDING_BYTE;
     lock.l_len = 1L;
     lock.l_type = F_UNLCK;
-    if( unixFileLock(pFile, &lock)!=0 ){
-      if( s != -1 ){
-        /* This could happen with a network mount */
-        tErrno = errno; 
-        rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK); 
-        if( IS_LOCK_ERROR(rc) ){
-          pFile->lastErrno = tErrno;
-        }
-        goto end_lock;
-      }
+    if( unixFileLock(pFile, &lock) && rc==SQLITE_OK ){
+      /* This could happen with a network mount */
+      tErrno = errno;
+      rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK); 
     }
-    if( s==(-1) ){
-      rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_LOCK);
-      if( IS_LOCK_ERROR(rc) ){
+
+    if( rc ){
+      if( rc!=SQLITE_BUSY ){
         pFile->lastErrno = tErrno;
       }
+      goto end_lock;
     }else{
       pFile->eFileLock = SHARED_LOCK;
       pInode->nLock++;
@@ -1437,22 +1449,20 @@ static int unixLock(sqlite3_file *id, int eFileLock){
     */
     assert( 0!=pFile->eFileLock );
     lock.l_type = F_WRLCK;
-    switch( eFileLock ){
-      case RESERVED_LOCK:
-        lock.l_start = RESERVED_BYTE;
-        break;
-      case EXCLUSIVE_LOCK:
-        lock.l_start = SHARED_FIRST;
-        lock.l_len = SHARED_SIZE;
-        break;
-      default:
-        assert(0);
+
+    assert( eFileLock==RESERVED_LOCK || eFileLock==EXCLUSIVE_LOCK );
+    if( eFileLock==RESERVED_LOCK ){
+      lock.l_start = RESERVED_BYTE;
+      lock.l_len = 1L;
+    }else{
+      lock.l_start = SHARED_FIRST;
+      lock.l_len = SHARED_SIZE;
     }
-    s = unixFileLock(pFile, &lock);
-    if( s==(-1) ){
+
+    if( unixFileLock(pFile, &lock) ){
       tErrno = errno;
       rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_LOCK);
-      if( IS_LOCK_ERROR(rc) ){
+      if( rc!=SQLITE_BUSY ){
         pFile->lastErrno = tErrno;
       }
     }
@@ -1623,10 +1633,10 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
         lock.l_whence = SEEK_SET;
         lock.l_start = SHARED_FIRST;
         lock.l_len = SHARED_SIZE;
-        if( unixFileLock(pFile, &lock)==(-1) ){
+        if( unixFileLock(pFile, &lock) ){
           tErrno = errno;
           rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_RDLOCK);
-          if( IS_LOCK_ERROR(rc) ){
+          if( rc!=SQLITE_BUSY ){
             pFile->lastErrno = tErrno;
           }
           goto end_unlock;
@@ -1637,12 +1647,12 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
     lock.l_whence = SEEK_SET;
     lock.l_start = PENDING_BYTE;
     lock.l_len = 2L;  assert( PENDING_BYTE+1==RESERVED_BYTE );
-    if( unixFileLock(pFile, &lock)!=(-1) ){
+    if( unixFileLock(pFile, &lock)==0 ){
       pInode->eFileLock = SHARED_LOCK;
     }else{
       tErrno = errno;
       rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK);
-      if( IS_LOCK_ERROR(rc) ){
+      if( rc!=SQLITE_BUSY ){
         pFile->lastErrno = tErrno;
       }
       goto end_unlock;
@@ -1661,12 +1671,12 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
       SimulateIOErrorBenign(1);
       SimulateIOError( h=(-1) )
       SimulateIOErrorBenign(0);
-      if( unixFileLock(pFile, &lock)!=(-1) ){
+      if( unixFileLock(pFile, &lock)==0 ){
         pInode->eFileLock = NO_LOCK;
       }else{
         tErrno = errno;
         rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK);
-        if( IS_LOCK_ERROR(rc) ){
+        if( rc!=SQLITE_BUSY ){
           pFile->lastErrno = tErrno;
         }
         pInode->eFileLock = NO_LOCK;
@@ -1714,29 +1724,27 @@ static int unixUnlock(sqlite3_file *id, int eFileLock){
 */
 static int closeUnixFile(sqlite3_file *id){
   unixFile *pFile = (unixFile*)id;
-  if( pFile ){
-    if( pFile->dirfd>=0 ){
-      robust_close(pFile, pFile->dirfd, __LINE__);
-      pFile->dirfd=-1;
-    }
-    if( pFile->h>=0 ){
-      robust_close(pFile, pFile->h, __LINE__);
-      pFile->h = -1;
-    }
-#if OS_VXWORKS
-    if( pFile->pId ){
-      if( pFile->isDelete ){
-        unlink(pFile->pId->zCanonicalName);
-      }
-      vxworksReleaseFileId(pFile->pId);
-      pFile->pId = 0;
-    }
-#endif
-    OSTRACE(("CLOSE   %-3d\n", pFile->h));
-    OpenCounter(-1);
-    sqlite3_free(pFile->pUnused);
-    memset(pFile, 0, sizeof(unixFile));
+  if( pFile->dirfd>=0 ){
+    robust_close(pFile, pFile->dirfd, __LINE__);
+    pFile->dirfd=-1;
   }
+  if( pFile->h>=0 ){
+    robust_close(pFile, pFile->h, __LINE__);
+    pFile->h = -1;
+  }
+#if OS_VXWORKS
+  if( pFile->pId ){
+    if( pFile->isDelete ){
+      unlink(pFile->pId->zCanonicalName);
+    }
+    vxworksReleaseFileId(pFile->pId);
+    pFile->pId = 0;
+  }
+#endif
+  OSTRACE(("CLOSE   %-3d\n", pFile->h));
+  OpenCounter(-1);
+  sqlite3_free(pFile->pUnused);
+  memset(pFile, 0, sizeof(unixFile));
   return SQLITE_OK;
 }
 
@@ -1745,24 +1753,25 @@ static int closeUnixFile(sqlite3_file *id){
 */
 static int unixClose(sqlite3_file *id){
   int rc = SQLITE_OK;
-  if( id ){
-    unixFile *pFile = (unixFile *)id;
-    unixUnlock(id, NO_LOCK);
-    unixEnterMutex();
-    assert( pFile->pInode==0 || pFile->pInode->nLock>0
-            || pFile->pInode->bProcessLock==0 );
-    if( pFile->pInode && pFile->pInode->nLock ){
-      /* If there are outstanding locks, do not actually close the file just
-      ** yet because that would clear those locks.  Instead, add the file
-      ** descriptor to pInode->pUnused list.  It will be automatically closed 
-      ** when the last lock is cleared.
-      */
-      setPendingFd(pFile);
-    }
-    releaseInodeInfo(pFile);
-    rc = closeUnixFile(id);
-    unixLeaveMutex();
+  unixFile *pFile = (unixFile *)id;
+  unixUnlock(id, NO_LOCK);
+  unixEnterMutex();
+
+  /* unixFile.pInode is always valid here. Otherwise, a different close
+  ** routine (e.g. nolockClose()) would be called instead.
+  */
+  assert( pFile->pInode->nLock>0 || pFile->pInode->bProcessLock==0 );
+  if( ALWAYS(pFile->pInode) && pFile->pInode->nLock ){
+    /* If there are outstanding locks, do not actually close the file just
+    ** yet because that would clear those locks.  Instead, add the file
+    ** descriptor to pInode->pUnused list.  It will be automatically closed 
+    ** when the last lock is cleared.
+    */
+    setPendingFd(pFile);
   }
+  releaseInodeInfo(pFile);
+  rc = closeUnixFile(id);
+  unixLeaveMutex();
   return rc;
 }
 
@@ -3007,6 +3016,7 @@ static int seekAndWrite(unixFile *id, i64 offset, const void *pBuf, int cnt){
   do{ got = osPwrite64(id->h, pBuf, cnt, offset);}while( got<0 && errno==EINTR);
 #else
   newOffset = lseek(id->h, offset, SEEK_SET);
+  SimulateIOError( newOffset-- );
   if( newOffset!=offset ){
     if( newOffset == -1 ){
       ((unixFile*)id)->lastErrno = errno;
@@ -3375,12 +3385,16 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
 
     nSize = ((nByte+pFile->szChunk-1) / pFile->szChunk) * pFile->szChunk;
     if( nSize>(i64)buf.st_size ){
+
 #if defined(HAVE_POSIX_FALLOCATE) && HAVE_POSIX_FALLOCATE
-      int rc;
+      /* The code below is handling the return value of osFallocate() 
+      ** correctly. posix_fallocate() is defined to "returns zero on success, 
+      ** or an error number on  failure". See the manpage for details. */
+      int err;
       do{
-        rc = osFallocate(pFile->h, buf.st_size, nSize-buf.st_size);
-      }while( rc<0 && errno==EINTR );
-      if( rc ) return SQLITE_IOERR_WRITE;
+        err = osFallocate(pFile->h, buf.st_size, nSize-buf.st_size);
+      }while( err==EINTR );
+      if( err ) return SQLITE_IOERR_WRITE;
 #else
       /* If the OS does not have posix_fallocate(), fake it. First use
       ** ftruncate() to set the file size, then write a single byte to

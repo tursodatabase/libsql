@@ -194,6 +194,57 @@ do_test 6.2 {
   db close
 } {}
 
+#-------------------------------------------------------------------------
+# Test that a database file a single byte in size is treated as an empty
+# file. Whereas a file 2 bytes or larger might be considered corrupt.
+#
+catch { db close }
+forcedelete test.db test.db2
+
+proc create_db_file {nByte} {
+  set fd [open test.db w]
+  fconfigure $fd -translation binary -encoding binary
+  puts -nonewline $fd [string range "xSQLite" 1 $nByte]
+  close $fd
+}
+
+foreach {nByte res} {
+  1      {0 {}}
+  2      {1 {file is encrypted or is not a database}}
+  3      {1 {file is encrypted or is not a database}}
+} {
+  do_test 7.$nByte {
+    create_db_file $nByte
+    sqlite3 db test.db
+    catchsql { CREATE TABLE t1(a, b) }
+  } $res
+  catch { db close }
+}
+
+#-------------------------------------------------------------------------
+# 
+catch { db close }
+forcedelete test.db test.db2
+
+do_test 8.1 {
+  sqlite3 db test.db
+  file_control_chunksize_test db main 4096
+  file size test.db
+} {0}
+
+foreach {tn hint size} {
+  1  1000    4096 
+  2  1000    4096 
+  3  3000    4096 
+  4  4096    4096 
+  5  4197    8192 
+} {
+  do_test 8.2.$tn {
+    file_control_sizehint_test db main $hint
+    file size test.db
+  } $size
+}
+
 
 
 finish_test

@@ -4889,6 +4889,44 @@ static int file_control_chunksize_test(
 }
 
 /*
+** tclcmd:   file_control_sizehint_test DB DBNAME SIZE
+**
+** This TCL command runs the sqlite3_file_control interface and
+** verifies correct operation of the SQLITE_GET_LOCKPROXYFILE and
+** SQLITE_SET_LOCKPROXYFILE verbs.
+*/
+static int file_control_sizehint_test(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3_int64 nSize;            /* Hinted size */
+  char *zDb;                      /* Db name ("main", "temp" etc.) */
+  sqlite3 *db;                    /* Database handle */
+  int rc;                         /* file_control() return code */
+
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB DBNAME SIZE");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) 
+   || Tcl_GetWideIntFromObj(interp, objv[3], &nSize)
+  ){
+   return TCL_ERROR;
+  }
+  zDb = Tcl_GetString(objv[2]);
+  if( zDb[0]=='\0' ) zDb = NULL;
+
+  rc = sqlite3_file_control(db, zDb, SQLITE_FCNTL_SIZE_HINT, (void *)&nSize);
+  if( rc ){
+    Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_STATIC);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
+/*
 ** tclcmd:   file_control_lockproxy_test DB PWD
 **
 ** This TCL command runs the sqlite3_file_control interface and
@@ -5608,6 +5646,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "file_control_lasterrno_test", file_control_lasterrno_test,  0   },
      { "file_control_lockproxy_test", file_control_lockproxy_test,  0   },
      { "file_control_chunksize_test", file_control_chunksize_test,  0   },
+     { "file_control_sizehint_test", file_control_sizehint_test,  0   },
      { "sqlite3_vfs_list",           vfs_list,     0   },
      { "sqlite3_create_function_v2", test_create_function_v2, 0 },
 
