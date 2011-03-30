@@ -559,7 +559,7 @@ void sqlite3VdbeChangeP5(Vdbe *p, u8 val){
 ** the address of the next instruction to be coded.
 */
 void sqlite3VdbeJumpHere(Vdbe *p, int addr){
-  sqlite3VdbeChangeP2(p, addr, p->nOp);
+  if( addr>=0 ) sqlite3VdbeChangeP2(p, addr, p->nOp);
 }
 
 

@@ -1,5 +1,5 @@
-C Add\stests\sto\ssyscall.test\sand\ssysfault.test.
-D 2011-03-29T18:28:35.749
+C Do\snot\sgenerate\ssqlite_stat1\sentries\sfor\sempty\stables\swhen\srunning\nANALYZE.\s\sTicket\s[83ea97620bd31016451]
+D 2011-03-30T14:54:05.390
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -115,7 +115,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c 6a0c176e64a34929a4436048066a84ef4f1445b3
-F src/analyze.c a038162344265ac21dfb24b3fcc06c666ebb9c07
+F src/analyze.c cafa5a22eb602ebdc5ba90995a41c1e84dda47a1
 F src/attach.c 438ea6f6b5d5961c1f49b737f2ce0f14ce7c6877
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 537f89c7ef5021cb580f31f782e556ffffcb2ed1
@@ -236,7 +236,7 @@ F src/vdbe.c e3f37ca0afdd72e883475e2a32a06167df2810d0
 F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
 F src/vdbeInt.h e1c6254641168507d25b46affb6dfb53c782f553
 F src/vdbeapi.c a09ad9164cafc505250d5dd6b69660c960f1308c
-F src/vdbeaux.c 9211dfa7d79d94d4e50714bfd0497ff3588a739d
+F src/vdbeaux.c d3e8be6fa84dd6a9a4b87b07b70ab4072dd3394e
 F src/vdbeblob.c c3ccb7c8732858c680f442932e66ad06bb036562
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
 F src/vdbetrace.c 3ba13bc32bdf16d2bdea523245fd16736bed67b5
@@ -253,12 +253,12 @@ F test/alter2.test 75f731508f1bf27ba09a6075c66cd02216ba464b
 F test/alter3.test 8677e48d95536f7a6ed86a1a774744dadcc22b07
 F test/alter4.test 1e5dd6b951e9f65ca66422edff02e56df82dd403
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
-F test/analyze.test c1eb87067fc16ece7c07e823d6395fd831b270c5
+F test/analyze.test c8cb89e8736336f1f0646c8123e6028a14c7b55e
 F test/analyze2.test 8f2b1534d43f5547ce9a6b736c021d4192c75be3
 F test/analyze3.test d61f55d8b472fc6e713160b1e577f7a68e63f38b
 F test/analyze4.test 757b37875cf9bb528d46f74497bc789c88365045
 F test/analyze5.test adc89b92fc9fee5ca1cb0bc8512f3206ad0fe5aa
-F test/analyze6.test 1ba1aea8fad25a77ffd71f24522d1bb9ecc949fc
+F test/analyze6.test c125622a813325bba1b4999040ddc213773c2290
 F test/async.test ad4ba51b77cd118911a3fe1356b0809da9c108c3
 F test/async2.test bf5e2ca2c96763b4cba3d016249ad7259a5603b6
 F test/async3.test 93edaa9122f498e56ea98c36c72abc407f4fb11e
@@ -875,7 +875,7 @@ F test/walslow.test d21625e2e99e11c032ce949e8a94661576548933
 F test/walthread.test a25a393c068a2b42b44333fa3fdaae9072f1617c
 F test/where.test de337a3fe0a459ec7c93db16a519657a90552330
 F test/where2.test 43d4becaf5a5df854e6c21d624a1cb84c6904554
-F test/where3.test c81d4ecfaed54e8aef9c1a8a90ac83c9f5c49090
+F test/where3.test 8e1175c7ef710c70502858fc4fb08d784b3620b9
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
@@ -919,7 +919,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P dbe569a099c2855480e35c0cc4d9332821ad80da
-R 3d53fb9ad6916c3f10485806a35396e6
-U dan
-Z cababf145f4f0436acd3441acb25d038
+P 3d2de011814002e2e25b7645f94ff8fc7aab9cdd
+R 0216cf925df143bd6cbc69301b702732
+U drh
+Z ebdb63d4898403f81a888e3e3a66ac94
