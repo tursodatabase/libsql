@@ -66,6 +66,7 @@ struct fuzzer_stem {
   const fuzzer_rule *pRule;  /* Current rule to apply */
   int n;                     /* Apply pRule at this character offset */
   fuzzer_cost rBaseCost;     /* Base cost of getting to zBasis */
+  fuzzer_cost rCostX;        /* Precomputed rBaseCost + pRule->rCost */
   fuzzer_stem *pNext;        /* Next stem in rCost order */
   fuzzer_stem *pHash;        /* Next stem with same hash on zBasis */
 };
@@ -82,6 +83,7 @@ struct fuzzer_vtab {
 };
 
 #define FUZZER_HASH  4001    /* Hash table size */
+#define FUZZER_NQUEUE  20    /* Number of slots on the stem queue */
 
 /* A fuzzer cursor object */
 struct fuzzer_cursor {
@@ -89,10 +91,13 @@ struct fuzzer_cursor {
   sqlite3_int64 iRowid;      /* The rowid of the current word */
   fuzzer_vtab *pVtab;        /* The virtual table this cursor belongs to */
   fuzzer_cost rLimit;        /* Maximum cost of any term */
-  fuzzer_stem *pStem;        /* Sorted list of stems for generating new terms */
+  fuzzer_stem *pStem;        /* Stem with smallest rCostX */
   fuzzer_stem *pDone;        /* Stems already processed to completion */
+  fuzzer_stem *aQueue[FUZZER_NQUEUE];  /* Queue of stems with higher rCostX */
+  int mxQueue;               /* Largest used index in aQueue[] */
   char *zBuf;                /* Temporary use buffer */
   int nBuf;                  /* Bytes allocated for zBuf */
+  int nStem;                 /* Number of stems allocated */
   fuzzer_rule nullRule;      /* Null rule used first */
   fuzzer_stem *apHash[FUZZER_HASH]; /* Hash of previously generated terms */
 };
@@ -206,22 +211,34 @@ static int fuzzerOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
 }
 
 /*
+** Free all stems in a list.
+*/
+static void fuzzerClearStemList(fuzzer_stem *pStem){
+  while( pStem ){
+    fuzzer_stem *pNext = pStem->pNext;
+    sqlite3_free(pStem);
+    pStem = pNext;
+  }
+}
+
+/*
 ** Free up all the memory allocated by a cursor.  Set it rLimit to 0
 ** to indicate that it is at EOF.
 */
 static void fuzzerClearCursor(fuzzer_cursor *pCur, int clearHash){
-  if( pCur->pStem==0 && pCur->pDone==0 ) clearHash = 0;
-  do{
-    while( pCur->pStem ){
-      fuzzer_stem *pStem = pCur->pStem;
-      pCur->pStem = pStem->pNext;
-      sqlite3_free(pStem);
-    }
-    pCur->pStem = pCur->pDone;
-    pCur->pDone = 0;
-  }while( pCur->pStem );
+  int i;
+  fuzzerClearStemList(pCur->pStem);
+  fuzzerClearStemList(pCur->pDone);
+  for(i=0; i<FUZZER_NQUEUE; i++) fuzzerClearStemList(pCur->aQueue[i]);
   pCur->rLimit = (fuzzer_cost)0;
-  if( clearHash ) memset(pCur->apHash, 0, sizeof(pCur->apHash));
+  if( clearHash && pCur->nStem ){
+    pCur->mxQueue = 0;
+    pCur->pStem = 0;
+    pCur->pDone = 0;
+    memset(pCur->aQueue, 0, sizeof(pCur->aQueue));
+    memset(pCur->apHash, 0, sizeof(pCur->apHash));
+  }
+  pCur->nStem = 0;
 }
 
 /*
@@ -280,7 +297,7 @@ static unsigned int fuzzerHash(const char *z){
 ** Current cost of a stem
 */
 static fuzzer_cost fuzzerCost(fuzzer_stem *pStem){
-  return pStem->rBaseCost + pStem->pRule->rCost;
+  return pStem->rCostX = pStem->rBaseCost + pStem->pRule->rCost;
 }
 
 #if 0
@@ -304,7 +321,7 @@ static void fuzzerStemPrint(
     if( fuzzerRender(pStem, &zBuf, &nBuf)!=SQLITE_OK ) return;
     fprintf(stderr, "%s[%s](%d)-->{%s}(%d)%s",
       zPrefix,
-      pStem->zBasis, pStem->rBaseCost, zBuf, fuzzerCost(pStem),
+      pStem->zBasis, pStem->rBaseCost, zBuf, pStem->,
       zSuffix
     );
     sqlite3_free(zBuf);
@@ -349,6 +366,7 @@ static int fuzzerAdvance(fuzzer_cursor *pCur, fuzzer_stem *pStem){
         int rc = fuzzerSeen(pCur, pStem);
         if( rc<0 ) return -1;
         if( rc==0 ){
+          fuzzerCost(pStem);
           return 1;
         }
       }
@@ -361,31 +379,106 @@ static int fuzzerAdvance(fuzzer_cursor *pCur, fuzzer_stem *pStem){
 }
 
 /*
-** Insert pNew into the list at pList.  Return a pointer to the new
+** The two input stem lists are both sorted in order of increasing
+** rCostX.  Merge them together into a single list, sorted by rCostX, and
+** return a pointer to the head of that new list.
+*/
+static fuzzer_stem *fuzzerMergeStems(fuzzer_stem *pA, fuzzer_stem *pB){
+  fuzzer_stem head;
+  fuzzer_stem *pTail;
+
+  pTail =  &head;
+  while( pA && pB ){
+    if( pA->rCostX<=pB->rCostX ){
+      pTail->pNext = pA;
+      pTail = pA;
+      pA = pA->pNext;
+    }else{
+      pTail->pNext = pB;
+      pTail = pB;
+      pB = pB->pNext;
+    }
+  }
+  if( pA==0 ){
+    pTail->pNext = pB;
+  }else{
+    pTail->pNext = pA;
+  }
+  return head.pNext;
+}
+
+/*
+** Load pCur->pStem with the lowest-cost stem.  Return a pointer
+** to the lowest-cost stem.
+*/
+static fuzzer_stem *fuzzerLowestCostStem(fuzzer_cursor *pCur){
+  fuzzer_stem *pBest, *pX;
+  int iBest;
+  int i;
+
+  if( pCur->pStem==0 ){
+    iBest = -1;
+    pBest = 0;
+    for(i=0; i<=pCur->mxQueue; i++){
+      pX = pCur->aQueue[i];
+      if( pX==0 ) continue;
+      if( pBest==0 || pBest->rCostX>pX->rCostX ){
+        pBest = pX;
+        iBest = i;
+      }
+    } 
+    if( pBest ){
+      pCur->aQueue[iBest] = pBest->pNext;
+      pBest->pNext = 0;
+      pCur->pStem = pBest;
+    }
+  }
+  return pCur->pStem;
+}
+
+/*
+** Insert pNew into queue of pending stems.  Then find the stem
+** with the lowest rCostX and move it into pCur->pStem.
 ** list.  The insert is done such the pNew is in the correct order
 ** according to fuzzer_stem.zBaseCost+fuzzer_stem.pRule->rCost.
 */
-static fuzzer_stem *fuzzerInsert(fuzzer_stem *pList, fuzzer_stem *pNew){
-  fuzzer_cost c1;
+static fuzzer_stem *fuzzerInsert(fuzzer_cursor *pCur, fuzzer_stem *pNew){
+  fuzzer_stem *pX;
+  int i;
 
-  if( pList==0 ){
+  /* If pCur->pStem exists and is greater than pNew, then make pNew
+  ** the new pCur->pStem and insert the old pCur->pStem instead.
+  */
+  if( (pX = pCur->pStem)!=0 && pX->rCostX>pNew->rCostX ){
     pNew->pNext = 0;
-    return pNew;
+    pCur->pStem = pNew;
+    pNew = pX;
   }
-  c1 = fuzzerCost(pNew);
-  if( c1 <= fuzzerCost(pList) ){
-    pNew->pNext = pList;
-    return pNew;
-  }else{
-    fuzzer_stem *pPrev;
-    pPrev = pList;
-    while( pPrev->pNext && fuzzerCost(pPrev->pNext)<c1 ){
-      pPrev = pPrev->pNext;
+
+  /* Insert the new value */
+  pNew->pNext = 0;
+  pX = pNew;
+  for(i=0; i<=pCur->mxQueue; i++){
+    if( pCur->aQueue[i] ){
+      pX = fuzzerMergeStems(pX, pCur->aQueue[i]);
+      pCur->aQueue[i] = 0;
+    }else{
+      pCur->aQueue[i] = pX;
+      break;
     }
-    pNew->pNext = pPrev->pNext;
-    pPrev->pNext = pNew;
-    return pList;
   }
+  if( i>pCur->mxQueue ){
+    if( i<FUZZER_NQUEUE ){
+      pCur->mxQueue = i;
+      pCur->aQueue[i] = pX;
+    }else{
+      assert( pCur->mxQueue==FUZZER_NQUEUE-1 );
+      pX = fuzzerMergeStems(pX, pCur->aQueue[FUZZER_NQUEUE-1]);
+      pCur->aQueue[FUZZER_NQUEUE-1] = pX;
+    }
+  }
+
+  return fuzzerLowestCostStem(pCur);
 }
 
 /*
@@ -408,10 +501,11 @@ static fuzzer_stem *fuzzerNewStem(
   memcpy(pNew->zBasis, zWord, pNew->nBasis+1);
   pNew->pRule = pCur->pVtab->pRule;
   pNew->n = -1;
-  pNew->rBaseCost = rBaseCost;
+  pNew->rBaseCost = pNew->rCostX = rBaseCost;
   h = fuzzerHash(pNew->zBasis);
   pNew->pHash = pCur->apHash[h];
   pCur->apHash[h] = pNew;
+  pCur->nStem++;
   return pNew;
 }
 
@@ -430,17 +524,16 @@ static int fuzzerNext(sqlite3_vtab_cursor *cur){
   ** a new stem and insert the new stem into the priority queue.
   */
   pStem = pCur->pStem;
-  if( fuzzerCost(pStem)>0 ){
+  if( pStem->rCostX>0 ){
     rc = fuzzerRender(pStem, &pCur->zBuf, &pCur->nBuf);
     if( rc==SQLITE_NOMEM ) return SQLITE_NOMEM;
-    pNew = fuzzerNewStem(pCur, pCur->zBuf, fuzzerCost(pStem));
+    pNew = fuzzerNewStem(pCur, pCur->zBuf, pStem->rCostX);
     if( pNew ){
       if( fuzzerAdvance(pCur, pNew)==0 ){
         pNew->pNext = pCur->pDone;
         pCur->pDone = pNew;
       }else{
-        pCur->pStem = fuzzerInsert(pStem, pNew);
-        if( pCur->pStem==pNew ){
+        if( fuzzerInsert(pCur, pNew)==pNew ){
           return SQLITE_OK;
         }
       }
@@ -454,17 +547,18 @@ static int fuzzerNext(sqlite3_vtab_cursor *cur){
   */
   while( (pStem = pCur->pStem)!=0 ){
     if( fuzzerAdvance(pCur, pStem) ){
-      pCur->pStem = pStem = fuzzerInsert(pStem->pNext, pStem);
+      pCur->pStem = 0;
+      pStem = fuzzerInsert(pCur, pStem);
       if( (rc = fuzzerSeen(pCur, pStem))!=0 ){
         if( rc<0 ) return SQLITE_NOMEM;
         continue;
       }
       return SQLITE_OK;  /* New word found */
     }
-    pCur->pStem = pStem->pNext;
+    pCur->pStem = 0;
     pStem->pNext = pCur->pDone;
     pCur->pDone = pStem;
-    if( pCur->pStem ){
+    if( fuzzerLowestCostStem(pCur) ){
       rc = fuzzerSeen(pCur, pCur->pStem);
       if( rc<0 ) return SQLITE_NOMEM;
       if( rc==0 ){
@@ -531,7 +625,7 @@ static int fuzzerColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
     sqlite3_result_text(ctx, pCur->zBuf, -1, SQLITE_TRANSIENT);
   }else if( i==1 ){
     /* the "distance" column */
-    sqlite3_result_int(ctx, fuzzerCost(pCur->pStem));
+    sqlite3_result_int(ctx, pCur->pStem->rCostX);
   }else{
     /* All other columns are NULL */
     sqlite3_result_null(ctx);

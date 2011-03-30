@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\srowid.
-D 2011-03-29T23:41:31.447
+C Move\sto\san\sO(NlogN)\salgorithm\sfor\sthe\spriority\squeue.\s\sAn\sinsertion\ssort\nwas\sway\stoo\sslow.
+D 2011-03-30T01:43:00.780
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6c96e694f446500449f683070b906de9fce17b88
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -202,7 +202,7 @@ F src/test_config.c 62f0f8f934b1d5c7e4cd4f506ae453a1117b47d7
 F src/test_demovfs.c 0aed671636735116fc872c5b03706fd5612488b5
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_func.c cbdec5cededa0761daedde5baf06004a9bf416b5
-F src/test_fuzzer.c dcb1e78badcf6f469ae386ecbed0e287920699c6
+F src/test_fuzzer.c edc2aaa0f75ce49efef39bcd2df45138479b0992
 F src/test_hexio.c 1237f000ec7a491009b1233f5c626ea71bce1ea2
 F src/test_init.c 5d624ffd0409d424cf9adbfe1f056b200270077c
 F src/test_intarray.c d879bbf8e4ce085ab966d1f3c896a7c8b4f5fc99
@@ -918,7 +918,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P dd41155bc7459cafc1a2d5c75233193abfbac05d
-R 580275be924edc1c171a4ef2518a45c4
+P 2cf4158ff051916717fc2c0f4b6332d5f6ea6e3d
+R 9250685bf3b3b21491f862d4fc8952d0
 U drh
-Z c835c92c0dd7f7913ad85caf0a4ef7ac
+Z 0b9911f371ac67382b47460caefb0a30
