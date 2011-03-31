@@ -56,15 +56,15 @@
 ** VFS if makeDefault is non-zero.
 **
 ** An auto-extension is registered which will make the function 
-** multiplex_control() available to open database connections.  This
+** multiplex_control() available to database connections.  This
 ** function gives access to the xFileControl interface of the 
 ** multiplex VFS shim.
 **
-** multiplex_control(<op>,<val>) 
+** SELECT multiplex_control(<op>,<val>) ;
 ** 
 **   <op>=1 MULTIPLEX_CTRL_ENABLE
+**   <val>=0 disable
 **   <val>=1 enable
-**   <val>=2 disable
 ** 
 **   <op>=1 MULTIPLEX_CTRL_SET_CHUNK_SIZE
 **   <val> int, chunk size

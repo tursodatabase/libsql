@@ -205,34 +205,41 @@ static void multiplexControlFunc(
 ){
   extern const char *sqlite3TestErrorName(int);
   extern int multiplexFileControl(sqlite3_file *, int, void *);
-  // pPager->fd
-  sqlite3 *db = (sqlite3 *)sqlite3_user_data(context);
-  int op = sqlite3_value_int(argv[0]);
-  int iVal = sqlite3_value_int(argv[1]);
   int rc = SQLITE_OK;
-  switch( op ){
-    case 1: 
-      op = MULTIPLEX_CTRL_ENABLE; 
-      break;
-    case 2: 
-      op = MULTIPLEX_CTRL_SET_CHUNK_SIZE; 
-      break;
-    case 3: 
-      op = MULTIPLEX_CTRL_SET_MAX_CHUNKS; 
-      break;
-    default:
-      rc = SQLITE_ERROR;
-      break;
+  sqlite3 *db = sqlite3_context_db_handle(context);
+  int op;
+  int iVal;
+
+  if( !db || argc!=2 ){ 
+    rc = SQLITE_ERROR; 
+  }else{
+    /* extract params */
+    op = sqlite3_value_int(argv[0]);
+    iVal = sqlite3_value_int(argv[1]);
+    /* map function op to file_control op */
+    switch( op ){
+      case 1: 
+        op = MULTIPLEX_CTRL_ENABLE; 
+        break;
+      case 2: 
+        op = MULTIPLEX_CTRL_SET_CHUNK_SIZE; 
+        break;
+      case 3: 
+        op = MULTIPLEX_CTRL_SET_MAX_CHUNKS; 
+        break;
+      default:
+        rc = SQLITE_ERROR;
+        break;
+    }
   }
   if( rc==SQLITE_OK ){
-    sqlite3_file *f = (sqlite3_file *)db;
-    rc = multiplexFileControl(f, op, &iVal);
+    rc = sqlite3_file_control(db, 0, op, &iVal);
   }
   sqlite3_result_text(context, (char *)sqlite3TestErrorName(rc), -1, SQLITE_TRANSIENT);
 }
 
 /*
-** This is the entry point to register the extension for the multiplex_control() function.
+** This is the entry point to register the auto-extension for the multiplex_control() function.
 */
 static int multiplexFuncInit(
   sqlite3 *db, 
@@ -241,7 +248,7 @@ static int multiplexFuncInit(
 ){
   int rc;
   rc = sqlite3_create_function(db, "multiplex_control", 2, SQLITE_ANY, 
-    db, multiplexControlFunc, 0, 0);
+    0, multiplexControlFunc, 0, 0);
   return rc;
 }
 

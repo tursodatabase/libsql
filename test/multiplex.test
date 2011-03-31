@@ -86,13 +86,11 @@ do_test multiplex-1.9.9 { sqlite3_multiplex_shutdown }            {SQLITE_OK}
 
 do_test multiplex-1.10.1 { sqlite3_multiplex_initialize "" 1 }                {SQLITE_OK}
 do_test multiplex-1.10.2 { sqlite3 db test.db }                               {}
-if { 0 } {
 do_test multiplex-1.10.3 { execsql { SELECT multiplex_control(2, 32768); } }  {SQLITE_OK}
 do_test multiplex-1.10.4 { execsql { SELECT multiplex_control(3, -1); } }     {SQLITE_MISUSE}
 do_test multiplex-1.10.5 { execsql { SELECT multiplex_control(2, -1); } }     {SQLITE_MISUSE}
 do_test multiplex-1.10.6 { execsql { SELECT multiplex_control(2, 31); } }     {SQLITE_OK}
 do_test multiplex-1.10.7 { execsql { SELECT multiplex_control(3, 100); } }    {SQLITE_MISUSE}
-}
 do_test multiplex-1.10.8 { db close }                                         {}
 do_test multiplex-1.10.9 { sqlite3_multiplex_shutdown }                       {SQLITE_OK}
 
