@@ -1,5 +1,5 @@
-C Further\stests\sfor\sos_unix.c.
-D 2011-03-30T19:08:03.321
+C Change\sthe\sANALYZE\scommand\sso\sthat\sit\swill\saccept\san\sindex\sname\sas\sits\nargument\sand\sonly\sreanalyze\sthat\sone\sindex.\s\sA\squick\ssmoke-test\sworks.\nNeed\sto\sstudy\sthe\simplications\sto\sthe\squery\splanner\sand\stest\scorner\scases.
+D 2011-03-31T02:03:28.435
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -115,7 +115,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c 6a0c176e64a34929a4436048066a84ef4f1445b3
-F src/analyze.c cafa5a22eb602ebdc5ba90995a41c1e84dda47a1
+F src/analyze.c ecc36fc13e5a982ce8136b8d598fc402b3787139
 F src/attach.c 438ea6f6b5d5961c1f49b737f2ce0f14ce7c6877
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 537f89c7ef5021cb580f31f782e556ffffcb2ed1
@@ -920,7 +920,11 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 3a27af5b3c688c651ba1fae261026ef77b7ff5e3
-R 8aec69201b7794049bf0ef28fa4da45f
-U dan
-Z 9b217166a2b3bec7df70dcbc250ff848
+P a84f7711949ea3885b0e36e48118d2c76a8a5b82
+R 2733d2c2848c13b668e60a30cb1bc35d
+T *bgcolor * #ab8eb2
+T *branch * analyze-idx
+T *sym-analyze-idx *
+T -sym-trunk *
+U drh
+Z 6f592daac956cab070466c419bbb51de
