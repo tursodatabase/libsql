@@ -34,7 +34,9 @@
 **
 ** MULTIPLEX_CTRL_SET_CHUNK_SIZE:
 **   This file control is used to set the maximum allowed chunk 
-**   size for a multiplex file set.
+**   size for a multiplex file set.  The chunk size should be 
+**   a multiple of SQLITE_MAX_PAGE_SIZE, and will be rounded up
+**   if not.
 **
 ** MULTIPLEX_CTRL_SET_MAX_CHUNKS:
 **   This file control is used to set the maximum number of chunks
@@ -44,5 +46,46 @@
 #define MULTIPLEX_CTRL_SET_CHUNK_SIZE  214015
 #define MULTIPLEX_CTRL_SET_MAX_CHUNKS  214016
 
+/*
+** CAPI: Initialize the multiplex VFS shim - sqlite3_multiplex_initialize()
+**
+** Use the VFS named zOrigVfsName as the VFS that does the actual work.  
+** Use the default if zOrigVfsName==NULL.  
+**
+** The multiplex VFS shim is named "multiplex".  It will become the default
+** VFS if makeDefault is non-zero.
+**
+** An auto-extension is registered which will make the function 
+** multiplex_control() available to open database connections.  This
+** function gives access to the xFileControl interface of the 
+** multiplex VFS shim.
+**
+** multiplex_control(<op>,<val>) 
+** 
+**   <op>=1 MULTIPLEX_CTRL_ENABLE
+**   <val>=1 enable
+**   <val>=2 disable
+** 
+**   <op>=1 MULTIPLEX_CTRL_SET_CHUNK_SIZE
+**   <val> int, chunk size
+** 
+**   <op>=1 MULTIPLEX_CTRL_SET_MAX_CHUNKS
+**   <val> int, max chunks
+**
+** THIS ROUTINE IS NOT THREADSAFE.  Call this routine exactly once
+** during start-up.
+*/
+extern int sqlite3_multiplex_initialize(const char *zOrigVfsName, int makeDefault);
+
+/*
+** CAPI: Shutdown the multiplex system - sqlite3_multiplex_shutdown()
+**
+** All SQLite database connections must be closed before calling this
+** routine.
+**
+** THIS ROUTINE IS NOT THREADSAFE.  Call this routine exactly once while
+** shutting down in order to free all remaining multiplex groups.
+*/
+extern int sqlite3_multiplex_shutdown(void);
 
 #endif

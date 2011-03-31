@@ -36,7 +36,7 @@ proc multiplex_name {name chunk} {
 proc multiplex_set {db name chunk_size max_chunks} {
   global g_chunk_size
   global g_max_chunks
-  set g_chunk_size $chunk_size
+  set g_chunk_size [ expr (($chunk_size+($::SQLITE_MAX_PAGE_SIZE-1)) & ~($::SQLITE_MAX_PAGE_SIZE-1)) ]
   set g_max_chunks $max_chunks
   set rc [catch {sqlite3_multiplex_control $db $name chunk_size $chunk_size} msg]
   if { $rc==0 } { 
@@ -74,15 +74,27 @@ do_test multiplex-1.6 { sqlite3_multiplex_shutdown }               {SQLITE_OK}
 do_test multiplex-1.7 { sqlite3_multiplex_initialize "" 1 }        {SQLITE_OK}
 do_test multiplex-1.8 { sqlite3_multiplex_shutdown }               {SQLITE_OK}
 
-do_test multiplex-1.9  { sqlite3_multiplex_initialize "" 1 }       {SQLITE_OK}
-sqlite3 db test.db
-do_test multiplex-1.10.1 { multiplex_set db main 32768 16 }        {SQLITE_OK}
-do_test multiplex-1.10.2 { multiplex_set db main 32768 -1 }        {SQLITE_MISUSE}
-do_test multiplex-1.10.3 { multiplex_set db main -1 16 }           {SQLITE_MISUSE}
-do_test multiplex-1.10.4 { multiplex_set db main 31 16 }           {SQLITE_MISUSE}
-do_test multiplex-1.10.5 { multiplex_set db main 32768 100 }       {SQLITE_MISUSE}
-db close
-do_test multiplex-1.11 { sqlite3_multiplex_shutdown }              {SQLITE_OK}
+do_test multiplex-1.9.1 { sqlite3_multiplex_initialize "" 1 }     {SQLITE_OK}
+do_test multiplex-1.9.2 { sqlite3 db test.db }                    {}
+do_test multiplex-1.9.3 { multiplex_set db main 32768 16 }        {SQLITE_OK}
+do_test multiplex-1.9.4 { multiplex_set db main 32768 -1 }        {SQLITE_MISUSE}
+do_test multiplex-1.9.5 { multiplex_set db main -1 16 }           {SQLITE_MISUSE}
+do_test multiplex-1.9.6 { multiplex_set db main 31 16 }           {SQLITE_OK}
+do_test multiplex-1.9.7 { multiplex_set db main 32768 100 }       {SQLITE_MISUSE}
+do_test multiplex-1.9.8 { db close }                              {}
+do_test multiplex-1.9.9 { sqlite3_multiplex_shutdown }            {SQLITE_OK}
+
+do_test multiplex-1.10.1 { sqlite3_multiplex_initialize "" 1 }                {SQLITE_OK}
+do_test multiplex-1.10.2 { sqlite3 db test.db }                               {}
+if { 0 } {
+do_test multiplex-1.10.3 { execsql { SELECT multiplex_control(2, 32768); } }  {SQLITE_OK}
+do_test multiplex-1.10.4 { execsql { SELECT multiplex_control(3, -1); } }     {SQLITE_MISUSE}
+do_test multiplex-1.10.5 { execsql { SELECT multiplex_control(2, -1); } }     {SQLITE_MISUSE}
+do_test multiplex-1.10.6 { execsql { SELECT multiplex_control(2, 31); } }     {SQLITE_OK}
+do_test multiplex-1.10.7 { execsql { SELECT multiplex_control(3, 100); } }    {SQLITE_MISUSE}
+}
+do_test multiplex-1.10.8 { db close }                                         {}
+do_test multiplex-1.10.9 { sqlite3_multiplex_shutdown }                       {SQLITE_OK}
 
 #-------------------------------------------------------------------------
 # Some simple warm-body tests with a single database file in rollback 
@@ -171,7 +183,9 @@ do_test multiplex-2.5.3 {
     INSERT INTO t1 VALUES(2, randomblob(4000));
     INSERT INTO t1 VALUES(3, 'three');
     INSERT INTO t1 VALUES(4, randomblob(4000));
-    INSERT INTO t1 VALUES(5, 'five') 
+    INSERT INTO t1 VALUES(5, 'five');
+    INSERT INTO t1 VALUES(6, randomblob($g_chunk_size));
+    INSERT INTO t1 VALUES(7, randomblob($g_chunk_size));
   }
 } {}
 
@@ -479,11 +493,11 @@ if {0==[info exists ::G(perm:presql)] || $::G(perm:presql) == ""} {
     do_test multiplex-5.6.2.$jmode {
       execsql {
         CREATE TABLE t1(a, b);
-        INSERT INTO t1 VALUES(1, randomblob(1100));
-        INSERT INTO t1 VALUES(2, randomblob(1100));
-        INSERT INTO t1 VALUES(3, randomblob(1100));
-        INSERT INTO t1 VALUES(4, randomblob(1100));
-        INSERT INTO t1 VALUES(5, randomblob(1100));
+        INSERT INTO t1 VALUES(1, randomblob(15000));
+        INSERT INTO t1 VALUES(2, randomblob(15000));
+        INSERT INTO t1 VALUES(3, randomblob(15000));
+        INSERT INTO t1 VALUES(4, randomblob(15000));
+        INSERT INTO t1 VALUES(5, randomblob(15000));
       }
       db close
       sqlite3_multiplex_initialize "" 1
@@ -492,7 +506,7 @@ if {0==[info exists ::G(perm:presql)] || $::G(perm:presql) == ""} {
     } {SQLITE_OK}
     do_test multiplex-5.6.3.$jmode {
       catchsql {
-        INSERT INTO t1 VALUES(6, randomblob(1100));
+        INSERT INTO t1 VALUES(6, randomblob(15000));
       }
     } {1 {disk I/O error}}
     do_test multiplex-5.6.4.$jmode {

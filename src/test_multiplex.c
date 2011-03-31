@@ -25,6 +25,11 @@
 #include "sqliteInt.h"
 #include "test_multiplex.h"
 
+#ifndef SQLITE_CORE
+  #define SQLITE_CORE 1  /* Disable the API redefinition in sqlite3ext.h */
+#endif
+#include "sqlite3ext.h"
+
 /*
 ** For a build without mutexes, no-op the mutex calls.
 */
@@ -44,9 +49,10 @@
 #define SQLITE_MULTIPLEX_VFS_NAME "multiplex"
 
 /* This is the limit on the chunk size.  It may be changed by calling
-** the xFileControl() interface.
+** the xFileControl() interface.  It will be rounded up to a 
+** multiple of SQLITE_MAX_PAGE_SIZE.
 */
-#define SQLITE_MULTIPLEX_CHUNK_SIZE 0x40000000
+#define SQLITE_MULTIPLEX_CHUNK_SIZE (SQLITE_MAX_PAGE_SIZE*32)
 /* Default limit on number of chunks.  Care should be taken
 ** so that values for chunks numbers fit in the SQLITE_MULTIPLEX_EXT_FMT
 ** format specifier. It may be changed by calling
@@ -199,12 +205,28 @@ static void multiplexControlFunc(
 ){
   extern const char *sqlite3TestErrorName(int);
   extern int multiplexFileControl(sqlite3_file *, int, void *);
-  sqlite3_file *db = (sqlite3_file *)sqlite3_user_data(context);
+  // pPager->fd
+  sqlite3 *db = (sqlite3 *)sqlite3_user_data(context);
   int op = sqlite3_value_int(argv[0]);
   int iVal = sqlite3_value_int(argv[1]);
-  int rc = multiplexFileControl(db, op, &iVal);
-  if( rc== 0 ){
-    sqlite3_result_text(context, (char *)sqlite3TestErrorName(rc), -1, SQLITE_TRANSIENT);
+  int rc = SQLITE_OK;
+  switch( op ){
+    case 1: 
+      op = MULTIPLEX_CTRL_ENABLE; 
+      break;
+    case 2: 
+      op = MULTIPLEX_CTRL_SET_CHUNK_SIZE; 
+      break;
+    case 3: 
+      op = MULTIPLEX_CTRL_SET_MAX_CHUNKS; 
+      break;
+    default:
+      rc = SQLITE_ERROR;
+      break;
+  }
+  if( rc==SQLITE_OK ){
+    sqlite3_file *f = (sqlite3_file *)db;
+    rc = multiplexFileControl(f, op, &iVal);
   }
   sqlite3_result_text(context, (char *)sqlite3TestErrorName(rc), -1, SQLITE_TRANSIENT);
 }
@@ -213,7 +235,9 @@ static void multiplexControlFunc(
 ** This is the entry point to register the extension for the multiplex_control() function.
 */
 static int multiplexFuncInit(
-  sqlite3 *db
+  sqlite3 *db, 
+  char **pzErrMsg, 
+  const sqlite3_api_routines *pApi
 ){
   int rc;
   rc = sqlite3_create_function(db, "multiplex_control", 2, SQLITE_ANY, 
@@ -663,9 +687,12 @@ static int multiplexFileControl(sqlite3_file *pConn, int op, void *pArg){
     case MULTIPLEX_CTRL_SET_CHUNK_SIZE:
       if( pArg ) {
         int nChunkSize = *(int *)pArg;
-        if( nChunkSize<32 ){ 
+        if( nChunkSize<1 ){
           rc = SQLITE_MISUSE;
         }else{
+          /* Round up to nearest multiple of SQLITE_MAX_PAGE_SIZE. */
+          nChunkSize = (nChunkSize + (SQLITE_MAX_PAGE_SIZE-1));
+          nChunkSize &= ~(SQLITE_MAX_PAGE_SIZE-1);
           pGroup->nChunkSize = nChunkSize;
           rc = SQLITE_OK;
         }
@@ -674,7 +701,7 @@ static int multiplexFileControl(sqlite3_file *pConn, int op, void *pArg){
     case MULTIPLEX_CTRL_SET_MAX_CHUNKS:
       if( pArg ) {
         int nMaxChunks = *(int *)pArg;
-        if(( nMaxChunks<1 ) || ( nMaxChunks>99 )){
+        if(( nMaxChunks<1 ) || ( nMaxChunks>SQLITE_MULTIPLEX_MAX_CHUNKS )){
           rc = SQLITE_MISUSE;
         }else{
           pGroup->nMaxChunks = nMaxChunks;
@@ -781,9 +808,10 @@ static int multiplexShmUnmap(sqlite3_file *pConn, int deleteFlag){
 
 /************************** Public Interfaces *****************************/
 /*
-** Initialize the multiplex VFS shim.  Use the VFS named zOrigVfsName
-** as the VFS that does the actual work.  Use the default if
-** zOrigVfsName==NULL.  
+** CAPI: Initialize the multiplex VFS shim - sqlite3_multiplex_initialize()
+**
+** Use the VFS named zOrigVfsName as the VFS that does the actual work.  
+** Use the default if zOrigVfsName==NULL.  
 **
 ** The multiplex VFS shim is named "multiplex".  It will become the default
 ** VFS if makeDefault is non-zero.
@@ -853,7 +881,7 @@ int sqlite3_multiplex_initialize(const char *zOrigVfsName, int makeDefault){
 }
 
 /*
-** Shutdown the multiplex system.
+** CAPI: Shutdown the multiplex system - sqlite3_multiplex_shutdown()
 **
 ** All SQLite database connections must be closed before calling this
 ** routine.
