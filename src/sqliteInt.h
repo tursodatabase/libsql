@@ -1865,8 +1865,8 @@ struct WhereLevel {
   int addrCont;         /* Jump here to continue with the next loop cycle */
   int addrFirst;        /* First instruction of interior of the loop */
   u8 iFrom;             /* Which entry in the FROM clause */
-  u8 op, p5;            /* Opcode and P5 of the opcode that ends the loop */
-  int p1, p2;           /* Operands of the opcode used to ends the loop */
+  u8 op, p3, p5;        /* Opcode, P3, and P5 of the end-of-loop instruction */
+  int p1, p2;           /* P1 and P2 operands of the end-of-loop instruction */
   union {               /* Information that depends on plan.wsFlags */
     struct {
       int nIn;              /* Number of entries in aInLoop[] */

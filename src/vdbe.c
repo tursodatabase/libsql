@@ -3313,6 +3313,7 @@ case OP_SeekGt: {       /* jump, in3 */
 #endif
     if( oc>=OP_SeekGe ){  assert( oc==OP_SeekGe || oc==OP_SeekGt );
       if( res<0 || (res==0 && oc==OP_SeekGt) ){
+        res = 0;
         rc = sqlite3BtreeNext(pC->pCursor, &res);
         if( rc!=SQLITE_OK ) goto abort_due_to_error;
         pC->rowidIsValid = 0;
@@ -3322,6 +3323,7 @@ case OP_SeekGt: {       /* jump, in3 */
     }else{
       assert( oc==OP_SeekLt || oc==OP_SeekLe );
       if( res>0 || (res==0 && oc==OP_SeekLt) ){
+        res = 0;
         rc = sqlite3BtreePrevious(pC->pCursor, &res);
         if( rc!=SQLITE_OK ) goto abort_due_to_error;
         pC->rowidIsValid = 0;
@@ -4166,7 +4168,7 @@ case OP_Rewind: {        /* jump */
   break;
 }
 
-/* Opcode: Next P1 P2 * * P5
+/* Opcode: Next P1 P2 P3 * P5
 **
 ** Advance cursor P1 so that it points to the next key/data pair in its
 ** table or index.  If there are no more key/value pairs then fall through
@@ -4178,9 +4180,14 @@ case OP_Rewind: {        /* jump */
 ** If P5 is positive and the jump is taken, then event counter
 ** number P5-1 in the prepared statement is incremented.
 **
+** The P3 value is a hint to the btree implementation. If P3==1, that
+** means P1 is an SQL index and that this instruction could have been
+** omitted if that index had been unique.  P3 is usually 0.  P3 is 
+** always either 0 or 1.
+**
 ** See also: Prev
 */
-/* Opcode: Prev P1 P2 * * P5
+/* Opcode: Prev P1 P2 P3 * P5
 **
 ** Back up cursor P1 so that it points to the previous key/data pair in its
 ** table or index.  If there is no previous key/value pairs then fall through
@@ -4191,6 +4198,11 @@ case OP_Rewind: {        /* jump */
 **
 ** If P5 is positive and the jump is taken, then event counter
 ** number P5-1 in the prepared statement is incremented.
+**
+** The P3 value is a hint to the btree implementation. If P3==1, that
+** means P1 is an SQL index and that this instruction could have been
+** omitted if that index had been unique.  P3 is usually 0.  P3 is 
+** always either 0 or 1.
 */
 case OP_Prev:          /* jump */
 case OP_Next: {        /* jump */
@@ -4201,6 +4213,7 @@ case OP_Next: {        /* jump */
   CHECK_FOR_INTERRUPT;
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   assert( pOp->p5<=ArraySize(p->aCounter) );
+  assert( pOp->p3==0 || pOp->p3==1 );
   pC = p->apCsr[pOp->p1];
   if( pC==0 ){
     break;  /* See ticket #2273 */
@@ -4210,7 +4223,10 @@ case OP_Next: {        /* jump */
     pC->nullRow = 1;
     break;
   }
-  res = 1;
+  res = pOp->p3;
+  assert( res==0 || pC->isIndex==1 );
+  testcase( res==1 );
+  testcase( res==0 );
   assert( pC->deferredMoveto==0 );
   rc = pOp->opcode==OP_Next ? sqlite3BtreeNext(pCrsr, &res) :
                               sqlite3BtreePrevious(pCrsr, &res);

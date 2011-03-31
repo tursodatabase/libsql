@@ -253,6 +253,7 @@ struct WhereCost {
 #define WHERE_VIRTUALTABLE 0x08000000  /* Use virtual-table processing */
 #define WHERE_MULTI_OR     0x10000000  /* OR using multiple indices */
 #define WHERE_TEMP_INDEX   0x20000000  /* Uses an ephemeral index */
+#define WHERE_UNQ_WANTED   0x40000000  /* True if UNIQUE would be helpful */
 
 /*
 ** Initialize a preallocated WhereClause structure.
@@ -2878,11 +2879,11 @@ static void bestBtreeIndex(
         }
         wsFlags |= (WHERE_COLUMN_RANGE|WHERE_ROWID_RANGE);
       }
-    }else if( pProbe->onError!=OE_None ){
+    }else{
       testcase( wsFlags & WHERE_COLUMN_IN );
       testcase( wsFlags & WHERE_COLUMN_NULL );
       if( (wsFlags & (WHERE_COLUMN_IN|WHERE_COLUMN_NULL))==0 ){
-        wsFlags |= WHERE_UNIQUE;
+        wsFlags |= (pProbe->onError!=OE_None) ? WHERE_UNIQUE : WHERE_UNQ_WANTED;
       }
     }
 
@@ -4016,6 +4017,8 @@ static Bitmask codeOneLoopStart(
       pLevel->op = OP_Next;
     }
     pLevel->p1 = iIdxCur;
+    assert( (WHERE_UNQ_WANTED>>30)==1 );
+    pLevel->p3 = (pLevel->plan.wsFlags>>30)&1;
   }else
 
 #ifndef SQLITE_OMIT_OR_OPTIMIZATION
@@ -4878,7 +4881,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     pLevel = &pWInfo->a[i];
     sqlite3VdbeResolveLabel(v, pLevel->addrCont);
     if( pLevel->op!=OP_Noop ){
-      sqlite3VdbeAddOp2(v, pLevel->op, pLevel->p1, pLevel->p2);
+      sqlite3VdbeAddOp3(v, pLevel->op, pLevel->p1, pLevel->p2, pLevel->p3);
       sqlite3VdbeChangeP5(v, pLevel->p5);
     }
     if( pLevel->plan.wsFlags & WHERE_IN_ABLE && pLevel->u.in.nIn>0 ){
