@@ -14,7 +14,7 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/malloc_common.tcl
 
-set g_chunk_size 2147483648
+set g_chunk_size [ expr ($::SQLITE_MAX_PAGE_SIZE*16384) ]
 set g_max_chunks 32
 
 # This handles appending the chunk number
@@ -74,25 +74,44 @@ do_test multiplex-1.6 { sqlite3_multiplex_shutdown }               {SQLITE_OK}
 do_test multiplex-1.7 { sqlite3_multiplex_initialize "" 1 }        {SQLITE_OK}
 do_test multiplex-1.8 { sqlite3_multiplex_shutdown }               {SQLITE_OK}
 
-do_test multiplex-1.9.1 { sqlite3_multiplex_initialize "" 1 }     {SQLITE_OK}
-do_test multiplex-1.9.2 { sqlite3 db test.db }                    {}
-do_test multiplex-1.9.3 { multiplex_set db main 32768 16 }        {SQLITE_OK}
-do_test multiplex-1.9.4 { multiplex_set db main 32768 -1 }        {SQLITE_MISUSE}
-do_test multiplex-1.9.5 { multiplex_set db main -1 16 }           {SQLITE_MISUSE}
-do_test multiplex-1.9.6 { multiplex_set db main 31 16 }           {SQLITE_OK}
-do_test multiplex-1.9.7 { multiplex_set db main 32768 100 }       {SQLITE_MISUSE}
-do_test multiplex-1.9.8 { db close }                              {}
-do_test multiplex-1.9.9 { sqlite3_multiplex_shutdown }            {SQLITE_OK}
 
-do_test multiplex-1.10.1 { sqlite3_multiplex_initialize "" 1 }                {SQLITE_OK}
-do_test multiplex-1.10.2 { sqlite3 db test.db }                               {}
-do_test multiplex-1.10.3 { execsql { SELECT multiplex_control(2, 32768); } }  {SQLITE_OK}
-do_test multiplex-1.10.4 { execsql { SELECT multiplex_control(3, -1); } }     {SQLITE_MISUSE}
-do_test multiplex-1.10.5 { execsql { SELECT multiplex_control(2, -1); } }     {SQLITE_MISUSE}
-do_test multiplex-1.10.6 { execsql { SELECT multiplex_control(2, 31); } }     {SQLITE_OK}
-do_test multiplex-1.10.7 { execsql { SELECT multiplex_control(3, 100); } }    {SQLITE_MISUSE}
-do_test multiplex-1.10.8 { db close }                                         {}
-do_test multiplex-1.10.9 { sqlite3_multiplex_shutdown }                       {SQLITE_OK}
+do_test multiplex-1.9.1  { sqlite3_multiplex_initialize "" 1 }     {SQLITE_OK}
+do_test multiplex-1.9.2  { sqlite3 db test.db }                    {}
+do_test multiplex-1.9.3  { multiplex_set db main 32768 16 }        {SQLITE_OK}
+do_test multiplex-1.9.4  { multiplex_set db main 32768 -1 }        {SQLITE_MISUSE}
+do_test multiplex-1.9.5  { multiplex_set db main -1 16 }           {SQLITE_MISUSE}
+do_test multiplex-1.9.6  { multiplex_set db main 31 16 }           {SQLITE_OK}
+do_test multiplex-1.9.7  { multiplex_set db main 32768 100 }       {SQLITE_MISUSE}
+do_test multiplex-1.9.8  { multiplex_set db main 1073741824 1 }    {SQLITE_OK}
+do_test multiplex-1.9.9  { db close }                              {}
+do_test multiplex-1.9.10 { sqlite3_multiplex_shutdown }            {SQLITE_OK}
+
+do_test multiplex-1.10.1  { sqlite3_multiplex_initialize "" 1 }                     {SQLITE_OK}
+do_test multiplex-1.10.2  { sqlite3 db test.db }                                    {}
+do_test multiplex-1.10.3  { execsql { SELECT multiplex_control(2, 32768); } }       {SQLITE_OK}
+do_test multiplex-1.10.4  { execsql { SELECT multiplex_control(3, -1); } }          {SQLITE_MISUSE}
+do_test multiplex-1.10.5  { execsql { SELECT multiplex_control(2, -1); } }          {SQLITE_MISUSE}
+do_test multiplex-1.10.6  { execsql { SELECT multiplex_control(2, 31); } }          {SQLITE_OK}
+do_test multiplex-1.10.7  { execsql { SELECT multiplex_control(3, 100); } }         {SQLITE_MISUSE}
+do_test multiplex-1.10.8  { execsql { SELECT multiplex_control(2, 1073741824); } }  {SQLITE_OK}
+do_test multiplex-1.10.9  { db close }                                              {}
+do_test multiplex-1.10.10 { sqlite3_multiplex_shutdown }                            {SQLITE_OK}
+
+do_test multiplex-1.11.1  { sqlite3_multiplex_initialize "" 1 }                 {SQLITE_OK}
+do_test multiplex-1.11.2  { sqlite3 db test.db }                                {}
+do_test multiplex-1.11.3  { sqlite3_multiplex_control db main enable 0  }       {SQLITE_OK}
+do_test multiplex-1.11.4  { sqlite3_multiplex_control db main enable 1  }       {SQLITE_OK}
+do_test multiplex-1.11.5  { sqlite3_multiplex_control db main enable -1 }       {SQLITE_OK}
+do_test multiplex-1.11.6  { db close }                                          {}
+do_test multiplex-1.11.7  { sqlite3_multiplex_shutdown }                        {SQLITE_OK}
+
+do_test multiplex-1.12.1  { sqlite3_multiplex_initialize "" 1 }                 {SQLITE_OK}
+do_test multiplex-1.12.2  { sqlite3 db test.db }                                {}
+do_test multiplex-1.12.3  { execsql { SELECT multiplex_control(1, 0); } }       {SQLITE_OK}
+do_test multiplex-1.12.4  { execsql { SELECT multiplex_control(1, 1); } }       {SQLITE_OK}
+do_test multiplex-1.12.5  { execsql { SELECT multiplex_control(1, -1); } }      {SQLITE_OK}
+do_test multiplex-1.12.6  { db close }                                          {}
+do_test multiplex-1.12.7  { sqlite3_multiplex_shutdown }                        {SQLITE_OK}
 
 #-------------------------------------------------------------------------
 # Some simple warm-body tests with a single database file in rollback 
@@ -104,7 +123,7 @@ do_test multiplex-1.10.9 { sqlite3_multiplex_shutdown }                       {S
 #
 #   multiplex-2.3.*: Open and close a second db.
 #
-#   multiplex-2.4.*: Try to shutdown the multiplex system befor e closing the db
+#   multiplex-2.4.*: Try to shutdown the multiplex system before closing the db
 #                file. Check that this fails and the multiplex system still works
 #                afterwards. Then close the database and successfully shut
 #                down the multiplex system.
@@ -113,6 +132,9 @@ do_test multiplex-1.10.9 { sqlite3_multiplex_shutdown }                       {S
 #
 #   multiplex-2.6.*: More reading/writing with varying small chunk sizes, as
 #                well as varying journal mode.
+#
+#   multiplex-2.7.*: Disable/enable tests.
+#
 
 sqlite3_multiplex_initialize "" 1
 multiplex_set db main 32768 16
@@ -260,6 +282,32 @@ foreach jmode $all_journal_modes {
 
   }
 }
+
+do_test multiplex-2.7.1  { multiplex_delete test.db }                          {}
+do_test multiplex-2.7.2  { sqlite3_multiplex_initialize "" 1 }                 {SQLITE_OK}
+do_test multiplex-2.7.3  { sqlite3 db test.db }                                {}
+do_test multiplex-2.7.4  { execsql { SELECT multiplex_control(2, 65536); } }   {SQLITE_OK}
+do_test multiplex-2.7.5  { execsql { SELECT multiplex_control(1, 0); } }       {SQLITE_OK}
+do_test multiplex-2.7.6 { 
+  execsql { 
+    CREATE TABLE t1(a PRIMARY KEY, b);
+    INSERT INTO t1 VALUES(1, randomblob(1000));
+  }
+} {}
+# verify only one file, and file size is less than chunks size
+do_test multiplex-2.7.7  { expr ([file size [multiplex_name test.db 0]] < 65536) } {1}
+do_test multiplex-2.7.8  { file exists [multiplex_name test.db 1] }                {0}
+do_test multiplex-2.7.9 { 
+  execsql { 
+    INSERT INTO t1 VALUES(1, randomblob(65536));
+  }
+} {}
+# verify only one file, and file size exceeds chunks size
+do_test multiplex-2.7.10 { expr ([file size [multiplex_name test.db 0]] > 65536) } {1}
+do_test multiplex-2.7.11 { file exists [multiplex_name test.db 1] }                {0}
+do_test multiplex-2.7.12 { db close }                                              {}
+do_test multiplex-2.7.13 { sqlite3_multiplex_shutdown }                            {SQLITE_OK}
+
 
 #-------------------------------------------------------------------------
 # Try some tests with more than one connection to a database file. Still
