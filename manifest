@@ -1,5 +1,5 @@
-C Change\sthe\sANALYZE\scommand\sso\sthat\sit\swill\saccept\san\sindex\sname\sas\sits\nargument\sand\sonly\sreanalyze\sthat\sone\sindex.\s\sA\squick\ssmoke-test\sworks.\nNeed\sto\sstudy\sthe\simplications\sto\sthe\squery\splanner\sand\stest\scorner\scases.
-D 2011-03-31T02:03:28.435
+C Test\scases\sfor\sANALYZE-index.
+D 2011-04-01T14:04:36.013
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -259,6 +259,7 @@ F test/analyze3.test d61f55d8b472fc6e713160b1e577f7a68e63f38b
 F test/analyze4.test 757b37875cf9bb528d46f74497bc789c88365045
 F test/analyze5.test adc89b92fc9fee5ca1cb0bc8512f3206ad0fe5aa
 F test/analyze6.test c125622a813325bba1b4999040ddc213773c2290
+F test/analyze7.test 06405dd3d2a3101de14270da508016a59254873b
 F test/async.test ad4ba51b77cd118911a3fe1356b0809da9c108c3
 F test/async2.test bf5e2ca2c96763b4cba3d016249ad7259a5603b6
 F test/async3.test 93edaa9122f498e56ea98c36c72abc407f4fb11e
@@ -920,11 +921,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a84f7711949ea3885b0e36e48118d2c76a8a5b82
-R 2733d2c2848c13b668e60a30cb1bc35d
-T *bgcolor * #ab8eb2
-T *branch * analyze-idx
-T *sym-analyze-idx *
-T -sym-trunk *
+P c8f9edd962442cbdd848c48f1a134557ab8c6ef5
+R 1095a96b12af8399e13f3de1ef24664d
 U drh
-Z 6f592daac956cab070466c419bbb51de
+Z a7b9c4ff9eb44077c37bf72bf0e8f05e
