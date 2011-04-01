@@ -1,5 +1,5 @@
-C Fix\sa\scompiler\swarning\sand\san\sunreachable\sbranch.\s\sRestore\s100%\sbranch\stest\ncoverage.
-D 2011-04-01T01:38:02.348
+C Fix\stwo\scompiler\serrors\sassociated\swith\snon-standard\scompile-time\soptions.
+D 2011-04-01T02:26:36.020
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -115,7 +115,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c 6a0c176e64a34929a4436048066a84ef4f1445b3
-F src/analyze.c b3a3d2e648f0140e6adf7ca087dc0b9a062a6325
+F src/analyze.c 6b536214aece5100f4814b715b1a9f096193bf14
 F src/attach.c 438ea6f6b5d5961c1f49b737f2ce0f14ce7c6877
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 537f89c7ef5021cb580f31f782e556ffffcb2ed1
@@ -244,7 +244,7 @@ F src/vtab.c e1edca38c4c4310710635bb91bb3c87fdf60f21d
 F src/wal.c 7334009b396285b658a95a3b6bc6d2b016a1f794
 F src/wal.h 7a5fbb00114b7f2cd40c7e1003d4c41ce9d26840
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c a6e89fe7e56ab7e633be6fdebdddd857e9e5bc99
+F src/where.c 176574bfeee13775761ce56416f773b0ec115d3f
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 51756962d522e474338e9b2ebb26e7364d4aa125
@@ -920,7 +920,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a84f7711949ea3885b0e36e48118d2c76a8a5b82
-R c6eafc0e317fd480113e33c20661f505
+P 4dc148bb4cec5ecba167cdcb4959a4f0fa05a96f
+R 6db83e8558722fd3bd0df3d6934e094c
 U drh
-Z d52e84775787a11d1858b0fd0e126e84
+Z 0287bc47bbe647ced5d0be0c2b89e260

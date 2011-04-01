@@ -124,6 +124,7 @@ static void analyzeOneTable(
   int regRowid = iMem++;       /* Rowid for the inserted record */
 
 #ifdef SQLITE_ENABLE_STAT2
+  int addr = 0;                /* Instruction address */
   int regTemp2 = iMem++;       /* Temporary use register */
   int regSamplerecno = iMem++; /* Index of next sample to record */
   int regRecno = iMem++;       /* Current sample index */
