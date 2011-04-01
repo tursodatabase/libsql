@@ -34,7 +34,8 @@ static void openStatTable(
   Parse *pParse,          /* Parsing context */
   int iDb,                /* The database we are looking in */
   int iStatCur,           /* Open the sqlite_stat1 table on this cursor */
-  const char *zWhere      /* Delete entries associated with this table */
+  const char *zWhere,     /* Delete entries for this table or index */
+  const char *zWhereType  /* Either "tbl" or "idx" */
 ){
   static const struct {
     const char *zName;
@@ -79,7 +80,7 @@ static void openStatTable(
       sqlite3TableLock(pParse, iDb, aRoot[i], 1, zTab);
       if( zWhere ){
         sqlite3NestedParse(pParse,
-           "DELETE FROM %Q.%s WHERE tbl=%Q", pDb->zName, zTab, zWhere
+           "DELETE FROM %Q.%s WHERE %s=%Q", pDb->zName, zTab, zWhereType, zWhere
         );
       }else{
         /* The sqlite_stat[12] table already exists.  Delete all rows. */
@@ -103,6 +104,7 @@ static void openStatTable(
 static void analyzeOneTable(
   Parse *pParse,   /* Parser context */
   Table *pTab,     /* Table whose indices are to be analyzed */
+  Index *pOnlyIdx, /* If not NULL, only analyze this one index */
   int iStatCur,    /* Index of VdbeCursor that writes the sqlite_stat1 table */
   int iMem         /* Available memory locations begin here */
 ){
@@ -160,9 +162,12 @@ static void analyzeOneTable(
   iIdxCur = pParse->nTab++;
   sqlite3VdbeAddOp4(v, OP_String8, 0, regTabname, 0, pTab->zName, 0);
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-    int nCol = pIdx->nColumn;
-    KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIdx);
+    int nCol;
+    KeyInfo *pKey;
 
+    if( pOnlyIdx && pOnlyIdx!=pIdx ) continue;
+    nCol = pIdx->nColumn;
+    pKey = sqlite3IndexKeyinfo(pParse, pIdx);
     if( iMem+1+(nCol*2)>pParse->nMem ){
       pParse->nMem = iMem+1+(nCol*2);
     }
@@ -383,20 +388,21 @@ static void analyzeDatabase(Parse *pParse, int iDb){
   sqlite3BeginWriteOperation(pParse, 0, iDb);
   iStatCur = pParse->nTab;
   pParse->nTab += 2;
-  openStatTable(pParse, iDb, iStatCur, 0);
+  openStatTable(pParse, iDb, iStatCur, 0, 0);
   iMem = pParse->nMem+1;
   for(k=sqliteHashFirst(&pSchema->tblHash); k; k=sqliteHashNext(k)){
     Table *pTab = (Table*)sqliteHashData(k);
-    analyzeOneTable(pParse, pTab, iStatCur, iMem);
+    analyzeOneTable(pParse, pTab, 0, iStatCur, iMem);
   }
   loadAnalysis(pParse, iDb);
 }
 
 /*
 ** Generate code that will do an analysis of a single table in
-** a database.
+** a database.  If pOnlyIdx is not NULL then it is a single index
+** in pTab that should be analyzed.
 */
-static void analyzeTable(Parse *pParse, Table *pTab){
+static void analyzeTable(Parse *pParse, Table *pTab, Index *pOnlyIdx){
   int iDb;
   int iStatCur;
 
@@ -406,8 +412,12 @@ static void analyzeTable(Parse *pParse, Table *pTab){
   sqlite3BeginWriteOperation(pParse, 0, iDb);
   iStatCur = pParse->nTab;
   pParse->nTab += 2;
-  openStatTable(pParse, iDb, iStatCur, pTab->zName);
-  analyzeOneTable(pParse, pTab, iStatCur, pParse->nMem+1);
+  if( pOnlyIdx ){
+    openStatTable(pParse, iDb, iStatCur, pOnlyIdx->zName, "idx");
+  }else{
+    openStatTable(pParse, iDb, iStatCur, pTab->zName, "tbl");
+  }
+  analyzeOneTable(pParse, pTab, pOnlyIdx, iStatCur, pParse->nMem+1);
   loadAnalysis(pParse, iDb);
 }
 
@@ -429,6 +439,7 @@ void sqlite3Analyze(Parse *pParse, Token *pName1, Token *pName2){
   int i;
   char *z, *zDb;
   Table *pTab;
+  Index *pIdx;
   Token *pTableName;
 
   /* Read the database schema. If an error occurs, leave an error message
@@ -453,11 +464,12 @@ void sqlite3Analyze(Parse *pParse, Token *pName1, Token *pName2){
     }else{
       z = sqlite3NameFromToken(db, pName1);
       if( z ){
-        pTab = sqlite3LocateTable(pParse, 0, z, 0);
-        sqlite3DbFree(db, z);
-        if( pTab ){
-          analyzeTable(pParse, pTab);
+        if( (pIdx = sqlite3FindIndex(db, z, 0))!=0 ){
+          analyzeTable(pParse, pIdx->pTable, pIdx);
+        }else if( (pTab = sqlite3LocateTable(pParse, 0, z, 0))!=0 ){
+          analyzeTable(pParse, pTab, 0);
         }
+        sqlite3DbFree(db, z);
       }
     }
   }else{
@@ -467,11 +479,12 @@ void sqlite3Analyze(Parse *pParse, Token *pName1, Token *pName2){
       zDb = db->aDb[iDb].zName;
       z = sqlite3NameFromToken(db, pTableName);
       if( z ){
-        pTab = sqlite3LocateTable(pParse, 0, z, zDb);
-        sqlite3DbFree(db, z);
-        if( pTab ){
-          analyzeTable(pParse, pTab);
+        if( (pIdx = sqlite3FindIndex(db, z, zDb))!=0 ){
+          analyzeTable(pParse, pIdx->pTable, pIdx);
+        }else if( (pTab = sqlite3LocateTable(pParse, 0, z, zDb))!=0 ){
+          analyzeTable(pParse, pTab, 0);
         }
+        sqlite3DbFree(db, z);
       }
     }   
   }
