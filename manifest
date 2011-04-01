@@ -1,5 +1,5 @@
-C Merge\sthe\smultiplexer\senhancements\sback\sinto\sthe\strunk.
-D 2011-04-01T18:39:24.584
+C Changes\sto\swal\stests\sso\sthat\sthey\swork\swith\sDEFAULT_AUTOVACUUM\sdefined.
+D 2011-04-01T19:14:40.912
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -857,11 +857,11 @@ F test/vtabE.test 7c4693638d7797ce2eda17af74292b97e705cc61
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
-F test/wal.test f060cae4b2164c4375109a8f803873187234661d
-F test/wal2.test 57a218446654ed3e3592c925762633c1d1e85636
-F test/wal3.test ec87d9dd9e9cebabed4024064e8ff531d336ead2
+F test/wal.test 973a4747a69247a43cc03292c44f59cc76f4df65
+F test/wal2.test e561a8c6fdd1c2cd1876f3e39757934e7b7361f8
+F test/wal3.test 5c396cc22497244d627306f4c1d360167353f8dd
 F test/wal4.test 3404b048fa5e10605facaf70384e6d2943412e30
-F test/wal5.test 3fef990d256cd9e95e9ad97e5dfdf3f150743fce
+F test/wal5.test 1bbfaa316dc2a1d0d1fac3f4500c38a90055a41b
 F test/wal6.test 07aa31ca8892d0527f2c5c5a9a2a87aa421dfaa8
 F test/wal_common.tcl a98f17fba96206122eff624db0ab13ec377be4fe
 F test/walbak.test 4df1c7369da0301caeb9a48fa45997fd592380e4
@@ -923,7 +923,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 5d34e64d4d2398aa9a54fd0a4f1de37ced7ea5dd 718f1ad7df9115871ba6159012d3183183fc40a1
-R 3be437ca6e714e1f6c593836a791944c
-U drh
-Z e8e2d5336305d42bc1912c6d6b830ecf
+P 2c125710cbf04198464d436b16e5ef37c5b219cf
+R b73fd492db86ba17fd0ee03f6edbe84f
+U dan
+Z 514a0a4f4cb96eef649ff183f226e66c

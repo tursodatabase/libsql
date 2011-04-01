@@ -343,6 +343,7 @@ file delete -force test.db test.db-wal test.db-journal
 do_test wal2-4.1 {
   sqlite3 db test.db
   execsql {
+    PRAGMA auto_vacuum = 0;
     PRAGMA journal_mode = WAL;
     CREATE TABLE data(x);
     INSERT INTO data VALUES('need xShmOpen to see this');
@@ -622,6 +623,7 @@ set READMARK1_WRITE {
 
 foreach {tn sql res expected_locks} {
   2 {
+    PRAGMA auto_vacuum = 0;
     PRAGMA journal_mode = WAL;
     BEGIN;
       CREATE TABLE t1(x);
@@ -707,6 +709,7 @@ tvfs delete
 do_test wal2-6.5.1 {
   sqlite3 db test.db
   execsql {
+    PRAGMA auto_vacuum = 0;
     PRAGMA journal_mode = wal;
     PRAGMA locking_mode = exclusive;
     CREATE TABLE t2(a, b);
@@ -1166,6 +1169,7 @@ foreach {tn sql reslist} {
 } {
   faultsim_delete_and_reopen
 
+  execsql {PRAGMA auto_vacuum = 0}
   execsql $sql
   do_execsql_test wal2-14.$tn.1 { PRAGMA journal_mode = WAL } {wal}
 
