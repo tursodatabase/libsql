@@ -121,7 +121,7 @@ struct TestSyscallArray {
   /*  4 */ { "stat",      (sqlite3_syscall_ptr)ts_stat,      0, 0, 0 },
   /*  5 */ { "fstat",     (sqlite3_syscall_ptr)ts_fstat,     0, 0, 0 },
   /*  6 */ { "ftruncate", (sqlite3_syscall_ptr)ts_ftruncate, 0, EIO, 0 },
-  /*  7 */ { "fcntl",     (sqlite3_syscall_ptr)ts_fcntl,     0, 0, 0 },
+  /*  7 */ { "fcntl",     (sqlite3_syscall_ptr)ts_fcntl,     0, EACCES, 0 },
   /*  8 */ { "read",      (sqlite3_syscall_ptr)ts_read,      0, 0, 0 },
   /*  9 */ { "pread",     (sqlite3_syscall_ptr)ts_pread,     0, 0, 0 },
   /* 10 */ { "pread64",   (sqlite3_syscall_ptr)ts_pread64,   0, 0, 0 },
@@ -275,7 +275,7 @@ static int ts_ftruncate(int fd, off_t n){
 static int ts_fcntl(int fd, int cmd, ... ){
   va_list ap;
   void *pArg;
-  if( tsIsFail() ){
+  if( tsIsFailErrno("fcntl") ){
     return -1;
   }
   va_start(ap, cmd);
@@ -287,7 +287,7 @@ static int ts_fcntl(int fd, int cmd, ... ){
 ** A wrapper around read().
 */
 static int ts_read(int fd, void *aBuf, size_t nBuf){
-  if( tsIsFail() ){
+  if( tsIsFailErrno("read") ){
     return -1;
   }
   return orig_read(fd, aBuf, nBuf);
@@ -297,7 +297,7 @@ static int ts_read(int fd, void *aBuf, size_t nBuf){
 ** A wrapper around pread().
 */
 static int ts_pread(int fd, void *aBuf, size_t nBuf, off_t off){
-  if( tsIsFail() ){
+  if( tsIsFailErrno("pread") ){
     return -1;
   }
   return orig_pread(fd, aBuf, nBuf, off);
@@ -307,7 +307,7 @@ static int ts_pread(int fd, void *aBuf, size_t nBuf, off_t off){
 ** A wrapper around pread64().
 */
 static int ts_pread64(int fd, void *aBuf, size_t nBuf, off_t off){
-  if( tsIsFail() ){
+  if( tsIsFailErrno("pread64") ){
     return -1;
   }
   return orig_pread64(fd, aBuf, nBuf, off);
@@ -317,7 +317,7 @@ static int ts_pread64(int fd, void *aBuf, size_t nBuf, off_t off){
 ** A wrapper around write().
 */
 static int ts_write(int fd, const void *aBuf, size_t nBuf){
-  if( tsIsFail() ){
+  if( tsIsFailErrno("write") ){
     return -1;
   }
   return orig_write(fd, aBuf, nBuf);
@@ -327,7 +327,7 @@ static int ts_write(int fd, const void *aBuf, size_t nBuf){
 ** A wrapper around pwrite().
 */
 static int ts_pwrite(int fd, const void *aBuf, size_t nBuf, off_t off){
-  if( tsIsFail() ){
+  if( tsIsFailErrno("pwrite") ){
     return -1;
   }
   return orig_pwrite(fd, aBuf, nBuf, off);
@@ -337,7 +337,7 @@ static int ts_pwrite(int fd, const void *aBuf, size_t nBuf, off_t off){
 ** A wrapper around pwrite64().
 */
 static int ts_pwrite64(int fd, const void *aBuf, size_t nBuf, off_t off){
-  if( tsIsFail() ){
+  if( tsIsFailErrno("pwrite64") ){
     return -1;
   }
   return orig_pwrite64(fd, aBuf, nBuf, off);
@@ -531,11 +531,17 @@ static int test_syscall_errno(
     const char *z;
     int i;
   } aErrno[] = {
-    { "EACCES", EACCES },
-    { "EINTR", EINTR },
-    { "EIO", EIO },
+    { "EACCES",    EACCES },
+    { "EINTR",     EINTR },
+    { "EIO",       EIO },
     { "EOVERFLOW", EOVERFLOW },
-    { "ENOMEM", ENOMEM },
+    { "ENOMEM",    ENOMEM },
+    { "EAGAIN",    EAGAIN },
+    { "ETIMEDOUT", ETIMEDOUT },
+    { "EBUSY",     EBUSY },
+    { "EPERM",     EPERM },
+    { "EDEADLK",   EDEADLK },
+    { "ENOLCK",    ENOLCK },
     { 0, 0 }
   };
 

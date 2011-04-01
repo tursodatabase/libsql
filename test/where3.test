@@ -222,6 +222,7 @@ do_execsql_test where3-3.0 {
   CREATE INDEX t301c ON t301(c);
   INSERT INTO t301 VALUES(1,2,3);
   CREATE TABLE t302(x, y);
+  INSERT INTO t302 VALUES(4,5);
   ANALYZE;
   explain query plan SELECT * FROM t302, t301 WHERE t302.x=5 AND t301.a=t302.y;
 } {
@@ -340,6 +341,5 @@ do_execsql_test where3-5.3 {
   0 1 0 {SEARCH TABLE aaa AS bbb USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
   0 0 0 {USE TEMP B-TREE FOR ORDER BY}
 }
-
 
 finish_test

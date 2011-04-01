@@ -105,9 +105,11 @@ foreach { i len uval xstr ustr u2u } {
     utf8_to_ustr2 [ sqlite3_column_text $S 0 ]
   } $ustr
 
-  do_test badutf2-5.1.$i {
-    utf8_to_utf8 $uval
-  } $u2u
+  ifcapable debug {
+    do_test badutf2-5.1.$i {
+      utf8_to_utf8 $uval
+    } $u2u
+  }
 
 }
 

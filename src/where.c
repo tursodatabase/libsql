@@ -2942,7 +2942,7 @@ static void bestBtreeIndex(
     if( nRow>(double)1 && nEq==1 && pFirstTerm!=0 ){
       if( pFirstTerm->eOperator & (WO_EQ|WO_ISNULL) ){
         testcase( pFirstTerm->eOperator==WO_EQ );
-        testcase( pFirstTerm->pOperator==WO_ISNULL );
+        testcase( pFirstTerm->eOperator==WO_ISNULL );
         whereEqualScanEst(pParse, pProbe, pFirstTerm->pExpr->pRight, &nRow);
       }else if( pFirstTerm->eOperator==WO_IN && bInEst==0 ){
         whereInScanEst(pParse, pProbe, pFirstTerm->pExpr->x.pList, &nRow);

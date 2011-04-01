@@ -71,4 +71,52 @@ do_test analyze6-1.2 {
 } {0 0 0 {SCAN TABLE cat (~16 rows)} 0 1 1 {SEARCH TABLE ev USING COVERING INDEX evy (y=?) (~32 rows)}}
 
 
+# Ticket [83ea97620bd3101645138b7b0e71c12c5498fe3d] 2011-03-30
+# If ANALYZE is run on an empty table, make sure indices are used
+# on the table.
+#
+do_test analyze6-2.1 {
+  execsql {
+    CREATE TABLE t201(x INTEGER PRIMARY KEY, y UNIQUE, z);
+    CREATE INDEX t201z ON t201(z);
+    ANALYZE;
+  }
+  eqp {SELECT * FROM t201 WHERE z=5}
+} {0 0 0 {SEARCH TABLE t201 USING INDEX t201z (z=?) (~10 rows)}}
+do_test analyze6-2.2 {
+  eqp {SELECT * FROM t201 WHERE y=5}
+} {0 0 0 {SEARCH TABLE t201 USING INDEX sqlite_autoindex_t201_1 (y=?) (~1 rows)}}
+do_test analyze6-2.3 {
+  eqp {SELECT * FROM t201 WHERE x=5}
+} {0 0 0 {SEARCH TABLE t201 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
+do_test analyze6-2.4 {
+  execsql {
+    INSERT INTO t201 VALUES(1,2,3);
+    ANALYZE t201;
+  }
+  eqp {SELECT * FROM t201 WHERE z=5}
+} {0 0 0 {SEARCH TABLE t201 USING INDEX t201z (z=?) (~10 rows)}}
+do_test analyze6-2.5 {
+  eqp {SELECT * FROM t201 WHERE y=5}
+} {0 0 0 {SEARCH TABLE t201 USING INDEX sqlite_autoindex_t201_1 (y=?) (~1 rows)}}
+do_test analyze6-2.6 {
+  eqp {SELECT * FROM t201 WHERE x=5}
+} {0 0 0 {SEARCH TABLE t201 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
+do_test analyze6-2.7 {
+  execsql {
+    INSERT INTO t201 VALUES(4,5,7);
+    INSERT INTO t201 SELECT x+100, y+100, z+100 FROM t201;
+    INSERT INTO t201 SELECT x+200, y+200, z+200 FROM t201;
+    INSERT INTO t201 SELECT x+400, y+400, z+400 FROM t201;
+    ANALYZE t201;
+  }
+  eqp {SELECT * FROM t201 WHERE z=5}
+} {0 0 0 {SEARCH TABLE t201 USING INDEX t201z (z=?) (~10 rows)}}
+do_test analyze6-2.8 {
+  eqp {SELECT * FROM t201 WHERE y=5}
+} {0 0 0 {SEARCH TABLE t201 USING INDEX sqlite_autoindex_t201_1 (y=?) (~1 rows)}}
+do_test analyze6-2.9 {
+  eqp {SELECT * FROM t201 WHERE x=5}
+} {0 0 0 {SEARCH TABLE t201 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}}
+
 finish_test

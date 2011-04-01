@@ -44,7 +44,12 @@ proc do_re_test {tn script expression} {
 # Tests oserror-1.* test failures in the open() system call.
 #
 
-# Test a failure in open() due to too many files.
+# Test a failure in open() due to too many files. 
+#
+# The xOpen() method of the unix VFS calls getcwd() as well as open().
+# Although this does not appear to be documented in the man page, on OSX
+# a call to getcwd() may fail if there are no free file descriptors. So
+# an error may be reported for either open() or getcwd() here.
 #
 do_test 1.1.1 {
   set ::log [list]
@@ -55,8 +60,9 @@ do_test 1.1.1 {
 do_test 1.1.2 {
   catch { for {set i 0} {$i < 2000} {incr i} { dbh_$i close } }
 } {1}
-
-do_re_test 1.1.3 { lindex $::log 0 } {^os_unix.c:\d+: \(\d+\) open\(.*test.db\) - }
+do_re_test 1.1.3 { 
+  lindex $::log 0 
+} {^os_unix.c:\d+: \(\d+\) (open|getcwd)\(.*test.db\) - }
 
 
 # Test a failure in open() due to the path being a directory.
