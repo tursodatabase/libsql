@@ -1594,7 +1594,7 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
         lock.l_whence = SEEK_SET;
         lock.l_start = SHARED_FIRST;
         lock.l_len = divSize;
-        if( unixFileLock(pFile,, &lock)==(-1) ){
+        if( unixFileLock(pFile, &lock)==(-1) ){
           tErrno = errno;
           rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK);
           if( IS_LOCK_ERROR(rc) ){
@@ -5747,7 +5747,9 @@ static int proxyCreateUnixFile(
   }
   memset(pNew, 0, sizeof(unixFile));
   pNew->openFlags = openFlags;
+  memset(&dummyVfs, 0, sizeof(dummyVfs));
   dummyVfs.pAppData = (void*)&autolockIoFinder;
+  dummyVfs.zName = "dummy";
   pUnused->fd = fd;
   pUnused->flags = openFlags;
   pNew->pUnused = pUnused;
