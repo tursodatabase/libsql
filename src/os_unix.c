@@ -1539,7 +1539,6 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
   struct flock lock;
   int rc = SQLITE_OK;
   int h;
-  int tErrno;                      /* Error code from system call errors */
 
   assert( pFile );
   OSTRACE(("UNLOCK  %d %d was %d(%d,%d) pid=%d (unix)\n", pFile->h, eFileLock,
@@ -1594,6 +1593,7 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
 #endif
 #if defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE
       if( handleNFSUnlock ){
+        int tErrno;               /* Error code from system call errors */
         off_t divSize = SHARED_SIZE - 1;
         
         lock.l_type = F_UNLCK;
