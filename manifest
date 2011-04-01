@@ -1,5 +1,5 @@
-C Further\stests\sfor\sos_unix.c.
-D 2011-03-30T19:08:03.321
+C Fix\sa\scompiler\swarning\sand\san\sunreachable\sbranch.\s\sRestore\s100%\sbranch\stest\ncoverage.
+D 2011-04-01T01:38:02.348
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -99,7 +99,7 @@ F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 1af0899c63a688e272d69d8e746f24e76f10a3f0
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
-F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
+F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F main.mk 7e4d4d0433c9cbfd906c6451a7cc50310a8f4555
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
@@ -115,7 +115,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c 6a0c176e64a34929a4436048066a84ef4f1445b3
-F src/analyze.c cafa5a22eb602ebdc5ba90995a41c1e84dda47a1
+F src/analyze.c b3a3d2e648f0140e6adf7ca087dc0b9a062a6325
 F src/attach.c 438ea6f6b5d5961c1f49b737f2ce0f14ce7c6877
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 537f89c7ef5021cb580f31f782e556ffffcb2ed1
@@ -236,7 +236,7 @@ F src/vdbe.c e3f37ca0afdd72e883475e2a32a06167df2810d0
 F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
 F src/vdbeInt.h e1c6254641168507d25b46affb6dfb53c782f553
 F src/vdbeapi.c a09ad9164cafc505250d5dd6b69660c960f1308c
-F src/vdbeaux.c d3e8be6fa84dd6a9a4b87b07b70ab4072dd3394e
+F src/vdbeaux.c 77921792f7ebae267490816deb6a9488f938fa85
 F src/vdbeblob.c c3ccb7c8732858c680f442932e66ad06bb036562
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
 F src/vdbetrace.c 3ba13bc32bdf16d2bdea523245fd16736bed67b5
@@ -604,7 +604,7 @@ F test/permutations.test 5b2a4cb756ffb2407cb4743163668d1d769febb6
 F test/pragma.test fdfc09067ea104a0c247a1a79d8093b56656f850
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
-F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301
+F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
 F test/quota.test ddafe133653093eb9a99ccd6264884ae43f9c9b8
@@ -920,7 +920,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 3a27af5b3c688c651ba1fae261026ef77b7ff5e3
-R 8aec69201b7794049bf0ef28fa4da45f
-U dan
-Z 9b217166a2b3bec7df70dcbc250ff848
+P a84f7711949ea3885b0e36e48118d2c76a8a5b82
+R c6eafc0e317fd480113e33c20661f505
+U drh
+Z d52e84775787a11d1858b0fd0e126e84
