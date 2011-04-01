@@ -1,5 +1,5 @@
-C Merge\sthe\sANALYZE-index\senhancement\sinto\strunk.
-D 2011-04-01T14:26:14.943
+C Ensure\sthat\sit\sis\snot\spossible\sto\sadd\sa\scolumn\sto\sa\ssystem\stable\susing\sALTER\sTABLE.
+D 2011-04-01T15:15:58.380
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -114,7 +114,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
-F src/alter.c 6a0c176e64a34929a4436048066a84ef4f1445b3
+F src/alter.c 280f5c04b11b492703a342222b3de0a999445280
 F src/analyze.c d0a673d303f611690fc7a3293aaefed57cccc5c8
 F src/attach.c 438ea6f6b5d5961c1f49b737f2ce0f14ce7c6877
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
@@ -248,7 +248,7 @@ F src/where.c 176574bfeee13775761ce56416f773b0ec115d3f
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 51756962d522e474338e9b2ebb26e7364d4aa125
-F test/alter.test 15f9224868b290d6bf7a63f31437f31aee070636
+F test/alter.test 4e47fb9ea59348b88fce4e8bb49de530128b104c
 F test/alter2.test 75f731508f1bf27ba09a6075c66cd02216ba464b
 F test/alter3.test 8677e48d95536f7a6ed86a1a774744dadcc22b07
 F test/alter4.test 1e5dd6b951e9f65ca66422edff02e56df82dd403
@@ -921,7 +921,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 7a6d05dfbc36310683dd51a280e9283cef4f9056 365896cb0868fa476e3b4f5a965a1344a2914cc2
-R 7c9526ecaff8bc8061319f5def8d1613
-U drh
-Z 1a31242492e35c93d42d83f1529d907f
+P 7e237aea22084416d02b89d5223de4e1ca76882d
+R 68179f8f20bd7e83c0daf30e8b4b7cff
+U dan
+Z 07da6539f8d6e81dde928bab49d2b3fe
