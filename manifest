@@ -1,5 +1,5 @@
-C Move\sto\san\sO(NlogN)\salgorithm\sfor\sthe\spriority\squeue.\s\sAn\sinsertion\ssort\nwas\sway\stoo\sslow.
-D 2011-03-30T01:43:00.780
+C Add\sadditional\stest\sdata\sand\sdocumentation\sto\sthe\sfuzzer\svirtual\stable.
+D 2011-04-01T20:28:31.337
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6c96e694f446500449f683070b906de9fce17b88
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -202,7 +202,7 @@ F src/test_config.c 62f0f8f934b1d5c7e4cd4f506ae453a1117b47d7
 F src/test_demovfs.c 0aed671636735116fc872c5b03706fd5612488b5
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_func.c cbdec5cededa0761daedde5baf06004a9bf416b5
-F src/test_fuzzer.c edc2aaa0f75ce49efef39bcd2df45138479b0992
+F src/test_fuzzer.c f884f6f32e8513d34248d6e1ac8a32047fead254
 F src/test_hexio.c 1237f000ec7a491009b1233f5c626ea71bce1ea2
 F src/test_init.c 5d624ffd0409d424cf9adbfe1f056b200270077c
 F src/test_intarray.c d879bbf8e4ce085ab966d1f3c896a7c8b4f5fc99
@@ -476,7 +476,7 @@ F test/fuzz2.test 207d0f9d06db3eaf47a6b7bfc835b8e2fc397167
 F test/fuzz3.test aec64345184d1662bd30e6a17851ff659d596dc5
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test dd7001ac86d09c154a7dff064f4739c60e2b312c
-F test/fuzzer1.test a81a50d7ba6005d9cc98bf58b8aae8c3e73e11a6
+F test/fuzzer1.test 3105b5a89a6cb0d475f0877debec942fe4143462
 F test/hook.test f04c3412463f8ec117c1c704c74ca0f627ce733a
 F test/icu.test 70df4faca133254c042d02ae342c0a141f2663f4
 F test/in.test 19b642bb134308980a92249750ea4ce3f6c75c2d
@@ -893,7 +893,7 @@ F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/lemon.c dfd81a51b6e27e469ba21d01a75ddf092d429027
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkkeywordhash.c d2e6b4a5965e23afb80fbe74bb54648cd371f309
-F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
+F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c.tcl cf44512a48112b1ba09590548660a5a6877afdb3
 F tool/mksqlite3h.tcl d76c226a5e8e1f3b5f6593bcabe5e98b3b1ec9ff
@@ -918,7 +918,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 2cf4158ff051916717fc2c0f4b6332d5f6ea6e3d
-R 9250685bf3b3b21491f862d4fc8952d0
+P 7958cbba736a599c1293b06602eec43dfe4fd7d1
+R a5f7c9b6891187773247bee84f644851
 U drh
-Z 0b9911f371ac67382b47460caefb0a30
+Z b39064b9fd85dd1a63e76912c214c45c

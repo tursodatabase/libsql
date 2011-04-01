@@ -12,6 +12,87 @@
 **
 ** Code for demonstartion virtual table that generates variations
 ** on an input word at increasing edit distances from the original.
+**
+** A fuzzer virtual table is created like this:
+**
+**     CREATE VIRTUAL TABLE temp.f USING fuzzer;
+**
+** The name of the new virtual table in the example above is "f".
+** Note that all fuzzer virtual tables must be TEMP tables.  The
+** "temp." prefix in front of the table name is required when the
+** table is being created.  The "temp." prefix can be omitted when
+** using the table as long as the name is unambiguous.
+**
+** Before being used, the fuzzer needs to be programmed by giving it
+** character transformations and a cost associated with each transformation.
+** Examples:
+**
+**    INSERT INTO f(cFrom,cTo,Cost) VALUES('','a',100);
+**
+** The above statement says that the cost of inserting a letter 'a' is
+** 100.  (All costs are integers.  We recommend that costs be scaled so
+** that the average cost is around 100.)
+**
+**    INSERT INTO f(cFrom,cTo,Cost) VALUES('b','',87);
+**
+** The above statement says that the cost of deleting a single letter
+** 'b' is 87.
+**
+**    INSERT INTO f(cFrom,cTo,Cost) VALUES('o','oe',38);
+**    INSERT INTO f(cFrom,cTo,Cost) VALUES('oe','o',40);
+**
+** This third example says that the cost of transforming the single
+** letter "o" into the two-letter sequence "oe" is 38 and that the
+** cost of transforming "oe" back into "o" is 40.
+**
+** After all the transformation costs have been set, the fuzzer table
+** can be queried as follows:
+**
+**    SELECT word, distance FROM f
+**     WHERE word MATCH 'abcdefg'
+**       AND distance<200;
+**
+** This first query outputs the string "abcdefg" and all strings that
+** can be derived from that string by appling the specified transformations.
+** The strings are output together with their total transformation cost
+** (called "distance") and appear in order of increasing cost.  No string
+** is output more than once.  If there are multiple ways to transform the
+** target string into the output string then the lowest cost transform is
+** the one that is returned.  In the example, the search is limited to 
+** strings with a total distance of less than 200.
+**
+** It is important to put some kind of a limit on the fuzzer output.  This
+** can be either in the form of a LIMIT clause at the end of the query,
+** or better, a "distance<NNN" constraint where NNN is some number.  The
+** running time and memory requirement is exponential in the value of NNN 
+** so you want to make sure that NNN is not too big.  A value of NNN that
+** is about twice the average transformation cost seems to give good results.
+**
+** The fuzzer table can be useful for tasks such as spelling correction.
+** Suppose there is a second table vocabulary(w) where the w column contains
+** all correctly spelled words.   Let $word be a word you want to look up.
+**
+**   SELECT vocabulary.w FROM f, vocabulary
+**    WHERE f.word MATCH $word
+**      AND f.distance<=200
+**      AND f.word=vocabulary.w
+**    LIMIT 20
+**
+** The query above gives the 20 closest words to the $word being tested.
+** (Note that for good performance, the vocubulary.w column should be
+** indexed.)
+**
+** A similar query can be used to find all words in the dictionary that
+** begin with some prefix $prefix:
+**
+**   SELECT vocabulary.w FROM f, vocabulary
+**    WHERE f.word MATCH $prefix
+**      AND f.distance<=200
+**      AND vocabulary.w BETWEEN f.word AND (f.word || x'F7BFBFBF')
+**    LIMIT 50
+**
+** This last query will show up to 50 words out of the vocabulary that
+** match or nearly match the $prefix.
 */
 #include "sqlite3.h"
 #include <stdlib.h>
