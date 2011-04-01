@@ -5,8 +5,10 @@
 #include <assert.h>
 #include <string.h>
 
-#include "sqliteInt.h"
-#include "vdbeInt.h"
+#ifndef SQLITE_AMALGAMATION
+# include "sqliteInt.h"
+# include "vdbeInt.h"
+#endif
 
 typedef struct SessionTable SessionTable;
 typedef struct SessionChange SessionChange;

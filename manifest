@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_ENABLE_PREUPDATE_HOOK\scompile-time\soption.
-D 2011-03-30T21:04:43.055
+C If\sthe\ssessions\smodule\sis\sbeing\sbuilt\sas\spart\sof\sthe\samalgamation,\sdo\snot\stry\sto\sinclude\ssqliteInt.h\sand\svdbeInt.h.
+D 2011-04-01T15:30:39.770
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -105,7 +105,7 @@ F ext/session/session3.test bfa2376db7cbb2ac69496f84d93a8d81b13110d3
 F ext/session/session4.test a6ed685da7a5293c5d6f99855bcf41dbc352ca84
 F ext/session/session_common.tcl fb91560b6dbd086010df8b3a137a452f1ac21a28
 F ext/session/sessionfault.test 2544a2e2ecad56e3c07a32c09799871d243c114c
-F ext/session/sqlite3session.c eaf093c81f076301cfd04f794d047cf7beffd290
+F ext/session/sqlite3session.c 2b2936b5188776b33bba1263f93267f3ec9d0d84
 F ext/session/sqlite3session.h f284bac51c12de0e0096fc986e61f5ae6b9e5be5
 F ext/session/test_session.c 82e3fd7d94f485ea63bcfb15d636c95a01db97a9
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
@@ -929,7 +929,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P d051694e024c590e4687cae1368f900799b7442d
-R c057f780dc1cba178107219ab6b28dc8
-U drh
-Z 598e11d1b0eff48f657d073c9eb1f2dc
+P 6634521461e6acff7cc778590e62d57831f9230d
+R 7a473314ef2d0233cdf9f16418e4fb53
+U dan
+Z 1c0b7044d6d9a7b111c49878de940801
