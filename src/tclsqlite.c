@@ -3583,6 +3583,7 @@ static void init_all(Tcl_Interp *interp){
     extern int SqliteSuperlock_Init(Tcl_Interp*);
     extern int SqlitetestSyscall_Init(Tcl_Interp*);
     extern int Sqlitetestfuzzer_Init(Tcl_Interp*);
+    extern int Sqlitetestwholenumber_Init(Tcl_Interp*);
 
 #ifdef SQLITE_ENABLE_ZIPVFS
     extern int Zipvfs_Init(Tcl_Interp*);
@@ -3622,6 +3623,7 @@ static void init_all(Tcl_Interp *interp){
     SqliteSuperlock_Init(interp);
     SqlitetestSyscall_Init(interp);
     Sqlitetestfuzzer_Init(interp);
+    Sqlitetestwholenumber_Init(interp);
 
     Tcl_CreateObjCommand(interp,"load_testfixture_extensions",init_all_cmd,0,0);
 

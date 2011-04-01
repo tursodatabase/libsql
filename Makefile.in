@@ -377,6 +377,7 @@ TESTSRC = \
   $(TOP)/src/test_tclvar.c \
   $(TOP)/src/test_thread.c \
   $(TOP)/src/test_vfs.c \
+  $(TOP)/src/test_wholenumber.c \
   $(TOP)/src/test_wsd.c
 
 # Source code to the library files needed by the test fixture

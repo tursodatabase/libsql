@@ -258,6 +258,7 @@ TESTSRC = \
   $(TOP)/src/test_tclvar.c \
   $(TOP)/src/test_thread.c \
   $(TOP)/src/test_vfs.c \
+  $(TOP)/src/test_wholenumber.c \
   $(TOP)/src/test_wsd.c
 
 #TESTSRC += $(TOP)/ext/fts2/fts2_tokenizer.c
