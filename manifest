@@ -1,7 +1,7 @@
-C Merge\sthe\sword-fuzzer\sbranch\sinto\strunk.
-D 2011-04-01T20:47:27.009
+C Fix\sup\sthe\sMakefile.in\sso\sthat\sthe\sconfiguration\sscript\sworks\sfor\s\n"make\stest".
+D 2011-04-01T20:54:38.434
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 6c96e694f446500449f683070b906de9fce17b88
+F Makefile.in e40cb0124e5a71e3ec545e828bb795dd46da5fcb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.vxworks c85ec1d8597fe2f7bc225af12ac1666e21379151
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
@@ -925,7 +925,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b477852f82c1fddbda61fad83d55055ad8503dda a6a81d4fdafabba514e8f8e1958d6132b3850772
-R 8fa020ba89288daa4e980326f651b43c
+P f77609d44194ee8871b3fb281ea6b90a9182f69f
+R d38929f39188d1b3fa8897057287e84b
 U drh
-Z f9a8b03fbe76a0642382439288b4d943
+Z ca70e73356c79c1f0f3c6edc9c65ce94
