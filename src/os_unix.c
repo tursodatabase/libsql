@@ -630,8 +630,15 @@ static int sqliteErrorFromPosixError(int posixError, int sqliteIOErr) {
   case EPERM: 
     return SQLITE_PERM;
     
+  /* EDEADLK is only possible if a call to fcntl(F_SETLKW) is made. And
+  ** this module never makes such a call. And the code in SQLite itself 
+  ** asserts that SQLITE_IOERR_BLOCKED is never returned. For these reasons
+  ** this case is also commented out. If the system does set errno to EDEADLK,
+  ** the default SQLITE_IOERR_XXX code will be returned. */
+#if 0
   case EDEADLK:
     return SQLITE_IOERR_BLOCKED;
+#endif
     
 #if EOPNOTSUPP!=ENOTSUP
   case EOPNOTSUPP: 
@@ -1192,10 +1199,9 @@ static int unixCheckReservedLock(sqlite3_file *id, int *pResOut){
     lock.l_start = RESERVED_BYTE;
     lock.l_len = 1;
     lock.l_type = F_WRLCK;
-    if (-1 == osFcntl(pFile->h, F_GETLK, &lock)) {
-      int tErrno = errno;
-      rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_CHECKRESERVEDLOCK);
-      pFile->lastErrno = tErrno;
+    if( osFcntl(pFile->h, F_GETLK, &lock) ){
+      rc = SQLITE_IOERR_CHECKRESERVEDLOCK;
+      pFile->lastErrno = errno;
     } else if( lock.l_type!=F_UNLCK ){
       reserved = 1;
     }
@@ -1425,7 +1431,7 @@ static int unixLock(sqlite3_file *id, int eFileLock){
     if( unixFileLock(pFile, &lock) && rc==SQLITE_OK ){
       /* This could happen with a network mount */
       tErrno = errno;
-      rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK); 
+      rc = SQLITE_IOERR_UNLOCK; 
     }
 
     if( rc ){
@@ -1596,7 +1602,7 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
         lock.l_len = divSize;
         if( unixFileLock(pFile, &lock)==(-1) ){
           tErrno = errno;
-          rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK);
+          rc = SQLITE_IOERR_UNLOCK;
           if( IS_LOCK_ERROR(rc) ){
             pFile->lastErrno = tErrno;
           }
@@ -1620,7 +1626,7 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
         lock.l_len = SHARED_SIZE-divSize;
         if( unixFileLock(pFile, &lock)==(-1) ){
           tErrno = errno;
-          rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK);
+          rc = SQLITE_IOERR_UNLOCK;
           if( IS_LOCK_ERROR(rc) ){
             pFile->lastErrno = tErrno;
           }
@@ -1634,11 +1640,14 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
         lock.l_start = SHARED_FIRST;
         lock.l_len = SHARED_SIZE;
         if( unixFileLock(pFile, &lock) ){
-          tErrno = errno;
-          rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_RDLOCK);
-          if( rc!=SQLITE_BUSY ){
-            pFile->lastErrno = tErrno;
-          }
+          /* In theory, the call to unixFileLock() cannot fail because another
+          ** process is holding an incompatible lock. If it does, this 
+          ** indicates that the other process is not following the locking
+          ** protocol. If this happens, return SQLITE_IOERR_RDLOCK. Returning
+          ** SQLITE_BUSY would confuse the upper layer (in practice it causes 
+          ** an assert to fail). */ 
+          rc = SQLITE_IOERR_RDLOCK;
+          pFile->lastErrno = errno;
           goto end_unlock;
         }
       }
@@ -1650,11 +1659,8 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
     if( unixFileLock(pFile, &lock)==0 ){
       pInode->eFileLock = SHARED_LOCK;
     }else{
-      tErrno = errno;
-      rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK);
-      if( rc!=SQLITE_BUSY ){
-        pFile->lastErrno = tErrno;
-      }
+      rc = SQLITE_IOERR_UNLOCK;
+      pFile->lastErrno = errno;
       goto end_unlock;
     }
   }
@@ -1674,11 +1680,8 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
       if( unixFileLock(pFile, &lock)==0 ){
         pInode->eFileLock = NO_LOCK;
       }else{
-        tErrno = errno;
-        rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK);
-        if( rc!=SQLITE_BUSY ){
-          pFile->lastErrno = tErrno;
-        }
+        rc = SQLITE_IOERR_UNLOCK;
+	pFile->lastErrno = errno;
         pInode->eFileLock = NO_LOCK;
         pFile->eFileLock = NO_LOCK;
       }
@@ -1986,7 +1989,7 @@ static int dotlockUnlock(sqlite3_file *id, int eFileLock) {
     int rc = 0;
     int tErrno = errno;
     if( ENOENT != tErrno ){
-      rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK);
+      rc = SQLITE_IOERR_UNLOCK;
     }
     if( IS_LOCK_ERROR(rc) ){
       pFile->lastErrno = tErrno;
@@ -2074,7 +2077,7 @@ static int flockCheckReservedLock(sqlite3_file *id, int *pResOut){
       if ( lrc ) {
         int tErrno = errno;
         /* unlock failed with an error */
-        lrc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK); 
+        lrc = SQLITE_IOERR_UNLOCK; 
         if( IS_LOCK_ERROR(lrc) ){
           pFile->lastErrno = tErrno;
           rc = lrc;
@@ -2196,21 +2199,12 @@ static int flockUnlock(sqlite3_file *id, int eFileLock) {
   }
   
   /* no, really, unlock. */
-  int rc = robust_flock(pFile->h, LOCK_UN);
-  if (rc) {
-    int r, tErrno = errno;
-    r = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK);
-    if( IS_LOCK_ERROR(r) ){
-      pFile->lastErrno = tErrno;
-    }
+  if( robust_flock(pFile->h, LOCK_UN) ){
 #ifdef SQLITE_IGNORE_FLOCK_LOCK_ERRORS
-    if( (r & SQLITE_IOERR) == SQLITE_IOERR ){
-      r = SQLITE_BUSY;
-    }
+    return SQLITE_OK;
 #endif /* SQLITE_IGNORE_FLOCK_LOCK_ERRORS */
-    
-    return r;
-  } else {
+    return SQLITE_IOERR_UNLOCK;
+  }else{
     pFile->eFileLock = NO_LOCK;
     return SQLITE_OK;
   }

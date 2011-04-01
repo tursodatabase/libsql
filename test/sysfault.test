@@ -94,13 +94,13 @@ foreach {tn errno errlist} {
 #
 foreach vfs {unix unix-excl} {
   foreach {tn errno errlist} {
-    1 EAGAIN       {{database is locked}}
-    2 ETIMEDOUT    {{database is locked}}
-    3 EBUSY        {{database is locked}}
-    4 EINTR        {{database is locked}}
-    5 ENOLCK       {{database is locked}}
-    6 EACCES       {{database is locked}}
-    7 EPERM        {{access permission denied}}
+    1 EAGAIN       {{database is locked} {disk I/O error}}
+    2 ETIMEDOUT    {{database is locked} {disk I/O error}}
+    3 EBUSY        {{database is locked} {disk I/O error}}
+    4 EINTR        {{database is locked} {disk I/O error}}
+    5 ENOLCK       {{database is locked} {disk I/O error}}
+    6 EACCES       {{database is locked} {disk I/O error}}
+    7 EPERM        {{access permission denied} {disk I/O error}}
     8 EDEADLK      {{disk I/O error}}
     9 ENOMEM       {{disk I/O error}}
   } {

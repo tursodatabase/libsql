@@ -1,5 +1,5 @@
-C Fix\ssome\sproblems\sin\sos_unix.c\swhen\scompiled\swith\sENABLE_LOCKING_STYLE\son\sOSX.\sAlso\ssome\sminor\sissues\swith\stest\sscripts.
-D 2011-04-01T09:04:37
+C In\sos_unix.c,\sdo\snot\sreturn\sSQLITE_BUSY\sto\sSQLite\sfollowing\san\serror\sin\sfcntl(F_UNLCK),\sregardless\sof\sthe\svalue\sof\serrno.
+D 2011-04-01T11:56:33
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 27701a1653595a1f2187dc61c8117e00a6c1d50f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -162,7 +162,7 @@ F src/os.c 22ac61d06e72a0dac900400147333b07b13d8e1d
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 2596fd2d5d0976c6c0c628d0c3c7c4e7a724f4cf
-F src/os_unix.c 9a129123a054572d4d8cf1766fb093b0e45ab57c
+F src/os_unix.c 8115c85152a7fce1bccdc195e3b0aeffcea2afd7
 F src/os_win.c 24d72407a90551969744cf9bcbb1b4c72c5fa845
 F src/pager.c 6aa906b60a59664ba58d3f746164bb010d407ce1
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
@@ -673,7 +673,7 @@ F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
 F test/superlock.test 5d7a4954b0059c903f82c7b67867bc5451a7c082
 F test/sync.test ded6b39d8d8ca3c0c5518516c6371b3316d3e3a3
 F test/syscall.test d1dae1fee88613cf763d97ad0038d867509e0c42
-F test/sysfault.test a2c3ca66d82f3b4ac7d29f1aeaba8962f4f5a22a
+F test/sysfault.test c79441d88d23696fbec7b147dba98d42a04f523f
 F test/table.test 04ba066432430657712d167ebf28080fe878d305
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
 F test/tclsqlite.test 8c154101e704170c2be10f137a5499ac2c6da8d3
@@ -920,7 +920,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e3bf2d5ce4f87535e030a446e03d911f421805f7
-R c7b1df6afcd246671bef4e02c46ac2c9
+P 8088031bc949bd4efb5edf33bbd1bce5700fca56
+R 9af7bbe929f0a94074f942a296a7973f
 U dan
-Z f228344db51d960df69afeb4fae2d9e8
+Z d897a548359e67df244f4d51f77e5957
