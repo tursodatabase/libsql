@@ -60,16 +60,16 @@
 ** function gives access to the xFileControl interface of the 
 ** multiplex VFS shim.
 **
-** SELECT multiplex_control(<op>,<val>) ;
+** SELECT multiplex_control(<op>,<val>);
 ** 
 **   <op>=1 MULTIPLEX_CTRL_ENABLE
 **   <val>=0 disable
 **   <val>=1 enable
 ** 
-**   <op>=1 MULTIPLEX_CTRL_SET_CHUNK_SIZE
+**   <op>=2 MULTIPLEX_CTRL_SET_CHUNK_SIZE
 **   <val> int, chunk size
 ** 
-**   <op>=1 MULTIPLEX_CTRL_SET_MAX_CHUNKS
+**   <op>=3 MULTIPLEX_CTRL_SET_MAX_CHUNKS
 **   <val> int, max chunks
 **
 ** THIS ROUTINE IS NOT THREADSAFE.  Call this routine exactly once
