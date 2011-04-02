@@ -2125,11 +2125,13 @@ struct TriggerPrg {
   TriggerPrg *pNext;      /* Next entry in Parse.pTriggerPrg list */
 };
 
-/* Datatype for the bitmask of all attached databases */
+/*
+** The yDbMask datatype for the bitmask of all attached databases.
+*/
 #if SQLITE_MAX_ATTACHED>30
-  typedef sqlite3_uint64 tAttachMask;
+  typedef sqlite3_uint64 yDbMask;
 #else
-  typedef unsigned int tAttachMask;
+  typedef unsigned int yDbMask;
 #endif
 
 /*
@@ -2180,8 +2182,8 @@ struct Parse {
     int iReg;             /* Reg with value of this column. 0 means none. */
     int lru;              /* Least recently used entry has the smallest value */
   } aColCache[SQLITE_N_COLCACHE];  /* One for each column cache entry */
-  tAttachMask writeMask;  /* Start a write transaction on these databases */
-  tAttachMask cookieMask; /* Bitmask of schema verified databases */
+  yDbMask writeMask;   /* Start a write transaction on these databases */
+  yDbMask cookieMask;  /* Bitmask of schema verified databases */
   u8 isMultiWrite;     /* True if statement may affect/insert multiple rows */
   u8 mayAbort;         /* True if statement may throw an ABORT exception */
   int cookieGoto;      /* Address of OP_Goto to cookie verifier subroutine */

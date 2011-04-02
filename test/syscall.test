@@ -19,8 +19,12 @@ if {[llength [info commands test_syscall]]==0} {
   finish_test
   return
 } 
-set testprefix syscall
 
+if {[test_syscall defaultvfs] != "unix"} {
+  finish_test
+  return
+}
+set testprefix syscall
 
 #-------------------------------------------------------------------------
 # Tests for the xSetSystemCall method.
@@ -52,12 +56,14 @@ do_test 2.1.2 { test_syscall exists nosuchcall } 0
 #-------------------------------------------------------------------------
 # Tests for the xNextSystemCall method.
 #
-set syscall_list [list                                \
-    open close access getcwd stat fstat ftruncate     \
-    fcntl read pread write pwrite fchmod              \
-]
-if {[test_syscall exists fallocate]} {lappend syscall_list fallocate}
-do_test 3.1 { test_syscall list } $syscall_list
+foreach s {
+    open close access getcwd stat fstat ftruncate
+    fcntl read pread write pwrite fchmod fallocate
+    pread64 pwrite64
+} {
+  if {[test_syscall exists $s]} {lappend syscall_list $s}
+}
+do_test 3.1 { lsort [test_syscall list] } [lsort $syscall_list]
 
 #-------------------------------------------------------------------------
 # This test verifies that if a call to open() fails and errno is set to
@@ -245,6 +251,5 @@ foreach {tn hint size} {
   } $size
 }
 
-
-
+test_syscall reset
 finish_test
