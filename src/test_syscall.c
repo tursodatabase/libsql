@@ -599,6 +599,24 @@ static int test_syscall_list(
   return TCL_OK;
 }
 
+static int test_syscall_defaultvfs(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_vfs *pVfs; 
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 2, objv, "");
+    return TCL_ERROR;
+  }
+
+  pVfs = sqlite3_vfs_find(0);
+  Tcl_SetObjResult(interp, Tcl_NewStringObj(pVfs->zName, -1));
+  return TCL_OK;
+}
+
 static int test_syscall(
   void * clientData,
   Tcl_Interp *interp,
@@ -609,13 +627,14 @@ static int test_syscall(
     const char *zName;
     Tcl_ObjCmdProc *xCmd;
   } aCmd[] = {
-    { "fault",     test_syscall_fault },
-    { "install",   test_syscall_install },
-    { "uninstall", test_syscall_uninstall },
-    { "reset",     test_syscall_reset },
-    { "errno",     test_syscall_errno },
-    { "exists",    test_syscall_exists },
-    { "list",      test_syscall_list },
+    { "fault",      test_syscall_fault },
+    { "install",    test_syscall_install },
+    { "uninstall",  test_syscall_uninstall },
+    { "reset",      test_syscall_reset },
+    { "errno",      test_syscall_errno },
+    { "exists",     test_syscall_exists },
+    { "list",       test_syscall_list },
+    { "defaultvfs", test_syscall_defaultvfs },
     { 0, 0 }
   };
   int iCmd;
