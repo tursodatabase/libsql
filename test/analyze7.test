@@ -18,7 +18,7 @@ source $testdir/tester.tcl
 
 # There is nothing to test if ANALYZE is disable for this build.
 #
-ifcapable {!analyze} {
+ifcapable {!analyze||!vtab} {
   finish_test
   return
 }

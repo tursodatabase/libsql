@@ -363,7 +363,7 @@ do_test memdb-6.15 {
   }
 } {}
 
-ifcapable subquery {
+ifcapable subquery&&vtab {
   do_test memdb-7.1 {
     register_wholenumber_module db
     execsql {

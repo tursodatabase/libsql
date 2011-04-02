@@ -1,5 +1,5 @@
-C Fix\sadditional\stest\scases\sso\sthat\sthey\swork\swith\sDEFAULT_AUTOVACUUM.
-D 2011-04-02T06:44:38.855
+C Do\snot\sattempt\sto\srun\stests\sthat\suse\sthe\s'wholenumber'\svirtual\stable\sif\sthe\sbuild\sdoes\snot\ssupport\svirtual\stables.
+D 2011-04-02T09:25:14.909
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -262,7 +262,7 @@ F test/analyze3.test d61f55d8b472fc6e713160b1e577f7a68e63f38b
 F test/analyze4.test 757b37875cf9bb528d46f74497bc789c88365045
 F test/analyze5.test adc89b92fc9fee5ca1cb0bc8512f3206ad0fe5aa
 F test/analyze6.test c125622a813325bba1b4999040ddc213773c2290
-F test/analyze7.test 550c38ac6823f300bbe836b4d6db5d1492806046
+F test/analyze7.test 9cbca440bebc5142a875ad23947797ff52f7b37c
 F test/async.test ad4ba51b77cd118911a3fe1356b0809da9c108c3
 F test/async2.test bf5e2ca2c96763b4cba3d016249ad7259a5603b6
 F test/async3.test 93edaa9122f498e56ea98c36c72abc407f4fb11e
@@ -568,7 +568,7 @@ F test/mallocK.test d79968641d1b70d88f6c01bdb9a7eb4a55582cc9
 F test/malloc_common.tcl 50d0ed21eed0ae9548b58935bd29ac89a05a54fa
 F test/manydb.test b3d3bc4c25657e7f68d157f031eb4db7b3df0d3c
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
-F test/memdb.test 7db5c2d98133ce95711ac36700a4a1e9f0b0692b
+F test/memdb.test 708a028d6d373e5b3842e4bdc8ba80998c9a4da6
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
 F test/memsubsys1.test 679db68394a5692791737b150852173b3e2fea10
 F test/memsubsys2.test 72a731225997ad5e8df89fdbeae9224616b6aecc
@@ -926,7 +926,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 975dff155bd9db42f2b6855b24c861852bb7a201
-R fe70661f0564d3a2ebc3b072a895ef40
+P 139bc5655ed1d0fd1b7ca86d05a998fcc5fbc18e
+R 85c1ab3db7c73393d878faa825bb79d8
 U dan
-Z b324e5f3ad19924d1e70c5c53376688b
+Z 27401d3cc561174a4c3aaa99ccf5b680
