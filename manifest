@@ -1,5 +1,5 @@
-C Avoid\sreturning\sSQLITE_NOTFOUND\swhen\sthe\sunix\sxSetSystemCall\sinterface\sis\sinvoked\swith\sNULL\spassed\sas\sthe\ssecond\sargument,\seven\sif\sall\sthe\sdefault\ssystem\scalls\sare\salready\sinstalled.
-D 2011-04-02T17:00:48
+C Change\sthe\sname\sof\sthe\s"tAttachMask"\sdatatype\sto\s"yDbMask".
+D 2011-04-02T20:01:02.621
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -124,7 +124,7 @@ F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
 F src/btree.c 2b9c81ff64da339a67dda4f94c0d763627be0b67
 F src/btree.h 8d36f774ec4b1d0027b8966f8c03d9a72a518c14
 F src/btreeInt.h 20f73dc93b1eeb83afd7259fbc6bd7dcf2df7fe4
-F src/build.c 6c490fe14dedb094a202f559e3b29a276abffcf8
+F src/build.c 3a8c6c4b1e16798755d46e699b7fcc12b9f27b2b
 F src/callback.c 5069f224882cbdccd559f591271d28d7f37745bc
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 52ff72f966cee3087e0138a3ec69371c22be3c01
@@ -180,7 +180,7 @@ F src/select.c d24406c45dd2442eb2eeaac413439066b149c944
 F src/shell.c 9dc0b4bb59290c0a35256d278cab0f314987ad6a
 F src/sqlite.h.in e047f69a61d604d4f8be6cf1d1bdfc68be9ba7e5
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
-F src/sqliteInt.h f8f1d00a22c98fd3f2fbc94da74eeb880879f89f
+F src/sqliteInt.h d45b0b1db417d5308e3bf9c8983aaf2d06e7cd36
 F src/sqliteLimit.h a17dcd3fb775d63b64a43a55c54cb282f9726f44
 F src/status.c 4997380fbb915426fef9e500b4872e79c99267fc
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -237,9 +237,9 @@ F src/util.c cd997077bad039efc0597eb027c929658f93c018
 F src/vacuum.c 924bd1bcee2dfb05376f79845bd3b4cec7b54b2f
 F src/vdbe.c a45a6a0daf2161797d50b3b5b8a3e0e4debf2d2b
 F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
-F src/vdbeInt.h e1c6254641168507d25b46affb6dfb53c782f553
+F src/vdbeInt.h 8ee9302ecc1036509956df8aceea6b0b5e0e231c
 F src/vdbeapi.c a09ad9164cafc505250d5dd6b69660c960f1308c
-F src/vdbeaux.c 77921792f7ebae267490816deb6a9488f938fa85
+F src/vdbeaux.c 80ed78c8e1edf8918e0e404891d314aa01ccb095
 F src/vdbeblob.c c3ccb7c8732858c680f442932e66ad06bb036562
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
 F src/vdbetrace.c 3ba13bc32bdf16d2bdea523245fd16736bed67b5
@@ -926,7 +926,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 71a799b02a3b3cf2e12758dea29fd2465bbec3e1
-R 96ca391ad53fdccc5149ee67daf1eb80
-U dan
-Z 09bfa66b6aa34161ab06f7710f843391
+P 3b91eaaa0b3c25022332ba3d1a5651848fc5d84c
+R e5d6d2ab5437a135179f043b3faf09c4
+U drh
+Z cdbe2872c525d3ae3a361db4be775f20
