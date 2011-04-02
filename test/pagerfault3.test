@@ -26,6 +26,7 @@ if {[permutation] == "inmemory_journal"} {
 #
 do_test pagerfault3-pre1 {
   execsql {
+    PRAGMA auto_vacuum = 0;
     PRAGMA page_size = 2048;
     CREATE TABLE t1(x);
     INSERT INTO t1 VALUES(randomblob(1200));

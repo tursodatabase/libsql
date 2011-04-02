@@ -1,5 +1,5 @@
-C Add\sthe\s"wholenumber"\svirtual\stable\smodule\sto\sthe\stest\ssuite\s-\suseful\sin\npopulating\stables\swith\smany\srows\sof\scontent\sprior\sto\sa\stest.
-D 2011-04-01T23:49:44.644
+C Fix\sadditional\stest\scases\sso\sthat\sthey\swork\swith\sDEFAULT_AUTOVACUUM.
+D 2011-04-02T06:44:38.855
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -600,7 +600,7 @@ F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
 F test/pagerfault.test 9de4d3e0c59970b4c6cb8dac511fa242f335d8a7
 F test/pagerfault2.test 1f79ea40d1133b2683a2f811b00f2399f7ec2401
-F test/pagerfault3.test 9b413f48a3e9a9a8c26968118f8db19fd7bfb8c7
+F test/pagerfault3.test f16e2efcb5fc9996d1356f7cbc44c998318ae1d7
 F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
@@ -872,7 +872,7 @@ F test/walbig.test e882bc1d014afffbfa2b6ba36e0f07d30a633ad0
 F test/walcksum.test a37b36375c595e61bdb7e1ec49b5f0979b6fc7ce
 F test/walcrash.test e763841551d6b23677ccb419797c1589dcbdbaf5
 F test/walcrash2.test 019d60b89d96c1937adb2b30b850ac7e86e5a142
-F test/walfault.test bf3808895f3b0751f6b0dbf52bb6d2e3a7b76a9d
+F test/walfault.test 58fce626359c9376fe35101b5c0f2df8040aa839
 F test/walhook.test ed00a40ba7255da22d6b66433ab61fab16a63483
 F test/walmode.test 22ddccd073c817ac9ead62b88ac446e8dedc7d2c
 F test/walnoshm.test a074428046408f4eb5c6a00e09df8cc97ff93317
@@ -926,7 +926,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 2e03830c1e1b05f7b22f9fe553ae708b65a4e942
-R 573ca184e9da16256a7f531dba0f1340
-U drh
-Z 1ec9b30671b78237d3db767735d384c0
+P 975dff155bd9db42f2b6855b24c861852bb7a201
+R fe70661f0564d3a2ebc3b072a895ef40
+U dan
+Z b324e5f3ad19924d1e70c5c53376688b
