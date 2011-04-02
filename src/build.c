@@ -408,6 +408,13 @@ void sqlite3ResetInternalSchema(sqlite3 *db, int iDb){
       assert(iDb==1 || (pDb->pBt && sqlite3BtreeHoldsMutex(pDb->pBt)));
       sqlite3SchemaFree(pDb->pSchema);
     }
+    /* If any database other than TEMP is reset, then also reset TEMP
+    ** since TEMP might be holding triggers that reference tables in the
+    ** other database.
+    */
+    if( iDb!=1 && (pDb = &db->aDb[1])!=0 && pDb->pSchema ){
+      sqlite3SchemaFree(pDb->pSchema);
+    }
     return;
   }
   /* Case 2 (from here to the end): Reset all schemas for all attached

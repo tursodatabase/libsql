@@ -1,5 +1,5 @@
-C Begin\sa\sseries\sof\schanges\sdesigned\sto\sreduce\sthe\sscope\sand\sfrequency\sof\ninvalidating\sschemas.\s\sDesign\sgoals\sare\sthat\sthe\sinternal\sschema\sshould\nnever\sbe\sdeleted\sout\sfrom\sunder\sa\sprepared\sstatement\sthat\sis\srunning\sand\nthat\sall\sprepared\sstatements\sshould\sbe\sexpired\sif\sthe\sschema\sis\sinvalidated.\nAt\sthe\ssame\stime,\sminimize\sthe\snumber\sof\sschema\sinvalidations.\s\sThis\schange\nmerely\srevises\sthe\ssqlite3ResetInternalSchema()\sfunction\sto\suse\s-1\sas\sthe\nwildcard\sfor\s"all"\srather\sthan\s0,\sso\sthat\swe\scan\sreset\sthe\smain\sschema\nindependently\sof\sall\sthe\sothers.
-D 2011-04-02T16:28:52.034
+C When\sresetting\sany\snon-TEMP\sschema,\salso\sreset\sthe\sTEMP\sschema\ssince\sit\smight\nbe\sholding\sreferences\sto\sthe\snon-TEMP\sschema\sthat\sjust\sgot\sreset.
+D 2011-04-02T16:50:25.018
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -124,7 +124,7 @@ F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
 F src/btree.c 2b9c81ff64da339a67dda4f94c0d763627be0b67
 F src/btree.h 8d36f774ec4b1d0027b8966f8c03d9a72a518c14
 F src/btreeInt.h 20f73dc93b1eeb83afd7259fbc6bd7dcf2df7fe4
-F src/build.c 9dca3dc000b85753cff822c69151f88d913f3b3e
+F src/build.c fcdd8f47361261432fb10d0e7234ba617025d1f2
 F src/callback.c 5069f224882cbdccd559f591271d28d7f37745bc
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 52ff72f966cee3087e0138a3ec69371c22be3c01
@@ -926,11 +926,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 71a799b02a3b3cf2e12758dea29fd2465bbec3e1
-R 5fca8a4df9fe5cb6d589b9d60d83b4fc
-T *bgcolor * #d3a8bc
-T *branch * schema-parse-refactor
-T *sym-schema-parse-refactor *
-T -sym-trunk *
+P 6a8ad6e31e0d2b8a5ace38faf0efd805155ee5f3
+R bc8973ff15cc98898e96282e6b2f93e3
 U drh
-Z 80e5b841d301ef316c4772ca966c9795
+Z af325c6ab15f4448779a96c9a9fe8dd3
