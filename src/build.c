@@ -393,26 +393,34 @@ void sqlite3UnlinkAndDeleteIndex(sqlite3 *db, int iDb, const char *zIdxName){
 ** if there were schema changes during the transaction or if a
 ** schema-cookie mismatch occurs.
 **
-** If iDb==0 then reset the internal schema tables for all database
-** files.  If iDb>=1 then reset the internal schema for only the
+** If iDb<0 then reset the internal schema tables for all database
+** files.  If iDb>=0 then reset the internal schema for only the
 ** single file indicated.
 */
 void sqlite3ResetInternalSchema(sqlite3 *db, int iDb){
   int i, j;
-  assert( iDb>=0 && iDb<db->nDb );
+  assert( iDb<db->nDb );
 
-  if( iDb==0 ){
-    sqlite3BtreeEnterAll(db);
+  if( iDb>=0 ){
+    /* Case 1:  Reset the single schema identified by iDb */
+    Db *pDb = &db->aDb[iDb];
+    if( pDb->pSchema ){
+      assert(iDb==1 || (pDb->pBt && sqlite3BtreeHoldsMutex(pDb->pBt)));
+      sqlite3SchemaFree(pDb->pSchema);
+    }
+    return;
   }
-  for(i=iDb; i<db->nDb; i++){
+  /* Case 2 (from here to the end): Reset all schemas for all attached
+  ** databases. */
+  assert( iDb<0 );
+  sqlite3BtreeEnterAll(db);
+  for(i=0; i<db->nDb; i++){
     Db *pDb = &db->aDb[i];
     if( pDb->pSchema ){
       assert(i==1 || (pDb->pBt && sqlite3BtreeHoldsMutex(pDb->pBt)));
       sqlite3SchemaFree(pDb->pSchema);
     }
-    if( iDb>0 ) return;
   }
-  assert( iDb==0 );
   db->flags &= ~SQLITE_InternChanges;
   sqlite3VtabUnlockList(db);
   sqlite3BtreeLeaveAll(db);

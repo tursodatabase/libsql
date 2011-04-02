@@ -48,7 +48,7 @@ static int createModule(
     if( pDel==pMod ){
       db->mallocFailed = 1;
     }
-    sqlite3ResetInternalSchema(db, 0);
+    sqlite3ResetInternalSchema(db, -1);
   }else if( xDestroy ){
     xDestroy(pAux);
   }

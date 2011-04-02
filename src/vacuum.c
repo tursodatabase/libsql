@@ -335,8 +335,9 @@ end_of_vacuum:
     pDb->pSchema = 0;
   }
 
-  sqlite3ResetInternalSchema(db, 0);
+  sqlite3ResetInternalSchema(db, -1);
 
   return rc;
 }
+
 #endif  /* SQLITE_OMIT_VACUUM && SQLITE_OMIT_ATTACH */

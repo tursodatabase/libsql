@@ -1,5 +1,5 @@
-C Fix\sa\srace\scondition\sin\sOP_ParseSchema.
-D 2011-04-02T09:44:43
+C Begin\sa\sseries\sof\schanges\sdesigned\sto\sreduce\sthe\sscope\sand\sfrequency\sof\ninvalidating\sschemas.\s\sDesign\sgoals\sare\sthat\sthe\sinternal\sschema\sshould\nnever\sbe\sdeleted\sout\sfrom\sunder\sa\sprepared\sstatement\sthat\sis\srunning\sand\nthat\sall\sprepared\sstatements\sshould\sbe\sexpired\sif\sthe\sschema\sis\sinvalidated.\nAt\sthe\ssame\stime,\sminimize\sthe\snumber\sof\sschema\sinvalidations.\s\sThis\schange\nmerely\srevises\sthe\ssqlite3ResetInternalSchema()\sfunction\sto\suse\s-1\sas\sthe\nwildcard\sfor\s"all"\srather\sthan\s0,\sso\sthat\swe\scan\sreset\sthe\smain\sschema\nindependently\sof\sall\sthe\sothers.
+D 2011-04-02T16:28:52.034
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -116,15 +116,15 @@ F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c 280f5c04b11b492703a342222b3de0a999445280
 F src/analyze.c d0a673d303f611690fc7a3293aaefed57cccc5c8
-F src/attach.c 438ea6f6b5d5961c1f49b737f2ce0f14ce7c6877
+F src/attach.c 7cae2cf0c14762ce14c074a860ec52890a973a56
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
-F src/backup.c 537f89c7ef5021cb580f31f782e556ffffcb2ed1
+F src/backup.c b7529a6691f0fd534ae8ff622203c46a7f1b626b
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
 F src/btree.c 2b9c81ff64da339a67dda4f94c0d763627be0b67
 F src/btree.h 8d36f774ec4b1d0027b8966f8c03d9a72a518c14
 F src/btreeInt.h 20f73dc93b1eeb83afd7259fbc6bd7dcf2df7fe4
-F src/build.c 6c490fe14dedb094a202f559e3b29a276abffcf8
+F src/build.c 9dca3dc000b85753cff822c69151f88d913f3b3e
 F src/callback.c 5069f224882cbdccd559f591271d28d7f37745bc
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 52ff72f966cee3087e0138a3ec69371c22be3c01
@@ -143,7 +143,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 8af9fcc75708d60b88636ccba38b4a7b3c155c3e
-F src/main.c c23c62e53d120c5eee086c0e2cc96cc9a691c50e
+F src/main.c 14c019b381b76ea378ee8629d1ed861a3899e075
 F src/malloc.c 92d59a007d7a42857d4e9454aa25b6b703286be1
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 00bd8265c81abb665c48fea1e0c234eb3b922206
@@ -170,8 +170,8 @@ F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 09d38c44ab275db581f7a2f6ff8b9bc7f8c0faaa
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c d548e31beafa792d1994b663a29a5303569efc4e
-F src/pragma.c 4221eb822d7cdb1fb69be555b189e15e5a24b6b5
-F src/prepare.c eb4944d9f7bfa13eb42a7416ed9aaed4de4d0bf3
+F src/pragma.c 672c5e453d6321fdcfd76ffe346d99cae54fcddb
+F src/prepare.c cec63cb151fcaeee00006ec5376698310caea56a
 F src/printf.c 585a36b6a963df832cfb69505afa3a34ed5ef8a1
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
@@ -234,16 +234,16 @@ F src/trigger.c ec4813709e990a169b6923293e839fa5dfd64282
 F src/update.c 81911be16ece3c3e7716aa18565b4814ec41f8b9
 F src/utf.c d83650c3ea08f7407bd9d0839d9885241c209c60
 F src/util.c cd997077bad039efc0597eb027c929658f93c018
-F src/vacuum.c 924bd1bcee2dfb05376f79845bd3b4cec7b54b2f
-F src/vdbe.c a45a6a0daf2161797d50b3b5b8a3e0e4debf2d2b
+F src/vacuum.c 3b2b0998f4f277e4bc61469c2d78d8424d02899b
+F src/vdbe.c 6b15a8fb9bb5d5abd232fbc72cc6410c2fd70c1b
 F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
 F src/vdbeInt.h e1c6254641168507d25b46affb6dfb53c782f553
 F src/vdbeapi.c a09ad9164cafc505250d5dd6b69660c960f1308c
-F src/vdbeaux.c 77921792f7ebae267490816deb6a9488f938fa85
+F src/vdbeaux.c e97565fb2fea822a2e853370c440b493ef09d7e7
 F src/vdbeblob.c c3ccb7c8732858c680f442932e66ad06bb036562
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
 F src/vdbetrace.c 3ba13bc32bdf16d2bdea523245fd16736bed67b5
-F src/vtab.c e1edca38c4c4310710635bb91bb3c87fdf60f21d
+F src/vtab.c 341ae69e949ce583c1729b0177f62ab821e8b42f
 F src/wal.c 7334009b396285b658a95a3b6bc6d2b016a1f794
 F src/wal.h 7a5fbb00114b7f2cd40c7e1003d4c41ce9d26840
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
@@ -926,7 +926,11 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 20afd81a4cf4d23962ec841bbd375f36a5156fb6
-R 25d34b3e2efbdd1c8e0ceadec6512306
-U dan
-Z 659aea6fa897bf521b0a686e5d197299
+P 71a799b02a3b3cf2e12758dea29fd2465bbec3e1
+R 5fca8a4df9fe5cb6d589b9d60d83b4fc
+T *bgcolor * #d3a8bc
+T *branch * schema-parse-refactor
+T *sym-schema-parse-refactor *
+T -sym-trunk *
+U drh
+Z 80e5b841d301ef316c4772ca966c9795

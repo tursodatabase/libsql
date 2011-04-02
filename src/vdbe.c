@@ -2649,7 +2649,7 @@ case OP_Savepoint: {
         }
         if( p1==SAVEPOINT_ROLLBACK && (db->flags&SQLITE_InternChanges)!=0 ){
           sqlite3ExpirePreparedStatements(db);
-          sqlite3ResetInternalSchema(db, 0);
+          sqlite3ResetInternalSchema(db, -1);
           db->flags = (db->flags | SQLITE_InternChanges);
         }
       }
@@ -5946,7 +5946,7 @@ vdbe_error_halt:
   sqlite3VdbeHalt(p);
   if( rc==SQLITE_IOERR_NOMEM ) db->mallocFailed = 1;
   rc = SQLITE_ERROR;
-  if( resetSchemaOnFault ) sqlite3ResetInternalSchema(db, 0);
+  if( resetSchemaOnFault ) sqlite3ResetInternalSchema(db, -1);
 
   /* This is the only way out of this procedure.  We have to
   ** release the mutexes on btrees that were acquired at the
