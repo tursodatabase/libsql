@@ -4625,23 +4625,26 @@ case OP_ParseSchema: {
   iDb = pOp->p1;
   assert( iDb>=0 && iDb<db->nDb );
 
-  /* Although the mutex on the BtShared object that corresponds to
-  ** database iDb (the database containing the sqlite_master table
-  ** read by this instruction) is currently held, it is necessary to
-  ** obtain the mutexes on all attached databases before checking if
-  ** the schema of iDb is loaded. This is because, at the start of
-  ** the sqlite3_exec() call below, SQLite will invoke 
-  ** sqlite3BtreeEnterAll(). If all mutexes are not already held, the
-  ** iDb mutex may be temporarily released to avoid deadlock. If 
-  ** this happens, then some other thread may delete the in-memory 
-  ** schema of database iDb before the SQL statement runs. The schema
-  ** will not be reloaded becuase the db->init.busy flag is set. This
-  ** can result in a "no such table: sqlite_master" or "malformed
-  ** database schema" error being returned to the user.
+  /* When this opcode is invoked, it is guaranteed that the b-tree mutex
+  ** is held and the schema is loaded for database iDb. However, at the 
+  ** start of the sqlite3_exec() call below, SQLite will invoke 
+  ** sqlite3BtreeEnterAll(). If all mutexes are not already held, the iDb 
+  ** mutex may be temporarily released to avoid deadlock. If this happens, 
+  ** then some other thread may delete the in-memory schema of database iDb 
+  ** before the SQL statement runs. The schema will not be reloaded because 
+  ** the db->init.busy flag is set. This can result in a "no such table: 
+  ** sqlite_master" or "malformed database schema" error being returned to 
+  ** the user. 
+  **
+  ** To avoid this, obtain all mutexes and check that no other thread has
+  ** deleted the schema before calling sqlite3_exec(). If we find that the
+  ** another thread has deleted the schema, there is no need to update it.
+  ** The updated schema will be loaded from disk when it is next required.
   */
   assert( sqlite3BtreeHoldsMutex(db->aDb[iDb].pBt) );
+  assert( DbHasProperty(db, iDb, DB_SchemaLoaded) );
   sqlite3BtreeEnterAll(db);
-  if( ALWAYS(DbHasProperty(db, iDb, DB_SchemaLoaded)) ){
+  if( DbHasProperty(db, iDb, DB_SchemaLoaded) ){
     zMaster = SCHEMA_TABLE(iDb);
     initData.db = db;
     initData.iDb = pOp->p1;

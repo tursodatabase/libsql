@@ -1,5 +1,5 @@
-C Do\snot\sattempt\sto\srun\stests\sthat\suse\sthe\s'wholenumber'\svirtual\stable\sif\sthe\sbuild\sdoes\snot\ssupport\svirtual\stables.
-D 2011-04-02T09:25:14.909
+C Fix\sa\srace\scondition\sin\sOP_ParseSchema.
+D 2011-04-02T09:44:43
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -235,7 +235,7 @@ F src/update.c 81911be16ece3c3e7716aa18565b4814ec41f8b9
 F src/utf.c d83650c3ea08f7407bd9d0839d9885241c209c60
 F src/util.c cd997077bad039efc0597eb027c929658f93c018
 F src/vacuum.c 924bd1bcee2dfb05376f79845bd3b4cec7b54b2f
-F src/vdbe.c e3f37ca0afdd72e883475e2a32a06167df2810d0
+F src/vdbe.c a45a6a0daf2161797d50b3b5b8a3e0e4debf2d2b
 F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
 F src/vdbeInt.h e1c6254641168507d25b46affb6dfb53c782f553
 F src/vdbeapi.c a09ad9164cafc505250d5dd6b69660c960f1308c
@@ -926,7 +926,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 139bc5655ed1d0fd1b7ca86d05a998fcc5fbc18e
-R 85c1ab3db7c73393d878faa825bb79d8
+P 20afd81a4cf4d23962ec841bbd375f36a5156fb6
+R 25d34b3e2efbdd1c8e0ceadec6512306
 U dan
-Z 27401d3cc561174a4c3aaa99ccf5b680
+Z 659aea6fa897bf521b0a686e5d197299
