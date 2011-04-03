@@ -954,7 +954,7 @@ void sqlite3VdbeUsesBtree(Vdbe *p, int i){
   yDbMask mask;
   assert( i>=0 && i<p->db->nDb && i<sizeof(yDbMask)*8 );
   assert( i<(int)sizeof(p->btreeMask)*8 );
-  mask = ((u32)1)<<i;
+  mask = ((yDbMask)1)<<i;
   if( (p->btreeMask & mask)==0 ){
     p->btreeMask |= mask;
     sqlite3BtreeMutexArrayInsert(&p->aMutex, p->db->aDb[i].pBt);

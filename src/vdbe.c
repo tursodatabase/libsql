@@ -2789,7 +2789,7 @@ case OP_Transaction: {
   Btree *pBt;
 
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
-  assert( (p->btreeMask & (1<<pOp->p1))!=0 );
+  assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
   pBt = db->aDb[pOp->p1].pBt;
 
   if( pBt ){
@@ -2845,7 +2845,7 @@ case OP_ReadCookie: {               /* out2-prerelease */
   assert( pOp->p3<SQLITE_N_BTREE_META );
   assert( iDb>=0 && iDb<db->nDb );
   assert( db->aDb[iDb].pBt!=0 );
-  assert( (p->btreeMask & (1<<iDb))!=0 );
+  assert( (p->btreeMask & (((yDbMask)1)<<iDb))!=0 );
 
   sqlite3BtreeGetMeta(db->aDb[iDb].pBt, iCookie, (u32 *)&iMeta);
   pOut->u.i = iMeta;
@@ -2866,7 +2866,7 @@ case OP_SetCookie: {       /* in3 */
   Db *pDb;
   assert( pOp->p2<SQLITE_N_BTREE_META );
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
-  assert( (p->btreeMask & (1<<pOp->p1))!=0 );
+  assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
   pDb = &db->aDb[pOp->p1];
   assert( pDb->pBt!=0 );
   pIn3 = &aMem[pOp->p3];
@@ -2914,7 +2914,7 @@ case OP_VerifyCookie: {
   Btree *pBt;
 
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
-  assert( (p->btreeMask & (1<<pOp->p1))!=0 );
+  assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
   pBt = db->aDb[pOp->p1].pBt;
   if( pBt ){
     sqlite3BtreeGetMeta(pBt, BTREE_SCHEMA_VERSION, (u32 *)&iMeta);
@@ -3018,7 +3018,7 @@ case OP_OpenWrite: {
   p2 = pOp->p2;
   iDb = pOp->p3;
   assert( iDb>=0 && iDb<db->nDb );
-  assert( (p->btreeMask & (1<<iDb))!=0 );
+  assert( (p->btreeMask & (((yDbMask)1)<<iDb))!=0 );
   pDb = &db->aDb[iDb];
   pX = pDb->pBt;
   assert( pX!=0 );
@@ -4513,7 +4513,7 @@ case OP_Destroy: {     /* out2-prerelease */
   }else{
     iDb = pOp->p3;
     assert( iCnt==1 );
-    assert( (p->btreeMask & (1<<iDb))!=0 );
+    assert( (p->btreeMask & (((yDbMask)1)<<iDb))!=0 );
     rc = sqlite3BtreeDropTable(db->aDb[iDb].pBt, pOp->p1, &iMoved);
     pOut->flags = MEM_Int;
     pOut->u.i = iMoved;
@@ -4549,7 +4549,7 @@ case OP_Clear: {
   int nChange;
  
   nChange = 0;
-  assert( (p->btreeMask & (1<<pOp->p2))!=0 );
+  assert( (p->btreeMask & (((yDbMask)1)<<pOp->p2))!=0 );
   rc = sqlite3BtreeClearTable(
       db->aDb[pOp->p2].pBt, pOp->p1, (pOp->p3 ? &nChange : 0)
   );
@@ -4594,7 +4594,7 @@ case OP_CreateTable: {          /* out2-prerelease */
 
   pgno = 0;
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
-  assert( (p->btreeMask & (1<<pOp->p1))!=0 );
+  assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
   pDb = &db->aDb[pOp->p1];
   assert( pDb->pBt!=0 );
   if( pOp->opcode==OP_CreateTable ){
@@ -4766,7 +4766,7 @@ case OP_IntegrityCk: {
   }
   aRoot[j] = 0;
   assert( pOp->p5<db->nDb );
-  assert( (p->btreeMask & (1<<pOp->p5))!=0 );
+  assert( (p->btreeMask & (((yDbMask)1)<<pOp->p5))!=0 );
   z = sqlite3BtreeIntegrityCheck(db->aDb[pOp->p5].pBt, aRoot, nRoot,
                                  (int)pnErr->u.i, &nErr);
   sqlite3DbFree(db, aRoot);
@@ -5303,7 +5303,7 @@ case OP_JournalMode: {    /* out2-prerelease */
   ** No other mutexes are required by the ATTACH command so this is safe
   ** to do.
   */
-  assert( (p->btreeMask & (1<<pOp->p1))!=0 || p->aMutex.nMutex==0 );
+  assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 || p->aMutex.nMutex==0 );
   if( p->aMutex.nMutex==0 ){
     /* This occurs right after ATTACH.  Get a mutex on the newly ATTACHed
     ** database. */
@@ -5408,7 +5408,7 @@ case OP_IncrVacuum: {        /* jump */
   Btree *pBt;
 
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
-  assert( (p->btreeMask & (1<<pOp->p1))!=0 );
+  assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
   pBt = db->aDb[pOp->p1].pBt;
   rc = sqlite3BtreeIncrVacuum(pBt);
   if( rc==SQLITE_DONE ){
@@ -5457,7 +5457,7 @@ case OP_TableLock: {
   if( isWriteLock || 0==(db->flags&SQLITE_ReadUncommitted) ){
     int p1 = pOp->p1; 
     assert( p1>=0 && p1<db->nDb );
-    assert( (p->btreeMask & (1<<p1))!=0 );
+    assert( (p->btreeMask & (((yDbMask)1)<<p1))!=0 );
     assert( isWriteLock==0 || isWriteLock==1 );
     rc = sqlite3BtreeLockTable(db->aDb[p1].pBt, pOp->p2, isWriteLock);
     if( (rc&0xFF)==SQLITE_LOCKED ){
