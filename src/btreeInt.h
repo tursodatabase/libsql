@@ -336,7 +336,7 @@ struct BtLock {
 ** All fields in this structure are accessed under sqlite3.mutex.
 ** The pBt pointer itself may not be changed while there exists cursors 
 ** in the referenced BtShared that point back to this Btree since those
-** cursors have to do go through this Btree to find their BtShared and
+** cursors have to go through this Btree to find their BtShared and
 ** they often do so without holding sqlite3.mutex.
 */
 struct Btree {

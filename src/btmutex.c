@@ -195,7 +195,7 @@ void sqlite3BtreeEnterAll(sqlite3 *db){
       if( !p->locked ){
         assert( p->wantToLock==1 );
         while( p->pPrev ) p = p->pPrev;
-        /* Reason for ALWAYS:  There must be at least on unlocked Btree in
+        /* Reason for ALWAYS:  There must be at least one unlocked Btree in
         ** the chain.  Otherwise the !p->locked test above would have failed */
         while( p->locked && ALWAYS(p->pNext) ) p = p->pNext;
         for(pLater = p->pNext; pLater; pLater=pLater->pNext){
