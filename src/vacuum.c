@@ -335,6 +335,8 @@ end_of_vacuum:
     pDb->pSchema = 0;
   }
 
+  /* This both clears the schemas and reduces the size of the db->aDb[]
+  ** array. */ 
   sqlite3ResetInternalSchema(db, -1);
 
   return rc;
