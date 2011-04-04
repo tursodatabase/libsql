@@ -1,5 +1,5 @@
-C Have\stest_syscall.c\sinclude\s"sqliteInt.h".\sOtherwise\sthe\sSQLITE_OS_UNIX\ssymbol\smay\snot\sbe\sdefined\scorrectly.
-D 2011-04-04T14:03:58.599
+C Add\sthe\s"--start=[permutation:][testfile]"\soption\sto\stester.tcl.\sFor\sstarting\squick.test\sor\sall.test\sat\sthe\snominated\spermutation\sand/or\stest\sfile.
+D 2011-04-04T15:38:16.948
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -685,7 +685,7 @@ F test/tclsqlite.test 8c154101e704170c2be10f137a5499ac2c6da8d3
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test f42121a0d29a62f00f93274464164177ab1cc24a
 F test/temptrigger.test b0273db072ce5f37cf19140ceb1f0d524bbe9f05
-F test/tester.tcl dafe0d30279f6d380d5d2a535781dda91b8cfc3f
+F test/tester.tcl 6fa3d2f581b479a3a088b1b5b0d145e548ebe662
 F test/thread001.test a3e6a7254d1cb057836cb3145b60c10bf5b7e60f
 F test/thread002.test afd20095e6e845b405df4f2c920cb93301ca69db
 F test/thread003.test b824d4f52b870ae39fc5bae4d8070eca73085dca
@@ -926,7 +926,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 425e3edb146c497817855dd741878709a25c8b98
-R bfbf218f3efb47247391ca878c887fe4
+P fda8fadd837e399d3fab7a9e6894617a5788d679
+R 4b62570a0a31579c57911e1ba72815ed
 U dan
-Z 9616075d7db18b4b467697e48342db18
+Z 8e0f703ae7b0d0dd238c3eeb189cec4d

@@ -154,6 +154,7 @@ if {[info exists cmdlinearg]==0} {
   #   --backtrace=N
   #   --binarylog=N
   #   --soak=N
+  #   --start=[$permutation:]$testfile
   #
   set cmdlinearg(soft-heap-limit)    0
   set cmdlinearg(maxerror)        1000
@@ -161,6 +162,7 @@ if {[info exists cmdlinearg]==0} {
   set cmdlinearg(backtrace)         10
   set cmdlinearg(binarylog)          0
   set cmdlinearg(soak)               0
+  set cmdlinearg(start)             "" 
 
   set leftover [list]
   foreach a $argv {
@@ -194,6 +196,16 @@ if {[info exists cmdlinearg]==0} {
       {^-+soak=.+$} {
         foreach {dummy cmdlinearg(soak)} [split $a =] break
         set ::G(issoak) $cmdlinearg(soak)
+      }
+      {^-+start=.+$} {
+        foreach {dummy cmdlinearg(start)} [split $a =] break
+
+        set ::G(start:file) $cmdlinearg(start)
+        if {[regexp {(.*):(.*)} $cmdlinearg(start) -> s.perm s.file]} {
+          set ::G(start:permutation) ${s.perm}
+          set ::G(start:file)        ${s.file}
+        }
+        if {$::G(start:file) == ""} {unset ::G(start:file)}
       }
       default {
         lappend leftover $a
@@ -1324,6 +1336,15 @@ proc slave_test_script {script} {
 
 proc slave_test_file {zFile} {
   set tail [file tail $zFile]
+
+  if {[info exists ::G(start:permutation)]} {
+    if {[permutation] != $::G(start:permutation)} return
+    unset ::G(start:permutation)
+  }
+  if {[info exists ::G(start:file)]} {
+    if {$tail != $::G(start:file) && $tail!="$::G(start:file).test"} return
+    unset ::G(start:file)
+  }
 
   # Remember the value of the shared-cache setting. So that it is possible
   # to check afterwards that it was not modified by the test script.
