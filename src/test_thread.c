@@ -53,7 +53,7 @@ struct EvalEvent {
 
 static Tcl_ObjCmdProc sqlthread_proc;
 static Tcl_ObjCmdProc clock_seconds_proc;
-#if defined(SQLITE_OS_UNIX) && defined(SQLITE_ENABLE_UNLOCK_NOTIFY)
+#if SQLITE_OS_UNIX && defined(SQLITE_ENABLE_UNLOCK_NOTIFY)
 static Tcl_ObjCmdProc blocking_step_proc;
 static Tcl_ObjCmdProc blocking_prepare_v2_proc;
 #endif
@@ -116,7 +116,7 @@ static Tcl_ThreadCreateType tclScriptThread(ClientData pSqlThread){
   interp = Tcl_CreateInterp();
   Tcl_CreateObjCommand(interp, "clock_seconds", clock_seconds_proc, 0, 0);
   Tcl_CreateObjCommand(interp, "sqlthread", sqlthread_proc, pSqlThread, 0);
-#if defined(SQLITE_OS_UNIX) && defined(SQLITE_ENABLE_UNLOCK_NOTIFY)
+#if SQLITE_OS_UNIX && defined(SQLITE_ENABLE_UNLOCK_NOTIFY)
   Tcl_CreateObjCommand(interp, "sqlite3_blocking_step", blocking_step_proc,0,0);
   Tcl_CreateObjCommand(interp, 
       "sqlite3_blocking_prepare_v2", blocking_prepare_v2_proc, (void *)1, 0);
@@ -392,7 +392,7 @@ static int clock_seconds_proc(
 ** should be considered if these functions are to be extended (i.e. to 
 ** support windows) in the future.
 */ 
-#if defined(SQLITE_OS_UNIX) && defined(SQLITE_ENABLE_UNLOCK_NOTIFY)
+#if SQLITE_OS_UNIX && defined(SQLITE_ENABLE_UNLOCK_NOTIFY)
 
 /* BEGIN_SQLITE_BLOCKING_STEP */
 /* This example uses the pthreads API */
@@ -614,7 +614,7 @@ static int blocking_prepare_v2_proc(
 int SqlitetestThread_Init(Tcl_Interp *interp){
   Tcl_CreateObjCommand(interp, "sqlthread", sqlthread_proc, 0, 0);
   Tcl_CreateObjCommand(interp, "clock_seconds", clock_seconds_proc, 0, 0);
-#if defined(SQLITE_OS_UNIX) && defined(SQLITE_ENABLE_UNLOCK_NOTIFY)
+#if SQLITE_OS_UNIX && defined(SQLITE_ENABLE_UNLOCK_NOTIFY)
   Tcl_CreateObjCommand(interp, "sqlite3_blocking_step", blocking_step_proc,0,0);
   Tcl_CreateObjCommand(interp, 
       "sqlite3_blocking_prepare_v2", blocking_prepare_v2_proc, (void *)1, 0);

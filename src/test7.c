@@ -20,7 +20,7 @@
 ** the SQLITE_SERVER option.
 */
 #if defined(SQLITE_SERVER) && !defined(SQLITE_OMIT_SHARED_CACHE) && \
-    defined(SQLITE_OS_UNIX) && OS_UNIX && SQLITE_THREADSAFE
+    SQLITE_OS_UNIX && SQLITE_THREADSAFE
 
 #include <stdlib.h>
 #include <string.h>

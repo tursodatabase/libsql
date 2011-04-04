@@ -76,7 +76,7 @@
 #include <assert.h>
 
 #include "sqliteInt.h"
-#ifdef SQLITE_OS_UNIX
+#if SQLITE_OS_UNIX
 
 /* From test1.c */
 extern const char *sqlite3TestErrorName(int);
