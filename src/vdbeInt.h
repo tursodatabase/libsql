@@ -303,9 +303,9 @@ struct Vdbe {
   u8 isPrepareV2;         /* True if prepared with prepare_v2() */
   int nChange;            /* Number of db changes made since last reset */
   yDbMask btreeMask;      /* Bitmask of db->aDb[] entries referenced */
+  u32 iMutexCounter;      /* Mutex counter upon sqlite3VdbeEnter() */
   int iStatement;         /* Statement number (or 0 if has not opened stmt) */
   int aCounter[3];        /* Counters used by sqlite3_stmt_status() */
-  BtreeMutexArray aMutex; /* An array of Btree used here and needing locks */
 #ifndef SQLITE_OMIT_TRACE
   i64 startTime;          /* Time when query started - used for profiling */
 #endif
@@ -387,6 +387,9 @@ int sqlite3VdbeCloseStatement(Vdbe *, int);
 void sqlite3VdbeFrameDelete(VdbeFrame*);
 int sqlite3VdbeFrameRestore(VdbeFrame *);
 void sqlite3VdbeMemStoreType(Mem *pMem);
+void sqlite3VdbeEnter(Vdbe*);
+void sqlite3VdbeLeave(Vdbe*);
+void sqlite3VdbeMutexResync(Vdbe*);
 
 #ifdef SQLITE_DEBUG
 void sqlite3VdbeMemPrepareToChange(Vdbe*,Mem*);
@@ -396,12 +399,6 @@ void sqlite3VdbeMemPrepareToChange(Vdbe*,Mem*);
 int sqlite3VdbeCheckFk(Vdbe *, int);
 #else
 # define sqlite3VdbeCheckFk(p,i) 0
-#endif
-
-#ifndef SQLITE_OMIT_SHARED_CACHE
-void sqlite3VdbeMutexArrayEnter(Vdbe *p);
-#else
-# define sqlite3VdbeMutexArrayEnter(p)
 #endif
 
 int sqlite3VdbeMemTranslate(Mem*, u8);

@@ -39,18 +39,6 @@
 typedef struct Btree Btree;
 typedef struct BtCursor BtCursor;
 typedef struct BtShared BtShared;
-typedef struct BtreeMutexArray BtreeMutexArray;
-
-/*
-** This structure records all of the Btrees that need to hold
-** a mutex before we enter sqlite3VdbeExec().  The Btrees are
-** are placed in aBtree[] in order of aBtree[]->pBt.  That way,
-** we can always lock and unlock them all quickly.
-*/
-struct BtreeMutexArray {
-  int nMutex;
-  Btree *aBtree[SQLITE_MAX_ATTACHED+1];
-};
 
 
 int sqlite3BtreeOpen(
@@ -228,23 +216,19 @@ void sqlite3BtreeCursorList(Btree*);
   void sqlite3BtreeEnterCursor(BtCursor*);
   void sqlite3BtreeLeaveCursor(BtCursor*);
   void sqlite3BtreeLeaveAll(sqlite3*);
-  void sqlite3BtreeMutexArrayEnter(BtreeMutexArray*);
-  void sqlite3BtreeMutexArrayLeave(BtreeMutexArray*);
-  void sqlite3BtreeMutexArrayInsert(BtreeMutexArray*, Btree*);
 #ifndef NDEBUG
   /* These routines are used inside assert() statements only. */
   int sqlite3BtreeHoldsMutex(Btree*);
   int sqlite3BtreeHoldsAllMutexes(sqlite3*);
+  u32 sqlite3BtreeMutexCounter(Btree*);
 #endif
 #else
 
 # define sqlite3BtreeLeave(X)
+# define sqlite3BtreeMutexCounter(X) 0
 # define sqlite3BtreeEnterCursor(X)
 # define sqlite3BtreeLeaveCursor(X)
 # define sqlite3BtreeLeaveAll(X)
-# define sqlite3BtreeMutexArrayEnter(X)
-# define sqlite3BtreeMutexArrayLeave(X)
-# define sqlite3BtreeMutexArrayInsert(X,Y)
 
 # define sqlite3BtreeHoldsMutex(X) 1
 # define sqlite3BtreeHoldsAllMutexes(X) 1
