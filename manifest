@@ -1,5 +1,5 @@
-C Add\sa\sdescription\sof\saccess\srules\sfor\sthe\sSchema\sobject\sand\slots\sof\sasserts\nto\sverify\sthat\sthe\saccess\srules\sare\sfollowed.
-D 2011-04-04T18:22:02.782
+C Minor\scomment\stypo\scorrections.\s\sSimplify\san\sassert.\s\sNo\sfunctional\schanges.
+D 2011-04-04T20:40:22.086
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -143,7 +143,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 8af9fcc75708d60b88636ccba38b4a7b3c155c3e
-F src/main.c 14c019b381b76ea378ee8629d1ed861a3899e075
+F src/main.c 83cb6a9f1404d59b4dc06ef58cf20401ac1f2261
 F src/malloc.c 92d59a007d7a42857d4e9454aa25b6b703286be1
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 00bd8265c81abb665c48fea1e0c234eb3b922206
@@ -180,7 +180,7 @@ F src/select.c d24406c45dd2442eb2eeaac413439066b149c944
 F src/shell.c 9dc0b4bb59290c0a35256d278cab0f314987ad6a
 F src/sqlite.h.in e047f69a61d604d4f8be6cf1d1bdfc68be9ba7e5
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
-F src/sqliteInt.h 9a944a2d9b12b30b186a0f1236a97eb01f1e50bb
+F src/sqliteInt.h 4db35e6a25a424d40bf19b0a818f3e9c78e9e7e2
 F src/sqliteLimit.h a17dcd3fb775d63b64a43a55c54cb282f9726f44
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -243,7 +243,7 @@ F src/vdbeaux.c e1ea6edc07b4f33a339cc45a2fbe0a36067d2d8b
 F src/vdbeblob.c c3ccb7c8732858c680f442932e66ad06bb036562
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
 F src/vdbetrace.c 3ba13bc32bdf16d2bdea523245fd16736bed67b5
-F src/vtab.c 672f8dadd6ce9ab984af81e3dfb1b5b38715e7b7
+F src/vtab.c b0abc931f95af94c9ffdf9f747eb191cda953123
 F src/wal.c 7334009b396285b658a95a3b6bc6d2b016a1f794
 F src/wal.h 7a5fbb00114b7f2cd40c7e1003d4c41ce9d26840
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
@@ -926,7 +926,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1e1a23cc56563d512b28288256c34f05ea15b4aa
-R 977144757d60ff253970ffcce55b348e
+P ae8374af057b6e6546e9265148cfffe32fcb0849
+R b2220f2e44fb0854f9cc6a8a89a03fab
 U drh
-Z 03b0de28f2209300e8cd6e160282b5b5
+Z 3ca4bebd3aef258bcff81de8a689c390
