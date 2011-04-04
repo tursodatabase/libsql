@@ -169,6 +169,8 @@ foreach {testprefix do_wal_checkpoint} {
     sql2 { ATTACH 'test.db2' AS aux }
     sql3 { ATTACH 'test.db2' AS aux }
     sql1 {
+      PRAGMA aux.auto_vacuum = 0;
+      PRAGMA main.auto_vacuum = 0;
       PRAGMA main.page_size=1024; PRAGMA main.journal_mode=WAL;
       PRAGMA aux.page_size=1024;  PRAGMA aux.journal_mode=WAL;
     }
@@ -309,6 +311,7 @@ foreach {testprefix do_wal_checkpoint} {
     
     do_test 3.$tn.1 {
       sql1 {
+        PRAGMA auto_vacuum = 0;
         PRAGMA journal_mode = WAL;
         PRAGMA synchronous = normal;
         CREATE TABLE t1(x, y);

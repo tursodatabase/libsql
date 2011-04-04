@@ -7990,7 +7990,7 @@ int sqlite3BtreeIsInBackup(Btree *p){
 **
 ** Just before the shared-btree is closed, the function passed as the 
 ** xFree argument when the memory allocation was made is invoked on the 
-** blob of allocated memory. This function should not call sqlite3_free()
+** blob of allocated memory. The xFree function should not call sqlite3_free()
 ** on the memory, the btree layer does that.
 */
 void *sqlite3BtreeSchema(Btree *p, int nBytes, void(*xFree)(void *)){

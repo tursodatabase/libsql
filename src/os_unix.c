@@ -394,10 +394,10 @@ static int unixSetSystemCall(
     /* If no zName is given, restore all system calls to their default
     ** settings and return NULL
     */
+    rc = SQLITE_OK;
     for(i=0; i<sizeof(aSyscall)/sizeof(aSyscall[0]); i++){
       if( aSyscall[i].pDefault ){
         aSyscall[i].pCurrent = aSyscall[i].pDefault;
-        rc = SQLITE_OK;
       }
     }
   }else{

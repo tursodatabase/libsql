@@ -3728,6 +3728,8 @@ static void init_all(Tcl_Interp *interp){
     extern int Sqlitemultiplex_Init(Tcl_Interp*);
     extern int SqliteSuperlock_Init(Tcl_Interp*);
     extern int SqlitetestSyscall_Init(Tcl_Interp*);
+    extern int Sqlitetestfuzzer_Init(Tcl_Interp*);
+    extern int Sqlitetestwholenumber_Init(Tcl_Interp*);
 #if defined(SQLITE_ENABLE_SESSION) && defined(SQLITE_ENABLE_PREUPDATE_HOOK)
     extern int TestSession_Init(Tcl_Interp*);
 #endif
@@ -3768,6 +3770,8 @@ static void init_all(Tcl_Interp *interp){
     Sqlitemultiplex_Init(interp);
     SqliteSuperlock_Init(interp);
     SqlitetestSyscall_Init(interp);
+    Sqlitetestfuzzer_Init(interp);
+    Sqlitetestwholenumber_Init(interp);
 #if defined(SQLITE_ENABLE_SESSION) && defined(SQLITE_ENABLE_PREUPDATE_HOOK)
     TestSession_Init(interp);
 #endif

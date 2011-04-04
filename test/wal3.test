@@ -413,6 +413,7 @@ testvfs T -default 1
 do_test wal3-6.1.1 {
   file delete -force test.db test.db-journal test.db wal
   sqlite3 db test.db
+  execsql { PRAGMA auto_vacuum = off }
   execsql { PRAGMA journal_mode = WAL }
   execsql {
     CREATE TABLE t1(a, b);
@@ -494,6 +495,7 @@ do_test wal3-6.2.1 {
   file delete -force test.db test.db-journal test.db wal
   sqlite3 db test.db
   sqlite3 db2 test.db
+  execsql { PRAGMA auto_vacuum = off }
   execsql { PRAGMA journal_mode = WAL }
   execsql {
     CREATE TABLE t1(a, b);
@@ -617,6 +619,7 @@ do_test wal3-8.1 {
   sqlite3 db test.db
   sqlite3 db2 test.db
   execsql {
+    PRAGMA auto_vacuum = off;
     PRAGMA journal_mode = WAL;
     CREATE TABLE b(c);
     INSERT INTO b VALUES('Tehran');

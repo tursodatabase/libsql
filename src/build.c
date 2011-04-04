@@ -148,7 +148,7 @@ void sqlite3FinishCoding(Parse *pParse){
     ** on each used database.
     */
     if( pParse->cookieGoto>0 ){
-      tAttachMask mask;
+      yDbMask mask;
       int iDb;
       sqlite3VdbeJumpHere(v, pParse->cookieGoto-1);
       for(iDb=0, mask=1; iDb<db->nDb; mask<<=1, iDb++){
@@ -3444,12 +3444,12 @@ void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
   }
   if( iDb>=0 ){
     sqlite3 *db = pToplevel->db;
-    tAttachMask mask;
+    yDbMask mask;
 
     assert( iDb<db->nDb );
     assert( db->aDb[iDb].pBt!=0 || iDb==1 );
     assert( iDb<SQLITE_MAX_ATTACHED+2 );
-    mask = ((tAttachMask)1)<<iDb;
+    mask = ((yDbMask)1)<<iDb;
     if( (pToplevel->cookieMask & mask)==0 ){
       pToplevel->cookieMask |= mask;
       pToplevel->cookieValue[iDb] = db->aDb[iDb].pSchema->schema_cookie;
@@ -3476,7 +3476,7 @@ void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
 void sqlite3BeginWriteOperation(Parse *pParse, int setStatement, int iDb){
   Parse *pToplevel = sqlite3ParseToplevel(pParse);
   sqlite3CodeVerifySchema(pParse, iDb);
-  pToplevel->writeMask |= ((tAttachMask)1)<<iDb;
+  pToplevel->writeMask |= ((yDbMask)1)<<iDb;
   pToplevel->isMultiWrite |= setStatement;
 }
 

@@ -238,6 +238,7 @@ TESTSRC = \
   $(TOP)/src/test_demovfs.c \
   $(TOP)/src/test_devsym.c \
   $(TOP)/src/test_func.c \
+  $(TOP)/src/test_fuzzer.c \
   $(TOP)/src/test_hexio.c \
   $(TOP)/src/test_init.c \
   $(TOP)/src/test_intarray.c \
@@ -258,7 +259,8 @@ TESTSRC = \
   $(TOP)/src/test_tclvar.c \
   $(TOP)/src/test_thread.c \
   $(TOP)/src/test_vfs.c \
-  $(TOP)/src/test_wsd.c 
+  $(TOP)/src/test_wholenumber.c \
+  $(TOP)/src/test_wsd.c
 
 #TESTSRC += $(TOP)/ext/fts2/fts2_tokenizer.c
 #TESTSRC += $(TOP)/ext/fts3/fts3_tokenizer.c

@@ -18,7 +18,7 @@ source $testdir/tester.tcl
 
 # There is nothing to test if ANALYZE is disable for this build.
 #
-ifcapable {!analyze} {
+ifcapable {!analyze||!vtab} {
   finish_test
   return
 }
@@ -26,23 +26,15 @@ ifcapable {!analyze} {
 # Generate some test data
 #
 do_test analyze7-1.0 {
+  register_wholenumber_module db
   execsql {
-    CREATE TABLE sequence(x INTEGER PRIMARY KEY);
-    INSERT INTO sequence VALUES(1);
-    INSERT INTO sequence VALUES(2);
-    INSERT INTO sequence SELECT x+2 FROM sequence;
-    INSERT INTO sequence SELECT x+4 FROM sequence;
-    INSERT INTO sequence SELECT x+8 FROM sequence;
-    INSERT INTO sequence SELECT x+16 FROM sequence;
-    INSERT INTO sequence SELECT x+32 FROM sequence;
-    INSERT INTO sequence SELECT x+64 FROM sequence;
-    INSERT INTO sequence SELECT x+128 FROM sequence;
-    INSERT INTO sequence SELECT x+256 FROM sequence;
     CREATE TABLE t1(a,b,c,d);
     CREATE INDEX t1a ON t1(a);
     CREATE INDEX t1b ON t1(b);
     CREATE INDEX t1cd ON t1(c,d);
-    INSERT INTO t1 SELECT x, x, x/100, x FROM sequence;
+    CREATE VIRTUAL TABLE nums USING wholenumber;
+    INSERT INTO t1 SELECT value, value, value/100, value FROM nums
+                    WHERE value BETWEEN 1 AND 256;
     EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE a=123;
   }
 } {0 0 0 {SEARCH TABLE t1 USING INDEX t1a (a=?) (~10 rows)}}
@@ -87,9 +79,22 @@ do_test analyze7-3.0 {
 do_test analyze7-3.1 {
   execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE b=123;}
 } {0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b=?) (~10 rows)}}
-do_test analyze7-3.2 {
-  execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE c=2;}
-} {0 0 0 {SEARCH TABLE t1 USING INDEX t1cd (c=?) (~102 rows)}}
+do_test analyze7-3.2.1 {
+  execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE c=?;}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX t1cd (c=?) (~86 rows)}}
+ifcapable stat2 {
+  # If ENABLE_STAT2 is defined, SQLite comes up with a different estimated
+  # row count for (c=2) than it does for (c=?).
+  do_test analyze7-3.2.2 {
+    execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE c=2;}
+  } {0 0 0 {SEARCH TABLE t1 USING INDEX t1cd (c=?) (~102 rows)}}
+} else {
+  # If ENABLE_STAT2 is not defined, the expected row count for (c=2) is the
+  # same as that for (c=?).
+  do_test analyze7-3.2.3 {
+    execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE c=2;}
+  } {0 0 0 {SEARCH TABLE t1 USING INDEX t1cd (c=?) (~86 rows)}}
+}
 do_test analyze7-3.3 {
   execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE a=123 AND b=123}
 } {0 0 0 {SEARCH TABLE t1 USING INDEX t1a (a=?) (~1 rows)}}

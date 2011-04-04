@@ -133,6 +133,7 @@ if {[permutation] != "inmemory_journal"} {
     faultsim_restore_and_reopen
   } -body {
     execsql {
+      PRAGMA auto_vacuum = 0;
       PRAGMA journal_mode = WAL;
       CREATE TABLE t1(a PRIMARY KEY, b);
       INSERT INTO t1 VALUES('a', 'b');
@@ -523,6 +524,7 @@ do_faultsim_test walfault-13.3 -prep {
 do_test walfault-14-pre {
   faultsim_delete_and_reopen
   execsql {
+    PRAGMA auto_vacuum = 0;
     PRAGMA journal_mode = WAL;
     BEGIN;
       CREATE TABLE abc(a PRIMARY KEY);

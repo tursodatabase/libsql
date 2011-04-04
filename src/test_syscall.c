@@ -214,6 +214,12 @@ static int ts_open(const char *zFile, int flags, int mode){
 */
 static int ts_close(int fd){
   if( tsIsFail() ){
+    /* Even if simulating an error, close the original file-descriptor. 
+    ** This is to stop the test process from running out of file-descriptors
+    ** when running a long test. If a call to close() appears to fail, SQLite
+    ** never attempts to use the file-descriptor afterwards (or even to close
+    ** it a second time).  */
+    orig_close(fd);
     return -1;
   }
   return orig_close(fd);
@@ -593,6 +599,24 @@ static int test_syscall_list(
   return TCL_OK;
 }
 
+static int test_syscall_defaultvfs(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_vfs *pVfs; 
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 2, objv, "");
+    return TCL_ERROR;
+  }
+
+  pVfs = sqlite3_vfs_find(0);
+  Tcl_SetObjResult(interp, Tcl_NewStringObj(pVfs->zName, -1));
+  return TCL_OK;
+}
+
 static int test_syscall(
   void * clientData,
   Tcl_Interp *interp,
@@ -603,13 +627,14 @@ static int test_syscall(
     const char *zName;
     Tcl_ObjCmdProc *xCmd;
   } aCmd[] = {
-    { "fault",     test_syscall_fault },
-    { "install",   test_syscall_install },
-    { "uninstall", test_syscall_uninstall },
-    { "reset",     test_syscall_reset },
-    { "errno",     test_syscall_errno },
-    { "exists",    test_syscall_exists },
-    { "list",      test_syscall_list },
+    { "fault",      test_syscall_fault },
+    { "install",    test_syscall_install },
+    { "uninstall",  test_syscall_uninstall },
+    { "reset",      test_syscall_reset },
+    { "errno",      test_syscall_errno },
+    { "exists",     test_syscall_exists },
+    { "list",       test_syscall_list },
+    { "defaultvfs", test_syscall_defaultvfs },
     { 0, 0 }
   };
   int iCmd;
