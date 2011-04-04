@@ -978,6 +978,8 @@ static u32 mutexCounterSum(Vdbe *p){
       cntSum += sqlite3BtreeMutexCounter(aDb[i].pBt);
     }
   }
+#else
+  UNUSED_PARAMETER(p);
 #endif
   return cntSum;
 }
@@ -1017,6 +1019,8 @@ void sqlite3VdbeEnter(Vdbe *p){
     }
   }
   p->iMutexCounter = mutexCounterSum(p);
+#else
+  UNUSED_PARAMETER(p);
 #endif
 }
 
@@ -1041,6 +1045,8 @@ void sqlite3VdbeLeave(Vdbe *p){
       sqlite3BtreeLeave(aDb[i].pBt);
     }
   }
+#else
+  UNUSED_PARAMETER(p);
 #endif
 }
 
@@ -1065,6 +1071,8 @@ void sqlite3VdbeLeave(Vdbe *p){
 void sqlite3VdbeMutexResync(Vdbe *p){
 #if !defined(SQLITE_OMIT_SHARED_CACHE) && defined(SQLITE_DEBUG)
   p->iMutexCounter = mutexCounterSum(p);
+#else
+  UNUSED_PARAMETER(p);
 #endif
 }
 

@@ -1,5 +1,5 @@
-C Remove\sthe\sBtreeMutexArray\sobject\s-\suse\sthe\sVdbe.btreeMask\sfield\sto\saccomplish\nthe\ssame\sresult.\s\sAdd\sa\sgeneration\scounter\sto\sbtree\smutexes\sin\sorder\sto\sassert\nthat\smutexes\sare\snever\stemporarily\sdropped\sover\sa\srange\sof\sinstructions\sin\sorder\nto\sdo\sdeadlock\savoidance\sin\ssome\ssubroutine.\s\sLock\sall\sbtrees\sin\sany\sVdbe\nprogram\sthat\suses\sOP_ParseSchema.
-D 2011-04-04T00:14:43.936
+C Suppress\sunused\sparameter\swarnings\sin\ssqlite3VdbeEnter()\sand\srelated\sroutines.
+D 2011-04-04T03:27:16.245
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -239,7 +239,7 @@ F src/vdbe.c e4d83957b4d102d542fb249bb46c7b55cbb67e4f
 F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
 F src/vdbeInt.h 7e2f028ecc1a9faa6f253e7aa8d89cae03662bae
 F src/vdbeapi.c a09ad9164cafc505250d5dd6b69660c960f1308c
-F src/vdbeaux.c 1a98cc953a316739c3e9a2930ae0eee517d37def
+F src/vdbeaux.c 010e4e67a5a577451b0220ea8903c9e279a43248
 F src/vdbeblob.c c3ccb7c8732858c680f442932e66ad06bb036562
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
 F src/vdbetrace.c 3ba13bc32bdf16d2bdea523245fd16736bed67b5
@@ -926,7 +926,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e2a09ea73c76a0bec1e09d1fc11092517e3ebdf9
-R 5eec5b6c06a45dcfcec6cc2765ee2ab8
+P d81708f7d1eee399bfe76f6b8dac950a85dc2582
+R a4fe05a3c45b7dfebc2c0e1b1ce8761a
 U drh
-Z 9f8e37bd1010a379addad04d1c835970
+Z 802ab81287251956931cb7c1ec2989a0
