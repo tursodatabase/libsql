@@ -1,5 +1,5 @@
-C Changes\sto\soserror.test\sand\ssyscall.test\sso\sthat\sthey\swork\swith\sthe\sin-memory\sjournal\spermutation\stest.
-D 2011-04-04T07:05:38.773
+C Move\sthe\sexpired-statement\stest\sfor\sOP_Function\suntil\safter\sall\smemory\shas\nbeen\sfreed.\s\sThe\stest\sis\sstill\scommented\sout,\showever.
+D 2011-04-04T12:29:20.265
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -235,7 +235,7 @@ F src/update.c 81911be16ece3c3e7716aa18565b4814ec41f8b9
 F src/utf.c d83650c3ea08f7407bd9d0839d9885241c209c60
 F src/util.c cd997077bad039efc0597eb027c929658f93c018
 F src/vacuum.c 924bd1bcee2dfb05376f79845bd3b4cec7b54b2f
-F src/vdbe.c e4d83957b4d102d542fb249bb46c7b55cbb67e4f
+F src/vdbe.c 6488f759929602cbc3acea5e9c7c10e2d2cd00ed
 F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
 F src/vdbeInt.h 7e2f028ecc1a9faa6f253e7aa8d89cae03662bae
 F src/vdbeapi.c a09ad9164cafc505250d5dd6b69660c960f1308c
@@ -926,7 +926,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f8e98ab3062a6e56924a86e8f3204c30d0f3d906
-R f1bbd3f7ef415e82a6c1a2591a207c23
-U dan
-Z 67d15952b786647f2d72d97293a23816
+P 4e996f36c73c5e768a954394fcbbf5e17576c807
+R 4c64876ffe2c0a670add1f1b62152ed8
+U drh
+Z badc0ef9dd3fcc800ebaf4f50ec0d36c

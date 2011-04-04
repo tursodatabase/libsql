@@ -1405,17 +1405,6 @@ case OP_Function: {
     goto no_mem;
   }
 
-  /* The app-defined function has done something that as caused this
-  ** statement to expire.  (Perhaps the function called sqlite3_exec()
-  ** with a CREATE TABLE statement.)
-  */
-#if 0
-  if( p->expired ){
-    rc = SQLITE_ABORT;
-    break;
-  }
-#endif
-
   /* If any auxiliary data functions have been called by this user function,
   ** immediately call the destructor for any non-static values.
   */
@@ -1437,6 +1426,15 @@ case OP_Function: {
   if( sqlite3VdbeMemTooBig(pOut) ){
     goto too_big;
   }
+
+#if 0
+  /* The app-defined function has done something that as caused this
+  ** statement to expire.  (Perhaps the function called sqlite3_exec()
+  ** with a CREATE TABLE statement.)
+  */
+  if( p->expired ) rc = SQLITE_ABORT;
+#endif
+
   REGISTER_TRACE(pOp->p3, pOut);
   UPDATE_MAX_BLOBSIZE(pOut);
   break;
