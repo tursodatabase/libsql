@@ -280,7 +280,7 @@ static int winMutexTry(sqlite3_mutex *p){
 #endif
 #ifdef SQLITE_DEBUG
   if( rc==SQLITE_OK && p->trace ){
-    printf("enter mutex %p (%d) with nRef=%d\n", p, p->trace, p->nRef);
+    printf("try mutex %p (%d) with nRef=%d\n", p, p->trace, p->nRef);
   }
 #endif
   return rc;

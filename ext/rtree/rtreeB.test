@@ -1,0 +1,34 @@
+# 2011 March 2
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# Make sure the rtreenode() testing function can handle entries with
+# 64-bit rowids.
+# 
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+} 
+source $testdir/tester.tcl
+ifcapable !rtree { finish_test ; return }
+
+do_test rtreeB-1.1 {
+  db eval {
+    CREATE VIRTUAL TABLE t1 USING rtree(ii, x0, y0, x1, y1);
+    INSERT INTO t1 VALUES(1073741824, 0.0, 0.0, 100.0, 100.0);
+    INSERT INTO t1 VALUES(2147483646, 0.0, 0.0, 200.0, 200.0);
+    INSERT INTO t1 VALUES(4294967296, 0.0, 0.0, 300.0, 300.0);
+    INSERT INTO t1 VALUES(8589934592, 20.0, 20.0, 150.0, 150.0);
+    INSERT INTO t1 VALUES(9223372036854775807, 150, 150, 400, 400);
+    SELECT rtreenode(2, data) FROM t1_node;
+  }
+} {{{1073741824 0.000000 0.000000 100.000000 100.000000} {2147483646 0.000000 0.000000 200.000000 200.000000} {4294967296 0.000000 0.000000 300.000000 300.000000} {8589934592 20.000000 20.000000 150.000000 150.000000} {9223372036854775807 150.000000 150.000000 400.000000 400.000000}}}
+
+
+finish_test

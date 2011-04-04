@@ -385,8 +385,7 @@ void sqlite3Pragma(
       sqlite3VdbeChangeP1(v, addr+1, iDb);
       sqlite3VdbeChangeP1(v, addr+6, SQLITE_DEFAULT_CACHE_SIZE);
     }else{
-      int size = sqlite3Atoi(zRight);
-      if( size<0 ) size = -size;
+      int size = sqlite3AbsInt32(sqlite3Atoi(zRight));
       sqlite3BeginWriteOperation(pParse, 0, iDb);
       sqlite3VdbeAddOp2(v, OP_Integer, size, 1);
       sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, BTREE_DEFAULT_CACHE_SIZE, 1);
@@ -696,8 +695,7 @@ void sqlite3Pragma(
       i64 cacheSize = pDb->pSchema->cache_size;
       returnSingleInt(pParse, "cache_size", &cacheSize);
     }else{
-      int size = sqlite3Atoi(zRight);
-      if( size<0 ) size = -size;
+      int size = sqlite3AbsInt32(sqlite3Atoi(zRight));
       pDb->pSchema->cache_size = size;
       sqlite3BtreeSetCacheSize(pDb->pBt, pDb->pSchema->cache_size);
     }
@@ -1390,13 +1388,29 @@ void sqlite3Pragma(
 
 #ifndef SQLITE_OMIT_WAL
   /*
-  **   PRAGMA [database.]wal_checkpoint
+  **   PRAGMA [database.]wal_checkpoint = passive|full|restart
   **
   ** Checkpoint the database.
   */
   if( sqlite3StrICmp(zLeft, "wal_checkpoint")==0 ){
+    int iBt = (pId2->z?iDb:SQLITE_MAX_ATTACHED);
+    int eMode = SQLITE_CHECKPOINT_PASSIVE;
+    if( zRight ){
+      if( sqlite3StrICmp(zRight, "full")==0 ){
+        eMode = SQLITE_CHECKPOINT_FULL;
+      }else if( sqlite3StrICmp(zRight, "restart")==0 ){
+        eMode = SQLITE_CHECKPOINT_RESTART;
+      }
+    }
     if( sqlite3ReadSchema(pParse) ) goto pragma_out;
-    sqlite3VdbeAddOp3(v, OP_Checkpoint, pId2->z?iDb:SQLITE_MAX_ATTACHED, 0, 0);
+    sqlite3VdbeSetNumCols(v, 3);
+    pParse->nMem = 3;
+    sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "busy", SQLITE_STATIC);
+    sqlite3VdbeSetColName(v, 1, COLNAME_NAME, "log", SQLITE_STATIC);
+    sqlite3VdbeSetColName(v, 2, COLNAME_NAME, "checkpointed", SQLITE_STATIC);
+
+    sqlite3VdbeAddOp3(v, OP_Checkpoint, iBt, eMode, 1);
+    sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 3);
   }else
 
   /*

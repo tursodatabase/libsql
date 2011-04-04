@@ -152,14 +152,16 @@ do_test attach-1.18 {
     ATTACH 'test.db' as db11;
   }
 } {0 {}}
-do_test attach-1.19 {
-  catchsql {
-    ATTACH 'test.db' as db12;
-  }
-} {1 {too many attached databases - max 10}}
-do_test attach-1.19.1 {
-  db errorcode
-} {1}
+if {$SQLITE_MAX_ATTACHED==10} {
+  do_test attach-1.19 {
+    catchsql {
+      ATTACH 'test.db' as db12;
+    }
+  } {1 {too many attached databases - max 10}}
+  do_test attach-1.19.1 {
+    db errorcode
+  } {1}
+}
 do_test attach-1.20.1 {
   execsql {
     DETACH db5;
@@ -179,14 +181,16 @@ do_test attach-1.21 {
     ATTACH 'test.db' as db12;
   }
 } {0 {}}
-do_test attach-1.22 {
-  catchsql {
-    ATTACH 'test.db' as db13;
-  }
-} {1 {too many attached databases - max 10}}
-do_test attach-1.22.1 {
-  db errorcode
-} {1}
+if {$SQLITE_MAX_ATTACHED==10} {
+  do_test attach-1.22 {
+    catchsql {
+      ATTACH 'test.db' as db13;
+    }
+  } {1 {too many attached databases - max 10}}
+  do_test attach-1.22.1 {
+    db errorcode
+  } {1}
+}
 do_test attach-1.23 {
   catchsql {
     DETACH "db14";
@@ -836,4 +840,5 @@ do_test attach-10.2 {
     PRAGMA database_list;
   }] 9 end
 } {4 noname {} 5 inmem {}}
+
 finish_test

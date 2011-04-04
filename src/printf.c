@@ -400,7 +400,11 @@ void sqlite3VXPrintf(
             v = va_arg(ap,int);
           }
           if( v<0 ){
-            longvalue = -v;
+            if( v==SMALLEST_INT64 ){
+              longvalue = ((u64)1)<<63;
+            }else{
+              longvalue = -v;
+            }
             prefix = '-';
           }else{
             longvalue = v;

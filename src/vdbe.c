@@ -571,7 +571,7 @@ int sqlite3VdbeExec(
   /*** INSERT STACK UNION HERE ***/
 
   assert( p->magic==VDBE_MAGIC_RUN );  /* sqlite3_step() verifies this */
-  sqlite3VdbeMutexArrayEnter(p);
+  sqlite3VdbeEnter(p);
   if( p->rc==SQLITE_NOMEM ){
     /* This happens if a malloc() inside a call to sqlite3_column_text() or
     ** sqlite3_column_text16() failed.  */
@@ -1246,19 +1246,12 @@ case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
     iA = pIn1->u.i;
     iB = pIn2->u.i;
     switch( pOp->opcode ){
-      case OP_Add:         iB += iA;       break;
-      case OP_Subtract:    iB -= iA;       break;
-      case OP_Multiply:    iB *= iA;       break;
+      case OP_Add:       if( sqlite3AddInt64(&iB,iA) ) goto fp_math;  break;
+      case OP_Subtract:  if( sqlite3SubInt64(&iB,iA) ) goto fp_math;  break;
+      case OP_Multiply:  if( sqlite3MulInt64(&iB,iA) ) goto fp_math;  break;
       case OP_Divide: {
         if( iA==0 ) goto arithmetic_result_is_null;
-        /* Dividing the largest possible negative 64-bit integer (1<<63) by 
-        ** -1 returns an integer too large to store in a 64-bit data-type. On
-        ** some architectures, the value overflows to (1<<63). On others,
-        ** a SIGFPE is issued. The following statement normalizes this
-        ** behavior so that all architectures behave as if integer 
-        ** overflow occurred.
-        */
-        if( iA==-1 && iB==SMALLEST_INT64 ) iA = 1;
+        if( iA==-1 && iB==SMALLEST_INT64 ) goto fp_math;
         iB /= iA;
         break;
       }
@@ -1272,6 +1265,7 @@ case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
     pOut->u.i = iB;
     MemSetTypeFlag(pOut, MEM_Int);
   }else{
+fp_math:
     rA = sqlite3VdbeRealValue(pIn1);
     rB = sqlite3VdbeRealValue(pIn2);
     switch( pOp->opcode ){
@@ -1400,6 +1394,7 @@ case OP_Function: {
     ctx.pColl = pOp[-1].p4.pColl;
   }
   (*ctx.pFunc->xFunc)(&ctx, n, apVal); /* IMP: R-24505-23230 */
+  sqlite3VdbeMutexResync(p);
   if( db->mallocFailed ){
     /* Even though a malloc() has failed, the implementation of the
     ** user function may have called an sqlite3_result_XXX() function
@@ -1431,6 +1426,15 @@ case OP_Function: {
   if( sqlite3VdbeMemTooBig(pOut) ){
     goto too_big;
   }
+
+#if 0
+  /* The app-defined function has done something that as caused this
+  ** statement to expire.  (Perhaps the function called sqlite3_exec()
+  ** with a CREATE TABLE statement.)
+  */
+  if( p->expired ) rc = SQLITE_ABORT;
+#endif
+
   REGISTER_TRACE(pOp->p3, pOut);
   UPDATE_MAX_BLOBSIZE(pOut);
   break;
@@ -1466,8 +1470,10 @@ case OP_BitAnd:                 /* same as TK_BITAND, in1, in2, out3 */
 case OP_BitOr:                  /* same as TK_BITOR, in1, in2, out3 */
 case OP_ShiftLeft:              /* same as TK_LSHIFT, in1, in2, out3 */
 case OP_ShiftRight: {           /* same as TK_RSHIFT, in1, in2, out3 */
-  i64 a;
-  i64 b;
+  i64 iA;
+  u64 uA;
+  i64 iB;
+  u8 op;
 
   pIn1 = &aMem[pOp->p1];
   pIn2 = &aMem[pOp->p2];
@@ -1476,16 +1482,38 @@ case OP_ShiftRight: {           /* same as TK_RSHIFT, in1, in2, out3 */
     sqlite3VdbeMemSetNull(pOut);
     break;
   }
-  a = sqlite3VdbeIntValue(pIn2);
-  b = sqlite3VdbeIntValue(pIn1);
-  switch( pOp->opcode ){
-    case OP_BitAnd:      a &= b;     break;
-    case OP_BitOr:       a |= b;     break;
-    case OP_ShiftLeft:   a <<= b;    break;
-    default:  assert( pOp->opcode==OP_ShiftRight );
-                         a >>= b;    break;
+  iA = sqlite3VdbeIntValue(pIn2);
+  iB = sqlite3VdbeIntValue(pIn1);
+  op = pOp->opcode;
+  if( op==OP_BitAnd ){
+    iA &= iB;
+  }else if( op==OP_BitOr ){
+    iA |= iB;
+  }else if( iB!=0 ){
+    assert( op==OP_ShiftRight || op==OP_ShiftLeft );
+
+    /* If shifting by a negative amount, shift in the other direction */
+    if( iB<0 ){
+      assert( OP_ShiftRight==OP_ShiftLeft+1 );
+      op = 2*OP_ShiftLeft + 1 - op;
+      iB = iB>(-64) ? -iB : 64;
+    }
+
+    if( iB>=64 ){
+      iA = (iA>=0 || op==OP_ShiftLeft) ? 0 : -1;
+    }else{
+      memcpy(&uA, &iA, sizeof(uA));
+      if( op==OP_ShiftLeft ){
+        uA <<= iB;
+      }else{
+        uA >>= iB;
+        /* Sign-extend on a right shift of a negative number */
+        if( iA<0 ) uA |= ((((u64)0xffffffff)<<32)|0xffffffff) << (64-iB);
+      }
+      memcpy(&iA, &uA, sizeof(iA));
+    }
   }
-  pOut->u.i = a;
+  pOut->u.i = iA;
   MemSetTypeFlag(pOut, MEM_Int);
   break;
 }
@@ -2411,7 +2439,6 @@ case OP_MakeRecord: {
   */
   nData = 0;         /* Number of bytes of data space */
   nHdr = 0;          /* Number of bytes of header space */
-  nByte = 0;         /* Data space required for this record */
   nZero = 0;         /* Number of zero bytes at the end of the record */
   nField = pOp->p1;
   zAffinity = pOp->p4.z;
@@ -2633,6 +2660,7 @@ case OP_Savepoint: {
         if( p1==SAVEPOINT_ROLLBACK && (db->flags&SQLITE_InternChanges)!=0 ){
           sqlite3ExpirePreparedStatements(db);
           sqlite3ResetInternalSchema(db, 0);
+          sqlite3VdbeMutexResync(p);
           db->flags = (db->flags | SQLITE_InternChanges);
         }
       }
@@ -2772,7 +2800,7 @@ case OP_Transaction: {
   Btree *pBt;
 
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
-  assert( (p->btreeMask & (1<<pOp->p1))!=0 );
+  assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
   pBt = db->aDb[pOp->p1].pBt;
 
   if( pBt ){
@@ -2828,7 +2856,7 @@ case OP_ReadCookie: {               /* out2-prerelease */
   assert( pOp->p3<SQLITE_N_BTREE_META );
   assert( iDb>=0 && iDb<db->nDb );
   assert( db->aDb[iDb].pBt!=0 );
-  assert( (p->btreeMask & (1<<iDb))!=0 );
+  assert( (p->btreeMask & (((yDbMask)1)<<iDb))!=0 );
 
   sqlite3BtreeGetMeta(db->aDb[iDb].pBt, iCookie, (u32 *)&iMeta);
   pOut->u.i = iMeta;
@@ -2849,7 +2877,7 @@ case OP_SetCookie: {       /* in3 */
   Db *pDb;
   assert( pOp->p2<SQLITE_N_BTREE_META );
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
-  assert( (p->btreeMask & (1<<pOp->p1))!=0 );
+  assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
   pDb = &db->aDb[pOp->p1];
   assert( pDb->pBt!=0 );
   pIn3 = &aMem[pOp->p3];
@@ -2873,10 +2901,12 @@ case OP_SetCookie: {       /* in3 */
   break;
 }
 
-/* Opcode: VerifyCookie P1 P2 *
+/* Opcode: VerifyCookie P1 P2 P3 * *
 **
 ** Check the value of global database parameter number 0 (the
-** schema version) and make sure it is equal to P2.  
+** schema version) and make sure it is equal to P2 and that the
+** generation counter on the local schema parse equals P3.
+**
 ** P1 is the database number which is 0 for the main database file
 ** and 1 for the file holding temporary tables and some higher number
 ** for auxiliary databases.
@@ -2891,16 +2921,19 @@ case OP_SetCookie: {       /* in3 */
 */
 case OP_VerifyCookie: {
   int iMeta;
+  int iGen;
   Btree *pBt;
+
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
-  assert( (p->btreeMask & (1<<pOp->p1))!=0 );
+  assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
   pBt = db->aDb[pOp->p1].pBt;
   if( pBt ){
     sqlite3BtreeGetMeta(pBt, BTREE_SCHEMA_VERSION, (u32 *)&iMeta);
+    iGen = db->aDb[pOp->p1].pSchema->iGeneration;
   }else{
     iMeta = 0;
   }
-  if( iMeta!=pOp->p2 ){
+  if( iMeta!=pOp->p2 || iGen!=pOp->p3 ){
     sqlite3DbFree(db, p->zErrMsg);
     p->zErrMsg = sqlite3DbStrDup(db, "database schema has changed");
     /* If the schema-cookie from the database file matches the cookie 
@@ -2918,9 +2951,10 @@ case OP_VerifyCookie: {
     */
     if( db->aDb[pOp->p1].pSchema->schema_cookie!=iMeta ){
       sqlite3ResetInternalSchema(db, pOp->p1);
+      sqlite3VdbeMutexResync(p);
     }
 
-    sqlite3ExpirePreparedStatements(db);
+    p->expired = 1;
     rc = SQLITE_SCHEMA;
   }
   break;
@@ -2996,7 +3030,7 @@ case OP_OpenWrite: {
   p2 = pOp->p2;
   iDb = pOp->p3;
   assert( iDb>=0 && iDb<db->nDb );
-  assert( (p->btreeMask & (1<<iDb))!=0 );
+  assert( (p->btreeMask & (((yDbMask)1)<<iDb))!=0 );
   pDb = &db->aDb[iDb];
   pX = pDb->pBt;
   assert( pX!=0 );
@@ -3685,7 +3719,6 @@ case OP_NewRowid: {           /* out2-prerelease */
     ** and try again, up to 100 times.
     */
     assert( pC->isTable );
-    cnt = 0;
 
 #ifdef SQLITE_32BIT_ROWID
 #   define MAX_ROWID 0x7fffffff
@@ -4492,7 +4525,7 @@ case OP_Destroy: {     /* out2-prerelease */
   }else{
     iDb = pOp->p3;
     assert( iCnt==1 );
-    assert( (p->btreeMask & (1<<iDb))!=0 );
+    assert( (p->btreeMask & (((yDbMask)1)<<iDb))!=0 );
     rc = sqlite3BtreeDropTable(db->aDb[iDb].pBt, pOp->p1, &iMoved);
     pOut->flags = MEM_Int;
     pOut->u.i = iMoved;
@@ -4528,7 +4561,7 @@ case OP_Clear: {
   int nChange;
  
   nChange = 0;
-  assert( (p->btreeMask & (1<<pOp->p2))!=0 );
+  assert( (p->btreeMask & (((yDbMask)1)<<pOp->p2))!=0 );
   rc = sqlite3BtreeClearTable(
       db->aDb[pOp->p2].pBt, pOp->p1, (pOp->p3 ? &nChange : 0)
   );
@@ -4573,7 +4606,7 @@ case OP_CreateTable: {          /* out2-prerelease */
 
   pgno = 0;
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
-  assert( (p->btreeMask & (1<<pOp->p1))!=0 );
+  assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
   pDb = &db->aDb[pOp->p1];
   assert( pDb->pBt!=0 );
   if( pOp->opcode==OP_CreateTable ){
@@ -4587,14 +4620,10 @@ case OP_CreateTable: {          /* out2-prerelease */
   break;
 }
 
-/* Opcode: ParseSchema P1 P2 * P4 *
+/* Opcode: ParseSchema P1 * * P4 *
 **
 ** Read and parse all entries from the SQLITE_MASTER table of database P1
-** that match the WHERE clause P4.  P2 is the "force" flag.   Always do
-** the parsing if P2 is true.  If P2 is false, then this routine is a
-** no-op if the schema is not currently loaded.  In other words, if P2
-** is false, the SQLITE_MASTER table is only parsed if the rest of the
-** schema is already loaded into the symbol table.
+** that match the WHERE clause P4. 
 **
 ** This opcode invokes the parser to create a new virtual machine,
 ** then runs the new virtual machine.  It is thus a re-entrant opcode.
@@ -4605,33 +4634,22 @@ case OP_ParseSchema: {
   char *zSql;
   InitData initData;
 
+  /* Any prepared statement that invokes this opcode will hold mutexes
+  ** on every btree.  This is a prerequisite for invoking 
+  ** sqlite3InitCallback().
+  */
+#ifdef SQLITE_DEBUG
+  for(iDb=0; iDb<db->nDb; iDb++){
+    assert( iDb==1 || sqlite3BtreeHoldsMutex(db->aDb[iDb].pBt) );
+  }
+#endif
+  assert( p->btreeMask == ~(yDbMask)0 );
+
+
   iDb = pOp->p1;
   assert( iDb>=0 && iDb<db->nDb );
-
-  /* If pOp->p2 is 0, then this opcode is being executed to read a
-  ** single row, for example the row corresponding to a new index
-  ** created by this VDBE, from the sqlite_master table. It only
-  ** does this if the corresponding in-memory schema is currently
-  ** loaded. Otherwise, the new index definition can be loaded along
-  ** with the rest of the schema when it is required.
-  **
-  ** Although the mutex on the BtShared object that corresponds to
-  ** database iDb (the database containing the sqlite_master table
-  ** read by this instruction) is currently held, it is necessary to
-  ** obtain the mutexes on all attached databases before checking if
-  ** the schema of iDb is loaded. This is because, at the start of
-  ** the sqlite3_exec() call below, SQLite will invoke 
-  ** sqlite3BtreeEnterAll(). If all mutexes are not already held, the
-  ** iDb mutex may be temporarily released to avoid deadlock. If 
-  ** this happens, then some other thread may delete the in-memory 
-  ** schema of database iDb before the SQL statement runs. The schema
-  ** will not be reloaded becuase the db->init.busy flag is set. This
-  ** can result in a "no such table: sqlite_master" or "malformed
-  ** database schema" error being returned to the user.
-  */
-  assert( sqlite3BtreeHoldsMutex(db->aDb[iDb].pBt) );
-  sqlite3BtreeEnterAll(db);
-  if( pOp->p2 || DbHasProperty(db, iDb, DB_SchemaLoaded) ){
+  assert( DbHasProperty(db, iDb, DB_SchemaLoaded) );
+  /* Used to be a conditional */ {
     zMaster = SCHEMA_TABLE(iDb);
     initData.db = db;
     initData.iDb = pOp->p1;
@@ -4652,7 +4670,6 @@ case OP_ParseSchema: {
       db->init.busy = 0;
     }
   }
-  sqlite3BtreeLeaveAll(db);
   if( rc==SQLITE_NOMEM ){
     goto no_mem;
   }
@@ -4753,7 +4770,7 @@ case OP_IntegrityCk: {
   }
   aRoot[j] = 0;
   assert( pOp->p5<db->nDb );
-  assert( (p->btreeMask & (1<<pOp->p5))!=0 );
+  assert( (p->btreeMask & (((yDbMask)1)<<pOp->p5))!=0 );
   z = sqlite3BtreeIntegrityCheck(db->aDb[pOp->p5].pBt, aRoot, nRoot,
                                  (int)pnErr->u.i, &nErr);
   sqlite3DbFree(db, aRoot);
@@ -5177,11 +5194,25 @@ case OP_AggStep: {
     ctx.pColl = pOp[-1].p4.pColl;
   }
   (ctx.pFunc->xStep)(&ctx, n, apVal); /* IMP: R-24505-23230 */
+  sqlite3VdbeMutexResync(p);
   if( ctx.isError ){
     sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3_value_text(&ctx.s));
     rc = ctx.isError;
   }
+
+  /* The app-defined function has done something that as caused this
+  ** statement to expire.  (Perhaps the function called sqlite3_exec()
+  ** with a CREATE TABLE statement.)
+  */
+#if 0
+  if( p->expired ){
+    rc = SQLITE_ABORT;
+    break;
+  }
+#endif
+
   sqlite3VdbeMemRelease(&ctx.s);
+
   break;
 }
 
@@ -5203,8 +5234,11 @@ case OP_AggFinal: {
   pMem = &aMem[pOp->p1];
   assert( (pMem->flags & ~(MEM_Null|MEM_Agg))==0 );
   rc = sqlite3VdbeMemFinalize(pMem, pOp->p4.pFunc);
+  sqlite3VdbeMutexResync(p);
   if( rc ){
     sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3_value_text(pMem));
+  }else if( p->expired ){
+    rc = SQLITE_ABORT;
   }
   sqlite3VdbeChangeEncoding(pMem, encoding);
   UPDATE_MAX_BLOBSIZE(pMem);
@@ -5215,13 +5249,36 @@ case OP_AggFinal: {
 }
 
 #ifndef SQLITE_OMIT_WAL
-/* Opcode: Checkpoint P1 * * * *
+/* Opcode: Checkpoint P1 P2 P3 * *
 **
 ** Checkpoint database P1. This is a no-op if P1 is not currently in
-** WAL mode.
+** WAL mode. Parameter P2 is one of SQLITE_CHECKPOINT_PASSIVE, FULL
+** or RESTART.  Write 1 or 0 into mem[P3] if the checkpoint returns
+** SQLITE_BUSY or not, respectively.  Write the number of pages in the
+** WAL after the checkpoint into mem[P3+1] and the number of pages
+** in the WAL that have been checkpointed after the checkpoint
+** completes into mem[P3+2].  However on an error, mem[P3+1] and
+** mem[P3+2] are initialized to -1.
 */
 case OP_Checkpoint: {
-  rc = sqlite3Checkpoint(db, pOp->p1);
+  int i;                          /* Loop counter */
+  int aRes[3];                    /* Results */
+  Mem *pMem;                      /* Write results here */
+
+  aRes[0] = 0;
+  aRes[1] = aRes[2] = -1;
+  assert( pOp->p2==SQLITE_CHECKPOINT_PASSIVE
+       || pOp->p2==SQLITE_CHECKPOINT_FULL
+       || pOp->p2==SQLITE_CHECKPOINT_RESTART
+  );
+  rc = sqlite3Checkpoint(db, pOp->p1, pOp->p2, &aRes[1], &aRes[2]);
+  if( rc==SQLITE_BUSY ){
+    rc = SQLITE_OK;
+    aRes[0] = 1;
+  }
+  for(i=0, pMem = &aMem[pOp->p3]; i<3; i++, pMem++){
+    sqlite3VdbeMemSetInt64(pMem, (i64)aRes[i]);
+  }    
   break;
 };  
 #endif
@@ -5258,7 +5315,7 @@ case OP_JournalMode: {    /* out2-prerelease */
 
   /* This opcode is used in two places: PRAGMA journal_mode and ATTACH.
   ** In PRAGMA journal_mode, the sqlite3VdbeUsesBtree() routine is called
-  ** when the statment is prepared and so p->aMutex.nMutex>0.  All mutexes
+  ** when the statement is prepared and so p->btreeMask!=0.  All mutexes
   ** are already acquired.  But when used in ATTACH, sqlite3VdbeUsesBtree()
   ** is not called when the statement is prepared because it requires the
   ** iDb index of the database as a parameter, and the database has not
@@ -5267,12 +5324,11 @@ case OP_JournalMode: {    /* out2-prerelease */
   ** No other mutexes are required by the ATTACH command so this is safe
   ** to do.
   */
-  assert( (p->btreeMask & (1<<pOp->p1))!=0 || p->aMutex.nMutex==0 );
-  if( p->aMutex.nMutex==0 ){
+  if( p->btreeMask==0 ){
     /* This occurs right after ATTACH.  Get a mutex on the newly ATTACHed
     ** database. */
     sqlite3VdbeUsesBtree(p, pOp->p1);
-    sqlite3VdbeMutexArrayEnter(p);
+    sqlite3VdbeEnter(p);
   }
 
   pBt = db->aDb[pOp->p1].pBt;
@@ -5372,7 +5428,7 @@ case OP_IncrVacuum: {        /* jump */
   Btree *pBt;
 
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
-  assert( (p->btreeMask & (1<<pOp->p1))!=0 );
+  assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
   pBt = db->aDb[pOp->p1].pBt;
   rc = sqlite3BtreeIncrVacuum(pBt);
   if( rc==SQLITE_DONE ){
@@ -5421,7 +5477,7 @@ case OP_TableLock: {
   if( isWriteLock || 0==(db->flags&SQLITE_ReadUncommitted) ){
     int p1 = pOp->p1; 
     assert( p1>=0 && p1<db->nDb );
-    assert( (p->btreeMask & (1<<p1))!=0 );
+    assert( (p->btreeMask & (((yDbMask)1)<<p1))!=0 );
     assert( isWriteLock==0 || isWriteLock==1 );
     rc = sqlite3BtreeLockTable(db->aDb[p1].pBt, pOp->p2, isWriteLock);
     if( (rc&0xFF)==SQLITE_LOCKED ){
@@ -5910,13 +5966,16 @@ vdbe_error_halt:
   sqlite3VdbeHalt(p);
   if( rc==SQLITE_IOERR_NOMEM ) db->mallocFailed = 1;
   rc = SQLITE_ERROR;
-  if( resetSchemaOnFault ) sqlite3ResetInternalSchema(db, 0);
+  if( resetSchemaOnFault ){
+    sqlite3ResetInternalSchema(db, 0);
+    sqlite3VdbeMutexResync(p);
+  }
 
   /* This is the only way out of this procedure.  We have to
   ** release the mutexes on btrees that were acquired at the
   ** top. */
 vdbe_return:
-  sqlite3BtreeMutexArrayLeave(&p->aMutex);
+  sqlite3VdbeLeave(p);
   return rc;
 
   /* Jump to here if a string or blob larger than SQLITE_MAX_LENGTH

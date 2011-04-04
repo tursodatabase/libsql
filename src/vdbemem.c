@@ -367,7 +367,7 @@ i64 sqlite3VdbeIntValue(Mem *pMem){
   }else if( flags & MEM_Real ){
     return doubleToInt64(pMem->r);
   }else if( flags & (MEM_Str|MEM_Blob) ){
-    i64 value;
+    i64 value = 0;
     assert( pMem->z || pMem->n==0 );
     testcase( pMem->z==0 );
     sqlite3Atoi64(pMem->z, &value, pMem->n, pMem->enc);
@@ -1077,11 +1077,19 @@ int sqlite3ValueFromExpr(
     /* This branch happens for multiple negative signs.  Ex: -(-5) */
     if( SQLITE_OK==sqlite3ValueFromExpr(db,pExpr->pLeft,enc,affinity,&pVal) ){
       sqlite3VdbeMemNumerify(pVal);
-      pVal->u.i = -1 * pVal->u.i;
-      /* (double)-1 In case of SQLITE_OMIT_FLOATING_POINT... */
-      pVal->r = (double)-1 * pVal->r;
+      if( pVal->u.i==SMALLEST_INT64 ){
+        pVal->flags &= MEM_Int;
+        pVal->flags |= MEM_Real;
+        pVal->r = (double)LARGEST_INT64;
+      }else{
+        pVal->u.i = -pVal->u.i;
+      }
+      pVal->r = -pVal->r;
       sqlite3ValueApplyAffinity(pVal, affinity, enc);
     }
+  }else if( op==TK_NULL ){
+    pVal = sqlite3ValueNew(db);
+    if( pVal==0 ) goto no_mem;
   }
 #ifndef SQLITE_OMIT_BLOB_LITERAL
   else if( op==TK_BLOB ){

@@ -117,8 +117,8 @@ proc do_faultsim_test {name args} {
   set DEFAULT(-prep)          ""
   set DEFAULT(-body)          ""
   set DEFAULT(-test)          ""
-  set DEFAULT(-install)          ""
-  set DEFAULT(-uninstall)          ""
+  set DEFAULT(-install)       ""
+  set DEFAULT(-uninstall)     ""
 
   fix_testname name
 

@@ -212,7 +212,7 @@ static int fts3SqlStmt(
 /* 4  */  "DELETE FROM %Q.'%q_segdir'",
 /* 5  */  "DELETE FROM %Q.'%q_docsize'",
 /* 6  */  "DELETE FROM %Q.'%q_stat'",
-/* 7  */  "SELECT * FROM %Q.'%q_content' WHERE rowid=?",
+/* 7  */  "SELECT %s FROM %Q.'%q_content' AS x WHERE rowid=?",
 /* 8  */  "SELECT (SELECT max(idx) FROM %Q.'%q_segdir' WHERE level = ?) + 1",
 /* 9  */  "INSERT INTO %Q.'%q_segments'(blockid, block) VALUES(?, ?)",
 /* 10 */  "SELECT coalesce((SELECT max(blockid) FROM %Q.'%q_segments') + 1, 1)",
@@ -229,7 +229,7 @@ static int fts3SqlStmt(
 
 /* 16 */  "DELETE FROM %Q.'%q_segdir' WHERE level = ?",
 /* 17 */  "DELETE FROM %Q.'%q_segments' WHERE blockid BETWEEN ? AND ?",
-/* 18 */  "INSERT INTO %Q.'%q_content' VALUES(%z)",
+/* 18 */  "INSERT INTO %Q.'%q_content' VALUES(%s)",
 /* 19 */  "DELETE FROM %Q.'%q_docsize' WHERE docid = ?",
 /* 20 */  "REPLACE INTO %Q.'%q_docsize' VALUES(?,?)",
 /* 21 */  "SELECT size FROM %Q.'%q_docsize' WHERE docid=?",
@@ -246,20 +246,9 @@ static int fts3SqlStmt(
   if( !pStmt ){
     char *zSql;
     if( eStmt==SQL_CONTENT_INSERT ){
-      int i;                      /* Iterator variable */  
-      char *zVarlist;             /* The "?, ?, ..." string */
-      zVarlist = (char *)sqlite3_malloc(2*p->nColumn+2);
-      if( !zVarlist ){
-        *pp = 0;
-        return SQLITE_NOMEM;
-      }
-      zVarlist[0] = '?';
-      zVarlist[p->nColumn*2+1] = '\0';
-      for(i=1; i<=p->nColumn; i++){
-        zVarlist[i*2-1] = ',';
-        zVarlist[i*2] = '?';
-      }
-      zSql = sqlite3_mprintf(azSql[eStmt], p->zDb, p->zName, zVarlist);
+      zSql = sqlite3_mprintf(azSql[eStmt], p->zDb, p->zName, p->zWriteExprlist);
+    }else if( eStmt==SQL_SELECT_CONTENT_BY_ROWID ){
+      zSql = sqlite3_mprintf(azSql[eStmt], p->zReadExprlist, p->zDb, p->zName);
     }else{
       zSql = sqlite3_mprintf(azSql[eStmt], p->zDb, p->zName);
     }
@@ -300,7 +289,7 @@ static int fts3SelectDocsize(
       sqlite3_bind_int64(pStmt, 1, iDocid);
     }
     rc = sqlite3_step(pStmt);
-    if( rc!=SQLITE_ROW ){
+    if( rc!=SQLITE_ROW || sqlite3_column_type(pStmt, 0)!=SQLITE_BLOB ){
       rc = sqlite3_reset(pStmt);
       if( rc==SQLITE_OK ) rc = SQLITE_CORRUPT;
       pStmt = 0;
@@ -401,8 +390,17 @@ int sqlite3Fts3ReadLock(Fts3Table *p){
 **   3: end_block
 **   4: root
 */
-int sqlite3Fts3AllSegdirs(Fts3Table *p, sqlite3_stmt **ppStmt){
-  return fts3SqlStmt(p, SQL_SELECT_ALL_LEVEL, ppStmt, 0);
+int sqlite3Fts3AllSegdirs(Fts3Table *p, int iLevel, sqlite3_stmt **ppStmt){
+  int rc;
+  sqlite3_stmt *pStmt = 0;
+  if( iLevel<0 ){
+    rc = fts3SqlStmt(p, SQL_SELECT_ALL_LEVEL, &pStmt, 0);
+  }else{
+    rc = fts3SqlStmt(p, SQL_SELECT_LEVEL, &pStmt, 0);
+    if( rc==SQLITE_OK ) sqlite3_bind_int(pStmt, 1, iLevel);
+  }
+  *ppStmt = pStmt;
+  return rc;
 }
 
 
@@ -1104,16 +1102,18 @@ int sqlite3Fts3SegReaderCost(
       sqlite3_stmt *pStmt;
       sqlite3_int64 nDoc = 0;
       sqlite3_int64 nByte = 0;
+      const char *pEnd;
       const char *a;
+
       rc = sqlite3Fts3SelectDoctotal(p, &pStmt);
-      if( rc ) return rc;
+      if( rc!=SQLITE_OK ) return rc;
       a = sqlite3_column_blob(pStmt, 0);
-      if( a ){
-        const char *pEnd = &a[sqlite3_column_bytes(pStmt, 0)];
-        a += sqlite3Fts3GetVarint(a, &nDoc);
-        while( a<pEnd ){
-          a += sqlite3Fts3GetVarint(a, &nByte);
-        }
+      assert( a );
+
+      pEnd = &a[sqlite3_column_bytes(pStmt, 0)];
+      a += sqlite3Fts3GetVarint(a, &nDoc);
+      while( a<pEnd ){
+        a += sqlite3Fts3GetVarint(a, &nByte);
       }
       if( nDoc==0 || nByte==0 ){
         sqlite3_reset(pStmt);
@@ -1301,42 +1301,6 @@ int sqlite3Fts3SegReaderPending(
   }
   *ppReader = pReader;
   return rc;
-}
-
-
-/*
-** The second argument to this function is expected to be a statement of
-** the form:
-**
-**   SELECT 
-**     idx,                  -- col 0
-**     start_block,          -- col 1
-**     leaves_end_block,     -- col 2
-**     end_block,            -- col 3
-**     root                  -- col 4
-**   FROM %_segdir ...
-**
-** This function allocates and initializes a Fts3SegReader structure to
-** iterate through the terms stored in the segment identified by the
-** current row that pStmt is pointing to. 
-**
-** If successful, the Fts3SegReader is left pointing to the first term
-** in the segment and SQLITE_OK is returned. Otherwise, an SQLite error
-** code is returned.
-*/
-static int fts3SegReaderNew(
-  sqlite3_stmt *pStmt,            /* See above */
-  int iAge,                       /* Segment "age". */
-  Fts3SegReader **ppReader        /* OUT: Allocated Fts3SegReader */
-){
-  return sqlite3Fts3SegReaderNew(iAge, 
-      sqlite3_column_int64(pStmt, 1),
-      sqlite3_column_int64(pStmt, 2),
-      sqlite3_column_int64(pStmt, 3),
-      sqlite3_column_blob(pStmt, 4),
-      sqlite3_column_bytes(pStmt, 4),
-      ppReader
-  );
 }
 
 /*
@@ -1944,25 +1908,6 @@ static int fts3IsEmpty(Fts3Table *p, sqlite3_value **apVal, int *pisEmpty){
 }
 
 /*
-** Set *pnSegment to the number of segments of level iLevel in the database.
-**
-** Return SQLITE_OK if successful, or an SQLite error code if not.
-*/
-static int fts3SegmentCount(Fts3Table *p, int iLevel, int *pnSegment){
-  sqlite3_stmt *pStmt;
-  int rc;
-
-  assert( iLevel>=0 );
-  rc = fts3SqlStmt(p, SQL_SELECT_LEVEL_COUNT, &pStmt, 0);
-  if( rc!=SQLITE_OK ) return rc;
-  sqlite3_bind_int(pStmt, 1, iLevel);
-  if( SQLITE_ROW==sqlite3_step(pStmt) ){
-    *pnSegment = sqlite3_column_int(pStmt, 0);
-  }
-  return sqlite3_reset(pStmt);
-}
-
-/*
 ** Set *pnSegment to the total number of segments in the database. Set
 ** *pnMax to the largest segment level in the database (segment levels
 ** are stored in the 'level' column of the %_segdir table).
@@ -2020,15 +1965,18 @@ static int fts3DeleteSegdir(
     return rc;
   }
 
-  if( iLevel>=0 ){
+  if( iLevel==FTS3_SEGCURSOR_ALL ){
+    fts3SqlExec(&rc, p, SQL_DELETE_ALL_SEGDIR, 0);
+  }else if( iLevel==FTS3_SEGCURSOR_PENDING ){
+    sqlite3Fts3PendingTermsClear(p);
+  }else{
+    assert( iLevel>=0 );
     rc = fts3SqlStmt(p, SQL_DELETE_SEGDIR_BY_LEVEL, &pDelete, 0);
     if( rc==SQLITE_OK ){
       sqlite3_bind_int(pDelete, 1, iLevel);
       sqlite3_step(pDelete);
       rc = sqlite3_reset(pDelete);
     }
-  }else{
-    fts3SqlExec(&rc, p, SQL_DELETE_ALL_SEGDIR, 0);
   }
 
   return rc;
@@ -2077,85 +2025,15 @@ static void fts3ColumnFilter(
   *pnList = nList;
 }
 
-/*
-** sqlite3Fts3SegReaderIterate() callback used when merging multiple 
-** segments to create a single, larger segment.
-*/
-static int fts3MergeCallback(
-  Fts3Table *p,                   /* FTS3 Virtual table handle */
-  void *pContext,                 /* Pointer to SegmentWriter* to write with */
-  char *zTerm,                    /* Term to write to the db */
-  int nTerm,                      /* Number of bytes in zTerm */
-  char *aDoclist,                 /* Doclist associated with zTerm */
-  int nDoclist                    /* Number of bytes in doclist */
-){
-  SegmentWriter **ppW = (SegmentWriter **)pContext;
-  return fts3SegWriterAdd(p, ppW, 1, zTerm, nTerm, aDoclist, nDoclist);
-}
-
-/*
-** sqlite3Fts3SegReaderIterate() callback used when flushing the contents
-** of the pending-terms hash table to the database.
-*/
-static int fts3FlushCallback(
-  Fts3Table *p,                   /* FTS3 Virtual table handle */
-  void *pContext,                 /* Pointer to SegmentWriter* to write with */
-  char *zTerm,                    /* Term to write to the db */
-  int nTerm,                      /* Number of bytes in zTerm */
-  char *aDoclist,                 /* Doclist associated with zTerm */
-  int nDoclist                    /* Number of bytes in doclist */
-){
-  SegmentWriter **ppW = (SegmentWriter **)pContext;
-  return fts3SegWriterAdd(p, ppW, 0, zTerm, nTerm, aDoclist, nDoclist);
-}
-
-/*
-** This function is used to iterate through a contiguous set of terms 
-** stored in the full-text index. It merges data contained in one or 
-** more segments to support this.
-**
-** The second argument is passed an array of pointers to SegReader objects
-** allocated with sqlite3Fts3SegReaderNew(). This function merges the range 
-** of terms selected by each SegReader. If a single term is present in
-** more than one segment, the associated doclists are merged. For each
-** term and (possibly merged) doclist in the merged range, the callback
-** function xFunc is invoked with its arguments set as follows.
-**
-**   arg 0: Copy of 'p' parameter passed to this function
-**   arg 1: Copy of 'pContext' parameter passed to this function
-**   arg 2: Pointer to buffer containing term
-**   arg 3: Size of arg 2 buffer in bytes
-**   arg 4: Pointer to buffer containing doclist
-**   arg 5: Size of arg 2 buffer in bytes
-**
-** The 4th argument to this function is a pointer to a structure of type
-** Fts3SegFilter, defined in fts3Int.h. The contents of this structure
-** further restrict the range of terms that callbacks are made for and
-** modify the behaviour of this function. See comments above structure
-** definition for details.
-*/
-int sqlite3Fts3SegReaderIterate(
+int sqlite3Fts3SegReaderStart(
   Fts3Table *p,                   /* Virtual table handle */
-  Fts3SegReader **apSegment,      /* Array of Fts3SegReader objects */
-  int nSegment,                   /* Size of apSegment array */
-  Fts3SegFilter *pFilter,         /* Restrictions on range of iteration */
-  int (*xFunc)(Fts3Table *, void *, char *, int, char *, int),  /* Callback */
-  void *pContext                  /* Callback context (2nd argument) */
+  Fts3SegReaderCursor *pCsr,      /* Cursor object */
+  Fts3SegFilter *pFilter          /* Restrictions on range of iteration */
 ){
-  int i;                          /* Iterator variable */
-  char *aBuffer = 0;              /* Buffer to merge doclists in */
-  int nAlloc = 0;                 /* Allocated size of aBuffer buffer */
-  int rc = SQLITE_OK;             /* Return code */
+  int i;
 
-  int isIgnoreEmpty =  (pFilter->flags & FTS3_SEGMENT_IGNORE_EMPTY);
-  int isRequirePos =   (pFilter->flags & FTS3_SEGMENT_REQUIRE_POS);
-  int isColFilter =    (pFilter->flags & FTS3_SEGMENT_COLUMN_FILTER);
-  int isPrefix =       (pFilter->flags & FTS3_SEGMENT_PREFIX);
-
-  /* If there are zero segments, this function is a no-op. This scenario
-  ** comes about only when reading from an empty database.
-  */
-  if( nSegment==0 ) goto finished;
+  /* Initialize the cursor object */
+  pCsr->pFilter = pFilter;
 
   /* If the Fts3SegFilter defines a specific term (or term prefix) to search 
   ** for, then advance each segment iterator until it points to a term of
@@ -2163,21 +2041,59 @@ int sqlite3Fts3SegReaderIterate(
   ** unnecessary merge/sort operations for the case where single segment
   ** b-tree leaf nodes contain more than one term.
   */
-  for(i=0; i<nSegment; i++){
+  for(i=0; i<pCsr->nSegment; i++){
     int nTerm = pFilter->nTerm;
     const char *zTerm = pFilter->zTerm;
-    Fts3SegReader *pSeg = apSegment[i];
+    Fts3SegReader *pSeg = pCsr->apSegment[i];
     do {
-      rc = fts3SegReaderNext(p, pSeg);
-      if( rc!=SQLITE_OK ) goto finished;
+      int rc = fts3SegReaderNext(p, pSeg);
+      if( rc!=SQLITE_OK ) return rc;
     }while( zTerm && fts3SegReaderTermCmp(pSeg, zTerm, nTerm)<0 );
   }
+  fts3SegReaderSort(
+      pCsr->apSegment, pCsr->nSegment, pCsr->nSegment, fts3SegReaderCmp);
 
-  fts3SegReaderSort(apSegment, nSegment, nSegment, fts3SegReaderCmp);
-  while( apSegment[0]->aNode ){
-    int nTerm = apSegment[0]->nTerm;
-    char *zTerm = apSegment[0]->zTerm;
-    int nMerge = 1;
+  return SQLITE_OK;
+}
+
+int sqlite3Fts3SegReaderStep(
+  Fts3Table *p,                   /* Virtual table handle */
+  Fts3SegReaderCursor *pCsr       /* Cursor object */
+){
+  int rc = SQLITE_OK;
+
+  int isIgnoreEmpty =  (pCsr->pFilter->flags & FTS3_SEGMENT_IGNORE_EMPTY);
+  int isRequirePos =   (pCsr->pFilter->flags & FTS3_SEGMENT_REQUIRE_POS);
+  int isColFilter =    (pCsr->pFilter->flags & FTS3_SEGMENT_COLUMN_FILTER);
+  int isPrefix =       (pCsr->pFilter->flags & FTS3_SEGMENT_PREFIX);
+  int isScan =         (pCsr->pFilter->flags & FTS3_SEGMENT_SCAN);
+
+  Fts3SegReader **apSegment = pCsr->apSegment;
+  int nSegment = pCsr->nSegment;
+  Fts3SegFilter *pFilter = pCsr->pFilter;
+
+  if( pCsr->nSegment==0 ) return SQLITE_OK;
+
+  do {
+    int nMerge;
+    int i;
+  
+    /* Advance the first pCsr->nAdvance entries in the apSegment[] array
+    ** forward. Then sort the list in order of current term again.  
+    */
+    for(i=0; i<pCsr->nAdvance; i++){
+      rc = fts3SegReaderNext(p, apSegment[i]);
+      if( rc!=SQLITE_OK ) return rc;
+    }
+    fts3SegReaderSort(apSegment, nSegment, pCsr->nAdvance, fts3SegReaderCmp);
+    pCsr->nAdvance = 0;
+
+    /* If all the seg-readers are at EOF, we're finished. return SQLITE_OK. */
+    assert( rc==SQLITE_OK );
+    if( apSegment[0]->aNode==0 ) break;
+
+    pCsr->nTerm = apSegment[0]->nTerm;
+    pCsr->zTerm = apSegment[0]->zTerm;
 
     /* If this is a prefix-search, and if the term that apSegment[0] points
     ** to does not share a suffix with pFilter->zTerm/nTerm, then all 
@@ -2186,35 +2102,36 @@ int sqlite3Fts3SegReaderIterate(
     ** Similarly, if this is a search for an exact match, and the first term
     ** of segment apSegment[0] is not a match, exit early.
     */
-    if( pFilter->zTerm ){
-      if( nTerm<pFilter->nTerm 
-       || (!isPrefix && nTerm>pFilter->nTerm)
-       || memcmp(zTerm, pFilter->zTerm, pFilter->nTerm) 
-    ){
-        goto finished;
+    if( pFilter->zTerm && !isScan ){
+      if( pCsr->nTerm<pFilter->nTerm 
+       || (!isPrefix && pCsr->nTerm>pFilter->nTerm)
+       || memcmp(pCsr->zTerm, pFilter->zTerm, pFilter->nTerm) 
+      ){
+        break;
       }
     }
 
+    nMerge = 1;
     while( nMerge<nSegment 
         && apSegment[nMerge]->aNode
-        && apSegment[nMerge]->nTerm==nTerm 
-        && 0==memcmp(zTerm, apSegment[nMerge]->zTerm, nTerm)
+        && apSegment[nMerge]->nTerm==pCsr->nTerm 
+        && 0==memcmp(pCsr->zTerm, apSegment[nMerge]->zTerm, pCsr->nTerm)
     ){
       nMerge++;
     }
 
     assert( isIgnoreEmpty || (isRequirePos && !isColFilter) );
     if( nMerge==1 && !isIgnoreEmpty ){
-      Fts3SegReader *p0 = apSegment[0];
-      rc = xFunc(p, pContext, zTerm, nTerm, p0->aDoclist, p0->nDoclist);
-      if( rc!=SQLITE_OK ) goto finished;
+      pCsr->aDoclist = apSegment[0]->aDoclist;
+      pCsr->nDoclist = apSegment[0]->nDoclist;
+      rc = SQLITE_ROW;
     }else{
       int nDoclist = 0;           /* Size of doclist */
       sqlite3_int64 iPrev = 0;    /* Previous docid stored in doclist */
 
       /* The current term of the first nMerge entries in the array
       ** of Fts3SegReader objects is the same. The doclists must be merged
-      ** and a single term added to the new segment.
+      ** and a single term returned with the merged doclist.
       */
       for(i=0; i<nMerge; i++){
         fts3SegReaderFirstDocid(apSegment[i]);
@@ -2242,52 +2159,55 @@ int sqlite3Fts3SegReaderIterate(
 
         if( !isIgnoreEmpty || nList>0 ){
           nByte = sqlite3Fts3VarintLen(iDocid-iPrev) + (isRequirePos?nList+1:0);
-          if( nDoclist+nByte>nAlloc ){
+          if( nDoclist+nByte>pCsr->nBuffer ){
             char *aNew;
-            nAlloc = (nDoclist+nByte)*2;
-            aNew = sqlite3_realloc(aBuffer, nAlloc);
+            pCsr->nBuffer = (nDoclist+nByte)*2;
+            aNew = sqlite3_realloc(pCsr->aBuffer, pCsr->nBuffer);
             if( !aNew ){
-              rc = SQLITE_NOMEM;
-              goto finished;
+              return SQLITE_NOMEM;
             }
-            aBuffer = aNew;
+            pCsr->aBuffer = aNew;
           }
-          nDoclist += sqlite3Fts3PutVarint(&aBuffer[nDoclist], iDocid-iPrev);
+          nDoclist += sqlite3Fts3PutVarint(
+              &pCsr->aBuffer[nDoclist], iDocid-iPrev
+          );
           iPrev = iDocid;
           if( isRequirePos ){
-            memcpy(&aBuffer[nDoclist], pList, nList);
+            memcpy(&pCsr->aBuffer[nDoclist], pList, nList);
             nDoclist += nList;
-            aBuffer[nDoclist++] = '\0';
+            pCsr->aBuffer[nDoclist++] = '\0';
           }
         }
 
         fts3SegReaderSort(apSegment, nMerge, j, fts3SegReaderDoclistCmp);
       }
-
       if( nDoclist>0 ){
-        rc = xFunc(p, pContext, zTerm, nTerm, aBuffer, nDoclist);
-        if( rc!=SQLITE_OK ) goto finished;
+        pCsr->aDoclist = pCsr->aBuffer;
+        pCsr->nDoclist = nDoclist;
+        rc = SQLITE_ROW;
       }
     }
+    pCsr->nAdvance = nMerge;
+  }while( rc==SQLITE_OK );
 
-    /* If there is a term specified to filter on, and this is not a prefix
-    ** search, return now. The callback that corresponds to the required
-    ** term (if such a term exists in the index) has already been made.
-    */
-    if( pFilter->zTerm && !isPrefix ){
-      goto finished;
-    }
-
-    for(i=0; i<nMerge; i++){
-      rc = fts3SegReaderNext(p, apSegment[i]);
-      if( rc!=SQLITE_OK ) goto finished;
-    }
-    fts3SegReaderSort(apSegment, nSegment, nMerge, fts3SegReaderCmp);
-  }
-
- finished:
-  sqlite3_free(aBuffer);
   return rc;
+}
+
+void sqlite3Fts3SegReaderFinish(
+  Fts3SegReaderCursor *pCsr       /* Cursor object */
+){
+  if( pCsr ){
+    int i;
+    for(i=0; i<pCsr->nSegment; i++){
+      sqlite3Fts3SegReaderFree(pCsr->apSegment[i]);
+    }
+    sqlite3_free(pCsr->apSegment);
+    sqlite3_free(pCsr->aBuffer);
+
+    pCsr->nSegment = 0;
+    pCsr->apSegment = 0;
+    pCsr->aBuffer = 0;
+  }
 }
 
 /*
@@ -2302,100 +2222,60 @@ int sqlite3Fts3SegReaderIterate(
 ** an SQLite error code is returned.
 */
 static int fts3SegmentMerge(Fts3Table *p, int iLevel){
-  int i;                          /* Iterator variable */
   int rc;                         /* Return code */
-  int iIdx;                       /* Index of new segment */
+  int iIdx = 0;                   /* Index of new segment */
   int iNewLevel = 0;              /* Level to create new segment at */
-  sqlite3_stmt *pStmt = 0;
-  SegmentWriter *pWriter = 0;
-  int nSegment = 0;               /* Number of segments being merged */
-  Fts3SegReader **apSegment = 0;  /* Array of Segment iterators */
-  Fts3SegReader *pPending = 0;    /* Iterator for pending-terms */
+  SegmentWriter *pWriter = 0;     /* Used to write the new, merged, segment */
   Fts3SegFilter filter;           /* Segment term filter condition */
+  Fts3SegReaderCursor csr;        /* Cursor to iterate through level(s) */
 
-  if( iLevel<0 ){
+  rc = sqlite3Fts3SegReaderCursor(p, iLevel, 0, 0, 1, 0, &csr);
+  if( rc!=SQLITE_OK || csr.nSegment==0 ) goto finished;
+
+  if( iLevel==FTS3_SEGCURSOR_ALL ){
     /* This call is to merge all segments in the database to a single
     ** segment. The level of the new segment is equal to the the numerically 
     ** greatest segment level currently present in the database. The index
-    ** of the new segment is always 0.
-    */
-    iIdx = 0;
-    rc = sqlite3Fts3SegReaderPending(p, 0, 0, 1, &pPending);
-    if( rc!=SQLITE_OK ) goto finished;
-    rc = fts3SegmentCountMax(p, &nSegment, &iNewLevel);
-    if( rc!=SQLITE_OK ) goto finished;
-    nSegment += (pPending!=0);
-    if( nSegment<=1 ){
-      return SQLITE_DONE;
+    ** of the new segment is always 0.  */
+    int nDummy; /* TODO: Remove this */
+    if( csr.nSegment==1 ){
+      rc = SQLITE_DONE;
+      goto finished;
     }
+    rc = fts3SegmentCountMax(p, &nDummy, &iNewLevel);
   }else{
     /* This call is to merge all segments at level iLevel. Find the next
     ** available segment index at level iLevel+1. The call to
     ** fts3AllocateSegdirIdx() will merge the segments at level iLevel+1 to 
-    ** a single iLevel+2 segment if necessary.
-    */
+    ** a single iLevel+2 segment if necessary.  */
     iNewLevel = iLevel+1;
     rc = fts3AllocateSegdirIdx(p, iNewLevel, &iIdx);
-    if( rc!=SQLITE_OK ) goto finished;
-    rc = fts3SegmentCount(p, iLevel, &nSegment);
-    if( rc!=SQLITE_OK ) goto finished;
   }
-  assert( nSegment>0 );
+  if( rc!=SQLITE_OK ) goto finished;
+  assert( csr.nSegment>0 );
   assert( iNewLevel>=0 );
-
-  /* Allocate space for an array of pointers to segment iterators. */
-  apSegment = (Fts3SegReader**)sqlite3_malloc(sizeof(Fts3SegReader *)*nSegment);
-  if( !apSegment ){
-    rc = SQLITE_NOMEM;
-    goto finished;
-  }
-  memset(apSegment, 0, sizeof(Fts3SegReader *)*nSegment);
-
-  /* Allocate a Fts3SegReader structure for each segment being merged. A 
-  ** Fts3SegReader stores the state data required to iterate through all 
-  ** entries on all leaves of a single segment. 
-  */
-  assert( SQL_SELECT_LEVEL+1==SQL_SELECT_ALL_LEVEL);
-  rc = fts3SqlStmt(p, SQL_SELECT_LEVEL+(iLevel<0), &pStmt, 0);
-  if( rc!=SQLITE_OK ) goto finished;
-  sqlite3_bind_int(pStmt, 1, iLevel);
-  for(i=0; SQLITE_ROW==(sqlite3_step(pStmt)); i++){
-    rc = fts3SegReaderNew(pStmt, i, &apSegment[i]);
-    if( rc!=SQLITE_OK ){
-      goto finished;
-    }
-  }
-  rc = sqlite3_reset(pStmt);
-  if( pPending ){
-    apSegment[i] = pPending;
-    pPending = 0;
-  }
-  pStmt = 0;
-  if( rc!=SQLITE_OK ) goto finished;
 
   memset(&filter, 0, sizeof(Fts3SegFilter));
   filter.flags = FTS3_SEGMENT_REQUIRE_POS;
-  filter.flags |= (iLevel<0 ? FTS3_SEGMENT_IGNORE_EMPTY : 0);
-  rc = sqlite3Fts3SegReaderIterate(p, apSegment, nSegment,
-      &filter, fts3MergeCallback, (void *)&pWriter
-  );
-  if( rc!=SQLITE_OK ) goto finished;
+  filter.flags |= (iLevel==FTS3_SEGCURSOR_ALL ? FTS3_SEGMENT_IGNORE_EMPTY : 0);
 
-  rc = fts3DeleteSegdir(p, iLevel, apSegment, nSegment);
-  if( rc==SQLITE_OK ){
-    rc = fts3SegWriterFlush(p, pWriter, iNewLevel, iIdx);
+  rc = sqlite3Fts3SegReaderStart(p, &csr, &filter);
+  while( SQLITE_OK==rc ){
+    rc = sqlite3Fts3SegReaderStep(p, &csr);
+    if( rc!=SQLITE_ROW ) break;
+    rc = fts3SegWriterAdd(p, &pWriter, 1, 
+        csr.zTerm, csr.nTerm, csr.aDoclist, csr.nDoclist);
   }
+  if( rc!=SQLITE_OK ) goto finished;
+  assert( pWriter );
+
+  rc = fts3DeleteSegdir(p, iLevel, csr.apSegment, csr.nSegment);
+  if( rc!=SQLITE_OK ) goto finished;
+  rc = fts3SegWriterFlush(p, pWriter, iNewLevel, iIdx);
 
  finished:
   fts3SegWriterFree(pWriter);
-  if( apSegment ){
-    for(i=0; i<nSegment; i++){
-      sqlite3Fts3SegReaderFree(apSegment[i]);
-    }
-    sqlite3_free(apSegment);
-  }
-  sqlite3Fts3SegReaderFree(pPending);
-  sqlite3_reset(pStmt);
+  sqlite3Fts3SegReaderFinish(&csr);
   return rc;
 }
 
@@ -2404,55 +2284,7 @@ static int fts3SegmentMerge(Fts3Table *p, int iLevel){
 ** Flush the contents of pendingTerms to a level 0 segment.
 */
 int sqlite3Fts3PendingTermsFlush(Fts3Table *p){
-  int rc;                         /* Return Code */
-  int idx;                        /* Index of new segment created */
-  SegmentWriter *pWriter = 0;     /* Used to write the segment */
-  Fts3SegReader *pReader = 0;     /* Used to iterate through the hash table */
-
-  /* Allocate a SegReader object to iterate through the contents of the
-  ** pending-terms table. If an error occurs, or if there are no terms
-  ** in the pending-terms table, return immediately.
-  */
-  rc = sqlite3Fts3SegReaderPending(p, 0, 0, 1, &pReader);
-  if( rc!=SQLITE_OK || pReader==0 ){
-    return rc;
-  }
-
-  /* Determine the next index at level 0. If level 0 is already full, this
-  ** call may merge all existing level 0 segments into a single level 1
-  ** segment.
-  */
-  rc = fts3AllocateSegdirIdx(p, 0, &idx);
-
-  /* If no errors have occured, iterate through the contents of the 
-  ** pending-terms hash table using the Fts3SegReader iterator. The callback
-  ** writes each term (along with its doclist) to the database via the
-  ** SegmentWriter handle pWriter.
-  */
-  if( rc==SQLITE_OK ){
-    void *c = (void *)&pWriter;   /* SegReaderIterate() callback context */
-    Fts3SegFilter f;              /* SegReaderIterate() parameters */
-
-    memset(&f, 0, sizeof(Fts3SegFilter));
-    f.flags = FTS3_SEGMENT_REQUIRE_POS;
-    rc = sqlite3Fts3SegReaderIterate(p, &pReader, 1, &f, fts3FlushCallback, c);
-  }
-  assert( pWriter || rc!=SQLITE_OK );
-
-  /* If no errors have occured, flush the SegmentWriter object to the
-  ** database. Then delete the SegmentWriter and Fts3SegReader objects
-  ** allocated by this function.
-  */
-  if( rc==SQLITE_OK ){
-    rc = fts3SegWriterFlush(p, pWriter, 0, idx);
-  }
-  fts3SegWriterFree(pWriter);
-  sqlite3Fts3SegReaderFree(pReader);
-
-  if( rc==SQLITE_OK ){
-    sqlite3Fts3PendingTermsClear(p);
-  }
-  return rc;
+  return fts3SegmentMerge(p, FTS3_SEGCURSOR_PENDING);
 }
 
 /*
@@ -2619,7 +2451,7 @@ static int fts3SpecialInsert(Fts3Table *p, sqlite3_value *pVal){
   if( !zVal ){
     return SQLITE_NOMEM;
   }else if( nVal==8 && 0==sqlite3_strnicmp(zVal, "optimize", 8) ){
-    rc = fts3SegmentMerge(p, -1);
+    rc = fts3SegmentMerge(p, FTS3_SEGCURSOR_ALL);
     if( rc==SQLITE_DONE ){
       rc = SQLITE_OK;
     }else{
@@ -2877,7 +2709,7 @@ int sqlite3Fts3Optimize(Fts3Table *p){
   int rc;
   rc = sqlite3_exec(p->db, "SAVEPOINT fts3", 0, 0, 0);
   if( rc==SQLITE_OK ){
-    rc = fts3SegmentMerge(p, -1);
+    rc = fts3SegmentMerge(p, FTS3_SEGCURSOR_ALL);
     if( rc==SQLITE_OK ){
       rc = sqlite3_exec(p->db, "RELEASE fts3", 0, 0, 0);
       if( rc==SQLITE_OK ){

@@ -52,6 +52,7 @@ do_test minmax3-1.0 {
     INSERT INTO t1 VALUES('2', 'V',   'five');
     INSERT INTO t1 VALUES('3', 'VI',  'six');
     COMMIT;
+    PRAGMA automatic_index=OFF;
   }
 } {}
 do_test minmax3-1.1.1 {

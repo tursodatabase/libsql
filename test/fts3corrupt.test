@@ -131,5 +131,32 @@ do_catchsql_test 4.3 {
   SELECT rowid FROM t1 WHERE t1 MATCH 'world';
 } {1 {database disk image is malformed}}
 
+# Test a special kind of corruption, where the %_stat table contains
+# an invalid entry. At one point this could lead to a division-by-zero
+# error in fts4.
+#
+do_execsql_test 5.0 {
+  DROP TABLE t1;
+  CREATE VIRTUAL TABLE t1 USING fts4;
+}
+do_test 5.1 {
+  db func nn nn
+  execsql BEGIN
+  execsql { INSERT INTO t1 VALUES('one') }
+  execsql { INSERT INTO t1 VALUES('two') }
+  execsql { INSERT INTO t1 VALUES('three') }
+  execsql { INSERT INTO t1 VALUES('four') }
+  execsql COMMIT
+} {}
+do_catchsql_test 5.2 {
+  UPDATE t1_stat SET value = X'0000';
+  SELECT matchinfo(t1, 'nxa') FROM t1 WHERE t1 MATCH 't*';
+} {1 {database disk image is malformed}}
+do_catchsql_test 5.3 {
+  UPDATE t1_stat SET value = NULL;
+  SELECT matchinfo(t1, 'nxa') FROM t1 WHERE t1 MATCH 't*';
+} {1 {database disk image is malformed}}
+
+
 finish_test
 

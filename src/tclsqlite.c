@@ -2468,7 +2468,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       }else{
         pDb->zProfile = 0;
       }
-#ifndef SQLITE_OMIT_TRACE
+#if !defined(SQLITE_OMIT_TRACE) && !defined(SQLITE_OMIT_FLOATING_POINT)
       if( pDb->zProfile ){
         pDb->interp = interp;
         sqlite3_profile(pDb->db, DbProfileHandler, pDb);
@@ -2652,7 +2652,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       }else{
         pDb->zTrace = 0;
       }
-#ifndef SQLITE_OMIT_TRACE
+#if !defined(SQLITE_OMIT_TRACE) && !defined(SQLITE_OMIT_FLOATING_POINT)
       if( pDb->zTrace ){
         pDb->interp = interp;
         sqlite3_trace(pDb->db, DbTraceHandler, pDb);
@@ -3581,6 +3581,9 @@ static void init_all(Tcl_Interp *interp){
     extern int Sqlitequota_Init(Tcl_Interp*);
     extern int Sqlitemultiplex_Init(Tcl_Interp*);
     extern int SqliteSuperlock_Init(Tcl_Interp*);
+    extern int SqlitetestSyscall_Init(Tcl_Interp*);
+    extern int Sqlitetestfuzzer_Init(Tcl_Interp*);
+    extern int Sqlitetestwholenumber_Init(Tcl_Interp*);
 
 #ifdef SQLITE_ENABLE_ZIPVFS
     extern int Zipvfs_Init(Tcl_Interp*);
@@ -3618,6 +3621,9 @@ static void init_all(Tcl_Interp *interp){
     Sqlitequota_Init(interp);
     Sqlitemultiplex_Init(interp);
     SqliteSuperlock_Init(interp);
+    SqlitetestSyscall_Init(interp);
+    Sqlitetestfuzzer_Init(interp);
+    Sqlitetestwholenumber_Init(interp);
 
     Tcl_CreateObjCommand(interp,"load_testfixture_extensions",init_all_cmd,0,0);
 

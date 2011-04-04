@@ -60,7 +60,7 @@ do_execsql_test 2.1 {
 do_test 2.2 { sqlite3demo_superlock unlock test.db } {unlock}
 do_catchsql_test 2.3 { SELECT * FROM t1 }           {1 {database is locked}}
 do_catchsql_test 2.4 { INSERT INTO t1 VALUES(5, 6)} {1 {database is locked}}
-do_catchsql_test 2.5 { PRAGMA wal_checkpoint }      {1 {database is locked}}
+do_catchsql_test 2.5 { PRAGMA wal_checkpoint }      {0 {1 -1 -1}}
 do_test 2.6 { unlock } {}
 
 do_execsql_test 3.1 { INSERT INTO t1 VALUES(3, 4) } 
@@ -68,15 +68,15 @@ do_execsql_test 3.1 { INSERT INTO t1 VALUES(3, 4) }
 do_test 3.2 { sqlite3demo_superlock unlock test.db } {unlock}
 do_catchsql_test 3.3 { SELECT * FROM t1 }           {1 {database is locked}}
 do_catchsql_test 3.4 { INSERT INTO t1 VALUES(5, 6)} {1 {database is locked}}
-do_catchsql_test 3.5 { PRAGMA wal_checkpoint }      {1 {database is locked}}
+do_catchsql_test 3.5 { PRAGMA wal_checkpoint }      {0 {1 -1 -1}}
 do_test 3.6 { unlock } {}
 
-do_execsql_test 4.1 { PRAGMA wal_checkpoint } {}
+do_execsql_test 4.1 { PRAGMA wal_checkpoint } {0 2 2}
 
 do_test 4.2 { sqlite3demo_superlock unlock test.db } {unlock}
 do_catchsql_test 4.3 { SELECT * FROM t1 }           {1 {database is locked}}
 do_catchsql_test 4.4 { INSERT INTO t1 VALUES(5, 6)} {1 {database is locked}}
-do_catchsql_test 4.5 { PRAGMA wal_checkpoint }      {1 {database is locked}}
+do_catchsql_test 4.5 { PRAGMA wal_checkpoint }      {0 {1 -1 -1}}
 do_test 4.6 { unlock } {}
 
 do_multiclient_test tn {
@@ -116,7 +116,7 @@ do_multiclient_test tn {
   do_test 5.$tn.5 { 
     csql3 { INSERT INTO t1 VALUES(5, 6) } 
   } {1 {database is locked}}
-  do_test 5.$tn.6 { csql1 "PRAGMA wal_checkpoint" } {1 {database is locked}}
+  do_test 5.$tn.6 { csql1 "PRAGMA wal_checkpoint" } {0 {1 -1 -1}}
 
   do_test 5.$tn.7 { unlock } {}
 
@@ -220,7 +220,7 @@ db_swap test.db2 test.db
 do_catchsql_test 6.4 { SELECT * FROM t1 } {0 {1 2 3 4}}
 do_catchsql_test 6.5 { SELECT * FROM t2 } {1 {no such table: t2}}
 
-do_execsql_test  6.6 { PRAGMA wal_checkpoint }
+do_execsql_test  6.6 { PRAGMA wal_checkpoint } {0 0 0}
 
 db_swap test.db2 test.db
 do_catchsql_test 6.7 { SELECT * FROM t1 } {1 {no such table: t1}}

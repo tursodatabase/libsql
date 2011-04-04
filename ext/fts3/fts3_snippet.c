@@ -880,13 +880,13 @@ static int fts3ExprLocalHitsCb(
   void *pCtx                      /* Pointer to MatchInfo structure */
 ){
   MatchInfo *p = (MatchInfo *)pCtx;
+  int iStart = iPhrase * p->nCol * 3;
+  int i;
+
+  for(i=0; i<p->nCol; i++) p->aMatchinfo[iStart+i*3] = 0;
 
   if( pExpr->aDoclist ){
     char *pCsr;
-    int iStart = iPhrase * p->nCol * 3;
-    int i;
-
-    for(i=0; i<p->nCol; i++) p->aMatchinfo[iStart+i*3] = 0;
 
     pCsr = sqlite3Fts3FindPositions(pExpr, p->pCursor->iPrevId, -1);
     if( pCsr ){
@@ -960,6 +960,7 @@ static int fts3MatchinfoSelectDoctotal(
 
   a = sqlite3_column_blob(pStmt, 0);
   a += sqlite3Fts3GetVarint(a, &nDoc);
+  if( nDoc==0 ) return SQLITE_CORRUPT;
   *pnDoc = (u32)nDoc;
 
   if( paLen ) *paLen = a;
@@ -1166,9 +1167,11 @@ static int fts3MatchinfoValues(
           if( rc==SQLITE_OK ){
             int iCol;
             for(iCol=0; iCol<pInfo->nCol; iCol++){
+              u32 iVal;
               sqlite3_int64 nToken;
               a += sqlite3Fts3GetVarint(a, &nToken);
-              pInfo->aMatchinfo[iCol] = (u32)(((u32)(nToken&0xffffffff)+nDoc/2)/nDoc);
+              iVal = (u32)(((u32)(nToken&0xffffffff)+nDoc/2)/nDoc);
+              pInfo->aMatchinfo[iCol] = iVal;
             }
           }
         }

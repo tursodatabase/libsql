@@ -80,7 +80,7 @@ do_execsql_test 2.1.2 "INSERT INTO t2 VALUES('[string repeat {a } 10000]')"
 do_execsql_test 2.1.3 "INSERT INTO t2 VALUES('b [string repeat {z } 10000]')"
 do_execsql_test 2.1.4 [string repeat "INSERT INTO t2 VALUES('x');" 50]
 do_execsql_test 2.1.5 {
-  INSERT INTO t2 VALUES('a b c d e f g');
+  INSERT INTO t2 VALUES('a b c d e f g z');
   INSERT INTO t2 VALUES('a b c d e f g');
 }
 foreach {tn sql} {
@@ -92,12 +92,21 @@ foreach {tn sql} {
 } {
   execsql $sql
 
-  do_execsql_test 2.2.$tn {
+  do_execsql_test 2.2.$tn.1 {
     SELECT mit(matchinfo(t2, 'pcxnal')) FROM t2 WHERE t2 MATCH 'a b';
   } [list                                          \
-    [list 2 1  1 54 54  1 3 3  54 372 7]        \
+    [list 2 1  1 54 54  1 3 3  54 372 8]        \
     [list 2 1  1 54 54  1 3 3  54 372 7]        \
   ]
+
+  set sqlite_fts3_enable_parentheses 1
+  do_execsql_test 2.2.$tn.2 {
+    SELECT mit(matchinfo(t2, 'x')) FROM t2 WHERE t2 MATCH 'g OR (g z)';
+  } [list                                       \
+    [list 1 2 2  1 2 2   1 54 54]               \
+    [list 1 2 2  1 2 2   0 54 54]               \
+  ]
+  set sqlite_fts3_enable_parentheses 0
 }
 
 do_execsql_test 2.3.1 {

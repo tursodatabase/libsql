@@ -107,7 +107,7 @@ typedef struct Fts3PhraseToken Fts3PhraseToken;
 typedef struct Fts3SegFilter Fts3SegFilter;
 typedef struct Fts3DeferredToken Fts3DeferredToken;
 typedef struct Fts3SegReader Fts3SegReader;
-typedef struct Fts3SegReaderArray Fts3SegReaderArray;
+typedef struct Fts3SegReaderCursor Fts3SegReaderCursor;
 
 /*
 ** A connection to a fulltext index is an instance of the following
@@ -129,6 +129,9 @@ struct Fts3Table {
   ** statements is run and reset within a single virtual table API call. 
   */
   sqlite3_stmt *aStmt[24];
+
+  char *zReadExprlist;
+  char *zWriteExprlist;
 
   int nNodeSize;                  /* Soft limit for node size */
   u8 bHasStat;                    /* True if %_stat table exists */
@@ -217,7 +220,7 @@ struct Fts3PhraseToken {
   int n;                          /* Number of bytes in buffer z */
   int isPrefix;                   /* True if token ends with a "*" character */
   int bFulltext;                  /* True if full-text index was used */
-  Fts3SegReaderArray *pArray;     /* Segment-reader for this token */
+  Fts3SegReaderCursor *pSegcsr;   /* Segment-reader for this token */
   Fts3DeferredToken *pDeferred;   /* Deferred token object for this token */
 };
 
@@ -285,12 +288,8 @@ int sqlite3Fts3SegReaderNew(int, sqlite3_int64,
   sqlite3_int64, sqlite3_int64, const char *, int, Fts3SegReader**);
 int sqlite3Fts3SegReaderPending(Fts3Table*,const char*,int,int,Fts3SegReader**);
 void sqlite3Fts3SegReaderFree(Fts3SegReader *);
-int sqlite3Fts3SegReaderIterate(
-  Fts3Table *, Fts3SegReader **, int, Fts3SegFilter *,
-  int (*)(Fts3Table *, void *, char *, int, char *, int),  void *
-);
 int sqlite3Fts3SegReaderCost(Fts3Cursor *, Fts3SegReader *, int *);
-int sqlite3Fts3AllSegdirs(Fts3Table*, sqlite3_stmt **);
+int sqlite3Fts3AllSegdirs(Fts3Table*, int, sqlite3_stmt **);
 int sqlite3Fts3ReadLock(Fts3Table *);
 int sqlite3Fts3ReadBlock(Fts3Table*, sqlite3_int64, char **, int*);
 
@@ -302,14 +301,23 @@ int sqlite3Fts3DeferToken(Fts3Cursor *, Fts3PhraseToken *, int);
 int sqlite3Fts3CacheDeferredDoclists(Fts3Cursor *);
 void sqlite3Fts3FreeDeferredDoclists(Fts3Cursor *);
 char *sqlite3Fts3DeferredDoclist(Fts3DeferredToken *, int *);
-
 void sqlite3Fts3SegmentsClose(Fts3Table *);
+
+#define FTS3_SEGCURSOR_PENDING -1
+#define FTS3_SEGCURSOR_ALL     -2
+
+int sqlite3Fts3SegReaderStart(Fts3Table*, Fts3SegReaderCursor*, Fts3SegFilter*);
+int sqlite3Fts3SegReaderStep(Fts3Table *, Fts3SegReaderCursor *);
+void sqlite3Fts3SegReaderFinish(Fts3SegReaderCursor *);
+int sqlite3Fts3SegReaderCursor(
+    Fts3Table *, int, const char *, int, int, int, Fts3SegReaderCursor *);
 
 /* Flags allowed as part of the 4th argument to SegmentReaderIterate() */
 #define FTS3_SEGMENT_REQUIRE_POS   0x00000001
 #define FTS3_SEGMENT_IGNORE_EMPTY  0x00000002
 #define FTS3_SEGMENT_COLUMN_FILTER 0x00000004
 #define FTS3_SEGMENT_PREFIX        0x00000008
+#define FTS3_SEGMENT_SCAN          0x00000010
 
 /* Type passed as 4th argument to SegmentReaderIterate() */
 struct Fts3SegFilter {
@@ -317,6 +325,25 @@ struct Fts3SegFilter {
   int nTerm;
   int iCol;
   int flags;
+};
+
+struct Fts3SegReaderCursor {
+  /* Used internally by sqlite3Fts3SegReaderXXX() calls */
+  Fts3SegReader **apSegment;      /* Array of Fts3SegReader objects */
+  int nSegment;                   /* Size of apSegment array */
+  int nAdvance;                   /* How many seg-readers to advance */
+  Fts3SegFilter *pFilter;         /* Pointer to filter object */
+  char *aBuffer;                  /* Buffer to merge doclists in */
+  int nBuffer;                    /* Allocated size of aBuffer[] in bytes */
+
+  /* Cost of running this iterator. Used by fts3.c only. */
+  int nCost;
+
+  /* Output values. Valid only after Fts3SegReaderStep() returns SQLITE_ROW. */
+  char *zTerm;                    /* Pointer to term buffer */
+  int nTerm;                      /* Size of zTerm in bytes */
+  char *aDoclist;                 /* Pointer to doclist buffer */
+  int nDoclist;                   /* Size of aDoclist[] in bytes */
 };
 
 /* fts3.c */
@@ -354,5 +381,8 @@ void sqlite3Fts3ExprFree(Fts3Expr *);
 #ifdef SQLITE_TEST
 int sqlite3Fts3ExprInitTestInterface(sqlite3 *db);
 #endif
+
+/* fts3_aux.c */
+int sqlite3Fts3InitAux(sqlite3 *db);
 
 #endif /* _FTSINT_H */

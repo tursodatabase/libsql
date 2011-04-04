@@ -148,7 +148,7 @@ void sqlite3FinishCoding(Parse *pParse){
     ** on each used database.
     */
     if( pParse->cookieGoto>0 ){
-      u32 mask;
+      yDbMask mask;
       int iDb;
       sqlite3VdbeJumpHere(v, pParse->cookieGoto-1);
       for(iDb=0, mask=1; iDb<db->nDb; mask<<=1, iDb++){
@@ -156,7 +156,9 @@ void sqlite3FinishCoding(Parse *pParse){
         sqlite3VdbeUsesBtree(v, iDb);
         sqlite3VdbeAddOp2(v,OP_Transaction, iDb, (mask & pParse->writeMask)!=0);
         if( db->init.busy==0 ){
-          sqlite3VdbeAddOp2(v,OP_VerifyCookie, iDb, pParse->cookieValue[iDb]);
+          sqlite3VdbeAddOp3(v, OP_VerifyCookie,
+                            iDb, pParse->cookieValue[iDb],
+                            db->aDb[iDb].pSchema->iGeneration);
         }
       }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -366,7 +368,7 @@ void sqlite3UnlinkAndDeleteIndex(sqlite3 *db, int iDb, const char *zIdxName){
 
   len = sqlite3Strlen30(zIdxName);
   pIndex = sqlite3HashInsert(pHash, zIdxName, len, 0);
-  if( pIndex ){
+  if( ALWAYS(pIndex) ){
     if( pIndex->pTable->pIndex==pIndex ){
       pIndex->pTable->pIndex = pIndex->pNext;
     }else{
@@ -3442,12 +3444,12 @@ void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
   }
   if( iDb>=0 ){
     sqlite3 *db = pToplevel->db;
-    int mask;
+    yDbMask mask;
 
     assert( iDb<db->nDb );
     assert( db->aDb[iDb].pBt!=0 || iDb==1 );
     assert( iDb<SQLITE_MAX_ATTACHED+2 );
-    mask = 1<<iDb;
+    mask = ((yDbMask)1)<<iDb;
     if( (pToplevel->cookieMask & mask)==0 ){
       pToplevel->cookieMask |= mask;
       pToplevel->cookieValue[iDb] = db->aDb[iDb].pSchema->schema_cookie;
@@ -3474,7 +3476,7 @@ void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
 void sqlite3BeginWriteOperation(Parse *pParse, int setStatement, int iDb){
   Parse *pToplevel = sqlite3ParseToplevel(pParse);
   sqlite3CodeVerifySchema(pParse, iDb);
-  pToplevel->writeMask |= 1<<iDb;
+  pToplevel->writeMask |= ((yDbMask)1)<<iDb;
   pToplevel->isMultiWrite |= setStatement;
 }
 

@@ -92,7 +92,7 @@ Expr *sqlite3ExprSetCollByToken(Parse *pParse, Expr *pExpr, Token *pCollName){
 CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
   CollSeq *pColl = 0;
   Expr *p = pExpr;
-  while( ALWAYS(p) ){
+  while( p ){
     int op;
     pColl = p->pColl;
     if( pColl ) break;
@@ -389,6 +389,7 @@ Expr *sqlite3ExprAlloc(
     if( op!=TK_INTEGER || pToken->z==0
           || sqlite3GetInt32(pToken->z, &iValue)==0 ){
       nExtra = pToken->n+1;
+      assert( iValue>=0 );
     }
   }
   pNew = sqlite3DbMallocZero(db, sizeof(Expr)+nExtra);
@@ -614,6 +615,8 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
 */
 void sqlite3ExprDelete(sqlite3 *db, Expr *p){
   if( p==0 ) return;
+  /* Sanity check: Assert that the IntValue is non-negative if it exists */
+  assert( !ExprHasProperty(p, EP_IntValue) || p->u.iValue>=0 );
   if( !ExprHasAnyProperty(p, EP_TokenOnly) ){
     sqlite3ExprDelete(db, p->pLeft);
     sqlite3ExprDelete(db, p->pRight);
@@ -1198,16 +1201,17 @@ int sqlite3ExprIsConstantOrFunction(Expr *p){
 */
 int sqlite3ExprIsInteger(Expr *p, int *pValue){
   int rc = 0;
+
+  /* If an expression is an integer literal that fits in a signed 32-bit
+  ** integer, then the EP_IntValue flag will have already been set */
+  assert( p->op!=TK_INTEGER || (p->flags & EP_IntValue)!=0
+           || sqlite3GetInt32(p->u.zToken, &rc)==0 );
+
   if( p->flags & EP_IntValue ){
     *pValue = p->u.iValue;
     return 1;
   }
   switch( p->op ){
-    case TK_INTEGER: {
-      rc = sqlite3GetInt32(p->u.zToken, pValue);
-      assert( rc==0 );
-      break;
-    }
     case TK_UPLUS: {
       rc = sqlite3ExprIsInteger(p->pLeft, pValue);
       break;
@@ -1221,13 +1225,6 @@ int sqlite3ExprIsInteger(Expr *p, int *pValue){
       break;
     }
     default: break;
-  }
-  if( rc ){
-    assert( ExprHasAnyProperty(p, EP_Reduced|EP_TokenOnly)
-               || (p->flags2 & EP2_MallocedToken)==0 );
-    p->op = TK_INTEGER;
-    p->flags |= EP_IntValue;
-    p->u.iValue = *pValue;
   }
   return rc;
 }
@@ -1953,6 +1950,7 @@ static void codeInteger(Parse *pParse, Expr *pExpr, int negFlag, int iMem){
   Vdbe *v = pParse->pVdbe;
   if( pExpr->flags & EP_IntValue ){
     int i = pExpr->u.iValue;
+    assert( i>=0 );
     if( negFlag ) i = -i;
     sqlite3VdbeAddOp2(v, OP_Integer, i, iMem);
   }else{
@@ -1963,7 +1961,7 @@ static void codeInteger(Parse *pParse, Expr *pExpr, int negFlag, int iMem){
     c = sqlite3Atoi64(z, &value, sqlite3Strlen30(z), SQLITE_UTF8);
     if( c==0 || (c==2 && negFlag) ){
       char *zV;
-      if( negFlag ){ value = -value; }
+      if( negFlag ){ value = c==2 ? SMALLEST_INT64 : -value; }
       zV = dup8bytes(v, (char*)&value);
       sqlite3VdbeAddOp4(v, OP_Int64, 0, iMem, 0, zV, P4_INT64);
     }else{
@@ -3251,6 +3249,7 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       exprCodeBetween(pParse, pExpr, dest, 1, jumpIfNull);
       break;
     }
+#ifndef SQLITE_OMIT_SUBQUERY
     case TK_IN: {
       int destIfFalse = sqlite3VdbeMakeLabel(v);
       int destIfNull = jumpIfNull ? dest : destIfFalse;
@@ -3259,6 +3258,7 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       sqlite3VdbeResolveLabel(v, destIfFalse);
       break;
     }
+#endif
     default: {
       r1 = sqlite3ExprCodeTemp(pParse, pExpr, &regFree1);
       sqlite3VdbeAddOp3(v, OP_If, r1, dest, jumpIfNull!=0);
@@ -3392,6 +3392,7 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       exprCodeBetween(pParse, pExpr, dest, 0, jumpIfNull);
       break;
     }
+#ifndef SQLITE_OMIT_SUBQUERY
     case TK_IN: {
       if( jumpIfNull ){
         sqlite3ExprCodeIN(pParse, pExpr, dest, dest);
@@ -3402,6 +3403,7 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       }
       break;
     }
+#endif
     default: {
       r1 = sqlite3ExprCodeTemp(pParse, pExpr, &regFree1);
       sqlite3VdbeAddOp3(v, OP_IfNot, r1, dest, jumpIfNull!=0);

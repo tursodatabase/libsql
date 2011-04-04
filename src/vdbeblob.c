@@ -266,6 +266,7 @@ int sqlite3_blob_open(
       /* Configure the OP_VerifyCookie */
       sqlite3VdbeChangeP1(v, 1, iDb);
       sqlite3VdbeChangeP2(v, 1, pTab->pSchema->schema_cookie);
+      sqlite3VdbeChangeP3(v, 1, pTab->pSchema->iGeneration);
 
       /* Make sure a mutex is held on the table to be accessed */
       sqlite3VdbeUsesBtree(v, iDb); 

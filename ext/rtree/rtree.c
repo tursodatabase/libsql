@@ -1354,7 +1354,7 @@ static int rtreeFilter(
 */
 static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   int rc = SQLITE_OK;
-  int ii, cCol;
+  int ii;
 
   int iIdx = 0;
   char zIdxStr[RTREE_MAX_DIMENSIONS*8+1];
@@ -1362,7 +1362,7 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   UNUSED_PARAMETER(tab);
 
   assert( pIdxInfo->idxStr==0 );
-  for(ii=0; ii<pIdxInfo->nConstraint; ii++){
+  for(ii=0; ii<pIdxInfo->nConstraint && iIdx<(sizeof(zIdxStr)-1); ii++){
     struct sqlite3_index_constraint *p = &pIdxInfo->aConstraint[ii];
 
     if( p->usable && p->iColumn==0 && p->op==SQLITE_INDEX_CONSTRAINT_EQ ){
@@ -1386,9 +1386,7 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     }
 
     if( p->usable && (p->iColumn>0 || p->op==SQLITE_INDEX_CONSTRAINT_MATCH) ){
-      int j, opmsk;
-      static const unsigned char compatible[] = { 0, 0, 1, 1, 2, 2 };
-      u8 op = 0;
+      u8 op;
       switch( p->op ){
         case SQLITE_INDEX_CONSTRAINT_EQ: op = RTREE_EQ; break;
         case SQLITE_INDEX_CONSTRAINT_GT: op = RTREE_GT; break;
@@ -1400,37 +1398,10 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
           op = RTREE_MATCH; 
           break;
       }
-      assert( op!=0 );
-
-      /* Make sure this particular constraint has not been used before.
-      ** If it has been used before, ignore it.
-      **
-      ** A <= or < can be used if there is a prior >= or >.
-      ** A >= or > can be used if there is a prior < or <=.
-      ** A <= or < is disqualified if there is a prior <=, <, or ==.
-      ** A >= or > is disqualified if there is a prior >=, >, or ==.
-      ** A == is disqualifed if there is any prior constraint.
-      */
-      assert( compatible[RTREE_EQ & 7]==0 );
-      assert( compatible[RTREE_LT & 7]==1 );
-      assert( compatible[RTREE_LE & 7]==1 );
-      assert( compatible[RTREE_GT & 7]==2 );
-      assert( compatible[RTREE_GE & 7]==2 );
-      cCol = p->iColumn - 1 + 'a';
-      opmsk = compatible[op & 7];
-      for(j=0; j<iIdx; j+=2){
-        if( zIdxStr[j+1]==cCol && (compatible[zIdxStr[j] & 7] & opmsk)!=0 ){
-          op = 0;
-          break;
-        }
-      }
-      if( op ){
-        assert( iIdx<sizeof(zIdxStr)-1 );
-        zIdxStr[iIdx++] = op;
-        zIdxStr[iIdx++] = cCol;
-        pIdxInfo->aConstraintUsage[ii].argvIndex = (iIdx/2);
-        pIdxInfo->aConstraintUsage[ii].omit = 1;
-      }
+      zIdxStr[iIdx++] = op;
+      zIdxStr[iIdx++] = p->iColumn - 1 + 'a';
+      pIdxInfo->aConstraintUsage[ii].argvIndex = (iIdx/2);
+      pIdxInfo->aConstraintUsage[ii].omit = 1;
     }
   }
 
@@ -3134,7 +3105,7 @@ static void rtreenode(sqlite3_context *ctx, int nArg, sqlite3_value **apArg){
     int jj;
 
     nodeGetCell(&tree, &node, ii, &cell);
-    sqlite3_snprintf(512-nCell,&zCell[nCell],"%d", cell.iRowid);
+    sqlite3_snprintf(512-nCell,&zCell[nCell],"%lld", cell.iRowid);
     nCell = strlen(zCell);
     for(jj=0; jj<tree.nDim*2; jj++){
       sqlite3_snprintf(512-nCell,&zCell[nCell]," %f",(double)cell.aCoord[jj].f);

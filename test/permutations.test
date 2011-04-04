@@ -181,6 +181,8 @@ test_suite "fts3" -prefix "" -description {
   fts3near.test fts3query.test fts3shared.test fts3snippet.test 
 
   fts3fault.test fts3malloc.test fts3matchinfo.test
+
+  fts3aux1.test fts3comp1.test
 }
 
 
@@ -196,6 +198,7 @@ test_suite "coverage-wal" -description {
   wal.test       wal2.test     wal3.test       walmode.test    
   walbak.test    walhook.test  walcrash2.test  walcksum.test
   walfault.test  walbig.test   walnoshm.test
+  wal5.test
 } 
 
 test_suite "coverage-pager" -description {

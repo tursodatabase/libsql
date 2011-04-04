@@ -1628,9 +1628,20 @@ ifcapable attach {
       ATTACH DATABASE ':memory:' AS test1
     }
   } {0 {}}
-  do_test auth-1.252 {
+  do_test auth-1.252a {
     set ::authargs
   } {:memory: {} {} {}}
+  do_test auth-1.252b {
+    db eval {DETACH test1}
+    set ::attachfilename :memory:
+    db eval {ATTACH $::attachfilename AS test1}
+    set ::authargs
+  } {{} {} {} {}}
+  do_test auth-1.252c {
+    db eval {DETACH test1}
+    db eval {ATTACH ':mem' || 'ory:' AS test1}
+    set ::authargs
+  } {{} {} {} {}}
   do_test auth-1.253 {
     catchsql {DETACH DATABASE test1}
     proc auth {code arg1 arg2 arg3 arg4} {

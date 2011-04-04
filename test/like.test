@@ -707,32 +707,32 @@ ifcapable like_opt&&!icu {
       INSERT INTO t10 VALUES(45,45,45,45,45,45);
     }
     count {
-      SELECT a FROM t10 WHERE b LIKE '12%' ORDER BY a;
+      SELECT a FROM t10 WHERE b LIKE '12%' ORDER BY +a;
     }
   } {12 123 scan 5 like 6}
   do_test like-10.2 {
     count {
-      SELECT a FROM t10 WHERE c LIKE '12%' ORDER BY a;
+      SELECT a FROM t10 WHERE c LIKE '12%' ORDER BY +a;
     }
   } {12 123 scan 5 like 6}
   do_test like-10.3 {
     count {
-      SELECT a FROM t10 WHERE d LIKE '12%' ORDER BY a;
+      SELECT a FROM t10 WHERE d LIKE '12%' ORDER BY +a;
     }
   } {12 123 scan 5 like 6}
   do_test like-10.4 {
     count {
-      SELECT a FROM t10 WHERE e LIKE '12%' ORDER BY a;
+      SELECT a FROM t10 WHERE e LIKE '12%' ORDER BY +a;
     }
   } {12 123 scan 5 like 6}
   do_test like-10.5 {
     count {
-      SELECT a FROM t10 WHERE f LIKE '12%' ORDER BY a;
+      SELECT a FROM t10 WHERE f LIKE '12%' ORDER BY +a;
     }
   } {12 123 scan 3 like 0}
   do_test like-10.6 {
     count {
-      SELECT a FROM t10 WHERE a LIKE '12%' ORDER BY a;
+      SELECT a FROM t10 WHERE a LIKE '12%' ORDER BY +a;
     }
   } {12 123 scan 5 like 6}
   do_test like-10.10 {
@@ -748,32 +748,32 @@ ifcapable like_opt&&!icu {
       INSERT INTO t10b SELECT * FROM t10;
     }
     count {
-      SELECT a FROM t10b WHERE b GLOB '12*' ORDER BY a;
+      SELECT a FROM t10b WHERE b GLOB '12*' ORDER BY +a;
     }
   } {12 123 scan 5 like 6}
   do_test like-10.11 {
     count {
-      SELECT a FROM t10b WHERE c GLOB '12*' ORDER BY a;
+      SELECT a FROM t10b WHERE c GLOB '12*' ORDER BY +a;
     }
   } {12 123 scan 5 like 6}
   do_test like-10.12 {
     count {
-      SELECT a FROM t10b WHERE d GLOB '12*' ORDER BY a;
+      SELECT a FROM t10b WHERE d GLOB '12*' ORDER BY +a;
     }
   } {12 123 scan 5 like 6}
   do_test like-10.13 {
     count {
-      SELECT a FROM t10b WHERE e GLOB '12*' ORDER BY a;
+      SELECT a FROM t10b WHERE e GLOB '12*' ORDER BY +a;
     }
   } {12 123 scan 5 like 6}
   do_test like-10.14 {
     count {
-      SELECT a FROM t10b WHERE f GLOB '12*' ORDER BY a;
+      SELECT a FROM t10b WHERE f GLOB '12*' ORDER BY +a;
     }
   } {12 123 scan 3 like 0}
   do_test like-10.15 {
     count {
-      SELECT a FROM t10b WHERE a GLOB '12*' ORDER BY a;
+      SELECT a FROM t10b WHERE a GLOB '12*' ORDER BY +a;
     }
   } {12 123 scan 5 like 6}
 }
@@ -819,7 +819,7 @@ do_test like-11.3 {
   queryplan {
     PRAGMA case_sensitive_like=OFF;
     CREATE INDEX t11b ON t11(b);
-    SELECT b FROM t11 WHERE b LIKE 'abc%' ORDER BY a;
+    SELECT b FROM t11 WHERE b LIKE 'abc%' ORDER BY +a;
   }
 } {abc abcd ABC ABCD sort {} t11b}
 do_test like-11.4 {
@@ -833,37 +833,37 @@ do_test like-11.5 {
     PRAGMA case_sensitive_like=OFF;
     DROP INDEX t11b;
     CREATE INDEX t11bnc ON t11(b COLLATE nocase);
-    SELECT b FROM t11 WHERE b LIKE 'abc%' ORDER BY a;
+    SELECT b FROM t11 WHERE b LIKE 'abc%' ORDER BY +a;
   }
 } {abc abcd ABC ABCD sort {} t11bnc}
 do_test like-11.6 {
   queryplan {
     CREATE INDEX t11bb ON t11(b COLLATE binary);
-    SELECT b FROM t11 WHERE b LIKE 'abc%' ORDER BY a;
+    SELECT b FROM t11 WHERE b LIKE 'abc%' ORDER BY +a;
   }
 } {abc abcd ABC ABCD sort {} t11bnc}
 do_test like-11.7 {
   queryplan {
     PRAGMA case_sensitive_like=ON;
-    SELECT b FROM t11 WHERE b LIKE 'abc%' ORDER BY a;
+    SELECT b FROM t11 WHERE b LIKE 'abc%' ORDER BY +a;
   }
 } {abc abcd sort {} t11bb}
 do_test like-11.8 {
   queryplan {
     PRAGMA case_sensitive_like=OFF;
-    SELECT b FROM t11 WHERE b GLOB 'abc*' ORDER BY a;
+    SELECT b FROM t11 WHERE b GLOB 'abc*' ORDER BY +a;
   }
 } {abc abcd sort {} t11bb}
 do_test like-11.9 {
   queryplan {
     CREATE INDEX t11cnc ON t11(c COLLATE nocase);
     CREATE INDEX t11cb ON t11(c COLLATE binary);
-    SELECT c FROM t11 WHERE c LIKE 'abc%' ORDER BY a;
+    SELECT c FROM t11 WHERE c LIKE 'abc%' ORDER BY +a;
   }
 } {abc abcd ABC ABCD sort {} t11cnc}
 do_test like-11.10 {
   queryplan {
-    SELECT c FROM t11 WHERE c GLOB 'abc*' ORDER BY a;
+    SELECT c FROM t11 WHERE c GLOB 'abc*' ORDER BY +a;
   }
 } {abc abcd sort {} t11cb}
 

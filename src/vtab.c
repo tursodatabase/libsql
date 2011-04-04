@@ -372,7 +372,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
 
     sqlite3VdbeAddOp2(v, OP_Expire, 0, 0);
     zWhere = sqlite3MPrintf(db, "name='%q' AND type='table'", pTab->zName);
-    sqlite3VdbeAddOp4(v, OP_ParseSchema, iDb, 1, 0, zWhere, P4_DYNAMIC);
+    sqlite3VdbeAddOp4(v, OP_ParseSchema, iDb, 0, 0, zWhere, P4_DYNAMIC);
     sqlite3VdbeAddOp4(v, OP_VCreate, iDb, 0, 0, 
                          pTab->zName, sqlite3Strlen30(pTab->zName) + 1);
   }

@@ -687,7 +687,6 @@ void sqlite3FkCheck(
   int regNew                      /* New row data is stored here */
 ){
   sqlite3 *db = pParse->db;       /* Database handle */
-  Vdbe *v;                        /* VM to write code to */
   FKey *pFKey;                    /* Used to iterate through FKs */
   int iDb;                        /* Index of database containing pTab */
   const char *zDb;                /* Name of database containing pTab */
@@ -699,7 +698,6 @@ void sqlite3FkCheck(
   /* If foreign-keys are disabled, this function is a no-op. */
   if( (db->flags&SQLITE_ForeignKeys)==0 ) return;
 
-  v = sqlite3GetVdbe(pParse);
   iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
   zDb = db->aDb[iDb].zName;
 

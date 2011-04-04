@@ -53,7 +53,7 @@ TCCX += -I$(TOP)/ext/async
 LIBOBJ+= alter.o analyze.o attach.o auth.o \
          backup.o bitvec.o btmutex.o btree.o build.o \
          callback.o complete.o ctime.o date.o delete.o expr.o fault.o fkey.o \
-         fts3.o fts3_expr.o fts3_hash.o fts3_icu.o fts3_porter.o \
+         fts3.o fts3_aux.o fts3_expr.o fts3_hash.o fts3_icu.o fts3_porter.o \
          fts3_snippet.o fts3_tokenizer.o fts3_tokenizer1.o fts3_write.o \
          func.o global.o hash.o \
          icu.o insert.o journal.o legacy.o loadext.o \
@@ -187,6 +187,7 @@ SRC += \
   $(TOP)/ext/fts3/fts3.c \
   $(TOP)/ext/fts3/fts3.h \
   $(TOP)/ext/fts3/fts3Int.h \
+  $(TOP)/ext/fts3/fts3_aux.c \
   $(TOP)/ext/fts3/fts3_expr.c \
   $(TOP)/ext/fts3/fts3_hash.c \
   $(TOP)/ext/fts3/fts3_hash.h \
@@ -238,6 +239,7 @@ TESTSRC = \
   $(TOP)/src/test_demovfs.c \
   $(TOP)/src/test_devsym.c \
   $(TOP)/src/test_func.c \
+  $(TOP)/src/test_fuzzer.c \
   $(TOP)/src/test_hexio.c \
   $(TOP)/src/test_init.c \
   $(TOP)/src/test_intarray.c \
@@ -254,9 +256,11 @@ TESTSRC = \
   $(TOP)/src/test_server.c \
   $(TOP)/src/test_stat.c \
   $(TOP)/src/test_superlock.c \
+  $(TOP)/src/test_syscall.c \
   $(TOP)/src/test_tclvar.c \
   $(TOP)/src/test_thread.c \
   $(TOP)/src/test_vfs.c \
+  $(TOP)/src/test_wholenumber.c \
   $(TOP)/src/test_wsd.c
 
 #TESTSRC += $(TOP)/ext/fts2/fts2_tokenizer.c
@@ -295,6 +299,7 @@ TESTSRC2 = \
   $(TOP)/src/where.c \
   parse.c \
   $(TOP)/ext/fts3/fts3.c \
+  $(TOP)/ext/fts3/fts3_aux.c \
   $(TOP)/ext/fts3/fts3_expr.c \
   $(TOP)/ext/fts3/fts3_tokenizer.c \
   $(TOP)/ext/fts3/fts3_write.c \
@@ -466,6 +471,9 @@ fts2_tokenizer1.o:	$(TOP)/ext/fts2/fts2_tokenizer1.c $(HDR) $(EXTHDR)
 fts3.o:	$(TOP)/ext/fts3/fts3.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3.c
 
+fts3_aux.o:	$(TOP)/ext/fts3/fts3_aux.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_aux.c
+
 fts3_expr.o:	$(TOP)/ext/fts3/fts3_expr.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_expr.c
 
@@ -535,8 +543,8 @@ test:	testfixture$(EXE) sqlite3$(EXE)
 # threadtest runs a few thread-safety tests that are implemented in C. This
 # target is invoked by the releasetest.tcl script.
 # 
-threadtest3$(EXE): sqlite3.c $(TOP)/test/threadtest3.c
-	$(TCCX) -O2 sqlite3.c $(TOP)/test/threadtest3.c \
+threadtest3$(EXE): sqlite3.o $(TOP)/test/threadtest3.c $(TOP)/test/tt3_checkpoint.c
+	$(TCCX) -O2 sqlite3.o $(TOP)/test/threadtest3.c \
 		-o threadtest3$(EXE) $(THREADLIB)
 
 threadtest: threadtest3$(EXE)

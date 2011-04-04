@@ -72,7 +72,7 @@ do_test tkt3824-2.3 {
   lsort [execsql_status {
     SELECT a FROM t2 WHERE b=2 AND c IS NULL ORDER BY b;
   }]
-} {5 9 sort}
+} {5 9 nosort}
 
 do_test tkt3824-3.1 {
   db eval {

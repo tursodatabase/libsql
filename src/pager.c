@@ -2851,6 +2851,28 @@ static int readDbPage(PgHdr *pPg){
   return rc;
 }
 
+/*
+** Update the value of the change-counter at offsets 24 and 92 in
+** the header and the sqlite version number at offset 96.
+**
+** This is an unconditional update.  See also the pager_incr_changecounter()
+** routine which only updates the change-counter if the update is actually
+** needed, as determined by the pPager->changeCountDone state variable.
+*/
+static void pager_write_changecounter(PgHdr *pPg){
+  u32 change_counter;
+
+  /* Increment the value just read and write it back to byte 24. */
+  change_counter = sqlite3Get4byte((u8*)pPg->pPager->dbFileVers)+1;
+  put32bits(((char*)pPg->pData)+24, change_counter);
+
+  /* Also store the SQLite version number in bytes 96..99 and in
+  ** bytes 92..95 store the change counter for which the version number
+  ** is valid. */
+  put32bits(((char*)pPg->pData)+92, change_counter);
+  put32bits(((char*)pPg->pData)+96, SQLITE_VERSION_NUMBER);
+}
+
 #ifndef SQLITE_OMIT_WAL
 /*
 ** This function is invoked once for each page that has already been 
@@ -2921,34 +2943,11 @@ static int pagerRollbackWal(Pager *pPager){
   return rc;
 }
 
-
-/*
-** Update the value of the change-counter at offsets 24 and 92 in
-** the header and the sqlite version number at offset 96.
-**
-** This is an unconditional update.  See also the pager_incr_changecounter()
-** routine which only updates the change-counter if the update is actually
-** needed, as determined by the pPager->changeCountDone state variable.
-*/
-static void pager_write_changecounter(PgHdr *pPg){
-  u32 change_counter;
-
-  /* Increment the value just read and write it back to byte 24. */
-  change_counter = sqlite3Get4byte((u8*)pPg->pPager->dbFileVers)+1;
-  put32bits(((char*)pPg->pData)+24, change_counter);
-
-  /* Also store the SQLite version number in bytes 96..99 and in
-  ** bytes 92..95 store the change counter for which the version number
-  ** is valid. */
-  put32bits(((char*)pPg->pData)+92, change_counter);
-  put32bits(((char*)pPg->pData)+96, SQLITE_VERSION_NUMBER);
-}
-
 /*
 ** This function is a wrapper around sqlite3WalFrames(). As well as logging
 ** the contents of the list of pages headed by pList (connected by pDirty),
 ** this function notifies any active backup processes that the pages have
-** changed.
+** changed. 
 **
 ** The list of pages passed into this routine is always sorted by page number.
 ** Hence, if page 1 appears anywhere on the list, it will be the first page.
@@ -6600,14 +6599,20 @@ sqlite3_backup **sqlite3PagerBackupPtr(Pager *pPager){
 
 #ifndef SQLITE_OMIT_WAL
 /*
-** This function is called when the user invokes "PRAGMA checkpoint".
+** This function is called when the user invokes "PRAGMA wal_checkpoint",
+** "PRAGMA wal_blocking_checkpoint" or calls the sqlite3_wal_checkpoint()
+** or wal_blocking_checkpoint() API functions.
+**
+** Parameter eMode is one of SQLITE_CHECKPOINT_PASSIVE, FULL or RESTART.
 */
-int sqlite3PagerCheckpoint(Pager *pPager){
+int sqlite3PagerCheckpoint(Pager *pPager, int eMode, int *pnLog, int *pnCkpt){
   int rc = SQLITE_OK;
   if( pPager->pWal ){
-    u8 *zBuf = (u8 *)pPager->pTmpSpace;
-    rc = sqlite3WalCheckpoint(pPager->pWal, pPager->ckptSyncFlags,
-                              pPager->pageSize, zBuf);
+    rc = sqlite3WalCheckpoint(pPager->pWal, eMode,
+        pPager->xBusyHandler, pPager->pBusyHandlerArg,
+        pPager->ckptSyncFlags, pPager->pageSize, (u8 *)pPager->pTmpSpace,
+        pnLog, pnCkpt
+    );
   }
   return rc;
 }
@@ -6635,8 +6640,8 @@ static int pagerExclusiveLock(Pager *pPager){
   assert( pPager->eLock==SHARED_LOCK || pPager->eLock==EXCLUSIVE_LOCK );
   rc = pagerLockDb(pPager, EXCLUSIVE_LOCK);
   if( rc!=SQLITE_OK ){
-    /* If the attempt to grab the pending lock failed, release the 
-    ** exclusive lock that may have been obtained instead.  */
+    /* If the attempt to grab the exclusive lock failed, release the 
+    ** pending lock that may have been obtained instead.  */
     pagerUnlockDb(pPager, SHARED_LOCK);
   }
 

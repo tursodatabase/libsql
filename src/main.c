@@ -378,6 +378,13 @@ int sqlite3_config(int op, ...){
       sqlite3GlobalConfig.nHeap = va_arg(ap, int);
       sqlite3GlobalConfig.mnReq = va_arg(ap, int);
 
+      if( sqlite3GlobalConfig.mnReq<1 ){
+        sqlite3GlobalConfig.mnReq = 1;
+      }else if( sqlite3GlobalConfig.mnReq>(1<<12) ){
+        /* cap min request size at 2^12 */
+        sqlite3GlobalConfig.mnReq = (1<<12);
+      }
+
       if( sqlite3GlobalConfig.pHeap==0 ){
         /* If the heap pointer is NULL, then restore the malloc implementation
         ** back to NULL pointers too.  This will cause the malloc to go
@@ -518,7 +525,35 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
       break;
     }
     default: {
+      static const struct {
+        int op;      /* The opcode */
+        u32 mask;    /* Mask of the bit in sqlite3.flags to set/clear */
+      } aFlagOp[] = {
+        { SQLITE_DBCONFIG_ENABLE_FKEY,    SQLITE_ForeignKeys    },
+        { SQLITE_DBCONFIG_ENABLE_TRIGGER, SQLITE_EnableTrigger  },
+      };
+      unsigned int i;
       rc = SQLITE_ERROR; /* IMP: R-42790-23372 */
+      for(i=0; i<ArraySize(aFlagOp); i++){
+        if( aFlagOp[i].op==op ){
+          int onoff = va_arg(ap, int);
+          int *pRes = va_arg(ap, int*);
+          int oldFlags = db->flags;
+          if( onoff>0 ){
+            db->flags |= aFlagOp[i].mask;
+          }else if( onoff==0 ){
+            db->flags &= ~aFlagOp[i].mask;
+          }
+          if( oldFlags!=db->flags ){
+            sqlite3ExpirePreparedStatements(db);
+          }
+          if( pRes ){
+            *pRes = (db->flags & aFlagOp[i].mask)!=0;
+          }
+          rc = SQLITE_OK;
+          break;
+        }
+      }
       break;
     }
   }
@@ -1347,18 +1382,32 @@ void *sqlite3_wal_hook(
 #endif
 }
 
-
 /*
-** Checkpoint database zDb. If zDb is NULL, or if the buffer zDb points
-** to contains a zero-length string, all attached databases are 
-** checkpointed.
+** Checkpoint database zDb.
 */
-int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb){
+int sqlite3_wal_checkpoint_v2(
+  sqlite3 *db,                    /* Database handle */
+  const char *zDb,                /* Name of attached database (or NULL) */
+  int eMode,                      /* SQLITE_CHECKPOINT_* value */
+  int *pnLog,                     /* OUT: Size of WAL log in frames */
+  int *pnCkpt                     /* OUT: Total number of frames checkpointed */
+){
 #ifdef SQLITE_OMIT_WAL
   return SQLITE_OK;
 #else
   int rc;                         /* Return code */
   int iDb = SQLITE_MAX_ATTACHED;  /* sqlite3.aDb[] index of db to checkpoint */
+
+  /* Initialize the output variables to -1 in case an error occurs. */
+  if( pnLog ) *pnLog = -1;
+  if( pnCkpt ) *pnCkpt = -1;
+
+  assert( SQLITE_CHECKPOINT_FULL>SQLITE_CHECKPOINT_PASSIVE );
+  assert( SQLITE_CHECKPOINT_FULL<SQLITE_CHECKPOINT_RESTART );
+  assert( SQLITE_CHECKPOINT_PASSIVE+2==SQLITE_CHECKPOINT_RESTART );
+  if( eMode<SQLITE_CHECKPOINT_PASSIVE || eMode>SQLITE_CHECKPOINT_RESTART ){
+    return SQLITE_MISUSE;
+  }
 
   sqlite3_mutex_enter(db->mutex);
   if( zDb && zDb[0] ){
@@ -1368,13 +1417,23 @@ int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb){
     rc = SQLITE_ERROR;
     sqlite3Error(db, SQLITE_ERROR, "unknown database: %s", zDb);
   }else{
-    rc = sqlite3Checkpoint(db, iDb);
+    rc = sqlite3Checkpoint(db, iDb, eMode, pnLog, pnCkpt);
     sqlite3Error(db, rc, 0);
   }
   rc = sqlite3ApiExit(db, rc);
   sqlite3_mutex_leave(db->mutex);
   return rc;
 #endif
+}
+
+
+/*
+** Checkpoint database zDb. If zDb is NULL, or if the buffer zDb points
+** to contains a zero-length string, all attached databases are 
+** checkpointed.
+*/
+int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb){
+  return sqlite3_wal_checkpoint_v2(db, zDb, SQLITE_CHECKPOINT_PASSIVE, 0, 0);
 }
 
 #ifndef SQLITE_OMIT_WAL
@@ -1394,20 +1453,31 @@ int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb){
 ** If iDb is passed SQLITE_MAX_ATTACHED, then all attached databases are
 ** checkpointed. If an error is encountered it is returned immediately -
 ** no attempt is made to checkpoint any remaining databases.
+**
+** Parameter eMode is one of SQLITE_CHECKPOINT_PASSIVE, FULL or RESTART.
 */
-int sqlite3Checkpoint(sqlite3 *db, int iDb){
+int sqlite3Checkpoint(sqlite3 *db, int iDb, int eMode, int *pnLog, int *pnCkpt){
   int rc = SQLITE_OK;             /* Return code */
   int i;                          /* Used to iterate through attached dbs */
+  int bBusy = 0;                  /* True if SQLITE_BUSY has been encountered */
 
   assert( sqlite3_mutex_held(db->mutex) );
+  assert( !pnLog || *pnLog==-1 );
+  assert( !pnCkpt || *pnCkpt==-1 );
 
   for(i=0; i<db->nDb && rc==SQLITE_OK; i++){
     if( i==iDb || iDb==SQLITE_MAX_ATTACHED ){
-      rc = sqlite3BtreeCheckpoint(db->aDb[i].pBt);
+      rc = sqlite3BtreeCheckpoint(db->aDb[i].pBt, eMode, pnLog, pnCkpt);
+      pnLog = 0;
+      pnCkpt = 0;
+      if( rc==SQLITE_BUSY ){
+        bBusy = 1;
+        rc = SQLITE_OK;
+      }
     }
   }
 
-  return rc;
+  return (rc==SQLITE_OK && bBusy) ? SQLITE_BUSY : rc;
 }
 #endif /* SQLITE_OMIT_WAL */
 
@@ -1660,8 +1730,8 @@ static const int aHardLimit[] = {
 #if SQLITE_MAX_FUNCTION_ARG<0 || SQLITE_MAX_FUNCTION_ARG>1000
 # error SQLITE_MAX_FUNCTION_ARG must be between 0 and 1000
 #endif
-#if SQLITE_MAX_ATTACHED<0 || SQLITE_MAX_ATTACHED>30
-# error SQLITE_MAX_ATTACHED must be between 0 and 30
+#if SQLITE_MAX_ATTACHED<0 || SQLITE_MAX_ATTACHED>62
+# error SQLITE_MAX_ATTACHED must be between 0 and 62
 #endif
 #if SQLITE_MAX_LIKE_PATTERN_LENGTH<1
 # error SQLITE_MAX_LIKE_PATTERN_LENGTH must be at least 1
@@ -1786,7 +1856,8 @@ static int openDatabase(
   ** The SQLITE_OPEN_NOMUTEX and SQLITE_OPEN_FULLMUTEX flags were
   ** dealt with in the previous code block.  Besides these, the only
   ** valid input flags for sqlite3_open_v2() are SQLITE_OPEN_READONLY,
-  ** SQLITE_OPEN_READWRITE, and SQLITE_OPEN_CREATE.  Silently mask
+  ** SQLITE_OPEN_READWRITE, SQLITE_OPEN_CREATE, SQLITE_OPEN_SHAREDCACHE,
+  ** SQLITE_OPEN_PRIVATECACHE, and some reserved bits.  Silently mask
   ** off all other flags.
   */
   flags &=  ~( SQLITE_OPEN_DELETEONCLOSE |
@@ -1825,7 +1896,7 @@ static int openDatabase(
   db->autoCommit = 1;
   db->nextAutovac = -1;
   db->nextPagesize = 0;
-  db->flags |= SQLITE_ShortColNames | SQLITE_AutoIndex
+  db->flags |= SQLITE_ShortColNames | SQLITE_AutoIndex | SQLITE_EnableTrigger
 #if SQLITE_DEFAULT_FILE_FORMAT<4
                  | SQLITE_LegacyFileFmt
 #endif

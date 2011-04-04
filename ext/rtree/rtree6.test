@@ -106,4 +106,51 @@ do_eqp_test rtree6.2.5 {
   0 1 1 {SEARCH TABLE t2 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}
 }
 
+do_execsql_test rtree6-3.1 {
+  CREATE VIRTUAL TABLE t3 USING rtree(id, x1, x2, y1, y2);
+  INSERT INTO t3 VALUES(NULL, 1, 1, 2, 2);
+  SELECT * FROM t3 WHERE 
+    x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND 
+    x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND 
+    x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND 
+    x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND 
+    x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND 
+    x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5;
+} {1 1.0 1.0 2.0 2.0}
+
+do_test rtree6.3.2 {
+  rtree_strategy {
+    SELECT * FROM t3 WHERE 
+      x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND 
+      x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND 
+      x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND 
+      x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 
+  }
+} {EaEaEaEaEaEaEaEaEaEaEaEaEaEaEaEaEaEaEaEa}
+do_test rtree6.3.3 {
+  rtree_strategy {
+    SELECT * FROM t3 WHERE 
+      x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND 
+      x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND 
+      x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND 
+      x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND 
+      x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND 
+      x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5
+  }
+} {EaEaEaEaEaEaEaEaEaEaEaEaEaEaEaEaEaEaEaEa}
+
+do_execsql_test rtree6-3.4 {
+  SELECT * FROM t3 WHERE x1>0.5 AND x1>0.8 AND x1>1.1
+} {}
+do_execsql_test rtree6-3.5 {
+  SELECT * FROM t3 WHERE 
+    x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND 
+    x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND 
+    x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND 
+    x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND 
+    x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND 
+    x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>0.5 AND x1>1.1
+} {}
+
+
 finish_test

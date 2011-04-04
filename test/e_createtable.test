@@ -1379,7 +1379,7 @@ do_createtable_tests 4.10 {
        {0 0 0 {SCAN TABLE t2 USING INDEX sqlite_autoindex_t2_1 (~1000000 rows)}}
 
   3    "EXPLAIN QUERY PLAN SELECT * FROM t2 WHERE b=10 AND c>10"
-       {0 0 0 {SEARCH TABLE t2 USING INDEX sqlite_autoindex_t2_1 (b=? AND c>?) (~3 rows)}}
+       {0 0 0 {SEARCH TABLE t2 USING INDEX sqlite_autoindex_t2_1 (b=? AND c>?) (~2 rows)}}
 }
 
 # EVIDENCE-OF: R-45493-35653 A CHECK constraint may be attached to a

@@ -312,8 +312,13 @@ static int utf8_to_utf8(
   sqlite3TestBinToHex(z,nOut);
   Tcl_AppendResult(interp, (char*)z, 0);
   sqlite3_free(z);
-#endif
   return TCL_OK;
+#else
+  Tcl_AppendResult(interp, 
+      "[utf8_to_utf8] unavailable - SQLITE_DEBUG not defined", 0
+  );
+  return TCL_ERROR;
+#endif
 }
 
 static int getFts3Varint(const char *p, sqlite_int64 *v){

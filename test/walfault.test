@@ -122,6 +122,7 @@ do_faultsim_test walfault-3 -prep {
     DELETE FROM abc;
     PRAGMA wal_checkpoint;
   }
+  set {} {}
 } -test {
   faultsim_test_result {0 {}}
 }
@@ -136,6 +137,7 @@ if {[permutation] != "inmemory_journal"} {
     faultsim_restore_and_reopen
   } -body {
     execsql {
+      PRAGMA auto_vacuum = 0;
       PRAGMA journal_mode = WAL;
       CREATE TABLE t1(a PRIMARY KEY, b);
       INSERT INTO t1 VALUES('a', 'b');
@@ -143,7 +145,7 @@ if {[permutation] != "inmemory_journal"} {
       SELECT * FROM t1;
     }
   } -test {
-    faultsim_test_result {0 {wal a b}}
+    faultsim_test_result {0 {wal 0 7 7 a b}}
     faultsim_integrity_check
   } 
 }
@@ -413,6 +415,7 @@ do_faultsim_test walfault-11 -faults shmerr* -prep {
   db eval { SELECT count(*) FROM abc }
   sqlite3 db2 test.db -vfs shmfault
   db2 eval { PRAGMA wal_checkpoint }
+  set {} {}
 } -test {
   faultsim_test_result {0 {}}
 }
@@ -525,6 +528,7 @@ do_faultsim_test walfault-13.3 -prep {
 do_test walfault-14-pre {
   faultsim_delete_and_reopen
   execsql {
+    PRAGMA auto_vacuum = 0;
     PRAGMA journal_mode = WAL;
     BEGIN;
       CREATE TABLE abc(a PRIMARY KEY);
@@ -538,11 +542,11 @@ do_faultsim_test walfault-14 -prep {
   faultsim_restore_and_reopen
 } -body {
   db eval { 
-    PRAGMA wal_checkpoint;
+    PRAGMA wal_checkpoint = full;
     INSERT INTO abc VALUES(randomblob(1500));
   }
 } -test {
-  faultsim_test_result {0 {}}
+  faultsim_test_result {0 {0 10 10}}
   faultsim_integrity_check
   set nRow [db eval {SELECT count(*) FROM abc}]
   if {!(($nRow==2 && $testrc) || $nRow==3)} { error "Bad db content" }

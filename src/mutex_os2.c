@@ -31,11 +31,16 @@
 struct sqlite3_mutex {
   HMTX mutex;       /* Mutex controlling the lock */
   int  id;          /* Mutex type */
-  int  nRef;        /* Number of references */
-  TID  owner;       /* Thread holding this mutex */
+#ifdef SQLITE_DEBUG
+ int   trace;       /* True to trace changes */
+#endif
 };
 
-#define OS2_MUTEX_INITIALIZER   0,0,0,0
+#ifdef SQLITE_DEBUG
+#define SQLITE3_MUTEX_INITIALIZER { 0, 0, 0 }
+#else
+#define SQLITE3_MUTEX_INITIALIZER { 0, 0 }
+#endif
 
 /*
 ** Initialize and deinitialize the mutex subsystem.
@@ -51,11 +56,14 @@ static int os2MutexEnd(void){ return SQLITE_OK; }
 ** to sqlite3_mutex_alloc() is one of these integer constants:
 **
 ** <ul>
-** <li>  SQLITE_MUTEX_FAST               0
-** <li>  SQLITE_MUTEX_RECURSIVE          1
-** <li>  SQLITE_MUTEX_STATIC_MASTER      2
-** <li>  SQLITE_MUTEX_STATIC_MEM         3
-** <li>  SQLITE_MUTEX_STATIC_PRNG        4
+** <li>  SQLITE_MUTEX_FAST
+** <li>  SQLITE_MUTEX_RECURSIVE
+** <li>  SQLITE_MUTEX_STATIC_MASTER
+** <li>  SQLITE_MUTEX_STATIC_MEM
+** <li>  SQLITE_MUTEX_STATIC_MEM2
+** <li>  SQLITE_MUTEX_STATIC_PRNG
+** <li>  SQLITE_MUTEX_STATIC_LRU
+** <li>  SQLITE_MUTEX_STATIC_LRU2
 ** </ul>
 **
 ** The first two constants cause sqlite3_mutex_alloc() to create
@@ -69,7 +77,7 @@ static int os2MutexEnd(void){ return SQLITE_OK; }
 ** might return such a mutex in response to SQLITE_MUTEX_FAST.
 **
 ** The other allowed parameters to sqlite3_mutex_alloc() each return
-** a pointer to a static preexisting mutex.  Three static mutexes are
+** a pointer to a static preexisting mutex.  Six static mutexes are
 ** used by the current version of SQLite.  Future versions of SQLite
 ** may add additional static mutexes.  Static mutexes are for internal
 ** use by SQLite only.  Applications that use SQLite mutexes should
@@ -99,13 +107,13 @@ static sqlite3_mutex *os2MutexAlloc(int iType){
     }
     default: {
       static volatile int isInit = 0;
-      static sqlite3_mutex staticMutexes[] = {
-        { OS2_MUTEX_INITIALIZER, },
-        { OS2_MUTEX_INITIALIZER, },
-        { OS2_MUTEX_INITIALIZER, },
-        { OS2_MUTEX_INITIALIZER, },
-        { OS2_MUTEX_INITIALIZER, },
-        { OS2_MUTEX_INITIALIZER, },
+      static sqlite3_mutex staticMutexes[6] = {
+        SQLITE3_MUTEX_INITIALIZER,
+        SQLITE3_MUTEX_INITIALIZER,
+        SQLITE3_MUTEX_INITIALIZER,
+        SQLITE3_MUTEX_INITIALIZER,
+        SQLITE3_MUTEX_INITIALIZER,
+        SQLITE3_MUTEX_INITIALIZER,
       };
       if ( !isInit ){
         APIRET rc;
@@ -151,9 +159,14 @@ static sqlite3_mutex *os2MutexAlloc(int iType){
 ** SQLite is careful to deallocate every mutex that it allocates.
 */
 static void os2MutexFree(sqlite3_mutex *p){
-  if( p==0 ) return;
-  assert( p->nRef==0 );
+#ifdef SQLITE_DEBUG
+  TID tid;
+  PID pid;
+  ULONG ulCount;
+  DosQueryMutexSem(p->mutex, &pid, &tid, &ulCount);
+  assert( ulCount==0 );
   assert( p->id==SQLITE_MUTEX_FAST || p->id==SQLITE_MUTEX_RECURSIVE );
+#endif
   DosCloseMutexSem( p->mutex );
   sqlite3_free( p );
 }
@@ -168,26 +181,29 @@ static int os2MutexHeld(sqlite3_mutex *p){
   PID pid;
   ULONG ulCount;
   PTIB ptib;
-  if( p!=0 ) {
-    DosQueryMutexSem(p->mutex, &pid, &tid, &ulCount);
-  } else {
-    DosGetInfoBlocks(&ptib, NULL);
-    tid = ptib->tib_ptib2->tib2_ultid;
-  }
-  return p==0 || (p->nRef!=0 && p->owner==tid);
+  DosQueryMutexSem(p->mutex, &pid, &tid, &ulCount);
+  if( ulCount==0 || ( ulCount>1 && p->id!=SQLITE_MUTEX_RECURSIVE ) )
+    return 0;
+  DosGetInfoBlocks(&ptib, NULL);
+  return tid==ptib->tib_ptib2->tib2_ultid;
 }
 static int os2MutexNotheld(sqlite3_mutex *p){
   TID tid;
   PID pid;
   ULONG ulCount;
   PTIB ptib;
-  if( p!= 0 ) {
-    DosQueryMutexSem(p->mutex, &pid, &tid, &ulCount);
-  } else {
-    DosGetInfoBlocks(&ptib, NULL);
-    tid = ptib->tib_ptib2->tib2_ultid;
-  }
-  return p==0 || p->nRef==0 || p->owner!=tid;
+  DosQueryMutexSem(p->mutex, &pid, &tid, &ulCount);
+  if( ulCount==0 )
+    return 1;
+  DosGetInfoBlocks(&ptib, NULL);
+  return tid!=ptib->tib_ptib2->tib2_ultid;
+}
+static void os2MutexTrace(sqlite3_mutex *p, char *pAction){
+  TID   tid;
+  PID   pid;
+  ULONG ulCount;
+  DosQueryMutexSem(p->mutex, &pid, &tid, &ulCount);
+  printf("%s mutex %p (%d) with nRef=%ld\n", pAction, (void*)p, p->trace, ulCount);
 }
 #endif
 
@@ -203,32 +219,21 @@ static int os2MutexNotheld(sqlite3_mutex *p){
 ** more than once, the behavior is undefined.
 */
 static void os2MutexEnter(sqlite3_mutex *p){
-  TID tid;
-  PID holder1;
-  ULONG holder2;
-  if( p==0 ) return;
   assert( p->id==SQLITE_MUTEX_RECURSIVE || os2MutexNotheld(p) );
   DosRequestMutexSem(p->mutex, SEM_INDEFINITE_WAIT);
-  DosQueryMutexSem(p->mutex, &holder1, &tid, &holder2);
-  p->owner = tid;
-  p->nRef++;
+#ifdef SQLITE_DEBUG
+  if( p->trace ) os2MutexTrace(p, "enter");
+#endif
 }
 static int os2MutexTry(sqlite3_mutex *p){
-  int rc;
-  TID tid;
-  PID holder1;
-  ULONG holder2;
-  if( p==0 ) return SQLITE_OK;
+  int rc = SQLITE_BUSY;
   assert( p->id==SQLITE_MUTEX_RECURSIVE || os2MutexNotheld(p) );
-  if( DosRequestMutexSem(p->mutex, SEM_IMMEDIATE_RETURN) == NO_ERROR) {
-    DosQueryMutexSem(p->mutex, &holder1, &tid, &holder2);
-    p->owner = tid;
-    p->nRef++;
+  if( DosRequestMutexSem(p->mutex, SEM_IMMEDIATE_RETURN) == NO_ERROR ) {
     rc = SQLITE_OK;
-  } else {
-    rc = SQLITE_BUSY;
+#ifdef SQLITE_DEBUG
+    if( p->trace ) os2MutexTrace(p, "try");
+#endif
   }
-
   return rc;
 }
 
@@ -239,19 +244,14 @@ static int os2MutexTry(sqlite3_mutex *p){
 ** is not currently allocated.  SQLite will never do either.
 */
 static void os2MutexLeave(sqlite3_mutex *p){
-  TID tid;
-  PID holder1;
-  ULONG holder2;
-  if( p==0 ) return;
-  assert( p->nRef>0 );
-  DosQueryMutexSem(p->mutex, &holder1, &tid, &holder2);
-  assert( p->owner==tid );
-  p->nRef--;
-  assert( p->nRef==0 || p->id==SQLITE_MUTEX_RECURSIVE );
+  assert( os2MutexHeld(p) );
   DosReleaseMutexSem(p->mutex);
+#ifdef SQLITE_DEBUG
+  if( p->trace ) os2MutexTrace(p, "leave");
+#endif
 }
 
-sqlite3_mutex_methods const *sqlite3DefaultMutex(void){
+SQLITE_PRIVATE sqlite3_mutex_methods const *sqlite3DefaultMutex(void){
   static const sqlite3_mutex_methods sMutex = {
     os2MutexInit,
     os2MutexEnd,
@@ -263,6 +263,9 @@ sqlite3_mutex_methods const *sqlite3DefaultMutex(void){
 #ifdef SQLITE_DEBUG
     os2MutexHeld,
     os2MutexNotheld
+#else
+    0,
+    0
 #endif
   };
 
