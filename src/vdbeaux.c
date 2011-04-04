@@ -157,6 +157,11 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
   pOp->p4.p = 0;
   pOp->p4type = P4_NOTUSED;
   p->expired = 0;
+  if( op==OP_ParseSchema ){
+    /* Any program that uses the OP_ParseSchema opcode needs to lock
+    ** all btrees. */
+    p->btreeMask = ~(yDbMask)0;
+  }
 #ifdef SQLITE_DEBUG
   pOp->zComment = 0;
   if( sqlite3VdbeAddopTrace ) sqlite3VdbePrintOp(0, i, &p->aOp[i]);
@@ -457,7 +462,7 @@ VdbeOp *sqlite3VdbeTakeOpArray(Vdbe *p, int *pnOp, int *pnMaxArg){
   assert( aOp && !p->db->mallocFailed );
 
   /* Check that sqlite3VdbeUsesBtree() was not called on this VM */
-  assert( p->aMutex.nMutex==0 );
+  assert( p->btreeMask==0 );
 
   resolveP2Values(p, pnMaxArg);
   *pnOp = p->nOp;
@@ -945,22 +950,131 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
 /*
 ** Declare to the Vdbe that the BTree object at db->aDb[i] is used.
 **
-** The prepared statement has to know in advance which Btree objects
-** will be used so that it can acquire mutexes on them all in sorted
-** order (via sqlite3VdbeMutexArrayEnter().  Mutexes are acquired
-** in order (and released in reverse order) to avoid deadlocks.
+** The prepared statements need to know in advance the complete set of
+** attached databases that they will be using.  A mask of these databases
+** is maintained in p->btreeMask and is used for locking and other purposes.
 */
 void sqlite3VdbeUsesBtree(Vdbe *p, int i){
-  yDbMask mask;
   assert( i>=0 && i<p->db->nDb && i<sizeof(yDbMask)*8 );
   assert( i<(int)sizeof(p->btreeMask)*8 );
-  mask = ((u32)1)<<i;
-  if( (p->btreeMask & mask)==0 ){
-    p->btreeMask |= mask;
-    sqlite3BtreeMutexArrayInsert(&p->aMutex, p->db->aDb[i].pBt);
-  }
+  p->btreeMask |= ((yDbMask)1)<<i;
 }
 
+/*
+** Compute the sum of all mutex counters for all btrees in the
+** given prepared statement.
+*/
+#ifndef SQLITE_OMIT_SHARED_CACHE
+static u32 mutexCounterSum(Vdbe *p){
+  u32 cntSum = 0;
+#ifdef SQLITE_DEBUG
+  int i;
+  yDbMask mask;
+  sqlite3 *db = p->db;
+  Db *aDb = db->aDb;
+  int nDb = db->nDb;
+  for(i=0, mask=1; i<nDb; i++, mask += mask){
+    if( i!=1 && (mask & p->btreeMask)!=0 && ALWAYS(aDb[i].pBt!=0) ){
+      cntSum += sqlite3BtreeMutexCounter(aDb[i].pBt);
+    }
+  }
+#else
+  UNUSED_PARAMETER(p);
+#endif
+  return cntSum;
+}
+#endif
+
+/*
+** If SQLite is compiled to support shared-cache mode and to be threadsafe,
+** this routine obtains the mutex associated with each BtShared structure
+** that may be accessed by the VM passed as an argument. In doing so it also
+** sets the BtShared.db member of each of the BtShared structures, ensuring
+** that the correct busy-handler callback is invoked if required.
+**
+** If SQLite is not threadsafe but does support shared-cache mode, then
+** sqlite3BtreeEnter() is invoked to set the BtShared.db variables
+** of all of BtShared structures accessible via the database handle 
+** associated with the VM.
+**
+** If SQLite is not threadsafe and does not support shared-cache mode, this
+** function is a no-op.
+**
+** The p->btreeMask field is a bitmask of all btrees that the prepared 
+** statement p will ever use.  Let N be the number of bits in p->btreeMask
+** corresponding to btrees that use shared cache.  Then the runtime of
+** this routine is N*N.  But as N is rarely more than 1, this should not
+** be a problem.
+*/
+void sqlite3VdbeEnter(Vdbe *p){
+#ifndef SQLITE_OMIT_SHARED_CACHE
+  int i;
+  yDbMask mask;
+  sqlite3 *db = p->db;
+  Db *aDb = db->aDb;
+  int nDb = db->nDb;
+  for(i=0, mask=1; i<nDb; i++, mask += mask){
+    if( i!=1 && (mask & p->btreeMask)!=0 && ALWAYS(aDb[i].pBt!=0) ){
+      sqlite3BtreeEnter(aDb[i].pBt);
+    }
+  }
+  p->iMutexCounter = mutexCounterSum(p);
+#else
+  UNUSED_PARAMETER(p);
+#endif
+}
+
+/*
+** Unlock all of the btrees previously locked by a call to sqlite3VdbeEnter().
+*/
+void sqlite3VdbeLeave(Vdbe *p){
+#ifndef SQLITE_OMIT_SHARED_CACHE
+  int i;
+  yDbMask mask;
+  sqlite3 *db = p->db;
+  Db *aDb = db->aDb;
+  int nDb = db->nDb;
+
+  /* Assert that the all mutexes have been held continously since
+  ** the most recent sqlite3VdbeEnter() or sqlite3VdbeMutexResync().
+  */
+  assert( mutexCounterSum(p) == p->iMutexCounter );
+
+  for(i=0, mask=1; i<nDb; i++, mask += mask){
+    if( i!=1 && (mask & p->btreeMask)!=0 && ALWAYS(aDb[i].pBt!=0) ){
+      sqlite3BtreeLeave(aDb[i].pBt);
+    }
+  }
+#else
+  UNUSED_PARAMETER(p);
+#endif
+}
+
+/*
+** Recompute the sum of the mutex counters on all btrees used by the
+** prepared statement p.
+**
+** Call this routine while holding a sqlite3VdbeEnter() after doing something
+** that might cause one or more of the individual mutexes held by the
+** prepared statement to be released.  Calling sqlite3BtreeEnter() on 
+** any BtShared mutex which is not used by the prepared statement is one
+** way to cause one or more of the mutexes in the prepared statement
+** to be temporarily released.  The anti-deadlocking logic in
+** sqlite3BtreeEnter() can cause mutexes to be released temporarily then
+** reacquired.
+**
+** Calling this routine is an acknowledgement that some of the individual
+** mutexes in the prepared statement might have been released and reacquired.
+** So checks to verify that mutex-protected content did not change
+** unexpectedly should accompany any call to this routine.
+*/
+void sqlite3VdbeMutexResync(Vdbe *p){
+#if !defined(SQLITE_OMIT_SHARED_CACHE) && defined(SQLITE_DEBUG)
+  p->iMutexCounter = mutexCounterSum(p);
+#else
+  UNUSED_PARAMETER(p);
+#endif
+}
 
 #if defined(VDBE_PROFILE) || defined(SQLITE_DEBUG)
 /*
@@ -1960,33 +2074,6 @@ int sqlite3VdbeCloseStatement(Vdbe *p, int eOp){
 }
 
 /*
-** If SQLite is compiled to support shared-cache mode and to be threadsafe,
-** this routine obtains the mutex associated with each BtShared structure
-** that may be accessed by the VM passed as an argument. In doing so it
-** sets the BtShared.db member of each of the BtShared structures, ensuring
-** that the correct busy-handler callback is invoked if required.
-**
-** If SQLite is not threadsafe but does support shared-cache mode, then
-** sqlite3BtreeEnterAll() is invoked to set the BtShared.db variables
-** of all of BtShared structures accessible via the database handle 
-** associated with the VM. Of course only a subset of these structures
-** will be accessed by the VM, and we could use Vdbe.btreeMask to figure
-** that subset out, but there is no advantage to doing so.
-**
-** If SQLite is not threadsafe and does not support shared-cache mode, this
-** function is a no-op.
-*/
-#ifndef SQLITE_OMIT_SHARED_CACHE
-void sqlite3VdbeMutexArrayEnter(Vdbe *p){
-#if SQLITE_THREADSAFE
-  sqlite3BtreeMutexArrayEnter(&p->aMutex);
-#else
-  sqlite3BtreeEnterAll(p->db);
-#endif
-}
-#endif
-
-/*
 ** This function is called when a transaction opened by the database 
 ** handle associated with the VM passed as an argument is about to be 
 ** committed. If there are outstanding deferred foreign key constraint
@@ -2058,7 +2145,7 @@ int sqlite3VdbeHalt(Vdbe *p){
     int isSpecialError;            /* Set to true if a 'special' error */
 
     /* Lock all btrees used by the statement */
-    sqlite3VdbeMutexArrayEnter(p);
+    sqlite3VdbeEnter(p);
 
     /* Check for one of the special errors */
     mrc = p->rc & 0xff;
@@ -2112,7 +2199,7 @@ int sqlite3VdbeHalt(Vdbe *p){
         rc = sqlite3VdbeCheckFk(p, 1);
         if( rc!=SQLITE_OK ){
           if( NEVER(p->readOnly) ){
-            sqlite3BtreeMutexArrayLeave(&p->aMutex);
+            sqlite3VdbeLeave(p);
             return SQLITE_ERROR;
           }
           rc = SQLITE_CONSTRAINT;
@@ -2124,7 +2211,7 @@ int sqlite3VdbeHalt(Vdbe *p){
           rc = vdbeCommit(db, p);
         }
         if( rc==SQLITE_BUSY && p->readOnly ){
-          sqlite3BtreeMutexArrayLeave(&p->aMutex);
+          sqlite3VdbeLeave(p);
           return SQLITE_BUSY;
         }else if( rc!=SQLITE_OK ){
           p->rc = rc;
@@ -2196,7 +2283,8 @@ int sqlite3VdbeHalt(Vdbe *p){
     }
 
     /* Release the locks */
-    sqlite3BtreeMutexArrayLeave(&p->aMutex);
+    sqlite3VdbeMutexResync(p);
+    sqlite3VdbeLeave(p);
   }
 
   /* We have successfully halted and closed the VM.  Record this fact. */

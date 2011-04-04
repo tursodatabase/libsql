@@ -571,7 +571,7 @@ int sqlite3VdbeExec(
   /*** INSERT STACK UNION HERE ***/
 
   assert( p->magic==VDBE_MAGIC_RUN );  /* sqlite3_step() verifies this */
-  sqlite3VdbeMutexArrayEnter(p);
+  sqlite3VdbeEnter(p);
   if( p->rc==SQLITE_NOMEM ){
     /* This happens if a malloc() inside a call to sqlite3_column_text() or
     ** sqlite3_column_text16() failed.  */
@@ -1394,6 +1394,7 @@ case OP_Function: {
     ctx.pColl = pOp[-1].p4.pColl;
   }
   (*ctx.pFunc->xFunc)(&ctx, n, apVal); /* IMP: R-24505-23230 */
+  sqlite3VdbeMutexResync(p);
   if( db->mallocFailed ){
     /* Even though a malloc() has failed, the implementation of the
     ** user function may have called an sqlite3_result_XXX() function
@@ -1425,6 +1426,15 @@ case OP_Function: {
   if( sqlite3VdbeMemTooBig(pOut) ){
     goto too_big;
   }
+
+#if 0
+  /* The app-defined function has done something that as caused this
+  ** statement to expire.  (Perhaps the function called sqlite3_exec()
+  ** with a CREATE TABLE statement.)
+  */
+  if( p->expired ) rc = SQLITE_ABORT;
+#endif
+
   REGISTER_TRACE(pOp->p3, pOut);
   UPDATE_MAX_BLOBSIZE(pOut);
   break;
@@ -2650,6 +2660,7 @@ case OP_Savepoint: {
         if( p1==SAVEPOINT_ROLLBACK && (db->flags&SQLITE_InternChanges)!=0 ){
           sqlite3ExpirePreparedStatements(db);
           sqlite3ResetInternalSchema(db, -1);
+          sqlite3VdbeMutexResync(p);
           db->flags = (db->flags | SQLITE_InternChanges);
         }
       }
@@ -2789,7 +2800,7 @@ case OP_Transaction: {
   Btree *pBt;
 
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
-  assert( (p->btreeMask & (1<<pOp->p1))!=0 );
+  assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
   pBt = db->aDb[pOp->p1].pBt;
 
   if( pBt ){
@@ -2845,7 +2856,7 @@ case OP_ReadCookie: {               /* out2-prerelease */
   assert( pOp->p3<SQLITE_N_BTREE_META );
   assert( iDb>=0 && iDb<db->nDb );
   assert( db->aDb[iDb].pBt!=0 );
-  assert( (p->btreeMask & (1<<iDb))!=0 );
+  assert( (p->btreeMask & (((yDbMask)1)<<iDb))!=0 );
 
   sqlite3BtreeGetMeta(db->aDb[iDb].pBt, iCookie, (u32 *)&iMeta);
   pOut->u.i = iMeta;
@@ -2866,7 +2877,7 @@ case OP_SetCookie: {       /* in3 */
   Db *pDb;
   assert( pOp->p2<SQLITE_N_BTREE_META );
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
-  assert( (p->btreeMask & (1<<pOp->p1))!=0 );
+  assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
   pDb = &db->aDb[pOp->p1];
   assert( pDb->pBt!=0 );
   pIn3 = &aMem[pOp->p3];
@@ -2914,7 +2925,7 @@ case OP_VerifyCookie: {
   Btree *pBt;
 
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
-  assert( (p->btreeMask & (1<<pOp->p1))!=0 );
+  assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
   pBt = db->aDb[pOp->p1].pBt;
   if( pBt ){
     sqlite3BtreeGetMeta(pBt, BTREE_SCHEMA_VERSION, (u32 *)&iMeta);
@@ -2940,6 +2951,7 @@ case OP_VerifyCookie: {
     */
     if( db->aDb[pOp->p1].pSchema->schema_cookie!=iMeta ){
       sqlite3ResetInternalSchema(db, pOp->p1);
+      sqlite3VdbeMutexResync(p);
     }
 
     p->expired = 1;
@@ -3018,7 +3030,7 @@ case OP_OpenWrite: {
   p2 = pOp->p2;
   iDb = pOp->p3;
   assert( iDb>=0 && iDb<db->nDb );
-  assert( (p->btreeMask & (1<<iDb))!=0 );
+  assert( (p->btreeMask & (((yDbMask)1)<<iDb))!=0 );
   pDb = &db->aDb[iDb];
   pX = pDb->pBt;
   assert( pX!=0 );
@@ -4513,7 +4525,7 @@ case OP_Destroy: {     /* out2-prerelease */
   }else{
     iDb = pOp->p3;
     assert( iCnt==1 );
-    assert( (p->btreeMask & (1<<iDb))!=0 );
+    assert( (p->btreeMask & (((yDbMask)1)<<iDb))!=0 );
     rc = sqlite3BtreeDropTable(db->aDb[iDb].pBt, pOp->p1, &iMoved);
     pOut->flags = MEM_Int;
     pOut->u.i = iMoved;
@@ -4549,7 +4561,7 @@ case OP_Clear: {
   int nChange;
  
   nChange = 0;
-  assert( (p->btreeMask & (1<<pOp->p2))!=0 );
+  assert( (p->btreeMask & (((yDbMask)1)<<pOp->p2))!=0 );
   rc = sqlite3BtreeClearTable(
       db->aDb[pOp->p2].pBt, pOp->p1, (pOp->p3 ? &nChange : 0)
   );
@@ -4594,7 +4606,7 @@ case OP_CreateTable: {          /* out2-prerelease */
 
   pgno = 0;
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
-  assert( (p->btreeMask & (1<<pOp->p1))!=0 );
+  assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
   pDb = &db->aDb[pOp->p1];
   assert( pDb->pBt!=0 );
   if( pOp->opcode==OP_CreateTable ){
@@ -4622,29 +4634,22 @@ case OP_ParseSchema: {
   char *zSql;
   InitData initData;
 
+  /* Any prepared statement that invokes this opcode will hold mutexes
+  ** on every btree.  This is a prerequisite for invoking 
+  ** sqlite3InitCallback().
+  */
+#ifdef SQLITE_DEBUG
+  for(iDb=0; iDb<db->nDb; iDb++){
+    assert( iDb==1 || sqlite3BtreeHoldsMutex(db->aDb[iDb].pBt) );
+  }
+#endif
+  assert( p->btreeMask == ~(yDbMask)0 );
+
+
   iDb = pOp->p1;
   assert( iDb>=0 && iDb<db->nDb );
-
-  /* When this opcode is invoked, it is guaranteed that the b-tree mutex
-  ** is held and the schema is loaded for database iDb. However, at the 
-  ** start of the sqlite3_exec() call below, SQLite will invoke 
-  ** sqlite3BtreeEnterAll(). If all mutexes are not already held, the iDb 
-  ** mutex may be temporarily released to avoid deadlock. If this happens, 
-  ** then some other thread may delete the in-memory schema of database iDb 
-  ** before the SQL statement runs. The schema will not be reloaded because 
-  ** the db->init.busy flag is set. This can result in a "no such table: 
-  ** sqlite_master" or "malformed database schema" error being returned to 
-  ** the user. 
-  **
-  ** To avoid this, obtain all mutexes and check that no other thread has
-  ** deleted the schema before calling sqlite3_exec(). If we find that the
-  ** another thread has deleted the schema, there is no need to update it.
-  ** The updated schema will be loaded from disk when it is next required.
-  */
-  assert( sqlite3BtreeHoldsMutex(db->aDb[iDb].pBt) );
   assert( DbHasProperty(db, iDb, DB_SchemaLoaded) );
-  sqlite3BtreeEnterAll(db);
-  if( DbHasProperty(db, iDb, DB_SchemaLoaded) ){
+  /* Used to be a conditional */ {
     zMaster = SCHEMA_TABLE(iDb);
     initData.db = db;
     initData.iDb = pOp->p1;
@@ -4665,7 +4670,6 @@ case OP_ParseSchema: {
       db->init.busy = 0;
     }
   }
-  sqlite3BtreeLeaveAll(db);
   if( rc==SQLITE_NOMEM ){
     goto no_mem;
   }
@@ -4766,7 +4770,7 @@ case OP_IntegrityCk: {
   }
   aRoot[j] = 0;
   assert( pOp->p5<db->nDb );
-  assert( (p->btreeMask & (1<<pOp->p5))!=0 );
+  assert( (p->btreeMask & (((yDbMask)1)<<pOp->p5))!=0 );
   z = sqlite3BtreeIntegrityCheck(db->aDb[pOp->p5].pBt, aRoot, nRoot,
                                  (int)pnErr->u.i, &nErr);
   sqlite3DbFree(db, aRoot);
@@ -5190,11 +5194,25 @@ case OP_AggStep: {
     ctx.pColl = pOp[-1].p4.pColl;
   }
   (ctx.pFunc->xStep)(&ctx, n, apVal); /* IMP: R-24505-23230 */
+  sqlite3VdbeMutexResync(p);
   if( ctx.isError ){
     sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3_value_text(&ctx.s));
     rc = ctx.isError;
   }
+
+  /* The app-defined function has done something that as caused this
+  ** statement to expire.  (Perhaps the function called sqlite3_exec()
+  ** with a CREATE TABLE statement.)
+  */
+#if 0
+  if( p->expired ){
+    rc = SQLITE_ABORT;
+    break;
+  }
+#endif
+
   sqlite3VdbeMemRelease(&ctx.s);
+
   break;
 }
 
@@ -5216,8 +5234,11 @@ case OP_AggFinal: {
   pMem = &aMem[pOp->p1];
   assert( (pMem->flags & ~(MEM_Null|MEM_Agg))==0 );
   rc = sqlite3VdbeMemFinalize(pMem, pOp->p4.pFunc);
+  sqlite3VdbeMutexResync(p);
   if( rc ){
     sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3_value_text(pMem));
+  }else if( p->expired ){
+    rc = SQLITE_ABORT;
   }
   sqlite3VdbeChangeEncoding(pMem, encoding);
   UPDATE_MAX_BLOBSIZE(pMem);
@@ -5294,7 +5315,7 @@ case OP_JournalMode: {    /* out2-prerelease */
 
   /* This opcode is used in two places: PRAGMA journal_mode and ATTACH.
   ** In PRAGMA journal_mode, the sqlite3VdbeUsesBtree() routine is called
-  ** when the statment is prepared and so p->aMutex.nMutex>0.  All mutexes
+  ** when the statement is prepared and so p->btreeMask!=0.  All mutexes
   ** are already acquired.  But when used in ATTACH, sqlite3VdbeUsesBtree()
   ** is not called when the statement is prepared because it requires the
   ** iDb index of the database as a parameter, and the database has not
@@ -5303,12 +5324,11 @@ case OP_JournalMode: {    /* out2-prerelease */
   ** No other mutexes are required by the ATTACH command so this is safe
   ** to do.
   */
-  assert( (p->btreeMask & (1<<pOp->p1))!=0 || p->aMutex.nMutex==0 );
-  if( p->aMutex.nMutex==0 ){
+  if( p->btreeMask==0 ){
     /* This occurs right after ATTACH.  Get a mutex on the newly ATTACHed
     ** database. */
     sqlite3VdbeUsesBtree(p, pOp->p1);
-    sqlite3VdbeMutexArrayEnter(p);
+    sqlite3VdbeEnter(p);
   }
 
   pBt = db->aDb[pOp->p1].pBt;
@@ -5408,7 +5428,7 @@ case OP_IncrVacuum: {        /* jump */
   Btree *pBt;
 
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
-  assert( (p->btreeMask & (1<<pOp->p1))!=0 );
+  assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
   pBt = db->aDb[pOp->p1].pBt;
   rc = sqlite3BtreeIncrVacuum(pBt);
   if( rc==SQLITE_DONE ){
@@ -5457,7 +5477,7 @@ case OP_TableLock: {
   if( isWriteLock || 0==(db->flags&SQLITE_ReadUncommitted) ){
     int p1 = pOp->p1; 
     assert( p1>=0 && p1<db->nDb );
-    assert( (p->btreeMask & (1<<p1))!=0 );
+    assert( (p->btreeMask & (((yDbMask)1)<<p1))!=0 );
     assert( isWriteLock==0 || isWriteLock==1 );
     rc = sqlite3BtreeLockTable(db->aDb[p1].pBt, pOp->p2, isWriteLock);
     if( (rc&0xFF)==SQLITE_LOCKED ){
@@ -5946,13 +5966,16 @@ vdbe_error_halt:
   sqlite3VdbeHalt(p);
   if( rc==SQLITE_IOERR_NOMEM ) db->mallocFailed = 1;
   rc = SQLITE_ERROR;
-  if( resetSchemaOnFault ) sqlite3ResetInternalSchema(db, -1);
+  if( resetSchemaOnFault ){
+    sqlite3ResetInternalSchema(db, 0);
+    sqlite3VdbeMutexResync(p);
+  }
 
   /* This is the only way out of this procedure.  We have to
   ** release the mutexes on btrees that were acquired at the
   ** top. */
 vdbe_return:
-  sqlite3BtreeMutexArrayLeave(&p->aMutex);
+  sqlite3VdbeLeave(p);
   return rc;
 
   /* Jump to here if a string or blob larger than SQLITE_MAX_LENGTH
