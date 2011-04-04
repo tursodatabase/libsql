@@ -1,5 +1,5 @@
-C Suppress\sunused\sparameter\swarnings\sin\ssqlite3VdbeEnter()\sand\srelated\sroutines.
-D 2011-04-04T03:27:16.245
+C Changes\sto\soserror.test\sand\ssyscall.test\sso\sthat\sthey\swork\swith\sthe\sin-memory\sjournal\spermutation\stest.
+D 2011-04-04T07:05:38.773
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -594,7 +594,7 @@ F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/omitunique.test bbb2ec4345d9125d9ee21cd9488d97a163020d5f
 F test/openv2.test af02ed0a9cbc0d2a61b8f35171d4d117e588e4ec
-F test/oserror.test 0abf1b4a935aae329b95da27388d7ca61aaea6f0
+F test/oserror.test 498d8337e9d15543eb7b004fef8594bf204ff43c
 F test/pager1.test d8672fd0af5f4f9b99b06283d00f01547809bebe
 F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
@@ -677,7 +677,7 @@ F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
 F test/superlock.test 5d7a4954b0059c903f82c7b67867bc5451a7c082
 F test/sync.test ded6b39d8d8ca3c0c5518516c6371b3316d3e3a3
-F test/syscall.test b967e1f5405bb1c9e2e223dbf7d7cd35220589a3
+F test/syscall.test 02e5359bf4f5e6f716696318fde4e0b5c2c70d21
 F test/sysfault.test c79441d88d23696fbec7b147dba98d42a04f523f
 F test/table.test 04ba066432430657712d167ebf28080fe878d305
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
@@ -926,7 +926,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P d81708f7d1eee399bfe76f6b8dac950a85dc2582
-R a4fe05a3c45b7dfebc2c0e1b1ce8761a
-U drh
-Z 802ab81287251956931cb7c1ec2989a0
+P f8e98ab3062a6e56924a86e8f3204c30d0f3d906
+R f1bbd3f7ef415e82a6c1a2591a207c23
+U dan
+Z 67d15952b786647f2d72d97293a23816

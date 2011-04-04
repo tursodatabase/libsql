@@ -221,8 +221,10 @@ foreach {nByte res} {
 } {
   do_test 7.$nByte {
     create_db_file $nByte
-    sqlite3 db test.db
-    catchsql { CREATE TABLE t1(a, b) }
+    list [catch {
+      sqlite3 db test.db
+      execsql { CREATE TABLE t1(a, b) }
+    } msg] $msg
   } $res
   catch { db close }
 }
