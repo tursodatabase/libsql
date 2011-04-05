@@ -955,7 +955,7 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
 ** is maintained in p->btreeMask and is used for locking and other purposes.
 */
 void sqlite3VdbeUsesBtree(Vdbe *p, int i){
-  assert( i>=0 && i<p->db->nDb && i<sizeof(yDbMask)*8 );
+  assert( i>=0 && i<p->db->nDb && i<(int)sizeof(yDbMask)*8 );
   assert( i<(int)sizeof(p->btreeMask)*8 );
   p->btreeMask |= ((yDbMask)1)<<i;
 }

@@ -69,6 +69,8 @@ static int fts3auxConnectMethod(
   int rc;                         /* value returned by declare_vtab() */
   Fts3auxTable *p;                /* Virtual table object to return */
 
+  UNUSED_PARAMETER(pUnused);
+
   /* The user should specify a single argument - the name of an fts3 table. */
   if( argc!=4 ){
     *pzErr = sqlite3_mprintf(
@@ -138,6 +140,8 @@ static int fts3auxBestIndexMethod(
   int iGe = -1;
   int iLe = -1;
 
+  UNUSED_PARAMETER(pVTab);
+
   /* This vtab delivers always results in "ORDER BY term ASC" order. */
   if( pInfo->nOrderBy==1 
    && pInfo->aOrderBy[0].iColumn==0 
@@ -185,6 +189,8 @@ static int fts3auxBestIndexMethod(
 */
 static int fts3auxOpenMethod(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCsr){
   Fts3auxCursor *pCsr;            /* Pointer to cursor object to return */
+
+  UNUSED_PARAMETER(pVTab);
 
   pCsr = (Fts3auxCursor *)sqlite3_malloc(sizeof(Fts3auxCursor));
   if( !pCsr ) return SQLITE_NOMEM;
@@ -334,6 +340,8 @@ static int fts3auxFilterMethod(
   Fts3Table *pFts3 = ((Fts3auxTable *)pCursor->pVtab)->pFts3Tab;
   int rc;
   int isScan;
+
+  UNUSED_PARAMETER(nVal);
 
   assert( idxStr==0 );
   assert( idxNum==FTS4AUX_EQ_CONSTRAINT || idxNum==0

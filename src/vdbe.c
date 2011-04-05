@@ -2931,7 +2931,7 @@ case OP_VerifyCookie: {
     sqlite3BtreeGetMeta(pBt, BTREE_SCHEMA_VERSION, (u32 *)&iMeta);
     iGen = db->aDb[pOp->p1].pSchema->iGeneration;
   }else{
-    iMeta = 0;
+    iGen = iMeta = 0;
   }
   if( iMeta!=pOp->p2 || iGen!=pOp->p3 ){
     sqlite3DbFree(db, p->zErrMsg);
