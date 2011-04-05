@@ -867,7 +867,7 @@ if {[db eval {PRAGMA locking_mode}]!="exclusive"} {
   catch { db2 close }
 }
 
-ifcapable stat2 {
+ifcapable stat2&&utf16 {
   do_malloc_test 38 -tclprep {
     add_test_collate db 0 0 1
     execsql {
