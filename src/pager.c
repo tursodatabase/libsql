@@ -2972,6 +2972,19 @@ static int pagerWalFrames(
   }
 #endif
 
+  if( isCommit ){
+    /* If a WAL transaction is being committed, there is no point in writing
+    ** any pages with page numbers greater than nTruncate into the WAL file.
+    ** They will never be read by any client. So remove them from the pDirty
+    ** list here. */
+    PgHdr *p;
+    PgHdr **ppNext = &pList;
+    for(p=pList; (*ppNext = p); p=p->pDirty){
+      if( p->pgno<=nTruncate ) ppNext = &p->pDirty;
+    }
+    assert( pList );
+  }
+
   if( pList->pgno==1 ) pager_write_changecounter(pList);
   rc = sqlite3WalFrames(pPager->pWal, 
       pPager->pageSize, pList, nTruncate, isCommit, syncFlags
@@ -2984,6 +2997,7 @@ static int pagerWalFrames(
   }
 
 #ifdef SQLITE_CHECK_PAGES
+  pList = sqlite3PcacheDirtyList(pPager->pPCache);
   for(p=pList; p; p=p->pDirty){
     pager_set_pagehash(p);
   }

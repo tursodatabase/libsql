@@ -303,7 +303,6 @@ struct Vdbe {
   u8 isPrepareV2;         /* True if prepared with prepare_v2() */
   int nChange;            /* Number of db changes made since last reset */
   yDbMask btreeMask;      /* Bitmask of db->aDb[] entries referenced */
-  u32 iMutexCounter;      /* Mutex counter upon sqlite3VdbeEnter() */
   int iStatement;         /* Statement number (or 0 if has not opened stmt) */
   int aCounter[3];        /* Counters used by sqlite3_stmt_status() */
 #ifndef SQLITE_OMIT_TRACE
@@ -387,9 +386,14 @@ int sqlite3VdbeCloseStatement(Vdbe *, int);
 void sqlite3VdbeFrameDelete(VdbeFrame*);
 int sqlite3VdbeFrameRestore(VdbeFrame *);
 void sqlite3VdbeMemStoreType(Mem *pMem);
-void sqlite3VdbeEnter(Vdbe*);
-void sqlite3VdbeLeave(Vdbe*);
-void sqlite3VdbeMutexResync(Vdbe*);
+
+#if !defined(SQLITE_OMIT_SHARED_CACHE) && SQLITE_THREADSAFE>0
+  void sqlite3VdbeEnter(Vdbe*);
+  void sqlite3VdbeLeave(Vdbe*);
+#else
+# define sqlite3VdbeEnter(X)
+# define sqlite3VdbeLeave(X)
+#endif
 
 #ifdef SQLITE_DEBUG
 void sqlite3VdbeMemPrepareToChange(Vdbe*,Mem*);
