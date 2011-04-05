@@ -48,7 +48,7 @@ static int createModule(
     if( pDel==pMod ){
       db->mallocFailed = 1;
     }
-    sqlite3ResetInternalSchema(db, 0);
+    sqlite3ResetInternalSchema(db, -1);
   }else if( xDestroy ){
     xDestroy(pAux);
   }
@@ -145,10 +145,9 @@ static VTable *vtabDisconnectAll(sqlite3 *db, Table *p){
   ** that contains table p is held by the caller. See header comments 
   ** above function sqlite3VtabUnlockList() for an explanation of why
   ** this makes it safe to access the sqlite3.pDisconnect list of any
-  ** database connection that may have an entry in the p->pVTable list.  */
-  assert( db==0 ||
-    sqlite3BtreeHoldsMutex(db->aDb[sqlite3SchemaToIndex(db, p->pSchema)].pBt) 
-  );
+  ** database connection that may have an entry in the p->pVTable list.
+  */
+  assert( db==0 || sqlite3SchemaMutexHeld(db, 0, p->pSchema) );
 
   while( pVTable ){
     sqlite3 *db2 = pVTable->db;
@@ -387,6 +386,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
     Schema *pSchema = pTab->pSchema;
     const char *zName = pTab->zName;
     int nName = sqlite3Strlen30(zName);
+    assert( sqlite3SchemaMutexHeld(db, 0, pSchema) );
     pOld = sqlite3HashInsert(&pSchema->tblHash, zName, nName, pTab);
     if( pOld ){
       db->mallocFailed = 1;

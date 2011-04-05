@@ -200,7 +200,7 @@ static void attachFunc(
       db->aDb[iDb].pBt = 0;
       db->aDb[iDb].pSchema = 0;
     }
-    sqlite3ResetInternalSchema(db, 0);
+    sqlite3ResetInternalSchema(db, -1);
     db->nDb = iDb;
     if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ){
       db->mallocFailed = 1;
@@ -272,7 +272,7 @@ static void detachFunc(
   sqlite3BtreeClose(pDb->pBt);
   pDb->pBt = 0;
   pDb->pSchema = 0;
-  sqlite3ResetInternalSchema(db, 0);
+  sqlite3ResetInternalSchema(db, -1);
   return;
 
 detach_error:

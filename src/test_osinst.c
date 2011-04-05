@@ -213,14 +213,14 @@ static sqlite3_io_methods vfslog_io_methods = {
   vfslogShmUnmap                  /* xShmUnmap */
 };
 
-#if defined(SQLITE_OS_UNIX) && !defined(NO_GETTOD)
+#if SQLITE_OS_UNIX && !defined(NO_GETTOD)
 #include <sys/time.h>
 static sqlite3_uint64 vfslog_time(){
   struct timeval sTime;
   gettimeofday(&sTime, 0);
   return sTime.tv_usec + (sqlite3_uint64)sTime.tv_sec * 1000000;
 }
-#elif defined(SQLITE_OS_WIN)
+#elif SQLITE_OS_WIN
 #include <windows.h>
 #include <time.h>
 static sqlite3_uint64 vfslog_time(){

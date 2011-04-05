@@ -115,7 +115,7 @@
 **   operations.
 */
 
-#if !defined(SQLITE_TEST) || defined(SQLITE_OS_UNIX)
+#if !defined(SQLITE_TEST) || SQLITE_OS_UNIX
 
 #include <sqlite3.h>
 
@@ -637,14 +637,14 @@ sqlite3_vfs *sqlite3_demovfs(void){
   return &demovfs;
 }
 
-#endif /* !defined(SQLITE_TEST) || defined(SQLITE_OS_UNIX) */
+#endif /* !defined(SQLITE_TEST) || SQLITE_OS_UNIX */
 
 
 #ifdef SQLITE_TEST
 
 #include <tcl.h>
 
-#ifdef SQLITE_OS_UNIX
+#if SQLITE_OS_UNIX
 static int register_demovfs(
   ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */

@@ -400,12 +400,12 @@ FuncDef *sqlite3FindFunction(
 /*
 ** Free all resources held by the schema structure. The void* argument points
 ** at a Schema struct. This function does not call sqlite3DbFree(db, ) on the 
-** pointer itself, it just cleans up subsiduary resources (i.e. the contents
+** pointer itself, it just cleans up subsidiary resources (i.e. the contents
 ** of the schema hash tables).
 **
 ** The Schema.cache_size variable is not cleared.
 */
-void sqlite3SchemaFree(void *p){
+void sqlite3SchemaClear(void *p){
   Hash temp1;
   Hash temp2;
   HashElem *pElem;
@@ -440,7 +440,7 @@ void sqlite3SchemaFree(void *p){
 Schema *sqlite3SchemaGet(sqlite3 *db, Btree *pBt){
   Schema * p;
   if( pBt ){
-    p = (Schema *)sqlite3BtreeSchema(pBt, sizeof(Schema), sqlite3SchemaFree);
+    p = (Schema *)sqlite3BtreeSchema(pBt, sizeof(Schema), sqlite3SchemaClear);
   }else{
     p = (Schema *)sqlite3DbMallocZero(0, sizeof(Schema));
   }

@@ -2345,7 +2345,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       assert( pExpr->u.zToken[0]!=0 );
       sqlite3VdbeAddOp2(v, OP_Variable, pExpr->iColumn, target);
       if( pExpr->u.zToken[1]!=0 ){
-        sqlite3VdbeChangeP4(v, -1, pExpr->u.zToken, 0);
+        sqlite3VdbeChangeP4(v, -1, pExpr->u.zToken, P4_TRANSIENT);
       }
       break;
     }

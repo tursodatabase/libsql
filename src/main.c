@@ -690,7 +690,8 @@ int sqlite3_close(sqlite3 *db){
   }
   sqlite3_mutex_enter(db->mutex);
 
-  sqlite3ResetInternalSchema(db, 0);
+  /* Force xDestroy calls on all virtual tables */
+  sqlite3ResetInternalSchema(db, -1);
 
   /* If a transaction is open, the ResetInternalSchema() call above
   ** will not have called the xDisconnect() method on any virtual
@@ -733,7 +734,7 @@ int sqlite3_close(sqlite3 *db){
       }
     }
   }
-  sqlite3ResetInternalSchema(db, 0);
+  sqlite3ResetInternalSchema(db, -1);
 
   /* Tell the code in notify.c that the connection no longer holds any
   ** locks and does not require any further unlock-notify callbacks.
@@ -828,7 +829,7 @@ void sqlite3RollbackAll(sqlite3 *db){
 
   if( db->flags&SQLITE_InternChanges ){
     sqlite3ExpirePreparedStatements(db);
-    sqlite3ResetInternalSchema(db, 0);
+    sqlite3ResetInternalSchema(db, -1);
   }
 
   /* Any deferred constraint violations have now been resolved. */

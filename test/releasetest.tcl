@@ -64,7 +64,6 @@ array set ::Configs {
     -O2
     -DSQLITE_ENABLE_UNLOCK_NOTIFY
     -DSQLITE_THREADSAFE
-    -DOS_UNIX
     -DSQLITE_TCL_DEFAULT_FULLMUTEX=1
   }
   "Secure-Delete" {

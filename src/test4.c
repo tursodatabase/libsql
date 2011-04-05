@@ -13,7 +13,7 @@
 */
 #include "sqliteInt.h"
 #include "tcl.h"
-#if defined(SQLITE_OS_UNIX) && OS_UNIX==1 && SQLITE_THREADSAFE
+#if SQLITE_OS_UNIX && SQLITE_THREADSAFE
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
