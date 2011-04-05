@@ -1,5 +1,5 @@
-C Added\sifcapable\swal\sto\ssome\stest\sscripts;
-D 2011-04-05T02:33:44.856
+C Improved\scomment\son\sthe\ssqlite3SrcListLookup\sfunction.
+D 2011-04-05T11:26:54.833
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -129,7 +129,7 @@ F src/callback.c 5069f224882cbdccd559f591271d28d7f37745bc
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 52ff72f966cee3087e0138a3ec69371c22be3c01
 F src/date.c 1548fdac51377e4e7833251de878b4058c148e1b
-F src/delete.c 7ed8a8c8b5f748ece92df173d7e0f7810c899ebd
+F src/delete.c 860c82c7db9b9d358bae607776bd7178b411fecc
 F src/expr.c 00817c672af554321fd67c44325afd7cef0e4648
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 418b840007c873975fd0d071746d952f8bca20ce
@@ -926,7 +926,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 57e0919b08e3b839b7c71011707a19ae2511a625
-R 92ae401439ab5ec163373abdec4908d5
-U shaneh
-Z 4749a579d5426b12c46df9b59dbb6167
+P 6b270381daad5d1a9ca5746cf439c90f9c735a1b
+R 2ab6636865bc4ea8875ff28b858a8e0a
+U drh
+Z eac0ee404fcc8c2a7c0088a90c957b5e
