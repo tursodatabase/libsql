@@ -220,6 +220,7 @@ void sqlite3BtreeCursorList(Btree*);
   /* These routines are used inside assert() statements only. */
   int sqlite3BtreeHoldsMutex(Btree*);
   int sqlite3BtreeHoldsAllMutexes(sqlite3*);
+  int sqlite3SchemaMutexHeld(sqlite3*,int,Schema*);
   u32 sqlite3BtreeMutexCounter(Btree*);
 #endif
 #else
@@ -232,6 +233,7 @@ void sqlite3BtreeCursorList(Btree*);
 
 # define sqlite3BtreeHoldsMutex(X) 1
 # define sqlite3BtreeHoldsAllMutexes(X) 1
+# define sqlite3BtreeSchemaMutexHeld(X,Y) 1
 #endif
 
 

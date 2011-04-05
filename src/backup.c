@@ -401,7 +401,7 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
       int nDestTruncate;
   
       if( p->pDestDb ){
-        sqlite3ResetInternalSchema(p->pDestDb, 0);
+        sqlite3ResetInternalSchema(p->pDestDb, -1);
       }
 
       /* Set nDestTruncate to the final number of pages in the destination
