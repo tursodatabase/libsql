@@ -960,31 +960,7 @@ void sqlite3VdbeUsesBtree(Vdbe *p, int i){
   p->btreeMask |= ((yDbMask)1)<<i;
 }
 
-/*
-** Compute the sum of all mutex counters for all btrees in the
-** given prepared statement.
-*/
-#ifndef SQLITE_OMIT_SHARED_CACHE
-static u32 mutexCounterSum(Vdbe *p){
-  u32 cntSum = 0;
-#ifdef SQLITE_DEBUG
-  int i;
-  yDbMask mask;
-  sqlite3 *db = p->db;
-  Db *aDb = db->aDb;
-  int nDb = db->nDb;
-  for(i=0, mask=1; i<nDb; i++, mask += mask){
-    if( i!=1 && (mask & p->btreeMask)!=0 && ALWAYS(aDb[i].pBt!=0) ){
-      cntSum += sqlite3BtreeMutexCounter(aDb[i].pBt);
-    }
-  }
-#else
-  UNUSED_PARAMETER(p);
-#endif
-  return cntSum;
-}
-#endif
-
+#if !defined(SQLITE_OMIT_SHARED_CACHE) && SQLITE_THREADSAFE>0
 /*
 ** If SQLite is compiled to support shared-cache mode and to be threadsafe,
 ** this routine obtains the mutex associated with each BtShared structure
@@ -1007,7 +983,6 @@ static u32 mutexCounterSum(Vdbe *p){
 ** be a problem.
 */
 void sqlite3VdbeEnter(Vdbe *p){
-#ifndef SQLITE_OMIT_SHARED_CACHE
   int i;
   yDbMask mask;
   sqlite3 *db = p->db;
@@ -1018,63 +993,27 @@ void sqlite3VdbeEnter(Vdbe *p){
       sqlite3BtreeEnter(aDb[i].pBt);
     }
   }
-  p->iMutexCounter = mutexCounterSum(p);
-#else
-  UNUSED_PARAMETER(p);
-#endif
 }
+#endif
 
+#if !defined(SQLITE_OMIT_SHARED_CACHE) && SQLITE_THREADSAFE>0
 /*
 ** Unlock all of the btrees previously locked by a call to sqlite3VdbeEnter().
 */
 void sqlite3VdbeLeave(Vdbe *p){
-#ifndef SQLITE_OMIT_SHARED_CACHE
   int i;
   yDbMask mask;
   sqlite3 *db = p->db;
   Db *aDb = db->aDb;
   int nDb = db->nDb;
 
-  /* Assert that the all mutexes have been held continously since
-  ** the most recent sqlite3VdbeEnter() or sqlite3VdbeMutexResync().
-  */
-  assert( mutexCounterSum(p) == p->iMutexCounter );
-
   for(i=0, mask=1; i<nDb; i++, mask += mask){
     if( i!=1 && (mask & p->btreeMask)!=0 && ALWAYS(aDb[i].pBt!=0) ){
       sqlite3BtreeLeave(aDb[i].pBt);
     }
   }
-#else
-  UNUSED_PARAMETER(p);
-#endif
 }
-
-/*
-** Recompute the sum of the mutex counters on all btrees used by the
-** prepared statement p.
-**
-** Call this routine while holding a sqlite3VdbeEnter() after doing something
-** that might cause one or more of the individual mutexes held by the
-** prepared statement to be released.  Calling sqlite3BtreeEnter() on 
-** any BtShared mutex which is not used by the prepared statement is one
-** way to cause one or more of the mutexes in the prepared statement
-** to be temporarily released.  The anti-deadlocking logic in
-** sqlite3BtreeEnter() can cause mutexes to be released temporarily then
-** reacquired.
-**
-** Calling this routine is an acknowledgement that some of the individual
-** mutexes in the prepared statement might have been released and reacquired.
-** So checks to verify that mutex-protected content did not change
-** unexpectedly should accompany any call to this routine.
-*/
-void sqlite3VdbeMutexResync(Vdbe *p){
-#if !defined(SQLITE_OMIT_SHARED_CACHE) && defined(SQLITE_DEBUG)
-  p->iMutexCounter = mutexCounterSum(p);
-#else
-  UNUSED_PARAMETER(p);
 #endif
-}
 
 #if defined(VDBE_PROFILE) || defined(SQLITE_DEBUG)
 /*
@@ -2283,7 +2222,6 @@ int sqlite3VdbeHalt(Vdbe *p){
     }
 
     /* Release the locks */
-    sqlite3VdbeMutexResync(p);
     sqlite3VdbeLeave(p);
   }
 

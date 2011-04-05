@@ -435,7 +435,6 @@ struct BtShared {
   Btree *pWriter;       /* Btree with currently open write transaction */
   u8 isExclusive;       /* True if pWriter has an EXCLUSIVE lock on the db */
   u8 isPending;         /* If waiting for read-locks to clear */
-  u16 iMutexCounter;    /* The number of mutex_leave(mutex) calls */
 #endif
   u8 *pTmpSpace;        /* BtShared.pageSize bytes of space for tmp use */
 };

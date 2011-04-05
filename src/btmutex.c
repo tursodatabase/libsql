@@ -45,27 +45,9 @@ static void unlockBtreeMutex(Btree *p){
   assert( sqlite3_mutex_held(p->db->mutex) );
   assert( p->db==pBt->db );
 
-  pBt->iMutexCounter++;
   sqlite3_mutex_leave(pBt->mutex);
   p->locked = 0;
 }
-
-#ifdef SQLITE_DEBUG
-/*
-** Return the number of times that the mutex has been exited for
-** the given btree.
-**
-** This is a small circular counter that wraps around to zero on
-** overflow.  It is used only for sanity checking - to verify that
-** mutexes are held continously by asserting that the value of
-** this counter at the beginning of a region is the same as at
-** the end.
-*/
-u32 sqlite3BtreeMutexCounter(Btree *p){
-  assert( p->locked==1 || p->sharable==0 );
-  return p->pBt->iMutexCounter;
-}
-#endif
 
 /*
 ** Enter a mutex on the given BTree object.
@@ -110,24 +92,6 @@ void sqlite3BtreeEnter(Btree *p){
   if( !p->sharable ) return;
   p->wantToLock++;
   if( p->locked ) return;
-
-  /* Increment the mutex counter on all locked btrees in the same
-  ** database connection.  This simulates the unlocking that would
-  ** occur on a worst-case mutex dead-lock avoidance scenario.
-  */
-#ifdef SQLITE_DEBUG
-  {
-    int ii;
-    sqlite3 *db = p->db;
-    Btree *pOther;
-    for(ii=0; ii<db->nDb; ii++){
-      if( ii==1 ) continue;
-      pOther = db->aDb[ii].pBt;
-      if( pOther==0 || pOther->sharable==0 || pOther->locked==0 ) continue;
-      pOther->pBt->iMutexCounter++;
-    }
-  }
-#endif
 
   /* In most cases, we should be able to acquire the lock we
   ** want without having to go throught the ascending lock

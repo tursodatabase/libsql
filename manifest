@@ -1,5 +1,5 @@
-C When\scommitting\sa\sWAL\stransaction,\sdo\snot\swrite\sany\spages\sto\sthe\sWAL\sfile\swith\spage\snumbers\sgreater\sthan\sthe\ssize\sof\sthe\sdatabase\simage\sin\spages.
-D 2011-04-05T16:09:08.127
+C Remove\sthe\smutex\scounter\sand\sthe\slogic\sthat\sattempts\sto\sverify\sthat\sbtree\nmutexes\sare\sheld\scontinuously.\s\sWe\sare\snot\smaking\sthat\sassumption\sat\sthis\ntime.
+D 2011-04-05T17:31:56.106
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -120,10 +120,10 @@ F src/attach.c 7cae2cf0c14762ce14c074a860ec52890a973a56
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c b7529a6691f0fd534ae8ff622203c46a7f1b626b
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
-F src/btmutex.c b81062220a4f91b0bd785d13d57205d68449be88
+F src/btmutex.c 1f951523accdfa1d204b06150e016b5b69529b8a
 F src/btree.c 107723ed4f9bdb55213ba6164c30c49af75f4bf9
-F src/btree.h c0e0ff5c85effe9fc757e3085bbdded6d1cca000
-F src/btreeInt.h 6714ce2f5e879eb9a904a6a4575dc4faa4f29991
+F src/btree.h 221e186cd64127088890a878aaab154344380fe8
+F src/btreeInt.h b5e339df994d12bcd9067d04f9125c8792de51ac
 F src/build.c d809f57250b10e83586bc23921de02055890b239
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
@@ -235,11 +235,11 @@ F src/update.c 81911be16ece3c3e7716aa18565b4814ec41f8b9
 F src/utf.c d83650c3ea08f7407bd9d0839d9885241c209c60
 F src/util.c cd997077bad039efc0597eb027c929658f93c018
 F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
-F src/vdbe.c 0140a57f9cbd50351219bfc4e44ef3de64bd65b8
+F src/vdbe.c b239d70f6862f1d0d3896c96efe7d6fabae1c56c
 F src/vdbe.h 8a675fefdf7119441fe817c800a9a52440c2e797
-F src/vdbeInt.h 7e2f028ecc1a9faa6f253e7aa8d89cae03662bae
+F src/vdbeInt.h 53dfcaf5b83297c24f537c4a54c1f35fd655b0a2
 F src/vdbeapi.c a09ad9164cafc505250d5dd6b69660c960f1308c
-F src/vdbeaux.c e1ea6edc07b4f33a339cc45a2fbe0a36067d2d8b
+F src/vdbeaux.c 64304e50c6d4ccca586410184927baa9faca6ecc
 F src/vdbeblob.c c3ccb7c8732858c680f442932e66ad06bb036562
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
 F src/vdbetrace.c 3ba13bc32bdf16d2bdea523245fd16736bed67b5
@@ -926,7 +926,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P d25c17ef6e2b916923489dccaaa018a2d6525401
-R c888a09e2325a742237e83457c23e497
-U dan
-Z 881050430264f599344995b52c518cce
+P 311d0b613d9cfa2dbcbb9ef2450041b1fd48770a
+R f2efb954b9e1d86872be6fb2ad3e5711
+U drh
+Z c70542c8d51f5c49bbcf63ab42aa4a3a

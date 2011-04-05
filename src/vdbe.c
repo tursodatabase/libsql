@@ -1394,7 +1394,6 @@ case OP_Function: {
     ctx.pColl = pOp[-1].p4.pColl;
   }
   (*ctx.pFunc->xFunc)(&ctx, n, apVal); /* IMP: R-24505-23230 */
-  sqlite3VdbeMutexResync(p);
   if( db->mallocFailed ){
     /* Even though a malloc() has failed, the implementation of the
     ** user function may have called an sqlite3_result_XXX() function
@@ -2660,7 +2659,6 @@ case OP_Savepoint: {
         if( p1==SAVEPOINT_ROLLBACK && (db->flags&SQLITE_InternChanges)!=0 ){
           sqlite3ExpirePreparedStatements(db);
           sqlite3ResetInternalSchema(db, -1);
-          sqlite3VdbeMutexResync(p);
           db->flags = (db->flags | SQLITE_InternChanges);
         }
       }
@@ -5198,22 +5196,10 @@ case OP_AggStep: {
     ctx.pColl = pOp[-1].p4.pColl;
   }
   (ctx.pFunc->xStep)(&ctx, n, apVal); /* IMP: R-24505-23230 */
-  sqlite3VdbeMutexResync(p);
   if( ctx.isError ){
     sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3_value_text(&ctx.s));
     rc = ctx.isError;
   }
-
-  /* The app-defined function has done something that as caused this
-  ** statement to expire.  (Perhaps the function called sqlite3_exec()
-  ** with a CREATE TABLE statement.)
-  */
-#if 0
-  if( p->expired ){
-    rc = SQLITE_ABORT;
-    break;
-  }
-#endif
 
   sqlite3VdbeMemRelease(&ctx.s);
 
@@ -5238,11 +5224,8 @@ case OP_AggFinal: {
   pMem = &aMem[pOp->p1];
   assert( (pMem->flags & ~(MEM_Null|MEM_Agg))==0 );
   rc = sqlite3VdbeMemFinalize(pMem, pOp->p4.pFunc);
-  sqlite3VdbeMutexResync(p);
   if( rc ){
     sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3_value_text(pMem));
-  }else if( p->expired ){
-    rc = SQLITE_ABORT;
   }
   sqlite3VdbeChangeEncoding(pMem, encoding);
   UPDATE_MAX_BLOBSIZE(pMem);
