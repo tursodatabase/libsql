@@ -1,5 +1,5 @@
-C Simplifications\sto\sthe\ssqlite3ResetInternalSchema()\slogic\sto\seliminate\nunreachable\sbranches.
-D 2011-04-05T19:26:30.895
+C Simplifications\sto\sthe\ssqlite3BtreeEnterAll()\sand\sLeaveAll()\sroutines.\nJust\shave\sthem\scall\sBtreeEnter\sand\sBtreeLeave()\srepeatedly\srather\sthan\ntrying\sto\sbe\sclever.
+D 2011-04-05T19:27:41.740
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -120,7 +120,7 @@ F src/attach.c 7cae2cf0c14762ce14c074a860ec52890a973a56
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c b7529a6691f0fd534ae8ff622203c46a7f1b626b
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
-F src/btmutex.c 1f951523accdfa1d204b06150e016b5b69529b8a
+F src/btmutex.c 7907af20b954a8605766fbd2d87b47647422960e
 F src/btree.c 107723ed4f9bdb55213ba6164c30c49af75f4bf9
 F src/btree.h 221e186cd64127088890a878aaab154344380fe8
 F src/btreeInt.h b5e339df994d12bcd9067d04f9125c8792de51ac
@@ -926,7 +926,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a89f24e2c9591d09cbe329895ceec87885059184
-R 4633b95d671699f85d5e19626e085a29
+P a4c3ac989d4e93f0279172901b9ece822d137700
+R b358e3039856b3a4cedf9c746c6172be
 U drh
-Z a7a8333914941d20132af834f7ba9e5c
+Z 63f8b79eae39a68f25008b0134502554

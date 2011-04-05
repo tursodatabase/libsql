@@ -186,30 +186,11 @@ void sqlite3BtreeLeaveCursor(BtCursor *pCur){
 */
 void sqlite3BtreeEnterAll(sqlite3 *db){
   int i;
-  Btree *p, *pLater;
+  Btree *p;
   assert( sqlite3_mutex_held(db->mutex) );
   for(i=0; i<db->nDb; i++){
     p = db->aDb[i].pBt;
-    assert( !p || (p->locked==0 && p->sharable) || p->pBt->db==p->db );
-    if( p && p->sharable ){
-      p->wantToLock++;
-      if( !p->locked ){
-        assert( p->wantToLock==1 );
-        while( p->pPrev ) p = p->pPrev;
-        /* Reason for ALWAYS:  There must be at least one unlocked Btree in
-        ** the chain.  Otherwise the !p->locked test above would have failed */
-        while( p->locked && ALWAYS(p->pNext) ) p = p->pNext;
-        for(pLater = p->pNext; pLater; pLater=pLater->pNext){
-          if( pLater->locked ){
-            unlockBtreeMutex(pLater);
-          }
-        }
-        while( p ){
-          lockBtreeMutex(p);
-          p = p->pNext;
-        }
-      }
-    }
+    if( p ) sqlite3BtreeEnter(p);
   }
 }
 void sqlite3BtreeLeaveAll(sqlite3 *db){
@@ -218,13 +199,7 @@ void sqlite3BtreeLeaveAll(sqlite3 *db){
   assert( sqlite3_mutex_held(db->mutex) );
   for(i=0; i<db->nDb; i++){
     p = db->aDb[i].pBt;
-    if( p && p->sharable ){
-      assert( p->wantToLock>0 );
-      p->wantToLock--;
-      if( p->wantToLock==0 ){
-        unlockBtreeMutex(p);
-      }
-    }
+    if( p ) sqlite3BtreeLeave(p);
   }
 }
 
