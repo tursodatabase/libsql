@@ -1,5 +1,5 @@
-C Fix\sa\sdocumentation\stypo.
-D 2011-04-05T14:22:48.053
+C When\scommitting\sa\sWAL\stransaction,\sdo\snot\swrite\sany\spages\sto\sthe\sWAL\sfile\swith\spage\snumbers\sgreater\sthan\sthe\ssize\sof\sthe\sdatabase\simage\sin\spages.
+D 2011-04-05T16:09:08.127
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -164,7 +164,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 2596fd2d5d0976c6c0c628d0c3c7c4e7a724f4cf
 F src/os_unix.c 32414676594a0a26cfccd7e02656230a3406eee7
 F src/os_win.c 24d72407a90551969744cf9bcbb1b4c72c5fa845
-F src/pager.c 6aa906b60a59664ba58d3f746164bb010d407ce1
+F src/pager.c 055239dcdfe12b3f5d97f6f01f85da01e2d6d912
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 09d38c44ab275db581f7a2f6ff8b9bc7f8c0faaa
@@ -860,7 +860,7 @@ F test/vtabE.test 7c4693638d7797ce2eda17af74292b97e705cc61
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
-F test/wal.test 973a4747a69247a43cc03292c44f59cc76f4df65
+F test/wal.test 084b086913a205eab4dde4b9a9cf8c781a576bb8
 F test/wal2.test e561a8c6fdd1c2cd1876f3e39757934e7b7361f8
 F test/wal3.test 5c396cc22497244d627306f4c1d360167353f8dd
 F test/wal4.test 3404b048fa5e10605facaf70384e6d2943412e30
@@ -926,7 +926,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 5db4511d8a77b74be3503a7c34257ef6b07541f5
-R f66ac9973277650bde436573608ca94f
-U drh
-Z c91a504724af14c0a00d31f50ea2afef
+P d25c17ef6e2b916923489dccaaa018a2d6525401
+R c888a09e2325a742237e83457c23e497
+U dan
+Z 881050430264f599344995b52c518cce

@@ -19,6 +19,8 @@ source $testdir/lock_common.tcl
 source $testdir/malloc_common.tcl
 source $testdir/wal_common.tcl
 
+set testprefix wal
+
 ifcapable !wal {finish_test ; return }
 
 proc reopen_db {} {
@@ -1503,6 +1505,54 @@ set nPage [expr 2+$AUTOVACUUM]
 do_test wal-23.4 { 
   set ::log 
 } [list SQLITE_OK "Recovered $nPage frames from WAL file $walfile"]
+
+
+ifcapable autovacuum {
+  # This block tests that if the size of a database is reduced by a 
+  # transaction (because of an incremental or auto-vacuum), that no
+  # data is written to the WAL file for the truncated pages as part
+  # of the commit. e.g. if a transaction reduces the size of a database
+  # to N pages, data for page N+1 should not be written to the WAL file 
+  # when committing the transaction. At one point such data was being 
+  # written.
+  #
+  catch {db close}
+  forcedelete test.db
+  sqlite3 db test.db
+  do_execsql_test 24.1 {
+    PRAGMA auto_vacuum = 2;
+    PRAGMA journal_mode = WAL;
+    PRAGMA page_size = 1024;
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES(randomblob(5000));
+    INSERT INTO t1 SELECT * FROM t1;
+    INSERT INTO t1 SELECT * FROM t1;
+    INSERT INTO t1 SELECT * FROM t1;
+    INSERT INTO t1 SELECT * FROM t1;
+  } {wal}
+  do_execsql_test 24.2 { 
+    DELETE FROM t1;
+    PRAGMA wal_checkpoint;
+  } {0 109 109}
+  do_test 24.3 {
+    db close
+    sqlite3 db test.db
+    file exists test.db-wal
+  } 0
+  do_test 24.4 {
+    file size test.db
+  } [expr 84 * 1024]
+  do_test 24.5 {
+    execsql { 
+      PRAGMA incremental_vacuum;
+      PRAGMA wal_checkpoint;
+    }
+    file size test.db
+  } [expr 3 * 1024]
+  do_test 24.6 {
+    file size test.db-wal
+  } 2128
+}
 
 db close
 sqlite3_shutdown
