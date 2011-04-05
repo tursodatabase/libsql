@@ -1,5 +1,5 @@
-C Added\sifcapable\sutf16\sto\sa\sfew\stest\scases;
-D 2011-04-05T02:21:04.887
+C Added\sifcapable\swal\sto\ssome\stest\sscripts;
+D 2011-04-05T02:33:44.856
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -377,7 +377,7 @@ F test/e_resolve.test dcce9308fb13b934ce29591105d031d3e14fbba6
 F test/e_select.test bf385ae3aa0f014c4933ae66fd3e1302138493eb
 F test/e_select2.test 5c3d3da19c7b3e90ae444579db2b70098599ab92
 F test/e_update.test 963d6876064e65f318d1c93aaed36a02b9b389bf
-F test/e_vacuum.test 057cc29445746fc1d2542984ff0253d511a234bd
+F test/e_vacuum.test 6c09c2af7f2f140518f371c5342100118f779dcf
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
@@ -926,7 +926,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 78b6eee200cab363be520d771375e44898f80e01
-R f54fb099162c6d5644e37dc8b0ce9ec9
+P 57e0919b08e3b839b7c71011707a19ae2511a625
+R 92ae401439ab5ec163373abdec4908d5
 U shaneh
-Z afef9bcfe286e0cf65b249bd959c3b3b
+Z 4749a579d5426b12c46df9b59dbb6167

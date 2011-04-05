@@ -175,6 +175,7 @@ do_test e_vacuum-1.3.2.1 {
 # EVIDENCE-OF: R-48521-51450 When in write-ahead log mode, only the
 # auto_vacuum support property can be changed using VACUUM.
 #
+ifcapable wal {
 do_test e_vacuum-1.3.3.1 {
   execsql { PRAGMA journal_mode = wal }
   execsql { PRAGMA page_size ; PRAGMA auto_vacuum }
@@ -185,6 +186,7 @@ do_test e_vacuum-1.3.3.2 {
   execsql VACUUM
   execsql { PRAGMA page_size ; PRAGMA auto_vacuum }
 } {2048 1}
+}
 
 # EVIDENCE-OF: R-38001-03952 VACUUM only works on the main database. It
 # is not possible to VACUUM an attached database file.
