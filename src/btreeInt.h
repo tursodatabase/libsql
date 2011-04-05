@@ -218,7 +218,7 @@
 /* The following value is the maximum cell size assuming a maximum page
 ** size give above.
 */
-#define MX_CELL_SIZE(pBt)  (pBt->pageSize-8)
+#define MX_CELL_SIZE(pBt)  ((int)(pBt->pageSize-8))
 
 /* The maximum number of cells on a single page of the database.  This
 ** assumes a minimum cell size of 6 bytes  (4 bytes for the cell itself
@@ -435,7 +435,6 @@ struct BtShared {
   Btree *pWriter;       /* Btree with currently open write transaction */
   u8 isExclusive;       /* True if pWriter has an EXCLUSIVE lock on the db */
   u8 isPending;         /* If waiting for read-locks to clear */
-  u16 iMutexCounter;    /* The number of mutex_leave(mutex) calls */
 #endif
   u8 *pTmpSpace;        /* BtShared.pageSize bytes of space for tmp use */
 };

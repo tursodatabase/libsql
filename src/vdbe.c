@@ -1404,7 +1404,6 @@ case OP_Function: {
     ctx.pColl = pOp[-1].p4.pColl;
   }
   (*ctx.pFunc->xFunc)(&ctx, n, apVal); /* IMP: R-24505-23230 */
-  sqlite3VdbeMutexResync(p);
   if( db->mallocFailed ){
     /* Even though a malloc() has failed, the implementation of the
     ** user function may have called an sqlite3_result_XXX() function
@@ -2670,7 +2669,6 @@ case OP_Savepoint: {
         if( p1==SAVEPOINT_ROLLBACK && (db->flags&SQLITE_InternChanges)!=0 ){
           sqlite3ExpirePreparedStatements(db);
           sqlite3ResetInternalSchema(db, -1);
-          sqlite3VdbeMutexResync(p);
           db->flags = (db->flags | SQLITE_InternChanges);
         }
       }
@@ -2943,7 +2941,7 @@ case OP_VerifyCookie: {
     sqlite3BtreeGetMeta(pBt, BTREE_SCHEMA_VERSION, (u32 *)&iMeta);
     iGen = db->aDb[pOp->p1].pSchema->iGeneration;
   }else{
-    iMeta = 0;
+    iGen = iMeta = 0;
   }
   if( iMeta!=pOp->p2 || iGen!=pOp->p3 ){
     sqlite3DbFree(db, p->zErrMsg);
@@ -5250,22 +5248,10 @@ case OP_AggStep: {
     ctx.pColl = pOp[-1].p4.pColl;
   }
   (ctx.pFunc->xStep)(&ctx, n, apVal); /* IMP: R-24505-23230 */
-  sqlite3VdbeMutexResync(p);
   if( ctx.isError ){
     sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3_value_text(&ctx.s));
     rc = ctx.isError;
   }
-
-  /* The app-defined function has done something that as caused this
-  ** statement to expire.  (Perhaps the function called sqlite3_exec()
-  ** with a CREATE TABLE statement.)
-  */
-#if 0
-  if( p->expired ){
-    rc = SQLITE_ABORT;
-    break;
-  }
-#endif
 
   sqlite3VdbeMemRelease(&ctx.s);
 
@@ -5290,11 +5276,8 @@ case OP_AggFinal: {
   pMem = &aMem[pOp->p1];
   assert( (pMem->flags & ~(MEM_Null|MEM_Agg))==0 );
   rc = sqlite3VdbeMemFinalize(pMem, pOp->p4.pFunc);
-  sqlite3VdbeMutexResync(p);
   if( rc ){
     sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3_value_text(pMem));
-  }else if( p->expired ){
-    rc = SQLITE_ABORT;
   }
   sqlite3VdbeChangeEncoding(pMem, encoding);
   UPDATE_MAX_BLOBSIZE(pMem);
@@ -5368,24 +5351,6 @@ case OP_JournalMode: {    /* out2-prerelease */
        || eNew==PAGER_JOURNALMODE_QUERY
   );
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
-
-  /* This opcode is used in two places: PRAGMA journal_mode and ATTACH.
-  ** In PRAGMA journal_mode, the sqlite3VdbeUsesBtree() routine is called
-  ** when the statement is prepared and so p->btreeMask!=0.  All mutexes
-  ** are already acquired.  But when used in ATTACH, sqlite3VdbeUsesBtree()
-  ** is not called when the statement is prepared because it requires the
-  ** iDb index of the database as a parameter, and the database has not
-  ** yet been attached so that index is unavailable.  We have to wait
-  ** until runtime (now) to get the mutex on the newly attached database.
-  ** No other mutexes are required by the ATTACH command so this is safe
-  ** to do.
-  */
-  if( p->btreeMask==0 ){
-    /* This occurs right after ATTACH.  Get a mutex on the newly ATTACHed
-    ** database. */
-    sqlite3VdbeUsesBtree(p, pOp->p1);
-    sqlite3VdbeEnter(p);
-  }
 
   pBt = db->aDb[pOp->p1].pBt;
   pPager = sqlite3BtreePager(pBt);

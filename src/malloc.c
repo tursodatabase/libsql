@@ -404,7 +404,7 @@ void sqlite3ScratchFree(void *p){
       pSlot->pNext = mem0.pScratchFree;
       mem0.pScratchFree = pSlot;
       mem0.nScratchFree++;
-      assert( mem0.nScratchFree<=sqlite3GlobalConfig.nScratch );
+      assert( mem0.nScratchFree <= (u32)sqlite3GlobalConfig.nScratch );
       sqlite3StatusAdd(SQLITE_STATUS_SCRATCH_USED, -1);
       sqlite3_mutex_leave(mem0.mutex);
     }else{

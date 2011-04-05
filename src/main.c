@@ -891,7 +891,7 @@ static int sqliteDefaultBusyCallback(
      { 1, 2, 5, 10, 15, 20, 25, 25,  25,  50,  50, 100 };
   static const u8 totals[] =
      { 0, 1, 3,  8, 18, 33, 53, 78, 103, 128, 178, 228 };
-# define NDELAY (sizeof(delays)/sizeof(delays[0]))
+# define NDELAY ArraySize(delays)
   sqlite3 *db = (sqlite3 *)ptr;
   int timeout = db->busyTimeout;
   int delay, prior;

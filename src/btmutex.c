@@ -45,27 +45,9 @@ static void unlockBtreeMutex(Btree *p){
   assert( sqlite3_mutex_held(p->db->mutex) );
   assert( p->db==pBt->db );
 
-  pBt->iMutexCounter++;
   sqlite3_mutex_leave(pBt->mutex);
   p->locked = 0;
 }
-
-#ifdef SQLITE_DEBUG
-/*
-** Return the number of times that the mutex has been exited for
-** the given btree.
-**
-** This is a small circular counter that wraps around to zero on
-** overflow.  It is used only for sanity checking - to verify that
-** mutexes are held continously by asserting that the value of
-** this counter at the beginning of a region is the same as at
-** the end.
-*/
-u32 sqlite3BtreeMutexCounter(Btree *p){
-  assert( p->locked==1 || p->sharable==0 );
-  return p->pBt->iMutexCounter;
-}
-#endif
 
 /*
 ** Enter a mutex on the given BTree object.
@@ -110,24 +92,6 @@ void sqlite3BtreeEnter(Btree *p){
   if( !p->sharable ) return;
   p->wantToLock++;
   if( p->locked ) return;
-
-  /* Increment the mutex counter on all locked btrees in the same
-  ** database connection.  This simulates the unlocking that would
-  ** occur on a worst-case mutex dead-lock avoidance scenario.
-  */
-#ifdef SQLITE_DEBUG
-  {
-    int ii;
-    sqlite3 *db = p->db;
-    Btree *pOther;
-    for(ii=0; ii<db->nDb; ii++){
-      if( ii==1 ) continue;
-      pOther = db->aDb[ii].pBt;
-      if( pOther==0 || pOther->sharable==0 || pOther->locked==0 ) continue;
-      pOther->pBt->iMutexCounter++;
-    }
-  }
-#endif
 
   /* In most cases, we should be able to acquire the lock we
   ** want without having to go throught the ascending lock
@@ -222,30 +186,11 @@ void sqlite3BtreeLeaveCursor(BtCursor *pCur){
 */
 void sqlite3BtreeEnterAll(sqlite3 *db){
   int i;
-  Btree *p, *pLater;
+  Btree *p;
   assert( sqlite3_mutex_held(db->mutex) );
   for(i=0; i<db->nDb; i++){
     p = db->aDb[i].pBt;
-    assert( !p || (p->locked==0 && p->sharable) || p->pBt->db==p->db );
-    if( p && p->sharable ){
-      p->wantToLock++;
-      if( !p->locked ){
-        assert( p->wantToLock==1 );
-        while( p->pPrev ) p = p->pPrev;
-        /* Reason for ALWAYS:  There must be at least one unlocked Btree in
-        ** the chain.  Otherwise the !p->locked test above would have failed */
-        while( p->locked && ALWAYS(p->pNext) ) p = p->pNext;
-        for(pLater = p->pNext; pLater; pLater=pLater->pNext){
-          if( pLater->locked ){
-            unlockBtreeMutex(pLater);
-          }
-        }
-        while( p ){
-          lockBtreeMutex(p);
-          p = p->pNext;
-        }
-      }
-    }
+    if( p ) sqlite3BtreeEnter(p);
   }
 }
 void sqlite3BtreeLeaveAll(sqlite3 *db){
@@ -254,13 +199,7 @@ void sqlite3BtreeLeaveAll(sqlite3 *db){
   assert( sqlite3_mutex_held(db->mutex) );
   for(i=0; i<db->nDb; i++){
     p = db->aDb[i].pBt;
-    if( p && p->sharable ){
-      assert( p->wantToLock>0 );
-      p->wantToLock--;
-      if( p->wantToLock==0 ){
-        unlockBtreeMutex(p);
-      }
-    }
+    if( p ) sqlite3BtreeLeave(p);
   }
 }
 

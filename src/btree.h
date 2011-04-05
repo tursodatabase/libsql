@@ -221,19 +221,17 @@ void sqlite3BtreeCursorList(Btree*);
   int sqlite3BtreeHoldsMutex(Btree*);
   int sqlite3BtreeHoldsAllMutexes(sqlite3*);
   int sqlite3SchemaMutexHeld(sqlite3*,int,Schema*);
-  u32 sqlite3BtreeMutexCounter(Btree*);
 #endif
 #else
 
 # define sqlite3BtreeLeave(X)
-# define sqlite3BtreeMutexCounter(X) 0
 # define sqlite3BtreeEnterCursor(X)
 # define sqlite3BtreeLeaveCursor(X)
 # define sqlite3BtreeLeaveAll(X)
 
 # define sqlite3BtreeHoldsMutex(X) 1
 # define sqlite3BtreeHoldsAllMutexes(X) 1
-# define sqlite3BtreeSchemaMutexHeld(X,Y) 1
+# define sqlite3SchemaMutexHeld(X,Y,Z) 1
 #endif
 
 

@@ -414,14 +414,16 @@ void sqlite3ResetInternalSchema(sqlite3 *db, int iDb){
     /* Case 1:  Reset the single schema identified by iDb */
     Db *pDb = &db->aDb[iDb];
     assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
-    if( ALWAYS(pDb->pSchema) ){
-      sqlite3SchemaClear(pDb->pSchema);
-    }
+    assert( pDb->pSchema!=0 );
+    sqlite3SchemaClear(pDb->pSchema);
+
     /* If any database other than TEMP is reset, then also reset TEMP
     ** since TEMP might be holding triggers that reference tables in the
     ** other database.
     */
-    if( iDb!=1 && (pDb = &db->aDb[1])!=0 && ALWAYS(pDb->pSchema) ){
+    if( iDb!=1 ){
+      pDb = &db->aDb[1];
+      assert( pDb->pSchema!=0 );
       sqlite3SchemaClear(pDb->pSchema);
     }
     return;
@@ -1410,7 +1412,7 @@ static char *createTableStmt(sqlite3 *db, Table *p){
     zSep = zSep2;
     identPut(zStmt, &k, pCol->zName);
     assert( pCol->affinity-SQLITE_AFF_TEXT >= 0 );
-    assert( pCol->affinity-SQLITE_AFF_TEXT < sizeof(azType)/sizeof(azType[0]) );
+    assert( pCol->affinity-SQLITE_AFF_TEXT < ArraySize(azType) );
     testcase( pCol->affinity==SQLITE_AFF_TEXT );
     testcase( pCol->affinity==SQLITE_AFF_NONE );
     testcase( pCol->affinity==SQLITE_AFF_NUMERIC );
