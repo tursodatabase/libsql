@@ -1129,7 +1129,7 @@ int sqlite3_config(int, ...);
 ** [database connection] (specified in the first argument).
 **
 ** The second argument to sqlite3_db_config(D,V,...)  is the
-** [SQLITE_DBCONIG_LOOKASIDE | configuration verb] - an integer code 
+** [SQLITE_DBCONFIG_LOOKASIDE | configuration verb] - an integer code 
 ** that indicates what aspect of the [database connection] is being configured.
 ** Subsequent arguments vary depending on the configuration verb.
 **
