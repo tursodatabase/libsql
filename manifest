@@ -1,5 +1,5 @@
-C Changes\sfor\sconsistent\suse\sof\sSQLITE_OS_UNIX\sand\sremoval\sof\slegacy\sOS_UNIX\sfrom\stestfixture\ssource;
-D 2011-04-04T21:48:01.840
+C Added\sifcapable\sutf16\sto\sa\sfew\stest\scases;
+D 2011-04-05T02:21:04.887
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -368,7 +368,7 @@ F test/e_createtable.test b40fc61bc4f1ad2a3c84590bd1d711507263d921
 F test/e_delete.test 55d868b647acc091c261a10b9b0cb0ab660a6acb
 F test/e_droptrigger.test ddd4b28ed8a3d81bd5153fa0ab7559529a2ca03a
 F test/e_dropview.test b347bab30fc8de67b131594b3cd6f3d3bdaa753d
-F test/e_expr.test 4e004d1f5187d4bbc9ca3d55660a8d164dd59f4e
+F test/e_expr.test 9e8b9790803df4de23c2d68d566959934a6179d4
 F test/e_fkey.test 38039b840ab19331000b0f0eb1d82baa7208a67a
 F test/e_fts3.test 75bb0aee26384ef586165e21018a17f7cd843469
 F test/e_insert.test 7390c2da39f16a134dc9a439144768c727757d2c
@@ -545,7 +545,7 @@ F test/lock_common.tcl d279887a0ab16cdb6d935c1203e64113c5a000e9
 F test/lookaside.test 93f07bac140c5bb1d49f3892d2684decafdc7af2
 F test/main.test 9d7bbfcc1b52c88ba7b2ba6554068ecf9939f252
 F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
-F test/malloc.test 927e6c8668a1d48c23aa6189bda02aff5a1b83de
+F test/malloc.test e56c9c3358da2c18385aea15a42dc970913986c2
 F test/malloc3.test 4128b1e6ffa506103b278ad97af89174f310c7ca
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
 F test/malloc5.test 4d16d1bb26d2deddd7c4f480deec341f9b2d0e22
@@ -926,7 +926,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a97e8505f229e05bf97ef9edbe063a52b581f339
-R 5b669314f67a239a5a132606db5a0d1b
+P 78b6eee200cab363be520d771375e44898f80e01
+R f54fb099162c6d5644e37dc8b0ce9ec9
 U shaneh
-Z 849485c22ade8d3120493afa3548d370
+Z afef9bcfe286e0cf65b249bd959c3b3b
