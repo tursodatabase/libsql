@@ -8,7 +8,7 @@ This Tcl script is used to test the various compile time options
 available for omitting code (the SQLITE_OMIT_xxx options). It
 should be invoked as follows:
 
-    <script> ?-makefile PATH-TO-MAKEFILE? ?-skip_run?
+    <script> ?test-symbol? ?-makefile PATH-TO-MAKEFILE? ?-skip_run?
 
 The default value for ::MAKEFILE is "../Makefile.linux.gcc".
 
@@ -120,11 +120,11 @@ catch {
 #
 proc process_options {argv} {
   if {$::tcl_platform(platform)=="windows" || $::tcl_platform(platform)=="os2"} {
-      set ::MAKEFILE ./Makefile                         ;# Default value
+    set ::MAKEFILE ./Makefile               ;# Default value
   } else {
-      set ::MAKEFILE ./Makefile.linux-gcc               ;# Default value
+    set ::MAKEFILE ./Makefile.linux-gcc     ;# Default value
   }
-  set ::SKIP_RUN 0                                      ;# Default to attempt test
+  set ::SKIP_RUN 0                          ;# Default to attempt test
 
   for {set i 0} {$i < [llength $argv]} {incr i} {
     switch -- [lindex $argv $i] {
@@ -134,13 +134,15 @@ proc process_options {argv} {
       }
   
       -skip_run {
-        incr i
         set ::SKIP_RUN 1
       }
 
       default {
-        puts stderr [string trim $::USAGE_MESSAGE]
-        exit -1
+        if {[info exists ::SYMBOL]} {
+          puts stderr [string trim $::USAGE_MESSAGE]
+          exit -1
+        }
+        set ::SYMBOL [lindex $argv $i]
       }
     }
     set ::MAKEFILE [file normalize $::MAKEFILE]
@@ -241,31 +243,43 @@ proc main {argv} {
   # Process any command line options.
   process_options $argv
 
-  # First try a test with all OMIT symbols except SQLITE_OMIT_FLOATING_POINT 
-  # and SQLITE_OMIT_PRAGMA defined. The former doesn't work (causes segfaults)
-  # and the latter is currently incompatible with the test suite (this should
-  # be fixed, but it will be a lot of work).
-  set allsyms [list]
-  foreach s $::OMIT_SYMBOLS {
-    if {$s!="SQLITE_OMIT_FLOATING_POINT" && $s!="SQLITE_OMIT_PRAGMA"} {
-      lappend allsyms $s
+  if {[info exists ::SYMBOL] } {
+    set sym $::SYMBOL
+
+    if {[lsearch $::OMIT_SYMBOLS $sym]<0 && [lsearch $::ENABLE_SYMBOLS $sym]<0} {
+      puts stderr "No such symbol: $sym"
+      exit -1
     }
-  }
-  run_quick_test test_OMIT_EVERYTHING $allsyms
 
-  # Now try one quick.test with each of the OMIT symbols defined. Included
-  # are the OMIT_FLOATING_POINT and OMIT_PRAGMA symbols, even though we
-  # know they will fail. It's good to be reminded of this from time to time.
-  foreach sym $::OMIT_SYMBOLS {
     set dirname "test_[string range $sym 7 end]"
     run_quick_test $dirname $sym
-  }
-
-  # Try the ENABLE/DISABLE symbols one at a time.  
-  # We don't do them all at once since some are conflicting.
-  foreach sym $::ENABLE_SYMBOLS {
-    set dirname "test_[string range $sym 7 end]"
-    run_quick_test $dirname $sym
+  } else {
+    # First try a test with all OMIT symbols except SQLITE_OMIT_FLOATING_POINT 
+    # and SQLITE_OMIT_PRAGMA defined. The former doesn't work (causes segfaults)
+    # and the latter is currently incompatible with the test suite (this should
+    # be fixed, but it will be a lot of work).
+    set allsyms [list]
+    foreach s $::OMIT_SYMBOLS {
+      if {$s!="SQLITE_OMIT_FLOATING_POINT" && $s!="SQLITE_OMIT_PRAGMA"} {
+        lappend allsyms $s
+      }
+    }
+    run_quick_test test_OMIT_EVERYTHING $allsyms
+  
+    # Now try one quick.test with each of the OMIT symbols defined. Included
+    # are the OMIT_FLOATING_POINT and OMIT_PRAGMA symbols, even though we
+    # know they will fail. It's good to be reminded of this from time to time.
+    foreach sym $::OMIT_SYMBOLS {
+      set dirname "test_[string range $sym 7 end]"
+      run_quick_test $dirname $sym
+    }
+  
+    # Try the ENABLE/DISABLE symbols one at a time.  
+    # We don't do them all at once since some are conflicting.
+    foreach sym $::ENABLE_SYMBOLS {
+      set dirname "test_[string range $sym 7 end]"
+      run_quick_test $dirname $sym
+    }
   }
 }
 
