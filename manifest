@@ -1,5 +1,5 @@
-C Changes\sto\ssupport\sbuilding\swith\svarious\sSQLITE_OMIT_XXX\soptions\sdefined.
-D 2011-04-06T17:54:31.814
+C Fix\sa\sbenign\sinaccuracy\sin\sthe\sos_unix.c\sSQLITE_FCNTL_SIZE_HINT\scode.
+D 2011-04-06T19:15:45.675
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -162,7 +162,7 @@ F src/os.c 22ac61d06e72a0dac900400147333b07b13d8e1d
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 2596fd2d5d0976c6c0c628d0c3c7c4e7a724f4cf
-F src/os_unix.c 32414676594a0a26cfccd7e02656230a3406eee7
+F src/os_unix.c a8fe62148d41e54e383d3360a711a01595feef58
 F src/os_win.c 24d72407a90551969744cf9bcbb1b4c72c5fa845
 F src/pager.c 055239dcdfe12b3f5d97f6f01f85da01e2d6d912
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
@@ -678,7 +678,7 @@ F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
 F test/superlock.test 5d7a4954b0059c903f82c7b67867bc5451a7c082
 F test/sync.test ded6b39d8d8ca3c0c5518516c6371b3316d3e3a3
-F test/syscall.test 02e5359bf4f5e6f716696318fde4e0b5c2c70d21
+F test/syscall.test 707c95e4ab7863e13f1293c6b0c76bead30249b3
 F test/sysfault.test c79441d88d23696fbec7b147dba98d42a04f523f
 F test/table.test 04ba066432430657712d167ebf28080fe878d305
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
@@ -861,7 +861,7 @@ F test/vtabE.test 7c4693638d7797ce2eda17af74292b97e705cc61
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
-F test/wal.test 084b086913a205eab4dde4b9a9cf8c781a576bb8
+F test/wal.test bac92a13276ce9b65d3d5c9ff3411d24c795826c
 F test/wal2.test e561a8c6fdd1c2cd1876f3e39757934e7b7361f8
 F test/wal3.test 5c396cc22497244d627306f4c1d360167353f8dd
 F test/wal4.test 3404b048fa5e10605facaf70384e6d2943412e30
@@ -927,7 +927,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b7296fd380319bcae26b1ac13f23e57a4852881b
-R 4db291802b7406c40281c186d712b803
+P 2039ed952a02bdcd4fc6d2e20572c4632084dcdb
+R 3687ff8b52f927a607094192283816b8
 U dan
-Z 5987d8475f9d11110fdabc0084f5d8fd
+Z 880d0add4f13ff10be2704386fa9b211

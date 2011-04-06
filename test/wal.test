@@ -1530,26 +1530,26 @@ ifcapable autovacuum {
     INSERT INTO t1 SELECT * FROM t1;
     INSERT INTO t1 SELECT * FROM t1;
   } {wal}
-  do_execsql_test 24.2 { 
-    DELETE FROM t1;
-    PRAGMA wal_checkpoint;
-  } {0 109 109}
-  do_test 24.3 {
+  do_test 24.2 { 
+    execsql {
+      DELETE FROM t1;
+      PRAGMA wal_checkpoint;
+    }
     db close
     sqlite3 db test.db
     file exists test.db-wal
   } 0
-  do_test 24.4 {
+  do_test 24.3 {
     file size test.db
   } [expr 84 * 1024]
-  do_test 24.5 {
+  do_test 24.4 {
     execsql { 
       PRAGMA incremental_vacuum;
       PRAGMA wal_checkpoint;
     }
     file size test.db
   } [expr 3 * 1024]
-  do_test 24.6 {
+  do_test 24.5 {
     file size test.db-wal
   } 2128
 }

@@ -3398,18 +3398,17 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
       */
       int nBlk = buf.st_blksize;  /* File-system block size */
       i64 iWrite;                 /* Next offset to write to */
-      int nWrite;                 /* Return value from seekAndWrite() */
 
       if( robust_ftruncate(pFile->h, nSize) ){
         pFile->lastErrno = errno;
         return unixLogError(SQLITE_IOERR_TRUNCATE, "ftruncate", pFile->zPath);
       }
       iWrite = ((buf.st_size + 2*nBlk - 1)/nBlk)*nBlk-1;
-      do {
-        nWrite = seekAndWrite(pFile, iWrite, "", 1);
+      while( iWrite<nSize ){
+        int nWrite = seekAndWrite(pFile, iWrite, "", 1);
+        if( nWrite!=1 ) return SQLITE_IOERR_WRITE;
         iWrite += nBlk;
-      } while( nWrite==1 && iWrite<nSize );
-      if( nWrite!=1 ) return SQLITE_IOERR_WRITE;
+      }
 #endif
     }
   }
