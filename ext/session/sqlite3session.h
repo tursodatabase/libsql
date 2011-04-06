@@ -737,5 +737,11 @@ int sqlite3changeset_apply(
 #define SQLITE_CHANGESET_REPLACE    1
 #define SQLITE_CHANGESET_ABORT      2
 
+/*
+** Make sure we can call this stuff from C++.
+*/
+#ifdef __cplusplus
+}
 #endif
 
+#endif  /* SQLITE_ENABLE_SESSION && SQLITE_ENABLE_PREUPDATE_HOOK */
