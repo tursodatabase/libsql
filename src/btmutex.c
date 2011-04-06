@@ -203,6 +203,14 @@ void sqlite3BtreeLeaveAll(sqlite3 *db){
   }
 }
 
+/*
+** Return true if a particular Btree requires a lock.  Return FALSE if
+** no lock is ever required since it is not sharable.
+*/
+int sqlite3BtreeSharable(Btree *p){
+  return p->sharable;
+}
+
 #ifndef NDEBUG
 /*
 ** Return true if the current thread holds the database connection

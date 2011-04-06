@@ -4645,8 +4645,6 @@ case OP_ParseSchema: {
     assert( iDb==1 || sqlite3BtreeHoldsMutex(db->aDb[iDb].pBt) );
   }
 #endif
-  assert( p->btreeMask == ~(yDbMask)0 );
-
 
   iDb = pOp->p1;
   assert( iDb>=0 && iDb<db->nDb );
