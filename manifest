@@ -1,5 +1,5 @@
-C Merge\sin\sthe\slatest\schanges\sfrom\sthe\strunk.
-D 2011-04-06T22:33:50.737
+C Fix\sVC++\scompiler\swarnings.
+D 2011-04-06T23:39:28.224
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -105,7 +105,7 @@ F ext/session/session3.test bfa2376db7cbb2ac69496f84d93a8d81b13110d3
 F ext/session/session4.test a6ed685da7a5293c5d6f99855bcf41dbc352ca84
 F ext/session/session_common.tcl fb91560b6dbd086010df8b3a137a452f1ac21a28
 F ext/session/sessionfault.test 2544a2e2ecad56e3c07a32c09799871d243c114c
-F ext/session/sqlite3session.c 2b2936b5188776b33bba1263f93267f3ec9d0d84
+F ext/session/sqlite3session.c bc6fc77d70d4d9994598b1daf0a43d48965b2155
 F ext/session/sqlite3session.h f284bac51c12de0e0096fc986e61f5ae6b9e5be5
 F ext/session/test_session.c 82e3fd7d94f485ea63bcfb15d636c95a01db97a9
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
@@ -251,7 +251,7 @@ F src/vdbeapi.c 8051038f7674c708f4515ab189fc3ea929e09a4c
 F src/vdbeaux.c b0a2a184a25380f7eb9d07e9336034ec38d1b213
 F src/vdbeblob.c c3ccb7c8732858c680f442932e66ad06bb036562
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
-F src/vdbetrace.c 3ba13bc32bdf16d2bdea523245fd16736bed67b5
+F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
 F src/vtab.c b0abc931f95af94c9ffdf9f747eb191cda953123
 F src/wal.c 7334009b396285b658a95a3b6bc6d2b016a1f794
 F src/wal.h 7a5fbb00114b7f2cd40c7e1003d4c41ce9d26840
@@ -937,7 +937,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 45f20261720dcd73eb887f7e3df100723000418b 614de91a504d2231009a9de1305e31fce1b1c5a6
-R 502dde3bb5feee985b14f915e41e9858
+P 435b57dc2be7b071270a6cddece297758b8153aa
+R 430b240dcc83276815f3990defb9cdf0
 U drh
-Z 9b010756d90228476ef26682d9d1164b
+Z 063f7a6f50976dabf014f8516d936514

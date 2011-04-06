@@ -564,7 +564,7 @@ static int sessionTableInfo(
 
   assert( pazCol && pabPK );
 
-  nThis = strlen(zThis);
+  nThis = sqlite3Strlen30(zThis);
   zPragma = sqlite3_mprintf("PRAGMA '%q'.table_info('%q')", zDb, zThis);
   if( !zPragma ) return SQLITE_NOMEM;
 
@@ -778,8 +778,8 @@ static void xPreUpdate(
   sqlite3_int64 iKey2             /* New rowid value (for a rowid UPDATE) */
 ){
   sqlite3_session *pSession;
-  int nDb = strlen(zDb);
-  int nName = strlen(zDb);
+  int nDb = sqlite3Strlen30(zDb);
+  int nName = sqlite3Strlen30(zName);
 
   assert( sqlite3_mutex_held(db->mutex) );
 
@@ -825,7 +825,7 @@ int sqlite3session_create(
 ){
   sqlite3_session *pNew;          /* Newly allocated session object */
   sqlite3_session *pOld;          /* Session object already attached to db */
-  int nDb = strlen(zDb);          /* Length of zDb in bytes */
+  int nDb = sqlite3Strlen30(zDb); /* Length of zDb in bytes */
 
   /* Zero the output value in case an error occurs. */
   *ppSession = 0;
@@ -882,7 +882,7 @@ void sqlite3session_delete(sqlite3_session *pSession){
         sqlite3_free(p);
       }
     }
-    sqlite3_free(pTab->azCol);
+    sqlite3_free((char*)pTab->azCol);  /* cast works around VC++ bug */
     sqlite3_free(pTab->apChange);
     sqlite3_free(pTab);
   }
@@ -914,7 +914,7 @@ int sqlite3session_attach(
 
     /* First search for an existing entry. If one is found, this call is
     ** a no-op. Return early. */
-    nName = strlen(zName);
+    nName = sqlite3Strlen30(zName);
     for(pTab=pSession->pTable; pTab; pTab=pTab->pNext){
       if( 0==sqlite3_strnicmp(pTab->zName, zName, nName+1) ) break;
     }
@@ -985,7 +985,7 @@ static void sessionAppendByte(SessionBuffer *p, u8 v, int *pRc){
 ** If an OOM condition is encountered, set *pRc to SQLITE_NOMEM before
 ** returning.
 */
-static void sessionAppendVarint(SessionBuffer *p, sqlite3_int64 v, int *pRc){
+static void sessionAppendVarint(SessionBuffer *p, int v, int *pRc){
   if( *pRc==SQLITE_OK && 0==sessionBufferGrow(p, 9, pRc) ){
     p->nBuf += sessionVarintPut(&p->aBuf[p->nBuf], v);
   }
@@ -1023,7 +1023,7 @@ static void sessionAppendStr(
   const char *zStr, 
   int *pRc
 ){
-  int nStr = strlen(zStr);
+  int nStr = sqlite3Strlen30(zStr);
   if( *pRc==SQLITE_OK && 0==sessionBufferGrow(p, nStr, pRc) ){
     memcpy(&p->aBuf[p->nBuf], zStr, nStr);
     p->nBuf += nStr;
@@ -1062,7 +1062,7 @@ static void sessionAppendIdent(
   const char *zStr,               /* String to quote, escape and append */
   int *pRc                        /* IN/OUT: Error code */
 ){
-  int nStr = strlen(zStr)*2 + 2 + 1;
+  int nStr = sqlite3Strlen30(zStr)*2 + 2 + 1;
   if( *pRc==SQLITE_OK && 0==sessionBufferGrow(p, nStr, pRc) ){
     char *zOut = (char *)&p->aBuf[p->nBuf];
     const char *zIn = zStr;
@@ -1072,7 +1072,7 @@ static void sessionAppendIdent(
       *zOut++ = *(zIn++);
     }
     *zOut++ = '"';
-    p->nBuf = ((u8 *)zOut - p->aBuf);
+    p->nBuf = (int)((u8 *)zOut - p->aBuf);
   }
 }
 
@@ -1372,7 +1372,7 @@ int sqlite3session_changeset(
       sessionAppendByte(&buf, 'T', &rc);
       sessionAppendVarint(&buf, nCol, &rc);
       sessionAppendBlob(&buf, pTab->abPK, nCol, &rc);
-      sessionAppendBlob(&buf, (u8 *)zName, strlen(zName)+1, &rc);
+      sessionAppendBlob(&buf, (u8 *)zName, sqlite3Strlen30(zName)+1, &rc);
 
       /* Build and compile a statement to execute: */
       if( rc==SQLITE_OK ){
@@ -1413,7 +1413,7 @@ int sqlite3session_changeset(
       if( buf.nBuf==nNoop ){
         buf.nBuf = nRewind;
       }
-      sqlite3_free(azCol);
+      sqlite3_free((char*)azCol);  /* cast works around VC++ bug */
     }
   }
 
@@ -1589,7 +1589,7 @@ int sqlite3changeset_next(sqlite3_changeset_iter *p){
     p->abPK = (u8 *)aChange;
     aChange += p->nCol;
     p->zTab = (char *)aChange;
-    aChange += (strlen((char *)aChange) + 1);
+    aChange += (sqlite3Strlen30((char *)aChange) + 1);
     p->op = *(aChange++);
     p->bIndirect = *(aChange++);
     sqlite3_free(p->apValue);
@@ -1796,7 +1796,7 @@ int sqlite3changeset_invert(
         */
         int nByte = 1 + sessionVarintGet(&aIn[i+1], &nCol);
         nByte += nCol;
-        nByte += 1 + strlen((char *)&aIn[i+nByte]);
+        nByte += 1 + sqlite3Strlen30((char *)&aIn[i+nByte]);
         memcpy(&aOut[i], &aIn[i], nByte);
         i += nByte;
         break;
@@ -1810,7 +1810,7 @@ int sqlite3changeset_invert(
         sessionReadRecord(&aEnd, nCol, 0);
         aOut[i] = (eType==SQLITE_DELETE ? SQLITE_INSERT : SQLITE_DELETE);
         aOut[i+1] = aIn[i+1];
-        nByte = aEnd - &aIn[i+2];
+        nByte = (int)(aEnd - &aIn[i+2]);
         memcpy(&aOut[i+2], &aIn[i+2], nByte);
         i += 2 + nByte;
         break;
@@ -1822,9 +1822,9 @@ int sqlite3changeset_invert(
         u8 *aEnd = &aIn[i+2];    
 
         sessionReadRecord(&aEnd, nCol, 0);
-        nByte1 = aEnd - &aIn[i+2];
+        nByte1 = (int)(aEnd - &aIn[i+2]);
         sessionReadRecord(&aEnd, nCol, 0);
-        nByte2 = aEnd - &aIn[i+2] - nByte1;
+        nByte2 = (int)(aEnd - &aIn[i+2]) - nByte1;
 
         aOut[i] = SQLITE_UPDATE;
         aOut[i+1] = aIn[i+1];
@@ -2416,7 +2416,7 @@ int sqlite3changeset_apply(
   sqlite3_changeset_iter *pIter;  /* Iterator to skip through changeset */  
   int rc;                         /* Return code */
   const char *zTab = 0;           /* Name of current table */
-  int nTab = 0;                   /* Result of strlen(zTab) */
+  int nTab = 0;                   /* Result of sqlite3Strlen30(zTab) */
   SessionApplyCtx sApply;         /* changeset_apply() context object */
 
   memset(&sApply, 0, sizeof(sApply));
@@ -2438,7 +2438,7 @@ int sqlite3changeset_apply(
       u8 *abPK;
 
       schemaMismatch = 0;
-      sqlite3_free(sApply.azCol);
+      sqlite3_free((char*)sApply.azCol);  /* cast works around VC++ bug */
       sqlite3_finalize(sApply.pDelete);
       sqlite3_finalize(sApply.pUpdate); 
       sqlite3_finalize(sApply.pInsert);
@@ -2479,7 +2479,7 @@ int sqlite3changeset_apply(
       ){
         break;
       }
-      nTab = strlen(zTab);
+      nTab = sqlite3Strlen30(zTab);
     }
 
     /* If there is a schema mismatch on the current table, proceed to the
@@ -2530,7 +2530,7 @@ int sqlite3changeset_apply(
   sqlite3_finalize(sApply.pDelete);
   sqlite3_finalize(sApply.pUpdate);
   sqlite3_finalize(sApply.pSelect);
-  sqlite3_free(sApply.azCol);
+  sqlite3_free((char*)sApply.azCol);  /* cast works around VC++ bug */
   sqlite3_mutex_leave(sqlite3_db_mutex(db));
   return rc;
 }
