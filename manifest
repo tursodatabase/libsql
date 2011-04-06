@@ -1,5 +1,5 @@
-C Suppress\smany\sharmless\scompiler\swarnings,\smostly\ssigned/unsigned\scomparisons\s\nwithin\sasserts\sor\sunused\sparameters\sin\sextensions.
-D 2011-04-05T22:08:24.148
+C Add\sconfigurations\sfeaturing\sthe\s-ftrapv\sswitch\sand\slarge\svalues\sfor\sSQLITE_MAX_ATTACHED\sto\sreleasetest.tcl.
+D 2011-04-06T12:37:09.027
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -271,6 +271,7 @@ F test/async5.test f3592d79c84d6e83a5f50d3fd500445f7d97dfdf
 F test/attach.test 2bb09073d7d5499127db00f50780766dcea913e1
 F test/attach2.test a295d2d7061adcee5884ef4a93c7c96a82765437
 F test/attach3.test bd9830bc3a0d22ed1310c9bff6896927937017dc
+F test/attach4.test d58859e62e0a70f17481eed01bf94995f72fea7f
 F test/attachmalloc.test 1d5b821a676f7bf0b00d87cc106b78966789ba57
 F test/auth.test b047105c32da7db70b842fd24056723125ecc2ff
 F test/auth2.test 270baddc8b9c273682760cffba6739d907bd2882
@@ -619,7 +620,7 @@ F test/randexpr1.test 1084050991e9ba22c1c10edd8d84673b501cc25a
 F test/rdonly.test c267d050a1d9a6a321de502b737daf28821a518d
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
 F test/releasetest.mk 2eced2f9ae701fd0a29e714a241760503ccba25a
-F test/releasetest.tcl 02497b7fb9c53fa65fc8757de7675987cd571068
+F test/releasetest.tcl c0c0865f1dff08dde08a964ef49e83217ebedbf8
 F test/rollback.test 1a83118ea6db4e7d8c10eaa63871b5e90502ffdc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test e58e0acef38b527ed1b0b70d3ada588f804af287
@@ -926,7 +927,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 51039b3578f948c23a810d176e81fa51a278fb28
-R 18530986ff3caac2d2c1acc5867b1dce
-U drh
-Z 767e18c513ceaeb424f39c58cb8c31a7
+P 3eeb0ff78d04891b5fd1a3d99a9fb8cfbed77a81
+R 6a88c360447f99a69a5292d43478158d
+U dan
+Z 01815f1e39a9f88f53e178793e399240
