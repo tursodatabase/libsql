@@ -161,7 +161,8 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
   if( op==OP_ParseSchema ){
     /* Any program that uses the OP_ParseSchema opcode needs to lock
     ** all btrees. */
-    p->btreeMask = ~(yDbMask)0;
+    int j;
+    for(j=0; j<p->db->nDb; j++) sqlite3VdbeUsesBtree(p, j);
   }
 #ifdef SQLITE_DEBUG
   pOp->zComment = 0;
@@ -959,6 +960,9 @@ void sqlite3VdbeUsesBtree(Vdbe *p, int i){
   assert( i>=0 && i<p->db->nDb && i<(int)sizeof(yDbMask)*8 );
   assert( i<(int)sizeof(p->btreeMask)*8 );
   p->btreeMask |= ((yDbMask)1)<<i;
+  if( i!=1 && sqlite3BtreeSharable(p->db->aDb[i].pBt) ){
+    p->lockMask |= ((yDbMask)1)<<i;
+  }
 }
 
 #if !defined(SQLITE_OMIT_SHARED_CACHE) && SQLITE_THREADSAFE>0
@@ -986,11 +990,15 @@ void sqlite3VdbeUsesBtree(Vdbe *p, int i){
 void sqlite3VdbeEnter(Vdbe *p){
   int i;
   yDbMask mask;
-  sqlite3 *db = p->db;
-  Db *aDb = db->aDb;
-  int nDb = db->nDb;
+  sqlite3 *db;
+  Db *aDb;
+  int nDb;
+  if( p->lockMask==0 ) return;  /* The common case */
+  db = p->db;
+  aDb = db->aDb;
+  nDb = db->nDb;
   for(i=0, mask=1; i<nDb; i++, mask += mask){
-    if( i!=1 && (mask & p->btreeMask)!=0 && ALWAYS(aDb[i].pBt!=0) ){
+    if( i!=1 && (mask & p->lockMask)!=0 && ALWAYS(aDb[i].pBt!=0) ){
       sqlite3BtreeEnter(aDb[i].pBt);
     }
   }
@@ -1004,12 +1012,15 @@ void sqlite3VdbeEnter(Vdbe *p){
 void sqlite3VdbeLeave(Vdbe *p){
   int i;
   yDbMask mask;
-  sqlite3 *db = p->db;
-  Db *aDb = db->aDb;
-  int nDb = db->nDb;
-
+  sqlite3 *db;
+  Db *aDb;
+  int nDb;
+  if( p->lockMask==0 ) return;  /* The common case */
+  db = p->db;
+  aDb = db->aDb;
+  nDb = db->nDb;
   for(i=0, mask=1; i<nDb; i++, mask += mask){
-    if( i!=1 && (mask & p->btreeMask)!=0 && ALWAYS(aDb[i].pBt!=0) ){
+    if( i!=1 && (mask & p->lockMask)!=0 && ALWAYS(aDb[i].pBt!=0) ){
       sqlite3BtreeLeave(aDb[i].pBt);
     }
   }

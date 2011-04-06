@@ -453,7 +453,6 @@ void *sqlite3_server(void *NotUsed){
     pthread_mutex_unlock(&pMsg->clientMutex);
     pthread_cond_signal(&pMsg->clientWakeup);
   }
-  sqlite3_thread_cleanup();
   pthread_mutex_unlock(&g.serverMutex);
   return 0;
 }
