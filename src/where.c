@@ -2532,7 +2532,7 @@ range_est_fallback:
 ** for a UTF conversion required for comparison.  The error is stored
 ** in the pParse structure.
 */
-int whereEqualScanEst(
+static int whereEqualScanEst(
   Parse *pParse,       /* Parsing & code generating context */
   Index *p,            /* The index whose left-most column is pTerm */
   Expr *pExpr,         /* Expression for VALUE in the x=VALUE constraint */
@@ -2589,7 +2589,7 @@ whereEqualScanEst_cancel:
 ** for a UTF conversion required for comparison.  The error is stored
 ** in the pParse structure.
 */
-int whereInScanEst(
+static int whereInScanEst(
   Parse *pParse,       /* Parsing & code generating context */
   Index *p,            /* The index whose left-most column is pTerm */
   ExprList *pList,     /* The value list on the RHS of "x IN (v1,v2,v3,...)" */
