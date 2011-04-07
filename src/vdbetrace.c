@@ -85,7 +85,7 @@ char *sqlite3VdbeExpandSql(
       const char *zStart = zRawSql;
       while( *(zRawSql++)!='\n' && *zRawSql );
       sqlite3StrAccumAppend(&out, "-- ", 3);
-      sqlite3StrAccumAppend(&out, zStart, zRawSql-zStart);
+      sqlite3StrAccumAppend(&out, zStart, (int)(zRawSql-zStart));
     }
   }else{
     while( zRawSql[0] ){

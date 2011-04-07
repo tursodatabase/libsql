@@ -1,5 +1,5 @@
-C Fix\san\sissue\swith\san\sanalyze\stest.\s\sNo\scode\schanges.
-D 2011-04-07T01:54:14.841
+C Fix\sa\scouple\sof\sMSVC\scompiler\swarnings;
+D 2011-04-07T03:41:01.582
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -177,7 +177,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 649a6f10f7eb7b52a5a28847773cb9968a828ae8
-F src/shell.c a73b30067ec15f116d5d0c28880179898fbe3d0b
+F src/shell.c 9c8389796764f65d4506bcd614ac8061f4160d5c
 F src/sqlite.h.in 4d28db70c37a1b17942820308eb59f211140da43
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
 F src/sqliteInt.h 7b0150bfdab049b11bb2d055d065051ff734d113
@@ -242,7 +242,7 @@ F src/vdbeapi.c e0e2672e0a96ae3f8575c8ecd02912a3e8a554a1
 F src/vdbeaux.c 9ae5074b19bdff2d8806a278533956fb281510d5
 F src/vdbeblob.c c3ccb7c8732858c680f442932e66ad06bb036562
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
-F src/vdbetrace.c 3ba13bc32bdf16d2bdea523245fd16736bed67b5
+F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
 F src/vtab.c b0abc931f95af94c9ffdf9f747eb191cda953123
 F src/wal.c 7334009b396285b658a95a3b6bc6d2b016a1f794
 F src/wal.h 7a5fbb00114b7f2cd40c7e1003d4c41ce9d26840
@@ -927,7 +927,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 9c64b5a99c5251818000e7d655f3a870589b631e
-R 500179b50473c33d369ec227056639d8
+P cddf79db83e5f121cc4ce8ab7ad3993fc96f5bc0
+R f5987fe82b62f3ebf8c67ca2278e4153
 U shaneh
-Z 968ffb3f0f21b278cdb420506c09a125
+Z 3f3df3b5de717a7fadca60aa07e16ae2
