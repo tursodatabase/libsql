@@ -1,5 +1,5 @@
-C Fix\sa\sperformance\sregression:\s\sKeep\stwo\sbtree\smasks\sin\seach\sprepared\nstatement;\sone\sfor\sbtrees\sused\sand\sanother\sfor\sbtrees\sthat\srequire\slocks.\nOnly\stry\sto\slock\sthe\sbtrees\sidentified\sby\sthe\ssecond\smask.
-D 2011-04-06T22:05:53.025
+C Fix\stypos\sin\sdocumentation\scomments.\s\sNo\schanges\sto\scode.
+D 2011-04-07T01:14:12.525
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -143,7 +143,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 3ae0d52da013a6326310655be6473fd472347b85
-F src/main.c 5dad851457fdd249a4d4f41e94fe9cb11aedf1f2
+F src/main.c a8571665d43ff18f89a49d47a281605ce5ea825e
 F src/malloc.c 788f2ed928786dfe305b6783d551d6b1a9080976
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 00bd8265c81abb665c48fea1e0c234eb3b922206
@@ -178,7 +178,7 @@ F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 649a6f10f7eb7b52a5a28847773cb9968a828ae8
 F src/shell.c a73b30067ec15f116d5d0c28880179898fbe3d0b
-F src/sqlite.h.in 923630d8249b66cf8a266dd53d4d094cace80164
+F src/sqlite.h.in 4d28db70c37a1b17942820308eb59f211140da43
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
 F src/sqliteInt.h 7b0150bfdab049b11bb2d055d065051ff734d113
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -927,7 +927,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 61a6ccbe3c9c3ad5f35fb325e3c327cb19409925
-R 5fa436b215ae7db10b0b34b9477bdc0a
+P 614de91a504d2231009a9de1305e31fce1b1c5a6
+R e68cf91f31b8f54b3f58e7c0f4d97cbb
 U drh
-Z e891e0a53128468187772ad760452d05
+Z 8376cd3928f598b2a6d539c81827da5e
