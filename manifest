@@ -1,5 +1,5 @@
-C Do\snot\srun\smulti-threaded\sTcl\stests\sif\sthe\slibrary\swas\sbuilt\swith\sSQLITE_MUTEX_NOOP\sdefined.
-D 2011-04-07T10:09:00.583
+C Avoid\srunning\sthread1.test\sor\sthread2.test\sif\sSQLITE_MUTEX_NOOP\sis\sdefined.
+D 2011-04-07T14:05:47.844
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -692,8 +692,8 @@ F test/thread002.test afd20095e6e845b405df4f2c920cb93301ca69db
 F test/thread003.test b824d4f52b870ae39fc5bae4d8070eca73085dca
 F test/thread004.test f51dfc3936184aaf73ee85f315224baad272a87f
 F test/thread005.test bf5c374ca65dd89fd56c8fe511ccfb46875bda5e
-F test/thread1.test 862dd006d189e8b0946935db17399dcac2f8ef91
-F test/thread2.test e08034b83fe9693ade77049732518e5b3d2d700d
+F test/thread1.test df115faa10a4ba1d456e9d4d9ec165016903eae4
+F test/thread2.test f35d2106452b77523b3a2b7d1dcde2e5ee8f9e46
 F test/thread_common.tcl 334639cadcb9f912bf82aa73f49efd5282e6cadd
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c ace893054fa134af3fc8d6e7cfecddb8e3acefb9
@@ -927,7 +927,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 29c7b42587000704d61f49badd584ac7040c3d7d
-R d74328ff56374f7a92f06da23007061f
+P e4e99606fdf1f1cecf914dc865b066bf07793d1f
+R 42c41e910cfc7e1c1b9040c4c34f5e86
 U dan
-Z bfc44684e4ef88e4862d7f932c4ec0cd
+Z e11fdaaab64fe55fe7338be760f5f876
