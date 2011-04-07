@@ -1,5 +1,5 @@
-C Fix\stypos\sin\sdocumentation\scomments.\s\sNo\schanges\sto\scode.
-D 2011-04-07T01:14:12.525
+C Fix\san\sissue\swith\san\sanalyze\stest.\s\sNo\scode\schanges.
+D 2011-04-07T01:54:14.841
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -262,7 +262,7 @@ F test/analyze3.test d61f55d8b472fc6e713160b1e577f7a68e63f38b
 F test/analyze4.test 757b37875cf9bb528d46f74497bc789c88365045
 F test/analyze5.test adc89b92fc9fee5ca1cb0bc8512f3206ad0fe5aa
 F test/analyze6.test c125622a813325bba1b4999040ddc213773c2290
-F test/analyze7.test 9cbca440bebc5142a875ad23947797ff52f7b37c
+F test/analyze7.test 5508e7828164ea0b518ed219bed7320a481863d4
 F test/async.test ad4ba51b77cd118911a3fe1356b0809da9c108c3
 F test/async2.test bf5e2ca2c96763b4cba3d016249ad7259a5603b6
 F test/async3.test 93edaa9122f498e56ea98c36c72abc407f4fb11e
@@ -927,7 +927,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 614de91a504d2231009a9de1305e31fce1b1c5a6
-R e68cf91f31b8f54b3f58e7c0f4d97cbb
-U drh
-Z 8376cd3928f598b2a6d539c81827da5e
+P 9c64b5a99c5251818000e7d655f3a870589b631e
+R 500179b50473c33d369ec227056639d8
+U shaneh
+Z 968ffb3f0f21b278cdb420506c09a125
