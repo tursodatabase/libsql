@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\sMSVC\scompiler\swarnings;
-D 2011-04-07T03:41:01.582
+C Fix\stest\sscript\sattach4.test\sso\sthat\sit\sworks\swith\stype\s1\sVFS\simplementations\s(no\swal).\sAnd\swal.test\sso\sthat\sit\swork\swith\sa\ssmall\sdefault\spager\scache\ssize.
+D 2011-04-07T05:17:32.622
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -271,7 +271,7 @@ F test/async5.test f3592d79c84d6e83a5f50d3fd500445f7d97dfdf
 F test/attach.test 2bb09073d7d5499127db00f50780766dcea913e1
 F test/attach2.test a295d2d7061adcee5884ef4a93c7c96a82765437
 F test/attach3.test bd9830bc3a0d22ed1310c9bff6896927937017dc
-F test/attach4.test d58859e62e0a70f17481eed01bf94995f72fea7f
+F test/attach4.test 31f9eb0ca7bdbc393cc4657b877903a226a83d4b
 F test/attachmalloc.test 1d5b821a676f7bf0b00d87cc106b78966789ba57
 F test/auth.test b047105c32da7db70b842fd24056723125ecc2ff
 F test/auth2.test 270baddc8b9c273682760cffba6739d907bd2882
@@ -861,7 +861,7 @@ F test/vtabE.test 7c4693638d7797ce2eda17af74292b97e705cc61
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
-F test/wal.test bac92a13276ce9b65d3d5c9ff3411d24c795826c
+F test/wal.test 5617ad308bfdb8a8885220d8a261a6096a8d7e57
 F test/wal2.test e561a8c6fdd1c2cd1876f3e39757934e7b7361f8
 F test/wal3.test 5c396cc22497244d627306f4c1d360167353f8dd
 F test/wal4.test 3404b048fa5e10605facaf70384e6d2943412e30
@@ -927,7 +927,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P cddf79db83e5f121cc4ce8ab7ad3993fc96f5bc0
-R f5987fe82b62f3ebf8c67ca2278e4153
-U shaneh
-Z 3f3df3b5de717a7fadca60aa07e16ae2
+P 748c9109c973e1d3e914adbe533f12af7783bfe4
+R 99d9581e40f5efb3517a0b9208c237e8
+U dan
+Z e2fa6b1af58e1ead18709b6bc0b2be67
