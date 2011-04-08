@@ -1342,7 +1342,10 @@ static void exprAnalyze(
   ** of the loop.  Without the TERM_VNULL flag, the not-null check at
   ** the start of the loop will prevent any results from being returned.
   */
-  if( pExpr->op==TK_NOTNULL && pExpr->pLeft->iColumn>=0 ){
+  if( pExpr->op==TK_NOTNULL
+   && pExpr->pLeft->op==TK_COLUMN
+   && pExpr->pLeft->iColumn>=0
+  ){
     Expr *pNewExpr;
     Expr *pLeft = pExpr->pLeft;
     int idxNew;
