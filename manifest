@@ -1,5 +1,5 @@
-C Make\ssure\sthe\squery\splanner\sis\sable\sto\scorrectly\sanalyze\sNULL\svalue\nsamples\sin\sthe\ssqlite_stat2\stable.\s\sThis\sis\sa\sbackport\sof\schanges\nfrom\scheck-in\s[f73a167b434f]
-D 2011-04-08T23:05:50.899
+C Backport\stest\scases\sfrom\strunk\sthat\sseek\sto\sprove\sthat\sthe\sIS\sNOT\sNULL\nquery\soptimization\sis\sworking.
+D 2011-04-08T23:36:09.017
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 543f91f24cd7fee774ecc0a61c19704c0c3e78fd
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -242,6 +242,7 @@ F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/analyze.test d21f2143664912a20d04b67baf4bed935e7b1b48
 F test/analyze2.test ea3df826879dd672031b27c6a845afc3a39f27d9
 F test/analyze3.test d61f55d8b472fc6e713160b1e577f7a68e63f38b
+F test/analyze5.test 1de8d66b11aae5a1453aa042d62e834a476bac9c
 F test/analyze6.test 1ba1aea8fad25a77ffd71f24522d1bb9ecc949fc
 F test/async.test ad4ba51b77cd118911a3fe1356b0809da9c108c3
 F test/async2.test bf5e2ca2c96763b4cba3d016249ad7259a5603b6
@@ -847,7 +848,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e8177e0149280ea775e9aac18307ce2528f72298
-R 0453ff8f07b741701e560aed8706c2ec
+P 1d6378898aab5208e1fbaf2683a63650b4987c16
+R b045c370be1787d7b141ea78738ab71f
 U drh
-Z 69d0a371db70c7015ac745d683a50d31
+Z 0143ec47aac262d7a15c469ecf440697
