@@ -1,5 +1,5 @@
-C Change\stwo\snew\sinternal\sfunctions\sin\swhere.c\sfrom\sglobal\sto\sfile\sscope.
-D 2011-04-07T19:56:21.304
+C Fix\sincrvacuum2.test\sso\sthat\sit\sworks\swith\sthe\sinmemory_journal\spermutation.
+D 2011-04-08T17:22:30.300
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -494,7 +494,7 @@ F test/incrblob3.test aedbb35ea1b6450c33b98f2b6ed98e5020be8dc7
 F test/incrblob_err.test c577c91d4ed9e8336cdb188b15d6ee2a6fe9604e
 F test/incrblobfault.test 917c0292224c64a56ef7215fd633a3a82f805be0
 F test/incrvacuum.test 453d1e490d8f5ad2c9b3a54282a0690d6ae56462
-F test/incrvacuum2.test 33f8f47edf361e6f31f67c46c4963d3f6841bc07
+F test/incrvacuum2.test ae04573b73ad52179f56e194fff0fbe43b509d23
 F test/incrvacuum_ioerr.test 57d2f5777ab13fa03b87b262a4ea1bad5cfc0291
 F test/index.test b5429732b3b983fa810e3ac867d7ca85dae35097
 F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
@@ -927,7 +927,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P bf78acb9dfacde0f08a5b3ceac13480f12a06168
-R a9f2f9a05093271e91b30b504fa13d37
-U drh
-Z 889e513b13f7f64ff3dfde333fe1ea41
+P 5bbfa17d4d6db18f8077f758d70c1bc253b58e2e
+R 2679548d57f4894ca8b9b15361fa4466
+U dan
+Z eb5d19ab4e4ff1806dfa7f05c67aa6f7

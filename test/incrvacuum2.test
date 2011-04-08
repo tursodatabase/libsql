@@ -198,6 +198,7 @@ ifcapable wal {
     sqlite3 db test.db
     set maxsz 0
     while {[file size test.db] > [expr 512*3]} {
+      execsql { PRAGMA journal_mode = WAL }
       execsql { PRAGMA wal_checkpoint }
       execsql { PRAGMA incremental_vacuum(1) }
       set newsz [file size test.db-wal]
