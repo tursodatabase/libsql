@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sleft-hand\sside\sof\sthe\sIS\sNOT\sNULL\soperator\sis\sa\ssimple\scolumn\nand\snot\sa\sgeneral\sexpression\sbefore\sapplying\sthe\sIS\sNOT\sNULL\noptimization.\s\sThis\sis\sa\sbackport\sof\scheck-in\s[543f75a6abe3].
-D 2011-04-08T23:04:28.400
+C Make\ssure\sthe\squery\splanner\sis\sable\sto\scorrectly\sanalyze\sNULL\svalue\nsamples\sin\sthe\ssqlite_stat2\stable.\s\sThis\sis\sa\sbackport\sof\schanges\nfrom\scheck-in\s[f73a167b434f]
+D 2011-04-08T23:05:50.899
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 543f91f24cd7fee774ecc0a61c19704c0c3e78fd
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -224,7 +224,7 @@ F src/vdbeInt.h ffd68c4d4229227a5089bec53a1c635146177abc
 F src/vdbeapi.c d0f4407e465f261780ad725c1caece7d66a6aa35
 F src/vdbeaux.c 157d62a6a8ca22c3792f5957e887df8bda2d58eb
 F src/vdbeblob.c 258a6010ba7a82b72b327fb24c55790655689256
-F src/vdbemem.c e5673f81a2381b35c60e73ef0a8502be2ab1041e
+F src/vdbemem.c c9f3bba5f81d3b4cbe9f8f7ed4fc7b9d50f3536e
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c 0e8e0cb30dffb078367e843e84e37ef99236c7e4
 F src/wal.c 5ac2119e23ee4424599d4275b66dc88d612a0543
@@ -847,7 +847,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a5aae1743a208e7792497dfebf3e8311140ae595
-R e7d63c16d3e7d724e83cf507d108ae6c
+P e8177e0149280ea775e9aac18307ce2528f72298
+R 0453ff8f07b741701e560aed8706c2ec
 U drh
-Z 1d910069d892bc78b9a0e115530a1c05
+Z 69d0a371db70c7015ac745d683a50d31

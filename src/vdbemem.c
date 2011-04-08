@@ -1051,6 +1051,9 @@ int sqlite3ValueFromExpr(
       /* (double)-1 In case of SQLITE_OMIT_FLOATING_POINT... */
       pVal->r = (double)-1 * pVal->r;
     }
+  }else if( op==TK_NULL ){
+    pVal = sqlite3ValueNew(db);
+    if( pVal==0 ) goto no_mem;
   }
 #ifndef SQLITE_OMIT_BLOB_LITERAL
   else if( op==TK_BLOB ){
