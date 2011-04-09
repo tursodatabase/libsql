@@ -302,9 +302,6 @@ static const char * const azCompileOpt[] = {
 #ifdef SQLITE_OMIT_TRUNCATE_OPTIMIZATION
   "OMIT_TRUNCATE_OPTIMIZATION",
 #endif
-#ifdef SQLITE_OMIT_UNIQUE_ENFORCEMENT
-  "OMIT_UNIQUE_ENFORCEMENT",
-#endif
 #ifdef SQLITE_OMIT_UTF16
   "OMIT_UTF16",
 #endif
