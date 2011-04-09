@@ -1,5 +1,5 @@
-C Remove\san\salways-true\sconditional.\s\sReplace\sit\swith\san\sassert().
-D 2011-04-09T17:53:30.201
+C Add\stest\sfile\sunordered.test.
+D 2011-04-09T19:17:49.275
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -835,6 +835,7 @@ F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
 F test/types3.test a0f66bf12f80fad89493535474f7a6d16fa58150
 F test/unique.test 083c7fff74695bcc27a71d75699deba3595bc9c2
 F test/unixexcl.test 9d80a54d86d2261f660758928959368ffc36151e
+F test/unordered.test c479d3027f9c4db05b44b83010735c6708abcc91
 F test/update.test 8bc86fd7ef1a00014f76dc6a6a7c974df4aef172
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
 F test/vacuum.test 29b60e8cc9e573b39676df6c4a75fe9e02d04a09
@@ -927,7 +928,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a46f32900a013aa6bb2dad2a9ed3ce00ab2493fd
-R 82deaf50c44bacb7e77b8358435cc0c9
-U drh
-Z 1d377ca5bb92e1cc67ae34d0dbcea9e6
+P 1c2f0f8477bcf251fe874a2cfae4d7a403cb88ff
+R 59d7eb60fa0b4547dfa6a4784c13a2a7
+U dan
+Z a2cc3dbbe88eab08901d5042b741714e
