@@ -1,5 +1,5 @@
-C Always\smake\ssure\sthe\sleft-hand\sside\sof\sthe\sIS\sNOT\sNULL\soperator\sis\sa\nsmiple\scolumn,\snot\sa\sgeneral\sexpression,\sbefore\sapplying\sthe\sIS\sNOT\sNULL\nquery\soptimization.
-D 2011-04-08T21:35:26.364
+C Do\snot\sdo\sa\sbackup\sif\sthe\snumber\sof\sreserved\sbytes\sin\sthe\ssource\sand\ndestination\sdo\snot\smatch.\s\sTry\sto\smake\sthe\smatch,\sbut\sif\sunable\sfail.
+D 2011-04-09T02:09:44.933
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -118,7 +118,7 @@ F src/alter.c 280f5c04b11b492703a342222b3de0a999445280
 F src/analyze.c a1ad9f4d8aac055c4a4bbd99073e2e78fe66129c
 F src/attach.c 7cae2cf0c14762ce14c074a860ec52890a973a56
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
-F src/backup.c b7529a6691f0fd534ae8ff622203c46a7f1b626b
+F src/backup.c 8d738af17e87eb6fcf2dab8b26153a918a114e48
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 6a9164af8a2ef4612ee30b253635a9bd8e5e1b1b
@@ -171,7 +171,7 @@ F src/pcache.c 09d38c44ab275db581f7a2f6ff8b9bc7f8c0faaa
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c d548e31beafa792d1994b663a29a5303569efc4e
 F src/pragma.c 49c90ab27a4339d4b5bc0b03c08cbcf20ed8d454
-F src/prepare.c 206e1f06479fb5f756592bded468bd3ece3f41d4
+F src/prepare.c e64261559a3187698a3e7e6c8b001a4f4f98dab4
 F src/printf.c 585a36b6a963df832cfb69505afa3a34ed5ef8a1
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
@@ -927,7 +927,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8ea3601cd11088ae4d62bd4a05d1675301b26ace
-R 7e699a3cf12fb4b90da6a0d2b765dc1b
+P 543f75a6abe3aa4f49df43e71a462702d40b3251
+R ecb9137cdfc6a112de5c41c40942b0a2
 U drh
-Z b346c2d4f65ea7f3ece8de7fdcc289fd
+Z e9521ab4b4c4425c6bb8ec5417657a53
