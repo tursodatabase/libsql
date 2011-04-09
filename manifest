@@ -1,5 +1,5 @@
-C Add\san\sOP_VerifyCookie\sinstruction\sto\s"CREATE\sXXX\sIF\sNOT\sEXISTS"\scommands.\sThis\sway,\sif\sthe\sspecified\sdatabase\sobject\sexisted\swhen\sthe\sstatement\swas\scompiled\sbut\sremoved\sfrom\sthe\sdatabase\sbefore\ssqlite3_step()\swas\scalled,\sthe\sstatement\sstill\sworks\sas\sexpected\s(and\screates\sthe\sobject).
-D 2011-04-09T15:39:02.585
+C Add\sVerifyCookie\sinstructions\sto\s"DROP\sXXX\sIF\sEXISTS"\sstatements\sif\sthe\sspecified\sdatabase\sobject\sdoes\snot\sexist\swhen\sthe\sstatement\sis\sprepared.
+D 2011-04-09T17:32:58.132
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -124,7 +124,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 6a9164af8a2ef4612ee30b253635a9bd8e5e1b1b
 F src/btree.h 11753dd46597a20702bca8746cb4caa4486a82b5
 F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
-F src/build.c 84d4a8030d38c8f8cea6bbfa3b9a9e92932b0d03
+F src/build.c f09c46c66a1e7668c6ee25c9a2518aaa6842044c
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 7deec4534f3b5a0c3b4a4cbadf809d321f64f9c4
@@ -180,7 +180,7 @@ F src/select.c 649a6f10f7eb7b52a5a28847773cb9968a828ae8
 F src/shell.c 9c8389796764f65d4506bcd614ac8061f4160d5c
 F src/sqlite.h.in 4d28db70c37a1b17942820308eb59f211140da43
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
-F src/sqliteInt.h 9e53256aa7cb22ed2126c5350bc25e96bc7c4ed8
+F src/sqliteInt.h ac8f3f5846275c634f6649969304a9e97f6f9854
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -230,7 +230,7 @@ F src/test_vfstrace.c 2265c9895f350c8d3c39b079998fbe7481505cc1
 F src/test_wholenumber.c 6129adfbe7c7444f2e60cc785927f3aa74e12290
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c 604607d6813e9551cf5189d899e0a25c12681080
-F src/trigger.c c31aeb3c33e8cef9029e83f5fd9111ef644ca6b9
+F src/trigger.c 144cc18bb701f3286484aae4292a9531f09278c8
 F src/update.c 81911be16ece3c3e7716aa18565b4814ec41f8b9
 F src/utf.c d83650c3ea08f7407bd9d0839d9885241c209c60
 F src/util.c cd997077bad039efc0597eb027c929658f93c018
@@ -388,7 +388,7 @@ F test/eval.test bc269c365ba877554948441e91ad5373f9f91be3
 F test/exclusive.test 53e1841b422e554cecf0160f937c473d6d0e3062
 F test/exclusive2.test 343d55130c12c67b8bf10407acec043a6c26c86b
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
-F test/exists.test 5e14325e4b2ea28709ff82d8d2605a129b5aec72
+F test/exists.test 81363f6982ea49dfd820a50845466390e60a4a0c
 F test/expr.test 19e8ac40313e2282a47b586d11c4892040990d3a
 F test/fallocate.test 43dc34b8c24be6baffadc3b4401ee15710ce83c6
 F test/filectrl.test 97003734290887566e01dded09dc9e99cb937e9e
@@ -927,7 +927,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8a42e236701c8afd9ada7d4568712a21690ea087
-R 962a8a84c94502671291e1b24e5febe9
+P b9dbd9936191666c3fc9889e938344a82cc03aeb
+R 0b11aa72c3fba72615e4990e1f23fca6
 U dan
-Z a74ebc24c62ba84a876e128dc1be558a
+Z 1024ea561694dc92b045ac4bc887de85
