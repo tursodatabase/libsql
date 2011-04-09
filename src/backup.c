@@ -623,9 +623,10 @@ void sqlite3BackupUpdate(sqlite3_backup *pBackup, Pgno iPage, const u8 *aData){
       ** the new data into the backup.
       */
       int rc;
-      if( p->pDestDb ) sqlite3_mutex_enter(p->pDestDb->mutex);
+      assert( p->pDestDb );
+      sqlite3_mutex_enter(p->pDestDb->mutex);
       rc = backupOnePage(p, iPage, aData);
-      if( p->pDestDb ) sqlite3_mutex_leave(p->pDestDb->mutex);
+      sqlite3_mutex_leave(p->pDestDb->mutex);
       assert( rc!=SQLITE_BUSY && rc!=SQLITE_LOCKED );
       if( rc!=SQLITE_OK ){
         p->rc = rc;

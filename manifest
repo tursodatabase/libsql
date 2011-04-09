@@ -1,5 +1,5 @@
-C Add\sVerifyCookie\sinstructions\sto\s"DROP\sXXX\sIF\sEXISTS"\sstatements\sif\sthe\sspecified\sdatabase\sobject\sdoes\snot\sexist\swhen\sthe\sstatement\sis\sprepared.
-D 2011-04-09T17:32:58.132
+C Remove\san\salways-true\sconditional.\s\sReplace\sit\swith\san\sassert().
+D 2011-04-09T17:53:30.201
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -118,7 +118,7 @@ F src/alter.c 280f5c04b11b492703a342222b3de0a999445280
 F src/analyze.c a425d62e8fa9ebcb4359ab84ff0c62c6563d2e2a
 F src/attach.c 7f97ca76ef2453440170929531a9c778267c0830
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
-F src/backup.c 8d738af17e87eb6fcf2dab8b26153a918a114e48
+F src/backup.c 986c15232757f2873dff35ee3b35cbf935fc573c
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 6a9164af8a2ef4612ee30b253635a9bd8e5e1b1b
@@ -927,7 +927,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b9dbd9936191666c3fc9889e938344a82cc03aeb
-R 0b11aa72c3fba72615e4990e1f23fca6
-U dan
-Z 1024ea561694dc92b045ac4bc887de85
+P a46f32900a013aa6bb2dad2a9ed3ce00ab2493fd
+R 82deaf50c44bacb7e77b8358435cc0c9
+U drh
+Z 1d377ca5bb92e1cc67ae34d0dbcea9e6
