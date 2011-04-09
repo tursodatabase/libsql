@@ -171,6 +171,9 @@ void sqlite3BeginTrigger(
                       zName, sqlite3Strlen30(zName)) ){
     if( !noErr ){
       sqlite3ErrorMsg(pParse, "trigger %T already exists", pName);
+    }else{
+      assert( !db->init.busy );
+      sqlite3CodeVerifySchema(pParse, iDb);
     }
     goto trigger_cleanup;
   }

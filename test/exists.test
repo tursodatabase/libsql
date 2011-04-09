@@ -1,0 +1,76 @@
+# 2011 April 9
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the various schema modification statements
+# that feature "IF EXISTS" or "IF NOT EXISTS" clauses.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+
+set testprefix exists
+
+do_multiclient_test tn {
+
+  # TABLE objects.
+  #
+  do_test $tn.1.1 {
+    sql2 { CREATE TABLE t1(x) }
+    sql1 { CREATE TABLE IF NOT EXISTS t1(a, b) }
+    sql2 { DROP TABLE t1 }
+    sql1 { CREATE TABLE IF NOT EXISTS t1(a, b) }
+    sql2 { SELECT name FROM sqlite_master WHERE type = 'table' }
+  } {t1}
+
+  do_test $tn.1.2 {
+    sql2 { CREATE TABLE t2(x) }
+    sql1 { CREATE TABLE IF NOT EXISTS t2 AS SELECT * FROM t1 }
+    sql2 { DROP TABLE t2 }
+    sql1 { CREATE TABLE IF NOT EXISTS t2 AS SELECT * FROM t1 }
+    sql2 { SELECT name FROM sqlite_master WHERE type = 'table' }
+  } {t1 t2}
+
+
+  # INDEX objects.
+  #
+  do_test $tn.2 {
+    sql2 { CREATE INDEX i1 ON t1(a) }
+    sql1 { CREATE INDEX IF NOT EXISTS i1 ON t1(a, b) }
+    sql2 { DROP INDEX i1 }
+    sql1 { CREATE INDEX IF NOT EXISTS i1 ON t1(a, b) }
+    sql2 { SELECT name FROM sqlite_master WHERE type = 'index' }
+  } {i1}
+
+  # VIEW objects.
+  #
+  do_test $tn.3 {
+    sql2 { CREATE VIEW v1 AS SELECT * FROM t1 }
+    sql1 { CREATE VIEW IF NOT EXISTS v1 AS SELECT * FROM t1 }
+    sql2 { DROP VIEW v1 }
+    sql1 { CREATE VIEW IF NOT EXISTS v1 AS SELECT * FROM t1 }
+    sql2 { SELECT name FROM sqlite_master WHERE type = 'view' }
+  } {v1}
+
+  # TRIGGER objects.
+  #
+  do_test $tn.4 {
+    sql2 { CREATE TRIGGER tr1 AFTER INSERT ON t1 BEGIN SELECT 1; END }
+sql1 { CREATE TRIGGER IF NOT EXISTS tr1 AFTER INSERT ON t1 BEGIN SELECT 1; END }
+    sql2 { DROP TRIGGER tr1 }
+sql1 { CREATE TRIGGER IF NOT EXISTS tr1 AFTER INSERT ON t1 BEGIN SELECT 1; END }
+    sql2 { SELECT name FROM sqlite_master WHERE type = 'trigger' }
+  } {tr1}
+
+}
+
+
+finish_test

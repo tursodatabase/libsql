@@ -813,6 +813,9 @@ void sqlite3StartTable(
     if( pTable ){
       if( !noErr ){
         sqlite3ErrorMsg(pParse, "table %T already exists", pName);
+      }else{
+        assert( !db->init.busy );
+        sqlite3CodeVerifySchema(pParse, iDb);
       }
       goto begin_table_error;
     }
@@ -2518,6 +2521,9 @@ Index *sqlite3CreateIndex(
     if( sqlite3FindIndex(db, zName, pDb->zName)!=0 ){
       if( !ifNotExist ){
         sqlite3ErrorMsg(pParse, "index %s already exists", zName);
+      }else{
+        assert( !db->init.busy );
+        sqlite3CodeVerifySchema(pParse, iDb);
       }
       goto exit_create_index;
     }
