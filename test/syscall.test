@@ -239,7 +239,6 @@ do_test 8.1 {
   file_control_chunksize_test db main 4096
   file size test.db
 } {0}
-
 foreach {tn hint size} {
   1  1000    4096 
   2  1000    4096 
@@ -248,6 +247,26 @@ foreach {tn hint size} {
   5  4197    8192 
 } {
   do_test 8.2.$tn {
+    file_control_sizehint_test db main $hint
+    file size test.db
+  } $size
+}
+
+do_test 8.3 {
+  db close
+  forcedelete test.db test.db2
+  sqlite3 db test.db
+  file_control_chunksize_test db main 16
+  file size test.db
+} {0}
+foreach {tn hint size} {
+  1  5       16 
+  2  13      16 
+  3  45      48 
+  4  48      48 
+  5  49      64 
+} {
+  do_test 8.4.$tn {
     file_control_sizehint_test db main $hint
     file size test.db
   } $size

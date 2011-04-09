@@ -17,11 +17,7 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-ifcapable !mutex {
-  finish_test
-  return
-}
-
+if {[run_thread_tests]==0} { finish_test ; return }
 
 # Skip this whole file if the thread testing code is not enabled
 #

@@ -727,7 +727,7 @@ struct sqlite3_io_methods {
 ** when [PRAGMA synchronous | PRAGMA synchronous=OFF] is set, but most 
 ** VFSes do not need this signal and should silently ignore this opcode.
 ** Applications should not call [sqlite3_file_control()] with this
-** opcode as doing so may disrupt the operation of the specilized VFSes
+** opcode as doing so may disrupt the operation of the specialized VFSes
 ** that do require it.  
 */
 #define SQLITE_FCNTL_LOCKSTATE        1
@@ -1309,7 +1309,7 @@ struct sqlite3_mem_methods {
 ** <dt>SQLITE_CONFIG_SCRATCH</dt>
 ** <dd> ^This option specifies a static memory buffer that SQLite can use for
 ** scratch memory.  There are three arguments:  A pointer an 8-byte
-** aligned memory buffer from which the scrach allocations will be
+** aligned memory buffer from which the scratch allocations will be
 ** drawn, the size of each scratch allocation (sz),
 ** and the maximum number of scratch allocations (N).  The sz
 ** argument must be a multiple of 16.
@@ -1461,7 +1461,7 @@ struct sqlite3_mem_methods {
 ** <dd> ^This option takes three additional arguments that determine the 
 ** [lookaside memory allocator] configuration for the [database connection].
 ** ^The first argument (the third parameter to [sqlite3_db_config()] is a
-** pointer to an memory buffer to use for lookaside memory.
+** pointer to a memory buffer to use for lookaside memory.
 ** ^The first argument after the SQLITE_DBCONFIG_LOOKASIDE verb
 ** may be NULL in which case SQLite will allocate the
 ** lookaside buffer itself using [sqlite3_malloc()]. ^The second argument is the
@@ -1493,7 +1493,7 @@ struct sqlite3_mem_methods {
 ** <dd> ^This option is used to enable or disable [CREATE TRIGGER | triggers].
 ** There should be two additional arguments.
 ** The first argument is an integer which is 0 to disable triggers,
-** positive to enable trigers or negative to leave the setting unchanged.
+** positive to enable triggers or negative to leave the setting unchanged.
 ** The second parameter is a pointer to an integer into which
 ** is written 0 or 1 to indicate whether triggers are disabled or enabled
 ** following this call.  The second parameter may be a NULL pointer, in
@@ -2105,7 +2105,7 @@ void sqlite3_randomness(int N, void *P);
 /*
 ** CAPI3REF: Compile-Time Authorization Callbacks
 **
-** ^This routine registers a authorizer callback with a particular
+** ^This routine registers an authorizer callback with a particular
 ** [database connection], supplied in the first argument.
 ** ^The authorizer callback is invoked as SQL statements are being compiled
 ** by [sqlite3_prepare()] or its variants [sqlite3_prepare_v2()],
@@ -2751,7 +2751,7 @@ int sqlite3_stmt_readonly(sqlite3_stmt *pStmt);
 ** whether or not it requires a protected sqlite3_value.
 **
 ** The terms "protected" and "unprotected" refer to whether or not
-** a mutex is held.  A internal mutex is held for a protected
+** a mutex is held.  An internal mutex is held for a protected
 ** sqlite3_value object but no mutex is held for an unprotected
 ** sqlite3_value object.  If SQLite is compiled to be single-threaded
 ** (with [SQLITE_THREADSAFE=0] and with [sqlite3_threadsafe()] returning 0)
@@ -3437,7 +3437,7 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 ** are used to add SQL functions or aggregates or to redefine the behavior
 ** of existing SQL functions or aggregates.  The only differences between
 ** these routines are the text encoding expected for
-** the the second parameter (the name of the function being created)
+** the second parameter (the name of the function being created)
 ** and the presence or absence of a destructor callback for
 ** the application data pointer.
 **
@@ -3482,7 +3482,7 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 ** callback only; NULL pointers must be passed as the xStep and xFinal
 ** parameters. ^An aggregate SQL function requires an implementation of xStep
 ** and xFinal and NULL pointer must be passed for xFunc. ^To delete an existing
-** SQL function or aggregate, pass NULL poiners for all three function
+** SQL function or aggregate, pass NULL pointers for all three function
 ** callbacks.
 **
 ** ^(If the ninth parameter to sqlite3_create_function_v2() is not NULL,
@@ -3916,7 +3916,7 @@ void sqlite3_result_zeroblob(sqlite3_context*, int n);
 ** ^The [SQLITE_UTF16_ALIGNED] value for eTextRep forces strings to begin
 ** on an even byte address.
 **
-** ^The fourth argument, pArg, is a application data pointer that is passed
+** ^The fourth argument, pArg, is an application data pointer that is passed
 ** through as the first argument to the collating function callback.
 **
 ** ^The fifth argument, xCallback, is a pointer to the collating function.
@@ -3932,7 +3932,7 @@ void sqlite3_result_zeroblob(sqlite3_context*, int n);
 ** by the eTextRep argument.  The collating function must return an
 ** integer that is negative, zero, or positive
 ** if the first string is less than, equal to, or greater than the second,
-** respectively.  A collating function must alway return the same answer
+** respectively.  A collating function must always return the same answer
 ** given the same inputs.  If two or more collating functions are registered
 ** to the same collation name (using different eTextRep values) then all
 ** must give an equivalent answer when invoked with equivalent strings.
@@ -4344,7 +4344,7 @@ int sqlite3_release_memory(int);
 ** <li> Memory accounting is disabled using a combination of the
 **      [sqlite3_config]([SQLITE_CONFIG_MEMSTATUS],...) start-time option and
 **      the [SQLITE_DEFAULT_MEMSTATUS] compile-time option.
-** <li> An alternative page cache implementation is specifed using
+** <li> An alternative page cache implementation is specified using
 **      [sqlite3_config]([SQLITE_CONFIG_PCACHE],...).
 ** <li> The page cache allocates from its own memory pool supplied
 **      by [sqlite3_config]([SQLITE_CONFIG_PAGECACHE],...) rather than
@@ -4565,7 +4565,7 @@ typedef struct sqlite3_module sqlite3_module;
 ** CAPI3REF: Virtual Table Object
 ** KEYWORDS: sqlite3_module {virtual table module}
 **
-** This structure, sometimes called a a "virtual table module", 
+** This structure, sometimes called a "virtual table module", 
 ** defines the implementation of a [virtual tables].  
 ** This structure consists mostly of methods for the module.
 **
@@ -4877,7 +4877,7 @@ typedef struct sqlite3_blob sqlite3_blob;
 ** This is true if any column of the row is changed, even a column
 ** other than the one the BLOB handle is open on.)^
 ** ^Calls to [sqlite3_blob_read()] and [sqlite3_blob_write()] for
-** a expired BLOB handle fail with an return code of [SQLITE_ABORT].
+** an expired BLOB handle fail with a return code of [SQLITE_ABORT].
 ** ^(Changes written into a BLOB prior to the BLOB expiring are not
 ** rolled back by the expiration of the BLOB.  Such changes will eventually
 ** commit if the transaction continues to completion.)^

@@ -209,6 +209,8 @@ foreach {testid where index rows} {
   502  {x IS NULL}                          {} 100
   503  {x=1}                               t1x  50
   504  {x IS NOT NULL}                     t1x  25
+  505  {+x IS NOT NULL}                     {} 500
+  506  {upper(x) IS NOT NULL}               {} 500
 
 } {
   # Verify that the expected index is used with the expected row count

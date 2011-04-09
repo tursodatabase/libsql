@@ -89,6 +89,9 @@ proc run_thread_tests {{print_warning 0}} {
   ifcapable !mutex { 
     set zProblem "SQLite build is not threadsafe"
   }
+  ifcapable mutex_noop { 
+    set zProblem "SQLite build uses SQLITE_MUTEX_NOOP"
+  }
   if {[info commands sqlthread] eq ""} {
     set zProblem "SQLite build is not threadsafe"
   }

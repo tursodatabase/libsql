@@ -87,7 +87,7 @@ ifcapable stat2 {
   # row count for (c=2) than it does for (c=?).
   do_test analyze7-3.2.2 {
     execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE c=2;}
-  } {0 0 0 {SEARCH TABLE t1 USING INDEX t1cd (c=?) (~102 rows)}}
+  } {0 0 0 {SEARCH TABLE t1 USING INDEX t1cd (c=?) (~51 rows)}}
 } else {
   # If ENABLE_STAT2 is not defined, the expected row count for (c=2) is the
   # same as that for (c=?).
