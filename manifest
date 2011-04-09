@@ -1,5 +1,5 @@
-C Back\sout\sthe\sSQLITE_OMIT_UNIQUE_ENFORCEMENT\scompile-option.\s\sIt\sis\san\sunneeded\ncomplication.
-D 2011-04-09T03:04:13.095
+C If\sthe\skeyword\s"unordered"\sappears\sat\sthe\send\sof\sthe\sSQLITE_STAT1.STAT\s\ncolumn\sfor\san\sindex,\sthen\suse\sthat\sindex\sfor\sequality\slookups\sonly,\snever\s\nfor\srange\squeries\sor\ssorting.\s\sThis\sfeature\sis\scurrently\sundocumented\sand\nmy\schange\sor\sbe\sremoved\sin\sa\sfuture\srelease.
+D 2011-04-09T03:20:59.281
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -115,7 +115,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c 280f5c04b11b492703a342222b3de0a999445280
-F src/analyze.c a1ad9f4d8aac055c4a4bbd99073e2e78fe66129c
+F src/analyze.c a425d62e8fa9ebcb4359ab84ff0c62c6563d2e2a
 F src/attach.c 7f97ca76ef2453440170929531a9c778267c0830
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 8d738af17e87eb6fcf2dab8b26153a918a114e48
@@ -180,7 +180,7 @@ F src/select.c 649a6f10f7eb7b52a5a28847773cb9968a828ae8
 F src/shell.c 9c8389796764f65d4506bcd614ac8061f4160d5c
 F src/sqlite.h.in 4d28db70c37a1b17942820308eb59f211140da43
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
-F src/sqliteInt.h 7b0150bfdab049b11bb2d055d065051ff734d113
+F src/sqliteInt.h 9e53256aa7cb22ed2126c5350bc25e96bc7c4ed8
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -247,7 +247,7 @@ F src/vtab.c b0abc931f95af94c9ffdf9f747eb191cda953123
 F src/wal.c 7334009b396285b658a95a3b6bc6d2b016a1f794
 F src/wal.h 7a5fbb00114b7f2cd40c7e1003d4c41ce9d26840
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 494d106959a492838ab3723e284de46ddd520da1
+F src/where.c 55403ce19c506be6a321c7f129aff693d6103db5
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 51756962d522e474338e9b2ebb26e7364d4aa125
@@ -926,7 +926,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 4caa5fc86e7fe404cd188713277f2801cd02dbc9
-R 7c13920af52add3fb4004361c1b744b2
+P 927e955b93e869727c55b784401de3ea07bee257 3b964155f611c437d53d44feafa22f531942b1b4
+R 8f730b36ea51ef307e60876151b20fbc
 U drh
-Z f0a05ecbdcea6caa1b19a9a2e8b6f008
+Z ad8576a5ee09c7cb93d286363cb1b8eb
