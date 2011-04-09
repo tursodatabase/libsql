@@ -1544,6 +1544,7 @@ ifcapable autovacuum {
   } [expr 84 * 1024]
   do_test 24.4 {
     execsql { 
+      PRAGMA cache_size = 200;
       PRAGMA incremental_vacuum;
       PRAGMA wal_checkpoint;
     }

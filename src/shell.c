@@ -2199,7 +2199,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
 
     /* convert testctrl text option to value. allow any unique prefix
     ** of the option name, or a numerical value. */
-    n = strlen(azArg[1]);
+    n = strlen30(azArg[1]);
     for(i=0; i<(int)(sizeof(aCtrl)/sizeof(aCtrl[0])); i++){
       if( strncmp(azArg[1], aCtrl[i].zCtrlName, n)==0 ){
         if( testctrl<0 ){

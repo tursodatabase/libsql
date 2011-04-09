@@ -1342,7 +1342,10 @@ static void exprAnalyze(
   ** of the loop.  Without the TERM_VNULL flag, the not-null check at
   ** the start of the loop will prevent any results from being returned.
   */
-  if( pExpr->op==TK_NOTNULL && pExpr->pLeft->iColumn>=0 ){
+  if( pExpr->op==TK_NOTNULL
+   && pExpr->pLeft->op==TK_COLUMN
+   && pExpr->pLeft->iColumn>=0
+  ){
     Expr *pNewExpr;
     Expr *pLeft = pExpr->pLeft;
     int idxNew;
@@ -2532,7 +2535,7 @@ range_est_fallback:
 ** for a UTF conversion required for comparison.  The error is stored
 ** in the pParse structure.
 */
-int whereEqualScanEst(
+static int whereEqualScanEst(
   Parse *pParse,       /* Parsing & code generating context */
   Index *p,            /* The index whose left-most column is pTerm */
   Expr *pExpr,         /* Expression for VALUE in the x=VALUE constraint */
@@ -2589,7 +2592,7 @@ whereEqualScanEst_cancel:
 ** for a UTF conversion required for comparison.  The error is stored
 ** in the pParse structure.
 */
-int whereInScanEst(
+static int whereInScanEst(
   Parse *pParse,       /* Parsing & code generating context */
   Index *p,            /* The index whose left-most column is pTerm */
   ExprList *pList,     /* The value list on the RHS of "x IN (v1,v2,v3,...)" */
@@ -2860,7 +2863,7 @@ static void bestBtreeIndex(
     }
 
     /* Determine the value of estBound. */
-    if( nEq<pProbe->nColumn ){
+    if( nEq<pProbe->nColumn && pProbe->bUnordered==0 ){
       int j = pProbe->aiColumn[nEq];
       if( findTerm(pWC, iCur, j, notReady, WO_LT|WO_LE|WO_GT|WO_GE, pIdx) ){
         WhereTerm *pTop = findTerm(pWC, iCur, j, notReady, WO_LT|WO_LE, pIdx);
@@ -2892,6 +2895,7 @@ static void bestBtreeIndex(
     ** will scan rows in a different order, set the bSort variable.  */
     if( pOrderBy ){
       if( (wsFlags & WHERE_COLUMN_IN)==0
+        && pProbe->bUnordered==0
         && isSortingIndex(pParse, pWC->pMaskSet, pProbe, iCur, pOrderBy,
                           nEq, wsFlags, &rev)
       ){

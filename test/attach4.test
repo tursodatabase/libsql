@@ -74,7 +74,11 @@ do_test 1.4 {
 set L [list]
 set S ""
 foreach {name f} $files {
-  lappend L wal
+  if {[permutation] == "journaltest"} {
+    lappend L delete
+  } else {
+    lappend L wal
+  }
   append S "
     PRAGMA $name.journal_mode = WAL;
     UPDATE $name.tbl SET x = '$name';
