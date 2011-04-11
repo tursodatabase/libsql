@@ -1837,7 +1837,7 @@ static int os2CurrentTimeInt64(sqlite3_vfs *pVfs, sqlite3_int64 *piNow){
 ** current time and date as a Julian Day number into *prNow and
 ** return 0.  Return 1 if the time and date cannot be found.
 */
-int os2CurrentTime( sqlite3_vfs *pVfs, double *prNow ){
+static int os2CurrentTime( sqlite3_vfs *pVfs, double *prNow ){
   int rc;
   sqlite3_int64 i;
   rc = os2CurrentTimeInt64(pVfs, &i);
