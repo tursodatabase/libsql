@@ -363,8 +363,10 @@ static struct unix_syscall {
 #define osPwrite64  ((ssize_t(*)(int,const void*,size_t,off_t))\
                     aSyscall[13].pCurrent)
 
+#if SQLITE_ENABLE_LOCKING_STYLE
   { "fchmod",       (sqlite3_syscall_ptr)fchmod,     0  },
 #define osFchmod    ((int(*)(int,mode_t))aSyscall[14].pCurrent)
+#endif
 
 #if defined(HAVE_POSIX_FALLOCATE) && HAVE_POSIX_FALLOCATE
   { "fallocate",    (sqlite3_syscall_ptr)posix_fallocate,  0 },
