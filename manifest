@@ -1,5 +1,5 @@
-C Add\sa\ssimple\stest\sprogram\sto\said\sin\sverifying\sthat\sjournals\sare\scross-platform.
-D 2011-04-10T16:39:23.788
+C Change\sexists.test\sto\srun\sall\stests\swith\sand\swithout\s"PRAGMA\sjournal_mode=WAL".
+D 2011-04-11T05:38:31.768
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -388,7 +388,7 @@ F test/eval.test bc269c365ba877554948441e91ad5373f9f91be3
 F test/exclusive.test 53e1841b422e554cecf0160f937c473d6d0e3062
 F test/exclusive2.test 343d55130c12c67b8bf10407acec043a6c26c86b
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
-F test/exists.test 81363f6982ea49dfd820a50845466390e60a4a0c
+F test/exists.test 5e2d64b4eb5a9d08876599bdae2e1213d2d12e2a
 F test/expr.test 19e8ac40313e2282a47b586d11c4892040990d3a
 F test/fallocate.test 43dc34b8c24be6baffadc3b4401ee15710ce83c6
 F test/filectrl.test 97003734290887566e01dded09dc9e99cb937e9e
@@ -929,7 +929,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f346dae1278b5b0cc0cd8e05aa3b4d8f70d2dc1d
-R 787af88c88556ef35e242179ba67cd89
-U drh
-Z 78bbdd619a80aac136302ef91f42dd4a
+P a65a7a59d19a64ba1aec388d23ada79aaaaa6f26
+R 4ba23071ac32ebdf25f66de1fbb24e0a
+U dan
+Z a38692cc4f2fcc5ccb895a8b6cae861a
