@@ -26,8 +26,8 @@
 */
 #ifdef SQLITE_COVERAGE_TEST
 void sqlite3Coverage(int x){
-  static int dummy = 0;
-  dummy += x;
+  static unsigned dummy = 0;
+  dummy += (unsigned)x;
 }
 #endif
 
