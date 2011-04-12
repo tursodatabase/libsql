@@ -1,5 +1,5 @@
-C Do\snot\soverride\sthe\sfchmod\ssystem\scall\sin\sunix\sunless\sthe\nSQLITE_ENABLE_LOCKING_STYLE\scompile-time\soption\sis\sengaged.
-D 2011-04-11T18:35:09.989
+C Version\s3.7.6.
+D 2011-04-12T01:58:40.690
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -929,7 +929,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 73906b67dc920e0c36e68ef9a302be3b495e8e3a
+P 51029d8430d2dbc782f161577d47e3dd11c4e4d7
 R fcc945afeae11beaa1721b47d44a80b4
 U drh
-Z b0bb59b252b4e1710f281b3588ea494e
+Z 0fccf301134ba497cedbdc7d897260bd
