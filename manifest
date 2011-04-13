@@ -1,5 +1,5 @@
-C Bump\sthe\sversion\snumber\sto\s3.7.6.1\sin\spreparation\sfor\sa\sbug-fix\srelease.
-D 2011-04-13T14:02:43.547
+C Version\s3.7.6.1
+D 2011-04-13T14:40:25.366
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -929,7 +929,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c6e727ab3b16e71b0151673bb24b0bafec368ee6
+P 5f0c394a5ab308946e72f20d6351c08c6737c63f
 R 7fdf1bc9f85c04d95a52ad8e53811995
 U drh
-Z b969ce0ad078ed23cf10c756ecc2d7ba
+Z 0a32cef0eaf644f20ba71a7034d19246
