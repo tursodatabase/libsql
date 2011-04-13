@@ -1,11 +1,11 @@
-C Make\ssure\sthe\sarray\sof\soverloadable\ssystem\scalls\sis\salways\scorrectly\nsized,\sregardless\sof\sthe\scompile-time\sconfiguration.\nTicket\s[bb3a86e890c8e96ab].
-D 2011-04-13T13:42:25.116
+C Bump\sthe\sversion\snumber\sto\s3.7.6.1\sin\spreparation\sfor\sa\sbug-fix\srelease.
+D 2011-04-13T14:02:43.547
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.vxworks c85ec1d8597fe2f7bc225af12ac1666e21379151
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
-F VERSION d1056b26608c9a2695187d57cac12ae89492639d
+F VERSION c97e5dcdea2407f4a94f9740294cdf39ce9e88c4
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 17dc593f791f874d2c23a0f9360850ded0286531
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -22,7 +22,7 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure c38c1947db7ed4adaed2affcb09cea9d3acd5a9a x
+F configure 61dbf78cdc4d6a871333dc599c130be6cce865c5 x
 F configure.ac 87a3c71bbe9c925381c154413eea7f3cdc397244
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -911,7 +911,7 @@ F tool/omittest.tcl b1dd290c1596e0f31fd335160a74ec5dfea3df4a
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
-F tool/shell1.test f608a009b04c490fd360c5ded458a6f98b4e7ec4
+F tool/shell1.test fee04fce1bf55e6e081523545fd4e0e83490ff8e
 F tool/shell2.test 5dc76b8005b465f420fed8241621da7513060ff3
 F tool/shell3.test 4fad469e8003938426355afdf34155f08c587836
 F tool/shell4.test 35f9c3d452b4e76d5013c63e1fd07478a62f14ce
@@ -929,7 +929,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f9d43fa363d54beab6f45db005abac0a7c0c47a7
-R 0d198cb245d7de531918d2678517b4ac
+P c6e727ab3b16e71b0151673bb24b0bafec368ee6
+R 7fdf1bc9f85c04d95a52ad8e53811995
 U drh
-Z 08b394929f70e70f37b132550bef53be
+Z b969ce0ad078ed23cf10c756ecc2d7ba
