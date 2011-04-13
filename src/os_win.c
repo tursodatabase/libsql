@@ -385,12 +385,15 @@ static int winLogErrorAtLine(
   int iLine                       /* Source line number where error occurred */
 ){
   char zMsg[500];                 /* Human readable error text */
+  int i;                          /* Loop counter */
   DWORD iErrno = GetLastError();  /* Error code */
 
   zMsg[0] = 0;
   getLastErrorMsg(sizeof(zMsg), zMsg);
   assert( errcode!=SQLITE_OK );
   if( zPath==0 ) zPath = "";
+  for(i=0; zMsg[i] && zMsg[i]!='\r' && zMsg[i]!='\n'; i++){}
+  zMsg[i] = 0;
   sqlite3_log(errcode,
       "os_win.c:%d: (%d) %s(%s) - %s",
       iLine, iErrno, zFunc, zPath, zMsg

@@ -1,5 +1,5 @@
-C Add\snew\sextended\serror\scodes\sfor\sI/O\serrors\son\sseek\sand\sshared-memory\smap.\nAdd\ssqlite3_log()\scalls\sin\sthe\swindows\sbackend\sto\srecord\sdetails\sof\serrors.
-D 2011-04-13T20:26:13.392
+C Remove\sextra\sCR\sand\sNL\scharacters\sfrom\sFormatMessage()\sgenerated\serror\nmessages\sin\sthe\swindows\sVFS.
+D 2011-04-13T23:42:53.616
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,7 +163,7 @@ F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 6c9db4728681138141f0bfc6f931303ac4c67a36
-F src/os_win.c bcd4fbe3edb6e6bcad3426feb674856d0d677a66
+F src/os_win.c 177a14a0690e072534749b5950034d0177bb26d6
 F src/pager.c 055239dcdfe12b3f5d97f6f01f85da01e2d6d912
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -929,7 +929,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8744ced4ec495852b7aa2de573001cb4993e6328
-R a6242b7bfc19e91e66c655c801889c0d
+P fe603217fce8e3a696bd108d5ae7f7a291b7e215
+R 54b10af9b842720eb0ab1e9ba643c2c4
 U drh
-Z fad7310c621c7362baadef9a16659a99
+Z 8703b01c69eb945e3446a99257cc2edf
