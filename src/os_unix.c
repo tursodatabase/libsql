@@ -363,7 +363,11 @@ static struct unix_syscall {
 #define osPwrite64  ((ssize_t(*)(int,const void*,size_t,off_t))\
                     aSyscall[13].pCurrent)
 
+#if SQLITE_ENABLE_LOCKING_STYLE
   { "fchmod",       (sqlite3_syscall_ptr)fchmod,     0  },
+#else
+  { "fchmod",       (sqlite3_syscall_ptr)0,          0  },
+#endif
 #define osFchmod    ((int(*)(int,mode_t))aSyscall[14].pCurrent)
 
 #if defined(HAVE_POSIX_FALLOCATE) && HAVE_POSIX_FALLOCATE
@@ -6970,6 +6974,10 @@ int sqlite3_os_init(void){
 #endif
   };
   unsigned int i;          /* Loop counter */
+
+  /* Double-check that the aSyscall[] array has been constructed
+  ** correctly.  See ticket [bb3a86e890c8e96ab] */
+  assert( ArraySize(aSyscall)==16 );
 
   /* Register all VFSes defined in the aVfs[] array */
   for(i=0; i<(sizeof(aVfs)/sizeof(sqlite3_vfs)); i++){
