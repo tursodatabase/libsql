@@ -354,6 +354,20 @@ static unsigned int sessionPreupdateHash(
 }
 
 /*
+** The buffer that the argument points to contains a serialized SQL value.
+** Return the number of bytes of space occupied by the value (including
+** the type byte).
+*/
+static int sessionSerialLen(u8 *a){
+  int e = *a;
+  int n;
+  if( e==0 ) return 1;
+  if( e==SQLITE_NULL ) return 1;
+  if( e==SQLITE_INTEGER || e==SQLITE_FLOAT ) return 9;
+  return sessionVarintGet(&a[1], &n) + 1 + n;
+}
+
+/*
 ** Based on the primary key values stored in change aRecord, calculate a
 ** hash key, assuming the has table has nBucket buckets. The hash keys
 ** calculated by this function are compatible with those calculated by
@@ -369,7 +383,7 @@ static unsigned int sessionChangeHash(
   u8 *a = aRecord;                /* Used to iterate through change record */
 
   for(i=0; i<pTab->nCol; i++){
-    int eType = *a++;
+    int eType = *a;
     int isPK = pTab->abPK[i];
 
     /* It is not possible for eType to be SQLITE_NULL here. The session 
@@ -377,29 +391,27 @@ static unsigned int sessionChangeHash(
     ** primary key columns. */
     assert( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT 
          || eType==SQLITE_TEXT || eType==SQLITE_BLOB 
+         || eType==SQLITE_NULL || eType==0 
     );
+    assert( !isPK || (eType!=0 && eType!=SQLITE_NULL) );
 
-    if( isPK ) h = HASH_APPEND(h, eType);
-    if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
-      if( isPK ) h = sessionHashAppendI64(h, sessionGetI64(a));
-      a += 8;
+    if( isPK ){
+      a++;
+      h = HASH_APPEND(h, eType);
+      if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
+        if( isPK ) h = sessionHashAppendI64(h, sessionGetI64(a));
+        a += 8;
+      }else{
+        int n; 
+        a += sessionVarintGet(a, &n);
+        if( isPK ) h = sessionHashAppendBlob(h, n, a);
+        a += n;
+      }
     }else{
-      int n; 
-      a += sessionVarintGet(a, &n);
-      if( isPK ) h = sessionHashAppendBlob(h, n, a);
-      a += n;
+      a += sessionSerialLen(a);
     }
   }
   return (h % nBucket);
-}
-
-static int sessionSerialLen(u8 *a){
-  int e = *a;
-  int n;
-  if( e==0 ) return 1;
-  if( e==SQLITE_NULL ) return 1;
-  if( e==SQLITE_INTEGER || e==SQLITE_FLOAT ) return 9;
-  return sessionVarintGet(&a[1], &n) + 1 + n;
 }
 
 static int sessionChangeEqual(
@@ -419,7 +431,7 @@ static int sessionChangeEqual(
       return 0;
     }
     a1 += n1;
-    a2 += n1;
+    a2 += n2;
   }
 
   return 1;

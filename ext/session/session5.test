@@ -21,33 +21,46 @@ ifcapable !session {finish_test; return}
 
 set testprefix session5
 
-proc do_concat_test {tn sql1 sql2} {
-  sqlite3session S1 db main ; S1 attach *
-  sqlite3session S2 db main ; S2 attach *
+# Organization of tests:
+#
+#   session5-1.*: Simple tests to check the concat() function produces 
+#                 correct results.
+#
+#   session5-2.*: More complicated tests.
+#   
+#   session5-3.*: Schema mismatch errors.
+#
 
-  execsql $sql1
-  set C1 [S1 changeset]
-  S1 delete
+proc changeset_to_list {c} {
+  set list [list]
+  sqlite3session_foreach elem $c { lappend list $elem }
+  lsort $list
+}
 
-  sqlite3session S1 db main ; S1 attach *
+proc do_concat_test {tn args} {
 
-  execsql $sql2
-  set C2 [S1 changeset]
-  S1 delete
+  set subtest 0
+  foreach sql $args {
+    incr subtest
+    sqlite3session S db main ; S attach *
+    execsql $sql
 
-  set C3 [S2 changeset]
-  S2 delete
+    set c [S changeset]
+    if {[info commands s_prev] != ""} {
+      set c_concat [sqlite3changeset_concat $c_prev $c]
+      set c_two [s_prev changeset]
+      s_prev delete
 
-  set C4 [sqlite3changeset_concat $C1 $C2]
+      set h_concat [changeset_to_list $c_concat]
+      set h_two [changeset_to_list $c_two]
 
-  set c3 [list]
-  set c4 [list]
-  sqlite3session_foreach c $C3 { lappend c3 $c }
-  sqlite3session_foreach c $C4 { lappend c4 $c }
-  set c3 [lsort $c3]
-  set c4 [lsort $c4]
+      do_test $tn.$subtest [list set {} $h_concat] $h_two
+    }
+    set c_prev $c
+    rename S s_prev
+  }
 
-  do_test $tn [list set {} $c4] $c3
+  catch { s_prev delete }
 }
 
 do_execsql_test 1.0 {
@@ -119,6 +132,57 @@ do_concat_test 1.2.7 {
   UPDATE t1 SET b = 'eight' WHERE a = 'I';
 } {
   DELETE FROM t1 WHERE a = 'I';
+}
+
+db function indirect indirect 
+proc indirect {{x -1}} {
+  S indirect $x
+  s_prev indirect $x
+}
+
+do_concat_test 2.1 {
+  CREATE TABLE abc(a, b, c PRIMARY KEY);
+  INSERT INTO abc VALUES(NULL, NULL, 1);
+  INSERT INTO abc VALUES('abcdefghijkl', NULL, 2);
+} {
+  DELETE FROM abc WHERE c = 1;
+  UPDATE abc SET c = 1 WHERE c = 2;
+} {
+  INSERT INTO abc VALUES('abcdefghijkl', NULL, 2);
+  INSERT INTO abc VALUES(1.0, 2.0, 3);
+} {
+  UPDATE abc SET a = a-1;
+} {
+  CREATE TABLE def(d, e, f, PRIMARY KEY(e, f));
+  INSERT INTO def VALUES('x', randomblob(11000), 67);
+  INSERT INTO def SELECT d, e, f+1 FROM def;
+  INSERT INTO def SELECT d, e, f+2 FROM def;
+  INSERT INTO def SELECT d, e, f+4 FROM def;
+} {
+  DELETE FROM def WHERE rowid>4;
+} { 
+  INSERT INTO def SELECT d, e, f+4 FROM def; 
+} {
+  INSERT INTO abc VALUES(22, 44, -1);
+} { 
+  UPDATE abc SET c=-2 WHERE c=-1;
+  UPDATE abc SET c=-3 WHERE c=-2;
+} {
+  UPDATE abc SET c=-4 WHERE c=-3;
+} {
+  UPDATE abc SET a=a+1 WHERE c=-3;
+  UPDATE abc SET a=a+1 WHERE c=-3;
+} {
+  UPDATE abc SET a=a+1 WHERE c=-3;
+  UPDATE abc SET a=a+1 WHERE c=-3;
+} {
+  INSERT INTO abc VALUES('one', 'two', 'three');
+} {
+  SELECT indirect(1);
+  UPDATE abc SET a='one point five' WHERE c = 'three';
+} {
+  SELECT indirect(0);
+  UPDATE abc SET a='one point six' WHERE c = 'three';
 }
 
 finish_test
