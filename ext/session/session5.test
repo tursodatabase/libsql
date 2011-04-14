@@ -1,0 +1,124 @@
+# 2011 April 13
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for the session module. 
+# Specifically, for the sqlite3changeset_concat() command.
+# 
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+} 
+source [file join [file dirname [info script]] session_common.tcl]
+source $testdir/tester.tcl
+ifcapable !session {finish_test; return}
+
+set testprefix session5
+
+proc do_concat_test {tn sql1 sql2} {
+  sqlite3session S1 db main ; S1 attach *
+  sqlite3session S2 db main ; S2 attach *
+
+  execsql $sql1
+  set C1 [S1 changeset]
+  S1 delete
+
+  sqlite3session S1 db main ; S1 attach *
+
+  execsql $sql2
+  set C2 [S1 changeset]
+  S1 delete
+
+  set C3 [S2 changeset]
+  S2 delete
+
+  set C4 [sqlite3changeset_concat $C1 $C2]
+
+  set c3 [list]
+  set c4 [list]
+  sqlite3session_foreach c $C3 { lappend c3 $c }
+  sqlite3session_foreach c $C4 { lappend c4 $c }
+  set c3 [lsort $c3]
+  set c4 [lsort $c4]
+
+  do_test $tn [list set {} $c4] $c3
+}
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a PRIMARY KEY, b);
+}
+
+do_concat_test 1.1.1 {
+  INSERT INTO t1 VALUES(1, 'one');
+} {
+  INSERT INTO t1 VALUES(2, 'two');
+}
+
+do_concat_test 1.1.2 {
+  UPDATE t1 SET b = 'five' WHERE a = 1;
+} {
+  UPDATE t1 SET b = 'six' WHERE a = 2;
+}
+
+do_concat_test 1.1.3 {
+  DELETE FROM t1 WHERE a = 1;
+} {
+  DELETE FROM t1 WHERE a = 2;
+}
+
+
+# 1.2.1:    INSERT + DELETE                     -> (none)
+# 1.2.2:    INSERT + UPDATE                     -> INSERT
+#
+# 1.2.3:    DELETE + INSERT (matching data)     -> (none)
+# 1.2.4:    DELETE + INSERT (non-matching data) -> UPDATE
+#
+# 1.2.5:    UPDATE + UPDATE (matching data)     -> (none)
+# 1.2.6:    UPDATE + UPDATE (non-matching data) -> UPDATE
+# 1.2.7:    UPDATE + DELETE                     -> DELETE
+#
+do_concat_test 1.2.1 {
+  INSERT INTO t1 VALUES('x', 'y');
+} {
+  DELETE FROM t1 WHERE a = 'x';
+}
+do_concat_test 1.2.2 {
+  INSERT INTO t1 VALUES(5.0, 'five');
+} {
+  UPDATE t1 SET b = 'six' WHERE a = 5.0;
+}
+
+do_execsql_test 1.2.3.1 "INSERT INTO t1 VALUES('I', 'one')"
+do_concat_test 1.2.3.2 {
+  DELETE FROM t1 WHERE a = 'I';
+} {
+  INSERT INTO t1 VALUES('I', 'one');
+}
+do_concat_test 1.2.4 {
+  DELETE FROM t1 WHERE a = 'I';
+} {
+  INSERT INTO t1 VALUES('I', 'two');
+}
+do_concat_test 1.2.5 {
+  UPDATE t1 SET b = 'five' WHERE a = 'I';
+} {
+  UPDATE t1 SET b = 'two' WHERE a = 'I';
+}
+do_concat_test 1.2.6 {
+  UPDATE t1 SET b = 'six' WHERE a = 'I';
+} {
+  UPDATE t1 SET b = 'seven' WHERE a = 'I';
+}
+do_concat_test 1.2.7 {
+  UPDATE t1 SET b = 'eight' WHERE a = 'I';
+} {
+  DELETE FROM t1 WHERE a = 'I';
+}
+
+finish_test

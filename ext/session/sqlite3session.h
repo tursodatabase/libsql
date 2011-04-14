@@ -522,6 +522,12 @@ int sqlite3changeset_invert(
   int *pnOut, void **ppOut        /* OUT: Inverse of input */
 );
 
+int sqlite3changeset_concat(
+  int nLeft, void *pLeft,         /* Input changeset */
+  int nRight, void *Right,        /* Input changeset */
+  int *pnOut, void **ppOut        /* OUT: Inverse of input */
+);
+
 /*
 ** CAPI3REF: Apply A Changeset To A Database
 **
