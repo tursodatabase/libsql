@@ -1,5 +1,5 @@
-C Fix\s#ifs\sinvolving\sSQLITE_ENABLE_LOCKING_STYLE\sso\sthat\sthey\scheck\sthe\svalue\sof\nthat\smacro\sand\snot\swhether\sit\sis\sdefined.
-D 2011-04-15T14:33:20.351
+C Do\snot\sdo\sfull\stable\sscans\sof\sunordered\sindices.
+D 2011-04-15T14:46:27.121
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -176,7 +176,7 @@ F src/printf.c 585a36b6a963df832cfb69505afa3a34ed5ef8a1
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
-F src/select.c 649a6f10f7eb7b52a5a28847773cb9968a828ae8
+F src/select.c d9d440809025a58547e39f4f268c2a296bfb56ff
 F src/shell.c 72e7e176bf46d5c6518d15ac4ad6847c4bb5df79
 F src/sqlite.h.in fe9a777d43276b4778e92b16a8b89ea6c38bb32b
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
@@ -835,7 +835,7 @@ F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
 F test/types3.test a0f66bf12f80fad89493535474f7a6d16fa58150
 F test/unique.test 083c7fff74695bcc27a71d75699deba3595bc9c2
 F test/unixexcl.test 9d80a54d86d2261f660758928959368ffc36151e
-F test/unordered.test c479d3027f9c4db05b44b83010735c6708abcc91
+F test/unordered.test e81169ce2a8f31b2c6b66af691887e1376ab3ced
 F test/update.test 8bc86fd7ef1a00014f76dc6a6a7c974df4aef172
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
 F test/vacuum.test 29b60e8cc9e573b39676df6c4a75fe9e02d04a09
@@ -929,7 +929,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 721e3c16b389a43f5d7c47a8fd0294473a39dad2
-R 6f5e617a8c0cbf994cc700b206a09793
+P 8775f159c129e1ee36a1a13c362184713376bd40
+R 56a1fc5d79220b9ac204635c2f04710a
 U drh
-Z b45c080aa2b2ed31817e44bd868b491f
+Z c31a330ffc1f1aa0cbae8e2f0b00bdea

@@ -57,6 +57,9 @@ foreach idxmode {ordered unordered} {
     6   "SELECT * FROM t1 WHERE a = ?"
         {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a=?) (~1 rows)}}
         {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a=?) (~1 rows)}}
+    7   "SELECT count(*) FROM t1"
+        {0 0 0 {SCAN TABLE t1 USING COVERING INDEX i1(~128 rows)}}
+        {0 0 0 {SCAN TABLE t1 (~128 rows)}}
   } {
     do_eqp_test 1.$idxmode.$tn $sql $r($idxmode)
   }
