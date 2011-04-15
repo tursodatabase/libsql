@@ -2862,19 +2862,28 @@ int sessionConcatChangeset(
     if( !pTab || zNew!=pTab->zName ){
       /* Search the list for a matching table */
       int nNew = strlen(zNew);
+      u8 *abPK;
+
+      sqlite3changeset_pk(pIter, &abPK, 0);
       for(pTab = *ppTabList; pTab; pTab=pTab->pNext){
         if( 0==sqlite3_strnicmp(pTab->zName, zNew, nNew+1) ) break;
       }
       if( !pTab ){
         pTab = sqlite3_malloc(sizeof(SessionTable));
-        if( !pTab ) break;
+        if( !pTab ){
+          rc = SQLITE_NOMEM;
+          break;
+        }
         memset(pTab, 0, sizeof(SessionTable));
         pTab->pNext = *ppTabList;
+        pTab->abPK = abPK;
+        pTab->nCol = nCol;
         *ppTabList = pTab;
+      }else if( pTab->nCol!=nCol || memcmp(pTab->abPK, abPK, nCol) ){
+        rc = SQLITE_SCHEMA;
+        break;
       }
       pTab->zName = (char *)zNew;
-      pTab->nCol = nCol;
-      sqlite3changeset_pk(pIter, &pTab->abPK, 0);
     }
 
     if( sessionGrowHash(pTab) ) break;
