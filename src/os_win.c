@@ -934,6 +934,7 @@ int sqlite3_fullsync_count = 0;
 static int winSync(sqlite3_file *id, int flags){
 #if !defined(NDEBUG) || !defined(SQLITE_NO_SYNC) || defined(SQLITE_DEBUG)
   winFile *pFile = (winFile*)id;
+  BOOL rc;
 #else
   UNUSED_PARAMETER(id);
 #endif
@@ -946,20 +947,19 @@ static int winSync(sqlite3_file *id, int flags){
 
   OSTRACE(("SYNC %d lock=%d\n", pFile->h, pFile->locktype));
 
-#ifndef SQLITE_TEST
-  UNUSED_PARAMETER(flags);
-#else
-  if( flags & SQLITE_SYNC_FULL ){
-    sqlite3_fullsync_count++;
-  }
-  sqlite3_sync_count++;
-#endif
-
   /* Unix cannot, but some systems may return SQLITE_FULL from here. This
   ** line is to test that doing so does not cause any problems.
   */
   SimulateDiskfullError( return SQLITE_FULL );
-  SimulateIOError( return SQLITE_IOERR; );
+
+#ifndef SQLITE_TEST
+  UNUSED_PARAMETER(flags);
+#else
+  if( (flags&0x0F)==SQLITE_SYNC_FULL ){
+    sqlite3_fullsync_count++;
+  }
+  sqlite3_sync_count++;
+#endif
 
   /* If we compiled with the SQLITE_NO_SYNC flag, then syncing is a
   ** no-op
@@ -967,7 +967,9 @@ static int winSync(sqlite3_file *id, int flags){
 #ifdef SQLITE_NO_SYNC
   return SQLITE_OK;
 #else
-  if( FlushFileBuffers(pFile->h) ){
+  rc = FlushFileBuffers(pFile->h);
+  SimulateIOError( rc=FALSE );
+  if( rc ){
     return SQLITE_OK;
   }else{
     pFile->lastErrno = GetLastError();

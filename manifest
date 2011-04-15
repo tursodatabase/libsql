@@ -1,5 +1,5 @@
-C Remove\sstray\ssemi-colon\sthat\sMSVC\scomplained\sabout.
-D 2011-04-15T19:30:42.292
+C Updates\sto\stest\scode\sin\sos_win\sto\sbring\swinSync\sinline\swith\sunixSync\s(test\scode\sonly).\s\s\nUpdated\sa\sfew\stest\sscripts\sto\saccount\sfor\sdirsync\scounting\sissues\son\sWindows.
+D 2011-04-15T20:18:40.626
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,7 +163,7 @@ F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c c80e9d427c9c44c6a26f5233c14c14550e8c05c1
-F src/os_win.c 177a14a0690e072534749b5950034d0177bb26d6
+F src/os_win.c d149b9a7dfdd38de09afc054f8168cd3cd80630b
 F src/pager.c 055239dcdfe12b3f5d97f6f01f85da01e2d6d912
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -677,7 +677,7 @@ F test/subquery.test b524f57c9574b2c0347045b4510ef795d4686796
 F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
 F test/superlock.test 5d7a4954b0059c903f82c7b67867bc5451a7c082
-F test/sync.test ded6b39d8d8ca3c0c5518516c6371b3316d3e3a3
+F test/sync.test 2bd73b585089c99e76b3e1796c42059b7d89d872
 F test/syscall.test 707c95e4ab7863e13f1293c6b0c76bead30249b3
 F test/sysfault.test c79441d88d23696fbec7b147dba98d42a04f523f
 F test/table.test 04ba066432430657712d167ebf28080fe878d305
@@ -863,7 +863,7 @@ F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
 F test/wal.test 5617ad308bfdb8a8885220d8a261a6096a8d7e57
-F test/wal2.test e561a8c6fdd1c2cd1876f3e39757934e7b7361f8
+F test/wal2.test aa0fb2314b3235be4503c06873e41ebfc0757782
 F test/wal3.test 5c396cc22497244d627306f4c1d360167353f8dd
 F test/wal4.test 3404b048fa5e10605facaf70384e6d2943412e30
 F test/wal5.test 1bbfaa316dc2a1d0d1fac3f4500c38a90055a41b
@@ -929,7 +929,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 4e33a0eaf83922926f8d5ee988a20439a09bc795
-R 1de3aeee08a0a0eaf4ebc036e17c7731
+P 7a085271ff85033479c2057c19a45a750168d228
+R b019ee7da23373414d9e5d588525e6d9
 U shaneh
-Z 5caf2116092f11c160fc67dc57f30878
+Z 81dc3f84502183f758b229c7fc470375

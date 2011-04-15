@@ -19,17 +19,25 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 #
-# These tests are only applicable on unix when pager pragma are
+# These tests are only applicable when pager pragma are
 # enabled. Also, since every test uses an ATTACHed database, they
 # are only run when ATTACH is enabled.
 #
-if {$::tcl_platform(platform)!="unix"} {
-  finish_test
-  return
-}
 ifcapable !pager_pragmas||!attach {
   finish_test
   return
+}
+
+set sqlite_sync_count 0
+proc cond_incr_sync_count {adj} {
+  global sqlite_sync_count
+  if {$::tcl_platform(platform) == "windows"} {
+    incr sqlite_sync_count $adj
+  } {
+    ifcapable !dirsync {
+      incr sqlite_sync_count $adj
+    }
+  }
 }
 
 do_test sync-1.1 {
@@ -42,9 +50,7 @@ do_test sync-1.1 {
     ATTACH DATABASE 'test2.db' AS db2;
     CREATE TABLE db2.t2(x,y);
   }
-  ifcapable !dirsync {
-    incr sqlite_sync_count 2
-  }
+  cond_incr_sync_count 2
   set sqlite_sync_count
 } 8
 ifcapable pager_pragmas {
@@ -58,9 +64,7 @@ ifcapable pager_pragmas {
       INSERT INTO t2 VALUES(3,4);
       COMMIT;
     }
-    ifcapable !dirsync {
-      incr sqlite_sync_count 3
-    }
+    cond_incr_sync_count 3
     set sqlite_sync_count
   } 8
 }
@@ -74,9 +78,7 @@ do_test sync-1.3 {
     INSERT INTO t2 VALUES(5,6);
     COMMIT;
   }
-  ifcapable !dirsync {
-    incr sqlite_sync_count 3
-  }
+  cond_incr_sync_count 3
   set sqlite_sync_count
 } 10
 ifcapable pager_pragmas {

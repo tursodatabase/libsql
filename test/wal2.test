@@ -23,6 +23,18 @@ set testprefix wal2
 
 ifcapable !wal {finish_test ; return }
 
+set sqlite_sync_count 0
+proc cond_incr_sync_count {adj} {
+  global sqlite_sync_count
+  if {$::tcl_platform(platform) == "windows"} {
+    incr sqlite_sync_count $adj
+  } {
+    ifcapable !dirsync {
+      incr sqlite_sync_count $adj
+    }
+  }
+}
+
 proc set_tvfs_hdr {file args} {
 
   # Set $nHdr to the number of bytes in the wal-index header:
@@ -1189,6 +1201,7 @@ foreach {tn sql reslist} {
   } {10 0 5 5 0 2 2}
 
   do_test wal2-14.$tn.3 {
+    cond_incr_sync_count 1
     list $sqlite_sync_count $sqlite_fullsync_count
   } [lrange $reslist 0 1]
 
