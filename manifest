@@ -1,5 +1,5 @@
-C Do\snot\sdo\sfull\stable\sscans\sof\sunordered\sindices.
-D 2011-04-15T14:46:27.121
+C Changes\sto\smemory\sallocator\susage\stracking\sto\sdelay\sthe\sonset\sof\sinteger\noverflow.
+D 2011-04-15T16:39:52.779
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -144,7 +144,7 @@ F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 3ae0d52da013a6326310655be6473fd472347b85
 F src/main.c a8571665d43ff18f89a49d47a281605ce5ea825e
-F src/malloc.c 788f2ed928786dfe305b6783d551d6b1a9080976
+F src/malloc.c d9cdb1fccae9a6b7f40bbfc781bc378e7405f9c9
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 00bd8265c81abb665c48fea1e0c234eb3b922206
 F src/mem2.c e307323e86b5da1853d7111b68fd6b84ad6f09cf
@@ -929,7 +929,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8775f159c129e1ee36a1a13c362184713376bd40
-R 56a1fc5d79220b9ac204635c2f04710a
+P a8761a9128de945aa4b6196df5ffe64115d66b61
+R 2fa8b4a986eeacdbbe17a46e5b0c10d7
 U drh
-Z c31a330ffc1f1aa0cbae8e2f0b00bdea
+Z f0ea562c57300e5a2ab554fa5ecd70be
