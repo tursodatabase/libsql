@@ -507,7 +507,7 @@ void sqlite3DbFree(sqlite3 *db, void *p){
 ** Change the size of an existing memory allocation
 */
 void *sqlite3Realloc(void *pOld, int nBytes){
-  int nOld, nNew, nDiff;;
+  int nOld, nNew, nDiff;
   void *pNew;
   if( pOld==0 ){
     return sqlite3Malloc(nBytes); /* IMP: R-28354-25769 */
