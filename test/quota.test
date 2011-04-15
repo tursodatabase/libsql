@@ -202,6 +202,9 @@ do_test quota-3.2.9 {
 set ::quota [list]
 proc quota_callback {file limitvar size} {
   upvar $limitvar limit
+  if {$::tcl_platform(platform)=="windows"} {
+    set file [ lindex [string map {\\ \/} $file] 0 ]
+  }
   lappend ::quota $file $size
   set limit 0
 }
