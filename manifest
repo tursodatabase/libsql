@@ -1,5 +1,5 @@
-C Back\sport\sthe\sunordered-index-hack\sto\sthe\s3.7.2\sbranch.
-D 2011-04-09T03:30:25.496
+C Backport\scheck-in\s[9f9f32882501ac9]\sto\sprovide\sEXPLAIN\sQUERY\sPLAN\soutput\sfor\nthe\scount(*)\soptimization.\s\sAlso\sbackport\scheck-in\s[a8761a9128de945aa]\sto\nprevent\sunordered\sindices\sfrom\sbeing\sused\son\sa\sfull\stable\sscan.\s\sThe\sfirst\nbackport\swas\snecessary\sin\sorder\sto\stest\sthe\ssecond.
+D 2011-04-15T15:18:34.932
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 543f91f24cd7fee774ecc0a61c19704c0c3e78fd
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/printf.c 8ae5082dd38a1b5456030c3755ec3a392cd51506
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
-F src/select.c 7a673c43b49d5f05f76e9c5a8cafa02862cbb901
+F src/select.c a84089eb0147bdc16f487cf6f2670432eb673c2b
 F src/shell.c 8517fc1f9c59ae4007e6cc8b9af91ab231ea2056
 F src/sqlite.h.in 2d72a6242df41c517e38eec8791abcf5484a36f1
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
@@ -760,6 +760,7 @@ F test/types.test 9a825ec8eea4e965d7113b74c76a78bb5240f2ac
 F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
 F test/types3.test a0f66bf12f80fad89493535474f7a6d16fa58150
 F test/unique.test 083c7fff74695bcc27a71d75699deba3595bc9c2
+F test/unordered.test 87ecfbb688f984d4aaf5716a343e260dd1fa2c6e
 F test/update.test 8bc86fd7ef1a00014f76dc6a6a7c974df4aef172
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
 F test/vacuum.test 15ae6784e70428b8db64e95c92d84b19e507b719
@@ -848,7 +849,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 9eff470226c6f879bb1b24fb00b6786a816d8cfd
-R ec1275508098699736f727d15a36cea8
+P 803530209f9c8d4dcf8ed51b5a96aee1766ef79f
+R 725597da94f34e4749b884cb2782a777
 U drh
-Z 5ab4f56fbd19b59b57d4609d1b0ffbc9
+Z 8cf57ecd3590b1d454de4a08c8b4d635
