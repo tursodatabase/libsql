@@ -2786,6 +2786,7 @@ static int sessionChangeMerge(
       nByte = sizeof(SessionChange) + pExist->nRecord + nRec;
       pNew = (SessionChange *)sqlite3_malloc(nByte);
       if( !pNew ){
+        sqlite3_free(pExist);
         return SQLITE_NOMEM;
       }
       memset(pNew, 0, sizeof(SessionChange));
@@ -2886,7 +2887,10 @@ int sessionConcatChangeset(
       pTab->zName = (char *)zNew;
     }
 
-    if( sessionGrowHash(pTab) ) break;
+    if( sessionGrowHash(pTab) ){
+      rc = SQLITE_NOMEM;
+      break;
+    }
     iHash = sessionChangeHash(pTab, aRec, pTab->nChange);
 
     /* Search for existing entry. If found, remove it from the hash table. 

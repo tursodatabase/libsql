@@ -128,5 +128,9 @@ proc compare_db {db1 db2} {
   return ""
 }
 
-
+proc changeset_to_list {c} {
+  set list [list]
+  sqlite3session_foreach elem $c { lappend list $elem }
+  lsort $list
+}
 

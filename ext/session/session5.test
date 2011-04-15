@@ -31,12 +31,6 @@ set testprefix session5
 #   session5-3.*: Schema mismatch errors.
 #
 
-proc changeset_to_list {c} {
-  set list [list]
-  sqlite3session_foreach elem $c { lappend list $elem }
-  lsort $list
-}
-
 proc do_concat_test {tn args} {
 
   set subtest 0
@@ -191,20 +185,31 @@ do_concat_test 2.1 {
   UPDATE abc SET a='one point six' WHERE c = 'three';
 }
 
+catch {db close}
+forcedelete test.db
+sqlite3 db test.db
+do_concat_test 2.2 {
+  CREATE TABLE t1(a, b, PRIMARY KEY(b));
+  CREATE TABLE t2(a PRIMARY KEY, b);
+  INSERT INTO t1 VALUES('string', 1);
+  INSERT INTO t1 VALUES(4, 2);
+  INSERT INTO t1 VALUES(X'FFAAFFAAFFAA', 3);
+} {
+  INSERT INTO t2 VALUES('one', 'two');
+  INSERT INTO t2 VALUES(1, NULL);
+  UPDATE t1 SET a = 5 WHERE a = 2;
+} {
+  DELETE FROM t2 WHERE a = 1;
+  UPDATE t1 SET a = 4 WHERE a = 2;
+  INSERT INTO t2 VALUES('x', 'y');
+}
+
 #-------------------------------------------------------------------------
 # Test that schema incompatibilities are detected correctly.
 #
 #   session5-3.1: Incompatible number of columns.
 #   session5-3.2: Incompatible PK definition.
 #
-proc sql_to_changeset {sql} {
-  sqlite3session S db main 
-  S attach *
-  execsql $sql
-  set c [S changeset]
-  S delete
-  return $c
-}
 
 do_test 3.1 {
   db close
@@ -212,12 +217,12 @@ do_test 3.1 {
   sqlite3 db test.db
 
   execsql { CREATE TABLE t1(a PRIMARY KEY, b) }
-  set c1 [sql_to_changeset { INSERT INTO t1 VALUES(1, 2) }]
+  set c1 [changeset_from_sql { INSERT INTO t1 VALUES(1, 2) }]
   execsql { 
     DROP TABLE t1;
     CREATE TABLE t1(a PRIMARY KEY, b, c);
   }
-  set c2 [sql_to_changeset { INSERT INTO t1 VALUES(2, 3, 4) }]
+  set c2 [changeset_from_sql { INSERT INTO t1 VALUES(2, 3, 4) }]
 
   list [catch { sqlite3changeset_concat $c1 $c2 } msg] $msg
 } {1 SQLITE_SCHEMA}
@@ -228,12 +233,12 @@ do_test 3.2 {
   sqlite3 db test.db
 
   execsql { CREATE TABLE t1(a PRIMARY KEY, b) }
-  set c1 [sql_to_changeset { INSERT INTO t1 VALUES(1, 2) }]
+  set c1 [changeset_from_sql { INSERT INTO t1 VALUES(1, 2) }]
   execsql { 
     DROP TABLE t1;
     CREATE TABLE t1(a, b PRIMARY KEY);
   }
-  set c2 [sql_to_changeset { INSERT INTO t1 VALUES(2, 3) }]
+  set c2 [changeset_from_sql { INSERT INTO t1 VALUES(2, 3) }]
 
   list [catch { sqlite3changeset_concat $c1 $c2 } msg] $msg
 } {1 SQLITE_SCHEMA}

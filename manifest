@@ -1,5 +1,5 @@
-C Have\ssqlite3changeset_concat()\sreturn\sSQLITE_SCHEMA\sif\san\sattempt\sis\smade\sto\sconcatenate\schangesets\sbased\son\sincompatible\sdatabase\sschemas.
-D 2011-04-15T15:04:31.042
+C Add\stests\sand\sfixes\sfor\sOOM\shandling\sin\ssqlite3changeset_concat().
+D 2011-04-15T16:03:32.057
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -103,10 +103,10 @@ F ext/session/session1.test 7a92a2a6f531aef1e9764ffb7f983fb8b315376d
 F ext/session/session2.test c3e5f78d5eb988e35cc2ba9ce3678f706283cfdb
 F ext/session/session3.test bfa2376db7cbb2ac69496f84d93a8d81b13110d3
 F ext/session/session4.test a6ed685da7a5293c5d6f99855bcf41dbc352ca84
-F ext/session/session5.test cbb011a1b2f487d2fe4b014fb6ae3a67e5f7f767
-F ext/session/session_common.tcl fb91560b6dbd086010df8b3a137a452f1ac21a28
-F ext/session/sessionfault.test 2544a2e2ecad56e3c07a32c09799871d243c114c
-F ext/session/sqlite3session.c b5293510224e42c50d69a509e6bfaca45defec76
+F ext/session/session5.test 940d77c748808769cac50fb62bb674aa84e472f2
+F ext/session/session_common.tcl 1539d8973b2aea0025c133eb0cc4c89fcef541a5
+F ext/session/sessionfault.test 2766cd620f1793f0e54f1e3859a184bcea55bad4
+F ext/session/sqlite3session.c 08573805932a9db4158f36663e01747d0ff69342
 F ext/session/sqlite3session.h 665f5591562e3c71eb3d0da26f1a1efae26f7bcf
 F ext/session/test_session.c f4d1dca94db71ec2177ee61eab51e718e58476d7
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
@@ -938,7 +938,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ada9efa53a6ea55f89d237cfd530f1d180343e19
-R bdb9eba45cd97b77f78325d72d96c5f4
+P 343b64517d244b75097e38342dc273eb5a52915b
+R c818789c65113df118a04c3a29f3e5ba
 U dan
-Z 570068f4f013ca36918b632f2a36093d
+Z 7081c2709375635b8446c7ef8a86300e
