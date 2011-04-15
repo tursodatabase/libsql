@@ -523,12 +523,84 @@ int sqlite3changeset_invert(
 );
 
 /*
-** CAPI3REF: Combine Two Changeset Objects
+** CAPI3REF: Concatenate Two Changeset Objects
+**
+** This function is used to concatenate two changesets, A and B, into a 
+** single changeset. The result is a changeset equivalent to applying
+** changeset A followed by changeset B. 
+**
+** Rows are identified by the values in their PRIMARY KEY columns. A change
+** in changeset A is considered to apply to the same row as a change in
+** changeset B if the two rows have the same primary key.
+**
+** Changes to rows that appear only in changeset A or B are copied into the
+** output changeset. Or, if both changeset A and B contain a change that
+** applies to a single row, the output depends on the type of each change,
+** as follows:
+**
+** <table border=1 style="margin-left:8ex;margin-right:8ex">
+**   <tr><th style="white-space:pre">Change A      </th>
+**       <th style="white-space:pre">Change B      </th>
+**       <th>Output Change
+**   <tr><td>INSERT <td>INSERT <td>
+**       Change A is copied into the output changeset. Change B is discarded.
+**       This case does not occur if changeset B is recorded immediately after
+**       changeset A. 
+**   <tr><td>INSERT <td>UPDATE <td>
+**       An INSERT change is copied into the output changeset. The values in
+**       the INSERT change are as if the row was inserted by change A and then
+**       updated according to change B.
+**   <tr><td>INSERT <td>DELETE <td>
+**       No change at all is copied into the output changeset.
+**   <tr><td>UPDATE <td>INSERT <td>
+**       Change A is copied into the output changeset. Change B is discarded.
+**       This case does not occur if changeset B is recorded immediately after
+**       changeset A. 
+**   <tr><td>UPDATE <td>UPDATE <td>
+**       A single UPDATE is copied into the output changeset. The accompanying
+**       values are as if the row was updated once by change A and then again
+**       by change B.
+**   <tr><td>UPDATE <td>DELETE <td>
+**       A single DELETE is copied into the output changeset.
+**   <tr><td>DELETE <td>INSERT <td>
+**       If one or more of the column values in the row inserted by change 
+**       B differ from those in the row deleted by change A, an UPDATE
+**       change is added to the output changeset. Otherwise, if the inserted
+**       row is exactly the same as the deleted row, no change is added to
+**       the output changeset.
+**   <tr><td>DELETE <td>UPDATE <td>
+**       Change A is copied into the output changeset. Change B is discarded.
+**       This case does not occur if changeset B is recorded immediately after
+**       changeset A. 
+**   <tr><td>DELETE <td>DELETE <td>
+**       Change A is copied into the output changeset. Change B is discarded.
+**       This case does not occur if changeset B is recorded immediately after
+**       changeset A. 
+** </table>
+**
+** If the two changesets contain changes to the same table, then the number
+** of columns and the position of the primary key columns for the table must
+** be the same in each changeset. If this is not the case, attempting to
+** concatenate the two changesets together fails and this function returns
+** SQLITE_SCHEMA. If either of the two input changesets appear to be corrupt,
+** and the corruption is detected, SQLITE_CORRUPT is returned. Or, if an
+** out-of-memory condition occurs during processing, this function returns
+** SQLITE_NOMEM.
+**
+** If none of the above errors occur, SQLITE_OK is returned and *ppOut set
+** to point to a buffer containing the output changeset. It is the 
+** responsibility of the caller to eventually call sqlite3_free() on *ppOut 
+** to release memory allocated for the buffer. *pnOut is set to the number 
+** of bytes in the output changeset. If an error does occur, both *ppOut and 
+** *pnOut are set to zero before returning.
 */
 int sqlite3changeset_concat(
-  int nLeft, void *pLeft,         /* First input changeset */
-  int nRight, void *Right,        /* Second input changeset */
-  int *pnOut, void **ppOut        /* OUT: Output changeset */
+  int nA,                         /* Number of bytes in buffer pA */
+  void *pA,                       /* Pointer to buffer containing changeset A */
+  int nB,                         /* Number of bytes in buffer pB */
+  void *pB,                       /* Pointer to buffer containing changeset B */
+  int *pnOut,                     /* OUT: Number of bytes in output changeset */
+  void **ppOut                    /* OUT: Buffer containing output changeset */
 );
 
 /*
