@@ -183,6 +183,13 @@ do_concat_test 2.1 {
 } {
   SELECT indirect(0);
   UPDATE abc SET a='one point six' WHERE c = 'three';
+} {
+  CREATE TABLE x1(a, b, PRIMARY KEY(a));
+  SELECT indirect(1);
+  INSERT INTO x1 VALUES(1, 2);
+} {
+  SELECT indirect(1);
+  UPDATE x1 SET b = 3 WHERE a = 1;
 }
 
 catch {db close}
@@ -203,6 +210,50 @@ do_concat_test 2.2 {
   UPDATE t1 SET a = 4 WHERE a = 2;
   INSERT INTO t2 VALUES('x', 'y');
 }
+
+do_test 2.3.0 {
+  catch {db close}
+  forcedelete test.db
+  sqlite3 db test.db
+ 
+  set sql1 ""
+  set sql2 ""
+  for {set i 1} {$i < 120} {incr i} {
+    append sql1 "INSERT INTO x1 VALUES($i*4, $i);"
+  }
+  for {set i 1} {$i < 120} {incr i} {
+    append sql2 "DELETE FROM x1 WHERE a = $i*4;"
+  }
+
+  set {} {}
+} {}
+do_concat_test 2.3 {
+  CREATE TABLE x1(a PRIMARY KEY, b)
+} $sql1 $sql2 $sql1 $sql2
+
+do_concat_test 2.4 {
+  CREATE TABLE x2(a PRIMARY KEY, b);
+  CREATE TABLE x3(a PRIMARY KEY, b);
+
+  INSERT INTO x2 VALUES('a', 'b');
+  INSERT INTO x2 VALUES('x', 'y');
+  INSERT INTO x3 VALUES('a', 'b');
+} {
+  INSERT INTO x2 VALUES('c', 'd');
+  INSERT INTO x3 VALUES('e', 'f');
+  INSERT INTO x3 VALUES('x', 'y');
+}
+
+do_concat_test 2.5 {
+  UPDATE x3 SET b = 'Y' WHERE a = 'x'
+} {
+  DELETE FROM x3 WHERE a = 'x'
+} {
+  DELETE FROM x2 WHERE a = 'a'
+} {
+  INSERT INTO x2 VALUES('a', 'B');
+}
+
 
 #-------------------------------------------------------------------------
 # Test that schema incompatibilities are detected correctly.

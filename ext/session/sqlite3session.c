@@ -2793,13 +2793,21 @@ static int sessionChangeMerge(
       pNew->bIndirect = (bIndirect && pExist->bIndirect);
       aCsr = pNew->aRecord = (u8 *)&pNew[1];
 
-      if( op1==SQLITE_INSERT && op2==SQLITE_UPDATE ){
+      if( op1==SQLITE_INSERT ){             /* INSERT + UPDATE */
         u8 *a1 = aRec;
+        assert( op2==SQLITE_UPDATE );
         pNew->bInsert = SQLITE_INSERT;
         sessionReadRecord(&a1, pTab->nCol, 0);
         sessionMergeRecord(&aCsr, pTab, pExist->aRecord, a1);
-      }
-      else if( op1==SQLITE_UPDATE && op2==SQLITE_UPDATE ){
+      }else if( op1==SQLITE_DELETE ){       /* DELETE + INSERT */
+        assert( op2==SQLITE_INSERT );
+        pNew->bInsert = SQLITE_UPDATE;
+        if( 0==sessionMergeUpdate(&aCsr, pTab, pExist->aRecord, 0, aRec, 0) ){
+          sqlite3_free(pNew);
+          pNew = 0;
+        }
+      }else if( op2==SQLITE_UPDATE ){       /* UPDATE + UPDATE */
+        assert( op1==SQLITE_UPDATE );
         u8 *a1 = pExist->aRecord;
         u8 *a2 = aRec;
         sessionReadRecord(&a1, pTab->nCol, 0);
@@ -2809,17 +2817,10 @@ static int sessionChangeMerge(
           sqlite3_free(pNew);
           pNew = 0;
         }
-      }
-      else if( op1==SQLITE_UPDATE && op2==SQLITE_DELETE ){
+      }else{                                /* UPDATE + DELETE */
+        assert( op1==SQLITE_UPDATE && op2==SQLITE_DELETE );
         pNew->bInsert = SQLITE_DELETE;
         sessionMergeRecord(&aCsr, pTab, aRec, pExist->aRecord);
-      }
-      else if( op1==SQLITE_DELETE && op2==SQLITE_INSERT ){
-        pNew->bInsert = SQLITE_UPDATE;
-        if( 0==sessionMergeUpdate(&aCsr, pTab, pExist->aRecord, 0, aRec, 0) ){
-          sqlite3_free(pNew);
-          pNew = 0;
-        }
       }
 
       if( pNew ){
@@ -2859,6 +2860,10 @@ int sessionConcatChangeset(
 
     assert( pIter->apValue==0 );
     sqlite3changeset_op(pIter, &zNew, &nCol, &op, &bIndirect);
+
+    assert( zNew>=(char *)pChangeset && zNew-nChangeset<((char *)pChangeset) );
+    assert( !pTab || pTab->zName-nChangeset<(char *)pChangeset );
+    assert( !pTab || zNew>=pTab->zName );
 
     if( !pTab || zNew!=pTab->zName ){
       /* Search the list for a matching table */
