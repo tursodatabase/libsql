@@ -443,5 +443,27 @@ do_conflict_test 6.1 -tables {t1 t2} -sql {
 do_db2_test 6.2 "SELECT * FROM t1" {a b 1 2}
 do_db2_test 6.3 "SELECT * FROM t2" {a b A B}
 
+#-------------------------------------------------------------------------
+# Test that session objects are not confused by changes to table in
+# other databases.
+#
+catch { db2 close }
+drop_all_tables
+forcedelete test.db2
+do_iterator_test 7.1 * {
+  ATTACH 'test.db2' AS aux;
+  CREATE TABLE main.t1(x PRIMARY KEY, y);
+  CREATE TABLE aux.t1(x PRIMARY KEY, y);
+
+  INSERT INTO main.t1 VALUES('one', 1);
+  INSERT INTO main.t1 VALUES('two', 2);
+  INSERT INTO aux.t1 VALUES('three', 3);
+  INSERT INTO aux.t1 VALUES('four', 4);
+} {
+  {INSERT t1 0 X. {} {t two i 2}} 
+  {INSERT t1 0 X. {} {t one i 1}}
+}
+
+
 catch { db2 close }
 finish_test

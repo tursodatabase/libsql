@@ -20,7 +20,7 @@
 # Commands to manipulate the db and the file-system at a high level:
 #
 #      copy_file              FROM TO
-#      drop_all_table         ?DB?
+#      drop_all_tables        ?DB?
 #      forcedelete            FILENAME
 #
 # Test the capability of the SQLite version built into the interpreter to
@@ -361,6 +361,12 @@ proc fix_testname {varname} {
   } {
     set testname "${::testprefix}-$testname"
   }
+}
+
+proc normalize_list {L} {
+  set L2 [list]
+  foreach l $L {lappend L2 $l}
+  set L2
 }
     
 proc do_execsql_test {testname sql {result {}}} {

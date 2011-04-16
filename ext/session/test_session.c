@@ -456,13 +456,25 @@ static int test_sqlite3session_foreach(
   int nChangeSet;
   sqlite3_changeset_iter *pIter;
   int rc;
+  Tcl_Obj *pVarname;
+  Tcl_Obj *pCS;
+  Tcl_Obj *pScript;
+  int isCheckNext = 0;
 
-  if( objc!=4 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "VARNAME CHANGESET SCRIPT");
+  if( objc>1 ){
+    char *zOpt = Tcl_GetString(objv[1]);
+    isCheckNext = (strcmp(zOpt, "-next")==0);
+  }
+  if( objc!=4+isCheckNext ){
+    Tcl_WrongNumArgs(interp, 1, objv, "?-next? VARNAME CHANGESET SCRIPT");
     return TCL_ERROR;
   }
 
-  pChangeSet = (void *)Tcl_GetByteArrayFromObj(objv[2], &nChangeSet);
+  pVarname = objv[1+isCheckNext];
+  pCS = objv[2+isCheckNext];
+  pScript = objv[3+isCheckNext];
+
+  pChangeSet = (void *)Tcl_GetByteArrayFromObj(pCS, &nChangeSet);
   rc = sqlite3changeset_start(&pIter, nChangeSet, pChangeSet);
   if( rc!=SQLITE_OK ){
     return test_session_error(interp, rc);
@@ -524,14 +536,21 @@ static int test_sqlite3session_foreach(
     Tcl_ListObjAppendElement(0, pVar, pOld);
     Tcl_ListObjAppendElement(0, pVar, pNew);
 
-    Tcl_ObjSetVar2(interp, objv[1], 0, pVar, 0);
-    rc = Tcl_EvalObjEx(interp, objv[3], 0);
+    Tcl_ObjSetVar2(interp, pVarname, 0, pVar, 0);
+    rc = Tcl_EvalObjEx(interp, pScript, 0);
     if( rc!=TCL_OK && rc!=TCL_CONTINUE ){
       sqlite3changeset_finalize(pIter);
       return rc==TCL_BREAK ? TCL_OK : rc;
     }
   }
-  rc = sqlite3changeset_finalize(pIter);
+
+  if( isCheckNext ){
+    int rc2 = sqlite3changeset_next(pIter);
+    rc = sqlite3changeset_finalize(pIter);
+    assert( (rc2==SQLITE_DONE && rc==SQLITE_OK) || rc2==rc );
+  }else{
+    rc = sqlite3changeset_finalize(pIter);
+  }
   if( rc!=SQLITE_OK ){
     return test_session_error(interp, rc);
   }

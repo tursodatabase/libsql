@@ -317,34 +317,29 @@ static unsigned int sessionPreupdateHash(
 
       eType = sqlite3_value_type(pVal);
       h = HASH_APPEND(h, eType);
-      switch( eType ){
-        case SQLITE_INTEGER: 
-        case SQLITE_FLOAT: {
-          i64 iVal;
-          if( eType==SQLITE_INTEGER ){
-            iVal = sqlite3_value_int64(pVal);
-          }else{
-            double rVal = sqlite3_value_double(pVal);
-            assert( sizeof(iVal)==8 && sizeof(rVal)==8 );
-            memcpy(&iVal, &rVal, 8);
-          }
-          h = sessionHashAppendI64(h, iVal);
-          break;
+      if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
+        i64 iVal;
+        if( eType==SQLITE_INTEGER ){
+          iVal = sqlite3_value_int64(pVal);
+        }else{
+          double rVal = sqlite3_value_double(pVal);
+          assert( sizeof(iVal)==8 && sizeof(rVal)==8 );
+          memcpy(&iVal, &rVal, 8);
         }
-
-        case SQLITE_TEXT: 
-        case SQLITE_BLOB: {
-          int n = sqlite3_value_bytes(pVal);
-          const u8 *z = eType==SQLITE_TEXT ?
-            sqlite3_value_text(pVal) : sqlite3_value_blob(pVal);
-          h = sessionHashAppendBlob(h, n, z);
-          break;
+        h = sessionHashAppendI64(h, iVal);
+      }else if( eType==SQLITE_TEXT || eType==SQLITE_BLOB ){
+        const u8 *z;
+        if( eType==SQLITE_TEXT ){
+          z = (const u8 *)sqlite3_value_text(pVal);
+        }else{
+          z = (const u8 *)sqlite3_value_blob(pVal);
         }
-
-        default:
-          assert( eType==SQLITE_NULL );
-          *pbNullPK = 1;
-          return SQLITE_OK;
+        if( !z ) return SQLITE_NOMEM;
+        h = sessionHashAppendBlob(h, sqlite3_value_bytes(pVal), z);
+      }else{
+        assert( eType==SQLITE_NULL );
+        *pbNullPK = 1;
+        return SQLITE_OK;
       }
     }
   }
@@ -399,12 +394,12 @@ static unsigned int sessionChangeHash(
       a++;
       h = HASH_APPEND(h, eType);
       if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
-        if( isPK ) h = sessionHashAppendI64(h, sessionGetI64(a));
+        h = sessionHashAppendI64(h, sessionGetI64(a));
         a += 8;
       }else{
         int n; 
         a += sessionVarintGet(a, &n);
-        if( isPK ) h = sessionHashAppendBlob(h, n, a);
+        h = sessionHashAppendBlob(h, n, a);
         a += n;
       }
     }else{
@@ -559,7 +554,7 @@ static int sessionMergeUpdate(
   return 1;
 }
 
-static int sessionPreupdateEqual(
+static void sessionPreupdateEqual(
   sqlite3 *db,
   SessionTable *pTab,
   SessionChange *pChange,
@@ -589,14 +584,23 @@ static int sessionPreupdateEqual(
         }
       }
     }else{
-      sqlite3_value *pVal;
-      int rc;
+      sqlite3_value *pVal;        /* Value returned by preupdate_new/old */
+      int rc;                     /* Error code from preupdate_new/old */
+
+      /* The following calls to preupdate_new() and preupdate_old() can not
+      ** fail. This is because they cache their return values, and by the
+      ** time control flows to here they have already been called once from
+      ** within sessionPreupdateHash(). The first two asserts below verify
+      ** this (that the method has already been called). */
       if( bNew ){
+        assert( db->pPreUpdate->pNewUnpacked || db->pPreUpdate->aNew );
         rc = sqlite3_preupdate_new(db, i, &pVal);
       }else{
+        assert( db->pPreUpdate->pUnpacked );
         rc = sqlite3_preupdate_old(db, i, &pVal);
       }
-      if( rc!=SQLITE_OK || sqlite3_value_type(pVal)!=eType ) return rc;
+      assert( rc==SQLITE_OK );
+      if( sqlite3_value_type(pVal)!=eType ) return;
 
       /* A SessionChange object never has a NULL value in a PK column */
       assert( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT
@@ -607,24 +611,24 @@ static int sessionPreupdateEqual(
         i64 iVal = sessionGetI64(a);
         a += 8;
         if( eType==SQLITE_INTEGER ){
-          if( sqlite3_value_int64(pVal)!=iVal ) return SQLITE_OK;
+          if( sqlite3_value_int64(pVal)!=iVal ) return;
         }else{
           double rVal;
           assert( sizeof(iVal)==8 && sizeof(rVal)==8 );
           memcpy(&rVal, &iVal, 8);
-          if( sqlite3_value_double(pVal)!=rVal ) return SQLITE_OK;
+          if( sqlite3_value_double(pVal)!=rVal ) return;
         }
       }else{
         int n;
         const u8 *z;
         a += sessionVarintGet(a, &n);
-        if( sqlite3_value_bytes(pVal)!=n ) return SQLITE_OK;
+        if( sqlite3_value_bytes(pVal)!=n ) return;
         if( eType==SQLITE_TEXT ){
           z = sqlite3_value_text(pVal);
         }else{
           z = sqlite3_value_blob(pVal);
         }
-        if( memcmp(a, z, n) ) return SQLITE_OK;
+        if( memcmp(a, z, n) ) return;
         a += n;
         break;
       }
@@ -632,7 +636,7 @@ static int sessionPreupdateEqual(
   }
 
   *pbEqual = 1;
-  return SQLITE_OK;
+  return;
 }
 
 /*
@@ -854,9 +858,9 @@ static void sessionPreupdateOneChange(
   rc = sessionPreupdateHash(db, pTab, op==SQLITE_INSERT, &iHash, &bNullPk);
   if( rc==SQLITE_OK && bNullPk==0 ){
     SessionChange *pC;
-    for(pC=pTab->apChange[iHash]; rc==SQLITE_OK && pC; pC=pC->pNext){
+    for(pC=pTab->apChange[iHash]; pC; pC=pC->pNext){
       int bEqual;
-      rc = sessionPreupdateEqual(db, pTab, pC, op==SQLITE_INSERT, &bEqual);
+      sessionPreupdateEqual(db, pTab, pC, op==SQLITE_INSERT, &bEqual);
       if( bEqual ) break;
     }
     if( pC==0 ){
@@ -1278,12 +1282,19 @@ static void sessionAppendCol(
       sessionAppendBlob(p, aBuf, 8, pRc);
     }
     if( eType==SQLITE_BLOB || eType==SQLITE_TEXT ){
-      int nByte = sqlite3_column_bytes(pStmt, iCol);
-      sessionAppendVarint(p, nByte, pRc);
-      sessionAppendBlob(p, eType==SQLITE_BLOB ? 
-        sqlite3_column_blob(pStmt, iCol) : sqlite3_column_text(pStmt, iCol),
-        nByte, pRc
-      );
+      u8 *z;
+      if( eType==SQLITE_BLOB ){
+        z = (u8 *)sqlite3_column_blob(pStmt, iCol);
+      }else{
+        z = (u8 *)sqlite3_column_text(pStmt, iCol);
+      }
+      if( z ){
+        int nByte = sqlite3_column_bytes(pStmt, iCol);
+        sessionAppendVarint(p, nByte, pRc);
+        sessionAppendBlob(p, z, nByte, pRc);
+      }else{
+        *pRc = SQLITE_NOMEM;
+      }
     }
   }
 }
@@ -1710,8 +1721,8 @@ static int sessionReadRecord(
         int nByte;
         aRec += sessionVarintGet(aRec, &nByte);
         if( apOut ){
-          int enc = (eType==SQLITE_TEXT ? SQLITE_UTF8 : 0);
-          sqlite3ValueSetStr(apOut[i], nByte, aRec, enc, SQLITE_STATIC);
+          u8 enc = (eType==SQLITE_TEXT ? SQLITE_UTF8 : 0);
+          sqlite3ValueSetStr(apOut[i], nByte, (char *)aRec, enc, SQLITE_STATIC);
         }
         aRec += nByte;
       }
@@ -1742,7 +1753,6 @@ static int sessionChangesetNext(
 ){
   u8 *aChange;
   int i;
-  u8 c;
 
   assert( (paRec==0 && pnRec==0) || (paRec && pnRec) );
 
@@ -1818,7 +1828,6 @@ static int sessionChangesetNext(
 */
 int sqlite3changeset_next(sqlite3_changeset_iter *p){
   return sessionChangesetNext(p, 0, 0);
-
 }
 
 /*
@@ -2987,7 +2996,6 @@ int sqlite3changeset_concat(
     }
   }
 
- concat_out:
   sessionDeleteTable(pList);
   return rc;
 }

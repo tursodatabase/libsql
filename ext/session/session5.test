@@ -30,6 +30,11 @@ set testprefix session5
 #   
 #   session5-3.*: Schema mismatch errors.
 #
+#   session5-4.*: Test the concat cases that indicate that the database
+#                 was modified in between recording of the two changesets
+#                 being concatenated (i.e. two changesets that INSERT rows
+#                 with the same PK values).
+#
 
 proc do_concat_test {tn args} {
 
@@ -224,7 +229,6 @@ do_test 2.3.0 {
   for {set i 1} {$i < 120} {incr i} {
     append sql2 "DELETE FROM x1 WHERE a = $i*4;"
   }
-
   set {} {}
 } {}
 do_concat_test 2.3 {
@@ -252,6 +256,47 @@ do_concat_test 2.5 {
   DELETE FROM x2 WHERE a = 'a'
 } {
   INSERT INTO x2 VALUES('a', 'B');
+}
+
+for {set k 1} {$k <=10} {incr k} {
+  do_test 2.6.$k.1 {
+    drop_all_tables
+    set sql1 ""
+    set sql2 ""
+    for {set i 1} {$i < 120} {incr i} {
+      append sql1 "INSERT INTO x1 VALUES(randomblob(20+(random()%10)), $i);"
+    }
+    for {set i 1} {$i < 120} {incr i} {
+      append sql2 "DELETE FROM x1 WHERE rowid = $i;"
+    }
+    set {} {}
+  } {}
+  do_concat_test 2.6.$k {
+    CREATE TABLE x1(a PRIMARY KEY, b)
+  } $sql1 $sql2 $sql1 $sql2
+}
+
+for {set k 1} {$k <=10} {incr k} {
+  do_test 2.7.$k.1 {
+    drop_all_tables
+    set sql1 ""
+    set sql2 ""
+    for {set i 1} {$i < 120} {incr i} {
+      append sql1 {
+        INSERT INTO x1 VALUES(
+         CASE WHEN random()%2 THEN random() ELSE randomblob(20+random()%10) END,
+         CASE WHEN random()%2 THEN random() ELSE randomblob(20+random()%10) END
+        );
+      }
+    }
+    for {set i 1} {$i < 120} {incr i} {
+      append sql2 "DELETE FROM x1 WHERE rowid = $i;"
+    }
+    set {} {}
+  } {}
+  do_concat_test 2.7.$k {
+    CREATE TABLE x1(a PRIMARY KEY, b)
+  } $sql1 $sql2 $sql1 $sql2
 }
 
 
@@ -294,5 +339,71 @@ do_test 3.2 {
   list [catch { sqlite3changeset_concat $c1 $c2 } msg] $msg
 } {1 SQLITE_SCHEMA}
 
+#-------------------------------------------------------------------------
+# Test that concat() handles these properly:
+#
+#   session5-4.1: INSERT + INSERT
+#   session5-4.2: UPDATE + INSERT
+#   session5-4.3: DELETE + UPDATE
+#   session5-4.4: DELETE + DELETE
+#
+
+proc do_concat_test2 {tn sql1 sqlX sql2 expected} {
+  sqlite3session S db main ; S attach *
+  execsql $sql1
+  set ::c1 [S changeset]
+  S delete
+
+  execsql $sqlX
+
+  sqlite3session S db main ; S attach *
+  execsql $sql2
+  set ::c2 [S changeset]
+  S delete
+
+  uplevel do_test $tn [list {
+    changeset_to_list [sqlite3changeset_concat $::c1 $::c2]
+  }] [list [normalize_list $expected]]
+}
+
+drop_all_tables db
+do_concat_test2 4.1 {
+  CREATE TABLE t1(a PRIMARY KEY, b);
+  INSERT INTO t1 VALUES('key', 'value');
+} {
+  DELETE FROM t1 WHERE a = 'key';
+} {
+  INSERT INTO t1 VALUES('key', 'xxx');
+} {
+  {INSERT t1 0 X. {} {t key t value}}
+}
+do_concat_test2 4.2 {
+  UPDATE t1 SET b = 'yyy';
+} {
+  DELETE FROM t1 WHERE a = 'key';
+} {
+  INSERT INTO t1 VALUES('key', 'value');
+} {
+  {UPDATE t1 0 X. {t key t xxx} {{} {} t yyy}}
+}
+do_concat_test2 4.3 {
+  DELETE FROM t1 WHERE a = 'key';
+} {
+  INSERT INTO t1 VALUES('key', 'www');
+} {
+  UPDATE t1 SET b = 'valueX' WHERE a = 'key';
+} {
+  {DELETE t1 0 X. {t key t value} {}}
+}
+do_concat_test2 4.4 {
+  DELETE FROM t1 WHERE a = 'key';
+} {
+  INSERT INTO t1 VALUES('key', 'ttt');
+} {
+  DELETE FROM t1 WHERE a = 'key';
+} {
+  {DELETE t1 0 X. {t key t valueX} {}}
+}
 
 finish_test
+
