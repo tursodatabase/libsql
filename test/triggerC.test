@@ -246,7 +246,7 @@ do_test triggerC-2.2 {
 } {100}
 
 do_test triggerC-2.3 {
-  execsql {
+  execsql "
     CREATE TABLE t23(x PRIMARY KEY);
 
     CREATE TRIGGER t23a AFTER INSERT ON t23 BEGIN
@@ -254,15 +254,15 @@ do_test triggerC-2.3 {
     END;
 
     CREATE TRIGGER t23b BEFORE INSERT ON t23 BEGIN
-      SELECT CASE WHEN new.x>500
+      SELECT CASE WHEN new.x>[expr $SQLITE_MAX_TRIGGER_DEPTH / 2]
                   THEN RAISE(IGNORE)
                   ELSE NULL END;
     END;
 
     INSERT INTO t23 VALUES(1);
     SELECT count(*) FROM t23;
-  }
-} {500}
+  "
+} [list [expr $SQLITE_MAX_TRIGGER_DEPTH / 2]]
  
 
 #-----------------------------------------------------------------------
@@ -288,12 +288,12 @@ do_test triggerC-3.1.3 {
 } {}
 
 do_test triggerC-3.2.1 {
-  execsql {
+  execsql "
     CREATE TABLE t3b(x);
-    CREATE TRIGGER t3bi AFTER INSERT ON t3b WHEN new.x<2000 BEGIN
+    CREATE TRIGGER t3bi AFTER INSERT ON t3b WHEN new.x<[expr $SQLITE_MAX_TRIGGER_DEPTH * 2] BEGIN
       INSERT INTO t3b VALUES(new.x+1);
     END;
-  }
+  "
   catchsql {
     INSERT INTO t3b VALUES(1);
   }
@@ -303,39 +303,39 @@ do_test triggerC-3.2.2 {
 } {}
 
 do_test triggerC-3.3.1 {
-  catchsql {
-    INSERT INTO t3b VALUES(1001);
-  }
+  catchsql "
+    INSERT INTO t3b VALUES([expr $SQLITE_MAX_TRIGGER_DEPTH + 1]);
+  "
 } {0 {}}
 do_test triggerC-3.3.2 {
   db eval {SELECT count(*), max(x), min(x) FROM t3b}
-} {1000 2000 1001}
+} [list $SQLITE_MAX_TRIGGER_DEPTH [expr $SQLITE_MAX_TRIGGER_DEPTH * 2] [expr $SQLITE_MAX_TRIGGER_DEPTH + 1]]
 
 do_test triggerC-3.4.1 {
-  catchsql {
+  catchsql "
     DELETE FROM t3b;
-    INSERT INTO t3b VALUES(999);
-  }
+    INSERT INTO t3b VALUES([expr $SQLITE_MAX_TRIGGER_DEPTH - 1]);
+  "
 } {1 {too many levels of trigger recursion}}
 do_test triggerC-3.4.2 {
   db eval {SELECT count(*), max(x), min(x) FROM t3b}
 } {0 {} {}}
 
 do_test triggerC-3.5.1 {
-  sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 100
-  catchsql {
-    INSERT INTO t3b VALUES(1901);
-  }
+  sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH  [expr $SQLITE_MAX_TRIGGER_DEPTH / 10]
+  catchsql "
+    INSERT INTO t3b VALUES([expr ($SQLITE_MAX_TRIGGER_DEPTH * 2) - ($SQLITE_MAX_TRIGGER_DEPTH / 10) + 1]);
+  "
 } {0 {}}
 do_test triggerC-3.5.2 {
   db eval {SELECT count(*), max(x), min(x) FROM t3b}
-} {100 2000 1901}
+} [list [expr $SQLITE_MAX_TRIGGER_DEPTH / 10] [expr $SQLITE_MAX_TRIGGER_DEPTH * 2] [expr ($SQLITE_MAX_TRIGGER_DEPTH * 2) - ($SQLITE_MAX_TRIGGER_DEPTH / 10) + 1]]
 
 do_test triggerC-3.5.3 {
-  catchsql {
+  catchsql "
     DELETE FROM t3b;
-    INSERT INTO t3b VALUES(1900);
-  }
+    INSERT INTO t3b VALUES([expr ($SQLITE_MAX_TRIGGER_DEPTH * 2) - ($SQLITE_MAX_TRIGGER_DEPTH / 10)]);
+  "
 } {1 {too many levels of trigger recursion}}
 do_test triggerC-3.5.4 {
   db eval {SELECT count(*), max(x), min(x) FROM t3b}
@@ -343,25 +343,25 @@ do_test triggerC-3.5.4 {
 
 do_test triggerC-3.6.1 {
   sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 1
-  catchsql {
-    INSERT INTO t3b VALUES(2000);
-  }
+  catchsql "
+    INSERT INTO t3b VALUES([expr $SQLITE_MAX_TRIGGER_DEPTH * 2]);
+  "
 } {0 {}}
 do_test triggerC-3.6.2 {
   db eval {SELECT count(*), max(x), min(x) FROM t3b}
-} {1 2000 2000}
+} [list 1 [expr $SQLITE_MAX_TRIGGER_DEPTH * 2] [expr $SQLITE_MAX_TRIGGER_DEPTH * 2]]
 
 do_test triggerC-3.6.3 {
-  catchsql {
+  catchsql "
     DELETE FROM t3b;
-    INSERT INTO t3b VALUES(1999);
-  }
+    INSERT INTO t3b VALUES([expr ($SQLITE_MAX_TRIGGER_DEPTH * 2) - 1]);
+  "
 } {1 {too many levels of trigger recursion}}
 do_test triggerC-3.6.4 {
   db eval {SELECT count(*), max(x), min(x) FROM t3b}
 } {0 {} {}}
-sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 1000
-      
+sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH $SQLITE_MAX_TRIGGER_DEPTH
+
 
 #-----------------------------------------------------------------------
 # This next block of tests, triggerC-4.*, checks that affinity 
