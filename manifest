@@ -1,5 +1,5 @@
-C Adjust\ssome\stest\scases\sin\striggerC.test\sto\shandle\snon-default\sSQLITE_MAX_TRIGGER_DEPTH\ssettings.
-D 2011-04-17T00:55:13.458
+C Change\sthe\sprototype\sfor\sthe\sopen()\ssystem\scall\sto\sagree\swith\sPosix.\s\sThough\na\sfaulty\sfunction\sprototype\sin\sa\spointer\scast\sis\sa\sseemingly\sinnocuous\serror,\s\nthe\scorrect\sprototype\sis\snecessary\sfor\spthreads\sto\swork\scorrectly\son\sNetBSD.
+D 2011-04-17T17:09:58.565
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -162,7 +162,7 @@ F src/os.c 22ac61d06e72a0dac900400147333b07b13d8e1d
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c c80e9d427c9c44c6a26f5233c14c14550e8c05c1
+F src/os_unix.c d7889a0f9389c8c2e1d3b380f5aa1256c22a90e8
 F src/os_win.c d149b9a7dfdd38de09afc054f8168cd3cd80630b
 F src/pager.c 055239dcdfe12b3f5d97f6f01f85da01e2d6d912
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
@@ -929,7 +929,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 75ed1bcee85587ddd54269156aa53df5f456a6c4
-R 379c921b24ffb143c95ccc4a63246270
-U shaneh
-Z 2e9dcf2f8c6a1f5638334b5ebd3e741d
+P 9d6c6129fd8be42c164f14bb90011b252c1f2c46
+R 4ae7f108651e5730cd8c416e7800e26e
+U drh
+Z 939cf52c691885a86594e39d90974750
