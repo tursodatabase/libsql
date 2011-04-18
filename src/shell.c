@@ -71,15 +71,15 @@ extern int isatty();
 #define isatty(x) 1
 #endif
 
+/* True if the timer is enabled */
+static int enableTimer = 0;
+
 #if !defined(_WIN32) && !defined(WIN32) && !defined(__OS2__) && !defined(__RTP__) && !defined(_WRS_KERNEL)
 #include <sys/time.h>
 #include <sys/resource.h>
 
 /* Saved resource information for the beginning of an operation */
 static struct rusage sBegin;
-
-/* True if the timer is enabled */
-static int enableTimer = 0;
 
 /*
 ** Begin timing an operation
@@ -123,9 +123,6 @@ static FILETIME ftKernelBegin;
 static FILETIME ftUserBegin;
 typedef BOOL (WINAPI *GETPROCTIMES)(HANDLE, LPFILETIME, LPFILETIME, LPFILETIME, LPFILETIME);
 static GETPROCTIMES getProcessTimesAddr = NULL;
-
-/* True if the timer is enabled */
-static int enableTimer = 0;
 
 /*
 ** Check to see if we have timer support.  Return 1 if necessary

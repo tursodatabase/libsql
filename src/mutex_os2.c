@@ -251,7 +251,7 @@ static void os2MutexLeave(sqlite3_mutex *p){
 #endif
 }
 
-SQLITE_PRIVATE sqlite3_mutex_methods const *sqlite3DefaultMutex(void){
+sqlite3_mutex_methods const *sqlite3DefaultMutex(void){
   static const sqlite3_mutex_methods sMutex = {
     os2MutexInit,
     os2MutexEnd,

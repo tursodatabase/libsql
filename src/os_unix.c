@@ -293,7 +293,7 @@ static struct unix_syscall {
   sqlite3_syscall_ptr pDefault; /* Default value */
 } aSyscall[] = {
   { "open",         (sqlite3_syscall_ptr)open,       0  },
-#define osOpen      ((int(*)(const char*,int,int))aSyscall[0].pCurrent)
+#define osOpen      ((int(*)(const char*,int,...))aSyscall[0].pCurrent)
 
   { "close",        (sqlite3_syscall_ptr)close,      0  },
 #define osClose     ((int(*)(int))aSyscall[1].pCurrent)
@@ -330,7 +330,7 @@ static struct unix_syscall {
   { "read",         (sqlite3_syscall_ptr)read,       0  },
 #define osRead      ((ssize_t(*)(int,void*,size_t))aSyscall[8].pCurrent)
 
-#if defined(USE_PREAD) || defined(SQLITE_ENABLE_LOCKING_STYLE)
+#if defined(USE_PREAD) || SQLITE_ENABLE_LOCKING_STYLE
   { "pread",        (sqlite3_syscall_ptr)pread,      0  },
 #else
   { "pread",        (sqlite3_syscall_ptr)0,          0  },
@@ -347,7 +347,7 @@ static struct unix_syscall {
   { "write",        (sqlite3_syscall_ptr)write,      0  },
 #define osWrite     ((ssize_t(*)(int,const void*,size_t))aSyscall[11].pCurrent)
 
-#if defined(USE_PREAD) || defined(SQLITE_ENABLE_LOCKING_STYLE)
+#if defined(USE_PREAD) || SQLITE_ENABLE_LOCKING_STYLE
   { "pwrite",       (sqlite3_syscall_ptr)pwrite,     0  },
 #else
   { "pwrite",       (sqlite3_syscall_ptr)0,          0  },
@@ -363,7 +363,11 @@ static struct unix_syscall {
 #define osPwrite64  ((ssize_t(*)(int,const void*,size_t,off_t))\
                     aSyscall[13].pCurrent)
 
+#if SQLITE_ENABLE_LOCKING_STYLE
   { "fchmod",       (sqlite3_syscall_ptr)fchmod,     0  },
+#else
+  { "fchmod",       (sqlite3_syscall_ptr)0,          0  },
+#endif
 #define osFchmod    ((int(*)(int,mode_t))aSyscall[14].pCurrent)
 
 #if defined(HAVE_POSIX_FALLOCATE) && HAVE_POSIX_FALLOCATE
@@ -929,7 +933,7 @@ struct unixInodeInfo {
   UnixUnusedFd *pUnused;          /* Unused file descriptors to close */
   unixInodeInfo *pNext;           /* List of all unixInodeInfo objects */
   unixInodeInfo *pPrev;           /*    .... doubly linked */
-#if defined(SQLITE_ENABLE_LOCKING_STYLE)
+#if SQLITE_ENABLE_LOCKING_STYLE
   unsigned long long sharedByte;  /* for AFP simulated shared lock */
 #endif
 #if OS_VXWORKS
@@ -3086,7 +3090,7 @@ static int unixWrite(
   SimulateDiskfullError(( wrote=0, amt=1 ));
 
   if( amt>0 ){
-    if( wrote<0 ){
+    if( wrote<0 && pFile->lastErrno!=ENOSPC ){
       /* lastErrno set by seekAndWrite */
       return SQLITE_IOERR_WRITE;
     }else{
@@ -3911,7 +3915,7 @@ static int unixShmMap(
             MAP_SHARED, pShmNode->h, pShmNode->nRegion*szRegion
         );
         if( pMem==MAP_FAILED ){
-          rc = SQLITE_IOERR;
+          rc = unixLogError(SQLITE_IOERR_SHMMAP, "mmap", pShmNode->zFilename);
           goto shmpage_out;
         }
       }else{
@@ -6681,6 +6685,10 @@ int sqlite3_os_init(void){
 #endif
   };
   unsigned int i;          /* Loop counter */
+
+  /* Double-check that the aSyscall[] array has been constructed
+  ** correctly.  See ticket [bb3a86e890c8e96ab] */
+  assert( ArraySize(aSyscall)==16 );
 
   /* Register all VFSes defined in the aVfs[] array */
   for(i=0; i<(sizeof(aVfs)/sizeof(sqlite3_vfs)); i++){
