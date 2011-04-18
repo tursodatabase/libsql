@@ -1,5 +1,5 @@
-C Further\scoverage\stests\sfor\sthe\ssession\smodule.
-D 2011-04-18T07:36:27.686
+C Fix\ssome\smissing\scomments\sand\sother\sissues\swith\ssession\smodule\scode.
+D 2011-04-18T12:05:03.122
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -106,7 +106,7 @@ F ext/session/session4.test a6ed685da7a5293c5d6f99855bcf41dbc352ca84
 F ext/session/session5.test 8fdfaf9dba28a2f1c6b89b06168bdab1fef2d478
 F ext/session/session_common.tcl 1539d8973b2aea0025c133eb0cc4c89fcef541a5
 F ext/session/sessionfault.test 401045278298a242cbc2e4bc986c102f01ff2180
-F ext/session/sqlite3session.c fd43b8cb35d8112fa77a9e9101f9efe7005e5e23
+F ext/session/sqlite3session.c 04a5065d5b64f43f120113df170e96bb8db8e229
 F ext/session/sqlite3session.h 665f5591562e3c71eb3d0da26f1a1efae26f7bcf
 F ext/session/test_session.c 311e5b9228374d0b5780448f289847ff1cf7d388
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
@@ -938,7 +938,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f46d4b641d613c39a80b12106e6a6ac0efc8be83
-R bc07f4a1348864ef3dbdf87527d99ed2
+P 69a01c708bf044eacf21a8951fe9e7d9fb4332c5
+R b92955ca865aafd93c0b967b180f7cc1
 U dan
-Z fcc600b67a0d6c899a275e81c6cbea0f
+Z 3095f8afd486ad0b7645eeb6cb4cbdcc

@@ -136,7 +136,7 @@ struct SessionTable {
 ** this structure stored in a SessionTable.aChange[] hash table.
 */
 struct SessionChange {
-  int bInsert;                    /* True if row was inserted this session */
+  int op;                         /* One of UPDATE, DELETE, INSERT */
   int bIndirect;                  /* True if this change is "indirect" */
   int nRecord;                    /* Number of bytes in buffer aRecord[] */
   u8 *aRecord;                    /* Buffer containing old.* record */
@@ -290,11 +290,36 @@ static int sessionSerializeValue(
   return SQLITE_OK;
 }
 
+/*
+** This macro is used to calculate hash key values for data structures. In
+** order to use this macro, the entire data structure must be represented
+** as a series of unsigned integers. In order to calculate a hash-key value
+** for a data structure represented as three such integers, the macro may
+** then be used as follows:
+**
+**    int hash_key_value;
+**    hash_key_value = HASH_APPEND(0, <value 1>);
+**    hash_key_value = HASH_APPEND(hash_key_value, <value 2>);
+**    hash_key_value = HASH_APPEND(hash_key_value, <value 3>);
+**
+** In practice, the data structures this macro is used for are the primary
+** key values of modified rows.
+*/
 #define HASH_APPEND(hash, add) ((hash) << 3) ^ (hash) ^ (unsigned int)(add)
+
+/*
+** Append the hash of the 64-bit integer passed as the second argument to the
+** hash-key value passed as the first. Return the new hash-key value.
+*/
 static unsigned int sessionHashAppendI64(unsigned int h, i64 i){
   h = HASH_APPEND(h, i & 0xFFFFFFFF);
   return HASH_APPEND(h, (i>>32)&0xFFFFFFFF);
 }
+
+/*
+** Append the hash of the blob passed via the second and third arguments to 
+** the hash-key value passed as the first. Return the new hash-key value.
+*/
 static unsigned int sessionHashAppendBlob(unsigned int h, int n, const u8 *z){
   int i;
   for(i=0; i<n; i++) h = HASH_APPEND(h, z[i]);
@@ -302,17 +327,30 @@ static unsigned int sessionHashAppendBlob(unsigned int h, int n, const u8 *z){
 }
 
 /*
+** Append the hash of the data type passed as the second argument to the
+** hash-key value passed as the first. Return the new hash-key value.
+*/
+static unsigned int sessionHashAppendType(unsigned int h, int eType){
+  return HASH_APPEND(h, eType);
+}
+
+/*
 ** This function may only be called from within a pre-update callback.
 ** It calculates a hash based on the primary key values of the old.* or 
-** new.* row currently available. The value returned is guaranteed to
-** be less than pTab->nBucket.
+** new.* row currently available and, assuming no error occurs, writes it to
+** *piHash before returning. If the primary key contains one or more NULL
+** values, *pbNullPK is set to true before returning.
+**
+** If an error occurs, an SQLite error code is returned and the final values
+** of *piHash asn *pbNullPK are undefined. Otherwise, SQLITE_OK is returned
+** and the output variables are set as described above.
 */
-static unsigned int sessionPreupdateHash(
+static int sessionPreupdateHash(
   sqlite3 *db,                    /* Database handle */
   SessionTable *pTab,             /* Session table handle */
   int bNew,                       /* True to hash the new.* PK */
   int *piHash,                    /* OUT: Hash value */
-  int *pbNullPK
+  int *pbNullPK                   /* OUT: True if there are NULL values in PK */
 ){
   unsigned int h = 0;             /* Hash value to return */
   int i;                          /* Used to iterate through columns */
@@ -333,7 +371,7 @@ static unsigned int sessionPreupdateHash(
       if( rc!=SQLITE_OK ) return rc;
 
       eType = sqlite3_value_type(pVal);
-      h = HASH_APPEND(h, eType);
+      h = sessionHashAppendType(h, eType);
       if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
         i64 iVal;
         if( eType==SQLITE_INTEGER ){
@@ -356,7 +394,6 @@ static unsigned int sessionPreupdateHash(
       }else{
         assert( eType==SQLITE_NULL );
         *pbNullPK = 1;
-        return SQLITE_OK;
       }
     }
   }
@@ -381,7 +418,7 @@ static int sessionSerialLen(u8 *a){
 
 /*
 ** Based on the primary key values stored in change aRecord, calculate a
-** hash key, assuming the has table has nBucket buckets. The hash keys
+** hash key. Assume the has table has nBucket buckets. The hash keys
 ** calculated by this function are compatible with those calculated by
 ** sessionPreupdateHash().
 */
@@ -409,7 +446,7 @@ static unsigned int sessionChangeHash(
 
     if( isPK ){
       a++;
-      h = HASH_APPEND(h, eType);
+      h = sessionHashAppendType(h, eType);
       if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
         h = sessionHashAppendI64(h, sessionGetI64(a));
         a += 8;
@@ -426,20 +463,26 @@ static unsigned int sessionChangeHash(
   return (h % nBucket);
 }
 
+/*
+** Arguments aLeft and aRight are pointers to change records for table pTab.
+** This function returns true if the two records apply to the same row (i.e.
+** have the same values stored in the primary key columns), or false 
+** otherwise.
+*/
 static int sessionChangeEqual(
-  SessionTable *pTab,
+  SessionTable *pTab,             /* Table used for PK definition */
   u8 *aLeft,                      /* Change record */
   u8 *aRight                      /* Change record */
 ){
-  u8 *a1 = aLeft;
-  u8 *a2 = aRight;
-  int i;
+  u8 *a1 = aLeft;                 /* Cursor to iterate through aLeft */
+  u8 *a2 = aRight;                /* Cursor to iterate through aRight */
+  int iCol;                       /* Used to iterate through table columns */
 
-  for(i=0; i<pTab->nCol; i++){
+  for(iCol=0; iCol<pTab->nCol; iCol++){
     int n1 = sessionSerialLen(a1);
     int n2 = sessionSerialLen(a2);
 
-    if( pTab->abPK[i] && (n1!=n2 || memcmp(a1, a2, n1)) ){
+    if( pTab->abPK[iCol] && (n1!=n2 || memcmp(a1, a2, n1)) ){
       return 0;
     }
     a1 += n1;
@@ -449,18 +492,31 @@ static int sessionChangeEqual(
   return 1;
 }
 
+/*
+** Arguments aLeft and aRight both point to buffers containing change
+** records with nCol columns. This function "merges" the two records into
+** a single records which is written to the buffer at *paOut. *paOut is
+** then set to point to one byte after the last byte written before 
+** returning.
+**
+** The merging of records is done as follows: For each column, if the 
+** aRight record contains a value for the column, copy the value from
+** their. Otherwise, if aLeft contains a value, copy it. If neither
+** record contains a value for a given column, then neither does the
+** output record.
+*/
 static void sessionMergeRecord(
   u8 **paOut, 
-  SessionTable *pTab, 
+  int nCol,
   u8 *aLeft,
   u8 *aRight
 ){
-  u8 *a1 = aLeft;
-  u8 *a2 = aRight;
-  u8 *aOut = *paOut;
-  int i;
+  u8 *a1 = aLeft;                 /* Cursor used to iterate through aLeft */
+  u8 *a2 = aRight;                /* Cursor used to iterate through aRight */
+  u8 *aOut = *paOut;              /* Output cursor */
+  int iCol;                       /* Used to iterate from 0 to nCol */
 
-  for(i=0; i<pTab->nCol; i++){
+  for(iCol=0; iCol<nCol; iCol++){
     int n1 = sessionSerialLen(a1);
     int n2 = sessionSerialLen(a2);
     if( *a2 ){
@@ -477,10 +533,24 @@ static void sessionMergeRecord(
   *paOut = aOut;
 }
 
+/*
+** This is a helper function used by sessionMergeUpdate().
+**
+** When this function is called, both *paOne and *paTwo point to a value 
+** within a change record. Before it returns, both have been advanced so 
+** as to point to the next value in the record.
+**
+** If, when this function is called, *paTwo points to a valid value (i.e.
+** *paTwo[0] is not 0x00 - the "no value" placeholder), a copy of the *paOne
+** pointer is returned and *pnVal is set to the number of bytes in the 
+** serialized value. Otherwise, a copy of *paOne is returned and *pnVal
+** set to the number of bytes in the value at *paOne. If *paOne points
+** to the "no value" placeholder, *pnVal is set to 1.
+*/
 static u8 *sessionMergeValue(
-  u8 **paOne,
-  u8 **paTwo,
-  int *pnVal
+  u8 **paOne,                     /* IN/OUT: Left-hand buffer pointer */
+  u8 **paTwo,                     /* IN/OUT: Right-hand buffer pointer */
+  int *pnVal                      /* OUT: Bytes in returned value */
 ){
   u8 *a1 = *paOne;
   u8 *a2 = *paTwo;
@@ -507,13 +577,17 @@ static u8 *sessionMergeValue(
   return pRet;
 }
 
+/*
+** This function is used by changeset_concat() to merge two UPDATE changes
+** on the same row.
+*/
 static int sessionMergeUpdate(
-  u8 **paOut, 
-  SessionTable *pTab, 
-  u8 *aOldRecord1,
-  u8 *aOldRecord2,
-  u8 *aNewRecord1,
-  u8 *aNewRecord2
+  u8 **paOut,                     /* IN/OUT: Pointer to output buffer */
+  SessionTable *pTab,             /* Table change pertains to */
+  u8 *aOldRecord1,                /* old.* record for first change */
+  u8 *aOldRecord2,                /* old.* record for second change */
+  u8 *aNewRecord1,                /* new.* record for first change */
+  u8 *aNewRecord2                 /* new.* record for second change */
 ){
   u8 *aOld1 = aOldRecord1;
   u8 *aOld2 = aOldRecord2;
@@ -584,25 +658,12 @@ static void sessionPreupdateEqual(
   *pbEqual = 0;
 
   for(i=0; i<pTab->nCol; i++){
-    int eType = *a++;
     if( !pTab->abPK[i] ){
-      switch( eType ){
-        case SQLITE_INTEGER: 
-        case SQLITE_FLOAT:
-          a += 8;
-          break;
-
-        case SQLITE_TEXT: 
-        case SQLITE_BLOB: {
-          int n;
-          a += sessionVarintGet(a, &n);
-          a += n;
-          break;
-        }
-      }
+      a += sessionSerialLen(a);
     }else{
       sqlite3_value *pVal;        /* Value returned by preupdate_new/old */
       int rc;                     /* Error code from preupdate_new/old */
+      int eType = *a++;           /* Type of value from change record */
 
       /* The following calls to preupdate_new() and preupdate_old() can not
       ** fail. This is because they cache their return values, and by the
@@ -942,7 +1003,7 @@ static void sessionPreupdateOneChange(
         pChange->bIndirect = 1;
       }
       pChange->nRecord = nByte;
-      pChange->bInsert = (op==SQLITE_INSERT);
+      pChange->op = op;
       pChange->pNext = pTab->apChange[iHash];
       pTab->apChange[iHash] = pChange;
 
@@ -1606,8 +1667,8 @@ int sqlite3session_changeset(
           rc = sessionSelectBind(pSel, nCol, abPK, p);
           if( rc!=SQLITE_OK ) continue;
           if( sqlite3_step(pSel)==SQLITE_ROW ){
-            int iCol;
-            if( p->bInsert ){
+            if( p->op==SQLITE_INSERT ){
+              int iCol;
               sessionAppendByte(&buf, SQLITE_INSERT, &rc);
               sessionAppendByte(&buf, p->bIndirect, &rc);
               for(iCol=0; iCol<nCol; iCol++){
@@ -1616,7 +1677,7 @@ int sqlite3session_changeset(
             }else{
               rc = sessionAppendUpdate(&buf, pSel, p, abPK);
             }
-          }else if( !p->bInsert ){
+          }else if( p->op!=SQLITE_INSERT ){
             /* A DELETE change */
             sessionAppendByte(&buf, SQLITE_DELETE, &rc);
             sessionAppendByte(&buf, p->bIndirect, &rc);
@@ -2784,12 +2845,12 @@ static int sessionChangeMerge(
       return SQLITE_NOMEM;
     }
     memset(pNew, 0, sizeof(SessionChange));
-    pNew->bInsert = op2;
+    pNew->op = op2;
     pNew->bIndirect = bIndirect;
     pNew->nRecord = nRec;
     pNew->aRecord = aRec;
   }else{
-    int op1 = pExist->bInsert;
+    int op1 = pExist->op;
 
     /* 
     **   op1=INSERT, op2=INSERT      ->      Unsupported. Discard op2.
@@ -2830,12 +2891,12 @@ static int sessionChangeMerge(
       if( op1==SQLITE_INSERT ){             /* INSERT + UPDATE */
         u8 *a1 = aRec;
         assert( op2==SQLITE_UPDATE );
-        pNew->bInsert = SQLITE_INSERT;
+        pNew->op = SQLITE_INSERT;
         sessionReadRecord(&a1, pTab->nCol, 0);
-        sessionMergeRecord(&aCsr, pTab, pExist->aRecord, a1);
+        sessionMergeRecord(&aCsr, pTab->nCol, pExist->aRecord, a1);
       }else if( op1==SQLITE_DELETE ){       /* DELETE + INSERT */
         assert( op2==SQLITE_INSERT );
-        pNew->bInsert = SQLITE_UPDATE;
+        pNew->op = SQLITE_UPDATE;
         if( 0==sessionMergeUpdate(&aCsr, pTab, pExist->aRecord, 0, aRec, 0) ){
           sqlite3_free(pNew);
           pNew = 0;
@@ -2846,15 +2907,15 @@ static int sessionChangeMerge(
         u8 *a2 = aRec;
         sessionReadRecord(&a1, pTab->nCol, 0);
         sessionReadRecord(&a2, pTab->nCol, 0);
-        pNew->bInsert = SQLITE_UPDATE;
+        pNew->op = SQLITE_UPDATE;
         if( 0==sessionMergeUpdate(&aCsr, pTab, aRec, pExist->aRecord, a1, a2) ){
           sqlite3_free(pNew);
           pNew = 0;
         }
       }else{                                /* UPDATE + DELETE */
         assert( op1==SQLITE_UPDATE && op2==SQLITE_DELETE );
-        pNew->bInsert = SQLITE_DELETE;
-        sessionMergeRecord(&aCsr, pTab, aRec, pExist->aRecord);
+        pNew->op = SQLITE_DELETE;
+        sessionMergeRecord(&aCsr, pTab->nCol, aRec, pExist->aRecord);
       }
 
       if( pNew ){
@@ -3006,7 +3067,7 @@ int sqlite3changeset_concat(
       for(i=0; i<pTab->nChange; i++){
         SessionChange *p;
         for(p=pTab->apChange[i]; p; p=p->pNext){
-          sessionAppendByte(&buf, p->bInsert, &rc);
+          sessionAppendByte(&buf, p->op, &rc);
           sessionAppendByte(&buf, p->bIndirect, &rc);
           sessionAppendBlob(&buf, p->aRecord, p->nRecord, &rc);
         }
