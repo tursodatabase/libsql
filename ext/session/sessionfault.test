@@ -20,6 +20,8 @@ source $testdir/tester.tcl
 
 set testprefix sessionfault
 
+if 1 {
+
 forcedelete test.db2
 sqlite3 db2 test.db2
 do_common_sql {
@@ -362,7 +364,7 @@ do_faultsim_test 8.2 -faults oom* -body {
 }
 
 faultsim_delete_and_reopen
-do_test 9.prep {
+do_test 9.1.prep {
   execsql { 
     PRAGMA encoding = 'utf16';
     CREATE TABLE t1(a PRIMARY KEY, b);
@@ -370,7 +372,8 @@ do_test 9.prep {
 } {}
 faultsim_save_and_close
 
-do_faultsim_test 9 -faults oom-transient -prep {
+set answers [list {0 {}} {1 SQLITE_NOMEM} {1 {callback requested query abort}}]
+do_faultsim_test 9.1 -faults oom-transient -prep {
   catch { unset ::c }
   faultsim_restore_and_reopen
   sqlite3session S db main
@@ -383,14 +386,54 @@ do_faultsim_test 9 -faults oom-transient -prep {
   set {} {}
 } -test {
   S delete
-  faultsim_test_result {0 {}} {1 SQLITE_NOMEM} {1 {callback requested query abort}}
+  eval faultsim_test_result $::answers
   if {[info exists ::c]} {
-    set expected "{INSERT t1 0 X. {} {t abcdefghijklmnopqrstuv t ABCDEFGHIJKLMNOPQRSTUV}}"
+    set expected [normalize_list {
+      {INSERT t1 0 X. {} {t abcdefghijklmnopqrstuv t ABCDEFGHIJKLMNOPQRSTUV}}
+    }]
     if { [changeset_to_list $::c] != $expected } {
       error "changeset mismatch"
     }
   }
 }
+
+}
+
+faultsim_delete_and_reopen
+do_test 9.2.prep {
+  execsql { 
+    PRAGMA encoding = 'utf16';
+    CREATE TABLE t1(a PRIMARY KEY, b);
+    INSERT INTO t1 VALUES('abcdefghij', 'ABCDEFGHIJKLMNOPQRSTUV');
+  }
+} {}
+faultsim_save_and_close
+
+set answers [list {0 {}} {1 SQLITE_NOMEM} {1 {callback requested query abort}}]
+do_faultsim_test 9.2 -faults oom-transient -prep {
+  catch { unset ::c }
+  faultsim_restore_and_reopen
+  sqlite3session S db main
+  S attach *
+} -body {
+  execsql {
+    UPDATE t1 SET b = 'xyz';
+  }
+  set ::c [S changeset]
+  set {} {}
+} -test {
+  S delete
+  eval faultsim_test_result $::answers
+  if {[info exists ::c]} {
+    set expected [normalize_list {
+      {UPDATE t1 0 X. {t abcdefghij t ABCDEFGHIJKLMNOPQRSTUV} {{} {} t xyz}}
+    }]
+    if { [changeset_to_list $::c] != $expected } {
+      error "changeset mismatch"
+    }
+  }
+}
+
 
 
 finish_test

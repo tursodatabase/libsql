@@ -390,6 +390,23 @@ do_iterator_test 6.1.7 * {
   {UPDATE t2 0 X. {i 4 t y} {{} {} t new}}
 }
 
+do_iterator_test 6.1.8 * {
+  CREATE TABLE t3(a, b PRIMARY KEY);
+  CREATE TABLE t4(a, b PRIMARY KEY);
+  CREATE TRIGGER t4t AFTER UPDATE ON t4 BEGIN
+    UPDATE t3 SET a = new.a WHERE b = new.b;
+  END;
+
+  SELECT indirect(1);
+  INSERT INTO t3 VALUES('one', 1);
+  INSERT INTO t4 VALUES('one', 1);
+  SELECT indirect(0);
+  UPDATE t4 SET a = 'two' WHERE b = 1;
+} {
+  {INSERT t4 0 .X {} {t two i 1}} 
+  {INSERT t3 1 .X {} {t two i 1}}
+}
+
 sqlite3session S db main
 do_execsql_test 6.2.1 {
   SELECT indirect(0);

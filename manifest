@@ -1,5 +1,5 @@
-C Improve\stest\scoverage\sof\ssession\smodule.
-D 2011-04-16T19:23:10.456
+C Further\scoverage\stests\sfor\sthe\ssession\smodule.
+D 2011-04-18T07:36:27.686
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -100,13 +100,13 @@ F ext/rtree/sqlite3rtree.h 1af0899c63a688e272d69d8e746f24e76f10a3f0
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F ext/session/session1.test f5d9f2e362abe2563181389509822bda956516ee
-F ext/session/session2.test c3e5f78d5eb988e35cc2ba9ce3678f706283cfdb
+F ext/session/session2.test 99ca0da7ddb617d42bafd83adccf99f18ae0384b
 F ext/session/session3.test a7a9ce59b8d1e49e2cc23d81421ac485be0eea01
 F ext/session/session4.test a6ed685da7a5293c5d6f99855bcf41dbc352ca84
 F ext/session/session5.test 8fdfaf9dba28a2f1c6b89b06168bdab1fef2d478
 F ext/session/session_common.tcl 1539d8973b2aea0025c133eb0cc4c89fcef541a5
-F ext/session/sessionfault.test 759060c36ef424919e3900b885b22aa15caf7f39
-F ext/session/sqlite3session.c 3475df4021c5260f795cf66f67233449795c06ea
+F ext/session/sessionfault.test 401045278298a242cbc2e4bc986c102f01ff2180
+F ext/session/sqlite3session.c fd43b8cb35d8112fa77a9e9101f9efe7005e5e23
 F ext/session/sqlite3session.h 665f5591562e3c71eb3d0da26f1a1efae26f7bcf
 F ext/session/test_session.c 311e5b9228374d0b5780448f289847ff1cf7d388
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
@@ -938,7 +938,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 3dfd1d63bddfa9bd9018eb00bee1d496379630b5
-R 57f77b8ed5537ccfd8e7f64bd8d648b6
+P f46d4b641d613c39a80b12106e6a6ac0efc8be83
+R bc07f4a1348864ef3dbdf87527d99ed2
 U dan
-Z 35862238c72a43b8ebb72adec800f600
+Z fcc600b67a0d6c899a275e81c6cbea0f
