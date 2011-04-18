@@ -645,20 +645,25 @@ static int sessionMergeUpdate(
   return 1;
 }
 
-static void sessionPreupdateEqual(
-  sqlite3 *db,
-  SessionTable *pTab,
-  SessionChange *pChange,
-  int bNew,
-  int *pbEqual
+/*
+** This function is only called from within a pre-update-hook callback.
+** It determines if the current pre-update-hook change affects the same row
+** as the change stored in argument pChange. If so, it returns true. Otherwise
+** if the pre-update-hook does not affect the same row as pChange, it returns
+** false.
+*/
+static int sessionPreupdateEqual(
+  sqlite3 *db,                    /* Database handle */
+  SessionTable *pTab,             /* Table associated with change */
+  SessionChange *pChange,         /* Change to compare to */
+  int op                          /* Current pre-update operation */
 ){
-  int i;
-  u8 *a = pChange->aRecord;
+  int iCol;                       /* Used to iterate through columns */
+  u8 *a = pChange->aRecord;       /* Cursor used to scan change record */
 
-  *pbEqual = 0;
-
-  for(i=0; i<pTab->nCol; i++){
-    if( !pTab->abPK[i] ){
+  assert( op==SQLITE_INSERT || op==SQLITE_UPDATE || op==SQLITE_DELETE );
+  for(iCol=0; iCol<pTab->nCol; iCol++){
+    if( !pTab->abPK[iCol] ){
       a += sessionSerialLen(a);
     }else{
       sqlite3_value *pVal;        /* Value returned by preupdate_new/old */
@@ -670,15 +675,15 @@ static void sessionPreupdateEqual(
       ** time control flows to here they have already been called once from
       ** within sessionPreupdateHash(). The first two asserts below verify
       ** this (that the method has already been called). */
-      if( bNew ){
+      if( op==SQLITE_INSERT ){
         assert( db->pPreUpdate->pNewUnpacked || db->pPreUpdate->aNew );
-        rc = sqlite3_preupdate_new(db, i, &pVal);
+        rc = sqlite3_preupdate_new(db, iCol, &pVal);
       }else{
         assert( db->pPreUpdate->pUnpacked );
-        rc = sqlite3_preupdate_old(db, i, &pVal);
+        rc = sqlite3_preupdate_old(db, iCol, &pVal);
       }
       assert( rc==SQLITE_OK );
-      if( sqlite3_value_type(pVal)!=eType ) return;
+      if( sqlite3_value_type(pVal)!=eType ) return 0;
 
       /* A SessionChange object never has a NULL value in a PK column */
       assert( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT
@@ -689,32 +694,31 @@ static void sessionPreupdateEqual(
         i64 iVal = sessionGetI64(a);
         a += 8;
         if( eType==SQLITE_INTEGER ){
-          if( sqlite3_value_int64(pVal)!=iVal ) return;
+          if( sqlite3_value_int64(pVal)!=iVal ) return 0;
         }else{
           double rVal;
           assert( sizeof(iVal)==8 && sizeof(rVal)==8 );
           memcpy(&rVal, &iVal, 8);
-          if( sqlite3_value_double(pVal)!=rVal ) return;
+          if( sqlite3_value_double(pVal)!=rVal ) return 0;
         }
       }else{
         int n;
         const u8 *z;
         a += sessionVarintGet(a, &n);
-        if( sqlite3_value_bytes(pVal)!=n ) return;
+        if( sqlite3_value_bytes(pVal)!=n ) return 0;
         if( eType==SQLITE_TEXT ){
           z = sqlite3_value_text(pVal);
         }else{
           z = sqlite3_value_blob(pVal);
         }
-        if( memcmp(a, z, n) ) return;
+        if( memcmp(a, z, n) ) return 0;
         a += n;
         break;
       }
     }
   }
 
-  *pbEqual = 1;
-  return;
+  return 1;
 }
 
 /*
@@ -768,7 +772,8 @@ static int sessionGrowHash(SessionTable *pTab){
 ** not, SQLITE_SCHEMA is returned and none of the output variables are
 ** populated.
 **
-** Otherwise, if it is not NULL, variable *pzTab is set to point to a
+** Otherwise, if they are not NULL, variable *pnCol is set to the number
+** of columns in the database table and variable *pzTab is set to point to a
 ** nul-terminated copy of the table name. *pazCol (if not NULL) is set to
 ** point to an array of pointers to column names. And *pabPK (again, if not
 ** NULL) is set to point to an array of booleans - true if the corresponding
@@ -778,8 +783,9 @@ static int sessionGrowHash(SessionTable *pTab){
 **
 **     CREATE TABLE tbl1(w, x, y, z, PRIMARY KEY(w, z));
 **
-** Then the three output variables are populated as follows:
+** Then the four output variables are populated as follows:
 **
+**     *pnCol  = 4
 **     *pzTab  = "tbl1"
 **     *pazCol = {"w", "x", "y", "z"}
 **     *pabPK  = {1, 0, 0, 1}
@@ -908,10 +914,18 @@ static int sessionInitTable(sqlite3_session *pSession, SessionTable *pTab){
   return pSession->rc;
 }
 
+/*
+** This function is only called from with a pre-update-hook reporting a 
+** change on table pTab (attached to session pSession). The type of change
+** (UPDATE, INSERT, DELETE) is specified by the first argument.
+**
+** Unless one is already present or an error occurs, an entry is added
+** to the changed-rows hash table associated with table pTab.
+*/
 static void sessionPreupdateOneChange(
-  int op,
-  sqlite3_session *pSession,
-  SessionTable *pTab
+  int op,                         /* One of SQLITE_UPDATE, INSERT, DELETE */
+  sqlite3_session *pSession,      /* Session object pTab is attached to */
+  SessionTable *pTab              /* Table that change applies to */
 ){
   sqlite3 *db = pSession->db;
   int iHash; 
@@ -939,9 +953,7 @@ static void sessionPreupdateOneChange(
     /* Search the hash table for an existing record for this row. */
     SessionChange *pC;
     for(pC=pTab->apChange[iHash]; pC; pC=pC->pNext){
-      int bEqual;
-      sessionPreupdateEqual(db, pTab, pC, op==SQLITE_INSERT, &bEqual);
-      if( bEqual ) break;
+      if( sessionPreupdateEqual(db, pTab, pC, op) ) break;
     }
 
     if( pC==0 ){
@@ -1109,6 +1121,10 @@ int sqlite3session_create(
   return SQLITE_OK;
 }
 
+/*
+** Free the list of table objects passed as the first argument. The contents
+** of the changed-rows hash tables are also deleted.
+*/
 void sessionDeleteTable(SessionTable *pList){
   SessionTable *pNext;
   SessionTable *pTab;
@@ -1492,14 +1508,20 @@ static int sessionAppendUpdate(
   return rc;
 }
 
+/*
+** Formulate and prepare a SELECT statement to retrieve a row from table
+** zTab in database zDb based on its primary key. i.e.
+**
+**   SELECT * FROM zDb.zTab WHERE pk1 = ? AND pk2 = ? AND ...
+*/
 static int sessionSelectStmt(
   sqlite3 *db,                    /* Database handle */
   const char *zDb,                /* Database name */
   const char *zTab,               /* Table name */
-  int nCol,
-  const char **azCol,
-  u8 *abPK,
-  sqlite3_stmt **ppStmt
+  int nCol,                       /* Number of columns in table */
+  const char **azCol,             /* Names of table columns */
+  u8 *abPK,                       /* PRIMARY KEY  array */
+  sqlite3_stmt **ppStmt           /* OUT: Prepared SELECT statement */
 ){
   int rc = SQLITE_OK;
   int i;
@@ -1527,11 +1549,19 @@ static int sessionSelectStmt(
   return rc;
 }
 
+/*
+** Bind the PRIMARY KEY values from the change passed in argument pChange
+** to the SELECT statement passed as the first argument. The SELECT statement
+** is as prepared by function sessionSelectStmt().
+**
+** Return SQLITE_OK if all PK values are successfully bound, or an SQLite
+** error code (e.g. SQLITE_NOMEM) otherwise.
+*/
 static int sessionSelectBind(
-  sqlite3_stmt *pSelect,
-  int nCol,
-  u8 *abPK,
-  SessionChange *pChange
+  sqlite3_stmt *pSelect,          /* SELECT from sessionSelectStmt() */
+  int nCol,                       /* Number of columns in table */
+  u8 *abPK,                       /* PRIMARY KEY array */
+  SessionChange *pChange          /* Change structure */
 ){
   int i;
   int rc = SQLITE_OK;
@@ -1592,6 +1622,12 @@ static int sessionSelectBind(
   return rc;
 }
 
+/*
+** This function is a no-op if *pRc is set to other than SQLITE_OK when it
+** is called. Otherwise, append a serialized table header (part of the binary 
+** changeset format) to buffer *pBuf. If an error occurs, set *pRc to an
+** SQLite error code before returning.
+*/
 static void sessionAppendTableHdr(
   SessionBuffer *pBuf, 
   SessionTable *pTab, 
@@ -1832,10 +1868,26 @@ static int sessionReadRecord(
   return SQLITE_OK;
 }
 
+/*
+** Advance the changeset iterator to the next change.
+**
+** If both paRec and pnRec are NULL, then this function works like the public
+** API sqlite3changeset_next(). If SQLITE_ROW is returned, then the
+** sqlite3changeset_new() and old() APIs may be used to query for values.
+**
+** Otherwise, if paRec and pnRec are not NULL, then a pointer to the change
+** record is written to *paRec before returning and the number of bytes in
+** the record to *pnRec.
+**
+** Either way, this function returns SQLITE_ROW if the iterator is 
+** successfully advanced to the next change in the changeset, an SQLite 
+** error code if an error occurs, or SQLITE_DONE if there are no further 
+** changes in the changeset.
+*/
 static int sessionChangesetNext(
-  sqlite3_changeset_iter *p, 
-  u8 **paRec, 
-  int *pnRec
+  sqlite3_changeset_iter *p,      /* Changeset iterator */
+  u8 **paRec,                     /* If non-NULL, store record pointer here */
+  int *pnRec                      /* If non-NULL, store size of record here */
 ){
   u8 *aChange;
   int i;
@@ -1918,7 +1970,7 @@ int sqlite3changeset_next(sqlite3_changeset_iter *p){
 
 /*
 ** The following function extracts information on the current change
-** from a changeset iterator. They may only be called after changeset_next()
+** from a changeset iterator. It may only be called after changeset_next()
 ** has returned SQLITE_ROW.
 */
 int sqlite3changeset_op(
@@ -1935,6 +1987,12 @@ int sqlite3changeset_op(
   return SQLITE_OK;
 }
 
+/*
+** Return information regarding the PRIMARY KEY and number of columns in
+** the database table affected by the change that pIter currently points
+** to. This function may only be called after changeset_next() returns
+** SQLITE_ROW.
+*/
 int sqlite3changeset_pk(
   sqlite3_changeset_iter *pIter,  /* Iterator object */
   unsigned char **pabPK,          /* OUT: Array of boolean - true for PK cols */
@@ -2828,14 +2886,19 @@ int sqlite3changeset_apply(
   return rc;
 }
 
+/*
+** This function is called to merge two changes to the same row together as
+** part of an sqlite3changeset_concat() operation. A new change object is
+** allocated and a pointer to it stored in *ppNew.
+*/
 static int sessionChangeMerge(
-  SessionTable *pTab,
-  SessionChange *pExist,
-  int op2,
-  int bIndirect,
-  u8 *aRec,
-  int nRec,
-  SessionChange **ppNew
+  SessionTable *pTab,             /* Table structure */
+  SessionChange *pExist,          /* Existing change */
+  int op2,                        /* Second change operation */
+  int bIndirect,                  /* True if second change is indirect */
+  u8 *aRec,                       /* Second change record */
+  int nRec,                       /* Number of bytes in aRec */
+  SessionChange **ppNew           /* OUT: Merged change */
 ){
   SessionChange *pNew = 0;
 
@@ -2929,10 +2992,14 @@ static int sessionChangeMerge(
   return SQLITE_OK;
 }
 
+/*
+** Add all changes in the changeset passed via the first two arguments to
+** hash tables.
+*/
 int sessionConcatChangeset(
-  int nChangeset,
-  void *pChangeset,
-  SessionTable **ppTabList
+  int nChangeset,                 /* Number of bytes in pChangeset */
+  void *pChangeset,               /* Changeset buffer */
+  SessionTable **ppTabList        /* IN/OUT: List of table objects */
 ){
   u8 *aRec;
   int nRec;
