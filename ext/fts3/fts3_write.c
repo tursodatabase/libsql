@@ -542,6 +542,14 @@ static int fts3PendingTermsAdd(
 
   assert( pTokenizer && pModule );
 
+  /* If the user has inserted a NULL value, this function may be called with
+  ** zText==0. In this case, add zero token entries to the hash table and 
+  ** return early. */
+  if( zText==0 ){
+    *pnWord = 0;
+    return SQLITE_OK;
+  }
+
   rc = pModule->xOpen(pTokenizer, zText, -1, &pCsr);
   if( rc!=SQLITE_OK ){
     return rc;
@@ -632,11 +640,9 @@ static int fts3InsertTerms(Fts3Table *p, sqlite3_value **apVal, u32 *aSz){
   int i;                          /* Iterator variable */
   for(i=2; i<p->nColumn+2; i++){
     const char *zText = (const char *)sqlite3_value_text(apVal[i]);
-    if( zText ){
-      int rc = fts3PendingTermsAdd(p, zText, i-2, &aSz[i-2]);
-      if( rc!=SQLITE_OK ){
-        return rc;
-      }
+    int rc = fts3PendingTermsAdd(p, zText, i-2, &aSz[i-2]);
+    if( rc!=SQLITE_OK ){
+      return rc;
     }
     aSz[p->nColumn] += sqlite3_value_bytes(apVal[i]);
   }
