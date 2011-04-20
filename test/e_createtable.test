@@ -989,9 +989,9 @@ do_execsql_test e_createtable-3.7.4 {
   SELECT quote(a), quote(b) FROM t6;
 } {1 2 'X' 3 1 4 'X' 5}
 
-# EVIDENCE-OF: R-18683-56219 If the default value of a column is
-# CURRENT_TIME, CURRENT_DATE or CURRENT_DATETIME, then the value used in
-# the new row is a text representation of the current UTC date and/or
+# EVIDENCE-OF: R-15363-55230 If the default value of a column is
+# CURRENT_TIME, CURRENT_DATE or CURRENT_TIMESTAMP, then the value used
+# in the new row is a text representation of the current UTC date and/or
 # time.
 #
 #     This is difficult to test literally without knowing what time the 

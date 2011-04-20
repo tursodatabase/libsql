@@ -1,5 +1,5 @@
-C Avoid\spassing\sNULL\sto\sthe\sxOpen\smethod\sof\san\sFTS3/4\stokenizer.
-D 2011-04-19T06:43:22.111
+C Update\sa\scomment\sin\se_createtable.test.
+D 2011-04-20T13:35:44.094
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -365,7 +365,7 @@ F test/descidx2.test 9f1a0c83fd57f8667c82310ca21b30a350888b5d
 F test/descidx3.test fe720e8b37d59f4cef808b0bf4e1b391c2e56b6f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
-F test/e_createtable.test b40fc61bc4f1ad2a3c84590bd1d711507263d921
+F test/e_createtable.test 4771686a586b6ae414f927c389b2c101cc05c028
 F test/e_delete.test 55d868b647acc091c261a10b9b0cb0ab660a6acb
 F test/e_droptrigger.test ddd4b28ed8a3d81bd5153fa0ab7559529a2ca03a
 F test/e_dropview.test b347bab30fc8de67b131594b3cd6f3d3bdaa753d
@@ -929,7 +929,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 3e135748f1efacb52b414b3ac3f4ae2c08bcd8fb
-R a6226e702419163cd5db7bb5053e7329
+P 0dd09fc034c127718366d3a3183e367d2f9fd82d
+R 056a0ea57c930302e35ea6c4f7c5b4b7
 U dan
-Z 2b55d93cd349a17e33ad50a5d9dd90a0
+Z b72241c9e230cb141bfcaf5fbf022480
