@@ -1,5 +1,5 @@
-C Update\sa\scomment\sin\se_createtable.test.
-D 2011-04-20T13:35:44.094
+C Add\sthe\s"getlock"\sutility\sfor\sdetermining\sif\sa\sdatabase\sfile\s(on\sunix)\sis\ncurrently\slocked.
+D 2011-04-22T22:55:10.113
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -899,6 +899,7 @@ F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
+F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/lemon.c dfd81a51b6e27e469ba21d01a75ddf092d429027
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkkeywordhash.c d2e6b4a5965e23afb80fbe74bb54648cd371f309
@@ -929,7 +930,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 0dd09fc034c127718366d3a3183e367d2f9fd82d
-R 056a0ea57c930302e35ea6c4f7c5b4b7
-U dan
-Z b72241c9e230cb141bfcaf5fbf022480
+P d8b149f5e465f7794739ed0210e1e5c53110ee9a
+R 46d4cc9c199137dd735f2ac252175f1e
+U drh
+Z 48df56ba9c3ee078a0d4702e2f08ce89
