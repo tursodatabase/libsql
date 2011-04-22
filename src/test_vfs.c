@@ -545,7 +545,7 @@ static int tvfsOpen(
 
   /* Evaluate the Tcl script: 
   **
-  **   SCRIPT xOpen FILENAME
+  **   SCRIPT xOpen FILENAME KEY-VALUE-ARGS
   **
   ** If the script returns an SQLite error code other than SQLITE_OK, an
   ** error is returned to the caller. If it returns SQLITE_OK, the new
@@ -554,7 +554,19 @@ static int tvfsOpen(
   */
   Tcl_ResetResult(p->interp);
   if( p->pScript && p->mask&TESTVFS_OPEN_MASK ){
-    tvfsExecTcl(p, "xOpen", Tcl_NewStringObj(pFd->zFilename, -1), 0, 0);
+    Tcl_Obj *pArg = Tcl_NewObj();
+    Tcl_IncrRefCount(pArg);
+    if( flags&SQLITE_OPEN_MAIN_DB ){
+      const char *z = &zName[strlen(zName)+1];
+      while( *z ){
+        Tcl_ListObjAppendElement(0, pArg, Tcl_NewStringObj(z, -1));
+        z += strlen(z) + 1;
+        Tcl_ListObjAppendElement(0, pArg, Tcl_NewStringObj(z, -1));
+        z += strlen(z) + 1;
+      }
+    }
+    tvfsExecTcl(p, "xOpen", Tcl_NewStringObj(pFd->zFilename, -1), pArg, 0);
+    Tcl_DecrRefCount(pArg);
     if( tvfsResultCode(p, &rc) ){
       if( rc!=SQLITE_OK ) return rc;
     }else{

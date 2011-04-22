@@ -426,6 +426,11 @@ int sqlite3_config(int op, ...){
       break;
     }
 
+    case SQLITE_CONFIG_URI: {
+      sqlite3GlobalConfig.bOpenUri = va_arg(ap, int);
+      break;
+    }
+
     default: {
       rc = SQLITE_ERROR;
       break;
@@ -1786,6 +1791,150 @@ int sqlite3_limit(sqlite3 *db, int limitId, int newLimit){
 }
 
 /*
+** This function is used to parse filenames passed by the user to API
+** functions sqlite3_open() or sqlite3_open_v2(), and for database filenames
+** specified as part of ATTACH statements.
+*/
+int sqlite3ParseUri(
+  const char *zDefaultVfs,        /* VFS to use if no "vfs=xxx" query option */
+  const char *zUri,               /* Nul-terminated URI to parse */
+  int *pFlags,                    /* IN/OUT: SQLITE_OPEN_XXX flags */
+  sqlite3_vfs **ppVfs,            /* OUT: VFS to use */ 
+  char **pzFile,                  /* OUT: Filename component of URI */
+  char **pzErrMsg                 /* OUT: Error message (if rc!=SQLITE_OK) */
+){
+  int flags = *pFlags;
+  const char *zVfs = zDefaultVfs;
+  char *zFile;
+  int nUri = sqlite3Strlen30(zUri);
+
+  assert( *pzErrMsg==0 );
+
+  if( ((flags & SQLITE_OPEN_URI) || sqlite3GlobalConfig.bOpenUri) 
+   && nUri>=5 && memcmp(zUri, "file:", 5)==0 
+  ){
+    char *zOpt = 0;
+    int eState;                   /* Parser state when parsing URI */
+    int iIn;                      /* Input character index */
+    int iOut = 0;                 /* Output character index */
+    int nByte = nUri+2;           /* Bytes of space to allocate */
+    for(iIn=0; iIn<nUri; iIn++) nByte += (zUri[iIn]=='&');
+
+    zFile = sqlite3_malloc(nByte);
+    if( !zFile ) return SQLITE_NOMEM;
+
+    /* Discard the scheme and authority segments of the URI. */
+    if( zUri[5]=='/' && zUri[6]=='/' ){
+      iIn = 7;
+      while( zUri[iIn] && zUri[iIn]!='/' ) iIn++;
+    }else{
+      iIn = 5;
+    }
+
+    /* Copy the filename and any query parameters into the zFile buffer. 
+    ** Decode %HH escape codes along the way. 
+    **
+    ** Within this loop, variable eState may be set to 0, 1 or 2, depending
+    ** on the parsing context. As follows:
+    **
+    **   0: Parsing file-name.
+    **   1: Parsing name section of a name=value query parameter.
+    **   2: Parsing value section of a name=value query parameter.
+    */
+    eState = 0;
+    while( zUri[iIn] && zUri[iIn]!='#' ){
+      char c = zUri[iIn++];
+      if( c=='%' 
+       && sqlite3Isxdigit(zUri[iIn]) 
+       && sqlite3Isxdigit(zUri[iIn+1]) 
+      ){
+        int codepoint = (sqlite3HexToInt(zUri[iIn++]) << 4);
+        codepoint += sqlite3HexToInt(zUri[iIn++]);
+
+        assert( codepoint>=0 && codepoint<256 );
+        if( codepoint==0 ) continue;
+        c = codepoint;
+      }else if( (eState==0 && c=='?') || (eState==1 && c=='=') ){
+        if( eState==0 ){
+          zOpt = &zFile[iOut+1];
+        }
+        eState++;
+        c = 0;
+      }else if( eState!=0 && c=='&' ){
+        if( eState==1 ) zFile[iOut++] = '\0';
+        eState = 1;
+        c = 0;
+      }
+      zFile[iOut++] = c;
+    }
+    if( eState==1 ) zFile[iOut++] = '\0';
+    zFile[iOut++] = '\0';
+    zFile[iOut++] = '\0';
+
+    /* Check if there were any options specified that should be interpreted 
+    ** here. Options that are interpreted here include "vfs" and those that
+    ** correspond to flags that may be passed to the sqlite3_open_v2()
+    ** method.  */
+    if( zOpt ){
+      struct Option {
+        const char *zOption;
+        int mask;
+      } aOpt [] = {
+        { "vfs", 0 },
+        { "readonly",     SQLITE_OPEN_READONLY },
+        { "readwrite",    SQLITE_OPEN_READWRITE },
+        { "create",       SQLITE_OPEN_CREATE },
+        { "sharedcache",  SQLITE_OPEN_SHAREDCACHE },
+        { "privatecache", SQLITE_OPEN_PRIVATECACHE }
+      };
+
+      while( zOpt[0] ){
+        int nOpt = sqlite3Strlen30(zOpt);
+        char *zVal = &zOpt[nOpt+1];
+        int nVal = sqlite3Strlen30(zVal);
+        int i;
+
+        for(i=0; i<ArraySize(aOpt); i++){
+          const char *z = aOpt[i].zOption;
+          if( nOpt==sqlite3Strlen30(z) && 0==memcmp(zOpt, z, nOpt) ){
+            int mask = aOpt[i].mask;
+            if( mask==0 ){
+              zVfs = zVal;
+            }else{
+              if( zVal[0]=='\0' || sqlite3GetBoolean(zVal) ){
+                flags |= mask;
+              }else{
+                flags &= ~mask;
+              }
+            }
+          }
+        }
+
+        zOpt = &zVal[nVal+1];
+      }
+    }
+
+  }else{
+    zFile = sqlite3_malloc(nUri+2);
+    if( !zFile ) return SQLITE_NOMEM;
+    memcpy(zFile, zUri, nUri);
+    zFile[nUri] = '\0';
+    zFile[nUri+1] = '\0';
+  }
+
+  *ppVfs = sqlite3_vfs_find(zVfs);
+  if( *ppVfs==0 ){
+    sqlite3_free(zFile);
+    *pzErrMsg = sqlite3_mprintf("no such vfs: %s", zVfs);
+    return SQLITE_ERROR;
+  }
+  *pFlags = flags;
+  *pzFile = zFile;
+  return SQLITE_OK;
+}
+
+
+/*
 ** This routine does the work of opening a database on behalf of
 ** sqlite3_open() and sqlite3_open16(). The database filename "zFilename"  
 ** is UTF-8 encoded.
@@ -1796,33 +1945,17 @@ static int openDatabase(
   unsigned flags,        /* Operational flags */
   const char *zVfs       /* Name of the VFS to use */
 ){
-  sqlite3 *db;
-  int rc;
-  int isThreadsafe;
+  sqlite3 *db;                    /* Store allocated handle here */
+  int rc;                         /* Return code */
+  int isThreadsafe;               /* True for threadsafe connections */
+  char *zOpen = 0;                /* Filename argument to pass to BtreeOpen() */
+  char *zErrMsg = 0;              /* Error message from sqlite3ParseUri() */
 
   *ppDb = 0;
 #ifndef SQLITE_OMIT_AUTOINIT
   rc = sqlite3_initialize();
   if( rc ) return rc;
 #endif
-
-  /* Only allow sensible combinations of bits in the flags argument.  
-  ** Throw an error if any non-sense combination is used.  If we
-  ** do not block illegal combinations here, it could trigger
-  ** assert() statements in deeper layers.  Sensible combinations
-  ** are:
-  **
-  **  1:  SQLITE_OPEN_READONLY
-  **  2:  SQLITE_OPEN_READWRITE
-  **  6:  SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
-  */
-  assert( SQLITE_OPEN_READONLY  == 0x01 );
-  assert( SQLITE_OPEN_READWRITE == 0x02 );
-  assert( SQLITE_OPEN_CREATE    == 0x04 );
-  testcase( (1<<(flags&7))==0x02 ); /* READONLY */
-  testcase( (1<<(flags&7))==0x04 ); /* READWRITE */
-  testcase( (1<<(flags&7))==0x40 ); /* READWRITE | CREATE */
-  if( ((1<<(flags&7)) & 0x46)==0 ) return SQLITE_MISUSE;
 
   if( sqlite3GlobalConfig.bCoreMutex==0 ){
     isThreadsafe = 0;
@@ -1903,13 +2036,6 @@ static int openDatabase(
   sqlite3HashInit(&db->aModule);
 #endif
 
-  db->pVfs = sqlite3_vfs_find(zVfs);
-  if( !db->pVfs ){
-    rc = SQLITE_ERROR;
-    sqlite3Error(db, rc, "no such vfs: %s", zVfs);
-    goto opendb_out;
-  }
-
   /* Add the default collation sequence BINARY. BINARY works for both UTF-8
   ** and UTF-16, so add a version for each to avoid any unnecessary
   ** conversions. The only error that can occur here is a malloc() failure.
@@ -1932,9 +2058,38 @@ static int openDatabase(
   createCollation(db, "NOCASE", SQLITE_UTF8, SQLITE_COLL_NOCASE, 0,
                   nocaseCollatingFunc, 0);
 
+  /* Parse the filename/URI argument. */
+  rc = sqlite3ParseUri(zVfs, zFilename, &flags, &db->pVfs, &zOpen, &zErrMsg);
+  if( rc!=SQLITE_OK ){
+    sqlite3Error(db, rc, "%s", zErrMsg);
+    sqlite3_free(zErrMsg);
+    goto opendb_out;
+  }
+
+  /* Only allow sensible combinations of bits in the flags argument.  
+  ** Throw an error if any non-sense combination is used.  If we
+  ** do not block illegal combinations here, it could trigger
+  ** assert() statements in deeper layers.  Sensible combinations
+  ** are:
+  **
+  **  1:  SQLITE_OPEN_READONLY
+  **  2:  SQLITE_OPEN_READWRITE
+  **  6:  SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
+  */
+  assert( SQLITE_OPEN_READONLY  == 0x01 );
+  assert( SQLITE_OPEN_READWRITE == 0x02 );
+  assert( SQLITE_OPEN_CREATE    == 0x04 );
+  testcase( (1<<(flags&7))==0x02 ); /* READONLY */
+  testcase( (1<<(flags&7))==0x04 ); /* READWRITE */
+  testcase( (1<<(flags&7))==0x40 ); /* READWRITE | CREATE */
+  if( ((1<<(flags&7)) & 0x46)==0 ){
+    rc = SQLITE_MISUSE;
+    goto opendb_out;
+  }
+
   /* Open the backend database driver */
   db->openFlags = flags;
-  rc = sqlite3BtreeOpen(zFilename, db, &db->aDb[0].pBt, 0,
+  rc = sqlite3BtreeOpen(zOpen, db, &db->aDb[0].pBt, 0,
                         flags | SQLITE_OPEN_MAIN_DB);
   if( rc!=SQLITE_OK ){
     if( rc==SQLITE_IOERR_NOMEM ){
@@ -2027,6 +2182,7 @@ static int openDatabase(
   sqlite3_wal_autocheckpoint(db, SQLITE_DEFAULT_WAL_AUTOCHECKPOINT);
 
 opendb_out:
+  sqlite3_free(zOpen);
   if( db ){
     assert( db->mutex!=0 || isThreadsafe==0 || sqlite3GlobalConfig.bFullMutex==0 );
     sqlite3_mutex_leave(db->mutex);
