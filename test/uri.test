@@ -15,7 +15,6 @@ source $testdir/tester.tcl
 
 set testprefix uri
 db close
-
 sqlite3_shutdown
 sqlite3_config_uri 1
 
@@ -36,6 +35,9 @@ foreach {tn uri file} {
   11     file:test%2Edb                     test.db
   12     file                               file
   13     http:test.db                       http:test.db
+  14     file://xyzPWD/test.db%3Fhello      test.db?hello
+  15     file:test.db%00extra               test.db
+  16     file:test%00.db%00extra            test
 } {
   set uri  [string map [list PWD [pwd]] $uri]
   set file [string map [list PWD [pwd]] $file]
@@ -58,18 +60,33 @@ tvfs script open_method
 proc open_method {method file arglist} {
   set ::arglist $arglist
 }
-breakpoint
 foreach {tn uri kvlist} {
-  1      file:test.db?hello=world              {hello world}
-  2      file:test.db?hello&world              {hello {} world {}}
-  3      file:test.db?hello=1&world=2&vfs=tvfs {hello 1 world 2 vfs tvfs}
-  4      file:test.db?hello=1&world=2&vfs=unix {}
+  1      file:test.db?hello=world                     {hello world}
+  2      file:test.db?hello&world                     {hello {} world {}}
+  3      file:test.db?hello=1&world=2&vfs=tvfs        {hello 1 world 2 vfs tvfs}
+  4      file:test.db?hello=1&world=2&vfs=unix        {}
+  5      file:test.db?%68%65%6C%6C%6F=%77%6F%72%6C%64 {hello world}
+  6      file:test%00.db?hello%00extra=world%00ex     {hello world}
+  7      file:test%00.db?hello%00=world%00            {hello world}
+  8      file:test%00.db?=world&xyz=abc               {xyz abc}
+  9      file:test.db?%00hello=world&xyz=abc          {xyz abc}
+  10     file:test.db?hello=%00world&xyz=             {hello {} xyz {}}
+  11     file:test.db?=#ravada                        {}
+  12     file:test.db?&&&&&&&&hello=world&&&&&&&      {hello world}
 } {
   set ::arglist ""
   set DB [sqlite3_open $uri]
   do_test 2.$tn { set ::arglist } $kvlist
   sqlite3_close $DB
 }
+tvfs delete
+
+#-------------------------------------------------------------------------
+# Test that specifying a non-existent VFS raises an error.
+#
+do_test 3.1 {
+  list [catch { sqlite3 db "file:test.db?vfs=nosuchvfs" } msg] $msg
+} {1 {no such vfs: nosuchvfs}}
 
 finish_test
 

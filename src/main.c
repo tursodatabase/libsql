@@ -1803,6 +1803,18 @@ int sqlite3ParseUri(
   char **pzFile,                  /* OUT: Filename component of URI */
   char **pzErrMsg                 /* OUT: Error message (if rc!=SQLITE_OK) */
 ){
+  struct UriOption {
+    const char *zOption;
+    int mask;
+  } aOpt [] = {
+    { "vfs", 0 },
+    { "readonly",     SQLITE_OPEN_READONLY },
+    { "readwrite",    SQLITE_OPEN_READWRITE },
+    { "create",       SQLITE_OPEN_CREATE },
+    { "sharedcache",  SQLITE_OPEN_SHAREDCACHE },
+    { "privatecache", SQLITE_OPEN_PRIVATECACHE }
+  };
+
   int flags = *pFlags;
   const char *zVfs = zDefaultVfs;
   char *zFile;
@@ -1813,7 +1825,7 @@ int sqlite3ParseUri(
   if( ((flags & SQLITE_OPEN_URI) || sqlite3GlobalConfig.bOpenUri) 
    && nUri>=5 && memcmp(zUri, "file:", 5)==0 
   ){
-    char *zOpt = 0;
+    char *zOpt;
     int eState;                   /* Parser state when parsing URI */
     int iIn;                      /* Input character index */
     int iOut = 0;                 /* Output character index */
@@ -1852,18 +1864,36 @@ int sqlite3ParseUri(
         codepoint += sqlite3HexToInt(zUri[iIn++]);
 
         assert( codepoint>=0 && codepoint<256 );
-        if( codepoint==0 ) continue;
-        c = codepoint;
-      }else if( (eState==0 && c=='?') || (eState==1 && c=='=') ){
-        if( eState==0 ){
-          zOpt = &zFile[iOut+1];
+        if( codepoint==0 ){
+          /* This branch is taken when "%00" appears within the URI. In this
+          ** case we ignore all text in the remainder of the path, name or
+          ** value currently being parsed. So ignore the current character
+          ** and skip to the next "?", "=" or "&", as appropriate. */
+          while( zUri[iIn] && zUri[iIn]!='#' 
+              && (eState!=0 || zUri[iIn]!='?')
+              && (eState!=1 || (zUri[iIn]!='=' && zUri[iIn]!='&'))
+              && (eState!=2 || zUri[iIn]!='&')
+          ){
+            iIn++;
+          }
+          continue;
         }
-        eState++;
+        c = codepoint;
+      }else if( eState==1 && (c=='&' || c=='=') ){
+        if( zFile[iOut-1]==0 ){
+          /* An empty option name. Ignore this option altogether. */
+          while( zUri[iIn] && zUri[iIn]!='#' && zUri[iIn-1]!='&' ) iIn++;
+          continue;
+        }
+        if( c=='&' ){
+          zFile[iOut++] = '\0';
+        }else{
+          eState = 2;
+        }
         c = 0;
-      }else if( eState!=0 && c=='&' ){
-        if( eState==1 ) zFile[iOut++] = '\0';
+      }else if( (eState==0 && c=='?') || (eState==2 && c=='&') ){
+        c = 0;
         eState = 1;
-        c = 0;
       }
       zFile[iOut++] = c;
     }
@@ -1875,43 +1905,30 @@ int sqlite3ParseUri(
     ** here. Options that are interpreted here include "vfs" and those that
     ** correspond to flags that may be passed to the sqlite3_open_v2()
     ** method.  */
-    if( zOpt ){
-      struct Option {
-        const char *zOption;
-        int mask;
-      } aOpt [] = {
-        { "vfs", 0 },
-        { "readonly",     SQLITE_OPEN_READONLY },
-        { "readwrite",    SQLITE_OPEN_READWRITE },
-        { "create",       SQLITE_OPEN_CREATE },
-        { "sharedcache",  SQLITE_OPEN_SHAREDCACHE },
-        { "privatecache", SQLITE_OPEN_PRIVATECACHE }
-      };
+    zOpt = &zFile[sqlite3Strlen30(zFile)+1];
+    while( zOpt[0] ){
+      int nOpt = sqlite3Strlen30(zOpt);
+      char *zVal = &zOpt[nOpt+1];
+      int nVal = sqlite3Strlen30(zVal);
+      int i;
 
-      while( zOpt[0] ){
-        int nOpt = sqlite3Strlen30(zOpt);
-        char *zVal = &zOpt[nOpt+1];
-        int nVal = sqlite3Strlen30(zVal);
-        int i;
-
-        for(i=0; i<ArraySize(aOpt); i++){
-          const char *z = aOpt[i].zOption;
-          if( nOpt==sqlite3Strlen30(z) && 0==memcmp(zOpt, z, nOpt) ){
-            int mask = aOpt[i].mask;
-            if( mask==0 ){
-              zVfs = zVal;
+      for(i=0; i<ArraySize(aOpt); i++){
+        const char *z = aOpt[i].zOption;
+        if( nOpt==sqlite3Strlen30(z) && 0==memcmp(zOpt, z, nOpt) ){
+          int mask = aOpt[i].mask;
+          if( mask==0 ){
+            zVfs = zVal;
+          }else{
+            if( zVal[0]=='\0' || sqlite3GetBoolean(zVal) ){
+              flags |= mask;
             }else{
-              if( zVal[0]=='\0' || sqlite3GetBoolean(zVal) ){
-                flags |= mask;
-              }else{
-                flags &= ~mask;
-              }
+              flags &= ~mask;
             }
           }
         }
-
-        zOpt = &zVal[nVal+1];
       }
+
+      zOpt = &zVal[nVal+1];
     }
 
   }else{
@@ -1924,8 +1941,8 @@ int sqlite3ParseUri(
 
   *ppVfs = sqlite3_vfs_find(zVfs);
   if( *ppVfs==0 ){
-    sqlite3_free(zFile);
     *pzErrMsg = sqlite3_mprintf("no such vfs: %s", zVfs);
+    sqlite3_free(zFile);
     return SQLITE_ERROR;
   }
   *pFlags = flags;

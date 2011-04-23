@@ -1,5 +1,5 @@
-C Add\sthe\sstart\sof\sthe\s"uri-filenames"\sfeature.
-D 2011-04-22T19:37:32.658
+C Fix\sparsing\sof\s%00\sin\suri\shandling\scode.
+D 2011-04-23T10:12:30.605
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -143,7 +143,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 3ae0d52da013a6326310655be6473fd472347b85
-F src/main.c 88a93debb7448053dfa7182fa4ae723a80b0644d
+F src/main.c cc9f5592000ee42e38b7086a097b19dc63518085
 F src/malloc.c 74c740e8ba22b806cfb980c8c0ddea1cbd54a20e
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 00bd8265c81abb665c48fea1e0c234eb3b922206
@@ -450,7 +450,7 @@ F test/fts3al.test 07d64326e79bbdbab20ee87fc3328fbf01641c9f
 F test/fts3am.test 218aa6ba0dfc50c7c16b2022aac5c6be593d08d8
 F test/fts3an.test a49ccadc07a2f7d646ec1b81bc09da2d85a85b18
 F test/fts3ao.test b83f99f70e9eec85f27d75801a974b3f820e01f9
-F test/fts3atoken.test bbb9e63a915f3df0e35d06e0add932b5bf2d54a9
+F test/fts3atoken.test 402ef2f7c2fb4b3d4fa0587df6441c1447e799b3
 F test/fts3aux1.test 719c35cbbcc04dde8e5a54a6f69851a0af9ed1f2
 F test/fts3b.test e93bbb653e52afde110ad53bbd793f14fe7a8984
 F test/fts3c.test fc723a9cf10b397fdfc2b32e73c53c8b1ec02958
@@ -596,7 +596,7 @@ F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test af02ed0a9cbc0d2a61b8f35171d4d117e588e4ec
 F test/oserror.test 498d8337e9d15543eb7b004fef8594bf204ff43c
-F test/pager1.test d8672fd0af5f4f9b99b06283d00f01547809bebe
+F test/pager1.test 2f2f93411c1c5afa44ebdaf19152e4bd4d9cb1b3
 F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
 F test/pagerfault.test 9de4d3e0c59970b4c6cb8dac511fa242f335d8a7
@@ -837,7 +837,7 @@ F test/unique.test 083c7fff74695bcc27a71d75699deba3595bc9c2
 F test/unixexcl.test 9d80a54d86d2261f660758928959368ffc36151e
 F test/unordered.test e81169ce2a8f31b2c6b66af691887e1376ab3ced
 F test/update.test 8bc86fd7ef1a00014f76dc6a6a7c974df4aef172
-F test/uri.test a9f84a838e73268c3fa9ed29b03512cb7baa7aca
+F test/uri.test b951a30a7cde3cdd978bdbfb2484c12a521f92d4
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
 F test/vacuum.test 29b60e8cc9e573b39676df6c4a75fe9e02d04a09
 F test/vacuum2.test 91a84c9b08adfc4472097d2e8deb0150214e0e76
@@ -930,10 +930,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P d8b149f5e465f7794739ed0210e1e5c53110ee9a
-R f623a8b9a02395ad34296947bebabb85
-T *branch * uri
-T *sym-uri *
-T -sym-trunk *
+P b8a8132e7148a7c90ca1352f20ab71d97b0bc4b0
+R d5dabedbe6f28cafb26739963e69b2b4
 U dan
-Z 1128ec625dbb3b0786239aee8b2345ad
+Z 7110de44a23dae8e6e6e15b3bc372cbd
