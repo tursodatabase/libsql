@@ -1039,7 +1039,7 @@ static void currentTimeFunc(
   UNUSED_PARAMETER(argv);
 
   db = sqlite3_context_db_handle(context);
-  sqlite3OsCurrentTimeInt64(db->pVfs, &iT);
+  sqlite3OsCurrentTimeInt64(db->pVfs &iT);
   t = iT/1000 - 10000*(sqlite3_int64)21086676;
 #ifdef HAVE_GMTIME_R
   {

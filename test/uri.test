@@ -47,6 +47,13 @@ foreach {tn uri file} {
   set DB [sqlite3_open $uri]
   do_test 1.$tn.2 { file exists $file } 1
   sqlite3_close $DB
+  forcedelete $file
+
+  do_test 1.$tn.3 { file exists $file } 0
+  sqlite3 db xxx.db
+  execsql { ATTACH $uri AS aux }
+  do_test 1.$tn.4 { file exists $file } 1
+  db close
 }
 
 
@@ -73,11 +80,19 @@ foreach {tn uri kvlist} {
   10     file:test.db?hello=%00world&xyz=             {hello {} xyz {}}
   11     file:test.db?=#ravada                        {}
   12     file:test.db?&&&&&&&&hello=world&&&&&&&      {hello world}
+  13     test.db?&&&&&&&&hello=world&&&&&&&           {}
+  14     http:test.db?hello&world                     {}
 } {
   set ::arglist ""
   set DB [sqlite3_open $uri]
-  do_test 2.$tn { set ::arglist } $kvlist
+  do_test 2.$tn.1 { set ::arglist } $kvlist
   sqlite3_close $DB
+
+  sqlite3 db xxx.db
+  set ::arglist ""
+  execsql { ATTACH $uri AS aux }
+  do_test 2.$tn.2 { set ::arglist } $kvlist
+  db close
 }
 tvfs delete
 
@@ -87,6 +102,29 @@ tvfs delete
 do_test 3.1 {
   list [catch { sqlite3 db "file:test.db?vfs=nosuchvfs" } msg] $msg
 } {1 {no such vfs: nosuchvfs}}
+
+#-------------------------------------------------------------------------
+# Test the "readonly" URI option.
+#
+do_test 4.0 {
+  sqlite3 db test.db
+  db eval {CREATE TABLE t1(a, b)}
+  db close
+} {}
+foreach {tn uri ro} {
+  1    "file:test.db"                                 0
+  2    "file:test.db?readonly=0"                      0
+  3    "file:test.db?readonly=1&readwrite=0&create=0" 1
+} {
+  set RES(0) {0 {}}
+  set RES(1) {1 {attempt to write a readonly database}}
+
+  do_test 4.$tn {
+    sqlite3 db $uri
+    catchsql { INSERT INTO t1 VALUES(1, 2) }
+  } $RES($ro)
+  db close
+}
 
 finish_test
 
