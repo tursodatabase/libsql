@@ -1,5 +1,5 @@
-C Have\sthe\sATTACH\scommand\sdo\sURI\sinterpretation\sin\sthe\ssame\sway\sas\ssqlite3_open()\sand\ssqlite3_open_v2()\sdo.
-D 2011-04-23T15:54:54.370
+C Test\sthat\sit\sis\snow\spossible\sto\suse\sdifferent\sVFSs\sfor\stwo\sdatabases\sattached\sto\sa\ssingle\shandle.
+D 2011-04-23T19:06:26.760
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -143,7 +143,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 3ae0d52da013a6326310655be6473fd472347b85
-F src/main.c 8b4ebab18189148b702afd931efd2f40476e6e05
+F src/main.c 933d0bcf586ba7acbe2ce3f37d35c474a8306109
 F src/malloc.c 74c740e8ba22b806cfb980c8c0ddea1cbd54a20e
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 00bd8265c81abb665c48fea1e0c234eb3b922206
@@ -225,7 +225,7 @@ F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c 162c4ec0137a549c009bb9ecab550527743cfc5d
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c 361ae0a0f1cbf5a28ad0388a258b104017a370c0
-F src/test_vfs.c b6bab7382f4ed27a67b204250c0c22821c6e3ae9
+F src/test_vfs.c 0ac5b2e3da61bc385c1017890687c359746be2fd
 F src/test_vfstrace.c 2265c9895f350c8d3c39b079998fbe7481505cc1
 F src/test_wholenumber.c 6129adfbe7c7444f2e60cc785927f3aa74e12290
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
@@ -837,7 +837,7 @@ F test/unique.test 083c7fff74695bcc27a71d75699deba3595bc9c2
 F test/unixexcl.test 9d80a54d86d2261f660758928959368ffc36151e
 F test/unordered.test e81169ce2a8f31b2c6b66af691887e1376ab3ced
 F test/update.test 8bc86fd7ef1a00014f76dc6a6a7c974df4aef172
-F test/uri.test 72d31f90b982e65763541db45ef3cb16f797d9fc
+F test/uri.test 062ba42524a5042985e7994dc2289259424b60bf
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
 F test/vacuum.test 29b60e8cc9e573b39676df6c4a75fe9e02d04a09
 F test/vacuum2.test 91a84c9b08adfc4472097d2e8deb0150214e0e76
@@ -930,7 +930,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 44f0874a95408c75a296964a04eef00341abb94a
-R 72226daec7234c928303c103545adaa3
+P 68240e75e87a54cde93352b0ec364d34365a8170
+R 4f397b814ac53bbd808b171d5d8b418c
 U dan
-Z b332a80681747acde88f379c7f0557c6
+Z 87fa4f3faa1bbb8cd013b95e032b042b

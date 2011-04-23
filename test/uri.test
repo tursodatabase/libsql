@@ -13,6 +13,15 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# Test organization:
+#
+#   1.*: That file names are correctly extracted from URIs.
+#   2.*: That URI options (query parameters) are correctly extracted from URIs.
+#   3.*: That specifying an unknown VFS causes an error.
+#   4.*: Tests for specifying other options (other than "vfs").
+#   5.*: Test using a different VFS with an attached database.
+#
+
 set testprefix uri
 db close
 sqlite3_shutdown
@@ -104,7 +113,9 @@ do_test 3.1 {
 } {1 {no such vfs: nosuchvfs}}
 
 #-------------------------------------------------------------------------
-# Test the "readonly" URI option.
+# Test some of the other options (other than "vfs").
+#
+# TODO: Fix this after the list of options is decided.
 #
 do_test 4.0 {
   sqlite3 db test.db
@@ -125,6 +136,61 @@ foreach {tn uri ro} {
   } $RES($ro)
   db close
 }
+
+#-------------------------------------------------------------------------
+# Test that things work if an ATTACHed database uses a different VFS than
+# the main database. The important point is that for all operations 
+# involving the ATTACHed database, the correct versions of the following
+# VFS are used for all operations involving the attached database.
+#
+#     xOpen
+#     xDelete
+#     xAccess
+#     xFullPathname
+#
+
+# This block of code creates two VFS - "tvfs1" and "tvfs2". Each time one
+# of the above methods is called using "tvfs1", global variable ::T1(X) is
+# set, where X is the file-name the method is called on. Calls to the above
+# methods using "tvfs2" set entries in the global T2 array.
+#
+testvfs tvfs1 
+tvfs1 filter {xOpen xDelete xAccess xFullPathname}
+tvfs1 script tvfs1_callback
+proc tvfs1_callback {method filename args} { 
+  set ::T1([file tail $filename]) 1 
+}
+testvfs tvfs2 
+tvfs2 filter {xOpen xDelete xAccess xFullPathname}
+tvfs2 script tvfs2_callback
+proc tvfs2_callback {method filename args} { 
+  set ::T2([file tail $filename]) 1 
+}
+
+eval forcedelete [glob test.db*]
+do_test 5.1.1 {
+  sqlite3 db file:test.db1?vfs=tvfs1
+  execsql {
+    ATTACH 'file:test.db2?vfs=tvfs2' AS aux;
+    PRAGMA main.journal_mode = PERSIST;
+    PRAGMA aux.journal_mode = PERSIST;
+    CREATE TABLE t1(a, b);
+    CREATE TABLE aux.t2(a, b);
+    PRAGMA main.journal_mode = WAL;
+    PRAGMA aux.journal_mode = PERSIST;
+    INSERT INTO t1 VALUES('x', 'y');
+    INSERT INTO t2 VALUES('x', 'y');
+  }
+  lsort [array names ::T1]
+} {test.db1 test.db1-journal test.db1-wal}
+
+do_test 5.1.2 {
+  lsort [array names ::T2]
+} {test.db2 test.db2-journal test.db2-wal}
+
+db close
+tvfs1 delete
+tvfs2 delete
 
 finish_test
 

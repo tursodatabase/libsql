@@ -114,20 +114,21 @@ struct Testvfs {
 **   + Simulating IO errors, and
 **   + Invoking the Tcl callback script.
 */
-#define TESTVFS_SHMOPEN_MASK    0x00000001
-#define TESTVFS_SHMLOCK_MASK    0x00000010
-#define TESTVFS_SHMMAP_MASK     0x00000020
-#define TESTVFS_SHMBARRIER_MASK 0x00000040
-#define TESTVFS_SHMCLOSE_MASK   0x00000080
+#define TESTVFS_SHMOPEN_MASK      0x00000001
+#define TESTVFS_SHMLOCK_MASK      0x00000010
+#define TESTVFS_SHMMAP_MASK       0x00000020
+#define TESTVFS_SHMBARRIER_MASK   0x00000040
+#define TESTVFS_SHMCLOSE_MASK     0x00000080
 
-#define TESTVFS_OPEN_MASK       0x00000100
-#define TESTVFS_SYNC_MASK       0x00000200
-#define TESTVFS_DELETE_MASK     0x00000400
-#define TESTVFS_CLOSE_MASK      0x00000800
-#define TESTVFS_WRITE_MASK      0x00001000
-#define TESTVFS_TRUNCATE_MASK   0x00002000
-#define TESTVFS_ACCESS_MASK     0x00004000
-#define TESTVFS_ALL_MASK        0x00007FFF
+#define TESTVFS_OPEN_MASK         0x00000100
+#define TESTVFS_SYNC_MASK         0x00000200
+#define TESTVFS_DELETE_MASK       0x00000400
+#define TESTVFS_CLOSE_MASK        0x00000800
+#define TESTVFS_WRITE_MASK        0x00001000
+#define TESTVFS_TRUNCATE_MASK     0x00002000
+#define TESTVFS_ACCESS_MASK       0x00004000
+#define TESTVFS_FULLPATHNAME_MASK 0x00008000
+#define TESTVFS_ALL_MASK          0x0001FFFF
 
 
 #define TESTVFS_MAX_PAGES 1024
@@ -675,6 +676,14 @@ static int tvfsFullPathname(
   int nOut, 
   char *zOut
 ){
+  Testvfs *p = (Testvfs *)pVfs->pAppData;
+  if( p->pScript && p->mask&TESTVFS_FULLPATHNAME_MASK ){
+    int rc;
+    tvfsExecTcl(p, "xFullPathname", Tcl_NewStringObj(zPath, -1), 0, 0);
+    if( tvfsResultCode(p, &rc) ){
+      if( rc!=SQLITE_OK ) return rc;
+    }
+  }
   return sqlite3OsFullPathname(PARENTVFS(pVfs), zPath, nOut, zOut);
 }
 
@@ -1040,18 +1049,19 @@ static int testvfs_obj_cmd(
         char *zName;
         int mask;
       } vfsmethod [] = {
-        { "xShmOpen",    TESTVFS_SHMOPEN_MASK },
-        { "xShmLock",    TESTVFS_SHMLOCK_MASK },
-        { "xShmBarrier", TESTVFS_SHMBARRIER_MASK },
-        { "xShmUnmap",   TESTVFS_SHMCLOSE_MASK },
-        { "xShmMap",     TESTVFS_SHMMAP_MASK },
-        { "xSync",       TESTVFS_SYNC_MASK },
-        { "xDelete",     TESTVFS_DELETE_MASK },
-        { "xWrite",      TESTVFS_WRITE_MASK },
-        { "xTruncate",   TESTVFS_TRUNCATE_MASK },
-        { "xOpen",       TESTVFS_OPEN_MASK },
-        { "xClose",      TESTVFS_CLOSE_MASK },
-        { "xAccess",     TESTVFS_ACCESS_MASK },
+        { "xShmOpen",      TESTVFS_SHMOPEN_MASK },
+        { "xShmLock",      TESTVFS_SHMLOCK_MASK },
+        { "xShmBarrier",   TESTVFS_SHMBARRIER_MASK },
+        { "xShmUnmap",     TESTVFS_SHMCLOSE_MASK },
+        { "xShmMap",       TESTVFS_SHMMAP_MASK },
+        { "xSync",         TESTVFS_SYNC_MASK },
+        { "xDelete",       TESTVFS_DELETE_MASK },
+        { "xWrite",        TESTVFS_WRITE_MASK },
+        { "xTruncate",     TESTVFS_TRUNCATE_MASK },
+        { "xOpen",         TESTVFS_OPEN_MASK },
+        { "xClose",        TESTVFS_CLOSE_MASK },
+        { "xAccess",       TESTVFS_ACCESS_MASK },
+        { "xFullPathname", TESTVFS_FULLPATHNAME_MASK },
       };
       Tcl_Obj **apElem = 0;
       int nElem = 0;

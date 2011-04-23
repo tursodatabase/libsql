@@ -1791,9 +1791,9 @@ int sqlite3_limit(sqlite3 *db, int limitId, int newLimit){
 }
 
 /*
-** This function is used to parse filenames passed by the user to API
-** functions sqlite3_open() or sqlite3_open_v2(), and for database filenames
-** specified as part of ATTACH statements.
+** This function is used to parse URIs passed by the user to API functions 
+** sqlite3_open() or sqlite3_open_v2(), and for database URIs specified as 
+** part of ATTACH statements.
 */
 int sqlite3ParseUri(
   const char *zDefaultVfs,        /* VFS to use if no "vfs=xxx" query option */
