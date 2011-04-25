@@ -1,0 +1,63 @@
+# 2011 April 25
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is testing the FTS3 module.
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix fts3conf
+
+# If SQLITE_ENABLE_FTS3 is defined, omit this file.
+ifcapable !fts3 {
+  finish_test
+  return
+}
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t1 USING fts3(x);
+  INSERT INTO t1(rowid, x) VALUES(1, 'a b c d');
+  INSERT INTO t1(rowid, x) VALUES(2, 'e f g h');
+
+  CREATE TABLE source(a, b);
+  INSERT INTO source VALUES(4, 'z');
+  INSERT INTO source VALUES(2, 'y');
+}
+db_save_and_close
+
+set T1 "INTO t1(rowid, x) VALUES(1, 'x')"
+set T2 "INTO t1(rowid, x) SELECT * FROM source"
+
+foreach {tn sql constraint data} [subst {
+  1    "INSERT OR ROLLBACK $T1"   1 {{a b c d} {e f g h}}
+  2    "INSERT OR ABORT    $T1"   1 {{a b c d} {e f g h} {i j k l}}
+  3    "INSERT OR FAIL     $T1"   1 {{a b c d} {e f g h} {i j k l}}
+  4    "INSERT OR IGNORE   $T1"   0 {{a b c d} {e f g h} {i j k l}}
+  5    "INSERT OR REPLACE  $T1"   0 {x {e f g h} {i j k l}}
+
+  6    "INSERT OR ROLLBACK $T2"   1 {{a b c d} {e f g h}}
+  7    "INSERT OR ABORT    $T2"   1 {{a b c d} {e f g h} {i j k l}}
+  8    "INSERT OR FAIL     $T2"   1 {{a b c d} {e f g h} {i j k l} z}
+  9    "INSERT OR IGNORE   $T2"   0 {{a b c d} {e f g h} {i j k l} z}
+  10   "INSERT OR REPLACE  $T2"   0 {{a b c d} y {i j k l} z}
+}] {
+  db_restore_and_reopen
+  execsql { 
+    BEGIN;
+      INSERT INTO t1(rowid, x) VALUES(3, 'i j k l');
+  }
+  set R(0) {0 {}}
+  set R(1) {1 {constraint failed}}
+  do_catchsql_test 1.$tn.1 $sql $R($constraint)
+  do_catchsql_test 1.$tn.2 { SELECT * FROM t1 } [list 0 $data]
+}
+
+finish_test

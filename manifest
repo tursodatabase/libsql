@@ -1,5 +1,5 @@
-C Disable\sthe\stransfer\soptimization\sif\sthe\sdestination\stable\scontains\nany\sforeign\skey\sconstraint\sand\sforeign\skey\sconstraints\sare\senabled.\nTicket\s[6284df89debdf].
-D 2011-04-24T22:56:07.596
+C Add\ssupport\sfor\son\sconflict\sclauses\sto\sfts3/fts4.
+D 2011-04-25T18:49:57.773
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -61,7 +61,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 5653c5654ac9b65bf3646af7e1d695c7e9b991a0
+F ext/fts3/fts3.c 94fa15fc9d6290e2ba042c24fc83e272c86a40c6
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 945926ea4b6a686c3e9834640a252d9870b7191e
 F ext/fts3/fts3_aux.c 9e931f55eed8498dafe7bc1160f10cbb1a652fdf
@@ -74,7 +74,7 @@ F ext/fts3/fts3_snippet.c e857c6a89d81d3b89df59f3b44b35c68d8ed5c62
 F ext/fts3/fts3_tokenizer.c 055f3dc7369585350b28db1ee0f3b214dca6724d
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 6e5cbaa588924ac578263a598e4fb9f5c9bb179d
-F ext/fts3/fts3_write.c c0af09a04021926d7d84094fa950defc9213416d
+F ext/fts3/fts3_write.c 388a7c7119f322d8fd4a5c19c9bd5793da47ccce
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
@@ -138,7 +138,7 @@ F src/global.c 02335177cf6946fe5525c6f0755cf181140debf3
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c cdee360e5cea59db6c4a980e4360499631222af6
+F src/insert.c 3eea5a53d2644116fb865afaa4699fabe62b441c
 F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
@@ -178,9 +178,9 @@ F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c d9d440809025a58547e39f4f268c2a296bfb56ff
 F src/shell.c 72e7e176bf46d5c6518d15ac4ad6847c4bb5df79
-F src/sqlite.h.in fe9a777d43276b4778e92b16a8b89ea6c38bb32b
+F src/sqlite.h.in 92f2daa48c1926d79db79229fb583cdb22d2d4c5
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
-F src/sqliteInt.h ac8f3f5846275c634f6649969304a9e97f6f9854
+F src/sqliteInt.h 5facb244a286e5c9ecd2f59758019f24a9245c8e
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -231,11 +231,11 @@ F src/test_wholenumber.c 6129adfbe7c7444f2e60cc785927f3aa74e12290
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c 604607d6813e9551cf5189d899e0a25c12681080
 F src/trigger.c 144cc18bb701f3286484aae4292a9531f09278c8
-F src/update.c 81911be16ece3c3e7716aa18565b4814ec41f8b9
+F src/update.c 5bcb56e5c7380a2eecb0e71891dbd4ad7437748f
 F src/utf.c d83650c3ea08f7407bd9d0839d9885241c209c60
 F src/util.c 465fe10aabf0ca7d7826a156dab919b0b65c525a
 F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
-F src/vdbe.c 05deeec6659f2579674a5e6510b3ada2a442f8d5
+F src/vdbe.c ac7aab1148964422b0a91ae5d50d31724fbd82ec
 F src/vdbe.h 8a675fefdf7119441fe817c800a9a52440c2e797
 F src/vdbeInt.h fe8f58d305e629fff02f61f655aca1d299f1f6ae
 F src/vdbeapi.c e0e2672e0a96ae3f8575c8ecd02912a3e8a554a1
@@ -243,7 +243,7 @@ F src/vdbeaux.c 9ae5074b19bdff2d8806a278533956fb281510d5
 F src/vdbeblob.c c3ccb7c8732858c680f442932e66ad06bb036562
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
 F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
-F src/vtab.c b0abc931f95af94c9ffdf9f747eb191cda953123
+F src/vtab.c 0e89db3e7416ccdab5138883d69ed8006a7e992c
 F src/wal.c 7334009b396285b658a95a3b6bc6d2b016a1f794
 F src/wal.h 7a5fbb00114b7f2cd40c7e1003d4c41ce9d26840
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
@@ -450,11 +450,12 @@ F test/fts3al.test 07d64326e79bbdbab20ee87fc3328fbf01641c9f
 F test/fts3am.test 218aa6ba0dfc50c7c16b2022aac5c6be593d08d8
 F test/fts3an.test a49ccadc07a2f7d646ec1b81bc09da2d85a85b18
 F test/fts3ao.test b83f99f70e9eec85f27d75801a974b3f820e01f9
-F test/fts3atoken.test bbb9e63a915f3df0e35d06e0add932b5bf2d54a9
-F test/fts3aux1.test 719c35cbbcc04dde8e5a54a6f69851a0af9ed1f2
+F test/fts3atoken.test 402ef2f7c2fb4b3d4fa0587df6441c1447e799b3
+F test/fts3aux1.test 0b02743955d56fc0d4d66236a26177bd1b726de0
 F test/fts3b.test e93bbb653e52afde110ad53bbd793f14fe7a8984
 F test/fts3c.test fc723a9cf10b397fdfc2b32e73c53c8b1ec02958
 F test/fts3comp1.test a0f5b16a2df44dd0b15751787130af2183167c0c
+F test/fts3conf.test 2dc3bce3fe20d1e9b0ecd27d4040d07a2b79d16b
 F test/fts3corrupt.test 7890cc202406858386ddf390a879dcf80bc10abf
 F test/fts3corrupt2.test 6d96efae2f8a6af3eeaf283aba437e6d0e5447ba
 F test/fts3cov.test e0fb00d8b715ddae4a94c305992dfc3ef70353d7
@@ -930,7 +931,10 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 0ab24b133e332ad7f4517b8e113e9c241ee9af9f
-R 40e74cf200b39d155b455f390ce862eb
-U drh
-Z 87bc3e585b95e6d3397bca153c02ab82
+P ddeea5ab5f6c0c4a86cdfbbb9f24d9d54bf8d301
+R ca5f1cf4bf0f7df53478a4e115a67980
+T *branch * vtab-conflict
+T *sym-vtab-conflict *
+T -sym-trunk *
+U dan
+Z dd80c4f8ae24b83ff1c8f809d0d54000

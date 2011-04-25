@@ -524,6 +524,8 @@ static void fts3DeclareVtab(int *pRc, Fts3Table *p){
     char *zSql;                   /* SQL statement passed to declare_vtab() */
     char *zCols;                  /* List of user defined columns */
 
+    sqlite3_vtab_config(p->db, SQLITE_VTAB_CONSTRAINT_SUPPORT, 1);
+
     /* Create a list of user columns for the virtual table */
     zCols = sqlite3_mprintf("%Q, ", p->azColumn[0]);
     for(i=1; zCols && i<p->nColumn; i++){

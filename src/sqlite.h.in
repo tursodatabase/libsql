@@ -6389,6 +6389,26 @@ int sqlite3_wal_checkpoint_v2(
 #define SQLITE_CHECKPOINT_FULL    1
 #define SQLITE_CHECKPOINT_RESTART 2
 
+/*
+** CAPI3REF: Virtual Table Interface Configuration
+*/
+int sqlite3_vtab_config(sqlite3*, int op, ...);
+
+/*
+** CAPI3REF: Determine The Virtual Table Conflict Policy
+*/
+#define SQLITE_VTAB_CONSTRAINT_SUPPORT 1
+int sqlite3_vtab_on_conflict(sqlite3 *);
+
+/*
+** CAPI3REF: Virtual Table Conflict Policies
+*/
+#define SQLITE_ROLLBACK 1
+/* #define SQLITE_IGNORE 2 */
+#define SQLITE_FAIL     3
+/* #define SQLITE_ABORT 4 */
+#define SQLITE_REPLACE  5
+
 
 /*
 ** Undo the hack that converts floating point types to integer for
