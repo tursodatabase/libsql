@@ -1,5 +1,5 @@
-C Add\sthe\s(deliberately\sundocumented)\ssqlite_log()\sSQL\sfunction\sas\sa\sbuilt-in.
-D 2011-04-25T18:03:10.263
+C Test\scase\sfor\sthe\s".log"\scommand\sto\sthe\scommand-line\sshell.
+D 2011-04-25T18:20:04.278
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -912,7 +912,7 @@ F tool/omittest.tcl b1dd290c1596e0f31fd335160a74ec5dfea3df4a
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
-F tool/shell1.test fee04fce1bf55e6e081523545fd4e0e83490ff8e
+F tool/shell1.test 44705d6078b37f58853005d2ad5f1e67bc9dbbed
 F tool/shell2.test 5dc76b8005b465f420fed8241621da7513060ff3
 F tool/shell3.test 4fad469e8003938426355afdf34155f08c587836
 F tool/shell4.test 35f9c3d452b4e76d5013c63e1fd07478a62f14ce
@@ -930,7 +930,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 4c7ff4dd352276e9c01cc536e188cbcd69396952
-R 02826977cda64533dcdcab57c0092168
+P f7806e03995b314771aa72a08ce55d56d60096cf
+R 90125b981bcf635951ddc9b0441cae0d
 U drh
-Z ae88889f134cbeb0e55dabbab9faed47
+Z da6f87ac8d880cc9cef1dbf3763cd407
