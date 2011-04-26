@@ -2013,6 +2013,15 @@ int sqlite3VdbeCloseStatement(Vdbe *p, int eOp){
     db->nStatement--;
     p->iStatement = 0;
 
+    if( rc==SQLITE_OK ){
+      if( eOp==SAVEPOINT_ROLLBACK ){
+        rc = sqlite3VtabSavepoint(db, SAVEPOINT_ROLLBACK, iSavepoint);
+      }
+      if( rc==SQLITE_OK ){
+        rc = sqlite3VtabSavepoint(db, SAVEPOINT_RELEASE, iSavepoint);
+      }
+    }
+
     /* If the statement transaction is being rolled back, also restore the 
     ** database handles deferred constraint counter to the value it had when 
     ** the statement transaction was opened.  */

@@ -2821,7 +2821,11 @@ case OP_Transaction: {
         db->nStatement++; 
         p->iStatement = db->nSavepoint + db->nStatement;
       }
-      rc = sqlite3BtreeBeginStmt(pBt, p->iStatement);
+
+      rc = sqlite3VtabSavepoint(db, SAVEPOINT_BEGIN, p->iStatement);
+      if( rc==SQLITE_OK ){
+        rc = sqlite3BtreeBeginStmt(pBt, p->iStatement);
+      }
 
       /* Store the current value of the database handles deferred constraint
       ** counter. If the statement transaction needs to be rolled back,

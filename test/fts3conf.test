@@ -22,7 +22,43 @@ ifcapable !fts3 {
   return
 }
 
-do_execsql_test 1.0 {
+
+proc fts3_integrity {tn db tbl} {
+
+  if {[sqlite3_get_autocommit $db]==0} {
+    error "fts3_integrity does not work with an open transaction"
+  }
+
+  set sql [db one {SELECT sql FROM sqlite_master WHERE name = $tbl}]
+  regexp -nocase {[^(]* using (.*)} $sql -> tail
+  set cols [list]
+  $db eval "PRAGMA table_info($tbl)" {
+    lappend cols $name
+  }
+  set cols [join [concat docid $cols] ,]
+
+  $db eval [subst {
+    CREATE VIRTUAL TABLE fts3check USING fts4term($tbl);
+    CREATE VIRTUAL TABLE temp.fts3check2 USING $tail;
+    INSERT INTO temp.fts3check2($cols) SELECT docid, * FROM $tbl;
+    CREATE VIRTUAL TABLE temp.fts3check3 USING fts4term(fts3check2);
+  }]
+
+  set m1 [$db one {SELECT md5sum(term, docid, col, pos) FROM fts3check}]
+  set m2 [$db one {SELECT md5sum(term, docid, col, pos) FROM fts3check3}]
+
+  $db eval {
+    DROP TABLE fts3check;
+    DROP TABLE temp.fts3check2;
+    DROP TABLE temp.fts3check3;
+  }
+  
+  uplevel [list do_test $tn [list set {} $m1] $m2]
+}
+
+
+
+do_execsql_test 1.0.1 {
   CREATE VIRTUAL TABLE t1 USING fts3(x);
   INSERT INTO t1(rowid, x) VALUES(1, 'a b c d');
   INSERT INTO t1(rowid, x) VALUES(2, 'e f g h');
@@ -36,6 +72,9 @@ db_save_and_close
 set T1 "INTO t1(rowid, x) VALUES(1, 'x')"
 set T2 "INTO t1(rowid, x) SELECT * FROM source"
 
+set T3 "t1 SET docid = 2 WHERE docid = 1"
+set T4 "t1 SET docid = CASE WHEN docid = 1 THEN 4 ELSE 3 END WHERE docid <=2"
+
 foreach {tn sql constraint data} [subst {
   1    "INSERT OR ROLLBACK $T1"   1 {{a b c d} {e f g h}}
   2    "INSERT OR ABORT    $T1"   1 {{a b c d} {e f g h} {i j k l}}
@@ -48,6 +87,18 @@ foreach {tn sql constraint data} [subst {
   8    "INSERT OR FAIL     $T2"   1 {{a b c d} {e f g h} {i j k l} z}
   9    "INSERT OR IGNORE   $T2"   0 {{a b c d} {e f g h} {i j k l} z}
   10   "INSERT OR REPLACE  $T2"   0 {{a b c d} y {i j k l} z}
+
+  11   "UPDATE OR ROLLBACK $T3"   1 {{a b c d} {e f g h}}
+  12   "UPDATE OR ABORT    $T3"   1 {{a b c d} {e f g h} {i j k l}}
+  13   "UPDATE OR FAIL     $T3"   1 {{a b c d} {e f g h} {i j k l}}
+  14   "UPDATE OR IGNORE   $T3"   0 {{a b c d} {e f g h} {i j k l}}
+  15   "UPDATE OR REPLACE  $T3"   0 {{a b c d} {i j k l}}
+
+  16   "UPDATE OR ROLLBACK $T4"   1 {{a b c d} {e f g h}}
+  17   "UPDATE OR ABORT    $T4"   1 {{a b c d} {e f g h} {i j k l}}
+  18   "UPDATE OR FAIL     $T4"   1 {{e f g h} {i j k l} {a b c d}}
+  19   "UPDATE OR IGNORE   $T4"   0 {{e f g h} {i j k l} {a b c d}}
+  20   "UPDATE OR REPLACE  $T4"   0 {{e f g h} {a b c d}}
 }] {
   db_restore_and_reopen
   execsql { 
@@ -58,6 +109,10 @@ foreach {tn sql constraint data} [subst {
   set R(1) {1 {constraint failed}}
   do_catchsql_test 1.$tn.1 $sql $R($constraint)
   do_catchsql_test 1.$tn.2 { SELECT * FROM t1 } [list 0 $data]
+  catchsql COMMIT
+
+  fts3_integrity 1.$tn.3 db t1
 }
+
 
 finish_test

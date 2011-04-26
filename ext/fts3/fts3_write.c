@@ -2711,15 +2711,31 @@ int sqlite3Fts3UpdateMethod(
   ** modify the database file.
   */
   if( nArg>1 ){
-    sqlite3_int64 iNewRowid;
+    /* Find the value object that holds the new rowid value. */
     sqlite3_value *pNewRowid = apVal[3+p->nColumn];
     if( sqlite3_value_type(pNewRowid)==SQLITE_NULL ){
       pNewRowid = apVal[1];
     }
+
     if( sqlite3_value_type(pNewRowid)!=SQLITE_NULL && ( 
         sqlite3_value_type(apVal[0])==SQLITE_NULL
      || sqlite3_value_int64(apVal[0])!=sqlite3_value_int64(pNewRowid)
     )){
+      /* The new rowid is not NULL (in this case the rowid will be
+      ** automatically assigned and there is no chance of a conflict), and 
+      ** the statement is either an INSERT or an UPDATE that modifies the
+      ** rowid column. So if the conflict mode is REPLACE, then delete any
+      ** existing row with rowid=pNewRowid. 
+      **
+      ** Or, if the conflict mode is not REPLACE, insert the new record into 
+      ** the %_content table. If we hit the duplicate rowid constraint (or any
+      ** other error) while doing so, return immediately.
+      **
+      ** This branch may also run if pNewRowid contains a value that cannot
+      ** be losslessly converted to an integer. In this case, the eventual 
+      ** call to fts3InsertData() (either just below or further on in this
+      ** function) will return SQLITE_MISMATCH.
+      */
       if( sqlite3_vtab_on_conflict(p->db)==SQLITE_REPLACE ){
         rc = fts3DeleteByRowid(p, pNewRowid, &nChng, aSzDel);
       }else{

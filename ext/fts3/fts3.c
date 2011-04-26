@@ -3544,8 +3544,19 @@ static int fts3RenameMethod(
   return rc;
 }
 
+static int fts3SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
+  return sqlite3Fts3PendingTermsFlush((Fts3Table *)pVtab);
+}
+static int fts3ReleaseMethod(sqlite3_vtab *pVtab, int iSavepoint){
+  return SQLITE_OK;
+}
+static int fts3RollbackToMethod(sqlite3_vtab *pVtab, int iSavepoint){
+  sqlite3Fts3PendingTermsClear((Fts3Table *)pVtab);
+  return SQLITE_OK;
+}
+
 static const sqlite3_module fts3Module = {
-  /* iVersion      */ 0,
+  /* iVersion      */ 1,
   /* xCreate       */ fts3CreateMethod,
   /* xConnect      */ fts3ConnectMethod,
   /* xBestIndex    */ fts3BestIndexMethod,
@@ -3565,6 +3576,9 @@ static const sqlite3_module fts3Module = {
   /* xRollback     */ fts3RollbackMethod,
   /* xFindFunction */ fts3FindFunctionMethod,
   /* xRename */       fts3RenameMethod,
+  /* xSavepoint    */ fts3SavepointMethod,
+  /* xRelease      */ fts3ReleaseMethod,
+  /* xRollbackTo   */ fts3RollbackToMethod,
 };
 
 /*
@@ -3609,6 +3623,11 @@ int sqlite3Fts3Init(sqlite3 *db){
 #ifdef SQLITE_ENABLE_ICU
   const sqlite3_tokenizer_module *pIcu = 0;
   sqlite3Fts3IcuTokenizerModule(&pIcu);
+#endif
+
+#ifdef SQLITE_TEST
+  rc = sqlite3Fts3InitTerm(db);
+  if( rc!=SQLITE_OK ) return rc;
 #endif
 
   rc = sqlite3Fts3InitAux(db);

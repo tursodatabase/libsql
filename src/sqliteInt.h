@@ -3049,6 +3049,7 @@ void sqlite3AutoLoadExtensions(sqlite3*);
 #  define sqlite3VtabLock(X) 
 #  define sqlite3VtabUnlock(X)
 #  define sqlite3VtabUnlockList(X)
+#  define sqlite3VtabSavepoint(X, Y, Z) SQLITE_OK
 #else
    void sqlite3VtabClear(sqlite3 *db, Table*);
    int sqlite3VtabSync(sqlite3 *db, char **);
@@ -3057,6 +3058,7 @@ void sqlite3AutoLoadExtensions(sqlite3*);
    void sqlite3VtabLock(VTable *);
    void sqlite3VtabUnlock(VTable *);
    void sqlite3VtabUnlockList(sqlite3*);
+   int sqlite3VtabSavepoint(sqlite3 *, int, int);
 #  define sqlite3VtabInSync(db) ((db)->nVTrans>0 && (db)->aVTrans==0)
 #endif
 void sqlite3VtabMakeWritable(Parse*,Table*);

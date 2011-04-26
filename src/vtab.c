@@ -836,7 +836,6 @@ int sqlite3VtabBegin(sqlite3 *db, VTable *pVTab){
   if( pModule->xBegin ){
     int i;
 
-
     /* If pVtab is already in the aVTrans array, return early */
     for(i=0; i<db->nVTrans; i++){
       if( db->aVTrans[i]==pVTab ){
@@ -848,6 +847,32 @@ int sqlite3VtabBegin(sqlite3 *db, VTable *pVTab){
     rc = pModule->xBegin(pVTab->pVtab);
     if( rc==SQLITE_OK ){
       rc = addToVTrans(db, pVTab);
+    }
+  }
+  return rc;
+}
+
+int sqlite3VtabSavepoint(sqlite3 *db, int op, int iSavepoint){
+  int i;
+  int rc = SQLITE_OK;
+
+  assert( op==SAVEPOINT_RELEASE||op==SAVEPOINT_ROLLBACK||op==SAVEPOINT_BEGIN );
+
+  for(i=0; rc==SQLITE_OK && i<db->nVTrans; i++){
+    sqlite3_vtab *pVtab = db->aVTrans[i]->pVtab;
+    sqlite3_module *pMod = db->aVTrans[i]->pMod->pModule;
+    if( pMod->iVersion>=1 ){
+      switch( op ){
+        case SAVEPOINT_BEGIN:
+          rc = pMod->xSavepoint(pVtab, iSavepoint);
+          break;
+        case SAVEPOINT_ROLLBACK:
+          rc = pMod->xRollbackTo(pVtab, iSavepoint);
+          break;
+        default:
+          rc = pMod->xRelease(pVtab, iSavepoint);
+          break;
+      }
     }
   }
   return rc;
