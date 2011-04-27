@@ -1,5 +1,5 @@
-C Fix\sa\scomment\stypo.
-D 2011-04-27T01:00:17.858
+C Expose\sthe\sUTF8\sto\sMBCS\sconversion\sroutine\sin\sos_win.c\sto\sexternal\napplications.
+D 2011-04-27T16:05:42.346
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,7 +163,7 @@ F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 2c67d126874b78eb427371db4793f0e8fbc7448b
-F src/os_win.c d149b9a7dfdd38de09afc054f8168cd3cd80630b
+F src/os_win.c 0d2fb750f74e403b40286fd500882dcea93db275
 F src/pager.c 055239dcdfe12b3f5d97f6f01f85da01e2d6d912
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -930,7 +930,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 7d0ff26a95cb1e9fcace4641245dda787f3522b4
-R d24ac9411a98171848004eba2e415ab8
+P 19c6625abd5b4e6a4406a8e421ae22527529e305
+R fcd8fa82794547de86a43c56e868f9a6
 U drh
-Z 23b5de7727bb069a870fe57a3628ffd6
+Z f1379103c390c9054c004f3716fc6621
