@@ -2734,7 +2734,9 @@ int sqlite3Fts3UpdateMethod(
       ** This branch may also run if pNewRowid contains a value that cannot
       ** be losslessly converted to an integer. In this case, the eventual 
       ** call to fts3InsertData() (either just below or further on in this
-      ** function) will return SQLITE_MISMATCH.
+      ** function) will return SQLITE_MISMATCH. If fts3DeleteByRowid is 
+      ** invoked, it will delete zero rows (since no row will have
+      ** docid=$pNewRowid if $pNewRowid is not an integer value).
       */
       if( sqlite3_vtab_on_conflict(p->db)==SQLITE_REPLACE ){
         rc = fts3DeleteByRowid(p, pNewRowid, &nChng, aSzDel);

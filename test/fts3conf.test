@@ -56,15 +56,15 @@ proc fts3_integrity {tn db tbl} {
   uplevel [list do_test $tn [list set {} $m1] $m2]
 }
 
+# Return true if the SQL statement passed as the second argument uses a
+# statement transaction.
+#
 proc sql_uses_stmt {db sql} {
   set stmt [sqlite3_prepare db $sql -1 dummy]
   set uses [uses_stmt_journal $stmt]
   sqlite3_finalize $stmt
   return $uses
 }
-
-
-
 
 do_execsql_test 1.0.1 {
   CREATE VIRTUAL TABLE t1 USING fts3(x);
@@ -135,5 +135,15 @@ do_execsql_test 2.1.1 {
 }
 fts3_integrity 2.1.2 db t1
 
+do_catchsql_test 2.2.1 {
+  DELETE FROM t1;
+  BEGIN;
+    INSERT INTO t1(docid, x) VALUES(0, 'a b c');
+    INSERT INTO t1(docid, x) VALUES(1, 'a b c');
+    REPLACE INTO t1(docid, x) VALUES('zero', 'd e f');
+} {1 {datatype mismatch}}
+do_execsql_test 2.2.2 { COMMIT }
+do_execsql_test 2.2.3 { SELECT * FROM t1 } {{a b c} {a b c}}
+fts3_integrity 2.2.4 db t1
 
 finish_test

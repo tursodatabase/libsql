@@ -1,5 +1,5 @@
-C Fix\sproblems\srelated\sto\ssavepoint\srollback\sand\sfts3.
-D 2011-04-27T12:08:04.566
+C Add\sdocumentation\sfor\sthe\snewly\sintroduced\ssqlite3_vtab_config()\sand\son_conflict()\sAPI\sfunctions.\sTest\sthat\sencountering\san\sSQLITE_MISMATCH\sin\sfts3\sdoes\snot\scorrupt\sthe\sfull\stext\sindex.
+D 2011-04-27T16:02:46.459
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -75,7 +75,7 @@ F ext/fts3/fts3_term.c c1dbc904ab1c2d687b97643c671795456228ab22
 F ext/fts3/fts3_tokenizer.c 055f3dc7369585350b28db1ee0f3b214dca6724d
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 6e5cbaa588924ac578263a598e4fb9f5c9bb179d
-F ext/fts3/fts3_write.c b4dfd76d61adb183b87c56573a1bdd0e1d1501da
+F ext/fts3/fts3_write.c 21ddcc47906807fb9481a0cc161db73469645d68
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
@@ -179,7 +179,7 @@ F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c d9d440809025a58547e39f4f268c2a296bfb56ff
 F src/shell.c 72e7e176bf46d5c6518d15ac4ad6847c4bb5df79
-F src/sqlite.h.in 3dc514ef85adfdb6377abee4fb780b420fc43f5e
+F src/sqlite.h.in 5d25d06b8ae0d624179dba9bebb7cce48ce831f0
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
 F src/sqliteInt.h e70a03bb66d209e279b3edeb57d4fdc42a1d9fda
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -456,7 +456,7 @@ F test/fts3aux1.test 0b02743955d56fc0d4d66236a26177bd1b726de0
 F test/fts3b.test e93bbb653e52afde110ad53bbd793f14fe7a8984
 F test/fts3c.test fc723a9cf10b397fdfc2b32e73c53c8b1ec02958
 F test/fts3comp1.test a0f5b16a2df44dd0b15751787130af2183167c0c
-F test/fts3conf.test 7b71b8a5f21481dfae43b9f7a26f2506fc2f9e70
+F test/fts3conf.test 600b366bb658842d78ed72e05476d14c2409d539
 F test/fts3corrupt.test 7890cc202406858386ddf390a879dcf80bc10abf
 F test/fts3corrupt2.test 6d96efae2f8a6af3eeaf283aba437e6d0e5447ba
 F test/fts3cov.test e0fb00d8b715ddae4a94c305992dfc3ef70353d7
@@ -932,7 +932,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P fb4a355871d9482ccb28b6ba03b842b3cc87b696
-R 7aaab6bc74b8e2e016b6645549f49c48
+P ff69f823f23e6fb6e8b2857c4576d9c0732d9572
+R da0922898dc0b07ed5b043ad92b8294b
 U dan
-Z e77f5258c98bca31cf26e41c03abebcf
+Z fc25e1a6e640452f4b097e45b1091129
