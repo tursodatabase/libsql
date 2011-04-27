@@ -1,5 +1,5 @@
-C Change\sthe\sname\sof\san\sinternal\sfunction\sto\savoid\sconflicts\swith\sthe\smath\nlibrary.
-D 2011-04-27T18:08:42.071
+C In\swindows,\signore\sERROR_NOT_LOCKED\swhen\scalling\sthe\sread-lock\sremoval\nroutine.
+D 2011-04-27T19:54:44.305
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,7 +163,7 @@ F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 2c67d126874b78eb427371db4793f0e8fbc7448b
-F src/os_win.c 0d2fb750f74e403b40286fd500882dcea93db275
+F src/os_win.c 4271f0bf733c0b45635ddcfb41c935573de8284c
 F src/pager.c 055239dcdfe12b3f5d97f6f01f85da01e2d6d912
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -930,7 +930,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 7b479b9bee93df909edecd44c7d6584d943b39c9
-R 896972878681caa8688ae0b699a33ade
+P 1bd1484cd7e09709d87aa84b82e87597d00a4162
+R 9628f97d1cf37de85ec8d2f9df941216
 U drh
-Z 901a5c52f94c833aabdd9b6dd2fd3b65
+Z cb18bd6131d197c3ee5b628d2860f479

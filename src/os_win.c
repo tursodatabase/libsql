@@ -1052,7 +1052,7 @@ static int unlockReadLock(winFile *pFile){
     res = UnlockFile(pFile->h, SHARED_FIRST + pFile->sharedLockByte, 0, 1, 0);
 #endif
   }
-  if( res == 0 ){
+  if( res==0 && GetLastError()!=ERROR_NOT_LOCKED ){
     pFile->lastErrno = GetLastError();
     winLogError(SQLITE_IOERR_UNLOCK, "unlockReadLock", pFile->zPath);
   }
