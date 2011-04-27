@@ -656,8 +656,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
   char *zErr = 0;
 
   sqlite3_mutex_enter(db->mutex);
-  pTab = db->pVtabCtx->pTab;
-  if( !pTab ){
+  if( !db->pVtabCtx || !(pTab = db->pVtabCtx->pTab) ){
     sqlite3Error(db, SQLITE_MISUSE, 0);
     sqlite3_mutex_leave(db->mutex);
     return SQLITE_MISUSE_BKPT;
@@ -852,26 +851,43 @@ int sqlite3VtabBegin(sqlite3 *db, VTable *pVTab){
   return rc;
 }
 
+/*
+** Invoke either the xSavepoint, xRollbackTo or xRelease method of all
+** virtual tables that currently have an open transaction. Pass iSavepoint
+** as the second argument to the virtual table method invoked.
+**
+** If op is SAVEPOINT_BEGIN, the xSavepoint method is invoked. If it is
+** SAVEPOINT_ROLLBACK, the xRollbackTo method. Otherwise, if op is 
+** SAVEPOINT_RELEASE, then the xRelease method of each virtual table with
+** an open transaction is invoked.
+**
+** If any virtual table method returns an error code other than SQLITE_OK, 
+** processing is abandoned and the error returned to the caller of this
+** function immediately. If all calls to virtual table methods are successful,
+** SQLITE_OK is returned.
+*/
 int sqlite3VtabSavepoint(sqlite3 *db, int op, int iSavepoint){
-  int i;
   int rc = SQLITE_OK;
 
   assert( op==SAVEPOINT_RELEASE||op==SAVEPOINT_ROLLBACK||op==SAVEPOINT_BEGIN );
-
-  for(i=0; rc==SQLITE_OK && i<db->nVTrans; i++){
-    sqlite3_vtab *pVtab = db->aVTrans[i]->pVtab;
-    sqlite3_module *pMod = db->aVTrans[i]->pMod->pModule;
-    if( pMod->iVersion>=1 ){
-      switch( op ){
-        case SAVEPOINT_BEGIN:
-          rc = pMod->xSavepoint(pVtab, iSavepoint);
-          break;
-        case SAVEPOINT_ROLLBACK:
-          rc = pMod->xRollbackTo(pVtab, iSavepoint);
-          break;
-        default:
-          rc = pMod->xRelease(pVtab, iSavepoint);
-          break;
+  if( db->aVTrans ){
+    int i;
+    for(i=0; rc==SQLITE_OK && i<db->nVTrans; i++){
+      const sqlite3_module *pMod = db->aVTrans[i]->pMod->pModule;
+      if( pMod->iVersion>=1 ){
+        int (*xMethod)(sqlite3_vtab *, int);
+        switch( op ){
+          case SAVEPOINT_BEGIN:
+            xMethod = pMod->xSavepoint;
+            break;
+          case SAVEPOINT_ROLLBACK:
+            xMethod = pMod->xRollbackTo;
+            break;
+          default:
+            xMethod = pMod->xRelease;
+            break;
+        }
+        if( xMethod ) rc = xMethod(db->aVTrans[i]->pVtab, iSavepoint);
       }
     }
   }

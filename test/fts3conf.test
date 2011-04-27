@@ -56,6 +56,14 @@ proc fts3_integrity {tn db tbl} {
   uplevel [list do_test $tn [list set {} $m1] $m2]
 }
 
+proc sql_uses_stmt {db sql} {
+  set stmt [sqlite3_prepare db $sql -1 dummy]
+  set uses [uses_stmt_journal $stmt]
+  sqlite3_finalize $stmt
+  return $uses
+}
+
+
 
 
 do_execsql_test 1.0.1 {
@@ -75,30 +83,30 @@ set T2 "INTO t1(rowid, x) SELECT * FROM source"
 set T3 "t1 SET docid = 2 WHERE docid = 1"
 set T4 "t1 SET docid = CASE WHEN docid = 1 THEN 4 ELSE 3 END WHERE docid <=2"
 
-foreach {tn sql constraint data} [subst {
-  1    "INSERT OR ROLLBACK $T1"   1 {{a b c d} {e f g h}}
-  2    "INSERT OR ABORT    $T1"   1 {{a b c d} {e f g h} {i j k l}}
-  3    "INSERT OR FAIL     $T1"   1 {{a b c d} {e f g h} {i j k l}}
-  4    "INSERT OR IGNORE   $T1"   0 {{a b c d} {e f g h} {i j k l}}
-  5    "INSERT OR REPLACE  $T1"   0 {x {e f g h} {i j k l}}
+foreach {tn sql uses constraint data} [subst {
+  1    "INSERT OR ROLLBACK $T1"   0 1 {{a b c d} {e f g h}}
+  2    "INSERT OR ABORT    $T1"   0 1 {{a b c d} {e f g h} {i j k l}}
+  3    "INSERT OR FAIL     $T1"   0 1 {{a b c d} {e f g h} {i j k l}}
+  4    "INSERT OR IGNORE   $T1"   0 0 {{a b c d} {e f g h} {i j k l}}
+  5    "INSERT OR REPLACE  $T1"   0 0 {x {e f g h} {i j k l}}
 
-  6    "INSERT OR ROLLBACK $T2"   1 {{a b c d} {e f g h}}
-  7    "INSERT OR ABORT    $T2"   1 {{a b c d} {e f g h} {i j k l}}
-  8    "INSERT OR FAIL     $T2"   1 {{a b c d} {e f g h} {i j k l} z}
-  9    "INSERT OR IGNORE   $T2"   0 {{a b c d} {e f g h} {i j k l} z}
-  10   "INSERT OR REPLACE  $T2"   0 {{a b c d} y {i j k l} z}
+  6    "INSERT OR ROLLBACK $T2"   1 1 {{a b c d} {e f g h}}
+  7    "INSERT OR ABORT    $T2"   1 1 {{a b c d} {e f g h} {i j k l}}
+  8    "INSERT OR FAIL     $T2"   1 1 {{a b c d} {e f g h} {i j k l} z}
+  9    "INSERT OR IGNORE   $T2"   1 0 {{a b c d} {e f g h} {i j k l} z}
+  10   "INSERT OR REPLACE  $T2"   1 0 {{a b c d} y {i j k l} z}
 
-  11   "UPDATE OR ROLLBACK $T3"   1 {{a b c d} {e f g h}}
-  12   "UPDATE OR ABORT    $T3"   1 {{a b c d} {e f g h} {i j k l}}
-  13   "UPDATE OR FAIL     $T3"   1 {{a b c d} {e f g h} {i j k l}}
-  14   "UPDATE OR IGNORE   $T3"   0 {{a b c d} {e f g h} {i j k l}}
-  15   "UPDATE OR REPLACE  $T3"   0 {{a b c d} {i j k l}}
+  11   "UPDATE OR ROLLBACK $T3"   1 1 {{a b c d} {e f g h}}
+  12   "UPDATE OR ABORT    $T3"   1 1 {{a b c d} {e f g h} {i j k l}}
+  13   "UPDATE OR FAIL     $T3"   1 1 {{a b c d} {e f g h} {i j k l}}
+  14   "UPDATE OR IGNORE   $T3"   1 0 {{a b c d} {e f g h} {i j k l}}
+  15   "UPDATE OR REPLACE  $T3"   1 0 {{a b c d} {i j k l}}
 
-  16   "UPDATE OR ROLLBACK $T4"   1 {{a b c d} {e f g h}}
-  17   "UPDATE OR ABORT    $T4"   1 {{a b c d} {e f g h} {i j k l}}
-  18   "UPDATE OR FAIL     $T4"   1 {{e f g h} {i j k l} {a b c d}}
-  19   "UPDATE OR IGNORE   $T4"   0 {{e f g h} {i j k l} {a b c d}}
-  20   "UPDATE OR REPLACE  $T4"   0 {{e f g h} {a b c d}}
+  16   "UPDATE OR ROLLBACK $T4"   1 1 {{a b c d} {e f g h}}
+  17   "UPDATE OR ABORT    $T4"   1 1 {{a b c d} {e f g h} {i j k l}}
+  18   "UPDATE OR FAIL     $T4"   1 1 {{e f g h} {i j k l} {a b c d}}
+  19   "UPDATE OR IGNORE   $T4"   1 0 {{e f g h} {i j k l} {a b c d}}
+  20   "UPDATE OR REPLACE  $T4"   1 0 {{e f g h} {a b c d}}
 }] {
   db_restore_and_reopen
   execsql { 
@@ -112,7 +120,20 @@ foreach {tn sql constraint data} [subst {
   catchsql COMMIT
 
   fts3_integrity 1.$tn.3 db t1
+
+  do_test 1.$tn.4 [list sql_uses_stmt db $sql] $uses
 }
+
+do_execsql_test 2.1.1 {
+  DELETE FROM t1;
+  BEGIN;
+    INSERT INTO t1 VALUES('a b c');
+    SAVEPOINT a;
+      INSERT INTO t1 VALUES('x y z');
+    ROLLBACK TO a;
+  COMMIT;
+}
+fts3_integrity 2.1.2 db t1
 
 
 finish_test

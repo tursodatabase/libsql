@@ -2580,6 +2580,14 @@ case OP_Savepoint: {
     }else{
       nName = sqlite3Strlen30(zName);
 
+      /* This call is Ok even if this savepoint is actually a transaction
+      ** savepoint (and therefore should not prompt xSavepoint()) callbacks.
+      ** If this is a transaction savepoint being opened, it is guaranteed
+      ** that the db->aVTrans[] array is empty.  */
+      assert( db->autoCommit==0 || db->nVTrans==0 );
+      rc = sqlite3VtabSavepoint(db, SAVEPOINT_BEGIN, p->iStatement);
+      if( rc!=SQLITE_OK ) goto abort_due_to_error;
+
       /* Create a new savepoint structure. */
       pNew = sqlite3DbMallocRaw(db, sizeof(Savepoint)+nName+1);
       if( pNew ){
@@ -2685,6 +2693,11 @@ case OP_Savepoint: {
         }
       }else{
         db->nDeferredCons = pSavepoint->nDeferredCons;
+      }
+
+      if( !isTransaction ){
+        rc = sqlite3VtabSavepoint(db, p1, iSavepoint);
+        if( rc!=SQLITE_OK ) goto abort_due_to_error;
       }
     }
   }
