@@ -56,16 +56,6 @@ proc fts3_integrity {tn db tbl} {
   uplevel [list do_test $tn [list set {} $m1] $m2]
 }
 
-# Return true if the SQL statement passed as the second argument uses a
-# statement transaction.
-#
-proc sql_uses_stmt {db sql} {
-  set stmt [sqlite3_prepare db $sql -1 dummy]
-  set uses [uses_stmt_journal $stmt]
-  sqlite3_finalize $stmt
-  return $uses
-}
-
 do_execsql_test 1.0.1 {
   CREATE VIRTUAL TABLE t1 USING fts3(x);
   INSERT INTO t1(rowid, x) VALUES(1, 'a b c d');

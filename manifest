@@ -1,5 +1,5 @@
-C Add\sdocumentation\sfor\sthe\snewly\sintroduced\ssqlite3_vtab_config()\sand\son_conflict()\sAPI\sfunctions.\sTest\sthat\sencountering\san\sSQLITE_MISMATCH\sin\sfts3\sdoes\snot\scorrupt\sthe\sfull\stext\sindex.
-D 2011-04-27T16:02:46.459
+C Have\sr-tree\svirtual\stables\ssupport\son-conflict\sclauses.
+D 2011-04-28T18:46:46.861
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -82,9 +82,9 @@ F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c eb9ae1d79046bd7871aa97ee6da51eb770134b5a
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c f5fa951eba03c41d292958064604a033021acdee
+F ext/rtree/rtree.c 829c6901a2b065ff93a68d431f9eaba8de7128e0
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
-F ext/rtree/rtree1.test dbd4250ac0ad367a262eb9676f7e3080b0368206
+F ext/rtree/rtree1.test 28e1b8da4da98093ce3210187434dd760a8d89d8
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
 F ext/rtree/rtree3.test a494da55c30ee0bc9b01a91c80c81b387b22d2dc
 F ext/rtree/rtree4.test 0061e6f464fd3dc6a79f82454c5a1c3dadbe42af
@@ -456,7 +456,7 @@ F test/fts3aux1.test 0b02743955d56fc0d4d66236a26177bd1b726de0
 F test/fts3b.test e93bbb653e52afde110ad53bbd793f14fe7a8984
 F test/fts3c.test fc723a9cf10b397fdfc2b32e73c53c8b1ec02958
 F test/fts3comp1.test a0f5b16a2df44dd0b15751787130af2183167c0c
-F test/fts3conf.test 600b366bb658842d78ed72e05476d14c2409d539
+F test/fts3conf.test 8e65ea56f88ced6cdd2252bdddb1a8327ae5af7e
 F test/fts3corrupt.test 7890cc202406858386ddf390a879dcf80bc10abf
 F test/fts3corrupt2.test 6d96efae2f8a6af3eeaf283aba437e6d0e5447ba
 F test/fts3cov.test e0fb00d8b715ddae4a94c305992dfc3ef70353d7
@@ -688,7 +688,7 @@ F test/tclsqlite.test 8c154101e704170c2be10f137a5499ac2c6da8d3
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test f42121a0d29a62f00f93274464164177ab1cc24a
 F test/temptrigger.test b0273db072ce5f37cf19140ceb1f0d524bbe9f05
-F test/tester.tcl 6fa3d2f581b479a3a088b1b5b0d145e548ebe662
+F test/tester.tcl d5139260aadd64f318ecbcf982316d5bbc254b1b
 F test/thread001.test a3e6a7254d1cb057836cb3145b60c10bf5b7e60f
 F test/thread002.test afd20095e6e845b405df4f2c920cb93301ca69db
 F test/thread003.test b824d4f52b870ae39fc5bae4d8070eca73085dca
@@ -932,7 +932,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ff69f823f23e6fb6e8b2857c4576d9c0732d9572
-R da0922898dc0b07ed5b043ad92b8294b
+P abdd70ae0424ccadb7edaf16e970c78b5257d23c
+R c8f4a330c2633adfb2862fa8f9efbab2
 U dan
-Z fc25e1a6e640452f4b097e45b1091129
+Z e17a424fc4dea753d2cbffe0969a3e63
