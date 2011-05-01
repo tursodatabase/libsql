@@ -1672,10 +1672,19 @@ static int btreeInvokeBusyHandler(void *pArg){
 ** Open a database file.
 ** 
 ** zFilename is the name of the database file.  If zFilename is NULL
-** a new database with a random name is created.  This randomly named
-** database file will be deleted when sqlite3BtreeClose() is called.
+** then an ephemeral database is created.  The ephemeral database might
+** be exclusively in memory, or it might use a disk-based memory cache.
+** Either way, the ephemeral database will be automatically deleted 
+** when sqlite3BtreeClose() is called.
+**
 ** If zFilename is ":memory:" then an in-memory database is created
 ** that is automatically destroyed when it is closed.
+**
+** The "flags" parameter is a bitmask that might contain bits
+** BTREE_OMIT_JOURNAL and/or BTREE_NO_READLOCK.  The BTREE_NO_READLOCK
+** bit is also set if the SQLITE_NoReadlock flags is set in db->flags.
+** These flags are passed through into sqlite3PagerOpen() and must
+** be the same values as PAGER_OMIT_JOURNAL and PAGER_NO_READLOCK.
 **
 ** If the database is already opened in the same database connection
 ** and we are in shared cache mode, then the open will fail with an
@@ -1698,6 +1707,9 @@ int sqlite3BtreeOpen(
   u8 nReserve;                   /* Byte of unused space on each page */
   unsigned char zDbHeader[100];  /* Database header content */
 
+  /* True if opening an ephemeral, temporary database */
+  const int isTempDb = zFilename==0 || zFilename[0]==0;
+
   /* Set the variable isMemdb to true for an in-memory database, or 
   ** false for a file-based database. This symbol is only required if
   ** either of the shared-data or autovacuum features are compiled 
@@ -1707,13 +1719,30 @@ int sqlite3BtreeOpen(
   #ifdef SQLITE_OMIT_MEMORYDB
     const int isMemdb = 0;
   #else
-    const int isMemdb = zFilename && !strcmp(zFilename, ":memory:");
+    const int isMemdb = (zFilename && strcmp(zFilename, ":memory:")==0)
+                         || (isTempDb && sqlite3TempInMemory(db));
   #endif
 #endif
 
   assert( db!=0 );
   assert( sqlite3_mutex_held(db->mutex) );
+  assert( (flags&0xff)==flags );   /* flags fit in 8 bits */
 
+  /* Only a BTREE_SINGLE database can be BTREE_UNORDERED */
+  assert( (flags & BTREE_UNORDERED)==0 || (flags & BTREE_SINGLE)!=0 );
+
+  /* A BTREE_SINGLE database is always a temporary and/or ephemeral */
+  assert( (flags & BTREE_SINGLE)==0 || isTempDb );
+
+  if( db->flags & SQLITE_NoReadlock ){
+    flags |= BTREE_NO_READLOCK;
+  }
+  if( isMemdb ){
+    flags |= BTREE_MEMORY;
+  }
+  if( (vfsFlags & SQLITE_OPEN_MAIN_DB)!=0 && (isMemdb || isTempDb) ){
+    vfsFlags = (vfsFlags & ~SQLITE_OPEN_MAIN_DB) | SQLITE_OPEN_TEMP_DB;
+  }
   pVfs = db->pVfs;
   p = sqlite3MallocZero(sizeof(Btree));
   if( !p ){
@@ -1731,7 +1760,7 @@ int sqlite3BtreeOpen(
   ** If this Btree is a candidate for shared cache, try to find an
   ** existing BtShared object that we can share with
   */
-  if( isMemdb==0 && zFilename && zFilename[0] ){
+  if( isMemdb==0 && isTempDb==0 ){
     if( vfsFlags & SQLITE_OPEN_SHAREDCACHE ){
       int nFullPathname = pVfs->mxPathname+1;
       char *zFullPathname = sqlite3Malloc(nFullPathname);
@@ -1806,6 +1835,7 @@ int sqlite3BtreeOpen(
     if( rc!=SQLITE_OK ){
       goto btree_open_out;
     }
+    pBt->openFlags = flags;
     pBt->db = db;
     sqlite3PagerSetBusyhandler(pBt->pPager, btreeInvokeBusyHandler, pBt);
     p->pBt = pBt;
@@ -1910,6 +1940,14 @@ btree_open_out:
     sqlite3_free(pBt);
     sqlite3_free(p);
     *ppBtree = 0;
+  }else{
+    /* If the B-Tree was successfully opened, set the pager-cache size to the
+    ** default value. Except, when opening on an existing shared pager-cache,
+    ** do not change the pager-cache size.
+    */
+    if( sqlite3BtreeSchema(p, 0, 0)==0 ){
+      sqlite3PagerSetCachesize(p->pBt->pPager, SQLITE_DEFAULT_CACHE_SIZE);
+    }
   }
   if( mutexOpen ){
     assert( sqlite3_mutex_held(mutexOpen) );
@@ -6881,11 +6919,12 @@ int sqlite3BtreeDelete(BtCursor *pCur){
 **     BTREE_INTKEY|BTREE_LEAFDATA     Used for SQL tables with rowid keys
 **     BTREE_ZERODATA                  Used for SQL indices
 */
-static int btreeCreateTable(Btree *p, int *piTable, int flags){
+static int btreeCreateTable(Btree *p, int *piTable, int createTabFlags){
   BtShared *pBt = p->pBt;
   MemPage *pRoot;
   Pgno pgnoRoot;
   int rc;
+  int ptfFlags;          /* Page-type flage for the root page of new table */
 
   assert( sqlite3BtreeHoldsMutex(p) );
   assert( pBt->inTransaction==TRANS_WRITE );
@@ -7004,8 +7043,14 @@ static int btreeCreateTable(Btree *p, int *piTable, int flags){
   }
 #endif
   assert( sqlite3PagerIswriteable(pRoot->pDbPage) );
-  zeroPage(pRoot, flags | PTF_LEAF);
+  if( createTabFlags & BTREE_INTKEY ){
+    ptfFlags = PTF_INTKEY | PTF_LEAFDATA | PTF_LEAF;
+  }else{
+    ptfFlags = PTF_ZERODATA | PTF_LEAF;
+  }
+  zeroPage(pRoot, ptfFlags);
   sqlite3PagerUnref(pRoot->pDbPage);
+  assert( (pBt->openFlags & BTREE_SINGLE)==0 || pgnoRoot==2 );
   *piTable = (int)pgnoRoot;
   return SQLITE_OK;
 }

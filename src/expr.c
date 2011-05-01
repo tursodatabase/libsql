@@ -1535,8 +1535,8 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
 #endif
 
 /*
-** Generate code for scalar subqueries used as an expression
-** and IN operators.  Examples:
+** Generate code for scalar subqueries used as a subquery expression, EXISTS,
+** or IN operators.  Examples:
 **
 **     (SELECT a FROM b)          -- subquery
 **     EXISTS (SELECT a FROM b)   -- EXISTS subquery
@@ -1599,10 +1599,10 @@ int sqlite3CodeSubselect(
 
   switch( pExpr->op ){
     case TK_IN: {
-      char affinity;
-      KeyInfo keyInfo;
-      int addr;        /* Address of OP_OpenEphemeral instruction */
-      Expr *pLeft = pExpr->pLeft;
+      char affinity;              /* Affinity of the LHS of the IN */
+      KeyInfo keyInfo;            /* Keyinfo for the generated table */
+      int addr;                   /* Address of OP_OpenEphemeral instruction */
+      Expr *pLeft = pExpr->pLeft; /* the LHS of the IN operator */
 
       if( rMayHaveNull ){
         sqlite3VdbeAddOp2(v, OP_Null, 0, rMayHaveNull);
@@ -1625,6 +1625,7 @@ int sqlite3CodeSubselect(
       */
       pExpr->iTable = pParse->nTab++;
       addr = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pExpr->iTable, !isRowid);
+      if( rMayHaveNull==0 ) sqlite3VdbeChangeP5(v, BTREE_UNORDERED);
       memset(&keyInfo, 0, sizeof(keyInfo));
       keyInfo.nField = 1;
 

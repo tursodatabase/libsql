@@ -59,6 +59,7 @@ typedef struct PgHdr DbPage;
 */
 #define PAGER_OMIT_JOURNAL  0x0001    /* Do not use a rollback journal */
 #define PAGER_NO_READLOCK   0x0002    /* Omit readlocks on readonly files */
+#define PAGER_MEMORY        0x0004    /* In-memory database */
 
 /*
 ** Valid values for the second argument to sqlite3PagerLockingMode().

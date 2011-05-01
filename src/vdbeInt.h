@@ -57,6 +57,7 @@ struct VdbeCursor {
   Bool deferredMoveto;  /* A call to sqlite3BtreeMoveto() is needed */
   Bool isTable;         /* True if a table requiring integer keys */
   Bool isIndex;         /* True if an index containing keys only - no data */
+  Bool isOrdered;       /* True if the underlying table is BTREE_UNORDERED */
   i64 movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
   Btree *pBt;           /* Separate file holding temporary table */
   int pseudoTableReg;   /* Register holding pseudotable content. */
