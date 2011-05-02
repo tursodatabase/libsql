@@ -711,4 +711,9 @@ do_test shell1-3.27.4 {
   catchcmd "test.db" ".timer OFF BAD"
 } {1 {Error: unknown command or invalid arguments:  "timer". Enter ".help" for help}}
 
+do_test shell1-3-28.1 {
+  catchcmd test.db \
+     ".log stdout\nSELECT coalesce(sqlite_log(123,'hello'),'456');"
+} "0 {(123) hello\n456}"
+
 puts "CLI tests completed successfully"

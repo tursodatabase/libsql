@@ -1,5 +1,5 @@
-C Test\sthat\sit\sis\snow\spossible\sto\suse\sdifferent\sVFSs\sfor\stwo\sdatabases\sattached\sto\sa\ssingle\shandle.
-D 2011-04-23T19:06:26.760
+C Merge\sthe\slatest\strunk\schanges\sinto\suri\sbranch.
+D 2011-05-02T17:41:01.076
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -133,12 +133,12 @@ F src/delete.c 7a24fcc9a31664d145acb97ce56b6d9f249a25e4
 F src/expr.c e3cf0957c6b8faaaf7386a3bc69e53c0dc9705be
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c a43ba8a005fb5efd1deeee06853e3a6120d46a91
-F src/func.c 3a8cb2fb2de3e3aed7f39106daf4878d9d17fcce
+F src/func.c b9117e40975245b8504cf3625d7e321d8d4b63dc
 F src/global.c 29bfb85611dd816b04f10fba0ca910366e128d38
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c acfb89fe4a73d703e425e167bfcc72985f4299ae
+F src/insert.c cdee360e5cea59db6c4a980e4360499631222af6
 F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
@@ -162,8 +162,8 @@ F src/os.c 22ac61d06e72a0dac900400147333b07b13d8e1d
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c d7889a0f9389c8c2e1d3b380f5aa1256c22a90e8
-F src/os_win.c d149b9a7dfdd38de09afc054f8168cd3cd80630b
+F src/os_unix.c 2c67d126874b78eb427371db4793f0e8fbc7448b
+F src/os_win.c 4271f0bf733c0b45635ddcfb41c935573de8284c
 F src/pager.c 24b689bc3639d534f5fb292d2c68038b1e720527
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -239,7 +239,7 @@ F src/vdbe.c a7f8f72ae817f7f81a25be6e18d9a37e09b0649f
 F src/vdbe.h 8a675fefdf7119441fe817c800a9a52440c2e797
 F src/vdbeInt.h fe8f58d305e629fff02f61f655aca1d299f1f6ae
 F src/vdbeapi.c e0e2672e0a96ae3f8575c8ecd02912a3e8a554a1
-F src/vdbeaux.c 9ae5074b19bdff2d8806a278533956fb281510d5
+F src/vdbeaux.c 5b8150112b490360fdf46f62f470a2ef75b0480a
 F src/vdbeblob.c c3ccb7c8732858c680f442932e66ad06bb036562
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
 F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
@@ -505,7 +505,7 @@ F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
 F test/insert.test aef273dd1cee84cc92407469e6bd1b3cdcb76908
 F test/insert2.test 4f3a04d168c728ed5ec2c88842e772606c7ce435
 F test/insert3.test 1b7db95a03ad9c5013fdf7d6722b6cd66ee55e30
-F test/insert4.test c1469999a58e86a85b74df645a820f4cc7a8273b
+F test/insert4.test b3e02648a5fc3075c29e13c369b5127bf859b5a2
 F test/insert5.test 1f93cbe9742110119133d7e8e3ccfe6d7c249766
 F test/intarray.test 066b7d7ac38d25bf96f87f1b017bfc687551cdd4
 F test/interrupt.test 42e7cf98646fd9cb4a3b131a93ed3c50b9e149f1
@@ -900,6 +900,7 @@ F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
+F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/lemon.c dfd81a51b6e27e469ba21d01a75ddf092d429027
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkkeywordhash.c d2e6b4a5965e23afb80fbe74bb54648cd371f309
@@ -912,7 +913,7 @@ F tool/omittest.tcl b1dd290c1596e0f31fd335160a74ec5dfea3df4a
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
-F tool/shell1.test fee04fce1bf55e6e081523545fd4e0e83490ff8e
+F tool/shell1.test 44705d6078b37f58853005d2ad5f1e67bc9dbbed
 F tool/shell2.test 5dc76b8005b465f420fed8241621da7513060ff3
 F tool/shell3.test 4fad469e8003938426355afdf34155f08c587836
 F tool/shell4.test 35f9c3d452b4e76d5013c63e1fd07478a62f14ce
@@ -930,7 +931,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 68240e75e87a54cde93352b0ec364d34365a8170
-R 4f397b814ac53bbd808b171d5d8b418c
+P 2af51f856c6203f836d8bb62b6b79b19554886e7 f55156c5194e85c47728b8a97fde3e5f0a5c9b56
+R 5b3361d8c251d725e8fb18c102b1e7f2
 U dan
-Z 87fa4f3faa1bbb8cd013b95e032b042b
+Z ce77508d586b51f29df902539114b8b5

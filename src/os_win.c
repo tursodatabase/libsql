@@ -286,7 +286,7 @@ char *sqlite3_win32_mbcs_to_utf8(const char *zFilename){
 ** Convert UTF-8 to multibyte character string.  Space to hold the 
 ** returned string is obtained from malloc().
 */
-static char *utf8ToMbcs(const char *zFilename){
+char *sqlite3_win32_utf8_to_mbcs(const char *zFilename){
   char *zFilenameMbcs;
   WCHAR *zTmpWide;
 
@@ -1052,7 +1052,7 @@ static int unlockReadLock(winFile *pFile){
     res = UnlockFile(pFile->h, SHARED_FIRST + pFile->sharedLockByte, 0, 1, 0);
 #endif
   }
-  if( res == 0 ){
+  if( res==0 && GetLastError()!=ERROR_NOT_LOCKED ){
     pFile->lastErrno = GetLastError();
     winLogError(SQLITE_IOERR_UNLOCK, "unlockReadLock", pFile->zPath);
   }
@@ -2004,7 +2004,7 @@ static void *convertUtf8Filename(const char *zFilename){
 */
 #if SQLITE_OS_WINCE==0
   }else{
-    zConverted = utf8ToMbcs(zFilename);
+    zConverted = sqlite3_win32_utf8_to_mbcs(zFilename);
 #endif
   }
   /* caller will handle out of memory */
