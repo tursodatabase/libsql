@@ -1,5 +1,5 @@
-C Allow\sonly\s"localhost"\sand\s""\sas\sauthorities\sin\sURIs.\sDo\snot\sallow\sescapes\s(%HH)\sin\sthe\sauthority\spart\sof\sa\sURI.
-D 2011-05-03T11:53:20.345
+C Remove\ssome\sunused\scode\srelated\sto\sURI\sparsing.
+D 2011-05-03T15:09:05.969
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -143,7 +143,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 3ae0d52da013a6326310655be6473fd472347b85
-F src/main.c 28da02efcab49fd4cc51008b5f6d27b742682807
+F src/main.c 872493d84fed9b9c910e1b7b2427a3e28dbe995a
 F src/malloc.c 74c740e8ba22b806cfb980c8c0ddea1cbd54a20e
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 00bd8265c81abb665c48fea1e0c234eb3b922206
@@ -931,7 +931,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 0a694a0b27e3ce251ce313cb5d19a7637c2fa309
-R afa0474b6eff205d0a5c2d2e9845accd
+P b8a0f1b523d1f31c8e7a102ba4bae5935b07104a
+R 2dc3488a634991eebc6008406cc86975
 U dan
-Z 0ad689b41032f94f1c384beb1085aa09
+Z 271aa5bc20c9ebf896bbbb0905472291

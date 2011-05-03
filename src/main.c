@@ -1856,16 +1856,11 @@ int sqlite3ParseUri(
        && sqlite3Isxdigit(zUri[iIn]) 
        && sqlite3Isxdigit(zUri[iIn+1]) 
       ){
-        int codepoint = (sqlite3HexToInt(zUri[iIn++]) << 4);
-        codepoint += sqlite3HexToInt(zUri[iIn++]);
+        int octet = (sqlite3HexToInt(zUri[iIn++]) << 4);
+        octet += sqlite3HexToInt(zUri[iIn++]);
 
-        assert( codepoint>=0 && codepoint<256 );
-        if( codepoint>=128 ){
-          *pzErrMsg = sqlite3_mprintf("invalid uri escape: %.3s", &zUri[-3]);
-          rc = SQLITE_ERROR;
-          goto parse_uri_out;
-        }
-        else if( codepoint==0 ){
+        assert( octet>=0 && octet<256 );
+        if( octet==0 ){
           /* This branch is taken when "%00" appears within the URI. In this
           ** case we ignore all text in the remainder of the path, name or
           ** value currently being parsed. So ignore the current character
@@ -1879,7 +1874,7 @@ int sqlite3ParseUri(
           }
           continue;
         }
-        c = codepoint;
+        c = octet;
       }else if( eState==1 && (c=='&' || c=='=') ){
         if( zFile[iOut-1]==0 ){
           /* An empty option name. Ignore this option altogether. */
