@@ -1803,18 +1803,7 @@ int sqlite3ParseUri(
   char **pzFile,                  /* OUT: Filename component of URI */
   char **pzErrMsg                 /* OUT: Error message (if rc!=SQLITE_OK) */
 ){
-  struct UriOption {
-    const char *zOption;
-    int mask;
-  } aOpt [] = {
-    { "vfs", 0 },
-    { "readonly",     SQLITE_OPEN_READONLY },
-    { "readwrite",    SQLITE_OPEN_READWRITE },
-    { "create",       SQLITE_OPEN_CREATE },
-    { "sharedcache",  SQLITE_OPEN_SHAREDCACHE },
-    { "privatecache", SQLITE_OPEN_PRIVATECACHE }
-  };
-
+  int rc = SQLITE_OK;
   int flags = *pFlags;
   const char *zVfs = zDefaultVfs;
   char *zFile;
@@ -1864,7 +1853,12 @@ int sqlite3ParseUri(
         codepoint += sqlite3HexToInt(zUri[iIn++]);
 
         assert( codepoint>=0 && codepoint<256 );
-        if( codepoint==0 ){
+        if( codepoint>=128 ){
+          *pzErrMsg = sqlite3_mprintf("invalid uri escape: %.3s", &zUri[-3]);
+          rc = SQLITE_ERROR;
+          goto parse_uri_out;
+        }
+        else if( codepoint==0 ){
           /* This branch is taken when "%00" appears within the URI. In this
           ** case we ignore all text in the remainder of the path, name or
           ** value currently being parsed. So ignore the current character
@@ -1904,27 +1898,70 @@ int sqlite3ParseUri(
     /* Check if there were any options specified that should be interpreted 
     ** here. Options that are interpreted here include "vfs" and those that
     ** correspond to flags that may be passed to the sqlite3_open_v2()
-    ** method.  */
+    ** method. */
     zOpt = &zFile[sqlite3Strlen30(zFile)+1];
     while( zOpt[0] ){
       int nOpt = sqlite3Strlen30(zOpt);
       char *zVal = &zOpt[nOpt+1];
       int nVal = sqlite3Strlen30(zVal);
-      int i;
 
-      for(i=0; i<ArraySize(aOpt); i++){
-        const char *z = aOpt[i].zOption;
-        if( nOpt==sqlite3Strlen30(z) && 0==memcmp(zOpt, z, nOpt) ){
-          int mask = aOpt[i].mask;
-          if( mask==0 ){
-            zVfs = zVal;
-          }else{
-            if( zVal[0]=='\0' || sqlite3GetBoolean(zVal) ){
-              flags |= mask;
-            }else{
-              flags &= ~mask;
+      if( nOpt==3 && sqlite3_strnicmp("vfs", zOpt, 3)==0 ){
+        zVfs = zVal;
+      }else{
+        struct OpenMode {
+          const char *z;
+          int mode;
+        } *aMode = 0;
+        char *zModeType;
+        int mask;
+        int limit;
+
+        if( nOpt==5 && sqlite3_strnicmp("cache", zOpt, 5)==0 ){
+          static struct OpenMode aCacheMode[] = {
+            { "shared",  SQLITE_OPEN_SHAREDCACHE },
+            { "private", SQLITE_OPEN_PRIVATECACHE },
+            { 0, 0 }
+          };
+
+          mask = SQLITE_OPEN_SHAREDCACHE|SQLITE_OPEN_PRIVATECACHE;
+          aMode = aCacheMode;
+          limit = mask;
+          zModeType = "cache";
+        }
+        if( nOpt==4 && sqlite3_strnicmp("mode", zOpt, 4)==0 ){
+          static struct OpenMode aOpenMode[] = {
+            { "ro",  SQLITE_OPEN_READONLY },
+            { "rw",  SQLITE_OPEN_READWRITE }, 
+            { "rwc", SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE },
+            { 0, 0 }
+          };
+
+          mask = SQLITE_OPEN_READONLY|SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
+          aMode = aOpenMode;
+          limit = mask & flags;
+          zModeType = "access";
+        }
+
+        if( aMode ){
+          int i;
+          int mode = 0;
+          for(i=0; aMode[i].z; i++){
+            const char *z = aMode[i].z;
+            if( nVal==strlen(z) && 0==sqlite3_strnicmp(zVal, z, nVal) ){
+              mode = aMode[i].mode;
+              break;
             }
           }
+          if( mode==0 ){
+            *pzErrMsg = sqlite3_mprintf("no such %s mode: %s", zModeType, zVal);
+            rc = SQLITE_ERROR;
+            goto parse_uri_out;
+          }
+          if( mode>limit ){
+            rc = SQLITE_PERM;
+            goto parse_uri_out;
+          }
+          flags = (flags & ~mask) | mode;
         }
       }
 
@@ -1942,12 +1979,16 @@ int sqlite3ParseUri(
   *ppVfs = sqlite3_vfs_find(zVfs);
   if( *ppVfs==0 ){
     *pzErrMsg = sqlite3_mprintf("no such vfs: %s", zVfs);
+    rc = SQLITE_ERROR;
+  }
+ parse_uri_out:
+  if( rc!=SQLITE_OK ){
     sqlite3_free(zFile);
-    return SQLITE_ERROR;
+    zFile = 0;
   }
   *pFlags = flags;
   *pzFile = zFile;
-  return SQLITE_OK;
+  return rc;
 }
 
 
@@ -1973,6 +2014,27 @@ static int openDatabase(
   rc = sqlite3_initialize();
   if( rc ) return rc;
 #endif
+
+  /* Only allow sensible combinations of bits in the flags argument.  
+  ** Throw an error if any non-sense combination is used.  If we
+  ** do not block illegal combinations here, it could trigger
+  ** assert() statements in deeper layers.  Sensible combinations
+  ** are:
+  **
+  **  1:  SQLITE_OPEN_READONLY
+  **  2:  SQLITE_OPEN_READWRITE
+  **  6:  SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
+  */
+  assert( SQLITE_OPEN_READONLY  == 0x01 );
+  assert( SQLITE_OPEN_READWRITE == 0x02 );
+  assert( SQLITE_OPEN_CREATE    == 0x04 );
+  testcase( (1<<(flags&7))==0x02 ); /* READONLY */
+  testcase( (1<<(flags&7))==0x04 ); /* READWRITE */
+  testcase( (1<<(flags&7))==0x40 ); /* READWRITE | CREATE */
+  if( ((1<<(flags&7)) & 0x46)==0 ){
+    rc = SQLITE_MISUSE;
+    goto opendb_out;
+  }
 
   if( sqlite3GlobalConfig.bCoreMutex==0 ){
     isThreadsafe = 0;
@@ -2078,29 +2140,8 @@ static int openDatabase(
   /* Parse the filename/URI argument. */
   rc = sqlite3ParseUri(zVfs, zFilename, &flags, &db->pVfs, &zOpen, &zErrMsg);
   if( rc!=SQLITE_OK ){
-    sqlite3Error(db, rc, "%s", zErrMsg);
+    sqlite3Error(db, rc, zErrMsg ? "%s" : 0, zErrMsg);
     sqlite3_free(zErrMsg);
-    goto opendb_out;
-  }
-
-  /* Only allow sensible combinations of bits in the flags argument.  
-  ** Throw an error if any non-sense combination is used.  If we
-  ** do not block illegal combinations here, it could trigger
-  ** assert() statements in deeper layers.  Sensible combinations
-  ** are:
-  **
-  **  1:  SQLITE_OPEN_READONLY
-  **  2:  SQLITE_OPEN_READWRITE
-  **  6:  SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
-  */
-  assert( SQLITE_OPEN_READONLY  == 0x01 );
-  assert( SQLITE_OPEN_READWRITE == 0x02 );
-  assert( SQLITE_OPEN_CREATE    == 0x04 );
-  testcase( (1<<(flags&7))==0x02 ); /* READONLY */
-  testcase( (1<<(flags&7))==0x04 ); /* READWRITE */
-  testcase( (1<<(flags&7))==0x40 ); /* READWRITE | CREATE */
-  if( ((1<<(flags&7)) & 0x46)==0 ){
-    rc = SQLITE_MISUSE;
     goto opendb_out;
   }
 

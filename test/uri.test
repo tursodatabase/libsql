@@ -117,25 +117,76 @@ do_test 3.1 {
 #
 # TODO: Fix this after the list of options is decided.
 #
-do_test 4.0 {
-  sqlite3 db test.db
-  db eval {CREATE TABLE t1(a, b)}
-  db close
-} {}
-foreach {tn uri ro} {
-  1    "file:test.db"                                 0
-  2    "file:test.db?readonly=0"                      0
-  3    "file:test.db?readonly=1&readwrite=0&create=0" 1
+foreach {tn mode create_ok write_ok readonly_ok} {
+  1    ro    0   0   1
+  2    rw    0   1   0
+  3    rwc   1   1   0
 } {
-  set RES(0) {0 {}}
-  set RES(1) {1 {attempt to write a readonly database}}
+  catch { db close }
+  forcedelete test.db
 
-  do_test 4.$tn {
-    sqlite3 db $uri
-    catchsql { INSERT INTO t1 VALUES(1, 2) }
-  } $RES($ro)
+  set A(1) {0 {}}
+  set A(0) {1 {unable to open database file}}
+  do_test 4.1.$tn.1 {
+    list [catch {sqlite3 db "file:test.db?mode=$mode"} msg] $msg
+  } $A($create_ok)
+
+  catch { db close }
+  forcedelete test.db
+  sqlite3 db test.db
+  db eval { CREATE TABLE t1(a, b) }
   db close
+
+  set A(1) {0 {}}
+  set A(0) {1 {attempt to write a readonly database}}
+  do_test 4.1.$tn.2 {
+    sqlite3 db "file:test.db?mode=$mode"
+    catchsql { INSERT INTO t1 VALUES(1, 2) }
+  } $A($write_ok)
+
+  set A(1) {0 {}}
+  set A(0) {1 {access permission denied}}
+  do_test 4.1.$tn.3 {
+    list [catch {sqlite3 db "file:test.db?mode=$mode" -readonly 1} msg] $msg
+  } $A($readonly_ok)
 }
+
+set orig [sqlite3_enable_shared_cache]
+foreach {tn options sc_default is_shared} {
+  1    ""                1   1
+  2    "cache=private"   1   0
+  3    "cache=shared"    1   1
+  4    ""                0   0
+  5    "cache=private"   0   0
+  6    "cache=shared"    0   1
+} {
+  catch { db close }
+  forcedelete test.db
+
+  sqlite3_enable_shared_cache 1
+  sqlite3 db2 test.db
+  db2 eval {CREATE TABLE t1(a, b)}
+
+  sqlite3_enable_shared_cache $sc_default
+  sqlite3 db "file:test.db?$options"
+  db eval {SELECT * FROM t1}
+
+  set A(1) {1 {database table is locked: t1}}
+  set A(0) {0 {}}
+  do_test 4.2.$tn {
+    db2 eval {BEGIN; INSERT INTO t1 VALUES(1, 2);}
+    catchsql { SELECT * FROM t1 }
+  } $A($is_shared)
+
+  db2 close
+}
+
+do_test 4.3.1 {
+  list [catch {sqlite3 db "file:test.db?mode=rc"} msg] $msg
+} {1 {no such access mode: rc}}
+do_test 4.3.2 {
+  list [catch {sqlite3 db "file:test.db?cache=public"} msg] $msg
+} {1 {no such cache mode: public}}
 
 #-------------------------------------------------------------------------
 # Test that things work if an ATTACHed database uses a different VFS than
@@ -177,7 +228,7 @@ do_test 5.1.1 {
     CREATE TABLE t1(a, b);
     CREATE TABLE aux.t2(a, b);
     PRAGMA main.journal_mode = WAL;
-    PRAGMA aux.journal_mode = PERSIST;
+    PRAGMA aux.journal_mode = WAL;
     INSERT INTO t1 VALUES('x', 'y');
     INSERT INTO t2 VALUES('x', 'y');
   }
