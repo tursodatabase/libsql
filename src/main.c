@@ -1828,6 +1828,13 @@ int sqlite3ParseUri(
     if( zUri[5]=='/' && zUri[6]=='/' ){
       iIn = 7;
       while( zUri[iIn] && zUri[iIn]!='/' ) iIn++;
+
+      if( iIn!=7 && (iIn!=16 || memcmp("localhost", &zUri[7], 9)) ){
+        *pzErrMsg = sqlite3_mprintf("invalid uri authority: %.*s", 
+            iIn-7, &zUri[7]);
+        rc = SQLITE_ERROR;
+        goto parse_uri_out;
+      }
     }else{
       iIn = 5;
     }

@@ -33,7 +33,7 @@ sqlite3_config_uri 1
 foreach {tn uri file} {
   1      test.db                            test.db
   2      file:test.db                       test.db
-  3      file://an-authorityPWD/test.db     test.db
+  3      file://PWD/test.db     test.db
   4      file:PWD/test.db                   test.db
   5      file:test.db?mork=1                test.db
   6      file:test.db?mork=1&tonglor=2      test.db
@@ -44,7 +44,7 @@ foreach {tn uri file} {
   11     file:test%2Edb                     test.db
   12     file                               file
   13     http:test.db                       http:test.db
-  14     file://xyzPWD/test.db%3Fhello      test.db?hello
+  14     file://localhostPWD/test.db%3Fhello   test.db?hello
   15     file:test.db%00extra               test.db
   16     file:test%00.db%00extra            test
 } {
@@ -64,7 +64,6 @@ foreach {tn uri file} {
   do_test 1.$tn.4 { file exists $file } 1
   db close
 }
-
 
 #-------------------------------------------------------------------------
 # Test that URI query parameters are passed through to the VFS layer
@@ -242,6 +241,26 @@ do_test 5.1.2 {
 db close
 tvfs1 delete
 tvfs2 delete
+
+#-------------------------------------------------------------------------
+# Check that only "" and "localhost" are acceptable as authorities.
+#
+catch {db close}
+foreach {tn uri res} {
+  1     "file://localhost/PWD/test.db"   {not an error}
+  2     "file:///PWD/test.db"            {not an error}
+  3     "file:/PWD/test.db"              {not an error}
+  4     "file://l%6Fcalhost/PWD/test.db" {invalid uri authority: l%6Fcalhost}
+  5     "file://lbcalhost/PWD/test.db"   {invalid uri authority: lbcalhost}
+  6     "file://x/PWD/test.db"           {invalid uri authority: x}
+} {
+  set uri  [string map [list PWD [string range [pwd] 1 end]] $uri]
+  do_test 6.$tn {
+    set DB [sqlite3_open $uri]
+    sqlite3_errmsg $DB
+  } $res
+  catch { sqlite3_close $DB }
+}
 
 finish_test
 
