@@ -420,7 +420,13 @@ static void fts3GetDeltaVarint(char **pp, sqlite3_int64 *pVal){
 }
 
 /*
+** When this function is called, *pp points to the first byte following a
+** varint that is part of a doclist (or position-list, or any other list
+** of varints). This function moves *pp to point to the start of that varint,
+** and decrements the value stored in *pVal by the varint value.
 **
+** Argument pStart points to the first byte of the doclist that the
+** varint is part of.
 */
 static void fts3GetReverseDeltaVarint(
   char **pp, 
@@ -3326,7 +3332,7 @@ int sqlite3Fts3ExprLoadFtDoclist(
 ** When called, *ppPoslist must point to the byte immediately following the
 ** end of a position-list. i.e. ( (*ppPoslist)[-1]==POS_END ). This function
 ** moves *ppPoslist so that it instead points to the first byte of the
-** position list.
+** same position list.
 */
 static void fts3ReversePoslist(char *pStart, char **ppPoslist){
   char *p = &(*ppPoslist)[-3];

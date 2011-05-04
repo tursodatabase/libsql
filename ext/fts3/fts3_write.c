@@ -2636,7 +2636,7 @@ static int fts3DeleteByRowid(
   Fts3Table *p, 
   sqlite3_value *pRowid, 
   int *pnDoc,
-  int *aSzDel
+  u32 *aSzDel
 ){
   int isEmpty = 0;
   int rc = fts3IsEmpty(p, pRowid, &isEmpty);
@@ -2646,13 +2646,13 @@ static int fts3DeleteByRowid(
       ** delete the contents of all three tables and throw away any
       ** data in the pendingTerms hash table.  */
       rc = fts3DeleteAll(p);
-      *pnDoc--;
+      *pnDoc = *pnDoc - 1;
     }else{
       sqlite3_int64 iRemove = sqlite3_value_int64(pRowid);
       rc = fts3PendingTermsDocid(p, iRemove);
       fts3DeleteTerms(&rc, p, pRowid, aSzDel);
       fts3SqlExec(&rc, p, SQL_DELETE_CONTENT, &pRowid);
-      if( sqlite3_changes(p->db) ) *pnDoc--;
+      if( sqlite3_changes(p->db) ) *pnDoc = *pnDoc - 1;
       if( p->bHasDocsize ){
         fts3SqlExec(&rc, p, SQL_DELETE_DOCSIZE, &pRowid);
       }
@@ -2680,7 +2680,6 @@ int sqlite3Fts3UpdateMethod(
   u32 *aSzDel;                    /* Sizes of deleted documents */
   int nChng = 0;                  /* Net change in number of documents */
   int bInsertDone = 0;
-  int bReplace = 0;               /* True if on conflict mode is REPLACE */
 
   assert( p->pSegments==0 );
 

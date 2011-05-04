@@ -1,5 +1,5 @@
-C Fix\sa\sperformance\sproblem\sin\squeries\sthat\suse\s"ORDER\sBY\srowid\sDESC"\sand\sone\sor\smore\sFTS\sauxiliary\sfunctions.
-D 2011-05-04T15:41:18.367
+C Fix\sa\scouple\sof\scompiler\swarnings\sin\sthe\sFTS\scode.
+D 2011-05-04T16:30:05.506
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -61,7 +61,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 18bf7e4eca7dcea86300ee4ead2427067c3b04c3
+F ext/fts3/fts3.c 84dc693d123ae544ec68fc7b384960b759d93c8a
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 8c2ac39ee17362571c58ab2c4f0667324c31f738
 F ext/fts3/fts3_aux.c 9e931f55eed8498dafe7bc1160f10cbb1a652fdf
@@ -75,7 +75,7 @@ F ext/fts3/fts3_term.c f115f5a5f4298303d3b22fc6c524b8d565c7b950
 F ext/fts3/fts3_tokenizer.c 055f3dc7369585350b28db1ee0f3b214dca6724d
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 6e5cbaa588924ac578263a598e4fb9f5c9bb179d
-F ext/fts3/fts3_write.c 21ddcc47906807fb9481a0cc161db73469645d68
+F ext/fts3/fts3_write.c 7d6d904b89333448eb968fc82470a74985d0b61e
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
@@ -933,7 +933,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 13395121e3d17ab6581dc5f6736ea324321a374c
-R b72c70132342e56f35c0ae4fa3c076bd
+P 95e09b20e9aad28f829c8950f3632debe473070a
+R 91dde4b8c1110da860391480e16cf257
 U dan
-Z f70b0240fad2f490b24e91d4b974b53a
+Z 55ea31537da115eeaba601610bb50d13
