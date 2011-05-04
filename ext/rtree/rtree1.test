@@ -31,6 +31,8 @@ source $testdir/tester.tcl
 #   rtree-7.*: Test renaming an r-tree table.
 #   rtree-8.*: Test constrained scans of r-tree data.
 #
+#   rtree-12.*: Test that on-conflict clauses are supported.
+#
 
 ifcapable !rtree {
   finish_test
@@ -416,4 +418,83 @@ do_test rtree-11.2 {
   }
 } {2}
 
+#-------------------------------------------------------------------------
+# Test on-conflict clause handling.
+#
+db_delete_and_reopen
+do_execsql_test 12.0 {
+  CREATE VIRTUAL TABLE t1 USING rtree_i32(idx, x1, x2, y1, y2);
+  INSERT INTO t1 VALUES(1,   1, 2, 3, 4);
+  INSERT INTO t1 VALUES(2,   2, 3, 4, 5);
+  INSERT INTO t1 VALUES(3,   3, 4, 5, 6);
+
+  CREATE TABLE source(idx, x1, x2, y1, y2);
+  INSERT INTO source VALUES(5, 8, 8, 8, 8);
+  INSERT INTO source VALUES(2, 7, 7, 7, 7);
+  
+}
+db_save_and_close
+foreach {tn sql_template testdata} {
+  1    "INSERT %CONF% INTO t1 VALUES(2, 7, 7, 7, 7)" {
+    ROLLBACK 0 1 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6}
+    ABORT    0 1 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6   4 4 5 6 7}
+    IGNORE   0 0 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6   4 4 5 6 7}
+    FAIL     0 1 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6   4 4 5 6 7}
+    REPLACE  0 0 {1 1 2 3 4   2 7 7 7 7   3 3 4 5 6   4 4 5 6 7}
+  }
+
+  2    "INSERT %CONF% INTO t1 SELECT * FROM source" {
+    ROLLBACK 1 1 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6}
+    ABORT    1 1 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6   4 4 5 6 7}
+    IGNORE   1 0 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6   4 4 5 6 7  5 8 8 8 8}
+    FAIL     1 1 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6   4 4 5 6 7  5 8 8 8 8}
+    REPLACE  1 0 {1 1 2 3 4   2 7 7 7 7   3 3 4 5 6   4 4 5 6 7  5 8 8 8 8}
+  }
+
+  3    "UPDATE %CONF% t1 SET idx = 2 WHERE idx = 4" {
+    ROLLBACK 1 1 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6}
+    ABORT    1 1 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6   4 4 5 6 7}
+    IGNORE   1 0 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6   4 4 5 6 7}
+    FAIL     1 1 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6   4 4 5 6 7}
+    REPLACE  1 0 {1 1 2 3 4   2 4 5 6 7   3 3 4 5 6}
+  }
+
+  3    "UPDATE %CONF% t1 SET idx = ((idx+1)%5)+1 WHERE idx > 2" {
+    ROLLBACK 1 1 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6}
+    ABORT    1 1 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6   4 4 5 6 7}
+    IGNORE   1 0 {1 1 2 3 4   2 2 3 4 5               4 4 5 6 7   5 3 4 5 6}
+    FAIL     1 1 {1 1 2 3 4   2 2 3 4 5               4 4 5 6 7   5 3 4 5 6}
+    REPLACE  1 0 {1 4 5 6 7   2 2 3 4 5                           5 3 4 5 6}
+  }
+
+  4    "INSERT %CONF% INTO t1 VALUES(2, 7, 6, 7, 7)" {
+    ROLLBACK 0 1 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6}
+    ABORT    0 1 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6   4 4 5 6 7}
+    IGNORE   0 0 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6   4 4 5 6 7}
+    FAIL     0 1 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6   4 4 5 6 7}
+    REPLACE  0 1 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6   4 4 5 6 7}
+  }
+
+} {
+  foreach {mode uses error data} $testdata {
+    db_restore_and_reopen
+
+    set sql [string map [list %CONF% "OR $mode"] $sql_template]
+    set testname "12.$tn.[string tolower $mode]"
+
+    execsql {
+      BEGIN;
+        INSERT INTO t1 VALUES(4,   4, 5, 6, 7);
+    }
+
+    set res(0) {0 {}}
+    set res(1) {1 {constraint failed}}
+    do_catchsql_test $testname.1 $sql $res($error)
+    do_test $testname.2 [list sql_uses_stmt db $sql] $uses
+    do_execsql_test $testname.3 { SELECT * FROM t1 ORDER BY idx } $data
+
+    do_test $testname.4 { rtree_check db t1 } 0
+    db close
+  }
+}
 finish_test

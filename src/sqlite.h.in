@@ -4609,6 +4609,11 @@ struct sqlite3_module {
                        void (**pxFunc)(sqlite3_context*,int,sqlite3_value**),
                        void **ppArg);
   int (*xRename)(sqlite3_vtab *pVtab, const char *zNew);
+  /* The methods above are in version 0 of the sqlite_module object. Those 
+  ** below are for version 1 and greater. */
+  int (*xSavepoint)(sqlite3_vtab *pVTab, int);
+  int (*xRelease)(sqlite3_vtab *pVTab, int);
+  int (*xRollbackTo)(sqlite3_vtab *pVTab, int);
 };
 
 /*
@@ -6386,10 +6391,74 @@ int sqlite3_wal_checkpoint_v2(
 ** [sqlite3_wal_checkpoint_v2()].  See the [sqlite3_wal_checkpoint_v2()]
 ** documentation for additional information about the meaning and use of
 ** each of these values.
+**
+** <dt>SQLITE_CONFIG_GETMUTEX</dt>
+** <dd> ^(This option takes a single argument which is a pointer to an
 */
 #define SQLITE_CHECKPOINT_PASSIVE 0
 #define SQLITE_CHECKPOINT_FULL    1
 #define SQLITE_CHECKPOINT_RESTART 2
+
+/*
+** CAPI3REF: Virtual Table Interface Configuration
+**
+** This function is called by a virtual table implementation to configure
+** various facets of the virtual table interface. At present, there is only
+** one option that may be configured using this function. Further options
+** may be added in the future.
+**
+** <dl>
+**   <dt>SQLITE_VTAB_CONSTRAINT_SUPPORT
+**   <dd>If the second argument to sqlite3_vtab_config() is
+**       SQLITE_VTAB_CONSTRAINT_SUPPORT, then SQLite expects this function to
+**       have been called with three arguments, the third of which being of
+**       type 'int'. If the third argument is zero, then the virtual table
+**       is indicating that it does not support constraints. In this case if
+**       a call to the xUpdate method returns SQLITE_CONSTRAINT, the entire
+**       statement is rolled back as if [ON CONFLICT | OR ABORT] had been
+**       specified as part of the users SQL statement, regardless of the actual
+**       ON CONFLICT mode specified.
+**
+**       If the third argument passed is non-zero, then the virtual table
+**       implementation must guarantee that if xUpdate returns 
+**       SQLITE_CONSTRAINT, it does so before any modifications to internal
+**       or persistent data structures have been made. If the [ON CONFLICT]
+**       mode is ABORT, FAIL, IGNORE or ROLLBACK, SQLite is able to roll back
+**       a statement or database transaction, and abandon or continue processing
+**       the current SQL statement as appropriate. If the ON CONFLICT mode is
+**       REPLACE and the xUpdate method returns SQLITE_CONSTRAINT, SQLite
+**       handles this as if the ON CONFLICT mode had been ABORT.
+**
+**       Virtual table implementations that are required to handle OR REPLACE
+**       must do so within the xUpdate method. If a call to the 
+**       [sqlite3_vtab_on_conflict()] function indicates that the current ON 
+**       CONFLICT policy is REPLACE, the virtual table implementation should 
+**       silently replace the appropriate rows within the xUpdate callback and
+**       return SQLITE_OK. Or, if this is not possible, it may return
+**       SQLITE_CONSTRAINT, in which case SQLite falls back to OR ABORT 
+**       constraint handling.
+** </dl>
+** 
+*/
+#define SQLITE_VTAB_CONSTRAINT_SUPPORT 1
+int sqlite3_vtab_config(sqlite3*, int op, ...);
+
+/*
+** CAPI3REF: Determine The Virtual Table Conflict Policy
+**
+** This function may only be called from within a call to the xUpdate method
+** of a virtual table implementation for an INSERT or UPDATE operation. The
+** value returned is one of SQLITE_ROLLBACK, SQLITE_IGNORE, SQLITE_FAIL,
+** SQLITE_ABORT or SQLITE_REPLACE, according to the [ON CONFLICT] mode of the 
+** SQL statement that triggered the callback.
+*/
+#define SQLITE_ROLLBACK 1
+/* #define SQLITE_IGNORE 2 */
+#define SQLITE_FAIL     3
+/* #define SQLITE_ABORT 4 */
+#define SQLITE_REPLACE  5
+int sqlite3_vtab_on_conflict(sqlite3 *);
+
 
 
 /*
