@@ -3321,6 +3321,25 @@ int sqlite3Fts3ExprLoadFtDoclist(
   return rc;
 }
 
+
+/*
+** When called, *ppPoslist must point to the byte immediately following the
+** end of a position-list. i.e. ( (*ppPoslist)[-1]==POS_END ). This function
+** moves *ppPoslist so that it instead points to the first byte of the
+** position list.
+*/
+static void fts3ReversePoslist(char *pStart, char **ppPoslist){
+  char *p = &(*ppPoslist)[-3];
+  char c = p[1];
+  while( p>=pStart && (*p & 0x80) | c ){ 
+    c = *p--; 
+  }
+  if( p>pStart ){ p = &p[2]; }
+  while( *p++&0x80 );
+  *ppPoslist = p;
+}
+
+
 /*
 ** After ExprLoadDoclist() (see above) has been called, this function is
 ** used to iterate/search through the position lists that make up the doclist
@@ -3337,20 +3356,36 @@ char *sqlite3Fts3FindPositions(
     char *pEnd = &pExpr->aDoclist[pExpr->nDoclist];
     char *pCsr;
 
-    if( pExpr->pCurrent==0 || pCursor->desc ){
-      pExpr->pCurrent = pExpr->aDoclist;
-      pExpr->iCurrent = 0;
-      pExpr->pCurrent += sqlite3Fts3GetVarint(pExpr->pCurrent,&pExpr->iCurrent);
+    if( pExpr->pCurrent==0 ){
+      if( pCursor->desc==0 ){
+        pExpr->pCurrent = pExpr->aDoclist;
+        pExpr->iCurrent = 0;
+        fts3GetDeltaVarint(&pExpr->pCurrent, &pExpr->iCurrent);
+      }else{
+        pCsr = pExpr->aDoclist;
+        while( pCsr<pEnd ){
+          fts3GetDeltaVarint(&pCsr, &pExpr->iCurrent);
+          fts3PoslistCopy(0, &pCsr);
+        }
+        fts3ReversePoslist(pExpr->aDoclist, &pCsr);
+        pExpr->pCurrent = pCsr;
+      }
     }
     pCsr = pExpr->pCurrent;
     assert( pCsr );
 
-    while( pCsr<pEnd ){
-      if( pExpr->iCurrent<iDocid ){
+    while( (pCursor->desc==0 && pCsr<pEnd) 
+        || (pCursor->desc && pCsr>pExpr->aDoclist) 
+    ){
+      if( pCursor->desc==0 && pExpr->iCurrent<iDocid ){
         fts3PoslistCopy(0, &pCsr);
         if( pCsr<pEnd ){
           fts3GetDeltaVarint(&pCsr, &pExpr->iCurrent);
         }
+        pExpr->pCurrent = pCsr;
+      }else if( pCursor->desc && pExpr->iCurrent>iDocid ){
+        fts3GetReverseDeltaVarint(&pCsr, pExpr->aDoclist, &pExpr->iCurrent);
+        fts3ReversePoslist(pExpr->aDoclist, &pCsr);
         pExpr->pCurrent = pCsr;
       }else{
         if( pExpr->iCurrent==iDocid ){

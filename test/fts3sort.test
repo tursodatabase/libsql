@@ -58,6 +58,7 @@ foreach {tn query} {
   7   "SELECT docid, * FROM t1 WHERE t1 MATCH 'aa OR da'"
   8   "SELECT docid, * FROM t1 WHERE t1 MATCH 'nosuchtoken'"
   9   "SELECT docid, snippet(t1) FROM t1 WHERE t1 MATCH 'aa OR da'"
+  10  "SELECT docid, snippet(t1) FROM t1 WHERE t1 MATCH 'aa OR nosuchtoken'"
 } {
 
   unset -nocomplain A B C D
