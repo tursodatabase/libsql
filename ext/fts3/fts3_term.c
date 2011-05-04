@@ -10,6 +10,9 @@
 **
 ******************************************************************************
 **
+** This file is not part of the production FTS code. It is only used for
+** testing. It contains a virtual table implementation that provides direct 
+** access to the full-text index of an FTS table. 
 */
 
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
@@ -134,7 +137,18 @@ static int fts3termBestIndexMethod(
   sqlite3_index_info *pInfo
 ){
   UNUSED_PARAMETER(pVTab);
-  UNUSED_PARAMETER(pInfo);
+
+  /* This vtab naturally does "ORDER BY term, docid, col, pos".  */
+  if( pInfo->nOrderBy ){
+    int i;
+    for(i=0; i<pInfo->nOrderBy; i++){
+      if( pInfo->aOrderBy[i].iColumn!=i || pInfo->aOrderBy[i].desc ) break;
+    }
+    if( i==pInfo->nOrderBy ){
+      pInfo->orderByConsumed = 1;
+    }
+  }
+
   return SQLITE_OK;
 }
 
