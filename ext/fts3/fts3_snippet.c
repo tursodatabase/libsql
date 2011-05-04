@@ -415,7 +415,7 @@ static int fts3SnippetFindPositions(Fts3Expr *pExpr, int iPhrase, void *ctx){
 
   pPhrase->nToken = pExpr->pPhrase->nToken;
 
-  pCsr = sqlite3Fts3FindPositions(pExpr, p->pCsr->iPrevId, p->iCol);
+  pCsr = sqlite3Fts3FindPositions(p->pCsr, pExpr, p->pCsr->iPrevId, p->iCol);
   if( pCsr ){
     int iFirst = 0;
     pPhrase->pList = pCsr;
@@ -888,7 +888,7 @@ static int fts3ExprLocalHitsCb(
   if( pExpr->aDoclist ){
     char *pCsr;
 
-    pCsr = sqlite3Fts3FindPositions(pExpr, p->pCursor->iPrevId, -1);
+    pCsr = sqlite3Fts3FindPositions(p->pCursor, pExpr, p->pCursor->iPrevId, -1);
     if( pCsr ){
       fts3LoadColumnlistCounts(&pCsr, &p->aMatchinfo[iStart], 0);
     }
@@ -1055,7 +1055,7 @@ static int fts3MatchinfoLcs(Fts3Cursor *pCsr, MatchInfo *pInfo){
     LcsIterator *pIter = &aIter[i];
     nToken -= pIter->pExpr->pPhrase->nToken;
     pIter->iPosOffset = nToken;
-    pIter->pRead = sqlite3Fts3FindPositions(pIter->pExpr, pCsr->iPrevId, -1);
+    pIter->pRead = sqlite3Fts3FindPositions(pCsr,pIter->pExpr,pCsr->iPrevId,-1);
     if( pIter->pRead ){
       pIter->iPos = pIter->iPosOffset;
       fts3LcsIteratorAdvance(&aIter[i]);
@@ -1408,6 +1408,7 @@ struct TermOffset {
 };
 
 struct TermOffsetCtx {
+  Fts3Cursor *pCsr;
   int iCol;                       /* Column of table to populate aTerm for */
   int iTerm;
   sqlite3_int64 iDocid;
@@ -1425,7 +1426,7 @@ static int fts3ExprTermOffsetInit(Fts3Expr *pExpr, int iPhrase, void *ctx){
   int iPos = 0;                   /* First position in position-list */
 
   UNUSED_PARAMETER(iPhrase);
-  pList = sqlite3Fts3FindPositions(pExpr, p->iDocid, p->iCol);
+  pList = sqlite3Fts3FindPositions(p->pCsr, pExpr, p->iDocid, p->iCol);
   nTerm = pExpr->pPhrase->nToken;
   if( pList ){
     fts3GetDeltaPosition(&pList, &iPos);
@@ -1478,6 +1479,7 @@ void sqlite3Fts3Offsets(
     goto offsets_out;
   }
   sCtx.iDocid = pCsr->iPrevId;
+  sCtx.pCsr = pCsr;
 
   /* Loop through the table columns, appending offset information to 
   ** string-buffer res for each column.
