@@ -1,5 +1,5 @@
-C Merge\svtab-conflict\sbranch\swith\strunk.
-D 2011-05-04T17:23:19.296
+C Add\sa\s#include\sto\stest_demovfs.c\sin\san\seffort\sto\sget\sit\sto\scompile\son\sSolaris.
+D 2011-05-05T13:53:46.541
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -200,7 +200,7 @@ F src/test_autoext.c 30e7bd98ab6d70a62bb9ba572e4c7df347fe645e
 F src/test_backup.c c129c91127e9b46e335715ae2e75756e25ba27de
 F src/test_btree.c 47cd771250f09cdc6e12dda5bc71bc0b3abc96e2
 F src/test_config.c d536042f27226b4639f0f87d4795fd37428a9ddf
-F src/test_demovfs.c 31050680fa6925b4f677cfd4fa965b5f19195e50
+F src/test_demovfs.c 938d0f595f8bd310076e1c06cf7885a01ce7ce01
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_func.c cbdec5cededa0761daedde5baf06004a9bf416b5
 F src/test_fuzzer.c f884f6f32e8513d34248d6e1ac8a32047fead254
@@ -933,7 +933,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f55156c5194e85c47728b8a97fde3e5f0a5c9b56 1a113359705d307efa1833b1dfa5542b045dae43
-R ce8473bec0301287a61bbbfd48f07dff
-U dan
-Z 6d8393d5b7b8dbdcf9f90f047ce29665
+P 8f9666af5f9459cbd0305a86281d745ea6163acf
+R 0b98a6dfe1bc7e5dd0540df1f35076f9
+U drh
+Z 3320cc00343f9752f29938f9f9e325ca
