@@ -1,11 +1,11 @@
-C Change\ssqlite3_create_module()\sso\sthat\sit\savoids\sresetting\sthe\sschema\sas\nlong\sas\spreexisting\smodules\sare\sunchanged.
-D 2011-05-05T13:54:28.663
+C Bump\sthe\sversion\snumber\sto\s3.7.7\son\saccount\sof\sthe\snew\ssqlite3_vtab_config()\nand\ssqlite3_vtab_on_conflict()\sinterfaces.\s\sUpdates\sto\sthe\sdocumentation\son\nthose\sinterfaces.
+D 2011-05-05T15:39:50.869
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.vxworks c85ec1d8597fe2f7bc225af12ac1666e21379151
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
-F VERSION c97e5dcdea2407f4a94f9740294cdf39ce9e88c4
+F VERSION 3fcdd7fbe3eb282df3978fe77288544543767961
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 17dc593f791f874d2c23a0f9360850ded0286531
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -22,7 +22,7 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 61dbf78cdc4d6a871333dc599c130be6cce865c5 x
+F configure 1c31f231ba59b71ff81dbf5c7c7594fdc83803d5 x
 F configure.ac 87a3c71bbe9c925381c154413eea7f3cdc397244
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -179,7 +179,7 @@ F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c d9d440809025a58547e39f4f268c2a296bfb56ff
 F src/shell.c 72e7e176bf46d5c6518d15ac4ad6847c4bb5df79
-F src/sqlite.h.in 5d25d06b8ae0d624179dba9bebb7cce48ce831f0
+F src/sqlite.h.in 9bf19a5dcf6317b0f091c255edaed0b1fc01dcd0
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
 F src/sqliteInt.h e70a03bb66d209e279b3edeb57d4fdc42a1d9fda
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -244,7 +244,7 @@ F src/vdbeaux.c 25aa5ba7d46b4fe7c8f33dc132d474242d5f9726
 F src/vdbeblob.c c3ccb7c8732858c680f442932e66ad06bb036562
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
 F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
-F src/vtab.c cc56ae9512b65ac6b13b751ffa8649929831069d
+F src/vtab.c 1491acb3e0a67eafe69134fb65bfa0b7b7e82342
 F src/wal.c 7334009b396285b658a95a3b6bc6d2b016a1f794
 F src/wal.h 7a5fbb00114b7f2cd40c7e1003d4c41ce9d26840
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
@@ -915,7 +915,7 @@ F tool/omittest.tcl b1dd290c1596e0f31fd335160a74ec5dfea3df4a
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
-F tool/shell1.test 44705d6078b37f58853005d2ad5f1e67bc9dbbed
+F tool/shell1.test 5542ecdc952f91121a835ed817e6feaf8988b333
 F tool/shell2.test 5dc76b8005b465f420fed8241621da7513060ff3
 F tool/shell3.test 4fad469e8003938426355afdf34155f08c587836
 F tool/shell4.test 35f9c3d452b4e76d5013c63e1fd07478a62f14ce
@@ -933,7 +933,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8f06ea33c9070de8ea85368d76cf26237d1aee73
-R aff00e1334f6da4cf8292fcebfc844bd
+P 8485855afc71fb8078d53719c3da75021890ce9e
+R d001197d2ada5bdc77fdb1803c900b72
 U drh
-Z ad6da57164b98567e1b21b53456334e7
+Z b6f82da815334ecd28dc3bea3383de2d

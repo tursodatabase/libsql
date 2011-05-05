@@ -992,17 +992,28 @@ void sqlite3VtabMakeWritable(Parse *pParse, Table *pTab){
   }
 }
 
+/*
+** Return the ON CONFLICT resolution mode in effect for the virtual
+** table update operation currently in progress.
+**
+** The results of this routine are undefined unless it is called from
+** within an xUpdate method.
+*/
 int sqlite3_vtab_on_conflict(sqlite3 *db){
-  int aMap[] = { 
+  static const unsigned char aMap[] = { 
     SQLITE_ROLLBACK, SQLITE_IGNORE, SQLITE_ABORT, SQLITE_FAIL, SQLITE_REPLACE 
   };
   assert( OE_Rollback==1 && OE_Abort==2 && OE_Fail==3 );
   assert( OE_Ignore==4 && OE_Replace==5 );
   assert( db->vtabOnConflict>=1 && db->vtabOnConflict<=5 );
-  return aMap[db->vtabOnConflict-1];
+  return (int)aMap[db->vtabOnConflict-1];
 }
 
-
+/*
+** Call from within the xCreate() or xConnect() methods to provide 
+** the SQLite core with additional information about the behavior
+** of the virtual table being implemented.
+*/
 int sqlite3_vtab_config(sqlite3 *db, int op, ...){
   va_list ap;
   int rc = SQLITE_OK;
