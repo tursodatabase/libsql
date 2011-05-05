@@ -1001,7 +1001,7 @@ void sqlite3VtabMakeWritable(Parse *pParse, Table *pTab){
 */
 int sqlite3_vtab_on_conflict(sqlite3 *db){
   static const unsigned char aMap[] = { 
-    SQLITE_ROLLBACK, SQLITE_IGNORE, SQLITE_ABORT, SQLITE_FAIL, SQLITE_REPLACE 
+    SQLITE_ROLLBACK, SQLITE_ABORT, SQLITE_FAIL, SQLITE_IGNORE, SQLITE_REPLACE 
   };
   assert( OE_Rollback==1 && OE_Abort==2 && OE_Fail==3 );
   assert( OE_Ignore==4 && OE_Replace==5 );
