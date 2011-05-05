@@ -1,5 +1,5 @@
-C Add\sa\s#include\sto\stest_demovfs.c\sin\san\seffort\sto\sget\sit\sto\scompile\son\sSolaris.
-D 2011-05-05T13:53:46.541
+C Change\ssqlite3_create_module()\sso\sthat\sit\savoids\sresetting\sthe\sschema\sas\nlong\sas\spreexisting\smodules\sare\sunchanged.
+D 2011-05-05T13:54:28.663
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -244,7 +244,7 @@ F src/vdbeaux.c 25aa5ba7d46b4fe7c8f33dc132d474242d5f9726
 F src/vdbeblob.c c3ccb7c8732858c680f442932e66ad06bb036562
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
 F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
-F src/vtab.c 59db0620d682d34abb96860020429e77bb2b8ced
+F src/vtab.c cc56ae9512b65ac6b13b751ffa8649929831069d
 F src/wal.c 7334009b396285b658a95a3b6bc6d2b016a1f794
 F src/wal.h 7a5fbb00114b7f2cd40c7e1003d4c41ce9d26840
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
@@ -933,7 +933,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8f9666af5f9459cbd0305a86281d745ea6163acf
-R 0b98a6dfe1bc7e5dd0540df1f35076f9
+P 8f06ea33c9070de8ea85368d76cf26237d1aee73
+R aff00e1334f6da4cf8292fcebfc844bd
 U drh
-Z 3320cc00343f9752f29938f9f9e325ca
+Z ad6da57164b98567e1b21b53456334e7

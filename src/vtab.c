@@ -54,13 +54,13 @@ static int createModule(
     pMod->xDestroy = xDestroy;
     pDel = (Module *)sqlite3HashInsert(&db->aModule, zCopy, nName, (void*)pMod);
     if( pDel && pDel->xDestroy ){
+      sqlite3ResetInternalSchema(db, -1);
       pDel->xDestroy(pDel->pAux);
     }
     sqlite3DbFree(db, pDel);
     if( pDel==pMod ){
       db->mallocFailed = 1;
     }
-    sqlite3ResetInternalSchema(db, -1);
   }else if( xDestroy ){
     xDestroy(pAux);
   }
