@@ -1427,6 +1427,18 @@ struct sqlite3_mem_methods {
 ** In a multi-threaded application, the application-defined logger
 ** function must be threadsafe. </dd>
 **
+** <dt>SQLITE_CONFIG_URI
+** <dd> This option takes a single argument of type int. If non-zero, then
+** URI handling is globally enabled. If the parameter is zero, then URI handling
+** is globally disabled. If URI handling is globally enabled, all filenames
+** passed to [sqlite3_open()], [sqlite3_open_v2()], [sqlite3_open16()] or
+** specified as part of [ATTACH] commands are interpreted as URIs, regardless
+** of whether or not the [SQLITE_OPEN_URI] flag is set when the database
+** connection is opened. If it is globally disabled, filenames are
+** only interpreted as URIs if the SQLITE_OPEN_URI flag is set when the
+** database connection is opened. By default, URI handling is globally
+** disabled. The default value may be changed by compiling with the
+** [SQLITE_USE_URI] symbol defined.
 ** </dl>
 */
 #define SQLITE_CONFIG_SINGLETHREAD  1  /* nil */
@@ -2322,7 +2334,7 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 /*
 ** CAPI3REF: Opening A New Database Connection
 **
-** ^These routines open an SQLite database file whose name is given by the
+** ^These routines open an SQLite database file as specified by the 
 ** filename argument. ^The filename argument is interpreted as UTF-8 for
 ** sqlite3_open() and sqlite3_open_v2() and as UTF-16 in the native byte
 ** order for sqlite3_open16(). ^(A [database connection] handle is usually
@@ -2385,6 +2397,11 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 ** [SQLITE_OPEN_PRIVATECACHE] flag causes the database connection to not
 ** participate in [shared cache mode] even if it is enabled.
 **
+** ^The fourth parameter to sqlite3_open_v2() is the name of the
+** [sqlite3_vfs] object that defines the operating system interface that
+** the new database connection should use.  ^If the fourth parameter is
+** a NULL pointer then the default [sqlite3_vfs] object is used.
+**
 ** ^If the filename is ":memory:", then a private, temporary in-memory database
 ** is created for the connection.  ^This in-memory database will vanish when
 ** the database connection is closed.  Future versions of SQLite might
@@ -2397,10 +2414,102 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 ** on-disk database will be created.  ^This private database will be
 ** automatically deleted as soon as the database connection is closed.
 **
-** ^The fourth parameter to sqlite3_open_v2() is the name of the
-** [sqlite3_vfs] object that defines the operating system interface that
-** the new database connection should use.  ^If the fourth parameter is
-** a NULL pointer then the default [sqlite3_vfs] object is used.
+** ^If URI filename interpretation is enabled, and the filename argument
+** begins with "file:", then the filename is interpreted as a URI. ^URI
+** filename interpretation is enabled if the [SQLITE_OPEN_URI] flag is
+** is set in the fourth argument to sqlite3_open_v2(), or if it has
+** been enabled globally using the [SQLITE_CONFIG_URI] option with the
+** [sqlite3_config()] method. 
+**
+** URI filenames are parsed according to RFC 1738. If the URI contains an
+** 'authority', then it must be either an empty string or the string 
+** "localhost". ^If the authority is not an empty string or "localhost", an 
+** error is returned to the caller. ^The 'fragment' component of a URI, if 
+** present, is always ignored.
+**
+** ^SQLite uses the 'path' component of the URI as the path to the database file
+** to open. ^If the path begins with a '/' character, then it is interpreted as
+** an absolute path. ^If it does not begin with a '/', it is interpreted as a 
+** relative path. ^On windows, if the first component of an absolute path is 
+** of the form "X:", where "X" is any alphabetic character, it is interpreted 
+** as a drive specification. ^Otherwise, the absolute path is interpreted as
+** the full pathname of a file on the current drive.
+**
+** The query component of a URI may contain parameters that are interpreted
+** either by SQLite itself, or by a [sqlite3_vfs | custom VFS implementation].
+** SQLite interprets the following three query parameters:
+**
+** <ul>
+**   <li> <b>vfs</b>: ^The "vfs" parameter may be used to specify the name of
+**     a VFS object that provides the operating system interface that should
+**     be used to access the database file on disk. ^If this option is set to
+**     an empty string the default VFS object is used. ^Specifying an unknown
+**     VFS is an error.
+**
+**   <li> <b>mode</b>: ^(This option may be set to either "ro", "rw" or "rwc".
+**     Attempting to set it to any other value is an error)^. ^If "ro" is
+**     specified, then the database is opened for read-only access, just as if
+**     the [SQLITE_OPEN_READONLY] flag had been set in the third argument to
+**     sqlite3_prepare_v2(). ^If the mode option is set to "rw", then the
+**     database is opened for read-write (but not create) access, as if
+**     SQLITE_OPEN_READWRITE (but not SQLITE_OPEN_CREATE) had been set.
+**     ^Value "rwc" is equivalent to setting both SQLITE_OPEN_READWRITE and
+**     SQLITE_OPEN_CREATE.
+**     ^If sqlite3_open_v2() is used, it is an error to specify a value for
+**     the mode parameter that is less restrictive than that specified by the
+**     flags passed as the third parameter.
+**
+**   <li> <b>cache</b>: ^The cache parameter may be set to either "shared" or
+**     "private". ^Setting it to "shared" is equivalent to setting the
+**     SQLITE_OPEN_SHAREDCACHE bit in the flags argument passed to
+**     sqlite3_open_v2(). ^Setting the cache parameter to "private" is 
+**     equivalent to setting the SQLITE_OPEN_PRIVATECACHE bit.
+**     ^If sqlite3_open_v2() is used and the "cache" parameter is present in
+**     a URI filename, its value overrides any behaviour requested by setting
+**     SQLITE_OPEN_PRIVATECACHE or SQLITE_OPEN_SHAREDCACHE flag.
+** </ul>
+**
+** ^Specifying an unknown parameter in the query component of a URI is not an
+** error.
+**
+** URI filename examples:
+**
+** <table border="1" align=center cellpadding=5>
+** <tr><th> URI filenames <th> Results
+** <tr><td> file:data.db <td> 
+**          Open the file "data.db" in the current directory.
+** <tr><td> file:/home/fred/data.db<br>
+**          file:///home/fred/data.db <br> 
+**          file://localhost/home/fred/data.db <br> <td> 
+**          Open the database file "/home/fred/data.db".
+** <tr><td> file://darkstar/home/fred/data.db <td> 
+**          An error. "darkstar" is not a recognized authority.
+** <tr><td style="white-space:nowrap"> 
+**          file:///C:/Documents%20and%20Settings/fred/Desktop/data.db
+**     <td> Windows only: Open the file "data.db" on fred's desktop on drive
+**          C:. If the "C:/" component were omitted from this URI, then the
+**          file "\Documents and Settings\fred\Desktop\data.db" would be opened
+**          on the current drive. Note that the %20 escaping in this example
+**          is not strictly necessary - space characters can be used literally
+**          in URI filenames.
+** <tr><td> file:data.db?mode=ro&cache=private <td> 
+**          Open file "data.db" in the current directory for read-only access.
+**          Regardless of whether or not shared-cache mode is enabled by
+**          default, use a private cache.
+** <tr><td> file:/home/fred/data.db?vfs=unix-nolock <td>
+**          Open file "/home/fred/data.db". Use the special VFS "unix-nolock".
+** <tr><td> file:data.db?mode=readonly <td> 
+**          An error. "readonly" is not a valid option for the "mode" parameter.
+** </table>
+**
+** ^URI hexadecimal escape sequences (%HH) are supported within the path and
+** query components of a URI. A hexadecimal escape sequence consists of a
+** percent sign - "%" - followed by exactly two hexadecimal digits 
+** specifying an octet value. ^Before the path or query components of a
+** URI filename are interpreted, they are encoded using UTF-8 and all 
+** hexadecimal escape sequences replaced by a single byte containing the
+** corresponding octet. If this process generates an invalid UTF-8 encoding,
+** the results are undefined.
 **
 ** <b>Note to Windows users:</b>  The encoding used for the filename argument
 ** of sqlite3_open() and sqlite3_open_v2() must be UTF-8, not whatever
