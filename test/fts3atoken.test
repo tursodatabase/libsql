@@ -24,6 +24,8 @@ ifcapable !fts3 {
   return
 }
 
+set ::testprefix fts3token
+
 proc escape_string {str} {
   set out ""
   foreach char [split $str ""] {
@@ -165,10 +167,21 @@ ifcapable icu {
   do_icu_test fts3token-4.6 MiddleOfTheOcean  $input $output
   do_icu_test fts3token-4.7 th_TH  $input $output
   do_icu_test fts3token-4.8 en_US  $input $output
+
+  do_execsql_test 5.1 {
+    CREATE VIRTUAL TABLE x1 USING fts3(name,TOKENIZE icu en_US);
+    insert into x1 (name) values (NULL);
+    insert into x1 (name) values (NULL);
+    delete from x1;
+  }
 }
+
 
 do_test fts3token-internal {
   execsql { SELECT fts3_tokenizer_internal_test() }
 } {ok}
 
+
 finish_test
+
+

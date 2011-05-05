@@ -171,6 +171,7 @@ struct Fts3Cursor {
   char *pNextId;                  /* Pointer into the body of aDoclist */
   char *aDoclist;                 /* List of docids for full-text queries */
   int nDoclist;                   /* Size of buffer at aDoclist */
+  int desc;                       /* True to sort in descending order */
   int eEvalmode;                  /* An FTS3_EVAL_XX constant */
   int nRowAvg;                    /* Average size of database rows, in pages */
 
@@ -353,7 +354,7 @@ int sqlite3Fts3GetVarint32(const char *, int *);
 int sqlite3Fts3VarintLen(sqlite3_uint64);
 void sqlite3Fts3Dequote(char *);
 
-char *sqlite3Fts3FindPositions(Fts3Expr *, sqlite3_int64, int);
+char *sqlite3Fts3FindPositions(Fts3Cursor *, Fts3Expr *, sqlite3_int64, int);
 int sqlite3Fts3ExprLoadDoclist(Fts3Cursor *, Fts3Expr *);
 int sqlite3Fts3ExprLoadFtDoclist(Fts3Cursor *, Fts3Expr *, char **, int *);
 int sqlite3Fts3ExprNearTrim(Fts3Expr *, Fts3Expr *, int);

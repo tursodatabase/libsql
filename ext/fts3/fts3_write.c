@@ -542,6 +542,14 @@ static int fts3PendingTermsAdd(
 
   assert( pTokenizer && pModule );
 
+  /* If the user has inserted a NULL value, this function may be called with
+  ** zText==0. In this case, add zero token entries to the hash table and 
+  ** return early. */
+  if( zText==0 ){
+    *pnWord = 0;
+    return SQLITE_OK;
+  }
+
   rc = pModule->xOpen(pTokenizer, zText, -1, &pCsr);
   if( rc!=SQLITE_OK ){
     return rc;
@@ -632,11 +640,9 @@ static int fts3InsertTerms(Fts3Table *p, sqlite3_value **apVal, u32 *aSz){
   int i;                          /* Iterator variable */
   for(i=2; i<p->nColumn+2; i++){
     const char *zText = (const char *)sqlite3_value_text(apVal[i]);
-    if( zText ){
-      int rc = fts3PendingTermsAdd(p, zText, i-2, &aSz[i-2]);
-      if( rc!=SQLITE_OK ){
-        return rc;
-      }
+    int rc = fts3PendingTermsAdd(p, zText, i-2, &aSz[i-2]);
+    if( rc!=SQLITE_OK ){
+      return rc;
     }
     aSz[p->nColumn] += sqlite3_value_bytes(apVal[i]);
   }
@@ -741,14 +747,14 @@ static int fts3DeleteAll(Fts3Table *p){
 static void fts3DeleteTerms( 
   int *pRC,               /* Result code */
   Fts3Table *p,           /* The FTS table to delete from */
-  sqlite3_value **apVal,  /* apVal[] contains the docid to be deleted */
+  sqlite3_value *pRowid,  /* The docid to be deleted */
   u32 *aSz                /* Sizes of deleted document written here */
 ){
   int rc;
   sqlite3_stmt *pSelect;
 
   if( *pRC ) return;
-  rc = fts3SqlStmt(p, SQL_SELECT_CONTENT_BY_ROWID, &pSelect, apVal);
+  rc = fts3SqlStmt(p, SQL_SELECT_CONTENT_BY_ROWID, &pSelect, &pRowid);
   if( rc==SQLITE_OK ){
     if( SQLITE_ROW==sqlite3_step(pSelect) ){
       int i;
@@ -1888,16 +1894,16 @@ static void fts3SegWriterFree(SegmentWriter *pWriter){
 ** The first value in the apVal[] array is assumed to contain an integer.
 ** This function tests if there exist any documents with docid values that
 ** are different from that integer. i.e. if deleting the document with docid
-** apVal[0] would mean the FTS3 table were empty.
+** pRowid would mean the FTS3 table were empty.
 **
 ** If successful, *pisEmpty is set to true if the table is empty except for
-** document apVal[0], or false otherwise, and SQLITE_OK is returned. If an
+** document pRowid, or false otherwise, and SQLITE_OK is returned. If an
 ** error occurs, an SQLite error code is returned.
 */
-static int fts3IsEmpty(Fts3Table *p, sqlite3_value **apVal, int *pisEmpty){
+static int fts3IsEmpty(Fts3Table *p, sqlite3_value *pRowid, int *pisEmpty){
   sqlite3_stmt *pStmt;
   int rc;
-  rc = fts3SqlStmt(p, SQL_IS_EMPTY, &pStmt, apVal);
+  rc = fts3SqlStmt(p, SQL_IS_EMPTY, &pStmt, &pRowid);
   if( rc==SQLITE_OK ){
     if( SQLITE_ROW==sqlite3_step(pStmt) ){
       *pisEmpty = sqlite3_column_int(pStmt, 0);
@@ -2621,6 +2627,40 @@ int sqlite3Fts3DeferToken(
   return SQLITE_OK;
 }
 
+/*
+** SQLite value pRowid contains the rowid of a row that may or may not be
+** present in the FTS3 table. If it is, delete it and adjust the contents
+** of subsiduary data structures accordingly.
+*/
+static int fts3DeleteByRowid(
+  Fts3Table *p, 
+  sqlite3_value *pRowid, 
+  int *pnDoc,
+  u32 *aSzDel
+){
+  int isEmpty = 0;
+  int rc = fts3IsEmpty(p, pRowid, &isEmpty);
+  if( rc==SQLITE_OK ){
+    if( isEmpty ){
+      /* Deleting this row means the whole table is empty. In this case
+      ** delete the contents of all three tables and throw away any
+      ** data in the pendingTerms hash table.  */
+      rc = fts3DeleteAll(p);
+      *pnDoc = *pnDoc - 1;
+    }else{
+      sqlite3_int64 iRemove = sqlite3_value_int64(pRowid);
+      rc = fts3PendingTermsDocid(p, iRemove);
+      fts3DeleteTerms(&rc, p, pRowid, aSzDel);
+      fts3SqlExec(&rc, p, SQL_DELETE_CONTENT, &pRowid);
+      if( sqlite3_changes(p->db) ) *pnDoc = *pnDoc - 1;
+      if( p->bHasDocsize ){
+        fts3SqlExec(&rc, p, SQL_DELETE_DOCSIZE, &pRowid);
+      }
+    }
+  }
+
+  return rc;
+}
 
 /*
 ** This function does the work for the xUpdate method of FTS3 virtual
@@ -2639,8 +2679,20 @@ int sqlite3Fts3UpdateMethod(
   u32 *aSzIns;                    /* Sizes of inserted documents */
   u32 *aSzDel;                    /* Sizes of deleted documents */
   int nChng = 0;                  /* Net change in number of documents */
+  int bInsertDone = 0;
 
   assert( p->pSegments==0 );
+
+  /* Check for a "special" INSERT operation. One of the form:
+  **
+  **   INSERT INTO xyz(xyz) VALUES('command');
+  */
+  if( nArg>1 
+   && sqlite3_value_type(apVal[0])==SQLITE_NULL 
+   && sqlite3_value_type(apVal[p->nColumn+2])!=SQLITE_NULL 
+  ){
+    return fts3SpecialInsert(p, apVal[p->nColumn+2]);
+  }
 
   /* Allocate space to hold the change in document sizes */
   aSzIns = sqlite3_malloc( sizeof(aSzIns[0])*(p->nColumn+1)*2 );
@@ -2648,37 +2700,70 @@ int sqlite3Fts3UpdateMethod(
   aSzDel = &aSzIns[p->nColumn+1];
   memset(aSzIns, 0, sizeof(aSzIns[0])*(p->nColumn+1)*2);
 
-  /* If this is a DELETE or UPDATE operation, remove the old record. */
-  if( sqlite3_value_type(apVal[0])!=SQLITE_NULL ){
-    int isEmpty = 0;
-    rc = fts3IsEmpty(p, apVal, &isEmpty);
-    if( rc==SQLITE_OK ){
-      if( isEmpty ){
-        /* Deleting this row means the whole table is empty. In this case
-        ** delete the contents of all three tables and throw away any
-        ** data in the pendingTerms hash table.
-        */
-        rc = fts3DeleteAll(p);
+  /* If this is an INSERT operation, or an UPDATE that modifies the rowid
+  ** value, then this operation requires constraint handling.
+  **
+  ** If the on-conflict mode is REPLACE, this means that the existing row
+  ** should be deleted from the database before inserting the new row. Or,
+  ** if the on-conflict mode is other than REPLACE, then this method must
+  ** detect the conflict and return SQLITE_CONSTRAINT before beginning to
+  ** modify the database file.
+  */
+  if( nArg>1 ){
+    /* Find the value object that holds the new rowid value. */
+    sqlite3_value *pNewRowid = apVal[3+p->nColumn];
+    if( sqlite3_value_type(pNewRowid)==SQLITE_NULL ){
+      pNewRowid = apVal[1];
+    }
+
+    if( sqlite3_value_type(pNewRowid)!=SQLITE_NULL && ( 
+        sqlite3_value_type(apVal[0])==SQLITE_NULL
+     || sqlite3_value_int64(apVal[0])!=sqlite3_value_int64(pNewRowid)
+    )){
+      /* The new rowid is not NULL (in this case the rowid will be
+      ** automatically assigned and there is no chance of a conflict), and 
+      ** the statement is either an INSERT or an UPDATE that modifies the
+      ** rowid column. So if the conflict mode is REPLACE, then delete any
+      ** existing row with rowid=pNewRowid. 
+      **
+      ** Or, if the conflict mode is not REPLACE, insert the new record into 
+      ** the %_content table. If we hit the duplicate rowid constraint (or any
+      ** other error) while doing so, return immediately.
+      **
+      ** This branch may also run if pNewRowid contains a value that cannot
+      ** be losslessly converted to an integer. In this case, the eventual 
+      ** call to fts3InsertData() (either just below or further on in this
+      ** function) will return SQLITE_MISMATCH. If fts3DeleteByRowid is 
+      ** invoked, it will delete zero rows (since no row will have
+      ** docid=$pNewRowid if $pNewRowid is not an integer value).
+      */
+      if( sqlite3_vtab_on_conflict(p->db)==SQLITE_REPLACE ){
+        rc = fts3DeleteByRowid(p, pNewRowid, &nChng, aSzDel);
       }else{
-        isRemove = 1;
-        iRemove = sqlite3_value_int64(apVal[0]);
-        rc = fts3PendingTermsDocid(p, iRemove);
-        fts3DeleteTerms(&rc, p, apVal, aSzDel);
-        fts3SqlExec(&rc, p, SQL_DELETE_CONTENT, apVal);
-        if( p->bHasDocsize ){
-          fts3SqlExec(&rc, p, SQL_DELETE_DOCSIZE, apVal);
-        }
-        nChng--;
+        rc = fts3InsertData(p, apVal, pRowid);
+        bInsertDone = 1;
       }
     }
-  }else if( sqlite3_value_type(apVal[p->nColumn+2])!=SQLITE_NULL ){
+  }
+  if( rc!=SQLITE_OK ){
     sqlite3_free(aSzIns);
-    return fts3SpecialInsert(p, apVal[p->nColumn+2]);
+    return rc;
+  }
+
+  /* If this is a DELETE or UPDATE operation, remove the old record. */
+  if( sqlite3_value_type(apVal[0])!=SQLITE_NULL ){
+    assert( sqlite3_value_type(apVal[0])==SQLITE_INTEGER );
+    rc = fts3DeleteByRowid(p, apVal[0], &nChng, aSzDel);
+    isRemove = 1;
+    iRemove = sqlite3_value_int64(apVal[0]);
   }
   
   /* If this is an INSERT or UPDATE operation, insert the new record. */
   if( nArg>1 && rc==SQLITE_OK ){
-    rc = fts3InsertData(p, apVal, pRowid);
+    if( bInsertDone==0 ){
+      rc = fts3InsertData(p, apVal, pRowid);
+      if( rc==SQLITE_CONSTRAINT ) rc = SQLITE_CORRUPT;
+    }
     if( rc==SQLITE_OK && (!isRemove || *pRowid!=iRemove) ){
       rc = fts3PendingTermsDocid(p, *pRowid);
     }

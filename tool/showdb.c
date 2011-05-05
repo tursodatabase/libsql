@@ -464,7 +464,7 @@ static void usage(const char *argv0){
     "    NNNbc           Decode btree page NNN and show content\n"
     "    NNNbm           Decode btree page NNN and show a layout map\n"
     "    NNNt            Decode freelist trunk page NNN\n"
-    "    NNNtd           Show leave freelist pages on the decode\n"
+    "    NNNtd           Show leaf freelist pages on the decode\n"
     "    NNNtr           Recurisvely decode freelist starting at NNN\n"
   );
 }

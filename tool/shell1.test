@@ -200,7 +200,7 @@ do_test shell1-1.15.3 {
 # -version             show SQLite version
 do_test shell1-1.16.1 {
   catchcmd "-version test.db" "" 
-} {0 3.7.6.1}
+} {0 3.7.7}
 
 #----------------------------------------------------------------------------
 # Test cases shell1-2.*: Basic "dot" command token parsing.
@@ -710,5 +710,10 @@ do_test shell1-3.27.4 {
   # too many arguments
   catchcmd "test.db" ".timer OFF BAD"
 } {1 {Error: unknown command or invalid arguments:  "timer". Enter ".help" for help}}
+
+do_test shell1-3-28.1 {
+  catchcmd test.db \
+     ".log stdout\nSELECT coalesce(sqlite_log(123,'hello'),'456');"
+} "0 {(123) hello\n456}"
 
 puts "CLI tests completed successfully"

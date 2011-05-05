@@ -420,6 +420,34 @@ static void fts3GetDeltaVarint(char **pp, sqlite3_int64 *pVal){
 }
 
 /*
+** When this function is called, *pp points to the first byte following a
+** varint that is part of a doclist (or position-list, or any other list
+** of varints). This function moves *pp to point to the start of that varint,
+** and decrements the value stored in *pVal by the varint value.
+**
+** Argument pStart points to the first byte of the doclist that the
+** varint is part of.
+*/
+static void fts3GetReverseDeltaVarint(
+  char **pp, 
+  char *pStart, 
+  sqlite3_int64 *pVal
+){
+  sqlite3_int64 iVal;
+  char *p = *pp;
+
+  /* Pointer p now points at the first byte past the varint we are 
+  ** interested in. So, unless the doclist is corrupt, the 0x80 bit is
+  ** clear on character p[-1]. */
+  for(p = (*pp)-2; p>=pStart && *p&0x80; p--);
+  p++;
+  *pp = p;
+
+  sqlite3Fts3GetVarint(p, &iVal);
+  *pVal -= iVal;
+}
+
+/*
 ** As long as *pp has not reached its end (pEnd), then do the same
 ** as fts3GetDeltaVarint(): read a single varint and add it to *pVal.
 ** But if we have reached the end of the varint, just set *pp=0 and
@@ -523,6 +551,8 @@ static void fts3DeclareVtab(int *pRc, Fts3Table *p){
     int rc;                       /* Return code */
     char *zSql;                   /* SQL statement passed to declare_vtab() */
     char *zCols;                  /* List of user defined columns */
+
+    sqlite3_vtab_config(p->db, SQLITE_VTAB_CONSTRAINT_SUPPORT, 1);
 
     /* Create a list of user columns for the virtual table */
     zCols = sqlite3_mprintf("%Q, ", p->azColumn[0]);
@@ -1092,6 +1122,22 @@ static int fts3BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
     pInfo->aConstraintUsage[iCons].argvIndex = 1;
     pInfo->aConstraintUsage[iCons].omit = 1;
   } 
+
+  /* Regardless of the strategy selected, FTS can deliver rows in rowid (or
+  ** docid) order. Both ascending and descending are possible. 
+  */
+  if( pInfo->nOrderBy==1 ){
+    struct sqlite3_index_orderby *pOrder = &pInfo->aOrderBy[0];
+    if( pOrder->iColumn<0 || pOrder->iColumn==p->nColumn+1 ){
+      if( pOrder->desc ){
+        pInfo->idxStr = "DESC";
+      }else{
+        pInfo->idxStr = "ASC";
+      }
+    }
+    pInfo->orderByConsumed = 1;
+  }
+
   return SQLITE_OK;
 }
 
@@ -2996,12 +3042,20 @@ static int fts3NextMethod(sqlite3_vtab_cursor *pCursor){
       }
       pCsr->iPrevId = sqlite3_column_int64(pCsr->pStmt, 0);
     }else{
-      if( pCsr->pNextId>=&pCsr->aDoclist[pCsr->nDoclist] ){
-        pCsr->isEof = 1;
-        break;
+      if( pCsr->desc==0 ){
+        if( pCsr->pNextId>=&pCsr->aDoclist[pCsr->nDoclist] ){
+          pCsr->isEof = 1;
+          break;
+        }
+        fts3GetDeltaVarint(&pCsr->pNextId, &pCsr->iPrevId);
+      }else{
+        fts3GetReverseDeltaVarint(&pCsr->pNextId,pCsr->aDoclist,&pCsr->iPrevId);
+        if( pCsr->pNextId<=pCsr->aDoclist ){
+          pCsr->isEof = 1;
+          break;
+        }
       }
       sqlite3_reset(pCsr->pStmt);
-      fts3GetDeltaVarint(&pCsr->pNextId, &pCsr->iPrevId);
       pCsr->isRequireSeek = 1;
       pCsr->isMatchinfoNeeded = 1;
     }
@@ -3034,8 +3088,8 @@ static int fts3FilterMethod(
   sqlite3_value **apVal           /* Arguments for the indexing scheme */
 ){
   const char *azSql[] = {
-    "SELECT %s FROM %Q.'%q_content' AS x WHERE docid = ?", /* non-full-scan */
-    "SELECT %s FROM %Q.'%q_content' AS x ",                /* full-scan */
+    "SELECT %s FROM %Q.'%q_content' AS x WHERE docid = ?",   /* non-full-scan */
+    "SELECT %s FROM %Q.'%q_content' AS x ORDER BY docid %s", /* full-scan */
   };
   int rc;                         /* Return code */
   char *zSql;                     /* SQL statement used to access %_content */
@@ -3091,7 +3145,9 @@ static int fts3FilterMethod(
   ** row by docid.
   */
   zSql = (char *)azSql[idxNum==FTS3_FULLSCAN_SEARCH];
-  zSql = sqlite3_mprintf(zSql, p->zReadExprlist, p->zDb, p->zName);
+  zSql = sqlite3_mprintf(
+      zSql, p->zReadExprlist, p->zDb, p->zName, (idxStr ? idxStr : "ASC")
+  );
   if( !zSql ){
     rc = SQLITE_NOMEM;
   }else{
@@ -3103,7 +3159,22 @@ static int fts3FilterMethod(
   }
   pCsr->eSearch = (i16)idxNum;
 
+  assert( pCsr->desc==0 );
   if( rc!=SQLITE_OK ) return rc;
+  if( rc==SQLITE_OK && pCsr->nDoclist>0 && idxStr && idxStr[0]=='D' ){
+    sqlite3_int64 iDocid = 0;
+    char *csr = pCsr->aDoclist;
+    while( csr<&pCsr->aDoclist[pCsr->nDoclist] ){
+      fts3GetDeltaVarint(&csr, &iDocid);
+    }
+    pCsr->pNextId = csr;
+    pCsr->iPrevId = iDocid;
+    pCsr->desc = 1;
+    pCsr->isRequireSeek = 1;
+    pCsr->isMatchinfoNeeded = 1;
+    pCsr->eEvalmode = FTS3_EVAL_NEXT;
+    return SQLITE_OK;
+  }
   return fts3NextMethod(pCursor);
 }
 
@@ -3256,12 +3327,32 @@ int sqlite3Fts3ExprLoadFtDoclist(
   return rc;
 }
 
+
+/*
+** When called, *ppPoslist must point to the byte immediately following the
+** end of a position-list. i.e. ( (*ppPoslist)[-1]==POS_END ). This function
+** moves *ppPoslist so that it instead points to the first byte of the
+** same position list.
+*/
+static void fts3ReversePoslist(char *pStart, char **ppPoslist){
+  char *p = &(*ppPoslist)[-3];
+  char c = p[1];
+  while( p>pStart && (*p & 0x80) | c ){ 
+    c = *p--; 
+  }
+  if( p>pStart ){ p = &p[2]; }
+  while( *p++&0x80 );
+  *ppPoslist = p;
+}
+
+
 /*
 ** After ExprLoadDoclist() (see above) has been called, this function is
 ** used to iterate/search through the position lists that make up the doclist
 ** stored in pExpr->aDoclist.
 */
 char *sqlite3Fts3FindPositions(
+  Fts3Cursor *pCursor,            /* Associate FTS3 cursor */
   Fts3Expr *pExpr,                /* Access this expressions doclist */
   sqlite3_int64 iDocid,           /* Docid associated with requested pos-list */
   int iCol                        /* Column of requested pos-list */
@@ -3272,19 +3363,35 @@ char *sqlite3Fts3FindPositions(
     char *pCsr;
 
     if( pExpr->pCurrent==0 ){
-      pExpr->pCurrent = pExpr->aDoclist;
-      pExpr->iCurrent = 0;
-      pExpr->pCurrent += sqlite3Fts3GetVarint(pExpr->pCurrent,&pExpr->iCurrent);
+      if( pCursor->desc==0 ){
+        pExpr->pCurrent = pExpr->aDoclist;
+        pExpr->iCurrent = 0;
+        fts3GetDeltaVarint(&pExpr->pCurrent, &pExpr->iCurrent);
+      }else{
+        pCsr = pExpr->aDoclist;
+        while( pCsr<pEnd ){
+          fts3GetDeltaVarint(&pCsr, &pExpr->iCurrent);
+          fts3PoslistCopy(0, &pCsr);
+        }
+        fts3ReversePoslist(pExpr->aDoclist, &pCsr);
+        pExpr->pCurrent = pCsr;
+      }
     }
     pCsr = pExpr->pCurrent;
     assert( pCsr );
 
-    while( pCsr<pEnd ){
-      if( pExpr->iCurrent<iDocid ){
+    while( (pCursor->desc==0 && pCsr<pEnd) 
+        || (pCursor->desc && pCsr>pExpr->aDoclist) 
+    ){
+      if( pCursor->desc==0 && pExpr->iCurrent<iDocid ){
         fts3PoslistCopy(0, &pCsr);
         if( pCsr<pEnd ){
           fts3GetDeltaVarint(&pCsr, &pExpr->iCurrent);
         }
+        pExpr->pCurrent = pCsr;
+      }else if( pCursor->desc && pExpr->iCurrent>iDocid ){
+        fts3GetReverseDeltaVarint(&pCsr, pExpr->aDoclist, &pExpr->iCurrent);
+        fts3ReversePoslist(pExpr->aDoclist, &pCsr);
         pExpr->pCurrent = pCsr;
       }else{
         if( pExpr->iCurrent==iDocid ){
@@ -3542,8 +3649,19 @@ static int fts3RenameMethod(
   return rc;
 }
 
+static int fts3SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
+  return sqlite3Fts3PendingTermsFlush((Fts3Table *)pVtab);
+}
+static int fts3ReleaseMethod(sqlite3_vtab *pVtab, int iSavepoint){
+  return SQLITE_OK;
+}
+static int fts3RollbackToMethod(sqlite3_vtab *pVtab, int iSavepoint){
+  sqlite3Fts3PendingTermsClear((Fts3Table *)pVtab);
+  return SQLITE_OK;
+}
+
 static const sqlite3_module fts3Module = {
-  /* iVersion      */ 0,
+  /* iVersion      */ 1,
   /* xCreate       */ fts3CreateMethod,
   /* xConnect      */ fts3ConnectMethod,
   /* xBestIndex    */ fts3BestIndexMethod,
@@ -3563,6 +3681,9 @@ static const sqlite3_module fts3Module = {
   /* xRollback     */ fts3RollbackMethod,
   /* xFindFunction */ fts3FindFunctionMethod,
   /* xRename */       fts3RenameMethod,
+  /* xSavepoint    */ fts3SavepointMethod,
+  /* xRelease      */ fts3ReleaseMethod,
+  /* xRollbackTo   */ fts3RollbackToMethod,
 };
 
 /*
@@ -3607,6 +3728,11 @@ int sqlite3Fts3Init(sqlite3 *db){
 #ifdef SQLITE_ENABLE_ICU
   const sqlite3_tokenizer_module *pIcu = 0;
   sqlite3Fts3IcuTokenizerModule(&pIcu);
+#endif
+
+#ifdef SQLITE_TEST
+  rc = sqlite3Fts3InitTerm(db);
+  if( rc!=SQLITE_OK ) return rc;
 #endif
 
   rc = sqlite3Fts3InitAux(db);

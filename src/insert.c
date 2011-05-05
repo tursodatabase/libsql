@@ -969,6 +969,7 @@ void sqlite3Insert(
       const char *pVTab = (const char *)sqlite3GetVTable(db, pTab);
       sqlite3VtabMakeWritable(pParse, pTab);
       sqlite3VdbeAddOp4(v, OP_VUpdate, 1, pTab->nCol+2, regIns, pVTab, P4_VTAB);
+      sqlite3VdbeChangeP5(v, onError==OE_Default ? OE_Abort : onError);
       sqlite3MayAbort(pParse);
     }else
 #endif
@@ -1732,6 +1733,18 @@ static int xferOptimization(
 #ifndef SQLITE_OMIT_CHECK
   if( pDest->pCheck && sqlite3ExprCompare(pSrc->pCheck, pDest->pCheck) ){
     return 0;   /* Tables have different CHECK constraints.  Ticket #2252 */
+  }
+#endif
+#ifndef SQLITE_OMIT_FOREIGN_KEY
+  /* Disallow the transfer optimization if the destination table constains
+  ** any foreign key constraints.  This is more restrictive than necessary.
+  ** But the main beneficiary of the transfer optimization is the VACUUM 
+  ** command, and the VACUUM command disables foreign key constraints.  So
+  ** the extra complication to make this rule less restrictive is probably
+  ** not worth the effort.  Ticket [6284df89debdfa61db8073e062908af0c9b6118e]
+  */
+  if( (pParse->db->flags & SQLITE_ForeignKeys)!=0 && pDest->pFKey!=0 ){
+    return 0;
   }
 #endif
 
