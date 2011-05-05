@@ -2014,6 +2014,15 @@ int sqlite3VdbeCloseStatement(Vdbe *p, int eOp){
     db->nStatement--;
     p->iStatement = 0;
 
+    if( rc==SQLITE_OK ){
+      if( eOp==SAVEPOINT_ROLLBACK ){
+        rc = sqlite3VtabSavepoint(db, SAVEPOINT_ROLLBACK, iSavepoint);
+      }
+      if( rc==SQLITE_OK ){
+        rc = sqlite3VtabSavepoint(db, SAVEPOINT_RELEASE, iSavepoint);
+      }
+    }
+
     /* If the statement transaction is being rolled back, also restore the 
     ** database handles deferred constraint counter to the value it had when 
     ** the statement transaction was opened.  */
@@ -2931,7 +2940,7 @@ int sqlite3VdbeRecordCompare(
 
   /* Compilers may complain that mem1.u.i is potentially uninitialized.
   ** We could initialize it, as shown here, to silence those complaints.
-  ** But in fact, mem1.u.i will never actually be used initialized, and doing 
+  ** But in fact, mem1.u.i will never actually be used uninitialized, and doing 
   ** the unnecessary initialization has a measurable negative performance
   ** impact, since this routine is a very high runner.  And so, we choose
   ** to ignore the compiler warnings and leave this variable uninitialized.

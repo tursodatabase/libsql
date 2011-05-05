@@ -633,6 +633,7 @@ typedef struct TriggerPrg TriggerPrg;
 typedef struct TriggerStep TriggerStep;
 typedef struct UnpackedRecord UnpackedRecord;
 typedef struct VTable VTable;
+typedef struct VtabCtx VtabCtx;
 typedef struct Walker Walker;
 typedef struct WherePlan WherePlan;
 typedef struct WhereInfo WhereInfo;
@@ -812,6 +813,7 @@ struct sqlite3 {
   u8 dfltLockMode;              /* Default locking-mode for attached dbs */
   signed char nextAutovac;      /* Autovac setting after VACUUM if >=0 */
   u8 suppressErr;               /* Do not issue error messages if true */
+  u8 vtabOnConflict;            /* Value to return for s3_vtab_on_conflict() */
   int nextPagesize;             /* Pagesize after VACUUM if >0 */
   int nTable;                   /* Number of tables in the database */
   CollSeq *pDfltColl;           /* The default collating sequence (BINARY) */
@@ -877,7 +879,7 @@ struct sqlite3 {
 #endif
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   Hash aModule;                 /* populated by sqlite3_create_module() */
-  Table *pVTab;                 /* vtab with active Connect/Create method */
+  VtabCtx *pVtabCtx;            /* Context for active vtab connect/create */
   VTable **aVTrans;             /* Virtual tables with open transactions */
   int nVTrans;                  /* Allocated size of aVTrans */
   VTable *pDisconnect;    /* Disconnect these in next sqlite3_prepare() */
@@ -1240,6 +1242,7 @@ struct VTable {
   Module *pMod;             /* Pointer to module implementation */
   sqlite3_vtab *pVtab;      /* Pointer to vtab instance */
   int nRef;                 /* Number of pointers to this structure */
+  u8 bConstraint;           /* True if constraints are supported */
   VTable *pNext;            /* Next in linked list (see above) */
 };
 
@@ -3052,6 +3055,7 @@ void sqlite3AutoLoadExtensions(sqlite3*);
 #  define sqlite3VtabLock(X) 
 #  define sqlite3VtabUnlock(X)
 #  define sqlite3VtabUnlockList(X)
+#  define sqlite3VtabSavepoint(X, Y, Z) SQLITE_OK
 #else
    void sqlite3VtabClear(sqlite3 *db, Table*);
    int sqlite3VtabSync(sqlite3 *db, char **);
@@ -3060,6 +3064,7 @@ void sqlite3AutoLoadExtensions(sqlite3*);
    void sqlite3VtabLock(VTable *);
    void sqlite3VtabUnlock(VTable *);
    void sqlite3VtabUnlockList(sqlite3*);
+   int sqlite3VtabSavepoint(sqlite3 *, int, int);
 #  define sqlite3VtabInSync(db) ((db)->nVTrans>0 && (db)->aVTrans==0)
 #endif
 void sqlite3VtabMakeWritable(Parse*,Table*);

@@ -15,6 +15,18 @@
 #include "sqliteInt.h"
 
 /*
+** Before a virtual table xCreate() or xConnect() method is invoked, the
+** sqlite3.pVtabCtx member variable is set to point to an instance of
+** this struct allocated on the stack. It is used by the implementation of 
+** the sqlite3_declare_vtab() and sqlite3_vtab_config() APIs, both of which
+** are invoked only from within xCreate and xConnect methods.
+*/
+struct VtabCtx {
+  Table *pTab;
+  VTable *pVTable;
+};
+
+/*
 ** The actual function that does the work of creating a new module.
 ** This function implements the sqlite3_create_module() and
 ** sqlite3_create_module_v2() interfaces.
@@ -42,13 +54,13 @@ static int createModule(
     pMod->xDestroy = xDestroy;
     pDel = (Module *)sqlite3HashInsert(&db->aModule, zCopy, nName, (void*)pMod);
     if( pDel && pDel->xDestroy ){
+      sqlite3ResetInternalSchema(db, -1);
       pDel->xDestroy(pDel->pAux);
     }
     sqlite3DbFree(db, pDel);
     if( pDel==pMod ){
       db->mallocFailed = 1;
     }
-    sqlite3ResetInternalSchema(db, -1);
   }else if( xDestroy ){
     xDestroy(pAux);
   }
@@ -434,6 +446,7 @@ static int vtabCallConstructor(
   int (*xConstruct)(sqlite3*,void*,int,const char*const*,sqlite3_vtab**,char**),
   char **pzErr
 ){
+  VtabCtx sCtx;
   VTable *pVTable;
   int rc;
   const char *const*azArg = (const char *const*)pTab->azModuleArg;
@@ -453,12 +466,14 @@ static int vtabCallConstructor(
   pVTable->db = db;
   pVTable->pMod = pMod;
 
-  assert( !db->pVTab );
-  assert( xConstruct );
-  db->pVTab = pTab;
-
   /* Invoke the virtual table constructor */
+  assert( &db->pVtabCtx );
+  assert( xConstruct );
+  sCtx.pTab = pTab;
+  sCtx.pVTable = pVTable;
+  db->pVtabCtx = &sCtx;
   rc = xConstruct(db, pMod->pAux, nArg, azArg, &pVTable->pVtab, &zErr);
+  db->pVtabCtx = 0;
   if( rc==SQLITE_NOMEM ) db->mallocFailed = 1;
 
   if( SQLITE_OK!=rc ){
@@ -474,7 +489,7 @@ static int vtabCallConstructor(
     ** the sqlite3_vtab object if successful.  */
     pVTable->pVtab->pModule = pMod->pModule;
     pVTable->nRef = 1;
-    if( db->pVTab ){
+    if( sCtx.pTab ){
       const char *zFormat = "vtable constructor did not declare schema: %s";
       *pzErr = sqlite3MPrintf(db, zFormat, pTab->zName);
       sqlite3VtabUnlock(pVTable);
@@ -522,7 +537,6 @@ static int vtabCallConstructor(
   }
 
   sqlite3DbFree(db, zModuleName);
-  db->pVTab = 0;
   return rc;
 }
 
@@ -642,8 +656,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
   char *zErr = 0;
 
   sqlite3_mutex_enter(db->mutex);
-  pTab = db->pVTab;
-  if( !pTab ){
+  if( !db->pVtabCtx || !(pTab = db->pVtabCtx->pTab) ){
     sqlite3Error(db, SQLITE_MISUSE, 0);
     sqlite3_mutex_leave(db->mutex);
     return SQLITE_MISUSE_BKPT;
@@ -670,7 +683,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
         pParse->pNewTable->nCol = 0;
         pParse->pNewTable->aCol = 0;
       }
-      db->pVTab = 0;
+      db->pVtabCtx->pTab = 0;
     }else{
       sqlite3Error(db, SQLITE_ERROR, (zErr ? "%s" : 0), zErr);
       sqlite3DbFree(db, zErr);
@@ -822,7 +835,6 @@ int sqlite3VtabBegin(sqlite3 *db, VTable *pVTab){
   if( pModule->xBegin ){
     int i;
 
-
     /* If pVtab is already in the aVTrans array, return early */
     for(i=0; i<db->nVTrans; i++){
       if( db->aVTrans[i]==pVTab ){
@@ -834,6 +846,49 @@ int sqlite3VtabBegin(sqlite3 *db, VTable *pVTab){
     rc = pModule->xBegin(pVTab->pVtab);
     if( rc==SQLITE_OK ){
       rc = addToVTrans(db, pVTab);
+    }
+  }
+  return rc;
+}
+
+/*
+** Invoke either the xSavepoint, xRollbackTo or xRelease method of all
+** virtual tables that currently have an open transaction. Pass iSavepoint
+** as the second argument to the virtual table method invoked.
+**
+** If op is SAVEPOINT_BEGIN, the xSavepoint method is invoked. If it is
+** SAVEPOINT_ROLLBACK, the xRollbackTo method. Otherwise, if op is 
+** SAVEPOINT_RELEASE, then the xRelease method of each virtual table with
+** an open transaction is invoked.
+**
+** If any virtual table method returns an error code other than SQLITE_OK, 
+** processing is abandoned and the error returned to the caller of this
+** function immediately. If all calls to virtual table methods are successful,
+** SQLITE_OK is returned.
+*/
+int sqlite3VtabSavepoint(sqlite3 *db, int op, int iSavepoint){
+  int rc = SQLITE_OK;
+
+  assert( op==SAVEPOINT_RELEASE||op==SAVEPOINT_ROLLBACK||op==SAVEPOINT_BEGIN );
+  if( db->aVTrans ){
+    int i;
+    for(i=0; rc==SQLITE_OK && i<db->nVTrans; i++){
+      const sqlite3_module *pMod = db->aVTrans[i]->pMod->pModule;
+      if( pMod->iVersion>=1 ){
+        int (*xMethod)(sqlite3_vtab *, int);
+        switch( op ){
+          case SAVEPOINT_BEGIN:
+            xMethod = pMod->xSavepoint;
+            break;
+          case SAVEPOINT_ROLLBACK:
+            xMethod = pMod->xRollbackTo;
+            break;
+          default:
+            xMethod = pMod->xRelease;
+            break;
+        }
+        if( xMethod ) rc = xMethod(db->aVTrans[i]->pVtab, iSavepoint);
+      }
     }
   }
   return rc;
@@ -935,6 +990,57 @@ void sqlite3VtabMakeWritable(Parse *pParse, Table *pTab){
   }else{
     pToplevel->db->mallocFailed = 1;
   }
+}
+
+/*
+** Return the ON CONFLICT resolution mode in effect for the virtual
+** table update operation currently in progress.
+**
+** The results of this routine are undefined unless it is called from
+** within an xUpdate method.
+*/
+int sqlite3_vtab_on_conflict(sqlite3 *db){
+  static const unsigned char aMap[] = { 
+    SQLITE_ROLLBACK, SQLITE_IGNORE, SQLITE_ABORT, SQLITE_FAIL, SQLITE_REPLACE 
+  };
+  assert( OE_Rollback==1 && OE_Abort==2 && OE_Fail==3 );
+  assert( OE_Ignore==4 && OE_Replace==5 );
+  assert( db->vtabOnConflict>=1 && db->vtabOnConflict<=5 );
+  return (int)aMap[db->vtabOnConflict-1];
+}
+
+/*
+** Call from within the xCreate() or xConnect() methods to provide 
+** the SQLite core with additional information about the behavior
+** of the virtual table being implemented.
+*/
+int sqlite3_vtab_config(sqlite3 *db, int op, ...){
+  va_list ap;
+  int rc = SQLITE_OK;
+
+  sqlite3_mutex_enter(db->mutex);
+
+  va_start(ap, op);
+  switch( op ){
+    case SQLITE_VTAB_CONSTRAINT_SUPPORT: {
+      VtabCtx *p = db->pVtabCtx;
+      if( !p ){
+        rc = SQLITE_MISUSE_BKPT;
+      }else{
+        assert( (p->pTab->tabFlags & TF_Virtual)!=0 );
+        p->pVTable->bConstraint = (u8)va_arg(ap, int);
+      }
+      break;
+    }
+    default:
+      rc = SQLITE_MISUSE_BKPT;
+      break;
+  }
+  va_end(ap);
+
+  if( rc!=SQLITE_OK ) sqlite3Error(db, rc, 0);
+  sqlite3_mutex_leave(db->mutex);
+  return rc;
 }
 
 #endif /* SQLITE_OMIT_VIRTUALTABLE */

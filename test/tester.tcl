@@ -753,6 +753,17 @@ proc integrity_check {name {db db}} {
   }
 }
 
+
+# Return true if the SQL statement passed as the second argument uses a
+# statement transaction.
+#
+proc sql_uses_stmt {db sql} {
+  set stmt [sqlite3_prepare $db $sql -1 dummy]
+  set uses [uses_stmt_journal $stmt]
+  sqlite3_finalize $stmt
+  return $uses
+}
+
 proc fix_ifcapable_expr {expr} {
   set ret ""
   set state 0

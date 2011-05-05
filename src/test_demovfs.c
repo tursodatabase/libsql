@@ -128,6 +128,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <errno.h>
+#include <fcntl.h>
 
 /*
 ** Size of the write buffer used by journal files in bytes.
