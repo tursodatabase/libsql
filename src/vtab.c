@@ -1027,7 +1027,7 @@ int sqlite3_vtab_config(sqlite3 *db, int op, ...){
       if( !p ){
         rc = SQLITE_MISUSE_BKPT;
       }else{
-        assert( (p->pTab->tabFlags & TF_Virtual)!=0 );
+        assert( p->pTab==0 || (p->pTab->tabFlags & TF_Virtual)!=0 );
         p->pVTable->bConstraint = (u8)va_arg(ap, int);
       }
       break;
