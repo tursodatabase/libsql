@@ -1653,7 +1653,7 @@ for {set i 0} {$i<513} {incr i 3} {
 testvfs tv -default 1
 tv script xOpenCb
 tv filter xOpen
-proc xOpenCb {method filename} {
+proc xOpenCb {method filename args} {
   set ::file_len [string length $filename]
 }
 sqlite3 db test.db
@@ -2381,6 +2381,7 @@ do_test pager1-30.1 {
 # file can still be rolled back. This is required for backward compatibility -
 # versions of SQLite prior to 3.5.8 always set this field to zero.
 #
+if {$tcl_platform(platform)=="unix"} {
 do_test pager1-31.1 {
   faultsim_delete_and_reopen
   execsql {
@@ -2408,7 +2409,7 @@ do_test pager1-31.1 {
   sqlite3 db2 test.db2
   execsql { PRAGMA integrity_check } db2
 } {ok}
-
+}
 
 
 finish_test
