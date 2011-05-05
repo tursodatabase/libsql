@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sthe\sURI\scode\spreventing\sthe\samalgamation\sfrom\sbuilding.\sAdd\scomments\sdescribing\sSQLITE_CONFIG_URI\sand\sSQLITE_OPEN_URI\sto\ssqlite.h.in.
-D 2011-05-05T12:35:33.316
+C Have\sthe\sxFullpath\smethod\sin\sos_win.c\sdiscard\sthe\sinitial\s"/"\sif\sa\sfilename\sbegins\swith\s"/X:",\swhere\sX\sis\sany\salphabetic\scharacter.\sAlso\sfix\ssome\stest\sissues\sin\suri.test.
+D 2011-05-05T18:53:48.721
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -164,7 +164,7 @@ F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 2c67d126874b78eb427371db4793f0e8fbc7448b
-F src/os_win.c 4271f0bf733c0b45635ddcfb41c935573de8284c
+F src/os_win.c ff0e14615a5086fa5ba6926e4ec0dc9cfb5a1a84
 F src/pager.c 24b689bc3639d534f5fb292d2c68038b1e720527
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -840,7 +840,7 @@ F test/unique.test 083c7fff74695bcc27a71d75699deba3595bc9c2
 F test/unixexcl.test 9d80a54d86d2261f660758928959368ffc36151e
 F test/unordered.test e81169ce2a8f31b2c6b66af691887e1376ab3ced
 F test/update.test 8bc86fd7ef1a00014f76dc6a6a7c974df4aef172
-F test/uri.test 858abdea53ac46844d52ba953fba78f15f0a463a
+F test/uri.test f21a5cd025ccedf0c6d4c5e365bb47e163098c04
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
 F test/vacuum.test 29b60e8cc9e573b39676df6c4a75fe9e02d04a09
 F test/vacuum2.test 91a84c9b08adfc4472097d2e8deb0150214e0e76
@@ -934,7 +934,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P af279f367e01732560b8b2b6aeb5ede4f04415dd
-R b650932bbc0e364498f81d36888b653d
+P ea562d6d67c2f2ef8baca02a77634c21b945196f
+R ab4f619c8bbf9faf6cdcf553d75032d8
 U dan
-Z 505d1fe8270a91e9ebfb3524cd8d9a43
+Z d81fc059a3e07abc471a058222e61ec9

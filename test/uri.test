@@ -31,25 +31,31 @@ sqlite3_config_uri 1
 # Test that file names are correctly extracted from URIs.
 #
 foreach {tn uri file} {
-  1      test.db                            test.db
-  2      file:test.db                       test.db
-  3      file://PWD/test.db     test.db
-  4      file:PWD/test.db                   test.db
-  5      file:test.db?mork=1                test.db
-  6      file:test.db?mork=1&tonglor=2      test.db
-  7      file:test.db?mork=1#boris          test.db
-  8      file:test.db#boris                 test.db
-  9      test.db#boris                      test.db#boris
-  10     test.db?mork=1#boris               test.db?mork=1#boris
-  11     file:test%2Edb                     test.db
-  12     file                               file
-  13     http:test.db                       http:test.db
-  14     file://localhostPWD/test.db%3Fhello   test.db?hello
-  15     file:test.db%00extra               test.db
-  16     file:test%00.db%00extra            test
+  1      test.db                              test.db
+  2      file:test.db                         test.db
+  3      file://PWD/test.db                   test.db
+  4      file:PWD/test.db                     test.db
+  5      file:test.db?mork=1                  test.db
+  6      file:test.db?mork=1&tonglor=2        test.db
+  7      file:test.db?mork=1#boris            test.db
+  8      file:test.db#boris                   test.db
+  9      test.db#boris                        test.db#boris
+  10     file:test%2Edb                       test.db
+  11     file                                 file
+  12     http:test.db                         http:test.db
+  13     file:test.db%00extra                 test.db
+  14     file:test%00.db%00extra              test
+
+  15     test.db?mork=1#boris                 test.db?mork=1#boris
+  16     file://localhostPWD/test.db%3Fhello  test.db?hello
 } {
-  set uri  [string map [list PWD [pwd]] $uri]
-  set file [string map [list PWD [pwd]] $file]
+  
+  if {$tcl_platform(platform)=="windows"} {
+    if {$tn>14} break
+    set uri  [string map [list PWD /[pwd]] $uri]
+  } else {
+    set uri  [string map [list PWD [pwd]] $uri]
+  }
 
   forcedelete $file
   do_test 1.$tn.1 { file exists $file } 0
@@ -60,7 +66,7 @@ foreach {tn uri file} {
 
   do_test 1.$tn.3 { file exists $file } 0
   sqlite3 db xxx.db
-  execsql { ATTACH $uri AS aux }
+  catchsql { ATTACH $uri AS aux }
   do_test 1.$tn.4 { file exists $file } 1
   db close
 }
@@ -69,6 +75,7 @@ foreach {tn uri file} {
 # Test that URI query parameters are passed through to the VFS layer
 # correctly.
 #
+testvfs tvfs2
 testvfs tvfs -default 1
 tvfs filter xOpen
 tvfs script open_method
@@ -79,7 +86,7 @@ foreach {tn uri kvlist} {
   1      file:test.db?hello=world                     {hello world}
   2      file:test.db?hello&world                     {hello {} world {}}
   3      file:test.db?hello=1&world=2&vfs=tvfs        {hello 1 world 2 vfs tvfs}
-  4      file:test.db?hello=1&world=2&vfs=unix        {}
+  4      file:test.db?hello=1&world=2&vfs=tvfs2        {}
   5      file:test.db?%68%65%6C%6C%6F=%77%6F%72%6C%64 {hello world}
   6      file:test%00.db?hello%00extra=world%00ex     {hello world}
   7      file:test%00.db?hello%00=world%00            {hello world}
@@ -88,9 +95,15 @@ foreach {tn uri kvlist} {
   10     file:test.db?hello=%00world&xyz=             {hello {} xyz {}}
   11     file:test.db?=#ravada                        {}
   12     file:test.db?&&&&&&&&hello=world&&&&&&&      {hello world}
+
   13     test.db?&&&&&&&&hello=world&&&&&&&           {}
   14     http:test.db?hello&world                     {}
 } {
+
+  if {$tcl_platform(platform) == "windows" && $tn>12} {
+    continue
+  }
+
   set ::arglist ""
   set DB [sqlite3_open $uri]
   do_test 2.$tn.1 { set ::arglist } $kvlist
@@ -103,6 +116,7 @@ foreach {tn uri kvlist} {
   db close
 }
 tvfs delete
+tvfs2 delete
 
 #-------------------------------------------------------------------------
 # Test that specifying a non-existent VFS raises an error.
@@ -217,6 +231,7 @@ proc tvfs2_callback {method filename args} {
   set ::T2([file tail $filename]) 1 
 }
 
+catch {db close}
 eval forcedelete [glob test.db*]
 do_test 5.1.1 {
   sqlite3 db file:test.db1?vfs=tvfs1
@@ -254,7 +269,13 @@ foreach {tn uri res} {
   5     "file://lbcalhost/PWD/test.db"   {invalid uri authority: lbcalhost}
   6     "file://x/PWD/test.db"           {invalid uri authority: x}
 } {
-  set uri  [string map [list PWD [string range [pwd] 1 end]] $uri]
+
+  if {$tcl_platform(platform)=="windows"} {
+    set uri  [string map [list PWD [string range [pwd] 3 end]] $uri]
+  } else {
+    set uri  [string map [list PWD [string range [pwd] 1 end]] $uri]
+  }
+
   do_test 6.$tn {
     set DB [sqlite3_open $uri]
     sqlite3_errmsg $DB
