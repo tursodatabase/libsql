@@ -533,7 +533,7 @@ void *sqlite3Realloc(void *pOld, int nBytes){
     nDiff = nNew - nOld;
     if( sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED) >= 
           mem0.alarmThreshold-nDiff ){
-      sqlite3MallocAlarm(nNew-nOld);
+      sqlite3MallocAlarm(nDiff);
     }
     assert( sqlite3MemdebugHasType(pOld, MEMTYPE_HEAP) );
     assert( sqlite3MemdebugNoType(pOld, ~MEMTYPE_HEAP) );
@@ -544,7 +544,7 @@ void *sqlite3Realloc(void *pOld, int nBytes){
     }
     if( pNew ){
       nNew = sqlite3MallocSize(pNew);
-      sqlite3StatusAdd(SQLITE_STATUS_MEMORY_USED, nDiff);
+      sqlite3StatusAdd(SQLITE_STATUS_MEMORY_USED, nNew-nOld);
     }
     sqlite3_mutex_leave(mem0.mutex);
   }else{
