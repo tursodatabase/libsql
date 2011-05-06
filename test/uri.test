@@ -20,6 +20,7 @@ source $testdir/tester.tcl
 #   3.*: That specifying an unknown VFS causes an error.
 #   4.*: Tests for specifying other options (other than "vfs").
 #   5.*: Test using a different VFS with an attached database.
+#   6.*: Test that authorities other than "" and localhost cause errors.
 #
 
 set testprefix uri
@@ -127,8 +128,6 @@ do_test 3.1 {
 
 #-------------------------------------------------------------------------
 # Test some of the other options (other than "vfs").
-#
-# TODO: Fix this after the list of options is decided.
 #
 foreach {tn mode create_ok write_ok readonly_ok} {
   1    ro    0   0   1

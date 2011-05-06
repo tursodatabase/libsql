@@ -2430,10 +2430,8 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 ** ^SQLite uses the 'path' component of the URI as the path to the database file
 ** to open. ^If the path begins with a '/' character, then it is interpreted as
 ** an absolute path. ^If it does not begin with a '/', it is interpreted as a 
-** relative path. ^On windows, if the first component of an absolute path is 
-** of the form "X:", where "X" is any alphabetic character, it is interpreted 
-** as a drive specification. ^Otherwise, the absolute path is interpreted as
-** the full pathname of a file on the current drive.
+** relative path. ^On windows, the first component of an absolute path 
+** is a drive specification (e.g. "C:").
 **
 ** The query component of a URI may contain parameters that are interpreted
 ** either by SQLite itself, or by a [sqlite3_vfs | custom VFS implementation].
@@ -2444,20 +2442,22 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 **     a VFS object that provides the operating system interface that should
 **     be used to access the database file on disk. ^If this option is set to
 **     an empty string the default VFS object is used. ^Specifying an unknown
-**     VFS is an error.
+**     VFS is an error. ^If sqlite3_open_v2() is used and the vfs option is
+**     present, then the VFS specified by the option takes precedence over
+**     the value passed as the fourth parameter to sqlite3_open_v2().
 **
-**   <li> <b>mode</b>: ^(This option may be set to either "ro", "rw" or "rwc".
-**     Attempting to set it to any other value is an error)^. ^If "ro" is
-**     specified, then the database is opened for read-only access, just as if
-**     the [SQLITE_OPEN_READONLY] flag had been set in the third argument to
-**     sqlite3_prepare_v2(). ^If the mode option is set to "rw", then the
-**     database is opened for read-write (but not create) access, as if
-**     SQLITE_OPEN_READWRITE (but not SQLITE_OPEN_CREATE) had been set.
-**     ^Value "rwc" is equivalent to setting both SQLITE_OPEN_READWRITE and
-**     SQLITE_OPEN_CREATE.
-**     ^If sqlite3_open_v2() is used, it is an error to specify a value for
-**     the mode parameter that is less restrictive than that specified by the
-**     flags passed as the third parameter.
+**   <li> <b>mode</b>: ^(The mode parameter may be set to either "ro", "rw" or
+**     "rwc". Attempting to set it to any other value is an error)^. 
+**     ^If "ro" is specified, then the database is opened for read-only 
+**     access, just as if the [SQLITE_OPEN_READONLY] flag had been set in the 
+**     third argument to sqlite3_prepare_v2(). ^If the mode option is set to 
+**     "rw", then the database is opened for read-write (but not create) 
+**     access, as if SQLITE_OPEN_READWRITE (but not SQLITE_OPEN_CREATE) had 
+**     been set. ^Value "rwc" is equivalent to setting both 
+**     SQLITE_OPEN_READWRITE and SQLITE_OPEN_CREATE. ^If sqlite3_open_v2() is 
+**     used, it is an error to specify a value for the mode parameter that is 
+**     less restrictive than that specified by the flags passed as the third 
+**     parameter.
 **
 **   <li> <b>cache</b>: ^The cache parameter may be set to either "shared" or
 **     "private". ^Setting it to "shared" is equivalent to setting the
@@ -2487,10 +2487,8 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 ** <tr><td style="white-space:nowrap"> 
 **          file:///C:/Documents%20and%20Settings/fred/Desktop/data.db
 **     <td> Windows only: Open the file "data.db" on fred's desktop on drive
-**          C:. If the "C:/" component were omitted from this URI, then the
-**          file "\Documents and Settings\fred\Desktop\data.db" would be opened
-**          on the current drive. Note that the %20 escaping in this example
-**          is not strictly necessary - space characters can be used literally
+**          C:. Note that the %20 escaping in this example is not strictly 
+**          necessary - space characters can be used literally
 **          in URI filenames.
 ** <tr><td> file:data.db?mode=ro&cache=private <td> 
 **          Open file "data.db" in the current directory for read-only access.
