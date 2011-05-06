@@ -36,21 +36,21 @@ if {[working_64bit_int]} {
     }
   } {-1 integer}
 }
-do_test tkt3922.2 {
+do_realnum_test tkt3922.2 {
   execsql {
     DELETE FROM t1;
     INSERT INTO t1 VALUES('-9223372036854775809');
     SELECT a, typeof(a) FROM t1;
   }
 } {-9.22337203685478e+18 real}
-do_test tkt3922.3 {
+do_realnum_test tkt3922.3 {
   execsql {
     DELETE FROM t1;
     INSERT INTO t1 VALUES('-9223372036854776832');
     SELECT a, typeof(a) FROM t1;
   }
 } {-9.22337203685478e+18 real}
-do_test tkt3922.4 {
+do_realnum_test tkt3922.4 {
   execsql {
     DELETE FROM t1;
     INSERT INTO t1 VALUES('-9223372036854776833');
@@ -78,7 +78,7 @@ if {[working_64bit_int]} {
     }
   } {1 integer}
 }
-do_test tkt3922.6 {
+do_realnum_test tkt3922.6 {
   execsql {
     DELETE FROM t1;
     INSERT INTO t1 VALUES('9223372036854775808');

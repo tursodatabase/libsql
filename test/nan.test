@@ -42,31 +42,31 @@ do_test nan-1.1.1 {
   db eval {SELECT x, typeof(x) FROM t1}
 } {{} null}
 if {$tcl_platform(platform) != "symbian"} {
-  do_test nan-1.1.2 {
+  do_realnum_test nan-1.1.2 {
     sqlite3_bind_double $::STMT 1 +Inf
     sqlite3_step $::STMT
     sqlite3_reset $::STMT
     db eval {SELECT x, typeof(x) FROM t1}
   } {{} null inf real}
-  do_test nan-1.1.3 {
+  do_realnum_test nan-1.1.3 {
     sqlite3_bind_double $::STMT 1 -Inf
     sqlite3_step $::STMT
     sqlite3_reset $::STMT
     db eval {SELECT x, typeof(x) FROM t1}
   } {{} null inf real -inf real}
-  do_test nan-1.1.4 {
+  do_realnum_test nan-1.1.4 {
     sqlite3_bind_double $::STMT 1 -NaN
     sqlite3_step $::STMT
     sqlite3_reset $::STMT
     db eval {SELECT x, typeof(x) FROM t1}
   } {{} null inf real -inf real {} null}
-  do_test nan-1.1.5 {
+  do_realnum_test nan-1.1.5 {
     sqlite3_bind_double $::STMT 1 NaN0
     sqlite3_step $::STMT
     sqlite3_reset $::STMT
     db eval {SELECT x, typeof(x) FROM t1}
   } {{} null inf real -inf real {} null {} null}
-  do_test nan-1.1.6 {
+  do_realnum_test nan-1.1.6 {
     sqlite3_bind_double $::STMT 1 -NaN0
     sqlite3_step $::STMT
     sqlite3_reset $::STMT
@@ -231,12 +231,12 @@ if {$tcl_platform(platform) != "symbian"} {
   # Do not run these tests on Symbian, as the Tcl port doesn't like to
   # convert from floating point value "-inf" to a string.
   #
-  do_test nan-4.7 {
+  do_realnum_test nan-4.7 {
     db eval {DELETE FROM t1}
     db eval "INSERT INTO t1 VALUES([string repeat 9 309].0)"
     db eval {SELECT x, typeof(x) FROM t1}
   } {inf real}
-  do_test nan-4.8 {
+  do_realnum_test nan-4.8 {
     db eval {DELETE FROM t1}
     db eval "INSERT INTO t1 VALUES(-[string repeat 9 309].0)"
     db eval {SELECT x, typeof(x) FROM t1}
@@ -313,7 +313,7 @@ do_test nan-4.18 {
   db eval {SELECT CAST(x AS text), typeof(x) FROM t1}
 } {-9.88131291682493e-324 real}
 
-do_test nan-4.20 {
+do_realnum_test nan-4.20 {
   db eval {DELETE FROM t1}
   set big [string repeat 9 10000].0e-9000
   db eval "INSERT INTO t1 VALUES($big)"
