@@ -2659,7 +2659,6 @@ void sqlite3ExprListDelete(sqlite3*, ExprList*);
 int sqlite3Init(sqlite3*, char**);
 int sqlite3InitCallback(void*, int, char**, char**);
 void sqlite3Pragma(Parse*,Token*,Token*,Token*,int);
-u8 sqlite3GetBoolean(const char *z);
 void sqlite3ResetInternalSchema(sqlite3*, int);
 void sqlite3BeginParse(Parse*,int);
 void sqlite3CommitInternalChanges(sqlite3*);

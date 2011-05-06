@@ -49,7 +49,7 @@ static u8 getSafetyLevel(const char *z){
 /*
 ** Interpret the given string as a boolean value.
 */
-u8 sqlite3GetBoolean(const char *z){
+static u8 getBoolean(const char *z){
   return getSafetyLevel(z)&1;
 }
 
@@ -219,7 +219,7 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
             mask &= ~(SQLITE_ForeignKeys);
           }
 
-          if( sqlite3GetBoolean(zRight) ){
+          if( getBoolean(zRight) ){
             db->flags |= mask;
           }else{
             db->flags &= ~mask;
@@ -433,7 +433,7 @@ void sqlite3Pragma(
     int b = -1;
     assert( pBt!=0 );
     if( zRight ){
-      b = sqlite3GetBoolean(zRight);
+      b = getBoolean(zRight);
     }
     if( pId2->n==0 && b>=0 ){
       int ii;
@@ -1033,7 +1033,7 @@ void sqlite3Pragma(
 #ifndef NDEBUG
   if( sqlite3StrICmp(zLeft, "parser_trace")==0 ){
     if( zRight ){
-      if( sqlite3GetBoolean(zRight) ){
+      if( getBoolean(zRight) ){
         sqlite3ParserTrace(stderr, "parser: ");
       }else{
         sqlite3ParserTrace(0, 0);
@@ -1047,7 +1047,7 @@ void sqlite3Pragma(
   */
   if( sqlite3StrICmp(zLeft, "case_sensitive_like")==0 ){
     if( zRight ){
-      sqlite3RegisterLikeFunctions(db, sqlite3GetBoolean(zRight));
+      sqlite3RegisterLikeFunctions(db, getBoolean(zRight));
     }
   }else
 

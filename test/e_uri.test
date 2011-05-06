@@ -65,28 +65,57 @@ if {$tcl_platform(platform) == "unix"} {
     set DB [sqlite3_open_v2 file:test.db [concat $flags SQLITE_OPEN_URI] ""]
     list [file exists file:test.db] [file exists test.db]
   } {0 1}
-  sqlite3_close $DB
   do_test 1.2 {
+    forcedelete file:test.db2 test.db2
+    set STMT [sqlite3_prepare $DB "ATTACH 'file:test.db2' AS aux" -1 dummy]
+    sqlite3_step $STMT
+    sqlite3_finalize $STMT
+    list [file exists file:test.db2] [file exists test.db2]
+  } {0 1}
+  sqlite3_close $DB
+  do_test 1.3 {
     forcedelete file:test.db test.db
     set DB [sqlite3_open_v2 file:test.db [concat $flags] ""]
     list [file exists file:test.db] [file exists test.db]
+  } {1 0}
+  do_test 1.4 {
+    forcedelete file:test.db2 test.db2
+    set STMT [sqlite3_prepare $DB "ATTACH 'file:test.db2' AS aux" -1 dummy]
+    sqlite3_step $STMT
+    sqlite3_finalize $STMT
+    list [file exists file:test.db2] [file exists test.db2]
   } {1 0}
   sqlite3_close $DB
 
   # Tests with SQLITE_CONFIG_URI configured to true. URI intepretation is
   # enabled with or without SQLITE_OPEN_URI.
+  #
   sqlite3_shutdown
   sqlite3_config_uri 1
-  do_test 1.3 {
+  do_test 1.5 {
     forcedelete file:test.db test.db
     set DB [sqlite3_open_v2 file:test.db [concat $flags SQLITE_OPEN_URI] ""]
     list [file exists file:test.db] [file exists test.db]
   } {0 1}
+  do_test 1.6 {
+    forcedelete file:test.db2 test.db2
+    set STMT [sqlite3_prepare $DB "ATTACH 'file:test.db2' AS aux" -1 dummy]
+    sqlite3_step $STMT
+    sqlite3_finalize $STMT
+    list [file exists file:test.db2] [file exists test.db2]
+  } {0 1}
   sqlite3_close $DB
-  do_test 1.4 {
+  do_test 1.7 {
     forcedelete file:test.db test.db
     set DB [sqlite3_open_v2 file:test.db [concat $flags] ""]
     list [file exists file:test.db] [file exists test.db]
+  } {0 1}
+  do_test 1.8 {
+    forcedelete file:test.db2 test.db2
+    set STMT [sqlite3_prepare $DB "ATTACH 'file:test.db2' AS aux" -1 dummy]
+    sqlite3_step $STMT
+    sqlite3_finalize $STMT
+    list [file exists file:test.db2] [file exists test.db2]
   } {0 1}
   sqlite3_close $DB
 }
