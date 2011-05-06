@@ -129,7 +129,9 @@ const unsigned char sqlite3CtypeMap[256] = {
 };
 #endif
 
-
+#ifndef SQLITE_USE_URI
+# define  SQLITE_USE_URI 0
+#endif
 
 /*
 ** The following singleton contains the global configuration for
@@ -139,6 +141,7 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    SQLITE_DEFAULT_MEMSTATUS,  /* bMemstat */
    1,                         /* bCoreMutex */
    SQLITE_THREADSAFE==1,      /* bFullMutex */
+   SQLITE_USE_URI,            /* bOpenUri */
    0x7ffffffe,                /* mxStrlen */
    100,                       /* szLookaside */
    500,                       /* nLookaside */
