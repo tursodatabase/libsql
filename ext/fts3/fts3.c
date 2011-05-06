@@ -3661,7 +3661,7 @@ static int fts3RollbackToMethod(sqlite3_vtab *pVtab, int iSavepoint){
 }
 
 static const sqlite3_module fts3Module = {
-  /* iVersion      */ 1,
+  /* iVersion      */ 2,
   /* xCreate       */ fts3CreateMethod,
   /* xConnect      */ fts3ConnectMethod,
   /* xBestIndex    */ fts3BestIndexMethod,
