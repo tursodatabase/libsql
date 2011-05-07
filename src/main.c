@@ -1817,13 +1817,13 @@ int sqlite3_limit(sqlite3 *db, int limitId, int newLimit){
 int sqlite3ParseUri(
   const char *zDefaultVfs,        /* VFS to use if no "vfs=xxx" query option */
   const char *zUri,               /* Nul-terminated URI to parse */
-  int *pFlags,                    /* IN/OUT: SQLITE_OPEN_XXX flags */
+  unsigned int *pFlags,           /* IN/OUT: SQLITE_OPEN_XXX flags */
   sqlite3_vfs **ppVfs,            /* OUT: VFS to use */ 
   char **pzFile,                  /* OUT: Filename component of URI */
   char **pzErrMsg                 /* OUT: Error message (if rc!=SQLITE_OK) */
 ){
   int rc = SQLITE_OK;
-  int flags = *pFlags;
+  unsigned int flags = *pFlags;
   const char *zVfs = zDefaultVfs;
   char *zFile;
   int nUri = sqlite3Strlen30(zUri);
@@ -1972,7 +1972,7 @@ int sqlite3ParseUri(
           int mode = 0;
           for(i=0; aMode[i].z; i++){
             const char *z = aMode[i].z;
-            if( nVal==strlen(z) && 0==memcmp(zVal, z, nVal) ){
+            if( nVal==sqlite3Strlen30(z) && 0==memcmp(zVal, z, nVal) ){
               mode = aMode[i].mode;
               break;
             }
@@ -2025,7 +2025,7 @@ int sqlite3ParseUri(
 static int openDatabase(
   const char *zFilename, /* Database filename UTF-8 encoded */
   sqlite3 **ppDb,        /* OUT: Returned database handle */
-  unsigned flags,        /* Operational flags */
+  unsigned int flags,    /* Operational flags */
   const char *zVfs       /* Name of the VFS to use */
 ){
   sqlite3 *db;                    /* Store allocated handle here */
@@ -2294,7 +2294,7 @@ int sqlite3_open_v2(
   int flags,              /* Flags */
   const char *zVfs        /* Name of VFS module to use */
 ){
-  return openDatabase(filename, ppDb, flags, zVfs);
+  return openDatabase(filename, ppDb, (unsigned int)flags, zVfs);
 }
 
 #ifndef SQLITE_OMIT_UTF16

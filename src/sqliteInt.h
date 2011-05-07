@@ -803,7 +803,7 @@ struct sqlite3 {
   int nDb;                      /* Number of backends currently in use */
   Db *aDb;                      /* All backends */
   int flags;                    /* Miscellaneous flags. See below */
-  int openFlags;                /* Flags passed to sqlite3_vfs.xOpen() */
+  unsigned int openFlags;       /* Flags passed to sqlite3_vfs.xOpen() */
   int errCode;                  /* Most recent error code (SQLITE_*) */
   int errMask;                  /* & result codes with this before returning */
   u8 autoCommit;                /* The auto-commit flag. */
@@ -2673,7 +2673,8 @@ void sqlite3AddColumnType(Parse*,Token*);
 void sqlite3AddDefaultValue(Parse*,ExprSpan*);
 void sqlite3AddCollateType(Parse*, Token*);
 void sqlite3EndTable(Parse*,Token*,Token*,Select*);
-int sqlite3ParseUri(const char*,const char*,int*,sqlite3_vfs**,char**,char **);
+int sqlite3ParseUri(const char*,const char*,unsigned int*,
+                    sqlite3_vfs**,char**,char **);
 
 Bitvec *sqlite3BitvecCreate(u32);
 int sqlite3BitvecTest(Bitvec*, u32);

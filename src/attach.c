@@ -72,7 +72,7 @@ static void attachFunc(
   const char *zFile;
   char *zPath = 0;
   char *zErr = 0;
-  int flags;
+  unsigned int flags;
   Db *aNew;
   char *zErrDyn = 0;
   sqlite3_vfs *pVfs;
