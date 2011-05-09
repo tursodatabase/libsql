@@ -1826,6 +1826,7 @@ int sqlite3ParseUri(
   unsigned int flags = *pFlags;
   const char *zVfs = zDefaultVfs;
   char *zFile;
+  char c;
   int nUri = sqlite3Strlen30(zUri);
 
   assert( *pzErrMsg==0 );
@@ -1873,8 +1874,8 @@ int sqlite3ParseUri(
     **   2: Parsing value section of a name=value query parameter.
     */
     eState = 0;
-    while( zUri[iIn] && zUri[iIn]!='#' ){
-      char c = zUri[iIn++];
+    while( (c = zUri[iIn])!=0 && c!='#' ){
+      iIn++;
       if( c=='%' 
        && sqlite3Isxdigit(zUri[iIn]) 
        && sqlite3Isxdigit(zUri[iIn+1]) 
@@ -1888,10 +1889,10 @@ int sqlite3ParseUri(
           ** case we ignore all text in the remainder of the path, name or
           ** value currently being parsed. So ignore the current character
           ** and skip to the next "?", "=" or "&", as appropriate. */
-          while( zUri[iIn] && zUri[iIn]!='#' 
-              && (eState!=0 || zUri[iIn]!='?')
-              && (eState!=1 || (zUri[iIn]!='=' && zUri[iIn]!='&'))
-              && (eState!=2 || zUri[iIn]!='&')
+          while( (c = zUri[iIn])!=0 && c!='#' 
+              && (eState!=0 || c!='?')
+              && (eState!=1 || (c!='=' && c!='&'))
+              && (eState!=2 || c!='&')
           ){
             iIn++;
           }
@@ -1983,6 +1984,8 @@ int sqlite3ParseUri(
             goto parse_uri_out;
           }
           if( mode>limit ){
+            *pzErrMsg = sqlite3_mprintf("%s mode not allowed: %s",
+                                        zModeType, zVal);
             rc = SQLITE_PERM;
             goto parse_uri_out;
           }
