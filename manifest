@@ -1,5 +1,5 @@
-C Update\sURI\stest\scases\sto\saccount\sfor\sthe\snew\serror\smessage\sformat.
-D 2011-05-10T17:43:28.367
+C Have\sflags\spassed\sto\ssqlite3_open_v2()\sapply\sto\sthe\smain\sand\sany\sattached\sdatabases.\sAnd\schange\sthings\sso\sthat\sany\s"mode=xxx"\sor\s"cache=xxx"\soptions\sspecified\sas\spart\sof\sa\sURI\sfor\sthe\smain\sdatabase\sdo\snot\salso\sapply\sto\sattached\sdatabases.
+D 2011-05-10T18:39:10.068
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -144,7 +144,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 3ae0d52da013a6326310655be6473fd472347b85
-F src/main.c f00cee5a27f5df5ed536e7043cb451b3c85ce65c
+F src/main.c e32d7a44c3307a4a33cfd1a2b06fb46f418ba7fc
 F src/malloc.c 591aedb20ae40813f1045f2ef253438a334775d9
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 00bd8265c81abb665c48fea1e0c234eb3b922206
@@ -841,7 +841,7 @@ F test/unique.test 083c7fff74695bcc27a71d75699deba3595bc9c2
 F test/unixexcl.test 9d80a54d86d2261f660758928959368ffc36151e
 F test/unordered.test e81169ce2a8f31b2c6b66af691887e1376ab3ced
 F test/update.test 8bc86fd7ef1a00014f76dc6a6a7c974df4aef172
-F test/uri.test 19d64e06602a1d000f0fc0ffd39b3a204fb3ad19
+F test/uri.test 2d08a6f77bf93ca925743a65802c4aa23aaaf373
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
 F test/vacuum.test 29b60e8cc9e573b39676df6c4a75fe9e02d04a09
 F test/vacuum2.test 91a84c9b08adfc4472097d2e8deb0150214e0e76
@@ -935,7 +935,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ad3389a9ab07f6b811841ffa76a5292719c4487d
-R a45bf605351a6737b616ae7b167a1c39
+P 5bde568028216f5bbf76fa0b61bf5b736699f4b1
+R 109bc7e0fff78b0c6554d3e5815c2cd8
 U dan
-Z 08251c747d7ddaeeaf3c4b5510848f0d
+Z 5955a7caf010dc14908da2de85096565
