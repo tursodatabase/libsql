@@ -1,5 +1,5 @@
-C Return\sa\ssuitable\serror\smessage\sif\sthe\smode=\sargument\sto\sa\sURI\sspecifies\na\shigher\smode\sthan\swhat\sis\sallowed\sby\scontext.\s\sOther\sminor\scleanups\sfor\nthe\sURI\sparsing\slogic.
-D 2011-05-09T19:20:17.775
+C Add\sexperimental\ssupport\sfor\sread-only\sconnections\sto\sWAL\sdatabases.
+D 2011-05-10T17:31:29.338
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,7 +163,7 @@ F src/os.c 22ac61d06e72a0dac900400147333b07b13d8e1d
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 2c67d126874b78eb427371db4793f0e8fbc7448b
+F src/os_unix.c 03630dd062c3d1fb9f25e2a227048b709c5babff
 F src/os_win.c ff0e14615a5086fa5ba6926e4ec0dc9cfb5a1a84
 F src/pager.c 24b689bc3639d534f5fb292d2c68038b1e720527
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
@@ -179,14 +179,14 @@ F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c d9d440809025a58547e39f4f268c2a296bfb56ff
 F src/shell.c 72e7e176bf46d5c6518d15ac4ad6847c4bb5df79
-F src/sqlite.h.in 41a0e4bc842917226e170273f64b95717a63270a
+F src/sqlite.h.in e7bbcb330ced6b5e25c9db8089c2c77aaefadf7d
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
 F src/sqliteInt.h b34bd64a7ade4808fcc301e0bb67ef5051ea49c6
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 501c9a200fd998a268be475be5858febc90b725b
-F src/test1.c f506164085bc4cbbb4b5c14b9c6de153f1aeafc5
+F src/test1.c 6ae026cd9d2b1b1e95a372a7460d091705db645d
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 124ff9735fb6bb7d41de180d6bac90e7b1509432
 F src/test4.c d1e5a5e904d4b444cf572391fdcb017638e36ff7
@@ -245,7 +245,7 @@ F src/vdbeblob.c c3ccb7c8732858c680f442932e66ad06bb036562
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
 F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
 F src/vtab.c 48dcef8bc757c2e7b488f68b5ddebb1650da2450
-F src/wal.c 7334009b396285b658a95a3b6bc6d2b016a1f794
+F src/wal.c 2574b16ee88b1934e97f63ae38025dc48ef45327
 F src/wal.h 7a5fbb00114b7f2cd40c7e1003d4c41ce9d26840
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 55403ce19c506be6a321c7f129aff693d6103db5
@@ -547,7 +547,7 @@ F test/lock4.test c82268c031d39345d05efa672f80b025481b3ae5
 F test/lock5.test b2abb5e711bc59b0eae00f6c97a36ec9f458fada
 F test/lock6.test ad5b387a3a8096afd3c68a55b9535056431b0cf5
 F test/lock7.test 64006c84c1c616657e237c7ad6532b765611cf64
-F test/lock_common.tcl d279887a0ab16cdb6d935c1203e64113c5a000e9
+F test/lock_common.tcl 0c270b121d40959fa2f3add382200c27045b3d95
 F test/lookaside.test 93f07bac140c5bb1d49f3892d2684decafdc7af2
 F test/main.test 9d7bbfcc1b52c88ba7b2ba6554068ecf9939f252
 F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
@@ -883,6 +883,7 @@ F test/walfault.test 58fce626359c9376fe35101b5c0f2df8040aa839
 F test/walhook.test ed00a40ba7255da22d6b66433ab61fab16a63483
 F test/walmode.test 22ddccd073c817ac9ead62b88ac446e8dedc7d2c
 F test/walnoshm.test a074428046408f4eb5c6a00e09df8cc97ff93317
+F test/walro.test 0fb4c79a9dfa1d14f46859e469d3b4844480cd9d
 F test/walshared.test 6dda2293880c300baf5d791c307f653094585761
 F test/walslow.test d21625e2e99e11c032ce949e8a94661576548933
 F test/walthread.test a25a393c068a2b42b44333fa3fdaae9072f1617c
@@ -935,7 +936,10 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ca3797d4967361e31a8a5ce1ce8190b095f3ed4c
-R fbfaa47316ae48b91e92f26cbe2f2742
-U drh
-Z 82e3dc394cc5052bfb9a5a6a21e4f298
+P d9bc1c7fe0ca5f6973a85827330958f4d09f8171
+R 864e9c4ee7a6cf5f8240415fb38d1af8
+T *branch * wal-readonly
+T *sym-wal-readonly *
+T -sym-trunk *
+U dan
+Z 321776a9f8d852e48652ad186c3a479b
