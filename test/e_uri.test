@@ -319,12 +319,12 @@ foreach {tn uri flags error} {
   2   {file:test.db?mode=ro}   rw    {not an error}
   3   {file:test.db?mode=ro}   rwc   {not an error}
 
-  4   {file:test.db?mode=rw}   ro    {access permission denied}
+  4   {file:test.db?mode=rw}   ro    {access mode not allowed: rw}
   5   {file:test.db?mode=rw}   rw    {not an error}
   6   {file:test.db?mode=rw}   rwc   {not an error}
 
-  7   {file:test.db?mode=rwc}  ro    {access permission denied}
-  8   {file:test.db?mode=rwc}  rw    {access permission denied}
+  7   {file:test.db?mode=rwc}  ro    {access mode not allowed: rwc}
+  8   {file:test.db?mode=rwc}  rw    {access mode not allowed: rwc}
   9   {file:test.db?mode=rwc}  rwc   {not an error}
 } {
   set f(ro)  [list SQLITE_OPEN_READONLY SQLITE_OPEN_URI]

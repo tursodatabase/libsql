@@ -1,5 +1,5 @@
-C Add\snew\sdocumentation\skeywords\sto\sthe\ssqlite3_vfs\sdescription.
-D 2011-05-10T10:17:02.660
+C Update\sURI\stest\scases\sto\saccount\sfor\sthe\snew\serror\smessage\sformat.
+D 2011-05-10T17:43:28.367
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -379,7 +379,7 @@ F test/e_resolve.test dcce9308fb13b934ce29591105d031d3e14fbba6
 F test/e_select.test bf385ae3aa0f014c4933ae66fd3e1302138493eb
 F test/e_select2.test 5c3d3da19c7b3e90ae444579db2b70098599ab92
 F test/e_update.test 963d6876064e65f318d1c93aaed36a02b9b389bf
-F test/e_uri.test dc9e8f06e44030904e6448c995386f325365713a
+F test/e_uri.test 9ce11319fb9b271bf7392027f913f7830e93e7a7
 F test/e_vacuum.test 6c09c2af7f2f140518f371c5342100118f779dcf
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
@@ -841,7 +841,7 @@ F test/unique.test 083c7fff74695bcc27a71d75699deba3595bc9c2
 F test/unixexcl.test 9d80a54d86d2261f660758928959368ffc36151e
 F test/unordered.test e81169ce2a8f31b2c6b66af691887e1376ab3ced
 F test/update.test 8bc86fd7ef1a00014f76dc6a6a7c974df4aef172
-F test/uri.test e8579b07985b8f4f658eb4e077962a9b2b7b6491
+F test/uri.test 19d64e06602a1d000f0fc0ffd39b3a204fb3ad19
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
 F test/vacuum.test 29b60e8cc9e573b39676df6c4a75fe9e02d04a09
 F test/vacuum2.test 91a84c9b08adfc4472097d2e8deb0150214e0e76
@@ -935,7 +935,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P d9bc1c7fe0ca5f6973a85827330958f4d09f8171
-R a4c51c77960c2b3e78f68dee95566335
-U drh
-Z 5d4e7081fc9730bf21891a9cc297b17d
+P ad3389a9ab07f6b811841ffa76a5292719c4487d
+R a45bf605351a6737b616ae7b167a1c39
+U dan
+Z 08251c747d7ddaeeaf3c4b5510848f0d

@@ -157,7 +157,7 @@ foreach {tn mode create_ok write_ok readonly_ok} {
   } $A($write_ok)
 
   set A(1) {0 {}}
-  set A(0) {1 {access permission denied}}
+  set A(0) [list 1 "access mode not allowed: $mode"]
   do_test 4.1.$tn.3 {
     list [catch {sqlite3 db "file:test.db?mode=$mode" -readonly 1} msg] $msg
   } $A($readonly_ok)
