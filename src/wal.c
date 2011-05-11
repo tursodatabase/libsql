@@ -406,6 +406,14 @@ struct WalCkptInfo {
 /*
 ** An open write-ahead log file is represented by an instance of the
 ** following object.
+**
+** The readOnlyShm variable is normally set to 0. If it is set to 1, then
+** the connection to shared-memory is read-only. This means it cannot
+** be written at all (even when read-locking the database). If it is set
+** to 2, then the shared-memory region is not yet open, but a read-only
+** connection is acceptable. In this case when the shared-memory is opened
+** (see function walIndexPage()), readOnlyShm is set to either 0 or 1 as
+** appropriate.
 */
 struct Wal {
   sqlite3_vfs *pVfs;         /* The VFS used to create pDbFd */

@@ -1803,6 +1803,11 @@ int sqlite3_limit(sqlite3 *db, int limitId, int newLimit){
 ** *pFlags may be updated before returning if the URI filename contains 
 ** "cache=xxx" or "mode=xxx" query parameters.
 **
+** The third argument, pBtflags, points to an integer containing the flags
+** that will be passed as the 5th argument to sqlite3BtreeOpen (BTREE_XXX
+** flags). This value will be edited if the URI filename contains a
+** "readonly_shm=1" or "readonly_shm=0" query parameter.
+**
 ** If successful, SQLITE_OK is returned. In this case *ppVfs is set to point to
 ** the VFS that should be used to open the database file. *pzFile is set to
 ** point to a buffer containing the name of the file to open. It is the 
