@@ -2366,7 +2366,7 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 ** sqlite3_open_v2() can take one of
 ** the following three values, optionally combined with the 
 ** [SQLITE_OPEN_NOMUTEX], [SQLITE_OPEN_FULLMUTEX], [SQLITE_OPEN_SHAREDCACHE],
-** and/or [SQLITE_OPEN_PRIVATECACHE] flags:)^
+** [SQLITE_OPEN_PRIVATECACHE], and/or [SQLITE_OPEN_URI] flags:)^
 **
 ** <dl>
 ** ^(<dt>[SQLITE_OPEN_READONLY]</dt>
@@ -2385,9 +2385,8 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 ** </dl>
 **
 ** If the 3rd parameter to sqlite3_open_v2() is not one of the
-** combinations shown above or one of the combinations shown above combined
-** with the [SQLITE_OPEN_NOMUTEX], [SQLITE_OPEN_FULLMUTEX],
-** [SQLITE_OPEN_SHAREDCACHE] and/or [SQLITE_OPEN_PRIVATECACHE] flags,
+** combinations shown above optionally combined with other
+** [SQLITE_OPEN_READONLY | SQLITE_OPEN_* bits]
 ** then the behavior is undefined.
 **
 ** ^If the [SQLITE_OPEN_NOMUTEX] flag is set, then the database connection
@@ -2419,27 +2418,36 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 ** on-disk database will be created.  ^This private database will be
 ** automatically deleted as soon as the database connection is closed.
 **
-** ^If URI filename interpretation is enabled, and the filename argument
+** [[URI filenames in sqlite3_open()]] <h3>URI Filenames</h3>
+**
+** ^If [URI filename] interpretation is enabled, and the filename argument
 ** begins with "file:", then the filename is interpreted as a URI. ^URI
 ** filename interpretation is enabled if the [SQLITE_OPEN_URI] flag is
 ** is set in the fourth argument to sqlite3_open_v2(), or if it has
 ** been enabled globally using the [SQLITE_CONFIG_URI] option with the
-** [sqlite3_config()] method. 
+** [sqlite3_config()] method or by the [SQLITE_USE_URI] compile-time option.
+** As of SQLite version 3.7.7, URI filename interpretation is turned off
+** by default, but future releases of SQLite might enable URI filename
+** intepretation by default.  See "[URI filenames]" for additional
+** information.
 **
-** URI filenames are parsed according to RFC 1738. If the URI contains an
-** 'authority', then it must be either an empty string or the string 
+** URI filenames are parsed according to RFC 3986. ^If the URI contains an
+** authority, then it must be either an empty string or the string 
 ** "localhost". ^If the authority is not an empty string or "localhost", an 
-** error is returned to the caller. ^The 'fragment' component of a URI, if 
-** present, is always ignored.
+** error is returned to the caller. ^The fragment component of a URI, if 
+** present, is ignored.
 **
-** ^SQLite uses the 'path' component of the URI as the path to the database file
-** to open. ^If the path begins with a '/' character, then it is interpreted as
-** an absolute path. ^If it does not begin with a '/', it is interpreted as a 
-** relative path. ^On windows, the first component of an absolute path 
+** ^SQLite uses the path component of the URI as the name of the disk file
+** which contains the database. ^If the path begins with a '/' character, 
+** then it is interpreted as an absolute path. ^If the path does not begin 
+** with a '/' (meaning that the authority section is omitted from the URI)
+** then the path is interpreted as a relative path. 
+** ^On windows, the first component of an absolute path 
 ** is a drive specification (e.g. "C:").
 **
+** [[core URI query parameters]]
 ** The query component of a URI may contain parameters that are interpreted
-** either by SQLite itself, or by a [sqlite3_vfs | custom VFS implementation].
+** either by SQLite itself, or by a [VFS | custom VFS implementation].
 ** SQLite interprets the following three query parameters:
 **
 ** <ul>
@@ -2475,9 +2483,11 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 ** </ul>
 **
 ** ^Specifying an unknown parameter in the query component of a URI is not an
-** error.
+** error.  Future versions of SQLite might understand additional query
+** parameters.  See "[query parameters with special meaning to SQLite]" for
+** additional information.
 **
-** URI filename examples:
+** [[URI filename examples]] <h3>URI filename examples</h3>
 **
 ** <table border="1" align=center cellpadding=5>
 ** <tr><th> URI filenames <th> Results
