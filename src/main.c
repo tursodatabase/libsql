@@ -2171,6 +2171,7 @@ static int openDatabase(
                   nocaseCollatingFunc, 0);
 
   /* Parse the filename/URI argument. */
+  db->openFlags = flags;
   rc = sqlite3ParseUri(
       zVfs, zFilename, &flags, &btflags, &db->pVfs, &zOpen, &zErrMsg);
   if( rc!=SQLITE_OK ){
@@ -2181,7 +2182,6 @@ static int openDatabase(
   }
 
   /* Open the backend database driver */
-  db->openFlags = flags;
   rc = sqlite3BtreeOpen(db->pVfs, zOpen, db, &db->aDb[0].pBt, btflags,
                         flags | SQLITE_OPEN_MAIN_DB);
   if( rc!=SQLITE_OK ){

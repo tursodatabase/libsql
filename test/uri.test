@@ -21,6 +21,7 @@ source $testdir/tester.tcl
 #   4.*: Tests for specifying other options (other than "vfs").
 #   5.*: Test using a different VFS with an attached database.
 #   6.*: Test that authorities other than "" and localhost cause errors.
+#   7.*: Test that a read-write db can be attached to a read-only connection.
 #
 
 set testprefix uri
@@ -157,7 +158,7 @@ foreach {tn mode create_ok write_ok readonly_ok} {
   } $A($write_ok)
 
   set A(1) {0 {}}
-  set A(0) {1 {access permission denied}}
+  set A(0) [list 1 "access mode not allowed: $mode"]
   do_test 4.1.$tn.3 {
     list [catch {sqlite3 db "file:test.db?mode=$mode" -readonly 1} msg] $msg
   } $A($readonly_ok)
@@ -282,5 +283,27 @@ foreach {tn uri res} {
   catch { sqlite3_close $DB }
 }
 
-finish_test
+forcedelete test.db test.db2
+do_test 7.1 {
+  sqlite3 db test.db
+  execsql {
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, 2);
+    ATTACH 'test.db2' AS aux;
+    CREATE TABLE aux.t2(a, b);
+    INSERT INTO t1 VALUES('a', 'b');
+  }
+  db close
+} {}
+do_test 7.2 {
+  sqlite3 db file:test.db?mode=ro
+  execsql { ATTACH 'file:test.db2?mode=rw' AS aux }
+} {}
+do_execsql_test  7.3 { 
+  INSERT INTO t2 VALUES('c', 'd') 
+} {}
+do_catchsql_test 7.4 { 
+  INSERT INTO t1 VALUES(3, 4) 
+} {1 {attempt to write a readonly database}}
 
+finish_test
