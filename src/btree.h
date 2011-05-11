@@ -61,6 +61,7 @@ int sqlite3BtreeOpen(
 #define BTREE_MEMORY        4  /* This is an in-memory DB */
 #define BTREE_SINGLE        8  /* The file contains at most 1 b-tree */
 #define BTREE_UNORDERED    16  /* Use of a hash implementation is OK */
+#define BTREE_READONLYSHM  32  /* Read-only SHM access is acceptable */
 
 int sqlite3BtreeClose(Btree*);
 int sqlite3BtreeSetCacheSize(Btree*,int);

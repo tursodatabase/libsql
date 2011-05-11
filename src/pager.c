@@ -620,6 +620,7 @@ struct Pager {
   u8 tempFile;                /* zFilename is a temporary file */
   u8 readOnly;                /* True for a read-only database */
   u8 memDb;                   /* True to inhibit all file I/O */
+  u8 readOnlyShm;             /* True if read-only shm access is Ok */
 
   /**************************************************************************
   ** The following block contains those class members that change during
@@ -3017,6 +3018,7 @@ static int pagerWalFrames(
 static int pagerBeginReadTransaction(Pager *pPager){
   int rc;                         /* Return code */
   int changed = 0;                /* True if cache must be reset */
+  Wal *pWal = pPager->pWal;
 
   assert( pagerUseWal(pPager) );
   assert( pPager->eState==PAGER_OPEN || pPager->eState==PAGER_READER );
@@ -3026,9 +3028,9 @@ static int pagerBeginReadTransaction(Pager *pPager){
   ** are in locking_mode=NORMAL and EndRead() was previously called,
   ** the duplicate call is harmless.
   */
-  sqlite3WalEndReadTransaction(pPager->pWal);
+  sqlite3WalEndReadTransaction(pWal);
 
-  rc = sqlite3WalBeginReadTransaction(pPager->pWal, &changed);
+  rc = sqlite3WalBeginReadTransaction(pWal, pPager->readOnlyShm, &changed);
   if( rc!=SQLITE_OK || changed ){
     pager_reset(pPager);
   }
@@ -4414,6 +4416,7 @@ int sqlite3PagerOpen(
   }
   pPager->pVfs = pVfs;
   pPager->vfsFlags = vfsFlags;
+  pPager->readOnlyShm = (flags & PAGER_READONLYSHM)!=0;
 
   /* Open the pager file.
   */

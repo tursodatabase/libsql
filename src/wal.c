@@ -529,7 +529,8 @@ static int walIndexPage(Wal *pWal, int iPage, volatile u32 **ppPage){
       rc = sqlite3OsShmMap(pWal->pDbFd, iPage, WALINDEX_PGSZ, 
           pWal->writeLock, (void volatile **)&pWal->apWiData[iPage]
       );
-      if( rc==SQLITE_CANTOPEN && iPage==0 ){
+      if( rc==SQLITE_CANTOPEN && pWal->readOnlyShm>1 ){
+        assert( iPage==0 );
         sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_READONLY_SHM, (void*)1);
         rc = sqlite3OsShmMap(pWal->pDbFd, iPage, WALINDEX_PGSZ, 
             pWal->writeLock, (void volatile **)&pWal->apWiData[iPage]
@@ -541,9 +542,10 @@ static int walIndexPage(Wal *pWal, int iPage, volatile u32 **ppPage){
       }
     }
   }
-
   *ppPage = pWal->apWiData[iPage];
+
   assert( iPage==0 || *ppPage || rc!=SQLITE_OK );
+  if( pWal->readOnlyShm>1 ) pWal->readOnlyShm = 0;
   return rc;
 }
 
@@ -1909,6 +1911,7 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
     return rc;
   };
   assert( page0 || pWal->writeLock==0 );
+  assert( pWal->readOnlyShm==0 || pWal->readOnlyShm==1 );
 
   /* If the first page of the wal-index has been mapped, try to read the
   ** wal-index header immediately, without holding any lock. This usually
@@ -2200,13 +2203,18 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
 ** Pager layer will use this to know that is cache is stale and
 ** needs to be flushed.
 */
-int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
+int sqlite3WalBeginReadTransaction(Wal *pWal, int readOnlyShm, int *pChanged){
   int rc;                         /* Return code */
   int cnt = 0;                    /* Number of TryBeginRead attempts */
 
+  if( pWal->nWiData==0 || pWal->apWiData[0]==0 ){
+    assert( readOnlyShm==0 || readOnlyShm==1 );
+    pWal->readOnlyShm = readOnlyShm*2;
+  }
   do{
     rc = walTryBeginRead(pWal, pChanged, 0, ++cnt);
   }while( rc==WAL_RETRY );
+  assert( rc || pWal->readOnlyShm==0 || (readOnlyShm && pWal->readOnlyShm==1) );
   testcase( (rc&0xff)==SQLITE_BUSY );
   testcase( (rc&0xff)==SQLITE_IOERR );
   testcase( rc==SQLITE_PROTOCOL );

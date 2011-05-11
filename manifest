@@ -1,5 +1,5 @@
-C Add\sexperimental\ssupport\sfor\sread-only\sconnections\sto\sWAL\sdatabases.
-D 2011-05-10T17:31:29.338
+C Only\sopen\sa\sread-only\sconnection\sto\sshared-memory\sif\sthe\s"readonly_shm=1"\soption\sis\sspecified\sas\spart\sof\sthe\sdatabase\sfile\sURI\s(and\sif\sa\sread-write\sconnection\sfails).
+D 2011-05-11T14:57:33.029
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -117,13 +117,13 @@ F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c 280f5c04b11b492703a342222b3de0a999445280
 F src/analyze.c a425d62e8fa9ebcb4359ab84ff0c62c6563d2e2a
-F src/attach.c 12c6957996908edc31c96d7c68d4942c2474405f
+F src/attach.c a87bfb77a720f7aa02791434aacfd9bc8feb50cc
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 986c15232757f2873dff35ee3b35cbf935fc573c
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 26f8a9d6169413c5682b89b5397d20437b653154
-F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
+F src/btree.h d796dc4030b3cce7f5a0cc4f2f986d2befa6b8ac
 F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
 F src/build.c 0132bc6631fa617a1d28ef805921f6dbac18a514
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
@@ -144,7 +144,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 3ae0d52da013a6326310655be6473fd472347b85
-F src/main.c f00cee5a27f5df5ed536e7043cb451b3c85ce65c
+F src/main.c 167fb3285720917e4d1a5c633f558c81b751eca3
 F src/malloc.c 591aedb20ae40813f1045f2ef253438a334775d9
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 00bd8265c81abb665c48fea1e0c234eb3b922206
@@ -165,8 +165,8 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 03630dd062c3d1fb9f25e2a227048b709c5babff
 F src/os_win.c ff0e14615a5086fa5ba6926e4ec0dc9cfb5a1a84
-F src/pager.c 24b689bc3639d534f5fb292d2c68038b1e720527
-F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
+F src/pager.c 4056376f83f85cea9922a11161087c529e39f7dc
+F src/pager.h 34c6b029446f06f40847746d22faac0d354dd909
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 09d38c44ab275db581f7a2f6ff8b9bc7f8c0faaa
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
@@ -181,7 +181,7 @@ F src/select.c d9d440809025a58547e39f4f268c2a296bfb56ff
 F src/shell.c 72e7e176bf46d5c6518d15ac4ad6847c4bb5df79
 F src/sqlite.h.in e7bbcb330ced6b5e25c9db8089c2c77aaefadf7d
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
-F src/sqliteInt.h b34bd64a7ade4808fcc301e0bb67ef5051ea49c6
+F src/sqliteInt.h 798fb09648cefc159ac9b3ce5e00f5ada1377ed1
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -245,8 +245,8 @@ F src/vdbeblob.c c3ccb7c8732858c680f442932e66ad06bb036562
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
 F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
 F src/vtab.c 48dcef8bc757c2e7b488f68b5ddebb1650da2450
-F src/wal.c 2574b16ee88b1934e97f63ae38025dc48ef45327
-F src/wal.h 7a5fbb00114b7f2cd40c7e1003d4c41ce9d26840
+F src/wal.c adc6c83b650e67e32159e11d557a46594834853e
+F src/wal.h c1e05cdf3d42ed7c9263739ca8f5cdd8761e7de3
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 55403ce19c506be6a321c7f129aff693d6103db5
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -883,7 +883,7 @@ F test/walfault.test 58fce626359c9376fe35101b5c0f2df8040aa839
 F test/walhook.test ed00a40ba7255da22d6b66433ab61fab16a63483
 F test/walmode.test 22ddccd073c817ac9ead62b88ac446e8dedc7d2c
 F test/walnoshm.test a074428046408f4eb5c6a00e09df8cc97ff93317
-F test/walro.test 0fb4c79a9dfa1d14f46859e469d3b4844480cd9d
+F test/walro.test c204f62fb6a77839bc6ce5adbdcc9df2aac877ca
 F test/walshared.test 6dda2293880c300baf5d791c307f653094585761
 F test/walslow.test d21625e2e99e11c032ce949e8a94661576548933
 F test/walthread.test a25a393c068a2b42b44333fa3fdaae9072f1617c
@@ -936,10 +936,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P d9bc1c7fe0ca5f6973a85827330958f4d09f8171
-R 864e9c4ee7a6cf5f8240415fb38d1af8
-T *branch * wal-readonly
-T *sym-wal-readonly *
-T -sym-trunk *
+P bb59f9862da45d25fb51d7821130854828c91c98
+R 04ad06f1f1eb20213db6e513d8bb75aa
 U dan
-Z 321776a9f8d852e48652ad186c3a479b
+Z 112f0ce43ba9dc957c26d5146ee2fe50

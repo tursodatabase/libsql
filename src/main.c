@@ -1818,6 +1818,7 @@ int sqlite3ParseUri(
   const char *zDefaultVfs,        /* VFS to use if no "vfs=xxx" query option */
   const char *zUri,               /* Nul-terminated URI to parse */
   unsigned int *pFlags,           /* IN/OUT: SQLITE_OPEN_XXX flags */
+  int *pBtflags,                  /* IN/OUT: BTREE_XXX flags */
   sqlite3_vfs **ppVfs,            /* OUT: VFS to use */ 
   char **pzFile,                  /* OUT: Filename component of URI */
   char **pzErrMsg                 /* OUT: Error message (if rc!=SQLITE_OK) */
@@ -1933,6 +1934,12 @@ int sqlite3ParseUri(
 
       if( nOpt==3 && memcmp("vfs", zOpt, 3)==0 ){
         zVfs = zVal;
+      }else if( nOpt==12 && memcmp("readonly_shm", zOpt, 12)==0 ){
+        if( sqlite3Atoi(zVal) ){
+          *pBtflags |= BTREE_READONLYSHM;
+        }else{
+          *pBtflags &= ~BTREE_READONLYSHM;
+        }
       }else{
         struct OpenMode {
           const char *z;
@@ -2036,6 +2043,7 @@ static int openDatabase(
   int isThreadsafe;               /* True for threadsafe connections */
   char *zOpen = 0;                /* Filename argument to pass to BtreeOpen() */
   char *zErrMsg = 0;              /* Error message from sqlite3ParseUri() */
+  int btflags = 0;                /* Mask of BTREE_XXX flags */
 
   *ppDb = 0;
 #ifndef SQLITE_OMIT_AUTOINIT
@@ -2163,7 +2171,8 @@ static int openDatabase(
                   nocaseCollatingFunc, 0);
 
   /* Parse the filename/URI argument. */
-  rc = sqlite3ParseUri(zVfs, zFilename, &flags, &db->pVfs, &zOpen, &zErrMsg);
+  rc = sqlite3ParseUri(
+      zVfs, zFilename, &flags, &btflags, &db->pVfs, &zOpen, &zErrMsg);
   if( rc!=SQLITE_OK ){
     if( rc==SQLITE_NOMEM ) db->mallocFailed = 1;
     sqlite3Error(db, rc, zErrMsg ? "%s" : 0, zErrMsg);
@@ -2173,7 +2182,7 @@ static int openDatabase(
 
   /* Open the backend database driver */
   db->openFlags = flags;
-  rc = sqlite3BtreeOpen(db->pVfs, zOpen, db, &db->aDb[0].pBt, 0,
+  rc = sqlite3BtreeOpen(db->pVfs, zOpen, db, &db->aDb[0].pBt, btflags,
                         flags | SQLITE_OPEN_MAIN_DB);
   if( rc!=SQLITE_OK ){
     if( rc==SQLITE_IOERR_NOMEM ){

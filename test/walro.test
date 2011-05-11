@@ -35,6 +35,13 @@ do_multiclient_test tn {
   forcedelete test.db
   forcedelete walro
 
+  foreach c {code1 code2 code3} {
+    $c {
+      sqlite3_shutdown
+      sqlite3_config_uri 1
+    }
+  }
+
   file mkdir walro
 
   do_test 1.1.1 {
@@ -49,7 +56,7 @@ do_multiclient_test tn {
 
   do_test 1.1.2 {
     file attributes test.db-shm -permissions r--r--r--
-    code1 { sqlite3 db test.db }
+    code1 { sqlite3 db file:test.db?readonly_shm=1 }
   } {}
 
   do_test 1.1.3 { sql1 "SELECT * FROM t1" }                {a b}
@@ -84,7 +91,7 @@ do_multiclient_test tn {
     list [file exists test.db-wal] [file exists test.db-shm]
   } {1 1}
   do_test 1.2.2 {
-    code1 { sqlite3 db test.db }
+    code1 { sqlite3 db file:test.db?readonly_shm=1 }
     sql1 { SELECT * FROM t1 }
   } {a b c d e f g h i j}
 
@@ -93,7 +100,7 @@ do_multiclient_test tn {
     file attributes test.db-shm -permissions rw-r--r--
     hexio_write test.db-shm 0 01020304 
     file attributes test.db-shm -permissions r--r--r--
-    code1 { sqlite3 db test.db }
+    code1 { sqlite3 db file:test.db?readonly_shm=1 }
     csql1 { SELECT * FROM t1 }
   } {1 {attempt to write a readonly database}}
   do_test 1.2.4 {

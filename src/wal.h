@@ -22,7 +22,7 @@
 #ifdef SQLITE_OMIT_WAL
 # define sqlite3WalOpen(x,y,z)                   0
 # define sqlite3WalClose(w,x,y,z)                0
-# define sqlite3WalBeginReadTransaction(y,z)     0
+# define sqlite3WalBeginReadTransaction(x,y,z)   0
 # define sqlite3WalEndReadTransaction(z)
 # define sqlite3WalRead(v,w,x,y,z)               0
 # define sqlite3WalDbsize(y)                     0
@@ -56,7 +56,7 @@ int sqlite3WalClose(Wal *pWal, int sync_flags, int, u8 *);
 ** write to or checkpoint the WAL.  sqlite3WalCloseSnapshot() closes the
 ** transaction and releases the lock.
 */
-int sqlite3WalBeginReadTransaction(Wal *pWal, int *);
+int sqlite3WalBeginReadTransaction(Wal *pWal, int, int *);
 void sqlite3WalEndReadTransaction(Wal *pWal);
 
 /* Read a page from the write-ahead log, if it is present. */
