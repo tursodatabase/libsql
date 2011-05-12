@@ -32,6 +32,11 @@ proc test_expr {name settings expr result} {
     execsql {BEGIN; UPDATE test1 SET %s; SELECT %s FROM test1; ROLLBACK;}
   } $settings $expr] $result
 }
+proc test_realnum_expr {name settings expr result} {
+  do_realnum_test $name [format {
+    execsql {BEGIN; UPDATE test1 SET %s; SELECT %s FROM test1; ROLLBACK;}
+  } $settings $expr] $result
+}
 
 test_expr expr-1.1 {i1=10, i2=20} {i1+i2} 30
 test_expr expr-1.2 {i1=10, i2=20} {i1-i2} -10
@@ -164,7 +169,7 @@ ifcapable floatingpoint {
 }
 
 if {[working_64bit_int]} {
-  test_expr expr-1.106 {i1=0} {-9223372036854775808/-1} 9.22337203685478e+18
+  test_realnum_expr expr-1.106 {i1=0} {-9223372036854775808/-1} 9.22337203685478e+18
 }
 
 test_expr expr-1.107 {i1=0} {-9223372036854775808%-1} 0
@@ -203,100 +208,100 @@ test_expr expr-1.126 {i1=8, i2=8} \
 ifcapable floatingpoint {if {[working_64bit_int]} {
   test_expr expr-1.200\
       {i1=9223372036854775806, i2=1} {i1+i2}      9223372036854775807
-  test_expr expr-1.201\
+  test_realnum_expr expr-1.201\
       {i1=9223372036854775806, i2=2} {i1+i2}      9.22337203685478e+18
-  test_expr expr-1.202\
+  test_realnum_expr expr-1.202\
       {i1=9223372036854775806, i2=100000} {i1+i2} 9.22337203685488e+18
-  test_expr expr-1.203\
+  test_realnum_expr expr-1.203\
       {i1=9223372036854775807, i2=0} {i1+i2}      9223372036854775807
-  test_expr expr-1.204\
+  test_realnum_expr expr-1.204\
       {i1=9223372036854775807, i2=1} {i1+i2}      9.22337203685478e+18
-  test_expr expr-1.205\
+  test_realnum_expr expr-1.205\
       {i2=9223372036854775806, i1=1} {i1+i2}      9223372036854775807
-  test_expr expr-1.206\
+  test_realnum_expr expr-1.206\
       {i2=9223372036854775806, i1=2} {i1+i2}      9.22337203685478e+18
-  test_expr expr-1.207\
+  test_realnum_expr expr-1.207\
       {i2=9223372036854775806, i1=100000} {i1+i2} 9.22337203685488e+18
-  test_expr expr-1.208\
+  test_realnum_expr expr-1.208\
       {i2=9223372036854775807, i1=0} {i1+i2}      9223372036854775807
-  test_expr expr-1.209\
+  test_realnum_expr expr-1.209\
       {i2=9223372036854775807, i1=1} {i1+i2}      9.22337203685478e+18
-  test_expr expr-1.210\
+  test_realnum_expr expr-1.210\
       {i1=-9223372036854775807, i2=-1} {i1+i2}    -9223372036854775808
-  test_expr expr-1.211\
+  test_realnum_expr expr-1.211\
       {i1=-9223372036854775807, i2=-2} {i1+i2}    -9.22337203685478e+18
-  test_expr expr-1.212\
+  test_realnum_expr expr-1.212\
       {i1=-9223372036854775807, i2=-100000} {i1+i2} -9.22337203685488e+18
-  test_expr expr-1.213\
+  test_realnum_expr expr-1.213\
       {i1=-9223372036854775808, i2=0} {i1+i2}     -9223372036854775808
-  test_expr expr-1.214\
+  test_realnum_expr expr-1.214\
       {i1=-9223372036854775808, i2=-1} {i1+i2}    -9.22337203685478e+18
-  test_expr expr-1.215\
+  test_realnum_expr expr-1.215\
       {i2=-9223372036854775807, i1=-1} {i1+i2}    -9223372036854775808
-  test_expr expr-1.216\
+  test_realnum_expr expr-1.216\
       {i2=-9223372036854775807, i1=-2} {i1+i2}    -9.22337203685478e+18
-  test_expr expr-1.217\
+  test_realnum_expr expr-1.217\
       {i2=-9223372036854775807, i1=-100000} {i1+i2} -9.22337203685488e+18
-  test_expr expr-1.218\
+  test_realnum_expr expr-1.218\
       {i2=-9223372036854775808, i1=0} {i1+i2}     -9223372036854775808
-  test_expr expr-1.219\
+  test_realnum_expr expr-1.219\
       {i2=-9223372036854775808, i1=-1} {i1+i2}    -9.22337203685478e+18
-  test_expr expr-1.220\
+  test_realnum_expr expr-1.220\
       {i1=9223372036854775806, i2=-1} {i1-i2}     9223372036854775807
-  test_expr expr-1.221\
+  test_realnum_expr expr-1.221\
       {i1=9223372036854775806, i2=-2} {i1-i2}      9.22337203685478e+18
-  test_expr expr-1.222\
+  test_realnum_expr expr-1.222\
       {i1=9223372036854775806, i2=-100000} {i1-i2} 9.22337203685488e+18
-  test_expr expr-1.223\
+  test_realnum_expr expr-1.223\
       {i1=9223372036854775807, i2=0} {i1-i2}      9223372036854775807
-  test_expr expr-1.224\
+  test_realnum_expr expr-1.224\
       {i1=9223372036854775807, i2=-1} {i1-i2}      9.22337203685478e+18
-  test_expr expr-1.225\
+  test_realnum_expr expr-1.225\
       {i2=-9223372036854775806, i1=1} {i1-i2}      9223372036854775807
-  test_expr expr-1.226\
+  test_realnum_expr expr-1.226\
       {i2=-9223372036854775806, i1=2} {i1-i2}      9.22337203685478e+18
-  test_expr expr-1.227\
+  test_realnum_expr expr-1.227\
       {i2=-9223372036854775806, i1=100000} {i1-i2} 9.22337203685488e+18
-  test_expr expr-1.228\
+  test_realnum_expr expr-1.228\
       {i2=-9223372036854775807, i1=0} {i1-i2}      9223372036854775807
-  test_expr expr-1.229\
+  test_realnum_expr expr-1.229\
       {i2=-9223372036854775807, i1=1} {i1-i2}      9.22337203685478e+18
-  test_expr expr-1.230\
+  test_realnum_expr expr-1.230\
       {i1=-9223372036854775807, i2=1} {i1-i2}    -9223372036854775808
-  test_expr expr-1.231\
+  test_realnum_expr expr-1.231\
       {i1=-9223372036854775807, i2=2} {i1-i2}    -9.22337203685478e+18
-  test_expr expr-1.232\
+  test_realnum_expr expr-1.232\
       {i1=-9223372036854775807, i2=100000} {i1-i2} -9.22337203685488e+18
-  test_expr expr-1.233\
+  test_realnum_expr expr-1.233\
       {i1=-9223372036854775808, i2=0} {i1-i2}     -9223372036854775808
-  test_expr expr-1.234\
+  test_realnum_expr expr-1.234\
       {i1=-9223372036854775808, i2=1} {i1-i2}    -9.22337203685478e+18
-  test_expr expr-1.235\
+  test_realnum_expr expr-1.235\
       {i2=9223372036854775807, i1=-1} {i1-i2}    -9223372036854775808
-  test_expr expr-1.236\
+  test_realnum_expr expr-1.236\
       {i2=9223372036854775807, i1=-2} {i1-i2}    -9.22337203685478e+18
-  test_expr expr-1.237\
+  test_realnum_expr expr-1.237\
       {i2=9223372036854775807, i1=-100000} {i1-i2} -9.22337203685488e+18
-  test_expr expr-1.238\
+  test_realnum_expr expr-1.238\
       {i2=9223372036854775807, i1=0} {i1-i2}     -9223372036854775807
-  test_expr expr-1.239\
+  test_realnum_expr expr-1.239\
       {i2=9223372036854775807, i1=-1} {i1-i2}    -9223372036854775808
 
-  test_expr expr-1.250\
+  test_realnum_expr expr-1.250\
       {i1=4294967296, i2=2147483648} {i1*i2}      9.22337203685478e+18
-  test_expr expr-1.251\
+  test_realnum_expr expr-1.251\
       {i1=4294967296, i2=2147483647} {i1*i2}      9223372032559808512
-  test_expr expr-1.252\
+  test_realnum_expr expr-1.252\
       {i1=-4294967296, i2=2147483648} {i1*i2}     -9223372036854775808
-  test_expr expr-1.253\
+  test_realnum_expr expr-1.253\
       {i1=-4294967296, i2=2147483647} {i1*i2}     -9223372032559808512
-  test_expr expr-1.254\
+  test_realnum_expr expr-1.254\
       {i1=4294967296, i2=-2147483648} {i1*i2}     -9223372036854775808
-  test_expr expr-1.255\
+  test_realnum_expr expr-1.255\
       {i1=4294967296, i2=-2147483647} {i1*i2}     -9223372032559808512
-  test_expr expr-1.256\
+  test_realnum_expr expr-1.256\
       {i1=-4294967296, i2=-2147483648} {i1*i2}    9.22337203685478e+18
-  test_expr expr-1.257\
+  test_realnum_expr expr-1.257\
       {i1=-4294967296, i2=-2147483647} {i1*i2}    9223372032559808512
 
 }}
@@ -883,7 +888,7 @@ do_test expr-12.2 {
 } {1 {near ")": syntax error}}
 
 ifcapable floatingpoint {
-  do_test expr-13.1 {
+  do_realnum_test expr-13.1 {
     execsql {
       SELECT 12345678901234567890;
     }
@@ -908,12 +913,12 @@ if {[working_64bit_int]} {
 # If the value is too large, use String->Float conversion.
 #
 ifcapable floatingpoint {
-  do_test expr-13.4 {
+  do_realnum_test expr-13.4 {
     execsql {
       SELECT 0+'9223372036854775808'
     }
   } {9.22337203685478e+18}
-  do_test expr-13.5 {
+  do_realnum_test expr-13.5 {
     execsql {
       SELECT '9223372036854775808'+0
     }
@@ -923,12 +928,12 @@ ifcapable floatingpoint {
 # Use String->float conversion if the value is explicitly a floating
 # point value.
 #
-do_test expr-13.6 {
+do_realnum_test expr-13.6 {
   execsql {
     SELECT 0+'9223372036854775807.0'
   }
 } {9.22337203685478e+18}
-do_test expr-13.7 {
+do_realnum_test expr-13.7 {
   execsql {
     SELECT '9223372036854775807.0'+0
   }

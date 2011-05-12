@@ -620,6 +620,7 @@ struct Pager {
   u8 tempFile;                /* zFilename is a temporary file */
   u8 readOnly;                /* True for a read-only database */
   u8 memDb;                   /* True to inhibit all file I/O */
+  u8 readOnlyShm;             /* True if read-only shm access is Ok */
 
   /**************************************************************************
   ** The following block contains those class members that change during
@@ -3017,6 +3018,7 @@ static int pagerWalFrames(
 static int pagerBeginReadTransaction(Pager *pPager){
   int rc;                         /* Return code */
   int changed = 0;                /* True if cache must be reset */
+  Wal *pWal = pPager->pWal;
 
   assert( pagerUseWal(pPager) );
   assert( pPager->eState==PAGER_OPEN || pPager->eState==PAGER_READER );
@@ -3026,9 +3028,9 @@ static int pagerBeginReadTransaction(Pager *pPager){
   ** are in locking_mode=NORMAL and EndRead() was previously called,
   ** the duplicate call is harmless.
   */
-  sqlite3WalEndReadTransaction(pPager->pWal);
+  sqlite3WalEndReadTransaction(pWal);
 
-  rc = sqlite3WalBeginReadTransaction(pPager->pWal, &changed);
+  rc = sqlite3WalBeginReadTransaction(pWal, pPager->readOnlyShm, &changed);
   if( rc!=SQLITE_OK || changed ){
     pager_reset(pPager);
   }
@@ -4299,6 +4301,8 @@ int sqlite3PagerOpen(
   int noReadlock = (flags & PAGER_NO_READLOCK)!=0;  /* True to omit read-lock */
   int pcacheSize = sqlite3PcacheSize();       /* Bytes to allocate for PCache */
   u32 szPageDflt = SQLITE_DEFAULT_PAGE_SIZE;  /* Default page size */
+  const char *zUri = 0;    /* URI args to copy */
+  int nUri = 0;            /* Number of bytes of URI args at *zUri */
 
   /* Figure out how much space is required for each journal file-handle
   ** (there are two of them, the main journal and the sub-journal). This
@@ -4329,6 +4333,7 @@ int sqlite3PagerOpen(
   ** leave both nPathname and zPathname set to 0.
   */
   if( zFilename && zFilename[0] ){
+    const char *z;
     nPathname = pVfs->mxPathname+1;
     zPathname = sqlite3Malloc(nPathname*2);
     if( zPathname==0 ){
@@ -4337,6 +4342,12 @@ int sqlite3PagerOpen(
     zPathname[0] = 0; /* Make sure initialized even if FullPathname() fails */
     rc = sqlite3OsFullPathname(pVfs, zFilename, nPathname, zPathname);
     nPathname = sqlite3Strlen30(zPathname);
+    z = zUri = &zFilename[sqlite3Strlen30(zFilename)+1];
+    while( *z ){
+      z += sqlite3Strlen30(z)+1;
+      z += sqlite3Strlen30(z)+1;
+    }
+    nUri = &z[1] - zUri;
     if( rc==SQLITE_OK && nPathname+8>pVfs->mxPathname ){
       /* This branch is taken when the journal path required by
       ** the database being opened will be more than pVfs->mxPathname
@@ -4369,7 +4380,7 @@ int sqlite3PagerOpen(
     ROUND8(pcacheSize) +           /* PCache object */
     ROUND8(pVfs->szOsFile) +       /* The main db file */
     journalFileSize * 2 +          /* The two journal files */ 
-    nPathname + 1 +                /* zFilename */
+    nPathname + 1 + nUri +         /* zFilename */
     nPathname + 8 + 1              /* zJournal */
 #ifndef SQLITE_OMIT_WAL
     + nPathname + 4 + 1              /* zWal */
@@ -4391,8 +4402,9 @@ int sqlite3PagerOpen(
   /* Fill in the Pager.zFilename and Pager.zJournal buffers, if required. */
   if( zPathname ){
     assert( nPathname>0 );
-    pPager->zJournal =   (char*)(pPtr += nPathname + 1);
+    pPager->zJournal =   (char*)(pPtr += nPathname + 1 + nUri);
     memcpy(pPager->zFilename, zPathname, nPathname);
+    memcpy(&pPager->zFilename[nPathname+1], zUri, nUri);
     memcpy(pPager->zJournal, zPathname, nPathname);
     memcpy(&pPager->zJournal[nPathname], "-journal", 8);
 #ifndef SQLITE_OMIT_WAL
@@ -4404,6 +4416,7 @@ int sqlite3PagerOpen(
   }
   pPager->pVfs = pVfs;
   pPager->vfsFlags = vfsFlags;
+  pPager->readOnlyShm = (flags & PAGER_READONLYSHM)!=0;
 
   /* Open the pager file.
   */

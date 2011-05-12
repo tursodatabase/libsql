@@ -70,8 +70,14 @@ static void attachFunc(
   sqlite3 *db = sqlite3_context_db_handle(context);
   const char *zName;
   const char *zFile;
+  char *zPath = 0;
+  char *zErr = 0;
+  unsigned int flags;
   Db *aNew;
   char *zErrDyn = 0;
+  sqlite3_vfs *pVfs;
+  const char *zVfs = db->pVfs->zName;       /* Name of default (main) VFS */
+  int btflags = 0;
 
   UNUSED_PARAMETER(NotUsed);
 
@@ -124,8 +130,18 @@ static void attachFunc(
   ** it to obtain the database schema. At this point the schema may
   ** or may not be initialised.
   */
-  rc = sqlite3BtreeOpen(zFile, db, &aNew->pBt, 0,
-                        db->openFlags | SQLITE_OPEN_MAIN_DB);
+  flags = db->openFlags;
+  rc = sqlite3ParseUri(zVfs, zFile, &flags, &btflags, &pVfs, &zPath, &zErr);
+  if( rc!=SQLITE_OK ){
+    if( rc==SQLITE_NOMEM ) db->mallocFailed = 1;
+    sqlite3_result_error(context, zErr, -1);
+    sqlite3_free(zErr);
+    return;
+  }
+  assert( pVfs );
+  flags |= SQLITE_OPEN_MAIN_DB;
+  rc = sqlite3BtreeOpen(pVfs, zPath, db, &aNew->pBt, btflags, flags);
+  sqlite3_free( zPath );
   db->nDb++;
   if( rc==SQLITE_CONSTRAINT ){
     rc = SQLITE_ERROR;

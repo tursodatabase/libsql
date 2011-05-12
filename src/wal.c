@@ -406,6 +406,14 @@ struct WalCkptInfo {
 /*
 ** An open write-ahead log file is represented by an instance of the
 ** following object.
+**
+** The readOnlyShm variable is normally set to 0. If it is set to 1, then
+** the connection to shared-memory is read-only. This means it cannot
+** be written at all (even when read-locking the database). If it is set
+** to 2, then the shared-memory region is not yet open, but a read-only
+** connection is acceptable. In this case when the shared-memory is opened
+** (see function walIndexPage()), readOnlyShm is set to either 0 or 1 as
+** appropriate.
 */
 struct Wal {
   sqlite3_vfs *pVfs;         /* The VFS used to create pDbFd */
@@ -420,6 +428,7 @@ struct Wal {
   u8 writeLock;              /* True if in a write transaction */
   u8 ckptLock;               /* True if holding a checkpoint lock */
   u8 readOnly;               /* True if the WAL file is open read-only */
+  u8 readOnlyShm;            /* True if the SHM file is open read-only */
   WalIndexHdr hdr;           /* Wal-index header for current transaction */
   const char *zWalName;      /* Name of WAL file */
   u32 nCkpt;                 /* Checkpoint sequence counter in the wal-header */
@@ -528,11 +537,23 @@ static int walIndexPage(Wal *pWal, int iPage, volatile u32 **ppPage){
       rc = sqlite3OsShmMap(pWal->pDbFd, iPage, WALINDEX_PGSZ, 
           pWal->writeLock, (void volatile **)&pWal->apWiData[iPage]
       );
+      if( rc==SQLITE_CANTOPEN && pWal->readOnlyShm>1 ){
+        assert( iPage==0 );
+        sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_READONLY_SHM, (void*)1);
+        rc = sqlite3OsShmMap(pWal->pDbFd, iPage, WALINDEX_PGSZ, 
+            pWal->writeLock, (void volatile **)&pWal->apWiData[iPage]
+        );
+        if( rc==SQLITE_OK ){
+          pWal->readOnly = pWal->readOnlyShm = 1;
+        }
+        sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_READONLY_SHM, (void*)0);
+      }
     }
   }
-
   *ppPage = pWal->apWiData[iPage];
+
   assert( iPage==0 || *ppPage || rc!=SQLITE_OK );
+  if( pWal->readOnlyShm>1 ) pWal->readOnlyShm = 0;
   return rc;
 }
 
@@ -772,6 +793,7 @@ static void walUnlockShared(Wal *pWal, int lockIdx){
 }
 static int walLockExclusive(Wal *pWal, int lockIdx, int n){
   int rc;
+  assert( pWal->readOnlyShm==0 );
   if( pWal->exclusiveMode ) return SQLITE_OK;
   rc = sqlite3OsShmLock(pWal->pDbFd, lockIdx, n,
                         SQLITE_SHM_LOCK | SQLITE_SHM_EXCLUSIVE);
@@ -781,6 +803,7 @@ static int walLockExclusive(Wal *pWal, int lockIdx, int n){
   return rc;
 }
 static void walUnlockExclusive(Wal *pWal, int lockIdx, int n){
+  assert( pWal->readOnlyShm==0 );
   if( pWal->exclusiveMode ) return;
   (void)sqlite3OsShmLock(pWal->pDbFd, lockIdx, n,
                          SQLITE_SHM_UNLOCK | SQLITE_SHM_EXCLUSIVE);
@@ -1056,6 +1079,7 @@ static int walIndexRecover(Wal *pWal){
   assert( WAL_ALL_BUT_WRITE==WAL_WRITE_LOCK+1 );
   assert( WAL_CKPT_LOCK==WAL_ALL_BUT_WRITE );
   assert( pWal->writeLock );
+  assert( pWal->readOnlyShm==0 );
   iLock = WAL_ALL_BUT_WRITE + pWal->ckptLock;
   nLock = SQLITE_SHM_NLOCK - iLock;
   rc = walLockExclusive(pWal, iLock, nLock);
@@ -1895,6 +1919,7 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
     return rc;
   };
   assert( page0 || pWal->writeLock==0 );
+  assert( pWal->readOnlyShm==0 || pWal->readOnlyShm==1 );
 
   /* If the first page of the wal-index has been mapped, try to read the
   ** wal-index header immediately, without holding any lock. This usually
@@ -1904,24 +1929,31 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
   badHdr = (page0 ? walIndexTryHdr(pWal, pChanged) : 1);
 
   /* If the first attempt failed, it might have been due to a race
-  ** with a writer.  So get a WRITE lock and try again.
+  ** with a writer. So lock the WAL_WRITE_LOCK byte and try again.
   */
   assert( badHdr==0 || pWal->writeLock==0 );
-  if( badHdr && SQLITE_OK==(rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1)) ){
-    pWal->writeLock = 1;
-    if( SQLITE_OK==(rc = walIndexPage(pWal, 0, &page0)) ){
-      badHdr = walIndexTryHdr(pWal, pChanged);
-      if( badHdr ){
-        /* If the wal-index header is still malformed even while holding
-        ** a WRITE lock, it can only mean that the header is corrupted and
-        ** needs to be reconstructed.  So run recovery to do exactly that.
-        */
-        rc = walIndexRecover(pWal);
-        *pChanged = 1;
+  if( badHdr ){
+    if( pWal->readOnlyShm ){
+      if( SQLITE_OK==(rc = walLockShared(pWal, WAL_WRITE_LOCK)) ){
+        walUnlockShared(pWal, WAL_WRITE_LOCK);
+        rc = SQLITE_READONLY_RECOVERY;
       }
+    }else if( SQLITE_OK==(rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1)) ){
+      pWal->writeLock = 1;
+      if( SQLITE_OK==(rc = walIndexPage(pWal, 0, &page0)) ){
+        badHdr = walIndexTryHdr(pWal, pChanged);
+        if( badHdr ){
+          /* If the wal-index header is still malformed even while holding
+          ** a WRITE lock, it can only mean that the header is corrupted and
+          ** needs to be reconstructed.  So run recovery to do exactly that.
+          */
+          rc = walIndexRecover(pWal);
+          *pChanged = 1;
+        }
+      }
+      pWal->writeLock = 0;
+      walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
     }
-    pWal->writeLock = 0;
-    walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
   }
 
   /* If the header is read successfully, check the version number to make
@@ -2108,7 +2140,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   }
   /* There was once an "if" here. The extra "{" is to preserve indentation. */
   {
-    if( mxReadMark < pWal->hdr.mxFrame || mxI==0 ){
+    if( pWal->readOnlyShm==0 && (mxReadMark < pWal->hdr.mxFrame || mxI==0) ){
       for(i=1; i<WAL_NREADER; i++){
         rc = walLockExclusive(pWal, WAL_READ_LOCK(i), 1);
         if( rc==SQLITE_OK ){
@@ -2123,7 +2155,8 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     }
     if( mxI==0 ){
       assert( rc==SQLITE_BUSY );
-      return WAL_RETRY;
+      assert( rc==SQLITE_BUSY || (pWal->readOnlyShm && rc==SQLITE_OK) );
+      return rc==SQLITE_BUSY ? WAL_RETRY : SQLITE_READONLY_CANTLOCK;
     }
 
     rc = walLockShared(pWal, WAL_READ_LOCK(mxI));
@@ -2178,13 +2211,18 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
 ** Pager layer will use this to know that is cache is stale and
 ** needs to be flushed.
 */
-int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
+int sqlite3WalBeginReadTransaction(Wal *pWal, int readOnlyShm, int *pChanged){
   int rc;                         /* Return code */
   int cnt = 0;                    /* Number of TryBeginRead attempts */
 
+  if( pWal->nWiData==0 || pWal->apWiData[0]==0 ){
+    assert( readOnlyShm==0 || readOnlyShm==1 );
+    pWal->readOnlyShm = readOnlyShm*2;
+  }
   do{
     rc = walTryBeginRead(pWal, pChanged, 0, ++cnt);
   }while( rc==WAL_RETRY );
+  assert( rc || pWal->readOnlyShm==0 || (readOnlyShm && pWal->readOnlyShm==1) );
   testcase( (rc&0xff)==SQLITE_BUSY );
   testcase( (rc&0xff)==SQLITE_IOERR );
   testcase( rc==SQLITE_PROTOCOL );
@@ -2359,6 +2397,7 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
   if( pWal->readOnly ){
     return SQLITE_READONLY;
   }
+  assert( pWal->readOnlyShm==0 );
 
   /* Only one writer allowed at a time.  Get the write lock.  Return
   ** SQLITE_BUSY if unable.
@@ -2748,6 +2787,10 @@ int sqlite3WalCheckpoint(
   assert( pWal->writeLock==0 );
 
   WALTRACE(("WAL%p: checkpoint begins\n", pWal));
+  if( pWal->readOnlyShm ){
+    return SQLITE_READONLY;
+  }
+
   rc = walLockExclusive(pWal, WAL_CKPT_LOCK, 1);
   if( rc ){
     /* Usually this is SQLITE_BUSY meaning that another thread or process
