@@ -298,6 +298,7 @@ foreach file {
    fts3_expr.c
    fts3_hash.c
    fts3_porter.c
+   fts3_term.c
    fts3_tokenizer.c
    fts3_tokenizer1.c
    fts3_write.c
