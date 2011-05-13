@@ -1548,13 +1548,17 @@ int sqlite3_extended_result_codes(sqlite3*, int onoff);
 **
 ** ^This routine returns the [rowid] of the most recent
 ** successful [INSERT] into the database from the [database connection]
-** in the first argument.  ^If no successful [INSERT]s
+** in the first argument.  ^As of SQLite version 3.7.7, this routines
+** records the last insert rowid of both ordinary tables and [virtual tables].
+** ^If no successful [INSERT]s
 ** have ever occurred on that database connection, zero is returned.
 **
-** ^(If an [INSERT] occurs within a trigger, then the [rowid] of the inserted
-** row is returned by this routine as long as the trigger is running.
-** But once the trigger terminates, the value returned by this routine
-** reverts to the last value inserted before the trigger fired.)^
+** ^(If an [INSERT] occurs within a trigger or within a [virtual table]
+** method, then this routine will return the [rowid] of the inserted
+** row as long as the trigger or virtual table method is running.
+** But once the trigger or virtual table method ends, the value returned 
+** by this routine reverts to what it was before the trigger or virtual
+** table method began.)^
 **
 ** ^An [INSERT] that fails due to a constraint violation is not a
 ** successful [INSERT] and does not change the value returned by this

@@ -1,5 +1,5 @@
-C Also\sadd\sfts3_term.c\sto\smain.mk.
-D 2011-05-13T17:11:20.942
+C Make\sarrangements\sso\sthat\svirtual\stable\sinserts\sinto\sshadow\stables\sdo\nnot\smodify\sthe\ssqlite3_last_insert_rowid()\sreturn.\s\sDocument\sthat\sthis\nis\show\ssqlite3_last_insert_rowid()\sworks.
+D 2011-05-13T18:51:42.945
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4a7ed220f2e9a068fd0f0b2ec451439f63e629fc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -179,7 +179,7 @@ F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c d9d440809025a58547e39f4f268c2a296bfb56ff
 F src/shell.c 72e7e176bf46d5c6518d15ac4ad6847c4bb5df79
-F src/sqlite.h.in 26f123aa6f23b6cbd84d4ef6df3b8210a23a3b0b
+F src/sqlite.h.in d7cc9050446a5ed9eb896362dd264e6e10e0cc03
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
 F src/sqliteInt.h b34bd64a7ade4808fcc301e0bb67ef5051ea49c6
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -236,7 +236,7 @@ F src/update.c 5bcb56e5c7380a2eecb0e71891dbd4ad7437748f
 F src/utf.c d83650c3ea08f7407bd9d0839d9885241c209c60
 F src/util.c 914e860d21496b19a912cd14f6f7a889a22f44e1
 F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
-F src/vdbe.c b2070c926a896e59234e27412a45e261fe752235
+F src/vdbe.c 343a068e8daeb8475e66776feb9f2974046e95c5
 F src/vdbe.h 8a675fefdf7119441fe817c800a9a52440c2e797
 F src/vdbeInt.h fe8f58d305e629fff02f61f655aca1d299f1f6ae
 F src/vdbeapi.c e0e2672e0a96ae3f8575c8ecd02912a3e8a554a1
@@ -935,7 +935,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6ee0773290a4c4aac2b2b5e1741e65170e08a8bb
-R e29a65a14e0a90ae39fc424e77122ad0
+P 966f2d2c1f01b6345eab5df87a40d337ced1c087
+R bc50f0e830166d8298c23030a9099063
 U drh
-Z 4626b21df75720896779227cd4b29fbb
+Z 667528c5e659a82acf6d9a2a3fcf251b
