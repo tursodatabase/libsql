@@ -1,5 +1,5 @@
-C Add\sfts3_term.c\sto\samalg\sgen\sscript\sand\sconfigure\sinput\sfiles.
-D 2011-05-12T21:01:12.782
+C Also\sadd\sfts3_term.c\sto\smain.mk.
+D 2011-05-13T17:11:20.942
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4a7ed220f2e9a068fd0f0b2ec451439f63e629fc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -102,7 +102,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk 496cec8b7890e39127532294e28e5e1d1b1beae1
+F main.mk bedd9fb5f843eab5d575275ef7d906a1e58c30a2
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -935,7 +935,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 851ab75d5f5d64d95d6237c28658bbc32145b78b
-R f2444b92fe2cfe7d047908f98416ca93
-U shaneh
-Z aec7145a879a050a92e29403b1ef0483
+P 6ee0773290a4c4aac2b2b5e1741e65170e08a8bb
+R e29a65a14e0a90ae39fc424e77122ad0
+U drh
+Z 4626b21df75720896779227cd4b29fbb
