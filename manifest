@@ -1,5 +1,5 @@
-C Avoid\sincluding\sfts3_term.c\sin\sthe\samalgamation,\sas\sit\scontains\stest\scode\sonly.
-D 2011-05-17T14:41:36.521
+C Avoid\sexceeding\sarray\sbounds\swhen\sreading\sa\scorrupt\sdatabase\sfile\sin\nautovacuum\smode.\s\sFixes\sa\sproblem\sdiscovered\sby\sJohn\sRegehr\sand\sPeng\sLi\nusing\sa\scustomized\sclang\scompiler.
+D 2011-05-17T15:21:56.657
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -122,7 +122,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 986c15232757f2873dff35ee3b35cbf935fc573c
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 26f8a9d6169413c5682b89b5397d20437b653154
+F src/btree.c 975ad691a57eb1fb60f1ec76ad0b6571eace62f9
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
 F src/build.c 0132bc6631fa617a1d28ef805921f6dbac18a514
@@ -936,7 +936,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P db7e500f69faf1906a84991ba67d26a195f02ae5
-R ae580e6a17ad522b073057ba8349f079
-U dan
-Z c7b8c78d63b81a588c33ebb0305a0680
+P f392b7ae0266b4c694836583cb91b10f2b6c0752
+R cf53219bce3a7dbccc0e0612301125fc
+U drh
+Z 6f0c0bbdb12e972d7467056dbeea9264
