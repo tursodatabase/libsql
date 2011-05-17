@@ -2921,12 +2921,12 @@ int sqlite3_test_control(int op, ...){
 ** returns a NULL pointer.
 */
 const char *sqlite3_uri_parameter(const char *zFilename, const char *zParam){
-  zFilename += sqlite3Strlen30(zFilename);
+  zFilename += sqlite3Strlen30(zFilename) + 1;
   while( zFilename[0] ){
     int x = strcmp(zFilename, zParam);
-    zFilename += sqlite3Strlen30(zFilename);
+    zFilename += sqlite3Strlen30(zFilename) + 1;
     if( x==0 ) return zFilename;
-    zFilename += sqlite3Strlen30(zFilename);
+    zFilename += sqlite3Strlen30(zFilename) + 1;
   }
   return 0;
 }
