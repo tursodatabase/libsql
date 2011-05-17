@@ -3769,6 +3769,7 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
                      (u32)sStat.st_ino, (u32)sStat.st_dev);
 #else
     sqlite3_snprintf(nShmFilename, zShmFilename, "%s-shm", pDbFd->zPath);
+    sqlite3FileSuffix3(pDbFd->zPath, zShmFilename);
 #endif
     pShmNode->h = -1;
     pDbFd->pInode->pShmNode = pShmNode;
@@ -4802,6 +4803,11 @@ static UnixUnusedFd *findReusableFd(const char *zPath, int flags){
 ** corresponding database file and sets *pMode to this value. Whenever 
 ** possible, WAL and journal files are created using the same permissions 
 ** as the associated database file.
+**
+** If the SQLITE_ENABLE_8_3_NAMES option is enabled, then the
+** original filename is unavailable.  But 8_3_NAMES is only used for
+** FAT filesystems and permissions do not matter there, so just use
+** the default permissions.
 */
 static int findCreateFileMode(
   const char *zPath,              /* Path of file (possibly) being created */
@@ -4809,6 +4815,7 @@ static int findCreateFileMode(
   mode_t *pMode                   /* OUT: Permissions to open file with */
 ){
   int rc = SQLITE_OK;             /* Return Code */
+  *pMode = SQLITE_DEFAULT_FILE_PERMISSIONS;
   if( flags & (SQLITE_OPEN_WAL|SQLITE_OPEN_MAIN_JOURNAL) ){
     char zDb[MAX_PATHNAME+1];     /* Database file path */
     int nDb;                      /* Number of valid bytes in zDb */
@@ -4820,15 +4827,15 @@ static int findCreateFileMode(
     **
     **   "<path to db>-journal"
     **   "<path to db>-wal"
-    **   "<path to db>-journal-NNNN"
-    **   "<path to db>-wal-NNNN"
+    **   "<path to db>-journalNN"
+    **   "<path to db>-walNN"
     **
-    ** where NNNN is a 4 digit decimal number. The NNNN naming schemes are 
+    ** where NN is a 4 digit decimal number. The NN naming schemes are 
     ** used by the test_multiplex.c module.
     */
     nDb = sqlite3Strlen30(zPath) - 1; 
-    while( nDb>0 && zPath[nDb]!='l' ) nDb--;
-    nDb -= ((flags & SQLITE_OPEN_WAL) ? 3 : 7);
+    while( nDb>0 && zPath[nDb]!='-' ) nDb--;
+    if( nDb==0 ) return SQLITE_OK;
     memcpy(zDb, zPath, nDb);
     zDb[nDb] = '\0';
 
@@ -4839,8 +4846,6 @@ static int findCreateFileMode(
     }
   }else if( flags & SQLITE_OPEN_DELETEONCLOSE ){
     *pMode = 0600;
-  }else{
-    *pMode = SQLITE_DEFAULT_FILE_PERMISSIONS;
   }
   return rc;
 }

@@ -1146,3 +1146,29 @@ int sqlite3AbsInt32(int x){
   if( x==(int)0x80000000 ) return 0x7fffffff;
   return -x;
 }
+
+#ifdef SQLITE_ENABLE_8_3_NAMES
+/*
+** If SQLITE_ENABLE_8_3_NAME is set at compile-time and if the database
+** filename in zBaseFilename is a URI with the "8_3_names=1" parameter and
+** if filename in z[] has a suffix (a.k.a. "extension") that is longer than
+** three characters, then shorten the suffix on z[] to be the last three
+** characters of the original suffix.
+**
+** Examples:
+**
+**     test.db-journal    =>   test.nal
+**     test.db-wal        =>   test.wal
+**     test.db-shm        =>   test.shm
+*/
+void sqlite3FileSuffix3(const char *zBaseFilename, char *z){
+  const char *zOk;
+  zOk = sqlite3_uri_parameter(zBaseFilename, "8_3_names");
+  if( zOk && sqlite3GetBoolean(zOk) ){
+    int i, sz;
+    sz = sqlite3Strlen30(z);
+    for(i=sz-1; i>0 && z[i]!='/' && z[i]!='\\' && z[i]!='.'; i--){}
+    if( z[i]=='.' && sz>i+4 ) memcpy(&z[i+1], &z[sz-3], 4);
+  }
+}
+#endif
