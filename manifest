@@ -1,5 +1,5 @@
-C Update\smultiplex\sVFS\sto\shandle\sempty\sfilenames\swhich\scan\soccur\sfor\sduring\svacuuming\s(temp\sfile\snames.)
-D 2011-05-18T02:22:41.100
+C Remove\sunreachable\sbranches\sfrom\sthe\s8.3\sfilename\slogic.
+D 2011-05-18T02:41:10.584
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -234,7 +234,7 @@ F src/tokenize.c 604607d6813e9551cf5189d899e0a25c12681080
 F src/trigger.c 144cc18bb701f3286484aae4292a9531f09278c8
 F src/update.c 5bcb56e5c7380a2eecb0e71891dbd4ad7437748f
 F src/utf.c d83650c3ea08f7407bd9d0839d9885241c209c60
-F src/util.c 5f4ba293a4bce63aab6885edde6261b007b34a20
+F src/util.c 0f33bbbdfcc4a2d8cf20c3b2a16ffc3b57c58a70
 F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
 F src/vdbe.c 343a068e8daeb8475e66776feb9f2974046e95c5
 F src/vdbe.h 8a675fefdf7119441fe817c800a9a52440c2e797
@@ -937,7 +937,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 96d609856025919571f781207dfa6a24b1732e8d
-R 2d9bd612a3d2dc8f2665702baad38baa
-U shaneh
-Z d27048d3dae68da084505a60e1541c3b
+P a074986045f1a81fb831ffee4a29af13c978b053
+R b1e893cccba0a3222ced9d709bda7393
+U drh
+Z 511f68817ff94b8f1f3a0e7f5adbf2b3
