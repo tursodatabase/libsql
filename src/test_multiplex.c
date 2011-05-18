@@ -218,14 +218,19 @@ static int multiplexGetTempname(sqlite3_vfs *pOrigVfs, int nBuf, char *zBuf){
   ** pVfs->mxPathname characters.
   */
   if( pOrigVfs->mxPathname <= nBuf ){
+    char *zTmp = sqlite3_malloc(pOrigVfs->mxPathname);
+    if( zTmp==0 ) return SQLITE_NOMEM;
 
     /* sqlite3_temp_directory should always be less than
     ** pVfs->mxPathname characters.
     */
     sqlite3_snprintf(pOrigVfs->mxPathname,
-                     zBuf,
+                     zTmp,
                      "%s/",
                      sqlite3_temp_directory ? sqlite3_temp_directory : ".");
+    rc = pOrigVfs->xFullPathname(pOrigVfs, zTmp, nBuf, zBuf);
+    sqlite3_free(zTmp);
+    if( rc ) return rc;
 
     /* Check that the output buffer is large enough for the temporary file 
     ** name.
