@@ -1175,6 +1175,35 @@ static int test_config_error(
 }
 
 /*
+** tclcmd:     sqlite3_config_uri  BOOLEAN
+**
+** Invoke sqlite3_config() or sqlite3_db_config() with invalid
+** opcodes and verify that they return errors.
+*/
+static int test_config_uri(
+  void * clientData, 
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc;
+  int bOpenUri;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "BOOL");
+    return TCL_ERROR;
+  }
+  if( Tcl_GetBooleanFromObj(interp, objv[1], &bOpenUri) ){
+    return TCL_ERROR;
+  }
+
+  rc = sqlite3_config(SQLITE_CONFIG_URI, bOpenUri);
+  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
+
+  return TCL_OK;
+}
+
+/*
 ** Usage:    
 **
 **   sqlite3_dump_memsys3  FILENAME
@@ -1422,6 +1451,7 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      { "sqlite3_config_memstatus",   test_config_memstatus         ,0 },
      { "sqlite3_config_lookaside",   test_config_lookaside         ,0 },
      { "sqlite3_config_error",       test_config_error             ,0 },
+     { "sqlite3_config_uri",         test_config_uri               ,0 },
      { "sqlite3_db_config_lookaside",test_db_config_lookaside      ,0 },
      { "sqlite3_dump_memsys3",       test_dump_memsys3             ,3 },
      { "sqlite3_dump_memsys5",       test_dump_memsys3             ,5 },

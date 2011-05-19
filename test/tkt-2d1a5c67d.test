@@ -1,0 +1,73 @@
+# 2011 May 19
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library. Specifically,
+# it tests that ticket [2d1a5c67dfc2363e44f29d9bbd57f7331851390a] has
+# been resolved.
+#
+# 
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+ifcapable !wal {finish_test; return}
+
+for {set ii 1} {$ii<=10} {incr ii} {
+  do_test tkt-2d1a5c67d.1.$ii {
+    db close
+    forcedelete test.db test.db-wal
+    sqlite3 db test.db
+    db eval "PRAGMA cache_size=$::ii"
+    db eval {
+      PRAGMA journal_mode=WAL;
+      CREATE TABLE t1(a,b);
+      CREATE INDEX t1b ON t1(b);
+      CREATE TABLE t2(x,y UNIQUE);
+      INSERT INTO t2 VALUES(3,4);
+      BEGIN;
+      INSERT INTO t1(a,b) VALUES(1,2);
+      SELECT 'A', * FROM t2 WHERE y=4;
+      SELECT 'B', * FROM t1;
+      COMMIT;
+      SELECT 'C', * FROM t1;
+    }
+  } {wal A 3 4 B 1 2 C 1 2}
+}
+
+db close
+forcedelete test.db test.db-wal
+sqlite3 db test.db
+register_wholenumber_module db
+db eval {
+  PRAGMA journal_mode=WAL;
+  CREATE TABLE t1(a,b);
+  CREATE INDEX t1b ON t1(b);
+  CREATE TABLE t2(x,y);
+  CREATE VIRTUAL TABLE nums USING wholenumber;
+  INSERT INTO t2 SELECT value, randomblob(1000) FROM nums
+                 WHERE value BETWEEN 1 AND 1000;
+}
+
+for {set ii 1} {$ii<=10} {incr ii} {
+  do_test tkt-2d1a5c67d.2.$ii {
+    db eval "PRAGMA cache_size=$::ii"
+    db eval {
+      DELETE FROM t1;
+      BEGIN;
+      INSERT INTO t1(a,b) VALUES(1,2);
+      SELECT sum(length(y)) FROM t2;
+      COMMIT;
+      SELECT * FROM t1;
+    }
+  } {1000000 1 2}
+}
+
+finish_test

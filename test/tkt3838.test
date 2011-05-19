@@ -25,7 +25,7 @@ ifcapable !altertable {
   return
 }
 
-do_test tkt3838-1.1 {
+do_realnum_test tkt3838-1.1 {
   db eval {
     PRAGMA encoding=UTF16;
     CREATE TABLE t1(x);

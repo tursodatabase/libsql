@@ -1800,6 +1800,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
       if( !zMaster ){
         return SQLITE_NOMEM;
       }
+      sqlite3FileSuffix3(zMainFile, zMaster);
       rc = sqlite3OsAccess(pVfs, zMaster, SQLITE_ACCESS_EXISTS, &res);
     }while( rc==SQLITE_OK && res );
     if( rc==SQLITE_OK ){

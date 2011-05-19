@@ -354,6 +354,15 @@ proc do_test {name cmd expected} {
   flush stdout
 }
 
+proc realnum_normalize {r} {
+  string map {1.#INF inf} [regsub -all {(e[+-])0+} $r {\1}]
+}
+proc do_realnum_test {name cmd expected} {
+  uplevel [list do_test $name [
+    subst -nocommands { realnum_normalize [ $cmd ] }
+  ] [realnum_normalize $expected]]
+}
+
 proc fix_testname {varname} {
   upvar $varname testname
   if {[info exists ::testprefix] 

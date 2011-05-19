@@ -4299,6 +4299,8 @@ int sqlite3PagerOpen(
   int noReadlock = (flags & PAGER_NO_READLOCK)!=0;  /* True to omit read-lock */
   int pcacheSize = sqlite3PcacheSize();       /* Bytes to allocate for PCache */
   u32 szPageDflt = SQLITE_DEFAULT_PAGE_SIZE;  /* Default page size */
+  const char *zUri = 0;    /* URI args to copy */
+  int nUri = 0;            /* Number of bytes of URI args at *zUri */
 
   /* Figure out how much space is required for each journal file-handle
   ** (there are two of them, the main journal and the sub-journal). This
@@ -4329,6 +4331,7 @@ int sqlite3PagerOpen(
   ** leave both nPathname and zPathname set to 0.
   */
   if( zFilename && zFilename[0] ){
+    const char *z;
     nPathname = pVfs->mxPathname+1;
     zPathname = sqlite3Malloc(nPathname*2);
     if( zPathname==0 ){
@@ -4337,6 +4340,12 @@ int sqlite3PagerOpen(
     zPathname[0] = 0; /* Make sure initialized even if FullPathname() fails */
     rc = sqlite3OsFullPathname(pVfs, zFilename, nPathname, zPathname);
     nPathname = sqlite3Strlen30(zPathname);
+    z = zUri = &zFilename[sqlite3Strlen30(zFilename)+1];
+    while( *z ){
+      z += sqlite3Strlen30(z)+1;
+      z += sqlite3Strlen30(z)+1;
+    }
+    nUri = &z[1] - zUri;
     if( rc==SQLITE_OK && nPathname+8>pVfs->mxPathname ){
       /* This branch is taken when the journal path required by
       ** the database being opened will be more than pVfs->mxPathname
@@ -4369,7 +4378,7 @@ int sqlite3PagerOpen(
     ROUND8(pcacheSize) +           /* PCache object */
     ROUND8(pVfs->szOsFile) +       /* The main db file */
     journalFileSize * 2 +          /* The two journal files */ 
-    nPathname + 1 +                /* zFilename */
+    nPathname + 1 + nUri +         /* zFilename */
     nPathname + 8 + 1              /* zJournal */
 #ifndef SQLITE_OMIT_WAL
     + nPathname + 4 + 1              /* zWal */
@@ -4391,14 +4400,17 @@ int sqlite3PagerOpen(
   /* Fill in the Pager.zFilename and Pager.zJournal buffers, if required. */
   if( zPathname ){
     assert( nPathname>0 );
-    pPager->zJournal =   (char*)(pPtr += nPathname + 1);
+    pPager->zJournal =   (char*)(pPtr += nPathname + 1 + nUri);
     memcpy(pPager->zFilename, zPathname, nPathname);
+    memcpy(&pPager->zFilename[nPathname+1], zUri, nUri);
     memcpy(pPager->zJournal, zPathname, nPathname);
     memcpy(&pPager->zJournal[nPathname], "-journal", 8);
+    sqlite3FileSuffix3(pPager->zFilename, pPager->zJournal);
 #ifndef SQLITE_OMIT_WAL
     pPager->zWal = &pPager->zJournal[nPathname+8+1];
     memcpy(pPager->zWal, zPathname, nPathname);
     memcpy(&pPager->zWal[nPathname], "-wal", 4);
+    sqlite3FileSuffix3(pPager->zFilename, pPager->zWal);
 #endif
     sqlite3_free(zPathname);
   }
@@ -5735,11 +5747,21 @@ int sqlite3PagerCommitPhaseOne(
   }else{
     if( pagerUseWal(pPager) ){
       PgHdr *pList = sqlite3PcacheDirtyList(pPager->pPCache);
+      PgHdr *pPageOne = 0;
+      if( pList==0 ){
+        /* Must have at least one page for the WAL commit flag.
+        ** Ticket [2d1a5c67dfc2363e44f29d9bbd57f] 2011-05-18 */
+        rc = sqlite3PagerGet(pPager, 1, &pPageOne);
+        pList = pPageOne;
+        pList->pDirty = 0;
+      }
+      assert( pList!=0 || rc!=SQLITE_OK );
       if( pList ){
         rc = pagerWalFrames(pPager, pList, pPager->dbSize, 1, 
             (pPager->fullSync ? pPager->syncFlags : 0)
         );
       }
+      sqlite3PagerUnref(pPageOne);
       if( rc==SQLITE_OK ){
         sqlite3PcacheCleanAll(pPager->pPCache);
       }
@@ -6597,6 +6619,7 @@ int sqlite3PagerOkToChangeJournalMode(Pager *pPager){
 i64 sqlite3PagerJournalSizeLimit(Pager *pPager, i64 iLimit){
   if( iLimit>=-1 ){
     pPager->journalSizeLimit = iLimit;
+    sqlite3WalLimit(pPager->pWal, iLimit);
   }
   return pPager->journalSizeLimit;
 }
@@ -6688,7 +6711,8 @@ static int pagerOpenWal(Pager *pPager){
   */
   if( rc==SQLITE_OK ){
     rc = sqlite3WalOpen(pPager->pVfs, 
-        pPager->fd, pPager->zWal, pPager->exclusiveMode, &pPager->pWal
+        pPager->fd, pPager->zWal, pPager->exclusiveMode,
+        pPager->journalSizeLimit, &pPager->pWal
     );
   }
 
