@@ -1,11 +1,11 @@
-C Version\s3.7.6.2
-D 2011-04-17T17:25:17.173
+C Backport\sthe\s[67bf1c9a88]\sfix\sfor\svanishing\sWAL\stransactions\sdue\sto\ssmall\ncache\sspillage.\s\sTicket\s[2d1a5c67dfc236].\s\sAlso\sbump\sthe\sversion\snumber\nto\s3.7.6.3\sin\spreparation\sfor\spatch\srelease.
+D 2011-05-19T01:46:38.450
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.vxworks c85ec1d8597fe2f7bc225af12ac1666e21379151
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
-F VERSION 7fbd89ecdebc63a53a5cedadb822b74f5ae42a24
+F VERSION a97d72f6b46c0c9e75d3cca51304d85e805328ac
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 17dc593f791f874d2c23a0f9360850ded0286531
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -22,7 +22,7 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure eb34ce3c85e7658b2eab3439f0e5b5c10b166b13 x
+F configure a9177382dc6a39ce80f14c34117aad64ddf4488b x
 F configure.ac 87a3c71bbe9c925381c154413eea7f3cdc397244
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -164,7 +164,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 4389231d079f8e323d9e24db6658bfd31f6d27a2
 F src/os_win.c 24d72407a90551969744cf9bcbb1b4c72c5fa845
-F src/pager.c 055239dcdfe12b3f5d97f6f01f85da01e2d6d912
+F src/pager.c f501684d8cf6ab503e97b6883974dec779c99bb5
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 09d38c44ab275db581f7a2f6ff8b9bc7f8c0faaa
@@ -700,6 +700,7 @@ F test/threadtest2.c ace893054fa134af3fc8d6e7cfecddb8e3acefb9
 F test/threadtest3.c 0ed13e09690f6204d7455fac3b0e8ece490f6eef
 F test/tkt-02a8e81d44.test 58494de77be2cf249228ada3f313fa399821c6ab
 F test/tkt-26ff0c2d1e.test 888324e751512972c6e0d1a09df740d8f5aaf660
+F test/tkt-2d1a5c67d.test 39d2368072315923021700a216379fcf23ac3a5c
 F test/tkt-2ea2425d34.test 1cf13e6f75d149b3209a0cb32927a82d3d79fb28
 F test/tkt-31338dca7e.test 5741cd48de500347a437ba1be58c8335e83c5a5e
 F test/tkt-313723c356.test c47f8a9330523e6f35698bf4489bcb29609b53ac
@@ -911,7 +912,7 @@ F tool/omittest.tcl b1dd290c1596e0f31fd335160a74ec5dfea3df4a
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
-F tool/shell1.test 7a389c6aaad05621be39501d6f8db410da464dcd
+F tool/shell1.test aa6f03aa38fae575db094c0211b18e2f22f7f52b
 F tool/shell2.test 5dc76b8005b465f420fed8241621da7513060ff3
 F tool/shell3.test 4fad469e8003938426355afdf34155f08c587836
 F tool/shell4.test 35f9c3d452b4e76d5013c63e1fd07478a62f14ce
@@ -929,7 +930,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c429edf30accac12d5deef10e59cd31146036f11
-R 050fbfdb8675b7eaafb0b1677e5953e7
+P 154ddbc17120be2915eb03edc52af1225eb7cb5e
+R 36390cb0be4272b8ed5078298b604298
 U drh
-Z 289c52539a2a59a211a989409cbc5426
+Z 089ce608fdbf2aed7dcc5f1897075bc9
