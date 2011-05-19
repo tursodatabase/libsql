@@ -291,7 +291,7 @@ static int fts3SelectDocsize(
     rc = sqlite3_step(pStmt);
     if( rc!=SQLITE_ROW || sqlite3_column_type(pStmt, 0)!=SQLITE_BLOB ){
       rc = sqlite3_reset(pStmt);
-      if( rc==SQLITE_OK ) rc = SQLITE_CORRUPT;
+      if( rc==SQLITE_OK ) rc = SQLITE_CORRUPT_VTAB;
       pStmt = 0;
     }else{
       rc = SQLITE_OK;
@@ -972,7 +972,7 @@ static int fts3SegReaderNext(Fts3Table *p, Fts3SegReader *pReader){
   if( nPrefix<0 || nSuffix<=0 
    || &pNext[nSuffix]>&pReader->aNode[pReader->nNode] 
   ){
-    return SQLITE_CORRUPT;
+    return SQLITE_CORRUPT_VTAB;
   }
 
   if( nPrefix+nSuffix>pReader->nTermAlloc ){
@@ -998,7 +998,7 @@ static int fts3SegReaderNext(Fts3Table *p, Fts3SegReader *pReader){
   if( &pReader->aDoclist[pReader->nDoclist]>&pReader->aNode[pReader->nNode] 
    || pReader->aDoclist[pReader->nDoclist-1]
   ){
-    return SQLITE_CORRUPT;
+    return SQLITE_CORRUPT_VTAB;
   }
   return SQLITE_OK;
 }
@@ -1123,7 +1123,7 @@ int sqlite3Fts3SegReaderCost(
       }
       if( nDoc==0 || nByte==0 ){
         sqlite3_reset(pStmt);
-        return SQLITE_CORRUPT;
+        return SQLITE_CORRUPT_VTAB;
       }
 
       pCsr->nRowAvg = (int)(((nByte / nDoc) + pgsz) / pgsz);
@@ -2762,7 +2762,7 @@ int sqlite3Fts3UpdateMethod(
   if( nArg>1 && rc==SQLITE_OK ){
     if( bInsertDone==0 ){
       rc = fts3InsertData(p, apVal, pRowid);
-      if( rc==SQLITE_CONSTRAINT ) rc = SQLITE_CORRUPT;
+      if( rc==SQLITE_CONSTRAINT ) rc = SQLITE_CORRUPT_VTAB;
     }
     if( rc==SQLITE_OK && (!isRemove || *pRowid!=iRemove) ){
       rc = fts3PendingTermsDocid(p, *pRowid);

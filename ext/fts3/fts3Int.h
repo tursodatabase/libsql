@@ -381,6 +381,7 @@ int sqlite3Fts3ExprParse(sqlite3_tokenizer *,
 void sqlite3Fts3ExprFree(Fts3Expr *);
 #ifdef SQLITE_TEST
 int sqlite3Fts3ExprInitTestInterface(sqlite3 *db);
+int sqlite3Fts3InitTerm(sqlite3 *db);
 #endif
 
 /* fts3_aux.c */
