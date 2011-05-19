@@ -567,5 +567,45 @@ if {0==[info exists ::G(perm:presql)] || $::G(perm:presql) == ""} {
   }
 }
 
+#-------------------------------------------------------------------------
+# Test that you can vacuum a multiplex'ed DB.  
+
+ifcapable vacuum {
+
+do_test multiplex-6.0.0 {
+  multiplex_delete test.db
+  sqlite3_multiplex_initialize "" 1
+  sqlite3 db test.db
+  multiplex_set db main 4096 16
+} {SQLITE_OK}
+
+do_test multiplex-6.1.0 {
+  execsql {
+    PRAGMA page_size=1024;
+    PRAGMA journal_mode=DELETE;
+    PRAGMA auto_vacuum=OFF;
+  }
+  execsql {
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, randomblob($g_chunk_size));
+    INSERT INTO t1 VALUES(2, randomblob($g_chunk_size));
+  }
+} {}
+do_test multiplex-6.2.1 { file size [multiplex_name test.db 0] } [list $g_chunk_size]
+do_test multiplex-6.2.2 { file size [multiplex_name test.db 1] } [list $g_chunk_size]
+
+do_test multiplex-6.3.0 {
+  execsql { VACUUM }
+} {}
+
+do_test multiplex-6.99 {
+  db close
+  multiplex_delete test.db
+  sqlite3_multiplex_shutdown
+} {SQLITE_OK}
+
+}
+
+
 catch { sqlite3_multiplex_shutdown }
 finish_test

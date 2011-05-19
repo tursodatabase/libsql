@@ -21,6 +21,7 @@
 
 #ifdef SQLITE_OMIT_WAL
 # define sqlite3WalOpen(x,y,z)                   0
+# define sqlite3WalLimit(x,y)
 # define sqlite3WalClose(w,x,y,z)                0
 # define sqlite3WalBeginReadTransaction(y,z)     0
 # define sqlite3WalEndReadTransaction(z)
@@ -46,8 +47,11 @@
 typedef struct Wal Wal;
 
 /* Open and close a connection to a write-ahead log. */
-int sqlite3WalOpen(sqlite3_vfs*, sqlite3_file*, const char *zName, int, Wal**);
+int sqlite3WalOpen(sqlite3_vfs*, sqlite3_file*, const char *, int, i64, Wal**);
 int sqlite3WalClose(Wal *pWal, int sync_flags, int, u8 *);
+
+/* Set the limiting size of a WAL file. */
+void sqlite3WalLimit(Wal*, i64);
 
 /* Used by readers to open (lock) and close (unlock) a snapshot.  A 
 ** snapshot is like a read-transaction.  It is the state of the database

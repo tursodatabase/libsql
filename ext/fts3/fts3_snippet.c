@@ -960,7 +960,7 @@ static int fts3MatchinfoSelectDoctotal(
 
   a = sqlite3_column_blob(pStmt, 0);
   a += sqlite3Fts3GetVarint(a, &nDoc);
-  if( nDoc==0 ) return SQLITE_CORRUPT;
+  if( nDoc==0 ) return SQLITE_CORRUPT_VTAB;
   *pnDoc = (u32)nDoc;
 
   if( paLen ) *paLen = a;
@@ -1555,7 +1555,7 @@ void sqlite3Fts3Offsets(
           );
           rc = fts3StringAppend(&res, aBuffer, -1);
         }else if( rc==SQLITE_DONE ){
-          rc = SQLITE_CORRUPT;
+          rc = SQLITE_CORRUPT_VTAB;
         }
       }
     }

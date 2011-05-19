@@ -874,7 +874,7 @@ int sqlite3VtabSavepoint(sqlite3 *db, int op, int iSavepoint){
     int i;
     for(i=0; rc==SQLITE_OK && i<db->nVTrans; i++){
       const sqlite3_module *pMod = db->aVTrans[i]->pMod->pModule;
-      if( pMod->iVersion>=1 ){
+      if( pMod->iVersion>=2 ){
         int (*xMethod)(sqlite3_vtab *, int);
         switch( op ){
           case SAVEPOINT_BEGIN:
@@ -1001,7 +1001,7 @@ void sqlite3VtabMakeWritable(Parse *pParse, Table *pTab){
 */
 int sqlite3_vtab_on_conflict(sqlite3 *db){
   static const unsigned char aMap[] = { 
-    SQLITE_ROLLBACK, SQLITE_IGNORE, SQLITE_ABORT, SQLITE_FAIL, SQLITE_REPLACE 
+    SQLITE_ROLLBACK, SQLITE_ABORT, SQLITE_FAIL, SQLITE_IGNORE, SQLITE_REPLACE 
   };
   assert( OE_Rollback==1 && OE_Abort==2 && OE_Fail==3 );
   assert( OE_Ignore==4 && OE_Replace==5 );
@@ -1027,7 +1027,7 @@ int sqlite3_vtab_config(sqlite3 *db, int op, ...){
       if( !p ){
         rc = SQLITE_MISUSE_BKPT;
       }else{
-        assert( (p->pTab->tabFlags & TF_Virtual)!=0 );
+        assert( p->pTab==0 || (p->pTab->tabFlags & TF_Virtual)!=0 );
         p->pVTable->bConstraint = (u8)va_arg(ap, int);
       }
       break;

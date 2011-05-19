@@ -650,7 +650,7 @@ do_test alter-6.7 {
 # Ticket #1665:  Make sure ALTER TABLE ADD COLUMN works on a table
 # that includes a COLLATE clause.
 #
-do_test alter-7.1 {
+do_realnum_test alter-7.1 {
   execsql {
     CREATE TABLE t1(a TEXT COLLATE BINARY);
     ALTER TABLE t1 ADD COLUMN b INTEGER COLLATE NOCASE;
