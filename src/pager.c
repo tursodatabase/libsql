@@ -5747,11 +5747,21 @@ int sqlite3PagerCommitPhaseOne(
   }else{
     if( pagerUseWal(pPager) ){
       PgHdr *pList = sqlite3PcacheDirtyList(pPager->pPCache);
+      PgHdr *pPageOne = 0;
+      if( pList==0 ){
+        /* Must have at least one page for the WAL commit flag.
+        ** Ticket [2d1a5c67dfc2363e44f29d9bbd57f] 2011-05-18 */
+        rc = sqlite3PagerGet(pPager, 1, &pPageOne);
+        pList = pPageOne;
+        pList->pDirty = 0;
+      }
+      assert( pList!=0 || rc!=SQLITE_OK );
       if( pList ){
         rc = pagerWalFrames(pPager, pList, pPager->dbSize, 1, 
             (pPager->fullSync ? pPager->syncFlags : 0)
         );
       }
+      sqlite3PagerUnref(pPageOne);
       if( rc==SQLITE_OK ){
         sqlite3PcacheCleanAll(pPager->pPCache);
       }
