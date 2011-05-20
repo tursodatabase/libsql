@@ -1,5 +1,5 @@
-C Mark\san\sunreachable\sbranch\sin\sthe\srecent\sWAL\sproblem\sas\sunreachable.
-D 2011-05-20T01:49:30.995
+C Fix\sthe\sURI\stest\sscript\sso\sthat\sit\sworks\seven\sif\sthere\sis\sa\ssubdirectory\nnamed\s"test".
+D 2011-05-20T01:50:01.794
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -843,7 +843,7 @@ F test/unique.test 083c7fff74695bcc27a71d75699deba3595bc9c2
 F test/unixexcl.test 9d80a54d86d2261f660758928959368ffc36151e
 F test/unordered.test e81169ce2a8f31b2c6b66af691887e1376ab3ced
 F test/update.test 8bc86fd7ef1a00014f76dc6a6a7c974df4aef172
-F test/uri.test 2d08a6f77bf93ca925743a65802c4aa23aaaf373
+F test/uri.test 53de9a2549cbda9c343223236918ef502f6a9051
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
 F test/vacuum.test 29b60e8cc9e573b39676df6c4a75fe9e02d04a09
 F test/vacuum2.test 91a84c9b08adfc4472097d2e8deb0150214e0e76
@@ -938,7 +938,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 97fcd9e88891abd44037004e47862bcecfa1b0c9
-R dfc39482dc1485cfb422ba7a47f95a18
+P 3e8a29ff8953054cb3b88db5997b5bae38ba09dd
+R 5fea414460a5e5fa1ee92fc36723f05a
 U drh
-Z 170a5ac08de306ec947114fc9ba724a8
+Z c112edb8a27a2fc78ca0bd2c77513025
