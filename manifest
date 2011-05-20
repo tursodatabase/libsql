@@ -1,5 +1,5 @@
-C Fix\sthe\sURI\stest\sscript\sso\sthat\sit\sworks\seven\sif\sthere\sis\sa\ssubdirectory\nnamed\s"test".
-D 2011-05-20T01:50:01.794
+C Add\sa\sbig\scomment\sto\sthe\stop\sof\stest_vfstrace.c\sto\sexplain\show\sto\scompile\nand\suse\sthat\smodule.
+D 2011-05-20T13:26:58.320
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -227,7 +227,7 @@ F src/test_syscall.c 162c4ec0137a549c009bb9ecab550527743cfc5d
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c 361ae0a0f1cbf5a28ad0388a258b104017a370c0
 F src/test_vfs.c 0ac5b2e3da61bc385c1017890687c359746be2fd
-F src/test_vfstrace.c 2265c9895f350c8d3c39b079998fbe7481505cc1
+F src/test_vfstrace.c 0b884e06094a746da729119a2cabdc7aa790063d
 F src/test_wholenumber.c 6129adfbe7c7444f2e60cc785927f3aa74e12290
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c 604607d6813e9551cf5189d899e0a25c12681080
@@ -938,7 +938,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 3e8a29ff8953054cb3b88db5997b5bae38ba09dd
-R 5fea414460a5e5fa1ee92fc36723f05a
+P 2018d4e108872f2436df046636401b89cfde589d
+R 255b37749f43768ed482b58df21cb526
 U drh
-Z c112edb8a27a2fc78ca0bd2c77513025
+Z b3fd4754e05513cf46b48a7229f1cea7
