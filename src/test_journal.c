@@ -14,13 +14,7 @@
 ** an existing VFS. The code in this file attempts to verify that SQLite
 ** correctly populates and syncs a journal file before writing to a
 ** corresponding database file.
-*/
-#if SQLITE_TEST          /* This file is used for testing only */
-
-#include "sqlite3.h"
-#include "sqliteInt.h"
-
-/*
+**
 ** INTERFACE
 **
 **   The public interface to this wrapper VFS is two functions:
@@ -99,6 +93,10 @@
 **
 **     c) The journal file is deleted using xDelete.
 */
+#if SQLITE_TEST          /* This file is used for testing only */
+
+#include "sqlite3.h"
+#include "sqliteInt.h"
 
 /*
 ** Maximum pathname length supported by the jt backend.
