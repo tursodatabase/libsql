@@ -2589,7 +2589,8 @@ case OP_Savepoint: {
       ** If this is a transaction savepoint being opened, it is guaranteed
       ** that the db->aVTrans[] array is empty.  */
       assert( db->autoCommit==0 || db->nVTrans==0 );
-      rc = sqlite3VtabSavepoint(db, SAVEPOINT_BEGIN, p->iStatement);
+      rc = sqlite3VtabSavepoint(db, SAVEPOINT_BEGIN,
+                                db->nStatement+db->nSavepoint);
       if( rc!=SQLITE_OK ) goto abort_due_to_error;
 
       /* Create a new savepoint structure. */
