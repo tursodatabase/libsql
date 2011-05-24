@@ -145,6 +145,14 @@ struct SegmentWriter {
 **   fts3NodeAddTerm()
 **   fts3NodeWrite()
 **   fts3NodeFree()
+**
+** When a b+tree is written to the database (either as a result of a merge
+** or the pending-terms table being flushed), leaves are written into the 
+** database file as soon as they are completely populated. The interior of
+** the tree is assembled in memory and written out only once all leaves have
+** been populated and stored. This is Ok, as the b+-tree fanout is usually
+** very large, meaning that the interior of the tree consumes relatively 
+** little memory.
 */
 struct SegmentNode {
   SegmentNode *pParent;           /* Parent node (or NULL for root node) */
@@ -177,7 +185,7 @@ struct SegmentNode {
 #define SQL_SELECT_LEVEL              12
 #define SQL_SELECT_ALL_LEVEL          13
 #define SQL_SELECT_LEVEL_COUNT        14
-#define SQL_SELECT_SEGDIR_COUNT_MAX   15
+#define SQL_SELECT_SEGDIR_MAX_LEVEL   15
 #define SQL_DELETE_SEGDIR_BY_LEVEL    16
 #define SQL_DELETE_SEGMENTS_RANGE     17
 #define SQL_CONTENT_INSERT            18
@@ -186,6 +194,10 @@ struct SegmentNode {
 #define SQL_SELECT_DOCSIZE            21
 #define SQL_SELECT_DOCTOTAL           22
 #define SQL_REPLACE_DOCTOTAL          23
+#define SQL_SELECT_ALL_PREFIX_LEVEL   24
+
+#define SQL_DELETE_ALL_TERMS_SEGDIR   25
+#define SQL_DELETE_ALL_PREFIX_SEGDIR  26
 
 /*
 ** This function is used to obtain an SQLite prepared statement handle
@@ -222,10 +234,12 @@ static int fts3SqlStmt(
 /* 12 */  "SELECT idx, start_block, leaves_end_block, end_block, root "
             "FROM %Q.'%q_segdir' WHERE level = ? ORDER BY idx ASC",
 /* 13 */  "SELECT idx, start_block, leaves_end_block, end_block, root "
-            "FROM %Q.'%q_segdir' ORDER BY level DESC, idx ASC",
+            "FROM %Q.'%q_segdir' WHERE level < " FTS3_SEGDIR_PREFIXLEVEL_STR
+            " ORDER BY level DESC, idx ASC",
 
 /* 14 */  "SELECT count(*) FROM %Q.'%q_segdir' WHERE level = ?",
-/* 15 */  "SELECT count(*), max(level) FROM %Q.'%q_segdir'",
+/* 15 */  "SELECT max(level) FROM %Q.'%q_segdir' WHERE level < (?+1)*"
+            FTS3_SEGDIR_PREFIXLEVEL_STR,
 
 /* 16 */  "DELETE FROM %Q.'%q_segdir' WHERE level = ?",
 /* 17 */  "DELETE FROM %Q.'%q_segments' WHERE blockid BETWEEN ? AND ?",
@@ -235,6 +249,11 @@ static int fts3SqlStmt(
 /* 21 */  "SELECT size FROM %Q.'%q_docsize' WHERE docid=?",
 /* 22 */  "SELECT value FROM %Q.'%q_stat' WHERE id=0",
 /* 23 */  "REPLACE INTO %Q.'%q_stat' VALUES(0,?)",
+/* 24 */  "SELECT idx, start_block, leaves_end_block, end_block, root "
+            "FROM %Q.'%q_segdir' WHERE level >= " FTS3_SEGDIR_PREFIXLEVEL_STR
+            " ORDER BY level DESC, idx ASC",
+/* 25 */ "DELETE FROM %Q.'%q_segdir' WHERE level<" FTS3_SEGDIR_PREFIXLEVEL_STR,
+/* 26 */ "DELETE FROM %Q.'%q_segdir' WHERE level>=" FTS3_SEGDIR_PREFIXLEVEL_STR,
   };
   int rc = SQLITE_OK;
   sqlite3_stmt *pStmt;
@@ -393,9 +412,12 @@ int sqlite3Fts3ReadLock(Fts3Table *p){
 int sqlite3Fts3AllSegdirs(Fts3Table *p, int iLevel, sqlite3_stmt **ppStmt){
   int rc;
   sqlite3_stmt *pStmt = 0;
-  if( iLevel<0 ){
+  if( iLevel==FTS3_SEGCURSOR_ALL_PREFIX ){
+    rc = fts3SqlStmt(p, SQL_SELECT_ALL_PREFIX_LEVEL, &pStmt, 0);
+  }else if( iLevel==FTS3_SEGCURSOR_ALL_TERM ){
     rc = fts3SqlStmt(p, SQL_SELECT_ALL_LEVEL, &pStmt, 0);
   }else{
+    assert( iLevel>=0 );
     rc = fts3SqlStmt(p, SQL_SELECT_LEVEL, &pStmt, 0);
     if( rc==SQLITE_OK ) sqlite3_bind_int(pStmt, 1, iLevel);
   }
@@ -512,6 +534,40 @@ static int fts3PendingListAppend(
   return 0;
 }
 
+static int fts3PendingTermsAddOne(
+  Fts3Table *p,
+  int iCol,
+  int iPos,
+  Fts3Hash *pHash,
+  const char *zToken,
+  int nToken
+){
+  PendingList *pList;
+  int rc = SQLITE_OK;
+
+  pList = (PendingList *)fts3HashFind(pHash, zToken, nToken);
+  if( pList ){
+    p->nPendingData -= (pList->nData + nToken + sizeof(Fts3HashElem));
+  }
+  if( fts3PendingListAppend(&pList, p->iPrevDocid, iCol, iPos, &rc) ){
+    if( pList==fts3HashInsert(pHash, zToken, nToken, pList) ){
+      /* Malloc failed while inserting the new entry. This can only 
+      ** happen if there was no previous entry for this token.
+      */
+      assert( 0==fts3HashFind(pHash, zToken, nToken) );
+      sqlite3_free(pList);
+      rc = SQLITE_NOMEM;
+    }
+  }
+  if( rc==SQLITE_OK ){
+    p->nPendingData += (pList->nData + nToken + sizeof(Fts3HashElem));
+  }
+  return rc;
+}
+
+ 
+
+
 /*
 ** Tokenize the nul-terminated string zText and add all tokens to the
 ** pending-terms hash-table. The docid used is that currently stored in
@@ -560,8 +616,6 @@ static int fts3PendingTermsAdd(
   while( SQLITE_OK==rc
       && SQLITE_OK==(rc = xNext(pCsr, &zToken, &nToken, &iStart, &iEnd, &iPos))
   ){
-    PendingList *pList;
- 
     if( iPos>=nWord ) nWord = iPos+1;
 
     /* Positions cannot be negative; we use -1 as a terminator internally.
@@ -572,22 +626,12 @@ static int fts3PendingTermsAdd(
       break;
     }
 
-    pList = (PendingList *)fts3HashFind(&p->pendingTerms, zToken, nToken);
-    if( pList ){
-      p->nPendingData -= (pList->nData + nToken + sizeof(Fts3HashElem));
-    }
-    if( fts3PendingListAppend(&pList, p->iPrevDocid, iCol, iPos, &rc) ){
-      if( pList==fts3HashInsert(&p->pendingTerms, zToken, nToken, pList) ){
-        /* Malloc failed while inserting the new entry. This can only 
-        ** happen if there was no previous entry for this token.
-        */
-        assert( 0==fts3HashFind(&p->pendingTerms, zToken, nToken) );
-        sqlite3_free(pList);
-        rc = SQLITE_NOMEM;
+    rc = fts3PendingTermsAddOne(p,iCol,iPos,&p->pendingTerms,zToken,nToken);
+    if( p->bPrefix ){
+      int n = (nToken > FTS3_MAX_PREFIX ? FTS3_MAX_PREFIX : nToken);
+      for(; n>0 && rc==SQLITE_OK; n--){
+        rc = fts3PendingTermsAddOne(p,iCol,iPos,&p->pendingPrefixes,zToken,n);
       }
-    }
-    if( rc==SQLITE_OK ){
-      p->nPendingData += (pList->nData + nToken + sizeof(Fts3HashElem));
     }
   }
 
@@ -626,6 +670,17 @@ void sqlite3Fts3PendingTermsClear(Fts3Table *p){
   }
   fts3HashClear(&p->pendingTerms);
   p->nPendingData = 0;
+}
+
+/*
+** Discard the contents of the pending-prefixes hash table. 
+*/
+void sqlite3Fts3PendingPrefixesClear(Fts3Table *p){
+  Fts3HashElem *pElem;
+  for(pElem=fts3HashFirst(&p->pendingPrefixes); pElem; pElem=fts3HashNext(pElem)){
+    sqlite3_free(fts3HashData(pElem));
+  }
+  fts3HashClear(&p->pendingPrefixes);
 }
 
 /*
@@ -725,6 +780,7 @@ static int fts3DeleteAll(Fts3Table *p){
 
   /* Discard the contents of the pending-terms hash table. */
   sqlite3Fts3PendingTermsClear(p);
+  sqlite3Fts3PendingPrefixesClear(p);
 
   /* Delete everything from the %_content, %_segments and %_segdir tables. */
   fts3SqlExec(&rc, p, SQL_DELETE_ALL_CONTENT, 0);
@@ -1235,12 +1291,28 @@ static int fts3CompareElemByTerm(const void *lhs, const void *rhs){
 /*
 ** This function is used to allocate an Fts3SegReader that iterates through
 ** a subset of the terms stored in the Fts3Table.pendingTerms array.
+**
+** If the isPrefixIter parameter is zero, then the returned SegReader iterates
+** through each term in the pending-terms table. Or, if isPrefixIter is
+** non-zero, it iterates through each term and its prefixes. For example, if
+** the pending terms hash table contains the terms "sqlite", "mysql" and
+** "firebird", then the iterator visits the following 'terms' (in the order
+** shown):
+**
+**   f fi fir fire fireb firebi firebir firebird
+**   m my mys mysq mysql
+**   s sq sql sqli sqlit sqlite
+**
+** Whereas if isPrefixIter is zero, the terms visited are:
+**
+**   firebird mysql sqlite
 */
 int sqlite3Fts3SegReaderPending(
   Fts3Table *p,                   /* Virtual table handle */
   const char *zTerm,              /* Term to search for */
   int nTerm,                      /* Size of buffer zTerm */
-  int isPrefix,                   /* True for a term-prefix query */
+  int isMultiTerm,                /* True to visit multiple terms */
+  int isPrefixIter,               /* 0->pendingTerms, 1->pendingPrefixes */
   Fts3SegReader **ppReader        /* OUT: SegReader for pending-terms */
 ){
   Fts3SegReader *pReader = 0;     /* Fts3SegReader object to return */
@@ -1248,11 +1320,14 @@ int sqlite3Fts3SegReaderPending(
   int nElem = 0;                  /* Size of array at aElem */
   int rc = SQLITE_OK;             /* Return Code */
 
-  if( isPrefix ){
+  if( isMultiTerm ){
     int nAlloc = 0;               /* Size of allocated array at aElem */
     Fts3HashElem *pE = 0;         /* Iterator variable */
+    Fts3Hash *pHash;
 
-    for(pE=fts3HashFirst(&p->pendingTerms); pE; pE=fts3HashNext(pE)){
+    pHash = (isPrefixIter ? &p->pendingPrefixes : &p->pendingTerms);
+
+    for(pE=fts3HashFirst(pHash); pE; pE=fts3HashNext(pE)){
       char *zKey = (char *)fts3HashKey(pE);
       int nKey = fts3HashKeysize(pE);
       if( nTerm==0 || (nKey>=nTerm && 0==memcmp(zKey, zTerm, nTerm)) ){
@@ -1269,6 +1344,7 @@ int sqlite3Fts3SegReaderPending(
           }
           aElem = aElem2;
         }
+
         aElem[nElem++] = pE;
       }
     }
@@ -1282,6 +1358,8 @@ int sqlite3Fts3SegReaderPending(
     }
 
   }else{
+    /* The query is a simple term lookup that matches at most one term in
+    ** the index. All that is required is a straight hash-lookup. */
     Fts3HashElem *pE = fts3HashFindElem(&p->pendingTerms, zTerm, nTerm);
     if( pE ){
       aElem = &pE;
@@ -1302,7 +1380,7 @@ int sqlite3Fts3SegReaderPending(
     }
   }
 
-  if( isPrefix ){
+  if( isMultiTerm ){
     sqlite3_free(aElem);
   }
   *ppReader = pReader;
@@ -1914,21 +1992,30 @@ static int fts3IsEmpty(Fts3Table *p, sqlite3_value *pRowid, int *pisEmpty){
 }
 
 /*
-** Set *pnSegment to the total number of segments in the database. Set
-** *pnMax to the largest segment level in the database (segment levels
-** are stored in the 'level' column of the %_segdir table).
+** Set *pnMax to the largest segment level in the database for either the
+** terms index (if parameter bPrefixIndex is 0) or the prefixes index (if
+** parameter bPrefixIndex is 1).
+**
+** Segment levels are stored in the 'level' column of the %_segdir table.
 **
 ** Return SQLITE_OK if successful, or an SQLite error code if not.
 */
-static int fts3SegmentCountMax(Fts3Table *p, int *pnSegment, int *pnMax){
+static int fts3SegmentMaxLevel(Fts3Table *p, int bPrefixIndex, int *pnMax){
   sqlite3_stmt *pStmt;
   int rc;
+  assert( bPrefixIndex==0 || bPrefixIndex==1 );
 
-  rc = fts3SqlStmt(p, SQL_SELECT_SEGDIR_COUNT_MAX, &pStmt, 0);
+  /* Set pStmt to the compiled version of:
+  **
+  **   SELECT max(level) FROM %Q.'%q_segdir' WHERE level < (?+1) * 1024 
+  **
+  ** (1024 is actually the value of macro FTS3_SEGDIR_PREFIXLEVEL_STR).
+  */
+  rc = fts3SqlStmt(p, SQL_SELECT_SEGDIR_MAX_LEVEL, &pStmt, 0);
   if( rc!=SQLITE_OK ) return rc;
+  sqlite3_bind_int(pStmt, 1, bPrefixIndex);
   if( SQLITE_ROW==sqlite3_step(pStmt) ){
-    *pnSegment = sqlite3_column_int(pStmt, 0);
-    *pnMax = sqlite3_column_int(pStmt, 1);
+    *pnMax = sqlite3_column_int(pStmt, 0);
   }
   return sqlite3_reset(pStmt);
 }
@@ -1971,12 +2058,21 @@ static int fts3DeleteSegdir(
     return rc;
   }
 
-  if( iLevel==FTS3_SEGCURSOR_ALL ){
-    fts3SqlExec(&rc, p, SQL_DELETE_ALL_SEGDIR, 0);
+  assert( iLevel>=0 
+       || iLevel==FTS3_SEGCURSOR_ALL_TERM
+       || iLevel==FTS3_SEGCURSOR_ALL_PREFIX 
+       || iLevel==FTS3_SEGCURSOR_PENDING
+       || iLevel==FTS3_SEGCURSOR_PENDING_PREFIX 
+  );
+  if( iLevel==FTS3_SEGCURSOR_ALL_TERM ){
+    fts3SqlExec(&rc, p, SQL_DELETE_ALL_TERMS_SEGDIR, 0);
+  }else if( iLevel==FTS3_SEGCURSOR_ALL_PREFIX ){
+    fts3SqlExec(&rc, p, SQL_DELETE_ALL_PREFIX_SEGDIR, 0);
+  }else if( iLevel==FTS3_SEGCURSOR_PENDING_PREFIX ){
+    sqlite3Fts3PendingPrefixesClear(p);
   }else if( iLevel==FTS3_SEGCURSOR_PENDING ){
     sqlite3Fts3PendingTermsClear(p);
-  }else{
-    assert( iLevel>=0 );
+  }else if( iLevel>=0 ){
     rc = fts3SqlStmt(p, SQL_DELETE_SEGDIR_BY_LEVEL, &pDelete, 0);
     if( rc==SQLITE_OK ){
       sqlite3_bind_int(pDelete, 1, iLevel);
@@ -2234,27 +2330,34 @@ static int fts3SegmentMerge(Fts3Table *p, int iLevel){
   SegmentWriter *pWriter = 0;     /* Used to write the new, merged, segment */
   Fts3SegFilter filter;           /* Segment term filter condition */
   Fts3SegReaderCursor csr;        /* Cursor to iterate through level(s) */
+  int bIgnoreEmpty = 0;           /* True to ignore empty segments */
 
   rc = sqlite3Fts3SegReaderCursor(p, iLevel, 0, 0, 1, 0, &csr);
   if( rc!=SQLITE_OK || csr.nSegment==0 ) goto finished;
 
-  if( iLevel==FTS3_SEGCURSOR_ALL ){
+  if( iLevel==FTS3_SEGCURSOR_ALL_TERM || iLevel==FTS3_SEGCURSOR_ALL_PREFIX ){
     /* This call is to merge all segments in the database to a single
     ** segment. The level of the new segment is equal to the the numerically 
     ** greatest segment level currently present in the database. The index
     ** of the new segment is always 0.  */
-    int nDummy; /* TODO: Remove this */
     if( csr.nSegment==1 ){
       rc = SQLITE_DONE;
       goto finished;
     }
-    rc = fts3SegmentCountMax(p, &nDummy, &iNewLevel);
+    rc = fts3SegmentMaxLevel(p, iLevel==FTS3_SEGCURSOR_ALL_PREFIX, &iNewLevel);
+    bIgnoreEmpty = 1;
   }else{
-    /* This call is to merge all segments at level iLevel. Find the next
+    /* This call is to merge all segments at level iLevel. find the next
     ** available segment index at level iLevel+1. The call to
     ** fts3AllocateSegdirIdx() will merge the segments at level iLevel+1 to 
     ** a single iLevel+2 segment if necessary.  */
-    iNewLevel = iLevel+1;
+    if( iLevel==FTS3_SEGCURSOR_PENDING ){
+      iNewLevel = 0;
+    }else if( iLevel==FTS3_SEGCURSOR_PENDING_PREFIX ){
+      iNewLevel = FTS3_SEGDIR_PREFIXLEVEL;
+    }else{
+      iNewLevel = iLevel+1;
+    }
     rc = fts3AllocateSegdirIdx(p, iNewLevel, &iIdx);
   }
   if( rc!=SQLITE_OK ) goto finished;
@@ -2263,7 +2366,7 @@ static int fts3SegmentMerge(Fts3Table *p, int iLevel){
 
   memset(&filter, 0, sizeof(Fts3SegFilter));
   filter.flags = FTS3_SEGMENT_REQUIRE_POS;
-  filter.flags |= (iLevel==FTS3_SEGCURSOR_ALL ? FTS3_SEGMENT_IGNORE_EMPTY : 0);
+  filter.flags |= (bIgnoreEmpty ? FTS3_SEGMENT_IGNORE_EMPTY : 0);
 
   rc = sqlite3Fts3SegReaderStart(p, &csr, &filter);
   while( SQLITE_OK==rc ){
@@ -2290,7 +2393,17 @@ static int fts3SegmentMerge(Fts3Table *p, int iLevel){
 ** Flush the contents of pendingTerms to a level 0 segment.
 */
 int sqlite3Fts3PendingTermsFlush(Fts3Table *p){
-  return fts3SegmentMerge(p, FTS3_SEGCURSOR_PENDING);
+  int rc = SQLITE_OK;
+  if( p->bPrefix ){
+    rc = fts3SegmentMerge(p, FTS3_SEGCURSOR_PENDING_PREFIX);
+  }
+  if( rc==SQLITE_OK || rc==SQLITE_DONE ){
+    rc = fts3SegmentMerge(p, FTS3_SEGCURSOR_PENDING);
+  }
+  if( rc==SQLITE_DONE ){
+    rc = SQLITE_OK;
+  }
+  return rc;
 }
 
 /*
@@ -2457,11 +2570,9 @@ static int fts3SpecialInsert(Fts3Table *p, sqlite3_value *pVal){
   if( !zVal ){
     return SQLITE_NOMEM;
   }else if( nVal==8 && 0==sqlite3_strnicmp(zVal, "optimize", 8) ){
-    rc = fts3SegmentMerge(p, FTS3_SEGCURSOR_ALL);
-    if( rc==SQLITE_DONE ){
-      rc = SQLITE_OK;
-    }else{
-      sqlite3Fts3PendingTermsClear(p);
+    rc = fts3SegmentMerge(p, FTS3_SEGCURSOR_ALL_PREFIX);
+    if( rc==SQLITE_OK ){
+      rc = fts3SegmentMerge(p, FTS3_SEGCURSOR_ALL_TERM);
     }
 #ifdef SQLITE_TEST
   }else if( nVal>9 && 0==sqlite3_strnicmp(zVal, "nodesize=", 9) ){
@@ -2476,6 +2587,8 @@ static int fts3SpecialInsert(Fts3Table *p, sqlite3_value *pVal){
   }
 
   sqlite3Fts3SegmentsClose(p);
+  sqlite3Fts3PendingTermsClear(p);
+  sqlite3Fts3PendingPrefixesClear(p);
   return rc;
 }
 
@@ -2792,13 +2905,22 @@ int sqlite3Fts3UpdateMethod(
 */
 int sqlite3Fts3Optimize(Fts3Table *p){
   int rc;
+  int bReturnDone = 0;
   rc = sqlite3_exec(p->db, "SAVEPOINT fts3", 0, 0, 0);
   if( rc==SQLITE_OK ){
-    rc = fts3SegmentMerge(p, FTS3_SEGCURSOR_ALL);
+    rc = fts3SegmentMerge(p, FTS3_SEGCURSOR_ALL_PREFIX);
+    if( rc==SQLITE_OK ){
+      rc = fts3SegmentMerge(p, FTS3_SEGCURSOR_ALL_TERM);
+    }
+    if( rc==SQLITE_DONE ){
+      bReturnDone = 1;
+      rc = SQLITE_OK;
+    }
     if( rc==SQLITE_OK ){
       rc = sqlite3_exec(p->db, "RELEASE fts3", 0, 0, 0);
       if( rc==SQLITE_OK ){
         sqlite3Fts3PendingTermsClear(p);
+        sqlite3Fts3PendingPrefixesClear(p);
       }
     }else{
       sqlite3_exec(p->db, "ROLLBACK TO fts3", 0, 0, 0);
@@ -2806,7 +2928,7 @@ int sqlite3Fts3Optimize(Fts3Table *p){
     }
   }
   sqlite3Fts3SegmentsClose(p);
-  return rc;
+  return ((rc==SQLITE_OK && bReturnDone) ? SQLITE_DONE : rc);
 }
 
 #endif

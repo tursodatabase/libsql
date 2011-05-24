@@ -865,6 +865,7 @@ static int fts3InitVtab(
   int nName;                      /* Bytes required to hold table name */
   int isFts4 = (argv[0][3]=='4'); /* True for FTS4, false for FTS3 */
   int bNoDocsize = 0;             /* True to omit %_docsize table */
+  int bPrefix = 0;                /* True to include a prefix-search index */
   const char **aCol;              /* Array of column names */
   sqlite3_tokenizer *pTokenizer = 0;        /* Tokenizer for this table */
 
@@ -927,6 +928,8 @@ static int fts3InitVtab(
       }else if( nKey==10 && 0==sqlite3_strnicmp(z, "uncompress", 10) ){
         zUncompress = zVal;
         zVal = 0;
+      }else if( nKey==6 && 0==sqlite3_strnicmp(z, "prefix", 6) ){
+        bPrefix = 1;
       }else{
         *pzErr = sqlite3_mprintf("unrecognized parameter: %s", z);
         rc = SQLITE_ERROR;
@@ -979,7 +982,9 @@ static int fts3InitVtab(
   p->bHasStat = isFts4;
   TESTONLY( p->inTransaction = -1 );
   TESTONLY( p->mxSavepoint = -1 );
+  p->bPrefix = bPrefix;
   fts3HashInit(&p->pendingTerms, FTS3_HASH_STRING, 1);
+  fts3HashInit(&p->pendingPrefixes, FTS3_HASH_STRING, 1);
 
   /* Fill in the zName and zDb fields of the vtab structure. */
   zCsr = (char *)&p->azColumn[nCol];
@@ -2139,6 +2144,28 @@ static int fts3DeferredTermSelect(
   return SQLITE_OK;
 }
 
+static int fts3SegReaderCursorAppend(
+  Fts3SegReaderCursor *pCsr, 
+  Fts3SegReader *pNew
+){
+  if( (pCsr->nSegment%16)==0 ){
+    Fts3SegReader **apNew;
+    int nByte = (pCsr->nSegment + 16)*sizeof(Fts3SegReader*);
+    apNew = (Fts3SegReader **)sqlite3_realloc(pCsr->apSegment, nByte);
+    if( !apNew ){
+      sqlite3Fts3SegReaderFree(pNew);
+      return SQLITE_NOMEM;
+    }
+    pCsr->apSegment = apNew;
+  }
+  pCsr->apSegment[pCsr->nSegment++] = pNew;
+  return SQLITE_OK;
+}
+
+/*
+** Set up a cursor object for iterating through the full-text index or 
+** a single level therein.
+*/
 int sqlite3Fts3SegReaderCursor(
   Fts3Table *p,                   /* FTS3 table handle */
   int iLevel,                     /* Level of segments to scan */
@@ -2152,42 +2179,52 @@ int sqlite3Fts3SegReaderCursor(
   int rc2;
   int iAge = 0;
   sqlite3_stmt *pStmt = 0;
-  Fts3SegReader *pPending = 0;
 
-  assert( iLevel==FTS3_SEGCURSOR_ALL 
+  assert( iLevel==FTS3_SEGCURSOR_ALL_TERM
       ||  iLevel==FTS3_SEGCURSOR_PENDING 
+      ||  iLevel==FTS3_SEGCURSOR_PENDING_PREFIX
+      ||  iLevel==FTS3_SEGCURSOR_ALL_PREFIX
       ||  iLevel>=0
   );
-  assert( FTS3_SEGCURSOR_PENDING<0 );
-  assert( FTS3_SEGCURSOR_ALL<0 );
-  assert( iLevel==FTS3_SEGCURSOR_ALL || (zTerm==0 && isPrefix==1) );
+  assert( 0>FTS3_SEGCURSOR_ALL_TERM
+      &&  0>FTS3_SEGCURSOR_PENDING 
+      &&  0>FTS3_SEGCURSOR_PENDING_PREFIX
+      &&  0>FTS3_SEGCURSOR_ALL_PREFIX
+  );
+  assert( iLevel==FTS3_SEGCURSOR_ALL_TERM
+       || iLevel==FTS3_SEGCURSOR_ALL_PREFIX 
+       || (zTerm==0 && isPrefix==1) 
+  );
   assert( isPrefix==0 || isScan==0 );
-
 
   memset(pCsr, 0, sizeof(Fts3SegReaderCursor));
 
-  /* If iLevel is less than 0, include a seg-reader for the pending-terms. */
+  /* "isScan" is only set to true by the ft4aux module, not an ordinary
+  ** full-text table. The pendingTerms and pendingPrefixes tables must be
+  ** empty in this case. */
   assert( isScan==0 || fts3HashCount(&p->pendingTerms)==0 );
+  assert( isScan==0 || fts3HashCount(&p->pendingPrefixes)==0 );
+
+  /* If iLevel is less than 0, include a seg-reader for the pending-terms. */
   if( iLevel<0 && isScan==0 ){
-    rc = sqlite3Fts3SegReaderPending(p, zTerm, nTerm, isPrefix, &pPending);
+    int bPrefix = (
+        iLevel==FTS3_SEGCURSOR_PENDING_PREFIX 
+     || iLevel==FTS3_SEGCURSOR_ALL_PREFIX
+    );
+    Fts3SegReader *pPending = 0;
+
+    rc = sqlite3Fts3SegReaderPending(p,zTerm,nTerm,isPrefix,bPrefix,&pPending);
     if( rc==SQLITE_OK && pPending ){
-      int nByte = (sizeof(Fts3SegReader *) * 16);
-      pCsr->apSegment = (Fts3SegReader **)sqlite3_malloc(nByte);
-      if( pCsr->apSegment==0 ){
-        rc = SQLITE_NOMEM;
-      }else{
-        pCsr->apSegment[0] = pPending;
-        pCsr->nSegment = 1;
-        pPending = 0;
-      }
+      rc = fts3SegReaderCursorAppend(pCsr, pPending);
     }
   }
 
-  if( iLevel!=FTS3_SEGCURSOR_PENDING ){
+  if( iLevel!=FTS3_SEGCURSOR_PENDING && iLevel!=FTS3_SEGCURSOR_PENDING_PREFIX ){
     if( rc==SQLITE_OK ){
       rc = sqlite3Fts3AllSegdirs(p, iLevel, &pStmt);
     }
     while( rc==SQLITE_OK && SQLITE_ROW==(rc = sqlite3_step(pStmt)) ){
+      Fts3SegReader *pSeg = 0;
 
       /* Read the values returned by the SELECT into local variables. */
       sqlite3_int64 iStartBlock = sqlite3_column_int64(pStmt, 1);
@@ -2195,18 +2232,6 @@ int sqlite3Fts3SegReaderCursor(
       sqlite3_int64 iEndBlock = sqlite3_column_int64(pStmt, 3);
       int nRoot = sqlite3_column_bytes(pStmt, 4);
       char const *zRoot = sqlite3_column_blob(pStmt, 4);
-
-      /* If nSegment is a multiple of 16 the array needs to be extended. */
-      if( (pCsr->nSegment%16)==0 ){
-        Fts3SegReader **apNew;
-        int nByte = (pCsr->nSegment + 16)*sizeof(Fts3SegReader*);
-        apNew = (Fts3SegReader **)sqlite3_realloc(pCsr->apSegment, nByte);
-        if( !apNew ){
-          rc = SQLITE_NOMEM;
-          goto finished;
-        }
-        pCsr->apSegment = apNew;
-      }
 
       /* If zTerm is not NULL, and this segment is not stored entirely on its
       ** root node, the range of leaves scanned can be reduced. Do this. */
@@ -2218,10 +2243,10 @@ int sqlite3Fts3SegReaderCursor(
       }
  
       rc = sqlite3Fts3SegReaderNew(iAge, iStartBlock, iLeavesEndBlock,
-          iEndBlock, zRoot, nRoot, &pCsr->apSegment[pCsr->nSegment]
+          iEndBlock, zRoot, nRoot, &pSeg
       );
       if( rc!=SQLITE_OK ) goto finished;
-      pCsr->nSegment++;
+      rc = fts3SegReaderCursorAppend(pCsr, pSeg);
       iAge++;
     }
   }
@@ -2229,7 +2254,6 @@ int sqlite3Fts3SegReaderCursor(
  finished:
   rc2 = sqlite3_reset(pStmt);
   if( rc==SQLITE_DONE ) rc = rc2;
-  sqlite3Fts3SegReaderFree(pPending);
 
   return rc;
 }
@@ -2247,11 +2271,18 @@ static int fts3TermSegReaderCursor(
 
   pSegcsr = sqlite3_malloc(sizeof(Fts3SegReaderCursor));
   if( pSegcsr ){
-    Fts3Table *p = (Fts3Table *)pCsr->base.pVtab;
     int i;
     int nCost = 0;
-    rc = sqlite3Fts3SegReaderCursor(
-        p, FTS3_SEGCURSOR_ALL, zTerm, nTerm, isPrefix, 0, pSegcsr);
+    Fts3Table *p = (Fts3Table *)pCsr->base.pVtab;
+
+    if( isPrefix && p->bPrefix && nTerm<=FTS3_MAX_PREFIX ){
+      rc = sqlite3Fts3SegReaderCursor(
+          p, FTS3_SEGCURSOR_ALL_PREFIX, zTerm, nTerm, 0, 0, pSegcsr);
+
+    }else{
+      rc = sqlite3Fts3SegReaderCursor(
+          p, FTS3_SEGCURSOR_ALL_TERM, zTerm, nTerm, isPrefix, 0, pSegcsr);
+    }
   
     for(i=0; rc==SQLITE_OK && i<pSegcsr->nSegment; i++){
       rc = sqlite3Fts3SegReaderCost(pCsr, pSegcsr->apSegment[i], &nCost);
@@ -3309,6 +3340,7 @@ static int fts3RollbackMethod(sqlite3_vtab *pVtab){
   assert( p->inTransaction!=0 );
   TESTONLY( p->inTransaction = 0 );
   TESTONLY( p->mxSavepoint = -1; );
+  sqlite3Fts3PendingPrefixesClear((Fts3Table *)pVtab);
   return SQLITE_OK;
 }
 
@@ -3683,6 +3715,7 @@ static int fts3RollbackToMethod(sqlite3_vtab *pVtab, int iSavepoint){
   assert( p->mxSavepoint >= iSavepoint );
   TESTONLY( p->mxSavepoint = iSavepoint );
   sqlite3Fts3PendingTermsClear(p);
+  sqlite3Fts3PendingPrefixesClear((Fts3Table *)pVtab);
   return SQLITE_OK;
 }
 

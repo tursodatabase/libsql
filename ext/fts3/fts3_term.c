@@ -27,6 +27,7 @@ typedef struct Fts3termCursor Fts3termCursor;
 
 struct Fts3termTable {
   sqlite3_vtab base;              /* Base class used by SQLite core */
+  int bPrefix;                    /* True for an fts4prefix table */
   Fts3Table *pFts3Tab;
 };
 
@@ -56,7 +57,7 @@ struct Fts3termCursor {
 */
 static int fts3termConnectMethod(
   sqlite3 *db,                    /* Database connection */
-  void *pUnused,                  /* Unused */
+  void *pCtx,                     /* Non-zero for an fts4prefix table */
   int argc,                       /* Number of elements in argv array */
   const char * const *argv,       /* xCreate/xConnect argument array */
   sqlite3_vtab **ppVtab,          /* OUT: New sqlite3_vtab object */
@@ -69,8 +70,6 @@ static int fts3termConnectMethod(
   int nByte;                      /* Bytes of space to allocate here */
   int rc;                         /* value returned by declare_vtab() */
   Fts3termTable *p;                /* Virtual table object to return */
-
-  UNUSED_PARAMETER(pUnused);
 
   /* The user should specify a single argument - the name of an fts3 table. */
   if( argc!=4 ){
@@ -97,6 +96,7 @@ static int fts3termConnectMethod(
   p->pFts3Tab->zDb = (char *)&p->pFts3Tab[1];
   p->pFts3Tab->zName = &p->pFts3Tab->zDb[nDb+1];
   p->pFts3Tab->db = db;
+  p->bPrefix = (int)pCtx;
 
   memcpy((char *)p->pFts3Tab->zDb, zDb, nDb);
   memcpy((char *)p->pFts3Tab->zName, zFts3, nFts3);
@@ -244,7 +244,8 @@ static int fts3termFilterMethod(
   sqlite3_value **apVal           /* Arguments for the indexing scheme */
 ){
   Fts3termCursor *pCsr = (Fts3termCursor *)pCursor;
-  Fts3Table *pFts3 = ((Fts3termTable *)pCursor->pVtab)->pFts3Tab;
+  Fts3termTable *p = (Fts3termTable *)pCursor->pVtab;
+  Fts3Table *pFts3 = p->pFts3Tab;
   int rc;
 
   UNUSED_PARAMETER(nVal);
@@ -262,7 +263,8 @@ static int fts3termFilterMethod(
   pCsr->filter.flags = FTS3_SEGMENT_REQUIRE_POS|FTS3_SEGMENT_IGNORE_EMPTY;
   pCsr->filter.flags |= FTS3_SEGMENT_SCAN;
 
-  rc = sqlite3Fts3SegReaderCursor(pFts3, FTS3_SEGCURSOR_ALL,
+  rc = sqlite3Fts3SegReaderCursor(pFts3, 
+      p->bPrefix ? FTS3_SEGCURSOR_ALL_PREFIX : FTS3_SEGCURSOR_ALL_TERM,
       pCsr->filter.zTerm, pCsr->filter.nTerm, 0, 1, &pCsr->csr
   );
   if( rc==SQLITE_OK ){
@@ -353,6 +355,9 @@ int sqlite3Fts3InitTerm(sqlite3 *db){
   int rc;                         /* Return code */
 
   rc = sqlite3_create_module(db, "fts4term", &fts3term_module, 0);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_module(db, "fts4prefix", &fts3term_module, (void*)1);
+  }
   return rc;
 }
 
