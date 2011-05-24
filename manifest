@@ -1,5 +1,5 @@
-C Make\ssure\sthe\ssavepoint\sindex\sis\scorrect\sone\scalls\sto\ssqlite3VtabSavepoint\nwith\sSAVEPOINT_BEGIN.
-D 2011-05-24T00:35:56.199
+C Do\snot\sinvoke\sthe\sxRollbackTo\sor\sxRelease\smethods\sof\sa\svirtual\stable\swithout\nhaving\sfirst\sinvoked\san\sappropriate\sxSavepoint\smethod.\s\sAdd\sassert()\sstatements\nto\sFTS3/4\sto\sverify\sthat\sthis\sis\shappening\sin\sall\scases.
+D 2011-05-24T15:36:01.532
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -61,9 +61,9 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 18c2a079ba2b9154b7485fd39d1a6d12b5872a76
+F ext/fts3/fts3.c e7600e285b58027657ebb46c6132b7d5a100accb
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 05d145152620e7849c452bd919f2cc3e2d75309f
+F ext/fts3/fts3Int.h c8c0011c5e5b3a7703376ea6cd7deb91cfb96a06
 F ext/fts3/fts3_aux.c 9e931f55eed8498dafe7bc1160f10cbb1a652fdf
 F ext/fts3/fts3_expr.c 5f49e0deaf723724b08100bb3ff40aab02ad0c93
 F ext/fts3/fts3_hash.c 3c8f6387a4a7f5305588b203fa7c887d753e1f1c
@@ -181,7 +181,7 @@ F src/select.c d9d440809025a58547e39f4f268c2a296bfb56ff
 F src/shell.c decd04236a7ef26be5ef46d4ea963044bfad9a48
 F src/sqlite.h.in 91c63a69eeddbd62182ec00dbfee390016972bdb
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
-F src/sqliteInt.h 771087591052966d36ac1fcd3c8bb7a8c6cf9a38
+F src/sqliteInt.h 558170329f2b9cc3ac1a697fda69d6136b1052a1
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -244,7 +244,7 @@ F src/vdbeaux.c 535851211df61d83213c83d5ffd3c6ce9ecbdc18
 F src/vdbeblob.c c3ccb7c8732858c680f442932e66ad06bb036562
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
 F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
-F src/vtab.c 48dcef8bc757c2e7b488f68b5ddebb1650da2450
+F src/vtab.c abc63828276619d7eb8f45ab265ebc2204c85ddd
 F src/wal.c de27c34c8016c00be348fc6bed588816557ceb66
 F src/wal.h 66b40bd91bc29a5be1c88ddd1f5ade8f3f48728a
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
@@ -938,7 +938,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a65d043a2ad895b931871c67e0ef397a1dc614a6
-R 94ee8b905e59bc1d32642c15b01f0858
+P a9d095660ca0e99b226e0fe669c11a0be6c49710
+R 19875cc50e6351fd8eaf432c5942eda7
 U drh
-Z 1f18a51d1c1bfd3a78b89267e4416239
+Z f15ff60c160c7edadf458f2c05939bd4

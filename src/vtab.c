@@ -873,12 +873,14 @@ int sqlite3VtabSavepoint(sqlite3 *db, int op, int iSavepoint){
   if( db->aVTrans ){
     int i;
     for(i=0; rc==SQLITE_OK && i<db->nVTrans; i++){
-      const sqlite3_module *pMod = db->aVTrans[i]->pMod->pModule;
-      if( pMod->iVersion>=2 ){
+      VTable *pVTab = db->aVTrans[i];
+      const sqlite3_module *pMod = pVTab->pMod->pModule;
+      if( pMod->iVersion>=2 && (pVTab->bInSavepoint || op==SAVEPOINT_BEGIN) ){
         int (*xMethod)(sqlite3_vtab *, int);
         switch( op ){
           case SAVEPOINT_BEGIN:
             xMethod = pMod->xSavepoint;
+            pVTab->bInSavepoint = 1;
             break;
           case SAVEPOINT_ROLLBACK:
             xMethod = pMod->xRollbackTo;

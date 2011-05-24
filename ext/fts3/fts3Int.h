@@ -92,11 +92,31 @@ typedef unsigned char u8;         /* 1-byte (or larger) unsigned integer */
 typedef short int i16;            /* 2-byte (or larger) signed integer */
 typedef unsigned int u32;         /* 4-byte unsigned integer */
 typedef sqlite3_uint64 u64;       /* 8-byte unsigned integer */
+
 /*
 ** Macro used to suppress compiler warnings for unused parameters.
 */
 #define UNUSED_PARAMETER(x) (void)(x)
+
+/*
+** Activate assert() only if SQLITE_TEST is enabled.
+*/
+#if !defined(NDEBUG) && !defined(SQLITE_DEBUG) 
+# define NDEBUG 1
 #endif
+
+/*
+** The TESTONLY macro is used to enclose variable declarations or
+** other bits of code that are needed to support the arguments
+** within testcase() and assert() macros.
+*/
+#if defined(SQLITE_DEBUG) || defined(SQLITE_COVERAGE_TEST)
+# define TESTONLY(X)  X
+#else
+# define TESTONLY(X)
+#endif
+
+#endif /* SQLITE_AMALGAMATION */
 
 typedef struct Fts3Table Fts3Table;
 typedef struct Fts3Cursor Fts3Cursor;
@@ -151,6 +171,16 @@ struct Fts3Table {
   int nPendingData;
   sqlite_int64 iPrevDocid;
   Fts3Hash pendingTerms;
+
+#if defined(SQLITE_DEBUG)
+  /* State variables used for validating that the transaction control
+  ** methods of the virtual table are called at appropriate times.  These
+  ** values do not contribution to the FTS computation; they are used for
+  ** verifying the SQLite core.
+  */
+  int inTransaction;     /* True after xBegin but before xCommit/xRollback */
+  int mxSavepoint;       /* Largest valid xSavepoint integer */
+#endif
 };
 
 /*
