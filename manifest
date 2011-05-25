@@ -1,5 +1,5 @@
-C Changes\sto\ssavepoint\sin\svirtual\stables\sfor\ssimpler\sand\smore\sconsistent\noperation.
-D 2011-05-25T01:16:42.774
+C Fix\sa\scompiler\swarning.
+D 2011-05-25T15:54:09.204
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -181,7 +181,7 @@ F src/select.c d9d440809025a58547e39f4f268c2a296bfb56ff
 F src/shell.c decd04236a7ef26be5ef46d4ea963044bfad9a48
 F src/sqlite.h.in 91c63a69eeddbd62182ec00dbfee390016972bdb
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
-F src/sqliteInt.h aba3cb057fabf6ff9fa634d677e750dfa946a856
+F src/sqliteInt.h d9ff5f198b5bac7ee0c6e1ea55f76897ba4dda87
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -938,7 +938,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 651ef24249d8c22c4f13e4c0bb98a60099cfd23a
-R d659c94b5cac09c043b35685a3ce715d
+P 92f26a8b8f18832cb1f8ba7dd8e5b020e71a5883
+R 1179d31eff61655636edf672584723cf
 U drh
-Z 45421066265cfeebb2a0b357f6a7553d
+Z c44adff51be44d9f0cc2862535697c61
