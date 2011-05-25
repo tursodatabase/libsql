@@ -16,56 +16,75 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix fts3prefix
 
+ifcapable !fts3 {
+  finish_test
+  return
+}
+
 # This proc tests that the prefixes index appears to represent the same content
 # as the terms index.
 #
-proc fts3_terms_and_prefixes {db tbl} {
-  $db eval "CREATE VIRTUAL TABLE fts3check1 USING fts4term($tbl);"
-  $db eval "CREATE VIRTUAL TABLE fts3check2 USING fts4prefix($tbl);"
+proc fts3_terms_and_prefixes {db tbl prefixlengths} {
 
-  $db eval {
-    CREATE TEMP TABLE terms AS SELECT * FROM fts3check1;
-    CREATE TEMP TABLE prefixes AS SELECT * FROM fts3check2;
-    CREATE INDEX temp.idx ON prefixes(term);
-    DROP TABLE fts3check1;
-    DROP TABLE fts3check2;
-  }
+  set iIndex 0
+  foreach len $prefixlengths {
+    incr iIndex
+    $db eval {
+      DROP TABLE IF EXISTS fts3check1;
+      DROP TABLE IF EXISTS fts3check2;
+    }
+    $db eval "CREATE VIRTUAL TABLE fts3check1 USING fts4term($tbl, 0);"
+    $db eval "CREATE VIRTUAL TABLE fts3check2 USING fts4term($tbl, $iIndex);"
 
-  $db eval { SELECT term, docid, col, pos FROM temp.terms } a {
-    set nMax [expr [string length $a(term)] - 1]
-    if {$nMax>8} {set nMax 8}
-    for {set n 0} {$n < $nMax} {incr n} {
-      set t [string range $a(term) 0 $n]
+    $db eval {
+      DROP TABLE IF EXISTS temp.terms;
+      DROP TABLE IF EXISTS temp.prefixes;
+      CREATE TEMP TABLE terms AS SELECT * FROM fts3check1;
+      CREATE TEMP TABLE prefixes AS SELECT * FROM fts3check2;
+      CREATE INDEX temp.idx ON prefixes(term);
+      DROP TABLE fts3check1;
+      DROP TABLE fts3check2;
+    }
+
+    set nExpect 0
+    $db eval { SELECT term, docid, col, pos FROM temp.terms } a {
+      if {[string length $a(term)]<$len} continue
+      incr nExpect
+      set prefix [string range $a(term) 0 [expr $len-1]]
       set r [$db one { 
         SELECT count(*) FROM temp.prefixes WHERE 
-        term = $t AND docid = $a(docid) AND col = $a(col) AND pos = $a(pos)
+        term = $prefix AND docid = $a(docid) AND col = $a(col) AND pos = $a(pos)
       }]
       if {$r != 1} {
         error "$t, $a(docid), $a(col), $a(pos)"
       }
     }
-  }
 
-  execsql { DROP TABLE temp.prefixes }
-  execsql { DROP TABLE temp.terms }
+    set nCount [$db one {SELECT count(*) FROM temp.prefixes}]
+    if {$nCount != $nExpect} {
+      error "prefixes.count(*) is $nCount expected $nExpect"
+    }
+  
+    execsql { DROP TABLE temp.prefixes }
+    execsql { DROP TABLE temp.terms }
 
-  set terms_layout [$db eval " 
-    SELECT level, idx FROM ${tbl}_segdir WHERE level < 1024 ORDER by 1, 2
-  "]
-  set prefixes_layout [$db eval " 
-    SELECT level-1024, idx FROM ${tbl}_segdir WHERE level >= 1024 ORDER by 1, 2
-  "]
+    set list [list]
+    $db eval "
+      SELECT sum( 1 << (16*(level%1024)) ) AS total, (level/1024) AS tree 
+      FROM ${tbl}_segdir GROUP BY tree
+    " {
+      lappend list [list $total $tree]
+    }
 
-  if {$terms_layout != $prefixes_layout} {
-    puts "TERMS LAYOUT:  $terms_layout"
-    puts "PREFIX LAYOUT: $prefixes_layout"
-    error "Terms and prefixes are comprised of different b-trees"
+    if { [lsort -integer -index 0 $list] != [lsort -integer -index 1 $list] } {
+      error "inconsistent tree structures: $list"
+    }
   }
 
   return ""
 }
-proc fts3_tap_test {tn db tbl} {
-  uplevel [list do_test $tn [list fts3_terms_and_prefixes $db $tbl] ""]
+proc fts3_tap_test {tn db tbl lens} {
+  uplevel [list do_test $tn [list fts3_terms_and_prefixes $db $tbl $lens] ""]
 }
 
 #-------------------------------------------------------------------------
@@ -73,21 +92,24 @@ proc fts3_tap_test {tn db tbl} {
 # being constructed correctly for the simplest possible case.
 #
 do_execsql_test 1.1 {
-  CREATE VIRTUAL TABLE t1 USING fts4(prefix=1);
-  CREATE VIRTUAL TABLE prefixes USING fts4prefix(t1);
+  CREATE VIRTUAL TABLE t1 USING fts4(prefix='1,3,6');
+
+  CREATE VIRTUAL TABLE p1 USING fts4term(t1, 1);
+  CREATE VIRTUAL TABLE p2 USING fts4term(t1, 2);
+  CREATE VIRTUAL TABLE p3 USING fts4term(t1, 3);
   CREATE VIRTUAL TABLE terms USING fts4term(t1);
 }
 do_execsql_test 1.2 {
   INSERT INTO t1 VALUES('sqlite mysql firebird');
 }
-do_execsql_test 1.3 {
-  SELECT term FROM prefixes;
-} {f fi fir fire fireb firebi firebir firebird m my mys mysq mysql s sq sql sqli sqlit sqlite}
+do_execsql_test 1.3.1 { SELECT term FROM p1 } {f m s}
+do_execsql_test 1.3.2 { SELECT term FROM p2 } {fir mys sql}
+do_execsql_test 1.3.3 { SELECT term FROM p3 } {firebi sqlite}
 do_execsql_test 1.4 {
   SELECT term FROM terms;
 } {firebird mysql sqlite}
 
-fts3_tap_test 1.5 db t1
+fts3_tap_test 1.5 db t1 {1 3 6}
 
 #-------------------------------------------------------------------------
 # A slightly more complicated dataset. This test also verifies that DELETE
@@ -115,15 +137,15 @@ do_execsql_test 2.1 {
   INSERT INTO t1 VALUES('Google. It is now developed and maintained as part');
   INSERT INTO t1 VALUES('of SQLite. ');
 }
-fts3_tap_test 2.2 db t1
+fts3_tap_test 2.2 db t1 {1 3 6}
 do_execsql_test 2.3 { DELETE FROM t1 WHERE docid%2; }
-fts3_tap_test 2.4 db t1
+fts3_tap_test 2.4 db t1 {1 3 6}
 
 do_execsql_test 2.5 { INSERT INTO t1(t1) VALUES('optimize') }
-fts3_tap_test 2.6 db t1
+fts3_tap_test 2.6 db t1 {1 3 6}
 
 do_execsql_test 3.1 {
-  CREATE VIRTUAL TABLE t2 USING fts4(prefix=1);
+  CREATE VIRTUAL TABLE t2 USING fts4(prefix='1,2,3');
   INSERT INTO t2 VALUES('On 12 September the wind direction turned and');
   INSERT INTO t2 VALUES('William''s fleet sailed. A storm blew up and the');
   INSERT INTO t2 VALUES('fleet was forced to take shelter at');
@@ -148,16 +170,16 @@ do_execsql_test 3.1 {
   INSERT INTO t2 VALUES('and waited for Harold''s return from the north.');
 }
 
-fts3_tap_test 3.2 db t2
+fts3_tap_test 3.2 db t2 {1 2 3}
 do_execsql_test 3.3 { SELECT optimize(t2) FROM t2 LIMIT 1 } {{Index optimized}}
-fts3_tap_test 3.4 db t2
+fts3_tap_test 3.4 db t2 {1 2 3}
 
 
 #-------------------------------------------------------------------------
 # Simple tests for reading the prefix-index.
 #
 do_execsql_test 4.1 {
-  CREATE VIRTUAL TABLE t3 USING fts4(prefix=1);
+  CREATE VIRTUAL TABLE t3 USING fts4(prefix="1,4");
   INSERT INTO t3 VALUES('one two three');
   INSERT INTO t3 VALUES('four five six');
   INSERT INTO t3 VALUES('seven eight nine');

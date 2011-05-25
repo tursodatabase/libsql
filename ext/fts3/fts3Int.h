@@ -23,8 +23,6 @@
 #include "fts3_tokenizer.h"
 #include "fts3_hash.h"
 
-#define FTS3_MAX_PREFIX 8
-
 /*
 ** This constant controls how often segments are merged. Once there are
 ** FTS3_MERGE_COUNT segments of level N, they are merged into a single
@@ -56,18 +54,22 @@
 #define FTS3_VARINT_MAX 10
 
 /*
-** FTS4 virtual tables may maintain two separate indexes. One that indexes
-** all document terms (the same index FTS3 tables maintain) and another used
-** for prefixes. B+-trees that are part of the prefix index have values for
-** the %_segdir.level column that are equal to or greater than the following
-** value.
+** FTS4 virtual tables may maintain multiple indexes - one index of all terms
+** in the document set and zero or more prefix indexes. All indexes are stored
+** as one or more b+-trees in the %_segments and %_segdir tables. 
 **
-** It is considered impossible for the regular index to use levels this large.
-** In theory it could, but that would require that at least 2^1024 separate
-** write operations to be made within the lifetime of the database.
+** It is possible to determine which index a b+-tree belongs to based on the
+** value stored in the "%_segdir.level" column. Given this value L, the index
+** that the b+-tree belongs to is (L<<10). In other words, all b+-trees with
+** level values between 0 and 1023 (inclusive) belong to index 0, all levels
+** between 1024 and 2047 to index 1, and so on.
+**
+** It is considered impossible for an index to use more than 1024 levels. In 
+** theory though this may happen, but only after at least 
+** (FTS3_MERGE_COUNT^1024) separate flushes of the pending-terms tables.
 */
-#define FTS3_SEGDIR_PREFIXLEVEL 1024
-#define FTS3_SEGDIR_PREFIXLEVEL_STR "1024"
+#define FTS3_SEGDIR_MAXLEVEL      1024
+#define FTS3_SEGDIR_MAXLEVEL_STR "1024"
 
 /*
 ** The testcase() macro is only used by the amalgamation.  If undefined,
@@ -172,23 +174,32 @@ struct Fts3Table {
   int nNodeSize;                  /* Soft limit for node size */
   u8 bHasStat;                    /* True if %_stat table exists */
   u8 bHasDocsize;                 /* True if %_docsize table exists */
-  u8 bPrefix;                     /* True if there is a prefix index */
   int nPgsz;                      /* Page size for host database */
   char *zSegmentsTbl;             /* Name of %_segments table */
   sqlite3_blob *pSegments;        /* Blob handle open on %_segments table */
 
-  /* The following hash table is used to buffer pending index updates during
+  /* TODO: Fix the first paragraph of this comment.
+  **
+  ** The following hash table is used to buffer pending index updates during
   ** transactions. Variable nPendingData estimates the memory size of the 
   ** pending data, including hash table overhead, but not malloc overhead. 
   ** When nPendingData exceeds nMaxPendingData, the buffer is flushed 
   ** automatically. Variable iPrevDocid is the docid of the most recently
   ** inserted record.
+  **
+  ** A single FTS4 table may have multiple full-text indexes. For each index
+  ** there is an entry in the aIndex[] array. Index 0 is an index of all the
+  ** terms that appear in the document set. Each subsequent index in aIndex[]
+  ** is an index of prefixes of a specific length.
   */
-  int nMaxPendingData;
-  int nPendingData;
-  sqlite_int64 iPrevDocid;
-  Fts3Hash pendingTerms;
-  Fts3Hash pendingPrefixes;
+  int nIndex;                     /* Size of aIndex[] */
+  struct Fts3Index {
+    int nPrefix;                  /* Prefix length (0 for main terms index) */
+    Fts3Hash hPending;            /* Pending terms table for this index */
+  } *aIndex;
+  int nMaxPendingData;            /* Max pending data before flush to disk */
+  int nPendingData;               /* Current bytes of pending data */
+  sqlite_int64 iPrevDocid;        /* Docid of most recently inserted document */
 
 #if defined(SQLITE_DEBUG)
   /* State variables used for validating that the transaction control
@@ -336,10 +347,10 @@ int sqlite3Fts3Optimize(Fts3Table *);
 int sqlite3Fts3SegReaderNew(int, sqlite3_int64,
   sqlite3_int64, sqlite3_int64, const char *, int, Fts3SegReader**);
 int sqlite3Fts3SegReaderPending(
-  Fts3Table*,const char*,int,int,int,Fts3SegReader**);
+  Fts3Table*,int,const char*,int,int,Fts3SegReader**);
 void sqlite3Fts3SegReaderFree(Fts3SegReader *);
 int sqlite3Fts3SegReaderCost(Fts3Cursor *, Fts3SegReader *, int *);
-int sqlite3Fts3AllSegdirs(Fts3Table*, int, sqlite3_stmt **);
+int sqlite3Fts3AllSegdirs(Fts3Table*, int, int, sqlite3_stmt **);
 int sqlite3Fts3ReadLock(Fts3Table *);
 int sqlite3Fts3ReadBlock(Fts3Table*, sqlite3_int64, char **, int*);
 
@@ -355,15 +366,13 @@ void sqlite3Fts3SegmentsClose(Fts3Table *);
 
 /* Special values interpreted by sqlite3SegReaderCursor() */
 #define FTS3_SEGCURSOR_PENDING        -1
-#define FTS3_SEGCURSOR_PENDING_PREFIX -2
-#define FTS3_SEGCURSOR_ALL_PREFIX     -3
-#define FTS3_SEGCURSOR_ALL_TERM       -4
+#define FTS3_SEGCURSOR_ALL            -2
 
 int sqlite3Fts3SegReaderStart(Fts3Table*, Fts3SegReaderCursor*, Fts3SegFilter*);
 int sqlite3Fts3SegReaderStep(Fts3Table *, Fts3SegReaderCursor *);
 void sqlite3Fts3SegReaderFinish(Fts3SegReaderCursor *);
 int sqlite3Fts3SegReaderCursor(
-    Fts3Table *, int, const char *, int, int, int, Fts3SegReaderCursor *);
+    Fts3Table *, int, int, const char *, int, int, int, Fts3SegReaderCursor *);
 
 /* Flags allowed as part of the 4th argument to SegmentReaderIterate() */
 #define FTS3_SEGMENT_REQUIRE_POS   0x00000001

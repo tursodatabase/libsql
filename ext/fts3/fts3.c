@@ -832,6 +832,58 @@ static char *fts3WriteExprList(Fts3Table *p, const char *zFunc, int *pRc){
   return zRet;
 }
 
+static int fts3GobbleInt(const char **pp, int *pnOut){
+  const char *p = *pp;
+  int nInt = 0;
+  for(p=*pp; p[0]>='0' && p[0]<='9'; p++){
+    nInt = nInt * 10 + (p[0] - '0');
+  }
+  if( p==*pp ) return SQLITE_ERROR;
+  *pnOut = nInt;
+  *pp = p;
+  return SQLITE_OK;
+}
+
+
+static int fts3PrefixParameter(
+  const char *zParam,             /* ABC in prefix=ABC parameter to parse */
+  int *pnIndex,                   /* OUT: size of *apIndex[] array */
+  struct Fts3Index **apIndex,     /* OUT: Array of indexes for this table */
+  struct Fts3Index **apFree       /* OUT: Free this with sqlite3_free() */
+){
+  struct Fts3Index *aIndex;
+  int nIndex = 1;
+
+  if( zParam && zParam[0] ){
+    const char *p;
+    nIndex++;
+    for(p=zParam; *p; p++){
+      if( *p==',' ) nIndex++;
+    }
+  }
+
+  aIndex = sqlite3_malloc(sizeof(struct Fts3Index) * nIndex);
+  *apIndex = *apFree = aIndex;
+  *pnIndex = nIndex;
+  if( !aIndex ){
+    return SQLITE_NOMEM;
+  }
+
+  memset(aIndex, 0, sizeof(struct Fts3Index) * nIndex);
+  if( zParam ){
+    const char *p = zParam;
+    int i;
+    for(i=1; i<nIndex; i++){
+      int nPrefix;
+      if( fts3GobbleInt(&p, &nPrefix) ) return SQLITE_ERROR;
+      aIndex[i].nPrefix = nPrefix;
+      p++;
+    }
+  }
+
+  return SQLITE_OK;
+}
+
 /*
 ** This function is the implementation of both the xConnect and xCreate
 ** methods of the FTS3 virtual table.
@@ -865,9 +917,13 @@ static int fts3InitVtab(
   int nName;                      /* Bytes required to hold table name */
   int isFts4 = (argv[0][3]=='4'); /* True for FTS4, false for FTS3 */
   int bNoDocsize = 0;             /* True to omit %_docsize table */
-  int bPrefix = 0;                /* True to include a prefix-search index */
   const char **aCol;              /* Array of column names */
   sqlite3_tokenizer *pTokenizer = 0;        /* Tokenizer for this table */
+
+  char *zPrefix = 0;              /* Prefix parameter value (or NULL) */
+  int nIndex;                     /* Size of aIndex[] array */
+  struct Fts3Index *aIndex;       /* Array of indexes for this table */
+  struct Fts3Index *aFree = 0;    /* Free this before returning */
 
   char *zCompress = 0;
   char *zUncompress = 0;
@@ -929,7 +985,9 @@ static int fts3InitVtab(
         zUncompress = zVal;
         zVal = 0;
       }else if( nKey==6 && 0==sqlite3_strnicmp(z, "prefix", 6) ){
-        bPrefix = 1;
+        sqlite3_free(zPrefix);
+        zPrefix = zVal;
+        zVal = 0;
       }else{
         *pzErr = sqlite3_mprintf("unrecognized parameter: %s", z);
         rc = SQLITE_ERROR;
@@ -958,10 +1016,18 @@ static int fts3InitVtab(
   }
   assert( pTokenizer );
 
+  rc = fts3PrefixParameter(zPrefix, &nIndex, &aIndex, &aFree);
+  if( rc==SQLITE_ERROR ){
+    assert( zPrefix );
+    *pzErr = sqlite3_mprintf("error parsing prefix parameter: %s", zPrefix);
+  }
+  if( rc ) goto fts3_init_out;
+
 
   /* Allocate and populate the Fts3Table structure. */
-  nByte = sizeof(Fts3Table) +              /* Fts3Table */
+  nByte = sizeof(Fts3Table) +                  /* Fts3Table */
           nCol * sizeof(char *) +              /* azColumn */
+          nIndex * sizeof(struct Fts3Index) +  /* aIndex */
           nName +                              /* zName */
           nDb +                                /* zDb */
           nString;                             /* Space for azColumn strings */
@@ -982,12 +1048,16 @@ static int fts3InitVtab(
   p->bHasStat = isFts4;
   TESTONLY( p->inTransaction = -1 );
   TESTONLY( p->mxSavepoint = -1 );
-  p->bPrefix = bPrefix;
-  fts3HashInit(&p->pendingTerms, FTS3_HASH_STRING, 1);
-  fts3HashInit(&p->pendingPrefixes, FTS3_HASH_STRING, 1);
+
+  p->aIndex = (struct Fts3Index *)&p->azColumn[nCol];
+  memcpy(p->aIndex, aIndex, sizeof(struct Fts3Index) * nIndex);
+  p->nIndex = nIndex;
+  for(i=0; i<nIndex; i++){
+    fts3HashInit(&p->aIndex[i].hPending, FTS3_HASH_STRING, 1);
+  }
 
   /* Fill in the zName and zDb fields of the vtab structure. */
-  zCsr = (char *)&p->azColumn[nCol];
+  zCsr = (char *)&p->aIndex[nIndex];
   p->zName = zCsr;
   memcpy(zCsr, argv[2], nName);
   zCsr += nName;
@@ -1034,6 +1104,8 @@ static int fts3InitVtab(
   fts3DeclareVtab(&rc, p);
 
 fts3_init_out:
+  sqlite3_free(zPrefix);
+  sqlite3_free(aFree);
   sqlite3_free(zCompress);
   sqlite3_free(zUncompress);
   sqlite3_free((void *)aCol);
@@ -2144,6 +2216,9 @@ static int fts3DeferredTermSelect(
   return SQLITE_OK;
 }
 
+/*
+** Append SegReader object pNew to the end of the pCsr->apSegment[] array.
+*/
 static int fts3SegReaderCursorAppend(
   Fts3SegReaderCursor *pCsr, 
   Fts3SegReader *pNew
@@ -2163,11 +2238,12 @@ static int fts3SegReaderCursorAppend(
 }
 
 /*
-** Set up a cursor object for iterating through the full-text index or 
-** a single level therein.
+** Set up a cursor object for iterating through a full-text index or a 
+** single level therein.
 */
 int sqlite3Fts3SegReaderCursor(
   Fts3Table *p,                   /* FTS3 table handle */
+  int iIndex,                     /* Index to search (from 0 to p->nIndex-1) */
   int iLevel,                     /* Level of segments to scan */
   const char *zTerm,              /* Term to query for */
   int nTerm,                      /* Size of zTerm in bytes */
@@ -2180,49 +2256,41 @@ int sqlite3Fts3SegReaderCursor(
   int iAge = 0;
   sqlite3_stmt *pStmt = 0;
 
-  assert( iLevel==FTS3_SEGCURSOR_ALL_TERM
+  assert( iIndex>=0 && iIndex<p->nIndex );
+  assert( iLevel==FTS3_SEGCURSOR_ALL
       ||  iLevel==FTS3_SEGCURSOR_PENDING 
-      ||  iLevel==FTS3_SEGCURSOR_PENDING_PREFIX
-      ||  iLevel==FTS3_SEGCURSOR_ALL_PREFIX
       ||  iLevel>=0
   );
-  assert( 0>FTS3_SEGCURSOR_ALL_TERM
-      &&  0>FTS3_SEGCURSOR_PENDING 
-      &&  0>FTS3_SEGCURSOR_PENDING_PREFIX
-      &&  0>FTS3_SEGCURSOR_ALL_PREFIX
-  );
-  assert( iLevel==FTS3_SEGCURSOR_ALL_TERM
-       || iLevel==FTS3_SEGCURSOR_ALL_PREFIX 
-       || (zTerm==0 && isPrefix==1) 
-  );
+  assert( iLevel<FTS3_SEGDIR_MAXLEVEL );
+  assert( FTS3_SEGCURSOR_ALL<0 && FTS3_SEGCURSOR_PENDING<0 );
+  assert( iLevel==FTS3_SEGCURSOR_ALL || (zTerm==0 && isPrefix==1) );
   assert( isPrefix==0 || isScan==0 );
+
+  /* "isScan" is only set to true by the ft4aux module, an ordinary
+  ** full-text tables. */
+  assert( isScan==0 || p->aIndex==0 );
 
   memset(pCsr, 0, sizeof(Fts3SegReaderCursor));
 
-  /* "isScan" is only set to true by the ft4aux module, not an ordinary
-  ** full-text table. The pendingTerms and pendingPrefixes tables must be
-  ** empty in this case. */
-  assert( isScan==0 || fts3HashCount(&p->pendingTerms)==0 );
-  assert( isScan==0 || fts3HashCount(&p->pendingPrefixes)==0 );
-
-  /* If iLevel is less than 0, include a seg-reader for the pending-terms. */
-  if( iLevel<0 && isScan==0 ){
-    int bPrefix = (
-        iLevel==FTS3_SEGCURSOR_PENDING_PREFIX 
-     || iLevel==FTS3_SEGCURSOR_ALL_PREFIX
-    );
-    Fts3SegReader *pPending = 0;
-
-    rc = sqlite3Fts3SegReaderPending(p,zTerm,nTerm,isPrefix,bPrefix,&pPending);
-    if( rc==SQLITE_OK && pPending ){
-      rc = fts3SegReaderCursorAppend(pCsr, pPending);
+  /* If iLevel is less than 0 and this is not a scan, include a seg-reader 
+  ** for the pending-terms. If this is a scan, then this call must be being
+  ** made by an fts4aux module, not an FTS table. In this case calling
+  ** Fts3SegReaderPending might segfault, as the data structures used by 
+  ** fts4aux are not completely populated. So it's easiest to filter these
+  ** calls out here.  */
+  if( iLevel<0 && p->aIndex ){
+    Fts3SegReader *pSeg = 0;
+    rc = sqlite3Fts3SegReaderPending(p, iIndex, zTerm, nTerm, isPrefix, &pSeg);
+    if( rc==SQLITE_OK && pSeg ){
+      rc = fts3SegReaderCursorAppend(pCsr, pSeg);
     }
   }
 
-  if( iLevel!=FTS3_SEGCURSOR_PENDING && iLevel!=FTS3_SEGCURSOR_PENDING_PREFIX ){
+  if( iLevel!=FTS3_SEGCURSOR_PENDING ){
     if( rc==SQLITE_OK ){
-      rc = sqlite3Fts3AllSegdirs(p, iLevel, &pStmt);
+      rc = sqlite3Fts3AllSegdirs(p, iIndex, iLevel, &pStmt);
     }
+
     while( rc==SQLITE_OK && SQLITE_ROW==(rc = sqlite3_step(pStmt)) ){
       Fts3SegReader *pSeg = 0;
 
@@ -2273,17 +2341,25 @@ static int fts3TermSegReaderCursor(
   if( pSegcsr ){
     int i;
     int nCost = 0;
+    int bFound = 0;               /* True once an index has been found */
     Fts3Table *p = (Fts3Table *)pCsr->base.pVtab;
 
-    if( isPrefix && p->bPrefix && nTerm<=FTS3_MAX_PREFIX ){
-      rc = sqlite3Fts3SegReaderCursor(
-          p, FTS3_SEGCURSOR_ALL_PREFIX, zTerm, nTerm, 0, 0, pSegcsr);
-
-    }else{
-      rc = sqlite3Fts3SegReaderCursor(
-          p, FTS3_SEGCURSOR_ALL_TERM, zTerm, nTerm, isPrefix, 0, pSegcsr);
+    if( isPrefix ){
+      for(i=1; i<p->nIndex; i++){
+        if( p->aIndex[i].nPrefix==nTerm ){
+          bFound = 1;
+          rc = sqlite3Fts3SegReaderCursor(
+              p, i, FTS3_SEGCURSOR_ALL, zTerm, nTerm, 0, 0, pSegcsr);
+          break;
+        }
+      }
     }
-  
+
+    if( bFound==0 ){
+      rc = sqlite3Fts3SegReaderCursor(
+          p, 0, FTS3_SEGCURSOR_ALL, zTerm, nTerm, isPrefix, 0, pSegcsr
+      );
+    }
     for(i=0; rc==SQLITE_OK && i<pSegcsr->nSegment; i++){
       rc = sqlite3Fts3SegReaderCost(pCsr, pSegcsr->apSegment[i], &nCost);
     }
@@ -3340,7 +3416,6 @@ static int fts3RollbackMethod(sqlite3_vtab *pVtab){
   assert( p->inTransaction!=0 );
   TESTONLY( p->inTransaction = 0 );
   TESTONLY( p->mxSavepoint = -1; );
-  sqlite3Fts3PendingPrefixesClear((Fts3Table *)pVtab);
   return SQLITE_OK;
 }
 
@@ -3715,7 +3790,6 @@ static int fts3RollbackToMethod(sqlite3_vtab *pVtab, int iSavepoint){
   assert( p->mxSavepoint >= iSavepoint );
   TESTONLY( p->mxSavepoint = iSavepoint );
   sqlite3Fts3PendingTermsClear(p);
-  sqlite3Fts3PendingPrefixesClear((Fts3Table *)pVtab);
   return SQLITE_OK;
 }
 

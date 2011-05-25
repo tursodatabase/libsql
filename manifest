@@ -1,5 +1,5 @@
-C If\sthe\sfts4\soption\sprefix=1\sis\sspecified,\shave\sthe\sfts4\smodule\smaintain\san\sindex\sof\sprefixes\sas\swell\sas\sterms.
-D 2011-05-24T18:49:45.786
+C Change\sfts4\sso\sthat\sthe\sprefix=\sparameter\sis\spasses\sa\scomma-separated\slist\sof\sintegers.\sFor\seach\sinteger\sN,\sa\sseparate\sindex\sof\sall\sprefixes\sof\slength\sN\sbytes\sis\screated.
+D 2011-05-25T18:34:53.807
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -61,21 +61,21 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 4a48bfef342badba0a71bdeb5354edaa3ad83382
+F ext/fts3/fts3.c 9ebda4cd406e5aa234977caa97c2045d36048753
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 02699211c0b6cf5aa713cc68c527c9a6e9159fbe
-F ext/fts3/fts3_aux.c d68d8e4d39e0342302d2c834618755af7c8058ea
+F ext/fts3/fts3Int.h deeeac21d17da06683a79b40ae119b93cf86f90a
+F ext/fts3/fts3_aux.c 2817a1ec9ffbad673cb1a1527ad807811bc7645b
 F ext/fts3/fts3_expr.c 5f49e0deaf723724b08100bb3ff40aab02ad0c93
 F ext/fts3/fts3_hash.c 3c8f6387a4a7f5305588b203fa7c887d753e1f1c
 F ext/fts3/fts3_hash.h 8331fb2206c609f9fc4c4735b9ab5ad6137c88ec
 F ext/fts3/fts3_icu.c ac494aed69835008185299315403044664bda295
 F ext/fts3/fts3_porter.c d61cfd81fb0fd8fbcb25adcaee0ba671aefaa5c2
 F ext/fts3/fts3_snippet.c 92b40397b28422c35c4127492d7ac6da34d1966a
-F ext/fts3/fts3_term.c cd226a311940b8ef414d5c1f7c74971a47cacedb
+F ext/fts3/fts3_term.c 0ade1812c0e97f394b58299810dfd5d2fb7ba501
 F ext/fts3/fts3_tokenizer.c 055f3dc7369585350b28db1ee0f3b214dca6724d
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 6e5cbaa588924ac578263a598e4fb9f5c9bb179d
-F ext/fts3/fts3_write.c 0fd6a55c774731852f889007fc6edb1b99819ee5
+F ext/fts3/fts3_write.c 416b367f56f3100314fa76615535178718c645e1
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
@@ -473,7 +473,7 @@ F test/fts3fault2.test dc96203af6ba31ce20163fc35460e1556e8edf4d
 F test/fts3malloc.test 9c8cc3f885bb4dfc66d0460c52f68f45e4710d1b
 F test/fts3matchinfo.test cc0b009edbbf575283d5fdb53271179e0d8019ba
 F test/fts3near.test 2e318ee434d32babd27c167142e2b94ddbab4844
-F test/fts3prefix.test 5b4e08c63d5d4a79e54754dc6b2209b03c885200
+F test/fts3prefix.test c51b04f38ce232cd0c9edd3cc60dc981db5e2726
 F test/fts3query.test ef79d31fdb355d094baec1c1b24b60439a1fb8a2
 F test/fts3rnd.test 2b1a579be557ab8ac54a51b39caa4aa8043cc4ad
 F test/fts3shared.test 8bb266521d7c5495c0ae522bb4d376ad5387d4a2
@@ -939,10 +939,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 651ef24249d8c22c4f13e4c0bb98a60099cfd23a
-R c499b030bb5d74c4afca730dec7a05bc
-T *branch * fts3-prefix-search
-T *sym-fts3-prefix-search *
-T -sym-trunk *
+P b5bdc639898ee22eebedeb560810e94e74de8aa4
+R e9f427c5bc714eae400763155f710174
 U dan
-Z 0c60a0f2885eb6df2e24e22407faffbe
+Z 6f0f673a9e9eaf0f72d887565c9f2227
