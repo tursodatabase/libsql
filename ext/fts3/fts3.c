@@ -3781,7 +3781,7 @@ static int fts3ReleaseMethod(sqlite3_vtab *pVtab, int iSavepoint){
   TESTONLY( Fts3Table *p = (Fts3Table*)pVtab );
   assert( p->inTransaction );
   assert( p->mxSavepoint >= iSavepoint );
-  TESTONLY( p->mxSavepoint = iSavepoint>0 ? iSavepoint-1 : 0 );
+  TESTONLY( p->mxSavepoint = iSavepoint-1 );
   return SQLITE_OK;
 }
 static int fts3RollbackToMethod(sqlite3_vtab *pVtab, int iSavepoint){

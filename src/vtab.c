@@ -577,11 +577,11 @@ int sqlite3VtabCallConnect(Parse *pParse, Table *pTab){
 
   return rc;
 }
-
 /*
-** Add the virtual table pVTab to the array sqlite3.aVTrans[].
+** Grow the db->aVTrans[] array so that there is room for at least one
+** more v-table. Return SQLITE_NOMEM if a malloc fails, or SQLITE_OK otherwise.
 */
-static int addToVTrans(sqlite3 *db, VTable *pVTab){
+static int growVTrans(sqlite3 *db){
   const int ARRAY_INCR = 5;
 
   /* Grow the sqlite3.aVTrans array if required */
@@ -596,10 +596,17 @@ static int addToVTrans(sqlite3 *db, VTable *pVTab){
     db->aVTrans = aVTrans;
   }
 
+  return SQLITE_OK;
+}
+
+/*
+** Add the virtual table pVTab to the array sqlite3.aVTrans[]. Space should
+** have already been reserved using growVTrans().
+*/
+static void addToVTrans(sqlite3 *db, VTable *pVTab){
   /* Add pVtab to the end of sqlite3.aVTrans */
   db->aVTrans[db->nVTrans++] = pVTab;
   sqlite3VtabLock(pVTab);
-  return SQLITE_OK;
 }
 
 /*
@@ -637,7 +644,10 @@ int sqlite3VtabCallCreate(sqlite3 *db, int iDb, const char *zTab, char **pzErr){
   /* Justification of ALWAYS():  The xConstructor method is required to
   ** create a valid sqlite3_vtab if it returns SQLITE_OK. */
   if( rc==SQLITE_OK && ALWAYS(sqlite3GetVTable(db, pTab)) ){
-      rc = addToVTrans(db, sqlite3GetVTable(db, pTab));
+    rc = growVTrans(db);
+    if( rc==SQLITE_OK ){
+      addToVTrans(db, sqlite3GetVTable(db, pTab));
+    }
   }
 
   return rc;
@@ -753,6 +763,7 @@ static void callFinaliser(sqlite3 *db, int offset){
         x = *(int (**)(sqlite3_vtab *))((char *)p->pModule + offset);
         if( x ) x(p);
       }
+      pVTab->iSavepoint = 0;
       sqlite3VtabUnlock(pVTab);
     }
     sqlite3DbFree(db, db->aVTrans);
@@ -842,10 +853,14 @@ int sqlite3VtabBegin(sqlite3 *db, VTable *pVTab){
       }
     }
 
-    /* Invoke the xBegin method */
-    rc = pModule->xBegin(pVTab->pVtab);
+    /* Invoke the xBegin method. If successful, add the vtab to the 
+    ** sqlite3.aVTrans[] array. */
+    rc = growVTrans(db);
     if( rc==SQLITE_OK ){
-      rc = addToVTrans(db, pVTab);
+      rc = pModule->xBegin(pVTab->pVtab);
+      if( rc==SQLITE_OK ){
+        addToVTrans(db, pVTab);
+      }
     }
   }
   return rc;
@@ -870,17 +885,18 @@ int sqlite3VtabSavepoint(sqlite3 *db, int op, int iSavepoint){
   int rc = SQLITE_OK;
 
   assert( op==SAVEPOINT_RELEASE||op==SAVEPOINT_ROLLBACK||op==SAVEPOINT_BEGIN );
+  assert( iSavepoint>=0 );
   if( db->aVTrans ){
     int i;
     for(i=0; rc==SQLITE_OK && i<db->nVTrans; i++){
       VTable *pVTab = db->aVTrans[i];
       const sqlite3_module *pMod = pVTab->pMod->pModule;
-      if( pMod->iVersion>=2 && (pVTab->bInSavepoint || op==SAVEPOINT_BEGIN) ){
+      if( pMod->iVersion>=2 ){
         int (*xMethod)(sqlite3_vtab *, int);
         switch( op ){
           case SAVEPOINT_BEGIN:
             xMethod = pMod->xSavepoint;
-            pVTab->bInSavepoint = 1;
+            pVTab->iSavepoint = iSavepoint+1;
             break;
           case SAVEPOINT_ROLLBACK:
             xMethod = pMod->xRollbackTo;
@@ -889,7 +905,9 @@ int sqlite3VtabSavepoint(sqlite3 *db, int op, int iSavepoint){
             xMethod = pMod->xRelease;
             break;
         }
-        if( xMethod ) rc = xMethod(db->aVTrans[i]->pVtab, iSavepoint);
+        if( xMethod && pVTab->iSavepoint>iSavepoint ){
+          rc = xMethod(db->aVTrans[i]->pVtab, iSavepoint);
+        }
       }
     }
   }
