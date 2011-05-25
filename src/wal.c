@@ -2539,10 +2539,12 @@ static int walRestartLog(Wal *pWal){
         if( pWal->mxWalSize>=0 ){
           i64 sz;
           int rx;
+          sqlite3BeginBenignMalloc();
           rx = sqlite3OsFileSize(pWal->pWalFd, &sz);
           if( rx==SQLITE_OK && (sz > pWal->mxWalSize) ){
             rx = sqlite3OsTruncate(pWal->pWalFd, pWal->mxWalSize);
           }
+          sqlite3EndBenignMalloc();
           if( rx ){
             sqlite3_log(rx, "cannot limit WAL size: %s", pWal->zWalName);
           }
