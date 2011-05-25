@@ -193,5 +193,11 @@ do_execsql_test 4.3 {
 do_execsql_test 4.4 {
   SELECT * FROM t3 WHERE t3 MATCH 's*'
 } {{four five six} {seven eight nine}}
+do_execsql_test 4.5 {
+  SELECT * FROM t3 WHERE t3 MATCH 'sev*'
+} {{seven eight nine}}
+do_execsql_test 4.6 {
+  SELECT * FROM t3 WHERE t3 MATCH 'one*'
+} {{one two three}}
 
 finish_test

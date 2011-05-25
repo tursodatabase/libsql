@@ -422,7 +422,7 @@ int sqlite3Fts3AllSegdirs(
   assert( iLevel<FTS3_SEGDIR_MAXLEVEL );
   assert( iIndex>=0 && iIndex<p->nIndex );
 
-  if( iLevel==FTS3_SEGCURSOR_ALL ){
+  if( iLevel<0 ){
     /* "SELECT * FROM %_segdir WHERE level BETWEEN ? AND ? ORDER BY ..." */
     rc = fts3SqlStmt(p, SQL_SELECT_LEVEL_RANGE, &pStmt, 0);
     if( rc==SQLITE_OK ){ 

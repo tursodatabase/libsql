@@ -2237,11 +2237,7 @@ static int fts3SegReaderCursorAppend(
   return SQLITE_OK;
 }
 
-/*
-** Set up a cursor object for iterating through a full-text index or a 
-** single level therein.
-*/
-int sqlite3Fts3SegReaderCursor(
+static int fts3SegReaderCursor(
   Fts3Table *p,                   /* FTS3 table handle */
   int iIndex,                     /* Index to search (from 0 to p->nIndex-1) */
   int iLevel,                     /* Level of segments to scan */
@@ -2253,24 +2249,7 @@ int sqlite3Fts3SegReaderCursor(
 ){
   int rc = SQLITE_OK;
   int rc2;
-  int iAge = 0;
   sqlite3_stmt *pStmt = 0;
-
-  assert( iIndex>=0 && iIndex<p->nIndex );
-  assert( iLevel==FTS3_SEGCURSOR_ALL
-      ||  iLevel==FTS3_SEGCURSOR_PENDING 
-      ||  iLevel>=0
-  );
-  assert( iLevel<FTS3_SEGDIR_MAXLEVEL );
-  assert( FTS3_SEGCURSOR_ALL<0 && FTS3_SEGCURSOR_PENDING<0 );
-  assert( iLevel==FTS3_SEGCURSOR_ALL || (zTerm==0 && isPrefix==1) );
-  assert( isPrefix==0 || isScan==0 );
-
-  /* "isScan" is only set to true by the ft4aux module, an ordinary
-  ** full-text tables. */
-  assert( isScan==0 || p->aIndex==0 );
-
-  memset(pCsr, 0, sizeof(Fts3SegReaderCursor));
 
   /* If iLevel is less than 0 and this is not a scan, include a seg-reader 
   ** for the pending-terms. If this is a scan, then this call must be being
@@ -2310,12 +2289,11 @@ int sqlite3Fts3SegReaderCursor(
         if( isPrefix==0 && isScan==0 ) iLeavesEndBlock = iStartBlock;
       }
  
-      rc = sqlite3Fts3SegReaderNew(iAge, iStartBlock, iLeavesEndBlock,
-          iEndBlock, zRoot, nRoot, &pSeg
+      rc = sqlite3Fts3SegReaderNew(pCsr->nSegment+1, 
+          iStartBlock, iLeavesEndBlock, iEndBlock, zRoot, nRoot, &pSeg
       );
       if( rc!=SQLITE_OK ) goto finished;
       rc = fts3SegReaderCursorAppend(pCsr, pSeg);
-      iAge++;
     }
   }
 
@@ -2324,6 +2302,49 @@ int sqlite3Fts3SegReaderCursor(
   if( rc==SQLITE_DONE ) rc = rc2;
 
   return rc;
+}
+
+/*
+** Set up a cursor object for iterating through a full-text index or a 
+** single level therein.
+*/
+int sqlite3Fts3SegReaderCursor(
+  Fts3Table *p,                   /* FTS3 table handle */
+  int iIndex,                     /* Index to search (from 0 to p->nIndex-1) */
+  int iLevel,                     /* Level of segments to scan */
+  const char *zTerm,              /* Term to query for */
+  int nTerm,                      /* Size of zTerm in bytes */
+  int isPrefix,                   /* True for a prefix search */
+  int isScan,                     /* True to scan from zTerm to EOF */
+  Fts3SegReaderCursor *pCsr       /* Cursor object to populate */
+){
+  assert( iIndex>=0 && iIndex<p->nIndex );
+  assert( iLevel==FTS3_SEGCURSOR_ALL
+      ||  iLevel==FTS3_SEGCURSOR_PENDING 
+      ||  iLevel>=0
+  );
+  assert( iLevel<FTS3_SEGDIR_MAXLEVEL );
+  assert( FTS3_SEGCURSOR_ALL<0 && FTS3_SEGCURSOR_PENDING<0 );
+  assert( isPrefix==0 || isScan==0 );
+
+  /* "isScan" is only set to true by the ft4aux module, an ordinary
+  ** full-text tables. */
+  assert( isScan==0 || p->aIndex==0 );
+
+  memset(pCsr, 0, sizeof(Fts3SegReaderCursor));
+
+  return fts3SegReaderCursor(
+      p, iIndex, iLevel, zTerm, nTerm, isPrefix, isScan, pCsr
+  );
+}
+
+static int fts3SegReaderCursorAddZero(
+  Fts3Table *p,
+  const char *zTerm,
+  int nTerm,
+  Fts3SegReaderCursor *pCsr
+){
+  return fts3SegReaderCursor(p, 0, FTS3_SEGCURSOR_ALL, zTerm, nTerm, 0, 0,pCsr);
 }
 
 
@@ -2345,12 +2366,23 @@ static int fts3TermSegReaderCursor(
     Fts3Table *p = (Fts3Table *)pCsr->base.pVtab;
 
     if( isPrefix ){
-      for(i=1; i<p->nIndex; i++){
+      for(i=1; bFound==0 && i<p->nIndex; i++){
         if( p->aIndex[i].nPrefix==nTerm ){
           bFound = 1;
           rc = sqlite3Fts3SegReaderCursor(
               p, i, FTS3_SEGCURSOR_ALL, zTerm, nTerm, 0, 0, pSegcsr);
-          break;
+        }
+      }
+
+      for(i=1; bFound==0 && i<p->nIndex; i++){
+        if( p->aIndex[i].nPrefix==nTerm+1 ){
+          bFound = 1;
+          rc = sqlite3Fts3SegReaderCursor(
+              p, i, FTS3_SEGCURSOR_ALL, zTerm, nTerm, 1, 0, pSegcsr
+          );
+          if( rc==SQLITE_OK ){
+            rc = fts3SegReaderCursorAddZero(p, zTerm, nTerm, pSegcsr);
+          }
         }
       }
     }
