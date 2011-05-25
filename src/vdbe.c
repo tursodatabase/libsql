@@ -2840,7 +2840,7 @@ case OP_Transaction: {
         p->iStatement = db->nSavepoint + db->nStatement;
       }
 
-      rc = sqlite3VtabSavepoint(db, SAVEPOINT_BEGIN, p->iStatement);
+      rc = sqlite3VtabSavepoint(db, SAVEPOINT_BEGIN, p->iStatement-1);
       if( rc==SQLITE_OK ){
         rc = sqlite3BtreeBeginStmt(pBt, p->iStatement);
       }

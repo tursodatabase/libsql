@@ -753,6 +753,7 @@ static void callFinaliser(sqlite3 *db, int offset){
         x = *(int (**)(sqlite3_vtab *))((char *)p->pModule + offset);
         if( x ) x(p);
       }
+      pVTab->iSavepoint = 0;
       sqlite3VtabUnlock(pVTab);
     }
     sqlite3DbFree(db, db->aVTrans);
@@ -870,17 +871,18 @@ int sqlite3VtabSavepoint(sqlite3 *db, int op, int iSavepoint){
   int rc = SQLITE_OK;
 
   assert( op==SAVEPOINT_RELEASE||op==SAVEPOINT_ROLLBACK||op==SAVEPOINT_BEGIN );
+  assert( iSavepoint>=0 );
   if( db->aVTrans ){
     int i;
     for(i=0; rc==SQLITE_OK && i<db->nVTrans; i++){
       VTable *pVTab = db->aVTrans[i];
       const sqlite3_module *pMod = pVTab->pMod->pModule;
-      if( pMod->iVersion>=2 && (pVTab->bInSavepoint || op==SAVEPOINT_BEGIN) ){
+      if( pMod->iVersion>=2 ){
         int (*xMethod)(sqlite3_vtab *, int);
         switch( op ){
           case SAVEPOINT_BEGIN:
             xMethod = pMod->xSavepoint;
-            pVTab->bInSavepoint = 1;
+            pVTab->iSavepoint = iSavepoint+1;
             break;
           case SAVEPOINT_ROLLBACK:
             xMethod = pMod->xRollbackTo;
@@ -889,7 +891,9 @@ int sqlite3VtabSavepoint(sqlite3 *db, int op, int iSavepoint){
             xMethod = pMod->xRelease;
             break;
         }
-        if( xMethod ) rc = xMethod(db->aVTrans[i]->pVtab, iSavepoint);
+        if( xMethod && pVTab->iSavepoint>iSavepoint ){
+          rc = xMethod(db->aVTrans[i]->pVtab, iSavepoint);
+        }
       }
     }
   }
