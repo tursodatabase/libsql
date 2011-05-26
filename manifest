@@ -1,5 +1,5 @@
-C Fix\ssome\sminor\sand\sharmless\scompiler\swarnings.
-D 2011-05-25T23:18:02.794
+C Changes\sto\swork\swith\sSQLITE_OMIT_VIRTUAL_TABLE.
+D 2011-05-26T14:19:14.865
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -236,7 +236,7 @@ F src/update.c 5bcb56e5c7380a2eecb0e71891dbd4ad7437748f
 F src/utf.c d83650c3ea08f7407bd9d0839d9885241c209c60
 F src/util.c 0f33bbbdfcc4a2d8cf20c3b2a16ffc3b57c58a70
 F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
-F src/vdbe.c 4812f0e5813b3969307ec466d26d9b32b7b814e9
+F src/vdbe.c a8ff6724d4f1ca8c45ef778d67633d1fb4d9bdbf
 F src/vdbe.h 8a675fefdf7119441fe817c800a9a52440c2e797
 F src/vdbeInt.h fe8f58d305e629fff02f61f655aca1d299f1f6ae
 F src/vdbeapi.c e0e2672e0a96ae3f8575c8ecd02912a3e8a554a1
@@ -705,7 +705,7 @@ F test/threadtest2.c ace893054fa134af3fc8d6e7cfecddb8e3acefb9
 F test/threadtest3.c 0ed13e09690f6204d7455fac3b0e8ece490f6eef
 F test/tkt-02a8e81d44.test 58494de77be2cf249228ada3f313fa399821c6ab
 F test/tkt-26ff0c2d1e.test 888324e751512972c6e0d1a09df740d8f5aaf660
-F test/tkt-2d1a5c67d.test 450b3cf86ca9a3b1fd0a9e136978142be3bff7e0
+F test/tkt-2d1a5c67d.test 73574c758502bf23260c17f97fcd9316dfb5a060
 F test/tkt-2ea2425d34.test 1cf13e6f75d149b3209a0cb32927a82d3d79fb28
 F test/tkt-31338dca7e.test 5741cd48de500347a437ba1be58c8335e83c5a5e
 F test/tkt-313723c356.test c47f8a9330523e6f35698bf4489bcb29609b53ac
@@ -938,7 +938,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P dd19105aa9521ffc0edcf16b84c064d5ebad55d7
-R 008aea5da6bfc4eb7e4a2c09eb3620eb
+P a4755e7088c3cc7c5ea191ce37f3950472f523ec
+R 730ee7bc721983cbb8520125b21bb17e
 U drh
-Z e8c2f21e52caf9d88919dc2348e8bfe9
+Z d447764bdbeb7397b78d42ae4b389d7c

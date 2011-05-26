@@ -2584,6 +2584,7 @@ case OP_Savepoint: {
     }else{
       nName = sqlite3Strlen30(zName);
 
+#ifdef SQLITE_OMIT_VIRTUAL_TABLE
       /* This call is Ok even if this savepoint is actually a transaction
       ** savepoint (and therefore should not prompt xSavepoint()) callbacks.
       ** If this is a transaction savepoint being opened, it is guaranteed
@@ -2592,6 +2593,7 @@ case OP_Savepoint: {
       rc = sqlite3VtabSavepoint(db, SAVEPOINT_BEGIN,
                                 db->nStatement+db->nSavepoint);
       if( rc!=SQLITE_OK ) goto abort_due_to_error;
+#endif
 
       /* Create a new savepoint structure. */
       pNew = sqlite3DbMallocRaw(db, sizeof(Savepoint)+nName+1);
