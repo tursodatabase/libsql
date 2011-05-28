@@ -1,5 +1,5 @@
-C Print\sa\slog\smessage\son\seach\scache\sspill\sif\scompiled\swith\nSQLITE_LOG_CACHE_SPILL.
-D 2011-05-28T15:53:07.056
+C Fix\sa\s"#ifdef"\sfrom\scheck-in\s[03f7d36a8a]\sthat\sshould\shave\sbeen\s"#ifndef".
+D 2011-05-28T19:24:15.852
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -236,7 +236,7 @@ F src/update.c 5bcb56e5c7380a2eecb0e71891dbd4ad7437748f
 F src/utf.c d83650c3ea08f7407bd9d0839d9885241c209c60
 F src/util.c 0f33bbbdfcc4a2d8cf20c3b2a16ffc3b57c58a70
 F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
-F src/vdbe.c a8ff6724d4f1ca8c45ef778d67633d1fb4d9bdbf
+F src/vdbe.c 380dddc404c1e4a9260a4194daa728b94ed102d7
 F src/vdbe.h 8a675fefdf7119441fe817c800a9a52440c2e797
 F src/vdbeInt.h fe8f58d305e629fff02f61f655aca1d299f1f6ae
 F src/vdbeapi.c e0e2672e0a96ae3f8575c8ecd02912a3e8a554a1
@@ -938,7 +938,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 03f7d36a8a24825b7542b5fed651af1622ae4eb5
-R ecca10c4aa82cb4b740a494236bdb180
+P 5f15579f8ca747f0fa0a7867ceffc8c7b8f904e6
+R a63903941bea8f77658823b8763468e2
 U drh
-Z 7233c15025f0530a32ecee3359d1f724
+Z 62e9bfe1cc7669e25feec8cecb39066d
