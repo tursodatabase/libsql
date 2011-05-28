@@ -274,6 +274,34 @@ ifcapable compound&&attach {
     set ::update_hook
   } [list]
 }
+
+do_test hook-4.4 {
+  execsql {
+    CREATE TABLE t4(a UNIQUE, b);
+    INSERT INTO t4 VALUES(1, 'a');
+    INSERT INTO t4 VALUES(2, 'b');
+  }
+  set ::update_hook [list]
+  execsql {
+    REPLACE INTO t4 VALUES(1, 'c');
+  }
+  set ::update_hook
+} [list INSERT main t4 3 ]
+do_execsql_test hook-4.4.1 {
+  SELECT * FROM t4 ORDER BY a;
+} {1 c 2 b}
+do_test hook-4.4.2 {
+  set ::update_hook [list]
+  execsql {
+    PRAGMA recursive_triggers = on;
+    REPLACE INTO t4 VALUES(1, 'd');
+  }
+  set ::update_hook
+} [list INSERT main t4 4 ]
+do_execsql_test hook-4.4.3 {
+  SELECT * FROM t4 ORDER BY a;
+} {1 d 2 b}
+
 db update_hook {}
 #
 #----------------------------------------------------------------------------

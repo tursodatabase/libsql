@@ -228,16 +228,17 @@ static int fts3ExprNearTrim(Fts3Expr *pExpr){
 */
 static int fts3ExprLoadDoclistsCb(Fts3Expr *pExpr, int iPhrase, void *ctx){
   int rc = SQLITE_OK;
+  Fts3Phrase *pPhrase = pExpr->pPhrase;
   LoadDoclistCtx *p = (LoadDoclistCtx *)ctx;
 
   UNUSED_PARAMETER(iPhrase);
 
   p->nPhrase++;
-  p->nToken += pExpr->pPhrase->nToken;
+  p->nToken += pPhrase->nToken;
 
-  if( pExpr->isLoaded==0 ){
+  if( pPhrase->isLoaded==0 ){
     rc = sqlite3Fts3ExprLoadDoclist(p->pCsr, pExpr);
-    pExpr->isLoaded = 1;
+    pPhrase->isLoaded = 1;
     if( rc==SQLITE_OK ){
       rc = fts3ExprNearTrim(pExpr);
     }
@@ -826,16 +827,15 @@ static int fts3ExprGlobalHitsCb(
 ){
   MatchInfo *p = (MatchInfo *)pCtx;
   Fts3Cursor *pCsr = p->pCursor;
+  Fts3Phrase *pPhrase = pExpr->pPhrase; 
   char *pIter;
   char *pEnd;
   char *pFree = 0;
   u32 *aOut = &p->aMatchinfo[3*iPhrase*p->nCol];
 
-  assert( pExpr->isLoaded );
-  assert( pExpr->eType==FTSQUERY_PHRASE );
+  assert( pPhrase->isLoaded );
 
   if( pCsr->pDeferred ){
-    Fts3Phrase *pPhrase = pExpr->pPhrase;
     int ii;
     for(ii=0; ii<pPhrase->nToken; ii++){
       if( pPhrase->aToken[ii].bFulltext ) break;
@@ -855,8 +855,8 @@ static int fts3ExprGlobalHitsCb(
       return SQLITE_OK;
     }
   }else{
-    pIter = pExpr->aDoclist;
-    pEnd = &pExpr->aDoclist[pExpr->nDoclist];
+    pIter = pPhrase->aDoclist;
+    pEnd = &pPhrase->aDoclist[pPhrase->nDoclist];
   }
 
   /* Fill in the global hit count matrix row for this phrase. */
@@ -885,7 +885,7 @@ static int fts3ExprLocalHitsCb(
 
   for(i=0; i<p->nCol; i++) p->aMatchinfo[iStart+i*3] = 0;
 
-  if( pExpr->aDoclist ){
+  if( pExpr->pPhrase->aDoclist ){
     char *pCsr;
 
     pCsr = sqlite3Fts3FindPositions(p->pCursor, pExpr, p->pCursor->iPrevId, -1);

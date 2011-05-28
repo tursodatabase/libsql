@@ -268,17 +268,16 @@ struct Fts3Cursor {
 ** sequence.  A single token is the base case and the most common case.
 ** For a sequence of tokens contained in double-quotes (i.e. "one two three")
 ** nToken will be the number of tokens in the string.
-**
-** The nDocMatch and nMatch variables contain data that may be used by the
-** matchinfo() function. They are populated when the full-text index is 
-** queried for hits on the phrase. If one or more tokens in the phrase
-** are deferred, the nDocMatch and nMatch variables are populated based
-** on the assumption that the 
 */
 struct Fts3PhraseToken {
   char *z;                        /* Text of the token */
   int n;                          /* Number of bytes in buffer z */
   int isPrefix;                   /* True if token ends with a "*" character */
+
+  /* Variables above this point are populated when the expression is
+  ** parsed (by code in fts3_expr.c). Below this point the variables are
+  ** used when evaluating the expression. */
+
   int bFulltext;                  /* True if full-text index was used */
   Fts3SegReaderCursor *pSegcsr;   /* Segment-reader for this token */
   Fts3DeferredToken *pDeferred;   /* Deferred token object for this token */
@@ -288,18 +287,24 @@ struct Fts3Phrase {
   /* Variables populated by fts3_expr.c when parsing a MATCH expression */
   int nToken;                /* Number of tokens in the phrase */
   int iColumn;               /* Index of column this phrase must match */
-  int isNot;                 /* Phrase prefixed by unary not (-) operator */
+
+  int isLoaded;              /* True if aDoclist/nDoclist are initialized. */
+  char *aDoclist;            /* Buffer containing doclist */
+  int nDoclist;              /* Size of aDoclist in bytes */
+  sqlite3_int64 iCurrent;
+  char *pCurrent;
+
   Fts3PhraseToken aToken[1]; /* One entry for each token in the phrase */
 };
 
 /*
 ** A tree of these objects forms the RHS of a MATCH operator.
 **
-** If Fts3Expr.eType is either FTSQUERY_NEAR or FTSQUERY_PHRASE and isLoaded
-** is true, then aDoclist points to a malloced buffer, size nDoclist bytes, 
-** containing the results of the NEAR or phrase query in FTS3 doclist
-** format. As usual, the initial "Length" field found in doclists stored
-** on disk is omitted from this buffer.
+** If Fts3Expr.eType is FTSQUERY_PHRASE and isLoaded is true, then aDoclist 
+** points to a malloced buffer, size nDoclist bytes, containing the results 
+** of this phrase query in FTS3 doclist format. As usual, the initial 
+** "Length" field found in doclists stored on disk is omitted from this 
+** buffer.
 **
 ** Variable pCurrent always points to the start of a docid field within
 ** aDoclist. Since the doclist is usually scanned in docid order, this can
@@ -312,13 +317,6 @@ struct Fts3Expr {
   Fts3Expr *pLeft;           /* Left operand */
   Fts3Expr *pRight;          /* Right operand */
   Fts3Phrase *pPhrase;       /* Valid if eType==FTSQUERY_PHRASE */
-
-  int isLoaded;              /* True if aDoclist/nDoclist are initialized. */
-  char *aDoclist;            /* Buffer containing doclist */
-  int nDoclist;              /* Size of aDoclist in bytes */
-
-  sqlite3_int64 iCurrent;
-  char *pCurrent;
 };
 
 /*

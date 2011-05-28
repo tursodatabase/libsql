@@ -2642,15 +2642,17 @@ char *sqlite3Fts3DeferredDoclist(Fts3DeferredToken *pDeferred, int *pnByte){
 */
 static void fts3DeferredDoclistClear(Fts3Expr *pExpr){
   if( pExpr ){
+    Fts3Phrase *pPhrase = pExpr->pPhrase;
     fts3DeferredDoclistClear(pExpr->pLeft);
     fts3DeferredDoclistClear(pExpr->pRight);
-    if( pExpr->isLoaded ){
-      sqlite3_free(pExpr->aDoclist);
-      pExpr->isLoaded = 0;
-      pExpr->aDoclist = 0;
-      pExpr->nDoclist = 0;
-      pExpr->pCurrent = 0;
-      pExpr->iCurrent = 0;
+    if( pPhrase ){
+      assert( pExpr->eType==FTSQUERY_PHRASE );
+      sqlite3_free(pPhrase->aDoclist);
+      pPhrase->isLoaded = 0;
+      pPhrase->aDoclist = 0;
+      pPhrase->nDoclist = 0;
+      pPhrase->pCurrent = 0;
+      pPhrase->iCurrent = 0;
     }
   }
 }

@@ -2767,11 +2767,13 @@ static int fts3NearMerge(
 ** each doclist that are not within nNear tokens of a corresponding entry
 ** in the other doclist.
 */
-int sqlite3Fts3ExprNearTrim(Fts3Expr *pLeft, Fts3Expr *pRight, int nNear){
+int sqlite3Fts3ExprNearTrim(Fts3Expr *pELeft, Fts3Expr *pERight, int nNear){
   int rc;                         /* Return code */
+  Fts3Phrase *pLeft = pELeft->pPhrase;
+  Fts3Phrase *pRight = pERight->pPhrase;
 
-  assert( pLeft->eType==FTSQUERY_PHRASE );
-  assert( pRight->eType==FTSQUERY_PHRASE );
+  assert( pELeft->eType==FTSQUERY_PHRASE && pLeft );
+  assert( pERight->eType==FTSQUERY_PHRASE && pRight );
   assert( pLeft->isLoaded && pRight->isLoaded );
 
   if( pLeft->aDoclist==0 || pRight->aDoclist==0 ){
@@ -2785,8 +2787,8 @@ int sqlite3Fts3ExprNearTrim(Fts3Expr *pLeft, Fts3Expr *pRight, int nNear){
     int nOut;                     /* Size of buffer aOut in bytes */
 
     rc = fts3NearMerge(MERGE_POS_NEAR, nNear, 
-        pLeft->pPhrase->nToken, pLeft->aDoclist, pLeft->nDoclist,
-        pRight->pPhrase->nToken, pRight->aDoclist, pRight->nDoclist,
+        pLeft->nToken, pLeft->aDoclist, pLeft->nDoclist,
+        pRight->nToken, pRight->aDoclist, pRight->nDoclist,
         &aOut, &nOut
     );
     if( rc!=SQLITE_OK ) return rc;
@@ -2795,8 +2797,8 @@ int sqlite3Fts3ExprNearTrim(Fts3Expr *pLeft, Fts3Expr *pRight, int nNear){
     pRight->nDoclist = nOut;
 
     rc = fts3NearMerge(MERGE_POS_NEAR, nNear, 
-        pRight->pPhrase->nToken, pRight->aDoclist, pRight->nDoclist,
-        pLeft->pPhrase->nToken, pLeft->aDoclist, pLeft->nDoclist,
+        pRight->nToken, pRight->aDoclist, pRight->nDoclist,
+        pLeft->nToken, pLeft->aDoclist, pLeft->nDoclist,
         &aOut, &nOut
     );
     sqlite3_free(pLeft->aDoclist);
@@ -3459,12 +3461,19 @@ static int fts3RollbackMethod(sqlite3_vtab *pVtab){
 */
 int sqlite3Fts3ExprLoadDoclist(Fts3Cursor *pCsr, Fts3Expr *pExpr){
   int rc;
-  assert( pExpr->eType==FTSQUERY_PHRASE && pExpr->pPhrase );
+  Fts3Phrase *pPhrase = pExpr->pPhrase;
+  assert( pExpr->eType==FTSQUERY_PHRASE && pPhrase );
   assert( pCsr->eEvalmode==FTS3_EVAL_NEXT );
-  rc = fts3EvalExpr(pCsr, pExpr, &pExpr->aDoclist, &pExpr->nDoclist, 1);
+  rc = fts3EvalExpr(pCsr, pExpr, &pPhrase->aDoclist, &pPhrase->nDoclist, 1);
   return rc;
 }
 
+/*
+** TODO: This is something to do with matchinfo(). Similar to
+** sqlite3ExprLoadDoclists() but slightly different.
+**
+** UPDATE: Only used when there are deferred tokens.
+*/
 int sqlite3Fts3ExprLoadFtDoclist(
   Fts3Cursor *pCsr, 
   Fts3Expr *pExpr,
@@ -3510,44 +3519,46 @@ char *sqlite3Fts3FindPositions(
   sqlite3_int64 iDocid,           /* Docid associated with requested pos-list */
   int iCol                        /* Column of requested pos-list */
 ){
-  assert( pExpr->isLoaded );
-  if( pExpr->aDoclist ){
-    char *pEnd = &pExpr->aDoclist[pExpr->nDoclist];
+  Fts3Phrase *pPhrase = pExpr->pPhrase;
+  assert( pPhrase->isLoaded );
+
+  if( pPhrase->aDoclist ){
+    char *pEnd = &pPhrase->aDoclist[pPhrase->nDoclist];
     char *pCsr;
 
-    if( pExpr->pCurrent==0 ){
+    if( pPhrase->pCurrent==0 ){
       if( pCursor->desc==0 ){
-        pExpr->pCurrent = pExpr->aDoclist;
-        pExpr->iCurrent = 0;
-        fts3GetDeltaVarint(&pExpr->pCurrent, &pExpr->iCurrent);
+        pPhrase->pCurrent = pPhrase->aDoclist;
+        pPhrase->iCurrent = 0;
+        fts3GetDeltaVarint(&pPhrase->pCurrent, &pPhrase->iCurrent);
       }else{
-        pCsr = pExpr->aDoclist;
+        pCsr = pPhrase->aDoclist;
         while( pCsr<pEnd ){
-          fts3GetDeltaVarint(&pCsr, &pExpr->iCurrent);
+          fts3GetDeltaVarint(&pCsr, &pPhrase->iCurrent);
           fts3PoslistCopy(0, &pCsr);
         }
-        fts3ReversePoslist(pExpr->aDoclist, &pCsr);
-        pExpr->pCurrent = pCsr;
+        fts3ReversePoslist(pPhrase->aDoclist, &pCsr);
+        pPhrase->pCurrent = pCsr;
       }
     }
-    pCsr = pExpr->pCurrent;
+    pCsr = pPhrase->pCurrent;
     assert( pCsr );
 
     while( (pCursor->desc==0 && pCsr<pEnd) 
-        || (pCursor->desc && pCsr>pExpr->aDoclist) 
+        || (pCursor->desc && pCsr>pPhrase->aDoclist) 
     ){
-      if( pCursor->desc==0 && pExpr->iCurrent<iDocid ){
+      if( pCursor->desc==0 && pPhrase->iCurrent<iDocid ){
         fts3PoslistCopy(0, &pCsr);
         if( pCsr<pEnd ){
-          fts3GetDeltaVarint(&pCsr, &pExpr->iCurrent);
+          fts3GetDeltaVarint(&pCsr, &pPhrase->iCurrent);
         }
-        pExpr->pCurrent = pCsr;
-      }else if( pCursor->desc && pExpr->iCurrent>iDocid ){
-        fts3GetReverseDeltaVarint(&pCsr, pExpr->aDoclist, &pExpr->iCurrent);
-        fts3ReversePoslist(pExpr->aDoclist, &pCsr);
-        pExpr->pCurrent = pCsr;
+        pPhrase->pCurrent = pCsr;
+      }else if( pCursor->desc && pPhrase->iCurrent>iDocid ){
+        fts3GetReverseDeltaVarint(&pCsr, pPhrase->aDoclist, &pPhrase->iCurrent);
+        fts3ReversePoslist(pPhrase->aDoclist, &pCsr);
+        pPhrase->pCurrent = pCsr;
       }else{
-        if( pExpr->iCurrent==iDocid ){
+        if( pPhrase->iCurrent==iDocid ){
           int iThis = 0;
           if( iCol<0 ){
             /* If iCol is negative, return a pointer to the start of the
