@@ -253,6 +253,13 @@ int sqlite3PcacheFetch(
     }
     if( pPg ){
       int rc;
+#ifdef SQLITE_LOG_CACHE_SPILL
+      sqlite3_log(SQLITE_FULL, 
+                  "spill page %d making room for %d - cache used: %d/%d",
+                  pPg->pgno, pgno,
+                  sqlite3GlobalConfig.pcache.xPagecount(pCache->pCache),
+                  pCache->nMax);
+#endif
       rc = pCache->xStress(pCache->pStress, pPg);
       if( rc!=SQLITE_OK && rc!=SQLITE_BUSY ){
         return rc;

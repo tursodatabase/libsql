@@ -1,5 +1,5 @@
-C Changes\sto\swork\swith\sSQLITE_OMIT_VIRTUAL_TABLE.
-D 2011-05-26T14:19:14.865
+C Print\sa\slog\smessage\son\seach\scache\sspill\sif\scompiled\swith\nSQLITE_LOG_CACHE_SPILL.
+D 2011-05-28T15:53:07.056
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/os_win.c 218b899469e570d46eb8147c2383075f7c026230
 F src/pager.c 120550e7ef01dafaa2cbb4a0528c0d87c8f12b41
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
-F src/pcache.c 09d38c44ab275db581f7a2f6ff8b9bc7f8c0faaa
+F src/pcache.c 49e718c095810c6b3334e3a6d89970aceaddefce
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c d548e31beafa792d1994b663a29a5303569efc4e
 F src/pragma.c 9e778decc3ee9bcaf88904b4a3b0a4360aaf0eab
@@ -938,7 +938,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a4755e7088c3cc7c5ea191ce37f3950472f523ec
-R 730ee7bc721983cbb8520125b21bb17e
+P 03f7d36a8a24825b7542b5fed651af1622ae4eb5
+R ecca10c4aa82cb4b740a494236bdb180
 U drh
-Z d447764bdbeb7397b78d42ae4b389d7c
+Z 7233c15025f0530a32ecee3359d1f724
