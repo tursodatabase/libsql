@@ -2849,7 +2849,7 @@ static int rtreeRename(sqlite3_vtab *pVtab, const char *zNewName){
 }
 
 static sqlite3_module rtreeModule = {
-  0,                         /* iVersion */
+  0,                          /* iVersion */
   rtreeCreate,                /* xCreate - create a table */
   rtreeConnect,               /* xConnect - connect to an existing table */
   rtreeBestIndex,             /* xBestIndex - Determine search strategy */
@@ -2868,7 +2868,10 @@ static sqlite3_module rtreeModule = {
   0,                          /* xCommit - commit transaction */
   0,                          /* xRollback - rollback transaction */
   0,                          /* xFindFunction - function overloading */
-  rtreeRename                 /* xRename - rename the table */
+  rtreeRename,                /* xRename - rename the table */
+  0,                          /* xSavepoint */
+  0,                          /* xRelease */
+  0                           /* xRollbackTo */
 };
 
 static int rtreeSqlInit(

@@ -5755,8 +5755,8 @@ int sqlite3PagerCommitPhaseOne(
         pList = pPageOne;
         pList->pDirty = 0;
       }
-      assert( pList!=0 || rc!=SQLITE_OK );
-      if( pList ){
+      assert( rc==SQLITE_OK );
+      if( ALWAYS(pList) ){
         rc = pagerWalFrames(pPager, pList, pPager->dbSize, 1, 
             (pPager->fullSync ? pPager->syncFlags : 0)
         );

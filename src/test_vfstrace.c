@@ -12,6 +12,100 @@
 **
 ** This file contains code implements a VFS shim that writes diagnostic
 ** output for each VFS call, similar to "strace".
+**
+** USAGE:
+**
+** This source file exports a single symbol which is the name of a
+** function:
+**
+**   int vfstrace_register(
+**     const char *zTraceName,         // Name of the newly constructed VFS
+**     const char *zOldVfsName,        // Name of the underlying VFS
+**     int (*xOut)(const char*,void*), // Output routine.  ex: fputs
+**     void *pOutArg,                  // 2nd argument to xOut.  ex: stderr
+**     int makeDefault                 // Make the new VFS the default
+**   );
+**
+** Applications that want to trace their VFS usage must provide a callback
+** function with this prototype:
+**
+**   int traceOutput(const char *zMessage, void *pAppData);
+**
+** This function will "output" the trace messages, where "output" can
+** mean different things to different applications.  The traceOutput function
+** for the command-line shell (see shell.c) is "fputs" from the standard
+** library, which means that all trace output is written on the stream
+** specified by the second argument.  In the case of the command-line shell
+** the second argument is stderr.  Other applications might choose to output
+** trace information to a file, over a socket, or write it into a buffer.
+**
+** The vfstrace_register() function creates a new "shim" VFS named by
+** the zTraceName parameter.  A "shim" VFS is an SQLite backend that does
+** not really perform the duties of a true backend, but simply filters or
+** interprets VFS calls before passing them off to another VFS which does
+** the actual work.  In this case the other VFS - the one that does the
+** real work - is identified by the second parameter, zOldVfsName.  If
+** the the 2nd parameter is NULL then the default VFS is used.  The common
+** case is for the 2nd parameter to be NULL.
+**
+** The third and fourth parameters are the pointer to the output function
+** and the second argument to the output function.  For the SQLite
+** command-line shell, when the -vfstrace option is used, these parameters
+** are fputs and stderr, respectively.
+**
+** The fifth argument is true (non-zero) to cause the newly created VFS
+** to become the default VFS.  The common case is for the fifth parameter
+** to be true.
+**
+** The call to vfstrace_register() simply creates the shim VFS that does
+** tracing.  The application must also arrange to use the new VFS for
+** all database connections that are created and for which tracing is 
+** desired.  This can be done by specifying the trace VFS using URI filename
+** notation, or by specifying the trace VFS as the 4th parameter to
+** sqlite3_open_v2() or by making the trace VFS be the default (by setting
+** the 5th parameter of vfstrace_register() to 1).
+**
+**
+** ENABLING VFSTRACE IN A COMMAND-LINE SHELL
+**
+** The SQLite command line shell implemented by the shell.c source file
+** can be used with this module.  To compile in -vfstrace support, first
+** gather this file (test_vfstrace.c), the shell source file (shell.c),
+** and the SQLite amalgamation source files (sqlite3.c, sqlite3.h) into
+** the working directory.  Then compile using a command like the following:
+**
+**    gcc -o sqlite3 -Os -I. -DSQLITE_ENABLE_VFSTRACE \
+**        -DSQLITE_THREADSAFE=0 -DSQLITE_ENABLE_FTS3 -DSQLITE_ENABLE_RTREE \
+**        -DHAVE_READLINE -DHAVE_USLEEP=1 \
+**        shell.c test_vfstrace.c sqlite3.c -ldl -lreadline -lncurses
+**
+** The gcc command above works on Linux and provides (in addition to the
+** -vfstrace option) support for FTS3 and FTS4, RTREE, and command-line
+** editing using the readline library.  The command-line shell does not
+** use threads so we added -DSQLITE_THREADSAFE=0 just to make the code
+** run a little faster.   For compiling on a Mac, you'll probably need
+** to omit the -DHAVE_READLINE, the -lreadline, and the -lncurses options.
+** The compilation could be simplified to just this:
+**
+**    gcc -DSQLITE_ENABLE_VFSTRACE \
+**         shell.c test_vfstrace.c sqlite3.c -ldl -lpthread
+**
+** In this second example, all unnecessary options have been removed
+** Note that since the code is now threadsafe, we had to add the -lpthread
+** option to pull in the pthreads library.
+**
+** To cross-compile for windows using MinGW, a command like this might
+** work:
+**
+**    /opt/mingw/bin/i386-mingw32msvc-gcc -o sqlite3.exe -Os -I \
+**         -DSQLITE_THREADSAFE=0 -DSQLITE_ENABLE_VFSTRACE \
+**         shell.c test_vfstrace.c sqlite3.c
+**
+** Similar compiler commands will work on different systems.  The key
+** invariants are (1) you must have -DSQLITE_ENABLE_VFSTRACE so that
+** the shell.c source file will know to include the -vfstrace command-line
+** option and (2) you must compile and link the three source files
+** shell,c, test_vfstrace.c, and sqlite3.c.  
 */
 #include <stdlib.h>
 #include <string.h>

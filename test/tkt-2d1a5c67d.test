@@ -17,8 +17,9 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix tkt-2d1a5c67d
 
-ifcapable !wal {finish_test; return}
+ifcapable {!wal || !vtab} {finish_test; return}
 
 for {set ii 1} {$ii<=10} {incr ii} {
   do_test tkt-2d1a5c67d.1.$ii {
@@ -69,5 +70,58 @@ for {set ii 1} {$ii<=10} {incr ii} {
     }
   } {1000000 1 2}
 }
+
+db close
+sqlite3 db test.db
+
+
+do_execsql_test 3.1 {
+  PRAGMA cache_size = 10;
+  CREATE TABLE t3(a INTEGER PRIMARY KEY, b);
+  CREATE TABLE t4(a);
+}
+
+do_execsql_test 3.2 {
+  INSERT INTO t3 VALUES(NULL, randomblob(500));
+  INSERT INTO t3 SELECT NULL, b||b FROM t3;     -- 2
+  INSERT INTO t3 SELECT NULL, b||b FROM t3;     -- 4
+  INSERT INTO t3 SELECT NULL, b||b FROM t3;     -- 8
+  INSERT INTO t3 SELECT NULL, b||b FROM t3;     -- 16
+  INSERT INTO t3 SELECT NULL, b||b FROM t3;     -- 32
+  INSERT INTO t3 SELECT NULL, b||b FROM t3;     -- 64
+  INSERT INTO t3 SELECT NULL, b||b FROM t3;     -- 128
+}
+
+do_execsql_test 3.3 {
+  BEGIN;
+    INSERT INTO t4 VALUES('xyz');
+}
+
+do_test 3.4 {
+  set blobs [list]
+  for {set i 1} {$i<100} {incr i} {
+    set b [db incrblob -readonly t3 b $i]
+    read $b
+    lappend blobs $b
+  }
+
+  execsql COMMIT
+  execsql { SELECT * FROM t4 WHERE a = 'xyz' }
+} {xyz}
+
+do_test 3.5 {
+  foreach b $blobs { close $b }
+  execsql { SELECT * FROM t4 WHERE a = 'xyz' }
+} {xyz}
+
+# Check that recovery works on the WAL file.
+#
+forcedelete test.db2-wal test.db2
+do_test 3.6 {
+  file copy test.db-wal test.db2-wal
+  file copy test.db test.db2
+  sqlite3 db2 test.db2
+  execsql { SELECT * FROM t4 WHERE a = 'xyz' } db2
+} {xyz}
 
 finish_test
