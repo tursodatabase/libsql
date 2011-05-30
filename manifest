@@ -1,5 +1,5 @@
-C Fix\sa\s"#ifdef"\sfrom\scheck-in\s[03f7d36a8a]\sthat\sshould\shave\sbeen\s"#ifndef".
-D 2011-05-28T19:24:15.852
+C Make\ssure\sthe\sP5\sargument\sto\sthe\sOP_VUpdate\sopcode\sis\salways\sset\sto\sa\nvalid\sconflict\sresolution\scode.
+D 2011-05-30T14:35:48.783
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -130,7 +130,7 @@ F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 7deec4534f3b5a0c3b4a4cbadf809d321f64f9c4
 F src/date.c 1548fdac51377e4e7833251de878b4058c148e1b
-F src/delete.c 7a24fcc9a31664d145acb97ce56b6d9f249a25e4
+F src/delete.c cecc926c70783452f3e8eb452c728291ce1a0b21
 F src/expr.c e3cf0957c6b8faaaf7386a3bc69e53c0dc9705be
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c a43ba8a005fb5efd1deeee06853e3a6120d46a91
@@ -938,7 +938,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 5f15579f8ca747f0fa0a7867ceffc8c7b8f904e6
-R a63903941bea8f77658823b8763468e2
+P edb865c35415f9553f8279028120f7b8de2bf7e2
+R 3b765e3c18f9b2a8d8763c389176a0b5
 U drh
-Z 62e9bfe1cc7669e25feec8cecb39066d
+Z 3e70f15cebd9551500dd66c2327a7d64
