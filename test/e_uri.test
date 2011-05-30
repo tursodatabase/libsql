@@ -48,10 +48,11 @@ proc open_uri_error {uri} {
 # and the filename argument begins with "file:", then the filename is
 # interpreted as a URI.
 #
-# EVIDENCE-OF: R-00067-59538 URI filename interpretation is enabled if
+# EVIDENCE-OF: R-32637-34037 URI filename interpretation is enabled if
 # the SQLITE_OPEN_URI flag is is set in the fourth argument to
 # sqlite3_open_v2(), or if it has been enabled globally using the
-# SQLITE_CONFIG_URI option with the sqlite3_config() method.
+# SQLITE_CONFIG_URI option with the sqlite3_config() method or by the
+# SQLITE_USE_URI compile-time option.
 #
 if {$tcl_platform(platform) == "unix"} {
   set flags [list SQLITE_OPEN_READWRITE SQLITE_OPEN_CREATE]
@@ -140,8 +141,8 @@ if {$tcl_platform(platform) == "unix"} {
   }
 }
 
-# EVIDENCE-OF: R-43804-65312 The 'fragment' component of a URI, if
-# present, is always ignored.
+# EVIDENCE-OF: R-45981-25528 The fragment component of a URI, if
+# present, is ignored.
 #
 #   It is difficult to test that something is ignore correctly. So these tests
 #   just show that adding a fragment does not interfere with the pathname or
@@ -157,14 +158,15 @@ if {$tcl_platform(platform) == "unix"} {
   }
 }
 
-# EVIDENCE-OF: R-00273-20588 SQLite uses the 'path' component of the URI
-# as the path to the database file to open.
+# EVIDENCE-OF: R-62557-09390 SQLite uses the path component of the URI
+# as the name of the disk file which contains the database.
 #
 # EVIDENCE-OF: R-28659-11035 If the path begins with a '/' character,
 # then it is interpreted as an absolute path.
 #
-# EVIDENCE-OF: R-39349-47203 If it does not begin with a '/', it is
-# interpreted as a relative path.
+# EVIDENCE-OF: R-46234-61323 If the path does not begin with a '/'
+# (meaning that the authority section is omitted from the URI) then the
+# path is interpreted as a relative path.
 #
 if {$tcl_platform(platform) == "unix"} {
   foreach {tn uri parse} "
