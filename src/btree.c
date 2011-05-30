@@ -5390,10 +5390,10 @@ static int fillInCell(
 ** "sz" must be the number of bytes in the cell.
 */
 static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
-  int i;          /* Loop counter */
   u32 pc;         /* Offset to cell content of cell being deleted */
   u8 *data;       /* pPage->aData */
   u8 *ptr;        /* Used to move bytes around within data[] */
+  u8 *endPtr;     /* End of loop */
   int rc;         /* The return code */
   int hdr;        /* Beginning of the header.  0 most pages.  100 page 1 */
 
@@ -5418,9 +5418,11 @@ static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
     *pRC = rc;
     return;
   }
-  for(i=idx+1; i<pPage->nCell; i++, ptr+=2){
+  endPtr = &data[pPage->cellOffset + 2*pPage->nCell - 2];
+  while( ptr<endPtr ){
     ptr[0] = ptr[2];
     ptr[1] = ptr[3];
+    ptr += 2;
   }
   pPage->nCell--;
   put2byte(&data[hdr+3], pPage->nCell);

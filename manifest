@@ -1,5 +1,5 @@
-C Update\sevidence\smarks\son\sthe\sURI\sfilename\stests\sto\sconform\sto\sthe\slatest\ndocumentation.
-D 2011-05-30T15:06:48.453
+C Minor\sperformance\simprovements.
+D 2011-05-30T23:42:16.233
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -122,7 +122,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 986c15232757f2873dff35ee3b35cbf935fc573c
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 975ad691a57eb1fb60f1ec76ad0b6571eace62f9
+F src/btree.c 0d3b39dcb79565c053e35fc12713f12d8a74d6a9
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
 F src/build.c 0132bc6631fa617a1d28ef805921f6dbac18a514
@@ -236,11 +236,11 @@ F src/update.c 5bcb56e5c7380a2eecb0e71891dbd4ad7437748f
 F src/utf.c d83650c3ea08f7407bd9d0839d9885241c209c60
 F src/util.c 0f33bbbdfcc4a2d8cf20c3b2a16ffc3b57c58a70
 F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
-F src/vdbe.c 380dddc404c1e4a9260a4194daa728b94ed102d7
+F src/vdbe.c 103827f560cdc48b1d455ce4d4b3573dd88f9ab4
 F src/vdbe.h 8a675fefdf7119441fe817c800a9a52440c2e797
 F src/vdbeInt.h fe8f58d305e629fff02f61f655aca1d299f1f6ae
 F src/vdbeapi.c e0e2672e0a96ae3f8575c8ecd02912a3e8a554a1
-F src/vdbeaux.c 07a5226ae6e9c6e54b5fcd3c395b86e7ffdba3a4
+F src/vdbeaux.c 99900868d18618a07ffaf780ecc41fd807834bde
 F src/vdbeblob.c c3ccb7c8732858c680f442932e66ad06bb036562
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
 F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
@@ -938,7 +938,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e3350dbd9f472c27ea6bc872d85098ac89d874c7
-R 31eb4302622f868d251135572f646bae
+P 1bab03c4811b5e5b3d15632bc2a3844891f9fad7
+R 7acb04adb38e3c88e3b1f83ed6f40a4e
 U drh
-Z 47e43c01cd8d7b7136f7bc52a005ac53
+Z 9e474b54141fcb6c3097a32384090f3c

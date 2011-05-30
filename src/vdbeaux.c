@@ -2852,7 +2852,7 @@ UnpackedRecord *sqlite3VdbeRecordUnpack(
     idx += getVarint32(&aKey[idx], serial_type);
     pMem->enc = pKeyInfo->enc;
     pMem->db = pKeyInfo->db;
-    pMem->flags = 0;
+    /* pMem->flags = 0; // sqlite3VdbeSerialGet() will set this for us */
     pMem->zMalloc = 0;
     d += sqlite3VdbeSerialGet(&aKey[d], serial_type, pMem);
     pMem++;
@@ -2867,6 +2867,7 @@ UnpackedRecord *sqlite3VdbeRecordUnpack(
 ** This routine destroys a UnpackedRecord object.
 */
 void sqlite3VdbeDeleteUnpackedRecord(UnpackedRecord *p){
+#ifdef SQLITE_DEBUG
   int i;
   Mem *pMem;
 
@@ -2880,6 +2881,7 @@ void sqlite3VdbeDeleteUnpackedRecord(UnpackedRecord *p){
     */
     if( NEVER(pMem->zMalloc) ) sqlite3VdbeMemRelease(pMem);
   }
+#endif
   if( p->flags & UNPACKED_NEED_FREE ){
     sqlite3DbFree(p->pKeyInfo->db, p);
   }
