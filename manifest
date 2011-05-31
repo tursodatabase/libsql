@@ -1,5 +1,5 @@
-C Update\sthe\sdocumentation\sto\sstate\sthat\sany\sparameter\sthat\sis\soptimized\sout\nof\sa\sprepared\sstatement\sbecomes\san\sanonymous\sparameter\sfor\swhich\nsqlite3_bind_parameter_name()\sreturns\sNULL.
-D 2011-05-31T11:56:15.040
+C Fix\sa\sproblem\sin\sthe\ssqlite3TestErrorName()\sfunction\s(used\sonly\sfor\stesting)\nthat\sappears\sto\shave\soriginated\sfrom\sa\sbad\smerge.
+D 2011-05-31T16:50:23.129
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -186,7 +186,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 501c9a200fd998a268be475be5858febc90b725b
-F src/test1.c 4a1171af201be90c21d64a872e686b1333d9a2cf
+F src/test1.c 9f61b9d23938bc5dd165ec7b95a91c30ce6e66db
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 124ff9735fb6bb7d41de180d6bac90e7b1509432
 F src/test4.c d1e5a5e904d4b444cf572391fdcb017638e36ff7
@@ -938,7 +938,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f9950c6af1813f724dacd7455f472acec921b06a
-R f6b845f51167252cf7d20999b01d5085
+P 701b8a23e3ea2c94454af5d9bd1e72acb66d0fe2
+R 0252c62ef68072dedfcd687577c244b5
 U drh
-Z 659dc0a03ae6f4d76444e7107181eaaf
+Z 32d78009c9e58634b2f842adf352a1be

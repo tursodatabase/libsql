@@ -164,7 +164,6 @@ const char *sqlite3TestErrorName(int rc){
                                zName = "SQLITE_IOERR_CHECKRESERVEDLOCK"; break;
     case SQLITE_IOERR_LOCK:          zName = "SQLITE_IOERR_LOCK";        break;
     case SQLITE_CORRUPT_VTAB:        zName = "SQLITE_CORRUPT_VTAB";      break;
-                               zName = "SQLITE_IOERR_CHECKRESERVEDLOCK"; break;
     default:                         zName = "SQLITE_Unknown";           break;
   }
   return zName;
