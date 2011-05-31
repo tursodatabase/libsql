@@ -420,6 +420,7 @@ struct Wal {
   sqlite3_file *pDbFd;       /* File handle for the database file */
   sqlite3_file *pWalFd;      /* File handle for WAL file */
   u32 iCallback;             /* Value to pass to log callback (or 0) */
+  i64 mxWalSize;             /* Truncate WAL to this size upon reset */
   int nWiData;               /* Size of array apWiData */
   volatile u32 **apWiData;   /* Pointer to wal-index content in memory */
   u32 szPage;                /* Database page size */
@@ -1258,6 +1259,7 @@ int sqlite3WalOpen(
   sqlite3_file *pDbFd,            /* The open database file */
   const char *zWalName,           /* Name of the WAL file */
   int bNoShm,                     /* True to run in heap-memory mode */
+  i64 mxWalSize,                  /* Truncate WAL to this size on reset */
   Wal **ppWal                     /* OUT: Allocated Wal handle */
 ){
   int rc;                         /* Return Code */
@@ -1290,6 +1292,7 @@ int sqlite3WalOpen(
   pRet->pWalFd = (sqlite3_file *)&pRet[1];
   pRet->pDbFd = pDbFd;
   pRet->readLock = -1;
+  pRet->mxWalSize = mxWalSize;
   pRet->zWalName = zWalName;
   pRet->exclusiveMode = (bNoShm ? WAL_HEAPMEMORY_MODE: WAL_NORMAL_MODE);
 
@@ -1309,6 +1312,13 @@ int sqlite3WalOpen(
     WALTRACE(("WAL%d: opened\n", pRet));
   }
   return rc;
+}
+
+/*
+** Change the size to which the WAL file is trucated on each reset.
+*/
+void sqlite3WalLimit(Wal *pWal, i64 iLimit){
+  if( pWal ) pWal->mxWalSize = iLimit;
 }
 
 /*
@@ -2561,6 +2571,24 @@ static int walRestartLog(Wal *pWal){
         */
         int i;                    /* Loop counter */
         u32 *aSalt = pWal->hdr.aSalt;       /* Big-endian salt values */
+
+        /* Limit the size of WAL file if the journal_size_limit PRAGMA is
+        ** set to a non-negative value.  Log errors encountered
+        ** during the truncation attempt. */
+        if( pWal->mxWalSize>=0 ){
+          i64 sz;
+          int rx;
+          sqlite3BeginBenignMalloc();
+          rx = sqlite3OsFileSize(pWal->pWalFd, &sz);
+          if( rx==SQLITE_OK && (sz > pWal->mxWalSize) ){
+            rx = sqlite3OsTruncate(pWal->pWalFd, pWal->mxWalSize);
+          }
+          sqlite3EndBenignMalloc();
+          if( rx ){
+            sqlite3_log(rx, "cannot limit WAL size: %s", pWal->zWalName);
+          }
+        }
+
         pWal->nCkpt++;
         pWal->hdr.mxFrame = 0;
         sqlite3Put4byte((u8*)&aSalt[0], 1 + sqlite3Get4byte((u8*)&aSalt[0]));

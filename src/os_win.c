@@ -1570,6 +1570,7 @@ static int winOpenSharedMemory(winFile *pDbFd){
   memset(pNew, 0, sizeof(*pNew));
   pNew->zFilename = (char*)&pNew[1];
   sqlite3_snprintf(nName+15, pNew->zFilename, "%s-shm", pDbFd->zPath);
+  sqlite3FileSuffix3(pDbFd->zPath, pNew->zFilename); 
 
   /* Look to see if there is an existing winShmNode that can be used.
   ** If no matching winShmNode currently exists, create a new one.

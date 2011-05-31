@@ -11,13 +11,36 @@
 *************************************************************************
 **
 ** This file contains a VFS "shim" - a layer that sits in between the
-** pager and the real VFS.
+** pager and the real VFS - that breaks up a very large database file
+** into two or more smaller files on disk.  This is useful, for example,
+** in order to support large, multi-gigabyte databases on older filesystems
+** that limit the maximum file size to 2 GiB.
 **
-** This particular shim enforces a multiplex system on DB files.  
-** This shim shards/partitions a single DB file into smaller 
-** "chunks" such that the total DB file size may exceed the maximum
-** file size of the underlying file system.
+** USAGE:
 **
+** Compile this source file and link it with your application.  Then
+** at start-time, invoke the following procedure:
+**
+**   int sqlite3_multiplex_initialize(
+**      const char *zOrigVfsName,    // The underlying real VFS
+**      int makeDefault              // True to make multiplex the default VFS
+**   );
+**
+** The procedure call above will create and register a new VFS shim named
+** "multiplex".  The multiplex VFS will use the VFS named by zOrigVfsName to
+** do the actual disk I/O.  (The zOrigVfsName parameter may be NULL, in 
+** which case the default VFS at the moment sqlite3_multiplex_initialize()
+** is called will be used as the underlying real VFS.)  
+**
+** If the makeDefault parameter is TRUE then multiplex becomes the new
+** default VFS.  Otherwise, you can use the multiplex VFS by specifying
+** "multiplex" as the 4th parameter to sqlite3_open_v2() or by employing
+** URI filenames and adding "vfs=multiplex" as a parameter to the filename
+** URI.
+**
+** The multiplex VFS allows databases up to 32 GiB in size.  But it splits
+** the files up into 1 GiB pieces, so that they will work even on filesystems
+** that do not support large files.
 */
 #include "sqlite3.h"
 #include <string.h>
@@ -185,11 +208,75 @@ static void multiplexLeave(void){ sqlite3_mutex_leave(gMultiplex.pMutex); }
 ** than the actual length of the string.  For very long strings (greater
 ** than 1GiB) the value returned might be less than the true string length.
 */
-int multiplexStrlen30(const char *z){
+static int multiplexStrlen30(const char *z){
   const char *z2 = z;
   if( z==0 ) return 0;
   while( *z2 ){ z2++; }
   return 0x3fffffff & (int)(z2 - z);
+}
+
+/*
+** Create a temporary file name in zBuf.  zBuf must be big enough to
+** hold at pOrigVfs->mxPathname characters.  This function departs
+** from the traditional temporary name generation in the os_win
+** and os_unix VFS in several ways, but is necessary so that 
+** the file name is known for temporary files (like those used 
+** during vacuum.)
+**
+** N.B. This routine assumes your underlying VFS is ok with using
+** "/" as a directory seperator.  This is the default for UNIXs
+** and is allowed (even mixed) for most versions of Windows.
+*/
+static int multiplexGetTempname(sqlite3_vfs *pOrigVfs, int nBuf, char *zBuf){
+  static char zChars[] =
+    "abcdefghijklmnopqrstuvwxyz"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "0123456789";
+  int i,j;
+  int attempts = 0;
+  int exists = 0;
+  int rc = SQLITE_ERROR;
+
+  /* Check that the output buffer is large enough for 
+  ** pVfs->mxPathname characters.
+  */
+  if( pOrigVfs->mxPathname <= nBuf ){
+    char *zTmp = sqlite3_malloc(pOrigVfs->mxPathname);
+    if( zTmp==0 ) return SQLITE_NOMEM;
+
+    /* sqlite3_temp_directory should always be less than
+    ** pVfs->mxPathname characters.
+    */
+    sqlite3_snprintf(pOrigVfs->mxPathname,
+                     zTmp,
+                     "%s/",
+                     sqlite3_temp_directory ? sqlite3_temp_directory : ".");
+    rc = pOrigVfs->xFullPathname(pOrigVfs, zTmp, nBuf, zBuf);
+    sqlite3_free(zTmp);
+    if( rc ) return rc;
+
+    /* Check that the output buffer is large enough for the temporary file 
+    ** name.
+    */
+    j = multiplexStrlen30(zBuf);
+    if( (j + 8 + 1 + 3 + 1) <= nBuf ){
+      /* Make 3 attempts to generate a unique name. */
+      do {
+        attempts++;
+        sqlite3_randomness(8, &zBuf[j]);
+        for(i=0; i<8; i++){
+          zBuf[j+i] = (char)zChars[ ((unsigned char)zBuf[j+i])%(sizeof(zChars)-1) ];
+        }
+        memcpy(&zBuf[j+i], ".tmp", 5);
+        rc = pOrigVfs->xAccess(pOrigVfs, zBuf, SQLITE_ACCESS_EXISTS, &exists);
+      } while ( (rc==SQLITE_OK) && exists && (attempts<3) );
+      if( rc==SQLITE_OK && exists ){
+        rc = SQLITE_ERROR;
+      }
+    }
+  }
+
+  return rc;
 }
 
 /* Translate an sqlite3_file* that is really a multiplexGroup* into
@@ -295,12 +382,12 @@ static int multiplexOpen(
   int flags,                 /* Flags to control the opening */
   int *pOutFlags             /* Flags showing results of opening */
 ){
-  int rc;                                        /* Result code */
+  int rc = SQLITE_OK;                            /* Result code */
   multiplexConn *pMultiplexOpen;                 /* The new multiplex file descriptor */
   multiplexGroup *pGroup;                        /* Corresponding multiplexGroup object */
   sqlite3_file *pSubOpen;                        /* Real file descriptor */
   sqlite3_vfs *pOrigVfs = gMultiplex.pOrigVfs;   /* Real VFS */
-  int nName = multiplexStrlen30(zName);
+  int nName;
   int i;
   int sz;
 
@@ -311,23 +398,39 @@ static int multiplexOpen(
   */
   multiplexEnter();
   pMultiplexOpen = (multiplexConn*)pConn;
-  /* allocate space for group */
-  sz = sizeof(multiplexGroup)                                /* multiplexGroup */
-     + (sizeof(sqlite3_file *)*SQLITE_MULTIPLEX_MAX_CHUNKS)  /* pReal[] */
-     + (pOrigVfs->szOsFile*SQLITE_MULTIPLEX_MAX_CHUNKS)      /* *pReal */
-     + SQLITE_MULTIPLEX_MAX_CHUNKS                           /* bOpen[] */
-     + nName + 1;                                            /* zName */
+
+  /* If the second argument to this function is NULL, generate a 
+  ** temporary file name to use.  This will be handled by the
+  ** original xOpen method.  We just need to allocate space for
+  ** it.
+  */
+  if( !zName ){
+    rc = multiplexGetTempname(pOrigVfs, pOrigVfs->mxPathname, gMultiplex.zName);
+    zName = gMultiplex.zName;
+  }
+
+  if( rc==SQLITE_OK ){
+    /* allocate space for group */
+    nName = multiplexStrlen30(zName);
+    sz = sizeof(multiplexGroup)                                /* multiplexGroup */
+       + (sizeof(sqlite3_file *)*SQLITE_MULTIPLEX_MAX_CHUNKS)  /* pReal[] */
+       + (pOrigVfs->szOsFile*SQLITE_MULTIPLEX_MAX_CHUNKS)      /* *pReal */
+       + SQLITE_MULTIPLEX_MAX_CHUNKS                           /* bOpen[] */
+       + nName + 1;                                            /* zName */
 #ifndef SQLITE_MULTIPLEX_EXT_OVWR
-  sz += SQLITE_MULTIPLEX_EXT_SZ;
-  assert(nName+SQLITE_MULTIPLEX_EXT_SZ < pOrigVfs->mxPathname);
+    sz += SQLITE_MULTIPLEX_EXT_SZ;
+    assert(nName+SQLITE_MULTIPLEX_EXT_SZ < pOrigVfs->mxPathname);
 #else
-  assert(nName >= SQLITE_MULTIPLEX_EXT_SZ);
-  assert(nName < pOrigVfs->mxPathname);
+    assert(nName >= SQLITE_MULTIPLEX_EXT_SZ);
+    assert(nName < pOrigVfs->mxPathname);
 #endif
-  pGroup = sqlite3_malloc( sz );
-  if( pGroup==0 ){
-    rc=SQLITE_NOMEM;
-  }else{
+    pGroup = sqlite3_malloc( sz );
+    if( pGroup==0 ){
+      rc=SQLITE_NOMEM;
+    }
+  }
+
+  if( rc==SQLITE_OK ){
     /* assign pointers to extra space allocated */
     char *p = (char *)&pGroup[1];
     pMultiplexOpen->pGroup = pGroup;
@@ -411,7 +514,7 @@ static int multiplexDelete(
     }
     rc2 = pOrigVfs->xAccess(pOrigVfs, gMultiplex.zName, 
         SQLITE_ACCESS_EXISTS, &exists);
-    if( rc2==SQLITE_OK && exists){
+    if( rc2==SQLITE_OK && exists ){
       /* if it exists, delete it */
       rc2 = pOrigVfs->xDelete(pOrigVfs, gMultiplex.zName, syncDir);
       if( rc2!=SQLITE_OK ) rc = rc2;

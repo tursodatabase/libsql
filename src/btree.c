@@ -788,6 +788,7 @@ static void ptrmapPut(BtShared *pBt, Pgno key, u8 eType, Pgno parent, int *pRC){
     *pRC = SQLITE_CORRUPT_BKPT;
     goto ptrmap_exit;
   }
+  assert( offset <= (int)pBt->usableSize-5 );
   pPtrmap = (u8 *)sqlite3PagerGetData(pDbPage);
 
   if( eType!=pPtrmap[offset] || get4byte(&pPtrmap[offset+1])!=parent ){
@@ -827,6 +828,11 @@ static int ptrmapGet(BtShared *pBt, Pgno key, u8 *pEType, Pgno *pPgno){
   pPtrmap = (u8 *)sqlite3PagerGetData(pDbPage);
 
   offset = PTRMAP_PTROFFSET(iPtrmap, key);
+  if( offset<0 ){
+    sqlite3PagerUnref(pDbPage);
+    return SQLITE_CORRUPT_BKPT;
+  }
+  assert( offset <= (int)pBt->usableSize-5 );
   assert( pEType!=0 );
   *pEType = pPtrmap[offset];
   if( pPgno ) *pPgno = get4byte(&pPtrmap[offset+1]);
@@ -5384,10 +5390,10 @@ static int fillInCell(
 ** "sz" must be the number of bytes in the cell.
 */
 static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
-  int i;          /* Loop counter */
   u32 pc;         /* Offset to cell content of cell being deleted */
   u8 *data;       /* pPage->aData */
   u8 *ptr;        /* Used to move bytes around within data[] */
+  u8 *endPtr;     /* End of loop */
   int rc;         /* The return code */
   int hdr;        /* Beginning of the header.  0 most pages.  100 page 1 */
 
@@ -5412,9 +5418,11 @@ static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
     *pRC = rc;
     return;
   }
-  for(i=idx+1; i<pPage->nCell; i++, ptr+=2){
+  endPtr = &data[pPage->cellOffset + 2*pPage->nCell - 2];
+  while( ptr<endPtr ){
     ptr[0] = ptr[2];
     ptr[1] = ptr[3];
+    ptr += 2;
   }
   pPage->nCell--;
   put2byte(&data[hdr+3], pPage->nCell);

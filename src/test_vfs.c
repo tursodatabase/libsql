@@ -10,10 +10,6 @@
 **
 ******************************************************************************
 **
-*/
-#if SQLITE_TEST          /* This file is used for testing only */
-
-/*
 ** This file contains the implementation of the Tcl [testvfs] command,
 ** used to create SQLite VFS implementations with various properties and
 ** instrumentation to support testing SQLite.
@@ -28,6 +24,7 @@
 **   -mxpathname INTEGER        (Value for sqlite3_vfs.mxPathname)
 **   -iversion   INTEGER        (Value for sqlite3_vfs.iVersion)
 */
+#if SQLITE_TEST          /* This file is used for testing only */
 
 #include "sqlite3.h"
 #include "sqliteInt.h"

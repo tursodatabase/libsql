@@ -378,7 +378,8 @@ TESTSRC = \
   $(TOP)/src/test_thread.c \
   $(TOP)/src/test_vfs.c \
   $(TOP)/src/test_wholenumber.c \
-  $(TOP)/src/test_wsd.c
+  $(TOP)/src/test_wsd.c       \
+  $(TOP)/ext/fts3/fts3_term.c 
 
 # Source code to the library files needed by the test fixture
 #
@@ -420,6 +421,7 @@ TESTSRC2 = \
   $(TOP)/ext/fts3/fts3.c \
   $(TOP)/ext/fts3/fts3_aux.c \
   $(TOP)/ext/fts3/fts3_expr.c \
+  $(TOP)/ext/fts3/fts3_term.c \
   $(TOP)/ext/fts3/fts3_tokenizer.c \
   $(TOP)/ext/fts3/fts3_write.c \
   $(TOP)/ext/async/sqlite3async.c
@@ -828,11 +830,11 @@ fts3_hash.lo:	$(TOP)/ext/fts3/fts3_hash.c $(HDR) $(EXTHDR)
 fts3_icu.lo:	$(TOP)/ext/fts3/fts3_icu.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_icu.c
 
-fts3_snippet.lo:	$(TOP)/ext/fts3/fts3_snippet.c $(HDR) $(EXTHDR)
-	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_snippet.c
-
 fts3_porter.lo:	$(TOP)/ext/fts3/fts3_porter.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_porter.c
+
+fts3_snippet.lo:	$(TOP)/ext/fts3/fts3_snippet.c $(HDR) $(EXTHDR)
+	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_snippet.c
 
 fts3_tokenizer.lo:	$(TOP)/ext/fts3/fts3_tokenizer.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_tokenizer.c

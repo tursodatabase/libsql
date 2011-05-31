@@ -1235,6 +1235,7 @@ struct VTable {
   sqlite3_vtab *pVtab;      /* Pointer to vtab instance */
   int nRef;                 /* Number of pointers to this structure */
   u8 bConstraint;           /* True if constraints are supported */
+  int iSavepoint;           /* Depth of the SAVEPOINT stack */
   VTable *pNext;            /* Next in linked list (see above) */
 };
 
@@ -2941,6 +2942,12 @@ int sqlite3AddInt64(i64*,i64);
 int sqlite3SubInt64(i64*,i64);
 int sqlite3MulInt64(i64*,i64);
 int sqlite3AbsInt32(int);
+#ifdef SQLITE_ENABLE_8_3_NAMES
+void sqlite3FileSuffix3(const char*, char*);
+#else
+# define sqlite3FileSuffix3(X,Y)
+#endif
+u8 sqlite3GetBoolean(const char *z);
 
 const void *sqlite3ValueText(sqlite3_value*, u8);
 int sqlite3ValueBytes(sqlite3_value*, u8);

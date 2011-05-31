@@ -4407,10 +4407,12 @@ int sqlite3PagerOpen(
     memcpy(&pPager->zFilename[nPathname+1], zUri, nUri);
     memcpy(pPager->zJournal, zPathname, nPathname);
     memcpy(&pPager->zJournal[nPathname], "-journal", 8);
+    sqlite3FileSuffix3(pPager->zFilename, pPager->zJournal);
 #ifndef SQLITE_OMIT_WAL
     pPager->zWal = &pPager->zJournal[nPathname+8+1];
     memcpy(pPager->zWal, zPathname, nPathname);
     memcpy(&pPager->zWal[nPathname], "-wal", 4);
+    sqlite3FileSuffix3(pPager->zFilename, pPager->zWal);
 #endif
     sqlite3_free(zPathname);
   }
@@ -5748,11 +5750,21 @@ int sqlite3PagerCommitPhaseOne(
   }else{
     if( pagerUseWal(pPager) ){
       PgHdr *pList = sqlite3PcacheDirtyList(pPager->pPCache);
-      if( pList ){
+      PgHdr *pPageOne = 0;
+      if( pList==0 ){
+        /* Must have at least one page for the WAL commit flag.
+        ** Ticket [2d1a5c67dfc2363e44f29d9bbd57f] 2011-05-18 */
+        rc = sqlite3PagerGet(pPager, 1, &pPageOne);
+        pList = pPageOne;
+        pList->pDirty = 0;
+      }
+      assert( rc==SQLITE_OK );
+      if( ALWAYS(pList) ){
         rc = pagerWalFrames(pPager, pList, pPager->dbSize, 1, 
             (pPager->fullSync ? pPager->syncFlags : 0)
         );
       }
+      sqlite3PagerUnref(pPageOne);
       if( rc==SQLITE_OK ){
         sqlite3PcacheCleanAll(pPager->pPCache);
       }
@@ -6610,6 +6622,7 @@ int sqlite3PagerOkToChangeJournalMode(Pager *pPager){
 i64 sqlite3PagerJournalSizeLimit(Pager *pPager, i64 iLimit){
   if( iLimit>=-1 ){
     pPager->journalSizeLimit = iLimit;
+    sqlite3WalLimit(pPager->pWal, iLimit);
   }
   return pPager->journalSizeLimit;
 }
@@ -6701,7 +6714,8 @@ static int pagerOpenWal(Pager *pPager){
   */
   if( rc==SQLITE_OK ){
     rc = sqlite3WalOpen(pPager->pVfs, 
-        pPager->fd, pPager->zWal, pPager->exclusiveMode, &pPager->pWal
+        pPager->fd, pPager->zWal, pPager->exclusiveMode,
+        pPager->journalSizeLimit, &pPager->pWal
     );
   }
 

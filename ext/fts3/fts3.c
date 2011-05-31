@@ -977,6 +977,8 @@ static int fts3InitVtab(
   p->nMaxPendingData = FTS3_MAX_PENDING_DATA;
   p->bHasDocsize = (isFts4 && bNoDocsize==0);
   p->bHasStat = isFts4;
+  TESTONLY( p->inTransaction = -1 );
+  TESTONLY( p->mxSavepoint = -1 );
   fts3HashInit(&p->pendingTerms, FTS3_HASH_STRING, 1);
 
   /* Fill in the zName and zDb fields of the vtab structure. */
@@ -1195,7 +1197,7 @@ static int fts3CursorSeek(sqlite3_context *pContext, Fts3Cursor *pCsr){
         ** table is missing a row that is present in the full-text index.
         ** The data structures are corrupt.
         */
-        rc = SQLITE_CORRUPT;
+        rc = SQLITE_CORRUPT_VTAB;
       }
       pCsr->isEof = 1;
       if( pContext ){
@@ -1255,7 +1257,7 @@ static int fts3ScanInteriorNode(
   zCsr += sqlite3Fts3GetVarint(zCsr, &iChild);
   zCsr += sqlite3Fts3GetVarint(zCsr, &iChild);
   if( zCsr>zEnd ){
-    return SQLITE_CORRUPT;
+    return SQLITE_CORRUPT_VTAB;
   }
   
   while( zCsr<zEnd && (piFirst || piLast) ){
@@ -1273,7 +1275,7 @@ static int fts3ScanInteriorNode(
     zCsr += sqlite3Fts3GetVarint32(zCsr, &nSuffix);
     
     if( nPrefix<0 || nSuffix<0 || &zCsr[nSuffix]>zEnd ){
-      rc = SQLITE_CORRUPT;
+      rc = SQLITE_CORRUPT_VTAB;
       goto finish_scan;
     }
     if( nPrefix+nSuffix>nAlloc ){
@@ -3274,7 +3276,11 @@ static int fts3SyncMethod(sqlite3_vtab *pVtab){
 */
 static int fts3BeginMethod(sqlite3_vtab *pVtab){
   UNUSED_PARAMETER(pVtab);
-  assert( ((Fts3Table *)pVtab)->nPendingData==0 );
+  TESTONLY( Fts3Table *p = (Fts3Table*)pVtab );
+  assert( p->nPendingData==0 );
+  assert( p->inTransaction!=1 );
+  TESTONLY( p->inTransaction = 1 );
+  TESTONLY( p->mxSavepoint = -1; );
   return SQLITE_OK;
 }
 
@@ -3285,7 +3291,11 @@ static int fts3BeginMethod(sqlite3_vtab *pVtab){
 */
 static int fts3CommitMethod(sqlite3_vtab *pVtab){
   UNUSED_PARAMETER(pVtab);
-  assert( ((Fts3Table *)pVtab)->nPendingData==0 );
+  TESTONLY( Fts3Table *p = (Fts3Table*)pVtab );
+  assert( p->nPendingData==0 );
+  assert( p->inTransaction!=0 );
+  TESTONLY( p->inTransaction = 0 );
+  TESTONLY( p->mxSavepoint = -1; );
   return SQLITE_OK;
 }
 
@@ -3294,7 +3304,11 @@ static int fts3CommitMethod(sqlite3_vtab *pVtab){
 ** hash-table. Any changes made to the database are reverted by SQLite.
 */
 static int fts3RollbackMethod(sqlite3_vtab *pVtab){
-  sqlite3Fts3PendingTermsClear((Fts3Table *)pVtab);
+  Fts3Table *p = (Fts3Table*)pVtab;
+  sqlite3Fts3PendingTermsClear(p);
+  assert( p->inTransaction!=0 );
+  TESTONLY( p->inTransaction = 0 );
+  TESTONLY( p->mxSavepoint = -1; );
   return SQLITE_OK;
 }
 
@@ -3650,13 +3664,29 @@ static int fts3RenameMethod(
 }
 
 static int fts3SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
-  return sqlite3Fts3PendingTermsFlush((Fts3Table *)pVtab);
+  Fts3Table *p = (Fts3Table*)pVtab;
+  UNUSED_PARAMETER(iSavepoint);
+  assert( p->inTransaction );
+  assert( p->mxSavepoint < iSavepoint );
+  TESTONLY( p->mxSavepoint = iSavepoint );
+  return sqlite3Fts3PendingTermsFlush(p);
 }
 static int fts3ReleaseMethod(sqlite3_vtab *pVtab, int iSavepoint){
+  TESTONLY( Fts3Table *p = (Fts3Table*)pVtab );
+  UNUSED_PARAMETER(iSavepoint);
+  UNUSED_PARAMETER(pVtab);
+  assert( p->inTransaction );
+  assert( p->mxSavepoint >= iSavepoint );
+  TESTONLY( p->mxSavepoint = iSavepoint-1 );
   return SQLITE_OK;
 }
 static int fts3RollbackToMethod(sqlite3_vtab *pVtab, int iSavepoint){
-  sqlite3Fts3PendingTermsClear((Fts3Table *)pVtab);
+  Fts3Table *p = (Fts3Table*)pVtab;
+  UNUSED_PARAMETER(iSavepoint);
+  assert( p->inTransaction );
+  assert( p->mxSavepoint >= iSavepoint );
+  TESTONLY( p->mxSavepoint = iSavepoint );
+  sqlite3Fts3PendingTermsClear(p);
   return SQLITE_OK;
 }
 

@@ -2922,3 +2922,25 @@ int sqlite3_test_control(int op, ...){
 #endif /* SQLITE_OMIT_BUILTIN_TEST */
   return rc;
 }
+
+/*
+** This is a utility routine, useful to VFS implementations, that checks
+** to see if a database file was a URI that contained a specific query 
+** parameter, and if so obtains the value of the query parameter.
+**
+** The zFilename argument is the filename pointer passed into the xOpen()
+** method of a VFS implementation.  The zParam argument is the name of the
+** query parameter we seek.  This routine returns the value of the zParam
+** parameter if it exists.  If the parameter does not exist, this routine
+** returns a NULL pointer.
+*/
+const char *sqlite3_uri_parameter(const char *zFilename, const char *zParam){
+  zFilename += sqlite3Strlen30(zFilename) + 1;
+  while( zFilename[0] ){
+    int x = strcmp(zFilename, zParam);
+    zFilename += sqlite3Strlen30(zFilename) + 1;
+    if( x==0 ) return zFilename;
+    zFilename += sqlite3Strlen30(zFilename) + 1;
+  }
+  return 0;
+}

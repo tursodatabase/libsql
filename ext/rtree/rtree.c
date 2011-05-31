@@ -517,17 +517,17 @@ nodeAcquire(
   if( pNode && iNode==1 ){
     pRtree->iDepth = readInt16(pNode->zData);
     if( pRtree->iDepth>RTREE_MAX_DEPTH ){
-      rc = SQLITE_CORRUPT;
+      rc = SQLITE_CORRUPT_VTAB;
     }
   }
 
   /* If no error has occurred so far, check if the "number of entries"
   ** field on the node is too large. If so, set the return code to 
-  ** SQLITE_CORRUPT.
+  ** SQLITE_CORRUPT_VTAB.
   */
   if( pNode && rc==SQLITE_OK ){
     if( NCELL(pNode)>((pRtree->iNodeSize-4)/pRtree->nBytesPerCell) ){
-      rc = SQLITE_CORRUPT;
+      rc = SQLITE_CORRUPT_VTAB;
     }
   }
 
@@ -535,7 +535,7 @@ nodeAcquire(
     if( pNode!=0 ){
       nodeHashInsert(pRtree, pNode);
     }else{
-      rc = SQLITE_CORRUPT;
+      rc = SQLITE_CORRUPT_VTAB;
     }
     *ppNode = pNode;
   }else{
@@ -1062,7 +1062,7 @@ static int nodeRowidIndex(
       return SQLITE_OK;
     }
   }
-  return SQLITE_CORRUPT;
+  return SQLITE_CORRUPT_VTAB;
 }
 
 /*
@@ -1657,7 +1657,7 @@ static int AdjustTree(
     int iCell;
 
     if( nodeParentIndex(pRtree, p, &iCell) ){
-      return SQLITE_CORRUPT;
+      return SQLITE_CORRUPT_VTAB;
     }
 
     nodeGetCell(pRtree, pParent, iCell, &cell);
@@ -2329,7 +2329,7 @@ static int fixLeafParent(Rtree *pRtree, RtreeNode *pLeaf){
     }
     rc = sqlite3_reset(pRtree->pReadParent);
     if( rc==SQLITE_OK ) rc = rc2;
-    if( rc==SQLITE_OK && !pChild->pParent ) rc = SQLITE_CORRUPT;
+    if( rc==SQLITE_OK && !pChild->pParent ) rc = SQLITE_CORRUPT_VTAB;
     pChild = pChild->pParent;
   }
   return rc;
@@ -2849,7 +2849,7 @@ static int rtreeRename(sqlite3_vtab *pVtab, const char *zNewName){
 }
 
 static sqlite3_module rtreeModule = {
-  0,                         /* iVersion */
+  0,                          /* iVersion */
   rtreeCreate,                /* xCreate - create a table */
   rtreeConnect,               /* xConnect - connect to an existing table */
   rtreeBestIndex,             /* xBestIndex - Determine search strategy */
@@ -2868,7 +2868,10 @@ static sqlite3_module rtreeModule = {
   0,                          /* xCommit - commit transaction */
   0,                          /* xRollback - rollback transaction */
   0,                          /* xFindFunction - function overloading */
-  rtreeRename                 /* xRename - rename the table */
+  rtreeRename,                /* xRename - rename the table */
+  0,                          /* xSavepoint */
+  0,                          /* xRelease */
+  0                           /* xRollbackTo */
 };
 
 static int rtreeSqlInit(

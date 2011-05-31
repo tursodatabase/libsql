@@ -1799,6 +1799,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
       if( !zMaster ){
         return SQLITE_NOMEM;
       }
+      sqlite3FileSuffix3(zMainFile, zMaster);
       rc = sqlite3OsAccess(pVfs, zMaster, SQLITE_ACCESS_EXISTS, &res);
     }while( rc==SQLITE_OK && res );
     if( rc==SQLITE_OK ){
@@ -2201,17 +2202,11 @@ int sqlite3VdbeHalt(Vdbe *p){
     ** do so. If this operation returns an error, and the current statement
     ** error code is SQLITE_OK or SQLITE_CONSTRAINT, then promote the
     ** current statement error code.
-    **
-    ** Note that sqlite3VdbeCloseStatement() can only fail if eStatementOp
-    ** is SAVEPOINT_ROLLBACK.  But if p->rc==SQLITE_OK then eStatementOp
-    ** must be SAVEPOINT_RELEASE.  Hence the NEVER(p->rc==SQLITE_OK) in 
-    ** the following code.
     */
     if( eStatementOp ){
       rc = sqlite3VdbeCloseStatement(p, eStatementOp);
       if( rc ){
-        assert( eStatementOp==SAVEPOINT_ROLLBACK );
-        if( NEVER(p->rc==SQLITE_OK) || p->rc==SQLITE_CONSTRAINT ){
+        if( p->rc==SQLITE_OK || p->rc==SQLITE_CONSTRAINT ){
           p->rc = rc;
           sqlite3DbFree(db, p->zErrMsg);
           p->zErrMsg = 0;
@@ -2857,7 +2852,7 @@ UnpackedRecord *sqlite3VdbeRecordUnpack(
     idx += getVarint32(&aKey[idx], serial_type);
     pMem->enc = pKeyInfo->enc;
     pMem->db = pKeyInfo->db;
-    pMem->flags = 0;
+    /* pMem->flags = 0; // sqlite3VdbeSerialGet() will set this for us */
     pMem->zMalloc = 0;
     d += sqlite3VdbeSerialGet(&aKey[d], serial_type, pMem);
     pMem++;
@@ -2872,6 +2867,7 @@ UnpackedRecord *sqlite3VdbeRecordUnpack(
 ** This routine destroys a UnpackedRecord object.
 */
 void sqlite3VdbeDeleteUnpackedRecord(UnpackedRecord *p){
+#ifdef SQLITE_DEBUG
   int i;
   Mem *pMem;
 
@@ -2885,6 +2881,7 @@ void sqlite3VdbeDeleteUnpackedRecord(UnpackedRecord *p){
     */
     if( NEVER(pMem->zMalloc) ) sqlite3VdbeMemRelease(pMem);
   }
+#endif
   if( p->flags & UNPACKED_NEED_FREE ){
     sqlite3DbFree(p->pKeyInfo->db, p);
   }

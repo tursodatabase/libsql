@@ -2649,6 +2649,7 @@ static void main_init(struct callback_data *data) {
   data->mode = MODE_List;
   memcpy(data->separator,"|", 2);
   data->showHeader = 0;
+  sqlite3_config(SQLITE_CONFIG_URI, 1);
   sqlite3_config(SQLITE_CONFIG_LOG, shellLog, data);
   sqlite3_snprintf(sizeof(mainPrompt), mainPrompt,"sqlite> ");
   sqlite3_snprintf(sizeof(continuePrompt), continuePrompt,"   ...> ");
@@ -2663,6 +2664,11 @@ int main(int argc, char **argv){
   int i;
   int rc = 0;
 
+  if( strcmp(sqlite3_sourceid(),SQLITE_SOURCE_ID)!=0 ){
+    fprintf(stderr, "SQLite header and source version mismatch\n%s\n%s\n",
+            sqlite3_sourceid(), SQLITE_SOURCE_ID);
+    exit(1);
+  }
   Argv0 = argv[0];
   main_init(&data);
   stdin_is_interactive = isatty(0);
