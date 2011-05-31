@@ -1,5 +1,5 @@
-C Minor\sperformance\simprovements.
-D 2011-05-30T23:42:16.233
+C Update\sthe\sdocumentation\sto\sstate\sthat\sany\sparameter\sthat\sis\soptimized\sout\nof\sa\sprepared\sstatement\sbecomes\san\sanonymous\sparameter\sfor\swhich\nsqlite3_bind_parameter_name()\sreturns\sNULL.
+D 2011-05-31T11:56:15.040
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -179,7 +179,7 @@ F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c d9d440809025a58547e39f4f268c2a296bfb56ff
 F src/shell.c decd04236a7ef26be5ef46d4ea963044bfad9a48
-F src/sqlite.h.in 91c63a69eeddbd62182ec00dbfee390016972bdb
+F src/sqlite.h.in c095996e68e0082f674f32e68ca909fc24196a2a
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
 F src/sqliteInt.h d9ff5f198b5bac7ee0c6e1ea55f76897ba4dda87
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -938,7 +938,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1bab03c4811b5e5b3d15632bc2a3844891f9fad7
-R 7acb04adb38e3c88e3b1f83ed6f40a4e
+P f9950c6af1813f724dacd7455f472acec921b06a
+R f6b845f51167252cf7d20999b01d5085
 U drh
-Z 9e474b54141fcb6c3097a32384090f3c
+Z 659dc0a03ae6f4d76444e7107181eaaf
