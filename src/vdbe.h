@@ -185,7 +185,7 @@ int sqlite3VdbeMakeLabel(Vdbe*);
 void sqlite3VdbeRunOnlyOnce(Vdbe*);
 void sqlite3VdbeDelete(Vdbe*);
 void sqlite3VdbeDeleteObject(sqlite3*,Vdbe*);
-void sqlite3VdbeMakeReady(Vdbe*,int,int,int,int,int,int);
+void sqlite3VdbeMakeReady(Vdbe*,Parse*);
 int sqlite3VdbeFinalize(Vdbe*);
 void sqlite3VdbeResolveLabel(Vdbe*, int);
 int sqlite3VdbeCurrentAddr(Vdbe*);
@@ -194,6 +194,7 @@ int sqlite3VdbeCurrentAddr(Vdbe*);
   void sqlite3VdbeTrace(Vdbe*,FILE*);
 #endif
 void sqlite3VdbeResetStepResult(Vdbe*);
+void sqlite3VdbeRewind(Vdbe*);
 int sqlite3VdbeReset(Vdbe*);
 void sqlite3VdbeSetNumCols(Vdbe*,int);
 int sqlite3VdbeSetColName(Vdbe*, int, int, const char *, void(*)(void*));

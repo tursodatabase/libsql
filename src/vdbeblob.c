@@ -297,7 +297,10 @@ int sqlite3_blob_open(
       sqlite3VdbeChangeP4(v, 3+flags, SQLITE_INT_TO_PTR(pTab->nCol+1),P4_INT32);
       sqlite3VdbeChangeP2(v, 7, pTab->nCol);
       if( !db->mallocFailed ){
-        sqlite3VdbeMakeReady(v, 1, 1, 1, 0, 0, 0);
+        pParse->nVar = 1;
+        pParse->nMem = 1;
+        pParse->nTab = 1;
+        sqlite3VdbeMakeReady(v, pParse);
       }
     }
    
