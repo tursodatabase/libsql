@@ -1,5 +1,5 @@
-C Refactor\sthe\sSQL\sparameter\sprocessing\sso\sthat\sparameter\snames\sfor\svalues\nthat\sare\soptimized\sout\sof\sthe\sprepare\sstatement\sare\snot\sforgotten.
-D 2011-06-01T18:15:55.858
+C Avoid\sunnecessary\sduplication\sof\sSQL\sparameter\snames.
+D 2011-06-01T19:16:06.364
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -131,7 +131,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 7deec4534f3b5a0c3b4a4cbadf809d321f64f9c4
 F src/date.c 1548fdac51377e4e7833251de878b4058c148e1b
 F src/delete.c cecc926c70783452f3e8eb452c728291ce1a0b21
-F src/expr.c c33584bcf4ee011e28ff74e4dcef02da1dc09dd6
+F src/expr.c ab46ab0f0c44979a8164ca31728d7d10ae5e8106
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c a43ba8a005fb5efd1deeee06853e3a6120d46a91
 F src/func.c b9117e40975245b8504cf3625d7e321d8d4b63dc
@@ -236,7 +236,7 @@ F src/update.c 5bcb56e5c7380a2eecb0e71891dbd4ad7437748f
 F src/utf.c d83650c3ea08f7407bd9d0839d9885241c209c60
 F src/util.c 0f33bbbdfcc4a2d8cf20c3b2a16ffc3b57c58a70
 F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
-F src/vdbe.c 103827f560cdc48b1d455ce4d4b3573dd88f9ab4
+F src/vdbe.c 2ec37637fa70ab0c694d8327ee5dcedbc0621524
 F src/vdbe.h d9c6123384189dc37d27beac1bf44688aa75b6cb
 F src/vdbeInt.h ad84226cc0adcb1185c22b70696b235a1678bb45
 F src/vdbeapi.c 0eeadc75e44a30efd996d6af6e7c5a2488e35be8
@@ -938,7 +938,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a0ae314c7f41d0146a9ee1adc576cd977219a378
-R d99e1065a540709b7ea760de89dbcfd0
+P b3aaf715b60b8a338cc6c92dad1ead4a3f7146a3
+R 018490a374b5cf414074a5a4bbd3de70
 U drh
-Z ce5ce2791f47aa05a4daaafded206f56
+Z dcf10ad87997753baf45956f9011da61

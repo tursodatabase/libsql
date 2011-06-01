@@ -988,6 +988,7 @@ case OP_Variable: {            /* out2-prerelease */
   Mem *pVar;       /* Value being transferred */
 
   assert( pOp->p1>0 && pOp->p1<=p->nVar );
+  assert( pOp->p4.z==0 || pOp->p4.z==p->azVar[pOp->p1-1] );
   pVar = &p->aVar[pOp->p1 - 1];
   if( sqlite3VdbeMemTooBig(pVar) ){
     goto too_big;
