@@ -3787,7 +3787,7 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
       if( pShmNode->h<0 ){
         const char *zRO;
         zRO = sqlite3_uri_parameter(pDbFd->zPath, "readonly_shm");
-        if( zRO && (zRO[0]!='0' || zRO[1]!=0) ){
+        if( zRO && sqlite3GetBoolean(zRO) ){
           pShmNode->h = robust_open(zShmFilename, O_RDONLY,
                                     (sStat.st_mode & 0777));
           pShmNode->isReadonly = 1;
