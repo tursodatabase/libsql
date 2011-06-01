@@ -69,6 +69,8 @@ do_test walcrash2-1.1 {
   }
   file size test.db-wal
 } [wal_file_size 8 1024] 
+
+if 0 { # WAL no longer spills transaction
 for {set nEntry 8} {$nEntry < 8192} {incr nEntry 8} {
   do_test walcrash2-1.2.[expr $nEntry/8] {
     set C [launch_testfixture]
@@ -89,6 +91,7 @@ for {set nEntry 8} {$nEntry < 8192} {incr nEntry 8} {
     file size test.db-wal
   } [wal_file_size 16 1024]
 }
+}
 do_test walcrash2-1.3 {
   sqlite3 db2 test.db
   execsql { SELECT count(*) FROM t1 } db2
@@ -96,4 +99,3 @@ do_test walcrash2-1.3 {
 catch { db2 close }
 
 finish_test
-

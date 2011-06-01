@@ -1,14 +1,11 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C SQLite\sversion\s3.7.5\srelease\scandidate\s2
-D 2011-01-28T17:03:50.592
+C Toward\sversion\s3.7.5.1.\s\sThis\scheck-in\supdates\sthe\sversion\snumber\sand\salso\npatches\sthe\spager\sso\sthat\sit\snever\sspills\scache\swhile\sin\sWAL\smode.\s\sThe\nlatter\spatch\sfixes\sticket\s[2d1a5c67dfc23]\sand\salso\sprevents\sexcessive\sWAL\nfile\ssizes\sif\sthe\spager\scache\sstarts\sthrashing.\s\sA\sfew\stest\scases\sfail.
+D 2011-06-01T11:26:51.806
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de6498556d536ae60bb8bb10e8c1ba011448658c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.vxworks c85ec1d8597fe2f7bc225af12ac1666e21379151
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
-F VERSION de8d3477dbf0d6cc226ccc6e046273627eb55fc5
+F VERSION 4d64d1231556eed819e7ab9837137181d4c9a8fe
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 17dc593f791f874d2c23a0f9360850ded0286531
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -25,7 +22,7 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 0eb10c03a6536d8e5ce52ab70fda0a152d8a3262 x
+F configure ade17ab3bfafa38924969ce25398d36ad1826c1c x
 F configure.ac 87a3c71bbe9c925381c154413eea7f3cdc397244
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -165,7 +162,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 2e452c9f2ca507623ad351c33a8a8b27849b1863
 F src/os_unix.c 1be46a35bad4bec5171e4de88aaff817260eb378
 F src/os_win.c 9abdcdd925416d854eabb0996c96debd92abfef5
-F src/pager.c b0fcbe3038fd08b111e1cf1deddd5f42418004d8
+F src/pager.c f582ebb4493c9e0240b17a0729588aeb1e0c17f9
 F src/pager.h 0ea59db2a33bc6c2c02cae34de33367e1effdf76
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 09d38c44ab275db581f7a2f6ff8b9bc7f8c0faaa
@@ -847,7 +844,7 @@ F test/walbak.test 4df1c7369da0301caeb9a48fa45997fd592380e4
 F test/walbig.test e882bc1d014afffbfa2b6ba36e0f07d30a633ad0
 F test/walcksum.test a37b36375c595e61bdb7e1ec49b5f0979b6fc7ce
 F test/walcrash.test e763841551d6b23677ccb419797c1589dcbdbaf5
-F test/walcrash2.test 019d60b89d96c1937adb2b30b850ac7e86e5a142
+F test/walcrash2.test 564b13f641f1c9cadb3814746897f0e0cb71a067
 F test/walfault.test 81ed760def1c1573151d416b0d09178cf006f9fd
 F test/walhook.test ed00a40ba7255da22d6b66433ab61fab16a63483
 F test/walmode.test 22ddccd073c817ac9ead62b88ac446e8dedc7d2c
@@ -884,7 +881,7 @@ F tool/mksqlite3internalh.tcl 7b43894e21bcb1bb39e11547ce7e38a063357e87
 F tool/omittest.tcl 27d6f6e3b1e95aeb26a1c140e6eb57771c6d794a
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
-F tool/shell1.test c31b0814a9c543db51ca0cc63edb5e77ea532303
+F tool/shell1.test 5356d6f16443a132aa3f9b40d5fbf9ad998f9846
 F tool/shell2.test 5dc76b8005b465f420fed8241621da7513060ff3
 F tool/shell3.test 4fad469e8003938426355afdf34155f08c587836
 F tool/shell4.test 35f9c3d452b4e76d5013c63e1fd07478a62f14ce
@@ -901,14 +898,11 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 682fe41efd3578e8c9abc7138b61f361c3adbe95
-R 7fccaf9f7c013ddef8926255f6aeb773
+P ed759d5a9edb3bba5f48f243df47be29e3fe8cd7
+R da076752a7e1f02af83cb61570d5ce6b
+T *bgcolor * #8680d6
+T *branch * branch-3.7.5
+T *sym-branch-3.7.5 *
+T -sym-trunk *
 U drh
-Z 4223173e58f25d45d236e232b9c90989
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFNQvb6oxKgR168RlERAtOTAJ9BaewewKXL3RGZUy5ycaHwjeEmJACeOPbw
-/JKqOugR+37RH7HnLCo9DBk=
-=kgPx
------END PGP SIGNATURE-----
+Z e12c2a5626b356509b4abffe00bd5c71

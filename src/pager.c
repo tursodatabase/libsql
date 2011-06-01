@@ -4168,13 +4168,12 @@ static int pagerStress(void *p, PgHdr *pPg){
 
   pPg->pDirty = 0;
   if( pagerUseWal(pPager) ){
-    /* Write a single frame for this page to the log. */
-    if( subjRequiresPage(pPg) ){ 
-      rc = subjournalPage(pPg); 
-    }
-    if( rc==SQLITE_OK ){
-      rc = pagerWalFrames(pPager, pPg, 0, 0, 0);
-    }
+    /* Never spill when in WAL mode.  The entire transaction must
+    ** remain in cache.  This is an alternative fix to ticket
+    ** [2d1a5c67dfc2] "Data loss on COMMIT in WAL mode".  It also
+    ** prevents huge WAL files when a large transaction starts
+    ** thrashing the cache. */
+    return SQLITE_OK;
   }else{
   
     /* Sync the journal file if required. */
