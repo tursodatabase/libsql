@@ -212,7 +212,6 @@ struct unixFile {
   UnixUnusedFd *pUnused;              /* Pre-allocated UnixUnusedFd */
   const char *zPath;                  /* Name of the file */
   unixShm *pShm;                      /* Shared memory segment information */
-  int readOnlyShm;                    /* True to open shared-memory read-only */
   int szChunk;                        /* Configured by FCNTL_CHUNK_SIZE */
 #if SQLITE_ENABLE_LOCKING_STYLE
   int openFlags;                      /* The flags specified at open() */
@@ -3453,10 +3452,6 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
     case SQLITE_FCNTL_SIZE_HINT: {
       return fcntlSizeHint((unixFile *)id, *(i64 *)pArg);
     }
-    case SQLITE_FCNTL_READONLY_SHM: {
-      ((unixFile*)id)->readOnlyShm = (pArg!=0);
-      return SQLITE_OK;
-    }
 #ifndef NDEBUG
     /* The pager calls this method to signal that it has done
     ** a rollback and that the database is therefore unchanged and
@@ -3542,11 +3537,11 @@ struct unixShmNode {
   char *zFilename;           /* Name of the mmapped file */
   int h;                     /* Open file descriptor */
   int szRegion;              /* Size of shared-memory regions */
-  int nRegion;               /* Size of array apRegion */
+  u16 nRegion;               /* Size of array apRegion */
+  u8 isReadonly;             /* True if read-only */
   char **apRegion;           /* Array of mapped shared-memory regions */
   int nRef;                  /* Number of unixShm objects pointing to this */
   unixShm *pFirst;           /* All unixShm objects pointing to this */
-  u8 readOnly;               /* True if this is a read-only mapping */
 #ifdef SQLITE_DEBUG
   u8 exclMask;               /* Mask of exclusive locks held */
   u8 sharedMask;             /* Mask of shared locks held */
@@ -3787,46 +3782,36 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
     }
 
     if( pInode->bProcessLock==0 ){
-      int flags = (pDbFd->readOnlyShm ? O_RDONLY : O_RDWR|O_CREAT);
-      pShmNode->h = robust_open(zShmFilename, flags, (sStat.st_mode & 0777));
+      pShmNode->h = robust_open(zShmFilename, O_RDWR|O_CREAT,
+                               (sStat.st_mode & 0777));
       if( pShmNode->h<0 ){
-        rc = unixLogError(SQLITE_CANTOPEN_BKPT, "open", zShmFilename);
-        goto shm_open_err;
+        const char *zRO;
+        zRO = sqlite3_uri_parameter(pDbFd->zPath, "readonly_shm");
+        if( zRO && (zRO[0]!='0' || zRO[1]!=0) ){
+          pShmNode->h = robust_open(zShmFilename, O_RDONLY,
+                                    (sStat.st_mode & 0777));
+          pShmNode->isReadonly = 1;
+        }
+        if( pShmNode->h<0 ){
+          rc = unixLogError(SQLITE_CANTOPEN_BKPT, "open", zShmFilename);
+          goto shm_open_err;
+        }
       }
-      pShmNode->readOnly = pDbFd->readOnlyShm;
   
       /* Check to see if another process is holding the dead-man switch.
-      ** If not, zero the first few bytes of the shared-memory file to make
-      ** sure it is not mistaken for valid by code in wal.c. Except, if this 
-      ** is a read-only connection to the shared-memory then it is not possible
-      ** to check check if another process is holding a read-lock on the DMS
-      ** byte, as we cannot attempt a write-lock via a read-only file 
-      ** descriptor. So in this case, we just assume the shared-memory 
-      ** contents are Ok and proceed.  */
-      if( pShmNode->readOnly==0 ){
-        rc = SQLITE_OK;
-        if( unixShmSystemLock(pShmNode, F_WRLCK, UNIX_SHM_DMS, 1)==SQLITE_OK ){
-          if( pDbFd->readOnlyShm ){
-            rc = SQLITE_IOERR_SHMOPEN;
-          }else if( 4!=osWrite(pShmNode->h, "\00\00\00\00", 4) ){
-            rc = unixLogError(SQLITE_IOERR_SHMOPEN, "ftruncate", zShmFilename);
-          }
+      ** If not, truncate the file to zero length. 
+      */
+      rc = SQLITE_OK;
+      if( unixShmSystemLock(pShmNode, F_WRLCK, UNIX_SHM_DMS, 1)==SQLITE_OK ){
+        if( robust_ftruncate(pShmNode->h, 0) ){
+          rc = unixLogError(SQLITE_IOERR_SHMOPEN, "ftruncate", zShmFilename);
         }
-        if( rc==SQLITE_OK ){
-          rc = unixShmSystemLock(pShmNode, F_RDLCK, UNIX_SHM_DMS, 1);
-        }
-        if( rc ) goto shm_open_err;
       }
+      if( rc==SQLITE_OK ){
+        rc = unixShmSystemLock(pShmNode, F_RDLCK, UNIX_SHM_DMS, 1);
+      }
+      if( rc ) goto shm_open_err;
     }
-  }
-
-  /* If the unixShmNode is read-only, but SQLITE_FCNTL_READONLY_SHM has not
-  ** been set for file-descriptor pDbFd, return an error. The wal.c module
-  ** will then call this function again with SQLITE_FCNTL_READONLY_SHM set.
-  */
-  else if( pShmNode->readOnly && !pDbFd->readOnlyShm ){
-    rc = SQLITE_IOERR_SHMOPEN;
-    goto shm_open_err;
   }
 
   /* Make the new connection a child of the unixShmNode */
@@ -3949,7 +3934,8 @@ static int unixShmMap(
     while(pShmNode->nRegion<=iRegion){
       void *pMem;
       if( pShmNode->h>=0 ){
-        pMem = mmap(0, szRegion, PROT_READ|(!pShmNode->readOnly?PROT_WRITE:0), 
+        pMem = mmap(0, szRegion,
+            pShmNode->isReadonly ? PROT_READ : PROT_READ|PROT_WRITE, 
             MAP_SHARED, pShmNode->h, pShmNode->nRegion*szRegion
         );
         if( pMem==MAP_FAILED ){
@@ -3975,6 +3961,7 @@ shmpage_out:
   }else{
     *pp = 0;
   }
+  if( pShmNode->isReadonly && rc==SQLITE_OK ) rc = SQLITE_READONLY;
   sqlite3_mutex_leave(pShmNode->mutex);
   return rc;
 }

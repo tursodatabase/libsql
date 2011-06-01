@@ -2673,7 +2673,7 @@ void sqlite3AddColumnType(Parse*,Token*);
 void sqlite3AddDefaultValue(Parse*,ExprSpan*);
 void sqlite3AddCollateType(Parse*, Token*);
 void sqlite3EndTable(Parse*,Token*,Token*,Select*);
-int sqlite3ParseUri(const char*,const char*,unsigned int*,int*,
+int sqlite3ParseUri(const char*,const char*,unsigned int*,
                     sqlite3_vfs**,char**,char **);
 
 Bitvec *sqlite3BitvecCreate(u32);

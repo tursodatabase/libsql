@@ -454,7 +454,6 @@ int sqlite3_exec(
 #define SQLITE_BUSY_RECOVERY           (SQLITE_BUSY   |  (1<<8))
 #define SQLITE_CANTOPEN_NOTEMPDIR      (SQLITE_CANTOPEN | (1<<8))
 #define SQLITE_CORRUPT_VTAB            (SQLITE_CORRUPT | (1<<8))
-
 #define SQLITE_READONLY_RECOVERY       (SQLITE_READONLY | (1<<8))
 #define SQLITE_READONLY_CANTLOCK       (SQLITE_READONLY | (2<<8))
 
@@ -737,27 +736,6 @@ struct sqlite3_io_methods {
 ** Applications should not call [sqlite3_file_control()] with this
 ** opcode as doing so may disrupt the operation of the specialized VFSes
 ** that do require it.  
-**
-** The [SQLITE_FCNTL_READONLY_SHM] may be generated internally by SQLite if
-** the "readonly_shm=1" URI option is specified when the database is opened.
-** The fourth argument passed to the VFS xFileControl methods is a pointer
-** to a variable of type "int" containing the value 1 or 0. If the variable
-** contains the value 1, then this indicates to the VFS that a read-only
-** mapping of the shared-memory region is acceptable. If it is set to 0, then
-** this indicates that a read-write mapping is required (as normal). If
-** a read-only mapping is returned, then the VFS may also return read-only
-** mappings for any subsequent requests via the same file-descriptor -
-** regardless of the value most recently configured using
-** SQLITE_FCNTL_READONLY_SHM.
-**
-** In practice, if "readonly_shm=1" is specified and the first attempt to
-** map a shared-memory region fails, then this file-control is invoked with
-** the argument variable set to 1 and a second attempt to map the shared-memory
-** region is made. If this mapping succeeds, then the connection continues
-** with the read-only mapping. Otherwise, if it fails, SQLITE_CANTOPEN is
-** returned to the caller. Whether or not the second (read-only) mapping
-** attempt succeeds, the file-control is invoked again with the argument
-** variable set to 0.
 */
 #define SQLITE_FCNTL_LOCKSTATE        1
 #define SQLITE_GET_LOCKPROXYFILE      2
@@ -767,7 +745,6 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_CHUNK_SIZE       6
 #define SQLITE_FCNTL_FILE_POINTER     7
 #define SQLITE_FCNTL_SYNC_OMITTED     8
-#define SQLITE_FCNTL_READONLY_SHM     9
 
 
 /*
@@ -2481,7 +2458,7 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 ** [[core URI query parameters]]
 ** The query component of a URI may contain parameters that are interpreted
 ** either by SQLite itself, or by a [VFS | custom VFS implementation].
-** SQLite interprets the following four query parameters:
+** SQLite interprets the following three query parameters:
 **
 ** <ul>
 **   <li> <b>vfs</b>: ^The "vfs" parameter may be used to specify the name of
@@ -2513,22 +2490,6 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 **     ^If sqlite3_open_v2() is used and the "cache" parameter is present in
 **     a URI filename, its value overrides any behaviour requested by setting
 **     SQLITE_OPEN_PRIVATECACHE or SQLITE_OPEN_SHAREDCACHE flag.
-**
-**   <li> <b>readonly_shm</b>: ^The readonly_shm parameter may be set to 
-**     either "1" or "0". Setting it to "1" indicates that if the database
-**     is in WAL mode and read-write access to the associated shared 
-**     memory region cannot be obtained, then an attempt should be made to open
-**     the shared-memory in read-only mode instead. If there exist one or
-**     more other database clients that have read-write connections to the
-**     database shared-memory, then a read-only shared-memory connection works 
-**     fine. However, if there exist no clients with read-write connections 
-**     to the shared-memory and the most recent such crashed or was interrupted
-**     by a power failure, then it is possible for a database client using a
-**     read-only connection to return incorrect data, incorrectly report 
-**     database corruption, or return an SQLITE_READONLY error. Or if the
-**     most recent read-write connection shut down cleanly, it may not be
-**     possible to open the shared-memory in read-only mode at all, and SQLite
-**     will return SQLITE_CANTOPEN.
 ** </ul>
 **
 ** ^Specifying an unknown parameter in the query component of a URI is not an

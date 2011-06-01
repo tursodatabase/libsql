@@ -1803,11 +1803,6 @@ int sqlite3_limit(sqlite3 *db, int limitId, int newLimit){
 ** *pFlags may be updated before returning if the URI filename contains 
 ** "cache=xxx" or "mode=xxx" query parameters.
 **
-** The third argument, pBtflags, points to an integer containing the flags
-** that will be passed as the 5th argument to sqlite3BtreeOpen (BTREE_XXX
-** flags). This value will be edited if the URI filename contains a
-** "readonly_shm=1" or "readonly_shm=0" query parameter.
-**
 ** If successful, SQLITE_OK is returned. In this case *ppVfs is set to point to
 ** the VFS that should be used to open the database file. *pzFile is set to
 ** point to a buffer containing the name of the file to open. It is the 
@@ -1823,7 +1818,6 @@ int sqlite3ParseUri(
   const char *zDefaultVfs,        /* VFS to use if no "vfs=xxx" query option */
   const char *zUri,               /* Nul-terminated URI to parse */
   unsigned int *pFlags,           /* IN/OUT: SQLITE_OPEN_XXX flags */
-  int *pBtflags,                  /* IN/OUT: BTREE_XXX flags */
   sqlite3_vfs **ppVfs,            /* OUT: VFS to use */ 
   char **pzFile,                  /* OUT: Filename component of URI */
   char **pzErrMsg                 /* OUT: Error message (if rc!=SQLITE_OK) */
@@ -1939,12 +1933,6 @@ int sqlite3ParseUri(
 
       if( nOpt==3 && memcmp("vfs", zOpt, 3)==0 ){
         zVfs = zVal;
-      }else if( nOpt==12 && memcmp("readonly_shm", zOpt, 12)==0 ){
-        if( sqlite3Atoi(zVal) ){
-          *pBtflags |= BTREE_READONLYSHM;
-        }else{
-          *pBtflags &= ~BTREE_READONLYSHM;
-        }
       }else{
         struct OpenMode {
           const char *z;
@@ -2048,7 +2036,6 @@ static int openDatabase(
   int isThreadsafe;               /* True for threadsafe connections */
   char *zOpen = 0;                /* Filename argument to pass to BtreeOpen() */
   char *zErrMsg = 0;              /* Error message from sqlite3ParseUri() */
-  int btflags = 0;                /* Mask of BTREE_XXX flags */
 
   *ppDb = 0;
 #ifndef SQLITE_OMIT_AUTOINIT
@@ -2177,8 +2164,7 @@ static int openDatabase(
 
   /* Parse the filename/URI argument. */
   db->openFlags = flags;
-  rc = sqlite3ParseUri(
-      zVfs, zFilename, &flags, &btflags, &db->pVfs, &zOpen, &zErrMsg);
+  rc = sqlite3ParseUri(zVfs, zFilename, &flags, &db->pVfs, &zOpen, &zErrMsg);
   if( rc!=SQLITE_OK ){
     if( rc==SQLITE_NOMEM ) db->mallocFailed = 1;
     sqlite3Error(db, rc, zErrMsg ? "%s" : 0, zErrMsg);
@@ -2187,7 +2173,7 @@ static int openDatabase(
   }
 
   /* Open the backend database driver */
-  rc = sqlite3BtreeOpen(db->pVfs, zOpen, db, &db->aDb[0].pBt, btflags,
+  rc = sqlite3BtreeOpen(db->pVfs, zOpen, db, &db->aDb[0].pBt, 0,
                         flags | SQLITE_OPEN_MAIN_DB);
   if( rc!=SQLITE_OK ){
     if( rc==SQLITE_IOERR_NOMEM ){

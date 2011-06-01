@@ -23,7 +23,7 @@
 # define sqlite3WalOpen(x,y,z)                   0
 # define sqlite3WalLimit(x,y)
 # define sqlite3WalClose(w,x,y,z)                0
-# define sqlite3WalBeginReadTransaction(x,y,z)   0
+# define sqlite3WalBeginReadTransaction(y,z)     0
 # define sqlite3WalEndReadTransaction(z)
 # define sqlite3WalRead(v,w,x,y,z)               0
 # define sqlite3WalDbsize(y)                     0
@@ -60,7 +60,7 @@ void sqlite3WalLimit(Wal*, i64);
 ** write to or checkpoint the WAL.  sqlite3WalCloseSnapshot() closes the
 ** transaction and releases the lock.
 */
-int sqlite3WalBeginReadTransaction(Wal *pWal, int, int *);
+int sqlite3WalBeginReadTransaction(Wal *pWal, int *);
 void sqlite3WalEndReadTransaction(Wal *pWal);
 
 /* Read a page from the write-ahead log, if it is present. */
