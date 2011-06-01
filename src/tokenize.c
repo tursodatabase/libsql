@@ -412,9 +412,8 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   assert( pParse->pNewTable==0 );
   assert( pParse->pNewTrigger==0 );
   assert( pParse->nVar==0 );
-  assert( pParse->nVarExpr==0 );
-  assert( pParse->nVarExprAlloc==0 );
-  assert( pParse->apVarExpr==0 );
+  assert( pParse->nzVar==0 );
+  assert( pParse->azVar==0 );
   enableLookaside = db->lookaside.bEnabled;
   if( db->lookaside.pStart ) db->lookaside.bEnabled = 1;
   while( !db->mallocFailed && zSql[i]!=0 ){
@@ -508,7 +507,8 @@ abort_parse:
   }
 
   sqlite3DeleteTrigger(db, pParse->pNewTrigger);
-  sqlite3DbFree(db, pParse->apVarExpr);
+  for(i=pParse->nzVar-1; i>=0; i--) sqlite3DbFree(db, pParse->azVar[i]);
+  sqlite3DbFree(db, pParse->azVar);
   sqlite3DbFree(db, pParse->aAlias);
   while( pParse->pAinc ){
     AutoincInfo *p = pParse->pAinc;

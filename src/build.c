@@ -200,9 +200,7 @@ void sqlite3FinishCoding(Parse *pParse){
     /* A minimum of one cursor is required if autoincrement is used
     *  See ticket [a696379c1f08866] */
     if( pParse->pAinc!=0 && pParse->nTab==0 ) pParse->nTab = 1;
-    sqlite3VdbeMakeReady(v, pParse->nVar, pParse->nMem,
-                         pParse->nTab, pParse->nMaxArg, pParse->explain,
-                         pParse->isMultiWrite && pParse->mayAbort);
+    sqlite3VdbeMakeReady(v, pParse);
     pParse->rc = SQLITE_DONE;
     pParse->colNamesSet = 0;
   }else{
