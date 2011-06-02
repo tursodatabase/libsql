@@ -768,7 +768,10 @@ void sqlite3Fts3ExprFree(Fts3Expr *p){
     assert( p->eType==FTSQUERY_PHRASE || p->pPhrase==0 );
     sqlite3Fts3ExprFree(p->pLeft);
     sqlite3Fts3ExprFree(p->pRight);
-    if( p->pPhrase ) sqlite3_free(p->pPhrase->aDoclist);
+    if( p->pPhrase ){
+      sqlite3Fts3EvalPhraseCleanup(p->pPhrase);
+      sqlite3_free(p->pPhrase->aDoclist);
+    }
     sqlite3_free(p);
   }
 }

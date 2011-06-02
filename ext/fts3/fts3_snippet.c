@@ -416,7 +416,7 @@ static int fts3SnippetFindPositions(Fts3Expr *pExpr, int iPhrase, void *ctx){
 
   pPhrase->nToken = pExpr->pPhrase->nToken;
 
-  pCsr = sqlite3Fts3FindPositions(p->pCsr, pExpr, p->pCsr->iPrevId, p->iCol);
+  pCsr = sqlite3Fts3EvalPhrasePoslist(p->pCsr, pExpr, p->pCsr->iPrevId,p->iCol);
   if( pCsr ){
     int iFirst = 0;
     pPhrase->pList = pCsr;
@@ -826,46 +826,31 @@ static int fts3ExprGlobalHitsCb(
   void *pCtx                      /* Pointer to MatchInfo structure */
 ){
   MatchInfo *p = (MatchInfo *)pCtx;
-  Fts3Cursor *pCsr = p->pCursor;
-  Fts3Phrase *pPhrase = pExpr->pPhrase; 
-  char *pIter;
-  char *pEnd;
-  char *pFree = 0;
   u32 *aOut = &p->aMatchinfo[3*iPhrase*p->nCol];
 
-  assert( pPhrase->isLoaded );
-
-  if( pCsr->pDeferred ){
-    int ii;
-    for(ii=0; ii<pPhrase->nToken; ii++){
-      if( pPhrase->aToken[ii].bFulltext ) break;
-    }
-    if( ii<pPhrase->nToken ){
-      int nFree = 0;
-      int rc = sqlite3Fts3ExprLoadFtDoclist(pCsr, pExpr, &pFree, &nFree);
-      if( rc!=SQLITE_OK ) return rc;
-      pIter = pFree;
-      pEnd = &pFree[nFree];
-    }else{
-      int iCol;                   /* Column index */
-      for(iCol=0; iCol<p->nCol; iCol++){
-        aOut[iCol*3 + 1] = (u32)p->nDoc;
-        aOut[iCol*3 + 2] = (u32)p->nDoc;
-      }
-      return SQLITE_OK;
+  if( pExpr->bDeferred ){
+    int iCol;                   /* Column index */
+    for(iCol=0; iCol<p->nCol; iCol++){
+      aOut[iCol*3 + 1] = (u32)p->nDoc;
+      aOut[iCol*3 + 2] = (u32)p->nDoc;
     }
   }else{
-    pIter = pPhrase->aDoclist;
-    pEnd = &pPhrase->aDoclist[pPhrase->nDoclist];
+    char *pIter;
+    char *pEnd;
+    int n;
+    int rc = sqlite3Fts3EvalPhraseDoclist(
+        p->pCursor, pExpr, (const char **)&pIter, &n
+    );
+    if( rc!=SQLITE_OK ) return rc;
+    pEnd = &pIter[n];
+
+    /* Fill in the global hit count matrix row for this phrase. */
+    while( pIter<pEnd ){
+      while( *pIter++ & 0x80 );      /* Skip past docid. */
+      fts3LoadColumnlistCounts(&pIter, &aOut[1], 1);
+    }
   }
 
-  /* Fill in the global hit count matrix row for this phrase. */
-  while( pIter<pEnd ){
-    while( *pIter++ & 0x80 );      /* Skip past docid. */
-    fts3LoadColumnlistCounts(&pIter, &aOut[1], 1);
-  }
-
-  sqlite3_free(pFree);
   return SQLITE_OK;
 }
 
@@ -882,15 +867,15 @@ static int fts3ExprLocalHitsCb(
   MatchInfo *p = (MatchInfo *)pCtx;
   int iStart = iPhrase * p->nCol * 3;
   int i;
+  sqlite3_int64 iDocid = p->pCursor->iPrevId;
 
-  for(i=0; i<p->nCol; i++) p->aMatchinfo[iStart+i*3] = 0;
-
-  if( pExpr->pPhrase->aDoclist ){
+  for(i=0; i<p->nCol; i++){
     char *pCsr;
-
-    pCsr = sqlite3Fts3FindPositions(p->pCursor, pExpr, p->pCursor->iPrevId, -1);
+    pCsr = sqlite3Fts3EvalPhrasePoslist(p->pCursor, pExpr, iDocid, i);
     if( pCsr ){
-      fts3LoadColumnlistCounts(&pCsr, &p->aMatchinfo[iStart], 0);
+      p->aMatchinfo[iStart+i*3] = fts3ColumnlistCount(&pCsr);
+    }else{
+      p->aMatchinfo[iStart+i*3] = 0;
     }
   }
 
@@ -976,9 +961,8 @@ static int fts3MatchinfoSelectDoctotal(
 typedef struct LcsIterator LcsIterator;
 struct LcsIterator {
   Fts3Expr *pExpr;                /* Pointer to phrase expression */
-  char *pRead;                    /* Cursor used to iterate through aDoclist */
   int iPosOffset;                 /* Tokens count up to end of this phrase */
-  int iCol;                       /* Current column number */
+  char *pRead;                    /* Cursor used to iterate through aDoclist */
   int iPos;                       /* Current position */
 };
 
@@ -1009,17 +993,10 @@ static int fts3LcsIteratorAdvance(LcsIterator *pIter){
   int rc = 0;
 
   pRead += sqlite3Fts3GetVarint(pRead, &iRead);
-  if( iRead==0 ){
-    pIter->iCol = LCS_ITERATOR_FINISHED;
+  if( iRead==0 || iRead==1 ){
+    pRead = 0;
     rc = 1;
   }else{
-    if( iRead==1 ){
-      pRead += sqlite3Fts3GetVarint(pRead, &iRead);
-      pIter->iCol = (int)iRead;
-      pIter->iPos = pIter->iPosOffset;
-      pRead += sqlite3Fts3GetVarint(pRead, &iRead);
-      rc = 1;
-    }
     pIter->iPos += (int)(iRead-2);
   }
 
@@ -1043,6 +1020,7 @@ static int fts3MatchinfoLcs(Fts3Cursor *pCsr, MatchInfo *pInfo){
   int i;
   int iCol;
   int nToken = 0;
+  sqlite3_int64 iDocid = pCsr->iPrevId;
 
   /* Allocate and populate the array of LcsIterator objects. The array
   ** contains one element for each matchable phrase in the query.
@@ -1051,42 +1029,34 @@ static int fts3MatchinfoLcs(Fts3Cursor *pCsr, MatchInfo *pInfo){
   if( !aIter ) return SQLITE_NOMEM;
   memset(aIter, 0, sizeof(LcsIterator) * pCsr->nPhrase);
   (void)fts3ExprIterate(pCsr->pExpr, fts3MatchinfoLcsCb, (void*)aIter);
+
   for(i=0; i<pInfo->nPhrase; i++){
     LcsIterator *pIter = &aIter[i];
     nToken -= pIter->pExpr->pPhrase->nToken;
     pIter->iPosOffset = nToken;
-    pIter->pRead = sqlite3Fts3FindPositions(pCsr,pIter->pExpr,pCsr->iPrevId,-1);
-    if( pIter->pRead ){
-      pIter->iPos = pIter->iPosOffset;
-      fts3LcsIteratorAdvance(&aIter[i]);
-    }else{
-      pIter->iCol = LCS_ITERATOR_FINISHED;
-    }
   }
 
   for(iCol=0; iCol<pInfo->nCol; iCol++){
     int nLcs = 0;                 /* LCS value for this column */
     int nLive = 0;                /* Number of iterators in aIter not at EOF */
 
-    /* Loop through the iterators in aIter[]. Set nLive to the number of
-    ** iterators that point to a position-list corresponding to column iCol.
-    */
     for(i=0; i<pInfo->nPhrase; i++){
-      assert( aIter[i].iCol>=iCol );
-      if( aIter[i].iCol==iCol ) nLive++;
+      LcsIterator *pIt = &aIter[i];
+      pIt->pRead = sqlite3Fts3EvalPhrasePoslist(pCsr, pIt->pExpr, iDocid, iCol);
+      if( pIt->pRead ){
+        pIt->iPos = pIt->iPosOffset;
+        fts3LcsIteratorAdvance(&aIter[i]);
+        nLive++;
+      }
     }
 
-    /* The following loop runs until all iterators in aIter[] have finished
-    ** iterating through positions in column iCol. Exactly one of the 
-    ** iterators is advanced each time the body of the loop is run.
-    */
     while( nLive>0 ){
       LcsIterator *pAdv = 0;      /* The iterator to advance by one position */
       int nThisLcs = 0;           /* LCS for the current iterator positions */
 
       for(i=0; i<pInfo->nPhrase; i++){
         LcsIterator *pIter = &aIter[i];
-        if( iCol!=pIter->iCol ){  
+        if( pIter->pRead==0 ){
           /* This iterator is already at EOF for this column. */
           nThisLcs = 0;
         }else{
@@ -1426,7 +1396,7 @@ static int fts3ExprTermOffsetInit(Fts3Expr *pExpr, int iPhrase, void *ctx){
   int iPos = 0;                   /* First position in position-list */
 
   UNUSED_PARAMETER(iPhrase);
-  pList = sqlite3Fts3FindPositions(p->pCsr, pExpr, p->iDocid, p->iCol);
+  pList = sqlite3Fts3EvalPhrasePoslist(p->pCsr, pExpr, p->iDocid, p->iCol);
   nTerm = pExpr->pPhrase->nToken;
   if( pList ){
     fts3GetDeltaPosition(&pList, &iPos);

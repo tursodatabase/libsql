@@ -33,7 +33,7 @@ struct Fts3termTable {
 
 struct Fts3termCursor {
   sqlite3_vtab_cursor base;       /* Base class used by SQLite core */
-  Fts3SegReaderCursor csr;        /* Must be right after "base" */
+  Fts3MultiSegReader csr;        /* Must be right after "base" */
   Fts3SegFilter filter;
 
   int isEof;                      /* True if cursor is at EOF */

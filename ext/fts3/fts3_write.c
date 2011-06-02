@@ -1155,6 +1155,8 @@ int sqlite3Fts3SegReaderCost(
   int nCost = 0;                  /* Cost in bytes to return */
   int pgsz = p->nPgsz;            /* Database page size */
 
+  assert( pgsz>0 );
+
   /* If this seg-reader is reading the pending-terms table, or if all data
   ** for the segment is stored on the root page of the b-tree, then the cost
   ** is zero. In this case all required data is already in main memory.
@@ -1220,6 +1222,40 @@ int sqlite3Fts3SegReaderCost(
   }
 
   *pnCost += nCost;
+  return rc;
+}
+
+int sqlite3Fts3MsrOvfl(
+  Fts3Cursor *pCsr, 
+  Fts3MultiSegReader *pMsr,
+  int *pnOvfl
+){
+  Fts3Table *p = (Fts3Table*)pCsr->base.pVtab;
+  int nOvfl = 0;
+  int ii;
+  int rc = SQLITE_OK;
+  int pgsz = p->nPgsz;
+
+  assert( p->bHasStat );
+  assert( pgsz>0 );
+
+  for(ii=0; rc==SQLITE_OK && ii<pMsr->nSegment; ii++){
+    Fts3SegReader *pReader = pMsr->apSegment[ii];
+    if( !fts3SegReaderIsPending(pReader) 
+     && !fts3SegReaderIsRootOnly(pReader) 
+    ){
+      int jj;
+      for(jj=pReader->iStartBlock; jj<=pReader->iLeafEndBlock; jj++){
+        int nBlob;
+        rc = sqlite3Fts3ReadBlock(p, jj, 0, &nBlob);
+        if( rc!=SQLITE_OK ) break;
+        if( (nBlob+35)>pgsz ){
+          nOvfl += (nBlob + 34)/pgsz;
+        }
+      }
+    }
+  }
+  *pnOvfl = nOvfl;
   return rc;
 }
 
@@ -2140,9 +2176,107 @@ static void fts3ColumnFilter(
   *pnList = nList;
 }
 
+int sqlite3Fts3MsrIncrStart(
+  Fts3Table *p,                   /* Virtual table handle */
+  Fts3MultiSegReader *pCsr,       /* Cursor object */
+  int iCol,                       /* Column to match on. */
+  const char *zTerm,              /* Term to iterate through a doclist for */
+  int nTerm                       /* Number of bytes in zTerm */
+){
+  int i;
+  int nSegment = pCsr->nSegment;
+
+  assert( pCsr->pFilter==0 );
+  assert( zTerm && nTerm>0 );
+
+  /* Advance each segment iterator until it points to the term zTerm/nTerm. */
+  for(i=0; i<nSegment; i++){
+    Fts3SegReader *pSeg = pCsr->apSegment[i];
+    do {
+      int rc = fts3SegReaderNext(p, pSeg);
+      if( rc!=SQLITE_OK ) return rc;
+    }while( fts3SegReaderTermCmp(pSeg, zTerm, nTerm)<0 );
+  }
+  fts3SegReaderSort(pCsr->apSegment, nSegment, nSegment, fts3SegReaderCmp);
+
+  /* Determine how many of the segments actually point to zTerm/nTerm. */
+  for(i=0; i<nSegment; i++){
+    Fts3SegReader *pSeg = pCsr->apSegment[i];
+    if( !pSeg->aNode || fts3SegReaderTermCmp(pSeg, zTerm, nTerm) ){
+      break;
+    }
+  }
+  pCsr->nAdvance = i;
+
+  /* Advance each of the segments to point to the first docid. */
+  for(i=0; i<pCsr->nAdvance; i++){
+    fts3SegReaderFirstDocid(pCsr->apSegment[i]);
+  }
+
+  assert( iCol<0 || iCol<p->nColumn );
+  pCsr->iColFilter = iCol;
+
+  return SQLITE_OK;
+}
+
+int sqlite3Fts3MsrIncrNext(
+  Fts3Table *p,                   /* Virtual table handle */
+  Fts3MultiSegReader *pMsr,       /* Multi-segment-reader handle */
+  sqlite3_int64 *piDocid,         /* OUT: Docid value */
+  char **paPoslist,               /* OUT: Pointer to position list */
+  int *pnPoslist                  /* OUT: Size of position list in bytes */
+){
+  int rc = SQLITE_OK;
+  int nMerge = pMsr->nAdvance;
+  Fts3SegReader **apSegment = pMsr->apSegment;
+
+  if( nMerge==0 ){
+    *paPoslist = 0;
+    return SQLITE_OK;
+  }
+
+  while( 1 ){
+    Fts3SegReader *pSeg;
+    fts3SegReaderSort(pMsr->apSegment, nMerge, nMerge, fts3SegReaderDoclistCmp);
+    pSeg = pMsr->apSegment[0];
+
+    if( pSeg->pOffsetList==0 ){
+      *paPoslist = 0;
+      break;
+    }else{
+      char *pList;
+      int nList;
+      int j;
+      sqlite3_int64 iDocid = apSegment[0]->iDocid;
+
+      fts3SegReaderNextDocid(apSegment[0], &pList, &nList);
+      j = 1;
+      while( j<nMerge
+        && apSegment[j]->pOffsetList
+        && apSegment[j]->iDocid==iDocid
+      ){
+        fts3SegReaderNextDocid(apSegment[j], 0, 0);
+      }
+
+      if( pMsr->iColFilter>=0 ){
+        fts3ColumnFilter(pMsr->iColFilter, &pList, &nList);
+      }
+
+      if( nList>0 ){
+        *piDocid = iDocid;
+        *paPoslist = pList;
+        *pnPoslist = nList;
+        break;
+      }
+    }
+  }
+
+  return rc;
+}
+
 int sqlite3Fts3SegReaderStart(
   Fts3Table *p,                   /* Virtual table handle */
-  Fts3SegReaderCursor *pCsr,      /* Cursor object */
+  Fts3MultiSegReader *pCsr,       /* Cursor object */
   Fts3SegFilter *pFilter          /* Restrictions on range of iteration */
 ){
   int i;
@@ -2173,7 +2307,7 @@ int sqlite3Fts3SegReaderStart(
 
 int sqlite3Fts3SegReaderStep(
   Fts3Table *p,                   /* Virtual table handle */
-  Fts3SegReaderCursor *pCsr       /* Cursor object */
+  Fts3MultiSegReader *pCsr        /* Cursor object */
 ){
   int rc = SQLITE_OK;
 
@@ -2308,8 +2442,9 @@ int sqlite3Fts3SegReaderStep(
   return rc;
 }
 
+
 void sqlite3Fts3SegReaderFinish(
-  Fts3SegReaderCursor *pCsr       /* Cursor object */
+  Fts3MultiSegReader *pCsr       /* Cursor object */
 ){
   if( pCsr ){
     int i;
@@ -2342,7 +2477,7 @@ static int fts3SegmentMerge(Fts3Table *p, int iIndex, int iLevel){
   int iNewLevel = 0;              /* Level/index to create new segment at */
   SegmentWriter *pWriter = 0;     /* Used to write the new, merged, segment */
   Fts3SegFilter filter;           /* Segment term filter condition */
-  Fts3SegReaderCursor csr;        /* Cursor to iterate through level(s) */
+  Fts3MultiSegReader csr;        /* Cursor to iterate through level(s) */
   int bIgnoreEmpty = 0;           /* True to ignore empty segments */
 
   assert( iLevel==FTS3_SEGCURSOR_ALL
@@ -2744,6 +2879,33 @@ int sqlite3Fts3CacheDeferredDoclists(Fts3Cursor *pCsr){
   }
 
   return rc;
+}
+
+int sqlite3Fts3DeferredTokenList(
+  Fts3DeferredToken *p, 
+  char **ppData, 
+  int *pnData
+){
+  char *pRet;
+  int nSkip;
+  sqlite3_int64 dummy;
+
+  *ppData = 0;
+  *pnData = 0;
+
+  if( p->pList==0 ){
+    return SQLITE_OK;
+  }
+
+  pRet = (char *)sqlite3_malloc(p->pList->nData);
+  if( !pRet ) return SQLITE_NOMEM;
+
+  nSkip = sqlite3Fts3GetVarint(p->pList->aData, &dummy);
+  *pnData = p->pList->nData - nSkip;
+  *ppData = pRet;
+  
+  memcpy(pRet, &p->pList->aData[nSkip], *pnData);
+  return SQLITE_OK;
 }
 
 /*

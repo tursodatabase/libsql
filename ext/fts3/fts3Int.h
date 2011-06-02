@@ -47,6 +47,11 @@
 */
 #define SizeofArray(X) ((int)(sizeof(X)/sizeof(X[0])))
 
+
+#ifndef MIN
+# define MIN(x,y) ((x)<(y)?(x):(y))
+#endif
+
 /*
 ** Maximum length of a varint encoded integer. The varint format is different
 ** from that used by SQLite, so the maximum length is 10, not 9.
@@ -142,10 +147,11 @@ typedef struct Fts3Expr Fts3Expr;
 typedef struct Fts3Phrase Fts3Phrase;
 typedef struct Fts3PhraseToken Fts3PhraseToken;
 
+typedef struct Fts3Doclist Fts3Doclist;
 typedef struct Fts3SegFilter Fts3SegFilter;
 typedef struct Fts3DeferredToken Fts3DeferredToken;
 typedef struct Fts3SegReader Fts3SegReader;
-typedef struct Fts3SegReaderCursor Fts3SegReaderCursor;
+typedef struct Fts3MultiSegReader Fts3MultiSegReader;
 
 /*
 ** A connection to a fulltext index is an instance of the following
@@ -224,6 +230,7 @@ struct Fts3Cursor {
   u8 isRequireSeek;               /* True if must seek pStmt to %_content row */
   sqlite3_stmt *pStmt;            /* Prepared statement in use by the cursor */
   Fts3Expr *pExpr;                /* Parsed MATCH query string */
+  int bIncremental;               /* True to use incremental querying */
   int nPhrase;                    /* Number of matchable phrases in query */
   Fts3DeferredToken *pDeferred;   /* Deferred search tokens, if any */
   sqlite3_int64 iPrevId;          /* Previous id read from aDoclist */
@@ -263,6 +270,17 @@ struct Fts3Cursor {
 #define FTS3_DOCID_SEARCH    1    /* Lookup by rowid on %_content table */
 #define FTS3_FULLTEXT_SEARCH 2    /* Full-text index search */
 
+
+struct Fts3Doclist {
+  char *aAll;                    /* Array containing doclist (or NULL) */
+  int nAll;                      /* Size of a[] in bytes */
+
+  sqlite3_int64 iDocid;          /* Current docid (if p!=0) */
+  char *pNextDocid;              /* Pointer to next docid */
+  char *pList;                   /* Pointer to position list following iDocid */
+  int nList;                     /* Length of position list */
+} doclist;
+
 /*
 ** A "phrase" is a sequence of one or more tokens that must match in
 ** sequence.  A single token is the base case and the most common case.
@@ -277,23 +295,29 @@ struct Fts3PhraseToken {
   /* Variables above this point are populated when the expression is
   ** parsed (by code in fts3_expr.c). Below this point the variables are
   ** used when evaluating the expression. */
-
   int bFulltext;                  /* True if full-text index was used */
-  Fts3SegReaderCursor *pSegcsr;   /* Segment-reader for this token */
   Fts3DeferredToken *pDeferred;   /* Deferred token object for this token */
+  Fts3MultiSegReader *pSegcsr;    /* Segment-reader for this token */
 };
 
 struct Fts3Phrase {
-  /* Variables populated by fts3_expr.c when parsing a MATCH expression */
-  int nToken;                /* Number of tokens in the phrase */
-  int iColumn;               /* Index of column this phrase must match */
+  /* Cache of doclist for this phrase. */
+  Fts3Doclist doclist;
+  int bIncr;                 /* True if doclist is loaded incrementally */
 
+#if 1
   int isLoaded;              /* True if aDoclist/nDoclist are initialized. */
   char *aDoclist;            /* Buffer containing doclist */
   int nDoclist;              /* Size of aDoclist in bytes */
   sqlite3_int64 iCurrent;
   char *pCurrent;
+#endif
 
+  /* Variables below this point are populated by fts3_expr.c when parsing 
+  ** a MATCH expression. Everything above is part of the evaluation phase. 
+  */
+  int nToken;                /* Number of tokens in the phrase */
+  int iColumn;               /* Index of column this phrase must match */
   Fts3PhraseToken aToken[1]; /* One entry for each token in the phrase */
 };
 
@@ -317,6 +341,12 @@ struct Fts3Expr {
   Fts3Expr *pLeft;           /* Left operand */
   Fts3Expr *pRight;          /* Right operand */
   Fts3Phrase *pPhrase;       /* Valid if eType==FTSQUERY_PHRASE */
+
+  /* The following are used by the fts3_eval.c module. */
+  sqlite3_int64 iDocid;      /* Current docid */
+  u8 bEof;                   /* True this expression is at EOF already */
+  u8 bStart;                 /* True if iDocid is valid */
+  u8 bDeferred;              /* True if this expression is entirely deferred */
 };
 
 /*
@@ -366,11 +396,12 @@ void sqlite3Fts3SegmentsClose(Fts3Table *);
 #define FTS3_SEGCURSOR_PENDING        -1
 #define FTS3_SEGCURSOR_ALL            -2
 
-int sqlite3Fts3SegReaderStart(Fts3Table*, Fts3SegReaderCursor*, Fts3SegFilter*);
-int sqlite3Fts3SegReaderStep(Fts3Table *, Fts3SegReaderCursor *);
-void sqlite3Fts3SegReaderFinish(Fts3SegReaderCursor *);
+int sqlite3Fts3SegReaderStart(Fts3Table*, Fts3MultiSegReader*, Fts3SegFilter*);
+int sqlite3Fts3SegReaderStep(Fts3Table *, Fts3MultiSegReader *);
+void sqlite3Fts3SegReaderFinish(Fts3MultiSegReader *);
+
 int sqlite3Fts3SegReaderCursor(
-    Fts3Table *, int, int, const char *, int, int, int, Fts3SegReaderCursor *);
+    Fts3Table *, int, int, const char *, int, int, int, Fts3MultiSegReader *);
 
 /* Flags allowed as part of the 4th argument to SegmentReaderIterate() */
 #define FTS3_SEGMENT_REQUIRE_POS   0x00000001
@@ -387,7 +418,7 @@ struct Fts3SegFilter {
   int flags;
 };
 
-struct Fts3SegReaderCursor {
+struct Fts3MultiSegReader {
   /* Used internally by sqlite3Fts3SegReaderXXX() calls */
   Fts3SegReader **apSegment;      /* Array of Fts3SegReader objects */
   int nSegment;                   /* Size of apSegment array */
@@ -396,8 +427,11 @@ struct Fts3SegReaderCursor {
   char *aBuffer;                  /* Buffer to merge doclists in */
   int nBuffer;                    /* Allocated size of aBuffer[] in bytes */
 
-  /* Cost of running this iterator. Used by fts3.c only. */
-  int nCost;
+  int iColFilter;                 /* If >=0, filter for this column */
+
+  /* Used by fts3.c only. */
+  int nCost;                      /* Cost of running iterator */
+  int bLookup;                    /* True if a lookup of a single entry. */
 
   /* Output values. Valid only after Fts3SegReaderStep() returns SQLITE_ROW. */
   char *zTerm;                    /* Pointer to term buffer */
@@ -413,7 +447,6 @@ int sqlite3Fts3GetVarint32(const char *, int *);
 int sqlite3Fts3VarintLen(sqlite3_uint64);
 void sqlite3Fts3Dequote(char *);
 
-char *sqlite3Fts3FindPositions(Fts3Cursor *, Fts3Expr *, sqlite3_int64, int);
 int sqlite3Fts3ExprLoadDoclist(Fts3Cursor *, Fts3Expr *);
 int sqlite3Fts3ExprLoadFtDoclist(Fts3Cursor *, Fts3Expr *, char **, int *);
 int sqlite3Fts3ExprNearTrim(Fts3Expr *, Fts3Expr *, int);
@@ -445,5 +478,30 @@ int sqlite3Fts3InitTerm(sqlite3 *db);
 
 /* fts3_aux.c */
 int sqlite3Fts3InitAux(sqlite3 *db);
+
+int sqlite3Fts3TermSegReaderCursor(
+  Fts3Cursor *pCsr,               /* Virtual table cursor handle */
+  const char *zTerm,              /* Term to query for */
+  int nTerm,                      /* Size of zTerm in bytes */
+  int isPrefix,                   /* True for a prefix search */
+  Fts3MultiSegReader **ppSegcsr   /* OUT: Allocated seg-reader cursor */
+);
+
+int sqlite3Fts3EvalPhraseCache(Fts3Cursor *, Fts3Phrase *);
+sqlite3_int64 sqlite3Fts3EvalDocid(Fts3Cursor *, Fts3Expr *);
+int sqlite3Fts3EvalPhraseDoclist(Fts3Cursor*, Fts3Expr*, const char**,int*);
+void sqlite3Fts3EvalPhraseCleanup(Fts3Phrase *);
+
+int sqlite3Fts3EvalStart(Fts3Cursor *, Fts3Expr *, int);
+int sqlite3Fts3EvalNext(Fts3Cursor *pCsr, Fts3Expr *pExpr);
+int sqlite3Fts3MsrIncrStart(
+    Fts3Table*, Fts3MultiSegReader*, int, const char*, int);
+int sqlite3Fts3MsrIncrNext(
+    Fts3Table *, Fts3MultiSegReader *, sqlite3_int64 *, char **, int *);
+char *sqlite3Fts3EvalPhrasePoslist(
+  Fts3Cursor *, Fts3Expr *, sqlite3_int64, int iCol); 
+int sqlite3Fts3MsrOvfl(Fts3Cursor *, Fts3MultiSegReader *, int *);
+
+int sqlite3Fts3DeferredTokenList(Fts3DeferredToken *, char **, int *);
 
 #endif /* _FTSINT_H */

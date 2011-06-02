@@ -28,7 +28,7 @@ struct Fts3auxTable {
 
 struct Fts3auxCursor {
   sqlite3_vtab_cursor base;       /* Base class used by SQLite core */
-  Fts3SegReaderCursor csr;        /* Must be right after "base" */
+  Fts3MultiSegReader csr;        /* Must be right after "base" */
   Fts3SegFilter filter;
   char *zStop;
   int nStop;                      /* Byte-length of string zStop */
