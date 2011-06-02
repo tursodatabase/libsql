@@ -1,5 +1,5 @@
-C Avoid\sunnecessary\sduplication\sof\sSQL\sparameter\snames.
-D 2011-06-01T19:16:06.364
+C Merge\sthe\sread-only\sshared\smemory\sbranch\sinto\strunk.\s\sAfter\sthis\smerge,\san\nunprivileged\sprocess\scan\sopen\sWAL-mode\sdatabases\sowned\sby\sanother\suser\sas\nlong\sas\sa\sdatabase\sconnection\swith\swrite\spermission\sexists\son\sthe\sdatabase\nfile\sand\sif\sthe\sreadonly_shm=1\sURI\squery\sparameter\sis\ssupplied.
+D 2011-06-02T13:04:33.467
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,7 +163,7 @@ F src/os.c 22ac61d06e72a0dac900400147333b07b13d8e1d
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 6d4a58d81ad4b782406519f3790202f330e89bb7
+F src/os_unix.c fd4e9588ff0ce09720721ce739ab2682202875ae
 F src/os_win.c 218b899469e570d46eb8147c2383075f7c026230
 F src/pager.c 120550e7ef01dafaa2cbb4a0528c0d87c8f12b41
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
@@ -179,14 +179,14 @@ F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c d9d440809025a58547e39f4f268c2a296bfb56ff
 F src/shell.c decd04236a7ef26be5ef46d4ea963044bfad9a48
-F src/sqlite.h.in 91c63a69eeddbd62182ec00dbfee390016972bdb
+F src/sqlite.h.in 2f51e4f58b2b4626fcbd9938580e730cb5fb4985
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
 F src/sqliteInt.h 6e58c558c57c8f44011736d5fa5295eb3130f9de
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 501c9a200fd998a268be475be5858febc90b725b
-F src/test1.c 9f61b9d23938bc5dd165ec7b95a91c30ce6e66db
+F src/test1.c efca486a25fb894988e7a82e84579a4e57388a02
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 124ff9735fb6bb7d41de180d6bac90e7b1509432
 F src/test4.c d1e5a5e904d4b444cf572391fdcb017638e36ff7
@@ -245,7 +245,7 @@ F src/vdbeblob.c f024f0bf420f36b070143c32b15cc7287341ffd3
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
 F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
 F src/vtab.c 9ba8c7fdb7d39260c033a402f6032d3e7bc5d336
-F src/wal.c ab1d8c5abf904fd6396f90499cbd8c54b8d6961b
+F src/wal.c fd63d07233203dd3bd29cbe1ae5c8bb2c34e08fc
 F src/wal.h 66b40bd91bc29a5be1c88ddd1f5ade8f3f48728a
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 55403ce19c506be6a321c7f129aff693d6103db5
@@ -548,7 +548,7 @@ F test/lock4.test c82268c031d39345d05efa672f80b025481b3ae5
 F test/lock5.test b2abb5e711bc59b0eae00f6c97a36ec9f458fada
 F test/lock6.test ad5b387a3a8096afd3c68a55b9535056431b0cf5
 F test/lock7.test 64006c84c1c616657e237c7ad6532b765611cf64
-F test/lock_common.tcl d279887a0ab16cdb6d935c1203e64113c5a000e9
+F test/lock_common.tcl 0c270b121d40959fa2f3add382200c27045b3d95
 F test/lookaside.test 93f07bac140c5bb1d49f3892d2684decafdc7af2
 F test/main.test 9d7bbfcc1b52c88ba7b2ba6554068ecf9939f252
 F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
@@ -886,6 +886,7 @@ F test/walfault.test 58fce626359c9376fe35101b5c0f2df8040aa839
 F test/walhook.test ed00a40ba7255da22d6b66433ab61fab16a63483
 F test/walmode.test 22ddccd073c817ac9ead62b88ac446e8dedc7d2c
 F test/walnoshm.test a074428046408f4eb5c6a00e09df8cc97ff93317
+F test/walro.test 1f15853383a976ff8bbec78dd44bc15c4e237392
 F test/walshared.test 6dda2293880c300baf5d791c307f653094585761
 F test/walslow.test d21625e2e99e11c032ce949e8a94661576548933
 F test/walthread.test a25a393c068a2b42b44333fa3fdaae9072f1617c
@@ -938,7 +939,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b3aaf715b60b8a338cc6c92dad1ead4a3f7146a3
-R 018490a374b5cf414074a5a4bbd3de70
+P e704e8690ae35decc9769a45cf8d519ccad8b79d 1f930d7e04cd4a5ff3d91a0e9f1b62114f1cebd2
+R fdd310892b7cea51b352170f4a152593
 U drh
-Z dcf10ad87997753baf45956f9011da61
+Z c21bc600f09ce2bc60c48c66dd9bd252
