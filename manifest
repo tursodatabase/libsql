@@ -1,5 +1,5 @@
-C Add\sa\smissing\scheck\sfor\sout-of-memory\sin\sthe\slemon\scode\sgenerator.
-D 2011-06-02T15:48:51.684
+C Fix\sa\sfaulty\sassert()\sin\sthe\sWAL-mode\slogic\sfor\sread-only\sshared\smemory.
+D 2011-06-02T17:24:49.997
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -245,7 +245,7 @@ F src/vdbeblob.c f024f0bf420f36b070143c32b15cc7287341ffd3
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
 F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
 F src/vtab.c 9ba8c7fdb7d39260c033a402f6032d3e7bc5d336
-F src/wal.c fd63d07233203dd3bd29cbe1ae5c8bb2c34e08fc
+F src/wal.c 0c70ad7b1cac6005fa5e2cbefd23ee05e391c290
 F src/wal.h 66b40bd91bc29a5be1c88ddd1f5ade8f3f48728a
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 55403ce19c506be6a321c7f129aff693d6103db5
@@ -939,7 +939,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 19084a6641f77a62110b04ea50e298fe132ea784
-R 35b0b86c3f244adcf3711ae5d8007435
+P efb20b9da6c7cb310a449cc818eaccd3d5bb4ab3
+R 7af7e431287e95dc91be1106acfd740b
 U drh
-Z df920ad923d5c14dce2ff7d7b1f2c419
+Z e77c10de1c037b59f0516366918c7ba0

@@ -2152,7 +2152,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
       }
     }
     if( mxI==0 ){
-      assert( rc==SQLITE_BUSY );
+      assert( rc==SQLITE_BUSY || (pWal->readOnly & WAL_SHM_RDONLY)!=0 );
       return rc==SQLITE_BUSY ? WAL_RETRY : SQLITE_READONLY_CANTLOCK;
     }
 
