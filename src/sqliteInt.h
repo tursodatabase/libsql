@@ -1235,6 +1235,7 @@ struct VTable {
   sqlite3_vtab *pVtab;      /* Pointer to vtab instance */
   int nRef;                 /* Number of pointers to this structure */
   u8 bConstraint;           /* True if constraints are supported */
+  int iSavepoint;           /* Depth of the SAVEPOINT stack */
   VTable *pNext;            /* Next in linked list (see above) */
 };
 
@@ -2229,9 +2230,8 @@ struct Parse {
   ** each recursion */
 
   int nVar;            /* Number of '?' variables seen in the SQL so far */
-  int nVarExpr;        /* Number of used slots in apVarExpr[] */
-  int nVarExprAlloc;   /* Number of allocated slots in apVarExpr[] */
-  Expr **apVarExpr;    /* Pointers to :aaa and $aaaa wildcard expressions */
+  int nzVar;           /* Number of available slots in azVar[] */
+  char **azVar;        /* Pointers to names of parameters */
   Vdbe *pReprepare;    /* VM being reprepared (sqlite3Reprepare()) */
   int nAlias;          /* Number of aliased result set columns */
   int nAliasAlloc;     /* Number of allocated slots for aAlias[] */

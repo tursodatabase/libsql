@@ -55,8 +55,8 @@ proc do_multiclient_test {varname script} {
     uplevel set $varname $tn
     uplevel $script
 
-    code2 { db2 close }
-    code3 { db3 close }
+    catch { code2 { db2 close } }
+    catch { code3 { db3 close } }
     catch { close $::code2_chan }
     catch { close $::code3_chan }
     catch { db close }

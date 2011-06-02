@@ -11,13 +11,36 @@
 *************************************************************************
 **
 ** This file contains a VFS "shim" - a layer that sits in between the
-** pager and the real VFS.
+** pager and the real VFS - that breaks up a very large database file
+** into two or more smaller files on disk.  This is useful, for example,
+** in order to support large, multi-gigabyte databases on older filesystems
+** that limit the maximum file size to 2 GiB.
 **
-** This particular shim enforces a multiplex system on DB files.  
-** This shim shards/partitions a single DB file into smaller 
-** "chunks" such that the total DB file size may exceed the maximum
-** file size of the underlying file system.
+** USAGE:
 **
+** Compile this source file and link it with your application.  Then
+** at start-time, invoke the following procedure:
+**
+**   int sqlite3_multiplex_initialize(
+**      const char *zOrigVfsName,    // The underlying real VFS
+**      int makeDefault              // True to make multiplex the default VFS
+**   );
+**
+** The procedure call above will create and register a new VFS shim named
+** "multiplex".  The multiplex VFS will use the VFS named by zOrigVfsName to
+** do the actual disk I/O.  (The zOrigVfsName parameter may be NULL, in 
+** which case the default VFS at the moment sqlite3_multiplex_initialize()
+** is called will be used as the underlying real VFS.)  
+**
+** If the makeDefault parameter is TRUE then multiplex becomes the new
+** default VFS.  Otherwise, you can use the multiplex VFS by specifying
+** "multiplex" as the 4th parameter to sqlite3_open_v2() or by employing
+** URI filenames and adding "vfs=multiplex" as a parameter to the filename
+** URI.
+**
+** The multiplex VFS allows databases up to 32 GiB in size.  But it splits
+** the files up into 1 GiB pieces, so that they will work even on filesystems
+** that do not support large files.
 */
 #include "sqlite3.h"
 #include <string.h>
