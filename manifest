@@ -1,5 +1,5 @@
-C Merge\sthe\sread-only\sshared\smemory\sbranch\sinto\strunk.\s\sAfter\sthis\smerge,\san\nunprivileged\sprocess\scan\sopen\sWAL-mode\sdatabases\sowned\sby\sanother\suser\sas\nlong\sas\sa\sdatabase\sconnection\swith\swrite\spermission\sexists\son\sthe\sdatabase\nfile\sand\sif\sthe\sreadonly_shm=1\sURI\squery\sparameter\sis\ssupplied.
-D 2011-06-02T13:04:33.467
+C Add\sa\smissing\scheck\sfor\sout-of-memory\sin\sthe\slemon\scode\sgenerator.
+D 2011-06-02T15:48:51.684
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -909,7 +909,7 @@ F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
-F tool/lemon.c dfd81a51b6e27e469ba21d01a75ddf092d429027
+F tool/lemon.c 2f182cf58a44a29107ad0027e4e696c79cbb9ad6
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkkeywordhash.c d2e6b4a5965e23afb80fbe74bb54648cd371f309
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
@@ -939,7 +939,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e704e8690ae35decc9769a45cf8d519ccad8b79d 1f930d7e04cd4a5ff3d91a0e9f1b62114f1cebd2
-R fdd310892b7cea51b352170f4a152593
+P 19084a6641f77a62110b04ea50e298fe132ea784
+R 35b0b86c3f244adcf3711ae5d8007435
 U drh
-Z c21bc600f09ce2bc60c48c66dd9bd252
+Z df920ad923d5c14dce2ff7d7b1f2c419
