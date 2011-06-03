@@ -1,5 +1,5 @@
-C Performance\senhancement\sto\sthe\sblob-literal\stokenizer.
-D 2011-06-03T21:34:45.326
+C Performance\simprovements\son\smemory\scopies\sinside\sof\sbtree\sby\smoving\s2\sbytes\nat\sa\stime\sinstead\sof\sjust\s1\sbyte\sat\sa\stime.
+D 2011-06-03T23:28:33.011
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -122,7 +122,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 986c15232757f2873dff35ee3b35cbf935fc573c
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 12aa3b71359c888984223cb2bcf691cf2d7753ae
+F src/btree.c 9f214af284fae1e96f12989dcc4d26f247b502fc
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
 F src/build.c 5a428625d21ad409514afb40ad083bee25dd957a
@@ -942,7 +942,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 957b2ab67c6185f0e1062593d237de5c434a38bf
-R bd36ddd3c30f1348cf18f2599b20bbca
+P 61aa2031f1c5ae05e31077588a55194a9546262a
+R ee8453a74951d0e43529f6f62862f77e
 U drh
-Z fe6a860af7a1658c61a1531782a69559
+Z eb5472e3af1761c7727508ef6d936f22

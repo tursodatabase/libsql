@@ -5422,8 +5422,7 @@ static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
   }
   endPtr = &data[pPage->cellOffset + 2*pPage->nCell - 2];
   while( ptr<endPtr ){
-    ptr[0] = ptr[2];
-    ptr[1] = ptr[3];
+    *(u16*)ptr = *(u16*)&ptr[2];
     ptr += 2;
   }
   pPage->nCell--;
@@ -5464,6 +5463,7 @@ static void insertCell(
   int cellOffset;   /* Address of first cell pointer in data[] */
   u8 *data;         /* The content of the whole page */
   u8 *ptr;          /* Used for moving information around in data[] */
+  u8 *endPtr;       /* End of the loop */
 
   int nSkip = (iChild ? 4 : 0);
 
@@ -5514,9 +5514,11 @@ static void insertCell(
     if( iChild ){
       put4byte(&data[idx], iChild);
     }
-    for(j=end, ptr=&data[j]; j>ins; j-=2, ptr-=2){
-      ptr[0] = ptr[-2];
-      ptr[1] = ptr[-1];
+    ptr = &data[end];
+    endPtr = &data[ins];
+    while( ptr>endPtr ){
+      *(u16*)ptr = *(u16*)&ptr[-2];
+      ptr -= 2;
     }
     put2byte(&data[ins], idx);
     put2byte(&data[pPage->hdrOffset+3], pPage->nCell);
@@ -5561,10 +5563,11 @@ static void assemblePage(
   pCellptr = &data[pPage->cellOffset + nCell*2];
   cellbody = nUsable;
   for(i=nCell-1; i>=0; i--){
+    u16 sz = aSize[i];
     pCellptr -= 2;
-    cellbody -= aSize[i];
+    cellbody -= sz;
     put2byte(pCellptr, cellbody);
-    memcpy(&data[cellbody], apCell[i], aSize[i]);
+    memcpy(&data[cellbody], apCell[i], sz);
   }
   put2byte(&data[hdr+3], nCell);
   put2byte(&data[hdr+5], cellbody);
