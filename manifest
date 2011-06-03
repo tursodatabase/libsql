@@ -1,5 +1,5 @@
-C Add\sshell\sscripts\sused\sfor\stesting\scompiler\swarnings\s(tool/warnings.sh),\nfor\sverifying\sthat\sthe\slibrary\sexports\sthe\scorrect\ssymbols\s(tool/symbols.sh),\nand\sto\sdemonstrate\sbuilding\sa\sfull-featured\scommand-line\sshell\n(tool/build-shell.sh).
-D 2011-06-03T13:06:50.043
+C Include\smore\sdetailed\sversion\sinformation\sin\sthe\scommand-line\sshell\soutput.
+D 2011-06-03T13:28:22.119
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -178,7 +178,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c d9d440809025a58547e39f4f268c2a296bfb56ff
-F src/shell.c decd04236a7ef26be5ef46d4ea963044bfad9a48
+F src/shell.c 0e0173b3e79d956368013e759f084caa7995ecb1
 F src/sqlite.h.in 2f51e4f58b2b4626fcbd9938580e730cb5fb4985
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
 F src/sqliteInt.h 6e58c558c57c8f44011736d5fa5295eb3130f9de
@@ -922,7 +922,7 @@ F tool/omittest.tcl b1dd290c1596e0f31fd335160a74ec5dfea3df4a
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
-F tool/shell1.test 5542ecdc952f91121a835ed817e6feaf8988b333
+F tool/shell1.test 20dfe7099cf2afe37aecd69afb7678d14f7a0abf
 F tool/shell2.test 5dc76b8005b465f420fed8241621da7513060ff3
 F tool/shell3.test 4fad469e8003938426355afdf34155f08c587836
 F tool/shell4.test 35f9c3d452b4e76d5013c63e1fd07478a62f14ce
@@ -942,7 +942,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 051f4635bf1e9618b108c4177b8ecc5762ed08e7
-R 9da6c706bda9f5ba334ec4313d0142ea
+P 3aca9a92c8b29bb43f65f93593ba4defd65139dc
+R 1eb21a9d7ed9685f625d6c1573544e8b
 U drh
-Z a1ce6be566aa33f6b6cc12b210f2a7c9
+Z 70d86fceaffca6cead41b36e31773fcc
