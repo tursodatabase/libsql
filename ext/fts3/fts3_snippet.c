@@ -177,51 +177,6 @@ static int fts3ExprIterate(
 }
 
 /*
-** The argument to this function is always a phrase node. Its doclist 
-** (Fts3Expr.aDoclist[]) and the doclists associated with all phrase nodes
-** to the left of this one in the query tree have already been loaded.
-**
-** If this phrase node is part of a series of phrase nodes joined by 
-** NEAR operators (and is not the left-most of said series), then elements are
-** removed from the phrases doclist consistent with the NEAR restriction. If
-** required, elements may be removed from the doclists of phrases to the
-** left of this one that are part of the same series of NEAR operator 
-** connected phrases.
-**
-** If an OOM error occurs, SQLITE_NOMEM is returned. Otherwise, SQLITE_OK.
-*/
-static int fts3ExprNearTrim(Fts3Expr *pExpr){
-  int rc = SQLITE_OK;
-  Fts3Expr *pParent = pExpr->pParent;
-
-  assert( pExpr->eType==FTSQUERY_PHRASE );
-  while( rc==SQLITE_OK
-   && pParent 
-   && pParent->eType==FTSQUERY_NEAR 
-   && pParent->pRight==pExpr 
-  ){
-    /* This expression (pExpr) is the right-hand-side of a NEAR operator. 
-    ** Find the expression to the left of the same operator.
-    */
-    int nNear = pParent->nNear;
-    Fts3Expr *pLeft = pParent->pLeft;
-
-    if( pLeft->eType!=FTSQUERY_PHRASE ){
-      assert( pLeft->eType==FTSQUERY_NEAR );
-      assert( pLeft->pRight->eType==FTSQUERY_PHRASE );
-      pLeft = pLeft->pRight;
-    }
-
-    rc = sqlite3Fts3ExprNearTrim(pLeft, pExpr, nNear);
-
-    pExpr = pLeft;
-    pParent = pExpr->pParent;
-  }
-
-  return rc;
-}
-
-/*
 ** This is an fts3ExprIterate() callback used while loading the doclists
 ** for each phrase into Fts3Expr.aDoclist[]/nDoclist. See also
 ** fts3ExprLoadDoclists().
@@ -235,14 +190,6 @@ static int fts3ExprLoadDoclistsCb(Fts3Expr *pExpr, int iPhrase, void *ctx){
 
   p->nPhrase++;
   p->nToken += pPhrase->nToken;
-
-  if( pPhrase->isLoaded==0 ){
-    rc = sqlite3Fts3ExprLoadDoclist(p->pCsr, pExpr);
-    pPhrase->isLoaded = 1;
-    if( rc==SQLITE_OK ){
-      rc = fts3ExprNearTrim(pExpr);
-    }
-  }
 
   return rc;
 }
@@ -416,7 +363,7 @@ static int fts3SnippetFindPositions(Fts3Expr *pExpr, int iPhrase, void *ctx){
 
   pPhrase->nToken = pExpr->pPhrase->nToken;
 
-  pCsr = sqlite3Fts3EvalPhrasePoslist(p->pCsr, pExpr, p->pCsr->iPrevId,p->iCol);
+  pCsr = sqlite3Fts3EvalPhrasePoslist(p->pCsr, pExpr, p->iCol);
   if( pCsr ){
     int iFirst = 0;
     pPhrase->pList = pCsr;
@@ -867,11 +814,10 @@ static int fts3ExprLocalHitsCb(
   MatchInfo *p = (MatchInfo *)pCtx;
   int iStart = iPhrase * p->nCol * 3;
   int i;
-  sqlite3_int64 iDocid = p->pCursor->iPrevId;
 
   for(i=0; i<p->nCol; i++){
     char *pCsr;
-    pCsr = sqlite3Fts3EvalPhrasePoslist(p->pCursor, pExpr, iDocid, i);
+    pCsr = sqlite3Fts3EvalPhrasePoslist(p->pCursor, pExpr, i);
     if( pCsr ){
       p->aMatchinfo[iStart+i*3] = fts3ColumnlistCount(&pCsr);
     }else{
@@ -1020,7 +966,6 @@ static int fts3MatchinfoLcs(Fts3Cursor *pCsr, MatchInfo *pInfo){
   int i;
   int iCol;
   int nToken = 0;
-  sqlite3_int64 iDocid = pCsr->iPrevId;
 
   /* Allocate and populate the array of LcsIterator objects. The array
   ** contains one element for each matchable phrase in the query.
@@ -1042,7 +987,7 @@ static int fts3MatchinfoLcs(Fts3Cursor *pCsr, MatchInfo *pInfo){
 
     for(i=0; i<pInfo->nPhrase; i++){
       LcsIterator *pIt = &aIter[i];
-      pIt->pRead = sqlite3Fts3EvalPhrasePoslist(pCsr, pIt->pExpr, iDocid, iCol);
+      pIt->pRead = sqlite3Fts3EvalPhrasePoslist(pCsr, pIt->pExpr, iCol);
       if( pIt->pRead ){
         pIt->iPos = pIt->iPosOffset;
         fts3LcsIteratorAdvance(&aIter[i]);
@@ -1396,7 +1341,7 @@ static int fts3ExprTermOffsetInit(Fts3Expr *pExpr, int iPhrase, void *ctx){
   int iPos = 0;                   /* First position in position-list */
 
   UNUSED_PARAMETER(iPhrase);
-  pList = sqlite3Fts3EvalPhrasePoslist(p->pCsr, pExpr, p->iDocid, p->iCol);
+  pList = sqlite3Fts3EvalPhrasePoslist(p->pCsr, pExpr, p->iCol);
   nTerm = pExpr->pPhrase->nToken;
   if( pList ){
     fts3GetDeltaPosition(&pList, &iPos);

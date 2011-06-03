@@ -230,14 +230,13 @@ struct Fts3Cursor {
   u8 isRequireSeek;               /* True if must seek pStmt to %_content row */
   sqlite3_stmt *pStmt;            /* Prepared statement in use by the cursor */
   Fts3Expr *pExpr;                /* Parsed MATCH query string */
-  int bIncremental;               /* True to use incremental querying */
   int nPhrase;                    /* Number of matchable phrases in query */
   Fts3DeferredToken *pDeferred;   /* Deferred search tokens, if any */
   sqlite3_int64 iPrevId;          /* Previous id read from aDoclist */
   char *pNextId;                  /* Pointer into the body of aDoclist */
   char *aDoclist;                 /* List of docids for full-text queries */
   int nDoclist;                   /* Size of buffer at aDoclist */
-  int desc;                       /* True to sort in descending order */
+  int bDesc;                      /* True to sort in descending order */
   int eEvalmode;                  /* An FTS3_EVAL_XX constant */
   int nRowAvg;                    /* Average size of database rows, in pages */
 
@@ -274,9 +273,10 @@ struct Fts3Cursor {
 struct Fts3Doclist {
   char *aAll;                    /* Array containing doclist (or NULL) */
   int nAll;                      /* Size of a[] in bytes */
-
-  sqlite3_int64 iDocid;          /* Current docid (if p!=0) */
   char *pNextDocid;              /* Pointer to next docid */
+
+  sqlite3_int64 iDocid;          /* Current docid (if pList!=0) */
+  int bFreeList;                 /* True if pList should be sqlite3_free()d */
   char *pList;                   /* Pointer to position list following iDocid */
   int nList;                     /* Length of position list */
 } doclist;
@@ -304,14 +304,6 @@ struct Fts3Phrase {
   /* Cache of doclist for this phrase. */
   Fts3Doclist doclist;
   int bIncr;                 /* True if doclist is loaded incrementally */
-
-#if 1
-  int isLoaded;              /* True if aDoclist/nDoclist are initialized. */
-  char *aDoclist;            /* Buffer containing doclist */
-  int nDoclist;              /* Size of aDoclist in bytes */
-  sqlite3_int64 iCurrent;
-  char *pCurrent;
-#endif
 
   /* Variables below this point are populated by fts3_expr.c when parsing 
   ** a MATCH expression. Everything above is part of the evaluation phase. 
@@ -380,7 +372,7 @@ void sqlite3Fts3SegReaderFree(Fts3SegReader *);
 int sqlite3Fts3SegReaderCost(Fts3Cursor *, Fts3SegReader *, int *);
 int sqlite3Fts3AllSegdirs(Fts3Table*, int, int, sqlite3_stmt **);
 int sqlite3Fts3ReadLock(Fts3Table *);
-int sqlite3Fts3ReadBlock(Fts3Table*, sqlite3_int64, char **, int*);
+int sqlite3Fts3ReadBlock(Fts3Table*, sqlite3_int64, char **, int*, int*);
 
 int sqlite3Fts3SelectDoctotal(Fts3Table *, sqlite3_stmt **);
 int sqlite3Fts3SelectDocsize(Fts3Table *, sqlite3_int64, sqlite3_stmt **);
@@ -448,7 +440,6 @@ int sqlite3Fts3VarintLen(sqlite3_uint64);
 void sqlite3Fts3Dequote(char *);
 
 int sqlite3Fts3ExprLoadDoclist(Fts3Cursor *, Fts3Expr *);
-int sqlite3Fts3ExprLoadFtDoclist(Fts3Cursor *, Fts3Expr *, char **, int *);
 int sqlite3Fts3ExprNearTrim(Fts3Expr *, Fts3Expr *, int);
 
 /* fts3_tokenizer.c */
@@ -493,13 +484,13 @@ int sqlite3Fts3EvalPhraseDoclist(Fts3Cursor*, Fts3Expr*, const char**,int*);
 void sqlite3Fts3EvalPhraseCleanup(Fts3Phrase *);
 
 int sqlite3Fts3EvalStart(Fts3Cursor *, Fts3Expr *, int);
-int sqlite3Fts3EvalNext(Fts3Cursor *pCsr, Fts3Expr *pExpr);
+int sqlite3Fts3EvalNext(Fts3Cursor *pCsr);
+
 int sqlite3Fts3MsrIncrStart(
     Fts3Table*, Fts3MultiSegReader*, int, const char*, int);
 int sqlite3Fts3MsrIncrNext(
     Fts3Table *, Fts3MultiSegReader *, sqlite3_int64 *, char **, int *);
-char *sqlite3Fts3EvalPhrasePoslist(
-  Fts3Cursor *, Fts3Expr *, sqlite3_int64, int iCol); 
+char *sqlite3Fts3EvalPhrasePoslist(Fts3Cursor *, Fts3Expr *, int iCol); 
 int sqlite3Fts3MsrOvfl(Fts3Cursor *, Fts3MultiSegReader *, int *);
 
 int sqlite3Fts3DeferredTokenList(Fts3DeferredToken *, char **, int *);

@@ -36,6 +36,27 @@
 */
 #define FTS3_NODE_PADDING (FTS3_VARINT_MAX*2)
 
+/*
+** Under certain circumstances, b-tree nodes (doclists) can be loaded into
+** memory incrementally instead of all at once. This can be a big performance
+** win (reduced IO and CPU) if SQLite stops calling the virtual table xNext()
+** method before retrieving all query results (as may happen, for example,
+** if a query has a LIMIT clause).
+**
+** Incremental loading is used for b-tree nodes FTS3_NODE_CHUNK_THRESHOLD 
+** bytes and larger. Nodes are loaded in chunks of FTS3_NODE_CHUNKSIZE bytes.
+** The code is written so that the hard lower-limit for each of these values 
+** is 1. Clearly such small values would be inefficient, but can be useful 
+** for testing purposes.
+**
+** TODO: Add a test interface to modify these "constants" from a script for
+** this purpose.
+*/
+#define FTS3_NODE_CHUNKSIZE (4*1024) 
+#define FTS3_NODE_CHUNK_THRESHOLD (FTS3_NODE_CHUNKSIZE*4)
+/* #define FTS3_NODE_CHUNKSIZE 1 */
+/* #define FTS3_NODE_CHUNK_THRESHOLD 1 */
+
 typedef struct PendingList PendingList;
 typedef struct SegmentNode SegmentNode;
 typedef struct SegmentWriter SegmentWriter;
@@ -93,6 +114,9 @@ struct Fts3SegReader {
 
   char *aNode;                    /* Pointer to node data (or NULL) */
   int nNode;                      /* Size of buffer at aNode (or 0) */
+  int nPopulate;                  /* If >0, bytes of buffer aNode[] loaded */
+  sqlite3_blob *pBlob;            /* If not NULL, blob handle to read node */
+
   Fts3HashElem **ppNextElem;
 
   /* Variables set by fts3SegReaderNext(). These may be read directly
@@ -933,7 +957,8 @@ int sqlite3Fts3ReadBlock(
   Fts3Table *p,                   /* FTS3 table handle */
   sqlite3_int64 iBlockid,         /* Access the row with blockid=$iBlockid */
   char **paBlob,                  /* OUT: Blob data in malloc'd buffer */
-  int *pnBlob                     /* OUT: Size of blob data */
+  int *pnBlob,                    /* OUT: Size of blob data */
+  int *pnLoad                     /* OUT: Bytes actually loaded */
 ){
   int rc;                         /* Return code */
 
@@ -954,11 +979,16 @@ int sqlite3Fts3ReadBlock(
 
   if( rc==SQLITE_OK ){
     int nByte = sqlite3_blob_bytes(p->pSegments);
+    *pnBlob = nByte;
     if( paBlob ){
       char *aByte = sqlite3_malloc(nByte + FTS3_NODE_PADDING);
       if( !aByte ){
         rc = SQLITE_NOMEM;
       }else{
+        if( pnLoad && nByte>(FTS3_NODE_CHUNK_THRESHOLD) ){
+          nByte = FTS3_NODE_CHUNKSIZE;
+          *pnLoad = nByte;
+        }
         rc = sqlite3_blob_read(p->pSegments, aByte, nByte, 0);
         memset(&aByte[nByte], 0, FTS3_NODE_PADDING);
         if( rc!=SQLITE_OK ){
@@ -968,7 +998,6 @@ int sqlite3Fts3ReadBlock(
       }
       *paBlob = aByte;
     }
-    *pnBlob = nByte;
   }
 
   return rc;
@@ -982,13 +1011,55 @@ void sqlite3Fts3SegmentsClose(Fts3Table *p){
   sqlite3_blob_close(p->pSegments);
   p->pSegments = 0;
 }
+    
+static int fts3SegReaderIncrRead(Fts3SegReader *pReader){
+  int nRead;                      /* Number of bytes to read */
+  int rc;                         /* Return code */
+
+  nRead = MIN(pReader->nNode - pReader->nPopulate, FTS3_NODE_CHUNKSIZE);
+  rc = sqlite3_blob_read(
+      pReader->pBlob, 
+      &pReader->aNode[pReader->nPopulate],
+      nRead,
+      pReader->nPopulate
+  );
+
+  if( rc==SQLITE_OK ){
+    pReader->nPopulate += nRead;
+    memset(&pReader->aNode[pReader->nPopulate], 0, FTS3_NODE_PADDING);
+    if( pReader->nPopulate==pReader->nNode ){
+      sqlite3_blob_close(pReader->pBlob);
+      pReader->pBlob = 0;
+      pReader->nPopulate = 0;
+    }
+  }
+  return rc;
+}
+
+static int fts3SegReaderRequire(Fts3SegReader *pReader, char *pFrom, int nByte){
+  int rc = SQLITE_OK;
+  assert( !pReader->pBlob 
+       || (pFrom>=pReader->aNode && pFrom<&pReader->aNode[pReader->nNode])
+  );
+  while( pReader->pBlob && rc==SQLITE_OK 
+     &&  (pFrom - pReader->aNode + nByte)>pReader->nPopulate
+  ){
+    rc = fts3SegReaderIncrRead(pReader);
+  }
+  return rc;
+}
 
 /*
 ** Move the iterator passed as the first argument to the next term in the
 ** segment. If successful, SQLITE_OK is returned. If there is no next term,
 ** SQLITE_DONE. Otherwise, an SQLite error code.
 */
-static int fts3SegReaderNext(Fts3Table *p, Fts3SegReader *pReader){
+static int fts3SegReaderNext(
+  Fts3Table *p, 
+  Fts3SegReader *pReader,
+  int bIncr
+){
+  int rc;                         /* Return code of various sub-routines */
   char *pNext;                    /* Cursor variable */
   int nPrefix;                    /* Number of bytes in term prefix */
   int nSuffix;                    /* Number of bytes in term suffix */
@@ -1000,7 +1071,6 @@ static int fts3SegReaderNext(Fts3Table *p, Fts3SegReader *pReader){
   }
 
   if( !pNext || pNext>=&pReader->aNode[pReader->nNode] ){
-    int rc;                       /* Return code from Fts3ReadBlock() */
 
     if( fts3SegReaderIsPending(pReader) ){
       Fts3HashElem *pElem = *(pReader->ppNextElem);
@@ -1020,6 +1090,8 @@ static int fts3SegReaderNext(Fts3Table *p, Fts3SegReader *pReader){
 
     if( !fts3SegReaderIsRootOnly(pReader) ){
       sqlite3_free(pReader->aNode);
+      sqlite3_blob_close(pReader->pBlob);
+      pReader->pBlob = 0;
     }
     pReader->aNode = 0;
 
@@ -1031,11 +1103,20 @@ static int fts3SegReaderNext(Fts3Table *p, Fts3SegReader *pReader){
     }
 
     rc = sqlite3Fts3ReadBlock(
-        p, ++pReader->iCurrentBlock, &pReader->aNode, &pReader->nNode
+        p, ++pReader->iCurrentBlock, &pReader->aNode, &pReader->nNode, 
+        (bIncr ? &pReader->nPopulate : 0)
     );
     if( rc!=SQLITE_OK ) return rc;
+    assert( pReader->pBlob==0 );
+    if( bIncr && pReader->nPopulate<pReader->nNode ){
+      pReader->pBlob = p->pSegments;
+      p->pSegments = 0;
+    }
     pNext = pReader->aNode;
   }
+
+  rc = fts3SegReaderRequire(pReader, pNext, FTS3_VARINT_MAX*2);
+  if( rc!=SQLITE_OK ) return rc;
   
   /* Because of the FTS3_NODE_PADDING bytes of padding, the following is 
   ** safe (no risk of overread) even if the node data is corrupted.  
@@ -1057,6 +1138,10 @@ static int fts3SegReaderNext(Fts3Table *p, Fts3SegReader *pReader){
     pReader->zTerm = zNew;
     pReader->nTermAlloc = nNew;
   }
+
+  rc = fts3SegReaderRequire(pReader, pNext, nSuffix+FTS3_VARINT_MAX);
+  if( rc!=SQLITE_OK ) return rc;
+
   memcpy(&pReader->zTerm[nPrefix], pNext, nSuffix);
   pReader->nTerm = nPrefix+nSuffix;
   pNext += nSuffix;
@@ -1069,7 +1154,7 @@ static int fts3SegReaderNext(Fts3Table *p, Fts3SegReader *pReader){
   ** of these statements is untrue, then the data structure is corrupt.
   */
   if( &pReader->aDoclist[pReader->nDoclist]>&pReader->aNode[pReader->nNode] 
-   || pReader->aDoclist[pReader->nDoclist-1]
+   || (pReader->nPopulate==0 && pReader->aDoclist[pReader->nDoclist-1])
   ){
     return SQLITE_CORRUPT_VTAB;
   }
@@ -1080,12 +1165,16 @@ static int fts3SegReaderNext(Fts3Table *p, Fts3SegReader *pReader){
 ** Set the SegReader to point to the first docid in the doclist associated
 ** with the current term.
 */
-static void fts3SegReaderFirstDocid(Fts3SegReader *pReader){
-  int n;
+static int fts3SegReaderFirstDocid(Fts3SegReader *pReader){
+  int rc;
   assert( pReader->aDoclist );
   assert( !pReader->pOffsetList );
-  n = sqlite3Fts3GetVarint(pReader->aDoclist, &pReader->iDocid);
-  pReader->pOffsetList = &pReader->aDoclist[n];
+  rc = fts3SegReaderRequire(pReader, pReader->aDoclist, FTS3_VARINT_MAX);
+  if( rc==SQLITE_OK ){
+    int n = sqlite3Fts3GetVarint(pReader->aDoclist, &pReader->iDocid);
+    pReader->pOffsetList = &pReader->aDoclist[n];
+  }
+  return rc;
 }
 
 /*
@@ -1098,11 +1187,12 @@ static void fts3SegReaderFirstDocid(Fts3SegReader *pReader){
 ** *pnOffsetList is set to the length of the set of column-offset
 ** lists, not including the nul-terminator byte. For example:
 */
-static void fts3SegReaderNextDocid(
+static int fts3SegReaderNextDocid(
   Fts3SegReader *pReader,
   char **ppOffsetList,
   int *pnOffsetList
 ){
+  int rc = SQLITE_OK;
   char *p = pReader->pOffsetList;
   char c = 0;
 
@@ -1110,7 +1200,16 @@ static void fts3SegReaderNextDocid(
   ** following two lines advance it to point one byte past the end of
   ** the same offset list.
   */
-  while( *p | c ) c = *p++ & 0x80;
+  while( 1 ){
+    int nRead;
+    int rc;
+
+    while( *p | c ) c = *p++ & 0x80;
+    assert( *p==0 );
+    if( pReader->pBlob==0 || (p - pReader->aNode)!=pReader->nPopulate ) break;
+    rc = fts3SegReaderIncrRead(pReader);
+    if( rc!=SQLITE_OK ) return rc;
+  }
   p++;
 
   /* If required, populate the output variables with a pointer to and the
@@ -1129,10 +1228,15 @@ static void fts3SegReaderNextDocid(
   if( p>=&pReader->aDoclist[pReader->nDoclist] ){
     pReader->pOffsetList = 0;
   }else{
-    sqlite3_int64 iDelta;
-    pReader->pOffsetList = p + sqlite3Fts3GetVarint(p, &iDelta);
-    pReader->iDocid += iDelta;
+    rc = fts3SegReaderRequire(pReader, p, FTS3_VARINT_MAX);
+    if( rc==SQLITE_OK ){
+      sqlite3_int64 iDelta;
+      pReader->pOffsetList = p + sqlite3Fts3GetVarint(p, &iDelta);
+      pReader->iDocid += iDelta;
+    }
   }
+
+  return SQLITE_OK;
 }
 
 /*
@@ -1212,7 +1316,7 @@ int sqlite3Fts3SegReaderCost(
     ** confirms this).
     */
     for(iBlock=pReader->iStartBlock; iBlock<=pReader->iLeafEndBlock; iBlock++){
-      rc = sqlite3Fts3ReadBlock(p, iBlock, 0, &nBlob);
+      rc = sqlite3Fts3ReadBlock(p, iBlock, 0, &nBlob, 0);
       if( rc!=SQLITE_OK ) break;
       if( (nBlob+35)>pgsz ){
         int nOvfl = (nBlob + 34)/pgsz;
@@ -1247,7 +1351,7 @@ int sqlite3Fts3MsrOvfl(
       int jj;
       for(jj=pReader->iStartBlock; jj<=pReader->iLeafEndBlock; jj++){
         int nBlob;
-        rc = sqlite3Fts3ReadBlock(p, jj, 0, &nBlob);
+        rc = sqlite3Fts3ReadBlock(p, jj, 0, &nBlob, 0);
         if( rc!=SQLITE_OK ) break;
         if( (nBlob+35)>pgsz ){
           nOvfl += (nBlob + 34)/pgsz;
@@ -1268,6 +1372,7 @@ void sqlite3Fts3SegReaderFree(Fts3SegReader *pReader){
     sqlite3_free(pReader->zTerm);
     if( !fts3SegReaderIsRootOnly(pReader) ){
       sqlite3_free(pReader->aNode);
+      sqlite3_blob_close(pReader->pBlob);
     }
   }
   sqlite3_free(pReader);
@@ -2193,7 +2298,7 @@ int sqlite3Fts3MsrIncrStart(
   for(i=0; i<nSegment; i++){
     Fts3SegReader *pSeg = pCsr->apSegment[i];
     do {
-      int rc = fts3SegReaderNext(p, pSeg);
+      int rc = fts3SegReaderNext(p, pSeg, 1);
       if( rc!=SQLITE_OK ) return rc;
     }while( fts3SegReaderTermCmp(pSeg, zTerm, nTerm)<0 );
   }
@@ -2210,8 +2315,10 @@ int sqlite3Fts3MsrIncrStart(
 
   /* Advance each of the segments to point to the first docid. */
   for(i=0; i<pCsr->nAdvance; i++){
-    fts3SegReaderFirstDocid(pCsr->apSegment[i]);
+    int rc = fts3SegReaderFirstDocid(pCsr->apSegment[i]);
+    if( rc!=SQLITE_OK ) return rc;
   }
+  fts3SegReaderSort(pCsr->apSegment, i, i, fts3SegReaderDoclistCmp);
 
   assert( iCol<0 || iCol<p->nColumn );
   pCsr->iColFilter = iCol;
@@ -2226,7 +2333,6 @@ int sqlite3Fts3MsrIncrNext(
   char **paPoslist,               /* OUT: Pointer to position list */
   int *pnPoslist                  /* OUT: Size of position list in bytes */
 ){
-  int rc = SQLITE_OK;
   int nMerge = pMsr->nAdvance;
   Fts3SegReader **apSegment = pMsr->apSegment;
 
@@ -2236,27 +2342,33 @@ int sqlite3Fts3MsrIncrNext(
   }
 
   while( 1 ){
+    int nSort;
     Fts3SegReader *pSeg;
-    fts3SegReaderSort(pMsr->apSegment, nMerge, nMerge, fts3SegReaderDoclistCmp);
     pSeg = pMsr->apSegment[0];
 
     if( pSeg->pOffsetList==0 ){
       *paPoslist = 0;
       break;
     }else{
+      int rc;
       char *pList;
       int nList;
       int j;
       sqlite3_int64 iDocid = apSegment[0]->iDocid;
 
-      fts3SegReaderNextDocid(apSegment[0], &pList, &nList);
+      rc = fts3SegReaderNextDocid(apSegment[0], &pList, &nList);
       j = 1;
-      while( j<nMerge
+      while( rc==SQLITE_OK 
+        && j<nMerge
         && apSegment[j]->pOffsetList
         && apSegment[j]->iDocid==iDocid
       ){
         fts3SegReaderNextDocid(apSegment[j], 0, 0);
+        j++;
       }
+      if( rc!=SQLITE_OK ) return rc;
+
+      fts3SegReaderSort(pMsr->apSegment, nMerge, j, fts3SegReaderDoclistCmp);
 
       if( pMsr->iColFilter>=0 ){
         fts3ColumnFilter(pMsr->iColFilter, &pList, &nList);
@@ -2269,9 +2381,10 @@ int sqlite3Fts3MsrIncrNext(
         break;
       }
     }
+    
   }
 
-  return rc;
+  return SQLITE_OK;
 }
 
 int sqlite3Fts3SegReaderStart(
@@ -2295,7 +2408,7 @@ int sqlite3Fts3SegReaderStart(
     const char *zTerm = pFilter->zTerm;
     Fts3SegReader *pSeg = pCsr->apSegment[i];
     do {
-      int rc = fts3SegReaderNext(p, pSeg);
+      int rc = fts3SegReaderNext(p, pSeg, 0);
       if( rc!=SQLITE_OK ) return rc;
     }while( zTerm && fts3SegReaderTermCmp(pSeg, zTerm, nTerm)<0 );
   }
@@ -2331,7 +2444,7 @@ int sqlite3Fts3SegReaderStep(
     ** forward. Then sort the list in order of current term again.  
     */
     for(i=0; i<pCsr->nAdvance; i++){
-      rc = fts3SegReaderNext(p, apSegment[i]);
+      rc = fts3SegReaderNext(p, apSegment[i], 0);
       if( rc!=SQLITE_OK ) return rc;
     }
     fts3SegReaderSort(apSegment, nSegment, pCsr->nAdvance, fts3SegReaderCmp);
@@ -2780,15 +2893,6 @@ static void fts3DeferredDoclistClear(Fts3Expr *pExpr){
     Fts3Phrase *pPhrase = pExpr->pPhrase;
     fts3DeferredDoclistClear(pExpr->pLeft);
     fts3DeferredDoclistClear(pExpr->pRight);
-    if( pPhrase ){
-      assert( pExpr->eType==FTSQUERY_PHRASE );
-      sqlite3_free(pPhrase->aDoclist);
-      pPhrase->isLoaded = 0;
-      pPhrase->aDoclist = 0;
-      pPhrase->nDoclist = 0;
-      pPhrase->pCurrent = 0;
-      pPhrase->iCurrent = 0;
-    }
   }
 }
 
