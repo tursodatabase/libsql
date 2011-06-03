@@ -1,5 +1,5 @@
-C Include\smore\sdetailed\sversion\sinformation\sin\sthe\scommand-line\sshell\soutput.
-D 2011-06-03T13:28:22.119
+C Hush\ssome\sharmless\scompiler\swarnings\sin\sthe\sURI\sparsing\slogic.
+D 2011-06-03T14:19:10.707
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -144,7 +144,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 3ae0d52da013a6326310655be6473fd472347b85
-F src/main.c 059daeed5876b3604f0192f838faf5f4db138901
+F src/main.c d67ea48933e4d63abba00578224a3319e6fbcbe1
 F src/malloc.c 591aedb20ae40813f1045f2ef253438a334775d9
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 00bd8265c81abb665c48fea1e0c234eb3b922206
@@ -942,7 +942,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 3aca9a92c8b29bb43f65f93593ba4defd65139dc
-R 1eb21a9d7ed9685f625d6c1573544e8b
+P 049c3c42fdefea8de7ec7008871963e37ce2d7bc
+R 06582f4582a8157c228d4b288a346794
 U drh
-Z 70d86fceaffca6cead41b36e31773fcc
+Z 0eb02a6eb0f61a953a539b049b2322b5
