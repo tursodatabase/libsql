@@ -1,5 +1,5 @@
-C Fix\sthe\sbuild\swhen\susing\sSQLITE_OMIT_PRAGMA.
-D 2011-06-03T13:02:57.441
+C Add\sshell\sscripts\sused\sfor\stesting\scompiler\swarnings\s(tool/warnings.sh),\nfor\sverifying\sthat\sthe\slibrary\sexports\sthe\scorrect\ssymbols\s(tool/symbols.sh),\nand\sto\sdemonstrate\sbuilding\sa\sfull-featured\scommand-line\sshell\n(tool/build-shell.sh).
+D 2011-06-03T13:06:50.043
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -904,6 +904,7 @@ F test/whereA.test 24c234263c8fe358f079d5e57d884fb569d2da0a
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
+F tool/build-shell.sh 12aa4391073a777fcb6dcc490b219a018ae98bac
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
@@ -938,8 +939,10 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
+F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 93e0be2bbf16d66d97ea7344187139d254b11cc3
-R 4ed98f1ed7ddc5d80458937702f664db
+F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
+P 051f4635bf1e9618b108c4177b8ecc5762ed08e7
+R 9da6c706bda9f5ba334ec4313d0142ea
 U drh
-Z 234b0b60ed4ca4872a72109fff862187
+Z a1ce6be566aa33f6b6cc12b210f2a7c9
