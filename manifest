@@ -1,5 +1,5 @@
-C Hush\ssome\sharmless\scompiler\swarnings\sin\sthe\sURI\sparsing\slogic.
-D 2011-06-03T14:19:10.707
+C Factor\san\s"if"\sout\sof\sa\sloop\sin\sbalance_nonroot()\sfor\sabout\sa\s1%\sperformance\nincrease.
+D 2011-06-03T17:50:49.782
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -122,7 +122,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 986c15232757f2873dff35ee3b35cbf935fc573c
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 0d3b39dcb79565c053e35fc12713f12d8a74d6a9
+F src/btree.c 12aa3b71359c888984223cb2bcf691cf2d7753ae
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
 F src/build.c c10ab9e2c77ade99dee23554787f8acfc0c231fc
@@ -942,7 +942,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 049c3c42fdefea8de7ec7008871963e37ce2d7bc
-R 06582f4582a8157c228d4b288a346794
+P 0206bc6f87bb9393218a380fc5b18039d334a8d8
+R 9437f6a8af920a11b9b18fbeccb53c6b
 U drh
-Z 0eb02a6eb0f61a953a539b049b2322b5
+Z d6270d9f0f6d36a33c5a8dae47c51fc0

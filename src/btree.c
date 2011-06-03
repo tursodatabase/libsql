@@ -857,6 +857,8 @@ static int ptrmapGet(BtShared *pBt, Pgno key, u8 *pEType, Pgno *pPgno){
 */
 #define findCell(P,I) \
   ((P)->aData + ((P)->maskPage & get2byte(&(P)->aData[(P)->cellOffset+2*(I)])))
+#define findCellv2(D,M,O,I) (D+(M&get2byte(D+(O+2*(I)))))
+
 
 /*
 ** This a more complex version of findCell() that works for
@@ -6016,12 +6018,24 @@ static int balance_nonroot(
     memcpy(pOld->aData, apOld[i]->aData, pBt->pageSize);
 
     limit = pOld->nCell+pOld->nOverflow;
-    for(j=0; j<limit; j++){
-      assert( nCell<nMaxCells );
-      apCell[nCell] = findOverflowCell(pOld, j);
-      szCell[nCell] = cellSizePtr(pOld, apCell[nCell]);
-      nCell++;
-    }
+    if( pOld->nOverflow>0 ){
+      for(j=0; j<limit; j++){
+        assert( nCell<nMaxCells );
+        apCell[nCell] = findOverflowCell(pOld, j);
+        szCell[nCell] = cellSizePtr(pOld, apCell[nCell]);
+        nCell++;
+      }
+    }else{
+      u8 *aData = pOld->aData;
+      u16 maskPage = pOld->maskPage;
+      u16 cellOffset = pOld->cellOffset;
+      for(j=0; j<limit; j++){
+        assert( nCell<nMaxCells );
+        apCell[nCell] = findCellv2(aData, maskPage, cellOffset, j);
+        szCell[nCell] = cellSizePtr(pOld, apCell[nCell]);
+        nCell++;
+      }
+    }       
     if( i<nOld-1 && !leafData){
       u16 sz = (u16)szNew[i];
       u8 *pTemp;
