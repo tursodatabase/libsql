@@ -1,5 +1,5 @@
-C Fix\san\s#ifdef\sof\sSQLITE_OMIT_VIRTUALTABLE\sthat\shad\san\sextra\s"_"\scharacter.
-D 2011-06-03T12:15:26.459
+C Fix\sthe\sbuild\swhen\susing\sSQLITE_OMIT_PRAGMA.
+D 2011-06-03T13:02:57.441
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -171,7 +171,7 @@ F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 49e718c095810c6b3334e3a6d89970aceaddefce
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c d548e31beafa792d1994b663a29a5303569efc4e
-F src/pragma.c 9e778decc3ee9bcaf88904b4a3b0a4360aaf0eab
+F src/pragma.c ebcd20f1e654f5cb3aeef864ed69c4697719fbaa
 F src/prepare.c e64261559a3187698a3e7e6c8b001a4f4f98dab4
 F src/printf.c 585a36b6a963df832cfb69505afa3a34ed5ef8a1
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -939,7 +939,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a13cfe616284f4ee86f0406e7b8fe8f9ba6e6990
-R 560ca19206a2de258e4ac41eb28208c5
+P 93e0be2bbf16d66d97ea7344187139d254b11cc3
+R 4ed98f1ed7ddc5d80458937702f664db
 U drh
-Z 105c7f13fbfb0b81256f08e0207c0eef
+Z 234b0b60ed4ca4872a72109fff862187
