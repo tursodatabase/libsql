@@ -1,5 +1,5 @@
-C Fix\sa\sfaulty\sassert()\sin\sthe\sWAL-mode\slogic\sfor\sread-only\sshared\smemory.
-D 2011-06-02T17:24:49.997
+C Fix\san\s#ifdef\sof\sSQLITE_OMIT_VIRTUALTABLE\sthat\shad\san\sextra\s"_"\scharacter.
+D 2011-06-03T12:15:26.459
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -236,7 +236,7 @@ F src/update.c 5bcb56e5c7380a2eecb0e71891dbd4ad7437748f
 F src/utf.c d83650c3ea08f7407bd9d0839d9885241c209c60
 F src/util.c 0f33bbbdfcc4a2d8cf20c3b2a16ffc3b57c58a70
 F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
-F src/vdbe.c 2ec37637fa70ab0c694d8327ee5dcedbc0621524
+F src/vdbe.c edfa3827d7a6fac2425bc10c0eb6e54342d2fa56
 F src/vdbe.h d9c6123384189dc37d27beac1bf44688aa75b6cb
 F src/vdbeInt.h ad84226cc0adcb1185c22b70696b235a1678bb45
 F src/vdbeapi.c 0eeadc75e44a30efd996d6af6e7c5a2488e35be8
@@ -939,7 +939,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P efb20b9da6c7cb310a449cc818eaccd3d5bb4ab3
-R 7af7e431287e95dc91be1106acfd740b
+P a13cfe616284f4ee86f0406e7b8fe8f9ba6e6990
+R 560ca19206a2de258e4ac41eb28208c5
 U drh
-Z e77c10de1c037b59f0516366918c7ba0
+Z 105c7f13fbfb0b81256f08e0207c0eef
