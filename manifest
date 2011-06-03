@@ -1,5 +1,5 @@
-C Create\sand\suse\sa\sfunction\sespecially\sfor\sadding\sthe\sParseSchema\sopcode.\nThis\sgives\sa\ssmall\sreduction\sin\scode\sand\sa\ssmall\sperformance\sincrease.
-D 2011-06-03T20:11:17.958
+C Performance\senhancement\sto\sthe\sblob-literal\stokenizer.
+D 2011-06-03T21:34:45.326
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -230,7 +230,7 @@ F src/test_vfs.c e7855568dfa1e0ba73668d273b65605d9f8b77e8
 F src/test_vfstrace.c 0b884e06094a746da729119a2cabdc7aa790063d
 F src/test_wholenumber.c 6129adfbe7c7444f2e60cc785927f3aa74e12290
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
-F src/tokenize.c 7b0c9281b2368dc69135e7a50bd271de9af1b467
+F src/tokenize.c c819d9f72168a035d545a5bdafe9b085b20df705
 F src/trigger.c c836a6caac16ba96611558922106858f6ca3d6bf
 F src/update.c 5bcb56e5c7380a2eecb0e71891dbd4ad7437748f
 F src/utf.c d83650c3ea08f7407bd9d0839d9885241c209c60
@@ -942,7 +942,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 1bd72d0c616e20fdb395c72ecd96579090ae26cb
-R 80ecde493cfcd0f0a571171fe6ad9164
+P 957b2ab67c6185f0e1062593d237de5c434a38bf
+R bd36ddd3c30f1348cf18f2599b20bbca
 U drh
-Z 08497a0228f24f1156217359e2dbd164
+Z fe6a860af7a1658c61a1531782a69559
