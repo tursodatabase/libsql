@@ -448,20 +448,6 @@ static void fts3GetReverseVarint(
 }
 
 /*
-** As long as *pp has not reached its end (pEnd), then do the same
-** as fts3GetDeltaVarint(): read a single varint and add it to *pVal.
-** But if we have reached the end of the varint, just set *pp=0 and
-** leave *pVal unchanged.
-*/
-static void fts3GetDeltaVarint2(char **pp, char *pEnd, sqlite3_int64 *pVal){
-  if( *pp>=pEnd ){
-    *pp = 0;
-  }else{
-    fts3GetDeltaVarint(pp, pVal);
-  }
-}
-
-/*
 ** The xDisconnect() virtual table method.
 */
 static int fts3DisconnectMethod(sqlite3_vtab *pVtab){
@@ -1912,188 +1898,6 @@ static int fts3PoslistNearMerge(
   }
 }
 
-/*
-** Values that may be used as the first parameter to fts3DoclistMerge().
-*/
-#define MERGE_NOT        2        /* D + D -> D */
-#define MERGE_AND        3        /* D + D -> D */
-#define MERGE_OR         4        /* D + D -> D */
-#define MERGE_PHRASE     6        /* P + P -> D */
-#define MERGE_NEAR       8        /* P + P -> D */
-
-#define MERGE_POS_OR     5        /* P + P -> P */
-#define MERGE_POS_PHRASE 7        /* P + P -> P */
-#define MERGE_POS_NEAR   9        /* P + P -> P */
-
-/*
-** Merge the two doclists passed in buffer a1 (size n1 bytes) and a2
-** (size n2 bytes). The output is written to pre-allocated buffer aBuffer,
-** which is guaranteed to be large enough to hold the results. The number
-** of bytes written to aBuffer is stored in *pnBuffer before returning.
-**
-** If successful, SQLITE_OK is returned. Otherwise, if a malloc error
-** occurs while allocating a temporary buffer as part of the merge operation,
-** SQLITE_NOMEM is returned.
-*/
-static int fts3DoclistMerge(
-  int mergetype,                  /* One of the MERGE_XXX constants */
-  int nParam1,                    /* Used by MERGE_NEAR and MERGE_POS_NEAR */
-  int nParam2,                    /* Used by MERGE_NEAR and MERGE_POS_NEAR */
-  char *aBuffer,                  /* Pre-allocated output buffer */
-  int *pnBuffer,                  /* OUT: Bytes written to aBuffer */
-  char *a1,                       /* Buffer containing first doclist */
-  int n1,                         /* Size of buffer a1 */
-  char *a2,                       /* Buffer containing second doclist */
-  int n2,                         /* Size of buffer a2 */
-  int *pnDoc                      /* OUT: Number of docids in output */
-){
-  sqlite3_int64 i1 = 0;
-  sqlite3_int64 i2 = 0;
-  sqlite3_int64 iPrev = 0;
-
-  char *p = aBuffer;
-  char *p1 = a1;
-  char *p2 = a2;
-  char *pEnd1 = &a1[n1];
-  char *pEnd2 = &a2[n2];
-  int nDoc = 0;
-
-  assert( mergetype==MERGE_OR     || mergetype==MERGE_POS_OR 
-       || mergetype==MERGE_AND    || mergetype==MERGE_NOT
-       || mergetype==MERGE_PHRASE || mergetype==MERGE_POS_PHRASE
-       || mergetype==MERGE_NEAR   || mergetype==MERGE_POS_NEAR
-  );
-  assert( mergetype==MERGE_POS_PHRASE || mergetype==MERGE_POS_NEAR );
-
-  if( !aBuffer ){
-    *pnBuffer = 0;
-    return SQLITE_NOMEM;
-  }
-
-  /* Read the first docid from each doclist */
-  fts3GetDeltaVarint2(&p1, pEnd1, &i1);
-  fts3GetDeltaVarint2(&p2, pEnd2, &i2);
-
-  switch( mergetype ){
-    case MERGE_OR:
-    case MERGE_POS_OR:
-      while( p1 || p2 ){
-        if( p2 && p1 && i1==i2 ){
-          fts3PutDeltaVarint(&p, &iPrev, i1);
-          if( mergetype==MERGE_POS_OR ) fts3PoslistMerge(&p, &p1, &p2);
-          fts3GetDeltaVarint2(&p1, pEnd1, &i1);
-          fts3GetDeltaVarint2(&p2, pEnd2, &i2);
-        }else if( !p2 || (p1 && i1<i2) ){
-          fts3PutDeltaVarint(&p, &iPrev, i1);
-          if( mergetype==MERGE_POS_OR ) fts3PoslistCopy(&p, &p1);
-          fts3GetDeltaVarint2(&p1, pEnd1, &i1);
-        }else{
-          fts3PutDeltaVarint(&p, &iPrev, i2);
-          if( mergetype==MERGE_POS_OR ) fts3PoslistCopy(&p, &p2);
-          fts3GetDeltaVarint2(&p2, pEnd2, &i2);
-        }
-      }
-      break;
-
-    case MERGE_AND:
-      while( p1 && p2 ){
-        if( i1==i2 ){
-          fts3PutDeltaVarint(&p, &iPrev, i1);
-          fts3GetDeltaVarint2(&p1, pEnd1, &i1);
-          fts3GetDeltaVarint2(&p2, pEnd2, &i2);
-          nDoc++;
-        }else if( i1<i2 ){
-          fts3GetDeltaVarint2(&p1, pEnd1, &i1);
-        }else{
-          fts3GetDeltaVarint2(&p2, pEnd2, &i2);
-        }
-      }
-      break;
-
-    case MERGE_NOT:
-      while( p1 ){
-        if( p2 && i1==i2 ){
-          fts3GetDeltaVarint2(&p1, pEnd1, &i1);
-          fts3GetDeltaVarint2(&p2, pEnd2, &i2);
-        }else if( !p2 || i1<i2 ){
-          fts3PutDeltaVarint(&p, &iPrev, i1);
-          fts3GetDeltaVarint2(&p1, pEnd1, &i1);
-        }else{
-          fts3GetDeltaVarint2(&p2, pEnd2, &i2);
-        }
-      }
-      break;
-
-    case MERGE_POS_PHRASE:
-    case MERGE_PHRASE: {
-      char **ppPos = (mergetype==MERGE_PHRASE ? 0 : &p);
-      while( p1 && p2 ){
-        if( i1==i2 ){
-          char *pSave = p;
-          sqlite3_int64 iPrevSave = iPrev;
-          fts3PutDeltaVarint(&p, &iPrev, i1);
-          if( 0==fts3PoslistPhraseMerge(ppPos, nParam1, 0, 1, &p1, &p2) ){
-            p = pSave;
-            iPrev = iPrevSave;
-          }else{
-            nDoc++;
-          }
-          fts3GetDeltaVarint2(&p1, pEnd1, &i1);
-          fts3GetDeltaVarint2(&p2, pEnd2, &i2);
-        }else if( i1<i2 ){
-          fts3PoslistCopy(0, &p1);
-          fts3GetDeltaVarint2(&p1, pEnd1, &i1);
-        }else{
-          fts3PoslistCopy(0, &p2);
-          fts3GetDeltaVarint2(&p2, pEnd2, &i2);
-        }
-      }
-      break;
-    }
-
-    default: assert( mergetype==MERGE_POS_NEAR || mergetype==MERGE_NEAR ); {
-      char *aTmp = 0;
-      char **ppPos = 0;
-
-      if( mergetype==MERGE_POS_NEAR ){
-        ppPos = &p;
-        aTmp = sqlite3_malloc(2*(n1+n2+1));
-        if( !aTmp ){
-          return SQLITE_NOMEM;
-        }
-      }
-
-      while( p1 && p2 ){
-        if( i1==i2 ){
-          char *pSave = p;
-          sqlite3_int64 iPrevSave = iPrev;
-          fts3PutDeltaVarint(&p, &iPrev, i1);
-
-          if( !fts3PoslistNearMerge(ppPos, aTmp, nParam1, nParam2, &p1, &p2) ){
-            iPrev = iPrevSave;
-            p = pSave;
-          }
-
-          fts3GetDeltaVarint2(&p1, pEnd1, &i1);
-          fts3GetDeltaVarint2(&p2, pEnd2, &i2);
-        }else if( i1<i2 ){
-          fts3PoslistCopy(0, &p1);
-          fts3GetDeltaVarint2(&p1, pEnd1, &i1);
-        }else{
-          fts3PoslistCopy(0, &p2);
-          fts3GetDeltaVarint2(&p2, pEnd2, &i2);
-        }
-      }
-      sqlite3_free(aTmp);
-      break;
-    }
-  }
-
-  if( pnDoc ) *pnDoc = nDoc;
-  *pnBuffer = (int)(p-aBuffer);
-  return SQLITE_OK;
-}
-
 /* 
 ** A pointer to an instance of this structure is used as the context 
 ** argument to sqlite3Fts3SegReaderIterate()
@@ -2253,7 +2057,6 @@ static void fts3DoclistPhraseMerge(
 */
 static int fts3DoclistNearMerge(
   int bDescIdx,
-  int mergetype,                  /* MERGE_POS_NEAR or MERGE_NEAR */
   int nNear,                      /* Parameter to NEAR operator */
   int nTokenLeft,                 /* Number of tokens in LHS phrase arg */
   char *aLeft,                    /* Doclist for LHS (incl. positions) */
@@ -2336,7 +2139,6 @@ static int fts3DoclistNearMerge(
 ** TermSelect.aaOutput[] array.
 */
 static int fts3TermSelectMerge(Fts3Table *p, TermSelect *pTS){
-  int mergetype = (pTS->isReqPos ? MERGE_POS_OR : MERGE_OR);
   char *aOut = 0;
   int nOut = 0;
   int i;
@@ -2406,7 +2208,6 @@ static int fts3TermSelectCb(
       return SQLITE_NOMEM;
     }
   }else{
-    int mergetype = (pTS->isReqPos ? MERGE_POS_OR : MERGE_OR);
     char *aMerge = aDoclist;
     int nMerge = nDoclist;
     int iOut;
@@ -3816,7 +3617,7 @@ static void fts3EvalNearMerge(
       char *aOut;                 /* Buffer in which to assemble new doclist */
       int nOut;                   /* Size of buffer aOut in bytes */
   
-      *pRc = fts3DoclistNearMerge(bDescIdx, MERGE_POS_NEAR, nNear, 
+      *pRc = fts3DoclistNearMerge(bDescIdx, nNear, 
           pLeft->nToken, pLeft->doclist.aAll, pLeft->doclist.nAll,
           pRight->nToken, pRight->doclist.aAll, pRight->doclist.nAll,
           &aOut, &nOut

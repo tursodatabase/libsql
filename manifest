@@ -1,5 +1,5 @@
-C Allow\sthe\s"order=DESC"\sand\s"order=ASC"\sparameters\sin\sFTS4\s"CREATE\sVIRTUAL\sTABLE"\sstatements.\sTables\screated\swith\s"order=DESC"\sstore\sall\sdoclists\sin\sdescending\sorder,\swhich\sallows\soptimizations\snormally\sapplied\sto\s"ORDER\sBY\sdocid\sASC"\squeries\sto\sbe\sused\swith\s"ORDER\sBY\sdocid\sDESC"\squeries\sinstead.
-D 2011-06-04T20:04:35.492
+C Remove\ssome\sunreachable\scode.
+D 2011-06-04T20:13:24.690
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -61,7 +61,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 432c902c697850cbc5ffc2be8a945ac7ac3328d7
+F ext/fts3/fts3.c 31f73cae1d21daba547c471a0a78d31e7516a29e
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h d76b021d5b7061eff7aa4055b5938eebef2bdb6a
 F ext/fts3/fts3_aux.c 28fc512608e147015c36080025456f57f571f76f
@@ -939,7 +939,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a4c7e2820824e82580730c36f85aede2efa66754
-R 2bf28954217e137f11160d52b346ca5f
+P f6a0193f5a32603eb48bddc6297042dbd2ffe96e
+R a65937620eeff7552523045d1ea22bb7
 U dan
-Z b16ce48fbf2f9ba7236a3b596adb6f59
+Z 582e1f65a0e245127649a23c8e5f1248
