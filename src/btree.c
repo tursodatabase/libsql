@@ -4453,7 +4453,7 @@ int sqlite3BtreeMovetoUnpacked(
   }
   assert( pCur->apPage[0]->intKey || pIdxKey );
   for(;;){
-    int lwr, upr;
+    int lwr, upr, idx;
     Pgno chldPg;
     MemPage *pPage = pCur->apPage[pCur->iPage];
     int c;
@@ -4469,14 +4469,14 @@ int sqlite3BtreeMovetoUnpacked(
     lwr = 0;
     upr = pPage->nCell-1;
     if( biasRight ){
-      pCur->aiIdx[pCur->iPage] = (u16)upr;
+      pCur->aiIdx[pCur->iPage] = (u16)(idx = upr);
     }else{
-      pCur->aiIdx[pCur->iPage] = (u16)((upr+lwr)/2);
+      pCur->aiIdx[pCur->iPage] = (u16)(idx = (upr+lwr)/2);
     }
     for(;;){
-      int idx = pCur->aiIdx[pCur->iPage]; /* Index of current cell in pPage */
       u8 *pCell;                          /* Pointer to current cell in pPage */
 
+      assert( idx==pCur->aiIdx[pCur->iPage] );
       pCur->info.nSize = 0;
       pCell = findCell(pPage, idx) + pPage->childPtrSize;
       if( pPage->intKey ){
@@ -4559,7 +4559,7 @@ int sqlite3BtreeMovetoUnpacked(
       if( lwr>upr ){
         break;
       }
-      pCur->aiIdx[pCur->iPage] = (u16)((lwr+upr)/2);
+      pCur->aiIdx[pCur->iPage] = (u16)(idx = (lwr+upr)/2);
     }
     assert( lwr==upr+1 );
     assert( pPage->isInit );
