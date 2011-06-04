@@ -180,6 +180,7 @@ struct Fts3Table {
   int nNodeSize;                  /* Soft limit for node size */
   u8 bHasStat;                    /* True if %_stat table exists */
   u8 bHasDocsize;                 /* True if %_docsize table exists */
+  u8 bDescIdx;                    /* True if doclists are in reverse order */
   int nPgsz;                      /* Page size for host database */
   char *zSegmentsTbl;             /* Name of %_segments table */
   sqlite3_blob *pSegments;        /* Blob handle open on %_segments table */
@@ -236,7 +237,7 @@ struct Fts3Cursor {
   char *pNextId;                  /* Pointer into the body of aDoclist */
   char *aDoclist;                 /* List of docids for full-text queries */
   int nDoclist;                   /* Size of buffer at aDoclist */
-  int bDesc;                      /* True to sort in descending order */
+  u8 bDesc;                       /* True to sort in descending order */
   int eEvalmode;                  /* An FTS3_EVAL_XX constant */
   int nRowAvg;                    /* Average size of database rows, in pages */
 
@@ -438,6 +439,7 @@ int sqlite3Fts3GetVarint(const char *, sqlite_int64 *);
 int sqlite3Fts3GetVarint32(const char *, int *);
 int sqlite3Fts3VarintLen(sqlite3_uint64);
 void sqlite3Fts3Dequote(char *);
+void sqlite3Fts3DoclistPrev(int,char*,int,char**,sqlite3_int64*,int*,u8*);
 
 int sqlite3Fts3ExprLoadDoclist(Fts3Cursor *, Fts3Expr *);
 int sqlite3Fts3ExprNearTrim(Fts3Expr *, Fts3Expr *, int);
@@ -494,5 +496,6 @@ char *sqlite3Fts3EvalPhrasePoslist(Fts3Cursor *, Fts3Expr *, int iCol);
 int sqlite3Fts3MsrOvfl(Fts3Cursor *, Fts3MultiSegReader *, int *);
 
 int sqlite3Fts3DeferredTokenList(Fts3DeferredToken *, char **, int *);
+
 
 #endif /* _FTSINT_H */

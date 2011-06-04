@@ -1,5 +1,5 @@
-C FTS\schanges:\sRemove\sunreachable\scode.\sFix\sbugs.\sWhen\sprocessing\sa\slarge\sdoclist\sincrementally,\sread\sfrom\sdisk\sincrementally\stoo.
-D 2011-06-03T18:00:19.691
+C Allow\sthe\s"order=DESC"\sand\s"order=ASC"\sparameters\sin\sFTS4\s"CREATE\sVIRTUAL\sTABLE"\sstatements.\sTables\screated\swith\s"order=DESC"\sstore\sall\sdoclists\sin\sdescending\sorder,\swhich\sallows\soptimizations\snormally\sapplied\sto\s"ORDER\sBY\sdocid\sASC"\squeries\sto\sbe\sused\swith\s"ORDER\sBY\sdocid\sDESC"\squeries\sinstead.
+D 2011-06-04T20:04:35.492
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -61,9 +61,9 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 3183cf6aa7bfb00f227be1950b326feb8294da7d
+F ext/fts3/fts3.c 432c902c697850cbc5ffc2be8a945ac7ac3328d7
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h ba6f831fcde80ed5f0ccb112bb593b117cf11538
+F ext/fts3/fts3Int.h d76b021d5b7061eff7aa4055b5938eebef2bdb6a
 F ext/fts3/fts3_aux.c 28fc512608e147015c36080025456f57f571f76f
 F ext/fts3/fts3_expr.c 0ae554230ada457e61e8184b24faac96aad78f6b
 F ext/fts3/fts3_hash.c 3c8f6387a4a7f5305588b203fa7c887d753e1f1c
@@ -75,7 +75,7 @@ F ext/fts3/fts3_term.c 6c7f33ab732a2a0f281898685650e3a492e1e2f1
 F ext/fts3/fts3_tokenizer.c 055f3dc7369585350b28db1ee0f3b214dca6724d
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 6e5cbaa588924ac578263a598e4fb9f5c9bb179d
-F ext/fts3/fts3_write.c c2f041d74f38e40c7487440f78d20f2aaa1f5d3c
+F ext/fts3/fts3_write.c d7eded6f5ee3032b41126047cc04b6720f59e6da
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
@@ -478,7 +478,7 @@ F test/fts3query.test ef79d31fdb355d094baec1c1b24b60439a1fb8a2
 F test/fts3rnd.test 2b1a579be557ab8ac54a51b39caa4aa8043cc4ad
 F test/fts3shared.test 8bb266521d7c5495c0ae522bb4d376ad5387d4a2
 F test/fts3snippet.test a12f22a3ba4dd59751a57c79b031d07ab5f51ddd
-F test/fts3sort.test e6f24e9cffc46484bcc9fe63d3c2ce41afcaa6c9
+F test/fts3sort.test c599f19e9452b5735c41889ea5a6da996f0ebc7c
 F test/fts4aa.test eadf85621c0a113d4c7ad3ccbf8441130e007b8f
 F test/func.test 6c5ce11e3a0021ca3c0649234e2d4454c89110ca
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
@@ -939,7 +939,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 28149a7882a1e9dfe4a75ec5b91d176ebe6284e9
-R b735e6f33e9ec766163a902e084c30a6
+P a4c7e2820824e82580730c36f85aede2efa66754
+R 2bf28954217e137f11160d52b346ca5f
 U dan
-Z f3b0ba5ae8b73d0176f1d82c224a912a
+Z b16ce48fbf2f9ba7236a3b596adb6f59

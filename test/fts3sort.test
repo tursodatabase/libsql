@@ -21,9 +21,8 @@ ifcapable !fts3 {
   return
 }
 
-set testprefix fts3sort
 
-proc build_database {nRow} {
+proc build_database {nRow param} {
   db close
   forcedelete test.db
   sqlite3 db test.db
@@ -31,7 +30,7 @@ proc build_database {nRow} {
   set vocab [list    aa ab ac   ba bb bc    ca cb cc   da]
   expr srand(0)
 
-  execsql { CREATE VIRTUAL TABLE t1 USING fts4 }
+  execsql "CREATE VIRTUAL TABLE t1 USING fts4($param)"
   for {set i 0} {$i < $nRow} {incr i} {
     set v [expr int(rand()*1000000)]
     set doc [list]
@@ -42,13 +41,24 @@ proc build_database {nRow} {
   }
 }
 
-set nRow 1000
-do_test 1.0 {
-  build_database $nRow
-  execsql { SELECT count(*) FROM t1 }
-} $nRow
+set testprefix fts3sort
 
-foreach {tn query} {
+unset -nocomplain CONTROL
+foreach {t param} {
+  1     ""
+  2     "order=asc"
+  3     "order=desc"
+} {
+
+  set testprefix fts3sort-1.$t
+
+  set nRow 1000
+  do_test 1.0 {
+    build_database $nRow $param
+    execsql { SELECT count(*) FROM t1 }
+  } $nRow
+  
+  foreach {tn query} {
   1   "SELECT docid, * FROM t1"
   2   "SELECT docid, * FROM t1 WHERE t1 MATCH 'aa'"
   3   "SELECT docid, * FROM t1 WHERE t1 MATCH 'a*'"
@@ -59,50 +69,93 @@ foreach {tn query} {
   8   "SELECT docid, * FROM t1 WHERE t1 MATCH 'nosuchtoken'"
   9   "SELECT docid, snippet(t1) FROM t1 WHERE t1 MATCH 'aa OR da'"
   10  "SELECT docid, snippet(t1) FROM t1 WHERE t1 MATCH 'aa OR nosuchtoken'"
+  11  "SELECT docid, snippet(t1) FROM t1 WHERE t1 MATCH 'aa NEAR bb'"
+  12  "SELECT docid, snippet(t1) FROM t1 WHERE t1 MATCH '\"aa bb\"'"
+  13  "SELECT docid, content FROM t1 WHERE t1 MATCH 'aa NEAR/2 bb NEAR/3 cc'"
+  14  "SELECT docid, content FROM t1 WHERE t1 MATCH '\"aa bb cc\"'"
+  } {
+  
+    unset -nocomplain A B C D
+    set A_list [list]
+    set B_list [list]
+    set C_list [list]
+    set D_list [list]
+  
+    unset -nocomplain X
+    db eval "$query ORDER BY rowid ASC"  X  { 
+      set A($X(docid)) [array get X] 
+      lappend A_list $X(docid)
+    }
+    unset -nocomplain X
+    db eval "$query ORDER BY rowid DESC" X  { 
+      set B($X(docid)) [array get X] 
+      lappend B_list $X(docid)
+    }
+    unset -nocomplain X
+    db eval "$query ORDER BY docid ASC"  X  { 
+      set C($X(docid)) [array get X] 
+      lappend C_list $X(docid)
+    }
+    unset -nocomplain X
+    db eval "$query ORDER BY docid DESC" X  { 
+      set D($X(docid)) [array get X] 
+      lappend D_list $X(docid)
+    }
+  
+    do_test $tn.1 { set A_list } [lsort -integer -increasing $A_list]
+    do_test $tn.2 { set B_list } [lsort -integer -decreasing $B_list]
+    do_test $tn.3 { set C_list } [lsort -integer -increasing $C_list]
+    do_test $tn.4 { set D_list } [lsort -integer -decreasing $D_list]
+  
+    unset -nocomplain DATA
+    unset -nocomplain X
+    db eval "$query" X  { 
+      set DATA($X(docid)) [array get X] 
+    }
+  
+    do_test $tn.5 { lsort [array get A] } [lsort [array get DATA]]
+    do_test $tn.6 { lsort [array get B] } [lsort [array get DATA]]
+    do_test $tn.7 { lsort [array get C] } [lsort [array get DATA]]
+    do_test $tn.8 { lsort [array get D] } [lsort [array get DATA]]
+
+    if {[info exists CONTROL($tn)]} {
+      do_test $tn.9 { set CONTROL($tn) } [lsort [array get DATA]]
+    } else {
+      set CONTROL($tn) [lsort [array get DATA]]
+    }
+  }
+}
+unset -nocomplain CONTROL
+
+set testprefix fts3sort
+
+#-------------------------------------------------------------------------
+# Tests for parsing the "order=asc" and "order=desc" directives.
+#
+foreach {tn param res} {
+  1 "order=asc"             {0 {}}
+  2 "order=desc"            {0 {}}
+  3 "order=dec"             {1 {unrecognized order: dec}}
+  4 "order=xxx, order=asc"  {0 {}}
 } {
-
-  unset -nocomplain A B C D
-  set A_list [list]
-  set B_list [list]
-  set C_list [list]
-  set D_list [list]
-
-  unset -nocomplain X
-  db eval "$query ORDER BY rowid ASC"  X  { 
-    set A($X(docid)) [array get X] 
-    lappend A_list $X(docid)
-  }
-  unset -nocomplain X
-  db eval "$query ORDER BY rowid DESC" X  { 
-    set B($X(docid)) [array get X] 
-    lappend B_list $X(docid)
-  }
-  unset -nocomplain X
-  db eval "$query ORDER BY docid ASC"  X  { 
-    set C($X(docid)) [array get X] 
-    lappend C_list $X(docid)
-  }
-  unset -nocomplain X
-  db eval "$query ORDER BY docid DESC" X  { 
-    set D($X(docid)) [array get X] 
-    lappend D_list $X(docid)
-  }
-
-  do_test 1.$tn.1 { set A_list } [lsort -integer -increasing $A_list]
-  do_test 1.$tn.2 { set B_list } [lsort -integer -decreasing $B_list]
-  do_test 1.$tn.3 { set C_list } [lsort -integer -increasing $C_list]
-  do_test 1.$tn.4 { set D_list } [lsort -integer -decreasing $D_list]
-
-  unset -nocomplain DATA
-  unset -nocomplain X
-  db eval "$query" X  { 
-    set DATA($X(docid)) [array get X] 
-  }
-
-  do_test 1.$tn.5 { lsort [array get A] } [lsort [array get DATA]]
-  do_test 1.$tn.6 { lsort [array get B] } [lsort [array get DATA]]
-  do_test 1.$tn.7 { lsort [array get C] } [lsort [array get DATA]]
-  do_test 1.$tn.8 { lsort [array get D] } [lsort [array get DATA]]
+  execsql { DROP TABLE IF EXISTS t1 }
+  do_catchsql_test 2.1.$tn "
+    CREATE VIRTUAL TABLE t1 USING fts4(a, b, $param)
+  " $res
 }
 
+do_execsql_test 2.2 {
+  BEGIN;
+    CREATE VIRTUAL TABLE t2 USING fts4(order=desc);
+    INSERT INTO t2 VALUES('aa bb');
+    INSERT INTO t2 VALUES('bb cc');
+    INSERT INTO t2 VALUES('cc aa');
+    SELECT docid FROM t2 WHERE t2 MATCH 'aa';
+  END;
+} {3 1}
+do_execsql_test 2.3 {
+  SELECT docid FROM t2 WHERE t2 MATCH 'aa';
+} {3 1}
+
 finish_test
+
