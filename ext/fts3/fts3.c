@@ -909,30 +909,12 @@ static int fts3InitVtab(
   struct Fts3Index *aIndex;       /* Array of indexes for this table */
   struct Fts3Index *aFree = 0;    /* Free this before returning */
 
+  /* The results of parsing supported FTS4 key=value options: */
   int bNoDocsize = 0;             /* True to omit %_docsize table */
   int bDescIdx = 0;               /* True to store descending indexes */
-
-  char *zMatchinfo = 0;           /* Prefix parameter value (or NULL) */
   char *zPrefix = 0;              /* Prefix parameter value (or NULL) */
   char *zCompress = 0;            /* compress=? parameter (or NULL) */
   char *zUncompress = 0;          /* uncompress=? parameter (or NULL) */
-  char *zOrder = 0;               /* order=? parameter (or NULL) */
-  struct Fts4Option {
-    const char *zOpt;
-    int nOpt;
-    char **pzVar;
-  } aFts4Opt[] = {
-    { "matchinfo",   9, 0 },
-    { "prefix",      6, 0 },
-    { "compress",    8, 0 },
-    { "uncompress", 10, 0 },
-    { "order",       5, 0 }
-  };
-  aFts4Opt[0].pzVar = &zMatchinfo;
-  aFts4Opt[1].pzVar = &zPrefix;
-  aFts4Opt[2].pzVar = &zCompress;
-  aFts4Opt[3].pzVar = &zUncompress;
-  aFts4Opt[4].pzVar = &zOrder;
 
   assert( strlen(argv[0])==4 );
   assert( (sqlite3_strnicmp(argv[0], "fts4", 4)==0 && isFts4)
@@ -973,26 +955,71 @@ static int fts3InitVtab(
 
     /* Check if it is an FTS4 special argument. */
     else if( isFts4 && fts3IsSpecialColumn(z, &nKey, &zVal) ){
+      struct Fts4Option {
+        const char *zOpt;
+        int nOpt;
+        char **pzVar;
+      } aFts4Opt[] = {
+        { "matchinfo",   9, 0 },            /* 0 -> MATCHINFO */
+        { "prefix",      6, 0 },            /* 1 -> PREFIX */
+        { "compress",    8, 0 },            /* 2 -> COMPRESS */
+        { "uncompress", 10, 0 },            /* 3 -> UNCOMPRESS */
+        { "order",       5, 0 }             /* 4 -> ORDER */
+      };
+
       int iOpt;
       if( !zVal ){
         rc = SQLITE_NOMEM;
       }else{
         for(iOpt=0; iOpt<SizeofArray(aFts4Opt); iOpt++){
-          if( nKey==aFts4Opt[iOpt].nOpt 
-           && !sqlite3_strnicmp(z, aFts4Opt[iOpt].zOpt, aFts4Opt[iOpt].nOpt) 
-          ){
-            char **pzVar = aFts4Opt[iOpt].pzVar;
-            sqlite3_free(*pzVar);
-            *pzVar = zVal;
-            zVal = 0;
+          struct Fts4Option *pOp = &aFts4Opt[iOpt];
+          if( nKey==pOp->nOpt && !sqlite3_strnicmp(z, pOp->zOpt, pOp->nOpt) ){
             break;
           }
         }
-        if( zVal ){
+        if( iOpt==SizeofArray(aFts4Opt) ){
           *pzErr = sqlite3_mprintf("unrecognized parameter: %s", z);
           rc = SQLITE_ERROR;
-          sqlite3_free(zVal);
+        }else{
+          switch( iOpt ){
+            case 0:               /* MATCHINFO */
+              if( strlen(zVal)!=4 || sqlite3_strnicmp(zVal, "fts3", 4) ){
+                *pzErr = sqlite3_mprintf("unrecognized matchinfo: %s", zVal);
+                rc = SQLITE_ERROR;
+              }
+              bNoDocsize = 1;
+              break;
+
+            case 1:               /* PREFIX */
+              sqlite3_free(zPrefix);
+              zPrefix = zVal;
+              zVal = 0;
+              break;
+
+            case 2:               /* COMPRESS */
+              sqlite3_free(zCompress);
+              zCompress = zVal;
+              zVal = 0;
+              break;
+
+            case 3:               /* UNCOMPRESS */
+              sqlite3_free(zUncompress);
+              zUncompress = zVal;
+              zVal = 0;
+              break;
+
+            case 4:               /* ORDER */
+              if( (strlen(zVal)!=3 || sqlite3_strnicmp(zVal, "asc", 3)) 
+               && (strlen(zVal)!=4 || sqlite3_strnicmp(zVal, "desc", 3)) 
+              ){
+                *pzErr = sqlite3_mprintf("unrecognized order: %s", zVal);
+                rc = SQLITE_ERROR;
+              }
+              bDescIdx = (zVal[0]=='d' || zVal[0]=='D');
+              break;
+          }
         }
+        sqlite3_free(zVal);
       }
     }
 
@@ -1011,26 +1038,6 @@ static int fts3InitVtab(
     nCol = 1;
   }
 
-  if( zMatchinfo ){
-    if( strlen(zMatchinfo)!=4 || sqlite3_strnicmp(zMatchinfo, "fts3", 4) ){
-      *pzErr = sqlite3_mprintf("unrecognized matchinfo: %s", zMatchinfo);
-      rc = SQLITE_ERROR;
-      goto fts3_init_out;
-    }
-    bNoDocsize = 1;
-  }
-
-  if( zOrder ){
-    if( (strlen(zOrder)!=3 || sqlite3_strnicmp(zOrder, "asc", 3)) 
-     && (strlen(zOrder)!=4 || sqlite3_strnicmp(zOrder, "desc", 3)) 
-    ){
-      *pzErr = sqlite3_mprintf("unrecognized order: %s", zOrder);
-      rc = SQLITE_ERROR;
-      goto fts3_init_out;
-    }
-    bDescIdx = (zOrder[0]=='d' || zOrder[0]=='D');
-  }
-
   if( pTokenizer==0 ){
     rc = sqlite3Fts3InitTokenizer(pHash, "simple", &pTokenizer, pzErr);
     if( rc!=SQLITE_OK ) goto fts3_init_out;
@@ -1042,8 +1049,7 @@ static int fts3InitVtab(
     assert( zPrefix );
     *pzErr = sqlite3_mprintf("error parsing prefix parameter: %s", zPrefix);
   }
-  if( rc ) goto fts3_init_out;
-
+  if( rc!=SQLITE_OK ) goto fts3_init_out;
 
   /* Allocate and populate the Fts3Table structure. */
   nByte = sizeof(Fts3Table) +                  /* Fts3Table */
@@ -1130,8 +1136,6 @@ fts3_init_out:
   sqlite3_free(aFree);
   sqlite3_free(zCompress);
   sqlite3_free(zUncompress);
-  sqlite3_free(zOrder);
-  sqlite3_free(zMatchinfo);
   sqlite3_free((void *)aCol);
   if( rc!=SQLITE_OK ){
     if( p ){
@@ -4187,7 +4191,10 @@ char *sqlite3Fts3EvalPhrasePoslist(
 
 /*
 ** Free all components of the Fts3Phrase structure that were allocated by
-** the eval module.
+** the eval module. Specifically, this means to free:
+**
+**   * the contents of pPhrase->doclist, and
+**   * any Fts3MultiSegReader objects held by phrase tokens.
 */
 void sqlite3Fts3EvalPhraseCleanup(Fts3Phrase *pPhrase){
   if( pPhrase ){

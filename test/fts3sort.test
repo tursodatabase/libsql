@@ -136,7 +136,8 @@ foreach {tn param res} {
   1 "order=asc"             {0 {}}
   2 "order=desc"            {0 {}}
   3 "order=dec"             {1 {unrecognized order: dec}}
-  4 "order=xxx, order=asc"  {0 {}}
+  4 "order=xxx, order=asc"  {1 {unrecognized order: xxx}}
+  5 "order=desc, order=asc" {0 {}}
 } {
   execsql { DROP TABLE IF EXISTS t1 }
   do_catchsql_test 2.1.$tn "
