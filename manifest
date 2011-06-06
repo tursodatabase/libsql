@@ -1,5 +1,5 @@
-C Performance\simprovement\sto\sthe\sbtree\ssearch\sroutine.
-D 2011-06-04T01:43:53.858
+C Add\sassert()\sstatements\sto\sverify\sthat\su16\spointers\sassociated\swith\nthe\senhancement\sin\s[897f56a158]\sare\salways\s2-byte\saligned.
+D 2011-06-06T13:38:11.704
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -122,7 +122,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 986c15232757f2873dff35ee3b35cbf935fc573c
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c c19d7b35c8325b302d88d73e834642a7a96ee003
+F src/btree.c 8c46f0ab69ad9549c75a3a91fed87abdaa743e2f
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
 F src/build.c 5a428625d21ad409514afb40ad083bee25dd957a
@@ -942,7 +942,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 897f56a158ebe62758c9998e4941ae046c75fb99
-R 84139bde7a129a9544042a4a85d415c4
+P 65db822f200bafe9abe59b33b17b2c643c17c5e8
+R 6f20bbc84376df4d202ff7744a749f24
 U drh
-Z 4316427fea8d5aeb84c01ffb6d821ecd
+Z b952c48c970134cec62f175ed76931db

@@ -5421,6 +5421,7 @@ static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
     return;
   }
   endPtr = &data[pPage->cellOffset + 2*pPage->nCell - 2];
+  assert( (SQLITE_PTR_TO_INT(ptr)&1)==0 );  /* ptr is always 2-byte aligned */
   while( ptr<endPtr ){
     *(u16*)ptr = *(u16*)&ptr[2];
     ptr += 2;
@@ -5516,6 +5517,7 @@ static void insertCell(
     }
     ptr = &data[end];
     endPtr = &data[ins];
+    assert( (SQLITE_PTR_TO_INT(ptr)&1)==0 );  /* ptr is always 2-byte aligned */
     while( ptr>endPtr ){
       *(u16*)ptr = *(u16*)&ptr[-2];
       ptr -= 2;
