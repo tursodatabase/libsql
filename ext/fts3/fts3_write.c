@@ -3159,7 +3159,7 @@ int sqlite3Fts3UpdateMethod(
   int rc = SQLITE_OK;             /* Return Code */
   int isRemove = 0;               /* True for an UPDATE or DELETE */
   sqlite3_int64 iRemove = 0;      /* Rowid removed by UPDATE or DELETE */
-  u32 *aSzIns;                    /* Sizes of inserted documents */
+  u32 *aSzIns = 0;                /* Sizes of inserted documents */
   u32 *aSzDel;                    /* Sizes of deleted documents */
   int nChng = 0;                  /* Net change in number of documents */
   int bInsertDone = 0;
@@ -3174,12 +3174,16 @@ int sqlite3Fts3UpdateMethod(
    && sqlite3_value_type(apVal[0])==SQLITE_NULL 
    && sqlite3_value_type(apVal[p->nColumn+2])!=SQLITE_NULL 
   ){
-    return fts3SpecialInsert(p, apVal[p->nColumn+2]);
+    rc = fts3SpecialInsert(p, apVal[p->nColumn+2]);
+    goto update_out;
   }
 
   /* Allocate space to hold the change in document sizes */
   aSzIns = sqlite3_malloc( sizeof(aSzIns[0])*(p->nColumn+1)*2 );
-  if( aSzIns==0 ) return SQLITE_NOMEM;
+  if( aSzIns==0 ){
+    rc = SQLITE_NOMEM;
+    goto update_out;
+  }
   aSzDel = &aSzIns[p->nColumn+1];
   memset(aSzIns, 0, sizeof(aSzIns[0])*(p->nColumn+1)*2);
 
@@ -3229,8 +3233,7 @@ int sqlite3Fts3UpdateMethod(
     }
   }
   if( rc!=SQLITE_OK ){
-    sqlite3_free(aSzIns);
-    return rc;
+    goto update_out;
   }
 
   /* If this is a DELETE or UPDATE operation, remove the old record. */
@@ -3263,6 +3266,7 @@ int sqlite3Fts3UpdateMethod(
     fts3UpdateDocTotals(&rc, p, aSzIns, aSzDel, nChng);
   }
 
+ update_out:
   sqlite3_free(aSzIns);
   sqlite3Fts3SegmentsClose(p);
   return rc;

@@ -1144,6 +1144,7 @@ fts3_init_out:
       pTokenizer->pModule->xDestroy(pTokenizer);
     }
   }else{
+    assert( p->pSegments==0 );
     *ppVTab = &p->base;
   }
   return rc;
@@ -1245,6 +1246,7 @@ static int fts3BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
     }
   }
 
+  assert( p->pSegments==0 );
   return SQLITE_OK;
 }
 
@@ -1280,6 +1282,7 @@ static int fts3CloseMethod(sqlite3_vtab_cursor *pCursor){
   sqlite3Fts3FreeDeferredTokens(pCsr);
   sqlite3_free(pCsr->aDoclist);
   sqlite3_free(pCsr->aMatchinfo);
+  assert( ((Fts3Table *)pCsr->base.pVtab)->pSegments==0 );
   sqlite3_free(pCsr);
   return SQLITE_OK;
 }
@@ -2564,6 +2567,7 @@ static int fts3NextMethod(sqlite3_vtab_cursor *pCursor){
   }else{
     rc = sqlite3Fts3EvalNext((Fts3Cursor *)pCursor);
   }
+  assert( ((Fts3Table *)pCsr->base.pVtab)->pSegments==0 );
   return rc;
 }
 
@@ -2701,7 +2705,7 @@ static int fts3ColumnMethod(
   sqlite3_context *pContext,      /* Context for sqlite3_result_xxx() calls */
   int iCol                        /* Index of column to read value from */
 ){
-  int rc;                         /* Return Code */
+  int rc = SQLITE_OK;             /* Return Code */
   Fts3Cursor *pCsr = (Fts3Cursor *) pCursor;
   Fts3Table *p = (Fts3Table *)pCursor->pVtab;
 
@@ -2712,21 +2716,20 @@ static int fts3ColumnMethod(
     /* This call is a request for the "docid" column. Since "docid" is an 
     ** alias for "rowid", use the xRowid() method to obtain the value.
     */
-    sqlite3_int64 iRowid;
-    rc = fts3RowidMethod(pCursor, &iRowid);
-    sqlite3_result_int64(pContext, iRowid);
+    sqlite3_result_int64(pContext, pCsr->iPrevId);
   }else if( iCol==p->nColumn ){
     /* The extra column whose name is the same as the table.
     ** Return a blob which is a pointer to the cursor.
     */
     sqlite3_result_blob(pContext, &pCsr, sizeof(pCsr), SQLITE_TRANSIENT);
-    rc = SQLITE_OK;
   }else{
     rc = fts3CursorSeek(0, pCsr);
     if( rc==SQLITE_OK ){
       sqlite3_result_value(pContext, sqlite3_column_value(pCsr->pStmt, iCol+1));
     }
   }
+
+  assert( ((Fts3Table *)pCsr->base.pVtab)->pSegments==0 );
   return rc;
 }
 
@@ -2760,6 +2763,7 @@ static int fts3SyncMethod(sqlite3_vtab *pVtab){
 static int fts3BeginMethod(sqlite3_vtab *pVtab){
   UNUSED_PARAMETER(pVtab);
   TESTONLY( Fts3Table *p = (Fts3Table*)pVtab );
+  assert( p->pSegments==0 );
   assert( p->nPendingData==0 );
   assert( p->inTransaction!=1 );
   TESTONLY( p->inTransaction = 1 );
@@ -2777,6 +2781,7 @@ static int fts3CommitMethod(sqlite3_vtab *pVtab){
   TESTONLY( Fts3Table *p = (Fts3Table*)pVtab );
   assert( p->nPendingData==0 );
   assert( p->inTransaction!=0 );
+  assert( p->pSegments==0 );
   TESTONLY( p->inTransaction = 0 );
   TESTONLY( p->mxSavepoint = -1; );
   return SQLITE_OK;
@@ -3047,7 +3052,7 @@ static int fts3SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
   assert( p->inTransaction );
   assert( p->mxSavepoint < iSavepoint );
   TESTONLY( p->mxSavepoint = iSavepoint );
-  return sqlite3Fts3PendingTermsFlush(p);
+  return fts3SyncMethod(pVtab);
 }
 static int fts3ReleaseMethod(sqlite3_vtab *pVtab, int iSavepoint){
   TESTONLY( Fts3Table *p = (Fts3Table*)pVtab );
@@ -3459,6 +3464,10 @@ static int fts3EvalPhraseStart(Fts3Cursor *pCsr, int bOptOk, Fts3Phrase *p){
   return rc;
 }
 
+/*
+** This function is used to iterate backwards (from the end to start) 
+** through doclists.
+*/
 void sqlite3Fts3DoclistPrev(
   int bDescIdx,                   /* True if the doclist is desc */
   char *aDoclist,                 /* Pointer to entire doclist */
@@ -3471,6 +3480,7 @@ void sqlite3Fts3DoclistPrev(
   char *p = *ppIter;
   int iMul = (bDescIdx ? -1 : 1);
 
+  assert( nDoclist>0 );
   assert( *pbEof==0 );
   assert( p || *piDocid==0 );
   assert( !p || (p>aDoclist && p<&aDoclist[nDoclist]) );
@@ -3537,7 +3547,7 @@ static int fts3EvalPhraseNext(
     if( rc==SQLITE_OK && !pDL->pList ){
       *pbEof = 1;
     }
-  }else if( pCsr->bDesc!=pTab->bDescIdx && pDL->aAll ){
+  }else if( pCsr->bDesc!=pTab->bDescIdx && pDL->nAll ){
     sqlite3Fts3DoclistPrev(pTab->bDescIdx, pDL->aAll, pDL->nAll, 
         &pDL->pNextDocid, &pDL->iDocid, &pDL->nList, pbEof
     );
@@ -3879,6 +3889,7 @@ static void fts3EvalNext(
   int *pRc
 ){
   if( *pRc==SQLITE_OK ){
+    assert( pExpr->bEof==0 );
     pExpr->bStart = 1;
 
     switch( pExpr->eType ){
@@ -3901,7 +3912,7 @@ static void fts3EvalNext(
           fts3EvalNext(pCsr, pRight, pRc);
 
           while( !pLeft->bEof && !pRight->bEof && *pRc==SQLITE_OK ){
-            int iDiff = DOCID_CMP(pLeft->iDocid, pRight->iDocid);
+            sqlite3_int64 iDiff = DOCID_CMP(pLeft->iDocid, pRight->iDocid);
             if( iDiff==0 ) break;
             if( iDiff<0 ){
               fts3EvalNext(pCsr, pLeft, pRc);
@@ -3919,20 +3930,20 @@ static void fts3EvalNext(
       case FTSQUERY_OR: {
         Fts3Expr *pLeft = pExpr->pLeft;
         Fts3Expr *pRight = pExpr->pRight;
-        int iCmp = DOCID_CMP(pLeft->iDocid, pRight->iDocid);
+        sqlite3_int64 iCmp = DOCID_CMP(pLeft->iDocid, pRight->iDocid);
 
         assert( pLeft->bStart || pLeft->iDocid==pRight->iDocid );
         assert( pRight->bStart || pLeft->iDocid==pRight->iDocid );
 
-        if( iCmp==0 ){
+        if( pRight->bEof || (pLeft->bEof==0 && iCmp<0) ){
           fts3EvalNext(pCsr, pLeft, pRc);
+        }else if( pLeft->bEof || (pRight->bEof==0 && iCmp>0) ){
           fts3EvalNext(pCsr, pRight, pRc);
-        }else if( pRight->bEof || (pLeft->bEof==0 && iCmp<0) ){
-          fts3EvalNext(pCsr, pLeft, pRc);
         }else{
+          fts3EvalNext(pCsr, pLeft, pRc);
           fts3EvalNext(pCsr, pRight, pRc);
         }
-  
+
         pExpr->bEof = (pLeft->bEof && pRight->bEof);
         iCmp = DOCID_CMP(pLeft->iDocid, pRight->iDocid);
         if( pRight->bEof || (pLeft->bEof==0 &&  iCmp<0) ){
@@ -3972,6 +3983,12 @@ static void fts3EvalNext(
         fts3EvalFreeDeferredDoclist(pPhrase);
         *pRc = fts3EvalPhraseNext(pCsr, pPhrase, &pExpr->bEof);
         pExpr->iDocid = pPhrase->doclist.iDocid;
+#if 0
+        printf("token \"%.*s\" docid=%lld\n", 
+            pPhrase->aToken[0].n, pPhrase->aToken[0].z, pExpr->iDocid
+        );
+#endif
+        
         break;
       }
     }
@@ -4123,8 +4140,9 @@ int sqlite3Fts3EvalPhraseDoclist(
     assert( rc!=SQLITE_OK || pPhrase->bIncr==0 );
     if( pExpr->bStart && !pExpr->bEof ){
       pExpr->bStart = 0;
-      while( rc==SQLITE_OK && pExpr->bEof==0 && pExpr->iDocid!=iDocid ){
+      while( rc==SQLITE_OK && (pExpr->bStart==0 || pExpr->iDocid!=iDocid) ){
         fts3EvalNext(pCsr, pExpr, &rc);
+        assert( !pExpr->bEof );
       }
     }
   }
