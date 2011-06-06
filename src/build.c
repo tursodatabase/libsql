@@ -200,9 +200,7 @@ void sqlite3FinishCoding(Parse *pParse){
     /* A minimum of one cursor is required if autoincrement is used
     *  See ticket [a696379c1f08866] */
     if( pParse->pAinc!=0 && pParse->nTab==0 ) pParse->nTab = 1;
-    sqlite3VdbeMakeReady(v, pParse->nVar, pParse->nMem,
-                         pParse->nTab, pParse->nMaxArg, pParse->explain,
-                         pParse->isMultiWrite && pParse->mayAbort);
+    sqlite3VdbeMakeReady(v, pParse);
     pParse->rc = SQLITE_DONE;
     pParse->colNamesSet = 0;
   }else{
@@ -1621,8 +1619,8 @@ void sqlite3EndTable(
 #endif
 
     /* Reparse everything to update our internal data structures */
-    sqlite3VdbeAddOp4(v, OP_ParseSchema, iDb, 0, 0,
-        sqlite3MPrintf(db, "tbl_name='%q'",p->zName), P4_DYNAMIC);
+    sqlite3VdbeAddParseSchemaOp(v, iDb,
+               sqlite3MPrintf(db, "tbl_name='%q'", p->zName));
   }
 
 
@@ -2819,9 +2817,8 @@ Index *sqlite3CreateIndex(
     if( pTblName ){
       sqlite3RefillIndex(pParse, pIndex, iMem);
       sqlite3ChangeCookie(pParse, iDb);
-      sqlite3VdbeAddOp4(v, OP_ParseSchema, iDb, 0, 0,
-         sqlite3MPrintf(db, "name='%q' AND type='index'", pIndex->zName), 
-         P4_DYNAMIC);
+      sqlite3VdbeAddParseSchemaOp(v, iDb,
+         sqlite3MPrintf(db, "name='%q' AND type='index'", pIndex->zName));
       sqlite3VdbeAddOp1(v, OP_Expire, 0);
     }
   }

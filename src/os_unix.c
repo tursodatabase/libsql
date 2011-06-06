@@ -3537,7 +3537,8 @@ struct unixShmNode {
   char *zFilename;           /* Name of the mmapped file */
   int h;                     /* Open file descriptor */
   int szRegion;              /* Size of shared-memory regions */
-  int nRegion;               /* Size of array apRegion */
+  u16 nRegion;               /* Size of array apRegion */
+  u8 isReadonly;             /* True if read-only */
   char **apRegion;           /* Array of mapped shared-memory regions */
   int nRef;                  /* Number of unixShm objects pointing to this */
   unixShm *pFirst;           /* All unixShm objects pointing to this */
@@ -3784,8 +3785,17 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
       pShmNode->h = robust_open(zShmFilename, O_RDWR|O_CREAT,
                                (sStat.st_mode & 0777));
       if( pShmNode->h<0 ){
-        rc = unixLogError(SQLITE_CANTOPEN_BKPT, "open", zShmFilename);
-        goto shm_open_err;
+        const char *zRO;
+        zRO = sqlite3_uri_parameter(pDbFd->zPath, "readonly_shm");
+        if( zRO && sqlite3GetBoolean(zRO) ){
+          pShmNode->h = robust_open(zShmFilename, O_RDONLY,
+                                    (sStat.st_mode & 0777));
+          pShmNode->isReadonly = 1;
+        }
+        if( pShmNode->h<0 ){
+          rc = unixLogError(SQLITE_CANTOPEN_BKPT, "open", zShmFilename);
+          goto shm_open_err;
+        }
       }
   
       /* Check to see if another process is holding the dead-man switch.
@@ -3924,7 +3934,8 @@ static int unixShmMap(
     while(pShmNode->nRegion<=iRegion){
       void *pMem;
       if( pShmNode->h>=0 ){
-        pMem = mmap(0, szRegion, PROT_READ|PROT_WRITE, 
+        pMem = mmap(0, szRegion,
+            pShmNode->isReadonly ? PROT_READ : PROT_READ|PROT_WRITE, 
             MAP_SHARED, pShmNode->h, pShmNode->nRegion*szRegion
         );
         if( pMem==MAP_FAILED ){
@@ -3950,6 +3961,7 @@ shmpage_out:
   }else{
     *pp = 0;
   }
+  if( pShmNode->isReadonly && rc==SQLITE_OK ) rc = SQLITE_READONLY;
   sqlite3_mutex_leave(pShmNode->mutex);
   return rc;
 }

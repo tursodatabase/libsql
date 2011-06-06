@@ -3049,6 +3049,7 @@ static int fts3RenameMethod(
 
 static int fts3SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
   Fts3Table *p = (Fts3Table*)pVtab;
+  UNUSED_PARAMETER(iSavepoint);
   assert( p->inTransaction );
   assert( p->mxSavepoint < iSavepoint );
   TESTONLY( p->mxSavepoint = iSavepoint );
@@ -3056,6 +3057,8 @@ static int fts3SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
 }
 static int fts3ReleaseMethod(sqlite3_vtab *pVtab, int iSavepoint){
   TESTONLY( Fts3Table *p = (Fts3Table*)pVtab );
+  UNUSED_PARAMETER(iSavepoint);
+  UNUSED_PARAMETER(pVtab);
   assert( p->inTransaction );
   assert( p->mxSavepoint >= iSavepoint );
   TESTONLY( p->mxSavepoint = iSavepoint-1 );
@@ -3063,6 +3066,7 @@ static int fts3ReleaseMethod(sqlite3_vtab *pVtab, int iSavepoint){
 }
 static int fts3RollbackToMethod(sqlite3_vtab *pVtab, int iSavepoint){
   Fts3Table *p = (Fts3Table*)pVtab;
+  UNUSED_PARAMETER(iSavepoint);
   assert( p->inTransaction );
   assert( p->mxSavepoint >= iSavepoint );
   TESTONLY( p->mxSavepoint = iSavepoint );

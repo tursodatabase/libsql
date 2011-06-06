@@ -3434,6 +3434,10 @@ void print_stack_union(
   /* Allocate and initialize types[] and allocate stddt[] */
   arraysize = lemp->nsymbol * 2;
   types = (char**)calloc( arraysize, sizeof(char*) );
+  if( types==0 ){
+    fprintf(stderr,"Out of memory.\n");
+    exit(1);
+  }
   for(i=0; i<arraysize; i++) types[i] = 0;
   maxdtlength = 0;
   if( lemp->vartype ){
@@ -3447,7 +3451,7 @@ void print_stack_union(
     if( len>maxdtlength ) maxdtlength = len;
   }
   stddt = (char*)malloc( maxdtlength*2 + 1 );
-  if( types==0 || stddt==0 ){
+  if( stddt==0 ){
     fprintf(stderr,"Out of memory.\n");
     exit(1);
   }

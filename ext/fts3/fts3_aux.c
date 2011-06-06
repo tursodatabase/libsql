@@ -343,6 +343,7 @@ static int fts3auxFilterMethod(
   int isScan;
 
   UNUSED_PARAMETER(nVal);
+  UNUSED_PARAMETER(idxStr);
 
   assert( idxStr==0 );
   assert( idxNum==FTS4AUX_EQ_CONSTRAINT || idxNum==0
@@ -460,7 +461,10 @@ int sqlite3Fts3InitAux(sqlite3 *db){
      0,                           /* xCommit       */
      0,                           /* xRollback     */
      0,                           /* xFindFunction */
-     0                            /* xRename       */
+     0,                           /* xRename       */
+     0,                           /* xSavepoint    */
+     0,                           /* xRelease      */
+     0                            /* xRollbackTo   */
   };
   int rc;                         /* Return code */
 

@@ -988,6 +988,7 @@ case OP_Variable: {            /* out2-prerelease */
   Mem *pVar;       /* Value being transferred */
 
   assert( pOp->p1>0 && pOp->p1<=p->nVar );
+  assert( pOp->p4.z==0 || pOp->p4.z==p->azVar[pOp->p1-1] );
   pVar = &p->aVar[pOp->p1 - 1];
   if( sqlite3VdbeMemTooBig(pVar) ){
     goto too_big;
@@ -1766,7 +1767,7 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
   pIn3 = &aMem[pOp->p3];
   flags1 = pIn1->flags;
   flags3 = pIn3->flags;
-  if( (pIn1->flags | pIn3->flags)&MEM_Null ){
+  if( (flags1 | flags3)&MEM_Null ){
     /* One or both operands are NULL */
     if( pOp->p5 & SQLITE_NULLEQ ){
       /* If SQLITE_NULLEQ is set (which will only happen if the operator is
@@ -1774,7 +1775,7 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
       ** or not both operands are null.
       */
       assert( pOp->opcode==OP_Eq || pOp->opcode==OP_Ne );
-      res = (pIn1->flags & pIn3->flags & MEM_Null)==0;
+      res = (flags1 & flags3 & MEM_Null)==0;
     }else{
       /* SQLITE_NULLEQ is clear and at least one operand is NULL,
       ** then the result is always NULL.
@@ -2584,6 +2585,7 @@ case OP_Savepoint: {
     }else{
       nName = sqlite3Strlen30(zName);
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
       /* This call is Ok even if this savepoint is actually a transaction
       ** savepoint (and therefore should not prompt xSavepoint()) callbacks.
       ** If this is a transaction savepoint being opened, it is guaranteed
@@ -2592,6 +2594,7 @@ case OP_Savepoint: {
       rc = sqlite3VtabSavepoint(db, SAVEPOINT_BEGIN,
                                 db->nStatement+db->nSavepoint);
       if( rc!=SQLITE_OK ) goto abort_due_to_error;
+#endif
 
       /* Create a new savepoint structure. */
       pNew = sqlite3DbMallocRaw(db, sizeof(Savepoint)+nName+1);
@@ -5880,20 +5883,20 @@ case OP_MaxPgcnt: {            /* out2-prerelease */
 */
 case OP_Trace: {
   char *zTrace;
+  char *z;
 
-  zTrace = (pOp->p4.z ? pOp->p4.z : p->zSql);
-  if( zTrace ){
-    if( db->xTrace ){
-      char *z = sqlite3VdbeExpandSql(p, zTrace);
-      db->xTrace(db->pTraceArg, z);
-      sqlite3DbFree(db, z);
-    }
-#ifdef SQLITE_DEBUG
-    if( (db->flags & SQLITE_SqlTrace)!=0 ){
-      sqlite3DebugPrintf("SQL-trace: %s\n", zTrace);
-    }
-#endif /* SQLITE_DEBUG */
+  if( db->xTrace && (zTrace = (pOp->p4.z ? pOp->p4.z : p->zSql))!=0 ){
+    z = sqlite3VdbeExpandSql(p, zTrace);
+    db->xTrace(db->pTraceArg, z);
+    sqlite3DbFree(db, z);
   }
+#ifdef SQLITE_DEBUG
+  if( (db->flags & SQLITE_SqlTrace)!=0
+   && (zTrace = (pOp->p4.z ? pOp->p4.z : p->zSql))!=0
+  ){
+    sqlite3DebugPrintf("SQL-trace: %s\n", zTrace);
+  }
+#endif /* SQLITE_DEBUG */
   break;
 }
 #endif
