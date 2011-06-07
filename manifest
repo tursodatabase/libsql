@@ -1,5 +1,5 @@
-C Add\sassert()\sstatements\sto\sverify\sthat\su16\spointers\sassociated\swith\nthe\senhancement\sin\s[897f56a158]\sare\salways\s2-byte\saligned.
-D 2011-06-06T13:38:11.704
+C Fix\sa\scomment\stype\son\sthe\sdescription\sof\sthe\sSchema\sobject.
+D 2011-06-07T18:31:14.409
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -181,7 +181,7 @@ F src/select.c d9d440809025a58547e39f4f268c2a296bfb56ff
 F src/shell.c 0e0173b3e79d956368013e759f084caa7995ecb1
 F src/sqlite.h.in 2f51e4f58b2b4626fcbd9938580e730cb5fb4985
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
-F src/sqliteInt.h 6e58c558c57c8f44011736d5fa5295eb3130f9de
+F src/sqliteInt.h d2a9f6e06b85bb72a47cfe8d45320abe9cfa44f1
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -942,7 +942,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 65db822f200bafe9abe59b33b17b2c643c17c5e8
-R 6f20bbc84376df4d202ff7744a749f24
+P 98ccfa930e8e5f10808a518e3e22e85e8a8a65c2
+R eade3cd28243c0adfa4f9b0e3371ab06
 U drh
-Z b952c48c970134cec62f175ed76931db
+Z 6c3c2f88a9e5ad93debb108bda4e78cb
