@@ -68,7 +68,11 @@ do_execsql_test 3.1 {
 
 do_execsql_test 3.2 {
   CREATE VIRTUAL TABLE xx USING FTS4;
+}
+do_execsql_test 3.3 {
   SELECT * FROM xx WHERE xx MATCH 'abc';
+}
+do_execsql_test 3.4 {
   SELECT * FROM xx WHERE xx MATCH 'a b c';
 }
 
