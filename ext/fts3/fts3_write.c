@@ -94,7 +94,6 @@ struct Fts3DeferredToken {
 **
 **   sqlite3Fts3SegReaderNew()
 **   sqlite3Fts3SegReaderFree()
-**   sqlite3Fts3SegReaderCost()
 **   sqlite3Fts3SegReaderIterate()
 **
 ** Methods used to manipulate Fts3SegReader structures:
@@ -1295,95 +1294,6 @@ static int fts3SegReaderNextDocid(
   return SQLITE_OK;
 }
 
-/*
-** This function is called to estimate the amount of data that will be 
-** loaded from the disk If SegReaderIterate() is called on this seg-reader,
-** in units of average document size.
-** 
-** This can be used as follows: If the caller has a small doclist that 
-** contains references to N documents, and is considering merging it with
-** a large doclist (size X "average documents"), it may opt not to load
-** the large doclist if X>N.
-*/
-int sqlite3Fts3SegReaderCost(
-  Fts3Cursor *pCsr,               /* FTS3 cursor handle */
-  Fts3SegReader *pReader,         /* Segment-reader handle */
-  int *pnCost                     /* IN/OUT: Number of bytes read */
-){
-  Fts3Table *p = (Fts3Table*)pCsr->base.pVtab;
-  int rc = SQLITE_OK;             /* Return code */
-  int nCost = 0;                  /* Cost in bytes to return */
-  int pgsz = p->nPgsz;            /* Database page size */
-
-  assert( pgsz>0 );
-
-  /* If this seg-reader is reading the pending-terms table, or if all data
-  ** for the segment is stored on the root page of the b-tree, then the cost
-  ** is zero. In this case all required data is already in main memory.
-  */
-  if( p->bHasStat 
-   && !fts3SegReaderIsPending(pReader) 
-   && !fts3SegReaderIsRootOnly(pReader) 
-  ){
-    int nBlob = 0;
-    sqlite3_int64 iBlock;
-
-    if( pCsr->nRowAvg==0 ){
-      /* The average document size, which is required to calculate the cost
-      ** of each doclist, has not yet been determined. Read the required 
-      ** data from the %_stat table to calculate it.
-      **
-      ** Entry 0 of the %_stat table is a blob containing (nCol+1) FTS3 
-      ** varints, where nCol is the number of columns in the FTS3 table.
-      ** The first varint is the number of documents currently stored in
-      ** the table. The following nCol varints contain the total amount of
-      ** data stored in all rows of each column of the table, from left
-      ** to right.
-      */
-      sqlite3_stmt *pStmt;
-      sqlite3_int64 nDoc = 0;
-      sqlite3_int64 nByte = 0;
-      const char *pEnd;
-      const char *a;
-
-      rc = sqlite3Fts3SelectDoctotal(p, &pStmt);
-      if( rc!=SQLITE_OK ) return rc;
-      a = sqlite3_column_blob(pStmt, 0);
-      assert( a );
-
-      pEnd = &a[sqlite3_column_bytes(pStmt, 0)];
-      a += sqlite3Fts3GetVarint(a, &nDoc);
-      while( a<pEnd ){
-        a += sqlite3Fts3GetVarint(a, &nByte);
-      }
-      if( nDoc==0 || nByte==0 ){
-        sqlite3_reset(pStmt);
-        return SQLITE_CORRUPT_VTAB;
-      }
-
-      pCsr->nRowAvg = (int)(((nByte / nDoc) + pgsz) / pgsz);
-      assert( pCsr->nRowAvg>0 ); 
-      rc = sqlite3_reset(pStmt);
-      if( rc!=SQLITE_OK ) return rc;
-    }
-
-    /* Assume that a blob flows over onto overflow pages if it is larger
-    ** than (pgsz-35) bytes in size (the file-format documentation
-    ** confirms this).
-    */
-    for(iBlock=pReader->iStartBlock; iBlock<=pReader->iLeafEndBlock; iBlock++){
-      rc = sqlite3Fts3ReadBlock(p, iBlock, 0, &nBlob, 0);
-      if( rc!=SQLITE_OK ) break;
-      if( (nBlob+35)>pgsz ){
-        int nOvfl = (nBlob + 34)/pgsz;
-        nCost += ((nOvfl + pCsr->nRowAvg - 1)/pCsr->nRowAvg);
-      }
-    }
-  }
-
-  *pnCost += nCost;
-  return rc;
-}
 
 int sqlite3Fts3MsrOvfl(
   Fts3Cursor *pCsr, 
@@ -2416,7 +2326,6 @@ int sqlite3Fts3MsrIncrNext(
   }
 
   while( 1 ){
-    int nSort;
     Fts3SegReader *pSeg;
     pSeg = pMsr->apSegment[0];
 
@@ -2956,20 +2865,6 @@ static int fts3SpecialInsert(Fts3Table *p, sqlite3_value *pVal){
   }
 
   return rc;
-}
-
-/*
-** Return the deferred doclist associated with deferred token pDeferred.
-** This function assumes that sqlite3Fts3CacheDeferredDoclists() has already
-** been called to allocate and populate the doclist.
-*/
-char *sqlite3Fts3DeferredDoclist(Fts3DeferredToken *pDeferred, int *pnByte){
-  if( pDeferred->pList ){
-    *pnByte = pDeferred->pList->nData;
-    return pDeferred->pList->aData;
-  }
-  *pnByte = 0;
-  return 0;
 }
 
 /*

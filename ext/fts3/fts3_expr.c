@@ -769,6 +769,7 @@ void sqlite3Fts3ExprFree(Fts3Expr *p){
     sqlite3Fts3ExprFree(p->pLeft);
     sqlite3Fts3ExprFree(p->pRight);
     sqlite3Fts3EvalPhraseCleanup(p->pPhrase);
+    sqlite3_free(p->aMI);
     sqlite3_free(p);
   }
 }

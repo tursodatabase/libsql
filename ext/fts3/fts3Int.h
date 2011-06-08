@@ -240,6 +240,7 @@ struct Fts3Cursor {
   u8 bDesc;                       /* True to sort in descending order */
   int eEvalmode;                  /* An FTS3_EVAL_XX constant */
   int nRowAvg;                    /* Average size of database rows, in pages */
+  int nDoc;                       /* Documents in table */
 
   int isMatchinfoNeeded;          /* True when aMatchinfo[] needs filling in */
   u32 *aMatchinfo;                /* Information about most recent match */
@@ -323,9 +324,17 @@ struct Fts3Phrase {
 ** "Length" field found in doclists stored on disk is omitted from this 
 ** buffer.
 **
-** Variable pCurrent always points to the start of a docid field within
-** aDoclist. Since the doclist is usually scanned in docid order, this can
-** be used to accelerate seeking to the required docid within the doclist.
+** Variable aMI is used only for FTSQUERY_NEAR nodes to store the global
+** matchinfo data. If it is not NULL, it points to an array of size nCol*3,
+** where nCol is the number of columns in the queried FTS table. The array
+** is populated as follows:
+**
+**   aMI[iCol*3 + 0] = Undefined
+**   aMI[iCol*3 + 1] = Number of occurrences
+**   aMI[iCol*3 + 2] = Number of rows containing at least one instance
+**
+** The aMI array is allocated using sqlite3_malloc(). It should be freed 
+** when the expression node is.
 */
 struct Fts3Expr {
   int eType;                 /* One of the FTSQUERY_XXX values defined below */
@@ -340,6 +349,8 @@ struct Fts3Expr {
   u8 bEof;                   /* True this expression is at EOF already */
   u8 bStart;                 /* True if iDocid is valid */
   u8 bDeferred;              /* True if this expression is entirely deferred */
+
+  u32 *aMI;
 };
 
 /*
@@ -370,7 +381,6 @@ int sqlite3Fts3SegReaderNew(int, sqlite3_int64,
 int sqlite3Fts3SegReaderPending(
   Fts3Table*,int,const char*,int,int,Fts3SegReader**);
 void sqlite3Fts3SegReaderFree(Fts3SegReader *);
-int sqlite3Fts3SegReaderCost(Fts3Cursor *, Fts3SegReader *, int *);
 int sqlite3Fts3AllSegdirs(Fts3Table*, int, int, sqlite3_stmt **);
 int sqlite3Fts3ReadLock(Fts3Table *);
 int sqlite3Fts3ReadBlock(Fts3Table*, sqlite3_int64, char **, int*, int*);
@@ -382,7 +392,6 @@ void sqlite3Fts3FreeDeferredTokens(Fts3Cursor *);
 int sqlite3Fts3DeferToken(Fts3Cursor *, Fts3PhraseToken *, int);
 int sqlite3Fts3CacheDeferredDoclists(Fts3Cursor *);
 void sqlite3Fts3FreeDeferredDoclists(Fts3Cursor *);
-char *sqlite3Fts3DeferredDoclist(Fts3DeferredToken *, int *);
 void sqlite3Fts3SegmentsClose(Fts3Table *);
 
 /* Special values interpreted by sqlite3SegReaderCursor() */
@@ -441,8 +450,7 @@ int sqlite3Fts3VarintLen(sqlite3_uint64);
 void sqlite3Fts3Dequote(char *);
 void sqlite3Fts3DoclistPrev(int,char*,int,char**,sqlite3_int64*,int*,u8*);
 
-int sqlite3Fts3ExprLoadDoclist(Fts3Cursor *, Fts3Expr *);
-int sqlite3Fts3ExprNearTrim(Fts3Expr *, Fts3Expr *, int);
+int sqlite3Fts3EvalPhraseStats(Fts3Cursor *, Fts3Expr *, u32 *);
 
 /* fts3_tokenizer.c */
 const char *sqlite3Fts3NextToken(const char *, int *);
@@ -480,9 +488,6 @@ int sqlite3Fts3TermSegReaderCursor(
   Fts3MultiSegReader **ppSegcsr   /* OUT: Allocated seg-reader cursor */
 );
 
-int sqlite3Fts3EvalPhraseCache(Fts3Cursor *, Fts3Phrase *);
-sqlite3_int64 sqlite3Fts3EvalDocid(Fts3Cursor *, Fts3Expr *);
-int sqlite3Fts3EvalPhraseDoclist(Fts3Cursor*, Fts3Expr*, const char**,int*);
 void sqlite3Fts3EvalPhraseCleanup(Fts3Phrase *);
 
 int sqlite3Fts3EvalStart(Fts3Cursor *, Fts3Expr *, int);

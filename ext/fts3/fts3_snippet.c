@@ -720,26 +720,6 @@ static int fts3ColumnlistCount(char **ppCollist){
   return nEntry;
 }
 
-static void fts3LoadColumnlistCounts(char **pp, u32 *aOut, int isGlobal){
-  char *pCsr = *pp;
-  while( *pCsr ){
-    int nHit;
-    sqlite3_int64 iCol = 0;
-    if( *pCsr==0x01 ){
-      pCsr++;
-      pCsr += sqlite3Fts3GetVarint(pCsr, &iCol);
-    }
-    nHit = fts3ColumnlistCount(&pCsr);
-    assert( nHit>0 );
-    if( isGlobal ){
-      aOut[iCol*3+1]++;
-    }
-    aOut[iCol*3] += nHit;
-  }
-  pCsr++;
-  *pp = pCsr;
-}
-
 /*
 ** fts3ExprIterate() callback used to collect the "global" matchinfo stats
 ** for a single query. 
@@ -773,32 +753,9 @@ static int fts3ExprGlobalHitsCb(
   void *pCtx                      /* Pointer to MatchInfo structure */
 ){
   MatchInfo *p = (MatchInfo *)pCtx;
-  u32 *aOut = &p->aMatchinfo[3*iPhrase*p->nCol];
-
-  if( pExpr->bDeferred ){
-    int iCol;                   /* Column index */
-    for(iCol=0; iCol<p->nCol; iCol++){
-      aOut[iCol*3 + 1] = (u32)p->nDoc;
-      aOut[iCol*3 + 2] = (u32)p->nDoc;
-    }
-  }else{
-    char *pIter;
-    char *pEnd;
-    int n;
-    int rc = sqlite3Fts3EvalPhraseDoclist(
-        p->pCursor, pExpr, (const char **)&pIter, &n
-    );
-    if( rc!=SQLITE_OK ) return rc;
-    pEnd = &pIter[n];
-
-    /* Fill in the global hit count matrix row for this phrase. */
-    while( pIter<pEnd ){
-      while( *pIter++ & 0x80 );      /* Skip past docid. */
-      fts3LoadColumnlistCounts(&pIter, &aOut[1], 1);
-    }
-  }
-
-  return SQLITE_OK;
+  return sqlite3Fts3EvalPhraseStats(
+      p->pCursor, pExpr, &p->aMatchinfo[3*iPhrase*p->nCol]
+  );
 }
 
 /*
