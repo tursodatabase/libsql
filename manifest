@@ -1,5 +1,5 @@
-C Fix\sa\scomment\stype\son\sthe\sdescription\sof\sthe\sSchema\sobject.
-D 2011-06-07T18:31:14.409
+C Fix\sa\sline\sin\spcache1.c\swhere\sa\sglobal\sdata\sstructure\sis\saccessed\swithout\susing\sthe\sGLOBAL()\smacro.\sThis\scauses\sa\ssubtle\smalfunction\son\stest\ssystems\sthat\suse\sSQLITE_OMIT_WSD.
+D 2011-06-09T17:53:43.990
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -170,7 +170,7 @@ F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 49e718c095810c6b3334e3a6d89970aceaddefce
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
-F src/pcache1.c d548e31beafa792d1994b663a29a5303569efc4e
+F src/pcache1.c 912bd5687d6df344698d8e69560f347b6e21c18a
 F src/pragma.c ebcd20f1e654f5cb3aeef864ed69c4697719fbaa
 F src/prepare.c e64261559a3187698a3e7e6c8b001a4f4f98dab4
 F src/printf.c 585a36b6a963df832cfb69505afa3a34ed5ef8a1
@@ -942,7 +942,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 98ccfa930e8e5f10808a518e3e22e85e8a8a65c2
-R eade3cd28243c0adfa4f9b0e3371ab06
-U drh
-Z 6c3c2f88a9e5ad93debb108bda4e78cb
+P 095cd9a6ec175b703ff3fcafeffb3349f21bd831
+R 7c10b21d6dc959e0ea4f54033f3d408b
+U dan
+Z e98f319e77bc2f43df3a70aff2c9cf53
