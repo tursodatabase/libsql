@@ -3763,13 +3763,13 @@ int sqlite3Fts3EvalStart(Fts3Cursor *pCsr, Fts3Expr *pExpr, int bOptOk){
   return rc;
 }
 
-static void fts3EvalFreeDeferredDoclist(Fts3Phrase *pPhrase){
+static void fts3EvalZeroPoslist(Fts3Phrase *pPhrase){
   if( pPhrase->doclist.bFreeList ){
     sqlite3_free(pPhrase->doclist.pList);
-    pPhrase->doclist.pList = 0;
-    pPhrase->doclist.nList = 0;
-    pPhrase->doclist.bFreeList = 0;
   }
+  pPhrase->doclist.pList = 0;
+  pPhrase->doclist.nList = 0;
+  pPhrase->doclist.bFreeList = 0;
 }
 
 static int fts3EvalNearTrim2(
@@ -3785,6 +3785,8 @@ static int fts3EvalNearTrim2(
   char *p2; 
   char *pOut; 
   int res;
+
+  assert( pPhrase->doclist.pList );
 
   p2 = pOut = pPhrase->doclist.pList;
   res = fts3PoslistNearMerge(
@@ -3959,16 +3961,16 @@ static void fts3EvalNext(
           fts3EvalNext(pCsr, pRight, pRc);
           assert( *pRc!=SQLITE_OK || pRight->bStart );
         }
-        do {
-          fts3EvalNext(pCsr, pLeft, pRc);
-          if( pLeft->bEof ) break;
+
+        fts3EvalNext(pCsr, pLeft, pRc);
+        if( pLeft->bEof==0 ){
           while( !*pRc 
               && !pRight->bEof 
               && DOCID_CMP(pLeft->iDocid, pRight->iDocid)>0 
           ){
             fts3EvalNext(pCsr, pRight, pRc);
           }
-        }while( !pRight->bEof && pRight->iDocid==pLeft->iDocid && !*pRc );
+        }
         pExpr->iDocid = pLeft->iDocid;
         pExpr->bEof = pLeft->bEof;
         break;
@@ -3976,7 +3978,7 @@ static void fts3EvalNext(
 
       default: {
         Fts3Phrase *pPhrase = pExpr->pPhrase;
-        fts3EvalFreeDeferredDoclist(pPhrase);
+        fts3EvalZeroPoslist(pPhrase);
         *pRc = fts3EvalPhraseNext(pCsr, pPhrase, &pExpr->bEof);
         pExpr->iDocid = pPhrase->doclist.iDocid;
         break;
@@ -3997,11 +3999,11 @@ static int fts3EvalDeferredTest(Fts3Cursor *pCsr, Fts3Expr *pExpr, int *pRc){
          && fts3EvalNearTest(pExpr, pRc)
         );
 
-        /* If this is a NEAR node and the NEAR expression does not match
-        ** any rows, zero the doclist for all phrases involved in the NEAR.
-        ** This is because the snippet(), offsets() and matchinfo() functions
-        ** are not supposed to recognize any instances of phrases that are
-        ** part of unmatched NEAR queries. For example if this expression:
+        /* If the NEAR expression does not match any rows, zero the doclist for 
+        ** all phrases involved in the NEAR. This is because the snippet(),
+        ** offsets() and matchinfo() functions are not supposed to recognize 
+        ** any instances of phrases that are part of unmatched NEAR queries. 
+        ** For example if this expression:
         **
         **    ... MATCH 'a OR (b NEAR c)'
         **
@@ -4012,12 +4014,19 @@ static int fts3EvalDeferredTest(Fts3Cursor *pCsr, Fts3Expr *pExpr, int *pRc){
         ** then any snippet() should ony highlight the "a" term, not the "b"
         ** (as "b" is part of a non-matching NEAR clause).
         */
-        if( pExpr->eType==FTSQUERY_NEAR && bHit==0 ){
+        if( bHit==0 
+         && pExpr->eType==FTSQUERY_NEAR 
+         && (pExpr->pParent==0 || pExpr->pParent->eType!=FTSQUERY_NEAR)
+        ){
           Fts3Expr *p;
           for(p=pExpr; p->pPhrase==0; p=p->pLeft){
-            p->pRight->pPhrase->doclist.pList = 0;
+            if( p->pRight->iDocid==pCsr->iPrevId ){
+              fts3EvalZeroPoslist(p->pRight->pPhrase);
+            }
           }
-          p->pPhrase->doclist.pList = 0;
+          if( p->iDocid==pCsr->iPrevId ){
+            fts3EvalZeroPoslist(p->pPhrase);
+          }
         }
 
         break;
@@ -4037,9 +4046,14 @@ static int fts3EvalDeferredTest(Fts3Cursor *pCsr, Fts3Expr *pExpr, int *pRc){
         break;
 
       default: {
-        if( pCsr->pDeferred ){
+        if( pCsr->pDeferred 
+         && (pExpr->iDocid==pCsr->iPrevId || pExpr->bDeferred)
+        ){
           Fts3Phrase *pPhrase = pExpr->pPhrase;
-          fts3EvalFreeDeferredDoclist(pPhrase);
+          assert( pExpr->bDeferred || pPhrase->doclist.bFreeList==0 );
+          if( pExpr->bDeferred ){
+            fts3EvalZeroPoslist(pPhrase);
+          }
           *pRc = fts3EvalDeferredPhrase(pCsr, pPhrase);
           bHit = (pPhrase->doclist.pList!=0);
           pExpr->iDocid = pCsr->iPrevId;
@@ -4116,7 +4130,7 @@ static void fts3EvalRestart(
     Fts3Phrase *pPhrase = pExpr->pPhrase;
 
     if( pPhrase ){
-      fts3EvalFreeDeferredDoclist(pPhrase);
+      fts3EvalZeroPoslist(pPhrase);
       if( pPhrase->bIncr ){
         sqlite3Fts3EvalPhraseCleanup(pPhrase);
         memset(&pPhrase->doclist, 0, sizeof(Fts3Doclist));
@@ -4172,7 +4186,7 @@ static void fts3EvalUpdateCounts(
   }
 }
 
-static int fts3EvalNearStats(
+static int fts3EvalGatherStats(
   Fts3Cursor *pCsr,
   Fts3Expr *pExpr
 ){
@@ -4195,6 +4209,7 @@ static int fts3EvalNearStats(
     }
     iDocid = pRoot->iDocid;
     bEof = pRoot->bEof;
+    assert( pRoot->bStart );
 
     /* Allocate space for the aMSI[] array of each FTSQUERY_PHRASE node */
     for(p=pRoot; p; p=p->pLeft){
@@ -4236,11 +4251,17 @@ static int fts3EvalNearStats(
     if( bEof ){
       pRoot->bEof = bEof;
     }else{
+      /* Caution: pRoot may iterate through docids in ascending or descending
+      ** order. For this reason, even though it seems more defensive, the 
+      ** do loop can not be written:
+      **
+      **   do {...} while( pRoot->iDocid<iDocid && rc==SQLITE_OK );
+      */
       fts3EvalRestart(pCsr, pRoot, &rc);
-      while( pRoot->iDocid<iDocid && rc==SQLITE_OK ){
+      do {
         fts3EvalNext(pCsr, pRoot, &rc);
         assert( pRoot->bEof==0 );
-      }
+      }while( pRoot->iDocid!=iDocid && rc==SQLITE_OK );
       fts3EvalLoadDeferred(pCsr, &rc);
     }
   }
@@ -4293,7 +4314,7 @@ int sqlite3Fts3EvalPhraseStats(
       aiOut[iCol*3 + 2] = pCsr->nDoc;
     }
   }else{
-    rc = fts3EvalNearStats(pCsr, pExpr);
+    rc = fts3EvalGatherStats(pCsr, pExpr);
     if( rc==SQLITE_OK ){
       assert( pExpr->aMI );
       for(iCol=0; iCol<pTab->nColumn; iCol++){
@@ -4372,7 +4393,7 @@ void sqlite3Fts3EvalPhraseCleanup(Fts3Phrase *pPhrase){
   if( pPhrase ){
     int i;
     sqlite3_free(pPhrase->doclist.aAll);
-    fts3EvalFreeDeferredDoclist(pPhrase);
+    fts3EvalZeroPoslist(pPhrase);
     memset(&pPhrase->doclist, 0, sizeof(Fts3Doclist));
     for(i=0; i<pPhrase->nToken; i++){
       fts3SegReaderCursorFree(pPhrase->aToken[i].pSegcsr);

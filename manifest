@@ -1,5 +1,5 @@
-C Fix\svarious\sissues\sto\sdo\swith\sdeferred\stokens,\sNEAR\sexpressions\sand\smatchinfo().
-D 2011-06-08T18:39:07.487
+C Fix\sproblems\sto\sdo\swith\susing\sboth\sOR\sand\sNEAR\soperators\sin\sa\ssingle\sexpression.
+D 2011-06-09T10:48:02.352
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -61,7 +61,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c b44083cafb9840be0927f8b9fb2ab4f373167f77
+F ext/fts3/fts3.c 5df3b5797522d3d17949ee12d5918d6d213b5114
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h a999cfbf605efec293a88519f74192f5204c84d6
 F ext/fts3/fts3_aux.c baed9dab7fb4604ae8cafdb2d7700abe93beffbe
@@ -475,7 +475,7 @@ F test/fts3matchinfo.test 08a82d18cc08abb28aec41d412b4c2ef25ba6a5f
 F test/fts3near.test 2e318ee434d32babd27c167142e2b94ddbab4844
 F test/fts3prefix.test 36246609111ec1683f7ea5ed27666ce2cefb5676
 F test/fts3query.test ef79d31fdb355d094baec1c1b24b60439a1fb8a2
-F test/fts3rnd.test d88ec3dbe52e81e410cd1a39554d15941f86333c
+F test/fts3rnd.test 1320d8826a845e38a96e769562bf83d7a92a15d0
 F test/fts3shared.test 8bb266521d7c5495c0ae522bb4d376ad5387d4a2
 F test/fts3snippet.test a12f22a3ba4dd59751a57c79b031d07ab5f51ddd
 F test/fts3sort.test 63d52c1812904b751f9e1ff487472e44833f5402
@@ -943,7 +943,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 9d10a6846b12a9cc8fd4fdc3affd931a27218b5a
-R 37e4da2cb9907d0ccf1d8076445165fd
+P 3972a787df5ec253b99b148385655e7b68d851fa
+R 9f88ec7fe13b9820fcb74aa4a46dd50c
 U dan
-Z 147c4bbcabf01e6d99dff7a301984a70
+Z 78f71a9a33e1daee77ff848d72b67bf4
