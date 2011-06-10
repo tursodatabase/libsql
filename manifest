@@ -1,5 +1,5 @@
-C Fix\sa\sline\sin\spcache1.c\swhere\sa\sglobal\sdata\sstructure\sis\saccessed\swithout\susing\sthe\sGLOBAL()\smacro.\sThis\scauses\sa\ssubtle\smalfunction\son\stest\ssystems\sthat\suse\sSQLITE_OMIT_WSD.
-D 2011-06-09T17:53:43.990
+C Fix\sminor\sproblems\swith\sforeign\skey\sconstraints\swhere\sthe\sparent\stable\sis\sthe\ssame\sas\sthe\schild\stable.
+D 2011-06-10T16:33:25.121
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -133,7 +133,7 @@ F src/date.c 1548fdac51377e4e7833251de878b4058c148e1b
 F src/delete.c cecc926c70783452f3e8eb452c728291ce1a0b21
 F src/expr.c ab46ab0f0c44979a8164ca31728d7d10ae5e8106
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
-F src/fkey.c a43ba8a005fb5efd1deeee06853e3a6120d46a91
+F src/fkey.c 9fabba17a4d4778dc660f0cb9d781fc86d7b9d41
 F src/func.c b9117e40975245b8504cf3625d7e321d8d4b63dc
 F src/global.c 29bfb85611dd816b04f10fba0ca910366e128d38
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
@@ -398,7 +398,7 @@ F test/filectrl.test 97003734290887566e01dded09dc9e99cb937e9e
 F test/filefmt.test f178cfc29501a14565954c961b226e61877dd32c
 F test/fkey1.test 01c7de578e11747e720c2d9aeef27f239853c4da
 F test/fkey2.test 080969fe219b3b082b0e097ac18c6af2e5b0631f
-F test/fkey3.test 42f88d6048d8dc079e2a8cf7baad1cc1483a7620
+F test/fkey3.test 0c4d36b6d5b88f2c233cf8a512d3e2eaedc06fd6
 F test/fkey4.test c6c8f9f9be885f95c85c7bceb26f243ad906fd49
 F test/fkey_malloc.test a5ede29bd2f6e56dea78c3d43fb86dd696c068c8
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
@@ -942,7 +942,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 095cd9a6ec175b703ff3fcafeffb3349f21bd831
-R 7c10b21d6dc959e0ea4f54033f3d408b
+P b11b2e1f8ccadf78bebe2278f05a8e3d3e543328
+R 82679520a5c6b1fbd50bacf672964c79
 U dan
-Z e98f319e77bc2f43df3a70aff2c9cf53
+Z 3e44af2707cf5eb06c1e283bd2e9d2ca
