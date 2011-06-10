@@ -244,7 +244,7 @@ void sqlite3Update(
   }
   for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
     int reg;
-    if( chngRowid ){
+    if( hasFK || chngRowid ){
       reg = ++pParse->nMem;
     }else{
       reg = 0;
