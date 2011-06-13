@@ -1,5 +1,5 @@
-C When\supdating\sa\sfield\sthat\srequires\sforeign\skey\sconstraints\sbe\schecked,\sensure\sthat\sthe\sindexes\sand\stables\sare\sconsistent\swhen\sthe\sFK\slogic\sis\srun.\sOtherwise,\sit\smay\sdetect\sthe\sinconsistency\sand\sreport\sdatabase\scorruption.
-D 2011-06-10T18:33:35.602
+C Use\sonly\sunsigned\svalues\sin\sthe\simplementatin\sof\sLIKE\sand\sGLOB\sso\sthat\nvalues\swon't\soverflow\sto\snegative\swhen\sdealing\swith\smalformed\sUTF8.
+D 2011-06-13T12:19:21.072
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 11dcc00a8d0e5202def00e81732784fb0cc4fe1d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -134,7 +134,7 @@ F src/delete.c cecc926c70783452f3e8eb452c728291ce1a0b21
 F src/expr.c ab46ab0f0c44979a8164ca31728d7d10ae5e8106
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 9fabba17a4d4778dc660f0cb9d781fc86d7b9d41
-F src/func.c b9117e40975245b8504cf3625d7e321d8d4b63dc
+F src/func.c d93772d9ffa51e4a8f275675bae1f61394c4ab80
 F src/global.c 29bfb85611dd816b04f10fba0ca910366e128d38
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
@@ -181,7 +181,7 @@ F src/select.c d9d440809025a58547e39f4f268c2a296bfb56ff
 F src/shell.c 0e0173b3e79d956368013e759f084caa7995ecb1
 F src/sqlite.h.in 2f51e4f58b2b4626fcbd9938580e730cb5fb4985
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
-F src/sqliteInt.h d2a9f6e06b85bb72a47cfe8d45320abe9cfa44f1
+F src/sqliteInt.h 7b7ec2394b94fc4516930cd9dae37af0f9312215
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -233,7 +233,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c c819d9f72168a035d545a5bdafe9b085b20df705
 F src/trigger.c c836a6caac16ba96611558922106858f6ca3d6bf
 F src/update.c 80d77311d91ebc06b27149e75701f1b3e9356622
-F src/utf.c d83650c3ea08f7407bd9d0839d9885241c209c60
+F src/utf.c c53eb7404b3eb5c1cbb5655c6a7a0e0ce6bd50f0
 F src/util.c 0f33bbbdfcc4a2d8cf20c3b2a16ffc3b57c58a70
 F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
 F src/vdbe.c edfa3827d7a6fac2425bc10c0eb6e54342d2fa56
@@ -942,7 +942,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 442d8d8bfe443797482354ba8766d97d3d6acaae
-R dc98bce2b79b015d80463a3aa5591d5c
-U dan
-Z 8380c49075a7949acdc7a8820572b0c9
+P 2b3d9996a829c62fbaf7c92d50e44636340b07c6
+R 901f548a763eaba41771c9603ccfd6ef
+U drh
+Z 700a00fc01c336d2e1728d856de33900

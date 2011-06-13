@@ -506,10 +506,10 @@ struct compareInfo {
 ** whereas only characters less than 0x80 do in ASCII.
 */
 #if defined(SQLITE_EBCDIC)
-# define sqlite3Utf8Read(A,C)    (*(A++))
-# define GlogUpperToLower(A)     A = sqlite3UpperToLower[A]
+# define sqlite3Utf8Read(A,C)  (*(A++))
+# define GlogUpperToLower(A)   A = sqlite3UpperToLower[A]
 #else
-# define GlogUpperToLower(A)     if( A<0x80 ){ A = sqlite3UpperToLower[A]; }
+# define GlogUpperToLower(A)   if( !((A)&~0x7f) ){ A = sqlite3UpperToLower[A]; }
 #endif
 
 static const struct compareInfo globInfo = { '*', '?', '[', 0 };
@@ -552,9 +552,9 @@ static int patternCompare(
   const u8 *zPattern,              /* The glob pattern */
   const u8 *zString,               /* The string to compare against the glob */
   const struct compareInfo *pInfo, /* Information about how to do the compare */
-  const int esc                    /* The escape character */
+  u32 esc                          /* The escape character */
 ){
-  int c, c2;
+  u32 c, c2;
   int invert;
   int seen;
   u8 matchOne = pInfo->matchOne;
@@ -684,7 +684,7 @@ static void likeFunc(
   sqlite3_value **argv
 ){
   const unsigned char *zA, *zB;
-  int escape = 0;
+  u32 escape = 0;
   int nPat;
   sqlite3 *db = sqlite3_context_db_handle(context);
 
