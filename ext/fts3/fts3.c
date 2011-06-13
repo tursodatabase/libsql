@@ -2727,8 +2727,10 @@ static int fts3RollbackMethod(sqlite3_vtab *pVtab){
 ** same position list.
 */
 static void fts3ReversePoslist(char *pStart, char **ppPoslist){
-  char *p = &(*ppPoslist)[-3];
-  char c = p[1];
+  char *p = &(*ppPoslist)[-2];
+  char c;
+
+  while( p>pStart && (c=*p--)==0 );
   while( p>pStart && (*p & 0x80) | c ){ 
     c = *p--; 
   }
@@ -3422,6 +3424,7 @@ void sqlite3Fts3DoclistPrev(
       iDocid += (iMul * iDelta);
       pNext = pDocid;
       fts3PoslistCopy(0, &pDocid);
+      while( pDocid<pEnd && *pDocid==0 ) pDocid++;
     }
 
     *pnList = pEnd - pNext;

@@ -1,0 +1,201 @@
+# 2011 June 10
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# If this build does not include FTS3, skip the tests in this file.
+#
+ifcapable !fts3 { finish_test ; return }
+source $testdir/fts3_common.tcl
+source $testdir/malloc_common.tcl
+
+set testprefix fts3rnd2
+
+proc test_fts3_near_match {tn doc expr res} {
+  fts3_near_match $doc $expr -phrasecountvar p
+  uplevel do_test [list $tn] [list [list set {} $p]] [list $res]
+}
+
+# Simple test cases for C routine [fts3_near_match].
+#
+test_fts3_near_match 1.1.1 {a b c a b} a                   {2}
+test_fts3_near_match 1.1.2 {a b c a b} {a 5 b 6 c}         {2 2 1}
+test_fts3_near_match 1.1.3 {a b c a b} {"a b"}             {2}
+test_fts3_near_match 1.1.4 {a b c a b} {"b c"}             {1}
+test_fts3_near_match 1.1.5 {a b c a b} {"c c"}             {0}
+
+test_fts3_near_match 1.2.1 "a b c d e f g" {b 2 f}         {0 0}
+test_fts3_near_match 1.2.2 "a b c d e f g" {b 3 f}         {1 1}
+test_fts3_near_match 1.2.3 "a b c d e f g" {f 2 b}         {0 0}
+test_fts3_near_match 1.2.4 "a b c d e f g" {f 3 b}         {1 1}
+test_fts3_near_match 1.2.5 "a b c d e f g" {"a b" 2 "f g"} {0 0}
+test_fts3_near_match 1.2.6 "a b c d e f g" {"a b" 3 "f g"} {1 1}
+
+set A "a b c d e f g h i j k l m n o p q r s t u v w x y z"
+test_fts3_near_match 1.3.1 $A {"c d" 5 "i j" 1 "e f"}      {0 0 0}
+test_fts3_near_match 1.3.2 $A {"c d" 5 "i j" 2 "e f"}      {1 1 1}
+
+proc mit {blob} {
+  set scan(littleEndian) i*
+  set scan(bigEndian) I*
+  binary scan $blob $scan($::tcl_platform(byteOrder)) r
+  return $r
+}
+db func mit mit
+
+proc fix_near_expr {expr} { 
+  set out [list]
+  lappend out [lindex $expr 0]
+  foreach {a b} [lrange $expr 1 end] {
+    if {[string match -nocase near $a]}   { set a 10 }
+    if {[string match -nocase near/* $a]} { set a [string range $a 5 end] }
+    lappend out $a
+    lappend out $b
+  }
+  return $out
+}
+
+proc do_near_test {tn tbl expr} {
+
+  set expr [fix_near_expr $expr]
+
+  # Create the MATCH expression from $expr
+  #
+  set match [lindex $expr 0]
+  if {[llength $match]>1} {
+    set match "\"$match\""
+  } 
+  foreach {nNear phrase} [lrange $expr 1 end] {
+    if {[llength $phrase]>1} {
+      append match " NEAR/$nNear \"$phrase\""
+    } else {
+      append match " NEAR/$nNear $phrase"
+    }
+  }
+
+  # Calculate the expected results using [fts3_near_match]. The following
+  # loop populates the "hits" and "counts" arrays as follows:
+  # 
+  #   1. For each document in the table that matches the NEAR expression,
+  #      hits($docid) is set to 1. The set of docids that match the expression
+  #      can therefore be found using [array names hits].
+  #
+  #   2. For each column of each document in the table, counts($docid,$iCol)
+  #      is set to the -phrasecountvar output.
+  #
+  set res [list]
+  catch { array unset hits }
+  db eval "SELECT docid, * FROM $tbl" d {
+    set iCol 0
+    foreach col [lrange $d(*) 1 end] {
+      set docid $d(docid)
+      set hit [fts3_near_match $d($col) $expr -p counts($docid,$iCol)]
+      if {$hit} { set hits($docid) 1 }
+      incr iCol
+    }
+  }
+  set nPhrase [expr ([llength $expr]+1)/2]
+  set nCol $iCol
+
+  # This block populates the nHit and nDoc arrays. For each phrase/column
+  # in the query/table, array elements are set as follows:
+  #
+  #   nHit($iPhrase,$iCol) - Total number of hits for phrase $iPhrase in 
+  #                          column $iCol.
+  #
+  #   nDoc($iPhrase,$iCol) - Number of documents with at least one hit for
+  #                          phrase $iPhrase in column $iCol.
+  #
+  for {set iPhrase 0} {$iPhrase < $nPhrase} {incr iPhrase} {
+    for {set iCol 0} {$iCol < $nCol} {incr iCol} {
+      set nHit($iPhrase,$iCol) 0
+      set nDoc($iPhrase,$iCol) 0
+    }
+  }
+  foreach key [array names counts] {
+    set iCol [lindex [split $key ,] 1]
+    set iPhrase 0
+    foreach c $counts($key) {
+      if {$c>0} { incr nHit($iPhrase,$iCol) 1 }
+      incr nDoc($iPhrase,$iCol) $c
+      incr iPhrase
+    }
+  }
+
+  # Set up the aMatchinfo array. For each document, set aMatchinfo($docid) to
+  # contain the output of matchinfo('x') for the document.
+  #
+  foreach docid [array names hits] {
+    set mi [list]
+    for {set iPhrase 0} {$iPhrase<$nPhrase} {incr iPhrase} {
+      for {set iCol 0} {$iCol<$nCol} {incr iCol} {
+        lappend mi [lindex $counts($docid,$iCol) $iPhrase]
+        lappend mi $nDoc($iPhrase,$iCol)
+        lappend mi $nHit($iPhrase,$iCol)
+      }
+    }
+    set aMatchinfo($docid) $mi
+  }
+
+  set matchinfo_asc [list]
+  foreach docid [lsort -integer -incr [array names aMatchinfo]] {
+    lappend matchinfo_asc $docid $aMatchinfo($docid)
+  }
+  set matchinfo_desc [list]
+  foreach docid [lsort -integer -decr [array names aMatchinfo]] {
+    lappend matchinfo_desc $docid $aMatchinfo($docid)
+  }
+
+  set title "(\"$match\" -> [llength [array names hits]] rows)"
+
+  do_execsql_test $tn$title.1 "
+    SELECT docid FROM $tbl WHERE $tbl MATCH '$match' ORDER BY docid ASC
+  " [lsort -integer -incr [array names hits]] 
+
+  do_execsql_test $tn$title.2 "
+    SELECT docid FROM $tbl WHERE $tbl MATCH '$match' ORDER BY docid DESC
+  " [lsort -integer -decr [array names hits]] 
+
+  do_execsql_test $tn$title.3 "
+    SELECT docid, mit(matchinfo($tbl, 'x')) FROM $tbl 
+    WHERE $tbl MATCH '$match' ORDER BY docid DESC
+  " $matchinfo_desc
+
+  do_execsql_test $tn$title.4 "
+    SELECT docid, mit(matchinfo($tbl, 'x')) FROM $tbl 
+    WHERE $tbl MATCH '$match' ORDER BY docid ASC
+  " $matchinfo_asc
+} 
+
+do_test 2.1 {
+  execsql { CREATE VIRTUAL TABLE t1 USING fts3(a, b) }
+  for {set i 0} {$i<32} {incr i} {
+    set doc [list]
+    if {$i&0x01} {lappend doc one}
+    if {$i&0x02} {lappend doc two}
+    if {$i&0x04} {lappend doc three}
+    if {$i&0x08} {lappend doc four}
+    if {$i&0x10} {lappend doc five}
+    execsql { INSERT INTO t1 VALUES($doc, null) }
+  }
+} {}
+foreach {tn expr} {
+  1     {one}
+  2     {one NEAR/1 five}
+  3     {t*}
+  4     {t* NEAR/0 five}
+  5     {o* NEAR/1 f*}
+  6     {one NEAR five NEAR two NEAR four NEAR three}
+} {
+  do_near_test 2.2.$tn t1 $expr
+}
+
+finish_test
+
