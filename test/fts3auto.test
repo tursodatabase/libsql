@@ -93,9 +93,42 @@ proc get_single_near_results {tbl expr arrayvar nullvar} {
     set iCol [lindex [split $key ,] 1]
     set iPhrase 0
     foreach c $counts($key) {
-      if {$c>0} { incr nHit($iPhrase,$iCol) 1 }
-      incr nDoc($iPhrase,$iCol) $c
+      if {$c>0} { incr nDoc($iPhrase,$iCol) 1 }
+      incr nHit($iPhrase,$iCol) $c
       incr iPhrase
+    }
+  }
+
+  if {[info exists ::fts3_deferred] && [llength $expr]==1} {
+    set phrase [lindex $expr 0]
+    set rewritten [list]
+    set partial 0
+    foreach tok $phrase {
+      if {[lsearch $::fts3_deferred $tok]>=0} {
+        lappend rewritten *
+      } else {
+        lappend rewritten $tok
+        set partial 1
+      }
+    }
+    if {$partial==0} {
+      set tblsize [db one "SELECT count(*) FROM $tbl"]
+      for {set iCol 0} {$iCol < $nCol} {incr iCol} {
+        set nHit(0,$iCol) $tblsize
+        set nDoc(0,$iCol) $tblsize
+      }
+    } elseif {$rewritten != $phrase} {
+      while {[lindex $rewritten end] == "*"} {
+        set rewritten [lrange $rewritten 0 end-1]
+      }
+      while {[lindex $rewritten 0] == "*"} {
+        set rewritten [lrange $rewritten 1 end]
+      }
+      get_single_near_results $tbl [list $rewritten] aRewrite nullentry
+      foreach docid [array names hits] {
+        set aMatchinfo($docid) $aRewrite($docid)
+      }
+      return
     }
   }
 
@@ -107,8 +140,8 @@ proc get_single_near_results {tbl expr arrayvar nullvar} {
     for {set iPhrase 0} {$iPhrase<$nPhrase} {incr iPhrase} {
       for {set iCol 0} {$iCol<$nCol} {incr iCol} {
         lappend mi [lindex $counts($docid,$iCol) $iPhrase]
-        lappend mi $nDoc($iPhrase,$iCol)
         lappend mi $nHit($iPhrase,$iCol)
+        lappend mi $nDoc($iPhrase,$iCol)
       }
     }
     set aMatchinfo($docid) $mi
@@ -119,7 +152,7 @@ proc get_single_near_results {tbl expr arrayvar nullvar} {
   set nullentry [list]
   for {set iPhrase 0} {$iPhrase<$nPhrase} {incr iPhrase} {
     for {set iCol 0} {$iCol<$nCol} {incr iCol} {
-      lappend nullentry 0 $nDoc($iPhrase,$iCol) $nHit($iPhrase,$iCol)
+      lappend nullentry 0 $nHit($iPhrase,$iCol) $nDoc($iPhrase,$iCol)
     }
   }
 }
@@ -219,7 +252,7 @@ proc get_near_results {tbl expr arrayvar {nullvar ""}} {
   }
 }
 
-proc do_near_test {tn tbl expr} {
+proc do_fts3query_test {tn tbl expr} {
 
   get_near_results $tbl $expr aMatchinfo
   set match $expr
@@ -286,19 +319,20 @@ test_fts3_near_match 1.3.2 $A {"c d" 5 "i j" 2 "e f"}      {1 1 1}
 
 #--------------------------------------------------------------------------
 # Test cases fts3auto-2.* run some simple tests using the 
-# [do_near_test] proc.
+# [do_fts3query_test] proc.
 #
 foreach {tn create} {
-  1    "CREATE VIRTUAL TABLE t1 USING fts4(a, b)"
-  2    "CREATE VIRTUAL TABLE t1 USING fts4(a, b, order=DESC)"
-  3    "CREATE VIRTUAL TABLE t1 USING fts4(a, b, order=ASC)"
-  4    "CREATE VIRTUAL TABLE t1 USING fts4(a, b, prefix=1)"
-  5    "CREATE VIRTUAL TABLE t1 USING fts4(a, b, order=DESC, prefix=1)"
-  6    "CREATE VIRTUAL TABLE t1 USING fts4(a, b, order=ASC, prefix=1)"
+  1    "fts4(a, b)"
+  2    "fts4(a, b, order=DESC)"
+  3    "fts4(a, b, order=ASC)"
+  4    "fts4(a, b, prefix=1)"
+  5    "fts4(a, b, order=DESC, prefix=1)"
+  6    "fts4(a, b, order=ASC, prefix=1)"
 } {
+break
   do_test 2.$tn.1 {
     catchsql { DROP TABLE t1 }
-    execsql  $create
+    execsql  "CREATE VIRTUAL TABLE t1 USING $create"
     for {set i 0} {$i<32} {incr i} {
       set doc [list]
       if {$i&0x01} {lappend doc one}
@@ -309,6 +343,7 @@ foreach {tn create} {
       execsql { INSERT INTO t1 VALUES($doc, null) }
     }
   } {}
+
   foreach {tn2 expr} {
     1     {one}
     2     {one NEAR/1 five}
@@ -327,7 +362,69 @@ foreach {tn create} {
     15    {"one two"}
     16    {"one two" NOT "three four"}
   } {
-    do_near_test 2.$tn.2.$tn2 t1 $expr
+    do_fts3query_test 2.$tn.2.$tn2 t1 $expr
+  }
+}
+
+#--------------------------------------------------------------------------
+# Some test cases involving deferred tokens.
+#
+proc make_token_deferrable {tbl token} {
+  set nRow [db one "SELECT count(*) FROM $tbl"]
+  set pgsz [db one "PRAGMA page_size"]
+
+  execsql "INSERT INTO $tbl ($tbl) VALUES('maxpending=100000000')"
+  execsql BEGIN
+  for {set i 0} {$i < ($nRow * $pgsz * 1.2)/100} {incr i} {
+    set doc [string repeat "$token " 100]
+    execsql "INSERT INTO $tbl VALUES(\$doc)"
+  }
+  execsql "INSERT INTO $tbl VALUES('aaaaaaa ${token}aaaaa')"
+  execsql COMMIT
+}
+
+foreach {tn create} {
+  1    "fts4(x)"
+  2    "fts4(x, order=DESC)"
+} {
+  catchsql { DROP TABLE t1 }
+  execsql  "CREATE VIRTUAL TABLE t1 USING $create"
+  do_execsql_test 3.$tn.1 {
+    INSERT INTO t1 VALUES('a b c d e f g h i j k');
+    INSERT INTO t1 VALUES('b c d e f g h i j k a');
+    INSERT INTO t1 VALUES('c d e f g h i j k a b');
+    INSERT INTO t1 VALUES('d e f g h i j k a b c');
+    INSERT INTO t1 VALUES('e f g h i j k a b c d');
+    INSERT INTO t1 VALUES('f g h i j k a b c d e');
+    INSERT INTO t1 VALUES('a c e g i k');
+    INSERT INTO t1 VALUES('a d g j');
+    INSERT INTO t1 VALUES('c a b');
+  }
+
+  make_token_deferrable t1 c
+
+  set ::fts3_deferred [list]
+  foreach {tn2 expr} {
+    1     {a OR c}
+  } {
+    do_fts3query_test 3.$tn.2.$tn2 t1 $expr
+  }
+
+  set ::fts3_deferred [list c]
+  execsql { 
+    UPDATE t1_segments 
+    SET block = zeroblob(length(block)) 
+    WHERE length(block)>10000 AND 0
+  }
+  foreach {tn2 expr} {
+    1     {a NEAR c}
+    2     {a AND c}
+    3     {"a c"}
+    4     {"c a"}
+    5     {"a c" NEAR/1 g}
+    6     {"a c" NEAR/0 g}
+  } {
+    do_fts3query_test 3.$tn.2.$tn2 t1 $expr
   }
 }
 

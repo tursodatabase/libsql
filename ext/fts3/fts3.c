@@ -3572,11 +3572,16 @@ static void fts3EvalTokenCosts(
       }
     }else if( pExpr->eType!=FTSQUERY_NOT ){
       if( pExpr->eType==FTSQUERY_OR ){
-        pRoot = pExpr;
-        **ppOr = pExpr;
+        pRoot = pExpr->pLeft;
+        **ppOr = pRoot;
         (*ppOr)++;
       }
       fts3EvalTokenCosts(pCsr, pRoot, pExpr->pLeft, ppTC, ppOr, pRc);
+      if( pExpr->eType==FTSQUERY_OR ){
+        pRoot = pExpr->pRight;
+        **ppOr = pRoot;
+        (*ppOr)++;
+      }
       fts3EvalTokenCosts(pCsr, pRoot, pExpr->pRight, ppTC, ppOr, pRc);
     }
   }
@@ -3736,7 +3741,7 @@ int sqlite3Fts3EvalStart(Fts3Cursor *pCsr, Fts3Expr *pExpr, int bOptOk){
     Fts3Expr **apOr;
     aTC = (Fts3TokenAndCost *)sqlite3_malloc(
         sizeof(Fts3TokenAndCost) * nToken
-      + sizeof(Fts3Expr *) * nOr
+      + sizeof(Fts3Expr *) * nOr * 2
     );
     apOr = (Fts3Expr **)&aTC[nToken];
 
@@ -4310,7 +4315,7 @@ int sqlite3Fts3EvalPhraseStats(
   int rc = SQLITE_OK;
   int iCol;
 
-  if( pExpr->bDeferred ){
+  if( pExpr->bDeferred && pExpr->pParent->eType!=FTSQUERY_NEAR ){
     assert( pCsr->nDoc>0 );
     for(iCol=0; iCol<pTab->nColumn; iCol++){
       aiOut[iCol*3 + 1] = pCsr->nDoc;
