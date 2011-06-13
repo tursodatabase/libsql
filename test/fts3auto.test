@@ -21,8 +21,62 @@ set sfep $sqlite_fts3_enable_parentheses
 set sqlite_fts3_enable_parentheses 1
 
 #--------------------------------------------------------------------------
-# Start of Tcl procs used by tests.
+# Start of Tcl infrastructure used by tests. The entry point is
+# [do_fts3query_test] (described below).
 #
+
+#    do_fts3query_test TESTNAME ?OPTIONS? TABLE MATCHEXPR
+#
+# This proc runs several test cases on FTS3/4 table $TABLE using match
+# expression $MATCHEXPR. All documents in $TABLE must be formatted so that
+# they can be "tokenized" using the Tcl list commands (llength, lindex etc.).
+# The name and column names used by $TABLE must not require any quoting or
+# escaping when used in SQL statements.
+#
+# $MATCHINFO may be any expression accepted by the FTS4 MATCH operator, 
+# except that the "<column-name>:token" syntax is not supported. Tcl list
+# commands are used to tokenize the expression. Any parenthesis must appear
+# either as separate list elements, or as the first (for opening) or last
+# (for closing) character of a list element. i.e. the expression "(a OR b)c"
+# will not be parsed correctly, but "( a OR b) c" will.
+#
+set sqlite_fts3_enable_parentheses 1
+proc do_fts3query_test {tn tbl expr} {
+
+  get_near_results $tbl $expr aMatchinfo
+  set match $expr
+
+  set matchinfo_asc [list]
+  foreach docid [lsort -integer -incr [array names aMatchinfo]] {
+    lappend matchinfo_asc $docid $aMatchinfo($docid)
+  }
+  set matchinfo_desc [list]
+  foreach docid [lsort -integer -decr [array names aMatchinfo]] {
+    lappend matchinfo_desc $docid $aMatchinfo($docid)
+  }
+
+  set title "(\"$match\" -> [llength [array names aMatchinfo]] rows)"
+
+  do_execsql_test $tn$title.1 "
+    SELECT docid FROM $tbl WHERE $tbl MATCH '$match' ORDER BY docid ASC
+  " [lsort -integer -incr [array names aMatchinfo]] 
+
+  do_execsql_test $tn$title.2 "
+    SELECT docid FROM $tbl WHERE $tbl MATCH '$match' ORDER BY docid DESC
+  " [lsort -integer -decr [array names aMatchinfo]] 
+
+  do_execsql_test $tn$title.3 "
+    SELECT docid, mit(matchinfo($tbl, 'x')) FROM $tbl 
+    WHERE $tbl MATCH '$match' ORDER BY docid DESC
+  " $matchinfo_desc
+
+  do_execsql_test $tn$title.4 "
+    SELECT docid, mit(matchinfo($tbl, 'x')) FROM $tbl 
+    WHERE $tbl MATCH '$match' ORDER BY docid ASC
+  " $matchinfo_asc
+}
+
+
 proc mit {blob} {
   set scan(littleEndian) i*
   set scan(bigEndian) I*
@@ -252,41 +306,6 @@ proc get_near_results {tbl expr arrayvar {nullvar ""}} {
   }
 }
 
-proc do_fts3query_test {tn tbl expr} {
-
-  get_near_results $tbl $expr aMatchinfo
-  set match $expr
-
-  set matchinfo_asc [list]
-  foreach docid [lsort -integer -incr [array names aMatchinfo]] {
-    lappend matchinfo_asc $docid $aMatchinfo($docid)
-  }
-  set matchinfo_desc [list]
-  foreach docid [lsort -integer -decr [array names aMatchinfo]] {
-    lappend matchinfo_desc $docid $aMatchinfo($docid)
-  }
-
-  set title "(\"$match\" -> [llength [array names aMatchinfo]] rows)"
-
-  do_execsql_test $tn$title.1 "
-    SELECT docid FROM $tbl WHERE $tbl MATCH '$match' ORDER BY docid ASC
-  " [lsort -integer -incr [array names aMatchinfo]] 
-
-  do_execsql_test $tn$title.2 "
-    SELECT docid FROM $tbl WHERE $tbl MATCH '$match' ORDER BY docid DESC
-  " [lsort -integer -decr [array names aMatchinfo]] 
-
-  do_execsql_test $tn$title.3 "
-    SELECT docid, mit(matchinfo($tbl, 'x')) FROM $tbl 
-    WHERE $tbl MATCH '$match' ORDER BY docid DESC
-  " $matchinfo_desc
-
-  do_execsql_test $tn$title.4 "
-    SELECT docid, mit(matchinfo($tbl, 'x')) FROM $tbl 
-    WHERE $tbl MATCH '$match' ORDER BY docid ASC
-  " $matchinfo_asc
-} 
-
 
 # End of test procs. Actual tests are below this line.
 #--------------------------------------------------------------------------
@@ -329,7 +348,6 @@ foreach {tn create} {
   5    "fts4(a, b, order=DESC, prefix=1)"
   6    "fts4(a, b, order=ASC, prefix=1)"
 } {
-break
   do_test 2.$tn.1 {
     catchsql { DROP TABLE t1 }
     execsql  "CREATE VIRTUAL TABLE t1 USING $create"
@@ -390,15 +408,15 @@ foreach {tn create} {
   catchsql { DROP TABLE t1 }
   execsql  "CREATE VIRTUAL TABLE t1 USING $create"
   do_execsql_test 3.$tn.1 {
-    INSERT INTO t1 VALUES('a b c d e f g h i j k');
-    INSERT INTO t1 VALUES('b c d e f g h i j k a');
-    INSERT INTO t1 VALUES('c d e f g h i j k a b');
-    INSERT INTO t1 VALUES('d e f g h i j k a b c');
-    INSERT INTO t1 VALUES('e f g h i j k a b c d');
-    INSERT INTO t1 VALUES('f g h i j k a b c d e');
-    INSERT INTO t1 VALUES('a c e g i k');
-    INSERT INTO t1 VALUES('a d g j');
-    INSERT INTO t1 VALUES('c a b');
+    INSERT INTO t1(docid, x) VALUES(-2, 'a b c d e f g h i j k');
+    INSERT INTO t1(docid, x) VALUES(-1, 'b c d e f g h i j k a');
+    INSERT INTO t1(docid, x) VALUES(0, 'c d e f g h i j k a b');
+    INSERT INTO t1(docid, x) VALUES(1, 'd e f g h i j k a b c');
+    INSERT INTO t1(docid, x) VALUES(2, 'e f g h i j k a b c d');
+    INSERT INTO t1(docid, x) VALUES(3, 'f g h i j k a b c d e');
+    INSERT INTO t1(docid, x) VALUES(4, 'a c e g i k');
+    INSERT INTO t1(docid, x) VALUES(5, 'a d g j');
+    INSERT INTO t1(docid, x) VALUES(6, 'c a b');
   }
 
   make_token_deferrable t1 c

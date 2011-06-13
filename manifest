@@ -1,5 +1,5 @@
-C Add\stests\sfor\sdeferred\stokens\sto\sfts3auto.test.\sFix\sa\sproblem\swith\sOR\squeries\sand\sdeferred\stokens.
-D 2011-06-13T17:00:12.630
+C Update\strace2.test\sto\saccount\sfor\snew\sFTS\squeries.
+D 2011-06-13T18:21:11.056
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -455,7 +455,7 @@ F test/fts3am.test 218aa6ba0dfc50c7c16b2022aac5c6be593d08d8
 F test/fts3an.test a49ccadc07a2f7d646ec1b81bc09da2d85a85b18
 F test/fts3ao.test b83f99f70e9eec85f27d75801a974b3f820e01f9
 F test/fts3atoken.test 402ef2f7c2fb4b3d4fa0587df6441c1447e799b3
-F test/fts3auto.test bf01a1d793155d744d23e4092871ca116f1db64c
+F test/fts3auto.test 0173f3fc3e03d66beb6dd65f7b99e7eb4ae2a27d
 F test/fts3aux1.test 0b02743955d56fc0d4d66236a26177bd1b726de0
 F test/fts3b.test e93bbb653e52afde110ad53bbd793f14fe7a8984
 F test/fts3c.test fc723a9cf10b397fdfc2b32e73c53c8b1ec02958
@@ -821,7 +821,7 @@ F test/tkt3997.test a335fa41ca3985660a139df7b734a26ef53284bd
 F test/tkt4018.test 7c2c9ba4df489c676a0a7a0e809a1fb9b2185bd1
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 4b36a41a3e9c7842151af6da5998f5080cdad9e5
-F test/trace2.test 0ce11265c83333d8f5beeca19e71ed93a88d386c
+F test/trace2.test 962175290996d5f06dc4402ca218bbfc7df4cb20
 F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
 F test/trans2.test d5337e61de45e66b1fcbf9db833fa8c82e624b22
 F test/trans3.test d728abaa318ca364dc370e06576aa7e5fbed7e97
@@ -945,7 +945,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P e4ab6cdb101bbeb804820425cf569ee7dc2397fb
-R 7fcdbf104822a42776783c2cd9e89101
+P b9fb69e55bb05a8819688ee63987f2a05c33d59b
+R 4f421cd82a93c9e8973177e58e4c866f
 U dan
-Z 0999cf6b26be67f673d9db0918d86701
+Z 2a2f406b9fac55b2e6e57d2ed45fc4da
