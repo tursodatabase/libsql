@@ -16,32 +16,13 @@ ifcapable !fts3 { finish_test ; return }
 source $testdir/fts3_common.tcl
 source $testdir/malloc_common.tcl
 
-set testprefix fts3rnd2
+set testprefix fts3auto
+set sfep $sqlite_fts3_enable_parentheses
+set sqlite_fts3_enable_parentheses 1
 
-proc test_fts3_near_match {tn doc expr res} {
-  fts3_near_match $doc $expr -phrasecountvar p
-  uplevel do_test [list $tn] [list [list set {} $p]] [list $res]
-}
-
-# Simple test cases for C routine [fts3_near_match].
+#--------------------------------------------------------------------------
+# Start of Tcl procs used by tests.
 #
-test_fts3_near_match 1.1.1 {a b c a b} a                   {2}
-test_fts3_near_match 1.1.2 {a b c a b} {a 5 b 6 c}         {2 2 1}
-test_fts3_near_match 1.1.3 {a b c a b} {"a b"}             {2}
-test_fts3_near_match 1.1.4 {a b c a b} {"b c"}             {1}
-test_fts3_near_match 1.1.5 {a b c a b} {"c c"}             {0}
-
-test_fts3_near_match 1.2.1 "a b c d e f g" {b 2 f}         {0 0}
-test_fts3_near_match 1.2.2 "a b c d e f g" {b 3 f}         {1 1}
-test_fts3_near_match 1.2.3 "a b c d e f g" {f 2 b}         {0 0}
-test_fts3_near_match 1.2.4 "a b c d e f g" {f 3 b}         {1 1}
-test_fts3_near_match 1.2.5 "a b c d e f g" {"a b" 2 "f g"} {0 0}
-test_fts3_near_match 1.2.6 "a b c d e f g" {"a b" 3 "f g"} {1 1}
-
-set A "a b c d e f g h i j k l m n o p q r s t u v w x y z"
-test_fts3_near_match 1.3.1 $A {"c d" 5 "i j" 1 "e f"}      {0 0 0}
-test_fts3_near_match 1.3.2 $A {"c d" 5 "i j" 2 "e f"}      {1 1 1}
-
 proc mit {blob} {
   set scan(littleEndian) i*
   set scan(bigEndian) I*
@@ -62,23 +43,12 @@ proc fix_near_expr {expr} {
   return $out
 }
 
-proc do_near_test {tn tbl expr} {
+proc get_single_near_results {tbl expr arrayvar nullvar} {
+  upvar $arrayvar aMatchinfo
+  upvar $nullvar nullentry
+  catch {array unset aMatchinfo}
 
   set expr [fix_near_expr $expr]
-
-  # Create the MATCH expression from $expr
-  #
-  set match [lindex $expr 0]
-  if {[llength $match]>1} {
-    set match "\"$match\""
-  } 
-  foreach {nNear phrase} [lrange $expr 1 end] {
-    if {[llength $phrase]>1} {
-      append match " NEAR/$nNear \"$phrase\""
-    } else {
-      append match " NEAR/$nNear $phrase"
-    }
-  }
 
   # Calculate the expected results using [fts3_near_match]. The following
   # loop populates the "hits" and "counts" arrays as follows:
@@ -144,6 +114,116 @@ proc do_near_test {tn tbl expr} {
     set aMatchinfo($docid) $mi
   }
 
+  # Set up the nullentry output.
+  #
+  set nullentry [list]
+  for {set iPhrase 0} {$iPhrase<$nPhrase} {incr iPhrase} {
+    for {set iCol 0} {$iCol<$nCol} {incr iCol} {
+      lappend nullentry 0 $nDoc($iPhrase,$iCol) $nHit($iPhrase,$iCol)
+    }
+  }
+}
+
+
+proc matching_brackets {expr} {
+  if {[string range $expr 0 0]!="(" || [string range $expr end end] !=")"} { 
+    return 0 
+  }
+
+  set iBracket 1
+  set nExpr [string length $expr]
+  for {set i 1} {$iBracket && $i < $nExpr} {incr i} {
+    set c [string range $expr $i $i]
+    if {$c == "("} {incr iBracket}
+    if {$c == ")"} {incr iBracket -1}
+  }
+
+  return [expr ($iBracket==0 && $i==$nExpr)]
+}
+
+proc get_near_results {tbl expr arrayvar {nullvar ""}} {
+  upvar $arrayvar aMatchinfo
+  if {$nullvar != ""} { upvar $nullvar nullentry }
+
+  set expr [string trim $expr]
+  while { [matching_brackets $expr] } {
+    set expr [string trim [string range $expr 1 end-1]]
+  }
+
+  set prec(NOT) 1
+  set prec(AND) 2
+  set prec(OR)  3
+
+  set currentprec 0
+  set iBracket 0
+  set expr_length [llength $expr]
+  for {set i 0} {$i < $expr_length} {incr i} {
+    set op [lindex $expr $i]
+    if {$iBracket==0 && [info exists prec($op)] && $prec($op)>=$currentprec } {
+      set opidx $i
+      set currentprec $prec($op)
+    } else {
+      for {set j 0} {$j < [string length $op]} {incr j} {
+        set c [string range $op $j $j]
+        if {$c == "("} { incr iBracket +1 }
+        if {$c == ")"} { incr iBracket -1 }
+      }
+    }
+  }
+  if {$iBracket!=0} { error "mismatched brackets in: $expr" }
+
+  if {[info exists opidx]==0} {
+    get_single_near_results $tbl $expr aMatchinfo nullentry
+  } else {
+    set eLeft  [lrange $expr 0 [expr $opidx-1]]
+    set eRight [lrange $expr [expr $opidx+1] end]
+
+    get_near_results $tbl $eLeft  aLeft  nullleft
+    get_near_results $tbl $eRight aRight nullright
+
+    switch -- [lindex $expr $opidx] {
+      "NOT" {
+        foreach hit [array names aLeft] {
+          if {0==[info exists aRight($hit)]} {
+            set aMatchinfo($hit) $aLeft($hit)
+          }
+        }
+        set nullentry $nullleft
+      }
+
+      "AND" {
+        foreach hit [array names aLeft] {
+          if {[info exists aRight($hit)]} {
+            set aMatchinfo($hit) [concat $aLeft($hit) $aRight($hit)]
+          }
+        }
+        set nullentry [concat $nullleft $nullright]
+      }
+
+      "OR" {
+        foreach hit [array names aLeft] {
+          if {[info exists aRight($hit)]} {
+            set aMatchinfo($hit) [concat $aLeft($hit) $aRight($hit)]
+            unset aRight($hit)
+          } else {
+            set aMatchinfo($hit) [concat $aLeft($hit) $nullright]
+          }
+        }
+        foreach hit [array names aRight] {
+          set aMatchinfo($hit) [concat $nullleft $aRight($hit)]
+        }
+
+        set nullentry [concat $nullleft $nullright]
+      }
+    }
+  }
+}
+
+proc do_near_test {tn tbl expr} {
+
+  get_near_results $tbl $expr aMatchinfo
+  set match $expr
+
   set matchinfo_asc [list]
   foreach docid [lsort -integer -incr [array names aMatchinfo]] {
     lappend matchinfo_asc $docid $aMatchinfo($docid)
@@ -153,15 +233,15 @@ proc do_near_test {tn tbl expr} {
     lappend matchinfo_desc $docid $aMatchinfo($docid)
   }
 
-  set title "(\"$match\" -> [llength [array names hits]] rows)"
+  set title "(\"$match\" -> [llength [array names aMatchinfo]] rows)"
 
   do_execsql_test $tn$title.1 "
     SELECT docid FROM $tbl WHERE $tbl MATCH '$match' ORDER BY docid ASC
-  " [lsort -integer -incr [array names hits]] 
+  " [lsort -integer -incr [array names aMatchinfo]] 
 
   do_execsql_test $tn$title.2 "
     SELECT docid FROM $tbl WHERE $tbl MATCH '$match' ORDER BY docid DESC
-  " [lsort -integer -decr [array names hits]] 
+  " [lsort -integer -decr [array names aMatchinfo]] 
 
   do_execsql_test $tn$title.3 "
     SELECT docid, mit(matchinfo($tbl, 'x')) FROM $tbl 
@@ -174,28 +254,83 @@ proc do_near_test {tn tbl expr} {
   " $matchinfo_asc
 } 
 
-do_test 2.1 {
-  execsql { CREATE VIRTUAL TABLE t1 USING fts3(a, b) }
-  for {set i 0} {$i<32} {incr i} {
-    set doc [list]
-    if {$i&0x01} {lappend doc one}
-    if {$i&0x02} {lappend doc two}
-    if {$i&0x04} {lappend doc three}
-    if {$i&0x08} {lappend doc four}
-    if {$i&0x10} {lappend doc five}
-    execsql { INSERT INTO t1 VALUES($doc, null) }
-  }
-} {}
-foreach {tn expr} {
-  1     {one}
-  2     {one NEAR/1 five}
-  3     {t*}
-  4     {t* NEAR/0 five}
-  5     {o* NEAR/1 f*}
-  6     {one NEAR five NEAR two NEAR four NEAR three}
-} {
-  do_near_test 2.2.$tn t1 $expr
+
+# End of test procs. Actual tests are below this line.
+#--------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------
+# The following test cases - fts3auto-1.* - focus on testing the Tcl 
+# command [fts3_near_match], which is used by other tests in this file.
+#
+proc test_fts3_near_match {tn doc expr res} {
+  fts3_near_match $doc $expr -phrasecountvar p
+  uplevel do_test [list $tn] [list [list set {} $p]] [list $res]
 }
 
+test_fts3_near_match 1.1.1 {a b c a b} a                   {2}
+test_fts3_near_match 1.1.2 {a b c a b} {a 5 b 6 c}         {2 2 1}
+test_fts3_near_match 1.1.3 {a b c a b} {"a b"}             {2}
+test_fts3_near_match 1.1.4 {a b c a b} {"b c"}             {1}
+test_fts3_near_match 1.1.5 {a b c a b} {"c c"}             {0}
+
+test_fts3_near_match 1.2.1 "a b c d e f g" {b 2 f}         {0 0}
+test_fts3_near_match 1.2.2 "a b c d e f g" {b 3 f}         {1 1}
+test_fts3_near_match 1.2.3 "a b c d e f g" {f 2 b}         {0 0}
+test_fts3_near_match 1.2.4 "a b c d e f g" {f 3 b}         {1 1}
+test_fts3_near_match 1.2.5 "a b c d e f g" {"a b" 2 "f g"} {0 0}
+test_fts3_near_match 1.2.6 "a b c d e f g" {"a b" 3 "f g"} {1 1}
+
+set A "a b c d e f g h i j k l m n o p q r s t u v w x y z"
+test_fts3_near_match 1.3.1 $A {"c d" 5 "i j" 1 "e f"}      {0 0 0}
+test_fts3_near_match 1.3.2 $A {"c d" 5 "i j" 2 "e f"}      {1 1 1}
+
+#--------------------------------------------------------------------------
+# Test cases fts3auto-2.* run some simple tests using the 
+# [do_near_test] proc.
+#
+foreach {tn create} {
+  1    "CREATE VIRTUAL TABLE t1 USING fts4(a, b)"
+  2    "CREATE VIRTUAL TABLE t1 USING fts4(a, b, order=DESC)"
+  3    "CREATE VIRTUAL TABLE t1 USING fts4(a, b, order=ASC)"
+  4    "CREATE VIRTUAL TABLE t1 USING fts4(a, b, prefix=1)"
+  5    "CREATE VIRTUAL TABLE t1 USING fts4(a, b, order=DESC, prefix=1)"
+  6    "CREATE VIRTUAL TABLE t1 USING fts4(a, b, order=ASC, prefix=1)"
+} {
+  do_test 2.$tn.1 {
+    catchsql { DROP TABLE t1 }
+    execsql  $create
+    for {set i 0} {$i<32} {incr i} {
+      set doc [list]
+      if {$i&0x01} {lappend doc one}
+      if {$i&0x02} {lappend doc two}
+      if {$i&0x04} {lappend doc three}
+      if {$i&0x08} {lappend doc four}
+      if {$i&0x10} {lappend doc five}
+      execsql { INSERT INTO t1 VALUES($doc, null) }
+    }
+  } {}
+  foreach {tn2 expr} {
+    1     {one}
+    2     {one NEAR/1 five}
+    3     {t*}
+    4     {t* NEAR/0 five}
+    5     {o* NEAR/1 f*}
+    6     {one NEAR five NEAR two NEAR four NEAR three}
+    7     {one NEAR xyz}
+    8     {one OR two}
+    9     {one AND two}
+    10    {one NOT two}
+    11    {one AND two OR three}
+    12    {three OR one AND two}
+    13    {(three OR one) AND two}
+    14    {(three OR one) AND two NOT (five NOT four)}
+    15    {"one two"}
+    16    {"one two" NOT "three four"}
+  } {
+    do_near_test 2.$tn.2.$tn2 t1 $expr
+  }
+}
+
+set sqlite_fts3_enable_parentheses $sfep
 finish_test
 
