@@ -162,7 +162,7 @@ proc simple_phrase {zPrefix} {
 
 # This [proc] is used to test the FTS3 matchinfo() function.
 # 
-proc simple_token_matchinfo {zToken} {
+proc simple_token_matchinfo {zToken bDesc} {
 
   set nDoc(0) 0
   set nDoc(1) 0
@@ -171,6 +171,8 @@ proc simple_token_matchinfo {zToken} {
   set nHit(1) 0
   set nHit(2) 0
 
+  set dir -inc
+  if {$bDesc} { set dir -dec }
 
   foreach key [array names ::t1] {
     set value $::t1($key)
@@ -184,7 +186,7 @@ proc simple_token_matchinfo {zToken} {
   }
 
   set ret [list]
-  foreach docid [lsort -integer [array names a]] {
+  foreach docid [lsort -integer $dir [array names a]] {
     if { [lindex [lsort -integer $a($docid)] end] } {
       set matchinfo [list 1 3]
       foreach i {0 1 2} hit $a($docid) {
@@ -262,22 +264,37 @@ proc mit {blob} {
   return $r
 }
 db func mit mit
-
 set sqlite_fts3_enable_parentheses 1
 
-foreach nodesize {50 500 1000 2000} {
+proc do_orderbydocid_test {tn sql res} {
+  uplevel [list do_select_test $tn.asc "$sql ORDER BY docid ASC" $res]
+  uplevel [list do_select_test $tn.desc "$sql ORDER BY docid DESC" \
+    [lsort -int -dec $res]
+  ]
+}
+
+set NUM_TRIALS 100
+
+foreach {nodesize order} {
+  50    DESC
+  50    ASC
+  500   ASC
+  1000  DESC
+  2000  ASC
+} {
   catch { array unset ::t1 }
+  set testname "$nodesize/$order"
 
   # Create the FTS3 table. Populate it (and the Tcl array) with 100 rows.
   #
   db transaction {
     catchsql { DROP TABLE t1 }
-    execsql "CREATE VIRTUAL TABLE t1 USING fts3(a, b, c)"
+    execsql "CREATE VIRTUAL TABLE t1 USING fts4(a, b, c, order=$order)"
     execsql "INSERT INTO t1(t1) VALUES('nodesize=$nodesize')"
     for {set i 0} {$i < 100} {incr i} { insert_row $i }
   }
   
-  for {set iTest 1} {$iTest <= 100} {incr iTest} {
+  for {set iTest 1} {$iTest <= $NUM_TRIALS} {incr iTest} {
     catchsql COMMIT
 
     set DO_MALLOC_TEST 0
@@ -286,6 +303,8 @@ foreach nodesize {50 500 1000 2000} {
       set DO_MALLOC_TEST 1 
       set nRep 2
     }
+
+    set ::testprefix fts3rnd-1.$testname.$iTest
   
     # Delete one row, update one row and insert one row.
     #
@@ -307,7 +326,7 @@ foreach nodesize {50 500 1000 2000} {
     if {0==($iTest%2)} { execsql COMMIT }
 
     if {0==($iTest%2)} { 
-      do_test fts3rnd-1.$nodesize.$iTest.0 { fts3_integrity_check t1 } ok 
+      #do_test 0 { fts3_integrity_check t1 } ok 
     }
 
     # Pick 10 terms from the vocabulary. Check that the results of querying
@@ -317,9 +336,14 @@ foreach nodesize {50 500 1000 2000} {
     #
     for {set i 0} {$i < 10} {incr i} {
       set term [random_term]
-      do_select_test fts3rnd-1.$nodesize.$iTest.1.$i {
+      do_select_test 1.$i.asc {
         SELECT docid, mit(matchinfo(t1)) FROM t1 WHERE t1 MATCH $term
-      } [simple_token_matchinfo $term]
+        ORDER BY docid ASC
+      } [simple_token_matchinfo $term 0]
+      do_select_test 1.$i.desc {
+        SELECT docid, mit(matchinfo(t1)) FROM t1 WHERE t1 MATCH $term
+        ORDER BY docid DESC
+      } [simple_token_matchinfo $term 1]
     }
 
     # This time, use the first two characters of each term as a term prefix
@@ -329,7 +353,7 @@ foreach nodesize {50 500 1000 2000} {
     for {set i 0} {$i < $nRep} {incr i} {
       set prefix [string range [random_term] 0 end-1]
       set match "${prefix}*"
-      do_select_test fts3rnd-1.$nodesize.$iTest.2.$i {
+      do_orderbydocid_test 2.$i {
         SELECT docid FROM t1 WHERE t1 MATCH $match
       } [simple_phrase $match]
     }
@@ -339,7 +363,7 @@ foreach nodesize {50 500 1000 2000} {
     for {set i 0} {$i < $nRep} {incr i} {
       set term [list [random_term] [random_term]]
       set match "\"$term\""
-      do_select_test fts3rnd-1.$nodesize.$iTest.3.$i {
+      do_orderbydocid_test 3.$i {
         SELECT docid FROM t1 WHERE t1 MATCH $match
       } [simple_phrase $term]
     }
@@ -349,7 +373,7 @@ foreach nodesize {50 500 1000 2000} {
     for {set i 0} {$i < $nRep} {incr i} {
       set term [list [random_term] [random_term] [random_term]]
       set match "\"$term\""
-      do_select_test fts3rnd-1.$nodesize.$iTest.4.$i {
+      do_orderbydocid_test 4.$i {
         SELECT docid FROM t1 WHERE t1 MATCH $match
       } [simple_phrase $term]
     }
@@ -362,17 +386,19 @@ foreach nodesize {50 500 1000 2000} {
       append query "[string range [random_term] 0 end-1]*"
 
       set match "\"$query\""
-      do_select_test fts3rnd-1.$nodesize.$iTest.5.$i {
+      do_orderbydocid_test 5.$i {
         SELECT docid FROM t1 WHERE t1 MATCH $match
       } [simple_phrase $query]
     }
 
-    # A NEAR query with terms as the arguments.
+    # A NEAR query with terms as the arguments:
+    #
+    #     ... MATCH '$term1 NEAR $term2' ...
     #
     for {set i 0} {$i < $nRep} {incr i} {
       set terms [list [random_term] [random_term]]
       set match [join $terms " NEAR "]
-      do_select_test fts3rnd-1.$nodesize.$iTest.6.$i {
+      do_orderbydocid_test 6.$i {
         SELECT docid FROM t1 WHERE t1 MATCH $match 
       } [simple_near $terms 10]
     }
@@ -383,7 +409,7 @@ foreach nodesize {50 500 1000 2000} {
       set terms [list [random_term] [random_term] [random_term]]
       set nNear 11
       set match [join $terms " NEAR/$nNear "]
-      do_select_test fts3rnd-1.$nodesize.$iTest.7.$i {
+      do_orderbydocid_test 7.$i {
         SELECT docid FROM t1 WHERE t1 MATCH $match
       } [simple_near $terms $nNear]
     }
@@ -399,7 +425,7 @@ foreach nodesize {50 500 1000 2000} {
         set term1 [random_term]
         set term2 [random_term]
         set match "$term1 $op $term2"
-        do_select_test fts3rnd-1.$nodesize.$iTest.$tn.$i {
+        do_orderbydocid_test $tn.$i {
           SELECT docid FROM t1 WHERE t1 MATCH $match
         } [$proc [simple_phrase $term1] [simple_phrase $term2]]
       }
@@ -408,9 +434,9 @@ foreach nodesize {50 500 1000 2000} {
     # Set operations on NEAR queries.
     #
     foreach {tn op proc} {
-      8  OR  setop_or
-      9  NOT setop_not
-      10 AND setop_and
+      11 OR  setop_or
+      12 NOT setop_not
+      13 AND setop_and
     } {
       for {set i 0} {$i < $nRep} {incr i} {
         set term1 [random_term]
@@ -418,7 +444,7 @@ foreach nodesize {50 500 1000 2000} {
         set term3 [random_term]
         set term4 [random_term]
         set match "$term1 NEAR $term2 $op $term3 NEAR $term4"
-        do_select_test fts3rnd-1.$nodesize.$iTest.$tn.$i {
+        do_orderbydocid_test $tn.$i {
           SELECT docid FROM t1 WHERE t1 MATCH $match
         } [$proc                                  \
             [simple_near [list $term1 $term2] 10] \
