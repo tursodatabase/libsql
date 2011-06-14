@@ -3342,21 +3342,6 @@ static int fts3EvalDeferredPhrase(Fts3Cursor *pCsr, Fts3Phrase *pPhrase){
   return SQLITE_OK;
 }
 
-
-/*
-** The following three functions:
-**
-**     fts3EvalPhraseStart()
-**     fts3EvalPhraseNext()
-**
-** May be used with a phrase object after fts3EvalAllocateReaders() has been
-** called to iterate through the set of docids that match the phrase.
-**
-** After a successful call to fts3EvalPhraseNext(), the following two 
-** functions may be called to access the current docid and position-list.
-*/
-
-
 /*
 ** This function is called for each Fts3Phrase in a full-text query 
 ** expression to initialize the mechanism for returning rows. Once this
@@ -4158,12 +4143,16 @@ static void fts3EvalRestart(
   }
 }
 
-static void fts3EvalUpdateCounts(
-  Fts3Cursor *pCsr,
-  Fts3Expr *pExpr,
-  int *pRc
-){
-  if( pExpr && *pRc==SQLITE_OK ){
+/*
+** After allocating the Fts3Expr.aMI[] array for each phrase in the 
+** expression rooted at pExpr, the cursor iterates through all rows matched
+** by pExpr, calling this function for each row. This function increments
+** the values in Fts3Expr.aMI[] according to the position-list currently
+** found in Fts3Expr.pPhrase->doclist.pList for each of the phrase 
+** expression nodes.
+*/
+static void fts3EvalUpdateCounts(Fts3Expr *pExpr){
+  if( pExpr ){
     Fts3Phrase *pPhrase = pExpr->pPhrase;
     if( pPhrase && pPhrase->doclist.pList ){
       int iCol = 0;
@@ -4189,14 +4178,25 @@ static void fts3EvalUpdateCounts(
       }
     }
 
-    fts3EvalUpdateCounts(pCsr, pExpr->pLeft, pRc);
-    fts3EvalUpdateCounts(pCsr, pExpr->pRight, pRc);
+    fts3EvalUpdateCounts(pExpr->pLeft);
+    fts3EvalUpdateCounts(pExpr->pRight);
   }
 }
 
+/*
+** Expression pExpr must be of type FTSQUERY_PHRASE.
+**
+** If it is not already allocated and populated, this function allocates and
+** populates the Fts3Expr.aMI[] array for expression pExpr. If pExpr is part
+** of a NEAR expression, then it also allocates and populates the same array
+** for all other phrases that are part of the NEAR expression.
+**
+** SQLITE_OK is returned if the aMI[] array is successfully allocated and
+** populated. Otherwise, if an error occurs, an SQLite error code is returned.
+*/
 static int fts3EvalGatherStats(
-  Fts3Cursor *pCsr,
-  Fts3Expr *pExpr
+  Fts3Cursor *pCsr,               /* Cursor object */
+  Fts3Expr *pExpr                 /* FTSQUERY_PHRASE expression */
 ){
   int rc = SQLITE_OK;             /* Return code */
 
@@ -4248,8 +4248,8 @@ static int fts3EvalGatherStats(
            && fts3EvalLoadDeferred(pCsr, &rc) 
       );
 
-      if( pCsr->isEof==0 ){
-        fts3EvalUpdateCounts(pCsr, pRoot, &rc);
+      if( rc==SQLITE_OK && pCsr->isEof==0 ){
+        fts3EvalUpdateCounts(pRoot);
       }
     }
 

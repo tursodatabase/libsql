@@ -1,5 +1,5 @@
-C Update\strace2.test\sto\saccount\sfor\snew\sFTS\squeries.
-D 2011-06-13T18:21:11.056
+C Remove\sunused\sparameters\sfrom\sinternal\sfts3\sfunction.
+D 2011-06-14T07:14:43.149
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -61,7 +61,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 2a48945d199d5d0fe66a06c8cf73ad2f0e7a4b5f
+F ext/fts3/fts3.c f4f65273121386349993d600c4c5f710d4b3e956
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h a999cfbf605efec293a88519f74192f5204c84d6
 F ext/fts3/fts3_aux.c baed9dab7fb4604ae8cafdb2d7700abe93beffbe
@@ -945,7 +945,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P b9fb69e55bb05a8819688ee63987f2a05c33d59b
-R 4f421cd82a93c9e8973177e58e4c866f
+P 2c20129297b64f4113b8edb551385eb918279471
+R 24738ea4e4f82770b7e9961a6f31bf0f
 U dan
-Z 2a2f406b9fac55b2e6e57d2ed45fc4da
+Z 096f5065b2f90702df92a748235d8620
