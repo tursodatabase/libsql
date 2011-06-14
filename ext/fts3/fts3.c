@@ -3387,7 +3387,6 @@ void sqlite3Fts3DoclistPrev(
   u8 *pbEof                       /* OUT: End-of-file flag */
 ){
   char *p = *ppIter;
-  int iMul = (bDescIdx ? -1 : 1);
 
   assert( nDoclist>0 );
   assert( *pbEof==0 );
@@ -3399,10 +3398,8 @@ void sqlite3Fts3DoclistPrev(
     char *pNext = 0;
     char *pDocid = aDoclist;
     char *pEnd = &aDoclist[nDoclist];
+    int iMul = 1;
 
-    pDocid += sqlite3Fts3GetVarint(pDocid, &iDocid);
-    pNext = pDocid;
-    fts3PoslistCopy(0, &pDocid);
     while( pDocid<pEnd ){
       sqlite3_int64 iDelta;
       pDocid += sqlite3Fts3GetVarint(pDocid, &iDelta);
@@ -3410,12 +3407,14 @@ void sqlite3Fts3DoclistPrev(
       pNext = pDocid;
       fts3PoslistCopy(0, &pDocid);
       while( pDocid<pEnd && *pDocid==0 ) pDocid++;
+      iMul = (bDescIdx ? -1 : 1);
     }
 
     *pnList = pEnd - pNext;
     *ppIter = pNext;
     *piDocid = iDocid;
   }else{
+    int iMul = (bDescIdx ? -1 : 1);
     sqlite3_int64 iDelta;
     fts3GetReverseVarint(&p, aDoclist, &iDelta);
     *piDocid -= (iMul * iDelta);

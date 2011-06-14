@@ -40,11 +40,38 @@ set sqlite_fts3_enable_parentheses 1
 # (for closing) character of a list element. i.e. the expression "(a OR b)c"
 # will not be parsed correctly, but "( a OR b) c" will.
 #
+# Available OPTIONS are:
+#
+#     -deferred TOKENLIST
+#
+# If the "deferred" option is supplied, it is passed a list of tokens that
+# are deferred by FTS and result in the relevant matchinfo() stats being an
+# approximation. 
+#
 set sqlite_fts3_enable_parentheses 1
-proc do_fts3query_test {tn tbl expr} {
+proc do_fts3query_test {tn args} {
 
-  get_near_results $tbl $expr aMatchinfo
-  set match $expr
+  set nArg [llength $args]
+  if {$nArg < 2 || ($nArg % 2)} {
+    set cmd do_fts3query_test
+    error "wrong # args: should be \"$cmd ?-deferred LIST? TABLE MATCHEXPR\""
+  }
+  set tbl   [lindex $args [expr $nArg-2]]
+  set match [lindex $args [expr $nArg-1]]
+  set deferred [list]
+
+  foreach {k v} [lrange $args 0 [expr $nArg-3]] {
+    switch -- $k {
+      -deferred {
+        set deferred $v
+      }
+      default {
+        error "bad option \"$k\": must be -deferred"
+      }
+    }
+  }
+
+  get_near_results $tbl $match $deferred aMatchinfo
 
   set matchinfo_asc [list]
   foreach docid [lsort -integer -incr [array names aMatchinfo]] {
@@ -97,7 +124,7 @@ proc fix_near_expr {expr} {
   return $out
 }
 
-proc get_single_near_results {tbl expr arrayvar nullvar} {
+proc get_single_near_results {tbl expr deferred arrayvar nullvar} {
   upvar $arrayvar aMatchinfo
   upvar $nullvar nullentry
   catch {array unset aMatchinfo}
@@ -153,12 +180,12 @@ proc get_single_near_results {tbl expr arrayvar nullvar} {
     }
   }
 
-  if {[info exists ::fts3_deferred] && [llength $expr]==1} {
+  if {[llength $deferred] && [llength $expr]==1} {
     set phrase [lindex $expr 0]
     set rewritten [list]
     set partial 0
     foreach tok $phrase {
-      if {[lsearch $::fts3_deferred $tok]>=0} {
+      if {[lsearch $deferred $tok]>=0} {
         lappend rewritten *
       } else {
         lappend rewritten $tok
@@ -178,7 +205,7 @@ proc get_single_near_results {tbl expr arrayvar nullvar} {
       while {[lindex $rewritten 0] == "*"} {
         set rewritten [lrange $rewritten 1 end]
       }
-      get_single_near_results $tbl [list $rewritten] aRewrite nullentry
+      get_single_near_results $tbl [list $rewritten] {} aRewrite nullentry
       foreach docid [array names hits] {
         set aMatchinfo($docid) $aRewrite($docid)
       }
@@ -228,7 +255,7 @@ proc matching_brackets {expr} {
   return [expr ($iBracket==0 && $i==$nExpr)]
 }
 
-proc get_near_results {tbl expr arrayvar {nullvar ""}} {
+proc get_near_results {tbl expr deferred arrayvar {nullvar ""}} {
   upvar $arrayvar aMatchinfo
   if {$nullvar != ""} { upvar $nullvar nullentry }
 
@@ -260,13 +287,13 @@ proc get_near_results {tbl expr arrayvar {nullvar ""}} {
   if {$iBracket!=0} { error "mismatched brackets in: $expr" }
 
   if {[info exists opidx]==0} {
-    get_single_near_results $tbl $expr aMatchinfo nullentry
+    get_single_near_results $tbl $expr $deferred aMatchinfo nullentry
   } else {
     set eLeft  [lrange $expr 0 [expr $opidx-1]]
     set eRight [lrange $expr [expr $opidx+1] end]
 
-    get_near_results $tbl $eLeft  aLeft  nullleft
-    get_near_results $tbl $eRight aRight nullright
+    get_near_results $tbl $eLeft  $deferred aLeft  nullleft
+    get_near_results $tbl $eRight $deferred aRight nullright
 
     switch -- [lindex $expr $opidx] {
       "NOT" {
@@ -390,8 +417,6 @@ foreach {tn create} {
 proc make_token_deferrable {tbl token} {
   set nRow [db one "SELECT count(*) FROM $tbl"]
   set pgsz [db one "PRAGMA page_size"]
-
-  execsql "INSERT INTO $tbl ($tbl) VALUES('maxpending=100000000')"
   execsql BEGIN
   for {set i 0} {$i < ($nRow * $pgsz * 1.2)/100} {incr i} {
     set doc [string repeat "$token " 100]
@@ -421,28 +446,54 @@ foreach {tn create} {
 
   make_token_deferrable t1 c
 
-  set ::fts3_deferred [list]
   foreach {tn2 expr} {
     1     {a OR c}
   } {
     do_fts3query_test 3.$tn.2.$tn2 t1 $expr
   }
 
-  set ::fts3_deferred [list c]
   execsql { 
     UPDATE t1_segments 
     SET block = zeroblob(length(block)) 
     WHERE length(block)>10000 AND 0
   }
-  foreach {tn2 expr} {
-    1     {a NEAR c}
-    2     {a AND c}
-    3     {"a c"}
-    4     {"c a"}
-    5     {"a c" NEAR/1 g}
-    6     {"a c" NEAR/0 g}
+  foreach {tn2 expr def} {
+    1     {a NEAR c}            {}
+    2     {a AND c}             c
+    3     {"a c"}               c
+    4     {"c a"}               c
+    5     {"a c" NEAR/1 g}      {}
+    6     {"a c" NEAR/0 g}      {}
   } {
-    do_fts3query_test 3.$tn.2.$tn2 t1 $expr
+    do_fts3query_test 3.$tn.2.$tn2 -deferred $def t1 $expr
+  }
+}
+
+#--------------------------------------------------------------------------
+#
+foreach {tn create} {
+  1    "fts4(x, y)"
+  2    "fts4(x, y, order=DESC)"
+} {
+  catchsql { DROP TABLE t1 }
+  execsql  "CREATE VIRTUAL TABLE t1 USING $create"
+
+  foreach {x y} {
+    {one two five four five} {}
+    {} {one two five four five}
+    {one two} {five four five}
+  } {
+    execsql {INSERT INTO t1 VALUES($x, $y)}
+  }
+
+  foreach {tn2 expr} {
+    1     {one AND five}
+    2     {one NEAR five}
+    3     {one NEAR/1 five}
+    4     {one NEAR/2 five}
+    5     {one NEAR/3 five}
+  } {
+    do_fts3query_test 4.$tn.2.$tn2 t1 $expr
   }
 }
 

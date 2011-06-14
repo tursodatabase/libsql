@@ -1,5 +1,5 @@
-C Merge\srecent\strunk\schanges\sinto\sfts3-prefix-search\sbranch.
-D 2011-06-14T07:22:30.078
+C Fix\sanother\sbug\scaused\sby\sNEAR/matchinfo/order=DESC\sinteraction.
+D 2011-06-14T09:00:27.140
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -61,7 +61,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 5d59c015d60379d399bbd1e1a597624237fd4583
+F ext/fts3/fts3.c ae3ae91d204d177fc37a22c7bc5a3a9df70e65a0
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h a999cfbf605efec293a88519f74192f5204c84d6
 F ext/fts3/fts3_aux.c baed9dab7fb4604ae8cafdb2d7700abe93beffbe
@@ -455,7 +455,7 @@ F test/fts3am.test 218aa6ba0dfc50c7c16b2022aac5c6be593d08d8
 F test/fts3an.test a49ccadc07a2f7d646ec1b81bc09da2d85a85b18
 F test/fts3ao.test b83f99f70e9eec85f27d75801a974b3f820e01f9
 F test/fts3atoken.test 402ef2f7c2fb4b3d4fa0587df6441c1447e799b3
-F test/fts3auto.test 0173f3fc3e03d66beb6dd65f7b99e7eb4ae2a27d
+F test/fts3auto.test 337dff2758887bfe7d337f76d25cc48db6e26f28
 F test/fts3aux1.test 0b02743955d56fc0d4d66236a26177bd1b726de0
 F test/fts3b.test e93bbb653e52afde110ad53bbd793f14fe7a8984
 F test/fts3c.test fc723a9cf10b397fdfc2b32e73c53c8b1ec02958
@@ -614,7 +614,7 @@ F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
 F test/pcache2.test 0d85f2ab6963aee28c671d4c71bec038c00a1d16
-F test/permutations.test d27eac16dae111ff7cec331dab4bca08625ba65a
+F test/permutations.test 3a0d43a3e92f74f49be42ddc580e9b1ec361ba0e
 F test/pragma.test fdfc09067ea104a0c247a1a79d8093b56656f850
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
@@ -945,7 +945,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 06de3f2cbc27cdfd9f83218c9ea576f74f60d07b 77f01578bb565d1bc884b374b68bae10ce34a084
-R 4b70a0fb05718888a014edb1bc0cc1e6
+P 135ce30f62ebd6a1b239c18dbbd9c926ea507db4
+R 6437acdf1435a01de33437d42862b03a
 U dan
-Z 363a76362b64a627be0e398551d0d1e2
+Z 0ea30b6b1ae90b1e541e7d3c3cb40fc6
