@@ -1,5 +1,5 @@
-C Fix\sanother\sbug\scaused\sby\sNEAR/matchinfo/order=DESC\sinteraction.
-D 2011-06-14T09:00:27.140
+C Add\sa\scouple\sof\sextra\stests.
+D 2011-06-14T11:32:50.766
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -455,7 +455,7 @@ F test/fts3am.test 218aa6ba0dfc50c7c16b2022aac5c6be593d08d8
 F test/fts3an.test a49ccadc07a2f7d646ec1b81bc09da2d85a85b18
 F test/fts3ao.test b83f99f70e9eec85f27d75801a974b3f820e01f9
 F test/fts3atoken.test 402ef2f7c2fb4b3d4fa0587df6441c1447e799b3
-F test/fts3auto.test 337dff2758887bfe7d337f76d25cc48db6e26f28
+F test/fts3auto.test 2f86f2a0e8ffa26d81d570897e6cc1c2262256d5
 F test/fts3aux1.test 0b02743955d56fc0d4d66236a26177bd1b726de0
 F test/fts3b.test e93bbb653e52afde110ad53bbd793f14fe7a8984
 F test/fts3c.test fc723a9cf10b397fdfc2b32e73c53c8b1ec02958
@@ -945,7 +945,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 135ce30f62ebd6a1b239c18dbbd9c926ea507db4
-R 6437acdf1435a01de33437d42862b03a
+P 04907fbadeb743c95cc9f3529e63ef388684799f
+R 84da75d7a3a06308ee488ec7371657d8
 U dan
-Z 0ea30b6b1ae90b1e541e7d3c3cb40fc6
+Z 0b29b5535d6bfbaa65e9d19cac80576d
