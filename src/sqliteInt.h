@@ -682,7 +682,7 @@ struct Db {
 ** A thread must be holding a mutex on the corresponding Btree in order
 ** to access Schema content.  This implies that the thread must also be
 ** holding a mutex on the sqlite3 connection pointer that owns the Btree.
-** For a TEMP Schema, on the connection mutex is required.
+** For a TEMP Schema, only the connection mutex is required.
 */
 struct Schema {
   int schema_cookie;   /* Database schema version number for this file */
@@ -2879,7 +2879,7 @@ int sqlite3GetInt32(const char *, int*);
 int sqlite3Atoi(const char*);
 int sqlite3Utf16ByteLen(const void *pData, int nChar);
 int sqlite3Utf8CharLen(const char *pData, int nByte);
-int sqlite3Utf8Read(const u8*, const u8**);
+u32 sqlite3Utf8Read(const u8*, const u8**);
 
 /*
 ** Routines to read and write variable-length integers.  These used to

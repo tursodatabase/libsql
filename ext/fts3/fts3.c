@@ -4114,6 +4114,15 @@ int sqlite3Fts3EvalNext(Fts3Cursor *pCsr){
   return rc;
 }
 
+/*
+** Restart interation for expression pExpr so that the next call to
+** sqlite3Fts3EvalNext() visits the first row. Do not allow incremental 
+** loading or merging of phrase doclists for this iteration.
+**
+** If *pRc is other than SQLITE_OK when this function is called, it is
+** a no-op. If an error occurs within this function, *pRc is set to an
+** SQLite error code before returning.
+*/
 static void fts3EvalRestart(
   Fts3Cursor *pCsr,
   Fts3Expr *pExpr,

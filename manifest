@@ -1,5 +1,5 @@
-C Remove\sunused\sparameters\sfrom\sinternal\sfts3\sfunction.
-D 2011-06-14T07:14:43.149
+C Merge\srecent\strunk\schanges\sinto\sfts3-prefix-search\sbranch.
+D 2011-06-14T07:22:30.078
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -61,7 +61,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c f4f65273121386349993d600c4c5f710d4b3e956
+F ext/fts3/fts3.c 5d59c015d60379d399bbd1e1a597624237fd4583
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h a999cfbf605efec293a88519f74192f5204c84d6
 F ext/fts3/fts3_aux.c baed9dab7fb4604ae8cafdb2d7700abe93beffbe
@@ -134,8 +134,8 @@ F src/date.c 1548fdac51377e4e7833251de878b4058c148e1b
 F src/delete.c cecc926c70783452f3e8eb452c728291ce1a0b21
 F src/expr.c ab46ab0f0c44979a8164ca31728d7d10ae5e8106
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
-F src/fkey.c a43ba8a005fb5efd1deeee06853e3a6120d46a91
-F src/func.c b9117e40975245b8504cf3625d7e321d8d4b63dc
+F src/fkey.c 9fabba17a4d4778dc660f0cb9d781fc86d7b9d41
+F src/func.c d93772d9ffa51e4a8f275675bae1f61394c4ab80
 F src/global.c 29bfb85611dd816b04f10fba0ca910366e128d38
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
@@ -171,7 +171,7 @@ F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 49e718c095810c6b3334e3a6d89970aceaddefce
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
-F src/pcache1.c d548e31beafa792d1994b663a29a5303569efc4e
+F src/pcache1.c 912bd5687d6df344698d8e69560f347b6e21c18a
 F src/pragma.c ebcd20f1e654f5cb3aeef864ed69c4697719fbaa
 F src/prepare.c e64261559a3187698a3e7e6c8b001a4f4f98dab4
 F src/printf.c 585a36b6a963df832cfb69505afa3a34ed5ef8a1
@@ -182,7 +182,7 @@ F src/select.c d9d440809025a58547e39f4f268c2a296bfb56ff
 F src/shell.c 0e0173b3e79d956368013e759f084caa7995ecb1
 F src/sqlite.h.in 2f51e4f58b2b4626fcbd9938580e730cb5fb4985
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
-F src/sqliteInt.h 6e58c558c57c8f44011736d5fa5295eb3130f9de
+F src/sqliteInt.h 7b7ec2394b94fc4516930cd9dae37af0f9312215
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -233,8 +233,8 @@ F src/test_wholenumber.c 6129adfbe7c7444f2e60cc785927f3aa74e12290
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c c819d9f72168a035d545a5bdafe9b085b20df705
 F src/trigger.c c836a6caac16ba96611558922106858f6ca3d6bf
-F src/update.c 5bcb56e5c7380a2eecb0e71891dbd4ad7437748f
-F src/utf.c d83650c3ea08f7407bd9d0839d9885241c209c60
+F src/update.c 80d77311d91ebc06b27149e75701f1b3e9356622
+F src/utf.c c53eb7404b3eb5c1cbb5655c6a7a0e0ce6bd50f0
 F src/util.c 0f33bbbdfcc4a2d8cf20c3b2a16ffc3b57c58a70
 F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
 F src/vdbe.c edfa3827d7a6fac2425bc10c0eb6e54342d2fa56
@@ -399,7 +399,7 @@ F test/filectrl.test 97003734290887566e01dded09dc9e99cb937e9e
 F test/filefmt.test f178cfc29501a14565954c961b226e61877dd32c
 F test/fkey1.test 01c7de578e11747e720c2d9aeef27f239853c4da
 F test/fkey2.test 080969fe219b3b082b0e097ac18c6af2e5b0631f
-F test/fkey3.test 42f88d6048d8dc079e2a8cf7baad1cc1483a7620
+F test/fkey3.test 5ec899d12b13bcf1e9ef40eff7fb692fdb91392e
 F test/fkey4.test c6c8f9f9be885f95c85c7bceb26f243ad906fd49
 F test/fkey_malloc.test a5ede29bd2f6e56dea78c3d43fb86dd696c068c8
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
@@ -945,7 +945,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 2c20129297b64f4113b8edb551385eb918279471
-R 24738ea4e4f82770b7e9961a6f31bf0f
+P 06de3f2cbc27cdfd9f83218c9ea576f74f60d07b 77f01578bb565d1bc884b374b68bae10ce34a084
+R 4b70a0fb05718888a014edb1bc0cc1e6
 U dan
-Z 096f5065b2f90702df92a748235d8620
+Z 363a76362b64a627be0e398551d0d1e2
