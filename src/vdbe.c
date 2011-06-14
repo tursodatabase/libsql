@@ -1399,15 +1399,6 @@ case OP_Function: {
   db->lastRowid = lastRowid;
   (*ctx.pFunc->xFunc)(&ctx, n, apVal); /* IMP: R-24505-23230 */
   lastRowid = db->lastRowid;
-  if( db->mallocFailed ){
-    /* Even though a malloc() has failed, the implementation of the
-    ** user function may have called an sqlite3_result_XXX() function
-    ** to return a value. The following call releases any resources
-    ** associated with such a value.
-    */
-    sqlite3VdbeMemRelease(&ctx.s);
-    goto no_mem;
-  }
 
   /* If any auxiliary data functions have been called by this user function,
   ** immediately call the destructor for any non-static values.
@@ -1416,6 +1407,16 @@ case OP_Function: {
     sqlite3VdbeDeleteAuxData(ctx.pVdbeFunc, pOp->p1);
     pOp->p4.pVdbeFunc = ctx.pVdbeFunc;
     pOp->p4type = P4_VDBEFUNC;
+  }
+
+  if( db->mallocFailed ){
+    /* Even though a malloc() has failed, the implementation of the
+    ** user function may have called an sqlite3_result_XXX() function
+    ** to return a value. The following call releases any resources
+    ** associated with such a value.
+    */
+    sqlite3VdbeMemRelease(&ctx.s);
+    goto no_mem;
   }
 
   /* If the function returned an error, throw an exception */

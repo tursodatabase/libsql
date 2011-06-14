@@ -1,5 +1,5 @@
-C Merge\sfts3-prefix-search\sbranch\swith\strunk.
-D 2011-06-14T11:50:09.808
+C Fix\sa\smemory\sleak\sthat\scan\sfollow\san\sOOM\serror\sin\sa\suser-function\sthat\suses\ssqlite3_set_auxdata().
+D 2011-06-14T14:18:45.331
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -237,7 +237,7 @@ F src/update.c 80d77311d91ebc06b27149e75701f1b3e9356622
 F src/utf.c c53eb7404b3eb5c1cbb5655c6a7a0e0ce6bd50f0
 F src/util.c 0f33bbbdfcc4a2d8cf20c3b2a16ffc3b57c58a70
 F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
-F src/vdbe.c edfa3827d7a6fac2425bc10c0eb6e54342d2fa56
+F src/vdbe.c 9eef9bb0d4a0de06cf904476eadf58395971e35a
 F src/vdbe.h 5cf09e7ee8a3f7d93bc51f196a96550786afe7a1
 F src/vdbeInt.h ad84226cc0adcb1185c22b70696b235a1678bb45
 F src/vdbeapi.c 0eeadc75e44a30efd996d6af6e7c5a2488e35be8
@@ -555,7 +555,7 @@ F test/lock_common.tcl 0c270b121d40959fa2f3add382200c27045b3d95
 F test/lookaside.test 93f07bac140c5bb1d49f3892d2684decafdc7af2
 F test/main.test 9d7bbfcc1b52c88ba7b2ba6554068ecf9939f252
 F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
-F test/malloc.test e56c9c3358da2c18385aea15a42dc970913986c2
+F test/malloc.test 76017be66cec4375a4b4ea5c71245e27a9fe2d0b
 F test/malloc3.test 4128b1e6ffa506103b278ad97af89174f310c7ca
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
 F test/malloc5.test 4d16d1bb26d2deddd7c4f480deec341f9b2d0e22
@@ -945,7 +945,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 77f01578bb565d1bc884b374b68bae10ce34a084 aefd46dfae7e06fbaf4f2b9a86a7f2ac6927331e
-R 84da75d7a3a06308ee488ec7371657d8
+P b1f9c1e0ac51cedfb05ac073a603343f6df865b5
+R 915dabb427b7d44a9631a4d5ac3ba884
 U dan
-Z 26ae4ebe97429ca9da8c05064a989555
+Z 905532115e84db070a1615e7e8131374
