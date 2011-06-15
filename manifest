@@ -1,5 +1,5 @@
-C Merge\sthe\simproved\sincremental\sdoclist\sloading\stest\sfrom\sthe\nbroken-build\sbranch\s(which\sis\snow\sfixed)\sinto\strunk.
-D 2011-06-15T13:11:06.128
+C Fix\sthe\swal7.test\sscript\sso\sthat\sit\sworks\seven\sif\ssecure_delete\sis\sengaged.
+D 2011-06-15T16:07:30.722
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -878,7 +878,7 @@ F test/wal3.test 5c396cc22497244d627306f4c1d360167353f8dd
 F test/wal4.test 3404b048fa5e10605facaf70384e6d2943412e30
 F test/wal5.test 1bbfaa316dc2a1d0d1fac3f4500c38a90055a41b
 F test/wal6.test 07aa31ca8892d0527f2c5c5a9a2a87aa421dfaa8
-F test/wal7.test 09bc8de3d11949571d6f7a4188b308059cec27e5
+F test/wal7.test c9c8d43bbfc7b99e49501b25c06506700e044891
 F test/wal_common.tcl a98f17fba96206122eff624db0ab13ec377be4fe
 F test/walbak.test 4df1c7369da0301caeb9a48fa45997fd592380e4
 F test/walbig.test e882bc1d014afffbfa2b6ba36e0f07d30a633ad0
@@ -945,7 +945,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 0185c4b689d18d66e6aa39b4a7bddc279e3c9d17 63ebcb52a1909aca80f2fef3e982f8fb5929b73b
-R fc57a2e2686d2dead5f714ec2e85c3f0
+P f9750870ee04935f338e4d808900fee5a8b2b389
+R 1072d6428994e2a6ec2fd048ac7a1c15
 U drh
-Z ece8b2c59ad0a86fa0f8629e77710c29
+Z ba8c39e1b220c272ee066a1f42d23d01
