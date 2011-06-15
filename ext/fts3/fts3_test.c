@@ -273,6 +273,7 @@ static int fts3_configure_incr_load_cmd(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
+#ifdef SQLITE_ENABLE_FTS3
   extern int test_fts3_node_chunksize;
   extern int test_fts3_node_chunk_threshold;
   int iArg1;
@@ -306,6 +307,7 @@ static int fts3_configure_incr_load_cmd(
 
   Tcl_SetObjResult(interp, pRet);
   Tcl_DecrRefCount(pRet);
+#endif
   return TCL_OK;
 }
 
@@ -316,4 +318,3 @@ int Sqlitetestfts3_Init(Tcl_Interp *interp){
   );
   return TCL_OK;
 }
-

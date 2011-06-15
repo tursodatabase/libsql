@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\scompiler\swarnings.
-D 2011-06-15T12:43:36.849
+C Fix\sso\sthat\sthe\sTCL\stest\sharness\sworks\seven\sif\sSQLITE_ENABLE_FTS\sis\somitted.
+D 2011-06-15T13:02:21.324
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -72,7 +72,7 @@ F ext/fts3/fts3_icu.c ac494aed69835008185299315403044664bda295
 F ext/fts3/fts3_porter.c d61cfd81fb0fd8fbcb25adcaee0ba671aefaa5c2
 F ext/fts3/fts3_snippet.c 82e2c1e420c871c02f6e85ea438570118d7105c8
 F ext/fts3/fts3_term.c 6c7f33ab732a2a0f281898685650e3a492e1e2f1
-F ext/fts3/fts3_test.c 4c90a63c117c989ea899d59e2195622dcf61dbc0
+F ext/fts3/fts3_test.c 4e833729c13cea9a6bb98d3b353f6e3b8f756004
 F ext/fts3/fts3_tokenizer.c 055f3dc7369585350b28db1ee0f3b214dca6724d
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 6e5cbaa588924ac578263a598e4fb9f5c9bb179d
@@ -945,7 +945,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 7a3813138d1a5c5d99f4756c79998831d779774f
-R e8d9fd64770806090874e1cc045d5b07
+P 3899f3b95ed50773a72d907b39b451fefce69c9e
+R fc57a2e2686d2dead5f714ec2e85c3f0
 U drh
-Z ea6a718ef2a7cf11b3bc2eae3fdf9321
+Z 950ecff3e7df79fb4044b7edf191f8e4
