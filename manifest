@@ -1,5 +1,5 @@
-C Add\sa\scouple\sof\spointer\stype\scasts\sto\stest\sfile\stest_quota.c.
-D 2011-06-15T17:04:43.219
+C Further\stweaks\sto\sthe\swal7.test\stest\scase.
+D 2011-06-15T19:18:47.862
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -878,7 +878,7 @@ F test/wal3.test 5c396cc22497244d627306f4c1d360167353f8dd
 F test/wal4.test 3404b048fa5e10605facaf70384e6d2943412e30
 F test/wal5.test 1bbfaa316dc2a1d0d1fac3f4500c38a90055a41b
 F test/wal6.test 07aa31ca8892d0527f2c5c5a9a2a87aa421dfaa8
-F test/wal7.test c9c8d43bbfc7b99e49501b25c06506700e044891
+F test/wal7.test 2ae8f427d240099cc4b2dfef63cff44e2a68a1bd
 F test/wal_common.tcl a98f17fba96206122eff624db0ab13ec377be4fe
 F test/walbak.test 4df1c7369da0301caeb9a48fa45997fd592380e4
 F test/walbig.test e882bc1d014afffbfa2b6ba36e0f07d30a633ad0
@@ -945,7 +945,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 68fb7a548c8fe00bcb9c6d71f2863b55d42b3c64
-R c0385c1daebb63351a38fc46b33ad8a2
-U dan
-Z 77d8ea6289891695c9c538ba7b8f6716
+P 0df061b0554c749cade4ec8ddabe453934825bb2
+R b35795e0bbb3ce3458e3327edc3421f8
+U drh
+Z 625133d76b14b6cbfe340f5d4f1b609e

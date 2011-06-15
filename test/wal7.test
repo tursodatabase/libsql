@@ -86,7 +86,7 @@ do_test wal7-3.0 {
     INSERT INTO t2 VALUES(1);
   }
   set sz [file size test.db-wal]
-  expr {$sz>0 && $sz<10000}
+  expr {$sz>0 && $sz<13700}
 } 1
 
 
