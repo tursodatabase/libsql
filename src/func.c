@@ -608,7 +608,7 @@ static int patternCompare(
         return 0;
       }
     }else if( c==matchSet ){
-      int prior_c = 0;
+      u32 prior_c = 0;
       assert( esc==0 );    /* This only occurs for GLOB, not LIKE */
       seen = 0;
       invert = 0;
