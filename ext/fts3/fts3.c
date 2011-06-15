@@ -3275,12 +3275,11 @@ static int fts3EvalDeferredPhrase(Fts3Cursor *pCsr, Fts3Phrase *pPhrase){
         nPoslist = nList;
 
       }else{
-        assert( iPrev>=0 );
-
         char *aOut = pList;
         char *p1 = aPoslist;
         char *p2 = aOut;
 
+        assert( iPrev>=0 );
         fts3PoslistPhraseMerge(&aOut, iToken-iPrev, 0, 1, &p1, &p2);
         sqlite3_free(aPoslist);
         aPoslist = pList;
