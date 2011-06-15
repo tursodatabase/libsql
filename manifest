@@ -1,5 +1,5 @@
-C Further\stweaks\sto\sthe\swal7.test\stest\scase.
-D 2011-06-15T19:18:47.862
+C Fix\sthe\smultiplex.test\smodule\sso\sthat\sit\sworks\swith\sthe\sinmemory_journal\npermutation.
+D 2011-06-15T23:34:51.929
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -593,7 +593,7 @@ F test/misc5.test 45b2e3ed5f79af2b4f38ae362eaf4c49674575bd
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test 29032efcd3d826fbd409e2a7af873e7939f4a4e3
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
-F test/multiplex.test 7a8a50c8ed72dfcf4db9ebae977f7a63184639d8
+F test/multiplex.test 555080c87abfc72ba68e2f3df01d4a9a7a4fdf58
 F test/mutex1.test 78b2b9bb320e51d156c4efdb71b99b051e7a4b41
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test dc212a22b36109fd1ae37154292444ef249c5ec2
@@ -945,7 +945,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 0df061b0554c749cade4ec8ddabe453934825bb2
-R b35795e0bbb3ce3458e3327edc3421f8
+P 177e2d72a8a654d25720e6afc7706624610ac80f
+R e264f27c78f465a3a7dd939a16ceb912
 U drh
-Z 625133d76b14b6cbfe340f5d4f1b609e
+Z 199fa6f213cb3bfff11b26a0ef6f9d7c
