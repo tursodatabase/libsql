@@ -242,8 +242,78 @@ static int fts3_near_match_cmd(
   return rc;
 }
 
+/*
+**   Tclcmd: fts3_configure_incr_load ?CHUNKSIZE THRESHOLD?
+**
+** Normally, FTS uses hard-coded values to determine the minimum doclist
+** size eligible for incremental loading, and the size of the chunks loaded
+** when a doclist is incrementally loaded. This command allows the built-in
+** values to be overridden for testing purposes.
+**
+** If present, the first argument is the chunksize in bytes to load doclists
+** in. The second argument is the minimum doclist size in bytes to use
+** incremental loading with.
+**
+** Whether or not the arguments are present, this command returns a list of
+** two integers - the initial chunksize and threshold when the command is
+** invoked. This can be used to restore the default behaviour after running
+** tests. For example:
+**
+**    # Override incr-load settings for testing:
+**    set cfg [fts3_configure_incr_load $new_chunksize $new_threshold]
+**
+**    .... run tests ....
+**
+**    # Restore initial incr-load settings:
+**    eval fts3_configure_incr_load $cfg
+*/
+static int fts3_configure_incr_load_cmd(
+  ClientData clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  extern int test_fts3_node_chunksize;
+  extern int test_fts3_node_chunk_threshold;
+  int iArg1;
+  int iArg2;
+  Tcl_Obj *pRet;
+
+  if( objc!=1 && objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "?CHUNKSIZE THRESHOLD?");
+    return TCL_ERROR;
+  }
+
+  pRet = Tcl_NewObj();
+  Tcl_IncrRefCount(pRet);
+  Tcl_ListObjAppendElement(
+      interp, pRet, Tcl_NewIntObj(test_fts3_node_chunksize));
+  Tcl_ListObjAppendElement(
+      interp, pRet, Tcl_NewIntObj(test_fts3_node_chunk_threshold));
+
+  if( objc==3 ){
+    int iArg1;
+    int iArg2;
+    if( Tcl_GetIntFromObj(interp, objv[1], &iArg1)
+     || Tcl_GetIntFromObj(interp, objv[2], &iArg2)
+    ){
+      Tcl_DecrRefCount(pRet);
+      return TCL_ERROR;
+    }
+    test_fts3_node_chunksize = iArg1;
+    test_fts3_node_chunk_threshold = iArg2;
+  }
+
+  Tcl_SetObjResult(interp, pRet);
+  Tcl_DecrRefCount(pRet);
+  return TCL_OK;
+}
+
 int Sqlitetestfts3_Init(Tcl_Interp *interp){
   Tcl_CreateObjCommand(interp, "fts3_near_match", fts3_near_match_cmd, 0, 0);
+  Tcl_CreateObjCommand(interp, 
+      "fts3_configure_incr_load", fts3_configure_incr_load_cmd, 0, 0
+  );
   return TCL_OK;
 }
 

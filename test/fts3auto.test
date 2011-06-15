@@ -530,6 +530,53 @@ foreach {tn create} {
   do_fts3query_test 4.$tn.4.5 -deferred fi* t1 {on* NEAR/3 fi*}
 }
 
+#--------------------------------------------------------------------------
+# The following test cases - fts3auto-5.* - focus on using prefix indexes.
+#
+set chunkconfig [fts3_configure_incr_load 1 1]
+foreach {tn create} {
+  1    "fts4(a, b)"
+  2    "fts4(a, b, order=DESC, prefix=1)"
+  3    "fts4(a, b, order=ASC,  prefix=1,3)"
+  4    "fts4(a, b, order=DESC, prefix=2,4)"
+} {
+
+  execsql [subst {
+    DROP TABLE t1;
+    CREATE VIRTUAL TABLE t1 USING $create;
+  }]
+
+  foreach {a b} {
+    "the song of songs which is solomons"
+    "let him kiss me with the kisses of his mouth for thy love is better than wine"
+    "because of the savour of thy good ointments thy name is as ointment poured forth therefore do the virgins love thee"
+    "draw me we will run after thee the king hath brought me into his chambers we will be glad and rejoice in thee we will remember thy love more than wine the upright love thee"
+    "i am black but comely o ye daughters of jerusalem as the tents of kedar as the curtains of solomon"
+    "look not upon me because i am black because the sun hath looked upon me my mothers children were angry with me they made me the keeper of the vineyards but mine own vineyard have i not kept"
+    "tell me o thou whom my soul loveth where thou feedest where thou makest thy flock to rest at noon for why should i be as one that turneth aside by the flocks of thy companions?"
+    "if thou know not o thou fairest among women go thy way forth by the footsteps of the flock and feed thy kids beside the shepherds tents"
+    "i have compared thee o my love to a company of horses in pharaohs chariots"
+    "thy cheeks are comely with rows of jewels thy neck with chains of gold"
+    "we will make thee borders of gold with studs of silver"
+    "while the king sitteth at his table my spikenard sendeth forth the smell thereof"
+    "a bundle of myrrh is my wellbeloved unto me he shall lie all night betwixt my breasts"
+    "my beloved is unto me as a cluster of camphire in the vineyards of en gedi"
+    "behold thou art fair my love behold thou art fair thou hast doves eyes"
+    "behold thou art fair my beloved yea pleasant also our bed is green"
+    "the beams of our house are cedar and our rafters of fir"
+  } {
+    execsql {INSERT INTO t1(a, b) VALUES($a, $b)}
+  }
+
+  do_fts3query_test 5.$tn.1.1 t1 {s*}
+  do_fts3query_test 5.$tn.1.2 t1 {so*}
+  do_fts3query_test 5.$tn.1.3 t1 {"s* o*"}
+  do_fts3query_test 5.$tn.1.4 t1 {b* NEAR/3 a*}
+  do_fts3query_test 5.$tn.1.5 t1 {th* NEAR/5 a* NEAR/5 w*}
+  do_fts3query_test 5.$tn.1.6 t1 {"b* th* art* fair*"}
+}
+eval fts3_configure_incr_load $chunkconfig
+
 set sqlite_fts3_enable_parentheses $sfep
 finish_test
 

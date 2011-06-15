@@ -49,13 +49,19 @@
 ** is 1. Clearly such small values would be inefficient, but can be useful 
 ** for testing purposes.
 **
-** TODO: Add a test interface to modify these "constants" from a script for
-** this purpose.
+** If this module is built with SQLITE_TEST defined, these constants may
+** be overridden at runtime for testing purposes. File fts3_test.c contains
+** a Tcl interface to read and write the values.
 */
-#define FTS3_NODE_CHUNKSIZE (4*1024) 
-#define FTS3_NODE_CHUNK_THRESHOLD (FTS3_NODE_CHUNKSIZE*4)
-/* #define FTS3_NODE_CHUNKSIZE 1 */
-/* #define FTS3_NODE_CHUNK_THRESHOLD 1 */
+#ifdef SQLITE_TEST
+int test_fts3_node_chunksize = (4*1024);
+int test_fts3_node_chunk_threshold = (4*1024)*4;
+# define FTS3_NODE_CHUNKSIZE       test_fts3_node_chunksize
+# define FTS3_NODE_CHUNK_THRESHOLD test_fts3_node_chunk_threshold
+#else
+# define FTS3_NODE_CHUNKSIZE (4*1024) 
+# define FTS3_NODE_CHUNK_THRESHOLD (FTS3_NODE_CHUNKSIZE*4)
+#endif
 
 typedef struct PendingList PendingList;
 typedef struct SegmentNode SegmentNode;
