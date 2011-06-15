@@ -1,5 +1,5 @@
-C Fix\sthe\swal7.test\sscript\sso\sthat\sit\sworks\seven\sif\ssecure_delete\sis\sengaged.
-D 2011-06-15T16:07:30.722
+C Add\sa\scouple\sof\spointer\stype\scasts\sto\stest\sfile\stest_quota.c.
+D 2011-06-15T17:04:43.219
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -218,7 +218,7 @@ F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
 F src/test_osinst.c 62b0b8ef21ce754cc94e17bb42377ed8795dba32
 F src/test_pcache.c 7bf828972ac0d2403f5cfa4cd14da41f8ebe73d8
-F src/test_quota.c b5576f17d701af461effd7ca1e71f0d100071192
+F src/test_quota.c cc4f67e12558a252ea4a11720be268348f4b1595
 F src/test_rtree.c 30c981837445a4e187ee850a49c4760d9642f7c3
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
@@ -945,7 +945,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P f9750870ee04935f338e4d808900fee5a8b2b389
-R 1072d6428994e2a6ec2fd048ac7a1c15
-U drh
-Z ba8c39e1b220c272ee066a1f42d23d01
+P 68fb7a548c8fe00bcb9c6d71f2863b55d42b3c64
+R c0385c1daebb63351a38fc46b33ad8a2
+U dan
+Z 77d8ea6289891695c9c538ba7b8f6716
