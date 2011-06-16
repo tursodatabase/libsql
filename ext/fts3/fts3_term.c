@@ -15,10 +15,10 @@
 ** access to the full-text index of an FTS table. 
 */
 
+#include "fts3Int.h"
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
 #ifdef SQLITE_TEST
 
-#include "fts3Int.h"
 #include <string.h>
 #include <assert.h>
 

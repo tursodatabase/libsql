@@ -292,13 +292,12 @@
 ** into a single segment.
 */
 
+#include "fts3Int.h"
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
 
 #if defined(SQLITE_ENABLE_FTS3) && !defined(SQLITE_CORE)
 # define SQLITE_CORE 1
 #endif
-
-#include "fts3Int.h"
 
 #include <assert.h>
 #include <stdlib.h>

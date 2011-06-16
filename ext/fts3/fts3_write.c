@@ -17,9 +17,9 @@
 ** code in fts3.c.
 */
 
+#include "fts3Int.h"
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
 
-#include "fts3Int.h"
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
