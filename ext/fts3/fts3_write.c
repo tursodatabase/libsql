@@ -1247,6 +1247,7 @@ static int fts3SegReaderNextDocid(
       pReader->pOffsetList = p;
     }
   }else{
+    char *pEnd = &pReader->aDoclist[pReader->nDoclist];
 
     /* Pointer p currently points at the first byte of an offset list. The
     ** following block advances it to point one byte past the end of
@@ -1275,13 +1276,15 @@ static int fts3SegReaderNextDocid(
       *ppOffsetList = pReader->pOffsetList;
       *pnOffsetList = (int)(p - pReader->pOffsetList - 1);
     }
+
+    while( p<pEnd && *p==0 ) p++;
   
     /* If there are no more entries in the doclist, set pOffsetList to
     ** NULL. Otherwise, set Fts3SegReader.iDocid to the next docid and
     ** Fts3SegReader.pOffsetList to point to the next offset list before
     ** returning.
     */
-    if( p>=&pReader->aDoclist[pReader->nDoclist] ){
+    if( p>=pEnd ){
       pReader->pOffsetList = 0;
     }else{
       rc = fts3SegReaderRequire(pReader, p, FTS3_VARINT_MAX);
@@ -2265,51 +2268,27 @@ static void fts3ColumnFilter(
   *pnList = nList;
 }
 
-int sqlite3Fts3MsrIncrStart(
-  Fts3Table *p,                   /* Virtual table handle */
-  Fts3MultiSegReader *pCsr,       /* Cursor object */
-  int iCol,                       /* Column to match on. */
-  const char *zTerm,              /* Term to iterate through a doclist for */
-  int nTerm                       /* Number of bytes in zTerm */
+/*
+** Cache data in the Fts3MultiSegReader.aBuffer[] buffer (overwriting any
+** existing data). Grow the buffer if required.
+**
+** If successful, return SQLITE_OK. Otherwise, if an OOM error is encountered
+** trying to resize the buffer, return SQLITE_NOMEM.
+*/
+static int fts3MsrBufferData(
+  Fts3MultiSegReader *pMsr,       /* Multi-segment-reader handle */
+  char *pList,
+  int nList
 ){
-  int i;
-  int nSegment = pCsr->nSegment;
-  int (*xCmp)(Fts3SegReader *, Fts3SegReader *) = (
-    p->bDescIdx ? fts3SegReaderDoclistCmpRev : fts3SegReaderDoclistCmp
-  );
-
-  assert( pCsr->pFilter==0 );
-  assert( zTerm && nTerm>0 );
-
-  /* Advance each segment iterator until it points to the term zTerm/nTerm. */
-  for(i=0; i<nSegment; i++){
-    Fts3SegReader *pSeg = pCsr->apSegment[i];
-    do {
-      int rc = fts3SegReaderNext(p, pSeg, 1);
-      if( rc!=SQLITE_OK ) return rc;
-    }while( fts3SegReaderTermCmp(pSeg, zTerm, nTerm)<0 );
+  if( nList>pMsr->nBuffer ){
+    char *pNew;
+    pMsr->nBuffer = nList*2;
+    pNew = (char *)sqlite3_realloc(pMsr->aBuffer, pMsr->nBuffer);
+    if( !pNew ) return SQLITE_NOMEM;
+    pMsr->aBuffer = pNew;
   }
-  fts3SegReaderSort(pCsr->apSegment, nSegment, nSegment, fts3SegReaderCmp);
 
-  /* Determine how many of the segments actually point to zTerm/nTerm. */
-  for(i=0; i<nSegment; i++){
-    Fts3SegReader *pSeg = pCsr->apSegment[i];
-    if( !pSeg->aNode || fts3SegReaderTermCmp(pSeg, zTerm, nTerm) ){
-      break;
-    }
-  }
-  pCsr->nAdvance = i;
-
-  /* Advance each of the segments to point to the first docid. */
-  for(i=0; i<pCsr->nAdvance; i++){
-    int rc = fts3SegReaderFirstDocid(p, pCsr->apSegment[i]);
-    if( rc!=SQLITE_OK ) return rc;
-  }
-  fts3SegReaderSort(pCsr->apSegment, i, i, xCmp);
-
-  assert( iCol<0 || iCol<p->nColumn );
-  pCsr->iColFilter = iCol;
-
+  memcpy(pMsr->aBuffer, pList, nList);
   return SQLITE_OK;
 }
 
@@ -2363,14 +2342,47 @@ int sqlite3Fts3MsrIncrNext(
       }
 
       if( nList>0 ){
+        if( fts3SegReaderIsPending(apSegment[0]) ){
+          rc = fts3MsrBufferData(pMsr, pList, nList+1);
+          if( rc!=SQLITE_OK ) return rc;
+          *paPoslist = pMsr->aBuffer;
+          assert( (pMsr->aBuffer[nList] & 0xFE)==0x00 );
+        }else{
+          *paPoslist = pList;
+        }
         *piDocid = iDocid;
-        *paPoslist = pList;
         *pnPoslist = nList;
         break;
       }
     }
-    
   }
+
+  return SQLITE_OK;
+}
+
+static int fts3SegReaderStart(
+  Fts3Table *p,                   /* Virtual table handle */
+  Fts3MultiSegReader *pCsr,       /* Cursor object */
+  const char *zTerm,              /* Term searched for (or NULL) */
+  int nTerm                       /* Length of zTerm in bytes */
+){
+  int i;
+  int nSeg = pCsr->nSegment;
+
+  /* If the Fts3SegFilter defines a specific term (or term prefix) to search 
+  ** for, then advance each segment iterator until it points to a term of
+  ** equal or greater value than the specified term. This prevents many
+  ** unnecessary merge/sort operations for the case where single segment
+  ** b-tree leaf nodes contain more than one term.
+  */
+  for(i=0; pCsr->bRestart==0 && i<pCsr->nSegment; i++){
+    Fts3SegReader *pSeg = pCsr->apSegment[i];
+    do {
+      int rc = fts3SegReaderNext(p, pSeg, 0);
+      if( rc!=SQLITE_OK ) return rc;
+    }while( zTerm && fts3SegReaderTermCmp(pSeg, zTerm, nTerm)<0 );
+  }
+  fts3SegReaderSort(pCsr->apSegment, nSeg, nSeg, fts3SegReaderCmp);
 
   return SQLITE_OK;
 }
@@ -2380,31 +2392,84 @@ int sqlite3Fts3SegReaderStart(
   Fts3MultiSegReader *pCsr,       /* Cursor object */
   Fts3SegFilter *pFilter          /* Restrictions on range of iteration */
 ){
-  int i;
-
-  /* Initialize the cursor object */
   pCsr->pFilter = pFilter;
+  return fts3SegReaderStart(p, pCsr, pFilter->zTerm, pFilter->nTerm);
+}
 
-  /* If the Fts3SegFilter defines a specific term (or term prefix) to search 
-  ** for, then advance each segment iterator until it points to a term of
-  ** equal or greater value than the specified term. This prevents many
-  ** unnecessary merge/sort operations for the case where single segment
-  ** b-tree leaf nodes contain more than one term.
-  */
-  for(i=0; i<pCsr->nSegment; i++){
-    int nTerm = pFilter->nTerm;
-    const char *zTerm = pFilter->zTerm;
+int sqlite3Fts3MsrIncrStart(
+  Fts3Table *p,                   /* Virtual table handle */
+  Fts3MultiSegReader *pCsr,       /* Cursor object */
+  int iCol,                       /* Column to match on. */
+  const char *zTerm,              /* Term to iterate through a doclist for */
+  int nTerm                       /* Number of bytes in zTerm */
+){
+  int i;
+  int rc;
+  int nSegment = pCsr->nSegment;
+  int (*xCmp)(Fts3SegReader *, Fts3SegReader *) = (
+    p->bDescIdx ? fts3SegReaderDoclistCmpRev : fts3SegReaderDoclistCmp
+  );
+
+  assert( pCsr->pFilter==0 );
+  assert( zTerm && nTerm>0 );
+
+  /* Advance each segment iterator until it points to the term zTerm/nTerm. */
+  rc = fts3SegReaderStart(p, pCsr, zTerm, nTerm);
+  if( rc!=SQLITE_OK ) return rc;
+
+  /* Determine how many of the segments actually point to zTerm/nTerm. */
+  for(i=0; i<nSegment; i++){
     Fts3SegReader *pSeg = pCsr->apSegment[i];
-    do {
-      int rc = fts3SegReaderNext(p, pSeg, 0);
-      if( rc!=SQLITE_OK ) return rc;
-    }while( zTerm && fts3SegReaderTermCmp(pSeg, zTerm, nTerm)<0 );
+    if( !pSeg->aNode || fts3SegReaderTermCmp(pSeg, zTerm, nTerm) ){
+      break;
+    }
   }
-  fts3SegReaderSort(
-      pCsr->apSegment, pCsr->nSegment, pCsr->nSegment, fts3SegReaderCmp);
+  pCsr->nAdvance = i;
+
+  /* Advance each of the segments to point to the first docid. */
+  for(i=0; i<pCsr->nAdvance; i++){
+    rc = fts3SegReaderFirstDocid(p, pCsr->apSegment[i]);
+    if( rc!=SQLITE_OK ) return rc;
+  }
+  fts3SegReaderSort(pCsr->apSegment, i, i, xCmp);
+
+  assert( iCol<0 || iCol<p->nColumn );
+  pCsr->iColFilter = iCol;
 
   return SQLITE_OK;
 }
+
+/*
+** This function is called on a MultiSegReader that has been started using
+** sqlite3Fts3MsrIncrStart(). One or more calls to MsrIncrNext() may also
+** have been made. Calling this function puts the MultiSegReader in such
+** a state that if the next two calls are:
+**
+**   sqlite3Fts3SegReaderStart()
+**   sqlite3Fts3SegReaderStep()
+**
+** then the entire doclist for the term is available in 
+** MultiSegReader.aDoclist/nDoclist.
+*/
+int sqlite3Fts3MsrIncrRestart(Fts3MultiSegReader *pCsr){
+  int i;                          /* Used to iterate through segment-readers */
+
+  assert( pCsr->zTerm==0 );
+  assert( pCsr->nTerm==0 );
+  assert( pCsr->aDoclist==0 );
+  assert( pCsr->nDoclist==0 );
+
+  pCsr->nAdvance = 0;
+  pCsr->bRestart = 1;
+  for(i=0; i<pCsr->nSegment; i++){
+    pCsr->apSegment[i]->pOffsetList = 0;
+    pCsr->apSegment[i]->nOffsetList = 0;
+    pCsr->apSegment[i]->iDocid = 0;
+  }
+
+  return SQLITE_OK;
+}
+
 
 int sqlite3Fts3SegReaderStep(
   Fts3Table *p,                   /* Virtual table handle */
@@ -2478,9 +2543,14 @@ int sqlite3Fts3SegReaderStep(
      && !isIgnoreEmpty 
      && (p->bDescIdx==0 || fts3SegReaderIsPending(apSegment[0])==0)
     ){
-      pCsr->aDoclist = apSegment[0]->aDoclist;
       pCsr->nDoclist = apSegment[0]->nDoclist;
-      rc = SQLITE_ROW;
+      if( fts3SegReaderIsPending(apSegment[0]) ){
+        rc = fts3MsrBufferData(pCsr, apSegment[0]->aDoclist, pCsr->nDoclist);
+        pCsr->aDoclist = pCsr->aBuffer;
+      }else{
+        pCsr->aDoclist = apSegment[0]->aDoclist;
+      }
+      if( rc==SQLITE_OK ) rc = SQLITE_ROW;
     }else{
       int nDoclist = 0;           /* Size of doclist */
       sqlite3_int64 iPrev = 0;    /* Previous docid stored in doclist */

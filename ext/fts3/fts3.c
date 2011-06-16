@@ -3493,7 +3493,7 @@ static int fts3EvalPhraseNext(
       while( pIter<pEnd && *pIter==0 ) pIter++;
 
       pDL->pNextDocid = pIter;
-      assert( *pIter || pIter>=&pDL->aAll[pDL->nAll] );
+      assert( pIter>=&pDL->aAll[pDL->nAll] || *pIter );
       *pbEof = 0;
     }
   }
@@ -4131,13 +4131,14 @@ static void fts3EvalRestart(
     if( pPhrase ){
       fts3EvalZeroPoslist(pPhrase);
       if( pPhrase->bIncr ){
-        sqlite3Fts3EvalPhraseCleanup(pPhrase);
-        memset(&pPhrase->doclist, 0, sizeof(Fts3Doclist));
-        *pRc = sqlite3Fts3EvalStart(pCsr, pExpr, 0);
-      }else{
-        pPhrase->doclist.pNextDocid = 0;
-        pPhrase->doclist.iDocid = 0;
+        assert( pPhrase->nToken==1 );
+        assert( pPhrase->aToken[0].pSegcsr );
+        sqlite3Fts3MsrIncrRestart(pPhrase->aToken[0].pSegcsr);
+        *pRc = fts3EvalPhraseStart(pCsr, 0, pPhrase);
       }
+
+      pPhrase->doclist.pNextDocid = 0;
+      pPhrase->doclist.iDocid = 0;
     }
 
     pExpr->iDocid = 0;

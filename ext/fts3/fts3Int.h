@@ -439,6 +439,7 @@ struct Fts3MultiSegReader {
   int nBuffer;                    /* Allocated size of aBuffer[] in bytes */
 
   int iColFilter;                 /* If >=0, filter for this column */
+  int bRestart;
 
   /* Used by fts3.c only. */
   int nCost;                      /* Cost of running iterator */

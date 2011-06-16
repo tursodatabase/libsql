@@ -521,6 +521,7 @@ foreach {tn create} {
   do_fts3query_test 4.$tn.3.2 -deferred five t1 {one NEAR five}
   do_fts3query_test 4.$tn.3.3 -deferred five t1 {one NEAR/1 five}
   do_fts3query_test 4.$tn.3.4 -deferred five t1 {one NEAR/2 five}
+
   do_fts3query_test 4.$tn.3.5 -deferred five t1 {one NEAR/3 five}
 
   do_fts3query_test 4.$tn.4.1 -deferred fi* t1 {on* AND fi*}
@@ -534,17 +535,22 @@ foreach {tn create} {
 # The following test cases - fts3auto-5.* - focus on using prefix indexes.
 #
 set chunkconfig [fts3_configure_incr_load 1 1]
-foreach {tn create} {
-  1    "fts4(a, b)"
-  2    "fts4(a, b, order=DESC, prefix=1)"
-  3    "fts4(a, b, order=ASC,  prefix=1,3)"
-  4    "fts4(a, b, order=DESC, prefix=2,4)"
+foreach {tn create pending} {
+  2    "fts4(a, b, order=ASC, prefix=1)"             1
+
+  1    "fts4(a, b)"                                  1
+  3    "fts4(a, b, order=ASC,  prefix=1,3)"          0
+  4    "fts4(a, b, order=DESC, prefix=2,4)"          0
+  5    "fts4(a, b, order=DESC, prefix=1)"            0
+  6    "fts4(a, b, order=ASC,  prefix=1,3)"          0
 } {
 
   execsql [subst {
-    DROP TABLE t1;
+    DROP TABLE IF EXISTS t1;
     CREATE VIRTUAL TABLE t1 USING $create;
   }]
+
+  if {$pending} {execsql BEGIN}
 
   foreach {a b} {
     "the song of songs which is solomons"
@@ -568,12 +574,16 @@ foreach {tn create} {
     execsql {INSERT INTO t1(a, b) VALUES($a, $b)}
   }
 
+
   do_fts3query_test 5.$tn.1.1 t1 {s*}
   do_fts3query_test 5.$tn.1.2 t1 {so*}
   do_fts3query_test 5.$tn.1.3 t1 {"s* o*"}
   do_fts3query_test 5.$tn.1.4 t1 {b* NEAR/3 a*}
-  do_fts3query_test 5.$tn.1.5 t1 {th* NEAR/5 a* NEAR/5 w*}
-  do_fts3query_test 5.$tn.1.6 t1 {"b* th* art* fair*"}
+  do_fts3query_test 5.$tn.1.5 t1 {a*}
+  do_fts3query_test 5.$tn.1.6 t1 {th* NEAR/5 a* NEAR/5 w*}
+  do_fts3query_test 5.$tn.1.7 t1 {"b* th* art* fair*"}
+
+  if {$pending} {execsql COMMIT}
 }
 eval fts3_configure_incr_load $chunkconfig
 
