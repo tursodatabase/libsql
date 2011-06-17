@@ -1,5 +1,5 @@
 #
-# nmake Makefile for SQLITE
+# nmake Makefile for SQLite
 #
 
 # The toplevel directory of the source tree.  This is the directory
@@ -10,6 +10,12 @@ TOP = .
 # Set this non-0 to create and use the SQLite amalgamation file.
 #
 USE_AMALGAMATION = 1
+
+# Version numbers and release number for the SQLite being compiled.
+#
+VERSION = 3.7
+VERSION_NUMBER = 3007007
+RELEASE = 3.7.7
 
 # C Compiler and options for use in building executables that
 # will run on the platform that is doing the build.
@@ -96,12 +102,6 @@ TCC = $(TCC) $(OPT_FEATURE_FLAGS)
 # Add in any optional parameters specified on the make commane line
 # ie.  make "OPTS=-DSQLITE_ENABLE_FOO=1 -DSQLITE_OMIT_FOO=1".
 TCC = $(TCC) $(OPTS)
-
-# Version numbers and release number for the SQLite being compiled.
-#
-VERSION = 3.7
-VERSION_NUMBER = 3007007
-RELEASE = 3.7.7
 
 # libtool compile/link
 LTCOMPILE = $(TCC) -Fo$@
@@ -379,7 +379,6 @@ TESTSRC2 = \
   $(TOP)\ext\fts3\fts3.c \
   $(TOP)\ext\fts3\fts3_aux.c \
   $(TOP)\ext\fts3\fts3_expr.c \
-  $(TOP)\ext\fts3\fts3_term.c \
   $(TOP)\ext\fts3\fts3_tokenizer.c \
   $(TOP)\ext\fts3\fts3_write.c \
   $(TOP)\ext\async\sqlite3async.c
@@ -431,7 +430,7 @@ EXTHDR = $(EXTHDR) \
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
-all:	sqlite3.h libsqlite3.lib sqlite3.exe libtclsqlite3.lib
+all:	libsqlite3.lib sqlite3.exe libtclsqlite3.lib
 
 libsqlite3.lib:	$(LIBOBJ)
 	$(LTLIB) -OUT:$@ $(LIBOBJ) $(TLIBS)
@@ -705,9 +704,6 @@ tclsqlite.lo:	$(TOP)\src\tclsqlite.c $(HDR)
 tclsqlite-shell.lo:	$(TOP)\src\tclsqlite.c $(HDR)
 	$(LTCOMPILE) -DTCLSH=1 -DBUILD_sqlite -I$(TCLINCDIR) -c $(TOP)\src\tclsqlite.c
 
-tclsqlite-stubs.lo:	$(TOP)\src\tclsqlite.c $(HDR)
-	$(LTCOMPILE) -DUSE_TCL_STUBS=1 -DBUILD_sqlite -I$(TCLINCDIR) -c $(TOP)\src\tclsqlite.c
-
 tclsqlite3.exe:	tclsqlite-shell.lo libsqlite3.lib
 	$(LTLINK) tclsqlite-shell.lo \
 		/link /LIBPATH:$(TCLLIBDIR) libsqlite3.lib $(LIBTCL)
@@ -817,7 +813,7 @@ TESTFIXTURE_SRC = $(TESTSRC) $(TOP)\src\tclsqlite.c $(TESTFIXTURE_SRC0)
 TESTFIXTURE_SRC = $(TESTSRC) $(TOP)\src\tclsqlite.c $(TESTFIXTURE_SRC1)
 !ENDIF
 
-testfixture.exe:	$(TESTFIXTURE_SRC)
+testfixture.exe:	$(TESTFIXTURE_SRC) $(HDR)
 	$(LTLINK) -DSQLITE_NO_SYNC=1 $(TESTFIXTURE_FLAGS) \
 		-DBUILD_sqlite -I$(TCLINCDIR) \
 		$(TESTFIXTURE_SRC) /link /LIBPATH:$(TCLLIBDIR) $(LIBTCL) $(TLIBS)
@@ -848,10 +844,10 @@ clean:
 	del /Q mkkeywordhash.exe keywordhash.h
 	-rmdir /Q/S tsrc
 	del /Q .target_source
-	del /Q testfixture.exe test.db
+	del /Q testfixture.exe testfixture.exp test.db
 	del /Q sqlite3.dll sqlite3.lib sqlite3.exp sqlite3.def
 	del /Q sqlite3.c
-	del /Q sqlite3_analyzer.exe spaceanal_tcl.h
+	del /Q sqlite3_analyzer.exe sqlite3_analyzer.exp spaceanal_tcl.h
 
 #
 # Windows section
