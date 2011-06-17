@@ -1,8 +1,9 @@
-C Fix\sa\sproblem\swith\sNEAR\squeries\sexecuted\sinside\sa\stransaction\sthat\swrites\sthe\sFTS\stable.
-D 2011-06-16T16:06:05.320
+C Add\sMicrosoft\snmake\scompatible\smakefile;\supdate\sa\sfew\stest\scases\sfor\sWindows.
+D 2011-06-17T07:07:24.791
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
+F Makefile.msc 20949462727fbf78b219feee331d8e2c65b26fe2
 F Makefile.vxworks c85ec1d8597fe2f7bc225af12ac1666e21379151
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 3fcdd7fbe3eb282df3978fe77288544543767961
@@ -604,10 +605,10 @@ F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test af02ed0a9cbc0d2a61b8f35171d4d117e588e4ec
 F test/oserror.test 498d8337e9d15543eb7b004fef8594bf204ff43c
-F test/pager1.test 8baf4470b29511503abcaf1f17d16b16462e4d54
+F test/pager1.test 228a831060dab96bc91b03ba2a85cedefd1ab38a
 F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
-F test/pagerfault.test 9de4d3e0c59970b4c6cb8dac511fa242f335d8a7
+F test/pagerfault.test 4194b8ea2a5da7958cd155556605ff554e1b065a
 F test/pagerfault2.test 1f79ea40d1133b2683a2f811b00f2399f7ec2401
 F test/pagerfault3.test f16e2efcb5fc9996d1356f7cbc44c998318ae1d7
 F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
@@ -945,7 +946,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P a0b43a320e6491de7070966ed7c3ec55fd660a85
-R a91f82245adaecbc51456523e27b5133
-U dan
-Z 67955b067165a6636fb02e1c55fe6931
+P 051c756c367837908f6691c0a36108e088c94f99
+R e346269f70235acf3b40c6deb844b2ac
+U shaneh
+Z 365961d93437a4759811963c7acf64cc
