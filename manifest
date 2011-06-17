@@ -1,5 +1,5 @@
-C Force\salmagamation\sgen\sscripts\sto\suse\sunix\sline\sendings\sfor\sconsistency\sacross\splatforms.
-D 2011-06-17T15:54:59.552
+C Update\swalro.test\sscript\sfor\sWindows.
+D 2011-06-17T15:55:32.570
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -890,7 +890,7 @@ F test/walfault.test 58fce626359c9376fe35101b5c0f2df8040aa839
 F test/walhook.test ed00a40ba7255da22d6b66433ab61fab16a63483
 F test/walmode.test 22ddccd073c817ac9ead62b88ac446e8dedc7d2c
 F test/walnoshm.test a074428046408f4eb5c6a00e09df8cc97ff93317
-F test/walro.test 1f15853383a976ff8bbec78dd44bc15c4e237392
+F test/walro.test 2d5d69e2e99da19ce6faab340330234fc4ca0720
 F test/walshared.test 6dda2293880c300baf5d791c307f653094585761
 F test/walslow.test d21625e2e99e11c032ce949e8a94661576548933
 F test/walthread.test a25a393c068a2b42b44333fa3fdaae9072f1617c
@@ -946,7 +946,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 55bb56d33632eac65bf401dc1f98324b20fb0718
-R 77e80f106180cd2ad766f4c4147bba61
+P a4adc7f78bf43843ee76911baf2f48eb483dd6ac
+R 5c2b696bf2a10ae915d91a0e25d93753
 U shaneh
-Z bf091bddca3c071d703abfe6c9ac2a5c
+Z 0d16be718df2431fa4a5a236a8a45590
