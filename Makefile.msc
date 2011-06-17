@@ -422,12 +422,6 @@ EXTHDR = $(EXTHDR) \
 #
 all:	sqlite3.h libsqlite3.lib sqlite3.exe libtclsqlite3.lib
 
-Makefile: $(TOP)\Makefile.in
-	.\config.status
-
-sqlite3.pc: $(TOP)\sqlite3.pc.in
-	.\config.status
-
 libsqlite3.lib:	$(LIBOBJ)
 	$(LTLIB) -OUT:$@ $(LIBOBJ) $(TLIBS)
 
@@ -854,8 +848,6 @@ clean:
 dll: sqlite3.dll
 
 sqlite3.def: $(LIBOBJ)
-	echo $(LIBOBJ) > real.txt
-	echo $(LIBOBJ) > lib.txt
 	echo 'EXPORTS' >sqlite3.def
 	dumpbin /symbols $(LIBOBJ) \
 		| $(NAWK) "/SECT.*_sqlite3_/ { sub(/^.* _/,\"\");print }" \
