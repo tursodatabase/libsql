@@ -1,5 +1,5 @@
-C More\supdates\sto\sthe\snmake\smakefile.
-D 2011-06-17T07:22:09.126
+C Force\salmagamation\sgen\sscripts\sto\suse\sunix\sline\sendings\sfor\sconsistency\sacross\splatforms.
+D 2011-06-17T15:54:59.552
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -919,8 +919,8 @@ F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkkeywordhash.c d2e6b4a5965e23afb80fbe74bb54648cd371f309
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
-F tool/mksqlite3c.tcl 623e26cc8c83322e4151d3ad85ac69d41221bae8
-F tool/mksqlite3h.tcl d76c226a5e8e1f3b5f6593bcabe5e98b3b1ec9ff
+F tool/mksqlite3c.tcl b23027b185d3e7c7a1803c6f977f68bebd7bc3ec
+F tool/mksqlite3h.tcl 78013ad79a5e492e5f764f3c7a8ef834255061f8
 F tool/mksqlite3internalh.tcl 7b43894e21bcb1bb39e11547ce7e38a063357e87
 F tool/omittest.tcl b1dd290c1596e0f31fd335160a74ec5dfea3df4a
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -946,7 +946,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P a7590af65f3881cf905b8cac2b87381e89a80271
-R c2bb355cb296a58515263b2b4a3bc840
+P 55bb56d33632eac65bf401dc1f98324b20fb0718
+R 77e80f106180cd2ad766f4c4147bba61
 U shaneh
-Z 74b5962094639c7853dc6a903a4ac1af
+Z bf091bddca3c071d703abfe6c9ac2a5c
