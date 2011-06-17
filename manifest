@@ -1,9 +1,9 @@
-C Update\swalro.test\sscript\sfor\sWindows.
-D 2011-06-17T15:55:32.570
+C Fix\sa\sfew\smore\sissues\swith\sthe\snmake\smakefile.
+D 2011-06-17T15:57:07.878
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 327a3ba5f00d8abe07b7051d837c8de58a11b6bc
+F Makefile.msc b84e4a1636babdf33ba1c339da6ae4e30d61bdce
 F Makefile.vxworks c85ec1d8597fe2f7bc225af12ac1666e21379151
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 3fcdd7fbe3eb282df3978fe77288544543767961
@@ -946,7 +946,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P a4adc7f78bf43843ee76911baf2f48eb483dd6ac
-R 5c2b696bf2a10ae915d91a0e25d93753
+P d6443f8eb30fc3e91e1ad92e2adb595ccf121880
+R efe888bea588d8664ec1e53b3ca0b8eb
 U shaneh
-Z 0d16be718df2431fa4a5a236a8a45590
+Z 8a36b3551ed8c68b140a2528bd77bdc7

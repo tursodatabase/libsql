@@ -7,16 +7,29 @@
 #
 TOP = .
 
+# Set this non-0 to create and use the SQLite amalgamation file.
+#
+USE_AMALGAMATION = 1
+
 # C Compiler and options for use in building executables that
 # will run on the platform that is doing the build.
 #
 BCC = cl.exe -O2
 
-# C Compile and options for use in building executables that 
+# C Compile and options for use in building executables that
 # will run on the target platform.  (BCC and TCC are usually the
 # same unless your are cross-compiling.)
 #
-TCC = cl.exe -W3 -O2 -DSQLITE_OS_WIN=1 -I. -I$(TOP)\src -I$(TOP)\ext\rtree
+TCC = cl.exe -W3 -O2 -DSQLITE_OS_WIN=1 -I. -I$(TOP)\src
+
+# The mksqlite3c.tcl and mksqlite3h.tcl scripts will pull in 
+# any extension header files by default.  For non-amalgamation
+# builds, we need to make sure the compiler can find these.
+#
+!IF $(USE_AMALGAMATION)==0
+TCC = $(TCC) -I$(TOP)\ext\fts3
+TCC = $(TCC) -I$(TOP)\ext\rtree
+!ENDIF
 
 # Define -DNDEBUG to compile without debugging (i.e., for production usage)
 # Omitting the define will cause extra debugging code to be inserted and
@@ -37,11 +50,11 @@ TCLSH_CMD = tclsh85
 
 # Compiler options needed for programs that use the readline() library.
 #
-READLINE_FLAGS = -DHAVE_READLINE=0 
+READLINE_FLAGS = -DHAVE_READLINE=0
 
 # The library that programs using readline() must link against.
 #
-LIBREADLINE = 
+LIBREADLINE =
 
 # Should the database engine be compiled threadsafe
 #
@@ -52,8 +65,8 @@ TCC = $(TCC) -DSQLITE_THREADSAFE=1
 TCC = $(TCC) -DSQLITE_THREAD_OVERRIDE_LOCK=-1
 
 # Any target libraries which libsqlite must be linked against
-# 
-TLIBS = 
+#
+TLIBS =
 
 # Flags controlling use of the in memory btree implementation
 #
@@ -61,11 +74,11 @@ TLIBS =
 # default to file, 2 to default to memory, and 3 to force temporary
 # tables to always be in memory.
 #
-TEMP_STORE = -DSQLITE_TEMP_STORE=1
+TCC = $(TCC) -DSQLITE_TEMP_STORE=1
 
 # Enable/disable loadable extensions, and other optional features
-# based on configuration. (-DSQLITE_OMIT*, -DSQLITE_ENABLE*).  
-# The same set of OMIT and ENABLE flags should be passed to the 
+# based on configuration. (-DSQLITE_OMIT*, -DSQLITE_ENABLE*).
+# The same set of OMIT and ENABLE flags should be passed to the
 # LEMON parser generator and the mkkeywordhash tool as well.
 
 # BEGIN standard options
@@ -100,8 +113,6 @@ NAWK = .\gawk.exe
 
 # You should not have to change anything below this line
 ###############################################################################
-
-USE_AMALGAMATION = 1
 
 # Object files for the SQLite library (non-amalgamation).
 #
@@ -326,7 +337,7 @@ TESTSRC = \
   $(TOP)\src\test_wholenumber.c \
   $(TOP)\src\test_wsd.c \
   $(TOP)\ext\fts3\fts3_term.c \
-  $(TOP)\ext\fts3\fts3_test.c 
+  $(TOP)\ext\fts3\fts3_test.c
 
 # Source code to the library files needed by the test fixture
 #
@@ -387,10 +398,10 @@ HDR = \
    $(TOP)\src\os_common.h \
    $(TOP)\src\pager.h \
    $(TOP)\src\pcache.h \
-   parse.h  \
-   sqlite3.h  \
+   parse.h \
+   sqlite3.h \
    $(TOP)\src\sqlite3ext.h \
-   $(TOP)\src\sqliteInt.h  \
+   $(TOP)\src\sqliteInt.h \
    $(TOP)\src\sqliteLimit.h \
    $(TOP)\src\vdbe.h \
    $(TOP)\src\vdbeInt.h
@@ -426,7 +437,7 @@ libsqlite3.lib:	$(LIBOBJ)
 	$(LTLIB) -OUT:$@ $(LIBOBJ) $(TLIBS)
 
 libtclsqlite3.lib:	tclsqlite.lo libsqlite3.lib
-	$(LTLIB) /LIBPATH:$(TCLLIBDIR) -OUT:$@ $** $(LIBTCL:tcl=tclstub) $(TLIBS)
+	$(LTLIB) /LIBPATH:$(TCLLIBDIR) -OUT:$@ tclsqlite.lo libsqlite3.lib $(LIBTCL:tcl=tclstub) $(TLIBS)
 
 sqlite3.exe:	$(TOP)\src\shell.c libsqlite3.lib sqlite3.h
 	$(LTLINK) $(READLINE_FLAGS) \
@@ -454,7 +465,7 @@ sqlite3.c:	.target_source $(TOP)\tool\mksqlite3c.tcl
 # Rule to build the amalgamation
 #
 sqlite3.lo:	sqlite3.c
-	$(LTCOMPILE) $(TEMP_STORE) -c sqlite3.c
+	$(LTCOMPILE) -c sqlite3.c
 
 # Rules to build the LEMON compiler generator
 #
@@ -471,222 +482,222 @@ lemon.exe:	$(TOP)\tool\lemon.c lempar.c
 #     opcodes.lo
 #
 parse.lo:	parse.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c parse.c
+	$(LTCOMPILE) -c parse.c
 
 opcodes.lo:	opcodes.c
-	$(LTCOMPILE) $(TEMP_STORE) -c opcodes.c
+	$(LTCOMPILE) -c opcodes.c
 
 # Rules to build individual *.lo files from files in the src directory.
 #
 alter.lo:	$(TOP)\src\alter.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\alter.c
+	$(LTCOMPILE) -c $(TOP)\src\alter.c
 
 analyze.lo:	$(TOP)\src\analyze.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\analyze.c
+	$(LTCOMPILE) -c $(TOP)\src\analyze.c
 
 attach.lo:	$(TOP)\src\attach.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\attach.c
+	$(LTCOMPILE) -c $(TOP)\src\attach.c
 
 auth.lo:	$(TOP)\src\auth.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\auth.c
+	$(LTCOMPILE) -c $(TOP)\src\auth.c
 
 backup.lo:	$(TOP)\src\backup.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\backup.c
+	$(LTCOMPILE) -c $(TOP)\src\backup.c
 
 bitvec.lo:	$(TOP)\src\bitvec.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\bitvec.c
+	$(LTCOMPILE) -c $(TOP)\src\bitvec.c
 
 btmutex.lo:	$(TOP)\src\btmutex.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\btmutex.c
+	$(LTCOMPILE) -c $(TOP)\src\btmutex.c
 
 btree.lo:	$(TOP)\src\btree.c $(HDR) $(TOP)\src\pager.h
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\btree.c
+	$(LTCOMPILE) -c $(TOP)\src\btree.c
 
 build.lo:	$(TOP)\src\build.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\build.c
+	$(LTCOMPILE) -c $(TOP)\src\build.c
 
 callback.lo:	$(TOP)\src\callback.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\callback.c
+	$(LTCOMPILE) -c $(TOP)\src\callback.c
 
 complete.lo:	$(TOP)\src\complete.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\complete.c
+	$(LTCOMPILE) -c $(TOP)\src\complete.c
 
 ctime.lo:	$(TOP)\src\ctime.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\ctime.c
+	$(LTCOMPILE) -c $(TOP)\src\ctime.c
 
 date.lo:	$(TOP)\src\date.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\date.c
+	$(LTCOMPILE) -c $(TOP)\src\date.c
 
 delete.lo:	$(TOP)\src\delete.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\delete.c
+	$(LTCOMPILE) -c $(TOP)\src\delete.c
 
 expr.lo:	$(TOP)\src\expr.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\expr.c
+	$(LTCOMPILE) -c $(TOP)\src\expr.c
 
 fault.lo:	$(TOP)\src\fault.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\fault.c
+	$(LTCOMPILE) -c $(TOP)\src\fault.c
 
 fkey.lo:	$(TOP)\src\fkey.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\fkey.c
+	$(LTCOMPILE) -c $(TOP)\src\fkey.c
 
 func.lo:	$(TOP)\src\func.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\func.c
+	$(LTCOMPILE) -c $(TOP)\src\func.c
 
 global.lo:	$(TOP)\src\global.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\global.c
+	$(LTCOMPILE) -c $(TOP)\src\global.c
 
 hash.lo:	$(TOP)\src\hash.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\hash.c
+	$(LTCOMPILE) -c $(TOP)\src\hash.c
 
 insert.lo:	$(TOP)\src\insert.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\insert.c
+	$(LTCOMPILE) -c $(TOP)\src\insert.c
 
 journal.lo:	$(TOP)\src\journal.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\journal.c
+	$(LTCOMPILE) -c $(TOP)\src\journal.c
 
 legacy.lo:	$(TOP)\src\legacy.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\legacy.c
+	$(LTCOMPILE) -c $(TOP)\src\legacy.c
 
 loadext.lo:	$(TOP)\src\loadext.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\loadext.c
+	$(LTCOMPILE) -c $(TOP)\src\loadext.c
 
 main.lo:	$(TOP)\src\main.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\main.c
+	$(LTCOMPILE) -c $(TOP)\src\main.c
 
 malloc.lo:	$(TOP)\src\malloc.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\malloc.c
+	$(LTCOMPILE) -c $(TOP)\src\malloc.c
 
 mem0.lo:	$(TOP)\src\mem0.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\mem0.c
+	$(LTCOMPILE) -c $(TOP)\src\mem0.c
 
 mem1.lo:	$(TOP)\src\mem1.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\mem1.c
+	$(LTCOMPILE) -c $(TOP)\src\mem1.c
 
 mem2.lo:	$(TOP)\src\mem2.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\mem2.c
+	$(LTCOMPILE) -c $(TOP)\src\mem2.c
 
 mem3.lo:	$(TOP)\src\mem3.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\mem3.c
+	$(LTCOMPILE) -c $(TOP)\src\mem3.c
 
 mem5.lo:	$(TOP)\src\mem5.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\mem5.c
+	$(LTCOMPILE) -c $(TOP)\src\mem5.c
 
 memjournal.lo:	$(TOP)\src\memjournal.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\memjournal.c
+	$(LTCOMPILE) -c $(TOP)\src\memjournal.c
 
 mutex.lo:	$(TOP)\src\mutex.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\mutex.c
+	$(LTCOMPILE) -c $(TOP)\src\mutex.c
 
 mutex_noop.lo:	$(TOP)\src\mutex_noop.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\mutex_noop.c
+	$(LTCOMPILE) -c $(TOP)\src\mutex_noop.c
 
 mutex_os2.lo:	$(TOP)\src\mutex_os2.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\mutex_os2.c
+	$(LTCOMPILE) -c $(TOP)\src\mutex_os2.c
 
 mutex_unix.lo:	$(TOP)\src\mutex_unix.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\mutex_unix.c
+	$(LTCOMPILE) -c $(TOP)\src\mutex_unix.c
 
 mutex_w32.lo:	$(TOP)\src\mutex_w32.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\mutex_w32.c
+	$(LTCOMPILE) -c $(TOP)\src\mutex_w32.c
 
 notify.lo:	$(TOP)\src\notify.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\notify.c
+	$(LTCOMPILE) -c $(TOP)\src\notify.c
 
 pager.lo:	$(TOP)\src\pager.c $(HDR) $(TOP)\src\pager.h
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\pager.c
+	$(LTCOMPILE) -c $(TOP)\src\pager.c
 
 pcache.lo:	$(TOP)\src\pcache.c $(HDR) $(TOP)\src\pcache.h
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\pcache.c
+	$(LTCOMPILE) -c $(TOP)\src\pcache.c
 
 pcache1.lo:	$(TOP)\src\pcache1.c $(HDR) $(TOP)\src\pcache.h
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\pcache1.c
+	$(LTCOMPILE) -c $(TOP)\src\pcache1.c
 
 os.lo:	$(TOP)\src\os.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\os.c
+	$(LTCOMPILE) -c $(TOP)\src\os.c
 
 os_unix.lo:	$(TOP)\src\os_unix.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\os_unix.c
+	$(LTCOMPILE) -c $(TOP)\src\os_unix.c
 
 os_win.lo:	$(TOP)\src\os_win.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\os_win.c
+	$(LTCOMPILE) -c $(TOP)\src\os_win.c
 
 os_os2.lo:	$(TOP)\src\os_os2.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\os_os2.c
+	$(LTCOMPILE) -c $(TOP)\src\os_os2.c
 
 pragma.lo:	$(TOP)\src\pragma.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\pragma.c
+	$(LTCOMPILE) -c $(TOP)\src\pragma.c
 
 prepare.lo:	$(TOP)\src\prepare.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\prepare.c
+	$(LTCOMPILE) -c $(TOP)\src\prepare.c
 
 printf.lo:	$(TOP)\src\printf.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\printf.c
+	$(LTCOMPILE) -c $(TOP)\src\printf.c
 
 random.lo:	$(TOP)\src\random.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\random.c
+	$(LTCOMPILE) -c $(TOP)\src\random.c
 
 resolve.lo:	$(TOP)\src\resolve.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\resolve.c
+	$(LTCOMPILE) -c $(TOP)\src\resolve.c
 
 rowset.lo:	$(TOP)\src\rowset.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\rowset.c
+	$(LTCOMPILE) -c $(TOP)\src\rowset.c
 
 select.lo:	$(TOP)\src\select.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\select.c
+	$(LTCOMPILE) -c $(TOP)\src\select.c
 
 status.lo:	$(TOP)\src\status.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\status.c
+	$(LTCOMPILE) -c $(TOP)\src\status.c
 
 table.lo:	$(TOP)\src\table.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\table.c
+	$(LTCOMPILE) -c $(TOP)\src\table.c
 
 tokenize.lo:	$(TOP)\src\tokenize.c keywordhash.h $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\tokenize.c
+	$(LTCOMPILE) -c $(TOP)\src\tokenize.c
 
 trigger.lo:	$(TOP)\src\trigger.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\trigger.c
+	$(LTCOMPILE) -c $(TOP)\src\trigger.c
 
 update.lo:	$(TOP)\src\update.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\update.c
+	$(LTCOMPILE) -c $(TOP)\src\update.c
 
 utf.lo:	$(TOP)\src\utf.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\utf.c
+	$(LTCOMPILE) -c $(TOP)\src\utf.c
 
 util.lo:	$(TOP)\src\util.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\util.c
+	$(LTCOMPILE) -c $(TOP)\src\util.c
 
 vacuum.lo:	$(TOP)\src\vacuum.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\vacuum.c
+	$(LTCOMPILE) -c $(TOP)\src\vacuum.c
 
 vdbe.lo:	$(TOP)\src\vdbe.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\vdbe.c
+	$(LTCOMPILE) -c $(TOP)\src\vdbe.c
 
 vdbeapi.lo:	$(TOP)\src\vdbeapi.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\vdbeapi.c
+	$(LTCOMPILE) -c $(TOP)\src\vdbeapi.c
 
 vdbeaux.lo:	$(TOP)\src\vdbeaux.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\vdbeaux.c
+	$(LTCOMPILE) -c $(TOP)\src\vdbeaux.c
 
 vdbeblob.lo:	$(TOP)\src\vdbeblob.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\vdbeblob.c
+	$(LTCOMPILE) -c $(TOP)\src\vdbeblob.c
 
 vdbemem.lo:	$(TOP)\src\vdbemem.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\vdbemem.c
+	$(LTCOMPILE) -c $(TOP)\src\vdbemem.c
 
 vdbetrace.lo:	$(TOP)\src\vdbetrace.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\vdbetrace.c
+	$(LTCOMPILE) -c $(TOP)\src\vdbetrace.c
 
 vtab.lo:	$(TOP)\src\vtab.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\vtab.c
+	$(LTCOMPILE) -c $(TOP)\src\vtab.c
 
 wal.lo:	$(TOP)\src\wal.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\wal.c
+	$(LTCOMPILE) -c $(TOP)\src\wal.c
 
 walker.lo:	$(TOP)\src\walker.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\walker.c
+	$(LTCOMPILE) -c $(TOP)\src\walker.c
 
 where.lo:	$(TOP)\src\where.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)\src\where.c
+	$(LTCOMPILE) -c $(TOP)\src\where.c
 
 tclsqlite.lo:	$(TOP)\src\tclsqlite.c $(HDR)
 	$(LTCOMPILE) -DUSE_TCL_STUBS=1 -DBUILD_sqlite -I$(TCLINCDIR) -c $(TOP)\src\tclsqlite.c
@@ -714,8 +725,8 @@ opcodes.h:	parse.h $(TOP)\src\vdbe.c $(TOP)\mkopcodeh.awk
 parse.h:	parse.c
 
 parse.c:	$(TOP)\src\parse.y lemon.exe $(TOP)\addopcodes.awk
+	del /Q parse.y parse.h parse.h.temp
 	copy $(TOP)\src\parse.y .
-	del /Q parse.h
 	.\lemon.exe $(OPT_FEATURE_FLAGS) $(OPTS) parse.y
 	move parse.h parse.h.temp
 	$(NAWK) -f $(TOP)\addopcodes.awk parse.h.temp >parse.h
@@ -796,7 +807,7 @@ rtree.lo:	$(TOP)\ext\rtree\rtree.c $(HDR) $(EXTHDR)
 # hidden when the library is built via the amalgamation).
 #
 TESTFIXTURE_FLAGS = -DTCLSH=1 -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1
-TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE 
+TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE
 
 TESTFIXTURE_SRC0 = $(TESTSRC2) libsqlite3.lib
 TESTFIXTURE_SRC1 = sqlite3.c
@@ -807,7 +818,7 @@ TESTFIXTURE_SRC = $(TESTSRC) $(TOP)\src\tclsqlite.c $(TESTFIXTURE_SRC1)
 !ENDIF
 
 testfixture.exe:	$(TESTFIXTURE_SRC)
-	$(LTLINK) -DSQLITE_NO_SYNC=1 $(TEMP_STORE) $(TESTFIXTURE_FLAGS) \
+	$(LTLINK) -DSQLITE_NO_SYNC=1 $(TESTFIXTURE_FLAGS) \
 		-DBUILD_sqlite -I$(TCLINCDIR) \
 		$(TESTFIXTURE_SRC) /link /LIBPATH:$(TCLLIBDIR) $(LIBTCL) $(TLIBS)
 
@@ -826,11 +837,11 @@ spaceanal_tcl.h:	$(TOP)\tool\spaceanal.tcl
 
 sqlite3_analyzer.exe:	$(TESTFIXTURE_SRC) spaceanal_tcl.h
 	$(LTLINK) -DTCLSH=2 -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1 \
-		-DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE $(TEMP_STORE) \
+		-DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE \
 		-DBUILD_sqlite -I$(TCLINCDIR) \
 		$(TESTFIXTURE_SRC) /link /LIBPATH:$(TCLLIBDIR) $(LIBTCL) $(TLIBS)
 
-clean:	
+clean:
 	del /Q *.lo *.lib *.obj sqlite3.exe libsqlite3.lib
 	del /Q sqlite3.h opcodes.c opcodes.h
 	del /Q lemon.exe lempar.c parse.*
@@ -838,7 +849,7 @@ clean:
 	-rmdir /Q/S tsrc
 	del /Q .target_source
 	del /Q testfixture.exe test.db
-	del /Q sqlite3.dll sqlite3.lib sqlite3.def
+	del /Q sqlite3.dll sqlite3.lib sqlite3.exp sqlite3.def
 	del /Q sqlite3.c
 	del /Q sqlite3_analyzer.exe spaceanal_tcl.h
 
@@ -847,11 +858,11 @@ clean:
 #
 dll: sqlite3.dll
 
-sqlite3.def: $(LIBOBJ)
-	echo 'EXPORTS' >sqlite3.def
-	dumpbin /symbols $(LIBOBJ) \
-		| $(NAWK) "/SECT.*_sqlite3_/ { sub(/^.* _/,\"\");print }" \
+sqlite3.def: libsqlite3.lib
+	echo EXPORTS >sqlite3.def
+	dumpbin /all libsqlite3.lib \
+		| $(NAWK) "/ 1 _sqlite3_/ { sub(/^.* _/,\"\");print }" \
 		| sort >>sqlite3.def
 
 sqlite3.dll: $(LIBOBJ) sqlite3.def
-	$(TCC) -LD -Fo$@ /DEF:sqlite3.def $(LIBOBJ)
+	link /DLL /OUT:$@ /DEF:sqlite3.def $(LIBOBJ)
