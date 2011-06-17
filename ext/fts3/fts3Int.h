@@ -306,7 +306,6 @@ struct Fts3PhraseToken {
   /* Variables above this point are populated when the expression is
   ** parsed (by code in fts3_expr.c). Below this point the variables are
   ** used when evaluating the expression. */
-  int bFulltext;                  /* True if full-text index was used */
   Fts3DeferredToken *pDeferred;   /* Deferred token object for this token */
   Fts3MultiSegReader *pSegcsr;    /* Segment-reader for this token */
 };
@@ -315,6 +314,7 @@ struct Fts3Phrase {
   /* Cache of doclist for this phrase. */
   Fts3Doclist doclist;
   int bIncr;                 /* True if doclist is loaded incrementally */
+  int iDoclistToken;
 
   /* Variables below this point are populated by fts3_expr.c when parsing 
   ** a MATCH expression. Everything above is part of the evaluation phase. 

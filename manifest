@@ -1,5 +1,5 @@
-C Add\sa\smissing\sdeclaration\sto\sfts3Int.h.
-D 2011-06-17T16:04:39.347
+C Avoid\sloading\sdoclists\sfor\sinfrequent\sterms\sthat\sare\spart\sof\sphrases\stwice.
+D 2011-06-17T17:37:31.284
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -62,9 +62,9 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 78b02b5f0195e397c4239ef9213e5506b7d3fa97
+F ext/fts3/fts3.c f919a7966426e539b3f39f696bc94269e3726033
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 974cf471fae5fed8ad87069cd86c1fe5a9bf6f9c
+F ext/fts3/fts3Int.h 8ece4390eb44e7179bb05c59d40f447663f5c077
 F ext/fts3/fts3_aux.c 0ebfa7b86cf8ff6a0861605fcc63b83ec1b70691
 F ext/fts3/fts3_expr.c 23791de01b3a5d313d76e02befd2601d4096bc2b
 F ext/fts3/fts3_hash.c aad95afa01cf2a5ffaa448e4b0ab043880cd1efb
@@ -946,7 +946,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P a117005f502482c4529661616cbb26eee1fe75d1
-R faf357353d86a944921df5db701e63d3
+P 3bfd4466f50711eb71d1a13231025ff4e1e76246
+R cd3d6544b7cd834ce139927827bd3fe8
 U dan
-Z d361a7bc828cbb05e3ac27317d622fe4
+Z fa9494c386a1e1a2787b09d7f28a7b96
