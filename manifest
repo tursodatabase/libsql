@@ -1,5 +1,5 @@
-C Fix\sa\sheader\sdependency\sin\snmake\sMakefile.
-D 2011-06-17T18:52:07.172
+C Do\snot\srun\stest\stkt-2d1a5c67d.test\sin\sthe\sinmemory_journal\spermutation\nsince\sthat\stest\srequires\sWAL\smode\swhich\sdoes\snot\swork\swith\sinmemory_journal.
+D 2011-06-19T21:17:35.711
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -615,7 +615,7 @@ F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
 F test/pcache2.test 0d85f2ab6963aee28c671d4c71bec038c00a1d16
-F test/permutations.test 3a0d43a3e92f74f49be42ddc580e9b1ec361ba0e
+F test/permutations.test 1e8892ebf1bd6e9e8036f4841c72a91bf72da74a
 F test/pragma.test fdfc09067ea104a0c247a1a79d8093b56656f850
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
@@ -946,7 +946,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 8f939723f742329cedba8930f71dff42004f3d0d
-R d5bee1c0649d20e80531413a35f05bd9
-U shaneh
-Z 03c84e62572562693578ac95748470fd
+P 54492212af6c4be5d5546b370398ef771c16f430
+R dd08c420fef14e9aaef20168e7aef1b4
+U drh
+Z ad3555b405ce175e6eb80427a259c9c5
