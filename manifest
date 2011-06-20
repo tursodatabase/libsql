@@ -1,5 +1,5 @@
-C Fix\stypos\sin\sevidence\smarks\son\stests.
-D 2011-06-20T22:34:50.122
+C More\stypo\sfixes\sin\sevidence\smarks.\s\sNo\scode\schanges.
+D 2011-06-20T23:51:33.581
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -373,7 +373,7 @@ F test/e_createtable.test 4771686a586b6ae414f927c389b2c101cc05c028
 F test/e_delete.test e2ae0d3fce5efd70fef99025e932afffc5616fab
 F test/e_droptrigger.test ddd4b28ed8a3d81bd5153fa0ab7559529a2ca03a
 F test/e_dropview.test b347bab30fc8de67b131594b3cd6f3d3bdaa753d
-F test/e_expr.test 9e8b9790803df4de23c2d68d566959934a6179d4
+F test/e_expr.test 71b55f90c9336ecec5a99641679036931260c754
 F test/e_fkey.test 38039b840ab19331000b0f0eb1d82baa7208a67a
 F test/e_fts3.test 75bb0aee26384ef586165e21018a17f7cd843469
 F test/e_insert.test 76d4bb5da9b28014d515d91ffe29a79a1e99f2bc
@@ -381,7 +381,7 @@ F test/e_reindex.test a064f0878b8f848fbca38f1f61f82f15a3000c64
 F test/e_resolve.test dcce9308fb13b934ce29591105d031d3e14fbba6
 F test/e_select.test 7ac53674e822d4d77bbb4a9a4aaefa5fdc9e493f
 F test/e_select2.test 5c3d3da19c7b3e90ae444579db2b70098599ab92
-F test/e_update.test 963d6876064e65f318d1c93aaed36a02b9b389bf
+F test/e_update.test b926341a65955d69a6375c9eb4fd82e7089bc83a
 F test/e_uri.test 8b943bc63cd1abb037430214cdb618422e6bf7d6
 F test/e_vacuum.test 6c09c2af7f2f140518f371c5342100118f779dcf
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
@@ -946,7 +946,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P b9cbab739a62f497545161f30195272f4e687a7f
-R 1f817dafc57d7060ce86fcbba44e24cf
+P bd980be471b185e2dc45875804103d5afc8f78cf
+R 129d3396a51cd277a2cd5fd90ed058d9
 U drh
-Z af694faf6d84b7161a6291503b697295
+Z c467af82d7eff2f784ff6186e148e641
