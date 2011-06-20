@@ -4354,8 +4354,8 @@ int sqlite3Fts3EvalPhraseStats(
   if( pExpr->bDeferred && pExpr->pParent->eType!=FTSQUERY_NEAR ){
     assert( pCsr->nDoc>0 );
     for(iCol=0; iCol<pTab->nColumn; iCol++){
-      aiOut[iCol*3 + 1] = pCsr->nDoc;
-      aiOut[iCol*3 + 2] = pCsr->nDoc;
+      aiOut[iCol*3 + 1] = (u32)pCsr->nDoc;
+      aiOut[iCol*3 + 2] = (u32)pCsr->nDoc;
     }
   }else{
     rc = fts3EvalGatherStats(pCsr, pExpr);

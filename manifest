@@ -1,5 +1,5 @@
-C Fix\scompiler\swarnings\sin\slemon\sby\sremoving\ssome\sof\sthe\scode\sadded\sby\nRyan\sGordon\sin\s[1e8b842039cc0].
-D 2011-06-20T18:27:23.761
+C More\scompiler\swarning\sfixes.
+D 2011-06-20T19:00:30.991
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -62,9 +62,9 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c e9c4b571212229ace32dc98e5e69e619efd3e2c2
+F ext/fts3/fts3.c f63086fc75c3b70025f2917d211c1b5ea0d41113
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 8ece4390eb44e7179bb05c59d40f447663f5c077
+F ext/fts3/fts3Int.h fa493ccbad78a2c99ad1c984f651c0c202e68536
 F ext/fts3/fts3_aux.c 0ebfa7b86cf8ff6a0861605fcc63b83ec1b70691
 F ext/fts3/fts3_expr.c 23791de01b3a5d313d76e02befd2601d4096bc2b
 F ext/fts3/fts3_hash.c aad95afa01cf2a5ffaa448e4b0ab043880cd1efb
@@ -77,14 +77,14 @@ F ext/fts3/fts3_test.c c0aae3219df989d3e827d07846097adf8cb09945
 F ext/fts3/fts3_tokenizer.c 6089986ebcfc19d4b7aabd2b92773368efa4354f
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 0dde8f307b8045565cf63797ba9acfaff1c50c68
-F ext/fts3/fts3_write.c 5774a7ee9632355ebf1ec4b7a5071fc9ab9eb956
+F ext/fts3/fts3_write.c 194829c8fd024a448fc899e5ff02a8ed06595529
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c eb9ae1d79046bd7871aa97ee6da51eb770134b5a
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 19ed115ba75b8e0815f572cfaa7f864b89523a90
+F ext/rtree/rtree.c b431c54d1ed05f04f2987e8a4fbb931acb40c312
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 28e1b8da4da98093ce3210187434dd760a8d89d8
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -187,7 +187,7 @@ F src/sqliteInt.h 7b7ec2394b94fc4516930cd9dae37af0f9312215
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c c124d55e3e7d156c0fcc62c7f9906de8451547dc
+F src/tclsqlite.c 5db825be61708b1a2b3f8f6e185e9b753829acef
 F src/test1.c efca486a25fb894988e7a82e84579a4e57388a02
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 124ff9735fb6bb7d41de180d6bac90e7b1509432
@@ -946,7 +946,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P f69ed286ffb3f62f5cb5c1f7df55fa4d2468b472
-R 85fd773d96f76df373ae8654723885fd
+P 76b18b2be072b9ea242df4c9535059f7b43f564b
+R 78c1df97ed01817ae07c84e5770b39c1
 U drh
-Z 8273f766e9b20e2bd5443eed5877e83e
+Z 0807b7361b2e2ddd7ca414b20f006eb7

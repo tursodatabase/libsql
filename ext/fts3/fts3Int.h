@@ -249,7 +249,7 @@ struct Fts3Cursor {
   u8 bDesc;                       /* True to sort in descending order */
   int eEvalmode;                  /* An FTS3_EVAL_XX constant */
   int nRowAvg;                    /* Average size of database rows, in pages */
-  int nDoc;                       /* Documents in table */
+  sqlite3_int64 nDoc;             /* Documents in table */
 
   int isMatchinfoNeeded;          /* True when aMatchinfo[] needs filling in */
   u32 *aMatchinfo;                /* Information about most recent match */

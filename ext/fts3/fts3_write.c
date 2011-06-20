@@ -1323,7 +1323,7 @@ int sqlite3Fts3MsrOvfl(
     if( !fts3SegReaderIsPending(pReader) 
      && !fts3SegReaderIsRootOnly(pReader) 
     ){
-      int jj;
+      sqlite3_int64 jj;
       for(jj=pReader->iStartBlock; jj<=pReader->iLeafEndBlock; jj++){
         int nBlob;
         rc = sqlite3Fts3ReadBlock(p, jj, 0, &nBlob, 0);
