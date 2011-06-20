@@ -1,5 +1,5 @@
-C Update\sa\scouple\stest\sscripts\sto\saccount\sfor\smore\sfloating\spoint\svariation\sunder\svarious\sWindows-based\sversions\sof\sTCL.\nUpdate\sa\scouple\stest\sscripts\sto\saccount\sfor\smore\sfloating\spoint\sdisplay\svariation\sin\sWindows-based\sversions\sof\sTCL.
-D 2011-06-20T17:41:41.693
+C Rework\sthe\sautoconf\sscript\sto\sbetter\sdeal\swith\sutime()\sand\sdlopen().
+D 2011-06-20T18:00:17.162
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -21,10 +21,10 @@ F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
-F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
+F config.h.in 405a958bdb3af382a809dccb08a44694923ddd61
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 1c31f231ba59b71ff81dbf5c7c7594fdc83803d5 x
-F configure.ac 87a3c71bbe9c925381c154413eea7f3cdc397244
+F configure f9e97ee7cdc9848e2f3f5ef015fdf861f46fb1bf x
+F configure.ac 298a759c086e72c013da459c2aec02a104f4224f
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/pager-invariants.txt 870107036470d7c419e93768676fae2f8749cf9e
@@ -165,7 +165,7 @@ F src/os.c 22ac61d06e72a0dac900400147333b07b13d8e1d
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c fd4e9588ff0ce09720721ce739ab2682202875ae
+F src/os_unix.c 07acbb3e074e52b48a4248c06f66c9a91db1a0ce
 F src/os_win.c 218b899469e570d46eb8147c2383075f7c026230
 F src/pager.c 120550e7ef01dafaa2cbb4a0528c0d87c8f12b41
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
@@ -946,7 +946,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P fe62179efdea40887e23a16f898060b879013824
-R f84c264b9f26192970f8ac141b9cac46
-U shaneh
-Z 139c54968e5481310a6c6f5918c1c65b
+P a4a8402bfec381dd23b7a96c2f4b52c0dd728a7a
+R 16536365517218923dc08762ed8b0c16
+U drh
+Z f0e3294585f4569580d0a1d0b238c6dc

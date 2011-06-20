@@ -138,6 +138,10 @@
 # include <sys/mount.h>
 #endif
 
+#ifdef HAVE_UTIME
+# include <utime.h>
+#endif
+
 /*
 ** Allowed values of unixFile.fsFlags
 */
@@ -1939,8 +1943,10 @@ static int dotlockLock(sqlite3_file *id, int eFileLock) {
   */
   if( pFile->eFileLock > NO_LOCK ){
     pFile->eFileLock = eFileLock;
-#if !OS_VXWORKS
     /* Always update the timestamp on the old file */
+#ifdef HAVE_UTIME
+    utime(zLockFile, NULL);
+#else
     utimes(zLockFile, NULL);
 #endif
     return SQLITE_OK;
