@@ -148,14 +148,40 @@ proc mit {blob} {
 }
 db func mit mit
 
-proc fix_near_expr {expr} { 
+proc fix_phrase_expr {cols expr colfiltervar} {
+  upvar $colfiltervar iColFilter
+
   set out [list]
-  lappend out [lindex $expr 0]
+  foreach t $expr {
+    if {[string match *:* $t]} {
+      set col [lindex [split $t :] 0]
+      set t   [lindex [split $t :] 1]
+      set iCol [lsearch $cols $col]
+      if {$iCol<0} { error "unknown column: $col" }
+      if {$iColFilter < 0} {
+        set iColFilter $iCol
+      } elseif {$iColFilter != $iCol} {
+        set iColFilter [llength $cols]
+      }
+    }
+    lappend out $t
+  }
+
+  return $out
+}
+
+proc fix_near_expr {cols expr colfiltervar} { 
+  upvar $colfiltervar iColFilter
+ 
+  set iColFilter -1
+
+  set out [list]
+  lappend out [fix_phrase_expr $cols [lindex $expr 0] iColFilter]
   foreach {a b} [lrange $expr 1 end] {
     if {[string match -nocase near $a]}   { set a 10 }
     if {[string match -nocase near/* $a]} { set a [string range $a 5 end] }
     lappend out $a
-    lappend out $b
+    lappend out [fix_phrase_expr $cols $b iColFilter]
   }
   return $out
 }
@@ -165,7 +191,10 @@ proc get_single_near_results {tbl expr deferred arrayvar nullvar} {
   upvar $nullvar nullentry
   catch {array unset aMatchinfo}
 
-  set expr [fix_near_expr $expr]
+  set cols [list]
+  set miss [list]
+  db eval "PRAGMA table_info($tbl)" A { lappend cols $A(name) ; lappend miss 0 }
+  set expr [fix_near_expr $cols $expr iColFilter]
 
   # Calculate the expected results using [fts3_near_match]. The following
   # loop populates the "hits" and "counts" arrays as follows:
@@ -183,8 +212,12 @@ proc get_single_near_results {tbl expr deferred arrayvar nullvar} {
     set iCol 0
     foreach col [lrange $d(*) 1 end] {
       set docid $d(docid)
-      set hit [fts3_near_match $d($col) $expr -p counts($docid,$iCol)]
-      if {$hit} { set hits($docid) 1 }
+      if {$iColFilter<0 || $iCol==$iColFilter} {
+        set hit [fts3_near_match $d($col) $expr -p counts($docid,$iCol)]
+        if {$hit} { set hits($docid) 1 }
+      } else {
+        set counts($docid,$iCol) $miss
+      }
       incr iCol
     }
   }
@@ -536,9 +569,8 @@ foreach {tn create} {
 #
 set chunkconfig [fts3_configure_incr_load 1 1]
 foreach {tn create pending} {
-  2    "fts4(a, b, order=ASC, prefix=1)"             1
-
   1    "fts4(a, b)"                                  1
+  2    "fts4(a, b, order=ASC, prefix=1)"             1
   3    "fts4(a, b, order=ASC,  prefix=1,3)"          0
   4    "fts4(a, b, order=DESC, prefix=2,4)"          0
   5    "fts4(a, b, order=DESC, prefix=1)"            0
@@ -586,6 +618,40 @@ foreach {tn create pending} {
   if {$pending} {execsql COMMIT}
 }
 eval fts3_configure_incr_load $chunkconfig
+
+foreach {tn pending create} {
+  1    0 "fts4(a, b, c, d)"
+  2    1 "fts4(a, b, c, d)"
+  3    0 "fts4(a, b, c, d, order=DESC)"
+  4    1 "fts4(a, b, c, d, order=DESC)"
+} {
+  execsql [subst {
+    DROP TABLE IF EXISTS t1;
+    CREATE VIRTUAL TABLE t1 USING $create;
+  }]
+
+
+  if {$pending} { execsql BEGIN }
+
+  foreach {a b c d} {
+    "A B C" "D E F" "G H I" "J K L"
+    "B C D" "E F G" "H I J" "K L A"
+    "C D E" "F G H" "I J K" "L A B"
+    "D E F" "G H I" "J K L" "A B C"
+    "E F G" "H I J" "K L A" "B C D"
+    "F G H" "I J K" "L A B" "C D E"
+  } {
+    execsql { INSERT INTO t1 VALUES($a, $b, $c, $d) }
+  }
+
+  do_fts3query_test 6.$tn.1 t1 {b:G}
+  do_fts3query_test 6.$tn.2 t1 {b:G AND c:I}
+  do_fts3query_test 6.$tn.3 t1 {b:G NEAR c:I}
+  do_fts3query_test 6.$tn.4 t1 {a:C OR b:G OR c:K OR d:C}
+  do_fts3query_test 6.$tn.5 t1 {a:G OR b:G}
+
+  catchsql { COMMIT }
+}
 
 set sqlite_fts3_enable_parentheses $sfep
 finish_test
