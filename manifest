@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\schanges\sinto\sthe\ssessions\sbranch.
-D 2011-06-20T10:44:10.301
+C (no\scomment)
+D 2011-06-20T11:17:11.686
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -73,7 +73,7 @@ F ext/fts3/fts3_icu.c 6c8f395cdf9e1e3afa7fadb7e523dbbf381c6dfa
 F ext/fts3/fts3_porter.c 8d946908f4812c005d3d33fcbe78418b1f4eb70c
 F ext/fts3/fts3_snippet.c a44b38a07d39701ab6d20d7d89fcafe193bf3680
 F ext/fts3/fts3_term.c 51e384269edcc015e8b555fdad2338f053388975
-F ext/fts3/fts3_test.c 4e833729c13cea9a6bb98d3b353f6e3b8f756004
+F ext/fts3/fts3_test.c b66f6c17f3430b3078d0bc5a77ecb124e5ffc901
 F ext/fts3/fts3_tokenizer.c 90ba6cdd8bb1b3686ab7a3d72333131e13c8fdb2
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 0dde8f307b8045565cf63797ba9acfaff1c50c68
@@ -197,7 +197,7 @@ F src/sqliteInt.h 928caa40080d47e8f92e1edee83f6249d03c5862
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c 761d9d7a7b79a41d5a237e6c5c350a1c719ec983
+F src/tclsqlite.c 2c9ac84e46f9753e05dff1f1bfc745a390ebeb64
 F src/test1.c efca486a25fb894988e7a82e84579a4e57388a02
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 124ff9735fb6bb7d41de180d6bac90e7b1509432
@@ -466,7 +466,7 @@ F test/fts3am.test 218aa6ba0dfc50c7c16b2022aac5c6be593d08d8
 F test/fts3an.test a49ccadc07a2f7d646ec1b81bc09da2d85a85b18
 F test/fts3ao.test b83f99f70e9eec85f27d75801a974b3f820e01f9
 F test/fts3atoken.test 402ef2f7c2fb4b3d4fa0587df6441c1447e799b3
-F test/fts3auto.test b0d360b331ff68bd9fb497a6192d23dc0783637c
+F test/fts3auto.test f1cb0a55130897013ca5850dbee2945c2908a45a
 F test/fts3aux1.test 0b02743955d56fc0d4d66236a26177bd1b726de0
 F test/fts3b.test e93bbb653e52afde110ad53bbd793f14fe7a8984
 F test/fts3c.test fc723a9cf10b397fdfc2b32e73c53c8b1ec02958
@@ -957,7 +957,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 832886b1e6edb916d9824924c7d88202f4eb1969 228c43c726e637daadc0c9b5a8b24243f239b1cf
-R 425dc88cb473dc3555e5dfae20be1cc8
-U drh
-Z d13f89a0688fa26bf060c192253dab5c
+P 4c5e276c902e0b93cfc05bf2e1db966ecdac0ed0 e539d08a4dda073dc67dc39a104f89374d3bd8e9
+R f0476f177016b146d1b12f97f172f0c0
+U dan
+Z 9b9916cabe28f8e3dca16fc079f9fb31
