@@ -1,5 +1,5 @@
-C Fix\svarious\sharmless\scompiler\swarnings\sin\sFTS3\sand\sRTREE.
-D 2011-06-20T17:24:29.807
+C Update\sa\scouple\stest\sscripts\sto\saccount\sfor\smore\sfloating\spoint\svariation\sunder\svarious\sWindows-based\sversions\sof\sTCL.\nUpdate\sa\scouple\stest\sscripts\sto\saccount\sfor\smore\sfloating\spoint\sdisplay\svariation\sin\sWindows-based\sversions\sof\sTCL.
+D 2011-06-20T17:41:41.693
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -387,7 +387,7 @@ F test/e_vacuum.test 6c09c2af7f2f140518f371c5342100118f779dcf
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
-F test/enc4.test 4b575ef09e0eff896e73bd24076f96c2aa6a42de
+F test/enc4.test b145fa25feb56ea1d51a5bc43ca268c0cf691a67
 F test/eqp.test f14fadd76da53405e9885e2431cacf7191d83cdb
 F test/eval.test bc269c365ba877554948441e91ad5373f9f91be3
 F test/exclusive.test 53e1841b422e554cecf0160f937c473d6d0e3062
@@ -695,7 +695,7 @@ F test/tclsqlite.test 8c154101e704170c2be10f137a5499ac2c6da8d3
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test f42121a0d29a62f00f93274464164177ab1cc24a
 F test/temptrigger.test b0273db072ce5f37cf19140ceb1f0d524bbe9f05
-F test/tester.tcl 76222602e59047c6ef119473c7a2ea7c6ee73d09
+F test/tester.tcl 78e63a11eaaec5c2b3c74977d61bf70666d8393f
 F test/thread001.test a3e6a7254d1cb057836cb3145b60c10bf5b7e60f
 F test/thread002.test afd20095e6e845b405df4f2c920cb93301ca69db
 F test/thread003.test b824d4f52b870ae39fc5bae4d8070eca73085dca
@@ -946,7 +946,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 161379d205455a7a4927a76efd4da75a98182854
-R 101f851ee84fff388935071d5ee10aa7
-U drh
-Z d31f9f2e52718650f4fd972489a8ff5b
+P fe62179efdea40887e23a16f898060b879013824
+R f84c264b9f26192970f8ac141b9cac46
+U shaneh
+Z 139c54968e5481310a6c6f5918c1c65b
