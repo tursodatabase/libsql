@@ -1,5 +1,5 @@
-C Fix\sdocumentation\stypos.\s\sNo\schanges\sto\scode.
-D 2011-06-20T20:39:12.063
+C Add\sadditional\serror\scheck\sfor\sdisk\sfull\son\sWindows.
+D 2011-06-20T20:48:09.429
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 07acbb3e074e52b48a4248c06f66c9a91db1a0ce
-F src/os_win.c 218b899469e570d46eb8147c2383075f7c026230
+F src/os_win.c eafcd6b91cf204a7ef29ac1ef2a1b7132e132e58
 F src/pager.c 120550e7ef01dafaa2cbb4a0528c0d87c8f12b41
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -946,7 +946,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 9024955973e90661c99efa2aad1f8c421ee93802
-R 96b31f6fed29106661e42f2100d8d49c
-U drh
-Z db5a97582df1de0a92a50868e533957b
+P 3276f3f7c90e356a9715f6b0a95cf48169f8d9f0
+R 36f6f0e4631f704d65d595ab5602f5ae
+U shaneh
+Z 2fbdfbb10586425f4553f2f3aade499b
