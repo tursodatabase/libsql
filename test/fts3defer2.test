@@ -48,6 +48,10 @@ do_execsql_test 1.1.4 {
   UPDATE t1_segments SET block = zeroblob(length(block)) WHERE length(block)>10000;
 } {2}
 
+do_execsql_test 1.2.0 {
+  SELECT content FROM t1 WHERE t1 MATCH 'f (e a)';
+} {{a b c d e f a x y}}
+
 do_execsql_test 1.2.1 {
   SELECT content FROM t1 WHERE t1 MATCH 'f (e NEAR/2 a)';
 } {{a b c d e f a x y}}
@@ -58,7 +62,7 @@ do_execsql_test 1.2.2 {
 } [list                              \
    {a b c d [e] [f] [a] x y}         \
    {0 1 8 1 0 0 10 1 0 2 12 1}       \
-   [list 3 1   1 1 1   1 8 8   1 8 8   8 5001 9]
+   [list 3 1   1 1 1   1 1 1   1 1 1   8 5001 9]
 ]
 
 do_execsql_test 1.2.3 {
@@ -67,7 +71,7 @@ do_execsql_test 1.2.3 {
 } [list                                 \
    {[a] b c d [e] [f] [a] x y}          \
    {0 2 0 1 0 1 8 1 0 0 10 1 0 2 12 1}  \
-   [list 3 1   1 1 1   1 8 8   2 8 8   8 5001 9]
+   [list 3 1   1 1 1   1 1 1   2 2 1   8 5001 9]
 ]
 
 do_execsql_test 1.3.1 { DROP TABLE t1 }
@@ -99,8 +103,14 @@ foreach {tn sql} {
     [list 2 1  1 54 54  1 3 3  54 372 7]        \
   ]
 
-  set sqlite_fts3_enable_parentheses 1
   do_execsql_test 2.2.$tn.2 {
+    SELECT mit(matchinfo(t2, 'x')) FROM t2 WHERE t2 MATCH 'g z';
+  } [list                                       \
+    [list 1 2 2  1 54 54]                       \
+  ]
+
+  set sqlite_fts3_enable_parentheses 1
+  do_execsql_test 2.2.$tn.3 {
     SELECT mit(matchinfo(t2, 'x')) FROM t2 WHERE t2 MATCH 'g OR (g z)';
   } [list                                       \
     [list 1 2 2  1 2 2   1 54 54]               \

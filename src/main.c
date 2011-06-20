@@ -1959,9 +1959,9 @@ int sqlite3ParseUri(
           const char *z;
           int mode;
         } *aMode = 0;
-        char *zModeType;
-        int mask;
-        int limit;
+        char *zModeType = 0;
+        int mask = 0;
+        int limit = 0;
 
         if( nOpt==5 && memcmp("cache", zOpt, 5)==0 ){
           static struct OpenMode aCacheMode[] = {

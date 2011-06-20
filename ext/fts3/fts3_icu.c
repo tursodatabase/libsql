@@ -10,10 +10,8 @@
 **
 *************************************************************************
 ** This file implements a tokenizer for fts3 based on the ICU library.
-** 
-** $Id: fts3_icu.c,v 1.3 2008/09/01 18:34:20 danielk1977 Exp $
 */
-
+#include "fts3Int.h"
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
 #ifdef SQLITE_ENABLE_ICU
 

@@ -379,7 +379,8 @@ TESTSRC = \
   $(TOP)/src/test_vfs.c \
   $(TOP)/src/test_wholenumber.c \
   $(TOP)/src/test_wsd.c       \
-  $(TOP)/ext/fts3/fts3_term.c 
+  $(TOP)/ext/fts3/fts3_term.c \
+  $(TOP)/ext/fts3/fts3_test.c 
 
 # Source code to the library files needed by the test fixture
 #

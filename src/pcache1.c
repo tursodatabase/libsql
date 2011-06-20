@@ -574,7 +574,7 @@ static sqlite3_pcache *pcache1Create(int szPage, int bPurgeable){
       pGroup = (PGroup*)&pCache[1];
       pGroup->mxPinned = 10;
     }else{
-      pGroup = &pcache1_g.grp;
+      pGroup = &pcache1.grp;
     }
     pCache->pGroup = pGroup;
     pCache->szPage = szPage;

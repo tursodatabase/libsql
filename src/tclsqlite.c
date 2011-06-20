@@ -3733,6 +3733,10 @@ static void init_all(Tcl_Interp *interp){
 #if defined(SQLITE_ENABLE_SESSION) && defined(SQLITE_ENABLE_PREUPDATE_HOOK)
     extern int TestSession_Init(Tcl_Interp*);
 #endif
+#ifdef SQLITE_ENABLE_FTS3
+    extern int Sqlitetestfts3_Init(Tcl_Interp *interp);
+#endif
+
 #ifdef SQLITE_ENABLE_ZIPVFS
     extern int Zipvfs_Init(Tcl_Interp*);
     Zipvfs_Init(interp);
@@ -3774,6 +3778,9 @@ static void init_all(Tcl_Interp *interp){
     Sqlitetestwholenumber_Init(interp);
 #if defined(SQLITE_ENABLE_SESSION) && defined(SQLITE_ENABLE_PREUPDATE_HOOK)
     TestSession_Init(interp);
+#endif
+#ifdef SQLITE_ENABLE_FTS3
+    Sqlitetestfts3_Init(interp);
 #endif
 
     Tcl_CreateObjCommand(interp,"load_testfixture_extensions",init_all_cmd,0,0);

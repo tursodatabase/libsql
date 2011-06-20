@@ -102,7 +102,7 @@ int sqlite3_reset(sqlite3_stmt *pStmt){
     Vdbe *v = (Vdbe*)pStmt;
     sqlite3_mutex_enter(v->db->mutex);
     rc = sqlite3VdbeReset(v);
-    sqlite3VdbeMakeReady(v, -1, 0, 0, 0, 0, 0);
+    sqlite3VdbeRewind(v);
     assert( (rc & (v->db->errMask))==rc );
     rc = sqlite3ApiExit(v->db, rc);
     sqlite3_mutex_leave(v->db->mutex);
@@ -1188,32 +1188,6 @@ int sqlite3_bind_parameter_count(sqlite3_stmt *pStmt){
 }
 
 /*
-** Create a mapping from variable numbers to variable names
-** in the Vdbe.azVar[] array, if such a mapping does not already
-** exist.
-*/
-static void createVarMap(Vdbe *p){
-  if( !p->okVar ){
-    int j;
-    Op *pOp;
-    sqlite3_mutex_enter(p->db->mutex);
-    /* The race condition here is harmless.  If two threads call this
-    ** routine on the same Vdbe at the same time, they both might end
-    ** up initializing the Vdbe.azVar[] array.  That is a little extra
-    ** work but it results in the same answer.
-    */
-    for(j=0, pOp=p->aOp; j<p->nOp; j++, pOp++){
-      if( pOp->opcode==OP_Variable ){
-        assert( pOp->p1>0 && pOp->p1<=p->nVar );
-        p->azVar[pOp->p1-1] = pOp->p4.z;
-      }
-    }
-    p->okVar = 1;
-    sqlite3_mutex_leave(p->db->mutex);
-  }
-}
-
-/*
 ** Return the name of a wildcard parameter.  Return NULL if the index
 ** is out of range or if the wildcard is unnamed.
 **
@@ -1221,10 +1195,9 @@ static void createVarMap(Vdbe *p){
 */
 const char *sqlite3_bind_parameter_name(sqlite3_stmt *pStmt, int i){
   Vdbe *p = (Vdbe*)pStmt;
-  if( p==0 || i<1 || i>p->nVar ){
+  if( p==0 || i<1 || i>p->nzVar ){
     return 0;
   }
-  createVarMap(p);
   return p->azVar[i-1];
 }
 
@@ -1238,9 +1211,8 @@ int sqlite3VdbeParameterIndex(Vdbe *p, const char *zName, int nName){
   if( p==0 ){
     return 0;
   }
-  createVarMap(p); 
   if( zName ){
-    for(i=0; i<p->nVar; i++){
+    for(i=0; i<p->nzVar; i++){
       const char *z = p->azVar[i];
       if( z && memcmp(z,zName,nName)==0 && z[nName]==0 ){
         return i+1;
