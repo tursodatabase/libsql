@@ -2680,8 +2680,8 @@ static int fts3SyncMethod(sqlite3_vtab *pVtab){
 ** Implementation of xBegin() method. This is a no-op.
 */
 static int fts3BeginMethod(sqlite3_vtab *pVtab){
-  UNUSED_PARAMETER(pVtab);
   TESTONLY( Fts3Table *p = (Fts3Table*)pVtab );
+  UNUSED_PARAMETER(pVtab);
   assert( p->pSegments==0 );
   assert( p->nPendingData==0 );
   assert( p->inTransaction!=1 );
@@ -2696,8 +2696,8 @@ static int fts3BeginMethod(sqlite3_vtab *pVtab){
 ** by fts3SyncMethod().
 */
 static int fts3CommitMethod(sqlite3_vtab *pVtab){
-  UNUSED_PARAMETER(pVtab);
   TESTONLY( Fts3Table *p = (Fts3Table*)pVtab );
+  UNUSED_PARAMETER(pVtab);
   assert( p->nPendingData==0 );
   assert( p->inTransaction!=0 );
   assert( p->pSegments==0 );

@@ -1,5 +1,5 @@
-C Add\sadditional\serror\scheck\sfor\sdisk\sfull\son\sWindows.
-D 2011-06-20T20:48:09.429
+C Fix\sa\scouple\sof\scompiler\sissues\son\sWindows\sdue\sto\swarning\sclean\sup.
+D 2011-06-20T20:50:49.490
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -62,7 +62,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c f63086fc75c3b70025f2917d211c1b5ea0d41113
+F ext/fts3/fts3.c 1c8a45dfd6836e7dea0307008079793ac0fc3b68
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h fa493ccbad78a2c99ad1c984f651c0c202e68536
 F ext/fts3/fts3_aux.c 0ebfa7b86cf8ff6a0861605fcc63b83ec1b70691
@@ -946,7 +946,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 3276f3f7c90e356a9715f6b0a95cf48169f8d9f0
-R 36f6f0e4631f704d65d595ab5602f5ae
+P 3ee5d1a51d6347858734b7b595771ae9cd2cc89d
+R 38b91ba83a0690d05159e3865af95b9c
 U shaneh
-Z 2fbdfbb10586425f4553f2f3aade499b
+Z 2b8dce98f298f90cca367918eb5b7523
