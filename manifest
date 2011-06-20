@@ -1,9 +1,9 @@
-C Fix\sa\scouple\sof\scompiler\sissues\son\sWindows\sdue\sto\swarning\sclean\sup.
-D 2011-06-20T20:50:49.490
+C Add\sability\sto\spass\slinker\sspecific\soptions\sto\snmake\smakefile.
+D 2011-06-20T20:52:32.797
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc ce73810c83d4bd202deb59d547a5df4a5cfef7c9
+F Makefile.msc c942f2ceb9385d6c75b01ee3d38d8a189fb76e8c
 F Makefile.vxworks c85ec1d8597fe2f7bc225af12ac1666e21379151
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 3fcdd7fbe3eb282df3978fe77288544543767961
@@ -946,7 +946,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 3ee5d1a51d6347858734b7b595771ae9cd2cc89d
-R 38b91ba83a0690d05159e3865af95b9c
+P 81e6f151d384fa1f1474175b39ad6dfa64f8da0d
+R 388ef8da117dd58630bcba36b4ab36b5
 U shaneh
-Z 2b8dce98f298f90cca367918eb5b7523
+Z 93f23f7fb76ab7ba5824bd093c1cad99
