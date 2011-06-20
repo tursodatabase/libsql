@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swhere\sFTS\stest\scode\swas\snot\sbeing\sincluded\sin\sthe\stestfixture\sbuild\swhen\sSQLITE_ENABLE_FTS4\swas\sdefined.
-D 2011-06-20T11:15:06.397
+C Update\ssome\stest\scases\sin\sfts4aa.test.
+D 2011-06-20T12:24:26.051
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -482,7 +482,7 @@ F test/fts3rnd.test 1320d8826a845e38a96e769562bf83d7a92a15d0
 F test/fts3shared.test 8bb266521d7c5495c0ae522bb4d376ad5387d4a2
 F test/fts3snippet.test a12f22a3ba4dd59751a57c79b031d07ab5f51ddd
 F test/fts3sort.test 63d52c1812904b751f9e1ff487472e44833f5402
-F test/fts4aa.test eadf85621c0a113d4c7ad3ccbf8441130e007b8f
+F test/fts4aa.test b99ad4d9a43a00efd096ef4d0b082de58d848d41
 F test/func.test 6c5ce11e3a0021ca3c0649234e2d4454c89110ca
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 7ba2ca5a1e9bca900ba2c230cf04bd67184bc1bc
@@ -946,7 +946,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P d138b0e65953c529619d64e662bdb5478d7d79c3
-R 3d60296c03d3d0e2521fbba8cb89cf3f
+P e539d08a4dda073dc67dc39a104f89374d3bd8e9
+R b083bc1ea242b4cf982414de51a9029e
 U dan
-Z 36fbe60e74554514c6ed759d1d5c5a4c
+Z ae813637c1aa99808ee254198982947e
