@@ -152,7 +152,7 @@ do_insert_tests e_insert-1.2 -error {
     4    "INSERT INTO a2 VALUES(1,2,3,4,5)" {a2 3 5}
 }
 
-# EVIDENCE-OF: R-52422-65517 In this case the result of evaluting the
+# EVIDENCE-OF: R-04006-57648 In this case the result of evaluating the
 # left-most expression in the VALUES list is inserted into the left-most
 # column of the new row, and so on.
 #
