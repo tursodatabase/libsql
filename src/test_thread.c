@@ -404,9 +404,9 @@ static int clock_seconds_proc(
 */
 typedef struct UnlockNotification UnlockNotification;
 struct UnlockNotification {
-  int fired;                           /* True after unlock event has occured */
-  pthread_cond_t cond;                 /* Condition variable to wait on */
-  pthread_mutex_t mutex;               /* Mutex to protect structure */
+  int fired;                         /* True after unlock event has occurred */
+  pthread_cond_t cond;               /* Condition variable to wait on */
+  pthread_mutex_t mutex;             /* Mutex to protect structure */
 };
 
 /*

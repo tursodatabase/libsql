@@ -1,5 +1,5 @@
-C Add\sability\sto\spass\slinker\sspecific\soptions\sto\snmake\smakefile.
-D 2011-06-20T20:52:32.797
+C Fix\smore\sdocumentation\stypos.
+D 2011-06-20T21:47:58.852
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -227,7 +227,7 @@ F src/test_stat.c f682704b5d1ba8e1d4e7e882a6d7922e2dcf066c
 F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c 162c4ec0137a549c009bb9ecab550527743cfc5d
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
-F src/test_thread.c 361ae0a0f1cbf5a28ad0388a258b104017a370c0
+F src/test_thread.c fe9a7803fc1d69cccb60f016f28c1cedf2d9fcfa
 F src/test_vfs.c e7855568dfa1e0ba73668d273b65605d9f8b77e8
 F src/test_vfstrace.c 0b884e06094a746da729119a2cabdc7aa790063d
 F src/test_wholenumber.c 6129adfbe7c7444f2e60cc785927f3aa74e12290
@@ -238,7 +238,7 @@ F src/update.c 80d77311d91ebc06b27149e75701f1b3e9356622
 F src/utf.c c53eb7404b3eb5c1cbb5655c6a7a0e0ce6bd50f0
 F src/util.c 0f33bbbdfcc4a2d8cf20c3b2a16ffc3b57c58a70
 F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
-F src/vdbe.c 9eef9bb0d4a0de06cf904476eadf58395971e35a
+F src/vdbe.c 50b5b4ef29d928a4f60905f820ee1ab2f8ced29f
 F src/vdbe.h 5cf09e7ee8a3f7d93bc51f196a96550786afe7a1
 F src/vdbeInt.h ad84226cc0adcb1185c22b70696b235a1678bb45
 F src/vdbeapi.c 0eeadc75e44a30efd996d6af6e7c5a2488e35be8
@@ -946,7 +946,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 81e6f151d384fa1f1474175b39ad6dfa64f8da0d
-R 388ef8da117dd58630bcba36b4ab36b5
-U shaneh
-Z 93f23f7fb76ab7ba5824bd093c1cad99
+P b4f09c9393ce703062170220af20a23fdcf53494
+R c603a648180bca7d3947c59e7b39857a
+U drh
+Z fdef6d940494abc4b720172bd995c022
