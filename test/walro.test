@@ -17,12 +17,14 @@ source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 set ::testprefix walro
 
+# These tests are only going to work on unix.
+#
+if {$::tcl_platform(platform) != "unix"} {
+  finish_test
+  return
+}
 
 do_multiclient_test tn {
-  # These tests are only going to work on unix.
-  #
-  if {$tcl_platform(platform) != "unix"} continue
-
   # Do not run tests with the connections in the same process.
   #
   if {$tn==2} continue

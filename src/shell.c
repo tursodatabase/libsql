@@ -2302,6 +2302,11 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     enableTimer = booleanValue(azArg[1]);
   }else
   
+  if( c=='v' && strncmp(azArg[0], "version", n)==0 ){
+    printf("SQLite %s %s\n",
+        sqlite3_libversion(), sqlite3_sourceid());
+  }else
+
   if( c=='w' && strncmp(azArg[0], "width", n)==0 && nArg>1 ){
     int j;
     assert( nArg<=ArraySize(azArg) );
@@ -2836,7 +2841,7 @@ int main(int argc, char **argv){
     }else if( strcmp(z,"-bail")==0 ){
       bail_on_error = 1;
     }else if( strcmp(z,"-version")==0 ){
-      printf("%s\n", sqlite3_libversion());
+      printf("%s %s\n", sqlite3_libversion(), sqlite3_sourceid());
       return 0;
     }else if( strcmp(z,"-interactive")==0 ){
       stdin_is_interactive = 1;
@@ -2881,10 +2886,10 @@ int main(int argc, char **argv){
       char *zHistory = 0;
       int nHistory;
       printf(
-        "SQLite version %s\n"
+        "SQLite version %s %.19s\n"
         "Enter \".help\" for instructions\n"
         "Enter SQL statements terminated with a \";\"\n",
-        sqlite3_libversion()
+        sqlite3_libversion(), sqlite3_sourceid()
       );
       zHome = find_home_dir();
       if( zHome ){

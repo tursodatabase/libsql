@@ -20,6 +20,11 @@ if {[permutation] == "inmemory_journal"} {
   return
 }
 
+if {$::tcl_platform(platform)=="windows"} {
+  finish_test
+  return
+}
+
 set a_string_counter 1
 proc a_string {n} {
   global a_string_counter

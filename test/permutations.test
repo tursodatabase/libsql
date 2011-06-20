@@ -179,10 +179,11 @@ test_suite "fts3" -prefix "" -description {
   fts3atoken.test fts3b.test fts3c.test fts3cov.test fts3d.test
   fts3defer.test fts3defer2.test fts3e.test fts3expr.test fts3expr2.test 
   fts3near.test fts3query.test fts3shared.test fts3snippet.test 
+  fts3sort.test
 
   fts3fault.test fts3malloc.test fts3matchinfo.test
 
-  fts3aux1.test fts3comp1.test
+  fts3aux1.test fts3comp1.test fts3auto.test
 }
 
 
@@ -528,7 +529,7 @@ test_suite "inmemory_journal" -description {
   stmt.test
 
   # WAL mode is different.
-  wal*
+  wal* tkt-2d1a5c67d.test
 }]
 
 ifcapable mem3 {

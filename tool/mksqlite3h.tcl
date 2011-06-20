@@ -65,6 +65,9 @@ close $in
 set varpattern {^[a-zA-Z][a-zA-Z_0-9 *]+sqlite3_[_a-zA-Z0-9]+(\[|;| =)}
 set declpattern {^ *[a-zA-Z][a-zA-Z_0-9 ]+ \**sqlite3_[_a-zA-Z0-9]+\(}
 
+# Force the output to use unix line endings, even on Windows.
+fconfigure stdout -translation lf
+
 # Process the src/sqlite.h.in ext/rtree/sqlite3rtree.h files.
 #
 foreach file [list $TOP/src/sqlite.h.in $TOP/ext/rtree/sqlite3rtree.h] {

@@ -1619,8 +1619,8 @@ void sqlite3EndTable(
 #endif
 
     /* Reparse everything to update our internal data structures */
-    sqlite3VdbeAddOp4(v, OP_ParseSchema, iDb, 0, 0,
-        sqlite3MPrintf(db, "tbl_name='%q'",p->zName), P4_DYNAMIC);
+    sqlite3VdbeAddParseSchemaOp(v, iDb,
+               sqlite3MPrintf(db, "tbl_name='%q'", p->zName));
   }
 
 
@@ -2817,9 +2817,8 @@ Index *sqlite3CreateIndex(
     if( pTblName ){
       sqlite3RefillIndex(pParse, pIndex, iMem);
       sqlite3ChangeCookie(pParse, iDb);
-      sqlite3VdbeAddOp4(v, OP_ParseSchema, iDb, 0, 0,
-         sqlite3MPrintf(db, "name='%q' AND type='index'", pIndex->zName), 
-         P4_DYNAMIC);
+      sqlite3VdbeAddParseSchemaOp(v, iDb,
+         sqlite3MPrintf(db, "name='%q' AND type='index'", pIndex->zName));
       sqlite3VdbeAddOp1(v, OP_Expire, 0);
     }
   }

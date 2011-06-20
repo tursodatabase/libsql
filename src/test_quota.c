@@ -323,7 +323,7 @@ static int quotaOpen(
           pFile=pFile->pNext){}
       if( pFile==0 ){
         int nName = strlen(zName);
-        pFile = sqlite3_malloc( sizeof(*pFile) + nName + 1 );
+        pFile = (quotaFile *)sqlite3_malloc( sizeof(*pFile) + nName + 1 );
         if( pFile==0 ){
           quotaLeave();
           pSubOpen->pMethods->xClose(pSubOpen);
@@ -683,7 +683,7 @@ int sqlite3_quota_set(
       quotaLeave();
       return SQLITE_OK;
     }
-    pGroup = sqlite3_malloc( sizeof(*pGroup) + nPattern + 1 );
+    pGroup = (quotaGroup *)sqlite3_malloc( sizeof(*pGroup) + nPattern + 1 );
     if( pGroup==0 ){
       quotaLeave();
       return SQLITE_NOMEM;

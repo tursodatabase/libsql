@@ -441,6 +441,8 @@ do_test pager1.4.2.1 {
   db close
   tstvfs delete
 } {}
+
+if {$::tcl_platform(platform)!="windows"} {
 do_test pager1.4.2.2 {
   faultsim_restore_and_reopen
   execsql {
@@ -473,6 +475,7 @@ do_test pager1.4.2.5 {
     PRAGMA integrity_check;
   }
 } {4 ok}
+}
 
 do_test pager1.4.3.1 {
   testvfs tstvfs -default 1
@@ -1548,6 +1551,7 @@ do_execsql_test pager1-13.1.1 {
   UPDATE t1 SET b = a_string(400);
 } {persist}
 
+if {$::tcl_platform(platform)!="windows"} {
 # Run transactions of increasing sizes. Eventually, one (or more than one)
 # of these will write just enough content that one of the old headers created 
 # by the transaction in the block above lies immediately after the content
@@ -1570,7 +1574,9 @@ for {set nUp 1} {$nUp<64} {incr nUp} {
   } {ok}
   db2 close
 }
+}
 
+if {$::tcl_platform(platform)!="windows"} {
 # Same test as above. But this time with an index on the table.
 #
 do_execsql_test pager1-13.2.1 {
@@ -1590,6 +1596,7 @@ for {set nUp 1} {$nUp<64} {incr nUp} {
     execsql { PRAGMA integrity_check } db2
   } {ok}
   db2 close
+}
 }
 
 db close

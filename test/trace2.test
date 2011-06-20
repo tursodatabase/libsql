@@ -141,10 +141,10 @@ ifcapable fts3 {
     INSERT INTO x1(x1) VALUES('optimize');
   } {
     "INSERT INTO x1(x1) VALUES('optimize');"
-    "-- SELECT idx, start_block, leaves_end_block, end_block, root FROM 'main'.'x1_segdir' ORDER BY level DESC, idx ASC"
-    "-- SELECT count(*), max(level) FROM 'main'.'x1_segdir'"
+    "-- SELECT idx, start_block, leaves_end_block, end_block, root FROM 'main'.'x1_segdir' WHERE level BETWEEN ? AND ?ORDER BY level DESC, idx ASC"
+    "-- SELECT max(level) FROM 'main'.'x1_segdir' WHERE level BETWEEN ? AND ?"
     "-- SELECT coalesce((SELECT max(blockid) FROM 'main'.'x1_segments') + 1, 1)"
-    "-- DELETE FROM 'main'.'x1_segdir'"
+    "-- DELETE FROM 'main'.'x1_segdir' WHERE level BETWEEN ? AND ?"
     "-- INSERT INTO 'main'.'x1_segdir' VALUES(?,?,?,?,?,?)"
   }
 }

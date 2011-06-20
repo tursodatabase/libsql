@@ -894,6 +894,18 @@ ifcapable stat2&&utf16 {
   }
 }
 
+# Test that if an OOM error occurs, aux-data is still correctly destroyed.
+# This test case was causing either a memory-leak or an assert() failure
+# at one point, depending on the configuration.
+#
+do_malloc_test 39 -tclprep {
+  sqlite3 db test.db
+} -sqlbody {
+  SELECT test_auxdata('abc', 'def');
+} -cleanup {
+  db close
+}
+
 # Ensure that no file descriptors were leaked.
 do_test malloc-99.X {
   catch {db close}

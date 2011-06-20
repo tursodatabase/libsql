@@ -13,10 +13,6 @@
 */
 #include "sqliteInt.h"
 
-/* Ignore this whole file if pragmas are disabled
-*/
-#if !defined(SQLITE_OMIT_PRAGMA)
-
 /*
 ** Interpret the given string as a safety level.  Return 0 for OFF,
 ** 1 for ON or NORMAL and 2 for FULL.  Return 1 for an empty or 
@@ -52,6 +48,12 @@ static u8 getSafetyLevel(const char *z){
 u8 sqlite3GetBoolean(const char *z){
   return getSafetyLevel(z)&1;
 }
+
+/* The sqlite3GetBoolean() function is used by other modules but the
+** remainder of this file is specific to PRAGMA processing.  So omit
+** the rest of the file if PRAGMAs are omitted from the build.
+*/
+#if !defined(SQLITE_OMIT_PRAGMA)
 
 /*
 ** Interpret the given string as a locking mode value.

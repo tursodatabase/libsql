@@ -353,13 +353,12 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
       testcase( z[0]=='x' ); testcase( z[0]=='X' );
       if( z[1]=='\'' ){
         *tokenType = TK_BLOB;
-        for(i=2; (c=z[i])!=0 && c!='\''; i++){
-          if( !sqlite3Isxdigit(c) ){
-            *tokenType = TK_ILLEGAL;
-          }
+        for(i=2; sqlite3Isxdigit(z[i]); i++){}
+        if( z[i]!='\'' || i%2 ){
+          *tokenType = TK_ILLEGAL;
+          while( z[i] && z[i]!='\'' ){ i++; }
         }
-        if( i%2 || !c ) *tokenType = TK_ILLEGAL;
-        if( c ) i++;
+        if( z[i] ) i++;
         return i;
       }
       /* Otherwise fall through to the next case */

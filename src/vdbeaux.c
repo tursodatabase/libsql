@@ -156,13 +156,6 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
   pOp->p3 = p3;
   pOp->p4.p = 0;
   pOp->p4type = P4_NOTUSED;
-  p->expired = 0;
-  if( op==OP_ParseSchema ){
-    /* Any program that uses the OP_ParseSchema opcode needs to lock
-    ** all btrees. */
-    int j;
-    for(j=0; j<p->db->nDb; j++) sqlite3VdbeUsesBtree(p, j);
-  }
 #ifdef SQLITE_DEBUG
   pOp->zComment = 0;
   if( sqlite3VdbeAddopTrace ) sqlite3VdbePrintOp(0, i, &p->aOp[i]);
@@ -199,6 +192,20 @@ int sqlite3VdbeAddOp4(
   int addr = sqlite3VdbeAddOp3(p, op, p1, p2, p3);
   sqlite3VdbeChangeP4(p, addr, zP4, p4type);
   return addr;
+}
+
+/*
+** Add an OP_ParseSchema opcode.  This routine is broken out from
+** sqlite3VdbeAddOp4() since it needs to also local all btrees.
+**
+** The zWhere string must have been obtained from sqlite3_malloc().
+** This routine will take ownership of the allocated memory.
+*/
+void sqlite3VdbeAddParseSchemaOp(Vdbe *p, int iDb, char *zWhere){
+  int j;
+  int addr = sqlite3VdbeAddOp3(p, OP_ParseSchema, iDb, 0, 0);
+  sqlite3VdbeChangeP4(p, addr, zWhere, P4_DYNAMIC);
+  for(j=0; j<p->db->nDb; j++) sqlite3VdbeUsesBtree(p, j);
 }
 
 /*

@@ -15,10 +15,10 @@
 ** access to the full-text index of an FTS table. 
 */
 
+#include "fts3Int.h"
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
 #ifdef SQLITE_TEST
 
-#include "fts3Int.h"
 #include <string.h>
 #include <assert.h>
 
@@ -27,12 +27,13 @@ typedef struct Fts3termCursor Fts3termCursor;
 
 struct Fts3termTable {
   sqlite3_vtab base;              /* Base class used by SQLite core */
+  int iIndex;                     /* Index for Fts3Table.aIndex[] */
   Fts3Table *pFts3Tab;
 };
 
 struct Fts3termCursor {
   sqlite3_vtab_cursor base;       /* Base class used by SQLite core */
-  Fts3SegReaderCursor csr;        /* Must be right after "base" */
+  Fts3MultiSegReader csr;        /* Must be right after "base" */
   Fts3SegFilter filter;
 
   int isEof;                      /* True if cursor is at EOF */
@@ -56,7 +57,7 @@ struct Fts3termCursor {
 */
 static int fts3termConnectMethod(
   sqlite3 *db,                    /* Database connection */
-  void *pUnused,                  /* Unused */
+  void *pCtx,                     /* Non-zero for an fts4prefix table */
   int argc,                       /* Number of elements in argv array */
   const char * const *argv,       /* xCreate/xConnect argument array */
   sqlite3_vtab **ppVtab,          /* OUT: New sqlite3_vtab object */
@@ -69,8 +70,12 @@ static int fts3termConnectMethod(
   int nByte;                      /* Bytes of space to allocate here */
   int rc;                         /* value returned by declare_vtab() */
   Fts3termTable *p;                /* Virtual table object to return */
+  int iIndex = 0;
 
-  UNUSED_PARAMETER(pUnused);
+  if( argc==5 ){
+    iIndex = atoi(argv[4]);
+    argc--;
+  }
 
   /* The user should specify a single argument - the name of an fts3 table. */
   if( argc!=4 ){
@@ -97,6 +102,8 @@ static int fts3termConnectMethod(
   p->pFts3Tab->zDb = (char *)&p->pFts3Tab[1];
   p->pFts3Tab->zName = &p->pFts3Tab->zDb[nDb+1];
   p->pFts3Tab->db = db;
+  p->pFts3Tab->nIndex = iIndex+1;
+  p->iIndex = iIndex;
 
   memcpy((char *)p->pFts3Tab->zDb, zDb, nDb);
   memcpy((char *)p->pFts3Tab->zName, zFts3, nFts3);
@@ -244,7 +251,8 @@ static int fts3termFilterMethod(
   sqlite3_value **apVal           /* Arguments for the indexing scheme */
 ){
   Fts3termCursor *pCsr = (Fts3termCursor *)pCursor;
-  Fts3Table *pFts3 = ((Fts3termTable *)pCursor->pVtab)->pFts3Tab;
+  Fts3termTable *p = (Fts3termTable *)pCursor->pVtab;
+  Fts3Table *pFts3 = p->pFts3Tab;
   int rc;
 
   UNUSED_PARAMETER(nVal);
@@ -262,7 +270,7 @@ static int fts3termFilterMethod(
   pCsr->filter.flags = FTS3_SEGMENT_REQUIRE_POS|FTS3_SEGMENT_IGNORE_EMPTY;
   pCsr->filter.flags |= FTS3_SEGMENT_SCAN;
 
-  rc = sqlite3Fts3SegReaderCursor(pFts3, FTS3_SEGCURSOR_ALL,
+  rc = sqlite3Fts3SegReaderCursor(pFts3, p->iIndex, FTS3_SEGCURSOR_ALL,
       pCsr->filter.zTerm, pCsr->filter.nTerm, 0, 1, &pCsr->csr
   );
   if( rc==SQLITE_OK ){

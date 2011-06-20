@@ -572,6 +572,7 @@ if {0==[info exists ::G(perm:presql)] || $::G(perm:presql) == ""} {
 
 ifcapable vacuum {
 
+sqlite3_multiplex_shutdown
 do_test multiplex-6.0.0 {
   multiplex_delete test.db
   sqlite3_multiplex_initialize "" 1
