@@ -1,5 +1,5 @@
-C Remove\sthe\sSQLITE_OMIT_CONFLICT_CLAUSE\spreprocessor\sdefine\swhich\swas\sno\nlonger\sin\suse.
-D 2011-06-20T20:15:53.770
+C Fix\sdocumentation\stypos.\s\sNo\schanges\sto\scode.
+D 2011-06-20T20:39:12.063
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -181,7 +181,7 @@ F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c d9d440809025a58547e39f4f268c2a296bfb56ff
 F src/shell.c 0e0173b3e79d956368013e759f084caa7995ecb1
-F src/sqlite.h.in 2f51e4f58b2b4626fcbd9938580e730cb5fb4985
+F src/sqlite.h.in a4d0baabe4f86b3ab9cf56eda23dfd9d022ece0a
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
 F src/sqliteInt.h 7b7ec2394b94fc4516930cd9dae37af0f9312215
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -946,7 +946,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P ed2dda9329ca42e9c0be1986c78b091051e7598f
-R 2e13d3ea53d110b2e8107877a848a618
+P 9024955973e90661c99efa2aad1f8c421ee93802
+R 96b31f6fed29106661e42f2100d8d49c
 U drh
-Z f04a5198d0b0503bfb4459f637e20be0
+Z db5a97582df1de0a92a50868e533957b
