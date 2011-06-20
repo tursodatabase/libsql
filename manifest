@@ -1,5 +1,5 @@
-C Enable\scrnl\sto\snl\stranslation\sfor\sthe\smksqlite3c.tcl\sscript.
-D 2011-06-20T15:24:22.735
+C Fix\svarious\sharmless\scompiler\swarnings\sin\sFTS3\sand\sRTREE.
+D 2011-06-20T17:24:29.807
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -62,7 +62,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c f919a7966426e539b3f39f696bc94269e3726033
+F ext/fts3/fts3.c e9c4b571212229ace32dc98e5e69e619efd3e2c2
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 8ece4390eb44e7179bb05c59d40f447663f5c077
 F ext/fts3/fts3_aux.c 0ebfa7b86cf8ff6a0861605fcc63b83ec1b70691
@@ -71,10 +71,10 @@ F ext/fts3/fts3_hash.c aad95afa01cf2a5ffaa448e4b0ab043880cd1efb
 F ext/fts3/fts3_hash.h 8331fb2206c609f9fc4c4735b9ab5ad6137c88ec
 F ext/fts3/fts3_icu.c 6c8f395cdf9e1e3afa7fadb7e523dbbf381c6dfa
 F ext/fts3/fts3_porter.c 8d946908f4812c005d3d33fcbe78418b1f4eb70c
-F ext/fts3/fts3_snippet.c a44b38a07d39701ab6d20d7d89fcafe193bf3680
-F ext/fts3/fts3_term.c 51e384269edcc015e8b555fdad2338f053388975
-F ext/fts3/fts3_test.c b66f6c17f3430b3078d0bc5a77ecb124e5ffc901
-F ext/fts3/fts3_tokenizer.c 90ba6cdd8bb1b3686ab7a3d72333131e13c8fdb2
+F ext/fts3/fts3_snippet.c 58b2ba2b934c1e2a2f6ac857d7f3c7e1a14b4532
+F ext/fts3/fts3_term.c a5457992723455a58804cb75c8cbd8978db5c2ef
+F ext/fts3/fts3_test.c c0aae3219df989d3e827d07846097adf8cb09945
+F ext/fts3/fts3_tokenizer.c 6089986ebcfc19d4b7aabd2b92773368efa4354f
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 0dde8f307b8045565cf63797ba9acfaff1c50c68
 F ext/fts3/fts3_write.c 5774a7ee9632355ebf1ec4b7a5071fc9ab9eb956
@@ -84,7 +84,7 @@ F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c eb9ae1d79046bd7871aa97ee6da51eb770134b5a
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 4b8438444927191b55de18e00df43b2e02aacbda
+F ext/rtree/rtree.c 19ed115ba75b8e0815f572cfaa7f864b89523a90
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 28e1b8da4da98093ce3210187434dd760a8d89d8
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -946,7 +946,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 65e5f7706d3b6784f9cce315478d7623d6d7e7d9
-R 007272672581ae30c53290e580616a46
+P 161379d205455a7a4927a76efd4da75a98182854
+R 101f851ee84fff388935071d5ee10aa7
 U drh
-Z 7e79762a0452996acbedf9f219efade9
+Z d31f9f2e52718650f4fd972489a8ff5b

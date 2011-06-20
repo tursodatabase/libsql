@@ -1024,7 +1024,7 @@ static int fts3MatchinfoValues(
         
       case FTS3_MATCHINFO_NDOC:
         if( bGlobal ){
-          sqlite3_int64 nDoc;
+          sqlite3_int64 nDoc = 0;
           rc = fts3MatchinfoSelectDoctotal(pTab, &pSelect, &nDoc, 0);
           pInfo->aMatchinfo[0] = (u32)nDoc;
         }

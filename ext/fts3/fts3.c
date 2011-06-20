@@ -1094,7 +1094,7 @@ static int fts3InitVtab(
   /* Fill in the azColumn array */
   for(iCol=0; iCol<nCol; iCol++){
     char *z; 
-    int n;
+    int n = 0;
     z = (char *)sqlite3Fts3NextToken(aCol[iCol], &n);
     memcpy(zCsr, z, n);
     zCsr[n] = '\0';

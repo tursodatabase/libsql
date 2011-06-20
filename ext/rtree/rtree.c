@@ -1565,11 +1565,11 @@ static int ChooseLeaf(
 
   for(ii=0; rc==SQLITE_OK && ii<(pRtree->iDepth-iHeight); ii++){
     int iCell;
-    sqlite3_int64 iBest;
+    sqlite3_int64 iBest = 0;
 
-    float fMinGrowth;
-    float fMinArea;
-    float fMinOverlap;
+    float fMinGrowth = 0.0;
+    float fMinArea = 0.0;
+    float fMinOverlap = 0.0;
 
     int nCell = NCELL(pNode);
     RtreeCell cell;
@@ -1999,9 +1999,9 @@ static int splitNodeStartree(
   int *aSpare;
   int ii;
 
-  int iBestDim;
-  int iBestSplit;
-  float fBestMargin;
+  int iBestDim = 0;
+  int iBestSplit = 0;
+  float fBestMargin = 0.0;
 
   int nByte = (pRtree->nDim+1)*(sizeof(int*)+nCell*sizeof(int));
 
@@ -2023,9 +2023,9 @@ static int splitNodeStartree(
 
   for(ii=0; ii<pRtree->nDim; ii++){
     float margin = 0.0;
-    float fBestOverlap;
-    float fBestArea;
-    int iBestLeft;
+    float fBestOverlap = 0.0;
+    float fBestArea = 0.0;
+    int iBestLeft = 0;
     int nLeft;
 
     for(
@@ -2340,7 +2340,7 @@ static int deleteCell(Rtree *, RtreeNode *, int, int);
 static int removeNode(Rtree *pRtree, RtreeNode *pNode, int iHeight){
   int rc;
   int rc2;
-  RtreeNode *pParent;
+  RtreeNode *pParent = 0;
   int iCell;
 
   assert( pNode->nRef==1 );
@@ -2991,7 +2991,7 @@ static int getNodeSize(
   int rc;
   char *zSql;
   if( isCreate ){
-    int iPageSize;
+    int iPageSize = 0;
     zSql = sqlite3_mprintf("PRAGMA %Q.page_size", pRtree->zDb);
     rc = getIntFromStmt(db, zSql, &iPageSize);
     if( rc==SQLITE_OK ){
