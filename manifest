@@ -1,5 +1,5 @@
-C Add\stests\sfor\sthe\s"column:term"\squery\ssyntax\sto\sfts3auto.test.
-D 2011-06-20T10:46:49.908
+C Fix\sa\sproblem\swhere\sFTS\stest\scode\swas\snot\sbeing\sincluded\sin\sthe\stestfixture\sbuild\swhen\sSQLITE_ENABLE_FTS4\swas\sdefined.
+D 2011-06-20T11:15:06.397
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -73,7 +73,7 @@ F ext/fts3/fts3_icu.c 6c8f395cdf9e1e3afa7fadb7e523dbbf381c6dfa
 F ext/fts3/fts3_porter.c 8d946908f4812c005d3d33fcbe78418b1f4eb70c
 F ext/fts3/fts3_snippet.c a44b38a07d39701ab6d20d7d89fcafe193bf3680
 F ext/fts3/fts3_term.c 51e384269edcc015e8b555fdad2338f053388975
-F ext/fts3/fts3_test.c 4e833729c13cea9a6bb98d3b353f6e3b8f756004
+F ext/fts3/fts3_test.c b66f6c17f3430b3078d0bc5a77ecb124e5ffc901
 F ext/fts3/fts3_tokenizer.c 90ba6cdd8bb1b3686ab7a3d72333131e13c8fdb2
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 0dde8f307b8045565cf63797ba9acfaff1c50c68
@@ -187,7 +187,7 @@ F src/sqliteInt.h 7b7ec2394b94fc4516930cd9dae37af0f9312215
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c c83f5b4a15ed92cb35aa04320aa4a30b95071b2f
+F src/tclsqlite.c c124d55e3e7d156c0fcc62c7f9906de8451547dc
 F src/test1.c efca486a25fb894988e7a82e84579a4e57388a02
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 124ff9735fb6bb7d41de180d6bac90e7b1509432
@@ -946,7 +946,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 228c43c726e637daadc0c9b5a8b24243f239b1cf
-R 7eddd2dd67b3d52dc8c6eb17ca4f485e
+P d138b0e65953c529619d64e662bdb5478d7d79c3
+R 3d60296c03d3d0e2521fbba8cb89cf3f
 U dan
-Z deeda911f2417117940e630ba55dce44
+Z 36fbe60e74554514c6ed759d1d5c5a4c

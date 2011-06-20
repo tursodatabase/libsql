@@ -19,6 +19,9 @@
 #include <string.h>
 #include <assert.h>
 
+/* Required so that the "ifdef SQLITE_ENABLE_FTS3" below works */
+#include "fts3Int.h"
+
 #define NM_MAX_TOKEN 12
 
 typedef struct NearPhrase NearPhrase;

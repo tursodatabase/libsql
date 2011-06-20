@@ -3585,7 +3585,7 @@ static void init_all(Tcl_Interp *interp){
     extern int Sqlitetestfuzzer_Init(Tcl_Interp*);
     extern int Sqlitetestwholenumber_Init(Tcl_Interp*);
 
-#ifdef SQLITE_ENABLE_FTS3
+#if defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4)
     extern int Sqlitetestfts3_Init(Tcl_Interp *interp);
 #endif
 
@@ -3629,7 +3629,7 @@ static void init_all(Tcl_Interp *interp){
     Sqlitetestfuzzer_Init(interp);
     Sqlitetestwholenumber_Init(interp);
 
-#ifdef SQLITE_ENABLE_FTS3
+#if defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4)
     Sqlitetestfts3_Init(interp);
 #endif
 
