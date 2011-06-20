@@ -1,5 +1,5 @@
-C Rework\sthe\sautoconf\sscript\sto\sbetter\sdeal\swith\sutime()\sand\sdlopen().
-D 2011-06-20T18:00:17.162
+C Fix\scompiler\swarnings\sin\slemon\sby\sremoving\ssome\sof\sthe\scode\sadded\sby\nRyan\sGordon\sin\s[1e8b842039cc0].
+D 2011-06-20T18:27:23.761
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -914,7 +914,7 @@ F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
-F tool/lemon.c 2f182cf58a44a29107ad0027e4e696c79cbb9ad6
+F tool/lemon.c d51c68d405ff7f9bad99268ca3c20a198eb983ed
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkkeywordhash.c d2e6b4a5965e23afb80fbe74bb54648cd371f309
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
@@ -946,7 +946,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P a4a8402bfec381dd23b7a96c2f4b52c0dd728a7a
-R 16536365517218923dc08762ed8b0c16
+P f69ed286ffb3f62f5cb5c1f7df55fa4d2468b472
+R 85fd773d96f76df373ae8654723885fd
 U drh
-Z f0e3294585f4569580d0a1d0b238c6dc
+Z 8273f766e9b20e2bd5443eed5877e83e
