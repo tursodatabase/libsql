@@ -1,5 +1,5 @@
-C More\scompiler\swarning\sfixes.
-D 2011-06-20T19:00:30.991
+C Remove\sthe\sSQLITE_OMIT_CONFLICT_CLAUSE\spreprocessor\sdefine\swhich\swas\sno\nlonger\sin\suse.
+D 2011-06-20T20:15:53.770
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -201,7 +201,7 @@ F src/test_async.c 0612a752896fad42d55c3999a5122af10dcf22ad
 F src/test_autoext.c 30e7bd98ab6d70a62bb9ba572e4c7df347fe645e
 F src/test_backup.c c129c91127e9b46e335715ae2e75756e25ba27de
 F src/test_btree.c 47cd771250f09cdc6e12dda5bc71bc0b3abc96e2
-F src/test_config.c 9a6aa8301a56906612b5e70f5b38e80cfb8af8e7
+F src/test_config.c 791a9acbf9a695cf9c12ff6bbe874dfde9a8c5f3
 F src/test_demovfs.c 20a4975127993f4959890016ae9ce5535a880094
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_func.c cbdec5cededa0761daedde5baf06004a9bf416b5
@@ -946,7 +946,7 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 76b18b2be072b9ea242df4c9535059f7b43f564b
-R 78c1df97ed01817ae07c84e5770b39c1
+P ed2dda9329ca42e9c0be1986c78b091051e7598f
+R 2e13d3ea53d110b2e8107877a848a618
 U drh
-Z 0807b7361b2e2ddd7ca414b20f006eb7
+Z f04a5198d0b0503bfb4459f637e20be0
