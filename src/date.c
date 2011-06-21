@@ -469,6 +469,9 @@ static sqlite3_int64 localtimeOffset(
   time_t t;
   struct tm sLocal;
 
+  /* Initialize the contents of sLocal to avoid a compiler warning. */
+  memset(&sLocal, 0, sizeof(sLocal));
+
   x = *p;
   computeYMD_HMS(&x);
   if( x.Y<1971 || x.Y>=2038 ){

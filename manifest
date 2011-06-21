@@ -1,5 +1,5 @@
-C Add\sa\smissing\sinitializer\sfor\ssqlite3GlobalConfig.bLocaltimeFault.
-D 2011-06-21T15:27:54.672
+C Initialize\sa\svariable\sintroduced\sas\spart\sof\sthe\sfix\sfor\s[bd484a090c8077]\sin\sorder\sto\ssilence\sa\scompiler\swarning.
+D 2011-06-21T15:38:05.427
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -131,7 +131,7 @@ F src/build.c 5a428625d21ad409514afb40ad083bee25dd957a
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 7deec4534f3b5a0c3b4a4cbadf809d321f64f9c4
-F src/date.c 8eb16dd5c0fea761f65f1ed98b2c2e8fbaea800c
+F src/date.c e4df48782b3fa3d99ed6c842d45645e22347b1d4
 F src/delete.c cecc926c70783452f3e8eb452c728291ce1a0b21
 F src/expr.c ab46ab0f0c44979a8164ca31728d7d10ae5e8106
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
@@ -948,7 +948,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 22265323f7785ec5e2afc14a989d53dcbbd36250
-R cc5ee80d3aa17b5739adb078a4e9f0a0
+P 7fe8ba2ec762d258b04e775766c82e5e541ab5d1
+R 7279502c00f0720017c3da8a6b7b8429
 U dan
-Z 62c65b0f07c403eb99ee87579e49f66f
+Z f96fb31e69ea5b6b58c1071e1a171626
