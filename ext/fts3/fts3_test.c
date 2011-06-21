@@ -279,8 +279,6 @@ static int fts3_configure_incr_load_cmd(
 #ifdef SQLITE_ENABLE_FTS3
   extern int test_fts3_node_chunksize;
   extern int test_fts3_node_chunk_threshold;
-  int iArg1;
-  int iArg2;
   Tcl_Obj *pRet;
 
   if( objc!=1 && objc!=3 ){

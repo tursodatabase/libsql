@@ -26,7 +26,7 @@ BCC = cl.exe -O2
 # will run on the target platform.  (BCC and TCC are usually the
 # same unless your are cross-compiling.)
 #
-TCC = cl.exe -W3 -O2 -DSQLITE_OS_WIN=1 -I. -I$(TOP)\src
+TCC = cl.exe -W3 -O2 -DSQLITE_OS_WIN=1 -I. -I$(TOP)\src -fp:precise
 
 # The mksqlite3c.tcl and mksqlite3h.tcl scripts will pull in 
 # any extension header files by default.  For non-amalgamation
@@ -105,8 +105,16 @@ TCC = $(TCC) $(OPTS)
 
 # libtool compile/link
 LTCOMPILE = $(TCC) -Fo$@
-LTLINK = $(TCC) -Fe$@
 LTLIB = lib.exe
+LTLINK = $(TCC) -Fe$@
+
+# If a platform was set, force the linker to target that.
+# Note that the vcvars*.bat family of batch files typically
+# set this for you.  Otherwise, the linker will attempt
+# to deduce the binary type based on the object files.
+!IF "$(PLATFORM)"!=""
+LTLINKOPTS = /MACHINE:$(PLATFORM)
+!ENDIF
 
 # nawk compatible awk.
 NAWK = .\gawk.exe
@@ -440,8 +448,8 @@ libtclsqlite3.lib:	tclsqlite.lo libsqlite3.lib
 
 sqlite3.exe:	$(TOP)\src\shell.c libsqlite3.lib sqlite3.h
 	$(LTLINK) $(READLINE_FLAGS) \
-		$(TOP)\src\shell.c libsqlite3.lib \
-		$(LIBREADLINE) $(TLIBS)
+		$(TOP)\src\shell.c \
+		/link $(LTLINKOPTS) libsqlite3.lib $(LIBREADLINE) $(TLIBS)
 
 # This target creates a directory named "tsrc" and fills it with
 # copies of all of the C source code and header files needed to
@@ -706,7 +714,7 @@ tclsqlite-shell.lo:	$(TOP)\src\tclsqlite.c $(HDR)
 
 tclsqlite3.exe:	tclsqlite-shell.lo libsqlite3.lib
 	$(LTLINK) tclsqlite-shell.lo \
-		/link /LIBPATH:$(TCLLIBDIR) libsqlite3.lib $(LIBTCL)
+		/link $(LTLINKOPTS) /LIBPATH:$(TCLLIBDIR) libsqlite3.lib $(LIBTCL)
 
 # Rules to build opcodes.c and opcodes.h
 #
@@ -816,7 +824,8 @@ TESTFIXTURE_SRC = $(TESTSRC) $(TOP)\src\tclsqlite.c $(TESTFIXTURE_SRC1)
 testfixture.exe:	$(TESTFIXTURE_SRC) $(HDR)
 	$(LTLINK) -DSQLITE_NO_SYNC=1 $(TESTFIXTURE_FLAGS) \
 		-DBUILD_sqlite -I$(TCLINCDIR) \
-		$(TESTFIXTURE_SRC) /link /LIBPATH:$(TCLLIBDIR) $(LIBTCL) $(TLIBS)
+		$(TESTFIXTURE_SRC) \
+		/link $(LTLINKOPTS) /LIBPATH:$(TCLLIBDIR) $(LIBTCL) $(TLIBS)
 
 fulltest:	testfixture.exe sqlite3.exe
 	.\testfixture.exe $(TOP)\test\all.test
@@ -835,7 +844,8 @@ sqlite3_analyzer.exe:	$(TESTFIXTURE_SRC) spaceanal_tcl.h
 	$(LTLINK) -DTCLSH=2 -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1 \
 		-DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE \
 		-DBUILD_sqlite -I$(TCLINCDIR) \
-		$(TESTFIXTURE_SRC) /link /LIBPATH:$(TCLLIBDIR) $(LIBTCL) $(TLIBS)
+		$(TESTFIXTURE_SRC) \
+		/link $(LTLINKOPTS) /LIBPATH:$(TCLLIBDIR) $(LIBTCL) $(TLIBS)
 
 clean:
 	del /Q *.lo *.lib *.obj sqlite3.exe libsqlite3.lib

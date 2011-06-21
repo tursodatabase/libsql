@@ -233,9 +233,9 @@ do_update_tests e_update-1.5 -query {
       {3 1 4   1 5 9   2 6 5}
 }
 
-# EVIDENCE-OF: R-09060-20018 If a single column-name appears more than
+# EVIDENCE-OF: R-34751-18293 If a single column-name appears more than
 # once in the list of assignment expressions, all but the rightmost
-# occurence is ignored.
+# occurrence is ignored.
 #
 do_update_tests e_update-1.6 -query {
   SELECT * FROM t2
@@ -605,4 +605,3 @@ do_update_tests e_update-3.5 -query { SELECT x FROM t8 ; DELETE FROM t8 } {
 } ;# ifcapable update_delete_limit
  
 finish_test
-

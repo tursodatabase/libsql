@@ -127,7 +127,7 @@ AC_CHECK_HEADERS([sys/types.h stdlib.h stdint.h inttypes.h])
 #########
 # Figure out whether or not we have these functions
 #
-AC_CHECK_FUNCS([usleep fdatasync localtime_r gmtime_r localtime_s])
+AC_CHECK_FUNCS([usleep fdatasync localtime_r gmtime_r localtime_s utime])
 
 #########
 # By default, we use the amalgamation (this may be changed below...)
@@ -619,6 +619,7 @@ AC_ARG_ENABLE(load-extension, AC_HELP_STRING([--enable-load-extension],
       [use_loadextension=$enableval],[use_loadextension=no])
 if test "${use_loadextension}" = "yes" ; then
   OPT_FEATURE_FLAGS=""
+  AC_SEARCH_LIBS(dlopen, dl)
 else
   OPT_FEATURE_FLAGS="-DSQLITE_OMIT_LOAD_EXTENSION=1"
 fi

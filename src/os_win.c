@@ -878,7 +878,8 @@ static int winWrite(
   }
 
   if( rc ){
-    if( pFile->lastErrno==ERROR_HANDLE_DISK_FULL ){
+    if(   ( pFile->lastErrno==ERROR_HANDLE_DISK_FULL )
+       || ( pFile->lastErrno==ERROR_DISK_FULL )){
       return SQLITE_FULL;
     }
     return winLogError(SQLITE_IOERR_WRITE, "winWrite", pFile->zPath);

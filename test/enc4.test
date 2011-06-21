@@ -61,19 +61,17 @@ foreach enc $encodings {
       
     set k 1
     foreach val $vals {
-      for {set x 1} {$x<18} {incr x} {
+      for {set x 1} {$x<16} {incr x} {
         set part [expr $init + [string range $val 0 [expr $x-1]]]
-        regsub {e\+0} $part {e+} part
-        regsub {^1e} $part {1.0e} part
 
-        do_test enc4-$i.$j.$k.3.$x {
+        do_realnum_test enc4-$i.$j.$k.3.$x {
           sqlite3_reset $S
           sqlite3_bind_text $S 1 $val $x
           sqlite3_step $S
           sqlite3_column_text $S 0
         } [list $part]
         
-        do_test enc4-$i.$j.$k.4.$x {
+        do_realnum_test enc4-$i.$j.$k.4.$x {
           sqlite3_reset $S
           sqlite3_bind_text16 $S 1 [encoding convertto unicode $val] [expr $x*2]
           sqlite3_step $S
