@@ -412,41 +412,41 @@ static void clearYMD_HMS_TZ(DateTime *p){
 }
 
 #ifndef SQLITE_OMIT_LOCALTIME
-
 /*
-** The following three functions - osLocaltime_r(), osLocaltime_s() and
-** osLocaltime() - are wrappers around system functions localtime_r(),
-** localtime_s() and localtime(), respectively.
+** The following routine implements the rough equivalent of localtime_r()
+** using whatever operating-system specific localtime facility that
+** is available.  This routine returns 0 on success and
+** non-zero on any kind of error.
 **
-** If the sqlite3GlobalConfig.bLocaltimeFault variable is true when one
-** of the following wrappers is called, it returns an error.
+** If the sqlite3GlobalConfig.bLocaltimeFault variable is true then this
+** routine will always fail.
 */
+int osLocaltime(time_t *t, struct tm *pTm){
+  int rc;
 #ifndef SQLITE_OMIT_BUILTIN_TEST
-
-#ifdef HAVE_LOCALTIME_R
-static struct tm * osLocaltime_r(time_t *t, struct tm *pTm){
-  if( sqlite3GlobalConfig.bLocaltimeFault ) return 0;
-  return localtime_r(t);
-}
-#elif defined(HAVE_LOCALTIME_S) && HAVE_LOCALTIME_S
-static int osLocaltime_s(struct tm *pTm, time_t *t){
   if( sqlite3GlobalConfig.bLocaltimeFault ) return 1;
-  return (int)localtime_s(pTm, t);
-}
-#else
-static struct tm * osLocaltime(time_t *t){
-  if( sqlite3GlobalConfig.bLocaltimeFault ) return 0;
-  return localtime(t);
-}
 #endif
-
+#ifdef HAVE_LOCALTIME_R
+  rc = localtime_r(t, pTm)==0;
+#elif defined(HAVE_LOCALTIME_S) && HAVE_LOCALTIME_S
+  rc = localtime_s(pTm, t);
 #else
-# define osLocaltime_r(x,y) localtime_r(x,y)
-# define osLocaltime_s(x,y) localtime_s(x,y)
-# define osLocaltime(x)     localtime(x)
+  {
+    struct tm *pX;
+    sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
+    sqlite3_mutex_enter(mutex);
+    pX = localtime(t);
+    if( pX ) *pTm = *pX;
+    sqlite3_mutex_leave(mutex);
+    rc = pX==0;
+  }
 #endif
+  return rc;
+}
+#endif /* SQLITE_OMIT_LOCALTIME */
 
 
+#ifndef SQLITE_OMIT_LOCALTIME
 /*
 ** Compute the difference (in milliseconds) between localtime and UTC
 ** (a.k.a. GMT) for the time value p where p is in UTC. If no error occurs,
@@ -462,6 +462,8 @@ static sqlite3_int64 localtimeOffset(
 ){
   DateTime x, y;
   time_t t;
+  struct tm sLocal;
+
   x = *p;
   computeYMD_HMS(&x);
   if( x.Y<1971 || x.Y>=2038 ){
@@ -479,57 +481,17 @@ static sqlite3_int64 localtimeOffset(
   x.validJD = 0;
   computeJD(&x);
   t = (time_t)(x.iJD/1000 - 21086676*(i64)10000);
-#ifdef HAVE_LOCALTIME_R
-  {
-    struct tm sLocal;
-    if( 0==osLocaltime_r(&t, &sLocal) ){
-      sqlite3_result_error(pCtx, "local time unavailable", -1);
-      *pRc = SQLITE_ERROR;
-      return 0;
-    }
-    y.Y = sLocal.tm_year + 1900;
-    y.M = sLocal.tm_mon + 1;
-    y.D = sLocal.tm_mday;
-    y.h = sLocal.tm_hour;
-    y.m = sLocal.tm_min;
-    y.s = sLocal.tm_sec;
+  if( osLocaltime(&t, &sLocal) ){
+    sqlite3_result_error(pCtx, "local time unavailable", -1);
+    *pRc = SQLITE_ERROR;
+    return 0;
   }
-#elif defined(HAVE_LOCALTIME_S) && HAVE_LOCALTIME_S
-  {
-    struct tm sLocal;
-    if( 0!=osLocaltime_s(&sLocal, &t) ){
-      sqlite3_result_error(pCtx, "local time unavailable", -1);
-      *pRc = SQLITE_ERROR;
-      return 0;
-    }
-    y.Y = sLocal.tm_year + 1900;
-    y.M = sLocal.tm_mon + 1;
-    y.D = sLocal.tm_mday;
-    y.h = sLocal.tm_hour;
-    y.m = sLocal.tm_min;
-    y.s = sLocal.tm_sec;
-  }
-#else
-  {
-    struct tm *pTm;
-    sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
-    pTm = osLocaltime(&t);
-    if( pTm ){
-      y.Y = pTm->tm_year + 1900;
-      y.M = pTm->tm_mon + 1;
-      y.D = pTm->tm_mday;
-      y.h = pTm->tm_hour;
-      y.m = pTm->tm_min;
-      y.s = pTm->tm_sec;
-    }
-    sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
-    if( !pTm ){
-      sqlite3_result_error(pCtx, "local time unavailable", -1);
-      *pRc = SQLITE_ERROR;
-      return 0;
-    }
-  }
-#endif
+  y.Y = sLocal.tm_year + 1900;
+  y.M = sLocal.tm_mon + 1;
+  y.D = sLocal.tm_mday;
+  y.h = sLocal.tm_hour;
+  y.m = sLocal.tm_min;
+  y.s = sLocal.tm_sec;
   y.validYMD = 1;
   y.validHMS = 1;
   y.validJD = 0;
