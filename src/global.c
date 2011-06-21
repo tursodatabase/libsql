@@ -169,6 +169,7 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    0,                         /* nRefInitMutex */
    0,                         /* xLog */
    0,                         /* pLogArg */
+   0,                         /* bLocaltimeFault */
 };
 
 

@@ -1,5 +1,5 @@
-C Fix\smain.mk\sso\sthat\sthe\s"amalgamation-testfixture"\starget\sworks\sagain.
-D 2011-06-21T15:24:30.118
+C Add\sa\smissing\sinitializer\sfor\ssqlite3GlobalConfig.bLocaltimeFault.
+D 2011-06-21T15:27:54.672
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -137,7 +137,7 @@ F src/expr.c ab46ab0f0c44979a8164ca31728d7d10ae5e8106
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 9fabba17a4d4778dc660f0cb9d781fc86d7b9d41
 F src/func.c 59bb046d7e3df1ab512ac339ccb0a6f996a17cb7
-F src/global.c 29bfb85611dd816b04f10fba0ca910366e128d38
+F src/global.c c70a46f28680f8d7c097dbc0430ccf3b932e90b0
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
@@ -948,7 +948,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 176248095b8056443ebcbff819e575bd100f5e50
-R a2592e3234167f1d411e9fcd7ca02e75
+P 22265323f7785ec5e2afc14a989d53dcbbd36250
+R cc5ee80d3aa17b5739adb078a4e9f0a0
 U dan
-Z 059270d02719ec3f38fe6aac1552df07
+Z 62c65b0f07c403eb99ee87579e49f66f
