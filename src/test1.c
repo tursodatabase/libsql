@@ -5523,6 +5523,54 @@ static int test_print_eqp(
 #endif /* SQLITE_OMIT_EXPLAIN */
 
 /*
+** sqlite3_test_control VERB ARGS...
+*/
+static int test_test_control(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  struct Verb {
+    const char *zName;
+    int i;
+  } aVerb[] = {
+    { "SQLITE_TESTCTRL_LOCALTIME_FAULT", SQLITE_TESTCTRL_LOCALTIME_FAULT }, 
+  };
+  int iVerb;
+  int iFlag;
+  int rc;
+
+  if( objc<2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "VERB ARGS...");
+    return TCL_ERROR;
+  }
+
+  rc = Tcl_GetIndexFromObjStruct(
+      interp, objv[1], aVerb, sizeof(aVerb[0]), "VERB", 0, &iVerb
+  );
+  if( rc!=TCL_OK ) return rc;
+
+  iFlag = aVerb[iVerb].i;
+  switch( iFlag ){
+    case SQLITE_TESTCTRL_LOCALTIME_FAULT: {
+      int val;
+      if( objc!=3 ){
+        Tcl_WrongNumArgs(interp, 2, objv, "ONOFF");
+        return TCL_ERROR;
+      }
+      if( Tcl_GetBooleanFromObj(interp, objv[2], &val) ) return TCL_ERROR;
+      sqlite3_test_control(SQLITE_TESTCTRL_LOCALTIME_FAULT, val);
+      break;
+    }
+  }
+
+  Tcl_ResetResult(interp);
+  return TCL_OK;
+}
+
+
+/*
 **      optimization_control DB OPT BOOLEAN
 **
 ** Enable or disable query optimizations using the sqlite3_test_control()
@@ -5785,6 +5833,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #ifndef SQLITE_OMIT_EXPLAIN
      { "print_explain_query_plan", test_print_eqp, 0  },
 #endif
+     { "sqlite3_test_control", test_test_control },
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   int i;
