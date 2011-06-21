@@ -27,15 +27,11 @@ do_test 1.2 {
 sqlite3_test_control SQLITE_TESTCTRL_LOCALTIME_FAULT 1
 
 do_test 2.1 {
-  foreach {rc msg} [catchsql { SELECT datetime('now', 'localtime') }] {}
-  set res [string match {error in localtime*()} $msg]
-  list $rc $res
-} {1 1}
+  catchsql { SELECT datetime('now', 'localtime') }
+} {1 {local time unavailable}}
 do_test 2.2 {
-  foreach {rc msg} [catchsql { SELECT datetime('now', 'utc') }] {}
-  set res [string match {error in localtime*()} $msg]
-  list $rc $res
-} {1 1}
+  catchsql { SELECT datetime('now', 'utc') }
+} {1 {local time unavailable}}
 
 sqlite3_test_control SQLITE_TESTCTRL_LOCALTIME_FAULT 0
 

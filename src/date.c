@@ -483,7 +483,7 @@ static sqlite3_int64 localtimeOffset(
   {
     struct tm sLocal;
     if( 0==osLocaltime_r(&t, &sLocal) ){
-      sqlite3_result_error(pCtx, "error in localtime_r()", -1);
+      sqlite3_result_error(pCtx, "local time unavailable", -1);
       *pRc = SQLITE_ERROR;
       return 0;
     }
@@ -498,7 +498,7 @@ static sqlite3_int64 localtimeOffset(
   {
     struct tm sLocal;
     if( 0!=osLocaltime_s(&sLocal, &t) ){
-      sqlite3_result_error(pCtx, "error in localtime_s()", -1);
+      sqlite3_result_error(pCtx, "local time unavailable", -1);
       *pRc = SQLITE_ERROR;
       return 0;
     }
@@ -524,7 +524,7 @@ static sqlite3_int64 localtimeOffset(
     }
     sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
     if( !pTm ){
-      sqlite3_result_error(pCtx, "error in localtime()", -1);
+      sqlite3_result_error(pCtx, "local time unavailable", -1);
       *pRc = SQLITE_ERROR;
       return 0;
     }
