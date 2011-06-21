@@ -1,5 +1,5 @@
-C Simplifications\sto\sthe\slocaltime()\sinterface.\s\sFix\sthe\scase\swhere\nlocaltime_r()\sis\savailable\sso\sthat\sit\sworks.\s\sTicket\s[bd484a090c8077].
-D 2011-06-21T14:35:30.890
+C Rework\sthe\slocaltime\slogic\syet\sagain\sin\sorder\sto\smake\sall\sbranches\sreachable\nand\sto\sfollow\sGNU\sstandards\sfor\sHAVE_LOCALTIME_R-type\smacros.\nTicket\s[bd484a090c8077].
+D 2011-06-21T15:01:25.129
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -131,7 +131,7 @@ F src/build.c 5a428625d21ad409514afb40ad083bee25dd957a
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 7deec4534f3b5a0c3b4a4cbadf809d321f64f9c4
-F src/date.c 2c5b336a05029c1647f7a4fe03d7ee50b9747bba
+F src/date.c 8eb16dd5c0fea761f65f1ed98b2c2e8fbaea800c
 F src/delete.c cecc926c70783452f3e8eb452c728291ce1a0b21
 F src/expr.c ab46ab0f0c44979a8164ca31728d7d10ae5e8106
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
@@ -948,7 +948,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 0e82175fd86f0ca5da90676aaee3118a70264d85
-R 39249556a57f6de5d465bb75e25a77c9
+P 5b68dae320d0fa3dc433826811e5018a47461de7
+R ed41c3134b790559b6de3aa9dbc8d008
 U drh
-Z f3f5de06e02a4cdc489a3c883165212f
+Z 9cf1abaccd2a2f678b16a61368320667

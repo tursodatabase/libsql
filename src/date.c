@@ -50,22 +50,6 @@
 
 #ifndef SQLITE_OMIT_DATETIME_FUNCS
 
-/*
-** On recent Windows platforms, the localtime_s() function is available
-** as part of the "Secure CRT". It is essentially equivalent to 
-** localtime_r() available under most POSIX platforms, except that the 
-** order of the parameters is reversed.
-**
-** See http://msdn.microsoft.com/en-us/library/a442x3ye(VS.80).aspx.
-**
-** If the user has not indicated to use localtime_r() or localtime_s()
-** already, check for an MSVC build environment that provides 
-** localtime_s().
-*/
-#if !defined(HAVE_LOCALTIME_R) && !defined(HAVE_LOCALTIME_S) && \
-     defined(_MSC_VER) && defined(_CRT_INSECURE_DEPRECATE)
-#define HAVE_LOCALTIME_S 1
-#endif
 
 /*
 ** A structure for holding a single date and time.
@@ -411,6 +395,23 @@ static void clearYMD_HMS_TZ(DateTime *p){
   p->validTZ = 0;
 }
 
+/*
+** On recent Windows platforms, the localtime_s() function is available
+** as part of the "Secure CRT". It is essentially equivalent to 
+** localtime_r() available under most POSIX platforms, except that the 
+** order of the parameters is reversed.
+**
+** See http://msdn.microsoft.com/en-us/library/a442x3ye(VS.80).aspx.
+**
+** If the user has not indicated to use localtime_r() or localtime_s()
+** already, check for an MSVC build environment that provides 
+** localtime_s().
+*/
+#if !defined(HAVE_LOCALTIME_R) && !defined(HAVE_LOCALTIME_S) && \
+     defined(_MSC_VER) && defined(_CRT_INSECURE_DEPRECATE)
+#define HAVE_LOCALTIME_S 1
+#endif
+
 #ifndef SQLITE_OMIT_LOCALTIME
 /*
 ** The following routine implements the rough equivalent of localtime_r()
@@ -423,24 +424,28 @@ static void clearYMD_HMS_TZ(DateTime *p){
 */
 int osLocaltime(time_t *t, struct tm *pTm){
   int rc;
+#if (!defined(HAVE_LOCALTIME_R) || !HAVE_LOCALTIME_R) \
+      && (!defined(HAVE_LOCALTIME_S) || !HAVE_LOCALTIME_S)
+  struct tm *pX;
+  sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
+  sqlite3_mutex_enter(mutex);
+  pX = localtime(t);
+#ifndef SQLITE_OMIT_BUILTIN_TEST
+  if( sqlite3GlobalConfig.bLocaltimeFault ) pX = 0;
+#endif
+  if( pX ) *pTm = *pX;
+  sqlite3_mutex_leave(mutex);
+  rc = pX==0;
+#else
 #ifndef SQLITE_OMIT_BUILTIN_TEST
   if( sqlite3GlobalConfig.bLocaltimeFault ) return 1;
 #endif
-#ifdef HAVE_LOCALTIME_R
+#if defined(HAVE_LOCALTIME_R) && HAVE_LOCALTIME_R
   rc = localtime_r(t, pTm)==0;
-#elif defined(HAVE_LOCALTIME_S) && HAVE_LOCALTIME_S
-  rc = localtime_s(pTm, t);
 #else
-  {
-    struct tm *pX;
-    sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
-    sqlite3_mutex_enter(mutex);
-    pX = localtime(t);
-    if( pX ) *pTm = *pX;
-    sqlite3_mutex_leave(mutex);
-    rc = pX==0;
-  }
-#endif
+  rc = localtime_s(pTm, t);
+#endif /* HAVE_LOCALTIME_R */
+#endif /* HAVE_LOCALTIME_R || HAVE_LOCALTIME_S */
   return rc;
 }
 #endif /* SQLITE_OMIT_LOCALTIME */
