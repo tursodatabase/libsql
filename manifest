@@ -1,5 +1,5 @@
-C Update\sa\sfew\sof\sthe\suri\stests\sto\swork\son\sWindows.
-D 2011-06-21T19:30:19.621
+C Update\sfilepath_normalize\sfor\sunix.
+D 2011-06-21T19:38:16.805
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -695,7 +695,7 @@ F test/tclsqlite.test 8c154101e704170c2be10f137a5499ac2c6da8d3
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test f42121a0d29a62f00f93274464164177ab1cc24a
 F test/temptrigger.test b0273db072ce5f37cf19140ceb1f0d524bbe9f05
-F test/tester.tcl 7c02f342a92aa161d13ab5241413e341039c14d7
+F test/tester.tcl 6be56c3d428d37b1d9281adc4c2b81e135c07773
 F test/thread001.test a3e6a7254d1cb057836cb3145b60c10bf5b7e60f
 F test/thread002.test afd20095e6e845b405df4f2c920cb93301ca69db
 F test/thread003.test b824d4f52b870ae39fc5bae4d8070eca73085dca
@@ -948,7 +948,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 9eac4a6bbe111d951ad23395ba82c868473c5b9b
-R cb165167c8ffaaf3fa41940019e90c06
+P a2a0cd4aa4a6723a849bbba590c22fd065fab55e
+R 8d007d7bee1018ae9fbc8ca3a0089039
 U shaneh
-Z 2a57b2d9aba31bd124d18eb8ab4bf292
+Z 6fcb3eb81cefe51f562056bbdbe8ba89

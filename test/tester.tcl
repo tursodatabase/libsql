@@ -356,9 +356,11 @@ proc do_test {name cmd expected} {
 
 proc filepath_normalize {p} {
   # test cases should be written to assume "unix"-like file paths
-  if {$::tcl_platform(platform)!="unix"} {
+  if {$::tcl_platform(platform)=="unix"} {
     # lreverse*2 as a hack to remove any unneeded {} after the string map
     lreverse [lreverse [string map {\\ /} [regsub -nocase -all {[a-z]:[/\\]+} $p {/}]]]
+  } {
+    set p
   }
 }
 proc do_filepath_test {name cmd expected} {
