@@ -1,5 +1,5 @@
-C Backport\sthe\slocaltime()\sfailure\sfix\sof\sticket\s[bd484a090c8077]\sto\sthe\n3.7.6\sbranch.
-D 2011-06-21T15:15:16.412
+C Give\sthe\sosLocaltime()\sfunction\sfile\sscope\sin\sdate.c.
+D 2011-06-21T15:58:14.587
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -128,7 +128,7 @@ F src/build.c f09c46c66a1e7668c6ee25c9a2518aaa6842044c
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 7deec4534f3b5a0c3b4a4cbadf809d321f64f9c4
-F src/date.c 8eb16dd5c0fea761f65f1ed98b2c2e8fbaea800c
+F src/date.c c223415ea95897bc22a2cde577296a3ed1c80950
 F src/delete.c 7a24fcc9a31664d145acb97ce56b6d9f249a25e4
 F src/expr.c e3cf0957c6b8faaaf7386a3bc69e53c0dc9705be
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
@@ -931,7 +931,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ed1da510a239ea767a01dc332b667119fa3c908e
-R 54fab978eaa2d7be584363d967fab2fc
-U drh
-Z ba01364c8e95bf423f27b3ad121cc8c9
+P 5d4b0c5bfc5be1b16b05d43f943cd8f755d23d0e
+R 81e0dab466898284c5ec5a84e35d07bc
+U dan
+Z 480a6904404a452960c694f5fec1e3e4

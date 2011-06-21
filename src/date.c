@@ -422,7 +422,7 @@ static void clearYMD_HMS_TZ(DateTime *p){
 ** If the sqlite3GlobalConfig.bLocaltimeFault variable is true then this
 ** routine will always fail.
 */
-int osLocaltime(time_t *t, struct tm *pTm){
+static int osLocaltime(time_t *t, struct tm *pTm){
   int rc;
 #if (!defined(HAVE_LOCALTIME_R) || !HAVE_LOCALTIME_R) \
       && (!defined(HAVE_LOCALTIME_S) || !HAVE_LOCALTIME_S)
