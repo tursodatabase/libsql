@@ -837,7 +837,7 @@ test:	testfixture.exe sqlite3.exe
 	.\testfixture.exe $(TOP)\test\veryquick.test
 
 spaceanal_tcl.h:	$(TOP)\tool\spaceanal.tcl
-	$(NAWK) "/^[^#]/ { gsub(/\\/,\"\\\\\\\\\");gsub(/\\\"/,\"\\\\\\\"\");gsub(/^/,\"\\\"\");gsub(/$$/,\"\\n\\\"\");print }" \
+	$(NAWK) -f $(TOP)/tool/tostr.awk \
 		$(TOP)\tool\spaceanal.tcl >spaceanal_tcl.h
 
 sqlite3_analyzer.exe:	$(TESTFIXTURE_SRC) spaceanal_tcl.h

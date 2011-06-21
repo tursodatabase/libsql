@@ -550,13 +550,8 @@ threadtest: threadtest3$(EXE)
 
 sqlite3_analyzer$(EXE):	$(TOP)/src/tclsqlite.c sqlite3.c $(TESTSRC) \
 			$(TOP)/tool/spaceanal.tcl
-	sed \
-	  -e '/^#/d' \
-	  -e 's,\\,\\\\,g' \
-	  -e 's,",\\",g' \
-	  -e 's,^,",' \
-	  -e 's,$$,\\n",' \
-	  $(TOP)/tool/spaceanal.tcl >spaceanal_tcl.h
+	$(NAWK) -f $(TOP)/tool/tostr.awk $(TOP)/tool/spaceanal.tcl \
+		 >spaceanal_tcl.h
 	$(TCCX) $(TCL_FLAGS) -DTCLSH=2 $(TESTFIXTURE_FLAGS)                    \
 		-DSQLITE_TEST=1 -DSQLITE_PRIVATE=""                            \
 		$(TESTSRC) $(TOP)/src/tclsqlite.c sqlite3.c                    \
