@@ -1,9 +1,9 @@
-C Give\sthe\sosLocaltime()\sfunction\sfile\sscope\sin\sdate.c.
-D 2011-06-21T15:54:24.112
+C Updates\sto\snmake\smakefile\sto\sallow\soptions\sto\sbe\spassed\sto\slib.exe.
+D 2011-06-21T18:12:07.861
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 341373786f1481b6027e26162d2a73db4ad12306
+F Makefile.msc 11082f65b452b908d93013292c17850378c39284
 F Makefile.vxworks c85ec1d8597fe2f7bc225af12ac1666e21379151
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 3fcdd7fbe3eb282df3978fe77288544543767961
@@ -948,7 +948,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 6b9877fa43bf29a9740285f0c40a6e6cf21f8190
-R 3fbca61c030ab09b1bb1127ca7da2d34
-U drh
-Z fa6d47f6a0dfe450fcd5e2c9c8154b97
+P 1577484595b5e5aab93722d76b273c911a04dc2c
+R f7161c21d188b4f81e0b1fd792d695ed
+U shaneh
+Z e880ef5fa1c4608e76d3b05c69240aa9
