@@ -1768,9 +1768,9 @@ do_select_tests e_select-8.5 {
   }
 }
 
-# EVIDENCE-OF: R-27923-38747 Otherwise, if the ORDER BY expression is
-# any other expression, it is evaluated and the the returned value used
-# to order the output rows.
+# EVIDENCE-OF: R-65068-27207 Otherwise, if the ORDER BY expression is
+# any other expression, it is evaluated and the returned value used to
+# order the output rows.
 #
 # EVIDENCE-OF: R-03421-57988 If the SELECT statement is a simple SELECT,
 # then an ORDER BY may contain any arbitrary expressions.

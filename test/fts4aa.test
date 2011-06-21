@@ -21,10 +21,6 @@ ifcapable !fts3 {
   finish_test
   return
 }
-if {[db eval {SELECT sqlite_compileoption_used('ENABLE_FTS4')}]==0} {
-  finish_test
-  return
-}
 
 do_test fts4aa-1.0 {
 db eval {
@@ -1589,19 +1585,19 @@ db func mit mit
 
 do_test fts4aa-2.1 {
   db eval {
-    SELECT docid, mit(matchinfo(t1)) FROM t1 WHERE t1 MATCH 'melchizedek';
+    SELECT docid, mit(matchinfo(t1, 'pcxnal')) FROM t1 WHERE t1 MATCH 'melchizedek';
   }
 } {1014018 {1 1 1 1 1 1533 25 20}}
 do_test fts4aa-2.2 {
   db eval {
-    SELECT docid, mit(matchinfo(t1)) FROM t1
+    SELECT docid, mit(matchinfo(t1, 'pcxnal')) FROM t1
      WHERE t1 MATCH 'spake hebrew'
      ORDER BY docid;
   }
 } {1039014 {2 1 1 40 40 1 6 6 1533 25 42} 1039017 {2 1 1 40 40 1 6 6 1533 25 26}}
 do_test fts4aa-2.3 {
   db eval {
-    SELECT docid, mit(matchinfo(t1)) FROM t1
+    SELECT docid, mit(matchinfo(t1, 'pcxnal')) FROM t1
      WHERE t1 MATCH 'laban overtook jacob'
      ORDER BY docid;
   }
@@ -1613,7 +1609,7 @@ do_test fts4aa-9.1 {
     SELECT hex(size) FROM t1_docsize;
     SELECT hex(value) FROM t1_stat;
   }
-} {17 0117}
+} {17 01176F}
 
 do_test fts4aa-9.2 {
   db eval {
@@ -1626,11 +1622,12 @@ do_test fts4aa-9.3 {
   }
 } {}
 do_test fts4aa-9.4 {
+  # Note: Token 'in' is being deferred in the following query. 
   db eval {
-    SELECT docid, mit(matchinfo(t1)) FROM t1
+    SELECT docid, mit(matchinfo(t1, 'pcxnal')) FROM t1
      WHERE t1 MATCH 'joseph died in egypt'
      ORDER BY docid;
   }
-} {1050026 {4 1 1 1 1 1 1 1 2 2 1 1 1 1 1 23 23}}
+} {1050026 {4 1 1 1 1 1 1 1 2 1 1 1 1 1 1 23 23}}
 
 finish_test

@@ -21,6 +21,7 @@
 
 #include <string.h>
 #include <assert.h>
+#include <stdlib.h>
 
 typedef struct Fts3termTable Fts3termTable;
 typedef struct Fts3termCursor Fts3termCursor;

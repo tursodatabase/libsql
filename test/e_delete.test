@@ -440,7 +440,7 @@ do_delete_tests e_delete-3.9 -repair rebuild_t1 -query {
 }
 
 
-# EVIDENCE-OF: R-26627-30313 The ORDER BY clause on an DELETE statement
+# EVIDENCE-OF: R-07548-13422 The ORDER BY clause on a DELETE statement
 # is used only to determine which rows fall within the LIMIT. The order
 # in which rows are deleted is arbitrary and is not influenced by the
 # ORDER BY clause.

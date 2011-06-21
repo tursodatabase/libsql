@@ -805,7 +805,7 @@ static void tclSqlFunc(sqlite3_context *context, int argc, sqlite3_value**argv){
         case SQLITE_INTEGER: {
           sqlite_int64 v = sqlite3_value_int64(pIn);
           if( v>=-2147483647 && v<=2147483647 ){
-            pVal = Tcl_NewIntObj(v);
+            pVal = Tcl_NewIntObj((int)v);
           }else{
             pVal = Tcl_NewWideIntObj(v);
           }
@@ -1485,7 +1485,7 @@ static Tcl_Obj *dbEvalColumnValue(DbEvalContext *p, int iCol){
     case SQLITE_INTEGER: {
       sqlite_int64 v = sqlite3_column_int64(pStmt, iCol);
       if( v>=-2147483647 && v<=2147483647 ){
-        return Tcl_NewIntObj(v);
+        return Tcl_NewIntObj((int)v);
       }else{
         return Tcl_NewWideIntObj(v);
       }
@@ -2452,7 +2452,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       }
       if( zNull && len>0 ){
         pDb->zNull = Tcl_Alloc( len + 1 );
-        strncpy(pDb->zNull, zNull, len);
+        memcpy(pDb->zNull, zNull, len);
         pDb->zNull[len] = '\0';
       }else{
         pDb->zNull = 0;

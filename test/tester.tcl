@@ -355,7 +355,8 @@ proc do_test {name cmd expected} {
 }
 
 proc realnum_normalize {r} {
-  string map {1.#INF inf} [regsub -all {(e[+-])0+} $r {\1}]
+  # different TCL versions display floating point values differently.
+  string map {1.#INF inf Inf inf .0e e} [regsub -all {(e[+-])0+} $r {\1}]
 }
 proc do_realnum_test {name cmd expected} {
   uplevel [list do_test $name [

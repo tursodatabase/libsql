@@ -156,7 +156,7 @@ int sqlite3Fts3InitTokenizer(
 ){
   int rc;
   char *z = (char *)zArg;
-  int n;
+  int n = 0;
   char *zCopy;
   char *zEnd;                     /* Pointer to nul-term of zCopy */
   sqlite3_tokenizer_module *m;

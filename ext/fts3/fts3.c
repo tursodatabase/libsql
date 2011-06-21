@@ -1094,7 +1094,7 @@ static int fts3InitVtab(
   /* Fill in the azColumn array */
   for(iCol=0; iCol<nCol; iCol++){
     char *z; 
-    int n;
+    int n = 0;
     z = (char *)sqlite3Fts3NextToken(aCol[iCol], &n);
     memcpy(zCsr, z, n);
     zCsr[n] = '\0';
@@ -2680,8 +2680,8 @@ static int fts3SyncMethod(sqlite3_vtab *pVtab){
 ** Implementation of xBegin() method. This is a no-op.
 */
 static int fts3BeginMethod(sqlite3_vtab *pVtab){
-  UNUSED_PARAMETER(pVtab);
   TESTONLY( Fts3Table *p = (Fts3Table*)pVtab );
+  UNUSED_PARAMETER(pVtab);
   assert( p->pSegments==0 );
   assert( p->nPendingData==0 );
   assert( p->inTransaction!=1 );
@@ -2696,8 +2696,8 @@ static int fts3BeginMethod(sqlite3_vtab *pVtab){
 ** by fts3SyncMethod().
 */
 static int fts3CommitMethod(sqlite3_vtab *pVtab){
-  UNUSED_PARAMETER(pVtab);
   TESTONLY( Fts3Table *p = (Fts3Table*)pVtab );
+  UNUSED_PARAMETER(pVtab);
   assert( p->nPendingData==0 );
   assert( p->inTransaction!=0 );
   assert( p->pSegments==0 );
@@ -4354,8 +4354,8 @@ int sqlite3Fts3EvalPhraseStats(
   if( pExpr->bDeferred && pExpr->pParent->eType!=FTSQUERY_NEAR ){
     assert( pCsr->nDoc>0 );
     for(iCol=0; iCol<pTab->nColumn; iCol++){
-      aiOut[iCol*3 + 1] = pCsr->nDoc;
-      aiOut[iCol*3 + 2] = pCsr->nDoc;
+      aiOut[iCol*3 + 1] = (u32)pCsr->nDoc;
+      aiOut[iCol*3 + 2] = (u32)pCsr->nDoc;
     }
   }else{
     rc = fts3EvalGatherStats(pCsr, pExpr);
