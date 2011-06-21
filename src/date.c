@@ -429,9 +429,9 @@ static struct tm * osLocaltime_r(time_t *t, struct tm *pTm){
   return localtime_r(t);
 }
 #elif defined(HAVE_LOCALTIME_S) && HAVE_LOCALTIME_S
-static int osLocaltime_s(time_t *t, struct tm *pTm){
+static int osLocaltime_s(struct tm *pTm, time_t *t){
   if( sqlite3GlobalConfig.bLocaltimeFault ) return 1;
-  return (int)localtime_s(t, pTm);
+  return (int)localtime_s(pTm, t);
 }
 #else
 static struct tm * osLocaltime(time_t *t){
@@ -497,7 +497,7 @@ static sqlite3_int64 localtimeOffset(
 #elif defined(HAVE_LOCALTIME_S) && HAVE_LOCALTIME_S
   {
     struct tm sLocal;
-    if( 0!=osLocaltime_s(&t, &sLocal) ){
+    if( 0!=osLocaltime_s(&sLocal, &t) ){
       sqlite3_result_error(pCtx, "error in localtime_s()", -1);
       *pRc = SQLITE_ERROR;
       return 0;

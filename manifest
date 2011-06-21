@@ -1,5 +1,5 @@
-C Return\san\serror\sif\slocaltime_r()\sfails\swithin\sone\sof\sthe\sdate/time\sfunctions.\sFix\sfor\s[bd484a090c].
-D 2011-06-21T12:47:30.109
+C Fix\san\serror\smade\sin\sthe\sprevious\scommit.\sThe\sparameters\sto\slocaltime_s()\swere\saccidentally\sreversed.
+D 2011-06-21T12:53:14.904
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -131,7 +131,7 @@ F src/build.c 5a428625d21ad409514afb40ad083bee25dd957a
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 7deec4534f3b5a0c3b4a4cbadf809d321f64f9c4
-F src/date.c 1b23db78863495e7ef2f670f6929de43e025d32c
+F src/date.c f3711b130f0a95d9b92733dbdaecdacc4ba71f35
 F src/delete.c cecc926c70783452f3e8eb452c728291ce1a0b21
 F src/expr.c ab46ab0f0c44979a8164ca31728d7d10ae5e8106
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
@@ -948,7 +948,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P dcb46d3f68e219a84c67c7ffef26fd2076a0ba28
-R 39f3065d8d058f3e7825e8ebdae8b8f0
+P 76ae8257efc1df6e20ce5718d4824adbbde423ec
+R 9f3386b83f2229ba9b1f406ebc50b4c5
 U dan
-Z b8411c557308c2ef01e76215d689a36d
+Z 7625d40f524bfcbd49390918c2896fb2
