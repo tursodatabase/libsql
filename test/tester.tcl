@@ -354,6 +354,19 @@ proc do_test {name cmd expected} {
   flush stdout
 }
 
+proc filepath_normalize {p} {
+  # test cases should be written to assume "unix"-like file paths
+  if {$::tcl_platform(platform)!="unix"} {
+    # lreverse*2 as a hack to remove any unneeded {} after the string map
+    lreverse [lreverse [string map {\\ /} [regsub -nocase -all {[a-z]:[/\\]+} $p {/}]]]
+  }
+}
+proc do_filepath_test {name cmd expected} {
+  uplevel [list do_test $name [
+    subst -nocommands { filepath_normalize [ $cmd ] }
+  ] [filepath_normalize $expected]]
+}
+
 proc realnum_normalize {r} {
   # different TCL versions display floating point values differently.
   string map {1.#INF inf Inf inf .0e e} [regsub -all {(e[+-])0+} $r {\1}]

@@ -121,6 +121,10 @@ if {$tcl_platform(platform) == "unix"} {
   sqlite3_close $DB
 }
 
+# ensure uri processing enabled for the rest of the tests
+sqlite3_shutdown
+sqlite3_config_uri 1
+
 # EVIDENCE-OF: R-17482-00398 If the authority is not an empty string or
 # "localhost", an error is returned to the caller.
 #
@@ -144,18 +148,16 @@ if {$tcl_platform(platform) == "unix"} {
 # EVIDENCE-OF: R-45981-25528 The fragment component of a URI, if
 # present, is ignored.
 #
-#   It is difficult to test that something is ignore correctly. So these tests
+#   It is difficult to test that something is ignored correctly. So these tests
 #   just show that adding a fragment does not interfere with the pathname or
 #   parameters passed through to the VFS xOpen() methods.
 #
-if {$tcl_platform(platform) == "unix"} {
-  foreach {tn uri parse} "
-    1    {file:test.db#abc}     {[pwd]/test.db {}}
-    2    {file:test.db?a=b#abc} {[pwd]/test.db {a b}}
-    3    {file:test.db?a=b#?c=d} {[pwd]/test.db {a b}}
-  " {
-    do_test 3.$tn { parse_uri $uri } $parse
-  }
+foreach {tn uri parse} "
+  1    {file:test.db#abc}     {[pwd]/test.db {}}
+  2    {file:test.db?a=b#abc} {[pwd]/test.db {a b}}
+  3    {file:test.db?a=b#?c=d} {[pwd]/test.db {a b}}
+" {
+  do_filepath_test 3.$tn { parse_uri $uri } $parse
 }
 
 # EVIDENCE-OF: R-62557-09390 SQLite uses the path component of the URI
@@ -168,16 +170,14 @@ if {$tcl_platform(platform) == "unix"} {
 # (meaning that the authority section is omitted from the URI) then the
 # path is interpreted as a relative path.
 #
-if {$tcl_platform(platform) == "unix"} {
-  foreach {tn uri parse} "
-    1    {file:test.db}             {[pwd]/test.db {}}
-    2    {file:/test.db}            {/test.db {}}
-    3    {file:///test.db}          {/test.db {}}
-    4    {file://localhost/test.db} {/test.db {}}
-    5    {file:/a/b/c/test.db}      {/a/b/c/test.db {}}
-  " {
-    do_test 4.$tn { parse_uri $uri } $parse
-  }
+foreach {tn uri parse} "
+  1    {file:test.db}             {[pwd]/test.db {}}
+  2    {file:/test.db}            {/test.db {}}
+  3    {file:///test.db}          {/test.db {}}
+  4    {file://localhost/test.db} {/test.db {}}
+  5    {file:/a/b/c/test.db}      {/a/b/c/test.db {}}
+" {
+  do_filepath_test 4.$tn { parse_uri $uri } $parse
 }
 
 # EVIDENCE-OF: R-01612-30877 The "vfs" parameter may be used to specify
@@ -270,8 +270,6 @@ foreach {tn uri error} "
 # EVIDENCE-OF: R-26845-32976 Value "rwc" is equivalent to setting both
 # SQLITE_OPEN_READWRITE and SQLITE_OPEN_CREATE.
 #
-sqlite3_shutdown
-sqlite3_config_uri 1
 foreach {tn uri read write create} {
   1    {file:test.db?mode=ro}     1 0 0
   2    {file:test.db?mode=rw}     1 1 0
@@ -429,10 +427,10 @@ sqlite3_enable_shared_cache $orig
 # EVIDENCE-OF: R-63472-46769 Specifying an unknown parameter in the
 # query component of a URI is not an error.
 #
-do_test 12.1 {
+do_filepath_test 12.1 {
   parse_uri file://localhost/test.db?an=unknown&parameter=is&ok=
 } {/test.db {an unknown parameter is ok {}}}
-do_test 12.2 {
+do_filepath_test 12.2 {
   parse_uri file://localhost/test.db?an&unknown&parameter&is&ok
 } {/test.db {an {} unknown {} parameter {} is {} ok {}}}
 
@@ -452,7 +450,7 @@ foreach {tn uri parse} "
   2  {file:/test.db?%68%65%6c%6c%6f=%77%6f%72%6c%64} {/test.db {hello world}}
   3  {file:/%C3%BF.db}                               {/\xFF.db {}}
 " {
-  do_test 13.$tn { parse_uri $uri } $parse
+  do_filepath_test 13.$tn { parse_uri $uri } $parse
 }
 
 finish_test
