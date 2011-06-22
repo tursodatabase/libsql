@@ -1,5 +1,5 @@
-C Change\sa\stest\scase\sin\stypes3.test\sslightly\sso\sthat\sit\sworks\swith\sthe\slatest\sversions\sof\sTcl.
-D 2011-06-22T10:56:54.742
+C Add\sa\sflush\sof\sstdout\sso\ssome\stest\scode\sreading\sfrom\sa\scommand\spipe\sworks\scorrectly\son\sWindows.
+D 2011-06-22T14:21:31.932
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -188,7 +188,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 5db825be61708b1a2b3f8f6e185e9b753829acef
-F src/test1.c ce2fab9e36932f5771c35291539366c9af229df3
+F src/test1.c 669b8fde7f3c72250d59fef1adda5e040f7baae0
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 124ff9735fb6bb7d41de180d6bac90e7b1509432
 F src/test4.c d1e5a5e904d4b444cf572391fdcb017638e36ff7
@@ -948,7 +948,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 065e5a5ea4f82f0d3fbb2e80d3a977af96c95683
-R bb24e8ea6743b27a72518b27f4017512
-U dan
-Z 83a2b05b96f2ad1cc32e9a94b3d4ad63
+P 6e1f4df51ad32e36715cba16f9df0d17a08dc653
+R f419aa12fb8154184260ed77fe4da08c
+U shaneh
+Z 359a9455871f477fa2aa903e2701f33c
