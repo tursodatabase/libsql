@@ -2924,6 +2924,17 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 
+    /*   sqlite3_test_control(SQLITE_TESTCTRL_LOCALTIME_FAULT, int onoff);
+    **
+    ** If parameter onoff is non-zero, configure the wrappers so that all
+    ** subsequent calls to localtime() and variants fail. If onoff is zero,
+    ** undo this setting.
+    */
+    case SQLITE_TESTCTRL_LOCALTIME_FAULT: {
+      sqlite3GlobalConfig.bLocaltimeFault = va_arg(ap, int);
+      break;
+    }
+
   }
   va_end(ap);
 #endif /* SQLITE_OMIT_BUILTIN_TEST */

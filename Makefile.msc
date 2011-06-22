@@ -114,6 +114,7 @@ LTLINK = $(TCC) -Fe$@
 # to deduce the binary type based on the object files.
 !IF "$(PLATFORM)"!=""
 LTLINKOPTS = /MACHINE:$(PLATFORM)
+LTLIBOPTS = /MACHINE:$(PLATFORM)
 !ENDIF
 
 # nawk compatible awk.
@@ -441,10 +442,10 @@ EXTHDR = $(EXTHDR) \
 all:	libsqlite3.lib sqlite3.exe libtclsqlite3.lib
 
 libsqlite3.lib:	$(LIBOBJ)
-	$(LTLIB) -OUT:$@ $(LIBOBJ) $(TLIBS)
+	$(LTLIB) $(LTLIBOPTS) /OUT:$@ $(LIBOBJ) $(TLIBS)
 
 libtclsqlite3.lib:	tclsqlite.lo libsqlite3.lib
-	$(LTLIB) /LIBPATH:$(TCLLIBDIR) -OUT:$@ tclsqlite.lo libsqlite3.lib $(LIBTCL:tcl=tclstub) $(TLIBS)
+	$(LTLIB) $(LTLIBOPTS) /LIBPATH:$(TCLLIBDIR) /OUT:$@ tclsqlite.lo libsqlite3.lib $(LIBTCL:tcl=tclstub) $(TLIBS)
 
 sqlite3.exe:	$(TOP)\src\shell.c libsqlite3.lib sqlite3.h
 	$(LTLINK) $(READLINE_FLAGS) \
@@ -837,7 +838,7 @@ test:	testfixture.exe sqlite3.exe
 	.\testfixture.exe $(TOP)\test\veryquick.test
 
 spaceanal_tcl.h:	$(TOP)\tool\spaceanal.tcl
-	$(NAWK) "/^[^#]/ { gsub(/\\/,\"\\\\\\\\\");gsub(/\\\"/,\"\\\\\\\"\");gsub(/^/,\"\\\"\");gsub(/$$/,\"\\n\\\"\");print }" \
+	$(NAWK) -f $(TOP)/tool/tostr.awk \
 		$(TOP)\tool\spaceanal.tcl >spaceanal_tcl.h
 
 sqlite3_analyzer.exe:	$(TESTFIXTURE_SRC) spaceanal_tcl.h
@@ -871,4 +872,4 @@ sqlite3.def: libsqlite3.lib
 		| sort >>sqlite3.def
 
 sqlite3.dll: $(LIBOBJ) sqlite3.def
-	link /DLL /OUT:$@ /DEF:sqlite3.def $(LIBOBJ)
+	link $(LTLINKOPTS) /DLL /DEF:sqlite3.def /OUT:$@ $(LIBOBJ)
