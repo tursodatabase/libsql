@@ -51,6 +51,7 @@ proc do_re_test {tn script expression} {
 # a call to getcwd() may fail if there are no free file descriptors. So
 # an error may be reported for either open() or getcwd() here.
 #
+puts "Possible valgrind error about invalid file descriptor follows:"
 do_test 1.1.1 {
   set ::log [list]
   list [catch {
