@@ -1,5 +1,5 @@
-C Print\sa\swarning\sin\soserror-1.1.1\sthat\sa\svalgrind\swarning\smight\soccur\sbut\sthat\nit\sis\sbenign.
-D 2011-06-22T15:21:48.838
+C Update\sa\stest\scase\sfor\sWindows\sthat\sfailed\sbecause\sof\ssize_hint\simplementation\sdifferences.
+D 2011-06-22T15:40:19.354
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -878,7 +878,7 @@ F test/wal.test 5617ad308bfdb8a8885220d8a261a6096a8d7e57
 F test/wal2.test aa0fb2314b3235be4503c06873e41ebfc0757782
 F test/wal3.test 5c396cc22497244d627306f4c1d360167353f8dd
 F test/wal4.test 3404b048fa5e10605facaf70384e6d2943412e30
-F test/wal5.test 1bbfaa316dc2a1d0d1fac3f4500c38a90055a41b
+F test/wal5.test f06a0427e06db00347e32eb9fa99d6a5c0f2d088
 F test/wal6.test 07aa31ca8892d0527f2c5c5a9a2a87aa421dfaa8
 F test/wal7.test 2ae8f427d240099cc4b2dfef63cff44e2a68a1bd
 F test/wal_common.tcl a98f17fba96206122eff624db0ab13ec377be4fe
@@ -948,7 +948,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P f14339c54bdeabc68c1e05b2c63ee95226f184e0
-R 890c7962dd3d85c2a0f6fce86cc02c53
-U drh
-Z c9a73b92d17c2dd3d2a6771a3a00914f
+P 13e96376e11d71d203f7b67c12272e8762200876
+R 0f9edd221a28a4b18bfff2393e67da75
+U shaneh
+Z 89c72c5e482a74abfd113068f7363d86
