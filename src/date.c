@@ -50,22 +50,6 @@
 
 #ifndef SQLITE_OMIT_DATETIME_FUNCS
 
-/*
-** On recent Windows platforms, the localtime_s() function is available
-** as part of the "Secure CRT". It is essentially equivalent to 
-** localtime_r() available under most POSIX platforms, except that the 
-** order of the parameters is reversed.
-**
-** See http://msdn.microsoft.com/en-us/library/a442x3ye(VS.80).aspx.
-**
-** If the user has not indicated to use localtime_r() or localtime_s()
-** already, check for an MSVC build environment that provides 
-** localtime_s().
-*/
-#if !defined(HAVE_LOCALTIME_R) && !defined(HAVE_LOCALTIME_S) && \
-     defined(_MSC_VER) && defined(_CRT_INSECURE_DEPRECATE)
-#define HAVE_LOCALTIME_S 1
-#endif
 
 /*
 ** A structure for holding a single date and time.
@@ -411,15 +395,83 @@ static void clearYMD_HMS_TZ(DateTime *p){
   p->validTZ = 0;
 }
 
+/*
+** On recent Windows platforms, the localtime_s() function is available
+** as part of the "Secure CRT". It is essentially equivalent to 
+** localtime_r() available under most POSIX platforms, except that the 
+** order of the parameters is reversed.
+**
+** See http://msdn.microsoft.com/en-us/library/a442x3ye(VS.80).aspx.
+**
+** If the user has not indicated to use localtime_r() or localtime_s()
+** already, check for an MSVC build environment that provides 
+** localtime_s().
+*/
+#if !defined(HAVE_LOCALTIME_R) && !defined(HAVE_LOCALTIME_S) && \
+     defined(_MSC_VER) && defined(_CRT_INSECURE_DEPRECATE)
+#define HAVE_LOCALTIME_S 1
+#endif
+
 #ifndef SQLITE_OMIT_LOCALTIME
 /*
-** Compute the difference (in milliseconds)
-** between localtime and UTC (a.k.a. GMT)
-** for the time value p where p is in UTC.
+** The following routine implements the rough equivalent of localtime_r()
+** using whatever operating-system specific localtime facility that
+** is available.  This routine returns 0 on success and
+** non-zero on any kind of error.
+**
+** If the sqlite3GlobalConfig.bLocaltimeFault variable is true then this
+** routine will always fail.
 */
-static sqlite3_int64 localtimeOffset(DateTime *p){
+static int osLocaltime(time_t *t, struct tm *pTm){
+  int rc;
+#if (!defined(HAVE_LOCALTIME_R) || !HAVE_LOCALTIME_R) \
+      && (!defined(HAVE_LOCALTIME_S) || !HAVE_LOCALTIME_S)
+  struct tm *pX;
+  sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
+  sqlite3_mutex_enter(mutex);
+  pX = localtime(t);
+#ifndef SQLITE_OMIT_BUILTIN_TEST
+  if( sqlite3GlobalConfig.bLocaltimeFault ) pX = 0;
+#endif
+  if( pX ) *pTm = *pX;
+  sqlite3_mutex_leave(mutex);
+  rc = pX==0;
+#else
+#ifndef SQLITE_OMIT_BUILTIN_TEST
+  if( sqlite3GlobalConfig.bLocaltimeFault ) return 1;
+#endif
+#if defined(HAVE_LOCALTIME_R) && HAVE_LOCALTIME_R
+  rc = localtime_r(t, pTm)==0;
+#else
+  rc = localtime_s(pTm, t);
+#endif /* HAVE_LOCALTIME_R */
+#endif /* HAVE_LOCALTIME_R || HAVE_LOCALTIME_S */
+  return rc;
+}
+#endif /* SQLITE_OMIT_LOCALTIME */
+
+
+#ifndef SQLITE_OMIT_LOCALTIME
+/*
+** Compute the difference (in milliseconds) between localtime and UTC
+** (a.k.a. GMT) for the time value p where p is in UTC. If no error occurs,
+** return this value and set *pRc to SQLITE_OK. 
+**
+** Or, if an error does occur, set *pRc to SQLITE_ERROR. The returned value
+** is undefined in this case.
+*/
+static sqlite3_int64 localtimeOffset(
+  DateTime *p,                    /* Date at which to calculate offset */
+  sqlite3_context *pCtx,          /* Write error here if one occurs */
+  int *pRc                        /* OUT: Error code. SQLITE_OK or ERROR */
+){
   DateTime x, y;
   time_t t;
+  struct tm sLocal;
+
+  /* Initialize the contents of sLocal to avoid a compiler warning. */
+  memset(&sLocal, 0, sizeof(sLocal));
+
   x = *p;
   computeYMD_HMS(&x);
   if( x.Y<1971 || x.Y>=2038 ){
@@ -437,47 +489,23 @@ static sqlite3_int64 localtimeOffset(DateTime *p){
   x.validJD = 0;
   computeJD(&x);
   t = (time_t)(x.iJD/1000 - 21086676*(i64)10000);
-#ifdef HAVE_LOCALTIME_R
-  {
-    struct tm sLocal;
-    localtime_r(&t, &sLocal);
-    y.Y = sLocal.tm_year + 1900;
-    y.M = sLocal.tm_mon + 1;
-    y.D = sLocal.tm_mday;
-    y.h = sLocal.tm_hour;
-    y.m = sLocal.tm_min;
-    y.s = sLocal.tm_sec;
+  if( osLocaltime(&t, &sLocal) ){
+    sqlite3_result_error(pCtx, "local time unavailable", -1);
+    *pRc = SQLITE_ERROR;
+    return 0;
   }
-#elif defined(HAVE_LOCALTIME_S) && HAVE_LOCALTIME_S
-  {
-    struct tm sLocal;
-    localtime_s(&sLocal, &t);
-    y.Y = sLocal.tm_year + 1900;
-    y.M = sLocal.tm_mon + 1;
-    y.D = sLocal.tm_mday;
-    y.h = sLocal.tm_hour;
-    y.m = sLocal.tm_min;
-    y.s = sLocal.tm_sec;
-  }
-#else
-  {
-    struct tm *pTm;
-    sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
-    pTm = localtime(&t);
-    y.Y = pTm->tm_year + 1900;
-    y.M = pTm->tm_mon + 1;
-    y.D = pTm->tm_mday;
-    y.h = pTm->tm_hour;
-    y.m = pTm->tm_min;
-    y.s = pTm->tm_sec;
-    sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
-  }
-#endif
+  y.Y = sLocal.tm_year + 1900;
+  y.M = sLocal.tm_mon + 1;
+  y.D = sLocal.tm_mday;
+  y.h = sLocal.tm_hour;
+  y.m = sLocal.tm_min;
+  y.s = sLocal.tm_sec;
   y.validYMD = 1;
   y.validHMS = 1;
   y.validJD = 0;
   y.validTZ = 0;
   computeJD(&y);
+  *pRc = SQLITE_OK;
   return y.iJD - x.iJD;
 }
 #endif /* SQLITE_OMIT_LOCALTIME */
@@ -501,9 +529,12 @@ static sqlite3_int64 localtimeOffset(DateTime *p){
 **     localtime
 **     utc
 **
-** Return 0 on success and 1 if there is any kind of error.
+** Return 0 on success and 1 if there is any kind of error. If the error
+** is in a system call (i.e. localtime()), then an error message is written
+** to context pCtx. If the error is an unrecognized modifier, no error is
+** written to pCtx.
 */
-static int parseModifier(const char *zMod, DateTime *p){
+static int parseModifier(sqlite3_context *pCtx, const char *zMod, DateTime *p){
   int rc = 1;
   int n;
   double r;
@@ -523,9 +554,8 @@ static int parseModifier(const char *zMod, DateTime *p){
       */
       if( strcmp(z, "localtime")==0 ){
         computeJD(p);
-        p->iJD += localtimeOffset(p);
+        p->iJD += localtimeOffset(p, pCtx, &rc);
         clearYMD_HMS_TZ(p);
-        rc = 0;
       }
       break;
     }
@@ -546,11 +576,12 @@ static int parseModifier(const char *zMod, DateTime *p){
       else if( strcmp(z, "utc")==0 ){
         sqlite3_int64 c1;
         computeJD(p);
-        c1 = localtimeOffset(p);
-        p->iJD -= c1;
-        clearYMD_HMS_TZ(p);
-        p->iJD += c1 - localtimeOffset(p);
-        rc = 0;
+        c1 = localtimeOffset(p, pCtx, &rc);
+        if( rc==SQLITE_OK ){
+          p->iJD -= c1;
+          clearYMD_HMS_TZ(p);
+          p->iJD += c1 - localtimeOffset(p, pCtx, &rc);
+        }
       }
 #endif
       break;
@@ -731,9 +762,8 @@ static int isDate(
     }
   }
   for(i=1; i<argc; i++){
-    if( (z = sqlite3_value_text(argv[i]))==0 || parseModifier((char*)z, p) ){
-      return 1;
-    }
+    z = sqlite3_value_text(argv[i]);
+    if( z==0 || parseModifier(context, (char*)z, p) ) return 1;
   }
   return 0;
 }

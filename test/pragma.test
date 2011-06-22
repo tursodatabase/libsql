@@ -1312,7 +1312,7 @@ if !$skip_lock_proxy_tests {
 
   sqlite3 db test.db
   # set lock proxy name and then query it via pragma interface
-  set lpp [exec mktemp -t 'proxy1']
+  set lpp [exec mktemp -t "proxy1"]
   do_test pragma-16.1 {
     execsql "PRAGMA lock_proxy_file='$lpp'"
     execsql "select * from sqlite_master"
@@ -1337,7 +1337,7 @@ if !$skip_lock_proxy_tests {
   } $lpp
 
   db2 close
-  set lpp2 [exec mktemp -t 'proxy2']
+  set lpp2 [exec mktemp -t "proxy2"]
 
   # 2nd database connection cannot override the lock proxy file
   do_test pragma-16.3 {

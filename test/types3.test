@@ -21,7 +21,7 @@ source $testdir/tester.tcl
 # A variable with only a string representation comes in as TEXT
 do_test types3-1.1 {
   set V {}
-  append V {}
+  append V x
   concat [tcl_variable_type V] [execsql {SELECT typeof(:V)}]
 } {string text}
 
