@@ -1,5 +1,5 @@
-C Modify\sthe\simplementation\sof\sthe\stest\scode\sin\stest_vfs.c\sso\sthat\stest\sVFS\sobjects\smay\sbe\sinvoked\srecursively.
-D 2011-06-22T10:37:19.411
+C Change\sa\stest\scase\sin\stypes3.test\sslightly\sso\sthat\sit\sworks\swith\sthe\slatest\sversions\sof\sTcl.
+D 2011-06-22T10:56:54.742
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -843,7 +843,7 @@ F test/triggerD.test c6add3817351451e419f6ff9e9a259b02b6e2de7
 F test/tt3_checkpoint.c 415eccce672d681b297485fc20f44cdf0eac93af
 F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
 F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
-F test/types3.test a0f66bf12f80fad89493535474f7a6d16fa58150
+F test/types3.test 99e009491a54f4dc02c06bdbc0c5eea56ae3e25a
 F test/unique.test 083c7fff74695bcc27a71d75699deba3595bc9c2
 F test/unixexcl.test 9d80a54d86d2261f660758928959368ffc36151e
 F test/unordered.test e81169ce2a8f31b2c6b66af691887e1376ab3ced
@@ -948,7 +948,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P c2e5faca144d2c25aada2a77b4ddefa5ca6ea925
-R a4cd5b97b8672366dadaf62699ff3d86
+P 065e5a5ea4f82f0d3fbb2e80d3a977af96c95683
+R bb24e8ea6743b27a72518b27f4017512
 U dan
-Z 076f8a98bd958dd0f5e07208d97aac36
+Z 83a2b05b96f2ad1cc32e9a94b3d4ad63
