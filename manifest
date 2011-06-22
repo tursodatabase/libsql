@@ -1,5 +1,5 @@
-C Fix\stypo\sin\sprevious\stester.tcl\scommit.
-D 2011-06-21T19:39:59.899
+C Modify\sthe\simplementation\sof\sthe\stest\scode\sin\stest_vfs.c\sso\sthat\stest\sVFS\sobjects\smay\sbe\sinvoked\srecursively.
+D 2011-06-22T10:37:19.411
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -228,7 +228,7 @@ F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c 162c4ec0137a549c009bb9ecab550527743cfc5d
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c fe9a7803fc1d69cccb60f016f28c1cedf2d9fcfa
-F src/test_vfs.c e7855568dfa1e0ba73668d273b65605d9f8b77e8
+F src/test_vfs.c 1d82aee93e644188179da2165f4fe3ad6b62782c
 F src/test_vfstrace.c 0b884e06094a746da729119a2cabdc7aa790063d
 F src/test_wholenumber.c 6129adfbe7c7444f2e60cc785927f3aa74e12290
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
@@ -948,7 +948,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 30dd4f887989354b5d01cc80bd9c4bd3528d3ae1
-R 084de3a15eae3d4856b5e83a7233fad0
-U shaneh
-Z cacbdaf793f85a27b495ae7addf7022f
+P c2e5faca144d2c25aada2a77b4ddefa5ca6ea925
+R a4cd5b97b8672366dadaf62699ff3d86
+U dan
+Z 076f8a98bd958dd0f5e07208d97aac36
