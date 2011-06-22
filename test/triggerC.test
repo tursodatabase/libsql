@@ -228,22 +228,22 @@ foreach {n tdefn rc} {
 }
 
 do_test triggerC-2.2 {
-  execsql {
+  execsql "
     CREATE TABLE t22(x);
 
     CREATE TRIGGER t22a AFTER INSERT ON t22 BEGIN
       INSERT INTO t22 SELECT x + (SELECT max(x) FROM t22) FROM t22;
     END;
     CREATE TRIGGER t22b BEFORE INSERT ON t22 BEGIN
-      SELECT CASE WHEN (SELECT count(*) FROM t22) >= 100
+      SELECT CASE WHEN (SELECT count(*) FROM t22) >= [expr $SQLITE_MAX_TRIGGER_DEPTH / 2]
                   THEN RAISE(IGNORE)
                   ELSE NULL END;
     END;
 
     INSERT INTO t22 VALUES(1);
     SELECT count(*) FROM t22;
-  }
-} {100}
+  "
+} [list [expr $SQLITE_MAX_TRIGGER_DEPTH / 2]]
 
 do_test triggerC-2.3 {
   execsql "

@@ -1,5 +1,5 @@
-C Add\sa\sflush\sof\sstdout\sso\ssome\stest\scode\sreading\sfrom\sa\scommand\spipe\sworks\scorrectly\son\sWindows.
-D 2011-06-22T14:21:31.932
+C Adjust\sa\stest\scase\sin\striggerC.test\sto\shandle\snon-default\sSQLITE_MAX_TRIGGER_DEPTH\ssettings.
+D 2011-06-22T14:43:59.375
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -838,7 +838,7 @@ F test/trigger8.test 30cb0530bd7c4728055420e3f739aa00412eafa4
 F test/trigger9.test 5b0789f1c5c4600961f8e68511b825b87be53e31
 F test/triggerA.test eaf11a29db2a11967d2d4b49d37f92bce598194e
 F test/triggerB.test 56780c031b454abac2340dbb3b71ac5c56c3d7fe
-F test/triggerC.test 811ab569af9e6fc894afbcc0d77d14500b2406c5
+F test/triggerC.test 02c690febf608ae20b9af86184a9867f79855b1d
 F test/triggerD.test c6add3817351451e419f6ff9e9a259b02b6e2de7
 F test/tt3_checkpoint.c 415eccce672d681b297485fc20f44cdf0eac93af
 F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
@@ -948,7 +948,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 6e1f4df51ad32e36715cba16f9df0d17a08dc653
-R f419aa12fb8154184260ed77fe4da08c
+P 6705f21effaa2f72dc5e17e888d679b8d35c2c3a
+R 87da11704e690d7cf704bfee15761e8a
 U shaneh
-Z 359a9455871f477fa2aa903e2701f33c
+Z 7c44dac3b62246a10bc140e2fc2fcdfe
