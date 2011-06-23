@@ -1,5 +1,5 @@
-C Do\snot\sdo\saffinity\stransformations\son\sinserts\sinto\san\sindex\sfor\sthe\nmanifestation\sof\sa\sview\sor\ssubquery.\s\sFix\sfor\sticket\s[91e2e8ba6ff2e2].
-D 2011-06-23T16:18:26.708
+C Add\sa\stest\sfor\sticket\s[91e2e8ba6f].\sNo\schanges\sto\scode.
+D 2011-06-23T16:40:26.224
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -725,6 +725,7 @@ F test/tkt-78e04e52ea.test ab52f0c1e2de6e46c910f4cc16b086bba05952b7
 F test/tkt-80ba201079.test a09684db1a0bd55b8838f606adccee456a51ddbf
 F test/tkt-80e031a00f.test 9a154173461a4dbe2de49cda73963e04842d52f7
 F test/tkt-8454a207b9.test c583a9f814a82a2b5ba95207f55001c9f0cd816c
+F test/tkt-91e2e8ba6f.test 08c4f94ae07696b05c9b822da0b4e5337a2f54c5
 F test/tkt-94c04eaadb.test be5ea61cb04dfdc047d19b5c5a9e75fa3da67a7f
 F test/tkt-9d68c883.test 458f7d82a523d7644b54b497c986378a7d8c8b67
 F test/tkt-b351d95f9.test d14a503c414c5c58fdde3e80f9a3cfef986498c0
@@ -948,7 +949,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 8dca748b23fa6f9abf47a186dcd1766f4dcf3ab7
-R 8a2977c4b779153cca71718dadb8abe7
-U drh
-Z c7801050cf22d76dd7a2a355fe09f4f2
+P 0b3174e0b1364ccc31853dce02bce5f7d3d431db
+R f6237300c8e94b60ef9cb6b4fc0d6ad4
+U dan
+Z 66a01206844bd880ddebccebd0a5e317
