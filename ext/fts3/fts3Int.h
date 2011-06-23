@@ -500,9 +500,6 @@ int sqlite3Fts3TermSegReaderCursor(
 
 void sqlite3Fts3EvalPhraseCleanup(Fts3Phrase *);
 
-int sqlite3Fts3EvalStart(Fts3Cursor *, Fts3Expr *, int);
-int sqlite3Fts3EvalNext(Fts3Cursor *pCsr);
-
 int sqlite3Fts3MsrIncrStart(
     Fts3Table*, Fts3MultiSegReader*, int, const char*, int);
 int sqlite3Fts3MsrIncrNext(
