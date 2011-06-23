@@ -644,6 +644,9 @@ static void fts3DatabasePageSize(int *pRc, Fts3Table *p){
         sqlite3_step(pStmt);
         p->nPgsz = sqlite3_column_int(pStmt, 0);
         rc = sqlite3_finalize(pStmt);
+      }else if( rc==SQLITE_AUTH ){
+        p->nPgsz = 1024;
+        rc = SQLITE_OK;
       }
     }
     assert( p->nPgsz>0 || rc!=SQLITE_OK );

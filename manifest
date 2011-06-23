@@ -1,5 +1,5 @@
-C Added\slimited\ssupport\sto\somittest.tcl\sfor\snmake\smakefile.
-D 2011-06-22T20:14:09.429
+C If\s"PRAGMA\spage_size"\scommands\sare\snot\sauthorized,\sthe\sFTS\smodule\swill\sassume\na\spage\ssize\sof\s1024.
+D 2011-06-23T00:59:41.395
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -62,7 +62,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 1c8a45dfd6836e7dea0307008079793ac0fc3b68
+F ext/fts3/fts3.c ca776037493d0081da70a6afc0df80f5ce347cb7
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h fa493ccbad78a2c99ad1c984f651c0c202e68536
 F ext/fts3/fts3_aux.c 0ebfa7b86cf8ff6a0861605fcc63b83ec1b70691
@@ -482,7 +482,7 @@ F test/fts3rnd.test 1320d8826a845e38a96e769562bf83d7a92a15d0
 F test/fts3shared.test 8bb266521d7c5495c0ae522bb4d376ad5387d4a2
 F test/fts3snippet.test a12f22a3ba4dd59751a57c79b031d07ab5f51ddd
 F test/fts3sort.test 63d52c1812904b751f9e1ff487472e44833f5402
-F test/fts4aa.test b99ad4d9a43a00efd096ef4d0b082de58d848d41
+F test/fts4aa.test 148d9eb54901af23b5d402b1f388f43e559e1728
 F test/func.test 6c5ce11e3a0021ca3c0649234e2d4454c89110ca
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 7ba2ca5a1e9bca900ba2c230cf04bd67184bc1bc
@@ -948,7 +948,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P f853fa63c357b78f93e553eb81cd79d4c3e06850
-R ddc3e17983db538a7697328fd62bb1d7
-U shaneh
-Z 53ee1769a28d0b67b6ec5c95bb5607ec
+P f5f46dc7b8c23e77fd1ff792b7d0cf070de47ca3
+R 75bcfe449226b3d5c48d659bee0c9f49
+U drh
+Z 3a2cb80a9cc46dd7ad3b57ead9348db1

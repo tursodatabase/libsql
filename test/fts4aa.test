@@ -22,9 +22,11 @@ ifcapable !fts3 {
   return
 }
 
-do_test fts4aa-1.0 {
+# This procedure fills an existing FTS3/FTS4 table with many entries.
+# The table needs to have a single column (other than docid) named "words".
+#
+proc fts4aa_fill_table {} {
 db eval {
-CREATE VIRTUAL TABLE t1 USING fts4(words, tokenize porter);
 BEGIN TRANSACTION;
 INSERT INTO t1(docid,words) VALUES(1001001,'In the beginning God created the heaven and the earth.');
 INSERT INTO t1(docid,words) VALUES(1001002,'And the earth was without form, and void; and darkness was upon the face of the deep. And the Spirit of God moved upon the face of the waters.');
@@ -1561,9 +1563,41 @@ INSERT INTO t1(docid,words) VALUES(1050025,'And Joseph took an oath of the child
 INSERT INTO t1(docid,words) VALUES(1050026,'So Joseph died, being an hundred and ten years old: and they embalmed him, and he was put in a coffin in Egypt.');
 COMMIT;
 }
+}
+
+# The following is a list of queries to perform against the above
+# FTS3/FTS4 database.  We will be trying these queries in various
+# configurations to ensure that they always return the same answers.
+#
+set fts4aa_queries {
+  {abraham}
+  {the king}
+  {"the king"}
+  {abraham OR joseph}
+  {ab* OR jos*}
+  {lived t*}
+  {spake hebrew}
+  {melchizedek}
+  {t* melchizedek}
+  {melchizedek t*}
+}
+unset -nocomplain fts4aa_res
+
+# Set up the baseline results
+#
+do_test fts4aa-1.0 {
+  db eval {
+    CREATE VIRTUAL TABLE t1 USING fts4(words, tokenize porter);
+  }
+  fts4aa_fill_table
+  foreach q $::fts4aa_queries {
+    set r [db eval {SELECT docid FROM t1 WHERE words MATCH $q ORDER BY docid}]
+    set ::fts4aa_res($q) $r
+  }
 } {}
 
-
+# Legacy test cases
+#
 do_test fts4aa-1.1 {
   db eval {
     SELECT docid FROM t1 EXCEPT SELECT docid FROM t1_docsize
@@ -1583,19 +1617,19 @@ proc mit {blob} {
 }
 db func mit mit
 
-do_test fts4aa-2.1 {
+do_test fts4aa-1.3 {
   db eval {
     SELECT docid, mit(matchinfo(t1, 'pcxnal')) FROM t1 WHERE t1 MATCH 'melchizedek';
   }
 } {1014018 {1 1 1 1 1 1533 25 20}}
-do_test fts4aa-2.2 {
+do_test fts4aa-1.4 {
   db eval {
     SELECT docid, mit(matchinfo(t1, 'pcxnal')) FROM t1
      WHERE t1 MATCH 'spake hebrew'
      ORDER BY docid;
   }
 } {1039014 {2 1 1 40 40 1 6 6 1533 25 42} 1039017 {2 1 1 40 40 1 6 6 1533 25 26}}
-do_test fts4aa-2.3 {
+do_test fts4aa-1.5 {
   db eval {
     SELECT docid, mit(matchinfo(t1, 'pcxnal')) FROM t1
      WHERE t1 MATCH 'laban overtook jacob'
@@ -1603,7 +1637,7 @@ do_test fts4aa-2.3 {
   }
 } {1031025 {3 1 2 54 46 1 3 3 2 181 160 1533 25 24}}
 
-do_test fts4aa-9.1 {
+do_test fts4aa-1.6 {
   db eval {
     DELETE FROM t1 WHERE docid!=1050026;
     SELECT hex(size) FROM t1_docsize;
@@ -1611,17 +1645,17 @@ do_test fts4aa-9.1 {
   }
 } {17 01176F}
 
-do_test fts4aa-9.2 {
+do_test fts4aa-1.7 {
   db eval {
     SELECT docid FROM t1 EXCEPT SELECT docid FROM t1_docsize
   }
 } {}
-do_test fts4aa-9.3 {
+do_test fts4aa-1.8 {
   db eval {
     SELECT docid FROM t1_docsize EXCEPT SELECT docid FROM t1
   }
 } {}
-do_test fts4aa-9.4 {
+do_test fts4aa-1.9 {
   # Note: Token 'in' is being deferred in the following query. 
   db eval {
     SELECT docid, mit(matchinfo(t1, 'pcxnal')) FROM t1
@@ -1629,5 +1663,68 @@ do_test fts4aa-9.4 {
      ORDER BY docid;
   }
 } {1050026 {4 1 1 1 1 1 1 1 2 1 1 1 1 1 1 23 23}}
+
+# Should get the same search results from FTS3
+#
+do_test fts4aa-2.0 {
+  db eval {
+    DROP TABLE t1;
+    CREATE VIRTUAL TABLE t1 USING fts3(words, tokenize porter);
+  }
+  fts4aa_fill_table
+} {}
+unset -nocomplain ii
+set ii 0
+foreach {q r} [array get fts4aa_res] {
+  incr ii
+  do_test fts4aa-2.$ii {
+    db eval {SELECT docid FROM t1 WHERE words MATCH $::q ORDER BY docid}
+  } $r
+}
+
+# Should get the same search results when the page size is very large
+#
+do_test fts4aa-3.0 {
+  db close
+  file delete -force test.db
+  sqlite3 db test.db
+  db eval {
+    PRAGMA page_size=65536;
+    CREATE VIRTUAL TABLE t1 USING fts4(words, tokenize porter);
+  }
+  fts4aa_fill_table
+} {}
+unset -nocomplain ii
+set ii 0
+foreach {q r} [array get fts4aa_res] {
+  incr ii
+  do_test fts4aa-3.$ii {
+    db eval {SELECT docid FROM t1 WHERE words MATCH $::q ORDER BY docid}
+  } $r
+}
+
+# Should get the same search results when an authorizer prevents
+# all PRAGMA statements.
+#
+proc no_pragma_auth {code arg1 arg2 arg3 arg4} {
+  if {$code=="SQLITE_PRAGMA"} {return SQLITE_DENY}
+  return SQLITE_OK;
+}
+do_test fts4aa-4.0 {
+  db auth ::no_pragma_auth
+  db eval {
+    DROP TABLE t1;
+    CREATE VIRTUAL TABLE t1 USING fts4(words, tokenize porter);
+  }
+  fts4aa_fill_table
+} {}
+unset -nocomplain ii
+set ii 0
+foreach {q r} [array get fts4aa_res] {
+  incr ii
+  do_test fts4aa-4.$ii {
+    db eval {SELECT docid FROM t1 WHERE words MATCH $::q ORDER BY docid}
+  } $r
+}
 
 finish_test
