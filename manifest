@@ -1,5 +1,5 @@
-C If\s"PRAGMA\spage_size"\scommands\sare\snot\sauthorized,\sthe\sFTS\smodule\swill\sassume\na\spage\ssize\sof\s1024.
-D 2011-06-23T00:59:41.395
+C Remove\sunused\svariables\sfrom\stest_vfs.c
+D 2011-06-23T01:07:49.019
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -228,7 +228,7 @@ F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c 162c4ec0137a549c009bb9ecab550527743cfc5d
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c fe9a7803fc1d69cccb60f016f28c1cedf2d9fcfa
-F src/test_vfs.c 1d82aee93e644188179da2165f4fe3ad6b62782c
+F src/test_vfs.c 956cb3f5cbd2a0d09129540e615bb0fb761c083d
 F src/test_vfstrace.c 0b884e06094a746da729119a2cabdc7aa790063d
 F src/test_wholenumber.c 6129adfbe7c7444f2e60cc785927f3aa74e12290
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
@@ -948,7 +948,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P f5f46dc7b8c23e77fd1ff792b7d0cf070de47ca3
-R 75bcfe449226b3d5c48d659bee0c9f49
+P ba39382ef546b4c4ae15ed90ef0b6c87762bffef
+R a2e4da6d4f37b715c700de568f5ee337
 U drh
-Z 3a2cb80a9cc46dd7ad3b57ead9348db1
+Z a27503cdff9ca0289ec2563bb6165861
