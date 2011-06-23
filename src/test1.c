@@ -5605,6 +5605,7 @@ static int optimization_control(
     { "index-cover",      SQLITE_IndexCover     },
     { "groupby-order",    SQLITE_GroupByOrder   },
     { "factor-constants", SQLITE_FactorOutConst },
+    { "real-as-int",      SQLITE_IdxRealAsInt   },
   };
 
   if( objc!=4 ){
