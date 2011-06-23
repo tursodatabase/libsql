@@ -1,5 +1,5 @@
-C Pull\sthe\slatest\schanges\sfrom\strunk\sinto\sthe\sapple-osx\sbranch.
-D 2011-06-23T02:30:36.446
+C Pull\sthe\slast-minute\sfixes\sfor\s3.7.7\sinto\sthe\sapple-osx\sbranch.
+D 2011-06-23T17:42:45.824
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8410b02448997eb43bdf0ffa482c9bc2d2624e45
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -135,7 +135,7 @@ F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 7deec4534f3b5a0c3b4a4cbadf809d321f64f9c4
 F src/date.c d3c11de76392ea62637bfac0f4655889fc2f5a85
-F src/delete.c cecc926c70783452f3e8eb452c728291ce1a0b21
+F src/delete.c 4925f9121525fc871f5d8d13c1f7dcc91abb38bb
 F src/expr.c ab46ab0f0c44979a8164ca31728d7d10ae5e8106
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 9fabba17a4d4778dc660f0cb9d781fc86d7b9d41
@@ -187,12 +187,12 @@ F src/shell.c 0e0173b3e79d956368013e759f084caa7995ecb1
 F src/sqlite.h.in 4b7255c10d39c5faf089dbd29cde7c367ff39f1f
 F src/sqlite3_private.h 2a814d17913732831acf13e7e87860105a3416e4
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
-F src/sqliteInt.h a9248d3b0d2b1cf428d8642320fb13044a8888e0
+F src/sqliteInt.h 7b72f7c6929757c0678d94524dbc7e7e3d6dc398
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 5db825be61708b1a2b3f8f6e185e9b753829acef
-F src/test1.c 81c73914d9d2d1fd73bf34cfef0dd3d3f1d4cb38
+F src/test1.c 07463c4177b450dd4d9e2425c58ea8cc34502247
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 124ff9735fb6bb7d41de180d6bac90e7b1509432
 F src/test4.c d1e5a5e904d4b444cf572391fdcb017638e36ff7
@@ -730,6 +730,7 @@ F test/tkt-78e04e52ea.test ab52f0c1e2de6e46c910f4cc16b086bba05952b7
 F test/tkt-80ba201079.test a09684db1a0bd55b8838f606adccee456a51ddbf
 F test/tkt-80e031a00f.test 9a154173461a4dbe2de49cda73963e04842d52f7
 F test/tkt-8454a207b9.test c583a9f814a82a2b5ba95207f55001c9f0cd816c
+F test/tkt-91e2e8ba6f.test 08c4f94ae07696b05c9b822da0b4e5337a2f54c5
 F test/tkt-94c04eaadb.test be5ea61cb04dfdc047d19b5c5a9e75fa3da67a7f
 F test/tkt-9d68c883.test 458f7d82a523d7644b54b497c986378a7d8c8b67
 F test/tkt-b351d95f9.test d14a503c414c5c58fdde3e80f9a3cfef986498c0
@@ -953,7 +954,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P fb7ad09dec805ccb709b138509d6e1eb77323c2f 8dca748b23fa6f9abf47a186dcd1766f4dcf3ab7
-R 9a5aa13fe4b32880371984e2fbe95a7d
+P b5acda0445db39d58229d65a361d539db30f3833 b61a76a53af04f731fe7617f7b6b4fb2aef6587b
+R c25239c8ec2046d490b64494ae9d6208
 U drh
-Z 69d0b611617bf66f9b720723d912b28c
+Z bf5f3fb5150b87e28dd1ca0cfe21c8ad
