@@ -1070,7 +1070,6 @@ static int testvfs_obj_cmd(
       if( objc==3 ){
         int nByte;
         if( p->pScript ){
-          int i;
           Tcl_DecrRefCount(p->pScript);
           p->pScript = 0;
         }
@@ -1223,7 +1222,6 @@ static int testvfs_obj_cmd(
 
 static void testvfs_obj_del(ClientData cd){
   Testvfs *p = (Testvfs *)cd;
-  int i;
   if( p->pScript ) Tcl_DecrRefCount(p->pScript);
   sqlite3_vfs_unregister(p->pVfs);
   ckfree((char *)p->pVfs);
