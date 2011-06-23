@@ -1,5 +1,5 @@
-C Add\sa\sbit\sto\sthe\sSQLITE_TESTCTRL_OPTIMIZATIONS\ssetting\sthat\swill\sdisable\naffinity\swhen\swriting\sto\sany\sindex,\sregardless\sof\swhether\sor\snot\sthe\sindex\nis\son\sa\smanifestation\sof\sa\sview.\s\sThis\sallows\sbetter\stesting\sof\sthe\sfix\nfor\sticket\s[91e2e8ba6ff2e2].
-D 2011-06-23T17:29:33.244
+C Version\s3.7.7\srelease\scandidate\s#1.
+D 2011-06-23T19:49:22.376
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -949,7 +949,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P c271f7e88fc081a460dd3f4afb24aa9fb7fa2917
+P b61a76a53af04f731fe7617f7b6b4fb2aef6587b
 R 5805b6f3882ce897a61c4ce87076bc70
 U drh
-Z 83d974f3e6b84b4810ac6511db96428d
+Z a111ec09c232c3c09811b275ae45bf17
