@@ -1,5 +1,5 @@
-C Add\sa\stest\sfor\sticket\s[91e2e8ba6f].\sNo\schanges\sto\scode.
-D 2011-06-23T16:40:26.224
+C Add\sa\sbit\sto\sthe\sSQLITE_TESTCTRL_OPTIMIZATIONS\ssetting\sthat\swill\sdisable\naffinity\swhen\swriting\sto\sany\sindex,\sregardless\sof\swhether\sor\snot\sthe\sindex\nis\son\sa\smanifestation\sof\sa\sview.\s\sThis\sallows\sbetter\stesting\sof\sthe\sfix\nfor\sticket\s[91e2e8ba6ff2e2].
+D 2011-06-23T17:29:33.244
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -132,7 +132,7 @@ F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 7deec4534f3b5a0c3b4a4cbadf809d321f64f9c4
 F src/date.c d3c11de76392ea62637bfac0f4655889fc2f5a85
-F src/delete.c de45b70c0225e5d55b6edee2cdd460da92d401ca
+F src/delete.c 4925f9121525fc871f5d8d13c1f7dcc91abb38bb
 F src/expr.c ab46ab0f0c44979a8164ca31728d7d10ae5e8106
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 9fabba17a4d4778dc660f0cb9d781fc86d7b9d41
@@ -183,12 +183,12 @@ F src/select.c d9d440809025a58547e39f4f268c2a296bfb56ff
 F src/shell.c 0e0173b3e79d956368013e759f084caa7995ecb1
 F src/sqlite.h.in 4b7255c10d39c5faf089dbd29cde7c367ff39f1f
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
-F src/sqliteInt.h a9248d3b0d2b1cf428d8642320fb13044a8888e0
+F src/sqliteInt.h 7b72f7c6929757c0678d94524dbc7e7e3d6dc398
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 5db825be61708b1a2b3f8f6e185e9b753829acef
-F src/test1.c 669b8fde7f3c72250d59fef1adda5e040f7baae0
+F src/test1.c 8eef932f1024f1076a8adb8a6f5d9c5267c9e969
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 124ff9735fb6bb7d41de180d6bac90e7b1509432
 F src/test4.c d1e5a5e904d4b444cf572391fdcb017638e36ff7
@@ -949,7 +949,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 0b3174e0b1364ccc31853dce02bce5f7d3d431db
-R f6237300c8e94b60ef9cb6b4fc0d6ad4
-U dan
-Z 66a01206844bd880ddebccebd0a5e317
+P c271f7e88fc081a460dd3f4afb24aa9fb7fa2917
+R 5805b6f3882ce897a61c4ce87076bc70
+U drh
+Z 83d974f3e6b84b4810ac6511db96428d
