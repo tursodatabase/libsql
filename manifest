@@ -1,5 +1,5 @@
-C Remove\sunused\svariables\sfrom\stest_vfs.c
-D 2011-06-23T01:07:49.019
+C Provide\sthe\sSQLITE_MAX_SCHEMA_RETRY\scompile-time\sparameter\sfor\sadjusting\sthe\nnumber\sof\sreparse\sattempts\safter\sa\sschema\schange.
+D 2011-06-23T01:42:53.188
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -241,7 +241,7 @@ F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
 F src/vdbe.c 50b5b4ef29d928a4f60905f820ee1ab2f8ced29f
 F src/vdbe.h 5cf09e7ee8a3f7d93bc51f196a96550786afe7a1
 F src/vdbeInt.h ad84226cc0adcb1185c22b70696b235a1678bb45
-F src/vdbeapi.c 0eeadc75e44a30efd996d6af6e7c5a2488e35be8
+F src/vdbeapi.c 2f908c65337b16c6249ab378d477e74492cf759b
 F src/vdbeaux.c 0b2e2880f13af400a27c92a7673287c3eaec8b21
 F src/vdbeblob.c f024f0bf420f36b070143c32b15cc7287341ffd3
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
@@ -948,7 +948,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P ba39382ef546b4c4ae15ed90ef0b6c87762bffef
-R a2e4da6d4f37b715c700de568f5ee337
+P 07884cc218e6899efd163448ab116f296722f7b8
+R 1ebb2dce4c03a2b8c248fc12b488baac
 U drh
-Z a27503cdff9ca0289ec2563bb6165861
+Z ee2965e68946933dec7ceb7c99aa065f
