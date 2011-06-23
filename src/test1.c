@@ -5517,6 +5517,11 @@ static int test_print_eqp(
   }
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
   rc = printExplainQueryPlan(pStmt);
+  /* This is needed on Windows so that a test case using this 
+  ** function can open a read pipe and get the output of
+  ** printExplainQueryPlan() immediately.
+  */
+  fflush(stdout);
   Tcl_SetResult(interp, (char *)t1ErrorName(rc), 0);
   return TCL_OK;
 }
