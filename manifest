@@ -1,5 +1,5 @@
-C Merging\slocal\schanges\sto\sapple-osx
-D 2011-06-24T20:47:06.827
+C Fix\sthe\sbuild.
+D 2011-06-24T21:47:39.109
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8410b02448997eb43bdf0ffa482c9bc2d2624e45
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -184,7 +184,7 @@ F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 75b7dd8c6a5ff9b8ec3f7ed51d31af8b30f114bc
 F src/shell.c 0e0173b3e79d956368013e759f084caa7995ecb1
-F src/sqlite.h.in 6961961e59fdb55d6719f11db79fb167c19bb275
+F src/sqlite.h.in dc26f18c71a30680b163317aa3d068e3aa02980c
 F src/sqlite3_private.h 1d18557420cb0cc51ff31ec0a3fcce11e5cd6f5a
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
 F src/sqliteInt.h 7b72f7c6929757c0678d94524dbc7e7e3d6dc398
@@ -954,7 +954,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 2d4458af59c697ad453996815d14442230654670
-R 7252e755eb943c8802f791d94d90614b
-U adam
-Z 048c280bdc3796d3c8e3318197ddc394
+P 34f0efa2b12e8eb09331768b1524a076baeb34ea
+R 768b5e530139c389ea55389c2df533b2
+U drh
+Z 525590b6735d93e452cf9134dab9e566

@@ -64,9 +64,6 @@ extern "C" {
 */
 #define SQLITE_DEPRECATED
 #define SQLITE_EXPERIMENTAL
-#ifndef __OSX_AVAILABLE_BUT_DEPRECATED
-#define __OSX_AVAILABLE_BUT_DEPRECATED(MacOSAvailable, MacOSDeprecated, iPhoneOSAvailable, iPhoneOSDeprecated)
-#endif
 
 /*
 ** Ensure these symbols were not defined by some previous header file.
@@ -4466,7 +4463,7 @@ void *sqlite3_update_hook(
 **
 ** See Also:  [SQLite Shared-Cache Mode]
 */
-int sqlite3_enable_shared_cache(int) __OSX_AVAILABLE_BUT_DEPRECATED(__MAC_10_0, __MAC_10_7, __IPHONE_2_0, __IPHONE_5_0);
+int sqlite3_enable_shared_cache(int);
 
 /*
 ** CAPI3REF: Attempt To Free Heap Memory
