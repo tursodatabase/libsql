@@ -1,5 +1,5 @@
-C Fix\sa\sWindows\sline\sending\sissue\sin\sa\stest\scase\sthat\swas\scausing\san\sincrblob\stest\sto\sfail.
-D 2011-06-24T13:50:13.840
+C Explicitly\scast\san\sargument\sto\sprintf()\sto\s(int),\sin\scase\sthe\sresult\sof\sthe\spointer\sarithmetic\sexpression\sis\sa\s64-bit\sinteger\son\ssome\splatforms.
+D 2011-06-24T18:43:23.777
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -127,7 +127,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 8c46f0ab69ad9549c75a3a91fed87abdaa743e2f
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
-F src/build.c 5a428625d21ad409514afb40ad083bee25dd957a
+F src/build.c 5e614e586d9f8a81c16c80b545b9e1747f96c1bb
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 7deec4534f3b5a0c3b4a4cbadf809d321f64f9c4
@@ -949,7 +949,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 9b191bb4c7c1e1b12b188c0b3eee1f8f587887c8
-R 32b8d769c1bc3fb3a1b9110c79256b1a
-U shaneh
-Z 84e18ea858841ffe13a9371ad8c31731
+P afbe9023a706375be53bce389ef4e806f17fc7ec
+R 39e40cd4e043bc5ee4d5e0c0bd1144c1
+U dan
+Z 0fb26f42eab966013b31af43c43a2eeb
