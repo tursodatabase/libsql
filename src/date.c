@@ -427,7 +427,9 @@ static int osLocaltime(time_t *t, struct tm *pTm){
 #if (!defined(HAVE_LOCALTIME_R) || !HAVE_LOCALTIME_R) \
       && (!defined(HAVE_LOCALTIME_S) || !HAVE_LOCALTIME_S)
   struct tm *pX;
+#if SQLITE_THREADSAFE>0
   sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
+#endif
   sqlite3_mutex_enter(mutex);
   pX = localtime(t);
 #ifndef SQLITE_OMIT_BUILTIN_TEST

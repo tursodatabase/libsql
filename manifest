@@ -1,5 +1,5 @@
-C Version\s3.7.7\srelease\scandidate\s#1.
-D 2011-06-23T19:49:22.376
+C Fix\ssome\sharmless\scompiler\swarnings\sthat\swere\soccurring\swith\sTHREADSAFE=0.
+D 2011-06-24T11:29:51.234
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -131,7 +131,7 @@ F src/build.c 5a428625d21ad409514afb40ad083bee25dd957a
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 7deec4534f3b5a0c3b4a4cbadf809d321f64f9c4
-F src/date.c d3c11de76392ea62637bfac0f4655889fc2f5a85
+F src/date.c a3c6842bad7ae632281811de112a8ba63ff08ab3
 F src/delete.c 4925f9121525fc871f5d8d13c1f7dcc91abb38bb
 F src/expr.c ab46ab0f0c44979a8164ca31728d7d10ae5e8106
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
@@ -165,7 +165,7 @@ F src/os.c 22ac61d06e72a0dac900400147333b07b13d8e1d
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 07acbb3e074e52b48a4248c06f66c9a91db1a0ce
+F src/os_unix.c d3e7b17100704ee0fe2ef71a98c478b947480f4d
 F src/os_win.c eafcd6b91cf204a7ef29ac1ef2a1b7132e132e58
 F src/pager.c 120550e7ef01dafaa2cbb4a0528c0d87c8f12b41
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
@@ -948,8 +948,8 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P b61a76a53af04f731fe7617f7b6b4fb2aef6587b
-R 5805b6f3882ce897a61c4ce87076bc70
+F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
+P 4374b7e83ea0a3fbc3691f9c0c936272862f32f2
+R 1f317b87075f75e0f868cf711b7bb21e
 U drh
-Z a111ec09c232c3c09811b275ae45bf17
+Z 5efaa6b46127bcc37e3b2f98e5f441cd
