@@ -1,5 +1,5 @@
-C Fix\ssome\sharmless\scompiler\swarnings\sthat\swere\soccurring\swith\sTHREADSAFE=0.
-D 2011-06-24T11:29:51.234
+C Fix\sa\sWindows\sline\sending\sissue\sin\sa\stest\scase\sthat\swas\scausing\san\sincrblob\stest\sto\sfail.
+D 2011-06-24T13:50:13.840
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -501,7 +501,7 @@ F test/in4.test 64f3cc1acde1b9161ccdd8e5bde3daefdb5b2617
 F test/incrblob.test 76e787ca3301d9bfa6906031c626d26f8dd707de
 F test/incrblob2.test edc3a96e557bd61fb39acc8d2edd43371fbbaa19
 F test/incrblob3.test aedbb35ea1b6450c33b98f2b6ed98e5020be8dc7
-F test/incrblob_err.test c577c91d4ed9e8336cdb188b15d6ee2a6fe9604e
+F test/incrblob_err.test d2562d2771ebffd4b3af89ef64c140dd44371597
 F test/incrblobfault.test 917c0292224c64a56ef7215fd633a3a82f805be0
 F test/incrvacuum.test 453d1e490d8f5ad2c9b3a54282a0690d6ae56462
 F test/incrvacuum2.test ae04573b73ad52179f56e194fff0fbe43b509d23
@@ -949,7 +949,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 4374b7e83ea0a3fbc3691f9c0c936272862f32f2
-R 1f317b87075f75e0f868cf711b7bb21e
-U drh
-Z 5efaa6b46127bcc37e3b2f98e5f441cd
+P 9b191bb4c7c1e1b12b188c0b3eee1f8f587887c8
+R 32b8d769c1bc3fb3a1b9110c79256b1a
+U shaneh
+Z 84e18ea858841ffe13a9371ad8c31731
