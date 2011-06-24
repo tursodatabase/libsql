@@ -18,7 +18,7 @@
 **   sqlite3demo_superunlock()
 */
 
-#include <sqlite3.h>
+#include "sqlite3.h"
 #include <string.h>               /* memset(), strlen() */
 #include <assert.h>               /* assert() */
 
@@ -148,7 +148,7 @@ static int superlockWalLock(
 ** this function must have been obtained from a successful call to
 ** sqlite3demo_superlock().
 */
-void sqlite3demo_superunlock(void *pLock){
+static void sqlite3demo_superunlock(void *pLock){
   Superlock *p = (Superlock *)pLock;
   if( p->bWal ){
     int rc;                         /* Return code */
@@ -179,9 +179,10 @@ void sqlite3demo_superunlock(void *pLock){
 ** until either the lock can be obtained or the busy-handler function returns
 ** 0 (indicating "give up").
 */
-int sqlite3demo_superlock(
+static int sqlite3demo_superlock(
   const char *zPath,              /* Path to database file to lock */
   const char *zVfs,               /* VFS to use to access database file */
+  int flags,                      /* Additional flags to pass to sqlite3_open_v2 */
   int (*xBusy)(void*,int),        /* Busy handler callback */
   void *pBusyArg,                 /* Context arg for busy handler */
   void **ppLock                   /* OUT: Context to pass to superunlock() */
@@ -196,7 +197,7 @@ int sqlite3demo_superlock(
 
   /* Open a database handle on the file to superlock. */
   rc = sqlite3_open_v2(
-      zPath, &pLock->db, SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE, zVfs
+    zPath, &pLock->db, SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|flags, zVfs
   );
 
   /* Install a busy-handler and execute a BEGIN EXCLUSIVE. If this is not
@@ -331,7 +332,7 @@ static int superlock_cmd(
     xBusy = superlock_busy;
   }
 
-  rc = sqlite3demo_superlock(zPath, zVfs, xBusy, &busy, &pLock);
+  rc = sqlite3demo_superlock(zPath, zVfs, 0, xBusy, &busy, &pLock);
   assert( rc==SQLITE_OK || pLock==0 );
   assert( rc!=SQLITE_OK || pLock!=0 );
 

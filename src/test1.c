@@ -4968,6 +4968,83 @@ static int file_control_lasterrno_test(
   return TCL_OK;  
 }
 
+#ifdef __APPLE__
+/* From sqlite3_priavet.h */
+# ifndef SQLITE_TRUNCATE_DATABASE
+# define SQLITE_TRUNCATE_DATABASE      101
+# endif
+# ifndef SQLITE_REPLACE_DATABASE
+# define SQLITE_REPLACE_DATABASE       102
+# endif
+
+/*
+** tclcmd:   file_control_truncate_test DB
+**
+** This TCL command runs the sqlite3_file_control interface and
+** verifies correct operation of the SQLITE_TRUNCATE_DATABASE verb.
+*/
+static int file_control_truncate_test(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3 *db;
+  int rc;
+  
+  if( objc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+                     Tcl_GetStringFromObj(objv[0], 0), " DB", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
+    return TCL_ERROR;
+  }
+  rc = sqlite3_file_control(db, NULL, SQLITE_TRUNCATE_DATABASE, 0);
+  if( rc ){ 
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(rc)); 
+    return TCL_ERROR; 
+  }
+  return TCL_OK;  
+}
+
+/*
+** tclcmd:   file_control_replace_test DB
+**
+** This TCL command runs the sqlite3_file_control interface and
+** verifies correct operation of the SQLITE_REPLACE_DATABASE verb.
+*/
+static int file_control_replace_test(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  int iArg = 0;
+  sqlite3 *src_db;
+  sqlite3 *dst_db;
+  int rc;
+  
+  if( objc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+                     Tcl_GetStringFromObj(objv[0], 0), " DST_DB SRC_DB", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &dst_db) ){
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[2]), &src_db) ){
+    return TCL_ERROR;
+  }
+  rc = sqlite3_file_control(dst_db, NULL, SQLITE_REPLACE_DATABASE, src_db);
+  if( rc ){ 
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(rc)); 
+    return TCL_ERROR; 
+  }
+  return TCL_OK;  
+}
+#endif /* __APPLE__ */
+
 /*
 ** tclcmd:   file_control_chunksize_test DB DBNAME SIZE
 **
@@ -5911,6 +5988,10 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "file_control_test",          file_control_test,   0   },
      { "file_control_lasterrno_test", file_control_lasterrno_test,  0   },
      { "file_control_lockproxy_test", file_control_lockproxy_test,  0   },
+#ifdef __APPLE__
+     { "file_control_truncate_test", file_control_truncate_test,  0   },
+     { "file_control_replace_test", file_control_replace_test,  0   },
+#endif 
      { "file_control_chunksize_test", file_control_chunksize_test,  0   },
      { "file_control_sizehint_test", file_control_sizehint_test,  0   },
      { "sqlite3_vfs_list",           vfs_list,     0   },

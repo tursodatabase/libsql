@@ -441,10 +441,10 @@ void sqlite3Pragma(
     if( pId2->n==0 && b>=0 ){
       int ii;
       for(ii=0; ii<db->nDb; ii++){
-        sqlite3BtreeSecureDelete(db->aDb[ii].pBt, b);
+        sqlite3BtreeSecureDelete(db->aDb[ii].pBt, (int)b);
       }
     }
-    b = sqlite3BtreeSecureDelete(pBt, b);
+    b = (int)sqlite3BtreeSecureDelete(pBt, (int)b);
     returnSingleInt(pParse, "secure_delete", &b);
   }else
 
@@ -564,6 +564,14 @@ void sqlite3Pragma(
       iDb = 0;
       pId2->n = 1;
     }
+#ifdef SQLITE_DEFAULT_WAL_SAFETYLEVEL
+    if (eMode == PAGER_JOURNALMODE_WAL) {
+      /* when entering wal mode, immediately switch the safety_level
+       * so that a query to pragma synchronous returns the correct value
+       */
+      pDb->safety_level = SQLITE_DEFAULT_WAL_SAFETYLEVEL;
+    }
+#endif /* SQLITE_DEFAULT_WAL_SAFETYLEVEL */
     for(ii=db->nDb-1; ii>=0; ii--){
       if( db->aDb[ii].pBt && (ii==iDb || pId2->n==0) ){
         sqlite3VdbeUsesBtree(v, ii);

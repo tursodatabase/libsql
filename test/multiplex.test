@@ -14,6 +14,12 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/malloc_common.tcl
 
+# AFP doesn't like multiplex db tests
+if { ![path_is_local "."] } {
+  finish_test 
+  return 
+}
+
 set g_chunk_size [ expr ($::SQLITE_MAX_PAGE_SIZE*16384) ]
 set g_max_chunks 32
 

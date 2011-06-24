@@ -83,9 +83,12 @@ char *sqlite3VdbeExpandSql(
   if( db->vdbeExecCnt>1 ){
     while( *zRawSql ){
       const char *zStart = zRawSql;
+      sqlite_int64 iStart = SQLITE_PTR_TO_INT(zRawSql);
+      sqlite_int64 iCurrent;
       while( *(zRawSql++)!='\n' && *zRawSql );
       sqlite3StrAccumAppend(&out, "-- ", 3);
-      sqlite3StrAccumAppend(&out, zStart, (int)(zRawSql-zStart));
+      iCurrent = SQLITE_PTR_TO_INT(zRawSql);
+      sqlite3StrAccumAppend(&out, zStart, (int)(iCurrent-iStart));
     }
   }else{
     while( zRawSql[0] ){

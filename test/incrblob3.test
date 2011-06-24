@@ -260,12 +260,17 @@ proc access_method {args} {
   return ""
 }
 
-do_test incrblob3-7.2 {
-  sqlite3 db test.db 
-  sqlite3_db_config_lookaside db 0 0 0
-  list [catch {db incrblob blobs v 1} msg] $msg
-} {1 {database schema has changed}}
-db close
+#set sqlite_os_trace 1
+# AFP asserts because the "db incrblob blobs v 1" clears the file locks and the unlock fails (HFS doesn't care about a failed unlock)
+if {[path_is_local "."]} {
+
+  do_test incrblob3-7.2 {
+    sqlite3 db test.db 
+    sqlite3_db_config_lookaside db 0 0 0
+    list [catch {db incrblob blobs v 1} msg] $msg
+  } {1 {database schema has changed}}
+  db close
+}
 tvfs delete
 
 finish_test

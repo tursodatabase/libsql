@@ -131,12 +131,18 @@ int sqlite3OsOpen(
   int *pFlagsOut
 ){
   int rc;
+  int openFlags;
   DO_OS_MALLOC_TEST(0);
   /* 0x87f3f is a mask of SQLITE_OPEN_ flags that are valid to be passed
   ** down into the VFS layer.  Some SQLITE_OPEN_ flags (for example,
   ** SQLITE_OPEN_FULLMUTEX or SQLITE_OPEN_SHAREDCACHE) are blocked before
   ** reaching the VFS. */
-  rc = pVfs->xOpen(pVfs, zPath, pFile, flags & 0x87f3f, pFlagsOut);
+#if SQLITE_ENABLE_DATA_PROTECTION
+  openFlags = flags & (0x87f3f | SQLITE_OPEN_FILEPROTECTION_MASK);
+#else
+  openFlags = flags & 0x87f3f;
+#endif
+  rc = pVfs->xOpen(pVfs, zPath, pFile, openFlags, pFlagsOut);
   assert( rc==SQLITE_OK || pFile->pMethods==0 );
   return rc;
 }

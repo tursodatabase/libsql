@@ -207,6 +207,16 @@ foreach {tn syncmode synccount} {
     {test.db-wal normal test.db-wal normal test.db-wal normal test.db normal}
 } {
 
+  if { $::sqlite_options(default_ckptfullfsync) } {
+    # checkpoint_fullfsync on by default
+    if { $tn == 2} {
+      set synccount {test.db-wal full test.db full}
+    }
+    if { $tn == 3} {
+      set synccount {test.db-wal normal test.db-wal normal test.db-wal full test.db full}
+    }
+  }
+
   proc sync_counter {args} { 
     foreach {method filename id flags} $args break
     lappend ::syncs [file tail $filename] $flags

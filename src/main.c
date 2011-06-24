@@ -1797,9 +1797,14 @@ int sqlite3_limit(sqlite3 *db, int limitId, int newLimit){
   return oldLimit;                     /* IMP: R-53341-35419 */
 }
 #if defined(SQLITE_ENABLE_AUTO_PROFILE)
-static void profile_sql(void *aux, const char *sql, u64 ns) {
+void _sqlite_auto_profile(void *aux, const char *sql, u64 ns);
+void _sqlite_auto_trace(void *aux, const char *sql);
+void _sqlite_auto_profile(void *aux, const char *sql, u64 ns) {
 #pragma unused(aux)
 	fprintf(stderr, "Query: %s\n Execution Time: %llu ms\n", sql, ns / 1000000);
+}
+void _sqlite_auto_trace(void *aux, const char *sql) {
+	fprintf(stderr, "TraceSQL(%p): %s\n", aux, sql);
 }
 #endif
 
@@ -2135,6 +2140,9 @@ static int openDatabase(
   db->nextAutovac = -1;
   db->nextPagesize = 0;
   db->flags |= SQLITE_ShortColNames | SQLITE_AutoIndex | SQLITE_EnableTrigger
+#if SQLITE_DEFAULT_CKPTFULLFSYNC
+                 | SQLITE_CkptFullFSync
+#endif
 #if SQLITE_DEFAULT_FILE_FORMAT<4
                  | SQLITE_LegacyFileFmt
 #endif
@@ -2294,9 +2302,13 @@ opendb_out:
 #if defined(SQLITE_ENABLE_AUTO_PROFILE)
   if( db && !rc ){
     char *envprofile = getenv("SQLITE_AUTO_PROFILE");
+    char *envtrace = getenv("SQLITE_AUTO_TRACE");
     
     if( envprofile!=NULL ){
-      sqlite3_profile(db, profile_sql, NULL);
+      sqlite3_profile(db, _sqlite_auto_profile, db);
+    }
+    if( envtrace!=NULL ){
+      sqlite3_trace(db, _sqlite_auto_trace, db);
     }
   }
 #endif
@@ -2966,3 +2978,145 @@ const char *sqlite3_uri_parameter(const char *zFilename, const char *zParam){
   }
   return 0;
 }
+
+#if (SQLITE_ENABLE_APPLE_SPI>0)
+#define SQLITE_FILE_HEADER_LEN 16
+#include <fcntl.h>
+#include "sqlite3_private.h"
+#include "btreeInt.h"
+#include <errno.h>
+#include <sys/param.h>
+
+/* Check for a conflicting lock.  If one is found, print an this
+ ** on standard output using the format string given and return 1.
+ ** If there are no conflicting locks, return 0.
+ */
+static int isLocked(
+  pid_t pid,            /* PID to test for lock owner */
+  int h,                /* File descriptor to check */
+  int type,             /* F_RDLCK or F_WRLCK */
+  unsigned int iOfst,   /* First byte of the lock */
+  unsigned int iCnt,    /* Number of bytes in the lock range */
+  const char *zType     /* Type of lock */
+){
+  struct flock lk;
+  int err;
+  
+  memset(&lk, 0, sizeof(lk));
+  lk.l_type = type;
+  lk.l_whence = SEEK_SET;
+  lk.l_start = iOfst;
+  lk.l_len = iCnt;
+
+  if( pid!=SQLITE_LOCKSTATE_ANYPID ){
+#ifndef F_GETLKPID
+# warning F_GETLKPID undefined, _sqlite3_lockstate falling back to F_GETLK
+    err = fcntl(h, F_GETLK, &lk);
+#else
+    lk.l_pid = pid;
+    err = fcntl(h, F_GETLKPID, &lk);
+#endif
+  }else{
+    err = fcntl(h, F_GETLK, &lk);
+  }
+
+  if( err==(-1) ){
+    fprintf(stderr, "fcntl(%d) failed: errno=%d\n", h, errno);
+    return -1;
+  }
+  
+  if( lk.l_type!=F_UNLCK && (pid==SQLITE_LOCKSTATE_ANYPID || lk.l_pid==pid) ){
+#ifdef SQLITE_DEBUG
+    fprintf(stderr, "%s lock held by %d\n", zType, (int)lk.l_pid);
+#endif
+    return 1;
+  } 
+  return 0;
+}
+
+/*
+ ** Location of locking bytes in the database file
+ */
+#ifndef PENDING_BYTE
+# define PENDING_BYTE      (0x40000000)
+# define RESERVED_BYTE     (PENDING_BYTE+1)
+# define SHARED_FIRST      (PENDING_BYTE+2)
+# define SHARED_SIZE       510
+#endif /* PENDING_BYTE */
+
+/*
+ ** Lock locations for shared-memory locks used by WAL mode.
+ */
+#ifndef SHM_BASE
+# define SHM_BASE          120
+# define SHM_WRITE         SHM_BASE
+# define SHM_CHECKPOINT    (SHM_BASE+1)
+# define SHM_RECOVER       (SHM_BASE+2)
+# define SHM_READ_FIRST    (SHM_BASE+3)
+# define SHM_READ_SIZE     5
+#endif /* SHM_BASE */
+
+/* 
+** Testing a file path for sqlite locks held by a process ID. 
+** Returns SQLITE_LOCKSTATE_ON if locks are present on path
+** that would prevent writing to the database.
+**
+** This test only works for lock testing on unix/posix VFS.
+** Adapted from tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
+*/
+int _sqlite3_lockstate(const char *path, pid_t pid){
+  int hDb;        /* File descriptor for the open database file */
+  int hShm;       /* File descriptor for WAL shared-memory file */
+  ssize_t got;    /* Bytes read from header */
+  int isWal;                 /* True if in WAL mode */
+  int nLock = 0;             /* Number of locks held */
+  unsigned char aHdr[100];   /* Database header */
+  
+  /* Open the file at path and make sure we are dealing with a database file */
+  hDb = open(path, O_RDONLY | O_NOCTTY);
+  if( hDb<0 ){
+    return SQLITE_LOCKSTATE_ERROR;
+  }
+  assert( (strlen(SQLITE_FILE_HEADER)+1)==SQLITE_FILE_HEADER_LEN );
+  got = pread(hDb, aHdr, 100, 0);
+  if( got<0 ){
+    close(hDb);
+    return SQLITE_LOCKSTATE_ERROR;
+  }
+  if( got!=100 || memcmp(aHdr, SQLITE_FILE_HEADER, SQLITE_FILE_HEADER_LEN)!=0 ){
+    close(hDb);
+    return SQLITE_LOCKSTATE_NOTADB;
+  }
+  
+  /* First check for an exclusive lock */
+  nLock += isLocked(pid, hDb, F_RDLCK, SHARED_FIRST, SHARED_SIZE, "EXCLUSIVE");
+  isWal = aHdr[18]==2;
+  if( nLock==0 && isWal==0 ){
+    /* Rollback mode */
+    nLock += isLocked(pid, hDb, F_WRLCK, PENDING_BYTE, SHARED_SIZE+2, "PENDING|RESERVED|SHARED");
+  }
+  close(hDb);
+  if( nLock==0 && isWal!=0 ){
+    char zShm[MAXPATHLEN];
+    
+    close(hDb);
+    /* WAL mode */
+    strlcpy(zShm, path, MAXPATHLEN);
+    strlcat(zShm, "-shm", MAXPATHLEN);
+    hShm = open(zShm, O_RDONLY, 0);
+    if( hShm<0 ){
+      return SQLITE_LOCKSTATE_OFF;
+    }
+    if( isLocked(pid, hShm, F_RDLCK, SHM_RECOVER, 1, "WAL-RECOVERY") ||
+       isLocked(pid, hShm, F_RDLCK, SHM_WRITE, 1, "WAL-WRITE") ){
+      nLock = 1;
+    }
+    close(hShm);
+  }
+  if( nLock>0 ){
+    return SQLITE_LOCKSTATE_ON;
+  }
+  return SQLITE_LOCKSTATE_OFF;
+}
+
+#endif /* SQLITE_ENABLE_APPLE_SPI */

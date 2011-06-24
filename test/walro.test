@@ -24,6 +24,13 @@ if {$::tcl_platform(platform) != "unix"} {
   return
 }
 
+# these tests can't deal with the location of the -shm file under proxy locking
+#
+if {[forced_proxy_locking]} {
+  finish_test
+  return
+}
+
 do_multiclient_test tn {
   # Do not run tests with the connections in the same process.
   #

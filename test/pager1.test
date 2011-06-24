@@ -534,6 +534,8 @@ proc copy_on_mj_delete {method filename args} {
 }
 
 set pwd [pwd]
+if {![forced_proxy_locking]} {
+  # proxy locking uses can't deal with auto proxy file paths longer than MAXPATHLEN
 foreach {tn1 tcl} {
   1 { set prefix "test.db" }
   2 { 
@@ -665,6 +667,7 @@ foreach {tn1 tcl} {
 db close
 tv delete
 file delete -force $dirname
+}
 
 
 # Set up a VFS to make a copy of the file-system just before deleting a
@@ -2008,8 +2011,8 @@ do_test pager1-22.2.1 {
   set ::synccount 0
   sqlite3 db test.db
   execsql {
-    PRAGMA synchronous = off;
     PRAGMA journal_mode = WAL;
+    PRAGMA synchronous = off;
     INSERT INTO ko DEFAULT VALUES;
   }
   execsql { PRAGMA wal_checkpoint }

@@ -64,6 +64,9 @@ extern "C" {
 */
 #define SQLITE_DEPRECATED
 #define SQLITE_EXPERIMENTAL
+#ifndef __OSX_AVAILABLE_BUT_DEPRECATED
+#define __OSX_AVAILABLE_BUT_DEPRECATED(MacOSAvailable, MacOSDeprecated, iPhoneOSAvailable, iPhoneOSDeprecated)
+#endif
 
 /*
 ** Ensure these symbols were not defined by some previous header file.
@@ -483,6 +486,7 @@ int sqlite3_exec(
 #define SQLITE_OPEN_SHAREDCACHE      0x00020000  /* Ok for sqlite3_open_v2() */
 #define SQLITE_OPEN_PRIVATECACHE     0x00040000  /* Ok for sqlite3_open_v2() */
 #define SQLITE_OPEN_WAL              0x00080000  /* VFS only */
+#define SQLITE_OPEN_FILEPROTECTION_MASK                                 0x00700000
 
 /* Reserved:                         0x00F00000 */
 
@@ -4455,9 +4459,14 @@ void *sqlite3_update_hook(
 ** future releases of SQLite.  Applications that care about shared
 ** cache setting should set it explicitly.
 **
+** ^Note: This method is deprecated on MacOS X 10.7 and iOS version 5.0
+** and will always return SQLITE_MISUSE, instead of calling this function
+** shared cache mode should be enabled per-database connection via 
+** sqlite3_open_v2 with SQLITE_OPEN_SHAREDCACHE instead.
+**
 ** See Also:  [SQLite Shared-Cache Mode]
 */
-int sqlite3_enable_shared_cache(int);
+int sqlite3_enable_shared_cache(int) __OSX_AVAILABLE_BUT_DEPRECATED(__MAC_10_0, __MAC_10_7, __IPHONE_2_0, __IPHONE_5_0);
 
 /*
 ** CAPI3REF: Attempt To Free Heap Memory

@@ -242,6 +242,23 @@ if {[info exists cmdlinearg]==0} {
 #
 sqlite3_soft_heap_limit $cmdlinearg(soft-heap-limit)
 
+proc forced_proxy_locking {} {
+  if $::sqlite_options(lock_proxy_pragmas)&&$::sqlite_options(prefer_proxy_locking) {
+    set force_proxy_value 0
+    set force_key "SQLITE_FORCE_PROXY_LOCKING="
+    foreach {env_pair} [exec env] { 
+      if { [string first $force_key $env_pair] == 0} {
+        set force_proxy_value [string range $env_pair [string length $force_key] end]
+      }
+    }
+    if { "$force_proxy_value " == "1 " } {
+      return 1
+    } 
+  }
+  return 0
+}
+
+
 # Create a test database
 #
 proc reset_db {} {
@@ -249,6 +266,14 @@ proc reset_db {} {
   file delete -force test.db
   file delete -force test.db-journal
   file delete -force test.db-wal
+  if {[forced_proxy_locking]} {
+    sqlite3 db ./test.db
+    set lock_proxy_path [db eval "PRAGMA lock_proxy_file;"] 
+    catch {db close}
+    # puts "deleting $lock_proxy_path"
+    file delete -force $lock_proxy_path    
+    file delete -force test.db
+  }
   sqlite3 db ./test.db
   set ::DB [sqlite3_connection_pointer db]
   if {[info exists ::SETUP_SQL]} {
@@ -1332,22 +1357,6 @@ proc presql {} {
   set presql ""
   catch {set presql $::G(perm:presql)}
   set presql
-}
-
-proc forced_proxy_locking {} {
-  ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
-    set force_proxy_value 0
-    set force_key "SQLITE_FORCE_PROXY_LOCKING="
-    foreach {env_pair} [exec env] { 
-      if { [string first $force_key $env_pair] == 0} {
-        set force_proxy_value [string range $env_pair [string length $force_key] end]
-      }
-    }
-    if { "$force_proxy_value " == "1 " } {
-      return 1
-    } 
-  }
-  return 0
 }
 
 proc wal_is_ok {} {

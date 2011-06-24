@@ -2377,7 +2377,11 @@ static int pager_delmaster(Pager *pPager, const char *zMaster){
   if( !pMaster ){
     rc = SQLITE_NOMEM;
   }else{
-    const int flags = (SQLITE_OPEN_READONLY|SQLITE_OPEN_MASTER_JOURNAL);
+    const int flags = 
+#if SQLITE_ENABLE_DATA_PROTECTION
+      (pPager->vfsFlags&SQLITE_OPEN_FILEPROTECTION_MASK)|
+#endif
+      (SQLITE_OPEN_READONLY|SQLITE_OPEN_MASTER_JOURNAL);
     rc = sqlite3OsOpen(pVfs, zMaster, pMaster, flags, 0);
   }
   if( rc!=SQLITE_OK ) goto delmaster_out;
@@ -2413,7 +2417,11 @@ static int pager_delmaster(Pager *pPager, const char *zMaster){
       ** so, return without deleting the master journal file.
       */
       int c;
-      int flags = (SQLITE_OPEN_READONLY|SQLITE_OPEN_MAIN_JOURNAL);
+      int flags = 
+#if SQLITE_ENABLE_DATA_PROTECTION
+        (pPager->vfsFlags&SQLITE_OPEN_FILEPROTECTION_MASK)|
+#endif
+        (SQLITE_OPEN_READONLY|SQLITE_OPEN_MAIN_JOURNAL);
       rc = sqlite3OsOpen(pVfs, zJournal, pJournal, flags, 0);
       if( rc!=SQLITE_OK ){
         goto delmaster_out;
@@ -3398,7 +3406,11 @@ static int pagerOpentemp(
   sqlite3_opentemp_count++;  /* Used for testing and analysis only */
 #endif
 
-  vfsFlags |=  SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE |
+  vfsFlags |=  
+#if SQLITE_ENABLE_DATA_PROTECTION
+            (pPager->vfsFlags&SQLITE_OPEN_FILEPROTECTION_MASK)|
+#endif
+            SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE |
             SQLITE_OPEN_EXCLUSIVE | SQLITE_OPEN_DELETEONCLOSE;
   rc = sqlite3OsOpen(pPager->pVfs, 0, pFile, vfsFlags, 0);
   assert( rc!=SQLITE_OK || isOpen(pFile) );
@@ -4527,7 +4539,11 @@ int sqlite3PagerOpen(
   pPager->noSync = pPager->tempFile;
   pPager->fullSync = pPager->noSync ?0:1;
   pPager->syncFlags = pPager->noSync ? 0 : SQLITE_SYNC_NORMAL;
+#if SQLITE_DEFAULT_CKPTFULLFSYNC
+  pPager->ckptSyncFlags = pPager->noSync ? 0 : SQLITE_SYNC_FULL;
+#else
   pPager->ckptSyncFlags = pPager->syncFlags;
+#endif
   /* pPager->pFirst = 0; */
   /* pPager->pFirstSynced = 0; */
   /* pPager->pLast = 0; */
@@ -4638,7 +4654,11 @@ static int hasHotJournal(Pager *pPager, int *pExists){
           ** it can be ignored.
           */
           if( !jrnlOpen ){
-            int f = SQLITE_OPEN_READONLY|SQLITE_OPEN_MAIN_JOURNAL;
+            int f = 
+#if SQLITE_ENABLE_DATA_PROTECTION
+              (pPager->vfsFlags&SQLITE_OPEN_FILEPROTECTION_MASK)|
+#endif
+              SQLITE_OPEN_READONLY|SQLITE_OPEN_MAIN_JOURNAL;
             rc = sqlite3OsOpen(pVfs, pPager->zJournal, pPager->jfd, f, &f);
           }
           if( rc==SQLITE_OK ){
@@ -4776,7 +4796,11 @@ int sqlite3PagerSharedLock(Pager *pPager){
             pVfs, pPager->zJournal, SQLITE_ACCESS_EXISTS, &bExists);
         if( rc==SQLITE_OK && bExists ){
           int fout = 0;
-          int f = SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_JOURNAL;
+          int f = 
+#if SQLITE_ENABLE_DATA_PROTECTION
+            (pPager->vfsFlags&SQLITE_OPEN_FILEPROTECTION_MASK)|
+#endif
+            SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_JOURNAL;
           assert( !pPager->tempFile );
           rc = sqlite3OsOpen(pVfs, pPager->zJournal, pPager->jfd, f, &fout);
           assert( rc!=SQLITE_OK || isOpen(pPager->jfd) );
@@ -5152,6 +5176,9 @@ static int pager_open_journal(Pager *pPager){
         sqlite3MemJournalOpen(pPager->jfd);
       }else{
         const int flags =                   /* VFS flags to open journal file */
+#if SQLITE_ENABLE_DATA_PROTECTION
+          (pPager->vfsFlags&SQLITE_OPEN_FILEPROTECTION_MASK)|
+#endif
           SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|
           (pPager->tempFile ? 
             (SQLITE_OPEN_DELETEONCLOSE|SQLITE_OPEN_TEMP_JOURNAL):
@@ -6710,10 +6737,14 @@ static int pagerOpenWal(Pager *pPager){
   ** (e.g. due to malloc() failure), return an error code.
   */
   if( rc==SQLITE_OK ){
-    rc = sqlite3WalOpen(pPager->pVfs, 
-        pPager->fd, pPager->zWal, pPager->exclusiveMode,
-        pPager->journalSizeLimit, &pPager->pWal
-    );
+#if SQLITE_ENABLE_DATA_PROTECTION
+    rc = sqlite3WalOpen(pPager->pVfs, pPager->fd, pPager->zWal, pPager->exclusiveMode,
+        pPager->journalSizeLimit, (pPager->vfsFlags & SQLITE_OPEN_FILEPROTECTION_MASK), 
+        &pPager->pWal);
+#else
+    rc = sqlite3WalOpen(pPager->pVfs, pPager->fd, pPager->zWal, pPager->exclusiveMode,
+        pPager->journalSizeLimit, 0, &pPager->pWal);
+#endif
   }
 
   return rc;

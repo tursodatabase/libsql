@@ -435,7 +435,17 @@ Tcl_SetVar2(interp, "sqlite_options", "long_double",
 #else
   Tcl_SetVar2(interp,"sqlite_options","prefer_proxy_locking","0",TCL_GLOBAL_ONLY);
 #endif
-    
+#if SQLITE_DEFAULT_CKPTFULLFSYNC
+  Tcl_SetVar2(interp,"sqlite_options","default_ckptfullfsync","1",TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp,"sqlite_options","default_ckptfullfsync","0",TCL_GLOBAL_ONLY);
+#endif
+#if SQLITE_DEFAULT_WAL_SAFETYLEVEL
+  Tcl_SetVar2(interp,"sqlite_options","default_wal_safetylevel",
+              STRINGVALUE(SQLITE_DEFAULT_WAL_SAFETYLEVEL),TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp,"sqlite_options","default_wal_safetylevel","0",TCL_GLOBAL_ONLY);
+#endif
     
 #ifdef SQLITE_OMIT_SHARED_CACHE
   Tcl_SetVar2(interp, "sqlite_options", "shared_cache", "0", TCL_GLOBAL_ONLY);

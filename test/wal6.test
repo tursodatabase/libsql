@@ -20,6 +20,8 @@ source $testdir/wal_common.tcl
 source $testdir/malloc_common.tcl
 ifcapable !wal {finish_test ; return }
 
+if { ![wal_is_ok] } {finish_test ; return }
+
 #-------------------------------------------------------------------------
 # Changing to WAL mode in one connection forces the change in others.
 #

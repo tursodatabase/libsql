@@ -1183,6 +1183,11 @@ foreach {tn sql reslist} {
   2 { PRAGMA checkpoint_fullfsync = 1 } {8 4 3 2 5 2}
   3 { PRAGMA checkpoint_fullfsync = 0 } {8 0 3 0 5 0}
 } {
+  if { $::sqlite_options(default_ckptfullfsync) && $tn == 1} {
+    # checkpoint_fullfsync on by default
+    set reslist {8 4 3 2 5 2}
+  }
+
   faultsim_delete_and_reopen
 
   execsql {PRAGMA auto_vacuum = 0}

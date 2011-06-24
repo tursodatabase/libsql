@@ -68,8 +68,14 @@ static BtShared *SQLITE_WSD sqlite3SharedCacheList = 0;
 ** sqlite3_open(), sqlite3_open16(), or sqlite3_open_v2().
 */
 int sqlite3_enable_shared_cache(int enable){
+#if defined(__APPLE__) && !defined(SQLITE_TEST) && !defined(TH3_COMPATIBILITY)
+  /* Enable global shared cache function for debugging and unit tests, 
+  ** but not for release */
+  return SQLITE_MISUSE;
+#else
   sqlite3GlobalConfig.sharedCacheEnabled = enable;
   return SQLITE_OK;
+#endif
 }
 #endif
 
@@ -2350,6 +2356,18 @@ static int lockBtree(BtShared *pBt){
       if( rc!=SQLITE_OK ){
         goto page1_init_failed;
       }else if( isOpen==0 ){
+#ifdef SQLITE_DEFAULT_WAL_SAFETYLEVEL
+        /* Default to specified safety_level for WAL mode */
+        if( pBt->db!=0 && pBt->db->aDb!=0 ){
+          sqlite3 *db = pBt->db;
+          if( db->aDb[0].safety_level != SQLITE_DEFAULT_WAL_SAFETYLEVEL) {
+            db->aDb[0].safety_level = SQLITE_DEFAULT_WAL_SAFETYLEVEL;
+            sqlite3PagerSetSafetyLevel(pBt->pPager, SQLITE_DEFAULT_WAL_SAFETYLEVEL, 
+                                       (db->flags&SQLITE_FullFSync)!=0,
+                                       (db->flags&SQLITE_CkptFullFSync)!=0);
+          }
+        }
+#endif
         releasePage(pPage1);
         return SQLITE_OK;
       }

@@ -4371,6 +4371,9 @@ select_end:
 }
 
 #if defined(SQLITE_DEBUG)
+void sqlite3PrintExpr(Expr *p);
+void sqlite3PrintExprList(ExprList *pList);
+void sqlite3PrintSelect(Select *p, int indent);
 /*
 *******************************************************************************
 ** The following code is used for testing and debugging only.  The code
