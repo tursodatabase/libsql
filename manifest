@@ -1,9 +1,9 @@
-C Explicitly\scast\san\sargument\sto\sprintf()\sto\s(int),\sin\scase\sthe\sresult\sof\sthe\spointer\sarithmetic\sexpression\sis\sa\s64-bit\sinteger\son\ssome\splatforms.
-D 2011-06-24T18:43:23.777
+C Support\susing\snmake\svia\scmd.exe,\sallow\sTcl\srelated\svariables\sto\sbe\soverridden\svia\sthe\senvironment,\sand\sadd\s'dll'\sto\sthe\s'all'\starget.
+D 2011-06-25T01:14:36.767
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 11082f65b452b908d93013292c17850378c39284
+F Makefile.msc 9c76731c20561a33ce1257c70be3f029cedb62a6
 F Makefile.vxworks c85ec1d8597fe2f7bc225af12ac1666e21379151
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 3fcdd7fbe3eb282df3978fe77288544543767961
@@ -949,7 +949,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P afbe9023a706375be53bce389ef4e806f17fc7ec
-R 39e40cd4e043bc5ee4d5e0c0bd1144c1
-U dan
-Z 0fb26f42eab966013b31af43c43a2eeb
+P 90cfeaf7b68eebc2cd75bc60b1bb86823646fe30
+R 9d6679872042f0704eb46a854652b6b2
+U mistachkin
+Z 10a97d70fb2ecf74c56670a3fe99eddd
