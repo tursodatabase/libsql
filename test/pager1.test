@@ -2008,18 +2008,23 @@ do_test pager1-22.2.1 {
   tv filter xSync
   tv script xSyncCb
   proc xSyncCb {args} {incr ::synccount}
-  set ::synccount 0
   sqlite3 db test.db
+
+  # Switch the db to WAL mode. And then execute a SELECT to make sure
+  # that the WAL file is open. Note that this may change the synchronous
+  # setting if DEFAULT_WAL_SAFETYLEVEL is defined.
+  execsql { PRAGMA journal_mode = WAL ; SELECT * FROM ko }
+
+  # Set synchronous=OFF. Insert some data and run a checkpoint. Since
+  # sync=off, this should not cause any calls to the xSync() method.
+  set ::synccount 0
   execsql {
-    PRAGMA journal_mode = WAL;
     PRAGMA synchronous = off;
     INSERT INTO ko DEFAULT VALUES;
+    PRAGMA wal_checkpoint;
   }
-  execsql { PRAGMA wal_checkpoint }
   set synccount
 } {0}
-db close
-tv delete
 
 #-------------------------------------------------------------------------
 # Tests for changing journal mode.

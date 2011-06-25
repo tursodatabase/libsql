@@ -197,9 +197,15 @@ foreach {testprefix do_wal_checkpoint} {
         INSERT INTO t2 VALUES(1, 2);
       }
     } {}
-    do_test 2.2.$tn.2 { file_page_counts } {1 5 1 5}
-    do_test 2.1.$tn.3 { code1 { do_wal_checkpoint db } } {0 5 5}
-    do_test 2.1.$tn.4 { file_page_counts } {2 5 2 5}
+    do_test 2.2.$tn.2 { file_page_counts } [
+      list 1 [wal_frames db 3 2] 1 [wal_frames db 3 2]
+    ]
+    do_test 2.1.$tn.3 { code1 { do_wal_checkpoint db } } [
+      list 0 [wal_frames db 3 2] [wal_frames db 3 2]
+    ]
+    do_test 2.1.$tn.4 { file_page_counts } [
+      list 2 [wal_frames db 3 2] 2 [wal_frames db 3 2]
+    ]
   }
 
   do_multiclient_test tn {
@@ -213,10 +219,16 @@ foreach {testprefix do_wal_checkpoint} {
         INSERT INTO t2 VALUES(3, 4);
       }
     } {}
-    do_test 2.2.$tn.2 { file_page_counts } {1 5 1 7}
+    do_test 2.2.$tn.2 { file_page_counts } [
+      list 1 [wal_frames db 3 2] 1 [wal_frames db 4 3]
+    ]
     do_test 2.2.$tn.3 { sql2 { BEGIN; SELECT * FROM t1 } } {1 2}
-    do_test 2.2.$tn.4 { code1 { do_wal_checkpoint db -mode restart } } {1 5 5}
-    do_test 2.2.$tn.5 { file_page_counts } {2 5 2 7}
+    do_test 2.2.$tn.4 { code1 { do_wal_checkpoint db -mode restart } } [
+      list 1 [wal_frames db 3 2] [wal_frames db 3 2]
+    ]
+    do_test 2.2.$tn.5 { file_page_counts } [
+      list 2 [wal_frames db 3 2] 2 [wal_frames db 4 3]
+    ]
   }
 
   do_multiclient_test tn {
@@ -229,19 +241,27 @@ foreach {testprefix do_wal_checkpoint} {
         INSERT INTO t2 VALUES(1, 2);
       }
     } {}
-    do_test 2.3.$tn.2 { file_page_counts } {1 5 1 5}
+    do_test 2.3.$tn.2 { file_page_counts } [
+      list 1 [wal_frames db 3 2] 1 [wal_frames db 3 2]
+    ]
     do_test 2.3.$tn.3 { sql2 { BEGIN; SELECT * FROM t1 } } {1 2}
     do_test 2.3.$tn.4 { sql1 { INSERT INTO t1 VALUES(3, 4) } } {}
     do_test 2.3.$tn.5 { sql1 { INSERT INTO t2 VALUES(3, 4) } } {}
-    do_test 2.3.$tn.6 { file_page_counts } {1 7 1 7}
-    do_test 2.3.$tn.7 { code1 { do_wal_checkpoint db -mode full } } {1 7 5}
+    do_test 2.3.$tn.6 { file_page_counts } [
+      list 1 [wal_frames db 4 3] 1 [wal_frames db 4 3]
+    ]
+    do_test 2.3.$tn.7 { code1 { do_wal_checkpoint db -mode full } } [
+      list 1 [wal_frames db 4 3] [wal_frames db 3 2]
+    ]
     if {$tcl_platform(platform) == "windows"} {
         # on unix, the size_hint is a no-op if no chunk size is set.
         # the windows implementation does not have a similar check,
         # and because of this, the db file size has an extra page.
         do_test 2.3.$tn.8 { file_page_counts } {2 7 2 7}
     } {
-        do_test 2.3.$tn.8 { file_page_counts } {1 7 2 7}
+        do_test 2.3.$tn.8 { file_page_counts } [
+          list 1 [wal_frames db 4 3] 2 [wal_frames db 4 3]
+        ]
     }
   }
 
@@ -301,6 +321,13 @@ foreach {testprefix do_wal_checkpoint} {
         sql3 { BEGIN; SELECT * FROM t1 }
       } {1 2}
 
+      # The value in ckpt_expected assumes that synchronous=FULL. If
+      # synchronous=NORMAL, decrease the WAL size by 2 frames.
+      if {$tn==1 && [db one {PRAGMA main.synchronous}] == 1} {
+        lset ckpt_expected 1 [expr [lindex $ckpt_expected 1] - 2]
+        lset ckpt_expected 2 [expr [lindex $ckpt_expected 2] - 2]
+      }
+  
       do_test 2.4.$tn1.$tn.2 {
         code1 { db busy busyhandler }
         code1 { do_wal_checkpoint db -mode [string tolower $checkpoint] }

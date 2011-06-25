@@ -13,6 +13,7 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/lock_common.tcl
+source $testdir/wal_common.tcl
 
 set testprefix superlock
 
@@ -77,7 +78,9 @@ do_catchsql_test 3.4 { INSERT INTO t1 VALUES(5, 6)} {1 {database is locked}}
 do_catchsql_test 3.5 { PRAGMA wal_checkpoint }      {0 {1 -1 -1}}
 do_test 3.6 { unlock } {}
 
-do_execsql_test 4.1 { PRAGMA wal_checkpoint } {0 2 2}
+do_execsql_test 4.1 { PRAGMA wal_checkpoint } [
+  list 0 [wal_frames db 1 1] [wal_frames db 1 1]
+]
 
 do_test 4.2 { sqlite3demo_superlock unlock test.db } {unlock}
 do_catchsql_test 4.3 { SELECT * FROM t1 }           {1 {database is locked}}

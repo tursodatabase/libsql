@@ -2359,9 +2359,15 @@ static int lockBtree(BtShared *pBt){
 #ifdef SQLITE_DEFAULT_WAL_SAFETYLEVEL
         /* Default to specified safety_level for WAL mode */
         if( pBt->db!=0 && pBt->db->aDb!=0 ){
+          int iDb;
           sqlite3 *db = pBt->db;
-          if( db->aDb[0].safety_level != SQLITE_DEFAULT_WAL_SAFETYLEVEL) {
-            db->aDb[0].safety_level = SQLITE_DEFAULT_WAL_SAFETYLEVEL;
+          Db *aDb = db->aDb;
+          for(iDb=0; iDb<db->nDb; iDb++){
+            if( aDb[iDb].pBt && aDb[iDb].pBt->pBt==pBt ) break;
+          }
+          assert( iDb<db->nDb );
+          if( aDb[iDb].safety_level != SQLITE_DEFAULT_WAL_SAFETYLEVEL) {
+            aDb[iDb].safety_level = SQLITE_DEFAULT_WAL_SAFETYLEVEL;
             sqlite3PagerSetSafetyLevel(pBt->pPager, SQLITE_DEFAULT_WAL_SAFETYLEVEL, 
                                        (db->flags&SQLITE_FullFSync)!=0,
                                        (db->flags&SQLITE_CkptFullFSync)!=0);

@@ -229,8 +229,9 @@ foreach {tn syncmode synccount} {
     T script sync_counter
     sqlite3 db test.db -vfs T
   
-    execsql "PRAGMA synchronous = $syncmode"
     execsql { PRAGMA journal_mode = WAL }
+    execsql { SELECT * FROM sqlite_master }
+    execsql "PRAGMA synchronous = $syncmode"
 
     set ::syncs [list]
     T filter xSync
@@ -442,7 +443,7 @@ do_test wal3-6.1.2 {
 } {o t t f}
 do_test wal3-6.1.3 {
   execsql { PRAGMA wal_checkpoint } db2
-} {0 7 7}
+} [list 0 [wal_frames db 4 3] [wal_frames db 4 3]]
 
 # At this point the log file has been fully checkpointed. However, 
 # connection [db3] holds a lock that prevents the log from being wrapped.
@@ -531,7 +532,7 @@ proc lock_callback {method file handle spec} {
 }
 do_test wal3-6.2.2 {
   execsql { PRAGMA wal_checkpoint }
-} {0 7 7}
+} [list 0 [wal_frames db 4 3] [wal_frames db 4 3]]
 do_test wal3-6.2.3 {
   set ::R
 } {h h l b}
@@ -628,7 +629,7 @@ T delete
 
 #-------------------------------------------------------------------------
 # 
-do_test wal3-8.1 {
+do_test wal3-8.1.1 {
   file delete -force test.db test.db-journal test.db wal .test.db-conch
   sqlite3 db test.db
   sqlite3 db2 test.db
@@ -639,9 +640,12 @@ do_test wal3-8.1 {
     INSERT INTO b VALUES('Tehran');
     INSERT INTO b VALUES('Qom');
     INSERT INTO b VALUES('Markazi');
-    PRAGMA wal_checkpoint;
   }
-} {wal 0 9 9}
+} {wal}
+
+do_test wal3.8.1.2 {
+  execsql { PRAGMA wal_checkpoint; }
+} [list 0 [wal_frames db 5 4] [wal_frames db 5 4]]
 do_test wal3-8.2 {
   execsql { SELECT * FROM b }
 } {Tehran Qom Markazi}

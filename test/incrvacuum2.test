@@ -15,6 +15,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+source $testdir/wal_common.tcl
 
 # If this build of the library does not support auto-vacuum, omit this
 # whole file.
@@ -188,10 +189,12 @@ ifcapable wal {
     execsql { 
       PRAGMA journal_mode = WAL;
       PRAGMA incremental_vacuum(1);
-      PRAGMA wal_checkpoint;
     }
+  } {wal}
+  do_test 4.2.1 {
+    execsql { PRAGMA wal_checkpoint }
     file size test.db-wal
-  } {1640}
+  } [wal_file_size [wal_frames db 2 1] 512]
 
   do_test 4.3 {
     db close
@@ -205,7 +208,7 @@ ifcapable wal {
       if {$newsz>$maxsz} {set maxsz $newsz}
     }
     set maxsz 
-  } {2176}
+  } [wal_file_size [wal_frames db 3 1] 512]
 }
 
 finish_test

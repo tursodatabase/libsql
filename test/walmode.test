@@ -59,7 +59,15 @@ do_test walmode-1.2 {
   file size test.db
 } {1024}
 
-set expected_sync_count 3
+# Determine how many sync() calls to expect from the "journal_mode=WAL" 
+# command above. Note that if DEFAULT_WAL_SAFETYLEVEL is defined, the
+# safety-level may have been modified while compiling the "journal_mode=WAL"
+# statement.
+switch -- [db eval {PRAGMA main.synchronous}] {
+  0        { set expected_sync_count 0 }
+  1        { set expected_sync_count 2 }
+  default  { set expected_sync_count 3 }
+}
 if {$::tcl_platform(platform)!="windows"} {
   ifcapable dirsync {
     incr expected_sync_count

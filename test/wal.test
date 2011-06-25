@@ -548,8 +548,9 @@ do_multiclient_test tn {
     sql2 { BEGIN; SELECT * FROM t1 }
   } {1 2 3 4 5 6 7 8 9 10}
   do_test wal-10.$tn.12 {
-    catchsql { PRAGMA wal_checkpoint } 
-  } {0 {0 13 13}}   ;# Reader no longer block checkpoints
+    # Reader no longer blocks checkpoint:
+    execsql { PRAGMA wal_checkpoint } 
+  } [list 0 [wal_frames db 8 5] [wal_frames db 8 5]] 
   do_test wal-10.$tn.13 {
     execsql { INSERT INTO t1 VALUES(11, 12) }
     sql2 {SELECT * FROM t1}
@@ -558,8 +559,8 @@ do_multiclient_test tn {
   # Writers do not block checkpoints any more either.
   #
   do_test wal-10.$tn.14 {
-    catchsql { PRAGMA wal_checkpoint } 
-  } {0 {0 15 13}}
+    execsql { PRAGMA wal_checkpoint } 
+  } [list 0 [wal_frames db 9 6] [wal_frames db 8 5]]
 
   # The following series of test cases used to verify another blocking
   # case in WAL - a case which no longer blocks.
@@ -568,11 +569,11 @@ do_multiclient_test tn {
     sql2 { COMMIT; BEGIN; SELECT * FROM t1; }
   } {1 2 3 4 5 6 7 8 9 10 11 12}
   do_test wal-10.$tn.16 {
-    catchsql { PRAGMA wal_checkpoint } 
-  } {0 {0 15 15}}
+    execsql { PRAGMA wal_checkpoint } 
+  } [list 0 [wal_frames db 9 6] [wal_frames db 9 6]]
   do_test wal-10.$tn.17 {
     execsql { PRAGMA wal_checkpoint } 
-  } {0 15 15}
+  } [list 0 [wal_frames db 9 6] [wal_frames db 9 6]]
   do_test wal-10.$tn.18 {
     sql3 { BEGIN; SELECT * FROM t1 }
   } {1 2 3 4 5 6 7 8 9 10 11 12}
@@ -595,13 +596,13 @@ do_multiclient_test tn {
   #
   do_test wal-10.$tn.23 {
     execsql { PRAGMA wal_checkpoint }
-  } {0 17 17}
+  } [list 0 [wal_frames db 10 7] [wal_frames db 10 7]]
   do_test wal-10.$tn.24 {
     sql2 { BEGIN; SELECT * FROM t1; }
   } {1 2 3 4 5 6 7 8 9 10 11 12 13 14}
   do_test wal-10.$tn.25 {
     execsql { PRAGMA wal_checkpoint }
-  } {0 17 17}
+  } [list 0 [wal_frames db 10 7] [wal_frames db 10 7]]
   do_test wal-10.$tn.26 {
     catchsql { INSERT INTO t1 VALUES(15, 16) }
   } {0 {}}
@@ -617,12 +618,12 @@ do_multiclient_test tn {
   } {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18}
   do_test wal-10.$tn.29 {
     execsql { INSERT INTO t1 VALUES(19, 20) }
-    catchsql { PRAGMA wal_checkpoint }
-  } {0 {0 6 0}}
+    execsql { PRAGMA wal_checkpoint }
+  } [list 0 [wal_frames db 4 2] 0]
   do_test wal-10.$tn.30 {
     code3 { sqlite3_finalize $::STMT }
     execsql { PRAGMA wal_checkpoint }
-  } {0 6 0}
+  } [list 0 [wal_frames db 4 2] 0]
 
   # At one point, if a reader failed to upgrade to a writer because it
   # was reading an old snapshot, the write-locks were not being released.
@@ -660,8 +661,8 @@ do_multiclient_test tn {
     }
   } {a b c d}
   do_test wal-10.$tn.36 {
-    catchsql { PRAGMA wal_checkpoint }
-  } {0 {0 16 16}}
+    execsql { PRAGMA wal_checkpoint }
+  } [list 0 [wal_frames db 11 5] [wal_frames db 11 5]]
   do_test wal-10.$tn.36 {
     sql3 { INSERT INTO t1 VALUES('e', 'f') }
     sql2 { SELECT * FROM t1 }
@@ -669,7 +670,7 @@ do_multiclient_test tn {
   do_test wal-10.$tn.37 {
     sql2 COMMIT
     execsql { PRAGMA wal_checkpoint }
-  } {0 18 18}
+  } [list 0 [wal_frames db 13 5] [wal_frames db 13 5]]
 }
 
 #-------------------------------------------------------------------------
@@ -1057,9 +1058,11 @@ foreach {tn ckpt_cmd ckpt_res ckpt_main ckpt_aux} {
       PRAGMA aux.auto_vacuum = 0;
       PRAGMA main.journal_mode = WAL;
       PRAGMA aux.journal_mode = WAL;
+      SELECT count(*) FROM main.sqlite_master, aux.sqlite_master;
       PRAGMA synchronous = NORMAL;
+      PRAGMA aux.synchronous = FULL;
     }
-  } {wal wal}
+  } {wal wal 0}
 
   do_test wal-16.$tn.2 {
     execsql {
@@ -1129,6 +1132,7 @@ foreach {tn sectorsize logsize} "
       PRAGMA auto_vacuum = 0;
       PRAGMA page_size = 512;
       PRAGMA journal_mode = WAL;
+      SELECT * FROM sqlite_master;
       PRAGMA synchronous = FULL;
     }
     execsql {
@@ -1556,7 +1560,7 @@ ifcapable autovacuum {
   } [expr 3 * 1024]
   do_test 24.5 {
     file size test.db-wal
-  } 2128
+  } [wal_file_size [wal_frames db 1 1] 1024]
 }
 
 db close

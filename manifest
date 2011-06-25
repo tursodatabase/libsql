@@ -1,5 +1,5 @@
-C Fix\sthe\sbuild.
-D 2011-06-24T21:47:39.109
+C Fix\stest\scases\sso\sthat\sthey\swork\swith\sSQLITE_DEFAULT_WAL_SAFETYLEVEL\sdefined.
+D 2011-06-25T16:35:41.980
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8410b02448997eb43bdf0ffa482c9bc2d2624e45
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -127,7 +127,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 986c15232757f2873dff35ee3b35cbf935fc573c
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c fea8eaab6b7bf0877e35a44827049226e2c397ec
+F src/btree.c 43581d03fc1b0fc8afa7790a26bf680161394d13
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
 F src/build.c 5a428625d21ad409514afb40ad083bee25dd957a
@@ -508,7 +508,7 @@ F test/incrblob3.test 086482e7937202be9f8cf327117a042d8628fe7d
 F test/incrblob_err.test c577c91d4ed9e8336cdb188b15d6ee2a6fe9604e
 F test/incrblobfault.test 917c0292224c64a56ef7215fd633a3a82f805be0
 F test/incrvacuum.test 453d1e490d8f5ad2c9b3a54282a0690d6ae56462
-F test/incrvacuum2.test ae04573b73ad52179f56e194fff0fbe43b509d23
+F test/incrvacuum2.test 08b23884a3acc8f5027385adafede3a0b044e3f9
 F test/incrvacuum_ioerr.test 57d2f5777ab13fa03b87b262a4ea1bad5cfc0291
 F test/index.test b5429732b3b983fa810e3ac867d7ca85dae35097
 F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
@@ -610,7 +610,7 @@ F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test af02ed0a9cbc0d2a61b8f35171d4d117e588e4ec
 F test/oserror.test 3fe52e0bd2891a9bf7cdeb639554992453d46301
-F test/pager1.test 4b7c08cab0717a051e9faf093d23ac202a280050
+F test/pager1.test 52725f1e15e02ec651921a7cd1083c3d0052a9c4
 F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
 F test/pagerfault.test b0a275779f0b0233809d2644dec94d689357e00a
@@ -690,7 +690,7 @@ F test/stmt.test 78a6764439cfa5abdcbf98d4d084739e81eeec4f
 F test/subquery.test b524f57c9574b2c0347045b4510ef795d4686796
 F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
-F test/superlock.test 9c567d759fe383abefde0e801e36a3b3aadb082e
+F test/superlock.test b68339e473d26cdeabe784ef14d7522334ec22c3
 F test/sync.test 2bd73b585089c99e76b3e1796c42059b7d89d872
 F test/syscall.test 707c95e4ab7863e13f1293c6b0c76bead30249b3
 F test/sysfault.test c79441d88d23696fbec7b147dba98d42a04f523f
@@ -880,14 +880,14 @@ F test/vtabE.test 7c4693638d7797ce2eda17af74292b97e705cc61
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
-F test/wal.test 3ff610479cd005117f54a8c003a8d86432e6f2ac
-F test/wal2.test 6c65a48c23309baec605d8b14dbc41c2d5baceb0
-F test/wal3.test 804be49c55b362c356f2b98cd8bac77145cfa647
+F test/wal.test c2df96d6f209076fe0571054eedfc4879d1c8a3a
+F test/wal2.test aaeac9c0f901cb3a779a49a5100decc615f04d76
+F test/wal3.test a4670279d6ed3fc4e0355d0e77882f7f46d54bbc
 F test/wal4.test 6a68c45bc1ca24a3592ec449ddcb92b29d0e0e87
-F test/wal5.test f06a0427e06db00347e32eb9fa99d6a5c0f2d088
+F test/wal5.test ad9865a6e39bfcf62c96f075e4c31838295b6509
 F test/wal6.test 8df39843b1471dc02993d173937b2c6589e2cb59
 F test/wal7.test 2ae8f427d240099cc4b2dfef63cff44e2a68a1bd
-F test/wal_common.tcl a98f17fba96206122eff624db0ab13ec377be4fe
+F test/wal_common.tcl 15f152fd55703975878741beca6cfa4209d5b3b3
 F test/walbak.test 767e1c9e0ea0cfb907873b332883e66e187fa4bc
 F test/walbig.test 78ac493db2abdb65b9c6cace5b851cc32df1d449
 F test/walcksum.test cf6787f2ee1a6a3da6f0c2b20b9ede5153e4e03f
@@ -895,7 +895,7 @@ F test/walcrash.test 80c1cc3173a0ef09d8303fa556cb0187a36d82ea
 F test/walcrash2.test c032d0040374ae28b41f99fc0cc290b4e2e34f17
 F test/walfault.test 7db81f3dac64ce8897196f199c2909078bcabf8d
 F test/walhook.test c934ac5219fee2b4e7653d291db9107b8dc73bba
-F test/walmode.test feb39956ec6f415fbb9dcb12d91243391c2c4715
+F test/walmode.test 8fe643a94841a1f95186e91e220181429f1188c1
 F test/walnoshm.test a074428046408f4eb5c6a00e09df8cc97ff93317
 F test/walro.test 05769ae10ddce1b6ad41bdd5326ab7ef951c8278
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
@@ -954,7 +954,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 34f0efa2b12e8eb09331768b1524a076baeb34ea
-R 768b5e530139c389ea55389c2df533b2
-U drh
-Z 525590b6735d93e452cf9134dab9e566
+P 97729542d53a407de1bdfeb5fa6d80bbdb4813b6
+R b0d94ba47dd23ef5ad400f41b1e77ddd
+U dan
+Z 21e66d4037d33761682c45f3b2e0d19c

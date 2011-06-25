@@ -33,6 +33,20 @@ proc wal_cksum_intlist {ckv1 ckv2 intlist} {
   }
 }
 
+# If the synchronous mode for the main database of db handle $db
+# is either OFF or NORMAL, return $nRight. Otherwise, if it is
+# FULL, return $nWrite+$nTrans.
+#
+proc wal_frames {db nWrite nTrans} {
+  set nRet $nWrite
+  switch -- [$db one {PRAGMA main.synchronous}] {
+    0 { }
+    1 { }
+    default { incr nRet $nTrans }
+  }
+  set nRet
+}
+
 
 # This proc calculates checksums in the same way as those used by SQLite 
 # in WAL files. If the $endian argument is "big", then checksums are
