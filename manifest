@@ -1,5 +1,5 @@
-C Fix\stest\scases\sso\sthat\sthey\swork\swith\sSQLITE_DEFAULT_WAL_SAFETYLEVEL\sdefined.
-D 2011-06-25T16:35:41.980
+C Changes\sto\smake\spragma\ssynchronous\ssticky\swhen\sSQLITE_DEFAULT_WAL_SAFETYLEVEL\sis\sused
+D 2011-06-25T21:43:15.946
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8410b02448997eb43bdf0ffa482c9bc2d2624e45
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -127,7 +127,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 986c15232757f2873dff35ee3b35cbf935fc573c
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 43581d03fc1b0fc8afa7790a26bf680161394d13
+F src/btree.c e09181860cc8b32ac3c767b0747a5ee66104817b
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
 F src/build.c 5a428625d21ad409514afb40ad083bee25dd957a
@@ -176,7 +176,7 @@ F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 49e718c095810c6b3334e3a6d89970aceaddefce
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c 912bd5687d6df344698d8e69560f347b6e21c18a
-F src/pragma.c a1010255cd602e2d0cd7fa6f63f9de338ce8ac78
+F src/pragma.c 66661dbe8428dd3215bd4c8f8a43dd3326e0bf6f
 F src/prepare.c 9d7403fe75fefa134351b41400d09ba1b189134b
 F src/printf.c 585a36b6a963df832cfb69505afa3a34ed5ef8a1
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -187,7 +187,7 @@ F src/shell.c 0e0173b3e79d956368013e759f084caa7995ecb1
 F src/sqlite.h.in dc26f18c71a30680b163317aa3d068e3aa02980c
 F src/sqlite3_private.h 1d18557420cb0cc51ff31ec0a3fcce11e5cd6f5a
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
-F src/sqliteInt.h 7b72f7c6929757c0678d94524dbc7e7e3d6dc398
+F src/sqliteInt.h 7240bba17d8f49a667d67bdbbe4cdf898536fc61
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -954,7 +954,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 97729542d53a407de1bdfeb5fa6d80bbdb4813b6
-R b0d94ba47dd23ef5ad400f41b1e77ddd
-U dan
-Z 21e66d4037d33761682c45f3b2e0d19c
+P 8f8b373eed7052e6e93c1805fc1effcf1db09366
+R e151aa11e88480c804b5ef43a2ab643c
+U adam
+Z 3111cbbb811aa7ac12c37845c0ffea17

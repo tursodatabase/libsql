@@ -565,11 +565,17 @@ void sqlite3Pragma(
       pId2->n = 1;
     }
 #ifdef SQLITE_DEFAULT_WAL_SAFETYLEVEL
-    if (eMode == PAGER_JOURNALMODE_WAL) {
-      /* when entering wal mode, immediately switch the safety_level
-       * so that a query to pragma synchronous returns the correct value
-       */
-      pDb->safety_level = SQLITE_DEFAULT_WAL_SAFETYLEVEL;
+    if( ! SQLITE_DbSafetyLevelIsFixed(pDb->safety_level) ){
+      if( eMode == PAGER_JOURNALMODE_WAL ){
+        /* when entering wal mode, immediately switch the safety_level
+        ** so that a query to pragma synchronous returns the correct value */
+      
+        pDb->safety_level = SQLITE_DEFAULT_WAL_SAFETYLEVEL;
+      }else{
+        /* If the user hasn't overridden the synchronous setting, use the 
+        ** default for non-wal databases */
+        pDb->safety_level = 3;
+      }
     }
 #endif /* SQLITE_DEFAULT_WAL_SAFETYLEVEL */
     for(ii=db->nDb-1; ii>=0; ii--){
@@ -841,14 +847,16 @@ void sqlite3Pragma(
   if( sqlite3StrICmp(zLeft,"synchronous")==0 ){
     if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     if( !zRight ){
-      i64 safetyLevel = pDb->safety_level-1;
+      u8 level = pDb->safety_level;
+      i64 safetyLevel = (i64)(SQLITE_DbSafetyLevelValue(level)-1);
       returnSingleInt(pParse, "synchronous", &safetyLevel);
     }else{
       if( !db->autoCommit ){
         sqlite3ErrorMsg(pParse, 
             "Safety level may not be changed inside a transaction");
       }else{
-        pDb->safety_level = getSafetyLevel(zRight)+1;
+        u8 level = getSafetyLevel(zRight)+1;
+        pDb->safety_level = (level | SQLITE_SAFETYLEVEL_FIXED);
       }
     }
   }else
@@ -1527,7 +1535,7 @@ void sqlite3Pragma(
   */
 #ifndef SQLITE_OMIT_PAGER_PRAGMAS
   if( db->autoCommit ){
-    sqlite3BtreeSetSafetyLevel(pDb->pBt, pDb->safety_level,
+    sqlite3BtreeSetSafetyLevel(pDb->pBt, SQLITE_DbSafetyLevelValue(pDb->safety_level),
                (db->flags&SQLITE_FullFSync)!=0,
                (db->flags&SQLITE_CkptFullFSync)!=0);
   }

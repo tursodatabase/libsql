@@ -2362,11 +2362,14 @@ static int lockBtree(BtShared *pBt){
           int iDb;
           sqlite3 *db = pBt->db;
           Db *aDb = db->aDb;
+          u8 level = 0;
           for(iDb=0; iDb<db->nDb; iDb++){
             if( aDb[iDb].pBt && aDb[iDb].pBt->pBt==pBt ) break;
           }
           assert( iDb<db->nDb );
-          if( aDb[iDb].safety_level != SQLITE_DEFAULT_WAL_SAFETYLEVEL) {
+          level = db->aDb[iDb].safety_level;
+          if( !SQLITE_DbSafetyLevelIsFixed(level) && 
+             (SQLITE_DbSafetyLevelValue(level) != SQLITE_DEFAULT_WAL_SAFETYLEVEL) ){
             aDb[iDb].safety_level = SQLITE_DEFAULT_WAL_SAFETYLEVEL;
             sqlite3PagerSetSafetyLevel(pBt->pPager, SQLITE_DEFAULT_WAL_SAFETYLEVEL, 
                                        (db->flags&SQLITE_FullFSync)!=0,

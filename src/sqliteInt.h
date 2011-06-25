@@ -651,6 +651,16 @@ typedef struct WhereLevel WhereLevel;
 #include "os.h"
 #include "mutex.h"
 
+/* When using a default wal safety level, the safety level should only 
+** change with the journal mode if the user hasn't manually specified 
+** pragma synchronous, if they have the defaults shouldn't be applied.
+** The SQLITE_SAFETYLEVEL_FIXED value is ORed into the Db->safety_level
+** field when the user has specified a synchronous setting via pragma.
+*/
+#define SQLITE_SAFETYLEVEL_FIXED 0x10
+#define SQLITE_SAFETYLEVEL_VALUE_MASK 0x03
+#define SQLITE_DbSafetyLevelValue(level) (level&SQLITE_SAFETYLEVEL_VALUE_MASK)
+#define SQLITE_DbSafetyLevelIsFixed(level) (level&SQLITE_SAFETYLEVEL_FIXED)
 
 /*
 ** Each database file to be accessed by the system is an instance
