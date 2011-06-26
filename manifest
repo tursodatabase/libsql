@@ -1,5 +1,5 @@
-C Support\susing\snmake\svia\scmd.exe,\sallow\sTcl\srelated\svariables\sto\sbe\soverridden\svia\sthe\senvironment,\sand\sadd\s'dll'\sto\sthe\s'all'\starget.
-D 2011-06-25T01:14:36.767
+C Modifications\sto\sthe\s"like.test"\sscript\sin\sorder\sto\sexpose\sthe\sproblem\nreported\sby\sticket\s[25ee81271091ec27a8c5].
+D 2011-06-26T23:44:35.143
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -540,7 +540,7 @@ F test/jrnlmode3.test c6522b276ba315fd1416198de6fc1da9e72409fb
 F test/keyword1.test a2400977a2e4fde43bf33754c2929fda34dbca05
 F test/lastinsert.test 474d519c68cb79d07ecae56a763aa7f322c72f51
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
-F test/like.test a47f52692aac96ba82508efba74819214cdebc17
+F test/like.test 9cc5261d22f2108a27cedff8a972aa3284a4ba52
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/limit.test 2db7b3b34fb925b8e847d583d2eb67531d0ce67e
 F test/loadext.test 0393ce12d9616aa87597dd0ec88181de181f6db0
@@ -949,7 +949,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 90cfeaf7b68eebc2cd75bc60b1bb86823646fe30
-R 9d6679872042f0704eb46a854652b6b2
-U mistachkin
-Z 10a97d70fb2ecf74c56670a3fe99eddd
+P 0cb0f30603b1658ae24d1b74d6ab59d05ef4e448
+R b4c0c5b0c346256e14626d78568a95ff
+U drh
+Z 547c3ad3eebb979ac90e817759786a1e
