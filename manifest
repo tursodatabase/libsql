@@ -1,12 +1,12 @@
-C Create\sa\sbranch\sthat\scontains\sjust\sthe\sfix\sfor\sthe\scase_sensitive_like\npragma\sbug,\sticket\s[25ee81271091ec].
-D 2011-06-27T23:32:35.931
+C Update\sthe\sversion\snumber\sto\s3.7.7.1
+D 2011-06-27T23:39:34.810
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 11082f65b452b908d93013292c17850378c39284
 F Makefile.vxworks c85ec1d8597fe2f7bc225af12ac1666e21379151
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
-F VERSION 3fcdd7fbe3eb282df3978fe77288544543767961
+F VERSION 5d587aa6adf86fd587768fe736359bd9f5e43890
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 17dc593f791f874d2c23a0f9360850ded0286531
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -23,7 +23,7 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 405a958bdb3af382a809dccb08a44694923ddd61
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure f9e97ee7cdc9848e2f3f5ef015fdf861f46fb1bf x
+F configure b8e6049719c5f649670388236e2253183243b873 x
 F configure.ac 298a759c086e72c013da459c2aec02a104f4224f
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -949,11 +949,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 4374b7e83ea0a3fbc3691f9c0c936272862f32f2
-R f6b60276b07542bae374240206d06fc4
-T *bgcolor * #80bbd6
-T *branch * branch-3.7.7
-T *sym-branch-3.7.7 *
-T -sym-trunk *
+P ec8f23fc042ad8d700abe38a98c2baea02db1176
+R 627b3b91e5169f5233cd18fa7efa5202
 U drh
-Z 5152c36779edaf261ff98a6334f3e894
+Z 1e438738b824cea0aee4b9c217d680ca
