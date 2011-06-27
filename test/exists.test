@@ -159,7 +159,7 @@ foreach jm {rollback wal} {
       sql1 { DROP INDEX IF EXISTS i2 }
       sql2 { CREATE INDEX aux.i2 ON t2(x) }
       sql1 { DROP INDEX IF EXISTS i2 }
-      sql2 { SELECT name FROM aux.sqlite_master WHERE type = 'index' }
+      sql2 { SELECT * FROM aux.sqlite_master WHERE type = 'index' }
     } {}
 
     # VIEW objects.

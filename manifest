@@ -1,5 +1,5 @@
-C Make\ssure\sall\snew\sstatements\sbegin\slife\sunexpired,\seven\sif\sthey\sregistered\nfunctions\sor\sdid\sother\sactions\sduring\spreparation\sthat\swould\shave\sexpired\nall\sstatements.\s\sFix\sfor\sticket\s[25ee81271091]
-D 2011-06-27T00:01:22.248
+C Add\sa\scase\sto\spermutations.test\sto\srun\sthe\sveryquick\stest\ssuite\susing\ssqlite3_prepare()\sinstead\sof\ssqlite3_prepare_v2().\sThis\shelps\sto\stest\sthe\sfix\sfor\sbug\s[25ee812710].
+D 2011-06-27T16:55:50.495
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -187,7 +187,7 @@ F src/sqliteInt.h 7b72f7c6929757c0678d94524dbc7e7e3d6dc398
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c 5db825be61708b1a2b3f8f6e185e9b753829acef
+F src/tclsqlite.c c355b33803fb756dc09297ec84d19604301fa622
 F src/test1.c 8eef932f1024f1076a8adb8a6f5d9c5267c9e969
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 124ff9735fb6bb7d41de180d6bac90e7b1509432
@@ -254,9 +254,9 @@ F src/where.c 55403ce19c506be6a321c7f129aff693d6103db5
 F test/8_3_names.test b93687beebd17f6ebf812405a6833bae5d1f4199
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
-F test/all.test 51756962d522e474338e9b2ebb26e7364d4aa125
+F test/all.test 52fc8dee494092031a556911d404ca30a749a30b
 F test/alter.test a3f570072b53d7c0fe463bab3f5affa8e113c487
-F test/alter2.test 75f731508f1bf27ba09a6075c66cd02216ba464b
+F test/alter2.test e0c09d630d650ea32333781a4ed3c45eb02c4289
 F test/alter3.test 8677e48d95536f7a6ed86a1a774744dadcc22b07
 F test/alter4.test 1e5dd6b951e9f65ca66422edff02e56df82dd403
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
@@ -393,7 +393,7 @@ F test/eval.test bc269c365ba877554948441e91ad5373f9f91be3
 F test/exclusive.test 53e1841b422e554cecf0160f937c473d6d0e3062
 F test/exclusive2.test 343d55130c12c67b8bf10407acec043a6c26c86b
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
-F test/exists.test 5e2d64b4eb5a9d08876599bdae2e1213d2d12e2a
+F test/exists.test 8f7b27b61c2fbe5822f0a1f899c715d14e416e30
 F test/expr.test 67c9fd6f8f829e239dc8b0f4a08a73c08b09196d
 F test/fallocate.test 43dc34b8c24be6baffadc3b4401ee15710ce83c6
 F test/filectrl.test 97003734290887566e01dded09dc9e99cb937e9e
@@ -615,7 +615,7 @@ F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
 F test/pcache2.test 0d85f2ab6963aee28c671d4c71bec038c00a1d16
-F test/permutations.test 1e8892ebf1bd6e9e8036f4841c72a91bf72da74a
+F test/permutations.test aae89941ca0968b53633c97b5dd0d6f9f9899d27
 F test/pragma.test fdfc09067ea104a0c247a1a79d8093b56656f850
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
@@ -693,7 +693,7 @@ F test/table.test 04ba066432430657712d167ebf28080fe878d305
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
 F test/tclsqlite.test 8c154101e704170c2be10f137a5499ac2c6da8d3
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
-F test/temptable.test f42121a0d29a62f00f93274464164177ab1cc24a
+F test/temptable.test 1a21a597055dcf6002b6f1ee867632dccd6e925c
 F test/temptrigger.test b0273db072ce5f37cf19140ceb1f0d524bbe9f05
 F test/tester.tcl 7d3d17914ca5397a82f801db733b81d4a82f50c3
 F test/thread001.test a3e6a7254d1cb057836cb3145b60c10bf5b7e60f
@@ -949,7 +949,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P c4db5b640638a211b096454ba90b58faf595392b
-R 1d2c6c9972e41fe17af0cc7482f056ad
-U drh
-Z 50eb339a1b9fd382164ccbf3dfada87e
+P faa38c8724d3eebad97197bfa44d11e75cfe6c69
+R ea65f158609dffa4f41c8ce1eb564414
+U dan
+Z 2df66e3ffb41532c6826925a7e3446a4
