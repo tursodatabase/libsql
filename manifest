@@ -1,5 +1,5 @@
-C Add\sa\scase\sto\spermutations.test\sto\srun\sthe\sveryquick\stest\ssuite\susing\ssqlite3_prepare()\sinstead\sof\ssqlite3_prepare_v2().\sThis\shelps\sto\stest\sthe\sfix\sfor\sbug\s[25ee812710].
-D 2011-06-27T16:55:50.495
+C Remove\san\sunnecessary\sassignment\sfrom\svdbeapi.c.
+D 2011-06-27T19:37:23.089
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -241,7 +241,7 @@ F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
 F src/vdbe.c 50b5b4ef29d928a4f60905f820ee1ab2f8ced29f
 F src/vdbe.h 5cf09e7ee8a3f7d93bc51f196a96550786afe7a1
 F src/vdbeInt.h ad84226cc0adcb1185c22b70696b235a1678bb45
-F src/vdbeapi.c 2f908c65337b16c6249ab378d477e74492cf759b
+F src/vdbeapi.c 11dc47987abacb76ad016dcf5abc0dc422482a98
 F src/vdbeaux.c 4d100407e3c72e163854aff8903d19d5ecdf46c0
 F src/vdbeblob.c f024f0bf420f36b070143c32b15cc7287341ffd3
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
@@ -949,7 +949,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P faa38c8724d3eebad97197bfa44d11e75cfe6c69
-R ea65f158609dffa4f41c8ce1eb564414
+P d9f7993bfa2ecb30c44455de538eb6f8a4a59087
+R 883da57d7e06eb3695abd9be14247d70
 U dan
-Z 2df66e3ffb41532c6826925a7e3446a4
+Z c99a55a7e4b26c5d9d0bfe655fb88e62

@@ -488,7 +488,7 @@ int sqlite3_step(sqlite3_stmt *pStmt){
          && cnt++ < SQLITE_MAX_SCHEMA_RETRY
          && (rc2 = rc = sqlite3Reprepare(v))==SQLITE_OK ){
     sqlite3_reset(pStmt);
-    v->expired = 0;
+    assert( v->expired==0 );
   }
   if( rc2!=SQLITE_OK && ALWAYS(v->isPrepareV2) && ALWAYS(db->pErr) ){
     /* This case occurs after failing to recompile an sql statement. 
