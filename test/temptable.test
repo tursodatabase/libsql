@@ -292,6 +292,7 @@ do_test temptable-5.1 {
   execsql {
     CREATE TEMP TABLE mask(a,b,c)
   } db2
+  if {[permutation]=="prepare"} { db2 cache flush }
   execsql {
     CREATE INDEX mask ON t2(x);
     SELECT * FROM t2;

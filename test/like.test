@@ -70,12 +70,15 @@ do_test like-1.4 {
   }
 } {ABC abc}
 do_test like-1.5.1 {
+  # Use sqlite3_exec() to verify fix for ticket [25ee81271091] 2011-06-26
+  sqlite3_exec db {PRAGMA case_sensitive_like=on}
+} {0 {}}
+do_test like-1.5.2 {
   execsql {
-    PRAGMA case_sensitive_like=on;
     SELECT x FROM t1 WHERE x LIKE 'abc' ORDER BY 1;
   }
 } {abc}
-do_test like-1.5.2 {
+do_test like-1.5.3 {
   execsql {
     PRAGMA case_sensitive_like; -- no argument; does not change setting
     SELECT x FROM t1 WHERE x LIKE 'abc' ORDER BY 1;

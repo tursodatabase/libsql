@@ -636,7 +636,12 @@ int sqlite3GenerateIndexKey(
     }
   }
   if( doMakeRec ){
-    const char *zAff = pTab->pSelect ? 0 : sqlite3IndexAffinityStr(v, pIdx);
+    const char *zAff;
+    if( pTab->pSelect || (pParse->db->flags & SQLITE_IdxRealAsInt)!=0 ){
+      zAff = 0;
+    }else{
+      zAff = sqlite3IndexAffinityStr(v, pIdx);
+    }
     sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase, nCol+1, regOut);
     sqlite3VdbeChangeP4(v, -1, zAff, P4_TRANSIENT);
   }
