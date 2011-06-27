@@ -1,5 +1,5 @@
-C Modifications\sto\sthe\s"like.test"\sscript\sin\sorder\sto\sexpose\sthe\sproblem\nreported\sby\sticket\s[25ee81271091ec27a8c5].
-D 2011-06-26T23:44:35.143
+C Make\ssure\sall\snew\sstatements\sbegin\slife\sunexpired,\seven\sif\sthey\sregistered\nfunctions\sor\sdid\sother\sactions\sduring\spreparation\sthat\swould\shave\sexpired\nall\sstatements.\s\sFix\sfor\sticket\s[25ee81271091]
+D 2011-06-27T00:01:22.248
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -242,7 +242,7 @@ F src/vdbe.c 50b5b4ef29d928a4f60905f820ee1ab2f8ced29f
 F src/vdbe.h 5cf09e7ee8a3f7d93bc51f196a96550786afe7a1
 F src/vdbeInt.h ad84226cc0adcb1185c22b70696b235a1678bb45
 F src/vdbeapi.c 2f908c65337b16c6249ab378d477e74492cf759b
-F src/vdbeaux.c 0b2e2880f13af400a27c92a7673287c3eaec8b21
+F src/vdbeaux.c 4d100407e3c72e163854aff8903d19d5ecdf46c0
 F src/vdbeblob.c f024f0bf420f36b070143c32b15cc7287341ffd3
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
 F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
@@ -949,7 +949,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 0cb0f30603b1658ae24d1b74d6ab59d05ef4e448
-R b4c0c5b0c346256e14626d78568a95ff
+P c4db5b640638a211b096454ba90b58faf595392b
+R 1d2c6c9972e41fe17af0cc7482f056ad
 U drh
-Z 547c3ad3eebb979ac90e817759786a1e
+Z 50eb339a1b9fd382164ccbf3dfada87e
