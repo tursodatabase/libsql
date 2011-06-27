@@ -1,5 +1,5 @@
-C Fix\ssome\sof\sthe\scode\sissues\s(missing\scomments\setc.)\sin\sthe\snew\sFTS\scode.
-D 2011-06-23T17:09:51.936
+C Changes\sto\simprove\sthe\sselection\sof\sdeferred\stokens\swithin\sphrases.
+D 2011-06-27T11:15:53.752
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -62,7 +62,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c c25723c7e96763fc88652a8716564e4b22c8a327
+F ext/fts3/fts3.c 70127bf57c54c45545a4ddd73161caf2d9bd1abe
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 7b452eeb592134c7adf87720c9e56d6060d1ed5a
 F ext/fts3/fts3_aux.c 0ebfa7b86cf8ff6a0861605fcc63b83ec1b70691
@@ -949,10 +949,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P c271f7e88fc081a460dd3f4afb24aa9fb7fa2917
-R b9f14b373682048157818c9e1116d00f
-T *branch * fts3-changes
-T *sym-fts3-changes *
-T -sym-trunk *
+P 8230d83120e0f4d217fde56e22c6f05aa5adee09
+R a3718a7f2e746e02b745366a3c6c0fd0
 U dan
-Z a7e048a2a0bdbbc293d8f131a4bc43fc
+Z deeb565ce480cc0dfb49de44342bb4c6

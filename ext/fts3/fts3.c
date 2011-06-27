@@ -2553,24 +2553,15 @@ static int fts3TermSelect(
 ** that the doclist is simply a list of docids stored as delta encoded 
 ** varints.
 */
-static int fts3DoclistCountDocids(int isPoslist, char *aList, int nList){
+static int fts3DoclistCountDocids(char *aList, int nList){
   int nDoc = 0;                   /* Return value */
   if( aList ){
     char *aEnd = &aList[nList];   /* Pointer to one byte after EOF */
     char *p = aList;              /* Cursor */
-    if( !isPoslist ){
-      /* The number of docids in the list is the same as the number of 
-      ** varints. In FTS3 a varint consists of a single byte with the 0x80 
-      ** bit cleared and zero or more bytes with the 0x80 bit set. So to
-      ** count the varints in the buffer, just count the number of bytes
-      ** with the 0x80 bit clear.  */
-      while( p<aEnd ) nDoc += (((*p++)&0x80)==0);
-    }else{
-      while( p<aEnd ){
-        nDoc++;
-        while( (*p++)&0x80 );     /* Skip docid varint */
-        fts3PoslistCopy(0, &p);   /* Skip over position list */
-      }
+    while( p<aEnd ){
+      nDoc++;
+      while( (*p++)&0x80 );     /* Skip docid varint */
+      fts3PoslistCopy(0, &p);   /* Skip over position list */
     }
   }
 
@@ -3914,27 +3905,35 @@ static int fts3EvalSelectDeferred(
     ** this (the logic that selects the tokens to be deferred) is probably
     ** the bit that needs to change.
     */
-    if( ii==0 ){
-      if( pTC->nOvfl ){
-        nDocEst = (pTC->nOvfl * pTab->nPgsz + pTab->nPgsz) / 10;
-      }else{
-        Fts3PhraseToken *pToken = pTC->pToken;
-        int nList = 0;
-        char *pList = 0;
-        rc = fts3TermSelect(pTab, pToken, pTC->iCol, &nList, &pList);
-        assert( rc==SQLITE_OK || pList==0 );
-        if( rc==SQLITE_OK ){
-          nDocEst = fts3DoclistCountDocids(1, pList, nList);
-          fts3EvalPhraseMergeToken(pTab, pTC->pPhrase, pTC->iToken,pList,nList);
-        }
+
+    if( ii && pTC->nOvfl>=(nDocEst*nDocSize) ){
+      /* The number of overflow pages to load for this (and therefore all
+      ** subsequent) tokens is greater than the estimated number of pages 
+      ** that will be loaded if all subsequent tokens are deferred.
+      */
+      Fts3PhraseToken *pToken = pTC->pToken;
+      rc = sqlite3Fts3DeferToken(pCsr, pToken, pTC->iCol);
+      fts3SegReaderCursorFree(pToken->pSegcsr);
+      pToken->pSegcsr = 0;
+    }else if( ii==0 || pTC->pPhrase->nToken>1 ){
+      /* Either this is the cheapest token in the entire query, or it is
+      ** part of a multi-token phrase. Either way, the entire doclist will
+      ** (eventually) be loaded into memory. It may as well be now. */
+      Fts3PhraseToken *pToken = pTC->pToken;
+      int nList = 0;
+      char *pList = 0;
+      rc = fts3TermSelect(pTab, pToken, pTC->iCol, &nList, &pList);
+      assert( rc==SQLITE_OK || pList==0 );
+      if( rc==SQLITE_OK ){
+        fts3EvalPhraseMergeToken(pTab, pTC->pPhrase, pTC->iToken,pList,nList);
+        nDocEst = fts3DoclistCountDocids(
+            pTC->pPhrase->doclist.aAll, pTC->pPhrase->doclist.nAll
+        );
       }
-    }else{
-      if( pTC->nOvfl>=(nDocEst*nDocSize) ){
-        Fts3PhraseToken *pToken = pTC->pToken;
-        rc = sqlite3Fts3DeferToken(pCsr, pToken, pTC->iCol);
-        fts3SegReaderCursorFree(pToken->pSegcsr);
-        pToken->pSegcsr = 0;
-      }
+    }else {
+      /* This token will not be deferred. And it will not be loaded into
+      ** memory at this point either. So assume that it filters out 75% of
+      ** the currently estimated number of documents. */
       nDocEst = 1 + (nDocEst/4);
     }
     pTC->pToken = 0;
