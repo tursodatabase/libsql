@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges.
-D 2011-06-27T19:25:10.603
+C Merge\slatest\strunk\schanges\swith\sfts3-changes\sbranch.
+D 2011-06-28T09:51:22.803
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -64,17 +64,17 @@ F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts3/fts3.c 70127bf57c54c45545a4ddd73161caf2d9bd1abe
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 7b452eeb592134c7adf87720c9e56d6060d1ed5a
+F ext/fts3/fts3Int.h e670e2c58b3dca76e44f7e7d35e61113d079db58
 F ext/fts3/fts3_aux.c 0ebfa7b86cf8ff6a0861605fcc63b83ec1b70691
 F ext/fts3/fts3_expr.c 23791de01b3a5d313d76e02befd2601d4096bc2b
-F ext/fts3/fts3_hash.c aad95afa01cf2a5ffaa448e4b0ab043880cd1efb
+F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
 F ext/fts3/fts3_hash.h 8331fb2206c609f9fc4c4735b9ab5ad6137c88ec
 F ext/fts3/fts3_icu.c 6c8f395cdf9e1e3afa7fadb7e523dbbf381c6dfa
 F ext/fts3/fts3_porter.c 8d946908f4812c005d3d33fcbe78418b1f4eb70c
 F ext/fts3/fts3_snippet.c 58b2ba2b934c1e2a2f6ac857d7f3c7e1a14b4532
 F ext/fts3/fts3_term.c a5457992723455a58804cb75c8cbd8978db5c2ef
-F ext/fts3/fts3_test.c c0aae3219df989d3e827d07846097adf8cb09945
-F ext/fts3/fts3_tokenizer.c 6089986ebcfc19d4b7aabd2b92773368efa4354f
+F ext/fts3/fts3_test.c 24fa13f330db011500acb95590da9eee24951894
+F ext/fts3/fts3_tokenizer.c 9ff7ec66ae3c5c0340fa081958e64f395c71a106
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 0dde8f307b8045565cf63797ba9acfaff1c50c68
 F ext/fts3/fts3_write.c 194829c8fd024a448fc899e5ff02a8ed06595529
@@ -145,7 +145,7 @@ F src/insert.c 3eea5a53d2644116fb865afaa4699fabe62b441c
 F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
-F src/loadext.c 3ae0d52da013a6326310655be6473fd472347b85
+F src/loadext.c 99a161b27a499fc8ad40745b7b1900a26f0a5f51
 F src/main.c fa654e1802e14a5f6c09c37971c3b69c1001d9c8
 F src/malloc.c 591aedb20ae40813f1045f2ef253438a334775d9
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -182,7 +182,7 @@ F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c d9d440809025a58547e39f4f268c2a296bfb56ff
 F src/shell.c 0e0173b3e79d956368013e759f084caa7995ecb1
 F src/sqlite.h.in 4b7255c10d39c5faf089dbd29cde7c367ff39f1f
-F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
+F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
 F src/sqliteInt.h 7b72f7c6929757c0678d94524dbc7e7e3d6dc398
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
@@ -949,7 +949,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 25e5b7686a06e7f4ee993d8559d23143e2e8c7a8 d9f7993bfa2ecb30c44455de538eb6f8a4a59087
-R d90c56f8c8c73b3d354275ed6655034c
+P 11ea98e454ad35b2606e81dec9ac866e4dd9f7e1 29e69f389cb0078e125ba5814a68b3fe8cf634c6
+R 99f54668f5b612c34e36e4280019aae3
 U dan
-Z 93900890f23a5f1f420e0f052b3cd95b
+Z c4e55cbac13868c8cb421abab69674f2

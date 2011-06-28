@@ -27,7 +27,14 @@
 # define SQLITE_ENABLE_FTS3
 #endif
 
-#ifdef SQLITE_ENABLE_FTS3
+#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
+
+/* If not building as part of the core, include sqlite3ext.h. */
+#ifndef SQLITE_CORE
+# include "sqlite3ext.h" 
+extern const sqlite3_api_routines *sqlite3_api;
+#endif
+
 #include "sqlite3.h"
 #include "fts3_tokenizer.h"
 #include "fts3_hash.h"
@@ -510,5 +517,5 @@ int sqlite3Fts3MsrIncrRestart(Fts3MultiSegReader *pCsr);
 
 int sqlite3Fts3DeferredTokenList(Fts3DeferredToken *, char **, int *);
 
-#endif /* SQLITE_ENABLE_FTS3 */
+#endif /* !SQLITE_CORE || SQLITE_ENABLE_FTS3 */
 #endif /* _FTSINT_H */
