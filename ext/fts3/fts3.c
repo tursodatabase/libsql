@@ -3864,11 +3864,13 @@ static int fts3EvalSelectDeferred(
 ){
   Fts3Table *pTab = (Fts3Table *)pCsr->base.pVtab;
   int nDocSize = 0;               /* Number of pages per doc loaded */
-  int nDocEst = 0;                /* Est. docs if all other tokens deferred */
   int rc = SQLITE_OK;             /* Return code */
   int ii;                         /* Iterator variable for various purposes */
   int nOvfl = 0;                  /* Total overflow pages used by doclists */
   int nToken = 0;                 /* Total number of tokens in cluster */
+
+  int nMinEst = 0;                /* The minimum count for any phrase so far. */
+  int nLoad4 = 1;                 /* (Phrases that will be loaded)^4. */
 
   /* Count the tokens in this AND/NEAR cluster. If none of the doclists
   ** associated with the tokens spill onto overflow pages, or if there is
@@ -3885,6 +3887,29 @@ static int fts3EvalSelectDeferred(
   rc = fts3EvalAverageDocsize(pCsr, &nDocSize);
   assert( rc!=SQLITE_OK || nDocSize>0 );
 
+
+  /* Iterate through all tokens in this AND/NEAR cluster, in ascending order 
+  ** of the number of overflow pages that will be loaded by the pager layer 
+  ** to retrieve the entire doclist for the token from the full-text index.
+  ** Load the doclists for tokens that are either:
+  **
+  **   a. The cheapest token in the entire query (i.e. the one visited by the
+  **      first iteration of this loop), or
+  **
+  **   b. Part of a multi-token phrase.
+  **
+  ** After each token doclist is loaded, merge it with the others from the
+  ** same phrase and count the number of documents that the merged doclist
+  ** contains. Set variable "nMinEst" to the smallest number of documents in 
+  ** any phrase doclist for which 1 or more token doclists have been loaded.
+  ** Let nOther be the number of other phrases for which it is certain that
+  ** one or more tokens will not be deferred.
+  **
+  ** Then, for each token, defer it if loading the doclist would result in
+  ** loading N or more overflow pages into memory, where N is computed as:
+  **
+  **    (nMinEst + 4^nOther - 1) / (4^nOther)
+  */
   for(ii=0; ii<nToken && rc==SQLITE_OK; ii++){
     int iTC;                      /* Used to iterate through aTC[] array. */
     Fts3TokenAndCost *pTC = 0;    /* Set to cheapest remaining token. */
@@ -3899,14 +3924,7 @@ static int fts3EvalSelectDeferred(
     }
     assert( pTC );
 
-    /* Determine if token pTC should be deferred. If not, update nDocEst. 
-    **
-    ** TODO: If there are performance regressions involving deferred tokens,
-    ** this (the logic that selects the tokens to be deferred) is probably
-    ** the bit that needs to change.
-    */
-
-    if( ii && pTC->nOvfl>=(nDocEst*nDocSize) ){
+    if( ii && pTC->nOvfl>=((nMinEst+(nLoad4/4)-1)/(nLoad4/4))*nDocSize ){
       /* The number of overflow pages to load for this (and therefore all
       ** subsequent) tokens is greater than the estimated number of pages 
       ** that will be loaded if all subsequent tokens are deferred.
@@ -3915,26 +3933,26 @@ static int fts3EvalSelectDeferred(
       rc = sqlite3Fts3DeferToken(pCsr, pToken, pTC->iCol);
       fts3SegReaderCursorFree(pToken->pSegcsr);
       pToken->pSegcsr = 0;
-    }else if( ii==0 || pTC->pPhrase->nToken>1 ){
-      /* Either this is the cheapest token in the entire query, or it is
-      ** part of a multi-token phrase. Either way, the entire doclist will
-      ** (eventually) be loaded into memory. It may as well be now. */
-      Fts3PhraseToken *pToken = pTC->pToken;
-      int nList = 0;
-      char *pList = 0;
-      rc = fts3TermSelect(pTab, pToken, pTC->iCol, &nList, &pList);
-      assert( rc==SQLITE_OK || pList==0 );
-      if( rc==SQLITE_OK ){
-        fts3EvalPhraseMergeToken(pTab, pTC->pPhrase, pTC->iToken,pList,nList);
-        nDocEst = fts3DoclistCountDocids(
-            pTC->pPhrase->doclist.aAll, pTC->pPhrase->doclist.nAll
-        );
+    }else{
+      nLoad4 = nLoad4*4;
+      if( ii==0 || pTC->pPhrase->nToken>1 ){
+        /* Either this is the cheapest token in the entire query, or it is
+        ** part of a multi-token phrase. Either way, the entire doclist will
+        ** (eventually) be loaded into memory. It may as well be now. */
+        Fts3PhraseToken *pToken = pTC->pToken;
+        int nList = 0;
+        char *pList = 0;
+        rc = fts3TermSelect(pTab, pToken, pTC->iCol, &nList, &pList);
+        assert( rc==SQLITE_OK || pList==0 );
+        if( rc==SQLITE_OK ){
+          int nCount;
+          fts3EvalPhraseMergeToken(pTab, pTC->pPhrase, pTC->iToken,pList,nList);
+          nCount = fts3DoclistCountDocids(
+              pTC->pPhrase->doclist.aAll, pTC->pPhrase->doclist.nAll
+          );
+          if( ii==0 || nCount<nMinEst ) nMinEst = nCount;
+        }
       }
-    }else {
-      /* This token will not be deferred. And it will not be loaded into
-      ** memory at this point either. So assume that it filters out 75% of
-      ** the currently estimated number of documents. */
-      nDocEst = 1 + (nDocEst/4);
     }
     pTC->pToken = 0;
   }
