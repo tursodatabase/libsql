@@ -107,15 +107,17 @@ proc do_fts3query_test {tn args} {
   " $matchinfo_asc
 }
 
-#    fts3_make_deferrable TABLE TOKEN
+#    fts3_make_deferrable TABLE TOKEN ?NROW?
 #
-proc fts3_make_deferrable {tbl token} {
+proc fts3_make_deferrable {tbl token {nRow 0}} {
 
   set stmt [sqlite3_prepare db "SELECT * FROM $tbl" -1 dummy]
   set name [sqlite3_column_name $stmt 0]
   sqlite3_finalize $stmt
 
-  set nRow [db one "SELECT count(*) FROM $tbl"]
+  if {$nRow==0} {
+    set nRow [db one "SELECT count(*) FROM $tbl"]
+  }
   set pgsz [db one "PRAGMA page_size"]
   execsql BEGIN
   for {set i 0} {$i < ($nRow * $pgsz * 1.2)/100} {incr i} {
@@ -651,6 +653,50 @@ foreach {tn pending create} {
   do_fts3query_test 6.$tn.5 t1 {a:G OR b:G}
 
   catchsql { COMMIT }
+}
+
+foreach {tn create} {
+  1    "fts4(x)"
+  2    "fts4(x, order=DESC)"
+} {
+  execsql [subst {
+    DROP TABLE IF EXISTS t1;
+    CREATE VIRTUAL TABLE t1 USING $create;
+  }]
+
+  foreach {x} {
+    "F E N O T K X V A X I E X A P G Q V H U"
+    "R V A E T C V Q N I E L O N U G J K L U"
+    "U Y I G W M V F J L X I D C H F P J Q B"
+    "S G D Z X R P G S S Y B K A S G A I L L"
+    "L S I C H T Z S R Q P R N K J X L F M J"
+    "C C C D P X B Z C M A D A C X S B T X V"
+    "W Y J M D R G V R K B X S A W R I T N C"
+    "P K L W T M S P O Y Y V V O E H Q A I R"
+    "C D Y I C Z F H J C O Y A Q F L S B D K"
+    "P G S C Y C Y V I M B D S Z D D Y W I E"
+    "Z K Z U E E S F Y X T U A L W O U J C Q"
+    "P A T Z S W L P L Q V Y Y I P W U X S S"
+    "I U I H U O F Z F R H R F T N D X A G M"
+    "N A B M S H K X S O Y D T X S B R Y H Z"
+    "L U D A S K I L S V Z J P U B E B Y H M"
+  } {
+    execsql { INSERT INTO t1 VALUES($x) }
+  }
+
+  # Add extra documents to the database such that token "B" will be considered
+  # deferrable if considering the other tokens means that 2 or fewer documents
+  # will be loaded into memory.
+  #
+  fts3_make_deferrable t1 B 2
+
+  # B is not deferred in either of the first two tests below, since filtering
+  # on "M" or "D" returns 10 documents or so. But filtering on "M * D" only
+  # returns 2, so B is deferred in this case.
+  #
+  do_fts3query_test 7.$tn.1             t1 {"M B"}
+  do_fts3query_test 7.$tn.2             t1 {"B D"}
+  do_fts3query_test 7.$tn.3 -deferred B t1 {"M B D"}
 }
 
 set sqlite_fts3_enable_parentheses $sfep

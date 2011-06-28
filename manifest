@@ -1,5 +1,5 @@
-C Changes\sto\sallow\sFTS\sto\sbe\scompiled\sas\sa\sloadable\smodule\sagain.
-D 2011-06-28T07:15:43.990
+C Merge\sthe\sfts3-changes\sbranch\sback\sinto\sthe\strunk.
+D 2011-06-28T14:16:42.198
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -62,9 +62,9 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c ca776037493d0081da70a6afc0df80f5ce347cb7
+F ext/fts3/fts3.c f45ad45053a587ad1c005459b704b7ade8bd504e
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 61c90f512b563345f9aa99c48c7afd0928de055c
+F ext/fts3/fts3Int.h e670e2c58b3dca76e44f7e7d35e61113d079db58
 F ext/fts3/fts3_aux.c 0ebfa7b86cf8ff6a0861605fcc63b83ec1b70691
 F ext/fts3/fts3_expr.c 23791de01b3a5d313d76e02befd2601d4096bc2b
 F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
@@ -456,7 +456,7 @@ F test/fts3am.test 218aa6ba0dfc50c7c16b2022aac5c6be593d08d8
 F test/fts3an.test a49ccadc07a2f7d646ec1b81bc09da2d85a85b18
 F test/fts3ao.test b83f99f70e9eec85f27d75801a974b3f820e01f9
 F test/fts3atoken.test 402ef2f7c2fb4b3d4fa0587df6441c1447e799b3
-F test/fts3auto.test f1cb0a55130897013ca5850dbee2945c2908a45a
+F test/fts3auto.test c1a30b37002b7c764a96937fbc71065b73d69494
 F test/fts3aux1.test 0b02743955d56fc0d4d66236a26177bd1b726de0
 F test/fts3b.test e93bbb653e52afde110ad53bbd793f14fe7a8984
 F test/fts3c.test fc723a9cf10b397fdfc2b32e73c53c8b1ec02958
@@ -949,7 +949,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 6c871ac1fa3c79baa0053dc49ab106cb3db4cfa0
-R 4e5d4c059d7e31bcf35d2d245a2997b7
+P 29e69f389cb0078e125ba5814a68b3fe8cf634c6 91daea7d2ec41f014fb30c6371aae447cc07f287
+R 26c661c69e309ad434e75bfd241a096d
 U dan
-Z c2844ce2a2f8548d3356adfa633cbd5b
+Z 7f90c6a2312621252bb79173b43d611c
