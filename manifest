@@ -1,5 +1,5 @@
-C Merge\sthe\sfts3-changes\sbranch\sback\sinto\sthe\strunk.
-D 2011-06-28T14:16:42.198
+C Pass\sthe\sBTREE_UNORDERED\shint\sinto\sboth\ssqlite3BtreeOpen()\sand\sinto\nsqlite3BtreeCreateTable().
+D 2011-06-29T17:11:39.745
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -238,7 +238,7 @@ F src/update.c 80d77311d91ebc06b27149e75701f1b3e9356622
 F src/utf.c c53eb7404b3eb5c1cbb5655c6a7a0e0ce6bd50f0
 F src/util.c 0f33bbbdfcc4a2d8cf20c3b2a16ffc3b57c58a70
 F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
-F src/vdbe.c 50b5b4ef29d928a4f60905f820ee1ab2f8ced29f
+F src/vdbe.c a9ced64f380bbd8b04da3a1c3a9602d3942704b5
 F src/vdbe.h 5cf09e7ee8a3f7d93bc51f196a96550786afe7a1
 F src/vdbeInt.h ad84226cc0adcb1185c22b70696b235a1678bb45
 F src/vdbeapi.c 11dc47987abacb76ad016dcf5abc0dc422482a98
@@ -949,7 +949,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 29e69f389cb0078e125ba5814a68b3fe8cf634c6 91daea7d2ec41f014fb30c6371aae447cc07f287
-R 26c661c69e309ad434e75bfd241a096d
-U dan
-Z 7f90c6a2312621252bb79173b43d611c
+P b9477eb056d120826ed82b0d65e6f27b5d0c087a
+R 04bb3d810ba550780b3b6fda2c65d8d3
+U drh
+Z 9a15d45fcfccc0dc2281a762dda887ad
