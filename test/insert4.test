@@ -112,7 +112,7 @@ do_test insert4-2.4.1 {
     INSERT INTO t3 SELECT DISTINCT * FROM t2;
     SELECT * FROM t3;
   }
-} {1 9 9 1}
+} {9 1 1 9}
 xferopt_test insert4-2.4.2 0
 do_test insert4-2.4.3 {
   catchsql {

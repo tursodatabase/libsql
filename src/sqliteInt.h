@@ -1966,6 +1966,7 @@ struct WhereInfo {
   u16 wctrlFlags;      /* Flags originally passed to sqlite3WhereBegin() */
   u8 okOnePass;        /* Ok to use one-pass algorithm for UPDATE or DELETE */
   u8 untestedTerms;    /* Not all WHERE terms resolved by outer loop */
+  u8 eDistinct;
   SrcList *pTabList;             /* List of tables in the join */
   int iTop;                      /* The very beginning of the WHERE loop */
   int iContinue;                 /* Jump here to continue with next record */
@@ -1976,6 +1977,9 @@ struct WhereInfo {
   double nRowOut;                /* Estimated number of output rows */
   WhereLevel a[1];               /* Information about each nest loop in WHERE */
 };
+
+#define WHERE_DISTINCT_UNIQUE 1
+#define WHERE_DISTINCT_ORDERED 2
 
 /*
 ** A NameContext defines a context in which to resolve table and column
@@ -2738,7 +2742,7 @@ Expr *sqlite3LimitWhere(Parse *, SrcList *, Expr *, ExprList *, Expr *, Expr *, 
 #endif
 void sqlite3DeleteFrom(Parse*, SrcList*, Expr*);
 void sqlite3Update(Parse*, SrcList*, ExprList*, Expr*, int);
-WhereInfo *sqlite3WhereBegin(Parse*, SrcList*, Expr*, ExprList**, u16);
+WhereInfo *sqlite3WhereBegin(Parse*, SrcList*, Expr*, ExprList**,ExprList*,u16);
 void sqlite3WhereEnd(WhereInfo*);
 int sqlite3ExprCodeGetColumn(Parse*, Table*, int, int, int);
 void sqlite3ExprCodeGetColumnOfTable(Vdbe*, Table*, int, int, int);

@@ -3721,6 +3721,7 @@ int sqlite3Select(
   int distinct;          /* Table to use for the distinct set */
   int rc = 1;            /* Value to return from this function */
   int addrSortIndex;     /* Address of an OP_OpenEphemeral instruction */
+  int addrDistinctIndex; /* Address of an OP_OpenEphemeral instruction */
   AggInfo sAggInfo;      /* Information used by aggregate queries */
   int iEnd;              /* Address of the end of the query */
   sqlite3 *db;           /* The database connection */
@@ -3850,12 +3851,14 @@ int sqlite3Select(
   /* If possible, rewrite the query to use GROUP BY instead of DISTINCT.
   ** GROUP BY might use an index, DISTINCT never does.
   */
+#if 0
   assert( p->pGroupBy==0 || (p->selFlags & SF_Aggregate)!=0 );
   if( (p->selFlags & (SF_Distinct|SF_Aggregate))==SF_Distinct ){
     p->pGroupBy = sqlite3ExprListDup(db, p->pEList, 0);
     pGroupBy = p->pGroupBy;
     p->selFlags &= ~SF_Distinct;
   }
+#endif
 
   /* If there is both a GROUP BY and an ORDER BY clause and they are
   ** identical, then disable the ORDER BY clause since the GROUP BY
@@ -3904,11 +3907,10 @@ int sqlite3Select(
   */
   if( p->selFlags & SF_Distinct ){
     KeyInfo *pKeyInfo;
-    assert( isAgg || pGroupBy );
     distinct = pParse->nTab++;
     pKeyInfo = keyInfoFromExprList(pParse, p->pEList);
-    sqlite3VdbeAddOp4(v, OP_OpenEphemeral, distinct, 0, 0,
-                        (char*)pKeyInfo, P4_KEYINFO_HANDOFF);
+    addrDistinctIndex = sqlite3VdbeAddOp4(v, OP_OpenEphemeral, distinct, 0, 0,
+        (char*)pKeyInfo, P4_KEYINFO_HANDOFF);
     sqlite3VdbeChangeP5(v, BTREE_UNORDERED);
   }else{
     distinct = -1;
@@ -3916,10 +3918,10 @@ int sqlite3Select(
 
   /* Aggregate and non-aggregate queries are handled differently */
   if( !isAgg && pGroupBy==0 ){
-    /* This case is for non-aggregate queries
-    ** Begin the database scan
-    */
-    pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pOrderBy, 0);
+    ExprList *pDist = (isDistinct ? p->pEList : 0);
+
+    /* Begin the database scan. */
+    pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pOrderBy, pDist, 0);
     if( pWInfo==0 ) goto select_end;
     if( pWInfo->nRowOut < p->nSelectRow ) p->nSelectRow = pWInfo->nRowOut;
 
@@ -3932,10 +3934,47 @@ int sqlite3Select(
       p->addrOpenEphm[2] = -1;
     }
 
-    /* Use the standard inner loop
-    */
-    assert(!isDistinct);
-    selectInnerLoop(pParse, p, pEList, 0, 0, pOrderBy, -1, pDest,
+    if( pWInfo->eDistinct ){
+      assert( isDistinct );
+      assert( pWInfo->eDistinct==WHERE_DISTINCT_ORDERED 
+           || pWInfo->eDistinct==WHERE_DISTINCT_UNIQUE 
+      );
+      distinct = -1;
+      if( pWInfo->eDistinct==WHERE_DISTINCT_ORDERED ){
+        int iJump;
+        int iExpr;
+        int iFlag = ++pParse->nMem;
+        int iBase = pParse->nMem+1;
+        int iBase2 = iBase + pEList->nExpr;
+        pParse->nMem += (pEList->nExpr*2);
+        VdbeOp *pOp;
+
+        /* Change the OP_OpenEphemeral coded earlier to an OP_Integer. The
+        ** OP_Integer initializes the "first row" flag.  */
+        pOp = sqlite3VdbeGetOp(v, addrDistinctIndex);
+        pOp->opcode = OP_Integer;
+        pOp->p1 = 1;
+        pOp->p2 = iFlag;
+
+        sqlite3ExprCodeExprList(pParse, pEList, iBase, 1);
+        iJump = sqlite3VdbeCurrentAddr(v) + 1 + pEList->nExpr + 1 + 1;
+        sqlite3VdbeAddOp2(v, OP_If, iFlag, iJump-1);
+        for(iExpr=0; iExpr<pEList->nExpr; iExpr++){
+          CollSeq *pColl = sqlite3ExprCollSeq(pParse, pEList->a[iExpr].pExpr);
+          sqlite3VdbeAddOp3(v, OP_Ne, iBase+iExpr, iJump, iBase2+iExpr);
+          sqlite3VdbeChangeP4(v, -1, (const char *)pColl, P4_COLLSEQ);
+          sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
+        }
+        sqlite3VdbeAddOp2(v, OP_Goto, 0, pWInfo->iContinue);
+
+        sqlite3VdbeAddOp2(v, OP_Integer, 0, iFlag);
+        assert( sqlite3VdbeCurrentAddr(v)==iJump );
+        sqlite3VdbeAddOp3(v, OP_Move, iBase, iBase2, pEList->nExpr);
+      }
+    }
+
+    /* Use the standard inner loop. */
+    selectInnerLoop(pParse, p, pEList, 0, 0, pOrderBy, distinct, pDest,
                     pWInfo->iContinue, pWInfo->iBreak);
 
     /* End the database scan loop.
@@ -4045,7 +4084,7 @@ int sqlite3Select(
       ** in the right order to begin with.
       */
       sqlite3VdbeAddOp2(v, OP_Gosub, regReset, addrReset);
-      pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pGroupBy, 0);
+      pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pGroupBy, 0, 0);
       if( pWInfo==0 ) goto select_end;
       if( pGroupBy==0 ){
         /* The optimizer is able to deliver rows in group by order so
@@ -4307,7 +4346,7 @@ int sqlite3Select(
         ** of output.
         */
         resetAccumulator(pParse, &sAggInfo);
-        pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pMinMax, flag);
+        pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pMinMax, 0, flag);
         if( pWInfo==0 ){
           sqlite3ExprListDelete(db, pDel);
           goto select_end;

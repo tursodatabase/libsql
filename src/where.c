@@ -253,6 +253,7 @@ struct WhereCost {
 #define WHERE_VIRTUALTABLE 0x08000000  /* Use virtual-table processing */
 #define WHERE_MULTI_OR     0x10000000  /* OR using multiple indices */
 #define WHERE_TEMP_INDEX   0x20000000  /* Uses an ephemeral index */
+#define WHERE_DISTINCT     0x40000000  /* Correct order for DISTINCT */
 
 /*
 ** Initialize a preallocated WhereClause structure.
@@ -1433,7 +1434,10 @@ static int isSortingIndex(
   struct ExprList_item *pTerm;    /* A term of the ORDER BY clause */
   sqlite3 *db = pParse->db;
 
-  assert( pOrderBy!=0 );
+  if( !pOrderBy ) return 0;
+  if( wsFlags & WHERE_COLUMN_IN ) return 0;
+  if( pIdx->bUnordered ) return 0;
+
   nTerm = pOrderBy->nExpr;
   assert( nTerm>0 );
 
@@ -1523,7 +1527,7 @@ static int isSortingIndex(
     }
   }
 
-  *pbRev = sortOrder!=0;
+  if( pbRev ) *pbRev = sortOrder!=0;
   if( j>=nTerm ){
     /* All terms of the ORDER BY clause are covered by this index so
     ** this index can be used for sorting. */
@@ -2689,6 +2693,7 @@ static void bestBtreeIndex(
   Bitmask notReady,           /* Mask of cursors not available for indexing */
   Bitmask notValid,           /* Cursors not available for any purpose */
   ExprList *pOrderBy,         /* The ORDER BY clause */
+  ExprList *pDistinct,        /* The select-list if query is DISTINCT */
   WhereCost *pCost            /* Lowest cost query plan */
 ){
   int iCur = pSrc->iCursor;   /* The cursor of the table to be accessed */
@@ -2829,7 +2834,8 @@ static void bestBtreeIndex(
     int nInMul = 1;               /* Number of distinct equalities to lookup */
     int estBound = 100;           /* Estimated reduction in search space */
     int nBound = 0;               /* Number of range constraints seen */
-    int bSort = 0;                /* True if external sort required */
+    int bSort = !!pOrderBy;       /* True if external sort required */
+    int bDist = !!pDistinct;      /* True if index cannot help with DISTINCT */
     int bLookup = 0;              /* True if not a covering index */
     WhereTerm *pTerm;             /* A single term of the WHERE clause */
 #ifdef SQLITE_ENABLE_STAT2
@@ -2893,17 +2899,22 @@ static void bestBtreeIndex(
     ** naturally scan rows in the required order, set the appropriate flags
     ** in wsFlags. Otherwise, if there is an ORDER BY clause but the index
     ** will scan rows in a different order, set the bSort variable.  */
-    if( pOrderBy ){
-      if( (wsFlags & WHERE_COLUMN_IN)==0
-        && pProbe->bUnordered==0
-        && isSortingIndex(pParse, pWC->pMaskSet, pProbe, iCur, pOrderBy,
-                          nEq, wsFlags, &rev)
-      ){
-        wsFlags |= WHERE_ROWID_RANGE|WHERE_COLUMN_RANGE|WHERE_ORDERBY;
-        wsFlags |= (rev ? WHERE_REVERSE : 0);
-      }else{
-        bSort = 1;
-      }
+    if( isSortingIndex(
+          pParse, pWC->pMaskSet, pProbe, iCur, pOrderBy, nEq, wsFlags, &rev)
+    ){
+      bSort = 0;
+      wsFlags |= WHERE_ROWID_RANGE|WHERE_COLUMN_RANGE|WHERE_ORDERBY;
+      wsFlags |= (rev ? WHERE_REVERSE : 0);
+    }
+
+    /* If there is a DISTINCT qualifier and this index will scan rows in
+    ** order of the DISTINCT expressions, clear bDist and set the appropriate
+    ** flags in wsFlags. */
+    if( isSortingIndex(
+          pParse, pWC->pMaskSet, pProbe, iCur, pDistinct, nEq, wsFlags, 0)
+    ){
+      bDist = 0;
+      wsFlags |= WHERE_ROWID_RANGE|WHERE_COLUMN_RANGE|WHERE_DISTINCT;
     }
 
     /* If currently calculating the cost of using an index (not the IPK
@@ -3018,6 +3029,9 @@ static void bestBtreeIndex(
     ** difference and select C of 3.0.
     */
     if( bSort ){
+      cost += nRow*estLog(nRow)*3;
+    }
+    if( bDist ){
       cost += nRow*estLog(nRow)*3;
     }
 
@@ -3165,7 +3179,7 @@ static void bestIndex(
   }else
 #endif
   {
-    bestBtreeIndex(pParse, pWC, pSrc, notReady, notValid, pOrderBy, pCost);
+    bestBtreeIndex(pParse, pWC, pSrc, notReady, notValid, pOrderBy, 0, pCost);
   }
 }
 
@@ -4127,7 +4141,7 @@ static Bitmask codeOneLoopStart(
       if( pOrTerm->leftCursor==iCur || pOrTerm->eOperator==WO_AND ){
         WhereInfo *pSubWInfo;          /* Info for single OR-term scan */
         /* Loop through table entries that match term pOrTerm. */
-        pSubWInfo = sqlite3WhereBegin(pParse, pOrTab, pOrTerm->pExpr, 0,
+        pSubWInfo = sqlite3WhereBegin(pParse, pOrTab, pOrTerm->pExpr, 0, 0,
                         WHERE_OMIT_OPEN | WHERE_OMIT_CLOSE |
                         WHERE_FORCE_TABLE | WHERE_ONETABLE_ONLY);
         if( pSubWInfo ){
@@ -4274,6 +4288,79 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
   }
 }
 
+/*
+** Return true if the DISTINCT expression-list passed as the third argument
+** is redundant. A DISTINCT list is redundant if the database contains a
+** UNIQUE index that guarantees that the result of the query will be distinct
+** anyway.
+*/
+static int whereDistinctRedundant(
+  Parse *pParse,
+  SrcList *pTabList,
+  WhereClause *pWC,
+  ExprList *pDistinct
+){
+  Table *pTab;
+  Index *pIdx;
+  int i;
+  int iBase;
+
+  /* If there is more than one table or sub-select in the FROM clause of
+  ** this query, then it will not be possible to show that the DISTINCT 
+  ** clause is redundant. */
+  if( pTabList->nSrc!=1 ) return 0;
+  iBase = pTabList->a[0].iCursor;
+  pTab = pTabList->a[0].pTab;
+
+  /* Check if all the expressions in the ExprList are of type TK_COLUMN and
+  ** on the same table. If this is not the case, return early, since it will 
+  ** not be possible to prove that the DISTINCT qualifier is redundant. 
+  ** If any of the expressions is an IPK column, then return true.
+  */
+  for(i=0; i<pDistinct->nExpr; i++){
+    Expr *p = pDistinct->a[i].pExpr;
+    if( p->op!=TK_COLUMN || p->iTable!=iBase ) return 0;
+    if( p->iColumn<0 ) return 1;
+  }
+
+  /* Loop through all indices on the table, checking each to see if it makes
+  ** the DISTINCT qualifier redundant. It does so if:
+  **
+  **   1. The index is itself UNIQUE, and
+  **
+  **   2. All of the columns in the index are either part of the pDistinct
+  **      list, or else the WHERE clause contains a term of the form "col=X",
+  **      where X is a constant value. The collation sequences of the
+  **      comparison and select-list expressions must match those of the index.
+  */
+  for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+    if( pIdx->onError==OE_None ) continue;
+    for(i=0; i<pIdx->nColumn; i++){
+      int iCol = pIdx->aiColumn[i];
+      const char *zColl = pIdx->azColl[i];
+
+      if( 0==findTerm(pWC, iBase, iCol, ~(Bitmask)0, WO_EQ, pIdx) ){
+        int j;
+        for(j=0; j<pDistinct->nExpr; j++){
+          Expr *p = pDistinct->a[j].pExpr;
+          if( p->iColumn==iCol ){
+            CollSeq *pColl = sqlite3ExprCollSeq(pParse, p);
+            const char *zEColl = (pColl ? pColl : pParse->db->pDfltColl)->zName;
+            if( 0==sqlite3StrICmp(zColl, zEColl) ) break;
+          }
+        }
+        if( j==pDistinct->nExpr ) break;
+      }
+    }
+    if( i==pIdx->nColumn ){
+      /* This index implies that the DISTINCT qualifier is redundant. */
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
 
 /*
 ** Generate the beginning of the loop used for WHERE clause processing.
@@ -4368,6 +4455,7 @@ WhereInfo *sqlite3WhereBegin(
   SrcList *pTabList,    /* A list of all tables to be scanned */
   Expr *pWhere,         /* The WHERE clause */
   ExprList **ppOrderBy, /* An ORDER BY clause, or NULL */
+  ExprList *pDistinct,  /* The select-list for DISTINCT queries - or NULL */
   u16 wctrlFlags        /* One of the WHERE_* flags defined in sqliteInt.h */
 ){
   int i;                     /* Loop counter */
@@ -4495,6 +4583,15 @@ WhereInfo *sqlite3WhereBegin(
     goto whereBeginError;
   }
 
+  /* Check if the DISTINCT qualifier, if there is one, is redundant. 
+  ** If it is, then set pDistinct to NULL and WhereInfo.eDistinct to
+  ** WHERE_DISTINCT_UNIQUE to tell the caller to ignore the DISTINCT.
+  */
+  if( pDistinct && whereDistinctRedundant(pParse, pTabList, pWC, pDistinct) ){
+    pDistinct = 0;
+    pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
+  }
+
   /* Chose the best index to use for each table in the FROM clause.
   **
   ** This loop fills in the following fields:
@@ -4578,6 +4675,7 @@ WhereInfo *sqlite3WhereBegin(
         int doNotReorder;    /* True if this table should not be reordered */
         WhereCost sCost;     /* Cost information from best[Virtual]Index() */
         ExprList *pOrderBy;  /* ORDER BY clause for index to optimize */
+        ExprList *pDist;     /* DISTINCT clause for index to optimize */
   
         doNotReorder =  (pTabItem->jointype & (JT_LEFT|JT_CROSS))!=0;
         if( j!=iFrom && doNotReorder ) break;
@@ -4588,6 +4686,7 @@ WhereInfo *sqlite3WhereBegin(
         }
         mask = (isOptimal ? m : notReady);
         pOrderBy = ((i==0 && ppOrderBy )?*ppOrderBy:0);
+        pDist = (i==0 ? pDistinct : 0);
         if( pTabItem->pIndex==0 ) nUnconstrained++;
   
         WHERETRACE(("=== trying table %d with isOptimal=%d ===\n",
@@ -4602,7 +4701,7 @@ WhereInfo *sqlite3WhereBegin(
 #endif
         {
           bestBtreeIndex(pParse, pWC, pTabItem, mask, notReady, pOrderBy,
-                         &sCost);
+              pDist, &sCost);
         }
         assert( isOptimal || (sCost.used&notReady)==0 );
 
@@ -4662,6 +4761,10 @@ WhereInfo *sqlite3WhereBegin(
                 bestJ, pLevel-pWInfo->a, bestPlan.rCost, bestPlan.plan.nRow));
     if( (bestPlan.plan.wsFlags & WHERE_ORDERBY)!=0 ){
       *ppOrderBy = 0;
+    }
+    if( (bestPlan.plan.wsFlags & WHERE_DISTINCT)!=0 ){
+      assert( pWInfo->eDistinct==0 );
+      pWInfo->eDistinct = WHERE_DISTINCT_ORDERED;
     }
     andFlags &= bestPlan.plan.wsFlags;
     pLevel->plan = bestPlan.plan;

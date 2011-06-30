@@ -1376,7 +1376,7 @@ do_test fuzzer1-2.3 {
        AND f2.distance<=200
        AND streetname.n>=f2.word AND streetname.n<=(f2.word || x'F7BFBFBF')
   }
-} {steelewood tallia tallu talwyn taymouth thelema trailer {tyler finley}}
+} {{tyler finley} trailer taymouth steelewood tallia tallu talwyn thelema}
 
 
 finish_test
