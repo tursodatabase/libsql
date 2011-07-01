@@ -1,5 +1,5 @@
-C Improve\suse\sof\sindexes\sto\soptimize\sDISTINCT\squeries.
-D 2011-07-01T18:26:40.769
+C Merge\slatest\strunk\schanges\swith\sexperimental\sbranch.
+D 2011-07-01T18:43:13.469
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -233,7 +233,7 @@ F src/test_vfstrace.c 0b884e06094a746da729119a2cabdc7aa790063d
 F src/test_wholenumber.c 6129adfbe7c7444f2e60cc785927f3aa74e12290
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c c819d9f72168a035d545a5bdafe9b085b20df705
-F src/trigger.c c836a6caac16ba96611558922106858f6ca3d6bf
+F src/trigger.c 1cfb80e2290ef66ea89cb4e821caae65a02c0d56
 F src/update.c 74a6cfb34e9732c1e2a86278b229913b4b51eeec
 F src/utf.c c53eb7404b3eb5c1cbb5655c6a7a0e0ce6bd50f0
 F src/util.c 0f33bbbdfcc4a2d8cf20c3b2a16ffc3b57c58a70
@@ -841,7 +841,7 @@ F test/trigger9.test 5b0789f1c5c4600961f8e68511b825b87be53e31
 F test/triggerA.test eaf11a29db2a11967d2d4b49d37f92bce598194e
 F test/triggerB.test 56780c031b454abac2340dbb3b71ac5c56c3d7fe
 F test/triggerC.test 02c690febf608ae20b9af86184a9867f79855b1d
-F test/triggerD.test c6add3817351451e419f6ff9e9a259b02b6e2de7
+F test/triggerD.test bfdac1143deee8fb12b6a3640d76e5669a567ff6
 F test/tt3_checkpoint.c 415eccce672d681b297485fc20f44cdf0eac93af
 F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
 F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
@@ -950,7 +950,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 7337293c87fb563604dd6ad284f2d1e30c938b4c
-R 0a65cc1234bf3efb15e20cfbd6948f45
+P 6c202ea0247ff509f696eee3839975a88ed26cf2 953e169e8a7dac05a0b56b4ef5d500ec8399d37f
+R 0920e7efb36d6d861c0873d40a58b5e8
 U dan
-Z be26c18c91323ba4302e319914f9eafb
+Z 076f69de0e54769c5ccba2bae7e8f9fd
