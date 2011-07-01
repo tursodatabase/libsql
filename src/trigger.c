@@ -117,15 +117,28 @@ void sqlite3BeginTrigger(
       goto trigger_cleanup;
     }
   }
+  if( !pTableName || db->mallocFailed ){
+    goto trigger_cleanup;
+  }
+
+  /* A long-standing parser bug is that this syntax was allowed:
+  **
+  **    CREATE TRIGGER attached.demo AFTER INSERT ON attached.tab ....
+  **                                                 ^^^^^^^^
+  **
+  ** To maintain backwards compatibility, ignore the database
+  ** name on pTableName if we are reparsing our of SQLITE_MASTER.
+  */
+  if( db->init.busy && iDb!=1 ){
+    sqlite3DbFree(db, pTableName->a[0].zDatabase);
+    pTableName->a[0].zDatabase = 0;
+  }
 
   /* If the trigger name was unqualified, and the table is a temp table,
   ** then set iDb to 1 to create the trigger in the temporary database.
   ** If sqlite3SrcListLookup() returns 0, indicating the table does not
   ** exist, the error is caught by the block below.
   */
-  if( !pTableName || db->mallocFailed ){
-    goto trigger_cleanup;
-  }
   pTab = sqlite3SrcListLookup(pParse, pTableName);
   if( db->init.busy==0 && pName2->n==0 && pTab
         && pTab->pSchema==db->aDb[1].pSchema ){

@@ -1,5 +1,5 @@
-C Pass\sthe\sBTREE_UNORDERED\shint\sinto\sboth\ssqlite3BtreeOpen()\sand\sinto\nsqlite3BtreeCreateTable().
-D 2011-06-29T17:11:39.745
+C Ignore\sthe\sdatabase\sname\son\sthe\starget\stable\swhen\sparsing\sa\sCREATE\sTABLE\nstatement\sout\sof\sthe\ssqlite_master\stable.\s\sThis\sis\sa\sfix\sfor\nticket\s[d6ddba6706353]\sthat\spreserves\sbackwards\scompatibility.
+D 2011-07-01T13:50:44.953
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -233,7 +233,7 @@ F src/test_vfstrace.c 0b884e06094a746da729119a2cabdc7aa790063d
 F src/test_wholenumber.c 6129adfbe7c7444f2e60cc785927f3aa74e12290
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c c819d9f72168a035d545a5bdafe9b085b20df705
-F src/trigger.c c836a6caac16ba96611558922106858f6ca3d6bf
+F src/trigger.c 1cfb80e2290ef66ea89cb4e821caae65a02c0d56
 F src/update.c 80d77311d91ebc06b27149e75701f1b3e9356622
 F src/utf.c c53eb7404b3eb5c1cbb5655c6a7a0e0ce6bd50f0
 F src/util.c 0f33bbbdfcc4a2d8cf20c3b2a16ffc3b57c58a70
@@ -949,7 +949,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P b9477eb056d120826ed82b0d65e6f27b5d0c087a
-R 04bb3d810ba550780b3b6fda2c65d8d3
+P 591de898f41630156cc0fc6ef17dd3ee5e7c479f
+R 0219e5330d7b506bd713afee90f76519
 U drh
-Z 9a15d45fcfccc0dc2281a762dda887ad
+Z 5f346c2968ae8ad6ce9a9eb04ceee5d9
