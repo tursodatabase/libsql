@@ -1,5 +1,5 @@
-C Improvements\sand\stests\sfor\sdetection\sof\sredundant\sDISTINCT\squalifiers.
-D 2011-07-01T14:21:38.743
+C Improve\suse\sof\sindexes\sto\soptimize\sDISTINCT\squeries.
+D 2011-07-01T18:26:40.769
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -250,7 +250,7 @@ F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 0c70ad7b1cac6005fa5e2cbefd23ee05e391c290
 F src/wal.h 66b40bd91bc29a5be1c88ddd1f5ade8f3f48728a
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 207cf2c12b391cfdfae89ca3c8afe2adbf46f712
+F src/where.c 83cf8e8637826a311e598980bf5c920069847a77
 F test/8_3_names.test b93687beebd17f6ebf812405a6833bae5d1f4199
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -368,7 +368,7 @@ F test/descidx1.test b1353c1a15cfbee97b13a1dcedaf0fe78163ba6a
 F test/descidx2.test 9f1a0c83fd57f8667c82310ca21b30a350888b5d
 F test/descidx3.test fe720e8b37d59f4cef808b0bf4e1b391c2e56b6f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
-F test/distinct.test 17985484790bbb6d098af682f808f11940ca6375
+F test/distinct.test dbedaddb15c7a96729d39e5c3d7c2993ac905a1d
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_createtable.test 4771686a586b6ae414f927c389b2c101cc05c028
 F test/e_delete.test e2ae0d3fce5efd70fef99025e932afffc5616fab
@@ -696,7 +696,7 @@ F test/tclsqlite.test 8c154101e704170c2be10f137a5499ac2c6da8d3
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test 1a21a597055dcf6002b6f1ee867632dccd6e925c
 F test/temptrigger.test b0273db072ce5f37cf19140ceb1f0d524bbe9f05
-F test/tester.tcl 7d3d17914ca5397a82f801db733b81d4a82f50c3
+F test/tester.tcl aad52c7644513e5650f6613d371b0af3193c3885
 F test/thread001.test a3e6a7254d1cb057836cb3145b60c10bf5b7e60f
 F test/thread002.test afd20095e6e845b405df4f2c920cb93301ca69db
 F test/thread003.test b824d4f52b870ae39fc5bae4d8070eca73085dca
@@ -950,7 +950,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P f7ba0219ef2f235543c258be736955d91ca5ecce
-R 778c4d57ca4312ecfa96b1ac67177d07
+P 7337293c87fb563604dd6ad284f2d1e30c938b4c
+R 0a65cc1234bf3efb15e20cfbd6948f45
 U dan
-Z 94d823140247a8802d583b432d46d049
+Z be26c18c91323ba4302e319914f9eafb

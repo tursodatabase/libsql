@@ -41,6 +41,23 @@ proc do_distinct_not_noop_test {tn sql} {
   uplevel [list do_test $tn [list is_distinct_noop $sql] 0]
 }
 
+proc do_temptables_test {tn sql temptables} {
+  uplevel [list do_test $tn [subst -novar {
+    set ret ""
+    db eval "EXPLAIN [set sql]" {
+      if {$opcode == "OpenEphemeral"} { 
+        if {$p5 != "10" && $p5!="00"} { error "p5 = $p5" }
+        if {$p5 == "10"} {
+          lappend ret hash
+        } else {
+          lappend ret btree
+        }
+      }
+    }
+    set ret
+  }] $temptables]
+}
+
 
 #-------------------------------------------------------------------------
 # The following tests - distinct-1.* - check that the planner correctly 
@@ -107,6 +124,37 @@ foreach {tn noop sql} {
   }
 }
 
+#-------------------------------------------------------------------------
+# The following tests - distinct-2.* - test cases where an index is
+# used to deliver results in order of the DISTINCT expressions. 
+#
+drop_all_tables
+do_execsql_test 2.0 {
+  CREATE TABLE t1(a, b, c);
+
+  CREATE INDEX i1 ON t1(a, b);
+  CREATE INDEX i2 ON t1(b COLLATE nocase, c COLLATE nocase);
+
+  INSERT INTO t1 VALUES('a', 'b', 'c');
+  INSERT INTO t1 VALUES('A', 'B', 'C');
+  INSERT INTO t1 VALUES('a', 'b', 'c');
+  INSERT INTO t1 VALUES('A', 'B', 'C');
+}
+
+foreach {tn sql temptables res} {
+  1   "a, b FROM t1"                                       {}      {A B a b}
+  2   "b, a FROM t1"                                       {}      {B A b a}
+  3   "a, b, c FROM t1"                                    {hash}  {a b c A B C}
+  4   "a, b, c FROM t1 ORDER BY a, b, c"                   {btree} {A B C a b c}
+  5   "b FROM t1 WHERE a = 'a'"                            {}      {b}
+  6   "b FROM t1"                                          {hash}  {b B}
+  7   "a FROM t1"                                          {}      {A a}
+  8   "b COLLATE nocase FROM t1"                           {}      {b}
+  9   "b COLLATE nocase FROM t1 ORDER BY b COLLATE nocase" {}      {B}
+} {
+  do_execsql_test    2.$tn.1 "SELECT DISTINCT $sql" $res
+  do_temptables_test 2.$tn.2 "SELECT DISTINCT $sql" $temptables
+}
 
 
 

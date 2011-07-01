@@ -1398,6 +1398,156 @@ static int referencesOtherTables(
   return 0;
 }
 
+/*
+** This function searches the expression list passed as the second argument
+** for an expression of type TK_COLUMN that refers to the same column and
+** uses the same collation sequence as the iCol'th column of index pIdx.
+** Argument iBase is the cursor number used for the table that pIdx refers
+** to.
+**
+** If such an expression is found, its index in pList->a[] is returned. If
+** no expression is found, -1 is returned.
+*/
+static int findIndexCol(
+  Parse *pParse,                  /* Parse context */
+  ExprList *pList,                /* Expression list to search */
+  int iBase,                      /* Cursor for table associated with pIdx */
+  Index *pIdx,                    /* Index to match column of */
+  int iCol                        /* Column of index to match */
+){
+  int i;
+  const char *zColl = pIdx->azColl[iCol];
+
+  for(i=0; i<pList->nExpr; i++){
+    Expr *p = pList->a[i].pExpr;
+    if( pIdx->aiColumn[iCol]==p->iColumn && iBase==p->iTable ){
+      CollSeq *pColl = sqlite3ExprCollSeq(pParse, p);
+      if( pColl && 0==sqlite3StrICmp(pColl->zName, zColl) ){
+        return i;
+      }
+    }
+  }
+
+  return -1;
+}
+
+/*
+** This routine determines if pIdx can be used to assist in processing a
+** DISTINCT qualifier. In other words, it tests whether or not using this
+** index for the outer loop guarantees that rows with equal values for
+** all expressions in the pDistinct list are delivered grouped together.
+**
+** For example, the query 
+**
+**   SELECT DISTINCT a, b, c FROM tbl WHERE a = ?
+**
+** can benefit from any index on columns "b" and "c".
+*/
+static int isDistinctIndex(
+  Parse *pParse,                  /* Parsing context */
+  WhereClause *pWC,               /* The WHERE clause */
+  Index *pIdx,                    /* The index being considered */
+  int base,                       /* Cursor number for the table pIdx is on */
+  ExprList *pDistinct,            /* The DISTINCT expressions */
+  int nEqCol                      /* Number of index columns with == */
+){
+  Bitmask mask = 0;               /* Mask of unaccounted for pDistinct exprs */
+  int i;                          /* Iterator variable */
+
+  if( pIdx->zName==0 || pDistinct==0 || pDistinct->nExpr>=BMS ) return 0;
+
+  /* Loop through all the expressions in the distinct list. If any of them
+  ** are not simple column references, return early. Otherwise, test if the
+  ** WHERE clause contains a "col=X" clause. If it does, the expression
+  ** can be ignored. If it does not, and the column does not belong to the
+  ** same table as index pIdx, return early. Finally, if there is no
+  ** matching "col=X" expression and the column is on the same table as pIdx,
+  ** set the corresponding bit in variable mask.
+  */
+  for(i=0; i<pDistinct->nExpr; i++){
+    WhereTerm *pTerm;
+    Expr *p = pDistinct->a[i].pExpr;
+    if( p->op!=TK_COLUMN ) return 0;
+    pTerm = findTerm(pWC, p->iTable, p->iColumn, ~(Bitmask)0, WO_EQ, 0);
+    if( pTerm ){
+      Expr *pX = pTerm->pExpr;
+      CollSeq *p1 = sqlite3BinaryCompareCollSeq(pParse, pX->pLeft, pX->pRight);
+      CollSeq *p2 = sqlite3ExprCollSeq(pParse, p);
+      if( p1==p2 ) continue;
+    }
+    if( p->iTable!=base ) return 0;
+    mask |= (((Bitmask)1) << i);
+  }
+
+  for(i=nEqCol; mask && i<pIdx->nColumn; i++){
+    int iExpr = findIndexCol(pParse, pDistinct, base, pIdx, i);
+    if( iExpr<0 ) break;
+    mask &= ~(((Bitmask)1) << iExpr);
+  }
+
+  return (mask==0);
+}
+
+
+/*
+** Return true if the DISTINCT expression-list passed as the third argument
+** is redundant. A DISTINCT list is redundant if the database contains a
+** UNIQUE index that guarantees that the result of the query will be distinct
+** anyway.
+*/
+static int isDistinctRedundant(
+  Parse *pParse,
+  SrcList *pTabList,
+  WhereClause *pWC,
+  ExprList *pDistinct
+){
+  Table *pTab;
+  Index *pIdx;
+  int i;                          
+  int iBase;
+
+  /* If there is more than one table or sub-select in the FROM clause of
+  ** this query, then it will not be possible to show that the DISTINCT 
+  ** clause is redundant. */
+  if( pTabList->nSrc!=1 ) return 0;
+  iBase = pTabList->a[0].iCursor;
+  pTab = pTabList->a[0].pTab;
+
+  /* If any of the expressions is an IPK column, then return true. */
+  for(i=0; i<pDistinct->nExpr; i++){
+    Expr *p = pDistinct->a[i].pExpr;
+    assert( p->op!=TK_COLUMN || p->iTable==iBase );
+    if( p->op==TK_COLUMN && p->iColumn<0 ) return 1;
+  }
+
+  /* Loop through all indices on the table, checking each to see if it makes
+  ** the DISTINCT qualifier redundant. It does so if:
+  **
+  **   1. The index is itself UNIQUE, and
+  **
+  **   2. All of the columns in the index are either part of the pDistinct
+  **      list, or else the WHERE clause contains a term of the form "col=X",
+  **      where X is a constant value. The collation sequences of the
+  **      comparison and select-list expressions must match those of the index.
+  */
+  for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+    if( pIdx->onError==OE_None ) continue;
+    for(i=0; i<pIdx->nColumn; i++){
+      int iCol = pIdx->aiColumn[i];
+      if( 0==findTerm(pWC, iBase, iCol, ~(Bitmask)0, WO_EQ, pIdx) 
+       && 0>findIndexCol(pParse, pDistinct, iBase, pIdx, i)
+      ){
+        break;
+      }
+    }
+    if( i==pIdx->nColumn ){
+      /* This index implies that the DISTINCT qualifier is redundant. */
+      return 1;
+    }
+  }
+
+  return 0;
+}
 
 /*
 ** This routine decides if pIdx can be used to satisfy the ORDER BY
@@ -2910,9 +3060,7 @@ static void bestBtreeIndex(
     /* If there is a DISTINCT qualifier and this index will scan rows in
     ** order of the DISTINCT expressions, clear bDist and set the appropriate
     ** flags in wsFlags. */
-    if( isSortingIndex(
-          pParse, pWC->pMaskSet, pProbe, iCur, pDistinct, nEq, wsFlags, 0)
-    ){
+    if( isDistinctIndex(pParse, pWC, pProbe, iCur, pDistinct, nEq) ){
       bDist = 0;
       wsFlags |= WHERE_ROWID_RANGE|WHERE_COLUMN_RANGE|WHERE_DISTINCT;
     }
@@ -4288,75 +4436,6 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
   }
 }
 
-/*
-** Return true if the DISTINCT expression-list passed as the third argument
-** is redundant. A DISTINCT list is redundant if the database contains a
-** UNIQUE index that guarantees that the result of the query will be distinct
-** anyway.
-*/
-static int whereDistinctRedundant(
-  Parse *pParse,
-  SrcList *pTabList,
-  WhereClause *pWC,
-  ExprList *pDistinct
-){
-  Table *pTab;
-  Index *pIdx;
-  int i;                          
-  int iBase;
-
-  /* If there is more than one table or sub-select in the FROM clause of
-  ** this query, then it will not be possible to show that the DISTINCT 
-  ** clause is redundant. */
-  if( pTabList->nSrc!=1 ) return 0;
-  iBase = pTabList->a[0].iCursor;
-  pTab = pTabList->a[0].pTab;
-
-  /* If any of the expressions is an IPK column, then return true. */
-  for(i=0; i<pDistinct->nExpr; i++){
-    Expr *p = pDistinct->a[i].pExpr;
-    assert( p->op!=TK_COLUMN || p->iTable==iBase );
-    if( p->op==TK_COLUMN && p->iColumn<0 ) return 1;
-  }
-
-  /* Loop through all indices on the table, checking each to see if it makes
-  ** the DISTINCT qualifier redundant. It does so if:
-  **
-  **   1. The index is itself UNIQUE, and
-  **
-  **   2. All of the columns in the index are either part of the pDistinct
-  **      list, or else the WHERE clause contains a term of the form "col=X",
-  **      where X is a constant value. The collation sequences of the
-  **      comparison and select-list expressions must match those of the index.
-  */
-  for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-    if( pIdx->onError==OE_None ) continue;
-    for(i=0; i<pIdx->nColumn; i++){
-      int iCol = pIdx->aiColumn[i];
-      const char *zColl = pIdx->azColl[i];
-
-      if( 0==findTerm(pWC, iBase, iCol, ~(Bitmask)0, WO_EQ, pIdx) ){
-        int j;
-        for(j=0; j<pDistinct->nExpr; j++){
-          Expr *p = pDistinct->a[j].pExpr;
-          assert( p->op!=TK_COLUMN || p->iTable==iBase );
-          if( p->op==TK_COLUMN && p->iColumn==iCol ){
-            CollSeq *pColl = sqlite3ExprCollSeq(pParse, p);
-            if( pColl && 0==sqlite3StrICmp(zColl, pColl->zName) ) break;
-          }
-        }
-        if( j==pDistinct->nExpr ) break;
-      }
-    }
-    if( i==pIdx->nColumn ){
-      /* This index implies that the DISTINCT qualifier is redundant. */
-      return 1;
-    }
-  }
-
-  return 0;
-}
-
 
 /*
 ** Generate the beginning of the loop used for WHERE clause processing.
@@ -4583,7 +4662,7 @@ WhereInfo *sqlite3WhereBegin(
   ** If it is, then set pDistinct to NULL and WhereInfo.eDistinct to
   ** WHERE_DISTINCT_UNIQUE to tell the caller to ignore the DISTINCT.
   */
-  if( pDistinct && whereDistinctRedundant(pParse, pTabList, pWC, pDistinct) ){
+  if( pDistinct && isDistinctRedundant(pParse, pTabList, pWC, pDistinct) ){
     pDistinct = 0;
     pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
   }
