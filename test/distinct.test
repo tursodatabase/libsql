@@ -1,0 +1,115 @@
+# 2011 July 1
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is the DISTINCT modifier.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+set testprefix distinct
+
+
+proc is_distinct_noop {sql} {
+  set sql1 $sql
+  set sql2 [string map {DISTINCT ""} $sql]
+
+  set program1 [list]
+  set program2 [list]
+  db eval "EXPLAIN $sql1" {
+    if {$opcode != "Noop"} { lappend program1 $opcode }
+  }
+  db eval "EXPLAIN $sql2" {
+    if {$opcode != "Noop"} { lappend program2 $opcode }
+  }
+
+  return [expr {$program1==$program2}]
+}
+
+proc do_distinct_noop_test {tn sql} {
+  uplevel [list do_test $tn [list is_distinct_noop $sql] 1]
+}
+proc do_distinct_not_noop_test {tn sql} {
+  uplevel [list do_test $tn [list is_distinct_noop $sql] 0]
+}
+
+
+#-------------------------------------------------------------------------
+# The following tests - distinct-1.* - check that the planner correctly 
+# detects cases where a UNIQUE index means that a DISTINCT clause is 
+# redundant. Currently the planner only detects such cases when there
+# is a single table in the FROM clause.
+#
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a, b, c, d);
+  CREATE UNIQUE INDEX i1 ON t1(b, c);
+  CREATE UNIQUE INDEX i2 ON t1(d COLLATE nocase);
+
+  CREATE TABLE t2(x INTEGER PRIMARY KEY, y);
+
+  CREATE TABLE t3(c1 PRIMARY KEY, c2);
+  CREATE INDEX i3 ON t3(c2);
+}
+foreach {tn noop sql} {
+
+  1   1   "SELECT DISTINCT b, c FROM t1"
+  2   1   "SELECT DISTINCT c FROM t1 WHERE b = ?"
+  3   1   "SELECT DISTINCT rowid FROM t1"
+  4   1   "SELECT DISTINCT rowid, a FROM t1"
+  5   1   "SELECT DISTINCT x FROM t2"
+  6   1   "SELECT DISTINCT * FROM t2"
+  7   1   "SELECT DISTINCT * FROM (SELECT * FROM t2)"
+
+  8   1   "SELECT DISTINCT * FROM t1"
+
+  8   0   "SELECT DISTINCT a, b FROM t1"
+
+  9   0   "SELECT DISTINCT c FROM t1 WHERE b IN (1,2)"
+  10  0   "SELECT DISTINCT c FROM t1"
+  11  0   "SELECT DISTINCT b FROM t1"
+
+  12  0   "SELECT DISTINCT a, d FROM t1"
+  13  0   "SELECT DISTINCT a, b, c COLLATE nocase FROM t1"
+  14  1   "SELECT DISTINCT a, d COLLATE nocase FROM t1"
+  15  0   "SELECT DISTINCT a, d COLLATE binary FROM t1"
+  16  1   "SELECT DISTINCT a, b, c COLLATE binary FROM t1"
+
+  16  0   "SELECT DISTINCT t1.rowid FROM t1, t2"
+  17  0   { /* Technically, it would be possible to detect that DISTINCT
+            ** is a no-op in cases like the following. But SQLite does not
+            ** do so. */
+            SELECT DISTINCT t1.rowid FROM t1, t2 WHERE t1.rowid=t2.rowid }
+
+  18  1   "SELECT DISTINCT c1, c2 FROM t3"
+  19  1   "SELECT DISTINCT c1 FROM t3"
+  20  1   "SELECT DISTINCT * FROM t3"
+  21  0   "SELECT DISTINCT c2 FROM t3"
+
+  22  0   "SELECT DISTINCT * FROM (SELECT 1, 2, 3 UNION SELECT 4, 5, 6)"
+  23  1   "SELECT DISTINCT rowid FROM (SELECT 1, 2, 3 UNION SELECT 4, 5, 6)"
+
+  24  0   "SELECT DISTINCT rowid/2 FROM t1"
+  25  1   "SELECT DISTINCT rowid/2, rowid FROM t1"
+  26  1   "SELECT DISTINCT rowid/2, b FROM t1 WHERE c = ?"
+} {
+  if {$noop} {
+    do_distinct_noop_test 1.$tn $sql
+  } else {
+    do_distinct_not_noop_test 1.$tn $sql
+  }
+}
+
+
+
+
+
+
+finish_test

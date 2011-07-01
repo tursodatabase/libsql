@@ -3848,18 +3848,6 @@ int sqlite3Select(
   }
 #endif
 
-  /* If possible, rewrite the query to use GROUP BY instead of DISTINCT.
-  ** GROUP BY might use an index, DISTINCT never does.
-  */
-#if 0
-  assert( p->pGroupBy==0 || (p->selFlags & SF_Aggregate)!=0 );
-  if( (p->selFlags & (SF_Distinct|SF_Aggregate))==SF_Distinct ){
-    p->pGroupBy = sqlite3ExprListDup(db, p->pEList, 0);
-    pGroupBy = p->pGroupBy;
-    p->selFlags &= ~SF_Distinct;
-  }
-#endif
-
   /* If there is both a GROUP BY and an ORDER BY clause and they are
   ** identical, then disable the ORDER BY clause since the GROUP BY
   ** will cause elements to come out in the correct order.  This is
@@ -3869,6 +3857,30 @@ int sqlite3Select(
   */
   if( sqlite3ExprListCompare(p->pGroupBy, pOrderBy)==0
          && (db->flags & SQLITE_GroupByOrder)==0 ){
+    pOrderBy = 0;
+  }
+
+  /* If the query is DISTINCT with an ORDER BY but is not an aggregate, and 
+  ** if the select-list is the same as the ORDER BY list, then this query
+  ** can be rewritten as a GROUP BY. In other words, this:
+  **
+  **     SELECT DISTINCT xyz FROM ... ORDER BY xyz
+  **
+  ** is transformed to:
+  **
+  **     SELECT xyz FROM ... GROUP BY xyz
+  **
+  ** The second form is preferred as a single index (or temp-table) may be 
+  ** used for both the ORDER BY and DISTINCT processing. As originally 
+  ** written the query must use a temp-table for at least one of the ORDER 
+  ** BY and DISTINCT, and an index or separate temp-table for the other.
+  */
+  if( (p->selFlags & (SF_Distinct|SF_Aggregate))==SF_Distinct 
+   && sqlite3ExprListCompare(pOrderBy, p->pEList)==0
+  ){
+    p->selFlags &= ~SF_Distinct;
+    p->pGroupBy = sqlite3ExprListDup(db, p->pEList, 0);
+    pGroupBy = p->pGroupBy;
     pOrderBy = 0;
   }
 
@@ -3935,6 +3947,10 @@ int sqlite3Select(
     }
 
     if( pWInfo->eDistinct ){
+      VdbeOp *pOp;                /* No longer required OpenEphemeral instr. */
+     
+      pOp = sqlite3VdbeGetOp(v, addrDistinctIndex);
+
       assert( isDistinct );
       assert( pWInfo->eDistinct==WHERE_DISTINCT_ORDERED 
            || pWInfo->eDistinct==WHERE_DISTINCT_UNIQUE 
@@ -3947,11 +3963,9 @@ int sqlite3Select(
         int iBase = pParse->nMem+1;
         int iBase2 = iBase + pEList->nExpr;
         pParse->nMem += (pEList->nExpr*2);
-        VdbeOp *pOp;
 
         /* Change the OP_OpenEphemeral coded earlier to an OP_Integer. The
         ** OP_Integer initializes the "first row" flag.  */
-        pOp = sqlite3VdbeGetOp(v, addrDistinctIndex);
         pOp->opcode = OP_Integer;
         pOp->p1 = 1;
         pOp->p2 = iFlag;
@@ -3970,6 +3984,8 @@ int sqlite3Select(
         sqlite3VdbeAddOp2(v, OP_Integer, 0, iFlag);
         assert( sqlite3VdbeCurrentAddr(v)==iJump );
         sqlite3VdbeAddOp3(v, OP_Move, iBase, iBase2, pEList->nExpr);
+      }else{
+        pOp->opcode = OP_Noop;
       }
     }
 

@@ -1,5 +1,5 @@
-C Experimental\schanges\sto\simprove\soptimization\sof\sDISTINCT\squeries.
-D 2011-06-30T20:17:15.042
+C Improvements\sand\stests\sfor\sdetection\sof\sredundant\sDISTINCT\squalifiers.
+D 2011-07-01T14:21:38.743
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -179,7 +179,7 @@ F src/printf.c 585a36b6a963df832cfb69505afa3a34ed5ef8a1
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
-F src/select.c cf259606f91f53f71bafd7a2da47f30cda6efc58
+F src/select.c e9d74f943c195f2673990febd3a455b421964ca0
 F src/shell.c 0e0173b3e79d956368013e759f084caa7995ecb1
 F src/sqlite.h.in 4b7255c10d39c5faf089dbd29cde7c367ff39f1f
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
@@ -250,7 +250,7 @@ F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 0c70ad7b1cac6005fa5e2cbefd23ee05e391c290
 F src/wal.h 66b40bd91bc29a5be1c88ddd1f5ade8f3f48728a
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 0bdcf6704dd0d8471052712e1d63a02990b7d0bf
+F src/where.c 207cf2c12b391cfdfae89ca3c8afe2adbf46f712
 F test/8_3_names.test b93687beebd17f6ebf812405a6833bae5d1f4199
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -368,6 +368,7 @@ F test/descidx1.test b1353c1a15cfbee97b13a1dcedaf0fe78163ba6a
 F test/descidx2.test 9f1a0c83fd57f8667c82310ca21b30a350888b5d
 F test/descidx3.test fe720e8b37d59f4cef808b0bf4e1b391c2e56b6f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
+F test/distinct.test 17985484790bbb6d098af682f808f11940ca6375
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_createtable.test 4771686a586b6ae414f927c389b2c101cc05c028
 F test/e_delete.test e2ae0d3fce5efd70fef99025e932afffc5616fab
@@ -949,10 +950,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 591de898f41630156cc0fc6ef17dd3ee5e7c479f
-R 5673acf06c190a75a743da9daebc8ac9
-T *branch * experimental
-T *sym-experimental *
-T -sym-trunk *
+P f7ba0219ef2f235543c258be736955d91ca5ecce
+R 778c4d57ca4312ecfa96b1ac67177d07
 U dan
-Z ab52fc5a81a2f6dd6b96daa429077988
+Z 94d823140247a8802d583b432d46d049

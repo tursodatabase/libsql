@@ -4302,7 +4302,7 @@ static int whereDistinctRedundant(
 ){
   Table *pTab;
   Index *pIdx;
-  int i;
+  int i;                          
   int iBase;
 
   /* If there is more than one table or sub-select in the FROM clause of
@@ -4312,15 +4312,11 @@ static int whereDistinctRedundant(
   iBase = pTabList->a[0].iCursor;
   pTab = pTabList->a[0].pTab;
 
-  /* Check if all the expressions in the ExprList are of type TK_COLUMN and
-  ** on the same table. If this is not the case, return early, since it will 
-  ** not be possible to prove that the DISTINCT qualifier is redundant. 
-  ** If any of the expressions is an IPK column, then return true.
-  */
+  /* If any of the expressions is an IPK column, then return true. */
   for(i=0; i<pDistinct->nExpr; i++){
     Expr *p = pDistinct->a[i].pExpr;
-    if( p->op!=TK_COLUMN || p->iTable!=iBase ) return 0;
-    if( p->iColumn<0 ) return 1;
+    assert( p->op!=TK_COLUMN || p->iTable==iBase );
+    if( p->op==TK_COLUMN && p->iColumn<0 ) return 1;
   }
 
   /* Loop through all indices on the table, checking each to see if it makes
@@ -4343,10 +4339,10 @@ static int whereDistinctRedundant(
         int j;
         for(j=0; j<pDistinct->nExpr; j++){
           Expr *p = pDistinct->a[j].pExpr;
-          if( p->iColumn==iCol ){
+          assert( p->op!=TK_COLUMN || p->iTable==iBase );
+          if( p->op==TK_COLUMN && p->iColumn==iCol ){
             CollSeq *pColl = sqlite3ExprCollSeq(pParse, p);
-            const char *zEColl = (pColl ? pColl : pParse->db->pDfltColl)->zName;
-            if( 0==sqlite3StrICmp(zColl, zEColl) ) break;
+            if( pColl && 0==sqlite3StrICmp(zColl, pColl->zName) ) break;
           }
         }
         if( j==pDistinct->nExpr ) break;
