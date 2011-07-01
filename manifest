@@ -1,5 +1,5 @@
-C Ignore\sthe\sdatabase\sname\son\sthe\starget\stable\swhen\sparsing\sa\sCREATE\sTABLE\nstatement\sout\sof\sthe\ssqlite_master\stable.\s\sThis\sis\sa\sfix\sfor\nticket\s[d6ddba6706353]\sthat\spreserves\sbackwards\scompatibility.
-D 2011-07-01T13:50:44.953
+C Test\scase\sfor\sticket\s[d6ddba6706353915ceed]
+D 2011-07-01T14:22:04.191
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -840,7 +840,7 @@ F test/trigger9.test 5b0789f1c5c4600961f8e68511b825b87be53e31
 F test/triggerA.test eaf11a29db2a11967d2d4b49d37f92bce598194e
 F test/triggerB.test 56780c031b454abac2340dbb3b71ac5c56c3d7fe
 F test/triggerC.test 02c690febf608ae20b9af86184a9867f79855b1d
-F test/triggerD.test c6add3817351451e419f6ff9e9a259b02b6e2de7
+F test/triggerD.test bfdac1143deee8fb12b6a3640d76e5669a567ff6
 F test/tt3_checkpoint.c 415eccce672d681b297485fc20f44cdf0eac93af
 F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
 F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
@@ -949,7 +949,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 591de898f41630156cc0fc6ef17dd3ee5e7c479f
-R 0219e5330d7b506bd713afee90f76519
+P 009c96ea7836edf75d65b150055e920079bb45e3
+R c79f1fc1420004e852fc4dd4b2df1b0e
 U drh
-Z 5f346c2968ae8ad6ce9a9eb04ceee5d9
+Z fee6ccae1aad0120ae0a15394efb76ef
