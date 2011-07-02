@@ -505,7 +505,7 @@ ifcapable subquery {
       )  
       ORDER BY LOWER(artist) ASC;
     }
-  } {one}
+  } {two}
 }
 
 # Ticket #1370.  Do not overwrite small files (less than 1024 bytes)
