@@ -1455,6 +1455,7 @@ static int isDistinctIndex(
   int i;                          /* Iterator variable */
 
   if( pIdx->zName==0 || pDistinct==0 || pDistinct->nExpr>=BMS ) return 0;
+  testcase( pDistinct->nExpr==BMS-1 );
 
   /* Loop through all the expressions in the distinct list. If any of them
   ** are not simple column references, return early. Otherwise, test if the

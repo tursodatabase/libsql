@@ -1,5 +1,5 @@
-C Ensure\sthat\sautomatic\sindexes\sare\sonly\screated\sin\sscenarios\swhere\sthey\smay\sbe\sused\smore\sthan\sonce.
-D 2011-07-02T15:32:57.635
+C Add\sa\stestcase\smacro\sto\sensure\stesting\sa\sboundary\scase\sin\sDISTINCT\sprocessing.
+D 2011-07-02T19:12:05.917
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -250,7 +250,7 @@ F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 0c70ad7b1cac6005fa5e2cbefd23ee05e391c290
 F src/wal.h 66b40bd91bc29a5be1c88ddd1f5ade8f3f48728a
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 30dc117ecd9406b7e442426cb5368199035c27ff
+F src/where.c c80c154db79ddbaff56ceb8879d96e71b090917d
 F test/8_3_names.test b93687beebd17f6ebf812405a6833bae5d1f4199
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -950,7 +950,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 45e581bff7a75db6c9a2c45b73d034d0b8a166d1
-R 6e4dc8fc887e24292adb3ae0b641a038
-U dan
-Z d167de182be16055ea09a1a9326ef0ca
+P 27c65d4d9c58bfc4ea8f9337fa15090459fb26c5
+R 31108ab0f55c59747082de8c46c3b2b9
+U drh
+Z d273315218f9229b31cebba00fe83934
