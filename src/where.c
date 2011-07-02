@@ -1513,11 +1513,13 @@ static int isDistinctRedundant(
   iBase = pTabList->a[0].iCursor;
   pTab = pTabList->a[0].pTab;
 
-  /* If any of the expressions is an IPK column, then return true. */
+  /* If any of the expressions is an IPK column on table iBase, then return 
+  ** true. Note: The (p->iTable==iBase) part of this test may be false if the
+  ** current SELECT is a correlated sub-query.
+  */
   for(i=0; i<pDistinct->nExpr; i++){
     Expr *p = pDistinct->a[i].pExpr;
-    assert( p->op!=TK_COLUMN || p->iTable==iBase );
-    if( p->op==TK_COLUMN && p->iColumn<0 ) return 1;
+    if( p->op==TK_COLUMN && p->iTable==iBase && p->iColumn<0 ) return 1;
   }
 
   /* Loop through all indices on the table, checking each to see if it makes

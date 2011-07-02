@@ -156,6 +156,9 @@ foreach {tn sql temptables res} {
   do_temptables_test 2.$tn.2 "SELECT DISTINCT $sql" $temptables
 }
 
+do_execsql_test 2.A {
+  SELECT (SELECT DISTINCT o.a FROM t1 AS i) FROM t1 AS o;
+} {a A a A}
 
 
 

@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\swith\sexperimental\sbranch.
-D 2011-07-01T18:43:13.469
+C Fix\sa\sbroken\sassert()\sin\swhere.c.
+D 2011-07-02T06:44:05.968
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -250,7 +250,7 @@ F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 0c70ad7b1cac6005fa5e2cbefd23ee05e391c290
 F src/wal.h 66b40bd91bc29a5be1c88ddd1f5ade8f3f48728a
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 83cf8e8637826a311e598980bf5c920069847a77
+F src/where.c dcc0d91cc4b843adf79476b721c10ca6f382cb85
 F test/8_3_names.test b93687beebd17f6ebf812405a6833bae5d1f4199
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -368,7 +368,7 @@ F test/descidx1.test b1353c1a15cfbee97b13a1dcedaf0fe78163ba6a
 F test/descidx2.test 9f1a0c83fd57f8667c82310ca21b30a350888b5d
 F test/descidx3.test fe720e8b37d59f4cef808b0bf4e1b391c2e56b6f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
-F test/distinct.test dbedaddb15c7a96729d39e5c3d7c2993ac905a1d
+F test/distinct.test 8c4d951fc40aba84421060e07b16099d2f4c2fdf
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_createtable.test 4771686a586b6ae414f927c389b2c101cc05c028
 F test/e_delete.test e2ae0d3fce5efd70fef99025e932afffc5616fab
@@ -950,7 +950,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 6c202ea0247ff509f696eee3839975a88ed26cf2 953e169e8a7dac05a0b56b4ef5d500ec8399d37f
-R 0920e7efb36d6d861c0873d40a58b5e8
+P e56be74eabc03d1a524d96aa4e87102dea4e348e
+R a0416d3328a66ac3932394627191f7dc
 U dan
-Z 076f69de0e54769c5ccba2bae7e8f9fd
+Z 6cc3cca355617f23d46e4dc8112cd183
