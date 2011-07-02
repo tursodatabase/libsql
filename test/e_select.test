@@ -1238,8 +1238,8 @@ do_select_tests e_select-5 {
   3.1 "SELECT x FROM h2" {One Two Three Four one two three four}
   3.2 "SELECT x FROM h1, h2 ON (x=b)" {One one Four four}
 
-  4.1 "SELECT DISTINCT x FROM h2" {four one three two}
-  4.2 "SELECT DISTINCT x FROM h1, h2 ON (x=b)" {four one}
+  4.1 "SELECT DISTINCT x FROM h2" {One Two Three Four}
+  4.2 "SELECT DISTINCT x FROM h1, h2 ON (x=b)" {One Four}
 } 
 
 # EVIDENCE-OF: R-02054-15343 For the purposes of detecting duplicate
@@ -1253,11 +1253,11 @@ do_select_tests e_select-5.5 {
 # sequence to compare text values with apply.
 #
 do_select_tests e_select-5.6 {
-  1  "SELECT DISTINCT b FROM h1"                  {I IV four i iv one}
-  2  "SELECT DISTINCT b COLLATE nocase FROM h1"   {four i iv one}
-  3  "SELECT DISTINCT x FROM h2"                  {four one three two}
+  1  "SELECT DISTINCT b FROM h1"                  {one I i four IV iv}
+  2  "SELECT DISTINCT b COLLATE nocase FROM h1"   {one I four IV}
+  3  "SELECT DISTINCT x FROM h2"                  {One Two Three Four}
   4  "SELECT DISTINCT x COLLATE binary FROM h2"   {
-    Four One Three Two four one three two
+    One Two Three Four one two three four
   }
 }
 

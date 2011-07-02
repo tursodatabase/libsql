@@ -355,7 +355,7 @@ for {set ii 3} {$ii <= 4} {incr ii} {
         SELECT DISTINCT (a/10) FROM t1 UNION ALL SELECT DISTINCT(d%2) FROM t2
       )
     }
-  } {0 1 0 1}
+  } {0 1 1 0}
 
   do_test selectB-$ii.20 {
     execsql {
