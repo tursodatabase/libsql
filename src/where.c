@@ -1902,6 +1902,10 @@ static void bestAutomaticIndex(
   WhereTerm *pWCEnd;          /* End of pWC->a[] */
   Table *pTable;              /* Table tht might be indexed */
 
+  if( pParse->nQueryLoop<=(double)1 ){
+    /* There is no point in building an automatic index for a single scan */
+    return;
+  }
   if( (pParse->db->flags & SQLITE_AutoIndex)==0 ){
     /* Automatic indices are disabled at run-time */
     return;
