@@ -165,4 +165,13 @@ do_test autoindex1-502 {
   }
 } {0 0 0 {SEARCH TABLE t501 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 0 0 0 {SCAN TABLE t502 (~100000 rows)}}
 
+
+do_execsql_test autoindex1-700 {
+  CREATE TABLE t5(a, b, c);
+  EXPLAIN QUERY PLAN SELECT a FROM t5 WHERE b=10 ORDER BY c;
+} {
+  0 0 0 {SCAN TABLE t5 (~100000 rows)} 
+}
+
+
 finish_test
