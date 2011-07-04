@@ -319,18 +319,22 @@ do_test sqllimits1-5.14.4 {
   catch {sqlite3_bind_text $::STMT 1 $::str1 -1} res
   set res
 } {SQLITE_TOOBIG}
-do_test sqllimits1-5.14.5 {
-  catch {sqlite3_bind_text16 $::STMT 1 $::str1 -1} res
-  set res
-} {SQLITE_TOOBIG}
+ifcapable utf16 {
+  do_test sqllimits1-5.14.5 {
+    catch {sqlite3_bind_text16 $::STMT 1 $::str1 -1} res
+    set res
+  } {SQLITE_TOOBIG}
+}
 do_test sqllimits1-5.14.6 {
   catch {sqlite3_bind_text $::STMT 1 $::str1 $np1} res
   set res
 } {SQLITE_TOOBIG}
-do_test sqllimits1-5.14.7 {
-  catch {sqlite3_bind_text16 $::STMT 1 $::str1 $np1} res
-  set res
-} {SQLITE_TOOBIG}
+ifcapable utf16 {
+  do_test sqllimits1-5.14.7 {
+    catch {sqlite3_bind_text16 $::STMT 1 $::str1 $np1} res
+    set res
+  } {SQLITE_TOOBIG}
+}
 do_test sqllimits1-5.14.8 {
   set n [expr {$np1-1}]
   catch {sqlite3_bind_text $::STMT 1 $::str1 $n} res
