@@ -1,5 +1,5 @@
-C Adjust\sa\scouple\sof\stest\sscripts\sso\sthat\sthey\swork\swith\sOMIT_UTF16\sbuilds.
-D 2011-07-04T06:52:15.309
+C Expose\sthe\svalue\sof\scompile\stime\ssymbol\sSQLITE_MAX_DEFAULT_PAGE_SIZE\sto\stest\sscripts.
+D 2011-07-06T09:36:59.031
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -201,7 +201,7 @@ F src/test_async.c 0612a752896fad42d55c3999a5122af10dcf22ad
 F src/test_autoext.c 30e7bd98ab6d70a62bb9ba572e4c7df347fe645e
 F src/test_backup.c c129c91127e9b46e335715ae2e75756e25ba27de
 F src/test_btree.c 47cd771250f09cdc6e12dda5bc71bc0b3abc96e2
-F src/test_config.c 791a9acbf9a695cf9c12ff6bbe874dfde9a8c5f3
+F src/test_config.c b4648b103586d2ae863056080c657680f6fa4825
 F src/test_demovfs.c 20a4975127993f4959890016ae9ce5535a880094
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_func.c cbdec5cededa0761daedde5baf06004a9bf416b5
@@ -950,7 +950,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P ff9fc722dc481df1ce6a9733db1f033b88141d5d
-R f023392f9f22f7fc5dcd77586a5f9e95
+P 6c51bad0a306558d2725463b5675c3799fabcb9d
+R d622adfd2b101711a0c600209c82490a
 U dan
-Z 70ce870889abf3a5e434fe4697977568
+Z ba49e9f4aa222a31146e61a57307661a
