@@ -297,7 +297,7 @@ struct Fts3Doclist {
   int bFreeList;                 /* True if pList should be sqlite3_free()d */
   char *pList;                   /* Pointer to position list following iDocid */
   int nList;                     /* Length of position list */
-} doclist;
+};
 
 /*
 ** A "phrase" is a sequence of one or more tokens that must match in
