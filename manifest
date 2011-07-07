@@ -1,5 +1,5 @@
-C Add\sa\starget\sto\smain.mk\sthat\swill\sfail\sif\sthe\samalgamation\scontains\sany\sexported\ssymbols\sthat\sdo\snot\sbegin\swith\s"sqlite3_".\sRun\sthis\starget\sfrom\swithin\sreleasetest.tcl.\sAdd\s"static"\sto\sa\scouple\sof\sprivate\sfunctions\sin\smem3.c.
-D 2011-07-07T08:19:16.876
+C Update\sthe\stool/symbols.sh\sscript\sto\scheck\sfor\saccidentally\sexported\nglobal\svariables.
+D 2011-07-07T08:52:24.692
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -946,11 +946,11 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
-F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
+F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P f244b2f3959e86fac555b91438cfe90528ab1648
-R 6592aa0ef1e7319ccd9410585affa7e2
-U dan
-Z ed79b421c9d7255d4a5ce5800ff3667b
+P a68b6580c7d436c896a644a475cdba33c2c8d6e6
+R 20857ee0c494bf7ca6cccf72c0173c3f
+U drh
+Z ead2bbb7b49847c65c37c7bbdac703c9
