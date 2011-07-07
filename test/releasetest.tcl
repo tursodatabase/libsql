@@ -155,10 +155,10 @@ array set ::Configs {
 
 array set ::Platforms {
   Linux-x86_64 {
+    "Debug-One"               "checksymbols test"
     "Secure-Delete"           test
     "Unlock-Notify"           "QUICKTEST_INCLUDE=notify2.test test"
     "Update-Delete-Limit"     test
-    "Debug-One"               test
     "Extra-Robustness"        test
     "Device-Two"              test
     "Ftrapv"                  test
@@ -176,6 +176,7 @@ array set ::Platforms {
     "OS-X"                    "threadtest fulltest"
   }
 }
+
 
 # End of configuration section.
 #########################################################################

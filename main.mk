@@ -565,6 +565,13 @@ $(TEST_EXTENSION): $(TOP)/src/test_loadext.c
 extensiontest: testfixture$(EXE) $(TEST_EXTENSION)
 	./testfixture$(EXE) $(TOP)/test/loadext.test
 
+# This target will fail if the SQLite amalgamation contains any exported
+# symbols that do not begin with "sqlite3_". It is run as part of the
+# releasetest.tcl script.
+#
+checksymbols: sqlite3.o
+	nm -g --defined-only sqlite3.o | grep -v " sqlite3_" ; test $$? -ne 0
+
 
 # Standard install and cleanup targets
 #
