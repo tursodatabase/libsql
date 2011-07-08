@@ -1,5 +1,5 @@
-C Fix\sfor\s[54844eea3f]:\sDo\snot\screate\sautomatic\sindexes\son\scorrelated\ssub-queries.
-D 2011-07-08T16:10:54.482
+C Change\sthe\sdefault\schunk\ssize\son\stest_multiplex.c\sto\s2147418112\sbytes\n(formerly\s1073741824\sbytes)\sand\smake\sthe\sdefault\sconfigurable\sat\scompile-time\nusing\sSQLITE_MULTIPLEX_CHUNK_SIZE\sand\sat\srun-time\susing\sthe\s"chunksize"\nURI\squery\sparameter.\s\sAdd\ssupport\sfo\stest_multiplex\sto\sthe\sshell.
+D 2011-07-08T17:02:57.508
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -180,7 +180,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 36368f44569208fa074e61f4dd0b6c4fb60ca2b4
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c e9d74f943c195f2673990febd3a455b421964ca0
-F src/shell.c 0e0173b3e79d956368013e759f084caa7995ecb1
+F src/shell.c bbe7818ff5bc8614105ceb81ad67b8bdc0b671dd
 F src/sqlite.h.in 4b7255c10d39c5faf089dbd29cde7c367ff39f1f
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
 F src/sqliteInt.h ba4a6d6288efb25b84bc0d7d0aaf80f9b42523ba
@@ -213,7 +213,7 @@ F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c 03313c693cca72959dcaaf79f8d76f21c01e19ff
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c 7ca7be34e0e09ef0ed6619544552ed95732e41f6
-F src/test_multiplex.c a7457a1ac46964b7f897d75ecfd447410ec067e6
+F src/test_multiplex.c 0585bb12a98521795344f67d17d77e258ea7b57f
 F src/test_multiplex.h e99c571bc4968b7a9363b661481f3934bfead61d
 F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
@@ -951,7 +951,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 18501dd1a8aa8299c091c36e35b9a10a29d4467b
-R f7d91718025095a30a469ac579a4e46b
-U dan
-Z fc4423411c04e2aaef6760d45d2bd142
+P 9f14fa56ba31afe3de8b0cf26ed09573a2cc2283
+R e83eed2583035b436dc963e6112fe3df
+U drh
+Z 8b9b6b1bb1eb76d53c04bd9c864821f0

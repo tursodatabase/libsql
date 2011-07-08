@@ -45,6 +45,7 @@
 #include "sqlite3.h"
 #include <string.h>
 #include <assert.h>
+#include <stdlib.h>
 #include "test_multiplex.h"
 
 #ifndef SQLITE_CORE
@@ -78,20 +79,26 @@
 
 /************************ Shim Definitions ******************************/
 
-#define SQLITE_MULTIPLEX_VFS_NAME "multiplex"
+#ifndef SQLITE_MULTIPLEX_VFS_NAME
+# define SQLITE_MULTIPLEX_VFS_NAME "multiplex"
+#endif
 
 /* This is the limit on the chunk size.  It may be changed by calling
 ** the xFileControl() interface.  It will be rounded up to a 
-** multiple of MAX_PAGE_SIZE.  We default it here to 1GB.
+** multiple of MAX_PAGE_SIZE.  We default it here to 2GiB less 64KiB.
 */
-#define SQLITE_MULTIPLEX_CHUNK_SIZE (MAX_PAGE_SIZE*16384)
+#ifndef SQLITE_MULTIPLEX_CHUNK_SIZE
+# define SQLITE_MULTIPLEX_CHUNK_SIZE 2147418112
+#endif
 
 /* Default limit on number of chunks.  Care should be taken
 ** so that values for chunks numbers fit in the SQLITE_MULTIPLEX_EXT_FMT
 ** format specifier. It may be changed by calling
 ** the xFileControl() interface.
 */
-#define SQLITE_MULTIPLEX_MAX_CHUNKS 32
+#ifndef SQLITE_MULTIPLEX_MAX_CHUNKS
+# define SQLITE_MULTIPLEX_MAX_CHUNKS 32
+#endif
 
 /* If SQLITE_MULTIPLEX_EXT_OVWR is defined, the 
 ** last SQLITE_MULTIPLEX_EXT_SZ characters of the 
@@ -431,12 +438,18 @@ static int multiplexOpen(
   }
 
   if( rc==SQLITE_OK ){
+    const char *zChunkSize;
     /* assign pointers to extra space allocated */
     char *p = (char *)&pGroup[1];
     pMultiplexOpen->pGroup = pGroup;
     memset(pGroup, 0, sz);
     pGroup->bEnabled = -1;
     pGroup->nChunkSize = SQLITE_MULTIPLEX_CHUNK_SIZE;
+    zChunkSize = sqlite3_uri_parameter(zName, "chunksize");
+    if( zChunkSize ){
+      int n = atoi(zChunkSize);
+      if( n>0 ) pGroup->nChunkSize = (n+0xffff)&~0xffff;
+    }
     pGroup->nMaxChunks = SQLITE_MULTIPLEX_MAX_CHUNKS;
     pGroup->pReal = (sqlite3_file **)p;
     p += (sizeof(sqlite3_file *)*pGroup->nMaxChunks);
