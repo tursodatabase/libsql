@@ -1,5 +1,5 @@
-C Update\sthe\stool/symbols.sh\sscript\sto\scheck\sfor\saccidentally\sexported\nglobal\svariables.
-D 2011-07-07T08:52:24.692
+C Extend\sthe\sSQLITE_TESTCTRL_OPTIMIZATIONS\soption\sto\sdisable\sDISTINCT\noptimizations.
+D 2011-07-08T13:07:02.960
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -183,7 +183,7 @@ F src/select.c e9d74f943c195f2673990febd3a455b421964ca0
 F src/shell.c 0e0173b3e79d956368013e759f084caa7995ecb1
 F src/sqlite.h.in 4b7255c10d39c5faf089dbd29cde7c367ff39f1f
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
-F src/sqliteInt.h 58df570a42d605f8e53d6eb920a16ca291d5822e
+F src/sqliteInt.h a7143a30c5817e5ed6cde42430255face266a710
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -250,7 +250,7 @@ F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 0c70ad7b1cac6005fa5e2cbefd23ee05e391c290
 F src/wal.h 66b40bd91bc29a5be1c88ddd1f5ade8f3f48728a
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c c80c154db79ddbaff56ceb8879d96e71b090917d
+F src/where.c c814c35a2731ff1f636bce7a628be91b0d77d734
 F test/8_3_names.test b93687beebd17f6ebf812405a6833bae5d1f4199
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -950,7 +950,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P a68b6580c7d436c896a644a475cdba33c2c8d6e6
-R 20857ee0c494bf7ca6cccf72c0173c3f
+P 71b749a9dca953cdf671d94afec16e2c98f3aee5
+R 26528fdf903671e1d2a91c9d7db991cc
 U drh
-Z ead2bbb7b49847c65c37c7bbdac703c9
+Z 1d6ed3edda2aa263aea05f58878a859f
