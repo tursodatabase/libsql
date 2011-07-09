@@ -1,5 +1,5 @@
-C Change\sthe\sdefault\schunk\ssize\son\stest_multiplex.c\sto\s2147418112\sbytes\n(formerly\s1073741824\sbytes)\sand\smake\sthe\sdefault\sconfigurable\sat\scompile-time\nusing\sSQLITE_MULTIPLEX_CHUNK_SIZE\sand\sat\srun-time\susing\sthe\s"chunksize"\nURI\squery\sparameter.\s\sAdd\ssupport\sfo\stest_multiplex\sto\sthe\sshell.
-D 2011-07-08T17:02:57.508
+C In\swhere.c::findIndexCol\s-\smake\ssure\sthat\sthe\sExpr.op\sis\sTK_COLUMN\sbefore\naccessing\sthe\sExpr.iColumn\sand\sExpr.iTable\sfields.\s\sAlso\sfix\sa\scouple\sof\nunreachable\sbranches.
+D 2011-07-09T13:00:41.795
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -250,7 +250,7 @@ F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 0c70ad7b1cac6005fa5e2cbefd23ee05e391c290
 F src/wal.h 66b40bd91bc29a5be1c88ddd1f5ade8f3f48728a
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c defae982c6a5ced7c9a972a5a4850ad140a6d631
+F src/where.c ce7cce80c5cb07ba40e9bf38a33ef806c61f55f2
 F test/8_3_names.test b93687beebd17f6ebf812405a6833bae5d1f4199
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -951,7 +951,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 9f14fa56ba31afe3de8b0cf26ed09573a2cc2283
-R e83eed2583035b436dc963e6112fe3df
+P e305b5a931374e2a1d2e66ea0a1248b9d4aecb19
+R 9f2366d63a9041cf0166a322890b593c
 U drh
-Z 8b9b6b1bb1eb76d53c04bd9c864821f0
+Z 1af89a162ab75877f31c3bef94a3cd45

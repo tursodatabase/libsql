@@ -1420,9 +1420,12 @@ static int findIndexCol(
 
   for(i=0; i<pList->nExpr; i++){
     Expr *p = pList->a[i].pExpr;
-    if( pIdx->aiColumn[iCol]==p->iColumn && iBase==p->iTable ){
+    if( p->op==TK_COLUMN
+     && p->iColumn==pIdx->aiColumn[iCol]
+     && p->iTable==iBase
+    ){
       CollSeq *pColl = sqlite3ExprCollSeq(pParse, p);
-      if( pColl && 0==sqlite3StrICmp(pColl->zName, zColl) ){
+      if( ALWAYS(pColl) && 0==sqlite3StrICmp(pColl->zName, zColl) ){
         return i;
       }
     }
@@ -1680,7 +1683,7 @@ static int isSortingIndex(
     }
   }
 
-  if( pbRev ) *pbRev = sortOrder!=0;
+  *pbRev = sortOrder!=0;
   if( j>=nTerm ){
     /* All terms of the ORDER BY clause are covered by this index so
     ** this index can be used for sorting. */
