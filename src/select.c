@@ -3925,7 +3925,7 @@ int sqlite3Select(
         (char*)pKeyInfo, P4_KEYINFO_HANDOFF);
     sqlite3VdbeChangeP5(v, BTREE_UNORDERED);
   }else{
-    distinct = -1;
+    distinct = addrDistinctIndex = -1;
   }
 
   /* Aggregate and non-aggregate queries are handled differently */
@@ -3949,6 +3949,7 @@ int sqlite3Select(
     if( pWInfo->eDistinct ){
       VdbeOp *pOp;                /* No longer required OpenEphemeral instr. */
      
+      assert( addrDistinctIndex>0 );
       pOp = sqlite3VdbeGetOp(v, addrDistinctIndex);
 
       assert( isDistinct );

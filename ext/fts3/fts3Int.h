@@ -497,14 +497,6 @@ int sqlite3Fts3InitTerm(sqlite3 *db);
 /* fts3_aux.c */
 int sqlite3Fts3InitAux(sqlite3 *db);
 
-int sqlite3Fts3TermSegReaderCursor(
-  Fts3Cursor *pCsr,               /* Virtual table cursor handle */
-  const char *zTerm,              /* Term to query for */
-  int nTerm,                      /* Size of zTerm in bytes */
-  int isPrefix,                   /* True for a prefix search */
-  Fts3MultiSegReader **ppSegcsr   /* OUT: Allocated seg-reader cursor */
-);
-
 void sqlite3Fts3EvalPhraseCleanup(Fts3Phrase *);
 
 int sqlite3Fts3MsrIncrStart(

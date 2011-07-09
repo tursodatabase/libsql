@@ -1,5 +1,5 @@
-C In\swhere.c::findIndexCol\s-\smake\ssure\sthat\sthe\sExpr.op\sis\sTK_COLUMN\sbefore\naccessing\sthe\sExpr.iColumn\sand\sExpr.iTable\sfields.\s\sAlso\sfix\sa\scouple\sof\nunreachable\sbranches.
-D 2011-07-09T13:00:41.795
+C Fix\sharmless\scompiler\swarnings\son\sunix.
+D 2011-07-09T16:17:18.236
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -64,7 +64,7 @@ F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts3/fts3.c f45ad45053a587ad1c005459b704b7ade8bd504e
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h d18022edfa82fd33d8fee35c1b1990f3cf937a1e
+F ext/fts3/fts3Int.h 30063fdd0bc433b5db1532e3a363cb0f2f7e8eb3
 F ext/fts3/fts3_aux.c 0ebfa7b86cf8ff6a0861605fcc63b83ec1b70691
 F ext/fts3/fts3_expr.c 23791de01b3a5d313d76e02befd2601d4096bc2b
 F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
@@ -179,7 +179,7 @@ F src/printf.c 585a36b6a963df832cfb69505afa3a34ed5ef8a1
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 36368f44569208fa074e61f4dd0b6c4fb60ca2b4
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
-F src/select.c e9d74f943c195f2673990febd3a455b421964ca0
+F src/select.c d219c4b68d603cc734b6f9b1e2780fee12a1fa0d
 F src/shell.c bbe7818ff5bc8614105ceb81ad67b8bdc0b671dd
 F src/sqlite.h.in 4b7255c10d39c5faf089dbd29cde7c367ff39f1f
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
@@ -951,7 +951,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P e305b5a931374e2a1d2e66ea0a1248b9d4aecb19
-R 9f2366d63a9041cf0166a322890b593c
+P 418a4da2a96cf33055f18c9a667754fad2111cf3
+R bd1403a9e638958833ef8e7e7178479a
 U drh
-Z 1af89a162ab75877f31c3bef94a3cd45
+Z 18ede22d9ea411d29db6ab17e40995c3
