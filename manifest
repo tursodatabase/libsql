@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\son\sunix.
-D 2011-07-09T16:17:18.236
+C Here\sis\san\sattempted\senhancement\sto\sthe\squery\splanner\sthat\sdidn't\swork\sout.\nBut\sit\sseems\sgood\sto\ssave\sthis\schange\sfor\shistorical\sreference,\seven\sif\sit\ndoes\snot\sbelong\son\sthe\strunk.
+D 2011-07-11T15:52:45.196
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -250,7 +250,7 @@ F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 0c70ad7b1cac6005fa5e2cbefd23ee05e391c290
 F src/wal.h 66b40bd91bc29a5be1c88ddd1f5ade8f3f48728a
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c ce7cce80c5cb07ba40e9bf38a33ef806c61f55f2
+F src/where.c bc46a3e6e3cf158360e2b2a0e7c9ee73124de581
 F test/8_3_names.test b93687beebd17f6ebf812405a6833bae5d1f4199
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -951,7 +951,11 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 418a4da2a96cf33055f18c9a667754fad2111cf3
-R bd1403a9e638958833ef8e7e7178479a
+P 90b1aea17400bbda5ebc8ae4eb4e12127519e42e
+R 8ae68d7982d6f92b87ef21927fff413f
+T *bgcolor * #c0ffc0
+T *branch * query-planner-deadend
+T *sym-query-planner-deadend *
+T -sym-trunk *
 U drh
-Z 18ede22d9ea411d29db6ab17e40995c3
+Z 9d0d932c2d463d85cb7dbc21286fff38

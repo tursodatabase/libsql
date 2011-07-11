@@ -4712,9 +4712,10 @@ WhereInfo *sqlite3WhereBegin(
     int isOptimal;              /* Iterator for optimal/non-optimal search */
     int nUnconstrained;         /* Number tables without INDEXED BY */
     Bitmask notIndexed;         /* Mask of tables that cannot use an index */
+    double rBestOptimalIdx;     /* Cost of best optimal index plan */
 
     memset(&bestPlan, 0, sizeof(bestPlan));
-    bestPlan.rCost = SQLITE_BIG_DBL;
+    bestPlan.rCost = rBestOptimalIdx = SQLITE_BIG_DBL;
     WHERETRACE(("*** Begin search for loop %d ***\n", i));
 
     /* Loop through the remaining entries in the FROM clause to find the
@@ -4813,8 +4814,10 @@ WhereInfo *sqlite3WhereBegin(
         **   (1) The table must not depend on other tables that have not
         **       yet run.
         **
-        **   (2) A full-table-scan plan cannot supercede indexed plan unless
-        **       the full-table-scan is an "optimal" plan as defined above.
+        **   (2) A full-table-scan cannot supercede an indexed plan unless
+        **       (a) the full-table-scan is an "optimal" plan as defined above
+        **       or (b) the cost of the full-table-scan is less than the cost
+        **       of the best optimal index plan.
         **
         **   (3) All tables have an INDEXED BY clause or this table lacks an
         **       INDEXED BY clause or this table uses the specific
@@ -4822,20 +4825,19 @@ WhereInfo *sqlite3WhereBegin(
         **       that a best-so-far is always selected even if an impossible
         **       combination of INDEXED BY clauses are given.  The error
         **       will be detected and relayed back to the application later.
-        **       The NEVER() comes about because rule (2) above prevents
-        **       An indexable full-table-scan from reaching rule (3).
         **
         **   (4) The plan cost must be lower than prior plans or else the
         **       cost must be the same and the number of rows must be lower.
         */
-        if( (sCost.used&notReady)==0                       /* (1) */
-            && (bestJ<0 || (notIndexed&m)!=0               /* (2) */
-                || (bestPlan.plan.wsFlags & WHERE_NOT_FULLSCAN)==0
-                || (sCost.plan.wsFlags & WHERE_NOT_FULLSCAN)!=0)
-            && (nUnconstrained==0 || pTabItem->pIndex==0   /* (3) */
-                || NEVER((sCost.plan.wsFlags & WHERE_NOT_FULLSCAN)!=0))
-            && (bestJ<0 || sCost.rCost<bestPlan.rCost      /* (4) */
-                || (sCost.rCost<=bestPlan.rCost 
+        if( (sCost.used&notReady)==0                                  /* (1) */
+         && (bestJ<0 || (notIndexed&m)!=0                             /* (2) */
+             || (bestPlan.plan.wsFlags & WHERE_NOT_FULLSCAN)==0
+             || sCost.rCost<rBestOptimalIdx
+             || (sCost.plan.wsFlags & WHERE_NOT_FULLSCAN)!=0)
+         && (nUnconstrained==0 || pTabItem->pIndex==0                 /* (3) */
+             || (sCost.plan.wsFlags & WHERE_NOT_FULLSCAN)!=0)
+         && (bestJ<0 || sCost.rCost<bestPlan.rCost                    /* (4) */
+             || (sCost.rCost<=bestPlan.rCost 
                  && sCost.plan.nRow<bestPlan.plan.nRow))
         ){
           WHERETRACE(("=== table %d is best so far"
@@ -4843,6 +4845,12 @@ WhereInfo *sqlite3WhereBegin(
                       j, sCost.rCost, sCost.plan.nRow));
           bestPlan = sCost;
           bestJ = j;
+        }
+        if( isOptimal
+         && (sCost.plan.wsFlags & WHERE_NOT_FULLSCAN)!=0
+         && sCost.rCost<rBestOptimalIdx
+        ){
+          rBestOptimalIdx = bestPlan.rCost;
         }
         if( doNotReorder ) break;
       }
