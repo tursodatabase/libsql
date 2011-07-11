@@ -5574,6 +5574,93 @@ static int test_test_control(
   return TCL_OK;
 }
 
+#if SQLITE_OS_WIN
+/*
+** Information passed from the main thread into the windows file locker
+** background thread.
+*/
+struct win32FileLocker {
+  HANDLE h;           /* Handle of the file to be locked */
+  int delay1;         /* Delay before locking */
+  int delay2;         /* Delay before unlocking */
+  int ok;             /* Finished ok */
+  int err;            /* True if an error occurs */
+};
+#endif
+
+
+#if SQLITE_OS_WIN
+/*
+** The background thread that does file locking.
+*/
+static void win32_file_locker(void *pAppData){
+  struct win32FileLocker *p = (struct win32FileLocker*)pAppData;
+  if( p->delay1 ) Sleep(p->delay1);
+  if( LockFile(p->h, 0, 0, 100000000, 0) ){
+    Sleep(p->delay2);
+    UnlockFile(p->h, 0, 0, 100000000, 0);
+    p->ok = 1;
+  }else{
+    p->err = 1;
+  }
+  CloseHandle(p->h);
+  p->h = 0;
+  p->delay1 = 0;
+  p->delay2 = 0;
+}
+#endif
+
+#if SQLITE_OS_WIN
+/*
+**      lock_win32_file FILENAME DELAY1 DELAY2
+**
+** Get an exclusive manditory lock on file for DELAY2 milliseconds.
+** Wait DELAY1 milliseconds before acquiring the lock.
+*/
+static int win32_file_lock(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  static struct win32FileLocker x = { 0, 0, 0 };
+  const char *zFilename;
+  int retry = 0;
+  
+  if( objc!=4 && objc!=1 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "FILENAME DELAY1 DELAY2");
+    return TCL_ERROR;
+  }
+  if( objc==1 ){
+    char zBuf[200];
+    sqlite3_snprintf(sizeof(zBuf), zBuf, "%d %d %d %d %d",
+                     x.ok, x.err, x.delay1, x.delay2, x.h);
+    Tcl_AppendResult(interp, zBuf, (char*)0);
+    return TCL_OK;
+  }
+  while( x.h && retry<10 ){
+    retry++;
+    Sleep(100);
+  }
+  if( x.h ){
+    Tcl_AppendResult(interp, "busy", (char*)0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(interp, objv[2], &x.delay1) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[3], &x.delay2) ) return TCL_ERROR;
+  zFilename = Tcl_GetString(objv[1]);
+  x.h = CreateFile(zFilename, GENERIC_READ|GENERIC_WRITE,
+              FILE_SHARE_READ|FILE_SHARE_WRITE, 0, OPEN_ALWAYS,
+              FILE_ATTRIBUTE_NORMAL, 0);
+  if( !x.h ){
+    Tcl_AppendResult(interp, "cannot open file: ", zFilename, (char*)0);
+    return TCL_ERROR;
+  }
+  _beginthread(win32_file_locker, 0, (void*)&x);
+  Sleep(0);
+  return TCL_OK;
+}
+#endif
 
 /*
 **      optimization_control DB OPT BOOLEAN
@@ -5754,6 +5841,9 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "restore_prng_state",            restore_prng_state, 0 },
      { "reset_prng_state",              reset_prng_state,   0 },
      { "optimization_control",          optimization_control,0},
+#if SQLITE_OS_WIN
+     { "lock_win32_file",               win32_file_lock,    0 },
+#endif
      { "tcl_objproc",                   runAsObjProc,       0 },
 
      /* sqlite3_column_*() API */

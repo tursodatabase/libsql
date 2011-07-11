@@ -1,5 +1,5 @@
-C Change\sthe\swindows\sbackend\sto\sretry\sread\sand\swrite\srequests\sif\sthe\sencounter\nERROR_LOCK_VIOLATION\sand\sERROR_SHARING_VIOLATION\serrors\s-\swhich\swe\sthink\nsometimes\shappens\sdue\sto\sagressive\santi-virus\ssoftware.
-D 2011-07-11T18:17:56.144
+C Update\sthe\sTCL\scommands\sfor\ssetting\swindows\smanditory\slocks.\nAdd\stest\scases\sfor\smanditory\slock\sdelays\sunder\swindows.
+D 2011-07-11T23:45:44.051
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -188,7 +188,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c c355b33803fb756dc09297ec84d19604301fa622
-F src/test1.c 8eef932f1024f1076a8adb8a6f5d9c5267c9e969
+F src/test1.c 6623e003ce840ed4a303918dbbc124f9e222974c
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 124ff9735fb6bb7d41de180d6bac90e7b1509432
 F src/test4.c d1e5a5e904d4b444cf572391fdcb017638e36ff7
@@ -911,6 +911,7 @@ F test/where9.test 24f19ad14bb1b831564ced5273e681e495662848
 F test/whereA.test 24c234263c8fe358f079d5e57d884fb569d2da0a
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
+F test/win32lock.test 7fa3287dccc836fcaa8e0d1e77aa017de5889231
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F tool/build-shell.sh 12aa4391073a777fcb6dcc490b219a018ae98bac
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -951,7 +952,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 90b1aea17400bbda5ebc8ae4eb4e12127519e42e
-R 349c7f009f94630db798c4428c847d95
+P c20aca06610407c197ea50ea77c2591aacf2252a
+R 4c1b031b9c10734fc2cbb78ed1f104dd
 U drh
-Z 6ec74c1e47a6a671533b542ae146a0f8
+Z 4f5517f8772eb0c19d9bc59edbaff4cc
