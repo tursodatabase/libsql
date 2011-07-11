@@ -1389,7 +1389,7 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
 */
 int sqlite3_preupdate_count(sqlite3 *db){
   PreUpdate *p = db->pPreUpdate;
-  return (p ? p->pCsr->nField : 0);
+  return (p ? p->keyinfo.nField : 0);
 }
 #endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
 

@@ -3274,13 +3274,17 @@ void sqlite3VdbePreUpdateHook(
     iKey2 = iKey1;
   }
 
+  assert( pCsr->nField==pTab->nCol 
+       || (pCsr->nField==pTab->nCol+1 && op==SQLITE_DELETE && iReg==-1)
+  );
+
   preupdate.v = v;
   preupdate.pCsr = pCsr;
   preupdate.op = op;
   preupdate.iNewReg = iReg;
   preupdate.keyinfo.db = db;
   preupdate.keyinfo.enc = ENC(db);
-  preupdate.keyinfo.nField = pCsr->nField;
+  preupdate.keyinfo.nField = pTab->nCol;
   preupdate.iKey1 = iKey1;
   preupdate.iKey2 = iKey2;
   preupdate.iPKey = pTab->iPKey;

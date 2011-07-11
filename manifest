@@ -1,5 +1,5 @@
-C Pull\sthe\slatest\sversion\s3.7.7\srelease-candidate\schanges\sinto\sthe\nsessions\sbranch.
-D 2011-06-23T17:40:15.467
+C Modifications\sso\sthat\sthe\ssessions\sextension\sworks\swith\sblob\shandles.
+D 2011-07-11T19:45:38.954
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -107,6 +107,7 @@ F ext/session/session2.test 99ca0da7ddb617d42bafd83adccf99f18ae0384b
 F ext/session/session3.test a7a9ce59b8d1e49e2cc23d81421ac485be0eea01
 F ext/session/session4.test a6ed685da7a5293c5d6f99855bcf41dbc352ca84
 F ext/session/session5.test 8fdfaf9dba28a2f1c6b89b06168bdab1fef2d478
+F ext/session/session6.test 443789bc2fca12e4f7075cf692c60b8a2bea1a26
 F ext/session/session_common.tcl 1539d8973b2aea0025c133eb0cc4c89fcef541a5
 F ext/session/sessionfault.test 401045278298a242cbc2e4bc986c102f01ff2180
 F ext/session/sqlite3session.c 26de50c3e34d89ae62e97024ad07e772e1c52db2
@@ -251,9 +252,9 @@ F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
 F src/vdbe.c df52db6162fd94767b76bb4e9a7cb9207e83086f
 F src/vdbe.h 322af148cceef120bb1ec9cff7f122e76abf94da
 F src/vdbeInt.h 3de6588b36c833969aebab202e1766d586c37ec2
-F src/vdbeapi.c 1d947da083c24e8bf61823f02f619a1f4a682100
-F src/vdbeaux.c db3d4eedccea5add714dfb8b10f70d0f8d692db5
-F src/vdbeblob.c f024f0bf420f36b070143c32b15cc7287341ffd3
+F src/vdbeapi.c 432a8a194accb9fe9fae45338f210174c6c961b4
+F src/vdbeaux.c bb86d48ce99c288d17e8d79711713399c21f0a8d
+F src/vdbeblob.c a547f286b651641bdb43a567af66d0e776a39ea2
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
 F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
 F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
@@ -960,7 +961,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 5d95b42946b5cf0346164aebe0a8c4f37527bc31 b61a76a53af04f731fe7617f7b6b4fb2aef6587b
-R 5b9118bd8782ff0e4b99f3cb89f8be24
-U drh
-Z 3edc7355d0a27e1ff60419d5d75c34a3
+P 840bf9c2d92192ee3cc2aa7c0e9bdb805a066fd4
+R c823c2479e73fc426d6fab6fb150638b
+U dan
+Z 6339a08530525dea9c6675e0fc9a27f5
