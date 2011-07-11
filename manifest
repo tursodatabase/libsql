@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\son\sunix.
-D 2011-07-09T16:17:18.236
+C Change\sthe\swindows\sbackend\sto\sretry\sread\sand\swrite\srequests\sif\sthe\sencounter\nERROR_LOCK_VIOLATION\sand\sERROR_SHARING_VIOLATION\serrors\s-\swhich\swe\sthink\nsometimes\shappens\sdue\sto\sagressive\santi-virus\ssoftware.
+D 2011-07-11T18:17:56.144
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c d3e7b17100704ee0fe2ef71a98c478b947480f4d
-F src/os_win.c eafcd6b91cf204a7ef29ac1ef2a1b7132e132e58
+F src/os_win.c 6ba8a531bdc739b23143e8f1d26222ead4d0bdb0
 F src/pager.c 120550e7ef01dafaa2cbb4a0528c0d87c8f12b41
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -951,7 +951,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 418a4da2a96cf33055f18c9a667754fad2111cf3
-R bd1403a9e638958833ef8e7e7178479a
+P 90b1aea17400bbda5ebc8ae4eb4e12127519e42e
+R 349c7f009f94630db798c4428c847d95
 U drh
-Z 18ede22d9ea411d29db6ab17e40995c3
+Z 6ec74c1e47a6a671533b542ae146a0f8

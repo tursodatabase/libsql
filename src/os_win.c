@@ -402,6 +402,33 @@ static int winLogErrorAtLine(
   return errcode;
 }
 
+/*
+** The number of times that a ReadFile() or WriteFile() will be retried
+** following a locking error.
+*/
+#ifndef SQLITE_WIN32_IOERR_RETRY
+# define SQLITE_WIN32_IOERR_RETRY 5
+#endif
+
+/*
+** If a ReadFile() or WriteFile() error occurs, invoke this routine
+** to see if it should be retried.  Return TRUE to retry.  Return FALSE
+** to give up with an error.
+*/
+static int retryIoerr(int *pnRetry){
+  DWORD e;
+  if( *pnRetry>=SQLITE_WIN32_IOERR_RETRY ){
+    return 0;
+  }
+  e = GetLastError();
+  if( e==ERROR_LOCK_VIOLATION || e==ERROR_SHARING_VIOLATION ){
+    Sleep(50 + 50*(*pnRetry));
+    ++*pnRetry;
+    return 1;
+  }
+  return 0;
+}
+
 #if SQLITE_OS_WINCE
 /*************************************************************************
 ** This section contains code for WinCE only.
@@ -820,6 +847,7 @@ static int winRead(
 ){
   winFile *pFile = (winFile*)id;  /* file handle */
   DWORD nRead;                    /* Number of bytes actually read from file */
+  int nRetry = 0;                 /* Number of retrys */
 
   assert( id!=0 );
   SimulateIOError(return SQLITE_IOERR_READ);
@@ -828,7 +856,8 @@ static int winRead(
   if( seekWinFile(pFile, offset) ){
     return SQLITE_FULL;
   }
-  if( !ReadFile(pFile->h, pBuf, amt, &nRead, 0) ){
+  while( !ReadFile(pFile->h, pBuf, amt, &nRead, 0) ){
+    if( retryIoerr(&nRetry) ) continue;
     pFile->lastErrno = GetLastError();
     return winLogError(SQLITE_IOERR_READ, "winRead", pFile->zPath);
   }
@@ -866,8 +895,14 @@ static int winWrite(
     u8 *aRem = (u8 *)pBuf;        /* Data yet to be written */
     int nRem = amt;               /* Number of bytes yet to be written */
     DWORD nWrite;                 /* Bytes written by each WriteFile() call */
+    int nRetry = 0;               /* Number of retries */
 
-    while( nRem>0 && WriteFile(pFile->h, aRem, nRem, &nWrite, 0) && nWrite>0 ){
+    while( nRem>0 ){
+      if( !WriteFile(pFile->h, aRem, nRem, &nWrite, 0) ){
+        if( retryIoerr(&nRetry) ) continue;
+        break;
+      }
+      if( nWrite<=0 ) break;
       aRem += nWrite;
       nRem -= nWrite;
     }
