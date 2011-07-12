@@ -426,7 +426,9 @@ static int retryIoerr(int *pnRetry){
     return 0;
   }
   e = GetLastError();
-  if( e==ERROR_LOCK_VIOLATION || e==ERROR_SHARING_VIOLATION ){
+  if( e==ERROR_ACCESS_DENIED ||
+      e==ERROR_LOCK_VIOLATION ||
+      e==ERROR_SHARING_VIOLATION ){
     Sleep(SQLITE_WIN32_IOERR_RETRY_DELAY*(1+*pnRetry));
     ++*pnRetry;
     return 1;
@@ -2388,14 +2390,20 @@ static int winDelete(
     return SQLITE_NOMEM;
   }
   if( isNT() ){
-    while( (rc = DeleteFileW(zConverted))!=0 || retryIoerr(&cnt) ){}
+    rc = 1;
+    while( GetFileAttributesW(zConverted)!=INVALID_FILE_ATTRIBUTES &&
+           (rc = DeleteFileW(zConverted))==0 && retryIoerr(&cnt) ){}
+    rc = rc ? SQLITE_OK : SQLITE_ERROR;
 /* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
 ** Since the ASCII version of these Windows API do not exist for WINCE,
 ** it's important to not reference them for WINCE builds.
 */
 #if SQLITE_OS_WINCE==0
   }else{
-    while( (rc = DeleteFileW(zConverted))!=0 || retryIoerr(&cnt) ){}
+    rc = 1;
+    while( GetFileAttributesA(zConverted)!=INVALID_FILE_ATTRIBUTES &&
+           (rc = DeleteFileA(zConverted))==0 && retryIoerr(&cnt) ){}
+    rc = rc ? SQLITE_OK : SQLITE_ERROR;
 #endif
   }
   if( rc ){
