@@ -20,6 +20,14 @@ source $testdir/tester.tcl
 
 set testprefix win32lock
 
+db close
+sqlite3_shutdown
+test_sqlite3_log xLog
+proc xLog {error_code msg} {
+  lappend ::log $msg 
+}
+sqlite3 db test.db
+
 do_test win32lock-1.1 {
   db eval {
     PRAGMA cache_size=10;
@@ -49,9 +57,18 @@ while {1} {
     do_test win32lock-1.2-$delay1 {
        set ::msg
     } {1 100000 2 50000 3 25000 4 12500}
+    if {$::log!=""} {
+      do_test win32lock-1.2-$delay1-log1 {
+        regsub {\d+} $::log # x
+        set x
+      } {{delayed #ms for lock/sharing conflict}}
+    }
     incr delay1 50
   }
+  set ::log {}
 }
 sqlite3_test_control_pending_byte $old_pending_byte
-
+sqlite3_shutdown
+test_sqlite3_log 
+sqlite3_initialize
 finish_test

@@ -1,5 +1,5 @@
-C Update\sthe\sTCL\scommands\sfor\ssetting\swindows\smanditory\slocks.\nAdd\stest\scases\sfor\smanditory\slock\sdelays\sunder\swindows.
-D 2011-07-11T23:45:44.051
+C Merge\sthe\simproved\santi-virus\sdefenses\sinto\sthe\strunk.
+D 2011-07-12T14:38:25.733
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c d3e7b17100704ee0fe2ef71a98c478b947480f4d
-F src/os_win.c 6ba8a531bdc739b23143e8f1d26222ead4d0bdb0
+F src/os_win.c 57778b70d209f30070dc70e0e9f8e4adba0de5bc
 F src/pager.c 120550e7ef01dafaa2cbb4a0528c0d87c8f12b41
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -882,7 +882,7 @@ F test/wal2.test aa0fb2314b3235be4503c06873e41ebfc0757782
 F test/wal3.test 5c396cc22497244d627306f4c1d360167353f8dd
 F test/wal4.test 3404b048fa5e10605facaf70384e6d2943412e30
 F test/wal5.test f06a0427e06db00347e32eb9fa99d6a5c0f2d088
-F test/wal6.test 07aa31ca8892d0527f2c5c5a9a2a87aa421dfaa8
+F test/wal6.test 2e3bc767d9c2ce35c47106148d43fcbd072a93b3
 F test/wal7.test 2ae8f427d240099cc4b2dfef63cff44e2a68a1bd
 F test/wal_common.tcl a98f17fba96206122eff624db0ab13ec377be4fe
 F test/walbak.test 4df1c7369da0301caeb9a48fa45997fd592380e4
@@ -911,7 +911,7 @@ F test/where9.test 24f19ad14bb1b831564ced5273e681e495662848
 F test/whereA.test 24c234263c8fe358f079d5e57d884fb569d2da0a
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
-F test/win32lock.test 7fa3287dccc836fcaa8e0d1e77aa017de5889231
+F test/win32lock.test 58d2505e035a8175c2db524e58e7c5c9bf1a926c
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F tool/build-shell.sh 12aa4391073a777fcb6dcc490b219a018ae98bac
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -952,7 +952,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P c20aca06610407c197ea50ea77c2591aacf2252a
-R 4c1b031b9c10734fc2cbb78ed1f104dd
+P 03af4c175c6ba303ec0a5be25fd42771e38f7347 36f11acc531a524407e03c797a6a1bcf88bad809
+R 15ec97d6baeea0684b5deea8be1be88e
 U drh
-Z 4f5517f8772eb0c19d9bc59edbaff4cc
+Z 2176be5b1a19aaddd13f35903c55d94b
