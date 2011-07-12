@@ -1919,6 +1919,10 @@ static void bestAutomaticIndex(
     /* The NOT INDEXED clause appears in the SQL. */
     return;
   }
+  if( pSrc->isCorrelated ){
+    /* The source is a correlated sub-query. No point in indexing it. */
+    return;
+  }
 
   assert( pParse->nQueryLoop >= (double)1 );
   pTable = pSrc->pTab;
