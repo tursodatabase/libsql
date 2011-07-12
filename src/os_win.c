@@ -427,14 +427,23 @@ static int retryIoerr(int *pnRetry){
   }
   e = GetLastError();
   if( e==ERROR_LOCK_VIOLATION || e==ERROR_SHARING_VIOLATION ){
-    int delay = SQLITE_WIN32_IOERR_RETRY_DELAY*(1+*pnRetry);
-    sqlite3_log(SQLITE_IOERR, "delay %dms for lock/sharing violation - "
-                              "probably due to antivirus software", delay);
-    Sleep(delay);
+    Sleep(SQLITE_WIN32_IOERR_RETRY_DELAY*(1+*pnRetry));
     ++*pnRetry;
     return 1;
   }
   return 0;
+}
+
+/*
+** Log a I/O error retry episode.
+*/
+static void logIoerr(int nRetry){
+  if( nRetry ){
+    sqlite3_log(SQLITE_IOERR, 
+      "delayed %dms for lock/sharing conflict",
+      SQLITE_WIN32_IOERR_RETRY_DELAY*nRetry*(nRetry+1)/2
+    );
+  }
 }
 
 #if SQLITE_OS_WINCE
@@ -869,6 +878,7 @@ static int winRead(
     pFile->lastErrno = GetLastError();
     return winLogError(SQLITE_IOERR_READ, "winRead", pFile->zPath);
   }
+  logIoerr(nRetry);
   if( nRead<(DWORD)amt ){
     /* Unread parts of the buffer must be zero-filled */
     memset(&((char*)pBuf)[nRead], 0, amt-nRead);
@@ -890,6 +900,7 @@ static int winWrite(
 ){
   int rc;                         /* True if error has occured, else false */
   winFile *pFile = (winFile*)id;  /* File handle */
+  int nRetry = 0;                 /* Number of retries */
 
   assert( amt>0 );
   assert( pFile );
@@ -903,7 +914,6 @@ static int winWrite(
     u8 *aRem = (u8 *)pBuf;        /* Data yet to be written */
     int nRem = amt;               /* Number of bytes yet to be written */
     DWORD nWrite;                 /* Bytes written by each WriteFile() call */
-    int nRetry = 0;               /* Number of retries */
 
     while( nRem>0 ){
       if( !WriteFile(pFile->h, aRem, nRem, &nWrite, 0) ){
@@ -926,6 +936,8 @@ static int winWrite(
       return SQLITE_FULL;
     }
     return winLogError(SQLITE_IOERR_WRITE, "winWrite", pFile->zPath);
+  }else{
+    logIoerr(nRetry);
   }
   return SQLITE_OK;
 }
@@ -2386,7 +2398,11 @@ static int winDelete(
     while( (rc = DeleteFileW(zConverted))!=0 || retryIoerr(&cnt) ){}
 #endif
   }
-  if( rc ) rc = winLogError(SQLITE_IOERR_DELETE, "winDelete", zFilename);
+  if( rc ){
+    rc = winLogError(SQLITE_IOERR_DELETE, "winDelete", zFilename);
+  }else{
+    logIoerr(cnt);
+  }
   free(zConverted);
   OSTRACE(("DELETE \"%s\" %s\n", zFilename, (rc ? "failed" : "ok" )));
   return rc;

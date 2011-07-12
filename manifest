@@ -1,5 +1,5 @@
-C Update\sthe\santi-virus\sretry\slogic\sfor\sDeleteFile().\s\sInvoke\ssqlite3_log()\nfor\seach\santi-virus\sretry.\s\sMake\sthe\sretry\sdelay\sconfigurable\sat\ncompile-time.
-D 2011-07-12T11:04:18.838
+C Improvements\sto\sthe\slogging\sthat\soccurs\son\san\santivirus\sI/O\sretry.
+D 2011-07-12T13:51:05.210
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c d3e7b17100704ee0fe2ef71a98c478b947480f4d
-F src/os_win.c 4cea89f0a6c98b6a7f4fb3895544af8a07d7807d
+F src/os_win.c 07050df9e4956f8a8bb8983788b2523fd6e7db87
 F src/pager.c 120550e7ef01dafaa2cbb4a0528c0d87c8f12b41
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -911,7 +911,7 @@ F test/where9.test 24f19ad14bb1b831564ced5273e681e495662848
 F test/whereA.test 24c234263c8fe358f079d5e57d884fb569d2da0a
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
-F test/win32lock.test 7fa3287dccc836fcaa8e0d1e77aa017de5889231
+F test/win32lock.test 58d2505e035a8175c2db524e58e7c5c9bf1a926c
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F tool/build-shell.sh 12aa4391073a777fcb6dcc490b219a018ae98bac
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -952,7 +952,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 03af4c175c6ba303ec0a5be25fd42771e38f7347
-R b94301e8087eadceda58922babc3618f
+P 89f1848d7f7d98b4f7da9218f99ed90d22dd43a8
+R 060b096970846ad68ec6f99f0023cc33
 U drh
-Z 71facc3c10c90f54a5e699820f127261
+Z 9da4b869d45a82433907baf19d8c1435
