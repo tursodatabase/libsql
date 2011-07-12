@@ -1,5 +1,5 @@
-C Update\sthe\sTCL\scommands\sfor\ssetting\swindows\smanditory\slocks.\nAdd\stest\scases\sfor\smanditory\slock\sdelays\sunder\swindows.
-D 2011-07-11T23:45:44.051
+C Experimental\ssupport\sfor\sspeeding\sup\sCREATE\sINDEX\scommands\susing\san\soffline\smerge\ssort.
+D 2011-07-12T14:28:05.335
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -104,7 +104,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk d81d86f0f70444f3abc241eccf5ace4a79ff9b69
+F main.mk df1e47e4bc886f556b39a8cdb9dc3f6fb6810d64
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -127,7 +127,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 8c46f0ab69ad9549c75a3a91fed87abdaa743e2f
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
-F src/build.c 5e614e586d9f8a81c16c80b545b9e1747f96c1bb
+F src/build.c 8aca0539bac544caf3ecb2baac1e7bdc1bfc80e6
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 7deec4534f3b5a0c3b4a4cbadf809d321f64f9c4
@@ -238,13 +238,14 @@ F src/update.c 74a6cfb34e9732c1e2a86278b229913b4b51eeec
 F src/utf.c c53eb7404b3eb5c1cbb5655c6a7a0e0ce6bd50f0
 F src/util.c 0f33bbbdfcc4a2d8cf20c3b2a16ffc3b57c58a70
 F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
-F src/vdbe.c a9ced64f380bbd8b04da3a1c3a9602d3942704b5
+F src/vdbe.c 88a7068472bafb29db500a167eef533d5f709cdc
 F src/vdbe.h 5cf09e7ee8a3f7d93bc51f196a96550786afe7a1
-F src/vdbeInt.h ad84226cc0adcb1185c22b70696b235a1678bb45
+F src/vdbeInt.h fb6c86006de1c0f249ea9dc14263ad0c357cfc24
 F src/vdbeapi.c 11dc47987abacb76ad016dcf5abc0dc422482a98
-F src/vdbeaux.c 4d100407e3c72e163854aff8903d19d5ecdf46c0
+F src/vdbeaux.c 8fb978eb73a97b34d352dd3ef3bff35b1b3fa7e9
 F src/vdbeblob.c f024f0bf420f36b070143c32b15cc7287341ffd3
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
+F src/vdbesort.c f07d526dfb0606e51f7588b26c9d401092318c39
 F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
 F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 0c70ad7b1cac6005fa5e2cbefd23ee05e391c290
@@ -510,6 +511,7 @@ F test/incrvacuum_ioerr.test 57d2f5777ab13fa03b87b262a4ea1bad5cfc0291
 F test/index.test b5429732b3b983fa810e3ac867d7ca85dae35097
 F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
 F test/index3.test 423a25c789fc8cc51aaf2a4370bbdde2d9e9eed7
+F test/index4.test 8d737e87536cba23d4567096b6432116e2ba896f
 F test/indexedby.test be501e381b82b2f8ab406309ba7aac46e221f4ad
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
 F test/insert.test aef273dd1cee84cc92407469e6bd1b3cdcb76908
@@ -952,7 +954,10 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P c20aca06610407c197ea50ea77c2591aacf2252a
-R 4c1b031b9c10734fc2cbb78ed1f104dd
-U drh
-Z 4f5517f8772eb0c19d9bc59edbaff4cc
+P 03af4c175c6ba303ec0a5be25fd42771e38f7347
+R 55fa78a5c4888948b8391ce686e6076d
+T *branch * experimental
+T *sym-experimental *
+T -sym-trunk *
+U dan
+Z 97a803d50902eb873dfd6c6b8aa1a07e

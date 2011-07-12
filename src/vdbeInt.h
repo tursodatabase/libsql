@@ -30,6 +30,9 @@ typedef struct VdbeOp Op;
 */
 typedef unsigned char Bool;
 
+/* Opaque type used by code in vdbesort.c */
+typedef struct VdbeSorter VdbeSorter;
+
 /*
 ** A cursor is a pointer into a single BTree within a database file.
 ** The cursor can seek to a BTree entry with a particular key, or
@@ -61,6 +64,7 @@ struct VdbeCursor {
   i64 seqCount;         /* Sequence counter */
   i64 movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
   i64 lastRowid;        /* Last rowid from a Next or NextIdx operation */
+  VdbeSorter *pSorter;  /* Sorter object for OP_OpenSorter cursors */
 
   /* Result of last sqlite3BtreeMoveto() done by an OP_NotExists or 
   ** OP_IsUnique opcode on this cursor. */
@@ -387,6 +391,10 @@ int sqlite3VdbeCloseStatement(Vdbe *, int);
 void sqlite3VdbeFrameDelete(VdbeFrame*);
 int sqlite3VdbeFrameRestore(VdbeFrame *);
 void sqlite3VdbeMemStoreType(Mem *pMem);
+
+int sqlite3VdbeSorterInit(sqlite3 *, VdbeCursor *);
+int sqlite3VdbeSorterWrite(sqlite3 *, VdbeCursor *);
+void sqlite3VdbeSorterClose(sqlite3 *, VdbeCursor *);
 
 #if !defined(SQLITE_OMIT_SHARED_CACHE) && SQLITE_THREADSAFE>0
   void sqlite3VdbeEnter(Vdbe*);

@@ -3144,6 +3144,7 @@ case OP_OpenWrite: {
 ** by this opcode will be used for automatically created transient
 ** indices in joins.
 */
+case OP_OpenSorter: 
 case OP_OpenAutoindex: 
 case OP_OpenEphemeral: {
   VdbeCursor *pCx;
@@ -3154,12 +3155,14 @@ case OP_OpenEphemeral: {
       SQLITE_OPEN_DELETEONCLOSE |
       SQLITE_OPEN_TRANSIENT_DB;
 
+  int btflags = BTREE_OMIT_JOURNAL | pOp->p5;
+  if( pOp->opcode!=OP_OpenSorter ) btflags |= BTREE_SINGLE;
+
   assert( pOp->p1>=0 );
   pCx = allocateCursor(p, pOp->p1, pOp->p2, -1, 1);
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
-  rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pCx->pBt, 
-                        BTREE_OMIT_JOURNAL | BTREE_SINGLE | pOp->p5, vfsFlags);
+  rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pCx->pBt, btflags, vfsFlags);
   if( rc==SQLITE_OK ){
     rc = sqlite3BtreeBeginTrans(pCx->pBt, 1);
   }
@@ -3178,7 +3181,7 @@ case OP_OpenEphemeral: {
         rc = sqlite3BtreeCursor(pCx->pBt, pgno, 1, 
                                 (KeyInfo*)pOp->p4.z, pCx->pCursor);
         pCx->pKeyInfo = pOp->p4.pKeyInfo;
-        pCx->pKeyInfo->enc = ENC(p->db);
+        pCx->pKeyInfo->enc = ENC(db);
       }
       pCx->isTable = 0;
     }else{
@@ -3188,6 +3191,9 @@ case OP_OpenEphemeral: {
   }
   pCx->isOrdered = (pOp->p5!=BTREE_UNORDERED);
   pCx->isIndex = !pCx->isTable;
+  if( rc==SQLITE_OK && pOp->opcode==OP_OpenSorter ){
+    rc = sqlite3VdbeSorterInit(db, pCx);
+  }
   break;
 }
 
@@ -4077,6 +4083,12 @@ case OP_RowData: {
   assert( pC!=0 );
   assert( pC->nullRow==0 );
   assert( pC->pseudoTableReg==0 );
+
+  if( pC->pSorter ){
+    rc = sqlite3VdbeSorterRowkey(db, pC, pOut);
+    break;
+  }
+
   assert( pC->pCursor!=0 );
   pCrsr = pC->pCursor;
   assert( sqlite3BtreeCursorIsValid(pCrsr) );
@@ -4257,7 +4269,9 @@ case OP_Rewind: {        /* jump */
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   res = 1;
-  if( (pCrsr = pC->pCursor)!=0 ){
+  if( pC->pSorter ){
+    rc = sqlite3VdbeSorterRewind(db, pC, &res);
+  }else if( (pCrsr = pC->pCursor)!=0 ){
     rc = sqlite3BtreeFirst(pCrsr, &res);
     pC->atFirst = res==0 ?1:0;
     pC->deferredMoveto = 0;
@@ -4311,17 +4325,23 @@ case OP_Next: {        /* jump */
   if( pC==0 ){
     break;  /* See ticket #2273 */
   }
-  pCrsr = pC->pCursor;
-  if( pCrsr==0 ){
-    pC->nullRow = 1;
-    break;
+  if( pC->pSorter ){
+    assert( pOp->opcode==OP_Next );
+    rc = sqlite3VdbeSorterNext(db, pC, &res);
+  }else{
+    pCrsr = pC->pCursor;
+    if( pCrsr==0 ){
+      pC->nullRow = 1;
+      break;
+    }
+    res = 1;
+    assert( pC->deferredMoveto==0 );
+    rc = pOp->opcode==OP_Next ? sqlite3BtreeNext(pCrsr, &res) :
+                                sqlite3BtreePrevious(pCrsr, &res);
   }
-  res = 1;
-  assert( pC->deferredMoveto==0 );
-  rc = pOp->opcode==OP_Next ? sqlite3BtreeNext(pCrsr, &res) :
-                              sqlite3BtreePrevious(pCrsr, &res);
   pC->nullRow = (u8)res;
   pC->cacheStatus = CACHE_STALE;
+
   if( res==0 ){
     pc = pOp->p2 - 1;
     if( pOp->p5 ) p->aCounter[pOp->p5-1]++;
@@ -4354,6 +4374,8 @@ case OP_IdxInsert: {        /* in2 */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
+  rc = sqlite3VdbeSorterWrite(db, pC);
+  if( rc!=SQLITE_OK ) goto abort_due_to_error;
   pIn2 = &aMem[pOp->p2];
   assert( pIn2->flags & MEM_Blob );
   pCrsr = pC->pCursor;
