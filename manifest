@@ -1,5 +1,5 @@
-C Modifications\sso\sthat\sthe\ssessions\sextension\sworks\swith\sblob\shandles.
-D 2011-07-11T19:45:38.954
+C Add\sthe\sxFilter\scallback\sto\sthe\ssqlite3changeset_apply()\sfunction.\sThis\scallback\sallows\sthe\sapplication\sto\saccept\sor\sreject\schanges\son\sa\sper-table\sbasis\swhen\sapplying\sa\schangeset.
+D 2011-07-13T15:21:02.741
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -110,9 +110,9 @@ F ext/session/session5.test 8fdfaf9dba28a2f1c6b89b06168bdab1fef2d478
 F ext/session/session6.test 443789bc2fca12e4f7075cf692c60b8a2bea1a26
 F ext/session/session_common.tcl 1539d8973b2aea0025c133eb0cc4c89fcef541a5
 F ext/session/sessionfault.test 401045278298a242cbc2e4bc986c102f01ff2180
-F ext/session/sqlite3session.c 26de50c3e34d89ae62e97024ad07e772e1c52db2
-F ext/session/sqlite3session.h 665f5591562e3c71eb3d0da26f1a1efae26f7bcf
-F ext/session/test_session.c 311e5b9228374d0b5780448f289847ff1cf7d388
+F ext/session/sqlite3session.c c05d28332fcdd66c82de85f5459d71554e2259d7
+F ext/session/sqlite3session.h f34905c818569779ddaea1bbef43469177614c69
+F ext/session/test_session.c 209f13fa8f4a597ffcc15fd0f8a3f27ed079c5e5
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F main.mk f56d9895882f5cdd9f9f9ba8f8a679e9202288c1
@@ -961,7 +961,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 840bf9c2d92192ee3cc2aa7c0e9bdb805a066fd4
-R c823c2479e73fc426d6fab6fb150638b
+P 82ac16c4f873d3bd7c22f36ba7b974b4903a2d50
+R c22fa4ebad64b5fe1347a3f0a2dcb7e8
 U dan
-Z 6339a08530525dea9c6675e0fc9a27f5
+Z 6a509799e9e665bc4a33861bc6dba39f

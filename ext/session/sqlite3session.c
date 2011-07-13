@@ -2756,6 +2756,10 @@ int sqlite3changeset_apply(
   sqlite3 *db,                    /* Apply change to "main" db of this handle */
   int nChangeset,                 /* Size of changeset in bytes */
   void *pChangeset,               /* Changeset blob */
+  int(*xFilter)(
+    void *pCtx,                   /* Copy of sixth arg to _apply() */
+    const char *zTab              /* Table name */
+  ),
   int(*xConflict)(
     void *pCtx,                   /* Copy of fifth arg to _apply() */
     int eConflict,                /* DATA, MISSING, CONFLICT, CONSTRAINT */
@@ -2788,7 +2792,6 @@ int sqlite3changeset_apply(
     if( zTab==0 || sqlite3_strnicmp(zNew, zTab, nTab+1) ){
       u8 *abPK;
 
-      schemaMismatch = 0;
       sqlite3_free((char*)sApply.azCol);  /* cast works around VC++ bug */
       sqlite3_finalize(sApply.pDelete);
       sqlite3_finalize(sApply.pUpdate); 
@@ -2797,40 +2800,50 @@ int sqlite3changeset_apply(
       memset(&sApply, 0, sizeof(sApply));
       sApply.db = db;
 
-      sqlite3changeset_pk(pIter, &abPK, 0);
-      rc = sessionTableInfo(
-          db, "main", zNew, &sApply.nCol, &zTab, &sApply.azCol, &sApply.abPK
-      );
-      if( rc!=SQLITE_OK ) break;
-
-      if( sApply.nCol==0 ){
-        schemaMismatch = 1;
-        sqlite3_log(SQLITE_SCHEMA, 
-            "sqlite3changeset_apply(): no such table: %s", zTab
+      /* If an xFilter() callback was specified, invoke it now. If the 
+      ** xFilter callback returns zero, skip this table. If it returns
+      ** non-zero, proceed. */
+      schemaMismatch = (xFilter && (0==xFilter(pCtx, zNew)));
+      if( schemaMismatch ){
+        zTab = sqlite3_mprintf("%s", zNew);
+        nTab = strlen(zTab);
+        sApply.azCol = (const char **)zTab;
+      }else{
+        sqlite3changeset_pk(pIter, &abPK, 0);
+        rc = sessionTableInfo(
+            db, "main", zNew, &sApply.nCol, &zTab, &sApply.azCol, &sApply.abPK
         );
+        if( rc!=SQLITE_OK ) break;
+  
+        if( sApply.nCol==0 ){
+          schemaMismatch = 1;
+          sqlite3_log(SQLITE_SCHEMA, 
+              "sqlite3changeset_apply(): no such table: %s", zTab
+          );
+        }
+        else if( sApply.nCol!=nCol ){
+          schemaMismatch = 1;
+          sqlite3_log(SQLITE_SCHEMA, 
+              "sqlite3changeset_apply(): table %s has %d columns, expected %d", 
+              zTab, sApply.nCol, nCol
+          );
+        }
+        else if( memcmp(sApply.abPK, abPK, nCol)!=0 ){
+          schemaMismatch = 1;
+          sqlite3_log(SQLITE_SCHEMA, "sqlite3changeset_apply(): "
+              "primary key mismatch for table %s", zTab
+          );
+        }
+        else if( 
+            (rc = sessionSelectRow(db, zTab, &sApply))
+         || (rc = sessionUpdateRow(db, zTab, &sApply))
+         || (rc = sessionDeleteRow(db, zTab, &sApply))
+         || (rc = sessionInsertRow(db, zTab, &sApply))
+        ){
+          break;
+        }
+        nTab = sqlite3Strlen30(zTab);
       }
-      else if( sApply.nCol!=nCol ){
-        schemaMismatch = 1;
-        sqlite3_log(SQLITE_SCHEMA, 
-            "sqlite3changeset_apply(): table %s has %d columns, expected %d", 
-            zTab, sApply.nCol, nCol
-        );
-      }
-      else if( memcmp(sApply.abPK, abPK, nCol)!=0 ){
-        schemaMismatch = 1;
-        sqlite3_log(SQLITE_SCHEMA, 
-            "sqlite3changeset_apply(): primary key mismatch for table %s", zTab
-        );
-      }
-      else if( 
-          (rc = sessionSelectRow(db, zTab, &sApply))
-       || (rc = sessionUpdateRow(db, zTab, &sApply))
-       || (rc = sessionDeleteRow(db, zTab, &sApply))
-       || (rc = sessionInsertRow(db, zTab, &sApply))
-      ){
-        break;
-      }
-      nTab = sqlite3Strlen30(zTab);
     }
 
     /* If there is a schema mismatch on the current table, proceed to the

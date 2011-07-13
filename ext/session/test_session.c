@@ -185,7 +185,8 @@ static void test_append_value(Tcl_Obj *pList, sqlite3_value *pVal){
 typedef struct TestConflictHandler TestConflictHandler;
 struct TestConflictHandler {
   Tcl_Interp *interp;
-  Tcl_Obj *pScript;
+  Tcl_Obj *pConflictScript;
+  Tcl_Obj *pFilterScript;
 };
 
 static int test_obj_eq_string(Tcl_Obj *p, const char *z){
@@ -198,6 +199,29 @@ static int test_obj_eq_string(Tcl_Obj *p, const char *z){
 
   return (nObj==n && (n==0 || 0==memcmp(zObj, z, n)));
 }
+
+static int test_filter_handler(
+  void *pCtx,                     /* Pointer to TestConflictHandler structure */
+  const char *zTab                /* Table name */
+){
+  TestConflictHandler *p = (TestConflictHandler *)pCtx;
+  int res = 1;
+  Tcl_Obj *pEval;
+  Tcl_Interp *interp = p->interp;
+
+  pEval = Tcl_DuplicateObj(p->pFilterScript);
+  Tcl_IncrRefCount(pEval);
+
+  if( TCL_OK!=Tcl_ListObjAppendElement(0, pEval, Tcl_NewStringObj(zTab, -1))
+   || TCL_OK!=Tcl_EvalObjEx(interp, pEval, TCL_EVAL_GLOBAL) 
+   || TCL_OK!=Tcl_GetIntFromObj(interp, Tcl_GetObjResult(interp), &res)
+  ){
+    Tcl_BackgroundError(interp);
+  }
+
+  Tcl_DecrRefCount(pEval);
+  return res;
+}  
 
 static int test_conflict_handler(
   void *pCtx,                     /* Pointer to TestConflictHandler structure */
@@ -213,7 +237,7 @@ static int test_conflict_handler(
   const char *zTab;               /* Name of table conflict is on */
   int nCol;                       /* Number of columns in table zTab */
 
-  pEval = Tcl_DuplicateObj(p->pScript);
+  pEval = Tcl_DuplicateObj(p->pConflictScript);
   Tcl_IncrRefCount(pEval);
 
   sqlite3changeset_op(pIter, &zTab, &nCol, &op, 0);
@@ -342,7 +366,7 @@ static int test_conflict_handler(
 }
 
 /*
-** sqlite3changeset_apply DB CHANGESET SCRIPT
+** sqlite3changeset_apply DB CHANGESET CONFLICT-SCRIPT ?FILTER-SCRIPT?
 */
 static int test_sqlite3changeset_apply(
   void * clientData,
@@ -357,8 +381,10 @@ static int test_sqlite3changeset_apply(
   int nChangeset;                 /* Size of buffer aChangeset in bytes */
   TestConflictHandler ctx;
 
-  if( objc!=4 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "DB CHANGESET SCRIPT");
+  if( objc!=4 && objc!=5 ){
+    Tcl_WrongNumArgs(interp, 1, objv, 
+        "DB CHANGESET CONFLICT-SCRIPT ?FILTER-SCRIPT?"
+    );
     return TCL_ERROR;
   }
   if( 0==Tcl_GetCommandInfo(interp, Tcl_GetString(objv[1]), &info) ){
@@ -367,11 +393,12 @@ static int test_sqlite3changeset_apply(
   }
   db = *(sqlite3 **)info.objClientData;
   pChangeset = (void *)Tcl_GetByteArrayFromObj(objv[2], &nChangeset);
-  ctx.pScript = objv[3];
+  ctx.pConflictScript = objv[3];
+  ctx.pFilterScript = objc==5 ? objv[4] : 0;
   ctx.interp = interp;
 
-  rc = sqlite3changeset_apply(
-      db, nChangeset, pChangeset, test_conflict_handler, (void *)&ctx
+  rc = sqlite3changeset_apply(db, nChangeset, pChangeset, 
+      (objc==5) ? test_filter_handler : 0, test_conflict_handler, (void *)&ctx
   );
   if( rc!=SQLITE_OK ){
     return test_session_error(interp, rc);

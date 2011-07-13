@@ -610,9 +610,19 @@ int sqlite3changeset_concat(
 ** "main" database attached to handle db with the changes found in the
 ** changeset passed via the second and third arguments.
 **
-** For each change in the changeset, this function tests that the target
-** database contains a compatible table. A table is considered compatible
-** if all of the following are true:
+** The fourth argument (xFilter) passed to this function is the "filter
+** callback". If it is not NULL, then for each table affected by at least one
+** change in the changeset, the filter callback is invoked with
+** the table name as the second argument, and a copy of the context pointer
+** passed as the sixth argument to this function as the first. If the "filter
+** callback" returns zero, then no attempt is made to apply any changes to 
+** the table. Otherwise, if the return value is non-zero or the xFilter
+** argument to this function is NULL, all changes related to the table are
+** attempted.
+**
+** For each table that is not excluded by the filter callback, this function 
+** tests that the target database contains a compatible table. A table is 
+** considered compatible if all of the following are true:
 **
 ** <ul>
 **   <li> The table has the same name as the name recorded in the 
@@ -623,17 +633,17 @@ int sqlite3changeset_concat(
 **        recorded in the changeset.
 ** </ul>
 **
-** If there is no compatible table, it is not an error, but the change is
-** not applied. A warning message is issued via the sqlite3_log() mechanism
-** with the error code SQLITE_SCHEMA. At most one such warning is issued for
-** each table in the changeset.
+** If there is no compatible table, it is not an error, but none of the
+** changes associated with the table are applied. A warning message is issued
+** via the sqlite3_log() mechanism with the error code SQLITE_SCHEMA. At most
+** one such warning is issued for each table in the changeset.
 **
-** Otherwise, if there is a compatible table, an attempt is made to modify
-** the table contents according to the UPDATE, INSERT or DELETE change.
-** If a change cannot be applied cleanly, the conflict handler function
-** passed as the fourth argument to sqlite3changeset_apply() may be invoked.
-** A description of exactly when the conflict handler is invoked for each
-** type of change is below.
+** For each change for which there is a compatible table, an attempt is made 
+** to modify the table contents according to the UPDATE, INSERT or DELETE 
+** change. If a change cannot be applied cleanly, the conflict handler 
+** function passed as the fifth argument to sqlite3changeset_apply() may be 
+** invoked. A description of exactly when the conflict handler is invoked for 
+** each type of change is below.
 **
 ** Each time the conflict handler function is invoked, it must return one
 ** of [SQLITE_CHANGESET_OMIT], [SQLITE_CHANGESET_ABORT] or 
@@ -729,8 +739,12 @@ int sqlite3changeset_apply(
   sqlite3 *db,                    /* Apply change to "main" db of this handle */
   int nChangeset,                 /* Size of changeset in bytes */
   void *pChangeset,               /* Changeset blob */
+  int(*xFilter)(
+    void *pCtx,                   /* Copy of sixth arg to _apply() */
+    const char *zTab              /* Table name */
+  ),
   int(*xConflict)(
-    void *pCtx,                   /* Copy of fifth arg to _apply() */
+    void *pCtx,                   /* Copy of sixth arg to _apply() */
     int eConflict,                /* DATA, MISSING, CONFLICT, CONSTRAINT */
     sqlite3_changeset_iter *p     /* Handle describing change and conflict */
   ),
