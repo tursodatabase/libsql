@@ -1,5 +1,5 @@
-C Added\sthe\sSQLITE_FCNTL_WIN32_AV_RETRY\sfile\scontrol\sfor\sconfiguring\sthe\nretry\scounts\sand\sdelays\sin\sthe\swindows\sVFS.
-D 2011-07-13T16:03:46.096
+C Do\snot\stry\sto\suse\sSTAT2\sto\srefine\sthe\srow\sestimate\sof\sa\squery\sthat\nuses\sa\sunique\sor\snearly-unique\sindex.
+D 2011-07-13T18:31:10.999
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -250,7 +250,7 @@ F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 0c70ad7b1cac6005fa5e2cbefd23ee05e391c290
 F src/wal.h 66b40bd91bc29a5be1c88ddd1f5ade8f3f48728a
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c ce7cce80c5cb07ba40e9bf38a33ef806c61f55f2
+F src/where.c 106cd9ab3eb410dfa7d0598194c277664bb2e9a3
 F test/8_3_names.test b93687beebd17f6ebf812405a6833bae5d1f4199
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -952,7 +952,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 0207fd9b0c0f6baa3c2cb8ba588ad585507848b3
-R c10af965bd436aa363363314cb7d7b89
+P 7aaf0a6ae1238129e07eb191ca3f043df445e27a
+R 86cf02b90f1b613c4a5037d43837eb94
 U drh
-Z 2357d1ef0784887fd664a2ba2dbc9797
+Z 59e834e53ef42b78107149fbc0ea32b5

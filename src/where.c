@@ -3111,12 +3111,13 @@ static void bestBtreeIndex(
     }
 
 #ifdef SQLITE_ENABLE_STAT2
-    /* If the constraint is of the form x=VALUE and histogram
+    /* If the constraint is of the form x=VALUE or x IN (E1,E2,...)
+    ** and we do not think that values of x are unique and if histogram
     ** data is available for column x, then it might be possible
     ** to get a better estimate on the number of rows based on
     ** VALUE and how common that value is according to the histogram.
     */
-    if( nRow>(double)1 && nEq==1 && pFirstTerm!=0 ){
+    if( nRow>(double)1 && nEq==1 && pFirstTerm!=0 && aiRowEst[1]>1 ){
       if( pFirstTerm->eOperator & (WO_EQ|WO_ISNULL) ){
         testcase( pFirstTerm->eOperator==WO_EQ );
         testcase( pFirstTerm->eOperator==WO_ISNULL );
