@@ -67,6 +67,40 @@ while {1} {
   }
   set ::log {}
 }
+
+do_test win32lock-2.0 {
+  file_control_win32_av_retry db -1 -1
+} {0 10 25}
+do_test win32lock-2.1 {
+  file_control_win32_av_retry db 1 1
+} {0 1 1}
+
+set delay1 50
+while {1} {
+  sqlite3_sleep 10
+  lock_win32_file test.db 0 $::delay1
+  set rc [catch {db eval {SELECT x, length(y) FROM t1 ORDER BY rowid}} msg]
+  if {$rc} {
+    do_test win32lock-2.2-$delay1-fin {
+       set ::msg
+    } {disk I/O error}
+    break
+  } else {
+    do_test win32lock-2.2-$delay1 {
+       set ::msg
+    } {1 100000 2 50000 3 25000 4 12500}
+    if {$::log!=""} {
+      do_test win32lock-2.2-$delay1-log1 {
+        regsub {\d+} $::log # x
+        set x
+      } {{delayed #ms for lock/sharing conflict}}
+    }
+    incr delay1 50
+  }
+  set ::log {}
+}
+
+file_control_win32_av_retry db 10 25
 sqlite3_test_control_pending_byte $old_pending_byte
 sqlite3_shutdown
 test_sqlite3_log 

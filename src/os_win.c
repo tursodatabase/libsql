@@ -414,6 +414,8 @@ static int winLogErrorAtLine(
 #ifndef SQLITE_WIN32_IOERR_RETRY_DELAY
 # define SQLITE_WIN32_IOERR_RETRY_DELAY 25
 #endif
+static int win32IoerrRetry = SQLITE_WIN32_IOERR_RETRY;
+static int win32IoerrRetryDelay = SQLITE_WIN32_IOERR_RETRY_DELAY;
 
 /*
 ** If a ReadFile() or WriteFile() error occurs, invoke this routine
@@ -422,14 +424,14 @@ static int winLogErrorAtLine(
 */
 static int retryIoerr(int *pnRetry){
   DWORD e;
-  if( *pnRetry>=SQLITE_WIN32_IOERR_RETRY ){
+  if( *pnRetry>=win32IoerrRetry ){
     return 0;
   }
   e = GetLastError();
   if( e==ERROR_ACCESS_DENIED ||
       e==ERROR_LOCK_VIOLATION ||
       e==ERROR_SHARING_VIOLATION ){
-    Sleep(SQLITE_WIN32_IOERR_RETRY_DELAY*(1+*pnRetry));
+    Sleep(win32IoerrRetryDelay*(1+*pnRetry));
     ++*pnRetry;
     return 1;
   }
@@ -443,7 +445,7 @@ static void logIoerr(int nRetry){
   if( nRetry ){
     sqlite3_log(SQLITE_IOERR, 
       "delayed %dms for lock/sharing conflict",
-      SQLITE_WIN32_IOERR_RETRY_DELAY*nRetry*(nRetry+1)/2
+      win32IoerrRetryDelay*nRetry*(nRetry+1)/2
     );
   }
 }
@@ -1354,6 +1356,20 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_SYNC_OMITTED: {
+      return SQLITE_OK;
+    }
+    case SQLITE_FCNTL_WIN32_AV_RETRY: {
+      int *a = (int*)pArg;
+      if( a[0]>0 ){
+        win32IoerrRetry = a[0];
+      }else{
+        a[0] = win32IoerrRetry;
+      }
+      if( a[1]>0 ){
+        win32IoerrRetryDelay = a[1];
+      }else{
+        a[1] = win32IoerrRetryDelay;
+      }
       return SQLITE_OK;
     }
   }

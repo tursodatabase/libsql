@@ -1,5 +1,5 @@
-C Merge\sthe\simproved\santi-virus\sdefenses\sinto\sthe\strunk.
-D 2011-07-12T14:38:25.733
+C Added\sthe\sSQLITE_FCNTL_WIN32_AV_RETRY\sfile\scontrol\sfor\sconfiguring\sthe\nretry\scounts\sand\sdelays\sin\sthe\swindows\sVFS.
+D 2011-07-13T16:03:46.096
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c d3e7b17100704ee0fe2ef71a98c478b947480f4d
-F src/os_win.c 57778b70d209f30070dc70e0e9f8e4adba0de5bc
+F src/os_win.c c5eadb2c0fc11347296a660f77b9844090265c0c
 F src/pager.c 120550e7ef01dafaa2cbb4a0528c0d87c8f12b41
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -181,14 +181,14 @@ F src/resolve.c 36368f44569208fa074e61f4dd0b6c4fb60ca2b4
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c d219c4b68d603cc734b6f9b1e2780fee12a1fa0d
 F src/shell.c bbe7818ff5bc8614105ceb81ad67b8bdc0b671dd
-F src/sqlite.h.in 4b7255c10d39c5faf089dbd29cde7c367ff39f1f
+F src/sqlite.h.in badc4f56b9b57a8731475c2ddbccd8198ce33b9b
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
 F src/sqliteInt.h ba4a6d6288efb25b84bc0d7d0aaf80f9b42523ba
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c c355b33803fb756dc09297ec84d19604301fa622
-F src/test1.c 6623e003ce840ed4a303918dbbc124f9e222974c
+F src/test1.c 693d9a63dfe2c68b167080c99cab82f267f5a38e
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 124ff9735fb6bb7d41de180d6bac90e7b1509432
 F src/test4.c d1e5a5e904d4b444cf572391fdcb017638e36ff7
@@ -911,7 +911,7 @@ F test/where9.test 24f19ad14bb1b831564ced5273e681e495662848
 F test/whereA.test 24c234263c8fe358f079d5e57d884fb569d2da0a
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
-F test/win32lock.test 58d2505e035a8175c2db524e58e7c5c9bf1a926c
+F test/win32lock.test 0a16a7df4a51575bda27529ac992a5a94e4a38bd
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F tool/build-shell.sh 12aa4391073a777fcb6dcc490b219a018ae98bac
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -952,7 +952,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 03af4c175c6ba303ec0a5be25fd42771e38f7347 36f11acc531a524407e03c797a6a1bcf88bad809
-R 15ec97d6baeea0684b5deea8be1be88e
+P 0207fd9b0c0f6baa3c2cb8ba588ad585507848b3
+R c10af965bd436aa363363314cb7d7b89
 U drh
-Z 2176be5b1a19aaddd13f35903c55d94b
+Z 2357d1ef0784887fd664a2ba2dbc9797

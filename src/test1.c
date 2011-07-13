@@ -5096,6 +5096,39 @@ static int file_control_lockproxy_test(
   return TCL_OK;  
 }
 
+/*
+** tclcmd:   file_control_win32_av_retry DB  NRETRY  DELAY
+**
+** This TCL command runs the sqlite3_file_control interface with
+** the SQLITE_FCNTL_WIN32_AV_RETRY opcode.
+*/
+static int file_control_win32_av_retry(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3 *db;
+  int rc;
+  int a[2];
+  char z[100];
+
+  if( objc!=4 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+        Tcl_GetStringFromObj(objv[0], 0), " DB NRETRY DELAY", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(interp, objv[2], &a[0]) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[3], &a[1]) ) return TCL_ERROR;
+  rc = sqlite3_file_control(db, NULL, SQLITE_FCNTL_WIN32_AV_RETRY, (void*)a);
+  sqlite3_snprintf(sizeof(z), z, "%d %d %d", rc, a[0], a[1]);
+  Tcl_AppendResult(interp, z, (char*)0);
+  return TCL_OK;  
+}
+
 
 /*
 ** tclcmd:   sqlite3_vfs_list
@@ -5638,7 +5671,7 @@ static int win32_file_lock(
     Tcl_AppendResult(interp, zBuf, (char*)0);
     return TCL_OK;
   }
-  while( x.h && retry<10 ){
+  while( x.h && retry<30 ){
     retry++;
     Sleep(100);
   }
@@ -5661,6 +5694,7 @@ static int win32_file_lock(
   return TCL_OK;
 }
 #endif
+
 
 /*
 **      optimization_control DB OPT BOOLEAN
@@ -5892,7 +5926,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "file_control_lasterrno_test", file_control_lasterrno_test,  0   },
      { "file_control_lockproxy_test", file_control_lockproxy_test,  0   },
      { "file_control_chunksize_test", file_control_chunksize_test,  0   },
-     { "file_control_sizehint_test", file_control_sizehint_test,  0   },
+     { "file_control_sizehint_test",  file_control_sizehint_test,   0   },
+     { "file_control_win32_av_retry", file_control_win32_av_retry,  0   },
      { "sqlite3_vfs_list",           vfs_list,     0   },
      { "sqlite3_create_function_v2", test_create_function_v2, 0 },
 
