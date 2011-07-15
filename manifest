@@ -1,5 +1,5 @@
-C Do\snot\stry\sto\suse\sSTAT2\sto\srefine\sthe\srow\sestimate\sof\sa\squery\sthat\nuses\sa\sunique\sor\snearly-unique\sindex.
-D 2011-07-13T18:31:10.999
+C In\sos_unix.c,\scheck\sif\sthe\sESTALE\smacro\sis\sdefined\sbefore\susing\sit.
+D 2011-07-15T13:43:34.523
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +165,7 @@ F src/os.c 22ac61d06e72a0dac900400147333b07b13d8e1d
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c d3e7b17100704ee0fe2ef71a98c478b947480f4d
+F src/os_unix.c dcd6d5782dd30e918dc3d111cdcb1883bfb95345
 F src/os_win.c c5eadb2c0fc11347296a660f77b9844090265c0c
 F src/pager.c 120550e7ef01dafaa2cbb4a0528c0d87c8f12b41
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
@@ -952,7 +952,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 7aaf0a6ae1238129e07eb191ca3f043df445e27a
-R 86cf02b90f1b613c4a5037d43837eb94
-U drh
-Z 59e834e53ef42b78107149fbc0ea32b5
+P efffc49baf38698ed3de05d16b4261bf405d42d7
+R a0a001d9a4f1e78d5a5b15dec2791e15
+U dan
+Z e14888b321d90cd480e1dbf5240f97b2
