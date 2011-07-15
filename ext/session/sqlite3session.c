@@ -1637,7 +1637,7 @@ static void sessionAppendTableHdr(
   sessionAppendByte(pBuf, 'T', pRc);
   sessionAppendVarint(pBuf, pTab->nCol, pRc);
   sessionAppendBlob(pBuf, pTab->abPK, pTab->nCol, pRc);
-  sessionAppendBlob(pBuf, (u8 *)pTab->zName, strlen(pTab->zName)+1, pRc);
+  sessionAppendBlob(pBuf, (u8 *)pTab->zName, (int)strlen(pTab->zName)+1, pRc);
 }
 
 /*
@@ -1951,7 +1951,7 @@ static int sessionChangesetNext(
     if( p->rc!=SQLITE_OK ) return p->rc;
   }
 
-  if( pnRec ){ *pnRec = aChange - *paRec; }
+  if( pnRec ){ *pnRec = (int)(aChange - *paRec); }
   p->pNext = aChange;
   return SQLITE_ROW;
 }
@@ -2806,7 +2806,7 @@ int sqlite3changeset_apply(
       schemaMismatch = (xFilter && (0==xFilter(pCtx, zNew)));
       if( schemaMismatch ){
         zTab = sqlite3_mprintf("%s", zNew);
-        nTab = strlen(zTab);
+        nTab = (int)strlen(zTab);
         sApply.azCol = (const char **)zTab;
       }else{
         sqlite3changeset_pk(pIter, &abPK, 0);
@@ -2995,7 +2995,7 @@ static int sessionChangeMerge(
       }
 
       if( pNew ){
-        pNew->nRecord = (aCsr - pNew->aRecord);
+        pNew->nRecord = (int)(aCsr - pNew->aRecord);
       }
       sqlite3_free(pExist);
     }
@@ -3042,7 +3042,7 @@ int sessionConcatChangeset(
 
     if( !pTab || zNew!=pTab->zName ){
       /* Search the list for a matching table */
-      int nNew = strlen(zNew);
+      int nNew = (int)strlen(zNew);
       u8 *abPK;
 
       sqlite3changeset_pk(pIter, &abPK, 0);
