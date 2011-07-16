@@ -1774,6 +1774,23 @@ int sqlite3session_indirect(sqlite3_session *pSession, int bIndirect){
 }
 
 /*
+** Return true if there have been no changes to monitored tables recorded
+** by the session object passed as the only argument.
+*/
+int sqlite3session_isempty(sqlite3_session *pSession){
+  int ret = 0;
+  SessionTable *pTab;
+
+  sqlite3_mutex_enter(sqlite3_db_mutex(pSession->db));
+  for(pTab=pSession->pTable; pTab && ret==0; pTab=pTab->pNext){
+    ret = (pTab->nEntry>0);
+  }
+  sqlite3_mutex_leave(sqlite3_db_mutex(pSession->db));
+
+  return ret;
+}
+
+/*
 ** Create an iterator used to iterate through the contents of a changeset.
 */
 int sqlite3changeset_start(

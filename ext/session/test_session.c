@@ -38,6 +38,7 @@ static int test_session_cmd(
     { "delete",    0, "",      }, /* 2 */
     { "enable",    1, "BOOL",  }, /* 3 */
     { "indirect",  1, "BOOL",  }, /* 4 */
+    { "isempty",   0, "",      }, /* 5 */
     { 0 }
   };
   int iSub;
@@ -96,6 +97,13 @@ static int test_session_cmd(
       int val;
       if( Tcl_GetIntFromObj(interp, objv[2], &val) ) return TCL_ERROR;
       val = sqlite3session_indirect(pSession, val);
+      Tcl_SetObjResult(interp, Tcl_NewBooleanObj(val));
+      break;
+    }
+
+    case 5: {      /* isempty */
+      int val;
+      val = sqlite3session_isempty(pSession);
       Tcl_SetObjResult(interp, Tcl_NewBooleanObj(val));
       break;
     }

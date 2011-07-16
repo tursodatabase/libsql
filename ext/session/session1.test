@@ -464,6 +464,33 @@ do_iterator_test 7.1 * {
   {INSERT t1 0 X. {} {t one i 1}}
 }
 
+#-------------------------------------------------------------------------
+# Test the sqlite3session_isempty() function.
+#
+do_test 8.1 {
+  execsql {
+    CREATE TABLE t5(x PRIMARY KEY, y);
+    CREATE TABLE t6(x PRIMARY KEY, y);
+    INSERT INTO t5 VALUES('a', 'b');
+    INSERT INTO t6 VALUES('a', 'b');
+  }
+  sqlite3session S db main
+  S attach *
+
+  S isempty
+} {0}
+do_test 8.2 {
+  execsql { DELETE FROM t5 }
+  S isempty
+} {1}
+do_test 8.3 {
+  S delete
+  sqlite3session S db main
+  S attach t5
+  execsql { DELETE FROM t5 }
+  S isempty
+} {0}
+do_test 8.4 { S delete } {}
 
 catch { db2 close }
 finish_test

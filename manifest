@@ -1,5 +1,5 @@
-C Add\sa\sfew\scasts\srequired\sby\s64-bit\sVS2010\sto\sthe\ssessions\scode.
-D 2011-07-15T19:11:32.763
+C Note\sin\sthe\sdocumentation\sthat\swhen\siterating\sthrough\sa\schangeset,\sall\schanges\sto\sa\ssingle\stable\sare\sgrouped\stogether.\sAlso\sadd\sthe\ssqlite3session_isempty()\sfunction.
+D 2011-07-16T18:05:07.557
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -102,7 +102,7 @@ F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 1af0899c63a688e272d69d8e746f24e76f10a3f0
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
-F ext/session/session1.test f5d9f2e362abe2563181389509822bda956516ee
+F ext/session/session1.test 6ad289a19648890cb138e4d2c9d2f5c1f714e505
 F ext/session/session2.test 99ca0da7ddb617d42bafd83adccf99f18ae0384b
 F ext/session/session3.test a7a9ce59b8d1e49e2cc23d81421ac485be0eea01
 F ext/session/session4.test a6ed685da7a5293c5d6f99855bcf41dbc352ca84
@@ -110,9 +110,9 @@ F ext/session/session5.test 8fdfaf9dba28a2f1c6b89b06168bdab1fef2d478
 F ext/session/session6.test 443789bc2fca12e4f7075cf692c60b8a2bea1a26
 F ext/session/session_common.tcl 1539d8973b2aea0025c133eb0cc4c89fcef541a5
 F ext/session/sessionfault.test 401045278298a242cbc2e4bc986c102f01ff2180
-F ext/session/sqlite3session.c b31221e6e068476f736e8aaf5c7b66895d1b16f4
-F ext/session/sqlite3session.h f34905c818569779ddaea1bbef43469177614c69
-F ext/session/test_session.c 209f13fa8f4a597ffcc15fd0f8a3f27ed079c5e5
+F ext/session/sqlite3session.c b35e70924598794e157325eb7176523293f1d48c
+F ext/session/sqlite3session.h b977d0bae338918c64f4f18f03f4648ad91df407
+F ext/session/test_session.c ea4dc9b4a1895c8e6bddcbfe3838d7eb57df2d99
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F main.mk f56d9895882f5cdd9f9f9ba8f8a679e9202288c1
@@ -961,7 +961,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P 282474c42f24f0e66c69b576b72ef8ce764d49e2
-R dce52d6dc32cededac0b5cc1823e4002
+P 5ac4a06111b5fad5f58c20ef5d2b65aeb23e105a
+R 3578d3e546ebd39820e5a49b01cb2c15
 U dan
-Z 91f64262d00fcd067a4fb1a130723392
+Z 84bc1b5f26e12cf6f38c5104884f25b6

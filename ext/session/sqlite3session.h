@@ -255,6 +255,23 @@ int sqlite3session_changeset(
 );
 
 /*
+** CAPI3REF: Test if a changeset has recorded any changes.
+**
+** Return non-zero if no changes to attached tables have been recorded by 
+** the session object passed as the first argument. Otherwise, if one or 
+** more changes have been recorded, return zero.
+**
+** Even if this function returns zero, it is possible that calling
+** [sqlite3session_changeset()] on the session handle may still return a
+** changeset that contains no changes. This can happen when a row in 
+** an attached table is modified and then later on the original values 
+** are restored. However, if this function returns non-zero, then it is
+** guaranteed that a call to sqlite3session_changeset() will return a 
+** changeset containing zero changes.
+*/
+int sqlite3session_isempty(sqlite3_session *pSession);
+
+/*
 ** CAPI3REF: Create An Iterator To Traverse A Changeset 
 **
 ** Create an iterator used to iterate through the contents of a changeset.
@@ -276,6 +293,15 @@ int sqlite3session_changeset(
 ** by passing it to [sqlite3changeset_finalize()]. The buffer containing the
 ** changeset (pChangeset) must remain valid until after the iterator is
 ** destroyed.
+**
+** Assuming the changeset blob was created by one of the
+** [sqlite3session_changeset()], [sqlite3changeset_concat()] or
+** [sqlite3changest_invert()], all changes within the changeset that apply
+** to a single table are grouped together. This means that when an application
+** iterates through a changeset using an iterator created by this function,
+** all changes that relate to a single table are visted consecutively. There 
+** is no chance that the iterator will visit a change the applies to table X, 
+** then one for table Y, and then later on visit another change for table X.
 */
 int sqlite3changeset_start(
   sqlite3_changeset_iter **pp,    /* OUT: New changeset iterator handle */
