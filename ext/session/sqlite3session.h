@@ -296,12 +296,13 @@ int sqlite3session_isempty(sqlite3_session *pSession);
 **
 ** Assuming the changeset blob was created by one of the
 ** [sqlite3session_changeset()], [sqlite3changeset_concat()] or
-** [sqlite3changest_invert()], all changes within the changeset that apply
-** to a single table are grouped together. This means that when an application
-** iterates through a changeset using an iterator created by this function,
-** all changes that relate to a single table are visted consecutively. There 
-** is no chance that the iterator will visit a change the applies to table X, 
-** then one for table Y, and then later on visit another change for table X.
+** [sqlite3changeset_invert()] functions, all changes within the changeset 
+** that apply to a single table are grouped together. This means that when 
+** an application iterates through a changeset using an iterator created by 
+** this function, all changes that relate to a single table are visted 
+** consecutively. There is no chance that the iterator will visit a change 
+** the applies to table X, then one for table Y, and then later on visit 
+** another change for table X.
 */
 int sqlite3changeset_start(
   sqlite3_changeset_iter **pp,    /* OUT: New changeset iterator handle */
