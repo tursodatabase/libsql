@@ -1787,7 +1787,7 @@ int sqlite3session_isempty(sqlite3_session *pSession){
   }
   sqlite3_mutex_leave(sqlite3_db_mutex(pSession->db));
 
-  return ret;
+  return (ret==0);
 }
 
 /*

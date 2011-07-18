@@ -478,18 +478,18 @@ do_test 8.1 {
   S attach *
 
   S isempty
-} {0}
+} {1}
 do_test 8.2 {
   execsql { DELETE FROM t5 }
   S isempty
-} {1}
+} {0}
 do_test 8.3 {
   S delete
   sqlite3session S db main
   S attach t5
   execsql { DELETE FROM t5 }
   S isempty
-} {0}
+} {1}
 do_test 8.4 { S delete } {}
 
 catch { db2 close }
