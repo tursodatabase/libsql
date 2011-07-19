@@ -1,12 +1,12 @@
-C In\sos_unix.c,\scheck\sif\sthe\sESTALE\smacro\sis\sdefined\sbefore\susing\sit.
-D 2011-07-15T13:43:34.523
+C Increase\sthe\sversion\snumber\sto\s3.7.8.
+D 2011-07-19T15:27:59.774
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 9c76731c20561a33ce1257c70be3f029cedb62a6
 F Makefile.vxworks c85ec1d8597fe2f7bc225af12ac1666e21379151
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
-F VERSION 3fcdd7fbe3eb282df3978fe77288544543767961
+F VERSION f724de7326e87b7f3b0a55f16ef4b4d993680d54
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 17dc593f791f874d2c23a0f9360850ded0286531
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -23,7 +23,7 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 405a958bdb3af382a809dccb08a44694923ddd61
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure f9e97ee7cdc9848e2f3f5ef015fdf861f46fb1bf x
+F configure 93e7e695581fa7bef4949161453d9845c5592ad0 x
 F configure.ac 298a759c086e72c013da459c2aec02a104f4224f
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -952,7 +952,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P efffc49baf38698ed3de05d16b4261bf405d42d7
-R a0a001d9a4f1e78d5a5b15dec2791e15
-U dan
-Z e14888b321d90cd480e1dbf5240f97b2
+P 87017410f2fc3f2ae15ef06714563ba9ad4350c7
+R 6dbb7226fc6df92a6d1fc7b30a91d1b6
+U drh
+Z 6ea6097405e5ac181fe822d84336e434
