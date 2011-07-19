@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sto\s3.7.8.
-D 2011-07-19T15:27:59.774
+C Formatting\schanges\son\sthe\smultiplexor\scode\s-\smake\ssure\sno\slines\sexceed\s80\ncharacters.\s\sNo\slogical\schanges.
+D 2011-07-19T18:29:00.027
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -213,7 +213,7 @@ F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c 03313c693cca72959dcaaf79f8d76f21c01e19ff
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c 7ca7be34e0e09ef0ed6619544552ed95732e41f6
-F src/test_multiplex.c 0585bb12a98521795344f67d17d77e258ea7b57f
+F src/test_multiplex.c d1b43de1209bd1bc207b694a738fdb84a162f65b
 F src/test_multiplex.h e99c571bc4968b7a9363b661481f3934bfead61d
 F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
@@ -952,7 +952,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 87017410f2fc3f2ae15ef06714563ba9ad4350c7
-R 6dbb7226fc6df92a6d1fc7b30a91d1b6
+P 4355bf2908b923e844907c1e3c09be3bf469f833
+R 33ae39ed3129fdb3c8dbf2c830ddcfd5
 U drh
-Z 6ea6097405e5ac181fe822d84336e434
+Z 60f009445613def050e13415b0c93faf
