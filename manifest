@@ -1,5 +1,5 @@
-C When\sthe\smultiplexor\sopens\san\sauxiliary\sfile,\sit\snow\spersists\sthe\sname\sof\sthat\nfile\suntil\sit\sis\sclosed,\sas\sit\sshould.\s\sRemove\sthe\slimit\son\sthe\snumber\sof\nauxiliary\sfiles\sused\sby\sthe\smultiplexor.
-D 2011-07-20T16:35:31.624
+C All\sthe\sSQLITE_OPEN_URI\sflag\sto\spropagate\sdown\sinto\sthe\sVFS.
+D 2011-07-20T17:13:30.035
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -161,7 +161,7 @@ F src/mutex_os2.c 882d735098c07c8c6a5472b8dd66e19675fe117f
 F src/mutex_unix.c b4f4e923bb8de93ec3f251fadb50855f23df9579
 F src/mutex_w32.c 5e54f3ba275bcb5d00248b8c23107df2e2f73e33
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
-F src/os.c 22ac61d06e72a0dac900400147333b07b13d8e1d
+F src/os.c fcc717427a80b2ed225373f07b642dc1aad7490b
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
@@ -952,7 +952,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P ed5f0aad6b21066bacd01521e82c22e96991f400
-R e63c3d9c3ff7ac85b18419c4f45127d4
+P 1ffa542bf913200a18ef77447aec4fc3ca1ed618
+R a8712e3b34abd0caa57ff420866bce41
 U drh
-Z 1541751b97b37082064c8e76500e9b76
+Z aa653174b90521d7bcecad6884ea5241
