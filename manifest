@@ -1,5 +1,5 @@
-C All\sthe\sSQLITE_OPEN_URI\sflag\sto\spropagate\sdown\sinto\sthe\sVFS.
-D 2011-07-20T17:13:30.035
+C For\san\sexisting\smultiplexed\sdatabase,\stry\sto\sset\sthe\schunk\ssize\sautomatically\nbased\son\sthe\ssizes\sof\sthe\spreexisting\spieces.
+D 2011-07-20T17:59:38.568
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -213,7 +213,7 @@ F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c 03313c693cca72959dcaaf79f8d76f21c01e19ff
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c 7ca7be34e0e09ef0ed6619544552ed95732e41f6
-F src/test_multiplex.c 282f315fd035c8d8342a4cc59748c60216b61fef
+F src/test_multiplex.c 7f5b2ec63ff514f12e95ffbe134fca87eaac7e96
 F src/test_multiplex.h e99c571bc4968b7a9363b661481f3934bfead61d
 F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
@@ -952,7 +952,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 1ffa542bf913200a18ef77447aec4fc3ca1ed618
-R a8712e3b34abd0caa57ff420866bce41
+P 29866f9598502a007816410fade34f1d0952dea0
+R f7447480ebd05c67794755dbb19b5608
 U drh
-Z aa653174b90521d7bcecad6884ea5241
+Z ce5790e6bda5ced4f7371ad338df0dcd

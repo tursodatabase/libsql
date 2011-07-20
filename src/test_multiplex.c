@@ -453,7 +453,7 @@ static int multiplexOpen(
   int rc = SQLITE_OK;                  /* Result code */
   multiplexConn *pMultiplexOpen;       /* The new multiplex file descriptor */
   multiplexGroup *pGroup;              /* Corresponding multiplexGroup object */
-  sqlite3_file *pSubOpen;                        /* Real file descriptor */
+  sqlite3_file *pSubOpen = 0;                    /* Real file descriptor */
   sqlite3_vfs *pOrigVfs = gMultiplex.pOrigVfs;   /* Real VFS */
   int nName;
   int sz;
@@ -513,16 +513,35 @@ static int multiplexOpen(
     memcpy(pGroup->zName, zName, nName+1);
     pGroup->nName = nName;
     pGroup->flags = flags;
-    pSubOpen = multiplexSubOpen(pGroup, 0, &rc, pOutFlags);
+    rc = multiplexSubFilename(pGroup, 1);
+    if( rc==SQLITE_OK ){
+      pSubOpen = multiplexSubOpen(pGroup, 0, &rc, pOutFlags);
+    }
     if( pSubOpen ){
-      /* if this file is already larger than chunk size, disable 
-      ** the multiplex feature.
-      */
+      int exists, rc2, rc3;
       sqlite3_int64 sz;
-      int rc2 = pSubOpen->pMethods->xFileSize(pSubOpen, &sz);
-      if( (rc2==SQLITE_OK) && (sz>pGroup->nChunkSize) ){
-        pGroup->bEnabled = 0;
+
+      rc2 = pSubOpen->pMethods->xFileSize(pSubOpen, &sz);
+      if( rc2==SQLITE_OK ){
+        /* If the first overflow file exists and if the size of the main file
+        ** is different from the chunk size, that means the chunk size is set
+        ** set incorrectly.  So fix it.
+        **
+        ** Or, if the first overflow file does not exist and the main file is
+        ** larger than the chunk size, that means the chunk size is too small.
+        ** But we have no way of determining the intended chunk size, so 
+        ** just disable the multiplexor all togethre.
+        */
+        rc3 = pOrigVfs->xAccess(pOrigVfs, pGroup->aReal[1].z,
+            SQLITE_ACCESS_EXISTS, &exists);
+        if( rc3==SQLITE_OK && exists && sz==(sz&0xffff0000) && sz>0
+            && sz!=pGroup->nChunkSize ){
+          pGroup->nChunkSize = sz;
+        }else if( rc3==SQLITE_OK && !exists && sz>pGroup->nChunkSize ){
+          pGroup->bEnabled = 0;
+        }
       }
+
       if( pSubOpen->pMethods->iVersion==1 ){
         pMultiplexOpen->base.pMethods = &gMultiplex.sIoMethodsV1;
       }else{
@@ -780,10 +799,10 @@ static int multiplexFileSize(sqlite3_file *pConn, sqlite3_int64 *pSize){
       rc = pSubOpen->pMethods->xFileSize(pSubOpen, pSize);
     }
   }else{
+    sqlite3_vfs *pOrigVfs = gMultiplex.pOrigVfs;
     *pSize = 0;
     for(i=0; 1; i++){
       sqlite3_file *pSubOpen = 0;
-      sqlite3_vfs *pOrigVfs = gMultiplex.pOrigVfs;
       int exists = 0;
       rc = multiplexSubFilename(pGroup, i);
       if( rc ) break;
