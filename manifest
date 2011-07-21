@@ -1,5 +1,5 @@
-C All\smultiplexor\schunk\ssizes\sup\sto\s4GiB.\s\sDisable\sthe\smultiplexor\sif\sthe\nchunk\ssize\sis\sset\sto\s0.
-D 2011-07-21T20:59:58.248
+C Compile\swith\sthe\sSQLITE_ENABLE_8_3_NAME\smacro\sset\sto\s2\sto\sforce\s8+3\sfilenames\nto\sbe\son\sall\sthe\stime.
+D 2011-07-21T21:29:35.633
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -236,7 +236,7 @@ F src/tokenize.c c819d9f72168a035d545a5bdafe9b085b20df705
 F src/trigger.c 1cfb80e2290ef66ea89cb4e821caae65a02c0d56
 F src/update.c 74a6cfb34e9732c1e2a86278b229913b4b51eeec
 F src/utf.c c53eb7404b3eb5c1cbb5655c6a7a0e0ce6bd50f0
-F src/util.c 0f33bbbdfcc4a2d8cf20c3b2a16ffc3b57c58a70
+F src/util.c 06302ffd2b80408d4f6c7af71f7090e0cf8d8ff7
 F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
 F src/vdbe.c a9ced64f380bbd8b04da3a1c3a9602d3942704b5
 F src/vdbe.h 5cf09e7ee8a3f7d93bc51f196a96550786afe7a1
@@ -952,7 +952,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 427a9a5120a68bfa12fec97cfd02eb9b28b3fa6b
-R 046ebc91a200dc382cece52b5754a0c1
+P 83191ad6f31536b0c1929938e1fbeb4cf6121ab0
+R f36be610ec3236a1941508a82c6dca72
 U drh
-Z 032caca1acf96a44c6601a79dc41d32f
+Z be7120c77d6b184261113de7aebad3e1
