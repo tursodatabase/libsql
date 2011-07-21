@@ -1,5 +1,5 @@
-C For\san\sexisting\smultiplexed\sdatabase,\stry\sto\sset\sthe\schunk\ssize\sautomatically\nbased\son\sthe\ssizes\sof\sthe\spreexisting\spieces.
-D 2011-07-20T17:59:38.568
+C All\smultiplexor\schunk\ssizes\sup\sto\s4GiB.\s\sDisable\sthe\smultiplexor\sif\sthe\nchunk\ssize\sis\sset\sto\s0.
+D 2011-07-21T20:59:58.248
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -213,7 +213,7 @@ F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c 03313c693cca72959dcaaf79f8d76f21c01e19ff
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c 7ca7be34e0e09ef0ed6619544552ed95732e41f6
-F src/test_multiplex.c 7f5b2ec63ff514f12e95ffbe134fca87eaac7e96
+F src/test_multiplex.c 991a60733dbde8c529043d466c5c44d180762561
 F src/test_multiplex.h e99c571bc4968b7a9363b661481f3934bfead61d
 F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
@@ -595,7 +595,7 @@ F test/misc5.test 9f9338f8211c7f5d1cbe16331fa65d019501aa50
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test 29032efcd3d826fbd409e2a7af873e7939f4a4e3
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
-F test/multiplex.test 2256e90e8780de6eeafc07d4084427c3a97d3bcb
+F test/multiplex.test b45367b1dac7dfa4c5b8ff0f3844260804a0034d
 F test/mutex1.test 78b2b9bb320e51d156c4efdb71b99b051e7a4b41
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test dc212a22b36109fd1ae37154292444ef249c5ec2
@@ -952,7 +952,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 29866f9598502a007816410fade34f1d0952dea0
-R f7447480ebd05c67794755dbb19b5608
+P 427a9a5120a68bfa12fec97cfd02eb9b28b3fa6b
+R 046ebc91a200dc382cece52b5754a0c1
 U drh
-Z ce5790e6bda5ced4f7371ad338df0dcd
+Z 032caca1acf96a44c6601a79dc41d32f

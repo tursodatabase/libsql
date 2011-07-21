@@ -80,7 +80,6 @@ do_test multiplex-1.9.1  { sqlite3_multiplex_initialize "" 1 }     {SQLITE_OK}
 do_test multiplex-1.9.2  { sqlite3 db test.db }                    {}
 do_test multiplex-1.9.3  { multiplex_set db main 32768 16 }        {SQLITE_OK}
 do_test multiplex-1.9.4  { multiplex_set db main 32768 -1 }        {SQLITE_OK}
-do_test multiplex-1.9.5  { multiplex_set db main -1 16 }           {SQLITE_MISUSE}
 do_test multiplex-1.9.6  { multiplex_set db main 31 16 }           {SQLITE_OK}
 do_test multiplex-1.9.7  { multiplex_set db main 32768 100 }       {SQLITE_OK}
 do_test multiplex-1.9.8  { multiplex_set db main 1073741824 1 }    {SQLITE_OK}
@@ -91,7 +90,6 @@ do_test multiplex-1.10.1  { sqlite3_multiplex_initialize "" 1 }                 
 do_test multiplex-1.10.2  { sqlite3 db test.db }                                                 {}
 do_test multiplex-1.10.3  { lindex [ catchsql { SELECT multiplex_control(2, 32768); } ] 0 }      {0}
 do_test multiplex-1.10.4  { lindex [ catchsql { SELECT multiplex_control(3, -1); } ] 0 }         {0}
-do_test multiplex-1.10.5  { lindex [ catchsql { SELECT multiplex_control(2, -1); } ] 0 }         {1}
 do_test multiplex-1.10.6  { lindex [ catchsql { SELECT multiplex_control(2, 31); } ] 0 }         {0}
 do_test multiplex-1.10.7  { lindex [ catchsql { SELECT multiplex_control(3, 100); } ] 0 }        {0}
 do_test multiplex-1.10.8  { lindex [ catchsql { SELECT multiplex_control(2, 1073741824); } ] 0 } {0}
