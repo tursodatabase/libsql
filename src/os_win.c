@@ -2452,11 +2452,13 @@ static int winAccess(
     return SQLITE_NOMEM;
   }
   if( isNT() ){
+    int cnt = 0;
     WIN32_FILE_ATTRIBUTE_DATA sAttrData;
     memset(&sAttrData, 0, sizeof(sAttrData));
-    if( GetFileAttributesExW((WCHAR*)zConverted,
+    while( (rc = GetFileAttributesExW((WCHAR*)zConverted,
                              GetFileExInfoStandard, 
-                             &sAttrData) ){
+                             &sAttrData)) && rc==0 && retryIoerr(&cnt) ){}
+    if( rc ){
       /* For an SQLITE_ACCESS_EXISTS query, treat a zero-length file
       ** as if it does not exist.
       */

@@ -1,5 +1,5 @@
-C Also\sadd\sthe\ssqlite3-all.c\starget\sto\sthe\sMSVC\smakefile.
-D 2011-07-22T11:23:49.199
+C Add\sretry\slogic\sfor\sAV\sdefense\sto\swinAccess().\s\sAlso\sallow\sOS\stracing\sto\sbe\nenabled\sby\sa\scompile-time\soption.
+D 2011-07-22T21:25:57.525
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1e6988b3c11dee9bd5edc0c804bd4468d74a9cdc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,10 +163,10 @@ F src/mutex_w32.c 5e54f3ba275bcb5d00248b8c23107df2e2f73e33
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c fcc717427a80b2ed225373f07b642dc1aad7490b
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
-F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
+F src/os_common.h 65a897143b64667d23ed329a7984b9b405accb58
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c dcd6d5782dd30e918dc3d111cdcb1883bfb95345
-F src/os_win.c c5eadb2c0fc11347296a660f77b9844090265c0c
+F src/os_win.c 8449cb4ce1cd50248b7133108532d9582cc6c042
 F src/pager.c 120550e7ef01dafaa2cbb4a0528c0d87c8f12b41
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -952,7 +952,11 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 71f7be586f5a18493cd516f89c4ecc460bb24462
-R 645e7d58a7503109e1bb3e986974849f
+P 8ce2b74a82264550b0e19da3e0e1a145db940a1c
+R 0af84a25fe935b16dac1aa3e854e0baf
+T *bgcolor * #d0c0ff
+T *branch * av-defense
+T *sym-av-defense *
+T -sym-trunk *
 U drh
-Z aaeed83d2a39a45645a69e9a638df017
+Z 9d105249d1658c472aed05118a4a48f3
