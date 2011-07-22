@@ -1,5 +1,5 @@
-C Use\s$(TCLSH_CMD)\sinstead\sof\stclsh\sin\sthe\sautoconf\smakefile.
-D 2011-07-22T10:33:04.219
+C Adjust\sthe\smaximum\snumber\sof\sopen\sdatabase\sconnections\sin\swal3.test\sdown\nfor\sOpenBSD.
+D 2011-07-22T10:53:05.152
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b85ed0fdfb95fb6822bc1c8c6bd5873fc53a84c2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -879,7 +879,7 @@ F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
 F test/wal.test 5617ad308bfdb8a8885220d8a261a6096a8d7e57
 F test/wal2.test aa0fb2314b3235be4503c06873e41ebfc0757782
-F test/wal3.test 5c396cc22497244d627306f4c1d360167353f8dd
+F test/wal3.test d512a5c8b4aa345722d11e8f1671db7eb15a0e39
 F test/wal4.test 3404b048fa5e10605facaf70384e6d2943412e30
 F test/wal5.test f06a0427e06db00347e32eb9fa99d6a5c0f2d088
 F test/wal6.test 2e3bc767d9c2ce35c47106148d43fcbd072a93b3
@@ -952,7 +952,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P ae83dac70173fecf203bf7e9f7bcb189d3e48f08
-R b476c21b2eaeefe9f084a953d275e8e3
+P fd36d8067b5a29d9acbf8c96b9d837406d0c0cce
+R d12689e1e57ff777372910ecacb2cd46
 U drh
-Z ff014274f8b77ee9173b86c8fcceebd1
+Z af1cbe1963416f046ac52ddc2f1578ee
