@@ -785,7 +785,7 @@ parse.c:	$(TOP)/src/parse.y lemon$(BEXE) $(TOP)/addopcodes.awk
 	$(NAWK) -f $(TOP)/addopcodes.awk parse.h.temp >parse.h
 
 sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest.uuid $(TOP)/VERSION
-	tclsh $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
+	$(TCLSH_CMD) $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
 
 keywordhash.h:	$(TOP)/tool/mkkeywordhash.c
 	$(BCC) -o mkkeywordhash$(BEXE) $(OPT_FEATURE_FLAGS) $(OPTS) $(TOP)/tool/mkkeywordhash.c
