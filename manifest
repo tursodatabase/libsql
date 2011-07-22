@@ -1,9 +1,9 @@
-C Add\smakefile\stargets\ssqlite3-all.c.
-D 2011-07-22T11:16:39.376
+C Also\sadd\sthe\ssqlite3-all.c\starget\sto\sthe\sMSVC\smakefile.
+D 2011-07-22T11:23:49.199
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1e6988b3c11dee9bd5edc0c804bd4468d74a9cdc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 9c76731c20561a33ce1257c70be3f029cedb62a6
+F Makefile.msc 8e04f517922b9e31a5bf975f07bb66df79ae7076
 F Makefile.vxworks c85ec1d8597fe2f7bc225af12ac1666e21379151
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION f724de7326e87b7f3b0a55f16ef4b4d993680d54
@@ -952,7 +952,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P b38e52f67574997de9f4b4318f2eb68ff0133f35
-R ada945a14522405a76d61d09ae93a2d9
+P 71f7be586f5a18493cd516f89c4ecc460bb24462
+R 645e7d58a7503109e1bb3e986974849f
 U drh
-Z 925c4df3e98ac05a9968b9d94b638861
+Z aaeed83d2a39a45645a69e9a638df017
