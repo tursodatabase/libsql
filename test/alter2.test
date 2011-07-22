@@ -137,6 +137,7 @@ do_test alter2-1.8 {
 do_test alter2-1.9 {
   # ALTER TABLE abc ADD COLUMN d;
   alter_table abc {CREATE TABLE abc(a, b, c, d);}
+  if {[permutation] == "prepare"} { db cache flush }
   execsql { SELECT * FROM abc; }
   execsql {
     UPDATE abc SET d = 11 WHERE c IS NULL AND a<4;

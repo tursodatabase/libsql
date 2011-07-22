@@ -783,6 +783,15 @@ test_suite "no_optimization" -description {
   optimization_control $::dbhandle all 0
 }
 
+test_suite "prepare" -description {
+  Run tests with the db connection using sqlite3_prepare() instead of _v2().
+} -dbconfig {
+  db_use_legacy_prepare $::dbhandle 1
+  #$::dbhandle cache size 0
+} -files [
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault*
+]
+
 # End of tests
 #############################################################################
 

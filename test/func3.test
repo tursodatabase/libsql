@@ -17,24 +17,26 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 
-do_test func3-1.1 {
-  set destroyed 0
-  proc destroy {} { set ::destroyed 1 }
-  sqlite3_create_function_v2 db f2 -1 any -func f2 -destroy destroy
-  set destroyed
-} 0
-do_test func3-1.2 {
-  sqlite3_create_function_v2 db f2 -1 utf8 -func f2
-  set destroyed
-} 0
-do_test func3-1.3 {
-  sqlite3_create_function_v2 db f2 -1 utf16le -func f2
-  set destroyed
-} 0
-do_test func3-1.4 {
-  sqlite3_create_function_v2 db f2 -1 utf16be -func f2
-  set destroyed
-} 1
+ifcapable utf16 {
+  do_test func3-1.1 {
+    set destroyed 0
+    proc destroy {} { set ::destroyed 1 }
+    sqlite3_create_function_v2 db f2 -1 any -func f2 -destroy destroy
+    set destroyed
+  } 0
+  do_test func3-1.2 {
+    sqlite3_create_function_v2 db f2 -1 utf8 -func f2
+    set destroyed
+  } 0
+  do_test func3-1.3 {
+    sqlite3_create_function_v2 db f2 -1 utf16le -func f2
+    set destroyed
+  } 0
+  do_test func3-1.4 {
+    sqlite3_create_function_v2 db f2 -1 utf16be -func f2
+    set destroyed
+  } 1
+}
 
 do_test func3-2.1 {
   set destroyed 0

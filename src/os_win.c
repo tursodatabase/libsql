@@ -402,6 +402,54 @@ static int winLogErrorAtLine(
   return errcode;
 }
 
+/*
+** The number of times that a ReadFile(), WriteFile(), and DeleteFile()
+** will be retried following a locking error - probably caused by 
+** antivirus software.  Also the initial delay before the first retry.
+** The delay increases linearly with each retry.
+*/
+#ifndef SQLITE_WIN32_IOERR_RETRY
+# define SQLITE_WIN32_IOERR_RETRY 10
+#endif
+#ifndef SQLITE_WIN32_IOERR_RETRY_DELAY
+# define SQLITE_WIN32_IOERR_RETRY_DELAY 25
+#endif
+static int win32IoerrRetry = SQLITE_WIN32_IOERR_RETRY;
+static int win32IoerrRetryDelay = SQLITE_WIN32_IOERR_RETRY_DELAY;
+
+/*
+** If a ReadFile() or WriteFile() error occurs, invoke this routine
+** to see if it should be retried.  Return TRUE to retry.  Return FALSE
+** to give up with an error.
+*/
+static int retryIoerr(int *pnRetry){
+  DWORD e;
+  if( *pnRetry>=win32IoerrRetry ){
+    return 0;
+  }
+  e = GetLastError();
+  if( e==ERROR_ACCESS_DENIED ||
+      e==ERROR_LOCK_VIOLATION ||
+      e==ERROR_SHARING_VIOLATION ){
+    Sleep(win32IoerrRetryDelay*(1+*pnRetry));
+    ++*pnRetry;
+    return 1;
+  }
+  return 0;
+}
+
+/*
+** Log a I/O error retry episode.
+*/
+static void logIoerr(int nRetry){
+  if( nRetry ){
+    sqlite3_log(SQLITE_IOERR, 
+      "delayed %dms for lock/sharing conflict",
+      win32IoerrRetryDelay*nRetry*(nRetry+1)/2
+    );
+  }
+}
+
 #if SQLITE_OS_WINCE
 /*************************************************************************
 ** This section contains code for WinCE only.
@@ -820,6 +868,7 @@ static int winRead(
 ){
   winFile *pFile = (winFile*)id;  /* file handle */
   DWORD nRead;                    /* Number of bytes actually read from file */
+  int nRetry = 0;                 /* Number of retrys */
 
   assert( id!=0 );
   SimulateIOError(return SQLITE_IOERR_READ);
@@ -828,10 +877,12 @@ static int winRead(
   if( seekWinFile(pFile, offset) ){
     return SQLITE_FULL;
   }
-  if( !ReadFile(pFile->h, pBuf, amt, &nRead, 0) ){
+  while( !ReadFile(pFile->h, pBuf, amt, &nRead, 0) ){
+    if( retryIoerr(&nRetry) ) continue;
     pFile->lastErrno = GetLastError();
     return winLogError(SQLITE_IOERR_READ, "winRead", pFile->zPath);
   }
+  logIoerr(nRetry);
   if( nRead<(DWORD)amt ){
     /* Unread parts of the buffer must be zero-filled */
     memset(&((char*)pBuf)[nRead], 0, amt-nRead);
@@ -853,6 +904,7 @@ static int winWrite(
 ){
   int rc;                         /* True if error has occured, else false */
   winFile *pFile = (winFile*)id;  /* File handle */
+  int nRetry = 0;                 /* Number of retries */
 
   assert( amt>0 );
   assert( pFile );
@@ -867,7 +919,12 @@ static int winWrite(
     int nRem = amt;               /* Number of bytes yet to be written */
     DWORD nWrite;                 /* Bytes written by each WriteFile() call */
 
-    while( nRem>0 && WriteFile(pFile->h, aRem, nRem, &nWrite, 0) && nWrite>0 ){
+    while( nRem>0 ){
+      if( !WriteFile(pFile->h, aRem, nRem, &nWrite, 0) ){
+        if( retryIoerr(&nRetry) ) continue;
+        break;
+      }
+      if( nWrite<=0 ) break;
       aRem += nWrite;
       nRem -= nWrite;
     }
@@ -883,6 +940,8 @@ static int winWrite(
       return SQLITE_FULL;
     }
     return winLogError(SQLITE_IOERR_WRITE, "winWrite", pFile->zPath);
+  }else{
+    logIoerr(nRetry);
   }
   return SQLITE_OK;
 }
@@ -1297,6 +1356,20 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_SYNC_OMITTED: {
+      return SQLITE_OK;
+    }
+    case SQLITE_FCNTL_WIN32_AV_RETRY: {
+      int *a = (int*)pArg;
+      if( a[0]>0 ){
+        win32IoerrRetry = a[0];
+      }else{
+        a[0] = win32IoerrRetry;
+      }
+      if( a[1]>0 ){
+        win32IoerrRetryDelay = a[1];
+      }else{
+        a[1] = win32IoerrRetryDelay;
+      }
       return SQLITE_OK;
     }
   }
@@ -2316,15 +2389,13 @@ static int winOpen(
 ** to MX_DELETION_ATTEMPTs deletion attempts are run before giving
 ** up and returning an error.
 */
-#define MX_DELETION_ATTEMPTS 5
 static int winDelete(
   sqlite3_vfs *pVfs,          /* Not used on win32 */
   const char *zFilename,      /* Name of file to delete */
   int syncDir                 /* Not used on win32 */
 ){
   int cnt = 0;
-  DWORD rc;
-  DWORD error = 0;
+  int rc;
   void *zConverted;
   UNUSED_PARAMETER(pVfs);
   UNUSED_PARAMETER(syncDir);
@@ -2335,34 +2406,30 @@ static int winDelete(
     return SQLITE_NOMEM;
   }
   if( isNT() ){
-    do{
-      DeleteFileW(zConverted);
-    }while(   (   ((rc = GetFileAttributesW(zConverted)) != INVALID_FILE_ATTRIBUTES)
-               || ((error = GetLastError()) == ERROR_ACCESS_DENIED))
-           && (++cnt < MX_DELETION_ATTEMPTS)
-           && (Sleep(100), 1) );
+    rc = 1;
+    while( GetFileAttributesW(zConverted)!=INVALID_FILE_ATTRIBUTES &&
+           (rc = DeleteFileW(zConverted))==0 && retryIoerr(&cnt) ){}
+    rc = rc ? SQLITE_OK : SQLITE_ERROR;
 /* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
 ** Since the ASCII version of these Windows API do not exist for WINCE,
 ** it's important to not reference them for WINCE builds.
 */
 #if SQLITE_OS_WINCE==0
   }else{
-    do{
-      DeleteFileA(zConverted);
-    }while(   (   ((rc = GetFileAttributesA(zConverted)) != INVALID_FILE_ATTRIBUTES)
-               || ((error = GetLastError()) == ERROR_ACCESS_DENIED))
-           && (++cnt < MX_DELETION_ATTEMPTS)
-           && (Sleep(100), 1) );
+    rc = 1;
+    while( GetFileAttributesA(zConverted)!=INVALID_FILE_ATTRIBUTES &&
+           (rc = DeleteFileA(zConverted))==0 && retryIoerr(&cnt) ){}
+    rc = rc ? SQLITE_OK : SQLITE_ERROR;
 #endif
   }
+  if( rc ){
+    rc = winLogError(SQLITE_IOERR_DELETE, "winDelete", zFilename);
+  }else{
+    logIoerr(cnt);
+  }
   free(zConverted);
-  OSTRACE(("DELETE \"%s\" %s\n", zFilename,
-       ( (rc==INVALID_FILE_ATTRIBUTES) && (error==ERROR_FILE_NOT_FOUND)) ?
-         "ok" : "failed" ));
- 
-  return (   (rc == INVALID_FILE_ATTRIBUTES) 
-          && (error == ERROR_FILE_NOT_FOUND)) ? SQLITE_OK :
-                 winLogError(SQLITE_IOERR_DELETE, "winDelete", zFilename);
+  OSTRACE(("DELETE \"%s\" %s\n", zFilename, (rc ? "failed" : "ok" )));
+  return rc;
 }
 
 /*

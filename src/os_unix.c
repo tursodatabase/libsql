@@ -677,7 +677,9 @@ static int sqliteErrorFromPosixError(int posixError, int sqliteIOErr) {
   case ENODEV:
   case ENXIO:
   case ENOENT:
+#ifdef ESTALE                     /* ESTALE is not defined on Interix systems */
   case ESTALE:
+#endif
   case ENOSYS:
     /* these should force the client to close the file and reconnect */
     
@@ -3672,7 +3674,7 @@ static void unixShmPurge(unixFile *pFd){
   if( p && p->nRef==0 ){
     int i;
     assert( p->pInode==pFd->pInode );
-    if( p->mutex ) sqlite3_mutex_free(p->mutex);
+    sqlite3_mutex_free(p->mutex);
     for(i=0; i<p->nRegion; i++){
       if( p->h>=0 ){
         munmap(p->apRegion[i], p->szRegion);

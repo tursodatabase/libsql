@@ -707,7 +707,7 @@ T delete
 # and continues.
 #
 set nConn 50
-if { [string match *BSD $tcl_platform(os)] } { set nConn 35 }
+if { [string match *BSD $tcl_platform(os)] } { set nConn 25 }
 do_test wal3-9.0 {
   file delete -force test.db test.db-journal test.db wal
   sqlite3 db test.db
@@ -784,4 +784,3 @@ do_multiclient_test tn {
 }
 
 finish_test
-

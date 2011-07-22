@@ -14,6 +14,12 @@
 # the use of these columns in triggers will refer to the column and not
 # to the actual ROWID.  Ticket [34d2ae1c6d08b5271ba5e5592936d4a1d913ffe3]
 #
+# Also, verify that triggers created like this:
+#
+#    CREATE TRIGGER attached.trig AFTER INSERT ON attached.tab ...
+#
+# can be reparsed as a main database.  Ticket [d6ddba6706353915ceedc56b4e3]
+#
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -170,5 +176,44 @@ do_test triggerD-3.2 {
   }
 } {10003 20004}
 
+
+#############################################################################
+# 
+# Ticket [d6ddba6706353915ceedc56b4e3e72ecb4d77ba4]
+#
+# The following syntax really should not be allowed:
+#
+#    CREATE TRIGGER xyz.trig BEFORE UPDATE ON xyz.tab BEGIN ...
+#
+# But a long-standing bug does allow it.  And the "xyz.tab" slips into
+# the sqlite_master table.  We cannot fix the bug simply by disallowing
+# "xyz.tab" since that could break legacy applications.  We have to 
+# fix the system so that the "xyz." on "xyz.tab" is ignored.
+# Verify that this is the case.
+#
+do_test triggerD-4.1 {
+  db close
+  file delete -force test.db test2.db
+  sqlite3 db test.db
+  db eval {
+    CREATE TABLE t1(x);
+    ATTACH 'test2.db' AS db2;
+    CREATE TABLE db2.t2(y);
+    CREATE TABLE db2.log(z);
+    CREATE TRIGGER db2.trig AFTER INSERT ON db2.t2 BEGIN
+      INSERT INTO log(z) VALUES(new.y);
+    END;
+    INSERT INTO t2 VALUES(123);
+    SELECT * FROM log;
+  }
+} {123}
+do_test triggerD-4.2 {
+  sqlite3 db2 test2.db
+  db2 eval {
+    INSERT INTO t2 VALUES(234);
+    SELECT * FROM log;
+  }
+} {123 234}
+db2 close
 
 finish_test

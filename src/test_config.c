@@ -583,6 +583,7 @@ Tcl_SetVar2(interp, "sqlite_options", "long_double",
   LINKVAR( DEFAULT_PAGE_SIZE );
   LINKVAR( DEFAULT_FILE_FORMAT );
   LINKVAR( MAX_ATTACHED );
+  LINKVAR( MAX_DEFAULT_PAGE_SIZE );
 
   {
     static const int cv_TEMP_STORE = SQLITE_TEMP_STORE;

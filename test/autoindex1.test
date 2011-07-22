@@ -248,4 +248,14 @@ do_execsql_test autoindex1-600 {
   0 1 1 {SEARCH SUBQUERY 1 AS y USING AUTOMATIC COVERING INDEX (sheep_no=?) (~8 rows)}
 }
 
+
+do_execsql_test autoindex1-700 {
+  CREATE TABLE t5(a, b, c);
+  EXPLAIN QUERY PLAN SELECT a FROM t5 WHERE b=10 ORDER BY c;
+} {
+  0 0 0 {SCAN TABLE t5 (~100000 rows)} 
+  0 0 0 {USE TEMP B-TREE FOR ORDER BY}
+}
+
+
 finish_test

@@ -84,6 +84,8 @@
 # define sqlite3_create_module 0
 # define sqlite3_create_module_v2 0
 # define sqlite3_declare_vtab 0
+# define sqlite3_vtab_config 0
+# define sqlite3_vtab_on_conflict 0
 #endif
 
 #ifdef SQLITE_OMIT_SHARED_CACHE
@@ -107,6 +109,7 @@
 #define sqlite3_blob_open      0
 #define sqlite3_blob_read      0
 #define sqlite3_blob_write     0
+#define sqlite3_blob_reopen    0
 #endif
 
 /*
@@ -372,6 +375,9 @@ static const sqlite3_api_routines sqlite3Apis = {
   0,
   0,
 #endif
+  sqlite3_blob_reopen,
+  sqlite3_vtab_config,
+  sqlite3_vtab_on_conflict,
 };
 
 /*

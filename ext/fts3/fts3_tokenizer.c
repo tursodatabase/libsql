@@ -23,12 +23,7 @@
 **     * The FTS3 module is being built into the core of
 **       SQLite (in which case SQLITE_ENABLE_FTS3 is defined).
 */
-#include "sqlite3ext.h"
-#ifndef SQLITE_CORE
-  SQLITE_EXTENSION_INIT1
-#endif
 #include "fts3Int.h"
-
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
 
 #include <assert.h>

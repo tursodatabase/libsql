@@ -43,19 +43,11 @@ foreach jmode $all_journal_modes {
 	} {1 2}
 
 # Under Windows, you'll get an error trying to delete
-# a file this is already opened.  For now, make sure 
-# we get that error, then close the first connection
+# a file this is already opened.  Close the first connection
 # so the other tests work.
 if {$tcl_platform(platform)=="windows"} {
   if {$jmode=="persist" || $jmode=="truncate"} {
-	  do_test wal6-1.2.$jmode.win {
-	    sqlite3 db2 test.db
-	    catchsql {
-		    PRAGMA journal_mode=WAL;
-	    } db2
-	  } {1 {disk I/O error}}
-  	db2 close
-	  db close
+    db close
   }
 }
 
@@ -87,4 +79,3 @@ if {$tcl_platform(platform)=="windows"} {
 }
 
 finish_test
-

@@ -107,6 +107,11 @@ typedef struct IncrblobChannel IncrblobChannel;
 /*
 ** There is one instance of this structure for each SQLite database
 ** that has been opened by the SQLite TCL interface.
+**
+** If this module is built with SQLITE_TEST defined (to create the SQLite
+** testfixture executable), then it may be configured to use either
+** sqlite3_prepare_v2() or sqlite3_prepare() to prepare SQL statements.
+** If SqliteDb.bLegacyPrepare is true, sqlite3_prepare() is used.
 */
 typedef struct SqliteDb SqliteDb;
 struct SqliteDb {
@@ -136,6 +141,9 @@ struct SqliteDb {
   IncrblobChannel *pIncrblob;/* Linked list of open incrblob channels */
   int nStep, nSort, nIndex;  /* Statistics for most recent operation */
   int nTransaction;          /* Number of nested [transaction] methods */
+#ifdef SQLITE_TEST
+  int bLegacyPrepare;        /* True to use sqlite3_prepare() */
+#endif
 };
 
 struct IncrblobChannel {
@@ -431,19 +439,32 @@ static SqlFunc *findSqlFunc(SqliteDb *pDb, const char *zName){
 }
 
 /*
+** Free a single SqlPreparedStmt object.
+*/
+static void dbFreeStmt(SqlPreparedStmt *pStmt){
+#ifdef SQLITE_TEST
+  if( sqlite3_sql(pStmt->pStmt)==0 ){
+    Tcl_Free((char *)pStmt->zSql);
+  }
+#endif
+  sqlite3_finalize(pStmt->pStmt);
+  Tcl_Free((char *)pStmt);
+}
+
+/*
 ** Finalize and free a list of prepared statements
 */
-static void flushStmtCache( SqliteDb *pDb ){
+static void flushStmtCache(SqliteDb *pDb){
   SqlPreparedStmt *pPreStmt;
+  SqlPreparedStmt *pNext;
 
-  while(  pDb->stmtList ){
-    sqlite3_finalize( pDb->stmtList->pStmt );
-    pPreStmt = pDb->stmtList;
-    pDb->stmtList = pDb->stmtList->pNext;
-    Tcl_Free( (char*)pPreStmt );
+  for(pPreStmt = pDb->stmtList; pPreStmt; pPreStmt=pNext){
+    pNext = pPreStmt->pNext;
+    dbFreeStmt(pPreStmt);
   }
   pDb->nStmt = 0;
   pDb->stmtLast = 0;
+  pDb->stmtList = 0;
 }
 
 /*
@@ -1075,6 +1096,27 @@ static int DbTransPostCmd(
 }
 
 /*
+** Unless SQLITE_TEST is defined, this function is a simple wrapper around
+** sqlite3_prepare_v2(). If SQLITE_TEST is defined, then it uses either
+** sqlite3_prepare_v2() or legacy interface sqlite3_prepare(), depending
+** on whether or not the [db_use_legacy_prepare] command has been used to 
+** configure the connection.
+*/
+static int dbPrepare(
+  SqliteDb *pDb,                  /* Database object */
+  const char *zSql,               /* SQL to compile */
+  sqlite3_stmt **ppStmt,          /* OUT: Prepared statement */
+  const char **pzOut              /* OUT: Pointer to next SQL statement */
+){
+#ifdef SQLITE_TEST
+  if( pDb->bLegacyPrepare ){
+    return sqlite3_prepare(pDb->db, zSql, -1, ppStmt, pzOut);
+  }
+#endif
+  return sqlite3_prepare_v2(pDb->db, zSql, -1, ppStmt, pzOut);
+}
+
+/*
 ** Search the cache for a prepared-statement object that implements the
 ** first SQL statement in the buffer pointed to by parameter zIn. If
 ** no such prepared-statement can be found, allocate and prepare a new
@@ -1144,7 +1186,7 @@ static int dbPrepareAndBind(
   if( pPreStmt==0 ){
     int nByte;
 
-    if( SQLITE_OK!=sqlite3_prepare_v2(pDb->db, zSql, -1, &pStmt, pzOut) ){
+    if( SQLITE_OK!=dbPrepare(pDb, zSql, &pStmt, pzOut) ){
       Tcl_SetObjResult(interp, dbTextToObj(sqlite3_errmsg(pDb->db)));
       return TCL_ERROR;
     }
@@ -1171,6 +1213,14 @@ static int dbPrepareAndBind(
     pPreStmt->nSql = (*pzOut - zSql);
     pPreStmt->zSql = sqlite3_sql(pStmt);
     pPreStmt->apParm = (Tcl_Obj **)&pPreStmt[1];
+#ifdef SQLITE_TEST
+    if( pPreStmt->zSql==0 ){
+      char *zCopy = Tcl_Alloc(pPreStmt->nSql + 1);
+      memcpy(zCopy, zSql, pPreStmt->nSql);
+      zCopy[pPreStmt->nSql] = '\0';
+      pPreStmt->zSql = zCopy;
+    }
+#endif
   }
   assert( pPreStmt );
   assert( strlen30(pPreStmt->zSql)==pPreStmt->nSql );
@@ -1224,7 +1274,6 @@ static int dbPrepareAndBind(
   return TCL_OK;
 }
 
-
 /*
 ** Release a statement reference obtained by calling dbPrepareAndBind().
 ** There should be exactly one call to this function for each call to
@@ -1249,8 +1298,7 @@ static void dbReleaseStmt(
 
   if( pDb->maxStmt<=0 || discard ){
     /* If the cache is turned off, deallocated the statement */
-    sqlite3_finalize(pPreStmt->pStmt);
-    Tcl_Free((char *)pPreStmt);
+    dbFreeStmt(pPreStmt);
   }else{
     /* Add the prepared statement to the beginning of the cache list. */
     pPreStmt->pNext = pDb->stmtList;
@@ -1270,11 +1318,11 @@ static void dbReleaseStmt(
     /* If we have too many statement in cache, remove the surplus from 
     ** the end of the cache list.  */
     while( pDb->nStmt>pDb->maxStmt ){
-      sqlite3_finalize(pDb->stmtLast->pStmt);
-      pDb->stmtLast = pDb->stmtLast->pPrev;
-      Tcl_Free((char*)pDb->stmtLast->pNext);
+      SqlPreparedStmt *pLast = pDb->stmtLast;
+      pDb->stmtLast = pLast->pPrev;
       pDb->stmtLast->pNext = 0;
       pDb->nStmt--;
+      dbFreeStmt(pLast);
     }
   }
 }
@@ -1407,9 +1455,12 @@ static void dbEvalRowInfo(
 ** no further rows available. This is similar to SQLITE_DONE.
 */
 static int dbEvalStep(DbEvalContext *p){
+  const char *zPrevSql = 0;       /* Previous value of p->zSql */
+
   while( p->zSql[0] || p->pPreStmt ){
     int rc;
     if( p->pPreStmt==0 ){
+      zPrevSql = (p->zSql==zPrevSql ? 0 : p->zSql);
       rc = dbPrepareAndBind(p->pDb, p->zSql, &p->zSql, &p->pPreStmt);
       if( rc!=TCL_OK ) return rc;
     }else{
@@ -1436,8 +1487,19 @@ static int dbEvalStep(DbEvalContext *p){
       if( rcs!=SQLITE_OK ){
         /* If a run-time error occurs, report the error and stop reading
         ** the SQL.  */
-        Tcl_SetObjResult(pDb->interp, dbTextToObj(sqlite3_errmsg(pDb->db)));
         dbReleaseStmt(pDb, pPreStmt, 1);
+#if SQLITE_TEST
+        if( p->pDb->bLegacyPrepare && rcs==SQLITE_SCHEMA && zPrevSql ){
+          /* If the runtime error was an SQLITE_SCHEMA, and the database
+          ** handle is configured to use the legacy sqlite3_prepare() 
+          ** interface, retry prepare()/step() on the same SQL statement.
+          ** This only happens once. If there is a second SQLITE_SCHEMA
+          ** error, the error will be returned to the caller. */
+          p->zSql = zPrevSql;
+          continue;
+        }
+#endif
+        Tcl_SetObjResult(pDb->interp, dbTextToObj(sqlite3_errmsg(pDb->db)));
         return TCL_ERROR;
       }else{
         dbReleaseStmt(pDb, pPreStmt, 0);
@@ -3072,7 +3134,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       }else{
         flags &= ~SQLITE_OPEN_NOMUTEX;
       }
-   }else if( strcmp(zArg, "-fullmutex")==0 ){
+    }else if( strcmp(zArg, "-fullmutex")==0 ){
       int b;
       if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
       if( b ){
@@ -3673,6 +3735,44 @@ static int init_all_cmd(
   init_all(slave);
   return TCL_OK;
 }
+
+/*
+** Tclcmd: db_use_legacy_prepare DB BOOLEAN
+**
+**   The first argument to this command must be a database command created by
+**   [sqlite3]. If the second argument is true, then the handle is configured
+**   to use the sqlite3_prepare_v2() function to prepare statements. If it
+**   is false, sqlite3_prepare().
+*/
+static int db_use_legacy_prepare_cmd(
+  ClientData cd,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  Tcl_CmdInfo cmdInfo;
+  SqliteDb *pDb;
+  int bPrepare;
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB BOOLEAN");
+    return TCL_ERROR;
+  }
+
+  if( !Tcl_GetCommandInfo(interp, Tcl_GetString(objv[1]), &cmdInfo) ){
+    Tcl_AppendResult(interp, "no such db: ", Tcl_GetString(objv[1]), (char*)0);
+    return TCL_ERROR;
+  }
+  pDb = (SqliteDb*)cmdInfo.objClientData;
+  if( Tcl_GetBooleanFromObj(interp, objv[2], &bPrepare) ){
+    return TCL_ERROR;
+  }
+
+  pDb->bLegacyPrepare = bPrepare;
+
+  Tcl_ResetResult(interp);
+  return TCL_OK;
+}
 #endif
 
 /*
@@ -3783,7 +3883,12 @@ static void init_all(Tcl_Interp *interp){
     Sqlitetestfts3_Init(interp);
 #endif
 
-    Tcl_CreateObjCommand(interp,"load_testfixture_extensions",init_all_cmd,0,0);
+    Tcl_CreateObjCommand(
+        interp, "load_testfixture_extensions", init_all_cmd, 0, 0
+    );
+    Tcl_CreateObjCommand(
+        interp, "db_use_legacy_prepare", db_use_legacy_prepare_cmd, 0, 0
+    );
 
 #ifdef SQLITE_SSE
     Sqlitetestsse_Init(interp);
