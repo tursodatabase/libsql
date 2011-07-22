@@ -1,7 +1,7 @@
-C Adjust\sthe\smaximum\snumber\sof\sopen\sdatabase\sconnections\sin\swal3.test\sdown\nfor\sOpenBSD.
-D 2011-07-22T10:53:05.152
+C Add\smakefile\stargets\ssqlite3-all.c.
+D 2011-07-22T11:16:39.376
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in b85ed0fdfb95fb6822bc1c8c6bd5873fc53a84c2
+F Makefile.in 1e6988b3c11dee9bd5edc0c804bd4468d74a9cdc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 9c76731c20561a33ce1257c70be3f029cedb62a6
 F Makefile.vxworks c85ec1d8597fe2f7bc225af12ac1666e21379151
@@ -104,7 +104,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk d81d86f0f70444f3abc241eccf5ace4a79ff9b69
+F main.mk 50adb7368bd0faa888eb4634b874d542d44f3de3
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -952,7 +952,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P fd36d8067b5a29d9acbf8c96b9d837406d0c0cce
-R d12689e1e57ff777372910ecacb2cd46
+P b38e52f67574997de9f4b4318f2eb68ff0133f35
+R ada945a14522405a76d61d09ae93a2d9
 U drh
-Z af1cbe1963416f046ac52ddc2f1578ee
+Z 925c4df3e98ac05a9968b9d94b638861
