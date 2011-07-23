@@ -414,8 +414,8 @@ static void multiplexSubClose(
 ){
   sqlite3_file *pSubOpen = pGroup->aReal[iChunk].p;
   if( pSubOpen ){
-    if( pOrigVfs ) pOrigVfs->xDelete(pOrigVfs, pGroup->aReal[iChunk].z, 0);
     pSubOpen->pMethods->xClose(pSubOpen);
+    if( pOrigVfs ) pOrigVfs->xDelete(pOrigVfs, pGroup->aReal[iChunk].z, 0);
     sqlite3_free(pGroup->aReal[iChunk].p);
   }
   sqlite3_free(pGroup->aReal[iChunk].z);
