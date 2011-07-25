@@ -1,5 +1,5 @@
-C Merge\sthe\swinAccess\sretry\slogic\sfrom\sthe\santi-antivirus\sbranch\ninto\sthe\strunk.
-D 2011-07-23T13:54:34.013
+C Enable\sthe\sSQLITE_FCNTL_SIZE_HINT\son\sunix\seven\sif\sSQLITE_FCNTL_CHUNK_SIZE\nhas\snot\sbeen\sset.
+D 2011-07-25T23:25:47.867
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1e6988b3c11dee9bd5edc0c804bd4468d74a9cdc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +165,7 @@ F src/os.c fcc717427a80b2ed225373f07b642dc1aad7490b
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 65a897143b64667d23ed329a7984b9b405accb58
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c dcd6d5782dd30e918dc3d111cdcb1883bfb95345
+F src/os_unix.c b83e0924d1a832a89989d3d2770179205d0e066a
 F src/os_win.c 8449cb4ce1cd50248b7133108532d9582cc6c042
 F src/pager.c 120550e7ef01dafaa2cbb4a0528c0d87c8f12b41
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
@@ -881,7 +881,7 @@ F test/wal.test 5617ad308bfdb8a8885220d8a261a6096a8d7e57
 F test/wal2.test aa0fb2314b3235be4503c06873e41ebfc0757782
 F test/wal3.test d512a5c8b4aa345722d11e8f1671db7eb15a0e39
 F test/wal4.test 3404b048fa5e10605facaf70384e6d2943412e30
-F test/wal5.test f06a0427e06db00347e32eb9fa99d6a5c0f2d088
+F test/wal5.test 08e145a352b1223930c7f0a1de82a8747a99c322
 F test/wal6.test 2e3bc767d9c2ce35c47106148d43fcbd072a93b3
 F test/wal7.test 2ae8f427d240099cc4b2dfef63cff44e2a68a1bd
 F test/wal_common.tcl a98f17fba96206122eff624db0ab13ec377be4fe
@@ -952,7 +952,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 6fb7cfc2efb32dd5c8921a90b853390bc44d4794 a6b85c73406caa3bf0585341c8ebc9897a1884f4
-R 1255c11fb87a761a1f8eac495b8a38b4
+P 08d0e8799e1441ef063b1cdf9e4107071a0f81ca
+R 513a198a27aca1f07c596d222f883111
 U drh
-Z 2eecc3b1645ef2e7bef18a04829340dc
+Z bf5f24c7092583c5f65553c09e369462
