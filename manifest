@@ -1,5 +1,5 @@
-C Prototype\schange\sfor\sa\snew\ssqlite3_file_control()\sthat\swill\scause\sthe\n-wal\sand\s-shm\sfiles\sto\spersist\safter\sthe\slast\sdatabase\sconnection\scloses.
-D 2011-07-26T16:03:07.413
+C Test\scases\sadded.\s\sFix\sthe\squery\smode.
+D 2011-07-26T16:23:25.835
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1e6988b3c11dee9bd5edc0c804bd4468d74a9cdc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,8 +165,8 @@ F src/os.c fcc717427a80b2ed225373f07b642dc1aad7490b
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 65a897143b64667d23ed329a7984b9b405accb58
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 294e8e9803454d70e796d84c77f990cc6d946899
-F src/os_win.c 313f48b6f92890f2a42d5ff6fa0fb0501d2fff25
+F src/os_unix.c 637fa969213812ba92f1f3c54e4be967bda60a13
+F src/os_win.c 7dd45f72a6c6ae5a985865b440ebd14d8ee7b874
 F src/pager.c 120550e7ef01dafaa2cbb4a0528c0d87c8f12b41
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -188,7 +188,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c c355b33803fb756dc09297ec84d19604301fa622
-F src/test1.c 693d9a63dfe2c68b167080c99cab82f267f5a38e
+F src/test1.c e7ea726d26b9007bae7907d8b40280c70ec6c504
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 124ff9735fb6bb7d41de180d6bac90e7b1509432
 F src/test4.c d1e5a5e904d4b444cf572391fdcb017638e36ff7
@@ -894,6 +894,7 @@ F test/walfault.test 58fce626359c9376fe35101b5c0f2df8040aa839
 F test/walhook.test ed00a40ba7255da22d6b66433ab61fab16a63483
 F test/walmode.test 22ddccd073c817ac9ead62b88ac446e8dedc7d2c
 F test/walnoshm.test a074428046408f4eb5c6a00e09df8cc97ff93317
+F test/walpersist.test 45fb0c94fb63908e2d66b1d99ce4645bfce0fa1e
 F test/walro.test 2d5d69e2e99da19ce6faab340330234fc4ca0720
 F test/walshared.test 6dda2293880c300baf5d791c307f653094585761
 F test/walslow.test d21625e2e99e11c032ce949e8a94661576548933
@@ -952,10 +953,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 05c9832e5f6eb705f1dce4e65cf4e2d56512ff6b
-R 89b4ef80e4aa70f9d9aab4e9774d951c
-T *branch * persistent-wal-patch
-T *sym-persistent-wal-patch *
-T -sym-trunk *
+P e34c553bf04761e86f3bd72f91439c05886caa5c
+R 19cfffdeb7e8194e5c58a90ee9f2b26d
 U drh
-Z fcc3b5975e3b68e4a98c8be3a9674ec5
+Z c92a162aecc6522b9f0c0715256a714d

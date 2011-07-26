@@ -3471,7 +3471,7 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
     case SQLITE_FCNTL_PERSIST_WAL: {
       int bPersist = *(int*)pArg;
       if( bPersist<0 ){
-        bPersist = (pFile->ctrlFlags & UNIXFILE_PERSIST_WAL)!=0;
+        *(int*)pArg = (pFile->ctrlFlags & UNIXFILE_PERSIST_WAL)!=0;
       }else if( bPersist==0 ){
         pFile->ctrlFlags &= ~UNIXFILE_PERSIST_WAL;
       }else{

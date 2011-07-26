@@ -1360,7 +1360,7 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
     case SQLITE_FCNTL_PERSIST_WAL: {
       int bPersist = *(int*)pArg;
       if( bPersist<0 ){
-        bPersist = pFile->bPersistWal;
+        *(int*)pArg = pFile->bPersistWal;
       }else{
         pFile->bPersistWal = bPersist!=0;
       }
