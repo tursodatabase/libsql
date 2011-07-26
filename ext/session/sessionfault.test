@@ -247,7 +247,7 @@ do_faultsim_test 5 -faults oom* -body {
     foreach c {
         {DELETE t1 0 .X {t xxx t yyy} {}} 
         {INSERT t1 0 .X {} {t string i 1}} 
-        {UPDATE t1 0 .X {i 20 {} {}} {i 4 i 2}}
+        {UPDATE t1 0 .X {i 20 i 2} {i 4 {} {}}}
     } { lappend y $c }
     if {$x != $y} { error "changeset no good" }
   }
