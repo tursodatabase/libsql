@@ -142,7 +142,7 @@ do_changeset_test 2.3.2 S {
 do_changeset_invert_test 2.3.3 S {
   {DELETE t1 0 X. {i 10 t Sukhothai} {}} 
   {INSERT t1 0 X. {} {i 1 t Sukhothai}} 
-  {UPDATE t1 0 X. {{} {} t Surin} {i 2 t Ayutthaya}} 
+  {UPDATE t1 0 X. {i 2 t Surin} {{} {} t Ayutthaya}} 
   {INSERT t1 0 X. {} {i 3 t Thonburi}} 
   {DELETE t1 0 X. {i 20 t Thapae} {}}
 }
@@ -492,5 +492,18 @@ do_test 8.3 {
 } {1}
 do_test 8.4 { S delete } {}
 
+#-------------------------------------------------------------------------
+#
+do_execsql_test 9.1 {
+  CREATE TABLE t7(a, b, c, d, e PRIMARY KEY, f, g);
+  INSERT INTO t7 VALUES(1, 1, 1, 1, 1, 1, 1);
+}
+do_test 9.2 { 
+  sqlite3session S db main 
+  S attach *
+  execsql { UPDATE t7 SET b=2, d=2 }
+} {}
+do_changeset_test 9.2 S {{UPDATE t7 0 ....X.. {{} {} i 1 {} {} i 1 i 1 {} {} {} {}} {{} {} i 2 {} {} i 2 {} {} {} {} {} {}}}}
+S delete
 catch { db2 close }
 finish_test

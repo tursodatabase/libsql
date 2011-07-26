@@ -545,7 +545,7 @@ int sqlite3changeset_finalize(sqlite3_changeset_iter *pIter);
 ** changeset. If it is not, the results are undefined.
 */
 int sqlite3changeset_invert(
-  int nIn, void *pIn,             /* Input changeset */
+  int nIn, const void *pIn,       /* Input changeset */
   int *pnOut, void **ppOut        /* OUT: Inverse of input */
 );
 

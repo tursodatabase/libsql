@@ -2132,14 +2132,17 @@ int sqlite3changeset_finalize(sqlite3_changeset_iter *p){
 */
 int sqlite3changeset_invert(
   int nChangeset,                 /* Number of bytes in input */
-  void *pChangeset,               /* Input changeset */
+  const void *pChangeset,         /* Input changeset */
   int *pnInverted,                /* OUT: Number of bytes in output changeset */
   void **ppInverted               /* OUT: Inverse of pChangeset */
 ){
+  int rc = SQLITE_OK;             /* Return value */
   u8 *aOut;
   u8 *aIn;
   int i;
-  int nCol = 0;
+  int nCol = 0;                   /* Number of cols in current table */
+  u8 *abPK = 0;                   /* PK array for current table */
+  sqlite3_value **apVal = 0;      /* Space for values for UPDATE inversion */
 
   /* Zero the output variables in case an error occurs. */
   *ppInverted = 0;
@@ -2163,10 +2166,13 @@ int sqlite3changeset_invert(
         **   * A nul-terminated table name.
         */
         int nByte = 1 + sessionVarintGet(&aIn[i+1], &nCol);
+        abPK = &aIn[i+nByte];
         nByte += nCol;
         nByte += 1 + sqlite3Strlen30((char *)&aIn[i+nByte]);
         memcpy(&aOut[i], &aIn[i], nByte);
         i += nByte;
+        sqlite3_free(apVal);
+        apVal = 0;
         break;
       }
 
@@ -2185,40 +2191,82 @@ int sqlite3changeset_invert(
       }
 
       case SQLITE_UPDATE: {
-        int nByte1;              /* Size of old.* record in bytes */
-        int nByte2;              /* Size of new.* record in bytes */
-        u8 *aEnd = &aIn[i+2];    
+        int iCol;
+        int nWrite = 0;
+        u8 *aEnd = &aIn[i+2];
 
-        sessionReadRecord(&aEnd, nCol, 0);
-        nByte1 = (int)(aEnd - &aIn[i+2]);
-        sessionReadRecord(&aEnd, nCol, 0);
-        nByte2 = (int)(aEnd - &aIn[i+2]) - nByte1;
+        if( 0==apVal ){
+          apVal = (sqlite3_value **)sqlite3_malloc(sizeof(apVal[0])*nCol*2);
+          if( 0==apVal ){
+            rc = SQLITE_NOMEM;
+            goto finished_invert;
+          }
+          memset(apVal, 0, sizeof(apVal[0])*nCol*2);
+        }
 
+        /* Read the old.* and new.* records for the update change. */
+        rc = sessionReadRecord(&aEnd, nCol, &apVal[0]);
+        if( rc==SQLITE_OK ){
+          rc = sessionReadRecord(&aEnd, nCol, &apVal[nCol]);
+        }
+
+        /* Write the header for the new UPDATE change. Same as the original. */
         aOut[i] = SQLITE_UPDATE;
         aOut[i+1] = aIn[i+1];
-        memcpy(&aOut[i+2], &aIn[i+2+nByte1], nByte2);
-        memcpy(&aOut[i+2+nByte2], &aIn[i+2], nByte1);
+        nWrite = 2;
 
-        i += 2 + nByte1 + nByte2;
+        /* Write the new old.* record. Consists of the PK columns from the
+        ** original old.* record, and the other values from the original
+        ** new.* record. */
+        for(iCol=0; rc==SQLITE_OK && iCol<nCol; iCol++){
+          sqlite3_value *pVal = apVal[iCol + (abPK[iCol] ? 0 : nCol)];
+          rc = sessionSerializeValue(&aOut[i+nWrite], pVal, &nWrite);
+        }
+
+        /* Write the new new.* record. Consists of a copy of all values
+        ** from the original old.* record, except for the PK columns, which
+        ** are set to "undefined". */
+        for(iCol=0; rc==SQLITE_OK && iCol<nCol; iCol++){
+          sqlite3_value *pVal = (abPK[iCol] ? 0 : apVal[iCol]);
+          rc = sessionSerializeValue(&aOut[i+nWrite], pVal, &nWrite);
+        }
+
+        for(iCol=0; iCol<nCol*2; iCol++){
+          sqlite3ValueFree(apVal[iCol]);
+        }
+        memset(apVal, 0, sizeof(apVal[0])*nCol*2);
+        if( rc!=SQLITE_OK ){
+          goto finished_invert;
+        }
+
+        i += nWrite;
+        assert( &aIn[i]==aEnd );
         break;
       }
 
       default:
-        sqlite3_free(aOut);
-        return SQLITE_CORRUPT;
+        rc = SQLITE_CORRUPT;
+        goto finished_invert;
     }
   }
 
+  assert( rc==SQLITE_OK );
   *pnInverted = nChangeset;
   *ppInverted = (void *)aOut;
-  return SQLITE_OK;
+
+ finished_invert:
+  if( rc!=SQLITE_OK ){
+    sqlite3_free(aOut);
+  }
+  sqlite3_free(apVal);
+  return rc;
 }
 
 typedef struct SessionApplyCtx SessionApplyCtx;
 struct SessionApplyCtx {
   sqlite3 *db;
   sqlite3_stmt *pDelete;          /* DELETE statement */
-  sqlite3_stmt *pUpdate;          /* DELETE statement */
+  sqlite3_stmt *pUpdate;          /* UPDATE statement */
   sqlite3_stmt *pInsert;          /* INSERT statement */
   sqlite3_stmt *pSelect;          /* SELECT statement */
   int nCol;                       /* Size of azCol[] and abPK[] arrays */
@@ -2995,9 +3043,9 @@ static int sessionChangeMerge(
           pNew = 0;
         }
       }else if( op2==SQLITE_UPDATE ){       /* UPDATE + UPDATE */
-        assert( op1==SQLITE_UPDATE );
         u8 *a1 = pExist->aRecord;
         u8 *a2 = aRec;
+        assert( op1==SQLITE_UPDATE );
         sessionReadRecord(&a1, pTab->nCol, 0);
         sessionReadRecord(&a2, pTab->nCol, 0);
         pNew->op = SQLITE_UPDATE;

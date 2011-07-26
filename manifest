@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\schanges\sinto\sthe\ssessions\sbranch.
-D 2011-07-22T12:49:27.667
+C Fix\sa\sproblem\scausing\ssqlite3changeset_invert()\sto\seffectively\sdrop\sUPDATE\schanges.
+D 2011-07-26T15:50:36.271
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1e6988b3c11dee9bd5edc0c804bd4468d74a9cdc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -102,16 +102,17 @@ F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 1af0899c63a688e272d69d8e746f24e76f10a3f0
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
-F ext/session/session1.test 98691eec553390d61114b6214d2397f399dc1198
+F ext/session/session1.test 502086908e4144dfaccb1baa77bc29d75a9daace
 F ext/session/session2.test 99ca0da7ddb617d42bafd83adccf99f18ae0384b
 F ext/session/session3.test a7a9ce59b8d1e49e2cc23d81421ac485be0eea01
 F ext/session/session4.test a6ed685da7a5293c5d6f99855bcf41dbc352ca84
 F ext/session/session5.test 8fdfaf9dba28a2f1c6b89b06168bdab1fef2d478
 F ext/session/session6.test 443789bc2fca12e4f7075cf692c60b8a2bea1a26
+F ext/session/session8.test 7d35947ad329b8966f095d34f9617a9eff52dc65
 F ext/session/session_common.tcl 1539d8973b2aea0025c133eb0cc4c89fcef541a5
 F ext/session/sessionfault.test 401045278298a242cbc2e4bc986c102f01ff2180
-F ext/session/sqlite3session.c 97295e187eade25398f52ed8b13fea68e0ee1e02
-F ext/session/sqlite3session.h 8dec372049532017d71c992609ca5450de7c5520
+F ext/session/sqlite3session.c 5a50e28759187440805fca653029946311593da6
+F ext/session/sqlite3session.h f374c9c4c96e08f67ac418871c29d423245c7673
 F ext/session/test_session.c ea4dc9b4a1895c8e6bddcbfe3838d7eb57df2d99
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
@@ -964,7 +965,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P d04e0fd82a15aee963e35830caf8159b4b6ccd87 8ce2b74a82264550b0e19da3e0e1a145db940a1c
-R a5737ded89a8c66dbf565b51f6981ff8
-U drh
-Z 81f45685ad26c120405ad7cb74da4306
+P 110cfd6920cf3011aeaf7e586f8db867bfc69fbb
+R 95b1f91b4b1f21686c1d16002cdc06fd
+U dan
+Z 326ddfa62484f9d6c6538d0373ca9236
