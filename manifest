@@ -1,5 +1,5 @@
-C Fix\sa\stest\scase\sin\ssessionfault.test.\sNo\schanges\sto\scode.
-D 2011-07-26T15:57:56.891
+C Fix\serrors\sin\sa\scomment\sin\ssqlite3session.c.\sNo\schanges\sto\scode.
+D 2011-07-26T17:53:53.311
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1e6988b3c11dee9bd5edc0c804bd4468d74a9cdc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -111,7 +111,7 @@ F ext/session/session6.test 443789bc2fca12e4f7075cf692c60b8a2bea1a26
 F ext/session/session8.test 7d35947ad329b8966f095d34f9617a9eff52dc65
 F ext/session/session_common.tcl 1539d8973b2aea0025c133eb0cc4c89fcef541a5
 F ext/session/sessionfault.test 891453e96630ee2915081487fc4b7226f0aa252f
-F ext/session/sqlite3session.c 5a50e28759187440805fca653029946311593da6
+F ext/session/sqlite3session.c 57d04e1d6a3579e673e61dea29f214fb4e0fc505
 F ext/session/sqlite3session.h f374c9c4c96e08f67ac418871c29d423245c7673
 F ext/session/test_session.c ea4dc9b4a1895c8e6bddcbfe3838d7eb57df2d99
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
@@ -965,7 +965,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P bb3e65d9724dcecdc54b4c9fb0448f95d14495ff
-R 9792f6e7ba4296e8c713a87df4ad910e
+P dc6ecacd7724089a0387e69a0fd5cdbfdd2023f8
+R 243487bed84c57b1cd5a32970f8d4775
 U dan
-Z 85a557af61ebafc7cfd33bb00bd9108a
+Z 2c93411bbe8d90a5b2b924f24cbf2370

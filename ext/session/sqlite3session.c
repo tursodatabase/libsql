@@ -2353,11 +2353,11 @@ static int sessionDeleteRow(
 **
 **     UPDATE x SET
 **     a = CASE WHEN ?2  THEN ?3  ELSE a END,
-**     b = CASE WHEN ?5  THEN ?6  ELSE a END,
-**     c = CASE WHEN ?8  THEN ?9  ELSE a END,
-**     d = CASE WHEN ?11 THEN ?12 ELSE a END
+**     b = CASE WHEN ?5  THEN ?6  ELSE b END,
+**     c = CASE WHEN ?8  THEN ?9  ELSE c END,
+**     d = CASE WHEN ?11 THEN ?12 ELSE d END
 **     WHERE a = ?1 AND c = ?7 AND (?13 OR 
-**       (?5==0 OR b IS ?4) AND (?11==0 OR b IS ?10) AND
+**       (?5==0 OR b IS ?4) AND (?11==0 OR d IS ?10) AND
 **     )
 **
 ** For each column in the table, there are three variables to bind:
