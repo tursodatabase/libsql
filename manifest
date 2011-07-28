@@ -1,5 +1,5 @@
-C Enable\sthe\sSQLITE_FCNTL_SIZE_HINT\son\sunix\seven\sif\sSQLITE_FCNTL_CHUNK_SIZE\nhas\snot\sbeen\sset.
-D 2011-07-25T23:25:47.867
+C Use\sosStat()\sinstead\sof\sstat()\sconsistently\sin\sos_unix.c
+D 2011-07-28T00:14:45.749
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1e6988b3c11dee9bd5edc0c804bd4468d74a9cdc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +165,7 @@ F src/os.c fcc717427a80b2ed225373f07b642dc1aad7490b
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 65a897143b64667d23ed329a7984b9b405accb58
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c b83e0924d1a832a89989d3d2770179205d0e066a
+F src/os_unix.c c617801bbe9a2233ceca4c3e3b8f5faedf955878
 F src/os_win.c 8449cb4ce1cd50248b7133108532d9582cc6c042
 F src/pager.c 120550e7ef01dafaa2cbb4a0528c0d87c8f12b41
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
@@ -952,7 +952,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 08d0e8799e1441ef063b1cdf9e4107071a0f81ca
-R 513a198a27aca1f07c596d222f883111
+P 05c9832e5f6eb705f1dce4e65cf4e2d56512ff6b
+R a79be5193c847721eba9e1a1f8d0351d
 U drh
-Z bf5f24c7092583c5f65553c09e369462
+Z 74ce5df3117db74444298f434c4c80d4
