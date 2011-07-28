@@ -1804,13 +1804,15 @@ int sqlite3WalClose(
     */
     rc = sqlite3OsLock(pWal->pDbFd, SQLITE_LOCK_EXCLUSIVE);
     if( rc==SQLITE_OK ){
+      int bPersistWal = -1;
       if( pWal->exclusiveMode==WAL_NORMAL_MODE ){
         pWal->exclusiveMode = WAL_EXCLUSIVE_MODE;
       }
       rc = sqlite3WalCheckpoint(
           pWal, SQLITE_CHECKPOINT_PASSIVE, 0, 0, sync_flags, nBuf, zBuf, 0, 0
       );
-      if( rc==SQLITE_OK ){
+      sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_PERSIST_WAL, &bPersistWal);
+      if( rc==SQLITE_OK && bPersistWal!=1 ){
         isDelete = 1;
       }
     }

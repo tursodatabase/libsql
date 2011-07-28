@@ -102,8 +102,9 @@ struct winFile {
   const sqlite3_io_methods *pMethod; /*** Must be first ***/
   sqlite3_vfs *pVfs;      /* The VFS used to open this file */
   HANDLE h;               /* Handle for accessing the file */
-  unsigned char locktype; /* Type of lock currently held on this file */
+  u8 locktype;            /* Type of lock currently held on this file */
   short sharedLockByte;   /* Randomly chosen byte used as a shared lock */
+  u8 bPersistWal;         /* True to persist WAL files */
   DWORD lastErrno;        /* The Windows errno from the last I/O error */
   DWORD sectorSize;       /* Sector size of the device file is on */
   winShm *pShm;           /* Instance of shared memory on this file */
@@ -1335,17 +1336,18 @@ static int winUnlock(sqlite3_file *id, int locktype){
 ** Control and query of the open file handle.
 */
 static int winFileControl(sqlite3_file *id, int op, void *pArg){
+  winFile *pFile = (winFile*)id;
   switch( op ){
     case SQLITE_FCNTL_LOCKSTATE: {
-      *(int*)pArg = ((winFile*)id)->locktype;
+      *(int*)pArg = pFile->locktype;
       return SQLITE_OK;
     }
     case SQLITE_LAST_ERRNO: {
-      *(int*)pArg = (int)((winFile*)id)->lastErrno;
+      *(int*)pArg = (int)pFile->lastErrno;
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_CHUNK_SIZE: {
-      ((winFile*)id)->szChunk = *(int *)pArg;
+      pFile->szChunk = *(int *)pArg;
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_SIZE_HINT: {
@@ -1353,6 +1355,15 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       SimulateIOErrorBenign(1);
       winTruncate(id, sz);
       SimulateIOErrorBenign(0);
+      return SQLITE_OK;
+    }
+    case SQLITE_FCNTL_PERSIST_WAL: {
+      int bPersist = *(int*)pArg;
+      if( bPersist<0 ){
+        *(int*)pArg = pFile->bPersistWal;
+      }else{
+        pFile->bPersistWal = bPersist!=0;
+      }
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_SYNC_OMITTED: {

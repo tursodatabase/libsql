@@ -250,8 +250,9 @@ struct unixFile {
 /*
 ** Allowed values for the unixFile.ctrlFlags bitmask:
 */
-#define UNIXFILE_EXCL   0x01     /* Connections from one process only */
-#define UNIXFILE_RDONLY 0x02     /* Connection is read only */
+#define UNIXFILE_EXCL        0x01     /* Connections from one process only */
+#define UNIXFILE_RDONLY      0x02     /* Connection is read only */
+#define UNIXFILE_PERSIST_WAL 0x04     /* Persistent WAL mode */
 
 /*
 ** Include code that is common to all os_*.c files
@@ -3450,21 +3451,33 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
 ** Information and control of an open file handle.
 */
 static int unixFileControl(sqlite3_file *id, int op, void *pArg){
+  unixFile *pFile = (unixFile*)id;
   switch( op ){
     case SQLITE_FCNTL_LOCKSTATE: {
-      *(int*)pArg = ((unixFile*)id)->eFileLock;
+      *(int*)pArg = pFile->eFileLock;
       return SQLITE_OK;
     }
     case SQLITE_LAST_ERRNO: {
-      *(int*)pArg = ((unixFile*)id)->lastErrno;
+      *(int*)pArg = pFile->lastErrno;
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_CHUNK_SIZE: {
-      ((unixFile*)id)->szChunk = *(int *)pArg;
+      pFile->szChunk = *(int *)pArg;
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_SIZE_HINT: {
-      return fcntlSizeHint((unixFile *)id, *(i64 *)pArg);
+      return fcntlSizeHint(pFile, *(i64 *)pArg);
+    }
+    case SQLITE_FCNTL_PERSIST_WAL: {
+      int bPersist = *(int*)pArg;
+      if( bPersist<0 ){
+        *(int*)pArg = (pFile->ctrlFlags & UNIXFILE_PERSIST_WAL)!=0;
+      }else if( bPersist==0 ){
+        pFile->ctrlFlags &= ~UNIXFILE_PERSIST_WAL;
+      }else{
+        pFile->ctrlFlags |= UNIXFILE_PERSIST_WAL;
+      }
+      return SQLITE_OK;
     }
 #ifndef NDEBUG
     /* The pager calls this method to signal that it has done
