@@ -2457,7 +2457,7 @@ static int winAccess(
     memset(&sAttrData, 0, sizeof(sAttrData));
     while( !(rc = GetFileAttributesExW((WCHAR*)zConverted,
                              GetFileExInfoStandard, 
-                             &sAttrData)) && rc==0 && retryIoerr(&cnt) ){}
+                             &sAttrData)) && retryIoerr(&cnt) ){}
     if( rc ){
       /* For an SQLITE_ACCESS_EXISTS query, treat a zero-length file
       ** as if it does not exist.
@@ -2495,7 +2495,8 @@ static int winAccess(
       rc = attr!=INVALID_FILE_ATTRIBUTES;
       break;
     case SQLITE_ACCESS_READWRITE:
-      rc = (attr & FILE_ATTRIBUTE_READONLY)==0;
+      rc = attr!=INVALID_FILE_ATTRIBUTES &&
+             (attr & FILE_ATTRIBUTE_READONLY)==0;
       break;
     default:
       assert(!"Invalid flags argument");

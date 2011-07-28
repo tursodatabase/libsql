@@ -1,5 +1,5 @@
-C Fix\sconditional\sfor\sretry\slogic\sin\swinAccess\sand\sadd\smissing\scall\sto\slogIoerr.
-D 2011-07-28T07:34:44.659
+C Remove\sredundant\ssub-expression\sfrom\sretry\sloop\sinvariant\sin\swinAccess.\s\sAlso,\smake\scheck\sfor\sSQLITE_ACCESS_READWRITE\sformally\scorrect.
+D 2011-07-28T19:16:41.062
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1e6988b3c11dee9bd5edc0c804bd4468d74a9cdc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 65a897143b64667d23ed329a7984b9b405accb58
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c c617801bbe9a2233ceca4c3e3b8f5faedf955878
-F src/os_win.c 2d96ae3e548059caab14515ec5d44f7f9a627b57
+F src/os_win.c f79cb7c31cc82532f625313d9f29359931dd2ed7
 F src/pager.c 120550e7ef01dafaa2cbb4a0528c0d87c8f12b41
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -911,7 +911,7 @@ F test/where9.test 24f19ad14bb1b831564ced5273e681e495662848
 F test/whereA.test 24c234263c8fe358f079d5e57d884fb569d2da0a
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
-F test/win32lock.test 0a16a7df4a51575bda27529ac992a5a94e4a38bd
+F test/win32lock.test e12fe40524705cde9a4f5af4668e811807807b84
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F tool/build-shell.sh 12aa4391073a777fcb6dcc490b219a018ae98bac
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -952,7 +952,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 9109128cb5640d687251dfbefa2fd998063cd9fb
-R 5bc8852e9677e7c4f366bdd5e0dbb83a
+P 8a145863d1a8711953ae72d706404fb96f6fec06
+R c93000a51b03c9223d1343b66dc15be8
 U mistachkin
-Z 4ff729fa32427901a460673b5cd07868
+Z 63cb8d3f96a5697becf5d48d5fb1787f
