@@ -2455,7 +2455,7 @@ static int winAccess(
     int cnt = 0;
     WIN32_FILE_ATTRIBUTE_DATA sAttrData;
     memset(&sAttrData, 0, sizeof(sAttrData));
-    while( (rc = GetFileAttributesExW((WCHAR*)zConverted,
+    while( !(rc = GetFileAttributesExW((WCHAR*)zConverted,
                              GetFileExInfoStandard, 
                              &sAttrData)) && rc==0 && retryIoerr(&cnt) ){}
     if( rc ){
@@ -2470,6 +2470,7 @@ static int winAccess(
         attr = sAttrData.dwFileAttributes;
       }
     }else{
+      logIoerr(cnt);
       if( GetLastError()!=ERROR_FILE_NOT_FOUND ){
         winLogError(SQLITE_IOERR_ACCESS, "winAccess", zFilename);
         free(zConverted);
