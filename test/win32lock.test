@@ -41,20 +41,23 @@ do_test win32lock-1.1 {
 } {1 100000 2 50000 3 25000 4 12500}
 
 unset -nocomplain delay1 rc msg
-set delay1 50
-set rc 0
 set old_pending_byte [sqlite3_test_control_pending_byte 0x40000000]
+
+set win32_lock_ok [list]
+set win32_lock_error [list]
+set delay1 25
 while {1} {
-  sqlite3_sleep 10
   lock_win32_file test.db 0 $::delay1
+  set ::log {}
   set rc [catch {db eval {SELECT x, length(y) FROM t1 ORDER BY rowid}} msg]
   if {$rc} {
-    do_test win32lock-1.2-$delay1-fin {
+    lappend win32_lock_error $::delay1
+    do_test win32lock-1.2-$delay1-error {
        set ::msg
     } {disk I/O error}
-    break
   } else {
-    do_test win32lock-1.2-$delay1 {
+    lappend win32_lock_ok $::delay1
+    do_test win32lock-1.2-$delay1-ok {
        set ::msg
     } {1 100000 2 50000 3 25000 4 12500}
     if {[info exists ::log] && $::log!=""} {
@@ -63,9 +66,10 @@ while {1} {
         set x
       } {{delayed #ms for lock/sharing conflict}}
     }
-    incr delay1 50
   }
-  set ::log {}
+  if {[llength $win32_lock_ok] && [llength $win32_lock_error]} break
+  incr delay1 25
+  sqlite3_sleep 10
 }
 
 do_test win32lock-2.0 {
@@ -75,18 +79,21 @@ do_test win32lock-2.1 {
   file_control_win32_av_retry db 1 1
 } {0 1 1}
 
-set delay1 50
+set win32_lock_ok [list]
+set win32_lock_error [list]
+set delay1 1
 while {1} {
-  sqlite3_sleep 10
   lock_win32_file test.db 0 $::delay1
+  set ::log {}
   set rc [catch {db eval {SELECT x, length(y) FROM t1 ORDER BY rowid}} msg]
   if {$rc} {
-    do_test win32lock-2.2-$delay1-fin {
+    lappend win32_lock_error $::delay1
+    do_test win32lock-2.2-$delay1-error {
        set ::msg
     } {disk I/O error}
-    break
   } else {
-    do_test win32lock-2.2-$delay1 {
+    lappend win32_lock_ok $::delay1
+    do_test win32lock-2.2-$delay1-ok {
        set ::msg
     } {1 100000 2 50000 3 25000 4 12500}
     if {[info exists ::log] && $::log!=""} {
@@ -95,9 +102,10 @@ while {1} {
         set x
       } {{delayed #ms for lock/sharing conflict}}
     }
-    incr delay1 50
   }
-  set ::log {}
+  if {[llength $win32_lock_ok] && [llength $win32_lock_error]} break
+  incr delay1 1
+  sqlite3_sleep 10
 }
 
 file_control_win32_av_retry db 10 25
