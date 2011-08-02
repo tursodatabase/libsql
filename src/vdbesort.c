@@ -111,6 +111,9 @@ struct VdbeSorterIter {
 /* Minimum allowable value for the VdbeSorter.nWorking variable */
 #define SORTER_MIN_SEGMENT_SIZE 10
 
+/* Maximum number of segments to merge in a single go */
+#define SORTER_MAX_MERGE_COUNT 256
+
 /*
 ** Append integer iRoot to the VdbeSorter.aRoot[] array of the sorter object
 ** passed as the second argument. SQLITE_NOMEM is returned if an OOM error
@@ -188,7 +191,6 @@ static int vdbeSorterIterInit(
   int iRoot,                      /* Root page of b-tree to iterate */
   VdbeSorterIter *pIter           /* Pointer to iterator to initialize */
 ){
-  VdbeSorter *pSorter = pCsr->pSorter;
   int rc;
 
   pIter->pCsr = (BtCursor *)sqlite3DbMallocZero(db, sqlite3BtreeCursorSize());
@@ -218,7 +220,6 @@ static int vdbeSorterIterNext(
 ){
   int rc;
   int bDummy;
-  VdbeSorter *pSorter = pCsr->pSorter;
 
   rc = sqlite3BtreeNext(pIter->pCsr, &bDummy);
   if( rc==SQLITE_OK ){
@@ -411,7 +412,10 @@ static int vdbeSorterInitMerge(
   int N = 2;
 
   /* Initialize as many iterators as possible. */
-  for(i=iFirst; rc==SQLITE_OK && i<pSorter->nRoot; i++){
+  for(i=iFirst; 
+      rc==SQLITE_OK && i<pSorter->nRoot && (i-iFirst)<SORTER_MAX_MERGE_COUNT; 
+      i++
+  ){
     int iIter = i - iFirst;
 
     assert( iIter<=pSorter->nAlloc );
@@ -450,8 +454,6 @@ static int vdbeSorterInitMerge(
 */
 int sqlite3VdbeSorterRewind(sqlite3 *db, VdbeCursor *pCsr, int *pbEof){
   int rc = SQLITE_OK;             /* Return code */
-  int N;
-  int i;
 
   VdbeSorter *pSorter = pCsr->pSorter;
   BtCursor *p = pCsr->pCursor;    /* Cursor structure */
@@ -485,7 +487,7 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, VdbeCursor *pCsr, int *pbEof){
         sqlite3BtreeCloseCursor(p);
         iRoot++;
       }
-    } while( rc==SQLITE_OK && iNext<pSorter->nRoot );
+    }while( rc==SQLITE_OK && iNext<pSorter->nRoot );
 
     if( iRoot==0 ) break;
     pSorter->nRoot = iRoot;

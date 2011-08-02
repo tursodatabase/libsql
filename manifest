@@ -1,5 +1,5 @@
-C Experimental\ssupport\sfor\sspeeding\sup\sCREATE\sINDEX\scommands\susing\san\soffline\smerge\ssort.
-D 2011-07-12T14:28:05.335
+C Minor\sfixes\sto\svdbesort.c\scode\sin\spreparation\sfor\sa\smajor\srework.
+D 2011-08-02T10:56:22.688
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -240,12 +240,12 @@ F src/util.c 0f33bbbdfcc4a2d8cf20c3b2a16ffc3b57c58a70
 F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
 F src/vdbe.c 88a7068472bafb29db500a167eef533d5f709cdc
 F src/vdbe.h 5cf09e7ee8a3f7d93bc51f196a96550786afe7a1
-F src/vdbeInt.h fb6c86006de1c0f249ea9dc14263ad0c357cfc24
+F src/vdbeInt.h 9e38e4f866faa9b25e30a1712c3ec1f489097ca1
 F src/vdbeapi.c 11dc47987abacb76ad016dcf5abc0dc422482a98
 F src/vdbeaux.c 8fb978eb73a97b34d352dd3ef3bff35b1b3fa7e9
 F src/vdbeblob.c f024f0bf420f36b070143c32b15cc7287341ffd3
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
-F src/vdbesort.c f07d526dfb0606e51f7588b26c9d401092318c39
+F src/vdbesort.c 40bb17d3616272dc5597b55ea7be74a2f15368ba
 F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
 F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 0c70ad7b1cac6005fa5e2cbefd23ee05e391c290
@@ -926,7 +926,7 @@ F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkkeywordhash.c d2e6b4a5965e23afb80fbe74bb54648cd371f309
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
-F tool/mksqlite3c.tcl 1fa0ed9cfdc768bf5de7e65fda8d97a46dd2a7e6
+F tool/mksqlite3c.tcl d8c0d3065bc23fd9e27d59bfebd34df203fe6b08
 F tool/mksqlite3h.tcl 78013ad79a5e492e5f764f3c7a8ef834255061f8
 F tool/mksqlite3internalh.tcl 7b43894e21bcb1bb39e11547ce7e38a063357e87
 F tool/omittest.tcl 8086c014cbae90f1f2b564d59d05a5e4ac1783c9
@@ -954,10 +954,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 03af4c175c6ba303ec0a5be25fd42771e38f7347
-R 55fa78a5c4888948b8391ce686e6076d
-T *branch * experimental
-T *sym-experimental *
-T -sym-trunk *
+P 30dbf0feab0323250404e0741ac2716bcb6b0cbe
+R 337aa1934af3c59a8870d01bcb4375d6
 U dan
-Z 97a803d50902eb873dfd6c6b8aa1a07e
+Z 9845e6e6f92471215969af52d2a4b78a

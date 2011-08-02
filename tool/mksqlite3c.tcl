@@ -259,6 +259,7 @@ foreach file {
    vdbetrace.c
    vdbe.c
    vdbeblob.c
+   vdbesort.c
    journal.c
    memjournal.c
 

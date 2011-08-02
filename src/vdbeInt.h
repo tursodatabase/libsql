@@ -396,6 +396,10 @@ int sqlite3VdbeSorterInit(sqlite3 *, VdbeCursor *);
 int sqlite3VdbeSorterWrite(sqlite3 *, VdbeCursor *);
 void sqlite3VdbeSorterClose(sqlite3 *, VdbeCursor *);
 
+int sqlite3VdbeSorterRowkey(sqlite3 *, VdbeCursor *, Mem *);
+int sqlite3VdbeSorterRewind(sqlite3 *, VdbeCursor *, int *);
+int sqlite3VdbeSorterNext(sqlite3 *, VdbeCursor *, int *);
+
 #if !defined(SQLITE_OMIT_SHARED_CACHE) && SQLITE_THREADSAFE>0
   void sqlite3VdbeEnter(Vdbe*);
   void sqlite3VdbeLeave(Vdbe*);
