@@ -1,5 +1,5 @@
-C Merge\sin\sthe\spermutation\schanges\sfrom\strunk.
-D 2011-08-02T20:01:06.809
+C Replace\sthe\smissed\s'file\scopy'\sin\smalloc_common.tcl\swith\scopy_file.
+D 2011-08-02T20:03:36.125
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1e6988b3c11dee9bd5edc0c804bd4468d74a9cdc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -577,7 +577,7 @@ F test/mallocH.test 79b65aed612c9b3ed2dcdaa727c85895fd1bfbdb
 F test/mallocI.test a88c2b9627c8506bf4703d8397420043a786cdb6
 F test/mallocJ.test b5d1839da331d96223e5f458856f8ffe1366f62e
 F test/mallocK.test d79968641d1b70d88f6c01bdb9a7eb4a55582cc9
-F test/malloc_common.tcl 9a329bb7fd3723ee508542be8ff428bf33cccc92
+F test/malloc_common.tcl 2930895b0962823ec679853e67e58dd6d8198b3c
 F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
 F test/memdb.test 708a028d6d373e5b3842e4bdc8ba80998c9a4da6
@@ -954,7 +954,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 8bef97a0eb2f56d0ac374d97e97e0a44c7f99aee 2bbf3150a4b7108e88ed81c1d40af6f06089e148 861a5b62430d0ada07a46d0e394fcf0b0faab1cd
-R 71d14b2778e99286bdae280684de342f
-U drh
-Z dc3b5053c70dc32d5e9154bd65bfd193
+P b30a5e307fd5485d23e4c4f8ed1c47525a0fe6d3
+R b771650dd0d348534e7a0e458639f43f
+U mistachkin
+Z b38b345a5f7b867577bd2e55767a9c11
