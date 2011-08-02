@@ -2142,6 +2142,7 @@ static sqlite3_index_info *allocateIndexInfo(
     testcase( pTerm->eOperator==WO_IN );
     testcase( pTerm->eOperator==WO_ISNULL );
     if( pTerm->eOperator & (WO_IN|WO_ISNULL) ) continue;
+    if( pTerm->wtFlags & TERM_VNULL ) continue;
     nTerm++;
   }
 
@@ -2192,6 +2193,7 @@ static sqlite3_index_info *allocateIndexInfo(
     testcase( pTerm->eOperator==WO_IN );
     testcase( pTerm->eOperator==WO_ISNULL );
     if( pTerm->eOperator & (WO_IN|WO_ISNULL) ) continue;
+    if( pTerm->wtFlags & TERM_VNULL ) continue;
     pIdxCons[j].iColumn = pTerm->u.leftColumn;
     pIdxCons[j].iTermOffset = i;
     pIdxCons[j].op = (u8)pTerm->eOperator;

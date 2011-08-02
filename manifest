@@ -1,5 +1,5 @@
-C Fix\sa\s(humorous)\stypo\sin\sthe\slemon\sdocumentation.
-D 2011-07-30T23:50:12.095
+C Make\ssure\sIS\sNOT\sNULL\sconstraints\swork\son\svirtual\stables.\nFix\sfor\sticket\s[6c14288a473ceff].
+D 2011-08-02T01:57:39.661
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1e6988b3c11dee9bd5edc0c804bd4468d74a9cdc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -250,7 +250,7 @@ F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 3154756177d6219e233d84291d5b05f4e06ff5e9
 F src/wal.h 66b40bd91bc29a5be1c88ddd1f5ade8f3f48728a
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 106cd9ab3eb410dfa7d0598194c277664bb2e9a3
+F src/where.c 7d09f4c1512affb60cc1190a4b33d121d4ce039a
 F test/8_3_names.test b93687beebd17f6ebf812405a6833bae5d1f4199
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -874,6 +874,7 @@ F test/vtabB.test 04df5dc531b9f44d9ca65b9c1b79f12b5922a796
 F test/vtabC.test 1cf7896ab6859bfe3074244b2b0e12de5cbdd766
 F test/vtabD.test 74167b1578e5886fe4c886d6bef2fd1406444c42
 F test/vtabE.test 7c4693638d7797ce2eda17af74292b97e705cc61
+F test/vtabF.test fd5ad376f5a34fe0891df1f3cddb4fe7c3eb077e
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
@@ -953,7 +954,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 1b56677bdfb102d070a2057a65ba424fec81131d
-R 07a1c012e85371e0cbf430cb6bbf3579
+P ed630b012f468d6779b83dd8c4dbf3a8dafee573
+R 171bb090fbd613c7785a72bd19098ec2
 U drh
-Z 06c1fbb8b37310ceef1a2adde6978995
+Z 642ce1d00dc515b7cad2aa099629b2e0
