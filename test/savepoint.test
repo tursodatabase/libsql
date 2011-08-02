@@ -371,7 +371,7 @@ wal_check_journal_mode savepoint-5.5
 #
 ifcapable {autovacuum && pragma} {
   db close
-  file delete -force test.db
+  forcedelete test.db
   sqlite3 db test.db
 
   do_test savepoint-6.1 {
@@ -419,7 +419,7 @@ ifcapable {autovacuum && pragma} {
 # surrounding savepoints by growing and shrinking the database file.
 #
 db close
-file delete -force test.db
+forcedelete test.db
 sqlite3 db test.db
 
 do_test savepoint-7.1 {
@@ -490,7 +490,7 @@ wal_check_journal_mode savepoint-7.3.3
 
 do_test savepoint-7.4.1 {
   db close
-  file delete -force test.db
+  forcedelete test.db
   sqlite3 db test.db
   execsql { PRAGMA auto_vacuum = incremental }
   wal_set_journal_mode
@@ -640,8 +640,8 @@ set templockstate [lindex [db eval {PRAGMA lock_status}] 3]
 
 if {[wal_is_wal_mode]==0} {
   do_test savepoint-10.2.1 {
-    file delete -force test3.db
-    file delete -force test2.db
+    forcedelete test3.db
+    forcedelete test2.db
     execsql {
       ATTACH 'test2.db' AS aux1;
       ATTACH 'test3.db' AS aux2;
@@ -762,7 +762,7 @@ if {[wal_is_wal_mode]==0} {
 # 
 do_test savepoint-11.1 {
   db close
-  file delete -force test.db
+  forcedelete test.db
   sqlite3 db test.db
   execsql { PRAGMA auto_vacuum = full; }
   wal_set_journal_mode
@@ -868,7 +868,7 @@ wal_check_journal_mode savepoint-12.5
 if {[wal_is_wal_mode]==0} {
   do_test savepoint-13.1 {
     db close
-    catch {file delete -force test.db}
+    catch {forcedelete test.db}
     sqlite3 db test.db
     execsql {
       BEGIN;
@@ -909,7 +909,7 @@ if {[wal_is_wal_mode]==0} {
 }
 
 db close
-file delete test.db
+delete_file test.db
 do_multiclient_test tn {
   do_test savepoint-14.$tn.1 {
     sql1 {

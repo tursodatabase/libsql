@@ -235,7 +235,7 @@ do_test shared6-3.X {
 } {}
 
 do_test shared6-4.1 {
-  #file delete -force test.db test.db-journal
+  #forcedelete test.db test.db-journal
   sqlite3 db1 test.db
   sqlite3 db2 test.db
 

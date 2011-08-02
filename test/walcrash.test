@@ -37,7 +37,7 @@ set REPEATS 100
 # walcrash-1.*
 #
 for {set i 1} {$i < $REPEATS} {incr i} {
-  file delete -force test.db test.db-wal
+  forcedelete test.db test.db-wal
   do_test walcrash-1.$i.1 {
     crashsql -delay 4 -file test.db-wal -seed [incr seed] {
       PRAGMA journal_mode = WAL;
@@ -74,7 +74,7 @@ for {set i 1} {$i < $REPEATS} {incr i} {
 # walcrash-2.*
 #
 for {set i 1} {$i < $REPEATS} {incr i} {
-  file delete -force test.db test.db-wal
+  forcedelete test.db test.db-wal
   do_test walcrash-2.$i.1 {
     crashsql -delay 4 -file test.db-wal -seed [incr seed] {
       PRAGMA journal_mode = WAL;
@@ -111,8 +111,8 @@ for {set i 1} {$i < $REPEATS} {incr i} {
 # walcrash-3.*
 #
 # for {set i 1} {$i < $REPEATS} {incr i} {
-#   file delete -force test.db test.db-wal
-#   file delete -force test2.db test2.db-wal
+#   forcedelete test.db test.db-wal
+#   forcedelete test2.db test2.db-wal
 # 
 #   do_test walcrash-3.$i.1 {
 #     crashsql -delay 2 -file test2.db-wal -seed [incr seed] {
@@ -143,8 +143,8 @@ for {set i 1} {$i < $REPEATS} {incr i} {
 # walcrash-4.*
 #
 for {set i 1} {$i < $REPEATS} {incr i} {
-  file delete -force test.db test.db-wal
-  file delete -force test2.db test2.db-wal
+  forcedelete test.db test.db-wal
+  forcedelete test2.db test2.db-wal
 
   do_test walcrash-4.$i.1 {
     crashsql -delay 3 -file test.db-wal -seed [incr seed] -blocksize 4096 {
@@ -171,8 +171,8 @@ for {set i 1} {$i < $REPEATS} {incr i} {
 # walcrash-5.*
 #
 for {set i 1} {$i < $REPEATS} {incr i} {
-  file delete -force test.db test.db-wal
-  file delete -force test2.db test2.db-wal
+  forcedelete test.db test.db-wal
+  forcedelete test2.db test2.db-wal
 
   do_test walcrash-5.$i.1 {
     crashsql -delay 11 -file test.db-wal -seed [incr seed] -blocksize 4096 {
@@ -212,8 +212,8 @@ for {set i 1} {$i < $REPEATS} {incr i} {
 # walcrash-6.*
 #
 for {set i 1} {$i < $REPEATS} {incr i} {
-  file delete -force test.db test.db-wal
-  file delete -force test2.db test2.db-wal
+  forcedelete test.db test.db-wal
+  forcedelete test2.db test2.db-wal
 
   do_test walcrash-6.$i.1 {
     crashsql -delay 12 -file test.db-wal -seed [incr seed] -blocksize 512 {
@@ -262,7 +262,7 @@ for {set i 1} {$i < $REPEATS} {incr i} {
 # based on the log file.
 #
 for {set i 1} {$i < $REPEATS} {incr i} {
-  file delete -force test.db test.db-wal
+  forcedelete test.db test.db-wal
 
   # Select a page-size for this test.
   #

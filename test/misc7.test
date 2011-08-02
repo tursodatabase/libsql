@@ -30,7 +30,7 @@ do_test misc7-3 {
 # Try to open a directory:
 #
 do_test misc7-4 {
-  file delete mydir
+  delete_file mydir
   file mkdir mydir
   set rc [catch {
     sqlite3 db2 ./mydir
@@ -41,7 +41,7 @@ do_test misc7-4 {
 # Try to open a file with a directory where its journal file should be.
 #
 do_test misc7-5 {
-  file delete mydir
+  delete_file mydir
   file mkdir mydir-journal
   sqlite3 db2 ./mydir
   catchsql {
@@ -152,8 +152,8 @@ db2 close
 # after the omit_readlock pragma has been exercised.
 #
 do_test misc7-7.1 {
-  file delete -force test2.db
-  file delete -force test2.db-journal
+  forcedelete test2.db
+  forcedelete test2.db-journal
   execsql {
     PRAGMA omit_readlock = 1;
     ATTACH 'test2.db' AS aux;
@@ -254,8 +254,8 @@ ifcapable vtab {
 }
 
 db close
-file delete -force test.db
-file delete -force test.db-journal
+forcedelete test.db
+forcedelete test.db-journal
 sqlite3 db test.db
 
 ifcapable explain {
@@ -278,8 +278,8 @@ ifcapable explain {
 }
 
 db close
-file delete -force test.db
-file delete -force test.db-journal
+forcedelete test.db
+forcedelete test.db-journal
 sqlite3 db test.db
 
 #--------------------------------------------------------------------
@@ -323,8 +323,8 @@ do_test misc7-15.2 {
 } {}
 
 db close
-file delete -force test.db
-file delete -force test.db-journal
+forcedelete test.db
+forcedelete test.db-journal
 sqlite3 db test.db
 
 do_ioerr_test misc7-16 -sqlprep {
@@ -385,15 +385,15 @@ if {$tcl_platform(platform)!="windows" && $tcl_platform(platform)!="os2"} {
         BEGIN;
         DELETE FROM t3 WHERE (oid%3)==0;
       }
-      copy_file test.db bak.db
-      copy_file test.db-journal bak.db-journal
+      forcecopy test.db bak.db
+      forcecopy test.db-journal bak.db-journal
       execsql {
         COMMIT;
       }
     
       db close
-      copy_file bak.db test.db
-      copy_file bak.db-journal test.db-journal
+      forcecopy bak.db test.db
+      forcecopy bak.db-journal test.db-journal
       sqlite3 db test.db
     
       catch {file attributes test.db-journal -permissions r--------}
@@ -484,6 +484,6 @@ do_test misc7-21.1 {
 
 
 db close
-file delete -force test.db
+forcedelete test.db
 
 finish_test

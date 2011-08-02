@@ -19,7 +19,7 @@ source $testdir/tester.tcl
 
 do_test tkt-5ee237-1.1 {
   db close
-  file delete -force test.db
+  forcedelete test.db
   sqlite3 db test.db
   db eval {
     CREATE TABLE t1(x UNIQUE);

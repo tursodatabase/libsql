@@ -34,7 +34,7 @@ proc uses_temp_table {sql} {
 # Construct the sample database.
 #
 do_test insert5-1.0 {
-  file delete -force test2.db test2.db-journal
+  forcedelete test2.db test2.db-journal
   execsql {
     CREATE TABLE MAIN(Id INTEGER, Id1 INTEGER); 
     CREATE TABLE B(Id INTEGER, Id1 INTEGER); 

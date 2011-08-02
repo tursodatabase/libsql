@@ -404,7 +404,7 @@ do_test temptable-6.8 {
   }
 } {1 {no such table: t9}}
 
-file delete -force test2.db test2.db-journal
+forcedelete test2.db test2.db-journal
 ifcapable attach {
   do_test temptable-7.1 {
     catchsql {
@@ -415,14 +415,14 @@ ifcapable attach {
 }
 
 # Need to do the following for tcl 8.5 on mac. On that configuration, the
-# -readonly flag is taken so seriously that a subsequent [file delete -force]
+# -readonly flag is taken so seriously that a subsequent [forcedelete]
 # (required before the next test file can be executed) will fail.
 #
 catch {file attributes test.db -readonly 0}
 
 do_test temptable-8.0 {
   db close
-  catch {file delete -force test.db}
+  catch {forcedelete test.db}
   sqlite3 db test.db
 } {}
 do_test temptable-8.1 {

@@ -16,7 +16,7 @@
 #
 # $Id: corruptE.test,v 1.14 2009/07/11 06:55:34 danielk1977 Exp $
 
-catch {file delete -force test.db test.db-journal test.bu}
+catch {forcedelete test.db test.db-journal test.bu}
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -60,23 +60,17 @@ ifcapable {integrityck} {
   integrity_check corruptE-1.2
 }
 
-# Copy file $from into $to
-#
-proc copy_file {from to} {
-  file copy -force $from $to
-}
-
 # Setup for the tests.  Make a backup copy of the good database in test.bu.
 #
 db close
-copy_file test.db test.bu
+forcecopy test.db test.bu
 sqlite3 db test.db
 set fsize [file size test.db]
 
 
 do_test corruptE-2.1 {
   db close
-  copy_file test.bu test.db
+  forcecopy test.bu test.db
 
   # insert corrupt byte(s)
   hexio_write test.db 2041 [format %02x 0x2e]
@@ -92,7 +86,7 @@ do_test corruptE-2.1 {
 
 do_test corruptE-2.2 {
   db close
-  copy_file test.bu test.db
+  forcecopy test.bu test.db
 
   # insert corrupt byte(s)
   hexio_write test.db 2047 [format %02x 0x84]
@@ -108,7 +102,7 @@ do_test corruptE-2.2 {
 
 do_test corruptE-2.3 {
   db close
-  copy_file test.bu test.db
+  forcecopy test.bu test.db
 
   # insert corrupt byte(s)
   hexio_write test.db 7420 [format %02x 0xa8]
@@ -124,7 +118,7 @@ do_test corruptE-2.3 {
 
 do_test corruptE-2.4 {
   db close
-  copy_file test.bu test.db
+  forcecopy test.bu test.db
 
   # insert corrupt byte(s)
   hexio_write test.db 10233 [format %02x 0xd0]
@@ -165,7 +159,7 @@ set tc 1
 foreach test $tests {
   do_test corruptE-3.$tc {
     db close
-    copy_file test.bu test.db
+    forcecopy test.bu test.db
 
     # insert corrupt byte(s)
     hexio_write test.db [lindex $test 0] [format %02x [lindex $test 1]]

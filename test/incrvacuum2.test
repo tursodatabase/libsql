@@ -70,7 +70,7 @@ do_test incrvacuum2-1.4 {
 #
 ifcapable attach {
   do_test incrvacuum2-2.1 {
-    file delete -force test2.db test2.db-journal
+    forcedelete test2.db test2.db-journal
     execsql {
       ATTACH DATABASE 'test2.db' AS aux;
       PRAGMA aux.auto_vacuum=incremental;

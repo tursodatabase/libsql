@@ -14,8 +14,8 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/malloc_common.tcl
 
-foreach f [glob -nocomplain test.db*mj*] { file delete -force $f }
-file delete -force test.db2
+foreach f [glob -nocomplain test.db*mj*] { forcedelete $f }
+forcedelete test.db2
 
 do_test tkt-f3e5abed55-1.1 {
   execsql {
@@ -51,7 +51,7 @@ do_test tkt-f3e5abed55-1.5 {
 do_test tkt-f3e5abed55-1.6 {
   glob -nocomplain test.db*mj*
 } {}
-foreach f [glob -nocomplain test.db*mj*] { file delete -force $f }
+foreach f [glob -nocomplain test.db*mj*] { forcedelete $f }
 db close
 db2 close
 

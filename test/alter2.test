@@ -315,8 +315,8 @@ do_test alter2-6.1 {
 } {2}
 ifcapable attach {
   do_test alter2-6.2 {
-    file delete -force test2.db-journal
-    file delete -force test2.db
+    forcedelete test2.db-journal
+    forcedelete test2.db
     execsql {
       ATTACH 'test2.db' AS aux;
       CREATE TABLE aux.t1(a, b);

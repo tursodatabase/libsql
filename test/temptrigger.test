@@ -157,8 +157,8 @@ sqlite3_enable_shared_cache $::enable_shared_cache
 #   temptrigger-3.4: Check that the temp trigger can be dropped without error.
 # 
 do_test temptrigger-3.1 {
-  catch { file delete -force test2.db test2.db-journal }
-  catch { file delete -force test.db test.db-journal }
+  catch { forcedelete test2.db test2.db-journal }
+  catch { forcedelete test.db test.db-journal }
   sqlite3 db test.db 
   sqlite3 db2 test2.db 
   execsql { CREATE TABLE t2(a, b) } db2

@@ -135,7 +135,7 @@ db2 close
 ifcapable autovacuum {
   do_test vacuum2-4.1 {
     db close
-    file delete -force test.db
+    forcedelete test.db
     sqlite3 db test.db
     execsql {
       pragma auto_vacuum=1;

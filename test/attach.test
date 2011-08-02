@@ -24,8 +24,8 @@ ifcapable !attach {
 }
 
 for {set i 2} {$i<=15} {incr i} {
-  file delete -force test$i.db
-  file delete -force test$i.db-journal
+  forcedelete test$i.db
+  forcedelete test$i.db-journal
 }
 
 do_test attach-1.1 {
@@ -628,7 +628,7 @@ do_test attach-5.1 {
   db close
   sqlite3 db test.db
   db2 close
-  file delete -force test2.db
+  forcedelete test2.db
   sqlite3 db2 test2.db
   catchsql {
     ATTACH DATABASE 'test.db' AS orig;
@@ -725,7 +725,7 @@ if {$tcl_platform(platform)=="unix"} {
     file attributes cannot-read -permission 0000
     if {[file writable cannot-read]} {
       puts "\n**** Tests do not work when run as root ****"
-      file delete -force cannot-read
+      forcedelete cannot-read
       exit 1
     }
     catchsql {
@@ -735,7 +735,7 @@ if {$tcl_platform(platform)=="unix"} {
   do_test attach-6.2.2 {
     db errorcode
   } {14}
-  file delete -force cannot-read
+  forcedelete cannot-read
 }
 
 # Check the error message if we try to access a database that has
@@ -749,12 +749,12 @@ for {set i 2} {$i<=15} {incr i} {
   catch {db$i close}
 }
 db close
-file delete -force test2.db
-file delete -force no-such-file
+forcedelete test2.db
+forcedelete no-such-file
 
 ifcapable subquery {
   do_test attach-7.1 {
-    file delete -force test.db test.db-journal
+    forcedelete test.db test.db-journal
     sqlite3 db test.db
     catchsql {
       DETACH RAISE ( IGNORE ) IN ( SELECT "AAAAAA" . * ORDER BY 
@@ -777,7 +777,7 @@ do_test attach-8.1 {
 do_test attach-8.2 {
   db errorcode
 } {26}
-file delete -force test2.db
+forcedelete test2.db
 do_test attach-8.3 {
   sqlite3 db2 test2.db
   db2 eval {CREATE TABLE t1(x); BEGIN EXCLUSIVE}
@@ -789,13 +789,13 @@ do_test attach-8.4 {
   db errorcode
 } {5}
 db2 close
-file delete -force test2.db
+forcedelete test2.db
 
 # Test that it is possible to attach the same database more than
 # once when not in shared-cache mode. That this is not possible in
 # shared-cache mode is tested in shared7.test.
 do_test attach-9.1 {
-  file delete -force test4.db
+  forcedelete test4.db
   execsql {
     ATTACH 'test4.db' AS aux1;
     CREATE TABLE aux1.t1(a, b);

@@ -68,7 +68,7 @@ foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
 
   # Make sure everything is flushed through. This is because [source]ing 
   # the next test file will delete the database file on disk (using
-  # [file delete]). If the asynchronous backend still has the file
+  # [delete_file]). If the asynchronous backend still has the file
   # open, it will become confused.
   #
   flush_async_queue

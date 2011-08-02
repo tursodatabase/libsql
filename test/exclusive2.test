@@ -259,8 +259,8 @@ do_test exclusive2-2.8 {
 
 db close
 catch {close $::fd}
-file delete -force test.db
-file delete -force test.db-journal
+forcedelete test.db
+forcedelete test.db-journal
 
 do_test exclusive2-3.0 {
   sqlite3 db test.db

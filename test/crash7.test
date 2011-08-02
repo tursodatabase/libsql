@@ -26,7 +26,7 @@ proc signature {} {
 foreach f [list test.db test.db-journal] {
   for {set ii 1} {$ii < 64} {incr ii} {
     db close
-    file delete test.db
+    delete_file test.db
     sqlite3 db test.db
   
     set from_size [expr 1024 << ($ii&3)]

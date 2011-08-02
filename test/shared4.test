@@ -30,10 +30,10 @@ set ::enable_shared_cache [sqlite3_enable_shared_cache 1]
 # Prepare multiple databases in shared cache mode.
 #
 do_test shared4-1.1 {
-  file delete -force test1.db test1.db-journal
-  file delete -force test2.db test2.db-journal
-  file delete -force test3.db test3.db-journal
-  file delete -force test4.db test4.db-journal
+  forcedelete test1.db test1.db-journal
+  forcedelete test2.db test2.db-journal
+  forcedelete test3.db test3.db-journal
+  forcedelete test4.db test4.db-journal
   sqlite3 db1 test1.db
   sqlite3 db2 test2.db
   sqlite3 db3 test3.db

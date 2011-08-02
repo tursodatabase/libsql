@@ -24,7 +24,7 @@ sqlite3_reset_auto_extension
 #
 proc build_test_db {testname pragmas} {
   catch {db close}
-  file delete -force test.db test.db-journal
+  forcedelete test.db test.db-journal
   sqlite3 db test.db
   db eval $pragmas
   db eval {
