@@ -35,6 +35,7 @@ do_malloc_test 1 -tclprep {
   }
 } -tclbody {
   set ::blob [db incrblob blobs v 1]
+  fconfigure $::blob -translation binary
   set rc [catch {puts -nonewline $::blob $::data}]
   if {$rc} { error "out of memory" }
 } 
@@ -71,8 +72,7 @@ do_malloc_test 3 -tclprep {
   if {$rc} { 
     error "out of memory" 
   }
-} 
-
+}
 
 do_ioerr_test incrblob_err-4 -cksum 1 -sqlprep {
   CREATE TABLE blobs(k, v BLOB);
@@ -87,6 +87,7 @@ do_ioerr_test incrblob_err-5 -cksum 1 -sqlprep {
   INSERT INTO blobs VALUES(1, zeroblob(length(CAST($::data AS BLOB))));
 } -tclbody {
   set ::blob [db incrblob blobs v 1]
+  fconfigure $::blob -translation binary
   puts -nonewline $::blob $::data
   close $::blob
 }
@@ -96,6 +97,7 @@ do_ioerr_test incrblob_err-6 -cksum 1 -sqlprep {
   INSERT INTO blobs VALUES(1, $::data || $::data || $::data);
 } -tclbody {
   set ::blob [db incrblob blobs v 1]
+  fconfigure $::blob -translation binary
   seek $::blob -20 end
   puts -nonewline $::blob "12345678900987654321"
   close $::blob

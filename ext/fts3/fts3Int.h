@@ -27,7 +27,14 @@
 # define SQLITE_ENABLE_FTS3
 #endif
 
-#ifdef SQLITE_ENABLE_FTS3
+#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
+
+/* If not building as part of the core, include sqlite3ext.h. */
+#ifndef SQLITE_CORE
+# include "sqlite3ext.h" 
+extern const sqlite3_api_routines *sqlite3_api;
+#endif
+
 #include "sqlite3.h"
 #include "fts3_tokenizer.h"
 #include "fts3_hash.h"
@@ -290,7 +297,7 @@ struct Fts3Doclist {
   int bFreeList;                 /* True if pList should be sqlite3_free()d */
   char *pList;                   /* Pointer to position list following iDocid */
   int nList;                     /* Length of position list */
-} doclist;
+};
 
 /*
 ** A "phrase" is a sequence of one or more tokens that must match in
@@ -490,18 +497,7 @@ int sqlite3Fts3InitTerm(sqlite3 *db);
 /* fts3_aux.c */
 int sqlite3Fts3InitAux(sqlite3 *db);
 
-int sqlite3Fts3TermSegReaderCursor(
-  Fts3Cursor *pCsr,               /* Virtual table cursor handle */
-  const char *zTerm,              /* Term to query for */
-  int nTerm,                      /* Size of zTerm in bytes */
-  int isPrefix,                   /* True for a prefix search */
-  Fts3MultiSegReader **ppSegcsr   /* OUT: Allocated seg-reader cursor */
-);
-
 void sqlite3Fts3EvalPhraseCleanup(Fts3Phrase *);
-
-int sqlite3Fts3EvalStart(Fts3Cursor *, Fts3Expr *, int);
-int sqlite3Fts3EvalNext(Fts3Cursor *pCsr);
 
 int sqlite3Fts3MsrIncrStart(
     Fts3Table*, Fts3MultiSegReader*, int, const char*, int);
@@ -513,5 +509,5 @@ int sqlite3Fts3MsrIncrRestart(Fts3MultiSegReader *pCsr);
 
 int sqlite3Fts3DeferredTokenList(Fts3DeferredToken *, char **, int *);
 
-#endif /* SQLITE_ENABLE_FTS3 */
+#endif /* !SQLITE_CORE || SQLITE_ENABLE_FTS3 */
 #endif /* _FTSINT_H */

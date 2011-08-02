@@ -1149,11 +1149,14 @@ int sqlite3AbsInt32(int x){
 
 #ifdef SQLITE_ENABLE_8_3_NAMES
 /*
-** If SQLITE_ENABLE_8_3_NAME is set at compile-time and if the database
+** If SQLITE_ENABLE_8_3_NAMES is set at compile-time and if the database
 ** filename in zBaseFilename is a URI with the "8_3_names=1" parameter and
 ** if filename in z[] has a suffix (a.k.a. "extension") that is longer than
 ** three characters, then shorten the suffix on z[] to be the last three
 ** characters of the original suffix.
+**
+** If SQLITE_ENABLE_8_3_NAMES is set to 2 at compile-time, then always
+** do the suffix shortening regardless of URI parameter.
 **
 ** Examples:
 **
@@ -1162,9 +1165,12 @@ int sqlite3AbsInt32(int x){
 **     test.db-shm        =>   test.shm
 */
 void sqlite3FileSuffix3(const char *zBaseFilename, char *z){
+#if SQLITE_ENABLE_8_3_NAMES<2
   const char *zOk;
   zOk = sqlite3_uri_parameter(zBaseFilename, "8_3_names");
-  if( zOk && sqlite3GetBoolean(zOk) ){
+  if( zOk && sqlite3GetBoolean(zOk) )
+#endif
+  {
     int i, sz;
     sz = sqlite3Strlen30(z);
     for(i=sz-1; i>0 && z[i]!='/' && z[i]!='.'; i--){}

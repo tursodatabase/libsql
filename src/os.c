@@ -138,9 +138,9 @@ int sqlite3OsOpen(
   ** SQLITE_OPEN_FULLMUTEX or SQLITE_OPEN_SHAREDCACHE) are blocked before
   ** reaching the VFS. */
 #if SQLITE_ENABLE_DATA_PROTECTION
-  openFlags = flags & (0x87f3f | SQLITE_OPEN_FILEPROTECTION_MASK);
+  openFlags = flags & (0x87f7f | SQLITE_OPEN_FILEPROTECTION_MASK);
 #else
-  openFlags = flags & 0x87f3f;
+  openFlags = flags & 0x87f7f;
 #endif
   rc = pVfs->xOpen(pVfs, zPath, pFile, openFlags, pFlagsOut);
   assert( rc==SQLITE_OK || pFile->pMethods==0 );

@@ -43,16 +43,32 @@ TCC = $(TCC) -I$(TOP)\ext\rtree
 #
 TCC = $(TCC) -DNDEBUG
 
-# The library that programs using TCL must link against.
+# The locations of the Tcl header and library files.  Also, the library that
+# non-stubs enabled programs using Tcl must link against.  These variables
+# (TCLINCDIR, TCLLIBDIR, and LIBTCL) may be overridden via the environment
+# prior to running nmake in order to match the actual installed location and
+# version on this machine.
 #
-LIBTCL = tcl85.lib
+!if "$(TCLINCDIR)" == ""
 TCLINCDIR = c:\tcl\include
+!endif
+
+!if "$(TCLLIBDIR)" == ""
 TCLLIBDIR = c:\tcl\lib
+!endif
+
+!if "$(LIBTCL)" == ""
+LIBTCL = tcl85.lib
+!endif
 
 # This is the command to use for tclsh - normally just "tclsh", but we may
-# know the specific version we want to use
+# know the specific version we want to use.  This variable (TCLSH_CMD) may be
+# overridden via the environment prior to running nmake in order to select a
+# specific Tcl shell to use.
 #
+!if "$(TCLSH_CMD)" == ""
 TCLSH_CMD = tclsh85
+!endif
 
 # Compiler options needed for programs that use the readline() library.
 #
@@ -118,7 +134,7 @@ LTLIBOPTS = /MACHINE:$(PLATFORM)
 !ENDIF
 
 # nawk compatible awk.
-NAWK = .\gawk.exe
+NAWK = gawk.exe
 
 # You should not have to change anything below this line
 ###############################################################################
@@ -439,7 +455,7 @@ EXTHDR = $(EXTHDR) \
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
-all:	libsqlite3.lib sqlite3.exe libtclsqlite3.lib
+all:	dll libsqlite3.lib sqlite3.exe libtclsqlite3.lib
 
 libsqlite3.lib:	$(LIBOBJ)
 	$(LTLIB) $(LTLIBOPTS) /OUT:$@ $(LIBOBJ) $(TLIBS)
@@ -463,12 +479,15 @@ sqlite3.exe:	$(TOP)\src\shell.c libsqlite3.lib sqlite3.h
 	-mkdir tsrc
 	for %i in ($(SRC)) do copy /Y %i tsrc
 	del /Q tsrc\sqlite.h.in tsrc\parse.y
-	$(TCLSH_CMD) $(TOP)\tool\vdbe-compress.tcl <tsrc\vdbe.c >vdbe.new
+	$(TCLSH_CMD) $(TOP)\tool\vdbe-compress.tcl < tsrc\vdbe.c > vdbe.new
 	move vdbe.new tsrc\vdbe.c
 	echo > .target_source
 
 sqlite3.c:	.target_source $(TOP)\tool\mksqlite3c.tcl
 	$(TCLSH_CMD) $(TOP)\tool\mksqlite3c.tcl
+
+sqlite3-all.c:	sqlite3.c $(TOP)/tool/split-sqlite3c.tcl
+	$(TCLSH_CMD) $(TOP)/tool/split-sqlite3c.tcl
 
 # Rule to build the amalgamation
 #
@@ -720,10 +739,10 @@ tclsqlite3.exe:	tclsqlite-shell.lo libsqlite3.lib
 # Rules to build opcodes.c and opcodes.h
 #
 opcodes.c:	opcodes.h $(TOP)\mkopcodec.awk
-	$(NAWK) "/#define OP_/ { print }" opcodes.h | sort /+45 | $(NAWK) -f $(TOP)\mkopcodec.awk >opcodes.c
+	$(NAWK) "/#define OP_/ { print }" opcodes.h | sort /+45 | $(NAWK) -f $(TOP)\mkopcodec.awk > opcodes.c
 
 opcodes.h:	parse.h $(TOP)\src\vdbe.c $(TOP)\mkopcodeh.awk
-	type parse.h $(TOP)\src\vdbe.c | $(NAWK) -f $(TOP)\mkopcodeh.awk >opcodes.h
+	type parse.h $(TOP)\src\vdbe.c | $(NAWK) -f $(TOP)\mkopcodeh.awk > opcodes.h
 
 # Rules to build parse.c and parse.h - the outputs of lemon.
 #
@@ -734,16 +753,16 @@ parse.c:	$(TOP)\src\parse.y lemon.exe $(TOP)\addopcodes.awk
 	copy $(TOP)\src\parse.y .
 	.\lemon.exe $(OPT_FEATURE_FLAGS) $(OPTS) parse.y
 	move parse.h parse.h.temp
-	$(NAWK) -f $(TOP)\addopcodes.awk parse.h.temp >parse.h
+	$(NAWK) -f $(TOP)\addopcodes.awk parse.h.temp > parse.h
 
 sqlite3.h:	$(TOP)\src\sqlite.h.in $(TOP)\manifest.uuid $(TOP)\VERSION
-	$(TCLSH_CMD) $(TOP)\tool\mksqlite3h.tcl $(TOP) >sqlite3.h
+	$(TCLSH_CMD) $(TOP)\tool\mksqlite3h.tcl $(TOP) > sqlite3.h
 
 mkkeywordhash.exe:	$(TOP)\tool\mkkeywordhash.c
 	$(BCC) -Femkkeywordhash.exe $(OPT_FEATURE_FLAGS) $(OPTS) $(TOP)\tool\mkkeywordhash.c
 
 keywordhash.h:	$(TOP)\tool\mkkeywordhash.c mkkeywordhash.exe
-	.\mkkeywordhash.exe >keywordhash.h
+	.\mkkeywordhash.exe > keywordhash.h
 
 
 
@@ -839,7 +858,7 @@ test:	testfixture.exe sqlite3.exe
 
 spaceanal_tcl.h:	$(TOP)\tool\spaceanal.tcl
 	$(NAWK) -f $(TOP)/tool/tostr.awk \
-		$(TOP)\tool\spaceanal.tcl >spaceanal_tcl.h
+		$(TOP)\tool\spaceanal.tcl > spaceanal_tcl.h
 
 sqlite3_analyzer.exe:	$(TESTFIXTURE_SRC) spaceanal_tcl.h
 	$(LTLINK) -DTCLSH=2 -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1 \
@@ -866,10 +885,10 @@ clean:
 dll: sqlite3.dll
 
 sqlite3.def: libsqlite3.lib
-	echo EXPORTS >sqlite3.def
+	echo EXPORTS > sqlite3.def
 	dumpbin /all libsqlite3.lib \
 		| $(NAWK) "/ 1 _sqlite3_/ { sub(/^.* _/,\"\");print }" \
-		| sort >>sqlite3.def
+		| sort >> sqlite3.def
 
 sqlite3.dll: $(LIBOBJ) sqlite3.def
 	link $(LTLINKOPTS) /DLL /DEF:sqlite3.def /OUT:$@ $(LIBOBJ)

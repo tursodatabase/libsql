@@ -20,7 +20,7 @@
 # Commands to manipulate the db and the file-system at a high level:
 #
 #      copy_file              FROM TO
-#      drop_all_table         ?DB?
+#      drop_all_tables        ?DB?
 #      forcedelete            FILENAME
 #
 # Test the capability of the SQLite version built into the interpreter to
