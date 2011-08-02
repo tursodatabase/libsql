@@ -79,6 +79,14 @@ do_test win32lock-2.1 {
   file_control_win32_av_retry db 1 1
 } {0 1 1}
 
+#
+# NOTE: It is known that the win32lock-2.2-* tests may fail if the system is
+#       experiencing heavy load (i.e. they are very timing sensitive).  This is
+#       primarily due to the AV retry delay being set to 1 millisecond in the
+#       win32lock-2.1 test (above).  While it is important to test this corner
+#       case for the AV retry logic, a failure of this test should probably not
+#       be interpreted as a bug in SQLite or these test cases.
+#
 set win32_lock_ok [list]
 set win32_lock_error [list]
 set delay1 1

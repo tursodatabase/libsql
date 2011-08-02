@@ -1,5 +1,5 @@
-C Correct\ssubtle\stiming\sissues\sin\sthe\swin32lock\stest\scases\sand\sin\sthe\slock_win32_file\sTcl\scommand.\s\sAlso,\seliminate\ssuperfluous\sMSVC\scompiler\swarnings.
-D 2011-08-02T23:34:00.968
+C Add\sexplanatory\scomment\sto\sthe\swin32lock-2.2\stest\scase.
+D 2011-08-02T23:45:53.187
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1e6988b3c11dee9bd5edc0c804bd4468d74a9cdc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -913,7 +913,7 @@ F test/where9.test 24f19ad14bb1b831564ced5273e681e495662848
 F test/whereA.test 24c234263c8fe358f079d5e57d884fb569d2da0a
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
-F test/win32lock.test 7144fb147f7096807b22c98a44c4f2d9649b1175
+F test/win32lock.test d60b39c53c68617524429be27bf239f0b11673f2
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F tool/build-shell.sh 12aa4391073a777fcb6dcc490b219a018ae98bac
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -954,7 +954,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 8a52698e642f40a32d09a6a00b63f25ac38f3fda
-R e99f54a15d751a5d0d488d9edef3a843
+P 7baf02946e14eb889d864984ff3b3822aad8a3c9
+R 47b1cf7826a3e63c594957b3cfc97529
 U mistachkin
-Z a80ca8d406d4afb3329eb0410ed145e3
+Z 7b594a9d83a13099dd5de5b0bd599b2c
