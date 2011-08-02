@@ -1,5 +1,5 @@
-C Make\ssure\sIS\sNOT\sNULL\sconstraints\swork\son\svirtual\stables.\nFix\sfor\sticket\s[6c14288a473ceff].
-D 2011-08-02T01:57:39.661
+C Omit\sbackcompat.test\sfrom\sthe\sjournaltest\spermutation\sbecause\sit\suses\sWAL\nmode\swhich\sis\sincompatible\swith\sjournaltest.
+D 2011-08-02T19:30:20.260
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1e6988b3c11dee9bd5edc0c804bd4468d74a9cdc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -616,7 +616,7 @@ F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
 F test/pcache2.test 0d85f2ab6963aee28c671d4c71bec038c00a1d16
-F test/permutations.test aae89941ca0968b53633c97b5dd0d6f9f9899d27
+F test/permutations.test 434b3c91168969cee1385663748106f5f13b2f9c
 F test/pragma.test fdfc09067ea104a0c247a1a79d8093b56656f850
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
@@ -954,7 +954,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P ed630b012f468d6779b83dd8c4dbf3a8dafee573
-R 171bb090fbd613c7785a72bd19098ec2
+P a55f4ab99952a731e4cd8f6ef17389062e5ed4c5
+R 2ce41a9c949729a862f5ca8012f8f07d
 U drh
-Z 642ce1d00dc515b7cad2aa099629b2e0
+Z 9aaddca534c660973358cb12c28015e6
