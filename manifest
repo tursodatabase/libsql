@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\schanges\sinto\sthe\swinopen-retry-logic\sbranch.
-D 2011-08-02T19:42:38.461
+C Merge\sin\sthe\spermutation\schanges\sfrom\strunk.
+D 2011-08-02T20:01:06.809
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1e6988b3c11dee9bd5edc0c804bd4468d74a9cdc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -616,7 +616,7 @@ F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
 F test/pcache2.test 9f9357bb0f463b87bdf695646024ed2031a0c85a
-F test/permutations.test 434b3c91168969cee1385663748106f5f13b2f9c
+F test/permutations.test 2caebe3ac9c227b076fd58a9fbd818715ec59379
 F test/pragma.test c8108e01da04f16e67e5754e610bc62c1b993f6c
 F test/pragma2.test 3a55f82b954242c642f8342b17dffc8b47472947
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
@@ -954,7 +954,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 9007586fdabed8dbcc78581ea9821cfd1f9a4c8c 2bbf3150a4b7108e88ed81c1d40af6f06089e148
-R ed676f9c5b5c5c1cb85f45ddea5340b8
+P 8bef97a0eb2f56d0ac374d97e97e0a44c7f99aee 2bbf3150a4b7108e88ed81c1d40af6f06089e148 861a5b62430d0ada07a46d0e394fcf0b0faab1cd
+R 71d14b2778e99286bdae280684de342f
 U drh
-Z a5575159f660bba167a59a6dccad64eb
+Z dc3b5053c70dc32d5e9154bd65bfd193

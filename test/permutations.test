@@ -529,7 +529,7 @@ test_suite "inmemory_journal" -description {
   stmt.test
 
   # WAL mode is different.
-  wal* tkt-2d1a5c67d.test
+  wal* tkt-2d1a5c67d.test backcompat.test
 }]
 
 ifcapable mem3 {
