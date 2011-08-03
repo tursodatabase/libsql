@@ -233,7 +233,7 @@ do_faultsim_test pagerfault-5.2 -prep {
 do_faultsim_test pagerfault-5.3 -faults oom-transient -prep {
   faultsim_restore_and_reopen
   db func a_string a_string
-  file delete -force test2.db test2.db-journal test2.db-wal
+  forcedelete test2.db test2.db-journal test2.db-wal
   execsql { 
     PRAGMA journal_mode = PERSIST;
     ATTACH 'test2.db' AS aux;
@@ -641,7 +641,7 @@ do_test pagerfault-13-pre1 {
     COMMIT;
   }
   db close
-  file delete -force test.db
+  forcedelete test.db
   faultsim_save
 } {}
 do_faultsim_test pagerfault-13 -prep {
@@ -1106,7 +1106,7 @@ do_faultsim_test pagerfault-22 -prep {
 #
 do_faultsim_test pagerfault-23 -prep {
   sqlite3 db :memory:
-  foreach f [glob -nocomplain test.db*] { file delete -force $f }
+  foreach f [glob -nocomplain test.db*] { forcedelete $f }
   db eval { 
     ATTACH 'test.db2' AS aux;
     CREATE TABLE t1(a, b);

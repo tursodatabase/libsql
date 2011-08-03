@@ -21,7 +21,7 @@ ifcapable !wal {finish_test ; return }
 
 proc reopen_db {} {
   catch { db close }
-  file delete -force test.db test.db-wal
+  forcedelete test.db test.db-wal
   sqlite3 db test.db
   execsql { PRAGMA journal_mode = wal }
 }
@@ -53,9 +53,9 @@ for {set seed 1} {$seed<10} {incr seed} {
     } {ok}
 
     do_test walslow-1.seed=$seed.$iTest.3 {
-      file delete -force testX.db testX.db-wal
-      file copy test.db testX.db
-      file copy test.db-wal testX.db-wal
+      forcedelete testX.db testX.db-wal
+      copy_file test.db testX.db
+      copy_file test.db-wal testX.db-wal
   
       sqlite3 db2 testX.db
       execsql { PRAGMA journal_mode = WAL } db2

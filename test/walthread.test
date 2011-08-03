@@ -129,7 +129,7 @@ proc do_thread_test {args} {
   puts "Running $P(testname) for $P(seconds) seconds..."
 
   catch { db close }
-  file delete -force test.db test.db-journal test.db-wal
+  forcedelete test.db test.db-journal test.db-wal
 
   sqlite3 db test.db
   eval $P(init)
@@ -508,12 +508,12 @@ do_thread_test walthread-5 -seconds $seconds(walthread-5) -init {
     COMMIT;
   }
 
-  file copy -force test.db-wal bak.db-wal
-  file copy -force test.db bak.db
+  forcecopy test.db-wal bak.db-wal
+  forcecopy test.db bak.db
   db close
 
-  file copy -force bak.db-wal test.db-wal
-  file copy -force bak.db test.db
+  forcecopy bak.db-wal test.db-wal
+  forcecopy bak.db test.db
 
   if {[file size test.db-wal] < [log_file_size [expr 64*1024] 1024]} {
     error "Somehow failed to create a large log file"

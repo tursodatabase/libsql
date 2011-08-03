@@ -208,7 +208,7 @@ db3 close
 do_test vacuum-3.1 {
   db close
   db2 close
-  file delete test.db
+  delete_file test.db
   sqlite3 db test.db
   execsql {
     PRAGMA empty_result_callbacks=on;
@@ -234,7 +234,7 @@ do_test vacuum-4.2 {
 ifcapable view {
 do_test vacuum-5.1 {
   db close
-  file delete -force test.db
+  forcedelete test.db
   sqlite3 db test.db
   catchsql {
     CREATE TABLE Test (TestID int primary key);
@@ -290,10 +290,10 @@ ifcapable {bloblit} {
 }
 
 # Check what happens when an in-memory database is vacuumed. The
-# [file delete] command covers us in case the library was compiled
+# [delete_file] command covers us in case the library was compiled
 # without in-memory database support.
 #
-file delete -force :memory:
+forcedelete :memory:
 do_test vacuum-7.0 {
   sqlite3 db2 :memory:
   execsql {
@@ -337,8 +337,8 @@ db2 close
 # Ticket #873.  VACUUM a database that has ' in its name.
 #
 do_test vacuum-8.1 {
-  file delete -force a'z.db
-  file delete -force a'z.db-journal
+  forcedelete a'z.db
+  forcedelete a'z.db-journal
   sqlite3 db2 a'z.db
   execsql {
     CREATE TABLE t1(t);
@@ -383,6 +383,6 @@ ifcapable {autoinc} {
   } $::cksum
 }
 
-file delete -force {a'z.db}
+forcedelete {a'z.db}
 
 finish_test

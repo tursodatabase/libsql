@@ -121,7 +121,7 @@ for {set ii 2} {$ii < 500} {incr ii} {
 # switch or something...
 #
 
-file delete -force test.db test2.db
+forcedelete test.db test2.db
 unset -nocomplain finished
 
 do_test thread005-2.1 {

@@ -60,7 +60,7 @@ foreach {DO_MALLOC_TEST enc} {
 # [foreach] loop is testing with OOM errors, disable the lookaside buffer.
 #
 db close
-file delete -force test.db test.db-journal
+forcedelete test.db test.db-journal
 sqlite3 db test.db
 if {$DO_MALLOC_TEST} { sqlite3_db_config_lookaside db 0 0 0 }
 db eval "PRAGMA encoding = '$enc'"
@@ -637,7 +637,7 @@ read_test 8.2.2 { PRAGMA table_info(t9c) } {0 c\"1 {} 0 {} 0 1 c'2 {} 0 {} 0}
 #
 foreach DO_MALLOC_TEST {0 1 2} {
   db close
-  file delete -force test.db test.db-journal
+  forcedelete test.db test.db-journal
   sqlite3 db test.db
   if {$DO_MALLOC_TEST} { sqlite3_db_config_lookaside db 0 0 0 }
 

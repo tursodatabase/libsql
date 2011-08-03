@@ -200,7 +200,7 @@ ifcapable attach {
 }
 
 ifcapable attach {
-  file delete -force test2.db
+  forcedelete test2.db
   do_test jrnlmode-2.1 {
     execsql {
       ATTACH 'test2.db' AS aux;
@@ -242,8 +242,8 @@ ifcapable attach {
 # Test caes jrnlmode-3.X verify that ticket #3127 has been fixed.
 #
   db close
-  file delete -force test2.db
-  file delete -force test.db
+  forcedelete test2.db
+  forcedelete test.db
   sqlite3 db test.db
 
   do_test jrnlmode-3.1 {
@@ -270,7 +270,7 @@ ifcapable attach {
 
 ifcapable autovacuum&&pragma {
   db close
-  file delete -force test.db
+  forcedelete test.db
   sqlite3 db test.db
   do_test jrnlmode-4.1 {
     execsql {
@@ -303,7 +303,7 @@ ifcapable autovacuum&&pragma {
 # pragma.
 ifcapable pragma {
   db close
-  file delete -force test.db test2.db test3.db
+  forcedelete test.db test2.db test3.db
   sqlite3 db test.db
 
   do_test jrnlmode-5.1 {
@@ -511,7 +511,7 @@ ifcapable pragma {
 ifcapable pragma {
   catch { db close }
   do_test jrnlmode-7.1 {
-    foreach f [glob -nocomplain test.db*] { file delete -force $f }
+    foreach f [glob -nocomplain test.db*] { forcedelete $f }
     sqlite3 db test.db
     execsql {
       PRAGMA journal_mode = memory;

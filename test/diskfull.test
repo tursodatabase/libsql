@@ -82,8 +82,8 @@ proc do_diskfull_test {prefix sql} {
 do_diskfull_test diskfull-2 VACUUM
 
 # db close
-# file delete -force test.db
-# file delete -force test.db-journal
+# forcedelete test.db
+# forcedelete test.db-journal
 # sqlite3 db test.db
 # 
 # do_test diskfull-3.1 {

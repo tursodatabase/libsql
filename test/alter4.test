@@ -178,7 +178,7 @@ ifcapable schema_version {
 
 do_test alter4-4.1 {
   db close
-  file delete -force test.db
+  forcedelete test.db
   set ::DB [sqlite3 db test.db]
   execsql {
     CREATE TEMP TABLE t1(a, b);
@@ -213,8 +213,8 @@ do_test alter4-4.99 {
 
 ifcapable attach {
   do_test alter4-5.1 {
-    file delete -force test2.db
-    file delete -force test2.db-journal
+    forcedelete test2.db
+    forcedelete test2.db-journal
     execsql {
       CREATE TEMP TABLE t1(a, b);
       INSERT INTO t1 VALUES(1, 'one');

@@ -153,7 +153,7 @@ foreach endian {big little} {
   #
   do_test walcksum-1.$endian.1 {
     catch { db close }
-    file delete -force test.db test.db-wal test.db-journal
+    forcedelete test.db test.db-wal test.db-journal
     sqlite3 db test.db
     execsql {
       PRAGMA page_size = 1024;
@@ -172,8 +172,8 @@ foreach endian {big little} {
       INSERT INTO t1 VALUES(21, 'twentyone');
     }
 
-    file copy -force test.db test2.db
-    file copy -force test.db-wal test2.db-wal
+    forcecopy test.db test2.db
+    forcecopy test.db-wal test2.db-wal
     db close
 
     list [file size test2.db] [file size test2.db-wal]
@@ -199,8 +199,8 @@ foreach endian {big little} {
     } {1}
   }
   do_test walcksum-1.$endian.4.1 {
-    file copy -force test2.db test.db
-    file copy -force test2.db-wal test.db-wal
+    forcecopy test2.db test.db
+    forcecopy test2.db-wal test.db-wal
     sqlite3 db test.db
     execsql { SELECT a FROM t1 }
   } {1 2 3 5 8 13 21}
@@ -248,8 +248,8 @@ foreach endian {big little} {
   # Now that both the recoverer and non-recoverer have added frames to the
   # log file, check that it can still be recovered.
   #
-  file copy -force test.db test2.db
-  file copy -force test.db-wal test2.db-wal
+  forcecopy test.db test2.db
+  forcecopy test.db-wal test2.db-wal
   do_test walcksum-1.$endian.7.11 {
     sqlite3 db3 test2.db
     execsql { 
@@ -294,7 +294,7 @@ foreach endian {big little} {
 # formatted (and can be recovered by a second process if required).
 #
 do_test walcksum-2.1 {
-  file delete -force test.db test.db-wal test.db-journal
+  forcedelete test.db test.db-wal test.db-journal
   sqlite3 db test.db
   execsql {
     PRAGMA synchronous = NORMAL;
@@ -322,8 +322,8 @@ do_test walcksum-2.1 {
     COMMIT;
   }
 
-  file copy -force test.db test2.db
-  file copy -force test.db-wal test2.db-wal
+  forcecopy test.db test2.db
+  forcecopy test.db-wal test2.db-wal
 
   sqlite3 db2 test2.db
   execsql {
@@ -340,7 +340,7 @@ catch { db2 close }
 # invalid as a result.
 #
 do_test walcksum-3.1 {
-  file delete -force test.db test.db-wal test.db-journal
+  forcedelete test.db test.db-wal test.db-journal
   sqlite3 db test.db
 
   execsql {
@@ -356,13 +356,13 @@ do_test walcksum-3.1 {
   file size test.db-wal
 } [wal_file_size 1 1024]
 do_test walcksum-3.2 {
-  file copy -force test.db-wal test2.db-wal
-  file copy -force test.db test2.db
+  forcecopy test.db-wal test2.db-wal
+  forcecopy test.db test2.db
   sqlite3 db2 test2.db
   execsql { SELECT a FROM t1 } db2
 } {1 2 3}
 db2 close
-file copy -force test.db test2.db
+forcecopy test.db test2.db
 
 
 foreach incr {1 2 3 20 40 60 80 100 120 140 160 180 200 220 240 253 254 255} {
@@ -370,7 +370,7 @@ foreach incr {1 2 3 20 40 60 80 100 120 140 160 180 200 220 240 253 254 255} {
     set FAIL 0
     for {set iOff 0} {$iOff < [wal_file_size 1 1024]} {incr iOff} {
 
-      file copy -force test.db-wal test2.db-wal
+      forcecopy test.db-wal test2.db-wal
       set fd [open test2.db-wal r+]
       fconfigure $fd -encoding binary
       fconfigure $fd -translation binary

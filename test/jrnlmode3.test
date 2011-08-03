@@ -48,7 +48,7 @@ do_test jrnlmode3-1.2 {
 } {1}
 
 db close
-file delete -force test.db test.db-journal
+forcedelete test.db test.db-journal
 sqlite3 db test.db
 
 do_test jrnlmode3-2.1 {
@@ -85,7 +85,7 @@ foreach fromjmode $all_journal_modes {
     # Start with a fresh database connection an empty database file.
     #
     db close
-    file delete -force test.db test.db-journal
+    forcedelete test.db test.db-journal
     sqlite3 db test.db
 
     # Initialize the journal mode.

@@ -140,7 +140,7 @@ do_test notify1-2.2.5 {
 do_test notify1-2.3.1 {
   db close
   db2 close
-  file delete -force test.db test2.db test3.db
+  forcedelete test.db test2.db test3.db
   foreach con {db db2 db3} {
     sqlite3 $con test.db
     $con eval { ATTACH 'test2.db' AS aux2 }
@@ -294,7 +294,7 @@ do_malloc_test notify1-5 -tclprep {
 #
 db close
 do_test notify1-6.1.1 {
-  file delete -force test.db test2.db
+  forcedelete test.db test2.db
   foreach conn {db db2 db3} {
     sqlite3 $conn test.db
     execsql { ATTACH 'test2.db' AS two } $conn

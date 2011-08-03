@@ -43,6 +43,11 @@ TCC = $(TCC) -I$(TOP)\ext\rtree
 #
 TCC = $(TCC) -DNDEBUG
 
+#
+# Prevent warnings about "insecure" runtime library functions being used.
+#
+TCC = $(TCC) -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS
+
 # The locations of the Tcl header and library files.  Also, the library that
 # non-stubs enabled programs using Tcl must link against.  These variables
 # (TCLINCDIR, TCLLIBDIR, and LIBTCL) may be overridden via the environment

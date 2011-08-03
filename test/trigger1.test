@@ -534,8 +534,8 @@ ifcapable conflict {
 # example, that you can drop and re-create tables referenced by triggers. 
 ifcapable tempdb&&attach {
   do_test trigger1-10.0 {
-    file delete -force test2.db
-    file delete -force test2.db-journal
+    forcedelete test2.db
+    forcedelete test2.db-journal
     execsql {
       ATTACH 'test2.db' AS aux;
     }

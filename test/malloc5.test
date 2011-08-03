@@ -275,7 +275,7 @@ proc nPage {db} {
   set stats(page)
 }
 db close
-file delete -force test.db test.db-journal test2.db test2.db-journal
+forcedelete test.db test.db-journal test2.db test2.db-journal
 
 # This block of test-cases (malloc5-6.1.*) prepares two database files
 # for the subsequent tests.
@@ -304,7 +304,7 @@ do_test malloc5-6.1.1 {
         SELECT randstr(50,50), randstr(75,75), randstr(100,100) FROM abc;
     COMMIT;
   } 
-  copy_file test.db test2.db
+  forcecopy test.db test2.db
   sqlite3 db2 test2.db
   list \
     [expr ([file size test.db]/1024)>20] [expr ([file size test2.db]/1024)>20]

@@ -85,7 +85,7 @@ do_test corruptD-1.0 {
     DELETE FROM t1 WHERE a = 30;
     DELETE FROM t1 WHERE a = 40;
   }
-  copy_file test.db test.bu
+  forcecopy test.db test.bu
 } {}
 
 proc incr_change_counter {} {
@@ -96,7 +96,7 @@ proc incr_change_counter {} {
 
 proc restore_file {} {
   db close
-  copy_file test.bu test.db
+  forcecopy test.bu test.db
   sqlite3 db test.db
 }
 

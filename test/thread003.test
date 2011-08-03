@@ -40,7 +40,7 @@ do_test thread003.1.2 {
 } {1}
 do_test thread003.1.3 {
   db close
-  file delete -force test2.db
+  forcedelete test2.db
   sqlite3 db test2.db
 } {}
 do_test thread003.1.4 {

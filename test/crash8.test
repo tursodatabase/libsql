@@ -243,7 +243,7 @@ do_test crash8-3.11 {
 #
 ifcapable pragma {
   reset_db
-  file delete -force test2.db
+  forcedelete test2.db
 
   do_test crash8-4.1 {
     execsql {
@@ -336,14 +336,14 @@ ifcapable pragma {
   } {def}
 
   do_test crash8-4.10 {
-    file delete $zMasterJournal
+    delete_file $zMasterJournal
     execsql { SELECT b FROM main.ab WHERE a = 0 }
   } {jkl}
 }
 
 for {set i 1} {$i < 10} {incr i} {
   catch { db close }
-  file delete -force test.db test.db-journal
+  forcedelete test.db test.db-journal
   sqlite3 db test.db
   do_test crash8-5.$i.1 {
     execsql {
@@ -367,7 +367,7 @@ for {set i 1} {$i < 10} {incr i} {
   } {ok}
   
   catch { db close }
-  file delete -force test.db test.db-journal
+  forcedelete test.db test.db-journal
   sqlite3 db test.db
   do_test crash8-5.$i.2 {
     execsql {
@@ -383,9 +383,9 @@ for {set i 1} {$i < 10} {incr i} {
       BEGIN;
         UPDATE t1 SET x = randomblob(900);
     }
-    file delete -force testX.db testX.db-journal testX.db-wal
-    copy_file test.db testX.db
-    copy_file test.db-journal testX.db-journal
+    forcedelete testX.db testX.db-journal testX.db-wal
+    forcecopy test.db testX.db
+    forcecopy test.db-journal testX.db-journal
     db close
 
     crashsql -file test.db -delay [expr ($::i%2) + 1] {

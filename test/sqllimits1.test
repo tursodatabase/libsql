@@ -759,7 +759,7 @@ ifcapable attach {
   do_test sqllimits1-12.1 {
     set max $::SQLITE_MAX_ATTACHED
     for {set i 0} {$i < ($max)} {incr i} {
-      file delete -force test${i}.db test${i}.db-journal
+      forcedelete test${i}.db test${i}.db-journal
     }
     for {set i 0} {$i < ($max)} {incr i} {
       execsql "ATTACH 'test${i}.db' AS aux${i}"

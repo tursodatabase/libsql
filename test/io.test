@@ -225,7 +225,7 @@ do_test io-2.6.2 {
   }
 } {1 {unable to open database file}}
 do_test io-2.6.3 {
-  file delete -force test.db-journal
+  forcedelete test.db-journal
   catchsql { COMMIT }
 } {0 {}}
 do_test io-2.6.4 {
@@ -237,7 +237,7 @@ do_test io-2.6.4 {
 # is created during execution of the COMMIT statement, so we have to
 # use the same technique to check that it is created as in the above 
 # block.
-file delete -force test2.db test2.db-journal
+forcedelete test2.db test2.db-journal
 ifcapable attach {
   do_test io-2.7.1 {
     execsql {
@@ -261,7 +261,7 @@ ifcapable attach {
     catchsql { COMMIT }
   } {1 {unable to open database file}}
   do_test io-2.7.5 {
-    file delete -force test2.db-journal
+    forcedelete test2.db-journal
     catchsql { COMMIT }
   } {1 {cannot commit - no transaction is active}}
   do_test io-2.7.6 {
@@ -304,7 +304,7 @@ do_test io-2.9.1 {
 do_test io-2.9.2 {
   execsql { ROLLBACK; }
   db close
-  file delete -force test.db test.db-journal
+  forcedelete test.db test.db-journal
   sqlite3 db test.db -vfs devsym
   execsql {
     PRAGMA auto_vacuum = OFF;
@@ -375,7 +375,7 @@ sqlite3_simulate_device -char sequential -sectorsize 0
 ifcapable pager_pragmas {
   do_test io-3.1 {
     db close
-    file delete -force test.db test.db-journal
+    forcedelete test.db test.db-journal
     sqlite3 db test.db -vfs devsym
     db eval {
       PRAGMA auto_vacuum=OFF;
@@ -544,7 +544,7 @@ foreach {char                 sectorsize pgsize} {
   incr tn
   if {$pgsize>$::SQLITE_MAX_PAGE_SIZE} continue
   db close
-  file delete -force test.db test.db-journal
+  forcedelete test.db test.db-journal
   sqlite3_simulate_device -char $char -sectorsize $sectorsize
   sqlite3 db test.db -vfs devsym
   db eval {

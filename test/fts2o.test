@@ -109,7 +109,7 @@ do_test fts2o-2.12 {
 # be run on an initially empty db.
 #
 db close
-file delete -force test.db test.db-journal
+forcedelete test.db test.db-journal
 sqlite3 db test.db
 
 do_test fts2o-3.1 {
@@ -134,7 +134,7 @@ do_test fts2o-3.2 {
 # Test that it is possible to rename an fts2 table in an attached 
 # database.
 #
-file delete -force test2.db test2.db-journal
+forcedelete test2.db test2.db-journal
 
 do_test fts2o-3.1 {
   execsql {

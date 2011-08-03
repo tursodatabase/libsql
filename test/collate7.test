@@ -44,7 +44,7 @@ do_test collate7-1.4 {
 } {2}
 
 do_test collate7-2.1 {
-  file delete -force test.db test.db-journal
+  forcedelete test.db test.db-journal
   sqlite3 db test.db
   sqlite3_create_collation_v2 db CASELESS caseless_cmp {incr ::caseless_del}
   execsql {

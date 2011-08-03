@@ -51,8 +51,8 @@ ifcapable !pragma {
 # that the "all.test" script does.
 #
 db close
-file delete test.db test.db-journal
-file delete test3.db test3.db-journal
+delete_file test.db test.db-journal
+delete_file test3.db test3.db-journal
 sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
 
 
@@ -221,8 +221,8 @@ do_test pragma-1.18 {
 # Test modifying the safety_level of an attached database.
 ifcapable pager_pragmas&&attach {
   do_test pragma-2.1 {
-    file delete -force test2.db
-    file delete -force test2.db-journal
+    forcedelete test2.db
+    forcedelete test2.db-journal
     execsql {
       ATTACH 'test2.db' AS aux;
     } 
@@ -255,7 +255,7 @@ ifcapable pager_pragmas&&attach {
 #
 do_test pragma-3.1 {
   db close
-  file delete -force test.db test.db-journal
+  forcedelete test.db test.db-journal
   sqlite3 db test.db
   execsql {
     PRAGMA auto_vacuum=OFF;
@@ -312,7 +312,7 @@ ifcapable attach {
     #
     do_test pragma-3.8 {
       execsql {DETACH t2}
-      file delete -force testerr.db testerr.db-journal
+      forcedelete testerr.db testerr.db-journal
       set out [open testerr.db w]
       fconfigure $out -translation binary
       set in [open test.db r]
@@ -419,7 +419,7 @@ Page 6 is never used} {rowid 1 missing from index i2}}
   }
   do_test pragma-3.19 {
     catch {db close}
-    file delete -force test.db test.db-journal
+    forcedelete test.db test.db-journal
     sqlite3 db test.db
     db eval {PRAGMA integrity_check}
   } {ok}
@@ -741,8 +741,8 @@ do_test pragma-8.1.10 {
 } SQLITE_SCHEMA
 
 # Make sure the schema-version can be manipulated in an attached database.
-file delete -force test2.db
-file delete -force test2.db-journal
+forcedelete test2.db
+forcedelete test2.db-journal
 ifcapable attach {
   do_test pragma-8.1.11 {
     execsql {
@@ -1205,7 +1205,7 @@ do_test pragma-13.1 {
 
 ifcapable pager_pragmas {
   db close
-  file delete -force test.db
+  forcedelete test.db
   sqlite3 db test.db
 
   do_test pragma-14.1 {
@@ -1241,7 +1241,7 @@ ifcapable pager_pragmas {
   } {2}
 
   do_test pragma-14.6 {
-    file delete -force test2.db
+    forcedelete test2.db
     sqlite3 db2 test2.db
     execsql {
       PRAGMA auto_vacuum = 0;

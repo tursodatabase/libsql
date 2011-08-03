@@ -27,7 +27,7 @@ ifcapable autovacuum {
 #
 for {set av 0} {$av<=$upperBound} {incr av} {
   db close
-  file delete -force test.db test.db-journal
+  forcedelete test.db test.db-journal
   sqlite3 db test.db
 
   # Create a table that spans multiple pages.  It is important

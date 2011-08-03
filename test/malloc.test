@@ -270,7 +270,7 @@ do_malloc_test 9 -sqlprep {
 do_malloc_test 10 -tclprep {
   catch {db2 close}
   db close
-  file delete -force test.db test.db-journal
+  forcedelete test.db test.db-journal
   sqlite3 db test.db
   sqlite3_extended_result_codes db 1
   db eval {CREATE TABLE abc(a, b, c)}
@@ -341,8 +341,8 @@ if {$tcl_platform(platform)!="windows"} {
       BEGIN;
       INSERT INTO t1 VALUES(3, 4);
     }
-    copy_file test2.db test.db
-    copy_file test2.db-journal test.db-journal
+    forcecopy test2.db test.db
+    forcecopy test2.db-journal test.db-journal
     db2 close
   } -tclbody {
     sqlite3 db test.db
@@ -499,7 +499,7 @@ unset static_string
 ifcapable attach {
   do_malloc_test 20 -tclprep {
     db close
-    file delete -force test2.db test2.db-journal
+    forcedelete test2.db test2.db-journal
     sqlite3 db test2.db
     sqlite3_extended_result_codes db 1
     db eval {CREATE TABLE t1(x);}

@@ -27,7 +27,7 @@ if {!$MEMDEBUG} {
 
 # Construct a test database
 #
-file delete -force test.db.bu
+forcedelete test.db.bu
 db eval {
   CREATE TABLE t1(a COLLATE NOCASE,b,c);
   INSERT INTO t1 VALUES(1,2,3);
@@ -38,7 +38,7 @@ db eval {
   CREATE TABLE t2(x,y,z);
 }
 db close
-file copy test.db test.db.bu
+copy_file test.db test.db.bu
 
 
 do_malloc_test mallocA-1 -testdb test.db.bu -sqlbody {
@@ -74,5 +74,5 @@ do_test malloc-99.X {
   set sqlite_open_file_count
 } {0}
 
-file delete -force test.db.bu
+forcedelete test.db.bu
 finish_test

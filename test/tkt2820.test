@@ -25,7 +25,7 @@ source $testdir/tester.tcl
 
 proc test_schema_change {testid init ddl res} {
   db close
-  file delete -force test.db test.db-journal
+  forcedelete test.db test.db-journal
   sqlite3 db test.db
   execsql $init
   do_test tkt2820-$testid.1 {
@@ -70,7 +70,7 @@ test_schema_change 3 {
 #
 do_test tkt2820-4.1 {
   db close
-  file delete -force test.db test.db-journal
+  forcedelete test.db test.db-journal
   sqlite3 db test.db
   db eval {
     CREATE TABLE t1(a INTEGER PRIMARY KEY);

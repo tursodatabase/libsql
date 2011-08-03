@@ -22,12 +22,12 @@ ifcapable {!pager_pragmas} {
   return
 }
 
-file delete -force test2.db-journal
-file delete -force test2.db
-file delete -force test3.db-journal
-file delete -force test3.db
-file delete -force test4.db-journal
-file delete -force test4.db
+forcedelete test2.db-journal
+forcedelete test2.db
+forcedelete test3.db-journal
+forcedelete test3.db
+forcedelete test4.db-journal
+forcedelete test4.db
 
 #----------------------------------------------------------------------
 # Test cases exclusive-1.X test the PRAGMA logic.
@@ -481,8 +481,8 @@ do_execsql_test exclusive-6.1 {
 }
 do_test exclusive-6.2 {
   forcedelete test2.db test2.db-journal
-  file copy test.db test2.db
-  file copy test.db-journal test2.db-journal
+  copy_file test.db test2.db
+  copy_file test.db-journal test2.db-journal
   sqlite3 db test2.db
 } {}
 

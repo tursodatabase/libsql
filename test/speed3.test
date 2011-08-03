@@ -116,7 +116,7 @@ proc reset_db {} {
   }
 }
 
-file delete -force test2.db test2.db-journal
+forcedelete test2.db test2.db-journal
 reset_db
 
 # Set up a database in auto-vacuum mode and create a database schema.

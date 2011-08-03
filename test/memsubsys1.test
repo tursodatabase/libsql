@@ -32,7 +32,7 @@ if {[permutation] == "memsubsys1"} {
 #
 proc build_test_db {testname pragmas} {
   catch {db close}
-  file delete -force test.db test.db-journal
+  forcedelete test.db test.db-journal
   sqlite3 db test.db
   sqlite3_db_config_lookaside db 0 0 0
   db eval $pragmas

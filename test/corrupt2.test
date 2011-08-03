@@ -41,9 +41,9 @@ do_test corrupt2-1.1 {
 do_test corrupt2-1.2 {
 
   # Corrupt the 16 byte magic string at the start of the file
-  file delete -force corrupt.db
-  file delete -force corrupt.db-journal
-  copy_file test.db corrupt.db
+  forcedelete corrupt.db
+  forcedelete corrupt.db-journal
+  forcecopy test.db corrupt.db
   set f [open corrupt.db RDWR]
   seek $f 8 start
   puts $f blah
@@ -60,9 +60,9 @@ do_test corrupt2-1.3 {
   db2 close
 
   # Corrupt the page-size (bytes 16 and 17 of page 1).
-  file delete -force corrupt.db
-  file delete -force corrupt.db-journal
-  copy_file test.db corrupt.db
+  forcedelete corrupt.db
+  forcedelete corrupt.db-journal
+  forcecopy test.db corrupt.db
   set f [open corrupt.db RDWR]
   fconfigure $f -encoding binary
   seek $f 16 start
@@ -80,9 +80,9 @@ do_test corrupt2-1.4 {
   db2 close
 
   # Corrupt the free-block list on page 1.
-  file delete -force corrupt.db
-  file delete -force corrupt.db-journal
-  copy_file test.db corrupt.db
+  forcedelete corrupt.db
+  forcedelete corrupt.db-journal
+  forcecopy test.db corrupt.db
   set f [open corrupt.db RDWR]
   fconfigure $f -encoding binary
   seek $f 101 start
@@ -100,9 +100,9 @@ do_test corrupt2-1.5 {
   db2 close
 
   # Corrupt the free-block list on page 1.
-  file delete -force corrupt.db
-  file delete -force corrupt.db-journal
-  copy_file test.db corrupt.db
+  forcedelete corrupt.db
+  forcedelete corrupt.db-journal
+  forcecopy test.db corrupt.db
   set f [open corrupt.db RDWR]
   fconfigure $f -encoding binary
   seek $f 101 start
@@ -123,9 +123,9 @@ db2 close
 # Corrupt a database by having 2 indices of the same name:
 do_test corrupt2-2.1 {
 
-  file delete -force corrupt.db
-  file delete -force corrupt.db-journal
-  copy_file test.db corrupt.db
+  forcedelete corrupt.db
+  forcedelete corrupt.db-journal
+  forcecopy test.db corrupt.db
 
   sqlite3 db2 corrupt.db 
   execsql "
@@ -150,8 +150,8 @@ do_test corrupt2-2.1 {
 db2 close
 
 do_test corrupt2-3.1 {
-  file delete -force corrupt.db
-  file delete -force corrupt.db-journal
+  forcedelete corrupt.db
+  forcedelete corrupt.db-journal
   sqlite3 db2 corrupt.db 
 
   execsql "
@@ -200,8 +200,8 @@ db2 close
 
 unset -nocomplain result
 do_test corrupt2-5.1 {
-  file delete -force corrupt.db
-  file delete -force corrupt.db-journal
+  forcedelete corrupt.db
+  forcedelete corrupt.db-journal
   sqlite3 db2 corrupt.db 
 
   execsql "
@@ -257,8 +257,8 @@ proc corruption_test {args} {
   array set A $args
 
   catch {db close}
-  file delete -force corrupt.db
-  file delete -force corrupt.db-journal
+  forcedelete corrupt.db
+  forcedelete corrupt.db-journal
 
   sqlite3 db corrupt.db 
   db eval $::presql

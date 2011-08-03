@@ -33,8 +33,8 @@ ifcapable !pragma||!schema_pragmas {
 # that the "all.test" script does.
 #
 db close
-file delete test.db test.db-journal
-file delete test3.db test3.db-journal
+delete_file test.db test.db-journal
+delete_file test3.db test3.db-journal
 sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
 db eval {PRAGMA auto_vacuum=0}
 
@@ -61,8 +61,8 @@ do_test pragma2-1.4 {
   }
 } {1}
 
-file delete -force test2.db
-file delete -force test2.db-journal
+forcedelete test2.db
+forcedelete test2.db-journal
 
 ifcapable attach {
   do_test pragma2-2.1 {

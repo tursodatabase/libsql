@@ -44,7 +44,7 @@ foreach fd $filehandles {
   close $fd
 }
 catch {
-  file delete -force testfile.1
+  forcedelete testfile.1
 }
 set N [expr $i / $num_fd_per_openwrite_db]
 
@@ -92,7 +92,7 @@ for {set i 0} {$i<$N} {incr i} {
 for {set i 0} {$i<$N} {incr i} {
   do_test manydb-3.$i {
     db$i close
-    file delete -force $dbname($i)
+    forcedelete $dbname($i)
   } {}
 }
 
