@@ -392,7 +392,7 @@ static int blobReadWrite(
     sqlite3BtreeEnterCursor(p->pCsr);
 
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
-    if( xCall==sqlite3BtreePutData ){
+    if( xCall==sqlite3BtreePutData && db->xPreUpdateCallback ){
       /* If a pre-update hook is registered and this is a write cursor, 
       ** invoke it here. 
       ** 
