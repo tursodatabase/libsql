@@ -57,7 +57,7 @@ while {1} {
     do_test win32lock-1.2-$delay1 {
        set ::msg
     } {1 100000 2 50000 3 25000 4 12500}
-    if {$::log!=""} {
+    if {[info exists ::log] && $::log!=""} {
       do_test win32lock-1.2-$delay1-log1 {
         regsub {\d+} $::log # x
         set x

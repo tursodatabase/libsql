@@ -1037,6 +1037,11 @@ case OP_Move: {
     zMalloc = pOut->zMalloc;
     pOut->zMalloc = 0;
     sqlite3VdbeMemMove(pOut, pIn1);
+#ifdef SQLITE_DEBUG
+    if( pOut->pScopyFrom>=&aMem[p1] && pOut->pScopyFrom<&aMem[p1+pOp->p3] ){
+      pOut->pScopyFrom += p1 - pOp->p2;
+    }
+#endif
     pIn1->zMalloc = zMalloc;
     REGISTER_TRACE(p2++, pOut);
     pIn1++;

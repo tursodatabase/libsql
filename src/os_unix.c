@@ -250,8 +250,9 @@ struct unixFile {
 /*
 ** Allowed values for the unixFile.ctrlFlags bitmask:
 */
-#define UNIXFILE_EXCL   0x01     /* Connections from one process only */
-#define UNIXFILE_RDONLY 0x02     /* Connection is read only */
+#define UNIXFILE_EXCL        0x01     /* Connections from one process only */
+#define UNIXFILE_RDONLY      0x02     /* Connection is read only */
+#define UNIXFILE_PERSIST_WAL 0x04     /* Persistent WAL mode */
 
 /*
 ** Include code that is common to all os_*.c files
@@ -3395,13 +3396,19 @@ static int proxyFileControl(sqlite3_file*,int,void*);
 ** SQLITE_FCNTL_SIZE_HINT operation is a no-op for Unix.
 */
 static int fcntlSizeHint(unixFile *pFile, i64 nByte){
-  if( pFile->szChunk ){
+  { /* preserve indentation of removed "if" */
     i64 nSize;                    /* Required file size */
+    i64 szChunk;                  /* Chunk size */
     struct stat buf;              /* Used to hold return values of fstat() */
    
     if( osFstat(pFile->h, &buf) ) return SQLITE_IOERR_FSTAT;
 
-    nSize = ((nByte+pFile->szChunk-1) / pFile->szChunk) * pFile->szChunk;
+    szChunk = pFile->szChunk;
+    if( szChunk==0 ){
+      nSize = nByte;
+    }else{
+      nSize = ((nByte+szChunk-1) / szChunk) * szChunk;
+    }
     if( nSize>(i64)buf.st_size ){
 
 #if defined(HAVE_POSIX_FALLOCATE) && HAVE_POSIX_FALLOCATE
@@ -3444,21 +3451,33 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
 ** Information and control of an open file handle.
 */
 static int unixFileControl(sqlite3_file *id, int op, void *pArg){
+  unixFile *pFile = (unixFile*)id;
   switch( op ){
     case SQLITE_FCNTL_LOCKSTATE: {
-      *(int*)pArg = ((unixFile*)id)->eFileLock;
+      *(int*)pArg = pFile->eFileLock;
       return SQLITE_OK;
     }
     case SQLITE_LAST_ERRNO: {
-      *(int*)pArg = ((unixFile*)id)->lastErrno;
+      *(int*)pArg = pFile->lastErrno;
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_CHUNK_SIZE: {
-      ((unixFile*)id)->szChunk = *(int *)pArg;
+      pFile->szChunk = *(int *)pArg;
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_SIZE_HINT: {
-      return fcntlSizeHint((unixFile *)id, *(i64 *)pArg);
+      return fcntlSizeHint(pFile, *(i64 *)pArg);
+    }
+    case SQLITE_FCNTL_PERSIST_WAL: {
+      int bPersist = *(int*)pArg;
+      if( bPersist<0 ){
+        *(int*)pArg = (pFile->ctrlFlags & UNIXFILE_PERSIST_WAL)!=0;
+      }else if( bPersist==0 ){
+        pFile->ctrlFlags &= ~UNIXFILE_PERSIST_WAL;
+      }else{
+        pFile->ctrlFlags |= UNIXFILE_PERSIST_WAL;
+      }
+      return SQLITE_OK;
     }
 #ifndef NDEBUG
     /* The pager calls this method to signal that it has done
@@ -4783,7 +4802,7 @@ static UnixUnusedFd *findReusableFd(const char *zPath, int flags){
   **
   ** Even if a subsequent open() call does succeed, the consequences of
   ** not searching for a resusable file descriptor are not dire.  */
-  if( 0==stat(zPath, &sStat) ){
+  if( 0==osStat(zPath, &sStat) ){
     unixInodeInfo *pInode;
 
     unixEnterMutex();
@@ -4859,7 +4878,7 @@ static int findCreateFileMode(
     memcpy(zDb, zPath, nDb);
     zDb[nDb] = '\0';
 
-    if( 0==stat(zDb, &sStat) ){
+    if( 0==osStat(zDb, &sStat) ){
       *pMode = sStat.st_mode & 0777;
     }else{
       rc = SQLITE_IOERR_FSTAT;
@@ -5204,7 +5223,7 @@ static int unixAccess(
   *pResOut = (osAccess(zPath, amode)==0);
   if( flags==SQLITE_ACCESS_EXISTS && *pResOut ){
     struct stat buf;
-    if( 0==stat(zPath, &buf) && buf.st_size==0 ){
+    if( 0==osStat(zPath, &buf) && buf.st_size==0 ){
       *pResOut = 0;
     }
   }

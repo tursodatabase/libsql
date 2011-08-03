@@ -752,6 +752,20 @@ struct sqlite3_io_methods {
 ** is not changed but instead the prior value of that setting is written
 ** into the array entry, allowing the current retry settings to be
 ** interrogated.  The zDbName parameter is ignored.
+**
+** ^The [SQLITE_FCNTL_PERSIST_WAL] opcode is used to set or query the
+** persistent [WAL | Write AHead Log] setting.  By default, the auxiliary
+** write ahead log and shared memory files used for transaction control
+** are automatically deleted when the latest connection to the database
+** closes.  Setting persistent WAL mode causes those files to persist after
+** close.  Persisting the files is useful when other processes that do not
+** have write permission on the directory containing the database file want
+** to read the database file, as the WAL and shared memory files must exist
+** in order for the database to be readable.  The fourth parameter to
+** [sqlite3_file_control()] for this opcode should be a pointer to an integer.
+** That integer is 0 to disable persistent WAL mode or 1 to enable persistent
+** WAL mode.  If the integer is -1, then it is overwritten with the current
+** WAL persistence setting.
 ** 
 */
 #define SQLITE_FCNTL_LOCKSTATE        1
@@ -763,6 +777,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_FILE_POINTER     7
 #define SQLITE_FCNTL_SYNC_OMITTED     8
 #define SQLITE_FCNTL_WIN32_AV_RETRY   9
+#define SQLITE_FCNTL_PERSIST_WAL     10
 
 /*
 ** CAPI3REF: Mutex Handle
