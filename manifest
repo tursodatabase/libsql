@@ -1,5 +1,5 @@
-C Exclude\sthe\s8_3_names.test\sscript\sfrom\sthe\sinmemory_journal\spermutation.
-D 2011-08-02T20:14:55.667
+C Update\sthe\sOP_Move\sopcode\sto\sshift\sthe\spScopyFrom\spointer\sof\saliases\swhen\ncompiled\swith\sSQLITE_DEBUG.\s\sTicket\s[d63523637517386191].
+D 2011-08-03T16:40:15.202
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1e6988b3c11dee9bd5edc0c804bd4468d74a9cdc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -238,7 +238,7 @@ F src/update.c 74a6cfb34e9732c1e2a86278b229913b4b51eeec
 F src/utf.c c53eb7404b3eb5c1cbb5655c6a7a0e0ce6bd50f0
 F src/util.c 06302ffd2b80408d4f6c7af71f7090e0cf8d8ff7
 F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
-F src/vdbe.c a9ced64f380bbd8b04da3a1c3a9602d3942704b5
+F src/vdbe.c 49d834f0fe49d305e07f9c212e94007fda2028e9
 F src/vdbe.h 5cf09e7ee8a3f7d93bc51f196a96550786afe7a1
 F src/vdbeInt.h ad84226cc0adcb1185c22b70696b235a1678bb45
 F src/vdbeapi.c 11dc47987abacb76ad016dcf5abc0dc422482a98
@@ -735,6 +735,7 @@ F test/tkt-b72787b1.test e6b62b2b2785c04d0d698d6a603507e384165049
 F test/tkt-bd484a090c.test 60460bf946f79a79712b71f202eda501ca99b898
 F test/tkt-cbd054fa6b.test f14f97ea43662e6f70c9e63287081e8be5d9d589
 F test/tkt-d11f09d36e.test fb44f7961aa6d4b632fb7b9768239832210b5fc7
+F test/tkt-d635236375.test 9d37e988b47d87505bc9445be0ca447002df5d09
 F test/tkt-d82e3f3721.test 731359dfdcdb36fea0559cd33fec39dd0ceae8e6
 F test/tkt-f3e5abed55.test 19fb59268da6f20a69a181b9c14154132d1c65e3
 F test/tkt-f777251dc7a.test 6f24c053bc5cdb7e1e19be9a72c8887cf41d5e87
@@ -954,7 +955,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 861a5b62430d0ada07a46d0e394fcf0b0faab1cd
-R 0ac986e6982ac12d722abe7bcb3da618
+P 78fc94c8d1229a8bdc9390e98b53c57aeef7fc46
+R bf0be95f6edb13861054cdf974a28d09
 U drh
-Z 3a732f4c9d85bdfbca1dba2584684292
+Z 63c3906617d97d8acb37208d4ff59628
