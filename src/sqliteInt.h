@@ -81,7 +81,9 @@
 ** construct a histogram of the table content when running ANALYZE
 ** and with SQLITE_ENABLE_STAT2
 */
-#define SQLITE_INDEX_SAMPLES 10
+#ifndef SQLITE_INDEX_SAMPLES
+# define SQLITE_INDEX_SAMPLES 10
+#endif
 
 /*
 ** The following macros are used to cast pointers to integers and

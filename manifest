@@ -1,5 +1,5 @@
-C Exclude\sthe\s8_3_names.test\sscript\sfrom\sthe\sinmemory_journal\spermutation.
-D 2011-08-02T20:14:55.667
+C Adjust\sthe\soutput\srow\sestimating\slogic\swhen\susing\sSTAT2.
+D 2011-08-03T01:07:25.236
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1e6988b3c11dee9bd5edc0c804bd4468d74a9cdc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -183,7 +183,7 @@ F src/select.c d219c4b68d603cc734b6f9b1e2780fee12a1fa0d
 F src/shell.c bbe7818ff5bc8614105ceb81ad67b8bdc0b671dd
 F src/sqlite.h.in 0b3cab7b2ea51f58396e8871fa5f349cfece5330
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
-F src/sqliteInt.h ba4a6d6288efb25b84bc0d7d0aaf80f9b42523ba
+F src/sqliteInt.h 8a7ca32a1563d25629073c3be8d0e3560d46e2fa
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -250,7 +250,7 @@ F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 3154756177d6219e233d84291d5b05f4e06ff5e9
 F src/wal.h 66b40bd91bc29a5be1c88ddd1f5ade8f3f48728a
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 7d09f4c1512affb60cc1190a4b33d121d4ce039a
+F src/where.c e169242225ff4742da34e7d8a20243adbf4664e5
 F test/8_3_names.test b93687beebd17f6ebf812405a6833bae5d1f4199
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -264,9 +264,9 @@ F test/analyze.test c8cb89e8736336f1f0646c8123e6028a14c7b55e
 F test/analyze2.test 8f2b1534d43f5547ce9a6b736c021d4192c75be3
 F test/analyze3.test d61f55d8b472fc6e713160b1e577f7a68e63f38b
 F test/analyze4.test 757b37875cf9bb528d46f74497bc789c88365045
-F test/analyze5.test 1de8d66b11aae5a1453aa042d62e834a476bac9c
+F test/analyze5.test f6c250012b173f9b10ae5d577e9592767b376b1c
 F test/analyze6.test c125622a813325bba1b4999040ddc213773c2290
-F test/analyze7.test 5508e7828164ea0b518ed219bed7320a481863d4
+F test/analyze7.test ed672a2c09c4b5a5b528ca38951318af463bb17e
 F test/async.test ad4ba51b77cd118911a3fe1356b0809da9c108c3
 F test/async2.test bf5e2ca2c96763b4cba3d016249ad7259a5603b6
 F test/async3.test 93edaa9122f498e56ea98c36c72abc407f4fb11e
@@ -954,7 +954,10 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 861a5b62430d0ada07a46d0e394fcf0b0faab1cd
-R 0ac986e6982ac12d722abe7bcb3da618
+P 78fc94c8d1229a8bdc9390e98b53c57aeef7fc46
+R 274804d4319047cf711d8a55ade8888e
+T *branch * query-planner-tweaks
+T *sym-query-planner-tweaks *
+T -sym-trunk *
 U drh
-Z 3a732f4c9d85bdfbca1dba2584684292
+Z 278da4b2a2802cf77ca6054afa34f6c4

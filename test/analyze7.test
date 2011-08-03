@@ -99,8 +99,10 @@ do_test analyze7-3.3 {
   execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE a=123 AND b=123}
 } {0 0 0 {SEARCH TABLE t1 USING INDEX t1a (a=?) (~1 rows)}}
 do_test analyze7-3.4 {
-  execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE c=123 AND b=123}
-} {0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b=?) (~2 rows)}}
+  set x [execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE c=123 AND b=123}]
+  regsub -all {[bcd]+} $x {x} x
+  set x
+} {0 0 0 {SEARCH TABLE t1 USING INDEX t1x (x=?) (~2 rows)}}
 do_test analyze7-3.5 {
   execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE a=123 AND c=123}
 } {0 0 0 {SEARCH TABLE t1 USING INDEX t1a (a=?) (~1 rows)}}

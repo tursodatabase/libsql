@@ -2732,7 +2732,7 @@ static int whereEqualScanEst(
   if( rc ) goto whereEqualScanEst_cancel;
   WHERETRACE(("equality scan regions: %d..%d\n", iLower, iUpper));
   if( iLower>=iUpper ){
-    nRowEst = p->aiRowEst[0]/(SQLITE_INDEX_SAMPLES*2);
+    nRowEst = p->aiRowEst[0]/(SQLITE_INDEX_SAMPLES*3);
     if( nRowEst<*pnRow ) *pnRow = nRowEst;
   }else{
     nRowEst = (iUpper-iLower)*p->aiRowEst[0]/SQLITE_INDEX_SAMPLES;
@@ -2811,7 +2811,7 @@ static int whereInScanEst(
         nSingle++;
       }
     }
-    nRowEst = (nSpan*2+nSingle)*p->aiRowEst[0]/(2*SQLITE_INDEX_SAMPLES)
+    nRowEst = (nSpan*3+nSingle)*p->aiRowEst[0]/(3*SQLITE_INDEX_SAMPLES)
                + nNotFound*p->aiRowEst[1];
     if( nRowEst > p->aiRowEst[0] ) nRowEst = p->aiRowEst[0];
     *pnRow = nRowEst;
