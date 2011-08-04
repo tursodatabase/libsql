@@ -3155,8 +3155,7 @@ case OP_OpenEphemeral: {
       SQLITE_OPEN_DELETEONCLOSE |
       SQLITE_OPEN_TRANSIENT_DB;
 
-  int btflags = BTREE_OMIT_JOURNAL | pOp->p5;
-  if( pOp->opcode!=OP_OpenSorter ) btflags |= BTREE_SINGLE;
+  int btflags = BTREE_OMIT_JOURNAL | BTREE_SINGLE | pOp->p5;
 
   assert( pOp->p1>=0 );
   pCx = allocateCursor(p, pOp->p1, pOp->p2, -1, 1);
