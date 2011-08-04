@@ -21,24 +21,23 @@
 typedef struct VdbeSorterIter VdbeSorterIter;
 
 /*
-** The aIter[] and aTree[] arrays are used to iterate through the sorter
-** contents after it has been populated. To iterate through the sorter
-** contents, the contents of all packed-memory-arrays (PMAs) must be 
-** merged. This structure supports merging any number of arrays in a 
-** single pass with no redundant comparison operations.
+** As keys are added to the sorter, they are written to disk in a series
+** of sorted packed-memory-arrays (PMAs). The size of each PMA is roughly
+** the same as the cache-size allowed for temporary databases. In order
+** to allow the caller to extract keys from the sorter in sorted order,
+** all PMAs currently stored on disk must be merged together. This comment
+** describes the data structure used to do so. The structure supports 
+** merging any number of arrays in a single pass with no redundant comparison 
+** operations.
 **
-** TODO: It may turn out that the optimum number of PMAs to merge in a 
-** single pass is 2. If this is the case, this data structure could be
-** simplified.
+** The aIter[] array contains an iterator for each of the PMAs being merged.
+** An aIter[] iterator either points to a valid key or else is at EOF. For 
+** the purposes of the paragraphs below, we assume that the array is actually 
+** N elements in size, where N is the smallest power of 2 greater to or equal 
+** to the number of iterators being merged. The extra aIter[] elements are 
+** treated as if they are empty (always at EOF).
 **
-** The first few elements of the aIter[] array contain pointers into
-** each of the PMAs being merged. An aIter[] element either points to a 
-** valid key or else is at EOF. For the purposes of the paragraphs below, 
-** we assume that the array is actually N elements in size, where N is the
-** smallest power of 2 greater to or equal to nRoot. The extra aIter[]
-** elements are treated as if they are empty PMAs (always at EOF).
-**
-** The aTree[] array is N elements in size. The value of N is stored in
+** The aTree[] array is also N elements in size. The value of N is stored in
 ** the VdbeSorter.nTree variable.
 **
 ** The final (N/2) elements of aTree[] contain the results of comparing
