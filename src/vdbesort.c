@@ -89,7 +89,6 @@ typedef struct VdbeSorterIter VdbeSorterIter;
 */
 struct VdbeSorter {
   int nWorking;                   /* Start a new b-tree after this many pages */
-  int nAlloc;                     /* Allocated size of aIter[] and aTree[] */
   int nTree;                      /* Used size of aTree/aIter (power of 2) */
   VdbeSorterIter *aIter;          /* Array of iterators to merge */
   int *aTree;                     /* Current state of incremental merge */
@@ -118,7 +117,7 @@ struct VdbeSorterIter {
 #define SORTER_MIN_SEGMENT_SIZE 10
 
 /* Maximum number of segments to merge in a single go */
-#define SORTER_MAX_MERGE_COUNT 2
+#define SORTER_MAX_MERGE_COUNT 16
 
 /*
 ** Append integer iOff to the VdbeSorter.aOffset[] array of the sorter object
@@ -128,7 +127,6 @@ struct VdbeSorterIter {
 ** TODO: The aOffset[] array may grow indefinitely. Fix this.
 */
 static int vdbeSorterAppendOffset(sqlite3 *db, VdbeSorter *p, i64 iOff){
-  int *aNew;                      /* New VdbeSorter.aRoot[] array */
   p->aOffset = sqlite3DbReallocOrFree(
       db, p->aOffset, (p->nOffset+1)*sizeof(i64)
   );
@@ -292,11 +290,10 @@ void sqlite3VdbeSorterClose(sqlite3 *db, VdbeCursor *pCsr){
   if( pSorter ){
     if( pSorter->aIter ){
       int i;
-      for(i=0; i<pSorter->nAlloc; i++){
+      for(i=0; i<pSorter->nTree; i++){
         vdbeSorterIterZero(db, &pSorter->aIter[i]);
       }
       sqlite3DbFree(db, pSorter->aIter);
-      sqlite3DbFree(db, pSorter->aTree);
     }
     if( pSorter->pTemp1 ){
       sqlite3OsCloseFree(pSorter->pTemp1);
@@ -449,33 +446,6 @@ int sqlite3VdbeSorterWrite(sqlite3 *db, VdbeCursor *pCsr){
 }
 
 /*
-** Extend the pSorter->aIter[] and pSorter->aTree[] arrays using DbRealloc().
-** Return SQLITE_OK if successful, or SQLITE_NOMEM otherwise.
-*/
-static int vdbeSorterGrowArrays(sqlite3* db, VdbeSorter *pSorter){
-  int *aTree;                     /* New aTree[] allocation */
-  VdbeSorterIter *aIter;          /* New aIter[] allocation */
-  int nOld = pSorter->nAlloc;     /* Current size of arrays */
-  int nNew = (nOld?nOld*2:4);     /* Size of arrays after reallocation */
-
-  /* Realloc aTree[]. */
-  aTree = sqlite3DbRealloc(db, pSorter->aTree, sizeof(int)*nNew);
-  if( !aTree ) return SQLITE_NOMEM;
-  memset(&aTree[nOld], 0, (nNew-nOld) * sizeof(int));
-  pSorter->aTree = aTree;
-
-  /* Realloc aIter[]. */
-  aIter = sqlite3DbRealloc(db, pSorter->aIter, sizeof(VdbeSorterIter)*nNew);
-  if( !aIter ) return SQLITE_NOMEM;
-  memset(&aIter[nOld], 0, (nNew-nOld) * sizeof(VdbeSorterIter));
-  pSorter->aIter = aIter;
-
-  /* Set VdbeSorter.nAlloc to the new size of the arrays and return OK. */
-  pSorter->nAlloc = nNew;
-  return SQLITE_OK;
-}
-
-/*
 ** Helper function for sqlite3VdbeSorterRewind().
 */
 static int vdbeSorterInitMerge(
@@ -484,14 +454,26 @@ static int vdbeSorterInitMerge(
   int iFirst,
   int *piNext
 ){
-  Pager *pPager = sqlite3BtreePager(pCsr->pBt);
   VdbeSorter *pSorter = pCsr->pSorter;
   int rc = SQLITE_OK;
   int i;
-  int nMaxRef = (pSorter->nWorking * 9/10);
   int N = 2;
+  int nIter;                      /* Number of iterators to initialize. */
 
-  assert( iFirst<pSorter->nOffset );
+  nIter = pSorter->nOffset - iFirst;
+  if( nIter>SORTER_MAX_MERGE_COUNT ){
+    nIter = SORTER_MAX_MERGE_COUNT;
+  }
+  assert( nIter>0 );
+  while( N<nIter ) N += N;
+
+  /* Allocate aIter[] and aTree[], if required. */
+  if( pSorter->aIter==0 ){
+    int nByte = N * (sizeof(int) + sizeof(VdbeSorterIter));
+    pSorter->aIter = (VdbeSorterIter *)sqlite3DbMallocZero(db, nByte);
+    if( !pSorter->aIter ) return SQLITE_NOMEM;
+    pSorter->aTree = (int *)&pSorter->aIter[N];
+  }
 
   /* Initialize as many iterators as possible. */
   for(i=iFirst; 
@@ -499,11 +481,6 @@ static int vdbeSorterInitMerge(
       i++
   ){
     int iIter = i - iFirst;
-
-    assert( iIter<=pSorter->nAlloc );
-    if( iIter==pSorter->nAlloc ){
-      rc = vdbeSorterGrowArrays(db, pSorter);
-    }
 
     if( rc==SQLITE_OK ){
       VdbeSorterIter *pIter = &pSorter->aIter[iIter];
@@ -515,19 +492,11 @@ static int vdbeSorterInitMerge(
         iEof = pSorter->aOffset[i+1];
       }
       rc = vdbeSorterIterInit(db, pSorter->pTemp1, iStart, iEof, pIter);
-      if( i>iFirst+1 ){
-        int nRef = (i-iFirst)*10;
-        if( nRef>=nMaxRef ){
-          i++;
-          break;
-        }
-      }
     }
   }
   *piNext = i;
 
   assert( i>iFirst );
-  while( (i-iFirst)>N ) N += N;
   pSorter->nTree = N;
 
   /* Populate the aTree[] array. */
@@ -560,7 +529,6 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, VdbeCursor *pCsr, int *pbEof){
   }
 
   while( rc==SQLITE_OK ){
-    int iRoot = 0;
     int iNext = 0;                /* Index of next segment to open */
     int iNew = 0;                 /* Index of new, merged, PMA */
 
@@ -571,15 +539,14 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, VdbeCursor *pCsr, int *pbEof){
       assert( iNext>0 );
       assert( rc!=SQLITE_OK || pSorter->aIter[ pSorter->aTree[1] ].pFile );
 
-      if( rc==SQLITE_OK && (iRoot>0 || iNext<pSorter->nOffset) ){
-        int pgno;
+      if( rc==SQLITE_OK && (iNew>0 || iNext<pSorter->nOffset) ){
         int bEof = 0;
 
         if( pTemp2==0 ){
           rc = vdbeSorterOpenTempFile(db, &pTemp2);
         }
         if( rc==SQLITE_OK ){
-          pSorter->aOffset[iRoot] = iWrite2;
+          pSorter->aOffset[iNew] = iWrite2;
         }
 
         while( rc==SQLITE_OK && bEof==0 ){
@@ -593,15 +560,15 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, VdbeCursor *pCsr, int *pbEof){
             rc = sqlite3VdbeSorterNext(db, pCsr, &bEof);
           }
         }
-        iRoot++;
+        iNew++;
       }
     }while( rc==SQLITE_OK && iNext<pSorter->nOffset );
 
-    if( iRoot==0 ){
+    if( iNew==0 ){
       break;
     }else{
       sqlite3_file *pTmp = pSorter->pTemp1;
-      pSorter->nOffset = iRoot;
+      pSorter->nOffset = iNew;
       pSorter->pTemp1 = pTemp2;
       pTemp2 = pTmp;
       pSorter->iWriteOff = iWrite2;
