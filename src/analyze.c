@@ -43,7 +43,7 @@ static void openStatTable(
   } aTable[] = {
     { "sqlite_stat1", "tbl,idx,stat" },
 #ifdef SQLITE_ENABLE_STAT2
-    { "sqlite_stat2", "tbl,idx,sampleno,sample" },
+    { "sqlite_stat2", "tbl,idx,sampleno,sample,cnt" },
 #endif
   };
 
@@ -94,6 +94,7 @@ static void openStatTable(
     sqlite3VdbeAddOp3(v, OP_OpenWrite, iStatCur+i, aRoot[i], iDb);
     sqlite3VdbeChangeP4(v, -1, (char *)3, P4_INT32);
     sqlite3VdbeChangeP5(v, aCreateTbl[i]);
+    VdbeComment((v, "%s", aTable[i].zName));
   }
 }
 
@@ -119,20 +120,26 @@ static void analyzeOneTable(
   int iDb;                     /* Index of database containing pTab */
   int regTabname = iMem++;     /* Register containing table name */
   int regIdxname = iMem++;     /* Register containing index name */
-  int regSampleno = iMem++;    /* Register containing next sample number */
-  int regCol = iMem++;         /* Content of a column analyzed table */
+  int regSampleno = iMem++;    /* Sampleno (stat2) or stat (stat1) */
+#ifdef SQLITE_ENABLE_STAT2
+  int regSample = iMem++;      /* The next sample value */
+  int regSampleCnt = iMem++;   /* Number of occurrances of regSample value */
+  int shortJump = 0;           /* Instruction address */
+  int addrStoreStat2 = 0;      /* Address of subroutine to wrote to stat2 */
+  int regNext = iMem++;        /* Index of next sample to record */
+  int regSampleIdx = iMem++;   /* Index of next sample */
+  int regReady = iMem++;       /* True if ready to store a stat2 entry */
+  int regGosub = iMem++;       /* Register holding subroutine return addr */
+  int regSample2 = iMem++;     /* Number of samples to acquire times 2 */
+  int regCount = iMem++;       /* Number of rows in the table */
+  int regCount2 = iMem++;      /* regCount*2 */
+#endif
+  int regCol = iMem++;         /* Content of a column in analyzed table */
   int regRec = iMem++;         /* Register holding completed record */
   int regTemp = iMem++;        /* Temporary use register */
   int regRowid = iMem++;       /* Rowid for the inserted record */
+  int once = 1;                /* One-time initialization */
 
-#ifdef SQLITE_ENABLE_STAT2
-  int addr = 0;                /* Instruction address */
-  int regTemp2 = iMem++;       /* Temporary use register */
-  int regSamplerecno = iMem++; /* Index of next sample to record */
-  int regRecno = iMem++;       /* Current sample index */
-  int regLast = iMem++;        /* Index of last sample to record */
-  int regFirst = iMem++;       /* Index of first sample to record */
-#endif
 
   v = sqlite3GetVdbe(pParse);
   if( v==0 || NEVER(pTab==0) ){
@@ -165,13 +172,18 @@ static void analyzeOneTable(
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
     int nCol;
     KeyInfo *pKey;
+    int addrIfNot;               /* address of OP_IfNot */
+    int *aChngAddr;              /* Array of jump instruction addresses */
 
     if( pOnlyIdx && pOnlyIdx!=pIdx ) continue;
+    VdbeNoopComment((v, "Begin analysis of %s", pIdx->zName));
     nCol = pIdx->nColumn;
     pKey = sqlite3IndexKeyinfo(pParse, pIdx);
     if( iMem+1+(nCol*2)>pParse->nMem ){
       pParse->nMem = iMem+1+(nCol*2);
     }
+    aChngAddr = sqlite3DbMallocRaw(db, sizeof(int)*pIdx->nColumn);
+    if( aChngAddr==0 ) continue;
 
     /* Open a cursor to the index to be analyzed. */
     assert( iDb==sqlite3SchemaToIndex(db, pIdx->pSchema) );
@@ -187,26 +199,39 @@ static void analyzeOneTable(
     /* If this iteration of the loop is generating code to analyze the
     ** first index in the pTab->pIndex list, then register regLast has
     ** not been populated. In this case populate it now.  */
-    if( pTab->pIndex==pIdx ){
-      sqlite3VdbeAddOp2(v, OP_Integer, SQLITE_INDEX_SAMPLES, regSamplerecno);
-      sqlite3VdbeAddOp2(v, OP_Integer, SQLITE_INDEX_SAMPLES*2-1, regTemp);
-      sqlite3VdbeAddOp2(v, OP_Integer, SQLITE_INDEX_SAMPLES*2, regTemp2);
+    if( once ){
+      once = 0;
+      sqlite3VdbeAddOp2(v, OP_Integer, SQLITE_INDEX_SAMPLES*2, regSample2);
 
-      sqlite3VdbeAddOp2(v, OP_Count, iIdxCur, regLast);
-      sqlite3VdbeAddOp2(v, OP_Null, 0, regFirst);
-      addr = sqlite3VdbeAddOp3(v, OP_Lt, regSamplerecno, 0, regLast);
-      sqlite3VdbeAddOp3(v, OP_Divide, regTemp2, regLast, regFirst);
-      sqlite3VdbeAddOp3(v, OP_Multiply, regLast, regTemp, regLast);
-      sqlite3VdbeAddOp2(v, OP_AddImm, regLast, SQLITE_INDEX_SAMPLES*2-2);
-      sqlite3VdbeAddOp3(v, OP_Divide,  regTemp2, regLast, regLast);
-      sqlite3VdbeJumpHere(v, addr);
+      sqlite3VdbeAddOp2(v, OP_Count, iIdxCur, regCount);
+      sqlite3VdbeAddOp3(v, OP_Add, regCount, regCount, regCount2);
+
+
+      /* Generate code for a subroutine that store the most recent sample
+      ** in the sqlite_stat2 table
+      */
+      shortJump = sqlite3VdbeAddOp0(v, OP_Goto);
+      sqlite3VdbeAddOp4(v, OP_MakeRecord, regTabname, 5, regRec, "aaaba", 0);
+      VdbeComment((v, "begin stat2 write subroutine"));
+      sqlite3VdbeAddOp2(v, OP_NewRowid, iStatCur+1, regRowid);
+      sqlite3VdbeAddOp3(v, OP_Insert, iStatCur+1, regRec, regRowid);
+      sqlite3VdbeAddOp2(v, OP_AddImm, regSampleno, 1);
+      sqlite3VdbeAddOp2(v, OP_AddImm, regReady, -1);
+      addrStoreStat2 = sqlite3VdbeAddOp2(v, OP_IfPos, regReady, shortJump+1);
+      sqlite3VdbeAddOp1(v, OP_Return, regGosub);
+      VdbeComment((v, "end stat2 write subroutine"));
+      sqlite3VdbeJumpHere(v, shortJump);
     }
-
-    /* Zero the regSampleno and regRecno registers. */
+    /* Reset state registers */
+    sqlite3VdbeAddOp2(v, OP_Copy, regCount2, regNext);
+    shortJump = sqlite3VdbeAddOp3(v, OP_Lt, regSample2, 0, regCount);
+    sqlite3VdbeAddOp3(v, OP_Divide, regSample2, regCount, regNext);
+    sqlite3VdbeJumpHere(v, shortJump);
     sqlite3VdbeAddOp2(v, OP_Integer, 0, regSampleno);
-    sqlite3VdbeAddOp2(v, OP_Integer, 0, regRecno);
-    sqlite3VdbeAddOp2(v, OP_Copy, regFirst, regSamplerecno);
-#endif
+    sqlite3VdbeAddOp2(v, OP_Integer, 0, regSampleIdx);
+    sqlite3VdbeAddOp2(v, OP_Integer, 0, regReady);
+
+#endif /* SQLITE_ENABLE_STAT2 */
 
     /* The block of memory cells initialized here is used as follows.
     **
@@ -236,7 +261,7 @@ static void analyzeOneTable(
     endOfLoop = sqlite3VdbeMakeLabel(v);
     sqlite3VdbeAddOp2(v, OP_Rewind, iIdxCur, endOfLoop);
     topOfLoop = sqlite3VdbeCurrentAddr(v);
-    sqlite3VdbeAddOp2(v, OP_AddImm, iMem, 1);
+    sqlite3VdbeAddOp2(v, OP_AddImm, iMem, 1);  /* Increment row counter */
 
     for(i=0; i<nCol; i++){
       CollSeq *pColl;
@@ -246,65 +271,63 @@ static void analyzeOneTable(
         /* Check if the record that cursor iIdxCur points to contains a
         ** value that should be stored in the sqlite_stat2 table. If so,
         ** store it.  */
-        int ne = sqlite3VdbeAddOp3(v, OP_Ne, regRecno, 0, regSamplerecno);
-        assert( regTabname+1==regIdxname 
-             && regTabname+2==regSampleno
-             && regTabname+3==regCol
-        );
-        sqlite3VdbeChangeP5(v, SQLITE_JUMPIFNULL);
-        sqlite3VdbeAddOp4(v, OP_MakeRecord, regTabname, 4, regRec, "aaab", 0);
-        sqlite3VdbeAddOp2(v, OP_NewRowid, iStatCur+1, regRowid);
-        sqlite3VdbeAddOp3(v, OP_Insert, iStatCur+1, regRec, regRowid);
+        int ne = sqlite3VdbeAddOp3(v, OP_Ne, iMem, 0, regNext);
+        VdbeComment((v, "jump if not a sample"));
+        sqlite3VdbeAddOp2(v, OP_Gosub, regGosub, addrStoreStat2);
+        sqlite3VdbeAddOp2(v, OP_Copy, regCol, regSample);
+        sqlite3VdbeAddOp2(v, OP_AddImm, regReady, 1);
 
-        /* Calculate new values for regSamplerecno and regSampleno.
+        /* Calculate new values for regNextSample.  Where N is the number
+        ** of rows in the table and S is the number of samples to take:
         **
-        **   sampleno = sampleno + 1
-        **   samplerecno = samplerecno+(remaining records)/(remaining samples)
+        **   nextSample = (sampleNumber*N*2 + N)/(2*S)
         */
-        sqlite3VdbeAddOp2(v, OP_AddImm, regSampleno, 1);
-        sqlite3VdbeAddOp3(v, OP_Subtract, regRecno, regLast, regTemp);
-        sqlite3VdbeAddOp2(v, OP_AddImm, regTemp, -1);
-        sqlite3VdbeAddOp2(v, OP_Integer, SQLITE_INDEX_SAMPLES, regTemp2);
-        sqlite3VdbeAddOp3(v, OP_Subtract, regSampleno, regTemp2, regTemp2);
-        sqlite3VdbeAddOp3(v, OP_Divide, regTemp2, regTemp, regTemp);
-        sqlite3VdbeAddOp3(v, OP_Add, regSamplerecno, regTemp, regSamplerecno);
-
+        sqlite3VdbeAddOp2(v, OP_AddImm, regSampleIdx, 1);
+        sqlite3VdbeAddOp3(v, OP_Multiply, regSampleIdx, regCount2, regNext);
+        sqlite3VdbeAddOp3(v, OP_Add, regNext, regCount, regNext);
+        sqlite3VdbeAddOp3(v, OP_Divide, regSample2, regNext, regNext);
         sqlite3VdbeJumpHere(v, ne);
-        sqlite3VdbeAddOp2(v, OP_AddImm, regRecno, 1);
 #endif
 
         /* Always record the very first row */
-        sqlite3VdbeAddOp1(v, OP_IfNot, iMem+1);
+        addrIfNot = sqlite3VdbeAddOp1(v, OP_IfNot, iMem+1);
       }
       assert( pIdx->azColl!=0 );
       assert( pIdx->azColl[i]!=0 );
       pColl = sqlite3LocateCollSeq(pParse, pIdx->azColl[i]);
-      sqlite3VdbeAddOp4(v, OP_Ne, regCol, 0, iMem+nCol+i+1,
-                       (char*)pColl, P4_COLLSEQ);
+      aChngAddr[i] = sqlite3VdbeAddOp4(v, OP_Ne, regCol, 0, iMem+nCol+i+1,
+                                      (char*)pColl, P4_COLLSEQ);
       sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
-    }
-    if( db->mallocFailed ){
-      /* If a malloc failure has occurred, then the result of the expression 
-      ** passed as the second argument to the call to sqlite3VdbeJumpHere() 
-      ** below may be negative. Which causes an assert() to fail (or an
-      ** out-of-bounds write if SQLITE_DEBUG is not defined).  */
-      return;
+      VdbeComment((v, "jump if column %d changed", i));
+#ifdef SQLITE_ENABLE_STAT2
+      if( i==0 && addrStoreStat2 ){
+        sqlite3VdbeAddOp2(v, OP_AddImm, regSampleCnt, 1);
+        VdbeComment((v, "incr repeat count"));
+      }
+#endif
     }
     sqlite3VdbeAddOp2(v, OP_Goto, 0, endOfLoop);
     for(i=0; i<nCol; i++){
-      int addr2 = sqlite3VdbeCurrentAddr(v) - (nCol*2);
+      sqlite3VdbeJumpHere(v, aChngAddr[i]);  /* Set jump dest for the OP_Ne */
       if( i==0 ){
-        sqlite3VdbeJumpHere(v, addr2-1);  /* Set jump dest for the OP_IfNot */
+        sqlite3VdbeJumpHere(v, addrIfNot);   /* Jump dest for OP_IfNot */
+#ifdef SQLITE_ENABLE_STAT2
+        sqlite3VdbeAddOp2(v, OP_Gosub, regGosub, addrStoreStat2);
+        sqlite3VdbeAddOp2(v, OP_Integer, 1, regSampleCnt);
+#endif        
       }
-      sqlite3VdbeJumpHere(v, addr2);      /* Set jump dest for the OP_Ne */
       sqlite3VdbeAddOp2(v, OP_AddImm, iMem+i+1, 1);
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, iMem+nCol+i+1);
     }
+    sqlite3DbFree(db, aChngAddr);
 
     /* End of the analysis loop. */
     sqlite3VdbeResolveLabel(v, endOfLoop);
     sqlite3VdbeAddOp2(v, OP_Next, iIdxCur, topOfLoop);
     sqlite3VdbeAddOp1(v, OP_Close, iIdxCur);
+#ifdef SQLITE_ENABLE_STAT2
+    sqlite3VdbeAddOp2(v, OP_Gosub, regGosub, addrStoreStat2);
+#endif        
 
     /* Store the results in sqlite_stat1.
     **

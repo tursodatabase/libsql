@@ -71,9 +71,9 @@ do_test analyze2-1.1 {
   }
   execsql { 
     ANALYZE;
-    SELECT * FROM sqlite_stat2;
+    SELECT tbl, idx, sampleno, sample FROM sqlite_stat2;
   }
-} [list t1 sqlite_autoindex_t1_1 0 50  \
+} [list t1 sqlite_autoindex_t1_1 0 49  \
         t1 sqlite_autoindex_t1_1 1 149 \
         t1 sqlite_autoindex_t1_1 2 249 \
         t1 sqlite_autoindex_t1_1 3 349 \
@@ -87,7 +87,7 @@ do_test analyze2-1.1 {
 
 do_test analyze2-1.2 {
   execsql {
-    DELETE FROM t1 WHERe x>9;
+    DELETE FROM t1 WHERE x>9;
     ANALYZE;
     SELECT tbl, idx, group_concat(sample, ' ') FROM sqlite_stat2;
   }
@@ -189,7 +189,7 @@ do_test analyze2-3.1 {
     WHERE idx = 't1_x' 
     GROUP BY tbl,idx
   }
-} {t1 t1_x {100 299 499 699 899 ajj cjj ejj gjj ijj}}
+} {t1 t1_x {99 299 499 699 899 ajj cjj ejj gjj ijj}}
 do_test analyze2-3.2 {
   execsql { 
     SELECT tbl,idx,group_concat(sample,' ') 
@@ -197,7 +197,7 @@ do_test analyze2-3.2 {
     WHERE idx = 't1_y' 
     GROUP BY tbl,idx
   }
-} {t1 t1_y {100 299 499 699 899 ajj cjj ejj gjj ijj}}
+} {t1 t1_y {99 299 499 699 899 ajj cjj ejj gjj ijj}}
 
 do_eqp_test 3.3 {
   SELECT * FROM t1 WHERE x BETWEEN 100 AND 500 AND y BETWEEN 'a' AND 'b'

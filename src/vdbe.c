@@ -1053,7 +1053,6 @@ case OP_Copy: {             /* in1, out2 */
   assert( pOut!=pIn1 );
   sqlite3VdbeMemShallowCopy(pOut, pIn1, MEM_Ephem);
   Deephemeralize(pOut);
-  REGISTER_TRACE(pOp->p2, pOut);
   break;
 }
 
@@ -1540,6 +1539,7 @@ case OP_AddImm: {            /* in1 */
   memAboutToChange(p, pIn1);
   sqlite3VdbeMemIntegerify(pIn1);
   pIn1->u.i += pOp->p2;
+  REGISTER_TRACE(pOp->p1, pIn1);
   break;
 }
 
