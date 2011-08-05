@@ -267,28 +267,6 @@ static void analyzeOneTable(
       CollSeq *pColl;
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, regCol);
       if( i==0 ){
-#ifdef SQLITE_ENABLE_STAT2
-        /* Check if the record that cursor iIdxCur points to contains a
-        ** value that should be stored in the sqlite_stat2 table. If so,
-        ** store it.  */
-        int ne = sqlite3VdbeAddOp3(v, OP_Ne, iMem, 0, regNext);
-        VdbeComment((v, "jump if not a sample"));
-        sqlite3VdbeAddOp2(v, OP_Gosub, regGosub, addrStoreStat2);
-        sqlite3VdbeAddOp2(v, OP_Copy, regCol, regSample);
-        sqlite3VdbeAddOp2(v, OP_AddImm, regReady, 1);
-
-        /* Calculate new values for regNextSample.  Where N is the number
-        ** of rows in the table and S is the number of samples to take:
-        **
-        **   nextSample = (sampleNumber*N*2 + N)/(2*S)
-        */
-        sqlite3VdbeAddOp2(v, OP_AddImm, regSampleIdx, 1);
-        sqlite3VdbeAddOp3(v, OP_Multiply, regSampleIdx, regCount2, regNext);
-        sqlite3VdbeAddOp3(v, OP_Add, regNext, regCount, regNext);
-        sqlite3VdbeAddOp3(v, OP_Divide, regSample2, regNext, regNext);
-        sqlite3VdbeJumpHere(v, ne);
-#endif
-
         /* Always record the very first row */
         addrIfNot = sqlite3VdbeAddOp1(v, OP_IfNot, iMem+1);
       }
@@ -321,8 +299,33 @@ static void analyzeOneTable(
     }
     sqlite3DbFree(db, aChngAddr);
 
-    /* End of the analysis loop. */
+    /* Always jump here after updating the iMem+1...iMem+1+nCol counters */
     sqlite3VdbeResolveLabel(v, endOfLoop);
+
+#ifdef SQLITE_ENABLE_STAT2
+    /* Check if the record that cursor iIdxCur points to contains a
+    ** value that should be stored in the sqlite_stat2 table. If so,
+    ** store it. 
+    */
+    int ne = sqlite3VdbeAddOp3(v, OP_Le, regNext, 0, iMem);
+    VdbeComment((v, "jump if not a sample"));
+    shortJump = sqlite3VdbeAddOp1(v, OP_If, regReady);
+    sqlite3VdbeAddOp2(v, OP_Copy, iMem+nCol+1, regSample);
+    sqlite3VdbeJumpHere(v, shortJump);
+    sqlite3VdbeAddOp2(v, OP_AddImm, regReady, 1);
+
+    /* Calculate new values for regNextSample.  Where N is the number
+    ** of rows in the table and S is the number of samples to take:
+    **
+    **   nextSample = (sampleNumber*N*2 + N)/(2*S)
+    */
+    sqlite3VdbeAddOp2(v, OP_AddImm, regSampleIdx, 1);
+    sqlite3VdbeAddOp3(v, OP_Multiply, regSampleIdx, regCount2, regNext);
+    sqlite3VdbeAddOp3(v, OP_Add, regNext, regCount, regNext);
+    sqlite3VdbeAddOp3(v, OP_Divide, regSample2, regNext, regNext);
+    sqlite3VdbeJumpHere(v, ne);
+#endif
+
     sqlite3VdbeAddOp2(v, OP_Next, iIdxCur, topOfLoop);
     sqlite3VdbeAddOp1(v, OP_Close, iIdxCur);
 #ifdef SQLITE_ENABLE_STAT2

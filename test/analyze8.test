@@ -1,0 +1,90 @@
+# 2011 August 5
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+# This file implements tests for the ANALYZE command under STAT2.
+# Testing the logic that computes the number of copies of each sample.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# There is nothing to test if ANALYZE is disable for this build.
+#
+ifcapable {!analyze||!vtab||!stat2} {
+  finish_test
+  return
+}
+
+# Generate some test data
+#
+do_test analyze8-1.0 {
+  set x 100
+  set y 1
+  set ycnt 0
+  set yinc 10
+  execsql {
+    CREATE TABLE t1(x,y);
+    ANALYZE;
+    BEGIN;
+    CREATE INDEX t1x ON t1(x);
+    CREATE INDEX t1y ON t1(y);
+  }
+  for {set i 0} {$i<20} {incr i} {
+    for {set j 0} {$j<300} {incr j} {
+      execsql {INSERT INTO t1 VALUES($x,$y)}
+      incr ycnt
+      if {$ycnt>=$yinc} {set ycnt 0; incr y}
+    }
+    for {set j 0} {$j<100} {incr j} {
+      incr x
+      execsql {INSERT INTO t1 VALUES($x,$y)}
+      incr ycnt
+      if {$ycnt>=$yinc} {set ycnt 0; incr y}
+    }
+  }
+  execsql {
+    COMMIT;
+    ANALYZE;
+    SELECT sample, cnt FROM sqlite_stat2 WHERE idx='t1x' ORDER BY sampleno;
+  }
+} {200 301 400 301 600 301 800 301 1000 301 1200 301 1400 301 1600 301 1800 301 2000 301}
+do_test analyze8-1.1 {
+  execsql {
+    SELECT count(*) FROM t1 WHERE x=200;
+  }
+} {301}
+
+do_test analyze8-2.0 {
+  execsql {
+    BEGIN;
+    DELETE FROM t1;
+  }
+  for {set x 1} {$x<200} {incr x} {
+    execsql {INSERT INTO t1 VALUES($x,$x)}
+  }
+  for {set i 0} {$i<200} {incr i} {
+    execsql {INSERT INTO t1 VALUES(999,999)}
+  }
+  execsql {
+    COMMIT;
+    ANALYZE;
+    SELECT sample, cnt FROM sqlite_stat2 WHERE idx='t1x' ORDER BY sampleno;
+  }
+} {20 1 60 1 100 1 140 1 180 1 999 200 999 200 999 200 999 200 999 200}
+do_test analyze8-2.1 {
+  for {set i 0} {$i<200} {incr i} {
+    execsql {INSERT INTO t1 VALUES(0,999)}
+  }
+  execsql {
+    ANALYZE;
+    SELECT sample, cnt FROM sqlite_stat2 WHERE idx='t1x' ORDER BY sampleno;
+  }
+} {0 200 0 200 0 200 10 1 70 1 130 1 190 1 999 200 999 200 999 200}

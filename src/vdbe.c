@@ -2468,6 +2468,7 @@ case OP_MakeRecord: {
   */
   for(pRec=pData0; pRec<=pLast; pRec++){
     assert( memIsValid(pRec) );
+    REGISTER_TRACE((pRec-pData0)+pOp->p1, pRec);
     if( zAffinity ){
       applyAffinity(pRec, zAffinity[pRec-pData0], encoding);
     }
