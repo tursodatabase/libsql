@@ -84,6 +84,7 @@
 #ifndef SQLITE_INDEX_SAMPLES
 # define SQLITE_INDEX_SAMPLES 10
 #endif
+#define SQLITE_MAX_SAMPLES 100
 
 /*
 ** The following macros are used to cast pointers to integers and
@@ -1485,6 +1486,7 @@ struct Index {
   u8 onError;      /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
   u8 autoIndex;    /* True if is automatically created (ex: by UNIQUE) */
   u8 bUnordered;   /* Use this index for == or IN queries only */
+  u8 nSample;      /* Number of slots in aSample[] */
   char *zColAff;   /* String defining the affinity of each column */
   Index *pNext;    /* The next index associated with the same table */
   Schema *pSchema; /* Schema containing this index */

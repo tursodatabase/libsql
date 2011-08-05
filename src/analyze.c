@@ -564,7 +564,7 @@ void sqlite3DeleteIndexSamples(sqlite3 *db, Index *pIdx){
 #ifdef SQLITE_ENABLE_STAT2
   if( pIdx->aSample ){
     int j;
-    for(j=0; j<SQLITE_INDEX_SAMPLES; j++){
+    for(j=0; j<pIdx->nSample; j++){
       IndexSample *p = &pIdx->aSample[j];
       if( p->eType==SQLITE_TEXT || p->eType==SQLITE_BLOB ){
         sqlite3DbFree(db, p->u.z);
@@ -614,6 +614,7 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
     sqlite3DefaultRowEst(pIdx);
     sqlite3DeleteIndexSamples(db, pIdx);
     pIdx->aSample = 0;
+    pIdx->nSample = 0;
   }
 
   /* Check to make sure the sqlite_stat1 table exists */
@@ -643,7 +644,8 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
     sqlite3_stmt *pStmt = 0;
 
     zSql = sqlite3MPrintf(db, 
-        "SELECT idx,sampleno,sample FROM %Q.sqlite_stat2", sInfo.zDatabase);
+        "SELECT idx, sampleno, sample FROM %Q.sqlite_stat2"
+        " ORDER BY rowid DESC", sInfo.zDatabase);
     if( !zSql ){
       rc = SQLITE_NOMEM;
     }else{
@@ -655,51 +657,48 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
       while( sqlite3_step(pStmt)==SQLITE_ROW ){
         char *zIndex;   /* Index name */
         Index *pIdx;    /* Pointer to the index object */
+        int iSample;
+        int eType;
+        IndexSample *pSample;
 
         zIndex = (char *)sqlite3_column_text(pStmt, 0);
-        pIdx = zIndex ? sqlite3FindIndex(db, zIndex, sInfo.zDatabase) : 0;
-        if( pIdx ){
-          int iSample = sqlite3_column_int(pStmt, 1);
-          if( iSample<SQLITE_INDEX_SAMPLES && iSample>=0 ){
-            int eType = sqlite3_column_type(pStmt, 2);
-
-            if( pIdx->aSample==0 ){
-              static const int sz = sizeof(IndexSample)*SQLITE_INDEX_SAMPLES;
-              pIdx->aSample = (IndexSample *)sqlite3DbMallocRaw(0, sz);
-              if( pIdx->aSample==0 ){
-                db->mallocFailed = 1;
-                break;
-              }
-	      memset(pIdx->aSample, 0, sz);
-            }
-
-            assert( pIdx->aSample );
-            {
-              IndexSample *pSample = &pIdx->aSample[iSample];
-              pSample->eType = (u8)eType;
-              if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
-                pSample->u.r = sqlite3_column_double(pStmt, 2);
-              }else if( eType==SQLITE_TEXT || eType==SQLITE_BLOB ){
-                const char *z = (const char *)(
-                    (eType==SQLITE_BLOB) ?
-                    sqlite3_column_blob(pStmt, 2):
-                    sqlite3_column_text(pStmt, 2)
-                );
-                int n = sqlite3_column_bytes(pStmt, 2);
-                if( n>24 ){
-                  n = 24;
-                }
-                pSample->nByte = (u8)n;
-                if( n < 1){
-                  pSample->u.z = 0;
-                }else{
-                  pSample->u.z = sqlite3DbStrNDup(0, z, n);
-                  if( pSample->u.z==0 ){
-                    db->mallocFailed = 1;
-                    break;
-                  }
-                }
-              }
+        if( zIndex==0 ) continue;
+        pIdx = sqlite3FindIndex(db, zIndex, sInfo.zDatabase);
+        if( pIdx==0 ) continue;
+        iSample = sqlite3_column_int(pStmt, 1);
+        if( iSample>=SQLITE_MAX_SAMPLES || iSample<0 ) continue;
+        if( pIdx->nSample<=iSample ){
+          IndexSample *pNew;
+          int sz = sizeof(IndexSample)*(iSample+1);
+          pNew = (IndexSample*)sqlite3Realloc(pIdx->aSample, sz);
+          if( pNew==0 ){
+            db->mallocFailed = 1;
+            break;
+          }
+          pIdx->aSample = pNew;
+          pIdx->nSample = iSample+1;
+        }
+        eType = sqlite3_column_type(pStmt, 2);
+        pSample = &pIdx->aSample[iSample];
+        pSample->eType = (u8)eType;
+        if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
+          pSample->u.r = sqlite3_column_double(pStmt, 2);
+        }else if( eType==SQLITE_TEXT || eType==SQLITE_BLOB ){
+          const char *z = (const char *)(
+             (eType==SQLITE_BLOB) ?
+              sqlite3_column_blob(pStmt, 2):
+              sqlite3_column_text(pStmt, 2)
+          );
+          int n = sqlite3_column_bytes(pStmt, 2);
+          if( n>24 ) n = 24;
+          pSample->nByte = (u8)n;
+          if( n < 1){
+            pSample->u.z = 0;
+          }else{
+            pSample->u.z = sqlite3DbStrNDup(0, z, n);
+            if( pSample->u.z==0 ){
+              db->mallocFailed = 1;
+              break;
             }
           }
         }
