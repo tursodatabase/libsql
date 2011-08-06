@@ -2422,12 +2422,12 @@ static void bestVirtualIndex(
 
 /*
 ** Argument pIdx is a pointer to an index structure that has an array of
-** SQLITE_INDEX_SAMPLES evenly spaced samples of the first indexed column
+** pIdx->nSample evenly spaced samples of the first indexed column
 ** stored in Index.aSample. These samples divide the domain of values stored
-** the index into (SQLITE_INDEX_SAMPLES+1) regions.
+** the index into (pIdx->nSample+1) regions.
 ** Region 0 contains all values less than the first sample value. Region
 ** 1 contains values between the first and second samples.  Region 2 contains
-** values between samples 2 and 3.  And so on.  Region SQLITE_INDEX_SAMPLES
+** values between samples 2 and 3.  And so on.  Region pIdx->nSample
 ** contains values larger than the last sample.
 **
 ** If the index contains many duplicates of a single value, then it is
@@ -2438,7 +2438,7 @@ static void bestVirtualIndex(
 **
 ** If successful, this function determines which of the regions value 
 ** pVal lies in, sets *piRegion to the region index (a value between 0
-** and SQLITE_INDEX_SAMPLES+1, inclusive) and returns SQLITE_OK.
+** and S+1, inclusive) and returns SQLITE_OK.
 ** Or, if an OOM occurs while converting text values between encodings,
 ** SQLITE_NOMEM is returned and *piRegion is undefined.
 */
@@ -2453,12 +2453,14 @@ static int whereRangeRegion(
   assert( roundUp==0 || roundUp==1 );
   if( ALWAYS(pVal) ){
     IndexSample *aSample = pIdx->aSample;
+    int nSample = pIdx->nSample;
     int i = 0;
     int eType = sqlite3_value_type(pVal);
 
+    assert( nSample>0 );
     if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
       double r = sqlite3_value_double(pVal);
-      for(i=0; i<SQLITE_INDEX_SAMPLES; i++){
+      for(i=0; i<nSample; i++){
         if( aSample[i].eType==SQLITE_NULL ) continue;
         if( aSample[i].eType>=SQLITE_TEXT ) break;
         if( roundUp ){
@@ -2470,7 +2472,7 @@ static int whereRangeRegion(
     }else if( eType==SQLITE_NULL ){
       i = 0;
       if( roundUp ){
-        while( i<SQLITE_INDEX_SAMPLES && aSample[i].eType==SQLITE_NULL ) i++;
+        while( i<nSample && aSample[i].eType==SQLITE_NULL ) i++;
       }
     }else{ 
       sqlite3 *db = pParse->db;
@@ -2500,7 +2502,7 @@ static int whereRangeRegion(
       }
       n = sqlite3ValueBytes(pVal, pColl->enc);
 
-      for(i=0; i<SQLITE_INDEX_SAMPLES; i++){
+      for(i=0; i<nSample; i++){
         int c;
         int eSampletype = aSample[i].eType;
         if( eSampletype==SQLITE_NULL || eSampletype<eType ) continue;
@@ -2526,7 +2528,7 @@ static int whereRangeRegion(
       }
     }
 
-    assert( i>=0 && i<=SQLITE_INDEX_SAMPLES );
+    assert( i>=0 && i<=pIdx->nSample );
     *piRegion = i;
   }
   return SQLITE_OK;
@@ -2626,7 +2628,8 @@ static int whereRangeScanEst(
     sqlite3_value *pUpperVal = 0;
     int iEst;
     int iLower = 0;
-    int iUpper = SQLITE_INDEX_SAMPLES;
+    int nSample = p->nSample;
+    int iUpper = p->nSample;
     int roundUpUpper = 0;
     int roundUpLower = 0;
     u8 aff = p->pTable->aCol[p->aiColumn[0]].affinity;
@@ -2653,7 +2656,7 @@ static int whereRangeScanEst(
       if( pLower ) iLower = iUpper/2;
     }else if( pUpperVal==0 ){
       rc = whereRangeRegion(pParse, p, pLowerVal, roundUpLower, &iLower);
-      if( pUpper ) iUpper = (iLower + SQLITE_INDEX_SAMPLES + 1)/2;
+      if( pUpper ) iUpper = (iLower + p->nSample + 1)/2;
     }else{
       rc = whereRangeRegion(pParse, p, pUpperVal, roundUpUpper, &iUpper);
       if( rc==SQLITE_OK ){
@@ -2663,12 +2666,13 @@ static int whereRangeScanEst(
     WHERETRACE(("range scan regions: %d..%d\n", iLower, iUpper));
 
     iEst = iUpper - iLower;
-    testcase( iEst==SQLITE_INDEX_SAMPLES );
-    assert( iEst<=SQLITE_INDEX_SAMPLES );
+    testcase( iEst==nSample );
+    assert( iEst<=nSample );
+    assert( nSample>0 );
     if( iEst<1 ){
-      *piEst = 50/SQLITE_INDEX_SAMPLES;
+      *piEst = 50/nSample;
     }else{
-      *piEst = (iEst*100)/SQLITE_INDEX_SAMPLES;
+      *piEst = (iEst*100)/nSample;
     }
     sqlite3ValueFree(pLowerVal);
     sqlite3ValueFree(pUpperVal);
@@ -2718,6 +2722,7 @@ static int whereEqualScanEst(
   double nRowEst;           /* New estimate of the number of rows */
 
   assert( p->aSample!=0 );
+  assert( p->nSample>0 );
   aff = p->pTable->aCol[p->aiColumn[0]].affinity;
   if( pExpr ){
     rc = valueFromExpr(pParse, pExpr, aff, &pRhs);
@@ -2732,10 +2737,10 @@ static int whereEqualScanEst(
   if( rc ) goto whereEqualScanEst_cancel;
   WHERETRACE(("equality scan regions: %d..%d\n", iLower, iUpper));
   if( iLower>=iUpper ){
-    nRowEst = p->aiRowEst[0]/(SQLITE_INDEX_SAMPLES*2);
+    nRowEst = p->aiRowEst[0]/(p->nSample*3);
     if( nRowEst<*pnRow ) *pnRow = nRowEst;
   }else{
-    nRowEst = (iUpper-iLower)*p->aiRowEst[0]/SQLITE_INDEX_SAMPLES;
+    nRowEst = (iUpper-iLower)*p->aiRowEst[0]/p->nSample;
     *pnRow = nRowEst;
   }
 
@@ -2776,14 +2781,16 @@ static int whereInScanEst(
   int nSpan = 0;            /* Number of histogram regions spanned */
   int nSingle = 0;          /* Histogram regions hit by a single value */
   int nNotFound = 0;        /* Count of values that are not constants */
-  int i;                               /* Loop counter */
-  u8 aSpan[SQLITE_INDEX_SAMPLES+1];    /* Histogram regions that are spanned */
-  u8 aSingle[SQLITE_INDEX_SAMPLES+1];  /* Histogram regions hit once */
+  int i;                             /* Loop counter */
+  int nSample = p->nSample;          /* Number of samples */
+  u8 aSpan[SQLITE_MAX_SAMPLES+1];    /* Histogram regions that are spanned */
+  u8 aSingle[SQLITE_MAX_SAMPLES+1];  /* Histogram regions hit once */
 
   assert( p->aSample!=0 );
+  assert( nSample>0 );
   aff = p->pTable->aCol[p->aiColumn[0]].affinity;
-  memset(aSpan, 0, sizeof(aSpan));
-  memset(aSingle, 0, sizeof(aSingle));
+  memset(aSpan, 0, nSample+1);
+  memset(aSingle, 0, nSample+1);
   for(i=0; i<pList->nExpr; i++){
     sqlite3ValueFree(pVal);
     rc = valueFromExpr(pParse, pList->a[i].pExpr, aff, &pVal);
@@ -2799,19 +2806,19 @@ static int whereInScanEst(
     if( iLower>=iUpper ){
       aSingle[iLower] = 1;
     }else{
-      assert( iLower>=0 && iUpper<=SQLITE_INDEX_SAMPLES );
+      assert( iLower>=0 && iUpper<=nSample );
       while( iLower<iUpper ) aSpan[iLower++] = 1;
     }
   }
   if( rc==SQLITE_OK ){
-    for(i=nSpan=0; i<=SQLITE_INDEX_SAMPLES; i++){
+    for(i=nSpan=0; i<=nSample; i++){
       if( aSpan[i] ){
         nSpan++;
       }else if( aSingle[i] ){
         nSingle++;
       }
     }
-    nRowEst = (nSpan*2+nSingle)*p->aiRowEst[0]/(2*SQLITE_INDEX_SAMPLES)
+    nRowEst = (nSpan*3+nSingle)*p->aiRowEst[0]/(3*nSample)
                + nNotFound*p->aiRowEst[1];
     if( nRowEst > p->aiRowEst[0] ) nRowEst = p->aiRowEst[0];
     *pnRow = nRowEst;
