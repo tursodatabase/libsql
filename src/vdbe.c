@@ -4373,8 +4373,6 @@ case OP_IdxInsert: {        /* in2 */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
-  rc = sqlite3VdbeSorterWrite(db, pC);
-  if( rc!=SQLITE_OK ) goto abort_due_to_error;
   pIn2 = &aMem[pOp->p2];
   assert( pIn2->flags & MEM_Blob );
   pCrsr = pC->pCursor;
@@ -4384,10 +4382,13 @@ case OP_IdxInsert: {        /* in2 */
     if( rc==SQLITE_OK ){
       nKey = pIn2->n;
       zKey = pIn2->z;
-      rc = sqlite3BtreeInsert(pCrsr, zKey, nKey, "", 0, 0, pOp->p3, 
-          ((pOp->p5 & OPFLAG_USESEEKRESULT) ? pC->seekResult : 0)
-      );
-      assert( pC->deferredMoveto==0 );
+      rc = sqlite3VdbeSorterWrite(db, pC, nKey);
+      if( rc==SQLITE_OK ){
+        rc = sqlite3BtreeInsert(pCrsr, zKey, nKey, "", 0, 0, pOp->p3, 
+            ((pOp->p5 & OPFLAG_USESEEKRESULT) ? pC->seekResult : 0)
+        );
+        assert( pC->deferredMoveto==0 );
+      }
       pC->cacheStatus = CACHE_STALE;
     }
   }

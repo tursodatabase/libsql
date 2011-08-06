@@ -1,5 +1,5 @@
-C Minor\sinternal\schanges\sto\svdbesort.c.\sAlso,\sdefault\sto\smerging\slists\stogether\s16\sat\sa\stime.
-D 2011-08-05T11:49:12.597
+C In\stemp\sfiles\sused\sfor\smerge\ssorting,\sstore\sthe\ssize\sof\seach\spacked-memory-array\sat\sthe\sstart\sof\sthe\sarray\sitself.\sThis\sis\sto\savoid\shaving\sto\sstore\sthe\soffsets\sof\sall\sarrays\sin\sthe\s(potentially\svery\slarge)\sfile\sin\smain-memory.
+D 2011-08-06T12:01:58.831
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -238,14 +238,14 @@ F src/update.c 74a6cfb34e9732c1e2a86278b229913b4b51eeec
 F src/utf.c c53eb7404b3eb5c1cbb5655c6a7a0e0ce6bd50f0
 F src/util.c 0f33bbbdfcc4a2d8cf20c3b2a16ffc3b57c58a70
 F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
-F src/vdbe.c 379ccaa6e03797e08aadb1ae6b0495cedff69209
+F src/vdbe.c ec7b04557d0849d835c4b1b95b463c2c470b60f8
 F src/vdbe.h 5cf09e7ee8a3f7d93bc51f196a96550786afe7a1
-F src/vdbeInt.h 9e38e4f866faa9b25e30a1712c3ec1f489097ca1
+F src/vdbeInt.h de75338edfafb812f5bf7f1b3881cbc7256b3c17
 F src/vdbeapi.c 11dc47987abacb76ad016dcf5abc0dc422482a98
 F src/vdbeaux.c 8fb978eb73a97b34d352dd3ef3bff35b1b3fa7e9
 F src/vdbeblob.c f024f0bf420f36b070143c32b15cc7287341ffd3
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
-F src/vdbesort.c f17fa625dbe19bfb8f0a0cb728cf9d73cab6ed1e
+F src/vdbesort.c d7739da903c6eb41b864939b2e4a34288167f031
 F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
 F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 0c70ad7b1cac6005fa5e2cbefd23ee05e391c290
@@ -954,7 +954,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P db8518cab8e329b1dbe4cd6c81b21ef3ea69fcb1
-R 82f4652664dbb6f6efbe2830f0e7593b
+P 9ddc324a34dbf97acef92eef21f8a35f63db4c5b
+R fa1c073fe4f821491ae9f0a1c071e6ef
 U dan
-Z 838a8014a1d3a0c9d59ff3654d53daf0
+Z 428b5e1af6502133e8ab01b3dcc7e84b
