@@ -1,5 +1,5 @@
-C In\stemp\sfiles\sused\sfor\smerge\ssorting,\sstore\sthe\ssize\sof\seach\spacked-memory-array\sat\sthe\sstart\sof\sthe\sarray\sitself.\sThis\sis\sto\savoid\shaving\sto\sstore\sthe\soffsets\sof\sall\sarrays\sin\sthe\s(potentially\svery\slarge)\sfile\sin\smain-memory.
-D 2011-08-06T12:01:58.831
+C Fix\sa\sproblem\swith\sbuilding\slarge\sindexes\sintroduced\sby\sthe\sprevious\scommit.
+D 2011-08-06T15:09:33.468
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -245,7 +245,7 @@ F src/vdbeapi.c 11dc47987abacb76ad016dcf5abc0dc422482a98
 F src/vdbeaux.c 8fb978eb73a97b34d352dd3ef3bff35b1b3fa7e9
 F src/vdbeblob.c f024f0bf420f36b070143c32b15cc7287341ffd3
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
-F src/vdbesort.c d7739da903c6eb41b864939b2e4a34288167f031
+F src/vdbesort.c 345235345a414bf387f1254fe3695bb566bf66d7
 F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
 F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 0c70ad7b1cac6005fa5e2cbefd23ee05e391c290
@@ -954,7 +954,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 9ddc324a34dbf97acef92eef21f8a35f63db4c5b
-R fa1c073fe4f821491ae9f0a1c071e6ef
+P 8051c1767c4386b0f14a66742d9fac41e001eb07
+R 93dcea351d8a57ea1935b884e502f99e
 U dan
-Z 428b5e1af6502133e8ab01b3dcc7e84b
+Z c870855eb410ccb3672032b9f318773d

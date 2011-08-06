@@ -553,9 +553,12 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, VdbeCursor *pCsr, int *pbEof){
   pSorter->nTree = N;
 
   do {
-    int iNew = 0;                 /* Index of new, merged, PMA */
+    int iNew;                     /* Index of new, merged, PMA */
 
-    for(iNew=0; rc==SQLITE_OK; iNew++){
+    for(iNew=0; 
+        rc==SQLITE_OK && iNew*SORTER_MAX_MERGE_COUNT<pSorter->nPMA; 
+        iNew++
+    ){
       i64 nWrite;                 /* Number of bytes in new PMA */
 
       /* If there are SORTER_MAX_MERGE_COUNT or less PMAs in file pTemp1,
