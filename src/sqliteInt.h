@@ -615,6 +615,7 @@ typedef struct FuncDefHash FuncDefHash;
 typedef struct IdList IdList;
 typedef struct Index Index;
 typedef struct IndexSample IndexSample;
+typedef struct IndexSampleArray IndexSampleArray;
 typedef struct KeyClass KeyClass;
 typedef struct KeyInfo KeyInfo;
 typedef struct Lookaside Lookaside;
@@ -1451,6 +1452,29 @@ struct UnpackedRecord {
 #define UNPACKED_PREFIX_SEARCH 0x0020  /* A prefix match is considered OK */
 
 /*
+** Each sample stored in the sqlite_stat2 table is represented in memory 
+** using a structure of this type.
+*/
+struct IndexSample {
+  union {
+    char *z;        /* Value if eType is SQLITE_TEXT or SQLITE_BLOB */
+    double r;       /* Value if eType is SQLITE_FLOAT or SQLITE_INTEGER */
+  } u;
+  u8 eType;         /* SQLITE_NULL, SQLITE_INTEGER ... etc. */
+  u8 nByte;         /* Size in byte of text or blob. */
+  u32 nCopy;        /* How many copies of this sample are in the database */
+};
+
+/*
+** An array of IndexSample elements is as follows:
+*/
+struct IndexSampleArray {
+  u16 n;            /* Number of elements in the array */
+  u16 nAlloc;       /* Space allocated to a[] */
+  IndexSample *a;   /* The samples */
+};
+
+/*
 ** Each SQL index is represented in memory by an
 ** instance of the following structure.
 **
@@ -1486,26 +1510,15 @@ struct Index {
   u8 onError;      /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
   u8 autoIndex;    /* True if is automatically created (ex: by UNIQUE) */
   u8 bUnordered;   /* Use this index for == or IN queries only */
-  u8 nSample;      /* Number of slots in aSample[] */
   char *zColAff;   /* String defining the affinity of each column */
   Index *pNext;    /* The next index associated with the same table */
   Schema *pSchema; /* Schema containing this index */
   u8 *aSortOrder;  /* Array of size Index.nColumn. True==DESC, False==ASC */
   char **azColl;   /* Array of collation sequence names for index */
-  IndexSample *aSample;    /* Array of SQLITE_INDEX_SAMPLES samples */
-};
-
-/*
-** Each sample stored in the sqlite_stat2 table is represented in memory 
-** using a structure of this type.
-*/
-struct IndexSample {
-  union {
-    char *z;        /* Value if eType is SQLITE_TEXT or SQLITE_BLOB */
-    double r;       /* Value if eType is SQLITE_FLOAT or SQLITE_INTEGER */
-  } u;
-  u8 eType;         /* SQLITE_NULL, SQLITE_INTEGER ... etc. */
-  u8 nByte;         /* Size in byte of text or blob. */
+#ifdef SQLITE_ENABLE_STAT2
+  IndexSampleArray sample;  /* Sampled histogram for the first column */
+  IndexSampleArray comkey;  /* The most common keys */
+#endif
 };
 
 /*

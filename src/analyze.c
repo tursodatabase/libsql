@@ -10,6 +10,99 @@
 **
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
+**
+** The ANALYZE command gather statistics about the content of tables
+** and indices.  These statistics are made available to the query planner
+** to help it make better decisions about the best way to implement a
+** query.
+**
+** Two system tables are created as follows:
+**
+**    CREATE TABLE sqlite_stat1(tbl, idx, stat);
+**    CREATE TABLE sqlite_stat2(tbl, idx, sampleno, sample, cnt);
+**
+** Additional tables might be added in future releases of SQLite.
+** The sqlite_stat2 table is only created and used if SQLite is
+** compiled with SQLITE_ENABLE_STAT2.  Older versions of SQLite
+** omit the sqlite_stat2.cnt column.  Newer versions of SQLite are
+** able to use older versions of the stat2 table that lack the cnt
+** column.
+**
+** Format of sqlite_stat1:
+**
+** There is normally one row per index, with the index identified by the
+** name in the idx column.  The tbl column is the name of the table to
+** which the index belongs.  In each such row, the stat column will be
+** a string consisting of a list of integers.  The first integer in this
+** list is the number of rows in the index and in the table.  The second
+** integer is the average number of rows in the index that have the same
+** value in the first column of the index.  The third integer is the average
+** number of rows in the index that have the same value for the first two
+** columns.  The N-th integer (for N>1) is the average number of rows in 
+** the index which have the same value for the first N-1 columns.  For
+** a K-column index, there will be K+1 integers in the stat column.  If
+** the index is unique, then the last integer will be 1.
+**
+** The list of integers in the stat column can optionally be followed
+** by the keyword "unordered".  The "unordered" keyword, if it is present,
+** must be separated from the last integer by a single space.  If the
+** "unordered" keyword is present, then the query planner assumes that
+** the index is unordered and will not use the index for a range query.
+** 
+** If the sqlite_stat1.idx column is NULL, then the sqlite_stat1.stat
+** column contains a single integer which is the (estimated) number of
+** rows in the table identified by sqlite_stat1.tbl.
+**
+** Format of sqlite_stat2:
+**
+** The sqlite_stat2 is only created and is only used if SQLite is compiled
+** with SQLITE_ENABLE_STAT2.  The "stat2" table contains additional information
+** about the key distribution within an index.  The index is identified by
+** the "idx" column and the "tbl" column is the name of the table to which
+** the index belongs.  There are usually multiple rows in the sqlite_stat2
+** table for each index.
+**
+** The sqlite_stat2 entires for an index that have sampleno>=0 are
+** sampled key values for the first column of the index taken at
+** intervals along the index.  The sqlite_stat2.sample column holds
+** the value of the key in the left-most column of the index.
+**
+** The samples are numbered from 0 to S-1
+** where S is 10 by default.  The number of samples created by the
+** ANALYZE command can be adjusted at compile-time using the
+** SQLITE_INDEX_SAMPLES macro.  The maximum number of samples is
+** SQLITE_MAX_SAMPLES, currently set to 100.  There are places in the
+** code that use an unsigned character to count samples, so an upper
+** bound on SQLITE_MAX_SAMPLES is 255.
+**
+** Suppose the index contains C rows.  And let the number
+** of samples be S.  SQLite assumes that the samples are taken from the
+** following rows for i between 0 and S-1:
+**
+**     rownumber = (i*C*2 + C)/(S*2)
+**
+** Conceptually, the index is divided into S bins and the sample is
+** taken from the middle of each bin.  The ANALYZE will not attempt
+** to populate sqlite_stat2 for an index that holds fewer than S*2
+** entries.
+**
+** If the key value for a sample (the sqlite_stat2.sample column) is a 
+** large string or blob, SQLite will only use the first 255 bytes of 
+** that string or blob.
+** 
+** The sqlite_stat2.cnt column contains the number of entries in the
+** index for which sqlite_stat2.sample matches the left-most column
+** of the index.  In other words, sqlite_stat2.cnt holds the number of
+** times the sqlite_stat2.sample value appears in the index..  Many 
+** older versions of SQLite omit the sqlite_stat2.cnt column.
+**
+** If the sqlite_stat2.sampleno value is -1, then that row holds a first-
+** column key that is a frequently used key in the index.  The
+** sqlite_stat2.cnt column will hold the number of occurrances of that key.
+** This information is useful to the query planner in cases where a
+** large percentage of the rows in indexed field have one of a small
+** handful of value but the balance of the rows in the index have
+** distinct or nearly distinct keys.
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -582,33 +675,68 @@ static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
   return 0;
 }
 
+#if SQLITE_ENABLE_STAT2
 /*
-** If the Index.aSample variable is not NULL, delete the aSample[] array
-** and its contents.
+** Delete an array of IndexSample objects
+*/
+static void deleteIndexSampleArray(
+  sqlite3 *db,                 /* The database connection */
+  IndexSampleArray *pArray     /* Array of IndexSample objects */
+){
+  int j;
+  if( pArray->a==0 ) return;
+  for(j=0; j<pArray->n; j++){
+    IndexSample *p = &pArray->a[j];
+    if( p->eType==SQLITE_TEXT || p->eType==SQLITE_BLOB ){
+      sqlite3_free(p->u.z);
+    }
+  }
+  sqlite3_free(pArray->a);
+  memset(pArray, 0, sizeof(*pArray));
+}
+#endif
+
+/*
+** Delete the sample and common-key arrays from the index.
 */
 void sqlite3DeleteIndexSamples(sqlite3 *db, Index *pIdx){
 #ifdef SQLITE_ENABLE_STAT2
-  if( pIdx->aSample ){
-    int j;
-    for(j=0; j<pIdx->nSample; j++){
-      IndexSample *p = &pIdx->aSample[j];
-      if( p->eType==SQLITE_TEXT || p->eType==SQLITE_BLOB ){
-        sqlite3DbFree(db, p->u.z);
-      }
-    }
-    sqlite3DbFree(db, pIdx->aSample);
-  }
+  deleteIndexSampleArray(db, &pIdx->sample);
+  deleteIndexSampleArray(db, &pIdx->comkey);
 #else
   UNUSED_PARAMETER(db);
   UNUSED_PARAMETER(pIdx);
 #endif
 }
 
+#ifdef SQLITE_ENABLE_STAT2
+/*
+** Enlarge an array of IndexSample objects.
+*/
+static IndexSample *allocIndexSample(
+  sqlite3 *db,              /* Database connection to malloc against */
+  IndexSampleArray *pArray, /* The array to enlarge */
+  int i                     /* Return this element */
+){
+  IndexSample *p;
+  if( i>=pArray->nAlloc ){
+    int szNew = i+1;
+    p = (IndexSample*)sqlite3_realloc(pArray->a, szNew*sizeof(IndexSample));
+    if( p==0 ) return 0;
+    pArray->a = p;
+    memset(&pArray->a[pArray->n], 0, (szNew-(pArray->n))*sizeof(IndexSample));
+    pArray->nAlloc = szNew;
+  }
+  if( i>=pArray->n ) pArray->n = i+1;
+  return &pArray->a[i];
+}
+#endif
+
 /*
 ** Load the content of the sqlite_stat1 and sqlite_stat2 tables. The
 ** contents of sqlite_stat1 are used to populate the Index.aiRowEst[]
 ** arrays. The contents of sqlite_stat2 are used to populate the
-** Index.aSample[] arrays.
+** Index.sample and Index.comkey arrays.
 **
 ** If the sqlite_stat1 table is not present in the database, SQLITE_ERROR
 ** is returned. In this case, even if SQLITE_ENABLE_STAT2 was defined 
@@ -629,6 +757,7 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
   HashElem *i;
   char *zSql;
   int rc;
+  Table *pTab;    /* Stat1 or Stat2 table */
 
   assert( iDb>=0 && iDb<db->nDb );
   assert( db->aDb[iDb].pBt!=0 );
@@ -639,14 +768,12 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
     Index *pIdx = sqliteHashData(i);
     sqlite3DefaultRowEst(pIdx);
     sqlite3DeleteIndexSamples(db, pIdx);
-    pIdx->aSample = 0;
-    pIdx->nSample = 0;
   }
 
   /* Check to make sure the sqlite_stat1 table exists */
   sInfo.db = db;
   sInfo.zDatabase = db->aDb[iDb].zName;
-  if( sqlite3FindTable(db, "sqlite_stat1", sInfo.zDatabase)==0 ){
+  if( (pTab=sqlite3FindTable(db, "sqlite_stat1", sInfo.zDatabase))==0 ){
     return SQLITE_ERROR;
   }
 
@@ -663,15 +790,17 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
 
   /* Load the statistics from the sqlite_stat2 table. */
 #ifdef SQLITE_ENABLE_STAT2
-  if( rc==SQLITE_OK && !sqlite3FindTable(db, "sqlite_stat2", sInfo.zDatabase) ){
+  if( rc==SQLITE_OK 
+    && (pTab=sqlite3FindTable(db, "sqlite_stat2", sInfo.zDatabase))==0 ){
     rc = SQLITE_ERROR;
   }
   if( rc==SQLITE_OK ){
     sqlite3_stmt *pStmt = 0;
 
     zSql = sqlite3MPrintf(db, 
-        "SELECT idx, sampleno, sample FROM %Q.sqlite_stat2"
-        " ORDER BY rowid DESC", sInfo.zDatabase);
+        "SELECT idx, sampleno, sample, %s FROM %Q.sqlite_stat2"
+        " ORDER BY rowid DESC",
+        pTab->nCol>=5 ? "cnt" : "0", sInfo.zDatabase);
     if( !zSql ){
       rc = SQLITE_NOMEM;
     }else{
@@ -692,21 +821,16 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
         pIdx = sqlite3FindIndex(db, zIndex, sInfo.zDatabase);
         if( pIdx==0 ) continue;
         iSample = sqlite3_column_int(pStmt, 1);
-        if( iSample>=SQLITE_MAX_SAMPLES || iSample<0 ) continue;
-        if( pIdx->nSample<=iSample ){
-          IndexSample *pNew;
-          int sz = sizeof(IndexSample)*(iSample+1);
-          pNew = (IndexSample*)sqlite3Realloc(pIdx->aSample, sz);
-          if( pNew==0 ){
-            db->mallocFailed = 1;
-            break;
-          }
-          pIdx->aSample = pNew;
-          pIdx->nSample = iSample+1;
+        if( iSample>=SQLITE_MAX_SAMPLES ) continue;
+        if( iSample<0 ){
+          pSample = allocIndexSample(db, &pIdx->comkey, pIdx->comkey.n);
+        }else{
+          pSample = allocIndexSample(db, &pIdx->sample, iSample);
         }
+        if( pSample==0 ) break;
         eType = sqlite3_column_type(pStmt, 2);
-        pSample = &pIdx->aSample[iSample];
         pSample->eType = (u8)eType;
+        pSample->nCopy = sqlite3_column_int(pStmt, 4);
         if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
           pSample->u.r = sqlite3_column_double(pStmt, 2);
         }else if( eType==SQLITE_TEXT || eType==SQLITE_BLOB ){
@@ -716,7 +840,7 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
               sqlite3_column_text(pStmt, 2)
           );
           int n = sqlite3_column_bytes(pStmt, 2);
-          if( n>24 ) n = 24;
+          if( n>255 ) n = 255;
           pSample->nByte = (u8)n;
           if( n < 1){
             pSample->u.z = 0;

@@ -161,3 +161,5 @@ do_test analyze8-3.6 {
     SELECT sample, cnt FROM sqlite_stat2 WHERE idx='t1all' ORDER BY sampleno;
   }
 } {2 2 20 38 20 38 20 38 20 38 20 38 20 38 20 38 20 38 20 38}
+
+finish_test

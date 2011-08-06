@@ -2422,12 +2422,12 @@ static void bestVirtualIndex(
 
 /*
 ** Argument pIdx is a pointer to an index structure that has an array of
-** pIdx->nSample evenly spaced samples of the first indexed column
-** stored in Index.aSample. These samples divide the domain of values stored
-** the index into (pIdx->nSample+1) regions.
+** pIdx->sample.n evenly spaced samples of the first indexed column
+** stored in Index.sample. These samples divide the domain of values stored
+** the index into (pIdx->sample.n+1) regions.
 ** Region 0 contains all values less than the first sample value. Region
 ** 1 contains values between the first and second samples.  Region 2 contains
-** values between samples 2 and 3.  And so on.  Region pIdx->nSample
+** values between samples 2 and 3.  And so on.  Region pIdx->sample.n
 ** contains values larger than the last sample.
 **
 ** If the index contains many duplicates of a single value, then it is
@@ -2452,8 +2452,8 @@ static int whereRangeRegion(
 ){
   assert( roundUp==0 || roundUp==1 );
   if( ALWAYS(pVal) ){
-    IndexSample *aSample = pIdx->aSample;
-    int nSample = pIdx->nSample;
+    IndexSample *aSample = pIdx->sample.a;
+    int nSample = pIdx->sample.n;
     int i = 0;
     int eType = sqlite3_value_type(pVal);
 
@@ -2528,7 +2528,7 @@ static int whereRangeRegion(
       }
     }
 
-    assert( i>=0 && i<=pIdx->nSample );
+    assert( i>=0 && i<=pIdx->sample.n );
     *piRegion = i;
   }
   return SQLITE_OK;
@@ -2623,13 +2623,13 @@ static int whereRangeScanEst(
 
 #ifdef SQLITE_ENABLE_STAT2
 
-  if( nEq==0 && p->aSample ){
+  if( nEq==0 && p->sample.a ){
     sqlite3_value *pLowerVal = 0;
     sqlite3_value *pUpperVal = 0;
     int iEst;
     int iLower = 0;
-    int nSample = p->nSample;
-    int iUpper = p->nSample;
+    int nSample = p->sample.n;
+    int iUpper = p->sample.n;
     int roundUpUpper = 0;
     int roundUpLower = 0;
     u8 aff = p->pTable->aCol[p->aiColumn[0]].affinity;
@@ -2656,7 +2656,7 @@ static int whereRangeScanEst(
       if( pLower ) iLower = iUpper/2;
     }else if( pUpperVal==0 ){
       rc = whereRangeRegion(pParse, p, pLowerVal, roundUpLower, &iLower);
-      if( pUpper ) iUpper = (iLower + p->nSample + 1)/2;
+      if( pUpper ) iUpper = (iLower + p->sample.n + 1)/2;
     }else{
       rc = whereRangeRegion(pParse, p, pUpperVal, roundUpUpper, &iUpper);
       if( rc==SQLITE_OK ){
@@ -2721,8 +2721,8 @@ static int whereEqualScanEst(
   int rc;                   /* Subfunction return code */
   double nRowEst;           /* New estimate of the number of rows */
 
-  assert( p->aSample!=0 );
-  assert( p->nSample>0 );
+  assert( p->sample.a!=0 );
+  assert( p->sample.n>0 );
   aff = p->pTable->aCol[p->aiColumn[0]].affinity;
   if( pExpr ){
     rc = valueFromExpr(pParse, pExpr, aff, &pRhs);
@@ -2737,10 +2737,10 @@ static int whereEqualScanEst(
   if( rc ) goto whereEqualScanEst_cancel;
   WHERETRACE(("equality scan regions: %d..%d\n", iLower, iUpper));
   if( iLower>=iUpper ){
-    nRowEst = p->aiRowEst[0]/(p->nSample*3);
+    nRowEst = p->aiRowEst[0]/(p->sample.n*3);
     if( nRowEst<*pnRow ) *pnRow = nRowEst;
   }else{
-    nRowEst = (iUpper-iLower)*p->aiRowEst[0]/p->nSample;
+    nRowEst = (iUpper-iLower)*p->aiRowEst[0]/p->sample.n;
     *pnRow = nRowEst;
   }
 
@@ -2782,11 +2782,11 @@ static int whereInScanEst(
   int nSingle = 0;          /* Histogram regions hit by a single value */
   int nNotFound = 0;        /* Count of values that are not constants */
   int i;                             /* Loop counter */
-  int nSample = p->nSample;          /* Number of samples */
+  int nSample = p->sample.n;         /* Number of samples */
   u8 aSpan[SQLITE_MAX_SAMPLES+1];    /* Histogram regions that are spanned */
   u8 aSingle[SQLITE_MAX_SAMPLES+1];  /* Histogram regions hit once */
 
-  assert( p->aSample!=0 );
+  assert( p->sample.a!=0 );
   assert( nSample>0 );
   aff = p->pTable->aCol[p->aiColumn[0]].affinity;
   memset(aSpan, 0, nSample+1);
@@ -3036,7 +3036,7 @@ static void bestBtreeIndex(
         wsFlags |= WHERE_COLUMN_NULL;
       }
 #ifdef SQLITE_ENABLE_STAT2
-      if( nEq==0 && pProbe->aSample ) pFirstTerm = pTerm;
+      if( nEq==0 && pProbe->sample.a ) pFirstTerm = pTerm;
 #endif
       used |= pTerm->prereqRight;
     }
