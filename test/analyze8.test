@@ -88,3 +88,76 @@ do_test analyze8-2.1 {
     SELECT sample, cnt FROM sqlite_stat2 WHERE idx='t1x' ORDER BY sampleno;
   }
 } {0 200 0 200 0 200 10 1 70 1 130 1 190 1 999 200 999 200 999 200}
+
+do_test analyze8-3.0 {
+  execsql {
+    BEGIN;
+    DROP TABLE t1;
+    CREATE TABLE t1(a,b);
+    CREATE INDEX t1all ON t1(a,b);
+    INSERT INTO t1 VALUES(0,1);
+    INSERT INTO t1 VALUES(0,2);
+    INSERT INTO t1 VALUES(0,3);
+    INSERT INTO t1 VALUES(1,4);
+    INSERT INTO t1 SELECT a+2, b+4 FROM t1;
+    INSERT INTO t1 SELECT a+4, b+8 FROM t1;
+    INSERT INTO t1 SELECT a+8, b+16 FROM t1;
+    COMMIT;
+    ANALYZE;
+    SELECT sample, cnt FROM sqlite_stat2 WHERE idx='t1all' ORDER BY sampleno;
+  }
+} {0 3 2 3 4 3 5 1 6 3 8 3 10 3 12 3 13 1 14 3}
+do_test analyze8-3.1 {
+  execsql {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(1,1);
+    INSERT INTO t1 VALUES(2,2);
+    INSERT INTO t1 SELECT a+2, b+2 FROM t1;
+    INSERT INTO t1 SELECT a+4, b+4 FROM t1;
+    INSERT INTO t1 SELECT a+8, b+8 FROM t1;
+    INSERT INTO t1 SELECT a+16, b+16 FROM t1;
+    DELETE FROM t1 WHERE a>21;
+    ANALYZE;
+    SELECT sample, cnt FROM sqlite_stat2 WHERE idx='t1all' ORDER BY sampleno;
+  }
+} {2 1 4 1 6 1 8 1 10 1 12 1 14 1 16 1 18 1 20 1}
+do_test analyze8-3.2 {
+  execsql {
+    UPDATE t1 SET a=123;
+    ANALYZE;
+    SELECT sample, cnt FROM sqlite_stat2 WHERE idx='t1all' ORDER BY sampleno;
+  }
+} {123 21 123 21 123 21 123 21 123 21 123 21 123 21 123 21 123 21 123 21}
+do_test analyze8-3.3 {
+  execsql {
+    DELETE FROM t1 WHERE b=1 OR b=2;
+    ANALYZE;
+    SELECT count(*) FROM t1;
+    SELECT sample, cnt FROM sqlite_stat2 WHERE idx='t1all' ORDER BY sampleno;
+  }
+} {19}
+do_test analyze8-3.4 {
+  execsql {
+    UPDATE t1 SET a=b;
+    INSERT INTO t1 VALUES(1,1);
+    INSERT INTO t1 VALUES(2,2);
+    INSERT INTO t1 SELECT a, b FROM t1;
+    ANALYZE;
+    SELECT sample, cnt FROM sqlite_stat2 WHERE idx='t1all' ORDER BY sampleno;
+  }
+} {2 2 4 2 6 2 8 2 10 2 12 2 14 2 16 2 18 2 20 2}
+do_test analyze8-3.5 {
+  execsql {
+    UPDATE t1 SET a=1 WHERE b<20;
+    ANALYZE;
+    SELECT sample, cnt FROM sqlite_stat2 WHERE idx='t1all' ORDER BY sampleno;
+  }
+} {1 38 1 38 1 38 1 38 1 38 1 38 1 38 1 38 1 38 20 2}
+do_test analyze8-3.6 {
+  execsql {
+    UPDATE t1 SET a=b;
+    UPDATE t1 SET a=20 WHERE b>2;
+    ANALYZE;
+    SELECT sample, cnt FROM sqlite_stat2 WHERE idx='t1all' ORDER BY sampleno;
+  }
+} {2 2 20 38 20 38 20 38 20 38 20 38 20 38 20 38 20 38 20 38}

@@ -133,12 +133,12 @@ static void analyzeOneTable(
   int regSample2 = iMem++;     /* Number of samples to acquire times 2 */
   int regCount = iMem++;       /* Number of rows in the table */
   int regCount2 = iMem++;      /* regCount*2 */
+  int once = 1;                /* One-time initialization */
 #endif
   int regCol = iMem++;         /* Content of a column in analyzed table */
   int regRec = iMem++;         /* Register holding completed record */
   int regTemp = iMem++;        /* Temporary use register */
   int regRowid = iMem++;       /* Rowid for the inserted record */
-  int once = 1;                /* One-time initialization */
 
 
   v = sqlite3GetVdbe(pParse);
