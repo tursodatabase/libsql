@@ -179,6 +179,15 @@ static void openStatTable(
         /* The sqlite_stat[12] table already exists.  Delete all rows. */
         sqlite3VdbeAddOp2(v, OP_Clear, aRoot[i], iDb);
       }
+#ifdef SQLITE_ENABLE_STAT2
+      if( i==1 && iDb!=1 && pStat->nCol==4 ){
+        sqlite3NestedParse(pParse,
+           "UPDATE %Q.sqlite_master SET sql='CREATE TABLE sqlite_stat2(%s)'"
+           " WHERE name='sqlite_stat2'", pDb->zName, aTable[i].zCols
+        );
+        sqlite3ChangeCookie(pParse, iDb);
+      }
+#endif
     }
   }
 
@@ -607,7 +616,7 @@ void sqlite3Analyze(Parse *pParse, Token *pName1, Token *pName2){
         }
         sqlite3DbFree(db, z);
       }
-    }   
+    }
   }
 }
 

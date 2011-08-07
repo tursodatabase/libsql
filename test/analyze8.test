@@ -162,4 +162,40 @@ do_test analyze8-3.6 {
   }
 } {2 2 20 38 20 38 20 38 20 38 20 38 20 38 20 38 20 38 20 38}
 
+
+
+# Verify that the 5th "cnt" column is added to the sqlite_stat2 table
+# on a full ANALYZE if the column is not already present.
+#
+do_test analyze8-4.0 {
+  execsql {
+    UPDATE t1 SET a=b;
+    ANALYZE;
+    PRAGMA writable_schema=ON;
+    UPDATE sqlite_master 
+       SET sql='CREATE TABLE sqlite_stat2(tbl,idx,sampleno,sample)'
+     WHERE name='sqlite_stat2';
+  }
+  db close
+  sqlite3 db test.db
+  execsql {
+    SELECT sample FROM sqlite_stat2 WHERE idx='t1all' ORDER BY sampleno
+  }
+} {2 4 6 8 10 12 14 16 18 20}
+do_test analyze8-4.1 {
+  catchsql {SELECT sample, cnt FROM sqlite_stat2}
+} {1 {no such column: cnt}}
+do_test analyze8-4.2 {
+  execsql {
+    ANALYZE;
+  }
+  db close;
+  sqlite3 db test.db
+  execsql {
+    SELECT sample, +cnt FROM sqlite_stat2 WHERE idx='t1all' ORDER BY sampleno;
+  }
+} {2 2 4 2 6 2 8 2 10 2 12 2 14 2 16 2 18 2 20 2}
+
+
+
 finish_test

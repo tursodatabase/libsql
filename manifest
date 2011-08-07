@@ -1,5 +1,5 @@
-C The\ssqlite_stat2.cnt\sfield\sis\sparsed\sif\sit\sis\spresent.\s\sBut\sit\sis\snot\syet\nused.\s\sA\slarge\scomment\sadded\sto\sanalyze.c\sto\sexplain\sthe\sformat\sof\sthe\nANALYZE\ssystem\stables.
-D 2011-08-06T19:48:53.187
+C The\sANALYZE\scommand\sadds\sthe\ssqlite_stat2.cnt\scolumn\sif\sit\sdoes\snot\salready\nexist.
+D 2011-08-07T00:21:17.038
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1e6988b3c11dee9bd5edc0c804bd4468d74a9cdc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -118,7 +118,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c ac80a0f31189f8b4a524ebf661e47e84536ee7f5
-F src/analyze.c 8a5343a20ae69fd27247249cf40262b0021e379e
+F src/analyze.c ab43a0dea4df603b644a0bc883aeea47856169a6
 F src/attach.c 12c6957996908edc31c96d7c68d4942c2474405f
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 986c15232757f2873dff35ee3b35cbf935fc573c
@@ -267,7 +267,7 @@ F test/analyze4.test 757b37875cf9bb528d46f74497bc789c88365045
 F test/analyze5.test f6c250012b173f9b10ae5d577e9592767b376b1c
 F test/analyze6.test c125622a813325bba1b4999040ddc213773c2290
 F test/analyze7.test ed672a2c09c4b5a5b528ca38951318af463bb17e
-F test/analyze8.test 8a9c83bf735311daf812c9f762d79234f9069404
+F test/analyze8.test fbb378563ec2f68f8dff4b6f70b7d35088acfd7b
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
 F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
 F test/async3.test d73a062002376d7edc1fe3edff493edbec1fc2f7
@@ -956,7 +956,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 2daab6bd42b34b32de46db513437cc4d6ca17975
-R cec8d2f4d5cd3f2eecb5e9f36d91b967
+P 6d1e2372fe73f4c04561108aac6bc8c95f6e7a1a
+R bbffc4c86ec6cf77283985eee0cedc8e
 U drh
-Z deea39c8beb81cdf79c7b9366ab4e7a9
+Z 16b3ea4435ed857a5ccfcdb15256b70e
