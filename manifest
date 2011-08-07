@@ -1,5 +1,5 @@
-C Merge\sthe\swinopen-retry-logic\sbranch\sinto\strunk.\s\sThe\sbiggest\schange\shere\nis\sto\stest\sscripts,\swhich\sshould\snow\suse\ssuch\sas\scopy_file\sand\ndelete_file\sfrom\stester.tcl\srather\sthan\sthe\sraw\sfile\scommands\sof\sTCL.
-D 2011-08-03T22:06:39.312
+C Remove\srelevant\selements\sfrom\sthe\ssqlite_stat2\stable\swhen\sdoing\sa\sDROP\nINDEX\sor\sDROP\sTABLE.
+D 2011-08-07T01:31:52.877
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1e6988b3c11dee9bd5edc0c804bd4468d74a9cdc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -127,7 +127,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 8c46f0ab69ad9549c75a3a91fed87abdaa743e2f
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
-F src/build.c 5e614e586d9f8a81c16c80b545b9e1747f96c1bb
+F src/build.c 19a8957a442d922a0d6ed1a5dd67b63202fc3260
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 7deec4534f3b5a0c3b4a4cbadf809d321f64f9c4
@@ -260,7 +260,7 @@ F test/alter2.test 7ea05c7d92ac99349a802ef7ada17294dd647060
 F test/alter3.test 49c9d9fba2b8fcdce2dedeca97bbf1f369cc548d
 F test/alter4.test b2debc14d8cbe4c1d12ccd6a41eef88a8c1f15d5
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
-F test/analyze.test c8cb89e8736336f1f0646c8123e6028a14c7b55e
+F test/analyze.test 68b43c1f9cd6ffc3bbb30d27a23712b38c413eca
 F test/analyze2.test 8f2b1534d43f5547ce9a6b736c021d4192c75be3
 F test/analyze3.test d61f55d8b472fc6e713160b1e577f7a68e63f38b
 F test/analyze4.test 757b37875cf9bb528d46f74497bc789c88365045
@@ -955,7 +955,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P a2135ad13049c170b33315a949b1544e6a136183 4cb17881d9676fa3359394391b9ba53f08e5809a
-R 69e73a0d833d24111d142317de3be42c
+P b90c28be3840169651022ef36cd7cf416bc22305
+R 73598e00e938e090a06d21036269e1f1
 U drh
-Z e1999267404d37fe86d90d3e80b00531
+Z 41423adf91510090095a57365c2e79b2
