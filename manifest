@@ -1,5 +1,5 @@
-C Remove\srelevant\selements\sfrom\sthe\ssqlite_stat2\stable\swhen\sdoing\sa\sDROP\nINDEX\sor\sDROP\sTABLE.
-D 2011-08-07T01:31:52.877
+C Allow\sthe\sunlink()\ssystem\scall\sto\sbe\soverridden\sin\sos_unix.c.
+D 2011-08-08T23:18:05.791
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1e6988b3c11dee9bd5edc0c804bd4468d74a9cdc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +165,7 @@ F src/os.c fcc717427a80b2ed225373f07b642dc1aad7490b
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 65a897143b64667d23ed329a7984b9b405accb58
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 51caec436f811fa387a85cf7b05f13962c7fe0dc
+F src/os_unix.c 597c854d9428b547717bcc9d2fc885a8030d7f86
 F src/os_win.c 4eb6fa00ee28f6d7bad0526edcbe5a60d297c67a
 F src/pager.c 120550e7ef01dafaa2cbb4a0528c0d87c8f12b41
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
@@ -688,7 +688,7 @@ F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
 F test/superlock.test 5d7a4954b0059c903f82c7b67867bc5451a7c082
 F test/sync.test a34cd43e98b7fb84eabbf38f7ed8f7349b3f3d85
-F test/syscall.test 707c95e4ab7863e13f1293c6b0c76bead30249b3
+F test/syscall.test a9d065ad1ef5f32446b1cb585a0e085b4e0996f5
 F test/sysfault.test c79441d88d23696fbec7b147dba98d42a04f523f
 F test/table.test 50c47f5fe9c112e92723af27cd735e6c92de6f85
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
@@ -955,7 +955,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P b90c28be3840169651022ef36cd7cf416bc22305
-R 73598e00e938e090a06d21036269e1f1
+P 3c8f97ae527e380bf2583c7cf8ceac9509f29bfe
+R 88d01aec65e2a86c5fc8acbdba857107
 U drh
-Z 41423adf91510090095a57365c2e79b2
+Z 304dbede0b6b9e99a78b17b48d6b9a6b
