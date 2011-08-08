@@ -174,6 +174,14 @@ static int vdbeSorterIterNext(
   return rc;
 }
 
+/*
+** Write a single varint, value iVal, to file-descriptor pFile. Return
+** SQLITE_OK if successful, or an SQLite error code if some error occurs.
+**
+** The value of *piOffset when this function is called is used as the byte
+** offset in file pFile to write to. Before returning, *piOffset is 
+** incremented by the number of bytes written.
+*/
 static int vdbeSorterWriteVarint(
   sqlite3_file *pFile, 
   i64 iVal, 
@@ -190,6 +198,17 @@ static int vdbeSorterWriteVarint(
   return rc;
 }
 
+/*
+** Read a single varint from file-descriptor pFile. Return SQLITE_OK if
+** successful, or an SQLite error code if some error occurs.
+**
+** The value of *piOffset when this function is called is used as the
+** byte offset in file pFile from whence to read the varint. If successful
+** (i.e. if no IO error occurs), then *piOffset is set to the offset of
+** the first byte past the end of the varint before returning. *piVal is
+** set to the integer value read. If an error occurs, the final values of
+** both *piOffset and *piVal are undefined.
+*/
 static int vdbeSorterReadVarint(
   sqlite3_file *pFile, 
   i64 iEof,                       /* Total number of bytes in file */
@@ -487,31 +506,28 @@ int sqlite3VdbeSorterWrite(sqlite3 *db, VdbeCursor *pCsr, int nKey){
 }
 
 /*
-** Helper function for sqlite3VdbeSorterRewind().
+** Helper function for sqlite3VdbeSorterRewind(). 
 */
 static int vdbeSorterInitMerge(
-  sqlite3 *db,
-  VdbeCursor *pCsr,
-  int iFirst,
+  sqlite3 *db,                    /* Database handle */
+  VdbeCursor *pCsr,               /* Cursor handle for this sorter */
   i64 *pnByte                     /* Sum of bytes in all opened PMAs */
 ){
   VdbeSorter *pSorter = pCsr->pSorter;
-  int rc = SQLITE_OK;
-  int i;
-  i64 nByte = 0;
+  int rc = SQLITE_OK;             /* Return code */
+  int i;                          /* Used to iterator through aIter[] */
+  i64 nByte = 0;                  /* Total bytes in all opened PMAs */
 
-  /* Initialize as many iterators as possible. */
-  for(i=iFirst; 
-      rc==SQLITE_OK && i<pSorter->nPMA && (i-iFirst)<SORTER_MAX_MERGE_COUNT; 
-      i++
-  ){
-    VdbeSorterIter *pIter = &pSorter->aIter[i - iFirst];
+  /* Initialize the iterators. */
+  for(i=0; rc==SQLITE_OK && i<SORTER_MAX_MERGE_COUNT; i++){
+    VdbeSorterIter *pIter = &pSorter->aIter[i];
     rc = vdbeSorterIterInit(db, pSorter, pSorter->iReadOff, pIter, &nByte);
     pSorter->iReadOff = pIter->iEof;
+    assert( pSorter->iReadOff<=pSorter->iWriteOff );
+    if( pSorter->iReadOff>=pSorter->iWriteOff ) break;
   }
-  assert( i>iFirst );
 
-  /* Populate the aTree[] array. */
+  /* Initialize the aTree[] array. */
   for(i=pSorter->nTree-1; rc==SQLITE_OK && i>0; i--){
     rc = vdbeSorterDoCompare(pCsr, i);
   }
@@ -573,7 +589,7 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, VdbeCursor *pCsr, int *pbEof){
       ** initialize interators for SORTER_MAX_MERGE_COUNT of them. These PMAs
       ** are merged into a single PMA that is written to file pTemp2.
       */
-      rc = vdbeSorterInitMerge(db, pCsr, iNew*SORTER_MAX_MERGE_COUNT, &nWrite);
+      rc = vdbeSorterInitMerge(db, pCsr, &nWrite);
       assert( rc!=SQLITE_OK || pSorter->aIter[ pSorter->aTree[1] ].pFile );
       if( rc!=SQLITE_OK || pSorter->nPMA<=SORTER_MAX_MERGE_COUNT ){
         break;

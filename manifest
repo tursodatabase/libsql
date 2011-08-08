@@ -1,5 +1,5 @@
-C Add\sfault-injection\sand\sother\stests\s(and\sfixes)\sto\simprove\scoverage\sof\svdbesort.c.
-D 2011-08-08T16:44:25.654
+C Remove\sredundant\sparameter\sfrom\svdbeSorterInitMerge()\sin\svdbesort.c.
+D 2011-08-08T19:26:13.264
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -245,7 +245,7 @@ F src/vdbeapi.c 11dc47987abacb76ad016dcf5abc0dc422482a98
 F src/vdbeaux.c 8fb978eb73a97b34d352dd3ef3bff35b1b3fa7e9
 F src/vdbeblob.c f024f0bf420f36b070143c32b15cc7287341ffd3
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
-F src/vdbesort.c e9a7d969bd5a85fc7b9f42865a71b834d26442be
+F src/vdbesort.c 6498ab415733d0c534d86b86238e8263e19105fe
 F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
 F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 0c70ad7b1cac6005fa5e2cbefd23ee05e391c290
@@ -955,7 +955,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 038ec9ea92f7661358580d999adc400da14d47f0
-R bca0e64155bd4edc59b1ae2d567af815
+P 0e6defa6aa540b413ea3f4bb6dcd86364d547067
+R a42b0b764e1daab6a572493624ec8887
 U dan
-Z 7ff7f4144c189044a56c845ca9d84e7e
+Z bf599f79a5376801fe18942866ce9ad0
