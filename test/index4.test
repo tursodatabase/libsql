@@ -67,4 +67,46 @@ ifcapable memorymanage {
 }
 
 
+do_execsql_test 1.6 {
+  BEGIN;
+    DROP TABLE t1;
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES('a');
+    INSERT INTO t1 VALUES('b');
+    INSERT INTO t1 VALUES('c');
+    INSERT INTO t1 VALUES('d');
+    INSERT INTO t1 VALUES('e');
+    INSERT INTO t1 VALUES('f');
+    INSERT INTO t1 VALUES('g');
+    INSERT INTO t1 VALUES(NULL);
+    INSERT INTO t1 SELECT randomblob(1202) FROM t1;     --    16
+    INSERT INTO t1 SELECT randomblob(2202) FROM t1;     --    32
+    INSERT INTO t1 SELECT randomblob(3202) FROM t1;     --    64
+    INSERT INTO t1 SELECT randomblob(4202) FROM t1;     --   128
+    INSERT INTO t1 SELECT randomblob(5202) FROM t1;     --   256
+  COMMIT;
+  CREATE INDEX i1 ON t1(x); 
+  PRAGMA integrity_check
+} {ok}
+
+do_execsql_test 1.7 {
+  BEGIN;
+    DROP TABLE t1;
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES('a');
+  COMMIT;
+  CREATE INDEX i1 ON t1(x); 
+  PRAGMA integrity_check
+} {ok}
+
+do_execsql_test 1.8 {
+  BEGIN;
+    DROP TABLE t1;
+    CREATE TABLE t1(x);
+  COMMIT;
+  CREATE INDEX i1 ON t1(x); 
+  PRAGMA integrity_check
+} {ok}
+
+
 finish_test

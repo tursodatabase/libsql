@@ -396,8 +396,10 @@ static int vdbeSorterBtreeToPMA(sqlite3 *db, VdbeCursor *pCsr){
       /* Make sure the aMalloc[] buffer is large enough for the record */
       if( rc==SQLITE_OK && nKey>nMalloc ){
         aMalloc = sqlite3DbReallocOrFree(db, aMalloc, nKey);
-        if( !aMalloc ){
-          rc = SQLITE_NOMEM;
+        if( !aMalloc ){ 
+          rc = SQLITE_NOMEM; 
+        }else{
+          nMalloc = nKey;
         }
       }
 
@@ -410,9 +412,10 @@ static int vdbeSorterBtreeToPMA(sqlite3 *db, VdbeCursor *pCsr){
         }
       }
 
+      if( rc!=SQLITE_OK ) break;
     }
 
-    assert( pSorter->nBtree==(
+    assert( rc!=SQLITE_OK || pSorter->nBtree==(
           iWriteOff-pSorter->iWriteOff-sqlite3VarintLen(pSorter->nBtree)
     ));
     pSorter->iWriteOff = iWriteOff;
@@ -648,6 +651,13 @@ int sqlite3VdbeSorterRowkey(sqlite3 *db, VdbeCursor *pCsr, Mem *pOut){
   VdbeSorterIter *pIter;
 
   pIter = &pSorter->aIter[ pSorter->aTree[1] ];
+
+  /* Coverage testing note: As things are currently, this call will always
+  ** succeed. This is because the memory cell passed by the VDBE layer 
+  ** happens to be the same one as was used to assemble the keys before they
+  ** were passed to the sorter - meaning it is always large enough for the
+  ** largest key. But this could change very easily, so we leave the call
+  ** to sqlite3VdbeMemGrow() in. */
   if( sqlite3VdbeMemGrow(pOut, pIter->nKey, 0) ){
     return SQLITE_NOMEM;
   }
