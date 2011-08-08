@@ -2422,13 +2422,17 @@ static void bestVirtualIndex(
 
 /*
 ** Argument pIdx is a pointer to an index structure that has an array of
-** pIdx->sample.n evenly spaced samples of the first indexed column
-** stored in Index.sample. These samples divide the domain of values stored
-** the index into (pIdx->sample.n+1) regions.
-** Region 0 contains all values less than the first sample value. Region
-** 1 contains values between the first and second samples.  Region 2 contains
-** values between samples 2 and 3.  And so on.  Region pIdx->sample.n
-** contains values larger than the last sample.
+** pIdx->sample.n (hereafter "S") evenly spaced samples of the first indexed
+** column stored in Index.sample. These samples divide the domain of values
+** stored the index into S+1 regions.  Region 0 contains all values less than
+** the first sample value. Region 1 contains values between the first and
+** second samples.  Region 2 contains values between samples 2 and 3.  And so
+** on.  Region S contains values larger than the last sample.
+**
+** Note that samples are computed as being centered on S buckets where each
+** bucket contains the nearly same number of rows.  This routine takes samples
+** to be dividers between regions, though.  Hence, region 0 and region S
+** contain half as many rows as the interior regions.
 **
 ** If the index contains many duplicates of a single value, then it is
 ** possible that two or more adjacent samples can hold the same value.
@@ -2438,7 +2442,7 @@ static void bestVirtualIndex(
 **
 ** If successful, this function determines which of the regions value 
 ** pVal lies in, sets *piRegion to the region index (a value between 0
-** and S+1, inclusive) and returns SQLITE_OK.
+** and S, inclusive) and returns SQLITE_OK.
 ** Or, if an OOM occurs while converting text values between encodings,
 ** SQLITE_NOMEM is returned and *piRegion is undefined.
 */
@@ -2448,7 +2452,8 @@ static int whereRangeRegion(
   Index *pIdx,                /* Index to consider domain of */
   sqlite3_value *pVal,        /* Value to consider */
   int roundUp,                /* Return largest valid region if true */
-  int *piRegion               /* OUT: Region of domain in which value lies */
+  int *piRegion,              /* OUT: Region of domain in which value lies */
+  u32 *pnCopy                 /* OUT: Number of rows with pVal, or -1 if unk */
 ){
   assert( roundUp==0 || roundUp==1 );
   if( ALWAYS(pVal) ){
@@ -2458,11 +2463,24 @@ static int whereRangeRegion(
     int eType = sqlite3_value_type(pVal);
 
     assert( nSample>0 );
-    if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
+    if( eType==SQLITE_INTEGER ){
+      i64 x = sqlite3_value_int64(pVal);
+      for(i=0; i<nSample; i++){
+        if( aSample[i].eType==SQLITE_NULL ) continue;
+        if( aSample[i].eType>=SQLITE_TEXT ) break;
+        if( aSample[i].u.i==x ) *pnCopy = aSample[i].nCopy;
+        if( roundUp ){
+          if( aSample[i].u.i>x ) break;
+        }else{
+          if( aSample[i].u.i>=x ) break;
+        }
+      }
+    }else if( eType==SQLITE_FLOAT ){
       double r = sqlite3_value_double(pVal);
       for(i=0; i<nSample; i++){
         if( aSample[i].eType==SQLITE_NULL ) continue;
         if( aSample[i].eType>=SQLITE_TEXT ) break;
+        if( aSample[i].u.r==r ) *pnCopy = aSample[i].nCopy;
         if( roundUp ){
           if( aSample[i].u.r>r ) break;
         }else{
@@ -2471,6 +2489,7 @@ static int whereRangeRegion(
       }
     }else if( eType==SQLITE_NULL ){
       i = 0;
+      if( aSample[0].eType==SQLITE_NULL ) *pnCopy = aSample[0].nCopy;
       if( roundUp ){
         while( i<nSample && aSample[i].eType==SQLITE_NULL ) i++;
       }
@@ -2480,9 +2499,7 @@ static int whereRangeRegion(
       const u8 *z;
       int n;
 
-      /* pVal comes from sqlite3ValueFromExpr() so the type cannot be NULL */
       assert( eType==SQLITE_TEXT || eType==SQLITE_BLOB );
-
       if( eType==SQLITE_BLOB ){
         z = (const u8 *)sqlite3_value_blob(pVal);
         pColl = db->pDfltColl;
@@ -2524,6 +2541,7 @@ static int whereRangeRegion(
         {
           c = pColl->xCmp(pColl->pUser, aSample[i].nByte, aSample[i].u.z, n, z);
         }
+        if( c==0 ) *pnCopy = aSample[i].nCopy;
         if( c-roundUp>=0 ) break;
       }
     }
@@ -2632,6 +2650,7 @@ static int whereRangeScanEst(
     int iUpper = p->sample.n;
     int roundUpUpper = 0;
     int roundUpLower = 0;
+    u32 nC = 0;
     u8 aff = p->pTable->aCol[p->aiColumn[0]].affinity;
 
     if( pLower ){
@@ -2652,19 +2671,18 @@ static int whereRangeScanEst(
       sqlite3ValueFree(pUpperVal);
       goto range_est_fallback;
     }else if( pLowerVal==0 ){
-      rc = whereRangeRegion(pParse, p, pUpperVal, roundUpUpper, &iUpper);
+      rc = whereRangeRegion(pParse, p, pUpperVal, roundUpUpper, &iUpper, &nC);
       if( pLower ) iLower = iUpper/2;
     }else if( pUpperVal==0 ){
-      rc = whereRangeRegion(pParse, p, pLowerVal, roundUpLower, &iLower);
+      rc = whereRangeRegion(pParse, p, pLowerVal, roundUpLower, &iLower, &nC);
       if( pUpper ) iUpper = (iLower + p->sample.n + 1)/2;
     }else{
-      rc = whereRangeRegion(pParse, p, pUpperVal, roundUpUpper, &iUpper);
+      rc = whereRangeRegion(pParse, p, pUpperVal, roundUpUpper, &iUpper, &nC);
       if( rc==SQLITE_OK ){
-        rc = whereRangeRegion(pParse, p, pLowerVal, roundUpLower, &iLower);
+        rc = whereRangeRegion(pParse, p, pLowerVal, roundUpLower, &iLower, &nC);
       }
     }
     WHERETRACE(("range scan regions: %d..%d\n", iLower, iUpper));
-
     iEst = iUpper - iLower;
     testcase( iEst==nSample );
     assert( iEst<=nSample );
@@ -2720,6 +2738,7 @@ static int whereEqualScanEst(
   u8 aff;                   /* Column affinity */
   int rc;                   /* Subfunction return code */
   double nRowEst;           /* New estimate of the number of rows */
+  u32 nC = 0;               /* Key copy count */
 
   assert( p->sample.a!=0 );
   assert( p->sample.n>0 );
@@ -2731,17 +2750,24 @@ static int whereEqualScanEst(
     pRhs = sqlite3ValueNew(pParse->db);
   }
   if( pRhs==0 ) return SQLITE_NOTFOUND;
-  rc = whereRangeRegion(pParse, p, pRhs, 0, &iLower);
+  rc = whereRangeRegion(pParse, p, pRhs, 0, &iLower, &nC);
   if( rc ) goto whereEqualScanEst_cancel;
-  rc = whereRangeRegion(pParse, p, pRhs, 1, &iUpper);
-  if( rc ) goto whereEqualScanEst_cancel;
-  WHERETRACE(("equality scan regions: %d..%d\n", iLower, iUpper));
-  if( iLower>=iUpper ){
-    nRowEst = p->aiRowEst[0]/(p->sample.n*3);
-    if( nRowEst<*pnRow ) *pnRow = nRowEst;
+  if( nC==0 ){
+    rc = whereRangeRegion(pParse, p, pRhs, 1, &iUpper, &nC);
+    if( rc ) goto whereEqualScanEst_cancel;
+  }
+  if( nC ){
+    WHERETRACE(("equality scan count: %u\n", nC));
+    *pnRow = nC;
   }else{
-    nRowEst = (iUpper-iLower)*p->aiRowEst[0]/p->sample.n;
-    *pnRow = nRowEst;
+    WHERETRACE(("equality scan regions: %d..%d\n", iLower, iUpper));
+    if( iLower>=iUpper ){
+      nRowEst = p->aiRowEst[0]/(p->sample.n*3);
+      if( nRowEst<*pnRow ) *pnRow = nRowEst;
+    }else{
+      nRowEst = (iUpper-iLower)*p->aiRowEst[0]/p->sample.n;
+      *pnRow = nRowEst;
+    }
   }
 
 whereEqualScanEst_cancel:
@@ -2782,6 +2808,7 @@ static int whereInScanEst(
   int nSingle = 0;          /* Histogram regions hit by a single value */
   int nNotFound = 0;        /* Count of values that are not constants */
   int i;                             /* Loop counter */
+  u32 nC;                            /* Exact count of rows for a key */
   int nSample = p->sample.n;         /* Number of samples */
   u8 aSpan[SQLITE_MAX_SAMPLES+1];    /* Histogram regions that are spanned */
   u8 aSingle[SQLITE_MAX_SAMPLES+1];  /* Histogram regions hit once */
@@ -2799,9 +2826,9 @@ static int whereInScanEst(
       nNotFound++;
       continue;
     }
-    rc = whereRangeRegion(pParse, p, pVal, 0, &iLower);
+    rc = whereRangeRegion(pParse, p, pVal, 0, &iLower, &nC);
     if( rc ) break;
-    rc = whereRangeRegion(pParse, p, pVal, 1, &iUpper);
+    rc = whereRangeRegion(pParse, p, pVal, 1, &iUpper, &nC);
     if( rc ) break;
     if( iLower>=iUpper ){
       aSingle[iLower] = 1;

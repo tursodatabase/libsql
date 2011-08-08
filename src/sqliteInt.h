@@ -1458,7 +1458,8 @@ struct UnpackedRecord {
 struct IndexSample {
   union {
     char *z;        /* Value if eType is SQLITE_TEXT or SQLITE_BLOB */
-    double r;       /* Value if eType is SQLITE_FLOAT or SQLITE_INTEGER */
+    double r;       /* Value if eType is SQLITE_FLOAT */
+    i64 i;          /* Value if eType is SQLITE_INTEGER */
   } u;
   u8 eType;         /* SQLITE_NULL, SQLITE_INTEGER ... etc. */
   u8 nByte;         /* Size in byte of text or blob. */

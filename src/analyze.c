@@ -839,8 +839,10 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
         if( pSample==0 ) break;
         eType = sqlite3_column_type(pStmt, 2);
         pSample->eType = (u8)eType;
-        pSample->nCopy = sqlite3_column_int(pStmt, 4);
-        if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
+        pSample->nCopy = sqlite3_column_int(pStmt, 3);
+        if( eType==SQLITE_INTEGER ){
+          pSample->u.i = sqlite3_column_int64(pStmt, 2);
+        }else if( eType==SQLITE_FLOAT ){
           pSample->u.r = sqlite3_column_double(pStmt, 2);
         }else if( eType==SQLITE_TEXT || eType==SQLITE_BLOB ){
           const char *z = (const char *)(
