@@ -1,5 +1,5 @@
-C In\sos_unix.c,\sdo\snot\sopen\sthe\sdirectory\scontaining\sthe\sdatabase\sfile\swhen\nthe\sdatabase\sfile\sis\sopened.\s\sInstead,\swait\suntil\stime\sto\sfsync()\sthe\ndirectory.\s\sAnd\sdo\snot\sreport\san\serror\sif\sthe\sopen\sfails,\ssince\ssome\nsystems\s(Ex:\sAIX\sand\sa\schromium\ssandbox)\sare\sunable\sto\sopen\sand\sfsync\ndirectories.
-D 2011-08-08T23:48:40.886
+C Add\scommand-line\sutilities\s"offsets.c"\sand\s"extract.c"\sfor\suse\sin\nlow-level\sanalyzsis\sof\sdatabase\sfiles.
+D 2011-08-09T18:14:36.327
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1e6988b3c11dee9bd5edc0c804bd4468d74a9cdc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -918,6 +918,7 @@ F test/win32lock.test d60b39c53c68617524429be27bf239f0b11673f2
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F tool/build-shell.sh 12aa4391073a777fcb6dcc490b219a018ae98bac
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
+F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
@@ -930,6 +931,7 @@ F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c.tcl 1fa0ed9cfdc768bf5de7e65fda8d97a46dd2a7e6
 F tool/mksqlite3h.tcl 78013ad79a5e492e5f764f3c7a8ef834255061f8
 F tool/mksqlite3internalh.tcl 7b43894e21bcb1bb39e11547ce7e38a063357e87
+F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
 F tool/omittest.tcl 8086c014cbae90f1f2b564d59d05a5e4ac1783c9
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
@@ -955,7 +957,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 8d1b5c3ac027ac00d57a250aad45230a09645617
-R 0f87b14e27e19fe9ccf3a0f4bda64412
+P 713b1b7dc1296e9cee42aeaad8c85528155f721d
+R 2b57d3d9e69c84bb70b8008d7b543857
 U drh
-Z 78ef8639c983997441ad2d451ca4d175
+Z 0ae7593144f65695d7975cca33773c01
