@@ -298,6 +298,9 @@ static int posixOpen(const char *zFile, int flags, int mode){
   return open(zFile, flags, mode);
 }
 
+/* Forward reference */
+static int openDirectory(const char*, int*);
+
 /*
 ** Many system calls are accessed through pointer-to-functions so that
 ** they may be overridden at runtime to facilitate fault injection during
@@ -396,6 +399,9 @@ static struct unix_syscall {
 
   { "unlink",       (sqlite3_syscall_ptr)unlink,           0 },
 #define osUnlink    ((int(*)(const char*))aSyscall[16].pCurrent)
+
+  { "openDirectory",    (sqlite3_syscall_ptr)openDirectory,      0 },
+#define osOpenDirectory ((int(*)(const char*,int*))aSyscall[17].pCurrent)
 
 }; /* End of the overrideable system calls */
 
@@ -3252,6 +3258,19 @@ static int full_fsync(int fd, int fullSync, int dataOnly){
 ** or SQLITE_CANTOPEN is returned and *pFd is set to an undefined
 ** value.
 **
+** The directory file descriptor is used for only one thing - to
+** fsync() a directory to make sure file creation and deletion events
+** are flushed to disk.  Such fsyncs are not needed on newer
+** journaling filesystems, but are required on older filesystems.
+**
+** This routine can be overridden using the xSetSysCall interface.
+** The ability to override this routine was added in support of the
+** chromium sandbox.  Opening a directory is a security risk (we are
+** told) so making it overrideable allows the chromium sandbox to
+** replace this routine with a harmless no-op.  To make this routine
+** a no-op, replace it with a stub that returns SQLITE_OK but leaves
+** *pFd set to a negative number.
+**
 ** If SQLITE_OK is returned, the caller is responsible for closing
 ** the file descriptor *pFd using close().
 */
@@ -3318,16 +3337,15 @@ static int unixSync(sqlite3_file *id, int flags){
   }
 
   /* Also fsync the directory containing the file if the DIRSYNC flag
-  ** is set.  This is a one-time occurrance.  Many systems (examples: AIX
-  ** or any process running inside a chromium sandbox) are unable to fsync a
-  ** directory, so ignore errors.
+  ** is set.  This is a one-time occurrance.  Many systems (examples: AIX)
+  ** are unable to fsync a directory, so ignore errors on the fsync.
   */
   if( pFile->ctrlFlags & UNIXFILE_DIRSYNC ){
     int dirfd;
     OSTRACE(("DIRSYNC %s (have_fullfsync=%d fullsync=%d)\n", pFile->zPath,
             HAVE_FULLFSYNC, isFullsync));
-    openDirectory(pFile->zPath, &dirfd);
-    if( dirfd>=0 ){
+    rc = osOpenDirectory(pFile->zPath, &dirfd);
+    if( rc==SQLITE_OK && dirfd>=0 ){
       full_fsync(dirfd, 0, 0);
       robust_close(pFile, dirfd, __LINE__);
     }
@@ -5146,7 +5164,7 @@ static int unixDelete(
 #ifndef SQLITE_DISABLE_DIRSYNC
   if( dirSync ){
     int fd;
-    rc = openDirectory(zPath, &fd);
+    rc = osOpenDirectory(zPath, &fd);
     if( rc==SQLITE_OK ){
 #if OS_VXWORKS
       if( fsync(fd)==-1 )
@@ -6719,7 +6737,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==17 );
+  assert( ArraySize(aSyscall)==18 );
 
   /* Register all VFSes defined in the aVfs[] array */
   for(i=0; i<(sizeof(aVfs)/sizeof(sqlite3_vfs)); i++){
