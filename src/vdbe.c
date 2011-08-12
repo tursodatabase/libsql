@@ -157,6 +157,13 @@ int sqlite3_found_count = 0;
 */
 #define ExpandBlob(P) (((P)->flags&MEM_Zero)?sqlite3VdbeMemExpandBlob(P):0)
 
+/* Return true if the cursor was opened using the OP_OpenSorter opcode. */
+#ifdef SQLITE_OMIT_MERGE_SORT
+# define isSorter(x) 0
+#else
+# define isSorter(x) ((x)->pSorter!=0)
+#endif
+
 /*
 ** Argument pMem points at a register that will be passed to a
 ** user-defined function or returned to the user as the result of a query.
@@ -3155,13 +3162,12 @@ case OP_OpenEphemeral: {
       SQLITE_OPEN_DELETEONCLOSE |
       SQLITE_OPEN_TRANSIENT_DB;
 
-  int btflags = BTREE_OMIT_JOURNAL | BTREE_SINGLE | pOp->p5;
-
   assert( pOp->p1>=0 );
   pCx = allocateCursor(p, pOp->p1, pOp->p2, -1, 1);
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
-  rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pCx->pBt, btflags, vfsFlags);
+  rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pCx->pBt, 
+                        BTREE_OMIT_JOURNAL | BTREE_SINGLE | pOp->p5, vfsFlags);
   if( rc==SQLITE_OK ){
     rc = sqlite3BtreeBeginTrans(pCx->pBt, 1);
   }
@@ -3180,7 +3186,7 @@ case OP_OpenEphemeral: {
         rc = sqlite3BtreeCursor(pCx->pBt, pgno, 1, 
                                 (KeyInfo*)pOp->p4.z, pCx->pCursor);
         pCx->pKeyInfo = pOp->p4.pKeyInfo;
-        pCx->pKeyInfo->enc = ENC(db);
+        pCx->pKeyInfo->enc = ENC(p->db);
       }
       pCx->isTable = 0;
     }else{
@@ -3190,9 +3196,11 @@ case OP_OpenEphemeral: {
   }
   pCx->isOrdered = (pOp->p5!=BTREE_UNORDERED);
   pCx->isIndex = !pCx->isTable;
+#ifndef SQLITE_OMIT_MERGE_SORT
   if( rc==SQLITE_OK && pOp->opcode==OP_OpenSorter ){
     rc = sqlite3VdbeSorterInit(db, pCx);
   }
+#endif
   break;
 }
 
@@ -4083,7 +4091,8 @@ case OP_RowData: {
   assert( pC->nullRow==0 );
   assert( pC->pseudoTableReg==0 );
 
-  if( pC->pSorter ){
+  if( isSorter(pC) ){
+    assert( pOp->opcode==OP_RowKey );
     rc = sqlite3VdbeSorterRowkey(db, pC, pOut);
     break;
   }
@@ -4268,7 +4277,7 @@ case OP_Rewind: {        /* jump */
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   res = 1;
-  if( pC->pSorter ){
+  if( isSorter(pC) ){
     rc = sqlite3VdbeSorterRewind(db, pC, &res);
   }else if( (pCrsr = pC->pCursor)!=0 ){
     rc = sqlite3BtreeFirst(pCrsr, &res);
@@ -4324,7 +4333,7 @@ case OP_Next: {        /* jump */
   if( pC==0 ){
     break;  /* See ticket #2273 */
   }
-  if( pC->pSorter ){
+  if( isSorter(pC) ){
     assert( pOp->opcode==OP_Next );
     rc = sqlite3VdbeSorterNext(db, pC, &res);
   }else{
@@ -4340,7 +4349,6 @@ case OP_Next: {        /* jump */
   }
   pC->nullRow = (u8)res;
   pC->cacheStatus = CACHE_STALE;
-
   if( res==0 ){
     pc = pOp->p2 - 1;
     if( pOp->p5 ) p->aCounter[pOp->p5-1]++;

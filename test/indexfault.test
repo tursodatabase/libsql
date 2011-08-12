@@ -15,6 +15,11 @@ source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 source $testdir/malloc_common.tcl
 
+ifcapable !mergesort {
+  finish_test
+  return
+}
+
 set testprefix indexfault
 
 # Set up the custom fault-injector. This is further configured by using

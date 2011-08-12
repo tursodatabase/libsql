@@ -18,6 +18,8 @@
 #include "sqliteInt.h"
 #include "vdbeInt.h"
 
+#ifndef SQLITE_OMIT_MERGE_SORT
+
 typedef struct VdbeSorterIter VdbeSorterIter;
 
 /*
@@ -684,3 +686,4 @@ int sqlite3VdbeSorterRowkey(sqlite3 *db, VdbeCursor *pCsr, Mem *pOut){
   return SQLITE_OK;
 }
 
+#endif /* #ifndef SQLITE_OMIT_MERGE_SORT */

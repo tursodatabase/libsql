@@ -1,5 +1,5 @@
-C Add\stests\sto\simprove\scoverage\sof\svdbesort.c.
-D 2011-08-12T11:59:57.541
+C Add\sthe\sSQLITE_OMIT_MERGE_SORT\spre-processor\sdirective.\sTo\somit\sthe\scode\sin\svdbesort.c.
+D 2011-08-12T15:02:00.509
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -127,10 +127,10 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c a30bdcc27eedc36a38a3a11e1ba83de9a6729f7e
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
-F src/build.c 8aca0539bac544caf3ecb2baac1e7bdc1bfc80e6
+F src/build.c ac39a62c06fbc3d6ef1d5f784e06d806bc821edc
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
-F src/ctime.c 7deec4534f3b5a0c3b4a4cbadf809d321f64f9c4
+F src/ctime.c 7f283795650dd4122cc07bd02193c40193b32cc6
 F src/date.c a3c6842bad7ae632281811de112a8ba63ff08ab3
 F src/delete.c ff68e5ef23aee08c0ff528f699a19397ed8bbed8
 F src/expr.c 4bbdfaf66bc614be9254ce0c26a17429067a3e07
@@ -201,7 +201,7 @@ F src/test_async.c 0612a752896fad42d55c3999a5122af10dcf22ad
 F src/test_autoext.c 30e7bd98ab6d70a62bb9ba572e4c7df347fe645e
 F src/test_backup.c c129c91127e9b46e335715ae2e75756e25ba27de
 F src/test_btree.c 47cd771250f09cdc6e12dda5bc71bc0b3abc96e2
-F src/test_config.c b4648b103586d2ae863056080c657680f6fa4825
+F src/test_config.c 9bc44df77f22cd0648c651fcd459353b8a984d7b
 F src/test_demovfs.c 20a4975127993f4959890016ae9ce5535a880094
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_func.c cbdec5cededa0761daedde5baf06004a9bf416b5
@@ -238,14 +238,14 @@ F src/update.c 74a6cfb34e9732c1e2a86278b229913b4b51eeec
 F src/utf.c c53eb7404b3eb5c1cbb5655c6a7a0e0ce6bd50f0
 F src/util.c 0f33bbbdfcc4a2d8cf20c3b2a16ffc3b57c58a70
 F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
-F src/vdbe.c ec7b04557d0849d835c4b1b95b463c2c470b60f8
+F src/vdbe.c eed17aa60343d7d19dc5110e0d4855695b7be9bb
 F src/vdbe.h 5cf09e7ee8a3f7d93bc51f196a96550786afe7a1
-F src/vdbeInt.h de75338edfafb812f5bf7f1b3881cbc7256b3c17
+F src/vdbeInt.h 603b4ccc81ffd7e57f15e4bdecee6d593856eec7
 F src/vdbeapi.c 11dc47987abacb76ad016dcf5abc0dc422482a98
 F src/vdbeaux.c 8fb978eb73a97b34d352dd3ef3bff35b1b3fa7e9
 F src/vdbeblob.c f024f0bf420f36b070143c32b15cc7287341ffd3
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
-F src/vdbesort.c 6498ab415733d0c534d86b86238e8263e19105fe
+F src/vdbesort.c b475ceede1837731f603f32ad28c3d59f07ec04e
 F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
 F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 0c70ad7b1cac6005fa5e2cbefd23ee05e391c290
@@ -513,7 +513,7 @@ F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
 F test/index3.test 423a25c789fc8cc51aaf2a4370bbdde2d9e9eed7
 F test/index4.test c82a59c9ae2ac01804bdb100162dca057318f40f
 F test/indexedby.test be501e381b82b2f8ab406309ba7aac46e221f4ad
-F test/indexfault.test 20a9eb550fd72b7ade902b7046c819b42b849685
+F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
 F test/insert.test aef273dd1cee84cc92407469e6bd1b3cdcb76908
 F test/insert2.test 4f3a04d168c728ed5ec2c88842e772606c7ce435
@@ -955,7 +955,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P eec8c0df075d3a54ad71a2854b170f3ed307d068
-R bafb9457f8118a5d4035b8ba0984f092
+P 87a15917d7d88285054e2a319506dd4a0cac9722
+R 8547f4d65e2fdae700fb2b829b9d1918
 U dan
-Z b426ea64e3d3bc7483e8f669138ad278
+Z 981ae6d6ebf67ae66ca60cea9244ff02

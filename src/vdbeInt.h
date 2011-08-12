@@ -392,13 +392,21 @@ void sqlite3VdbeFrameDelete(VdbeFrame*);
 int sqlite3VdbeFrameRestore(VdbeFrame *);
 void sqlite3VdbeMemStoreType(Mem *pMem);
 
+#ifdef SQLITE_OMIT_MERGE_SORT
+# define sqlite3VdbeSorterInit(Y,Z)      SQLITE_OK
+# define sqlite3VdbeSorterWrite(X,Y,Z)   SQLITE_OK
+# define sqlite3VdbeSorterClose(Y,Z)
+# define sqlite3VdbeSorterRowkey(X,Y,Z)  SQLITE_OK
+# define sqlite3VdbeSorterRewind(X,Y,Z)  SQLITE_OK
+# define sqlite3VdbeSorterNext(X,Y,Z)    SQLITE_OK
+#else
 int sqlite3VdbeSorterInit(sqlite3 *, VdbeCursor *);
 int sqlite3VdbeSorterWrite(sqlite3 *, VdbeCursor *, int);
 void sqlite3VdbeSorterClose(sqlite3 *, VdbeCursor *);
-
 int sqlite3VdbeSorterRowkey(sqlite3 *, VdbeCursor *, Mem *);
 int sqlite3VdbeSorterRewind(sqlite3 *, VdbeCursor *, int *);
 int sqlite3VdbeSorterNext(sqlite3 *, VdbeCursor *, int *);
+#endif
 
 #if !defined(SQLITE_OMIT_SHARED_CACHE) && SQLITE_THREADSAFE>0
   void sqlite3VdbeEnter(Vdbe*);
