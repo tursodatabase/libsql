@@ -1,5 +1,5 @@
-C Remove\sredundant\sparameter\sfrom\svdbeSorterInitMerge()\sin\svdbesort.c.
-D 2011-08-08T19:26:13.264
+C Add\stests\sto\simprove\scoverage\sof\svdbesort.c.
+D 2011-08-12T11:59:57.541
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -228,7 +228,7 @@ F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c 162c4ec0137a549c009bb9ecab550527743cfc5d
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c fe9a7803fc1d69cccb60f016f28c1cedf2d9fcfa
-F src/test_vfs.c 956cb3f5cbd2a0d09129540e615bb0fb761c083d
+F src/test_vfs.c b0baec983bd6f872715a4b44c8f39104fec333af
 F src/test_vfstrace.c 0b884e06094a746da729119a2cabdc7aa790063d
 F src/test_wholenumber.c 6129adfbe7c7444f2e60cc785927f3aa74e12290
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
@@ -513,7 +513,7 @@ F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
 F test/index3.test 423a25c789fc8cc51aaf2a4370bbdde2d9e9eed7
 F test/index4.test c82a59c9ae2ac01804bdb100162dca057318f40f
 F test/indexedby.test be501e381b82b2f8ab406309ba7aac46e221f4ad
-F test/indexfault.test 758a11b2e0c00609c227fa10136e9edcd1200c7f
+F test/indexfault.test 20a9eb550fd72b7ade902b7046c819b42b849685
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
 F test/insert.test aef273dd1cee84cc92407469e6bd1b3cdcb76908
 F test/insert2.test 4f3a04d168c728ed5ec2c88842e772606c7ce435
@@ -881,7 +881,7 @@ F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
 F test/wal.test 5617ad308bfdb8a8885220d8a261a6096a8d7e57
-F test/wal2.test aa0fb2314b3235be4503c06873e41ebfc0757782
+F test/wal2.test ceba91f0d82c4fd87f342aa5504eb1f8fa6418f3
 F test/wal3.test 5c396cc22497244d627306f4c1d360167353f8dd
 F test/wal4.test 3404b048fa5e10605facaf70384e6d2943412e30
 F test/wal5.test f06a0427e06db00347e32eb9fa99d6a5c0f2d088
@@ -955,7 +955,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 0e6defa6aa540b413ea3f4bb6dcd86364d547067
-R a42b0b764e1daab6a572493624ec8887
+P eec8c0df075d3a54ad71a2854b170f3ed307d068
+R bafb9457f8118a5d4035b8ba0984f092
 U dan
-Z bf599f79a5376801fe18942866ce9ad0
+Z b426ea64e3d3bc7483e8f669138ad278

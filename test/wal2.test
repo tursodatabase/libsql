@@ -606,6 +606,7 @@ do_test wal2-6.4.1 {
   testvfs tvfs
   tvfs script tvfs_cb
   sqlite3 db test.db -vfs tvfs
+  set {} {}
 } {}
 
 set RECOVERY {
