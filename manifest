@@ -1,5 +1,5 @@
-C Make\sthe\sopenDirectory\sroutine\sin\sos_unix.c\soverrideable\sso\sthat\sit\scan\nbe\sturned\sinto\sa\sharmless\sno-op\sfor\sthe\schromium\ssandbox.
-D 2011-08-10T01:52:12.736
+C Begin\sa\sbranch\sthat\sexperimentally\sreplaces\ssqlite_stat2\swith\sa\snew\stable\ncalled\ssqlite_stat3\sthat\swill\shopefully\sfacilitate\sbetter\squery\nplanning\sdecisions.
+D 2011-08-12T01:51:45.485
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1e6988b3c11dee9bd5edc0c804bd4468d74a9cdc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -118,7 +118,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c ac80a0f31189f8b4a524ebf661e47e84536ee7f5
-F src/analyze.c a425d62e8fa9ebcb4359ab84ff0c62c6563d2e2a
+F src/analyze.c da6661dbe12f71d37e81c1138cd7b3175fa60a4f
 F src/attach.c 12c6957996908edc31c96d7c68d4942c2474405f
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 986c15232757f2873dff35ee3b35cbf935fc573c
@@ -127,10 +127,10 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 8c46f0ab69ad9549c75a3a91fed87abdaa743e2f
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
-F src/build.c 19a8957a442d922a0d6ed1a5dd67b63202fc3260
+F src/build.c 4165efa323b4d3678a6b39fddb775627c18e9a80
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
-F src/ctime.c 7deec4534f3b5a0c3b4a4cbadf809d321f64f9c4
+F src/ctime.c 0df87f944b17c17c6b3976a9758d8af2802e1b19
 F src/date.c a3c6842bad7ae632281811de112a8ba63ff08ab3
 F src/delete.c ff68e5ef23aee08c0ff528f699a19397ed8bbed8
 F src/expr.c 4bbdfaf66bc614be9254ce0c26a17429067a3e07
@@ -181,9 +181,9 @@ F src/resolve.c 36368f44569208fa074e61f4dd0b6c4fb60ca2b4
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c d219c4b68d603cc734b6f9b1e2780fee12a1fa0d
 F src/shell.c bbe7818ff5bc8614105ceb81ad67b8bdc0b671dd
-F src/sqlite.h.in 0b3cab7b2ea51f58396e8871fa5f349cfece5330
+F src/sqlite.h.in e8eb090406b9a743befff4c387aa3bd5eeae661e
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
-F src/sqliteInt.h ba4a6d6288efb25b84bc0d7d0aaf80f9b42523ba
+F src/sqliteInt.h a4c0124ff6dbbf325002b4a34248cc08453c9739
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -201,7 +201,7 @@ F src/test_async.c 0612a752896fad42d55c3999a5122af10dcf22ad
 F src/test_autoext.c 30e7bd98ab6d70a62bb9ba572e4c7df347fe645e
 F src/test_backup.c c129c91127e9b46e335715ae2e75756e25ba27de
 F src/test_btree.c 47cd771250f09cdc6e12dda5bc71bc0b3abc96e2
-F src/test_config.c b4648b103586d2ae863056080c657680f6fa4825
+F src/test_config.c baa9cfc6304aa739b32c735378008a0fa846b573
 F src/test_demovfs.c 20a4975127993f4959890016ae9ce5535a880094
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_func.c cbdec5cededa0761daedde5baf06004a9bf416b5
@@ -235,7 +235,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c c819d9f72168a035d545a5bdafe9b085b20df705
 F src/trigger.c 1cfb80e2290ef66ea89cb4e821caae65a02c0d56
 F src/update.c 74a6cfb34e9732c1e2a86278b229913b4b51eeec
-F src/utf.c c53eb7404b3eb5c1cbb5655c6a7a0e0ce6bd50f0
+F src/utf.c 890c67dcfcc7a74623c95baac7535aadfe265e84
 F src/util.c 06302ffd2b80408d4f6c7af71f7090e0cf8d8ff7
 F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
 F src/vdbe.c 49d834f0fe49d305e07f9c212e94007fda2028e9
@@ -244,13 +244,13 @@ F src/vdbeInt.h ad84226cc0adcb1185c22b70696b235a1678bb45
 F src/vdbeapi.c 11dc47987abacb76ad016dcf5abc0dc422482a98
 F src/vdbeaux.c 4d100407e3c72e163854aff8903d19d5ecdf46c0
 F src/vdbeblob.c f024f0bf420f36b070143c32b15cc7287341ffd3
-F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
+F src/vdbemem.c 74410d1639869b309d6fe1e8cbc02a557157a7c2
 F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
 F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 3154756177d6219e233d84291d5b05f4e06ff5e9
 F src/wal.h 66b40bd91bc29a5be1c88ddd1f5ade8f3f48728a
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 7d09f4c1512affb60cc1190a4b33d121d4ce039a
+F src/where.c 24d95b218176bad38ae2abe73197c28d3d6ef9a6
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -277,7 +277,7 @@ F test/attach2.test e54436ed956d3d88bdee61221da59bf3935a0966
 F test/attach3.test d89ccfe4fe6e2b5e368d480fcdfe4b496c54cf4e
 F test/attach4.test 31f9eb0ca7bdbc393cc4657b877903a226a83d4b
 F test/attachmalloc.test 3a4bfca9545bfe906a8d2e622de10fbac5b711b0
-F test/auth.test b047105c32da7db70b842fd24056723125ecc2ff
+F test/auth.test ac996c81ad910148606f5c7e3b3f85d47c29960f
 F test/auth2.test 270baddc8b9c273682760cffba6739d907bd2882
 F test/auth3.test a4755e6a2a2fea547ffe63c874eb569e60a28eb5
 F test/autoinc.test bd30d372d00045252f6c2e41b5f41455e1975acf
@@ -682,6 +682,7 @@ F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
 F test/sqllimits1.test b1aae27cc98eceb845e7f7adf918561256e31298
 F test/stat.test 0997f6a57a35866b14111ed361ed8851ce7978ae
+F test/stat3.test 44cec64164a2f5d86960343a118bc0bdac754f61
 F test/stmt.test 25d64e3dbf9a3ce89558667d7f39d966fe2a71b9
 F test/subquery.test b524f57c9574b2c0347045b4510ef795d4686796
 F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
@@ -957,7 +958,10 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P dfa22ed4387f9526b74d5265503c7c8e9d559903
-R bf22196e9aa98f18724e5d2624f7dcbf
+P 6b236069e1ea3c99ff0a007a790d4baebda70b13
+R 28c5bf799a1842cffe08b02c7be0270b
+T *branch * stat3-enhancement
+T *sym-stat3-enhancement *
+T -sym-trunk *
 U drh
-Z 2ec35109792cc0dc5d4f7cebd4d85034
+Z 1615a89a47ce6302aa7ba89aa7dcb40d
