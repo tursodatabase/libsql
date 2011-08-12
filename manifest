@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_OMIT_MERGE_SORT\spre-processor\sdirective.\sTo\somit\sthe\scode\sin\svdbesort.c.
-D 2011-08-12T15:02:00.509
+C Remove\san\sunused\sparameter\sfrom\sa\sfunction\sin\svdbesort.c.\sFix\ssome\scomments\sand\sother\sdetails\sin\sthe\ssame\sfile.
+D 2011-08-12T16:11:43.093
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c1d7a7f4fd8da6b1815032efca950e3d5125407e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -238,14 +238,14 @@ F src/update.c 74a6cfb34e9732c1e2a86278b229913b4b51eeec
 F src/utf.c c53eb7404b3eb5c1cbb5655c6a7a0e0ce6bd50f0
 F src/util.c 0f33bbbdfcc4a2d8cf20c3b2a16ffc3b57c58a70
 F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
-F src/vdbe.c eed17aa60343d7d19dc5110e0d4855695b7be9bb
+F src/vdbe.c 1f5bb8b8a0f24bd93e66958eaebd060ccee272a2
 F src/vdbe.h 5cf09e7ee8a3f7d93bc51f196a96550786afe7a1
-F src/vdbeInt.h 603b4ccc81ffd7e57f15e4bdecee6d593856eec7
+F src/vdbeInt.h f9250326f264ca5f100acc19e9c07096bb889096
 F src/vdbeapi.c 11dc47987abacb76ad016dcf5abc0dc422482a98
 F src/vdbeaux.c 8fb978eb73a97b34d352dd3ef3bff35b1b3fa7e9
 F src/vdbeblob.c f024f0bf420f36b070143c32b15cc7287341ffd3
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
-F src/vdbesort.c b475ceede1837731f603f32ad28c3d59f07ec04e
+F src/vdbesort.c a756d20db3ff596dd3dd10f6a13fd832f5715540
 F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
 F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 0c70ad7b1cac6005fa5e2cbefd23ee05e391c290
@@ -955,7 +955,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 87a15917d7d88285054e2a319506dd4a0cac9722
-R 8547f4d65e2fdae700fb2b829b9d1918
+P 4ced2394b10d0a4f86422ff893bcdf3cf32591e3
+R ced8374c50fa0d83b7bc754994eec7c3
 U dan
-Z 981ae6d6ebf67ae66ca60cea9244ff02
+Z 2a841cd45d02eb2ca25a3f8996849530

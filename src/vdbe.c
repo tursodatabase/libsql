@@ -4093,7 +4093,7 @@ case OP_RowData: {
 
   if( isSorter(pC) ){
     assert( pOp->opcode==OP_RowKey );
-    rc = sqlite3VdbeSorterRowkey(db, pC, pOut);
+    rc = sqlite3VdbeSorterRowkey(pC, pOut);
     break;
   }
 
