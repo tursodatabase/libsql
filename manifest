@@ -1,7 +1,7 @@
-C Merge\slatest\strunk\schanges\sinto\sexperimental\sbranch.
-D 2011-08-12T16:30:30.031
+C Update\sMakefile.in\sand\sconfigure\sto\saccount\sfor\snew\ssource\sfile\svdbesort.c.
+D 2011-08-12T16:34:42.929
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 1e6988b3c11dee9bd5edc0c804bd4468d74a9cdc
+F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 9fd0401b0134b565a9c7d8ed49dc044cc89f2096
 F Makefile.vxworks c85ec1d8597fe2f7bc225af12ac1666e21379151
@@ -23,7 +23,7 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 405a958bdb3af382a809dccb08a44694923ddd61
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 93e7e695581fa7bef4949161453d9845c5592ad0 x
+F configure 4010a2e577b7d43c429672858d442ac5a570fdcd x
 F configure.ac 298a759c086e72c013da459c2aec02a104f4224f
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 3091574143dd3415669b6745843ff8d011d33549
@@ -960,7 +960,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 1a8498d8037a1b93e56951bbdbb76291bd5a4f87 6b236069e1ea3c99ff0a007a790d4baebda70b13
-R 31c6a782e4904c59693691553f2ae0bd
+P 7e515055f219b01dd72df4e27bdcabfa2f9be5c2
+R fced7a7577e38a6f428a347e92769773
 U dan
-Z d620fa181c3729f4f9367beda130e667
+Z 6744e39c2749f1a6bab5f9b9573f4bb7
