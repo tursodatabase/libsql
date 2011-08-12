@@ -257,6 +257,9 @@ static const char * const azCompileOpt[] = {
 #ifdef SQLITE_OMIT_MEMORYDB
   "OMIT_MEMORYDB",
 #endif
+#ifdef SQLITE_OMIT_MERGE_SORT
+  "OMIT_MERGE_SORT",
+#endif
 #ifdef SQLITE_OMIT_OR_OPTIMIZATION
   "OMIT_OR_OPTIMIZATION",
 #endif

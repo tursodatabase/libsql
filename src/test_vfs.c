@@ -123,6 +123,8 @@ struct Testvfs {
 #define TESTVFS_TRUNCATE_MASK     0x00002000
 #define TESTVFS_ACCESS_MASK       0x00004000
 #define TESTVFS_FULLPATHNAME_MASK 0x00008000
+#define TESTVFS_READ_MASK         0x00010000
+
 #define TESTVFS_ALL_MASK          0x0001FFFF
 
 
@@ -325,8 +327,22 @@ static int tvfsRead(
   int iAmt, 
   sqlite_int64 iOfst
 ){
-  TestvfsFd *p = tvfsGetFd(pFile);
-  return sqlite3OsRead(p->pReal, zBuf, iAmt, iOfst);
+  int rc = SQLITE_OK;
+  TestvfsFd *pFd = tvfsGetFd(pFile);
+  Testvfs *p = (Testvfs *)pFd->pVfs->pAppData;
+  if( p->pScript && p->mask&TESTVFS_READ_MASK ){
+    tvfsExecTcl(p, "xRead", 
+        Tcl_NewStringObj(pFd->zFilename, -1), pFd->pShmId, 0
+    );
+    tvfsResultCode(p, &rc);
+  }
+  if( rc==SQLITE_OK && p->mask&TESTVFS_READ_MASK && tvfsInjectIoerr(p) ){
+    rc = SQLITE_IOERR;
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3OsRead(pFd->pReal, zBuf, iAmt, iOfst);
+  }
+  return rc;
 }
 
 /*
@@ -1030,6 +1046,7 @@ static int testvfs_obj_cmd(
         { "xSync",         TESTVFS_SYNC_MASK },
         { "xDelete",       TESTVFS_DELETE_MASK },
         { "xWrite",        TESTVFS_WRITE_MASK },
+        { "xRead",         TESTVFS_READ_MASK },
         { "xTruncate",     TESTVFS_TRUNCATE_MASK },
         { "xOpen",         TESTVFS_OPEN_MASK },
         { "xClose",        TESTVFS_CLOSE_MASK },
