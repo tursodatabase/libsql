@@ -408,7 +408,7 @@ proc do_malloc_test {tn args} {
       set zRepeat "transient"
       if {$::iRepeat} {set zRepeat "persistent"}
       restore_prng_state
-      foreach file [glob -nocomplain test.db-mj*] {file delete -force $file}
+      foreach file [glob -nocomplain test.db-mj*] {forcedelete $file}
 
       do_test ${tn}.${zRepeat}.${::n} {
   
@@ -425,7 +425,7 @@ proc do_malloc_test {tn args} {
         forcedelete test2.db-journal
         forcedelete test2.db-wal
         if {[info exists ::mallocopts(-testdb)]} {
-          file copy $::mallocopts(-testdb) test.db
+          copy_file $::mallocopts(-testdb) test.db
         }
         catch { sqlite3 db test.db }
         if {[info commands db] ne ""} {

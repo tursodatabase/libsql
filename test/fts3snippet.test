@@ -131,7 +131,7 @@ foreach {DO_MALLOC_TEST enc} {
 } {
 
   db close
-  file delete -force test.db
+  forcedelete test.db
   sqlite3 db test.db
   sqlite3_db_config_lookaside db 0 0 0
   db eval "PRAGMA encoding = \"$enc\""

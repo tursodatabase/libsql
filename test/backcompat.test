@@ -61,7 +61,7 @@ foreach bin $binaries {
 
 proc do_backcompat_test {rv bin1 bin2 script} {
 
-  file delete -force test.db
+  forcedelete test.db
 
   if {$bin1 != ""} { set ::bc_chan1 [launch_testfixture $bin1] }
   set ::bc_chan2 [launch_testfixture $bin2]
@@ -152,7 +152,7 @@ proc read_file_system {} {
 proc write_file_system {data} {
   foreach f {test.db test.db-journal test.db-wal} d $data { 
     if {[string length $d] == 0} {
-      file delete -force $f
+      forcedelete $f
     } else {
       write_file $f $d
     }

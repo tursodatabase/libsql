@@ -23,7 +23,7 @@ ifcapable !crashtest {
 
 for {set ii 0} {$ii < 10} {incr ii} {
   catch {db close}
-  file delete -force test.db test.db-journal
+  forcedelete test.db test.db-journal
   crashsql -delay 2 -file test.db {
     PRAGMA auto_vacuum=OFF;
     PRAGMA page_size=4096;
@@ -40,7 +40,7 @@ for {set ii 0} {$ii < 10} {incr ii} {
 
 for {set ii 0} {$ii < 10} {incr ii} {
   catch {db close}
-  file delete -force test.db test.db-journal
+  forcedelete test.db test.db-journal
   sqlite3 db test.db
   execsql {
     PRAGMA auto_vacuum=OFF;
@@ -66,7 +66,7 @@ proc signature {} {
 #
 for {set ii 0} {$ii < 30} {incr ii} {
   db close
-  file delete -force test.db
+  forcedelete test.db
   sqlite3 db test.db
 
   set pagesize [expr 1024 << ($ii % 4)]

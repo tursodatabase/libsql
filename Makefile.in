@@ -517,6 +517,9 @@ sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
 sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl
 	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl
 
+sqlite3-all.c:	sqlite3.c $(TOP)/tool/split-sqlite3c.tcl
+	$(TCLSH_CMD) $(TOP)/tool/split-sqlite3c.tcl
+
 # Rule to build the amalgamation
 #
 sqlite3.lo:	sqlite3.c
@@ -785,7 +788,7 @@ parse.c:	$(TOP)/src/parse.y lemon$(BEXE) $(TOP)/addopcodes.awk
 	$(NAWK) -f $(TOP)/addopcodes.awk parse.h.temp >parse.h
 
 sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest.uuid $(TOP)/VERSION
-	tclsh $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
+	$(TCLSH_CMD) $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
 
 keywordhash.h:	$(TOP)/tool/mkkeywordhash.c
 	$(BCC) -o mkkeywordhash$(BEXE) $(OPT_FEATURE_FLAGS) $(OPTS) $(TOP)/tool/mkkeywordhash.c

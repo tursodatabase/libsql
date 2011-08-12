@@ -94,9 +94,9 @@ for {set i 1} {$i < 50} {incr i} {
   
   # Check that the file-system in its current state can be recovered.
   # 
-  file copy -force test.db test2.db
-  file copy -force test.db-wal test2.db-wal
-  file delete -force test2.db-journal
+  forcecopy test.db test2.db
+  forcecopy test.db-wal test2.db-wal
+  forcedelete test2.db-journal
   sqlite3 db2 test2.db
   do_test wal3-1.$i.5 {
     execsql { SELECT count(*) FROM t1 } db2
@@ -208,7 +208,7 @@ foreach {tn syncmode synccount} {
     lappend ::syncs [file tail $filename] $flags
   }
   do_test wal3-3.$tn {
-    file delete -force test.db test.db-wal test.db-journal
+    forcedelete test.db test.db-wal test.db-journal
   
     testvfs T
     T filter {} 
@@ -411,7 +411,7 @@ T delete
 catch {db close}
 testvfs T -default 1
 do_test wal3-6.1.1 {
-  file delete -force test.db test.db-journal test.db wal
+  forcedelete test.db test.db-journal test.db wal
   sqlite3 db test.db
   execsql { PRAGMA auto_vacuum = off }
   execsql { PRAGMA journal_mode = WAL }
@@ -492,7 +492,7 @@ db2 close
 db close
 
 do_test wal3-6.2.1 {
-  file delete -force test.db test.db-journal test.db wal
+  forcedelete test.db test.db-journal test.db wal
   sqlite3 db test.db
   sqlite3 db2 test.db
   execsql { PRAGMA auto_vacuum = off }
@@ -558,7 +558,7 @@ T delete
 catch {db close}
 testvfs T -default 1
 do_test wal3-7.1.1 {
-  file delete -force test.db test.db-journal test.db wal
+  forcedelete test.db test.db-journal test.db wal
   sqlite3 db test.db
   execsql {
     PRAGMA journal_mode = WAL;
@@ -615,7 +615,7 @@ T delete
 #-------------------------------------------------------------------------
 # 
 do_test wal3-8.1 {
-  file delete -force test.db test.db-journal test.db wal
+  forcedelete test.db test.db-journal test.db wal
   sqlite3 db test.db
   sqlite3 db2 test.db
   execsql {
@@ -707,9 +707,9 @@ T delete
 # and continues.
 #
 set nConn 50
-if { [string match *BSD $tcl_platform(os)] } { set nConn 35 }
+if { [string match *BSD $tcl_platform(os)] } { set nConn 25 }
 do_test wal3-9.0 {
-  file delete -force test.db test.db-journal test.db wal
+  forcedelete test.db test.db-journal test.db wal
   sqlite3 db test.db
   execsql {
     PRAGMA page_size = 1024;
@@ -784,4 +784,3 @@ do_multiclient_test tn {
 }
 
 finish_test
-

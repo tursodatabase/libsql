@@ -120,7 +120,7 @@ foreach AutoVacuumMode [list 0 1] {
   }
 
   db close
-  file delete -force test.db test.db-journal
+  forcedelete test.db test.db-journal
 
   sqlite3 db test.db
   execsql "PRAGMA auto_vacuum = $AutoVacuumMode"
@@ -379,7 +379,7 @@ ifcapable vtab {
 #
 ifcapable attach {
   do_test incrblob-5.1 {
-    file delete -force test2.db test2.db-journal
+    forcedelete test2.db test2.db-journal
     set ::size [expr [file size [info script]]]
     execsql {
       ATTACH 'test2.db' AS aux;
@@ -584,7 +584,7 @@ set ::data [read $fd 14000]
 close $fd
 
 db close
-file delete -force test.db test.db-journal
+forcedelete test.db test.db-journal
 sqlite3 db test.db
 
 do_test incrblob-7.2.1 {

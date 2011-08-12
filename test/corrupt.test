@@ -15,7 +15,7 @@
 #
 # $Id: corrupt.test,v 1.12 2009/07/13 09:41:45 danielk1977 Exp $
 
-catch {file delete -force test.db test.db-journal test.bu}
+catch {forcedelete test.db test.db-journal test.bu}
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -51,22 +51,10 @@ do_test corrupt-1.1 {
 } {}
 integrity_check corrupt-1.2
 
-# Copy file $from into $to
-#
-proc copy_file {from to} {
-  set f [open $from]
-  fconfigure $f -translation binary
-  set t [open $to w]
-  fconfigure $t -translation binary
-  puts -nonewline $t [read $f [file size $from]]
-  close $t
-  close $f
-}
-
 # Setup for the tests.  Make a backup copy of the good database in test.bu.
 # Create a string of garbage data that is 256 bytes long.
 #
-copy_file test.db test.bu
+forcecopy test.db test.bu
 set fsize [file size test.db]
 set junk "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 while {[string length $junk]<256} {append junk $junk}
@@ -79,7 +67,7 @@ set junk [string range $junk 0 255]
 for {set i [expr {1*256}]} {$i<$fsize-256} {incr i 256} {
   set tn [expr {$i/256}]
   db close
-  copy_file test.bu test.db
+  forcecopy test.bu test.db
   set fd [open test.db r+]
   fconfigure $fd -translation binary
   seek $fd $i
@@ -132,7 +120,7 @@ for {set i [expr {1*256}]} {$i<$fsize-256} {incr i 256} {
 #
 do_test corrupt-3.1 {
   db close
-  copy_file test.bu test.db
+  forcecopy test.bu test.db
   sqlite3 db test.db
   list
 } {}
@@ -181,7 +169,7 @@ do_test corrupt-3.6 {
 
 do_test corrupt-4.1 {
   db close
-  file delete -force test.db test.db-journal
+  forcedelete test.db test.db-journal
   sqlite3 db test.db
   execsql {
     PRAGMA page_size = 1024;
@@ -213,7 +201,7 @@ do_test corrupt-4.2 {
 
 do_test corrupt-5.1 {
   db close
-  file delete -force test.db test.db-journal
+  forcedelete test.db test.db-journal
   sqlite3 db test.db
 
   execsql { PRAGMA page_size = 1024 }
@@ -236,7 +224,7 @@ do_test corrupt-5.2 {
 # running this testcase under valgrind revealed the problem.
 do_test corrupt-6.1 {
   db close
-  file delete -force test.db test.db-journal
+  forcedelete test.db test.db-journal
   sqlite3 db test.db
   execsql { 
     PRAGMA page_size = 1024; CREATE TABLE t1(x);
@@ -264,7 +252,7 @@ do_test corrupt-6.1 {
 
 ifcapable oversize_cell_check {
   db close
-  file delete -force test.db test.db-journal
+  forcedelete test.db test.db-journal
   sqlite3 db test.db
   execsql { 
     PRAGMA page_size = 1024; CREATE TABLE t1(x);
@@ -317,7 +305,7 @@ ifcapable oversize_cell_check {
 }
 
 db close
-file delete -force test.db test.db-journal
+forcedelete test.db test.db-journal
 do_test corrupt-8.1 {
   sqlite3 db test.db
   execsql {
@@ -335,7 +323,7 @@ do_test corrupt-8.1 {
 } {1 {database disk image is malformed}}
 
 db close
-file delete -force test.db test.db-journal
+forcedelete test.db test.db-journal
 do_test corrupt-8.2 {
   sqlite3 db test.db
   execsql {

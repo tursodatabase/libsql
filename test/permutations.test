@@ -520,7 +520,7 @@ test_suite "inmemory_journal" -description {
   # the number of fsync() calls.
   pager.test exclusive.test jrnlmode.test sync.test misc1.test 
   journal1.test conflict.test crash8.test tkt3457.test io.test
-  journal3.test
+  journal3.test 8_3_names.test
 
   pager1.test async4.test corrupt.test filefmt.test pager2.test
   corrupt5.test corruptA.test pageropt.test
@@ -529,7 +529,7 @@ test_suite "inmemory_journal" -description {
   stmt.test
 
   # WAL mode is different.
-  wal* tkt-2d1a5c67d.test
+  wal* tkt-2d1a5c67d.test backcompat.test
 }]
 
 ifcapable mem3 {
@@ -726,7 +726,7 @@ test_suite "journaltest" -description {
   unregister_jt_vfs
 } -files [test_set $::allquicktests -exclude {
   wal* incrvacuum.test ioerr.test corrupt4.test io.test crash8.test 
-  async4.test bigfile.test
+  async4.test bigfile.test backcompat.test
 }]
 
 if {[info commands register_demovfs] != ""} {
@@ -865,4 +865,3 @@ if {[info script] == $argv0} {
   main $argv
   finish_test
 }
-

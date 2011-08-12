@@ -73,7 +73,7 @@ foreach {sql res2} [list \
   for {set ii 0} {$ii < 10} {incr ii} {
 
     db close
-    file delete -force test.db test.db-journal
+    forcedelete test.db test.db-journal
     sqlite3 db test.db
     do_test crash3-1.$tn.1 {
       execsql {
@@ -106,7 +106,7 @@ foreach {sql res2} [list \
 # This block tests both the IOCAP_SEQUENTIAL and IOCAP_SAFE_APPEND flags.
 #
 db close
-file delete -force test.db test.db-journal
+forcedelete test.db test.db-journal
 sqlite3 db test.db
 do_test crash3-2.0 {
   execsql {
@@ -177,7 +177,7 @@ foreach {::crashfile ::delay ::char} {
 #
 for {set ii 0} {$ii < 10} {incr ii} {
   db close
-  file delete -force test.db test.db-journal
+  forcedelete test.db test.db-journal
   crashsql -file test.db -char {sequential atomic} {
     CREATE TABLE abc(a, b, c);
   }

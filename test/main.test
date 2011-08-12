@@ -301,7 +301,7 @@ ifcapable {trigger} {
 if {[permutation] == ""} {
   do_test main-2.0 {
     catch {db close}
-    file delete -force test.db
+    forcedelete test.db
     set fd [open test.db w]
     puts $fd hi!
     close $fd
@@ -314,16 +314,16 @@ if {[permutation] == ""} {
 #
 do_test main-3.1 {
   catch {db close}
-  foreach f [glob -nocomplain testdb/*] {file delete -force $f}
-  file delete -force testdb
+  foreach f [glob -nocomplain testdb/*] {forcedelete $f}
+  forcedelete testdb
   sqlite3 db testdb
   set v [catch {execsql {SELECT * from T1 where x!!5}} msg]
   lappend v $msg
 } {1 {unrecognized token: "!!"}}
 do_test main-3.2 {
   catch {db close}
-  foreach f [glob -nocomplain testdb/*] {file delete -force $f}
-  file delete -force testdb
+  foreach f [glob -nocomplain testdb/*] {forcedelete $f}
+  forcedelete testdb
   sqlite3 db testdb
   set v [catch {execsql {SELECT * from T1 where ^x}} msg]
   lappend v $msg
@@ -442,8 +442,8 @@ do_test main-3.2.30 {
 
 do_test main-3.3 {
   catch {db close}
-  foreach f [glob -nocomplain testdb/*] {file delete -force $f}
-  file delete -force testdb
+  foreach f [glob -nocomplain testdb/*] {forcedelete $f}
+  forcedelete testdb
   sqlite3 db testdb
   execsql {
     create table T1(X REAL);  /* C-style comments allowed */

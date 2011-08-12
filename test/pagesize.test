@@ -42,7 +42,7 @@ do_test pagesize-1.3 {
 
 do_test pagesize-1.4 {
   db close
-  file delete -force test.db
+  forcedelete test.db
   sqlite3 db test.db
   execsql {
     PRAGMA page_size=511;
@@ -99,7 +99,7 @@ foreach PGSZ {512 2048 4096 8192} {
   }
   do_test pagesize-2.$PGSZ.1 {
     db close
-    file delete -force test.db
+    forcedelete test.db
     sqlite3 db test.db
     execsql "PRAGMA page_size=$PGSZ"
     execsql {
@@ -190,7 +190,7 @@ foreach PGSZ {512 2048 4096 8192} {
   integrity_check pagesize-2.$PGSZ.17
 
   db close
-  file delete -force test.db
+  forcedelete test.db
   sqlite3 db test.db
   do_test pagesize-2.$PGSZ.30 {
     execsql "
@@ -203,7 +203,7 @@ foreach PGSZ {512 2048 4096 8192} {
   } [list 1024 $PGSZ]
 
   db close
-  file delete -force test.db
+  forcedelete test.db
   sqlite3 db test.db
   do_test pagesize-2.$PGSZ.40 {
     execsql "

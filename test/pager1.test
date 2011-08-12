@@ -452,7 +452,7 @@ do_test pager1.4.2.2 {
 } {4 ok}
 do_test pager1.4.2.3 {
   faultsim_restore_and_reopen
-  foreach f [glob test.db-mj*] { file delete -force $f }
+  foreach f [glob test.db-mj*] { forcedelete $f }
   execsql {
     SELECT count(*) FROM t1;
     PRAGMA integrity_check;
@@ -469,7 +469,7 @@ do_test pager1.4.2.4 {
 do_test pager1.4.2.5 {
   faultsim_restore_and_reopen
   hexio_write test.db-journal [expr [file size test.db-journal]-20] 123456
-  foreach f [glob test.db-mj*] { file delete -force $f }
+  foreach f [glob test.db-mj*] { forcedelete $f }
   execsql {
     SELECT count(*) FROM t1;
     PRAGMA integrity_check;
@@ -649,7 +649,7 @@ foreach {tn1 tcl} {
     #
     do_test pager1-4.4.$tn.7 {
       faultsim_restore_and_reopen $prefix
-      foreach f [glob ${prefix}-mj*] { file delete -force $f }
+      foreach f [glob ${prefix}-mj*] { forcedelete $f }
       execsql "ATTACH '${prefix}2' AS aux"
     } {}
     do_execsql_test pager1-4.4.$tn.8 {
@@ -664,7 +664,7 @@ foreach {tn1 tcl} {
 }
 db close
 tv delete
-file delete -force $dirname
+forcedelete $dirname
 
 
 # Set up a VFS to make a copy of the file-system just before deleting a
@@ -882,7 +882,7 @@ do_test pager1.4.7.3 {
   db close
   catch {file attributes test.db-journal -permissions rw-rw-rw-}
   catch {file attributes test.db-journal -readonly 0}
-  file delete test.db-journal
+  delete_file test.db-journal
   file exists test.db-journal
 } {0}
 
@@ -2368,8 +2368,8 @@ do_test pager1-29.2 {
 #
 do_test pager1-30.1 {
   db close
-  file delete test.db
-  file delete test.db-journal
+  delete_file test.db
+  delete_file test.db-journal
   set fd [open test.db-journal w]
   seek $fd [expr 512+1032*2]
   puts -nonewline $fd x
@@ -2409,8 +2409,8 @@ do_test pager1-31.1 {
     BEGIN;
       UPDATE t1 SET y = randomblob(1499);
   }
-  file copy test.db test.db2
-  file copy test.db-journal test.db2-journal
+  copy_file test.db test.db2
+  copy_file test.db-journal test.db2-journal
   
   hexio_write test.db2-journal 24 00000000
   sqlite3 db2 test.db2

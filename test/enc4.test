@@ -43,7 +43,7 @@ set vals [list\
 set i 1
 foreach enc $encodings {
 
-  file delete -force test.db
+  forcedelete test.db
   sqlite3 db test.db
   db eval "PRAGMA encoding = \"$enc\""
 
@@ -93,7 +93,7 @@ foreach enc $encodings {
   incr i
 }
 
-file delete -force test.db
+forcedelete test.db
 sqlite3 db test.db
 
 do_test enc4-4.1 {

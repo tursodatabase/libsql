@@ -88,8 +88,8 @@ if {$tcl_platform(platform) == "unix"
       BEGIN;
       INSERT INTO t3 VALUES('hello world');
     }
-    file copy -force test.db testA.db
-    file copy -force test.db-journal testA.db-journal
+    forcecopy test.db testA.db
+    forcecopy test.db-journal testA.db-journal
     execsql {
       COMMIT;
     }

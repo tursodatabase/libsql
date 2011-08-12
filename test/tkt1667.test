@@ -25,7 +25,7 @@ ifcapable !autovacuum||!tclvar {
 }
 
 db close
-file delete -force test.db test.db-journal
+forcedelete test.db test.db-journal
 
 # Set the pending byte offset such that the page it is on is
 # the first autovacuum pointer map page in the file (assume a page 

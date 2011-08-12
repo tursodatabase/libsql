@@ -155,7 +155,7 @@ foreach ::lookaside_buffer_size {0 64 120} {
   
     # Step 1.
     db close
-    file delete -force test.db
+    forcedelete test.db
     sqlite3 db test.db
     sqlite3_db_config_lookaside db 0 $::lookaside_buffer_size 500
     db cache size 0
@@ -287,7 +287,7 @@ foreach ::lookaside_buffer_size {0 64 120} {
 
     # Step 1.
     db close
-    file delete -force test.db
+    forcedelete test.db
     sqlite3 db test.db
     sqlite3_db_config_lookaside db 0 $::lookaside_buffer_size 500
     db cache size 1000

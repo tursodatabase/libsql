@@ -25,7 +25,7 @@ ifcapable !wal {finish_test ; return }
 
 proc reopen_db {} {
   catch { db close }
-  file delete -force test.db test.db-wal test.db-wal-summary
+  forcedelete test.db test.db-wal test.db-wal-summary
   sqlite3_wal db test.db
 }
 
@@ -211,8 +211,8 @@ do_test wal-4.4.5 {
   execsql { SELECT count(*) FROM t2 }
 } {1}
 do_test wal-4.4.6 {
-  file copy -force test.db test2.db
-  file copy -force test.db-wal test2.db-wal
+  forcecopy test.db test2.db
+  forcecopy test.db-wal test2.db-wal
   sqlite3 db2 test2.db
   execsql { SELECT count(*) FROM t2 ; SELECT count(*) FROM t1 } db2
 } {1 2}
@@ -269,8 +269,8 @@ do_test wal-4.5.5 {
   execsql { SELECT count(*) FROM t2 ; SELECT count(*) FROM t1 }
 } {1 2}
 do_test wal-4.5.6 {
-  file copy -force test.db test2.db
-  file copy -force test.db-wal test2.db-wal
+  forcecopy test.db test2.db
+  forcecopy test.db-wal test2.db-wal
   sqlite3 db2 test2.db
   execsql { SELECT count(*) FROM t2 ; SELECT count(*) FROM t1 } db2
 } {1 2}
@@ -334,7 +334,7 @@ db close
 foreach sector {512 4096} {
   sqlite3_simulate_device -sectorsize $sector
   foreach pgsz {512 1024 2048 4096} {
-    file delete -force test.db test.db-wal
+    forcedelete test.db test.db-wal
     do_test wal-6.$sector.$pgsz.1 {
       sqlite3 db test.db -vfs devsym
       execsql "
@@ -357,7 +357,7 @@ foreach sector {512 4096} {
 }
 
 do_test wal-7.1 {
-  file delete -force test.db test.db-wal
+  forcedelete test.db test.db-wal
   sqlite3_wal db test.db
   execsql {
     PRAGMA page_size = 1024;
@@ -377,7 +377,7 @@ do_test wal-7.2 {
 do_test wal-8.1 {
   reopen_db
   catch { db close }
-  file delete -force test.db test.db-wal
+  forcedelete test.db test.db-wal
 
   sqlite3 db test.db
   db function blob blob
@@ -435,9 +435,9 @@ do_test wal-9.2 {
 } {ok}
 
 do_test wal-9.3 {
-  file delete -force test2.db test2.db-wal
-  file copy test.db test2.db
-  file copy test.db-wal test2.db-wal
+  forcedelete test2.db test2.db-wal
+  copy_file test.db test2.db
+  copy_file test.db-wal test2.db-wal
   sqlite3_wal db3 test2.db 
   execsql {PRAGMA integrity_check } db3
 } {ok}
@@ -786,8 +786,8 @@ do_test wal-12.3 {
   list [expr [file size test.db]/1024] [expr [file size test.db-wal]/1044]
 } {3 2}
 do_test wal-12.4 {
-  file copy -force test.db test2.db
-  file copy -force test.db-wal test2.db-wal
+  forcecopy test.db test2.db
+  forcecopy test.db-wal test2.db-wal
   sqlite3_wal db2 test2.db
   execsql { SELECT * FROM t2 } db2
 } {B 1}
@@ -804,8 +804,8 @@ do_test wal-12.5 {
   execsql {  SELECT * FROM t2 }
 } {B 2}
 do_test wal-12.6 {
-  file copy -force test.db test2.db
-  file copy -force test.db-wal test2.db-wal
+  forcecopy test.db test2.db
+  forcecopy test.db-wal test2.db-wal
   sqlite3_wal db2 test2.db
   execsql { SELECT * FROM t2 } db2
 } {B 2}
@@ -909,7 +909,7 @@ do_multiclient_test tn {
 catch { db close }
 catch { db2 close }
 catch { db3 close }
-file delete -force test.db test.db-wal
+forcedelete test.db test.db-wal
 sqlite3 db test.db
 sqlite3 db2 test.db
 do_test wal-14 {
@@ -947,7 +947,7 @@ catch { db2 close }
 # The following block of tests - wal-15.* - focus on testing the 
 # implementation of the sqlite3_wal_checkpoint() interface.
 #
-file delete -force test.db test.db-wal
+forcedelete test.db test.db-wal
 sqlite3 db test.db
 do_test wal-15.1 {
   execsql {
@@ -1043,8 +1043,8 @@ foreach {tn ckpt_cmd ckpt_res ckpt_main ckpt_aux} {
   9 {db eval "PRAGMA temp.wal_checkpoint"}   {0 -1 -1}     0 0
 } {
   do_test wal-16.$tn.1 {
-    file delete -force test2.db test2.db-wal test2.db-journal
-    file delete -force test.db test.db-wal test.db-journal
+    forcedelete test2.db test2.db-wal test2.db-journal
+    forcedelete test.db test.db-wal test.db-journal
 
     sqlite3 db test.db
     execsql {
@@ -1116,7 +1116,7 @@ foreach {tn sectorsize logsize} "
   6  4096  [wal_file_size 176 512]
   7  8192  [wal_file_size 184 512]
 " {
-  file delete -force test.db test.db-wal test.db-journal
+  forcedelete test.db test.db-wal test.db-journal
   sqlite3_simulate_device -sectorsize $sectorsize
   sqlite3 db test.db -vfs devsym
 
@@ -1160,7 +1160,7 @@ sqlite3_test_control_pending_byte $old_pending_byte
 #   wal-18.2.* When the page-size field that occurs at the start of a log
 #              file is a power of 2 greater than 16384 or smaller than 512.
 #
-file delete -force test.db test.db-wal test.db-journal
+forcedelete test.db test.db-wal test.db-journal
 do_test wal-18.0 {
   sqlite3 db test.db
   execsql {
@@ -1178,8 +1178,8 @@ do_test wal-18.0 {
     INSERT INTO t1 VALUES(5, 6);          -- frames 5 and 6
   }
 
-  file copy -force test.db testX.db
-  file copy -force test.db-wal testX.db-wal
+  forcecopy test.db testX.db
+  forcecopy test.db-wal testX.db-wal
   db close
   list [file size testX.db] [file size testX.db-wal]
 } [list [expr 3*1024] [wal_file_size 6 1024]]
@@ -1195,8 +1195,8 @@ foreach {nFrame result} {
          6      {0 0 1 2 3 4 5 6}
 } {
   do_test wal-18.1.$nFrame {
-    file copy -force testX.db test.db
-    file copy -force testX.db-wal test.db-wal
+    forcecopy testX.db test.db
+    forcecopy testX.db-wal test.db-wal
 
     hexio_write test.db-wal [expr 24 + $nFrame*(24+1024) + 20] 00000000
 
@@ -1232,7 +1232,7 @@ proc logcksum {ckv1 ckv2 blob} {
   }
 }
 
-file copy -force test.db testX.db
+forcecopy test.db testX.db
 foreach {tn pgsz works} { 
   1    128    0
   2    256    0
@@ -1253,8 +1253,8 @@ foreach {tn pgsz works} {
   }
 
   for {set pg 1} {$pg <= 3} {incr pg} {
-    file copy -force testX.db test.db
-    file delete -force test.db-wal
+    forcecopy testX.db test.db
+    forcedelete test.db-wal
   
     # Check that the database now exists and consists of three pages. And
     # that there is no associated wal file.
@@ -1321,7 +1321,7 @@ foreach {tn pgsz works} {
 # snapshot.
 #
 do_test wal-19.1 {
-  file delete -force test.db test.db-wal test.db-journal
+  forcedelete test.db test.db-wal test.db-journal
   sqlite3 db test.db
   sqlite3 db2 test.db
   execsql {
@@ -1370,7 +1370,7 @@ do_test wal-19.4 {
 #
 do_test wal-20.1 {
   catch {db close}
-  file delete -force test.db test.db-wal test.db-journal
+  forcedelete test.db test.db-wal test.db-journal
   sqlite3 db test.db
   execsql {
     PRAGMA journal_mode = WAL;
@@ -1476,7 +1476,7 @@ foreach pgsz {512 1024 2048 4096 8192 16384 32768 65536} {
 #
 set walfile [file nativename [file join [pwd] test.db-wal]]
 catch {db close}
-file delete -force test.db
+forcedelete test.db
 do_test wal-23.1 {
   faultsim_delete_and_reopen
   execsql {

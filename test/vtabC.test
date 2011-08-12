@@ -31,7 +31,7 @@ ifcapable !trigger { finish_test ; return }
 unset -nocomplain N
 for {set N 1} {$N<=20} {incr N} {
   db close
-  file delete -force test.db test.db-journal
+  forcedelete test.db test.db-journal
   sqlite3 db test.db
   register_echo_module [sqlite3_connection_pointer db]
 

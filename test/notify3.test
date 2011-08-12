@@ -25,7 +25,7 @@ ifcapable !unlock_notify||!shared_cache {
 set esc [sqlite3_enable_shared_cache 1]
 
 sqlite3 db  test.db
-file delete -force test.db2 test.db2-journal test.db2-wal
+forcedelete test.db2 test.db2-journal test.db2-wal
 sqlite3 db2 test.db2
 
 do_test notify3-1.1 {

@@ -67,8 +67,8 @@ do_test 8_3_names-2.1 {
   file exists test.nal
 } 1
 forcedelete test2.db test2.nal test2.db-journal
-file copy test.db test2.db
-file copy test.nal test2.nal
+copy_file test.db test2.db
+copy_file test.nal test2.nal
 do_test 8_3_names-2.2 {
   db eval {
     COMMIT;
@@ -101,8 +101,8 @@ do_test 8_3_names-3.1 {
   file exists test.nal
 } 0
 forcedelete test2.db test2.nal test2.db-journal
-file copy test.db test2.db
-file copy test.db-journal test2.db-journal
+copy_file test.db test2.db
+copy_file test.db-journal test2.db-journal
 do_test 8_3_names-3.2 {
   db eval {
     COMMIT;

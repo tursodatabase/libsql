@@ -51,7 +51,7 @@ foreach err [list ioerr malloc-transient malloc-persistent] {
   for {set n 1} {$::go} {incr n} {
     set ::sqlite_io_error_pending 0
     sqlite3_memdebug_fail -1
-    file delete -force test.db test.db-journal
+    forcedelete test.db test.db-journal
     sqlite3 db test.db
     execsql $::setup_script
     db close

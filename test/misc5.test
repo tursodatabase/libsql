@@ -514,7 +514,7 @@ ifcapable subquery {
 if {[permutation] == ""} {
   do_test misc5-4.1 {
     db close
-    file delete -force test.db
+    forcedelete test.db
     set fd [open test.db w]
     puts $fd "This is not really a database"
     close $fd
@@ -544,7 +544,7 @@ do_test misc5-5.4 {
 # a UNION ALL query causes an error, not a crash.
 #
 db close
-file delete -force test.db
+forcedelete test.db
 sqlite3 db test.db
 ifcapable subquery&&compound {
   do_test misc5-6.1 {

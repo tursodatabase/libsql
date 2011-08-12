@@ -48,7 +48,7 @@ do_test walbak-1.0 {
   }
 } {wal}
 do_test walbak-1.1 {
-  file delete -force bak.db bak.db-journal bak.db-wal
+  forcedelete bak.db bak.db-journal bak.db-wal
   db backup bak.db
   file size bak.db
 } [expr 3*1024]
@@ -106,7 +106,7 @@ proc sig {{db db}} {
   }
 }
 db close
-file delete test.db
+delete_file test.db
 sqlite3 db test.db
 do_test walbak-2.1 {
   execsql { PRAGMA journal_mode = WAL }
@@ -236,7 +236,7 @@ foreach {tn setup} {
   }
 
 } {
-  foreach f [glob -nocomplain test.db*] { file delete -force $f }
+  foreach f [glob -nocomplain test.db*] { forcedelete $f }
 
   eval $setup
 

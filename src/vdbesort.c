@@ -331,7 +331,7 @@ static int vdbeSorterDoCompare(VdbeCursor *pCsr, int iOut){
 int sqlite3VdbeSorterInit(sqlite3 *db, VdbeCursor *pCsr){
   assert( pCsr->pKeyInfo && pCsr->pBt );
   pCsr->pSorter = sqlite3DbMallocZero(db, sizeof(VdbeSorter));
-  return (pCsr->pSorter ? SQLITE_NOMEM : SQLITE_OK);
+  return (pCsr->pSorter ? SQLITE_OK : SQLITE_NOMEM);
 }
 
 /*

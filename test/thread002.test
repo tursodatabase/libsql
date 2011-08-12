@@ -27,7 +27,7 @@ set ::NTHREAD 10
 do_test thread002.1 {
   # Create 3 databases with identical schemas:
   for {set ii 0} {$ii < 3} {incr ii} {
-    file delete -force test${ii}.db
+    forcedelete test${ii}.db
     sqlite3 db test${ii}.db
     execsql {
       CREATE TABLE t1(k, v);

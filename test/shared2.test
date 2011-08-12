@@ -129,7 +129,7 @@ do_test shared2-3.2 {
   sqlite3_enable_shared_cache 1
 } {1}
 
-file delete -force test.db
+forcedelete test.db
 
 sqlite3 db test.db
 do_test shared2-4.1 {

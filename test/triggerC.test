@@ -918,7 +918,7 @@ do_test triggerC-11.4 {
 
 do_test triggerC-12.1 {
   db close
-  file delete -force test.db
+  forcedelete test.db
   sqlite3 db test.db
 
   execsql {

@@ -20,7 +20,7 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 # These tests will not work on windows because windows uses
-# manditory file locking which breaks the file copy command.
+# manditory file locking which breaks the copy_file command.
 #
 if {$tcl_platform(platform)=="windows"} {
   finish_test
@@ -51,13 +51,13 @@ do_test journal1-1.2 {
     BEGIN;
     DELETE FROM t1;
   }
-  file copy -force test.db-journal test.db-journal-bu
+  forcecopy test.db-journal test.db-journal-bu
   execsql {
     ROLLBACK;
   }
   db close
-  file delete test.db
-  file copy test.db-journal-bu test.db-journal
+  delete_file test.db
+  copy_file test.db-journal-bu test.db-journal
   sqlite3 db test.db
   catchsql {
     SELECT * FROM sqlite_master

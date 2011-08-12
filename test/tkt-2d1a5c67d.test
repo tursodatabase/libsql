@@ -118,8 +118,8 @@ do_test 3.5 {
 #
 forcedelete test.db2-wal test.db2
 do_test 3.6 {
-  file copy test.db-wal test.db2-wal
-  file copy test.db test.db2
+  copy_file test.db-wal test.db2-wal
+  copy_file test.db test.db2
   sqlite3 db2 test.db2
   execsql { SELECT * FROM t4 WHERE a = 'xyz' } db2
 } {xyz}

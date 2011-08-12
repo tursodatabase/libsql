@@ -34,7 +34,7 @@ for {set ii 0} {$ii < 10} {incr ii} {
     # Set up the database so that it is an auto-vacuum database 
     # containing a single table (root page 3) with a single row. 
     # The row has an overflow page (page 4).
-    file delete -force test.db test.db-journal
+    forcedelete test.db test.db-journal
     sqlite3 db test.db
     set c [string repeat 3 1500]
     db eval {
