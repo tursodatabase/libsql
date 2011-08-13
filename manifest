@@ -1,5 +1,5 @@
-C Begin\sa\sbranch\sthat\sexperimentally\sreplaces\ssqlite_stat2\swith\sa\snew\stable\ncalled\ssqlite_stat3\sthat\swill\shopefully\sfacilitate\sbetter\squery\nplanning\sdecisions.
-D 2011-08-12T01:51:45.485
+C The\sANALYZE\scommand\spicks\sfor\s15\ssamples\sfor\ssqlite_stat3\swith\sthe\slargest\nnEq\sfields,\splus\s5\sother\sevenly\sspaced\ssamples.
+D 2011-08-13T00:58:05.748
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1e6988b3c11dee9bd5edc0c804bd4468d74a9cdc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -118,7 +118,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c ac80a0f31189f8b4a524ebf661e47e84536ee7f5
-F src/analyze.c da6661dbe12f71d37e81c1138cd7b3175fa60a4f
+F src/analyze.c 31a1ea5a5a355097aa7a5fce09bbd9ae2a2c7672
 F src/attach.c 12c6957996908edc31c96d7c68d4942c2474405f
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 986c15232757f2873dff35ee3b35cbf935fc573c
@@ -958,10 +958,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 6b236069e1ea3c99ff0a007a790d4baebda70b13
-R 28c5bf799a1842cffe08b02c7be0270b
-T *branch * stat3-enhancement
-T *sym-stat3-enhancement *
-T -sym-trunk *
+P 52e1d7e8ddd4bb5ef3a9d00fd2d719a8a784f807
+R d14fbf4d209dccbd0b61f66b6e37c6c9
 U drh
-Z 1615a89a47ce6302aa7ba89aa7dcb40d
+Z 59baacb653226a018ea530dc8e60b319
