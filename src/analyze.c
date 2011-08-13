@@ -19,7 +19,7 @@
 **
 **    CREATE TABLE sqlite_stat1(tbl, idx, stat);
 **    CREATE TABLE sqlite_stat2(tbl, idx, sampleno, sample);
-**    CREATE TABLE sqlite_stat3(tbl, idx, nLt, nEq, sample);
+**    CREATE TABLE sqlite_stat3(tbl, idx, nEq, nLt, nDLt, sample);
 **
 ** Additional tables might be added in future releases of SQLite.
 ** The sqlite_stat2 table is not created or used unless the SQLite version
@@ -88,12 +88,13 @@
 **
 ** The format of the sqlite_stat3 table is similar to the format for
 ** the sqlite_stat2 table, with the following changes:  (1)
-** The sampleno column is removed.  (2) Every sample has nEq and nLt 
-** columns which hold the approximate number of keys in the table that
-** exactly match the sample, and which are less than the sample,
-** respectively.  (3) The number of samples can very from one table
-** to the next; the sample count does not have to be exactly 10 as
-** it is with sqlite_stat2. (4) The samples do not have to be evenly spaced.
+** The sampleno column is removed.  (2) Every sample has nEq, nLt, and nDLt
+** columns which hold the approximate number of rows in the table that
+** exactly match the sample, the approximate number of rows with values
+** less than the sample, and the approximate number of distinct key values
+** less than the sample, respectively.  (3) The number of samples can very 
+** from one table to the next; the sample count does not have to be 
+** exactly 10 as it is with sqlite_stat2.
 **
 ** The ANALYZE command will typically generate sqlite_stat3 tables
 ** that contain between 10 and 40 samples which are distributed across
@@ -132,7 +133,7 @@ static void openStatTable(
   } aTable[] = {
     { "sqlite_stat1", "tbl,idx,stat" },
 #ifdef SQLITE_ENABLE_STAT3
-    { "sqlite_stat3", "tbl,idx,neq,nlt,sample" },
+    { "sqlite_stat3", "tbl,idx,neq,nlt,ndlt,sample" },
 #endif
   };
   static const char *azToDrop[] = { 
@@ -207,7 +208,7 @@ static void openStatTable(
 ** Recommended number of samples for sqlite_stat3
 */
 #ifndef SQLITE_STAT3_SAMPLES
-# define SQLITE_STAT3_SAMPLES 20
+# define SQLITE_STAT3_SAMPLES 24
 #endif
 
 /*
@@ -222,10 +223,12 @@ struct Stat3Accum {
   int iMin;                 /* Index of entry with minimum nEq and hash */
   int mxSample;             /* Maximum number of samples to accumulate */
   int nSample;              /* Current number of samples */
+  u32 iPrn;                 /* Pseudo-random number used for sampling */
   struct Stat3Sample {
     i64 iRowid;                /* Rowid in main table of the key */
     tRowcnt nEq;               /* sqlite_stat3.nEq */
     tRowcnt nLt;               /* sqlite_stat3.nLt */
+    tRowcnt nDLt;              /* sqlite_stat3.nDLt */
     u8 isPSample;              /* True if a periodic sample */
     u32 iHash;                 /* Tiebreaker hash */
   } *a;                     /* An array of samples */
@@ -263,7 +266,8 @@ static void stat3Init(
   p->a = (struct Stat3Sample*)&p[1];
   p->nRow = nRow;
   p->mxSample = mxSample;
-  p->nPSample = p->nRow/6 + 1;
+  p->nPSample = p->nRow/(mxSample/3+1) + 1;
+  sqlite3_randomness(sizeof(p->iPrn), &p->iPrn);
   sqlite3_result_blob(context, p, sizeof(p), sqlite3_free);
 }
 static const FuncDef stat3InitFuncdef = {
@@ -282,7 +286,7 @@ static const FuncDef stat3InitFuncdef = {
 
 
 /*
-** Implementation of the stat3_push(nEq,nLt,rowid,P) SQL function.  The
+** Implementation of the stat3_push(nEq,nLt,nDLt,rowid,P) SQL function.  The
 ** arguments describe a single key instance.  This routine makes the 
 ** decision about whether or not to retain this key for the sqlite_stat3
 ** table.
@@ -294,23 +298,20 @@ static void stat3Push(
   int argc,
   sqlite3_value **argv
 ){
-  Stat3Accum *p = (Stat3Accum*)sqlite3_value_blob(argv[3]);
+  Stat3Accum *p = (Stat3Accum*)sqlite3_value_blob(argv[4]);
   tRowcnt nEq = sqlite3_value_int64(argv[0]);
   tRowcnt nLt = sqlite3_value_int64(argv[1]);
-  i64 rowid = sqlite3_value_int64(argv[2]);
+  tRowcnt nDLt = sqlite3_value_int64(argv[2]);
+  i64 rowid = sqlite3_value_int64(argv[3]);
   u8 isPSample = 0;
   u8 doInsert = 0;
   int iMin = p->iMin;
   struct Stat3Sample *pSample;
   int i;
-  u32 h, h1, h2, h3;
+  u32 h;
   if( nEq==0 ) return;
 
-  h1 = (unsigned)(rowid&0xffff);
-  h2 = (unsigned)nEq;
-  h3 = (unsigned)(nLt+1);
-  h = h1*h2*h3*0x10010001;
-
+  h = p->iPrn = p->iPrn*1103515245 + 12345;
   if( (nLt/p->nPSample)!=((nEq+nLt)/p->nPSample) ){
     doInsert = isPSample = 1;
   }else if( p->nSample<p->mxSample ){
@@ -322,13 +323,17 @@ static void stat3Push(
   }
   if( !doInsert ) return;
   if( p->nSample==p->mxSample ){
-    pSample = &p->a[iMin];
+    if( iMin<p->nSample ){
+      memcpy(&p->a[iMin], &p->a[iMin+1], sizeof(p->a[0])*(p->nSample-iMin));
+    }
+    pSample = &p->a[p->nSample-1];
   }else{
     pSample = &p->a[p->nSample++];
   }
   pSample->iRowid = rowid;
   pSample->nEq = nEq;
   pSample->nLt = nLt;
+  pSample->nDLt = nDLt;
   pSample->iHash = h;
   pSample->isPSample = isPSample;
 
@@ -358,7 +363,7 @@ static void stat3Push(
   }
 }
 static const FuncDef stat3PushFuncdef = {
-  3,                /* nArg */
+  5,                /* nArg */
   SQLITE_UTF8,      /* iPrefEnc */
   0,                /* flags */
   0,                /* pUserData */
@@ -380,6 +385,7 @@ static const FuncDef stat3PushFuncdef = {
 **   argc==2    result:  rowid
 **   argc==3    result:  nEq
 **   argc==4    result:  nLt
+**   argc==5    result:  nDLt
 */
 static void stat3Get(
   sqlite3_context *context,
@@ -395,6 +401,7 @@ static void stat3Get(
     case 2: sqlite3_result_int64(context, p->a[n].iRowid); break;
     case 3: sqlite3_result_int64(context, p->a[n].nEq);    break;
     case 4: sqlite3_result_int64(context, p->a[n].nLt);    break;
+    case 5: sqlite3_result_int64(context, p->a[n].nDLt);   break;
   }
 }
 static const FuncDef stat3GetFuncdef = {
@@ -441,6 +448,7 @@ static void analyzeOneTable(
 #ifdef SQLITE_ENABLE_STAT3
   int regNumEq = regStat1;     /* Number of instances.  Same as regStat1 */
   int regNumLt = iMem++;       /* Number of keys less than regSample */
+  int regNumDLt = iMem++;      /* Number of distinct keys less than regSample */
   int regSample = iMem++;      /* The next sample value */
   int regRowid = regSample;    /* Rowid of a sample */
   int regAccum = iMem++;       /* Register to hold Stat3Accum object */
@@ -520,6 +528,7 @@ static void analyzeOneTable(
     sqlite3VdbeAddOp2(v, OP_Integer, SQLITE_STAT3_SAMPLES, regTemp1);
     sqlite3VdbeAddOp2(v, OP_Integer, 0, regNumEq);
     sqlite3VdbeAddOp2(v, OP_Integer, 0, regNumLt);
+    sqlite3VdbeAddOp2(v, OP_Integer, -1, regNumDLt);
     sqlite3VdbeAddOp4(v, OP_Function, 1, regCount, regAccum,
                       (char*)&stat3InitFuncdef, P4_FUNCDEF);
     sqlite3VdbeChangeP5(v, 2);
@@ -584,9 +593,10 @@ static void analyzeOneTable(
 #ifdef SQLITE_ENABLE_STAT3
         sqlite3VdbeAddOp4(v, OP_Function, 1, regNumEq, regTemp2,
                           (char*)&stat3PushFuncdef, P4_FUNCDEF);
-        sqlite3VdbeChangeP5(v, 4);
+        sqlite3VdbeChangeP5(v, 5);
         sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, pIdx->nColumn, regRowid);
         sqlite3VdbeAddOp3(v, OP_Add, regNumEq, regNumLt, regNumLt);
+        sqlite3VdbeAddOp2(v, OP_AddImm, regNumDLt, 1);
         sqlite3VdbeAddOp2(v, OP_Integer, 1, regNumEq);
 #endif        
       }
@@ -603,7 +613,7 @@ static void analyzeOneTable(
 #ifdef SQLITE_ENABLE_STAT3
     sqlite3VdbeAddOp4(v, OP_Function, 1, regNumEq, regTemp2,
                       (char*)&stat3PushFuncdef, P4_FUNCDEF);
-    sqlite3VdbeChangeP5(v, 4);
+    sqlite3VdbeChangeP5(v, 5);
     sqlite3VdbeAddOp2(v, OP_Integer, -1, regLoop);
     shortJump = 
     sqlite3VdbeAddOp2(v, OP_AddImm, regLoop, 1);
@@ -620,7 +630,10 @@ static void analyzeOneTable(
     sqlite3VdbeAddOp4(v, OP_Function, 1, regAccum, regNumLt,
                       (char*)&stat3GetFuncdef, P4_FUNCDEF);
     sqlite3VdbeChangeP5(v, 4);
-    sqlite3VdbeAddOp4(v, OP_MakeRecord, regTabname, 5, regRec, "bbbbb", 0);
+    sqlite3VdbeAddOp4(v, OP_Function, 1, regAccum, regNumDLt,
+                      (char*)&stat3GetFuncdef, P4_FUNCDEF);
+    sqlite3VdbeChangeP5(v, 5);
+    sqlite3VdbeAddOp4(v, OP_MakeRecord, regTabname, 6, regRec, "bbbbbb", 0);
     sqlite3VdbeAddOp2(v, OP_NewRowid, iStatCur+1, regNewRowid);
     sqlite3VdbeAddOp3(v, OP_Insert, iStatCur+1, regRec, regNewRowid);
     sqlite3VdbeAddOp2(v, OP_Goto, 0, shortJump);
@@ -953,8 +966,7 @@ static int loadStat3(sqlite3 *db, const char *zDb){
   sqlite3_finalize(pStmt);
 
   zSql = sqlite3MPrintf(db, 
-      "SELECT idx,nlt,neq,sample FROM %Q.sqlite_stat3"
-      " ORDER BY idx, nlt", zDb);
+      "SELECT idx,nlt,neq,sample FROM %Q.sqlite_stat3", zDb);
   if( !zSql ){
     return SQLITE_NOMEM;
   }
