@@ -957,6 +957,7 @@ static int loadStat3(sqlite3 *db, const char *zDb){
     assert( pIdx->nSample==0 );
     pIdx->nSample = (u8)nSample;
     pIdx->aSample = sqlite3MallocZero( nSample*sizeof(IndexSample) );
+    pIdx->avgEq = pIdx->aiRowEst[1];
     if( pIdx->aSample==0 ){
       db->mallocFailed = 1;
       sqlite3_finalize(pStmt);
@@ -966,7 +967,7 @@ static int loadStat3(sqlite3 *db, const char *zDb){
   sqlite3_finalize(pStmt);
 
   zSql = sqlite3MPrintf(db, 
-      "SELECT idx,nlt,neq,sample FROM %Q.sqlite_stat3", zDb);
+      "SELECT idx,neq,nlt,ndlt,sample FROM %Q.sqlite_stat3", zDb);
   if( !zSql ){
     return SQLITE_NOMEM;
   }
@@ -977,6 +978,8 @@ static int loadStat3(sqlite3 *db, const char *zDb){
   while( sqlite3_step(pStmt)==SQLITE_ROW ){
     char *zIndex;   /* Index name */
     Index *pIdx;    /* Pointer to the index object */
+    int i;          /* Loop counter */
+    tRowcnt sumEq;  /* Sum of the nEq values */
 
     zIndex = (char *)sqlite3_column_text(pStmt, 0);
     if( zIndex==0 ) continue;
@@ -990,17 +993,25 @@ static int loadStat3(sqlite3 *db, const char *zDb){
     }
     assert( idx<pIdx->nSample );
     pSample = &pIdx->aSample[idx];
-    pSample->nLt = (tRowcnt)sqlite3_column_int64(pStmt, 1);
-    pSample->nEq = (tRowcnt)sqlite3_column_int64(pStmt, 2);
-    eType = sqlite3_column_type(pStmt, 3);
+    pSample->nEq = (tRowcnt)sqlite3_column_int64(pStmt, 1);
+    pSample->nLt = (tRowcnt)sqlite3_column_int64(pStmt, 2);
+    pSample->nDLt = (tRowcnt)sqlite3_column_int64(pStmt, 3);
+    if( idx==pIdx->nSample-1 ){
+      if( pSample->nDLt>0 ){
+        for(i=0, sumEq=0; i<=idx-1; i++) sumEq += pIdx->aSample[i].nEq;
+        pIdx->avgEq = (pSample->nLt - sumEq)/pSample->nDLt;
+      }
+      if( pIdx->avgEq<=0 ) pIdx->avgEq = 1;
+    }
+    eType = sqlite3_column_type(pStmt, 4);
     pSample->eType = (u8)eType;
     switch( eType ){
       case SQLITE_INTEGER: {
-        pSample->u.i = sqlite3_column_int64(pStmt, 3);
+        pSample->u.i = sqlite3_column_int64(pStmt, 4);
         break;
       }
       case SQLITE_FLOAT: {
-        pSample->u.r = sqlite3_column_double(pStmt, 3);
+        pSample->u.r = sqlite3_column_double(pStmt, 4);
         break;
       }
       case SQLITE_NULL: {
@@ -1009,10 +1020,10 @@ static int loadStat3(sqlite3 *db, const char *zDb){
       default: assert( eType==SQLITE_TEXT || eType==SQLITE_BLOB ); {
         const char *z = (const char *)(
               (eType==SQLITE_BLOB) ?
-              sqlite3_column_blob(pStmt, 3):
-              sqlite3_column_text(pStmt, 3)
+              sqlite3_column_blob(pStmt, 4):
+              sqlite3_column_text(pStmt, 4)
            );
-        int n = sqlite3_column_bytes(pStmt, 2);
+        int n = sqlite3_column_bytes(pStmt, 4);
         if( n>0xffff ) n = 0xffff;
         pSample->nByte = (u16)n;
         if( n < 1){

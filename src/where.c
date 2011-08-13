@@ -2441,6 +2441,8 @@ static int whereKeyStats(
   IndexSample *aSample;
   int i, eType;
   int isEq = 0;
+  i64 v;
+  double r, rS;
 
   assert( roundUp==0 || roundUp==1 );
   if( pVal==0 ) return SQLITE_ERROR;
@@ -2450,22 +2452,36 @@ static int whereKeyStats(
   eType = sqlite3_value_type(pVal);
 
   if( eType==SQLITE_INTEGER ){
-    i64 v = sqlite3_value_int64(pVal);
+    v = sqlite3_value_int64(pVal);
+    r = (i64)v;
     for(i=0; i<pIdx->nSample; i++){
       if( aSample[i].eType==SQLITE_NULL ) continue;
       if( aSample[i].eType>=SQLITE_TEXT ) break;
-      if( aSample[i].u.i>=v ){
-        isEq = aSample[i].u.i==v;
-        break;
+      if( aSample[i].eType==SQLITE_INTEGER ){
+        if( aSample[i].u.i>=v ){
+          isEq = aSample[i].u.i==v;
+          break;
+        }
+      }else{
+        assert( aSample[i].eType==SQLITE_FLOAT );
+        if( aSample[i].u.r>=r ){
+          isEq = aSample[i].u.r==r;
+          break;
+        }
       }
     }
   }else if( eType==SQLITE_FLOAT ){
-    double r = sqlite3_value_double(pVal);
+    r = sqlite3_value_double(pVal);
     for(i=0; i<pIdx->nSample; i++){
       if( aSample[i].eType==SQLITE_NULL ) continue;
       if( aSample[i].eType>=SQLITE_TEXT ) break;
-      if( aSample[i].u.r>=r ){
-        isEq = aSample[i].u.r==r;
+      if( aSample[i].eType==SQLITE_FLOAT ){
+        rS = aSample[i].u.r;
+      }else{
+        rS = aSample[i].u.i;
+      }
+      if( rS>=r ){
+        isEq = rS==r;
         break;
       }
     }
@@ -2546,14 +2562,11 @@ static int whereKeyStats(
     if( i==0 ){
       iLower = 0;
       iUpper = aSample[0].nLt;
-    }else if( i>=pIdx->nSample ){
-      iUpper = n;
-      iLower = aSample[i].nEq + aSample[i].nLt;
     }else{
+      iUpper = i>=pIdx->nSample ? n : aSample[i].nLt;
       iLower = aSample[i-1].nEq + aSample[i-1].nLt;
-      iUpper = aSample[i].nLt;
     }
-    aStat[1] = pIdx->aiRowEst[1];
+    aStat[1] = pIdx->avgEq;
     if( iLower>=iUpper ){
       iGap = 0;
     }else{
@@ -2651,7 +2664,7 @@ static int whereRangeScanEst(
   int nEq,             /* index into p->aCol[] of the range-compared column */
   WhereTerm *pLower,   /* Lower bound on the range. ex: "x>123" Might be NULL */
   WhereTerm *pUpper,   /* Upper bound on the range. ex: "x<455" Might be NULL */
-  tRowcnt *pRangeDiv   /* OUT: Reduce search space by this divisor */
+  double *pRangeDiv   /* OUT: Reduce search space by this divisor */
 ){
   int rc = SQLITE_OK;
 
@@ -2684,18 +2697,18 @@ static int whereRangeScanEst(
        && whereKeyStats(pParse, p, pRangeVal, 1, a)==SQLITE_OK
       ){
         iUpper = a[0];
-        if( pLower->eOperator==WO_LE ) iUpper += a[1];
+        if( pUpper->eOperator==WO_LE ) iUpper += a[1];
       }
       sqlite3ValueFree(pRangeVal);
     }
     if( rc==SQLITE_OK ){
       if( iUpper<=iLower ){
-        *pRangeDiv = p->aiRowEst[0];
+        *pRangeDiv = (double)p->aiRowEst[0];
       }else{
-        *pRangeDiv = p->aiRowEst[0]/(iUpper - iLower);
+        *pRangeDiv = (double)p->aiRowEst[0]/(double)(iUpper - iLower);
       }
-      WHERETRACE(("range scan regions: %u..%u  div=%u\n",
-                  (u32)iLower, (u32)iUpper, (u32)*pRangeDiv));
+      WHERETRACE(("range scan regions: %u..%u  div=%g\n",
+                  (u32)iLower, (u32)iUpper, *pRangeDiv));
       return SQLITE_OK;
     }
   }
@@ -2705,9 +2718,9 @@ static int whereRangeScanEst(
   UNUSED_PARAMETER(nEq);
 #endif
   assert( pLower || pUpper );
-  *pRangeDiv = 1;
-  if( pLower && (pLower->wtFlags & TERM_VNULL)==0 ) *pRangeDiv *= 4;
-  if( pUpper ) *pRangeDiv *= 4;
+  *pRangeDiv = (double)1;
+  if( pLower && (pLower->wtFlags & TERM_VNULL)==0 ) *pRangeDiv *= (double)4;
+  if( pUpper ) *pRangeDiv *= (double)4;
   return rc;
 }
 
@@ -2976,7 +2989,7 @@ static void bestBtreeIndex(
     int nEq;                      /* Number of == or IN terms matching index */
     int bInEst = 0;               /* True if "x IN (SELECT...)" seen */
     int nInMul = 1;               /* Number of distinct equalities to lookup */
-    tRowcnt rangeDiv = 1;         /* Estimated reduction in search space */
+    double rangeDiv = (double)1;  /* Estimated reduction in search space */
     int nBound = 0;               /* Number of range constraints seen */
     int bSort = !!pOrderBy;       /* True if external sort required */
     int bDist = !!pDistinct;      /* True if index cannot help with DISTINCT */
@@ -3111,7 +3124,7 @@ static void bestBtreeIndex(
     /* Adjust the number of output rows and downward to reflect rows
     ** that are excluded by range constraints.
     */
-    nRow = nRow/(double)rangeDiv;
+    nRow = nRow/rangeDiv;
     if( nRow<1 ) nRow = 1;
 
     /* Experiments run on real SQLite databases show that the time needed

@@ -1502,6 +1502,7 @@ struct Index {
   u8 *aSortOrder;  /* Array of size Index.nColumn. True==DESC, False==ASC */
   char **azColl;   /* Array of collation sequence names for index */
 #ifdef SQLITE_ENABLE_STAT3
+  tRowcnt avgEq;           /* Average nEq value for key values not in aSample */
   IndexSample *aSample;    /* Samples of the left-most key */
 #endif
 };
@@ -1520,6 +1521,7 @@ struct IndexSample {
   u16 nByte;        /* Size in byte of text or blob. */
   tRowcnt nEq;      /* Est. number of rows where the key equals this sample */
   tRowcnt nLt;      /* Est. number of rows where key is less than this sample */
+  tRowcnt nDLt;     /* Est. number of distinct keys less than this sample */
 };
 
 /*

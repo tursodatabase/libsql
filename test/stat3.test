@@ -11,7 +11,7 @@
 #
 # This file implements regression tests for SQLite library. This file 
 # implements tests for the extra functionality provided by the ANALYZE 
-# command when the library is compiled with SQLITE_ENABLE_STAT2 defined.
+# command when the library is compiled with SQLITE_ENABLE_STAT3 defined.
 #
 
 set testdir [file dirname $argv0]
@@ -28,7 +28,7 @@ do_test 1.1 {
   db eval {
     PRAGMA writable_schema=ON;
     CREATE TABLE sqlite_stat2(tbl,idx,sampleno,sample);
-    CREATE TABLE sqlite_stat3(tbl,idx,sampleno,sample,neq,nlt);
+    CREATE TABLE sqlite_stat3(tbl,idx,neq,nlt,ndlt,sample);
     SELECT name FROM sqlite_master ORDER BY 1;
   }
 } {sqlite_stat2 sqlite_stat3}

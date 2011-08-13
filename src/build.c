@@ -2062,7 +2062,6 @@ void sqlite3CodeDropTable(Parse *pParse, Table *pTab, int iDb, int isView){
   sqlite3NestedParse(pParse, 
       "DELETE FROM %Q.%s WHERE tbl_name=%Q and type!='trigger'",
       pDb->zName, SCHEMA_TABLE(iDb), pTab->zName);
-  sqlite3ClearStatTables(pParse, iDb, "tbl", pTab->zName);
   if( !isView && !IsVirtual(pTab) ){
     destroyTable(pParse, pTab);
   }
@@ -2174,6 +2173,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
     sqlite3BeginWriteOperation(pParse, 1, iDb);
     sqlite3FkDropTable(pParse, pName, pTab);
     sqlite3CodeDropTable(pParse, pTab, iDb, isView);
+    sqlite3ClearStatTables(pParse, iDb, "tbl", pTab->zName);
   }
 
 exit_drop_table:
