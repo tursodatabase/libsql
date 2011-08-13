@@ -4991,9 +4991,8 @@ static int file_control_chunksize_test(
 /*
 ** tclcmd:   file_control_sizehint_test DB DBNAME SIZE
 **
-** This TCL command runs the sqlite3_file_control interface and
-** verifies correct operation of the SQLITE_GET_LOCKPROXYFILE and
-** SQLITE_SET_LOCKPROXYFILE verbs.
+** This TCL command runs the sqlite3_file_control interface 
+** with SQLITE_FCNTL_SIZE_HINT
 */
 static int file_control_sizehint_test(
   ClientData clientData, /* Pointer to sqlite3_enable_XXX function */

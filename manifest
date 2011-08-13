@@ -1,5 +1,5 @@
-C Merge\sthe\sexperimental\schanges\sto\suse\sa\smerge-sort\swhen\screating\san\sindex\sinto\sthe\strunk.
-D 2011-08-12T16:47:12.815
+C Fix\sthe\sheader\scomment\son\sthe\simplementation\sof\sthe\nfile_control_sizehint_test\sTCL\scommand\sin\stest1.c.
+D 2011-08-13T10:47:51.259
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -188,7 +188,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c c355b33803fb756dc09297ec84d19604301fa622
-F src/test1.c 9952abd6dc729eb1c011b71ee26a8b49d0aa7c10
+F src/test1.c 7439efb86c1022f19a39a8e61de2cbac23ffab03
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 124ff9735fb6bb7d41de180d6bac90e7b1509432
 F src/test4.c d1e5a5e904d4b444cf572391fdcb017638e36ff7
@@ -960,7 +960,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 6b236069e1ea3c99ff0a007a790d4baebda70b13 69e4b41de22968c565c6575707a73956e3b20ff4
-R fced7a7577e38a6f428a347e92769773
-U dan
-Z 3bbbe4efed9782cd51a19bb264baec63
+P 346a453d1f1d615f1e9e7923a27dad84b8727fb1
+R 7ce31f76b768334971130323332609c7
+U drh
+Z 036ec65c1ec43dc86ad51b2b611e625e
