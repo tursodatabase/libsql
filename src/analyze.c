@@ -65,7 +65,7 @@
 ** the index belongs.  There are usually 10 rows in the sqlite_stat2
 ** table for each index.
 **
-** The sqlite_stat2 entires for an index that have sampleno between 0 and 9
+** The sqlite_stat2 entries for an index that have sampleno between 0 and 9
 ** inclusive are samples of the left-most key value in the index taken at
 ** evenly spaced points along the index.  Let the number of samples be S
 ** (10 in the standard build) and let C be the number of rows in the index.
@@ -92,7 +92,7 @@
 ** columns which hold the approximate number of rows in the table that
 ** exactly match the sample, the approximate number of rows with values
 ** less than the sample, and the approximate number of distinct key values
-** less than the sample, respectively.  (3) The number of samples can very 
+** less than the sample, respectively.  (3) The number of samples can vary 
 ** from one table to the next; the sample count does not have to be 
 ** exactly 10 as it is with sqlite_stat2.
 **
