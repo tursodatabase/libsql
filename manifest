@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\stypos\sin\scomments\sin\sanalyze.c.
-D 2011-08-15T12:02:21.660
+C Update\ssome\stest\scases\sto\swork\swith\ssqlite_stat3\sinstead\sof\ssqlite_stat2.
+D 2011-08-15T12:58:23.538
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1e6988b3c11dee9bd5edc0c804bd4468d74a9cdc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -255,17 +255,17 @@ F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 52fc8dee494092031a556911d404ca30a749a30b
-F test/alter.test 5314fc01ef51ab8af0b8890725b710ed48d4806b
+F test/alter.test 54912d932309df2e4f62aeb47169c2ff740e53ed
 F test/alter2.test 7ea05c7d92ac99349a802ef7ada17294dd647060
 F test/alter3.test 49c9d9fba2b8fcdce2dedeca97bbf1f369cc548d
 F test/alter4.test b2debc14d8cbe4c1d12ccd6a41eef88a8c1f15d5
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/analyze.test f8ab7d15858b4093b06caf5e57e2a5ff7104bdae
 F test/analyze2.test 8f2b1534d43f5547ce9a6b736c021d4192c75be3
-F test/analyze3.test d5e4da00a37b927d83aead50626c254a785c111f
+F test/analyze3.test 7bcadc47589fd730f9a12ffc9b30a520d7f6931b
 F test/analyze4.test 757b37875cf9bb528d46f74497bc789c88365045
 F test/analyze5.test 713354664c5ff1853ab2cbcb740f0cf5cb7c802e
-F test/analyze6.test c125622a813325bba1b4999040ddc213773c2290
+F test/analyze6.test bd3625806a5ee6f7bef72d06295bd319f0290af2
 F test/analyze7.test d3587aa5af75c9048d031b94fceca2534fa75d1d
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
 F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
@@ -734,7 +734,7 @@ F test/tkt-9d68c883.test 458f7d82a523d7644b54b497c986378a7d8c8b67
 F test/tkt-b351d95f9.test d14a503c414c5c58fdde3e80f9a3cfef986498c0
 F test/tkt-b72787b1.test e6b62b2b2785c04d0d698d6a603507e384165049
 F test/tkt-bd484a090c.test 60460bf946f79a79712b71f202eda501ca99b898
-F test/tkt-cbd054fa6b.test f14f97ea43662e6f70c9e63287081e8be5d9d589
+F test/tkt-cbd054fa6b.test bd9fb546f63bc0c79d1776978d059fa51c5b1c63
 F test/tkt-d11f09d36e.test fb44f7961aa6d4b632fb7b9768239832210b5fc7
 F test/tkt-d635236375.test 9d37e988b47d87505bc9445be0ca447002df5d09
 F test/tkt-d82e3f3721.test 731359dfdcdb36fea0559cd33fec39dd0ceae8e6
@@ -958,7 +958,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 89b2f70884cad0abdf4c66cb64ecddb2820ded74
-R 9884d3dd8105ab98ebe71de1c72e2a2b
-U dan
-Z b401be2988daefedc016cbb2d3ab24a6
+P ae31dc67aa0637150f964de31a6da6f5797b462a
+R db03066face0c75eaaff8230204f24b2
+U drh
+Z 4658be3708d6f87baa530d35bdb7827f
