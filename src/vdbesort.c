@@ -541,7 +541,7 @@ static int vdbeSorterInitMerge(
     VdbeSorterIter *pIter = &pSorter->aIter[i];
     rc = vdbeSorterIterInit(db, pSorter, pSorter->iReadOff, pIter, &nByte);
     pSorter->iReadOff = pIter->iEof;
-    assert( pSorter->iReadOff<=pSorter->iWriteOff );
+    assert( pSorter->iReadOff<=pSorter->iWriteOff || rc!=SQLITE_OK );
     if( pSorter->iReadOff>=pSorter->iWriteOff ) break;
   }
 
