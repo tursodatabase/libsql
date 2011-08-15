@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sin\sthe\smerge-sort\slogic\sto\saccount\sfor\sI/O\serrors.
-D 2011-08-15T15:37:15.493
+C Updated\scomments\son\sthe\smultiplexor\sextension.\s\sNo\schanges\sto\scode.
+D 2011-08-15T19:44:30.942
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -213,7 +213,7 @@ F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c 03313c693cca72959dcaaf79f8d76f21c01e19ff
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c 7ca7be34e0e09ef0ed6619544552ed95732e41f6
-F src/test_multiplex.c 731fb740a9fd4b11cb7b1990c62fc88d01c90dfd
+F src/test_multiplex.c 3fc368022c46fe44ec22c5e1ed727223a54a6a1d
 F src/test_multiplex.h e99c571bc4968b7a9363b661481f3934bfead61d
 F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
@@ -960,7 +960,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 26f2da24b080bf89e3574bd1a162eb1fead51456
-R 4dd13a8266a17ee7b649184b6349eea5
+P c1daa809a17a97610e51f9babd90f36908921245
+R b2a38ddd9a0fb78674a7b9b801a2c178
 U drh
-Z 269571d9db3b50ac39e22f789db49cad
+Z fd99972c6519c355091efb4b8ed6aaf8
