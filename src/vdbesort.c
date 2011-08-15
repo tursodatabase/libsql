@@ -363,9 +363,9 @@ void sqlite3VdbeSorterClose(sqlite3 *db, VdbeCursor *pCsr){
 static int vdbeSorterOpenTempFile(sqlite3 *db, sqlite3_file **ppFile){
   int dummy;
   return sqlite3OsOpenMalloc(db->pVfs, 0, ppFile,
-      SQLITE_OPEN_TEMP_DB   |
-      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE |
-      SQLITE_OPEN_EXCLUSIVE | SQLITE_OPEN_DELETEONCLOSE, &dummy
+      SQLITE_OPEN_TEMP_JOURNAL |
+      SQLITE_OPEN_READWRITE    | SQLITE_OPEN_CREATE |
+      SQLITE_OPEN_EXCLUSIVE    | SQLITE_OPEN_DELETEONCLOSE, &dummy
   );
 }
 

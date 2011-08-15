@@ -1,5 +1,5 @@
-C Fix\sthe\sheader\scomment\son\sthe\simplementation\sof\sthe\nfile_control_sizehint_test\sTCL\scommand\sin\stest1.c.
-D 2011-08-13T10:47:51.259
+C When\sopening\sa\stemporary\sfile\sto\suse\sin\sa\smerge-sort,\spass\sSQLITE_OPEN_TEMP_JOURNAL\sinstead\sof\sSQLITE_OPEN_TEMP_DB.\sThis\sis\sa\sbetter\sfit,\sas\smerge-sort\sfiles\sare\swritten\sand\sread\ssequentially\slike\sjournal\sfiles.
+D 2011-08-15T14:41:01.304
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -245,7 +245,7 @@ F src/vdbeapi.c 11dc47987abacb76ad016dcf5abc0dc422482a98
 F src/vdbeaux.c 8fb978eb73a97b34d352dd3ef3bff35b1b3fa7e9
 F src/vdbeblob.c f024f0bf420f36b070143c32b15cc7287341ffd3
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
-F src/vdbesort.c 3e6b2268326ee075ae5e8cece4e469e5d1d4a859
+F src/vdbesort.c 18e27c404df77c1834cc8d50d8853d77e3d32174
 F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
 F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 3154756177d6219e233d84291d5b05f4e06ff5e9
@@ -960,7 +960,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 346a453d1f1d615f1e9e7923a27dad84b8727fb1
-R 7ce31f76b768334971130323332609c7
-U drh
-Z 036ec65c1ec43dc86ad51b2b611e625e
+P 309198085f255fc1fcc7bf28fd38d016d5a536ab
+R f4a558ac5b07c7ee47bc6d83b48fab6c
+U dan
+Z 08dca85211394f3ea3660d49e9f91d6b
