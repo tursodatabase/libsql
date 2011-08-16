@@ -1,5 +1,5 @@
-C Add\sthe\sanalyze8.test\stest\smodule\sfor\ssqlite_stat3.
-D 2011-08-16T01:15:12.193
+C Allow\sthe\ssqlite3VdbeJumpHere()\sroutine\sto\saccept\sa\snegative\sor\szero\saddress\nif\sa\sprior\smemory\sallocation\serror\shas\soccurred.\s\sThe\snew\ssqlite_stat3\slogic\nneeds\sthis.
+D 2011-08-16T02:07:04.573
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1e6988b3c11dee9bd5edc0c804bd4468d74a9cdc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -242,7 +242,7 @@ F src/vdbe.c 49d834f0fe49d305e07f9c212e94007fda2028e9
 F src/vdbe.h 5cf09e7ee8a3f7d93bc51f196a96550786afe7a1
 F src/vdbeInt.h ad84226cc0adcb1185c22b70696b235a1678bb45
 F src/vdbeapi.c 11dc47987abacb76ad016dcf5abc0dc422482a98
-F src/vdbeaux.c 4d100407e3c72e163854aff8903d19d5ecdf46c0
+F src/vdbeaux.c 05eb4457899f09c2a2eb0bff26844023cf6544f8
 F src/vdbeblob.c f024f0bf420f36b070143c32b15cc7287341ffd3
 F src/vdbemem.c 74410d1639869b309d6fe1e8cbc02a557157a7c2
 F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
@@ -959,7 +959,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 2504bcfb0cf14b5ce51db0af1269ac28384714e0
-R 5a73b64fef41c0e56d473c9564281bab
+P 2c83ac89dc5a6017587defb541c9f3731b98892a
+R 1450328cb5bbd53defdba59501aa7ba3
 U drh
-Z db81907234b1038bee781d0d0d68d5d7
+Z d5f58e0bf7dc218c29e54b5a642cee65
