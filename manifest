@@ -1,5 +1,5 @@
-C Update\ssome\stest\scases\sto\swork\swith\ssqlite_stat3\sinstead\sof\ssqlite_stat2.
-D 2011-08-15T12:58:23.538
+C Add\sthe\sanalyze8.test\stest\smodule\sfor\ssqlite_stat3.
+D 2011-08-16T01:15:12.193
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1e6988b3c11dee9bd5edc0c804bd4468d74a9cdc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -267,6 +267,7 @@ F test/analyze4.test 757b37875cf9bb528d46f74497bc789c88365045
 F test/analyze5.test 713354664c5ff1853ab2cbcb740f0cf5cb7c802e
 F test/analyze6.test bd3625806a5ee6f7bef72d06295bd319f0290af2
 F test/analyze7.test d3587aa5af75c9048d031b94fceca2534fa75d1d
+F test/analyze8.test 4ca170de2ba30ccb1af2c0406803db72262f9691
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
 F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
 F test/async3.test d73a062002376d7edc1fe3edff493edbec1fc2f7
@@ -958,7 +959,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P ae31dc67aa0637150f964de31a6da6f5797b462a
-R db03066face0c75eaaff8230204f24b2
+P 2504bcfb0cf14b5ce51db0af1269ac28384714e0
+R 5a73b64fef41c0e56d473c9564281bab
 U drh
-Z 4658be3708d6f87baa530d35bdb7827f
+Z db81907234b1038bee781d0d0d68d5d7
