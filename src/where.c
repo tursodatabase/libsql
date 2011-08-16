@@ -2499,7 +2499,6 @@ static int whereKeyStats(
       sqlite3 *db = pParse->db;
       CollSeq *pColl;
       const u8 *z;
-      int n;
       if( eType==SQLITE_BLOB ){
         z = (const u8 *)sqlite3_value_blob(pVal);
         pColl = db->pDfltColl;
@@ -2796,10 +2795,10 @@ static int whereInScanEst(
   ExprList *pList,     /* The value list on the RHS of "x IN (v1,v2,v3,...)" */
   double *pnRow        /* Write the revised row estimate here */
 ){
-  int rc = SQLITE_OK;       /* Subfunction return code */
-  double nEst;              /* Number of rows for a single term */
-  double nRowEst;           /* New estimate of the number of rows */
-  int i;                    /* Loop counter */
+  int rc = SQLITE_OK;         /* Subfunction return code */
+  double nEst;                /* Number of rows for a single term */
+  double nRowEst = (double)0; /* New estimate of the number of rows */
+  int i;                      /* Loop counter */
 
   assert( p->aSample!=0 );
   for(i=0; rc==SQLITE_OK && i<pList->nExpr; i++){

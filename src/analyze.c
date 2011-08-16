@@ -254,6 +254,7 @@ static void stat3Init(
   int mxSample;
   int n;
 
+  UNUSED_PARAMETER(argc);
   nRow = (tRowcnt)sqlite3_value_int64(argv[0]);
   mxSample = sqlite3_value_int(argv[1]);
   n = sizeof(*p) + sizeof(p->a[0])*mxSample;
@@ -309,8 +310,10 @@ static void stat3Push(
   struct Stat3Sample *pSample;
   int i;
   u32 h;
-  if( nEq==0 ) return;
 
+  UNUSED_PARAMETER(context);
+  UNUSED_PARAMETER(argc);
+  if( nEq==0 ) return;
   h = p->iPrn = p->iPrn*1103515245 + 12345;
   if( (nLt/p->nPSample)!=((nEq+nLt)/p->nPSample) ){
     doInsert = isPSample = 1;
@@ -497,7 +500,7 @@ static void analyzeOneTable(
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
     int nCol;
     KeyInfo *pKey;
-    int addrIfNot;               /* address of OP_IfNot */
+    int addrIfNot = 0;           /* address of OP_IfNot */
     int *aChngAddr;              /* Array of jump instruction addresses */
 
     if( pOnlyIdx && pOnlyIdx!=pIdx ) continue;
@@ -907,6 +910,7 @@ void sqlite3DeleteIndexSamples(sqlite3 *db, Index *pIdx){
     }
     sqlite3_free(pIdx->aSample);
   }
+  UNUSED_PARAMETER(db);
   pIdx->nSample = 0;
   pIdx->aSample = 0;
 #else
@@ -925,7 +929,7 @@ static int loadStat3(sqlite3 *db, const char *zDb){
   sqlite3_stmt *pStmt = 0;      /* An SQL statement being run */
   char *zSql;                   /* Text of the SQL statement */
   Index *pPrevIdx = 0;          /* Previous index in the loop */
-  int idx;                      /* slot in pIdx->aSample[] for next sample */
+  int idx = 0;                  /* slot in pIdx->aSample[] for next sample */
   int eType;                    /* Datatype of a sample */
   IndexSample *pSample;         /* A slot in pIdx->aSample[] */
 
