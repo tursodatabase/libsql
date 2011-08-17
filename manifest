@@ -1,9 +1,9 @@
-C Use\sOP_Sort\srather\sthan\sOP_Rewind\sin\sorder\sto\ssort\sthe\scontent\sof\sa\snew\nindex\son\sthe\sCREATE\sINDEX\sstatement.\s\sAdd\san\sALWAYS()\sto\sthe\smerge\ssort\nlogic\sto\sdocument\san\sunreachable\sbranch.
-D 2011-08-17T00:40:58.276
+C Add\svdbesort.c\sto\sthe\sMSVC\smakefile.
+D 2011-08-17T02:19:54.041
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 9fd0401b0134b565a9c7d8ed49dc044cc89f2096
+F Makefile.msc fea2e0a074809d785dd7471a3b0d72acca4c9073
 F Makefile.vxworks c85ec1d8597fe2f7bc225af12ac1666e21379151
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION f724de7326e87b7f3b0a55f16ef4b4d993680d54
@@ -960,7 +960,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 0f42ef697e197d193867c0d6be3c9cf6471488c6
-R 379592adaec833a4cd5b123be0966811
-U drh
-Z ca898c130a5f289776aff7d373cdb475
+P f01766f42342f043bf0cbe1e07224963011f01b7
+R c793a5c60ca1ad78ac8923cca825ce9c
+U mistachkin
+Z 34f393e16d3ab18b8e040e48a688f767
