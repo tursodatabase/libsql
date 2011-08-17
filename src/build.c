@@ -2385,7 +2385,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
     sqlite3VdbeAddOp2(v, OP_IdxInsert, iSorter, regRecord);
     sqlite3VdbeAddOp2(v, OP_Next, iTab, addr1+1);
     sqlite3VdbeJumpHere(v, addr1);
-    addr1 = sqlite3VdbeAddOp2(v, OP_Rewind, iSorter, 0);
+    addr1 = sqlite3VdbeAddOp2(v, OP_Sort, iSorter, 0);
     sqlite3VdbeAddOp2(v, OP_RowKey, iSorter, regRecord);
   }
 

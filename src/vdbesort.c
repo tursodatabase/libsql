@@ -692,7 +692,7 @@ int sqlite3VdbeSorterRowkey(VdbeCursor *pCsr, Mem *pOut){
   ** were passed to the sorter - meaning it is always large enough for the
   ** largest key. But this could change very easily, so we leave the call
   ** to sqlite3VdbeMemGrow() in. */
-  if( sqlite3VdbeMemGrow(pOut, pIter->nKey, 0) ){
+  if( NEVER(sqlite3VdbeMemGrow(pOut, pIter->nKey, 0)) ){
     return SQLITE_NOMEM;
   }
   pOut->n = pIter->nKey;

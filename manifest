@@ -1,5 +1,5 @@
-C Updated\scomments\son\sthe\smultiplexor\sextension.\s\sNo\schanges\sto\scode.
-D 2011-08-15T19:44:30.942
+C Use\sOP_Sort\srather\sthan\sOP_Rewind\sin\sorder\sto\ssort\sthe\scontent\sof\sa\snew\nindex\son\sthe\sCREATE\sINDEX\sstatement.\s\sAdd\san\sALWAYS()\sto\sthe\smerge\ssort\nlogic\sto\sdocument\san\sunreachable\sbranch.
+D 2011-08-17T00:40:58.276
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -127,7 +127,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c a30bdcc27eedc36a38a3a11e1ba83de9a6729f7e
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
-F src/build.c 77b40abf79e1541356f552c9681b0b431aba672b
+F src/build.c 77be7c2174300e94404ca89a2a9bbd8047d0ce11
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 7f283795650dd4122cc07bd02193c40193b32cc6
@@ -245,7 +245,7 @@ F src/vdbeapi.c 11dc47987abacb76ad016dcf5abc0dc422482a98
 F src/vdbeaux.c 8fb978eb73a97b34d352dd3ef3bff35b1b3fa7e9
 F src/vdbeblob.c f024f0bf420f36b070143c32b15cc7287341ffd3
 F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
-F src/vdbesort.c af82a8b0d0dbf67f8b03d9a70d3d6fcd3bdf83ba
+F src/vdbesort.c a63bab05465ef7f8d28d46757eef55f84828d9a7
 F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
 F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 3154756177d6219e233d84291d5b05f4e06ff5e9
@@ -544,7 +544,7 @@ F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
 F test/keyword1.test a2400977a2e4fde43bf33754c2929fda34dbca05
 F test/lastinsert.test 474d519c68cb79d07ecae56a763aa7f322c72f51
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
-F test/like.test 9cc5261d22f2108a27cedff8a972aa3284a4ba52
+F test/like.test 7b4aaa4a8192fdec90e0a905984c92a688c51e48
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/limit.test 2db7b3b34fb925b8e847d583d2eb67531d0ce67e
 F test/loadext.test dab17f7014f8079698dbd4b02705562b0ce6db5f
@@ -960,7 +960,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P c1daa809a17a97610e51f9babd90f36908921245
-R b2a38ddd9a0fb78674a7b9b801a2c178
+P 0f42ef697e197d193867c0d6be3c9cf6471488c6
+R 379592adaec833a4cd5b123be0966811
 U drh
-Z fd99972c6519c355091efb4b8ed6aaf8
+Z ca898c130a5f289776aff7d373cdb475
