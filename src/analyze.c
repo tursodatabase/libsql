@@ -506,12 +506,12 @@ static void analyzeOneTable(
     if( pOnlyIdx && pOnlyIdx!=pIdx ) continue;
     VdbeNoopComment((v, "Begin analysis of %s", pIdx->zName));
     nCol = pIdx->nColumn;
+    aChngAddr = sqlite3DbMallocRaw(db, sizeof(int)*nCol);
+    if( aChngAddr==0 ) continue;
     pKey = sqlite3IndexKeyinfo(pParse, pIdx);
     if( iMem+1+(nCol*2)>pParse->nMem ){
       pParse->nMem = iMem+1+(nCol*2);
     }
-    aChngAddr = sqlite3DbMallocRaw(db, sizeof(int)*pIdx->nColumn);
-    if( aChngAddr==0 ) continue;
 
     /* Open a cursor to the index to be analyzed. */
     assert( iDb==sqlite3SchemaToIndex(db, pIdx->pSchema) );

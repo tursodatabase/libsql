@@ -1,5 +1,5 @@
-C Fix\sa\sfew\sharmless\scompiler\swarnings.\s\sAdd\sSQLITE_ENABLE_STAT3\sto\sthe\nstandard\scompiler\swarning\sscript.
-D 2011-08-16T17:06:21.985
+C Fix\san\serror\swith\sOOM\sprocessing\sin\sthe\sANALYZE\slogic.
+D 2011-08-18T01:10:35.659
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1e6988b3c11dee9bd5edc0c804bd4468d74a9cdc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -118,7 +118,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c ac80a0f31189f8b4a524ebf661e47e84536ee7f5
-F src/analyze.c f436b0f53be47fbc03c661ec7c2b4c5fec14077e
+F src/analyze.c 6beb1c0a3b44ed0b841a332dea992a6b52422497
 F src/attach.c 12c6957996908edc31c96d7c68d4942c2474405f
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 986c15232757f2873dff35ee3b35cbf935fc573c
@@ -959,7 +959,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 682b359e1531c8d4c805e2c1b5656b2d76e481e3
-P 9650d7962804d61f56cac944ff9bb2c7bc111957
-R f1db5c89fee04ee43fcb815b658cde4c
+P 3d68f9afee02f95103eb1682b8f2362f8d249437
+R 6062edeb95e40a6916ef4809b7eeeeb7
 U drh
-Z 935e4c47860333dc9df37a80ab259764
+Z 87a9c9bfca0f09248c3abec58d88b5e3
