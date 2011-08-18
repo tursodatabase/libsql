@@ -1,5 +1,5 @@
-C Properly\sprocess\sx64\sDLL\sexports,\swhich\sdo\snot\scontain\sa\sleading\sunderscore,\sin\sthe\sMSVC\smakefile.
-D 2011-08-17T07:46:48.807
+C Ensure\sthat\sthe\sTcl\s"db\sonecolumn"\scommand\sreturns\san\sempty\sstring\sif\sthe\sSELECT\sstatement\sreturns\szero\srows.
+D 2011-08-18T17:47:57.861
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -187,7 +187,7 @@ F src/sqliteInt.h ba4a6d6288efb25b84bc0d7d0aaf80f9b42523ba
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c c355b33803fb756dc09297ec84d19604301fa622
+F src/tclsqlite.c 3ef1dda2f1dc207c792eaadebf9d8adc44648581
 F src/test1.c 7439efb86c1022f19a39a8e61de2cbac23ffab03
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 124ff9735fb6bb7d41de180d6bac90e7b1509432
@@ -695,7 +695,7 @@ F test/syscall.test 966addf703faee6a5d509abe6d8885e393e552fd
 F test/sysfault.test c79441d88d23696fbec7b147dba98d42a04f523f
 F test/table.test 50c47f5fe9c112e92723af27cd735e6c92de6f85
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
-F test/tclsqlite.test 8c154101e704170c2be10f137a5499ac2c6da8d3
+F test/tclsqlite.test 5ebcbb0dccc3fbc1edc3bba84c38e2c2d574c5aa
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test 51edd31c65ed1560dd600b1796e8325df96318e2
 F test/temptrigger.test 26670ed7a39cf2296a7f0a9e0a1d7bdb7abe936d
@@ -960,7 +960,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 8eaa2cd3f454711f2275d03831bca6a36a0b2504
-R 0fe48656420959bd5de542be5b4efaf6
-U mistachkin
-Z 5230d32cf6c6e4c6fcefed256acd0f20
+P d5936324d27a16ce251f56f5813176c82215d901
+R a8e1072994232162582a78a9778fc949
+U dan
+Z 9e090d004501086a51465c896cd8b408
