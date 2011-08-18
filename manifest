@@ -1,5 +1,5 @@
-C Fix\san\serror\swith\sOOM\sprocessing\sin\sthe\sANALYZE\slogic.
-D 2011-08-18T01:10:35.659
+C Fix\sa\sbug\sin\sthe\scleanup\sof\sstat\stables\son\sa\sDROP\sTABLE\sin\sautovacuum\smode.
+D 2011-08-18T02:51:21.105
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1e6988b3c11dee9bd5edc0c804bd4468d74a9cdc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -127,7 +127,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 8c46f0ab69ad9549c75a3a91fed87abdaa743e2f
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
-F src/build.c cd77ae979219d6363234b506de28c71f217063e1
+F src/build.c 4534f8c4b1747e8305b5351100ce24ae3fd2b256
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 0df87f944b17c17c6b3976a9758d8af2802e1b19
@@ -959,7 +959,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 682b359e1531c8d4c805e2c1b5656b2d76e481e3
-P 3d68f9afee02f95103eb1682b8f2362f8d249437
-R 6062edeb95e40a6916ef4809b7eeeeb7
+P b26ec79c69f44b55bc4bb11e293f11b3afa3b724
+R f2393c9ff880d16764503970806408ba
 U drh
-Z 87a9c9bfca0f09248c3abec58d88b5e3
+Z 766e55b80580eb08573c3a4577419339
