@@ -905,14 +905,15 @@ void sqlite3DeleteIndexSamples(sqlite3 *db, Index *pIdx){
     for(j=0; j<pIdx->nSample; j++){
       IndexSample *p = &pIdx->aSample[j];
       if( p->eType==SQLITE_TEXT || p->eType==SQLITE_BLOB ){
-        sqlite3_free(p->u.z);
+        sqlite3DbFree(db, p->u.z);
       }
     }
-    sqlite3_free(pIdx->aSample);
+    sqlite3DbFree(db, pIdx->aSample);
   }
-  UNUSED_PARAMETER(db);
-  pIdx->nSample = 0;
-  pIdx->aSample = 0;
+  if( db && db->pnBytesFreed==0 ){
+    pIdx->nSample = 0;
+    pIdx->aSample = 0;
+  }
 #else
   UNUSED_PARAMETER(db);
   UNUSED_PARAMETER(pIdx);
@@ -968,7 +969,8 @@ static int loadStat3(sqlite3 *db, const char *zDb){
       return SQLITE_NOMEM;
     }
   }
-  sqlite3_finalize(pStmt);
+  rc = sqlite3_finalize(pStmt);
+  if( rc ) return rc;
 
   zSql = sqlite3MPrintf(db, 
       "SELECT idx,neq,nlt,ndlt,sample FROM %Q.sqlite_stat3", zDb);
@@ -1027,7 +1029,7 @@ static int loadStat3(sqlite3 *db, const char *zDb){
               sqlite3_column_blob(pStmt, 4):
               sqlite3_column_text(pStmt, 4)
            );
-        int n = sqlite3_column_bytes(pStmt, 4);
+        int n = z ? sqlite3_column_bytes(pStmt, 4) : 0;
         if( n>0xffff ) n = 0xffff;
         pSample->nByte = (u16)n;
         if( n < 1){

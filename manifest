@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\scleanup\sof\sstat\stables\son\sa\sDROP\sTABLE\sin\sautovacuum\smode.
-D 2011-08-18T02:51:21.105
+C Fix\sthe\sstat3\sanalysis\sloader\sto\sbe\scompatible\swith\ssqlite3_db_status().\nAlso\sfix\ssome\sOOM\sissues\swith\sthe\sstat3\sanalysis\sloader.
+D 2011-08-18T13:45:23.575
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1e6988b3c11dee9bd5edc0c804bd4468d74a9cdc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -118,7 +118,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c ac80a0f31189f8b4a524ebf661e47e84536ee7f5
-F src/analyze.c 6beb1c0a3b44ed0b841a332dea992a6b52422497
+F src/analyze.c 3fbffcfbc606d73fa996ded1f874eddffbb06d09
 F src/attach.c 12c6957996908edc31c96d7c68d4942c2474405f
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 986c15232757f2873dff35ee3b35cbf935fc573c
@@ -959,7 +959,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 682b359e1531c8d4c805e2c1b5656b2d76e481e3
-P b26ec79c69f44b55bc4bb11e293f11b3afa3b724
-R f2393c9ff880d16764503970806408ba
+P 3fe5d54f635f7b27851d256e417f21b91febb871
+R 9217825cb5191e88bf95b5e4ba6d99d3
 U drh
-Z 766e55b80580eb08573c3a4577419339
+Z 7bc5368e818d03d3e9a11991cb532d98
