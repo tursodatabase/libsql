@@ -1,5 +1,5 @@
-C When\sretrying\sa\swrite()\safter\san\sEINTR\serror\son\sunix,\sbe\ssure\sto\salso\nrerun\sthe\sprevious\slseek().\s\sTicket\s[e59bdf6116036a]
-D 2011-08-19T14:54:12.709
+C Experimental\schange:\sIf\sSQLITE_PAGECACHE_BLOCKALLOC\sis\sdefined,\sinstead\sof\sallocating\spages\sone\sat\sa\stime,\sallocate\sblocks\sof\sbetween\s15\sand\s63\spages\sin\sa\ssingle\sallocation.
+D 2011-08-19T18:15:00.523
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,7 +172,7 @@ F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 49e718c095810c6b3334e3a6d89970aceaddefce
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
-F src/pcache1.c 912bd5687d6df344698d8e69560f347b6e21c18a
+F src/pcache1.c 0a131cf9999ba5baeb82fe1b073924ef115af853
 F src/pragma.c ebcd20f1e654f5cb3aeef864ed69c4697719fbaa
 F src/prepare.c e64261559a3187698a3e7e6c8b001a4f4f98dab4
 F src/printf.c 585a36b6a963df832cfb69505afa3a34ed5ef8a1
@@ -960,7 +960,10 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 928bcaf0f00a408e2f6c1d85dfab214457f52ad5
-R 843a68fd8264832950d511247e1afac6
-U drh
-Z 08ca15b3cb3d5aca6ddea45758dd9762
+P 21452f3ae6b5882b03c7cc41e661c7b8144cc3df
+R 2997be16a993dfce2f800d3578e57dd4
+T *branch * pager-blockalloc
+T *sym-pager-blockalloc *
+T -sym-trunk *
+U dan
+Z 1efe07fa4b86c6fc00527f5dc4f02f5a
