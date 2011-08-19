@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\sTcl\s"db\sonecolumn"\scommand\sreturns\san\sempty\sstring\sif\sthe\sSELECT\sstatement\sreturns\szero\srows.
-D 2011-08-18T17:47:57.861
+C When\sretrying\sa\swrite()\safter\san\sEINTR\serror\son\sunix,\sbe\ssure\sto\salso\nrerun\sthe\sprevious\slseek().\s\sTicket\s[e59bdf6116036a]
+D 2011-08-19T14:54:12.709
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +165,7 @@ F src/os.c fcc717427a80b2ed225373f07b642dc1aad7490b
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 65a897143b64667d23ed329a7984b9b405accb58
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 0177d9f411d96f99218c69759a98393baa674b76
+F src/os_unix.c 81f15448f112e77bd2bd3a1bcf531430616de918
 F src/os_win.c 4eb6fa00ee28f6d7bad0526edcbe5a60d297c67a
 F src/pager.c 120550e7ef01dafaa2cbb4a0528c0d87c8f12b41
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
@@ -225,7 +225,7 @@ F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
 F src/test_stat.c f682704b5d1ba8e1d4e7e882a6d7922e2dcf066c
 F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
-F src/test_syscall.c 162c4ec0137a549c009bb9ecab550527743cfc5d
+F src/test_syscall.c a992d8c80ea91fbf21fb2dd570db40e77dd7e6ae
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c fe9a7803fc1d69cccb60f016f28c1cedf2d9fcfa
 F src/test_vfs.c b0baec983bd6f872715a4b44c8f39104fec333af
@@ -960,7 +960,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P d5936324d27a16ce251f56f5813176c82215d901
-R a8e1072994232162582a78a9778fc949
-U dan
-Z 9e090d004501086a51465c896cd8b408
+P 928bcaf0f00a408e2f6c1d85dfab214457f52ad5
+R 843a68fd8264832950d511247e1afac6
+U drh
+Z 08ca15b3cb3d5aca6ddea45758dd9762
