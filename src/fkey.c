@@ -736,7 +736,7 @@ void sqlite3FkCheck(
     if( !pTo || locateFkeyIndex(pParse, pTo, pFKey, &pIdx, &aiFree) ){
       assert( isIgnoreErrors==0 || (regOld!=0 && regNew==0) );
       if( !isIgnoreErrors || db->mallocFailed ) return;
-      if( isIgnoreErrors && pTo==0 ){
+      if( pTo==0 ){
         /* If isIgnoreErrors is true, then a table is being dropped. In this
         ** case SQLite runs a "DELETE FROM xxx" on the table being dropped
         ** before actually dropping it in order to check FK constraints.

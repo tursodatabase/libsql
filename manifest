@@ -1,5 +1,5 @@
-C Fix\sfor\s[b1d3a2e531].
-D 2011-08-22T09:54:26.787
+C Remove\san\sunreachable\sbranch\sin\sthe\sFK\scode.
+D 2011-08-22T20:33:12.500
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -135,7 +135,7 @@ F src/date.c a3c6842bad7ae632281811de112a8ba63ff08ab3
 F src/delete.c ff68e5ef23aee08c0ff528f699a19397ed8bbed8
 F src/expr.c 4bbdfaf66bc614be9254ce0c26a17429067a3e07
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
-F src/fkey.c c92c8eece2b64efd0966efa0a5bef6d9e1a510fd
+F src/fkey.c 9f00ea98f6b360d477b5a78b5b59a1fbde82431c
 F src/func.c 59bb046d7e3df1ab512ac339ccb0a6f996a17cb7
 F src/global.c c70a46f28680f8d7c097dbc0430ccf3b932e90b0
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 21452f3ae6b5882b03c7cc41e661c7b8144cc3df
-R 6e7c1928d4170588c7bdf4f235f82163
-U dan
-Z 675b337ab718118c5da55278cd8c06b6
+P 3f3acee465a6e390301f9dc588dd1d8e0bd646bd
+R 8af209df3d5cecec157217fe275df036
+U drh
+Z 9f019ce792b8a697a5e67d419f53cdeb
