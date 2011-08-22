@@ -1,5 +1,5 @@
-C When\sretrying\sa\swrite()\safter\san\sEINTR\serror\son\sunix,\sbe\ssure\sto\salso\nrerun\sthe\sprevious\slseek().\s\sTicket\s[e59bdf6116036a]
-D 2011-08-19T14:54:12.709
+C Fix\sfor\s[b1d3a2e531].
+D 2011-08-22T09:54:26.787
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -135,7 +135,7 @@ F src/date.c a3c6842bad7ae632281811de112a8ba63ff08ab3
 F src/delete.c ff68e5ef23aee08c0ff528f699a19397ed8bbed8
 F src/expr.c 4bbdfaf66bc614be9254ce0c26a17429067a3e07
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
-F src/fkey.c c8492fed772af1ed61251582707266227612b45b
+F src/fkey.c c92c8eece2b64efd0966efa0a5bef6d9e1a510fd
 F src/func.c 59bb046d7e3df1ab512ac339ccb0a6f996a17cb7
 F src/global.c c70a46f28680f8d7c097dbc0430ccf3b932e90b0
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
@@ -733,6 +733,7 @@ F test/tkt-8454a207b9.test c583a9f814a82a2b5ba95207f55001c9f0cd816c
 F test/tkt-91e2e8ba6f.test 08c4f94ae07696b05c9b822da0b4e5337a2f54c5
 F test/tkt-94c04eaadb.test be5ea61cb04dfdc047d19b5c5a9e75fa3da67a7f
 F test/tkt-9d68c883.test 458f7d82a523d7644b54b497c986378a7d8c8b67
+F test/tkt-b1d3a2e531.test 610ef582413171b379652663111b1f996d9f8f78
 F test/tkt-b351d95f9.test d14a503c414c5c58fdde3e80f9a3cfef986498c0
 F test/tkt-b72787b1.test e6b62b2b2785c04d0d698d6a603507e384165049
 F test/tkt-bd484a090c.test 60460bf946f79a79712b71f202eda501ca99b898
@@ -960,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 928bcaf0f00a408e2f6c1d85dfab214457f52ad5
-R 843a68fd8264832950d511247e1afac6
-U drh
-Z 08ca15b3cb3d5aca6ddea45758dd9762
+P 21452f3ae6b5882b03c7cc41e661c7b8144cc3df
+R 6e7c1928d4170588c7bdf4f235f82163
+U dan
+Z 675b337ab718118c5da55278cd8c06b6
