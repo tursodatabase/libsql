@@ -1,5 +1,5 @@
-C Remove\sa\sbranch\sthat\sis\salways\strue.
-D 2011-08-23T00:01:58.939
+C When\scopying\sa\srollback\smode\sdatabase\sover\sa\sWAL\sdatabase\susing\sthe\sbackup\sAPI,\sleave\sthe\sdestination\sdatabase\sin\sWAL\smode\s(instead\sof\sswitching\sit\sto\srollback\smode).\sFix\sfor\s[af95b8c609].
+D 2011-08-23T11:47:06.849
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -121,10 +121,10 @@ F src/alter.c ac80a0f31189f8b4a524ebf661e47e84536ee7f5
 F src/analyze.c a425d62e8fa9ebcb4359ab84ff0c62c6563d2e2a
 F src/attach.c 12c6957996908edc31c96d7c68d4942c2474405f
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
-F src/backup.c 986c15232757f2873dff35ee3b35cbf935fc573c
+F src/backup.c 4dfc39043a42cbe47f22b2da47065ae5377f44fd
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c a30bdcc27eedc36a38a3a11e1ba83de9a6729f7e
+F src/btree.c 97cf3ba4ff067e716753b33661035e50853aebba
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
 F src/build.c 6c60478a1e23f7cdd30ae0251b46f9adbe0e98c2
@@ -891,7 +891,7 @@ F test/wal5.test 08e145a352b1223930c7f0a1de82a8747a99c322
 F test/wal6.test 2e3bc767d9c2ce35c47106148d43fcbd072a93b3
 F test/wal7.test 2ae8f427d240099cc4b2dfef63cff44e2a68a1bd
 F test/wal_common.tcl a98f17fba96206122eff624db0ab13ec377be4fe
-F test/walbak.test 53be94bccbc3f592d22a5909588ccc81b319ce83
+F test/walbak.test b9f68e39646375c2b877be906babcc15d38b4877
 F test/walbig.test e882bc1d014afffbfa2b6ba36e0f07d30a633ad0
 F test/walcksum.test f5447800a157c9e2234fbb8e80243f0813941bde
 F test/walcrash.test 4fcb661faf71db91214156d52d43ee327f52bde1
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 6c227cc85378fa6041703d6620031c0e0a2db55f
-R 097c99892539b0af0c0419cec17783c1
-U drh
-Z ba0092ef44967f1382824e5e567024ca
+P a65681926d8acf779ad39be21b74537c21777783
+R 4fa828c7c042de4b81d2337ffc4e400a
+U dan
+Z 6839a6474a17b2a69c514b02de64259d
