@@ -56,7 +56,10 @@ struct PGroup {
   int mxPinned;                  /* nMaxpage + 10 - nMinPage */
   int nCurrentPage;              /* Number of purgeable pages allocated */
   PgHdr1 *pLruHead, *pLruTail;   /* LRU list of unpinned pages */
+#ifdef SQLITE_PAGECACHE_BLOCKALLOC
+  int isBusy;                    /* Do not run ReleaseMemory() if true */
   PGroupBlockList *pBlockList;   /* List of block-lists for this group */
+#endif
 };
 
 /*
@@ -401,32 +404,30 @@ static PgHdr1 *pcache1AllocPage(PCache1 *pCache){
   nByte += sizeof(PGroupBlockList *);
   nByte = ROUND8(nByte);
 
-  do{
+  for(pList=pGroup->pBlockList; pList; pList=pList->pNext){
+    if( pList->nByte==nByte ) break;
+  }
+  if( pList==0 ){
+    PGroupBlockList *pNew;
+    assert( pGroup->isBusy==0 );
+    assert( sqlite3_mutex_held(pGroup->mutex) );
+    pGroup->isBusy = 1;  /* Disable sqlite3PcacheReleaseMemory() */
+    pNew = (PGroupBlockList *)sqlite3MallocZero(sizeof(PGroupBlockList));
+    pGroup->isBusy = 0;  /* Reenable sqlite3PcacheReleaseMemory() */
+    if( pNew==0 ){
+      /* malloc() failure. Return early. */
+      return 0;
+    }
+#ifdef SQLITE_DEBUG
     for(pList=pGroup->pBlockList; pList; pList=pList->pNext){
-      if( pList->nByte==nByte ) break;
+      assert( pList->nByte!=nByte );
     }
-    if( pList==0 ){
-      PGroupBlockList *pNew;
-      pcache1LeaveMutex(pCache->pGroup);
-      pNew = (PGroupBlockList *)sqlite3MallocZero(sizeof(PGroupBlockList));
-      pcache1EnterMutex(pCache->pGroup);
-      if( pNew==0 ){
-        /* malloc() failure. Return early. */
-        return 0;
-      }
-      for(pList=pGroup->pBlockList; pList; pList=pList->pNext){
-        if( pList->nByte==nByte ) break;
-      }
-      if( pList ){
-        sqlite3_free(pNew);
-      }else{
-        pNew->nByte = nByte;
-        pNew->pNext = pGroup->pBlockList;
-        pGroup->pBlockList = pNew;
-        pList = pNew;
-      }
-    }
-  }while( pList==0 );
+#endif
+    pNew->nByte = nByte;
+    pNew->pNext = pGroup->pBlockList;
+    pGroup->pBlockList = pNew;
+    pList = pNew;
+  }
 
   pBlock = pList->pFirst;
   if( pBlock==0 || pBlock->mUsed==(((Bitmask)1<<pBlock->nEntry)-1) ){
@@ -436,6 +437,7 @@ static PgHdr1 *pcache1AllocPage(PCache1 *pCache){
     ** structure and MINENTRY allocations of nByte bytes each. If the 
     ** allocator returns more memory than requested, then more than MINENTRY 
     ** allocations may fit in it. */
+    assert( sqlite3_mutex_held(pGroup->mutex) );
     pcache1LeaveMutex(pCache->pGroup);
     sz = sizeof(PGroupBlock) + PAGECACHE_BLOCKALLOC_MINENTRY * nByte;
     pBlock = (PGroupBlock *)sqlite3Malloc(sz);
@@ -481,6 +483,10 @@ static PgHdr1 *pcache1AllocPage(PCache1 *pCache){
     pList->pLast->pNext = pBlock;
     pList->pLast = pBlock;
   }
+  p = PAGE_TO_PGHDR1(pCache, pPg);
+  if( pCache->bPurgeable ){
+    pCache->pGroup->nCurrentPage++;
+  }
 #else
   /* The group mutex must be released before pcache1Alloc() is called. This
   ** is because it may call sqlite3_release_memory(), which assumes that 
@@ -489,8 +495,6 @@ static PgHdr1 *pcache1AllocPage(PCache1 *pCache){
   pcache1LeaveMutex(pCache->pGroup);
   pPg = pcache1Alloc(nByte);
   pcache1EnterMutex(pCache->pGroup);
-#endif
-
   if( pPg ){
     p = PAGE_TO_PGHDR1(pCache, pPg);
     if( pCache->bPurgeable ){
@@ -499,6 +503,7 @@ static PgHdr1 *pcache1AllocPage(PCache1 *pCache){
   }else{
     p = 0;
   }
+#endif
   return p;
 }
 
@@ -1165,6 +1170,9 @@ void sqlite3PCacheSetDefault(void){
 */
 int sqlite3PcacheReleaseMemory(int nReq){
   int nFree = 0;
+#ifdef SQLITE_PAGECACHE_BLOCKALLOC
+  if( pcache1.grp.isBusy ) return 0;
+#endif
   assert( sqlite3_mutex_notheld(pcache1.grp.mutex) );
   assert( sqlite3_mutex_notheld(pcache1.mutex) );
   if( pcache1.pStart==0 ){
