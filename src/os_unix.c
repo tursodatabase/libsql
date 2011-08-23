@@ -3350,6 +3350,8 @@ static int unixSync(sqlite3_file *id, int flags){
     if( rc==SQLITE_OK && dirfd>=0 ){
       full_fsync(dirfd, 0, 0);
       robust_close(pFile, dirfd, __LINE__);
+    }else if( rc==SQLITE_CANTOPEN ){
+      rc = SQLITE_OK;
     }
     pFile->ctrlFlags &= ~UNIXFILE_DIRSYNC;
   }
@@ -5181,6 +5183,8 @@ static int unixDelete(
         rc = unixLogError(SQLITE_IOERR_DIR_FSYNC, "fsync", zPath);
       }
       robust_close(0, fd, __LINE__);
+    }else if( rc==SQLITE_CANTOPEN ){
+      rc = SQLITE_OK;
     }
   }
 #endif

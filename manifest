@@ -1,5 +1,5 @@
-C Change\sthe\sway\sthe\s"crash"\sVFS\s(test6.c)\shandles\sSQLITE_FCNTL_SIZE_HINT.
-D 2011-08-23T19:46:02
+C If\sthe\sapplication-defined\sopenDirectory()\sfunction\sreturns\sSQLITE_CANTOPEN,\nthen\ssilently\signore\sthe\serror.\s\sThis\sallows\sthe\schromium\ssandbox\sto\sdisallow\nopening\sof\sdirectories\swithout\scausing\serrors.
+D 2011-08-23T20:11:32.027
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +165,7 @@ F src/os.c fcc717427a80b2ed225373f07b642dc1aad7490b
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 65a897143b64667d23ed329a7984b9b405accb58
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 87ced852f8dc3da0c43621e4fed7d9021e43af6a
+F src/os_unix.c 81341980c52a44106b10c1e28a0d5c5247476452
 F src/os_win.c 4eb6fa00ee28f6d7bad0526edcbe5a60d297c67a
 F src/pager.c 120550e7ef01dafaa2cbb4a0528c0d87c8f12b41
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P fac8bc8f3450a6ce74c9250acb0608e940ffb54d
-R 6deef9be16cca6bfadecc1bc856a9364
-U dan
-Z 387bea6b299ffc3208c402fd4ffe247f
+P 40dd8a60be0ca79e0d0bf3a2b5a43f13c02b4971
+R 5e02443774dfa828b5ad397a58754916
+U drh
+Z d188cae288df33cd4e6f9c6da0cbb238
