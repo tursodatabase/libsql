@@ -128,7 +128,7 @@ do_test tkt2854-1.18 {
 # attached db cannot be locked, the internal exclusive flag used by
 # shared-cache users is correctly cleared.
 do_test tkt2854-1.19 {
-  file delete -force test2.db test2.db-journal
+  forcedelete test2.db test2.db-journal
   sqlite3 db4 test2.db
   execsql { CREATE TABLE def(d, e, f) } db4
   execsql { ATTACH 'test2.db' AS aux } db

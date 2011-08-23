@@ -50,7 +50,7 @@ do_test tkt35xx-1.1 {
 # Trigger the problem using statement rollback.
 #
 db close
-file delete test.db
+delete_file test.db
 sqlite3 db test.db
 set big [string repeat abcdefghij 22]    ;# 220 byte string
 do_test tkt35xx-1.2.1 {

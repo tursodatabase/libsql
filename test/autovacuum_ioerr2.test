@@ -75,7 +75,7 @@ do_ioerr_test autovacuum-ioerr2-3 -sqlprep {
   DROP TABLE abc2;
 }
 
-file delete -force backup.db
+forcedelete backup.db
 ifcapable subquery {
   do_ioerr_test autovacuum-ioerr2-4 -tclprep {
     if {![file exists backup.db]} {
@@ -99,9 +99,9 @@ ifcapable subquery {
       dbb close
     }
     db close
-    file delete -force test.db
-    file delete -force test.db-journal
-    copy_file backup.db test.db
+    forcedelete test.db
+    forcedelete test.db-journal
+    forcecopy backup.db test.db
     set ::DB [sqlite3 db test.db]
     execsql {
       PRAGMA cache_size = 10;

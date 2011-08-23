@@ -467,7 +467,7 @@ do_test autovacuum-3.3 {
 
 do_test autovacuum-3.4 {
   db close
-  file delete -force test.db
+  forcedelete test.db
   sqlite3 db test.db
   execsql {
     PRAGMA auto_vacuum;
@@ -502,7 +502,7 @@ do_test autovacuum-4.0 {
   # Reset everything just in case.
   #
   db close
-  file delete -force test.db test.db-journal
+  forcedelete test.db test.db-journal
   sqlite3 db test.db
   execsql {
     PRAGMA auto_vacuum = 1;
@@ -599,8 +599,8 @@ do_test autovacuum-6.1 {
 #
 do_test autovacuum-7.1 {
   db close
-  file delete -force test.db
-  file delete -force test.db-journal
+  forcedelete test.db
+  forcedelete test.db-journal
   sqlite3 db test.db
 
   execsql {

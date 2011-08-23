@@ -167,7 +167,7 @@ foreach {iTest xStep xPrepare} {
   1 sqlite3_blocking_step sqlite3_blocking_prepare_v2
   2 sqlite3_step          sqlite3_nonblocking_prepare_v2
 } {
-  file delete -force test.db test2.db test3.db
+  forcedelete test.db test2.db test3.db
 
   set ThreadSetup "set xStep $xStep;set xPrepare $xPrepare;set nSecond $nSecond"
 

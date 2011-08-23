@@ -183,8 +183,8 @@ if {$tcl_platform(platform)!="windows"} {
       BEGIN;
       INSERT INTO t1 VALUES(3, 4);
     }
-    copy_file test2.db test.db
-    copy_file test2.db-journal test.db-journal
+    forcecopy test2.db test.db
+    forcecopy test2.db-journal test.db-journal
     db2 close
   } -tclbody {
     sqlite3 db test.db
@@ -219,11 +219,11 @@ if {$tcl_platform(platform)=="unix"} {
       BEGIN;
       INSERT INTO t1 VALUES(randstr(200,200), randstr(1000,1000), 2);
     }
-    copy_file test.db-journal test2.db-journal
+    forcecopy test.db-journal test2.db-journal
     execsql {
       COMMIT;
     }
-    copy_file test2.db-journal test.db-journal
+    forcecopy test2.db-journal test.db-journal
     set f [open test.db-journal a]
     fconfigure $f -encoding binary
     puts -nonewline $f "hello"

@@ -165,7 +165,7 @@ do_test misc2-6.1 {
 ifcapable tclvar {
   do_test misc2-7.1 {
     db close
-    file delete -force test.db
+    forcedelete test.db
     sqlite3 db test.db
     execsql {
       CREATE TABLE t1(x);
@@ -265,7 +265,7 @@ ifcapable tclvar {
   #
   do_test misc2-7.11 {
     db close
-    file delete -force test.db
+    forcedelete test.db
     sqlite3 db test.db
     execsql {
       CREATE TABLE t1(x);
@@ -361,7 +361,7 @@ ifcapable tclvar {
 }
 
 db close
-file delete -force test.db
+forcedelete test.db
 sqlite3 db test.db
 catchsql { pragma recursive_triggers = off } 
 

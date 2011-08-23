@@ -409,7 +409,7 @@ do_test memdb-8.2 {
 # 
 set msize [sqlite3_status SQLITE_STATUS_MALLOC_SIZE 0]
 if {[lindex $msize 2]!=0} {
-  ifcapable autovacuum {
+  ifcapable autovacuum&&!blockalloc {
     do_test memdb-9.1 {
       db close
       sqlite3 db test.db

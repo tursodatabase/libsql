@@ -297,14 +297,14 @@ do_test descidx1-5.9 {
 ifcapable legacyformat {
   do_test descidx1-6.1 {
     db close
-    file delete -force test.db test.db-journal
+    forcedelete test.db test.db-journal
     sqlite3 db test.db
     execsql {PRAGMA legacy_file_format}
   } {1}
 } else {
   do_test descidx1-6.1 {
     db close
-    file delete -force test.db test.db-journal
+    forcedelete test.db test.db-journal
     sqlite3 db test.db
     execsql {PRAGMA legacy_file_format}
   } {0}
@@ -328,7 +328,7 @@ ifcapable vacuum {
 }
 do_test descidx1-6.4 {
   db close
-  file delete -force test.db test.db-journal
+  forcedelete test.db test.db-journal
   sqlite3 db test.db
   execsql {PRAGMA legacy_file_format=NO}
   execsql {PRAGMA legacy_file_format}

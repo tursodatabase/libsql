@@ -24,7 +24,7 @@ ifcapable !attach {
   return
 }
 
-file delete -force test2.db test2.db-journal
+forcedelete test2.db test2.db-journal
 
 do_test tkt1873-1.1 {
   execsql {

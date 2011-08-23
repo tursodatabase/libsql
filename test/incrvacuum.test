@@ -331,7 +331,7 @@ proc compare_dbs {A B tname} {
 set ::str1 [string repeat abcdefghij 130]
 set ::str2 [string repeat 1234567890 105]
 
-file delete -force test1.db test1.db-journal test2.db test2.db-journal
+forcedelete test1.db test1.db-journal test2.db test2.db-journal
 sqlite3 db1 test1.db
 sqlite3 db2 test2.db
 execsql { PRAGMA auto_vacuum = 'none' } db1
@@ -475,7 +475,7 @@ do_test incrvacuum-8.1 {
 #
 do_test incrvacuum-9.1 {
   db close
-  file delete -force test.db test.db-journal
+  forcedelete test.db test.db-journal
   sqlite3 db test.db
 
   execsql {
@@ -593,7 +593,7 @@ do_test incrvacuum-10.8 {
 # vacuum mode.
 #
 db close
-file delete -force test.db test.db-journal
+forcedelete test.db test.db-journal
 sqlite3 db test.db
 
 ifcapable default_autovacuum {
@@ -651,7 +651,7 @@ do_test incrvacuum-11.7 {
 # auto_vacuum = XXX" statement is executed.
 #
 db close
-file delete -force test.db test.db-journal
+forcedelete test.db test.db-journal
 sqlite3 db test.db
 
 do_test incrvacuum-12.1 {
@@ -692,7 +692,7 @@ do_test incrvacuum-12.5 {
 #
 db2 close
 db close
-file delete -force test.db test.db-journal
+forcedelete test.db test.db-journal
 sqlite3 db test.db  ;  set ::DB [sqlite3_connection_pointer db]
 sqlite3 db2 test.db
 
@@ -743,7 +743,7 @@ if {[permutation] == ""} {
 do_test incrvacuum-15.1 {
   db close
   db2 close
-  file delete -force test.db
+  forcedelete test.db
   sqlite3 db test.db
 
   set str [string repeat "abcdefghij" 500]

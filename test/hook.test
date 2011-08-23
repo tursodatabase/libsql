@@ -95,7 +95,7 @@ do_test hook-3.9 {
 # Ticket #3564.
 #
 do_test hook-3.10 {
-  file delete -force test2.db test2.db-journal
+  forcedelete test2.db test2.db-journal
   sqlite3 db2 test2.db
   proc commit_hook {} {
     set y [db2 one {SELECT y FROM t3 WHERE y>10}]
@@ -217,7 +217,7 @@ ifcapable trigger {
 set ::update_hook {}
 ifcapable attach {
   do_test hook-4.2.3 {
-    file delete -force test2.db
+    forcedelete test2.db
     execsql {
       ATTACH 'test2.db' AS aux;
       CREATE TABLE aux.t3(a INTEGER PRIMARY KEY, b);

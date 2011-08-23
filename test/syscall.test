@@ -59,7 +59,7 @@ do_test 2.1.2 { test_syscall exists nosuchcall } 0
 foreach s {
     open close access getcwd stat fstat ftruncate
     fcntl read pread write pwrite fchmod fallocate
-    pread64 pwrite64
+    pread64 pwrite64 unlink openDirectory
 } {
   if {[test_syscall exists $s]} {lappend syscall_list $s}
 }

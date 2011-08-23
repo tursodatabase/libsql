@@ -205,16 +205,16 @@ source $testdir/malloc_common.tcl
 # Save a copy of the current database configuration.
 #
 db close
-file delete -force test.db-triggerA
-file copy test.db test.db-triggerA
+forcedelete test.db-triggerA
+copy_file test.db test.db-triggerA
 sqlite3 db test.db
 
 # Run malloc tests on the INSTEAD OF trigger firing.
 #
 do_malloc_test triggerA-3 -tclprep {
   db close
-  file delete -force test.db test.db-journal
-  file copy -force test.db-triggerA test.db
+  forcedelete test.db test.db-journal
+  forcecopy test.db-triggerA test.db
   sqlite3 db test.db
   sqlite3_extended_result_codes db 1  
   db eval {SELECT * FROM v5; -- warm up the cache}
@@ -225,6 +225,6 @@ do_malloc_test triggerA-3 -tclprep {
 
 # Clean up the saved database copy.
 #
-file delete -force test.db-triggerA
+forcedelete test.db-triggerA
 
 finish_test

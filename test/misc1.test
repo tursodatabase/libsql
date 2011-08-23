@@ -491,7 +491,7 @@ do_test misc1-14.2b {
 } {1}
 do_test misc1-14.3 {
   cd ..
-  file delete -force tempdir
+  forcedelete tempdir
   execsql {COMMIT}
   file exists ./test.db-journal
 } {0}

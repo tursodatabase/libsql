@@ -35,7 +35,7 @@ do_test shared7-1.2 {
 } {1 {database is already attached}}
 
 do_test shared7-1.3 {
-  file delete -force test2.db test2.db-journal
+  forcedelete test2.db test2.db-journal
   db eval {
     ATTACH 'test2.db' AS test2;
     CREATE TABLE test2.t2(y);

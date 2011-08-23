@@ -24,7 +24,7 @@ set ::enable_shared_cache [sqlite3_enable_shared_cache 1]
 # Ticket #1824
 #
 do_test shared3-1.1 {
-  file delete -force test.db test.db-journal
+  forcedelete test.db test.db-journal
   sqlite3 db1 test.db
   db1 eval {
     PRAGMA encoding=UTF16;

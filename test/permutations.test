@@ -111,7 +111,7 @@ set allquicktests [test_set $alltests -exclude {
   thread003.test thread004.test thread005.test trans2.test vacuum3.test 
   incrvacuum_ioerr.test autovacuum_crash.test btree8.test shared_err.test
   vtab_err.test walslow.test walcrash.test 
-  walthread.test rtree3.test
+  walthread.test rtree3.test indexfault.test
 }]
 if {[info exists ::env(QUICKTEST_INCLUDE)]} {
   set allquicktests [concat $allquicktests $::env(QUICKTEST_INCLUDE)]
@@ -520,7 +520,7 @@ test_suite "inmemory_journal" -description {
   # the number of fsync() calls.
   pager.test exclusive.test jrnlmode.test sync.test misc1.test 
   journal1.test conflict.test crash8.test tkt3457.test io.test
-  journal3.test
+  journal3.test 8_3_names.test
 
   pager1.test async4.test corrupt.test filefmt.test pager2.test
   corrupt5.test corruptA.test pageropt.test
@@ -529,7 +529,7 @@ test_suite "inmemory_journal" -description {
   stmt.test
 
   # WAL mode is different.
-  wal* tkt-2d1a5c67d.test
+  wal* tkt-2d1a5c67d.test backcompat.test
 }]
 
 ifcapable mem3 {
@@ -726,7 +726,7 @@ test_suite "journaltest" -description {
   unregister_jt_vfs
 } -files [test_set $::allquicktests -exclude {
   wal* incrvacuum.test ioerr.test corrupt4.test io.test crash8.test 
-  async4.test bigfile.test
+  async4.test bigfile.test backcompat.test
 }]
 
 if {[info commands register_demovfs] != ""} {
@@ -865,4 +865,3 @@ if {[info script] == $argv0} {
   main $argv
   finish_test
 }
-

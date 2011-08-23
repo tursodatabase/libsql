@@ -43,6 +43,11 @@ TCC = $(TCC) -I$(TOP)\ext\rtree
 #
 TCC = $(TCC) -DNDEBUG
 
+#
+# Prevent warnings about "insecure" runtime library functions being used.
+#
+TCC = $(TCC) -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS
+
 # The locations of the Tcl header and library files.  Also, the library that
 # non-stubs enabled programs using Tcl must link against.  These variables
 # (TCLINCDIR, TCLLIBDIR, and LIBTCL) may be overridden via the environment
@@ -157,8 +162,8 @@ LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
          random.lo resolve.lo rowset.lo rtree.lo select.lo status.lo \
          table.lo tokenize.lo trigger.lo \
          update.lo util.lo vacuum.lo \
-         vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbetrace.lo \
-         wal.lo walker.lo where.lo utf.lo vtab.lo
+         vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
+         vdbetrace.lo wal.lo walker.lo where.lo utf.lo vtab.lo
 
 # Object files for the amalgamation.
 #
@@ -257,6 +262,7 @@ SRC = \
   $(TOP)\src\vdbeaux.c \
   $(TOP)\src\vdbeblob.c \
   $(TOP)\src\vdbemem.c \
+  $(TOP)\src\vdbesort.c \
   $(TOP)\src\vdbetrace.c \
   $(TOP)\src\vdbeInt.h \
   $(TOP)\src\vtab.c \
@@ -398,6 +404,7 @@ TESTSRC2 = \
   $(TOP)\src\vdbeaux.c \
   $(TOP)\src\vdbe.c \
   $(TOP)\src\vdbemem.c \
+  $(TOP)\src\vdbesort.c \
   $(TOP)\src\vdbetrace.c \
   $(TOP)\src\where.c \
   parse.c \
@@ -711,6 +718,9 @@ vdbeblob.lo:	$(TOP)\src\vdbeblob.c $(HDR)
 vdbemem.lo:	$(TOP)\src\vdbemem.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)\src\vdbemem.c
 
+vdbesort.lo:	$(TOP)\src\vdbesort.c $(HDR)
+	$(LTCOMPILE) -c $(TOP)\src\vdbesort.c
+
 vdbetrace.lo:	$(TOP)\src\vdbetrace.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)\src\vdbetrace.c
 
@@ -887,7 +897,7 @@ dll: sqlite3.dll
 sqlite3.def: libsqlite3.lib
 	echo EXPORTS > sqlite3.def
 	dumpbin /all libsqlite3.lib \
-		| $(NAWK) "/ 1 _sqlite3_/ { sub(/^.* _/,\"\");print }" \
+		| $(NAWK) "/ 1 _?sqlite3_/ { sub(/^.* _?/,\"\");print }" \
 		| sort >> sqlite3.def
 
 sqlite3.dll: $(LIBOBJ) sqlite3.def

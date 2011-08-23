@@ -2191,6 +2191,7 @@ static int winOpen(
   winFile *pFile = (winFile*)id;
   void *zConverted;              /* Filename in OS encoding */
   const char *zUtf8Name = zName; /* Filename in UTF-8 encoding */
+  int cnt = 0;
 
   /* If argument zPath is a NULL pointer, this function is required to open
   ** a temporary file. Use this buffer to store the file name in.
@@ -2310,30 +2311,30 @@ static int winOpen(
 #endif
 
   if( isNT() ){
-    h = CreateFileW((WCHAR*)zConverted,
-       dwDesiredAccess,
-       dwShareMode,
-       NULL,
-       dwCreationDisposition,
-       dwFlagsAndAttributes,
-       NULL
-    );
+    while( (h = CreateFileW((WCHAR*)zConverted,
+                            dwDesiredAccess,
+                            dwShareMode, NULL,
+                            dwCreationDisposition,
+                            dwFlagsAndAttributes,
+                            NULL))==INVALID_HANDLE_VALUE &&
+                            retryIoerr(&cnt) ){}
 /* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
 ** Since the ASCII version of these Windows API do not exist for WINCE,
 ** it's important to not reference them for WINCE builds.
 */
 #if SQLITE_OS_WINCE==0
   }else{
-    h = CreateFileA((char*)zConverted,
-       dwDesiredAccess,
-       dwShareMode,
-       NULL,
-       dwCreationDisposition,
-       dwFlagsAndAttributes,
-       NULL
-    );
+    while( (h = CreateFileA((char*)zConverted,
+                            dwDesiredAccess,
+                            dwShareMode, NULL,
+                            dwCreationDisposition,
+                            dwFlagsAndAttributes,
+                            NULL))==INVALID_HANDLE_VALUE &&
+                            retryIoerr(&cnt) ){}
 #endif
   }
+
+  logIoerr(cnt);
 
   OSTRACE(("OPEN %d %s 0x%lx %s\n", 
            h, zName, dwDesiredAccess, 

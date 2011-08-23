@@ -33,8 +33,8 @@ do_test attach2-1.1 {
     CREATE TABLE t1(a,b);
     CREATE INDEX x1 ON t1(a);
   }
-  file delete -force test2.db
-  file delete -force test2.db-journal
+  forcedelete test2.db
+  forcedelete test2.db-journal
   sqlite3 db2 test2.db
   db2 eval {
     CREATE TABLE t1(a,b);
@@ -327,7 +327,7 @@ do_test attach2-4.15 {
 
 db close
 db2 close
-file delete -force test2.db
+forcedelete test2.db
 sqlite3_soft_heap_limit $soft_limit
 
 # These tests - attach2-5.* - check that the master journal file is deleted
@@ -335,7 +335,7 @@ sqlite3_soft_heap_limit $soft_limit
 #
 # Update: It's not actually created if a rollback occurs, so that test
 # doesn't really prove too much.
-foreach f [glob test.db*] {file delete -force $f}
+foreach f [glob test.db*] {forcedelete $f}
 do_test attach2-5.1 {
   sqlite3 db test.db
   execsql {

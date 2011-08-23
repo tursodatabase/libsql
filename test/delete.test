@@ -275,7 +275,7 @@ do_test delete-8.0 {
   }
 } {123}
 db close
-catch {file delete -force test.db-journal}
+catch {forcedelete test.db-journal}
 catch {file attributes test.db -permissions 0444}
 catch {file attributes test.db -readonly 1}
 sqlite3 db test.db
@@ -312,12 +312,12 @@ do_test delete-8.6 {
 integrity_check delete-8.7
 
 # Need to do the following for tcl 8.5 on mac. On that configuration, the
-# -readonly flag is taken so seriously that a subsequent [file delete -force]
+# -readonly flag is taken so seriously that a subsequent [forcedelete]
 # (required before the next test file can be executed) will fail.
 #
 catch {file attributes test.db -readonly 0}
 db close
-file delete -force test.db test.db-journal
+forcedelete test.db test.db-journal
 
 # The following tests verify that SQLite correctly handles the case
 # where an index B-Tree is being scanned, the rowid column being read

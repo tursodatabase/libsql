@@ -61,7 +61,7 @@ set cksum [dbcksum db main]
 # is identical to the original.
 #
 do_test backup2-2 {
-  file delete -force bu1.db
+  forcedelete bu1.db
   db backup bu1.db
   sqlite3 db2 bu1.db
   dbcksum db2 main
@@ -72,7 +72,7 @@ do_test backup2-2 {
 #
 do_test backup2-3.1 {
   db close
-  file delete -force test.db test.db-journal
+  forcedelete test.db test.db-journal
   sqlite3 db test.db
   db2 eval {BEGIN EXCLUSIVE}
   set rc [catch {db restore bu1.db} res]
@@ -82,7 +82,7 @@ do_test backup2-3.1 {
 } {1 {restore failed: source database busy}}
 do_test backup2-3.2 {
   db close
-  file delete -force test.db test.db-journal
+  forcedelete test.db test.db-journal
   sqlite3 db test.db
   db restore bu1.db
   dbcksum db main
@@ -96,7 +96,7 @@ do_test backup2-4 {
 } $cksum
 do_test backup2-5 {
   db2 close
-  file delete -force bu1.db bu2.db
+  forcedelete bu1.db bu2.db
   db backup temp bu2.db
   sqlite3 db2 bu2.db
   dbcksum db2 main
@@ -127,7 +127,7 @@ do_test backup2-7 {
 # Try to backup database that does not exist
 #
 do_test backup2-8 {
-  file delete -force bu1.db
+  forcedelete bu1.db
   set rc [catch {db backup aux1 bu1.db} res]
   lappend rc $res
 } {1 {backup failed: unknown database aux1}}
@@ -143,7 +143,7 @@ do_test backup2-9 {
 #
 if {$tcl_platform(platform)=="windows"} {
   do_test backup2-10 {
-    file delete -force bu3.db
+    forcedelete bu3.db
     file mkdir bu3.db
     set rc [catch {db restore temp bu3.db} res]
     lappend rc $res
@@ -151,7 +151,7 @@ if {$tcl_platform(platform)=="windows"} {
 }
 if {$tcl_platform(platform)!="windows"} {
   do_test backup2-10 {
-    file delete -force bu3.db
+    forcedelete bu3.db
     file mkdir bu3.db
     set rc [catch {db restore temp bu3.db} res]
     lappend rc $res
@@ -172,7 +172,7 @@ do_test backup2-12 {
   lappend rc $res
 } {1 {restore failed: unknown database aux1}}
 do_test backup2-13 {
-  file delete -force bu4.db
+  forcedelete bu4.db
   set rc [catch {db restore bu4.db} res]
   lappend rc $res
 } {1 {cannot open source database: unable to open database file}}
@@ -184,6 +184,6 @@ do_test backup2-14 {
   lappend rc $res
 } {1 {wrong # args: should be "db restore ?DATABASE? FILENAME"}}
  
-file delete -force bu1.db bu2.db bu3.db bu4.db
+forcedelete bu1.db bu2.db bu3.db bu4.db
 
 finish_test

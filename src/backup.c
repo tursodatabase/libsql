@@ -419,6 +419,15 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
         sqlite3ResetInternalSchema(p->pDestDb, -1);
       }
 
+      if( destMode==PAGER_JOURNALMODE_WAL ){
+        /* This call cannot fail. The success of the BtreeUpdateMeta() 
+        ** method above indicates that a write transaction has been opened 
+        ** and page 1 is already dirty. Therefore this always succeeds.
+        */
+        TESTONLY(int rc2 =) sqlite3BtreeSetVersion(p->pDest, 2);
+        assert( rc2==SQLITE_OK );
+      }
+
       /* Set nDestTruncate to the final number of pages in the destination
       ** database. The complication here is that the destination page
       ** size may be different to the source page size. 

@@ -26,7 +26,7 @@ do_test securedel-1.0 {
   db eval {PRAGMA secure_delete;}
 } $DEFAULT_SECDEL
 
-file delete -force test2.db test2.db-journal
+forcedelete test2.db test2.db-journal
 do_test securedel-1.1 {
   db eval {
     ATTACH 'test2.db' AS db2;

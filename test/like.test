@@ -308,8 +308,8 @@ do_test like-3.18 {
 #
 do_test like-3.19 {
   set sqlite_like_count 0
+  db eval {CREATE INDEX i1 ON t1(x);}
   queryplan {
-    CREATE INDEX i1 ON t1(x);
     SELECT x FROM t1 WHERE x GLOB 'abc*' ORDER BY 1;
   }
 } {abc abcd nosort {} i1}
@@ -522,7 +522,7 @@ do_test like-5.24 {
   }
 } {zz-lower-lower zZ-lower-upper Zz-upper-lower ZZ-upper-upper nosort {} i2}
 do_test like-5.25 {
-  queryplan {
+  db eval {
     PRAGMA case_sensitive_like=on;
     CREATE TABLE t3(x TEXT);
     CREATE INDEX i3 ON t3(x);
@@ -530,6 +530,8 @@ do_test like-5.25 {
     INSERT INTO t3 VALUES('zZ-lower-upper');
     INSERT INTO t3 VALUES('Zz-upper-lower');
     INSERT INTO t3 VALUES('zz-lower-lower');
+  }
+  queryplan {
     SELECT x FROM t3 WHERE x LIKE 'zz%';
   }
 } {zz-lower-lower nosort {} i3}

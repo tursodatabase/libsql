@@ -139,7 +139,7 @@ do_execsql_test stat-4.1 {
 ]
 
 db close
-file delete -force test.db
+forcedelete test.db
 sqlite3 db test.db
 register_dbstat_vtab db
 breakpoint

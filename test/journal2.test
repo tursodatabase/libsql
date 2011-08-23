@@ -167,7 +167,7 @@ do_test journal2-1.13 {
 } {1 {disk I/O error}}
 db2 close
 unset ::tvfs_error_on_write
-file copy -force test.db testX.db
+forcecopy test.db testX.db
 
 do_test journal2-1.14 { file exists test.db-journal } 1
 do_test journal2-1.15 {

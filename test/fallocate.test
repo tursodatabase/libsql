@@ -80,7 +80,7 @@ if {![wal_is_ok]} { set skipwaltests 1 }
 
 if {!$skipwaltests} {
   db close
-  file delete -force test.db
+  forcedelete test.db
   if {[forced_proxy_locking]} { file delete -force .test.db-conch }
   sqlite3 db test.db
   file_control_chunksize_test db main [expr 32*1024]

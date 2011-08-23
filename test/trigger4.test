@@ -130,8 +130,8 @@ do_test trigger4-3.7 {
 
 do_test trigger4-4.1 {
     db close
-    file delete -force trigtest.db
-    file delete -force trigtest.db-journal
+    forcedelete trigtest.db
+    forcedelete trigtest.db-journal
     sqlite3 db trigtest.db
     catchsql {drop table tbl; drop view vw}
     execsql {
@@ -195,6 +195,6 @@ do_test trigger4-7.2 {
 
 integrity_check trigger4-99.9
 db close
-file delete -force trigtest.db trigtest.db-journal
+forcedelete trigtest.db trigtest.db-journal
 
 finish_test
