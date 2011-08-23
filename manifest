@@ -1,5 +1,5 @@
-C Have\sthe\s"crash"\sVFS\sused\sby\sthe\stcl\stests\s(test6.c)\shandle\sSQLITE_FCNTL_SIZE_HINT\sinternally,\sinstead\sof\spassing\sit\sdirectly\sthrough\sto\sthe\sunderlying\sVFS.\sThis\sis\simportant\sif\sthe\scrash\sVFS\sis\ssimulating\snon-default\sdevice\scharacteristics\ssuch\sas\sSQLITE_DEVCAP_SEQUENTIAL\sor\sATOMIC.
-D 2011-08-23T16:41:06
+C Change\sthe\sway\sthe\s"crash"\sVFS\s(test6.c)\shandles\sSQLITE_FCNTL_SIZE_HINT.
+D 2011-08-23T19:46:02
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -193,7 +193,7 @@ F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 124ff9735fb6bb7d41de180d6bac90e7b1509432
 F src/test4.c d1e5a5e904d4b444cf572391fdcb017638e36ff7
 F src/test5.c e1a19845625144caf038031234a12185e40d315c
-F src/test6.c fbe4fd2f82454908183cad19d749af4a3583a6e1
+F src/test6.c 3191b4ab964a144230ff9ef96c093520375c7b2a
 F src/test7.c 2e0781754905c8adc3268d8f0967e7633af58843
 F src/test8.c 6b1d12912a04fe6fca8c45bb9c3ea022f4352228
 F src/test9.c bea1e8cf52aa93695487badedd6e1886c321ea60
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 0da292da3bc867a5c6e29384f325581ea06bbd20
-R dc16859e99d1a347b096d5c98e40d7f7
+P fac8bc8f3450a6ce74c9250acb0608e940ffb54d
+R 6deef9be16cca6bfadecc1bc856a9364
 U dan
-Z 65c94081a9bcc76e85d7e9a92076df51
+Z 387bea6b299ffc3208c402fd4ffe247f
