@@ -505,6 +505,13 @@ static int cfCheckReservedLock(sqlite3_file *pFile, int *pResOut){
   return sqlite3OsCheckReservedLock(((CrashFile *)pFile)->pRealFile, pResOut);
 }
 static int cfFileControl(sqlite3_file *pFile, int op, void *pArg){
+  if( op==SQLITE_FCNTL_SIZE_HINT ){
+    CrashFile *pCrash = (CrashFile *)pFile;
+    i64 nByte = *(i64 *)pArg;
+    if( nByte>pCrash->iSize ){
+      return cfWrite(pFile, "", 1, nByte-1);
+    }
+  }
   return sqlite3OsFileControl(((CrashFile *)pFile)->pRealFile, op, pArg);
 }
 
