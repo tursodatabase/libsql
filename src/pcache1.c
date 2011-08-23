@@ -352,6 +352,7 @@ static int pcache1MemSize(void *p){
 }
 #endif /* SQLITE_ENABLE_MEMORY_MANAGEMENT */
 
+#ifdef SQLITE_PAGECACHE_BLOCKALLOC
 /*
 ** The block pBlock belongs to list pList but is not currently linked in.
 ** Insert it into the start of the list.
@@ -381,6 +382,7 @@ static void freeListIfEmpty(PGroup *pGroup, PGroupBlockList *pList){
     sqlite3_free(pList);
   }
 }
+#endif /* SQLITE_PAGECACHE_BLOCKALLOC */
 
 /*
 ** Allocate a new page object initially associated with cache pCache.

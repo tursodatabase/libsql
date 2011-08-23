@@ -1,5 +1,5 @@
-C Merge\sthe\sPAGECACHE_BLOCKALLOC\schanges\sinto\strunk.
-D 2011-08-23T12:50:09.565
+C Ifdef\sout\sroutines\sin\spcache1.c\sthat\sare\sused\sonly\nwhen\sSQLITE_PAGECACHE_BLOCKALLOC\sis\sdefined.
+D 2011-08-23T13:27:48.086
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,7 +172,7 @@ F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 49e718c095810c6b3334e3a6d89970aceaddefce
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
-F src/pcache1.c 0a131cf9999ba5baeb82fe1b073924ef115af853
+F src/pcache1.c a1d860753eee0a46165afaad3962a88463fb32a8
 F src/pragma.c ebcd20f1e654f5cb3aeef864ed69c4697719fbaa
 F src/prepare.c e64261559a3187698a3e7e6c8b001a4f4f98dab4
 F src/printf.c 585a36b6a963df832cfb69505afa3a34ed5ef8a1
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 35e6ac18e3d030095da57fff87a288939e9be93f ca47da2a1f6e6d221470e7f02b129fc21c288d7b
-R 403e9fa9f5f657d069e88180eb3874b3
+P 768c1846d48a555054f07edeabdae8817a2c0a8e
+R 53362bf80cd780a6b08fc570628a643d
 U drh
-Z ec65a11b28f52408e8ceb2cf85827722
+Z 0b461e319a7b9bf40f9bf23bd2b9df99
