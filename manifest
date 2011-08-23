@@ -1,5 +1,5 @@
-C Remove\san\sunreachable\sbranch\sin\sthe\sFK\scode.
-D 2011-08-22T20:33:12.500
+C Remove\sa\sbranch\sthat\sis\salways\strue.
+D 2011-08-23T00:01:58.939
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -127,7 +127,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c a30bdcc27eedc36a38a3a11e1ba83de9a6729f7e
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
-F src/build.c 77be7c2174300e94404ca89a2a9bbd8047d0ce11
+F src/build.c 6c60478a1e23f7cdd30ae0251b46f9adbe0e98c2
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 7f283795650dd4122cc07bd02193c40193b32cc6
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 3f3acee465a6e390301f9dc588dd1d8e0bd646bd
-R 8af209df3d5cecec157217fe275df036
+P 6c227cc85378fa6041703d6620031c0e0a2db55f
+R 097c99892539b0af0c0419cec17783c1
 U drh
-Z 9f019ce792b8a697a5e67d419f53cdeb
+Z ba0092ef44967f1382824e5e567024ca

@@ -3369,8 +3369,9 @@ void sqlite3SrcListIndexedBy(Parse *pParse, SrcList *p, Token *pIndexedBy){
 ** operator with A.  This routine shifts that operator over to B.
 */
 void sqlite3SrcListShiftJoinType(SrcList *p){
-  if( p && p->a ){
+  if( p ){
     int i;
+    assert( p->a || p->nSrc==0 );
     for(i=p->nSrc-1; i>0; i--){
       p->a[i].jointype = p->a[i-1].jointype;
     }
