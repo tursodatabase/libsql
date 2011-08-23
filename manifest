@@ -1,5 +1,5 @@
-C When\scopying\sa\srollback\smode\sdatabase\sover\sa\sWAL\sdatabase\susing\sthe\sbackup\sAPI,\sleave\sthe\sdestination\sdatabase\sin\sWAL\smode\s(instead\sof\sswitching\sit\sto\srollback\smode).\sFix\sfor\s[af95b8c609].
-D 2011-08-23T11:47:06.849
+C Merge\sthe\sPAGECACHE_BLOCKALLOC\schanges\sinto\strunk.
+D 2011-08-23T12:50:09.565
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -130,7 +130,7 @@ F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
 F src/build.c 6c60478a1e23f7cdd30ae0251b46f9adbe0e98c2
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
-F src/ctime.c 7f283795650dd4122cc07bd02193c40193b32cc6
+F src/ctime.c caf51429be3e0d4114056a8273b0fff812ff8ae9
 F src/date.c a3c6842bad7ae632281811de112a8ba63ff08ab3
 F src/delete.c ff68e5ef23aee08c0ff528f699a19397ed8bbed8
 F src/expr.c 4bbdfaf66bc614be9254ce0c26a17429067a3e07
@@ -165,14 +165,14 @@ F src/os.c fcc717427a80b2ed225373f07b642dc1aad7490b
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 65a897143b64667d23ed329a7984b9b405accb58
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 81f15448f112e77bd2bd3a1bcf531430616de918
+F src/os_unix.c 87ced852f8dc3da0c43621e4fed7d9021e43af6a
 F src/os_win.c 4eb6fa00ee28f6d7bad0526edcbe5a60d297c67a
 F src/pager.c 120550e7ef01dafaa2cbb4a0528c0d87c8f12b41
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 49e718c095810c6b3334e3a6d89970aceaddefce
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
-F src/pcache1.c 912bd5687d6df344698d8e69560f347b6e21c18a
+F src/pcache1.c 0a131cf9999ba5baeb82fe1b073924ef115af853
 F src/pragma.c ebcd20f1e654f5cb3aeef864ed69c4697719fbaa
 F src/prepare.c e64261559a3187698a3e7e6c8b001a4f4f98dab4
 F src/printf.c 585a36b6a963df832cfb69505afa3a34ed5ef8a1
@@ -201,7 +201,7 @@ F src/test_async.c 0612a752896fad42d55c3999a5122af10dcf22ad
 F src/test_autoext.c 30e7bd98ab6d70a62bb9ba572e4c7df347fe645e
 F src/test_backup.c c129c91127e9b46e335715ae2e75756e25ba27de
 F src/test_btree.c 47cd771250f09cdc6e12dda5bc71bc0b3abc96e2
-F src/test_config.c 9bc44df77f22cd0648c651fcd459353b8a984d7b
+F src/test_config.c e342660556d64365aacea2b23cbb5e6654d7278f
 F src/test_demovfs.c 20a4975127993f4959890016ae9ce5535a880094
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_func.c cbdec5cededa0761daedde5baf06004a9bf416b5
@@ -358,7 +358,7 @@ F test/crash8.test 38767cb504bbe491de6be4a7006b154973a2309f
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test b5de160630b209c4b8925bdcbbaf48cc90b67fe8
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
-F test/ctime.test 7bd009071e242aac4f18521581536b652b789a47
+F test/ctime.test 7f0bd5084d9dd7da9ad46901810896edd2ebb463
 F test/date.test a18a2ce81add84b17b06559e82ad7bb91bc6ddff
 F test/dbstatus.test a719af0f226bd280748a4bb9054c0a5a9fc1b16c
 F test/default.test 6faf23ccb300114924353007795aa9a8ec0aa9dc
@@ -583,9 +583,9 @@ F test/mallocK.test d79968641d1b70d88f6c01bdb9a7eb4a55582cc9
 F test/malloc_common.tcl 2930895b0962823ec679853e67e58dd6d8198b3c
 F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
-F test/memdb.test 708a028d6d373e5b3842e4bdc8ba80998c9a4da6
+F test/memdb.test 4b5d2671588ed59cb08642adc67fd78c666dc9c2
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
-F test/memsubsys1.test 16ce163ac1ace3d71bf0eaa6a821ed153addd91f
+F test/memsubsys1.test 39f1ddddf76ce51a3232aab0279668e23cf00f83
 F test/memsubsys2.test 3a1c1a9de48e5726faa85108b02459fae8cb9ee9
 F test/minmax.test 722d80816f7e096bf2c04f4111f1a6c1ba65453d
 F test/minmax2.test 33504c01a03bd99226144e4b03f7631a274d66e0
@@ -618,7 +618,7 @@ F test/pagerfault3.test f16e2efcb5fc9996d1356f7cbc44c998318ae1d7
 F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
-F test/pcache2.test 9f9357bb0f463b87bdf695646024ed2031a0c85a
+F test/pcache2.test bc67c6802989dba05cdf3a4574fd882e238c7ecf
 F test/permutations.test ad17319066a90e2db71823c3ff104795ffc71b31
 F test/pragma.test c8108e01da04f16e67e5754e610bc62c1b993f6c
 F test/pragma2.test 3a55f82b954242c642f8342b17dffc8b47472947
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P a65681926d8acf779ad39be21b74537c21777783
-R 4fa828c7c042de4b81d2337ffc4e400a
-U dan
-Z 6839a6474a17b2a69c514b02de64259d
+P 35e6ac18e3d030095da57fff87a288939e9be93f ca47da2a1f6e6d221470e7f02b129fc21c288d7b
+R 403e9fa9f5f657d069e88180eb3874b3
+U drh
+Z ec65a11b28f52408e8ceb2cf85827722
