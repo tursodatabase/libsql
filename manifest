@@ -1,5 +1,5 @@
-C Modify\stest\scases\sso\sthat\sveryquick.test\spasses\swith\sPAGECACHE_BLOCKALLOC\sdefined.
-D 2011-08-22T14:55:54
+C Change\sto\stest\sinstrumentation\sof\sos_unix.c:\sRegard\sIO\serrors\sthat\soccur\swithin\sSQLITE_FCNTL_SIZE_HINT\srequests\sas\sbenign.
+D 2011-08-23T05:10:39
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +165,7 @@ F src/os.c fcc717427a80b2ed225373f07b642dc1aad7490b
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 65a897143b64667d23ed329a7984b9b405accb58
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 81f15448f112e77bd2bd3a1bcf531430616de918
+F src/os_unix.c 87ced852f8dc3da0c43621e4fed7d9021e43af6a
 F src/os_win.c 4eb6fa00ee28f6d7bad0526edcbe5a60d297c67a
 F src/pager.c 120550e7ef01dafaa2cbb4a0528c0d87c8f12b41
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
@@ -960,7 +960,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 2ebae31e1eb352696f3c2f7706a34c084b28c262
-P 63597097eedf80080fab0c1978cfd66ecaaa79fa
-R 397f8ab116cb0f87f68b6bf88cbdf035
+P c61000705b61dc448a838846826d1a5ab5eaca2b
+R adaf3ffa3eb6341c9bccd9574332e7b9
 U dan
-Z 6577dc2ab7dde3596c443709ef216908
+Z a132e12565cef78793cdd803b684e9a4
