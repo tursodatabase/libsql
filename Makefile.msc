@@ -48,6 +48,11 @@ TCC = $(TCC) -DNDEBUG
 #
 TCC = $(TCC) -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS
 
+#
+# Use native Win32 heap.
+#
+TCC = $(TCC) -DSQLITE_WIN32_MALLOC=1
+
 # The locations of the Tcl header and library files.  Also, the library that
 # non-stubs enabled programs using Tcl must link against.  These variables
 # (TCLINCDIR, TCLLIBDIR, and LIBTCL) may be overridden via the environment

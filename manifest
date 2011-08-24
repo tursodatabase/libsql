@@ -1,9 +1,9 @@
-C Updates\sto\sthe\ssqlite3_mem_methods\sdocumentation.
-D 2011-08-24T15:18:16.947
+C Experimental\swork\sto\sallow\sSQLite\sto\suse\sthe\snative\sWin32\sheap\sAPI.
+D 2011-08-24T16:13:57.329
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 386444f1e1a1536d19a426030d93fd6e03b7d3b5
+F Makefile.msc 8ebd89ed4493641a9e2316a941d776e2bcc5ad39
 F Makefile.vxworks c85ec1d8597fe2f7bc225af12ac1666e21379151
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION f724de7326e87b7f3b0a55f16ef4b4d993680d54
@@ -166,7 +166,7 @@ F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 65a897143b64667d23ed329a7984b9b405accb58
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 81341980c52a44106b10c1e28a0d5c5247476452
-F src/os_win.c 4eb6fa00ee28f6d7bad0526edcbe5a60d297c67a
+F src/os_win.c a9950bf0f32753418ab6f74417aebd432bde2383
 F src/pager.c 120550e7ef01dafaa2cbb4a0528c0d87c8f12b41
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -183,7 +183,7 @@ F src/select.c d219c4b68d603cc734b6f9b1e2780fee12a1fa0d
 F src/shell.c bbe7818ff5bc8614105ceb81ad67b8bdc0b671dd
 F src/sqlite.h.in 0a6c9c23337fd1352c5c75a613ff9533aa7d91cb
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
-F src/sqliteInt.h ba4a6d6288efb25b84bc0d7d0aaf80f9b42523ba
+F src/sqliteInt.h 137c2af01e5913f9673e226b0822392cc4655b98
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -961,7 +961,10 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 46f5a68bfa4199a4bd398030bf88bfbb4df3d5ca
-R 153cb3ab6156bae4555a624a64dd86d1
-U drh
-Z 489994766712dfe3d3bf81175cae5684
+P 988998fe7b0a21ed113b67f812e51f357045bef4
+R 0396c522791d26a46580a50de4d03044
+T *branch * winNativeHeap
+T *sym-winNativeHeap *
+T -sym-trunk *
+U mistachkin
+Z 6f33f4bfa3c296caae6e295d0a3da4b8

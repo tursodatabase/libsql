@@ -119,6 +119,51 @@ struct winFile {
 #endif
 };
 
+/*
+ * If compiled with SQLITE_WIN32_MALLOC on Windows, we will use the
+ * various Win32 API heap functions instead of our own.
+ */
+#ifdef SQLITE_WIN32_MALLOC
+/*
+ * The initial size of the Win32-specific heap.  This value may be zero.
+ */
+#ifndef SQLITE_WIN32_HEAP_INIT_SIZE
+#  define SQLITE_WIN32_HEAP_INIT_SIZE ((SQLITE_DEFAULT_CACHE_SIZE) * \
+                                       (SQLITE_DEFAULT_PAGE_SIZE) + 4194304)
+#endif
+
+/*
+ * The maximum size of the Win32-specific heap.  This value may be zero.
+ */
+#ifndef SQLITE_WIN32_HEAP_MAX_SIZE
+#  define SQLITE_WIN32_HEAP_MAX_SIZE  (0)
+#endif
+
+/*
+** The winMemData structure stores information required by the Win32-specific
+** sqlite3_mem_methods implementation.
+*/
+typedef struct winMemData winMemData;
+struct winMemData {
+  u32 magic;    /* Magic number to detect structure corruption. */
+  HANDLE hHeap; /* The handle to our heap. */
+  BOOL bOwned;  /* Do we own the heap (i.e. destroy it on shutdown)? */
+};
+
+#define WINMEM_MAGIC     0x42b2830b
+
+static struct winMemData win_mem_data = { WINMEM_MAGIC, NULL, FALSE };
+
+static void *winMemMalloc(int nBytes);
+static void winMemFree(void *pPrior);
+static void *winMemRealloc(void *pPrior, int nBytes);
+static int winMemSize(void *p);
+static int winMemRoundup(int n);
+static int winMemInit(void *pAppData);
+static void winMemShutdown(void *pAppData);
+
+const sqlite3_mem_methods *sqlite3MemGetWin32(void);
+#endif /* SQLITE_WIN32_MALLOC */
 
 /*
 ** Forward prototypes.
@@ -170,6 +215,159 @@ static int sqlite3_os_type = 0;
     return sqlite3_os_type==2;
   }
 #endif /* SQLITE_OS_WINCE */
+
+#ifdef SQLITE_WIN32_MALLOC
+/*
+** Allocate nBytes of memory.
+*/
+static void *winMemMalloc(int nBytes){
+  HANDLE hHeap;
+
+  assert( win_mem_data.magic==WINMEM_MAGIC );
+  hHeap = win_mem_data.hHeap;
+  assert( hHeap!=0 );
+  assert( hHeap!=INVALID_HANDLE_VALUE );
+#ifdef SQLITE_WIN32_MALLOC_VALIDATE
+  assert ( HeapValidate(hHeap, 0, NULL) );
+#endif
+  assert( nBytes>=0 );
+  return HeapAlloc(hHeap, 0, (SIZE_T)nBytes);
+}
+
+/*
+** Free memory.
+*/
+static void winMemFree(void *pPrior){
+  HANDLE hHeap;
+
+  assert( win_mem_data.magic==WINMEM_MAGIC );
+  hHeap = win_mem_data.hHeap;
+  assert( hHeap!=0 );
+  assert( hHeap!=INVALID_HANDLE_VALUE );
+#ifdef SQLITE_WIN32_MALLOC_VALIDATE
+  assert ( HeapValidate(hHeap, 0, pPrior) );
+#endif
+  if (!pPrior) return; /* Passing NULL to HeapFree is undefined. */
+  HeapFree(hHeap, 0, pPrior);
+}
+
+/*
+** Change the size of an existing memory allocation
+*/
+static void *winMemRealloc(void *pPrior, int nBytes){
+  HANDLE hHeap;
+
+  assert( win_mem_data.magic==WINMEM_MAGIC );
+  hHeap = win_mem_data.hHeap;
+  assert( hHeap!=0 );
+  assert( hHeap!=INVALID_HANDLE_VALUE );
+#ifdef SQLITE_WIN32_MALLOC_VALIDATE
+  assert ( HeapValidate(hHeap, 0, pPrior) );
+#endif
+  assert( nBytes>=0 );
+  if (!pPrior) return HeapAlloc(hHeap, 0, (SIZE_T)nBytes);
+  return HeapReAlloc(hHeap, 0, pPrior, (SIZE_T)nBytes);
+}
+
+/*
+** Return the size of an outstanding allocation, in bytes.
+*/
+static int winMemSize(void *p){
+  HANDLE hHeap;
+  SIZE_T n;
+
+  assert( win_mem_data.magic==WINMEM_MAGIC );
+  hHeap = win_mem_data.hHeap;
+  assert( hHeap!=0 );
+  assert( hHeap!=INVALID_HANDLE_VALUE );
+#ifdef SQLITE_WIN32_MALLOC_VALIDATE
+  assert ( HeapValidate(hHeap, 0, NULL) );
+#endif
+  if (!p) return 0;
+  n = HeapSize(hHeap, 0, p);
+  assert( n<=INT_MAX );
+  return (int)n;
+}
+
+/*
+** Round up a request size to the next valid allocation size.
+*/
+static int winMemRoundup(int n){
+  return n;
+}
+
+/*
+** Initialize this module.
+*/
+static int winMemInit(void *pAppData){
+  winMemData *pWinMemData = (winMemData *)pAppData;
+
+  if (!pWinMemData) return SQLITE_ERROR;
+  assert( pWinMemData->magic==WINMEM_MAGIC );
+  if (!pWinMemData->hHeap){
+    pWinMemData->hHeap = HeapCreate(0, SQLITE_WIN32_HEAP_INIT_SIZE,
+                                    SQLITE_WIN32_HEAP_MAX_SIZE);
+    if (!pWinMemData->hHeap){
+      return SQLITE_NOMEM;
+    }
+    pWinMemData->bOwned = TRUE;
+  }
+  assert( pWinMemData->hHeap!=0 );
+  assert( pWinMemData->hHeap!=INVALID_HANDLE_VALUE );
+#ifdef SQLITE_WIN32_MALLOC_VALIDATE
+  assert( HeapValidate(pWinMemData->hHeap, 0, NULL) );
+#endif
+  return SQLITE_OK;
+}
+
+/*
+** Deinitialize this module.
+*/
+static void winMemShutdown(void *pAppData){
+  winMemData *pWinMemData = (winMemData *)pAppData;
+
+  if (!pWinMemData) return;
+  if (pWinMemData->hHeap){
+    assert( pWinMemData->hHeap!=INVALID_HANDLE_VALUE );
+#ifdef SQLITE_WIN32_MALLOC_VALIDATE
+    assert( HeapValidate(pWinMemData->hHeap, 0, NULL) );
+#endif
+    if (pWinMemData->bOwned){
+      if (!HeapDestroy(pWinMemData->hHeap)){
+        /* TODO: Log this? */
+      }
+      pWinMemData->bOwned = FALSE;
+    }
+    pWinMemData->hHeap = NULL;
+  }
+}
+
+/*
+** Populate the low-level memory allocation function pointers in
+** sqlite3GlobalConfig.m with pointers to the routines in this file. The
+** arguments specify the block of memory to manage.
+**
+** This routine is only called by sqlite3_config(), and therefore
+** is not required to be threadsafe (it is not).
+*/
+const sqlite3_mem_methods *sqlite3MemGetWin32(void){
+  static const sqlite3_mem_methods winMemMethods = {
+    winMemMalloc,
+    winMemFree,
+    winMemRealloc,
+    winMemSize,
+    winMemRoundup,
+    winMemInit,
+    winMemShutdown,
+    &win_mem_data
+  };
+  return &winMemMethods;
+}
+
+void sqlite3MemSetDefault(void){
+  sqlite3_config(SQLITE_CONFIG_MALLOC, sqlite3MemGetWin32());
+}
+#endif /* SQLITE_WIN32_MALLOC */
 
 /*
 ** Convert a UTF-8 string to microsoft unicode (UTF-16?). 
