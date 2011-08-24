@@ -223,7 +223,7 @@ do_test quota-3.2.X {
 } {SQLITE_OK}
 
 #-------------------------------------------------------------------------
-# Quotas are deleted when unused and when there limit is set to zero
+# Quotas are deleted when unused and when their limit is set to zero
 #
 
 # Return a list of all currently defined quotas.  Each quota is identified
@@ -330,10 +330,39 @@ do_test quota-4.3.1 {
 } {}
 
 do_test quota-4.4.1 {
+  set ::quota {}
+  sqlite3_quota_set */quota-test-A?.db 10000 quota_callback
+  file delete -force ./quota-test-A1.db ./quota-test-A2.db
+  sqlite3 db ./quota-test-A1.db
+  db eval {
+     CREATE TABLE t1(x);
+     INSERT INTO t1 VALUES(randomblob(5000));
+  }
+  quota_list
+} {*/quota-test-A?.db}
+do_test quota-4.4.2 {
+  expr {$::quota==""}
+} {1}
+do_test quota-4.4.3 {
+  db close
+  sqlite3 db ./quota-test-A2.db
+  db eval {
+     CREATE TABLE t1(x);
+     INSERT INTO t1 VALUES(randomblob(5000));
+  }
+  quota_list
+} {*/quota-test-A?.db}
+do_test quota-4.4.4 {
+  expr {$::quota!=""}
+} {1}
+
+
+do_test quota-4.9.1 {
+  db close
   sqlite3_quota_set A 1000 quota_callback
   sqlite3_quota_shutdown
 } {SQLITE_OK}
-do_test quota-4.4.2 {
+do_test quota-4.9.2 {
   quota_list
 } {}
 
