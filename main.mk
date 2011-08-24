@@ -384,7 +384,7 @@ sqlite3.c:	target_source $(TOP)/tool/mksqlite3c.tcl
 	echo '#endif /* USE_SYSTEM_SQLITE */' >>tclsqlite3.c
 	cat $(TOP)/src/tclsqlite.c >>tclsqlite3.c
 
-sqlite3-debug.c:	target_source $(TOP)/tool/mksqlite3c.tcl
+sqlite3.c-debug:	target_source $(TOP)/tool/mksqlite3c.tcl
 	tclsh $(TOP)/tool/mksqlite3c.tcl --linemacros
 	echo '#ifndef USE_SYSTEM_SQLITE' >tclsqlite3.c
 	cat sqlite3.c >>tclsqlite3.c

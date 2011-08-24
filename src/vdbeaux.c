@@ -524,10 +524,9 @@ int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp){
 ** static array using sqlite3VdbeAddOpList but we want to make a
 ** few minor changes to the program.
 */
-void sqlite3VdbeChangeP1(Vdbe *p, int addr, int val){
+void sqlite3VdbeChangeP1(Vdbe *p, u32 addr, int val){
   assert( p!=0 );
-  assert( addr>=0 );
-  if( p->nOp>addr ){
+  if( ((u32)p->nOp)>addr ){
     p->aOp[addr].p1 = val;
   }
 }
@@ -536,10 +535,9 @@ void sqlite3VdbeChangeP1(Vdbe *p, int addr, int val){
 ** Change the value of the P2 operand for a specific instruction.
 ** This routine is useful for setting a jump destination.
 */
-void sqlite3VdbeChangeP2(Vdbe *p, int addr, int val){
+void sqlite3VdbeChangeP2(Vdbe *p, u32 addr, int val){
   assert( p!=0 );
-  assert( addr>=0 );
-  if( p->nOp>addr ){
+  if( ((u32)p->nOp)>addr ){
     p->aOp[addr].p2 = val;
   }
 }
@@ -547,10 +545,9 @@ void sqlite3VdbeChangeP2(Vdbe *p, int addr, int val){
 /*
 ** Change the value of the P3 operand for a specific instruction.
 */
-void sqlite3VdbeChangeP3(Vdbe *p, int addr, int val){
+void sqlite3VdbeChangeP3(Vdbe *p, u32 addr, int val){
   assert( p!=0 );
-  assert( addr>=0 );
-  if( p->nOp>addr ){
+  if( ((u32)p->nOp)>addr ){
     p->aOp[addr].p3 = val;
   }
 }

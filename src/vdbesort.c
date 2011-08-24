@@ -626,12 +626,12 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, VdbeCursor *pCsr, int *pbEof){
       if( rc==SQLITE_OK ){
         int bEof = 0;
         while( rc==SQLITE_OK && bEof==0 ){
-          int nByte;
+          int nToWrite;
           VdbeSorterIter *pIter = &pSorter->aIter[ pSorter->aTree[1] ];
           assert( pIter->pFile );
-          nByte = pIter->nKey + sqlite3VarintLen(pIter->nKey);
-          rc = sqlite3OsWrite(pTemp2, pIter->aAlloc, nByte, iWrite2);
-          iWrite2 += nByte;
+          nToWrite = pIter->nKey + sqlite3VarintLen(pIter->nKey);
+          rc = sqlite3OsWrite(pTemp2, pIter->aAlloc, nToWrite, iWrite2);
+          iWrite2 += nToWrite;
           if( rc==SQLITE_OK ){
             rc = sqlite3VdbeSorterNext(db, pCsr, &bEof);
           }
