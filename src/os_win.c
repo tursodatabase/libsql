@@ -154,6 +154,9 @@ struct winMemData {
 
 static struct winMemData win_mem_data = { WINMEM_MAGIC, NULL, FALSE };
 
+#define winMemAssertMagic() assert( win_mem_data.magic==WINMEM_MAGIC )
+#define winMemGetHeap() win_mem_data.hHeap
+
 static void *winMemMalloc(int nBytes);
 static void winMemFree(void *pPrior);
 static void *winMemRealloc(void *pPrior, int nBytes);
@@ -222,16 +225,22 @@ static int sqlite3_os_type = 0;
 */
 static void *winMemMalloc(int nBytes){
   HANDLE hHeap;
+  void *p;
 
-  assert( win_mem_data.magic==WINMEM_MAGIC );
-  hHeap = win_mem_data.hHeap;
+  winMemAssertMagic();
+  hHeap = winMemGetHeap();
   assert( hHeap!=0 );
   assert( hHeap!=INVALID_HANDLE_VALUE );
 #ifdef SQLITE_WIN32_MALLOC_VALIDATE
   assert ( HeapValidate(hHeap, 0, NULL) );
 #endif
   assert( nBytes>=0 );
-  return HeapAlloc(hHeap, 0, (SIZE_T)nBytes);
+  p = HeapAlloc(hHeap, 0, (SIZE_T)nBytes);
+  if( !p ){
+    sqlite3_log(SQLITE_NOMEM, "failed to HeapAlloc %u bytes (%d), heap=%p",
+        nBytes, GetLastError(), (void*)hHeap);
+  }
+  return p;
 }
 
 /*
@@ -240,15 +249,18 @@ static void *winMemMalloc(int nBytes){
 static void winMemFree(void *pPrior){
   HANDLE hHeap;
 
-  assert( win_mem_data.magic==WINMEM_MAGIC );
-  hHeap = win_mem_data.hHeap;
+  winMemAssertMagic();
+  hHeap = winMemGetHeap();
   assert( hHeap!=0 );
   assert( hHeap!=INVALID_HANDLE_VALUE );
 #ifdef SQLITE_WIN32_MALLOC_VALIDATE
   assert ( HeapValidate(hHeap, 0, pPrior) );
 #endif
-  if (!pPrior) return; /* Passing NULL to HeapFree is undefined. */
-  HeapFree(hHeap, 0, pPrior);
+  if( !pPrior ) return; /* Passing NULL to HeapFree is undefined. */
+  if( !HeapFree(hHeap, 0, pPrior) ){
+    sqlite3_log(SQLITE_NOMEM, "failed to HeapFree block %p (%d), heap=%p",
+        pPrior, GetLastError(), (void*)hHeap);
+  }
 }
 
 /*
@@ -256,17 +268,27 @@ static void winMemFree(void *pPrior){
 */
 static void *winMemRealloc(void *pPrior, int nBytes){
   HANDLE hHeap;
+  void *p;
 
-  assert( win_mem_data.magic==WINMEM_MAGIC );
-  hHeap = win_mem_data.hHeap;
+  winMemAssertMagic();
+  hHeap = winMemGetHeap();
   assert( hHeap!=0 );
   assert( hHeap!=INVALID_HANDLE_VALUE );
 #ifdef SQLITE_WIN32_MALLOC_VALIDATE
   assert ( HeapValidate(hHeap, 0, pPrior) );
 #endif
   assert( nBytes>=0 );
-  if (!pPrior) return HeapAlloc(hHeap, 0, (SIZE_T)nBytes);
-  return HeapReAlloc(hHeap, 0, pPrior, (SIZE_T)nBytes);
+  if( !pPrior ){
+    p = HeapAlloc(hHeap, 0, (SIZE_T)nBytes);
+  }else{
+    p = HeapReAlloc(hHeap, 0, pPrior, (SIZE_T)nBytes);
+  }
+  if( !p ){
+    sqlite3_log(SQLITE_NOMEM, "failed to %s %u bytes (%d), heap=%p",
+        pPrior ? "HeapReAlloc" : "HeapAlloc", nBytes, GetLastError(),
+        (void*)hHeap);
+  }
+  return p;
 }
 
 /*
@@ -276,16 +298,20 @@ static int winMemSize(void *p){
   HANDLE hHeap;
   SIZE_T n;
 
-  assert( win_mem_data.magic==WINMEM_MAGIC );
-  hHeap = win_mem_data.hHeap;
+  winMemAssertMagic();
+  hHeap = winMemGetHeap();
   assert( hHeap!=0 );
   assert( hHeap!=INVALID_HANDLE_VALUE );
 #ifdef SQLITE_WIN32_MALLOC_VALIDATE
   assert ( HeapValidate(hHeap, 0, NULL) );
 #endif
-  if (!p) return 0;
+  if( !p ) return 0;
   n = HeapSize(hHeap, 0, p);
-  assert( n<=INT_MAX );
+  if( n==(SIZE_T)-1 ){
+    sqlite3_log(SQLITE_NOMEM, "failed to HeapSize block %p (%d), heap=%p",
+        p, GetLastError(), (void*)hHeap);
+    return 0;
+  }
   return (int)n;
 }
 
@@ -302,12 +328,16 @@ static int winMemRoundup(int n){
 static int winMemInit(void *pAppData){
   winMemData *pWinMemData = (winMemData *)pAppData;
 
-  if (!pWinMemData) return SQLITE_ERROR;
+  if( !pWinMemData ) return SQLITE_ERROR;
   assert( pWinMemData->magic==WINMEM_MAGIC );
-  if (!pWinMemData->hHeap){
+  if( !pWinMemData->hHeap ){
     pWinMemData->hHeap = HeapCreate(0, SQLITE_WIN32_HEAP_INIT_SIZE,
                                     SQLITE_WIN32_HEAP_MAX_SIZE);
-    if (!pWinMemData->hHeap){
+    if( !pWinMemData->hHeap ){
+      sqlite3_log(SQLITE_NOMEM,
+          "failed to HeapCreate (%d), initSize=%u, maxSize=%u",
+          GetLastError(), SQLITE_WIN32_HEAP_INIT_SIZE,
+          SQLITE_WIN32_HEAP_MAX_SIZE);
       return SQLITE_NOMEM;
     }
     pWinMemData->bOwned = TRUE;
@@ -326,15 +356,16 @@ static int winMemInit(void *pAppData){
 static void winMemShutdown(void *pAppData){
   winMemData *pWinMemData = (winMemData *)pAppData;
 
-  if (!pWinMemData) return;
-  if (pWinMemData->hHeap){
+  if( !pWinMemData ) return;
+  if( pWinMemData->hHeap ){
     assert( pWinMemData->hHeap!=INVALID_HANDLE_VALUE );
 #ifdef SQLITE_WIN32_MALLOC_VALIDATE
     assert( HeapValidate(pWinMemData->hHeap, 0, NULL) );
 #endif
-    if (pWinMemData->bOwned){
-      if (!HeapDestroy(pWinMemData->hHeap)){
-        /* TODO: Log this? */
+    if( pWinMemData->bOwned ){
+      if( !HeapDestroy(pWinMemData->hHeap) ){
+        sqlite3_log(SQLITE_NOMEM, "failed to HeapDestroy (%d), heap=%p",
+            GetLastError(), (void*)pWinMemData->hHeap);
       }
       pWinMemData->bOwned = FALSE;
     }
