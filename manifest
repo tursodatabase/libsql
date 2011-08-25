@@ -1,5 +1,5 @@
-C Disable\sexternal\smerge\ssource\swhen\sSQLITE_TEMP_STORE==3.\s\sAdd\sdocumentation\nto\sthe\sOP_OpenSorter\sopcode.
-D 2011-08-25T18:01:28.912
+C Fix\sharmless\scompiler\swarnings\sin\stest\scode.\s\sNo\schanges\sto\sthe\score.
+D 2011-08-25T18:54:46.949
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -212,7 +212,7 @@ F src/test_intarray.c d879bbf8e4ce085ab966d1f3c896a7c8b4f5fc99
 F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c 03313c693cca72959dcaaf79f8d76f21c01e19ff
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
-F src/test_malloc.c 7ca7be34e0e09ef0ed6619544552ed95732e41f6
+F src/test_malloc.c 91d5cf1751d3e563754fd183da1c020727b5480e
 F src/test_multiplex.c 3fc368022c46fe44ec22c5e1ed727223a54a6a1d
 F src/test_multiplex.h e99c571bc4968b7a9363b661481f3934bfead61d
 F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
@@ -220,14 +220,14 @@ F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
 F src/test_osinst.c 62b0b8ef21ce754cc94e17bb42377ed8795dba32
 F src/test_pcache.c 7bf828972ac0d2403f5cfa4cd14da41f8ebe73d8
 F src/test_quota.c a391c866217e92986c6f523f05b08aa6956c8419
-F src/test_rtree.c 30c981837445a4e187ee850a49c4760d9642f7c3
+F src/test_rtree.c 6d06306e29946dc36f528a3a2cdc3add794656f1
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
 F src/test_stat.c f682704b5d1ba8e1d4e7e882a6d7922e2dcf066c
 F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c a992d8c80ea91fbf21fb2dd570db40e77dd7e6ae
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
-F src/test_thread.c fe9a7803fc1d69cccb60f016f28c1cedf2d9fcfa
+F src/test_thread.c dc77f920d24f2f515bd315b87942b6396332a414
 F src/test_vfs.c b0baec983bd6f872715a4b44c8f39104fec333af
 F src/test_vfstrace.c 0b884e06094a746da729119a2cabdc7aa790063d
 F src/test_wholenumber.c 6129adfbe7c7444f2e60cc785927f3aa74e12290
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 6deb3ea1f080324ea23ebdc9008753fbbc4063e2
-R e577d29da99527ab60f52d6969060c0e
+P 5a690486811379cea40c6ed48b2902f421234832
+R b670a9b478c564906fde521e9e611e80
 U drh
-Z 85fefc5da7f19ffe66dceac3b6402fe3
+Z 37f19f515aa327db72395c72e711b78f
