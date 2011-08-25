@@ -1,5 +1,5 @@
-C Cherrypick\sthe\s[d4f6437f8d]\schange\sso\sthat\sSQLITE_FCNTL_SIZE_HINT\sis\salways\nhonored\sand\snever\sundone\sby\smemory\spressure\son\swindows.
-D 2011-08-25T01:58:17.932
+C Fix\san\sfile\sseparator\scharacter\sissue\swith\stest_quota.c\sthat\swas\scausing\nit\sto\sfail\son\swindows.
+D 2011-08-25T03:38:31.807
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -219,7 +219,7 @@ F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
 F src/test_osinst.c 62b0b8ef21ce754cc94e17bb42377ed8795dba32
 F src/test_pcache.c 7bf828972ac0d2403f5cfa4cd14da41f8ebe73d8
-F src/test_quota.c 8cba4d8eb7db7118df3d735278e37b5b78b0e7b6
+F src/test_quota.c a391c866217e92986c6f523f05b08aa6956c8419
 F src/test_rtree.c 30c981837445a4e187ee850a49c4760d9642f7c3
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
@@ -626,7 +626,7 @@ F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
-F test/quota.test 482ba633252e88b7e3f492d0b5feddb4ec573e98
+F test/quota.test 1c59a396e8f7b5d8466fa74b59f2aeb778d74f7a
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/randexpr1.tcl 40dec52119ed3a2b8b2a773bce24b63a3a746459
 F test/randexpr1.test 1084050991e9ba22c1c10edd8d84673b501cc25a
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 2b7fe8e5b74c3504edd0e3ff78096e357ee1b47c
-R 36794aff5f4e59db0011ed3cfb68a8bd
+P 67ff8d27f6aa6e0beff1f6b72a997b30a9647879
+R 189663821404b788f9cb42e77814f964
 U drh
-Z d927f02499c2c18cd5f3df33fe1648f7
+Z e58750e60b6d57b280118e37270351cf

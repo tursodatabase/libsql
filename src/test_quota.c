@@ -815,8 +815,8 @@ int sqlite3_quota_file(const char *zFilename){
                    SQLITE_OPEN_READONLY | SQLITE_OPEN_MAIN_DB, &outFlags);
   }
   if( rc==SQLITE_OK ){
-    quotaFileSize(fd, &iSize);
-    quotaClose(fd);
+    fd->pMethods->xFileSize(fd, &iSize);
+    fd->pMethods->xClose(fd);
   }else if( rc==SQLITE_CANTOPEN ){
     quotaGroup *pGroup;
     quotaFile *pFile;
