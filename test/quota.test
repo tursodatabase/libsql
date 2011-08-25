@@ -235,6 +235,13 @@ proc quota_list {} {
   }
   return [lsort $allq]
 }
+proc quota_size {name} {
+  set allq {}
+  foreach q [sqlite3_quota_dump] {
+    if {[lindex $q 0]==$name} {return [lindex $q 2]}
+  }
+  return 0
+}
 
 do_test quota-4.1.1 {
   sqlite3_quota_set *test.db 0 {}
@@ -355,7 +362,73 @@ do_test quota-4.4.3 {
 do_test quota-4.4.4 {
   expr {$::quota!=""}
 } {1}
+do_test quota-4.4.5 {
+  db close
+  sqlite3_quota_set */quota-test-A?.db 0 {}
+  sqlite3_quota_dump
+} {}
+do_test quota-4.4.6 {
+  sqlite3_quota_set */quota-test-A?.db 10000 quota_callback
+  sqlite3 db quota-test-A1.db
+  db eval {SELECT count(*) FROM sqlite_master}
+  quota_size */quota-test-A?.db
+} [file size quota-test-A1.db]
+do_test quota-4.4.7 {
+  sqlite3_quota_file quota-test-A2.db
+  quota_size */quota-test-A?.db
+} [expr {[file size quota-test-A1.db]+[file size quota-test-A2.db]}]
 
+do_test quota-4.5.1 {
+  foreach file [glob -nocomplain quota-test-B*] {
+    forcedelete $file
+  }
+  sqlite3_quota_set */quota-test-B* 100000 quota_callback
+  quota_size */quota-test-B*
+} {0}
+do_test quota-4.5.2 {
+  sqlite3_quota_file quota-test-B1.txt
+  quota_size */quota-test-B*
+} {0}
+proc add_to_file {name n} {
+  set out [open $name a]
+  fconfigure $out -translation binary
+  puts -nonewline $out [string repeat x $n]
+  close $out
+}
+do_test quota-4.5.3 {
+  add_to_file quota-test-B1.txt 123
+  sqlite3_quota_file quota-test-B1.txt
+  quota_size */quota-test-B*
+} {123}
+do_test quota-4.5.4 {
+  add_to_file quota-test-B2.txt 234
+  sqlite3_quota_file quota-test-B2.txt
+  quota_size */quota-test-B*
+} {357}
+do_test quota-4.5.5 {
+  add_to_file quota-test-B1.txt 2000
+  sqlite3_quota_file quota-test-B1.txt
+  quota_size */quota-test-B*
+} {2357}
+do_test quota-4.5.6 {
+  forcedelete quota-test-B1.txt
+  sqlite3_quota_file quota-test-B1.txt
+  quota_size */quota-test-B*
+} {234}
+do_test quota-4.5.7 {
+  forcedelete quota-test-B2.txt
+  sqlite3_quota_file quota-test-B2.txt
+  quota_size */quota-test-B*
+} {0}
+do_test quota-4.5.8 {
+  add_to_file quota-test-B3.txt 1234
+  sqlite3_quota_file quota-test-B3.txt
+  quota_size */quota-test-B*
+} {1234}
+do_test quota-4.5.9 {
+  sqlite3_quota_set */quota-test-B* 0 {}
+  quota_size */quota-test-B*
+} {0}
 
 do_test quota-4.9.1 {
   db close

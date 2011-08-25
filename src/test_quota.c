@@ -795,6 +795,43 @@ int sqlite3_quota_set(
   return SQLITE_OK;
 }
 
+/*
+** Bring the named file under quota management.  Or if it is already under
+** management, update its size.
+*/
+int sqlite3_quota_file(const char *zFilename){
+  char *zFull;
+  sqlite3_file *fd;
+  int rc;
+  int outFlags = 0;
+  sqlite3_int64 iSize;
+  fd = sqlite3_malloc(gQuota.sThisVfs.szOsFile + gQuota.sThisVfs.mxPathname+1);
+  if( fd==0 ) return SQLITE_NOMEM;
+  zFull = gQuota.sThisVfs.szOsFile + (char*)fd;
+  rc = gQuota.pOrigVfs->xFullPathname(gQuota.pOrigVfs, zFilename,
+                                      gQuota.sThisVfs.mxPathname+1, zFull);
+  if( rc==SQLITE_OK ){
+    rc = quotaOpen(&gQuota.sThisVfs, zFull, fd, 
+                   SQLITE_OPEN_READONLY | SQLITE_OPEN_MAIN_DB, &outFlags);
+  }
+  if( rc==SQLITE_OK ){
+    quotaFileSize(fd, &iSize);
+    quotaClose(fd);
+  }else if( rc==SQLITE_CANTOPEN ){
+    quotaGroup *pGroup;
+    quotaFile *pFile;
+    quotaEnter();
+    pGroup = quotaGroupFind(zFull);
+    if( pGroup ){
+      pFile = quotaFindFile(pGroup, zFull);
+      if( pFile ) quotaRemoveFile(pFile);
+    }
+    quotaLeave();
+  }
+  sqlite3_free(fd);
+  return rc;
+}
+
   
 /***************************** Test Code ***********************************/
 #ifdef SQLITE_TEST
@@ -972,6 +1009,32 @@ static int test_quota_set(
 }
 
 /*
+** tclcmd: sqlite3_quota_file FILENAME
+*/
+static int test_quota_file(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  const char *zFilename;          /* File pattern to configure */
+  int rc;                         /* Value returned by quota_file() */
+
+  /* Process arguments */
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "FILENAME");
+    return TCL_ERROR;
+  }
+  zFilename = Tcl_GetString(objv[1]);
+
+  /* Invoke sqlite3_quota_file() */
+  rc = sqlite3_quota_file(zFilename);
+
+  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_STATIC);
+  return TCL_OK;
+}
+
+/*
 ** tclcmd:  sqlite3_quota_dump
 */
 static int test_quota_dump(
@@ -1028,6 +1091,7 @@ int Sqlitequota_Init(Tcl_Interp *interp){
     { "sqlite3_quota_initialize", test_quota_initialize },
     { "sqlite3_quota_shutdown", test_quota_shutdown },
     { "sqlite3_quota_set", test_quota_set },
+    { "sqlite3_quota_file", test_quota_file },
     { "sqlite3_quota_dump", test_quota_dump },
   };
   int i;
