@@ -410,16 +410,16 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
     ** the case where the source and destination databases have the
     ** same schema version.
     */
-    if( rc==SQLITE_DONE 
-     && (rc = sqlite3BtreeUpdateMeta(p->pDest,1,p->iDestSchema+1))==SQLITE_OK
-    ){
-      if( p->pDestDb ){
-        sqlite3ResetInternalSchema(p->pDestDb, -1);
+    if( rc==SQLITE_DONE ){
+      rc = sqlite3BtreeUpdateMeta(p->pDest,1,p->iDestSchema+1);
+      if( rc==SQLITE_OK ){
+        if( p->pDestDb ){
+          sqlite3ResetInternalSchema(p->pDestDb, -1);
+        }
+        if( destMode==PAGER_JOURNALMODE_WAL ){
+          rc = sqlite3BtreeSetVersion(p->pDest, 2);
+        }
       }
-      if( destMode==PAGER_JOURNALMODE_WAL ){
-        rc = sqlite3BtreeSetVersion(p->pDest, 2);
-      }
-
       if( rc==SQLITE_OK ){
         int nDestTruncate;
         /* Set nDestTruncate to the final number of pages in the destination

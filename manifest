@@ -1,5 +1,5 @@
-C Replace\san\sassert()\sthat\sa\scondition\smay\snot\soccur\sin\sbackup.c\swith\scode\sto\shandle\sthat\scondition,\swhich\scan\soccur.
-D 2011-08-25T19:28:47.374
+C Reorder\ssome\sof\sthe\sbranches\sin\sbackup.c\sin\sorder\sto\smake\sthe\scode\neasier\sto\stest.
+D 2011-08-25T20:18:47.446
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -121,7 +121,7 @@ F src/alter.c ac80a0f31189f8b4a524ebf661e47e84536ee7f5
 F src/analyze.c a425d62e8fa9ebcb4359ab84ff0c62c6563d2e2a
 F src/attach.c 12c6957996908edc31c96d7c68d4942c2474405f
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
-F src/backup.c 2d879fd8bf2d40011d0d67233842b0367ce95ac7
+F src/backup.c 28a4fe55327ff708bfaf9d4326d02686f7a553c3
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 97cf3ba4ff067e716753b33661035e50853aebba
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 16f83fec77668c021694fbb189b415bd3b90adc8
-R 3935a8b1957579da0f0f48128e347d0c
-U dan
-Z da737978f8355147bae2811829cc97da
+P 472c74b3452c5a07dfb006010441232b09599ad5
+R 8c5e28ffe9a7799230a8adf4f20dce05
+U drh
+Z ae50a88981aafd0a9a503f248a20233b
