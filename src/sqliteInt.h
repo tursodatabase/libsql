@@ -367,6 +367,14 @@
 #endif
 
 /*
+** If all temporary storage is in-memory, then omit the external merge-sort
+** logic since it is superfluous.
+*/
+#if SQLITE_TEMP_STORE==3 && !defined(SQLITE_OMIT_MERGE_SORT)
+# define SQLITE_OMIT_MERGE_SORT
+#endif
+
+/*
 ** GCC does not define the offsetof() macro so we'll have to do it
 ** ourselves.
 */

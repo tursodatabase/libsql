@@ -3156,6 +3156,12 @@ case OP_OpenWrite: {
 ** by this opcode will be used for automatically created transient
 ** indices in joins.
 */
+/* Opcode: OpenSorter P1 P2 * P4 *
+**
+** This opcode works like OP_OpenEphemeral except that it opens
+** a transient index that is specifically designed to sort large
+** tables using an external merge-sort algorithm.
+*/
 case OP_OpenSorter: 
 case OP_OpenAutoindex: 
 case OP_OpenEphemeral: {

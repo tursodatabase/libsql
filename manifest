@@ -1,5 +1,5 @@
-C Fix\sthe\sSQLITE_DISABLE_DIRSYNC\scompile\stime\soption.
-D 2011-08-25T13:46:32.991
+C Disable\sexternal\smerge\ssource\swhen\sSQLITE_TEMP_STORE==3.\s\sAdd\sdocumentation\nto\sthe\sOP_OpenSorter\sopcode.
+D 2011-08-25T18:01:28.912
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -183,7 +183,7 @@ F src/select.c d219c4b68d603cc734b6f9b1e2780fee12a1fa0d
 F src/shell.c bbe7818ff5bc8614105ceb81ad67b8bdc0b671dd
 F src/sqlite.h.in 0a6c9c23337fd1352c5c75a613ff9533aa7d91cb
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
-F src/sqliteInt.h ba4a6d6288efb25b84bc0d7d0aaf80f9b42523ba
+F src/sqliteInt.h 18876859c6a60fd42b4e3772229387390702f096
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -238,7 +238,7 @@ F src/update.c 74a6cfb34e9732c1e2a86278b229913b4b51eeec
 F src/utf.c c53eb7404b3eb5c1cbb5655c6a7a0e0ce6bd50f0
 F src/util.c 06302ffd2b80408d4f6c7af71f7090e0cf8d8ff7
 F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
-F src/vdbe.c 22d0d5bc8e8e467e1e0fa20a0a6b21c297f5601f
+F src/vdbe.c 8f18a857e7cc1eba1a59d2ab011d4cf0d05f48ad
 F src/vdbe.h 2bf6ec77d8b9980fc19da6e0b0a36d0dbf884ce4
 F src/vdbeInt.h f9250326f264ca5f100acc19e9c07096bb889096
 F src/vdbeapi.c 11dc47987abacb76ad016dcf5abc0dc422482a98
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P ddb8d3e80df868bda0704feed31171fa055432b5
-R 8156f8cef08e6f8b5e271e42f6684a40
-U dan
-Z 3bd35289d7fa3fba45bc6fb085762931
+P 6deb3ea1f080324ea23ebdc9008753fbbc4063e2
+R e577d29da99527ab60f52d6969060c0e
+U drh
+Z 85fefc5da7f19ffe66dceac3b6402fe3
