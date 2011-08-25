@@ -1,5 +1,5 @@
-C Fix\san\sfile\sseparator\scharacter\sissue\swith\stest_quota.c\sthat\swas\scausing\nit\sto\sfail\son\swindows.
-D 2011-08-25T03:38:31.807
+C Fix\sthe\sSQLITE_DISABLE_DIRSYNC\scompile\stime\soption.
+D 2011-08-25T13:46:32.991
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +165,7 @@ F src/os.c fcc717427a80b2ed225373f07b642dc1aad7490b
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 65a897143b64667d23ed329a7984b9b405accb58
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 81341980c52a44106b10c1e28a0d5c5247476452
+F src/os_unix.c 1a34ca3794ced80e4a4ebcc3ba1f4c516762e534
 F src/os_win.c 19fa09046f1f86590a188abdcf5630b8fe8279cf
 F src/pager.c 120550e7ef01dafaa2cbb4a0528c0d87c8f12b41
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 67ff8d27f6aa6e0beff1f6b72a997b30a9647879
-R 189663821404b788f9cb42e77814f964
-U drh
-Z e58750e60b6d57b280118e37270351cf
+P ddb8d3e80df868bda0704feed31171fa055432b5
+R 8156f8cef08e6f8b5e271e42f6684a40
+U dan
+Z 3bd35289d7fa3fba45bc6fb085762931
