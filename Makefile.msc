@@ -10,7 +10,19 @@ TOP = .
 # Set this non-0 to create and use the SQLite amalgamation file.
 #
 USE_AMALGAMATION = 1
-DEBUG=0
+
+# Set this to one of the following values to enable various debugging
+# features.  Each level includes the debugging options from the previous
+# levels.  Currently, the recognized values for DEBUG are:
+#
+# 0 == NDEBUG: Disables assert() and other runtime diagnostics.
+# 1 == Disables NDEBUG and all optimizations and then enables PDBs.
+# 2 == SQLITE_DEBUG: Enables various diagnostics messages and code.
+# 3 == SQLITE_WIN32_MALLOC_VALIDATE: Validate the Win32 native heap per call.
+# 4 == SQLITE_DEBUG_OS_TRACE: Enables output from the OSTRACE() macros.
+# 5 == SQLITE_ENABLE_IOTRACE: Enables output from the IOTRACE() macros.
+#
+DEBUG = 0
 
 # Version numbers and release number for the SQLite being compiled.
 #
@@ -151,9 +163,9 @@ TCC = $(TCC) $(OPT_FEATURE_FLAGS)
 # ie.  make "OPTS=-DSQLITE_ENABLE_FOO=1 -DSQLITE_OMIT_FOO=1".
 TCC = $(TCC) $(OPTS)
 
-# Add debug information if enabled.
-!IF $(DEBUG)!=0
-TCC = $(TCC) -Zi -D_DEBUG
+# If debugging is enabled, disable all optimizations and enable PDBs.
+!IF $(DEBUG)>0
+TCC = $(TCC) -Od -Zi -D_DEBUG
 !ENDIF
 
 # libtool compile/link
@@ -170,7 +182,8 @@ LTLINKOPTS = /MACHINE:$(PLATFORM)
 LTLIBOPTS = /MACHINE:$(PLATFORM)
 !ENDIF
 
-!IF $(DEBUG)!=0
+# If debugging is enabled, enable PDBs.
+!IF $(DEBUG)>0
 LTLINKOPTS = $(LTLINKOPTS) /DEBUG
 !ENDIF
 

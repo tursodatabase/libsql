@@ -69,6 +69,10 @@ while {1} {
   }
   if {[llength $win32_lock_ok] && [llength $win32_lock_error]} break
   incr delay1 25
+  if {$delay1 > 12500} {
+    puts "Timed out waiting for \"ok\" and \"error\" results."
+    break
+  }
   sqlite3_sleep 10
 }
 
@@ -113,6 +117,10 @@ while {1} {
   }
   if {[llength $win32_lock_ok] && [llength $win32_lock_error]} break
   incr delay1 1
+  if {$delay1 > 500} {
+    puts "Timed out waiting for \"ok\" and \"error\" results."
+    break
+  }
   sqlite3_sleep 10
 }
 
