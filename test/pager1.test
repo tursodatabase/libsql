@@ -2418,5 +2418,42 @@ do_test pager1-31.1 {
 } {ok}
 }
 
+#-------------------------------------------------------------------------
+# Test that a database file can be "pre-hinted" to a certain size and that
+# subsequent spilling of the pager cache does not result in the database
+# file being shrunk.
+#
+catch {db close}
+forcedelete test.db
+
+do_test pager1-32.1 {
+  sqlite3 db test.db
+  execsql {
+    CREATE TABLE t1(x, y);
+  }
+  db close
+  sqlite3 db test.db
+  execsql {
+    BEGIN;
+    INSERT INTO t1 VALUES(1, randomblob(10000));
+  }
+  file_control_sizehint_test db main 20971520; # 20MB
+  execsql {
+    PRAGMA cache_size = 10;
+    INSERT INTO t1 VALUES(1, randomblob(10000));
+    INSERT INTO t1 VALUES(2, randomblob(10000));
+    INSERT INTO t1 SELECT x+2, randomblob(10000) from t1;
+    INSERT INTO t1 SELECT x+4, randomblob(10000) from t1;
+    INSERT INTO t1 SELECT x+8, randomblob(10000) from t1;
+    INSERT INTO t1 SELECT x+16, randomblob(10000) from t1;
+    SELECT count(*) FROM t1;
+    COMMIT;
+  }
+  db close
+  file size test.db
+} {20971520}
+
+# Cleanup 20MB file left by the previous test.
+forcedelete test.db
 
 finish_test

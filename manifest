@@ -1,5 +1,5 @@
-C Add\serror\slogging\sto\snative\sWin32\sheap\ssupport.
-D 2011-08-24T17:42:22.399
+C Make\ssure\sthat\sSQLITE_FCNTL_SIZE_HINT\son\sWindows\sdoes\snot\sshrink\sthe\sfile.
+D 2011-08-25T01:16:42.999
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 65a897143b64667d23ed329a7984b9b405accb58
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 81341980c52a44106b10c1e28a0d5c5247476452
-F src/os_win.c f9958ef76430472cd3b43ec45643949b2876daa4
+F src/os_win.c 7d27ec1e65069d7ce8d698a475cc3550b8dbae15
 F src/pager.c 120550e7ef01dafaa2cbb4a0528c0d87c8f12b41
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -609,7 +609,7 @@ F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
 F test/oserror.test 3fe52e0bd2891a9bf7cdeb639554992453d46301
-F test/pager1.test 7fc949ccd463dedda729e4d0a1a44e63a3273d39
+F test/pager1.test 70c94c895ffaf4dc34ee4b66e6e4cd713af41edc
 F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
 F test/pagerfault.test 452f2cc23e3bfcfa935f4442aec1da4fe1dc0442
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P bf3d0ab53829350637283442f75071fe6d925245
-R 0f7433104155ca1c8873be3fedc86cf8
+P 7fca5a284cded6d7531060da6e99a57aed50cf8f
+R 8bf9aeffcdc394f7e2d1b2b0d493cfd6
 U mistachkin
-Z 3b4d0724e0585445008e0568091ed65d
+Z 53621de951679e35f623a12339a41936

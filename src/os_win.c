@@ -1580,11 +1580,18 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_SIZE_HINT: {
-      sqlite3_int64 sz = *(sqlite3_int64*)pArg;
-      SimulateIOErrorBenign(1);
-      winTruncate(id, sz);
-      SimulateIOErrorBenign(0);
-      return SQLITE_OK;
+      winFile *pFile = (winFile*)id;
+      sqlite3_int64 oldSz;
+      int rc = winFileSize(id, &oldSz);
+      if( rc==SQLITE_OK ){
+        sqlite3_int64 newSz = *(sqlite3_int64*)pArg;
+        if( newSz>oldSz ){
+          SimulateIOErrorBenign(1);
+          rc = winTruncate(id, newSz);
+          SimulateIOErrorBenign(0);
+        }
+      }
+      return rc;
     }
     case SQLITE_FCNTL_PERSIST_WAL: {
       int bPersist = *(int*)pArg;
