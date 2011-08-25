@@ -1,9 +1,9 @@
-C Make\ssure\sthat\sSQLITE_FCNTL_SIZE_HINT\son\sWindows\sdoes\snot\sshrink\sthe\sfile.
-D 2011-08-25T01:16:42.999
+C In\sthe\sMSVC\smakefile,\ssupport\sseveral\slevels\sof\sdebugging,\seach\sone\sbuilding\son\sthe\sprevious.\s\sAlso,\sadd\scomment\sabout\sthe\sSQLITE_WIN32_MALLOC_VALIDATE\smacro.
+D 2011-08-25T02:02:25.221
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc baf6b7037a8e0838387f8bfc9baacfcc57dc5902
+F Makefile.msc 2bd2c2956d9b5662f2f239f3f4785ab940c9d095
 F Makefile.vxworks c85ec1d8597fe2f7bc225af12ac1666e21379151
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION f724de7326e87b7f3b0a55f16ef4b4d993680d54
@@ -183,7 +183,7 @@ F src/select.c d219c4b68d603cc734b6f9b1e2780fee12a1fa0d
 F src/shell.c bbe7818ff5bc8614105ceb81ad67b8bdc0b671dd
 F src/sqlite.h.in 0a6c9c23337fd1352c5c75a613ff9533aa7d91cb
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
-F src/sqliteInt.h 137c2af01e5913f9673e226b0822392cc4655b98
+F src/sqliteInt.h 5004ed078f0a4fd9a725b2eb75d7cf758cf86e91
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 7fca5a284cded6d7531060da6e99a57aed50cf8f
-R 8bf9aeffcdc394f7e2d1b2b0d493cfd6
+P d4f6437f8de82482dfaa4c084f4221e89e21eb00
+R da2e33245e2364528467756cf50f41d5
 U mistachkin
-Z 53621de951679e35f623a12339a41936
+Z b479c51d4c7cb9ebde1314847b959959

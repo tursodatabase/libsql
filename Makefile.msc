@@ -10,6 +10,7 @@ TOP = .
 # Set this non-0 to create and use the SQLite amalgamation file.
 #
 USE_AMALGAMATION = 1
+DEBUG=0
 
 # Version numbers and release number for the SQLite being compiled.
 #
@@ -41,7 +42,21 @@ TCC = $(TCC) -I$(TOP)\ext\rtree
 # Omitting the define will cause extra debugging code to be inserted and
 # includes extra comments when "EXPLAIN stmt" is used.
 #
+!IF $(DEBUG)==0
 TCC = $(TCC) -DNDEBUG
+!ENDIF
+
+!IF $(DEBUG)>1
+TCC = $(TCC) -DSQLITE_DEBUG
+!ENDIF
+
+!IF $(DEBUG)>3
+TCC = $(TCC) -DSQLITE_DEBUG_OS_TRACE=1
+!ENDIF
+
+!IF $(DEBUG)>4
+TCC = $(TCC) -DSQLITE_ENABLE_IOTRACE
+!ENDIF
 
 #
 # Prevent warnings about "insecure" runtime library functions being used.
@@ -49,10 +64,16 @@ TCC = $(TCC) -DNDEBUG
 TCC = $(TCC) -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS
 
 #
-# Use native Win32 heap.
+# Use native Win32 heap instead of malloc/free?
 #
 TCC = $(TCC) -DSQLITE_WIN32_MALLOC=1
-# TCC = $(TCC) -DSQLITE_WIN32_MALLOC_VALIDATE=1
+
+#
+# Validate the heap on every call into the native Win32 heap subsystem?
+#
+!IF $(DEBUG)>2
+TCC = $(TCC) -DSQLITE_WIN32_MALLOC_VALIDATE=1
+!ENDIF
 
 # The locations of the Tcl header and library files.  Also, the library that
 # non-stubs enabled programs using Tcl must link against.  These variables
@@ -130,6 +151,11 @@ TCC = $(TCC) $(OPT_FEATURE_FLAGS)
 # ie.  make "OPTS=-DSQLITE_ENABLE_FOO=1 -DSQLITE_OMIT_FOO=1".
 TCC = $(TCC) $(OPTS)
 
+# Add debug information if enabled.
+!IF $(DEBUG)!=0
+TCC = $(TCC) -Zi -D_DEBUG
+!ENDIF
+
 # libtool compile/link
 LTCOMPILE = $(TCC) -Fo$@
 LTLIB = lib.exe
@@ -142,6 +168,10 @@ LTLINK = $(TCC) -Fe$@
 !IF "$(PLATFORM)"!=""
 LTLINKOPTS = /MACHINE:$(PLATFORM)
 LTLIBOPTS = /MACHINE:$(PLATFORM)
+!ENDIF
+
+!IF $(DEBUG)!=0
+LTLINKOPTS = $(LTLINKOPTS) /DEBUG
 !ENDIF
 
 # nawk compatible awk.

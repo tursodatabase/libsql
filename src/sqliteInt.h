@@ -150,6 +150,11 @@
 **     SQLITE_WIN32_MALLOC           // Use Win32 native heap API
 **     SQLITE_MEMDEBUG               // Debugging version of system malloc()
 **
+** On Windows, if the SQLITE_WIN32_MALLOC_VALIDATE macro is defined and the
+** assert() macro is enabled, each call into the Win32 native heap subsystem
+** will cause HeapValidate to be called.  If heap validation should fail, an
+** assertion will be triggered.
+**
 ** (Historical note:  There used to be several other options, but we've
 ** pared it down to just these two.)
 **
