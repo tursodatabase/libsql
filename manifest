@@ -1,5 +1,5 @@
-C Updates\sto\sthe\ssqlite3_mem_methods\sdocumentation.
-D 2011-08-24T15:18:16.947
+C Add\sthe\sSQLITE_EXTRA_INIT\smacro.
+D 2011-08-25T00:14:41.083
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -146,7 +146,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 99a161b27a499fc8ad40745b7b1900a26f0a5f51
-F src/main.c fa654e1802e14a5f6c09c37971c3b69c1001d9c8
+F src/main.c 43664b68a0b0f8fe9edc7d987b42cb8e26298468
 F src/malloc.c 591aedb20ae40813f1045f2ef253438a334775d9
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 00bd8265c81abb665c48fea1e0c234eb3b922206
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 46f5a68bfa4199a4bd398030bf88bfbb4df3d5ca
-R 153cb3ab6156bae4555a624a64dd86d1
+P 988998fe7b0a21ed113b67f812e51f357045bef4
+R 8b28b7c3eecedf6de29c77136a1a0b20
 U drh
-Z 489994766712dfe3d3bf81175cae5684
+Z 5b1b2064520e67fe87ded16d48f38359
