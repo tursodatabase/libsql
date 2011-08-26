@@ -11,6 +11,10 @@ TOP = .
 #
 USE_AMALGAMATION = 1
 
+# Set this to non-0 to create and use PDBs.
+#
+SYMBOLS = 1
+
 # Set this to one of the following values to enable various debugging
 # features.  Each level includes the debugging options from the previous
 # levels.  Currently, the recognized values for DEBUG are:
@@ -33,13 +37,13 @@ RELEASE = 3.7.7
 # C Compiler and options for use in building executables that
 # will run on the platform that is doing the build.
 #
-BCC = cl.exe -O2
+BCC = cl.exe
 
 # C Compile and options for use in building executables that
 # will run on the target platform.  (BCC and TCC are usually the
 # same unless your are cross-compiling.)
 #
-TCC = cl.exe -W3 -O2 -DSQLITE_OS_WIN=1 -I. -I$(TOP)\src -fp:precise
+TCC = cl.exe -W3 -DSQLITE_OS_WIN=1 -I. -I$(TOP)\src -fp:precise
 
 # The mksqlite3c.tcl and mksqlite3h.tcl scripts will pull in 
 # any extension header files by default.  For non-amalgamation
@@ -163,9 +167,16 @@ TCC = $(TCC) $(OPT_FEATURE_FLAGS)
 # ie.  make "OPTS=-DSQLITE_ENABLE_FOO=1 -DSQLITE_OMIT_FOO=1".
 TCC = $(TCC) $(OPTS)
 
+# If symbols are enabled, enable PDBs.
 # If debugging is enabled, disable all optimizations and enable PDBs.
 !IF $(DEBUG)>0
-TCC = $(TCC) -Od -Zi -D_DEBUG
+TCC = $(TCC) -Od -D_DEBUG
+!ELSE
+TCC = $(TCC) -O2
+!ENDIF
+
+!IF $(DEBUG)>0 || $(SYMBOLS)!=0
+TCC = $(TCC) -Zi
 !ENDIF
 
 # libtool compile/link
@@ -183,7 +194,7 @@ LTLIBOPTS = /MACHINE:$(PLATFORM)
 !ENDIF
 
 # If debugging is enabled, enable PDBs.
-!IF $(DEBUG)>0
+!IF $(DEBUG)>0 || $(SYMBOLS)!=0
 LTLINKOPTS = $(LTLINKOPTS) /DEBUG
 !ENDIF
 

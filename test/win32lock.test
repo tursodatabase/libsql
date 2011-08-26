@@ -126,6 +126,7 @@ while {1} {
 
 file_control_win32_av_retry db 10 25
 sqlite3_test_control_pending_byte $old_pending_byte
+db close
 sqlite3_shutdown
 test_sqlite3_log 
 sqlite3_initialize

@@ -1,9 +1,9 @@
-C Disable\schecking\sthe\swinMemData\sstructure\ssignature\swhen\scompiled\swith\sNDEBUG.
-D 2011-08-26T01:45:50.307
+C In\sthe\sMSVC\smakefile,\sallow\ssymbols\sto\sbe\senabled\swithout\sNDEBUG\sdefined.\s\sAlso,\sfor\sthe\swin32lock\stest,\smake\ssure\sthe\sdatabase\sis\sclosed\sprior\sto\sshutdown.
+D 2011-08-26T05:40:31.767
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc bc9394ac5e8d87e3de2c1573b099bb05b92dc3b0
+F Makefile.msc bef57955ca8a1e174cabcba1aab3eae71a0440b6
 F Makefile.vxworks c85ec1d8597fe2f7bc225af12ac1666e21379151
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION f724de7326e87b7f3b0a55f16ef4b4d993680d54
@@ -918,7 +918,7 @@ F test/where9.test 24f19ad14bb1b831564ced5273e681e495662848
 F test/whereA.test 24c234263c8fe358f079d5e57d884fb569d2da0a
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
-F test/win32lock.test 00151c83c77e9413a775e9a285d5ff4d71fede06
+F test/win32lock.test b2a539e85ae6b2d78475e016a9636b4451dc7fb9
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F tool/build-shell.sh 12aa4391073a777fcb6dcc490b219a018ae98bac
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 1c2ecec8e7320bc5b532b3107005fb7f0370f25c
-R 02977b3b753ae039e380bcd8a52f086a
+P 50edc2f9141bd13277119afd129387029ebe5c01
+R 002b2d3196bf95293f3cedb09dc37ba9
 U mistachkin
-Z 4992e9cb9a64a1646ed5db3855348839
+Z ce7b6301abcea19c7a2844759d8d5a41
