@@ -153,16 +153,30 @@ struct winFile {
 */
 typedef struct winMemData winMemData;
 struct winMemData {
+#ifndef NDEBUG
   u32 magic;    /* Magic number to detect structure corruption. */
+#endif
   HANDLE hHeap; /* The handle to our heap. */
   BOOL bOwned;  /* Do we own the heap (i.e. destroy it on shutdown)? */
 };
 
+#ifndef NDEBUG
 #define WINMEM_MAGIC     0x42b2830b
+#endif
 
-static struct winMemData win_mem_data = { WINMEM_MAGIC, NULL, FALSE };
+static struct winMemData win_mem_data = {
+#ifndef NDEBUG
+  WINMEM_MAGIC,
+#endif
+  NULL, FALSE
+};
 
+#ifndef NDEBUG
 #define winMemAssertMagic() assert( win_mem_data.magic==WINMEM_MAGIC )
+#else
+#define winMemAssertMagic()
+#endif
+
 #define winMemGetHeap() win_mem_data.hHeap
 
 static void *winMemMalloc(int nBytes);
