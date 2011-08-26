@@ -424,6 +424,12 @@ Tcl_SetVar2(interp, "sqlite_options", "long_double",
   Tcl_SetVar2(interp, "sqlite_options", "stat2", "0", TCL_GLOBAL_ONLY);
 #endif
 
+#ifdef SQLITE_ENABLE_STAT3
+  Tcl_SetVar2(interp, "sqlite_options", "stat3", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "stat3", "0", TCL_GLOBAL_ONLY);
+#endif
+
 #if !defined(SQLITE_ENABLE_LOCKING_STYLE)
 #  if defined(__APPLE__)
 #    define SQLITE_ENABLE_LOCKING_STYLE 1

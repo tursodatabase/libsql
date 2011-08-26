@@ -82,14 +82,14 @@ do_test analyze7-3.1 {
 do_test analyze7-3.2.1 {
   execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE c=?;}
 } {0 0 0 {SEARCH TABLE t1 USING INDEX t1cd (c=?) (~86 rows)}}
-ifcapable stat2 {
-  # If ENABLE_STAT2 is defined, SQLite comes up with a different estimated
+ifcapable stat3 {
+  # If ENABLE_STAT3 is defined, SQLite comes up with a different estimated
   # row count for (c=2) than it does for (c=?).
   do_test analyze7-3.2.2 {
     execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE c=2;}
-  } {0 0 0 {SEARCH TABLE t1 USING INDEX t1cd (c=?) (~51 rows)}}
+  } {0 0 0 {SEARCH TABLE t1 USING INDEX t1cd (c=?) (~57 rows)}}
 } else {
-  # If ENABLE_STAT2 is not defined, the expected row count for (c=2) is the
+  # If ENABLE_STAT3 is not defined, the expected row count for (c=2) is the
   # same as that for (c=?).
   do_test analyze7-3.2.3 {
     execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE c=2;}
@@ -98,12 +98,14 @@ ifcapable stat2 {
 do_test analyze7-3.3 {
   execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE a=123 AND b=123}
 } {0 0 0 {SEARCH TABLE t1 USING INDEX t1a (a=?) (~1 rows)}}
-do_test analyze7-3.4 {
-  execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE c=123 AND b=123}
-} {0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b=?) (~2 rows)}}
-do_test analyze7-3.5 {
-  execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE a=123 AND c=123}
-} {0 0 0 {SEARCH TABLE t1 USING INDEX t1a (a=?) (~1 rows)}}
+ifcapable {!stat3} {
+  do_test analyze7-3.4 {
+    execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE c=123 AND b=123}
+  } {0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b=?) (~2 rows)}}
+  do_test analyze7-3.5 {
+    execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE a=123 AND c=123}
+  } {0 0 0 {SEARCH TABLE t1 USING INDEX t1a (a=?) (~1 rows)}}
+}
 do_test analyze7-3.6 {
   execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE c=123 AND d=123 AND b=123}
 } {0 0 0 {SEARCH TABLE t1 USING INDEX t1cd (c=? AND d=?) (~1 rows)}}
