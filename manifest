@@ -1,5 +1,5 @@
-C Add\scomments\sfor\sthe\svarious\sdebug\slevels.\s\sWhen\sdebugging,\sdisable\soptimizations.\s\sPrevent\sthe\swin32lock\stests\sfrom\sspinning\sforever.
-D 2011-08-25T04:09:12.308
+C Allow\sthe\sWin32\snative\sheap\sflags\sto\sbe\soverridden\sat\scompile-time.
+D 2011-08-26T01:32:24.991
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 65a897143b64667d23ed329a7984b9b405accb58
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 81341980c52a44106b10c1e28a0d5c5247476452
-F src/os_win.c 7d27ec1e65069d7ce8d698a475cc3550b8dbae15
+F src/os_win.c dc2e61b0727989a796482471e1e9caab890005ea
 F src/pager.c 120550e7ef01dafaa2cbb4a0528c0d87c8f12b41
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 4257e9b7ca78feb03df08fde56da947ae64c5c6f
-R 0448fba2024f79c072babb8ddd4d7080
+P 401859236b0d97bde82b11f32efce6eb9d490941
+R 35801e696f9647a4182ac9bf0b1942c5
 U mistachkin
-Z d666bad4d643507c471d1b757fa63134
+Z affee667f35124b9dd9a06a0543d989b
