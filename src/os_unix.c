@@ -260,7 +260,11 @@ struct unixFile {
 #define UNIXFILE_EXCL        0x01     /* Connections from one process only */
 #define UNIXFILE_RDONLY      0x02     /* Connection is read only */
 #define UNIXFILE_PERSIST_WAL 0x04     /* Persistent WAL mode */
-#define UNIXFILE_DIRSYNC     0x08     /* Directory sync needed */
+#ifndef SQLITE_DISABLE_DIRSYNC
+# define UNIXFILE_DIRSYNC    0x08     /* Directory sync needed */
+#else
+# define UNIXFILE_DIRSYNC    0x00
+#endif
 
 /*
 ** Include code that is common to all os_*.c files
@@ -3739,6 +3743,8 @@ static int unixSync(sqlite3_file *id, int flags){
 #else
       robust_close(pFile, dirfd, __LINE__);
 #endif
+    }else if( rc==SQLITE_CANTOPEN ){
+      rc = SQLITE_OK;
     }
     pFile->ctrlFlags &= ~UNIXFILE_DIRSYNC;
 
@@ -5900,6 +5906,8 @@ static int unixDelete(
 #else
       robust_close(0, fd, __LINE__);
 #endif
+    }else if( rc==SQLITE_CANTOPEN ){
+      rc = SQLITE_OK;
     }
   }
 #endif

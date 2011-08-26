@@ -388,8 +388,10 @@ static int vdbeSorterBtreeToPMA(sqlite3 *db, VdbeCursor *pCsr){
   VdbeSorter *pSorter = pCsr->pSorter;
   int res = 0;
 
+  /* sqlite3BtreeFirst() cannot fail because sorter btrees are always held
+  ** in memory and so an I/O error is not possible. */
   rc = sqlite3BtreeFirst(pCsr->pCursor, &res);
-  if( rc!=SQLITE_OK || res ) return rc;
+  if( NEVER(rc!=SQLITE_OK) || res ) return rc;
   assert( pSorter->nBtree>0 );
 
   /* If the first temporary PMA file has not been opened, open it now. */
@@ -429,8 +431,9 @@ static int vdbeSorterBtreeToPMA(sqlite3 *db, VdbeCursor *pCsr){
 
       /* Write the record itself to the output file */
       if( rc==SQLITE_OK ){
+        /* sqlite3BtreeKey() cannot fail because sorter btrees held in memory */
         rc = sqlite3BtreeKey(pCsr->pCursor, 0, nKey, aMalloc);
-        if( rc==SQLITE_OK ){
+        if( ALWAYS(rc==SQLITE_OK) ){
           rc = sqlite3OsWrite(pSorter->pTemp1, aMalloc, nKey, iWriteOff);
           iWriteOff += nKey;
         }
@@ -474,6 +477,9 @@ int sqlite3VdbeSorterWrite(sqlite3 *db, VdbeCursor *pCsr, int nKey){
     Pager *pPager = sqlite3BtreePager(pCsr->pBt);
     int nPage;                    /* Current size of temporary file in pages */
 
+    /* Sorters never spill to disk */
+    assert( sqlite3PagerFile(pPager)->pMethods==0 );
+
     /* Determine how many pages the temporary b-tree has grown to */
     sqlite3PagerPagecount(pPager, &nPage);
 
@@ -483,7 +489,7 @@ int sqlite3VdbeSorterWrite(sqlite3 *db, VdbeCursor *pCsr, int nKey){
     ** also possible that sqlite3_release_memory() was called). So set the
     ** size of the working set to a little less than the current size of the 
     ** file in pages.  */
-    if( pSorter->nWorking==0 && sqlite3PagerFile(pPager)->pMethods ){
+    if( pSorter->nWorking==0 && sqlite3PagerUnderStress(pPager) ){
       pSorter->nWorking = nPage-5;
       if( pSorter->nWorking<SORTER_MIN_WORKING ){
         pSorter->nWorking = SORTER_MIN_WORKING;
@@ -626,12 +632,12 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, VdbeCursor *pCsr, int *pbEof){
       if( rc==SQLITE_OK ){
         int bEof = 0;
         while( rc==SQLITE_OK && bEof==0 ){
-          int nByte;
+          int nToWrite;
           VdbeSorterIter *pIter = &pSorter->aIter[ pSorter->aTree[1] ];
           assert( pIter->pFile );
-          nByte = pIter->nKey + sqlite3VarintLen(pIter->nKey);
-          rc = sqlite3OsWrite(pTemp2, pIter->aAlloc, nByte, iWrite2);
-          iWrite2 += nByte;
+          nToWrite = pIter->nKey + sqlite3VarintLen(pIter->nKey);
+          rc = sqlite3OsWrite(pTemp2, pIter->aAlloc, nToWrite, iWrite2);
+          iWrite2 += nToWrite;
           if( rc==SQLITE_OK ){
             rc = sqlite3VdbeSorterNext(db, pCsr, &bEof);
           }

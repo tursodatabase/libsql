@@ -11,6 +11,23 @@ TOP = .
 #
 USE_AMALGAMATION = 1
 
+# Set this to non-0 to create and use PDBs.
+#
+SYMBOLS = 1
+
+# Set this to one of the following values to enable various debugging
+# features.  Each level includes the debugging options from the previous
+# levels.  Currently, the recognized values for DEBUG are:
+#
+# 0 == NDEBUG: Disables assert() and other runtime diagnostics.
+# 1 == Disables NDEBUG and all optimizations and then enables PDBs.
+# 2 == SQLITE_DEBUG: Enables various diagnostics messages and code.
+# 3 == SQLITE_WIN32_MALLOC_VALIDATE: Validate the Win32 native heap per call.
+# 4 == SQLITE_DEBUG_OS_TRACE: Enables output from the OSTRACE() macros.
+# 5 == SQLITE_ENABLE_IOTRACE: Enables output from the IOTRACE() macros.
+#
+DEBUG = 0
+
 # Version numbers and release number for the SQLite being compiled.
 #
 VERSION = 3.7
@@ -20,13 +37,13 @@ RELEASE = 3.7.7
 # C Compiler and options for use in building executables that
 # will run on the platform that is doing the build.
 #
-BCC = cl.exe -O2
+BCC = cl.exe
 
 # C Compile and options for use in building executables that
 # will run on the target platform.  (BCC and TCC are usually the
 # same unless your are cross-compiling.)
 #
-TCC = cl.exe -W3 -O2 -DSQLITE_OS_WIN=1 -I. -I$(TOP)\src -fp:precise
+TCC = cl.exe -W3 -DSQLITE_OS_WIN=1 -I. -I$(TOP)\src -fp:precise
 
 # The mksqlite3c.tcl and mksqlite3h.tcl scripts will pull in 
 # any extension header files by default.  For non-amalgamation
@@ -41,12 +58,38 @@ TCC = $(TCC) -I$(TOP)\ext\rtree
 # Omitting the define will cause extra debugging code to be inserted and
 # includes extra comments when "EXPLAIN stmt" is used.
 #
+!IF $(DEBUG)==0
 TCC = $(TCC) -DNDEBUG
+!ENDIF
+
+!IF $(DEBUG)>1
+TCC = $(TCC) -DSQLITE_DEBUG
+!ENDIF
+
+!IF $(DEBUG)>3
+TCC = $(TCC) -DSQLITE_DEBUG_OS_TRACE=1
+!ENDIF
+
+!IF $(DEBUG)>4
+TCC = $(TCC) -DSQLITE_ENABLE_IOTRACE
+!ENDIF
 
 #
 # Prevent warnings about "insecure" runtime library functions being used.
 #
 TCC = $(TCC) -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS
+
+#
+# Use native Win32 heap instead of malloc/free?
+#
+# TCC = $(TCC) -DSQLITE_WIN32_MALLOC=1
+
+#
+# Validate the heap on every call into the native Win32 heap subsystem?
+#
+!IF $(DEBUG)>2
+TCC = $(TCC) -DSQLITE_WIN32_MALLOC_VALIDATE=1
+!ENDIF
 
 # The locations of the Tcl header and library files.  Also, the library that
 # non-stubs enabled programs using Tcl must link against.  These variables
@@ -124,6 +167,18 @@ TCC = $(TCC) $(OPT_FEATURE_FLAGS)
 # ie.  make "OPTS=-DSQLITE_ENABLE_FOO=1 -DSQLITE_OMIT_FOO=1".
 TCC = $(TCC) $(OPTS)
 
+# If symbols are enabled, enable PDBs.
+# If debugging is enabled, disable all optimizations and enable PDBs.
+!IF $(DEBUG)>0
+TCC = $(TCC) -Od -D_DEBUG
+!ELSE
+TCC = $(TCC) -O2
+!ENDIF
+
+!IF $(DEBUG)>0 || $(SYMBOLS)!=0
+TCC = $(TCC) -Zi
+!ENDIF
+
 # libtool compile/link
 LTCOMPILE = $(TCC) -Fo$@
 LTLIB = lib.exe
@@ -136,6 +191,11 @@ LTLINK = $(TCC) -Fe$@
 !IF "$(PLATFORM)"!=""
 LTLINKOPTS = /MACHINE:$(PLATFORM)
 LTLIBOPTS = /MACHINE:$(PLATFORM)
+!ENDIF
+
+# If debugging is enabled, enable PDBs.
+!IF $(DEBUG)>0 || $(SYMBOLS)!=0
+LTLINKOPTS = $(LTLINKOPTS) /DEBUG
 !ENDIF
 
 # nawk compatible awk.

@@ -18,6 +18,7 @@
 /* Solely for the UNUSED_PARAMETER() macro. */
 #include "sqliteInt.h"
 
+#ifdef SQLITE_ENABLE_RTREE
 /* 
 ** Type used to cache parameter information for the "circle" r-tree geometry
 ** callback.
@@ -230,6 +231,7 @@ static int cube_geom(
 
   return SQLITE_OK;
 }
+#endif /* SQLITE_ENABLE_RTREE */
 
 static int register_cube_geom(
   void * clientData,

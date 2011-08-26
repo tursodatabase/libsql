@@ -3131,7 +3131,7 @@ case OP_OpenWrite: {
   break;
 }
 
-/* Opcode: OpenEphemeral P1 P2 * P4 *
+/* Opcode: OpenEphemeral P1 P2 * P4 P5
 **
 ** Open a new cursor P1 to a transient table.
 ** The cursor is always opened read/write even if 
@@ -3148,6 +3148,11 @@ case OP_OpenWrite: {
 ** to a TEMP table at the SQL level, or to a table opened by
 ** this opcode.  Then this opcode was call OpenVirtual.  But
 ** that created confusion with the whole virtual-table idea.
+**
+** The P5 parameter can be a mask of the BTREE_* flags defined
+** in btree.h.  These flags control aspects of the operation of
+** the btree.  The BTREE_OMIT_JOURNAL and BTREE_SINGLE flags are
+** added automatically.
 */
 /* Opcode: OpenAutoindex P1 P2 * P4 *
 **
@@ -3155,6 +3160,12 @@ case OP_OpenWrite: {
 ** different name to distinguish its use.  Tables created using
 ** by this opcode will be used for automatically created transient
 ** indices in joins.
+*/
+/* Opcode: OpenSorter P1 P2 * P4 *
+**
+** This opcode works like OP_OpenEphemeral except that it opens
+** a transient index that is specifically designed to sort large
+** tables using an external merge-sort algorithm.
 */
 case OP_OpenSorter: 
 case OP_OpenAutoindex: 
@@ -3168,6 +3179,7 @@ case OP_OpenEphemeral: {
       SQLITE_OPEN_TRANSIENT_DB;
 
   assert( pOp->p1>=0 );
+  assert( (pOp->opcode==OP_OpenSorter)==((pOp->p5 & BTREE_SORTER)!=0) );
   pCx = allocateCursor(p, pOp->p1, pOp->p2, -1, 1);
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;

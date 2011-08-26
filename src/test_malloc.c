@@ -1222,7 +1222,7 @@ static int test_dump_memsys3(
     return TCL_ERROR;
   }
 
-  switch( (int)clientData ){
+  switch( SQLITE_PTR_TO_INT(clientData) ){
     case 3: {
 #ifdef SQLITE_ENABLE_MEMSYS3
       extern void sqlite3Memsys3Dump(const char*);
@@ -1460,7 +1460,7 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
   };
   int i;
   for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){
-    ClientData c = (ClientData)aObjCmd[i].clientData;
+    ClientData c = (ClientData)SQLITE_INT_TO_PTR(aObjCmd[i].clientData);
     Tcl_CreateObjCommand(interp, aObjCmd[i].zName, aObjCmd[i].xProc, c, 0);
   }
   return TCL_OK;

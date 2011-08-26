@@ -509,8 +509,11 @@ static int cfFileControl(sqlite3_file *pFile, int op, void *pArg){
     CrashFile *pCrash = (CrashFile *)pFile;
     i64 nByte = *(i64 *)pArg;
     if( nByte>pCrash->iSize ){
-      return cfWrite(pFile, "", 1, nByte-1);
+      if( SQLITE_OK==writeListAppend(pFile, nByte, 0, 0) ){
+        pCrash->iSize = nByte;
+      }
     }
+    return SQLITE_OK;
   }
   return sqlite3OsFileControl(((CrashFile *)pFile)->pRealFile, op, pArg);
 }
