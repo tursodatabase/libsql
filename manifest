@@ -1,5 +1,5 @@
-C Update\scompiler\serror\smessage\sregarding\sthe\schoice\sof\smemory\sallocator\sdefines.
-D 2011-08-26T11:25:02.455
+C Fix\sseveral\sharmless\scompiler\swarnings\sand\sa\sdocumentation\sbug.
+D 2011-08-26T20:55:50.529
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +165,7 @@ F src/os.c fcc717427a80b2ed225373f07b642dc1aad7490b
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 65a897143b64667d23ed329a7984b9b405accb58
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 1a34ca3794ced80e4a4ebcc3ba1f4c516762e534
+F src/os_unix.c 3792524439a13af0464ba65baf4d647dad063604
 F src/os_win.c 86bcb5bd0386c761c764c3383879469346da3a14
 F src/pager.c 817f7f7140c9fa2641f28e6330e924708ddd870d
 F src/pager.h 2bab1b2ea4eac58663b5833e3522e36b5ff63447
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 5238a74987507f27af4080e2842f53e049b5b111
-R 68d004e4a18ddd9b15416c3d56993539
-U mistachkin
-Z cf5bdd8db49b4512fd908f85b844bfec
+P 1dada5158215d1816edb69ff2610f9d2259ce19d
+R 16e082a02686bfb3de55c1b850240992
+U drh
+Z 9f47e5dd82da8bb114d554ebcb62232c
