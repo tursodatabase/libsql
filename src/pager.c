@@ -620,6 +620,8 @@ struct Pager {
   u8 tempFile;                /* zFilename is a temporary file */
   u8 readOnly;                /* True for a read-only database */
   u8 memDb;                   /* True to inhibit all file I/O */
+  u8 hasSeenStress;           /* pagerStress() called one or more times */
+  u8 isSorter;                /* True for a PAGER_SORTER */
 
   /**************************************************************************
   ** The following block contains those class members that change during
@@ -841,6 +843,15 @@ static int assert_pager_state(Pager *p){
     );
     assert( p->eState!=PAGER_ERROR && p->eState!=PAGER_OPEN );
     assert( pagerUseWal(p)==0 );
+  }
+
+  /* A sorter is a temp file that never spills to disk and always has
+  ** the doNotSpill flag set
+  */
+  if( p->isSorter ){
+    assert( p->tempFile );
+    assert( p->doNotSpill );
+    assert( p->fd->pMethods==0 );
   }
 
   /* If changeCountDone is set, a RESERVED lock or greater must be held
@@ -3739,6 +3750,7 @@ static int pagerSyncHotJournal(Pager *pPager){
 int sqlite3PagerClose(Pager *pPager){
   u8 *pTmp = (u8 *)pPager->pTmpSpace;
 
+  assert( assert_pager_state(pPager) );
   disable_simulated_io_errors();
   sqlite3BeginBenignMalloc();
   /* pPager->errCode = 0; */
@@ -4173,6 +4185,7 @@ static int pagerStress(void *p, PgHdr *pPg){
   ** be called in the error state.  Nevertheless, we include a NEVER()
   ** test for the error state as a safeguard against future changes.
   */
+  pPager->hasSeenStress = 1;
   if( NEVER(pPager->errCode) ) return SQLITE_OK;
   if( pPager->doNotSpill ) return SQLITE_OK;
   if( pPager->doNotSyncSpill && (pPg->flags & PGHDR_NEED_SYNC)!=0 ){
@@ -4544,6 +4557,12 @@ int sqlite3PagerOpen(
   /* pPager->pBusyHandlerArg = 0; */
   pPager->xReiniter = xReinit;
   /* memset(pPager->aHash, 0, sizeof(pPager->aHash)); */
+#ifndef SQLITE_OMIT_MERGE_SORT
+  if( flags & PAGER_SORTER ){
+    pPager->doNotSpill = 1;
+    pPager->isSorter = 1;
+  }
+#endif
 
   *ppPager = pPager;
   return SQLITE_OK;
@@ -6087,6 +6106,17 @@ int *sqlite3PagerStats(Pager *pPager){
 int sqlite3PagerIsMemdb(Pager *pPager){
   return MEMDB;
 }
+
+#ifndef SQLITE_OMIT_MERGE_SORT
+/*
+** Return true if the pager has seen a pagerStress callback.
+*/
+int sqlite3PagerUnderStress(Pager *pPager){
+  assert( pPager->isSorter );
+  assert( pPager->doNotSpill );
+  return pPager->hasSeenStress;
+}
+#endif
 
 /*
 ** Check that there are at least nSavepoint savepoints open. If there are

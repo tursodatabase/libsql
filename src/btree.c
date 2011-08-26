@@ -1734,11 +1734,22 @@ int sqlite3BtreeOpen(
   /* A BTREE_SINGLE database is always a temporary and/or ephemeral */
   assert( (flags & BTREE_SINGLE)==0 || isTempDb );
 
+  /* The BTREE_SORTER flag is only used if SQLITE_OMIT_MERGE_SORT is undef */
+#ifdef SQLITE_OMIT_MERGE_SORT
+  assert( (flags & BTREE_SORTER)==0 );
+#endif
+
+  /* BTREE_SORTER is always on a BTREE_SINGLE, BTREE_OMIT_JOURNAL */
+  assert( (flags & BTREE_SORTER)==0 ||
+          (flags & (BTREE_SINGLE|BTREE_OMIT_JOURNAL))
+                                        ==(BTREE_SINGLE|BTREE_OMIT_JOURNAL) );
+
   if( db->flags & SQLITE_NoReadlock ){
     flags |= BTREE_NO_READLOCK;
   }
   if( isMemdb ){
     flags |= BTREE_MEMORY;
+    flags &= ~BTREE_SORTER;
   }
   if( (vfsFlags & SQLITE_OPEN_MAIN_DB)!=0 && (isMemdb || isTempDb) ){
     vfsFlags = (vfsFlags & ~SQLITE_OPEN_MAIN_DB) | SQLITE_OPEN_TEMP_DB;
@@ -8174,5 +8185,3 @@ int sqlite3BtreeSetVersion(Btree *pBtree, int iVersion){
   pBt->doNotUseWAL = 0;
   return rc;
 }
-
-

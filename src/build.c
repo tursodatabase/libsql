@@ -2372,6 +2372,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   if( bUseSorter ){
     iSorter = pParse->nTab++;
     sqlite3VdbeAddOp4(v, OP_OpenSorter, iSorter, 0, 0, (char*)pKey, P4_KEYINFO);
+    sqlite3VdbeChangeP5(v, BTREE_SORTER);
   }
 
   /* Open the table. Loop through all rows of the table, inserting index
