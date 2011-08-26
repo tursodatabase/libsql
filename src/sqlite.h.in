@@ -2550,11 +2550,16 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** </li>
 **
 ** <li>
-** ^If the value of a [parameter | host parameter] in the WHERE clause might
-** change the query plan for a statement, then the statement may be
-** automatically recompiled (as if there had been a schema change) on the first 
-** [sqlite3_step()] call following any change to the 
-** [sqlite3_bind_text | bindings] of the [parameter]. 
+** ^If the specific value bound to [parameter | host parameter] in the 
+** WHERE clause might influence the choice of query plan for a statement,
+** then the statement will be automatically recompiled, as if there had been 
+** a schema change, on the first  [sqlite3_step()] call following any change
+** to the [sqlite3_bind_text | bindings] of that [parameter]. 
+** ^The specific value of WHERE-clause [parameter] might influence the 
+** choice of query plan if the parameter is the left-hand side of a [LIKE]
+** or [GLOB] operator or if the parameter is compared to an indexed column
+** and the [SQLITE_ENABLE_STAT3] compile-time option is enabled.
+** the 
 ** </li>
 ** </ol>
 */
