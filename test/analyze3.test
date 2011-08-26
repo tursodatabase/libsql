@@ -149,7 +149,7 @@ do_eqp_test analyze3-1.2.2 {
 } {0 0 0 {SEARCH TABLE t2 USING INDEX i2 (x>? AND x<?) (~196 rows)}}
 do_eqp_test analyze3-1.2.3 {
   SELECT sum(y) FROM t2 WHERE x>0 AND x<99
-} {0 0 0 {SEARCH TABLE t2 USING INDEX i2 (x>? AND x<?) (~982 rows)}}
+} {0 0 0 {SEARCH TABLE t2 USING INDEX i2 (x>? AND x<?) (~968 rows)}}
 do_test analyze3-1.2.4 {
   sf_execsql { SELECT sum(y) FROM t2 WHERE x>12 AND x<20 }
 } {161 0 4760}
