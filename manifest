@@ -1,5 +1,5 @@
-C Merge\sWin32\snative\sheap\ssupport\sinto\strunk.
-D 2011-08-26T11:18:44.284
+C Update\scompiler\serror\smessage\sregarding\sthe\schoice\sof\smemory\sallocator\sdefines.
+D 2011-08-26T11:25:02.455
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -183,7 +183,7 @@ F src/select.c d219c4b68d603cc734b6f9b1e2780fee12a1fa0d
 F src/shell.c bbe7818ff5bc8614105ceb81ad67b8bdc0b671dd
 F src/sqlite.h.in 0a6c9c23337fd1352c5c75a613ff9533aa7d91cb
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
-F src/sqliteInt.h 42e60144648d32e5a6c9994b2baa58b9cf8db69b
+F src/sqliteInt.h 86a4fdb3ba9ab31d98b266797606f30fefe5b8a9
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P c71d73201d950355862dd8d5de142c9673888755 5ed7633d41b99929309a7e13d37375a4fdae43b3
-R 6db87d8333d6edb6b791bc23dadc42e1
+P 5238a74987507f27af4080e2842f53e049b5b111
+R 68d004e4a18ddd9b15416c3d56993539
 U mistachkin
-Z 81e8aedab83fc3e19b6d4ef38c1919d2
+Z cf5bdd8db49b4512fd908f85b844bfec
