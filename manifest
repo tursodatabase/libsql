@@ -1,5 +1,5 @@
-C Merge\sthe\sbranch-3.7.2\schanges\sinto\sthe\sstat3-3.7.2\ssubbranch.\s\sAlso\sfix\nsome\stest\sscript\sissues.
-D 2011-08-26T18:04:52.302
+C Veryquick\sand\smin.rc\stests\snow\spassing.
+D 2011-08-26T18:28:17.095
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 543f91f24cd7fee774ecc0a61c19704c0c3e78fd
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -116,7 +116,7 @@ F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
 F src/btree.c 40c7a36152403d8e7266f99ef157a661c7ab9691
 F src/btree.h 2d1a83ad509047e8cc314fda7e054f99ff52414d
 F src/btreeInt.h c424f2f131cc61ddf130f9bd736b3df12c8a51f0
-F src/build.c 556c5918354ff1102e286fa0f7c032e18bdc2640
+F src/build.c 90685b71dfb606dba062271297959eb499e18a17
 F src/callback.c da3c38d0ef5d7f04fae371e519bda61aa9cb1704
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c c4eeabe49bb1422efd04b4ca474c0bd8063f8379
@@ -239,7 +239,7 @@ F test/alter2.test 52096b711afe5f219e575c6db7a70f7a35df4f63
 F test/alter3.test 25b95a136708f22b87184fa6a4309eea03d65153
 F test/alter4.test 9386ffd1e9c7245f43eca412b2058d747509cc1f
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
-F test/analyze.test 2b2e06e06e575a431a0c3caa9e1511bdcdcc78ff
+F test/analyze.test f8ab7d15858b4093b06caf5e57e2a5ff7104bdae
 F test/analyze2.test ea3df826879dd672031b27c6a845afc3a39f27d9
 F test/analyze3.test 9be0af5e23b711559e8f78c42a6c04de956cba9b
 F test/analyze5.test 713354664c5ff1853ab2cbcb740f0cf5cb7c802e
@@ -853,7 +853,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 01cc4ff6af56a3dd08013862027bf8b91314986d 41b5f86971ed9d7ddca31bd9b43d0a41f03f002b
-R cea0fc29368023c16e8c038f08376226
+P a42db19d52b679e5f3ce6970883903816e75a4e4
+R 665754cf660cbecaba167a23a44d91dd
 U drh
-Z 9d73d77c74a70edc1459c3063eaeecaf
+Z 68aaf0288cba84ca9c2643399ac9c8cc
