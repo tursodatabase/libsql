@@ -39,8 +39,13 @@
 ** URI.
 **
 ** The multiplex VFS allows databases up to 32 GiB in size.  But it splits
-** the files up into 1 GiB pieces, so that they will work even on filesystems
-** that do not support large files.
+** the files up into smaller pieces, so that they will work even on 
+** filesystems that do not support large files.  The default chunk size
+** is 2147418112 bytes (which is 64KiB less than 2GiB) but this can be
+** changed at compile-time by defining the SQLITE_MULTIPLEX_CHUNK_SIZE
+** macro.  Use the "chunksize=NNNN" query parameter with a URI filename
+** in order to select an alternative chunk size for individual connections
+** at run-time.
 */
 #include "sqlite3.h"
 #include <string.h>

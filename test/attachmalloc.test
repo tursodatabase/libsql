@@ -29,8 +29,8 @@ do_malloc_test attachmalloc-1 -tclprep {
   catch { db close }
   for {set i 2} {$i<=4} {incr i} {
     catch { db$i close }
-    file delete -force test$i.db
-    file delete -force test$i.db-journal
+    forcedelete test$i.db
+    forcedelete test$i.db-journal
   }
 } -tclbody {
   if {[catch {sqlite3 db test.db}]} {
@@ -48,8 +48,8 @@ do_malloc_test attachmalloc-1 -tclprep {
 }
 
 do_malloc_test attachmalloc-2 -tclprep {
-  file delete -force test2.db
-  file delete -force test2.db-journal
+  forcedelete test2.db
+  forcedelete test2.db-journal
   sqlite3 db2 test2.db
   db2 eval {
     CREATE TABLE t1(a, b, c);

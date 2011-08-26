@@ -31,7 +31,7 @@ do_test wal4-1.2 {
   # Save a copy of the file-system containing the wal and wal-index files 
   # only (no database file).
   faultsim_save_and_close
-  file delete -force sv_test.db
+  forcedelete sv_test.db
 } {}
 
 do_test wal4-1.3 {

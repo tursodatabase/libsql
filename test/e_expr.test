@@ -657,7 +657,7 @@ set sqlite_current_time 0
 
 # EVIDENCE-OF: R-57598-59332 -- syntax diagram expr
 #
-file delete -force test.db2
+forcedelete test.db2
 execsql {
   ATTACH 'test.db2' AS dbname;
   CREATE TABLE dbname.tblname(cname);
@@ -1675,7 +1675,7 @@ db3 close
 # Test statements related to the EXISTS and NOT EXISTS operators.
 #
 catch { db close }
-file delete -force test.db
+forcedelete test.db
 sqlite3 db test.db
 
 do_execsql_test e_expr-34.1 {
@@ -1756,7 +1756,7 @@ foreach {tn e1 e2} {
 #
 
 catch { db close }
-file delete -force test.db
+forcedelete test.db
 sqlite3 db test.db
 do_test e_expr-35.0 {
   execsql {

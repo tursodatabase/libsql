@@ -66,8 +66,8 @@ LIBOBJ+= alter.o analyze.o attach.o auth.o \
          random.o resolve.o rowset.o rtree.o select.o status.o \
          table.o tokenize.o trigger.o \
          update.o util.o vacuum.o \
-         vdbe.o vdbeapi.o vdbeaux.o vdbeblob.o vdbemem.o vdbetrace.o \
-         wal.o walker.o where.o utf.o vtab.o
+         vdbe.o vdbeapi.o vdbeaux.o vdbeblob.o vdbemem.o vdbesort.o \
+	 vdbetrace.o wal.o walker.o where.o utf.o vtab.o
 
 
 
@@ -156,6 +156,7 @@ SRC = \
   $(TOP)/src/vdbeaux.c \
   $(TOP)/src/vdbeblob.c \
   $(TOP)/src/vdbemem.c \
+  $(TOP)/src/vdbesort.c \
   $(TOP)/src/vdbetrace.c \
   $(TOP)/src/vdbeInt.h \
   $(TOP)/src/vtab.c \
@@ -384,6 +385,14 @@ sqlite3.c:	target_source $(TOP)/tool/mksqlite3c.tcl
 	echo '#ifndef USE_SYSTEM_SQLITE' >tclsqlite3.c
 	cat sqlite3.c >>tclsqlite3.c
 	echo '#endif /* USE_SYSTEM_SQLITE */' >>tclsqlite3.c
+	cat $(TOP)/src/tclsqlite.c >>tclsqlite3.c
+
+sqlite3.c-debug:	target_source $(TOP)/tool/mksqlite3c.tcl
+	tclsh $(TOP)/tool/mksqlite3c.tcl --linemacros
+	echo '#ifndef USE_SYSTEM_SQLITE' >tclsqlite3.c
+	cat sqlite3.c >>tclsqlite3.c
+	echo '#endif /* USE_SYSTEM_SQLITE */' >>tclsqlite3.c
+	echo '#line 1 "tclsqlite.c"' >>tclsqlite3.c
 	cat $(TOP)/src/tclsqlite.c >>tclsqlite3.c
 
 sqlite3-all.c:	sqlite3.c $(TOP)/tool/split-sqlite3c.tcl

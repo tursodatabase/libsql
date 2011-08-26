@@ -23,7 +23,7 @@ source $testdir/tester.tcl
 do_not_use_codec
 
 db close
-file delete -force test.db test.db-journal
+forcedelete test.db test.db-journal
 
 # Database begins with valid 16-byte header string.
 #
@@ -63,7 +63,7 @@ ifcapable pager_pragmas {
           && $pagesize>$SQLITE_MAX_PAGE_SIZE} continue
      do_test filefmt-1.5.$pagesize.1 {
        db close
-       file delete -force test.db
+       forcedelete test.db
        sqlite3 db test.db
        db eval "PRAGMA auto_vacuum=OFF"
        db eval "PRAGMA page_size=$pagesize"
@@ -105,7 +105,7 @@ do_test filefmt-1.7 {
 ifcapable pager_pragmas {
   do_test filefmt-1.8 {
     db close
-    file delete -force test.db
+    forcedelete test.db
     sqlite3 db test.db
     db eval {PRAGMA page_size=512; CREATE TABLE t1(x)}
     db close
@@ -125,7 +125,7 @@ ifcapable pager_pragmas {
 # always derives this from the size of the file.
 #
 db close
-file delete -force test.db
+forcedelete test.db
 
 set a_string_counter 1
 proc a_string {n} {
@@ -157,7 +157,7 @@ integrity_check filefmt-2.1.5
 do_test         filefmt-2.1.6 { hexio_read test.db 28 4 } {00000010}
 
 db close
-file delete -force test.db
+forcedelete test.db
 sqlite3 db test.db
 db func a_string a_string
 

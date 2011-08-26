@@ -24,7 +24,7 @@ if {[catch {sqlite3 db test.db -vfs unix-none} msg]} {
   return
 }
 db close
-file delete -force test.db.lock
+forcedelete test.db.lock
 
 ifcapable lock_proxy_pragmas {
   set ::using_proxy 0
@@ -100,7 +100,7 @@ do_test lock5-dotfile.X {
 
 #####################################################################
 
-file delete -force test.db
+forcedelete test.db
 if {[catch {sqlite3 db test.db -vfs unix-flock} msg]} {
   finish_test
   return

@@ -427,8 +427,8 @@ ifcapable tempdb {
 #
 ifcapable tempdb&&attach {
   do_test autoinc-5.1 {
-    file delete -force test2.db
-    file delete -force test2.db-journal
+    forcedelete test2.db
+    forcedelete test2.db-journal
     sqlite3 db2 test2.db
     execsql {
       CREATE TABLE t4(m INTEGER PRIMARY KEY AUTOINCREMENT, n);
@@ -520,7 +520,7 @@ do_test autoinc-7.2 {
 do_test autoinc-8.1 {
   catch {db2 close}
   catch {db close}
-  file delete -force test.db
+  forcedelete test.db
   sqlite3 db test.db
   set DB [sqlite3_connection_pointer db]
   set STMT [sqlite3_prepare $DB {

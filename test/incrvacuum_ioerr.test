@@ -108,7 +108,7 @@ do_ioerr_test incrvacuum-ioerr-3 -start 1 -cksum 1 -tclprep {
 ifcapable shared_cache {
 
   catch { db close }
-  file delete -force test.db
+  forcedelete test.db
   set ::enable_shared_cache [sqlite3_enable_shared_cache 1]
   
   # Create two connections to a single shared-cache:

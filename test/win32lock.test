@@ -41,20 +41,23 @@ do_test win32lock-1.1 {
 } {1 100000 2 50000 3 25000 4 12500}
 
 unset -nocomplain delay1 rc msg
-set delay1 50
-set rc 0
 set old_pending_byte [sqlite3_test_control_pending_byte 0x40000000]
+
+set win32_lock_ok [list]
+set win32_lock_error [list]
+set delay1 25
 while {1} {
-  sqlite3_sleep 10
   lock_win32_file test.db 0 $::delay1
+  set ::log {}
   set rc [catch {db eval {SELECT x, length(y) FROM t1 ORDER BY rowid}} msg]
   if {$rc} {
-    do_test win32lock-1.2-$delay1-fin {
+    lappend win32_lock_error $::delay1
+    do_test win32lock-1.2-$delay1-error {
        set ::msg
     } {disk I/O error}
-    break
   } else {
-    do_test win32lock-1.2-$delay1 {
+    lappend win32_lock_ok $::delay1
+    do_test win32lock-1.2-$delay1-ok {
        set ::msg
     } {1 100000 2 50000 3 25000 4 12500}
     if {[info exists ::log] && $::log!=""} {
@@ -63,9 +66,14 @@ while {1} {
         set x
       } {{delayed #ms for lock/sharing conflict}}
     }
-    incr delay1 50
   }
-  set ::log {}
+  if {[llength $win32_lock_ok] && [llength $win32_lock_error]} break
+  incr delay1 25
+  if {$delay1 > 12500} {
+    puts "Timed out waiting for \"ok\" and \"error\" results."
+    break
+  }
+  sqlite3_sleep 10
 }
 
 do_test win32lock-2.0 {
@@ -75,33 +83,50 @@ do_test win32lock-2.1 {
   file_control_win32_av_retry db 1 1
 } {0 1 1}
 
-set delay1 50
+#
+# NOTE: It is known that the win32lock-2.2-* tests may fail if the system is
+#       experiencing heavy load (i.e. they are very timing sensitive).  This is
+#       primarily due to the AV retry delay being set to 1 millisecond in the
+#       win32lock-2.1 test (above).  While it is important to test this corner
+#       case for the AV retry logic, a failure of this test should probably not
+#       be interpreted as a bug in SQLite or these test cases.
+#
+set win32_lock_ok [list]
+set win32_lock_error [list]
+set delay1 1
 while {1} {
-  sqlite3_sleep 10
   lock_win32_file test.db 0 $::delay1
+  set ::log {}
   set rc [catch {db eval {SELECT x, length(y) FROM t1 ORDER BY rowid}} msg]
   if {$rc} {
-    do_test win32lock-2.2-$delay1-fin {
+    lappend win32_lock_error $::delay1
+    do_test win32lock-2.2-$delay1-error {
        set ::msg
     } {disk I/O error}
-    break
   } else {
-    do_test win32lock-2.2-$delay1 {
+    lappend win32_lock_ok $::delay1
+    do_test win32lock-2.2-$delay1-ok {
        set ::msg
     } {1 100000 2 50000 3 25000 4 12500}
-    if {$::log!=""} {
+    if {[info exists ::log] && $::log!=""} {
       do_test win32lock-2.2-$delay1-log1 {
         regsub {\d+} $::log # x
         set x
       } {{delayed #ms for lock/sharing conflict}}
     }
-    incr delay1 50
   }
-  set ::log {}
+  if {[llength $win32_lock_ok] && [llength $win32_lock_error]} break
+  incr delay1 1
+  if {$delay1 > 500} {
+    puts "Timed out waiting for \"ok\" and \"error\" results."
+    break
+  }
+  sqlite3_sleep 10
 }
 
 file_control_win32_av_retry db 10 25
 sqlite3_test_control_pending_byte $old_pending_byte
+db close
 sqlite3_shutdown
 test_sqlite3_log 
 sqlite3_initialize

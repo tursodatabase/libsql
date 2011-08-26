@@ -410,102 +410,106 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
     ** the case where the source and destination databases have the
     ** same schema version.
     */
-    if( rc==SQLITE_DONE 
-     && (rc = sqlite3BtreeUpdateMeta(p->pDest,1,p->iDestSchema+1))==SQLITE_OK
-    ){
-      int nDestTruncate;
-  
-      if( p->pDestDb ){
-        sqlite3ResetInternalSchema(p->pDestDb, -1);
-      }
-
-      /* Set nDestTruncate to the final number of pages in the destination
-      ** database. The complication here is that the destination page
-      ** size may be different to the source page size. 
-      **
-      ** If the source page size is smaller than the destination page size, 
-      ** round up. In this case the call to sqlite3OsTruncate() below will
-      ** fix the size of the file. However it is important to call
-      ** sqlite3PagerTruncateImage() here so that any pages in the 
-      ** destination file that lie beyond the nDestTruncate page mark are
-      ** journalled by PagerCommitPhaseOne() before they are destroyed
-      ** by the file truncation.
-      */
-      assert( pgszSrc==sqlite3BtreeGetPageSize(p->pSrc) );
-      assert( pgszDest==sqlite3BtreeGetPageSize(p->pDest) );
-      if( pgszSrc<pgszDest ){
-        int ratio = pgszDest/pgszSrc;
-        nDestTruncate = (nSrcPage+ratio-1)/ratio;
-        if( nDestTruncate==(int)PENDING_BYTE_PAGE(p->pDest->pBt) ){
-          nDestTruncate--;
+    if( rc==SQLITE_DONE ){
+      rc = sqlite3BtreeUpdateMeta(p->pDest,1,p->iDestSchema+1);
+      if( rc==SQLITE_OK ){
+        if( p->pDestDb ){
+          sqlite3ResetInternalSchema(p->pDestDb, -1);
         }
-      }else{
-        nDestTruncate = nSrcPage * (pgszSrc/pgszDest);
+        if( destMode==PAGER_JOURNALMODE_WAL ){
+          rc = sqlite3BtreeSetVersion(p->pDest, 2);
+        }
       }
-      sqlite3PagerTruncateImage(pDestPager, nDestTruncate);
-
-      if( pgszSrc<pgszDest ){
-        /* If the source page-size is smaller than the destination page-size,
-        ** two extra things may need to happen:
+      if( rc==SQLITE_OK ){
+        int nDestTruncate;
+        /* Set nDestTruncate to the final number of pages in the destination
+        ** database. The complication here is that the destination page
+        ** size may be different to the source page size. 
         **
-        **   * The destination may need to be truncated, and
-        **
-        **   * Data stored on the pages immediately following the 
-        **     pending-byte page in the source database may need to be
-        **     copied into the destination database.
+        ** If the source page size is smaller than the destination page size, 
+        ** round up. In this case the call to sqlite3OsTruncate() below will
+        ** fix the size of the file. However it is important to call
+        ** sqlite3PagerTruncateImage() here so that any pages in the 
+        ** destination file that lie beyond the nDestTruncate page mark are
+        ** journalled by PagerCommitPhaseOne() before they are destroyed
+        ** by the file truncation.
         */
-        const i64 iSize = (i64)pgszSrc * (i64)nSrcPage;
-        sqlite3_file * const pFile = sqlite3PagerFile(pDestPager);
-        i64 iOff;
-        i64 iEnd;
-
-        assert( pFile );
-        assert( (i64)nDestTruncate*(i64)pgszDest >= iSize || (
-              nDestTruncate==(int)(PENDING_BYTE_PAGE(p->pDest->pBt)-1)
-           && iSize>=PENDING_BYTE && iSize<=PENDING_BYTE+pgszDest
-        ));
-
-        /* This call ensures that all data required to recreate the original
-        ** database has been stored in the journal for pDestPager and the
-        ** journal synced to disk. So at this point we may safely modify
-        ** the database file in any way, knowing that if a power failure
-        ** occurs, the original database will be reconstructed from the 
-        ** journal file.  */
-        rc = sqlite3PagerCommitPhaseOne(pDestPager, 0, 1);
-
-        /* Write the extra pages and truncate the database file as required. */
-        iEnd = MIN(PENDING_BYTE + pgszDest, iSize);
-        for(
-          iOff=PENDING_BYTE+pgszSrc; 
-          rc==SQLITE_OK && iOff<iEnd; 
-          iOff+=pgszSrc
-        ){
-          PgHdr *pSrcPg = 0;
-          const Pgno iSrcPg = (Pgno)((iOff/pgszSrc)+1);
-          rc = sqlite3PagerGet(pSrcPager, iSrcPg, &pSrcPg);
-          if( rc==SQLITE_OK ){
-            u8 *zData = sqlite3PagerGetData(pSrcPg);
-            rc = sqlite3OsWrite(pFile, zData, pgszSrc, iOff);
+        assert( pgszSrc==sqlite3BtreeGetPageSize(p->pSrc) );
+        assert( pgszDest==sqlite3BtreeGetPageSize(p->pDest) );
+        if( pgszSrc<pgszDest ){
+          int ratio = pgszDest/pgszSrc;
+          nDestTruncate = (nSrcPage+ratio-1)/ratio;
+          if( nDestTruncate==(int)PENDING_BYTE_PAGE(p->pDest->pBt) ){
+            nDestTruncate--;
           }
-          sqlite3PagerUnref(pSrcPg);
+        }else{
+          nDestTruncate = nSrcPage * (pgszSrc/pgszDest);
         }
-        if( rc==SQLITE_OK ){
-          rc = backupTruncateFile(pFile, iSize);
-        }
+        sqlite3PagerTruncateImage(pDestPager, nDestTruncate);
 
-        /* Sync the database file to disk. */
-        if( rc==SQLITE_OK ){
-          rc = sqlite3PagerSync(pDestPager);
+        if( pgszSrc<pgszDest ){
+          /* If the source page-size is smaller than the destination page-size,
+          ** two extra things may need to happen:
+          **
+          **   * The destination may need to be truncated, and
+          **
+          **   * Data stored on the pages immediately following the 
+          **     pending-byte page in the source database may need to be
+          **     copied into the destination database.
+          */
+          const i64 iSize = (i64)pgszSrc * (i64)nSrcPage;
+          sqlite3_file * const pFile = sqlite3PagerFile(pDestPager);
+          i64 iOff;
+          i64 iEnd;
+
+          assert( pFile );
+          assert( (i64)nDestTruncate*(i64)pgszDest >= iSize || (
+                nDestTruncate==(int)(PENDING_BYTE_PAGE(p->pDest->pBt)-1)
+             && iSize>=PENDING_BYTE && iSize<=PENDING_BYTE+pgszDest
+          ));
+
+          /* This call ensures that all data required to recreate the original
+          ** database has been stored in the journal for pDestPager and the
+          ** journal synced to disk. So at this point we may safely modify
+          ** the database file in any way, knowing that if a power failure
+          ** occurs, the original database will be reconstructed from the 
+          ** journal file.  */
+          rc = sqlite3PagerCommitPhaseOne(pDestPager, 0, 1);
+
+          /* Write the extra pages and truncate the database file as required */
+          iEnd = MIN(PENDING_BYTE + pgszDest, iSize);
+          for(
+            iOff=PENDING_BYTE+pgszSrc; 
+            rc==SQLITE_OK && iOff<iEnd; 
+            iOff+=pgszSrc
+          ){
+            PgHdr *pSrcPg = 0;
+            const Pgno iSrcPg = (Pgno)((iOff/pgszSrc)+1);
+            rc = sqlite3PagerGet(pSrcPager, iSrcPg, &pSrcPg);
+            if( rc==SQLITE_OK ){
+              u8 *zData = sqlite3PagerGetData(pSrcPg);
+              rc = sqlite3OsWrite(pFile, zData, pgszSrc, iOff);
+            }
+            sqlite3PagerUnref(pSrcPg);
+          }
+          if( rc==SQLITE_OK ){
+            rc = backupTruncateFile(pFile, iSize);
+          }
+
+          /* Sync the database file to disk. */
+          if( rc==SQLITE_OK ){
+            rc = sqlite3PagerSync(pDestPager);
+          }
+        }else{
+          rc = sqlite3PagerCommitPhaseOne(pDestPager, 0, 0);
         }
-      }else{
-        rc = sqlite3PagerCommitPhaseOne(pDestPager, 0, 0);
-      }
-  
-      /* Finish committing the transaction to the destination database. */
-      if( SQLITE_OK==rc
-       && SQLITE_OK==(rc = sqlite3BtreeCommitPhaseTwo(p->pDest, 0))
-      ){
-        rc = SQLITE_DONE;
+    
+        /* Finish committing the transaction to the destination database. */
+        if( SQLITE_OK==rc
+         && SQLITE_OK==(rc = sqlite3BtreeCommitPhaseTwo(p->pDest, 0))
+        ){
+          rc = SQLITE_DONE;
+        }
       }
     }
   

@@ -1686,7 +1686,7 @@ foreach {q r} [array get fts4aa_res] {
 #
 do_test fts4aa-3.0 {
   db close
-  file delete -force test.db
+  forcedelete test.db
   sqlite3 db test.db
   db eval {
     PRAGMA page_size=65536;

@@ -27,7 +27,7 @@ set ::enable_shared_cache [sqlite3_enable_shared_cache 1]
 foreach av [list 0 1] {
 
 # Open the database connection and execute the auto-vacuum pragma
-file delete -force test.db
+forcedelete test.db
 sqlite3 db test.db
 
 ifcapable autovacuum {
@@ -293,9 +293,9 @@ catch {db3 close}
 #     db2.main  ->   ./test2.db
 #     db2.test  ->   ./test.db
 #
-file delete -force test.db
-file delete -force test2.db
-file delete -force test2.db-journal
+forcedelete test.db
+forcedelete test2.db
+forcedelete test2.db-journal
 sqlite3 db  test.db
 sqlite3 db2 test2.db
 do_test shared-$av.4.1.1 {
@@ -426,7 +426,7 @@ catch {db close}
 # Tests shared-5.* 
 #
 foreach db [list test.db test1.db test2.db test3.db] {
-  file delete -force $db ${db}-journal
+  forcedelete $db ${db}-journal
 }
 do_test shared-$av.5.1.1 {
   sqlite3 db1 test.db
@@ -557,7 +557,7 @@ do_test shared-$av.6.1.4 {
 catch {db1 close}
 catch {db2 close}
 foreach f [list test.db test2.db] {
-  file delete -force $f ${f}-journal
+  forcedelete $f ${f}-journal
 }
 
 #--------------------------------------------------------------------------
@@ -643,7 +643,7 @@ unset -nocomplain contents
 # The following tests try to trick the shared-cache code into assuming
 # the wrong encoding for a database.
 #
-file delete -force test.db test.db-journal
+forcedelete test.db test.db-journal
 ifcapable utf16 {
   do_test shared-$av.8.1.1 {
     sqlite3 db test.db
@@ -675,7 +675,7 @@ ifcapable utf16 {
     }
   } {UTF-8}
 
-  file delete -force test2.db test2.db-journal
+  forcedelete test2.db test2.db-journal
   do_test shared-$av.8.2.1 {
     execsql {
       ATTACH 'test2.db' AS aux;
@@ -693,7 +693,7 @@ ifcapable utf16 {
 
   catch {db close}
   catch {db2 close}
-  file delete -force test.db test2.db
+  forcedelete test.db test2.db
 
   do_test shared-$av.8.3.2 {
     sqlite3 db test.db
@@ -732,7 +732,7 @@ if 0 {
 
 catch {db close}
 catch {db2 close}
-file delete -force test.db test2.db
+forcedelete test.db test2.db
 
 #---------------------------------------------------------------------------
 # The following tests - shared-9.* - test interactions between TEMP triggers
@@ -772,7 +772,7 @@ do_test shared-$av.9.3 {
 #
 do_test shared-$av.10.1 {
   # Create a small sample database with two connections to it (db and db2).
-  file delete -force test.db
+  forcedelete test.db
   sqlite3 db  test.db
   sqlite3 db2 test.db
   execsql {
@@ -853,7 +853,7 @@ do_test shared-$av.10.11 {
 } {}
 
 do_test shared-$av.11.1 {
-  file delete -force test.db
+  forcedelete test.db
   sqlite3 db  test.db
   sqlite3 db2 test.db
   execsql {
@@ -916,7 +916,7 @@ do_test shared-$av.11.11 {
 
 # This tests that if it is impossible to free any pages, SQLite will
 # exceed the limit set by PRAGMA cache_size.
-file delete -force test.db test.db-journal
+forcedelete test.db test.db-journal
 sqlite3 db test.db 
 ifcapable pager_pragmas {
   do_test shared-$av.12.1 {
@@ -963,7 +963,7 @@ do_test shared-$av.12.X {
 # database handle. This covers an extra line or two.
 #
 do_test shared-$av.13.1 {
-  file delete -force test2.db test3.db test4.db test5.db
+  forcedelete test2.db test3.db test4.db test5.db
   sqlite3 db :memory:
   execsql {
     ATTACH 'test2.db' AS aux2;
@@ -1026,7 +1026,7 @@ do_test shared-$av.14.3 {
 # assert() statements in the C code.
 #
 do_test shared-$av-15.1 {
-  file delete -force test.db
+  forcedelete test.db
   sqlite3 db test.db -fullmutex 1
   sqlite3 db2 test.db -fullmutex 1
   execsql {

@@ -164,7 +164,7 @@ foreach {tn iInsert res wal_index_hdr_mod wal_locks} "
 db close
 db2 close
 tvfs delete
-file delete -force test.db test.db-wal test.db-journal
+forcedelete test.db test.db-wal test.db-journal
 
 #-------------------------------------------------------------------------
 # This test case is very similar to the previous one, except, after
@@ -271,7 +271,7 @@ foreach {tn iInsert res0 res1 wal_index_hdr_mod} {
 db close
 db2 close
 tvfs delete
-file delete -force test.db test.db-wal test.db-journal
+forcedelete test.db test.db-wal test.db-journal
 
 
 if 0 {
@@ -344,7 +344,7 @@ do_test wal2-3.5 {
 } {0 0}
 db close
 tvfs delete
-file delete -force test.db test.db-wal test.db-journal
+forcedelete test.db test.db-wal test.db-journal
 
 }
 
@@ -441,7 +441,7 @@ tvfs delete
 #               connection silently remains in exclusive mode.
 #
 do_test wal2-6.1.1 {
-  file delete -force test.db test.db-wal test.db-journal
+  forcedelete test.db test.db-wal test.db-journal
   sqlite3 db test.db
   execsql {
     Pragma Journal_Mode = Wal;
@@ -484,7 +484,7 @@ do_test wal2-6.1.6 {
 db close
 
 do_test wal2-6.2.1 {
-  file delete -force test.db test.db-wal test.db-journal
+  forcedelete test.db test.db-wal test.db-journal
   sqlite3 db test.db
   execsql {
     Pragma Locking_Mode = Exclusive;
@@ -552,7 +552,7 @@ do_test wal2-6.2.9 {
 db close
 
 do_test wal2-6.3.1 {
-  file delete -force test.db test.db-wal test.db-journal
+  forcedelete test.db test.db-wal test.db-journal
   sqlite3 db test.db
   execsql {
     PRAGMA journal_mode = WAL;
@@ -597,7 +597,7 @@ db close
 # as expected when a WAL database is used with locking_mode=exclusive.
 #
 do_test wal2-6.4.1 {
-  file delete -force test.db test.db-wal test.db-journal
+  forcedelete test.db test.db-wal test.db-journal
   proc tvfs_cb {method args} {
     set ::shm_file [lindex $args 0]
     if {$method == "xShmLock"} { lappend ::locks [lindex $args 2] }
@@ -606,6 +606,7 @@ do_test wal2-6.4.1 {
   testvfs tvfs
   tvfs script tvfs_cb
   sqlite3 db test.db -vfs tvfs
+  set {} {}
 } {}
 
 set RECOVERY {
@@ -792,7 +793,7 @@ T delete
 # Test a theory about the checksum algorithm. Theory was false and this
 # test did not provoke a bug.
 #
-file delete -force test.db test.db-wal test.db-journal
+forcedelete test.db test.db-wal test.db-journal
 do_test wal2-7.1.1 {
   sqlite3 db test.db
   execsql {
@@ -803,8 +804,8 @@ do_test wal2-7.1.1 {
   file size test.db
 } {4096}
 do_test wal2-7.1.2 {
-  file copy -force test.db test2.db
-  file copy -force test.db-wal test2.db-wal
+  forcecopy test.db test2.db
+  forcecopy test.db-wal test2.db-wal
   hexio_write test2.db-wal 48 FF
 } {1}
 do_test wal2-7.1.3 {
@@ -814,7 +815,7 @@ do_test wal2-7.1.3 {
 } {}
 db close
 db2 close
-file delete -force test.db test.db-wal test.db-journal
+forcedelete test.db test.db-wal test.db-journal
 do_test wal2-8.1.2 {
   sqlite3 db test.db
   execsql {
@@ -870,7 +871,7 @@ testvfs tvfs
 tvfs script get_name
 tvfs filter xShmOpen
 
-file delete -force test.db test.db-wal test.db-journal
+forcedelete test.db test.db-wal test.db-journal
 do_test wal2-9.1 {
   sqlite3 db test.db -vfs tvfs
   execsql {

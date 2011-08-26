@@ -48,7 +48,7 @@ do_test walbak-1.0 {
   }
 } {wal}
 do_test walbak-1.1 {
-  file delete -force bak.db bak.db-journal bak.db-wal
+  forcedelete bak.db bak.db-journal bak.db-wal
   db backup bak.db
   file size bak.db
 } [expr 3*1024]
@@ -79,6 +79,9 @@ do_test walbak-1.6 {
   execsql { PRAGMA wal_checkpoint }
   list [file size test.db] [file size test.db-wal]
 } [list [expr 3*1024] [wal_file_size 6 1024]]
+do_test walbak-1.6.1 {
+  hexio_read test.db 18 2
+} {0202}
 do_test walbak-1.7 {
   execsql { 
     CREATE TABLE t2(a, b);
@@ -106,7 +109,7 @@ proc sig {{db db}} {
   }
 }
 db close
-file delete test.db
+delete_file test.db
 sqlite3 db test.db
 do_test walbak-2.1 {
   execsql { PRAGMA journal_mode = WAL }
@@ -236,7 +239,7 @@ foreach {tn setup} {
   }
 
 } {
-  foreach f [glob -nocomplain test.db*] { file delete -force $f }
+  foreach f [glob -nocomplain test.db*] { forcedelete $f }
 
   eval $setup
 
@@ -271,8 +274,83 @@ foreach {tn setup} {
     execsql { SELECT * FROM t1 }
   } {1 2 3 4 5 6 7 8}
 
+  # Check that [db] is still in WAL mode.
+  do_test walbak-3.$tn.5 {
+    execsql { PRAGMA journal_mode }
+  } {wal}
+  do_test walbak-3.$tn.6 {
+    execsql { PRAGMA wal_checkpoint }
+    hexio_read test.db 18 2
+  } {0202}
+
+  # If it was not an in-memory database, check that [db2] is still in
+  # rollback mode.
+  if {[file exists test.db2]} {
+    do_test walbak-3.$tn.7 {
+      execsql { PRAGMA journal_mode } db2
+    } {wal}
+    do_test walbak-3.$tn.8 {
+      execsql { PRAGMA wal_checkpoint }
+      hexio_read test.db 18 2
+    } {0202}
+  }
+
   db  close
   db2 close
+}
+
+#-------------------------------------------------------------------------
+# Test that the following holds when a backup operation is run:
+#
+#   Source  |  Destination inital  |  Destination final
+#   ---------------------------------------------------
+#   Rollback   Rollback               Rollback
+#   Rollback   WAL                    WAL
+#   WAL        Rollback               WAL
+#   WAL        WAL                    WAL
+#
+foreach {tn src dest dest_final} {
+  1   delete    delete    delete
+  2   delete    wal       wal
+  3   wal       delete    wal
+  4   wal       wal       wal
+} {
+  catch { db close } 
+  catch { db2 close } 
+  forcedelete test.db test.db2
+
+  do_test walbak-4.$tn.1 {
+    sqlite3 db test.db
+    db eval "PRAGMA journal_mode = $src"
+    db eval {
+      CREATE TABLE t1(a, b);
+      INSERT INTO t1 VALUES('I', 'II');
+      INSERT INTO t1 VALUES('III', 'IV');
+    }
+
+    sqlite3 db2 test.db2
+    db2 eval "PRAGMA journal_mode = $dest"
+    db2 eval {
+      CREATE TABLE t2(x, y);
+      INSERT INTO t2 VALUES('1', '2');
+      INSERT INTO t2 VALUES('3', '4');
+    }
+  } {}
+
+  do_test walbak-4.$tn.2 { execsql { PRAGMA journal_mode } db  } $src
+  do_test walbak-4.$tn.3 { execsql { PRAGMA journal_mode } db2 } $dest
+
+  do_test walbak-4.$tn.4 { db backup test.db2 } {}
+  do_test walbak-4.$tn.5 {
+    execsql { SELECT * FROM t1 } db2
+  } {I II III IV}
+  do_test walbak-4.$tn.5 { execsql { PRAGMA journal_mode } db2 } $dest_final
+
+
+  db2 close
+  do_test walbak-4.$tn.6 { file exists test.db2-wal } 0
+  sqlite3 db2 test.db2
+  do_test walbak-4.$tn.7 { execsql { PRAGMA journal_mode } db2 } $dest_final
 }
 
 

@@ -145,7 +145,7 @@ do_test multiplex-1.13.7  { sqlite3_multiplex_shutdown }                        
 sqlite3_multiplex_initialize "" 1
 multiplex_set db main 32768 16
 
-file delete -force test.x
+forcedelete test.x
 do_test multiplex-2.1.2 {
   sqlite3 db test.x
   execsql {
@@ -514,7 +514,7 @@ do_test multiplex-5.4.1 {
   file mkdir test.db
   list [catch { sqlite3 db test.db } msg] $msg
 } {1 {unable to open database file}}
-catch { file delete test.db }
+catch { delete_file test.db }
 
 do_faultsim_test multiplex-5.5 -prep {
   catch { sqlite3_multiplex_shutdown }

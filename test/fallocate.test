@@ -79,7 +79,7 @@ ifcapable !wal { set skipwaltests 1 }
 
 if {!$skipwaltests} {
   db close
-  file delete -force test.db
+  forcedelete test.db
   sqlite3 db test.db
   file_control_chunksize_test db main [expr 32*1024]
   

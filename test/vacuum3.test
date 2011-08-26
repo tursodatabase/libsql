@@ -196,7 +196,7 @@ foreach {request actual} [list \
 
 do_test vacuum3-4.1 {
   db close
-  file delete test.db
+  delete_file test.db
   sqlite3 db test.db
   execsql {
     PRAGMA page_size=1024;

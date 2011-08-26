@@ -20,7 +20,9 @@
 # Commands to manipulate the db and the file-system at a high level:
 #
 #      copy_file              FROM TO
+#      delete_file            FILENAME
 #      drop_all_tables        ?DB?
+#      forcecopy              FROM TO
 #      forcedelete            FILENAME
 #
 # Test the capability of the SQLite version built into the interpreter to
@@ -123,6 +125,121 @@ if {[info command sqlite_orig]==""} {
   }
 }
 
+proc getFileRetries {} {
+  if {![info exists ::G(file-retries)]} {
+    #
+    # NOTE: Return the default number of retries for [file] operations.  A
+    #       value of zero or less here means "disabled".
+    #
+    return [expr {$::tcl_platform(platform) eq "windows" ? 10 : 0}]
+  }
+  return $::G(file-retries)
+}
+
+proc getFileRetryDelay {} {
+  if {![info exists ::G(file-retry-delay)]} {
+    #
+    # NOTE: Return the default number of milliseconds to wait when retrying
+    #       failed [file] operations.  A value of zero or less means "do not
+    #       wait".
+    #
+    return 100; # TODO: Good default?
+  }
+  return $::G(file-retry-delay)
+}
+
+# Copy file $from into $to. This is used because some versions of
+# TCL for windows (notably the 8.4.1 binary package shipped with the
+# current mingw release) have a broken "file copy" command.
+#
+proc copy_file {from to} {
+  do_copy_file false $from $to
+}
+
+proc forcecopy {from to} {
+  do_copy_file true $from $to
+}
+
+proc do_copy_file {force from to} {
+  set nRetry [getFileRetries]     ;# Maximum number of retries.
+  set nDelay [getFileRetryDelay]  ;# Delay in ms before retrying.
+
+  # On windows, sometimes even a [file copy -force] can fail. The cause is
+  # usually "tag-alongs" - programs like anti-virus software, automatic backup
+  # tools and various explorer extensions that keep a file open a little longer
+  # than we expect, causing the delete to fail.
+  #
+  # The solution is to wait a short amount of time before retrying the copy.
+  #
+  if {$nRetry > 0} {
+    for {set i 0} {$i<$nRetry} {incr i} {
+      set rc [catch {
+        if {$force} {
+          file copy -force $from $to
+        } else {
+          file copy $from $to
+        }
+      } msg]
+      if {$rc==0} break
+      if {$nDelay > 0} { after $nDelay }
+    }
+    if {$rc} { error $msg }
+  } else {
+    if {$force} {
+      file copy -force $from $to
+    } else {
+      file copy $from $to
+    }
+  }
+}
+
+# Delete a file or directory
+#
+proc delete_file {args} {
+  do_delete_file false {*}$args
+}
+
+proc forcedelete {args} {
+  do_delete_file true {*}$args
+}
+
+proc do_delete_file {force args} {
+  set nRetry [getFileRetries]     ;# Maximum number of retries.
+  set nDelay [getFileRetryDelay]  ;# Delay in ms before retrying.
+
+  foreach filename $args {
+    # On windows, sometimes even a [file delete -force] can fail just after
+    # a file is closed. The cause is usually "tag-alongs" - programs like
+    # anti-virus software, automatic backup tools and various explorer
+    # extensions that keep a file open a little longer than we expect, causing
+    # the delete to fail.
+    #
+    # The solution is to wait a short amount of time before retrying the
+    # delete.
+    #
+    if {$nRetry > 0} {
+      for {set i 0} {$i<$nRetry} {incr i} {
+        set rc [catch {
+          if {$force} {
+            file delete -force $filename
+          } else {
+            file delete $filename
+          }
+        } msg]
+        if {$rc==0} break
+        if {$nDelay > 0} { after $nDelay }
+      }
+      if {$rc} { error $msg }
+    } else {
+      if {$force} {
+        file delete -force $filename
+      } else {
+        file delete $filename
+      }
+    }
+  }
+}
+
 proc execpresql {handle args} {
   trace remove execution $handle enter [list execpresql $handle]
   if {[info exists ::G(perm:presql)]} {
@@ -154,6 +271,8 @@ if {[info exists cmdlinearg]==0} {
   #   --backtrace=N
   #   --binarylog=N
   #   --soak=N
+  #   --file-retries=N
+  #   --file-retry-delay=N
   #   --start=[$permutation:]$testfile
   #
   set cmdlinearg(soft-heap-limit)    0
@@ -162,6 +281,8 @@ if {[info exists cmdlinearg]==0} {
   set cmdlinearg(backtrace)         10
   set cmdlinearg(binarylog)          0
   set cmdlinearg(soak)               0
+  set cmdlinearg(file-retries)       0
+  set cmdlinearg(file-retry-delay)   0
   set cmdlinearg(start)             "" 
 
   set leftover [list]
@@ -196,6 +317,14 @@ if {[info exists cmdlinearg]==0} {
       {^-+soak=.+$} {
         foreach {dummy cmdlinearg(soak)} [split $a =] break
         set ::G(issoak) $cmdlinearg(soak)
+      }
+      {^-+file-retries=.+$} {
+        foreach {dummy cmdlinearg(file-retries)} [split $a =] break
+        set ::G(file-retries) $cmdlinearg(file-retries)
+      }
+      {^-+file-retry-delay=.+$} {
+        foreach {dummy cmdlinearg(file-retry-delay)} [split $a =] break
+        set ::G(file-retry-delay) $cmdlinearg(file-retry-delay)
       }
       {^-+start=.+$} {
         foreach {dummy cmdlinearg(start)} [split $a =] break
@@ -246,9 +375,9 @@ sqlite3_soft_heap_limit $cmdlinearg(soft-heap-limit)
 #
 proc reset_db {} {
   catch {db close}
-  file delete -force test.db
-  file delete -force test.db-journal
-  file delete -force test.db-wal
+  forcedelete test.db
+  forcedelete test.db-journal
+  forcedelete test.db-wal
   sqlite3 db ./test.db
   set ::DB [sqlite3_connection_pointer db]
   if {[info exists ::SETUP_SQL]} {
@@ -628,10 +757,10 @@ proc finalize_testing {} {
     }
   }
   foreach f [glob -nocomplain test.db-*-journal] {
-    file delete -force $f
+    forcedelete $f
   }
   foreach f [glob -nocomplain test.db-mj*] {
-    file delete -force $f
+    forcedelete $f
   }
   exit [expr {$nErr>0}]
 }
@@ -744,30 +873,6 @@ proc stepsql {dbptr sql} {
     }
   }
   return $r
-}
-
-# Delete a file or directory
-#
-proc forcedelete {args} {
-  foreach filename $args {
-    # On windows, sometimes even a [file delete -force] can fail just after
-    # a file is closed. The cause is usually "tag-alongs" - programs like
-    # anti-virus software, automatic backup tools and various explorer
-    # extensions that keep a file open a little longer than we expect, causing
-    # the delete to fail.
-    #
-    # The solution is to wait a short amount of time before retrying the 
-    # delete.
-    #
-    set nRetry  50                  ;# Maximum number of retries.
-    set nDelay 100                  ;# Delay in ms before retrying.
-    for {set i 0} {$i<$nRetry} {incr i} {
-      set rc [catch {file delete -force $filename} msg]
-      if {$rc==0} break
-      after $nDelay
-    }
-    if {$rc} { error $msg }
-  }
 }
 
 # Do an integrity check of the entire database
@@ -970,10 +1075,10 @@ proc do_ioerr_test {testname args} {
       set ::sqlite_io_error_pending 0
       catch {db close}
       catch {db2 close}
-      catch {file delete -force test.db}
-      catch {file delete -force test.db-journal}
-      catch {file delete -force test2.db}
-      catch {file delete -force test2.db-journal}
+      catch {forcedelete test.db}
+      catch {forcedelete test.db-journal}
+      catch {forcedelete test2.db}
+      catch {forcedelete test2.db-journal}
       set ::DB [sqlite3 db test.db; sqlite3_connection_pointer db]
       sqlite3_extended_result_codes $::DB $::ioerropts(-erc)
       if {[info exists ::ioerropts(-tclprep)]} {
@@ -1247,24 +1352,6 @@ proc memdebug_log_sql {{filename mallocs.sql}} {
   close $fd
 }
 
-# Copy file $from into $to. This is used because some versions of
-# TCL for windows (notably the 8.4.1 binary package shipped with the
-# current mingw release) have a broken "file copy" command.
-#
-proc copy_file {from to} {
-  if {$::tcl_platform(platform)=="unix"} {
-    file copy -force $from $to
-  } else {
-    set f [open $from]
-    fconfigure $f -translation binary
-    set t [open $to w]
-    fconfigure $t -translation binary
-    puts -nonewline $t [read $f [file size $from]]
-    close $t
-    close $f
-  }
-}
-
 # Drop all tables in database [db]
 proc drop_all_tables {{db db}} {
   ifcapable trigger&&foreignkey {
@@ -1446,7 +1533,7 @@ proc db_save {} {
   foreach f [glob -nocomplain sv_test.db*] { forcedelete $f }
   foreach f [glob -nocomplain test.db*] {
     set f2 "sv_$f"
-    file copy -force $f $f2
+    forcecopy $f $f2
   }
 }
 proc db_save_and_close {} {
@@ -1458,7 +1545,7 @@ proc db_restore {} {
   foreach f [glob -nocomplain test.db*] { forcedelete $f }
   foreach f2 [glob -nocomplain sv_test.db*] {
     set f [string range $f2 3 end]
-    file copy -force $f2 $f
+    forcecopy $f2 $f
   }
 }
 proc db_restore_and_reopen {{dbfile test.db}} {
@@ -1468,7 +1555,7 @@ proc db_restore_and_reopen {{dbfile test.db}} {
 }
 proc db_delete_and_reopen {{file test.db}} {
   catch { db close }
-  foreach f [glob -nocomplain test.db*] { file delete -force $f }
+  foreach f [glob -nocomplain test.db*] { forcedelete $f }
   sqlite3 db $file
 }
 

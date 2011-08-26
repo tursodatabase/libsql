@@ -463,7 +463,7 @@ TEST 29 {
 
 # Test a simple multi-file transaction 
 #
-file delete -force test2.db
+forcedelete test2.db
 ifcapable attach {
   SQL {ATTACH 'test2.db' AS aux;}
   SQL {BEGIN}
@@ -650,7 +650,7 @@ run_test $::run_test_script 1
 
 # Close and reopen the db.
 db close
-file delete -force test.db test.db-journal test2.db test2.db-journal
+forcedelete test.db test.db-journal test2.db test2.db-journal
 sqlite3 db test.db
 sqlite3_extended_result_codes db 1
 set ::DB [sqlite3_connection_pointer db]

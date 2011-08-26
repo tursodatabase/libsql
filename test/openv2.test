@@ -17,7 +17,7 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 db close
-file delete -force test.db test.db-journal
+forcedelete test.db test.db-journal
 do_test openv2-1.1 {
   set rc [catch {sqlite3 db test.db -create 0} msg]
   lappend rc $msg

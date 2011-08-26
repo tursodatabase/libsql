@@ -246,7 +246,7 @@ foreach zSetup [list {
   unset -nocomplain ::aEntry
 
   catch { db close }
-  file delete -force test.db test.db-wal test.db-journal
+  forcedelete test.db test.db-wal test.db-journal
   eval $zSetup
   sql $DATABASE_SCHEMA
 

@@ -458,7 +458,7 @@ do_test view-12.1 {
 
 ifcapable attach {
   do_test view-13.1 {
-    file delete -force test2.db
+    forcedelete test2.db
     catchsql {
       ATTACH 'test2.db' AS two;
       CREATE TABLE two.t2(x,y);

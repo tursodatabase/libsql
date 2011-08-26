@@ -325,6 +325,7 @@ static int ts_pread64(int fd, void *aBuf, size_t nBuf, off_t off){
 */
 static int ts_write(int fd, const void *aBuf, size_t nBuf){
   if( tsIsFailErrno("write") ){
+    if( tsErrno("write")==EINTR ) orig_write(fd, aBuf, nBuf/2);
     return -1;
   }
   return orig_write(fd, aBuf, nBuf);
@@ -671,4 +672,3 @@ int SqlitetestSyscall_Init(Tcl_Interp *interp){
   return TCL_OK;
 }
 #endif
-

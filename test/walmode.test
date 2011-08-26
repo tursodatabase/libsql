@@ -295,7 +295,7 @@ db close
 # loaded when sqlite3_prepare_v2() is called to compile the statement.
 #
 do_test walmode-7.0 {
-  file delete -force test.db
+  forcedelete test.db
   sqlite3 db test.db
   execsql {
     PRAGMA journal_mode = WAL;

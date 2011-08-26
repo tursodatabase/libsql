@@ -60,7 +60,7 @@ do_test backup_ioerr-1.2 {
 } {1}
 do_test backup_ioerr-1.3 {
   db close
-  file delete -force test.db
+  forcedelete test.db
 } {}
 
 # Turn off IO error simulation.
@@ -155,8 +155,8 @@ for {set iError 1} {$bStop == 0} {incr iError} {
 
   catch { ddb close }
   catch { sdb close }
-  catch { file delete -force test.db }
-  catch { file delete -force bak.db }
+  catch { forcedelete test.db }
+  catch { forcedelete bak.db }
 
   # Open the source and destination databases.
   sqlite3 sdb test.db

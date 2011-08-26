@@ -167,6 +167,13 @@ int sqlite3_found_count = 0;
 */
 #define ExpandBlob(P) (((P)->flags&MEM_Zero)?sqlite3VdbeMemExpandBlob(P):0)
 
+/* Return true if the cursor was opened using the OP_OpenSorter opcode. */
+#ifdef SQLITE_OMIT_MERGE_SORT
+# define isSorter(x) 0
+#else
+# define isSorter(x) ((x)->pSorter!=0)
+#endif
+
 /*
 ** Argument pMem points at a register that will be passed to a
 ** user-defined function or returned to the user as the result of a query.
@@ -3134,7 +3141,7 @@ case OP_OpenWrite: {
   break;
 }
 
-/* Opcode: OpenEphemeral P1 P2 * P4 *
+/* Opcode: OpenEphemeral P1 P2 * P4 P5
 **
 ** Open a new cursor P1 to a transient table.
 ** The cursor is always opened read/write even if 
@@ -3151,6 +3158,11 @@ case OP_OpenWrite: {
 ** to a TEMP table at the SQL level, or to a table opened by
 ** this opcode.  Then this opcode was call OpenVirtual.  But
 ** that created confusion with the whole virtual-table idea.
+**
+** The P5 parameter can be a mask of the BTREE_* flags defined
+** in btree.h.  These flags control aspects of the operation of
+** the btree.  The BTREE_OMIT_JOURNAL and BTREE_SINGLE flags are
+** added automatically.
 */
 /* Opcode: OpenAutoindex P1 P2 * P4 *
 **
@@ -3159,6 +3171,13 @@ case OP_OpenWrite: {
 ** by this opcode will be used for automatically created transient
 ** indices in joins.
 */
+/* Opcode: OpenSorter P1 P2 * P4 *
+**
+** This opcode works like OP_OpenEphemeral except that it opens
+** a transient index that is specifically designed to sort large
+** tables using an external merge-sort algorithm.
+*/
+case OP_OpenSorter: 
 case OP_OpenAutoindex: 
 case OP_OpenEphemeral: {
   VdbeCursor *pCx;
@@ -3170,6 +3189,7 @@ case OP_OpenEphemeral: {
       SQLITE_OPEN_TRANSIENT_DB;
 
   assert( pOp->p1>=0 );
+  assert( (pOp->opcode==OP_OpenSorter)==((pOp->p5 & BTREE_SORTER)!=0) );
   pCx = allocateCursor(p, pOp->p1, pOp->p2, -1, 1);
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
@@ -3203,6 +3223,11 @@ case OP_OpenEphemeral: {
   }
   pCx->isOrdered = (pOp->p5!=BTREE_UNORDERED);
   pCx->isIndex = !pCx->isTable;
+#ifndef SQLITE_OMIT_MERGE_SORT
+  if( rc==SQLITE_OK && pOp->opcode==OP_OpenSorter ){
+    rc = sqlite3VdbeSorterInit(db, pCx);
+  }
+#endif
   break;
 }
 
@@ -4134,6 +4159,13 @@ case OP_RowData: {
   assert( pC!=0 );
   assert( pC->nullRow==0 );
   assert( pC->pseudoTableReg==0 );
+
+  if( isSorter(pC) ){
+    assert( pOp->opcode==OP_RowKey );
+    rc = sqlite3VdbeSorterRowkey(pC, pOut);
+    break;
+  }
+
   assert( pC->pCursor!=0 );
   pCrsr = pC->pCursor;
   assert( sqlite3BtreeCursorIsValid(pCrsr) );
@@ -4314,7 +4346,9 @@ case OP_Rewind: {        /* jump */
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   res = 1;
-  if( (pCrsr = pC->pCursor)!=0 ){
+  if( isSorter(pC) ){
+    rc = sqlite3VdbeSorterRewind(db, pC, &res);
+  }else if( (pCrsr = pC->pCursor)!=0 ){
     rc = sqlite3BtreeFirst(pCrsr, &res);
     pC->atFirst = res==0 ?1:0;
     pC->deferredMoveto = 0;
@@ -4368,15 +4402,20 @@ case OP_Next: {        /* jump */
   if( pC==0 ){
     break;  /* See ticket #2273 */
   }
-  pCrsr = pC->pCursor;
-  if( pCrsr==0 ){
-    pC->nullRow = 1;
-    break;
+  if( isSorter(pC) ){
+    assert( pOp->opcode==OP_Next );
+    rc = sqlite3VdbeSorterNext(db, pC, &res);
+  }else{
+    pCrsr = pC->pCursor;
+    if( pCrsr==0 ){
+      pC->nullRow = 1;
+      break;
+    }
+    res = 1;
+    assert( pC->deferredMoveto==0 );
+    rc = pOp->opcode==OP_Next ? sqlite3BtreeNext(pCrsr, &res) :
+                                sqlite3BtreePrevious(pCrsr, &res);
   }
-  res = 1;
-  assert( pC->deferredMoveto==0 );
-  rc = pOp->opcode==OP_Next ? sqlite3BtreeNext(pCrsr, &res) :
-                              sqlite3BtreePrevious(pCrsr, &res);
   pC->nullRow = (u8)res;
   pC->cacheStatus = CACHE_STALE;
   if( res==0 ){
@@ -4420,10 +4459,13 @@ case OP_IdxInsert: {        /* in2 */
     if( rc==SQLITE_OK ){
       nKey = pIn2->n;
       zKey = pIn2->z;
-      rc = sqlite3BtreeInsert(pCrsr, zKey, nKey, "", 0, 0, pOp->p3, 
-          ((pOp->p5 & OPFLAG_USESEEKRESULT) ? pC->seekResult : 0)
-      );
-      assert( pC->deferredMoveto==0 );
+      rc = sqlite3VdbeSorterWrite(db, pC, nKey);
+      if( rc==SQLITE_OK ){
+        rc = sqlite3BtreeInsert(pCrsr, zKey, nKey, "", 0, 0, pOp->p3, 
+            ((pOp->p5 & OPFLAG_USESEEKRESULT) ? pC->seekResult : 0)
+        );
+        assert( pC->deferredMoveto==0 );
+      }
       pC->cacheStatus = CACHE_STALE;
     }
   }

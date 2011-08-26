@@ -1205,16 +1205,10 @@ int sqlite3_db_config(sqlite3*, int op, ...);
 ** order to verify that SQLite recovers gracefully from such
 ** conditions.
 **
-** The xMalloc and xFree methods must work like the
-** malloc() and free() functions from the standard C library.
-** The xRealloc method must work like realloc() from the standard C library
-** with the exception that if the second argument to xRealloc is zero,
-** xRealloc must be a no-op - it must not perform any allocation or
-** deallocation.  ^SQLite guarantees that the second argument to
+** The xMalloc, xRealloc, and xFree methods must work like the
+** malloc(), realloc() and free() functions from the standard C library.
+** ^SQLite guarantees that the second argument to
 ** xRealloc is always a value returned by a prior call to xRoundup.
-** And so in cases where xRoundup always returns a positive number,
-** xRealloc can perform exactly as the standard library realloc() and
-** still be in compliance with this specification.
 **
 ** xSize should return the allocated size of a memory allocation
 ** previously obtained from xMalloc or xRealloc.  The allocated size

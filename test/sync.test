@@ -42,8 +42,8 @@ proc cond_incr_sync_count {adj} {
 
 do_test sync-1.1 {
   set sqlite_sync_count 0
-  file delete -force test2.db
-  file delete -force test2.db-journal
+  forcedelete test2.db
+  forcedelete test2.db-journal
   execsql {
     PRAGMA fullfsync=OFF;
     CREATE TABLE t1(a,b);

@@ -112,7 +112,7 @@ do_test jrnlmode2-2.4 {
 
 do_test jrnlmode2-2.5 {
   db close
-  file delete test.db-journal
+  delete_file test.db-journal
 } {}
 do_test jrnlmode2-2.6 {
   sqlite3 db2 test.db -readonly 1

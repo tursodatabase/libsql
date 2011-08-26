@@ -234,6 +234,16 @@ int sqlite3_initialize(void){
 #endif
 #endif
 
+  /* Do extra initialization steps requested by the SQLITE_EXTRA_INIT
+  ** compile-time option.
+  */
+#ifdef SQLITE_EXTRA_INIT
+  if( rc==SQLITE_OK && sqlite3GlobalConfig.isInit ){
+    int SQLITE_EXTRA_INIT(void);
+    rc = SQLITE_EXTRA_INIT();
+  }
+#endif
+
   return rc;
 }
 

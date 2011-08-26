@@ -47,7 +47,7 @@ proc do_fuzzy_malloc_test {testname args} {
 
   sqlite3_memdebug_fail -1
   db close
-  file delete test.db test.db-journal
+  delete_file test.db test.db-journal
   sqlite3 db test.db
   set ::prep $::fuzzyopts(-sqlprep)
   execsql $::prep

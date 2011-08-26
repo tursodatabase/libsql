@@ -134,7 +134,7 @@ sqlite3_enable_load_extension db 1
 # Try to load an extension for which the file does not exist.
 #
 do_test loadext-2.1 {
-  file delete -force ${testextension}xx
+  forcedelete ${testextension}xx
   set rc [catch {
     sqlite3_load_extension db "${testextension}xx"
   } msg]

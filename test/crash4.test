@@ -63,7 +63,7 @@ foreach cmd $sql_cmd_list {
 #
 for {set cnt 1; set fin 0} {!$fin} {incr cnt} {
   db close
-  file delete -force test.db test.db-journal
+  forcedelete test.db test.db-journal
   do_test crash4-1.$cnt.1 {
     set seed [expr {int(abs(rand()*10000))}]
     set delay [expr {int($cnt/50)+1}]

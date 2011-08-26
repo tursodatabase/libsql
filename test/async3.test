@@ -41,8 +41,8 @@ set paths {
 
 do_test async3-1.0 {
   file mkdir [file join chocolate banana vanilla]
-  file delete -force chocolate/banana/vanilla/file.db
-  file delete -force chocolate/banana/vanilla/file.db-journal
+  forcedelete chocolate/banana/vanilla/file.db
+  forcedelete chocolate/banana/vanilla/file.db-journal
 } {}
 
 do_test async3-1.1 {

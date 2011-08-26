@@ -26,7 +26,7 @@ do_test lock4-1.1 {
      PRAGMA auto_vacuum=OFF;
      CREATE TABLE t1(x);
   }
-  file delete -force test2.db test2.db-journal
+  forcedelete test2.db test2.db-journal
   sqlite3 db2 test2.db
   db2 eval {
      PRAGMA auto_vacuum=OFF;

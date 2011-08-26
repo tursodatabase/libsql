@@ -617,5 +617,16 @@ ifcapable tclvar {
   } {31323334 blob}
 }
 
+db func xCall xCall
+proc xCall {} { return "value" }
+do_execsql_test tcl-14.1 {
+  CREATE TABLE t6(x);
+  INSERT INTO t6 VALUES(1);
+}
+do_test tcl-14.2 {
+  db one {SELECT x FROM t6 WHERE xCall()!='value'}
+} {}
+
+
 
 finish_test

@@ -95,7 +95,7 @@ do_test fts1o-3.6 {
 # Test that it is possible to rename an fts1 table in an attached 
 # database.
 #
-file delete -force test2.db test2.db-journal
+forcedelete test2.db test2.db-journal
 
 do_test fts1o-4.1 {
   execsql {

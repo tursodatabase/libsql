@@ -667,8 +667,8 @@ ifcapable attach {
   # Now attach a database and ensure that a table can be created in the 
   # attached database whilst in a callback from a query on the main database.
   do_test table-14.3 {
-    file delete -force test2.db
-    file delete -force test2.db-journal
+    forcedelete test2.db
+    forcedelete test2.db-journal
     execsql {
       ATTACH 'test2.db' as aux;
     }

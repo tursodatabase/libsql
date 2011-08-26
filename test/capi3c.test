@@ -670,7 +670,7 @@ if {![sqlite3 -has-codec]} {
   # Now test that the library correctly handles bogus entries in the
   # sqlite_master table (schema corruption).
   do_test capi3c-8.1 {
-    file delete -force test.db test.db-journal
+    forcedelete test.db test.db-journal
     sqlite3 db test.db
     execsql {
       CREATE TABLE t1(a);
@@ -695,7 +695,7 @@ if {![sqlite3 -has-codec]} {
     # Build a 5-field row record. The first field is a string 'table', and
     # subsequent fields are all NULL.
     db close
-    file delete -force test.db test.db-journal
+    forcedelete test.db test.db-journal
     sqlite3 db test.db
     execsql {
       CREATE TABLE t1(a);
@@ -712,8 +712,8 @@ if {![sqlite3 -has-codec]} {
   } {1 {malformed database schema (?)}}
   db close
 }
-file delete -force test.db
-file delete -force test.db-journal
+forcedelete test.db
+forcedelete test.db-journal
 
 
 # Test the english language string equivalents for sqlite error codes

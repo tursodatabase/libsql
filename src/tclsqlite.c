@@ -2327,6 +2327,8 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     if( choice==DB_ONECOLUMN ){
       if( rc==TCL_OK ){
         Tcl_SetObjResult(interp, dbEvalColumnValue(&sEval, 0));
+      }else if( rc==TCL_BREAK ){
+        Tcl_ResetResult(interp);
       }
     }else if( rc==TCL_BREAK || rc==TCL_OK ){
       Tcl_SetObjResult(interp, Tcl_NewBooleanObj(rc==TCL_OK));
