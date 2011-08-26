@@ -1,9 +1,9 @@
-C Create\sa\snew\spager\stype,\sPAGER_SORTER,\sfor\suse\sin\sthe\sexternal\smerge\ssort.\nSuch\spagers\sare\salways\sheld\sin\smemory\sbut\sdo\sreport\swhen\sthey\sare\sunder\nmemory\spressure\sby\scalling\spagerStress.
-D 2011-08-26T00:34:45.360
+C Merge\sWin32\snative\sheap\ssupport\sinto\strunk.
+D 2011-08-26T11:18:44.284
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 386444f1e1a1536d19a426030d93fd6e03b7d3b5
+F Makefile.msc 55fe94bf23b4c1ff035f19b0ae2ea486350f8d01
 F Makefile.vxworks c85ec1d8597fe2f7bc225af12ac1666e21379151
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION f724de7326e87b7f3b0a55f16ef4b4d993680d54
@@ -166,7 +166,7 @@ F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 65a897143b64667d23ed329a7984b9b405accb58
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 1a34ca3794ced80e4a4ebcc3ba1f4c516762e534
-F src/os_win.c 19fa09046f1f86590a188abdcf5630b8fe8279cf
+F src/os_win.c 86bcb5bd0386c761c764c3383879469346da3a14
 F src/pager.c 817f7f7140c9fa2641f28e6330e924708ddd870d
 F src/pager.h 2bab1b2ea4eac58663b5833e3522e36b5ff63447
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -183,7 +183,7 @@ F src/select.c d219c4b68d603cc734b6f9b1e2780fee12a1fa0d
 F src/shell.c bbe7818ff5bc8614105ceb81ad67b8bdc0b671dd
 F src/sqlite.h.in 0a6c9c23337fd1352c5c75a613ff9533aa7d91cb
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
-F src/sqliteInt.h 18876859c6a60fd42b4e3772229387390702f096
+F src/sqliteInt.h 42e60144648d32e5a6c9994b2baa58b9cf8db69b
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -918,7 +918,7 @@ F test/where9.test 24f19ad14bb1b831564ced5273e681e495662848
 F test/whereA.test 24c234263c8fe358f079d5e57d884fb569d2da0a
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
-F test/win32lock.test d60b39c53c68617524429be27bf239f0b11673f2
+F test/win32lock.test b2a539e85ae6b2d78475e016a9636b4451dc7fb9
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F tool/build-shell.sh 12aa4391073a777fcb6dcc490b219a018ae98bac
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 2c443d47ecee7b43a89f0a4bf299c46c66e3f80d
-R 5271767b893f002dc634ff718e14ca01
-U drh
-Z 986c77c3e73f3db4a3199ce94583c644
+P c71d73201d950355862dd8d5de142c9673888755 5ed7633d41b99929309a7e13d37375a4fdae43b3
+R 6db87d8333d6edb6b791bc23dadc42e1
+U mistachkin
+Z 81e8aedab83fc3e19b6d4ef38c1919d2
