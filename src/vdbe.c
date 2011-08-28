@@ -2129,7 +2129,6 @@ case OP_Column: {
   assert( pOp->p3>0 && pOp->p3<=p->nMem );
   pDest = &aMem[pOp->p3];
   memAboutToChange(p, pDest);
-  MemSetTypeFlag(pDest, MEM_Null);
   zRec = 0;
 
   /* This block sets the variable payloadSize to be the total number of
@@ -2186,9 +2185,10 @@ case OP_Column: {
     payloadSize = 0;
   }
 
-  /* If payloadSize is 0, then just store a NULL */
+  /* If payloadSize is 0, then just store a NULL.  This can happen because of
+  ** nullRow or because of a corrupt database. */
   if( payloadSize==0 ){
-    assert( pDest->flags&MEM_Null );
+    MemSetTypeFlag(pDest, MEM_Null);
     goto op_column_out;
   }
   assert( db->aLimit[SQLITE_LIMIT_LENGTH]>=0 );
@@ -2354,7 +2354,7 @@ case OP_Column: {
     if( pOp->p4type==P4_MEM ){
       sqlite3VdbeMemShallowCopy(pDest, pOp->p4.pMem, MEM_Static);
     }else{
-      assert( pDest->flags&MEM_Null );
+      MemSetTypeFlag(pDest, MEM_Null);
     }
   }
 

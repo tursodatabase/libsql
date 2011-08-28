@@ -1,5 +1,5 @@
-C Correctly\sdisplay\sP4_ADVANCE\svalues\son\sopcode\straces.\s\sMark\san\salways-taken\nbranch\sin\sOP_Column\sas\ssuch.
-D 2011-08-28T00:19:26.614
+C About\sa\s3%\simprovement\sin\sthe\sperformance\sof\sOP_Column.
+D 2011-08-28T02:15:34.550
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -238,7 +238,7 @@ F src/update.c 74a6cfb34e9732c1e2a86278b229913b4b51eeec
 F src/utf.c c53eb7404b3eb5c1cbb5655c6a7a0e0ce6bd50f0
 F src/util.c 06302ffd2b80408d4f6c7af71f7090e0cf8d8ff7
 F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
-F src/vdbe.c 47713d4005ad7256b0b5c9744dded58d14f652ad
+F src/vdbe.c 8c9e0508ce0fe16e45c7398b3042d62c2968d779
 F src/vdbe.h c1eeedacab6bcf1e7c2cf8203ba9763a616f9a86
 F src/vdbeInt.h f9250326f264ca5f100acc19e9c07096bb889096
 F src/vdbeapi.c 11dc47987abacb76ad016dcf5abc0dc422482a98
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 1a249845251199c00817893add300a1a654b4df9
-R d6f033bc6e8a438086fa5960ee9d7157
+P 087dc96086fe4e45da93ab6a0d5dda34c932ce97
+R 1c4d03777b493872eab90f1e3c1ffa05
 U drh
-Z 47cc80ebc2025318e796ba82fe696b90
+Z 518276ac7d503545f19a1d6a51270da1
