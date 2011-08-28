@@ -2173,7 +2173,7 @@ case OP_Column: {
       rc = sqlite3BtreeDataSize(pCrsr, &payloadSize);
       assert( rc==SQLITE_OK );   /* DataSize() cannot fail */
     }
-  }else if( pC->pseudoTableReg>0 ){
+  }else if( ALWAYS(pC->pseudoTableReg>0) ){
     pReg = &aMem[pC->pseudoTableReg];
     assert( pReg->flags & MEM_Blob );
     assert( memIsValid(pReg) );

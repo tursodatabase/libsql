@@ -945,6 +945,10 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
       sqlite3_snprintf(nTemp, zTemp, "program");
       break;
     }
+    case P4_ADVANCE: {
+      zTemp[0] = 0;
+      break;
+    }
     default: {
       zP4 = pOp->p4.z;
       if( zP4==0 ){
