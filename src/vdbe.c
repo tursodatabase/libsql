@@ -2118,6 +2118,7 @@ case OP_Column: {
   u32 szField;       /* Number of bytes in the content of a field */
   int szHdr;         /* Size of the header size field at start of record */
   int avail;         /* Number of bytes of available data */
+  u32 t;             /* A type code from the record header */
   Mem *pReg;         /* PseudoTable input register */
 
 
@@ -2295,8 +2296,14 @@ case OP_Column: {
     for(i=0; i<nField; i++){
       if( zIdx<zEndHdr ){
         aOffset[i] = offset;
-        zIdx += getVarint32(zIdx, aType[i]);
-        szField = sqlite3VdbeSerialTypeLen(aType[i]);
+        if( zIdx[0]<0x80 ){
+          t = zIdx[0];
+          zIdx++;
+        }else{
+          zIdx += sqlite3GetVarint32(zIdx, &t);
+        }
+        aType[i] = t;
+        szField = sqlite3VdbeSerialTypeLen(t);
         offset += szField;
         if( offset<szField ){  /* True if offset overflows */
           zIdx = &zEndHdr[1];  /* Forces SQLITE_CORRUPT return below */
