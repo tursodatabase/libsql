@@ -1,5 +1,5 @@
-C Small\sperformance\simprovement\sto\sOP_Column.
-D 2011-08-29T02:16:18.855
+C About\sa\s1%\soverall\sperformance\simprovement\sby\susing\sa\smacro\sto\savoid\nno-op\scalls\sto\ssqlite3MemReleaseExternal().
+D 2011-08-29T02:49:41.731
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -238,13 +238,13 @@ F src/update.c 74a6cfb34e9732c1e2a86278b229913b4b51eeec
 F src/utf.c c53eb7404b3eb5c1cbb5655c6a7a0e0ce6bd50f0
 F src/util.c 06302ffd2b80408d4f6c7af71f7090e0cf8d8ff7
 F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
-F src/vdbe.c dc84628c47e76ffa5dd945afea1460815323ad91
+F src/vdbe.c 9165b35da939f4a66c7e68b0c6d3f017ca982cb1
 F src/vdbe.h c1eeedacab6bcf1e7c2cf8203ba9763a616f9a86
-F src/vdbeInt.h f9250326f264ca5f100acc19e9c07096bb889096
+F src/vdbeInt.h 70767f6504aac4f0057ec2a55738470a890789ac
 F src/vdbeapi.c 11dc47987abacb76ad016dcf5abc0dc422482a98
 F src/vdbeaux.c de1e4cab060a45df9ebee68dd63543d14559f0e7
 F src/vdbeblob.c f024f0bf420f36b070143c32b15cc7287341ffd3
-F src/vdbemem.c 0498796b6ffbe45e32960d6a1f5adfb6e419883b
+F src/vdbemem.c 5e6effb96dd53d233361cbfaa3f0a43b9af689e9
 F src/vdbesort.c 8a61a6d731cbe612217edf9eece6197f37c9489e
 F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
 F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P edff9d4a995095e555fcc9aec4c56f4bcaa1557e
-R 2bdc90f10d7d2094fa6ddf41f90c24fd
+P b6b73a747ad8d0f026074e41c2a4adc529ec2674
+R 285e2022a0bbe1b677ddbb6dec295cd8
 U drh
-Z 9bbe13d88effafce7032c1658f4f21f3
+Z 74a42c07c09977852193d878c3468fe6

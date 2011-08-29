@@ -673,7 +673,7 @@ int sqlite3VdbeExec(
       assert( pOp->p2<=p->nMem );
       pOut = &aMem[pOp->p2];
       memAboutToChange(p, pOut);
-      sqlite3VdbeMemReleaseExternal(pOut);
+      MemReleaseExt(pOut);
       pOut->flags = MEM_Int;
     }
 
@@ -2344,7 +2344,7 @@ case OP_Column: {
   if( aOffset[p2] ){
     assert( rc==SQLITE_OK );
     if( zRec ){
-      sqlite3VdbeMemReleaseExternal(pDest);
+      MemReleaseExt(pDest);
       sqlite3VdbeSerialGet((u8 *)&zRec[aOffset[p2]], aType[p2], pDest);
     }else{
       len = sqlite3VdbeSerialTypeLen(aType[p2]);
