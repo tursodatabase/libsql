@@ -3445,19 +3445,13 @@ static int proxyFileControl(sqlite3_file*,int,void*);
 ** nBytes or larger, this routine is a no-op.
 */
 static int fcntlSizeHint(unixFile *pFile, i64 nByte){
-  { /* preserve indentation of removed "if" */
+  if( pFile->szChunk ){
     i64 nSize;                    /* Required file size */
-    i64 szChunk;                  /* Chunk size */
     struct stat buf;              /* Used to hold return values of fstat() */
    
     if( osFstat(pFile->h, &buf) ) return SQLITE_IOERR_FSTAT;
 
-    szChunk = pFile->szChunk;
-    if( szChunk==0 ){
-      nSize = nByte;
-    }else{
-      nSize = ((nByte+szChunk-1) / szChunk) * szChunk;
-    }
+    nSize = ((nByte+pFile->szChunk-1) / pFile->szChunk) * pFile->szChunk;
     if( nSize>(i64)buf.st_size ){
 
 #if defined(HAVE_POSIX_FALLOCATE) && HAVE_POSIX_FALLOCATE

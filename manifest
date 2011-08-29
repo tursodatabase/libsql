@@ -1,5 +1,5 @@
-C Merge\sperformance\senhancements\sinto\strunk.
-D 2011-08-29T03:08:47.559
+C Back\sout\s[05c9832e5f6eb]\ssince\sit\swas\scausing\sa\sperformance\sregression\swith\nno\sobvious\sbenefit.
+D 2011-08-29T11:56:14.294
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +165,7 @@ F src/os.c fcc717427a80b2ed225373f07b642dc1aad7490b
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 65a897143b64667d23ed329a7984b9b405accb58
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 3792524439a13af0464ba65baf4d647dad063604
+F src/os_unix.c 014cd466edc2b73e417f382c3213b6c72bc35280
 F src/os_win.c 86bcb5bd0386c761c764c3383879469346da3a14
 F src/pager.c 817f7f7140c9fa2641f28e6330e924708ddd870d
 F src/pager.h 2bab1b2ea4eac58663b5833e3522e36b5ff63447
@@ -609,7 +609,7 @@ F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
 F test/oserror.test 3fe52e0bd2891a9bf7cdeb639554992453d46301
-F test/pager1.test 70c94c895ffaf4dc34ee4b66e6e4cd713af41edc
+F test/pager1.test 2d3a7c6facd899d8879d23f31454cc53f49358b9
 F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
 F test/pagerfault.test 452f2cc23e3bfcfa935f4442aec1da4fe1dc0442
@@ -887,7 +887,7 @@ F test/wal.test e11da8d5ea8a38a247339455098357e9adf63d76
 F test/wal2.test ad6412596815f553cd30f271d291ab003092bc7e
 F test/wal3.test 18da4e65c30c43c646ad40e145e9a074e4062fc9
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
-F test/wal5.test 08e145a352b1223930c7f0a1de82a8747a99c322
+F test/wal5.test f06a0427e06db00347e32eb9fa99d6a5c0f2d088
 F test/wal6.test 2e3bc767d9c2ce35c47106148d43fcbd072a93b3
 F test/wal7.test 2ae8f427d240099cc4b2dfef63cff44e2a68a1bd
 F test/wal_common.tcl a98f17fba96206122eff624db0ab13ec377be4fe
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 5454d0fe227b7c1f0e7715b6c08f97019628fc4c ff71d20a9ed129bd1785a3f7a777ce62098735b7
-R 285e2022a0bbe1b677ddbb6dec295cd8
+P 5a00d24b279424d257781ec3f1227e72a5d56f57 08d0e8799e1441ef063b1cdf9e4107071a0f81ca
+R e71350ad5d643f1597441507aa7bf97e
 U drh
-Z 695e51e350fb27c7201e6f8a4ffc48bc
+Z 50a26ca875ae5b915f6bf10b2da0f1e7

@@ -2437,6 +2437,7 @@ do_test pager1-32.1 {
     BEGIN;
     INSERT INTO t1 VALUES(1, randomblob(10000));
   }
+  file_control_chunksize_test db main 1024
   file_control_sizehint_test db main 20971520; # 20MB
   execsql {
     PRAGMA cache_size = 10;
