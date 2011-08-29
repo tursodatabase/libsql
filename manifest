@@ -1,5 +1,5 @@
-C Back\sout\s[05c9832e5f6eb]\ssince\sit\swas\scausing\sa\sperformance\sregression\swith\nno\sobvious\sbenefit.
-D 2011-08-29T11:56:14.294
+C Fix\sa\sbroken\sassert()\sstatement\sin\sselect.c.
+D 2011-08-29T18:24:27.787
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -179,7 +179,7 @@ F src/printf.c 585a36b6a963df832cfb69505afa3a34ed5ef8a1
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 36368f44569208fa074e61f4dd0b6c4fb60ca2b4
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
-F src/select.c d219c4b68d603cc734b6f9b1e2780fee12a1fa0d
+F src/select.c 14552e9ff4b27ec027a43fafb62ea5d049cd2809
 F src/shell.c bbe7818ff5bc8614105ceb81ad67b8bdc0b671dd
 F src/sqlite.h.in 0a6c9c23337fd1352c5c75a613ff9533aa7d91cb
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 5a00d24b279424d257781ec3f1227e72a5d56f57 08d0e8799e1441ef063b1cdf9e4107071a0f81ca
-R e71350ad5d643f1597441507aa7bf97e
-U drh
-Z 50a26ca875ae5b915f6bf10b2da0f1e7
+P 639cc85a911454bffdcccb33f2976c683953ae64
+R 91692067377849e6b7529274128e3e95
+U dan
+Z 23ba19994854bcc26c6e0981ff18a6fb

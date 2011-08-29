@@ -3949,7 +3949,7 @@ int sqlite3Select(
     if( pWInfo->eDistinct ){
       VdbeOp *pOp;                /* No longer required OpenEphemeral instr. */
      
-      assert( addrDistinctIndex>0 );
+      assert( addrDistinctIndex>=0 );
       pOp = sqlite3VdbeGetOp(v, addrDistinctIndex);
 
       assert( isDistinct );
