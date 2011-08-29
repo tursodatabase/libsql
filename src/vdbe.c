@@ -673,7 +673,7 @@ int sqlite3VdbeExec(
       assert( pOp->p2<=p->nMem );
       pOut = &aMem[pOp->p2];
       memAboutToChange(p, pOut);
-      sqlite3VdbeMemReleaseExternal(pOut);
+      MemReleaseExt(pOut);
       pOut->flags = MEM_Int;
     }
 
@@ -2118,6 +2118,7 @@ case OP_Column: {
   u32 szField;       /* Number of bytes in the content of a field */
   int szHdr;         /* Size of the header size field at start of record */
   int avail;         /* Number of bytes of available data */
+  u32 t;             /* A type code from the record header */
   Mem *pReg;         /* PseudoTable input register */
 
 
@@ -2129,7 +2130,6 @@ case OP_Column: {
   assert( pOp->p3>0 && pOp->p3<=p->nMem );
   pDest = &aMem[pOp->p3];
   memAboutToChange(p, pDest);
-  MemSetTypeFlag(pDest, MEM_Null);
   zRec = 0;
 
   /* This block sets the variable payloadSize to be the total number of
@@ -2173,7 +2173,7 @@ case OP_Column: {
       rc = sqlite3BtreeDataSize(pCrsr, &payloadSize);
       assert( rc==SQLITE_OK );   /* DataSize() cannot fail */
     }
-  }else if( pC->pseudoTableReg>0 ){
+  }else if( ALWAYS(pC->pseudoTableReg>0) ){
     pReg = &aMem[pC->pseudoTableReg];
     assert( pReg->flags & MEM_Blob );
     assert( memIsValid(pReg) );
@@ -2186,9 +2186,10 @@ case OP_Column: {
     payloadSize = 0;
   }
 
-  /* If payloadSize is 0, then just store a NULL */
+  /* If payloadSize is 0, then just store a NULL.  This can happen because of
+  ** nullRow or because of a corrupt database. */
   if( payloadSize==0 ){
-    assert( pDest->flags&MEM_Null );
+    MemSetTypeFlag(pDest, MEM_Null);
     goto op_column_out;
   }
   assert( db->aLimit[SQLITE_LIMIT_LENGTH]>=0 );
@@ -2295,8 +2296,14 @@ case OP_Column: {
     for(i=0; i<nField; i++){
       if( zIdx<zEndHdr ){
         aOffset[i] = offset;
-        zIdx += getVarint32(zIdx, aType[i]);
-        szField = sqlite3VdbeSerialTypeLen(aType[i]);
+        if( zIdx[0]<0x80 ){
+          t = zIdx[0];
+          zIdx++;
+        }else{
+          zIdx += sqlite3GetVarint32(zIdx, &t);
+        }
+        aType[i] = t;
+        szField = sqlite3VdbeSerialTypeLen(t);
         offset += szField;
         if( offset<szField ){  /* True if offset overflows */
           zIdx = &zEndHdr[1];  /* Forces SQLITE_CORRUPT return below */
@@ -2337,7 +2344,7 @@ case OP_Column: {
   if( aOffset[p2] ){
     assert( rc==SQLITE_OK );
     if( zRec ){
-      sqlite3VdbeMemReleaseExternal(pDest);
+      MemReleaseExt(pDest);
       sqlite3VdbeSerialGet((u8 *)&zRec[aOffset[p2]], aType[p2], pDest);
     }else{
       len = sqlite3VdbeSerialTypeLen(aType[p2]);
@@ -2354,7 +2361,7 @@ case OP_Column: {
     if( pOp->p4type==P4_MEM ){
       sqlite3VdbeMemShallowCopy(pDest, pOp->p4.pMem, MEM_Static);
     }else{
-      assert( pDest->flags&MEM_Null );
+      MemSetTypeFlag(pDest, MEM_Null);
     }
   }
 
@@ -2550,7 +2557,7 @@ case OP_Count: {         /* out2-prerelease */
   BtCursor *pCrsr;
 
   pCrsr = p->apCsr[pOp->p1]->pCursor;
-  if( pCrsr ){
+  if( ALWAYS(pCrsr) ){
     rc = sqlite3BtreeCount(pCrsr, &nEntry);
   }else{
     nEntry = 0;
@@ -3112,15 +3119,9 @@ case OP_OpenWrite: {
   rc = sqlite3BtreeCursor(pX, p2, wrFlag, pKeyInfo, pCur->pCursor);
   pCur->pKeyInfo = pKeyInfo;
 
-  /* Since it performs no memory allocation or IO, the only values that
-  ** sqlite3BtreeCursor() may return are SQLITE_EMPTY and SQLITE_OK. 
-  ** SQLITE_EMPTY is only returned when attempting to open the table
-  ** rooted at page 1 of a zero-byte database.  */
-  assert( rc==SQLITE_EMPTY || rc==SQLITE_OK );
-  if( rc==SQLITE_EMPTY ){
-    pCur->pCursor = 0;
-    rc = SQLITE_OK;
-  }
+  /* Since it performs no memory allocation or IO, the only value that
+  ** sqlite3BtreeCursor() may return is SQLITE_OK. */
+  assert( rc==SQLITE_OK );
 
   /* Set the VdbeCursor.isTable and isIndex variables. Previous versions of
   ** SQLite used to check if the root-page flags were sane at this point
@@ -3333,7 +3334,7 @@ case OP_SeekGt: {       /* jump, in3 */
   assert( OP_SeekGe == OP_SeekLt+2 );
   assert( OP_SeekGt == OP_SeekLt+3 );
   assert( pC->isOrdered );
-  if( pC->pCursor!=0 ){
+  if( ALWAYS(pC->pCursor!=0) ){
     oc = pOp->opcode;
     pC->nullRow = 0;
     if( pC->isTable ){
@@ -3691,7 +3692,7 @@ case OP_NotExists: {        /* jump, in3 */
   assert( pC->isTable );
   assert( pC->pseudoTableReg==0 );
   pCrsr = pC->pCursor;
-  if( pCrsr!=0 ){
+  if( ALWAYS(pCrsr!=0) ){
     res = 0;
     iKey = pIn3->u.i;
     rc = sqlite3BtreeMovetoUnpacked(pCrsr, 0, iKey, 0, &res);
@@ -4218,6 +4219,7 @@ case OP_NullRow: {
   assert( pC!=0 );
   pC->nullRow = 1;
   pC->rowidIsValid = 0;
+  assert( pC->pCursor || pC->pVtabCursor );
   if( pC->pCursor ){
     sqlite3BtreeClearCursor(pC->pCursor);
   }
@@ -4241,7 +4243,7 @@ case OP_Last: {        /* jump */
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   pCrsr = pC->pCursor;
-  if( pCrsr==0 ){
+  if( NEVER(pCrsr==0) ){
     res = 1;
   }else{
     rc = sqlite3BtreeLast(pCrsr, &res);
@@ -4296,7 +4298,9 @@ case OP_Rewind: {        /* jump */
   res = 1;
   if( isSorter(pC) ){
     rc = sqlite3VdbeSorterRewind(db, pC, &res);
-  }else if( (pCrsr = pC->pCursor)!=0 ){
+  }else{
+    pCrsr = pC->pCursor;
+    assert( pCrsr );
     rc = sqlite3BtreeFirst(pCrsr, &res);
     pC->atFirst = res==0 ?1:0;
     pC->deferredMoveto = 0;
@@ -4311,7 +4315,7 @@ case OP_Rewind: {        /* jump */
   break;
 }
 
-/* Opcode: Next P1 P2 * * P5
+/* Opcode: Next P1 P2 * P4 P5
 **
 ** Advance cursor P1 so that it points to the next key/data pair in its
 ** table or index.  If there are no more key/value pairs then fall through
@@ -4319,6 +4323,9 @@ case OP_Rewind: {        /* jump */
 ** jump immediately to P2.
 **
 ** The P1 cursor must be for a real table, not a pseudo-table.
+**
+** P4 is always of type P4_ADVANCE. The function pointer points to
+** sqlite3BtreeNext().
 **
 ** If P5 is positive and the jump is taken, then event counter
 ** number P5-1 in the prepared statement is incremented.
@@ -4334,13 +4341,15 @@ case OP_Rewind: {        /* jump */
 **
 ** The P1 cursor must be for a real table, not a pseudo-table.
 **
+** P4 is always of type P4_ADVANCE. The function pointer points to
+** sqlite3BtreePrevious().
+**
 ** If P5 is positive and the jump is taken, then event counter
 ** number P5-1 in the prepared statement is incremented.
 */
 case OP_Prev:          /* jump */
 case OP_Next: {        /* jump */
   VdbeCursor *pC;
-  BtCursor *pCrsr;
   int res;
 
   CHECK_FOR_INTERRUPT;
@@ -4354,15 +4363,12 @@ case OP_Next: {        /* jump */
     assert( pOp->opcode==OP_Next );
     rc = sqlite3VdbeSorterNext(db, pC, &res);
   }else{
-    pCrsr = pC->pCursor;
-    if( pCrsr==0 ){
-      pC->nullRow = 1;
-      break;
-    }
     res = 1;
     assert( pC->deferredMoveto==0 );
-    rc = pOp->opcode==OP_Next ? sqlite3BtreeNext(pCrsr, &res) :
-                                sqlite3BtreePrevious(pCrsr, &res);
+    assert( pC->pCursor );
+    assert( pOp->opcode!=OP_Next || pOp->p4.xAdvance==sqlite3BtreeNext );
+    assert( pOp->opcode!=OP_Prev || pOp->p4.xAdvance==sqlite3BtreePrevious );
+    rc = pOp->p4.xAdvance(pC->pCursor, &res);
   }
   pC->nullRow = (u8)res;
   pC->cacheStatus = CACHE_STALE;
