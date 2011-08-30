@@ -1,5 +1,5 @@
-C Fix\sa\sbroken\sassert()\sstatement\sin\sselect.c.
-D 2011-08-29T18:24:27.787
+C Fix\sa\sbuffer\soverrun\sin\stest\slogic.\s\sNo\simpact\son\sthe\score\sSQLite.
+D 2011-08-30T00:53:50.943
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -188,7 +188,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 3ef1dda2f1dc207c792eaadebf9d8adc44648581
-F src/test1.c 7439efb86c1022f19a39a8e61de2cbac23ffab03
+F src/test1.c 0f41b7c67719207a5de24b009e172c4dcf189827
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 124ff9735fb6bb7d41de180d6bac90e7b1509432
 F src/test4.c d1e5a5e904d4b444cf572391fdcb017638e36ff7
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 639cc85a911454bffdcccb33f2976c683953ae64
-R 91692067377849e6b7529274128e3e95
-U dan
-Z 23ba19994854bcc26c6e0981ff18a6fb
+P ad78ef2b3a20e3c3191fba232cbae70656210cf5
+R 9fd102bca587a254d41deef9450d4a29
+U drh
+Z 9655fc5ee46b247cbd13810f6ee3dd0d
