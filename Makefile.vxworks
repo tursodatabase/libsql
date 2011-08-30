@@ -517,7 +517,7 @@ tclsqlite.o:	$(TOP)/src/tclsqlite.c $(HDR)
 # Rules to build opcodes.c and opcodes.h
 #
 opcodes.c:	opcodes.h $(TOP)/mkopcodec.awk
-	sort -n -b -k 3 opcodes.h | $(NAWK) -f $(TOP)/mkopcodec.awk >opcodes.c
+	$(NAWK) -f $(TOP)/mkopcodec.awk opcodes.h >opcodes.c
 
 opcodes.h:	parse.h $(TOP)/src/vdbe.c $(TOP)/mkopcodeh.awk
 	cat parse.h $(TOP)/src/vdbe.c | \

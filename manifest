@@ -1,10 +1,10 @@
-C Make\ssure\sSQLITE_FCNTL_SIZE_HINT\sa\sno-op\sif\sthe\schunk\ssize\sis\snot\sgreater\sthan\szero.
-D 2011-08-30T01:23:34.101
+C Change\sthe\sbuild\sprocess\sso\sthat\sit\sdoes\snot\srequire\sthe\sunix\s"sort"\ncommand.\s\sThis\savoids\sconfusion\sbetween\sms-sort\sand\smingw-sort\son\nwindows\ssystems.
+D 2011-08-30T01:29:04.104
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
+F Makefile.in d314143fa6be24828021d3f583ad37d9afdce505
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 55fe94bf23b4c1ff035f19b0ae2ea486350f8d01
-F Makefile.vxworks c85ec1d8597fe2f7bc225af12ac1666e21379151
+F Makefile.msc c39cc7a7a9fe8f6304f37b88f3bca9aae5b83f30
+F Makefile.vxworks 1deb39c8bb047296c30161ffa10c1b5423e632f9
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION f724de7326e87b7f3b0a55f16ef4b4d993680d54
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -104,11 +104,11 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk 201b1d81aa4ac0af21b243151e79477c14ce3722
+F main.mk 8744cb76517817170f7fd2c78fbf0006fabb93c1
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
-F mkopcodec.awk 3fb9bf077053c968451f4dd03d11661ac373f9d1
+F mkopcodec.awk f6fccee29e68493bfd90a2e0466ede5fa94dd2fc
 F mkopcodeh.awk 29b84656502eee5f444c3147f331ee686956ab0e
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F publish.sh 313c5b2425f2cf5e547db7549a9796acc4508f22
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P e95cf2c576dda656c0f31eeec3d98e911b9003a1
-R 23e2e1649d860cacfc7d885e0481975c
-U mistachkin
-Z 106f8d2e0fe01f69aa7179a809ac1874
+P 88b763e8d73fafa1538b08af28b1c8b723b39c61
+R b27c1f3a83b2f5462f0150a6100017fc
+U drh
+Z 704d1aefb0f6d4ce0005ee8d827376d9

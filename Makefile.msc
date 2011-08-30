@@ -809,7 +809,7 @@ tclsqlite3.exe:	tclsqlite-shell.lo libsqlite3.lib
 # Rules to build opcodes.c and opcodes.h
 #
 opcodes.c:	opcodes.h $(TOP)\mkopcodec.awk
-	$(NAWK) "/#define OP_/ { print }" opcodes.h | sort /+45 | $(NAWK) -f $(TOP)\mkopcodec.awk > opcodes.c
+	$(NAWK) -f $(TOP)\mkopcodec.awk opcodes.h > opcodes.c
 
 opcodes.h:	parse.h $(TOP)\src\vdbe.c $(TOP)\mkopcodeh.awk
 	type parse.h $(TOP)\src\vdbe.c | $(NAWK) -f $(TOP)\mkopcodeh.awk > opcodes.h
