@@ -1,5 +1,5 @@
-C Change\sthe\sbuild\sprocess\sso\sthat\sit\sdoes\snot\srequire\sthe\sunix\s"sort"\ncommand.\s\sThis\savoids\sconfusion\sbetween\sms-sort\sand\smingw-sort\son\nwindows\ssystems.
-D 2011-08-30T01:29:04.104
+C Enable\sthe\sthread\stest\slogic\sto\swork\swith\sthe\sSQLITE_HAS_CODEC\scompile-time\noption.
+D 2011-08-30T19:52:32.227
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d314143fa6be24828021d3f583ad37d9afdce505
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -227,7 +227,7 @@ F src/test_stat.c f682704b5d1ba8e1d4e7e882a6d7922e2dcf066c
 F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c a992d8c80ea91fbf21fb2dd570db40e77dd7e6ae
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
-F src/test_thread.c dc77f920d24f2f515bd315b87942b6396332a414
+F src/test_thread.c 35022393dd54d147b998b6b7f7e945b01114d666
 F src/test_vfs.c b0baec983bd6f872715a4b44c8f39104fec333af
 F src/test_vfstrace.c 0b884e06094a746da729119a2cabdc7aa790063d
 F src/test_wholenumber.c 6129adfbe7c7444f2e60cc785927f3aa74e12290
@@ -700,9 +700,9 @@ F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test 51edd31c65ed1560dd600b1796e8325df96318e2
 F test/temptrigger.test 26670ed7a39cf2296a7f0a9e0a1d7bdb7abe936d
 F test/tester.tcl 0b2999b578964297663de4870babbbee29225622
-F test/thread001.test a3e6a7254d1cb057836cb3145b60c10bf5b7e60f
-F test/thread002.test 716631b06cccf33b368ab7f6dd3cad92907b8928
-F test/thread003.test 33d2d46e6a53ccb2ff8dc4d0c4e3b3aaee36dcd1
+F test/thread001.test 7cc2ce08f9cde95964736d11e91f9ab610f82f91
+F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
+F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
 F test/thread004.test f51dfc3936184aaf73ee85f315224baad272a87f
 F test/thread005.test 50d10b5684399676174bd96c94ad4250b1a2c8b6
 F test/thread1.test df115faa10a4ba1d456e9d4d9ec165016903eae4
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 88b763e8d73fafa1538b08af28b1c8b723b39c61
-R b27c1f3a83b2f5462f0150a6100017fc
+P f1bd5bbae505068d24bfd9cc6bab6a8b8940bad6
+R 6d1c7722e8d08f5c9ec39c32c435674d
 U drh
-Z 704d1aefb0f6d4ce0005ee8d827376d9
+Z 883417057169f45a687263a717525500
