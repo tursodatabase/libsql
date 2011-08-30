@@ -2522,6 +2522,7 @@ void Parse(struct lemon *gp)
     ErrorMsg(ps.filename,0,"Can't allocate %d of memory to hold this file.",
       filesize+1);
     gp->errorcnt++;
+    fclose(fp);
     return;
   }
   if( fread(filebuf,1,filesize,fp)!=filesize ){
@@ -2529,6 +2530,7 @@ void Parse(struct lemon *gp)
       filesize);
     free(filebuf);
     gp->errorcnt++;
+    fclose(fp);
     return;
   }
   fclose(fp);
