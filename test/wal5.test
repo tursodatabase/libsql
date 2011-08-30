@@ -235,14 +235,7 @@ foreach {testprefix do_wal_checkpoint} {
     do_test 2.3.$tn.5 { sql1 { INSERT INTO t2 VALUES(3, 4) } } {}
     do_test 2.3.$tn.6 { file_page_counts } {1 7 1 7}
     do_test 2.3.$tn.7 { code1 { do_wal_checkpoint db -mode full } } {1 7 5}
-    if {$tcl_platform(platform) == "windows"} {
-        # on unix, the size_hint is a no-op if no chunk size is set.
-        # the windows implementation does not have a similar check,
-        # and because of this, the db file size has an extra page.
-        do_test 2.3.$tn.8 { file_page_counts } {2 7 2 7}
-    } {
-        do_test 2.3.$tn.8 { file_page_counts } {1 7 2 7}
-    }
+    do_test 2.3.$tn.8 { file_page_counts } {1 7 2 7}
   }
 
   # Check that checkpoints block on the correct locks. And respond correctly

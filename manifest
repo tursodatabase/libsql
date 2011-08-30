@@ -1,5 +1,5 @@
-C Fix\sa\stotal\sunimportant\sfile\sdescriptor\sleak\sin\slemon.\s\sThis\sis\sto\ssilence\nwarning\smessages.
-D 2011-08-30T00:58:58.556
+C Make\ssure\sSQLITE_FCNTL_SIZE_HINT\sa\sno-op\sif\sthe\schunk\ssize\sis\snot\sgreater\sthan\szero.
+D 2011-08-30T01:23:34.101
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8c930e7b493d59099ea1304bd0f2aed152eb3315
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,8 +165,8 @@ F src/os.c fcc717427a80b2ed225373f07b642dc1aad7490b
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 65a897143b64667d23ed329a7984b9b405accb58
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 014cd466edc2b73e417f382c3213b6c72bc35280
-F src/os_win.c 86bcb5bd0386c761c764c3383879469346da3a14
+F src/os_unix.c ae82cf32c497d9a3a0f147de1b7219b636db4f53
+F src/os_win.c 45de13c6c3501cfd6469b2b34149b823060e39f4
 F src/pager.c 817f7f7140c9fa2641f28e6330e924708ddd870d
 F src/pager.h 2bab1b2ea4eac58663b5833e3522e36b5ff63447
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -887,7 +887,7 @@ F test/wal.test e11da8d5ea8a38a247339455098357e9adf63d76
 F test/wal2.test ad6412596815f553cd30f271d291ab003092bc7e
 F test/wal3.test 18da4e65c30c43c646ad40e145e9a074e4062fc9
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
-F test/wal5.test f06a0427e06db00347e32eb9fa99d6a5c0f2d088
+F test/wal5.test 1bbfaa316dc2a1d0d1fac3f4500c38a90055a41b
 F test/wal6.test 2e3bc767d9c2ce35c47106148d43fcbd072a93b3
 F test/wal7.test 2ae8f427d240099cc4b2dfef63cff44e2a68a1bd
 F test/wal_common.tcl a98f17fba96206122eff624db0ab13ec377be4fe
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 49cd60e38bd8df9d736ced95e0ace6efea95ca7d
-R 864960f9c27e1685a9edda4031c320e3
-U drh
-Z 0c80443f2de345db03862d58a6ec74c5
+P e95cf2c576dda656c0f31eeec3d98e911b9003a1
+R 23e2e1649d860cacfc7d885e0481975c
+U mistachkin
+Z 106f8d2e0fe01f69aa7179a809ac1874
