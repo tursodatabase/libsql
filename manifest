@@ -1,5 +1,5 @@
-C Always\sinclude\sthe\sunixShm.id\sfield,\seven\swhen\snot\sdebugging.
-D 2011-08-31T18:35:34.234
+C The\sserver1.test\sscript\sshould\sonly\srun\sif\smutexes\sare\sfunctional.\nFix\sto\sthe\s#ifdef\schange\sof\scheck-in\s[9e6a4c1473].
+D 2011-08-31T19:40:58.259
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d314143fa6be24828021d3f583ad37d9afdce505
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,7 +163,7 @@ F src/mutex_w32.c 5e54f3ba275bcb5d00248b8c23107df2e2f73e33
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c fcc717427a80b2ed225373f07b642dc1aad7490b
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
-F src/os_common.h b15945976976c80e9a29c2d331a9c6fb42d3efa5
+F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 9e6e26b96b10e62a5dc678ea95bbb16d05fcca6e
 F src/os_win.c 45de13c6c3501cfd6469b2b34149b823060e39f4
@@ -661,7 +661,7 @@ F test/select9.test 74c0fb2c6eecb0219cbed0cbe3df136f8fbf9343
 F test/selectA.test 06d1032fa9009314c95394f2ca2e60d9f7ae8532
 F test/selectB.test 0d072c5846071b569766e6cd7f923f646a8b2bfa
 F test/selectC.test f9bf1bc4581b5b8158caa6e4e4f682acb379fb25
-F test/server1.test f5b790d4c0498179151ca8a7715a65a7802c859c
+F test/server1.test 46803bd3fe8b99b30dbc5ff38ffc756f5c13a118
 F test/shared.test 34945a516532b11182c3eb26e31247eee3c9ae48
 F test/shared2.test 8f71d4eb4d5261280de92284df74172545c852cc
 F test/shared3.test ebf77f023f4bdaa8f74f65822b559e86ce5c6257
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 9e6a4c1473a4cb061a88f6a437a2828368b3ddc8
-R 834dac199e1c9ebe831f91eccddde409
+P 07803476206b8cde60ccc320b9ccdc0d48a41d65
+R eb9ef004318c49388ea9aaadc3e8b5e6
 U drh
-Z 761dac1f8bf1d111d08b2e615a88c98b
+Z 078a9843a586847568ff69812d8e24f3
