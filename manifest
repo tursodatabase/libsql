@@ -1,5 +1,5 @@
-C Backslash\sescaping\sis\snot\sworking\sright\sin\stostr.awk\son\sthe\slatest\subuntu.\nThe\seasiest\sfix\sis\sto\ssimply\snot\suse\sany\sbackslashes\sin\sthe\sspaceanal.tcl\nscript.
-D 2011-08-31T17:46:50.850
+C Only\screate\sthe\ssqlite3OSTrace\sglobal\svariable\sif\scompiling\swith\s\nSQLITE_TEST.
+D 2011-08-31T18:04:54.752
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d314143fa6be24828021d3f583ad37d9afdce505
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,7 +163,7 @@ F src/mutex_w32.c 5e54f3ba275bcb5d00248b8c23107df2e2f73e33
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c fcc717427a80b2ed225373f07b642dc1aad7490b
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
-F src/os_common.h 65a897143b64667d23ed329a7984b9b405accb58
+F src/os_common.h b15945976976c80e9a29c2d331a9c6fb42d3efa5
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c ae82cf32c497d9a3a0f147de1b7219b636db4f53
 F src/os_win.c 45de13c6c3501cfd6469b2b34149b823060e39f4
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P d0b347b412376d22e9f0770ac083dafb5e480dd0
-R b71c3db157ba0c4a396659741c76245f
+P df550066657cb41bad34ac8e722b8148ab7eabfb
+R ba2041aae6bc957791be99b48d3a5d63
 U drh
-Z 6dc79f498e7b45dccac5e2d58d584bd0
+Z 1de22a554319629ea944db035b2e3bd4
