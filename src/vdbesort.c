@@ -142,8 +142,8 @@ static int vdbeSorterIterNext(
 ){
   int rc;                         /* Return Code */
   int nRead;                      /* Number of bytes read */
-  int nRec;                       /* Size of record in bytes */
-  int iOff;                       /* Size of serialized size varint in bytes */
+  int nRec = 0;                   /* Size of record in bytes */
+  int iOff = 0;                   /* Size of serialized size varint in bytes */
 
   nRead = pIter->iEof - pIter->iReadOff;
   if( nRead>5 ) nRead = 5;
@@ -154,25 +154,26 @@ static int vdbeSorterIterNext(
   }
 
   rc = sqlite3OsRead(pIter->pFile, pIter->aAlloc, nRead, pIter->iReadOff);
-  iOff = getVarint32(pIter->aAlloc, nRec);
-
-  if( rc==SQLITE_OK && (iOff+nRec)>nRead ){
-    int nRead2;                   /* Number of extra bytes to read */
-    if( (iOff+nRec)>pIter->nAlloc ){
-      int nNew = pIter->nAlloc*2;
-      while( (iOff+nRec)>nNew ) nNew = nNew*2;
-      pIter->aAlloc = sqlite3DbReallocOrFree(db, pIter->aAlloc, nNew);
-      if( !pIter->aAlloc ) return SQLITE_NOMEM;
-      pIter->nAlloc = nNew;
+  if( rc==SQLITE_OK ){
+    iOff = getVarint32(pIter->aAlloc, nRec);
+    if( (iOff+nRec)>nRead ){
+      int nRead2;                   /* Number of extra bytes to read */
+      if( (iOff+nRec)>pIter->nAlloc ){
+        int nNew = pIter->nAlloc*2;
+        while( (iOff+nRec)>nNew ) nNew = nNew*2;
+        pIter->aAlloc = sqlite3DbReallocOrFree(db, pIter->aAlloc, nNew);
+        if( !pIter->aAlloc ) return SQLITE_NOMEM;
+        pIter->nAlloc = nNew;
+      }
+  
+      nRead2 = iOff + nRec - nRead;
+      rc = sqlite3OsRead(
+          pIter->pFile, &pIter->aAlloc[nRead], nRead2, pIter->iReadOff+nRead
+      );
     }
-
-    nRead2 = iOff + nRec - nRead;
-    rc = sqlite3OsRead(
-        pIter->pFile, &pIter->aAlloc[nRead], nRead2, pIter->iReadOff+nRead
-    );
   }
 
-  assert( nRec>0 || rc!=SQLITE_OK );
+  assert( rc!=SQLITE_OK || nRec>0 );
   pIter->iReadOff += iOff+nRec;
   pIter->nKey = nRec;
   pIter->aKey = &pIter->aAlloc[iOff];
@@ -543,12 +544,12 @@ static int vdbeSorterInitMerge(
   i64 nByte = 0;                  /* Total bytes in all opened PMAs */
 
   /* Initialize the iterators. */
-  for(i=0; rc==SQLITE_OK && i<SORTER_MAX_MERGE_COUNT; i++){
+  for(i=0; i<SORTER_MAX_MERGE_COUNT; i++){
     VdbeSorterIter *pIter = &pSorter->aIter[i];
     rc = vdbeSorterIterInit(db, pSorter, pSorter->iReadOff, pIter, &nByte);
     pSorter->iReadOff = pIter->iEof;
-    assert( pSorter->iReadOff<=pSorter->iWriteOff || rc!=SQLITE_OK );
-    if( pSorter->iReadOff>=pSorter->iWriteOff ) break;
+    assert( rc!=SQLITE_OK || pSorter->iReadOff<=pSorter->iWriteOff );
+    if( rc!=SQLITE_OK || pSorter->iReadOff>=pSorter->iWriteOff ) break;
   }
 
   /* Initialize the aTree[] array. */
