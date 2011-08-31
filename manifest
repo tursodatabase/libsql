@@ -1,5 +1,5 @@
-C The\sserver1.test\sscript\sshould\sonly\srun\sif\smutexes\sare\sfunctional.\nFix\sto\sthe\s#ifdef\schange\sof\scheck-in\s[9e6a4c1473].
-D 2011-08-31T19:40:58.259
+C Add\sthe\sSQLITE_MAX_SCHEMA_RETRY\scompile-time\soption\sto\sthe\sset\sof\soptions\nunderstood\sby\s"PRAGMA\scompile_options;"\sand\sby\sthe\s\n"sqlite_compileoption_used()"\sfunction.
+D 2011-08-31T20:47:50.717
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d314143fa6be24828021d3f583ad37d9afdce505
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -130,7 +130,7 @@ F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
 F src/build.c 2d5de52df616a3bf5a659cbca85211c46e2ba9bd
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
-F src/ctime.c caf51429be3e0d4114056a8273b0fff812ff8ae9
+F src/ctime.c e3132ec65240b2e2f3d50831021eac387f27584d
 F src/date.c a3c6842bad7ae632281811de112a8ba63ff08ab3
 F src/delete.c ff68e5ef23aee08c0ff528f699a19397ed8bbed8
 F src/expr.c 4bbdfaf66bc614be9254ce0c26a17429067a3e07
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 07803476206b8cde60ccc320b9ccdc0d48a41d65
-R eb9ef004318c49388ea9aaadc3e8b5e6
+P 6489848590db7088d965b7fa7feabc8c66e2e2b1
+R b679703af471462fe3522547f0d4dc68
 U drh
-Z 078a9843a586847568ff69812d8e24f3
+Z 6eb5e5b5812def8adf95eaa9a9b59bfd
