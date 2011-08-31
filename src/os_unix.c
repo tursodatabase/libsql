@@ -3146,11 +3146,11 @@ int sqlite3_fullsync_count = 0;
 
 /*
 ** We do not trust systems to provide a working fdatasync().  Some do.
-** Others do no.  To be safe, we will stick with the (slower) fsync().
-** If you know that your system does support fdatasync() correctly,
+** Others do no.  To be safe, we will stick with the (slightly slower)
+** fsync(). If you know that your system does support fdatasync() correctly,
 ** then simply compile with -Dfdatasync=fdatasync
 */
-#if !defined(fdatasync) && !defined(__linux__)
+#if !defined(fdatasync)
 # define fdatasync fsync
 #endif
 

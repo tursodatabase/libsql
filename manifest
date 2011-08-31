@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_MAX_SCHEMA_RETRY\scompile-time\soption\sto\sthe\sset\sof\soptions\nunderstood\sby\s"PRAGMA\scompile_options;"\sand\sby\sthe\s\n"sqlite_compileoption_used()"\sfunction.
-D 2011-08-31T20:47:50.717
+C Formerly,\swe\senabled\sfdatasync()\son\slinux\sonly.\s\sBut\snow\swe\slearn\sthat\nfdatasync()\sis\snot\ssupported\son\sAndroid.\s\sSo\swe\sdisable\sfdatasync()\son\nLinux\stoo.\s\sIt\scan\sbe\sreenabled\sat\scompile-time\sfor\sthose\swho\sreally\sneed\sit.
+D 2011-08-31T21:01:55.686
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d314143fa6be24828021d3f583ad37d9afdce505
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +165,7 @@ F src/os.c fcc717427a80b2ed225373f07b642dc1aad7490b
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 9e6e26b96b10e62a5dc678ea95bbb16d05fcca6e
+F src/os_unix.c 10e0c4dcdbec8d4189890fdf3e71b32efae194e3
 F src/os_win.c 45de13c6c3501cfd6469b2b34149b823060e39f4
 F src/pager.c 817f7f7140c9fa2641f28e6330e924708ddd870d
 F src/pager.h 2bab1b2ea4eac58663b5833e3522e36b5ff63447
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 6489848590db7088d965b7fa7feabc8c66e2e2b1
-R b679703af471462fe3522547f0d4dc68
+P 1b124af40a8fa4d3094f24a9213096b66411b8f9
+R e3c435a6ba2306a2d838c8b23577f672
 U drh
-Z 6eb5e5b5812def8adf95eaa9a9b59bfd
+Z 9e7ae74ddd5128c7f3fb2205f914d095
