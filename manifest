@@ -1,5 +1,5 @@
-C Enable\sthe\sthread\stest\slogic\sto\swork\swith\sthe\sSQLITE_HAS_CODEC\scompile-time\noption.
-D 2011-08-30T19:52:32.227
+C Add\schecks\sto\smake\ssure\scells\sin\scorrupt\sdatabase\sfiles\s\ndo\snot\soverflow\sa\spage\swhen\sdoing\sautovacuum.\nProblem\sdetected\sby\svalgrind.
+D 2011-08-31T13:27:19.588
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d314143fa6be24828021d3f583ad37d9afdce505
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -124,7 +124,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 28a4fe55327ff708bfaf9d4326d02686f7a553c3
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c bd89d604a532063da8ed1a095f1805db49896325
+F src/btree.c 4a2856b3bde9959986a7b9327841b3ff94023784
 F src/btree.h 9ddf04226eac592d4cc3709c5a8b33b2351ff5f7
 F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
 F src/build.c 2d5de52df616a3bf5a659cbca85211c46e2ba9bd
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P f1bd5bbae505068d24bfd9cc6bab6a8b8940bad6
-R 6d1c7722e8d08f5c9ec39c32c435674d
+P 20ddfb4780b87953718f3a8e67b777dcff0e3b5e
+R 513927bc09bdb01972234dc3d07878fd
 U drh
-Z 883417057169f45a687263a717525500
+Z 7574b78d098e12a356337eb2bfd798e6
