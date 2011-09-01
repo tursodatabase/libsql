@@ -2082,6 +2082,7 @@ struct Select {
 #define SF_UsesEphemeral   0x0008  /* Uses the OpenEphemeral opcode */
 #define SF_Expanded        0x0010  /* sqlite3SelectExpand() called on this */
 #define SF_HasTypeInfo     0x0020  /* FROM subqueries have Table metadata */
+#define SF_UseSorter       0x0040  /* Sort using a sorter */
 
 
 /*

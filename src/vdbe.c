@@ -3170,6 +3170,7 @@ case OP_OpenWrite: {
 */
 case OP_OpenSorter: 
 case OP_OpenAutoindex: 
+case OP_SorterOpen:
 case OP_OpenEphemeral: {
   VdbeCursor *pCx;
   static const int vfsFlags = 
@@ -3214,6 +3215,7 @@ case OP_OpenEphemeral: {
   }
   pCx->isOrdered = (pOp->p5!=BTREE_UNORDERED);
   pCx->isIndex = !pCx->isTable;
+  pCx->isSorter = pOp->opcode==OP_SorterOpen;
 #ifndef SQLITE_OMIT_MERGE_SORT
   if( rc==SQLITE_OK && pOp->opcode==OP_OpenSorter ){
     rc = sqlite3VdbeSorterInit(db, pCx);
@@ -4090,6 +4092,7 @@ case OP_ResetCount: {
 ** If the P1 cursor must be pointing to a valid row (not a NULL row)
 ** of a real table, not a pseudo-table.
 */
+case OP_SorterData:
 case OP_RowKey:
 case OP_RowData: {
   VdbeCursor *pC;
@@ -4103,11 +4106,12 @@ case OP_RowData: {
   /* Note that RowKey and RowData are really exactly the same instruction */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
-  assert( pC->isTable || pOp->opcode==OP_RowKey );
+  assert( pC->isTable || pOp->opcode!=OP_RowData );
   assert( pC->isIndex || pOp->opcode==OP_RowData );
   assert( pC!=0 );
   assert( pC->nullRow==0 );
   assert( pC->pseudoTableReg==0 );
+  assert( pC->isSorter==(pOp->opcode==OP_SorterData) );
 
   if( isSorter(pC) ){
     assert( pOp->opcode==OP_RowKey );
@@ -4271,6 +4275,7 @@ case OP_Last: {        /* jump */
 ** regression tests can determine whether or not the optimizer is
 ** correctly optimizing out sorts.
 */
+case OP_SorterSort:    /* jump */
 case OP_Sort: {        /* jump */
 #ifdef SQLITE_TEST
   sqlite3_sort_count++;
@@ -4295,6 +4300,7 @@ case OP_Rewind: {        /* jump */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
+  assert( pC->isSorter==(pOp->opcode==OP_SorterSort) );
   res = 1;
   if( isSorter(pC) ){
     rc = sqlite3VdbeSorterRewind(db, pC, &res);
@@ -4347,6 +4353,7 @@ case OP_Rewind: {        /* jump */
 ** If P5 is positive and the jump is taken, then event counter
 ** number P5-1 in the prepared statement is incremented.
 */
+case OP_SorterNext:    /* jump */
 case OP_Prev:          /* jump */
 case OP_Next: {        /* jump */
   VdbeCursor *pC;
@@ -4359,6 +4366,7 @@ case OP_Next: {        /* jump */
   if( pC==0 ){
     break;  /* See ticket #2273 */
   }
+  assert( pC->isSorter==(pOp->opcode==OP_SorterNext) );
   if( isSorter(pC) ){
     assert( pOp->opcode==OP_Next );
     rc = sqlite3VdbeSorterNext(db, pC, &res);
@@ -4395,6 +4403,7 @@ case OP_Next: {        /* jump */
 ** This instruction only works for indices.  The equivalent instruction
 ** for tables is OP_Insert.
 */
+case OP_SorterInsert:
 case OP_IdxInsert: {        /* in2 */
   VdbeCursor *pC;
   BtCursor *pCrsr;
@@ -4404,6 +4413,7 @@ case OP_IdxInsert: {        /* in2 */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
+  assert( pC->isSorter==(pOp->opcode==OP_SorterInsert) );
   pIn2 = &aMem[pOp->p2];
   assert( pIn2->flags & MEM_Blob );
   pCrsr = pC->pCursor;

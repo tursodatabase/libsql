@@ -1,5 +1,5 @@
-C Avoid\susing\suninitialized\svariables\safter\sfailures\sin\sthe\smerge\ssort\scode.
-D 2011-08-31T23:57:22.695
+C Experimental\scode-generator\schanges\sto\sutilize\snew\sopcodes\sfor\ssorting.
+D 2011-09-01T15:32:47.873
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d314143fa6be24828021d3f583ad37d9afdce505
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -179,11 +179,11 @@ F src/printf.c 585a36b6a963df832cfb69505afa3a34ed5ef8a1
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 36368f44569208fa074e61f4dd0b6c4fb60ca2b4
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
-F src/select.c 14552e9ff4b27ec027a43fafb62ea5d049cd2809
+F src/select.c 20bef6860c5f69c6a90666b4968d4c5cb88056c0
 F src/shell.c bbe7818ff5bc8614105ceb81ad67b8bdc0b671dd
 F src/sqlite.h.in 0a6c9c23337fd1352c5c75a613ff9533aa7d91cb
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
-F src/sqliteInt.h 86a4fdb3ba9ab31d98b266797606f30fefe5b8a9
+F src/sqliteInt.h f6debf9a9eb8463ab2ef8be4b2b740ea9af5afba
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -238,11 +238,11 @@ F src/update.c 74a6cfb34e9732c1e2a86278b229913b4b51eeec
 F src/utf.c c53eb7404b3eb5c1cbb5655c6a7a0e0ce6bd50f0
 F src/util.c 06302ffd2b80408d4f6c7af71f7090e0cf8d8ff7
 F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
-F src/vdbe.c 9165b35da939f4a66c7e68b0c6d3f017ca982cb1
+F src/vdbe.c 9260e5138855399bea2611a29da336688bfa1b79
 F src/vdbe.h c1eeedacab6bcf1e7c2cf8203ba9763a616f9a86
-F src/vdbeInt.h 70767f6504aac4f0057ec2a55738470a890789ac
+F src/vdbeInt.h 51a902e12c7d571e3b516e5407e30f996494aafe
 F src/vdbeapi.c 11dc47987abacb76ad016dcf5abc0dc422482a98
-F src/vdbeaux.c de1e4cab060a45df9ebee68dd63543d14559f0e7
+F src/vdbeaux.c e58acbc5ea3823922a0cd8fa21f94f39af51ee88
 F src/vdbeblob.c f024f0bf420f36b070143c32b15cc7287341ffd3
 F src/vdbemem.c 5e6effb96dd53d233361cbfaa3f0a43b9af689e9
 F src/vdbesort.c f3d043a1bab7409d4a23cd7a35287c3ac440a167
@@ -961,7 +961,10 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 70b5b309568ac55565558d5456aca1e431cfd26b
-R 09e04eb9163c46e529a61f2438cff2a1
+P 2869ed28299b1c9f355ecc24635830f7f1249126
+R e08eee2093eee8a9fb40d6646a4c9c76
+T *branch * merge-sort
+T *sym-merge-sort *
+T -sym-trunk *
 U drh
-Z bdb2832352809bf647849d42b7aa6060
+Z c5e8ef1774d371c2becb6d0057b76727

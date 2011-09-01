@@ -419,12 +419,18 @@ static void pushOntoSorter(
   int nExpr = pOrderBy->nExpr;
   int regBase = sqlite3GetTempRange(pParse, nExpr+2);
   int regRecord = sqlite3GetTempReg(pParse);
+  int op;
   sqlite3ExprCacheClear(pParse);
   sqlite3ExprCodeExprList(pParse, pOrderBy, regBase, 0);
   sqlite3VdbeAddOp2(v, OP_Sequence, pOrderBy->iECursor, regBase+nExpr);
   sqlite3ExprCodeMove(pParse, regData, regBase+nExpr+1, 1);
   sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase, nExpr + 2, regRecord);
-  sqlite3VdbeAddOp2(v, OP_IdxInsert, pOrderBy->iECursor, regRecord);
+  if( pSelect->selFlags & SF_UseSorter ){
+    op = OP_SorterInsert;
+  }else{
+    op = OP_IdxInsert;
+  }
+  sqlite3VdbeAddOp2(v, op, pOrderBy->iECursor, regRecord);
   sqlite3ReleaseTempReg(pParse, regRecord);
   sqlite3ReleaseTempRange(pParse, regBase, nExpr+2);
   if( pSelect->iLimit ){
@@ -893,9 +899,20 @@ static void generateSortTail(
   }else{
     regRowid = sqlite3GetTempReg(pParse);
   }
-  addr = 1 + sqlite3VdbeAddOp2(v, OP_Sort, iTab, addrBreak);
-  codeOffset(v, p, addrContinue);
-  sqlite3VdbeAddOp3(v, OP_Column, iTab, pOrderBy->nExpr + 1, regRow);
+  if( p->selFlags & SF_UseSorter ){
+    int regSortOut = sqlite3GetTempReg(pParse);
+    int ptab2 = pParse->nTab++;
+    sqlite3VdbeAddOp3(v, OP_OpenPseudo, ptab2, regSortOut, pOrderBy->nExpr+2);
+    addr = 1 + sqlite3VdbeAddOp2(v, OP_SorterSort, iTab, addrBreak);
+    codeOffset(v, p, addrContinue);
+    sqlite3VdbeAddOp2(v, OP_SorterData, iTab, regSortOut);
+    sqlite3VdbeAddOp3(v, OP_Column, ptab2, pOrderBy->nExpr+1, regRow);
+    sqlite3VdbeChangeP5(v, OPFLAG_CLEARCACHE);
+  }else{
+    addr = 1 + sqlite3VdbeAddOp2(v, OP_Sort, iTab, addrBreak);
+    codeOffset(v, p, addrContinue);
+    sqlite3VdbeAddOp3(v, OP_Column, iTab, pOrderBy->nExpr+1, regRow);
+  }
   switch( eDest ){
     case SRT_Table:
     case SRT_EphemTab: {
@@ -948,7 +965,11 @@ static void generateSortTail(
   /* The bottom of the loop
   */
   sqlite3VdbeResolveLabel(v, addrContinue);
-  sqlite3VdbeAddOp2(v, OP_Next, iTab, addr);
+  if( p->selFlags & SF_UseSorter ){
+    sqlite3VdbeAddOp2(v, OP_SorterNext, iTab, addr);
+  }else{
+    sqlite3VdbeAddOp2(v, OP_Next, iTab, addr);
+  }
   sqlite3VdbeResolveLabel(v, addrBreak);
   if( eDest==SRT_Output || eDest==SRT_Coroutine ){
     sqlite3VdbeAddOp2(v, OP_Close, pseudoTab, 0);
@@ -3914,6 +3935,10 @@ int sqlite3Select(
   iEnd = sqlite3VdbeMakeLabel(v);
   p->nSelectRow = (double)LARGEST_INT64;
   computeLimitRegisters(pParse, p, iEnd);
+  if( p->iLimit==0 && addrSortIndex>=0 ){
+    sqlite3VdbeGetOp(v, addrSortIndex)->opcode = OP_SorterOpen;
+    p->selFlags |= SF_UseSorter;
+  }
 
   /* Open a virtual index to use for the distinct set.
   */
