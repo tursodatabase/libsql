@@ -732,13 +732,18 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, VdbeCursor *pCsr, int *pbEof){
 
   assert( pSorter );
 
+  /* If no data has been written to disk, then do not do so now. Instead,
+  ** sort the VdbeSorter.pRecord list. The vdbe layer will read data directly
+  ** from the in-memory list.  */
+  if( pSorter->nPMA==0 ){
+    *pbEof = !pSorter->pRecord;
+    assert( pSorter->aTree==0 );
+    return vdbeSorterSort(db, pCsr);
+  }
+
   /* Write the current b-tree to a PMA. Close the b-tree cursor. */
   rc = vdbeSorterListToPMA(db, pCsr);
   if( rc!=SQLITE_OK ) return rc;
-  if( pSorter->nPMA==0 ){
-    *pbEof = 1;
-    return SQLITE_OK;
-  }
 
   /* Allocate space for aIter[] and aTree[]. */
   nIter = pSorter->nPMA;
@@ -826,17 +831,48 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, VdbeCursor *pCsr, int *pbEof){
 */
 int sqlite3VdbeSorterNext(sqlite3 *db, VdbeCursor *pCsr, int *pbEof){
   VdbeSorter *pSorter = pCsr->pSorter;
-  int iPrev = pSorter->aTree[1];  /* Index of iterator to advance */
-  int i;                          /* Index of aTree[] to recalculate */
   int rc;                         /* Return code */
 
-  rc = vdbeSorterIterNext(db, &pSorter->aIter[iPrev]);
-  for(i=(pSorter->nTree+iPrev)/2; rc==SQLITE_OK && i>0; i=i/2){
-    rc = vdbeSorterDoCompare(pCsr, i);
-  }
+  if( pSorter->aTree ){
+    int iPrev = pSorter->aTree[1];/* Index of iterator to advance */
+    int i;                        /* Index of aTree[] to recalculate */
 
-  *pbEof = (pSorter->aIter[pSorter->aTree[1]].pFile==0);
+    rc = vdbeSorterIterNext(db, &pSorter->aIter[iPrev]);
+    for(i=(pSorter->nTree+iPrev)/2; rc==SQLITE_OK && i>0; i=i/2){
+      rc = vdbeSorterDoCompare(pCsr, i);
+    }
+
+    *pbEof = (pSorter->aIter[pSorter->aTree[1]].pFile==0);
+  }else{
+    SorterRecord *pFree = pSorter->pRecord;
+    pSorter->pRecord = pFree->pNext;
+    pFree->pNext = 0;
+    vdbeSorterRecordFree(db, pFree);
+    *pbEof = !pSorter->pRecord;
+    rc = SQLITE_OK;
+  }
   return rc;
+}
+
+/*
+** Return a pointer to a buffer owned by the sorter that contains the 
+** current key.
+*/
+static void *vdbeSorterRowkey(
+  VdbeSorter *pSorter,            /* Sorter object */
+  int *pnKey                      /* OUT: Size of current key in bytes */
+){
+  void *pKey;
+  if( pSorter->aTree ){
+    VdbeSorterIter *pIter;
+    pIter = &pSorter->aIter[ pSorter->aTree[1] ];
+    *pnKey = pIter->nKey;
+    pKey = pIter->aKey;
+  }else{
+    *pnKey = pSorter->pRecord->nVal;
+    pKey = pSorter->pRecord->pVal;
+  }
+  return pKey;
 }
 
 /*
@@ -844,15 +880,15 @@ int sqlite3VdbeSorterNext(sqlite3 *db, VdbeCursor *pCsr, int *pbEof){
 */
 int sqlite3VdbeSorterRowkey(VdbeCursor *pCsr, Mem *pOut){
   VdbeSorter *pSorter = pCsr->pSorter;
-  VdbeSorterIter *pIter;
+  void *pKey; int nKey;           /* Sorter key to copy into pOut */
 
-  pIter = &pSorter->aIter[ pSorter->aTree[1] ];
-  if( sqlite3VdbeMemGrow(pOut, pIter->nKey, 0) ){
+  pKey = vdbeSorterRowkey(pSorter, &nKey);
+  if( sqlite3VdbeMemGrow(pOut, nKey, 0) ){
     return SQLITE_NOMEM;
   }
-  pOut->n = pIter->nKey;
+  pOut->n = nKey;
   MemSetTypeFlag(pOut, MEM_Blob);
-  memcpy(pOut->z, pIter->aKey, pIter->nKey);
+  memcpy(pOut->z, pKey, nKey);
 
   return SQLITE_OK;
 }
@@ -874,11 +910,10 @@ int sqlite3VdbeSorterCompare(
 ){
   int rc;
   VdbeSorter *pSorter = pCsr->pSorter;
-  VdbeSorterIter *pIter;
-  pIter = &pSorter->aIter[ pSorter->aTree[1] ];
-  rc = vdbeSorterCompare(pCsr->pKeyInfo, 1,
-      pVal->z, pVal->n, pIter->aKey, pIter->nKey, pRes
-  );
+  void *pKey; int nKey;           /* Sorter key to compare pVal with */
+
+  pKey = vdbeSorterRowkey(pSorter, &nKey);
+  rc = vdbeSorterCompare(pCsr->pKeyInfo, 1, pVal->z, pVal->n, pKey, nKey, pRes);
   assert( rc!=SQLITE_OK || *pRes<=0 );
   return rc;
 }
