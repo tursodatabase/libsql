@@ -2326,6 +2326,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   int iIdx = pParse->nTab++;     /* Btree cursor used for pIndex */
   int iSorter = iTab;            /* Cursor opened by OpenSorter (if in use) */
   int addr1;                     /* Address of top of loop */
+  int addr2;                     /* Address to jump to for next iteration */
   int tnum;                      /* Root page of index */
   Vdbe *v;                       /* Generate code into this virtual machine */
   KeyInfo *pKey;                 /* KeyInfo for index */
@@ -2372,25 +2373,34 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   if( bUseSorter ){
     iSorter = pParse->nTab++;
     sqlite3VdbeAddOp4(v, OP_OpenSorter, iSorter, 0, 0, (char*)pKey, P4_KEYINFO);
-    sqlite3VdbeChangeP5(v, BTREE_SORTER);
   }
 
   /* Open the table. Loop through all rows of the table, inserting index
   ** records into the sorter. */
   sqlite3OpenTable(pParse, iTab, iDb, pTab, OP_OpenRead);
   addr1 = sqlite3VdbeAddOp2(v, OP_Rewind, iTab, 0);
+  addr2 = addr1 + 1;
   regRecord = sqlite3GetTempReg(pParse);
   regIdxKey = sqlite3GenerateIndexKey(pParse, pIndex, iTab, regRecord, 1);
 
   if( bUseSorter ){
-    sqlite3VdbeAddOp2(v, OP_IdxInsert, iSorter, regRecord);
+    sqlite3VdbeAddOp2(v, OP_SorterInsert, iSorter, regRecord);
     sqlite3VdbeAddOp2(v, OP_Next, iTab, addr1+1);
     sqlite3VdbeJumpHere(v, addr1);
-    addr1 = sqlite3VdbeAddOp2(v, OP_Sort, iSorter, 0);
-    sqlite3VdbeAddOp2(v, OP_RowKey, iSorter, regRecord);
-  }
-
-  if( pIndex->onError!=OE_None ){
+    addr1 = sqlite3VdbeAddOp2(v, OP_SorterSort, iSorter, 0);
+    if( pIndex->onError!=OE_None ){
+      int j2 = sqlite3VdbeCurrentAddr(v) + 3;
+      sqlite3VdbeAddOp2(v, OP_Goto, 0, j2);
+      addr2 = sqlite3VdbeCurrentAddr(v);
+      sqlite3VdbeAddOp3(v, OP_SorterCompare, iSorter, j2, regRecord);
+      sqlite3HaltConstraint(
+          pParse, OE_Abort, "indexed columns are not unique", P4_STATIC
+      );
+    }else{
+      addr2 = sqlite3VdbeCurrentAddr(v);
+    }
+    sqlite3VdbeAddOp2(v, OP_SorterData, iSorter, regRecord);
+  }else if( pIndex->onError!=OE_None ){
     const int regRowid = regIdxKey + pIndex->nColumn;
     const int j2 = sqlite3VdbeCurrentAddr(v) + 2;
     void * const pRegKey = SQLITE_INT_TO_PTR(regIdxKey);
@@ -2411,7 +2421,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   sqlite3VdbeAddOp3(v, OP_IdxInsert, iIdx, regRecord, bUseSorter);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
   sqlite3ReleaseTempReg(pParse, regRecord);
-  sqlite3VdbeAddOp2(v, OP_Next, iSorter, addr1+1);
+  sqlite3VdbeAddOp2(v, bUseSorter ? OP_SorterNext : OP_Next, iSorter, addr2);
   sqlite3VdbeJumpHere(v, addr1);
 
   sqlite3VdbeAddOp1(v, OP_Close, iTab);

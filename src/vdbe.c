@@ -3162,15 +3162,7 @@ case OP_OpenWrite: {
 ** by this opcode will be used for automatically created transient
 ** indices in joins.
 */
-/* Opcode: OpenSorter P1 P2 * P4 *
-**
-** This opcode works like OP_OpenEphemeral except that it opens
-** a transient index that is specifically designed to sort large
-** tables using an external merge-sort algorithm.
-*/
-case OP_OpenSorter: 
 case OP_OpenAutoindex: 
-case OP_SorterOpen:
 case OP_OpenEphemeral: {
   VdbeCursor *pCx;
   static const int vfsFlags = 
@@ -3181,7 +3173,6 @@ case OP_OpenEphemeral: {
       SQLITE_OPEN_TRANSIENT_DB;
 
   assert( pOp->p1>=0 );
-  assert( (pOp->opcode==OP_OpenSorter)==((pOp->p5 & BTREE_SORTER)!=0) );
   pCx = allocateCursor(p, pOp->p1, pOp->p2, -1, 1);
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
@@ -3215,12 +3206,24 @@ case OP_OpenEphemeral: {
   }
   pCx->isOrdered = (pOp->p5!=BTREE_UNORDERED);
   pCx->isIndex = !pCx->isTable;
-  pCx->isSorter = pOp->opcode==OP_SorterOpen;
-#ifndef SQLITE_OMIT_MERGE_SORT
-  if( rc==SQLITE_OK && pOp->opcode==OP_OpenSorter ){
-    rc = sqlite3VdbeSorterInit(db, pCx);
-  }
-#endif
+  break;
+}
+
+/* Opcode: OpenSorter P1 P2 * P4 *
+**
+** This opcode works like OP_OpenEphemeral except that it opens
+** a transient index that is specifically designed to sort large
+** tables using an external merge-sort algorithm.
+*/
+case OP_SorterOpen:
+case OP_OpenSorter: {
+  VdbeCursor *pCx;
+  pCx = allocateCursor(p, pOp->p1, pOp->p2, -1, 1);
+  if( pCx==0 ) goto no_mem;
+  pCx->pKeyInfo = pOp->p4.pKeyInfo;
+  pCx->pKeyInfo->enc = ENC(p->db);
+  pCx->isSorter = 1;
+  rc = sqlite3VdbeSorterInit(db, pCx);
   break;
 }
 
@@ -4072,6 +4075,40 @@ case OP_ResetCount: {
   break;
 }
 
+/* Opcode: SorterCompare P1 P2 P3
+**
+** P1 is a sorter cursor. This instruction compares the record blob in 
+** register P3 with the entry that the sorter cursor currently points to.
+** If, excluding the rowid fields at the end, the two records are a match,
+** fall through to the next instruction. Otherwise, jump to instruction P2.
+*/
+case OP_SorterCompare: {
+  VdbeCursor *pC;
+  int res;
+
+  pC = p->apCsr[pOp->p1];
+  assert( isSorter(pC) );
+  pIn3 = &aMem[pOp->p3];
+  rc = sqlite3VdbeSorterCompare(pC, pIn3, &res);
+  if( res ){
+    pc = pOp->p2-1;
+  }
+  break;
+};
+
+/* Opcode: SorterData P1 P2 * * *
+**
+** Write into register P2 the current sorter data for sorter cursor P1.
+*/
+case OP_SorterData: {
+  VdbeCursor *pC;
+  pOut = &aMem[pOp->p2];
+  pC = p->apCsr[pOp->p1];
+  assert( pC->isSorter );
+  rc = sqlite3VdbeSorterRowkey(pC, pOut);
+  break;
+}
+
 /* Opcode: RowData P1 P2 * * *
 **
 ** Write into register P2 the complete row data for cursor P1.
@@ -4092,7 +4129,6 @@ case OP_ResetCount: {
 ** If the P1 cursor must be pointing to a valid row (not a NULL row)
 ** of a real table, not a pseudo-table.
 */
-case OP_SorterData:
 case OP_RowKey:
 case OP_RowData: {
   VdbeCursor *pC;
@@ -4106,18 +4142,13 @@ case OP_RowData: {
   /* Note that RowKey and RowData are really exactly the same instruction */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
+  assert( pC->isSorter==0 );
   assert( pC->isTable || pOp->opcode!=OP_RowData );
   assert( pC->isIndex || pOp->opcode==OP_RowData );
   assert( pC!=0 );
   assert( pC->nullRow==0 );
   assert( pC->pseudoTableReg==0 );
   assert( pC->isSorter==(pOp->opcode==OP_SorterData) );
-
-  if( isSorter(pC) ){
-    assert( pOp->opcode==OP_RowKey );
-    rc = sqlite3VdbeSorterRowkey(pC, pOut);
-    break;
-  }
 
   assert( pC->pCursor!=0 );
   pCrsr = pC->pCursor;
@@ -4368,7 +4399,7 @@ case OP_Next: {        /* jump */
   }
   assert( pC->isSorter==(pOp->opcode==OP_SorterNext) );
   if( isSorter(pC) ){
-    assert( pOp->opcode==OP_Next );
+    assert( pOp->opcode==OP_SorterNext );
     rc = sqlite3VdbeSorterNext(db, pC, &res);
   }else{
     res = 1;
@@ -4421,16 +4452,17 @@ case OP_IdxInsert: {        /* in2 */
     assert( pC->isTable==0 );
     rc = ExpandBlob(pIn2);
     if( rc==SQLITE_OK ){
-      nKey = pIn2->n;
-      zKey = pIn2->z;
-      rc = sqlite3VdbeSorterWrite(db, pC, nKey);
-      if( rc==SQLITE_OK ){
+      if( isSorter(pC) ){
+        rc = sqlite3VdbeSorterWrite(db, pC, pIn2);
+      }else{
+        nKey = pIn2->n;
+        zKey = pIn2->z;
         rc = sqlite3BtreeInsert(pCrsr, zKey, nKey, "", 0, 0, pOp->p3, 
             ((pOp->p5 & OPFLAG_USESEEKRESULT) ? pC->seekResult : 0)
-        );
+            );
         assert( pC->deferredMoveto==0 );
+        pC->cacheStatus = CACHE_STALE;
       }
-      pC->cacheStatus = CACHE_STALE;
     }
   }
   break;

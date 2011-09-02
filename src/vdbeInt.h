@@ -403,13 +403,15 @@ void sqlite3VdbeMemStoreType(Mem *pMem);
 # define sqlite3VdbeSorterRowkey(Y,Z)    SQLITE_OK
 # define sqlite3VdbeSorterRewind(X,Y,Z)  SQLITE_OK
 # define sqlite3VdbeSorterNext(X,Y,Z)    SQLITE_OK
+# define sqlite3VdbeSorterCompare(X,Y,Z) SQLITE_OK
 #else
 int sqlite3VdbeSorterInit(sqlite3 *, VdbeCursor *);
-int sqlite3VdbeSorterWrite(sqlite3 *, VdbeCursor *, int);
 void sqlite3VdbeSorterClose(sqlite3 *, VdbeCursor *);
 int sqlite3VdbeSorterRowkey(VdbeCursor *, Mem *);
-int sqlite3VdbeSorterRewind(sqlite3 *, VdbeCursor *, int *);
 int sqlite3VdbeSorterNext(sqlite3 *, VdbeCursor *, int *);
+int sqlite3VdbeSorterRewind(sqlite3 *, VdbeCursor *, int *);
+int sqlite3VdbeSorterWrite(sqlite3 *, VdbeCursor *, Mem *);
+int sqlite3VdbeSorterCompare(VdbeCursor *, Mem *, int *);
 #endif
 
 #if !defined(SQLITE_OMIT_SHARED_CACHE) && SQLITE_THREADSAFE>0
