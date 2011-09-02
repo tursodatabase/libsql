@@ -7285,7 +7285,6 @@ static int btreeDropTable(Btree *p, Pgno iTable, int *piMoved){
   return rc;  
 }
 int sqlite3BtreeDropTable(Btree *p, int iTable, int *piMoved){
-  BtShared *pBt = p->pBt;
   int rc;
   sqlite3BtreeEnter(p);
   rc = btreeDropTable(p, iTable, piMoved);

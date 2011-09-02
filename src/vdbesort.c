@@ -102,8 +102,8 @@ struct VdbeSorter {
   sqlite3_file *pTemp1;           /* PMA file 1 */
   int nPMA;                       /* Number of PMAs stored in pTemp1 */
   SorterRecord *pRecord;          /* Head of in-memory record list */
-  int nLimit1;                    /* Minimum PMA size, in bytes */
-  int nLimit2;                    /* Maximum PMA size, in bytes */
+  int mnPmaSize;                  /* Minimum PMA size, in bytes */
+  int mxPmaSize;                  /* Maximum PMA size, in bytes.  0==no limit */
   char *aSpace;                   /* Space for UnpackRecord() */
   int nSpace;                     /* Size of aSpace in bytes */
 };
@@ -400,16 +400,20 @@ static int vdbeSorterDoCompare(VdbeCursor *pCsr, int iOut){
 */
 int sqlite3VdbeSorterInit(sqlite3 *db, VdbeCursor *pCsr){
   int pgsz;                       /* Page size of main database */
+  int mxCache;                    /* Cache size */
+  VdbeSorter *pSorter;            /* The new sorter */
 
   assert( pCsr->pKeyInfo && pCsr->pBt==0 );
-  pCsr->pSorter = sqlite3DbMallocZero(db, sizeof(VdbeSorter));
-  if( pCsr->pSorter==0 ){
+  pCsr->pSorter = pSorter = sqlite3DbMallocZero(db, sizeof(VdbeSorter));
+  if( pSorter==0 ){
     return SQLITE_NOMEM;
   }
 
   pgsz = sqlite3BtreeGetPageSize(db->aDb[0].pBt);
-  pCsr->pSorter->nLimit1 = 10 * pgsz;
-  pCsr->pSorter->nLimit2 = db->aDb[0].pSchema->cache_size * pgsz;
+  pSorter->mnPmaSize = SORTER_MIN_WORKING * pgsz;
+  mxCache = db->aDb[0].pSchema->cache_size;
+  if( mxCache<SORTER_MIN_WORKING ) mxCache = SORTER_MIN_WORKING;
+  pSorter->mxPmaSize = mxCache * pgsz;
 
   return SQLITE_OK;
 }
@@ -557,25 +561,6 @@ static int vdbeSorterSort(sqlite3 *db, VdbeCursor *pCsr){
   }
   pSorter->pRecord = p;
 
-#if 0
-  {
-    SorterRecord *pTmp1 = 0;
-    SorterRecord *pTmp2;
-    for(pTmp2=pSorter->pRecord; pTmp2 && rc==SQLITE_OK; pTmp2=pTmp2->pNext){
-      if( pTmp1 ){
-        int res;
-        rc = vdbeSorterCompare(pCsr, 
-            0, pTmp1->pVal, pTmp1->nVal, pTmp2->pVal, pTmp2->nVal, &res
-        );
-        assert( rc!=SQLITE_OK || res<0 );
-      }
-      pTmp1 = pTmp2;
-    }
-  }
-#endif
-
-  if( rc!=SQLITE_OK ){
-  }
   sqlite3_free(aSlot);
   return rc;
 }
@@ -682,8 +667,8 @@ int sqlite3VdbeSorterWrite(
   **     than (page-size * 10) and sqlite3HeapNearlyFull() returns true.
   */
   if( rc==SQLITE_OK && (
-        (pSorter->nInMemory>pSorter->nLimit2)
-     || (pSorter->nInMemory>pSorter->nLimit1 && sqlite3HeapNearlyFull())
+        (pSorter->nInMemory>pSorter->mxPmaSize)
+     || (pSorter->nInMemory>pSorter->mnPmaSize && sqlite3HeapNearlyFull())
   )){
     rc = vdbeSorterListToPMA(db, pCsr);
     pSorter->nInMemory = 0;
@@ -920,7 +905,7 @@ int sqlite3VdbeSorterCompare(
 
   pKey = vdbeSorterRowkey(pSorter, &nKey);
   rc = vdbeSorterCompare(pCsr, 1, pVal->z, pVal->n, pKey, nKey, pRes);
-  assert( rc!=SQLITE_OK || *pRes<=0 );
+  assert( rc!=SQLITE_OK || pVal->db->mallocFailed || (*pRes)<=0 );
   return rc;
 }
 

@@ -156,9 +156,6 @@ const char *sqlite3PagerJournalname(Pager*);
 int sqlite3PagerNosync(Pager*);
 void *sqlite3PagerTempSpace(Pager*);
 int sqlite3PagerIsMemdb(Pager*);
-#ifndef SQLITE_OMIT_MERGE_SORT
-int sqlite3PagerUnderStress(Pager*);
-#endif
 
 /* Functions used to truncate the database file. */
 void sqlite3PagerTruncateImage(Pager*,Pgno);
