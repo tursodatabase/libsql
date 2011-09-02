@@ -1604,7 +1604,6 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
     }
     case SQLITE_FCNTL_SIZE_HINT: {
       if( pFile->szChunk>0 ){
-        winFile *pFile = (winFile*)id;
         sqlite3_int64 oldSz;
         int rc = winFileSize(id, &oldSz);
         if( rc==SQLITE_OK ){

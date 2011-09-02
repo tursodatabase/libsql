@@ -1,5 +1,5 @@
-C Avoid\susing\suninitialized\svariables\safter\sfailures\sin\sthe\smerge\ssort\scode.
-D 2011-08-31T23:57:22.695
+C Remove\sunused\slocal\svariable.
+D 2011-09-02T15:08:28.662
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d314143fa6be24828021d3f583ad37d9afdce505
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 10e0c4dcdbec8d4189890fdf3e71b32efae194e3
-F src/os_win.c 45de13c6c3501cfd6469b2b34149b823060e39f4
+F src/os_win.c 33b7b7b48939af5cef2305f5ded19d45c025e2c7
 F src/pager.c 817f7f7140c9fa2641f28e6330e924708ddd870d
 F src/pager.h 2bab1b2ea4eac58663b5833e3522e36b5ff63447
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 70b5b309568ac55565558d5456aca1e431cfd26b
-R 09e04eb9163c46e529a61f2438cff2a1
-U drh
-Z bdb2832352809bf647849d42b7aa6060
+P 2869ed28299b1c9f355ecc24635830f7f1249126
+R d7407cbd16401c8c8a7c8d014c2baaa2
+U mistachkin
+Z 3bc82a48805c63310ead923d005627b4
