@@ -1,5 +1,5 @@
-C If\sall\sdata\sbeing\ssorted\sfits\sin\smemory,\savoid\swriting\sany\sdata\sout\sto\stemporary\sfiles\sin\svdbesort.c.
-D 2011-09-02T11:45:31.600
+C Reduce\sthe\snumber\sof\smalloc()\scalls\smade\swhen\screating\san\sindex\son\smore\sthan\s2\scolumns.
+D 2011-09-02T15:41:33.781
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d314143fa6be24828021d3f583ad37d9afdce505
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -245,7 +245,7 @@ F src/vdbeapi.c 11dc47987abacb76ad016dcf5abc0dc422482a98
 F src/vdbeaux.c e58acbc5ea3823922a0cd8fa21f94f39af51ee88
 F src/vdbeblob.c f024f0bf420f36b070143c32b15cc7287341ffd3
 F src/vdbemem.c 5e6effb96dd53d233361cbfaa3f0a43b9af689e9
-F src/vdbesort.c 1e9d4437c7520e09b18f37d2c520bfa01e638655
+F src/vdbesort.c a49d44498cc19af9bdbdc8e9fa882dd26cc17066
 F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
 F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 3154756177d6219e233d84291d5b05f4e06ff5e9
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 7769fb988d9be0f2d8129aaac19620ac88f9b4a6
-R 023e08b29250dcfb353aa799966d9eeb
+P 71075673c625f243969c3f34c73f28f378924007
+R 16433222f8a97f40a1aa6bc60c6c3db0
 U dan
-Z 052620c5c09aadfa96f446950f8f8dff
+Z 8c008bdf93f87673bd214d386e7f6cf5
