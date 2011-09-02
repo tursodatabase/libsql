@@ -93,7 +93,7 @@ typedef struct SorterRecord SorterRecord;
 ** being merged (rounded up to the next power of 2).
 */
 struct VdbeSorter {
-  int nInMemory;                  /* Current size of b-tree contents as PMA */
+  int nInMemory;                  /* Current size of pRecord list as PMA */
   int nTree;                      /* Used size of aTree/aIter (power of 2) */
   VdbeSorterIter *aIter;          /* Array of iterators to merge */
   int *aTree;                     /* Current state of incremental merge */
@@ -422,7 +422,6 @@ static void vdbeSorterRecordFree(sqlite3 *db, SorterRecord *pRecord){
   SorterRecord *pNext;
   for(p=pRecord; p; p=pNext){
     pNext = p->pNext;
-    sqlite3DbFree(db, p->pVal);
     sqlite3DbFree(db, p);
   }
 }
@@ -630,7 +629,6 @@ static int vdbeSorterListToPMA(sqlite3 *db, VdbeCursor *pCsr){
         iOff += p->nVal;
       }
 
-      sqlite3DbFree(db, p->pVal);
       sqlite3DbFree(db, p);
     }
 
@@ -657,28 +655,21 @@ int sqlite3VdbeSorterWrite(
   Mem *pVal                       /* Memory cell containing record */
 ){
   VdbeSorter *pSorter = pCsr->pSorter;
-  int rc;
-  SorterRecord *pNew;
+  int rc = SQLITE_OK;             /* Return Code */
+  SorterRecord *pNew;             /* New list element */
 
   assert( pSorter );
   pSorter->nInMemory += sqlite3VarintLen(pVal->n) + pVal->n;
 
-  pNew = (SorterRecord *)sqlite3DbMallocZero(db, sizeof(SorterRecord));
+  pNew = (SorterRecord *)sqlite3DbMallocRaw(db, pVal->n + sizeof(SorterRecord));
   if( pNew==0 ){
     rc = SQLITE_NOMEM;
   }else{
-    rc = sqlite3VdbeMemMakeWriteable(pVal);
-    if( rc==SQLITE_OK ){
-      pNew->pVal = pVal->z;
-      pNew->nVal = pVal->n;
-      pVal->zMalloc = 0;
-      sqlite3VdbeMemSetNull(pVal);
-      pNew->pNext = pSorter->pRecord;
-      pSorter->pRecord = pNew;
-    }else{
-      sqlite3DbFree(db, pNew);
-      rc = SQLITE_NOMEM;
-    }
+    pNew->pVal = (void *)&pNew[1];
+    memcpy(pNew->pVal, pVal->z, pVal->n);
+    pNew->nVal = pVal->n;
+    pNew->pNext = pSorter->pRecord;
+    pSorter->pRecord = pNew;
   }
 
   /* See if the contents of the sorter should now be written out. They

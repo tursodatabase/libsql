@@ -1,5 +1,5 @@
-C Reduce\sthe\snumber\sof\smalloc()\scalls\smade\swhen\screating\san\sindex\son\smore\sthan\s2\scolumns.
-D 2011-09-02T15:41:33.781
+C Combine\stwo\smalloc\scalls\sin\svdbesort.c.
+D 2011-09-02T18:03:16.975
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d314143fa6be24828021d3f583ad37d9afdce505
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -124,7 +124,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 28a4fe55327ff708bfaf9d4326d02686f7a553c3
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c bc2099e7d3c22c52b2c54349b9c07c04f2a810d0
+F src/btree.c dc3f244447fd5aade08f66d475e2a6316bbef4e7
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
 F src/build.c dc367138cb3625e6d42b389e05d7267aece5753c
@@ -245,7 +245,7 @@ F src/vdbeapi.c 11dc47987abacb76ad016dcf5abc0dc422482a98
 F src/vdbeaux.c e58acbc5ea3823922a0cd8fa21f94f39af51ee88
 F src/vdbeblob.c f024f0bf420f36b070143c32b15cc7287341ffd3
 F src/vdbemem.c 5e6effb96dd53d233361cbfaa3f0a43b9af689e9
-F src/vdbesort.c a49d44498cc19af9bdbdc8e9fa882dd26cc17066
+F src/vdbesort.c b56437b8b3a0a17a2b110d37633dc9217c72fd60
 F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
 F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 3154756177d6219e233d84291d5b05f4e06ff5e9
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 71075673c625f243969c3f34c73f28f378924007
-R 16433222f8a97f40a1aa6bc60c6c3db0
+P 065b0c9858da0ebb41722f3c56bdaf62f28b2f2c
+R 06bb7ef7ee2f3a8f904497ea31ee4edb
 U dan
-Z 8c008bdf93f87673bd214d386e7f6cf5
+Z ad89820409358feeee63c15f85c9298f

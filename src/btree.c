@@ -7288,13 +7288,7 @@ int sqlite3BtreeDropTable(Btree *p, int iTable, int *piMoved){
   BtShared *pBt = p->pBt;
   int rc;
   sqlite3BtreeEnter(p);
-  if( (pBt->openFlags&BTREE_SINGLE) ){
-    pBt->nPage = 0;
-    sqlite3PagerTruncateImage(pBt->pPager, 1);
-    rc = newDatabase(pBt);
-  }else{
-    rc = btreeDropTable(p, iTable, piMoved);
-  }
+  rc = btreeDropTable(p, iTable, piMoved);
   sqlite3BtreeLeave(p);
   return rc;
 }
