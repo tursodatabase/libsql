@@ -433,7 +433,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
       n = pOp[-1].p1;
       if( n>nMaxArgs ) nMaxArgs = n;
 #endif
-    }else if( opcode==OP_Next ){
+    }else if( opcode==OP_Next || opcode==OP_SorterNext ){
       pOp->p4.xAdvance = sqlite3BtreeNext;
       pOp->p4type = P4_ADVANCE;
     }else if( opcode==OP_Prev ){

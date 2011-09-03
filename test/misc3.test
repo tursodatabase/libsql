@@ -270,7 +270,7 @@ ifcapable {explain} {
       CREATE UNIQUE INDEX ex1i1 ON ex1(a);
       EXPLAIN REINDEX;
     }]
-    regexp { IsUnique \d+ \d+ \d+ \d+ } $x
+    regexp { SorterCompare \d+ \d+ \d+ } $x
   } {1}
   if {[regexp {16} [db one {PRAGMA encoding}]]} {
     do_test misc3-6.11-utf16 {

@@ -45,7 +45,7 @@ proc do_temptables_test {tn sql temptables} {
   uplevel [list do_test $tn [subst -novar {
     set ret ""
     db eval "EXPLAIN [set sql]" {
-      if {$opcode == "OpenEphemeral"} { 
+      if {$opcode == "OpenEphemeral" || $opcode == "SorterOpen"} { 
         if {$p5 != "10" && $p5!="00"} { error "p5 = $p5" }
         if {$p5 == "10"} {
           lappend ret hash

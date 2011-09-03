@@ -1734,22 +1734,11 @@ int sqlite3BtreeOpen(
   /* A BTREE_SINGLE database is always a temporary and/or ephemeral */
   assert( (flags & BTREE_SINGLE)==0 || isTempDb );
 
-  /* The BTREE_SORTER flag is only used if SQLITE_OMIT_MERGE_SORT is undef */
-#ifdef SQLITE_OMIT_MERGE_SORT
-  assert( (flags & BTREE_SORTER)==0 );
-#endif
-
-  /* BTREE_SORTER is always on a BTREE_SINGLE, BTREE_OMIT_JOURNAL */
-  assert( (flags & BTREE_SORTER)==0 ||
-          (flags & (BTREE_SINGLE|BTREE_OMIT_JOURNAL))
-                                        ==(BTREE_SINGLE|BTREE_OMIT_JOURNAL) );
-
   if( db->flags & SQLITE_NoReadlock ){
     flags |= BTREE_NO_READLOCK;
   }
   if( isMemdb ){
     flags |= BTREE_MEMORY;
-    flags &= ~BTREE_SORTER;
   }
   if( (vfsFlags & SQLITE_OPEN_MAIN_DB)!=0 && (isMemdb || isTempDb) ){
     vfsFlags = (vfsFlags & ~SQLITE_OPEN_MAIN_DB) | SQLITE_OPEN_TEMP_DB;
@@ -7296,16 +7285,9 @@ static int btreeDropTable(Btree *p, Pgno iTable, int *piMoved){
   return rc;  
 }
 int sqlite3BtreeDropTable(Btree *p, int iTable, int *piMoved){
-  BtShared *pBt = p->pBt;
   int rc;
   sqlite3BtreeEnter(p);
-  if( (pBt->openFlags&BTREE_SINGLE) ){
-    pBt->nPage = 0;
-    sqlite3PagerTruncateImage(pBt->pPager, 1);
-    rc = newDatabase(pBt);
-  }else{
-    rc = btreeDropTable(p, iTable, piMoved);
-  }
+  rc = btreeDropTable(p, iTable, piMoved);
   sqlite3BtreeLeave(p);
   return rc;
 }

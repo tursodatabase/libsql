@@ -59,12 +59,13 @@ struct VdbeCursor {
   Bool isTable;         /* True if a table requiring integer keys */
   Bool isIndex;         /* True if an index containing keys only - no data */
   Bool isOrdered;       /* True if the underlying table is BTREE_UNORDERED */
+  Bool isSorter;        /* True if a new-style sorter */
   sqlite3_vtab_cursor *pVtabCursor;  /* The cursor for a virtual table */
   const sqlite3_module *pModule;     /* Module for cursor pVtabCursor */
   i64 seqCount;         /* Sequence counter */
   i64 movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
   i64 lastRowid;        /* Last rowid from a Next or NextIdx operation */
-  VdbeSorter *pSorter;  /* Sorter object for OP_OpenSorter cursors */
+  VdbeSorter *pSorter;  /* Sorter object for OP_SorterOpen cursors */
 
   /* Result of last sqlite3BtreeMoveto() done by an OP_NotExists or 
   ** OP_IsUnique opcode on this cursor. */
@@ -402,13 +403,15 @@ void sqlite3VdbeMemStoreType(Mem *pMem);
 # define sqlite3VdbeSorterRowkey(Y,Z)    SQLITE_OK
 # define sqlite3VdbeSorterRewind(X,Y,Z)  SQLITE_OK
 # define sqlite3VdbeSorterNext(X,Y,Z)    SQLITE_OK
+# define sqlite3VdbeSorterCompare(X,Y,Z) SQLITE_OK
 #else
 int sqlite3VdbeSorterInit(sqlite3 *, VdbeCursor *);
-int sqlite3VdbeSorterWrite(sqlite3 *, VdbeCursor *, int);
 void sqlite3VdbeSorterClose(sqlite3 *, VdbeCursor *);
 int sqlite3VdbeSorterRowkey(VdbeCursor *, Mem *);
-int sqlite3VdbeSorterRewind(sqlite3 *, VdbeCursor *, int *);
 int sqlite3VdbeSorterNext(sqlite3 *, VdbeCursor *, int *);
+int sqlite3VdbeSorterRewind(sqlite3 *, VdbeCursor *, int *);
+int sqlite3VdbeSorterWrite(sqlite3 *, VdbeCursor *, Mem *);
+int sqlite3VdbeSorterCompare(VdbeCursor *, Mem *, int *);
 #endif
 
 #if !defined(SQLITE_OMIT_SHARED_CACHE) && SQLITE_THREADSAFE>0
