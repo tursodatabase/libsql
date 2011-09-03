@@ -490,44 +490,36 @@ static int vdbeSorterMerge(
   int rc = SQLITE_OK;
   SorterRecord *pFinal = 0;
   SorterRecord **pp = &pFinal;
-  int bKey2InSpace = 0;           /* True if pCsr->aSpace contains key2 */
+  void *pVal2 = p2 ? p2->pVal : 0;
 
-  while( p1 || p2 ){
-    if( p1==0 ){
-      *pp = p2;
-      p2 = 0;
-    }else if( p2==0 ){
-      *pp = p1;
-      p1 = 0;
-    }else{
-      int res;
-      rc = vdbeSorterCompare(pCsr, 0, 
-          p1->pVal, p1->nVal, (bKey2InSpace ? 0 : p2->pVal), p2->nVal, &res
-      );
-      if( rc!=SQLITE_OK ){
-        vdbeSorterRecordFree(db, p1);
-        vdbeSorterRecordFree(db, p2);
-        vdbeSorterRecordFree(db, pFinal);
-        pFinal = 0;
-        break;
-      }
-      if( res<=0 ){
-        *pp = p1;
-        pp = &p1->pNext;
-        p1 = p1->pNext;
-        bKey2InSpace = 1;
-      }else{
-        *pp = p2;
-        pp = &p2->pNext;
-        p2 = p2->pNext;
-        bKey2InSpace = 0;
-      }
+  while( p1 && p2 ){
+    int res;
+    rc = vdbeSorterCompare(pCsr, 0, p1->pVal, p1->nVal, pVal2, p2->nVal, &res);
+    if( rc!=SQLITE_OK ){
       *pp = 0;
+      vdbeSorterRecordFree(db, p1);
+      vdbeSorterRecordFree(db, p2);
+      vdbeSorterRecordFree(db, pFinal);
+      *ppOut = 0;
+      return rc;
+    }
+    if( res<=0 ){
+      *pp = p1;
+      pp = &p1->pNext;
+      p1 = p1->pNext;
+      pVal2 = 0;
+    }else{
+      *pp = p2;
+       pp = &p2->pNext;
+      p2 = p2->pNext;
+      if( p2==0 ) break;
+      pVal2 = p2->pVal;
     }
   }
+  *pp = p1 ? p1 : p2;
 
   *ppOut = pFinal;
-  return rc;
+  return SQLITE_OK;
 }
 
 /*
