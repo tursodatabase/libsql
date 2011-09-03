@@ -303,6 +303,9 @@ static int vdbeSorterIterInit(
 ** field. For the purposes of the comparison, ignore it. Also, if bOmitRowid
 ** is true and key1 contains even a single NULL value, it is considered to
 ** be less than key2. Even if key2 also contains NULL values.
+**
+** If pKey2 is passed a NULL pointer, then it is assumed that the pCsr->aSpace
+** has been allocated and contains an unpacked record that is used as key2.
 */
 static int vdbeSorterCompare(
   VdbeCursor *pCsr,               /* Cursor object (for pKeyInfo) */
@@ -326,15 +329,20 @@ static int vdbeSorterCompare(
     pSorter->nSpace = nSpace;
   }
 
-  /* This call cannot fail. As the memory is already allocated. */
-  r2 = sqlite3VdbeRecordUnpack(pKeyInfo, nKey2, pKey2, aSpace, nSpace);
-  assert( r2 && (r2->flags & UNPACKED_NEED_FREE)==0 );
+  if( pKey2 ){
+    /* This call cannot fail. As the memory is already allocated. */
+    r2 = sqlite3VdbeRecordUnpack(pKeyInfo, nKey2, pKey2, aSpace, nSpace);
+    assert( r2 && (r2->flags & UNPACKED_NEED_FREE)==0 );
+    assert( r2==aSpace );
+  }else{
+    r2 = (UnpackedRecord *)aSpace;
+    assert( !bOmitRowid );
+  }
 
   if( bOmitRowid ){
     for(i=0; i<r2->nField-1; i++){
       if( r2->aMem[i].flags & MEM_Null ){
         *pRes = -1;
-        sqlite3VdbeDeleteUnpackedRecord(r2);
         return SQLITE_OK;
       }
     }
@@ -344,7 +352,6 @@ static int vdbeSorterCompare(
   }
 
   *pRes = sqlite3VdbeRecordCompare(nKey1, pKey1, r2);
-  /* sqlite3VdbeDeleteUnpackedRecord(r2); */
   return SQLITE_OK;
 }
 
@@ -483,6 +490,7 @@ static int vdbeSorterMerge(
   int rc = SQLITE_OK;
   SorterRecord *pFinal = 0;
   SorterRecord **pp = &pFinal;
+  int bKey2InSpace = 0;           /* True if pCsr->aSpace contains key2 */
 
   while( p1 || p2 ){
     if( p1==0 ){
@@ -493,8 +501,8 @@ static int vdbeSorterMerge(
       p1 = 0;
     }else{
       int res;
-      rc = vdbeSorterCompare(
-          pCsr, 0, p1->pVal, p1->nVal, p2->pVal, p2->nVal, &res
+      rc = vdbeSorterCompare(pCsr, 0, 
+          p1->pVal, p1->nVal, (bKey2InSpace ? 0 : p2->pVal), p2->nVal, &res
       );
       if( rc!=SQLITE_OK ){
         vdbeSorterRecordFree(db, p1);
@@ -507,10 +515,12 @@ static int vdbeSorterMerge(
         *pp = p1;
         pp = &p1->pNext;
         p1 = p1->pNext;
+        bKey2InSpace = 1;
       }else{
         *pp = p2;
         pp = &p2->pNext;
         p2 = p2->pNext;
+        bKey2InSpace = 0;
       }
       *pp = 0;
     }
