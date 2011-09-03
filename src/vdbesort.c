@@ -409,11 +409,13 @@ int sqlite3VdbeSorterInit(sqlite3 *db, VdbeCursor *pCsr){
     return SQLITE_NOMEM;
   }
 
-  pgsz = sqlite3BtreeGetPageSize(db->aDb[0].pBt);
-  pSorter->mnPmaSize = SORTER_MIN_WORKING * pgsz;
-  mxCache = db->aDb[0].pSchema->cache_size;
-  if( mxCache<SORTER_MIN_WORKING ) mxCache = SORTER_MIN_WORKING;
-  pSorter->mxPmaSize = mxCache * pgsz;
+  if( !sqlite3TempInMemory(db) ){
+    pgsz = sqlite3BtreeGetPageSize(db->aDb[0].pBt);
+    pSorter->mnPmaSize = SORTER_MIN_WORKING * pgsz;
+    mxCache = db->aDb[0].pSchema->cache_size;
+    if( mxCache<SORTER_MIN_WORKING ) mxCache = SORTER_MIN_WORKING;
+    pSorter->mxPmaSize = mxCache * pgsz;
+  }
 
   return SQLITE_OK;
 }
@@ -666,7 +668,7 @@ int sqlite3VdbeSorterWrite(
   **   * The total memory allocated for the in-memory list is greater 
   **     than (page-size * 10) and sqlite3HeapNearlyFull() returns true.
   */
-  if( rc==SQLITE_OK && (
+  if( rc==SQLITE_OK && pSorter->mxPmaSize>0 && (
         (pSorter->nInMemory>pSorter->mxPmaSize)
      || (pSorter->nInMemory>pSorter->mnPmaSize && sqlite3HeapNearlyFull())
   )){
