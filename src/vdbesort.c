@@ -239,15 +239,10 @@ static int vdbeSorterReadVarint(
 ){
   u8 aVarint[9];                  /* Buffer large enough for a varint */
   i64 iOff = *piOffset;           /* Offset in file to read from */
-  int nRead = 9;                  /* Number of bytes to read from file */
   int rc;                         /* Return code */
 
   assert( iEof>iOff );
-  if( (iEof-iOff)<nRead ){
-    nRead = iEof-iOff;
-  }
-
-  rc = sqlite3OsRead(pFile, aVarint, nRead, iOff);
+  rc = sqlite3OsRead(pFile, aVarint, 9, iOff);
   if( rc==SQLITE_OK ){
     *piOffset += getVarint(aVarint, (u64 *)piVal);
   }
@@ -333,7 +328,7 @@ static int vdbeSorterCompare(
     /* This call cannot fail. As the memory is already allocated. */
     r2 = sqlite3VdbeRecordUnpack(pKeyInfo, nKey2, pKey2, aSpace, nSpace);
     assert( r2 && (r2->flags & UNPACKED_NEED_FREE)==0 );
-    assert( r2==aSpace );
+    assert( r2==(UnpackedRecord*)aSpace );
   }else{
     r2 = (UnpackedRecord *)aSpace;
     assert( !bOmitRowid );
@@ -387,10 +382,15 @@ static int vdbeSorterDoCompare(VdbeCursor *pCsr, int iOut){
     iRes = i1;
   }else{
     int res;
-    int rc = vdbeSorterCompare(
+    int rc;
+    assert( pCsr->pSorter->aSpace!=0 );  /* allocated in vdbeSorterMerge() */
+    rc = vdbeSorterCompare(
         pCsr, 0, p1->aKey, p1->nKey, p2->aKey, p2->nKey, &res
     );
-    if( rc!=SQLITE_OK ) return rc;
+    /* The vdbeSorterCompare() call cannot fail since pCsr->pSorter->aSpace
+    ** has already been allocated. */
+    assert( rc==SQLITE_OK );
+
     if( res<=0 ){
       iRes = i1;
     }else{
@@ -606,6 +606,7 @@ static int vdbeSorterListToPMA(sqlite3 *db, VdbeCursor *pCsr){
     i64 iOff = pSorter->iWriteOff;
     SorterRecord *p;
     SorterRecord *pNext = 0;
+    static const char eightZeros[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
     pSorter->nPMA++;
     rc = vdbeSorterWriteVarint(pSorter->pTemp1, pSorter->nInMemory, &iOff);
@@ -629,6 +630,11 @@ static int vdbeSorterListToPMA(sqlite3 *db, VdbeCursor *pCsr){
     ));
 
     pSorter->iWriteOff = iOff;
+    if( rc==SQLITE_OK ){
+      /* Terminate each file with 8 extra bytes so that from any offset
+      ** in the file we can always read 9 bytes without a SHORT_READ error */
+      rc = sqlite3OsWrite(pSorter->pTemp1, eightZeros, 8, iOff);
+    }
     pSorter->pRecord = p;
   }
 

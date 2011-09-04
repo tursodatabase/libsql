@@ -900,7 +900,7 @@ static void generateSortTail(
     regRowid = sqlite3GetTempReg(pParse);
   }
   if( p->selFlags & SF_UseSorter ){
-    int regSortOut = sqlite3GetTempReg(pParse);
+    int regSortOut = ++pParse->nMem;
     int ptab2 = pParse->nTab++;
     sqlite3VdbeAddOp3(v, OP_OpenPseudo, ptab2, regSortOut, pOrderBy->nExpr+2);
     addr = 1 + sqlite3VdbeAddOp2(v, OP_SorterSort, iTab, addrBreak);
