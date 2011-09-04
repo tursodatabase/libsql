@@ -233,7 +233,6 @@ static int vdbeSorterWriteVarint(
 */
 static int vdbeSorterReadVarint(
   sqlite3_file *pFile,            /* File to read from */
-  i64 iEof,                       /* Total number of bytes in file */
   i64 *piOffset,                  /* IN/OUT: Read offset in pFile */
   i64 *piVal                      /* OUT: Value read from file */
 ){
@@ -241,7 +240,6 @@ static int vdbeSorterReadVarint(
   i64 iOff = *piOffset;           /* Offset in file to read from */
   int rc;                         /* Return code */
 
-  assert( iEof>iOff );
   rc = sqlite3OsRead(pFile, aVarint, 9, iOff);
   if( rc==SQLITE_OK ){
     *piOffset += getVarint(aVarint, (u64 *)piVal);
@@ -274,9 +272,8 @@ static int vdbeSorterIterInit(
   if( !pIter->aAlloc ){
     rc = SQLITE_NOMEM;
   }else{
-    i64 iEof = pSorter->iWriteOff;     /* EOF of file pSorter->pTemp1 */
     i64 nByte;                         /* Total size of PMA in bytes */
-    rc = vdbeSorterReadVarint(pSorter->pTemp1, iEof, &pIter->iReadOff, &nByte);
+    rc = vdbeSorterReadVarint(pSorter->pTemp1, &pIter->iReadOff, &nByte);
     *pnByte += nByte;
     pIter->iEof = pIter->iReadOff + nByte;
   }
