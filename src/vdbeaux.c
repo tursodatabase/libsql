@@ -2859,18 +2859,19 @@ UnpackedRecord *sqlite3VdbeAllocUnpackedRecord(
   ** it by.  If pSpace is already 8-byte aligned, nOff should be zero.
   */
   nOff = (8 - (SQLITE_PTR_TO_INT(pSpace) & 7)) & 7;
-  pSpace += nOff;
-  szSpace -= nOff;
-
   nByte = ROUND8(sizeof(UnpackedRecord)) + sizeof(Mem)*(pKeyInfo->nField+1);
-  if( nByte>szSpace ){
+  if( nByte>szSpace+nOff ){
     p = (UnpackedRecord *)sqlite3DbMallocRaw(pKeyInfo->db, nByte);
     *ppFree = (char *)p;
+    if( !p ) return 0;
   }else{
-    p = (UnpackedRecord*)pSpace;
+    p = (UnpackedRecord*)&pSpace[nOff];
     *ppFree = 0;
   }
-  
+
+  p->aMem = (Mem*)&((char*)p)[ROUND8(sizeof(UnpackedRecord))];
+  p->pKeyInfo = pKeyInfo;
+  p->nField = pKeyInfo->nField + 1;
   return p;
 }
 
@@ -2890,12 +2891,9 @@ void sqlite3VdbeRecordUnpack(
   u32 idx;                        /* Offset in aKey[] to read from */
   u16 u;                          /* Unsigned loop counter */
   u32 szHdr;
-  Mem *pMem;
+  Mem *pMem = p->aMem;
 
   p->flags = 0;
-  p->pKeyInfo = pKeyInfo;
-  p->nField = pKeyInfo->nField + 1;
-  p->aMem = pMem = (Mem*)&((char*)p)[ROUND8(sizeof(UnpackedRecord))];
   assert( EIGHT_BYTE_ALIGNMENT(pMem) );
   idx = getVarint32(aKey, szHdr);
   d = szHdr;

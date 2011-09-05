@@ -310,28 +310,20 @@ static int vdbeSorterCompare(
   UnpackedRecord *r2 = pSorter->pUnpacked;
   int i;
 
-  if( r2==0 ){
-    char *pFree;
-    r2 = sqlite3VdbeAllocUnpackedRecord(pKeyInfo, 0, 0, &pFree);
-    if( r2==0 ) return SQLITE_NOMEM;
-    assert( pFree==(char *)r2 );
-    pSorter->pUnpacked = r2;
-  }
-
   if( pKey2 ){
     sqlite3VdbeRecordUnpack(pKeyInfo, nKey2, pKey2, r2);
   }
 
   if( bOmitRowid ){
-    for(i=0; i<r2->nField-1; i++){
+    r2->nField = pKeyInfo->nField;
+    assert( r2->nField>0 );
+    for(i=0; i<r2->nField; i++){
       if( r2->aMem[i].flags & MEM_Null ){
         *pRes = -1;
         return SQLITE_OK;
       }
     }
     r2->flags |= UNPACKED_PREFIX_MATCH;
-    r2->nField--;
-    assert( r2->nField>0 );
   }
 
   *pRes = sqlite3VdbeRecordCompare(nKey1, pKey1, r2);
@@ -397,12 +389,17 @@ int sqlite3VdbeSorterInit(sqlite3 *db, VdbeCursor *pCsr){
   int pgsz;                       /* Page size of main database */
   int mxCache;                    /* Cache size */
   VdbeSorter *pSorter;            /* The new sorter */
+  char *d;                        /* Dummy */
 
   assert( pCsr->pKeyInfo && pCsr->pBt==0 );
   pCsr->pSorter = pSorter = sqlite3DbMallocZero(db, sizeof(VdbeSorter));
   if( pSorter==0 ){
     return SQLITE_NOMEM;
   }
+  
+  pSorter->pUnpacked = sqlite3VdbeAllocUnpackedRecord(pCsr->pKeyInfo, 0, 0, &d);
+  if( pSorter->pUnpacked==0 ) return SQLITE_NOMEM;
+  assert( pSorter->pUnpacked==(UnpackedRecord *)d );
 
   if( !sqlite3TempInMemory(db) ){
     pgsz = sqlite3BtreeGetPageSize(db->aDb[0].pBt);

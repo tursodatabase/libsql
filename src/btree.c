@@ -669,7 +669,7 @@ static int btreeMoveto(
     pIdxKey = 0;
   }
   rc = sqlite3BtreeMovetoUnpacked(pCur, pIdxKey, nKey, bias, pRes);
-  if( pKey ){
+  if( pFree ){
     sqlite3DbFree(pCur->pKeyInfo->db, pFree);
   }
   return rc;
