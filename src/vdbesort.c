@@ -104,8 +104,7 @@ struct VdbeSorter {
   SorterRecord *pRecord;          /* Head of in-memory record list */
   int mnPmaSize;                  /* Minimum PMA size, in bytes */
   int mxPmaSize;                  /* Maximum PMA size, in bytes.  0==no limit */
-  char *aSpace;                   /* Space for UnpackRecord() */
-  int nSpace;                     /* Size of aSpace in bytes */
+  UnpackedRecord *pUnpacked;      /* Used to unpack keys */
 };
 
 /*
@@ -308,27 +307,19 @@ static int vdbeSorterCompare(
 ){
   KeyInfo *pKeyInfo = pCsr->pKeyInfo;
   VdbeSorter *pSorter = pCsr->pSorter;
-  char *aSpace = pSorter->aSpace;
-  int nSpace = pSorter->nSpace;
-  UnpackedRecord *r2;
+  UnpackedRecord *r2 = pSorter->pUnpacked;
   int i;
 
-  if( aSpace==0 ){
-    nSpace = ROUND8(sizeof(UnpackedRecord))+(pKeyInfo->nField+1)*sizeof(Mem);
-    aSpace = (char *)sqlite3Malloc(nSpace);
-    if( aSpace==0 ) return SQLITE_NOMEM;
-    pSorter->aSpace = aSpace;
-    pSorter->nSpace = nSpace;
+  if( r2==0 ){
+    char *pFree;
+    r2 = sqlite3VdbeAllocUnpackedRecord(pKeyInfo, 0, 0, &pFree);
+    if( r2==0 ) return SQLITE_NOMEM;
+    assert( pFree==(char *)r2 );
+    pSorter->pUnpacked = r2;
   }
 
   if( pKey2 ){
-    /* This call cannot fail. As the memory is already allocated. */
-    r2 = sqlite3VdbeRecordUnpack(pKeyInfo, nKey2, pKey2, aSpace, nSpace);
-    assert( r2 && (r2->flags & UNPACKED_NEED_FREE)==0 );
-    assert( r2==(UnpackedRecord*)aSpace );
-  }else{
-    r2 = (UnpackedRecord *)aSpace;
-    assert( !bOmitRowid );
+    sqlite3VdbeRecordUnpack(pKeyInfo, nKey2, pKey2, r2);
   }
 
   if( bOmitRowid ){
@@ -380,11 +371,11 @@ static int vdbeSorterDoCompare(VdbeCursor *pCsr, int iOut){
   }else{
     int res;
     int rc;
-    assert( pCsr->pSorter->aSpace!=0 );  /* allocated in vdbeSorterMerge() */
+    assert( pCsr->pSorter->pUnpacked!=0 );  /* allocated in vdbeSorterMerge() */
     rc = vdbeSorterCompare(
         pCsr, 0, p1->aKey, p1->nKey, p2->aKey, p2->nKey, &res
     );
-    /* The vdbeSorterCompare() call cannot fail since pCsr->pSorter->aSpace
+    /* The vdbeSorterCompare() call cannot fail since pCsr->pSorter->pUnpacked
     ** has already been allocated. */
     assert( rc==SQLITE_OK );
 
@@ -453,7 +444,7 @@ void sqlite3VdbeSorterClose(sqlite3 *db, VdbeCursor *pCsr){
       sqlite3OsCloseFree(pSorter->pTemp1);
     }
     vdbeSorterRecordFree(db, pSorter->pRecord);
-    sqlite3_free(pSorter->aSpace);
+    sqlite3DbFree(db, pSorter->pUnpacked);
     sqlite3DbFree(db, pSorter);
     pCsr->pSorter = 0;
   }

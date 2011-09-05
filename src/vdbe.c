@@ -3531,6 +3531,7 @@ case OP_Found: {        /* jump, in3 */
   int alreadyExists;
   VdbeCursor *pC;
   int res;
+  char *pFree;
   UnpackedRecord *pIdxKey;
   UnpackedRecord r;
   char aTempRec[ROUND8(sizeof(UnpackedRecord)) + sizeof(Mem)*3 + 7];
@@ -3558,18 +3559,18 @@ case OP_Found: {        /* jump, in3 */
       r.flags = UNPACKED_PREFIX_MATCH;
       pIdxKey = &r;
     }else{
+      pIdxKey = sqlite3VdbeAllocUnpackedRecord(
+          pC->pKeyInfo, aTempRec, sizeof(aTempRec), &pFree
+      ); 
+      if( pIdxKey==0 ) goto no_mem;
       assert( pIn3->flags & MEM_Blob );
       assert( (pIn3->flags & MEM_Zero)==0 );  /* zeroblobs already expanded */
-      pIdxKey = sqlite3VdbeRecordUnpack(pC->pKeyInfo, pIn3->n, pIn3->z,
-                                        aTempRec, sizeof(aTempRec));
-      if( pIdxKey==0 ){
-        goto no_mem;
-      }
+      sqlite3VdbeRecordUnpack(pC->pKeyInfo, pIn3->n, pIn3->z, pIdxKey);
       pIdxKey->flags |= UNPACKED_PREFIX_MATCH;
     }
     rc = sqlite3BtreeMovetoUnpacked(pC->pCursor, pIdxKey, 0, 0, &res);
     if( pOp->p4.i==0 ){
-      sqlite3VdbeDeleteUnpackedRecord(pIdxKey);
+      sqlite3DbFree(db, pFree);
     }
     if( rc!=SQLITE_OK ){
       break;

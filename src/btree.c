@@ -656,18 +656,21 @@ static int btreeMoveto(
   int rc;                    /* Status code */
   UnpackedRecord *pIdxKey;   /* Unpacked index key */
   char aSpace[150];          /* Temp space for pIdxKey - to avoid a malloc */
+  char *pFree = 0;
 
   if( pKey ){
     assert( nKey==(i64)(int)nKey );
-    pIdxKey = sqlite3VdbeRecordUnpack(pCur->pKeyInfo, (int)nKey, pKey,
-                                      aSpace, sizeof(aSpace));
+    pIdxKey = sqlite3VdbeAllocUnpackedRecord(
+        pCur->pKeyInfo, aSpace, sizeof(aSpace), &pFree
+    );
     if( pIdxKey==0 ) return SQLITE_NOMEM;
+    sqlite3VdbeRecordUnpack(pCur->pKeyInfo, nKey, pKey, pIdxKey);
   }else{
     pIdxKey = 0;
   }
   rc = sqlite3BtreeMovetoUnpacked(pCur, pIdxKey, nKey, bias, pRes);
   if( pKey ){
-    sqlite3VdbeDeleteUnpackedRecord(pIdxKey);
+    sqlite3DbFree(pCur->pKeyInfo->db, pFree);
   }
   return rc;
 }

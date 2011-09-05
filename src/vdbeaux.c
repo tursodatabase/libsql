@@ -2830,54 +2830,69 @@ u32 sqlite3VdbeSerialGet(
   return 0;
 }
 
-
 /*
-** Given the nKey-byte encoding of a record in pKey[], parse the
-** record into a UnpackedRecord structure.  Return a pointer to
-** that structure.
+** This routine is used to allocate sufficient space for an UnpackedRecord
+** structure large enough to be used with sqlite3VdbeRecordUnpack() if
+** the first argument is a pointer to KeyInfo structure pKeyInfo.
 **
-** The calling function might provide szSpace bytes of memory
-** space at pSpace.  This space can be used to hold the returned
-** VDbeParsedRecord structure if it is large enough.  If it is
-** not big enough, space is obtained from sqlite3_malloc().
+** The space is either allocated using sqlite3DbMallocRaw() or from within
+** the unaligned buffer passed via the second and third arguments (presumably
+** stack space). If the former, then *ppFree is set to a pointer that should
+** be eventually freed by the caller using sqlite3DbFree(). Or, if the 
+** allocation comes from the pSpace/szSpace buffer, *ppFree is set to NULL
+** before returning.
 **
-** The returned structure should be closed by a call to
-** sqlite3VdbeDeleteUnpackedRecord().
-*/ 
-UnpackedRecord *sqlite3VdbeRecordUnpack(
-  KeyInfo *pKeyInfo,     /* Information about the record format */
-  int nKey,              /* Size of the binary record */
-  const void *pKey,      /* The binary record */
-  char *pSpace,          /* Unaligned space available to hold the object */
-  int szSpace            /* Size of pSpace[] in bytes */
+** If an OOM error occurs, NULL is returned.
+*/
+UnpackedRecord *sqlite3VdbeAllocUnpackedRecord(
+  KeyInfo *pKeyInfo,              /* Description of the record */
+  char *pSpace,                   /* Unaligned space available */
+  int szSpace,                    /* Size of pSpace[] in bytes */
+  char **ppFree                   /* OUT: Caller should free this pointer */
 ){
-  const unsigned char *aKey = (const unsigned char *)pKey;
-  UnpackedRecord *p;  /* The unpacked record that we will return */
-  int nByte;          /* Memory space needed to hold p, in bytes */
-  int d;
-  u32 idx;
-  u16 u;              /* Unsigned loop counter */
-  u32 szHdr;
-  Mem *pMem;
-  int nOff;           /* Increase pSpace by this much to 8-byte align it */
-  
-  /*
-  ** We want to shift the pointer pSpace up such that it is 8-byte aligned.
+  UnpackedRecord *p;              /* Unpacked record to return */
+  int nOff;                       /* Increment pSpace by nOff to align it */
+  int nByte;                      /* Number of bytes required for *p */
+
+  /* We want to shift the pointer pSpace up such that it is 8-byte aligned.
   ** Thus, we need to calculate a value, nOff, between 0 and 7, to shift 
   ** it by.  If pSpace is already 8-byte aligned, nOff should be zero.
   */
   nOff = (8 - (SQLITE_PTR_TO_INT(pSpace) & 7)) & 7;
   pSpace += nOff;
   szSpace -= nOff;
+
   nByte = ROUND8(sizeof(UnpackedRecord)) + sizeof(Mem)*(pKeyInfo->nField+1);
   if( nByte>szSpace ){
-    p = sqlite3DbMallocRaw(pKeyInfo->db, nByte);
-    if( p==0 ) return 0;
-    p->flags = UNPACKED_NEED_FREE | UNPACKED_NEED_DESTROY;
+    p = (UnpackedRecord *)sqlite3DbMallocRaw(pKeyInfo->db, nByte);
+    *ppFree = (char *)p;
   }else{
     p = (UnpackedRecord*)pSpace;
-    p->flags = UNPACKED_NEED_DESTROY;
+    *ppFree = 0;
   }
+  
+  return p;
+}
+
+/*
+** Given the nKey-byte encoding of a record in pKey[], populate the 
+** UnpackedRecord structure indicated by the fourth argument with the
+** contents of the decoded record.
+*/ 
+void sqlite3VdbeRecordUnpack(
+  KeyInfo *pKeyInfo,     /* Information about the record format */
+  int nKey,              /* Size of the binary record */
+  const void *pKey,      /* The binary record */
+  UnpackedRecord *p      /* Populate this structure before returning. */
+){
+  const unsigned char *aKey = (const unsigned char *)pKey;
+  int d; 
+  u32 idx;                        /* Offset in aKey[] to read from */
+  u16 u;                          /* Unsigned loop counter */
+  u32 szHdr;
+  Mem *pMem;
+
+  p->flags = 0;
   p->pKeyInfo = pKeyInfo;
   p->nField = pKeyInfo->nField + 1;
   p->aMem = pMem = (Mem*)&((char*)p)[ROUND8(sizeof(UnpackedRecord))];
@@ -2899,31 +2914,6 @@ UnpackedRecord *sqlite3VdbeRecordUnpack(
   }
   assert( u<=pKeyInfo->nField + 1 );
   p->nField = u;
-  return (void*)p;
-}
-
-/*
-** This routine destroys a UnpackedRecord object.
-*/
-void sqlite3VdbeDeleteUnpackedRecord(UnpackedRecord *p){
-#ifdef SQLITE_DEBUG
-  int i;
-  Mem *pMem;
-
-  assert( p!=0 );
-  assert( p->flags & UNPACKED_NEED_DESTROY );
-  for(i=0, pMem=p->aMem; i<p->nField; i++, pMem++){
-    /* The unpacked record is always constructed by the
-    ** sqlite3VdbeUnpackRecord() function above, which makes all
-    ** strings and blobs static.  And none of the elements are
-    ** ever transformed, so there is never anything to delete.
-    */
-    if( NEVER(pMem->zMalloc) ) sqlite3VdbeMemRelease(pMem);
-  }
-#endif
-  if( p->flags & UNPACKED_NEED_FREE ){
-    sqlite3DbFree(p->pKeyInfo->db, p);
-  }
 }
 
 /*
