@@ -373,14 +373,6 @@
 #endif
 
 /*
-** If all temporary storage is in-memory, then omit the external merge-sort
-** logic since it is superfluous.
-*/
-#if SQLITE_TEMP_STORE==3 && !defined(SQLITE_OMIT_MERGE_SORT)
-# define SQLITE_OMIT_MERGE_SORT
-#endif
-
-/*
 ** GCC does not define the offsetof() macro so we'll have to do it
 ** ourselves.
 */
@@ -1570,6 +1562,7 @@ struct AggInfo {
   u8 useSortingIdx;       /* In direct mode, reference the sorting index rather
                           ** than the source table */
   int sortingIdx;         /* Cursor number of the sorting index */
+  int sortingIdxPTab;     /* Cursor number of pseudo-table */
   ExprList *pGroupBy;     /* The group by clause */
   int nSortingColumn;     /* Number of columns in the sorting index */
   struct AggInfo_col {    /* For each column used in source tables */
@@ -2102,6 +2095,7 @@ struct Select {
 #define SF_UsesEphemeral   0x0008  /* Uses the OpenEphemeral opcode */
 #define SF_Expanded        0x0010  /* sqlite3SelectExpand() called on this */
 #define SF_HasTypeInfo     0x0020  /* FROM subqueries have Table metadata */
+#define SF_UseSorter       0x0040  /* Sort using a sorter */
 
 
 /*

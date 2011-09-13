@@ -29,7 +29,7 @@
 # error "The MEMORY_DEBUG macro is obsolete.  Use SQLITE_DEBUG instead."
 #endif
 
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_TEST) && defined(SQLITE_DEBUG)
 # ifndef SQLITE_DEBUG_OS_TRACE
 #   define SQLITE_DEBUG_OS_TRACE 0
 # endif

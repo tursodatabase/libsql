@@ -147,6 +147,9 @@ static const char * const azCompileOpt[] = {
 #ifdef SQLITE_LOCK_TRACE
   "LOCK_TRACE",
 #endif
+#ifdef SQLITE_MAX_SCHEMA_RETRY
+  "MAX_SCHEMA_RETRY=" CTIMEOPT_VAL(SQLITE_MAX_SCHEMA_RETRY),
+#endif
 #ifdef SQLITE_MEMDEBUG
   "MEMDEBUG",
 #endif
