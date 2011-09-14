@@ -17,13 +17,18 @@ BEGIN {
   print     " || defined(SQLITE_DEBUG)"
   print "const char *sqlite3OpcodeName(int i){"
   print " static const char *const azName[] = { \"?\","
+  mx = 0
 }
 /define OP_/ {
   sub("OP_","",$2)
-  i++
-  printf "     /* %3d */ \"%s\",\n", $3, $2
+  i = $3+0
+  label[i] = $2
+  if( mx<i ) mx = i
 }
 END {
+  for(i=1; i<=mx; i++){
+    printf "     /* %3d */ \"%s\",\n", i, label[i]
+  }
   print "  };"
   print "  return azName[i];"
   print "}"

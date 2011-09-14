@@ -2892,11 +2892,12 @@ static int afpCheckReservedLock(sqlite3_file *id, int *pResOut){
   int rc = SQLITE_OK;
   int reserved = 0;
   unixFile *pFile = (unixFile*)id;
+  afpLockingContext *context;
   
   SimulateIOError( return SQLITE_IOERR_CHECKRESERVEDLOCK; );
   
   assert( pFile );
-  afpLockingContext *context = (afpLockingContext *) pFile->lockingContext;
+  context = (afpLockingContext *) pFile->lockingContext;
   if( context->reserved ){
     *pResOut = 1;
     return SQLITE_OK;
@@ -3036,7 +3037,7 @@ static int afpLock(sqlite3_file *id, int eFileLock){
   ** operating system calls for the specified lock.
   */
   if( eFileLock==SHARED_LOCK ){
-    int lrc1, lrc2, lrc1Errno;
+    int lrc1, lrc2, lrc1Errno = 0;
     long lk, mask;
     
     assert( pInode->nShared==0 );
@@ -3512,11 +3513,11 @@ int sqlite3_fullsync_count = 0;
 
 /*
 ** We do not trust systems to provide a working fdatasync().  Some do.
-** Others do no.  To be safe, we will stick with the (slower) fsync().
-** If you know that your system does support fdatasync() correctly,
+** Others do no.  To be safe, we will stick with the (slightly slower)
+** fsync(). If you know that your system does support fdatasync() correctly,
 ** then simply compile with -Dfdatasync=fdatasync
 */
-#if !defined(fdatasync) && !defined(__linux__)
+#if !defined(fdatasync)
 # define fdatasync fsync
 #endif
 
@@ -3829,26 +3830,18 @@ static int proxyFileControl(sqlite3_file*,int,void*);
 
 /* 
 ** This function is called to handle the SQLITE_FCNTL_SIZE_HINT 
-** file-control operation.
-**
-** If the user has configured a chunk-size for this file, it could be
-** that the file needs to be extended at this point. Otherwise, the
-** SQLITE_FCNTL_SIZE_HINT operation is a no-op for Unix.
+** file-control operation.  Enlarge the database to nBytes in size
+** (rounded up to the next chunk-size).  If the database is already
+** nBytes or larger, this routine is a no-op.
 */
 static int fcntlSizeHint(unixFile *pFile, i64 nByte){
-  { /* preserve indentation of removed "if" */
+  if( pFile->szChunk>0 ){
     i64 nSize;                    /* Required file size */
-    i64 szChunk;                  /* Chunk size */
     struct stat buf;              /* Used to hold return values of fstat() */
    
     if( osFstat(pFile->h, &buf) ) return SQLITE_IOERR_FSTAT;
 
-    szChunk = pFile->szChunk;
-    if( szChunk==0 ){
-      nSize = nByte;
-    }else{
-      nSize = ((nByte+szChunk-1) / szChunk) * szChunk;
-    }
+    nSize = ((nByte+pFile->szChunk-1) / pFile->szChunk) * pFile->szChunk;
     if( nSize>(i64)buf.st_size ){
 
 #if defined(HAVE_POSIX_FALLOCATE) && HAVE_POSIX_FALLOCATE
@@ -4303,11 +4296,9 @@ struct unixShm {
   unixShmNode *pShmNode;     /* The underlying unixShmNode object */
   unixShm *pNext;            /* Next unixShm with the same unixShmNode */
   u8 hasMutex;               /* True if holding the unixShmNode mutex */
+  u8 id;                     /* Id of this connection within its unixShmNode */
   u16 sharedMask;            /* Mask of shared locks held */
   u16 exclMask;              /* Mask of exclusive locks held */
-#ifdef SQLITE_DEBUG
-  u8 id;                     /* Id of this connection within its unixShmNode */
-#endif
 };
 
 /*
@@ -5645,6 +5636,9 @@ static int unixOpen(
 #if SQLITE_ENABLE_LOCKING_STYLE
   int isAutoProxy  = (flags & SQLITE_OPEN_AUTOPROXY);
 #endif
+#if defined(__APPLE__) || SQLITE_ENABLE_LOCKING_STYLE
+  struct statfs fsInfo;
+#endif
 
   /* If creating a master or main-file journal, this function will open
   ** a file-descriptor on the directory too. The first time unixSync()
@@ -5793,7 +5787,6 @@ static int unixOpen(
 
   
 #if defined(__APPLE__) || SQLITE_ENABLE_LOCKING_STYLE
-  struct statfs fsInfo;
   if( fstatfs(fd, &fsInfo) == -1 ){
     ((unixFile*)pFile)->lastErrno = errno;
     robust_close(p, fd, __LINE__);
@@ -5820,7 +5813,6 @@ static int unixOpen(
     if( envforce!=NULL ){
       useProxy = atoi(envforce)>0;
     }else{
-      struct statfs fsInfo;
       if( statfs(zPath, &fsInfo) == -1 ){
         /* In theory, the close(fd) call is sub-optimal. If the file opened
         ** with fd is a database file, and there are other connections open
@@ -6597,6 +6589,8 @@ static int proxyGetHostID(unsigned char *pHostID, int *pError){
       return SQLITE_IOERR;
     }
   }
+#else
+  UNUSED_PARAMETER(pError);
 #endif
 #ifdef SQLITE_TEST
   /* simulate multiple hosts by creating unique hostid file paths */
@@ -6688,6 +6682,7 @@ static int proxyConchLock(unixFile *pFile, uuid_t myHostID, int lockType){
   int rc = SQLITE_OK;
   struct timespec conchModTime;
   
+  memset(&conchModTime, 0, sizeof(conchModTime));
   do {
     rc = conchFile->pMethod->xLock((sqlite3_file*)conchFile, lockType);
     if( rc==SQLITE_BUSY ){
@@ -6934,6 +6929,7 @@ static int proxyTakeConch(unixFile *pFile){
     end_takeconch:
       OSTRACE(("TRANSPROXY: CLOSE  %d\n", pFile->h));
       if( rc==SQLITE_OK && pFile->openFlags ){
+        int fd;
         if( pFile->h>=0 ){
 #if defined(STRICT_CLOSE_ERROR) && OSCLOSE_CHECK_CLOSE_IOERR
           if( close(pFile->h) ){
@@ -6945,7 +6941,7 @@ static int proxyTakeConch(unixFile *pFile){
 #endif
         }
         pFile->h = -1;
-        int fd = robust_open(pCtx->dbPath, pFile->openFlags,
+        fd = robust_open(pCtx->dbPath, pFile->openFlags,
                       SQLITE_DEFAULT_FILE_PERMISSIONS);
         OSTRACE(("TRANSPROXY: OPEN  %d\n", fd));
         if( fd>=0 ){

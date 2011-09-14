@@ -80,7 +80,7 @@ do_test thread003.2 {
   foreach zFile {test.db test2.db} {
     set SCRIPT [format {
       set iEnd [expr {[clock_seconds] + %d}]
-      set ::DB [sqlthread open %s]
+      set ::DB [sqlthread open %s xyzzy]
   
       # Set the cache size to 15 pages per cache. 30 available globally.
       execsql { PRAGMA cache_size = 15 }
@@ -117,7 +117,7 @@ do_test thread003.3 {
     set SCRIPT [format {
       set iStart [clock_seconds]
       set iEnd [expr {[clock_seconds] + %d}]
-      set ::DB [sqlthread open %s]
+      set ::DB [sqlthread open %s xyzzy]
   
       # Set the cache size to 15 pages per cache. 30 available globally.
       execsql { PRAGMA cache_size = 15 }
@@ -156,7 +156,7 @@ unset -nocomplain finished(2)
 do_test thread003.4 {
   thread_spawn finished(1) $thread_procs [format {
     set iEnd [expr {[clock_seconds] + %d}]
-    set ::DB [sqlthread open test.db]
+    set ::DB [sqlthread open test.db xyzzy]
 
     # Set the cache size to 15 pages per cache. 30 available globally.
     execsql { PRAGMA cache_size = 15 }
