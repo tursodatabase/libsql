@@ -460,7 +460,6 @@ static int vdbeSorterOpenTempFile(sqlite3 *db, sqlite3_file **ppFile){
 ** Set *ppOut to the head of the new list.
 */
 static void vdbeSorterMerge(
-  sqlite3 *db,                    /* Database handle */
   VdbeCursor *pCsr,               /* For pKeyInfo */
   SorterRecord *p1,               /* First list to merge */
   SorterRecord *p2,               /* Second list to merge */
@@ -495,7 +494,7 @@ static void vdbeSorterMerge(
 ** if successful, or an SQLite error code (i.e. SQLITE_NOMEM) if an error
 ** occurs.
 */
-static int vdbeSorterSort(sqlite3 *db, VdbeCursor *pCsr){
+static int vdbeSorterSort(VdbeCursor *pCsr){
   int i;
   SorterRecord **aSlot;
   SorterRecord *p;
@@ -511,7 +510,7 @@ static int vdbeSorterSort(sqlite3 *db, VdbeCursor *pCsr){
     SorterRecord *pNext = p->pNext;
     p->pNext = 0;
     for(i=0; aSlot[i]; i++){
-      vdbeSorterMerge(db, pCsr, p, aSlot[i], &p);
+      vdbeSorterMerge(pCsr, p, aSlot[i], &p);
       aSlot[i] = 0;
     }
     aSlot[i] = p;
@@ -520,7 +519,7 @@ static int vdbeSorterSort(sqlite3 *db, VdbeCursor *pCsr){
 
   p = 0;
   for(i=0; i<64; i++){
-    vdbeSorterMerge(db, pCsr, p, aSlot[i], &p);
+    vdbeSorterMerge(pCsr, p, aSlot[i], &p);
   }
   pSorter->pRecord = p;
 
@@ -551,7 +550,7 @@ static int vdbeSorterListToPMA(sqlite3 *db, VdbeCursor *pCsr){
     return rc;
   }
 
-  rc = vdbeSorterSort(db, pCsr);
+  rc = vdbeSorterSort(pCsr);
 
   /* If the first temporary PMA file has not been opened, open it now. */
   if( rc==SQLITE_OK && pSorter->pTemp1==0 ){
@@ -698,7 +697,7 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, VdbeCursor *pCsr, int *pbEof){
   if( pSorter->nPMA==0 ){
     *pbEof = !pSorter->pRecord;
     assert( pSorter->aTree==0 );
-    return vdbeSorterSort(db, pCsr);
+    return vdbeSorterSort(pCsr);
   }
 
   /* Write the current b-tree to a PMA. Close the b-tree cursor. */
