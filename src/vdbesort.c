@@ -160,8 +160,12 @@ static int vdbeSorterIterNext(
   int nRec = 0;                   /* Size of record in bytes */
   int iOff = 0;                   /* Size of serialized size varint in bytes */
 
-  nRead = pIter->iEof - pIter->iReadOff;
-  if( nRead>5 ) nRead = 5;
+  assert( pIter->iEof>=pIter->iReadOff );
+  if( pIter->iEof-pIter->iReadOff>5 ){
+    nRead = 5;
+  }else{
+    nRead = (int)(pIter->iEof - pIter->iReadOff);
+  }
   if( nRead<=0 ){
     /* This is an EOF condition */
     vdbeSorterIterZero(db, pIter);

@@ -664,7 +664,7 @@ static int btreeMoveto(
         pCur->pKeyInfo, aSpace, sizeof(aSpace), &pFree
     );
     if( pIdxKey==0 ) return SQLITE_NOMEM;
-    sqlite3VdbeRecordUnpack(pCur->pKeyInfo, nKey, pKey, pIdxKey);
+    sqlite3VdbeRecordUnpack(pCur->pKeyInfo, (int)nKey, pKey, pIdxKey);
   }else{
     pIdxKey = 0;
   }
