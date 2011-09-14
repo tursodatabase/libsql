@@ -4395,7 +4395,7 @@ static u8 *sqlite3_stack_baseline = 0;
 static void prepStack(void){
   int i;
   u32 bigBuf[65536];
-  for(i=0; i<sizeof(bigBuf); i++) bigBuf[i] = 0xdeadbeef;
+  for(i=0; i<sizeof(bigBuf)/sizeof(bigBuf[0]); i++) bigBuf[i] = 0xdeadbeef;
   sqlite3_stack_baseline = (u8*)&bigBuf[65536];
 }
 

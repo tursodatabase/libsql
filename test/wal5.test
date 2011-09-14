@@ -235,7 +235,7 @@ foreach {testprefix do_wal_checkpoint} {
     do_test 2.3.$tn.5 { sql1 { INSERT INTO t2 VALUES(3, 4) } } {}
     do_test 2.3.$tn.6 { file_page_counts } {1 7 1 7}
     do_test 2.3.$tn.7 { code1 { do_wal_checkpoint db -mode full } } {1 7 5}
-    do_test 2.3.$tn.8 { file_page_counts } {2 7 2 7}
+    do_test 2.3.$tn.8 { file_page_counts } {1 7 2 7}
   }
 
   # Check that checkpoints block on the correct locks. And respond correctly
@@ -343,3 +343,4 @@ foreach {testprefix do_wal_checkpoint} {
 
 
 finish_test
+

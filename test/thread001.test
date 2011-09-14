@@ -42,7 +42,7 @@ foreach {tn same_db shared_cache} [list \
     sqlite3_enable_shared_cache $shared_cache
     sqlite3_enable_shared_cache $shared_cache
   } $shared_cache
-  sqlite3 db test.db -fullmutex 1
+  sqlite3 db test.db -fullmutex 1 -key xyzzy
 
   set dbconfig ""
   if {$same_db} {
@@ -77,7 +77,7 @@ foreach {tn same_db shared_cache} [list \
     #sqlthread parent {puts STARTING..}
     set needToClose 0
     if {![info exists ::DB]} {
-      set ::DB [sqlthread open test.db]
+      set ::DB [sqlthread open test.db xyzzy]
       #sqlthread parent "puts \"OPEN $::DB\""
       set needToClose 1
     }

@@ -282,6 +282,21 @@ static int sqlthread_open(
 
   zFilename = Tcl_GetString(objv[2]);
   rc = sqlite3_open(zFilename, &db);
+#ifdef SQLITE_HAS_CODEC
+  if( db && objc>=4 ){
+    const char *zKey;
+    int nKey;
+    zKey = Tcl_GetStringFromObj(objv[3], &nKey);
+    rc = sqlite3_key(db, zKey, nKey);
+    if( rc!=SQLITE_OK ){
+      char *zErrMsg = sqlite3_mprintf("error %d: %s", rc, sqlite3_errmsg(db));
+      sqlite3_close(db);
+      Tcl_AppendResult(interp, zErrMsg, (char*)0);
+      sqlite3_free(zErrMsg);
+      return TCL_ERROR;
+    }
+  }
+#endif
   Md5_Register(db);
   sqlite3_busy_handler(db, xBusy, 0);
   
@@ -349,7 +364,7 @@ static int sqlthread_proc(
   if( rc!=TCL_OK ) return rc;
   pSub = &aSub[iIndex];
 
-  if( objc!=(pSub->nArg+2) ){
+  if( objc<(pSub->nArg+2) ){
     Tcl_WrongNumArgs(interp, 2, objv, pSub->zUsage);
     return TCL_ERROR;
   }

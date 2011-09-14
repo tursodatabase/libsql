@@ -809,7 +809,7 @@ tclsqlite3.exe:	tclsqlite-shell.lo libsqlite3.lib
 # Rules to build opcodes.c and opcodes.h
 #
 opcodes.c:	opcodes.h $(TOP)\mkopcodec.awk
-	$(NAWK) "/#define OP_/ { print }" opcodes.h | sort /+45 | $(NAWK) -f $(TOP)\mkopcodec.awk > opcodes.c
+	$(NAWK) -f $(TOP)\mkopcodec.awk opcodes.h > opcodes.c
 
 opcodes.h:	parse.h $(TOP)\src\vdbe.c $(TOP)\mkopcodeh.awk
 	type parse.h $(TOP)\src\vdbe.c | $(NAWK) -f $(TOP)\mkopcodeh.awk > opcodes.h
@@ -938,7 +938,7 @@ sqlite3_analyzer.exe:	$(TESTFIXTURE_SRC) spaceanal_tcl.h
 		/link $(LTLINKOPTS) /LIBPATH:$(TCLLIBDIR) $(LIBTCL) $(TLIBS)
 
 clean:
-	del /Q *.lo *.lib *.obj sqlite3.exe libsqlite3.lib
+	del /Q *.lo *.ilk *.lib *.obj *.pdb sqlite3.exe libsqlite3.lib
 	del /Q sqlite3.h opcodes.c opcodes.h
 	del /Q lemon.exe lempar.c parse.*
 	del /Q mkkeywordhash.exe keywordhash.h

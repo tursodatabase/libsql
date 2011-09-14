@@ -158,5 +158,23 @@ do_execsql_test 2.3 {
   SELECT docid FROM t2 WHERE t2 MATCH 'aa';
 } {3 1}
 
+#-------------------------------------------------------------------------
+# Test that ticket [56be976859] has been fixed.
+#
+do_execsql_test 3.1 {
+  CREATE VIRTUAL TABLE t3 USING fts4(x, order=DESC);
+  INSERT INTO t3(docid, x) VALUES(113382409004785664, 'aa');
+  INSERT INTO t3(docid, x) VALUES(1, 'ab');
+  SELECT rowid FROM t3 WHERE x MATCH 'a*' ORDER BY docid DESC;
+} {113382409004785664 1}
+do_execsql_test 3.2 {
+  CREATE VIRTUAL TABLE t4 USING fts4(x);
+  INSERT INTO t4(docid, x) VALUES(-113382409004785664, 'aa');
+  INSERT INTO t4(docid, x) VALUES(1, 'ab');
+  SELECT rowid FROM t4 WHERE x MATCH 'a*';
+} {-113382409004785664 1}
+
+
+
 finish_test
 

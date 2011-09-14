@@ -108,5 +108,19 @@ do_execsql_test 1.8 {
   PRAGMA integrity_check
 } {ok}
 
+do_execsql_test 2.1 {
+  BEGIN;
+    CREATE TABLE t2(x);
+    INSERT INTO t2 VALUES(14);
+    INSERT INTO t2 VALUES(35);
+    INSERT INTO t2 VALUES(15);
+    INSERT INTO t2 VALUES(35);
+    INSERT INTO t2 VALUES(16);
+  COMMIT;
+}
+do_catchsql_test 2.2 {
+  CREATE UNIQUE INDEX i3 ON t2(x);
+} {1 {indexed columns are not unique}}
+
 
 finish_test

@@ -1327,6 +1327,26 @@ int sqlite3_stmt_status(sqlite3_stmt *pStmt, int op, int resetFlag){
 
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
 /*
+** Allocate and populate an UnpackedRecord structure based on the serialized
+** record in nKey/pKey. Return a pointer to the new UnpackedRecord structure
+** if successful, or a NULL pointer if an OOM error is encountered.
+*/
+static UnpackedRecord *vdbeUnpackRecord(
+  KeyInfo *pKeyInfo, 
+  int nKey, 
+  const void *pKey
+){
+  char *dummy;                    /* Dummy argument for AllocUnpackedRecord() */
+  UnpackedRecord *pRet;           /* Return value */
+
+  pRet = sqlite3VdbeAllocUnpackedRecord(pKeyInfo, 0, 0, &dummy);
+  if( pRet ){
+    sqlite3VdbeRecordUnpack(pKeyInfo, nKey, pKey, pRet);
+  }
+  return pRet;
+}
+
+/*
 ** This function is called from within a pre-update callback to retrieve
 ** a field of the row currently being updated or deleted.
 */
@@ -1356,7 +1376,7 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
     if( !aRec ) goto preupdate_old_out;
     rc = sqlite3BtreeData(p->pCsr->pCursor, 0, nRec, aRec);
     if( rc==SQLITE_OK ){
-      p->pUnpacked = sqlite3VdbeRecordUnpack(&p->keyinfo, nRec, aRec, 0, 0);
+      p->pUnpacked = vdbeUnpackRecord(&p->keyinfo, nRec, aRec);
       if( !p->pUnpacked ) rc = SQLITE_NOMEM;
     }
     if( rc!=SQLITE_OK ){
@@ -1438,7 +1458,7 @@ int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
       Mem *pData = &p->v->aMem[p->iNewReg];
       rc = sqlite3VdbeMemExpandBlob(pData);
       if( rc!=SQLITE_OK ) goto preupdate_new_out;
-      pUnpack = sqlite3VdbeRecordUnpack(&p->keyinfo, pData->n, pData->z, 0, 0);
+      pUnpack = vdbeUnpackRecord(&p->keyinfo, pData->n, pData->z);
       if( !pUnpack ){
         rc = SQLITE_NOMEM;
         goto preupdate_new_out;
