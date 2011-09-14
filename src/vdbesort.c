@@ -298,7 +298,7 @@ static int vdbeSorterIterInit(
 ** If pKey2 is passed a NULL pointer, then it is assumed that the pCsr->aSpace
 ** has been allocated and contains an unpacked record that is used as key2.
 */
-static int vdbeSorterCompare(
+static void vdbeSorterCompare(
   VdbeCursor *pCsr,               /* Cursor object (for pKeyInfo) */
   int bOmitRowid,                 /* Ignore rowid field at end of keys */
   void *pKey1, int nKey1,         /* Left side of comparison */
@@ -320,14 +320,13 @@ static int vdbeSorterCompare(
     for(i=0; i<r2->nField; i++){
       if( r2->aMem[i].flags & MEM_Null ){
         *pRes = -1;
-        return SQLITE_OK;
+        return;
       }
     }
     r2->flags |= UNPACKED_PREFIX_MATCH;
   }
 
   *pRes = sqlite3VdbeRecordCompare(nKey1, pKey1, r2);
-  return SQLITE_OK;
 }
 
 /*
@@ -362,15 +361,10 @@ static int vdbeSorterDoCompare(VdbeCursor *pCsr, int iOut){
     iRes = i1;
   }else{
     int res;
-    int rc;
     assert( pCsr->pSorter->pUnpacked!=0 );  /* allocated in vdbeSorterMerge() */
-    rc = vdbeSorterCompare(
+    vdbeSorterCompare(
         pCsr, 0, p1->aKey, p1->nKey, p2->aKey, p2->nKey, &res
     );
-    /* The vdbeSorterCompare() call cannot fail since pCsr->pSorter->pUnpacked
-    ** has already been allocated. */
-    assert( rc==SQLITE_OK );
-
     if( res<=0 ){
       iRes = i1;
     }else{
@@ -462,32 +456,23 @@ static int vdbeSorterOpenTempFile(sqlite3 *db, sqlite3_file **ppFile){
 }
 
 /*
-** Attemp to merge the two sorted lists p1 and p2 into a single list. If no
-** error occurs set *ppOut to the head of the new list and return SQLITE_OK.
+** Merge the two sorted lists p1 and p2 into a single list.
+** Set *ppOut to the head of the new list.
 */
-static int vdbeSorterMerge(
+static void vdbeSorterMerge(
   sqlite3 *db,                    /* Database handle */
   VdbeCursor *pCsr,               /* For pKeyInfo */
   SorterRecord *p1,               /* First list to merge */
   SorterRecord *p2,               /* Second list to merge */
   SorterRecord **ppOut            /* OUT: Head of merged list */
 ){
-  int rc = SQLITE_OK;
   SorterRecord *pFinal = 0;
   SorterRecord **pp = &pFinal;
   void *pVal2 = p2 ? p2->pVal : 0;
 
   while( p1 && p2 ){
     int res;
-    rc = vdbeSorterCompare(pCsr, 0, p1->pVal, p1->nVal, pVal2, p2->nVal, &res);
-    if( rc!=SQLITE_OK ){
-      *pp = 0;
-      vdbeSorterRecordFree(db, p1);
-      vdbeSorterRecordFree(db, p2);
-      vdbeSorterRecordFree(db, pFinal);
-      *ppOut = 0;
-      return rc;
-    }
+    vdbeSorterCompare(pCsr, 0, p1->pVal, p1->nVal, pVal2, p2->nVal, &res);
     if( res<=0 ){
       *pp = p1;
       pp = &p1->pNext;
@@ -502,9 +487,7 @@ static int vdbeSorterMerge(
     }
   }
   *pp = p1 ? p1 : p2;
-
   *ppOut = pFinal;
-  return SQLITE_OK;
 }
 
 /*
@@ -513,7 +496,6 @@ static int vdbeSorterMerge(
 ** occurs.
 */
 static int vdbeSorterSort(sqlite3 *db, VdbeCursor *pCsr){
-  int rc = SQLITE_OK;
   int i;
   SorterRecord **aSlot;
   SorterRecord *p;
@@ -528,13 +510,9 @@ static int vdbeSorterSort(sqlite3 *db, VdbeCursor *pCsr){
   while( p ){
     SorterRecord *pNext = p->pNext;
     p->pNext = 0;
-    for(i=0; rc==SQLITE_OK && aSlot[i]; i++){
-      rc = vdbeSorterMerge(db, pCsr, p, aSlot[i], &p);
+    for(i=0; aSlot[i]; i++){
+      vdbeSorterMerge(db, pCsr, p, aSlot[i], &p);
       aSlot[i] = 0;
-    }
-    if( rc!=SQLITE_OK ){
-      vdbeSorterRecordFree(db, pNext);
-      break;
     }
     aSlot[i] = p;
     p = pNext;
@@ -542,16 +520,12 @@ static int vdbeSorterSort(sqlite3 *db, VdbeCursor *pCsr){
 
   p = 0;
   for(i=0; i<64; i++){
-    if( rc==SQLITE_OK ){
-      rc = vdbeSorterMerge(db, pCsr, p, aSlot[i], &p);
-    }else{
-      vdbeSorterRecordFree(db, aSlot[i]);
-    }
+    vdbeSorterMerge(db, pCsr, p, aSlot[i], &p);
   }
   pSorter->pRecord = p;
 
   sqlite3_free(aSlot);
-  return rc;
+  return SQLITE_OK;
 }
 
 
@@ -894,14 +868,12 @@ int sqlite3VdbeSorterCompare(
   Mem *pVal,                      /* Value to compare to current sorter key */
   int *pRes                       /* OUT: Result of comparison */
 ){
-  int rc;
   VdbeSorter *pSorter = pCsr->pSorter;
   void *pKey; int nKey;           /* Sorter key to compare pVal with */
 
   pKey = vdbeSorterRowkey(pSorter, &nKey);
-  rc = vdbeSorterCompare(pCsr, 1, pVal->z, pVal->n, pKey, nKey, pRes);
-  assert( rc!=SQLITE_OK || pVal->db->mallocFailed || (*pRes)<=0 );
-  return rc;
+  vdbeSorterCompare(pCsr, 1, pVal->z, pVal->n, pKey, nKey, pRes);
+  return SQLITE_OK;
 }
 
 #endif /* #ifndef SQLITE_OMIT_MERGE_SORT */
