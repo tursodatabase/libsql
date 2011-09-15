@@ -1,5 +1,5 @@
-C Remove\s'const'\sfrom\sa\svariable\sthat\smight\sactually\sbe\swritten\swhen\san\sOOM\serror\soccurs.\sAlso,\sfix\sa\scouple\sMSVC/Win32\scompiler\swarnings.
-D 2011-09-14T18:19:08.529
+C Cleanup/fix\serror\shandling\swhen\sno\sarguments\sare\ssupplied\sto\sthe\sSQLite\sanalyzer.
+D 2011-09-15T00:40:11.725
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d314143fa6be24828021d3f583ad37d9afdce505
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -950,7 +950,7 @@ F tool/showjournal.c b62cecaab86a4053d944c276bb5232e4d17ece02
 F tool/showwal.c f09e5a80a293919290ec85a6a37c85a5ddcf37d9
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b
-F tool/spaceanal.tcl 1ee4df4e190675ba67b8c60cf304496d0021cfb4
+F tool/spaceanal.tcl fe02dede3d29ef0fefcf80a685644fdf4d9a768e
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P a1f3aeeb0988c848d40ce8f6da6e902935a997e2
-R 0af9d8f0b3f18e81a71e0aa10948427c
+P 3035dc1c7398791d550f4c02774ef7f961b4bb02
+R 58029ae8750333d2c5d6f46b6d3f7365
 U mistachkin
-Z d90e2842f2c20a0f3227a4c8a539b329
+Z 3ee1857491433480e0555890625ce07e
