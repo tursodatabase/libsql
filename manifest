@@ -1,5 +1,5 @@
-C Adding\stest\scase\sfor\sticket\s[002caede898]
-D 2011-09-15T19:39:42.113
+C Materialize\ssubqueries\susing\sa\ssubroutine\sand\sinvoke\sthat\ssubroutine\nprior\sto\seach\suse\sof\sthe\ssubqueries\smanifestation.\s\sFix\sfor\nticket\s[002caede898aee4]
+D 2011-09-15T23:58:14.314
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d314143fa6be24828021d3f583ad37d9afdce505
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -133,7 +133,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c e3132ec65240b2e2f3d50831021eac387f27584d
 F src/date.c a3c6842bad7ae632281811de112a8ba63ff08ab3
 F src/delete.c ff68e5ef23aee08c0ff528f699a19397ed8bbed8
-F src/expr.c cbcd8c2f1588a9862291a081699854c5e1cb28ab
+F src/expr.c 109de1d4a58d25c062a79d7e84bdbb77b348844e
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 9f00ea98f6b360d477b5a78b5b59a1fbde82431c
 F src/func.c 59bb046d7e3df1ab512ac339ccb0a6f996a17cb7
@@ -179,11 +179,11 @@ F src/printf.c 585a36b6a963df832cfb69505afa3a34ed5ef8a1
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 36368f44569208fa074e61f4dd0b6c4fb60ca2b4
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
-F src/select.c bf7b7ea6befb483619da5f597b0864668b828c3c
+F src/select.c d85d83c334a3842b47d14e0574acb5f531d5579a
 F src/shell.c bbe7818ff5bc8614105ceb81ad67b8bdc0b671dd
 F src/sqlite.h.in 0a6c9c23337fd1352c5c75a613ff9533aa7d91cb
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
-F src/sqliteInt.h c7e37ee49b1a922ddcd18fa98dd750efa4d2db14
+F src/sqliteInt.h feb4f2b212fe36bbd951e44d2490c6aacf02f689
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -961,10 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 3fc566ac5dfce314ee414a3fb79daeeed6d0f179
-R 3df652f1b6c038f8caa8cb1ea6bf4532
-T *branch * tkt-002caede898
-T *sym-tkt-002caede898 *
-T -sym-trunk *
+P 62dfc51a495be017605cf315d72e2db91bfa28f7
+R 6d5602e8586fba23bb68456f6fac9e14
 U drh
-Z 9197dd7d4afe8679532f19b1e34148bf
+Z 035be646ae967eef8d7d2956eeb67c86

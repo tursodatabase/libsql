@@ -3801,7 +3801,11 @@ int sqlite3Select(
     Select *pSub = pItem->pSelect;
     int isAggSub;
 
-    if( pSub==0 || pItem->isPopulated ) continue;
+    if( pSub==0 ) continue;
+    if( pItem->addrFillSub ){
+      sqlite3VdbeAddOp2(v, OP_Gosub, pItem->regReturn, pItem->addrFillSub);
+      continue;
+    }
 
     /* Increment Parse.nHeight by the height of the largest expression
     ** tree refered to by this, the parent select. The child select
@@ -3812,21 +3816,41 @@ int sqlite3Select(
     */
     pParse->nHeight += sqlite3SelectExprHeight(p);
 
-    /* Check to see if the subquery can be absorbed into the parent. */
     isAggSub = (pSub->selFlags & SF_Aggregate)!=0;
     if( flattenSubquery(pParse, p, i, isAgg, isAggSub) ){
+      /* This subquery can be absorbed into its parent. */
       if( isAggSub ){
         isAgg = 1;
         p->selFlags |= SF_Aggregate;
       }
       i = -1;
     }else{
+      /* Generate a subroutine that will fill an ephemeral table with
+      ** the content of this subquery.  pItem->addrFillSub will point
+      ** to the address of the generated subroutine.  pItem->regReturn
+      ** is a register allocated to hold the subroutine return address
+      */
+      int topAddr = sqlite3VdbeAddOp0(v, OP_Goto);
+      int regOnce = 0;
+      assert( pItem->addrFillSub==0 );
+      pItem->addrFillSub = topAddr+1;
+      pItem->regReturn = ++pParse->nMem;
+      if( pItem->isCorrelated==0 && pParse->pTriggerTab==0 ){
+        /* If the subquery is no correlated and if we are not inside of
+        ** a trigger, then we only need to compute the value of the subquery
+        ** once. */
+        regOnce = ++pParse->nMem;
+        sqlite3VdbeAddOp1(v, OP_If, regOnce);
+        sqlite3VdbeAddOp2(v, OP_Integer, 1, regOnce);
+      }
       sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
-      assert( pItem->isPopulated==0 );
       explainSetInteger(pItem->iSelectId, (u8)pParse->iNextSelectId);
       sqlite3Select(pParse, pSub, &dest);
-      pItem->isPopulated = 1;
       pItem->pTab->nRowEst = (unsigned)pSub->nSelectRow;
+      if( regOnce ) sqlite3VdbeJumpHere(v, topAddr+1);
+      sqlite3VdbeAddOp1(v, OP_Return, pItem->regReturn);
+      sqlite3VdbeJumpHere(v, topAddr);
+      sqlite3VdbeAddOp2(v, OP_Gosub, pItem->regReturn, topAddr+1);
     }
     if( /*pParse->nErr ||*/ db->mallocFailed ){
       goto select_end;
