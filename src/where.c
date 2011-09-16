@@ -467,13 +467,13 @@ static Bitmask exprListTableUsage(WhereMaskSet *pMaskSet, ExprList *pList){
 static Bitmask exprSelectTableUsage(WhereMaskSet *pMaskSet, Select *pS){
   Bitmask mask = 0;
   while( pS ){
-    SrcList *pSrc;
+    SrcList *pSrc = pS->pSrc;
     mask |= exprListTableUsage(pMaskSet, pS->pEList);
     mask |= exprListTableUsage(pMaskSet, pS->pGroupBy);
     mask |= exprListTableUsage(pMaskSet, pS->pOrderBy);
     mask |= exprTableUsage(pMaskSet, pS->pWhere);
     mask |= exprTableUsage(pMaskSet, pS->pHaving);
-    if( (pSrc = pS->pSrc)!=0 ){
+    if( ALWAYS(pSrc!=0) ){
       int i;
       for(i=0; i<pSrc->nSrc; i++){
         mask |= exprSelectTableUsage(pMaskSet, pSrc->a[i].pSelect);

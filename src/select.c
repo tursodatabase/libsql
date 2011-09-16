@@ -89,6 +89,8 @@ Select *sqlite3SelectNew(
     clearSelect(db, pNew);
     if( pNew!=&standin ) sqlite3DbFree(db, pNew);
     pNew = 0;
+  }else{
+    assert( pNew->pSrc!=0 || pParse->nErr>0 );
   }
   return pNew;
 }
