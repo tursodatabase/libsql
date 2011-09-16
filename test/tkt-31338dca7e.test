@@ -163,4 +163,16 @@ do_test tkt-31338-3.6 {
   }    
 } {4 2 4 3 4 {} 4 99 101 3 4 {}}
 
+do_test tkt-31338-3.7 {
+  db eval {
+    SELECT * FROM t3 LEFT JOIN t1 ON d=g LEFT JOIN t4 ON c=h
+     WHERE (a=1 AND h=4)
+         OR (b IN (
+               SELECT x FROM (SELECT e+f+a AS x, e FROM t2 ORDER BY 1 LIMIT 2)
+               GROUP BY e
+            ));
+  }    
+} {4 2 4 3 4 {} 4 99 101 3 4 {}}
+
+
 finish_test

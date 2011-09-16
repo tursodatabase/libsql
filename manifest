@@ -1,5 +1,5 @@
-C Further\sstreamlining\sof\sthe\ssubquery\smaterializer.\s\sNew\stest\scases\sfor\nticket\s[002caede898a]
-D 2011-09-16T16:00:51.082
+C When\sanalyzing\sthe\sright-hand\sside\sof\sIN\soperators\sto\ssee\sif\sthe\sIN\soperator\ncan\swork\swith\san\sindex,\sbe\ssure\sto\sdecend\sinto\snested\ssubqueries.\nFix\sfor\sticket\s[1a1308d2538d7]
+D 2011-09-16T17:43:06.835
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d314143fa6be24828021d3f583ad37d9afdce505
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -251,7 +251,7 @@ F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 3154756177d6219e233d84291d5b05f4e06ff5e9
 F src/wal.h 66b40bd91bc29a5be1c88ddd1f5ade8f3f48728a
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c e7be35164f139003c9786921b8147ff5309254b0
+F src/where.c 73234bca5efe5cfe0d330ae26b705bf2df03af1e
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -715,7 +715,7 @@ F test/tkt-02a8e81d44.test 58494de77be2cf249228ada3f313fa399821c6ab
 F test/tkt-26ff0c2d1e.test 888324e751512972c6e0d1a09df740d8f5aaf660
 F test/tkt-2d1a5c67d.test b028a811049eb472cb2d3a43fc8ce4f6894eebda
 F test/tkt-2ea2425d34.test 1cf13e6f75d149b3209a0cb32927a82d3d79fb28
-F test/tkt-31338dca7e.test 099fa7d3062da40b2a187b27b0c76fed677e4919
+F test/tkt-31338dca7e.test 1f714c14b6682c5db715e0bda347926a3456f7a9
 F test/tkt-313723c356.test c47f8a9330523e6f35698bf4489bcb29609b53ac
 F test/tkt-38cb5df375.test 9e9b19857dba0896a8efdaf334d405ba423492f2
 F test/tkt-3998683a16.test 6d1d04d551ed1704eb3396ca87bb9ccc8c5c1eb7
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 95708ae2235658c3a49679e2fe252a058793366a
-R ed217ffbd1eb23c46e3dd65abee737cc
+P ff8b76b25b42497a7374de56c6a8f34cbe70cd6a
+R 34a35a895569cf9f022e7945a674f5c5
 U drh
-Z a08b3947e57752f2c6077ad25dc8a001
+Z 3184e4e9148b5fe9b0698bbc6c4cbb58
