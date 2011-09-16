@@ -1,5 +1,5 @@
-C Merge\sthe\s[002caede898]\sfix\sinto\strunk.
-D 2011-09-16T01:38:53.253
+C Further\sstreamlining\sof\sthe\ssubquery\smaterializer.\s\sNew\stest\scases\sfor\nticket\s[002caede898a]
+D 2011-09-16T16:00:51.082
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d314143fa6be24828021d3f583ad37d9afdce505
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -179,7 +179,7 @@ F src/printf.c 585a36b6a963df832cfb69505afa3a34ed5ef8a1
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 36368f44569208fa074e61f4dd0b6c4fb60ca2b4
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
-F src/select.c c7ea7cd4462cc44a40012ebbdcd31a83ac1e7274
+F src/select.c 2769d297c877e66ce780663867fdcffdeaa8302e
 F src/shell.c bbe7818ff5bc8614105ceb81ad67b8bdc0b671dd
 F src/sqlite.h.in 0a6c9c23337fd1352c5c75a613ff9533aa7d91cb
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
@@ -715,7 +715,7 @@ F test/tkt-02a8e81d44.test 58494de77be2cf249228ada3f313fa399821c6ab
 F test/tkt-26ff0c2d1e.test 888324e751512972c6e0d1a09df740d8f5aaf660
 F test/tkt-2d1a5c67d.test b028a811049eb472cb2d3a43fc8ce4f6894eebda
 F test/tkt-2ea2425d34.test 1cf13e6f75d149b3209a0cb32927a82d3d79fb28
-F test/tkt-31338dca7e.test cbfc6c0a43dca5b1f46a0f727bfc93e312117fc2
+F test/tkt-31338dca7e.test 099fa7d3062da40b2a187b27b0c76fed677e4919
 F test/tkt-313723c356.test c47f8a9330523e6f35698bf4489bcb29609b53ac
 F test/tkt-38cb5df375.test 9e9b19857dba0896a8efdaf334d405ba423492f2
 F test/tkt-3998683a16.test 6d1d04d551ed1704eb3396ca87bb9ccc8c5c1eb7
@@ -961,7 +961,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 3fc566ac5dfce314ee414a3fb79daeeed6d0f179 7f00552b739fad79517b042a6ed61abe743a917b
-R dfebcfb6ba63e648417a1c83afb0ef8f
+P 95708ae2235658c3a49679e2fe252a058793366a
+R ed217ffbd1eb23c46e3dd65abee737cc
 U drh
-Z baf4ff7d9b925e2ad8e253a721fec7c0
+Z a08b3947e57752f2c6077ad25dc8a001

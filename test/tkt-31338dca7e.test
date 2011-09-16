@@ -110,6 +110,57 @@ do_test tkt-31338-3.2 {
             ));
   }    
 } {4 1 2 3 4 {}}
+do_test tkt-31338-3.3 {
+  db eval {    
+    SELECT * FROM t3 LEFT JOIN t1 ON d=g LEFT JOIN t4 ON c=h
+     WHERE (+a=1 AND h=4)
+         OR (b IN (
+               SELECT x FROM (SELECT e+f AS x, e FROM t2 ORDER BY 1 LIMIT 2)
+               GROUP BY e
+            ));
+  }    
+} {4 1 2 3 4 {}}
+do_test tkt-31338-3.4 {
+  db eval {    
+    SELECT * FROM t3 LEFT JOIN t1 ON d=g LEFT JOIN t4 ON c=h
+     WHERE (a=1 AND h=4)
+         OR (+b IN (
+               SELECT x FROM (SELECT e+f AS x, e FROM t2 ORDER BY 1 LIMIT 2)
+               GROUP BY e
+            ));
+  }    
+} {4 1 2 3 4 {}}
 
+do_test tkt-31338-3.5 {
+  db eval {
+    CREATE TABLE t5(a,b,c,d,e,f);
+    CREATE TABLE t6(g,h);
+    CREATE TRIGGER t6r AFTER INSERT ON t6 BEGIN
+      INSERT INTO t5    
+        SELECT * FROM t3 LEFT JOIN t1 ON d=g LEFT JOIN t4 ON c=h
+         WHERE (a=1 AND h=4)
+            OR (b IN (
+               SELECT x FROM (SELECT e+f AS x, e FROM t2 ORDER BY 1 LIMIT 2)
+               GROUP BY e
+            ));
+    END;
+    INSERT INTO t6 VALUES(88,99);
+    SELECT * FROM t5;
+  }    
+} {4 1 2 3 4 {}}
+
+do_test tkt-31338-3.6 {
+  db eval {    
+    INSERT INTO t1 VALUES(2,4,3,4);
+    INSERT INTO t1 VALUES(99,101,3,4);
+    INSERT INTO t1 VALUES(98,97,3,4);
+    SELECT * FROM t3 LEFT JOIN t1 ON d=g LEFT JOIN t4 ON c=h
+     WHERE (a=1 AND h=4)
+         OR (b IN (
+               SELECT x+a FROM (SELECT e+f AS x, e FROM t2 ORDER BY 1 LIMIT 2)
+               GROUP BY e
+            ));
+  }    
+} {4 2 4 3 4 {} 4 99 101 3 4 {}}
 
 finish_test

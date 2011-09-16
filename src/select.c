@@ -3830,11 +3830,14 @@ int sqlite3Select(
       ** to the address of the generated subroutine.  pItem->regReturn
       ** is a register allocated to hold the subroutine return address
       */
-      int topAddr = sqlite3VdbeAddOp0(v, OP_Goto);
+      int topAddr;
       int onceAddr = 0;
+      int retAddr;
       assert( pItem->addrFillSub==0 );
-      pItem->addrFillSub = topAddr+1;
       pItem->regReturn = ++pParse->nMem;
+      topAddr = sqlite3VdbeAddOp2(v, OP_Integer, 0, pItem->regReturn);
+      pItem->addrFillSub = topAddr+1;
+      VdbeNoopComment((v, "materialize %s", pItem->pTab->zName));
       if( pItem->isCorrelated==0 && pParse->pTriggerTab==0 ){
         /* If the subquery is no correlated and if we are not inside of
         ** a trigger, then we only need to compute the value of the subquery
@@ -3847,9 +3850,10 @@ int sqlite3Select(
       sqlite3Select(pParse, pSub, &dest);
       pItem->pTab->nRowEst = (unsigned)pSub->nSelectRow;
       if( onceAddr ) sqlite3VdbeJumpHere(v, onceAddr);
-      sqlite3VdbeAddOp1(v, OP_Return, pItem->regReturn);
-      sqlite3VdbeJumpHere(v, topAddr);
-      sqlite3VdbeAddOp2(v, OP_Gosub, pItem->regReturn, topAddr+1);
+      retAddr = sqlite3VdbeAddOp1(v, OP_Return, pItem->regReturn);
+      VdbeComment((v, "end %s", pItem->pTab->zName));
+      sqlite3VdbeChangeP1(v, topAddr, retAddr);
+
     }
     if( /*pParse->nErr ||*/ db->mallocFailed ){
       goto select_end;
