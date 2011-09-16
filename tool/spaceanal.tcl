@@ -4,11 +4,14 @@
 #
 
 if {[catch {
+if {![info exists argv0]} {
+  set argv0 [file rootname [file tail [info nameofexecutable]]]
+}
 
 # Get the name of the database to analyze
 #
 #set argv $argv0
-if {[llength $argv]!=1} {
+if {![info exists argv] || [llength $argv]!=1} {
   puts stderr "Usage: $argv0 database-name"
   exit 1
 }
@@ -28,12 +31,12 @@ if {[file size $file_to_analyze]<512} {
 
 # Open the database
 #
-sqlite3 db [lindex $argv 0]
+sqlite3 db $file_to_analyze
 register_dbstat_vtab db
 
 set pageSize [db one {PRAGMA page_size}]
 
-#set DB [btree_open [lindex $argv 0] 1000 0]
+#set DB [btree_open $file_to_analyze 1000 0]
 
 # In-memory database for collecting statistics. This script loops through
 # the tables and indices in the database being analyzed, adding a row for each

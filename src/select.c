@@ -89,6 +89,8 @@ Select *sqlite3SelectNew(
     clearSelect(db, pNew);
     if( pNew!=&standin ) sqlite3DbFree(db, pNew);
     pNew = 0;
+  }else{
+    assert( pNew->pSrc!=0 || pParse->nErr>0 );
   }
   return pNew;
 }
@@ -3801,7 +3803,11 @@ int sqlite3Select(
     Select *pSub = pItem->pSelect;
     int isAggSub;
 
-    if( pSub==0 || pItem->isPopulated ) continue;
+    if( pSub==0 ) continue;
+    if( pItem->addrFillSub ){
+      sqlite3VdbeAddOp2(v, OP_Gosub, pItem->regReturn, pItem->addrFillSub);
+      continue;
+    }
 
     /* Increment Parse.nHeight by the height of the largest expression
     ** tree refered to by this, the parent select. The child select
@@ -3812,21 +3818,44 @@ int sqlite3Select(
     */
     pParse->nHeight += sqlite3SelectExprHeight(p);
 
-    /* Check to see if the subquery can be absorbed into the parent. */
     isAggSub = (pSub->selFlags & SF_Aggregate)!=0;
     if( flattenSubquery(pParse, p, i, isAgg, isAggSub) ){
+      /* This subquery can be absorbed into its parent. */
       if( isAggSub ){
         isAgg = 1;
         p->selFlags |= SF_Aggregate;
       }
       i = -1;
     }else{
+      /* Generate a subroutine that will fill an ephemeral table with
+      ** the content of this subquery.  pItem->addrFillSub will point
+      ** to the address of the generated subroutine.  pItem->regReturn
+      ** is a register allocated to hold the subroutine return address
+      */
+      int topAddr;
+      int onceAddr = 0;
+      int retAddr;
+      assert( pItem->addrFillSub==0 );
+      pItem->regReturn = ++pParse->nMem;
+      topAddr = sqlite3VdbeAddOp2(v, OP_Integer, 0, pItem->regReturn);
+      pItem->addrFillSub = topAddr+1;
+      VdbeNoopComment((v, "materialize %s", pItem->pTab->zName));
+      if( pItem->isCorrelated==0 && pParse->pTriggerTab==0 ){
+        /* If the subquery is no correlated and if we are not inside of
+        ** a trigger, then we only need to compute the value of the subquery
+        ** once. */
+        int regOnce = ++pParse->nMem;
+        onceAddr = sqlite3VdbeAddOp1(v, OP_Once, regOnce);
+      }
       sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
-      assert( pItem->isPopulated==0 );
       explainSetInteger(pItem->iSelectId, (u8)pParse->iNextSelectId);
       sqlite3Select(pParse, pSub, &dest);
-      pItem->isPopulated = 1;
       pItem->pTab->nRowEst = (unsigned)pSub->nSelectRow;
+      if( onceAddr ) sqlite3VdbeJumpHere(v, onceAddr);
+      retAddr = sqlite3VdbeAddOp1(v, OP_Return, pItem->regReturn);
+      VdbeComment((v, "end %s", pItem->pTab->zName));
+      sqlite3VdbeChangeP1(v, topAddr, retAddr);
+
     }
     if( /*pParse->nErr ||*/ db->mallocFailed ){
       goto select_end;
@@ -3967,7 +3996,7 @@ int sqlite3Select(
     ** into an OP_Noop.
     */
     if( addrSortIndex>=0 && pOrderBy==0 ){
-      sqlite3VdbeChangeToNoop(v, addrSortIndex, 1);
+      sqlite3VdbeChangeToNoop(v, addrSortIndex);
       p->addrOpenEphm[2] = -1;
     }
 
@@ -4250,7 +4279,7 @@ int sqlite3Select(
         sqlite3VdbeAddOp2(v, OP_SorterNext, sAggInfo.sortingIdx, addrTopOfLoop);
       }else{
         sqlite3WhereEnd(pWInfo);
-        sqlite3VdbeChangeToNoop(v, addrSortingIdx, 1);
+        sqlite3VdbeChangeToNoop(v, addrSortingIdx);
       }
 
       /* Output the final row of result
