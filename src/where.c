@@ -1994,8 +1994,7 @@ static void constructAutomaticIndex(
   v = pParse->pVdbe;
   assert( v!=0 );
   regIsInit = ++pParse->nMem;
-  addrInit = sqlite3VdbeAddOp1(v, OP_If, regIsInit);
-  sqlite3VdbeAddOp2(v, OP_Integer, 1, regIsInit);
+  addrInit = sqlite3VdbeAddOp1(v, OP_Once, regIsInit);
 
   /* Count the number of columns that will be added to the index
   ** and used to match WHERE clause constraints */
