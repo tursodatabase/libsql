@@ -2031,6 +2031,16 @@ case OP_BitNot: {             /* same as TK_BITNOT, in1, out2 */
   break;
 }
 
+/* Opcode: Once P1 P2 * * *
+**
+** Jump to P2 if the value in register P1 is a not null or zero.  If
+** the value is NULL or zero, fall through and change the P1 register
+** to an integer 1.
+**
+** When P1 is not used otherwise in a program, this opcode falls through
+** once and jumps on all subsequent invocations.  It is the equivalent
+** of "OP_If P1 P2", followed by "OP_Integer 1 P1".
+*/
 /* Opcode: If P1 P2 P3 * *
 **
 ** Jump to P2 if the value in register P1 is true.  The value
@@ -2043,6 +2053,7 @@ case OP_BitNot: {             /* same as TK_BITNOT, in1, out2 */
 ** is considered true if it has a numeric value of zero.  If the value
 ** in P1 is NULL then take the jump if P3 is true.
 */
+case OP_Once:               /* jump, in1 */
 case OP_If:                 /* jump, in1 */
 case OP_IfNot: {            /* jump, in1 */
   int c;
@@ -2059,6 +2070,12 @@ case OP_IfNot: {            /* jump, in1 */
   }
   if( c ){
     pc = pOp->p2-1;
+  }else if( pOp->opcode==OP_Once ){
+    assert( (pIn1->flags & (MEM_Agg|MEM_Dyn|MEM_RowSet|MEM_Frame))==0 );
+    memAboutToChange(p, pIn1);
+    pIn1->flags = MEM_Int;
+    pIn1->u.i = 1;
+    REGISTER_TRACE(pOp->p1, pIn1);
   }
   break;
 }
