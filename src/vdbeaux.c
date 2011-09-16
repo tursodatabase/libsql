@@ -670,18 +670,15 @@ void sqlite3VdbeLinkSubProgram(Vdbe *pVdbe, SubProgram *p){
 }
 
 /*
-** Change N opcodes starting at addr to No-ops.
+** Change the opcode at addr into OP_Noop
 */
-void sqlite3VdbeChangeToNoop(Vdbe *p, int addr, int N){
+void sqlite3VdbeChangeToNoop(Vdbe *p, int addr){
   if( p->aOp ){
     VdbeOp *pOp = &p->aOp[addr];
     sqlite3 *db = p->db;
-    while( N-- ){
-      freeP4(db, pOp->p4type, pOp->p4.p);
-      memset(pOp, 0, sizeof(pOp[0]));
-      pOp->opcode = OP_Noop;
-      pOp++;
-    }
+    freeP4(db, pOp->p4type, pOp->p4.p);
+    memset(pOp, 0, sizeof(pOp[0]));
+    pOp->opcode = OP_Noop;
   }
 }
 
@@ -837,7 +834,7 @@ void sqlite3VdbeNoopComment(Vdbe *p, const char *zFormat, ...){
 VdbeOp *sqlite3VdbeGetOp(Vdbe *p, int addr){
   /* C89 specifies that the constant "dummy" will be initialized to all
   ** zeros, which is correct.  MSVC generates a warning, nevertheless. */
-  static const VdbeOp dummy;  /* Ignore the MSVC warning about no initializer */
+  static VdbeOp dummy;  /* Ignore the MSVC warning about no initializer */
   assert( p->magic==VDBE_MAGIC_INIT );
   if( addr<0 ){
 #ifdef SQLITE_OMIT_TRACE
