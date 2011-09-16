@@ -1,9 +1,9 @@
-C Silence\sharmless\scompiler\swarning\sabout\sredefinition\sof\sthe\s_CRT_SECURE_NO_WARNINGS\smacro\sby\sshell.c.
-D 2011-09-16T20:16:36.109
+C Fix\s#if's\sin\swinSync\sto\savoid\scompiler\swarnings\sabout\sunused\slocal\svariables.\s\sAlso,\supdate\sversion\snumbers\sin\sthe\sMSVC\smakefile.
+D 2011-09-16T20:43:44.526
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d314143fa6be24828021d3f583ad37d9afdce505
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 25da409ce0c7799e57f48a729a8e153b23027adc
+F Makefile.msc b5e917439d5ed42364173d1648aae1d418e323ea
 F Makefile.vxworks 1deb39c8bb047296c30161ffa10c1b5423e632f9
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION f724de7326e87b7f3b0a55f16ef4b4d993680d54
@@ -166,7 +166,7 @@ F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 10e0c4dcdbec8d4189890fdf3e71b32efae194e3
-F src/os_win.c 33b7b7b48939af5cef2305f5ded19d45c025e2c7
+F src/os_win.c 0fc0f46c94b0385a940b0ee32992a833019a5985
 F src/pager.c 5545863e4e246e1744cfb6993821c6e4b63ffb64
 F src/pager.h 6bea8d1949db33768de1c5b4133b267b40845f8b
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -962,7 +962,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P cf51ef8ab8a610ddf64f66970dd689fe1df405b8
-R 82ae90fbdac03554dc4ad676e24ddb3c
+P 690220717f3d92d4fb7bd72226fc8d5f38f5fbcf
+R 8db2e7132a1227a7b1d23ed92e216603
 U mistachkin
-Z 2ae026d8ea384ca85214e134ca7c45bb
+Z 593341d840a3a381b39866ac10a16fed
