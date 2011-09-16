@@ -1,5 +1,5 @@
-C Fix\s#if's\sin\swinSync\sto\savoid\scompiler\swarnings\sabout\sunused\slocal\svariables.\s\sAlso,\supdate\sversion\snumbers\sin\sthe\sMSVC\smakefile.
-D 2011-09-16T20:43:44.526
+C Fix\sa\sproblem\swith\sSQLITE_OMIT_TRACE\sthat\swas\sintroduced\sby\sthe\srecent\nOP_Once\schange.
+D 2011-09-16T22:10:57.198
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d314143fa6be24828021d3f583ad37d9afdce505
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -133,7 +133,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c e3132ec65240b2e2f3d50831021eac387f27584d
 F src/date.c a3c6842bad7ae632281811de112a8ba63ff08ab3
 F src/delete.c ff68e5ef23aee08c0ff528f699a19397ed8bbed8
-F src/expr.c fd54c517869919c9b0b11dcadd43c66540ffa682
+F src/expr.c f4dcaeb8252c4b16fcdc245660f70ed366bc6cdd
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 9f00ea98f6b360d477b5a78b5b59a1fbde82431c
 F src/func.c 59bb046d7e3df1ab512ac339ccb0a6f996a17cb7
@@ -962,7 +962,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 690220717f3d92d4fb7bd72226fc8d5f38f5fbcf
-R 8db2e7132a1227a7b1d23ed92e216603
-U mistachkin
-Z 593341d840a3a381b39866ac10a16fed
+P 2e66e41457422449ac5918b16be443e737dfb149
+R fc961be987415e6cdb50c0924196d190
+U drh
+Z a161e546ae0e6f16b9b8fc71b39898c3
