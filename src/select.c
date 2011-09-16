@@ -3831,7 +3831,7 @@ int sqlite3Select(
       ** is a register allocated to hold the subroutine return address
       */
       int topAddr = sqlite3VdbeAddOp0(v, OP_Goto);
-      int regOnce = 0;
+      int onceAddr = 0;
       assert( pItem->addrFillSub==0 );
       pItem->addrFillSub = topAddr+1;
       pItem->regReturn = ++pParse->nMem;
@@ -3839,15 +3839,14 @@ int sqlite3Select(
         /* If the subquery is no correlated and if we are not inside of
         ** a trigger, then we only need to compute the value of the subquery
         ** once. */
-        regOnce = ++pParse->nMem;
-        sqlite3VdbeAddOp1(v, OP_If, regOnce);
-        sqlite3VdbeAddOp2(v, OP_Integer, 1, regOnce);
+        int regOnce = ++pParse->nMem;
+        onceAddr = sqlite3VdbeAddOp1(v, OP_Once, regOnce);
       }
       sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
       explainSetInteger(pItem->iSelectId, (u8)pParse->iNextSelectId);
       sqlite3Select(pParse, pSub, &dest);
       pItem->pTab->nRowEst = (unsigned)pSub->nSelectRow;
-      if( regOnce ) sqlite3VdbeJumpHere(v, topAddr+1);
+      if( onceAddr ) sqlite3VdbeJumpHere(v, onceAddr);
       sqlite3VdbeAddOp1(v, OP_Return, pItem->regReturn);
       sqlite3VdbeJumpHere(v, topAddr);
       sqlite3VdbeAddOp2(v, OP_Gosub, pItem->regReturn, topAddr+1);
@@ -3991,7 +3990,7 @@ int sqlite3Select(
     ** into an OP_Noop.
     */
     if( addrSortIndex>=0 && pOrderBy==0 ){
-      sqlite3VdbeChangeToNoop(v, addrSortIndex, 1);
+      sqlite3VdbeChangeToNoop(v, addrSortIndex);
       p->addrOpenEphm[2] = -1;
     }
 
@@ -4274,7 +4273,7 @@ int sqlite3Select(
         sqlite3VdbeAddOp2(v, OP_SorterNext, sAggInfo.sortingIdx, addrTopOfLoop);
       }else{
         sqlite3WhereEnd(pWInfo);
-        sqlite3VdbeChangeToNoop(v, addrSortingIdx, 1);
+        sqlite3VdbeChangeToNoop(v, addrSortingIdx);
       }
 
       /* Output the final row of result
