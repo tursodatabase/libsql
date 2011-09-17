@@ -1,5 +1,8 @@
-C Merge\sthe\slatest\strunk\sfixes\sinto\sthe\sapple-osx\sbranch.
-D 2011-09-16T19:36:42.844
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Remove\sa\scouple\sof\scomments\sthat\swere\scausing\sproblems\sfor\sthe\namalgamation\sgenerator\sscript.
+D 2011-09-17T18:56:19.259
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 55bbee3ada084d4aa4dab9e1e0d90a21aab8bbcf
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +171,7 @@ F src/os.c af614089eb9328f3a6a8374d2e4c12ff2761988b
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c fed168d5299f156532d98d88b9dee601611bfe6e
+F src/os_unix.c 6fdce4067dc5796b358bd9cf55cf5dd62d580945
 F src/os_win.c 33b7b7b48939af5cef2305f5ded19d45c025e2c7
 F src/pager.c e36f6225d5530898aae33667143c36d676f64508
 F src/pager.h 6bea8d1949db33768de1c5b4133b267b40845f8b
@@ -967,7 +970,14 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 2456b4d0d2522dd2541146031347bc5e51f2036f cf51ef8ab8a610ddf64f66970dd689fe1df405b8
-R 0b04053dc847e693de750af3e7d35871
+P 070bf203bb7cd59d69c10b29d7d9374e0361a47a
+R c3eb3f9a015c2395c8dba0f7f2156e1e
 U drh
-Z 9648d759d7257c88ac73ed1bf658e69a
+Z 152feeb50a50dacd1d2556041d439a2a
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (Darwin)
+
+iEYEARECAAYFAk507VMACgkQoxKgR168RlEAVgCfXvTVgVXWPGlRVI4ZDt0OzYbj
+ynUAn1Ffg/K6d4Qv0fXu9IMMlWlJmUNu
+=LZzm
+-----END PGP SIGNATURE-----

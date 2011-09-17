@@ -304,8 +304,8 @@ struct unixFile {
 
 #if SQLITE_ENABLE_SUPERLOCK
 #include "sqlite3.h"
-#include <string.h>               /* memset(), strlen() */
-#include <assert.h>               /* assert() */
+#include <string.h>
+#include <assert.h>
 
 /*
 ** A structure to collect a busy-handler callback and argument and a count
