@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sfile\sstructure\sis\szeroed\sprior\sto\scalling\sthe\sVFS\sto\sopen\sa\sfile.
-D 2011-09-17T15:34:50.929
+C Add\sa\snew\sscript\sto\sbuild\san\samalgamation\sthat\somits\sFTS3/4\sand\sRTREE.
+D 2011-09-17T17:29:20.058
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d314143fa6be24828021d3f583ad37d9afdce505
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -933,6 +933,7 @@ F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkkeywordhash.c d2e6b4a5965e23afb80fbe74bb54648cd371f309
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
+F tool/mksqlite3c-noext.tcl 105023aa86f696a74b1d6a4929d1e1c3baf9471c
 F tool/mksqlite3c.tcl 9fbac513cd9d5ac95ad55630f49bb16c5347ab75
 F tool/mksqlite3h.tcl 78013ad79a5e492e5f764f3c7a8ef834255061f8
 F tool/mksqlite3internalh.tcl 7b43894e21bcb1bb39e11547ce7e38a063357e87
@@ -962,7 +963,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 96be3f7b59b3ed4703b907e29db629df34b2b56f
-R 77ce1bce7b62d392fc7c2060d8f391e0
-U mistachkin
-Z b6b2d3e2f1bcf3c98cc7b58c3993322a
+P 29c4d0dd43d41650e54824afd70dd40f1b91cc86
+R e9f251e9ab673855366d66b9e88d41ff
+U drh
+Z 203ac8ce95ad01a7dde042f0d58501cc
