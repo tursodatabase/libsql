@@ -1574,11 +1574,10 @@ int sqlite3CodeSubselect(
   int rMayHaveNull,       /* Register that records whether NULLs exist in RHS */
   int isRowid             /* If true, LHS of IN operator is a rowid */
 ){
-  int testAddr = 0;                       /* One-time test address */
+  int testAddr = -1;                      /* One-time test address */
   int rReg = 0;                           /* Register storing resulting */
   Vdbe *v = sqlite3GetVdbe(pParse);
   if( NEVER(v==0) ) return 0;
-  assert( sqlite3VdbeCurrentAddr(v)>0 );
   sqlite3ExprCachePush(pParse);
 
   /* This code must be run in its entirety every time it is encountered
@@ -1594,13 +1593,12 @@ int sqlite3CodeSubselect(
   if( !ExprHasAnyProperty(pExpr, EP_VarSelect) && !pParse->pTriggerTab ){
     int mem = ++pParse->nMem;
     testAddr = sqlite3VdbeAddOp1(v, OP_Once, mem);
-    assert( testAddr>0 || pParse->db->mallocFailed );
   }
 
 #ifndef SQLITE_OMIT_EXPLAIN
   if( pParse->explain==2 ){
     char *zMsg = sqlite3MPrintf(
-        pParse->db, "EXECUTE %s%s SUBQUERY %d", testAddr?"":"CORRELATED ",
+        pParse->db, "EXECUTE %s%s SUBQUERY %d", testAddr>=0?"":"CORRELATED ",
         pExpr->op==TK_IN?"LIST":"SCALAR", pParse->iNextSelectId
     );
     sqlite3VdbeAddOp4(v, OP_Explain, pParse->iSelectId, 0, 0, zMsg, P4_DYNAMIC);
@@ -1692,9 +1690,9 @@ int sqlite3CodeSubselect(
           ** this code only executes once.  Because for a non-constant
           ** expression we need to rerun this code each time.
           */
-          if( testAddr && !sqlite3ExprIsConstant(pE2) ){
+          if( testAddr>=0 && !sqlite3ExprIsConstant(pE2) ){
             sqlite3VdbeChangeToNoop(v, testAddr);
-            testAddr = 0;
+            testAddr = -1;
           }
 
           /* Evaluate the expression and insert it into the temp table */
@@ -1763,7 +1761,7 @@ int sqlite3CodeSubselect(
     }
   }
 
-  if( testAddr ){
+  if( testAddr>=0 ){
     sqlite3VdbeJumpHere(v, testAddr);
   }
   sqlite3ExprCachePop(pParse, 1);
