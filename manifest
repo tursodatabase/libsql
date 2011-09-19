@@ -1,9 +1,9 @@
-C Merge\sthe\slatest\strunk\schanges\sinto\sthe\ssessions\sbranch.
-D 2011-09-16T19:40:24.719
+C Merge\sin\sall\strunk\schanges\sthrough\sthe\sversion\s3.7.8\srelease.
+D 2011-09-19T20:28:07.777
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d314143fa6be24828021d3f583ad37d9afdce505
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 25da409ce0c7799e57f48a729a8e153b23027adc
+F Makefile.msc b5e917439d5ed42364173d1648aae1d418e323ea
 F Makefile.vxworks 1deb39c8bb047296c30161ffa10c1b5423e632f9
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION f724de7326e87b7f3b0a55f16ef4b4d993680d54
@@ -145,11 +145,11 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c e3132ec65240b2e2f3d50831021eac387f27584d
 F src/date.c a3c6842bad7ae632281811de112a8ba63ff08ab3
 F src/delete.c 614d6e012aa5b624e78f3b556243497825de196b
-F src/expr.c fd54c517869919c9b0b11dcadd43c66540ffa682
+F src/expr.c f4dcaeb8252c4b16fcdc245660f70ed366bc6cdd
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 9f00ea98f6b360d477b5a78b5b59a1fbde82431c
 F src/func.c 59bb046d7e3df1ab512ac339ccb0a6f996a17cb7
-F src/global.c c70a46f28680f8d7c097dbc0430ccf3b932e90b0
+F src/global.c e230227de13601714b29f9363028514aada5ae2f
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
@@ -173,14 +173,14 @@ F src/mutex_os2.c 882d735098c07c8c6a5472b8dd66e19675fe117f
 F src/mutex_unix.c b4f4e923bb8de93ec3f251fadb50855f23df9579
 F src/mutex_w32.c 5e54f3ba275bcb5d00248b8c23107df2e2f73e33
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
-F src/os.c fcc717427a80b2ed225373f07b642dc1aad7490b
+F src/os.c 3b3f69c34be7f998f5ea6bd46a2fe8a2b7fa8f70
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 10e0c4dcdbec8d4189890fdf3e71b32efae194e3
-F src/os_win.c 33b7b7b48939af5cef2305f5ded19d45c025e2c7
-F src/pager.c 5545863e4e246e1744cfb6993821c6e4b63ffb64
-F src/pager.h 6bea8d1949db33768de1c5b4133b267b40845f8b
+F src/os_win.c 0fc0f46c94b0385a940b0ee32992a833019a5985
+F src/pager.c 15d10371e2d560b68870a9ccec022ad8f01e70a2
+F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 49e718c095810c6b3334e3a6d89970aceaddefce
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
@@ -192,7 +192,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 36368f44569208fa074e61f4dd0b6c4fb60ca2b4
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c d9b7d20b0365f80761846f00ef3638d4b33eeaf2
-F src/shell.c bbe7818ff5bc8614105ceb81ad67b8bdc0b671dd
+F src/shell.c 13fe2aeddc3cc90d6a273831d1f63736d1596f81
 F src/sqlite.h.in 355493ac9492746a0bbd17a4fd40911aa89b5a3a
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
 F src/sqliteInt.h 2c05edf4b8155bf4ef0775a9c30e4b57d7527af3
@@ -946,6 +946,7 @@ F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkkeywordhash.c d2e6b4a5965e23afb80fbe74bb54648cd371f309
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
+F tool/mksqlite3c-noext.tcl 105023aa86f696a74b1d6a4929d1e1c3baf9471c
 F tool/mksqlite3c.tcl 9fbac513cd9d5ac95ad55630f49bb16c5347ab75
 F tool/mksqlite3h.tcl 78013ad79a5e492e5f764f3c7a8ef834255061f8
 F tool/mksqlite3internalh.tcl 7b43894e21bcb1bb39e11547ce7e38a063357e87
@@ -975,7 +976,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P c00e45ede7cbf71a3a6d1ccad0b9275010ca8493 cf51ef8ab8a610ddf64f66970dd689fe1df405b8
-R 8f9c10e95fc4061078755c289f7e07d0
+P 5efb02949dbeabccfe1d848d275529f03f3dfc84 3e0da808d2f5b4d12046e05980ca04578f581177
+R 29a8a873fd8274eaac6f4c279a0f93a3
 U drh
-Z 423f374ece1297d22d3fad8417996b4a
+Z cf555a868961f047f28c626087f81d1a
