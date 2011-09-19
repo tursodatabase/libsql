@@ -1,12 +1,9 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Remove\sa\scouple\sof\scomments\sthat\swere\scausing\sproblems\sfor\sthe\namalgamation\sgenerator\sscript.
-D 2011-09-17T18:56:19.259
+C Merge\sin\sall\strunk\schanges\sthrough\sthe\s3.7.8\srelease.
+D 2011-09-19T20:32:36.507
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 55bbee3ada084d4aa4dab9e1e0d90a21aab8bbcf
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 25da409ce0c7799e57f48a729a8e153b23027adc
+F Makefile.msc b5e917439d5ed42364173d1648aae1d418e323ea
 F Makefile.vxworks 1deb39c8bb047296c30161ffa10c1b5423e632f9
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION f724de7326e87b7f3b0a55f16ef4b4d993680d54
@@ -139,11 +136,11 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c e3132ec65240b2e2f3d50831021eac387f27584d
 F src/date.c a3c6842bad7ae632281811de112a8ba63ff08ab3
 F src/delete.c ff68e5ef23aee08c0ff528f699a19397ed8bbed8
-F src/expr.c fd54c517869919c9b0b11dcadd43c66540ffa682
+F src/expr.c f4dcaeb8252c4b16fcdc245660f70ed366bc6cdd
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 9f00ea98f6b360d477b5a78b5b59a1fbde82431c
 F src/func.c 1b9d471b632d8529e0f86b7bd2b918dcc2cb1097
-F src/global.c c70a46f28680f8d7c097dbc0430ccf3b932e90b0
+F src/global.c e230227de13601714b29f9363028514aada5ae2f
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
@@ -167,14 +164,14 @@ F src/mutex_os2.c 882d735098c07c8c6a5472b8dd66e19675fe117f
 F src/mutex_unix.c b4f4e923bb8de93ec3f251fadb50855f23df9579
 F src/mutex_w32.c 5e54f3ba275bcb5d00248b8c23107df2e2f73e33
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
-F src/os.c af614089eb9328f3a6a8374d2e4c12ff2761988b
+F src/os.c 0668c16ae226cd58cef8240e5edbd0c93248739e
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 6fdce4067dc5796b358bd9cf55cf5dd62d580945
-F src/os_win.c 33b7b7b48939af5cef2305f5ded19d45c025e2c7
-F src/pager.c e36f6225d5530898aae33667143c36d676f64508
-F src/pager.h 6bea8d1949db33768de1c5b4133b267b40845f8b
+F src/os_win.c 0fc0f46c94b0385a940b0ee32992a833019a5985
+F src/pager.c 984dc40d797d8d822d6ce1d184287600d94a289f
+F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 49e718c095810c6b3334e3a6d89970aceaddefce
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
@@ -186,7 +183,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 36368f44569208fa074e61f4dd0b6c4fb60ca2b4
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c f3971442d59d06801ac3c712f2851ece8d1cdead
-F src/shell.c bbe7818ff5bc8614105ceb81ad67b8bdc0b671dd
+F src/shell.c 13fe2aeddc3cc90d6a273831d1f63736d1596f81
 F src/sqlite.h.in 175065018323ca082092f92873e074647d00bec2
 F src/sqlite3_private.h 1d18557420cb0cc51ff31ec0a3fcce11e5cd6f5a
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
@@ -941,6 +938,7 @@ F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkkeywordhash.c d2e6b4a5965e23afb80fbe74bb54648cd371f309
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
+F tool/mksqlite3c-noext.tcl 105023aa86f696a74b1d6a4929d1e1c3baf9471c
 F tool/mksqlite3c.tcl 90f243ad9c76f814716452a4867a6a3befdb721a
 F tool/mksqlite3h.tcl 78013ad79a5e492e5f764f3c7a8ef834255061f8
 F tool/mksqlite3internalh.tcl 7b43894e21bcb1bb39e11547ce7e38a063357e87
@@ -970,14 +968,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 070bf203bb7cd59d69c10b29d7d9374e0361a47a
-R c3eb3f9a015c2395c8dba0f7f2156e1e
+P ffed86bf969b98d196ac50bb5e5faddecab4fc59 3e0da808d2f5b4d12046e05980ca04578f581177
+R fab0c6c716ebe505f8c308159e4b4eab
 U drh
-Z 152feeb50a50dacd1d2556041d439a2a
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (Darwin)
-
-iEYEARECAAYFAk507VMACgkQoxKgR168RlEAVgCfXvTVgVXWPGlRVI4ZDt0OzYbj
-ynUAn1Ffg/K6d4Qv0fXu9IMMlWlJmUNu
-=LZzm
------END PGP SIGNATURE-----
+Z 7d1fe25483dc7359b7f468acf5aa09ab
