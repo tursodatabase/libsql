@@ -620,7 +620,6 @@ struct Pager {
   u8 tempFile;                /* zFilename is a temporary file */
   u8 readOnly;                /* True for a read-only database */
   u8 memDb;                   /* True to inhibit all file I/O */
-  u8 hasSeenStress;           /* pagerStress() called one or more times */
 
   /**************************************************************************
   ** The following block contains those class members that change during
@@ -4175,7 +4174,6 @@ static int pagerStress(void *p, PgHdr *pPg){
   ** be called in the error state.  Nevertheless, we include a NEVER()
   ** test for the error state as a safeguard against future changes.
   */
-  pPager->hasSeenStress = 1;
   if( NEVER(pPager->errCode) ) return SQLITE_OK;
   if( pPager->doNotSpill ) return SQLITE_OK;
   if( pPager->doNotSyncSpill && (pPg->flags & PGHDR_NEED_SYNC)!=0 ){
