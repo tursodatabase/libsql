@@ -1,5 +1,5 @@
-C Remove\sa\sstray\smerge-sort\srelated\schange\sfrom\spager.c\sand\spager.h.
-D 2011-09-19T11:57:34.680
+C Increase\sthe\sdefault\slookaside\scache\sline\ssize\sfrom\s100\sto\s128\sbytes.
+D 2011-09-19T13:01:53.066
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d314143fa6be24828021d3f583ad37d9afdce505
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -137,7 +137,7 @@ F src/expr.c f4dcaeb8252c4b16fcdc245660f70ed366bc6cdd
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 9f00ea98f6b360d477b5a78b5b59a1fbde82431c
 F src/func.c 59bb046d7e3df1ab512ac339ccb0a6f996a17cb7
-F src/global.c c70a46f28680f8d7c097dbc0430ccf3b932e90b0
+F src/global.c e230227de13601714b29f9363028514aada5ae2f
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
@@ -963,7 +963,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P b31a7d7db9040d8eedaf1ecd89ea0033f579d0f1
-R 1c8ffe1a542693449ee741dcf7775b98
-U dan
-Z f53b7375cccfa7037a6a242074ab7937
+P 69823ed163049d6fa1e24a9810c3c99f2a8fdd46
+R 0a2782a80f1b08369498ecce1d7a7aa8
+U drh
+Z 32bc5c0badd95a130ff9fd9bc53942e8
