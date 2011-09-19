@@ -156,7 +156,7 @@
 ** assertion will be triggered.
 **
 ** (Historical note:  There used to be several other options, but we've
-** pared it down to just these two.)
+** pared it down to just these three.)
 **
 ** If none of the above are defined, then set SQLITE_SYSTEM_MALLOC as
 ** the default.

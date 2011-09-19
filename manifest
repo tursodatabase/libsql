@@ -1,5 +1,5 @@
-C Version\s3.7.8\srelease\scandidate
-D 2011-09-19T14:49:19.255
+C Minor\scomment\schange\sin\sthe\sdescription\sof\sthe\sdifferent\smemory\sallocator\noptions.\s\sNo\schanges\sto\scode.
+D 2011-09-19T20:56:59.410
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d314143fa6be24828021d3f583ad37d9afdce505
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -183,7 +183,7 @@ F src/select.c d9b7d20b0365f80761846f00ef3638d4b33eeaf2
 F src/shell.c 13fe2aeddc3cc90d6a273831d1f63736d1596f81
 F src/sqlite.h.in 0a6c9c23337fd1352c5c75a613ff9533aa7d91cb
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
-F src/sqliteInt.h feb4f2b212fe36bbd951e44d2490c6aacf02f689
+F src/sqliteInt.h 76d81cd9da0618b231398bfcf90556e971972fca
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -963,7 +963,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P db019465036171fcad31181bec7d6ac185f50430
-R 0a2782a80f1b08369498ecce1d7a7aa8
+P 3e0da808d2f5b4d12046e05980ca04578f581177
+R 8185767b36f8ee5089cf1856ba34ec13
 U drh
-Z 5f8dabab2a44903caad40fc4aceed901
+Z dd5a6c14bafead231702b31c9079bdda
