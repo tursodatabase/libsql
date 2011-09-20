@@ -218,6 +218,22 @@ int sqlite3_db_status(
       break;
     }
 
+    /*
+    ** Set *pCurrent to the total cache hits or misses encountered by the
+    ** database connection since the last reset. *pHighwater is always set to
+    ** zero.
+    */
+    case SQLITE_DBSTATUS_CACHE_HIT:
+    case SQLITE_DBSTATUS_CACHE_MISS: {
+      assert( SQLITE_DBSTATUS_CACHE_MISS==SQLITE_DBSTATUS_CACHE_HIT+1 );
+      *pHighwater = 0;
+      *pCurrent = db->aHitMiss[op-SQLITE_DBSTATUS_CACHE_HIT];
+      if( resetFlag ){
+        db->aHitMiss[op-SQLITE_DBSTATUS_CACHE_HIT] = 0;
+      }
+      break;
+    }
+
     default: {
       rc = SQLITE_ERROR;
     }

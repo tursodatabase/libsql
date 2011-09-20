@@ -518,6 +518,27 @@ static void importVtabErrMsg(Vdbe *p, sqlite3_vtab *pVtab){
   pVtab->zErrMsg = 0;
 }
 
+/*
+** Call sqlite3PagerCacheStats() on all database pagers used by the VM
+** passed as the first argument, incrementing *pnHit and *pnMiss for
+** with each call.
+*/
+static void vdbeCacheStats(Vdbe *p, int *pnHit, int *pnMiss){
+  int i;
+  yDbMask mask;
+  sqlite3 *db;
+  Db *aDb;
+  int nDb;
+  if( p->lockMask==0 ) return;  /* The common case */
+  db = p->db;
+  aDb = db->aDb;
+  nDb = db->nDb;
+  for(i=0, mask=1; i<nDb; i++, mask += mask){
+    if( i!=1 && (mask & p->lockMask)!=0 && ALWAYS(aDb[i].pBt!=0) ){
+      sqlite3PagerCacheStats(sqlite3BtreePager(aDb[i].pBt), pnHit, pnMiss);
+    }
+  }
+}
 
 /*
 ** Execute as much of a VDBE program as we can then return.
@@ -576,10 +597,13 @@ int sqlite3VdbeExec(
   u64 start;                 /* CPU clock count at start of opcode */
   int origPc;                /* Program counter at start of opcode */
 #endif
+  int nHit = 0;              /* Cache hits for this call */
+  int nMiss = 0;             /* Cache misses for this call */
   /*** INSERT STACK UNION HERE ***/
 
   assert( p->magic==VDBE_MAGIC_RUN );  /* sqlite3_step() verifies this */
   sqlite3VdbeEnter(p);
+  vdbeCacheStats(p, &nHit, &nMiss);
   if( p->rc==SQLITE_NOMEM ){
     /* This happens if a malloc() inside a call to sqlite3_column_text() or
     ** sqlite3_column_text16() failed.  */
@@ -6112,6 +6136,16 @@ vdbe_error_halt:
   ** top. */
 vdbe_return:
   db->lastRowid = lastRowid;
+
+  /* Update the statement and database cache hit/miss statistics. */
+  nHit  = -nHit;
+  nMiss = -nMiss;
+  vdbeCacheStats(p, &nHit, &nMiss);
+  p->aCounter[SQLITE_STMTSTATUS_CACHE_HIT-1] += nHit;
+  p->aCounter[SQLITE_STMTSTATUS_CACHE_MISS-1] += nMiss;
+  db->aHitMiss[0] += nHit;
+  db->aHitMiss[1] += nMiss;
+
   sqlite3VdbeLeave(p);
   return rc;
 

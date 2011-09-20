@@ -15,6 +15,7 @@
 
 #include "sqliteInt.h"
 #include "vdbeInt.h"
+#include "btreeInt.h"
 
 #ifndef SQLITE_OMIT_INCRBLOB
 
@@ -384,9 +385,17 @@ static int blobReadWrite(
     /* Call either BtreeData() or BtreePutData(). If SQLITE_ABORT is
     ** returned, clean-up the statement handle.
     */
+    Pager *pPager = p->pCsr->pBt->pPager;
+    int nHit = 0;
+    int nMiss = 0;
+
     assert( db == v->db );
     sqlite3BtreeEnterCursor(p->pCsr);
+    sqlite3PagerCacheStats(pPager, &nHit, &nMiss);
     rc = xCall(p->pCsr, iOffset+p->iOffset, n, z);
+    db->aHitMiss[0] -= nHit;
+    db->aHitMiss[1] -= nMiss;
+    sqlite3PagerCacheStats(pPager, &db->aHitMiss[0], &db->aHitMiss[1]);
     sqlite3BtreeLeaveCursor(p->pCsr);
     if( rc==SQLITE_ABORT ){
       sqlite3VdbeFinalize(v);

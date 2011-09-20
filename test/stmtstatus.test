@@ -1,0 +1,79 @@
+# 2011 September 20
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Tests for the sqlite3_stmt_status() function
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+set ::testprefix stmtstatus
+
+do_execsql_test 1.0 {
+  PRAGMA page_size = 1024;
+  PRAGMA auto_vacuum = 0;
+
+  CREATE TABLE t1(a PRIMARY KEY, b);
+  INSERT INTO t1 VALUES(1, randomblob(600));
+  INSERT INTO t1 VALUES(2, randomblob(600));
+  INSERT INTO t1 VALUES(3, randomblob(600));
+}
+
+proc stmt_hit_miss {stmt {reset 0}} {
+  list [sqlite3_stmt_status $stmt SQLITE_STMTSTATUS_CACHE_HIT $reset]  \
+       [sqlite3_stmt_status $stmt SQLITE_STMTSTATUS_CACHE_MISS $reset] 
+}
+
+do_test 1.1 {
+  db close
+  sqlite3 db test.db
+  expr {[file size test.db] / 1024}
+} 6
+
+do_test 1.2 {
+  set ::stmt [sqlite3_prepare_v2 db "SELECT b FROM t1 WHERE a=2" -1 dummy]
+  stmt_hit_miss $::stmt
+} {0 0}
+
+breakpoint
+do_test 1.3 { 
+  sqlite3_step $::stmt  
+  sqlite3_reset $::stmt  
+} SQLITE_OK
+do_test 1.4 { stmt_hit_miss $::stmt } {1 3}
+do_test 1.5 { 
+  sqlite3_step $::stmt  
+  sqlite3_reset $::stmt  
+} SQLITE_OK
+do_test 1.6 { stmt_hit_miss $::stmt } {5 3}
+do_test 1.7 { stmt_hit_miss $::stmt 0 } {5 3}
+do_test 1.8 { stmt_hit_miss $::stmt 1 } {5 3}
+do_test 1.9 { stmt_hit_miss $::stmt 0 } {0 0}
+do_test 1.10 { sqlite3_finalize $::stmt } SQLITE_OK
+
+do_test 1.11 { sqlite3_db_status db CACHE_HIT  0 } {0 6 0}
+do_test 1.12 { sqlite3_db_status db CACHE_MISS 0 } {0 3 0}
+do_test 1.13 { sqlite3_db_status db CACHE_HIT  1 } {0 6 0}
+do_test 1.14 { sqlite3_db_status db CACHE_MISS 1 } {0 3 0}
+do_test 1.15 { sqlite3_db_status db CACHE_HIT  0 } {0 0 0}
+do_test 1.16 { sqlite3_db_status db CACHE_MISS 0 } {0 0 0}
+
+do_test 1.17 {
+  set fd [db incrblob main t1 b 1]
+  set len [string length [read $fd]]
+  close $fd
+  set len
+} 600
+do_test 1.18 { sqlite3_db_status db CACHE_HIT  0 } {0 2 0}
+do_test 1.19 { sqlite3_db_status db CACHE_MISS 0 } {0 1 0}
+
+ 
+finish_test

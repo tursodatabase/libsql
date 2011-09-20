@@ -1325,11 +1325,13 @@ static int test_db_status(
     { "STMT_USED",           SQLITE_DBSTATUS_STMT_USED           },
     { "LOOKASIDE_HIT",       SQLITE_DBSTATUS_LOOKASIDE_HIT       },
     { "LOOKASIDE_MISS_SIZE", SQLITE_DBSTATUS_LOOKASIDE_MISS_SIZE },
-    { "LOOKASIDE_MISS_FULL", SQLITE_DBSTATUS_LOOKASIDE_MISS_FULL }
+    { "LOOKASIDE_MISS_FULL", SQLITE_DBSTATUS_LOOKASIDE_MISS_FULL },
+    { "CACHE_HIT",           SQLITE_DBSTATUS_CACHE_HIT           },
+    { "CACHE_MISS",          SQLITE_DBSTATUS_CACHE_MISS          }
   };
   Tcl_Obj *pResult;
   if( objc!=4 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "PARAMETER RESETFLAG");
+    Tcl_WrongNumArgs(interp, 1, objv, "DB PARAMETER RESETFLAG");
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
