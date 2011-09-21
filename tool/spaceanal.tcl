@@ -35,8 +35,7 @@ sqlite3 db $file_to_analyze
 register_dbstat_vtab db
 
 set pageSize [db one {PRAGMA page_size}]
-
-#set DB [btree_open $file_to_analyze 1000 0]
+db eval {SELECT count(*) FROM sqlite_master}
 
 # In-memory database for collecting statistics. This script loops through
 # the tables and indices in the database being analyzed, adding a row for each
@@ -66,11 +65,10 @@ mem eval $tabledef
 
 # Create a temporary "dbstat" virtual table.
 #
-db eval { 
-  CREATE VIRTUAL TABLE temp.stat USING dbstat;
-  CREATE TEMP TABLE dbstat AS SELECT * FROM temp.stat ORDER BY name, path;
-  DROP TABLE temp.stat;
-}
+db eval {CREATE VIRTUAL TABLE temp.stat USING dbstat}
+db eval {CREATE TEMP TABLE dbstat AS SELECT * FROM temp.stat
+         ORDER BY name, path}
+db eval {DROP TABLE temp.stat}
 
 proc isleaf {pagetype is_index} {
   return [expr {$pagetype == "leaf" || ($pagetype == "internal" && $is_index)}]
