@@ -1,7 +1,7 @@
-C Change\sthe\sway\sthe\ssqlite3_analyzer\sexecutable\sis\sbuilt.
-D 2011-09-21T16:43:07.588
+C Fix\sthe\ssqlite3_analyzer\starget\sin\sthe\sconfigure-generated\sMakefile.
+D 2011-09-21T17:04:21.754
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in d314143fa6be24828021d3f583ad37d9afdce505
+F Makefile.in c9d4753bb534cad66d3b46e6923707b865f18ef6
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc b5e917439d5ed42364173d1648aae1d418e323ea
 F Makefile.vxworks 1deb39c8bb047296c30161ffa10c1b5423e632f9
@@ -963,7 +963,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 36be31ff0af7f811fe2c6f7e26f058cffb7257e1
-R 8a6deb50b0588867fc20acf473ca1a9e
-U dan
-Z 506e969eac3211328e94965db47501bb
+P 05e3cced8a884e8bca6f208d2f09e335d3929eac
+R d2ae1eb53fb99dd2853da3eccd53ad17
+U drh
+Z 32d053563fdefa8a387e9c96c97f544b
