@@ -518,6 +518,16 @@ tclsqlite3:	$(TOP)/src/tclsqlite.c libsqlite3.a
 	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 -o tclsqlite3 \
 		$(TOP)/src/tclsqlite.c libsqlite3.a $(LIBTCL) $(THREADLIB)
 
+sqlite3_analyzer.c: sqlite3.c $(TOP)/src/test_stat.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl
+	echo "#define TCLSH 2" > $@
+	cat sqlite3.c $(TOP)/src/test_stat.c $(TOP)/src/tclsqlite.c >> $@
+	echo "static const char *tclsh_main_loop(void){" >> $@
+	echo "static const char *zMainloop = " >> $@
+	$(NAWK) -f $(TOP)/tool/tostr.awk $(TOP)/tool/spaceanal.tcl >> $@
+	echo "; return zMainloop; }" >> $@
+
+sqlite3_analyzer$(EXE): sqlite3_analyzer.c spaceanal_tcl.h
+	$(TCCX) $(TCL_FLAGS) sqlite3_analyzer.c -o $@ $(LIBTCL) $(THREADLIB) 
 
 # Rules to build the 'testfixture' application.
 #
@@ -559,16 +569,6 @@ threadtest3$(EXE): sqlite3.o $(TOP)/test/threadtest3.c $(TOP)/test/tt3_checkpoin
 
 threadtest: threadtest3$(EXE)
 	./threadtest3$(EXE)
-
-sqlite3_analyzer$(EXE):	$(TOP)/src/tclsqlite.c sqlite3.c $(TESTSRC) \
-			$(TOP)/tool/spaceanal.tcl
-	$(NAWK) -f $(TOP)/tool/tostr.awk $(TOP)/tool/spaceanal.tcl \
-		 >spaceanal_tcl.h
-	$(TCCX) $(TCL_FLAGS) -DTCLSH=2 $(TESTFIXTURE_FLAGS)                    \
-		-DSQLITE_TEST=1 -DSQLITE_PRIVATE=""                            \
-		$(TESTSRC) $(TOP)/src/tclsqlite.c sqlite3.c                    \
-		-o sqlite3_analyzer$(EXE)                                      \
-		$(LIBTCL) $(THREADLIB)
 
 TEST_EXTENSION = $(SHPREFIX)testloadext.$(SO)
 $(TEST_EXTENSION): $(TOP)/src/test_loadext.c

@@ -18,7 +18,9 @@
 ** for an example implementation.
 */
 
-#include "sqliteInt.h"
+#ifndef SQLITE_AMALGAMATION
+# include "sqliteInt.h"
+#endif
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 
@@ -568,7 +570,7 @@ int sqlite3_dbstat_register(sqlite3 *db){
 
 #endif
 
-#ifdef SQLITE_TEST
+#if defined(SQLITE_TEST) || TCLSH==2
 #include <tcl.h>
 
 static int test_dbstat(
@@ -604,4 +606,5 @@ int SqlitetestStat_Init(Tcl_Interp *interp){
   Tcl_CreateObjCommand(interp, "register_dbstat_vtab", test_dbstat, 0, 0);
   return TCL_OK;
 }
-#endif
+#endif /* if defined(SQLITE_TEST) || TCLSH==2 */
+
