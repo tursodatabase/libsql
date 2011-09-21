@@ -526,7 +526,7 @@ sqlite3_analyzer.c: sqlite3.c $(TOP)/src/test_stat.c $(TOP)/src/tclsqlite.c $(TO
 	$(NAWK) -f $(TOP)/tool/tostr.awk $(TOP)/tool/spaceanal.tcl >> $@
 	echo "; return zMainloop; }" >> $@
 
-sqlite3_analyzer$(EXE): sqlite3_analyzer.c spaceanal_tcl.h
+sqlite3_analyzer$(EXE): sqlite3_analyzer.c
 	$(TCCX) $(TCL_FLAGS) sqlite3_analyzer.c -o $@ $(LIBTCL) $(THREADLIB) 
 
 # Rules to build the 'testfixture' application.
