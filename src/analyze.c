@@ -23,10 +23,10 @@
 **
 ** Additional tables might be added in future releases of SQLite.
 ** The sqlite_stat2 table is not created or used unless the SQLite version
-** is between 3.6.18 and 3.7.7, inclusive, and unless SQLite is compiled
+** is between 3.6.18 and 3.7.8, inclusive, and unless SQLite is compiled
 ** with SQLITE_ENABLE_STAT2.  The sqlite_stat2 table is deprecated.
 ** The sqlite_stat2 table is superceded by sqlite_stat3, which is only
-** created and used by SQLite versions after 2011-08-09 with
+** created and used by SQLite versions 3.7.9 and later and with
 ** SQLITE_ENABLE_STAT3 defined.  The fucntionality of sqlite_stat3
 ** is a superset of sqlite_stat2.  
 **
@@ -59,7 +59,7 @@
 **
 ** The sqlite_stat2 is only created and is only used if SQLite is compiled
 ** with SQLITE_ENABLE_STAT2 and if the SQLite version number is between
-** 3.6.18 and 3.7.7.  The "stat2" table contains additional information
+** 3.6.18 and 3.7.8.  The "stat2" table contains additional information
 ** about the distribution of keys within an index.  The index is identified by
 ** the "idx" column and the "tbl" column is the name of the table to which
 ** the index belongs.  There are usually 10 rows in the sqlite_stat2
@@ -86,16 +86,28 @@
 ** The sqlite_stat3 is an enhancement to sqlite_stat2.  A new name is
 ** used to avoid compatibility problems.  
 **
-** The format of the sqlite_stat3 table is similar to the format for
-** the sqlite_stat2 table, with the following changes:  (1)
-** The sampleno column is removed.  (2) Every sample has nEq, nLt, and nDLt
-** columns which hold the approximate number of rows in the table that
-** exactly match the sample, the approximate number of rows with values
-** less than the sample, and the approximate number of distinct key values
-** less than the sample, respectively.  (3) The number of samples can vary 
-** from one table to the next; the sample count does not have to be 
-** exactly 10 as it is with sqlite_stat2.
+** The format of the sqlite_stat3 table is similar to the format of
+** the sqlite_stat2 table.  There are multiple entries for each index.
+** The idx column names the index and the tbl column is the table of the
+** index.  If the idx and tbl columns are the same, then the sample is
+** of the INTEGER PRIMARY KEY.  The sample column is a value taken from
+** the left-most column of the index.  The nEq column is the approximate
+** number of entires in the index whose left-most column exactly matches
+** the sample.  nLt is the approximate number of entires whose left-most
+** column is less than the same.  The nDLt column is the approximate
+** number of distinct left-most entries in the index that are less than
+** the same.
 **
+** Future versions of SQLite might change to store a string containing
+** multiple integers values in the nDLt column of sqlite_stat3.  The first
+** integer will be the number of prior index entires that are distinct in
+** the left-most column.  The second integer will be the number of prior index
+** entries that are distinct in the first two columns.  The third integer
+** will be the number of prior index entries that are distinct in the first
+** three columns.  And so forth.  With that extension, the nDLt field is
+** similar in function to the sqlite_stat1.stat field.
+**
+** There can be an arbitrary number of sqlite_stat3 entries per index.
 ** The ANALYZE command will typically generate sqlite_stat3 tables
 ** that contain between 10 and 40 samples which are distributed across
 ** the key space, though not uniformly, and which include samples with

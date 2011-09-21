@@ -121,7 +121,7 @@ struct WhereTerm {
 #ifdef SQLITE_ENABLE_STAT3
 #  define TERM_VNULL    0x80   /* Manufactured x>NULL or x<=NULL term */
 #else
-#  define TERM_VNULL    0x00   /* Disabled if not using stat2 */
+#  define TERM_VNULL    0x00   /* Disabled if not using stat3 */
 #endif
 
 /*
@@ -1341,7 +1341,7 @@ static void exprAnalyze(
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 #ifdef SQLITE_ENABLE_STAT3
-  /* When sqlite_stat2 histogram data is available an operator of the
+  /* When sqlite_stat3 histogram data is available an operator of the
   ** form "x IS NOT NULL" can sometimes be evaluated more efficiently
   ** as "x>NULL" if x is not an INTEGER PRIMARY KEY.  So construct a
   ** virtual term of that form.
