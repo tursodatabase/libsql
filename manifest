@@ -1,5 +1,5 @@
-C Remove\sthe\sSQLITE_PAGECACHE_BLOCKALLOC\scompilation\soption.
-D 2011-09-22T14:56:31.229
+C Remove\sa\sredundant\s(and\sundefined)\s"forcedelete"\scommand\sfrom\scorruptE.test.
+D 2011-09-22T15:31:30.163
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8de00a4e52f308ef6d564834c0973e53646e0d4c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -345,7 +345,7 @@ F test/corruptA.test fafa652aa585753be4f6b62ff0bb250266eaf7ce
 F test/corruptB.test 20d4a20cbed23958888c3e8995b424a47223d647
 F test/corruptC.test 62a767fe64acb1975f58cc6171192839c783edbb
 F test/corruptD.test 99b1999dbfa7cc04aaeac9d695a2445d4e7c7458
-F test/corruptE.test 78f7e1b9fd4a92e5951c7a5e414f2c4492733870
+F test/corruptE.test 1b9eb20a8711251ce57b44a257e241085b39b52d
 F test/count.test 454e1ce985c94d13efeac405ce54439f49336163
 F test/crash.test 519dc29f6fea151f015a23236e555239353946eb
 F test/crash2.test 5b14d4eb58b880e231361d3b609b216acda86651
@@ -964,7 +964,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 5100b6e9dc5107f0f835d0aac26fe6d4938ffc73
-R c0527ab7d53ddacfb2296ee9b8d0ee9c
+P 4eb4689834b538b9eeec5a5803528260e1aff78d
+R 262c3aeccd7c893526a314d03fa12d82
 U dan
-Z f31c94b75567eb17d1f72beb13b1de1b
+Z b984e82b28ae9a7089c19360a2ce9099
