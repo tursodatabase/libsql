@@ -928,9 +928,11 @@ clean:
 	rm -f $(PUBLISH)
 	rm -f *.da *.bb *.bbg gmon.out
 	rm -rf tsrc .target_source
+	rm -f tclsqlite3$(TEXE)
 	rm -f testfixture$(TEXE) test.db
-	rm -f sqlite3.dll sqlite3.lib sqlite3.def
+	rm -f sqlite3.dll sqlite3.lib sqlite3.exp sqlite3.def
 	rm -f sqlite3.c
+	rm -f sqlite3_analyzer$(TEXE) sqlite3_analyzer.c
 
 distclean:	clean
 	rm -f config.log config.status libtool Makefile sqlite3.pc

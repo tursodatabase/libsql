@@ -593,10 +593,15 @@ install:	sqlite3 libsqlite3.a sqlite3.h
 	mv sqlite3.h /usr/include
 
 clean:	
-	rm -f *.o sqlite3 libsqlite3.a sqlite3.h opcodes.*
+	rm -f *.o sqlite3 sqlite3.exe libsqlite3.a sqlite3.h opcodes.*
 	rm -f lemon lempar.c parse.* sqlite*.tar.gz mkkeywordhash keywordhash.h
 	rm -f $(PUBLISH)
 	rm -f *.da *.bb *.bbg gmon.out
 	rm -rf tsrc target_source
 	rm -f testloadext.dll libtestloadext.so
+	rm -f amalgamation-testfixture amalgamation-testfixture.exe
+	rm -f fts3-testfixture fts3-testfixture.exe
+	rm -f testfixture testfixture.exe
+	rm -f threadtest3 threadtest3.exe
 	rm -f sqlite3.c fts?amal.c tclsqlite3.c
+	rm -f sqlite3_analyzer sqlite3_analyzer.exe sqlite3_analyzer.c

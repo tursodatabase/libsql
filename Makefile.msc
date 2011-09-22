@@ -926,15 +926,15 @@ soaktest:	testfixture.exe sqlite3.exe
 test:	testfixture.exe sqlite3.exe
 	.\testfixture.exe $(TOP)\test\veryquick.test
 
-spaceanal_tcl.h:	$(TOP)\tool\spaceanal.tcl
-	$(NAWK) -f $(TOP)/tool/tostr.awk \
-		$(TOP)\tool\spaceanal.tcl > spaceanal_tcl.h
+sqlite3_analyzer.c: sqlite3.c $(TOP)\src\test_stat.c $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl
+	copy sqlite3.c + $(TOP)\src\test_stat.c + $(TOP)\src\tclsqlite.c $@
+	echo static const char *tclsh_main_loop(void){ >> $@
+	echo static const char *zMainloop = >> $@
+	$(NAWK) -f $(TOP)\tool\tostr.awk $(TOP)\tool\spaceanal.tcl >> $@
+	echo ; return zMainloop; } >> $@
 
-sqlite3_analyzer.exe:	$(TESTFIXTURE_SRC) spaceanal_tcl.h
-	$(LTLINK) -DTCLSH=2 -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1 \
-		-DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE \
-		-DBUILD_sqlite -I$(TCLINCDIR) \
-		$(TESTFIXTURE_SRC) \
+sqlite3_analyzer.exe:	sqlite3_analyzer.c
+	$(LTLINK) -DBUILD_sqlite -DTCLSH=2 -I$(TCLINCDIR) sqlite3_analyzer.c \
 		/link $(LTLINKOPTS) /LIBPATH:$(TCLLIBDIR) $(LIBTCL) $(TLIBS)
 
 clean:
@@ -944,10 +944,11 @@ clean:
 	del /Q mkkeywordhash.exe keywordhash.h
 	-rmdir /Q/S tsrc
 	del /Q .target_source
+	del /Q tclsqlite3.exe
 	del /Q testfixture.exe testfixture.exp test.db
 	del /Q sqlite3.dll sqlite3.lib sqlite3.exp sqlite3.def
 	del /Q sqlite3.c
-	del /Q sqlite3_analyzer.exe sqlite3_analyzer.exp spaceanal_tcl.h
+	del /Q sqlite3_analyzer.exe sqlite3_analyzer.exp sqlite3_analyzer.c
 
 #
 # Windows section
