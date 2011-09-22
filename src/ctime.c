@@ -329,9 +329,6 @@ static const char * const azCompileOpt[] = {
 #ifdef SQLITE_OMIT_XFER_OPT
   "OMIT_XFER_OPT",
 #endif
-#ifdef SQLITE_PAGECACHE_BLOCKALLOC
-  "PAGECACHE_BLOCKALLOC",
-#endif
 #ifdef SQLITE_PERFORMANCE_TRACE
   "PERFORMANCE_TRACE",
 #endif
