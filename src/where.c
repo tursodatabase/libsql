@@ -2925,7 +2925,7 @@ static void bestBtreeIndex(
     const tRowcnt * const aiRowEst = pProbe->aiRowEst;
     double cost;                /* Cost of using pProbe */
     double nRow;                /* Estimated number of rows in result set */
-    double log10N;              /* base-10 logarithm of nRow (inexact) */
+    double log10N = (double)1;  /* base-10 logarithm of nRow (inexact) */
     int rev;                    /* True to scan in reverse order */
     int wsFlags = 0;
     Bitmask used = 0;

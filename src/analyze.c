@@ -339,7 +339,7 @@ static void stat3Push(
   if( !doInsert ) return;
   if( p->nSample==p->mxSample ){
     if( iMin<p->nSample ){
-      memcpy(&p->a[iMin], &p->a[iMin+1], sizeof(p->a[0])*(p->nSample-iMin));
+      memmove(&p->a[iMin], &p->a[iMin+1], sizeof(p->a[0])*(p->nSample-iMin-1));
     }
     pSample = &p->a[p->nSample-1];
   }else{
