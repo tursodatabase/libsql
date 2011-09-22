@@ -670,8 +670,8 @@ struct Pager {
   char *zJournal;             /* Name of the journal file */
   int (*xBusyHandler)(void*); /* Function to call when busy */
   void *pBusyHandlerArg;      /* Context argument for xBusyHandler */
+  int nHit, nMiss;            /* Total cache hits and misses */
 #ifdef SQLITE_TEST
-  int nHit, nMiss;            /* Cache hits and missing */
   int nRead, nWrite;          /* Database pages read/written */
 #endif
   void (*xReiniter)(DbPage*); /* Call this routine when reloading pages */
@@ -4169,7 +4169,7 @@ static int pagerStress(void *p, PgHdr *pPg){
   **
   ** Spilling is also prohibited when in an error state since that could
   ** lead to database corruption.   In the current implementaton it 
-  ** is impossible for sqlite3PCacheFetch() to be called with createFlag==1
+  ** is impossible for sqlite3PcacheFetch() to be called with createFlag==1
   ** while in the error state, hence it is impossible for this routine to
   ** be called in the error state.  Nevertheless, we include a NEVER()
   ** test for the error state as a safeguard against future changes.
@@ -5005,14 +5005,13 @@ int sqlite3PagerAcquire(
     /* In this case the pcache already contains an initialized copy of
     ** the page. Return without further ado.  */
     assert( pgno<=PAGER_MAX_PGNO && pgno!=PAGER_MJ_PGNO(pPager) );
-    PAGER_INCR(pPager->nHit);
+    pPager->nHit++;
     return SQLITE_OK;
 
   }else{
     /* The pager cache has created a new page. Its content needs to 
     ** be initialized.  */
 
-    PAGER_INCR(pPager->nMiss);
     pPg = *ppPage;
     pPg->pPager = pPager;
 
@@ -5048,6 +5047,7 @@ int sqlite3PagerAcquire(
       IOTRACE(("ZERO %p %d\n", pPager, pgno));
     }else{
       assert( pPg->pPager==pPager );
+      pPager->nMiss++;
       rc = readDbPage(pPg);
       if( rc!=SQLITE_OK ){
         goto pager_acquire_err;
@@ -6081,6 +6081,31 @@ int *sqlite3PagerStats(Pager *pPager){
   return a;
 }
 #endif
+
+/*
+** Parameter eStat must be either SQLITE_DBSTATUS_CACHE_HIT or
+** SQLITE_DBSTATUS_CACHE_MISS. Before returning, *pnVal is incremented by the
+** current cache hit or miss count, according to the value of eStat. If the 
+** reset parameter is non-zero, the cache hit or miss count is zeroed before 
+** returning.
+*/
+void sqlite3PagerCacheStat(Pager *pPager, int eStat, int reset, int *pnVal){
+  int *piStat;
+
+  assert( eStat==SQLITE_DBSTATUS_CACHE_HIT
+       || eStat==SQLITE_DBSTATUS_CACHE_MISS
+  );
+  if( eStat==SQLITE_DBSTATUS_CACHE_HIT ){
+    piStat = &pPager->nHit;
+  }else{
+    piStat = &pPager->nMiss;
+  }
+
+  *pnVal += *piStat;
+  if( reset ){
+    *piStat = 0;
+  }
+}
 
 /*
 ** Return true if this is an in-memory pager.
