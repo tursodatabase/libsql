@@ -172,7 +172,10 @@ static void openStatTable(
   */
   for(i=0; i<ArraySize(azToDrop); i++){
     Table *pTab = sqlite3FindTable(db, azToDrop[i], pDb->zName);
-    if( pTab ) sqlite3CodeDropTable(pParse, pTab, iDb, 0);
+    if( pTab ){
+      sqlite3CodeDropTable(pParse, pTab, iDb, 0);
+      break;
+    }
   }
 
   /* Create new statistic tables if they do not exist, or clear them
@@ -338,9 +341,8 @@ static void stat3Push(
   }
   if( !doInsert ) return;
   if( p->nSample==p->mxSample ){
-    if( iMin<p->nSample ){
-      memmove(&p->a[iMin], &p->a[iMin+1], sizeof(p->a[0])*(p->nSample-iMin-1));
-    }
+    assert( p->nSample - iMin - 1 >= 0 );
+    memmove(&p->a[iMin], &p->a[iMin+1], sizeof(p->a[0])*(p->nSample-iMin-1));
     pSample = &p->a[p->nSample-1];
   }else{
     pSample = &p->a[p->nSample++];
@@ -413,10 +415,10 @@ static void stat3Get(
   assert( p!=0 );
   if( p->nSample<=n ) return;
   switch( argc ){
-    case 2: sqlite3_result_int64(context, p->a[n].iRowid); break;
-    case 3: sqlite3_result_int64(context, p->a[n].nEq);    break;
-    case 4: sqlite3_result_int64(context, p->a[n].nLt);    break;
-    case 5: sqlite3_result_int64(context, p->a[n].nDLt);   break;
+    case 2:  sqlite3_result_int64(context, p->a[n].iRowid); break;
+    case 3:  sqlite3_result_int64(context, p->a[n].nEq);    break;
+    case 4:  sqlite3_result_int64(context, p->a[n].nLt);    break;
+    default: sqlite3_result_int64(context, p->a[n].nDLt);   break;
   }
 }
 static const FuncDef stat3GetFuncdef = {
@@ -972,6 +974,7 @@ static int loadStat3(sqlite3 *db, const char *zDb){
     pIdx = sqlite3FindIndex(db, zIndex, zDb);
     if( pIdx==0 ) continue;
     assert( pIdx->nSample==0 );
+    testcase( nSample==255 );
     pIdx->nSample = (u8)nSample;
     pIdx->aSample = sqlite3MallocZero( nSample*sizeof(IndexSample) );
     pIdx->avgEq = pIdx->aiRowEst[1];
@@ -1042,8 +1045,7 @@ static int loadStat3(sqlite3 *db, const char *zDb){
               sqlite3_column_text(pStmt, 4)
            );
         int n = z ? sqlite3_column_bytes(pStmt, 4) : 0;
-        if( n>0xffff ) n = 0xffff;
-        pSample->nByte = (u16)n;
+        pSample->nByte = n;
         if( n < 1){
           pSample->u.z = 0;
         }else{

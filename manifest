@@ -1,5 +1,5 @@
-C Fix\san\suninitialized\svariable\sand\sa\smisuse\sof\smemcpy().
-D 2011-09-22T00:28:55.958
+C Fix\san\sissue\sin\sANALYZE\swhen\sSTAT3\sis\sdisabled\sbut\sboth\ssqlite_stat2\sand\nsqlite_stat3\stables\sexist.\s\sAlso\sadd\stestability\stweaks\sto\sthe\sSTAT3\scode.
+D 2011-09-22T18:46:34.844
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d314143fa6be24828021d3f583ad37d9afdce505
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -118,7 +118,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c ac80a0f31189f8b4a524ebf661e47e84536ee7f5
-F src/analyze.c 78a513d6229689c40252aa5d820565bcba90634c
+F src/analyze.c 12c096a7e2383559c451c7111938a2682661795a
 F src/attach.c 12c6957996908edc31c96d7c68d4942c2474405f
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 28a4fe55327ff708bfaf9d4326d02686f7a553c3
@@ -183,7 +183,7 @@ F src/select.c d9b7d20b0365f80761846f00ef3638d4b33eeaf2
 F src/shell.c 13fe2aeddc3cc90d6a273831d1f63736d1596f81
 F src/sqlite.h.in 3f531daa04457e83bc13765c98c06c7d71c27fa5
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
-F src/sqliteInt.h 6cb04e5216d68becf18fd4a4a6d47ec07f33219c
+F src/sqliteInt.h 40bc71ab0840027d0b4e452b09467dc7274828e2
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -251,7 +251,7 @@ F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 3154756177d6219e233d84291d5b05f4e06ff5e9
 F src/wal.h 66b40bd91bc29a5be1c88ddd1f5ade8f3f48728a
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c bd9ca1bb5ab909b04bdba6da2fffdfe07207c655
+F src/where.c 432a42cf4392bafe80ff06affb62cc24c8eea3fb
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -965,7 +965,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 63fc3e4bea6a7f5dc34b2af83f30458eb10b8fe0
-R 21208cbb3e90ead0385f6f34c9d78ada
+P ee110d5a4a6f29400bb632a9a18c7dcd04638657
+R ed357b44bde952eee8192d464b59f2eb
 U drh
-Z 173e771ada64f444efa1679d0416f2ab
+Z b3542caa8ec714ec974a1ed2d471f84c

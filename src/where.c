@@ -2452,6 +2452,7 @@ static int whereKeyStats(
   double r, rS;
 
   assert( roundUp==0 || roundUp==1 );
+  assert( pIdx->nSample>0 );
   if( pVal==0 ) return SQLITE_ERROR;
   n = pIdx->aiRowEst[0];
   aSample = pIdx->aSample;
@@ -2494,7 +2495,7 @@ static int whereKeyStats(
     }
   }else if( eType==SQLITE_NULL ){
     i = 0;
-    if( pIdx->nSample>=1 && aSample[0].eType==SQLITE_NULL ) isEq = 1;
+    if( aSample[0].eType==SQLITE_NULL ) isEq = 1;
   }else{
     assert( eType==SQLITE_TEXT || eType==SQLITE_BLOB );
     for(i=0; i<pIdx->nSample; i++){
@@ -2760,6 +2761,7 @@ static int whereEqualScanEst(
   tRowcnt a[2];             /* Statistics */
 
   assert( p->aSample!=0 );
+  assert( p->nSample>0 );
   aff = p->pTable->aCol[p->aiColumn[0]].affinity;
   if( pExpr ){
     rc = valueFromExpr(pParse, pExpr, aff, &pRhs);

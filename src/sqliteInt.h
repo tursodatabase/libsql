@@ -1524,7 +1524,7 @@ struct IndexSample {
     i64 i;          /* Value if eType is SQLITE_INTEGER */
   } u;
   u8 eType;         /* SQLITE_NULL, SQLITE_INTEGER ... etc. */
-  u16 nByte;        /* Size in byte of text or blob. */
+  int nByte;        /* Size in byte of text or blob. */
   tRowcnt nEq;      /* Est. number of rows where the key equals this sample */
   tRowcnt nLt;      /* Est. number of rows where key is less than this sample */
   tRowcnt nDLt;     /* Est. number of distinct keys less than this sample */
