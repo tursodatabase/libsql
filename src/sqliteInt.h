@@ -1501,13 +1501,13 @@ struct Index {
   u8 onError;      /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
   u8 autoIndex;    /* True if is automatically created (ex: by UNIQUE) */
   u8 bUnordered;   /* Use this index for == or IN queries only */
-  u8 nSample;      /* Number of elements in aSample[] */
   char *zColAff;   /* String defining the affinity of each column */
   Index *pNext;    /* The next index associated with the same table */
   Schema *pSchema; /* Schema containing this index */
   u8 *aSortOrder;  /* Array of size Index.nColumn. True==DESC, False==ASC */
   char **azColl;   /* Array of collation sequence names for index */
 #ifdef SQLITE_ENABLE_STAT3
+  int nSample;             /* Number of elements in aSample[] */
   tRowcnt avgEq;           /* Average nEq value for key values not in aSample */
   IndexSample *aSample;    /* Samples of the left-most key */
 #endif

@@ -970,12 +970,10 @@ static int loadStat3(sqlite3 *db, const char *zDb){
     zIndex = (char *)sqlite3_column_text(pStmt, 0);
     if( zIndex==0 ) continue;
     nSample = sqlite3_column_int(pStmt, 1);
-    if( nSample>255 ) continue;
     pIdx = sqlite3FindIndex(db, zIndex, zDb);
     if( pIdx==0 ) continue;
     assert( pIdx->nSample==0 );
-    testcase( nSample==255 );
-    pIdx->nSample = (u8)nSample;
+    pIdx->nSample = nSample;
     pIdx->aSample = sqlite3MallocZero( nSample*sizeof(IndexSample) );
     pIdx->avgEq = pIdx->aiRowEst[1];
     if( pIdx->aSample==0 ){

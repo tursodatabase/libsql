@@ -1,5 +1,5 @@
-C Fix\san\sissue\sin\sANALYZE\swhen\sSTAT3\sis\sdisabled\sbut\sboth\ssqlite_stat2\sand\nsqlite_stat3\stables\sexist.\s\sAlso\sadd\stestability\stweaks\sto\sthe\sSTAT3\scode.
-D 2011-09-22T18:46:34.844
+C Remove\sthe\srestriction\son\sthe\snumber\sof\sentries\sper\sindex\sin\ssqlite_stat3.
+D 2011-09-22T20:52:56.063
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d314143fa6be24828021d3f583ad37d9afdce505
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -118,7 +118,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c ac80a0f31189f8b4a524ebf661e47e84536ee7f5
-F src/analyze.c 12c096a7e2383559c451c7111938a2682661795a
+F src/analyze.c f2b6e33f13ea763fa26425ac2f37249c56153ccd
 F src/attach.c 12c6957996908edc31c96d7c68d4942c2474405f
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 28a4fe55327ff708bfaf9d4326d02686f7a553c3
@@ -183,7 +183,7 @@ F src/select.c d9b7d20b0365f80761846f00ef3638d4b33eeaf2
 F src/shell.c 13fe2aeddc3cc90d6a273831d1f63736d1596f81
 F src/sqlite.h.in 3f531daa04457e83bc13765c98c06c7d71c27fa5
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
-F src/sqliteInt.h 40bc71ab0840027d0b4e452b09467dc7274828e2
+F src/sqliteInt.h 28cca77ebdaf6025ae5df52717dff429c7c6d4ef
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -965,7 +965,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P ee110d5a4a6f29400bb632a9a18c7dcd04638657
-R ed357b44bde952eee8192d464b59f2eb
+P 3ca7e449e2e20d95e516cf7fe87bfa0b51c07086
+R c105c04b0bf619f9bd8e7351a02bbd18
 U drh
-Z b3542caa8ec714ec974a1ed2d471f84c
+Z 3b0d1caf0749877c04e96ab7e0587090
