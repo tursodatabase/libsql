@@ -1,7 +1,7 @@
-C Remove\sa\sredundant\s(and\sundefined)\s"forcedelete"\scommand\sfrom\scorruptE.test.
-D 2011-09-22T15:31:30.163
+C Add\sthe\s-DBUILD_sqlite\soption\sto\sthe\scompiler\swhen\sbuilding\stestfixture.exe\nusing\sthe\sconfigure\sscript.
+D 2011-09-23T16:34:49.242
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 8de00a4e52f308ef6d564834c0973e53646e0d4c
+F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 6676bcfe711f621a0b1916ecfa5d0927f8084517
 F Makefile.vxworks 1deb39c8bb047296c30161ffa10c1b5423e632f9
@@ -964,7 +964,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 4eb4689834b538b9eeec5a5803528260e1aff78d
-R 262c3aeccd7c893526a314d03fa12d82
-U dan
-Z b984e82b28ae9a7089c19360a2ce9099
+P 6d8d4e1694694c3e961fc1922f732d1da40caa6f
+R 040dfcfdeae57e43ae6b152b05f4d580
+U drh
+Z 20c1fc7fe5f59b298e53a25791050dac
