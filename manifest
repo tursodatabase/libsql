@@ -1,5 +1,5 @@
-C Fix\stypos\sin\sthe\sformat\sdescription\scomment\sof\sanalyze.c.
-D 2011-09-23T13:25:03.244
+C Testability\senhancements.
+D 2011-09-23T13:59:33.693
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d314143fa6be24828021d3f583ad37d9afdce505
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -127,7 +127,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 77b09c69d4849a90361e6fe5db36d167f20600c0
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
-F src/build.c 57e3b27c26e6754393cd63a2774a6c673df1e804
+F src/build.c 2dc09385981bf7f41eae7d3aeb47cb2453813456
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c dde6a9b835b9e8cc067b713de1a7f6a0c9ff807e
@@ -251,7 +251,7 @@ F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 3154756177d6219e233d84291d5b05f4e06ff5e9
 F src/wal.h 66b40bd91bc29a5be1c88ddd1f5ade8f3f48728a
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 432a42cf4392bafe80ff06affb62cc24c8eea3fb
+F src/where.c aafcb21a74e41f9aae76ea604e1e787ff8574125
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -965,7 +965,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 374343c8ad53829c4ad715ed623d16635797de9a
-R e7e1b2a1114af9230eb2e44197ed5da5
+P 74e27fad339a2d7899c1f42805e615128929f07a
+R 2a02eac3daaa0669ad4c98fbdd4d2386
 U drh
-Z 6b4c74838ff582a42303843c6a42764e
+Z 0b4e185fe7f24f4f88a2a412ad76b268

@@ -2578,7 +2578,6 @@ static int whereKeyStats(
       iGap = 0;
     }else{
       iGap = iUpper - iLower;
-      if( iGap>=aStat[1]/2 ) iGap -= aStat[1]/2;
     }
     if( roundUp ){
       iGap = (iGap*2)/3;
@@ -3119,11 +3118,13 @@ static void bestBtreeIndex(
     ** VALUE and how common that value is according to the histogram.
     */
     if( nRow>(double)1 && nEq==1 && pFirstTerm!=0 && aiRowEst[1]>1 ){
+      assert( (pFirstTerm->eOperator & (WO_EQ|WO_ISNULL|WO_IN))!=0 );
       if( pFirstTerm->eOperator & (WO_EQ|WO_ISNULL) ){
         testcase( pFirstTerm->eOperator==WO_EQ );
         testcase( pFirstTerm->eOperator==WO_ISNULL );
         whereEqualScanEst(pParse, pProbe, pFirstTerm->pExpr->pRight, &nRow);
-      }else if( pFirstTerm->eOperator==WO_IN && bInEst==0 ){
+      }else if( bInEst==0 ){
+        assert( pFirstTerm->eOperator==WO_IN );
         whereInScanEst(pParse, pProbe, pFirstTerm->pExpr->x.pList, &nRow);
       }
     }
