@@ -94,9 +94,9 @@
 ** the left-most column of the index.  The nEq column is the approximate
 ** number of entires in the index whose left-most column exactly matches
 ** the sample.  nLt is the approximate number of entires whose left-most
-** column is less than the same.  The nDLt column is the approximate
+** column is less than the sample.  The nDLt column is the approximate
 ** number of distinct left-most entries in the index that are less than
-** the same.
+** the sample.
 **
 ** Future versions of SQLite might change to store a string containing
 ** multiple integers values in the nDLt column of sqlite_stat3.  The first
