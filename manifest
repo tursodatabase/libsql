@@ -1,5 +1,5 @@
-C Add\sSQLITE_DBSTATUS_CACHE_HIT\sand\s_MISS\sto\sthe\s".stat"\scommand\sin\sthe\sshell.
-D 2011-09-23T18:58:23.501
+C Fix\ssome\stest\sfiles\sso\sthat\sthey\swork\swith\sSQLITE_OMIT_WAL\sbuilds.
+D 2011-09-24T05:55:36.123
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -276,7 +276,7 @@ F test/async5.test 0dd8701bd588bf6e70c2557a22ae3f22b2567b4c
 F test/attach.test 0e6f8de2589f11a5f474ef57fe5af2877e61c0e8
 F test/attach2.test e54436ed956d3d88bdee61221da59bf3935a0966
 F test/attach3.test d89ccfe4fe6e2b5e368d480fcdfe4b496c54cf4e
-F test/attach4.test 31f9eb0ca7bdbc393cc4657b877903a226a83d4b
+F test/attach4.test 53bf502f17647c6d6c5add46dda6bac8b6f4665c
 F test/attachmalloc.test 3a4bfca9545bfe906a8d2e622de10fbac5b711b0
 F test/auth.test b047105c32da7db70b842fd24056723125ecc2ff
 F test/auth2.test 270baddc8b9c273682760cffba6739d907bd2882
@@ -609,8 +609,8 @@ F test/notify3.test a86259abbfb923aa27d30f0fc038c88e5251488a
 F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
-F test/oserror.test 3fe52e0bd2891a9bf7cdeb639554992453d46301
-F test/pager1.test 2d3a7c6facd899d8879d23f31454cc53f49358b9
+F test/oserror.test 50417780d0e0d7cd23cf12a8277bb44024765df3
+F test/pager1.test c8f202a460ba6a1cd7a36888042ca471220bb42d
 F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
 F test/pagerfault.test 452f2cc23e3bfcfa935f4442aec1da4fe1dc0442
@@ -691,7 +691,7 @@ F test/subquery.test b524f57c9574b2c0347045b4510ef795d4686796
 F test/subquery2.test edcad5c118f0531c2e21bf16a09bbb105252d4cd
 F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
-F test/superlock.test 5d7a4954b0059c903f82c7b67867bc5451a7c082
+F test/superlock.test 7b1167925e9d30a5d1f0701d24812fdda42c3a86
 F test/sync.test a34cd43e98b7fb84eabbf38f7ed8f7349b3f3d85
 F test/syscall.test 966addf703faee6a5d509abe6d8885e393e552fd
 F test/sysfault.test c79441d88d23696fbec7b147dba98d42a04f523f
@@ -858,7 +858,7 @@ F test/unique.test 083c7fff74695bcc27a71d75699deba3595bc9c2
 F test/unixexcl.test 9d80a54d86d2261f660758928959368ffc36151e
 F test/unordered.test e81169ce2a8f31b2c6b66af691887e1376ab3ced
 F test/update.test 8bc86fd7ef1a00014f76dc6a6a7c974df4aef172
-F test/uri.test 53de9a2549cbda9c343223236918ef502f6a9051
+F test/uri.test 0d289d32396bdbc491e9dc845f1a52e13f861e0b
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
 F test/vacuum.test 9516f3a8e49be666f2dde28561e4be5ae5612de0
 F test/vacuum2.test af432e6e3bfc0ea20a80cb86a03c7d9876d38324
@@ -894,7 +894,7 @@ F test/wal6.test 2e3bc767d9c2ce35c47106148d43fcbd072a93b3
 F test/wal7.test 2ae8f427d240099cc4b2dfef63cff44e2a68a1bd
 F test/wal_common.tcl a98f17fba96206122eff624db0ab13ec377be4fe
 F test/walbak.test b9f68e39646375c2b877be906babcc15d38b4877
-F test/walbig.test e882bc1d014afffbfa2b6ba36e0f07d30a633ad0
+F test/walbig.test 0ab8a430ef420a3114f7092e0f30fc9585ffa155
 F test/walcksum.test f5447800a157c9e2234fbb8e80243f0813941bde
 F test/walcrash.test 4fcb661faf71db91214156d52d43ee327f52bde1
 F test/walcrash2.test 019d60b89d96c1937adb2b30b850ac7e86e5a142
@@ -902,8 +902,8 @@ F test/walfault.test efb0d5724893133e71b8d9d90abdb781845a6bb0
 F test/walhook.test ed00a40ba7255da22d6b66433ab61fab16a63483
 F test/walmode.test 4022fe03ae6e830583672caa101f046438a0473c
 F test/walnoshm.test 84ca10c544632a756467336b7c3b864d493ee496
-F test/walpersist.test 45fb0c94fb63908e2d66b1d99ce4645bfce0fa1e
-F test/walro.test 2d5d69e2e99da19ce6faab340330234fc4ca0720
+F test/walpersist.test fd40d33765b2693f721c90c66d97f99757559006
+F test/walro.test 412d0809300b94ba142440e94d6a30eabf2220b7
 F test/walshared.test 6dda2293880c300baf5d791c307f653094585761
 F test/walslow.test e7be6d9888f83aa5d3d3c7c08aa9b5c28b93609a
 F test/walthread.test a2ed5270eb695284d4ad27d252517bdc3317ee2a
@@ -964,7 +964,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 15a13b6c59ddf145c3fc860d993a7fa5587a0799
-R 8a846188b5a50b629e779a79335084c3
-U drh
-Z fb711bd276d7d1d753d686357da5cf42
+P d279e1a309909a0897b6082753a0fadb5066c31a
+R 1d47a8525f2f65e65f824b1ab6ac3952
+U dan
+Z 402b9c23e658ae7ef163736478b873db

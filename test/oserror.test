@@ -97,23 +97,25 @@ do_re_test 1.4.2 { lindex $::log 0 } {^os_unix.c:\d*: \(\d+\) open\(.*test.db\) 
 #--------------------------------------------------------------------------
 # Tests oserror-1.* test failures in the unlink() system call.
 #
-do_test 2.1.1 {
-  set ::log [list]
-  file mkdir test.db-wal
-  forcedelete test.db
-  list [catch {
-    sqlite3 dbh test.db
-    execsql { SELECT * FROM sqlite_master } dbh
-  } msg] $msg
-} {1 {disk I/O error}}
-
-do_re_test 2.1.2 { 
-  lindex $::log 0 
-} {^os_unix.c:\d+: \(\d+\) unlink\(.*test.db-wal\) - }
-do_test 2.1.3 { 
-  catch { dbh close }
-  forcedelete test.db-wal
-} {}
+ifcapable wal {
+  do_test 2.1.1 {
+    set ::log [list]
+    file mkdir test.db-wal
+    forcedelete test.db
+    list [catch {
+      sqlite3 dbh test.db
+      execsql { SELECT * FROM sqlite_master } dbh
+    } msg] $msg
+  } {1 {disk I/O error}}
+  
+  do_re_test 2.1.2 { 
+    lindex $::log 0 
+  } {^os_unix.c:\d+: \(\d+\) unlink\(.*test.db-wal\) - }
+  do_test 2.1.3 { 
+    catch { dbh close }
+    forcedelete test.db-wal
+  } {}
+}
   
 
 test_syscall reset

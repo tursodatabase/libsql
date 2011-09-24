@@ -24,6 +24,13 @@ if {$::tcl_platform(platform) != "unix"} {
   return
 }
 
+# And only if the build is WAL-capable.
+#
+ifcapable !wal {
+  finish_test
+  return
+}
+
 do_multiclient_test tn {
   # Do not run tests with the connections in the same process.
   #
