@@ -1,5 +1,5 @@
-C Fix\ssome\stest\sfiles\sso\sthat\sthey\swork\swith\sSQLITE_OMIT_WAL\sbuilds.
-D 2011-09-24T05:55:36.123
+C Fix\smisc3.test\sso\sthat\sit\sworks\swith\sOMIT_MERGE_SORT\sbuilds.
+D 2011-09-24T09:54:14.482
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -593,7 +593,7 @@ F test/minmax2.test 33504c01a03bd99226144e4b03f7631a274d66e0
 F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
 F test/misc1.test 55cb2bfbf4a8cd61f4be1effc30426ad41696bff
 F test/misc2.test 00d7de54eda90e237fc9a38b9e5ccc769ebf6d4d
-F test/misc3.test 8e42d54b772a23b3c573672d3e0894d15b05221d
+F test/misc3.test fe55130a43e444ee75e2156ff75dc96e964b5738
 F test/misc4.test 9c078510fbfff05a9869a0b6d8b86a623ad2c4f6
 F test/misc5.test 528468b26d03303b1f047146e5eefc941b9069f5
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
@@ -964,7 +964,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P d279e1a309909a0897b6082753a0fadb5066c31a
-R 1d47a8525f2f65e65f824b1ab6ac3952
+P a38668dcff0a4d241d959ea19330ad43295d757d
+R 62fed009ce85bf6f45bc23bd10da92d7
 U dan
-Z 402b9c23e658ae7ef163736478b873db
+Z 385822c158a58f684ff65fda1a36a729
