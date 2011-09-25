@@ -1,5 +1,5 @@
-C Fix\smisc3.test\sso\sthat\sit\sworks\swith\sOMIT_MERGE_SORT\sbuilds.
-D 2011-09-24T09:54:14.482
+C If\san\sopen\sas\sread/write\sfails,\sdo\snot\stry\sto\sreopen\sas\sread-only\sif\sin\nexclusive\saccess\smode.
+D 2011-09-25T17:49:26.535
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 10e0c4dcdbec8d4189890fdf3e71b32efae194e3
-F src/os_win.c 0fc0f46c94b0385a940b0ee32992a833019a5985
+F src/os_win.c fbe47c7fdc9a846a772bbf98719c328becad5f8a
 F src/pager.c 8a6ac3e0d9694412076e2273e3c81e9c4e08758f
 F src/pager.h dbcaa791e8b6c3a6b77c168c5c27deec289fb176
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -964,7 +964,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P a38668dcff0a4d241d959ea19330ad43295d757d
-R 62fed009ce85bf6f45bc23bd10da92d7
-U dan
-Z 385822c158a58f684ff65fda1a36a729
+P 87946c627f7230bea3739fd6aeec3e56115a3f93
+R 45c74df3a651dc62ff2bf197449037d8
+U drh
+Z 9e8d9a9ad0cf791e3b92c0613c836ce2

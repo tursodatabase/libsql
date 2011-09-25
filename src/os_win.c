@@ -2615,7 +2615,7 @@ static int winOpen(
     pFile->lastErrno = GetLastError();
     winLogError(SQLITE_CANTOPEN, "winOpen", zUtf8Name);
     free(zConverted);
-    if( isReadWrite ){
+    if( isReadWrite && !isExclusive ){
       return winOpen(pVfs, zName, id, 
              ((flags|SQLITE_OPEN_READONLY)&~(SQLITE_OPEN_CREATE|SQLITE_OPEN_READWRITE)), pOutFlags);
     }else{
