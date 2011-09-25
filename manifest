@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\schanges\sinto\sthe\sstat3-trunk\sbranch.
-D 2011-09-23T14:40:31.864
+C If\san\sopen\sas\sread/write\sfails,\sdo\snot\stry\sto\sreopen\sas\sread-only\sif\sin\nexclusive\saccess\smode.
+D 2011-09-25T17:47:58.118
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8de00a4e52f308ef6d564834c0973e53646e0d4c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 10e0c4dcdbec8d4189890fdf3e71b32efae194e3
-F src/os_win.c 0fc0f46c94b0385a940b0ee32992a833019a5985
+F src/os_win.c fbe47c7fdc9a846a772bbf98719c328becad5f8a
 F src/pager.c 8a6ac3e0d9694412076e2273e3c81e9c4e08758f
 F src/pager.h dbcaa791e8b6c3a6b77c168c5c27deec289fb176
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -966,7 +966,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P be44928cf2a3c063c8228b769d90947acbfad1ef 6d8d4e1694694c3e961fc1922f732d1da40caa6f
-R d77ad79f371c48e48b75d0b9ae4d6798
+P 0beb88a92c8f75231df120bef54616c7e4bb68c8
+R 89507550a3363f4f0fee38865f012e03
 U drh
-Z 325ba8d2018722c1460e52f95a5b9a1a
+Z 8cbac2d25730672d9c2dfbd894fb75ea
