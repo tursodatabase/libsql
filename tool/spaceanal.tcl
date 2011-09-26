@@ -34,8 +34,8 @@ if {[file size $file_to_analyze]<512} {
 sqlite3 db $file_to_analyze
 register_dbstat_vtab db
 
-set pageSize [db one {PRAGMA page_size}]
 db eval {SELECT count(*) FROM sqlite_master}
+set pageSize [db one {PRAGMA page_size}]
 
 # In-memory database for collecting statistics. This script loops through
 # the tables and indices in the database being analyzed, adding a row for each
@@ -357,8 +357,15 @@ proc autovacuum_overhead {filePages pageSize} {
 #                (not including sqlite_master)
 # user_percent:  $user_payload as a percentage of total file size.
 
-set file_bytes  [file size $file_to_analyze]
-set file_pgcnt  [expr {$file_bytes/$pageSize}]
+### The following, setting $file_bytes based on the actual size of the file
+### on disk, causes this tool to choke on zipvfs databases. So set it based
+### on the return of [PRAGMA page_count] instead.
+if 0 {
+  set file_bytes  [file size $file_to_analyze]
+  set file_pgcnt  [expr {$file_bytes/$pageSize}]
+}
+set file_pgcnt  [db one {PRAGMA page_count}]
+set file_bytes  [expr $file_pgcnt * $pageSize]
 
 set av_pgcnt    [autovacuum_overhead $file_pgcnt $pageSize]
 set av_percent  [percent $av_pgcnt $file_pgcnt]
