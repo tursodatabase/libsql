@@ -35,7 +35,7 @@ sqlite3 db $file_to_analyze
 register_dbstat_vtab db
 
 db eval {SELECT count(*) FROM sqlite_master}
-set pageSize [db one {PRAGMA page_size}]
+set pageSize [expr {wide([db one {PRAGMA page_size}])}]
 
 # In-memory database for collecting statistics. This script loops through
 # the tables and indices in the database being analyzed, adding a row for each
@@ -145,7 +145,7 @@ foreach {name tblname} [concat sqlite_master sqlite_master [db eval $sql]] {
 
 proc integerify {real} {
   if {[string is double -strict $real]} {
-    return [expr {int($real)}]
+    return [expr {wide($real)}]
   } else {
     return 0
   }
@@ -330,7 +330,7 @@ proc autovacuum_overhead {filePages pageSize} {
   set ptrsPerPage [expr double($pageSize/5)]
 
   # Return the number of pointer map pages in the database.
-  return [expr int(ceil( ($filePages-1.0)/($ptrsPerPage+1.0) ))]
+  return [expr wide(ceil( ($filePages-1.0)/($ptrsPerPage+1.0) ))]
 }
 
 
@@ -365,16 +365,16 @@ if 0 {
   set file_pgcnt  [expr {$file_bytes/$pageSize}]
 }
 set file_pgcnt  [db one {PRAGMA page_count}]
-set file_bytes  [expr $file_pgcnt * $pageSize]
+set file_bytes  [expr {$file_pgcnt * $pageSize}]
 
 set av_pgcnt    [autovacuum_overhead $file_pgcnt $pageSize]
 set av_percent  [percent $av_pgcnt $file_pgcnt]
 
 set sql {SELECT sum(leaf_pages+int_pages+ovfl_pages) FROM space_used}
-set inuse_pgcnt   [expr int([mem eval $sql])]
+set inuse_pgcnt   [expr wide([mem eval $sql])]
 set inuse_percent [percent $inuse_pgcnt $file_pgcnt]
 
-set free_pgcnt    [expr $file_pgcnt-$inuse_pgcnt-$av_pgcnt]
+set free_pgcnt    [expr {$file_pgcnt-$inuse_pgcnt-$av_pgcnt}]
 set free_percent  [percent $free_pgcnt $file_pgcnt]
 set free_pgcnt2   [db one {PRAGMA freelist_count}]
 set free_percent2 [percent $free_pgcnt2 $file_pgcnt]

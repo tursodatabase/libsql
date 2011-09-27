@@ -1,5 +1,5 @@
-C Changes\sto\sthe\sanalyzer\sscript\sto\smake\sit\swork\swith\szipvfs\sdatabases.
-D 2011-09-26T19:32:47.615
+C Changes\sto\ssqlite3_analyzer\sto\stry\sto\savoid\sinteger\soverflow\sproblems\s\nwhen\slinking\sagainst\solder\sversions\sof\sTCL.
+D 2011-09-27T13:40:26.197
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -953,7 +953,7 @@ F tool/showjournal.c b62cecaab86a4053d944c276bb5232e4d17ece02
 F tool/showwal.c f09e5a80a293919290ec85a6a37c85a5ddcf37d9
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b
-F tool/spaceanal.tcl a7ffc29ba8db2fd791b4de83ee0a2a0436c07171
+F tool/spaceanal.tcl 7591cccc6383cd649b4d5e5babe6a3dbba1625d6
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
@@ -964,7 +964,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 263c5fb2802f8c84835e42fc66acb1065b7e42b9
-R 653cfc1894df476a0aac3944fac55ae4
-U dan
-Z 3c688ce814d5c4f405619c4d3e366aaa
+P d82cffab6acafcf9d91fea4ac47cad73f6f09775
+R 2bc38f424055a926b03e353359683766
+U drh
+Z 8c563b03c7524b0b82590cf24a8a41f9
