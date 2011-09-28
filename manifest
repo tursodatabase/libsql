@@ -1,5 +1,5 @@
-C Enhance\sthe\sstat\sVFS\sto\sreport\sout\sthe\stotal\ssize\sof\sall\spages\sused\sby\na\stable,\seven\sif\sthe\sZIPVFS\scompression\sbackend\sis\sin\splay.\s\sUpdate\nthe\ssqlite3_analyzer\slogic\sto\suse\sthese\snew\soutputs.
-D 2011-09-28T00:50:14.068
+C In\sthe\sshell,\sallow\sarbitrary\stable\snames\son\sthe\s".import"\scommand.\nTicket\s[d1d84037b90a449].
+D 2011-09-28T01:10:00.323
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -180,7 +180,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 36368f44569208fa074e61f4dd0b6c4fb60ca2b4
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c d9b7d20b0365f80761846f00ef3638d4b33eeaf2
-F src/shell.c 1d3baca3399a36fc34883b6cdab457688ae8e248
+F src/shell.c e8fe1251aee84baa2fb232ce83d938de25aa650f
 F src/sqlite.h.in c0ebc53056fd99590dec4cb4bd60a0787098ff18
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
 F src/sqliteInt.h 76d81cd9da0618b231398bfcf90556e971972fca
@@ -964,7 +964,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 8c846311a0cd510bbf9361213bb60764e9b797aa
-R 3bd6d041dec83962663bcd3d3bb93a06
+P 19b8eaaf70db82d401d33beb7fd36045d5e8326f
+R 435f0dc1b7e1759ce0909fde7c17ff57
 U drh
-Z 6010793edcdb8e3508d42d2b73d9c2b0
+Z 73ce79df8c2bde7f261efb2cafa35265

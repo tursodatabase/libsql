@@ -1678,7 +1678,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       fprintf(stderr, "Error: non-null separator required for import\n");
       return 1;
     }
-    zSql = sqlite3_mprintf("SELECT * FROM '%q'", zTable);
+    zSql = sqlite3_mprintf("SELECT * FROM %s", zTable);
     if( zSql==0 ){
       fprintf(stderr, "Error: out of memory\n");
       return 1;
@@ -1700,7 +1700,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       fprintf(stderr, "Error: out of memory\n");
       return 1;
     }
-    sqlite3_snprintf(nByte+20, zSql, "INSERT INTO '%q' VALUES(?", zTable);
+    sqlite3_snprintf(nByte+20, zSql, "INSERT INTO %s VALUES(?", zTable);
     j = strlen30(zSql);
     for(i=1; i<nCol; i++){
       zSql[j++] = ',';
