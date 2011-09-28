@@ -64,19 +64,10 @@
   "  ncell      INTEGER,          /* Cells on page (0 for overflow) */"     \
   "  payload    INTEGER,          /* Bytes of payload on this page */"      \
   "  unused     INTEGER,          /* Bytes of unused space on this page */" \
-  "  mx_payload INTEGER           /* Largest payload size of all cells */"  \
+  "  mx_payload INTEGER,          /* Largest payload size of all cells */"  \
+  "  pgoffset   INTEGER,          /* Offset of page in file */"             \
+  "  pgsize     INTEGER           /* Size of the page */"                   \
   ");"
-
-#if 0
-#define VTAB_SCHEMA2                                                        \
-  "CREATE TABLE yy( "                                                       \
-  "  pageno   INTEGER,            /* B-tree page number */"                 \
-  "  cellno   INTEGER,            /* Cell number within page */"            \
-  "  local    INTEGER,            /* Bytes of content stored locally */"    \
-  "  payload  INTEGER,            /* Total cell payload size */"            \
-  "  novfl    INTEGER             /* Number of overflow pages */"           \
-  ");"
-#endif
 
 
 typedef struct StatTable StatTable;
@@ -126,6 +117,8 @@ struct StatCursor {
   int nPayload;                   /* Value of 'payload' column */
   int nUnused;                    /* Value of 'unused' column */
   int nMxPayload;                 /* Value of 'mx_payload' column */
+  i64 iOffset;                    /* Value of 'pgOffset' column */
+  int szPage;                     /* Value of 'pgSize' column */
 };
 
 struct StatTable {
@@ -283,6 +276,7 @@ static int statDecodePage(Btree *pBt, StatPage *p){
   int iOff;
   int nHdr;
   int isLeaf;
+  int szPage;
 
   u8 *aData = sqlite3PagerGetData(p->pPg);
   u8 *aHdr = &aData[p->iPgno==1 ? 100 : 0];
@@ -303,10 +297,11 @@ static int statDecodePage(Btree *pBt, StatPage *p){
   }
   p->nUnused = nUnused;
   p->iRightChildPg = isLeaf ? 0 : sqlite3Get4byte(&aHdr[8]);
+  szPage = sqlite3BtreeGetPageSize(pBt);
 
   if( p->nCell ){
     int i;                        /* Used to iterate through cells */
-    int nUsable = sqlite3BtreeGetPageSize(pBt) - sqlite3BtreeGetReserve(pBt);
+    int nUsable = szPage - sqlite3BtreeGetReserve(pBt);
 
     p->aCell = sqlite3_malloc((p->nCell+1) * sizeof(StatCell));
     memset(p->aCell, 0, (p->nCell+1) * sizeof(StatCell));
@@ -451,11 +446,27 @@ static int statNext(sqlite3_vtab_cursor *pCursor){
   */
   if( rc==SQLITE_OK ){
     int i;
+    sqlite3_file *fd;
+    sqlite3_int64 x[2];
     StatPage *p = &pCsr->aPage[pCsr->iPage];
     pCsr->zName = (char *)sqlite3_column_text(pCsr->pStmt, 0);
     pCsr->iPageno = p->iPgno;
 
     statDecodePage(pBt, p);
+
+    /* The default page size and offset */
+    pCsr->szPage = sqlite3BtreeGetPageSize(pBt);
+    pCsr->iOffset = pCsr->szPage * (p->iPgno - 1);
+
+    /* If connected to a ZIPVFS backend, override the page size and
+    ** offset with actual values obtained from ZIPVFS.
+    */
+    fd = sqlite3PagerFile(pPager);
+    x[0] = p->iPgno;
+    if( sqlite3OsFileControl(fd, 230440, &x)==SQLITE_OK ){
+      pCsr->iOffset = x[0];
+      pCsr->szPage = x[1];
+    }
 
     switch( p->flags ){
       case 0x05:             /* table internal */
@@ -530,6 +541,12 @@ static int statColumn(
       break;
     case 7:            /* mx_payload */
       sqlite3_result_int(ctx, pCsr->nMxPayload);
+      break;
+    case 8:            /* pgoffset */
+      sqlite3_result_int64(ctx, pCsr->iOffset);
+      break;
+    case 9:            /* pgsize */
+      sqlite3_result_int(ctx, pCsr->szPage);
       break;
   }
   return SQLITE_OK;
@@ -607,4 +624,3 @@ int SqlitetestStat_Init(Tcl_Interp *interp){
   return TCL_OK;
 }
 #endif /* if defined(SQLITE_TEST) || TCLSH==2 */
-

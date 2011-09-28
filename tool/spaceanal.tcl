@@ -59,7 +59,8 @@ set tabledef {CREATE TABLE space_used(
    int_unused int,   -- Number of unused bytes on interior pages
    leaf_unused int,  -- Number of unused bytes on primary pages
    ovfl_unused int,  -- Number of unused bytes on overflow pages
-   gap_cnt int       -- Number of gaps in the page layout
+   gap_cnt int,      -- Number of gaps in the page layout
+   compressed_size int  -- Total bytes stored on disk
 );}
 mem eval $tabledef
 
@@ -101,7 +102,8 @@ foreach {name tblname} [concat sqlite_master sqlite_master [db eval $sql]] {
       sum(isoverflow(pagetype, $is_index)) AS ovfl_pages,
       sum(isinternal(pagetype, $is_index) * unused) AS int_unused,
       sum(isleaf(pagetype, $is_index) * unused) AS leaf_unused,
-      sum(isoverflow(pagetype, $is_index) * unused) AS ovfl_unused
+      sum(isoverflow(pagetype, $is_index) * unused) AS ovfl_unused,
+      sum(pgsize) AS compressed_size
     FROM temp.dbstat WHERE name = $name
   } break
 
@@ -138,7 +140,8 @@ foreach {name tblname} [concat sqlite_master sqlite_master [db eval $sql]] {
       $int_unused, 
       $leaf_unused,
       $ovfl_unused,
-      $gap_cnt
+      $gap_cnt,
+      $compressed_size
     );
   }
 }
@@ -224,7 +227,8 @@ proc subreport {title where} {
       int(sum(leaf_unused)) AS leaf_unused,
       int(sum(int_unused)) AS int_unused,
       int(sum(ovfl_unused)) AS ovfl_unused,
-      int(sum(gap_cnt)) AS gap_cnt
+      int(sum(gap_cnt)) AS gap_cnt,
+      int(sum(compressed_size)) AS compressed_size
     FROM space_used WHERE $where" {} {}
 
   # Output the sub-report title, nicely decorated with * characters.
@@ -274,6 +278,11 @@ proc subreport {title where} {
   statline {Percentage of total database} $total_pages_percent
   statline {Number of entries} $nleaf
   statline {Bytes of storage consumed} $storage
+  if {$compressed_size!=$storage} {
+    set pct [expr {$compressed_size*100.0/$storage}]
+    set pct [format {%5.1f%%} $pct]
+    statline {Bytes used after compression} $compressed_size $pct
+  }
   statline {Bytes of payload} $payload $payload_percent
   statline {Average payload per entry} $avg_payload
   statline {Average unused bytes per entry} $avg_unused
