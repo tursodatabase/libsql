@@ -385,4 +385,20 @@ ifcapable {autoinc} {
 
 forcedelete {a'z.db}
 
+# Test that "PRAGMA count_changes" does not interfere with VACUUM or cause
+# it to return any rows to the user.
+#
+do_test vacuum-10.1 {
+  db close
+  forcedelete test.db
+  sqlite3 db test.db
+  execsql {
+    CREATE TABLE t8(a, b);
+    INSERT INTO t8 VALUES('a', 'b');
+    INSERT INTO t8 VALUES('c', 'd');
+    PRAGMA count_changes = 1;
+  }
+} {}
+do_test vacuum-10.2 { execsql VACUUM } {}
+
 finish_test

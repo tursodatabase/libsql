@@ -1,5 +1,5 @@
-C In\sthe\sshell,\sallow\sarbitrary\stable\snames\son\sthe\s".import"\scommand.\nTicket\s[d1d84037b90a449].
-D 2011-09-28T01:10:00.323
+C Disable\sthe\sxfer\soptimization\sif\s"PRAGMA\scount_changes=1"\sis\sconfigured.\sTicket\s[c48d99d690].
+D 2011-09-30T12:01:01.579
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -141,7 +141,7 @@ F src/global.c e230227de13601714b29f9363028514aada5ae2f
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 3eea5a53d2644116fb865afaa4699fabe62b441c
+F src/insert.c ca18783512323f74aaf4ee74b46ffd75ec80d031
 F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
@@ -237,7 +237,7 @@ F src/trigger.c 1cfb80e2290ef66ea89cb4e821caae65a02c0d56
 F src/update.c 74a6cfb34e9732c1e2a86278b229913b4b51eeec
 F src/utf.c c53eb7404b3eb5c1cbb5655c6a7a0e0ce6bd50f0
 F src/util.c 06302ffd2b80408d4f6c7af71f7090e0cf8d8ff7
-F src/vacuum.c 05513dca036a1e7848fe18d5ed1265ac0b32365e
+F src/vacuum.c 297f39745e05d7a6ed7def7929451474d570a31e
 F src/vdbe.c 60340bfb23f456ea0791cb28262a887363773371
 F src/vdbe.h f0725ee997db869ecae5bb70a71612aabeca7755
 F src/vdbeInt.h 693d6ac6810298fc6b4c503cfbe3f99a240f40af
@@ -739,6 +739,7 @@ F test/tkt-b1d3a2e531.test 610ef582413171b379652663111b1f996d9f8f78
 F test/tkt-b351d95f9.test d14a503c414c5c58fdde3e80f9a3cfef986498c0
 F test/tkt-b72787b1.test e6b62b2b2785c04d0d698d6a603507e384165049
 F test/tkt-bd484a090c.test 60460bf946f79a79712b71f202eda501ca99b898
+F test/tkt-c48d99d690.test bed446e3513ae10eec1b86fdd186ef750226c408
 F test/tkt-cbd054fa6b.test f14f97ea43662e6f70c9e63287081e8be5d9d589
 F test/tkt-d11f09d36e.test fb44f7961aa6d4b632fb7b9768239832210b5fc7
 F test/tkt-d635236375.test 9d37e988b47d87505bc9445be0ca447002df5d09
@@ -860,7 +861,7 @@ F test/unordered.test e81169ce2a8f31b2c6b66af691887e1376ab3ced
 F test/update.test 8bc86fd7ef1a00014f76dc6a6a7c974df4aef172
 F test/uri.test 0d289d32396bdbc491e9dc845f1a52e13f861e0b
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
-F test/vacuum.test 9516f3a8e49be666f2dde28561e4be5ae5612de0
+F test/vacuum.test ce91c39f7f91a4273bf620efad21086b5aa6ef1d
 F test/vacuum2.test af432e6e3bfc0ea20a80cb86a03c7d9876d38324
 F test/vacuum3.test 77ecdd54592b45a0bcb133339f99f1ae0ae94d0d
 F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
@@ -964,7 +965,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 19b8eaaf70db82d401d33beb7fd36045d5e8326f
-R 435f0dc1b7e1759ce0909fde7c17ff57
-U drh
-Z 73ce79df8c2bde7f261efb2cafa35265
+P f4dd32d30ed54f847319664cf749fd0b92b4af3f
+R 712f892aa9e5f34289b214c1af3c2cef
+U dan
+Z 65613378c768fb62c70f2ad14b487bbd

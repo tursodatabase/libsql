@@ -45,7 +45,7 @@ static int execSql(sqlite3 *db, char **pzErrMsg, const char *zSql){
     return sqlite3_errcode(db);
   }
   VVA_ONLY( rc = ) sqlite3_step(pStmt);
-  assert( rc!=SQLITE_ROW );
+  assert( rc!=SQLITE_ROW || (db->flags&SQLITE_CountRows) );
   return vacuumFinalize(db, pStmt, pzErrMsg);
 }
 
