@@ -1,9 +1,9 @@
-C Disable\sthe\sxfer\soptimization\sif\s"PRAGMA\scount_changes=1"\sis\sconfigured.\sTicket\s[c48d99d690].
-D 2011-09-30T12:01:01.579
+C Update\sMSVC\smakefile\sto\sallow\stargets\sto\sbe\sbuilt\swith\ssupport\sfor\sICU.
+D 2011-10-02T05:23:16.470
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 6676bcfe711f621a0b1916ecfa5d0927f8084517
+F Makefile.msc dcad80fa69f17d46fe6778ba873fc108ca16298d
 F Makefile.vxworks 1deb39c8bb047296c30161ffa10c1b5423e632f9
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION bb37c274b503bbe73f00ea4f374eb817cba4b171
@@ -965,7 +965,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P f4dd32d30ed54f847319664cf749fd0b92b4af3f
-R 712f892aa9e5f34289b214c1af3c2cef
-U dan
-Z 65613378c768fb62c70f2ad14b487bbd
+P 9ddfe1e41300413bc9af7e5ce0ec9d1daf9136b1
+R 03863d4dd01ba5995289085115b33375
+U mistachkin
+Z 7dfdbd4e337132033acb3bc17ce78d60
