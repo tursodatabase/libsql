@@ -4048,6 +4048,15 @@ static int fts3EvalSelectDeferred(
   int nMinEst = 0;                /* The minimum count for any phrase so far. */
   int nLoad4 = 1;                 /* (Phrases that will be loaded)^4. */
 
+  /* Tokens are never deferred for FTS tables created using the content=xxx
+  ** option. The reason being that it is not guaranteed that the content
+  ** table actually contains the same data as the index. To prevent this from
+  ** causing any problems, the deferred token optimization is completely
+  ** disabled for content=xxx tables. */
+  if( pTab->zContentTbl ){
+    return SQLITE_OK;
+  }
+
   /* Count the tokens in this AND/NEAR cluster. If none of the doclists
   ** associated with the tokens spill onto overflow pages, or if there is
   ** only 1 token, exit early. No tokens to defer in this case. */

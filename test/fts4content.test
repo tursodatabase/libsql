@@ -22,6 +22,24 @@ ifcapable !fts3 {
   return
 }
 
+#-------------------------------------------------------------------------
+# Test organization:
+#   
+#   1.* - Warm-body tests.
+#
+#   2.* - Querying a content=xxx FTS table.
+#
+#   3.* - Writing to a content=xxx FTS table.
+#
+#   4.* - The "INSERT INTO fts(fts) VALUES('rebuild')" command.
+#
+#   5.* - Check that CREATE TABLE, DROP TABLE and ALTER TABLE correctly
+#         ignore any %_content table when used with the content=xxx option.
+#
+#   6.* - Test the effects of messing with the schema of table xxx after
+#         creating a content=xxx FTS index.
+#
+
 do_execsql_test 1.1 {
   CREATE TABLE t1(a, b, c);
   INSERT INTO t1 VALUES('w x', 'x y', 'y z');
@@ -362,5 +380,72 @@ do_execsql_test 5.1.7 {
 } {
   t5 t5_content
 }
+
+#-------------------------------------------------------------------------
+# Test cases 6.* test 
+# 
+do_catchsql_test 6.1.1 {
+  CREATE VIRTUAL TABLE ft7 USING fts4(content=t7);
+} {1 {vtable constructor failed: ft7}}
+
+do_execsql_test 6.2.1 {
+  CREATE TABLE t7(one, two);
+  CREATE VIRTUAL TABLE ft7 USING fts4(content=t7);
+  INSERT INTO t7 VALUES('A B', 'B A');
+  INSERT INTO t7 VALUES('C D', 'A A');
+  SELECT * FROM ft7;
+} {
+  {A B} {B A} {C D} {A A}
+}
+
+do_catchsql_test 6.2.2 {
+  DROP TABLE t7;
+  SELECT * FROM ft7;
+} {1 {SQL logic error or missing database}}
+
+db close
+sqlite3 db test.db
+do_execsql_test 6.2.3 {
+  SELECT name FROM sqlite_master WHERE name LIKE '%t7%'
+} {
+  ft7 ft7_segments ft7_segdir sqlite_autoindex_ft7_segdir_1 
+  ft7_docsize ft7_stat
+}
+do_catchsql_test 6.2.4 {
+  SELECT * FROM ft7;
+} {1 {vtable constructor failed: ft7}}
+do_execsql_test 6.2.5 {
+  CREATE TABLE t7(x, y);
+  INSERT INTO t7 VALUES('A B', 'B A');
+  INSERT INTO t7 VALUES('C D', 'A A');
+  SELECT * FROM ft7;
+} {
+  {A B} {B A} {C D} {A A}
+}
+
+do_execsql_test 6.2.6 {
+  INSERT INTO ft7(ft7) VALUES('rebuild');
+  SELECT rowid FROM ft7 WHERE ft7 MATCH '"A A"';
+} {2}
+
+do_execsql_test 6.2.7 {
+  DROP TABLE t7;
+  CREATE TABLE t7(x);
+}
+do_catchsql_test 6.2.8 {
+  SELECT rowid FROM ft7 WHERE ft7 MATCH '"A A"';
+} {1 {SQL logic error or missing database}}
+do_catchsql_test 6.2.9 {
+  SELECT rowid FROM ft7 WHERE ft7 MATCH '"A A"';
+} {1 {SQL logic error or missing database}}
+
+db close
+sqlite3 db test.db
+do_catchsql_test 6.2.10 {
+  SELECT rowid FROM ft7 WHERE ft7 MATCH '"A A"';
+} {0 2}
+do_catchsql_test 6.2.11 {
+  SELECT rowid, * FROM ft7 WHERE ft7 MATCH '"A A"';
+} {0 {2 {}}}
 
 finish_test
