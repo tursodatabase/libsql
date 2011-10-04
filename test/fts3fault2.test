@@ -82,4 +82,27 @@ do_faultsim_test 2.1 -prep {
   faultsim_test_result {0 {a * 1 1 a 0 1 1 b * 1 1 b 0 1 1 c * 1 1 c 0 1 1 x * 1 1 x 1 1 1 y * 1 1 y 1 1 1 z * 1 1 z 1 1 1}}
 }
 
+do_faultsim_test 3.0 -faults oom* -prep {
+  faultsim_delete_and_reopen
+  db eval { CREATE TABLE 'xx yy'(a, b); }
+} -body {
+  execsql {
+    CREATE VIRTUAL TABLE tt USING fts4(content="xx yy");
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+do_faultsim_test 3.1 -faults oom* -prep {
+  faultsim_delete_and_reopen
+  db func zip zip
+  db func unzip unzip
+} -body {
+  execsql {
+    CREATE VIRTUAL TABLE tt USING fts4(compress=zip, uncompress=unzip);
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
 finish_test

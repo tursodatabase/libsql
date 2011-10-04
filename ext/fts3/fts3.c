@@ -1151,7 +1151,7 @@ static int fts3InitVtab(
 
             case 4:               /* ORDER */
               if( (strlen(zVal)!=3 || sqlite3_strnicmp(zVal, "asc", 3)) 
-               && (strlen(zVal)!=4 || sqlite3_strnicmp(zVal, "desc", 3)) 
+               && (strlen(zVal)!=4 || sqlite3_strnicmp(zVal, "desc", 4)) 
               ){
                 *pzErr = sqlite3_mprintf("unrecognized order: %s", zVal);
                 rc = SQLITE_ERROR;
@@ -1159,7 +1159,8 @@ static int fts3InitVtab(
               bDescIdx = (zVal[0]=='d' || zVal[0]=='D');
               break;
 
-            case 5:               /* CONTENT */
+            default:              /* CONTENT */
+              assert( iOpt==5 );
               sqlite3_free(zUncompress);
               zContent = zVal;
               zVal = 0;
@@ -1928,7 +1929,7 @@ static int fts3PoslistPhraseMerge(
   char **pp1,                     /* IN/OUT: Left input list */
   char **pp2                      /* IN/OUT: Right input list */
 ){
-  char *p = (pp ? *pp : 0);
+  char *p = *pp;
   char *p1 = *pp1;
   char *p2 = *pp2;
   int iCol1 = 0;
@@ -1954,7 +1955,7 @@ static int fts3PoslistPhraseMerge(
       sqlite3_int64 iPos1 = 0;
       sqlite3_int64 iPos2 = 0;
 
-      if( pp && iCol1 ){
+      if( iCol1 ){
         *p++ = POS_COLUMN;
         p += sqlite3Fts3PutVarint(p, iCol1);
       }
@@ -1969,13 +1970,6 @@ static int fts3PoslistPhraseMerge(
          || (isExact==0 && iPos2>iPos1 && iPos2<=iPos1+nToken) 
         ){
           sqlite3_int64 iSave;
-          if( !pp ){
-            fts3PoslistCopy(0, &p2);
-            fts3PoslistCopy(0, &p1);
-            *pp1 = p1;
-            *pp2 = p2;
-            return 1;
-          }
           iSave = isSaveLeft ? iPos1 : iPos2;
           fts3PutDeltaVarint(&p, &iPrev, iSave+2); iPrev -= 2;
           pSave = 0;
@@ -2027,7 +2021,7 @@ static int fts3PoslistPhraseMerge(
   fts3PoslistCopy(0, &p1);
   *pp1 = p1;
   *pp2 = p2;
-  if( !pp || *pp==p ){
+  if( *pp==p ){
     return 0;
   }
   *p++ = 0x00;
@@ -3216,10 +3210,14 @@ static int fts3RenameMethod(
   sqlite3 *db = p->db;            /* Database connection */
   int rc;                         /* Return Code */
 
+  /* As it happens, the pending terms table is always empty here. This is
+  ** because an "ALTER TABLE RENAME TABLE" statement inside a transaction 
+  ** always opens a savepoint transaction. And the xSavepoint() method 
+  ** flushes the pending terms table. But leave the (no-op) call to
+  ** PendingTermsFlush() in in case that changes.
+  */
+  assert( p->nPendingData==0 );
   rc = sqlite3Fts3PendingTermsFlush(p);
-  if( rc!=SQLITE_OK ){
-    return rc;
-  }
 
   if( p->zContentTbl==0 ){
     fts3DbExec(&rc, db,
@@ -3586,21 +3584,20 @@ static int fts3EvalPhraseLoad(
 */
 static int fts3EvalDeferredPhrase(Fts3Cursor *pCsr, Fts3Phrase *pPhrase){
   int iToken;                     /* Used to iterate through phrase tokens */
-  int rc = SQLITE_OK;             /* Return code */
   char *aPoslist = 0;             /* Position list for deferred tokens */
   int nPoslist = 0;               /* Number of bytes in aPoslist */
   int iPrev = -1;                 /* Token number of previous deferred token */
 
   assert( pPhrase->doclist.bFreeList==0 );
 
-  for(iToken=0; rc==SQLITE_OK && iToken<pPhrase->nToken; iToken++){
+  for(iToken=0; iToken<pPhrase->nToken; iToken++){
     Fts3PhraseToken *pToken = &pPhrase->aToken[iToken];
     Fts3DeferredToken *pDeferred = pToken->pDeferred;
 
     if( pDeferred ){
       char *pList;
       int nList;
-      rc = sqlite3Fts3DeferredTokenList(pDeferred, &pList, &nList);
+      int rc = sqlite3Fts3DeferredTokenList(pDeferred, &pList, &nList);
       if( rc!=SQLITE_OK ) return rc;
 
       if( pList==0 ){
@@ -3930,7 +3927,7 @@ static void fts3EvalTokenCosts(
   Fts3Expr ***ppOr,               /* Write new OR root to *(*ppOr)++ */
   int *pRc                        /* IN/OUT: Error code */
 ){
-  if( *pRc==SQLITE_OK && pExpr ){
+  if( *pRc==SQLITE_OK ){
     if( pExpr->eType==FTSQUERY_PHRASE ){
       Fts3Phrase *pPhrase = pExpr->pPhrase;
       int i;
@@ -3944,6 +3941,11 @@ static void fts3EvalTokenCosts(
         *pRc = sqlite3Fts3MsrOvfl(pCsr, pTC->pToken->pSegcsr, &pTC->nOvfl);
       }
     }else if( pExpr->eType!=FTSQUERY_NOT ){
+      assert( pExpr->eType==FTSQUERY_OR
+           || pExpr->eType==FTSQUERY_AND
+           || pExpr->eType==FTSQUERY_NEAR
+      );
+      assert( pExpr->pLeft && pExpr->pRight );
       if( pExpr->eType==FTSQUERY_OR ){
         pRoot = pExpr->pLeft;
         **ppOr = pRoot;
