@@ -468,6 +468,7 @@ static int fts3DisconnectMethod(sqlite3_vtab *pVtab){
   sqlite3_free(p->zSegmentsTbl);
   sqlite3_free(p->zReadExprlist);
   sqlite3_free(p->zWriteExprlist);
+  sqlite3_free(p->zContentTbl);
 
   /* Invoke the tokenizer destructor to free the tokenizer. */
   p->pTokenizer->pModule->xDestroy(p->pTokenizer);
@@ -507,16 +508,19 @@ static void fts3DbExec(
 ** The xDestroy() virtual table method.
 */
 static int fts3DestroyMethod(sqlite3_vtab *pVtab){
-  int rc = SQLITE_OK;              /* Return code */
   Fts3Table *p = (Fts3Table *)pVtab;
-  sqlite3 *db = p->db;
+  int rc = SQLITE_OK;              /* Return code */
+  const char *zDb = p->zDb;        /* Name of database (e.g. "main", "temp") */
+  sqlite3 *db = p->db;             /* Database handle */
 
   /* Drop the shadow tables */
-  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_content'", p->zDb, p->zName);
-  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_segments'", p->zDb,p->zName);
-  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_segdir'", p->zDb, p->zName);
-  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_docsize'", p->zDb, p->zName);
-  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_stat'", p->zDb, p->zName);
+  if( p->zContentTbl==0 ){
+    fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_content'", zDb, p->zName);
+  }
+  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_segments'", zDb,p->zName);
+  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_segdir'", zDb, p->zName);
+  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_docsize'", zDb, p->zName);
+  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_stat'", zDb, p->zName);
 
   /* If everything has worked, invoke fts3DisconnectMethod() to free the
   ** memory associated with the Fts3Table structure and return SQLITE_OK.
@@ -578,23 +582,27 @@ static void fts3DeclareVtab(int *pRc, Fts3Table *p){
 static int fts3CreateTables(Fts3Table *p){
   int rc = SQLITE_OK;             /* Return code */
   int i;                          /* Iterator variable */
-  char *zContentCols;             /* Columns of %_content table */
   sqlite3 *db = p->db;            /* The database connection */
 
-  /* Create a list of user columns for the content table */
-  zContentCols = sqlite3_mprintf("docid INTEGER PRIMARY KEY");
-  for(i=0; zContentCols && i<p->nColumn; i++){
-    char *z = p->azColumn[i];
-    zContentCols = sqlite3_mprintf("%z, 'c%d%q'", zContentCols, i, z);
-  }
-  if( zContentCols==0 ) rc = SQLITE_NOMEM;
+  if( p->zContentTbl==0 ){
+    char *zContentCols;           /* Columns of %_content table */
 
-  /* Create the content table */
-  fts3DbExec(&rc, db, 
-     "CREATE TABLE %Q.'%q_content'(%s)",
-     p->zDb, p->zName, zContentCols
-  );
-  sqlite3_free(zContentCols);
+    /* Create a list of user columns for the content table */
+    zContentCols = sqlite3_mprintf("docid INTEGER PRIMARY KEY");
+    for(i=0; zContentCols && i<p->nColumn; i++){
+      char *z = p->azColumn[i];
+      zContentCols = sqlite3_mprintf("%z, 'c%d%q'", zContentCols, i, z);
+    }
+    if( zContentCols==0 ) rc = SQLITE_NOMEM;
+  
+    /* Create the content table */
+    fts3DbExec(&rc, db, 
+       "CREATE TABLE %Q.'%q_content'(%s)",
+       p->zDb, p->zName, zContentCols
+    );
+    sqlite3_free(zContentCols);
+  }
+
   /* Create other tables */
   fts3DbExec(&rc, db, 
       "CREATE TABLE %Q.'%q_segments'(blockid INTEGER PRIMARY KEY, block BLOB);",
@@ -745,8 +753,8 @@ static char *fts3QuoteId(char const *zInput){
 }
 
 /*
-** Return a list of comma separated SQL expressions that could be used
-** in a SELECT statement such as the following:
+** Return a list of comma separated SQL expressions and a FROM clause that 
+** could be used in a SELECT statement such as the following:
 **
 **     SELECT <list of expressions> FROM %_content AS x ...
 **
@@ -757,7 +765,7 @@ static char *fts3QuoteId(char const *zInput){
 ** table has the three user-defined columns "a", "b", and "c", the following
 ** string is returned:
 **
-**     "docid, unzip(x.'a'), unzip(x.'b'), unzip(x.'c')"
+**     "docid, unzip(x.'a'), unzip(x.'b'), unzip(x.'c') FROM %_content AS x"
 **
 ** The pointer returned points to a buffer allocated by sqlite3_malloc(). It
 ** is the responsibility of the caller to eventually free it.
@@ -773,16 +781,28 @@ static char *fts3ReadExprList(Fts3Table *p, const char *zFunc, int *pRc){
   char *zFunction;
   int i;
 
-  if( !zFunc ){
-    zFunction = "";
+  if( p->zContentTbl==0 ){
+    if( !zFunc ){
+      zFunction = "";
+    }else{
+      zFree = zFunction = fts3QuoteId(zFunc);
+    }
+    fts3Appendf(pRc, &zRet, "docid");
+    for(i=0; i<p->nColumn; i++){
+      fts3Appendf(pRc, &zRet, ",%s(x.'c%d%q')", zFunction, i, p->azColumn[i]);
+    }
+    sqlite3_free(zFree);
   }else{
-    zFree = zFunction = fts3QuoteId(zFunc);
+    fts3Appendf(pRc, &zRet, "rowid");
+    for(i=0; i<p->nColumn; i++){
+      fts3Appendf(pRc, &zRet, ", x.'%q'", p->azColumn[i]);
+    }
   }
-  fts3Appendf(pRc, &zRet, "docid");
-  for(i=0; i<p->nColumn; i++){
-    fts3Appendf(pRc, &zRet, ",%s(x.'c%d%q')", zFunction, i, p->azColumn[i]);
-  }
-  sqlite3_free(zFree);
+  fts3Appendf(pRc, &zRet, "FROM '%q'.'%q%s' AS x", 
+      p->zDb,
+      (p->zContentTbl ? p->zContentTbl : p->zName),
+      (p->zContentTbl ? "" : "_content")
+  );
   return zRet;
 }
 
@@ -907,6 +927,91 @@ static int fts3PrefixParameter(
 }
 
 /*
+** This function is called when initializing an FTS4 table that uses the
+** content=xxx option. It determines the number of and names of the columns
+** of the new FTS4 table.
+**
+** The third argument passed to this function is the value passed to the
+** config=xxx option (i.e. "xxx"). This function queries the database for
+** a table of that name. If found, the output variables are populated
+** as follows:
+**
+**   *pnCol:   Set to the number of columns table xxx has,
+**
+**   *pnStr:   Set to the total amount of space required to store a copy
+**             of each columns name, including the nul-terminator.
+**
+**   *pazCol:  Set to point to an array of *pnCol strings. Each string is
+**             the name of the corresponding column in table xxx. The array
+**             and its contents are allocated using a single allocation. It
+**             is the responsibility of the caller to free this allocation
+**             by eventually passing the *pazCol value to sqlite3_free().
+**
+** If the table cannot be found, an error code is returned and the output
+** variables are undefined. Or, if an OOM is encountered, SQLITE_NOMEM is
+** returned (and the output variables are undefined).
+*/
+static int fts3ContentColumns(
+  sqlite3 *db,                    /* Database handle */
+  const char *zDb,                /* Name of db (i.e. "main", "temp" etc.) */
+  const char *zTbl,               /* Name of content table */
+  const char ***pazCol,           /* OUT: Malloc'd array of column names */
+  int *pnCol,                     /* OUT: Size of array *pazCol */
+  int *pnStr                      /* OUT: Bytes of string content */
+){
+  int rc = SQLITE_OK;             /* Return code */
+  char *zSql;                     /* "SELECT *" statement on zTbl */  
+  sqlite3_stmt *pStmt = 0;        /* Compiled version of zSql */
+
+  zSql = sqlite3_mprintf("SELECT * FROM %Q.%Q", zDb, zTbl);
+  if( !zSql ){
+    rc = SQLITE_NOMEM;
+  }else{
+    rc = sqlite3_prepare(db, zSql, -1, &pStmt, 0);
+  }
+  sqlite3_free(zSql);
+
+  if( rc==SQLITE_OK ){
+    const char **azCol;           /* Output array */
+    int nStr = 0;                 /* Size of all column names (incl. 0x00) */
+    int nCol;                     /* Number of table columns */
+    int i;                        /* Used to iterate through columns */
+
+    /* Loop through the returned columns. Set nStr to the number of bytes of
+    ** space required to store a copy of each column name, including the
+    ** nul-terminator byte.  */
+    nCol = sqlite3_column_count(pStmt);
+    for(i=0; i<nCol; i++){
+      const char *zCol = sqlite3_column_name(pStmt, i);
+      nStr += strlen(zCol) + 1;
+    }
+
+    /* Allocate and populate the array to return. */
+    azCol = (const char **)sqlite3_malloc(sizeof(char *) * nCol + nStr);
+    if( azCol==0 ){
+      rc = SQLITE_NOMEM;
+    }else{
+      char *p = (char *)&azCol[nCol];
+      for(i=0; i<nCol; i++){
+        const char *zCol = sqlite3_column_name(pStmt, i);
+        int n = strlen(zCol)+1;
+        memcpy(p, zCol, n);
+        azCol[i] = p;
+        p += n;
+      }
+    }
+    sqlite3_finalize(pStmt);
+
+    /* Set the output variables. */
+    *pnCol = nCol;
+    *pnStr = nStr;
+    *pazCol = azCol;
+  }
+
+  return rc;
+}
+
+/*
 ** This function is the implementation of both the xConnect and xCreate
 ** methods of the FTS3 virtual table.
 **
@@ -950,6 +1055,7 @@ static int fts3InitVtab(
   char *zPrefix = 0;              /* Prefix parameter value (or NULL) */
   char *zCompress = 0;            /* compress=? parameter (or NULL) */
   char *zUncompress = 0;          /* uncompress=? parameter (or NULL) */
+  char *zContent = 0;             /* content=? parameter (or NULL) */
 
   assert( strlen(argv[0])==4 );
   assert( (sqlite3_strnicmp(argv[0], "fts4", 4)==0 && isFts4)
@@ -993,13 +1099,13 @@ static int fts3InitVtab(
       struct Fts4Option {
         const char *zOpt;
         int nOpt;
-        char **pzVar;
       } aFts4Opt[] = {
-        { "matchinfo",   9, 0 },            /* 0 -> MATCHINFO */
-        { "prefix",      6, 0 },            /* 1 -> PREFIX */
-        { "compress",    8, 0 },            /* 2 -> COMPRESS */
-        { "uncompress", 10, 0 },            /* 3 -> UNCOMPRESS */
-        { "order",       5, 0 }             /* 4 -> ORDER */
+        { "matchinfo",   9 },     /* 0 -> MATCHINFO */
+        { "prefix",      6 },     /* 1 -> PREFIX */
+        { "compress",    8 },     /* 2 -> COMPRESS */
+        { "uncompress", 10 },     /* 3 -> UNCOMPRESS */
+        { "order",       5 },     /* 4 -> ORDER */
+        { "content",     7 }      /* 5 -> CONTENT */
       };
 
       int iOpt;
@@ -1052,6 +1158,12 @@ static int fts3InitVtab(
               }
               bDescIdx = (zVal[0]=='d' || zVal[0]=='D');
               break;
+
+            case 5:               /* CONTENT */
+              sqlite3_free(zUncompress);
+              zContent = zVal;
+              zVal = 0;
+              break;
           }
         }
         sqlite3_free(zVal);
@@ -1063,6 +1175,27 @@ static int fts3InitVtab(
       nString += (int)(strlen(z) + 1);
       aCol[nCol++] = z;
     }
+  }
+
+  /* If a content=xxx option was specified, the following:
+  **
+  **   1. Ignore any compress= and uncompress= options.
+  **
+  **   2. Ignore any column names that were specified as part of the 
+  **      the CREATE VIRTUAL TABLE statement.
+  **
+  **   3. Determine the actual column names to use for the FTS table 
+  **      based on the columns of the content= table.
+  */
+  if( rc==SQLITE_OK && zContent ){
+    sqlite3_free(aCol); 
+    sqlite3_free(zCompress); 
+    sqlite3_free(zUncompress); 
+    zCompress = 0;
+    zUncompress = 0;
+    aCol = 0;
+    rc = fts3ContentColumns(db, argv[1], zContent, &aCol, &nCol, &nString);
+    assert( rc!=SQLITE_OK || nCol>0 );
   }
   if( rc!=SQLITE_OK ) goto fts3_init_out;
 
@@ -1108,6 +1241,8 @@ static int fts3InitVtab(
   p->bHasDocsize = (isFts4 && bNoDocsize==0);
   p->bHasStat = isFts4;
   p->bDescIdx = bDescIdx;
+  p->zContentTbl = zContent;
+  zContent = 0;
   TESTONLY( p->inTransaction = -1 );
   TESTONLY( p->mxSavepoint = -1 );
 
@@ -1169,6 +1304,7 @@ fts3_init_out:
   sqlite3_free(aIndex);
   sqlite3_free(zCompress);
   sqlite3_free(zUncompress);
+  sqlite3_free(zContent);
   sqlite3_free((void *)aCol);
   if( rc!=SQLITE_OK ){
     if( p ){
@@ -1334,11 +1470,16 @@ static int fts3CursorSeek(sqlite3_context *pContext, Fts3Cursor *pCsr){
     }else{
       int rc = sqlite3_reset(pCsr->pStmt);
       if( rc==SQLITE_OK ){
-        /* If no row was found and no error has occured, then the %_content
-        ** table is missing a row that is present in the full-text index.
-        ** The data structures are corrupt.
-        */
-        rc = SQLITE_CORRUPT_VTAB;
+        Fts3Table *p = (Fts3Table *)pCsr->base.pVtab;
+        if( p->zContentTbl==0 ){
+          /* If no row was found and no error has occured, then the %_content
+          ** table is missing a row that is present in the full-text index.
+          ** The data structures are corrupt.
+          */
+          rc = SQLITE_CORRUPT_VTAB;
+        }else{
+          return SQLITE_OK;
+        }
       }
       pCsr->isEof = 1;
       if( pContext ){
@@ -2713,12 +2854,13 @@ static int fts3FilterMethod(
   ** row by docid.
   */
   if( idxNum==FTS3_FULLSCAN_SEARCH ){
-    const char *zSort = (pCsr->bDesc ? "DESC" : "ASC");
-    const char *zTmpl = "SELECT %s FROM %Q.'%q_content' AS x ORDER BY docid %s";
-    zSql = sqlite3_mprintf(zTmpl, p->zReadExprlist, p->zDb, p->zName, zSort);
+    const char *zTmpl = "SELECT %s ORDER BY rowid %s";
+    zSql = sqlite3_mprintf(zTmpl, 
+        p->zReadExprlist, (pCsr->bDesc ? "DESC" : "ASC")
+    );
   }else{
-    const char *zTmpl = "SELECT %s FROM %Q.'%q_content' AS x WHERE docid = ?";
-    zSql = sqlite3_mprintf(zTmpl, p->zReadExprlist, p->zDb, p->zName);
+    const char *zTmpl = "SELECT %s WHERE rowid = ?";
+    zSql = sqlite3_mprintf(zTmpl, p->zReadExprlist);
   }
   if( !zSql ) return SQLITE_NOMEM;
   rc = sqlite3_prepare_v2(p->db, zSql, -1, &pCsr->pStmt, 0);
@@ -2781,7 +2923,7 @@ static int fts3ColumnMethod(
     sqlite3_result_blob(pContext, &pCsr, sizeof(pCsr), SQLITE_TRANSIENT);
   }else{
     rc = fts3CursorSeek(0, pCsr);
-    if( rc==SQLITE_OK ){
+    if( rc==SQLITE_OK && sqlite3_data_count(pCsr->pStmt)>(iCol+1) ){
       sqlite3_result_value(pContext, sqlite3_column_value(pCsr->pStmt, iCol+1));
     }
   }
@@ -3079,10 +3221,13 @@ static int fts3RenameMethod(
     return rc;
   }
 
-  fts3DbExec(&rc, db,
-    "ALTER TABLE %Q.'%q_content'  RENAME TO '%q_content';",
-    p->zDb, p->zName, zName
-  );
+  if( p->zContentTbl==0 ){
+    fts3DbExec(&rc, db,
+      "ALTER TABLE %Q.'%q_content'  RENAME TO '%q_content';",
+      p->zDb, p->zName, zName
+    );
+  }
+
   if( p->bHasDocsize ){
     fts3DbExec(&rc, db,
       "ALTER TABLE %Q.'%q_docsize'  RENAME TO '%q_docsize';",

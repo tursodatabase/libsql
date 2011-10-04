@@ -184,6 +184,7 @@ struct Fts3Table {
   int nColumn;                    /* number of named columns in virtual table */
   char **azColumn;                /* column names.  malloced */
   sqlite3_tokenizer *pTokenizer;  /* tokenizer for inserts and queries */
+  char *zContentTbl;              /* content=xxx option, or NULL */
 
   /* Precompiled statements used by the implementation. Each of these 
   ** statements is run and reset within a single virtual table API call. 
@@ -245,6 +246,7 @@ struct Fts3Cursor {
   i16 eSearch;                    /* Search strategy (see below) */
   u8 isEof;                       /* True if at End Of Results */
   u8 isRequireSeek;               /* True if must seek pStmt to %_content row */
+  u8 isNullRow;                   /* True for a row of NULLs */
   sqlite3_stmt *pStmt;            /* Prepared statement in use by the cursor */
   Fts3Expr *pExpr;                /* Parsed MATCH query string */
   int nPhrase;                    /* Number of matchable phrases in query */

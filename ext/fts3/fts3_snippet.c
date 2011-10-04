@@ -1409,7 +1409,7 @@ void sqlite3Fts3Offsets(
 
       if( !pTerm ){
         /* All offsets for this column have been gathered. */
-        break;
+        rc = SQLITE_DONE;
       }else{
         assert( iCurrent<=iMinPos );
         if( 0==(0xFE&*pTerm->pList) ){
@@ -1426,7 +1426,7 @@ void sqlite3Fts3Offsets(
               "%d %d %d %d ", iCol, pTerm-sCtx.aTerm, iStart, iEnd-iStart
           );
           rc = fts3StringAppend(&res, aBuffer, -1);
-        }else if( rc==SQLITE_DONE ){
+        }else if( rc==SQLITE_DONE && pTab->zContentTbl==0 ){
           rc = SQLITE_CORRUPT_VTAB;
         }
       }

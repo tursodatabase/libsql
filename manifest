@@ -1,5 +1,5 @@
-C Update\sMSVC\smakefile\sto\sallow\stargets\sto\sbe\sbuilt\swith\ssupport\sfor\sICU.
-D 2011-10-02T05:23:16.470
+C Add\sexperimental\s'content'\soption\sto\sFTS4.
+D 2011-10-04T11:22:59.677
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -62,22 +62,22 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 195e4da669741c1f097434ec48c0ba5739193af9
+F ext/fts3/fts3.c 626fcf477e531b470f06aae3d427abcda2d5d31c
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 30063fdd0bc433b5db1532e3a363cb0f2f7e8eb3
+F ext/fts3/fts3Int.h a335d671d42ca07528a93c5b830e48e0205b26bc
 F ext/fts3/fts3_aux.c 0ebfa7b86cf8ff6a0861605fcc63b83ec1b70691
 F ext/fts3/fts3_expr.c 23791de01b3a5d313d76e02befd2601d4096bc2b
 F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
 F ext/fts3/fts3_hash.h 8331fb2206c609f9fc4c4735b9ab5ad6137c88ec
 F ext/fts3/fts3_icu.c 6c8f395cdf9e1e3afa7fadb7e523dbbf381c6dfa
 F ext/fts3/fts3_porter.c 8d946908f4812c005d3d33fcbe78418b1f4eb70c
-F ext/fts3/fts3_snippet.c 58b2ba2b934c1e2a2f6ac857d7f3c7e1a14b4532
+F ext/fts3/fts3_snippet.c 8838a1de5f7df3a559596870caaa4a9895248998
 F ext/fts3/fts3_term.c a5457992723455a58804cb75c8cbd8978db5c2ef
 F ext/fts3/fts3_test.c 24fa13f330db011500acb95590da9eee24951894
 F ext/fts3/fts3_tokenizer.c 9ff7ec66ae3c5c0340fa081958e64f395c71a106
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 0dde8f307b8045565cf63797ba9acfaff1c50c68
-F ext/fts3/fts3_write.c 194829c8fd024a448fc899e5ff02a8ed06595529
+F ext/fts3/fts3_write.c 9e14eb54310345b441d7a8c83bc3ae474230bea6
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
@@ -486,6 +486,7 @@ F test/fts3shared.test 8bb266521d7c5495c0ae522bb4d376ad5387d4a2
 F test/fts3snippet.test 8e956051221a34c7daeb504f023cb54d5fa5a8b2
 F test/fts3sort.test 9a5176c9317bb545ec5f144d62e6fedb4da6c66e
 F test/fts4aa.test 6e7f90420b837b2c685f3bcbe84c868492d40a68
+F test/fts4content.test fbafb7160eef1560b6a254b1ad5631acccd388a1
 F test/func.test 6c5ce11e3a0021ca3c0649234e2d4454c89110ca
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 001021e5b88bd02a3b365a5c5fd8f6f49d39744a
@@ -620,7 +621,7 @@ F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
-F test/permutations.test ad17319066a90e2db71823c3ff104795ffc71b31
+F test/permutations.test 7b1c4cb40af3712e42364c82390ace0df207b5e0
 F test/pragma.test c8108e01da04f16e67e5754e610bc62c1b993f6c
 F test/pragma2.test 3a55f82b954242c642f8342b17dffc8b47472947
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
@@ -965,7 +966,10 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 9ddfe1e41300413bc9af7e5ce0ec9d1daf9136b1
-R 03863d4dd01ba5995289085115b33375
-U mistachkin
-Z 7dfdbd4e337132033acb3bc17ce78d60
+P eb5da5e1dbe9c198095036827318fb381441cbd0
+R 7991a3071fb34636c7b5ed4b010ad95a
+T *branch * fts4-content
+T *sym-fts4-content *
+T -sym-trunk *
+U dan
+Z 48ff718a3615a321d5bc0764cb014ed4
