@@ -1,5 +1,5 @@
-C Merge\sthe\sSTAT3\schanges\sinto\strunk.
-D 2011-10-03T15:30:33.910
+C When\sfinding\sthe\sappropriate\sfile\spermissions\sfor\sjournal\sfiles\swith\nSQLITE_ENABLE_8_3_NAMES,\signore\s"-"\scharacters\sin\sthe\sname\sof\sthe\ncontaining\sdirectory.
+D 2011-10-05T15:26:13.326
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +165,7 @@ F src/os.c 3b3f69c34be7f998f5ea6bd46a2fe8a2b7fa8f70
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 10e0c4dcdbec8d4189890fdf3e71b32efae194e3
+F src/os_unix.c 9da63854b702e0855ce13711a80d8bdcc5b69549
 F src/os_win.c fbe47c7fdc9a846a772bbf98719c328becad5f8a
 F src/pager.c 8a6ac3e0d9694412076e2273e3c81e9c4e08758f
 F src/pager.h dbcaa791e8b6c3a6b77c168c5c27deec289fb176
@@ -967,7 +967,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P eb5da5e1dbe9c198095036827318fb381441cbd0 4a153f010037db83107314269b240c0ece8430f8
-R 275c2a97143f629aefcc177df6bba902
+P 774d0842bcce8862f2aac371f1689536ed234a0a
+R 8bd0da8f5be7e82af9f6bb3b243542c9
 U drh
-Z d37f9abd0dd218dc2e6379072330845e
+Z 6258a1fa0558c65b7a4b3244943b1ca3

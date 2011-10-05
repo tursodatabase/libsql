@@ -4888,8 +4888,16 @@ static int findCreateFileMode(
     ** used by the test_multiplex.c module.
     */
     nDb = sqlite3Strlen30(zPath) - 1; 
-    while( nDb>0 && zPath[nDb]!='-' ) nDb--;
-    if( nDb==0 ) return SQLITE_OK;
+#ifdef SQLITE_ENABLE_8_3_NAMES
+    while( nDb>0 && zPath[nDb]!='-' && zPath[nDb]!='/' ) nDb--;
+    if( nDb==0 || zPath[nDb]=='/' ) return SQLITE_OK;
+#else
+    while( zPath[nDb]!='-' ){
+      assert( nDb>0 );
+      assert( zPath[nDb]!='\n' );
+      nDb--;
+    }
+#endif
     memcpy(zDb, zPath, nDb);
     zDb[nDb] = '\0';
 
