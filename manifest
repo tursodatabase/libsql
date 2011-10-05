@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sIO\serror\shandling\sin\sthe\srebuild-index\scode.
-D 2011-10-05T06:07:00.875
+C Change\sFTS4\sso\sthat\sif\sboth\sthe\scontent=xxx\soption\sand\scolumn\snames\sare\sspecified,\sthe\svirtual\stable\sassumes\sthat\sthe\snamed\scolumns\scorrespond\sto\scolumns\sof\stable\sxxx.
+D 2011-10-05T15:11:30.760
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -62,7 +62,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 6d6f3d331ed785d2e68608443eff66448ea95354
+F ext/fts3/fts3.c f2ed0ae669534e0c9c8ba95b60b6c137544e7e49
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 06f442ce096e6254432a6b16a56b6fe7b24bd372
 F ext/fts3/fts3_aux.c 0ebfa7b86cf8ff6a0861605fcc63b83ec1b70691
@@ -77,7 +77,7 @@ F ext/fts3/fts3_test.c 24fa13f330db011500acb95590da9eee24951894
 F ext/fts3/fts3_tokenizer.c 9ff7ec66ae3c5c0340fa081958e64f395c71a106
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 0dde8f307b8045565cf63797ba9acfaff1c50c68
-F ext/fts3/fts3_write.c 16fba93fc840f15421ebf1a783a8c3395700bbf9
+F ext/fts3/fts3_write.c 06520aa8a0a32a7bed08b29a9004fde1cb7f0318
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
@@ -486,7 +486,7 @@ F test/fts3shared.test 8bb266521d7c5495c0ae522bb4d376ad5387d4a2
 F test/fts3snippet.test 8e956051221a34c7daeb504f023cb54d5fa5a8b2
 F test/fts3sort.test 95be0b19d7e41c44b29014f13ea8bddd495fd659
 F test/fts4aa.test 6e7f90420b837b2c685f3bcbe84c868492d40a68
-F test/fts4content.test 5c226c7c666e250c175bcbdfbdd4be3f275c73ba
+F test/fts4content.test c5f531ecfc3d446b90032cae212549dbbb18dd78
 F test/func.test 6c5ce11e3a0021ca3c0649234e2d4454c89110ca
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 001021e5b88bd02a3b365a5c5fd8f6f49d39744a
@@ -966,7 +966,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 0f439944ab49a5691615bc170fdcf652055573df
-R 29197ea13db81f2ba07fe324b03117e5
+P c6ba81fcad32192674bd510e607f787adc1f7038
+R 0217fe49810be9d8f9417ba3c648ab3e
 U dan
-Z a28913360f741831433fc7b43c93a8a9
+Z 1eb4f36513f7844867f45162778888e7

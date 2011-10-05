@@ -1182,20 +1182,19 @@ static int fts3InitVtab(
   **
   **   1. Ignore any compress= and uncompress= options.
   **
-  **   2. Ignore any column names that were specified as part of the 
-  **      the CREATE VIRTUAL TABLE statement.
-  **
-  **   3. Determine the actual column names to use for the FTS table 
-  **      based on the columns of the content= table.
+  **   2. If no column names were specified as part of the CREATE VIRTUAL
+  **      TABLE statement, use all columns from the content table.
   */
   if( rc==SQLITE_OK && zContent ){
-    sqlite3_free(aCol); 
     sqlite3_free(zCompress); 
     sqlite3_free(zUncompress); 
     zCompress = 0;
     zUncompress = 0;
-    aCol = 0;
-    rc = fts3ContentColumns(db, argv[1], zContent, &aCol, &nCol, &nString);
+    if( nCol==0 ){
+      sqlite3_free(aCol); 
+      aCol = 0;
+      rc = fts3ContentColumns(db, argv[1], zContent, &aCol, &nCol, &nString);
+    }
     assert( rc!=SQLITE_OK || nCol>0 );
   }
   if( rc!=SQLITE_OK ) goto fts3_init_out;
@@ -1458,39 +1457,63 @@ static int fts3CloseMethod(sqlite3_vtab_cursor *pCursor){
 }
 
 /*
+** If pCsr->pStmt has not been prepared (i.e. if pCsr->pStmt==0), then
+** compose and prepare an SQL statement of the form:
+**
+**    "SELECT <columns> FROM %_content WHERE rowid = ?"
+**
+** (or the equivalent for a content=xxx table) and set pCsr->pStmt to
+** it. If an error occurs, return an SQLite error code.
+**
+** Otherwise, set *ppStmt to point to pCsr->pStmt and return SQLITE_OK.
+*/
+static int fts3CursorSeekStmt(Fts3Cursor *pCsr, sqlite3_stmt **ppStmt){
+  int rc = SQLITE_OK;
+  if( pCsr->pStmt==0 ){
+    Fts3Table *p = (Fts3Table *)pCsr->base.pVtab;
+    char *zSql;
+    zSql = sqlite3_mprintf("SELECT %s WHERE rowid = ?", p->zReadExprlist);
+    if( !zSql ) return SQLITE_NOMEM;
+    rc = sqlite3_prepare_v2(p->db, zSql, -1, &pCsr->pStmt, 0);
+    sqlite3_free(zSql);
+  }
+  *ppStmt = pCsr->pStmt;
+  return rc;
+}
+
+/*
 ** Position the pCsr->pStmt statement so that it is on the row
 ** of the %_content table that contains the last match.  Return
 ** SQLITE_OK on success.  
 */
 static int fts3CursorSeek(sqlite3_context *pContext, Fts3Cursor *pCsr){
+  int rc = SQLITE_OK;
   if( pCsr->isRequireSeek ){
-    sqlite3_bind_int64(pCsr->pStmt, 1, pCsr->iPrevId);
-    pCsr->isRequireSeek = 0;
-    if( SQLITE_ROW==sqlite3_step(pCsr->pStmt) ){
-      return SQLITE_OK;
-    }else{
-      int rc = sqlite3_reset(pCsr->pStmt);
-      if( rc==SQLITE_OK ){
-        Fts3Table *p = (Fts3Table *)pCsr->base.pVtab;
-        if( p->zContentTbl==0 ){
+    sqlite3_stmt *pStmt = 0;
+
+    rc = fts3CursorSeekStmt(pCsr, &pStmt);
+    if( rc==SQLITE_OK ){
+      sqlite3_bind_int64(pCsr->pStmt, 1, pCsr->iPrevId);
+      pCsr->isRequireSeek = 0;
+      if( SQLITE_ROW==sqlite3_step(pCsr->pStmt) ){
+        return SQLITE_OK;
+      }else{
+        rc = sqlite3_reset(pCsr->pStmt);
+        if( rc==SQLITE_OK && ((Fts3Table *)pCsr->base.pVtab)->zContentTbl==0 ){
           /* If no row was found and no error has occured, then the %_content
           ** table is missing a row that is present in the full-text index.
-          ** The data structures are corrupt.
-          */
+          ** The data structures are corrupt.  */
           rc = SQLITE_CORRUPT_VTAB;
-        }else{
-          return SQLITE_OK;
+          pCsr->isEof = 1;
         }
       }
-      pCsr->isEof = 1;
-      if( pContext ){
-        sqlite3_result_error_code(pContext, rc);
-      }
-      return rc;
     }
-  }else{
-    return SQLITE_OK;
   }
+
+  if( rc!=SQLITE_OK && pContext ){
+    sqlite3_result_error_code(pContext, rc);
+  }
+  return rc;
 }
 
 /*
@@ -2848,23 +2871,23 @@ static int fts3FilterMethod(
   ** row by docid.
   */
   if( idxNum==FTS3_FULLSCAN_SEARCH ){
-    const char *zTmpl = "SELECT %s ORDER BY rowid %s";
-    zSql = sqlite3_mprintf(zTmpl, 
+    zSql = sqlite3_mprintf(
+        "SELECT %s ORDER BY rowid %s",
         p->zReadExprlist, (pCsr->bDesc ? "DESC" : "ASC")
     );
-  }else{
-    const char *zTmpl = "SELECT %s WHERE rowid = ?";
-    zSql = sqlite3_mprintf(zTmpl, p->zReadExprlist);
+    if( zSql ){
+      rc = sqlite3_prepare_v2(p->db, zSql, -1, &pCsr->pStmt, 0);
+      sqlite3_free(zSql);
+    }else{
+      rc = SQLITE_NOMEM;
+    }
+  }else if( idxNum==FTS3_DOCID_SEARCH ){
+    rc = fts3CursorSeekStmt(pCsr, &pCsr->pStmt);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3_bind_value(pCsr->pStmt, 1, apVal[0]);
+    }
   }
-  if( !zSql ) return SQLITE_NOMEM;
-  rc = sqlite3_prepare_v2(p->db, zSql, -1, &pCsr->pStmt, 0);
-  sqlite3_free(zSql);
   if( rc!=SQLITE_OK ) return rc;
-
-  if( idxNum==FTS3_DOCID_SEARCH ){
-    rc = sqlite3_bind_value(pCsr->pStmt, 1, apVal[0]);
-    if( rc!=SQLITE_OK ) return rc;
-  }
 
   return fts3NextMethod(pCursor);
 }

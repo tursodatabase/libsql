@@ -409,17 +409,24 @@ static void fts3SqlExec(
 ** not what users expect when they get SQLITE_LOCKED_SHAREDCACHE. It can
 ** still happen if the user reads data directly from the %_segments or
 ** %_segdir tables instead of going through FTS3 though.
+**
+** This reasoning does not apply to a content=xxx table.
 */
 int sqlite3Fts3ReadLock(Fts3Table *p){
   int rc;                         /* Return code */
   sqlite3_stmt *pStmt;            /* Statement used to obtain lock */
 
-  rc = fts3SqlStmt(p, SQL_SELECT_CONTENT_BY_ROWID, &pStmt, 0);
-  if( rc==SQLITE_OK ){
-    sqlite3_bind_null(pStmt, 1);
-    sqlite3_step(pStmt);
-    rc = sqlite3_reset(pStmt);
+  if( p->zContentTbl==0 ){
+    rc = fts3SqlStmt(p, SQL_SELECT_CONTENT_BY_ROWID, &pStmt, 0);
+    if( rc==SQLITE_OK ){
+      sqlite3_bind_null(pStmt, 1);
+      sqlite3_step(pStmt);
+      rc = sqlite3_reset(pStmt);
+    }
+  }else{
+    rc = SQLITE_OK;
   }
+
   return rc;
 }
 
