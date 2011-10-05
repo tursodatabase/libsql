@@ -1,5 +1,5 @@
-C Improve\stest\scoverage\sof\sfts3.c.
-D 2011-10-04T19:41:50.550
+C Fix\sa\sproblem\swith\sIO\serror\shandling\sin\sthe\srebuild-index\scode.
+D 2011-10-05T06:07:00.875
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -77,7 +77,7 @@ F ext/fts3/fts3_test.c 24fa13f330db011500acb95590da9eee24951894
 F ext/fts3/fts3_tokenizer.c 9ff7ec66ae3c5c0340fa081958e64f395c71a106
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 0dde8f307b8045565cf63797ba9acfaff1c50c68
-F ext/fts3/fts3_write.c 9e14eb54310345b441d7a8c83bc3ae474230bea6
+F ext/fts3/fts3_write.c 16fba93fc840f15421ebf1a783a8c3395700bbf9
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
@@ -475,7 +475,7 @@ F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3expr.test 5e745b2b6348499d9ef8d59015de3182072c564c
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
 F test/fts3fault.test f83e556465bb69dc8bc676339eca408dce4ca246
-F test/fts3fault2.test 253f9b336043ab7d0393d1b97a9f4ed21190331a
+F test/fts3fault2.test b62a2bc843c20414405f80e5eeb78e39bc68fe53
 F test/fts3malloc.test b86ea33db9e8c58c0c2f8027a9fcadaf6a1568be
 F test/fts3matchinfo.test 6507fe1c342e542300d65ea637d4110eccf894e6
 F test/fts3near.test 2e318ee434d32babd27c167142e2b94ddbab4844
@@ -966,7 +966,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P be86c7061b68f403730bf63ea1f7dc0d9ceb0a3b
-R 5a9454f18e2824c0a4b3f3725eccae4e
+P 0f439944ab49a5691615bc170fdcf652055573df
+R 29197ea13db81f2ba07fe324b03117e5
 U dan
-Z e08086009c7ea460be359636e4d09cb8
+Z a28913360f741831433fc7b43c93a8a9

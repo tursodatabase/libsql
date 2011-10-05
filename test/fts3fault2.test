@@ -105,4 +105,30 @@ do_faultsim_test 3.1 -faults oom* -prep {
   faultsim_test_result {0 {}}
 }
 
+do_test 4.0 {
+  faultsim_delete_and_reopen
+  execsql {
+    CREATE VIRTUAL TABLE ft USING fts4(a, b);
+    INSERT INTO ft VALUES('U U T C O', 'F N D E S');
+    INSERT INTO ft VALUES('P H X G B', 'I D M R U');
+    INSERT INTO ft VALUES('P P X D M', 'Y V N T C');
+    INSERT INTO ft VALUES('Z L Q O W', 'D F U N Q');
+    INSERT INTO ft VALUES('A J D U P', 'C H M Q E');
+    INSERT INTO ft VALUES('P S A O H', 'S Z C W D');
+    INSERT INTO ft VALUES('T B N L W', 'C A K T I');
+    INSERT INTO ft VALUES('K E Z L O', 'L L Y C E');
+    INSERT INTO ft VALUES('C R E S V', 'Q V F W P');
+    INSERT INTO ft VALUES('S K H G W', 'R W Q F G');
+  }
+  faultsim_save_and_close
+} {}
+do_faultsim_test 4.1 -prep {
+  faultsim_restore_and_reopen
+  db eval {SELECT * FROM sqlite_master}
+} -body {
+  execsql { INSERT INTO ft(ft) VALUES('rebuild') }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
 finish_test

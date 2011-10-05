@@ -3001,8 +3001,10 @@ static int fts3DoRebuild(Fts3Table *p){
     sqlite3_free(aSz);
 
     if( pStmt ){
-      assert( rc==SQLITE_OK );
-      rc = sqlite3_finalize(pStmt);
+      int rc2 = sqlite3_finalize(pStmt);
+      if( rc==SQLITE_OK ){
+        rc = rc2;
+      }
     }
   }
 
