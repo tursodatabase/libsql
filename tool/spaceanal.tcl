@@ -4,18 +4,29 @@
 #
 
 if {[catch {
-if {![info exists argv0]} {
-  set argv0 [file rootname [file tail [info nameofexecutable]]]
-}
-
 # Get the name of the database to analyze
 #
-#set argv $argv0
-if {![info exists argv] || [llength $argv]!=1} {
+proc usage {} {
+  set argv0 [file rootname [file tail [info nameofexecutable]]]
   puts stderr "Usage: $argv0 database-name"
   exit 1
 }
-set file_to_analyze [lindex $argv 0]
+set file_to_analyze {}
+set flags(-pageinfo) 0
+append argv {}
+foreach arg $argv {
+  if {[regexp {^-+pageinfo$} $arg]} {
+    set flags(-pageinfo) 1
+  } elseif {[regexp {^-} $arg]} {
+    puts stderr "Unknown option: $arg"
+    usage
+  } elseif {$file_to_analyze!=""} {
+    usage
+  } else {
+    set file_to_analyze $arg
+  }
+}
+if {$file_to_analyze==""} usage
 if {![file exists $file_to_analyze]} {
   puts stderr "No such file: $file_to_analyze"
   exit 1
@@ -24,7 +35,8 @@ if {![file readable $file_to_analyze]} {
   puts stderr "File is not readable: $file_to_analyze"
   exit 1
 }
-if {[file size $file_to_analyze]<512} {
+set true_file_size [file size $file_to_analyze]
+if {$true_file_size<512} {
   puts stderr "Empty or malformed database: $file_to_analyze"
   exit 1
 }
@@ -85,6 +97,8 @@ db func isleaf isleaf
 db func isinternal isinternal
 db func isoverflow isoverflow
 
+set isCompressed 0
+set compressOverhead 0
 set sql { SELECT name, tbl_name FROM sqlite_master WHERE rootpage>0 }
 foreach {name tblname} [concat sqlite_master sqlite_master [db eval $sql]] {
 
@@ -106,6 +120,13 @@ foreach {name tblname} [concat sqlite_master sqlite_master [db eval $sql]] {
       sum(pgsize) AS compressed_size
     FROM temp.dbstat WHERE name = $name
   } break
+
+  set total_pages [expr {$leaf_pages+$int_pages+$ovfl_pages}]
+  set storage [expr {$total_pages*$pageSize}]
+  if {!$isCompressed && $storage>$compressed_size} {
+    set isCompressed 1
+    set compressOverhead 14
+  }
 
   # Column 'gap_cnt' is set to the number of non-contiguous entries in the
   # list of pages visited if the b-tree structure is traversed in a top-down
@@ -203,7 +224,7 @@ proc divide {num denom} {
 # the $where clause determines which subset to analyze.
 #
 proc subreport {title where} {
-  global pageSize file_pgcnt
+  global pageSize file_pgcnt compressOverhead
 
   # Query the in-memory database for the sum of various statistics 
   # for the subset of tables/indices identified by the WHERE clause in
@@ -279,6 +300,7 @@ proc subreport {title where} {
   statline {Number of entries} $nleaf
   statline {Bytes of storage consumed} $storage
   if {$compressed_size!=$storage} {
+    set compressed_size [expr {$compressed_size+$compressOverhead*$total_pages}]
     set pct [expr {$compressed_size*100.0/$storage}]
     set pct [format {%5.1f%%} $pct]
     statline {Bytes used after compression} $compressed_size $pct
@@ -419,7 +441,13 @@ statline {Number of tables in the database} $ntable
 statline {Number of indices} $nindex
 statline {Number of named indices} $nmanindex
 statline {Automatically generated indices} $nautoindex
-statline {Size of the file in bytes} $file_bytes
+if {$isCompressed} {
+  statline {Size of uncompressed content in bytes} $file_bytes
+  set efficiency [percent $true_file_size $file_bytes]
+  statline {Size of compressed file on disk} $true_file_size $efficiency
+} else {
+  statline {Size of the file in bytes} $file_bytes
+}
 statline {Bytes of user payload stored} $user_payload $user_percent
 
 # Output table rankings
@@ -431,6 +459,24 @@ mem eval {SELECT tblname, count(*) AS cnt,
               int(sum(int_pages+leaf_pages+ovfl_pages)) AS size
           FROM space_used GROUP BY tblname ORDER BY size+0 DESC, tblname} {} {
   statline [string toupper $tblname] $size [percent $size $file_pgcnt]
+}
+if {$isCompressed} {
+  puts ""
+  puts "*** Bytes of disk space used after compression ***********************"
+  puts ""
+  set csum 0
+  mem eval {SELECT tblname,
+                  int(sum(compressed_size)) +
+                         $compressOverhead*sum(int_pages+leaf_pages+ovfl_pages)
+                        AS csize
+          FROM space_used GROUP BY tblname ORDER BY csize+0 DESC, tblname} {} {
+    incr csum $csize
+    statline [string toupper $tblname] $csize [percent $csize $true_file_size]
+  }
+  set overhead [expr {$true_file_size - $csum}]
+  if {$overhead>0} {
+    statline {Header and free space} $overhead [percent $overhead $true_file_size]
+  }
 }
 
 # Output subreports
