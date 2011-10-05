@@ -357,6 +357,32 @@ static int statDecodePage(Btree *pBt, StatPage *p){
 }
 
 /*
+** Populate the pCsr->iOffset and pCsr->szPage member variables. Based on
+** the current value of pCsr->iPageno.
+*/
+static void statSizeAndOffset(StatCursor *pCsr){
+  StatTable *pTab = (StatTable *)((sqlite3_vtab_cursor *)pCsr)->pVtab;
+  Btree *pBt = pTab->db->aDb[0].pBt;
+  Pager *pPager = sqlite3BtreePager(pBt);
+  sqlite3_file *fd;
+  sqlite3_int64 x[2];
+
+  /* The default page size and offset */
+  pCsr->szPage = sqlite3BtreeGetPageSize(pBt);
+  pCsr->iOffset = pCsr->szPage * (pCsr->iPageno - 1);
+
+  /* If connected to a ZIPVFS backend, override the page size and
+  ** offset with actual values obtained from ZIPVFS.
+  */
+  fd = sqlite3PagerFile(pPager);
+  x[0] = pCsr->iPageno;
+  if( sqlite3OsFileControl(fd, 230440, &x)==SQLITE_OK ){
+    pCsr->iOffset = x[0];
+    pCsr->szPage = x[1];
+  }
+}
+
+/*
 ** Move a statvfs cursor to the next entry in the file.
 */
 static int statNext(sqlite3_vtab_cursor *pCursor){
@@ -414,6 +440,7 @@ static int statNext(sqlite3_vtab_cursor *pCursor){
           pCsr->nUnused = nUsable - 4 - pCsr->nPayload;
         }
         pCell->iOvfl++;
+        statSizeAndOffset(pCsr);
         return SQLITE_OK;
       }
       if( p->iRightChildPg ) break;
@@ -446,27 +473,12 @@ static int statNext(sqlite3_vtab_cursor *pCursor){
   */
   if( rc==SQLITE_OK ){
     int i;
-    sqlite3_file *fd;
-    sqlite3_int64 x[2];
     StatPage *p = &pCsr->aPage[pCsr->iPage];
     pCsr->zName = (char *)sqlite3_column_text(pCsr->pStmt, 0);
     pCsr->iPageno = p->iPgno;
 
     statDecodePage(pBt, p);
-
-    /* The default page size and offset */
-    pCsr->szPage = sqlite3BtreeGetPageSize(pBt);
-    pCsr->iOffset = pCsr->szPage * (p->iPgno - 1);
-
-    /* If connected to a ZIPVFS backend, override the page size and
-    ** offset with actual values obtained from ZIPVFS.
-    */
-    fd = sqlite3PagerFile(pPager);
-    x[0] = p->iPgno;
-    if( sqlite3OsFileControl(fd, 230440, &x)==SQLITE_OK ){
-      pCsr->iOffset = x[0];
-      pCsr->szPage = x[1];
-    }
+    statSizeAndOffset(pCsr);
 
     switch( p->flags ){
       case 0x05:             /* table internal */

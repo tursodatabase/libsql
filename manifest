@@ -1,5 +1,5 @@
-C When\sfinding\sthe\sappropriate\sfile\spermissions\sfor\sjournal\sfiles\swith\nSQLITE_ENABLE_8_3_NAMES,\signore\s"-"\scharacters\sin\sthe\sname\sof\sthe\ncontaining\sdirectory.
-D 2011-10-05T15:26:13.326
+C Fix\stest\scode\srelated\sto\sreporting\sthe\ssize\sof\soverflow\spages\sin\szipvfs\sdatabases.
+D 2011-10-05T17:36:27.323
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -223,7 +223,7 @@ F src/test_quota.c a391c866217e92986c6f523f05b08aa6956c8419
 F src/test_rtree.c 6d06306e29946dc36f528a3a2cdc3add794656f1
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
-F src/test_stat.c cf0a0e6d000ee4fbfd0d633d1e774a0267765f05
+F src/test_stat.c 69de4361c7a69fc1136d31ab7144408cd00805c7
 F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c a992d8c80ea91fbf21fb2dd570db40e77dd7e6ae
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
@@ -967,7 +967,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 774d0842bcce8862f2aac371f1689536ed234a0a
-R 8bd0da8f5be7e82af9f6bb3b243542c9
-U drh
-Z 6258a1fa0558c65b7a4b3244943b1ca3
+P 328cc1867ffbbf1c953dfd843649f5f209c8e6ec
+R 9966c1a1728c681681f9fe1b1d6773fc
+U dan
+Z 69c3b890ba0b067ca386e3a142264668
