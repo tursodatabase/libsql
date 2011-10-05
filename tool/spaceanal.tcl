@@ -13,10 +13,13 @@ proc usage {} {
 }
 set file_to_analyze {}
 set flags(-pageinfo) 0
+set flags(-stats) 0
 append argv {}
 foreach arg $argv {
   if {[regexp {^-+pageinfo$} $arg]} {
     set flags(-pageinfo) 1
+  } elseif {[regexp {^-+stats$} $arg]} {
+    set flags(-stats) 1
   } elseif {[regexp {^-} $arg]} {
     puts stderr "Unknown option: $arg"
     usage
@@ -48,6 +51,44 @@ register_dbstat_vtab db
 
 db eval {SELECT count(*) FROM sqlite_master}
 set pageSize [expr {wide([db one {PRAGMA page_size}])}]
+
+if {$flags(-pageinfo)} {
+  db eval {CREATE VIRTUAL TABLE temp.stat USING dbstat}
+  db eval {SELECT name, path, pageno FROM temp.stat ORDER BY pageno} {
+    puts "$pageno $name $path"
+  }
+  exit 0
+}
+if {$flags(-stats)} {
+  db eval {CREATE VIRTUAL TABLE temp.stat USING dbstat}
+  puts "BEGIN;"
+  puts "CREATE TABLE stats("
+  puts "  name       STRING,           /* Name of table or index */"
+  puts "  path       INTEGER,          /* Path to page from root */"
+  puts "  pageno     INTEGER,          /* Page number */"
+  puts "  pagetype   STRING,           /* 'internal', 'leaf' or 'overflow' */"
+  puts "  ncell      INTEGER,          /* Cells on page (0 for overflow) */"
+  puts "  payload    INTEGER,          /* Bytes of payload on this page */"
+  puts "  unused     INTEGER,          /* Bytes of unused space on this page */"
+  puts "  mx_payload INTEGER,          /* Largest payload size of all cells */"
+  puts "  pgoffset   INTEGER,          /* Offset of page in file */"
+  puts "  pgsize     INTEGER           /* Size of the page */"
+  puts ");"
+  db eval {SELECT quote(name) || ',' ||
+                  quote(path) || ',' ||
+                  quote(pageno) || ',' ||
+                  quote(pagetype) || ',' ||
+                  quote(ncell) || ',' ||
+                  quote(payload) || ',' ||
+                  quote(unused) || ',' ||
+                  quote(mx_payload) || ',' ||
+                  quote(pgoffset) || ',' ||
+                  quote(pgsize) AS x FROM stat} {
+    puts "INSERT INTO stats VALUES($x);"
+  }
+  puts "COMMIT;"
+  exit 0
+}
 
 # In-memory database for collecting statistics. This script loops through
 # the tables and indices in the database being analyzed, adding a row for each

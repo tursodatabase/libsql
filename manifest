@@ -1,5 +1,5 @@
-C Update\sthe\ssqlite3_analyzer\sutility\sprogram\sto\sprovide\smore\sdetails\sabout\nthe\scompression\sperformance\sof\sZIPVFS\sdatabase\sfiles.
-D 2011-10-05T18:18:13.395
+C Add\sthe\s--pageinfo\sand\s--stats\soptions\sto\sthe\ssqlite3_analyzer\sutility.
+D 2011-10-05T19:46:03.527
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -956,7 +956,7 @@ F tool/showjournal.c b62cecaab86a4053d944c276bb5232e4d17ece02
 F tool/showwal.c f09e5a80a293919290ec85a6a37c85a5ddcf37d9
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b
-F tool/spaceanal.tcl 7ba8b9784fe7c4fb89d3d9ca012d41c9d74b3c95
+F tool/spaceanal.tcl 2dc915c21309029dbf0eb54868ad036454d2f77a
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
@@ -967,7 +967,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P ad7c9eed8bbd607babce4f5965f587c873e7bc02
-R e170bea645862be3dfb0e179487437ed
+P fa5ed53296d45a5f963d20fb361555c432e0f31b
+R a181777b970b4ab76912e6ec4d5a6e74
 U drh
-Z 9854118ea63abc101ac650ae8a3b25fa
+Z f1a2995e806e2cefa53579be0d3ef0a3
