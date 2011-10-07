@@ -142,6 +142,7 @@ struct WhereClause {
   Bitmask vmask;           /* Bitmask identifying virtual table cursors */
   WhereClause *pOuter;     /* Outer conjunction */
   u8 op;                   /* Split operator.  TK_AND or TK_OR */
+  u16 wctrlFlags;          /* Might include WHERE_AND_ONLY */
   int nTerm;               /* Number of terms */
   int nSlot;               /* Number of entries in a[] */
   WhereTerm *a;            /* Each a[] describes a term of the WHERE cluase */
@@ -270,7 +271,8 @@ struct WhereCost {
 static void whereClauseInit(
   WhereClause *pWC,        /* The WhereClause to be initialized */
   Parse *pParse,           /* The parsing context */
-  WhereMaskSet *pMaskSet   /* Mapping from table cursor numbers to bitmasks */
+  WhereMaskSet *pMaskSet,  /* Mapping from table cursor numbers to bitmasks */
+  u16 wctrlFlags           /* Might include WHERE_AND_ONLY */
 ){
   pWC->pParse = pParse;
   pWC->pMaskSet = pMaskSet;
@@ -279,6 +281,7 @@ static void whereClauseInit(
   pWC->nSlot = ArraySize(pWC->aStatic);
   pWC->a = pWC->aStatic;
   pWC->vmask = 0;
+  pWC->wctrlFlags = wctrlFlags;
 }
 
 /* Forward reference */
@@ -889,7 +892,7 @@ static void exprAnalyzeOrTerm(
   if( pOrInfo==0 ) return;
   pTerm->wtFlags |= TERM_ORINFO;
   pOrWc = &pOrInfo->wc;
-  whereClauseInit(pOrWc, pWC->pParse, pMaskSet);
+  whereClauseInit(pOrWc, pWC->pParse, pMaskSet, pWC->wctrlFlags);
   whereSplit(pOrWc, pExpr, TK_OR);
   exprAnalyzeAll(pSrc, pOrWc);
   if( db->mallocFailed ) return;
@@ -916,7 +919,7 @@ static void exprAnalyzeOrTerm(
         pOrTerm->wtFlags |= TERM_ANDINFO;
         pOrTerm->eOperator = WO_AND;
         pAndWC = &pAndInfo->wc;
-        whereClauseInit(pAndWC, pWC->pParse, pMaskSet);
+        whereClauseInit(pAndWC, pWC->pParse, pMaskSet, pWC->wctrlFlags);
         whereSplit(pAndWC, pOrTerm->pExpr, TK_AND);
         exprAnalyzeAll(pSrc, pAndWC);
         pAndWC->pOuter = pWC;
@@ -1814,9 +1817,12 @@ static void bestOrClauseIndex(
   WhereTerm * const pWCEnd = &pWC->a[pWC->nTerm];        /* End of pWC->a[] */
   WhereTerm *pTerm;                 /* A single term of the WHERE clause */
 
-  /* No OR-clause optimization allowed if the INDEXED BY or NOT INDEXED clauses
-  ** are used */
+  /* The OR-clause optimization is disallowed if the INDEXED BY or
+  ** NOT INDEXED clauses are used or if the WHERE_AND_ONLY bit is set. */
   if( pSrc->notIndexed || pSrc->pIndex!=0 ){
+    return;
+  }
+  if( pWC->wctrlFlags & WHERE_AND_ONLY ){
     return;
   }
 
@@ -4338,7 +4344,7 @@ static Bitmask codeOneLoopStart(
         }
         /* Loop through table entries that match term pOrTerm. */
         pSubWInfo = sqlite3WhereBegin(pParse, pOrTab, pOrExpr, 0, 0,
-                        WHERE_OMIT_OPEN | WHERE_OMIT_CLOSE |
+                        WHERE_OMIT_OPEN_CLOSE | WHERE_AND_ONLY |
                         WHERE_FORCE_TABLE | WHERE_ONETABLE_ONLY);
         if( pSubWInfo ){
           explainOneScan(
@@ -4648,7 +4654,7 @@ WhereInfo *sqlite3WhereBegin(
   ** subexpression is separated by an AND operator.
   */
   initMaskSet(pMaskSet);
-  whereClauseInit(pWC, pParse, pMaskSet);
+  whereClauseInit(pWC, pParse, pMaskSet, wctrlFlags);
   sqlite3ExprCodeConstants(pParse, pWhere);
   whereSplit(pWC, pWhere, TK_AND);   /* IMP: R-15842-53296 */
     
@@ -4976,7 +4982,7 @@ WhereInfo *sqlite3WhereBegin(
     }else
 #endif
     if( (pLevel->plan.wsFlags & WHERE_IDX_ONLY)==0
-         && (wctrlFlags & WHERE_OMIT_OPEN)==0 ){
+         && (wctrlFlags & WHERE_OMIT_OPEN_CLOSE)==0 ){
       int op = pWInfo->okOnePass ? OP_OpenWrite : OP_OpenRead;
       sqlite3OpenTable(pParse, pTabItem->iCursor, iDb, pTab, op);
       testcase( pTab->nCol==BMS-1 );
@@ -5156,7 +5162,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     assert( pTab!=0 );
     if( (pTab->tabFlags & TF_Ephemeral)==0
      && pTab->pSelect==0
-     && (pWInfo->wctrlFlags & WHERE_OMIT_CLOSE)==0
+     && (pWInfo->wctrlFlags & WHERE_OMIT_OPEN_CLOSE)==0
     ){
       int ws = pLevel->plan.wsFlags;
       if( !pWInfo->okOnePass && (ws & WHERE_IDX_ONLY)==0 ){

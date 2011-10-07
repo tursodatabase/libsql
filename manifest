@@ -1,5 +1,5 @@
-C Begin\san\seffort\sto\senhance\sthe\squery\splanner\sto\sdo\sa\sbetter\sjob\swith\sOR\sterms\nin\sthe\sWHERE\sclause.\s\sThis\schange\sallows\sANDs\soutside\sof\sthe\sOR\sto\sbe\sfactored\ninto\sthe\sOR\sterms\sif\sthat\sis\shelpful\sin\sfinding\sbetter\sindices.
-D 2011-10-07T13:33:10.760
+C Prevent\sinfinite\srecursion\sof\sin\sthe\squery\splanner\sfor\ssome\spathological\ntest\scases\sby\sdisabling\sOR-clause\sprocessing\supon\sfirst\srecursion.
+D 2011-10-07T14:40:59.269
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -183,7 +183,7 @@ F src/select.c d9b7d20b0365f80761846f00ef3638d4b33eeaf2
 F src/shell.c e8fe1251aee84baa2fb232ce83d938de25aa650f
 F src/sqlite.h.in 1865923bdb9deb8dde42da5862aca0071adb6061
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
-F src/sqliteInt.h 28cca77ebdaf6025ae5df52717dff429c7c6d4ef
+F src/sqliteInt.h 2f66bf068131f0e499dd5e0abea3f68cd6b27b2d
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 4568e72dfd36b6a5911f93457364deb072e0b03a
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -251,7 +251,7 @@ F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 3154756177d6219e233d84291d5b05f4e06ff5e9
 F src/wal.h 66b40bd91bc29a5be1c88ddd1f5ade8f3f48728a
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 80c53e8e21fe9c5c5830e33d806fc168577427ed
+F src/where.c 2e82da485ae1e037d2e372fd361c926cd4885934
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -967,10 +967,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 9913996e7b0f94ba1c51200b61433193002f3638
-R 7d8737bed3e72adf3b068f98f3f5d762
-T *branch * or-opt
-T *sym-or-opt *
-T -sym-trunk *
+P 876bd21aaac444c7e056730e35696a74e9a1af0a
+R 2e052ba91d5f74c653875a92f40f0614
 U drh
-Z 6d6f0e795135cadc2210cb2fc14d2593
+Z ec0c9bad465d9d136336e81b2a3d87e4
