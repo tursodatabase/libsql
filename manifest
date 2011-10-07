@@ -1,5 +1,5 @@
-C Add\sthe\s--pageinfo\sand\s--stats\soptions\sto\sthe\ssqlite3_analyzer\sutility.
-D 2011-10-05T19:46:03.527
+C Enhance\sthe\ssqlite3_data_count()\sroutine\sso\sthat\sit\scan\sbe\sused\sto\sdetermine\nif\sSQLITE_DONE\shas\sbeen\sseen\son\sthe\sprepared\sstatement.
+D 2011-10-07T12:59:23.182
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -181,7 +181,7 @@ F src/resolve.c 36368f44569208fa074e61f4dd0b6c4fb60ca2b4
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c d9b7d20b0365f80761846f00ef3638d4b33eeaf2
 F src/shell.c e8fe1251aee84baa2fb232ce83d938de25aa650f
-F src/sqlite.h.in 3b238342522bfc3b9d68d7ff3240a27a2a59ee59
+F src/sqlite.h.in 1865923bdb9deb8dde42da5862aca0071adb6061
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
 F src/sqliteInt.h 28cca77ebdaf6025ae5df52717dff429c7c6d4ef
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -242,7 +242,7 @@ F src/vdbe.c 60340bfb23f456ea0791cb28262a887363773371
 F src/vdbe.h f0725ee997db869ecae5bb70a71612aabeca7755
 F src/vdbeInt.h 693d6ac6810298fc6b4c503cfbe3f99a240f40af
 F src/vdbeapi.c 11dc47987abacb76ad016dcf5abc0dc422482a98
-F src/vdbeaux.c 461e3e39cc6084e23412f3ff85ef73839dae90e2
+F src/vdbeaux.c 9542e2fba791f14022c23fbe5cbe179eee36abc6
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c 2fc78b3e0fabcc1eaa23cd79dd2e30e6dcfe1e56
 F src/vdbesort.c 468d43c057063e54da4f1988b38b4f46d60e7790
@@ -967,7 +967,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P fa5ed53296d45a5f963d20fb361555c432e0f31b
-R a181777b970b4ab76912e6ec4d5a6e74
+P baa80c7bc31900decae0d8e6090b30fcde377492
+R 1223a474d1e5cea6170a2af45d3f0303
 U drh
-Z f1a2995e806e2cefa53579be0d3ef0a3
+Z 7e8fd93d23ec7d2fecbdff0e025997fa

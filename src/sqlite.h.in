@@ -3348,6 +3348,12 @@ int sqlite3_step(sqlite3_stmt*);
 ** (via calls to the [sqlite3_column_int | sqlite3_column_*()] of
 ** interfaces) then sqlite3_data_count(P) returns 0.
 ** ^The sqlite3_data_count(P) routine also returns 0 if P is a NULL pointer.
+** ^The sqlite3_data_count(P) routine returns 0 if the previous call to
+** [sqlite3_step](P) returned [SQLITE_DONE].  ^The sqlite3_data_count(P)
+** will return non-zero if previous call to [sqlite3_step](P) returned
+** [SQLITE_ROW], except in the case of the [PRAGMA incremental_vacuum]
+** where it always returns zero since each step of that multi-step
+** pragma returns 0 columns of data.
 **
 ** See also: [sqlite3_column_count()]
 */
