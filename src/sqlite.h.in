@@ -766,7 +766,11 @@ struct sqlite3_io_methods {
 ** That integer is 0 to disable persistent WAL mode or 1 to enable persistent
 ** WAL mode.  If the integer is -1, then it is overwritten with the current
 ** WAL persistence setting.
-** 
+**
+** ^The [SQLITE_FCNTL_OVERWRITE] opcode is invoked by SQLite after opening
+** a write transaction to indicate that, unless it is rolled back for some
+** reason, the entire database file will be overwritten by the current 
+** transaction. This is used by VACUUM operations.
 */
 #define SQLITE_FCNTL_LOCKSTATE        1
 #define SQLITE_GET_LOCKPROXYFILE      2
@@ -778,6 +782,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_SYNC_OMITTED     8
 #define SQLITE_FCNTL_WIN32_AV_RETRY   9
 #define SQLITE_FCNTL_PERSIST_WAL     10
+#define SQLITE_FCNTL_OVERWRITE       11
 
 /*
 ** CAPI3REF: Mutex Handle
