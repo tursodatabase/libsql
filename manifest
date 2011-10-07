@@ -1,5 +1,5 @@
-C Make\ssure\ssqlite3_data_count()\sbehaves\sas\sdocumented,\seven\sfor\nEXPLAIN\sQUERY\sPLAN\squeries.
-D 2011-10-07T18:24:25.948
+C Change\sthe\sANALYZE\scommand\sso\sthat\sit\sno\slonger\stried\sto\sdelete\sunused\nsqlite_stat2\sand\ssqlite_stat3\stables.\s\sChange\sthe\sDROP\sTABLE\scommand\sso\nthat\sit\sis\sable\sto\sdrop\sthose\stables.
+D 2011-10-07T23:52:25.818
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -118,7 +118,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c ac80a0f31189f8b4a524ebf661e47e84536ee7f5
-F src/analyze.c 775421ced0bd78181cc206fbc63063658066c1da
+F src/analyze.c 682fd999a01c897a682365a459190758b83de836
 F src/attach.c 12c6957996908edc31c96d7c68d4942c2474405f
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 4fd4440c8f81339d8eb8e5d2df54b68d79e94f2f
@@ -127,7 +127,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 77b09c69d4849a90361e6fe5db36d167f20600c0
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
-F src/build.c 2dc09385981bf7f41eae7d3aeb47cb2453813456
+F src/build.c 119937b0ae1ff4dcec8fdea53771acc95bafca51
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 829f3261d3db48e3d87891bc887208734734c2e4
@@ -687,7 +687,6 @@ F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
 F test/sqllimits1.test b1aae27cc98eceb845e7f7adf918561256e31298
 F test/stat.test 36bc951bdc2beac4224cc54396fd6a7dc65336f4
-F test/stat3.test 53e1e3282b6e62af3de160d186fa7336fe1b48bf
 F test/stmt.test 25d64e3dbf9a3ce89558667d7f39d966fe2a71b9
 F test/subquery.test b524f57c9574b2c0347045b4510ef795d4686796
 F test/subquery2.test edcad5c118f0531c2e21bf16a09bbb105252d4cd
@@ -697,7 +696,7 @@ F test/superlock.test 7b1167925e9d30a5d1f0701d24812fdda42c3a86
 F test/sync.test a34cd43e98b7fb84eabbf38f7ed8f7349b3f3d85
 F test/syscall.test 966addf703faee6a5d509abe6d8885e393e552fd
 F test/sysfault.test c79441d88d23696fbec7b147dba98d42a04f523f
-F test/table.test 50c47f5fe9c112e92723af27cd735e6c92de6f85
+F test/table.test a59d985ca366e39b17b175f387f9d5db5a18d4e2
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
 F test/tclsqlite.test 5ebcbb0dccc3fbc1edc3bba84c38e2c2d574c5aa
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
@@ -967,7 +966,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P b23ae131874bc5c621f0f5ea8d76fce1ec089cc2
-R c851b7fc8ea31836b467cff36423209c
+P d4f95b3b6e9f4a4072606af5daa17ea7c645382e
+R 4fe120270d0591d545e8a0d8aa07746c
 U drh
-Z ec0b90c872666342728b41ee2195393b
+Z 90bf796c032cc3a71272ed4f53de20b0

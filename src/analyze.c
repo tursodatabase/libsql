@@ -148,12 +148,6 @@ static void openStatTable(
     { "sqlite_stat3", "tbl,idx,neq,nlt,ndlt,sample" },
 #endif
   };
-  static const char *azToDrop[] = { 
-    "sqlite_stat2",
-#ifndef SQLITE_ENABLE_STAT3
-    "sqlite_stat3",
-#endif
-  };
 
   int aRoot[] = {0, 0};
   u8 aCreateTbl[] = {0, 0};
@@ -166,17 +160,6 @@ static void openStatTable(
   assert( sqlite3BtreeHoldsAllMutexes(db) );
   assert( sqlite3VdbeDb(v)==db );
   pDb = &db->aDb[iDb];
-
-  /* Drop all statistics tables that this version of SQLite does not
-  ** understand.
-  */
-  for(i=0; i<ArraySize(azToDrop); i++){
-    Table *pTab = sqlite3FindTable(db, azToDrop[i], pDb->zName);
-    if( pTab ){
-      sqlite3CodeDropTable(pParse, pTab, iDb, 0);
-      break;
-    }
-  }
 
   /* Create new statistic tables if they do not exist, or clear them
   ** if they do already exist.
