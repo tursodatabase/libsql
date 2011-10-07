@@ -3032,6 +3032,7 @@ static void bestBtreeIndex(
       pTerm = findTerm(pWC, iCur, j, notReady, eqTermMask, pIdx);
       if( pTerm==0 ) break;
       wsFlags |= (WHERE_COLUMN_EQ|WHERE_ROWID_EQ);
+      testcase( pTerm->pWC!=pWC );
       if( pTerm->eOperator & WO_IN ){
         Expr *pExpr = pTerm->pExpr;
         wsFlags |= WHERE_COLUMN_IN;
@@ -3063,11 +3064,13 @@ static void bestBtreeIndex(
           nBound = 1;
           wsFlags |= WHERE_TOP_LIMIT;
           used |= pTop->prereqRight;
+          testcase( pTop->pWC!=pWC );
         }
         if( pBtm ){
           nBound++;
           wsFlags |= WHERE_BTM_LIMIT;
           used |= pBtm->prereqRight;
+          testcase( pBtm->pWC!=pWC );
         }
         wsFlags |= (WHERE_COLUMN_RANGE|WHERE_ROWID_RANGE);
       }

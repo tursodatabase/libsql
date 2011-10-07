@@ -1,5 +1,5 @@
-C More\stest\scases\sfor\sthe\sOR\soptimization.
-D 2011-10-07T16:08:28.818
+C Add\stestcase()\smacros\sto\sensure\sgood\stest\scoverage.
+D 2011-10-07T17:45:58.914
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -251,7 +251,7 @@ F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 3154756177d6219e233d84291d5b05f4e06ff5e9
 F src/wal.h 66b40bd91bc29a5be1c88ddd1f5ade8f3f48728a
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 2e82da485ae1e037d2e372fd361c926cd4885934
+F src/where.c a6d127dd05daf0f9ffa654edfab4f1236dc759b7
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -967,7 +967,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 9fca05eac503d712886a05d03794f76c61fb39ed
-R bd6384414b9b60e15876987ee9f999e9
+P 4997d8b81cd3ea7c708911bfece00020d11224f9
+R b935363a5df75d52ae6d528d229f42f6
 U drh
-Z 427731fab44d769232d079e056d051e3
+Z e878c83927724d1c2481f6ca56873708
