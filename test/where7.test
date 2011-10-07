@@ -10,8 +10,6 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the multi-index OR clause optimizer.
-#
-# $Id: where7.test,v 1.9 2009/06/07 23:45:11 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -23341,7 +23339,7 @@ do_execsql_test where7-3.1 {
            OR t301.c8 = 1407424651264000)
    ORDER BY t302.c5 LIMIT 200;
 } {
-  0 0 1 {SEARCH TABLE t301 USING COVERING INDEX t301_c4 (c4=?) (~10 rows)} 
+  0 0 1 {SEARCH TABLE t301 USING COVERING INDEX t301_c4 (c4=?) (~5 rows)} 
   0 0 1 {SEARCH TABLE t301 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
   0 1 0 {SEARCH TABLE t302 USING INDEX t302_c8_c3 (c8=? AND c3>?) (~2 rows)} 
   0 0 0 {USE TEMP B-TREE FOR ORDER BY}

@@ -1,5 +1,5 @@
-C Prevent\sinfinite\srecursion\sof\sin\sthe\squery\splanner\sfor\ssome\spathological\ntest\scases\sby\sdisabling\sOR-clause\sprocessing\supon\sfirst\srecursion.
-D 2011-10-07T14:40:59.269
+C More\stest\scases\sfor\sthe\sOR\soptimization.
+D 2011-10-07T16:08:28.818
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -916,10 +916,10 @@ F test/where3.test 8e1175c7ef710c70502858fc4fb08d784b3620b9
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
-F test/where7.test aa4cfcd6f66e2a4ef87b6717327325bf4d547502
+F test/where7.test 814d7373413398e074f134cff5f8872e2c08bd3b
 F test/where8.test a6c740fd286d7883e274e17b6230a9d672a7ab1f
 F test/where8m.test da346596e19d54f0aba35ebade032a7c47d79739
-F test/where9.test 24f19ad14bb1b831564ced5273e681e495662848
+F test/where9.test bed66dcfc69a54a99661c0c9906189cb5e58f4e2
 F test/whereA.test 24c234263c8fe358f079d5e57d884fb569d2da0a
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
@@ -967,7 +967,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 876bd21aaac444c7e056730e35696a74e9a1af0a
-R 2e052ba91d5f74c653875a92f40f0614
+P 9fca05eac503d712886a05d03794f76c61fb39ed
+R bd6384414b9b60e15876987ee9f999e9
 U drh
-Z ec0c9bad465d9d136336e81b2a3d87e4
+Z 427731fab44d769232d079e056d051e3
