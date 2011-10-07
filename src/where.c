@@ -127,12 +127,22 @@ struct WhereTerm {
 /*
 ** An instance of the following structure holds all information about a
 ** WHERE clause.  Mostly this is a container for one or more WhereTerms.
+**
+** Explanation of pOuter:  For a WHERE clause of the form
+**
+**           a AND ((b AND c) OR (d AND e)) AND f
+**
+** There are separate WhereClause objects for the whole clause and for
+** the subclauses "(b AND c)" and "(d AND e)".  The pOuter field of the
+** subclauses points to the WhereClause object for the whole clause.
 */
 struct WhereClause {
   Parse *pParse;           /* The parser context */
   WhereMaskSet *pMaskSet;  /* Mapping of table cursor numbers to bitmasks */
   Bitmask vmask;           /* Bitmask identifying virtual table cursors */
+  WhereClause *pOuter;     /* Outer conjunction */
   u8 op;                   /* Split operator.  TK_AND or TK_OR */
+  u16 wctrlFlags;          /* Might include WHERE_AND_ONLY */
   int nTerm;               /* Number of terms */
   int nSlot;               /* Number of entries in a[] */
   WhereTerm *a;            /* Each a[] describes a term of the WHERE cluase */
@@ -261,14 +271,17 @@ struct WhereCost {
 static void whereClauseInit(
   WhereClause *pWC,        /* The WhereClause to be initialized */
   Parse *pParse,           /* The parsing context */
-  WhereMaskSet *pMaskSet   /* Mapping from table cursor numbers to bitmasks */
+  WhereMaskSet *pMaskSet,  /* Mapping from table cursor numbers to bitmasks */
+  u16 wctrlFlags           /* Might include WHERE_AND_ONLY */
 ){
   pWC->pParse = pParse;
   pWC->pMaskSet = pMaskSet;
+  pWC->pOuter = 0;
   pWC->nTerm = 0;
   pWC->nSlot = ArraySize(pWC->aStatic);
   pWC->a = pWC->aStatic;
   pWC->vmask = 0;
+  pWC->wctrlFlags = wctrlFlags;
 }
 
 /* Forward reference */
@@ -584,36 +597,38 @@ static WhereTerm *findTerm(
   int k;
   assert( iCur>=0 );
   op &= WO_ALL;
-  for(pTerm=pWC->a, k=pWC->nTerm; k; k--, pTerm++){
-    if( pTerm->leftCursor==iCur
-       && (pTerm->prereqRight & notReady)==0
-       && pTerm->u.leftColumn==iColumn
-       && (pTerm->eOperator & op)!=0
-    ){
-      if( pIdx && pTerm->eOperator!=WO_ISNULL ){
-        Expr *pX = pTerm->pExpr;
-        CollSeq *pColl;
-        char idxaff;
-        int j;
-        Parse *pParse = pWC->pParse;
-
-        idxaff = pIdx->pTable->aCol[iColumn].affinity;
-        if( !sqlite3IndexAffinityOk(pX, idxaff) ) continue;
-
-        /* Figure out the collation sequence required from an index for
-        ** it to be useful for optimising expression pX. Store this
-        ** value in variable pColl.
-        */
-        assert(pX->pLeft);
-        pColl = sqlite3BinaryCompareCollSeq(pParse, pX->pLeft, pX->pRight);
-        assert(pColl || pParse->nErr);
-
-        for(j=0; pIdx->aiColumn[j]!=iColumn; j++){
-          if( NEVER(j>=pIdx->nColumn) ) return 0;
+  for(; pWC; pWC=pWC->pOuter){
+    for(pTerm=pWC->a, k=pWC->nTerm; k; k--, pTerm++){
+      if( pTerm->leftCursor==iCur
+         && (pTerm->prereqRight & notReady)==0
+         && pTerm->u.leftColumn==iColumn
+         && (pTerm->eOperator & op)!=0
+      ){
+        if( pIdx && pTerm->eOperator!=WO_ISNULL ){
+          Expr *pX = pTerm->pExpr;
+          CollSeq *pColl;
+          char idxaff;
+          int j;
+          Parse *pParse = pWC->pParse;
+  
+          idxaff = pIdx->pTable->aCol[iColumn].affinity;
+          if( !sqlite3IndexAffinityOk(pX, idxaff) ) continue;
+  
+          /* Figure out the collation sequence required from an index for
+          ** it to be useful for optimising expression pX. Store this
+          ** value in variable pColl.
+          */
+          assert(pX->pLeft);
+          pColl = sqlite3BinaryCompareCollSeq(pParse, pX->pLeft, pX->pRight);
+          assert(pColl || pParse->nErr);
+  
+          for(j=0; pIdx->aiColumn[j]!=iColumn; j++){
+            if( NEVER(j>=pIdx->nColumn) ) return 0;
+          }
+          if( pColl && sqlite3StrICmp(pColl->zName, pIdx->azColl[j]) ) continue;
         }
-        if( pColl && sqlite3StrICmp(pColl->zName, pIdx->azColl[j]) ) continue;
+        return pTerm;
       }
-      return pTerm;
     }
   }
   return 0;
@@ -877,7 +892,7 @@ static void exprAnalyzeOrTerm(
   if( pOrInfo==0 ) return;
   pTerm->wtFlags |= TERM_ORINFO;
   pOrWc = &pOrInfo->wc;
-  whereClauseInit(pOrWc, pWC->pParse, pMaskSet);
+  whereClauseInit(pOrWc, pWC->pParse, pMaskSet, pWC->wctrlFlags);
   whereSplit(pOrWc, pExpr, TK_OR);
   exprAnalyzeAll(pSrc, pOrWc);
   if( db->mallocFailed ) return;
@@ -904,9 +919,10 @@ static void exprAnalyzeOrTerm(
         pOrTerm->wtFlags |= TERM_ANDINFO;
         pOrTerm->eOperator = WO_AND;
         pAndWC = &pAndInfo->wc;
-        whereClauseInit(pAndWC, pWC->pParse, pMaskSet);
+        whereClauseInit(pAndWC, pWC->pParse, pMaskSet, pWC->wctrlFlags);
         whereSplit(pAndWC, pOrTerm->pExpr, TK_AND);
         exprAnalyzeAll(pSrc, pAndWC);
+        pAndWC->pOuter = pWC;
         testcase( db->mallocFailed );
         if( !db->mallocFailed ){
           for(j=0, pAndTerm=pAndWC->a; j<pAndWC->nTerm; j++, pAndTerm++){
@@ -1801,9 +1817,12 @@ static void bestOrClauseIndex(
   WhereTerm * const pWCEnd = &pWC->a[pWC->nTerm];        /* End of pWC->a[] */
   WhereTerm *pTerm;                 /* A single term of the WHERE clause */
 
-  /* No OR-clause optimization allowed if the INDEXED BY or NOT INDEXED clauses
-  ** are used */
+  /* The OR-clause optimization is disallowed if the INDEXED BY or
+  ** NOT INDEXED clauses are used or if the WHERE_AND_ONLY bit is set. */
   if( pSrc->notIndexed || pSrc->pIndex!=0 ){
+    return;
+  }
+  if( pWC->wctrlFlags & WHERE_AND_ONLY ){
     return;
   }
 
@@ -1833,6 +1852,7 @@ static void bestOrClauseIndex(
           WhereClause tempWC;
           tempWC.pParse = pWC->pParse;
           tempWC.pMaskSet = pWC->pMaskSet;
+          tempWC.pOuter = pWC;
           tempWC.op = TK_AND;
           tempWC.a = pOrTerm;
           tempWC.nTerm = 1;
@@ -3012,6 +3032,7 @@ static void bestBtreeIndex(
       pTerm = findTerm(pWC, iCur, j, notReady, eqTermMask, pIdx);
       if( pTerm==0 ) break;
       wsFlags |= (WHERE_COLUMN_EQ|WHERE_ROWID_EQ);
+      testcase( pTerm->pWC!=pWC );
       if( pTerm->eOperator & WO_IN ){
         Expr *pExpr = pTerm->pExpr;
         wsFlags |= WHERE_COLUMN_IN;
@@ -3043,11 +3064,13 @@ static void bestBtreeIndex(
           nBound = 1;
           wsFlags |= WHERE_TOP_LIMIT;
           used |= pTop->prereqRight;
+          testcase( pTop->pWC!=pWC );
         }
         if( pBtm ){
           nBound++;
           wsFlags |= WHERE_BTM_LIMIT;
           used |= pBtm->prereqRight;
+          testcase( pBtm->pWC!=pWC );
         }
         wsFlags |= (WHERE_COLUMN_RANGE|WHERE_ROWID_RANGE);
       }
@@ -3769,7 +3792,8 @@ static Bitmask codeOneLoopStart(
   WhereInfo *pWInfo,   /* Complete information about the WHERE clause */
   int iLevel,          /* Which level of pWInfo->a[] should be coded */
   u16 wctrlFlags,      /* One of the WHERE_* flags defined in sqliteInt.h */
-  Bitmask notReady     /* Which tables are currently available */
+  Bitmask notReady,    /* Which tables are currently available */
+  Expr *pWhere         /* Complete WHERE clause */
 ){
   int j, k;            /* Loop counters */
   int iCur;            /* The VDBE cursor for the table */
@@ -4251,7 +4275,8 @@ static Bitmask codeOneLoopStart(
     int iLoopBody = sqlite3VdbeMakeLabel(v);  /* Start of loop body */
     int iRetInit;                             /* Address of regReturn init */
     int untestedTerms = 0;             /* Some terms not completely tested */
-    int ii;
+    int ii;                            /* Loop counter */
+    Expr *pAndExpr = 0;                /* An ".. AND (...)" expression */
    
     pTerm = pLevel->plan.u.pTerm;
     assert( pTerm!=0 );
@@ -4301,13 +4326,28 @@ static Bitmask codeOneLoopStart(
     }
     iRetInit = sqlite3VdbeAddOp2(v, OP_Integer, 0, regReturn);
 
+    /* If the original WHERE clause is z of the form:  (x1 OR x2 OR ...) AND y
+    ** Then for every term xN, evaluate as the subexpression: xN AND z
+    ** That way, terms in y that are factored into the disjunction will
+    ** be picked up by the recursive calls to sqlite3WhereBegin() below.
+    */
+    if( pWC->nTerm>1 ){
+      pAndExpr = sqlite3ExprAlloc(pParse->db, TK_AND, 0, 0);
+      pAndExpr->pRight = pWhere;
+    }
+
     for(ii=0; ii<pOrWc->nTerm; ii++){
       WhereTerm *pOrTerm = &pOrWc->a[ii];
       if( pOrTerm->leftCursor==iCur || pOrTerm->eOperator==WO_AND ){
         WhereInfo *pSubWInfo;          /* Info for single OR-term scan */
+        Expr *pOrExpr = pOrTerm->pExpr;
+        if( pAndExpr ){
+          pAndExpr->pLeft = pOrExpr;
+          pOrExpr = pAndExpr;
+        }
         /* Loop through table entries that match term pOrTerm. */
-        pSubWInfo = sqlite3WhereBegin(pParse, pOrTab, pOrTerm->pExpr, 0, 0,
-                        WHERE_OMIT_OPEN | WHERE_OMIT_CLOSE |
+        pSubWInfo = sqlite3WhereBegin(pParse, pOrTab, pOrExpr, 0, 0,
+                        WHERE_OMIT_OPEN_CLOSE | WHERE_AND_ONLY |
                         WHERE_FORCE_TABLE | WHERE_ONETABLE_ONLY);
         if( pSubWInfo ){
           explainOneScan(
@@ -4335,6 +4375,7 @@ static Bitmask codeOneLoopStart(
         }
       }
     }
+    sqlite3DbFree(pParse->db, pAndExpr);
     sqlite3VdbeChangeP1(v, iRetInit, sqlite3VdbeCurrentAddr(v));
     sqlite3VdbeAddOp2(v, OP_Goto, 0, pLevel->addrBrk);
     sqlite3VdbeResolveLabel(v, iLoopBody);
@@ -4616,7 +4657,7 @@ WhereInfo *sqlite3WhereBegin(
   ** subexpression is separated by an AND operator.
   */
   initMaskSet(pMaskSet);
-  whereClauseInit(pWC, pParse, pMaskSet);
+  whereClauseInit(pWC, pParse, pMaskSet, wctrlFlags);
   sqlite3ExprCodeConstants(pParse, pWhere);
   whereSplit(pWC, pWhere, TK_AND);   /* IMP: R-15842-53296 */
     
@@ -4944,7 +4985,7 @@ WhereInfo *sqlite3WhereBegin(
     }else
 #endif
     if( (pLevel->plan.wsFlags & WHERE_IDX_ONLY)==0
-         && (wctrlFlags & WHERE_OMIT_OPEN)==0 ){
+         && (wctrlFlags & WHERE_OMIT_OPEN_CLOSE)==0 ){
       int op = pWInfo->okOnePass ? OP_OpenWrite : OP_OpenRead;
       sqlite3OpenTable(pParse, pTabItem->iCursor, iDb, pTab, op);
       testcase( pTab->nCol==BMS-1 );
@@ -4989,7 +5030,7 @@ WhereInfo *sqlite3WhereBegin(
   for(i=0; i<nTabList; i++){
     pLevel = &pWInfo->a[i];
     explainOneScan(pParse, pTabList, pLevel, i, pLevel->iFrom, wctrlFlags);
-    notReady = codeOneLoopStart(pWInfo, i, wctrlFlags, notReady);
+    notReady = codeOneLoopStart(pWInfo, i, wctrlFlags, notReady, pWhere);
     pWInfo->iContinue = pLevel->addrCont;
   }
 
@@ -5124,7 +5165,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     assert( pTab!=0 );
     if( (pTab->tabFlags & TF_Ephemeral)==0
      && pTab->pSelect==0
-     && (pWInfo->wctrlFlags & WHERE_OMIT_CLOSE)==0
+     && (pWInfo->wctrlFlags & WHERE_OMIT_OPEN_CLOSE)==0
     ){
       int ws = pLevel->plan.wsFlags;
       if( !pWInfo->okOnePass && (ws & WHERE_IDX_ONLY)==0 ){

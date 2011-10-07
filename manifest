@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_FCNTL_OVERWRITE\sfile-control.\sUsed\sby\sSQLite\sto\sindicate\sto\sthe\sOS\slayer\sthat\sthe\scurrent\stransaction\swill\soverwrite\sthe\sentire\sfile.
-D 2011-10-07T16:57:59.355
+C Improved\shandling\sof\sOR\sterms\sin\sthe\sWHERE\sclause\swith\smulti-column\sindexes.
+D 2011-10-07T17:52:40.878
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -183,7 +183,7 @@ F src/select.c d9b7d20b0365f80761846f00ef3638d4b33eeaf2
 F src/shell.c e8fe1251aee84baa2fb232ce83d938de25aa650f
 F src/sqlite.h.in b22e3187e048661d98a748ad54099c69dccfe497
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
-F src/sqliteInt.h 28cca77ebdaf6025ae5df52717dff429c7c6d4ef
+F src/sqliteInt.h 2f66bf068131f0e499dd5e0abea3f68cd6b27b2d
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 4568e72dfd36b6a5911f93457364deb072e0b03a
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -251,7 +251,7 @@ F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 3154756177d6219e233d84291d5b05f4e06ff5e9
 F src/wal.h 66b40bd91bc29a5be1c88ddd1f5ade8f3f48728a
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c aafcb21a74e41f9aae76ea604e1e787ff8574125
+F src/where.c a6d127dd05daf0f9ffa654edfab4f1236dc759b7
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -916,10 +916,10 @@ F test/where3.test 8e1175c7ef710c70502858fc4fb08d784b3620b9
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
-F test/where7.test aa4cfcd6f66e2a4ef87b6717327325bf4d547502
+F test/where7.test 814d7373413398e074f134cff5f8872e2c08bd3b
 F test/where8.test a6c740fd286d7883e274e17b6230a9d672a7ab1f
 F test/where8m.test da346596e19d54f0aba35ebade032a7c47d79739
-F test/where9.test 24f19ad14bb1b831564ced5273e681e495662848
+F test/where9.test bed66dcfc69a54a99661c0c9906189cb5e58f4e2
 F test/whereA.test 24c234263c8fe358f079d5e57d884fb569d2da0a
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
@@ -967,7 +967,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 9913996e7b0f94ba1c51200b61433193002f3638
-R 95c2b529419f78d1f0a0f16ca9ea56e3
-U dan
-Z 751eeeee5e1f94cafba63c56e2ffa2f0
+P 1da87fcdacfa7d277c3ee98e410a9ea8b529c368 5c132592820e9dc2355e26ea14e155c797c335b3
+R 8ca3076f2df3dea6526cd23b3be813bd
+U drh
+Z ddb3b7cdb3a83c191cd3bc7c8f9d4238

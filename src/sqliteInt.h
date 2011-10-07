@@ -1979,10 +1979,10 @@ struct WhereLevel {
 #define WHERE_ORDERBY_MAX      0x0002 /* ORDER BY processing for max() func */
 #define WHERE_ONEPASS_DESIRED  0x0004 /* Want to do one-pass UPDATE/DELETE */
 #define WHERE_DUPLICATES_OK    0x0008 /* Ok to return a row more than once */
-#define WHERE_OMIT_OPEN        0x0010 /* Table cursors are already open */
-#define WHERE_OMIT_CLOSE       0x0020 /* Omit close of table & index cursors */
-#define WHERE_FORCE_TABLE      0x0040 /* Do not use an index-only search */
-#define WHERE_ONETABLE_ONLY    0x0080 /* Only code the 1st table in pTabList */
+#define WHERE_OMIT_OPEN_CLOSE  0x0010 /* Table cursors are already open */
+#define WHERE_FORCE_TABLE      0x0020 /* Do not use an index-only search */
+#define WHERE_ONETABLE_ONLY    0x0040 /* Only code the 1st table in pTabList */
+#define WHERE_AND_ONLY         0x0080 /* Don't use indices for OR terms */
 
 /*
 ** The WHERE clause processing routine has two halves.  The
