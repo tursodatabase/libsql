@@ -219,7 +219,7 @@ do_test malloc5-4.2 {
   execsql {SELECT * FROM abc}
   set nMaxBytes [sqlite3_memory_highwater 1]
   puts -nonewline " (Highwater mark: $nMaxBytes) "
-  expr $nMaxBytes <= 100000
+  expr $nMaxBytes <= 110000
 } {1}
 do_test malloc5-4.3 {
   # Check that the content of table abc is at least roughly as expected.
