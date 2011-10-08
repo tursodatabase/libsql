@@ -17,7 +17,7 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-ifcapable {!pager_pragmas||secure_delete} {
+ifcapable {!pager_pragmas||secure_delete||direct_read} {
   finish_test
   return
 }
