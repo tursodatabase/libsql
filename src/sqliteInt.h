@@ -3265,4 +3265,29 @@ SQLITE_EXTERN void (*sqlite3IoTrace)(const char*,...);
 #define MEMTYPE_PCACHE     0x08  /* Page cache allocations */
 #define MEMTYPE_DB         0x10  /* Uses sqlite3DbMalloc, not sqlite_malloc */
 
+
+#if (SQLITE_ENABLE_APPLE_SPI>0) && defined(__APPLE__)
+
+/*
+** An instance of the following structure is used to hold the process ID
+** and return-by-reference lockstate value.  The SQLITE_FCNTL_LOCKSTATE_PID
+** requires the 4th argument to sqlite3_file_control to be a pointer to an
+** instance of LockstatePID initialized with a LockstatePID.pid value equal
+** to a process ID to be tested, or the special value SQLITE_LOCKSTATE_ANYPID
+** The Lockstate.state value is always set to one of the following values
+** when sqlite3_file_control returns:
+** 
+**   SQLITE_LOCKSTATE_OFF    no active sqlite file locks match the specified pid
+**   SQLITE_LOCKSTATE_ON     active sqlite file locks match the specified pid
+**   SQLITE_LOCKSTATE_NOTADB path points to a file that is not an sqlite db file
+**   SQLITE_LOCKSTATE_ERROR  path was not vaild or was unreadable
+*/
+typedef struct LockstatePID LockstatePID;
+struct LockstatePID {
+  pid_t pid;                 /* Process ID to test */
+  int state;                 /* The state of the lock (return value) */
+};
+
+#endif
+
 #endif /* _SQLITEINT_H_ */

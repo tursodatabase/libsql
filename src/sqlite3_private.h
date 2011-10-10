@@ -28,16 +28,26 @@
 extern int _sqlite3_lockstate(const char *path, pid_t pid);
 
 /*
+** Test an open database connection for sqlite locks held by a process ID,
+** if a process has an open database connection this will avoid trashing file
+** locks by re-using open file descriptors for the database file and support
+** files (-shm)
+*/
+#define SQLITE_FCNTL_LOCKSTATE_PID          103
+
+/*
 ** Pass the SQLITE_TRUNCATE_DATABASE operation code to sqlite3_file_control() 
 ** to truncate a database and its associated journal file to zero length.
 */
-#define SQLITE_TRUNCATE_DATABASE      101
+#define SQLITE_FCNTL_TRUNCATE_DATABASE      101
+#define SQLITE_TRUNCATE_DATABASE            SQLITE_FCNTL_TRUNCATE_DATABASE
 
 /*
 ** Pass the SQLITE_REPLACE_DATABASE operation code to sqlite3_file_control() 
 ** and a sqlite3 pointer to another open database file to safely copy the 
 ** contents of that database file into the receiving database.
 */
-#define SQLITE_REPLACE_DATABASE       102
+#define SQLITE_FCNTL_REPLACE_DATABASE       102
+#define SQLITE_REPLACE_DATABASE             SQLITE_FCNTL_REPLACE_DATABASE
 
 #endif

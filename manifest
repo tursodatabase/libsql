@@ -1,5 +1,5 @@
-C Merge\sin\sall\strunk\schanges\sthrough\sthe\s3.7.8\srelease.
-D 2011-09-19T20:32:36.507
+C Forward\sport\sthe\sApple-specific\schanges\sfrom\s[db5b7b778c]\sin\sthe\napple-osx-377\sbranch.\s\sFix\sthis\sup\sso\sthat\sit\swill\scompile\sand\srun\son\sLinux.
+D 2011-10-10T23:53:48.384
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 55bbee3ada084d4aa4dab9e1e0d90a21aab8bbcf
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -124,7 +124,7 @@ F src/alter.c ac80a0f31189f8b4a524ebf661e47e84536ee7f5
 F src/analyze.c a425d62e8fa9ebcb4359ab84ff0c62c6563d2e2a
 F src/attach.c 12c6957996908edc31c96d7c68d4942c2474405f
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
-F src/backup.c 28a4fe55327ff708bfaf9d4326d02686f7a553c3
+F src/backup.c 5774963f44ed38c56561033694d3a5ad516c556b
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 71a65f9bbdc3c93bd0f043aa9148b751474cea5e
@@ -149,10 +149,10 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c 015826a958f690302d27e096a68d50b3657e4201
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 99a161b27a499fc8ad40745b7b1900a26f0a5f51
-F src/main.c 242eaa584e256364f81f2aef97d3eca283d94073
+F src/main.c 4aabaa8d510c08d59595be5d83c4d630e8200982
 F src/malloc.c 591aedb20ae40813f1045f2ef253438a334775d9
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
-F src/mem1.c 46095d62b241466ef51970e592aa3a7a87e443e1
+F src/mem1.c c390a8fce10912a770ebe6fa031f5f463649e7ae
 F src/mem2.c e307323e86b5da1853d7111b68fd6b84ad6f09cf
 F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
 F src/mem5.c c2c63b7067570b00bf33d751c39af24182316f7f
@@ -168,9 +168,9 @@ F src/os.c 0668c16ae226cd58cef8240e5edbd0c93248739e
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 6fdce4067dc5796b358bd9cf55cf5dd62d580945
-F src/os_win.c 0fc0f46c94b0385a940b0ee32992a833019a5985
-F src/pager.c 984dc40d797d8d822d6ce1d184287600d94a289f
+F src/os_unix.c ed727d5822235e16519e82ba8bb355426381e1be
+F src/os_win.c 3fc8f4bb69dd71b2dc6b48e8d5fb411748197470
+F src/pager.c 5cafaf3833fceefd21bfa4dd2254b71461663286
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 49e718c095810c6b3334e3a6d89970aceaddefce
@@ -184,15 +184,15 @@ F src/resolve.c 36368f44569208fa074e61f4dd0b6c4fb60ca2b4
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c f3971442d59d06801ac3c712f2851ece8d1cdead
 F src/shell.c 13fe2aeddc3cc90d6a273831d1f63736d1596f81
-F src/sqlite.h.in 175065018323ca082092f92873e074647d00bec2
-F src/sqlite3_private.h 1d18557420cb0cc51ff31ec0a3fcce11e5cd6f5a
+F src/sqlite.h.in 9b74f2d71c15cc9e3f78c16474e2096a707ceba5
+F src/sqlite3_private.h e3b586e0aa329075d99be7198df9bc80c5b19e2d
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
-F src/sqliteInt.h 751564e4eb28a49d4f53f7bd2a211a48115d01d7
+F src/sqliteInt.h e9a32825290cee916e3e0939c857a13801afc700
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 3ef1dda2f1dc207c792eaadebf9d8adc44648581
-F src/test1.c 48759e7898dd7af7ae2b01de12045814583e15c6
+F src/test1.c 63a00ab722cc49025a6f675bcda39bed83663a48
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 124ff9735fb6bb7d41de180d6bac90e7b1509432
 F src/test4.c d1e5a5e904d4b444cf572391fdcb017638e36ff7
@@ -246,13 +246,13 @@ F src/vdbe.c 26deb38f5bd32ebeb2cb60853a52f2bf33d71641
 F src/vdbe.h f0725ee997db869ecae5bb70a71612aabeca7755
 F src/vdbeInt.h 693d6ac6810298fc6b4c503cfbe3f99a240f40af
 F src/vdbeapi.c 335435e65443f38d3073b5043e80cbbb7090c2d9
-F src/vdbeaux.c 49be7a5ce6a1b7df9ef5791133c3e4e6ab2a1ffe
+F src/vdbeaux.c 669fe607968e058ef49f7ed7846efde4fece5848
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c 5e6effb96dd53d233361cbfaa3f0a43b9af689e9
 F src/vdbesort.c 468d43c057063e54da4f1988b38b4f46d60e7790
 F src/vdbetrace.c 4b92fe7355f682368203d29b2be7125cbab85e79
 F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
-F src/wal.c 92c7c876b026d5e38fab3ce332e49266ffcf8b2b
+F src/wal.c eea77c324942f7e31ce9c3a5e6e86c4a0424fa09
 F src/wal.h e75d87752bd5df3dc4152ee2cb3b0dcd0b309e5e
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c b641d399cfd8588d0e20d9790d1582b663a732a8
@@ -968,7 +968,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P ffed86bf969b98d196ac50bb5e5faddecab4fc59 3e0da808d2f5b4d12046e05980ca04578f581177
-R fab0c6c716ebe505f8c308159e4b4eab
+P ade72b1874c7672ae8d62b9ebac8e4d63fee80cc db5b7b778c09c57501cb8266895a0ea4f2de7649
+R 492a1b6738940e27b5c3378a18dde5be
 U drh
-Z 7d1fe25483dc7359b7f468acf5aa09ab
+Z 7f2d52c0164fc6fa32a2a1d8b7959b0c
