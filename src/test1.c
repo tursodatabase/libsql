@@ -4990,17 +4990,21 @@ static int file_control_truncate_test(
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
   sqlite3 *db;
+  int flags;
   int rc;
   
-  if( objc!=2 ){
+  if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-                     Tcl_GetStringFromObj(objv[0], 0), " DB", 0);
+                     Tcl_GetStringFromObj(objv[0], 0), " DB FLAGS", 0);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
     return TCL_ERROR;
   }
-  rc = sqlite3_file_control(db, NULL, SQLITE_TRUNCATE_DATABASE, 0);
+  if( Tcl_GetIntFromObj(interp, objv[2], &flags) ){
+    return TCL_ERROR;
+  }
+  rc = sqlite3_file_control(db, NULL, SQLITE_TRUNCATE_DATABASE, &flags);
   if( rc ){ 
     Tcl_SetObjResult(interp, Tcl_NewIntObj(rc)); 
     return TCL_ERROR; 
@@ -5282,6 +5286,39 @@ static int path_is_dos(
   
   return TCL_OK;  
 }
+
+/*
+** tclcmd:   file_control_persist_wal DB PERSIST-FLAG
+**
+** This TCL command runs the sqlite3_file_control interface with
+** the SQLITE_FCNTL_PERSIST_WAL opcode.
+*/
+static int file_control_persist_wal(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3 *db;
+  int rc;
+  int bPersist;
+  char z[100];
+  
+  if( objc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+                     Tcl_GetStringFromObj(objv[0], 0), " DB FLAG", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(interp, objv[2], &bPersist) ) return TCL_ERROR;
+  rc = sqlite3_file_control(db, NULL, SQLITE_FCNTL_PERSIST_WAL, (void*)&bPersist);
+  sqlite3_snprintf(sizeof(z), z, "%d %d", rc, bPersist);
+  Tcl_AppendResult(interp, z, (char*)0);
+  return TCL_OK;  
+}
+
 
 /*
 ** tclcmd:   sqlite3_vfs_list
@@ -5994,6 +6031,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #endif 
      { "file_control_chunksize_test", file_control_chunksize_test,  0   },
      { "file_control_sizehint_test", file_control_sizehint_test,  0   },
+     { "file_control_persist_wal",    file_control_persist_wal,     0   },
      { "sqlite3_vfs_list",           vfs_list,     0   },
      { "sqlite3_create_function_v2", test_create_function_v2, 0 },
      { "path_is_local",              path_is_local,  0   },

@@ -6739,11 +6739,11 @@ static int pagerOpenWal(Pager *pPager){
   if( rc==SQLITE_OK ){
 #if SQLITE_ENABLE_DATA_PROTECTION
     rc = sqlite3WalOpen(pPager->pVfs, pPager->fd, pPager->zWal, pPager->exclusiveMode,
-        pPager->journalSizeLimit, (pPager->vfsFlags & SQLITE_OPEN_FILEPROTECTION_MASK), 
+        pPager->journalSizeLimit, (pPager->vfsFlags & (SQLITE_OPEN_FILEPROTECTION_MASK | SQLITE_OPEN_READONLY)), 
         &pPager->pWal);
 #else
     rc = sqlite3WalOpen(pPager->pVfs, pPager->fd, pPager->zWal, pPager->exclusiveMode,
-        pPager->journalSizeLimit, 0, &pPager->pWal);
+        pPager->journalSizeLimit, (pPager->vfsFlags & SQLITE_OPEN_READONLY), &pPager->pWal);
 #endif
   }
 

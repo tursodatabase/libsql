@@ -1508,6 +1508,8 @@ void sqlite3VdbeMakeReady(
   zCsr += (zCsr - (u8*)0)&7;
   assert( EIGHT_BYTE_ALIGNMENT(zCsr) );
 
+  p->expired = 0;
+  
   /* Memory for registers, parameters, cursor, etc, is allocated in two
   ** passes.  On the first pass, we try to reuse unused space at the 
   ** end of the opcode array.  If we are unable to satisfy all memory

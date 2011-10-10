@@ -1285,7 +1285,11 @@ int sqlite3WalOpen(
   pRet->exclusiveMode = (bNoShm ? WAL_HEAPMEMORY_MODE: WAL_NORMAL_MODE);
 
   /* Open file handle on the write-ahead log file. */
-  vfsFlags = flags | (SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_WAL);
+  if( flags&SQLITE_OPEN_READONLY ){
+    vfsFlags = flags | SQLITE_OPEN_WAL;
+  } else {
+    vfsFlags = flags | (SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_WAL);
+  }
   rc = sqlite3OsOpen(pVfs, zWalName, pRet->pWalFd, vfsFlags, &vfsFlags);
   if( rc==SQLITE_OK && vfsFlags&SQLITE_OPEN_READONLY ){
     pRet->readOnly = WAL_RDONLY;
@@ -1805,13 +1809,15 @@ int sqlite3WalClose(
     */
     rc = sqlite3OsLock(pWal->pDbFd, SQLITE_LOCK_EXCLUSIVE);
     if( rc==SQLITE_OK ){
+      int bPersistWal = -1;
       if( pWal->exclusiveMode==WAL_NORMAL_MODE ){
         pWal->exclusiveMode = WAL_EXCLUSIVE_MODE;
       }
       rc = sqlite3WalCheckpoint(
           pWal, SQLITE_CHECKPOINT_PASSIVE, 0, 0, sync_flags, nBuf, zBuf, 0, 0
       );
-      if( rc==SQLITE_OK ){
+      sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_PERSIST_WAL, &bPersistWal);
+      if( rc==SQLITE_OK && bPersistWal!=1 ){
         isDelete = 1;
       }
     }
@@ -1864,6 +1870,9 @@ static int walIndexTryHdr(Wal *pWal, int *pChanged){
   ** reordering the reads and writes.
   */
   aHdr = walIndexHdr(pWal);
+  if( aHdr==NULL ){
+    return 1; /* Shouldn't be getting NULL from walIndexHdr, but we are */
+  }
   memcpy(&h1, (void *)&aHdr[0], sizeof(h1));
   walShmBarrier(pWal);
   memcpy(&h2, (void *)&aHdr[1], sizeof(h2));
@@ -2048,7 +2057,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   */
   if( cnt>5 ){
     int nDelay = 1;                      /* Pause time in microseconds */
-    if( cnt>100 ){
+    if( cnt>500 ){
       VVA_ONLY( pWal->lockError = 1; )
       return SQLITE_PROTOCOL;
     }

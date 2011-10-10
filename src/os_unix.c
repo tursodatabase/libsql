@@ -258,8 +258,9 @@ struct unixFile {
 /*
 ** Allowed values for the unixFile.ctrlFlags bitmask:
 */
-#define UNIXFILE_EXCL   0x01     /* Connections from one process only */
-#define UNIXFILE_RDONLY 0x02     /* Connection is read only */
+#define UNIXFILE_EXCL        0x01     /* Connections from one process only */
+#define UNIXFILE_RDONLY      0x02     /* Connection is read only */
+#define UNIXFILE_PERSIST_WAL 0x04     /* Persistent WAL mode */
 
 /*
 ** Include code that is common to all os_*.c files
@@ -1539,6 +1540,8 @@ static int unixCheckReservedLock(sqlite3_file *id, int *pResOut){
   return rc;
 }
 
+static int _unixFileLock(unixFile *pFile, struct flock *pLock, int retry);
+
 /*
 ** Attempt to set a system-lock on the file pFile.  The lock is 
 ** described by pLock.
@@ -1559,7 +1562,15 @@ static int unixCheckReservedLock(sqlite3_file *id, int *pResOut){
 ** to fcntl() fails. In this case, errno is set appropriately (by fcntl()).
 */
 static int unixFileLock(unixFile *pFile, struct flock *pLock){
-  int rc;
+  return _unixFileLock(pFile, pLock, 0);
+}
+
+static int unixFileLock2(unixFile *pFile, struct flock *pLock){
+  return _unixFileLock(pFile, pLock, 10);
+}
+
+static int _unixFileLock(unixFile *pFile, struct flock *pLock, int retry) {
+  int rc = 0;
   unixInodeInfo *pInode = pFile->pInode;
   assert( unixMutexHeld() );
   assert( pInode!=0 );
@@ -1581,7 +1592,13 @@ static int unixFileLock(unixFile *pFile, struct flock *pLock){
       rc = 0;
     }
   }else{
-    rc = osFcntl(pFile->h, F_SETLK, pLock);
+    int i = 0;                      
+    do {
+      rc = osFcntl(pFile->h, F_SETLK, pLock);
+      if (rc && retry) {
+        usleep(100 * (++i));
+      }
+    } while (!rc && retry--);
   }
   return rc;
 }
@@ -1752,7 +1769,7 @@ static int unixLock(sqlite3_file *id, int eFileLock){
     lock.l_start = PENDING_BYTE;
     lock.l_len = 1L;
     lock.l_type = F_UNLCK;
-    if( unixFileLock(pFile, &lock) && rc==SQLITE_OK ){
+    if( unixFileLock2(pFile, &lock) && rc==SQLITE_OK ){
       /* This could happen with a network mount */
       tErrno = errno;
 #if OSLOCKING_CHECK_BUSY_IOERR
@@ -1920,15 +1937,15 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
       assert( handleNFSUnlock==0 );
 #endif
 #if defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE
+      int tErrno;               /* Error code from system call errors */
       if( handleNFSUnlock ){
-        int tErrno;               /* Error code from system call errors */
         off_t divSize = SHARED_SIZE - 1;
         
         lock.l_type = F_UNLCK;
         lock.l_whence = SEEK_SET;
         lock.l_start = SHARED_FIRST;
         lock.l_len = divSize;
-        if( unixFileLock(pFile, &lock)==(-1) ){
+        if( unixFileLock2(pFile, &lock)==(-1) ){
           tErrno = errno;
 #if OSLOCKING_CHECK_BUSY_IOERR
           rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK);
@@ -1944,9 +1961,13 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
         lock.l_whence = SEEK_SET;
         lock.l_start = SHARED_FIRST;
         lock.l_len = divSize;
-        if( unixFileLock(pFile, &lock)==(-1) ){
+        if( unixFileLock2(pFile, &lock)==(-1) ){
           tErrno = errno;
+#if OSLOCKING_CHECK_BUSY_IOERR
           rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_RDLOCK);
+#else
+          rc = SQLITE_IOERR_UNLOCK;
+#endif
           if( IS_LOCK_ERROR(rc) ){
             pFile->lastErrno = tErrno;
           }
@@ -1956,7 +1977,7 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
         lock.l_whence = SEEK_SET;
         lock.l_start = SHARED_FIRST+divSize;
         lock.l_len = SHARED_SIZE-divSize;
-        if( unixFileLock(pFile, &lock)==(-1) ){
+        if( unixFileLock2(pFile, &lock)==(-1) ){
           tErrno = errno;
 #if OSLOCKING_CHECK_BUSY_IOERR
           rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK);
@@ -1975,13 +1996,10 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
         lock.l_whence = SEEK_SET;
         lock.l_start = SHARED_FIRST;
         lock.l_len = SHARED_SIZE;
-        if( unixFileLock(pFile, &lock) ){
-#if OSLOCKING_CHECK_BUSY_IOERR
+        if( unixFileLock2(pFile, &lock) ){
           tErrno = errno;
+#if OSLOCKING_CHECK_BUSY_IOERR
           rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_RDLOCK);
-          if( IS_LOCK_ERROR(rc) ){
-            pFile->lastErrno = tErrno;
-          }
 #else
           /* In theory, the call to unixFileLock() cannot fail because another
           ** process is holding an incompatible lock. If it does, this 
@@ -1990,8 +2008,11 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
           ** SQLITE_BUSY would confuse the upper layer (in practice it causes 
           ** an assert to fail). */ 
           rc = SQLITE_IOERR_RDLOCK;
-          pFile->lastErrno = errno;
+          pFile->lastErrno = tErrno;
 #endif
+          if( IS_LOCK_ERROR(rc) ){
+            pFile->lastErrno = tErrno;
+          }
           goto end_unlock;
         }
       }
@@ -2000,7 +2021,7 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
     lock.l_whence = SEEK_SET;
     lock.l_start = PENDING_BYTE;
     lock.l_len = 2L;  assert( PENDING_BYTE+1==RESERVED_BYTE );
-    if( unixFileLock(pFile, &lock)==0 ){
+    if( unixFileLock2(pFile, &lock)==0 ){
       pInode->eFileLock = SHARED_LOCK;
     }else{
 #if OSLOCKING_CHECK_BUSY_IOERR
@@ -2029,7 +2050,7 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
       SimulateIOErrorBenign(1);
       SimulateIOError( h=(-1) )
       SimulateIOErrorBenign(0);
-      if( unixFileLock(pFile, &lock)==0 ){
+      if( unixFileLock2(pFile, &lock)==0 ){
         pInode->eFileLock = NO_LOCK;
       }else{
 #if OSLOCKING_CHECK_BUSY_IOERR
@@ -3845,25 +3866,271 @@ static int getDbPathForUnixFile(unixFile *pFile, char *dbPath);
 #endif
 static int isProxyLockingMode(unixFile *);
 
+#if (SQLITE_ENABLE_APPLE_SPI>0) && defined(__APPLE__)
+static int unixTruncateDatabase(unixFile *, int);
+
+static int unixInvalidateSupportFiles(unixFile *, int);
+
+static int unixReplaceDatabase(unixFile *pFile, sqlite3 *srcdb) {
+  sqlite3_file *id = (sqlite3_file *)pFile;
+  Btree *pSrcBtree = NULL;
+  sqlite3_file *src_file = NULL;
+  unixFile *pSrcFile = NULL;
+  char srcWalPath[MAXPATHLEN+5];
+  int srcWalFD = -1;
+  int rc = SQLITE_OK;
+  void *pLock = NULL;
+  int flags = 0;
+  sqlite3 *srcdb2 = NULL;
+  copyfile_state_t s;
+  int corruptSrcFileLock = 0;
+  int corruptDstFileLock = 0;
+  int isSrcCorrupt = 0;
+  int isDstCorrupt = 0;
+  
+  if( !sqlite3SafetyCheckOk(srcdb) ){
+    return SQLITE_MISUSE;
+  }
+    
+#if SQLITE_ENABLE_DATA_PROTECTION
+  flags |= pFile->protFlags;
+#endif
+#if SQLITE_ENABLE_LOCKING_STYLE
+  if( isProxyLockingMode(pFile) ){
+    flags |= SQLITE_OPEN_AUTOPROXY;
+  }
+#endif
+  
+  rc = sqlite3demo_superlock(pFile->zPath, 0, flags, 0, 0, &pLock);
+  if( rc ){
+    if( rc==SQLITE_CORRUPT || rc==SQLITE_NOTADB ){
+      isDstCorrupt = 1;
+      rc = sqlite3demo_superlock_corrupt(id, SQLITE_LOCK_EXCLUSIVE, &corruptDstFileLock);
+    }
+    if( rc ){
+      return rc;
+    }
+  }
+  /* get the src file descriptor adhering to the db struct access rules 
+   ** this code is modeled after sqlite3_file_control() in main.c
+   */ 
+  sqlite3_mutex_enter(srcdb->mutex);
+  if( srcdb->nDb>0 ){
+    pSrcBtree = srcdb->aDb[0].pBt;
+  }
+  if( pSrcBtree ){
+    Pager *pSrcPager;
+    sqlite3BtreeEnter(pSrcBtree);
+    pSrcPager = sqlite3BtreePager(pSrcBtree);
+    assert( pSrcPager!=0 );
+    src_file = sqlite3PagerFile(pSrcPager);
+    assert( src_file!=0 );
+    if( src_file->pMethods ){
+      int srcFlags = 0;
+      pSrcFile = (unixFile *)src_file;
+      /* wal mode db cannot be opened readonly */
+      if ((pSrcFile->openFlags & O_RDWR) == O_RDWR) {
+        srcFlags = SQLITE_OPEN_READWRITE;
+      } else {
+        srcFlags = SQLITE_OPEN_READONLY;
+      }
+#if SQLITE_ENABLE_DATA_PROTECTION
+      srcFlags |= pSrcFile->protFlags;
+#endif
+#if SQLITE_ENABLE_LOCKING_STYLE
+      if( isProxyLockingMode(pSrcFile) ){
+        srcFlags |= SQLITE_OPEN_AUTOPROXY;
+      }
+#endif
+      rc = sqlite3_open_v2(pSrcFile->zPath, &srcdb2, srcFlags, 0);
+      if( rc==SQLITE_OK ){
+        /* start a deferred transaction and read to establish a read lock */
+        rc = sqlite3_exec(srcdb2, "BEGIN DEFERRED; PRAGMA schema_version", 0, 0, 0);
+        if( rc==SQLITE_CORRUPT || rc==SQLITE_NOTADB ){
+          isSrcCorrupt = 1;
+          rc = sqlite3demo_superlock_corrupt(src_file, SQLITE_LOCK_SHARED, &corruptSrcFileLock);
+        }
+      }
+    }
+  }
+  if( !srcdb2 || pSrcFile==NULL || pSrcFile->h<0){
+    rc = SQLITE_INTERNAL;
+  }
+  if( rc!=SQLITE_OK ){
+    goto end_replace_database;
+  }
+  /* both databases are locked appropriately, copy the src wal journal if 
+   ** one exists and then the actual database file
+   */
+  strlcpy(srcWalPath, pSrcFile->zPath, MAXPATHLEN+5);
+  strlcat(srcWalPath, "-wal", MAXPATHLEN+5);
+  srcWalFD = open(srcWalPath, O_RDONLY);
+  if( !(srcWalFD<0) ){
+    char dstWalPath[MAXPATHLEN+5];
+    int dstWalFD = -1;
+    strlcpy(dstWalPath, pFile->zPath, MAXPATHLEN+5);
+    strlcat(dstWalPath, "-wal", MAXPATHLEN+5);
+    dstWalFD = open(dstWalPath, O_RDWR|O_CREAT, SQLITE_DEFAULT_FILE_PERMISSIONS);
+    if( !(dstWalFD<0) ){
+      s = copyfile_state_alloc();
+      lseek(srcWalFD, 0, SEEK_SET);
+      lseek(dstWalFD, 0, SEEK_SET);
+      if( fcopyfile(srcWalFD, dstWalFD, s, COPYFILE_ALL) ){
+        int err=errno;
+        switch(err) {
+          case ENOMEM:
+            rc = SQLITE_NOMEM;
+            break;
+          default:
+            pFile->lastErrno = err;
+            rc = SQLITE_IOERR;
+        }
+      }
+      copyfile_state_free(s);
+      close(dstWalFD);
+    }
+    close(srcWalFD);
+  }
+  if( rc==SQLITE_OK ){
+    /* before we copy, ensure that the file change counter will be modified */
+    uint32_t srcChange = 0;
+    uint32_t dstChange = 0;
+    pread(pSrcFile->h, &srcChange, 4, 24);
+    pread(pFile->h, &dstChange, 4, 24);
+    
+    /* copy the actual database */
+    s = copyfile_state_alloc();
+    lseek(pSrcFile->h, 0, SEEK_SET);
+    lseek(pFile->h, 0, SEEK_SET);
+    if( fcopyfile(pSrcFile->h, pFile->h, s, COPYFILE_ALL) ){
+      int err=errno;
+      switch(err) {
+        case ENOMEM:
+          rc = SQLITE_NOMEM;
+          break;
+        default:
+          pFile->lastErrno = err;
+          rc = SQLITE_IOERR;
+      }
+    }
+    copyfile_state_free(s);
+    
+    if (srcChange == dstChange) {
+      /* modify the change counter to force page zero to be reloaded */
+      dstChange ++;
+      pwrite(pFile->h, &dstChange, 4, 24);
+    }
+  }
+  if( isSrcCorrupt ){
+    sqlite3demo_superunlock_corrupt(src_file, corruptSrcFileLock);
+  }else{
+    /* done with the source db so end the transaction */
+    sqlite3_exec(srcdb2, "COMMIT", 0, 0, 0);
+  }
+  /* zero out any old journal clutter */
+  if( rc==SQLITE_OK ){
+    int skipWAL = (srcWalFD<0)?0:1;
+    unixInvalidateSupportFiles(pFile, skipWAL);
+  }
+  
+end_replace_database:
+  if( pSrcBtree ){
+    sqlite3_close(srcdb2);
+    sqlite3BtreeLeave(pSrcBtree);
+  }
+  sqlite3_mutex_leave(srcdb->mutex);
+  if( isDstCorrupt ){
+    sqlite3demo_superunlock_corrupt(id, corruptDstFileLock);
+  }else{
+    sqlite3demo_superunlock(pLock);
+  }
+  return rc;
+}
+
+#define SQLITE_FILE_HEADER_LEN 16
+#include "btreeInt.h"
+/* Check for a conflicting lock.  If one is found, print an this
+ ** on standard output using the format string given and return 1.
+ ** If there are no conflicting locks, return 0.
+ */
+static int unixIsLocked(
+  pid_t pid,            /* PID to test for lock owner */
+  int h,                /* File descriptor to check */
+  int type,             /* F_RDLCK or F_WRLCK */
+  unsigned int iOfst,   /* First byte of the lock */
+  unsigned int iCnt,    /* Number of bytes in the lock range */
+  const char *zType     /* Type of lock */
+){
+  struct flock lk;
+  int err;
+  
+  memset(&lk, 0, sizeof(lk));
+  lk.l_type = type;
+  lk.l_whence = SEEK_SET;
+  lk.l_start = iOfst;
+  lk.l_len = iCnt;
+  
+  if( pid!=SQLITE_LOCKSTATE_ANYPID ){
+#ifndef F_GETLKPID
+# warning F_GETLKPID undefined, _sqlite3_lockstate falling back to F_GETLK
+    err = fcntl(h, F_GETLK, &lk);
+#else
+    lk.l_pid = pid;
+    err = fcntl(h, F_GETLKPID, &lk);
+#endif
+  }else{
+    err = fcntl(h, F_GETLK, &lk);
+  }
+  
+  if( err==(-1) ){
+    fprintf(stderr, "fcntl(%d) failed: errno=%d\n", h, errno);
+    return -1;
+  }
+  
+  if( lk.l_type!=F_UNLCK && (pid==SQLITE_LOCKSTATE_ANYPID || lk.l_pid==pid) ){
+#ifdef SQLITE_DEBUG
+    fprintf(stderr, "%s lock held by %d\n", zType, (int)lk.l_pid);
+#endif
+    return 1;
+  } 
+  return 0;
+}
+
+static int unixLockstatePid(unixFile *, pid_t, int *);
+
+#endif /* (SQLITE_ENABLE_APPLE_SPI>0) && defined(__APPLE__) */
+                               
 /*
 ** Information and control of an open file handle.
 */
 static int unixFileControl(sqlite3_file *id, int op, void *pArg){
+  unixFile *pFile = (unixFile*)id;
   switch( op ){
     case SQLITE_FCNTL_LOCKSTATE: {
-      *(int*)pArg = ((unixFile*)id)->eFileLock;
+      *(int*)pArg = pFile->eFileLock;
       return SQLITE_OK;
     }
-    case SQLITE_LAST_ERRNO: {
-      *(int*)pArg = ((unixFile*)id)->lastErrno;
+    case SQLITE_FCNTL_LAST_ERRNO: {
+      *(int*)pArg = pFile->lastErrno;
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_CHUNK_SIZE: {
-      ((unixFile*)id)->szChunk = *(int *)pArg;
+      pFile->szChunk = *(int *)pArg;
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_SIZE_HINT: {
-      return fcntlSizeHint((unixFile *)id, *(i64 *)pArg);
+      return fcntlSizeHint(pFile, *(i64 *)pArg);
+    }
+    case SQLITE_FCNTL_PERSIST_WAL: {
+      int bPersist = *(int*)pArg;
+      if( bPersist<0 ){
+        *(int*)pArg = (pFile->ctrlFlags & UNIXFILE_PERSIST_WAL)!=0;
+      }else if( bPersist==0 ){
+        pFile->ctrlFlags &= ~UNIXFILE_PERSIST_WAL;
+      }else{
+        pFile->ctrlFlags |= UNIXFILE_PERSIST_WAL;
+      }
+      return SQLITE_OK;
     }
 #ifndef NDEBUG
     /* The pager calls this method to signal that it has done
@@ -3877,267 +4144,27 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
     }
 #endif
 #if SQLITE_ENABLE_LOCKING_STYLE && defined(__APPLE__)
-    case SQLITE_SET_LOCKPROXYFILE:
-    case SQLITE_GET_LOCKPROXYFILE: {
+    case SQLITE_FCNTL_SET_LOCKPROXYFILE:
+    case SQLITE_FCNTL_GET_LOCKPROXYFILE: {
       return proxyFileControl(id,op,pArg);
     }
 #endif /* SQLITE_ENABLE_LOCKING_STYLE && defined(__APPLE__) */
 #if (SQLITE_ENABLE_APPLE_SPI>0) && defined(__APPLE__)
-    case SQLITE_TRUNCATE_DATABASE: {
-      unixFile *pFile = (unixFile*)id;
-      int rc = SQLITE_OK;
-      void *pLock = NULL;
-      int flags = 0;
-      int corruptFileLock = 0;
-      int isCorrupt = 0;
-
-#if SQLITE_ENABLE_DATA_PROTECTION
-      flags |= pFile->protFlags;
-#endif
-#if SQLITE_ENABLE_LOCKING_STYLE
-      if( isProxyLockingMode(pFile) ){
-        flags |= SQLITE_OPEN_AUTOPROXY;
-      }
-#endif
-      
-      rc = sqlite3demo_superlock(pFile->zPath, 0, flags, 0, 0, &pLock);
-      if( rc ){
-        if( rc==SQLITE_CORRUPT || rc==SQLITE_NOTADB ){
-          isCorrupt = 1;
-          rc = sqlite3demo_superlock_corrupt(id, SQLITE_LOCK_EXCLUSIVE, &corruptFileLock);
-        }
-        if( rc ){
-          return rc;
-        }
-      }
-      rc = pFile->pMethod->xTruncate(id, ((pFile->fsFlags & SQLITE_FSFLAGS_IS_MSDOS) != 0) ? 1L : 0L);
-
-      if( rc==SQLITE_OK ){
-        char jPath[MAXPATHLEN+9];
-        int zLen = strlcpy(jPath, pFile->zPath, MAXPATHLEN+9);
-        if( zLen<MAXPATHLEN ){
-          size_t jLen;
-          const char extensions[2][9] = { "-wal", "-journal" /*, "-shm" */ };
-          int j = 0;
-          for( j=0; j<2; j++ ){
-            jLen = strlcpy(&jPath[zLen], extensions[j], 9);
-            if( jLen < 9 ){
-              int jfd = open(jPath, O_TRUNC);
-              if( jfd==(-1) ){
-                if ( errno!=ENOENT ){
-                  perror(jPath);
-                }
-              } else {
-                fsync(jfd);
-                close(jfd);
-              }
-            }
-          }
-        }
-        pFile->pMethod->xSync(id, SQLITE_SYNC_FULL);
-      }
-      if( isCorrupt ){
-        sqlite3demo_superunlock_corrupt(id, corruptFileLock);
-      }else{
-        sqlite3demo_superunlock(pLock);
-      }
-      return rc;
+    case SQLITE_FCNTL_TRUNCATE_DATABASE: {
+      return unixTruncateDatabase(pFile, (pArg ? (*(int *)pArg) : 0));
     }
+    case SQLITE_FCNTL_REPLACE_DATABASE: {
+      return unixReplaceDatabase(pFile, (sqlite3 *)pArg);
+    }
+    case SQLITE_FCNTL_LOCKSTATE_PID: {
+      LockstatePID *pLockstate;
+      int rc;
       
-    case SQLITE_REPLACE_DATABASE: {
-      unixFile *pFile = (unixFile*)id;
-      sqlite3 *srcdb = (sqlite3 *)pArg;
-      Btree *pSrcBtree = NULL;
-      sqlite3_file *src_file = NULL;
-      unixFile *pSrcFile = NULL;
-      char srcWalPath[MAXPATHLEN+5];
-      int srcWalFD = -1;
-      int rc = SQLITE_OK;
-      void *pLock = NULL;
-      int flags = 0;
-      sqlite3 *srcdb2 = NULL;
-      copyfile_state_t s;
-      int corruptSrcFileLock = 0;
-      int corruptDstFileLock = 0;
-      int isSrcCorrupt = 0;
-      int isDstCorrupt = 0;
-
-      if( !sqlite3SafetyCheckOk(srcdb) ){
+      if( pArg==NULL ){
         return SQLITE_MISUSE;
       }
-      
-#if SQLITE_ENABLE_DATA_PROTECTION
-      flags |= pFile->protFlags;
-#endif
-#if SQLITE_ENABLE_LOCKING_STYLE
-      if( isProxyLockingMode(pFile) ){
-        flags |= SQLITE_OPEN_AUTOPROXY;
-      }
-#endif
-      
-      rc = sqlite3demo_superlock(pFile->zPath, 0, flags, 0, 0, &pLock);
-      if( rc ){
-        if( rc==SQLITE_CORRUPT || rc==SQLITE_NOTADB ){
-          isDstCorrupt = 1;
-          rc = sqlite3demo_superlock_corrupt(id, SQLITE_LOCK_EXCLUSIVE, &corruptDstFileLock);
-        }
-        if( rc ){
-          return rc;
-        }
-      }
-      /* get the src file descriptor adhering to the db struct access rules 
-       ** this code is modeled after sqlite3_file_control() in main.c
-       */ 
-      sqlite3_mutex_enter(srcdb->mutex);
-      if( srcdb->nDb>0 ){
-        pSrcBtree = srcdb->aDb[0].pBt;
-      }
-      if( pSrcBtree ){
-        Pager *pSrcPager;
-        sqlite3BtreeEnter(pSrcBtree);
-        pSrcPager = sqlite3BtreePager(pSrcBtree);
-        assert( pSrcPager!=0 );
-        src_file = sqlite3PagerFile(pSrcPager);
-        assert( src_file!=0 );
-        if( src_file->pMethods ){
-          int srcFlags = 0;
-          pSrcFile = (unixFile *)src_file;
-          /* wal mode db cannot be opened readonly */
-          if ((pSrcFile->openFlags & O_RDWR) == O_RDWR) {
-            srcFlags = SQLITE_OPEN_READWRITE;
-          } else {
-            srcFlags = SQLITE_OPEN_READONLY;
-          }
-#if SQLITE_ENABLE_DATA_PROTECTION
-          srcFlags |= pSrcFile->protFlags;
-#endif
-#if SQLITE_ENABLE_LOCKING_STYLE
-          if( isProxyLockingMode(pSrcFile) ){
-            srcFlags |= SQLITE_OPEN_AUTOPROXY;
-          }
-#endif
-          rc = sqlite3_open_v2(pSrcFile->zPath, &srcdb2, srcFlags, 0);
-          if( rc==SQLITE_OK ){
-            /* start a deferred transaction and read to establish a read lock */
-            rc = sqlite3_exec(srcdb2, "BEGIN DEFERRED; PRAGMA schema_version", 0, 0, 0);
-            if( rc==SQLITE_CORRUPT || rc==SQLITE_NOTADB ){
-              isSrcCorrupt = 1;
-              rc = sqlite3demo_superlock_corrupt(src_file, SQLITE_LOCK_SHARED, &corruptSrcFileLock);
-            }
-          }
-        }
-      }
-      if( !srcdb2 || pSrcFile==NULL || pSrcFile->h<0){
-        rc = SQLITE_INTERNAL;
-      }
-      if( rc!=SQLITE_OK ){
-        goto end_replace_database;
-      }
-      /* both databases are locked appropriately, copy the src wal journal if 
-      ** one exists and then the actual database file
-      */
-      strlcpy(srcWalPath, pSrcFile->zPath, MAXPATHLEN+5);
-      strlcat(srcWalPath, "-wal", MAXPATHLEN+5);
-      srcWalFD = open(srcWalPath, O_RDONLY);
-      if( !(srcWalFD<0) ){
-        char dstWalPath[MAXPATHLEN+5];
-        int dstWalFD = -1;
-        strlcpy(dstWalPath, pFile->zPath, MAXPATHLEN+5);
-        strlcat(dstWalPath, "-wal", MAXPATHLEN+5);
-        dstWalFD = open(dstWalPath, O_RDWR|O_CREAT, SQLITE_DEFAULT_FILE_PERMISSIONS);
-        if( !(dstWalFD<0) ){
-          s = copyfile_state_alloc();
-          lseek(srcWalFD, 0, SEEK_SET);
-          lseek(dstWalFD, 0, SEEK_SET);
-          if( fcopyfile(srcWalFD, dstWalFD, s, COPYFILE_ALL) ){
-            int err=errno;
-            switch(err) {
-              case ENOMEM:
-                rc = SQLITE_NOMEM;
-                break;
-              default:
-                pFile->lastErrno = err;
-                rc = SQLITE_IOERR;
-            }
-          }
-          copyfile_state_free(s);
-          close(dstWalFD);
-        }
-        close(srcWalFD);
-      }
-      if( rc==SQLITE_OK ){
-        /* before we copy, ensure that the file change counter will be modified */
-        uint32_t srcChange = 0;
-        uint32_t dstChange = 0;
-        pread(pSrcFile->h, &srcChange, 4, 24);
-        pread(pFile->h, &dstChange, 4, 24);
-        
-        /* copy the actual database */
-        s = copyfile_state_alloc();
-        lseek(pSrcFile->h, 0, SEEK_SET);
-        lseek(pFile->h, 0, SEEK_SET);
-        if( fcopyfile(pSrcFile->h, pFile->h, s, COPYFILE_ALL) ){
-          int err=errno;
-          switch(err) {
-            case ENOMEM:
-              rc = SQLITE_NOMEM;
-              break;
-            default:
-              pFile->lastErrno = err;
-              rc = SQLITE_IOERR;
-          }
-        }
-        copyfile_state_free(s);
-        
-        if (srcChange == dstChange) {
-          /* modify the change counter to force page zero to be reloaded */
-          dstChange ++;
-          pwrite(pFile->h, &dstChange, 4, 24);
-        }
-      }
-      if( isSrcCorrupt ){
-        sqlite3demo_superunlock_corrupt(src_file, corruptSrcFileLock);
-      }else{
-        /* done with the source db so end the transaction */
-        sqlite3_exec(srcdb2, "COMMIT", 0, 0, 0);
-      }
-      /* zero out any old journal clutter */
-      if( rc==SQLITE_OK ){
-        char jPath[MAXPATHLEN+9];
-        int zLen = strlcpy(jPath, pFile->zPath, MAXPATHLEN+9);
-        if( zLen<MAXPATHLEN ){
-          size_t jLen;
-          const char extensions[2][9] = { "-wal", "-journal" /* "-shm" */ };
-          int j = (srcWalFD<0)?0:1; /* skip the wal if we replaced it */
-          for( ; j<2; j++ ){
-            jLen = strlcpy(&jPath[zLen], extensions[j], 9);
-            if( jLen < 9 ){
-              int jfd = open(jPath, O_TRUNC);
-              if( jfd==(-1) ){
-                if ( errno!=ENOENT ){
-                  perror(jPath);
-                }
-              } else {
-                fsync(jfd);
-                close(jfd);
-              }
-            }
-          }
-        }
-        pFile->pMethod->xSync(id, SQLITE_SYNC_FULL);
-      }
-      
-    end_replace_database:
-      if( pSrcBtree ){
-        sqlite3_close(srcdb2);
-        sqlite3BtreeLeave(pSrcBtree);
-      }
-      sqlite3_mutex_leave(srcdb->mutex);
-      if( isDstCorrupt ){
-        sqlite3demo_superunlock_corrupt(id, corruptDstFileLock);
-      }else{
-        sqlite3demo_superunlock(pLock);
-      }
+      pLockstate = (LockstatePID *)pArg;
+      rc = unixLockstatePid(pFile, pLockstate->pid, &(pLockstate->state));
       return rc;
     }
 #endif /* (SQLITE_ENABLE_APPLE_SPI>0) && defined(__APPLE__) */
@@ -4470,8 +4497,16 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
     }
 
     if( pInode->bProcessLock==0 ){
-      pShmNode->h = robust_open(zShmFilename, O_RDWR|O_CREAT,
+      const char *zRO;
+      zRO = sqlite3_uri_parameter(pDbFd->zPath, "readonly_shm");
+      if( zRO && sqlite3GetBoolean(zRO) ){
+        pShmNode->h = robust_open(zShmFilename, O_RDONLY,
+                                  (sStat.st_mode & 0777));
+        pShmNode->isReadonly = 1;
+      }else{
+        pShmNode->h = robust_open(zShmFilename, O_RDWR|O_CREAT,
                                (sStat.st_mode & 0777));
+      }
       if( pShmNode->h<0 ){
         const char *zRO;
         zRO = sqlite3_uri_parameter(pDbFd->zPath, "readonly_shm");
@@ -4846,6 +4881,210 @@ static int unixShmUnmap(
 # define unixShmBarrier 0
 # define unixShmUnmap   0
 #endif /* #ifndef SQLITE_OMIT_WAL */
+
+#if (SQLITE_ENABLE_APPLE_SPI>0) && defined(__APPLE__)
+static const char *unixTempFileDir(void);
+
+static int unixInvalidateSupportFiles(unixFile *pFile, int skipWAL) {
+  char jPath[MAXPATHLEN+9];
+  int zLen = strlcpy(jPath, pFile->zPath, MAXPATHLEN+9);
+  if( zLen<MAXPATHLEN ){
+    size_t jLen;
+    const char extensions[3][9] = { "-wal", "-journal", "-shm" };
+    int j = (skipWAL ? 1 : 0);
+    for( ; j<3; j++ ){
+      
+      /* Check to see if the shm file is already opened for this pFile */
+      if( j==2 ){
+        unixEnterMutex(); /* Because pFile->pInode is shared across threads */
+        unixShmNode *pShmNode = pFile->pInode->pShmNode;
+        if( pShmNode && !pShmNode->isReadonly ){
+          struct stat sStat;
+          sqlite3_mutex_enter(pShmNode->mutex);
+          
+          if( pShmNode->h>=0 && !osFstat(pShmNode->h, &sStat) ){
+            unsigned long size = (sStat.st_size<4) ? sStat.st_size : 4;
+            if( size>0 ){
+              bzero(pShmNode->apRegion[0], size);
+              sqlite3_mutex_leave(pShmNode->mutex);
+              unixLeaveMutex();
+              continue;
+            }
+          }
+          sqlite3_mutex_leave(pShmNode->mutex);
+        }
+        unixLeaveMutex();
+      }
+      jLen = strlcpy(&jPath[zLen], extensions[j], 9);
+      if( jLen < 9 ){
+        int jflags = (j<2) ? O_TRUNC : O_RDWR;
+        int jfd = open(jPath, jflags);
+        if( jfd==(-1) ){
+          if( errno!=ENOENT ){
+            perror(jPath);
+          }
+        } else {
+          if( j==2 ){
+            struct stat sStat;
+            if( !osFstat(jfd, &sStat) ){
+              unsigned long size = (sStat.st_size<4) ? sStat.st_size : 4;
+              if( size>0 ){
+                uint32_t zero = 0;
+                pwrite(jfd, &zero, (size_t)size, 0);
+              }
+            }
+          }
+          fsync(jfd);
+          close(jfd);
+        }
+      }
+    }
+  }
+  return SQLITE_OK;
+}
+
+static int unixTruncateDatabase(unixFile *pFile, int bFlags) {
+  sqlite3_file *id = (sqlite3_file *)pFile;
+  int rc = SQLITE_OK;
+  void *pLock = NULL;
+  int flags = 0;
+  int corruptFileLock = 0;
+  int isCorrupt = 0;
+    
+#if SQLITE_ENABLE_DATA_PROTECTION
+  flags |= pFile->protFlags;
+#endif
+#if SQLITE_ENABLE_LOCKING_STYLE
+  if( isProxyLockingMode(pFile) ){
+    flags |= SQLITE_OPEN_AUTOPROXY;
+  }
+#endif
+  
+  rc = sqlite3demo_superlock(pFile->zPath, 0, flags, 0, 0, &pLock);
+  if( rc ){
+    if( rc==SQLITE_CORRUPT || rc==SQLITE_NOTADB ){
+      isCorrupt = 1;
+      rc = sqlite3demo_superlock_corrupt(id, SQLITE_LOCK_EXCLUSIVE, &corruptFileLock);
+    }
+    if( rc ){
+      return rc;
+    }
+  }
+  rc = pFile->pMethod->xTruncate(id, ((pFile->fsFlags & SQLITE_FSFLAGS_IS_MSDOS) != 0) ? 1L : 0L);
+  if( rc==SQLITE_OK ){
+    unixInvalidateSupportFiles(pFile, 0);
+  }
+  pFile->pMethod->xSync(id, SQLITE_SYNC_FULL);
+
+
+  if( isCorrupt ){
+    sqlite3demo_superunlock_corrupt(id, corruptFileLock);
+  }else{
+    sqlite3demo_superunlock(pLock);
+  }
+  return rc;
+}
+
+/*
+ ** Lock locations for shared-memory locks used by WAL mode.
+ */
+#ifndef SHM_BASE
+# define SHM_BASE          120
+# define SHM_WRITE         SHM_BASE
+# define SHM_CHECKPOINT    (SHM_BASE+1)
+# define SHM_RECOVER       (SHM_BASE+2)
+# define SHM_READ_FIRST    (SHM_BASE+3)
+# define SHM_READ_SIZE     5
+#endif /* SHM_BASE */
+
+/*
+** This test only works for lock testing on unix/posix VFS.
+** Adapted from tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
+*/
+static int unixLockstatePid(unixFile *pFile, pid_t pid, int *pLockstate){
+  int hDb;        /* File descriptor for the open database file */
+  int hShm = -1;  /* File descriptor for WAL shared-memory file */
+  ssize_t got;    /* Bytes read from header */
+  int isWal;                 /* True if in WAL mode */
+  int nLock = 0;             /* Number of locks held */
+  unsigned char aHdr[100];   /* Database header */
+  
+  assert(pLockstate);
+  
+  /* make sure we are dealing with a database file */
+  hDb = pFile->h;
+  if( hDb<0 ){
+    *pLockstate = SQLITE_LOCKSTATE_ERROR;
+    return SQLITE_ERROR;
+  }
+  assert( (strlen(SQLITE_FILE_HEADER)+1)==SQLITE_FILE_HEADER_LEN );
+  got = pread(hDb, aHdr, 100, 0);
+  if( got<0 ){
+    *pLockstate = SQLITE_LOCKSTATE_ERROR;
+    return SQLITE_ERROR;
+  }
+  if( got!=100 || memcmp(aHdr, SQLITE_FILE_HEADER, SQLITE_FILE_HEADER_LEN)!=0 ){
+    *pLockstate = SQLITE_LOCKSTATE_NOTADB;
+    return SQLITE_NOTADB;
+  }
+  
+  /* First check for an exclusive lock */
+  nLock += unixIsLocked(pid, hDb, F_RDLCK, SHARED_FIRST, SHARED_SIZE, "EXCLUSIVE");
+  isWal = aHdr[18]==2;
+  if( nLock==0 && isWal==0 ){
+    /* Rollback mode */
+    nLock += unixIsLocked(pid, hDb, F_WRLCK, PENDING_BYTE, SHARED_SIZE+2, "PENDING|RESERVED|SHARED");
+  }
+  if( nLock==0 && isWal!=0 ){
+    /* lookup the file descriptor for the shared memory file if we have it open in this process */
+    unixEnterMutex(); /* Because pFile->pInode is shared across threads */
+    unixShmNode *pShmNode = pFile->pInode->pShmNode;
+    if( pShmNode ){
+      sqlite3_mutex_enter(pShmNode->mutex);
+      
+      hShm = pShmNode->h;
+      if( hShm >= 0){
+        if( unixIsLocked(pid, hShm, F_RDLCK, SHM_RECOVER, 1, "WAL-RECOVERY") ||
+           unixIsLocked(pid, hShm, F_RDLCK, SHM_WRITE, 1, "WAL-WRITE") ){
+          nLock = 1;
+        }
+      }
+      
+      sqlite3_mutex_leave(pShmNode->mutex);
+    } 
+    
+    if( hShm<0 ){
+      /* the shared memory file isn't open in this process space, open our own FD */
+      char zShm[MAXPATHLEN];
+      
+      /* WAL mode */
+      strlcpy(zShm, pFile->zPath, MAXPATHLEN);
+      strlcat(zShm, "-shm", MAXPATHLEN);
+      hShm = open(zShm, O_RDONLY, 0);
+      if( hShm<0 ){
+        *pLockstate = SQLITE_LOCKSTATE_OFF;
+        unixLeaveMutex();
+        return SQLITE_OK;
+      }
+      if( unixIsLocked(pid, hShm, F_RDLCK, SHM_RECOVER, 1, "WAL-RECOVERY") ||
+         unixIsLocked(pid, hShm, F_RDLCK, SHM_WRITE, 1, "WAL-WRITE") ){
+        nLock = 1;
+      }
+      close(hShm);
+    }
+    unixLeaveMutex();
+  }
+  if( nLock>0 ){
+    *pLockstate = SQLITE_LOCKSTATE_ON;
+  } else {
+    *pLockstate = SQLITE_LOCKSTATE_OFF;
+  }
+  return SQLITE_OK;
+}
+
+#endif /* (SQLITE_ENABLE_APPLE_SPI>0) && defined(__APPLE__) */
+
+
 
 /*
 ** Here ends the implementation of all sqlite3_file methods.
