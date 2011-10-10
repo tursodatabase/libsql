@@ -533,8 +533,10 @@ void sqlite3Pragma(
     int eMode;        /* One of the PAGER_JOURNALMODE_XXX symbols */
     int ii;           /* Loop counter */
 
-    /* Force the schema to be loaded on all databases.  This cases all
-    ** database files to be opened and the journal_modes set. */
+    /* Force the schema to be loaded on all databases.  This causes all
+    ** database files to be opened and the journal_modes set.  This is
+    ** necessary because subsequent processing must know if the databases
+    ** are in WAL mode. */
     if( sqlite3ReadSchema(pParse) ){
       goto pragma_out;
     }
