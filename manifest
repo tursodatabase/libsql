@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sa\scomment\sfor\sPRAGMA\sjournal_mode.\s\sAlso\samplify\sthat\ssame\ncomment.
-D 2011-10-10T12:04:14.421
+C Enhance\ssqlite3_analyzer\sso\sthat\sit\sis\sable\sto\sdeal\swith\smultiplexed\sdatabases\nthat\shave\s8+3\sfilenames.
+D 2011-10-10T16:06:35.583
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -955,7 +955,7 @@ F tool/showjournal.c b62cecaab86a4053d944c276bb5232e4d17ece02
 F tool/showwal.c f09e5a80a293919290ec85a6a37c85a5ddcf37d9
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b
-F tool/spaceanal.tcl 2dc915c21309029dbf0eb54868ad036454d2f77a
+F tool/spaceanal.tcl 15f6cd939b4ecc14d061de7e8ace89e26c30c40b
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
@@ -966,7 +966,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 4be9dccc711c9ad252e2cbd99bbcbe43247503a1
-R 4f7aae45b96181a005dc5c4d09ba91e5
+P c8ff2a484005ca48c52407db9f4a9a7d9f747158
+R be244c8f58449ece0a1463fbe4e67da8
 U drh
-Z b16e865902308c681d3a83f00f2990fa
+Z 10316430b1a9168938d816e89fe8c137
