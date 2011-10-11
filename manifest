@@ -1,5 +1,5 @@
-C Remove\sall\sprecision\sand\swidth\slimits\sfrom\sformatting\sfields\sin\sthe\nsqlite3_mprintf()\sfamily\sof\sfunctions.\sMalloc\sfor\sspace\sas\snecessary.\nThe\sprevents\sa\sstack\soverflow\son\svery\slarge\snumbers\susing\s%f.
-D 2011-10-11T17:54:54.587
+C Change\sthe\sbehavior\sof\sthe\sreadonly_shm=1\squery\sparameter\sso\sthat\sit\snever\nattempts\sto\sopen\sthe\s-shm\sfile\sread/write.
+D 2011-10-11T18:18:54.704
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +165,7 @@ F src/os.c 3b3f69c34be7f998f5ea6bd46a2fe8a2b7fa8f70
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 9da63854b702e0855ce13711a80d8bdcc5b69549
+F src/os_unix.c b14e8b40e28d983a908249442e1e0273a1ecb64e
 F src/os_win.c fbe47c7fdc9a846a772bbf98719c328becad5f8a
 F src/pager.c 8a6ac3e0d9694412076e2273e3c81e9c4e08758f
 F src/pager.h dbcaa791e8b6c3a6b77c168c5c27deec289fb176
@@ -905,7 +905,7 @@ F test/walhook.test ed00a40ba7255da22d6b66433ab61fab16a63483
 F test/walmode.test 4022fe03ae6e830583672caa101f046438a0473c
 F test/walnoshm.test 84ca10c544632a756467336b7c3b864d493ee496
 F test/walpersist.test fd40d33765b2693f721c90c66d97f99757559006
-F test/walro.test 412d0809300b94ba142440e94d6a30eabf2220b7
+F test/walro.test e6bb27762c9f22601cbb8bff6e0acfd124e74b63
 F test/walshared.test 6dda2293880c300baf5d791c307f653094585761
 F test/walslow.test e7be6d9888f83aa5d3d3c7c08aa9b5c28b93609a
 F test/walthread.test a2ed5270eb695284d4ad27d252517bdc3317ee2a
@@ -966,7 +966,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 9325c1a8c413dfbf0381190d8347f0a446ae5f5b
-R e5d1b1fb843cbf71cdab9d042be23020
+P 1f843fb383583ee7ef51c13b8a820744e450101a
+R 87c5e36e725d4b46722e677165962480
 U drh
-Z 4feb18f759ff84be86477c96fb244530
+Z 87c8aa4ca9cebc791402bbaa3b6f9b8a
