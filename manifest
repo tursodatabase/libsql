@@ -1,5 +1,5 @@
-C Fix\sa\slocking\serror\sintroduced\swhen\sporting\sthe\snew\sApple\slocking\scode.
-D 2011-10-11T15:03:45.466
+C Simplify\sthe\sreadonly_shm\simplementation\sso\sthat\sit\sconforms\sto\sthe\nimplementation\son\strunk.\s\sUpdate\sthe\stest\scases\sto\sagree\swith\sthe\snew\nbehavior.
+D 2011-10-11T18:38:13.545
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in acb1a0b8fe8029196afe437f64ead3301731b6f0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/os.c 0668c16ae226cd58cef8240e5edbd0c93248739e
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c c254695c7394013990bbb280f82efbfb10b93c20
+F src/os_unix.c cf2d13380093f2c4fa89f86c299178481776c881
 F src/os_win.c 2d6f0e6f7df4742ef4714d52f6dac2742580204e
 F src/pager.c b23e50bc7aa99e3b264537243a4f5cd2663d0734
 F src/pager.h dbcaa791e8b6c3a6b77c168c5c27deec289fb176
@@ -910,7 +910,7 @@ F test/walhook.test c934ac5219fee2b4e7653d291db9107b8dc73bba
 F test/walmode.test 9308ffc25555a1c4eaa44a863792240406637496
 F test/walnoshm.test 84ca10c544632a756467336b7c3b864d493ee496
 F test/walpersist.test fd40d33765b2693f721c90c66d97f99757559006
-F test/walro.test 4549618ff78efd6f9d042f3e6b17afe83a610526
+F test/walro.test e6bb27762c9f22601cbb8bff6e0acfd124e74b63
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test 3c2475d7672511380d33cef1924a065d2ad62ff0
 F test/walthread.test 3decc7e72594e0270dc1a1cc0984d6db7165b4cc
@@ -971,7 +971,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 7e2c4898224f9fabf724a6d4e1ac597845a66f73
-R aeb09b5626de90d270de451c2079a3c3
+P cce1f521362a87cc46fc5bfba68b7c188e2ea34f
+R 6248c52db8063a12ed87719b7770c516
 U drh
-Z af9063b7e9882f71b77f0b12c1ab5c00
+Z d5d2cbe7994f9774b3181fd3344ad8bf

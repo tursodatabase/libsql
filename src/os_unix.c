@@ -4707,27 +4707,16 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
 
     if( pInode->bProcessLock==0 ){
       const char *zRO;
+      int openFlags = O_RDWR | O_CREAT;
       zRO = sqlite3_uri_parameter(pDbFd->zPath, "readonly_shm");
       if( zRO && sqlite3GetBoolean(zRO) ){
-        pShmNode->h = robust_open(zShmFilename, O_RDONLY,
-                                  (sStat.st_mode & 0777));
+        openFlags = O_RDONLY;
         pShmNode->isReadonly = 1;
-      }else{
-        pShmNode->h = robust_open(zShmFilename, O_RDWR|O_CREAT,
-                               (sStat.st_mode & 0777));
       }
+      pShmNode->h = robust_open(zShmFilename, openFlags, (sStat.st_mode&0777));
       if( pShmNode->h<0 ){
-        const char *zRO;
-        zRO = sqlite3_uri_parameter(pDbFd->zPath, "readonly_shm");
-        if( zRO && sqlite3GetBoolean(zRO) ){
-          pShmNode->h = robust_open(zShmFilename, O_RDONLY,
-                                    (sStat.st_mode & 0777));
-          pShmNode->isReadonly = 1;
-        }
-        if( pShmNode->h<0 ){
-          rc = unixLogError(SQLITE_CANTOPEN_BKPT, "open", zShmFilename);
-          goto shm_open_err;
-        }
+        rc = unixLogError(SQLITE_CANTOPEN_BKPT, "open", zShmFilename);
+        goto shm_open_err;
       }
   
       /* Check to see if another process is holding the dead-man switch.
