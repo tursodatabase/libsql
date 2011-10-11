@@ -1931,13 +1931,13 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
     **  4:   [RRRR.]
     */
     if( eFileLock==SHARED_LOCK ){
+      int tErrno;               /* Error code from system call errors */
 
 #if !defined(__APPLE__) || !SQLITE_ENABLE_LOCKING_STYLE
       (void)handleNFSUnlock;
       assert( handleNFSUnlock==0 );
 #endif
 #if defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE
-      int tErrno;               /* Error code from system call errors */
       if( handleNFSUnlock ){
         off_t divSize = SHARED_SIZE - 1;
         

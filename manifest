@@ -1,5 +1,5 @@
-C Merging\sin\scherry\spicked\sdiffs\sfor\spersist\swal,\salloc\spadding,\swal-safe\svacuum\sand\ssqlite3_file_control\sbased\slockstate\schecking
-D 2011-10-10T22:11:44.216
+C Patches\sto\sthe\sapple-osx-377\sbranch\sso\sthat\sit\swill\scompile\sand\srun\son\s\nnon-Mac\sunix\splatforms.
+D 2011-10-11T00:09:13.879
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8410b02448997eb43bdf0ffa482c9bc2d2624e45
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -152,7 +152,7 @@ F src/loadext.c 3ae0d52da013a6326310655be6473fd472347b85
 F src/main.c f3d35af74fdccb20f7edb31d842006d99887cf2e
 F src/malloc.c 591aedb20ae40813f1045f2ef253438a334775d9
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
-F src/mem1.c 1abe5a2c20d981e050504684bfdd3a126356e6d9
+F src/mem1.c c390a8fce10912a770ebe6fa031f5f463649e7ae
 F src/mem2.c e307323e86b5da1853d7111b68fd6b84ad6f09cf
 F src/mem3.c 9b237d911ba9904142a804be727cc6664873f8a3
 F src/mem5.c c2c63b7067570b00bf33d751c39af24182316f7f
@@ -168,7 +168,7 @@ F src/os.c 1663f3754a3da185369a121a4f417762f77880b6
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 8f60f53930d4c9e781c46d803b3534d004282442
+F src/os_unix.c c936dcabe90f688c59c91f26df79ea56ba4f156a
 F src/os_win.c daa67fe04bd162fbcc387214e9614a7faa6b90b1
 F src/pager.c 4bee5b51c33855cd8de4094709912b000f2bccff
 F src/pager.h 3f8c783de1d4706b40b1ac15b64f5f896bcc78d1
@@ -192,7 +192,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac64842c86cec2fc1a1d0e5c16d3beb8ad332bf
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 5db825be61708b1a2b3f8f6e185e9b753829acef
-F src/test1.c 1ce078b76ff2876c32b6ae4d1bbf754f704c87cb
+F src/test1.c 411093e4d82ddd7202f23e2222d7f039e2432a3d
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 124ff9735fb6bb7d41de180d6bac90e7b1509432
 F src/test4.c d1e5a5e904d4b444cf572391fdcb017638e36ff7
@@ -955,7 +955,7 @@ F tool/symbols.sh bc2a3709940d47c8ac8e0a1fdf17ec801f015a00
 F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh 347d974d143cf132f953b565fbc03026f19fcb4d
-P aef7945c423a8338374572eeda9444866c64569b
-R d7448c6862ea7b8b001f5bf968511903
-U adam
-Z 39deebc534cda2d5bd1c84327ddbee27
+P db5b7b778c09c57501cb8266895a0ea4f2de7649
+R f5591d41a3ef2a2d817d7a74a89f31ff
+U drh
+Z 315988c25345647ead14743334f970a8

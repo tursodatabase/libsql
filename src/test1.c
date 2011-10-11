@@ -5210,7 +5210,6 @@ static int path_is_local(
   int objc,              /* Number of arguments */
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
-  sqlite3 *db;
   const char *zPath;
   int nPath;
   
@@ -5252,7 +5251,6 @@ static int path_is_dos(
   int objc,              /* Number of arguments */
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
-  sqlite3 *db;
   const char *zPath;
   int nPath;
   
