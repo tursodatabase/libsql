@@ -74,6 +74,11 @@ extern int isatty();
 /* True if the timer is enabled */
 static int enableTimer = 0;
 
+/* ctype macros that work with signed characters */
+#define IsSpace(X)  isspace((unsigned char)X)
+#define IsDigit(X)  isdigit((unsigned char)X)
+#define ToLower(X)  (char)tolower((unsigned char)X)
+
 #if !defined(_WIN32) && !defined(WIN32) && !defined(__OS2__) && !defined(__RTP__) && !defined(_WRS_KERNEL)
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -265,23 +270,23 @@ static void iotracePrintf(const char *zFormat, ...){
 */
 static int isNumber(const char *z, int *realnum){
   if( *z=='-' || *z=='+' ) z++;
-  if( !isdigit(*z) ){
+  if( !IsDigit(*z) ){
     return 0;
   }
   z++;
   if( realnum ) *realnum = 0;
-  while( isdigit(*z) ){ z++; }
+  while( IsDigit(*z) ){ z++; }
   if( *z=='.' ){
     z++;
-    if( !isdigit(*z) ) return 0;
-    while( isdigit(*z) ){ z++; }
+    if( !IsDigit(*z) ) return 0;
+    while( IsDigit(*z) ){ z++; }
     if( realnum ) *realnum = 1;
   }
   if( *z=='e' || *z=='E' ){
     z++;
     if( *z=='+' || *z=='-' ) z++;
-    if( !isdigit(*z) ) return 0;
-    while( isdigit(*z) ){ z++; }
+    if( !IsDigit(*z) ) return 0;
+    while( IsDigit(*z) ){ z++; }
     if( realnum ) *realnum = 1;
   }
   return *z==0;
@@ -1090,7 +1095,7 @@ static int shell_exec(
       if( !pStmt ){
         /* this happens for a comment or white-space */
         zSql = zLeftover;
-        while( isspace(zSql[0]) ) zSql++;
+        while( IsSpace(zSql[0]) ) zSql++;
         continue;
       }
 
@@ -1170,7 +1175,7 @@ static int shell_exec(
       rc = sqlite3_finalize(pStmt);
       if( rc==SQLITE_OK ){
         zSql = zLeftover;
-        while( isspace(zSql[0]) ) zSql++;
+        while( IsSpace(zSql[0]) ) zSql++;
       }else if( pzErrMsg ){
         *pzErrMsg = save_err_msg(db);
       }
@@ -1441,7 +1446,7 @@ static int booleanValue(char *zArg){
   int val = atoi(zArg);
   int j;
   for(j=0; zArg[j]; j++){
-    zArg[j] = (char)tolower(zArg[j]);
+    zArg[j] = ToLower(zArg[j]);
   }
   if( strcmp(zArg,"on")==0 ){
     val = 1;
@@ -1467,7 +1472,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   /* Parse the input line into tokens.
   */
   while( zLine[i] && nArg<ArraySize(azArg) ){
-    while( isspace((unsigned char)zLine[i]) ){ i++; }
+    while( IsSpace(zLine[i]) ){ i++; }
     if( zLine[i]==0 ) break;
     if( zLine[i]=='\'' || zLine[i]=='"' ){
       int delim = zLine[i++];
@@ -1479,7 +1484,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       if( delim=='"' ) resolve_backslashes(azArg[nArg-1]);
     }else{
       azArg[nArg++] = &zLine[i];
-      while( zLine[i] && !isspace((unsigned char)zLine[i]) ){ i++; }
+      while( zLine[i] && !IsSpace(zLine[i]) ){ i++; }
       if( zLine[i] ) zLine[i++] = 0;
       resolve_backslashes(azArg[nArg-1]);
     }
@@ -2021,7 +2026,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     data.mode = MODE_Semi;
     if( nArg>1 ){
       int i;
-      for(i=0; azArg[1][i]; i++) azArg[1][i] = (char)tolower(azArg[1][i]);
+      for(i=0; azArg[1][i]; i++) azArg[1][i] = ToLower(azArg[1][i]);
       if( strcmp(azArg[1],"sqlite_master")==0 ){
         char *new_argv[2], *new_colv[2];
         new_argv[0] = "CREATE TABLE sqlite_master (\n"
@@ -2344,7 +2349,7 @@ static int _contains_semicolon(const char *z, int N){
 */
 static int _all_whitespace(const char *z){
   for(; *z; z++){
-    if( isspace(*(unsigned char*)z) ) continue;
+    if( IsSpace(z[0]) ) continue;
     if( *z=='/' && z[1]=='*' ){
       z += 2;
       while( *z && (*z!='*' || z[1]!='/') ){ z++; }
@@ -2369,11 +2374,11 @@ static int _all_whitespace(const char *z){
 ** as is the Oracle "/".
 */
 static int _is_command_terminator(const char *zLine){
-  while( isspace(*(unsigned char*)zLine) ){ zLine++; };
+  while( IsSpace(zLine[0]) ){ zLine++; };
   if( zLine[0]=='/' && _all_whitespace(&zLine[1]) ){
     return 1;  /* Oracle */
   }
-  if( tolower(zLine[0])=='g' && tolower(zLine[1])=='o'
+  if( ToLower(zLine[0])=='g' && ToLower(zLine[1])=='o'
          && _all_whitespace(&zLine[2]) ){
     return 1;  /* SQL Server */
   }
@@ -2443,7 +2448,7 @@ static int process_input(struct callback_data *p, FILE *in){
     nSqlPrior = nSql;
     if( zSql==0 ){
       int i;
-      for(i=0; zLine[i] && isspace((unsigned char)zLine[i]); i++){}
+      for(i=0; zLine[i] && IsSpace(zLine[i]); i++){}
       if( zLine[i]!=0 ){
         nSql = strlen30(zLine);
         zSql = malloc( nSql+3 );
