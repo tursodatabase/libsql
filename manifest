@@ -1,5 +1,5 @@
-C Change\sthe\sbehavior\sof\sthe\sreadonly_shm=1\squery\sparameter\sso\sthat\sit\snever\nattempts\sto\sopen\sthe\s-shm\sfile\sread/write.
-D 2011-10-11T18:18:54.704
+C Add\sa\scouple\sof\sasserts\strying\sto\smake\sthe\soperation\sof\s\nsqlite3SelectNew()\sclearer.
+D 2011-10-11T20:14:41.773
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -179,7 +179,7 @@ F src/printf.c 1cd24df913bafc0cb69dc7ae68af85cc480925aa
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 36368f44569208fa074e61f4dd0b6c4fb60ca2b4
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
-F src/select.c d9b7d20b0365f80761846f00ef3638d4b33eeaf2
+F src/select.c 94b375306bfb4590fdfd76581ae663f57e94808f
 F src/shell.c e8fe1251aee84baa2fb232ce83d938de25aa650f
 F src/sqlite.h.in 821027573c481e45ba276b078a3ae9ebaeb9bb92
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
@@ -966,7 +966,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 1f843fb383583ee7ef51c13b8a820744e450101a
-R 87c5e36e725d4b46722e677165962480
+P f1364004836078378e4005ab3eb9c0a04e3d4ce7
+R 3342cb35f3dfdd7fe1a8faa40e73a95e
 U drh
-Z 87c8aa4ca9cebc791402bbaa3b6f9b8a
+Z ff666d79c8aac1b8165f8cc9911a51c1
