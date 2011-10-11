@@ -1,5 +1,5 @@
-C Enhance\ssqlite3_analyzer\sso\sthat\sit\sis\sable\sto\sdeal\swith\smultiplexed\sdatabases\nthat\shave\s8+3\sfilenames.
-D 2011-10-10T16:06:35.583
+C Fix\srequirements\smarks\sassociate\swith\sSTAT3.
+D 2011-10-11T12:39:19.194
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -181,7 +181,7 @@ F src/resolve.c 36368f44569208fa074e61f4dd0b6c4fb60ca2b4
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c d9b7d20b0365f80761846f00ef3638d4b33eeaf2
 F src/shell.c e8fe1251aee84baa2fb232ce83d938de25aa650f
-F src/sqlite.h.in b22e3187e048661d98a748ad54099c69dccfe497
+F src/sqlite.h.in 821027573c481e45ba276b078a3ae9ebaeb9bb92
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
 F src/sqliteInt.h 2f66bf068131f0e499dd5e0abea3f68cd6b27b2d
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -251,7 +251,7 @@ F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 3154756177d6219e233d84291d5b05f4e06ff5e9
 F src/wal.h 66b40bd91bc29a5be1c88ddd1f5ade8f3f48728a
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c a6d127dd05daf0f9ffa654edfab4f1236dc759b7
+F src/where.c 12939ac49f5122eb11b5ca4c35b2fdd8eaae9833
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -966,7 +966,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P c8ff2a484005ca48c52407db9f4a9a7d9f747158
-R be244c8f58449ece0a1463fbe4e67da8
+P e5169f9a5b7e20b8adaf6ebb7868a64e44fd7321
+R fa1bfea306973bc99ccb0d80c9355cfe
 U drh
-Z 10316430b1a9168938d816e89fe8c137
+Z 7aa6c1f7c4e6214ddb2d3b34feac8ca1
