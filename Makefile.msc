@@ -11,6 +11,10 @@ TOP = .
 #
 USE_AMALGAMATION = 1
 
+# Set this non-0 to use the International Components for Unicode (ICU).
+#
+USE_ICU = 0
+
 # Set this to non-0 to create and use PDBs.
 #
 SYMBOLS = 1
@@ -31,8 +35,8 @@ DEBUG = 0
 # Version numbers and release number for the SQLite being compiled.
 #
 VERSION = 3.7
-VERSION_NUMBER = 3007008
-RELEASE = 3.7.8
+VERSION_NUMBER = 3007009
+RELEASE = 3.7.9
 
 # C Compiler and options for use in building executables that
 # will run on the platform that is doing the build.
@@ -109,6 +113,23 @@ TCLLIBDIR = c:\tcl\lib
 LIBTCL = tcl85.lib
 !endif
 
+# The locations of the ICU header and library files.  These variables
+# (ICUINCDIR, ICULIBDIR, and LIBICU) may be overridden via the environment
+# prior to running nmake in order to match the actual installed location on
+# this machine.
+#
+!if "$(ICUINCDIR)" == ""
+ICUINCDIR = c:\icu\include
+!endif
+
+!if "$(ICULIBDIR)" == ""
+ICULIBDIR = c:\icu\lib
+!endif
+
+!if "$(LIBICU)" == ""
+LIBICU = icuuc.lib icuin.lib
+!endif
+
 # This is the command to use for tclsh - normally just "tclsh", but we may
 # know the specific version we want to use.  This variable (TCLSH_CMD) may be
 # overridden via the environment prior to running nmake in order to select a
@@ -136,7 +157,9 @@ TCC = $(TCC) -DSQLITE_THREAD_OVERRIDE_LOCK=-1
 
 # Any target libraries which libsqlite must be linked against
 #
+!if "$(TLIBS)" == ""
 TLIBS =
+!endif
 
 # Flags controlling use of the in memory btree implementation
 #
@@ -179,6 +202,13 @@ TCC = $(TCC) -O2
 TCC = $(TCC) -Zi
 !ENDIF
 
+# If ICU support is enabled, add the compiler options for it.
+!IF $(USE_ICU)!=0
+TCC = $(TCC) -DSQLITE_ENABLE_ICU=1
+TCC = $(TCC) -I$(TOP)\ext\icu
+TCC = $(TCC) -I$(ICUINCDIR)
+!ENDIF
+
 # libtool compile/link
 LTCOMPILE = $(TCC) -Fo$@
 LTLIB = lib.exe
@@ -196,6 +226,16 @@ LTLIBOPTS = /MACHINE:$(PLATFORM)
 # If debugging is enabled, enable PDBs.
 !IF $(DEBUG)>0 || $(SYMBOLS)!=0
 LTLINKOPTS = $(LTLINKOPTS) /DEBUG
+!ENDIF
+
+# Start with the Tcl related linker options.
+LTLIBPATHS = /LIBPATH:$(TCLLIBDIR)
+LTLIBS = $(LIBTCL)
+
+# If ICU support is enabled, add the linker options for it.
+!IF $(USE_ICU)!=0
+LTLIBPATHS = $(LTLIBPATHS) /LIBPATH:$(ICULIBDIR)
+LTLIBS = $(LTLIBS) $(LIBICU)
 !ENDIF
 
 # nawk compatible awk.
@@ -528,12 +568,12 @@ libsqlite3.lib:	$(LIBOBJ)
 	$(LTLIB) $(LTLIBOPTS) /OUT:$@ $(LIBOBJ) $(TLIBS)
 
 libtclsqlite3.lib:	tclsqlite.lo libsqlite3.lib
-	$(LTLIB) $(LTLIBOPTS) /LIBPATH:$(TCLLIBDIR) /OUT:$@ tclsqlite.lo libsqlite3.lib $(LIBTCL:tcl=tclstub) $(TLIBS)
+	$(LTLIB) $(LTLIBOPTS) $(LTLIBPATHS) /OUT:$@ tclsqlite.lo libsqlite3.lib $(LIBTCL:tcl=tclstub) $(TLIBS)
 
 sqlite3.exe:	$(TOP)\src\shell.c libsqlite3.lib sqlite3.h
 	$(LTLINK) $(READLINE_FLAGS) \
 		$(TOP)\src\shell.c \
-		/link $(LTLINKOPTS) libsqlite3.lib $(LIBREADLINE) $(TLIBS)
+		/link $(LTLINKOPTS) $(LTLIBPATHS) libsqlite3.lib $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
 # This target creates a directory named "tsrc" and fills it with
 # copies of all of the C source code and header files needed to
@@ -804,7 +844,7 @@ tclsqlite-shell.lo:	$(TOP)\src\tclsqlite.c $(HDR)
 
 tclsqlite3.exe:	tclsqlite-shell.lo libsqlite3.lib
 	$(LTLINK) tclsqlite-shell.lo \
-		/link $(LTLINKOPTS) /LIBPATH:$(TCLLIBDIR) libsqlite3.lib $(LIBTCL)
+		/link $(LTLINKOPTS) $(LTLIBPATHS) libsqlite3.lib $(LTLIBS) $(TLIBS)
 
 # Rules to build opcodes.c and opcodes.h
 #
@@ -915,7 +955,7 @@ testfixture.exe:	$(TESTFIXTURE_SRC) $(HDR)
 	$(LTLINK) -DSQLITE_NO_SYNC=1 $(TESTFIXTURE_FLAGS) \
 		-DBUILD_sqlite -I$(TCLINCDIR) \
 		$(TESTFIXTURE_SRC) \
-		/link $(LTLINKOPTS) /LIBPATH:$(TCLLIBDIR) $(LIBTCL) $(TLIBS)
+		/link $(LTLINKOPTS) $(LTLIBPATHS) $(LTLIBS) $(TLIBS)
 
 fulltest:	testfixture.exe sqlite3.exe
 	.\testfixture.exe $(TOP)\test\all.test
@@ -926,16 +966,16 @@ soaktest:	testfixture.exe sqlite3.exe
 test:	testfixture.exe sqlite3.exe
 	.\testfixture.exe $(TOP)\test\veryquick.test
 
-spaceanal_tcl.h:	$(TOP)\tool\spaceanal.tcl
-	$(NAWK) -f $(TOP)/tool/tostr.awk \
-		$(TOP)\tool\spaceanal.tcl > spaceanal_tcl.h
+sqlite3_analyzer.c: sqlite3.c $(TOP)\src\test_stat.c $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl
+	copy sqlite3.c + $(TOP)\src\test_stat.c + $(TOP)\src\tclsqlite.c $@
+	echo static const char *tclsh_main_loop(void){ >> $@
+	echo static const char *zMainloop = >> $@
+	$(NAWK) -f $(TOP)\tool\tostr.awk $(TOP)\tool\spaceanal.tcl >> $@
+	echo ; return zMainloop; } >> $@
 
-sqlite3_analyzer.exe:	$(TESTFIXTURE_SRC) spaceanal_tcl.h
-	$(LTLINK) -DTCLSH=2 -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1 \
-		-DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE \
-		-DBUILD_sqlite -I$(TCLINCDIR) \
-		$(TESTFIXTURE_SRC) \
-		/link $(LTLINKOPTS) /LIBPATH:$(TCLLIBDIR) $(LIBTCL) $(TLIBS)
+sqlite3_analyzer.exe:	sqlite3_analyzer.c
+	$(LTLINK) -DBUILD_sqlite -DTCLSH=2 -I$(TCLINCDIR) sqlite3_analyzer.c \
+		/link $(LTLINKOPTS) $(LTLIBPATHS) $(LTLIBS) $(TLIBS)
 
 clean:
 	del /Q *.lo *.ilk *.lib *.obj *.pdb sqlite3.exe libsqlite3.lib
@@ -944,10 +984,11 @@ clean:
 	del /Q mkkeywordhash.exe keywordhash.h
 	-rmdir /Q/S tsrc
 	del /Q .target_source
+	del /Q tclsqlite3.exe
 	del /Q testfixture.exe testfixture.exp test.db
 	del /Q sqlite3.dll sqlite3.lib sqlite3.exp sqlite3.def
 	del /Q sqlite3.c
-	del /Q sqlite3_analyzer.exe sqlite3_analyzer.exp spaceanal_tcl.h
+	del /Q sqlite3_analyzer.exe sqlite3_analyzer.exp sqlite3_analyzer.c
 
 #
 # Windows section
@@ -961,4 +1002,4 @@ sqlite3.def: libsqlite3.lib
 		| sort >> sqlite3.def
 
 sqlite3.dll: $(LIBOBJ) sqlite3.def
-	link $(LTLINKOPTS) /DLL /DEF:sqlite3.def /OUT:$@ $(LIBOBJ)
+	link $(LTLINKOPTS) $(LTLIBPATHS) /DLL /DEF:sqlite3.def /OUT:$@ $(LIBOBJ) $(LTLIBS) $(TLIBS)

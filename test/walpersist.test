@@ -17,6 +17,11 @@ source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 set ::testprefix walpersist
 
+ifcapable !wal {
+  finish_test
+  return
+}
+
 do_test walpersist-1.0 {
   db eval {
     PRAGMA journal_mode=WAL;

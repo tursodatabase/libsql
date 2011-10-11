@@ -1766,6 +1766,10 @@ do_multiclient_test tn {
 #   + Page 0,
 #   + A page with a page number greater than (2^31-1).
 #
+# These tests will not work if SQLITE_DIRECT_OVERFLOW_READ is defined. In
+# that case IO errors are sometimes reported instead of SQLITE_CORRUPT.
+#
+ifcapable !direct_read {
 do_test pager1-18.1 {
   faultsim_delete_and_reopen
   db func a_string a_string
@@ -1841,6 +1845,7 @@ do_test pager1-18.6 {
   sqlite3 db test.db
   catchsql { SELECT length(x) FROM t1 }
 } {1 {database disk image is malformed}}
+}
 
 do_test pager1-19.1 {
   sqlite3 db ""
@@ -1992,31 +1997,33 @@ ifcapable wal {
 #   pager1-22.1.*: is a no-op on a non-WAL db, and
 #   pager1-22.2.*: does not cause xSync calls with a synchronous=off db.
 #
-do_test pager1-22.1.1 {
-  faultsim_delete_and_reopen
-  execsql {
-    CREATE TABLE ko(c DEFAULT 'abc', b DEFAULT 'def');
-    INSERT INTO ko DEFAULT VALUES;
-  }
-  execsql { PRAGMA wal_checkpoint }
-} {0 -1 -1}
-do_test pager1-22.2.1 {
-  testvfs tv -default 1
-  tv filter xSync
-  tv script xSyncCb
-  proc xSyncCb {args} {incr ::synccount}
-  set ::synccount 0
-  sqlite3 db test.db
-  execsql {
-    PRAGMA synchronous = off;
-    PRAGMA journal_mode = WAL;
-    INSERT INTO ko DEFAULT VALUES;
-  }
-  execsql { PRAGMA wal_checkpoint }
-  set synccount
-} {0}
-db close
-tv delete
+ifcapable wal {
+  do_test pager1-22.1.1 {
+    faultsim_delete_and_reopen
+    execsql {
+      CREATE TABLE ko(c DEFAULT 'abc', b DEFAULT 'def');
+      INSERT INTO ko DEFAULT VALUES;
+    }
+    execsql { PRAGMA wal_checkpoint }
+  } {0 -1 -1}
+  do_test pager1-22.2.1 {
+    testvfs tv -default 1
+    tv filter xSync
+    tv script xSyncCb
+    proc xSyncCb {args} {incr ::synccount}
+    set ::synccount 0
+    sqlite3 db test.db
+    execsql {
+      PRAGMA synchronous = off;
+      PRAGMA journal_mode = WAL;
+      INSERT INTO ko DEFAULT VALUES;
+    }
+    execsql { PRAGMA wal_checkpoint }
+    set synccount
+  } {0}
+  db close
+  tv delete
+}
 
 #-------------------------------------------------------------------------
 # Tests for changing journal mode.

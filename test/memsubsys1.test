@@ -25,13 +25,6 @@ if {[permutation] == "memsubsys1"} {
   return
 }
 
-# Nor will it work if the pager is allocating memory in blocks.
-#
-ifcapable blockalloc {
-  finish_test
-  return
-}
-
 # This procedure constructs a new database in test.db.  It fills
 # this database with many small records (enough to force multiple
 # rebalance operations in the btree-layer and to require a large

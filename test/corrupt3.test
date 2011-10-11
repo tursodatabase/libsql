@@ -25,7 +25,7 @@ do_not_use_codec
 
 # We must have the page_size pragma for these tests to work.
 #
-ifcapable !pager_pragmas {
+ifcapable !pager_pragmas||direct_read {
   finish_test
   return
 }

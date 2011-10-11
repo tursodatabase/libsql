@@ -3938,21 +3938,55 @@ static int accessPayload(
         /* Need to read this page properly. It contains some of the
         ** range of data that is being read (eOp==0) or written (eOp!=0).
         */
-        DbPage *pDbPage;
+#ifdef SQLITE_DIRECT_OVERFLOW_READ
+        sqlite3_file *fd;
+#endif
         int a = amt;
-        rc = sqlite3PagerGet(pBt->pPager, nextPage, &pDbPage);
-        if( rc==SQLITE_OK ){
-          aPayload = sqlite3PagerGetData(pDbPage);
-          nextPage = get4byte(aPayload);
-          if( a + offset > ovflSize ){
-            a = ovflSize - offset;
-          }
-          rc = copyPayload(&aPayload[offset+4], pBuf, a, eOp, pDbPage);
-          sqlite3PagerUnref(pDbPage);
-          offset = 0;
-          amt -= a;
-          pBuf += a;
+        if( a + offset > ovflSize ){
+          a = ovflSize - offset;
         }
+
+#ifdef SQLITE_DIRECT_OVERFLOW_READ
+        /* If all the following are true:
+        **
+        **   1) this is a read operation, and 
+        **   2) data is required from the start of this overflow page, and
+        **   3) the database is file-backed, and
+        **   4) there is no open write-transaction, and
+        **   5) the database is not a WAL database,
+        **
+        ** then data can be read directly from the database file into the
+        ** output buffer, bypassing the page-cache altogether. This speeds
+        ** up loading large records that span many overflow pages.
+        */
+        if( eOp==0                                             /* (1) */
+         && offset==0                                          /* (2) */
+         && pBt->inTransaction==TRANS_READ                     /* (4) */
+         && (fd = sqlite3PagerFile(pBt->pPager))->pMethods     /* (3) */
+         && pBt->pPage1->aData[19]==0x01                       /* (5) */
+        ){
+          u8 aSave[4];
+          u8 *aWrite = &pBuf[-4];
+          memcpy(aSave, aWrite, 4);
+          rc = sqlite3OsRead(fd, aWrite, a+4, pBt->pageSize * (nextPage-1));
+          nextPage = get4byte(aWrite);
+          memcpy(aWrite, aSave, 4);
+        }else
+#endif
+
+        {
+          DbPage *pDbPage;
+          rc = sqlite3PagerGet(pBt->pPager, nextPage, &pDbPage);
+          if( rc==SQLITE_OK ){
+            aPayload = sqlite3PagerGetData(pDbPage);
+            nextPage = get4byte(aPayload);
+            rc = copyPayload(&aPayload[offset+4], pBuf, a, eOp, pDbPage);
+            sqlite3PagerUnref(pDbPage);
+            offset = 0;
+          }
+        }
+        amt -= a;
+        pBuf += a;
       }
     }
   }

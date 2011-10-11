@@ -219,44 +219,46 @@ do_test 4.3.2 {
 # set, where X is the file-name the method is called on. Calls to the above
 # methods using "tvfs2" set entries in the global T2 array.
 #
-testvfs tvfs1 
-tvfs1 filter {xOpen xDelete xAccess xFullPathname}
-tvfs1 script tvfs1_callback
-proc tvfs1_callback {method filename args} { 
-  set ::T1([file tail $filename]) 1 
-}
-testvfs tvfs2 
-tvfs2 filter {xOpen xDelete xAccess xFullPathname}
-tvfs2 script tvfs2_callback
-proc tvfs2_callback {method filename args} { 
-  set ::T2([file tail $filename]) 1 
-}
-
-catch {db close}
-eval forcedelete [glob test.db*]
-do_test 5.1.1 {
-  sqlite3 db file:test.db1?vfs=tvfs1
-  execsql {
-    ATTACH 'file:test.db2?vfs=tvfs2' AS aux;
-    PRAGMA main.journal_mode = PERSIST;
-    PRAGMA aux.journal_mode = PERSIST;
-    CREATE TABLE t1(a, b);
-    CREATE TABLE aux.t2(a, b);
-    PRAGMA main.journal_mode = WAL;
-    PRAGMA aux.journal_mode = WAL;
-    INSERT INTO t1 VALUES('x', 'y');
-    INSERT INTO t2 VALUES('x', 'y');
+ifcapable wal {
+  testvfs tvfs1 
+  tvfs1 filter {xOpen xDelete xAccess xFullPathname}
+  tvfs1 script tvfs1_callback
+  proc tvfs1_callback {method filename args} { 
+    set ::T1([file tail $filename]) 1 
   }
-  lsort [array names ::T1]
-} {test.db1 test.db1-journal test.db1-wal}
-
-do_test 5.1.2 {
-  lsort [array names ::T2]
-} {test.db2 test.db2-journal test.db2-wal}
-
-db close
-tvfs1 delete
-tvfs2 delete
+  testvfs tvfs2 
+  tvfs2 filter {xOpen xDelete xAccess xFullPathname}
+  tvfs2 script tvfs2_callback
+  proc tvfs2_callback {method filename args} { 
+    set ::T2([file tail $filename]) 1 
+  }
+  
+  catch {db close}
+  eval forcedelete [glob test.db*]
+  do_test 5.1.1 {
+    sqlite3 db file:test.db1?vfs=tvfs1
+    execsql {
+      ATTACH 'file:test.db2?vfs=tvfs2' AS aux;
+      PRAGMA main.journal_mode = PERSIST;
+      PRAGMA aux.journal_mode = PERSIST;
+      CREATE TABLE t1(a, b);
+      CREATE TABLE aux.t2(a, b);
+      PRAGMA main.journal_mode = WAL;
+      PRAGMA aux.journal_mode = WAL;
+      INSERT INTO t1 VALUES('x', 'y');
+      INSERT INTO t2 VALUES('x', 'y');
+    }
+    lsort [array names ::T1]
+  } {test.db1 test.db1-journal test.db1-wal}
+  
+  do_test 5.1.2 {
+    lsort [array names ::T2]
+  } {test.db2 test.db2-journal test.db2-wal}
+  db close
+  
+  tvfs1 delete
+  tvfs2 delete
+}
 
 #-------------------------------------------------------------------------
 # Check that only "" and "localhost" are acceptable as authorities.

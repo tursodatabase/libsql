@@ -16,14 +16,6 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-# If compiled with blockalloc, pagecache memory is not used. Which
-# causes these tests to fail.
-#
-ifcapable blockalloc {
-  finish_test
-  return
-}
-
 # Set up a pcache memory pool so that we can easily track how many
 # pages are being used for cache.
 #

@@ -1757,6 +1757,9 @@ static int xferOptimization(
     return 0;
   }
 #endif
+  if( (pParse->db->flags & SQLITE_CountRows)!=0 ){
+    return 0;
+  }
 
   /* If we get this far, it means either:
   **

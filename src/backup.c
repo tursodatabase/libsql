@@ -669,9 +669,17 @@ void sqlite3BackupRestart(sqlite3_backup *pBackup){
 */
 int sqlite3BtreeCopyFile(Btree *pTo, Btree *pFrom){
   int rc;
+  sqlite3_file *pFd;              /* File descriptor for database pTo */
   sqlite3_backup b;
   sqlite3BtreeEnter(pTo);
   sqlite3BtreeEnter(pFrom);
+
+  assert( sqlite3BtreeIsInTrans(pTo) );
+  pFd = sqlite3PagerFile(sqlite3BtreePager(pTo));
+  if( pFd->pMethods ){
+    i64 nByte = sqlite3BtreeGetPageSize(pFrom)*(i64)sqlite3BtreeLastPage(pFrom);
+    sqlite3OsFileControl(pFd, SQLITE_FCNTL_OVERWRITE, &nByte);
+  }
 
   /* Set up an sqlite3_backup object. sqlite3_backup.pDestDb must be set
   ** to 0. This is used by the implementations of sqlite3_backup_step()
@@ -698,6 +706,7 @@ int sqlite3BtreeCopyFile(Btree *pTo, Btree *pFrom){
     pTo->pBt->pageSizeFixed = 0;
   }
 
+  assert( sqlite3BtreeIsInTrans(pTo)==0 );
   sqlite3BtreeLeave(pFrom);
   sqlite3BtreeLeave(pTo);
   return rc;

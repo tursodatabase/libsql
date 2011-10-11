@@ -3685,33 +3685,34 @@ int Md5_Register(sqlite3 *db){
 ** the TCL interpreter reads and evaluates that file.
 */
 #if TCLSH==1
-static char zMainloop[] =
-  "set line {}\n"
-  "while {![eof stdin]} {\n"
-    "if {$line!=\"\"} {\n"
-      "puts -nonewline \"> \"\n"
-    "} else {\n"
-      "puts -nonewline \"% \"\n"
-    "}\n"
-    "flush stdout\n"
-    "append line [gets stdin]\n"
-    "if {[info complete $line]} {\n"
-      "if {[catch {uplevel #0 $line} result]} {\n"
-        "puts stderr \"Error: $result\"\n"
-      "} elseif {$result!=\"\"} {\n"
-        "puts $result\n"
+static const char *tclsh_main_loop(void){
+  static const char zMainloop[] =
+    "set line {}\n"
+    "while {![eof stdin]} {\n"
+      "if {$line!=\"\"} {\n"
+        "puts -nonewline \"> \"\n"
+      "} else {\n"
+        "puts -nonewline \"% \"\n"
       "}\n"
-      "set line {}\n"
-    "} else {\n"
-      "append line \\n\n"
+      "flush stdout\n"
+      "append line [gets stdin]\n"
+      "if {[info complete $line]} {\n"
+        "if {[catch {uplevel #0 $line} result]} {\n"
+          "puts stderr \"Error: $result\"\n"
+        "} elseif {$result!=\"\"} {\n"
+          "puts $result\n"
+        "}\n"
+        "set line {}\n"
+      "} else {\n"
+        "append line \\n\n"
+      "}\n"
     "}\n"
-  "}\n"
-;
+  ;
+  return zMainloop;
+}
 #endif
 #if TCLSH==2
-static char zMainloop[] = 
-#include "spaceanal_tcl.h"
-;
+static const char *tclsh_main_loop(void);
 #endif
 
 #ifdef SQLITE_TEST
@@ -3795,6 +3796,17 @@ static void init_all(Tcl_Interp *interp){
   Md5_Init(interp);
 #endif
 
+  /* Install the [register_dbstat_vtab] command to access the implementation
+  ** of virtual table dbstat (source file test_stat.c). This command is
+  ** required for testfixture and sqlite3_analyzer, but not by the production
+  ** Tcl extension.  */
+#if defined(SQLITE_TEST) || TCLSH==2
+  {
+    extern int SqlitetestStat_Init(Tcl_Interp*);
+    SqlitetestStat_Init(interp);
+  }
+#endif
+
 #ifdef SQLITE_TEST
   {
     extern int Sqliteconfig_Init(Tcl_Interp*);
@@ -3824,7 +3836,6 @@ static void init_all(Tcl_Interp *interp){
     extern int Sqlitetestbackup_Init(Tcl_Interp*);
     extern int Sqlitetestintarray_Init(Tcl_Interp*);
     extern int Sqlitetestvfs_Init(Tcl_Interp *);
-    extern int SqlitetestStat_Init(Tcl_Interp*);
     extern int Sqlitetestrtree_Init(Tcl_Interp*);
     extern int Sqlitequota_Init(Tcl_Interp*);
     extern int Sqlitemultiplex_Init(Tcl_Interp*);
@@ -3870,7 +3881,6 @@ static void init_all(Tcl_Interp *interp){
     Sqlitetestbackup_Init(interp);
     Sqlitetestintarray_Init(interp);
     Sqlitetestvfs_Init(interp);
-    SqlitetestStat_Init(interp);
     Sqlitetestrtree_Init(interp);
     Sqlitequota_Init(interp);
     Sqlitemultiplex_Init(interp);
@@ -3908,12 +3918,13 @@ int TCLSH_MAIN(int argc, char **argv){
   ** sqlite3_initialize() is. */
   sqlite3_shutdown();
 
+  Tcl_FindExecutable(argv[0]);
+  interp = Tcl_CreateInterp();
+
 #if TCLSH==2
   sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);
 #endif
-  Tcl_FindExecutable(argv[0]);
 
-  interp = Tcl_CreateInterp();
   init_all(interp);
   if( argc>=2 ){
     int i;
@@ -3934,7 +3945,7 @@ int TCLSH_MAIN(int argc, char **argv){
     }
   }
   if( TCLSH==2 || argc<=1 ){
-    Tcl_GlobalEval(interp, zMainloop);
+    Tcl_GlobalEval(interp, tclsh_main_loop());
   }
   return 0;
 }
