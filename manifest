@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\schanges\sinto\sthe\sapple-osx\sbranch.
-D 2011-10-11T14:19:38.772
+C Fix\sa\slocking\serror\sintroduced\swhen\sporting\sthe\snew\sApple\slocking\scode.
+D 2011-10-11T15:03:45.466
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in acb1a0b8fe8029196afe437f64ead3301731b6f0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/os.c 0668c16ae226cd58cef8240e5edbd0c93248739e
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c b84dfb5c8d7fd5a31cc892225bf8ecac23d3fed2
+F src/os_unix.c c254695c7394013990bbb280f82efbfb10b93c20
 F src/os_win.c 2d6f0e6f7df4742ef4714d52f6dac2742580204e
 F src/pager.c b23e50bc7aa99e3b264537243a4f5cd2663d0734
 F src/pager.h dbcaa791e8b6c3a6b77c168c5c27deec289fb176
@@ -971,7 +971,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 6cb43f6c6e9d8054e00acab378b8af0d82d3084c 9325c1a8c413dfbf0381190d8347f0a446ae5f5b
-R 35e8d9aed92da5f4989d13fbcde43536
+P 7e2c4898224f9fabf724a6d4e1ac597845a66f73
+R aeb09b5626de90d270de451c2079a3c3
 U drh
-Z 25803df07d204a173fc151f91f24e41d
+Z af9063b7e9882f71b77f0b12c1ab5c00

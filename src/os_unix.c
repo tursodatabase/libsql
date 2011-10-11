@@ -1594,17 +1594,16 @@ static int unixFileLock(unixFile *pFile, struct flock *pLock, int nRetry){
       pInode->bProcessLock = 1;
       pInode->nLock++;
     }else{
-      int i = 0;                      
-      do {
-        rc = osFcntl(pFile->h, F_SETLK, pLock);
-        if( rc && nRetry ){
-           usleep(100 * (++i));
-        }
-      }while( !rc && nRetry-- );
       rc = 0;
     }
   }else{
-    rc = osFcntl(pFile->h, F_SETLK, pLock);
+    int i = 0;                      
+    do {
+      rc = osFcntl(pFile->h, F_SETLK, pLock);
+      if( rc && nRetry ){
+         usleep(100 * (++i));
+      }
+    }while( !rc && nRetry-- );
   }
   return rc;
 }
