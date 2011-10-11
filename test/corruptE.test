@@ -16,8 +16,6 @@
 #
 # $Id: corruptE.test,v 1.14 2009/07/11 06:55:34 danielk1977 Exp $
 
-catch {forcedelete test.db test.db-journal test.bu}
-
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 

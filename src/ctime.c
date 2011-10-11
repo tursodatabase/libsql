@@ -117,6 +117,9 @@ static const char * const azCompileOpt[] = {
 #ifdef SQLITE_ENABLE_STAT2
   "ENABLE_STAT2",
 #endif
+#ifdef SQLITE_ENABLE_STAT3
+  "ENABLE_STAT3",
+#endif
 #ifdef SQLITE_ENABLE_UNLOCK_NOTIFY
   "ENABLE_UNLOCK_NOTIFY",
 #endif
@@ -328,9 +331,6 @@ static const char * const azCompileOpt[] = {
 #endif
 #ifdef SQLITE_OMIT_XFER_OPT
   "OMIT_XFER_OPT",
-#endif
-#ifdef SQLITE_PAGECACHE_BLOCKALLOC
-  "PAGECACHE_BLOCKALLOC",
 #endif
 #ifdef SQLITE_PERFORMANCE_TRACE
   "PERFORMANCE_TRACE",

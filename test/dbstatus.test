@@ -56,6 +56,12 @@ proc lookaside {db} {
   }
 }
 
+ifcapable stat3 {
+  set STAT3 1
+} else {
+  set STAT3 0
+}
+
 #---------------------------------------------------------------------------
 # Run the dbstatus-2 and dbstatus-3 tests with several of different
 # lookaside buffer sizes.
@@ -118,7 +124,7 @@ foreach ::lookaside_buffer_size {0 64 120} {
       CREATE TABLE t2(c, d);
       CREATE VIEW v1 AS SELECT * FROM t1 UNION SELECT * FROM t2;
     }
-    6 {
+    6y {
       CREATE TABLE t1(a, b);
       CREATE INDEX i1 ON t1(a);
       CREATE INDEX i2 ON t1(a,b);
@@ -198,7 +204,11 @@ foreach ::lookaside_buffer_size {0 64 120} {
     # much greater than just that reported by DBSTATUS_SCHEMA_USED in this
     # case.
     #
-    if {[string match *x $tn] || $AUTOVACUUM} {
+    # Some of the memory used for sqlite_stat3 is unaccounted for by
+    # dbstatus.
+    #
+    if {[string match *x $tn] || $AUTOVACUUM
+         || ([string match *y $tn] && $STAT3)} {
       do_test dbstatus-2.$tn.ax { expr {($nSchema1-$nSchema2)<=$nFree} } 1
     } else {
       do_test dbstatus-2.$tn.a { expr {$nSchema1-$nSchema2} } $nFree

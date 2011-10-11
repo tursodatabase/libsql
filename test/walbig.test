@@ -17,6 +17,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+ifcapable !wal {
+  finish_test
+  return
+}
+
 # Do not use a codec for this file, as the database is manipulated using
 # external methods (the [fake_big_file] and [hexio_write] commands).
 #

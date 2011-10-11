@@ -75,10 +75,12 @@ set L [list]
 set S ""
 foreach {name f} $files {
   if {[permutation] == "journaltest"} {
-    lappend L delete
+    set mode delete
   } else {
-    lappend L wal
+    set mode wal
   }
+  ifcapable !wal { set mode delete }
+  lappend L $mode
   append S "
     PRAGMA $name.journal_mode = WAL;
     UPDATE $name.tbl SET x = '$name';

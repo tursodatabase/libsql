@@ -223,16 +223,5 @@ do_test ctime-2.5.$tc {
   } ]
 } {0 {{}}}
 
-ifcapable blockalloc {
-  do_test ctime-3.1a {
-    db eval {SELECT sqlite_compileoption_used('PAGECACHE_BLOCKALLOC')}
-  } {1}
-} else {
-  do_test ctime-3.1b {
-    db eval {SELECT sqlite_compileoption_used('PAGECACHE_BLOCKALLOC')}
-  } {0}
-}
-
-
 
 finish_test
