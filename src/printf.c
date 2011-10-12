@@ -7,48 +7,10 @@
 **
 **************************************************************************
 **
-** The following modules is an enhanced replacement for the "printf" subroutines
-** found in the standard C library.  The following enhancements are
-** supported:
-**
-**      +  Additional functions.  The standard set of "printf" functions
-**         includes printf, fprintf, sprintf, vprintf, vfprintf, and
-**         vsprintf.  This module adds the following:
-**
-**           *  snprintf -- Works like sprintf, but has an extra argument
-**                          which is the size of the buffer written to.
-**
-**           *  mprintf --  Similar to sprintf.  Writes output to memory
-**                          obtained from malloc.
-**
-**           *  xprintf --  Calls a function to dispose of output.
-**
-**           *  nprintf --  No output, but returns the number of characters
-**                          that would have been output by printf.
-**
-**           *  A v- version (ex: vsnprintf) of every function is also
-**              supplied.
-**
-**      +  A few extensions to the formatting notation are supported:
-**
-**           *  The "=" flag (similar to "-") causes the output to be
-**              be centered in the appropriately sized field.
-**
-**           *  The %b field outputs an integer in binary notation.
-**
-**           *  The %c field now accepts a precision.  The character output
-**              is repeated by the number of times the precision specifies.
-**
-**           *  The %' field works like %c, but takes as its character the
-**              next character of the format string, instead of the next
-**              argument.  For example,  printf("%.78'-")  prints 78 minus
-**              signs, the same as  printf("%.78c",'-').
-**
-**      +  When compiled using GCC on a SPARC, this version of printf is
-**         faster than the library printf for SUN OS 4.1.
-**
-**      +  All functions are fully reentrant.
-**
+** This file contains code for a set of "printf"-like routines.  These
+** routines format strings much like the printf() from the standard C
+** library, though the implementation here has enhancements to support
+** SQLlite.
 */
 #include "sqliteInt.h"
 
@@ -187,7 +149,7 @@ static void appendSpace(StrAccum *pAccum, int N){
 
 /*
 ** On machines with a small stack size, you can redefine the
-** SQLITE_PRINT_BUF_SIZE to be less than 350.
+** SQLITE_PRINT_BUF_SIZE to be something smaller, if desired.
 */
 #ifndef SQLITE_PRINT_BUF_SIZE
 # define SQLITE_PRINT_BUF_SIZE 70
@@ -195,31 +157,7 @@ static void appendSpace(StrAccum *pAccum, int N){
 #define etBUFSIZE SQLITE_PRINT_BUF_SIZE  /* Size of the output buffer */
 
 /*
-** The root program.  All variations call this core.
-**
-** INPUTS:
-**   func   This is a pointer to a function taking three arguments
-**            1. A pointer to anything.  Same as the "arg" parameter.
-**            2. A pointer to the list of characters to be output
-**               (Note, this list is NOT null terminated.)
-**            3. An integer number of characters to be output.
-**               (Note: This number might be zero.)
-**
-**   arg    This is the pointer to anything which will be passed as the
-**          first argument to "func".  Use it for whatever you like.
-**
-**   fmt    This is the format string, as in the usual print.
-**
-**   ap     This is a pointer to a list of arguments.  Same as in
-**          vfprint.
-**
-** OUTPUTS:
-**          The return value is the total number of characters sent to
-**          the function "func".  Returns -1 on a error.
-**
-** Note that the order in which automatic variables are declared below
-** seems to make a big difference in determining how fast this beast
-** will run.
+** Render a string given by "fmt" into the StrAccum object.
 */
 void sqlite3VXPrintf(
   StrAccum *pAccum,                  /* Accumulate results here */
@@ -242,22 +180,22 @@ void sqlite3VXPrintf(
   etByte flag_long;          /* True if "l" flag is present */
   etByte flag_longlong;      /* True if the "ll" flag is present */
   etByte done;               /* Loop termination flag */
+  etByte xtype = 0;          /* Conversion paradigm */
+  char prefix;               /* Prefix character.  "+" or "-" or " " or '\0'. */
   sqlite_uint64 longvalue;   /* Value for integer types */
   LONGDOUBLE_TYPE realvalue; /* Value for real types */
   const et_info *infop;      /* Pointer to the appropriate info structure */
-  char buf[etBUFSIZE];       /* Conversion buffer */
   char *zOut;                /* Rendering buffer */
   int nOut;                  /* Size of the rendering buffer */
-  char prefix;               /* Prefix character.  "+" or "-" or " " or '\0'. */
-  etByte xtype = 0;          /* Conversion paradigm */
-  char *zExtra;              /* Extra memory used for etTCLESCAPE conversions */
+  char *zExtra;              /* Malloced memory used by some conversion */
 #ifndef SQLITE_OMIT_FLOATING_POINT
   int  exp, e2;              /* exponent of real numbers */
+  int nsd;                   /* Number of significant digits returned */
   double rounder;            /* Used for rounding floating point values */
   etByte flag_dp;            /* True if decimal point should be shown */
   etByte flag_rtz;           /* True if trailing zeros should be removed */
-  int nsd;                   /* Number of significant digits returned */
 #endif
+  char buf[etBUFSIZE];       /* Conversion buffer */
 
   length = 0;
   bufpt = 0;
