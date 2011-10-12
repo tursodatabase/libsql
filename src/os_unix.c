@@ -5428,10 +5428,12 @@ int sqlite3_current_time = 0;  /* Fake system time in seconds since 1970. */
 ** epoch of noon in Greenwich on November 24, 4714 B.C according to the
 ** proleptic Gregorian calendar.
 **
-** On success, return 0.  Return 1 if the time and date cannot be found.
+** On success, return SQLITE_OK.  Return SQLITE_ERROR if the time and date 
+** cannot be found.
 */
 static int unixCurrentTimeInt64(sqlite3_vfs *NotUsed, sqlite3_int64 *piNow){
   static const sqlite3_int64 unixEpoch = 24405875*(sqlite3_int64)8640000;
+  int rc = SQLITE_OK;
 #if defined(NO_GETTOD)
   time_t t;
   time(&t);
@@ -5442,8 +5444,11 @@ static int unixCurrentTimeInt64(sqlite3_vfs *NotUsed, sqlite3_int64 *piNow){
   *piNow = unixEpoch + 1000*(sqlite3_int64)sNow.tv_sec + sNow.tv_nsec/1000000;
 #else
   struct timeval sNow;
-  gettimeofday(&sNow, 0);
-  *piNow = unixEpoch + 1000*(sqlite3_int64)sNow.tv_sec + sNow.tv_usec/1000;
+  if( gettimeofday(&sNow, 0)==0 ){
+    *piNow = unixEpoch + 1000*(sqlite3_int64)sNow.tv_sec + sNow.tv_usec/1000;
+  }else{
+    rc = SQLITE_ERROR;
+  }
 #endif
 
 #ifdef SQLITE_TEST
@@ -5452,7 +5457,7 @@ static int unixCurrentTimeInt64(sqlite3_vfs *NotUsed, sqlite3_int64 *piNow){
   }
 #endif
   UNUSED_PARAMETER(NotUsed);
-  return 0;
+  return rc;
 }
 
 /*
@@ -5462,10 +5467,11 @@ static int unixCurrentTimeInt64(sqlite3_vfs *NotUsed, sqlite3_int64 *piNow){
 */
 static int unixCurrentTime(sqlite3_vfs *NotUsed, double *prNow){
   sqlite3_int64 i;
+  int rc;
   UNUSED_PARAMETER(NotUsed);
-  unixCurrentTimeInt64(0, &i);
+  rc = unixCurrentTimeInt64(0, &i);
   *prNow = i/86400000.0;
-  return 0;
+  return rc;
 }
 
 /*

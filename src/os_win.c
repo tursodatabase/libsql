@@ -3066,7 +3066,8 @@ int sqlite3_current_time = 0;  /* Fake system time in seconds since 1970. */
 ** epoch of noon in Greenwich on November 24, 4714 B.C according to the
 ** proleptic Gregorian calendar.
 **
-** On success, return 0.  Return 1 if the time and date cannot be found.
+** On success, return SQLITE_OK.  Return SQLITE_ERROR if the time and date 
+** cannot be found.
 */
 static int winCurrentTimeInt64(sqlite3_vfs *pVfs, sqlite3_int64 *piNow){
   /* FILETIME structure is a 64-bit value representing the number of 
@@ -3086,7 +3087,7 @@ static int winCurrentTimeInt64(sqlite3_vfs *pVfs, sqlite3_int64 *piNow){
   GetSystemTime(&time);
   /* if SystemTimeToFileTime() fails, it returns zero. */
   if (!SystemTimeToFileTime(&time,&ft)){
-    return 1;
+    return SQLITE_ERROR;
   }
 #else
   GetSystemTimeAsFileTime( &ft );
@@ -3102,7 +3103,7 @@ static int winCurrentTimeInt64(sqlite3_vfs *pVfs, sqlite3_int64 *piNow){
   }
 #endif
   UNUSED_PARAMETER(pVfs);
-  return 0;
+  return SQLITE_OK;
 }
 
 /*

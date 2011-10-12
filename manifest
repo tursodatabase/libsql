@@ -1,5 +1,5 @@
-C Suppress\sa\scompiler\swarning\sthat\soccurs\swith\sSQLITE_OMIT_VIRTUALTABLE.
-D 2011-10-12T19:04:07.402
+C The\sdate/time\sfunctions\sreturn\sNULL\sif\sthe\sxCurrentTime\sor\nxCurrentTimeInt64\sVFS\smethods\sfail.\nTicket\s[0b803bff856c644c]
+D 2011-10-12T23:13:43.648
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -131,7 +131,7 @@ F src/build.c 119937b0ae1ff4dcec8fdea53771acc95bafca51
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 829f3261d3db48e3d87891bc887208734734c2e4
-F src/date.c a3c6842bad7ae632281811de112a8ba63ff08ab3
+F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c ff68e5ef23aee08c0ff528f699a19397ed8bbed8
 F src/expr.c f4dcaeb8252c4b16fcdc245660f70ed366bc6cdd
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
@@ -165,8 +165,8 @@ F src/os.c 3b3f69c34be7f998f5ea6bd46a2fe8a2b7fa8f70
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c b14e8b40e28d983a908249442e1e0273a1ecb64e
-F src/os_win.c fbe47c7fdc9a846a772bbf98719c328becad5f8a
+F src/os_unix.c 7f8031b5b3aee1b9e066e2ea8f83e02775debcb4
+F src/os_win.c 58c1cef8a167275d5238bdfb3c455e53e3146354
 F src/pager.c 8a6ac3e0d9694412076e2273e3c81e9c4e08758f
 F src/pager.h dbcaa791e8b6c3a6b77c168c5c27deec289fb176
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -966,7 +966,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 97ef4f5013731fa3a0f72451b7e8c9aec5523104
-R aa347fcaa7b1b78f72c141e6103db8e0
+P 6bedb49d68f2960a6fc4701d02e177789abf9099
+R f6f2282ee33c9438c6a443681fa52486
 U drh
-Z 4df9a6a5c072d98e4f59e9f8ded1b3be
+Z e1a02e86d35f387f95f1d1ceb1084f34
