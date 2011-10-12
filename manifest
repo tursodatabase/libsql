@@ -1,5 +1,5 @@
-C Clean\sup\sobsolete\scomments\sin\sprintf.c.
-D 2011-10-12T18:52:59.595
+C Suppress\sa\scompiler\swarning\sthat\soccurs\swith\sSQLITE_OMIT_VIRTUALTABLE.
+D 2011-10-12T19:04:07.402
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -183,7 +183,7 @@ F src/select.c 94b375306bfb4590fdfd76581ae663f57e94808f
 F src/shell.c a07ce148dc665e4283edf878d0fb52fed2018408
 F src/sqlite.h.in 821027573c481e45ba276b078a3ae9ebaeb9bb92
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
-F src/sqliteInt.h 2f66bf068131f0e499dd5e0abea3f68cd6b27b2d
+F src/sqliteInt.h 6f8e592fc28d16160d017684966b3528833a46c1
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 4568e72dfd36b6a5911f93457364deb072e0b03a
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -966,7 +966,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 4f1a558d0013fbf3fe00bdf5883e61a1f3779831
-R 3b4749da52d09d736fe4f908b2fe6beb
+P 97ef4f5013731fa3a0f72451b7e8c9aec5523104
+R aa347fcaa7b1b78f72c141e6103db8e0
 U drh
-Z 30471bd3e45c0db38d5307794f8fd877
+Z 4df9a6a5c072d98e4f59e9f8ded1b3be
