@@ -1,5 +1,5 @@
-C Put\sin\scode\sto\sdefend\sagainst\ssigned/unsigned\scharacter\sproblems\nin\sthe\scommand-line\sshell.
-D 2011-10-11T20:41:54.810
+C Clarify\sa\scomment\sand\sfix\sa\scode\sformatting\sissue\sin\sbtree.c.
+D 2011-10-12T17:00:28.920
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -124,7 +124,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 4fd4440c8f81339d8eb8e5d2df54b68d79e94f2f
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c b53e009bccb4cfcbcde074f586f0c1c6712a0e12
+F src/btree.c 74da2e088722edfef79f1d182934bbe6a436c0fc
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
 F src/build.c 119937b0ae1ff4dcec8fdea53771acc95bafca51
@@ -966,7 +966,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P b21b1c7bc490b193da8d8a277489eb875a507e30
-R 7c8d9511406d6fc0a6ea749b1b39d02c
+P b94a80a832777f0e639f6a81fcfe169bf970a8c0
+R 95fde01c6f40604b21834caf64be98db
 U drh
-Z 1652abdbfcdbd0d6697e8d56e8019c87
+Z 389b1315be168f08d6aa9a5e7d0d3d85
