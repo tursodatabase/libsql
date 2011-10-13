@@ -332,16 +332,15 @@ static void upperFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   if( z2 ){
     z1 = contextMalloc(context, ((i64)n)+1);
     if( z1 ){
-      memcpy(z1, z2, n+1);
-      for(i=0; z1[i]; i++){
-        z1[i] = (char)sqlite3Toupper(z1[i]);
+      for(i=0; i<n; i++){
+        z1[i] = (char)sqlite3Toupper(z2[i]);
       }
-      sqlite3_result_text(context, z1, -1, sqlite3_free);
+      sqlite3_result_text(context, z1, n, sqlite3_free);
     }
   }
 }
 static void lowerFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  u8 *z1;
+  char *z1;
   const char *z2;
   int i, n;
   UNUSED_PARAMETER(argc);
@@ -352,11 +351,10 @@ static void lowerFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   if( z2 ){
     z1 = contextMalloc(context, ((i64)n)+1);
     if( z1 ){
-      memcpy(z1, z2, n+1);
-      for(i=0; z1[i]; i++){
-        z1[i] = sqlite3Tolower(z1[i]);
+      for(i=0; i<n; i++){
+        z1[i] = sqlite3Tolower(z2[i]);
       }
-      sqlite3_result_text(context, (char *)z1, -1, sqlite3_free);
+      sqlite3_result_text(context, z1, n, sqlite3_free);
     }
   }
 }

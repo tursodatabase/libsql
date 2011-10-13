@@ -1,5 +1,5 @@
-C Handle\supdating\sthe\sonly\srow\sof\san\sFTS\stable\scorrectly.\sFix\sfor\s[9fd058691].
-D 2011-10-13T17:16:45.272
+C Simplifications\sto\sthe\supper()\sand\slower()\sSQL\sfunctions.\nUpdates\sto\sdocumentation\son\ssqlite3_bind_text()\sand\ssqlite3_result_text()\nto\smake\sit\sclear\sthat\susers\sshould\snot\stry\sto\screate\sstrings\swith\nembedded\sNULs\sand\sthat\sif\sthey\sdo\sthe\sresult\sof\sexpression\son\sthose\sstrings\nis\sundefined.\s\sTicket\s[57c971fc74524a]
+D 2011-10-13T18:00:11.063
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -136,7 +136,7 @@ F src/delete.c ff68e5ef23aee08c0ff528f699a19397ed8bbed8
 F src/expr.c 1a7970a0c5c72a76c6929896ac109f04e194619b
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 9f00ea98f6b360d477b5a78b5b59a1fbde82431c
-F src/func.c 59bb046d7e3df1ab512ac339ccb0a6f996a17cb7
+F src/func.c 6261ce00aad9c63cd5b4219249b05683979060e9
 F src/global.c e230227de13601714b29f9363028514aada5ae2f
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
@@ -181,7 +181,7 @@ F src/resolve.c 36368f44569208fa074e61f4dd0b6c4fb60ca2b4
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 94b375306bfb4590fdfd76581ae663f57e94808f
 F src/shell.c e30e20107fda14260640191a51aa527d8f209671
-F src/sqlite.h.in 821027573c481e45ba276b078a3ae9ebaeb9bb92
+F src/sqlite.h.in 5ec7488ef4c124ae905286600a9f2d64250aebb1
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
 F src/sqliteInt.h 6f8e592fc28d16160d017684966b3528833a46c1
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -969,7 +969,7 @@ F tool/symbols.sh fec58532668296d7c7dc48be9c87f75ccdb5814f
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P c3cb7f4fad725d5fa4d5acd9da63fc4538ce8e13
-R ec95a62db79b84d7111fda3a8be06ca9
-U dan
-Z 25dbdd79336e5688c7ffd1d8a10e1ab3
+P 7e24645be2fe0ffe092212e7bcfa5b4500305811
+R 70d5d750704aa84a6b8318ba5f4ea9e5
+U drh
+Z 36fd6a9db851f3c203fcf94c8d8271d9
