@@ -407,6 +407,7 @@ struct callback_data {
   int statsOn;           /* True to display memory stats before each finalize */
   int cnt;               /* Number of records displayed so far */
   FILE *out;             /* Write results here */
+  int nErr;              /* Number of errors seen */
   int mode;              /* An output mode setting */
   int writableSchema;    /* True if PRAGMA writable_schema=ON */
   int showHeader;        /* True to show column names in List or Column mode */
@@ -932,27 +933,33 @@ static char *appendText(char *zIn, char const *zAppend, char quote){
 ** querying the SQLITE_MASTER table.
 */
 static int run_table_dump_query(
-  FILE *out,              /* Send output here */
-  sqlite3 *db,            /* Database to query */
-  const char *zSelect,    /* SELECT statement to extract content */
-  const char *zFirstRow   /* Print before first row, if not NULL */
+  struct callback_data *p, /* Query context */
+  const char *zSelect,     /* SELECT statement to extract content */
+  const char *zFirstRow    /* Print before first row, if not NULL */
 ){
   sqlite3_stmt *pSelect;
   int rc;
-  rc = sqlite3_prepare(db, zSelect, -1, &pSelect, 0);
+  rc = sqlite3_prepare(p->db, zSelect, -1, &pSelect, 0);
   if( rc!=SQLITE_OK || !pSelect ){
+    fprintf(p->out, "/**** ERROR: (%d) %s *****/\n", rc, sqlite3_errmsg(p->db));
+    p->nErr++;
     return rc;
   }
   rc = sqlite3_step(pSelect);
   while( rc==SQLITE_ROW ){
     if( zFirstRow ){
-      fprintf(out, "%s", zFirstRow);
+      fprintf(p->out, "%s", zFirstRow);
       zFirstRow = 0;
     }
-    fprintf(out, "%s;\n", sqlite3_column_text(pSelect, 0));
+    fprintf(p->out, "%s;\n", sqlite3_column_text(pSelect, 0));
     rc = sqlite3_step(pSelect);
   }
-  return sqlite3_finalize(pSelect);
+  rc = sqlite3_finalize(pSelect);
+  if( rc!=SQLITE_OK ){
+    fprintf(p->out, "/**** ERROR: (%d) %s *****/\n", rc, sqlite3_errmsg(p->db));
+    p->nErr++;
+  }
+  return rc;
 }
 
 /*
@@ -1278,10 +1285,10 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
     zSelect = appendText(zSelect, "|| ')' FROM  ", 0);
     zSelect = appendText(zSelect, zTable, '"');
 
-    rc = run_table_dump_query(p->out, p->db, zSelect, zPrepStmt);
+    rc = run_table_dump_query(p, zSelect, zPrepStmt);
     if( rc==SQLITE_CORRUPT ){
       zSelect = appendText(zSelect, " ORDER BY rowid DESC", 0);
-      rc = run_table_dump_query(p->out, p->db, zSelect, 0);
+      run_table_dump_query(p, zSelect, 0);
     }
     if( zSelect ) free(zSelect);
   }
@@ -1297,19 +1304,30 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
 */
 static int run_schema_dump_query(
   struct callback_data *p, 
-  const char *zQuery,
-  char **pzErrMsg
+  const char *zQuery
 ){
   int rc;
-  rc = sqlite3_exec(p->db, zQuery, dump_callback, p, pzErrMsg);
+  char *zErr = 0;
+  rc = sqlite3_exec(p->db, zQuery, dump_callback, p, &zErr);
   if( rc==SQLITE_CORRUPT ){
     char *zQ2;
     int len = strlen30(zQuery);
-    if( pzErrMsg ) sqlite3_free(*pzErrMsg);
+    fprintf(p->out, "/****** CORRUPTION ERROR *******/\n");
+    if( zErr ){
+      fprintf(p->out, "/****** %s ******/\n", zErr);
+      sqlite3_free(zErr);
+      zErr = 0;
+    }
     zQ2 = malloc( len+100 );
     if( zQ2==0 ) return rc;
     sqlite3_snprintf(sizeof(zQ2), zQ2, "%s ORDER BY rowid DESC", zQuery);
-    rc = sqlite3_exec(p->db, zQ2, dump_callback, p, pzErrMsg);
+    rc = sqlite3_exec(p->db, zQ2, dump_callback, p, &zErr);
+    if( rc ){
+      fprintf(p->out, "/****** ERROR: %s ******/\n", zErr);
+    }else{
+      rc = SQLITE_CORRUPT;
+    }
+    sqlite3_free(zErr);
     free(zQ2);
   }
   return rc;
@@ -1555,7 +1573,6 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   }else
 
   if( c=='d' && strncmp(azArg[0], "dump", n)==0 && nArg<3 ){
-    char *zErrMsg = 0;
     open_db(p);
     /* When playing back a "dump", the content might appear in an order
     ** which causes immediate foreign key constraints to be violated.
@@ -1564,16 +1581,17 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     fprintf(p->out, "BEGIN TRANSACTION;\n");
     p->writableSchema = 0;
     sqlite3_exec(p->db, "PRAGMA writable_schema=ON", 0, 0, 0);
+    p->nErr = 0;
     if( nArg==1 ){
       run_schema_dump_query(p, 
         "SELECT name, type, sql FROM sqlite_master "
-        "WHERE sql NOT NULL AND type=='table' AND name!='sqlite_sequence'", 0
+        "WHERE sql NOT NULL AND type=='table' AND name!='sqlite_sequence'"
       );
       run_schema_dump_query(p, 
         "SELECT name, type, sql FROM sqlite_master "
-        "WHERE name=='sqlite_sequence'", 0
+        "WHERE name=='sqlite_sequence'"
       );
-      run_table_dump_query(p->out, p->db,
+      run_table_dump_query(p,
         "SELECT sql FROM sqlite_master "
         "WHERE sql NOT NULL AND type IN ('index','trigger','view')", 0
       );
@@ -1584,8 +1602,8 @@ static int do_meta_command(char *zLine, struct callback_data *p){
         run_schema_dump_query(p,
           "SELECT name, type, sql FROM sqlite_master "
           "WHERE tbl_name LIKE shellstatic() AND type=='table'"
-          "  AND sql NOT NULL", 0);
-        run_table_dump_query(p->out, p->db,
+          "  AND sql NOT NULL");
+        run_table_dump_query(p,
           "SELECT sql FROM sqlite_master "
           "WHERE sql NOT NULL"
           "  AND type IN ('index','trigger','view')"
@@ -1599,12 +1617,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       p->writableSchema = 0;
     }
     sqlite3_exec(p->db, "PRAGMA writable_schema=OFF", 0, 0, 0);
-    if( zErrMsg ){
-      fprintf(stderr,"Error: %s\n", zErrMsg);
-      sqlite3_free(zErrMsg);
-    }else{
-      fprintf(p->out, "COMMIT;\n");
-    }
+    fprintf(p->out, p->nErr ? "ROLLBACK; -- due to errors\n" : "COMMIT;\n");
   }else
 
   if( c=='e' && strncmp(azArg[0], "echo", n)==0 && nArg>1 && nArg<3 ){
