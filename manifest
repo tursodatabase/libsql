@@ -1,5 +1,5 @@
-C If\serrors\sare\sencountered\swhile\sprocessing\sthe\s".dump"\scommand\sin\sthe\ncommand-line\sshell,\sprint\serror\smessages\sas\scomments\sin\sthe\soutput\sand\nROLLBACK\sat\sthe\send\srather\sthan\scommitting.\nTicket\s[ee19e690ec9a5a2]
-D 2011-10-13T00:41:49.789
+C Fix\sa\sharmless\scompiler\swarning\sintroduced\sinto\sos_unix.c\sby\sone\sof\sthe\s\nrecent\schanges.
+D 2011-10-13T01:01:14.183
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +165,7 @@ F src/os.c 3b3f69c34be7f998f5ea6bd46a2fe8a2b7fa8f70
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 7f8031b5b3aee1b9e066e2ea8f83e02775debcb4
+F src/os_unix.c d42ad1c4cb8360825639a64c44bc63672ace8916
 F src/os_win.c 58c1cef8a167275d5238bdfb3c455e53e3146354
 F src/pager.c 8a6ac3e0d9694412076e2273e3c81e9c4e08758f
 F src/pager.h dbcaa791e8b6c3a6b77c168c5c27deec289fb176
@@ -966,7 +966,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P af8bcdd951c31f69966942d67833da30f6b121bf
-R cf954ca8f3097f02bf28c5ed04310c31
+P 8a8dcd6bd043d82dc04b6ad0614c64d20ace8e5f
+R 427d2c24706186abc37fd5c28f6e528a
 U drh
-Z bdd04747fa59c02e0592ff23948f0dfa
+Z 31d3119f9b55f979f35bd3ee2d4fe1ba

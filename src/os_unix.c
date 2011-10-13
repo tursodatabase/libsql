@@ -5466,7 +5466,7 @@ static int unixCurrentTimeInt64(sqlite3_vfs *NotUsed, sqlite3_int64 *piNow){
 ** return 0.  Return 1 if the time and date cannot be found.
 */
 static int unixCurrentTime(sqlite3_vfs *NotUsed, double *prNow){
-  sqlite3_int64 i;
+  sqlite3_int64 i = 0;
   int rc;
   UNUSED_PARAMETER(NotUsed);
   rc = unixCurrentTimeInt64(0, &i);
