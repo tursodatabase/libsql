@@ -3453,7 +3453,7 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB){
     }
   }else if( pA->op!=TK_COLUMN && pA->u.zToken ){
     if( ExprHasProperty(pB, EP_IntValue) || NEVER(pB->u.zToken==0) ) return 2;
-    if( sqlite3StrICmp(pA->u.zToken,pB->u.zToken)!=0 ){
+    if( strcmp(pA->u.zToken,pB->u.zToken)!=0 ){
       return 2;
     }
   }

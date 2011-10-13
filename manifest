@@ -1,5 +1,5 @@
-C Make\ssure\sthe\spage_count\sand\squick_check\spragmas\swork\sproperly\seven\swhen\ntheir\snames\sare\scapitalized.\s\sFixes\sa\sproblem\sreported\son\sthe\smailing\slist.
-D 2011-10-13T14:41:22.110
+C Make\ssure\sthe\squery\soptimizer\sfor\saggregate\squeries\sknows\sthat\sexpressions\n(x='a')\sand\s(x='A')\sare\sdifferent.\s\sTicket\s[fa7bf5ec94801e7e]
+D 2011-10-13T15:35:52.354
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -133,7 +133,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 829f3261d3db48e3d87891bc887208734734c2e4
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c ff68e5ef23aee08c0ff528f699a19397ed8bbed8
-F src/expr.c f4dcaeb8252c4b16fcdc245660f70ed366bc6cdd
+F src/expr.c 1a7970a0c5c72a76c6929896ac109f04e194619b
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 9f00ea98f6b360d477b5a78b5b59a1fbde82431c
 F src/func.c 59bb046d7e3df1ab512ac339ccb0a6f996a17cb7
@@ -749,6 +749,7 @@ F test/tkt-f3e5abed55.test 669bb076f2ac573c7398ce00f40cd0ca502043a9
 F test/tkt-f777251dc7a.test 6f24c053bc5cdb7e1e19be9a72c8887cf41d5e87
 F test/tkt-f7b4edec.test d998a08ff2b18b7f62edce8e3044317c45efe6c7
 F test/tkt-f973c7ac31.test 1da0ed15ec2c7749fb5ce2828cd69d07153ad9f4
+F test/tkt-fa7bf5ec.test 9102dfea58aa371d78969da735f9392c57e2e035
 F test/tkt-fc62af4523.test 72825d3febdedcd5593a27989fc05accdbfc2bb4
 F test/tkt1435.test f8c52c41de6e5ca02f1845f3a46e18e25cadac00
 F test/tkt1443.test bacc311da5c96a227bf8c167e77a30c99f8e8368
@@ -967,7 +968,7 @@ F tool/symbols.sh fec58532668296d7c7dc48be9c87f75ccdb5814f
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P c41d1d4652b8c7608322e9360c30f06965fd0942
-R c197aad45ade73dffa326e7c03277cd6
+P 150592b4b4d86372e70332d4f69e41a04c4c54c3
+R 323134b1e783ca1be165bf0fb4b4559e
 U drh
-Z 7e96464fa3894ea180db838f3653f8b1
+Z de56e6160107aa87c1184b3bbf78f940
