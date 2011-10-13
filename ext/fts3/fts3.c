@@ -1338,7 +1338,7 @@ static int fts3CursorSeek(sqlite3_context *pContext, Fts3Cursor *pCsr){
         ** table is missing a row that is present in the full-text index.
         ** The data structures are corrupt.
         */
-        rc = SQLITE_CORRUPT_VTAB;
+        rc = FTS_CORRUPT_VTAB;
       }
       pCsr->isEof = 1;
       if( pContext ){
@@ -1398,7 +1398,7 @@ static int fts3ScanInteriorNode(
   zCsr += sqlite3Fts3GetVarint(zCsr, &iChild);
   zCsr += sqlite3Fts3GetVarint(zCsr, &iChild);
   if( zCsr>zEnd ){
-    return SQLITE_CORRUPT_VTAB;
+    return FTS_CORRUPT_VTAB;
   }
   
   while( zCsr<zEnd && (piFirst || piLast) ){
@@ -1416,7 +1416,7 @@ static int fts3ScanInteriorNode(
     zCsr += sqlite3Fts3GetVarint32(zCsr, &nSuffix);
     
     if( nPrefix<0 || nSuffix<0 || &zCsr[nSuffix]>zEnd ){
-      rc = SQLITE_CORRUPT_VTAB;
+      rc = FTS_CORRUPT_VTAB;
       goto finish_scan;
     }
     if( nPrefix+nSuffix>nAlloc ){
@@ -3859,7 +3859,7 @@ static int fts3EvalAverageDocsize(Fts3Cursor *pCsr, int *pnPage){
     }
     if( nDoc==0 || nByte==0 ){
       sqlite3_reset(pStmt);
-      return SQLITE_CORRUPT_VTAB;
+      return FTS_CORRUPT_VTAB;
     }
 
     pCsr->nDoc = nDoc;
@@ -4825,6 +4825,15 @@ void sqlite3Fts3EvalPhraseCleanup(Fts3Phrase *pPhrase){
     }
   }
 }
+
+/*
+** Return SQLITE_CORRUPT_VTAB.
+*/
+#ifdef SQLITE_DEBUG
+int sqlite3Fts3Corrupt(){
+  return SQLITE_CORRUPT_VTAB;
+}
+#endif
 
 #if !SQLITE_CORE
 /*

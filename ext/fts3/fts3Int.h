@@ -157,6 +157,13 @@ typedef sqlite3_uint64 u64;       /* 8-byte unsigned integer */
 
 #endif /* SQLITE_AMALGAMATION */
 
+#ifdef SQLITE_DEBUG
+int sqlite3Fts3Corrupt(void);
+# define FTS_CORRUPT_VTAB sqlite3Fts3Corrupt()
+#else
+# define FTS_CORRUPT_VTAB SQLITE_CORRUPT_VTAB
+#endif
+
 typedef struct Fts3Table Fts3Table;
 typedef struct Fts3Cursor Fts3Cursor;
 typedef struct Fts3Expr Fts3Expr;
