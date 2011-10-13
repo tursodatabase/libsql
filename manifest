@@ -1,5 +1,5 @@
-C Adjust\sthe\ssymbols.sh\sscript\sfor\sSTAT3.\s\sAdd\sthe\ssymbols-mingw.sh\sscript\sfor\ntesting\son\swindows\swith\sMinGW.
-D 2011-10-13T14:18:51.846
+C Make\ssure\sthe\spage_count\sand\squick_check\spragmas\swork\sproperly\seven\swhen\ntheir\snames\sare\scapitalized.\s\sFixes\sa\sproblem\sreported\son\sthe\smailing\slist.
+D 2011-10-13T14:41:22.110
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +173,7 @@ F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 49e718c095810c6b3334e3a6d89970aceaddefce
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c 24f5e85a78514584b46190260ba7ab0a66312197
-F src/pragma.c 68d7db4fc9de8bcfae94c1d43120531ec252b9c0
+F src/pragma.c 0a11a7b543b455ab28e0c881b346fb569eefd2d3
 F src/prepare.c e64261559a3187698a3e7e6c8b001a4f4f98dab4
 F src/printf.c c6ec4b345655a90691fd69de46bfd10f263b1aaf
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -622,7 +622,7 @@ F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/permutations.test ad17319066a90e2db71823c3ff104795ffc71b31
-F test/pragma.test c8108e01da04f16e67e5754e610bc62c1b993f6c
+F test/pragma.test 1ea0c85be853135bb7468e6eed48ee12b04794d4
 F test/pragma2.test 3a55f82b954242c642f8342b17dffc8b47472947
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301
@@ -967,7 +967,7 @@ F tool/symbols.sh fec58532668296d7c7dc48be9c87f75ccdb5814f
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 17e4fde5c541f1bba723386938b6123b2431bffc
-R 486400a177be812669a333a82555c1f5
+P c41d1d4652b8c7608322e9360c30f06965fd0942
+R c197aad45ade73dffa326e7c03277cd6
 U drh
-Z f27e2c68607b57fc251f5ab7e7102c22
+Z 7e96464fa3894ea180db838f3653f8b1

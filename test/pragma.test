@@ -329,6 +329,9 @@ ifcapable attach {
     do_test pragma-3.8.1 {
       execsql {PRAGMA quick_check}
     } {ok}
+    do_test pragma-3.8.2 {
+      execsql {PRAGMA QUICK_CHECK}
+    } {ok}
     do_test pragma-3.9 {
       execsql {
         ATTACH 'testerr.db' AS t2;
@@ -1219,6 +1222,9 @@ ifcapable pager_pragmas {
       PRAGMA page_count;
     }
   } {2}
+  do_test pragma-14.2uc {
+    execsql {pragma PAGE_COUNT}
+  } {2}
 
   do_test pragma-14.3 {
     execsql { 
@@ -1226,6 +1232,9 @@ ifcapable pager_pragmas {
       CREATE TABLE def(a, b, c);
       PRAGMA page_count;
     }
+  } {3}
+  do_test pragma-14.3uc {
+    execsql {pragma PAGE_COUNT}
   } {3}
 
   do_test pragma-14.4 {
@@ -1255,6 +1264,9 @@ ifcapable pager_pragmas {
       ATTACH 'test2.db' AS aux;
       PRAGMA aux.page_count;
     } 
+  } {5}
+  do_test pragma-14.6uc {
+    execsql {pragma AUX.PAGE_COUNT}
   } {5}
 }
 
