@@ -1,5 +1,5 @@
-C Provide\sa\scomplete\sprototype\sfor\sisatty()\sin\sthe\scommand-line\sshell\ssources.
-D 2011-10-13T16:36:29.833
+C An\simproved\sfix\sfor\sthe\spage_count\sand\squick_check\sproblem\spreviously\npatched\sat\s[150592b4b4d8637]
+D 2011-10-13T17:09:01.247
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +173,7 @@ F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 49e718c095810c6b3334e3a6d89970aceaddefce
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c 24f5e85a78514584b46190260ba7ab0a66312197
-F src/pragma.c 0a11a7b543b455ab28e0c881b346fb569eefd2d3
+F src/pragma.c da8ef96b3eec351e81e0061c39810e548bcc96d7
 F src/prepare.c e64261559a3187698a3e7e6c8b001a4f4f98dab4
 F src/printf.c c6ec4b345655a90691fd69de46bfd10f263b1aaf
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -968,7 +968,7 @@ F tool/symbols.sh fec58532668296d7c7dc48be9c87f75ccdb5814f
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 6df7343b4c3de9ad8221180dc959dbbdf54733c7
-R b36f1c5467f7a7b4c968bdd000819e3b
+P 8bf13b036a77af9984f8f3d3a93da589fafd773f
+R 2d14ac4e9551c84e90407929f7ce1d30
 U drh
-Z 3bfa4da8f402717f393283aeaaadc9a9
+Z 0f1ef2a0c533d691837cc1c484eedc14
