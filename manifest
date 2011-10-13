@@ -1,5 +1,5 @@
-C The\ssqlite3_overload_function()\sinterface\sreturns\san\serror\sif\sit\sis\sunable\nto\screate\sthe\soverload\sfunction.\s\sTicket\s[20f9d4fbbff3a3]
-D 2011-10-12T23:49:49.486
+C Be\ssure\sto\sallocate\splenty\sof\sspace\sfor\serror\smessages\scoming\sout\sof\nsqlite3_load_extension(),\sso\sthat\sfilenames\sand\sprocedure\snames\sare\nnot\struncated.\s\sTicket\s[7d32c69b50f89d]
+D 2011-10-13T00:11:36.709
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -145,7 +145,7 @@ F src/insert.c ca18783512323f74aaf4ee74b46ffd75ec80d031
 F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
-F src/loadext.c 99a161b27a499fc8ad40745b7b1900a26f0a5f51
+F src/loadext.c d0d2022a5a07274d408820b978b9e549189d314f
 F src/main.c ae03daa1adf657aac69f18bb13f6a0763494b502
 F src/malloc.c 591aedb20ae40813f1045f2ef253438a334775d9
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -966,7 +966,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P c96651dd6ceadd51c9e1f4d942177d3c128c47b4
-R ea04b607dc034a923513c6e21f4d7206
+P d5b6b374c5225d21c386fb3d6507d3938296e759
+R ad241b5f1e2b5a40e8b22e9f2c8bb18c
 U drh
-Z 3ca712cf2f818c92184b1f1b656548d2
+Z 12a1fc6a3955002b8a71d507adebb052
