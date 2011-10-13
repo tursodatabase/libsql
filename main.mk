@@ -594,7 +594,8 @@ install:	sqlite3 libsqlite3.a sqlite3.h
 
 clean:	
 	rm -f *.o sqlite3 sqlite3.exe libsqlite3.a sqlite3.h opcodes.*
-	rm -f lemon lempar.c parse.* sqlite*.tar.gz mkkeywordhash keywordhash.h
+	rm -f lemon lemon.exe lempar.c parse.* sqlite*.tar.gz
+	rm -f mkkeywordhash mkkeywordhash.exe keywordhash.h
 	rm -f $(PUBLISH)
 	rm -f *.da *.bb *.bbg gmon.out
 	rm -rf tsrc target_source
