@@ -17,6 +17,17 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
+/*
+** Enable large-file support for fopen() and friends on unix.
+*/
+#ifndef SQLITE_DISABLE_LFS
+# define _LARGE_FILE       1
+# ifndef _FILE_OFFSET_BITS
+#   define _FILE_OFFSET_BITS 64
+# endif
+# define _LARGEFILE_SOURCE 1
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
