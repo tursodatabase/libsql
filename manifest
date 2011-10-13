@@ -1,5 +1,5 @@
-C Do\sthe\s".dump"\scommand\sinside\sof\sa\stransaction\sto\sprevent\sother\sprocesses\nfrom\smodifying\sthe\sdatabase\swhile\sthe\sdump\sis\sunderway.\nTicket\s[2466653295e65]
-D 2011-10-13T13:34:04.111
+C Make\ssure\sall\snon-API\sfunctions\sin\sos_win.c\shave\sfile\sscope.\nTicket\s[35c54c874987]
+D 2011-10-13T14:05:32.038
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c d42ad1c4cb8360825639a64c44bc63672ace8916
-F src/os_win.c 58c1cef8a167275d5238bdfb3c455e53e3146354
+F src/os_win.c 49d418916428a59d773f39993db0ecde56ab4c37
 F src/pager.c 8a6ac3e0d9694412076e2273e3c81e9c4e08758f
 F src/pager.h dbcaa791e8b6c3a6b77c168c5c27deec289fb176
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -966,7 +966,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 4bf4d5ebfbf5d157a8bf3a3817e2ce350f25af0e
-R c828aecf4dc802851bfe4e4621a41639
+P 1c00d5454c85dfddb6c628c3742b4ddeaad6423a
+R 62079adc2aa04b6b18d74fffb6482754
 U drh
-Z 1d222bf3e883f519ea46d7f751e5c97d
+Z a52af7b3a4f3b4ce4a34929a0d76fe19
