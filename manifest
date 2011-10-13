@@ -1,5 +1,5 @@
-C Enable\slarge-file\ssupport\sfor\sfopen()\sand\sfriends\sin\sthe\scommand-line\sshell.\nTicket\s[92af7da36b6fbd]
-D 2011-10-13T16:02:17.114
+C Change\sthe\scommand-line\sshell\sto\sdo\sthe\s".dump"\sinside\sof\sa\sSAVEPOINT\nrather\sthan\sa\stransaction,\ssince\sthis\sallows\sit\sto\sbe\srun\sfrom\swithin\na\stransaction.
+D 2011-10-13T16:30:13.341
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -180,7 +180,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 36368f44569208fa074e61f4dd0b6c4fb60ca2b4
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 94b375306bfb4590fdfd76581ae663f57e94808f
-F src/shell.c faba48cc0e93cc5cf3ed807a1301397198656ba1
+F src/shell.c 2a1dc64d3090b2df52c7f14193412158dc270092
 F src/sqlite.h.in 821027573c481e45ba276b078a3ae9ebaeb9bb92
 F src/sqlite3ext.h 1a1a4f784aa9c3b00edd287940197de52487cd93
 F src/sqliteInt.h 6f8e592fc28d16160d017684966b3528833a46c1
@@ -968,7 +968,7 @@ F tool/symbols.sh fec58532668296d7c7dc48be9c87f75ccdb5814f
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P e43da426e66e6b63d5ed9610a6308aba0089313b
-R 2f8c91247f2bf8554514af942b180667
+P eeeba4f0d2207ec26c60a405e2705e5d40022dbb
+R ed7e565f0211c4c1131b905cec35ce7f
 U drh
-Z b6deee099df43353152ea0c675f27bf5
+Z 07e4e2747d51a87b1cc6214a4bd49bcf
