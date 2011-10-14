@@ -438,7 +438,7 @@ static void fts3GetReverseVarint(
   sqlite3_int64 *pVal
 ){
   sqlite3_int64 iVal;
-  char *p = *pp;
+  char *p;
 
   /* Pointer p now points at the first byte past the varint we are 
   ** interested in. So, unless the doclist is corrupt, the 0x80 bit is
@@ -839,7 +839,7 @@ static char *fts3WriteExprList(Fts3Table *p, const char *zFunc, int *pRc){
 ** This function is used when parsing the "prefix=" FTS4 parameter.
 */
 static int fts3GobbleInt(const char **pp, int *pnOut){
-  const char *p = *pp;            /* Iterator pointer */
+  const char *p;                  /* Iterator pointer */
   int nInt = 0;                   /* Output value */
 
   for(p=*pp; p[0]>='0' && p[0]<='9'; p++){
@@ -1429,6 +1429,7 @@ static int fts3ScanInteriorNode(
       }
       zBuffer = zNew;
     }
+    assert( zBuffer );
     memcpy(&zBuffer[nPrefix], zCsr, nSuffix);
     nBuffer = nPrefix + nSuffix;
     zCsr += nSuffix;
@@ -2865,7 +2866,7 @@ static int fts3RollbackMethod(sqlite3_vtab *pVtab){
 */
 static void fts3ReversePoslist(char *pStart, char **ppPoslist){
   char *p = &(*ppPoslist)[-2];
-  char c;
+  char c = 0;
 
   while( p>pStart && (c=*p--)==0 );
   while( p>pStart && (*p & 0x80) | c ){ 
@@ -4335,7 +4336,9 @@ static int fts3EvalNearTest(Fts3Expr *pExpr, int *pRc){
       aPoslist = pExpr->pRight->pPhrase->doclist.pList;
       nToken = pExpr->pRight->pPhrase->nToken;
       for(p=pExpr->pLeft; p && res; p=p->pLeft){
-        int nNear = p->pParent->nNear;
+        int nNear;
+        assert( p->pParent && p->pParent->pLeft==p );
+        nNear = p->pParent->nNear;
         Fts3Phrase *pPhrase = (
             p->eType==FTSQUERY_NEAR ? p->pRight->pPhrase : p->pPhrase
         );
