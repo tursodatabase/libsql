@@ -4585,7 +4585,6 @@ int sqlite3BtreeMovetoUnpacked(
       if( c==0 ){
         if( pPage->intKey && !pPage->leaf ){
           lwr = idx;
-          upr = lwr - 1;
           break;
         }else{
           *pRes = 0;
@@ -4603,7 +4602,7 @@ int sqlite3BtreeMovetoUnpacked(
       }
       pCur->aiIdx[pCur->iPage] = (u16)(idx = (lwr+upr)/2);
     }
-    assert( lwr==upr+1 );
+    assert( lwr==upr+1 || (pPage->intKey && !pPage->leaf) );
     assert( pPage->isInit );
     if( pPage->leaf ){
       chldPg = 0;
@@ -4868,6 +4867,8 @@ static int allocateBtreePage(
         pTrunk = 0;
         goto end_allocate_page;
       }
+      assert( pTrunk!=0 );
+      assert( pTrunk->aData!=0 );
 
       k = get4byte(&pTrunk->aData[4]); /* # of leaves on this trunk page */
       if( k==0 && !searchList ){
@@ -6423,6 +6424,7 @@ static int balance_nonroot(
         /* Cell i is the cell immediately following the last cell on old
         ** sibling page j. If the siblings are not leaf pages of an
         ** intkey b-tree, then cell i was a divider cell. */
+        assert( j+1 < ArraySize(apCopy) );
         pOld = apCopy[++j];
         iNextOld = i + !leafData + pOld->nCell + pOld->nOverflow;
         if( pOld->nOverflow ){

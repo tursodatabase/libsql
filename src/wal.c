@@ -2343,7 +2343,7 @@ int sqlite3WalRead(
     int sz;
     i64 iOffset;
     sz = pWal->hdr.szPage;
-    sz = (pWal->hdr.szPage&0xfe00) + ((pWal->hdr.szPage&0x0001)<<16);
+    sz = (sz&0xfe00) + ((sz&0x0001)<<16);
     testcase( sz<=32768 );
     testcase( sz>=65536 );
     iOffset = walFrameOffset(iRead, sz) + WAL_FRAME_HDRSIZE;

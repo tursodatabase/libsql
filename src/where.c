@@ -4896,7 +4896,8 @@ WhereInfo *sqlite3WhereBegin(
     WHERETRACE(("*** Optimizer selects table %d for loop %d"
                 " with cost=%g and nRow=%g\n",
                 bestJ, pLevel-pWInfo->a, bestPlan.rCost, bestPlan.plan.nRow));
-    if( (bestPlan.plan.wsFlags & WHERE_ORDERBY)!=0 ){
+    /* The ALWAYS() that follows was added to hush up clang scan-build */
+    if( (bestPlan.plan.wsFlags & WHERE_ORDERBY)!=0 && ALWAYS(ppOrderBy) ){
       *ppOrderBy = 0;
     }
     if( (bestPlan.plan.wsFlags & WHERE_DISTINCT)!=0 ){

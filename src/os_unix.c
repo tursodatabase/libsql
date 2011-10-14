@@ -1363,14 +1363,14 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   */
   int rc = SQLITE_OK;
   unixFile *pFile = (unixFile*)id;
-  unixInodeInfo *pInode = pFile->pInode;
+  unixInodeInfo *pInode;
   struct flock lock;
   int tErrno = 0;
 
   assert( pFile );
   OSTRACE(("LOCK    %d %s was %s(%s,%d) pid=%d (unix)\n", pFile->h,
       azFileLock(eFileLock), azFileLock(pFile->eFileLock),
-      azFileLock(pInode->eFileLock), pInode->nShared , getpid()));
+      azFileLock(pFile->pInode->eFileLock), pFile->pInode->nShared , getpid()));
 
   /* If there is already a lock of this type or more restrictive on the
   ** unixFile, do nothing. Don't use the end_lock: exit path, as
@@ -1574,7 +1574,6 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
   unixInodeInfo *pInode;
   struct flock lock;
   int rc = SQLITE_OK;
-  int h;
 
   assert( pFile );
   OSTRACE(("UNLOCK  %d %d was %d(%d,%d) pid=%d (unix)\n", pFile->h, eFileLock,
@@ -1586,14 +1585,10 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
     return SQLITE_OK;
   }
   unixEnterMutex();
-  h = pFile->h;
   pInode = pFile->pInode;
   assert( pInode->nShared!=0 );
   if( pFile->eFileLock>SHARED_LOCK ){
     assert( pInode->eFileLock==pFile->eFileLock );
-    SimulateIOErrorBenign(1);
-    SimulateIOError( h=(-1) )
-    SimulateIOErrorBenign(0);
 
 #ifndef NDEBUG
     /* When reducing a lock such that other processes can start
@@ -1604,11 +1599,6 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
     ** the file has changed and hence might not know to flush their
     ** cache.  The use of a stale cache can lead to database corruption.
     */
-#if 0
-    assert( pFile->inNormalWrite==0
-         || pFile->dbUpdate==0
-         || pFile->transCntrChng==1 );
-#endif
     pFile->inNormalWrite = 0;
 #endif
 
@@ -1710,9 +1700,6 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
       lock.l_type = F_UNLCK;
       lock.l_whence = SEEK_SET;
       lock.l_start = lock.l_len = 0L;
-      SimulateIOErrorBenign(1);
-      SimulateIOError( h=(-1) )
-      SimulateIOErrorBenign(0);
       if( unixFileLock(pFile, &lock)==0 ){
         pInode->eFileLock = NO_LOCK;
       }else{
@@ -4548,6 +4535,9 @@ static int fillInUnixFile(
   assert( zFilename==0 || zFilename[0]=='/' );
 #endif
 
+  /* No locking occurs in temporary files */
+  assert( zFilename!=0 || noLock );
+
   OSTRACE(("OPEN    %-3d %s\n", h, zFilename));
   pNew->h = h;
   pNew->zPath = zFilename;
@@ -4649,6 +4639,7 @@ static int fillInUnixFile(
     */
     char *zLockFile;
     int nFilename;
+    assert( zFilename!=0 );
     nFilename = (int)strlen(zFilename) + 6;
     zLockFile = (char *)sqlite3_malloc(nFilename);
     if( zLockFile==0 ){

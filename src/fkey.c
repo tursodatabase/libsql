@@ -1124,6 +1124,7 @@ static Trigger *fkActionTrigger(
       fkTriggerDelete(db, pTrigger);
       return 0;
     }
+    assert( pStep!=0 );
 
     switch( action ){
       case OE_Restrict:

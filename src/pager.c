@@ -2703,7 +2703,6 @@ static int pager_playback(Pager *pPager, int isHot){
       rc = pager_playback_one_page(pPager,&pPager->journalOff,0,1,0);
       if( rc!=SQLITE_OK ){
         if( rc==SQLITE_DONE ){
-          rc = SQLITE_OK;
           pPager->journalOff = szJ;
           break;
         }else if( rc==SQLITE_IOERR_SHORT_READ ){
@@ -2965,6 +2964,7 @@ static int pagerWalFrames(
 #endif
 
   assert( pPager->pWal );
+  assert( pList );
 #ifdef SQLITE_DEBUG
   /* Verify that the page list is in accending order */
   for(p=pList; p && p->pDirty; p=p->pDirty){

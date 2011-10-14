@@ -2178,7 +2178,7 @@ case OP_Column: {
       zRec = (char*)pC->aRow;
     }else if( pC->isIndex ){
       assert( sqlite3BtreeCursorIsValid(pCrsr) );
-      rc = sqlite3BtreeKeySize(pCrsr, &payloadSize64);
+      VVA_ONLY(rc =) sqlite3BtreeKeySize(pCrsr, &payloadSize64);
       assert( rc==SQLITE_OK );   /* True because of CursorMoveto() call above */
       /* sqlite3BtreeParseCellPtr() uses getVarint32() to extract the
       ** payload size, so it is impossible for payloadSize64 to be
@@ -2187,7 +2187,7 @@ case OP_Column: {
       payloadSize = (u32)payloadSize64;
     }else{
       assert( sqlite3BtreeCursorIsValid(pCrsr) );
-      rc = sqlite3BtreeDataSize(pCrsr, &payloadSize);
+      VVA_ONLY(rc =) sqlite3BtreeDataSize(pCrsr, &payloadSize);
       assert( rc==SQLITE_OK );   /* DataSize() cannot fail */
     }
   }else if( ALWAYS(pC->pseudoTableReg>0) ){
@@ -4191,14 +4191,14 @@ case OP_RowData: {
 
   if( pC->isIndex ){
     assert( !pC->isTable );
-    rc = sqlite3BtreeKeySize(pCrsr, &n64);
+    VVA_ONLY(rc =) sqlite3BtreeKeySize(pCrsr, &n64);
     assert( rc==SQLITE_OK );    /* True because of CursorMoveto() call above */
     if( n64>db->aLimit[SQLITE_LIMIT_LENGTH] ){
       goto too_big;
     }
     n = (u32)n64;
   }else{
-    rc = sqlite3BtreeDataSize(pCrsr, &n);
+    VVA_ONLY(rc =) sqlite3BtreeDataSize(pCrsr, &n);
     assert( rc==SQLITE_OK );    /* DataSize() cannot fail */
     if( n>(u32)db->aLimit[SQLITE_LIMIT_LENGTH] ){
       goto too_big;

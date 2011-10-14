@@ -197,7 +197,6 @@ void sqlite3VXPrintf(
 #endif
   char buf[etBUFSIZE];       /* Conversion buffer */
 
-  length = 0;
   bufpt = 0;
   for(; (c=(*fmt))!=0; ++fmt){
     if( c!='%' ){
@@ -692,6 +691,7 @@ void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
     testcase(p->mallocFailed);
     return;
   }
+  assert( p->zText!=0 || p->nChar==0 );
   if( N<0 ){
     N = sqlite3Strlen30(z);
   }
@@ -723,7 +723,7 @@ void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
         zNew = sqlite3_realloc(zOld, p->nAlloc);
       }
       if( zNew ){
-        if( zOld==0 ) memcpy(zNew, p->zText, p->nChar);
+        if( zOld==0 && p->nChar>0 ) memcpy(zNew, p->zText, p->nChar);
         p->zText = zNew;
       }else{
         p->mallocFailed = 1;
@@ -732,6 +732,7 @@ void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
       }
     }
   }
+  assert( p->zText );
   memcpy(&p->zText[p->nChar], z, N);
   p->nChar += N;
 }

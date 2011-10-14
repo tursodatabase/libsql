@@ -2282,6 +2282,7 @@ opendb_out:
     sqlite3_mutex_leave(db->mutex);
   }
   rc = sqlite3_errcode(db);
+  assert( db!=0 || rc==SQLITE_NOMEM );
   if( rc==SQLITE_NOMEM ){
     sqlite3_close(db);
     db = 0;

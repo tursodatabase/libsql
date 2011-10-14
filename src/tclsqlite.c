@@ -919,7 +919,7 @@ static int auth_callback(
   Tcl_DStringAppendElement(&str, zArg4 ? zArg4 : "");
   rc = Tcl_GlobalEval(pDb->interp, Tcl_DStringValue(&str));
   Tcl_DStringFree(&str);
-  zReply = Tcl_GetStringResult(pDb->interp);
+  zReply = rc==TCL_OK ? Tcl_GetStringResult(pDb->interp) : "SQLITE_DENY";
   if( strcmp(zReply,"SQLITE_OK")==0 ){
     rc = SQLITE_OK;
   }else if( strcmp(zReply,"SQLITE_DENY")==0 ){
@@ -968,14 +968,12 @@ static char *local_getline(char *zPrompt, FILE *in){
   char *zLine;
   int nLine;
   int n;
-  int eol;
 
   nLine = 100;
   zLine = malloc( nLine );
   if( zLine==0 ) return 0;
   n = 0;
-  eol = 0;
-  while( !eol ){
+  while( 1 ){
     if( n+100>nLine ){
       nLine = nLine*2 + 100;
       zLine = realloc(zLine, nLine);
@@ -987,14 +985,13 @@ static char *local_getline(char *zPrompt, FILE *in){
         return 0;
       }
       zLine[n] = 0;
-      eol = 1;
       break;
     }
     while( zLine[n] ){ n++; }
     if( n>0 && zLine[n-1]=='\n' ){
       n--;
       zLine[n] = 0;
-      eol = 1;
+      break;
     }
   }
   zLine = realloc( zLine, n+1 );
@@ -2121,7 +2118,6 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     zCommit = "COMMIT";
     while( (zLine = local_getline(0, in))!=0 ){
       char *z;
-      i = 0;
       lineno++;
       azCol[0] = zLine;
       for(i=0, z=zLine; *z; z++){
@@ -2550,14 +2546,16 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   ** Change the encryption key on the currently open database.
   */
   case DB_REKEY: {
+#ifdef SQLITE_HAS_CODEC
     int nKey;
     void *pKey;
+#endif
     if( objc!=3 ){
       Tcl_WrongNumArgs(interp, 2, objv, "KEY");
       return TCL_ERROR;
     }
-    pKey = Tcl_GetByteArrayFromObj(objv[2], &nKey);
 #ifdef SQLITE_HAS_CODEC
+    pKey = Tcl_GetByteArrayFromObj(objv[2], &nKey);
     rc = sqlite3_rekey(pDb->db, pKey, nKey);
     if( rc ){
       Tcl_AppendResult(interp, sqlite3ErrStr(rc), 0);
@@ -2920,8 +2918,6 @@ static int DbObjCmdAdaptor(
 */
 static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   SqliteDb *p;
-  void *pKey = 0;
-  int nKey = 0;
   const char *zArg;
   char *zErrMsg;
   int i;
@@ -2929,6 +2925,10 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   const char *zVfs = 0;
   int flags;
   Tcl_DString translatedFilename;
+#ifdef SQLITE_HAS_CODEC
+  void *pKey = 0;
+  int nKey = 0;
+#endif
 
   /* In normal use, each TCL interpreter runs in a single thread.  So
   ** by default, we can turn of mutexing on SQLite database connections.
@@ -2960,7 +2960,9 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   for(i=3; i+1<objc; i+=2){
     zArg = Tcl_GetString(objv[i]);
     if( strcmp(zArg,"-key")==0 ){
+#ifdef SQLITE_HAS_CODEC
       pKey = Tcl_GetByteArrayFromObj(objv[i+1], &nKey);
+#endif
     }else if( strcmp(zArg, "-vfs")==0 ){
       zVfs = Tcl_GetString(objv[i+1]);
     }else if( strcmp(zArg, "-readonly")==0 ){
