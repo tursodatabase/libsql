@@ -2476,7 +2476,6 @@ static int whereKeyStats(
   if( pVal==0 ) return SQLITE_ERROR;
   n = pIdx->aiRowEst[0];
   aSample = pIdx->aSample;
-  i = 0;
   eType = sqlite3_value_type(pVal);
 
   if( eType==SQLITE_INTEGER ){

@@ -4337,9 +4337,10 @@ static int fts3EvalNearTest(Fts3Expr *pExpr, int *pRc){
       nToken = pExpr->pRight->pPhrase->nToken;
       for(p=pExpr->pLeft; p && res; p=p->pLeft){
         int nNear;
+        Fts3Phrase *pPhrase;
         assert( p->pParent && p->pParent->pLeft==p );
         nNear = p->pParent->nNear;
-        Fts3Phrase *pPhrase = (
+        pPhrase = (
             p->eType==FTSQUERY_NEAR ? p->pRight->pPhrase : p->pPhrase
         );
         res = fts3EvalNearTrim(nNear, aTmp, &aPoslist, &nToken, pPhrase);

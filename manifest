@@ -1,5 +1,5 @@
-C Fix\sa\sfew\sminor\sand\sharmless\sclang\swarnings\sin\sFTS3\sand\sRTREE.
-D 2011-10-14T22:57:03.219
+C Added\sthe\stool/warnings-clang.sh\sscript.\s\sChanges\sso\sthat\sthere\sare\sno\nwarnings\swith\seither\sgcc\sor\sclang\seven\sincluding\sFTS4\sand\sRTREE\sand\nboth\swith\sand\swithout\sSQLITE_THREADSAFE=0.
+D 2011-10-15T00:16:30.056
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -62,7 +62,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 9dd7e3edfe0cadda09fa4ac702f2e1f43eeed232
+F ext/fts3/fts3.c d02bb1b3212f8ec9b98433630233d35278b43db2
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 59c5a9475fed5d76c70a4763103b3c8e60424a68
 F ext/fts3/fts3_aux.c 0ebfa7b86cf8ff6a0861605fcc63b83ec1b70691
@@ -84,7 +84,7 @@ F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c eb9ae1d79046bd7871aa97ee6da51eb770134b5a
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 1ac5f6dc216374d9534806aa0be326ab88166c95
+F ext/rtree/rtree.c 692e9192d148f318b3dca9f744600346a175eedd
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 28e1b8da4da98093ce3210187434dd760a8d89d8
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -121,10 +121,10 @@ F src/alter.c ac80a0f31189f8b4a524ebf661e47e84536ee7f5
 F src/analyze.c 682fd999a01c897a682365a459190758b83de836
 F src/attach.c 12c6957996908edc31c96d7c68d4942c2474405f
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
-F src/backup.c 4fd4440c8f81339d8eb8e5d2df54b68d79e94f2f
+F src/backup.c 6c140bafcb4d09738421d54d06853aa2fccf9e19
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 4918e848d92212005057e42a2e45b7219e4bb630
+F src/btree.c 32199e2d939233ade25340eaba450f818b37c079
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
 F src/build.c ae152efb9c2d6615b14adb7a5f2c51483d4d55df
@@ -144,9 +144,9 @@ F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
 F src/insert.c ca18783512323f74aaf4ee74b46ffd75ec80d031
 F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
-F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
+F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
 F src/loadext.c d0d2022a5a07274d408820b978b9e549189d314f
-F src/main.c 82863f47e8ec76dbce21eb92699cd4720b0f45e7
+F src/main.c df06f5229b8046f85dde253dfd7fe35ae9e4902e
 F src/malloc.c 591aedb20ae40813f1045f2ef253438a334775d9
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 00bd8265c81abb665c48fea1e0c234eb3b922206
@@ -155,17 +155,17 @@ F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
 F src/mem5.c c2c63b7067570b00bf33d751c39af24182316f7f
 F src/memjournal.c 0ebce851677a7ac035ba1512a7e65851b34530c6
 F src/mutex.c 6949180803ff05a7d0e2b9334a95b4fb5a00e23f
-F src/mutex.h fe2ef5e1c4dae531d5a544f9241f19c56d26803d
+F src/mutex.h 2a79e0c10c26412546b501ee0f3d92b42decf63e
 F src/mutex_noop.c d5cfbca87168c661a0b118cd8e329a908e453151
 F src/mutex_os2.c 882d735098c07c8c6a5472b8dd66e19675fe117f
 F src/mutex_unix.c b4f4e923bb8de93ec3f251fadb50855f23df9579
 F src/mutex_w32.c 5e54f3ba275bcb5d00248b8c23107df2e2f73e33
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
-F src/os.c 3b3f69c34be7f998f5ea6bd46a2fe8a2b7fa8f70
+F src/os.c 5d9b02782ed36345348d6fe21d7762ed3a9cfd2a
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 951ac5260895f1311432ff3ecd5384bbe22f9f4f
+F src/os_unix.c 1e7dcc176a6b1ec3dc3256b27a058459b35c2a73
 F src/os_win.c 49d418916428a59d773f39993db0ecde56ab4c37
 F src/pager.c 60c80db526d39286b913c824cf8303d34ab17a89
 F src/pager.h dbcaa791e8b6c3a6b77c168c5c27deec289fb176
@@ -251,7 +251,7 @@ F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 9658df8d404b82e6b2d40fd05944463214e2d935
 F src/wal.h 66b40bd91bc29a5be1c88ddd1f5ade8f3f48728a
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 0db7e2db5128c9e8aec225fd229cf56773a4ef5a
+F src/where.c 813233b3b2059002178780d8523e2aec0c292e2c
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -819,7 +819,7 @@ F test/tkt3761.test b95ea9c98f21cf91325f18a984887e62caceab33
 F test/tkt3762.test 2a9f3b03df44ec49ec0cfa8d5da6574c2a7853df
 F test/tkt3773.test 430b06567ce40285dfd2c4834a2a61816403efeb
 F test/tkt3791.test a6624b9a80b216a26cf473607f42f3e51898c267
-F test/tkt3793.test 754b73f0e6a9349c70dc57e522cf3247272ecd5d
+F test/tkt3793.test d90ffd75c52413908d15e1c44fc2ea9c80fcc449
 F test/tkt3810.test 90fa0635dfa7da9680c8cd3513350a49b3a8ae12
 F test/tkt3824.test 150aa00bb6220672e5f0eb14dc8eaa36750425f0
 F test/tkt3832.test 2300d10d57562b89875b72148338ac3e14f8847d
@@ -968,8 +968,9 @@ F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh fec58532668296d7c7dc48be9c87f75ccdb5814f
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
+F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 60fee9574b0125705787e33c16f116cf188c8323
-R 1a4c08a3338b0b158cd0a6ed96050fd2
+P b3324f6cc27c3bfb32b12eacace2fc731c2dd644
+R fdfdc42f8d308f4430129946a791fabf
 U drh
-Z 24b0cbc69060cf779c3e05cfda4702af
+Z b3da471414a86656d736be9bf8ce9b6c

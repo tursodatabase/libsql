@@ -528,7 +528,7 @@ static int unixMutexHeld(void) {
 #endif
 
 
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_TEST) && defined(SQLITE_DEBUG)
 /*
 ** Helper function for printing out trace information from debugging
 ** binaries. This returns the string represetation of the supplied

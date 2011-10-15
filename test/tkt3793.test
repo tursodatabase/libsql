@@ -100,16 +100,18 @@ set x 0
 # Note: Before the bug was fixed, if [db2] was opened with the "-fullmutex 1"
 # option, then this test case would cause an assert() to fail.
 #
-set ::busyconnection db1
-db1 eval {SELECT * FROM t2 ORDER BY a LIMIT 20} {
-  do_test tkt3793-2.[incr x] { set ::busyconnection } db1
-  set ::busyconnection db2
-
-  db2 eval { SELECT count(*) FROM t2 }
-  do_test tkt3793-2.[incr x] { set ::busyconnection } db2
+ifcapable threadsafe {
   set ::busyconnection db1
+  db1 eval {SELECT * FROM t2 ORDER BY a LIMIT 20} {
+    do_test tkt3793-2.[incr x] { set ::busyconnection } db1
+    set ::busyconnection db2
+  
+    db2 eval { SELECT count(*) FROM t2 }
+    do_test tkt3793-2.[incr x] { set ::busyconnection } db2
+    set ::busyconnection db1
+  }
 }
-
+  
 do_test tkt3793-3 {
   db1 close
   db2 close

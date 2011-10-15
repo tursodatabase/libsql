@@ -1572,6 +1572,7 @@ static int ChooseLeaf(
     float fMinArea = 0.0;
 #if VARIANT_RSTARTREE_CHOOSESUBTREE
     float fMinOverlap = 0.0;
+    float overlap;
 #endif
 
     int nCell = NCELL(pNode);
@@ -1604,7 +1605,6 @@ static int ChooseLeaf(
       int bBest = 0;
       float growth;
       float area;
-      float overlap = 0.0;
       nodeGetCell(pRtree, pNode, iCell, &cell);
       growth = cellGrowth(pRtree, &cell, pCell);
       area = cellArea(pRtree, &cell);
@@ -1612,6 +1612,8 @@ static int ChooseLeaf(
 #if VARIANT_RSTARTREE_CHOOSESUBTREE
       if( ii==(pRtree->iDepth-1) ){
         overlap = cellOverlapEnlargement(pRtree,&cell,pCell,aCell,nCell,iCell);
+      }else{
+        overlap = 0.0;
       }
       if( (iCell==0) 
        || (overlap<fMinOverlap) 

@@ -106,7 +106,7 @@ char *sqlite3_temp_directory = 0;
 **       without blocking.
 */
 int sqlite3_initialize(void){
-  sqlite3_mutex *pMaster;                      /* The main static mutex */
+  MUTEX_LOGIC( sqlite3_mutex *pMaster; )       /* The main static mutex */
   int rc;                                      /* Result code */
 
 #ifdef SQLITE_OMIT_WSD
@@ -140,7 +140,7 @@ int sqlite3_initialize(void){
   ** malloc subsystem - this implies that the allocation of a static
   ** mutex must not require support from the malloc subsystem.
   */
-  pMaster = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
+  MUTEX_LOGIC( pMaster = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER); )
   sqlite3_mutex_enter(pMaster);
   sqlite3GlobalConfig.isMutexInit = 1;
   if( !sqlite3GlobalConfig.isMallocInit ){
