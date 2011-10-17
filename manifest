@@ -1,5 +1,5 @@
-C Performance\simprovement\sfor\sascii\sto\sfloating-point\sconversions\swith\svery\nlarge\sexponents.
-D 2011-10-17T12:14:26.646
+C Avoid\s32-bit\sinteger\soverflow\swhen\sevaluating\sthe\sexponent\sof\sa\sfloating\spoint\nvalue\sduring\sascii\sto\sbinary\sconversion.
+D 2011-10-17T20:41:46.844
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -236,7 +236,7 @@ F src/tokenize.c c819d9f72168a035d545a5bdafe9b085b20df705
 F src/trigger.c 1cfb80e2290ef66ea89cb4e821caae65a02c0d56
 F src/update.c 25e046a8f69d5e557aabde2000487b8545509d8d
 F src/utf.c 890c67dcfcc7a74623c95baac7535aadfe265e84
-F src/util.c a982d7ee3c4aca643b01abc6f742f61fea1e4fa3
+F src/util.c df83983bd57057df4951516880066b42b7055269
 F src/vacuum.c 0c0ba2242355c6048d65e2b333abe0f7c06348fa
 F src/vdbe.c 75e626a6e6aefbd35b25ccab8bff533a65354638
 F src/vdbe.h f0725ee997db869ecae5bb70a71612aabeca7755
@@ -604,7 +604,7 @@ F test/misuse.test ba4fb5d1a6101d1c171ea38b3c613d0661c83054
 F test/multiplex.test 9df8bf738b3b97c718fceb3fadb30900ba494418
 F test/mutex1.test 78b2b9bb320e51d156c4efdb71b99b051e7a4b41
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
-F test/nan.test dc212a22b36109fd1ae37154292444ef249c5ec2
+F test/nan.test e9648b9d007c7045242af35e11a984d4b169443a
 F test/notify1.test 669b2b743618efdc18ca4b02f45423d5d2304abf
 F test/notify2.test 9503e51b9a272a5405c205ad61b7623d5a9ca489
 F test/notify3.test a86259abbfb923aa27d30f0fc038c88e5251488a
@@ -970,7 +970,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 39408702a989f907261c298bf0947f3e68bd10fe
-R 204579a8fff7f7f01b8c865c0b12cfa2
+P 59bb999c8ba5e4ee7a4e388fc724b8606136d60c
+R 6b0f73ca59012aaddad5825c810302fc
 U drh
-Z 09bec3cab67bc63e509e3048fd3a5001
+Z c15000514b2d7c59bec3a3398b3cbf62

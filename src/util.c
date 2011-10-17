@@ -331,7 +331,7 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
     }
     /* copy digits to exponent */
     while( z<zEnd && sqlite3Isdigit(*z) ){
-      e = e*10 + (*z - '0');
+      e = e<10000 ? (e*10 + (*z - '0')) : 10000;
       z+=incr;
       eValid = 1;
     }
