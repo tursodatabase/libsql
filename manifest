@@ -1,5 +1,5 @@
-C Added\sthe\stool/warnings-clang.sh\sscript.\s\sChanges\sso\sthat\sthere\sare\sno\nwarnings\swith\seither\sgcc\sor\sclang\seven\sincluding\sFTS4\sand\sRTREE\sand\nboth\swith\sand\swithout\sSQLITE_THREADSAFE=0.
-D 2011-10-15T00:16:30.056
+C Performance\simprovement\sfor\sascii\sto\sfloating-point\sconversions\swith\svery\nlarge\sexponents.
+D 2011-10-17T12:14:26.646
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -236,7 +236,7 @@ F src/tokenize.c c819d9f72168a035d545a5bdafe9b085b20df705
 F src/trigger.c 1cfb80e2290ef66ea89cb4e821caae65a02c0d56
 F src/update.c 25e046a8f69d5e557aabde2000487b8545509d8d
 F src/utf.c 890c67dcfcc7a74623c95baac7535aadfe265e84
-F src/util.c 06302ffd2b80408d4f6c7af71f7090e0cf8d8ff7
+F src/util.c a982d7ee3c4aca643b01abc6f742f61fea1e4fa3
 F src/vacuum.c 0c0ba2242355c6048d65e2b333abe0f7c06348fa
 F src/vdbe.c 75e626a6e6aefbd35b25ccab8bff533a65354638
 F src/vdbe.h f0725ee997db869ecae5bb70a71612aabeca7755
@@ -970,7 +970,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P b3324f6cc27c3bfb32b12eacace2fc731c2dd644
-R fdfdc42f8d308f4430129946a791fabf
+P 39408702a989f907261c298bf0947f3e68bd10fe
+R 204579a8fff7f7f01b8c865c0b12cfa2
 U drh
-Z b3da471414a86656d736be9bf8ce9b6c
+Z 09bec3cab67bc63e509e3048fd3a5001
