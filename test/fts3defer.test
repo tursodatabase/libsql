@@ -426,6 +426,13 @@ foreach {tn setup} {
       SELECT rowid FROM t1 WHERE t1 MATCH '"jk xduvfhk" OR "zm azavwm"'
     } {8 15 26 92 96}
   }
+
+  do_select_test 7.1 {
+    SELECT rowid FROM t1 WHERE t1 MATCH '^zm mjpavjuhw'
+  } {56 62}
+  do_select_test 7.2 {
+    SELECT rowid FROM t1 WHERE t1 MATCH '^azavwm zm'
+  } {43}
 }
 
 set testprefix fts3defer

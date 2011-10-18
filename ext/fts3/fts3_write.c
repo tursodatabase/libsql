@@ -3117,6 +3117,7 @@ int sqlite3Fts3CacheDeferredDoclists(Fts3Cursor *pCsr){
         for(pDef=pCsr->pDeferred; pDef && rc==SQLITE_OK; pDef=pDef->pNext){
           Fts3PhraseToken *pPT = pDef->pToken;
           if( (pDef->iCol>=p->nColumn || pDef->iCol==i)
+           && (pPT->bFirst==0 || iPos==0)
            && (pPT->n==nToken || (pPT->isPrefix && pPT->n<nToken))
            && (0==memcmp(zToken, pPT->z, pPT->n))
           ){

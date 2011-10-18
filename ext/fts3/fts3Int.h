@@ -310,6 +310,7 @@ struct Fts3PhraseToken {
   char *z;                        /* Text of the token */
   int n;                          /* Number of bytes in buffer z */
   int isPrefix;                   /* True if token ends with a "*" character */
+  int bFirst;                     /* True if token must appear at position 0 */
 
   /* Variables above this point are populated when the expression is
   ** parsed (by code in fts3_expr.c). Below this point the variables are

@@ -180,9 +180,21 @@ static int getNextToken(
           pRet->pPhrase->aToken[0].isPrefix = 1;
           iEnd++;
         }
-        if( !sqlite3_fts3_enable_parentheses && iStart>0 && z[iStart-1]=='-' ){
-          pParse->isNot = 1;
+
+        while( 1 ){
+          if( !sqlite3_fts3_enable_parentheses 
+           && iStart>0 && z[iStart-1]=='-' 
+          ){
+            pParse->isNot = 1;
+            iStart--;
+          }else if( iStart>0 && z[iStart-1]=='^' ){
+            pRet->pPhrase->aToken[0].bFirst = 1;
+            iStart--;
+          }else{
+            break;
+          }
         }
+
       }
       nConsumed = iEnd;
     }
@@ -281,6 +293,7 @@ static int getNextString(
 
         pToken->n = nByte;
         pToken->isPrefix = (iEnd<nInput && zInput[iEnd]=='*');
+        pToken->bFirst = (iBegin>0 && zInput[iBegin-1]=='^');
         nToken = ii+1;
       }
     }
