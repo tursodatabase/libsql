@@ -1,5 +1,5 @@
-C Fix\san\suninitialized\svariable\sin\sOR-clause\sprocessing.
-D 2011-10-18T19:14:33.246
+C Fix\sthe\svirtual\stable\srename\slogic\sso\sthat\sit\sworks\seven\sif\sthe\sdatabase\nencoding\sis\ssomething\sother\sthan\sUTF8.\nTicket\s[8290242b2a9a81683]
+D 2011-10-18T22:07:47.722
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -238,7 +238,7 @@ F src/update.c 25e046a8f69d5e557aabde2000487b8545509d8d
 F src/utf.c 890c67dcfcc7a74623c95baac7535aadfe265e84
 F src/util.c df83983bd57057df4951516880066b42b7055269
 F src/vacuum.c 0c0ba2242355c6048d65e2b333abe0f7c06348fa
-F src/vdbe.c 054e1d52587718605ac482e45cd93e0eae673298
+F src/vdbe.c 251381bff459154bf239e9977bd39b22bcb7a94c
 F src/vdbe.h f0725ee997db869ecae5bb70a71612aabeca7755
 F src/vdbeInt.h 693d6ac6810298fc6b4c503cfbe3f99a240f40af
 F src/vdbeapi.c 11dc47987abacb76ad016dcf5abc0dc422482a98
@@ -470,7 +470,7 @@ F test/fts3conf.test 8e65ea56f88ced6cdd2252bdddb1a8327ae5af7e
 F test/fts3corrupt.test 7b0f91780ca36118d73324ec803187208ad33b32
 F test/fts3corrupt2.test 6d96efae2f8a6af3eeaf283aba437e6d0e5447ba
 F test/fts3cov.test e0fb00d8b715ddae4a94c305992dfc3ef70353d7
-F test/fts3d.test 95fb3c862cbc4297c93fceb9a635543744e9ef52
+F test/fts3d.test bf640d79722b720fa1c81834c48cdaa45d531b1a
 F test/fts3defer.test ffd4e07f79a09660d4b3e2613b041ab9b6100d91
 F test/fts3defer2.test 35867d33ba6db03f6c73bd6f5fc333ae14f68c81
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
@@ -970,7 +970,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 551ce407bd77149865423511bd52eba2f404161a
-R 95644f03839fa87055c65a00a0ad6110
+P 54aecd929867606d14a062b501abbfb6f5f05e37
+R dccf2fe03db8f585fac4df0bc3670756
 U drh
-Z e0ca001c10e0088cffb51eb7d7827b4b
+Z aaf98f5abdd914fb531f49ab6760c2d4

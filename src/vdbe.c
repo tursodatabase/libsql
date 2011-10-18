@@ -5888,10 +5888,15 @@ case OP_VRename: {
   assert( memIsValid(pName) );
   REGISTER_TRACE(pOp->p1, pName);
   assert( pName->flags & MEM_Str );
-  rc = pVtab->pModule->xRename(pVtab, pName->z);
-  importVtabErrMsg(p, pVtab);
-  p->expired = 0;
-
+  testcase( pName->enc==SQLITE_UTF8 );
+  testcase( pName->enc==SQLITE_UTF16BE );
+  testcase( pName->enc==SQLITE_UTF16LE );
+  rc = sqlite3VdbeChangeEncoding(pName, SQLITE_UTF8);
+  if( rc==SQLITE_OK ){
+    rc = pVtab->pModule->xRename(pVtab, pName->z);
+    importVtabErrMsg(p, pVtab);
+    p->expired = 0;
+  }
   break;
 }
 #endif
