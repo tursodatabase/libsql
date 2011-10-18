@@ -1,5 +1,5 @@
-C Improved\shandling\sof\sUSING\sand\sNATURAL\sJOIN\sin\s3-way\sand\shigher\sjoins.\nTicket\s[3338b3fa19ac4ab]
-D 2011-10-18T18:10:40.151
+C Fix\san\suninitialized\svariable\sin\sOR-clause\sprocessing.
+D 2011-10-18T19:14:33.246
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -251,7 +251,7 @@ F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
 F src/wal.c 9658df8d404b82e6b2d40fd05944463214e2d935
 F src/wal.h 66b40bd91bc29a5be1c88ddd1f5ade8f3f48728a
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 813233b3b2059002178780d8523e2aec0c292e2c
+F src/where.c b617d9e1eda592fe6bb38748307440c80da90771
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -970,7 +970,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 3126754c72351c724be29d75a194bfc3e7b67205
-R ed8534091276e292d87550ffda27999e
+P 551ce407bd77149865423511bd52eba2f404161a
+R 95644f03839fa87055c65a00a0ad6110
 U drh
-Z a262b8d3562a7e10f8c3ec0f3139747f
+Z e0ca001c10e0088cffb51eb7d7827b4b

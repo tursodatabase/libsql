@@ -1855,6 +1855,7 @@ static void bestOrClauseIndex(
           tempWC.pOuter = pWC;
           tempWC.op = TK_AND;
           tempWC.a = pOrTerm;
+          tempWC.wctrlFlags = 0;
           tempWC.nTerm = 1;
           bestIndex(pParse, &tempWC, pSrc, notReady, notValid, 0, &sTermCost);
         }else{
