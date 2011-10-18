@@ -1,5 +1,5 @@
-C Fix\sa\sfloating-point\sexception\sthat\scan\soccur\swhen\san\sFTS4\squery\scontains\sa\slarge\snumber\sof\stokens\sconnected\sby\sAND\sor\sNEAR\soperators.
-D 2011-10-18T12:44:04.580
+C Improved\shandling\sof\sUSING\sand\sNATURAL\sJOIN\sin\s3-way\sand\shigher\sjoins.\nTicket\s[3338b3fa19ac4ab]
+D 2011-10-18T18:10:40.151
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -177,7 +177,7 @@ F src/pragma.c da8ef96b3eec351e81e0061c39810e548bcc96d7
 F src/prepare.c e64261559a3187698a3e7e6c8b001a4f4f98dab4
 F src/printf.c 03104cbff6959ff45df69dc9060ba6212f60a869
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
-F src/resolve.c 36368f44569208fa074e61f4dd0b6c4fb60ca2b4
+F src/resolve.c 365ab1c870e38596d6869e76fb544fe6e4ffc809
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 80f3ac44a8514b1d107b80f5df4a424ae059d2b6
 F src/shell.c f0ab793261ab045a0b8c47fa2707e8a894d2898f
@@ -913,7 +913,7 @@ F test/walslow.test e7be6d9888f83aa5d3d3c7c08aa9b5c28b93609a
 F test/walthread.test a2ed5270eb695284d4ad27d252517bdc3317ee2a
 F test/where.test de337a3fe0a459ec7c93db16a519657a90552330
 F test/where2.test 43d4becaf5a5df854e6c21d624a1cb84c6904554
-F test/where3.test 8e1175c7ef710c70502858fc4fb08d784b3620b9
+F test/where3.test 667e75642102c97a00bf9b23d3cb267db321d006
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
@@ -970,7 +970,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 491ff5fb2504173d6905e38b8ea35737338aaa84
-R 58f061e71ad84767d73477085e2bfcf6
-U dan
-Z b0882f47410096d3d98223e9ef02aa47
+P 3126754c72351c724be29d75a194bfc3e7b67205
+R ed8534091276e292d87550ffda27999e
+U drh
+Z a262b8d3562a7e10f8c3ec0f3139747f
