@@ -449,5 +449,33 @@ do_execsql_test 3.3 {
   SELECT count(*) FROM x1 WHERE x1 MATCH '"d e f"'
 } {16}
 
+# At one point the following was causing a floating-point exception.
+#
+do_execsql_test 4.1 {
+  CREATE VIRTUAL TABLE x2 USING FTS4(x);
+  BEGIN;
+  INSERT INTO x2 VALUES('m m m m m m m m m m m m m m m m m m m m m m m m m m');
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 VALUES('a b c d e f g h i j k l m n o p q r s t u v w x y m');
+  COMMIT;
+}
+do_execsql_test 4.2 {
+  SELECT * FROM x2 WHERE x2 MATCH 'a b c d e f g h i j k l m n o p q r s';
+} {{a b c d e f g h i j k l m n o p q r s t u v w x y m}}
+
 
 finish_test

@@ -4144,7 +4144,11 @@ static int fts3EvalSelectDeferred(
       fts3SegReaderCursorFree(pToken->pSegcsr);
       pToken->pSegcsr = 0;
     }else{
-      nLoad4 = nLoad4*4;
+      /* Set nLoad4 to the value of (4^nOther) for the next iteration of the
+      ** for-loop. Except, limit the value to 2^24 to prevent it from 
+      ** overflowing the 32-bit integer it is stored in. */
+      if( ii<12 ) nLoad4 = nLoad4*4;
+
       if( ii==0 || pTC->pPhrase->nToken>1 ){
         /* Either this is the cheapest token in the entire query, or it is
         ** part of a multi-token phrase. Either way, the entire doclist will

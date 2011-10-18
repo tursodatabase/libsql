@@ -1,5 +1,5 @@
-C Change\sFTS4\sso\sthat\sif\sboth\sthe\scontent=xxx\soption\sand\scolumn\snames\sare\sspecified,\sthe\svirtual\stable\sassumes\sthat\sthe\snamed\scolumns\scorrespond\sto\scolumns\sof\stable\sxxx.
-D 2011-10-05T15:11:30.760
+C Cherrypick\spatch\s[3126754c72]\sfrom\sthe\strunk\sinto\sthe\scontent=\sbranch.
+D 2011-10-18T12:49:59.086
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -62,7 +62,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c f2ed0ae669534e0c9c8ba95b60b6c137544e7e49
+F ext/fts3/fts3.c 15e1725f3dc7c0028676831d82b376e93b87527e
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 06f442ce096e6254432a6b16a56b6fe7b24bd372
 F ext/fts3/fts3_aux.c 0ebfa7b86cf8ff6a0861605fcc63b83ec1b70691
@@ -469,7 +469,7 @@ F test/fts3corrupt.test 7b0f91780ca36118d73324ec803187208ad33b32
 F test/fts3corrupt2.test 6d96efae2f8a6af3eeaf283aba437e6d0e5447ba
 F test/fts3cov.test e0fb00d8b715ddae4a94c305992dfc3ef70353d7
 F test/fts3d.test 95fb3c862cbc4297c93fceb9a635543744e9ef52
-F test/fts3defer.test 7c8a38d5f617d7b52ae1c43ed73c536e7e895a35
+F test/fts3defer.test ffd4e07f79a09660d4b3e2613b041ab9b6100d91
 F test/fts3defer2.test 35867d33ba6db03f6c73bd6f5fc333ae14f68c81
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3expr.test 5e745b2b6348499d9ef8d59015de3182072c564c
@@ -966,7 +966,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P c6ba81fcad32192674bd510e607f787adc1f7038
-R 0217fe49810be9d8f9417ba3c648ab3e
+P 289ee43179369fce2fde50870d72c445e184e896
+R 50f1458a2cdbee488c53894b18c71839
 U dan
-Z 1eb4f36513f7844867f45162778888e7
+Z e075e042ac91a648318521977fb348f1
