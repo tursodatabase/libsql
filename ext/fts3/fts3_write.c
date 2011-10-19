@@ -2509,6 +2509,7 @@ int sqlite3Fts3SegReaderStep(
   int isColFilter =    (pCsr->pFilter->flags & FTS3_SEGMENT_COLUMN_FILTER);
   int isPrefix =       (pCsr->pFilter->flags & FTS3_SEGMENT_PREFIX);
   int isScan =         (pCsr->pFilter->flags & FTS3_SEGMENT_SCAN);
+  int isFirst =        (pCsr->pFilter->flags & FTS3_SEGMENT_FIRST);
 
   Fts3SegReader **apSegment = pCsr->apSegment;
   int nSegment = pCsr->nSegment;
@@ -2568,6 +2569,7 @@ int sqlite3Fts3SegReaderStep(
     assert( isIgnoreEmpty || (isRequirePos && !isColFilter) );
     if( nMerge==1 
      && !isIgnoreEmpty 
+     && !isFirst 
      && (p->bDescIdx==0 || fts3SegReaderIsPending(apSegment[0])==0)
     ){
       pCsr->nDoclist = apSegment[0]->nDoclist;
@@ -2633,12 +2635,24 @@ int sqlite3Fts3SegReaderStep(
             }
             pCsr->aBuffer = aNew;
           }
-          nDoclist += sqlite3Fts3PutVarint(&pCsr->aBuffer[nDoclist], iDelta);
-          iPrev = iDocid;
-          if( isRequirePos ){
-            memcpy(&pCsr->aBuffer[nDoclist], pList, nList);
-            nDoclist += nList;
-            pCsr->aBuffer[nDoclist++] = '\0';
+
+          if( isFirst ){
+            char *a = &pCsr->aBuffer[nDoclist];
+            int nWrite;
+           
+            nWrite = sqlite3Fts3FirstFilter(iDelta, pList, nList, a);
+            if( nWrite ){
+              iPrev = iDocid;
+              nDoclist += nWrite;
+            }
+          }else{
+            nDoclist += sqlite3Fts3PutVarint(&pCsr->aBuffer[nDoclist], iDelta);
+            iPrev = iDocid;
+            if( isRequirePos ){
+              memcpy(&pCsr->aBuffer[nDoclist], pList, nList);
+              nDoclist += nList;
+              pCsr->aBuffer[nDoclist++] = '\0';
+            }
           }
         }
 

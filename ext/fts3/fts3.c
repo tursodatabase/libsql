@@ -2348,65 +2348,53 @@ static void fts3DoclistPhraseMerge(
 }
 
 /*
-** When this function is called, pList points to a doclist containing position
-** data, length *pnList bytes. This removes all entries from the doclist that
-** do not correspond to the first token in a column and overwrites pList
-** with the result. *pnList is set to the length of the new doclist before
-** returning.
-**
-** If bDescDoclist is true, then both the input and output are in descending
-** order. Otherwise, ascending.
+** Argument pList points to a position list nList bytes in size. This
+** function checks to see if the position list contains any entries for
+** a token in position 0 (of any column). If so, it writes argument iDelta
+** to the output buffer pOut, followed by a position list consisting only
+** of the entries from pList at position 0, and terminated by an 0x00 byte.
+** The value returned is the number of bytes written to pOut (if any).
 */
-static void fts3DoclistFirstFilter(
-  int bDescDoclist,               /* True if pList is a descending doclist */
-  char *pList,                    /* Buffer containing doclist */
-  int *pnList                     /* IN/OUT: Size of doclist */
+int sqlite3Fts3FirstFilter(
+  sqlite3_int64 iDelta,           /* Varint that may be written to pOut */
+  char *pList,                    /* Position list (no 0x00 term) */
+  int nList,                      /* Size of pList in bytes */
+  char *pOut                      /* Write output here */
 ){
+  int nOut = 0;
+  int bWritten = 0;               /* True once iDelta has been written */
   char *p = pList;
-  char *pOut = pList;
-  char *pEnd = &pList[*pnList];
+  char *pEnd = &pList[nList];
 
-  sqlite3_int64 iDoc;
-  sqlite3_int64 iPrev;
-  int bFirstOut = 0;
-
-  fts3GetDeltaVarint3(&p, pEnd, 0, &iDoc);
-  while( p ){
-    int bWritten = 0;
-    if( *p!=0x01 ){
-      if( *p==0x02 ){
-        fts3PutDeltaVarint3(&pOut, bDescDoclist, &iPrev, &bFirstOut, iDoc); 
-        *pOut++ = 0x02;
-        bWritten = 1;
-      }
-      fts3ColumnlistCopy(0, &p);
+  if( *p!=0x01 ){
+    if( *p==0x02 ){
+      nOut += sqlite3Fts3PutVarint(&pOut[nOut], iDelta);
+      pOut[nOut++] = 0x02;
+      bWritten = 1;
     }
-
-    while( *p==0x01 ){
-      sqlite3_int64 iCol;
-      p++;
-      p += sqlite3Fts3GetVarint(p, &iCol);
-      if( *p==0x02 ){
-        if( bWritten==0 ){
-          fts3PutDeltaVarint3(&pOut, bDescDoclist, &iPrev, &bFirstOut, iDoc); 
-          bWritten = 1;
-        }
-        *pOut++ = 0x01;
-        pOut += sqlite3Fts3PutVarint(pOut, iCol);
-        *pOut++ = 0x02;
-      }
-      fts3ColumnlistCopy(0, &p);
-    }
-    if( bWritten ){
-      *pOut++ = 0x00;
-    }
-
-    assert( *p==0x00 );
-    p++;
-    fts3GetDeltaVarint3(&p, pEnd, bDescDoclist, &iDoc);
+    fts3ColumnlistCopy(0, &p);
   }
 
-  *pnList = (pOut - pList);
+  while( p<pEnd && *p==0x01 ){
+    sqlite3_int64 iCol;
+    p++;
+    p += sqlite3Fts3GetVarint(p, &iCol);
+    if( *p==0x02 ){
+      if( bWritten==0 ){
+        nOut += sqlite3Fts3PutVarint(&pOut[nOut], iDelta);
+        bWritten = 1;
+      }
+      pOut[nOut++] = 0x01;
+      nOut += sqlite3Fts3PutVarint(&pOut[nOut], iCol);
+      pOut[nOut++] = 0x02;
+    }
+    fts3ColumnlistCopy(0, &p);
+  }
+  if( bWritten ){
+    pOut[nOut++] = 0x00;
+  }
+
+  return nOut;
 }
 
 
@@ -2765,6 +2753,7 @@ static int fts3TermSelect(
 
   filter.flags = FTS3_SEGMENT_IGNORE_EMPTY | FTS3_SEGMENT_REQUIRE_POS
         | (pTok->isPrefix ? FTS3_SEGMENT_PREFIX : 0)
+        | (pTok->bFirst ? FTS3_SEGMENT_FIRST : 0)
         | (iColumn<p->nColumn ? FTS3_SEGMENT_COLUMN_FILTER : 0);
   filter.iCol = iColumn;
   filter.zTerm = pTok->z;
@@ -3579,10 +3568,6 @@ static void fts3EvalPhraseMergeToken(
   int nList                       /* Number of bytes in pList */
 ){
   assert( iToken!=p->iDoclistToken );
-
-  if( p->aToken[iToken].bFirst ){
-    fts3DoclistFirstFilter(pTab->bDescIdx, pList, &nList);
-  }
 
   if( pList==0 ){
     sqlite3_free(p->doclist.aAll);

@@ -1,5 +1,5 @@
-C Add\stests\sfor\sFTS\s^\ssearches\sand\smatchinfo().
-D 2011-10-19T10:18:01.912
+C Change\sthe\sway\s^\stokens\swork\sin\sFTS\sso\sthat\sthe\sfiltering\sis\sdone\sas\spart\sof\sreading\sthe\sFTS\sindex\sinstead\sof\swaiting\suntil\san\sentire\sdoclist\shas\sbeen\sretrieved\sand\sthen\sfiltering\sit.
+D 2011-10-19T11:57:13.985
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -62,9 +62,9 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 708122f0ed7b7b0aa9813fe302eb40a238956276
+F ext/fts3/fts3.c 064b660a11ae29651b647fa7c3e9954d901ab58a
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h bc27eebe2c5919115aa1858fdd308a230af6a359
+F ext/fts3/fts3Int.h 7a0deb219371d29b8d385fb5e929ede2bdc7c239
 F ext/fts3/fts3_aux.c 0ebfa7b86cf8ff6a0861605fcc63b83ec1b70691
 F ext/fts3/fts3_expr.c dd0facbede8fd7d1376670cc6154f1fef3a4c5bc
 F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
@@ -77,7 +77,7 @@ F ext/fts3/fts3_test.c 24fa13f330db011500acb95590da9eee24951894
 F ext/fts3/fts3_tokenizer.c 9ff7ec66ae3c5c0340fa081958e64f395c71a106
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 0dde8f307b8045565cf63797ba9acfaff1c50c68
-F ext/fts3/fts3_write.c 567380f2d6671df16cfbb56324b321c71d5ab0d3
+F ext/fts3/fts3_write.c aaf0885fd5d37c6869071ee58b5aa3ba07cc0d87
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
@@ -967,7 +967,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 2c03b24f4cc6f2c28c9d5b9984320d41b8486c32
-R 402b5e477b47b6aa728a3149c74db091
+P 92618c1463fb304cf8057d082b2c7096152dff27
+R c2d7bdd9838ac956262a194e0ae43b40
 U dan
-Z 87cae0b85a25fbf32c49680729e400c4
+Z 8d1b6b02c37e3947f3ee71176bf9a674

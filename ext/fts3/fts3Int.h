@@ -429,6 +429,7 @@ int sqlite3Fts3SegReaderCursor(
 #define FTS3_SEGMENT_COLUMN_FILTER 0x00000004
 #define FTS3_SEGMENT_PREFIX        0x00000008
 #define FTS3_SEGMENT_SCAN          0x00000010
+#define FTS3_SEGMENT_FIRST         0x00000020
 
 /* Type passed as 4th argument to SegmentReaderIterate() */
 struct Fts3SegFilter {
@@ -468,8 +469,8 @@ int sqlite3Fts3GetVarint32(const char *, int *);
 int sqlite3Fts3VarintLen(sqlite3_uint64);
 void sqlite3Fts3Dequote(char *);
 void sqlite3Fts3DoclistPrev(int,char*,int,char**,sqlite3_int64*,int*,u8*);
-
 int sqlite3Fts3EvalPhraseStats(Fts3Cursor *, Fts3Expr *, u32 *);
+int sqlite3Fts3FirstFilter(sqlite3_int64, char *, int, char *);
 
 /* fts3_tokenizer.c */
 const char *sqlite3Fts3NextToken(const char *, int *);
