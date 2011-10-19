@@ -200,6 +200,9 @@ do_test fts3ao-4.7 {
     SELECT * FROM t5;
   }
 } {{the quick brown fox} {jumped over the} {lazy dog}}
+do_execsql_test fts3ao-4.8 {
+  SELECT snippet(t5, '[', ']') FROM t5 WHERE t5 MATCH 'the'
+} {{[the] quick brown fox} {jumped over [the]}}
 
 # Test that it is possible to rename an FTS4 table. Renaming an FTS4 table
 # involves renaming the extra %_docsize and %_stat tables.

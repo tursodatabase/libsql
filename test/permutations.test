@@ -180,10 +180,12 @@ test_suite "fts3" -prefix "" -description {
   fts3defer.test fts3defer2.test fts3e.test fts3expr.test fts3expr2.test 
   fts3near.test fts3query.test fts3shared.test fts3snippet.test 
   fts3sort.test
-
   fts3fault.test fts3malloc.test fts3matchinfo.test
-
   fts3aux1.test fts3comp1.test fts3auto.test
+  fts4aa.test fts4content.test
+  fts3conf.test fts3prefix.test fts3fault2.test fts3corrupt.test
+  fts3corrupt2.test
+  fts3first.test
 }
 
 
