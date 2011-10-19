@@ -368,6 +368,7 @@ static int fts3SnippetFindPositions(Fts3Expr *pExpr, int iPhrase, void *ctx){
     int iFirst = 0;
     pPhrase->pList = pCsr;
     fts3GetDeltaPosition(&pCsr, &iFirst);
+    assert( iFirst>=0 );
     pPhrase->pHead = pCsr;
     pPhrase->pTail = pCsr;
     pPhrase->iHead = iFirst;

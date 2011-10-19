@@ -2391,6 +2391,7 @@ static void fts3DoclistFirstFilter(
           fts3PutDeltaVarint3(&pOut, bDescDoclist, &iPrev, &bFirstOut, iDoc); 
           bWritten = 1;
         }
+        *pOut++ = 0x01;
         pOut += sqlite3Fts3PutVarint(pOut, iCol);
         *pOut++ = 0x02;
       }

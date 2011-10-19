@@ -1,5 +1,5 @@
-C If\sa\stoken\swithin\san\sFTS\squery\sis\sprefixed\swith\sa\s'^'\scharacter,\sit\smust\sbe\sthe\sfirst\stoken\sin\sa\scolumn\sof\sdata\sto\smatch.
-D 2011-10-18T19:39:41.203
+C Fix\sa\sproblem\sin\sFTS\sto\sdo\swith\s^\stokens\sand\sthe\ssnippet()\sfunction.
+D 2011-10-19T09:40:49.185
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -62,7 +62,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c e12a151b5f0f8d444744554f91dbb89dbf0654df
+F ext/fts3/fts3.c 708122f0ed7b7b0aa9813fe302eb40a238956276
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h bc27eebe2c5919115aa1858fdd308a230af6a359
 F ext/fts3/fts3_aux.c 0ebfa7b86cf8ff6a0861605fcc63b83ec1b70691
@@ -71,7 +71,7 @@ F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
 F ext/fts3/fts3_hash.h 8331fb2206c609f9fc4c4735b9ab5ad6137c88ec
 F ext/fts3/fts3_icu.c 6c8f395cdf9e1e3afa7fadb7e523dbbf381c6dfa
 F ext/fts3/fts3_porter.c 8d946908f4812c005d3d33fcbe78418b1f4eb70c
-F ext/fts3/fts3_snippet.c 8838a1de5f7df3a559596870caaa4a9895248998
+F ext/fts3/fts3_snippet.c e1f3ed049efa35337d393a0ae971b32c28f4c88d
 F ext/fts3/fts3_term.c a5457992723455a58804cb75c8cbd8978db5c2ef
 F ext/fts3/fts3_test.c 24fa13f330db011500acb95590da9eee24951894
 F ext/fts3/fts3_tokenizer.c 9ff7ec66ae3c5c0340fa081958e64f395c71a106
@@ -476,7 +476,7 @@ F test/fts3expr.test 5e745b2b6348499d9ef8d59015de3182072c564c
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
 F test/fts3fault.test f83e556465bb69dc8bc676339eca408dce4ca246
 F test/fts3fault2.test b62a2bc843c20414405f80e5eeb78e39bc68fe53
-F test/fts3first.test 10f42914701d559c9fabfd7725b56c9f1b542fe8
+F test/fts3first.test 8402101caa140802fdea7322652b22caa7662010
 F test/fts3malloc.test b86ea33db9e8c58c0c2f8027a9fcadaf6a1568be
 F test/fts3matchinfo.test 6507fe1c342e542300d65ea637d4110eccf894e6
 F test/fts3near.test 2e318ee434d32babd27c167142e2b94ddbab4844
@@ -967,7 +967,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P f9b5b217088a6aeb25eba184ab92d1a842a680a6
-R 4545768a323f698040377ce29e450e89
+P 63ac33c860eb32ce96699f06bf83121cec2ffaca
+R 3121ed7658c54e3e7fae4ae1475b5670
 U dan
-Z a7972271e048cbba7c3ba6dcd813d2e6
+Z 5ad246c0f30695f9ad4b0b18222b341a
