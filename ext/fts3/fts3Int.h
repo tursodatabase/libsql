@@ -489,7 +489,7 @@ void sqlite3Fts3Matchinfo(sqlite3_context *, Fts3Cursor *, const char *);
 
 /* fts3_expr.c */
 int sqlite3Fts3ExprParse(sqlite3_tokenizer *, 
-  char **, int, int, const char *, int, Fts3Expr **
+  char **, int, int, int, const char *, int, Fts3Expr **
 );
 void sqlite3Fts3ExprFree(Fts3Expr *);
 #ifdef SQLITE_TEST

@@ -93,6 +93,7 @@ typedef struct ParseContext ParseContext;
 struct ParseContext {
   sqlite3_tokenizer *pTokenizer;      /* Tokenizer module */
   const char **azCol;                 /* Array of column names for fts3 table */
+  int bFts4;                          /* True to allow FTS4-only syntax */
   int nCol;                           /* Number of entries in azCol[] */
   int iDefaultCol;                    /* Default column to query */
   int isNot;                          /* True if getNextNode() sees a unary - */
@@ -187,7 +188,7 @@ static int getNextToken(
           ){
             pParse->isNot = 1;
             iStart--;
-          }else if( iStart>0 && z[iStart-1]=='^' ){
+          }else if( pParse->bFts4 && iStart>0 && z[iStart-1]=='^' ){
             pRet->pPhrase->aToken[0].bFirst = 1;
             iStart--;
           }else{
@@ -741,6 +742,7 @@ exprparse_out:
 int sqlite3Fts3ExprParse(
   sqlite3_tokenizer *pTokenizer,      /* Tokenizer module */
   char **azCol,                       /* Array of column names for fts3 table */
+  int bFts4,                          /* True to allow FTS4-only syntax */
   int nCol,                           /* Number of entries in azCol[] */
   int iDefaultCol,                    /* Default column to query */
   const char *z, int n,               /* Text of MATCH query */
@@ -754,6 +756,7 @@ int sqlite3Fts3ExprParse(
   sParse.nCol = nCol;
   sParse.iDefaultCol = iDefaultCol;
   sParse.nNest = 0;
+  sParse.bFts4 = bFts4;
   if( z==0 ){
     *ppExpr = 0;
     return SQLITE_OK;
@@ -943,7 +946,7 @@ static void fts3ExprTest(
   }
 
   rc = sqlite3Fts3ExprParse(
-      pTokenizer, azCol, nCol, nCol, zExpr, nExpr, &pExpr
+      pTokenizer, azCol, 0, nCol, nCol, zExpr, nExpr, &pExpr
   );
   if( rc!=SQLITE_OK && rc!=SQLITE_NOMEM ){
     sqlite3_result_error(context, "Error parsing expression", -1);

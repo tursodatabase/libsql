@@ -2894,8 +2894,8 @@ static int fts3FilterMethod(
       return SQLITE_NOMEM;
     }
 
-    rc = sqlite3Fts3ExprParse(p->pTokenizer, p->azColumn, p->nColumn, 
-        iCol, zQuery, -1, &pCsr->pExpr
+    rc = sqlite3Fts3ExprParse(p->pTokenizer, p->azColumn, p->bHasStat, 
+        p->nColumn, iCol, zQuery, -1, &pCsr->pExpr
     );
     if( rc!=SQLITE_OK ){
       if( rc==SQLITE_ERROR ){

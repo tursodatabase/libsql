@@ -427,12 +427,17 @@ foreach {tn setup} {
     } {8 15 26 92 96}
   }
 
-  do_select_test 7.1 {
-    SELECT rowid FROM t1 WHERE t1 MATCH '^zm mjpavjuhw'
-  } {56 62}
-  do_select_test 7.2 {
-    SELECT rowid FROM t1 WHERE t1 MATCH '^azavwm zm'
-  } {43}
+  if {$tn>1} {
+    # These tests will not work with $tn==1, as in this case table t1 is
+    # created using FTS3. The ^ syntax is only available with FTS4 tables.
+    #
+    do_select_test 7.1 {
+      SELECT rowid FROM t1 WHERE t1 MATCH '^zm mjpavjuhw'
+    } {56 62}
+    do_select_test 7.2 {
+      SELECT rowid FROM t1 WHERE t1 MATCH '^azavwm zm'
+    } {43}
+  }
 }
 
 set testprefix fts3defer

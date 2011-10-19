@@ -18,6 +18,8 @@ ifcapable !fts3 {
   return
 }
 
+set testprefix fts3first
+
 proc lreverse {L} {
   set res [list]
   for {set ii [expr [llength $L]-1]} {$ii>=0} {incr ii -1} {
@@ -138,5 +140,24 @@ foreach {tn match res} {
     SELECT mit(matchinfo(x2, 'x')) FROM x2 WHERE x2 MATCH $match
   } $rev
 }
+
+# Test that ^ is ignored for FTS3 tables.
+#
+do_execsql_test 2.1 {
+  CREATE VIRTUAL TABLE x3 USING fts3;
+  INSERT INTO x3 VALUES('A B C');
+  INSERT INTO x3 VALUES('B A C');
+
+  CREATE VIRTUAL TABLE x4 USING fts4;
+  INSERT INTO x4 VALUES('A B C');
+  INSERT INTO x4 VALUES('B A C');
+}
+
+do_execsql_test 2.2.1 {
+  SELECT * FROM x3 WHERE x3 MATCH '^A';
+} {{A B C} {B A C}}
+do_execsql_test 2.2.2 {
+  SELECT * FROM x4 WHERE x4 MATCH '^A';
+} {{A B C}}
 
 finish_test
