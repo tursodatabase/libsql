@@ -2968,8 +2968,8 @@ static int fts3DoRebuild(Fts3Table *p){
   rc = fts3DeleteAll(p, 0);
   if( rc==SQLITE_OK ){
     u32 *aSz = 0;
-    u32 *aSzIns;
-    u32 *aSzDel;
+    u32 *aSzIns = 0;
+    u32 *aSzDel = 0;
     sqlite3_stmt *pStmt = 0;
     int nEntry = 0;
 

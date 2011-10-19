@@ -1,5 +1,5 @@
-C Fix\scomments\son\sSQLITE_CONFIG_HEAP\sso\sthat\sthey\sdo\snot\sinterfere\swith\sthe\nrequirements\sscanner.
-D 2011-10-19T17:13:08.805
+C Fix\sharmless\scompiler\swarnings\sin\sFTS4.
+D 2011-10-19T18:21:47.264
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -62,7 +62,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 9c125699baf1c03a3d8d53fb7d8d27ab4ad7d6eb
+F ext/fts3/fts3.c 246ef2d0cef67517d156d39c9247cd6c432f0d79
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h def7a900f98c5ab5fa4772e922bfa219d5097f05
 F ext/fts3/fts3_aux.c 0ebfa7b86cf8ff6a0861605fcc63b83ec1b70691
@@ -77,7 +77,7 @@ F ext/fts3/fts3_test.c 24fa13f330db011500acb95590da9eee24951894
 F ext/fts3/fts3_tokenizer.c 9ff7ec66ae3c5c0340fa081958e64f395c71a106
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 0dde8f307b8045565cf63797ba9acfaff1c50c68
-F ext/fts3/fts3_write.c f2545f59a4cc2eb6739acb3d026b8a91a1f3d429
+F ext/fts3/fts3_write.c c097228bff4d33c6b8a270c9717b9f8339068776
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
@@ -972,7 +972,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 8a4077057ddeb08e8edc5f20a75abaaba7a278ba
-R b6475ab92965b41fc368318dd410ee81
+P a3151ce15c256219646013d695b6e162e306cef8
+R c03f17b280572c2b36a89af35fc59d08
 U drh
-Z d1c63652bd6e0c53508e2b02187c5b10
+Z 9ceef528bc2e97c4ba4f48a0f47a964a

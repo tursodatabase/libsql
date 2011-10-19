@@ -1191,7 +1191,7 @@ static int fts3InitVtab(
     zCompress = 0;
     zUncompress = 0;
     if( nCol==0 ){
-      sqlite3_free(aCol); 
+      sqlite3_free((void*)aCol); 
       aCol = 0;
       rc = fts3ContentColumns(db, argv[1], zContent, &aCol, &nCol, &nString);
     }
@@ -1962,7 +1962,7 @@ static int fts3PoslistPhraseMerge(
   /* Never set both isSaveLeft and isExact for the same invocation. */
   assert( isSaveLeft==0 || isExact==0 );
 
-  assert( *p1!=0 && *p2!=0 );
+  assert( p!=0 && *p1!=0 && *p2!=0 );
   if( *p1==POS_COLUMN ){ 
     p1++;
     p1 += sqlite3Fts3GetVarint32(p1, &iCol1);
@@ -1997,6 +1997,7 @@ static int fts3PoslistPhraseMerge(
           iSave = isSaveLeft ? iPos1 : iPos2;
           fts3PutDeltaVarint(&p, &iPrev, iSave+2); iPrev -= 2;
           pSave = 0;
+          assert( p );
         }
         if( (!isSaveLeft && iPos2<=(iPos1+nToken)) || iPos2<=iPos1 ){
           if( (*p2&0xFE)==0 ) break;
