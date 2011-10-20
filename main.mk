@@ -362,6 +362,9 @@ sqlite3$(EXE):	$(TOP)/src/shell.c libsqlite3.a sqlite3.h
 		$(TOP)/src/shell.c                                  \
 		libsqlite3.a $(LIBREADLINE) $(TLIBS) $(THREADLIB)
 
+sqlite3.o:	sqlite3.c
+	$(TCCX) -c sqlite3.c
+
 # This target creates a directory named "tsrc" and fills it with
 # copies of all of the C source code and header files needed to
 # build on the target system.  Some of the C source code and header
