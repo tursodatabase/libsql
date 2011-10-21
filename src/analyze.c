@@ -119,16 +119,16 @@
 /*
 ** This routine generates code that opens the sqlite_stat1 table for
 ** writing with cursor iStatCur. If the library was built with the
-** SQLITE_ENABLE_STAT2 macro defined, then the sqlite_stat2 table is
+** SQLITE_ENABLE_STAT3 macro defined, then the sqlite_stat3 table is
 ** opened for writing using cursor (iStatCur+1)
 **
 ** If the sqlite_stat1 tables does not previously exist, it is created.
-** Similarly, if the sqlite_stat2 table does not exist and the library
-** is compiled with SQLITE_ENABLE_STAT2 defined, it is created. 
+** Similarly, if the sqlite_stat3 table does not exist and the library
+** is compiled with SQLITE_ENABLE_STAT3 defined, it is created. 
 **
 ** Argument zWhere may be a pointer to a buffer containing a table name,
 ** or it may be a NULL pointer. If it is not NULL, then all entries in
-** the sqlite_stat1 and (if applicable) sqlite_stat2 tables associated
+** the sqlite_stat1 and (if applicable) sqlite_stat3 tables associated
 ** with the named table are deleted. If zWhere==0, then code is generated
 ** to delete all stat table entries.
 */
