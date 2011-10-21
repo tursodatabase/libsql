@@ -200,4 +200,14 @@ do_execsql_test 4.6 {
   SELECT * FROM t3 WHERE t3 MATCH 'one*'
 } {{one two three}}
 
+#-------------------------------------------------------------------------
+# Syntax tests.
+#
+do_catchsql_test 5.1 {
+  CREATE VIRTUAL TABLE t4 USING fts4(prefix="abc");
+} {1 {error parsing prefix parameter: abc}}
+do_catchsql_test 5.2 {
+  CREATE VIRTUAL TABLE t4 USING fts4(prefix="");
+} {0 {}}
+
 finish_test

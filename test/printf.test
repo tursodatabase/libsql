@@ -3547,7 +3547,7 @@ do_test printf-4.16 {
 do_test printf-5.1 {
   set x [sqlite3_mprintf_str {%d %d %100000s} 0 0 {Hello}]
   string length $x
-} {344}
+} {100004}
 do_test printf-5.2 {
   sqlite3_mprintf_str {%d %d (%-10.10s) %} -9 -10 {HelloHelloHello}
 } {-9 -10 (HelloHello) %}

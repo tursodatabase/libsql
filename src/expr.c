@@ -403,7 +403,8 @@ Expr *sqlite3ExprAlloc(
       }else{
         int c;
         pNew->u.zToken = (char*)&pNew[1];
-        memcpy(pNew->u.zToken, pToken->z, pToken->n);
+        assert( pToken->z!=0 || pToken->n==0 );
+        if( pToken->n ) memcpy(pNew->u.zToken, pToken->z, pToken->n);
         pNew->u.zToken[pToken->n] = 0;
         if( dequote && nExtra>=3 
              && ((c = pToken->z[0])=='\'' || c=='"' || c=='[' || c=='`') ){
@@ -1442,11 +1443,19 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
   p = (ExprHasProperty(pX, EP_xIsSelect) ? pX->x.pSelect : 0);
   if( ALWAYS(pParse->nErr==0) && isCandidateForInOpt(p) ){
     sqlite3 *db = pParse->db;              /* Database connection */
-    Expr *pExpr = p->pEList->a[0].pExpr;   /* Expression <column> */
-    int iCol = pExpr->iColumn;             /* Index of column <column> */
     Vdbe *v = sqlite3GetVdbe(pParse);      /* Virtual machine being coded */
-    Table *pTab = p->pSrc->a[0].pTab;      /* Table <table>. */
+    Table *pTab;                           /* Table <table>. */
+    Expr *pExpr;                           /* Expression <column> */
+    int iCol;                              /* Index of column <column> */
     int iDb;                               /* Database idx for pTab */
+
+    assert( p );                        /* Because of isCandidateForInOpt(p) */
+    assert( p->pEList!=0 );             /* Because of isCandidateForInOpt(p) */
+    assert( p->pEList->a[0].pExpr!=0 ); /* Because of isCandidateForInOpt(p) */
+    assert( p->pSrc!=0 );               /* Because of isCandidateForInOpt(p) */
+    pTab = p->pSrc->a[0].pTab;
+    pExpr = p->pEList->a[0].pExpr;
+    iCol = pExpr->iColumn;
    
     /* Code an OP_VerifyCookie and OP_TableLock for <table>. */
     iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
@@ -3453,7 +3462,7 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB){
     }
   }else if( pA->op!=TK_COLUMN && pA->u.zToken ){
     if( ExprHasProperty(pB, EP_IntValue) || NEVER(pB->u.zToken==0) ) return 2;
-    if( sqlite3StrICmp(pA->u.zToken,pB->u.zToken)!=0 ){
+    if( strcmp(pA->u.zToken,pB->u.zToken)!=0 ){
       return 2;
     }
   }

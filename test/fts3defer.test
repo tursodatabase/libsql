@@ -426,6 +426,18 @@ foreach {tn setup} {
       SELECT rowid FROM t1 WHERE t1 MATCH '"jk xduvfhk" OR "zm azavwm"'
     } {8 15 26 92 96}
   }
+
+  if {$tn>1} {
+    # These tests will not work with $tn==1, as in this case table t1 is
+    # created using FTS3. The ^ syntax is only available with FTS4 tables.
+    #
+    do_select_test 7.1 {
+      SELECT rowid FROM t1 WHERE t1 MATCH '^zm mjpavjuhw'
+    } {56 62}
+    do_select_test 7.2 {
+      SELECT rowid FROM t1 WHERE t1 MATCH '^azavwm zm'
+    } {43}
+  }
 }
 
 set testprefix fts3defer
@@ -448,6 +460,34 @@ do_execsql_test 3.2 "
 do_execsql_test 3.3 {
   SELECT count(*) FROM x1 WHERE x1 MATCH '"d e f"'
 } {16}
+
+# At one point the following was causing a floating-point exception.
+#
+do_execsql_test 4.1 {
+  CREATE VIRTUAL TABLE x2 USING FTS4(x);
+  BEGIN;
+  INSERT INTO x2 VALUES('m m m m m m m m m m m m m m m m m m m m m m m m m m');
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 SELECT * FROM x2;
+  INSERT INTO x2 VALUES('a b c d e f g h i j k l m n o p q r s t u v w x y m');
+  COMMIT;
+}
+do_execsql_test 4.2 {
+  SELECT * FROM x2 WHERE x2 MATCH 'a b c d e f g h i j k l m n o p q r s';
+} {{a b c d e f g h i j k l m n o p q r s t u v w x y m}}
 
 
 finish_test

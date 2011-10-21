@@ -294,6 +294,7 @@ do_write_test fts3_malloc-5.1 ft_content {
 do_test fts3_malloc-5.2 {
   execsql { CREATE VIRTUAL TABLE ft8 USING fts3(x, tokenize porter) }
 } {}
+
 do_write_test fts3_malloc-5.3 ft_content {
   INSERT INTO ft8 VALUES('short alongertoken reallyquitealotlongerimeanit andthistokenisjustsolongthatonemightbeforgivenforimaginingthatitwasmerelyacontrivedexampleandnotarealtoken')
 }

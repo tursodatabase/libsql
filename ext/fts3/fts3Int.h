@@ -157,6 +157,13 @@ typedef sqlite3_uint64 u64;       /* 8-byte unsigned integer */
 
 #endif /* SQLITE_AMALGAMATION */
 
+#ifdef SQLITE_DEBUG
+int sqlite3Fts3Corrupt(void);
+# define FTS_CORRUPT_VTAB sqlite3Fts3Corrupt()
+#else
+# define FTS_CORRUPT_VTAB SQLITE_CORRUPT_VTAB
+#endif
+
 typedef struct Fts3Table Fts3Table;
 typedef struct Fts3Cursor Fts3Cursor;
 typedef struct Fts3Expr Fts3Expr;
@@ -184,6 +191,7 @@ struct Fts3Table {
   int nColumn;                    /* number of named columns in virtual table */
   char **azColumn;                /* column names.  malloced */
   sqlite3_tokenizer *pTokenizer;  /* tokenizer for inserts and queries */
+  char *zContentTbl;              /* content=xxx option, or NULL */
 
   /* Precompiled statements used by the implementation. Each of these 
   ** statements is run and reset within a single virtual table API call. 
@@ -224,7 +232,7 @@ struct Fts3Table {
   int nPendingData;               /* Current bytes of pending data */
   sqlite_int64 iPrevDocid;        /* Docid of most recently inserted document */
 
-#if defined(SQLITE_DEBUG)
+#if defined(SQLITE_DEBUG) || defined(SQLITE_COVERAGE_TEST)
   /* State variables used for validating that the transaction control
   ** methods of the virtual table are called at appropriate times.  These
   ** values do not contribution to the FTS computation; they are used for
@@ -309,6 +317,7 @@ struct Fts3PhraseToken {
   char *z;                        /* Text of the token */
   int n;                          /* Number of bytes in buffer z */
   int isPrefix;                   /* True if token ends with a "*" character */
+  int bFirst;                     /* True if token must appear at position 0 */
 
   /* Variables above this point are populated when the expression is
   ** parsed (by code in fts3_expr.c). Below this point the variables are
@@ -427,6 +436,7 @@ int sqlite3Fts3SegReaderCursor(
 #define FTS3_SEGMENT_COLUMN_FILTER 0x00000004
 #define FTS3_SEGMENT_PREFIX        0x00000008
 #define FTS3_SEGMENT_SCAN          0x00000010
+#define FTS3_SEGMENT_FIRST         0x00000020
 
 /* Type passed as 4th argument to SegmentReaderIterate() */
 struct Fts3SegFilter {
@@ -466,8 +476,8 @@ int sqlite3Fts3GetVarint32(const char *, int *);
 int sqlite3Fts3VarintLen(sqlite3_uint64);
 void sqlite3Fts3Dequote(char *);
 void sqlite3Fts3DoclistPrev(int,char*,int,char**,sqlite3_int64*,int*,u8*);
-
 int sqlite3Fts3EvalPhraseStats(Fts3Cursor *, Fts3Expr *, u32 *);
+int sqlite3Fts3FirstFilter(sqlite3_int64, char *, int, char *);
 
 /* fts3_tokenizer.c */
 const char *sqlite3Fts3NextToken(const char *, int *);
@@ -486,7 +496,7 @@ void sqlite3Fts3Matchinfo(sqlite3_context *, Fts3Cursor *, const char *);
 
 /* fts3_expr.c */
 int sqlite3Fts3ExprParse(sqlite3_tokenizer *, 
-  char **, int, int, const char *, int, Fts3Expr **
+  char **, int, int, int, const char *, int, Fts3Expr **
 );
 void sqlite3Fts3ExprFree(Fts3Expr *);
 #ifdef SQLITE_TEST

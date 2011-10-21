@@ -705,7 +705,7 @@ static int isLikeOrGlob(
     if( pVal && sqlite3_value_type(pVal)==SQLITE_TEXT ){
       z = (char *)sqlite3_value_text(pVal);
     }
-    sqlite3VdbeSetVarmask(pParse->pVdbe, iCol); /* IMP: R-31526-56213 */
+    sqlite3VdbeSetVarmask(pParse->pVdbe, iCol);
     assert( pRight->op==TK_VARIABLE || pRight->op==TK_REGISTER );
   }else if( op==TK_STRING ){
     z = pRight->u.zToken;
@@ -723,7 +723,7 @@ static int isLikeOrGlob(
       *ppPrefix = pPrefix;
       if( op==TK_VARIABLE ){
         Vdbe *v = pParse->pVdbe;
-        sqlite3VdbeSetVarmask(v, pRight->iColumn); /* IMP: R-31526-56213 */
+        sqlite3VdbeSetVarmask(v, pRight->iColumn);
         if( *pisComplete && pRight->u.zToken[1] ){
           /* If the rhs of the LIKE expression is a variable, and the current
           ** value of the variable means there is no need to invoke the LIKE
@@ -1855,6 +1855,7 @@ static void bestOrClauseIndex(
           tempWC.pOuter = pWC;
           tempWC.op = TK_AND;
           tempWC.a = pOrTerm;
+          tempWC.wctrlFlags = 0;
           tempWC.nTerm = 1;
           bestIndex(pParse, &tempWC, pSrc, notReady, notValid, 0, &sTermCost);
         }else{
@@ -2476,7 +2477,6 @@ static int whereKeyStats(
   if( pVal==0 ) return SQLITE_ERROR;
   n = pIdx->aiRowEst[0];
   aSample = pIdx->aSample;
-  i = 0;
   eType = sqlite3_value_type(pVal);
 
   if( eType==SQLITE_INTEGER ){
@@ -2637,7 +2637,7 @@ static int valueFromExpr(
    || (pExpr->op==TK_REGISTER && pExpr->op2==TK_VARIABLE)
   ){
     int iVar = pExpr->iColumn;
-    sqlite3VdbeSetVarmask(pParse->pVdbe, iVar); /* IMP: R-31526-56213 */
+    sqlite3VdbeSetVarmask(pParse->pVdbe, iVar);
     *pp = sqlite3VdbeGetValue(pParse->pReprepare, iVar, aff);
     return SQLITE_OK;
   }
@@ -4896,7 +4896,8 @@ WhereInfo *sqlite3WhereBegin(
     WHERETRACE(("*** Optimizer selects table %d for loop %d"
                 " with cost=%g and nRow=%g\n",
                 bestJ, pLevel-pWInfo->a, bestPlan.rCost, bestPlan.plan.nRow));
-    if( (bestPlan.plan.wsFlags & WHERE_ORDERBY)!=0 ){
+    /* The ALWAYS() that follows was added to hush up clang scan-build */
+    if( (bestPlan.plan.wsFlags & WHERE_ORDERBY)!=0 && ALWAYS(ppOrderBy) ){
       *ppOrderBy = 0;
     }
     if( (bestPlan.plan.wsFlags & WHERE_DISTINCT)!=0 ){

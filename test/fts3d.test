@@ -304,4 +304,57 @@ do_test fts3d-5.1 {
   }
 } {{Index already optimal} 2 0}
 
+
+# ALTER TABLE RENAME should work regardless of the database encoding.
+#
+do_test fts3d-6.0 {
+  db close
+  forcedelete test.db
+  sqlite3 db test.db
+  db eval {
+    PRAGMA encoding=UTF8;
+    CREATE VIRTUAL TABLE fts USING fts3(a,b,c);
+    SELECT name FROM sqlite_master WHERE name GLOB '???_*' ORDER BY 1;
+  }
+} {fts_content fts_segdir fts_segments}
+do_test fts3d-6.1 {
+  db eval {
+    ALTER TABLE fts RENAME TO xyz;
+    SELECT name FROM sqlite_master WHERE name GLOB '???_*' ORDER BY 1;
+  }
+} {xyz_content xyz_segdir xyz_segments}
+do_test fts3d-6.2 {
+  db close
+  forcedelete test.db
+  sqlite3 db test.db
+  db eval {
+    PRAGMA encoding=UTF16le;
+    CREATE VIRTUAL TABLE fts USING fts3(a,b,c);
+    SELECT name FROM sqlite_master WHERE name GLOB '???_*' ORDER BY 1;
+  }
+} {fts_content fts_segdir fts_segments}
+do_test fts3d-6.3 {
+  db eval {
+    ALTER TABLE fts RENAME TO xyz;
+    SELECT name FROM sqlite_master WHERE name GLOB '???_*' ORDER BY 1;
+  }
+} {xyz_content xyz_segdir xyz_segments}
+do_test fts3d-6.4 {
+  db close
+  forcedelete test.db
+  sqlite3 db test.db
+  db eval {
+    PRAGMA encoding=UTF16be;
+    CREATE VIRTUAL TABLE fts USING fts3(a,b,c);
+    SELECT name FROM sqlite_master WHERE name GLOB '???_*' ORDER BY 1;
+  }
+} {fts_content fts_segdir fts_segments}
+do_test fts3d-6.5 {
+  db eval {
+    ALTER TABLE fts RENAME TO xyz;
+    SELECT name FROM sqlite_master WHERE name GLOB '???_*' ORDER BY 1;
+  }
+} {xyz_content xyz_segdir xyz_segments}
+ 
+
 finish_test

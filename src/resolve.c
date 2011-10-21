@@ -98,6 +98,24 @@ static void resolveAlias(
   sqlite3DbFree(db, pDup);
 }
 
+
+/*
+** Return TRUE if the name zCol occurs anywhere in the USING clause.
+**
+** Return FALSE if the USING clause is NULL or if it does not contain
+** zCol.
+*/
+static int nameInUsingClause(IdList *pUsing, const char *zCol){
+  if( pUsing ){
+    int k;
+    for(k=0; k<pUsing->nId; k++){
+      if( sqlite3StrICmp(pUsing->a[k].zName, zCol)==0 ) return 1;
+    }
+  }
+  return 0;
+}
+
+
 /*
 ** Given the name of a column of the form X.Y.Z or Y.Z or just Z, look up
 ** that name in the set of source tables in pSrcList and make the pExpr 
@@ -189,7 +207,14 @@ static int lookupName(
         }
         for(j=0, pCol=pTab->aCol; j<pTab->nCol; j++, pCol++){
           if( sqlite3StrICmp(pCol->zName, zCol)==0 ){
-            IdList *pUsing;
+            /* If there has been exactly one prior match and this match
+            ** is for the right-hand table of a NATURAL JOIN or is in a 
+            ** USING clause, then skip this match.
+            */
+            if( cnt==1 ){
+              if( pItem->jointype & JT_NATURAL ) continue;
+              if( nameInUsingClause(pItem->pUsing, zCol) ) continue;
+            }
             cnt++;
             pExpr->iTable = pItem->iCursor;
             pExpr->pTab = pTab;
@@ -197,26 +222,6 @@ static int lookupName(
             pSchema = pTab->pSchema;
             /* Substitute the rowid (column -1) for the INTEGER PRIMARY KEY */
             pExpr->iColumn = j==pTab->iPKey ? -1 : (i16)j;
-            if( i<pSrcList->nSrc-1 ){
-              if( pItem[1].jointype & JT_NATURAL ){
-                /* If this match occurred in the left table of a natural join,
-                ** then skip the right table to avoid a duplicate match */
-                pItem++;
-                i++;
-              }else if( (pUsing = pItem[1].pUsing)!=0 ){
-                /* If this match occurs on a column that is in the USING clause
-                ** of a join, skip the search of the right table of the join
-                ** to avoid a duplicate match there. */
-                int k;
-                for(k=0; k<pUsing->nId; k++){
-                  if( sqlite3StrICmp(pUsing->a[k].zName, zCol)==0 ){
-                    pItem++;
-                    i++;
-                    break;
-                  }
-                }
-              }
-            }
             break;
           }
         }

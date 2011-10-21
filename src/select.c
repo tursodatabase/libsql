@@ -65,6 +65,7 @@ Select *sqlite3SelectNew(
   pNew = sqlite3DbMallocZero(db, sizeof(*pNew) );
   assert( db->mallocFailed || !pOffset || pLimit ); /* OFFSET implies LIMIT */
   if( pNew==0 ){
+    assert( db->mallocFailed );
     pNew = &standin;
     memset(pNew, 0, sizeof(*pNew));
   }
@@ -92,6 +93,7 @@ Select *sqlite3SelectNew(
   }else{
     assert( pNew->pSrc!=0 || pParse->nErr>0 );
   }
+  assert( pNew!=&standin );
   return pNew;
 }
 
@@ -1270,7 +1272,10 @@ static int selectColumnsFromExprList(
     }else{
       Expr *pColExpr = p;  /* The expression that is the result column name */
       Table *pTab;         /* Table associated with this expression */
-      while( pColExpr->op==TK_DOT ) pColExpr = pColExpr->pRight;
+      while( pColExpr->op==TK_DOT ){
+        pColExpr = pColExpr->pRight;
+        assert( pColExpr!=0 );
+      }
       if( pColExpr->op==TK_COLUMN && ALWAYS(pColExpr->pTab!=0) ){
         /* For columns use the column name name */
         int iCol = pColExpr->iColumn;
