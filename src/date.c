@@ -289,12 +289,18 @@ static int parseYyyyMmDd(const char *zDate, DateTime *p){
 }
 
 /*
-** Set the time to the current time reported by the VFS
+** Set the time to the current time reported by the VFS.
+**
+** Return the number of errors.
 */
-static void setDateTimeToCurrent(sqlite3_context *context, DateTime *p){
+static int setDateTimeToCurrent(sqlite3_context *context, DateTime *p){
   sqlite3 *db = sqlite3_context_db_handle(context);
-  sqlite3OsCurrentTimeInt64(db->pVfs, &p->iJD);
-  p->validJD = 1;
+  if( sqlite3OsCurrentTimeInt64(db->pVfs, &p->iJD)==SQLITE_OK ){
+    p->validJD = 1;
+    return 0;
+  }else{
+    return 1;
+  }
 }
 
 /*
@@ -324,8 +330,7 @@ static int parseDateOrTime(
   }else if( parseHhMmSs(zDate, p)==0 ){
     return 0;
   }else if( sqlite3StrICmp(zDate,"now")==0){
-    setDateTimeToCurrent(context, p);
-    return 0;
+    return setDateTimeToCurrent(context, p);
   }else if( sqlite3AtoF(zDate, &r, sqlite3Strlen30(zDate), SQLITE_UTF8) ){
     p->iJD = (sqlite3_int64)(r*86400000.0 + 0.5);
     p->validJD = 1;
@@ -752,8 +757,9 @@ static int isDate(
   int eType;
   memset(p, 0, sizeof(*p));
   if( argc==0 ){
-    setDateTimeToCurrent(context, p);
-  }else if( (eType = sqlite3_value_type(argv[0]))==SQLITE_FLOAT
+    return setDateTimeToCurrent(context, p);
+  }
+  if( (eType = sqlite3_value_type(argv[0]))==SQLITE_FLOAT
                    || eType==SQLITE_INTEGER ){
     p->iJD = (sqlite3_int64)(sqlite3_value_double(argv[0])*86400000.0 + 0.5);
     p->validJD = 1;
@@ -1065,31 +1071,28 @@ static void currentTimeFunc(
   char *zFormat = (char *)sqlite3_user_data(context);
   sqlite3 *db;
   sqlite3_int64 iT;
+  struct tm *pTm;
+  struct tm sNow;
   char zBuf[20];
 
   UNUSED_PARAMETER(argc);
   UNUSED_PARAMETER(argv);
 
   db = sqlite3_context_db_handle(context);
-  sqlite3OsCurrentTimeInt64(db->pVfs, &iT);
+  if( sqlite3OsCurrentTimeInt64(db->pVfs, &iT) ) return;
   t = iT/1000 - 10000*(sqlite3_int64)21086676;
 #ifdef HAVE_GMTIME_R
-  {
-    struct tm sNow;
-    gmtime_r(&t, &sNow);
-    strftime(zBuf, 20, zFormat, &sNow);
-  }
+  pTm = gmtime_r(&t, &sNow);
 #else
-  {
-    struct tm *pTm;
-    sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
-    pTm = gmtime(&t);
-    strftime(zBuf, 20, zFormat, pTm);
-    sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
-  }
+  sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
+  pTm = gmtime(&t);
+  if( pTm ) memcpy(&sNow, pTm, sizeof(sNow));
+  sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
 #endif
-
-  sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
+  if( pTm ){
+    strftime(zBuf, 20, zFormat, &sNow);
+    sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
+  }
 }
 #endif
 

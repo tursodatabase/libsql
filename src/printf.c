@@ -7,48 +7,10 @@
 **
 **************************************************************************
 **
-** The following modules is an enhanced replacement for the "printf" subroutines
-** found in the standard C library.  The following enhancements are
-** supported:
-**
-**      +  Additional functions.  The standard set of "printf" functions
-**         includes printf, fprintf, sprintf, vprintf, vfprintf, and
-**         vsprintf.  This module adds the following:
-**
-**           *  snprintf -- Works like sprintf, but has an extra argument
-**                          which is the size of the buffer written to.
-**
-**           *  mprintf --  Similar to sprintf.  Writes output to memory
-**                          obtained from malloc.
-**
-**           *  xprintf --  Calls a function to dispose of output.
-**
-**           *  nprintf --  No output, but returns the number of characters
-**                          that would have been output by printf.
-**
-**           *  A v- version (ex: vsnprintf) of every function is also
-**              supplied.
-**
-**      +  A few extensions to the formatting notation are supported:
-**
-**           *  The "=" flag (similar to "-") causes the output to be
-**              be centered in the appropriately sized field.
-**
-**           *  The %b field outputs an integer in binary notation.
-**
-**           *  The %c field now accepts a precision.  The character output
-**              is repeated by the number of times the precision specifies.
-**
-**           *  The %' field works like %c, but takes as its character the
-**              next character of the format string, instead of the next
-**              argument.  For example,  printf("%.78'-")  prints 78 minus
-**              signs, the same as  printf("%.78c",'-').
-**
-**      +  When compiled using GCC on a SPARC, this version of printf is
-**         faster than the library printf for SUN OS 4.1.
-**
-**      +  All functions are fully reentrant.
-**
+** This file contains code for a set of "printf"-like routines.  These
+** routines format strings much like the printf() from the standard C
+** library, though the implementation here has enhancements to support
+** SQLlite.
 */
 #include "sqliteInt.h"
 
@@ -187,43 +149,15 @@ static void appendSpace(StrAccum *pAccum, int N){
 
 /*
 ** On machines with a small stack size, you can redefine the
-** SQLITE_PRINT_BUF_SIZE to be less than 350.
+** SQLITE_PRINT_BUF_SIZE to be something smaller, if desired.
 */
 #ifndef SQLITE_PRINT_BUF_SIZE
-# if defined(SQLITE_SMALL_STACK)
-#   define SQLITE_PRINT_BUF_SIZE 50
-# else
-#   define SQLITE_PRINT_BUF_SIZE 350
-# endif
+# define SQLITE_PRINT_BUF_SIZE 70
 #endif
 #define etBUFSIZE SQLITE_PRINT_BUF_SIZE  /* Size of the output buffer */
 
 /*
-** The root program.  All variations call this core.
-**
-** INPUTS:
-**   func   This is a pointer to a function taking three arguments
-**            1. A pointer to anything.  Same as the "arg" parameter.
-**            2. A pointer to the list of characters to be output
-**               (Note, this list is NOT null terminated.)
-**            3. An integer number of characters to be output.
-**               (Note: This number might be zero.)
-**
-**   arg    This is the pointer to anything which will be passed as the
-**          first argument to "func".  Use it for whatever you like.
-**
-**   fmt    This is the format string, as in the usual print.
-**
-**   ap     This is a pointer to a list of arguments.  Same as in
-**          vfprint.
-**
-** OUTPUTS:
-**          The return value is the total number of characters sent to
-**          the function "func".  Returns -1 on a error.
-**
-** Note that the order in which automatic variables are declared below
-** seems to make a big difference in determining how fast this beast
-** will run.
+** Render a string given by "fmt" into the StrAccum object.
 */
 void sqlite3VXPrintf(
   StrAccum *pAccum,                  /* Accumulate results here */
@@ -246,23 +180,23 @@ void sqlite3VXPrintf(
   etByte flag_long;          /* True if "l" flag is present */
   etByte flag_longlong;      /* True if the "ll" flag is present */
   etByte done;               /* Loop termination flag */
+  etByte xtype = 0;          /* Conversion paradigm */
+  char prefix;               /* Prefix character.  "+" or "-" or " " or '\0'. */
   sqlite_uint64 longvalue;   /* Value for integer types */
   LONGDOUBLE_TYPE realvalue; /* Value for real types */
   const et_info *infop;      /* Pointer to the appropriate info structure */
-  char buf[etBUFSIZE];       /* Conversion buffer */
-  char prefix;               /* Prefix character.  "+" or "-" or " " or '\0'. */
-  etByte xtype = 0;          /* Conversion paradigm */
-  char *zExtra;              /* Extra memory used for etTCLESCAPE conversions */
+  char *zOut;                /* Rendering buffer */
+  int nOut;                  /* Size of the rendering buffer */
+  char *zExtra;              /* Malloced memory used by some conversion */
 #ifndef SQLITE_OMIT_FLOATING_POINT
   int  exp, e2;              /* exponent of real numbers */
+  int nsd;                   /* Number of significant digits returned */
   double rounder;            /* Used for rounding floating point values */
   etByte flag_dp;            /* True if decimal point should be shown */
   etByte flag_rtz;           /* True if trailing zeros should be removed */
-  etByte flag_exp;           /* True to force display of the exponent */
-  int nsd;                   /* Number of significant digits returned */
 #endif
+  char buf[etBUFSIZE];       /* Conversion buffer */
 
-  length = 0;
   bufpt = 0;
   for(; (c=(*fmt))!=0; ++fmt){
     if( c!='%' ){
@@ -306,9 +240,6 @@ void sqlite3VXPrintf(
         width = width*10 + c - '0';
         c = *++fmt;
       }
-    }
-    if( width > etBUFSIZE-10 ){
-      width = etBUFSIZE-10;
     }
     /* Get the precision */
     if( c=='.' ){
@@ -355,12 +286,6 @@ void sqlite3VXPrintf(
       }
     }
     zExtra = 0;
-
-
-    /* Limit the precision to prevent overflowing buf[] during conversion */
-    if( precision>etBUFSIZE-40 && (infop->flags & FLAG_STRING)==0 ){
-      precision = etBUFSIZE-40;
-    }
 
     /*
     ** At this point, variables are initialized as follows:
@@ -426,16 +351,26 @@ void sqlite3VXPrintf(
         if( flag_zeropad && precision<width-(prefix!=0) ){
           precision = width-(prefix!=0);
         }
-        bufpt = &buf[etBUFSIZE-1];
+        if( precision<etBUFSIZE-10 ){
+          nOut = etBUFSIZE;
+          zOut = buf;
+        }else{
+          nOut = precision + 10;
+          zOut = zExtra = sqlite3Malloc( nOut );
+          if( zOut==0 ){
+            pAccum->mallocFailed = 1;
+            return;
+          }
+        }
+        bufpt = &zOut[nOut-1];
         if( xtype==etORDINAL ){
           static const char zOrd[] = "thstndrd";
           int x = (int)(longvalue % 10);
           if( x>=4 || (longvalue/10)%10==1 ){
             x = 0;
           }
-          buf[etBUFSIZE-3] = zOrd[x*2];
-          buf[etBUFSIZE-2] = zOrd[x*2+1];
-          bufpt -= 2;
+          *(--bufpt) = zOrd[x*2+1];
+          *(--bufpt) = zOrd[x*2];
         }
         {
           register const char *cset;      /* Use registers for speed */
@@ -447,7 +382,7 @@ void sqlite3VXPrintf(
             longvalue = longvalue/base;
           }while( longvalue>0 );
         }
-        length = (int)(&buf[etBUFSIZE-1]-bufpt);
+        length = (int)(&zOut[nOut-1]-bufpt);
         for(idx=precision-length; idx>0; idx--){
           *(--bufpt) = '0';                             /* Zero pad */
         }
@@ -458,7 +393,7 @@ void sqlite3VXPrintf(
           pre = &aPrefix[infop->prefix];
           for(; (x=(*pre))!=0; pre++) *(--bufpt) = x;
         }
-        length = (int)(&buf[etBUFSIZE-1]-bufpt);
+        length = (int)(&zOut[nOut-1]-bufpt);
         break;
       case etFLOAT:
       case etEXP:
@@ -468,7 +403,6 @@ void sqlite3VXPrintf(
         length = 0;
 #else
         if( precision<0 ) precision = 6;         /* Set default precision */
-        if( precision>etBUFSIZE/2-10 ) precision = etBUFSIZE/2-10;
         if( realvalue<0.0 ){
           realvalue = -realvalue;
           prefix = '-';
@@ -516,7 +450,6 @@ void sqlite3VXPrintf(
         ** If the field type is etGENERIC, then convert to either etEXP
         ** or etFLOAT, as appropriate.
         */
-        flag_exp = xtype==etEXP;
         if( xtype!=etFLOAT ){
           realvalue += rounder;
           if( realvalue>=10.0 ){ realvalue *= 0.1; exp++; }
@@ -537,6 +470,14 @@ void sqlite3VXPrintf(
         }else{
           e2 = exp;
         }
+        if( e2+precision+width > etBUFSIZE - 15 ){
+          bufpt = zExtra = sqlite3Malloc( e2+precision+width+15 );
+          if( bufpt==0 ){
+            pAccum->mallocFailed = 1;
+            return;
+          }
+        }
+        zOut = bufpt;
         nsd = 0;
         flag_dp = (precision>0 ?1:0) | flag_alternateform | flag_altform2;
         /* The sign in front of the number */
@@ -568,7 +509,7 @@ void sqlite3VXPrintf(
         /* Remove trailing zeros and the "." if no digits follow the "." */
         if( flag_rtz && flag_dp ){
           while( bufpt[-1]=='0' ) *(--bufpt) = 0;
-          assert( bufpt>buf );
+          assert( bufpt>zOut );
           if( bufpt[-1]=='.' ){
             if( flag_altform2 ){
               *(bufpt++) = '0';
@@ -578,7 +519,7 @@ void sqlite3VXPrintf(
           }
         }
         /* Add the "eNNN" suffix */
-        if( flag_exp || xtype==etEXP ){
+        if( xtype==etEXP ){
           *(bufpt++) = aDigits[infop->charset];
           if( exp<0 ){
             *(bufpt++) = '-'; exp = -exp;
@@ -597,8 +538,8 @@ void sqlite3VXPrintf(
         /* The converted number is in buf[] and zero terminated. Output it.
         ** Note that the number is in the usual order, not reversed as with
         ** integer conversions. */
-        length = (int)(bufpt-buf);
-        bufpt = buf;
+        length = (int)(bufpt-zOut);
+        bufpt = zOut;
 
         /* Special case:  Add leading zeros if the flag_zeropad flag is
         ** set and we are not left justified */
@@ -736,9 +677,7 @@ void sqlite3VXPrintf(
         appendSpace(pAccum, nspace);
       }
     }
-    if( zExtra ){
-      sqlite3_free(zExtra);
-    }
+    sqlite3_free(zExtra);
   }/* End for loop over the format string */
 } /* End of function */
 
@@ -752,6 +691,7 @@ void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
     testcase(p->mallocFailed);
     return;
   }
+  assert( p->zText!=0 || p->nChar==0 );
   if( N<0 ){
     N = sqlite3Strlen30(z);
   }
@@ -783,7 +723,7 @@ void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
         zNew = sqlite3_realloc(zOld, p->nAlloc);
       }
       if( zNew ){
-        if( zOld==0 ) memcpy(zNew, p->zText, p->nChar);
+        if( zOld==0 && p->nChar>0 ) memcpy(zNew, p->zText, p->nChar);
         p->zText = zNew;
       }else{
         p->mallocFailed = 1;
@@ -792,6 +732,7 @@ void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
       }
     }
   }
+  assert( p->zText );
   memcpy(&p->zText[p->nChar], z, N);
   p->nChar += N;
 }

@@ -365,6 +365,9 @@ sqlite3$(EXE):	$(TOP)/src/shell.c libsqlite3.a sqlite3.h
 		$(TOP)/src/shell.c                                  \
 		libsqlite3.a $(LIBREADLINE) $(TLIBS) $(THREADLIB)
 
+sqlite3.o:	sqlite3.c
+	$(TCCX) -c sqlite3.c
+
 # This target creates a directory named "tsrc" and fills it with
 # copies of all of the C source code and header files needed to
 # build on the target system.  Some of the C source code and header
@@ -597,7 +600,8 @@ install:	sqlite3 libsqlite3.a sqlite3.h
 
 clean:	
 	rm -f *.o sqlite3 sqlite3.exe libsqlite3.a sqlite3.h opcodes.*
-	rm -f lemon lempar.c parse.* sqlite*.tar.gz mkkeywordhash keywordhash.h
+	rm -f lemon lemon.exe lempar.c parse.* sqlite*.tar.gz
+	rm -f mkkeywordhash mkkeywordhash.exe keywordhash.h
 	rm -f $(PUBLISH)
 	rm -f *.da *.bb *.bbg gmon.out
 	rm -rf tsrc target_source

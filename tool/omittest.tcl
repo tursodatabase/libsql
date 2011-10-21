@@ -48,19 +48,18 @@ they do not respect the OPTS variable.
 #
 #
 proc run_quick_test {dir omit_symbol_list} {
-  set target "testfixture"
   # Compile the value of the OPTS Makefile variable.
-  set opts "-DSQLITE_MEMDEBUG -DSQLITE_DEBUG -DSQLITE_NO_SYNC" 
+  set opts ""
   if {$::tcl_platform(platform)=="windows"} {
-    append opts " -DSQLITE_OS_WIN=1"
+    append opts "OPTS += -DSQLITE_OS_WIN=1\n"
     set target "testfixture.exe"
   } elseif {$::tcl_platform(platform)=="os2"} {
-    append opts " -DSQLITE_OS_OS2=1"
+    append opts "OPTS += -DSQLITE_OS_OS2=1\n"
   } else {
-    append opts " -DSQLITE_OS_UNIX=1"
+    append opts "OPTS += -DSQLITE_OS_UNIX=1\n"
   }
   foreach sym $omit_symbol_list {
-    append opts " -D${sym}=1"
+    append opts "OPTS += -D${sym}=1\n"
   }
 
   # Create the directory and do the build. If an error occurs return
@@ -68,12 +67,20 @@ proc run_quick_test {dir omit_symbol_list} {
   file mkdir $dir
   puts -nonewline "Building $dir..."
   flush stdout
-catch {
-  file copy -force ./config.h $dir
-  file copy -force ./libtool $dir
-}
+  catch {
+    file copy -force ./config.h $dir
+    file copy -force ./libtool $dir
+  }
+  set fd [open $::MAKEFILE]
+  set mkfile [read $fd]
+  close $fd
+  regsub {\ninclude} $mkfile "\n$opts\ninclude" mkfile
+  set fd [open $dir/makefile w]
+  puts $fd $mkfile
+  close $fd
+  
   set rc [catch {
-    exec $::MAKEBIN -C $dir -f $::MAKEFILE clean $target OPTS=$opts >& $dir/build.log
+    exec $::MAKEBIN -C $dir -f makefile clean $::TARGET >& $dir/build.log
   }]
   if {$rc} {
     puts "No good. See $dir/build.log."
@@ -102,7 +109,7 @@ catch {
     puts -nonewline "Testing $dir..."
     flush stdout
     set rc [catch {
-      exec $::MAKEBIN -C $dir -f $::MAKEFILE test OPTS=$opts >& $dir/test.log
+      exec $::MAKEBIN -C $dir -f makefile test >& $dir/test.log
     }]
     if {$rc} {
       puts "No good. See $dir/test.log."
@@ -126,6 +133,7 @@ proc process_options {argv} {
     set ::MAKEFILE ./Makefile.linux-gcc     ;# Default value
   }
   set ::SKIP_RUN 0                          ;# Default to attempt test
+  set ::TARGET testfixture                  ;# Default thing to build
 
   for {set i 0} {$i < [llength $argv]} {incr i} {
     switch -- [lindex $argv $i] {
@@ -137,6 +145,11 @@ proc process_options {argv} {
       -nmake {
         set ::MAKEBIN nmake
         set ::MAKEFILE ./Makefile.msc
+      }
+
+      -target {
+        incr i
+        set ::TARGET [lindex $argv $i]
       }
 
       -skip_run {
@@ -182,7 +195,6 @@ proc main {argv} {
     SQLITE_OMIT_DATETIME_FUNCS \
     SQLITE_OMIT_DECLTYPE \
     SQLITE_OMIT_DEPRECATED \
-    xxxSQLITE_OMIT_DISKIO \
     SQLITE_OMIT_EXPLAIN \
     SQLITE_OMIT_FLAG_PRAGMAS \
     SQLITE_OMIT_FLOATING_POINT \
@@ -224,15 +236,11 @@ proc main {argv} {
     SQLITE_DISABLE_DIRSYNC \
     SQLITE_DISABLE_LFS \
     SQLITE_ENABLE_ATOMIC_WRITE \
-    xxxSQLITE_ENABLE_CEROD \
     SQLITE_ENABLE_COLUMN_METADATA \
     SQLITE_ENABLE_EXPENSIVE_ASSERT \
-    xxxSQLITE_ENABLE_FTS1 \
-    xxxSQLITE_ENABLE_FTS2 \
     SQLITE_ENABLE_FTS3 \
     SQLITE_ENABLE_FTS3_PARENTHESIS \
     SQLITE_ENABLE_FTS4 \
-    xxxSQLITE_ENABLE_ICU \
     SQLITE_ENABLE_IOTRACE \
     SQLITE_ENABLE_LOAD_EXTENSION \
     SQLITE_ENABLE_LOCKING_STYLE \
@@ -241,7 +249,7 @@ proc main {argv} {
     SQLITE_ENABLE_MEMSYS5 \
     SQLITE_ENABLE_OVERSIZE_CELL_CHECK \
     SQLITE_ENABLE_RTREE \
-    SQLITE_ENABLE_STAT2 \
+    SQLITE_ENABLE_STAT3 \
     SQLITE_ENABLE_UNLOCK_NOTIFY \
     SQLITE_ENABLE_UPDATE_DELETE_LIMIT \
   ]

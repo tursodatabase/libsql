@@ -368,6 +368,7 @@ static int fts3SnippetFindPositions(Fts3Expr *pExpr, int iPhrase, void *ctx){
     int iFirst = 0;
     pPhrase->pList = pCsr;
     fts3GetDeltaPosition(&pCsr, &iFirst);
+    assert( iFirst>=0 );
     pPhrase->pHead = pCsr;
     pPhrase->pTail = pCsr;
     pPhrase->iHead = iFirst;
@@ -848,7 +849,7 @@ static int fts3MatchinfoSelectDoctotal(
 
   a = sqlite3_column_blob(pStmt, 0);
   a += sqlite3Fts3GetVarint(a, &nDoc);
-  if( nDoc==0 ) return SQLITE_CORRUPT_VTAB;
+  if( nDoc==0 ) return FTS_CORRUPT_VTAB;
   *pnDoc = (u32)nDoc;
 
   if( paLen ) *paLen = a;
@@ -1409,7 +1410,7 @@ void sqlite3Fts3Offsets(
 
       if( !pTerm ){
         /* All offsets for this column have been gathered. */
-        break;
+        rc = SQLITE_DONE;
       }else{
         assert( iCurrent<=iMinPos );
         if( 0==(0xFE&*pTerm->pList) ){
@@ -1426,8 +1427,8 @@ void sqlite3Fts3Offsets(
               "%d %d %d %d ", iCol, pTerm-sCtx.aTerm, iStart, iEnd-iStart
           );
           rc = fts3StringAppend(&res, aBuffer, -1);
-        }else if( rc==SQLITE_DONE ){
-          rc = SQLITE_CORRUPT_VTAB;
+        }else if( rc==SQLITE_DONE && pTab->zContentTbl==0 ){
+          rc = FTS_CORRUPT_VTAB;
         }
       }
     }

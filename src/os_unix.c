@@ -528,7 +528,7 @@ static int unixMutexHeld(void) {
 #endif
 
 
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_TEST) && defined(SQLITE_DEBUG)
 /*
 ** Helper function for printing out trace information from debugging
 ** binaries. This returns the string represetation of the supplied
@@ -1363,14 +1363,14 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   */
   int rc = SQLITE_OK;
   unixFile *pFile = (unixFile*)id;
-  unixInodeInfo *pInode = pFile->pInode;
+  unixInodeInfo *pInode;
   struct flock lock;
   int tErrno = 0;
 
   assert( pFile );
   OSTRACE(("LOCK    %d %s was %s(%s,%d) pid=%d (unix)\n", pFile->h,
       azFileLock(eFileLock), azFileLock(pFile->eFileLock),
-      azFileLock(pInode->eFileLock), pInode->nShared , getpid()));
+      azFileLock(pFile->pInode->eFileLock), pFile->pInode->nShared , getpid()));
 
   /* If there is already a lock of this type or more restrictive on the
   ** unixFile, do nothing. Don't use the end_lock: exit path, as
@@ -1574,7 +1574,6 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
   unixInodeInfo *pInode;
   struct flock lock;
   int rc = SQLITE_OK;
-  int h;
 
   assert( pFile );
   OSTRACE(("UNLOCK  %d %d was %d(%d,%d) pid=%d (unix)\n", pFile->h, eFileLock,
@@ -1586,14 +1585,10 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
     return SQLITE_OK;
   }
   unixEnterMutex();
-  h = pFile->h;
   pInode = pFile->pInode;
   assert( pInode->nShared!=0 );
   if( pFile->eFileLock>SHARED_LOCK ){
     assert( pInode->eFileLock==pFile->eFileLock );
-    SimulateIOErrorBenign(1);
-    SimulateIOError( h=(-1) )
-    SimulateIOErrorBenign(0);
 
 #ifndef NDEBUG
     /* When reducing a lock such that other processes can start
@@ -1604,11 +1599,6 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
     ** the file has changed and hence might not know to flush their
     ** cache.  The use of a stale cache can lead to database corruption.
     */
-#if 0
-    assert( pFile->inNormalWrite==0
-         || pFile->dbUpdate==0
-         || pFile->transCntrChng==1 );
-#endif
     pFile->inNormalWrite = 0;
 #endif
 
@@ -1710,9 +1700,6 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
       lock.l_type = F_UNLCK;
       lock.l_whence = SEEK_SET;
       lock.l_start = lock.l_len = 0L;
-      SimulateIOErrorBenign(1);
-      SimulateIOError( h=(-1) )
-      SimulateIOErrorBenign(0);
       if( unixFileLock(pFile, &lock)==0 ){
         pInode->eFileLock = NO_LOCK;
       }else{
@@ -3854,16 +3841,15 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
     }
 
     if( pInode->bProcessLock==0 ){
-      pShmNode->h = robust_open(zShmFilename, O_RDWR|O_CREAT,
-                               (sStat.st_mode & 0777));
+      const char *zRO;
+      int openFlags = O_RDWR | O_CREAT;
+      zRO = sqlite3_uri_parameter(pDbFd->zPath, "readonly_shm");
+      if( zRO && sqlite3GetBoolean(zRO) ){
+        openFlags = O_RDONLY;
+        pShmNode->isReadonly = 1;
+      }
+      pShmNode->h = robust_open(zShmFilename, openFlags, (sStat.st_mode&0777));
       if( pShmNode->h<0 ){
-        const char *zRO;
-        zRO = sqlite3_uri_parameter(pDbFd->zPath, "readonly_shm");
-        if( zRO && sqlite3GetBoolean(zRO) ){
-          pShmNode->h = robust_open(zShmFilename, O_RDONLY,
-                                    (sStat.st_mode & 0777));
-          pShmNode->isReadonly = 1;
-        }
         if( pShmNode->h<0 ){
           rc = unixLogError(SQLITE_CANTOPEN_BKPT, "open", zShmFilename);
           goto shm_open_err;
@@ -4549,6 +4535,9 @@ static int fillInUnixFile(
   assert( zFilename==0 || zFilename[0]=='/' );
 #endif
 
+  /* No locking occurs in temporary files */
+  assert( zFilename!=0 || noLock );
+
   OSTRACE(("OPEN    %-3d %s\n", h, zFilename));
   pNew->h = h;
   pNew->zPath = zFilename;
@@ -4650,6 +4639,7 @@ static int fillInUnixFile(
     */
     char *zLockFile;
     int nFilename;
+    assert( zFilename!=0 );
     nFilename = (int)strlen(zFilename) + 6;
     zLockFile = (char *)sqlite3_malloc(nFilename);
     if( zLockFile==0 ){
@@ -4884,13 +4874,13 @@ static int findCreateFileMode(
     **   "<path to db>-journalNN"
     **   "<path to db>-walNN"
     **
-    ** where NN is a 4 digit decimal number. The NN naming schemes are 
+    ** where NN is a decimal number. The NN naming schemes are 
     ** used by the test_multiplex.c module.
     */
     nDb = sqlite3Strlen30(zPath) - 1; 
 #ifdef SQLITE_ENABLE_8_3_NAMES
-    while( nDb>0 && zPath[nDb]!='-' && zPath[nDb]!='/' ) nDb--;
-    if( nDb==0 || zPath[nDb]=='/' ) return SQLITE_OK;
+    while( nDb>0 && !sqlite3Isalnum(zPath[nDb]) ) nDb--;
+    if( nDb==0 || zPath[nDb]!='-' ) return SQLITE_OK;
 #else
     while( zPath[nDb]!='-' ){
       assert( nDb>0 );
@@ -5429,10 +5419,12 @@ int sqlite3_current_time = 0;  /* Fake system time in seconds since 1970. */
 ** epoch of noon in Greenwich on November 24, 4714 B.C according to the
 ** proleptic Gregorian calendar.
 **
-** On success, return 0.  Return 1 if the time and date cannot be found.
+** On success, return SQLITE_OK.  Return SQLITE_ERROR if the time and date 
+** cannot be found.
 */
 static int unixCurrentTimeInt64(sqlite3_vfs *NotUsed, sqlite3_int64 *piNow){
   static const sqlite3_int64 unixEpoch = 24405875*(sqlite3_int64)8640000;
+  int rc = SQLITE_OK;
 #if defined(NO_GETTOD)
   time_t t;
   time(&t);
@@ -5443,8 +5435,11 @@ static int unixCurrentTimeInt64(sqlite3_vfs *NotUsed, sqlite3_int64 *piNow){
   *piNow = unixEpoch + 1000*(sqlite3_int64)sNow.tv_sec + sNow.tv_nsec/1000000;
 #else
   struct timeval sNow;
-  gettimeofday(&sNow, 0);
-  *piNow = unixEpoch + 1000*(sqlite3_int64)sNow.tv_sec + sNow.tv_usec/1000;
+  if( gettimeofday(&sNow, 0)==0 ){
+    *piNow = unixEpoch + 1000*(sqlite3_int64)sNow.tv_sec + sNow.tv_usec/1000;
+  }else{
+    rc = SQLITE_ERROR;
+  }
 #endif
 
 #ifdef SQLITE_TEST
@@ -5453,7 +5448,7 @@ static int unixCurrentTimeInt64(sqlite3_vfs *NotUsed, sqlite3_int64 *piNow){
   }
 #endif
   UNUSED_PARAMETER(NotUsed);
-  return 0;
+  return rc;
 }
 
 /*
@@ -5462,11 +5457,12 @@ static int unixCurrentTimeInt64(sqlite3_vfs *NotUsed, sqlite3_int64 *piNow){
 ** return 0.  Return 1 if the time and date cannot be found.
 */
 static int unixCurrentTime(sqlite3_vfs *NotUsed, double *prNow){
-  sqlite3_int64 i;
+  sqlite3_int64 i = 0;
+  int rc;
   UNUSED_PARAMETER(NotUsed);
-  unixCurrentTimeInt64(0, &i);
+  rc = unixCurrentTimeInt64(0, &i);
   *prNow = i/86400000.0;
-  return 0;
+  return rc;
 }
 
 /*

@@ -467,7 +467,7 @@ void sqlite3Pragma(
     if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     sqlite3CodeVerifySchema(pParse, iDb);
     iReg = ++pParse->nMem;
-    if( zLeft[0]=='p' ){
+    if( sqlite3Tolower(zLeft[0])=='p' ){
       sqlite3VdbeAddOp2(v, OP_Pagecount, iDb, iReg);
     }else{
       sqlite3VdbeAddOp3(v, OP_MaxPgcnt, iDb, iReg, sqlite3Atoi(zRight));
@@ -1080,7 +1080,7 @@ void sqlite3Pragma(
       { OP_ResultRow,   3, 1,        0},
     };
 
-    int isQuick = (zLeft[0]=='q');
+    int isQuick = (sqlite3Tolower(zLeft[0])=='q');
 
     /* Initialize the VDBE program */
     if( sqlite3ReadSchema(pParse) ) goto pragma_out;

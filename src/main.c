@@ -106,7 +106,7 @@ char *sqlite3_temp_directory = 0;
 **       without blocking.
 */
 int sqlite3_initialize(void){
-  sqlite3_mutex *pMaster;                      /* The main static mutex */
+  MUTEX_LOGIC( sqlite3_mutex *pMaster; )       /* The main static mutex */
   int rc;                                      /* Result code */
 
 #ifdef SQLITE_OMIT_WSD
@@ -140,7 +140,7 @@ int sqlite3_initialize(void){
   ** malloc subsystem - this implies that the allocation of a static
   ** mutex must not require support from the malloc subsystem.
   */
-  pMaster = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
+  MUTEX_LOGIC( pMaster = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER); )
   sqlite3_mutex_enter(pMaster);
   sqlite3GlobalConfig.isMutexInit = 1;
   if( !sqlite3GlobalConfig.isMallocInit ){
@@ -1214,13 +1214,13 @@ int sqlite3_overload_function(
   int nArg
 ){
   int nName = sqlite3Strlen30(zName);
-  int rc;
+  int rc = SQLITE_OK;
   sqlite3_mutex_enter(db->mutex);
   if( sqlite3FindFunction(db, zName, nName, nArg, SQLITE_UTF8, 0)==0 ){
-    sqlite3CreateFunc(db, zName, nArg, SQLITE_UTF8,
-                      0, sqlite3InvalidFunction, 0, 0, 0);
+    rc = sqlite3CreateFunc(db, zName, nArg, SQLITE_UTF8,
+                           0, sqlite3InvalidFunction, 0, 0, 0);
   }
-  rc = sqlite3ApiExit(db, SQLITE_OK);
+  rc = sqlite3ApiExit(db, rc);
   sqlite3_mutex_leave(db->mutex);
   return rc;
 }
@@ -2303,6 +2303,7 @@ opendb_out:
     sqlite3_mutex_leave(db->mutex);
   }
   rc = sqlite3_errcode(db);
+  assert( db!=0 || rc==SQLITE_NOMEM );
   if( rc==SQLITE_NOMEM ){
     sqlite3_close(db);
     db = 0;

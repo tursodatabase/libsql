@@ -320,6 +320,52 @@ do_realnum_test nan-4.20 {
   db eval {SELECT x, typeof(x) FROM t1}
 } {inf real}
 
+do_realnum_test nan-4.30 {
+  db eval {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES('2.5e+9999');
+    SELECT x, typeof(x) FROM t1;
+  }
+} {inf real}
+do_realnum_test nan-4.31 {
+  db eval {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES('2.5e+10000');
+    SELECT x, typeof(x) FROM t1;
+  }
+} {inf real}
+
+do_realnum_test nan-4.32 {
+  db eval {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES('2.5e-9999');
+    SELECT x, typeof(x) FROM t1;
+  }
+} {0.0 real}
+do_realnum_test nan-4.33 {
+  db eval {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES('2.5e-10000');
+    SELECT x, typeof(x) FROM t1;
+  }
+} {0.0 real}
+do_realnum_test nan-4.34 {
+  db eval {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES('2.5e2147483650');
+    SELECT x, typeof(x) FROM t1;
+  }
+} {inf real}
+do_realnum_test nan-4.35 {
+  db eval {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES('2.5e-2147483650');
+    SELECT x, typeof(x) FROM t1;
+  }
+} {0.0 real}
+
+  
+
 
 
 finish_test

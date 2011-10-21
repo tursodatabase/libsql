@@ -1268,7 +1268,8 @@ static int rtreeFilter(
         rc = SQLITE_NOMEM;
       }else{
         memset(pCsr->aConstraint, 0, sizeof(RtreeConstraint)*argc);
-        assert( (idxStr==0 && argc==0) || (int)strlen(idxStr)==argc*2 );
+        assert( (idxStr==0 && argc==0)
+                || (idxStr && (int)strlen(idxStr)==argc*2) );
         for(ii=0; ii<argc; ii++){
           RtreeConstraint *p = &pCsr->aConstraint[ii];
           p->op = idxStr[ii*2];
@@ -1569,7 +1570,10 @@ static int ChooseLeaf(
 
     float fMinGrowth = 0.0;
     float fMinArea = 0.0;
+#if VARIANT_RSTARTREE_CHOOSESUBTREE
     float fMinOverlap = 0.0;
+    float overlap;
+#endif
 
     int nCell = NCELL(pNode);
     RtreeCell cell;
@@ -1601,7 +1605,6 @@ static int ChooseLeaf(
       int bBest = 0;
       float growth;
       float area;
-      float overlap = 0.0;
       nodeGetCell(pRtree, pNode, iCell, &cell);
       growth = cellGrowth(pRtree, &cell, pCell);
       area = cellArea(pRtree, &cell);
@@ -1609,6 +1612,8 @@ static int ChooseLeaf(
 #if VARIANT_RSTARTREE_CHOOSESUBTREE
       if( ii==(pRtree->iDepth-1) ){
         overlap = cellOverlapEnlargement(pRtree,&cell,pCell,aCell,nCell,iCell);
+      }else{
+        overlap = 0.0;
       }
       if( (iCell==0) 
        || (overlap<fMinOverlap) 
@@ -1616,6 +1621,7 @@ static int ChooseLeaf(
        || (overlap==fMinOverlap && growth==fMinGrowth && area<fMinArea)
       ){
         bBest = 1;
+        fMinOverlap = overlap;
       }
 #else
       if( iCell==0||growth<fMinGrowth||(growth==fMinGrowth && area<fMinArea) ){
@@ -1623,7 +1629,6 @@ static int ChooseLeaf(
       }
 #endif
       if( bBest ){
-        fMinOverlap = overlap;
         fMinGrowth = growth;
         fMinArea = area;
         iBest = cell.iRowid;

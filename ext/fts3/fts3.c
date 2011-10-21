@@ -438,7 +438,7 @@ static void fts3GetReverseVarint(
   sqlite3_int64 *pVal
 ){
   sqlite3_int64 iVal;
-  char *p = *pp;
+  char *p;
 
   /* Pointer p now points at the first byte past the varint we are 
   ** interested in. So, unless the doclist is corrupt, the 0x80 bit is
@@ -468,6 +468,7 @@ static int fts3DisconnectMethod(sqlite3_vtab *pVtab){
   sqlite3_free(p->zSegmentsTbl);
   sqlite3_free(p->zReadExprlist);
   sqlite3_free(p->zWriteExprlist);
+  sqlite3_free(p->zContentTbl);
 
   /* Invoke the tokenizer destructor to free the tokenizer. */
   p->pTokenizer->pModule->xDestroy(p->pTokenizer);
@@ -507,16 +508,19 @@ static void fts3DbExec(
 ** The xDestroy() virtual table method.
 */
 static int fts3DestroyMethod(sqlite3_vtab *pVtab){
-  int rc = SQLITE_OK;              /* Return code */
   Fts3Table *p = (Fts3Table *)pVtab;
-  sqlite3 *db = p->db;
+  int rc = SQLITE_OK;              /* Return code */
+  const char *zDb = p->zDb;        /* Name of database (e.g. "main", "temp") */
+  sqlite3 *db = p->db;             /* Database handle */
 
   /* Drop the shadow tables */
-  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_content'", p->zDb, p->zName);
-  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_segments'", p->zDb,p->zName);
-  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_segdir'", p->zDb, p->zName);
-  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_docsize'", p->zDb, p->zName);
-  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_stat'", p->zDb, p->zName);
+  if( p->zContentTbl==0 ){
+    fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_content'", zDb, p->zName);
+  }
+  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_segments'", zDb,p->zName);
+  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_segdir'", zDb, p->zName);
+  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_docsize'", zDb, p->zName);
+  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_stat'", zDb, p->zName);
 
   /* If everything has worked, invoke fts3DisconnectMethod() to free the
   ** memory associated with the Fts3Table structure and return SQLITE_OK.
@@ -578,23 +582,27 @@ static void fts3DeclareVtab(int *pRc, Fts3Table *p){
 static int fts3CreateTables(Fts3Table *p){
   int rc = SQLITE_OK;             /* Return code */
   int i;                          /* Iterator variable */
-  char *zContentCols;             /* Columns of %_content table */
   sqlite3 *db = p->db;            /* The database connection */
 
-  /* Create a list of user columns for the content table */
-  zContentCols = sqlite3_mprintf("docid INTEGER PRIMARY KEY");
-  for(i=0; zContentCols && i<p->nColumn; i++){
-    char *z = p->azColumn[i];
-    zContentCols = sqlite3_mprintf("%z, 'c%d%q'", zContentCols, i, z);
-  }
-  if( zContentCols==0 ) rc = SQLITE_NOMEM;
+  if( p->zContentTbl==0 ){
+    char *zContentCols;           /* Columns of %_content table */
 
-  /* Create the content table */
-  fts3DbExec(&rc, db, 
-     "CREATE TABLE %Q.'%q_content'(%s)",
-     p->zDb, p->zName, zContentCols
-  );
-  sqlite3_free(zContentCols);
+    /* Create a list of user columns for the content table */
+    zContentCols = sqlite3_mprintf("docid INTEGER PRIMARY KEY");
+    for(i=0; zContentCols && i<p->nColumn; i++){
+      char *z = p->azColumn[i];
+      zContentCols = sqlite3_mprintf("%z, 'c%d%q'", zContentCols, i, z);
+    }
+    if( zContentCols==0 ) rc = SQLITE_NOMEM;
+  
+    /* Create the content table */
+    fts3DbExec(&rc, db, 
+       "CREATE TABLE %Q.'%q_content'(%s)",
+       p->zDb, p->zName, zContentCols
+    );
+    sqlite3_free(zContentCols);
+  }
+
   /* Create other tables */
   fts3DbExec(&rc, db, 
       "CREATE TABLE %Q.'%q_segments'(blockid INTEGER PRIMARY KEY, block BLOB);",
@@ -745,8 +753,8 @@ static char *fts3QuoteId(char const *zInput){
 }
 
 /*
-** Return a list of comma separated SQL expressions that could be used
-** in a SELECT statement such as the following:
+** Return a list of comma separated SQL expressions and a FROM clause that 
+** could be used in a SELECT statement such as the following:
 **
 **     SELECT <list of expressions> FROM %_content AS x ...
 **
@@ -757,7 +765,7 @@ static char *fts3QuoteId(char const *zInput){
 ** table has the three user-defined columns "a", "b", and "c", the following
 ** string is returned:
 **
-**     "docid, unzip(x.'a'), unzip(x.'b'), unzip(x.'c')"
+**     "docid, unzip(x.'a'), unzip(x.'b'), unzip(x.'c') FROM %_content AS x"
 **
 ** The pointer returned points to a buffer allocated by sqlite3_malloc(). It
 ** is the responsibility of the caller to eventually free it.
@@ -773,16 +781,28 @@ static char *fts3ReadExprList(Fts3Table *p, const char *zFunc, int *pRc){
   char *zFunction;
   int i;
 
-  if( !zFunc ){
-    zFunction = "";
+  if( p->zContentTbl==0 ){
+    if( !zFunc ){
+      zFunction = "";
+    }else{
+      zFree = zFunction = fts3QuoteId(zFunc);
+    }
+    fts3Appendf(pRc, &zRet, "docid");
+    for(i=0; i<p->nColumn; i++){
+      fts3Appendf(pRc, &zRet, ",%s(x.'c%d%q')", zFunction, i, p->azColumn[i]);
+    }
+    sqlite3_free(zFree);
   }else{
-    zFree = zFunction = fts3QuoteId(zFunc);
+    fts3Appendf(pRc, &zRet, "rowid");
+    for(i=0; i<p->nColumn; i++){
+      fts3Appendf(pRc, &zRet, ", x.'%q'", p->azColumn[i]);
+    }
   }
-  fts3Appendf(pRc, &zRet, "docid");
-  for(i=0; i<p->nColumn; i++){
-    fts3Appendf(pRc, &zRet, ",%s(x.'c%d%q')", zFunction, i, p->azColumn[i]);
-  }
-  sqlite3_free(zFree);
+  fts3Appendf(pRc, &zRet, "FROM '%q'.'%q%s' AS x", 
+      p->zDb,
+      (p->zContentTbl ? p->zContentTbl : p->zName),
+      (p->zContentTbl ? "" : "_content")
+  );
   return zRet;
 }
 
@@ -839,7 +859,7 @@ static char *fts3WriteExprList(Fts3Table *p, const char *zFunc, int *pRc){
 ** This function is used when parsing the "prefix=" FTS4 parameter.
 */
 static int fts3GobbleInt(const char **pp, int *pnOut){
-  const char *p = *pp;            /* Iterator pointer */
+  const char *p;                  /* Iterator pointer */
   int nInt = 0;                   /* Output value */
 
   for(p=*pp; p[0]>='0' && p[0]<='9'; p++){
@@ -907,6 +927,91 @@ static int fts3PrefixParameter(
 }
 
 /*
+** This function is called when initializing an FTS4 table that uses the
+** content=xxx option. It determines the number of and names of the columns
+** of the new FTS4 table.
+**
+** The third argument passed to this function is the value passed to the
+** config=xxx option (i.e. "xxx"). This function queries the database for
+** a table of that name. If found, the output variables are populated
+** as follows:
+**
+**   *pnCol:   Set to the number of columns table xxx has,
+**
+**   *pnStr:   Set to the total amount of space required to store a copy
+**             of each columns name, including the nul-terminator.
+**
+**   *pazCol:  Set to point to an array of *pnCol strings. Each string is
+**             the name of the corresponding column in table xxx. The array
+**             and its contents are allocated using a single allocation. It
+**             is the responsibility of the caller to free this allocation
+**             by eventually passing the *pazCol value to sqlite3_free().
+**
+** If the table cannot be found, an error code is returned and the output
+** variables are undefined. Or, if an OOM is encountered, SQLITE_NOMEM is
+** returned (and the output variables are undefined).
+*/
+static int fts3ContentColumns(
+  sqlite3 *db,                    /* Database handle */
+  const char *zDb,                /* Name of db (i.e. "main", "temp" etc.) */
+  const char *zTbl,               /* Name of content table */
+  const char ***pazCol,           /* OUT: Malloc'd array of column names */
+  int *pnCol,                     /* OUT: Size of array *pazCol */
+  int *pnStr                      /* OUT: Bytes of string content */
+){
+  int rc = SQLITE_OK;             /* Return code */
+  char *zSql;                     /* "SELECT *" statement on zTbl */  
+  sqlite3_stmt *pStmt = 0;        /* Compiled version of zSql */
+
+  zSql = sqlite3_mprintf("SELECT * FROM %Q.%Q", zDb, zTbl);
+  if( !zSql ){
+    rc = SQLITE_NOMEM;
+  }else{
+    rc = sqlite3_prepare(db, zSql, -1, &pStmt, 0);
+  }
+  sqlite3_free(zSql);
+
+  if( rc==SQLITE_OK ){
+    const char **azCol;           /* Output array */
+    int nStr = 0;                 /* Size of all column names (incl. 0x00) */
+    int nCol;                     /* Number of table columns */
+    int i;                        /* Used to iterate through columns */
+
+    /* Loop through the returned columns. Set nStr to the number of bytes of
+    ** space required to store a copy of each column name, including the
+    ** nul-terminator byte.  */
+    nCol = sqlite3_column_count(pStmt);
+    for(i=0; i<nCol; i++){
+      const char *zCol = sqlite3_column_name(pStmt, i);
+      nStr += strlen(zCol) + 1;
+    }
+
+    /* Allocate and populate the array to return. */
+    azCol = (const char **)sqlite3_malloc(sizeof(char *) * nCol + nStr);
+    if( azCol==0 ){
+      rc = SQLITE_NOMEM;
+    }else{
+      char *p = (char *)&azCol[nCol];
+      for(i=0; i<nCol; i++){
+        const char *zCol = sqlite3_column_name(pStmt, i);
+        int n = strlen(zCol)+1;
+        memcpy(p, zCol, n);
+        azCol[i] = p;
+        p += n;
+      }
+    }
+    sqlite3_finalize(pStmt);
+
+    /* Set the output variables. */
+    *pnCol = nCol;
+    *pnStr = nStr;
+    *pazCol = azCol;
+  }
+
+  return rc;
+}
+
+/*
 ** This function is the implementation of both the xConnect and xCreate
 ** methods of the FTS3 virtual table.
 **
@@ -950,6 +1055,7 @@ static int fts3InitVtab(
   char *zPrefix = 0;              /* Prefix parameter value (or NULL) */
   char *zCompress = 0;            /* compress=? parameter (or NULL) */
   char *zUncompress = 0;          /* uncompress=? parameter (or NULL) */
+  char *zContent = 0;             /* content=? parameter (or NULL) */
 
   assert( strlen(argv[0])==4 );
   assert( (sqlite3_strnicmp(argv[0], "fts4", 4)==0 && isFts4)
@@ -993,13 +1099,13 @@ static int fts3InitVtab(
       struct Fts4Option {
         const char *zOpt;
         int nOpt;
-        char **pzVar;
       } aFts4Opt[] = {
-        { "matchinfo",   9, 0 },            /* 0 -> MATCHINFO */
-        { "prefix",      6, 0 },            /* 1 -> PREFIX */
-        { "compress",    8, 0 },            /* 2 -> COMPRESS */
-        { "uncompress", 10, 0 },            /* 3 -> UNCOMPRESS */
-        { "order",       5, 0 }             /* 4 -> ORDER */
+        { "matchinfo",   9 },     /* 0 -> MATCHINFO */
+        { "prefix",      6 },     /* 1 -> PREFIX */
+        { "compress",    8 },     /* 2 -> COMPRESS */
+        { "uncompress", 10 },     /* 3 -> UNCOMPRESS */
+        { "order",       5 },     /* 4 -> ORDER */
+        { "content",     7 }      /* 5 -> CONTENT */
       };
 
       int iOpt;
@@ -1045,12 +1151,19 @@ static int fts3InitVtab(
 
             case 4:               /* ORDER */
               if( (strlen(zVal)!=3 || sqlite3_strnicmp(zVal, "asc", 3)) 
-               && (strlen(zVal)!=4 || sqlite3_strnicmp(zVal, "desc", 3)) 
+               && (strlen(zVal)!=4 || sqlite3_strnicmp(zVal, "desc", 4)) 
               ){
                 *pzErr = sqlite3_mprintf("unrecognized order: %s", zVal);
                 rc = SQLITE_ERROR;
               }
               bDescIdx = (zVal[0]=='d' || zVal[0]=='D');
+              break;
+
+            default:              /* CONTENT */
+              assert( iOpt==5 );
+              sqlite3_free(zUncompress);
+              zContent = zVal;
+              zVal = 0;
               break;
           }
         }
@@ -1063,6 +1176,26 @@ static int fts3InitVtab(
       nString += (int)(strlen(z) + 1);
       aCol[nCol++] = z;
     }
+  }
+
+  /* If a content=xxx option was specified, the following:
+  **
+  **   1. Ignore any compress= and uncompress= options.
+  **
+  **   2. If no column names were specified as part of the CREATE VIRTUAL
+  **      TABLE statement, use all columns from the content table.
+  */
+  if( rc==SQLITE_OK && zContent ){
+    sqlite3_free(zCompress); 
+    sqlite3_free(zUncompress); 
+    zCompress = 0;
+    zUncompress = 0;
+    if( nCol==0 ){
+      sqlite3_free((void*)aCol); 
+      aCol = 0;
+      rc = fts3ContentColumns(db, argv[1], zContent, &aCol, &nCol, &nString);
+    }
+    assert( rc!=SQLITE_OK || nCol>0 );
   }
   if( rc!=SQLITE_OK ) goto fts3_init_out;
 
@@ -1108,6 +1241,8 @@ static int fts3InitVtab(
   p->bHasDocsize = (isFts4 && bNoDocsize==0);
   p->bHasStat = isFts4;
   p->bDescIdx = bDescIdx;
+  p->zContentTbl = zContent;
+  zContent = 0;
   TESTONLY( p->inTransaction = -1 );
   TESTONLY( p->mxSavepoint = -1 );
 
@@ -1169,6 +1304,7 @@ fts3_init_out:
   sqlite3_free(aIndex);
   sqlite3_free(zCompress);
   sqlite3_free(zUncompress);
+  sqlite3_free(zContent);
   sqlite3_free((void *)aCol);
   if( rc!=SQLITE_OK ){
     if( p ){
@@ -1321,34 +1457,63 @@ static int fts3CloseMethod(sqlite3_vtab_cursor *pCursor){
 }
 
 /*
+** If pCsr->pStmt has not been prepared (i.e. if pCsr->pStmt==0), then
+** compose and prepare an SQL statement of the form:
+**
+**    "SELECT <columns> FROM %_content WHERE rowid = ?"
+**
+** (or the equivalent for a content=xxx table) and set pCsr->pStmt to
+** it. If an error occurs, return an SQLite error code.
+**
+** Otherwise, set *ppStmt to point to pCsr->pStmt and return SQLITE_OK.
+*/
+static int fts3CursorSeekStmt(Fts3Cursor *pCsr, sqlite3_stmt **ppStmt){
+  int rc = SQLITE_OK;
+  if( pCsr->pStmt==0 ){
+    Fts3Table *p = (Fts3Table *)pCsr->base.pVtab;
+    char *zSql;
+    zSql = sqlite3_mprintf("SELECT %s WHERE rowid = ?", p->zReadExprlist);
+    if( !zSql ) return SQLITE_NOMEM;
+    rc = sqlite3_prepare_v2(p->db, zSql, -1, &pCsr->pStmt, 0);
+    sqlite3_free(zSql);
+  }
+  *ppStmt = pCsr->pStmt;
+  return rc;
+}
+
+/*
 ** Position the pCsr->pStmt statement so that it is on the row
 ** of the %_content table that contains the last match.  Return
 ** SQLITE_OK on success.  
 */
 static int fts3CursorSeek(sqlite3_context *pContext, Fts3Cursor *pCsr){
+  int rc = SQLITE_OK;
   if( pCsr->isRequireSeek ){
-    sqlite3_bind_int64(pCsr->pStmt, 1, pCsr->iPrevId);
-    pCsr->isRequireSeek = 0;
-    if( SQLITE_ROW==sqlite3_step(pCsr->pStmt) ){
-      return SQLITE_OK;
-    }else{
-      int rc = sqlite3_reset(pCsr->pStmt);
-      if( rc==SQLITE_OK ){
-        /* If no row was found and no error has occured, then the %_content
-        ** table is missing a row that is present in the full-text index.
-        ** The data structures are corrupt.
-        */
-        rc = SQLITE_CORRUPT_VTAB;
+    sqlite3_stmt *pStmt = 0;
+
+    rc = fts3CursorSeekStmt(pCsr, &pStmt);
+    if( rc==SQLITE_OK ){
+      sqlite3_bind_int64(pCsr->pStmt, 1, pCsr->iPrevId);
+      pCsr->isRequireSeek = 0;
+      if( SQLITE_ROW==sqlite3_step(pCsr->pStmt) ){
+        return SQLITE_OK;
+      }else{
+        rc = sqlite3_reset(pCsr->pStmt);
+        if( rc==SQLITE_OK && ((Fts3Table *)pCsr->base.pVtab)->zContentTbl==0 ){
+          /* If no row was found and no error has occured, then the %_content
+          ** table is missing a row that is present in the full-text index.
+          ** The data structures are corrupt.  */
+          rc = FTS_CORRUPT_VTAB;
+          pCsr->isEof = 1;
+        }
       }
-      pCsr->isEof = 1;
-      if( pContext ){
-        sqlite3_result_error_code(pContext, rc);
-      }
-      return rc;
     }
-  }else{
-    return SQLITE_OK;
   }
+
+  if( rc!=SQLITE_OK && pContext ){
+    sqlite3_result_error_code(pContext, rc);
+  }
+  return rc;
 }
 
 /*
@@ -1398,7 +1563,7 @@ static int fts3ScanInteriorNode(
   zCsr += sqlite3Fts3GetVarint(zCsr, &iChild);
   zCsr += sqlite3Fts3GetVarint(zCsr, &iChild);
   if( zCsr>zEnd ){
-    return SQLITE_CORRUPT_VTAB;
+    return FTS_CORRUPT_VTAB;
   }
   
   while( zCsr<zEnd && (piFirst || piLast) ){
@@ -1416,7 +1581,7 @@ static int fts3ScanInteriorNode(
     zCsr += sqlite3Fts3GetVarint32(zCsr, &nSuffix);
     
     if( nPrefix<0 || nSuffix<0 || &zCsr[nSuffix]>zEnd ){
-      rc = SQLITE_CORRUPT_VTAB;
+      rc = FTS_CORRUPT_VTAB;
       goto finish_scan;
     }
     if( nPrefix+nSuffix>nAlloc ){
@@ -1429,6 +1594,7 @@ static int fts3ScanInteriorNode(
       }
       zBuffer = zNew;
     }
+    assert( zBuffer );
     memcpy(&zBuffer[nPrefix], zCsr, nSuffix);
     nBuffer = nPrefix + nSuffix;
     zCsr += nSuffix;
@@ -1787,7 +1953,7 @@ static int fts3PoslistPhraseMerge(
   char **pp1,                     /* IN/OUT: Left input list */
   char **pp2                      /* IN/OUT: Right input list */
 ){
-  char *p = (pp ? *pp : 0);
+  char *p = *pp;
   char *p1 = *pp1;
   char *p2 = *pp2;
   int iCol1 = 0;
@@ -1796,7 +1962,7 @@ static int fts3PoslistPhraseMerge(
   /* Never set both isSaveLeft and isExact for the same invocation. */
   assert( isSaveLeft==0 || isExact==0 );
 
-  assert( *p1!=0 && *p2!=0 );
+  assert( p!=0 && *p1!=0 && *p2!=0 );
   if( *p1==POS_COLUMN ){ 
     p1++;
     p1 += sqlite3Fts3GetVarint32(p1, &iCol1);
@@ -1813,7 +1979,7 @@ static int fts3PoslistPhraseMerge(
       sqlite3_int64 iPos1 = 0;
       sqlite3_int64 iPos2 = 0;
 
-      if( pp && iCol1 ){
+      if( iCol1 ){
         *p++ = POS_COLUMN;
         p += sqlite3Fts3PutVarint(p, iCol1);
       }
@@ -1828,16 +1994,10 @@ static int fts3PoslistPhraseMerge(
          || (isExact==0 && iPos2>iPos1 && iPos2<=iPos1+nToken) 
         ){
           sqlite3_int64 iSave;
-          if( !pp ){
-            fts3PoslistCopy(0, &p2);
-            fts3PoslistCopy(0, &p1);
-            *pp1 = p1;
-            *pp2 = p2;
-            return 1;
-          }
           iSave = isSaveLeft ? iPos1 : iPos2;
           fts3PutDeltaVarint(&p, &iPrev, iSave+2); iPrev -= 2;
           pSave = 0;
+          assert( p );
         }
         if( (!isSaveLeft && iPos2<=(iPos1+nToken)) || iPos2<=iPos1 ){
           if( (*p2&0xFE)==0 ) break;
@@ -1886,7 +2046,7 @@ static int fts3PoslistPhraseMerge(
   fts3PoslistCopy(0, &p1);
   *pp1 = p1;
   *pp2 = p2;
-  if( !pp || *pp==p ){
+  if( *pp==p ){
     return 0;
   }
   *p++ = 0x00;
@@ -2187,6 +2347,56 @@ static void fts3DoclistPhraseMerge(
   }
 
   *pnRight = p - aOut;
+}
+
+/*
+** Argument pList points to a position list nList bytes in size. This
+** function checks to see if the position list contains any entries for
+** a token in position 0 (of any column). If so, it writes argument iDelta
+** to the output buffer pOut, followed by a position list consisting only
+** of the entries from pList at position 0, and terminated by an 0x00 byte.
+** The value returned is the number of bytes written to pOut (if any).
+*/
+int sqlite3Fts3FirstFilter(
+  sqlite3_int64 iDelta,           /* Varint that may be written to pOut */
+  char *pList,                    /* Position list (no 0x00 term) */
+  int nList,                      /* Size of pList in bytes */
+  char *pOut                      /* Write output here */
+){
+  int nOut = 0;
+  int bWritten = 0;               /* True once iDelta has been written */
+  char *p = pList;
+  char *pEnd = &pList[nList];
+
+  if( *p!=0x01 ){
+    if( *p==0x02 ){
+      nOut += sqlite3Fts3PutVarint(&pOut[nOut], iDelta);
+      pOut[nOut++] = 0x02;
+      bWritten = 1;
+    }
+    fts3ColumnlistCopy(0, &p);
+  }
+
+  while( p<pEnd && *p==0x01 ){
+    sqlite3_int64 iCol;
+    p++;
+    p += sqlite3Fts3GetVarint(p, &iCol);
+    if( *p==0x02 ){
+      if( bWritten==0 ){
+        nOut += sqlite3Fts3PutVarint(&pOut[nOut], iDelta);
+        bWritten = 1;
+      }
+      pOut[nOut++] = 0x01;
+      nOut += sqlite3Fts3PutVarint(&pOut[nOut], iCol);
+      pOut[nOut++] = 0x02;
+    }
+    fts3ColumnlistCopy(0, &p);
+  }
+  if( bWritten ){
+    pOut[nOut++] = 0x00;
+  }
+
+  return nOut;
 }
 
 
@@ -2545,6 +2755,7 @@ static int fts3TermSelect(
 
   filter.flags = FTS3_SEGMENT_IGNORE_EMPTY | FTS3_SEGMENT_REQUIRE_POS
         | (pTok->isPrefix ? FTS3_SEGMENT_PREFIX : 0)
+        | (pTok->bFirst ? FTS3_SEGMENT_FIRST : 0)
         | (iColumn<p->nColumn ? FTS3_SEGMENT_COLUMN_FILTER : 0);
   filter.iCol = iColumn;
   filter.zTerm = pTok->z;
@@ -2685,8 +2896,8 @@ static int fts3FilterMethod(
       return SQLITE_NOMEM;
     }
 
-    rc = sqlite3Fts3ExprParse(p->pTokenizer, p->azColumn, p->nColumn, 
-        iCol, zQuery, -1, &pCsr->pExpr
+    rc = sqlite3Fts3ExprParse(p->pTokenizer, p->azColumn, p->bHasStat, 
+        p->nColumn, iCol, zQuery, -1, &pCsr->pExpr
     );
     if( rc!=SQLITE_OK ){
       if( rc==SQLITE_ERROR ){
@@ -2713,22 +2924,23 @@ static int fts3FilterMethod(
   ** row by docid.
   */
   if( idxNum==FTS3_FULLSCAN_SEARCH ){
-    const char *zSort = (pCsr->bDesc ? "DESC" : "ASC");
-    const char *zTmpl = "SELECT %s FROM %Q.'%q_content' AS x ORDER BY docid %s";
-    zSql = sqlite3_mprintf(zTmpl, p->zReadExprlist, p->zDb, p->zName, zSort);
-  }else{
-    const char *zTmpl = "SELECT %s FROM %Q.'%q_content' AS x WHERE docid = ?";
-    zSql = sqlite3_mprintf(zTmpl, p->zReadExprlist, p->zDb, p->zName);
+    zSql = sqlite3_mprintf(
+        "SELECT %s ORDER BY rowid %s",
+        p->zReadExprlist, (pCsr->bDesc ? "DESC" : "ASC")
+    );
+    if( zSql ){
+      rc = sqlite3_prepare_v2(p->db, zSql, -1, &pCsr->pStmt, 0);
+      sqlite3_free(zSql);
+    }else{
+      rc = SQLITE_NOMEM;
+    }
+  }else if( idxNum==FTS3_DOCID_SEARCH ){
+    rc = fts3CursorSeekStmt(pCsr, &pCsr->pStmt);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3_bind_value(pCsr->pStmt, 1, apVal[0]);
+    }
   }
-  if( !zSql ) return SQLITE_NOMEM;
-  rc = sqlite3_prepare_v2(p->db, zSql, -1, &pCsr->pStmt, 0);
-  sqlite3_free(zSql);
   if( rc!=SQLITE_OK ) return rc;
-
-  if( idxNum==FTS3_DOCID_SEARCH ){
-    rc = sqlite3_bind_value(pCsr->pStmt, 1, apVal[0]);
-    if( rc!=SQLITE_OK ) return rc;
-  }
 
   return fts3NextMethod(pCursor);
 }
@@ -2781,7 +2993,7 @@ static int fts3ColumnMethod(
     sqlite3_result_blob(pContext, &pCsr, sizeof(pCsr), SQLITE_TRANSIENT);
   }else{
     rc = fts3CursorSeek(0, pCsr);
-    if( rc==SQLITE_OK ){
+    if( rc==SQLITE_OK && sqlite3_data_count(pCsr->pStmt)>(iCol+1) ){
       sqlite3_result_value(pContext, sqlite3_column_value(pCsr->pStmt, iCol+1));
     }
   }
@@ -2865,7 +3077,7 @@ static int fts3RollbackMethod(sqlite3_vtab *pVtab){
 */
 static void fts3ReversePoslist(char *pStart, char **ppPoslist){
   char *p = &(*ppPoslist)[-2];
-  char c;
+  char c = 0;
 
   while( p>pStart && (c=*p--)==0 );
   while( p>pStart && (*p & 0x80) | c ){ 
@@ -3074,15 +3286,22 @@ static int fts3RenameMethod(
   sqlite3 *db = p->db;            /* Database connection */
   int rc;                         /* Return Code */
 
+  /* As it happens, the pending terms table is always empty here. This is
+  ** because an "ALTER TABLE RENAME TABLE" statement inside a transaction 
+  ** always opens a savepoint transaction. And the xSavepoint() method 
+  ** flushes the pending terms table. But leave the (no-op) call to
+  ** PendingTermsFlush() in in case that changes.
+  */
+  assert( p->nPendingData==0 );
   rc = sqlite3Fts3PendingTermsFlush(p);
-  if( rc!=SQLITE_OK ){
-    return rc;
+
+  if( p->zContentTbl==0 ){
+    fts3DbExec(&rc, db,
+      "ALTER TABLE %Q.'%q_content'  RENAME TO '%q_content';",
+      p->zDb, p->zName, zName
+    );
   }
 
-  fts3DbExec(&rc, db,
-    "ALTER TABLE %Q.'%q_content'  RENAME TO '%q_content';",
-    p->zDb, p->zName, zName
-  );
   if( p->bHasDocsize ){
     fts3DbExec(&rc, db,
       "ALTER TABLE %Q.'%q_docsize'  RENAME TO '%q_docsize';",
@@ -3441,21 +3660,20 @@ static int fts3EvalPhraseLoad(
 */
 static int fts3EvalDeferredPhrase(Fts3Cursor *pCsr, Fts3Phrase *pPhrase){
   int iToken;                     /* Used to iterate through phrase tokens */
-  int rc = SQLITE_OK;             /* Return code */
   char *aPoslist = 0;             /* Position list for deferred tokens */
   int nPoslist = 0;               /* Number of bytes in aPoslist */
   int iPrev = -1;                 /* Token number of previous deferred token */
 
   assert( pPhrase->doclist.bFreeList==0 );
 
-  for(iToken=0; rc==SQLITE_OK && iToken<pPhrase->nToken; iToken++){
+  for(iToken=0; iToken<pPhrase->nToken; iToken++){
     Fts3PhraseToken *pToken = &pPhrase->aToken[iToken];
     Fts3DeferredToken *pDeferred = pToken->pDeferred;
 
     if( pDeferred ){
       char *pList;
       int nList;
-      rc = sqlite3Fts3DeferredTokenList(pDeferred, &pList, &nList);
+      int rc = sqlite3Fts3DeferredTokenList(pDeferred, &pList, &nList);
       if( rc!=SQLITE_OK ) return rc;
 
       if( pList==0 ){
@@ -3556,6 +3774,7 @@ static int fts3EvalPhraseStart(Fts3Cursor *pCsr, int bOptOk, Fts3Phrase *p){
    && p->nToken==1 
    && pFirst->pSegcsr 
    && pFirst->pSegcsr->bLookup 
+   && pFirst->bFirst==0
   ){
     /* Use the incremental approach. */
     int iCol = (p->iColumn >= pTab->nColumn ? -1 : p->iColumn);
@@ -3785,7 +4004,7 @@ static void fts3EvalTokenCosts(
   Fts3Expr ***ppOr,               /* Write new OR root to *(*ppOr)++ */
   int *pRc                        /* IN/OUT: Error code */
 ){
-  if( *pRc==SQLITE_OK && pExpr ){
+  if( *pRc==SQLITE_OK ){
     if( pExpr->eType==FTSQUERY_PHRASE ){
       Fts3Phrase *pPhrase = pExpr->pPhrase;
       int i;
@@ -3799,6 +4018,11 @@ static void fts3EvalTokenCosts(
         *pRc = sqlite3Fts3MsrOvfl(pCsr, pTC->pToken->pSegcsr, &pTC->nOvfl);
       }
     }else if( pExpr->eType!=FTSQUERY_NOT ){
+      assert( pExpr->eType==FTSQUERY_OR
+           || pExpr->eType==FTSQUERY_AND
+           || pExpr->eType==FTSQUERY_NEAR
+      );
+      assert( pExpr->pLeft && pExpr->pRight );
       if( pExpr->eType==FTSQUERY_OR ){
         pRoot = pExpr->pLeft;
         **ppOr = pRoot;
@@ -3859,7 +4083,7 @@ static int fts3EvalAverageDocsize(Fts3Cursor *pCsr, int *pnPage){
     }
     if( nDoc==0 || nByte==0 ){
       sqlite3_reset(pStmt);
-      return SQLITE_CORRUPT_VTAB;
+      return FTS_CORRUPT_VTAB;
     }
 
     pCsr->nDoc = nDoc;
@@ -3902,6 +4126,15 @@ static int fts3EvalSelectDeferred(
 
   int nMinEst = 0;                /* The minimum count for any phrase so far. */
   int nLoad4 = 1;                 /* (Phrases that will be loaded)^4. */
+
+  /* Tokens are never deferred for FTS tables created using the content=xxx
+  ** option. The reason being that it is not guaranteed that the content
+  ** table actually contains the same data as the index. To prevent this from
+  ** causing any problems, the deferred token optimization is completely
+  ** disabled for content=xxx tables. */
+  if( pTab->zContentTbl ){
+    return SQLITE_OK;
+  }
 
   /* Count the tokens in this AND/NEAR cluster. If none of the doclists
   ** associated with the tokens spill onto overflow pages, or if there is
@@ -3965,7 +4198,11 @@ static int fts3EvalSelectDeferred(
       fts3SegReaderCursorFree(pToken->pSegcsr);
       pToken->pSegcsr = 0;
     }else{
-      nLoad4 = nLoad4*4;
+      /* Set nLoad4 to the value of (4^nOther) for the next iteration of the
+      ** for-loop. Except, limit the value to 2^24 to prevent it from 
+      ** overflowing the 32-bit integer it is stored in. */
+      if( ii<12 ) nLoad4 = nLoad4*4;
+
       if( ii==0 || pTC->pPhrase->nToken>1 ){
         /* Either this is the cheapest token in the entire query, or it is
         ** part of a multi-token phrase. Either way, the entire doclist will
@@ -4335,8 +4572,11 @@ static int fts3EvalNearTest(Fts3Expr *pExpr, int *pRc){
       aPoslist = pExpr->pRight->pPhrase->doclist.pList;
       nToken = pExpr->pRight->pPhrase->nToken;
       for(p=pExpr->pLeft; p && res; p=p->pLeft){
-        int nNear = p->pParent->nNear;
-        Fts3Phrase *pPhrase = (
+        int nNear;
+        Fts3Phrase *pPhrase;
+        assert( p->pParent && p->pParent->pLeft==p );
+        nNear = p->pParent->nNear;
+        pPhrase = (
             p->eType==FTSQUERY_NEAR ? p->pRight->pPhrase : p->pPhrase
         );
         res = fts3EvalNearTrim(nNear, aTmp, &aPoslist, &nToken, pPhrase);
@@ -4825,6 +5065,15 @@ void sqlite3Fts3EvalPhraseCleanup(Fts3Phrase *pPhrase){
     }
   }
 }
+
+/*
+** Return SQLITE_CORRUPT_VTAB.
+*/
+#ifdef SQLITE_DEBUG
+int sqlite3Fts3Corrupt(){
+  return SQLITE_CORRUPT_VTAB;
+}
+#endif
 
 #if !SQLITE_CORE
 /*

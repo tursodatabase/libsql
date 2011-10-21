@@ -782,30 +782,29 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
 ** makes the code easier to read during debugging.  None of this happens
 ** in a production build.
 */
-void sqlite3VdbeComment(Vdbe *p, const char *zFormat, ...){
-  va_list ap;
-  if( !p ) return;
+static void vdbeVComment(Vdbe *p, const char *zFormat, va_list ap){
   assert( p->nOp>0 || p->aOp==0 );
   assert( p->aOp==0 || p->aOp[p->nOp-1].zComment==0 || p->db->mallocFailed );
   if( p->nOp ){
-    char **pz = &p->aOp[p->nOp-1].zComment;
+    assert( p->aOp );
+    sqlite3DbFree(p->db, p->aOp[p->nOp-1].zComment);
+    p->aOp[p->nOp-1].zComment = sqlite3VMPrintf(p->db, zFormat, ap);
+  }
+}
+void sqlite3VdbeComment(Vdbe *p, const char *zFormat, ...){
+  va_list ap;
+  if( p ){
     va_start(ap, zFormat);
-    sqlite3DbFree(p->db, *pz);
-    *pz = sqlite3VMPrintf(p->db, zFormat, ap);
+    vdbeVComment(p, zFormat, ap);
     va_end(ap);
   }
 }
 void sqlite3VdbeNoopComment(Vdbe *p, const char *zFormat, ...){
   va_list ap;
-  if( !p ) return;
-  sqlite3VdbeAddOp0(p, OP_Noop);
-  assert( p->nOp>0 || p->aOp==0 );
-  assert( p->aOp==0 || p->aOp[p->nOp-1].zComment==0 || p->db->mallocFailed );
-  if( p->nOp ){
-    char **pz = &p->aOp[p->nOp-1].zComment;
+  if( p ){
+    sqlite3VdbeAddOp0(p, OP_Noop);
     va_start(ap, zFormat);
-    sqlite3DbFree(p->db, *pz);
-    *pz = sqlite3VMPrintf(p->db, zFormat, ap);
+    vdbeVComment(p, zFormat, ap);
     va_end(ap);
   }
 }
@@ -3066,7 +3065,7 @@ int sqlite3VdbeIdxRowid(sqlite3 *db, BtCursor *pCur, i64 *rowid){
   ** this code can safely assume that nCellKey is 32-bits  
   */
   assert( sqlite3BtreeCursorIsValid(pCur) );
-  rc = sqlite3BtreeKeySize(pCur, &nCellKey);
+  VVA_ONLY(rc =) sqlite3BtreeKeySize(pCur, &nCellKey);
   assert( rc==SQLITE_OK );     /* pCur is always valid so KeySize cannot fail */
   assert( (nCellKey & SQLITE_MAX_U32)==(u64)nCellKey );
 
@@ -3141,7 +3140,7 @@ int sqlite3VdbeIdxKeyCompare(
   Mem m;
 
   assert( sqlite3BtreeCursorIsValid(pCur) );
-  rc = sqlite3BtreeKeySize(pCur, &nCellKey);
+  VVA_ONLY(rc =) sqlite3BtreeKeySize(pCur, &nCellKey);
   assert( rc==SQLITE_OK );    /* pCur is always valid so KeySize cannot fail */
   /* nCellKey will always be between 0 and 0xffffffff because of the say
   ** that btreeParseCellPtr() and sqlite3GetVarint32() are implemented */
