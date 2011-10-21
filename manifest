@@ -1,5 +1,5 @@
-C Fix\san\sissue\swith\sfinding\sthe\saccess\spermissions\sof\sjournal\sfiles\swhen\n8+3\sfilenames\sare\sin\suse.
-D 2011-10-20T18:23:35.274
+C If\san\serror\soccurs\swhile\swriting\sto\sthe\sdatabase\sfile\sduring\sa\sVACUUM,\sdiscard\sthe\scontents\sof\sthe\sin-memory\scache.\sThis\sis\srequired\sas\sif\sthe\sdatabase\sis\sa\szipvfs\sdatabase,\sthe\scontents\sof\sthe\scache\smay\sbe\sinconsistent\swith\srespect\sto\sthe\sdatabase\sas\sstored\son\sdisk.
+D 2011-10-21T14:27:32.821
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -121,7 +121,7 @@ F src/alter.c ac80a0f31189f8b4a524ebf661e47e84536ee7f5
 F src/analyze.c 682fd999a01c897a682365a459190758b83de836
 F src/attach.c 12c6957996908edc31c96d7c68d4942c2474405f
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
-F src/backup.c 6c140bafcb4d09738421d54d06853aa2fccf9e19
+F src/backup.c 4368158da74d4711888e03264105c5c527d76caf
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 32199e2d939233ade25340eaba450f818b37c079
@@ -167,8 +167,8 @@ F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c ddda0b1c5ae536669634d7bff31b3f8f4d654866
 F src/os_win.c 49d418916428a59d773f39993db0ecde56ab4c37
-F src/pager.c 60c80db526d39286b913c824cf8303d34ab17a89
-F src/pager.h dbcaa791e8b6c3a6b77c168c5c27deec289fb176
+F src/pager.c ad62daa0c21e27ae332b3ceb4f579a2a97046ddc
+F src/pager.h 9f81b08efb06db4ba8be69446e10b005c351373d
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 49e718c095810c6b3334e3a6d89970aceaddefce
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
@@ -972,7 +972,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 4344483f7d7f64dffadde0053e6c745948db9486
-R 8791a00ec886d9269177e370bb87a885
-U drh
-Z bc76726412c4dd0d1fa3c4a2fb94fbb7
+P 2b35c5144ddcc2ed6d0fcaa8c0ba5d20b9487be7
+R 6634e59d536aa69184f81d4953f270aa
+U dan
+Z b63f5f0c2bfaf50eddb56fa49684523d

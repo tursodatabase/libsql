@@ -704,6 +704,8 @@ int sqlite3BtreeCopyFile(Btree *pTo, Btree *pFrom){
   rc = sqlite3_backup_finish(&b);
   if( rc==SQLITE_OK ){
     pTo->pBt->pageSizeFixed = 0;
+  }else{
+    sqlite3PagerClearCache(sqlite3BtreePager(b.pDest));
   }
 
   assert( sqlite3BtreeIsInTrans(pTo)==0 );

@@ -6836,6 +6836,13 @@ int sqlite3PagerCloseWal(Pager *pPager){
   return rc;
 }
 
+/*
+** Unless this is an in-memory or temporary database, clear the pager cache.
+*/
+void sqlite3PagerClearCache(Pager *pPager){
+  if( !MEMDB && pPager->tempFile==0 ) pager_reset(pPager);
+}
+
 #ifdef SQLITE_HAS_CODEC
 /*
 ** This function is called by the wal module when writing page content
