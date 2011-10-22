@@ -1,5 +1,5 @@
-C Purge\slingering\sreferences\sto\sSQLITE_STAT2\sfrom\sthe\scode\sand\stest\sscripts.
-D 2011-10-21T19:06:32.669
+C Avoid\sa\sharmless\sreference\sto\san\suninitialized\svariable\sfollowing\san\nerror\sin\sFTS3.\s\sThis\sis\snot\sa\sbug.\s\sThe\schange\sis\sto\ssilence\sa\svalgrind\nwarning.
+D 2011-10-22T21:00:46.835
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -238,7 +238,7 @@ F src/update.c 25e046a8f69d5e557aabde2000487b8545509d8d
 F src/utf.c 890c67dcfcc7a74623c95baac7535aadfe265e84
 F src/util.c df83983bd57057df4951516880066b42b7055269
 F src/vacuum.c 0c0ba2242355c6048d65e2b333abe0f7c06348fa
-F src/vdbe.c 251381bff459154bf239e9977bd39b22bcb7a94c
+F src/vdbe.c 326994a64a9a08853122200dc9f62cb96b8f0831
 F src/vdbe.h f0725ee997db869ecae5bb70a71612aabeca7755
 F src/vdbeInt.h 693d6ac6810298fc6b4c503cfbe3f99a240f40af
 F src/vdbeapi.c 11dc47987abacb76ad016dcf5abc0dc422482a98
@@ -971,7 +971,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 76de9914bed11abda3898928633ad09d5a284f84
-R 9b3a6c060ffdadcd5f6abcd839fba359
+P aed2bf7a3c828a7191389b3f8235a9387977b476
+R 581537dd5ceacce0228b1e700fb5fa3e
 U drh
-Z ef6fbf08b85d3319379c1b870a96f90d
+Z b9c4b650240d28ae14b5d71fc3a026c4
