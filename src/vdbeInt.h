@@ -152,6 +152,10 @@ struct Mem {
   u16 flags;          /* Some combination of MEM_Null, MEM_Str, MEM_Dyn, etc. */
   u8  type;           /* One of SQLITE_NULL, SQLITE_TEXT, SQLITE_INTEGER, etc */
   u8  enc;            /* SQLITE_UTF8, SQLITE_UTF16BE, SQLITE_UTF16LE */
+#ifdef SQLITE_DEBUG
+  Mem *pScopyFrom;    /* This Mem is a shallow copy of pScopyFrom */
+  void *pFiller;      /* So that sizeof(Mem) is a multiple of 8 */
+#endif
   void (*xDel)(void *);  /* If not null, call this function to delete Mem.z */
   char *zMalloc;      /* Dynamic buffer allocated by sqlite3_malloc() */
 };
@@ -178,6 +182,7 @@ struct Mem {
 #define MEM_Blob      0x0010   /* Value is a BLOB */
 #define MEM_RowSet    0x0020   /* Value is a RowSet object */
 #define MEM_Frame     0x0040   /* Value is a VdbeFrame object */
+#define MEM_Invalid   0x0080   /* Value is undefined */
 #define MEM_TypeMask  0x00ff   /* Mask of type bits */
 
 /* Whenever Mem contains a valid string or blob representation, one of
@@ -191,18 +196,24 @@ struct Mem {
 #define MEM_Ephem     0x1000   /* Mem.z points to an ephemeral string */
 #define MEM_Agg       0x2000   /* Mem.z points to an agg function context */
 #define MEM_Zero      0x4000   /* Mem.i contains count of 0s appended to blob */
-
 #ifdef SQLITE_OMIT_INCRBLOB
   #undef MEM_Zero
   #define MEM_Zero 0x0000
 #endif
-
 
 /*
 ** Clear any existing type flags from a Mem and replace them with f
 */
 #define MemSetTypeFlag(p, f) \
    ((p)->flags = ((p)->flags&~(MEM_TypeMask|MEM_Zero))|f)
+
+/*
+** Return true if a memory cell is not marked as invalid.  This macro
+** is for use inside assert() statements only.
+*/
+#ifdef SQLITE_DEBUG
+#define memIsValid(M)  ((M)->flags & MEM_Invalid)==0
+#endif
 
 
 /* A VdbeFunc is just a FuncDef (defined in sqliteInt.h) that contains
@@ -391,6 +402,10 @@ int sqlite3VdbeCloseStatement(Vdbe *, int);
 void sqlite3VdbeFrameDelete(VdbeFrame*);
 int sqlite3VdbeFrameRestore(VdbeFrame *);
 void sqlite3VdbeMemStoreType(Mem *pMem);
+
+#ifdef SQLITE_DEBUG
+void sqlite3VdbeMemPrepareToChange(Vdbe*,Mem*);
+#endif
 
 #ifndef SQLITE_OMIT_FOREIGN_KEY
 int sqlite3VdbeCheckFk(Vdbe *, int);

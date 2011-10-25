@@ -380,7 +380,7 @@ static void fkLookupParent(
       sqlite3VdbeAddOp3(v, OP_OpenRead, iCur, pIdx->tnum, iDb);
       sqlite3VdbeChangeP4(v, -1, (char*)pKey, P4_KEYINFO_HANDOFF);
       for(i=0; i<nCol; i++){
-        sqlite3VdbeAddOp2(v, OP_SCopy, aiCol[i]+1+regData, regTemp+i);
+        sqlite3VdbeAddOp2(v, OP_Copy, aiCol[i]+1+regData, regTemp+i);
       }
   
       /* If the parent table is the same as the child table, and we are about
