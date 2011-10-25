@@ -53,7 +53,7 @@ set in [open $TOP/manifest]
 set zDate {}
 while {![eof $in]} {
   set line [gets $in]
-  if {[regexp {^D (2.*[0-9])} $line all date]} {
+  if {[regexp {^D (2[-0-9T:]+)} $line all date]} {
     set zDate [string map {T { }} $date]
     break
   }
