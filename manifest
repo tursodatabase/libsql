@@ -1,5 +1,5 @@
-C If\san\serror\soccurs\swithin\ssqlite3_step()\son\sa\sstatement\sprepared\susing\ssqlite3_prepare_v2(),\stransfer\sboth\sthe\serror\scode\sand\serror\smessage\sto\sthe\sdatabase\shandle\sbefore\ssqlite3_step()\sreturns\s(so\sthat\sthey\sare\savailable\svia\ssqlite3_errcode()\sand\ssqlite3_errmsg().\sPrior\sto\sthis\scommit,\sonly\sthe\serror\scode\swas\stransfered.\sThe\serror\smessage\swas\snot\savailable\suntil\safter\seither\ssqlite3_reset()\sor\ssqlite3_finalize()\shad\sbeen\scalled\son\sthe\sstatement\shandle.
-D 2011-10-27T15:19:58.880
+C Avoid\sreporting\sa\sNOMEM\serror\sif\sa\smemory\sallocation\sfails\swhile\scopying\nthe\serror\smessage\sfrom\sa\sprepared\sstatement\sinto\sthe\sdatabase\sconnection.
+D 2011-10-29T01:33:24.945
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -242,7 +242,7 @@ F src/vdbe.c 326994a64a9a08853122200dc9f62cb96b8f0831
 F src/vdbe.h f0725ee997db869ecae5bb70a71612aabeca7755
 F src/vdbeInt.h 9498fc98a2c9e349a4ef13455ff5a3e898f40176
 F src/vdbeapi.c 4dbba7f94f127f6ea8d2d0505ee1f98e5ffbf546
-F src/vdbeaux.c 9cb5c1a8f6b592059372cb8a5f774bdbf5b85853
+F src/vdbeaux.c a950e34449a508d48d90475acc287943a4094f3a
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c 2fc78b3e0fabcc1eaa23cd79dd2e30e6dcfe1e56
 F src/vdbesort.c 468d43c057063e54da4f1988b38b4f46d60e7790
@@ -972,7 +972,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P d980c5b22fd700afb3cac5de5501c9350f2f589e
-R ae51b75095c5b5f8c67203e309153d5d
-U dan
-Z bb68bef02a5a1fffaf7c3c37d61664aa
+P 8f88cc4e616b4b30ed349f89e148f782da5cb6c4
+R e3bd9b4dade9a74f94c70cdba2d29737
+U drh
+Z 8133356b7455845a68123b5226e1c2e4

@@ -2322,9 +2322,11 @@ int sqlite3VdbeTransferError(Vdbe *p){
   sqlite3 *db = p->db;
   int rc = p->rc;
   if( p->zErrMsg ){
+    u8 mallocFailed = db->mallocFailed;
     sqlite3BeginBenignMalloc();
     sqlite3ValueSetStr(db->pErr, -1, p->zErrMsg, SQLITE_UTF8, SQLITE_TRANSIENT);
     sqlite3EndBenignMalloc();
+    db->mallocFailed = mallocFailed;
     db->errCode = rc;
   }else{
     sqlite3Error(db, rc, 0);
