@@ -1,5 +1,5 @@
-C Add\sa\stest\sfor\s[48f29963]\sthat\sdoes\snot\sdepend\son\sFTS.
-D 2011-10-29T15:29:43.114
+C Update\sfkey_malloc.test\sto\saccount\sfor\sthe\ssqlite3_errmsg()\srelated\schanges\sin\s[8f88cc4e61]\sand\s[dcb7879347].
+D 2011-10-29T19:25:08.478
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -406,7 +406,7 @@ F test/fkey1.test 01c7de578e11747e720c2d9aeef27f239853c4da
 F test/fkey2.test 080969fe219b3b082b0e097ac18c6af2e5b0631f
 F test/fkey3.test 5ec899d12b13bcf1e9ef40eff7fb692fdb91392e
 F test/fkey4.test c6c8f9f9be885f95c85c7bceb26f243ad906fd49
-F test/fkey_malloc.test a5ede29bd2f6e56dea78c3d43fb86dd696c068c8
+F test/fkey_malloc.test c3a12acd053c976de09036498eef09b83afa4a80
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
 F test/fts-9fd058691.test 78b887e30ae6816df0e1fed6259de4b5a64ad33c
 F test/fts1a.test 46090311f85da51bb33bd5ce84f7948359c6d8d7
@@ -973,7 +973,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 3ec20c3020e1bb5ec2815848af75cf4847a218e5
-R bee3a4997207c9d3364557054b655c5c
+P fb15f5458eb3e17ce9795c09bffe1224fea0eecd
+R a6284e813abfdfaa34242c22cdfc336d
 U dan
-Z 3b6231d5ae6559c0d9e1b3fbe5372e52
+Z e9b4b54e655d448e180d1bf12ef383ee
