@@ -891,7 +891,7 @@ int sqlite3VtabSavepoint(sqlite3 *db, int op, int iSavepoint){
     for(i=0; rc==SQLITE_OK && i<db->nVTrans; i++){
       VTable *pVTab = db->aVTrans[i];
       const sqlite3_module *pMod = pVTab->pMod->pModule;
-      if( pMod->iVersion>=2 ){
+      if( pVTab->pVtab && pMod->iVersion>=2 ){
         int (*xMethod)(sqlite3_vtab *, int);
         switch( op ){
           case SAVEPOINT_BEGIN:
@@ -906,7 +906,7 @@ int sqlite3VtabSavepoint(sqlite3 *db, int op, int iSavepoint){
             break;
         }
         if( xMethod && pVTab->iSavepoint>iSavepoint ){
-          rc = xMethod(db->aVTrans[i]->pVtab, iSavepoint);
+          rc = xMethod(pVTab->pVtab, iSavepoint);
         }
       }
     }

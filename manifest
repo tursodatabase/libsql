@@ -1,5 +1,5 @@
-C Avoid\sreporting\sa\sNOMEM\serror\sif\sa\smemory\sallocation\sfails\swhile\scopying\nthe\serror\smessage\sfrom\sa\sprepared\sstatement\sinto\sthe\sdatabase\sconnection.
-D 2011-10-29T01:33:24.945
+C Avoid\sattempting\sto\scall\ssavepoint\srelated\smethods\son\sdeleted\ssqlite3_vtab\sobjects.\sFix\sfor\s[48f299634a].
+D 2011-10-29T11:43:04.563
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -247,7 +247,7 @@ F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c 2fc78b3e0fabcc1eaa23cd79dd2e30e6dcfe1e56
 F src/vdbesort.c 468d43c057063e54da4f1988b38b4f46d60e7790
 F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
-F src/vtab.c 901791a47318c0562cd0c676a2c6ff1bc530e582
+F src/vtab.c e9318d88feac85be8e27ee783ac8f5397933fc8a
 F src/wal.c 9658df8d404b82e6b2d40fd05944463214e2d935
 F src/wal.h 66b40bd91bc29a5be1c88ddd1f5ade8f3f48728a
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
@@ -473,6 +473,7 @@ F test/fts3cov.test e0fb00d8b715ddae4a94c305992dfc3ef70353d7
 F test/fts3d.test bf640d79722b720fa1c81834c48cdaa45d531b1a
 F test/fts3defer.test 2ea3fa028f8d9523f9c33dd8acc4555d567ea4ac
 F test/fts3defer2.test 35867d33ba6db03f6c73bd6f5fc333ae14f68c81
+F test/fts3drop.test 1b906e293d6773812587b3dc458cb9e8f3f0c297
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3expr.test 5e745b2b6348499d9ef8d59015de3182072c564c
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
@@ -972,7 +973,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 8f88cc4e616b4b30ed349f89e148f782da5cb6c4
-R e3bd9b4dade9a74f94c70cdba2d29737
-U drh
-Z 8133356b7455845a68123b5226e1c2e4
+P dcb78793474e533c3e4f5c6389ba3c997f062eee
+R 6c1b12fe0cc07129b3d5b7cc8afc854a
+U dan
+Z 248f553ede00e5f9d5bcf3180c09ce04
