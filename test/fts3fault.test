@@ -18,8 +18,6 @@ set ::testprefix fts3fault
 # If SQLITE_ENABLE_FTS3 is not defined, omit this file.
 ifcapable !fts3 { finish_test ; return }
 
-if 1 {
-
 # Test error handling in the sqlite3Fts3Init() function. This is the 
 # function that registers the FTS3 module and various support functions
 # with SQLite.
@@ -146,7 +144,8 @@ do_faultsim_test 7.2 -prep {
   execsql { CREATE VIRTUAL TABLE t1 USING fts4(a, b, matchinfo=fs3) }
 } -test {
   faultsim_test_result {1 {unrecognized matchinfo: fs3}} \
-                       {1 {vtable constructor failed: t1}}
+                       {1 {vtable constructor failed: t1}} \
+                       {1 {SQL logic error or missing database}}
 }
 do_faultsim_test 7.3 -prep { 
   faultsim_delete_and_reopen
@@ -154,9 +153,8 @@ do_faultsim_test 7.3 -prep {
   execsql { CREATE VIRTUAL TABLE t1 USING fts4(a, b, matchnfo=fts3) }
 } -test {
   faultsim_test_result {1 {unrecognized parameter: matchnfo=fts3}} \
-                       {1 {vtable constructor failed: t1}}
-}
-
+                       {1 {vtable constructor failed: t1}} \
+                       {1 {SQL logic error or missing database}}
 }
 
 proc mit {blob} {

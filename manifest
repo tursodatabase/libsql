@@ -1,5 +1,5 @@
-C Update\sfkey_malloc.test\sto\saccount\sfor\sthe\ssqlite3_errmsg()\srelated\schanges\sin\s[8f88cc4e61]\sand\s[dcb7879347].
-D 2011-10-29T19:25:08.478
+C Update\sfts3fault.test\sto\saccount\sfor\sthe\ssqlite3_errmsg()\srelated\schanges\sin\s[8f88cc4e61]\sand\s[dcb7879347].
+D 2011-10-31T06:52:51.929
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -477,7 +477,7 @@ F test/fts3drop.test 1b906e293d6773812587b3dc458cb9e8f3f0c297
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3expr.test 5e745b2b6348499d9ef8d59015de3182072c564c
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
-F test/fts3fault.test f83e556465bb69dc8bc676339eca408dce4ca246
+F test/fts3fault.test cb72dccb0a3b9f730f16c5240f3fcb9303eb1660
 F test/fts3fault2.test b62a2bc843c20414405f80e5eeb78e39bc68fe53
 F test/fts3first.test dbdedd20914c8d539aa3206c9b34a23775644641
 F test/fts3malloc.test b86ea33db9e8c58c0c2f8027a9fcadaf6a1568be
@@ -973,7 +973,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P fb15f5458eb3e17ce9795c09bffe1224fea0eecd
-R a6284e813abfdfaa34242c22cdfc336d
+P 5b82ec6fbbd2f4195ad06dd911de3817373ad5bf
+R 29c8753d0115fb58d01891e5cb413fc9
 U dan
-Z e9b4b54e655d448e180d1bf12ef383ee
+Z 39aba6063ce752fd13bbccdce4880df4
