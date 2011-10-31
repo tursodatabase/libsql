@@ -3167,7 +3167,7 @@ static void bestBtreeIndex(
     ** slower with larger records, presumably because fewer records fit
     ** on one page and hence more pages have to be fetched.
     **
-    ** The ANALYZE command and the sqlite_stat1 and sqlite_stat2 tables do
+    ** The ANALYZE command and the sqlite_stat1 and sqlite_stat3 tables do
     ** not give us data on the relative sizes of table and index records.
     ** So this computation assumes table records are about twice as big
     ** as index records

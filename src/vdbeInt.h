@@ -395,6 +395,7 @@ int sqlite3VdbeCloseStatement(Vdbe *, int);
 void sqlite3VdbeFrameDelete(VdbeFrame*);
 int sqlite3VdbeFrameRestore(VdbeFrame *);
 void sqlite3VdbeMemStoreType(Mem *pMem);
+int sqlite3VdbeTransferError(Vdbe *p);
 
 #ifdef SQLITE_OMIT_MERGE_SORT
 # define sqlite3VdbeSorterInit(Y,Z)      SQLITE_OK

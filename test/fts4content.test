@@ -38,6 +38,10 @@ ifcapable !fts3 {
 #
 #   6.* - Test the effects of messing with the schema of table xxx after
 #         creating a content=xxx FTS index.
+#   
+#   7.* - Test that if content=xxx is specified and table xxx does not
+#         exist, the FTS table can still be used for INSERT and some
+#         SELECT statements.
 #
 
 do_execsql_test 1.1.1 {
@@ -474,5 +478,24 @@ do_execsql_test 7.1.1 {
 do_execsql_test 7.1.2 {
   SELECT docid FROM ft8 WHERE ft8 MATCH 'N';
 } {13 15}
+
+do_execsql_test 7.2.1 {
+  CREATE VIRTUAL TABLE ft9 USING fts4(content=, x);
+  INSERT INTO ft9(docid, x) VALUES(13, 'U O N X G');
+  INSERT INTO ft9(docid, x) VALUES(14, 'C J J U B');
+  INSERT INTO ft9(docid, x) VALUES(15, 'N J Y G X');
+  INSERT INTO ft9(docid, x) VALUES(16, 'R Y D O R');
+  INSERT INTO ft9(docid, x) VALUES(17, 'I Y T Q O');
+}
+do_execsql_test 7.2.2 {
+  SELECT docid FROM ft9 WHERE ft9 MATCH 'N';
+} {13 15}
+do_execsql_test 7.2.3 {
+  SELECT name FROM sqlite_master WHERE name LIKE 'ft9_%';
+} {ft9_segments ft9_segdir ft9_docsize ft9_stat}
+
+do_catchsql_test 7.2.4 {
+  SELECT * FROM ft9 WHERE ft9 MATCH 'N';
+} {1 {SQL logic error or missing database}}
 
 finish_test

@@ -471,7 +471,7 @@ end_of_step:
     ** error has occured, then return the error code in p->rc to the
     ** caller. Set the error code in the database handle to the same value.
     */ 
-    rc = db->errCode = p->rc;
+    rc = sqlite3VdbeTransferError(p);
   }
   return (rc&db->errMask);
 }

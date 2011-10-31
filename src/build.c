@@ -1981,7 +1981,7 @@ static void destroyTable(Parse *pParse, Table *pTab){
 }
 
 /*
-** Remove entries from the sqlite_stat1 and sqlite_stat2 tables
+** Remove entries from the sqlite_statN tables (for N in (1,2,3))
 ** after a DROP INDEX or DROP TABLE command.
 */
 static void sqlite3ClearStatTables(
@@ -1990,18 +1990,15 @@ static void sqlite3ClearStatTables(
   const char *zType,     /* "idx" or "tbl" */
   const char *zName      /* Name of index or table */
 ){
-  static const char *azStatTab[] = { 
-    "sqlite_stat1",
-    "sqlite_stat2",
-    "sqlite_stat3",
-  };
   int i;
   const char *zDbName = pParse->db->aDb[iDb].zName;
-  for(i=0; i<ArraySize(azStatTab); i++){
-    if( sqlite3FindTable(pParse->db, azStatTab[i], zDbName) ){
+  for(i=1; i<=3; i++){
+    char zTab[24];
+    sqlite3_snprintf(sizeof(zTab),zTab,"sqlite_stat%d",i);
+    if( sqlite3FindTable(pParse->db, zTab, zDbName) ){
       sqlite3NestedParse(pParse,
         "DELETE FROM %Q.%s WHERE %s=%Q",
-        zDbName, azStatTab[i], zType, zName
+        zDbName, zTab, zType, zName
       );
     }
   }

@@ -68,7 +68,7 @@ proc catch_fk_error {zSql} {
   if {[string match {*foreign key*} $msg]} {
     return ""
   }
-  if {$msg eq "out of memory"} {
+  if {$msg eq "out of memory" || $msg eq "constraint failed"} {
     error 1
   }
   error $msg

@@ -4304,9 +4304,8 @@ case OP_Last: {        /* jump */
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   pCrsr = pC->pCursor;
-  if( NEVER(pCrsr==0) ){
-    res = 1;
-  }else{
+  res = 0;
+  if( ALWAYS(pCrsr!=0) ){
     rc = sqlite3BtreeLast(pCrsr, &res);
   }
   pC->nullRow = (u8)res;
