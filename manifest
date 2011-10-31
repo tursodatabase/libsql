@@ -1,5 +1,5 @@
-C Pull\sthe\slatest\strunk\schanges\sinto\sthe\sapple-osx\sbranch.
-D 2011-10-31T14:42:31.165
+C Fix\sthe\sos_unix.c\ssource\sfile\sso\sthat\sit\swill\sbuild\sas\spart\sof\san\namalgamation\son\snon-apple\splatforms.
+D 2011-10-31T19:34:47.116
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in acb1a0b8fe8029196afe437f64ead3301731b6f0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -169,7 +169,7 @@ F src/os.c c7a716e36875fb993b6e4f99cae954d504411285
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 68ca0b5e203c7f56bfad37062ba83f94840ef015
+F src/os_unix.c c70a44872d019b9863996658bab0b20e1ff49c6e
 F src/os_win.c 4e61b811ab33d5509e0d96f758f9a9132963fff2
 F src/pager.c 52530f16c3fbaa7f73303338b4d841b857234b28
 F src/pager.h 9f81b08efb06db4ba8be69446e10b005c351373d
@@ -979,7 +979,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P be62ef058bcee55b31127ee779f7ecbf762986f8 6635cd9a7714b681dd8aa96e90be462a40d10178
-R 76b4ba48f5a469af1b620b90084fe1df
+P 4fa9ee794713e7a2298f53d9b517c90745b3408b
+R edb9dada8873231c8fe96b37a819b2c3
 U drh
-Z 5999e74c5857ddb82230fad4eb996c52
+Z 66dd33daf9e4d75f88f8e9a5e64025e1

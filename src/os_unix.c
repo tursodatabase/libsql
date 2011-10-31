@@ -46,6 +46,9 @@
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
 
+#include "btreeInt.h"           /* Use by Apple extensions only */
+
+
 /*
 ** There are various methods for file locking used for concurrency
 ** control:
@@ -4157,7 +4160,6 @@ end_replace_database:
   return rc;
 }
 #define SQLITE_FILE_HEADER_LEN 16
-#include "btreeInt.h"
 /* Check for a conflicting lock.  If one is found, print an this
  ** on standard output using the format string given and return 1.
  ** If there are no conflicting locks, return 0.
