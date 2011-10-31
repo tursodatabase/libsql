@@ -741,7 +741,7 @@ struct sqlite3_io_methods {
 ** retry counts and intervals for certain disk I/O operations for the
 ** windows [VFS] in order to work to provide robustness against
 ** anti-virus programs.  By default, the windows VFS will retry file read,
-** file write, and file delete opertions up to 10 times, with a delay
+** file write, and file delete operations up to 10 times, with a delay
 ** of 25 milliseconds before the first retry and with the delay increasing
 ** by an additional 25 milliseconds with each subsequent retry.  This
 ** opcode allows those to values (10 retries and 25 milliseconds of delay)

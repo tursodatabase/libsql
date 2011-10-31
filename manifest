@@ -1,5 +1,5 @@
-C Add\snew\sfile\sext/fts3/README.content,\sdescribing\sthe\sexperimental\sFTS4\scontent\soption.
-D 2011-10-31T11:36:29.263
+C Fix\sa\stypo\sin\sa\scomment.\s\sNo\scode\schanges.
+D 2011-10-31T12:25:01.056
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -182,7 +182,7 @@ F src/resolve.c 365ab1c870e38596d6869e76fb544fe6e4ffc809
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 80f3ac44a8514b1d107b80f5df4a424ae059d2b6
 F src/shell.c f0ab793261ab045a0b8c47fa2707e8a894d2898f
-F src/sqlite.h.in c3d7085eb5f7d3b4ce7a484e0ecb9082e57daab1
+F src/sqlite.h.in ff950aef7b378963c67add42dda5d446a0b7330e
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h c74457cd2c4bd77683bac76e698bf2ec2d3e13f9
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -974,7 +974,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 3f2d49c6786beb6ff9d56376364ebc6cd9136346
-R 6381e06f1c55fb7700be42aa3a0138e3
-U dan
-Z ff269487aa8ff3e3aac698089b9c29e4
+P 13a9d085e1a5654a97b8d26bae7182ca6c0c237b
+R b059ff356abfc5b4524a9b548916f43e
+U drh
+Z 96e807ea22060094cd672e7fd9baae6e
