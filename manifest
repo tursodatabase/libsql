@@ -1,5 +1,5 @@
-C Fix\sthe\sos_unix.c\ssource\sfile\sso\sthat\sit\swill\sbuild\sas\spart\sof\san\namalgamation\son\snon-apple\splatforms.
-D 2011-10-31T19:34:47.116
+C Fix\sa\sproblem\swith\ssqlite3_backup_step()\sthat\sresulted\sfrom\sa\sfaulty\smerge.
+D 2011-10-31T19:59:09.047
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in acb1a0b8fe8029196afe437f64ead3301731b6f0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -125,7 +125,7 @@ F src/alter.c ac80a0f31189f8b4a524ebf661e47e84536ee7f5
 F src/analyze.c 5a1db16a651ce6310c8b046b2cbb736e030e14b9
 F src/attach.c 12c6957996908edc31c96d7c68d4942c2474405f
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
-F src/backup.c 096853864aeb7b2b8c6fc7ec346d845eac16566a
+F src/backup.c 4368158da74d4711888e03264105c5c527d76caf
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 601b808e1f1e7d0d17270f6103c5759633f5f76f
@@ -979,7 +979,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 4fa9ee794713e7a2298f53d9b517c90745b3408b
-R edb9dada8873231c8fe96b37a819b2c3
+P b2f7639c8faf962239d41bb3a151448fad84e84c
+R 8d574b43105259909dffa0ccb1362b89
 U drh
-Z 66dd33daf9e4d75f88f8e9a5e64025e1
+Z 26dda03107425061088e3704204c7d17
