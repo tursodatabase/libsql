@@ -70,7 +70,7 @@ proc sf_execsql {sql {db db}} {
 #   Show that there are two possible plans for querying the table with
 #   a range constraint on the indexed column - "full table scan" or "use 
 #   the index". When the range is specified using literal values, SQLite
-#   is able to pick the best plan based on the samples in sqlite_stat2.
+#   is able to pick the best plan based on the samples in sqlite_stat3.
 #
 # analyze3-1.1.4 - 3.1.9
 #   Show that using SQL variables produces the same results as using

@@ -2312,6 +2312,30 @@ void sqlite3VdbeResetStepResult(Vdbe *p){
 }
 
 /*
+** Copy the error code and error message belonging to the VDBE passed
+** as the first argument to its database handle (so that they will be 
+** returned by calls to sqlite3_errcode() and sqlite3_errmsg()).
+**
+** This function does not clear the VDBE error code or message, just
+** copies them to the database handle.
+*/
+int sqlite3VdbeTransferError(Vdbe *p){
+  sqlite3 *db = p->db;
+  int rc = p->rc;
+  if( p->zErrMsg ){
+    u8 mallocFailed = db->mallocFailed;
+    sqlite3BeginBenignMalloc();
+    sqlite3ValueSetStr(db->pErr, -1, p->zErrMsg, SQLITE_UTF8, SQLITE_TRANSIENT);
+    sqlite3EndBenignMalloc();
+    db->mallocFailed = mallocFailed;
+    db->errCode = rc;
+  }else{
+    sqlite3Error(db, rc, 0);
+  }
+  return rc;
+}
+
+/*
 ** Clean up a VDBE after execution but do not delete the VDBE just yet.
 ** Write any error messages into *pzErrMsg.  Return the result code.
 **
@@ -2338,18 +2362,9 @@ int sqlite3VdbeReset(Vdbe *p){
   ** instructions yet, leave the main database error information unchanged.
   */
   if( p->pc>=0 ){
-    if( p->zErrMsg ){
-      sqlite3BeginBenignMalloc();
-      sqlite3ValueSetStr(db->pErr,-1,p->zErrMsg,SQLITE_UTF8,SQLITE_TRANSIENT);
-      sqlite3EndBenignMalloc();
-      db->errCode = p->rc;
-      sqlite3DbFree(db, p->zErrMsg);
-      p->zErrMsg = 0;
-    }else if( p->rc ){
-      sqlite3Error(db, p->rc, 0);
-    }else{
-      sqlite3Error(db, SQLITE_OK, 0);
-    }
+    sqlite3VdbeTransferError(p);
+    sqlite3DbFree(db, p->zErrMsg);
+    p->zErrMsg = 0;
     if( p->runOnlyOnce ) p->expired = 1;
   }else if( p->rc && p->expired ){
     /* The expired flag was set on the VDBE before the first call

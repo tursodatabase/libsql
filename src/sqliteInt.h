@@ -77,13 +77,6 @@
 #endif
 
 /*
-** The number of samples of an index that SQLite takes in order to 
-** construct a histogram of the table content when running ANALYZE
-** and with SQLITE_ENABLE_STAT2
-*/
-#define SQLITE_INDEX_SAMPLES 10
-
-/*
 ** The following macros are used to cast pointers to integers and
 ** integers to pointers.  The way you do this varies from one compiler
 ** to the next, so we have developed the following set of #if statements
@@ -1522,8 +1515,9 @@ struct Index {
 };
 
 /*
-** Each sample stored in the sqlite_stat2 table is represented in memory 
-** using a structure of this type.
+** Each sample stored in the sqlite_stat3 table is represented in memory 
+** using a structure of this type.  See documentation at the top of the
+** analyze.c source file for additional information.
 */
 struct IndexSample {
   union {

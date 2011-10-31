@@ -1178,5 +1178,20 @@ do_test vtab1-17.1 {
   catchsql { CREATE VIRTUAL TABLE t4 USING echo(t3); }
 } {1 {vtable constructor failed: t4}}
 
+# This test verifies that ticket 48f29963 is fixed.
+#
+do_test vtab1-17.1 {
+  execsql { 
+    CREATE TABLE t5(a, b);
+    CREATE VIRTUAL TABLE e5 USING echo_v2(t5);
+    BEGIN;
+      INSERT INTO e5 VALUES(1, 2);
+      DROP TABLE e5;
+      SAVEPOINT one;
+      ROLLBACK TO one;
+    COMMIT;
+  }
+} {}
+
 unset -nocomplain echo_module_begin_fail
 finish_test

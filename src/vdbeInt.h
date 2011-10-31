@@ -416,6 +416,7 @@ int sqlite3VdbeFrameRestore(VdbeFrame *);
 void sqlite3VdbeMemStoreType(Mem *pMem);
 void sqlite3VdbePreUpdateHook(
     Vdbe *, VdbeCursor *, int, const char*, Table *, i64, int);
+int sqlite3VdbeTransferError(Vdbe *p);
 
 #ifdef SQLITE_OMIT_MERGE_SORT
 # define sqlite3VdbeSorterInit(Y,Z)      SQLITE_OK
