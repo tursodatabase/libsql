@@ -1,5 +1,5 @@
-C Add\sa\smissing\sva_end()\smacro\sto\sfts3.c.
-D 2011-11-04T10:37:21.486
+C Change\sa\smemcpy()\sin\ssqlite3FileSuffix()\sto\smemmove()\son\sthe\sgrounds\sthat\sthe\ssource\sand\sdestination\smay\soverlap.
+D 2011-11-04T12:05:52.920
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -237,7 +237,7 @@ F src/tokenize.c c819d9f72168a035d545a5bdafe9b085b20df705
 F src/trigger.c 1cfb80e2290ef66ea89cb4e821caae65a02c0d56
 F src/update.c 25e046a8f69d5e557aabde2000487b8545509d8d
 F src/utf.c 890c67dcfcc7a74623c95baac7535aadfe265e84
-F src/util.c df83983bd57057df4951516880066b42b7055269
+F src/util.c 01238e2b0f24a14779181dbf991fe02620a80e31
 F src/vacuum.c 0c0ba2242355c6048d65e2b333abe0f7c06348fa
 F src/vdbe.c 326994a64a9a08853122200dc9f62cb96b8f0831
 F src/vdbe.h f0725ee997db869ecae5bb70a71612aabeca7755
@@ -974,7 +974,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P e2f08426d7a84a2ac6148f485b7af377201a175b
-R 19c57c219de81f8809cf2fb3735a6990
+P e6f825748a1d510c8f5529c79656bb5db9216231
+R 68c2a70c630ede591afbf936bbf79f75
 U dan
-Z 0b59c1e4adcdd28152b0ec79ab89340f
+Z 793b5014c789d9668df6d06bf87edd80
