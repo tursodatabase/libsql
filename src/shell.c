@@ -2085,7 +2085,8 @@ static int do_meta_command(char *zLine, struct callback_data *p){
           "  (SELECT sql sql, type type, tbl_name tbl_name, name name"
           "     FROM sqlite_master UNION ALL"
           "   SELECT sql, type, tbl_name, name FROM sqlite_temp_master) "
-          "WHERE tbl_name LIKE shellstatic() AND type!='meta' AND sql NOTNULL "
+          "WHERE lower(tbl_name) LIKE shellstatic()"
+          "  AND type!='meta' AND sql NOTNULL "
           "ORDER BY substr(type,2,1), name",
           callback, &data, &zErrMsg);
         zShellStatic = 0;

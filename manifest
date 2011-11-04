@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sINSERT\sINTO\s...\sSELECT\sstatement\sworks\scorrectly\seven\swhen\nthe\sdestination\stable\scontains\san\sINTEGER\sPRIMARY\sKEY\sON\sCONFLICT...\scolumn.\nTicket\s[676bc02b87176125].
-D 2011-11-04T00:23:53.875
+C Enhance\sthe\sshell\sso\sthat\sthe\s".schema"\scommand\sworks\swith\scase\sinsensitive\nLIKE\spatterns\seven\swith\sPRAGMA\scache_sensitive_like=ON.
+D 2011-11-04T00:35:56.173
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -181,7 +181,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 365ab1c870e38596d6869e76fb544fe6e4ffc809
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 80f3ac44a8514b1d107b80f5df4a424ae059d2b6
-F src/shell.c f0ab793261ab045a0b8c47fa2707e8a894d2898f
+F src/shell.c 6d2ad7f80adc9c8c3195412879af36eb3196c1b6
 F src/sqlite.h.in ff950aef7b378963c67add42dda5d446a0b7330e
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h c74457cd2c4bd77683bac76e698bf2ec2d3e13f9
@@ -974,7 +974,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P c7c6050ef060877ebe77b41d959e9df13f8c9b5e
-R 86847a1d583226c862e98772b444bf54
+P 6f9898db7ff0730cc03f561f9c32ef3dee7e5d81
+R d2ce493b65686d96618972d4df6ad36c
 U drh
-Z a5a032e1b2e9278ae9ce6bac983d1037
+Z 773ddc7cfde2cddd1397075b47c1fbba
