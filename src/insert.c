@@ -1578,31 +1578,25 @@ static int xferCompatibleIndex(Index *pDest, Index *pSrc){
 **
 **     INSERT INTO tab1 SELECT * FROM tab2;
 **
-** This optimization is only attempted if
+** The xfer optimization transfers raw records from tab2 over to tab1.  
+** Columns are not decoded and reassemblied, which greatly improves
+** performance.  Raw index records are transferred in the same way.
 **
-**    (1)  tab1 and tab2 have identical schemas including all the
-**         same indices and constraints
+** The xfer optimization is only attempted if tab1 and tab2 are compatible.
+** There are lots of rules for determining compatibility - see comments
+** embedded in the code for details.
 **
-**    (2)  tab1 and tab2 are different tables
+** This routine returns TRUE if the optimization is guaranteed to be used.
+** Sometimes the xfer optimization will only work if the destination table
+** is empty - a factor that can only be determined at run-time.  In that
+** case, this routine generates code for the xfer optimization but also
+** does a test to see if the destination table is empty and jumps over the
+** xfer optimization code if the test fails.  In that case, this routine
+** returns FALSE so that the caller will know to go ahead and generate
+** an unoptimized transfer.  This routine also returns FALSE if there
+** is no chance that the xfer optimization can be applied.
 **
-**    (3)  There must be no triggers on tab1
-**
-**    (4)  The result set of the SELECT statement is "*"
-**
-**    (5)  The SELECT statement has no WHERE, HAVING, ORDER BY, GROUP BY,
-**         or LIMIT clause.
-**
-**    (6)  The SELECT statement is a simple (not a compound) select that
-**         contains only tab2 in its FROM clause
-**
-** This method for implementing the INSERT transfers raw records from
-** tab2 over to tab1.  The columns are not decoded.  Raw records from
-** the indices of tab2 are transfered to tab1 as well.  In so doing,
-** the resulting tab1 has much less fragmentation.
-**
-** This routine returns TRUE if the optimization is attempted.  If any
-** of the conditions above fail so that the optimization should not
-** be attempted, then this routine returns FALSE.
+** This optimization is particularly useful at making VACUUM run faster.
 */
 static int xferOptimization(
   Parse *pParse,        /* Parser context */
@@ -1641,9 +1635,6 @@ static int xferOptimization(
   if( onError==OE_Default ){
     if( pDest->iPKey>=0 ) onError = pDest->keyConf;
     if( onError==OE_Default ) onError = OE_Abort;
-  }
-  if( onError!=OE_Abort && onError!=OE_Rollback ){
-    return 0;   /* Cannot do OR REPLACE or OR IGNORE or OR FAIL */
   }
   assert(pSelect->pSrc);   /* allocated even if there is no FROM clause */
   if( pSelect->pSrc->nSrc!=1 ){
@@ -1749,16 +1740,12 @@ static int xferOptimization(
   }
 #endif
   if( (pParse->db->flags & SQLITE_CountRows)!=0 ){
-    return 0;
+    return 0;  /* xfer opt does not play well with PRAGMA count_changes */
   }
 
-  /* If we get this far, it means either:
-  **
-  **    *   We can always do the transfer if the table contains an
-  **        an integer primary key
-  **
-  **    *   We can conditionally do the transfer if the destination
-  **        table is empty.
+  /* If we get this far, it means that the xfer optimization is at
+  ** least a possibility, though it might only work if the destination
+  ** table (tab1) is initially empty.
   */
 #ifdef SQLITE_TEST
   sqlite3_xferopt_count++;
@@ -1770,16 +1757,23 @@ static int xferOptimization(
   iDest = pParse->nTab++;
   regAutoinc = autoIncBegin(pParse, iDbDest, pDest);
   sqlite3OpenTable(pParse, iDest, iDbDest, pDest, OP_OpenWrite);
-  if( (pDest->iPKey<0 && pDest->pIndex!=0) || destHasUniqueIdx ){
-    /* If tables do not have an INTEGER PRIMARY KEY and there
-    ** are indices to be copied and the destination is not empty,
-    ** we have to disallow the transfer optimization because the
-    ** the rowids might change which will mess up indexing.
+  if( (pDest->iPKey<0 && pDest->pIndex!=0)          /* (1) */
+   || destHasUniqueIdx                              /* (2) */
+   || (onError!=OE_Abort && onError!=OE_Rollback)   /* (3) */
+  ){
+    /* In some circumstances, we are able to run the xfer optimization
+    ** only if the destination table is initially empty.  This code makes
+    ** that determination.  Conditions under which the destination must
+    ** be empty:
     **
-    ** Or if the destination has a UNIQUE index and is not empty,
-    ** we also disallow the transfer optimization because we cannot
-    ** insure that all entries in the union of DEST and SRC will be
-    ** unique.
+    ** (1) There is no INTEGER PRIMARY KEY but there are indices.
+    **     (If the destination is not initially empty, the rowid fields
+    **     of index entries might need to change.)
+    **
+    ** (2) The destination has a unique index.  (The xfer optimization 
+    **     is unable to test uniqueness.)
+    **
+    ** (3) onError is something other than OE_Abort and OE_Rollback.
     */
     addr1 = sqlite3VdbeAddOp2(v, OP_Rewind, iDest, 0);
     emptyDestTest = sqlite3VdbeAddOp2(v, OP_Goto, 0, 0);
