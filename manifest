@@ -1,5 +1,5 @@
-C Version\s3.7.9
-D 2011-11-01T00:52:41.132
+C Make\ssure\sthe\sINSERT\sINTO\s...\sSELECT\sstatement\sworks\scorrectly\seven\swhen\nthe\sdestination\stable\scontains\san\sINTEGER\sPRIMARY\sKEY\sON\sCONFLICT...\scolumn.\nTicket\s[676bc02b87176125].
+D 2011-11-04T00:23:53.875
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -142,7 +142,7 @@ F src/global.c e230227de13601714b29f9363028514aada5ae2f
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c ca18783512323f74aaf4ee74b46ffd75ec80d031
+F src/insert.c bfe25a1d333658bd6f79fded6581d8a6962ce272
 F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
@@ -525,7 +525,7 @@ F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
 F test/insert.test aef273dd1cee84cc92407469e6bd1b3cdcb76908
 F test/insert2.test 4f3a04d168c728ed5ec2c88842e772606c7ce435
 F test/insert3.test 1b7db95a03ad9c5013fdf7d6722b6cd66ee55e30
-F test/insert4.test 63ea672b0fc6d3a9a0ccee774a771510b1e684c4
+F test/insert4.test 03f1644c4f2393e26e6b12d105ce375811178ace
 F test/insert5.test 394f96728d1258f406fe5f5aeb0aaf29487c39a6
 F test/intarray.test 066b7d7ac38d25bf96f87f1b017bfc687551cdd4
 F test/interrupt.test 42e7cf98646fd9cb4a3b131a93ed3c50b9e149f1
@@ -974,8 +974,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 6635cd9a7714b681dd8aa96e90be462a40d10178
-R b059ff356abfc5b4524a9b548916f43e
-T +sym-version-3.7.9 *
+P c7c6050ef060877ebe77b41d959e9df13f8c9b5e
+R 86847a1d583226c862e98772b444bf54
 U drh
-Z a9ecbb5c487c786a176874d979505217
+Z a5a032e1b2e9278ae9ce6bac983d1037

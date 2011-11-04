@@ -1639,7 +1639,8 @@ static int xferOptimization(
   }
 #endif
   if( onError==OE_Default ){
-    onError = OE_Abort;
+    if( pDest->iPKey>=0 ) onError = pDest->keyConf;
+    if( onError==OE_Default ) onError = OE_Abort;
   }
   if( onError!=OE_Abort && onError!=OE_Rollback ){
     return 0;   /* Cannot do OR REPLACE or OR IGNORE or OR FAIL */
