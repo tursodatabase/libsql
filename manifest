@@ -1,5 +1,5 @@
-C Enhance\sthe\sshell\sso\sthat\sthe\s".schema"\scommand\sworks\swith\scase\sinsensitive\nLIKE\spatterns\seven\swith\sPRAGMA\scache_sensitive_like=ON.
-D 2011-11-04T00:35:56.173
+C Use\smkdir()\sand\srmdir()\srather\sthan\sopen()\sand\sunlink()\sto\screate\sthe\slock\nfiles\swith\sthe\sunix-dotlock\sVFS.\s\sThe\schange\sis\sbackwards\scompatible\sand,\nwe\sare\stold,\sworks\sbetter\son\ssome\snetwork\sfilesystems.
+D 2011-11-04T02:24:02.845
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/os.c 5d9b02782ed36345348d6fe21d7762ed3a9cfd2a
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c ddda0b1c5ae536669634d7bff31b3f8f4d654866
+F src/os_unix.c 32f2ac2adbbba6acb649915a6953524ecf4cf9d5
 F src/os_win.c 49d418916428a59d773f39993db0ecde56ab4c37
 F src/pager.c ad62daa0c21e27ae332b3ceb4f579a2a97046ddc
 F src/pager.h 9f81b08efb06db4ba8be69446e10b005c351373d
@@ -699,7 +699,7 @@ F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
 F test/superlock.test 7b1167925e9d30a5d1f0701d24812fdda42c3a86
 F test/sync.test a34cd43e98b7fb84eabbf38f7ed8f7349b3f3d85
-F test/syscall.test 966addf703faee6a5d509abe6d8885e393e552fd
+F test/syscall.test 2a922050dbee032f587249b070fb42692f5e1e22
 F test/sysfault.test c79441d88d23696fbec7b147dba98d42a04f523f
 F test/table.test a59d985ca366e39b17b175f387f9d5db5a18d4e2
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
@@ -974,7 +974,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 6f9898db7ff0730cc03f561f9c32ef3dee7e5d81
-R d2ce493b65686d96618972d4df6ad36c
+P b06bf3b3605a3c39cdfbb76c9a9f6b5202bb95ec
+R 044a4088718b0a84e4c3090a9efafe25
 U drh
-Z 773ddc7cfde2cddd1397075b47c1fbba
+Z 61f6de61b36ef0e121c72533e9e5fa9c
