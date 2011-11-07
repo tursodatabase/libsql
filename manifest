@@ -1,7 +1,7 @@
-C Change\sthe\sdefault\sfile\sformat\sfrom\s1\sto\s4.\s\sThis\smeans\sthat,\sunless\nPRAGMA\slegacy_file_format=ON\sis\sused\sfirst,\nnew\sdatabases\swill\snot\sbe\sreadable\sby\sversions\sprior\sto\s3.3.0\s(2006-01-10).
-D 2011-11-07T13:05:23.752
+C Add\sa\smakefile\starget\sfor\stclsqlite3.c\sto\sMakefile.in.
+D 2011-11-07T16:46:43.166
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
+F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc dcad80fa69f17d46fe6778ba873fc108ca16298d
 F Makefile.vxworks 1deb39c8bb047296c30161ffa10c1b5423e632f9
@@ -974,7 +974,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 5dbfaed8c3e09ea35033dacf6faa3d6a0202cc68
-R 91210a7cb330216247f576d63b7cb22e
+P a35f52b1ad22c2ad49fb1083f892b92c72da348c
+R f257df2fa7b8aed0523718d037ef131f
 U drh
-Z ee567ee7aeddc37d4ee7c9054a23b5ee
+Z 0907ff28d067a85c58af2436afc0a409
