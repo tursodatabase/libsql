@@ -4401,13 +4401,15 @@ sqlite3_stmt *sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt);
 ** on the same [database connection] D, or NULL for
 ** the first call for each function on D.
 **
+** The commit and rollback hook callbacks are not reentrant.
 ** The callback implementation must not do anything that will modify
 ** the database connection that invoked the callback.  Any actions
 ** to modify the database connection must be deferred until after the
 ** completion of the [sqlite3_step()] call that triggered the commit
 ** or rollback hook in the first place.
-** Note that [sqlite3_prepare_v2()] and [sqlite3_step()] both modify their
-** database connections for the meaning of "modify" in this paragraph.
+** Note that running any other SQL statements, including SELECT statements,
+** or merely calling [sqlite3_prepare_v2()] and [sqlite3_step()] will modify
+** the database connections for the meaning of "modify" in this paragraph.
 **
 ** ^Registering a NULL function disables the callback.
 **
