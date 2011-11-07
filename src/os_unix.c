@@ -2951,35 +2951,48 @@ static int nfsUnlock(sqlite3_file *id, int eFileLock){
 */
 static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
   int got;
+  int prior = 0;
 #if (!defined(USE_PREAD) && !defined(USE_PREAD64))
   i64 newOffset;
 #endif
   TIMER_START;
+  do{
 #if defined(USE_PREAD)
-  do{ got = osPread(id->h, pBuf, cnt, offset); }while( got<0 && errno==EINTR );
-  SimulateIOError( got = -1 );
+    got = osPread(id->h, pBuf, cnt, offset);
+    SimulateIOError( got = -1 );
 #elif defined(USE_PREAD64)
-  do{ got = osPread64(id->h, pBuf, cnt, offset); }while( got<0 && errno==EINTR);
-  SimulateIOError( got = -1 );
+    got = osPread64(id->h, pBuf, cnt, offset);
+    SimulateIOError( got = -1 );
 #else
-  newOffset = lseek(id->h, offset, SEEK_SET);
-  SimulateIOError( newOffset-- );
-  if( newOffset!=offset ){
-    if( newOffset == -1 ){
-      ((unixFile*)id)->lastErrno = errno;
-    }else{
-      ((unixFile*)id)->lastErrno = 0;			
+    newOffset = lseek(id->h, offset, SEEK_SET);
+    SimulateIOError( newOffset-- );
+    if( newOffset!=offset ){
+      if( newOffset == -1 ){
+        ((unixFile*)id)->lastErrno = errno;
+      }else{
+        ((unixFile*)id)->lastErrno = 0;			
+      }
+      return -1;
     }
-    return -1;
-  }
-  do{ got = osRead(id->h, pBuf, cnt); }while( got<0 && errno==EINTR );
+    got = osRead(id->h, pBuf, cnt);
 #endif
+    if( got==cnt ) break;
+    if( got<0 ){
+      if( errno==EINTR ){ got = 1; continue; }
+      prior = 0;
+      ((unixFile*)id)->lastErrno = errno;
+      break;
+    }else if( got>0 ){
+      cnt -= got;
+      offset += got;
+      prior += got;
+      pBuf = (void*)(got + (char*)pBuf);
+    }
+  }while( got>0 );
   TIMER_END;
-  if( got<0 ){
-    ((unixFile*)id)->lastErrno = errno;
-  }
-  OSTRACE(("READ    %-3d %5d %7lld %llu\n", id->h, got, offset, TIMER_ELAPSED));
-  return got;
+  OSTRACE(("READ    %-3d %5d %7lld %llu\n",
+            id->h, got+prior, offset-prior, TIMER_ELAPSED));
+  return got+prior;
 }
 
 /*
