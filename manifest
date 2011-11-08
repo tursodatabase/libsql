@@ -1,5 +1,5 @@
-C Version\s3.7.9
-D 2011-11-01T00:52:41.132
+C Cherrypick\sthe\s[5dbfaed8c3]\spatch\sso\sthat\sSQLITE_OMIT_WAL\sworks\sagain.
+D 2011-11-08T15:06:05.970
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c ddda0b1c5ae536669634d7bff31b3f8f4d654866
 F src/os_win.c 49d418916428a59d773f39993db0ecde56ab4c37
-F src/pager.c ad62daa0c21e27ae332b3ceb4f579a2a97046ddc
+F src/pager.c db33d4bf1e3e019c34c220971cc6c3aa07c30f54
 F src/pager.h 9f81b08efb06db4ba8be69446e10b005c351373d
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 49e718c095810c6b3334e3a6d89970aceaddefce
@@ -974,8 +974,10 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 6635cd9a7714b681dd8aa96e90be462a40d10178
-R b059ff356abfc5b4524a9b548916f43e
-T +sym-version-3.7.9 *
+P c7c6050ef060877ebe77b41d959e9df13f8c9b5e
+R b1074df93a84469af8101d94bb6b2e3f
+T *branch * omit-wal-fix
+T *sym-omit-wal-fix *
+T -sym-trunk *
 U drh
-Z a9ecbb5c487c786a176874d979505217
+Z bfe4c31ef99626d4d4e4796969e6c126
