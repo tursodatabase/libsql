@@ -365,16 +365,25 @@ int sqlite3_config(int op, ...){
     }
 
     case SQLITE_CONFIG_PCACHE: {
-      /* Specify an alternative page cache implementation */
-      sqlite3GlobalConfig.pcache = *va_arg(ap, sqlite3_pcache_methods*);
+      /* no-op */
+      break;
+    }
+    case SQLITE_CONFIG_GETPCACHE: {
+      /* now an error */
+      rc = SQLITE_ERROR;
       break;
     }
 
-    case SQLITE_CONFIG_GETPCACHE: {
-      if( sqlite3GlobalConfig.pcache.xInit==0 ){
+    case SQLITE_CONFIG_PCACHE2: {
+      /* Specify an alternative page cache implementation */
+      sqlite3GlobalConfig.pcache2 = *va_arg(ap, sqlite3_pcache_methods2*);
+      break;
+    }
+    case SQLITE_CONFIG_GETPCACHE2: {
+      if( sqlite3GlobalConfig.pcache2.xInit==0 ){
         sqlite3PCacheSetDefault();
       }
-      *va_arg(ap, sqlite3_pcache_methods*) = sqlite3GlobalConfig.pcache;
+      *va_arg(ap, sqlite3_pcache_methods2*) = sqlite3GlobalConfig.pcache2;
       break;
     }
 

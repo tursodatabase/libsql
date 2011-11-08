@@ -1,5 +1,5 @@
-C Make\sthe\sunix\sVFS\stolerant\sof\sread()\scalls\sthat\sreturn\sless\sthan\sthe\nrequested\snumber\sof\sbytes.
-D 2011-11-07T18:16:00.449
+C Experimental\schange\sto\sthe\spcache\sinterface\sto\sallow\spage\sbuffers\sto\sbe\sallocated\sseparately\sfrom\stheir\sassociated\scontainer\sstructures.
+D 2011-11-08T20:08:44.098
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -138,7 +138,7 @@ F src/expr.c fbf116f90cabc917ae50bba24a73a0b55519a0c8
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 657212460bf5cfd3ae607d12ea62092844c227b5
 F src/func.c 6261ce00aad9c63cd5b4219249b05683979060e9
-F src/global.c e230227de13601714b29f9363028514aada5ae2f
+F src/global.c 107ccaacb4b30895cf3a3a39decf417c804acfa1
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
@@ -147,7 +147,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
 F src/loadext.c d0d2022a5a07274d408820b978b9e549189d314f
-F src/main.c df06f5229b8046f85dde253dfd7fe35ae9e4902e
+F src/main.c 93d49bc6abf4ccea97721d016b9f45228cff7057
 F src/malloc.c 591aedb20ae40813f1045f2ef253438a334775d9
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 00bd8265c81abb665c48fea1e0c234eb3b922206
@@ -171,9 +171,9 @@ F src/os_win.c 49d418916428a59d773f39993db0ecde56ab4c37
 F src/pager.c db33d4bf1e3e019c34c220971cc6c3aa07c30f54
 F src/pager.h 9f81b08efb06db4ba8be69446e10b005c351373d
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
-F src/pcache.c 49e718c095810c6b3334e3a6d89970aceaddefce
-F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
-F src/pcache1.c 24f5e85a78514584b46190260ba7ab0a66312197
+F src/pcache.c fad8646667e074d06e29028029a0440d852497e5
+F src/pcache.h c770382f9fae4ca5025c5523bd0aa13cd6ddc6f8
+F src/pcache1.c 54fc4ed623157b6f706da961c1d3776a40aa131d
 F src/pragma.c da8ef96b3eec351e81e0061c39810e548bcc96d7
 F src/prepare.c e64261559a3187698a3e7e6c8b001a4f4f98dab4
 F src/printf.c 03104cbff6959ff45df69dc9060ba6212f60a869
@@ -182,9 +182,9 @@ F src/resolve.c 365ab1c870e38596d6869e76fb544fe6e4ffc809
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 80f3ac44a8514b1d107b80f5df4a424ae059d2b6
 F src/shell.c 6d2ad7f80adc9c8c3195412879af36eb3196c1b6
-F src/sqlite.h.in b7a4e8d428e467d820cbb4c1d275fdda88b4d7ab
+F src/sqlite.h.in c436f15dd27782e83d532651394c41fe4b96d1b0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h b0b6df8f7fe739e3cd718debb60f58853666d13e
+F src/sqliteInt.h f87f241b9821a9d466c2711b7345d30ef3624249
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 4568e72dfd36b6a5911f93457364deb072e0b03a
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -208,7 +208,7 @@ F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_func.c cbdec5cededa0761daedde5baf06004a9bf416b5
 F src/test_fuzzer.c f884f6f32e8513d34248d6e1ac8a32047fead254
 F src/test_hexio.c c4773049603151704a6ab25ac5e936b5109caf5a
-F src/test_init.c 5d624ffd0409d424cf9adbfe1f056b200270077c
+F src/test_init.c 1ff3a696ca45e3c4cd7639217ded5d9c41428fed
 F src/test_intarray.c d879bbf8e4ce085ab966d1f3c896a7c8b4f5fc99
 F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c 03313c693cca72959dcaaf79f8d76f21c01e19ff
@@ -219,7 +219,7 @@ F src/test_multiplex.h e99c571bc4968b7a9363b661481f3934bfead61d
 F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
 F src/test_osinst.c 62b0b8ef21ce754cc94e17bb42377ed8795dba32
-F src/test_pcache.c 7bf828972ac0d2403f5cfa4cd14da41f8ebe73d8
+F src/test_pcache.c 708147942470815963efa7a58fe63470a1943a5e
 F src/test_quota.c a391c866217e92986c6f523f05b08aa6956c8419
 F src/test_rtree.c 6d06306e29946dc36f528a3a2cdc3add794656f1
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
@@ -592,7 +592,7 @@ F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
 F test/memdb.test 708a028d6d373e5b3842e4bdc8ba80998c9a4da6
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
-F test/memsubsys1.test 16ce163ac1ace3d71bf0eaa6a821ed153addd91f
+F test/memsubsys1.test c0db8a1e99f4fa07cb858900c55bad9547899aa8
 F test/memsubsys2.test 3a1c1a9de48e5726faa85108b02459fae8cb9ee9
 F test/minmax.test 722d80816f7e096bf2c04f4111f1a6c1ba65453d
 F test/minmax2.test 33504c01a03bd99226144e4b03f7631a274d66e0
@@ -974,7 +974,10 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 4fe5b73115a8b44950767f1b528107261d7312c9
-R 235506ff1af96e54491bff797f85e25a
-U drh
-Z b43cdd5d2255740ef7ed4b6994dd0923
+P a210695abcfa5cb04279edfd04824d881b7c4ada
+R 753cd5b3a540b0935d5201e586350091
+T *branch * experimental-pcache
+T *sym-experimental-pcache *
+T -sym-trunk *
+U dan
+Z 65dd88e6b6c81cfeaddd0d87f1e89623
