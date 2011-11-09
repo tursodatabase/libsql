@@ -346,7 +346,7 @@ void sqlite3Pragma(
     goto pragma_out;
   }
  
-#ifndef SQLITE_OMIT_PAGER_PRAGMAS
+#if !defined(SQLITE_OMIT_PAGER_PRAGMAS) && !defined(SQLITE_OMIT_DEPRECATED)
   /*
   **  PRAGMA [database.]default_cache_size
   **  PRAGMA [database.]default_cache_size=N
@@ -395,7 +395,9 @@ void sqlite3Pragma(
       sqlite3BtreeSetCacheSize(pDb->pBt, pDb->pSchema->cache_size);
     }
   }else
+#endif /* !SQLITE_OMIT_PAGER_PRAGMAS && !SQLITE_OMIT_DEPRECATED */
 
+#if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
   /*
   **  PRAGMA [database.]page_size
   **  PRAGMA [database.]page_size=N
@@ -416,7 +418,7 @@ void sqlite3Pragma(
       ** buffer that the pager module resizes using sqlite3_realloc().
       */
       db->nextPagesize = sqlite3Atoi(zRight);
-      if( SQLITE_NOMEM==sqlite3BtreeSetPageSize(pBt, db->nextPagesize, -1, 0) ){
+      if( SQLITE_NOMEM==sqlite3BtreeSetPageSize(pBt, db->nextPagesize,-1,0) ){
         db->mallocFailed = 1;
       }
     }
@@ -456,6 +458,10 @@ void sqlite3Pragma(
   ** second form attempts to change this setting.  Both
   ** forms return the current setting.
   **
+  ** The absolute value of N is used.  This is undocumented and might
+  ** change.  The only purpose is to provide an easy way to test
+  ** the sqlite3AbsInt32() function.
+  **
   **  PRAGMA [database.]page_count
   **
   ** Return the number of pages in the specified database.
@@ -470,7 +476,8 @@ void sqlite3Pragma(
     if( sqlite3Tolower(zLeft[0])=='p' ){
       sqlite3VdbeAddOp2(v, OP_Pagecount, iDb, iReg);
     }else{
-      sqlite3VdbeAddOp3(v, OP_MaxPgcnt, iDb, iReg, sqlite3Atoi(zRight));
+      sqlite3VdbeAddOp3(v, OP_MaxPgcnt, iDb, iReg, 
+                        sqlite3AbsInt32(sqlite3Atoi(zRight)));
     }
     sqlite3VdbeAddOp2(v, OP_ResultRow, iReg, 1);
     sqlite3VdbeSetNumCols(v, 1);

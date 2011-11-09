@@ -576,6 +576,9 @@ static sqlite3_pcache *pcache1Create(int szPage, int szExtra, int bPurgeable){
   int separateCache = sqlite3GlobalConfig.bCoreMutex>0;
 #endif
 
+  assert( (szPage & (szPage-1))==0 && szPage>=512 && szPage<=65536 );
+  assert( szExtra < 300 );
+
   sz = sizeof(PCache1) + sizeof(PGroup)*separateCache;
   pCache = (PCache1 *)sqlite3_malloc(sz);
   if( pCache ){
@@ -748,17 +751,24 @@ static sqlite3_pcache_page *pcache1Fetch(
       || pGroup->nCurrentPage>=pGroup->nMaxPage
       || pcache1UnderMemoryPressure(pCache)
   )){
-    PCache1 *pOtherCache;
+    PCache1 *pOther;
     pPage = pGroup->pLruTail;
     pcache1RemoveFromHash(pPage);
     pcache1PinPage(pPage);
-    if( (pOtherCache = pPage->pCache)->szPage!=pCache->szPage 
-     || pOtherCache->szExtra!=pCache->szExtra 
-    ){
+    pOther = pPage->pCache;
+
+    /* We want to verify that szPage and szExtra are the same for pOther
+    ** and pCache.  Assert that we can verify this by comparing sums. */
+    assert( (pCache->szPage & (pCache->szPage-1))==0 && pCache->szPage>=512 );
+    assert( pCache->szExtra<512 );
+    assert( (pOther->szPage & (pOther->szPage-1))==0 && pOther->szPage>=512 );
+    assert( pOther->szExtra<512 );
+
+    if( pOther->szPage+pOther->szExtra != pCache->szPage+pCache->szExtra ){
       pcache1FreePage(pPage);
       pPage = 0;
     }else{
-      pGroup->nCurrentPage -= (pOtherCache->bPurgeable - pCache->bPurgeable);
+      pGroup->nCurrentPage -= (pOther->bPurgeable - pCache->bPurgeable);
     }
   }
 
