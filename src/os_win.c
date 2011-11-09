@@ -1445,11 +1445,13 @@ static int winLock(sqlite3_file *id, int locktype){
   ){
     int cnt = 3;
     while( cnt-->0 && (res = LockFile(pFile->h, PENDING_BYTE, 0, 1, 0))==0 ){
-      /* Try 3 times to get the pending lock.  The pending lock might be
-      ** held by another reader process who will release it momentarily.
+      /* Try 3 times to get the pending lock.  This is needed to work
+      ** around problems caused by anti-virus software on windows system.
+      ** If you are using this code as a model for alternative VFSes, do not
+      ** copy this retry logic.  It is a hack intended for windows only.
       */
       OSTRACE(("could not get a PENDING lock. cnt=%d\n", cnt));
-      Sleep(1);
+      if( cnt ) Sleep(1);
     }
     gotPendingLock = res;
     if( !res ){

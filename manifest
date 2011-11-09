@@ -1,5 +1,5 @@
-C Make\sthe\sunix\sVFS\stolerant\sof\sread()\scalls\sthat\sreturn\sless\sthan\sthe\nrequested\snumber\sof\sbytes.
-D 2011-11-07T18:16:00.449
+C Omit\san\sunnecessary\sSleep()\scall\sin\swindows\spending-lock\sretry\nlogic.\s\sEnhance\sthe\scomment\son\sthat\slogic\sto\sdiscourage\speople\nfrom\scopying\sit\sinto\sother\sVFSes.
+D 2011-11-09T18:07:34.181
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -167,7 +167,7 @@ F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 4fbb91726165e105c1679a2660f49a3f4c376e4f
-F src/os_win.c 49d418916428a59d773f39993db0ecde56ab4c37
+F src/os_win.c 6749a95cfe4bf00b71716515ca1c2601aa212ef8
 F src/pager.c db33d4bf1e3e019c34c220971cc6c3aa07c30f54
 F src/pager.h 9f81b08efb06db4ba8be69446e10b005c351373d
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -974,7 +974,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 4fe5b73115a8b44950767f1b528107261d7312c9
-R 235506ff1af96e54491bff797f85e25a
+P a210695abcfa5cb04279edfd04824d881b7c4ada
+R e1dcb4cfde514f4d6d711be7740004c1
 U drh
-Z b43cdd5d2255740ef7ed4b6994dd0923
+Z 8231b98b427b17224b8ab6c5f9a53e24
