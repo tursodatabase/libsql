@@ -684,14 +684,11 @@ void sqlite3Pragma(
   **  PRAGMA [database.]cache_size=N
   **
   ** The first form reports the current local setting for the
-  ** page cache size.  The local setting can be different from
-  ** the persistent cache size value that is stored in the database
-  ** file itself.  The value returned is the maximum number of
-  ** pages in the page cache.  The second form sets the local
-  ** page cache size value.  It does not change the persistent
-  ** cache size stored on the disk so the cache size will revert
-  ** to its default value when the database is closed and reopened.
-  ** N should be a positive integer.
+  ** page cache size. The second form sets the local
+  ** page cache size value.  If N is positive then that is the
+  ** number of pages in the cache.  If N is negative, then the
+  ** number of pages is adjusted so that the cache uses -N kibibytes
+  ** of memory.
   */
   if( sqlite3StrICmp(zLeft,"cache_size")==0 ){
     if( sqlite3ReadSchema(pParse) ) goto pragma_out;
@@ -699,7 +696,7 @@ void sqlite3Pragma(
     if( !zRight ){
       returnSingleInt(pParse, "cache_size", pDb->pSchema->cache_size);
     }else{
-      int size = sqlite3AbsInt32(sqlite3Atoi(zRight));
+      int size = sqlite3Atoi(zRight);
       pDb->pSchema->cache_size = size;
       sqlite3BtreeSetCacheSize(pDb->pBt, pDb->pSchema->cache_size);
     }

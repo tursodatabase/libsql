@@ -20,7 +20,7 @@ struct PCache {
   PgHdr *pDirty, *pDirtyTail;         /* List of dirty pages in LRU order */
   PgHdr *pSynced;                     /* Last synced page in dirty page list */
   int nRef;                           /* Number of referenced pages */
-  int nMax;                           /* Configured cache size */
+  int szCache;                        /* Configured cache size */
   int szPage;                         /* Size of every page in this cache */
   int szExtra;                        /* Size of extra space for each page */
   int bPurgeable;                     /* True if pages are on backing store */
@@ -181,7 +181,7 @@ void sqlite3PcacheOpen(
   p->bPurgeable = bPurgeable;
   p->xStress = xStress;
   p->pStress = pStress;
-  p->nMax = 100;
+  p->szCache = 100;
 }
 
 /*
@@ -196,6 +196,17 @@ void sqlite3PcacheSetPageSize(PCache *pCache, int szPage){
     pCache->pPage1 = 0;
   }
   pCache->szPage = szPage;
+}
+
+/*
+** Compute the number of pages of cache requested.
+*/
+static int numberOfCachePages(PCache *p){
+  if( p->szCache>=0 ){
+    return p->szCache;
+  }else{
+    return (-1024*p->szCache)/(p->szPage+p->szExtra);
+  }
 }
 
 /*
@@ -226,7 +237,7 @@ int sqlite3PcacheFetch(
     if( !p ){
       return SQLITE_NOMEM;
     }
-    sqlite3GlobalConfig.pcache2.xCachesize(p, pCache->nMax);
+    sqlite3GlobalConfig.pcache2.xCachesize(p, numberOfCachePages(pCache));
     pCache->pCache = p;
   }
 
@@ -259,7 +270,7 @@ int sqlite3PcacheFetch(
                   "spill page %d making room for %d - cache used: %d/%d",
                   pPg->pgno, pgno,
                   sqlite3GlobalConfig.pcache.xPagecount(pCache->pCache),
-                  pCache->nMax);
+                  numberOfCachePages(pCache));
 #endif
       rc = pCache->xStress(pCache->pStress, pPg);
       if( rc!=SQLITE_OK && rc!=SQLITE_BUSY ){
@@ -569,7 +580,7 @@ int sqlite3PcachePagecount(PCache *pCache){
 ** Get the suggested cache-size value.
 */
 int sqlite3PcacheGetCachesize(PCache *pCache){
-  return pCache->nMax;
+  return numberOfCachePages(pCache);
 }
 #endif
 
@@ -577,9 +588,10 @@ int sqlite3PcacheGetCachesize(PCache *pCache){
 ** Set the suggested cache-size value.
 */
 void sqlite3PcacheSetCachesize(PCache *pCache, int mxPage){
-  pCache->nMax = mxPage;
+  pCache->szCache = mxPage;
   if( pCache->pCache ){
-    sqlite3GlobalConfig.pcache2.xCachesize(pCache->pCache, mxPage);
+    sqlite3GlobalConfig.pcache2.xCachesize(pCache->pCache,
+                                           numberOfCachePages(pCache));
   }
 }
 
