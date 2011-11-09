@@ -62,6 +62,11 @@ ifcapable stat3 {
   set STAT3 0
 }
 
+ifcapable malloc_usable_size {
+  finish_test
+  return
+}
+
 #---------------------------------------------------------------------------
 # Run the dbstatus-2 and dbstatus-3 tests with several of different
 # lookaside buffer sizes.

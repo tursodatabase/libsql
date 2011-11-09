@@ -26,6 +26,10 @@
 */
 #ifdef SQLITE_SYSTEM_MALLOC
 
+#ifdef HAVE_MALLOC_USABLE_SIZE
+#include <malloc.h>
+#endif
+
 /*
 ** Like malloc(), but remember the size of the allocation
 ** so that we can find it later using sqlite3MemSize().
@@ -35,6 +39,14 @@
 ** routines.
 */
 static void *sqlite3MemMalloc(int nByte){
+#ifdef HAVE_MALLOC_USABLE_SIZE
+  void *p = malloc( nByte );
+  if( p==0 ){
+    testcase( sqlite3GlobalConfig.xLog!=0 );
+    sqlite3_log(SQLITE_NOMEM, "failed to allocate %u bytes of memory", nByte);
+  }
+  return p;
+#else
   sqlite3_int64 *p;
   assert( nByte>0 );
   nByte = ROUND8(nByte);
@@ -47,6 +59,7 @@ static void *sqlite3MemMalloc(int nByte){
     sqlite3_log(SQLITE_NOMEM, "failed to allocate %u bytes of memory", nByte);
   }
   return (void *)p;
+#endif
 }
 
 /*
@@ -58,10 +71,14 @@ static void *sqlite3MemMalloc(int nByte){
 ** by higher-level routines.
 */
 static void sqlite3MemFree(void *pPrior){
+#if HAVE_MALLOC_USABLE_SIZE
+  free(pPrior);
+#else
   sqlite3_int64 *p = (sqlite3_int64*)pPrior;
   assert( pPrior!=0 );
   p--;
   free(p);
+#endif
 }
 
 /*
@@ -69,11 +86,15 @@ static void sqlite3MemFree(void *pPrior){
 ** or xRealloc().
 */
 static int sqlite3MemSize(void *pPrior){
+#if HAVE_MALLOC_USABLE_SIZE
+  return pPrior ? (int)malloc_usable_size(pPrior) : 0;
+#else
   sqlite3_int64 *p;
   if( pPrior==0 ) return 0;
   p = (sqlite3_int64*)pPrior;
   p--;
   return (int)p[0];
+#endif
 }
 
 /*
@@ -87,6 +108,16 @@ static int sqlite3MemSize(void *pPrior){
 ** routines and redirected to xFree.
 */
 static void *sqlite3MemRealloc(void *pPrior, int nByte){
+#if HAVE_MALLOC_USABLE_SIZE
+  void *p = realloc(pPrior, nByte);
+  if( p==0 ){
+    testcase( sqlite3GlobalConfig.xLog!=0 );
+    sqlite3_log(SQLITE_NOMEM,
+      "failed memory resize %u to %u bytes",
+      malloc_usable_size(pPrior), nByte);
+  }
+  return p;
+#else
   sqlite3_int64 *p = (sqlite3_int64*)pPrior;
   assert( pPrior!=0 && nByte>0 );
   assert( nByte==ROUND8(nByte) ); /* EV: R-46199-30249 */
@@ -102,6 +133,7 @@ static void *sqlite3MemRealloc(void *pPrior, int nByte){
       sqlite3MemSize(pPrior), nByte);
   }
   return (void*)p;
+#endif
 }
 
 /*

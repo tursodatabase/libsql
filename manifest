@@ -1,5 +1,5 @@
-C Update\sthe\sAPI\sdocumentation\sfor\sthe\snew\spcache2\sinterface.\s\sChange\sthe\norder\sof\sparameters\son\sthe\sxCreate\smethod\sof\spcache2.
-D 2011-11-09T00:06:05.887
+C For\sthe\smem1.c\ssystem\smalloc\simplementation,\suse\sthe\smalloc_usable_size()\nfunction\sif\sthe\sHAVE_MALLOC_USABLE_SIZE\smacro\sis\sdefined.\s\sUpdate\sautoconf\nto\slook\sfor\sthat\sfunction\swhen\sconfiguring.
+D 2011-11-09T01:53:25.593
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -21,10 +21,10 @@ F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
-F config.h.in 405a958bdb3af382a809dccb08a44694923ddd61
+F config.h.in 31cc8c4943f56e60c4aa4fba929c9d4c70e418b4
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 806c06aef5895860da49600ce098dbe4d5a8435c x
-F configure.ac 298a759c086e72c013da459c2aec02a104f4224f
+F configure 194ed7797c67c24ebbeb001fcfc557116fe5eba9 x
+F configure.ac 75323bdac56fb0e69f6a3fc5b23f24359550b9d9
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 3091574143dd3415669b6745843ff8d011d33549
 F doc/pager-invariants.txt 870107036470d7c419e93768676fae2f8749cf9e
@@ -150,7 +150,7 @@ F src/loadext.c d0d2022a5a07274d408820b978b9e549189d314f
 F src/main.c 93d49bc6abf4ccea97721d016b9f45228cff7057
 F src/malloc.c 591aedb20ae40813f1045f2ef253438a334775d9
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
-F src/mem1.c 00bd8265c81abb665c48fea1e0c234eb3b922206
+F src/mem1.c 7456e2ca0524609ebc06a9befeda5289d4575ad4
 F src/mem2.c e307323e86b5da1853d7111b68fd6b84ad6f09cf
 F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
 F src/mem5.c c2c63b7067570b00bf33d751c39af24182316f7f
@@ -202,7 +202,7 @@ F src/test_async.c 0612a752896fad42d55c3999a5122af10dcf22ad
 F src/test_autoext.c 30e7bd98ab6d70a62bb9ba572e4c7df347fe645e
 F src/test_backup.c c129c91127e9b46e335715ae2e75756e25ba27de
 F src/test_btree.c 47cd771250f09cdc6e12dda5bc71bc0b3abc96e2
-F src/test_config.c bc8826296a7b3a86eeaba1ac2af5551d1c20c35b
+F src/test_config.c a036a69b550ebc477ab9ca2b37269201f888436e
 F src/test_demovfs.c 20a4975127993f4959890016ae9ce5535a880094
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_func.c cbdec5cededa0761daedde5baf06004a9bf416b5
@@ -361,7 +361,7 @@ F test/createtab.test b5de160630b209c4b8925bdcbbaf48cc90b67fe8
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
 F test/ctime.test 7bd009071e242aac4f18521581536b652b789a47
 F test/date.test a18a2ce81add84b17b06559e82ad7bb91bc6ddff
-F test/dbstatus.test 9eb484ba837c6f3f9bbcaecc29e6060a8c3ba6d2
+F test/dbstatus.test 179575499759241bf92ca2fb86bd3ccc8a562aac
 F test/dbstatus2.test dc57b0d9610851c0ff58a8e1b5b191678398b72a
 F test/default.test 6faf23ccb300114924353007795aa9a8ec0aa9dc
 F test/delete.test a065b05d2ebf60fd16639c579a4adfb7c381c701
@@ -592,7 +592,7 @@ F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
 F test/memdb.test 708a028d6d373e5b3842e4bdc8ba80998c9a4da6
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
-F test/memsubsys1.test c0db8a1e99f4fa07cb858900c55bad9547899aa8
+F test/memsubsys1.test 5b3f39b452f4c0b3cd884fc2fd2246f8f960d313
 F test/memsubsys2.test 3a1c1a9de48e5726faa85108b02459fae8cb9ee9
 F test/minmax.test 722d80816f7e096bf2c04f4111f1a6c1ba65453d
 F test/minmax2.test 33504c01a03bd99226144e4b03f7631a274d66e0
@@ -974,7 +974,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P c275c9d323cb1dccb031b199d413ac3a0b244fea
-R 4fb01fb575d63e4a5f19c0220660f3b1
+P 4da7095683ec821414e255419d63a24dbd9d726d
+R c213b277008496abb081e494c07b96f8
 U drh
-Z afa7f9c0cc886adac8a55835b7a79aea
+Z adde38f0bee72bcf55d83cbeb4f89a8f
