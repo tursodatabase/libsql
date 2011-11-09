@@ -131,8 +131,8 @@ static unsigned testpcacheRandom(testpcache *p){
 ** Allocate a new page cache instance.
 */
 static sqlite3_pcache *testpcacheCreate(
-  int szExtra, 
   int szPage, 
+  int szExtra, 
   int bPurgeable
 ){
   int nMem;

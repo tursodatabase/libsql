@@ -24,7 +24,6 @@ typedef struct PgHdr1 PgHdr1;
 typedef struct PgFreeslot PgFreeslot;
 typedef struct PGroup PGroup;
 
-
 /* Each page cache (or PCache) belongs to a PGroup.  A PGroup is a set 
 ** of one or more PCaches that are able to recycle each others unpinned
 ** pages when they are under memory pressure.  A PGroup is an instance of
@@ -554,7 +553,7 @@ static void pcache1Shutdown(void *NotUsed){
 **
 ** Allocate a new cache.
 */
-static sqlite3_pcache *pcache1Create(int szExtra, int szPage, int bPurgeable){
+static sqlite3_pcache *pcache1Create(int szPage, int szExtra, int bPurgeable){
   PCache1 *pCache;      /* The newly created page cache */
   PGroup *pGroup;       /* The group the new page cache will belong to */
   int sz;               /* Bytes of memory required to allocate the new cache */

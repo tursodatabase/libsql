@@ -221,7 +221,7 @@ int sqlite3PcacheFetch(
   if( !pCache->pCache && createFlag ){
     sqlite3_pcache *p;
     p = sqlite3GlobalConfig.pcache2.xCreate(
-        pCache->szExtra + sizeof(PgHdr), pCache->szPage, pCache->bPurgeable
+        pCache->szPage, pCache->szExtra + sizeof(PgHdr), pCache->bPurgeable
     );
     if( !p ){
       return SQLITE_NOMEM;
