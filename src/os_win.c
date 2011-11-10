@@ -49,13 +49,6 @@
 #endif
 
 /*
-** Macros used to determine whether or not to use threads.
-*/
-#if defined(THREADSAFE) && THREADSAFE
-# define SQLITE_W32_THREADS 1
-#endif
-
-/*
 ** Include code that is common to all os_*.c files
 */
 #include "os_common.h"
@@ -558,20 +551,21 @@ char *sqlite3_win32_utf8_to_mbcs(const char *zFilename){
 ** is zero if the error message fits in the buffer, or non-zero
 ** otherwise (if the message was truncated).
 */
-static int getLastErrorMsg(int nBuf, char *zBuf){
+static int getLastErrorMsg(DWORD lastErrno, int nBuf, char *zBuf){
   /* FormatMessage returns 0 on failure.  Otherwise it
   ** returns the number of TCHARs written to the output
   ** buffer, excluding the terminating null char.
   */
-  DWORD error = GetLastError();
   DWORD dwLen = 0;
   char *zOut = 0;
 
   if( isNT() ){
     WCHAR *zTempWide = NULL;
-    dwLen = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+    dwLen = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                           FORMAT_MESSAGE_FROM_SYSTEM |
+                           FORMAT_MESSAGE_IGNORE_INSERTS,
                            NULL,
-                           error,
+                           lastErrno,
                            0,
                            (LPWSTR) &zTempWide,
                            0,
@@ -589,9 +583,11 @@ static int getLastErrorMsg(int nBuf, char *zBuf){
 #if SQLITE_OS_WINCE==0
   }else{
     char *zTemp = NULL;
-    dwLen = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+    dwLen = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                           FORMAT_MESSAGE_FROM_SYSTEM |
+                           FORMAT_MESSAGE_IGNORE_INSERTS,
                            NULL,
-                           error,
+                           lastErrno,
                            0,
                            (LPSTR) &zTemp,
                            0,
@@ -605,7 +601,7 @@ static int getLastErrorMsg(int nBuf, char *zBuf){
 #endif
   }
   if( 0 == dwLen ){
-    sqlite3_snprintf(nBuf, zBuf, "OsError 0x%x (%u)", error, error);
+    sqlite3_snprintf(nBuf, zBuf, "OsError 0x%x (%u)", lastErrno, lastErrno);
   }else{
     /* copy a maximum of nBuf chars to output buffer */
     sqlite3_snprintf(nBuf, zBuf, "%s", zOut);
@@ -642,7 +638,7 @@ static int winLogErrorAtLine(
   int i;                          /* Loop counter */
 
   zMsg[0] = 0;
-  getLastErrorMsg(sizeof(zMsg), zMsg);
+  getLastErrorMsg(lastErrno, sizeof(zMsg), zMsg);
   assert( errcode!=SQLITE_OK );
   if( zPath==0 ) zPath = "";
   for(i=0; zMsg[i] && zMsg[i]!='\r' && zMsg[i]!='\n'; i++){}
@@ -2998,7 +2994,7 @@ static void *winDlOpen(sqlite3_vfs *pVfs, const char *zFilename){
 }
 static void winDlError(sqlite3_vfs *pVfs, int nBuf, char *zBufOut){
   UNUSED_PARAMETER(pVfs);
-  getLastErrorMsg(nBuf, zBufOut);
+  getLastErrorMsg(GetLastError(), nBuf, zBufOut);
 }
 static void (*winDlSym(sqlite3_vfs *pVfs, void *pHandle, const char *zSymbol))(void){
   UNUSED_PARAMETER(pVfs);
@@ -3172,7 +3168,7 @@ static int winCurrentTime(sqlite3_vfs *pVfs, double *prNow){
 */
 static int winGetLastError(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
   UNUSED_PARAMETER(pVfs);
-  return getLastErrorMsg(nBuf, zBuf);
+  return getLastErrorMsg(GetLastError(), nBuf, zBuf);
 }
 
 
