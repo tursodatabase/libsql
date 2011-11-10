@@ -1,5 +1,5 @@
-C When\scompiling\swith\sMSVC,\suse\sthe\s_msize\sfunction.
-D 2011-11-09T17:01:40.187
+C Use\ssqlite3MallocSize()\sto\sget\sthe\sactual\ssize\sof\sthe\smemory\sallocation\nused\sfor\slookaside\scache\sand\sincrease\sthe\ssize\sof\sthe\scache\sto\suse\sthe\nfull\sallocation.
+D 2011-11-10T02:24:11.076
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -147,7 +147,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
 F src/loadext.c d0d2022a5a07274d408820b978b9e549189d314f
-F src/main.c 8d75abfbb6f9518da984fcb83e7deb986e5fad1a
+F src/main.c 666a78ff3495e6b598dfdf95470d94cdc7026b3e
 F src/malloc.c 591aedb20ae40813f1045f2ef253438a334775d9
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 7456e2ca0524609ebc06a9befeda5289d4575ad4
@@ -974,7 +974,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P bc10a753579b65ba4604867204b7b3d8383f3ac7
-R b4ab2e16a52b2d4a4a1aafe11f524dda
-U mistachkin
-Z 36fa820f8cb337e79d0b9d411145a7d3
+P 797a147934743a565c6f1f9dd4d41574690b4c2b
+R 18d8d9d953fa089dbbd8eb3a1a1977dd
+U drh
+Z 2aff7dca442feb19b2932365e48ed79f

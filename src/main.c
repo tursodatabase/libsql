@@ -495,6 +495,7 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
     sqlite3BeginBenignMalloc();
     pStart = sqlite3Malloc( sz*cnt );  /* IMP: R-61949-35727 */
     sqlite3EndBenignMalloc();
+    if( pStart ) cnt = sqlite3MallocSize(pStart)/sz;
   }else{
     sz = ROUNDDOWN8(sz); /* IMP: R-33038-09382 */
     pStart = pBuf;
