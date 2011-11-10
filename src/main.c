@@ -482,22 +482,21 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
   if( db->lookaside.bMalloced ){
     sqlite3_free(db->lookaside.pStart);
   }
-  /* The size of a lookaside slot needs to be larger than a pointer
-  ** to be useful.
+  /* The size of a lookaside slot after ROUNDDOWN8 needs to be larger
+  ** than a pointer to be useful.
   */
+  sz = ROUNDDOWN8(sz);  /* IMP: R-33038-09382 */
   if( sz<=(int)sizeof(LookasideSlot*) ) sz = 0;
   if( cnt<0 ) cnt = 0;
   if( sz==0 || cnt==0 ){
     sz = 0;
     pStart = 0;
   }else if( pBuf==0 ){
-    sz = ROUNDDOWN8(sz); /* IMP: R-33038-09382 */
     sqlite3BeginBenignMalloc();
     pStart = sqlite3Malloc( sz*cnt );  /* IMP: R-61949-35727 */
     sqlite3EndBenignMalloc();
     if( pStart ) cnt = sqlite3MallocSize(pStart)/sz;
   }else{
-    sz = ROUNDDOWN8(sz); /* IMP: R-33038-09382 */
     pStart = pBuf;
   }
   db->lookaside.pStart = pStart;
