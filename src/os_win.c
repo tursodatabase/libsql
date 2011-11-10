@@ -630,16 +630,16 @@ static int getLastErrorMsg(int nBuf, char *zBuf){
 ** The two subsequent arguments should be the name of the OS function that
 ** failed and the the associated file-system path, if any.
 */
-#define winLogError(a,b,c)     winLogErrorAtLine(a,b,c,__LINE__)
+#define winLogError(a,b,c,d)   winLogErrorAtLine(a,b,c,d,__LINE__)
 static int winLogErrorAtLine(
   int errcode,                    /* SQLite error code */
+  DWORD lastErrno,                /* Win32 last error */
   const char *zFunc,              /* Name of OS function that failed */
   const char *zPath,              /* File path associated with error */
   int iLine                       /* Source line number where error occurred */
 ){
   char zMsg[500];                 /* Human readable error text */
   int i;                          /* Loop counter */
-  DWORD iErrno = GetLastError();  /* Error code */
 
   zMsg[0] = 0;
   getLastErrorMsg(sizeof(zMsg), zMsg);
@@ -649,7 +649,7 @@ static int winLogErrorAtLine(
   zMsg[i] = 0;
   sqlite3_log(errcode,
       "os_win.c:%d: (%d) %s(%s) - %s",
-      iLine, iErrno, zFunc, zPath, zMsg
+      iLine, lastErrno, zFunc, zPath, zMsg
   );
 
   return errcode;
@@ -780,7 +780,7 @@ static BOOL winceCreateLock(const char *zFilename, winFile *pFile){
   pFile->hMutex = CreateMutexW(NULL, FALSE, zName);
   if (!pFile->hMutex){
     pFile->lastErrno = GetLastError();
-    winLogError(SQLITE_ERROR, "winceCreateLock1", zFilename);
+    winLogError(SQLITE_ERROR, pFile->lastErrno, "winceCreateLock1", zFilename);
     free(zName);
     return FALSE;
   }
@@ -812,7 +812,8 @@ static BOOL winceCreateLock(const char *zFilename, winFile *pFile){
     /* If mapping failed, close the shared memory handle and erase it */
     if (!pFile->shared){
       pFile->lastErrno = GetLastError();
-      winLogError(SQLITE_ERROR, "winceCreateLock2", zFilename);
+      winLogError(SQLITE_ERROR, pFile->lastErrno,
+               "winceCreateLock2", zFilename);
       CloseHandle(pFile->hShared);
       pFile->hShared = NULL;
     }
@@ -1058,7 +1059,8 @@ static int seekWinFile(winFile *pFile, sqlite3_int64 iOffset){
   dwRet = SetFilePointer(pFile->h, lowerBits, &upperBits, FILE_BEGIN);
   if( (dwRet==INVALID_SET_FILE_POINTER && GetLastError()!=NO_ERROR) ){
     pFile->lastErrno = GetLastError();
-    winLogError(SQLITE_IOERR_SEEK, "seekWinFile", pFile->zPath);
+    winLogError(SQLITE_IOERR_SEEK, pFile->lastErrno,
+             "seekWinFile", pFile->zPath);
     return 1;
   }
 
@@ -1105,7 +1107,8 @@ static int winClose(sqlite3_file *id){
   OSTRACE(("CLOSE %d %s\n", pFile->h, rc ? "ok" : "failed"));
   OpenCounter(-1);
   return rc ? SQLITE_OK
-            : winLogError(SQLITE_IOERR_CLOSE, "winClose", pFile->zPath);
+            : winLogError(SQLITE_IOERR_CLOSE, GetLastError(),
+                          "winClose", pFile->zPath);
 }
 
 /*
@@ -1133,7 +1136,8 @@ static int winRead(
   while( !ReadFile(pFile->h, pBuf, amt, &nRead, 0) ){
     if( retryIoerr(&nRetry) ) continue;
     pFile->lastErrno = GetLastError();
-    return winLogError(SQLITE_IOERR_READ, "winRead", pFile->zPath);
+    return winLogError(SQLITE_IOERR_READ, pFile->lastErrno,
+             "winRead", pFile->zPath);
   }
   logIoerr(nRetry);
   if( nRead<(DWORD)amt ){
@@ -1192,7 +1196,8 @@ static int winWrite(
        || ( pFile->lastErrno==ERROR_DISK_FULL )){
       return SQLITE_FULL;
     }
-    return winLogError(SQLITE_IOERR_WRITE, "winWrite", pFile->zPath);
+    return winLogError(SQLITE_IOERR_WRITE, pFile->lastErrno,
+             "winWrite", pFile->zPath);
   }else{
     logIoerr(nRetry);
   }
@@ -1222,10 +1227,12 @@ static int winTruncate(sqlite3_file *id, sqlite3_int64 nByte){
 
   /* SetEndOfFile() returns non-zero when successful, or zero when it fails. */
   if( seekWinFile(pFile, nByte) ){
-    rc = winLogError(SQLITE_IOERR_TRUNCATE, "winTruncate1", pFile->zPath);
+    rc = winLogError(SQLITE_IOERR_TRUNCATE, pFile->lastErrno,
+             "winTruncate1", pFile->zPath);
   }else if( 0==SetEndOfFile(pFile->h) ){
     pFile->lastErrno = GetLastError();
-    rc = winLogError(SQLITE_IOERR_TRUNCATE, "winTruncate2", pFile->zPath);
+    rc = winLogError(SQLITE_IOERR_TRUNCATE, pFile->lastErrno,
+             "winTruncate2", pFile->zPath);
   }
 
   OSTRACE(("TRUNCATE %d %lld %s\n", pFile->h, nByte, rc ? "failed" : "ok"));
@@ -1296,7 +1303,8 @@ static int winSync(sqlite3_file *id, int flags){
     return SQLITE_OK;
   }else{
     pFile->lastErrno = GetLastError();
-    return winLogError(SQLITE_IOERR_FSYNC, "winSync", pFile->zPath);
+    return winLogError(SQLITE_IOERR_FSYNC, pFile->lastErrno,
+             "winSync", pFile->zPath);
   }
 #endif
 }
@@ -1317,7 +1325,8 @@ static int winFileSize(sqlite3_file *id, sqlite3_int64 *pSize){
      && ((error = GetLastError()) != NO_ERROR) )
   {
     pFile->lastErrno = error;
-    return winLogError(SQLITE_IOERR_FSTAT, "winFileSize", pFile->zPath);
+    return winLogError(SQLITE_IOERR_FSTAT, pFile->lastErrno,
+             "winFileSize", pFile->zPath);
   }
   *pSize = (((sqlite3_int64)upperBits)<<32) + lowerBits;
   return SQLITE_OK;
@@ -1377,7 +1386,8 @@ static int unlockReadLock(winFile *pFile){
   }
   if( res==0 && GetLastError()!=ERROR_NOT_LOCKED ){
     pFile->lastErrno = GetLastError();
-    winLogError(SQLITE_IOERR_UNLOCK, "unlockReadLock", pFile->zPath);
+    winLogError(SQLITE_IOERR_UNLOCK, pFile->lastErrno,
+             "unlockReadLock", pFile->zPath);
   }
   return res;
 }
@@ -1580,7 +1590,8 @@ static int winUnlock(sqlite3_file *id, int locktype){
     if( locktype==SHARED_LOCK && !getReadLock(pFile) ){
       /* This should never happen.  We should always be able to
       ** reacquire the read lock */
-      rc = winLogError(SQLITE_IOERR_UNLOCK, "winUnlock", pFile->zPath);
+      rc = winLogError(SQLITE_IOERR_UNLOCK, GetLastError(),
+               "winUnlock", pFile->zPath);
     }
   }
   if( type>=RESERVED_LOCK ){
@@ -1971,7 +1982,8 @@ static int winOpenSharedMemory(winFile *pDbFd){
     if( winShmSystemLock(pShmNode, _SHM_WRLCK, WIN_SHM_DMS, 1)==SQLITE_OK ){
       rc = winTruncate((sqlite3_file *)&pShmNode->hFile, 0);
       if( rc!=SQLITE_OK ){
-        rc = winLogError(SQLITE_IOERR_SHMOPEN, "winOpenShm", pDbFd->zPath);
+        rc = winLogError(SQLITE_IOERR_SHMOPEN, GetLastError(),
+                 "winOpenShm", pDbFd->zPath);
       }
     }
     if( rc==SQLITE_OK ){
@@ -2230,7 +2242,8 @@ static int winShmMap(
     */
     rc = winFileSize((sqlite3_file *)&pShmNode->hFile, &sz);
     if( rc!=SQLITE_OK ){
-      rc = winLogError(SQLITE_IOERR_SHMSIZE, "winShmMap1", pDbFd->zPath);
+      rc = winLogError(SQLITE_IOERR_SHMSIZE, GetLastError(),
+               "winShmMap1", pDbFd->zPath);
       goto shmpage_out;
     }
 
@@ -2244,7 +2257,8 @@ static int winShmMap(
       if( !isWrite ) goto shmpage_out;
       rc = winTruncate((sqlite3_file *)&pShmNode->hFile, nByte);
       if( rc!=SQLITE_OK ){
-        rc = winLogError(SQLITE_IOERR_SHMSIZE, "winShmMap2", pDbFd->zPath);
+        rc = winLogError(SQLITE_IOERR_SHMSIZE, GetLastError(),
+                 "winShmMap2", pDbFd->zPath);
         goto shmpage_out;
       }
     }
@@ -2281,7 +2295,8 @@ static int winShmMap(
       }
       if( !pMap ){
         pShmNode->lastErrno = GetLastError();
-        rc = winLogError(SQLITE_IOERR_SHMMAP, "winShmMap3", pDbFd->zPath);
+        rc = winLogError(SQLITE_IOERR_SHMMAP, pShmNode->lastErrno,
+                 "winShmMap3", pDbFd->zPath);
         if( hMap ) CloseHandle(hMap);
         goto shmpage_out;
       }
@@ -2615,7 +2630,7 @@ static int winOpen(
 
   if( h==INVALID_HANDLE_VALUE ){
     pFile->lastErrno = GetLastError();
-    winLogError(SQLITE_CANTOPEN, "winOpen", zUtf8Name);
+    winLogError(SQLITE_CANTOPEN, pFile->lastErrno, "winOpen", zUtf8Name);
     free(zConverted);
     if( isReadWrite && !isExclusive ){
       return winOpen(pVfs, zName, id, 
@@ -2708,7 +2723,8 @@ static int winDelete(
 #endif
   }
   if( rc ){
-    rc = winLogError(SQLITE_IOERR_DELETE, "winDelete", zFilename);
+    rc = winLogError(SQLITE_IOERR_DELETE, GetLastError(),
+             "winDelete", zFilename);
   }else{
     logIoerr(cnt);
   }
@@ -2755,9 +2771,10 @@ static int winAccess(
         attr = sAttrData.dwFileAttributes;
       }
     }else{
+      DWORD lastErrno = GetLastError();
       logIoerr(cnt);
-      if( GetLastError()!=ERROR_FILE_NOT_FOUND ){
-        winLogError(SQLITE_IOERR_ACCESS, "winAccess", zFilename);
+      if( lastErrno!=ERROR_FILE_NOT_FOUND ){
+        winLogError(SQLITE_IOERR_ACCESS, lastErrno, "winAccess", zFilename);
         free(zConverted);
         return SQLITE_IOERR_ACCESS;
       }else{
