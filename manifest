@@ -1,5 +1,5 @@
-C Expand\spassing\sof\sa\slast\serror\sargument\sto\sthe\sgetLastErrorMsg\sfunction.\s\sAlso,\sremove\sunused\sSQLITE_W32_THREADS\sdefine.
-D 2011-11-10T21:45:06.907
+C Make\ssure\sa\scorrupt\sindex\sdoes\snot\scause\sa\sbuffer\soverread\sin\s\nsqlite3VdbeRecordCompare().
+D 2011-11-11T00:27:15.786
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -125,9 +125,9 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 4368158da74d4711888e03264105c5c527d76caf
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 32199e2d939233ade25340eaba450f818b37c079
+F src/btree.c 2521a74f04cf288497af3b318fa3a31efb272ef6
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
-F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
+F src/btreeInt.h ea863a819224d3e6845ad1e39954d41558b8cd8b
 F src/build.c 8af67a08a852ff4c63701963cb1ab7166f577814
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
@@ -974,7 +974,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 32ab365715e2c50f30aa2f92a323857b9d917bf6
-R d5d8a9a49f50a40940976e300037af02
-U mistachkin
-Z a0f426067c598247950f7d47f9af3362
+P 8f28797984c1d4700357a75815ca4b324c3ebf5c
+R 0b7ae5ff536a087fdb2c3479a3ed3d3f
+U drh
+Z 717b87433a48f5a306459509a02bb49f

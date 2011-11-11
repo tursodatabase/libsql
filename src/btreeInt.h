@@ -289,6 +289,8 @@ struct MemPage {
   } aOvfl[5];
   BtShared *pBt;       /* Pointer to BtShared that this page is part of */
   u8 *aData;           /* Pointer to disk image of the page data */
+  u8 *aDataEnd;        /* One byte past the end of usable data */
+  u8 *aCellIdx;        /* The cell index area */
   DbPage *pDbPage;     /* Pager page handle */
   Pgno pgno;           /* Page number for this page */
 };
