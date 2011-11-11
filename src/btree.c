@@ -859,7 +859,7 @@ static int ptrmapGet(BtShared *pBt, Pgno key, u8 *pEType, Pgno *pPgno){
 ** This routine works only for pages that do not contain overflow cells.
 */
 #define findCell(P,I) \
-  ((P)->aData + ((P)->maskPage & get2byte(&(P)->aData[(P)->cellOffset+2*(I)])))
+  ((P)->aData + ((P)->maskPage & get2byte(&(P)->aCellIdx[2*(I)])))
 #define findCellv2(D,M,O,I) (D+(M&get2byte(D+(O+2*(I)))))
 
 
@@ -1409,6 +1409,8 @@ static int btreeInitPage(MemPage *pPage){
     pPage->nOverflow = 0;
     usableSize = pBt->usableSize;
     pPage->cellOffset = cellOffset = hdr + 12 - 4*pPage->leaf;
+    pPage->aDataEnd = &data[usableSize];
+    pPage->aCellIdx = &data[cellOffset];
     top = get2byteNotZero(&data[hdr+5]);
     pPage->nCell = get2byte(&data[hdr+3]);
     if( pPage->nCell>MX_CELL(pBt) ){
@@ -1512,6 +1514,8 @@ static void zeroPage(MemPage *pPage, int flags){
   decodeFlags(pPage, flags);
   pPage->hdrOffset = hdr;
   pPage->cellOffset = first;
+  pPage->aDataEnd = &data[pBt->usableSize];
+  pPage->aCellIdx = &data[first];
   pPage->nOverflow = 0;
   assert( pBt->pageSize>=512 && pBt->pageSize<=65536 );
   pPage->maskPage = (u16)(pBt->pageSize - 1);
@@ -4550,16 +4554,22 @@ int sqlite3BtreeMovetoUnpacked(
         ** 2 bytes of the cell.
         */
         int nCell = pCell[0];
-        if( !(nCell & 0x80) && nCell<=pPage->maxLocal ){
+        if( !(nCell & 0x80)
+         && nCell<=pPage->maxLocal
+         && (pCell+nCell+1)<=pPage->aDataEnd
+        ){
           /* This branch runs if the record-size field of the cell is a
           ** single byte varint and the record fits entirely on the main
           ** b-tree page.  */
+          testcase( pCell+nCell+1==pPage->aDataEnd );
           c = sqlite3VdbeRecordCompare(nCell, (void*)&pCell[1], pIdxKey);
         }else if( !(pCell[1] & 0x80) 
           && (nCell = ((nCell&0x7f)<<7) + pCell[1])<=pPage->maxLocal
+          && (pCell+nCell+2)<=pPage->aDataEnd
         ){
           /* The record-size field is a 2 byte varint and the record 
           ** fits entirely on the main b-tree page.  */
+          testcase( pCell+nCell+2==pPage->aDataEnd );
           c = sqlite3VdbeRecordCompare(nCell, (void*)&pCell[2], pIdxKey);
         }else{
           /* The record flows over onto one or more overflow pages. In
@@ -5454,7 +5464,7 @@ static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   data = pPage->aData;
-  ptr = &data[pPage->cellOffset + 2*idx];
+  ptr = &pPage->aCellIdx[2*idx];
   pc = get2byte(ptr);
   hdr = pPage->hdrOffset;
   testcase( pc==get2byte(&data[hdr+5]) );
@@ -5468,7 +5478,7 @@ static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
     *pRC = rc;
     return;
   }
-  endPtr = &data[pPage->cellOffset + 2*pPage->nCell - 2];
+  endPtr = &pPage->aCellIdx[2*pPage->nCell - 2];
   assert( (SQLITE_PTR_TO_INT(ptr)&1)==0 );  /* ptr is always 2-byte aligned */
   while( ptr<endPtr ){
     *(u16*)ptr = *(u16*)&ptr[2];
@@ -5610,7 +5620,7 @@ static void assemblePage(
   assert( pPage->nCell==0 );
   assert( get2byteNotZero(&data[hdr+5])==nUsable );
 
-  pCellptr = &data[pPage->cellOffset + nCell*2];
+  pCellptr = &pPage->aCellIdx[nCell*2];
   cellbody = nUsable;
   for(i=nCell-1; i>=0; i--){
     u16 sz = aSize[i];
