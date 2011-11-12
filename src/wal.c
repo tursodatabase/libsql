@@ -2310,7 +2310,7 @@ int sqlite3WalRead(
     for(iKey=walHash(pgno); aHash[iKey]; iKey=walNextHash(iKey)){
       u32 iFrame = aHash[iKey] + iZero;
       if( iFrame<=iLast && aPgno[aHash[iKey]]==pgno ){
-        assert( iFrame>iRead );
+        /* assert( iFrame>iRead ); -- not true if there is corruption */
         iRead = iFrame;
       }
       if( (nCollide--)==0 ){
