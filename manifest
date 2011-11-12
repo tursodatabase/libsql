@@ -1,5 +1,5 @@
-C Catch\sand\sreport\serrors\sfrom\ssqlite3OsFullPathname().
-D 2011-11-11T23:51:15.820
+C Merge\sthe\swindows\sxSyscall\senhancements\sinto\strunk.
+D 2011-11-12T15:41:52.950
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -162,12 +162,12 @@ F src/mutex_os2.c 882d735098c07c8c6a5472b8dd66e19675fe117f
 F src/mutex_unix.c b4f4e923bb8de93ec3f251fadb50855f23df9579
 F src/mutex_w32.c 5e54f3ba275bcb5d00248b8c23107df2e2f73e33
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
-F src/os.c 5d9b02782ed36345348d6fe21d7762ed3a9cfd2a
+F src/os.c 28bbdab2170dfce84d86c45456a18eab1d0f99a9
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 4fbb91726165e105c1679a2660f49a3f4c376e4f
-F src/os_win.c d6cf718667c4d89d930f30caa6cdc7f7753e259a
+F src/os_win.c a22b88d2c088c09a678a471abafa8d60dbf56803
 F src/pager.c db33d4bf1e3e019c34c220971cc6c3aa07c30f54
 F src/pager.h 9f81b08efb06db4ba8be69446e10b005c351373d
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -229,7 +229,7 @@ F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c a992d8c80ea91fbf21fb2dd570db40e77dd7e6ae
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c 35022393dd54d147b998b6b7f7e945b01114d666
-F src/test_vfs.c b0baec983bd6f872715a4b44c8f39104fec333af
+F src/test_vfs.c 27b7d9de40630f603b9e2cf9ef2a7c81d31c4515
 F src/test_vfstrace.c 0b884e06094a746da729119a2cabdc7aa790063d
 F src/test_wholenumber.c 6129adfbe7c7444f2e60cc785927f3aa74e12290
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
@@ -707,7 +707,7 @@ F test/tclsqlite.test 5ebcbb0dccc3fbc1edc3bba84c38e2c2d574c5aa
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test 51edd31c65ed1560dd600b1796e8325df96318e2
 F test/temptrigger.test 26670ed7a39cf2296a7f0a9e0a1d7bdb7abe936d
-F test/tester.tcl 0b2999b578964297663de4870babbbee29225622
+F test/tester.tcl 001051eaf28c1040800f588a64c63e0bd0e1f36b
 F test/thread001.test 7cc2ce08f9cde95964736d11e91f9ab610f82f91
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -974,7 +974,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 471cf0d8e7857110e525e029c2d535cb518dba6a
-R 65b07c80cc955ef693a9df9b61c2f7e6
+P 77119785c84ac7f416ed72c38c532399b6093d7a 76dec8aa9dbbc39e0a7c3b358b58ce7f7a477a2b
+R ed313c65fa66f4a0f305ec8176ce8f6d
 U drh
-Z 2bcb48737ffc2ef5d0789f9c5e08f674
+Z 011c8308c57c9b72d1c6dd7078495814
