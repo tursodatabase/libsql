@@ -1776,7 +1776,12 @@ int sqlite3BtreeOpen(
         sqlite3_free(p);
         return SQLITE_NOMEM;
       }
-      sqlite3OsFullPathname(pVfs, zFilename, nFullPathname, zFullPathname);
+      rc = sqlite3OsFullPathname(pVfs, zFilename, nFullPathname, zFullPathname);
+      if( rc ){
+        sqlite3_free(zFullPathname);
+        sqlite3_free(p);
+        return rc;
+      }
 #if SQLITE_THREADSAFE
       mutexOpen = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_OPEN);
       sqlite3_mutex_enter(mutexOpen);
@@ -2477,9 +2482,9 @@ static int newDatabase(BtShared *pBt){
   }
   pP1 = pBt->pPage1;
   assert( pP1!=0 );
-  data = pP1->aData;
   rc = sqlite3PagerWrite(pP1->pDbPage);
   if( rc ) return rc;
+  data = pP1->aData;
   memcpy(data, zMagicHeader, sizeof(zMagicHeader));
   assert( sizeof(zMagicHeader)==16 );
   data[16] = (u8)((pBt->pageSize>>8)&0xff);
@@ -3778,38 +3783,6 @@ static int getOverflowPage(
 }
 
 /*
-** Copy data from a buffer to a page, or from a page to a buffer.
-**
-** pPayload is a pointer to data stored on database page pDbPage.
-** If argument eOp is false, then nByte bytes of data are copied
-** from pPayload to the buffer pointed at by pBuf. If eOp is true,
-** then sqlite3PagerWrite() is called on pDbPage and nByte bytes
-** of data are copied from the buffer pBuf to pPayload.
-**
-** SQLITE_OK is returned on success, otherwise an error code.
-*/
-static int copyPayload(
-  void *pPayload,           /* Pointer to page data */
-  void *pBuf,               /* Pointer to buffer */
-  int nByte,                /* Number of bytes to copy */
-  int eOp,                  /* 0 -> copy from page, 1 -> copy to page */
-  DbPage *pDbPage           /* Page containing pPayload */
-){
-  if( eOp ){
-    /* Copy data from buffer to page (a write operation) */
-    int rc = sqlite3PagerWrite(pDbPage);
-    if( rc!=SQLITE_OK ){
-      return rc;
-    }
-    memcpy(pPayload, pBuf, nByte);
-  }else{
-    /* Copy data from page to buffer (a read operation) */
-    memcpy(pBuf, pPayload, nByte);
-  }
-  return SQLITE_OK;
-}
-
-/*
 ** This function is used to read or overwrite payload information
 ** for the entry that the pCur cursor is pointing to. If the eOp
 ** parameter is 0, this is a read operation (data copied into
@@ -3856,6 +3829,7 @@ static int accessPayload(
   assert( pCur->aiIdx[pCur->iPage]<pPage->nCell );
   assert( cursorHoldsMutex(pCur) );
 
+
   getCellInfo(pCur);
   aPayload = pCur->info.pCell + pCur->info.nHeader;
   nKey = (pPage->intKey ? 0 : (int)pCur->info.nKey);
@@ -3873,7 +3847,14 @@ static int accessPayload(
     if( a+offset>pCur->info.nLocal ){
       a = pCur->info.nLocal - offset;
     }
-    rc = copyPayload(&aPayload[offset], pBuf, a, eOp, pPage->pDbPage);
+    if( eOp ){
+      if( (rc = sqlite3PagerWrite(pPage->pDbPage))!=SQLITE_OK ) return rc;
+      getCellInfo(pCur);
+      aPayload = pCur->info.pCell + pCur->info.nHeader;
+      memcpy(aPayload+offset, pBuf, a);
+    }else{
+      memcpy(pBuf, aPayload+offset, a);
+    }
     offset = 0;
     pBuf += a;
     amt -= a;
@@ -3984,9 +3965,17 @@ static int accessPayload(
           DbPage *pDbPage;
           rc = sqlite3PagerGet(pBt->pPager, nextPage, &pDbPage);
           if( rc==SQLITE_OK ){
+            if( eOp && (rc = sqlite3PagerWrite(pDbPage))!=SQLITE_OK ){
+              sqlite3PagerUnref(pDbPage);
+              return rc;
+            }
             aPayload = sqlite3PagerGetData(pDbPage);
             nextPage = get4byte(aPayload);
-            rc = copyPayload(&aPayload[offset+4], pBuf, a, eOp, pDbPage);
+            if( eOp ){
+              memcpy(&aPayload[offset+4], pBuf, a);
+            }else{
+              memcpy(pBuf, &aPayload[offset+4], a);
+            }
             sqlite3PagerUnref(pDbPage);
             offset = 0;
           }
@@ -7385,16 +7374,14 @@ void sqlite3BtreeGetMeta(Btree *p, int idx, u32 *pMeta){
 */
 int sqlite3BtreeUpdateMeta(Btree *p, int idx, u32 iMeta){
   BtShared *pBt = p->pBt;
-  unsigned char *pP1;
   int rc;
   assert( idx>=1 && idx<=15 );
   sqlite3BtreeEnter(p);
   assert( p->inTrans==TRANS_WRITE );
   assert( pBt->pPage1!=0 );
-  pP1 = pBt->pPage1->aData;
   rc = sqlite3PagerWrite(pBt->pPage1->pDbPage);
   if( rc==SQLITE_OK ){
-    put4byte(&pP1[36 + idx*4], iMeta);
+    put4byte(&pBt->pPage1->aData[36 + idx*4], iMeta);
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( idx==BTREE_INCR_VACUUM ){
       assert( pBt->autoVacuum || iMeta==0 );
@@ -8223,6 +8210,7 @@ int sqlite3BtreeSetVersion(Btree *pBtree, int iVersion){
       if( rc==SQLITE_OK ){
         rc = sqlite3PagerWrite(pBt->pPage1->pDbPage);
         if( rc==SQLITE_OK ){
+          aData = pBt->pPage1->aData;
           aData[18] = (u8)iVersion;
           aData[19] = (u8)iVersion;
         }

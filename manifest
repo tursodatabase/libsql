@@ -1,5 +1,5 @@
-C Pull\sover\sall\sthe\slatest\schanges\sfrom\strunk.
-D 2011-11-11T14:12:36.001
+C Attempt\sto\smodify\sbtree.c\sso\sthat\sit\sassumes\sthat\scalls\sto\ssqlite3PagerWrite()\nwill\sreallocate\sthe\spage\sbuffer.\s\sAs\sthere\sis\snot\sgood\sway\sto\stest\sthis\nassumption\syet,\sprobably\sa\sfew\sspots\swere\smissed.
+D 2011-11-12T23:10:13.436
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -125,7 +125,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 4368158da74d4711888e03264105c5c527d76caf
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 2521a74f04cf288497af3b318fa3a31efb272ef6
+F src/btree.c 149cccf2134f555583d0825e47b17104aa06cb84
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h ea863a819224d3e6845ad1e39954d41558b8cd8b
 F src/build.c 8af67a08a852ff4c63701963cb1ab7166f577814
@@ -974,7 +974,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 6bda711f93e753dd0be8d896a007b3f7b5064787 471cf0d8e7857110e525e029c2d535cb518dba6a
-R 50394ddf6c21b3d5be10b1579addf880
+P 1bbbf8574a820c5f787a937f02a8e2a91264ace0
+R 8fe5168196d72d713cb64bacae73a939
 U drh
-Z 183f0080d0ed04f08eff14296686e20c
+Z db5deb4d4c1ff85ac518999d30605134
