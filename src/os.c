@@ -27,11 +27,18 @@
 ** The following functions are instrumented for malloc() failure 
 ** testing:
 **
-**     sqlite3OsOpen()
 **     sqlite3OsRead()
 **     sqlite3OsWrite()
 **     sqlite3OsSync()
+**     sqlite3OsFileSize()
 **     sqlite3OsLock()
+**     sqlite3OsCheckReservedLock()
+**     sqlite3OsFileControl()
+**     sqlite3OsShmMap()
+**     sqlite3OsOpen()
+**     sqlite3OsDelete()
+**     sqlite3OsAccess()
+**     sqlite3OsFullPathname()
 **
 */
 #if defined(SQLITE_TEST)
@@ -91,6 +98,7 @@ int sqlite3OsCheckReservedLock(sqlite3_file *id, int *pResOut){
   return id->pMethods->xCheckReservedLock(id, pResOut);
 }
 int sqlite3OsFileControl(sqlite3_file *id, int op, void *pArg){
+  DO_OS_MALLOC_TEST(id);
   return id->pMethods->xFileControl(id, op, pArg);
 }
 int sqlite3OsSectorSize(sqlite3_file *id){
@@ -116,6 +124,7 @@ int sqlite3OsShmMap(
   int bExtend,                    /* True to extend file if necessary */
   void volatile **pp              /* OUT: Pointer to mapping */
 ){
+  DO_OS_MALLOC_TEST(id);
   return id->pMethods->xShmMap(id, iPage, pgsz, bExtend, pp);
 }
 
@@ -141,6 +150,7 @@ int sqlite3OsOpen(
   return rc;
 }
 int sqlite3OsDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
+  DO_OS_MALLOC_TEST(0);
   return pVfs->xDelete(pVfs, zPath, dirSync);
 }
 int sqlite3OsAccess(
@@ -158,6 +168,7 @@ int sqlite3OsFullPathname(
   int nPathOut, 
   char *zPathOut
 ){
+  DO_OS_MALLOC_TEST(0);
   zPathOut[0] = 0;
   return pVfs->xFullPathname(pVfs, zPath, nPathOut, zPathOut);
 }

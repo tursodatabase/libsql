@@ -155,11 +155,11 @@ static int getSectorSize(
 
 /*
 ** The following variable is (normally) set once and never changes
-** thereafter.  It records whether the operating system is Win95
+** thereafter.  It records whether the operating system is Win9x
 ** or WinNT.
 **
 ** 0:   Operating system unknown.
-** 1:   Operating system is Win95.
+** 1:   Operating system is Win9x.
 ** 2:   Operating system is WinNT.
 **
 ** In order to facilitate testing on a WinNT system, the test fixture
@@ -954,7 +954,7 @@ static char *unicodeToUtf8(LPCWSTR zWideFilename){
 }
 
 /*
-** Convert an ansi string to Microsoft Unicode, based on the
+** Convert an ANSI string to Microsoft Unicode, based on the
 ** current codepage settings for file apis.
 ** 
 ** Space to hold the returned string is obtained
@@ -1067,12 +1067,14 @@ static int getLastErrorMsg(DWORD lastErrno, int nBuf, char *zBuf){
                              0);
     if( dwLen > 0 ){
       /* allocate a buffer and convert to UTF8 */
+      sqlite3BeginBenignMalloc();
       zOut = unicodeToUtf8(zTempWide);
+      sqlite3EndBenignMalloc();
       /* free the system buffer allocated by FormatMessage */
       osLocalFree(zTempWide);
     }
 /* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
-** Since the ASCII version of these Windows API do not exist for WINCE,
+** Since the ANSI version of these Windows API do not exist for WINCE,
 ** it's important to not reference them for WINCE builds.
 */
 #if SQLITE_OS_WINCE==0
@@ -1089,7 +1091,9 @@ static int getLastErrorMsg(DWORD lastErrno, int nBuf, char *zBuf){
                              0);
     if( dwLen > 0 ){
       /* allocate a buffer and convert to UTF8 */
+      sqlite3BeginBenignMalloc();
       zOut = sqlite3_win32_mbcs_to_utf8(zTemp);
+      sqlite3EndBenignMalloc();
       /* free the system buffer allocated by FormatMessage */
       osLocalFree(zTemp);
     }
@@ -1832,7 +1836,7 @@ static int winFileSize(sqlite3_file *id, sqlite3_int64 *pSize){
 /*
 ** Acquire a reader lock.
 ** Different API routines are called depending on whether or not this
-** is Win95 or WinNT.
+** is Win9x or WinNT.
 */
 static int getReadLock(winFile *pFile){
   int res;
@@ -2908,7 +2912,7 @@ static int getTempname(int nBuf, char *zBuf){
       return SQLITE_IOERR_NOMEM;
     }
 /* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
-** Since the ASCII version of these Windows API do not exist for WINCE,
+** Since the ANSI version of these Windows API do not exist for WINCE,
 ** it's important to not reference them for WINCE builds.
 */
 #if SQLITE_OS_WINCE==0
@@ -3098,7 +3102,7 @@ static int winOpen(
                               NULL))==INVALID_HANDLE_VALUE &&
                               retryIoerr(&cnt) ){}
 /* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
-** Since the ASCII version of these Windows API do not exist for WINCE,
+** Since the ANSI version of these Windows API do not exist for WINCE,
 ** it's important to not reference them for WINCE builds.
 */
 #if SQLITE_OS_WINCE==0
@@ -3202,7 +3206,7 @@ static int winDelete(
            (rc = osDeleteFileW(zConverted))==0 && retryIoerr(&cnt) ){}
     rc = rc ? SQLITE_OK : SQLITE_ERROR;
 /* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
-** Since the ASCII version of these Windows API do not exist for WINCE,
+** Since the ANSI version of these Windows API do not exist for WINCE,
 ** it's important to not reference them for WINCE builds.
 */
 #if SQLITE_OS_WINCE==0
@@ -3273,7 +3277,7 @@ static int winAccess(
       }
     }
 /* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
-** Since the ASCII version of these Windows API do not exist for WINCE,
+** Since the ANSI version of these Windows API do not exist for WINCE,
 ** it's important to not reference them for WINCE builds.
 */
 #if SQLITE_OS_WINCE==0
@@ -3362,7 +3366,7 @@ static int winFullPathname(
     zOut = unicodeToUtf8(zTemp);
     sqlite3_free(zTemp);
 /* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
-** Since the ASCII version of these Windows API do not exist for WINCE,
+** Since the ANSI version of these Windows API do not exist for WINCE,
 ** it's important to not reference them for WINCE builds.
 */
 #if SQLITE_OS_WINCE==0
@@ -3415,11 +3419,16 @@ static int getSectorSize(
   ** size.
   */
   SimulateIOErrorBenign(1);
+  sqlite3BeginBenignMalloc();
   rc = winFullPathname(pVfs, zRelative, MAX_PATH, zFullpath);
+  sqlite3EndBenignMalloc();
   SimulateIOErrorBenign(0);
   if( rc == SQLITE_OK )
   {
-    void *zConverted = convertUtf8Filename(zFullpath);
+    void *zConverted;
+    sqlite3BeginBenignMalloc();
+    zConverted = convertUtf8Filename(zFullpath);
+    sqlite3EndBenignMalloc();
     if( zConverted ){
       if( isNT() ){
         /* trim path to just drive reference */
@@ -3479,7 +3488,7 @@ static void *winDlOpen(sqlite3_vfs *pVfs, const char *zFilename){
   if( isNT() ){
     h = osLoadLibraryW((LPCWSTR)zConverted);
 /* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
-** Since the ASCII version of these Windows API do not exist for WINCE,
+** Since the ANSI version of these Windows API do not exist for WINCE,
 ** it's important to not reference them for WINCE builds.
 */
 #if SQLITE_OS_WINCE==0
@@ -3662,8 +3671,6 @@ static int winGetLastError(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
   return getLastErrorMsg(osGetLastError(), nBuf, zBuf);
 }
 
-
-
 /*
 ** Initialize and deinitialize the operating system interface.
 */
@@ -3707,6 +3714,7 @@ int sqlite3_os_init(void){
   sqlite3_vfs_register(&winVfs, 1);
   return SQLITE_OK; 
 }
+
 int sqlite3_os_end(void){ 
   return SQLITE_OK;
 }
