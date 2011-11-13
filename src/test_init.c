@@ -160,7 +160,7 @@ static void installInitWrappers(void){
     wrMutexLeave, wrMutexHeld,  wrMutexNotheld
   };
   sqlite3_pcache_methods2 pcachemethods = {
-    0,
+    1, 0,
     wrPCacheInit,      wrPCacheShutdown,  wrPCacheCreate, 
     wrPCacheCachesize, wrPCachePagecount, wrPCacheFetch,
     wrPCacheUnpin,     wrPCacheRekey,     wrPCacheTruncate,  

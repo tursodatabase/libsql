@@ -5934,9 +5934,25 @@ int sqlite3_stmt_status(sqlite3_stmt*, int op,int resetFlg);
 ** sqlite3_pcache object except by holding and passing pointers
 ** to the object.
 **
-** See [sqlite3_pcache_methods] for additional information.
+** See [sqlite3_pcache_methods2] for additional information.
 */
 typedef struct sqlite3_pcache sqlite3_pcache;
+
+/*
+** CAPI3REF: Custom Page Cache Object
+**
+** The sqlite3_pcache_page object represents a single page in the
+** page cache.  The page cache will allocate instances of this
+** object.  Various methods of the page cache use pointers to instances
+** of this object as parameters or as their return value.
+**
+** See [sqlite3_pcache_methods2] for additional information.
+*/
+typedef struct sqlite3_pcache_page sqlite3_pcache_page;
+struct sqlite3_pcache_page {
+  void *pBuf;        /* The content of the page */
+  void *pExtra;      /* Extra information associated with the page */
+};
 
 /*
 ** CAPI3REF: Application Defined Page Cache.
@@ -6092,12 +6108,8 @@ typedef struct sqlite3_pcache sqlite3_pcache;
 ** functions.
 */
 typedef struct sqlite3_pcache_methods2 sqlite3_pcache_methods2;
-typedef struct sqlite3_pcache_page sqlite3_pcache_page;
-struct sqlite3_pcache_page {
-  void *pBuf;
-  void *pExtra;
-};
 struct sqlite3_pcache_methods2 {
+  int iVersion;
   void *pArg;
   int (*xInit)(void*);
   void (*xShutdown)(void*);

@@ -432,6 +432,7 @@ void installTestPCache(
   unsigned highStress         /* Call xStress agressively */
 ){
   static const sqlite3_pcache_methods2 testPcache = {
+    1,
     (void*)&testpcacheGlobal,
     testpcacheInit,
     testpcacheShutdown,

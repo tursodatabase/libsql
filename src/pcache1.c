@@ -924,6 +924,7 @@ static void pcache1Destroy(sqlite3_pcache *p){
 */
 void sqlite3PCacheSetDefault(void){
   static const sqlite3_pcache_methods2 defaultMethods = {
+    1,                       /* iVersion */
     0,                       /* pArg */
     pcache1Init,             /* xInit */
     pcache1Shutdown,         /* xShutdown */
