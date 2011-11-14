@@ -131,7 +131,7 @@ static void pcacheUnpin(PgHdr *p){
     if( p->pgno==1 ){
       pCache->pPage1 = 0;
     }
-    sqlite3GlobalConfig.pcache2.xUnpin(pCache->pCache, p->pPage, 0);
+    sqlite3GlobalConfig.pcache2.xUnpin(pCache->pCache, p->pPage, 1);
   }
 }
 

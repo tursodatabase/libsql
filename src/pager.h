@@ -123,7 +123,7 @@ int sqlite3PagerWrite(DbPage*);
 void sqlite3PagerDontWrite(DbPage*);
 int sqlite3PagerMovepage(Pager*,DbPage*,Pgno,int);
 int sqlite3PagerPageRefcount(DbPage*);
-void *sqlite3PagerGetData(DbPage *); 
+u8 *sqlite3PagerGetData(DbPage *); 
 void *sqlite3PagerGetExtra(DbPage *); 
 
 /* Functions used to manage pager transactions and savepoints. */

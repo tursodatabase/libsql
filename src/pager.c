@@ -1726,6 +1726,7 @@ static int addToSavepointBitvecs(Pager *pPager, Pgno pgno){
 ** is opened (by this or by any other connection).
 */
 static void pager_unlock(Pager *pPager){
+  PgHdr *pPg;
 
   assert( pPager->eState==PAGER_READER 
        || pPager->eState==PAGER_OPEN 
@@ -1785,22 +1786,31 @@ static void pager_unlock(Pager *pPager){
   ** it can safely move back to PAGER_OPEN state. This happens in both
   ** normal and exclusive-locking mode.
   */
-  if( pPager->errCode || pPager->pMapObject ){
+  if( pPager->errCode ){
     assert( !MEMDB );
     pager_reset(pPager);
     pPager->changeCountDone = pPager->tempFile;
     pPager->eState = PAGER_OPEN;
     pPager->errCode = SQLITE_OK;
-    sqlite3OsUnmap(pPager->fd, pPager->pMapObject);
-    pPager->pMapObject = 0;
-    pPager->aFileContent = 0;
-    pPager->nFileContent = 0;
   }
 
   pPager->journalOff = 0;
   pPager->journalHdr = 0;
   pPager->setMaster = 0;
 
+  pPg = 0;
+  sqlite3PcacheFetch(pPager->pPCache, 1, 0, &pPg);
+  if( pPg ){
+    /* assert( sqlite3PcachePagecount(pPager->pPCache)==1 ); */
+    pPg->pData = pPg->pBuf;
+    sqlite3PcacheRelease(pPg);
+  }else{
+    /*assert( sqlite3PcachePagecount(pPager->pPCache)==0 );*/
+  }
+  sqlite3OsUnmap(pPager->fd, pPager->pMapObject);
+  pPager->pMapObject = 0;
+  pPager->aFileContent = 0;
+  pPager->nFileContent = 0;
 }
 
 /*
@@ -5292,6 +5302,16 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
 }
 
 /*
+** Make a copy of page content into malloced space.
+*/
+void makePageWriteable(Pager *pPager, PgHdr *pPg){
+  if( pPg->pData!=pPg->pBuf ){
+    memcpy(pPg->pBuf, pPg->pData, pPager->pageSize);
+    pPg->pData = pPg->pBuf;
+  }
+}
+
+/*
 ** Mark a single data page as writeable. The page is written into the 
 ** main journal or sub-journal as required. If the page is written into
 ** one of the journals, the corresponding bit is set in the 
@@ -5340,10 +5360,8 @@ static int pager_write(PgHdr *pPg){
   assert( assert_pager_state(pPager) );
 
   /* Make sure page content is held in malloced memory */
-  if( pPg->pData!=pPg->pBuf ){
-    memcpy(pPg->pBuf, pPg->pData, pPager->pageSize);
-    pData = pPg->pData = pPg->pBuf;
-  }
+  makePageWriteable(pPager, pPg);
+  pData = pPg->pData;
 
   /* Mark the page as dirty.  If the page has already been written
   ** to the journal then we can return right away.
@@ -6437,6 +6455,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
   }
 
   origPgno = pPg->pgno;
+  makePageWriteable(pPager, pPg);
   sqlite3PcacheMove(pPg, pgno);
   sqlite3PcacheMakeDirty(pPg);
 
@@ -6486,9 +6505,9 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
 /*
 ** Return a pointer to the data for the specified page.
 */
-void *sqlite3PagerGetData(DbPage *pPg){
+u8 *sqlite3PagerGetData(DbPage *pPg){
   assert( pPg->nRef>0 || pPg->pPager->memDb );
-  return pPg->pData;
+  return (u8*)pPg->pData;
 }
 
 /*

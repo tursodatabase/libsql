@@ -729,15 +729,22 @@ int sqlite3BtreeCursorHasMoved(BtCursor *pCur, int *pHasMoved){
 }
 
 /*
+** Set up the correct data pointers for a MemPage
+*/
+static u8 *btreeGetData(MemPage *pPage){
+  pPage->aData = sqlite3PagerGetData(pPage->pDbPage);
+  pPage->aDataEnd = &pPage->aData[pPage->pBt->usableSize];
+  pPage->aCellIdx = &pPage->aData[pPage->cellOffset];
+  return pPage->aData;
+}
+
+/*
 ** Make a btree page is writable.
 */
 static int btreeMakePageWriteable(MemPage *pPage){
   int rc;
-  if( sqlite3PagerIswriteable(pPage->pDbPage) ) return SQLITE_OK;
   rc = sqlite3PagerWrite(pPage->pDbPage);
-  pPage->aData = sqlite3PagerGetData(pPage->pDbPage);
-  pPage->aDataEnd = &pPage->aData[pPage->pBt->usableSize];
-  pPage->aCellIdx = &pPage->aData[pPage->cellOffset];
+  btreeGetData(pPage);
   return rc;
 }
 
@@ -810,6 +817,7 @@ static void ptrmapPut(BtShared *pBt, Pgno key, u8 eType, Pgno parent, int *pRC){
   if( eType!=pPtrmap[offset] || get4byte(&pPtrmap[offset+1])!=parent ){
     TRACE(("PTRMAP_UPDATE: %d->(%d,%d)\n", key, eType, parent));
     *pRC= rc = sqlite3PagerWrite(pDbPage);
+    pPtrmap = sqlite3PagerGetData(pDbPage);
     if( rc==SQLITE_OK ){
       pPtrmap[offset] = eType;
       put4byte(&pPtrmap[offset+1], parent);
@@ -1648,7 +1656,7 @@ static void releasePage(MemPage *pPage){
     assert( pPage->aData );
     assert( pPage->pBt );
     assert( sqlite3PagerGetExtra(pPage->pDbPage) == (void*)pPage );
-    assert( sqlite3PagerGetData(pPage->pDbPage)==pPage->aData );
+    /* assert( sqlite3PagerGetData(pPage->pDbPage)==pPage->aData ); */
     assert( sqlite3_mutex_held(pPage->pBt->mutex) );
     sqlite3PagerUnref(pPage->pDbPage);
   }
@@ -2323,6 +2331,7 @@ static int lockBtree(BtShared *pBt){
   int nPage;           /* Number of pages in the database */
   int nPageFile = 0;   /* Number of pages in the database file */
   int nPageHeader;     /* Number of pages in the database according to hdr */
+  u8 *page1;           /* Content of page 1 */
 
   assert( sqlite3_mutex_held(pBt->mutex) );
   assert( pBt->pPage1==0 );
@@ -2334,15 +2343,15 @@ static int lockBtree(BtShared *pBt){
   /* Do some checking to help insure the file we opened really is
   ** a valid database file. 
   */
-  nPage = nPageHeader = get4byte(28+(u8*)pPage1->aData);
+  page1 = btreeGetData(pPage1);
+  nPage = nPageHeader = get4byte(&page1[28]);
   sqlite3PagerPagecount(pBt->pPager, &nPageFile);
-  if( nPage==0 || memcmp(24+(u8*)pPage1->aData, 92+(u8*)pPage1->aData,4)!=0 ){
+  if( nPage==0 || memcmp(24+page1, 92+page1, 4)!=0 ){
     nPage = nPageFile;
   }
   if( nPage>0 ){
     u32 pageSize;
     u32 usableSize;
-    u8 *page1 = pPage1->aData;
     rc = SQLITE_NOTADB;
     if( memcmp(page1, zMagicHeader, 16)!=0 ){
       goto page1_init_failed;
@@ -2497,7 +2506,7 @@ static int newDatabase(BtShared *pBt){
   assert( pP1!=0 );
   rc = btreeMakePageWriteable(pP1);
   if( rc ) return rc;
-  data = pP1->aData;
+  data = btreeGetData(pP1);
   memcpy(data, zMagicHeader, sizeof(zMagicHeader));
   assert( sizeof(zMagicHeader)==16 );
   data[16] = (u8)((pBt->pageSize>>8)&0xff);
@@ -2667,6 +2676,7 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
       ** re-read the database size from page 1 if a savepoint or transaction
       ** rollback occurs within the transaction.
       */
+      btreeGetData(pPage1);
       if( pBt->nPage!=get4byte(&pPage1->aData[28]) ){
         rc = btreeMakePageWriteable(pPage1);
         if( rc==SQLITE_OK ){
@@ -2913,6 +2923,7 @@ static int incrVacuumStep(BtShared *pBt, Pgno nFin, Pgno iLastPg){
     u8 eType;
     Pgno iPtrPage;
 
+    btreeGetData(pBt->pPage1);
     nFreeList = get4byte(&pBt->pPage1->aData[36]);
     if( nFreeList==0 ){
       return SQLITE_DONE;
@@ -3065,6 +3076,7 @@ static int autoVacuumCommit(BtShared *pBt){
       return SQLITE_CORRUPT_BKPT;
     }
 
+    btreeGetData(pBt->pPage1);
     nFree = get4byte(&pBt->pPage1->aData[36]);
     nEntry = pBt->usableSize/5;
     nPtrmap = (nFree-nOrig+PTRMAP_PAGENO(pBt, nOrig)+nEntry)/nEntry;
@@ -3424,7 +3436,7 @@ int sqlite3BtreeSavepoint(Btree *p, int op, int iSavepoint){
     if( rc==SQLITE_OK ){
       if( iSavepoint<0 && pBt->initiallyEmpty ) pBt->nPage = 0;
       rc = newDatabase(pBt);
-      pBt->nPage = get4byte(28 + pBt->pPage1->aData);
+      pBt->nPage = get4byte(28 + btreeGetData(pBt->pPage1));
 
       /* The database size was written into the offset 28 of the header
       ** when the transaction started, so we know that the value at offset
@@ -3963,7 +3975,7 @@ static int accessPayload(
          && offset==0                                          /* (2) */
          && pBt->inTransaction==TRANS_READ                     /* (4) */
          && (fd = sqlite3PagerFile(pBt->pPager))->pMethods     /* (3) */
-         && pBt->pPage1->aData[19]==0x01                       /* (5) */
+         && btreeGetData(pBt->pPage1)[19]==0x01                /* (5) */
         ){
           u8 aSave[4];
           u8 *aWrite = &pBuf[-4];
@@ -4825,7 +4837,7 @@ static int allocateBtreePage(
   assert( sqlite3_mutex_held(pBt->mutex) );
   pPage1 = pBt->pPage1;
   mxPage = btreePagecount(pBt);
-  n = get4byte(&pPage1->aData[36]);
+  n = get4byte(&btreeGetData(pPage1)[36]);
   testcase( n==mxPage-1 );
   if( n>=mxPage ){
     return SQLITE_CORRUPT_BKPT;
@@ -5000,6 +5012,7 @@ static int allocateBtreePage(
                  *pPgno, closest+1, k, pTrunk->pgno, n-1));
           rc = btreeMakePageWriteable(pTrunk);
           if( rc ) goto end_allocate_page;
+          aData = pTrunk->aData;
           if( closest<k-1 ){
             memcpy(&aData[8+closest*4], &aData[4+k*4], 4);
           }
@@ -7370,7 +7383,7 @@ void sqlite3BtreeGetMeta(Btree *p, int idx, u32 *pMeta){
   assert( pBt->pPage1 );
   assert( idx>=0 && idx<=15 );
 
-  *pMeta = get4byte(&pBt->pPage1->aData[36 + idx*4]);
+  *pMeta = get4byte(&btreeGetData(pBt->pPage1)[36 + idx*4]);
 
   /* If auto-vacuum is disabled in this build and this is an auto-vacuum
   ** database, mark the database as read-only.  */
@@ -7930,6 +7943,7 @@ char *sqlite3BtreeIntegrityCheck(
 
   /* Check the integrity of the freelist
   */
+  btreeGetData(pBt->pPage1);
   checkList(&sCheck, 1, get4byte(&pBt->pPage1->aData[32]),
             get4byte(&pBt->pPage1->aData[36]), "Main freelist: ");
 
@@ -8217,13 +8231,13 @@ int sqlite3BtreeSetVersion(Btree *pBtree, int iVersion){
 
   rc = sqlite3BtreeBeginTrans(pBtree, 0);
   if( rc==SQLITE_OK ){
-    u8 *aData = pBt->pPage1->aData;
+    u8 *aData = btreeGetData(pBt->pPage1);
     if( aData[18]!=(u8)iVersion || aData[19]!=(u8)iVersion ){
       rc = sqlite3BtreeBeginTrans(pBtree, 2);
       if( rc==SQLITE_OK ){
         rc = btreeMakePageWriteable(pBt->pPage1);
         if( rc==SQLITE_OK ){
-          aData = pBt->pPage1->aData;
+          aData = btreeGetData(pBt->pPage1);
           aData[18] = (u8)iVersion;
           aData[19] = (u8)iVersion;
         }

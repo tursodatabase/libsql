@@ -1,5 +1,5 @@
-C Begin\smaking\sexperimental\schanges\sto\suse\smmap()\sfor\sreading\scontent\sfrom\na\sdatabase.\s\sThe\scode\scompiles,\sbut\scrashes\son\sthe\stest\ssuite.
-D 2011-11-14T01:55:02.731
+C Further\swork\son\smmap().\s\sStill\sdoes\snot\swork\sright\s-\sautovacuum\stests\sare\sthe\nfirst\sto\sfail.
+D 2011-11-14T12:34:15.531
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -125,7 +125,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 4368158da74d4711888e03264105c5c527d76caf
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 2d943dc55e9828b017a2f3fe696a54ff91f51eaf
+F src/btree.c c683806cd69ae845d5093d6e2906a7a73a2d9775
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h ea863a819224d3e6845ad1e39954d41558b8cd8b
 F src/build.c 8af67a08a852ff4c63701963cb1ab7166f577814
@@ -168,10 +168,10 @@ F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c f2c4cfdc350f9b1c5b6ff5079b65c875dc5ea35d
 F src/os_win.c d6cf718667c4d89d930f30caa6cdc7f7753e259a
-F src/pager.c 6b3a7765ac98a32e125a7f0214fe65e9b578aac8
-F src/pager.h a29eabed35775666fbbcdf91d6a6811f42efdd54
+F src/pager.c 196b112bb00473f719f49fa777f609c135fdd886
+F src/pager.h 13fd98ed10e7d23b23721dd2eafa474c26c9a234
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
-F src/pcache.c ccbd5b12806d8fd8a4652b26a5be42d8eee1e962
+F src/pcache.c e9246c20744e13268e7e02230446bc748c5cc470
 F src/pcache.h f8a98a37dd4f7c8bb4ffbdbd6284457c6b78b16e
 F src/pcache1.c 0ac7b63db83a705787f4ababf1e4cff27b5f8064
 F src/pragma.c 65d1d63d64f8b7350f28d5ee6d40f7985deccdfe
@@ -974,10 +974,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 9f839ac05a9f3cfe587d2ccdccd50dac41baedbe
-R b9e47a24ac1e99bdba7ee295a969cbe5
-T *branch * mmap-experimental
-T *sym-mmap-experimental *
-T -sym-experimental-pcache *
+P 09be42d5fa7ef692428579d4d8d48b3316190945
+R befae33617c94c7a45bbbb00f51b97b6
 U drh
-Z 12fb6642b5e5f67ae442ddd38187142a
+Z ea236fcfb430914e9125ff2cd702c553
