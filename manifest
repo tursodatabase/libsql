@@ -1,5 +1,5 @@
-C Version\s3.7.9
-D 2011-11-01T00:52:41.132
+C Fix\sa\s8-byte\salignment\sproblem\sthat\scauses\sa\sSIGBUS\son\sSparc.
+D 2011-11-14T02:53:54.950
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -128,7 +128,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 32199e2d939233ade25340eaba450f818b37c079
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
-F src/build.c 8af67a08a852ff4c63701963cb1ab7166f577814
+F src/build.c 8915bb6d72ead998f94c2756ea8d143c77709b70
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c a9c26822515f81ec21588cbb482ca6724be02e33
@@ -974,8 +974,10 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 6635cd9a7714b681dd8aa96e90be462a40d10178
-R b059ff356abfc5b4524a9b548916f43e
-T +sym-version-3.7.9 *
+P c7c6050ef060877ebe77b41d959e9df13f8c9b5e
+R ff6342b74061a33cbd4fa1292ca6bba4
+T *branch * branch-3.7.9
+T *sym-branch-3.7.9 *
+T -sym-trunk *
 U drh
-Z a9ecbb5c487c786a176874d979505217
+Z d03af58daca88e6314e5ea39548757b9
