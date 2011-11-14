@@ -119,9 +119,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <errno.h>
-#ifndef SQLITE_OMIT_WAL
 #include <sys/mman.h>
-#endif
 
 #if SQLITE_ENABLE_LOCKING_STYLE
 # include <sys/ioctl.h>
@@ -412,6 +410,14 @@ static struct unix_syscall {
 
   { "rmdir",        (sqlite3_syscall_ptr)rmdir,           0 },
 #define osRmdir     ((int(*)(const char*))aSyscall[19].pCurrent)
+
+  { "mmap",         (sqlite3_syscall_ptr)mmap,            0 },
+#define osMmap  ((int(*)(void*,size_t,int,int,int,off_t))aSyscall[20].pCurrent)
+
+  { "munmap",       (sqlite3_syscall_ptr)munmap,          0 },
+#define osMunmap    ((int(*)(void*,size_t))aSyscall[21].pCurrent)
+
+
 
 }; /* End of the overrideable system calls */
 
@@ -4230,6 +4236,63 @@ static int unixShmUnmap(
 #endif /* #ifndef SQLITE_OMIT_WAL */
 
 /*
+** An object used to record enough information about a file mapping to
+** undo that mapping.
+*/
+struct unixMapping {
+  sqlite3_int64 len;
+  void *p;
+};
+
+/*
+** Try to map some or all of a file into memory
+*/
+static int unixMap(
+  sqlite3_file *pFile,   /* File to be mapped */
+  sqlite3_int64 ofst,    /* Offset of start of section to be mapped */
+  sqlite3_int64 len,     /* Length of the section to be mapped */
+  int mmapFlags,         /* Flags controlling the mapping */
+  void **ppMapObj,       /* Write here an object to undo the mapping */
+  void **ppMem           /* Write here a pointer to the mapped file */
+){
+  struct unixMapping *pNew;
+  unixFile *pUFile = (unixFile*)pFile;
+
+  assert( mmapFlags==SQLITE_OPEN_READONLY );
+  sqlite3BeginBenignMalloc();
+  pNew = sqlite3_malloc( sizeof(*pNew) );
+  sqlite3EndBenignMalloc();
+  if( pNew==0 ){
+    *ppMapObj = 0;
+    *ppMem = 0;
+    return SQLITE_CANTOPEN;
+  }
+  pNew->len = len;
+  pNew->p = *ppMem = mmap(0, len, PROT_READ, MAP_SHARED, pUFile->h, 0);
+  if( pNew->p==0 ){
+    sqlite3_free(pNew);
+    return SQLITE_CANTOPEN;
+  }else{
+    *ppMapObj = pNew;
+    return SQLITE_OK;
+  }
+}
+
+/*
+** Undo a prior memory mapping.
+*/
+static int unixUnmap(
+  sqlite3_file *pFile,
+  void *pMapObj
+){
+  struct unixMapping *pMap = (struct unixMapping*)pMapObj;
+  assert( pMap!=0 );
+  munmap(pMap->p, pMap->len);
+  sqlite3_free(pMap);
+  return SQLITE_OK;
+}
+
+/*
 ** Here ends the implementation of all sqlite3_file methods.
 **
 ********************** End sqlite3_file Methods *******************************
@@ -4269,9 +4332,9 @@ static int unixShmUnmap(
 **   *  An I/O method finder function called FINDER that returns a pointer
 **      to the METHOD object in the previous bullet.
 */
-#define IOMETHODS(FINDER, METHOD, VERSION, CLOSE, LOCK, UNLOCK, CKLOCK)      \
+#define IOMETHODS(FINDER, METHOD, CLOSE, LOCK, UNLOCK, CKLOCK, SHMMAP)       \
 static const sqlite3_io_methods METHOD = {                                   \
-   VERSION,                    /* iVersion */                                \
+   3,                          /* iVersion */                                \
    CLOSE,                      /* xClose */                                  \
    unixRead,                   /* xRead */                                   \
    unixWrite,                  /* xWrite */                                  \
@@ -4284,10 +4347,12 @@ static const sqlite3_io_methods METHOD = {                                   \
    unixFileControl,            /* xFileControl */                            \
    unixSectorSize,             /* xSectorSize */                             \
    unixDeviceCharacteristics,  /* xDeviceCapabilities */                     \
-   unixShmMap,                 /* xShmMap */                                 \
+   SHMMAP,                     /* xShmMap */                                 \
    unixShmLock,                /* xShmLock */                                \
    unixShmBarrier,             /* xShmBarrier */                             \
-   unixShmUnmap                /* xShmUnmap */                               \
+   unixShmUnmap,               /* xShmUnmap */                               \
+   unixMap,                    /* xMap */                                    \
+   unixUnmap                   /* xUnmap */                                  \
 };                                                                           \
 static const sqlite3_io_methods *FINDER##Impl(const char *z, unixFile *p){   \
   UNUSED_PARAMETER(z); UNUSED_PARAMETER(p);                                  \
@@ -4304,40 +4369,40 @@ static const sqlite3_io_methods *(*const FINDER)(const char*,unixFile *p)    \
 IOMETHODS(
   posixIoFinder,            /* Finder function name */
   posixIoMethods,           /* sqlite3_io_methods object name */
-  2,                        /* shared memory is enabled */
   unixClose,                /* xClose method */
   unixLock,                 /* xLock method */
   unixUnlock,               /* xUnlock method */
-  unixCheckReservedLock     /* xCheckReservedLock method */
+  unixCheckReservedLock,    /* xCheckReservedLock method */
+  unixShmMap                /* Shared memory enabled */
 )
 IOMETHODS(
   nolockIoFinder,           /* Finder function name */
   nolockIoMethods,          /* sqlite3_io_methods object name */
-  1,                        /* shared memory is disabled */
   nolockClose,              /* xClose method */
   nolockLock,               /* xLock method */
   nolockUnlock,             /* xUnlock method */
-  nolockCheckReservedLock   /* xCheckReservedLock method */
+  nolockCheckReservedLock,  /* xCheckReservedLock method */
+  0                         /* Shared memory disabled */
 )
 IOMETHODS(
   dotlockIoFinder,          /* Finder function name */
   dotlockIoMethods,         /* sqlite3_io_methods object name */
-  1,                        /* shared memory is disabled */
   dotlockClose,             /* xClose method */
   dotlockLock,              /* xLock method */
   dotlockUnlock,            /* xUnlock method */
-  dotlockCheckReservedLock  /* xCheckReservedLock method */
+  dotlockCheckReservedLock, /* xCheckReservedLock method */
+  0                         /* Shared memory disabled */
 )
 
 #if SQLITE_ENABLE_LOCKING_STYLE && !OS_VXWORKS
 IOMETHODS(
   flockIoFinder,            /* Finder function name */
   flockIoMethods,           /* sqlite3_io_methods object name */
-  1,                        /* shared memory is disabled */
   flockClose,               /* xClose method */
   flockLock,                /* xLock method */
   flockUnlock,              /* xUnlock method */
-  flockCheckReservedLock    /* xCheckReservedLock method */
+  flockCheckReservedLock,   /* xCheckReservedLock method */
+  0                         /* Shared memory disabled */
 )
 #endif
 
@@ -4345,11 +4410,11 @@ IOMETHODS(
 IOMETHODS(
   semIoFinder,              /* Finder function name */
   semIoMethods,             /* sqlite3_io_methods object name */
-  1,                        /* shared memory is disabled */
   semClose,                 /* xClose method */
   semLock,                  /* xLock method */
   semUnlock,                /* xUnlock method */
-  semCheckReservedLock      /* xCheckReservedLock method */
+  semCheckReservedLock,     /* xCheckReservedLock method */
+  0                         /* Shared memory disabled */
 )
 #endif
 
@@ -4357,11 +4422,11 @@ IOMETHODS(
 IOMETHODS(
   afpIoFinder,              /* Finder function name */
   afpIoMethods,             /* sqlite3_io_methods object name */
-  1,                        /* shared memory is disabled */
   afpClose,                 /* xClose method */
   afpLock,                  /* xLock method */
   afpUnlock,                /* xUnlock method */
-  afpCheckReservedLock      /* xCheckReservedLock method */
+  afpCheckReservedLock,     /* xCheckReservedLock method */
+  0                         /* Shared memory disabled */
 )
 #endif
 
@@ -4382,11 +4447,11 @@ static int proxyCheckReservedLock(sqlite3_file*, int*);
 IOMETHODS(
   proxyIoFinder,            /* Finder function name */
   proxyIoMethods,           /* sqlite3_io_methods object name */
-  1,                        /* shared memory is disabled */
   proxyClose,               /* xClose method */
   proxyLock,                /* xLock method */
   proxyUnlock,              /* xUnlock method */
-  proxyCheckReservedLock    /* xCheckReservedLock method */
+  proxyCheckReservedLock,   /* xCheckReservedLock method */
+  0                         /* Shared memory disabled */
 )
 #endif
 
@@ -4395,11 +4460,11 @@ IOMETHODS(
 IOMETHODS(
   nfsIoFinder,               /* Finder function name */
   nfsIoMethods,              /* sqlite3_io_methods object name */
-  1,                         /* shared memory is disabled */
   unixClose,                 /* xClose method */
   unixLock,                  /* xLock method */
   nfsUnlock,                 /* xUnlock method */
-  unixCheckReservedLock      /* xCheckReservedLock method */
+  unixCheckReservedLock,     /* xCheckReservedLock method */
+  0                          /* Shared memory disabled */
 )
 #endif
 
@@ -6771,7 +6836,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==20 );
+  assert( ArraySize(aSyscall)==22 );
 
   /* Register all VFSes defined in the aVfs[] array */
   for(i=0; i<(sizeof(aVfs)/sizeof(sqlite3_vfs)); i++){

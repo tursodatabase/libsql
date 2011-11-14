@@ -24,7 +24,8 @@ typedef struct PCache PCache;
 */
 struct PgHdr {
   sqlite3_pcache_page *pPage;    /* Pcache object page handle */
-  void *pData;                   /* Page data */
+  void *pData;                   /* Page data to actually use */
+  void *pBuf;                    /* Malloced buffer to hold pData */
   void *pExtra;                  /* Extra content */
   PgHdr *pDirty;                 /* Transient list of dirty pages */
   Pgno pgno;                     /* Page number for this page */

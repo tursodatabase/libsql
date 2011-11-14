@@ -251,6 +251,8 @@ int sqlite3OsShmMap(sqlite3_file *,int,int,int,void volatile **);
 int sqlite3OsShmLock(sqlite3_file *id, int, int, int);
 void sqlite3OsShmBarrier(sqlite3_file *id);
 int sqlite3OsShmUnmap(sqlite3_file *id, int);
+int sqlite3OsMap(sqlite3_file*,sqlite3_int64,sqlite3_int64,int,void**,void**);
+int sqlite3OsUnmap(sqlite3_file*,void*);
 
 /* 
 ** Functions for accessing sqlite3_vfs methods 

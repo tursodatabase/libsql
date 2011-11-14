@@ -168,8 +168,8 @@ void *sqlite3PagerCodec(DbPage *);
 /* Functions to support testing and debugging. */
 #if !defined(NDEBUG) || defined(SQLITE_TEST)
   Pgno sqlite3PagerPagenumber(DbPage*);
-  int sqlite3PagerIswriteable(DbPage*);
 #endif
+int sqlite3PagerIswriteable(DbPage*);
 #ifdef SQLITE_TEST
   int *sqlite3PagerStats(Pager*);
   void sqlite3PagerRefdump(Pager*);

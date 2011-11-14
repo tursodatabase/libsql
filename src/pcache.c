@@ -287,7 +287,7 @@ int sqlite3PcacheFetch(
     if( !pPgHdr->pPage ){
       memset(pPgHdr, 0, sizeof(PgHdr));
       pPgHdr->pPage = pPage;
-      pPgHdr->pData = pPage->pBuf;
+      pPgHdr->pData = pPgHdr->pBuf = pPage->pBuf;
       pPgHdr->pExtra = (void *)&pPgHdr[1];
       memset(pPgHdr->pExtra, 0, pCache->szExtra);
       pPgHdr->pCache = pCache;
@@ -295,7 +295,7 @@ int sqlite3PcacheFetch(
     }
     assert( pPgHdr->pCache==pCache );
     assert( pPgHdr->pgno==pgno );
-    assert( pPgHdr->pData==pPage->pBuf );
+    assert( pPgHdr->pBuf==pPage->pBuf );
     assert( pPgHdr->pExtra==(void *)&pPgHdr[1] );
 
     if( 0==pPgHdr->nRef ){

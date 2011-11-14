@@ -199,6 +199,52 @@ int sqlite3OsCurrentTimeInt64(sqlite3_vfs *pVfs, sqlite3_int64 *pTimeOut){
   return rc;
 }
 
+/* Attempt to map all or part of a file into memory.  VFSes are not
+** required to implement this.  The VFS might be an older version (less then
+** 3) that does not have an xMap pointer.  Or the xMap pointer might be NULL.
+*/
+int sqlite3OsMap(
+  sqlite3_file *pFile,    /* The file to be mapped into memory */
+  sqlite3_int64 ofst,     /* Index of the first byte to map */
+  sqlite3_int64 len,      /* Number of bytes to be mapped */
+  int mmapFlags,          /* Map control flags */
+  void **ppMemObj,        /* Write a mapping object here */
+  void **ppMem            /* Write the start of the mapped file here */
+){
+  int rc;
+
+  /* The current implementation only does read-only mmap.  This could change
+  ** in the future. */
+  assert( mmapFlags==SQLITE_OPEN_READONLY );
+
+  /* The current implementation currently only maps the whole file.  This
+  ** could change in the future. */
+  assert( ofst==0 );
+
+  if( pFile->pMethods==0 || pFile->pMethods->iVersion<3
+     || pFile->pMethods->xMap==0 ){
+    *ppMemObj = 0;
+    *ppMem = 0;
+    rc = SQLITE_CANTOPEN;
+  }else{
+    rc = pFile->pMethods->xMap(pFile, ofst, len, mmapFlags, ppMemObj, ppMem);
+  }
+  return rc;
+}
+
+/* Undo a mapping.
+**
+** The pMemObj parameter will have been obtained by a prior call to
+** sqlite3OsMap().  So if pMemObj is not NULL, we know that the current
+** VFS does support xMap and xUnmap.
+*/
+int sqlite3OsUnmap(sqlite3_file *pFile, void *pMemObj){
+  int rc = SQLITE_OK;
+  if( pMemObj ) rc = pFile->pMethods->xUnmap(pFile, pMemObj);
+  return rc;
+}
+
+
 int sqlite3OsOpenMalloc(
   sqlite3_vfs *pVfs, 
   const char *zFile, 
