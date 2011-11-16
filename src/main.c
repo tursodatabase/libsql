@@ -365,16 +365,25 @@ int sqlite3_config(int op, ...){
     }
 
     case SQLITE_CONFIG_PCACHE: {
-      /* Specify an alternative page cache implementation */
-      sqlite3GlobalConfig.pcache = *va_arg(ap, sqlite3_pcache_methods*);
+      /* no-op */
+      break;
+    }
+    case SQLITE_CONFIG_GETPCACHE: {
+      /* now an error */
+      rc = SQLITE_ERROR;
       break;
     }
 
-    case SQLITE_CONFIG_GETPCACHE: {
-      if( sqlite3GlobalConfig.pcache.xInit==0 ){
+    case SQLITE_CONFIG_PCACHE2: {
+      /* Specify an alternative page cache implementation */
+      sqlite3GlobalConfig.pcache2 = *va_arg(ap, sqlite3_pcache_methods2*);
+      break;
+    }
+    case SQLITE_CONFIG_GETPCACHE2: {
+      if( sqlite3GlobalConfig.pcache2.xInit==0 ){
         sqlite3PCacheSetDefault();
       }
-      *va_arg(ap, sqlite3_pcache_methods*) = sqlite3GlobalConfig.pcache;
+      *va_arg(ap, sqlite3_pcache_methods2*) = sqlite3GlobalConfig.pcache2;
       break;
     }
 
@@ -473,21 +482,21 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
   if( db->lookaside.bMalloced ){
     sqlite3_free(db->lookaside.pStart);
   }
-  /* The size of a lookaside slot needs to be larger than a pointer
-  ** to be useful.
+  /* The size of a lookaside slot after ROUNDDOWN8 needs to be larger
+  ** than a pointer to be useful.
   */
+  sz = ROUNDDOWN8(sz);  /* IMP: R-33038-09382 */
   if( sz<=(int)sizeof(LookasideSlot*) ) sz = 0;
   if( cnt<0 ) cnt = 0;
   if( sz==0 || cnt==0 ){
     sz = 0;
     pStart = 0;
   }else if( pBuf==0 ){
-    sz = ROUNDDOWN8(sz); /* IMP: R-33038-09382 */
     sqlite3BeginBenignMalloc();
     pStart = sqlite3Malloc( sz*cnt );  /* IMP: R-61949-35727 */
     sqlite3EndBenignMalloc();
+    if( pStart ) cnt = sqlite3MallocSize(pStart)/sz;
   }else{
-    sz = ROUNDDOWN8(sz); /* IMP: R-33038-09382 */
     pStart = pBuf;
   }
   db->lookaside.pStart = pStart;
@@ -2888,15 +2897,6 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 #endif 
-
-    /* sqlite3_test_control(SQLITE_TESTCTRL_PGHDRSZ)
-    **
-    ** Return the size of a pcache header in bytes.
-    */
-    case SQLITE_TESTCTRL_PGHDRSZ: {
-      rc = sizeof(PgHdr);
-      break;
-    }
 
     /* sqlite3_test_control(SQLITE_TESTCTRL_SCRATCHMALLOC, sz, &pNew, pFree);
     **
