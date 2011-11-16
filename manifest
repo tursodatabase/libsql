@@ -1,5 +1,5 @@
-C Where\spossible,\stake\sadvantage\sof\sthe\srowid\sat\sthe\send\sof\sindex\srecords\sto\soptimize\srange\sconstraints\s(<,\s>,\s<=,\s>=)\son\sthe\srowid\scolumn.
-D 2011-11-16T15:27:09.116
+C Fix\san\sinvalid\sassert()\sstatement\sadded\sby\s[3b58f5f066].
+D 2011-11-16T15:41:29.973
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -243,7 +243,7 @@ F src/vdbe.c a7ab9993ec5a4d9479dc99671faec061fbf9b889
 F src/vdbe.h f0725ee997db869ecae5bb70a71612aabeca7755
 F src/vdbeInt.h 9498fc98a2c9e349a4ef13455ff5a3e898f40176
 F src/vdbeapi.c 4dbba7f94f127f6ea8d2d0505ee1f98e5ffbf546
-F src/vdbeaux.c 17bee21d513b8567f2e010aea287e81e9e6e273f
+F src/vdbeaux.c 3ff5f59d4fdbe94eafd97483e7ceee6045364d02
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c 2fc78b3e0fabcc1eaa23cd79dd2e30e6dcfe1e56
 F src/vdbesort.c 468d43c057063e54da4f1988b38b4f46d60e7790
@@ -975,7 +975,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 4fb3ca756a3a7c66baa4745a9b2c1e246a67c699
-R 131e1406052949b0c9af0dcdeb54bce6
+P 3b58f5f06648205a47e5cace0201269c406e476a
+R c8ea7107e3daef31b122bbcd288f4e49
 U dan
-Z 4ed1ee25329fe5dbd728820234ee8619
+Z 2cec893a5743ba3152a50038626b1c85
