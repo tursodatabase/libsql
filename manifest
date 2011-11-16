@@ -1,5 +1,5 @@
-C Update\smemsubsys1.test\sto\saccount\sfor\sthe\srecently\sincreased\ssize\sof\sthe\sMemPage\sstructure\sin\sbtreeInt.h.
-D 2011-11-16T08:18:20.698
+C Where\spossible,\stake\sadvantage\sof\sthe\srowid\sat\sthe\send\sof\sindex\srecords\sto\soptimize\srange\sconstraints\s(<,\s>,\s<=,\s>=)\son\sthe\srowid\scolumn.
+D 2011-11-16T15:27:09.116
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -142,7 +142,7 @@ F src/global.c e230227de13601714b29f9363028514aada5ae2f
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 9794a963911da8157ad0dc39726c9c695b1c4692
+F src/insert.c 8f283d6734dd837ed7531b26d7622fda70874390
 F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
@@ -239,11 +239,11 @@ F src/update.c 25e046a8f69d5e557aabde2000487b8545509d8d
 F src/utf.c 890c67dcfcc7a74623c95baac7535aadfe265e84
 F src/util.c 01238e2b0f24a14779181dbf991fe02620a80e31
 F src/vacuum.c 0c0ba2242355c6048d65e2b333abe0f7c06348fa
-F src/vdbe.c 326994a64a9a08853122200dc9f62cb96b8f0831
+F src/vdbe.c a7ab9993ec5a4d9479dc99671faec061fbf9b889
 F src/vdbe.h f0725ee997db869ecae5bb70a71612aabeca7755
 F src/vdbeInt.h 9498fc98a2c9e349a4ef13455ff5a3e898f40176
 F src/vdbeapi.c 4dbba7f94f127f6ea8d2d0505ee1f98e5ffbf546
-F src/vdbeaux.c a950e34449a508d48d90475acc287943a4094f3a
+F src/vdbeaux.c 17bee21d513b8567f2e010aea287e81e9e6e273f
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c 2fc78b3e0fabcc1eaa23cd79dd2e30e6dcfe1e56
 F src/vdbesort.c 468d43c057063e54da4f1988b38b4f46d60e7790
@@ -252,7 +252,7 @@ F src/vtab.c e9318d88feac85be8e27ee783ac8f5397933fc8a
 F src/wal.c 5fe1ba55b8fab9d3936bc9093af61ab9f1c580a1
 F src/wal.h 66b40bd91bc29a5be1c88ddd1f5ade8f3f48728a
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 7c85f4c93058e27100d404f0777aaeb0d1b296ae
+F src/where.c f73752ca85c0ed221753fda98aeaf6b9d4616e0e
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -927,6 +927,7 @@ F test/where8m.test da346596e19d54f0aba35ebade032a7c47d79739
 F test/where9.test bed66dcfc69a54a99661c0c9906189cb5e58f4e2
 F test/whereA.test 24c234263c8fe358f079d5e57d884fb569d2da0a
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
+F test/whereC.test 13ff5ec0dba407c0e0c075980c75b3275a6774e5
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/win32lock.test b2a539e85ae6b2d78475e016a9636b4451dc7fb9
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
@@ -974,7 +975,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P ebf6eb6ed756c0a3158b4cb5fb4b460c79d93c29
-R caea05edce79a54f0d9a19e01ae7581d
+P 4fb3ca756a3a7c66baa4745a9b2c1e246a67c699
+R 131e1406052949b0c9af0dcdeb54bce6
 U dan
-Z 63891b2b7447d3ac397ed0d8ca697472
+Z 4ed1ee25329fe5dbd728820234ee8619

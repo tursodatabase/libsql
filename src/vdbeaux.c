@@ -3166,7 +3166,7 @@ int sqlite3VdbeIdxKeyCompare(
   if( rc ){
     return rc;
   }
-  assert( pUnpacked->flags & UNPACKED_IGNORE_ROWID );
+  assert( pUnpacked->flags & UNPACKED_PREFIX_SEARCH );
   *res = sqlite3VdbeRecordCompare(m.n, m.z, pUnpacked);
   sqlite3VdbeMemRelease(&m);
   return SQLITE_OK;

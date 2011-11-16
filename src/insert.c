@@ -47,7 +47,7 @@ void sqlite3OpenTable(
 **  'd'            INTEGER
 **  'e'            REAL
 **
-** An extra 'b' is appended to the end of the string to cover the
+** An extra 'd' is appended to the end of the string to cover the
 ** rowid that appears as the last column in every index.
 **
 ** Memory for the buffer containing the column index affinity string
@@ -75,7 +75,7 @@ const char *sqlite3IndexAffinityStr(Vdbe *v, Index *pIdx){
     for(n=0; n<pIdx->nColumn; n++){
       pIdx->zColAff[n] = pTab->aCol[pIdx->aiColumn[n]].affinity;
     }
-    pIdx->zColAff[n++] = SQLITE_AFF_NONE;
+    pIdx->zColAff[n++] = SQLITE_AFF_INTEGER;
     pIdx->zColAff[n] = 0;
   }
  
