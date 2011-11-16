@@ -24,7 +24,7 @@ set g_max_chunks 32
 # file name with the chunk number.
 proc multiplex_name {name chunk} {
   if {$chunk==0} { return $name }
-  set num [format "%02d" $chunk]
+  set num [format "%03d" $chunk]
   ifcapable {multiplex_ext_overwrite} {
     set name [string range $name 0 [expr [string length $name]-2-1]]
   }

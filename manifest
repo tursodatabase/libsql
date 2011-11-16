@@ -1,5 +1,5 @@
-C Remove\scode\smade\sobsolete\sby\sthe\schanges\sto\sindex\sprocessing\sthat\sallow\nrange\ssearch\son\sthe\srowid.
-D 2011-11-16T16:23:15.780
+C Change\sthe\smultiplexor\ssuffix\sfrom\s2\sto\s3\sdigits.
+D 2011-11-16T17:32:28.704
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -214,7 +214,7 @@ F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c 03313c693cca72959dcaaf79f8d76f21c01e19ff
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c 8d416f29ad8573f32601f6056c9d2b17472e9ad5
-F src/test_multiplex.c 3fc368022c46fe44ec22c5e1ed727223a54a6a1d
+F src/test_multiplex.c 6a65dd5006117d26718110a8e00b0118aa5c98a1
 F src/test_multiplex.h e99c571bc4968b7a9363b661481f3934bfead61d
 F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
@@ -605,7 +605,7 @@ F test/misc5.test 528468b26d03303b1f047146e5eefc941b9069f5
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test eafaa41b9133d7a2ded4641bbe5f340731d35a52
 F test/misuse.test ba4fb5d1a6101d1c171ea38b3c613d0661c83054
-F test/multiplex.test 9df8bf738b3b97c718fceb3fadb30900ba494418
+F test/multiplex.test 770f0295dd6673e60458cb93abd033ed2f253291
 F test/mutex1.test 78b2b9bb320e51d156c4efdb71b99b051e7a4b41
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test e9648b9d007c7045242af35e11a984d4b169443a
@@ -975,7 +975,10 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 888b09dd8fc0a31b69852a2c10eebb5f31fe35de
-R e9cdc1916fc67db6e66156ee2c102eee
+P a5418c7fc216a30abf7b2fa8c579aee586393a91
+R 6f660080d5c293528a113cc8cdb20026
+T *branch * 3-digit-multiplex-suffix
+T *sym-3-digit-multiplex-suffix *
+T -sym-trunk *
 U drh
-Z 65f4e24eecf20b0f9a407d4be4414918
+Z 8b5e0625a534e1e664db241b7f45d292
