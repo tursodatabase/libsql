@@ -1,5 +1,5 @@
-C Forward\sport\sthe\s8-byte\salignment\sfix\sfrom\sbranch-3.7.9.
-D 2011-11-14T03:00:28.076
+C Update\smemsubsys1.test\sto\saccount\sfor\sthe\srecently\sincreased\ssize\sof\sthe\sMemPage\sstructure\sin\sbtreeInt.h.
+D 2011-11-16T08:18:20.698
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -592,7 +592,7 @@ F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
 F test/memdb.test 708a028d6d373e5b3842e4bdc8ba80998c9a4da6
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
-F test/memsubsys1.test 16ce163ac1ace3d71bf0eaa6a821ed153addd91f
+F test/memsubsys1.test c0db8a1e99f4fa07cb858900c55bad9547899aa8
 F test/memsubsys2.test 3a1c1a9de48e5726faa85108b02459fae8cb9ee9
 F test/minmax.test 722d80816f7e096bf2c04f4111f1a6c1ba65453d
 F test/minmax2.test 33504c01a03bd99226144e4b03f7631a274d66e0
@@ -974,7 +974,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 87614b62ace530761e0e1170ec5840b212735ec6 54cc11981127b52145e39f551d958580b1d45169
-R d0f4fbb7a87678b75d0d31293b56ed61
-U drh
-Z 9316f0b6f55795050abf35dbc6e7bbba
+P ebf6eb6ed756c0a3158b4cb5fb4b460c79d93c29
+R caea05edce79a54f0d9a19e01ae7581d
+U dan
+Z 63891b2b7447d3ac397ed0d8ca697472

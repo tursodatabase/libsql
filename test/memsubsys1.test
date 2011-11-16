@@ -68,7 +68,7 @@ proc reset_highwater_marks {} {
   sqlite3_status SQLITE_STATUS_PARSER_STACK 1
 }
 
-set xtra_size 256
+set xtra_size 272
 
 # Test 1:  Both PAGECACHE and SCRATCH are shut down.
 #
