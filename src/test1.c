@@ -4593,6 +4593,31 @@ static int test_release_memory(
   return TCL_OK;
 }
 
+
+/*
+** Usage:  sqlite3_db_release_memory DB
+**
+** Attempt to release memory currently held by database DB.  Return the
+** result code (which in the current implementation is always zero).
+*/
+static int test_db_release_memory(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+  int rc;
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  rc = sqlite3_db_release_memory(db);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
+  return TCL_OK;
+}
+
 /*
 ** Usage:  sqlite3_soft_heap_limit ?N?
 **
@@ -5915,6 +5940,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "uses_stmt_journal",             uses_stmt_journal ,0 },
 
      { "sqlite3_release_memory",        test_release_memory,     0},
+     { "sqlite3_db_release_memory",     test_db_release_memory,  0},
      { "sqlite3_soft_heap_limit",       test_soft_heap_limit,    0},
      { "sqlite3_thread_cleanup",        test_thread_cleanup,     0},
      { "sqlite3_pager_refcounts",       test_pager_refcounts,    0},

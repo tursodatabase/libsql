@@ -103,6 +103,7 @@ void sqlite3PagerSetBusyhandler(Pager*, int(*)(void *), void *);
 int sqlite3PagerSetPagesize(Pager*, u32*, int);
 int sqlite3PagerMaxPageCount(Pager*, int);
 void sqlite3PagerSetCachesize(Pager*, int);
+void sqlite3PagerShrink(Pager*);
 void sqlite3PagerSetSafetyLevel(Pager*,int,int,int);
 int sqlite3PagerLockingMode(Pager *, int);
 int sqlite3PagerSetJournalMode(Pager *, int);

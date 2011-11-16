@@ -142,6 +142,9 @@ void sqlite3PcacheSetCachesize(PCache *, int);
 int sqlite3PcacheGetCachesize(PCache *);
 #endif
 
+/* Free up as much memory as possible from the page cache */
+void sqlite3PcacheShrink(PCache*);
+
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
 /* Try to return memory used by the pcache module to the main memory heap */
 int sqlite3PcacheReleaseMemory(int);

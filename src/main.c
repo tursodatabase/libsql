@@ -531,6 +531,24 @@ sqlite3_mutex *sqlite3_db_mutex(sqlite3 *db){
 }
 
 /*
+** Free up as much memory as we can from the given database
+** connection.
+*/
+int sqlite3_db_release_memory(sqlite3 *db){
+  int i;
+  sqlite3BtreeEnterAll(db);
+  for(i=0; i<db->nDb; i++){
+    Btree *pBt = db->aDb[i].pBt;
+    if( pBt ){
+      Pager *pPager = sqlite3BtreePager(pBt);
+      sqlite3PagerShrink(pPager);
+    }
+  }
+  sqlite3BtreeLeaveAll(db);
+  return SQLITE_OK;
+}
+
+/*
 ** Configuration settings for an individual database connection
 */
 int sqlite3_db_config(sqlite3 *db, int op, ...){

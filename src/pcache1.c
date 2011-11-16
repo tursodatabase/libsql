@@ -227,8 +227,9 @@ static void *pcache1Alloc(int nByte){
 /*
 ** Free an allocated buffer obtained from pcache1Alloc().
 */
-static void pcache1Free(void *p){
-  if( p==0 ) return;
+static int pcache1Free(void *p){
+  int nFreed = 0;
+  if( p==0 ) return 0;
   if( p>=pcache1.pStart && p<pcache1.pEnd ){
     PgFreeslot *pSlot;
     sqlite3_mutex_enter(pcache1.mutex);
@@ -241,15 +242,15 @@ static void pcache1Free(void *p){
     assert( pcache1.nFreeSlot<=pcache1.nSlot );
     sqlite3_mutex_leave(pcache1.mutex);
   }else{
-    int iSize;
     assert( sqlite3MemdebugHasType(p, MEMTYPE_PCACHE) );
     sqlite3MemdebugSetType(p, MEMTYPE_HEAP);
-    iSize = sqlite3MallocSize(p);
+    nFreed = sqlite3MallocSize(p);
     sqlite3_mutex_enter(pcache1.mutex);
-    sqlite3StatusAdd(SQLITE_STATUS_PAGECACHE_OVERFLOW, -iSize);
+    sqlite3StatusAdd(SQLITE_STATUS_PAGECACHE_OVERFLOW, -nFreed);
     sqlite3_mutex_leave(pcache1.mutex);
     sqlite3_free(p);
   }
+  return nFreed;
 }
 
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
@@ -624,6 +625,25 @@ static void pcache1Cachesize(sqlite3_pcache *p, int nMax){
 }
 
 /*
+** Implementation of the sqlite3_pcache.xShrink method. 
+**
+** Free up as much memory as possible.
+*/
+static void pcache1Shrink(sqlite3_pcache *p){
+  PCache1 *pCache = (PCache1*)p;
+  if( pCache->bPurgeable ){
+    PGroup *pGroup = pCache->pGroup;
+    int savedMaxPage;
+    pcache1EnterMutex(pGroup);
+    savedMaxPage = pGroup->nMaxPage;
+    pGroup->nMaxPage = 0;
+    pcache1EnforceMaxPage(pGroup);
+    pGroup->nMaxPage = savedMaxPage;
+    pcache1LeaveMutex(pGroup);
+  }
+}
+
+/*
 ** Implementation of the sqlite3_pcache.xPagecount method. 
 */
 static int pcache1Pagecount(sqlite3_pcache *p){
@@ -935,7 +955,8 @@ void sqlite3PCacheSetDefault(void){
     pcache1Unpin,            /* xUnpin */
     pcache1Rekey,            /* xRekey */
     pcache1Truncate,         /* xTruncate */
-    pcache1Destroy           /* xDestroy */
+    pcache1Destroy,          /* xDestroy */
+    pcache1Shrink            /* xShrink */
   };
   sqlite3_config(SQLITE_CONFIG_PCACHE2, &defaultMethods);
 }

@@ -1438,6 +1438,16 @@ void sqlite3Pragma(
   }else
 #endif
 
+  /*
+  **  PRAGMA shrink_memory
+  **
+  ** This pragma attempts to free as much memory as possible from the
+  ** current database connection.
+  */
+  if( sqlite3StrICmp(zLeft, "shrink_memory")==0 ){
+    sqlite3_db_release_memory(db);
+  }else
+
 #if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
   /*
   ** Report the current state of file logs for all databases

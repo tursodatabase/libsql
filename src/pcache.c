@@ -595,6 +595,15 @@ void sqlite3PcacheSetCachesize(PCache *pCache, int mxPage){
   }
 }
 
+/*
+** Free up as much memory as possible from the page cache.
+*/
+void sqlite3PcacheShrink(PCache *pCache){
+  if( pCache->pCache ){
+    sqlite3GlobalConfig.pcache2.xShrink(pCache->pCache);
+  }
+}
+
 #if defined(SQLITE_CHECK_PAGES) || defined(SQLITE_DEBUG)
 /*
 ** For all dirty pages currently in the cache, invoke the specified

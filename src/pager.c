@@ -3295,6 +3295,13 @@ void sqlite3PagerSetCachesize(Pager *pPager, int mxPage){
 }
 
 /*
+** Free as much memory as possible from the pager.
+*/
+void sqlite3PagerShrink(Pager *pPager){
+  sqlite3PcacheShrink(pPager->pPCache);
+}
+
+/*
 ** Adjust the robustness of the database to damage due to OS crashes
 ** or power failures by changing the number of syncs()s when writing
 ** the rollback journal.  There are three levels:
