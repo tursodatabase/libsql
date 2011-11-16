@@ -1453,7 +1453,6 @@ struct UnpackedRecord {
 */
 #define UNPACKED_NEED_FREE     0x0001  /* Memory is from sqlite3Malloc() */
 #define UNPACKED_NEED_DESTROY  0x0002  /* apMem[]s should all be destroyed */
-#define UNPACKED_IGNORE_ROWID  0x0004  /* Ignore trailing rowid on key1 */
 #define UNPACKED_INCRKEY       0x0008  /* Make this key an epsilon larger */
 #define UNPACKED_PREFIX_MATCH  0x0010  /* A prefix match is considered OK */
 #define UNPACKED_PREFIX_SEARCH 0x0020  /* A prefix match is considered OK */

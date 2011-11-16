@@ -1,5 +1,5 @@
-C Fix\san\sinvalid\sassert()\sstatement\sadded\sby\s[3b58f5f066].
-D 2011-11-16T15:41:29.973
+C Remove\scode\smade\sobsolete\sby\sthe\schanges\sto\sindex\sprocessing\sthat\sallow\nrange\ssearch\son\sthe\srowid.
+D 2011-11-16T16:23:15.780
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -184,7 +184,7 @@ F src/select.c 80f3ac44a8514b1d107b80f5df4a424ae059d2b6
 F src/shell.c 6d2ad7f80adc9c8c3195412879af36eb3196c1b6
 F src/sqlite.h.in b7a4e8d428e467d820cbb4c1d275fdda88b4d7ab
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h b0b6df8f7fe739e3cd718debb60f58853666d13e
+F src/sqliteInt.h ce631f204a67ae35b817928e3931484bda0963bc
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 4568e72dfd36b6a5911f93457364deb072e0b03a
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -243,7 +243,7 @@ F src/vdbe.c a7ab9993ec5a4d9479dc99671faec061fbf9b889
 F src/vdbe.h f0725ee997db869ecae5bb70a71612aabeca7755
 F src/vdbeInt.h 9498fc98a2c9e349a4ef13455ff5a3e898f40176
 F src/vdbeapi.c 4dbba7f94f127f6ea8d2d0505ee1f98e5ffbf546
-F src/vdbeaux.c 3ff5f59d4fdbe94eafd97483e7ceee6045364d02
+F src/vdbeaux.c 45713a5f8f4f36195f503b30153ddef292323f88
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c 2fc78b3e0fabcc1eaa23cd79dd2e30e6dcfe1e56
 F src/vdbesort.c 468d43c057063e54da4f1988b38b4f46d60e7790
@@ -975,7 +975,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 3b58f5f06648205a47e5cace0201269c406e476a
-R c8ea7107e3daef31b122bbcd288f4e49
-U dan
-Z 2cec893a5743ba3152a50038626b1c85
+P 888b09dd8fc0a31b69852a2c10eebb5f31fe35de
+R e9cdc1916fc67db6e66156ee2c102eee
+U drh
+Z 65f4e24eecf20b0f9a407d4be4414918

@@ -2943,15 +2943,6 @@ void sqlite3VdbeRecordUnpack(
 ** Or if the UNPACKED_MATCH_PREFIX flag is set and the prefixes are
 ** equal, then the keys are considered to be equal and
 ** the parts beyond the common prefix are ignored.
-**
-** If the UNPACKED_IGNORE_ROWID flag is set, then the last byte of
-** the header of pKey1 is ignored.  It is assumed that pKey1 is
-** an index key, and thus ends with a rowid value.  The last byte
-** of the header will therefore be the serial type of the rowid:
-** one of 1, 2, 3, 4, 5, 6, 8, or 9 - the integer serial types.
-** The serial type of the final rowid will always be a single byte.
-** By ignoring this last byte of the header, we force the comparison
-** to ignore the rowid at the end of key1.
 */
 int sqlite3VdbeRecordCompare(
   int nKey1, const void *pKey1, /* Left key */
@@ -2984,9 +2975,6 @@ int sqlite3VdbeRecordCompare(
   
   idx1 = getVarint32(aKey1, szHdr1);
   d1 = szHdr1;
-  if( pPKey2->flags & UNPACKED_IGNORE_ROWID ){
-    szHdr1--;
-  }
   nField = pKeyInfo->nField;
   while( idx1<szHdr1 && i<pPKey2->nField ){
     u32 serial_type1;
