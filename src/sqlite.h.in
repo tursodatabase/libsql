@@ -4381,6 +4381,11 @@ sqlite3 *sqlite3_db_handle(sqlite3_stmt*);
 ** has the name "main".  If there is no attached database N on the database
 ** connection D, or if database N is a temporary or in-memory database, then
 ** a NULL pointer is returned.
+**
+** ^The filename returned by this function is the output of the
+** xFullPathname method of the [VFS].  ^In other words, the filename
+** will be an absolute pathname, even if the filename used
+** to open the database originally was a URI or relative pathname.
 */
 const char *sqlite3_db_filename(sqlite3 *db, const char *zDbName);
 
