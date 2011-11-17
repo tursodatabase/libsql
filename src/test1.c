@@ -4619,6 +4619,29 @@ static int test_db_release_memory(
 }
 
 /*
+** Usage:  sqlite3_db_filename DB DBNAME
+**
+** Return the name of a file associated with a database.
+*/
+static int test_db_filename(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+  const char *zDbName;
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB DBNAME");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  zDbName = Tcl_GetString(objv[2]);
+  Tcl_AppendResult(interp, sqlite3_db_filename(db, zDbName), (void*)0);
+  return TCL_OK;
+}
+
+/*
 ** Usage:  sqlite3_soft_heap_limit ?N?
 **
 ** Query or set the soft heap limit for the current thread.  The
@@ -5941,6 +5964,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 
      { "sqlite3_release_memory",        test_release_memory,     0},
      { "sqlite3_db_release_memory",     test_db_release_memory,  0},
+     { "sqlite3_db_filename",           test_db_filename,        0},
      { "sqlite3_soft_heap_limit",       test_soft_heap_limit,    0},
      { "sqlite3_thread_cleanup",        test_thread_cleanup,     0},
      { "sqlite3_pager_refcounts",       test_pager_refcounts,    0},

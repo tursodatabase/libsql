@@ -2970,3 +2970,17 @@ const char *sqlite3_uri_parameter(const char *zFilename, const char *zParam){
   }
   return 0;
 }
+
+/*
+** Return the filename of the database associated with a database
+** connection.
+*/
+const char *sqlite3_db_filename(sqlite3 *db, const char *zDbName){
+  int i;
+  for(i=0; i<db->nDb; i++){
+    if( db->aDb[i].pBt && sqlite3StrICmp(zDbName, db->aDb[i].zName)==0 ){
+      return sqlite3BtreeGetFilename(db->aDb[i].pBt);
+    }
+  }
+  return 0;
+}

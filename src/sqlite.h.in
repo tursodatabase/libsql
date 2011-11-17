@@ -4374,6 +4374,17 @@ int sqlite3_get_autocommit(sqlite3*);
 sqlite3 *sqlite3_db_handle(sqlite3_stmt*);
 
 /*
+** CAPI3REF: Return The Filename For A Database Connection
+**
+** ^The sqlite3_db_filename(D,N) interface returns a pointer to a filename
+** associated with database N of connection D.  ^The main database file
+** has the name "main".  If there is no attached database N on the database
+** connection D, or if database N is a temporary or in-memory database, then
+** a NULL pointer is returned.
+*/
+const char *sqlite3_db_filename(sqlite3 *db, const char *zDbName);
+
+/*
 ** CAPI3REF: Find the next prepared statement
 **
 ** ^This interface returns a pointer to the next [prepared statement] after
