@@ -1776,7 +1776,12 @@ int sqlite3BtreeOpen(
         sqlite3_free(p);
         return SQLITE_NOMEM;
       }
-      sqlite3OsFullPathname(pVfs, zFilename, nFullPathname, zFullPathname);
+      rc = sqlite3OsFullPathname(pVfs, zFilename, nFullPathname, zFullPathname);
+      if( rc ){
+        sqlite3_free(zFullPathname);
+        sqlite3_free(p);
+        return rc;
+      }
 #if SQLITE_THREADSAFE
       mutexOpen = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_OPEN);
       sqlite3_mutex_enter(mutexOpen);
