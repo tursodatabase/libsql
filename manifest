@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_stmt_busy()\sinterface.
-D 2011-11-25T17:21:47.094
+C Fix\sa\stypo\sin\sthe\sdocumentation\sfor\ssqlite3_stmt_busy().
+D 2011-11-25T17:51:52.008
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -182,7 +182,7 @@ F src/resolve.c 365ab1c870e38596d6869e76fb544fe6e4ffc809
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 80f3ac44a8514b1d107b80f5df4a424ae059d2b6
 F src/shell.c 29812a900a780eb0f835c4bc65e216272689def8
-F src/sqlite.h.in ef5e1d1e25e5f3512ebb659975bc53840fe6ebf2
+F src/sqlite.h.in 57081d8e6b53ce29541d7437c93bce6087ac53b5
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h f412e020e1009163c74be56eaac1bf7f6c0a4515
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -976,7 +976,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 0b7edc44757660c8a5ae3b91cbcc3e6afd419b28
-R 45cf62e5f6b60da1dccab28df3542630
+P 95cc4af686dc9bf85cb7224aecde27c9ca14ad5c
+R db79d71dc43fe99dbb583145bbcb11d9
 U drh
-Z 09847bc32a30bed5dba534d9bd527061
+Z 288334a5a07994861eca34b0137225ec

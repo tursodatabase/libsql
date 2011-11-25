@@ -2943,7 +2943,7 @@ int sqlite3_stmt_readonly(sqlite3_stmt *pStmt);
 ** NULL pointer and is not a pointer to a valid [prepared statement]
 ** object, then the behavior is undefined and probably undesirable.
 **
-** This interface can be used in combination [sqlite3_stmt_next()]
+** This interface can be used in combination [sqlite3_next_stmt()]
 ** to locate all prepared statements associated with a database 
 ** connection that are in need of being reset.  This can be used,
 ** for example, in diagnostic routines to search for prepared 
