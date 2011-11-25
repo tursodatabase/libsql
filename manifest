@@ -1,5 +1,5 @@
-C Change\sthe\smultiplexor\sto\suse\sa\s3-digit\ssuffix.
-D 2011-11-18T13:10:51.946
+C Add\sthe\ssqlite3_stmt_busy()\sinterface.
+D 2011-11-25T17:21:47.094
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -182,14 +182,14 @@ F src/resolve.c 365ab1c870e38596d6869e76fb544fe6e4ffc809
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 80f3ac44a8514b1d107b80f5df4a424ae059d2b6
 F src/shell.c 29812a900a780eb0f835c4bc65e216272689def8
-F src/sqlite.h.in 19706a000717456c4963bb0f96262581436ffb5a
+F src/sqlite.h.in ef5e1d1e25e5f3512ebb659975bc53840fe6ebf2
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h f412e020e1009163c74be56eaac1bf7f6c0a4515
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 4568e72dfd36b6a5911f93457364deb072e0b03a
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c de581e2e71f5e7f98366156afad83b4742ac6fe0
-F src/test1.c a445a5d09f63ca66a704720dbec240c65806bcd1
+F src/test1.c fe455fc1be1b0dbf4ce45b11c255900e8ae18da3
 F src/test2.c 80d323d11e909cf0eb1b6fbb4ac22276483bcf31
 F src/test3.c 124ff9735fb6bb7d41de180d6bac90e7b1509432
 F src/test4.c d1e5a5e904d4b444cf572391fdcb017638e36ff7
@@ -242,7 +242,7 @@ F src/vacuum.c 0c0ba2242355c6048d65e2b333abe0f7c06348fa
 F src/vdbe.c a7ab9993ec5a4d9479dc99671faec061fbf9b889
 F src/vdbe.h f0725ee997db869ecae5bb70a71612aabeca7755
 F src/vdbeInt.h 9498fc98a2c9e349a4ef13455ff5a3e898f40176
-F src/vdbeapi.c 4dbba7f94f127f6ea8d2d0505ee1f98e5ffbf546
+F src/vdbeapi.c 86189ebba2c49791d75eaa12929f3ce6527596bd
 F src/vdbeaux.c 45713a5f8f4f36195f503b30153ddef292323f88
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c 2fc78b3e0fabcc1eaa23cd79dd2e30e6dcfe1e56
@@ -315,7 +315,7 @@ F test/capi2.test 835d4cee9f542ea50fa8d01f3fe6de80b0627360
 F test/capi3.test 7200dff6acb17b9a4b6f9918f554eaae04968ddd
 F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
 F test/capi3c.test ccf0acf045dbacd09f6229aa4efed670aaba76a9
-F test/capi3d.test cd36571f014f34bdc4421967f6453cbb597d5d16
+F test/capi3d.test 17b57ca28be3e37e14c2ba8f787d292d84b724a1
 F test/capi3e.test f7408dda65c92b9056199fdc180f893015f83dde
 F test/cast.test 4c275cbdc8202d6f9c54a3596701719868ac7dc3
 F test/check.test db2b29d557544347d28e25b8406f5d5ecc3d1bc3
@@ -976,7 +976,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 1c45b2a0c055f6fc5da9d00ae2e9171099d904d4 06e0cdaf9112f722c23692e25c5b1f99b61c2d78
-R d62e550a3406a1fdeec14ac20b144781
+P 0b7edc44757660c8a5ae3b91cbcc3e6afd419b28
+R 45cf62e5f6b60da1dccab28df3542630
 U drh
-Z d184ad6817e342a5dbefa36cc13c5962
+Z 09847bc32a30bed5dba534d9bd527061

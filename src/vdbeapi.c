@@ -1278,6 +1278,14 @@ int sqlite3_stmt_readonly(sqlite3_stmt *pStmt){
 }
 
 /*
+** Return true if the prepared statement is in need of being reset.
+*/
+int sqlite3_stmt_busy(sqlite3_stmt *pStmt){
+  Vdbe *v = (Vdbe*)pStmt;
+  return v!=0 && v->pc>0 && v->magic==VDBE_MAGIC_RUN;
+}
+
+/*
 ** Return a pointer to the next prepared statement after pStmt associated
 ** with database connection pDb.  If pStmt is NULL, return the first
 ** prepared statement for the database connection.  Return NULL if there

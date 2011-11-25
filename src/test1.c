@@ -2331,6 +2331,33 @@ static int test_stmt_readonly(
 }
 
 /*
+** Usage:  sqlite3_stmt_busy  STMT
+**
+** Return true if STMT is a non-NULL pointer to a statement
+** that has been stepped but not to completion.
+*/
+static int test_stmt_busy(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  int rc;
+
+  if( objc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+        Tcl_GetStringFromObj(objv[0], 0), " STMT", 0);
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  rc = sqlite3_stmt_busy(pStmt);
+  Tcl_SetObjResult(interp, Tcl_NewBooleanObj(rc));
+  return TCL_OK;
+}
+
+/*
 ** Usage:  uses_stmt_journal  STMT
 **
 ** Return true if STMT uses a statement journal.
@@ -5960,6 +5987,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_sql",                   test_sql           ,0 },
      { "sqlite3_next_stmt",             test_next_stmt     ,0 },
      { "sqlite3_stmt_readonly",         test_stmt_readonly ,0 },
+     { "sqlite3_stmt_busy",             test_stmt_busy     ,0 },
      { "uses_stmt_journal",             uses_stmt_journal ,0 },
 
      { "sqlite3_release_memory",        test_release_memory,     0},
