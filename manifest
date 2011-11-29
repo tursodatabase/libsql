@@ -1,5 +1,5 @@
-C Update\sthe\sversion\snumber\sto\s3.7.10.
-D 2011-11-25T21:51:03.023
+C Removed\sthe\sunused\s"type"\sfield\sfrom\sthe\sCollSeq\s(collating\ssequence)\sobject.
+D 2011-11-29T14:46:56.791
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -147,7 +147,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
 F src/loadext.c d0d2022a5a07274d408820b978b9e549189d314f
-F src/main.c 55cbc40465fb58708cb82d4a285a6ea8cf1e4581
+F src/main.c 8be1ee70dd90ef7562c801dbe946a4f9f93bb128
 F src/malloc.c 591aedb20ae40813f1045f2ef253438a334775d9
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 7456e2ca0524609ebc06a9befeda5289d4575ad4
@@ -184,7 +184,7 @@ F src/select.c 80f3ac44a8514b1d107b80f5df4a424ae059d2b6
 F src/shell.c 29812a900a780eb0f835c4bc65e216272689def8
 F src/sqlite.h.in 57081d8e6b53ce29541d7437c93bce6087ac53b5
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h f412e020e1009163c74be56eaac1bf7f6c0a4515
+F src/sqliteInt.h f49fb4fdcbb771f0b20b0b19f5590bab1dcfbf0d
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 4568e72dfd36b6a5911f93457364deb072e0b03a
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -976,7 +976,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 7812626d1da1e19f2fc54a045c9fe2741ce68699
-R 00de12829df3386707d38924a0593a4d
+P ed0151ba8379a6c95304c9a8f9fe47e741fb80a3
+R 13b41fa72e4f9a2a4e116535aca5d91c
 U drh
-Z e0beeb659ff8b012da42c86c4be4154a
+Z 68de038f6dc2b2eb4d0dfd2d0418c9e2

@@ -1655,7 +1655,6 @@ static int createCollation(
   sqlite3* db,
   const char *zName, 
   u8 enc,
-  u8 collType,
   void* pCtx,
   int(*xCompare)(void*,int,const void*,int,const void*),
   void(*xDel)(void*)
@@ -1720,7 +1719,6 @@ static int createCollation(
   pColl->pUser = pCtx;
   pColl->xDel = xDel;
   pColl->enc = (u8)(enc2 | (enc & SQLITE_UTF16_ALIGNED));
-  pColl->type = collType;
   sqlite3Error(db, SQLITE_OK, 0);
   return SQLITE_OK;
 }
@@ -2181,14 +2179,10 @@ static int openDatabase(
   ** and UTF-16, so add a version for each to avoid any unnecessary
   ** conversions. The only error that can occur here is a malloc() failure.
   */
-  createCollation(db, "BINARY", SQLITE_UTF8, SQLITE_COLL_BINARY, 0,
-                  binCollFunc, 0);
-  createCollation(db, "BINARY", SQLITE_UTF16BE, SQLITE_COLL_BINARY, 0,
-                  binCollFunc, 0);
-  createCollation(db, "BINARY", SQLITE_UTF16LE, SQLITE_COLL_BINARY, 0,
-                  binCollFunc, 0);
-  createCollation(db, "RTRIM", SQLITE_UTF8, SQLITE_COLL_USER, (void*)1,
-                  binCollFunc, 0);
+  createCollation(db, "BINARY", SQLITE_UTF8, 0, binCollFunc, 0);
+  createCollation(db, "BINARY", SQLITE_UTF16BE, 0, binCollFunc, 0);
+  createCollation(db, "BINARY", SQLITE_UTF16LE, 0, binCollFunc, 0);
+  createCollation(db, "RTRIM", SQLITE_UTF8, (void*)1, binCollFunc, 0);
   if( db->mallocFailed ){
     goto opendb_out;
   }
@@ -2196,8 +2190,7 @@ static int openDatabase(
   assert( db->pDfltColl!=0 );
 
   /* Also add a UTF-8 case-insensitive collation sequence. */
-  createCollation(db, "NOCASE", SQLITE_UTF8, SQLITE_COLL_NOCASE, 0,
-                  nocaseCollatingFunc, 0);
+  createCollation(db, "NOCASE", SQLITE_UTF8, 0, nocaseCollatingFunc, 0);
 
   /* Parse the filename/URI argument. */
   db->openFlags = flags;
@@ -2390,7 +2383,7 @@ int sqlite3_create_collation(
   int rc;
   sqlite3_mutex_enter(db->mutex);
   assert( !db->mallocFailed );
-  rc = createCollation(db, zName, (u8)enc, SQLITE_COLL_USER, pCtx, xCompare, 0);
+  rc = createCollation(db, zName, (u8)enc, pCtx, xCompare, 0);
   rc = sqlite3ApiExit(db, rc);
   sqlite3_mutex_leave(db->mutex);
   return rc;
@@ -2410,7 +2403,7 @@ int sqlite3_create_collation_v2(
   int rc;
   sqlite3_mutex_enter(db->mutex);
   assert( !db->mallocFailed );
-  rc = createCollation(db, zName, (u8)enc, SQLITE_COLL_USER, pCtx, xCompare, xDel);
+  rc = createCollation(db, zName, (u8)enc, pCtx, xCompare, xDel);
   rc = sqlite3ApiExit(db, rc);
   sqlite3_mutex_leave(db->mutex);
   return rc;
@@ -2433,7 +2426,7 @@ int sqlite3_create_collation16(
   assert( !db->mallocFailed );
   zName8 = sqlite3Utf16to8(db, zName, -1, SQLITE_UTF16NATIVE);
   if( zName8 ){
-    rc = createCollation(db, zName8, (u8)enc, SQLITE_COLL_USER, pCtx, xCompare, 0);
+    rc = createCollation(db, zName8, (u8)enc, pCtx, xCompare, 0);
     sqlite3DbFree(db, zName8);
   }
   rc = sqlite3ApiExit(db, rc);

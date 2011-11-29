@@ -1144,19 +1144,10 @@ struct Column {
 struct CollSeq {
   char *zName;          /* Name of the collating sequence, UTF-8 encoded */
   u8 enc;               /* Text encoding handled by xCmp() */
-  u8 type;              /* One of the SQLITE_COLL_... values below */
   void *pUser;          /* First argument to xCmp() */
   int (*xCmp)(void*,int, const void*, int, const void*);
   void (*xDel)(void*);  /* Destructor for pUser */
 };
-
-/*
-** Allowed values of CollSeq.type:
-*/
-#define SQLITE_COLL_BINARY  1  /* The default memcmp() collating sequence */
-#define SQLITE_COLL_NOCASE  2  /* The built-in NOCASE collating sequence */
-#define SQLITE_COLL_REVERSE 3  /* The built-in REVERSE collating sequence */
-#define SQLITE_COLL_USER    0  /* Any other user-defined collating sequence */
 
 /*
 ** A sort order can be either ASC or DESC.
