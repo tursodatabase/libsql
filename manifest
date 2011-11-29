@@ -1,5 +1,5 @@
-C Remove\sunused\sboolean\sfields\sfrom\sthe\sUnpackedRecord\sobject.
-D 2011-11-29T15:04:12.252
+C Remove\sunused\sfields\sfrom\sthe\sParse\sobject.\s\sDocumentation\sand\sformatting\nimprovements\son\sdata\sstructure\sdefinitions.
+D 2011-11-29T15:40:32.491
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -133,7 +133,7 @@ F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c a9c26822515f81ec21588cbb482ca6724be02e33
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
-F src/delete.c ff68e5ef23aee08c0ff528f699a19397ed8bbed8
+F src/delete.c 51d32f0a9c880663e54ce309f52e40c325d5e112
 F src/expr.c fbf116f90cabc917ae50bba24a73a0b55519a0c8
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 657212460bf5cfd3ae607d12ea62092844c227b5
@@ -170,7 +170,7 @@ F src/os_unix.c 4fbb91726165e105c1679a2660f49a3f4c376e4f
 F src/os_win.c a22b88d2c088c09a678a471abafa8d60dbf56803
 F src/pager.c d981f3bfcc0e4460537d983899620700ccf8f539
 F src/pager.h 5cd760857707529b403837d813d86b68938d6183
-F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
+F src/parse.y d02cc7bdb9ba11fb7aa212f55f99e59e4ee55439
 F src/pcache.c 1fdd77978c1525d1ca4b9ef48eb80abca710cb4c
 F src/pcache.h b1d8775a9bddf44e65edb0d20bfc57a4982f840f
 F src/pcache1.c 9d735349ac87ef08076c6b1230f04cd83b15c6da
@@ -184,7 +184,7 @@ F src/select.c 80f3ac44a8514b1d107b80f5df4a424ae059d2b6
 F src/shell.c 29812a900a780eb0f835c4bc65e216272689def8
 F src/sqlite.h.in 57081d8e6b53ce29541d7437c93bce6087ac53b5
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h bbc4c0b01e3499a9d30750c91718217c26688afb
+F src/sqliteInt.h 6f28b69d77356b1e45c024a6c103a1e0f0ec9f62
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 4568e72dfd36b6a5911f93457364deb072e0b03a
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -976,7 +976,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P ab89b047e82efdf59ed91a38b5195341a3743cbf
-R beca209612bf2507bfd744deef578dc8
+P b10d091ec02e94643e865743129e2a21147b3136
+R 7d0a9d11e01c28eaf1d831b1553005fb
 U drh
-Z 97f245e9e22cbbc849b128b1b8b18545
+Z fa710425b85d2a4b5e2c971fb970b087
