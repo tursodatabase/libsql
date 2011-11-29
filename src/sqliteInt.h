@@ -1434,7 +1434,7 @@ struct KeyInfo {
 struct UnpackedRecord {
   KeyInfo *pKeyInfo;  /* Collation and sort-order information */
   u16 nField;         /* Number of entries in apMem[] */
-  u16 flags;          /* Boolean settings.  UNPACKED_... below */
+  u8 flags;           /* Boolean settings.  UNPACKED_... below */
   i64 rowid;          /* Used by UNPACKED_PREFIX_SEARCH */
   Mem *aMem;          /* Values */
 };
@@ -1442,11 +1442,9 @@ struct UnpackedRecord {
 /*
 ** Allowed values of UnpackedRecord.flags
 */
-#define UNPACKED_NEED_FREE     0x0001  /* Memory is from sqlite3Malloc() */
-#define UNPACKED_NEED_DESTROY  0x0002  /* apMem[]s should all be destroyed */
-#define UNPACKED_INCRKEY       0x0008  /* Make this key an epsilon larger */
-#define UNPACKED_PREFIX_MATCH  0x0010  /* A prefix match is considered OK */
-#define UNPACKED_PREFIX_SEARCH 0x0020  /* A prefix match is considered OK */
+#define UNPACKED_INCRKEY       0x01  /* Make this key an epsilon larger */
+#define UNPACKED_PREFIX_MATCH  0x02  /* A prefix match is considered OK */
+#define UNPACKED_PREFIX_SEARCH 0x04  /* Ignore final (rowid) field */
 
 /*
 ** Each SQL index is represented in memory by an
