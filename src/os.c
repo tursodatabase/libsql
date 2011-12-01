@@ -340,3 +340,235 @@ int sqlite3_vfs_unregister(sqlite3_vfs *pVfs){
   sqlite3_mutex_leave(mutex);
   return SQLITE_OK;
 }
+
+#ifndef SQLITE_OMIT_VFS_STDIO
+/*****************************************************************************
+** The remainder of this file contains a simplified stdio-like interface
+** to the VFS layer.
+*/
+
+/*
+** An instance of the following object records the state of an
+** open file.  This object is opaque to all users - the internal
+** structure is only visible to the functions below.
+*/
+struct sqlite3_FILE {
+  char *zFilename;        /* Full pathname of the open file */
+  sqlite3_int64 iOfst;    /* Current offset into the file */
+  sqlite3_vfs *pVfs;      /* The VFS used for this file */
+  u8 alwaysAppend;        /* Always append if true */
+  sqlite3_file sFile;     /* Open file.  MUST BE LAST */
+};
+
+/*
+** This is a helper routine used to translate a URI into a full pathname
+** and a pointer to the appropriate VFS.
+*/
+static int getFilename(const char *zURI, sqlite3_vfs **ppVfs, char **pzName){
+  int rc;
+  char *zOpen = 0;
+  char *zFullname = 0;
+  unsigned int flags;
+  char *zErrmsg = 0;
+  sqlite3_vfs *pVfs = 0;
+
+  rc = sqlite3ParseUri(0, zURI, &flags, &pVfs, &zOpen, &zErrmsg);
+  sqlite3_free(zErrmsg);
+  if( rc ) goto getFilename_error;
+  zFullname = sqlite3_malloc( pVfs->mxPathname+1 );
+  if( zFullname==0 ){ rc = SQLITE_NOMEM;  goto getFilename_error; }
+  rc = pVfs->xFullPathname(pVfs, zOpen, pVfs->mxPathname, zFullname);
+  if( rc ) goto getFilename_error;
+  sqlite3_free(zOpen);
+  zOpen = 0;
+  *pzName = sqlite3_realloc(zFullname, sqlite3Strlen30(zFullname)+1);
+  if( *pzName==0 ) goto getFilename_error;
+  zFullname = 0;
+  *ppVfs = pVfs;
+  return SQLITE_OK;
+
+getFilename_error:
+  sqlite3_free(zOpen);
+  sqlite3_free(zFullname);
+  *pzName = 0;
+  *ppVfs = 0;
+  return rc;
+}
+
+/*
+** Open a file for stdio-like reading and writing.  The file is identified
+** by the URI in the first parameter.  The access mode can be "r", "r+",
+** "w", "w+", "a", or "a+" with the usual meanings.
+**
+** On success, a pointer to a new sqlite3_FILE object is returned.  On
+** failure, NULL is returned.  Unfortunately, there is no way to recover
+** detailed error information after a failure.
+*/
+sqlite3_FILE *sqlite3_fopen(const char *zURI, const char *zMode){
+  char *zFile = 0;
+  sqlite3_vfs *pVfs = 0;
+  int rc;
+  int openFlags;
+  int doTruncate = 0;
+  int seekEnd = 0;
+  int alwaysAppend = 0;
+  int nToAlloc;
+  sqlite3_FILE *p;
+
+  if( zMode[0]==0 ) return 0;
+  if( zMode[0]=='r' ){
+    if( zMode[1]=='+' ){
+      openFlags = SQLITE_OPEN_READWRITE;
+    }else{
+      openFlags = SQLITE_OPEN_READONLY;
+    }
+  }else if( zMode[0]=='w' ){
+    openFlags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE;
+    doTruncate = 1;
+  }else if( zMode[0]=='a' ){
+    openFlags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE;
+    if( zMode[1]=='+' ){
+      alwaysAppend = 1;
+    }else{
+      seekEnd = 1;
+    }
+  }else{
+    return 0;
+  }
+  rc = getFilename(zURI, &pVfs, &zFile);
+  if( rc ) return 0;
+  nToAlloc = sizeof(*p) + ROUND8(pVfs->szOsFile);
+  p = sqlite3_malloc( nToAlloc );
+  if( p==0 ){
+    sqlite3_free(zFile);
+    return 0;
+  }
+  memset(p, 0, nToAlloc);
+  p->zFilename = zFile;
+  rc = pVfs->xOpen(pVfs, zFile, &p->sFile, openFlags, &openFlags);
+  if( rc!=SQLITE_OK ){
+    sqlite3_free(zFile);
+    sqlite3_free(p);
+    return 0;
+  }
+  p->pVfs = pVfs;
+  p->alwaysAppend = alwaysAppend;
+  if( seekEnd ) sqlite3_fseek(p, 0, SQLITE_SEEK_END);
+  if( doTruncate ) sqlite3_ftruncate(p, 0);
+  return p;
+}
+
+/*
+** Close a file perviously opened by sqlite3_fopen().
+*/
+int sqlite3_fclose(sqlite3_FILE *p){
+  p->sFile.pMethods->xClose(&p->sFile);
+  sqlite3_free(p);
+  return SQLITE_OK;
+}
+
+/*
+** Read iAmt bytes from the file p into pBuf.  
+**
+** Return 0 on success or an error code if the full amount could
+** not be read.
+*/
+int sqlite3_fread(
+  void *pBuf,            /* Write content read into this buffer */
+  sqlite3_int64 iAmt,    /* Number of bytes to read */
+  sqlite3_FILE *p        /* Read from this file */
+){
+  int rc = p->sFile.pMethods->xRead(&p->sFile, pBuf, iAmt, p->iOfst);
+  if( rc==SQLITE_OK ){
+    p->iOfst += iAmt;
+  }
+  return rc;
+}
+
+/*
+** Write iAmt bytes from buffer pBuf into the file p.
+**
+** Return 0 on success or an error code if anything goes wrong.
+*/
+int sqlite3_fwrite(
+  const void *pBuf,      /* Take content to be written from this buffer */
+  sqlite3_int64 iAmt,    /* Number of bytes to write */
+  sqlite3_FILE *p        /* Write into this file */
+){
+  int rc;
+
+  if( p->alwaysAppend ) sqlite3_fseek(p, 0, SQLITE_SEEK_END);
+  rc = p->sFile.pMethods->xWrite(&p->sFile, pBuf, iAmt, p->iOfst);
+  if( rc==SQLITE_OK ){
+    p->iOfst += iAmt;
+  }
+  return rc;
+}
+
+/*
+** Truncate an open file to newSize bytes.
+*/
+int sqlite3_ftruncate(sqlite3_FILE *p, sqlite3_int64 newSize){
+  int rc;
+  rc = p->sFile.pMethods->xTruncate(&p->sFile, newSize);
+  return rc;
+}
+
+/*
+** Return the current position of the file pointer.
+*/
+sqlite3_int64 sqlite3_ftell(sqlite3_FILE *p){
+  return p->iOfst;
+}
+
+/*
+** Move the file pointer to a new position in the file.
+*/
+int sqlite3_fseek(sqlite3_FILE *p, sqlite3_int64 ofst, int whence){
+  int rc = SQLITE_OK;
+  if( whence==SQLITE_SEEK_SET ){
+    p->iOfst = ofst;
+  }else if( whence==SQLITE_SEEK_CUR ){
+    p->iOfst += ofst;
+  }else{
+    sqlite3_int64 iCur = 0;
+    rc = p->sFile.pMethods->xFileSize(&p->sFile, &iCur);
+    if( rc==SQLITE_OK ){
+      p->iOfst = iCur + ofst;
+    }
+  }
+  return rc;
+}
+
+/*
+** Rewind the file pointer to the beginning of the file.
+*/
+int sqlite3_rewind(sqlite3_FILE *p){
+  p->iOfst = 0;
+  return SQLITE_OK;
+}
+
+/*
+** Flush the content of OS cache buffers to disk.  (fsync())
+*/
+int sqlite3_fflush(sqlite3_FILE *p){
+  return p->sFile.pMethods->xSync(&p->sFile, SQLITE_SYNC_NORMAL);
+}
+
+/*
+** Delete the file identified by the URI in the first parameter
+*/
+int sqlite3_remove(const char *zURI){
+  sqlite3_vfs *pVfs = 0;
+  char *zFilename = 0;
+  int rc;
+
+  rc = getFilename(zURI, &pVfs, &zFilename);
+  if( rc==SQLITE_OK ){
+    rc = pVfs->xDelete(pVfs, zFilename, 0);
+  }
+  sqlite3_free(zFilename);
+  return rc;
+}
+
+#endif /* SQLITE_OMIT_VFS_STDIO */

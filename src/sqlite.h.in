@@ -572,6 +572,10 @@ int sqlite3_exec(
 ** for their own use.  The pMethods entry is a pointer to an
 ** [sqlite3_io_methods] object that defines methods for performing
 ** I/O operations on the open file.
+**
+** Do not confuse the low-level sqlite3_file object described here
+** and used by the [VFS] with the high-level [sqlite3_FILE object]
+** that provides a stdio-like interface for use by application programs.
 */
 typedef struct sqlite3_file sqlite3_file;
 struct sqlite3_file {
@@ -6823,7 +6827,196 @@ int sqlite3_vtab_on_conflict(sqlite3 *);
 /* #define SQLITE_ABORT 4  // Also an error code */
 #define SQLITE_REPLACE  5
 
+/*
+** CAPI3REF: Simplified Interface To The VFS
+** KEYWORDS: *sqlite3_FILE {*sqlite3_FILE object}
+**
+** An instance of this object represents an open file in a [VFS].
+** This object is used by simplified I/O routines such as 
+** [sqlite3_fopen()] and [sqlite3_fread()] and [sqlite3_fwrite()].
+**
+** The sqlite3_FILE object provides a simple means to access
+** the filesystem through an SQLite [VFS].  This allows, for example,
+** ordinary file I/O to occur through VFS shims such as the quota or
+** multiplexor or vfstrace, or for I/O to occur on specialized
+** application-specific VFSes.  The sqlite3_FILE object also provides
+** a safe way for the application to read directly from an SQLite database
+** file, without the risk of cancelling posix advisory locks when the
+** connection is closed, as would happen using stdio or direct OS
+** I/O interfaces.
+**
+** The simplified I/O routines a similar to the "fopen()" family
+** of I/O routines in the standard C library, though there are some
+** minor differences.  Note in particular that [sqlite3_fread()] and
+** [sqlite3_fwrite()] have 3 instead of 4 parameters and return a
+** success code rather than the number of elements read or written.
+** Also, standard C library numeric datatypes such as size_t and off_t are
+** replaced in this interface with the 64-bit signed integer type
+** [sqlite3_int64].
+**
+** The sqlite3_FILE object is not intended to be a general-purpose 
+** replacement for stdio, but it can be very useful in some
+** circumstances.
+**
+** Do not confuse the high-level sqlite3_FILE object described here
+** with the low-level [sqlite3_file] object used by the [VFS].
+**
+** See also:
+** [sqlite3_fopen()],
+** [sqlite3_fread()],
+** [sqlite3_fwrite()],
+** [sqlite3_fseek()],
+** [sqlite3_ftell()],
+** [sqlite3_rewind()],
+** [sqlite3_fflush()],
+** [sqlite3_ftruncate()],
+** [sqlite3_close()],
+** [sqlite3_remove()].
+*/
+typedef struct sqlite3_FILE sqlite3_FILE;
 
+/*
+** CAPI3REF: Open A File Object
+**
+** The sqlite3_fopen(F,M) routine opens an [sqlite3_FILE object] on the
+** the file identified by [URI filename] F with mode M.  Return a pointer
+** to the [sqlite3_FILE object] created, or a NULL pointer if the open failed.
+**
+** The mode M can be one of the following:
+**
+** <dl>
+** <dt><b>"r"</b>
+** <dd>Open the file read-only.  Fail if the file does not already exist.
+** <dt><b>"r+"</b>
+** <dd>Open the file read and writing, but fail if the file does not
+** already exist.
+** <dt><b>"w"</b>
+** <dd>Open for reading and writing.  Create the file if it does not
+** already exist.  If the file does already exist, truncate it to zero
+** bytes in size immediately after opening.
+** <dt><b>"w+"</b>
+** <dd>This works the same as "w".
+** <dt><b>"a"</b>
+** <dd>Open for reading and writing.  Create the file if it does not
+** already exist.  Set the file cursor to the end of the file so that
+** any write operations that occur prior to an [sqlite3_fseek()] or
+** [sqlite3_rewind()] will append to the file.
+** <dt><b>"a+"</b>
+** <dd>Open for reading and writing.  Create the file if it does not
+** already exist.  The file cursor is positioned at the beginning of
+** the file for reading purposes.  However, any writes on the file
+** cause the file cursor to move to the end of the file prior to the
+** write (and thus append to the file).
+** </dl>
+**
+** Any value for the mode M other than those listed above cause the
+** sqlite3_fopen() call to fail.
+**
+** See also:
+** [sqlite3_fread()],
+** [sqlite3_fwrite()],
+** [sqlite3_fseek()],
+** [sqlite3_ftell()],
+** [sqlite3_rewind()],
+** [sqlite3_fflush()],
+** [sqlite3_close()],
+** [sqlite3_remove()].
+*/
+sqlite3_FILE *sqlite3_fopen(const char *zURI, const char *zMode);
+
+/*
+** CAPI3REF:  Read and Write A File Object
+**
+** The [sqlite3_fread(B,N,P)] routine reads N bytes of content from 
+** [sqlite3_FILE object] P and into buffer B.  
+** The [sqlite3_fwrite(B,N,P)] routine writes N bytes of content from
+** buffer B into [sqlite3_FILE object] P.  Both routines return
+** SQLITE_OK on success or an [error code] on failure.
+**
+** Reading and writing always occur beginning at the file cursor.  The file
+** cursor is advanced by N if the read or write is successful and unchanged
+** if the read is not successful.  Not that the file cursor is
+** unchanged by a partial read ([SQLITE_IOERR_SHORT_READ]).
+** If the mode from [sqlite3_fopen()] was "a+" then the file cursor is
+** always moved to the end of the file prior to every write.
+**
+** Note that these routines differ from stdio fread() and fwrite()
+** functions in two significant ways:  These routines use 3 parameters
+** instead of 4; these routines always assume an element size of one byte.
+** And these routines return a success code, not the number of elements
+** read or written.  With the routines described here, and unlike
+** fread() and fwrite(), a partial read or write is considered an error.
+*/
+int sqlite3_fread(void*, sqlite3_int64, sqlite3_FILE*);
+int sqlite3_fwrite(const void*, sqlite3_int64, sqlite3_FILE*);
+
+/*
+** CAPI3REF:  Whence Parameter For sqlite3_fseek()
+**
+** The 3rd parameter to [sqlite3_fseek(P,N,W)] can take on any of the
+** following values.
+*/
+#define SQLITE_SEEK_SET  0
+#define SQLITE_SEEK_CUR  1
+#define SQLITE_SEEK_END  2
+
+/*
+** CAPI3REF:  Position The Cursor For An sqlite3_FILE object
+**
+** This routines move the current cursor position in an [sqlite3_FILE object].
+** The sqlite3_fseek(P,N,W) call move the [sqlite3_FILE object] P to a new
+** position N relative to W.  W is [SQLITE_SEEK_SET] for the beginning of
+** the file, [SQLITE_SEEK_CUR] for the cursor position prior to the current
+** move, or [SQLITE_SEEK_END] for the end of the file.
+**
+** The sqlite3_rewind(P) call move the cursor position to the beginning
+** of the file.  It is equivalent to sqlite3_fseek(P,0,SQLITE_SEEK_SET).
+**
+** The sqlite3_ftell(P) call returns the current cursor position.
+*/
+int sqlite3_fseek(sqlite3_FILE*, sqlite3_int64, int whence);
+int sqlite3_rewind(sqlite3_FILE*);
+sqlite3_int64 sqlite3_ftell(sqlite3_FILE*);
+
+/*
+** CAPI3REF:  Flush OS File Cache Buffers
+**
+** A call to sqlite3_fflush(P) causes any writes previously made against
+** [sqlite3_FILE object] P to be flushed from the operating-system cache
+** to nonvolatile storage.
+*/
+int sqlite3_fflush(sqlite3_FILE*);
+
+/*
+** CAPI3REF:  Truncate An sqlite3_FILE object
+**
+** The sqlite3_ftruncate(P,N) interface calls the [sqlite3_FILE object] P
+** to be truncated to N bytes in size.
+**
+** It is undefined what happens if N is larger than the current file size.
+** Some [VFS] implementations will extend the file.  Others will fail.
+** Still others will leave the file in an inconsistent state.
+*/
+int sqlite3_ftruncate(sqlite3_FILE*, sqlite3_int64);
+
+/*
+** CAPI3REF:  Close an sqlite3_FILE object
+**
+** Every successful call to [sqlite3_fopen()] should be eventually followed
+** by a call to this routine to destroy the [sqlite3_FILE object] that
+** [sqlite3_fopen()] created.  After calling this routine, the
+** [sqlite3_FILE object] must not be used again.
+*/
+int sqlite3_fclose(sqlite3_FILE*);
+
+/*
+** CAPI3REF:  Remove A File
+**
+** The sqlite3_remove(U) interface attempts to delete the file identified
+** by the [URI filename] U.  Query parameters on U can specify a particular
+** [VFS] to use to do the deletion.
+*/
+int sqlite3_remove(const char *zURI);
 
 /*
 ** Undo the hack that converts floating point types to integer for

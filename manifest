@@ -1,5 +1,5 @@
-C Remove\sunused\sfields\sfrom\sthe\sParse\sobject.\s\sDocumentation\sand\sformatting\nimprovements\son\sdata\sstructure\sdefinitions.
-D 2011-11-29T15:40:32.491
+C Add\sa\sprototype\simplementation\sof\sstdio-like\sroutines\sfor\saccessing\sthe\sVFS.\nThis\sis\sintended\sas\sdocumentation.\s\sThe\scode\sis\suntested.\sThere\sis\sno\nguarantee\sthat\sany\sof\sthis\swill\sever\smake\sit\sinto\strunk.\s\sSubstantial\nrevision\sis\spossible\sprior\sto\sreaching\strunk,\sif\sit\sever\sdoes.
+D 2011-12-01T02:32:12.196
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -162,7 +162,7 @@ F src/mutex_os2.c 882d735098c07c8c6a5472b8dd66e19675fe117f
 F src/mutex_unix.c b4f4e923bb8de93ec3f251fadb50855f23df9579
 F src/mutex_w32.c 5e54f3ba275bcb5d00248b8c23107df2e2f73e33
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
-F src/os.c 28bbdab2170dfce84d86c45456a18eab1d0f99a9
+F src/os.c c2dcf314db63a0ea06af00fcf087750a1852bbbc
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
@@ -182,7 +182,7 @@ F src/resolve.c 365ab1c870e38596d6869e76fb544fe6e4ffc809
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 80f3ac44a8514b1d107b80f5df4a424ae059d2b6
 F src/shell.c 29812a900a780eb0f835c4bc65e216272689def8
-F src/sqlite.h.in 57081d8e6b53ce29541d7437c93bce6087ac53b5
+F src/sqlite.h.in 6ab24133ed28e094dc67981cd9279d7bd8b31cf6
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h 6f28b69d77356b1e45c024a6c103a1e0f0ec9f62
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -976,7 +976,10 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P b10d091ec02e94643e865743129e2a21147b3136
-R 7d0a9d11e01c28eaf1d831b1553005fb
+P 431556cac0b2c86d7f6a60412ff1023feeaafedf
+R 0398714a93656ee1bfce81727b47b578
+T *branch * vfs-stdio
+T *sym-vfs-stdio *
+T -sym-trunk *
 U drh
-Z fa710425b85d2a4b5e2c971fb970b087
+Z 536ed89e4d5b4e5e1bbeee8dbaae70fb
