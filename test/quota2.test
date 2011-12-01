@@ -22,6 +22,17 @@ file delete -force quota2b
 file mkdir quota2a
 file mkdir quota2b
 
+# The standard_path procedure converts a pathname into a standard format
+# that is the same across platforms.
+#
+unset -nocomplain ::quota_pwd ::quota_mapping
+set ::quota_pwd [string map {\\ /} [pwd]]
+set ::quota_mapping [list $::quota_pwd PWD]
+proc standard_path {x} {
+  set x [string map {\\ /} $x]
+  return [string map $::quota_mapping $x]
+}
+
 # The quota_check procedure is a callback from the quota handler.
 # It has three arguments which are (1) the full pathname of the file
 # that has gone over quota, (2) the quota limit, (3) the requested
@@ -35,10 +46,10 @@ file mkdir quota2b
 #
 set ::quota {}
 set ::quota_request_ok 0
+
 proc quota_check {filename limitvar size} {
   upvar $limitvar limit
-  set filename [string map [list [pwd] PWD \\ /] $filename]
-  lappend ::quota $filename [set limit] $size
+  lappend ::quota [standard_path $filename] [set limit] $size
   if {$::quota_request_ok} {set limit $size}
 }
 
@@ -96,15 +107,15 @@ do_test quota2-1.10 {
   sqlite3_quota_ftell $::h1
 } {0}
 do_test quota2-1.11 {
-  string map [list [pwd] PWD \\ /] [sqlite3_quota_dump]
+  standard_path [sqlite3_quota_dump]
 } {{*/quota2b/* 5000 0} {*/quota2a/* 4000 4000 {PWD/quota2a/xyz.txt 4000 1 0}}}
 do_test quota1-1.12 {
   sqlite3_quota_fclose $::h1
-  string map [list [pwd] PWD \\ /] [sqlite3_quota_dump]
+  standard_path [sqlite3_quota_dump]
 } {{*/quota2b/* 5000 0} {*/quota2a/* 4000 4000 {PWD/quota2a/xyz.txt 4000 0 0}}}
 do_test quota1-1.13 {
   sqlite3_quota_remove quota2a/xyz.txt
-  string map [list [pwd] PWD \\ /] [sqlite3_quota_dump]
+  standard_path [sqlite3_quota_dump]
 } {{*/quota2b/* 5000 0} {*/quota2a/* 4000 0}}
 
 

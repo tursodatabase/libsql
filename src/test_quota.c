@@ -241,7 +241,7 @@ static void quotaGroupDeref(quotaGroup *pGroup){
 **
 */
 static int quotaStrglob(const char *zGlob, const char *z){
-  int c, c2;
+  int c, c2, cx;
   int invert;
   int seen;
 
@@ -258,8 +258,9 @@ static int quotaStrglob(const char *zGlob, const char *z){
         }
         return (*z)!=0;
       }
+      cx = (c=='/') ? '\\' : c;
       while( (c2 = (*(z++)))!=0 ){
-        while( c2!=c ){
+        while( c2!=c && c2!=cx ){
           c2 = *(z++);
           if( c2==0 ) return 0;
         }
@@ -423,7 +424,7 @@ static char *quota_utf8_to_mbcs(const char *zUtf8){
 */
 static void quota_mbcs_free(char *zOld){
 #if SQLITE_OS_WIN
-  free(zOld);
+  sqlite3_free(zOld);
 #else
   /* No-op on unix */
 #endif  
@@ -1004,7 +1005,7 @@ size_t sqlite3_quota_fwrite(
   iOfst = ftell(p->f);
   iEnd = iOfst + size*nmemb;
   pFile = p->pFile;
-  if( pFile->iSize<iEnd ){
+  if( pFile && pFile->iSize<iEnd ){
     quotaGroup *pGroup = pFile->pGroup;
     quotaEnter();
     szNew = pGroup->iSize - pFile->iSize + iEnd;
@@ -1035,14 +1036,16 @@ int sqlite3_quota_fclose(quota_FILE *p){
   quotaFile *pFile;
   rc = fclose(p->f);
   pFile = p->pFile;
-  quotaEnter();
-  pFile->nRef--;
-  if( pFile->nRef==0 ){
-    quotaGroup *pGroup = pFile->pGroup;
-    if( pFile->deleteOnClose ) quotaRemoveFile(pFile);
-    quotaGroupDeref(pGroup);
+  if( pFile ){
+    quotaEnter();
+    pFile->nRef--;
+    if( pFile->nRef==0 ){
+      quotaGroup *pGroup = pFile->pGroup;
+      if( pFile->deleteOnClose ) quotaRemoveFile(pFile);
+      quotaGroupDeref(pGroup);
+    }
+    quotaLeave();
   }
-  quotaLeave();
   sqlite3_free(p);
   return rc;
 }
@@ -1305,9 +1308,13 @@ static int test_quota_dump(
     Tcl_ListObjAppendElement(interp, pGroupTerm,
           Tcl_NewWideIntObj(pGroup->iSize));
     for(pFile=pGroup->pFiles; pFile; pFile=pFile->pNext){
+      int i;
+      char zTemp[1000];
       pFileTerm = Tcl_NewObj();
+      sqlite3_snprintf(sizeof(zTemp), zTemp, "%s", pFile->zFilename);
+      for(i=0; zTemp[i]; i++){ if( zTemp[i]=='\\' ) zTemp[i] = '/'; }
       Tcl_ListObjAppendElement(interp, pFileTerm,
-            Tcl_NewStringObj(pFile->zFilename, -1));
+            Tcl_NewStringObj(zTemp, -1));
       Tcl_ListObjAppendElement(interp, pFileTerm,
             Tcl_NewWideIntObj(pFile->iSize));
       Tcl_ListObjAppendElement(interp, pFileTerm,
@@ -1538,6 +1545,32 @@ static int test_quota_remove(
 }
 
 /*
+** tclcmd: sqlite3_quota_glob PATTERN TEXT
+**
+** Test the glob pattern matching.  Return 1 if TEXT matches PATTERN
+** and return 0 if it does not.
+*/
+static int test_quota_glob(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  const char *zPattern;          /* The glob pattern */
+  const char *zText;             /* Text to compare agains the pattern */
+  int rc;
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "PATTERN TEXT");
+    return TCL_ERROR;
+  }
+  zPattern = Tcl_GetString(objv[1]);
+  zText = Tcl_GetString(objv[2]);
+  rc = quotaStrglob(zPattern, zText);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
+  return TCL_OK;
+}
+
+/*
 ** This routine registers the custom TCL commands defined in this
 ** module.  This should be the only procedure visible from outside
 ** of this module.
@@ -1560,6 +1593,7 @@ int Sqlitequota_Init(Tcl_Interp *interp){
     { "sqlite3_quota_rewind",     test_quota_rewind },
     { "sqlite3_quota_ftell",      test_quota_ftell },
     { "sqlite3_quota_remove",     test_quota_remove },
+    { "sqlite3_quota_glob",       test_quota_glob },
   };
   int i;
 

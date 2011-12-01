@@ -1,5 +1,5 @@
-C Add\stest\slogic\sand\ssome\stest\scases.
-D 2011-12-01T20:48:15.803
+C Progress\stoward\sgetting\sthings\sto\swork\sbetter\son\swindows.
+D 2011-12-01T22:07:22.034
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -220,7 +220,7 @@ F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
 F src/test_osinst.c 62b0b8ef21ce754cc94e17bb42377ed8795dba32
 F src/test_pcache.c a5cd24730cb43c5b18629043314548c9169abb00
-F src/test_quota.c ed68398661b398f0ce213349eb1cac6b5c39f62e
+F src/test_quota.c 38c23c0fcbc92e0f8fe6fc0a76e66680cdb1b5cb
 F src/test_quota.h 118dba604ae5b6903acdd40d2b94a1f319047612
 F src/test_rtree.c 6d06306e29946dc36f528a3a2cdc3add794656f1
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
@@ -634,8 +634,9 @@ F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
+F test/quota-glob.test bb88e8da2f24f7f8413492967beb35d3222f52a4
 F test/quota.test 46e6571b45c3c58ac131cc38f7d600aa9f75974d
-F test/quota2.test 1372a399adcecc423396f51faec5de44ae236019
+F test/quota2.test 87b9c7a63e458706e528c661efa3955abc540fc5
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/randexpr1.tcl 40dec52119ed3a2b8b2a773bce24b63a3a746459
 F test/randexpr1.test 1084050991e9ba22c1c10edd8d84673b501cc25a
@@ -978,7 +979,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P bd3ce723f1b5be52be46ede8614ca316f56e7e6f
-R 137abcb878bf12767e2fb107dd20a728
+P a4730586cc1f686ead956ccd1cc218b5931942c9
+R 2e2d8adc5259d2440bcb724fb4357d2b
 U drh
-Z 363de760bad75051e8a4f47a97fcd11d
+Z 0c07da994a8e7e81f42215da8ed506cb

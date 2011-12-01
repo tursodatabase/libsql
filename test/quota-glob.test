@@ -1,0 +1,50 @@
+# 2011 December 1
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Tests for the glob-style string compare operator embedded in the
+# quota shim.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+catch { unset testnum }
+catch { unset pattern }
+catch { unset text }
+catch { unset ans }
+
+foreach {testnum pattern text ans} {
+   1  abcdefg   abcdefg   1
+   2  abcdefG   abcdefg   0
+   3  abcdef    abcdefg   0
+   4  abcdefgh  abcdefg   0
+   5  abcdef?   abcdefg   1
+   6  abcdef?   abcdef    0
+   7  abcdef?   abcdefgh  0
+   8  abcdefg   abcdef?   0
+   9  abcdef?   abcdef?   1
+  10  abc/def   abc/def   1
+  11  abc/def   abc\\def  1
+  12  */abc/*   x/abc/y   1
+  13  */abc/*   /abc/     1
+  16  */abc/*   x///a/ab/abc   0
+  17  */abc/*   x//a/ab/abc/   1
+  16  */abc/*   x///a/ab/abc   0
+  17  */abc/*   x//a/ab/abc/   1
+} {
+  do_test quota-glob-$testnum.1 {
+    sqlite3_quota_glob $::pattern $::text
+  } $::ans
+  do_test quota-glob-$testnum.2 {
+    sqlite3_quota_glob $::pattern [string map {/ \\} $::text]
+  } $::ans
+}
+finish_test
