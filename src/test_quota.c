@@ -237,6 +237,8 @@ static void quotaGroupDeref(quotaGroup *pGroup){
 **
 **     [^...]     Matches one character not in the enclosed list.
 **
+**     /          Matches "/" or "\\"
+**
 */
 static int quotaStrglob(const char *zGlob, const char *z){
   int c, c2;
@@ -295,6 +297,9 @@ static int quotaStrglob(const char *zGlob, const char *z){
         c2 = *(zGlob++);
       }
       if( c2==0 || (seen ^ invert)==0 ) return 0;
+    }else if( c=='/' ){
+      if( z[0]!='/' && z[0]!='\\' ) return 0;
+      z++;
     }else{
       if( c!=(*(z++)) ) return 0;
     }
@@ -349,6 +354,79 @@ static quotaFile *quotaFindFile(
     }
   }
   return pFile;
+}
+
+/*
+** Figure out if we are dealing with Unix, Windows, or some other
+** operating system.  After the following block of preprocess macros,
+** all of SQLITE_OS_UNIX, SQLITE_OS_WIN, SQLITE_OS_OS2, and SQLITE_OS_OTHER 
+** will defined to either 1 or 0.  One of the four will be 1.  The other 
+** three will be 0.
+*/
+#if defined(SQLITE_OS_OTHER)
+# if SQLITE_OS_OTHER==1
+#   undef SQLITE_OS_UNIX
+#   define SQLITE_OS_UNIX 0
+#   undef SQLITE_OS_WIN
+#   define SQLITE_OS_WIN 0
+#   undef SQLITE_OS_OS2
+#   define SQLITE_OS_OS2 0
+# else
+#   undef SQLITE_OS_OTHER
+# endif
+#endif
+#if !defined(SQLITE_OS_UNIX) && !defined(SQLITE_OS_OTHER)
+# define SQLITE_OS_OTHER 0
+# ifndef SQLITE_OS_WIN
+#   if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) \
+                       || defined(__MINGW32__) || defined(__BORLANDC__)
+#     define SQLITE_OS_WIN 1
+#     define SQLITE_OS_UNIX 0
+#     define SQLITE_OS_OS2 0
+#   elif defined(__EMX__) || defined(_OS2) || defined(OS2) \
+                          || defined(_OS2_) || defined(__OS2__)
+#     define SQLITE_OS_WIN 0
+#     define SQLITE_OS_UNIX 0
+#     define SQLITE_OS_OS2 1
+#   else
+#     define SQLITE_OS_WIN 0
+#     define SQLITE_OS_UNIX 1
+#     define SQLITE_OS_OS2 0
+#  endif
+# else
+#  define SQLITE_OS_UNIX 0
+#  define SQLITE_OS_OS2 0
+# endif
+#else
+# ifndef SQLITE_OS_WIN
+#  define SQLITE_OS_WIN 0
+# endif
+#endif
+
+
+/*
+** Translate UTF8 to MBCS for use in fopen() calls.  Return a pointer to the
+** translated text..  Call quota_mbcs_free() to deallocate any memory
+** used to store the returned pointer when done.
+*/
+static char *quota_utf8_to_mbcs(const char *zUtf8){
+#if SQLITE_OS_WIN
+  extern char *sqlite3_win32_utf8_to_mbcs(const char*);
+  return sqlite3_win32_utf8_to_mbcs(zUtf8);
+#else
+  return (char*)zUtf8;  /* No-op on unix */
+#endif  
+}
+
+/*
+** Deallocate any memory allocated by quota_utf8_to_mbcs().
+*/
+static void quota_mbcs_free(char *zOld){
+#if SQLITE_OS_WIN
+  free(zOld);
+#else
+  /* No-op on unix */
+#endif  
 }
 
 /************************* VFS Method Wrappers *****************************/
@@ -856,20 +934,23 @@ int sqlite3_quota_file(const char *zFilename){
 quota_FILE *sqlite3_quota_fopen(const char *zFilename, const char *zMode){
   quota_FILE *p = 0;
   char *zFull = 0;
+  char *zFullTranslated;
   int rc;
   quotaGroup *pGroup;
   quotaFile *pFile;
 
-  p = sqlite3_malloc(gQuota.sThisVfs.mxPathname + 1);
-  if( p==0 ) return 0;
-  zFull = (char*)&p[1];
+  zFull = sqlite3_malloc(gQuota.sThisVfs.mxPathname + 1);
+  if( zFull==0 ) return 0;
   rc = gQuota.pOrigVfs->xFullPathname(gQuota.pOrigVfs, zFilename,
                                       gQuota.sThisVfs.mxPathname+1, zFull);
   if( rc ) goto quota_fopen_error;
   p = sqlite3_malloc(sizeof(*p));
   if( p==0 ) goto quota_fopen_error;
   memset(p, 0, sizeof(*p));
-  p->f = fopen(zFull, zMode);
+  zFullTranslated = quota_utf8_to_mbcs(zFull);
+  if( zFullTranslated==0 ) goto quota_fopen_error;
+  p->f = fopen(zFullTranslated, zMode);
+  quota_mbcs_free(zFullTranslated);
   if( p->f==0 ) goto quota_fopen_error;
   quotaEnter();
   pGroup = quotaGroupFind(zFull);
@@ -1243,6 +1324,220 @@ static int test_quota_dump(
 }
 
 /*
+** tclcmd: sqlite3_quota_fopen FILENAME MODE
+*/
+static int test_quota_fopen(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  const char *zFilename;          /* File pattern to configure */
+  const char *zMode;              /* Mode string */
+  quota_FILE *p;                  /* Open string object */
+  char zReturn[50];               /* Name of pointer to return */
+
+  /* Process arguments */
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "FILENAME MODE");
+    return TCL_ERROR;
+  }
+  zFilename = Tcl_GetString(objv[1]);
+  zMode = Tcl_GetString(objv[2]);
+  p = sqlite3_quota_fopen(zFilename, zMode);
+  sqlite3_snprintf(sizeof(zReturn), zReturn, "%p", p);
+  Tcl_SetResult(interp, zReturn, TCL_VOLATILE);
+  return TCL_OK;
+}
+
+/* Defined in test1.c */
+extern void *sqlite3TestTextToPtr(const char*);
+
+/*
+** tclcmd: sqlite3_quota_fread HANDLE SIZE NELEM
+*/
+static int test_quota_fread(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  quota_FILE *p;
+  char *zBuf;
+  int sz;
+  int nElem;
+  int got;
+
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "HANDLE SIZE NELEM");
+    return TCL_ERROR;
+  }
+  p = sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
+  if( Tcl_GetIntFromObj(interp, objv[2], &sz) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[3], &nElem) ) return TCL_ERROR;
+  zBuf = sqlite3_malloc( sz*nElem + 1 );
+  if( zBuf==0 ){
+    Tcl_SetResult(interp, "out of memory", TCL_STATIC);
+    return TCL_ERROR;
+  }
+  got = sqlite3_quota_fread(zBuf, sz, nElem, p);
+  if( got<0 ) got = 0;
+  zBuf[got*sz] = 0;
+  Tcl_SetResult(interp, zBuf, TCL_VOLATILE);
+  sqlite3_free(zBuf);
+  return TCL_OK;
+}
+
+/*
+** tclcmd: sqlite3_quota_fwrite HANDLE SIZE NELEM CONTENT
+*/
+static int test_quota_fwrite(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  quota_FILE *p;
+  char *zBuf;
+  int sz;
+  int nElem;
+  int got;
+
+  if( objc!=5 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "HANDLE SIZE NELEM CONTENT");
+    return TCL_ERROR;
+  }
+  p = sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
+  if( Tcl_GetIntFromObj(interp, objv[2], &sz) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[3], &nElem) ) return TCL_ERROR;
+  zBuf = Tcl_GetString(objv[4]);
+  got = sqlite3_quota_fwrite(zBuf, sz, nElem, p);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(got));
+  return TCL_OK;
+}
+
+/*
+** tclcmd: sqlite3_quota_fclose HANDLE
+*/
+static int test_quota_fclose(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  quota_FILE *p;
+  int rc;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "HANDLE");
+    return TCL_ERROR;
+  }
+  p = sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
+  rc = sqlite3_quota_fclose(p);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
+  return TCL_OK;
+}
+
+/*
+** tclcmd: sqlite3_quota_fseek HANDLE OFFSET WHENCE
+*/
+static int test_quota_fseek(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  quota_FILE *p;
+  int ofst;
+  const char *zWhence;
+  int whence;
+  int rc;
+
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "HANDLE OFFSET WHENCE");
+    return TCL_ERROR;
+  }
+  p = sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
+  if( Tcl_GetIntFromObj(interp, objv[2], &ofst) ) return TCL_ERROR;
+  zWhence = Tcl_GetString(objv[3]);
+  if( strcmp(zWhence, "SEEK_SET")==0 ){
+    whence = SEEK_SET;
+  }else if( strcmp(zWhence, "SEEK_CUR")==0 ){
+    whence = SEEK_CUR;
+  }else if( strcmp(zWhence, "SEEK_END")==0 ){
+    whence = SEEK_END;
+  }else{
+    Tcl_AppendResult(interp,
+           "WHENCE should be SEEK_SET, SEEK_CUR, or SEEK_END", (char*)0);
+    return TCL_ERROR;
+  }
+  rc = sqlite3_quota_fseek(p, ofst, whence);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
+  return TCL_OK;
+}
+
+/*
+** tclcmd: sqlite3_quota_rewind HANDLE
+*/
+static int test_quota_rewind(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  quota_FILE *p;
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "HANDLE");
+    return TCL_ERROR;
+  }
+  p = sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
+  sqlite3_quota_rewind(p);
+  return TCL_OK;
+}
+
+/*
+** tclcmd: sqlite3_quota_ftell HANDLE
+*/
+static int test_quota_ftell(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  quota_FILE *p;
+  sqlite3_int64 x;
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "HANDLE");
+    return TCL_ERROR;
+  }
+  p = sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
+  x = sqlite3_quota_ftell(p);
+  Tcl_SetObjResult(interp, Tcl_NewWideIntObj(x));
+  return TCL_OK;
+}
+
+/*
+** tclcmd: sqlite3_quota_remove FILENAME
+*/
+static int test_quota_remove(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  const char *zFilename;          /* File pattern to configure */
+  int rc;
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "FILENAME");
+    return TCL_ERROR;
+  }
+  zFilename = Tcl_GetString(objv[1]);
+  rc = sqlite3_quota_remove(zFilename);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
+  return TCL_OK;
+}
+
+/*
 ** This routine registers the custom TCL commands defined in this
 ** module.  This should be the only procedure visible from outside
 ** of this module.
@@ -1253,10 +1548,18 @@ int Sqlitequota_Init(Tcl_Interp *interp){
      Tcl_ObjCmdProc *xProc;
   } aCmd[] = {
     { "sqlite3_quota_initialize", test_quota_initialize },
-    { "sqlite3_quota_shutdown", test_quota_shutdown },
-    { "sqlite3_quota_set", test_quota_set },
-    { "sqlite3_quota_file", test_quota_file },
-    { "sqlite3_quota_dump", test_quota_dump },
+    { "sqlite3_quota_shutdown",   test_quota_shutdown },
+    { "sqlite3_quota_set",        test_quota_set },
+    { "sqlite3_quota_file",       test_quota_file },
+    { "sqlite3_quota_dump",       test_quota_dump },
+    { "sqlite3_quota_fopen",      test_quota_fopen },
+    { "sqlite3_quota_fread",      test_quota_fread },
+    { "sqlite3_quota_fwrite",     test_quota_fwrite },
+    { "sqlite3_quota_fclose",     test_quota_fclose },
+    { "sqlite3_quota_fseek",      test_quota_fseek },
+    { "sqlite3_quota_rewind",     test_quota_rewind },
+    { "sqlite3_quota_ftell",      test_quota_ftell },
+    { "sqlite3_quota_remove",     test_quota_remove },
   };
   int i;
 
