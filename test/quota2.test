@@ -68,7 +68,7 @@ for {set i 1} {$i<=1000} {incr i} {
 catch { unset h1 }
 catch { unset x }
 do_test quota2-1.1 {
-  set ::h1 [sqlite3_quota_fopen quota2a/xyz.txt w+]
+  set ::h1 [sqlite3_quota_fopen quota2a/xyz.txt w+b]
   sqlite3_quota_fwrite $::h1 1 7000 $bigtext
 } {4000}
 do_test quota2-1.2 {
