@@ -27,7 +27,7 @@
 ** files within the group is less than the new quota, then the write
 ** continues as if nothing had happened.
 */
-#include "sqlite3.h"
+#include "test_quota.h"
 #include <string.h>
 #include <assert.h>
 
@@ -110,6 +110,18 @@ struct quotaConn {
   quotaFile *pFile;               /* The underlying file */
   /* The underlying VFS sqlite3_file is appended to this object */
 };
+
+/*
+** An instance of the following object records the state of an
+** open file.  This object is opaque to all users - the internal
+** structure is only visible to the functions below.
+*/
+struct quota_FILE {
+  FILE *f;                /* Open stdio file pointer */
+  sqlite3_int64 iOfst;    /* Current offset into the file */
+  quotaFile *pFile;       /* The file record in the quota system */
+};
+
 
 /************************* Global Variables **********************************/
 /*
@@ -313,10 +325,28 @@ static sqlite3_file *quotaSubOpen(sqlite3_file *pConn){
 /* Find a file in a quota group and return a pointer to that file.
 ** Return NULL if the file is not in the group.
 */
-static quotaFile *quotaFindFile(quotaGroup *pGroup, const char *zName){
+static quotaFile *quotaFindFile(
+  quotaGroup *pGroup,     /* Group in which to look for the file */
+  const char *zName,      /* Full pathname of the file */
+  int createFlag          /* Try to create the file if not found */
+){
   quotaFile *pFile = pGroup->pFiles;
   while( pFile && strcmp(pFile->zFilename, zName)!=0 ){
     pFile = pFile->pNext;
+  }
+  if( pFile==0 && createFlag ){
+    int nName = strlen(zName);
+    pFile = (quotaFile *)sqlite3_malloc( sizeof(*pFile) + nName + 1 );
+    if( pFile ){
+      memset(pFile, 0, sizeof(*pFile));
+      pFile->zFilename = (char*)&pFile[1];
+      memcpy(pFile->zFilename, zName, nName+1);
+      pFile->pNext = pGroup->pFiles;
+      if( pGroup->pFiles ) pGroup->pFiles->ppPrev = &pFile->pNext;
+      pFile->ppPrev = &pGroup->pFiles;
+      pGroup->pFiles = pFile;
+      pFile->pGroup = pGroup;
+    }
   }
   return pFile;
 }
@@ -364,25 +394,13 @@ static int quotaOpen(
     pSubOpen = quotaSubOpen(pConn);
     rc = pOrigVfs->xOpen(pOrigVfs, zName, pSubOpen, flags, pOutFlags);
     if( rc==SQLITE_OK ){
-      pFile = quotaFindFile(pGroup, zName);
+      pFile = quotaFindFile(pGroup, zName, 1);
       if( pFile==0 ){
-        int nName = strlen(zName);
-        pFile = (quotaFile *)sqlite3_malloc( sizeof(*pFile) + nName + 1 );
-        if( pFile==0 ){
-          quotaLeave();
-          pSubOpen->pMethods->xClose(pSubOpen);
-          return SQLITE_NOMEM;
-        }
-        memset(pFile, 0, sizeof(*pFile));
-        pFile->zFilename = (char*)&pFile[1];
-        memcpy(pFile->zFilename, zName, nName+1);
-        pFile->pNext = pGroup->pFiles;
-        if( pGroup->pFiles ) pGroup->pFiles->ppPrev = &pFile->pNext;
-        pFile->ppPrev = &pGroup->pFiles;
-        pGroup->pFiles = pFile;
-        pFile->pGroup = pGroup;
-        pFile->deleteOnClose = (flags & SQLITE_OPEN_DELETEONCLOSE)!=0;
+        quotaLeave();
+        pSubOpen->pMethods->xClose(pSubOpen);
+        return SQLITE_NOMEM;
       }
+      pFile->deleteOnClose = (flags & SQLITE_OPEN_DELETEONCLOSE)!=0;
       pFile->nRef++;
       pQuotaOpen->pFile = pFile;
       if( pSubOpen->pMethods->iVersion==1 ){
@@ -423,7 +441,7 @@ static int quotaDelete(
     quotaEnter();
     pGroup = quotaGroupFind(zName);
     if( pGroup ){
-      pFile = quotaFindFile(pGroup, zName);
+      pFile = quotaFindFile(pGroup, zName, 0);
       if( pFile ){
         if( pFile->nRef ){
           pFile->deleteOnClose = 1;
@@ -823,12 +841,158 @@ int sqlite3_quota_file(const char *zFilename){
     quotaEnter();
     pGroup = quotaGroupFind(zFull);
     if( pGroup ){
-      pFile = quotaFindFile(pGroup, zFull);
+      pFile = quotaFindFile(pGroup, zFull, 0);
       if( pFile ) quotaRemoveFile(pFile);
     }
     quotaLeave();
   }
   sqlite3_free(fd);
+  return rc;
+}
+
+/*
+** Open a potentially quotaed file for I/O.
+*/
+quota_FILE *sqlite3_quota_fopen(const char *zFilename, const char *zMode){
+  quota_FILE *p = 0;
+  char *zFull = 0;
+  int rc;
+  quotaGroup *pGroup;
+  quotaFile *pFile;
+
+  p = sqlite3_malloc(gQuota.sThisVfs.mxPathname + 1);
+  if( p==0 ) return 0;
+  zFull = (char*)&p[1];
+  rc = gQuota.pOrigVfs->xFullPathname(gQuota.pOrigVfs, zFilename,
+                                      gQuota.sThisVfs.mxPathname+1, zFull);
+  if( rc ) goto quota_fopen_error;
+  p = sqlite3_malloc(sizeof(*p));
+  if( p==0 ) goto quota_fopen_error;
+  memset(p, 0, sizeof(*p));
+  p->f = fopen(zFull, zMode);
+  if( p->f==0 ) goto quota_fopen_error;
+  quotaEnter();
+  pGroup = quotaGroupFind(zFull);
+  if( pGroup ){
+    pFile = quotaFindFile(pGroup, zFull, 1);
+    if( pFile==0 ){
+      quotaLeave();
+      goto quota_fopen_error;
+    }
+    pFile->nRef++;
+    p->pFile = pFile;
+  }
+  quotaLeave();
+  sqlite3_free(zFull);
+  return p;
+
+quota_fopen_error:
+  sqlite3_free(zFull);
+  if( p && p->f ) fclose(p->f);
+  sqlite3_free(p);
+  return 0;
+}
+
+/*
+** Read content from a quota_FILE
+*/
+size_t sqlite3_quota_fread(
+  void *pBuf,            /* Store the content here */
+  size_t size,           /* Size of each element */
+  size_t nmemb,          /* Number of elements to read */
+  quota_FILE *p          /* Read from this quota_FILE object */
+){
+  return fread(pBuf, size, nmemb, p->f);
+}
+
+/*
+** Write content into a quota_FILE.  Invoke the quota callback and block
+** the write if we exceed quota.
+*/
+size_t sqlite3_quota_fwrite(
+  void *pBuf,            /* Take content to write from here */
+  size_t size,           /* Size of each element */
+  size_t nmemb,          /* Number of elements */
+  quota_FILE *p          /* Write to this quota_FILE objecct */
+){
+  sqlite3_int64 iOfst;
+  sqlite3_int64 iEnd;
+  sqlite3_int64 szNew;
+  quotaFile *pFile;
+  
+  iOfst = ftell(p->f);
+  iEnd = iOfst + size*nmemb;
+  pFile = p->pFile;
+  if( pFile->iSize<iEnd ){
+    quotaGroup *pGroup = pFile->pGroup;
+    quotaEnter();
+    szNew = pGroup->iSize - pFile->iSize + iEnd;
+    if( szNew>pGroup->iLimit && pGroup->iLimit>0 ){
+      if( pGroup->xCallback ){
+        pGroup->xCallback(pFile->zFilename, &pGroup->iLimit, szNew, 
+                          pGroup->pArg);
+      }
+      if( szNew>pGroup->iLimit && pGroup->iLimit>0 ){
+        iEnd = pGroup->iLimit - pGroup->iSize + pFile->iSize;
+        nmemb = (iEnd - iOfst)/size;
+        iEnd = iOfst + size*nmemb;
+        szNew = pGroup->iSize - pFile->iSize + iEnd;
+      }
+    }
+    pGroup->iSize = szNew;
+    pFile->iSize = iEnd;
+    quotaLeave();
+  }
+  return fwrite(pBuf, size, nmemb, p->f);
+}
+
+/*
+** Close an open quota_FILE stream.
+*/
+int sqlite3_quota_fclose(quota_FILE *p){
+  int rc;
+  quotaFile *pFile;
+  rc = fclose(p->f);
+  pFile = p->pFile;
+  quotaEnter();
+  pFile->nRef--;
+  if( pFile->nRef==0 ){
+    quotaGroup *pGroup = pFile->pGroup;
+    if( pFile->deleteOnClose ) quotaRemoveFile(pFile);
+    quotaGroupDeref(pGroup);
+  }
+  quotaLeave();
+  sqlite3_free(p);
+  return rc;
+}
+
+/*
+** Seek on a quota_FILE stream.
+*/
+int sqlite3_quota_fseek(quota_FILE *p, long offset, int whence){
+  return fseek(p->f, offset, whence);
+}
+
+/*
+** rewind a quota_FILE stream.
+*/
+void sqlite3_quota_rewind(quota_FILE *p){
+  rewind(p->f);
+}
+
+/*
+** Tell the current location of a quota_FILE stream.
+*/
+long sqlite3_quota_ftell(quota_FILE *p){
+  return ftell(p->f);
+}
+
+/*
+** Remove a file.  Update quotas accordingly.
+*/
+int sqlite3_quota_remove(const char *zFilename){
+  int rc = remove(zFilename);
+  sqlite3_quota_file(zFilename);
   return rc;
 }
 

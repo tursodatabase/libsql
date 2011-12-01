@@ -1,5 +1,5 @@
-C Remove\sunused\sfields\sfrom\sthe\sParse\sobject.\s\sDocumentation\sand\sformatting\nimprovements\son\sdata\sstructure\sdefinitions.
-D 2011-11-29T15:40:32.491
+C Add\sstdio-like\sI/O\sinterfaces\sto\sthe\stest_quota\sVFS.\s\sThis\sis\sa\sprototype\nchange\sfor\sdiscussion\sand\sis\smostly\suntested.\s\sThis\sis\san\salternative\sto\nadding\sstdio-like\sI/O\sinterfaces\sin\sthe\score.\s\sThere\sis\sno\sguarantee\sthat\nthis\scode\swill\smake\sit\sinto\sthe\strunk.\s\sIf\sit\sdoes\sget\sto\strunk,\sthere\ncould\sbe\smany\schanges\sto\sthe\sinterface\sfirst.
+D 2011-12-01T18:44:21.630
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -220,7 +220,8 @@ F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
 F src/test_osinst.c 62b0b8ef21ce754cc94e17bb42377ed8795dba32
 F src/test_pcache.c a5cd24730cb43c5b18629043314548c9169abb00
-F src/test_quota.c a391c866217e92986c6f523f05b08aa6956c8419
+F src/test_quota.c f3ed8e130fff8e824a320a80668cfaffd6cb55ff
+F src/test_quota.h 118dba604ae5b6903acdd40d2b94a1f319047612
 F src/test_rtree.c 6d06306e29946dc36f528a3a2cdc3add794656f1
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
@@ -976,7 +977,10 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P b10d091ec02e94643e865743129e2a21147b3136
-R 7d0a9d11e01c28eaf1d831b1553005fb
+P 431556cac0b2c86d7f6a60412ff1023feeaafedf
+R e31672c1519f90c43111109b685a8ffb
+T *branch * quota-stdio
+T *sym-quota-stdio *
+T -sym-trunk *
 U drh
-Z fa710425b85d2a4b5e2c971fb970b087
+Z 0283eb6e7b14cfb0e1559cbc303ec8df
