@@ -65,21 +65,27 @@ int sqlite3_quota_shutdown(void);
 ** The zPattern is always compared against the full pathname of the file.
 ** Even if APIs are called with relative pathnames, SQLite converts the
 ** name to a full pathname before comparing it against zPattern.  zPattern
-** is a standard glob pattern with the following matching rules:
+** is a glob pattern with the following matching rules:
 **
 **      '*'       Matches any sequence of zero or more characters.
 **
 **      '?'       Matches exactly one character.
 **
 **     [...]      Matches one character from the enclosed list of
-**                characters.
+**                characters.  "]" can be part of the list if it is
+**                the first character.  Within the list "X-Y" matches
+**                characters X or Y or any character in between the
+**                two.  Ex:  "[0-9]" matches any digit.
 **
 **     [^...]     Matches one character not in the enclosed list.
+**
+**     /          Matches either / or \.  This allows glob patterns
+**                containing / to work on both unix and windows.
 **
 ** Note that, unlike unix shell globbing, the directory separator "/"
 ** can match a wildcard.  So, for example, the pattern "/abc/xyz/" "*"
 ** matches any files anywhere in the directory hierarchy beneath
-** /abc/xyz
+** /abc/xyz.
 **
 ** If the iLimit for a quota group is set to zero, then the quota group
 ** is disabled and will be deleted when the last database connection using
