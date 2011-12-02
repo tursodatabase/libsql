@@ -87,6 +87,9 @@ int sqlite3_quota_shutdown(void);
 ** matches any files anywhere in the directory hierarchy beneath
 ** /abc/xyz.
 **
+** The glob algorithm works on bytes.  Multi-byte UTF8 characters are
+** matched as if each byte were a separate character.
+**
 ** If the iLimit for a quota group is set to zero, then the quota group
 ** is disabled and will be deleted when the last database connection using
 ** the quota group is closed.
