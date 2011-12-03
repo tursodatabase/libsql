@@ -17,8 +17,10 @@ source $testdir/malloc_common.tcl
 db close
 sqlite3_quota_initialize "" 1
 
-foreach dir {quota2a quota2b quota2c} {
+foreach dir {quota2a/x1 quota2a/x2 quota2a quota2b quota2c} {
   file delete -force $dir
+}
+foreach dir {quota2a quota2a/x1 quota2a/x2 quota2b quota2c} {
   file mkdir $dir
 }
 
@@ -109,11 +111,11 @@ do_test quota2-1.10 {
 do_test quota2-1.11 {
   standard_path [sqlite3_quota_dump]
 } {{*/quota2b/* 5000 0} {*/quota2a/* 4000 4000 {PWD/quota2a/xyz.txt 4000 1 0}}}
-do_test quota1-1.12 {
+do_test quota2-1.12 {
   sqlite3_quota_fclose $::h1
   standard_path [sqlite3_quota_dump]
 } {{*/quota2b/* 5000 0} {*/quota2a/* 4000 4000 {PWD/quota2a/xyz.txt 4000 0 0}}}
-do_test quota1-1.13 {
+do_test quota2-1.13 {
   sqlite3_quota_remove quota2a/xyz.txt
   standard_path [sqlite3_quota_dump]
 } {{*/quota2b/* 5000 0} {*/quota2a/* 4000 0}}
@@ -162,10 +164,64 @@ do_test quota2-2.10 {
 do_test quota2-2.11 {
   standard_path [sqlite3_quota_dump]
 } {{*/quota2b/* 5000 0} {*/quota2a/* 4000 0}}
-do_test quota1-2.12 {
+do_test quota2-2.12 {
   sqlite3_quota_fclose $::h1
   standard_path [sqlite3_quota_dump]
 } {{*/quota2b/* 5000 0} {*/quota2a/* 4000 0}}
+
+do_test quota2-3.1 {
+  sqlite3_quota_set */quota2b/* 0 quota_check
+  set ::h1 [sqlite3_quota_fopen quota2a/x1/a.txt a]
+  sqlite3_quota_fwrite $::h1 10 10 $bigtext
+} {10}
+do_test quota2-3.2 {
+  standard_path [sqlite3_quota_dump]
+} {{*/quota2a/* 4000 100 {PWD/quota2a/x1/a.txt 100 1 0}}}
+do_test quota2-3.3 {
+  sqlite3_quota_fflush $::h1
+  standard_path [sqlite3_quota_dump]
+} {{*/quota2a/* 4000 100 {PWD/quota2a/x1/a.txt 100 1 0}}}
+do_test quota2-3.4 {
+  sqlite3_quota_fclose $::h1
+  standard_path [sqlite3_quota_dump]
+} {{*/quota2a/* 4000 100 {PWD/quota2a/x1/a.txt 100 0 0}}}
+do_test quota2-3.5 {
+  set ::h2 [sqlite3_quota_fopen quota2a/x2/b.txt a]
+  sqlite3_quota_fwrite $::h2 10 20 $bigtext
+  standard_path [sqlite3_quota_dump]
+} {{*/quota2a/* 4000 300 {PWD/quota2a/x2/b.txt 200 1 0} {PWD/quota2a/x1/a.txt 100 0 0}}}
+do_test quota2-3.6 {
+  set ::h3 [sqlite3_quota_fopen quota2a/x1/c.txt a]
+  sqlite3_quota_fwrite $::h3 10 50 $bigtext
+  standard_path [sqlite3_quota_dump]
+} {{*/quota2a/* 4000 800 {PWD/quota2a/x1/c.txt 500 1 0} {PWD/quota2a/x2/b.txt 200 1 0} {PWD/quota2a/x1/a.txt 100 0 0}}}
+do_test quota2-3.7 {
+  file exists quota2a/x1/a.txt
+} {1}
+do_test quota2-3.8 {
+  file exists quota2a/x2/b.txt
+} {1}
+do_test quota2-3.9 {
+  file exists quota2a/x1/c.txt
+} {1}
+do_test quota2-3.10 {
+  sqlite3_quota_remove quota2a/x1
+  standard_path [sqlite3_quota_dump]
+} {{*/quota2a/* 4000 700 {PWD/quota2a/x1/c.txt 500 1 1} {PWD/quota2a/x2/b.txt 200 1 0}}}
+do_test quota2-3.11 {
+  sqlite3_quota_fclose $::h2
+  sqlite3_quota_fclose $::h3
+  standard_path [sqlite3_quota_dump]
+} {{*/quota2a/* 4000 200 {PWD/quota2a/x2/b.txt 200 0 0}}}
+do_test quota2-3.12 {
+  file exists quota2a/x1/a.txt
+} {0}
+do_test quota2-3.13 {
+  file exists quota2a/x2/b.txt
+} {1}
+do_test quota2-3.14 {
+  file exists quota2a/x1/c.txt
+} {0}
 
 catch { sqlite3_quota_shutdown }
 catch { unset quota_request_ok }

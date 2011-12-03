@@ -552,7 +552,10 @@ static int quotaClose(sqlite3_file *pConn){
   pFile->nRef--;
   if( pFile->nRef==0 ){
     quotaGroup *pGroup = pFile->pGroup;
-    if( pFile->deleteOnClose ) quotaRemoveFile(pFile);
+    if( pFile->deleteOnClose ){
+      gQuota.pOrigVfs->xDelete(gQuota.pOrigVfs, pFile->zFilename, 0);
+      quotaRemoveFile(pFile);
+    }
     quotaGroupDeref(pGroup);
   }
   quotaLeave();
@@ -1041,13 +1044,23 @@ int sqlite3_quota_fclose(quota_FILE *p){
     pFile->nRef--;
     if( pFile->nRef==0 ){
       quotaGroup *pGroup = pFile->pGroup;
-      if( pFile->deleteOnClose ) quotaRemoveFile(pFile);
+      if( pFile->deleteOnClose ){
+        gQuota.pOrigVfs->xDelete(gQuota.pOrigVfs, pFile->zFilename, 0);
+        quotaRemoveFile(pFile);
+      }
       quotaGroupDeref(pGroup);
     }
     quotaLeave();
   }
   sqlite3_free(p);
   return rc;
+}
+
+/*
+** Flush memory buffers for a quota_FILE to disk.
+*/
+int sqlite3_quota_fflush(quota_FILE *p){
+  return fflush(p->f);
 }
 
 /*
@@ -1072,14 +1085,57 @@ long sqlite3_quota_ftell(quota_FILE *p){
 }
 
 /*
-** Remove a file.  Update quotas accordingly.
+** Remove a managed file.  Update quotas accordingly.
 */
 int sqlite3_quota_remove(const char *zFilename){
-  int rc = remove(zFilename);
-  sqlite3_quota_file(zFilename);
+  char *zFull;            /* Full pathname for zFilename */
+  int nFull;              /* Number of bytes in zFilename */
+  int rc;                 /* Result code */
+  quotaGroup *pGroup;     /* Group containing zFilename */
+  quotaFile *pFile;       /* A file in the group */
+  quotaFile *pNextFile;   /* next file in the group */
+  int diff;               /* Difference between filenames */
+  char c;                 /* First character past end of pattern */
+
+  zFull = sqlite3_malloc(gQuota.sThisVfs.mxPathname + 1);
+  if( zFull==0 ) return SQLITE_NOMEM;
+  rc = gQuota.pOrigVfs->xFullPathname(gQuota.pOrigVfs, zFilename,
+                                      gQuota.sThisVfs.mxPathname+1, zFull);
+  if( rc ){
+    sqlite3_free(zFull);
+    return rc;
+  }
+
+  /* Figure out the length of the full pathname.  If the name ends with
+  ** / (or \ on windows) then remove the trailing /.
+  */
+  nFull = strlen(zFull);
+  if( nFull>0 && (zFull[nFull-1]=='/' || zFull[nFull-1]=='\\') ){
+    nFull--;
+    zFull[nFull] = 0;
+  }
+
+  quotaEnter();
+  pGroup = quotaGroupFind(zFull);
+  if( pGroup ){
+    for(pFile=pGroup->pFiles; pFile && rc==SQLITE_OK; pFile=pNextFile){
+      pNextFile = pFile->pNext;
+      diff = memcmp(zFull, pFile->zFilename, nFull);
+      if( diff==0 && ((c = pFile->zFilename[nFull])==0 || c=='/' || c=='\\') ){
+        if( pFile->nRef ){
+          pFile->deleteOnClose = 1;
+        }else{
+          rc = gQuota.pOrigVfs->xDelete(gQuota.pOrigVfs, pFile->zFilename, 0);
+          quotaRemoveFile(pFile);
+          quotaGroupDeref(pGroup);
+        }
+      }
+    }
+  }
+  quotaLeave();
+  sqlite3_free(zFull);
   return rc;
 }
-
   
 /***************************** Test Code ***********************************/
 #ifdef SQLITE_TEST
@@ -1446,6 +1502,28 @@ static int test_quota_fclose(
 }
 
 /*
+** tclcmd: sqlite3_quota_fflush HANDLE
+*/
+static int test_quota_fflush(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  quota_FILE *p;
+  int rc;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "HANDLE");
+    return TCL_ERROR;
+  }
+  p = sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
+  rc = sqlite3_quota_fflush(p);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
+  return TCL_OK;
+}
+
+/*
 ** tclcmd: sqlite3_quota_fseek HANDLE OFFSET WHENCE
 */
 static int test_quota_fseek(
@@ -1589,6 +1667,7 @@ int Sqlitequota_Init(Tcl_Interp *interp){
     { "sqlite3_quota_fread",      test_quota_fread },
     { "sqlite3_quota_fwrite",     test_quota_fwrite },
     { "sqlite3_quota_fclose",     test_quota_fclose },
+    { "sqlite3_quota_fflush",     test_quota_fflush },
     { "sqlite3_quota_fseek",      test_quota_fseek },
     { "sqlite3_quota_rewind",     test_quota_rewind },
     { "sqlite3_quota_ftell",      test_quota_ftell },

@@ -101,6 +101,10 @@ int sqlite3_quota_shutdown(void);
 ** database connections if those connections are to participate in the
 ** quota group.  Creating a quota group does not affect database connections
 ** that are already open.
+**
+** The patterns that define the various quota groups should be distinct.
+** If the same filename matches more than one quota group pattern, then
+** the behavior of this package is undefined.
 */
 int sqlite3_quota_set(
   const char *zPattern,           /* The filename pattern */
@@ -116,14 +120,20 @@ int sqlite3_quota_set(
 );
 
 /*
-** Bring the named file under quota management.  Or if it is already under
-** management, update its size.
+** Bring the named file under quota management, assuming its name matches
+** the glob pattern of some quota group.  Or if it is already under
+** management, update its size.  If zFilename does not match the glob
+** pattern of any quota group, this routine is a no-op.
 */
 int sqlite3_quota_file(const char *zFilename);
 
 /*
 ** The following object serves the same role as FILE in the standard C
 ** library.  It represents an open connection to a file on disk for I/O.
+**
+** A single quota_FILE should not be used by two or more threads at the
+** same time.  Multiple threads can be using different quota_FILE objects
+** simultaneously, but not the same quota_FILE object.
 */
 typedef struct quota_FILE quota_FILE;
 
@@ -142,6 +152,13 @@ size_t sqlite3_quota_fread(void*, size_t, size_t, quota_FILE*);
 size_t sqlite3_quota_fwrite(void*, size_t, size_t, quota_FILE*);
 
 /*
+** Flush all written content held in memory buffers out to disk.
+** This is the equivalent of fflush() in the standard library - not
+** an fsync().
+*/
+int sqlite3_quota_fflush(quota_FILE*);
+
+/*
 ** Close a quota_FILE object and free all associated resources.  The
 ** file remains under quota management.
 */
@@ -156,11 +173,23 @@ void sqlite3_quota_rewind(quota_FILE*);
 long sqlite3_quota_ftell(quota_FILE*);
 
 /*
-** Delete a file from the disk.  If that file is under quota management,
-** then adjust quotas accordingly.
+** Delete a file from the disk, if that file is under quota management.
+** Adjust quotas accordingly.
 **
-** The file being deleted must not be open for reading or writing or as
-** a database when it is deleted.
+** If zFilename is the name of a directory that matches one of the
+** quota glob patterns, then all files under quota management that
+** are contained within that directory are deleted.
+**
+** A standard SQLite result code is returned (SQLITE_OK, SQLITE_NOMEM, etc.)
+** When deleting a directory of files, if the deletion of any one
+** file fails (for example due to an I/O error), then this routine
+** returns immediately, with the error code, and does not try to 
+** delete any of the other files in the specified directory.
+**
+** All files are removed from quota management and deleted from disk.
+** However, no attempt is made to remove empty directories.
+**
+** This routine is a no-op for files that are not under quota management.
 */
 int sqlite3_quota_remove(const char *zFilename);
 
