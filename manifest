@@ -1,5 +1,5 @@
-C Do\snot\sreuse\stemp\sregisters\soriginally\sallocated\sto\sa\ssubroutine\swithin\nthe\smain\sbody\sof\sthe\sprogram\slogic,\ssince\sif\sthe\ssubroutine\sis\scalled\nwhile\sthe\sreused\stemp\sregisters\sare\sin\suse,\stheir\svalues\swill\sget\sclobbered.\nCandidate\sfix\sfor\sticket\s[3a77c9714e63330]
-D 2011-12-06T13:24:59.067
+C Add\sfile\stkt-3a77c9714e.test,\scontaining\stests\sto\sverify\sthat\sthe\sproblem\sdocumented\sby\sticket\s[3a77c9714e]\shas\sbeen\sfixed.
+D 2011-12-06T13:46:54.313
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -728,6 +728,7 @@ F test/tkt-31338dca7e.test 1f714c14b6682c5db715e0bda347926a3456f7a9
 F test/tkt-313723c356.test c47f8a9330523e6f35698bf4489bcb29609b53ac
 F test/tkt-38cb5df375.test 9e9b19857dba0896a8efdaf334d405ba423492f2
 F test/tkt-3998683a16.test 6d1d04d551ed1704eb3396ca87bb9ccc8c5c1eb7
+F test/tkt-3a77c9714e.test 1675c22a5be71d7fa026e5db5daeeb4dd64f7824
 F test/tkt-3fe897352e.test 10de1a67bd5c66b238a4c96abe55531b37bb4f00
 F test/tkt-4a03edc4c8.test 2865e4edbc075b954daa82f8da7cc973033ec76e
 F test/tkt-54844eea3f.test a12b851128f46a695e4e378cca67409b9b8f5894
@@ -976,7 +977,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 5b03ba9db0d23a8597b45e00ad5892c8065ce1cd
-R 9fd2e18e31f5993e2a2417d0bd31fbb8
-U drh
-Z 6b588a9e7cf08c9f198f7cca1fb8c358
+P 092d53315e50be42b51ef7b3069c82c32a129b6a
+R 8d2fc7565d4aa525192ff0541b1c9cf2
+U dan
+Z d04d6b5cb95ec0b64c1e1542ea707494
