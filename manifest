@@ -1,5 +1,5 @@
-C Merge\sthe\swinGetLastError\sfixes\sinto\strunk.
-D 2011-12-06T00:47:51.936
+C Do\snot\sreuse\stemp\sregisters\soriginally\sallocated\sto\sa\ssubroutine\swithin\nthe\smain\sbody\sof\sthe\sprogram\slogic,\ssince\sif\sthe\ssubroutine\sis\scalled\nwhile\sthe\sreused\stemp\sregisters\sare\sin\suse,\stheir\svalues\swill\sget\sclobbered.\nCandidate\sfix\sfor\sticket\s[3a77c9714e63330]
+D 2011-12-06T13:24:59.067
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -134,7 +134,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c a9c26822515f81ec21588cbb482ca6724be02e33
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c 51d32f0a9c880663e54ce309f52e40c325d5e112
-F src/expr.c fbf116f90cabc917ae50bba24a73a0b55519a0c8
+F src/expr.c 319db0ad9f3c5d039d54bf5a65c98c08c7233924
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 657212460bf5cfd3ae607d12ea62092844c227b5
 F src/func.c 6261ce00aad9c63cd5b4219249b05683979060e9
@@ -180,11 +180,11 @@ F src/printf.c 03104cbff6959ff45df69dc9060ba6212f60a869
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 365ab1c870e38596d6869e76fb544fe6e4ffc809
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
-F src/select.c 80f3ac44a8514b1d107b80f5df4a424ae059d2b6
+F src/select.c 538b5f096f6aacedf717bf982f9ad9a901008514
 F src/shell.c 29812a900a780eb0f835c4bc65e216272689def8
 F src/sqlite.h.in 57081d8e6b53ce29541d7437c93bce6087ac53b5
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h 6f28b69d77356b1e45c024a6c103a1e0f0ec9f62
+F src/sqliteInt.h 142ef5ed3fe0e6c662e99dbf92f38715b29a53b6
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 4568e72dfd36b6a5911f93457364deb072e0b03a
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -976,7 +976,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 431556cac0b2c86d7f6a60412ff1023feeaafedf 7e657bbb800107c992a6ee7a3b35bc0a073bf3e4
-R 543654dfa3532b18db5b62d6f330a3c2
+P 5b03ba9db0d23a8597b45e00ad5892c8065ce1cd
+R 9fd2e18e31f5993e2a2417d0bd31fbb8
 U drh
-Z d9a349b5feef66c92d693305f283c870
+Z 6b588a9e7cf08c9f198f7cca1fb8c358

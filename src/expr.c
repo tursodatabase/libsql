@@ -3762,3 +3762,11 @@ void sqlite3ReleaseTempRange(Parse *pParse, int iReg, int nReg){
     pParse->iRangeReg = iReg;
   }
 }
+
+/*
+** Mark all temporary registers as being unavailable for reuse.
+*/
+void sqlite3ClearTempRegCache(Parse *pParse){
+  pParse->nTempReg = 0;
+  pParse->nRangeReg = 0;
+}

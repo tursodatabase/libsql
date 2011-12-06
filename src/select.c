@@ -3860,7 +3860,7 @@ int sqlite3Select(
       retAddr = sqlite3VdbeAddOp1(v, OP_Return, pItem->regReturn);
       VdbeComment((v, "end %s", pItem->pTab->zName));
       sqlite3VdbeChangeP1(v, topAddr, retAddr);
-
+      sqlite3ClearTempRegCache(pParse);
     }
     if( /*pParse->nErr ||*/ db->mallocFailed ){
       goto select_end;
