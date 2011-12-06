@@ -1,5 +1,5 @@
-C Remove\sunused\sfields\sfrom\sthe\sParse\sobject.\s\sDocumentation\sand\sformatting\nimprovements\son\sdata\sstructure\sdefinitions.
-D 2011-11-29T15:40:32.491
+C Merge\sthe\swinGetLastError\sfixes\sinto\strunk.
+D 2011-12-06T00:47:51.936
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -167,7 +167,7 @@ F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 4fbb91726165e105c1679a2660f49a3f4c376e4f
-F src/os_win.c a22b88d2c088c09a678a471abafa8d60dbf56803
+F src/os_win.c 6efe66a38215c38eaa7603ee5f76848159f8669d
 F src/pager.c d981f3bfcc0e4460537d983899620700ccf8f539
 F src/pager.h 5cd760857707529b403837d813d86b68938d6183
 F src/parse.y d02cc7bdb9ba11fb7aa212f55f99e59e4ee55439
@@ -976,7 +976,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P b10d091ec02e94643e865743129e2a21147b3136
-R 7d0a9d11e01c28eaf1d831b1553005fb
+P 431556cac0b2c86d7f6a60412ff1023feeaafedf 7e657bbb800107c992a6ee7a3b35bc0a073bf3e4
+R 543654dfa3532b18db5b62d6f330a3c2
 U drh
-Z fa710425b85d2a4b5e2c971fb970b087
+Z d9a349b5feef66c92d693305f283c870

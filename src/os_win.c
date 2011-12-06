@@ -1170,18 +1170,23 @@ static int win32IoerrRetryDelay = SQLITE_WIN32_IOERR_RETRY_DELAY;
 ** to see if it should be retried.  Return TRUE to retry.  Return FALSE
 ** to give up with an error.
 */
-static int retryIoerr(int *pnRetry){
-  DWORD e;
+static int retryIoerr(int *pnRetry, DWORD *pError){
+  DWORD e = osGetLastError();
   if( *pnRetry>=win32IoerrRetry ){
+    if( pError ){
+      *pError = e;
+    }
     return 0;
   }
-  e = osGetLastError();
   if( e==ERROR_ACCESS_DENIED ||
       e==ERROR_LOCK_VIOLATION ||
       e==ERROR_SHARING_VIOLATION ){
     osSleep(win32IoerrRetryDelay*(1+*pnRetry));
     ++*pnRetry;
     return 1;
+  }
+  if( pError ){
+    *pError = e;
   }
   return 0;
 }
@@ -1539,6 +1544,7 @@ static int seekWinFile(winFile *pFile, sqlite3_int64 iOffset){
   LONG upperBits;                 /* Most sig. 32 bits of new offset */
   LONG lowerBits;                 /* Least sig. 32 bits of new offset */
   DWORD dwRet;                    /* Value returned by SetFilePointer() */
+  DWORD lastErrno;                /* Value returned by GetLastError() */
 
   upperBits = (LONG)((iOffset>>32) & 0x7fffffff);
   lowerBits = (LONG)(iOffset & 0xffffffff);
@@ -1551,8 +1557,10 @@ static int seekWinFile(winFile *pFile, sqlite3_int64 iOffset){
   ** GetLastError().
   */
   dwRet = osSetFilePointer(pFile->h, lowerBits, &upperBits, FILE_BEGIN);
-  if( (dwRet==INVALID_SET_FILE_POINTER && osGetLastError()!=NO_ERROR) ){
-    pFile->lastErrno = osGetLastError();
+
+  if( (dwRet==INVALID_SET_FILE_POINTER
+      && ((lastErrno = osGetLastError())!=NO_ERROR)) ){
+    pFile->lastErrno = lastErrno;
     winLogError(SQLITE_IOERR_SEEK, pFile->lastErrno,
              "seekWinFile", pFile->zPath);
     return 1;
@@ -1628,8 +1636,9 @@ static int winRead(
     return SQLITE_FULL;
   }
   while( !osReadFile(pFile->h, pBuf, amt, &nRead, 0) ){
-    if( retryIoerr(&nRetry) ) continue;
-    pFile->lastErrno = osGetLastError();
+    DWORD lastErrno;
+    if( retryIoerr(&nRetry, &lastErrno) ) continue;
+    pFile->lastErrno = lastErrno;
     return winLogError(SQLITE_IOERR_READ, pFile->lastErrno,
              "winRead", pFile->zPath);
   }
@@ -1669,10 +1678,11 @@ static int winWrite(
     u8 *aRem = (u8 *)pBuf;        /* Data yet to be written */
     int nRem = amt;               /* Number of bytes yet to be written */
     DWORD nWrite;                 /* Bytes written by each WriteFile() call */
+    DWORD lastErrno = NO_ERROR;   /* Value returned by GetLastError() */
 
     while( nRem>0 ){
       if( !osWriteFile(pFile->h, aRem, nRem, &nWrite, 0) ){
-        if( retryIoerr(&nRetry) ) continue;
+        if( retryIoerr(&nRetry, &lastErrno) ) continue;
         break;
       }
       if( nWrite<=0 ) break;
@@ -1680,7 +1690,7 @@ static int winWrite(
       nRem -= nWrite;
     }
     if( nRem>0 ){
-      pFile->lastErrno = osGetLastError();
+      pFile->lastErrno = lastErrno;
       rc = 1;
     }
   }
@@ -1810,15 +1820,15 @@ static int winFileSize(sqlite3_file *id, sqlite3_int64 *pSize){
   DWORD upperBits;
   DWORD lowerBits;
   winFile *pFile = (winFile*)id;
-  DWORD error;
+  DWORD lastErrno;
 
   assert( id!=0 );
   SimulateIOError(return SQLITE_IOERR_FSTAT);
   lowerBits = osGetFileSize(pFile->h, &upperBits);
   if(   (lowerBits == INVALID_FILE_SIZE)
-     && ((error = osGetLastError()) != NO_ERROR) )
+     && ((lastErrno = osGetLastError())!=NO_ERROR) )
   {
-    pFile->lastErrno = error;
+    pFile->lastErrno = lastErrno;
     return winLogError(SQLITE_IOERR_FSTAT, pFile->lastErrno,
              "winFileSize", pFile->zPath);
   }
@@ -1869,6 +1879,7 @@ static int getReadLock(winFile *pFile){
 */
 static int unlockReadLock(winFile *pFile){
   int res;
+  DWORD lastErrno;
   if( isNT() ){
     res = osUnlockFile(pFile->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
 /* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
@@ -1878,8 +1889,8 @@ static int unlockReadLock(winFile *pFile){
     res = osUnlockFile(pFile->h, SHARED_FIRST + pFile->sharedLockByte, 0, 1, 0);
 #endif
   }
-  if( res==0 && osGetLastError()!=ERROR_NOT_LOCKED ){
-    pFile->lastErrno = osGetLastError();
+  if( res==0 && ((lastErrno = osGetLastError())!=ERROR_NOT_LOCKED) ){
+    pFile->lastErrno = lastErrno;
     winLogError(SQLITE_IOERR_UNLOCK, pFile->lastErrno,
              "unlockReadLock", pFile->zPath);
   }
@@ -1918,7 +1929,7 @@ static int winLock(sqlite3_file *id, int locktype){
   int newLocktype;       /* Set pFile->locktype to this value before exiting */
   int gotPendingLock = 0;/* True if we acquired a PENDING lock this time */
   winFile *pFile = (winFile*)id;
-  DWORD error = NO_ERROR;
+  DWORD lastErrno = NO_ERROR;
 
   assert( id!=0 );
   OSTRACE(("LOCK %d %d was %d(%d)\n",
@@ -1960,7 +1971,7 @@ static int winLock(sqlite3_file *id, int locktype){
     }
     gotPendingLock = res;
     if( !res ){
-      error = osGetLastError();
+      lastErrno = osGetLastError();
     }
   }
 
@@ -1972,7 +1983,7 @@ static int winLock(sqlite3_file *id, int locktype){
     if( res ){
       newLocktype = SHARED_LOCK;
     }else{
-      error = osGetLastError();
+      lastErrno = osGetLastError();
     }
   }
 
@@ -1984,7 +1995,7 @@ static int winLock(sqlite3_file *id, int locktype){
     if( res ){
       newLocktype = RESERVED_LOCK;
     }else{
-      error = osGetLastError();
+      lastErrno = osGetLastError();
     }
   }
 
@@ -2005,8 +2016,8 @@ static int winLock(sqlite3_file *id, int locktype){
     if( res ){
       newLocktype = EXCLUSIVE_LOCK;
     }else{
-      error = osGetLastError();
-      OSTRACE(("error-code = %d\n", error));
+      lastErrno = osGetLastError();
+      OSTRACE(("error-code = %d\n", lastErrno));
       getReadLock(pFile);
     }
   }
@@ -2026,7 +2037,7 @@ static int winLock(sqlite3_file *id, int locktype){
   }else{
     OSTRACE(("LOCK FAILED %d trying for %d but got %d\n", pFile->h,
            locktype, newLocktype));
-    pFile->lastErrno = error;
+    pFile->lastErrno = lastErrno;
     rc = SQLITE_BUSY;
   }
   pFile->locktype = (u8)newLocktype;
@@ -2964,6 +2975,7 @@ static int winOpen(
   int *pOutFlags            /* Status return flags */
 ){
   HANDLE h;
+  DWORD lastErrno;
   DWORD dwDesiredAccess;
   DWORD dwShareMode;
   DWORD dwCreationDisposition;
@@ -3100,7 +3112,7 @@ static int winOpen(
                               dwCreationDisposition,
                               dwFlagsAndAttributes,
                               NULL))==INVALID_HANDLE_VALUE &&
-                              retryIoerr(&cnt) ){}
+                              retryIoerr(&cnt, &lastErrno) ){}
 /* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
 ** Since the ANSI version of these Windows API do not exist for WINCE,
 ** it's important to not reference them for WINCE builds.
@@ -3113,7 +3125,7 @@ static int winOpen(
                               dwCreationDisposition,
                               dwFlagsAndAttributes,
                               NULL))==INVALID_HANDLE_VALUE &&
-                              retryIoerr(&cnt) ){}
+                              retryIoerr(&cnt, &lastErrno) ){}
 #endif
   }
 
@@ -3124,7 +3136,7 @@ static int winOpen(
            h==INVALID_HANDLE_VALUE ? "failed" : "ok"));
 
   if( h==INVALID_HANDLE_VALUE ){
-    pFile->lastErrno = osGetLastError();
+    pFile->lastErrno = lastErrno;
     winLogError(SQLITE_CANTOPEN, pFile->lastErrno, "winOpen", zUtf8Name);
     sqlite3_free(zConverted);
     if( isReadWrite && !isExclusive ){
@@ -3191,6 +3203,7 @@ static int winDelete(
 ){
   int cnt = 0;
   int rc;
+  DWORD lastErrno;
   void *zConverted;
   UNUSED_PARAMETER(pVfs);
   UNUSED_PARAMETER(syncDir);
@@ -3203,7 +3216,7 @@ static int winDelete(
   if( isNT() ){
     rc = 1;
     while( osGetFileAttributesW(zConverted)!=INVALID_FILE_ATTRIBUTES &&
-           (rc = osDeleteFileW(zConverted))==0 && retryIoerr(&cnt) ){}
+         (rc = osDeleteFileW(zConverted))==0 && retryIoerr(&cnt, &lastErrno) ){}
     rc = rc ? SQLITE_OK : SQLITE_ERROR;
 /* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
 ** Since the ANSI version of these Windows API do not exist for WINCE,
@@ -3213,12 +3226,12 @@ static int winDelete(
   }else{
     rc = 1;
     while( osGetFileAttributesA(zConverted)!=INVALID_FILE_ATTRIBUTES &&
-           (rc = osDeleteFileA(zConverted))==0 && retryIoerr(&cnt) ){}
+         (rc = osDeleteFileA(zConverted))==0 && retryIoerr(&cnt, &lastErrno) ){}
     rc = rc ? SQLITE_OK : SQLITE_ERROR;
 #endif
   }
   if( rc ){
-    rc = winLogError(SQLITE_IOERR_DELETE, osGetLastError(),
+    rc = winLogError(SQLITE_IOERR_DELETE, lastErrno,
              "winDelete", zFilename);
   }else{
     logIoerr(cnt);
@@ -3239,6 +3252,7 @@ static int winAccess(
 ){
   DWORD attr;
   int rc = 0;
+  DWORD lastErrno;
   void *zConverted;
   UNUSED_PARAMETER(pVfs);
 
@@ -3253,7 +3267,7 @@ static int winAccess(
     memset(&sAttrData, 0, sizeof(sAttrData));
     while( !(rc = osGetFileAttributesExW((LPCWSTR)zConverted,
                              GetFileExInfoStandard, 
-                             &sAttrData)) && retryIoerr(&cnt) ){}
+                             &sAttrData)) && retryIoerr(&cnt, &lastErrno) ){}
     if( rc ){
       /* For an SQLITE_ACCESS_EXISTS query, treat a zero-length file
       ** as if it does not exist.
@@ -3266,7 +3280,6 @@ static int winAccess(
         attr = sAttrData.dwFileAttributes;
       }
     }else{
-      DWORD lastErrno = osGetLastError();
       logIoerr(cnt);
       if( lastErrno!=ERROR_FILE_NOT_FOUND ){
         winLogError(SQLITE_IOERR_ACCESS, lastErrno, "winAccess", zFilename);
