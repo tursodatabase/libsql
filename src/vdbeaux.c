@@ -2464,6 +2464,10 @@ void sqlite3VdbeDeleteObject(sqlite3 *db, Vdbe *p){
   sqlite3DbFree(db, p->aColName);
   sqlite3DbFree(db, p->zSql);
   sqlite3DbFree(db, p->pFree);
+#if defined(SQLITE_DEBUG)
+  sqlite3_free(p->zExplain);
+  sqlite3_free(p->pExplain);
+#endif
   sqlite3DbFree(db, p);
 }
 

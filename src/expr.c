@@ -2939,6 +2939,56 @@ int sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr, int target){
   return inReg;
 }
 
+#if defined(SQLITE_DEBUG)
+/*
+** Generate a human-readable explanation of an expression tree.
+*/
+void sqlite3ExplainExpr(Vdbe *pOut, Expr *p){
+  if( p==0 ){
+    sqlite3ExplainPrintf(pOut, "(C-null)");
+    return;
+  }
+  if( !ExprHasProperty(p, EP_IntValue) && p->u.zToken ){
+    sqlite3ExplainPrintf(pOut, "(%s", p->u.zToken);
+  }else{
+    sqlite3ExplainPrintf(pOut, "(op=%d", p->op);
+  }
+  if( p->pLeft ){
+    sqlite3ExplainPrintf(pOut, " left=");
+    sqlite3ExplainExpr(pOut, p->pLeft);
+  }
+  if( p->pRight ){
+    sqlite3ExplainPrintf(pOut, " right=");
+    sqlite3ExplainExpr(pOut, p->pRight);
+  }
+  sqlite3ExplainPrintf(pOut, ")");
+}
+#endif /* defined(SQLITE_DEBUG) */
+
+#if defined(SQLITE_DEBUG)
+/*
+** Generate a human-readable explanation of an expression list.
+*/
+void sqlite3ExplainExprList(Vdbe *pOut, ExprList *pList){
+  int i;
+  if( pList==0 ){
+    sqlite3ExplainPrintf(pOut, "(empty-list)");
+    return;
+  }
+  sqlite3ExplainPush(pOut);
+  for(i=0; i<pList->nExpr; i++){
+    sqlite3ExplainPrintf(pOut, "%02d: ", i);
+    sqlite3ExplainPush(pOut);
+    sqlite3ExplainExpr(pOut, pList->a[i].pExpr);
+    sqlite3ExplainPop(pOut);
+    if( i<pList->nExpr-1 ){
+      sqlite3ExplainNL(pOut);
+    }
+  }
+  sqlite3ExplainPop(pOut);
+}
+#endif /* SQLITE_DEBUG */
+
 /*
 ** Return TRUE if pExpr is an constant expression that is appropriate
 ** for factoring out of a loop.  Appropriate expressions are:
