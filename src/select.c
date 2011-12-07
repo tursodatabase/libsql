@@ -4498,47 +4498,43 @@ select_end:
 /*
 ** Generate a human-readable description of a the Select object.
 */
-void sqlite3ExplainSelect(Vdbe *pVdbe, Select *p){
-  if( p==0 ){
-    sqlite3ExplainPrintf(pVdbe, "(empty-select)");
-    return;
-  }
+static void explainOneSelect(Vdbe *pVdbe, Select *p){
   sqlite3ExplainPrintf(pVdbe, "SELECT ");
-  sqlite3ExplainPush(pVdbe);
   sqlite3ExplainExprList(pVdbe, p->pEList);
   sqlite3ExplainNL(pVdbe);
-  sqlite3ExplainPop(pVdbe);
   if( p->pSrc && p->pSrc->nSrc ){
     int i;
-    sqlite3ExplainPrintf(pVdbe, "  FROM ");
+    sqlite3ExplainPrintf(pVdbe, "FROM ");
     sqlite3ExplainPush(pVdbe);
     for(i=0; i<p->pSrc->nSrc; i++){
       struct SrcList_item *pItem = &p->pSrc->a[i];
-      sqlite3ExplainPrintf(pVdbe, "%02d: ", i);
-      sqlite3ExplainPush(pVdbe);
+      sqlite3ExplainPrintf(pVdbe, "src[%d] = ", i);
       if( pItem->pSelect ){
         sqlite3ExplainSelect(pVdbe, pItem->pSelect);
       }else if( pItem->zName ){
         sqlite3ExplainPrintf(pVdbe, "%s", pItem->zName);
       }
       if( pItem->pTab ){
-        sqlite3ExplainPrintf(pVdbe, " (table: %s)", pItem->pTab->zName);
+        sqlite3ExplainPrintf(pVdbe, " (name=%s:%d)",
+                             pItem->pTab->zName, pItem->iCursor);
+      }
+      if( pItem->jointype & JT_LEFT ){
+        sqlite3ExplainPrintf(pVdbe, " LEFT-JOIN");
       }
       if( pItem->zAlias ){
         sqlite3ExplainPrintf(pVdbe, " (AS %s)", pItem->zAlias);
       }
       sqlite3ExplainNL(pVdbe);
-      sqlite3ExplainPop(pVdbe);
     }
     sqlite3ExplainPop(pVdbe);
   }
   if( p->pWhere ){
-    sqlite3ExplainPrintf(pVdbe, " WHERE ");
+    sqlite3ExplainPrintf(pVdbe, "WHERE ");
     sqlite3ExplainExpr(pVdbe, p->pWhere);
     sqlite3ExplainNL(pVdbe);
   }
   if( p->pGroupBy ){
-    sqlite3ExplainPrintf(pVdbe, " GROUP BY ");
+    sqlite3ExplainPrintf(pVdbe, "GROUPBY ");
     sqlite3ExplainExprList(pVdbe, p->pGroupBy);
     sqlite3ExplainNL(pVdbe);
   }
@@ -4548,11 +4544,37 @@ void sqlite3ExplainSelect(Vdbe *pVdbe, Select *p){
     sqlite3ExplainNL(pVdbe);
   }
   if( p->pOrderBy ){
-    sqlite3ExplainPrintf(pVdbe, " ORDER BY ");
+    sqlite3ExplainPrintf(pVdbe, "ORDERBY ");
     sqlite3ExplainExprList(pVdbe, p->pOrderBy);
     sqlite3ExplainNL(pVdbe);
   }
-  sqlite3ExplainPrintf(pVdbe, "   END");
+  if( p->pLimit ){
+    sqlite3ExplainPrintf(pVdbe, "LIMIT ");
+    sqlite3ExplainExpr(pVdbe, p->pLimit);
+    sqlite3ExplainNL(pVdbe);
+  }
+  if( p->pOffset ){
+    sqlite3ExplainPrintf(pVdbe, "OFFSET ");
+    sqlite3ExplainExpr(pVdbe, p->pOffset);
+    sqlite3ExplainNL(pVdbe);
+  }
+}
+void sqlite3ExplainSelect(Vdbe *pVdbe, Select *p){
+  if( p==0 ){
+    sqlite3ExplainPrintf(pVdbe, "(null-select)");
+    return;
+  }
+  while( p->pPrior ) p = p->pPrior;
+  sqlite3ExplainPush(pVdbe);
+  while( p ){
+    explainOneSelect(pVdbe, p);
+    p = p->pNext;
+    if( p==0 ) break;
+    sqlite3ExplainNL(pVdbe);
+    sqlite3ExplainPrintf(pVdbe, "%s\n", selectOpName(p->op));
+  }
+  sqlite3ExplainPrintf(pVdbe, "END");
+  sqlite3ExplainPop(pVdbe);
 }
 
 /* End of the structure debug printing code

@@ -1,5 +1,5 @@
-C Begin\sadding\sthe\sdata-structure\sexplaining\ssubsystem.\s\sAll\sis\scontained\swithin
-D 2011-12-06T19:44:51.212
+C Improvements\sto\sthe\sdata-structure\sexplain\ssubsystem.\s\sMost\squeries\snow\ngive\sa\sreasonably\sdetailed\sgraph\sof\stheir\sparse\stree.
+D 2011-12-07T01:23:51.800
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -134,7 +134,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c a9c26822515f81ec21588cbb482ca6724be02e33
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c 51d32f0a9c880663e54ce309f52e40c325d5e112
-F src/expr.c 942171222a30af8cf4f9504a43ef6cadaf993dae
+F src/expr.c 62f6ad2a1dcfbf684e6916c0662d5b4f28b98346
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 657212460bf5cfd3ae607d12ea62092844c227b5
 F src/func.c 6261ce00aad9c63cd5b4219249b05683979060e9
@@ -180,7 +180,7 @@ F src/printf.c 7ffb4ebb8b341f67e049695ba031da717b3d2699
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 365ab1c870e38596d6869e76fb544fe6e4ffc809
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
-F src/select.c 2923f3129afcddb8023971ab591b07cdc868c163
+F src/select.c 352ac58d6070f9a5564e9648bc2202b9d6339747
 F src/shell.c a1eadb2fdbfa45e54307263f0c8da8ee8cd61b8b
 F src/sqlite.h.in 1dc07194eb1a2c69c8ef75f88022b170be08024a
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
@@ -977,7 +977,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 162421dadf93e9201c3290d800c597cbeeacdb40
-R ddbfe0a87d25503aebbe5e810f678862
+P 79ae51c5b1b20ed0a425a87e65a32a096a80b7e1
+R 33f29d39c143746ce94119c4aaec65fd
 U drh
-Z ed29fdae1618daadbff0e860a54f25e4
+Z 8a3e65c823a12538f790d9d174308040
