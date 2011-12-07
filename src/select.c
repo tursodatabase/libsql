@@ -4500,6 +4500,16 @@ select_end:
 */
 static void explainOneSelect(Vdbe *pVdbe, Select *p){
   sqlite3ExplainPrintf(pVdbe, "SELECT ");
+  if( p->selFlags & (SF_Distinct|SF_Aggregate) ){
+    if( p->selFlags & SF_Distinct ){
+      sqlite3ExplainPrintf(pVdbe, "DISTINCT ");
+    }
+    if( p->selFlags & SF_Aggregate ){
+      sqlite3ExplainPrintf(pVdbe, "agg_flag ");
+    }
+    sqlite3ExplainNL(pVdbe);
+    sqlite3ExplainPrintf(pVdbe, "   ");
+  }
   sqlite3ExplainExprList(pVdbe, p->pEList);
   sqlite3ExplainNL(pVdbe);
   if( p->pSrc && p->pSrc->nSrc ){
