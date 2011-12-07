@@ -4508,21 +4508,20 @@ static void explainOneSelect(Vdbe *pVdbe, Select *p){
     sqlite3ExplainPush(pVdbe);
     for(i=0; i<p->pSrc->nSrc; i++){
       struct SrcList_item *pItem = &p->pSrc->a[i];
-      sqlite3ExplainPrintf(pVdbe, "src[%d] = ", i);
+      sqlite3ExplainPrintf(pVdbe, "{%d,*} = ", pItem->iCursor);
       if( pItem->pSelect ){
         sqlite3ExplainSelect(pVdbe, pItem->pSelect);
+        if( pItem->pTab ){
+          sqlite3ExplainPrintf(pVdbe, " (tabname=%s)", pItem->pTab->zName);
+        }
       }else if( pItem->zName ){
         sqlite3ExplainPrintf(pVdbe, "%s", pItem->zName);
       }
-      if( pItem->pTab ){
-        sqlite3ExplainPrintf(pVdbe, " (name=%s:%d)",
-                             pItem->pTab->zName, pItem->iCursor);
+      if( pItem->zAlias ){
+        sqlite3ExplainPrintf(pVdbe, " (AS %s)", pItem->zAlias);
       }
       if( pItem->jointype & JT_LEFT ){
         sqlite3ExplainPrintf(pVdbe, " LEFT-JOIN");
-      }
-      if( pItem->zAlias ){
-        sqlite3ExplainPrintf(pVdbe, " (AS %s)", pItem->zAlias);
       }
       sqlite3ExplainNL(pVdbe);
     }

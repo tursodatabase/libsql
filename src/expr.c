@@ -2956,8 +2956,8 @@ void sqlite3ExplainExpr(Vdbe *pOut, Expr *pExpr){
   }
   switch( op ){
     case TK_AGG_COLUMN: {
-      sqlite3ExplainPrintf(pOut, "AGG_COLUMN(%s:%d:%d)",
-            pExpr->pTab->zName, pExpr->iTable, pExpr->iColumn);
+      sqlite3ExplainPrintf(pOut, "AGG{%d:%d}",
+            pExpr->iTable, pExpr->iColumn);
       break;
     }
     case TK_COLUMN: {
@@ -2965,27 +2965,27 @@ void sqlite3ExplainExpr(Vdbe *pOut, Expr *pExpr){
         /* This only happens when coding check constraints */
         sqlite3ExplainPrintf(pOut, "COLUMN(%d)", pExpr->iColumn);
       }else{
-        sqlite3ExplainPrintf(pOut, "COLUMN(%s:%d:%d)",
-            pExpr->pTab->zName, pExpr->iTable, pExpr->iColumn);
+        sqlite3ExplainPrintf(pOut, "{%d:%d}",
+                             pExpr->iTable, pExpr->iColumn);
       }
       break;
     }
     case TK_INTEGER: {
       if( pExpr->flags & EP_IntValue ){
-        sqlite3ExplainPrintf(pOut, "INTEGER(%d)", pExpr->u.iValue);
+        sqlite3ExplainPrintf(pOut, "%d", pExpr->u.iValue);
       }else{
-        sqlite3ExplainPrintf(pOut, "INTEGER(%s)", pExpr->u.zToken);
+        sqlite3ExplainPrintf(pOut, "%s", pExpr->u.zToken);
       }
       break;
     }
 #ifndef SQLITE_OMIT_FLOATING_POINT
     case TK_FLOAT: {
-      sqlite3ExplainPrintf(pOut,"REAL(%s)", pExpr->u.zToken);
+      sqlite3ExplainPrintf(pOut,"%s", pExpr->u.zToken);
       break;
     }
 #endif
     case TK_STRING: {
-      sqlite3ExplainPrintf(pOut,"STRING(%s)", pExpr->u.zToken);
+      sqlite3ExplainPrintf(pOut,"%Q", pExpr->u.zToken);
       break;
     }
     case TK_NULL: {
@@ -2994,15 +2994,7 @@ void sqlite3ExplainExpr(Vdbe *pOut, Expr *pExpr){
     }
 #ifndef SQLITE_OMIT_BLOB_LITERAL
     case TK_BLOB: {
-      int n;
-      const char *z;
-      assert( !ExprHasProperty(pExpr, EP_IntValue) );
-      assert( pExpr->u.zToken[0]=='x' || pExpr->u.zToken[0]=='X' );
-      assert( pExpr->u.zToken[1]=='\'' );
-      z = &pExpr->u.zToken[2];
-      n = sqlite3Strlen30(z) - 1;
-      assert( z[n]=='\'' );
-      sqlite3ExplainPrintf(pOut,"BLOB(%.*s)", n, z);
+      sqlite3ExplainPrintf(pOut,"%s", pExpr->u.zToken);
       break;
     }
 #endif
