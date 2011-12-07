@@ -940,7 +940,7 @@ IdList *sqlite3IdListDup(sqlite3 *db, IdList *p){
   return pNew;
 }
 Select *sqlite3SelectDup(sqlite3 *db, Select *p, int flags){
-  Select *pNew;
+  Select *pNew, *pPrior;
   if( p==0 ) return 0;
   pNew = sqlite3DbMallocRaw(db, sizeof(*p) );
   if( pNew==0 ) return 0;
@@ -951,7 +951,9 @@ Select *sqlite3SelectDup(sqlite3 *db, Select *p, int flags){
   pNew->pHaving = sqlite3ExprDup(db, p->pHaving, flags);
   pNew->pOrderBy = sqlite3ExprListDup(db, p->pOrderBy, flags);
   pNew->op = p->op;
-  pNew->pPrior = sqlite3SelectDup(db, p->pPrior, flags);
+  pNew->pPrior = pPrior = sqlite3SelectDup(db, p->pPrior, flags);
+  if( pPrior ) pPrior->pNext = pNew;
+  pNew->pNext = 0;
   pNew->pLimit = sqlite3ExprDup(db, p->pLimit, flags);
   pNew->pOffset = sqlite3ExprDup(db, p->pOffset, flags);
   pNew->iLimit = 0;
