@@ -347,7 +347,7 @@ void sqlite3Pragma(
     goto pragma_out;
   }
  
-#ifndef SQLITE_OMIT_PAGER_PRAGMAS
+#if !defined(SQLITE_OMIT_PAGER_PRAGMAS) && !defined(SQLITE_OMIT_DEPRECATED)
   /*
   **  PRAGMA [database.]default_cache_size
   **  PRAGMA [database.]default_cache_size=N
@@ -396,7 +396,9 @@ void sqlite3Pragma(
       sqlite3BtreeSetCacheSize(pDb->pBt, pDb->pSchema->cache_size);
     }
   }else
+#endif /* !SQLITE_OMIT_PAGER_PRAGMAS && !SQLITE_OMIT_DEPRECATED */
 
+#if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
   /*
   **  PRAGMA [database.]page_size
   **  PRAGMA [database.]page_size=N
@@ -417,7 +419,7 @@ void sqlite3Pragma(
       ** buffer that the pager module resizes using sqlite3_realloc().
       */
       db->nextPagesize = sqlite3Atoi(zRight);
-      if( SQLITE_NOMEM==sqlite3BtreeSetPageSize(pBt, db->nextPagesize, -1, 0) ){
+      if( SQLITE_NOMEM==sqlite3BtreeSetPageSize(pBt, db->nextPagesize,-1,0) ){
         db->mallocFailed = 1;
       }
     }
@@ -457,6 +459,10 @@ void sqlite3Pragma(
   ** second form attempts to change this setting.  Both
   ** forms return the current setting.
   **
+  ** The absolute value of N is used.  This is undocumented and might
+  ** change.  The only purpose is to provide an easy way to test
+  ** the sqlite3AbsInt32() function.
+  **
   **  PRAGMA [database.]page_count
   **
   ** Return the number of pages in the specified database.
@@ -471,7 +477,8 @@ void sqlite3Pragma(
     if( sqlite3Tolower(zLeft[0])=='p' ){
       sqlite3VdbeAddOp2(v, OP_Pagecount, iDb, iReg);
     }else{
-      sqlite3VdbeAddOp3(v, OP_MaxPgcnt, iDb, iReg, sqlite3Atoi(zRight));
+      sqlite3VdbeAddOp3(v, OP_MaxPgcnt, iDb, iReg, 
+                        sqlite3AbsInt32(sqlite3Atoi(zRight)));
     }
     sqlite3VdbeAddOp2(v, OP_ResultRow, iReg, 1);
     sqlite3VdbeSetNumCols(v, 1);
@@ -699,14 +706,11 @@ void sqlite3Pragma(
   **  PRAGMA [database.]cache_size=N
   **
   ** The first form reports the current local setting for the
-  ** page cache size.  The local setting can be different from
-  ** the persistent cache size value that is stored in the database
-  ** file itself.  The value returned is the maximum number of
-  ** pages in the page cache.  The second form sets the local
-  ** page cache size value.  It does not change the persistent
-  ** cache size stored on the disk so the cache size will revert
-  ** to its default value when the database is closed and reopened.
-  ** N should be a positive integer.
+  ** page cache size. The second form sets the local
+  ** page cache size value.  If N is positive then that is the
+  ** number of pages in the cache.  If N is negative, then the
+  ** number of pages is adjusted so that the cache uses -N kibibytes
+  ** of memory.
   */
   if( sqlite3StrICmp(zLeft,"cache_size")==0 ){
     if( sqlite3ReadSchema(pParse) ) goto pragma_out;
@@ -715,7 +719,7 @@ void sqlite3Pragma(
       i64 cacheSize = pDb->pSchema->cache_size;
       returnSingleInt(pParse, "cache_size", &cacheSize);
     }else{
-      int size = sqlite3AbsInt32(sqlite3Atoi(zRight));
+      int size = sqlite3Atoi(zRight);
       pDb->pSchema->cache_size = size;
       sqlite3BtreeSetCacheSize(pDb->pBt, pDb->pSchema->cache_size);
     }
@@ -1455,6 +1459,16 @@ void sqlite3Pragma(
     returnSingleInt(pParse, "wal_autocheckpoint", &walArg);
   }else
 #endif
+
+  /*
+  **  PRAGMA shrink_memory
+  **
+  ** This pragma attempts to free as much memory as possible from the
+  ** current database connection.
+  */
+  if( sqlite3StrICmp(zLeft, "shrink_memory")==0 ){
+    sqlite3_db_release_memory(db);
+  }else
 
 #if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
   /*

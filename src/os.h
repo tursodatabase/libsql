@@ -66,6 +66,15 @@
 #endif
 
 /*
+** Determine if we are dealing with Windows NT.
+*/
+#if defined(_WIN32_WINNT)
+# define SQLITE_OS_WINNT 1
+#else
+# define SQLITE_OS_WINNT 0
+#endif
+
+/*
 ** Determine if we are dealing with WindowsCE - which has a much
 ** reduced API.
 */

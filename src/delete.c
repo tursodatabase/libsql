@@ -148,7 +148,6 @@ Expr *sqlite3LimitWhere(
   */
   if( pOrderBy && (pLimit == 0) ) {
     sqlite3ErrorMsg(pParse, "ORDER BY without LIMIT on %s", zStmtType);
-    pParse->parseError = 1;
     goto limit_where_cleanup_2;
   }
 

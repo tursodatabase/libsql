@@ -2085,7 +2085,8 @@ static int do_meta_command(char *zLine, struct callback_data *p){
           "  (SELECT sql sql, type type, tbl_name tbl_name, name name"
           "     FROM sqlite_master UNION ALL"
           "   SELECT sql, type, tbl_name, name FROM sqlite_temp_master) "
-          "WHERE tbl_name LIKE shellstatic() AND type!='meta' AND sql NOTNULL "
+          "WHERE lower(tbl_name) LIKE shellstatic()"
+          "  AND type!='meta' AND sql NOTNULL "
           "ORDER BY substr(type,2,1), name",
           callback, &data, &zErrMsg);
         zShellStatic = 0;
@@ -2219,7 +2220,6 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       { "reserve",               SQLITE_TESTCTRL_RESERVE                },
       { "optimizations",         SQLITE_TESTCTRL_OPTIMIZATIONS          },
       { "iskeyword",             SQLITE_TESTCTRL_ISKEYWORD              },
-      { "pghdrsz",               SQLITE_TESTCTRL_PGHDRSZ                },
       { "scratchmalloc",         SQLITE_TESTCTRL_SCRATCHMALLOC          },
     };
     int testctrl = -1;
@@ -2264,7 +2264,6 @@ static int do_meta_command(char *zLine, struct callback_data *p){
         case SQLITE_TESTCTRL_PRNG_SAVE:           
         case SQLITE_TESTCTRL_PRNG_RESTORE:        
         case SQLITE_TESTCTRL_PRNG_RESET:
-        case SQLITE_TESTCTRL_PGHDRSZ:             
           if( nArg==2 ){
             rc = sqlite3_test_control(testctrl);
             printf("%d (0x%08x)\n", rc, rc);

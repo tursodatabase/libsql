@@ -4616,9 +4616,9 @@ case OP_IdxGE: {        /* jump */
     r.pKeyInfo = pC->pKeyInfo;
     r.nField = (u16)pOp->p4.i;
     if( pOp->p5 ){
-      r.flags = UNPACKED_INCRKEY | UNPACKED_IGNORE_ROWID;
+      r.flags = UNPACKED_INCRKEY | UNPACKED_PREFIX_MATCH;
     }else{
-      r.flags = UNPACKED_IGNORE_ROWID;
+      r.flags = UNPACKED_PREFIX_MATCH;
     }
     r.aMem = &aMem[pOp->p3];
 #ifdef SQLITE_DEBUG

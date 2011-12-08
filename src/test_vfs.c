@@ -988,7 +988,7 @@ static int testvfs_obj_cmd(
   switch( aSubcmd[i].eCmd ){
     case CMD_SHM: {
       Tcl_Obj *pObj;
-      int i;
+      int i, rc;
       TestvfsBuffer *pBuffer;
       char *zName;
       if( objc!=3 && objc!=4 ){
@@ -996,10 +996,16 @@ static int testvfs_obj_cmd(
         return TCL_ERROR;
       }
       zName = ckalloc(p->pParent->mxPathname);
-      p->pParent->xFullPathname(
+      rc = p->pParent->xFullPathname(
           p->pParent, Tcl_GetString(objv[2]), 
           p->pParent->mxPathname, zName
       );
+      if( rc!=SQLITE_OK ){
+        Tcl_AppendResult(interp, "failed to get full path: ",
+                         Tcl_GetString(objv[2]), 0);
+        ckfree(zName);
+        return TCL_ERROR;
+      }
       for(pBuffer=p->pBuffer; pBuffer; pBuffer=pBuffer->pNext){
         if( 0==strcmp(pBuffer->zFile, zName) ) break;
       }

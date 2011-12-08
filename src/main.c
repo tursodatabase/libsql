@@ -368,16 +368,25 @@ int sqlite3_config(int op, ...){
     }
 
     case SQLITE_CONFIG_PCACHE: {
-      /* Specify an alternative page cache implementation */
-      sqlite3GlobalConfig.pcache = *va_arg(ap, sqlite3_pcache_methods*);
+      /* no-op */
+      break;
+    }
+    case SQLITE_CONFIG_GETPCACHE: {
+      /* now an error */
+      rc = SQLITE_ERROR;
       break;
     }
 
-    case SQLITE_CONFIG_GETPCACHE: {
-      if( sqlite3GlobalConfig.pcache.xInit==0 ){
+    case SQLITE_CONFIG_PCACHE2: {
+      /* Specify an alternative page cache implementation */
+      sqlite3GlobalConfig.pcache2 = *va_arg(ap, sqlite3_pcache_methods2*);
+      break;
+    }
+    case SQLITE_CONFIG_GETPCACHE2: {
+      if( sqlite3GlobalConfig.pcache2.xInit==0 ){
         sqlite3PCacheSetDefault();
       }
-      *va_arg(ap, sqlite3_pcache_methods*) = sqlite3GlobalConfig.pcache;
+      *va_arg(ap, sqlite3_pcache_methods2*) = sqlite3GlobalConfig.pcache2;
       break;
     }
 
@@ -476,21 +485,21 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
   if( db->lookaside.bMalloced ){
     sqlite3_free(db->lookaside.pStart);
   }
-  /* The size of a lookaside slot needs to be larger than a pointer
-  ** to be useful.
+  /* The size of a lookaside slot after ROUNDDOWN8 needs to be larger
+  ** than a pointer to be useful.
   */
+  sz = ROUNDDOWN8(sz);  /* IMP: R-33038-09382 */
   if( sz<=(int)sizeof(LookasideSlot*) ) sz = 0;
   if( cnt<0 ) cnt = 0;
   if( sz==0 || cnt==0 ){
     sz = 0;
     pStart = 0;
   }else if( pBuf==0 ){
-    sz = ROUNDDOWN8(sz); /* IMP: R-33038-09382 */
     sqlite3BeginBenignMalloc();
     pStart = sqlite3Malloc( sz*cnt );  /* IMP: R-61949-35727 */
     sqlite3EndBenignMalloc();
+    if( pStart ) cnt = sqlite3MallocSize(pStart)/sz;
   }else{
-    sz = ROUNDDOWN8(sz); /* IMP: R-33038-09382 */
     pStart = pBuf;
   }
   db->lookaside.pStart = pStart;
@@ -522,6 +531,24 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
 */
 sqlite3_mutex *sqlite3_db_mutex(sqlite3 *db){
   return db->mutex;
+}
+
+/*
+** Free up as much memory as we can from the given database
+** connection.
+*/
+int sqlite3_db_release_memory(sqlite3 *db){
+  int i;
+  sqlite3BtreeEnterAll(db);
+  for(i=0; i<db->nDb; i++){
+    Btree *pBt = db->aDb[i].pBt;
+    if( pBt ){
+      Pager *pPager = sqlite3BtreePager(pBt);
+      sqlite3PagerShrink(pPager);
+    }
+  }
+  sqlite3BtreeLeaveAll(db);
+  return SQLITE_OK;
 }
 
 /*
@@ -1635,7 +1662,6 @@ static int createCollation(
   sqlite3* db,
   const char *zName, 
   u8 enc,
-  u8 collType,
   void* pCtx,
   int(*xCompare)(void*,int,const void*,int,const void*),
   void(*xDel)(void*)
@@ -1700,7 +1726,6 @@ static int createCollation(
   pColl->pUser = pCtx;
   pColl->xDel = xDel;
   pColl->enc = (u8)(enc2 | (enc & SQLITE_UTF16_ALIGNED));
-  pColl->type = collType;
   sqlite3Error(db, SQLITE_OK, 0);
   return SQLITE_OK;
 }
@@ -2175,14 +2200,10 @@ static int openDatabase(
   ** and UTF-16, so add a version for each to avoid any unnecessary
   ** conversions. The only error that can occur here is a malloc() failure.
   */
-  createCollation(db, "BINARY", SQLITE_UTF8, SQLITE_COLL_BINARY, 0,
-                  binCollFunc, 0);
-  createCollation(db, "BINARY", SQLITE_UTF16BE, SQLITE_COLL_BINARY, 0,
-                  binCollFunc, 0);
-  createCollation(db, "BINARY", SQLITE_UTF16LE, SQLITE_COLL_BINARY, 0,
-                  binCollFunc, 0);
-  createCollation(db, "RTRIM", SQLITE_UTF8, SQLITE_COLL_USER, (void*)1,
-                  binCollFunc, 0);
+  createCollation(db, "BINARY", SQLITE_UTF8, 0, binCollFunc, 0);
+  createCollation(db, "BINARY", SQLITE_UTF16BE, 0, binCollFunc, 0);
+  createCollation(db, "BINARY", SQLITE_UTF16LE, 0, binCollFunc, 0);
+  createCollation(db, "RTRIM", SQLITE_UTF8, (void*)1, binCollFunc, 0);
   if( db->mallocFailed ){
     goto opendb_out;
   }
@@ -2190,8 +2211,7 @@ static int openDatabase(
   assert( db->pDfltColl!=0 );
 
   /* Also add a UTF-8 case-insensitive collation sequence. */
-  createCollation(db, "NOCASE", SQLITE_UTF8, SQLITE_COLL_NOCASE, 0,
-                  nocaseCollatingFunc, 0);
+  createCollation(db, "NOCASE", SQLITE_UTF8, 0, nocaseCollatingFunc, 0);
 
   /* Parse the filename/URI argument. */
   db->openFlags = flags;
@@ -2400,7 +2420,7 @@ int sqlite3_create_collation(
   int rc;
   sqlite3_mutex_enter(db->mutex);
   assert( !db->mallocFailed );
-  rc = createCollation(db, zName, (u8)enc, SQLITE_COLL_USER, pCtx, xCompare, 0);
+  rc = createCollation(db, zName, (u8)enc, pCtx, xCompare, 0);
   rc = sqlite3ApiExit(db, rc);
   sqlite3_mutex_leave(db->mutex);
   return rc;
@@ -2420,7 +2440,7 @@ int sqlite3_create_collation_v2(
   int rc;
   sqlite3_mutex_enter(db->mutex);
   assert( !db->mallocFailed );
-  rc = createCollation(db, zName, (u8)enc, SQLITE_COLL_USER, pCtx, xCompare, xDel);
+  rc = createCollation(db, zName, (u8)enc, pCtx, xCompare, xDel);
   rc = sqlite3ApiExit(db, rc);
   sqlite3_mutex_leave(db->mutex);
   return rc;
@@ -2443,7 +2463,7 @@ int sqlite3_create_collation16(
   assert( !db->mallocFailed );
   zName8 = sqlite3Utf16to8(db, zName, -1, SQLITE_UTF16NATIVE);
   if( zName8 ){
-    rc = createCollation(db, zName8, (u8)enc, SQLITE_COLL_USER, pCtx, xCompare, 0);
+    rc = createCollation(db, zName8, (u8)enc, pCtx, xCompare, 0);
     sqlite3DbFree(db, zName8);
   }
   rc = sqlite3ApiExit(db, rc);
@@ -2926,15 +2946,6 @@ int sqlite3_test_control(int op, ...){
     }
 #endif 
 
-    /* sqlite3_test_control(SQLITE_TESTCTRL_PGHDRSZ)
-    **
-    ** Return the size of a pcache header in bytes.
-    */
-    case SQLITE_TESTCTRL_PGHDRSZ: {
-      rc = sizeof(PgHdr);
-      break;
-    }
-
     /* sqlite3_test_control(SQLITE_TESTCTRL_SCRATCHMALLOC, sz, &pNew, pFree);
     **
     ** Pass pFree into sqlite3ScratchFree(). 
@@ -2986,6 +2997,20 @@ const char *sqlite3_uri_parameter(const char *zFilename, const char *zParam){
     zFilename += sqlite3Strlen30(zFilename) + 1;
     if( x==0 ) return zFilename;
     zFilename += sqlite3Strlen30(zFilename) + 1;
+  }
+  return 0;
+}
+
+/*
+** Return the filename of the database associated with a database
+** connection.
+*/
+const char *sqlite3_db_filename(sqlite3 *db, const char *zDbName){
+  int i;
+  for(i=0; i<db->nDb; i++){
+    if( db->aDb[i].pBt && sqlite3StrICmp(zDbName, db->aDb[i].zName)==0 ){
+      return sqlite3BtreeGetFilename(db->aDb[i].pBt);
+    }
   }
   return 0;
 }

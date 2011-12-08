@@ -3303,6 +3303,13 @@ void sqlite3PagerSetCachesize(Pager *pPager, int mxPage){
 }
 
 /*
+** Free as much memory as possible from the pager.
+*/
+void sqlite3PagerShrink(Pager *pPager){
+  sqlite3PcacheShrink(pPager->pPCache);
+}
+
+/*
 ** Adjust the robustness of the database to damage due to OS crashes
 ** or power failures by changing the number of syncs()s when writing
 ** the rollback journal.  There are three levels:
@@ -6687,6 +6694,15 @@ sqlite3_backup **sqlite3PagerBackupPtr(Pager *pPager){
   return &pPager->pBackup;
 }
 
+#ifndef SQLITE_OMIT_VACUUM
+/*
+** Unless this is an in-memory or temporary database, clear the pager cache.
+*/
+void sqlite3PagerClearCache(Pager *pPager){
+  if( !MEMDB && pPager->tempFile==0 ) pager_reset(pPager);
+}
+#endif
+
 #ifndef SQLITE_OMIT_WAL
 /*
 ** This function is called when the user invokes "PRAGMA wal_checkpoint",
@@ -6865,13 +6881,6 @@ int sqlite3PagerCloseWal(Pager *pPager){
     }
   }
   return rc;
-}
-
-/*
-** Unless this is an in-memory or temporary database, clear the pager cache.
-*/
-void sqlite3PagerClearCache(Pager *pPager){
-  if( !MEMDB && pPager->tempFile==0 ) pager_reset(pPager);
 }
 
 #ifdef SQLITE_HAS_CODEC

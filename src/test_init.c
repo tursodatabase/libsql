@@ -30,9 +30,9 @@
 #include <tcl.h>
 
 static struct Wrapped {
-  sqlite3_pcache_methods pcache;
-  sqlite3_mem_methods    mem;
-  sqlite3_mutex_methods  mutex;
+  sqlite3_pcache_methods2 pcache;
+  sqlite3_mem_methods     mem;
+  sqlite3_mutex_methods   mutex;
 
   int mem_init;                /* True if mem subsystem is initalized */
   int mem_fail;                /* True to fail mem subsystem inialization */
@@ -123,8 +123,8 @@ static void wrPCacheShutdown(void *pArg){
   wrapped.pcache_init = 0;
 }
 
-static sqlite3_pcache *wrPCacheCreate(int a, int b){
-  return wrapped.pcache.xCreate(a, b);
+static sqlite3_pcache *wrPCacheCreate(int a, int b, int c){
+  return wrapped.pcache.xCreate(a, b, c);
 }  
 static void wrPCacheCachesize(sqlite3_pcache *p, int n){
   wrapped.pcache.xCachesize(p, n);
@@ -132,13 +132,18 @@ static void wrPCacheCachesize(sqlite3_pcache *p, int n){
 static int wrPCachePagecount(sqlite3_pcache *p){
   return wrapped.pcache.xPagecount(p);
 }  
-static void *wrPCacheFetch(sqlite3_pcache *p, unsigned a, int b){
+static sqlite3_pcache_page *wrPCacheFetch(sqlite3_pcache *p, unsigned a, int b){
   return wrapped.pcache.xFetch(p, a, b);
 }  
-static void wrPCacheUnpin(sqlite3_pcache *p, void *a, int b){
+static void wrPCacheUnpin(sqlite3_pcache *p, sqlite3_pcache_page *a, int b){
   wrapped.pcache.xUnpin(p, a, b);
 }  
-static void wrPCacheRekey(sqlite3_pcache *p, void *a, unsigned b, unsigned c){
+static void wrPCacheRekey(
+  sqlite3_pcache *p, 
+  sqlite3_pcache_page *a, 
+  unsigned b, 
+  unsigned c
+){
   wrapped.pcache.xRekey(p, a, b, c);
 }  
 static void wrPCacheTruncate(sqlite3_pcache *p, unsigned a){
@@ -154,8 +159,8 @@ static void installInitWrappers(void){
     wrMutexFree,  wrMutexEnter, wrMutexTry,
     wrMutexLeave, wrMutexHeld,  wrMutexNotheld
   };
-  sqlite3_pcache_methods pcachemethods = {
-    0,
+  sqlite3_pcache_methods2 pcachemethods = {
+    1, 0,
     wrPCacheInit,      wrPCacheShutdown,  wrPCacheCreate, 
     wrPCacheCachesize, wrPCachePagecount, wrPCacheFetch,
     wrPCacheUnpin,     wrPCacheRekey,     wrPCacheTruncate,  
@@ -173,10 +178,10 @@ static void installInitWrappers(void){
   sqlite3_shutdown();
   sqlite3_config(SQLITE_CONFIG_GETMUTEX, &wrapped.mutex);
   sqlite3_config(SQLITE_CONFIG_GETMALLOC, &wrapped.mem);
-  sqlite3_config(SQLITE_CONFIG_GETPCACHE, &wrapped.pcache);
+  sqlite3_config(SQLITE_CONFIG_GETPCACHE2, &wrapped.pcache);
   sqlite3_config(SQLITE_CONFIG_MUTEX, &mutexmethods);
   sqlite3_config(SQLITE_CONFIG_MALLOC, &memmethods);
-  sqlite3_config(SQLITE_CONFIG_PCACHE, &pcachemethods);
+  sqlite3_config(SQLITE_CONFIG_PCACHE2, &pcachemethods);
 }
 
 static int init_wrapper_install(
@@ -218,7 +223,7 @@ static int init_wrapper_uninstall(
   sqlite3_shutdown();
   sqlite3_config(SQLITE_CONFIG_MUTEX, &wrapped.mutex);
   sqlite3_config(SQLITE_CONFIG_MALLOC, &wrapped.mem);
-  sqlite3_config(SQLITE_CONFIG_PCACHE, &wrapped.pcache);
+  sqlite3_config(SQLITE_CONFIG_PCACHE2, &wrapped.pcache);
   return TCL_OK;
 }
 
