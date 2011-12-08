@@ -1,5 +1,5 @@
-C Cherrypick\sthe\s[7e5b56b1c6]\sfix\sfor\sthe\ssqlite3SelectDup()\sroutine\s\ninto\strunk.
-D 2011-12-07T01:55:51.485
+C Follow\sthe\spreviously\sestablished\spattern\sfor\sdetecting\spreprocessor\sdefines\sfor\sspecific\sflavors\sof\sWindows\s(for\sNT\sin\sthis\scase).
+D 2011-12-08T03:51:12.637
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,11 +163,11 @@ F src/mutex_unix.c b4f4e923bb8de93ec3f251fadb50855f23df9579
 F src/mutex_w32.c 5e54f3ba275bcb5d00248b8c23107df2e2f73e33
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c 28bbdab2170dfce84d86c45456a18eab1d0f99a9
-F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
+F src/os.h 5830d32c4dab94fa0373404a139ada670e800731
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 4fbb91726165e105c1679a2660f49a3f4c376e4f
-F src/os_win.c 6efe66a38215c38eaa7603ee5f76848159f8669d
+F src/os_win.c 8af100f78f157eb6185fd9153d7f35b829c4da04
 F src/pager.c d981f3bfcc0e4460537d983899620700ccf8f539
 F src/pager.h 5cd760857707529b403837d813d86b68938d6183
 F src/parse.y d02cc7bdb9ba11fb7aa212f55f99e59e4ee55439
@@ -977,7 +977,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 162421dadf93e9201c3290d800c597cbeeacdb40
-R d17736709c9e1055d62b7d5dd5010549
-U drh
-Z 01f1b62cbb252e00fe26739b3bf9a3e5
+P 7fc535090ca3416706dff4abce10ac2d7f775e02
+R 6482ffb35478eb08f1e552e0a44aef9d
+U mistachkin
+Z 72aea825d319aa78f5f6763f21c44870
