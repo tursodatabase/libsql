@@ -1,5 +1,5 @@
-C Follow\sthe\spreviously\sestablished\spattern\sfor\sdetecting\spreprocessor\sdefines\sfor\sspecific\sflavors\sof\sWindows\s(for\sNT\sin\sthis\scase).
-D 2011-12-08T03:51:12.637
+C In\spersistent\sWAL\smode,\struncate\sthe\sWAL\sfile\sto\sthe\ssize\sspecified\sby\sthe\njournal_size_limit\spragma\swhen\sdisconnecting\sfrom\sthe\sWAL.
+D 2011-12-08T19:50:32.953
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -249,7 +249,7 @@ F src/vdbemem.c 2fc78b3e0fabcc1eaa23cd79dd2e30e6dcfe1e56
 F src/vdbesort.c 468d43c057063e54da4f1988b38b4f46d60e7790
 F src/vdbetrace.c 5d0dc3d5fd54878cc8d6d28eb41deb8d5885b114
 F src/vtab.c e9318d88feac85be8e27ee783ac8f5397933fc8a
-F src/wal.c 5fe1ba55b8fab9d3936bc9093af61ab9f1c580a1
+F src/wal.c 7e6e7fe68ee649505dca38c8ab83eda0d0d96ae5
 F src/wal.h 66b40bd91bc29a5be1c88ddd1f5ade8f3f48728a
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c f73752ca85c0ed221753fda98aeaf6b9d4616e0e
@@ -912,7 +912,7 @@ F test/walfault.test efb0d5724893133e71b8d9d90abdb781845a6bb0
 F test/walhook.test ed00a40ba7255da22d6b66433ab61fab16a63483
 F test/walmode.test 4022fe03ae6e830583672caa101f046438a0473c
 F test/walnoshm.test 84ca10c544632a756467336b7c3b864d493ee496
-F test/walpersist.test fd40d33765b2693f721c90c66d97f99757559006
+F test/walpersist.test 710b1b6cf6f8333e984f437724d1fa9e0511c5aa
 F test/walro.test e6bb27762c9f22601cbb8bff6e0acfd124e74b63
 F test/walshared.test 6dda2293880c300baf5d791c307f653094585761
 F test/walslow.test e7be6d9888f83aa5d3d3c7c08aa9b5c28b93609a
@@ -977,7 +977,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 7fc535090ca3416706dff4abce10ac2d7f775e02
-R 6482ffb35478eb08f1e552e0a44aef9d
-U mistachkin
-Z 72aea825d319aa78f5f6763f21c44870
+P a0d92193dd5ae97608748f354aa17eb188431546
+R 2af387da3b388b68a597840e0b4cefff
+U drh
+Z 15eed8d4acdafc18909017c3c88afe5e

@@ -1782,6 +1782,26 @@ static int walCheckpoint(
 }
 
 /*
+** Attempt to limit the WAL size to the size limit defined by
+** PRAGMA journal_size_limit.
+*/
+static void walLimitSize(Wal *pWal){
+  if( pWal->mxWalSize>=0 ){
+    i64 sz;
+    int rx;
+    sqlite3BeginBenignMalloc();
+    rx = sqlite3OsFileSize(pWal->pWalFd, &sz);
+    if( rx==SQLITE_OK && (sz > pWal->mxWalSize) ){
+      rx = sqlite3OsTruncate(pWal->pWalFd, pWal->mxWalSize);
+    }
+    sqlite3EndBenignMalloc();
+    if( rx ){
+      sqlite3_log(rx, "cannot limit WAL size: %s", pWal->zWalName);
+    }
+  }
+}
+
+/*
 ** Close a connection to a log file.
 */
 int sqlite3WalClose(
@@ -1814,6 +1834,8 @@ int sqlite3WalClose(
       sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_PERSIST_WAL, &bPersistWal);
       if( rc==SQLITE_OK && bPersistWal!=1 ){
         isDelete = 1;
+      }else{
+        walLimitSize(pWal);
       }
     }
 
@@ -2518,6 +2540,7 @@ int sqlite3WalSavepointUndo(Wal *pWal, u32 *aWalData){
   return rc;
 }
 
+
 /*
 ** This function is called just before writing a set of frames to the log
 ** file (see sqlite3WalFrames()). It checks to see if, instead of appending
@@ -2555,23 +2578,7 @@ static int walRestartLog(Wal *pWal){
         int i;                    /* Loop counter */
         u32 *aSalt = pWal->hdr.aSalt;       /* Big-endian salt values */
 
-        /* Limit the size of WAL file if the journal_size_limit PRAGMA is
-        ** set to a non-negative value.  Log errors encountered
-        ** during the truncation attempt. */
-        if( pWal->mxWalSize>=0 ){
-          i64 sz;
-          int rx;
-          sqlite3BeginBenignMalloc();
-          rx = sqlite3OsFileSize(pWal->pWalFd, &sz);
-          if( rx==SQLITE_OK && (sz > pWal->mxWalSize) ){
-            rx = sqlite3OsTruncate(pWal->pWalFd, pWal->mxWalSize);
-          }
-          sqlite3EndBenignMalloc();
-          if( rx ){
-            sqlite3_log(rx, "cannot limit WAL size: %s", pWal->zWalName);
-          }
-        }
-
+        walLimitSize(pWal);
         pWal->nCkpt++;
         pWal->hdr.mxFrame = 0;
         sqlite3Put4byte((u8*)&aSalt[0], 1 + sqlite3Get4byte((u8*)&aSalt[0]));
