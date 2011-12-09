@@ -1947,12 +1947,13 @@ static int generateOutputSubroutine(
   */
   if( regPrev ){
     int j1, j2;
-    j1 = sqlite3VdbeAddOp1(v, OP_JumpOnce, pParse->nOnce++);
+    j1 = sqlite3VdbeAddOp1(v, OP_IfNot, regPrev);
     j2 = sqlite3VdbeAddOp4(v, OP_Compare, pIn->iMem, regPrev+1, pIn->nMem,
                               (char*)pKeyInfo, p4type);
     sqlite3VdbeAddOp3(v, OP_Jump, j2+2, iContinue, j2+2);
     sqlite3VdbeJumpHere(v, j1);
     sqlite3ExprCodeCopy(pParse, pIn->iMem, regPrev+1, pIn->nMem);
+    sqlite3VdbeAddOp2(v, OP_Integer, 1, regPrev);
   }
   if( pParse->db->mallocFailed ) return 0;
 

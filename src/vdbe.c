@@ -2052,22 +2052,6 @@ case OP_Once: {             /* jump */
   break;
 }
 
-/* Opcode: JumpOnce P1 P2 * * *
-**
-** Check if OP_Once flag P1 is clear. If so, set the flag and
-** jump to instruction P2. Otherwise fall through.
-**
-** See also: Once
-*/
-case OP_JumpOnce: {         /* jump */
-  assert( pOp->p1<p->nOnceFlag );
-  if( !p->aOnceFlag[pOp->p1] ){
-    pc = pOp->p2-1;
-    p->aOnceFlag[pOp->p1] = 1;
-  }
-  break;
-}
-
 /* Opcode: If P1 P2 P3 * *
 **
 ** Jump to P2 if the value in register P1 is true.  The value
@@ -5101,7 +5085,6 @@ case OP_Program: {        /* jump */
 
   pProgram = pOp->p4.pProgram;
   pRt = &aMem[pOp->p3];
-  /*assert( memIsValid(pRt) );*/
   assert( pProgram->nOp>0 );
   
   /* If the p5 flag is clear, then recursive invocation of triggers is 
@@ -5166,7 +5149,7 @@ case OP_Program: {        /* jump */
 
     pEnd = &VdbeFrameMem(pFrame)[pFrame->nChildMem];
     for(pMem=VdbeFrameMem(pFrame); pMem!=pEnd; pMem++){
-      pMem->flags = MEM_Null;
+      pMem->flags = MEM_Invalid;
       pMem->db = db;
     }
   }else{
@@ -5278,7 +5261,7 @@ case OP_MemMax: {        /* in2 */
   }else{
     pIn1 = &aMem[pOp->p1];
   }
-  /*assert( memIsValid(pIn1) );  FIXME */
+  assert( memIsValid(pIn1) );
   sqlite3VdbeMemIntegerify(pIn1);
   pIn2 = &aMem[pOp->p2];
   sqlite3VdbeMemIntegerify(pIn2);
