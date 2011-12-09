@@ -1,5 +1,5 @@
-C Take\sout\sthe\sOP_JumpOnce\sopcode.\s\sRevert\scompound\sSELECT\sto\suse\sOP_IfNot,\nwhich\sis\sthe\scorrect\sbehavior.\s\sMark\strigger\sregisters\sas\sinitially\ninvalid.
-D 2011-12-09T17:27:51.519
+C Remove\san\sunnecessary\sinitialization\sof\sVdbe.aOnceFlag.
+D 2011-12-09T17:38:23.898
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -243,7 +243,7 @@ F src/vdbe.c 029add0c5197a61db588824a58570547330b9d8f
 F src/vdbe.h 18f581cac1f4339ec3299f3e0cc6e11aec654cdb
 F src/vdbeInt.h 23a9506c9ab31e7823d7257d1828d2d7843443a0
 F src/vdbeapi.c 86189ebba2c49791d75eaa12929f3ce6527596bd
-F src/vdbeaux.c d9d406ae5963a4b0424f2f56415e3d4d330667b6
+F src/vdbeaux.c 71a0cd6ae14ddb2e2a6d6b97d5b54ae753272682
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c 2fc78b3e0fabcc1eaa23cd79dd2e30e6dcfe1e56
 F src/vdbesort.c 468d43c057063e54da4f1988b38b4f46d60e7790
@@ -978,7 +978,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 28ffd39c7162c8f7139711545122cffa257911dd
-R 121bb37be8c24842afbf4add96953aee
+P 6a9fb47d5060fe641915f5f99cc9265409a4583b
+R c86cf051b4407cf6125edf9f0e3046a6
 U drh
-Z 11be617eddaa1f2d6fdfc985cd0a65fa
+Z 0944fb1b87cf72506193a8756f5ed350

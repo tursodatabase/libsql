@@ -1563,7 +1563,6 @@ void sqlite3VdbeMakeReady(
       p->aMem[n].db = db;
     }
   }
-  if( p->aOnceFlag ) memset(p->aOnceFlag, 0, p->nOnceFlag);
   p->explain = pParse->explain;
   sqlite3VdbeRewind(p);
 }
