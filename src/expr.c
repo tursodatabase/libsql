@@ -1444,6 +1444,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
   int eType = 0;                        /* Type of RHS table. IN_INDEX_* */
   int iTab = pParse->nTab++;            /* Cursor of the RHS table */
   int mustBeUnique = (prNotFound==0);   /* True if RHS must be unique */
+  Vdbe *v = sqlite3GetVdbe(pParse);     /* Virtual machine being coded */
 
   assert( pX->op==TK_IN );
 
@@ -1454,7 +1455,6 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
   p = (ExprHasProperty(pX, EP_xIsSelect) ? pX->x.pSelect : 0);
   if( ALWAYS(pParse->nErr==0) && isCandidateForInOpt(p) ){
     sqlite3 *db = pParse->db;              /* Database connection */
-    Vdbe *v = sqlite3GetVdbe(pParse);      /* Virtual machine being coded */
     Table *pTab;                           /* Table <table>. */
     Expr *pExpr;                           /* Expression <column> */
     int iCol;                              /* Index of column <column> */
@@ -1521,6 +1521,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
           sqlite3VdbeJumpHere(v, iAddr);
           if( prNotFound && !pTab->aCol[iCol].notNull ){
             *prNotFound = ++pParse->nMem;
+            sqlite3VdbeAddOp2(v, OP_Null, 0, *prNotFound);
           }
         }
       }
@@ -1536,6 +1537,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
     eType = IN_INDEX_EPH;
     if( prNotFound ){
       *prNotFound = rMayHaveNull = ++pParse->nMem;
+      sqlite3VdbeAddOp2(v, OP_Null, 0, *prNotFound);
     }else{
       testcase( pParse->nQueryLoop>(double)1 );
       pParse->nQueryLoop = (double)1;

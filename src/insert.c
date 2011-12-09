@@ -240,6 +240,7 @@ void sqlite3AutoincrementBegin(Parse *pParse){
     assert( sqlite3SchemaMutexHeld(db, 0, pDb->pSchema) );
     sqlite3OpenTable(pParse, 0, p->iDb, pDb->pSchema->pSeqTab, OP_OpenRead);
     addr = sqlite3VdbeCurrentAddr(v);
+    sqlite3VdbeAddOp2(v, OP_Null, 0, memId+1);
     sqlite3VdbeAddOp4(v, OP_String8, 0, memId-1, 0, p->pTab->zName, 0);
     sqlite3VdbeAddOp2(v, OP_Rewind, 0, addr+9);
     sqlite3VdbeAddOp3(v, OP_Column, 0, 0, memId);
