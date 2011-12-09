@@ -3845,12 +3845,11 @@ int sqlite3Select(
       topAddr = sqlite3VdbeAddOp2(v, OP_Integer, 0, pItem->regReturn);
       pItem->addrFillSub = topAddr+1;
       VdbeNoopComment((v, "materialize %s", pItem->pTab->zName));
-      if( pItem->isCorrelated==0 && pParse->pTriggerTab==0 ){
+      if( pItem->isCorrelated==0 ){
         /* If the subquery is no correlated and if we are not inside of
         ** a trigger, then we only need to compute the value of the subquery
         ** once. */
-        int regOnce = ++pParse->nMem;
-        onceAddr = sqlite3VdbeAddOp1(v, OP_Once, regOnce);
+        onceAddr = sqlite3CodeOnce(pParse);
       }
       sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
       explainSetInteger(pItem->iSelectId, (u8)pParse->iNextSelectId);

@@ -1469,6 +1469,7 @@ void sqlite3VdbeMakeReady(
   int nMem;                      /* Number of VM memory registers */
   int nCursor;                   /* Number of cursors required */
   int nArg;                      /* Number of arguments in subprograms */
+  int nOnce;                     /* Number of OP_Once instructions */
   int n;                         /* Loop counter */
   u8 *zCsr;                      /* Memory available for allocation */
   u8 *zEnd;                      /* First byte past allocated memory */
@@ -1484,6 +1485,7 @@ void sqlite3VdbeMakeReady(
   nMem = pParse->nMem;
   nCursor = pParse->nTab;
   nArg = pParse->nMaxArg;
+  nOnce = pParse->nOnce;
   
   /* For each cursor required, also allocate a memory cell. Memory
   ** cells (nMem+1-nCursor)..nMem, inclusive, will never be used by
@@ -1530,6 +1532,8 @@ void sqlite3VdbeMakeReady(
     p->azVar = allocSpace(p->azVar, nVar*sizeof(char*), &zCsr, zEnd, &nByte);
     p->apCsr = allocSpace(p->apCsr, nCursor*sizeof(VdbeCursor*),
                           &zCsr, zEnd, &nByte);
+    p->aOnceFlag = allocSpace(p->aOnceFlag, nOnce*sizeof(u8), 
+                          &zCsr, zEnd, &nByte);
     if( nByte ){
       p->pFree = sqlite3DbMallocZero(db, nByte);
     }
@@ -1538,6 +1542,7 @@ void sqlite3VdbeMakeReady(
   }while( nByte && !db->mallocFailed );
 
   p->nCursor = (u16)nCursor;
+  p->nOnceFlag = nOnce;
   if( p->aVar ){
     p->nVar = (ynVar)nVar;
     for(n=0; n<nVar; n++){
@@ -1596,6 +1601,8 @@ void sqlite3VdbeFreeCursor(Vdbe *p, VdbeCursor *pCx){
 */
 int sqlite3VdbeFrameRestore(VdbeFrame *pFrame){
   Vdbe *v = pFrame->v;
+  v->aOnceFlag = pFrame->aOnceFlag;
+  v->nOnceFlag = pFrame->nOnceFlag;
   v->aOp = pFrame->aOp;
   v->nOp = pFrame->nOp;
   v->aMem = pFrame->aMem;
@@ -1642,6 +1649,7 @@ static void closeAllCursors(Vdbe *p){
     p->pDelFrame = pDel->pParent;
     sqlite3VdbeFrameDelete(pDel);
   }
+  memset(p->aOnceFlag, 0, p->nOnceFlag);
 }
 
 /*

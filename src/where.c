@@ -2005,7 +2005,6 @@ static void constructAutomaticIndex(
   int nByte;                  /* Byte of memory needed for pIdx */
   Index *pIdx;                /* Object describing the transient index */
   Vdbe *v;                    /* Prepared statement under construction */
-  int regIsInit;              /* Register set by initialization */
   int addrInit;               /* Address of the initialization bypass jump */
   Table *pTable;              /* The table being indexed */
   KeyInfo *pKeyinfo;          /* Key information for the index */   
@@ -2022,8 +2021,7 @@ static void constructAutomaticIndex(
   ** transient index on 2nd and subsequent iterations of the loop. */
   v = pParse->pVdbe;
   assert( v!=0 );
-  regIsInit = ++pParse->nMem;
-  addrInit = sqlite3VdbeAddOp1(v, OP_Once, regIsInit);
+  addrInit = sqlite3CodeOnce(pParse);
 
   /* Count the number of columns that will be added to the index
   ** and used to match WHERE clause constraints */
