@@ -2136,7 +2136,7 @@ int sqlite3VdbeHalt(Vdbe *p){
   if( p->db->mallocFailed ){
     p->rc = SQLITE_NOMEM;
   }
-  if( p->aOnceFlag ) memset(p->aOnceFlag, 0, p->nOnceFlag);
+  memset(p->aOnceFlag, 0, p->nOnceFlag);
   closeAllCursors(p);
   if( p->magic!=VDBE_MAGIC_RUN ){
     return SQLITE_OK;
