@@ -764,7 +764,8 @@ case OP_Goto: {             /* jump */
 ** Write the current address onto register P1
 ** and then jump to address P2.
 */
-case OP_Gosub: {            /* jump, in1 */
+case OP_Gosub: {            /* jump */
+  assert( pOp->p1>0 && pOp->p1<=p->nMem );
   pIn1 = &aMem[pOp->p1];
   assert( (pIn1->flags & MEM_Dyn)==0 );
   memAboutToChange(p, pIn1);
@@ -961,12 +962,25 @@ case OP_String: {          /* out2-prerelease */
   break;
 }
 
-/* Opcode: Null * P2 * * *
+/* Opcode: Null * P2 P3 * *
 **
-** Write a NULL into register P2.
+** Write a NULL into registers P2.  If P3 greater than P2, then also write
+** NULL into register P3 and ever register in between P2 and P3.  If P3
+** is less than P2 (typically P3 is zero) then only register P2 is
+** set to NULL
 */
 case OP_Null: {           /* out2-prerelease */
+  int cnt;
+  cnt = pOp->p3-pOp->p2;
+  assert( pOp->p3<=p->nMem );
   pOut->flags = MEM_Null;
+  while( cnt>0 ){
+    pOut++;
+    memAboutToChange(p, pOut);
+    MemReleaseExt(pOut);
+    pOut->flags = MEM_Null;
+    cnt--;
+  }
   break;
 }
 
@@ -2025,6 +2039,8 @@ case OP_BitNot: {             /* same as TK_BITNOT, in1, out2 */
 **
 ** Check if OP_Once flag P1 is set. If so, jump to instruction P2. Otherwise,
 ** set the flag and fall through to the next instruction.
+**
+** See also: JumpOnce
 */
 case OP_Once: {             /* jump */
   assert( pOp->p1<p->nOnceFlag );
@@ -2040,13 +2056,13 @@ case OP_Once: {             /* jump */
 **
 ** Jump to P2 if the value in register P1 is true.  The value
 ** is considered true if it is numeric and non-zero.  If the value
-** in P1 is NULL then take the jump if P3 is true.
+** in P1 is NULL then take the jump if P3 is non-zero.
 */
 /* Opcode: IfNot P1 P2 P3 * *
 **
 ** Jump to P2 if the value in register P1 is False.  The value
-** is considered true if it has a numeric value of zero.  If the value
-** in P1 is NULL then take the jump if P3 is true.
+** is considered false if it has a numeric value of zero.  If the value
+** in P1 is NULL then take the jump if P3 is zero.
 */
 case OP_If:                 /* jump, in1 */
 case OP_IfNot: {            /* jump, in1 */
@@ -5069,7 +5085,6 @@ case OP_Program: {        /* jump */
 
   pProgram = pOp->p4.pProgram;
   pRt = &aMem[pOp->p3];
-  assert( memIsValid(pRt) );
   assert( pProgram->nOp>0 );
   
   /* If the p5 flag is clear, then recursive invocation of triggers is 
@@ -5134,7 +5149,7 @@ case OP_Program: {        /* jump */
 
     pEnd = &VdbeFrameMem(pFrame)[pFrame->nChildMem];
     for(pMem=VdbeFrameMem(pFrame); pMem!=pEnd; pMem++){
-      pMem->flags = MEM_Null;
+      pMem->flags = MEM_Invalid;
       pMem->db = db;
     }
   }else{

@@ -4154,6 +4154,7 @@ int sqlite3Select(
       VdbeComment((v, "clear abort flag"));
       sqlite3VdbeAddOp2(v, OP_Integer, 0, iUseFlag);
       VdbeComment((v, "indicate accumulator empty"));
+      sqlite3VdbeAddOp3(v, OP_Null, 0, iAMem, iAMem+pGroupBy->nExpr-1);
 
       /* Begin a loop that will extract all source rows in GROUP BY order.
       ** This might involve two separate loops with an OP_Sort in between, or
