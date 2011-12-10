@@ -1,5 +1,5 @@
-C Allow\sUNION\sALL\scompounds\sto\sbe\spromoted\sup\sto\sreplace\sa\ssimple\swrapper\nSELECT\seven\sif\sthe\scompounds\sare\sjoins.
-D 2011-12-10T17:17:17.131
+C Minor\scleanups\sof\sthe\scompound-subquery\sflattening\slogic.\s\sNew\stest\scases\nadded\sfor\sjoins\sthe\scompound\ssubquery.
+D 2011-12-10T23:18:32.554
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -134,7 +134,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c a9c26822515f81ec21588cbb482ca6724be02e33
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c 51d32f0a9c880663e54ce309f52e40c325d5e112
-F src/expr.c a68c194c7709388302266e9a5bd9de2243486835
+F src/expr.c 537591e95eac74af783e4eb033954fb218cf398e
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 657212460bf5cfd3ae607d12ea62092844c227b5
 F src/func.c 6261ce00aad9c63cd5b4219249b05683979060e9
@@ -178,13 +178,13 @@ F src/pragma.c dd66f21fafe7be40e1a48ad4195764cc191cf583
 F src/prepare.c ec4989f7f480544bdc4192fe663470d2a2d7d61e
 F src/printf.c 7ffb4ebb8b341f67e049695ba031da717b3d2699
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
-F src/resolve.c 365ab1c870e38596d6869e76fb544fe6e4ffc809
+F src/resolve.c 3d3e80a98f203ac6b9329e9621e29eda85ddfd40
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
-F src/select.c 8c53ca04d6f6c06dd3bba5b53070572fd26ceaaa
+F src/select.c f38d6bb54dbe42409b66b038be24765f68b5d44b
 F src/shell.c a1eadb2fdbfa45e54307263f0c8da8ee8cd61b8b
 F src/sqlite.h.in 1dc07194eb1a2c69c8ef75f88022b170be08024a
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h 7a64e24659e067f3882eeb75f31d59e7b3723b8b
+F src/sqliteInt.h 165409fa8adc8701148830804febeded3f2e4448
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 4568e72dfd36b6a5911f93457364deb072e0b03a
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -666,7 +666,7 @@ F test/select7.test dad6f00f0d49728a879d6eb6451d4752db0b0abe
 F test/select8.test 391de11bdd52339c30580dabbbbe97e3e9a3c79d
 F test/select9.test 74c0fb2c6eecb0219cbed0cbe3df136f8fbf9343
 F test/selectA.test 06d1032fa9009314c95394f2ca2e60d9f7ae8532
-F test/selectB.test 0d072c5846071b569766e6cd7f923f646a8b2bfa
+F test/selectB.test 954e4e49cf1f896d61794e440669e03a27ceea25
 F test/selectC.test f9bf1bc4581b5b8158caa6e4e4f682acb379fb25
 F test/server1.test 46803bd3fe8b99b30dbc5ff38ffc756f5c13a118
 F test/shared.test 34945a516532b11182c3eb26e31247eee3c9ae48
@@ -978,7 +978,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P bcbc7152d49107afa926c8950360c61a6cf3d244
-R fdd2391ad6c97a200fa195ba2b7608fb
+P 3d4b4f4fb7c1d9f1c742fef884383e9f50f8630e
+R cd399db3e1d12898eb15c691830496b3
 U drh
-Z 0fd477d0479c6495f79c3db569ff13d1
+Z 6e0886d4861bd3870ceeed33fcdf7d2c

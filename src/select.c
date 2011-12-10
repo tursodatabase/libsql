@@ -2219,8 +2219,8 @@ static int multiSelectOrderBy(
     for(i=1; db->mallocFailed==0 && i<=p->pEList->nExpr; i++){
       struct ExprList_item *pItem;
       for(j=0, pItem=pOrderBy->a; j<nOrderBy; j++, pItem++){
-        assert( pItem->iCol>0 );
-        if( pItem->iCol==i ) break;
+        assert( pItem->iOrderByCol>0 );
+        if( pItem->iOrderByCol==i ) break;
       }
       if( j==nOrderBy ){
         Expr *pNew = sqlite3Expr(db, TK_INTEGER, 0);
@@ -2228,7 +2228,7 @@ static int multiSelectOrderBy(
         pNew->flags |= EP_IntValue;
         pNew->u.iValue = i;
         pOrderBy = sqlite3ExprListAppend(pParse, pOrderBy, pNew);
-        pOrderBy->a[nOrderBy++].iCol = (u16)i;
+        pOrderBy->a[nOrderBy++].iOrderByCol = (u16)i;
       }
     }
   }
@@ -2244,8 +2244,8 @@ static int multiSelectOrderBy(
   if( aPermute ){
     struct ExprList_item *pItem;
     for(i=0, pItem=pOrderBy->a; i<nOrderBy; i++, pItem++){
-      assert( pItem->iCol>0  && pItem->iCol<=p->pEList->nExpr );
-      aPermute[i] = pItem->iCol - 1;
+      assert( pItem->iOrderByCol>0  && pItem->iOrderByCol<=p->pEList->nExpr );
+      aPermute[i] = pItem->iOrderByCol - 1;
     }
     pKeyMerge =
       sqlite3DbMallocRaw(db, sizeof(*pKeyMerge)+nOrderBy*(sizeof(CollSeq*)+1));
@@ -2810,19 +2810,21 @@ static int flattenSubquery(
     for(pSub1=pSub; pSub1; pSub1=pSub1->pPrior){
       testcase( (pSub1->selFlags & (SF_Distinct|SF_Aggregate))==SF_Distinct );
       testcase( (pSub1->selFlags & (SF_Distinct|SF_Aggregate))==SF_Aggregate );
+      assert( pSub->pSrc!=0 );
       if( (pSub1->selFlags & (SF_Distinct|SF_Aggregate))!=0
        || (pSub1->pPrior && pSub1->op!=TK_ALL) 
-       || NEVER(pSub1->pSrc==0) || pSub1->pSrc->nSrc<1
+       || pSub1->pSrc->nSrc<1
       ){
         return 0;
       }
+      testcase( pSub1->pSrc->nSrc>1 );
     }
 
     /* Restriction 18. */
     if( p->pOrderBy ){
       int ii;
       for(ii=0; ii<p->pOrderBy->nExpr; ii++){
-        if( p->pOrderBy->a[ii].iCol==0 ) return 0;
+        if( p->pOrderBy->a[ii].iOrderByCol==0 ) return 0;
       }
     }
   }

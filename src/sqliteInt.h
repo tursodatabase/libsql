@@ -1772,7 +1772,7 @@ struct ExprList {
     char *zSpan;           /* Original text of the expression */
     u8 sortOrder;          /* 1 for DESC or 0 for ASC */
     u8 done;               /* A flag to indicate when processing is finished */
-    u16 iCol;              /* For ORDER BY, column number in result set */
+    u16 iOrderByCol;       /* For ORDER BY, column number in result set */
     u16 iAlias;            /* Index into Parse.aAlias[] for zName */
   } *a;                  /* One entry for each expression */
 };
