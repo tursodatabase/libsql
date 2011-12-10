@@ -1,9 +1,9 @@
-C Change\sthe\sVDBE\sso\sthat\sall\sregisters\sare\sinitialized\sto\s"Invalid"\sinstead\sof\nNULL\sand\sreport\serrors\son\sany\sattempted\sread\sof\san\sInvalid\sregister.\s\sThis\nwill\shelp\sprevent\sfuture\sbugs\ssimilar\sto\s[7bbfb7d442].
-D 2011-12-09T18:06:44.319
+C Always\suse\s_msize()\sto\sget\smemory\sallocation\ssizes\son\swindows,\swithout\shaving\nto\sdo\sanything\sspecial\sin\sthe\smakefile.
+D 2011-12-10T13:49:44.752
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 3bd3641a345d488a9601c0cc7f9d35aeede5d12b
+F Makefile.msc dcad80fa69f17d46fe6778ba873fc108ca16298d
 F Makefile.vxworks 1deb39c8bb047296c30161ffa10c1b5423e632f9
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION af03cd6400f9d71d38bdb7a9d66a1aefdc2f3e0d
@@ -150,7 +150,7 @@ F src/loadext.c d0d2022a5a07274d408820b978b9e549189d314f
 F src/main.c 8be1ee70dd90ef7562c801dbe946a4f9f93bb128
 F src/malloc.c 591aedb20ae40813f1045f2ef253438a334775d9
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
-F src/mem1.c f96706e354e5e540305ba4cfe315fe52173a9f9e
+F src/mem1.c 7998e7003a3047e323c849a26dda004debc04d03
 F src/mem2.c e307323e86b5da1853d7111b68fd6b84ad6f09cf
 F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
 F src/mem5.c c2c63b7067570b00bf33d751c39af24182316f7f
@@ -978,7 +978,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 557c69055a300b4082830b5f4803091dca1c3140 d9ba023c608bce7768bc08478f9df9243f2e73ce
-R c86cf051b4407cf6125edf9f0e3046a6
+P 0064bab77149768640d7758a3e271d5a1d63b256
+R 24b1670e7f54ceef1719656e8887fd23
 U drh
-Z b55d92759eb01feac738f44135c5de26
+Z 1195788bf6e0e867e75c58852af50db9

@@ -26,6 +26,13 @@
 */
 #ifdef SQLITE_SYSTEM_MALLOC
 
+/*
+** Windows systems have malloc_usable_size() but it is called _msize()
+*/
+#if !defined(HAVE_MALLOC_USABLE_SIZE) && SQLITE_OS_WIN
+# define HAVE_MALLOC_USABLE_SIZE 1
+# define malloc_usable_size _msize
+#endif
 
 #if defined(__APPLE__)
 
