@@ -181,7 +181,7 @@ static int sqlite3_os_type = 0;
 #  define SQLITE_WIN32_HAS_ANSI
 #endif
 
-#if SQLITE_OS_WINCE || defined(_WIN32_WINNT)
+#if SQLITE_OS_WINCE || SQLITE_OS_WINNT
 #  define SQLITE_WIN32_HAS_WIDE
 #endif
 
