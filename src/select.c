@@ -4494,98 +4494,98 @@ select_end:
   return rc;
 }
 
-#if defined(SQLITE_DEBUG)
+#if defined(SQLITE_ENABLE_TREE_EXPLAIN)
 /*
-*******************************************************************************
-** The following code is used for testing and debugging only.  The code
-** that follows does not appear in normal builds.
-**
-** These routines are used to print out the content of all or part of a 
-** parse structures such as Select or Expr.  Such printouts are useful
-** for helping to understand what is happening inside the code generator
-** during the execution of complex SELECT statements.
-**
-** These routine are not called anywhere from within the normal
-** code base.  Then are intended to be called from within the debugger
-** or from temporary "printf" statements inserted for debugging.
+** Generate a human-readable description of a the Select object.
 */
-void sqlite3PrintExpr(Expr *p){
-  if( !ExprHasProperty(p, EP_IntValue) && p->u.zToken ){
-    sqlite3DebugPrintf("(%s", p->u.zToken);
-  }else{
-    sqlite3DebugPrintf("(%d", p->op);
-  }
-  if( p->pLeft ){
-    sqlite3DebugPrintf(" ");
-    sqlite3PrintExpr(p->pLeft);
-  }
-  if( p->pRight ){
-    sqlite3DebugPrintf(" ");
-    sqlite3PrintExpr(p->pRight);
-  }
-  sqlite3DebugPrintf(")");
-}
-void sqlite3PrintExprList(ExprList *pList){
-  int i;
-  for(i=0; i<pList->nExpr; i++){
-    sqlite3PrintExpr(pList->a[i].pExpr);
-    if( i<pList->nExpr-1 ){
-      sqlite3DebugPrintf(", ");
+static void explainOneSelect(Vdbe *pVdbe, Select *p){
+  sqlite3ExplainPrintf(pVdbe, "SELECT ");
+  if( p->selFlags & (SF_Distinct|SF_Aggregate) ){
+    if( p->selFlags & SF_Distinct ){
+      sqlite3ExplainPrintf(pVdbe, "DISTINCT ");
     }
+    if( p->selFlags & SF_Aggregate ){
+      sqlite3ExplainPrintf(pVdbe, "agg_flag ");
+    }
+    sqlite3ExplainNL(pVdbe);
+    sqlite3ExplainPrintf(pVdbe, "   ");
   }
-}
-void sqlite3PrintSelect(Select *p, int indent){
-  sqlite3DebugPrintf("%*sSELECT(%p) ", indent, "", p);
-  sqlite3PrintExprList(p->pEList);
-  sqlite3DebugPrintf("\n");
-  if( p->pSrc ){
-    char *zPrefix;
+  sqlite3ExplainExprList(pVdbe, p->pEList);
+  sqlite3ExplainNL(pVdbe);
+  if( p->pSrc && p->pSrc->nSrc ){
     int i;
-    zPrefix = "FROM";
+    sqlite3ExplainPrintf(pVdbe, "FROM ");
+    sqlite3ExplainPush(pVdbe);
     for(i=0; i<p->pSrc->nSrc; i++){
       struct SrcList_item *pItem = &p->pSrc->a[i];
-      sqlite3DebugPrintf("%*s ", indent+6, zPrefix);
-      zPrefix = "";
+      sqlite3ExplainPrintf(pVdbe, "{%d,*} = ", pItem->iCursor);
       if( pItem->pSelect ){
-        sqlite3DebugPrintf("(\n");
-        sqlite3PrintSelect(pItem->pSelect, indent+10);
-        sqlite3DebugPrintf("%*s)", indent+8, "");
+        sqlite3ExplainSelect(pVdbe, pItem->pSelect);
+        if( pItem->pTab ){
+          sqlite3ExplainPrintf(pVdbe, " (tabname=%s)", pItem->pTab->zName);
+        }
       }else if( pItem->zName ){
-        sqlite3DebugPrintf("%s", pItem->zName);
-      }
-      if( pItem->pTab ){
-        sqlite3DebugPrintf("(table: %s)", pItem->pTab->zName);
+        sqlite3ExplainPrintf(pVdbe, "%s", pItem->zName);
       }
       if( pItem->zAlias ){
-        sqlite3DebugPrintf(" AS %s", pItem->zAlias);
+        sqlite3ExplainPrintf(pVdbe, " (AS %s)", pItem->zAlias);
       }
-      if( i<p->pSrc->nSrc-1 ){
-        sqlite3DebugPrintf(",");
+      if( pItem->jointype & JT_LEFT ){
+        sqlite3ExplainPrintf(pVdbe, " LEFT-JOIN");
       }
-      sqlite3DebugPrintf("\n");
+      sqlite3ExplainNL(pVdbe);
     }
+    sqlite3ExplainPop(pVdbe);
   }
   if( p->pWhere ){
-    sqlite3DebugPrintf("%*s WHERE ", indent, "");
-    sqlite3PrintExpr(p->pWhere);
-    sqlite3DebugPrintf("\n");
+    sqlite3ExplainPrintf(pVdbe, "WHERE ");
+    sqlite3ExplainExpr(pVdbe, p->pWhere);
+    sqlite3ExplainNL(pVdbe);
   }
   if( p->pGroupBy ){
-    sqlite3DebugPrintf("%*s GROUP BY ", indent, "");
-    sqlite3PrintExprList(p->pGroupBy);
-    sqlite3DebugPrintf("\n");
+    sqlite3ExplainPrintf(pVdbe, "GROUPBY ");
+    sqlite3ExplainExprList(pVdbe, p->pGroupBy);
+    sqlite3ExplainNL(pVdbe);
   }
   if( p->pHaving ){
-    sqlite3DebugPrintf("%*s HAVING ", indent, "");
-    sqlite3PrintExpr(p->pHaving);
-    sqlite3DebugPrintf("\n");
+    sqlite3ExplainPrintf(pVdbe, "HAVING ");
+    sqlite3ExplainExpr(pVdbe, p->pHaving);
+    sqlite3ExplainNL(pVdbe);
   }
   if( p->pOrderBy ){
-    sqlite3DebugPrintf("%*s ORDER BY ", indent, "");
-    sqlite3PrintExprList(p->pOrderBy);
-    sqlite3DebugPrintf("\n");
+    sqlite3ExplainPrintf(pVdbe, "ORDERBY ");
+    sqlite3ExplainExprList(pVdbe, p->pOrderBy);
+    sqlite3ExplainNL(pVdbe);
+  }
+  if( p->pLimit ){
+    sqlite3ExplainPrintf(pVdbe, "LIMIT ");
+    sqlite3ExplainExpr(pVdbe, p->pLimit);
+    sqlite3ExplainNL(pVdbe);
+  }
+  if( p->pOffset ){
+    sqlite3ExplainPrintf(pVdbe, "OFFSET ");
+    sqlite3ExplainExpr(pVdbe, p->pOffset);
+    sqlite3ExplainNL(pVdbe);
   }
 }
+void sqlite3ExplainSelect(Vdbe *pVdbe, Select *p){
+  if( p==0 ){
+    sqlite3ExplainPrintf(pVdbe, "(null-select)");
+    return;
+  }
+  while( p->pPrior ) p = p->pPrior;
+  sqlite3ExplainPush(pVdbe);
+  while( p ){
+    explainOneSelect(pVdbe, p);
+    p = p->pNext;
+    if( p==0 ) break;
+    sqlite3ExplainNL(pVdbe);
+    sqlite3ExplainPrintf(pVdbe, "%s\n", selectOpName(p->op));
+  }
+  sqlite3ExplainPrintf(pVdbe, "END");
+  sqlite3ExplainPop(pVdbe);
+}
+
 /* End of the structure debug printing code
 *****************************************************************************/
 #endif /* defined(SQLITE_TEST) || defined(SQLITE_DEBUG) */

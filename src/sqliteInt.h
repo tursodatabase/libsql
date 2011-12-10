@@ -1707,10 +1707,10 @@ struct Expr {
 #define EP_FixedDest  0x0200  /* Result needed in a specific register */
 #define EP_IntValue   0x0400  /* Integer value contained in u.iValue */
 #define EP_xIsSelect  0x0800  /* x.pSelect is valid (otherwise x.pList is) */
-
-#define EP_Reduced    0x1000  /* Expr struct is EXPR_REDUCEDSIZE bytes only */
-#define EP_TokenOnly  0x2000  /* Expr struct is EXPR_TOKENONLYSIZE bytes only */
-#define EP_Static     0x4000  /* Held in memory not obtained from malloc() */
+#define EP_Hint       0x1000  /* Optimizer hint. Not required for correctness */
+#define EP_Reduced    0x2000  /* Expr struct is EXPR_REDUCEDSIZE bytes only */
+#define EP_TokenOnly  0x4000  /* Expr struct is EXPR_TOKENONLYSIZE bytes only */
+#define EP_Static     0x8000  /* Held in memory not obtained from malloc() */
 
 /*
 ** The following are the meanings of bits in the Expr.flags2 field.
@@ -2651,6 +2651,29 @@ char *sqlite3MAppendf(sqlite3*,char*,const char*,...);
 #if defined(SQLITE_TEST)
   void *sqlite3TestTextToPtr(const char*);
 #endif
+
+/* Output formatting for SQLITE_TESTCTRL_EXPLAIN */
+#if defined(SQLITE_ENABLE_TREE_EXPLAIN)
+  void sqlite3ExplainBegin(Vdbe*);
+  void sqlite3ExplainPrintf(Vdbe*, const char*, ...);
+  void sqlite3ExplainNL(Vdbe*);
+  void sqlite3ExplainPush(Vdbe*);
+  void sqlite3ExplainPop(Vdbe*);
+  void sqlite3ExplainFinish(Vdbe*);
+  void sqlite3ExplainSelect(Vdbe*, Select*);
+  void sqlite3ExplainExpr(Vdbe*, Expr*);
+  void sqlite3ExplainExprList(Vdbe*, ExprList*);
+  const char *sqlite3VdbeExplanation(Vdbe*);
+#else
+# define sqlite3ExplainBegin(X)
+# define sqlite3ExplainSelect(A,B)
+# define sqlite3ExplainExpr(A,B)
+# define sqlite3ExplainExprList(A,B)
+# define sqlite3ExplainFinish(X)
+# define sqlite3VdbeExplanation(X) 0
+#endif
+
+
 void sqlite3SetString(char **, sqlite3*, const char*, ...);
 void sqlite3ErrorMsg(Parse*, const char*, ...);
 int sqlite3Dequote(char*);
@@ -3032,6 +3055,7 @@ int sqlite3OpenTempDatabase(Parse *);
 
 void sqlite3StrAccumInit(StrAccum*, char*, int, int);
 void sqlite3StrAccumAppend(StrAccum*,const char*,int);
+void sqlite3AppendSpace(StrAccum*,int);
 char *sqlite3StrAccumFinish(StrAccum*);
 void sqlite3StrAccumReset(StrAccum*);
 void sqlite3SelectDestInit(SelectDest*,int,int);
