@@ -304,6 +304,13 @@ static int multiplexSubFilename(multiplexGroup *pGroup, int iChunk){
       int i;
       for(i=n-1; i>0 && i>=n-4 && z[i]!='.'; i--){}
       if( i>=n-4 ) n = i+1;
+      if( pGroup->flags & (SQLITE_OPEN_MAIN_JOURNAL|SQLITE_OPEN_TEMP_JOURNAL) ){
+        /* The extensions on overflow files for main databases are 001, 002,
+        ** 003 and so forth.  To avoid name collisions, add 100 to the 
+        ** extensions of journal files so that they are 101, 102, 103, ....
+        */
+        iChunk += 100;
+      }
 #endif
       sqlite3_snprintf(4,&z[n],"%03d",iChunk);
     }
