@@ -1,5 +1,5 @@
-C Fix\sSTAT3\sso\sthat\sit\sworks\swith\sthe\snew\suninitialized\sregister\slogic\sof\nthe\sVDBE.\s\sTicket\s[7bbfb7d4422ff]
-D 2011-12-11T02:30:35.672
+C Update\scomments\sdescribing\sthe\sflattening\soptimization\sin\sselect.c.
+D 2011-12-11T21:51:04.519
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -180,7 +180,7 @@ F src/printf.c 7ffb4ebb8b341f67e049695ba031da717b3d2699
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 3d3e80a98f203ac6b9329e9621e29eda85ddfd40
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
-F src/select.c f38d6bb54dbe42409b66b038be24765f68b5d44b
+F src/select.c a1d075db66a0ea42807353501b62997969e5be79
 F src/shell.c a1eadb2fdbfa45e54307263f0c8da8ee8cd61b8b
 F src/sqlite.h.in 1dc07194eb1a2c69c8ef75f88022b170be08024a
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
@@ -978,7 +978,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 1e6a698aab9270637d3ea00fd6b0e94f4172e875
-R b14f97101207c69b3c216a1f2d4f412b
+P d11a57985c394772043c63d4c2b534944be0a664
+R db74426b5ff988e285b71512d50b85b4
 U drh
-Z ed714f23f92d49472af328d21dd14bdc
+Z fcdcb7d7647c15fa01d78b530015f5fb

@@ -2588,9 +2588,8 @@ static void substSelect(
 
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
 /*
-** This routine attempts to flatten subqueries in order to speed
-** execution.  It returns 1 if it makes changes and 0 if no flattening
-** occurs.
+** This routine attempts to flatten subqueries as a performance optimization.
+** This routine returns 1 if it makes changes and 0 if no flattening occurs.
 **
 ** To understand the concept of flattening, consider the following
 ** query:
@@ -2632,7 +2631,10 @@ static void substSelect(
 **   (6)  The subquery does not use aggregates or the outer query is not
 **        DISTINCT.
 **
-**   (7)  The subquery has a FROM clause.
+**   (7)  The subquery has a FROM clause.  TODO:  For subqueries without
+**        A FROM clause, consider adding a FROM close with the special
+**        table sqlite_once that consists of a single row containing a
+**        single NULL.
 **
 **   (8)  The subquery does not use LIMIT or the outer query is not a join.
 **
@@ -2665,11 +2667,14 @@ static void substSelect(
 **
 **          * is not itself part of a compound select,
 **          * is not an aggregate or DISTINCT query, and
-**          * has no other tables or sub-selects in the FROM clause.
+**          * is not a join
 **
 **        The parent and sub-query may contain WHERE clauses. Subject to
 **        rules (11), (13) and (14), they may also contain ORDER BY,
-**        LIMIT and OFFSET clauses.
+**        LIMIT and OFFSET clauses.  The subquery cannot use any compound
+**        operator other than UNION ALL because all the other compound
+**        operators have an implied DISTINCT which is disallowed by
+**        restriction (4).
 **
 **  (18)  If the sub-query is a compound select, then all terms of the
 **        ORDER by clause of the parent must be simple references to 
@@ -2681,7 +2686,7 @@ static void substSelect(
 **  (20)  If the sub-query is a compound select, then it must not use
 **        an ORDER BY clause.  Ticket #3773.  We could relax this constraint
 **        somewhat by saying that the terms of the ORDER BY clause must
-**        appear as unmodified result columns in the outer query.  But
+**        appear as unmodified result columns in the outer query.  But we
 **        have other optimizations in mind to deal with that case.
 **
 **  (21)  The subquery does not use LIMIT or the outer query is not
