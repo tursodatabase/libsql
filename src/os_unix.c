@@ -2014,8 +2014,8 @@ static int dotlockUnlock(sqlite3_file *id, int eFileLock) {
   rc = osRmdir(zLockFile);
   if( rc<0 && errno==ENOTDIR ) rc = osUnlink(zLockFile);
   if( rc<0 ){
-    int rc = 0;
     int tErrno = errno;
+    rc = 0;
     if( ENOENT != tErrno ){
       rc = SQLITE_IOERR_UNLOCK;
     }
