@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2011-12-11T02:29:25.100
+C Fix\sSTAT3\sso\sthat\sit\sworks\swith\sthe\snew\suninitialized\sregister\slogic\sof\nthe\sVDBE.\s\sTicket\s[7bbfb7d4422ff]
+D 2011-12-11T02:30:35.672
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -119,7 +119,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c ac80a0f31189f8b4a524ebf661e47e84536ee7f5
-F src/analyze.c 5a1db16a651ce6310c8b046b2cbb736e030e14b9
+F src/analyze.c f32ff304da413851eefa562b04e61ff6cb88248b
 F src/attach.c 12c6957996908edc31c96d7c68d4942c2474405f
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 4368158da74d4711888e03264105c5c527d76caf
@@ -978,7 +978,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 5061d85ff934db3c217c97acbbbed3286d9e02aa
-R 50fc7fd86c15521c2d33b9b65e5658d5
+P 1e6a698aab9270637d3ea00fd6b0e94f4172e875
+R b14f97101207c69b3c216a1f2d4f412b
 U drh
-Z c0a452295d74b5e6062f8bf2ec7734da
+Z ed714f23f92d49472af328d21dd14bdc
