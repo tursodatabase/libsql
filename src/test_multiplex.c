@@ -749,7 +749,7 @@ static int multiplexTruncate(sqlite3_file *pConn, sqlite3_int64 size){
     }else{
       rc = pSubOpen->pMethods->xTruncate(pSubOpen, size);
     }
-  }else{
+  }else if( (pGroup->flags & SQLITE_OPEN_MAIN_DB)==0 ){
     int rc2;
     int i;
     sqlite3_file *pSubOpen;

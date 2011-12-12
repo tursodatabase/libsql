@@ -1,5 +1,5 @@
-C Fix\sfor\sthe\sxFileSize\smethod\sof\stest_multiplex.c\swhen\sused\son\sa\sfile\sopened\swith\sthe\sDELETEONCLOSE\sflag\sset.
-D 2011-12-12T18:21:44.814
+C Change\sthe\smultiplexor\sVFS\sso\sthat\sxTruncate\sis\sa\sno-op\son\sdatabase\sfiles.
+D 2011-12-12T18:55:44.020
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -214,7 +214,7 @@ F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c 03313c693cca72959dcaaf79f8d76f21c01e19ff
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c 8d416f29ad8573f32601f6056c9d2b17472e9ad5
-F src/test_multiplex.c affbe08d3c6f42d39490c022367ae3507b2fdf2f
+F src/test_multiplex.c 7dcf429b53f5f5ef22bba7987bea61234a0c7418
 F src/test_multiplex.h e99c571bc4968b7a9363b661481f3934bfead61d
 F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
@@ -606,6 +606,7 @@ F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test eafaa41b9133d7a2ded4641bbe5f340731d35a52
 F test/misuse.test ba4fb5d1a6101d1c171ea38b3c613d0661c83054
 F test/multiplex.test 770f0295dd6673e60458cb93abd033ed2f253291
+F test/multiplex2.test 580ca5817c7edbe4cc68fa150609c9473393003a
 F test/mutex1.test 78b2b9bb320e51d156c4efdb71b99b051e7a4b41
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test e9648b9d007c7045242af35e11a984d4b169443a
@@ -978,7 +979,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 9b2691aa911289d74bfe3edf45937a33fb7eaa8d
-R aecccf1f2de8d72e3aa2a9e170f720dc
+P 713071c493e9937a20c436b07299df428249e378
+R a7073a245182348c2b23e6c1f035f042
 U dan
-Z 51500cb9c3cff96463190c290eed59f5
+Z 56d8f5d800b0598a435509f86c8ead65
