@@ -96,25 +96,15 @@
 # define SQLITE_MULTIPLEX_CHUNK_SIZE 2147418112
 #endif
 
-/* Default limit on number of chunks.  Care should be taken
-** so that values for chunks numbers fit in the SQLITE_MULTIPLEX_EXT_FMT
-** format specifier. It may be changed by calling
-** the xFileControl() interface.
+/* This used to be the default limit on number of chunks, but
+** it is no longer enforced.  There is currently no limit to the
+** number of chunks.
+**
+** May be changed by calling the xFileControl() interface.
 */
 #ifndef SQLITE_MULTIPLEX_MAX_CHUNKS
-# define SQLITE_MULTIPLEX_MAX_CHUNKS 32
+# define SQLITE_MULTIPLEX_MAX_CHUNKS 12
 #endif
-
-/* If SQLITE_MULTIPLEX_EXT_OVWR is defined, the 
-** last SQLITE_MULTIPLEX_EXT_SZ characters of the 
-** filename will be overwritten, otherwise, the 
-** multiplex extension is simply appended to the filename.
-** Ex.  (undefined) test.db -> test.db01
-**      (defined)   test.db -> test.01
-** Chunk 0 does not have a modified extension.
-*/
-#define SQLITE_MULTIPLEX_EXT_FMT    "%02d"
-#define SQLITE_MULTIPLEX_EXT_SZ     2
 
 /************************ Object Definitions ******************************/
 
@@ -304,20 +294,25 @@ static int multiplexSubFilename(multiplexGroup *pGroup, int iChunk){
   if( pGroup->aReal[iChunk].z==0 ){
     char *z;
     int n = pGroup->nName;
-    pGroup->aReal[iChunk].z = z = sqlite3_malloc( n+3 );
+    pGroup->aReal[iChunk].z = z = sqlite3_malloc( n+4 );
     if( z==0 ){
       return SQLITE_NOMEM;
     }
     memcpy(z, pGroup->zName, n+1);
     if( iChunk>0 ){
 #ifdef SQLITE_ENABLE_8_3_NAMES
-      if( n>3 && z[n-3]=='.' ){
-        n--;
-      }else if( n>4 && z[n-4]=='.' ){
-        n -= 2;
+      int i;
+      for(i=n-1; i>0 && i>=n-4 && z[i]!='.'; i--){}
+      if( i>=n-4 ) n = i+1;
+      if( pGroup->flags & (SQLITE_OPEN_MAIN_JOURNAL|SQLITE_OPEN_TEMP_JOURNAL) ){
+        /* The extensions on overflow files for main databases are 001, 002,
+        ** 003 and so forth.  To avoid name collisions, add 100 to the 
+        ** extensions of journal files so that they are 101, 102, 103, ....
+        */
+        iChunk += 100;
       }
 #endif
-      sqlite3_snprintf(3,&z[n],"%02d",iChunk);
+      sqlite3_snprintf(4,&z[n],"%03d",iChunk);
     }
   }
   return SQLITE_OK;
@@ -754,7 +749,7 @@ static int multiplexTruncate(sqlite3_file *pConn, sqlite3_int64 size){
     }else{
       rc = pSubOpen->pMethods->xTruncate(pSubOpen, size);
     }
-  }else{
+  }else if( (pGroup->flags & SQLITE_OPEN_MAIN_DB)==0 ){
     int rc2;
     int i;
     sqlite3_file *pSubOpen;
@@ -819,8 +814,13 @@ static int multiplexFileSize(sqlite3_file *pConn, sqlite3_int64 *pSize){
       int exists = 0;
       rc = multiplexSubFilename(pGroup, i);
       if( rc ) break;
-      rc2 = pOrigVfs->xAccess(pOrigVfs, pGroup->aReal[i].z,
-          SQLITE_ACCESS_EXISTS, &exists);
+      if( pGroup->flags & SQLITE_OPEN_DELETEONCLOSE ){
+        exists = pGroup->nReal>=i && pGroup->aReal[i].p!=0;
+        rc2 = SQLITE_OK;
+      }else{
+        rc2 = pOrigVfs->xAccess(pOrigVfs, pGroup->aReal[i].z,
+            SQLITE_ACCESS_EXISTS, &exists);
+      }
       if( rc2==SQLITE_OK && exists){
         /* if it exists, open it */
         pSubOpen = multiplexSubOpen(pGroup, i, &rc, NULL);

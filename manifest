@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\sdocumentation\sof\sthe\ssqlite3_db_filename()\sinterface.
-D 2011-11-17T11:49:58.484
+C Backport\sa\sminimal\sset\sof\schanges\sneeded\sto\sget\s8+3\sfilenames\sand\sthe\nmultiplexor\sshim\splaying\swell\stogether.
+D 2011-12-12T20:01:12.623
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/os.c 28bbdab2170dfce84d86c45456a18eab1d0f99a9
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 4fbb91726165e105c1679a2660f49a3f4c376e4f
+F src/os_unix.c 02b3794c008bab490689399cca9a8b81c1df6eaa
 F src/os_win.c a22b88d2c088c09a678a471abafa8d60dbf56803
 F src/pager.c d981f3bfcc0e4460537d983899620700ccf8f539
 F src/pager.h 5cd760857707529b403837d813d86b68938d6183
@@ -181,7 +181,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 365ab1c870e38596d6869e76fb544fe6e4ffc809
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 80f3ac44a8514b1d107b80f5df4a424ae059d2b6
-F src/shell.c 29812a900a780eb0f835c4bc65e216272689def8
+F src/shell.c 183c4b6a84e82c768fefcc554a1256e89fc8feba
 F src/sqlite.h.in 19706a000717456c4963bb0f96262581436ffb5a
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h f412e020e1009163c74be56eaac1bf7f6c0a4515
@@ -214,7 +214,7 @@ F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c 03313c693cca72959dcaaf79f8d76f21c01e19ff
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c 8d416f29ad8573f32601f6056c9d2b17472e9ad5
-F src/test_multiplex.c 3fc368022c46fe44ec22c5e1ed727223a54a6a1d
+F src/test_multiplex.c 7dcf429b53f5f5ef22bba7987bea61234a0c7418
 F src/test_multiplex.h e99c571bc4968b7a9363b661481f3934bfead61d
 F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
@@ -976,7 +976,10 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 4d3cf9e1d8ac356db5a708913f614e42a6a56b94
-R daa1b38027d3a49fc0c491c85b1f5a39
+P 1c45b2a0c055f6fc5da9d00ae2e9171099d904d4
+R d417f9c46d07ddef314e54db481adadc
+T *branch * nx-devkit
+T *sym-nx-devkit *
+T -sym-trunk *
 U drh
-Z f65f1ce31dbae92bc408999ba5cab4af
+Z 6224f10399d131c42f88b8ba9dbbfa5d
