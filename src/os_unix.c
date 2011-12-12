@@ -4899,7 +4899,7 @@ static int findCreateFileMode(
     */
     nDb = sqlite3Strlen30(zPath) - 1; 
 #ifdef SQLITE_ENABLE_8_3_NAMES
-    while( nDb>0 && !sqlite3Isalnum(zPath[nDb]) ) nDb--;
+    while( nDb>0 && sqlite3Isalnum(zPath[nDb]) ) nDb--;
     if( nDb==0 || zPath[nDb]!='-' ) return SQLITE_OK;
 #else
     while( zPath[nDb]!='-' ){
