@@ -2344,7 +2344,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   }else
   
   if( c=='v' && strncmp(azArg[0], "version", n)==0 ){
-    printf("SQLite %s %s\n",
+    printf("SQLite %s %s\n" /*extra-version-info*/,
         sqlite3_libversion(), sqlite3_sourceid());
   }else
 
@@ -2941,7 +2941,7 @@ int main(int argc, char **argv){
       char *zHistory = 0;
       int nHistory;
       printf(
-        "SQLite version %s %.19s\n"
+        "SQLite version %s %.19s\n" /*extra-version-info*/
         "Enter \".help\" for instructions\n"
         "Enter SQL statements terminated with a \";\"\n",
         sqlite3_libversion(), sqlite3_sourceid()
