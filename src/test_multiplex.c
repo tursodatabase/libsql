@@ -814,8 +814,13 @@ static int multiplexFileSize(sqlite3_file *pConn, sqlite3_int64 *pSize){
       int exists = 0;
       rc = multiplexSubFilename(pGroup, i);
       if( rc ) break;
-      rc2 = pOrigVfs->xAccess(pOrigVfs, pGroup->aReal[i].z,
-          SQLITE_ACCESS_EXISTS, &exists);
+      if( pGroup->flags & SQLITE_OPEN_DELETEONCLOSE ){
+        exists = pGroup->nReal>=i && pGroup->aReal[i].p!=0;
+        rc2 = SQLITE_OK;
+      }else{
+        rc2 = pOrigVfs->xAccess(pOrigVfs, pGroup->aReal[i].z,
+            SQLITE_ACCESS_EXISTS, &exists);
+      }
       if( rc2==SQLITE_OK && exists){
         /* if it exists, open it */
         pSubOpen = multiplexSubOpen(pGroup, i, &rc, NULL);
