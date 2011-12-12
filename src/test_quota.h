@@ -30,6 +30,11 @@
 #include "sqlite3.h"
 #include <stdio.h>
 
+/* Make this callable from C++ */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
 ** Initialize the quota VFS shim.  Use the VFS named zOrigVfsName
 ** as the VFS that does the actual work.  Use the default if
@@ -193,4 +198,7 @@ long sqlite3_quota_ftell(quota_FILE*);
 */
 int sqlite3_quota_remove(const char *zFilename);
 
+#ifdef __cplusplus
+}  /* end of the 'extern "C"' block */
+#endif
 #endif /* _QUOTA_H_ */

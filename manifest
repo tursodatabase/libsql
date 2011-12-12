@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_quota_fflush()\sinterface.\s\sEnhance\ssqlite3_quota_remove()\nso\sthat\sit\scan\sremove\sentire\sdirectories.
-D 2011-12-03T00:13:06.592
+C Make\ssure\sthe\squota\slogic\sis\susable\sas\sC++.
+D 2011-12-12T19:47:25.223
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -220,8 +220,8 @@ F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
 F src/test_osinst.c 62b0b8ef21ce754cc94e17bb42377ed8795dba32
 F src/test_pcache.c a5cd24730cb43c5b18629043314548c9169abb00
-F src/test_quota.c 2e6191cbfc6ae978330a0d0ffcc3fb81b7059e68
-F src/test_quota.h 9b3c75a79e8c3c6a9d3846b73435bebcd550ba12
+F src/test_quota.c 5259eaa0c98b1f55cbce1f34ed7043ae9538911e
+F src/test_quota.h 98cb0cdc4b4c0fa917f7f43734127f6d182e94fa
 F src/test_rtree.c 6d06306e29946dc36f528a3a2cdc3add794656f1
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
@@ -979,7 +979,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 8cfd3575c8d9f5361c5276d6b83aba47606975a3
-R 28ca02cd727421756b639f8157eb6391
+P abcb65af4cdd192beaccdbc2109ad45b9e7f9d00
+R 219a0e733f4a37c7491a23e5eb8ab5d1
 U drh
-Z 84dc1ce8a56d57cb5251e17d63b686ff
+Z ccc24742bcaed950386a7bec659a920b

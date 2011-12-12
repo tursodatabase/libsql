@@ -905,7 +905,8 @@ int sqlite3_quota_file(const char *zFilename){
   int rc;
   int outFlags = 0;
   sqlite3_int64 iSize;
-  fd = sqlite3_malloc(gQuota.sThisVfs.szOsFile + gQuota.sThisVfs.mxPathname+1);
+  fd = (sqlite3_file*)sqlite3_malloc(gQuota.sThisVfs.szOsFile +
+                                     gQuota.sThisVfs.mxPathname+1);
   if( fd==0 ) return SQLITE_NOMEM;
   zFull = gQuota.sThisVfs.szOsFile + (char*)fd;
   rc = gQuota.pOrigVfs->xFullPathname(gQuota.pOrigVfs, zFilename,
@@ -943,12 +944,12 @@ quota_FILE *sqlite3_quota_fopen(const char *zFilename, const char *zMode){
   quotaGroup *pGroup;
   quotaFile *pFile;
 
-  zFull = sqlite3_malloc(gQuota.sThisVfs.mxPathname + 1);
+  zFull = (char*)sqlite3_malloc(gQuota.sThisVfs.mxPathname + 1);
   if( zFull==0 ) return 0;
   rc = gQuota.pOrigVfs->xFullPathname(gQuota.pOrigVfs, zFilename,
                                       gQuota.sThisVfs.mxPathname+1, zFull);
   if( rc ) goto quota_fopen_error;
-  p = sqlite3_malloc(sizeof(*p));
+  p = (quota_FILE*)sqlite3_malloc(sizeof(*p));
   if( p==0 ) goto quota_fopen_error;
   memset(p, 0, sizeof(*p));
   zFullTranslated = quota_utf8_to_mbcs(zFull);
@@ -1097,7 +1098,7 @@ int sqlite3_quota_remove(const char *zFilename){
   int diff;               /* Difference between filenames */
   char c;                 /* First character past end of pattern */
 
-  zFull = sqlite3_malloc(gQuota.sThisVfs.mxPathname + 1);
+  zFull = (char*)sqlite3_malloc(gQuota.sThisVfs.mxPathname + 1);
   if( zFull==0 ) return SQLITE_NOMEM;
   rc = gQuota.pOrigVfs->xFullPathname(gQuota.pOrigVfs, zFilename,
                                       gQuota.sThisVfs.mxPathname+1, zFull);
@@ -1438,7 +1439,7 @@ static int test_quota_fread(
   p = sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
   if( Tcl_GetIntFromObj(interp, objv[2], &sz) ) return TCL_ERROR;
   if( Tcl_GetIntFromObj(interp, objv[3], &nElem) ) return TCL_ERROR;
-  zBuf = sqlite3_malloc( sz*nElem + 1 );
+  zBuf = (char*)sqlite3_malloc( sz*nElem + 1 );
   if( zBuf==0 ){
     Tcl_SetResult(interp, "out of memory", TCL_STATIC);
     return TCL_ERROR;
