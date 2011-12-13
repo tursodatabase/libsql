@@ -798,11 +798,12 @@ static int multiplexFileSize(sqlite3_file *pConn, sqlite3_int64 *pSize){
   int rc = SQLITE_OK;
   int rc2;
   int i;
+  *pSize = 0;
   multiplexEnter();
   if( !pGroup->bEnabled ){
     sqlite3_file *pSubOpen = multiplexSubOpen(pGroup, 0, &rc, NULL);
     if( pSubOpen==0 ){
-      rc = SQLITE_IOERR_FSTAT;
+      rc = SQLITE_OK;  /* If SubOpen failed, assume a size of zero */
     }else{
       rc = pSubOpen->pMethods->xFileSize(pSubOpen, pSize);
     }
@@ -813,7 +814,7 @@ static int multiplexFileSize(sqlite3_file *pConn, sqlite3_int64 *pSize){
       sqlite3_file *pSubOpen = 0;
       int exists = 0;
       rc = multiplexSubFilename(pGroup, i);
-      if( rc ) break;
+      if( rc ){ rc = SQLITE_OK; /* Assume size of zero */ break; }
       if( pGroup->flags & SQLITE_OPEN_DELETEONCLOSE ){
         exists = pGroup->nReal>=i && pGroup->aReal[i].p!=0;
         rc2 = SQLITE_OK;

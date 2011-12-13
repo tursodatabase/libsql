@@ -1,5 +1,5 @@
-C Add\sa\scompile-time\sshutdown\sprocedure\sto\sbe\scalled\sby\ssqlite3_shutdown()\s\nto\sundo\sthe\seffects\sof\sthe\scompile-time\sinitialization\sprocedure.
-D 2011-12-13T01:34:21.866
+C When\sthe\smultiplexor\sFileSize\sprocedure\sfails\sto\sopen\sthe\sfile,\sassume\sthat\nthe\sfile\sis\szero\sbytes\sin\ssize.
+D 2011-12-13T02:41:13.433
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -214,7 +214,7 @@ F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c 03313c693cca72959dcaaf79f8d76f21c01e19ff
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c 8d416f29ad8573f32601f6056c9d2b17472e9ad5
-F src/test_multiplex.c 7dcf429b53f5f5ef22bba7987bea61234a0c7418
+F src/test_multiplex.c 56f837b9cafb0efb641a4073226f2b05a2c4872d
 F src/test_multiplex.h e99c571bc4968b7a9363b661481f3934bfead61d
 F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
@@ -976,7 +976,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P c4e2ce486217c96373836bfe641f46abf891799a
-R d65c08a2f3d54828df6dbe84b5def66b
+P c2ed86f5945662a4ddcdc7b303df3f64fb3bf17d
+R 54dcfa200fabf4bee31d0ce1ef27bb67
 U drh
-Z a5e8c7320fe29c2fddbea8503f1c5fe2
+Z 12069cbcb91e3fccb976a5eab6a4fcac
