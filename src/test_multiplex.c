@@ -455,7 +455,7 @@ static int multiplexOpen(
       sqlite3_int64 sz;
 
       rc2 = pSubOpen->pMethods->xFileSize(pSubOpen, &sz);
-      if( rc2==SQLITE_OK ){
+      if( rc2==SQLITE_OK && zName ){
         /* If the first overflow file exists and if the size of the main file
         ** is different from the chunk size, that means the chunk size is set
         ** set incorrectly.  So fix it.
@@ -857,7 +857,7 @@ static int multiplexSectorSize(sqlite3_file *pConn){
   multiplexConn *p = (multiplexConn*)pConn;
   int rc;
   sqlite3_file *pSubOpen = multiplexSubOpen(p->pGroup, 0, &rc, NULL);
-  if( pSubOpen ){
+  if( pSubOpen && pSubOpen->pMethods->xSectorSize ){
     return pSubOpen->pMethods->xSectorSize(pSubOpen);
   }
   return DEFAULT_SECTOR_SIZE;

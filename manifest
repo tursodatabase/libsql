@@ -1,5 +1,5 @@
-C Add\sextra\stests\sfor\sthe\smultiplexor\sVFS.\sNo\schanges\sto\scode.
-D 2011-12-13T16:40:33.044
+C Change\sthe\sSQLITE_EXTRA_INIT\sroutine\sto\stake\sa\ssingle\sargument\swhich\sis\sa\npointer\sto\sa\sstring.\s\sCall\sSQLITE_EXTRA_INIT\swith\sa\sNULL\sargument.\nFixes\sto\smultiplexor\sto\streat\sthe\sVFS\sproperly\sin\scorner\scases.\s\sFix\sthe\ninitialization\sof\smultiplex3.test.
+D 2011-12-13T18:22:38.364
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -147,7 +147,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
 F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
-F src/main.c 8fc06b5ab42330f26d13fbd8f969eead1d214556
+F src/main.c e7e6985365795ef6c500d05d766222222efbb0ac
 F src/malloc.c 591aedb20ae40813f1045f2ef253438a334775d9
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 7456e2ca0524609ebc06a9befeda5289d4575ad4
@@ -214,7 +214,7 @@ F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c 03313c693cca72959dcaaf79f8d76f21c01e19ff
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c 8d416f29ad8573f32601f6056c9d2b17472e9ad5
-F src/test_multiplex.c 10aaf8b7ebeb74f82d5c96e06c398b776917e457
+F src/test_multiplex.c c8cfaa7fa15494454a39c7e79241760d5fbe2c0c
 F src/test_multiplex.h e99c571bc4968b7a9363b661481f3934bfead61d
 F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
@@ -607,7 +607,7 @@ F test/misc7.test eafaa41b9133d7a2ded4641bbe5f340731d35a52
 F test/misuse.test ba4fb5d1a6101d1c171ea38b3c613d0661c83054
 F test/multiplex.test 8bc3c71f73fe833bc8a659d454d320044a33b5da
 F test/multiplex2.test 7e507a63f3981731556224b23646d29013b98c03
-F test/multiplex3.test 6772008fcaa754ae1b5ddc27c55aa813b12569b2
+F test/multiplex3.test e17b73e904dbd789de37192b6b94424e6f847bc3
 F test/mutex1.test 78b2b9bb320e51d156c4efdb71b99b051e7a4b41
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test e9648b9d007c7045242af35e11a984d4b169443a
@@ -978,7 +978,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 2eb79efbff9cdab843b172e9fa9fb400c542fab1
-R 77c5fb359ca24a528b4e0f7440c132da
-U dan
-Z 0e58dc3998254ef9753cd678e848dfd4
+P c7de6f683d0fec62bc138b4a53b5cccc80c736c3
+R c2c58817769bc21d103f97b44c17e047
+U drh
+Z e8a8ea3bf562796b70179d1fa7b7b6fa

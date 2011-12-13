@@ -14,7 +14,7 @@
 # the multiplexor extension with 8.3 filenames.
 #
 
-set testdir $env(SQLITE_TEST_DIR)
+set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/malloc_common.tcl
 set ::testprefix multiplex3
