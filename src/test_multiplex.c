@@ -81,6 +81,8 @@
 #define sqlite3_mutex_notheld(X)  ((void)(X),1)
 #endif /* SQLITE_THREADSAFE==0 */
 
+#define SQLITE_MULTIPLEX_JOURNAL_8_3_OFFSET 400
+
 
 /************************ Shim Definitions ******************************/
 
@@ -97,7 +99,7 @@
 #endif
 
 /* This used to be the default limit on number of chunks, but
-** it is no longer enforced.  There is currently no limit to the
+** it is no longer enforced. There is currently no limit to the
 ** number of chunks.
 **
 ** May be changed by calling the xFileControl() interface.
@@ -244,7 +246,7 @@ static int multiplexSubFilename(multiplexGroup *pGroup, int iChunk){
         ** 003 and so forth.  To avoid name collisions, add 100 to the 
         ** extensions of journal files so that they are 101, 102, 103, ....
         */
-        iChunk += 100;
+        iChunk += SQLITE_MULTIPLEX_JOURNAL_8_3_OFFSET;
       }
 #endif
       sqlite3_snprintf(4,&z[n],"%03d",iChunk);
@@ -264,6 +266,18 @@ static sqlite3_file *multiplexSubOpen(
 ){
   sqlite3_file *pSubOpen = 0;
   sqlite3_vfs *pOrigVfs = gMultiplex.pOrigVfs;        /* Real VFS */
+
+#ifdef SQLITE_ENABLE_8_3_NAMES
+  /* If JOURNAL_8_3_OFFSET is set to (say) 500, then any overflow files are 
+  ** part of a database journal are named db.501, db.502, and so on. A 
+  ** database may therefore not grow to larger than 500 chunks. Attempting
+  ** to open chunk 501 indicates the database is full. */
+  if( iChunk>=SQLITE_MULTIPLEX_JOURNAL_8_3_OFFSET ){
+    *rc = SQLITE_FULL;
+    return 0;
+  }
+#endif
+
   *rc = multiplexSubFilename(pGroup, iChunk);
   if( (*rc)==SQLITE_OK && (pSubOpen = pGroup->aReal[iChunk].p)==0 ){
     pSubOpen = sqlite3_malloc( pOrigVfs->szOsFile );
@@ -633,7 +647,7 @@ static int multiplexWrite(
       rc = pSubOpen->pMethods->xWrite(pSubOpen, pBuf, iAmt, iOfst);
     }
   }else{
-    while( iAmt > 0 ){
+    while( rc==SQLITE_OK && iAmt>0 ){
       int i = (int)(iOfst / pGroup->szChunk);
       sqlite3_file *pSubOpen = multiplexSubOpen(pGroup, i, &rc, NULL);
       if( pSubOpen ){
@@ -643,13 +657,9 @@ static int multiplexWrite(
         iAmt -= extra;
         rc = pSubOpen->pMethods->xWrite(pSubOpen, pBuf, iAmt,
                                         iOfst % pGroup->szChunk);
-        if( rc!=SQLITE_OK ) break;
         pBuf = (char *)pBuf + iAmt;
         iOfst += iAmt;
         iAmt = extra;
-      }else{
-        rc = SQLITE_IOERR_WRITE;
-        break;
       }
     }
   }

@@ -14,6 +14,7 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/malloc_common.tcl
 source $testdir/lock_common.tcl
+set testprefix multiplex2
 db close
 
 do_multiclient_test tn {
@@ -46,10 +47,10 @@ do_multiclient_test tn {
     SELECT count(*) FROM t1;
   } 
 
-  do_test multiplex-1.$tn.1 { sql1 { SELECT count(*) FROM t1 } } 512
-  do_test multiplex-1.$tn.2 { sql2 { SELECT count(*) FROM t1 } } 512
+  do_test 1.$tn.1 { sql1 { SELECT count(*) FROM t1 } } 512
+  do_test 1.$tn.2 { sql2 { SELECT count(*) FROM t1 } } 512
   sql2 { DELETE FROM t1 ; VACUUM }
-  do_test multiplex-1.$tn.3 { sql1 { SELECT count(*) FROM t1 } } 0
+  do_test 1.$tn.3 { sql1 { SELECT count(*) FROM t1 } } 0
 
   sql1 {
     INSERT INTO t1 VALUES(randomblob(10), randomblob(4000));          --    1
@@ -65,8 +66,54 @@ do_multiclient_test tn {
     SELECT count(*) FROM t1;
   }
 
-  do_test multiplex-1.$tn.4 { sql2 { SELECT count(*) FROM t1 } } 512
+  do_test 1.$tn.4 { sql2 { SELECT count(*) FROM t1 } } 512
 }
 
+catch {db close}
+foreach f [glob -nocomplain test.*] { forcedelete $f }
+
+ifcapable 8_3_names {
+  sqlite3 db test.db -vfs multiplex
+  sqlite3_multiplex_control db main chunk_size [expr 256*1024]
+
+  # Insert 512 * 256K (128MB) of data. If each row is around 4K, this means
+  # we need 32768 rows.
+  do_catchsql_test 2.1 {
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(randomblob(10), randomblob(4000));          --    1
+    INSERT INTO t1 SELECT randomblob(10), randomblob(4000) FROM t1;   --    2
+    INSERT INTO t1 SELECT randomblob(10), randomblob(4000) FROM t1;   --    4
+    INSERT INTO t1 SELECT randomblob(10), randomblob(4000) FROM t1;   --    8
+    INSERT INTO t1 SELECT randomblob(10), randomblob(4000) FROM t1;   --   16
+    INSERT INTO t1 SELECT randomblob(10), randomblob(4000) FROM t1;   --   32
+    INSERT INTO t1 SELECT randomblob(10), randomblob(4000) FROM t1;   --   64
+    INSERT INTO t1 SELECT randomblob(10), randomblob(4000) FROM t1;   --  128
+    INSERT INTO t1 SELECT randomblob(10), randomblob(4000) FROM t1;   --  256
+    INSERT INTO t1 SELECT randomblob(10), randomblob(4000) FROM t1;   --  512
+
+    INSERT INTO t1 SELECT randomblob(10), randomblob(4000) FROM t1;   --   1K
+    INSERT INTO t1 SELECT randomblob(10), randomblob(4000) FROM t1;   --   2K
+    INSERT INTO t1 SELECT randomblob(10), randomblob(4000) FROM t1;   --   4K
+    INSERT INTO t1 SELECT randomblob(10), randomblob(4000) FROM t1;   --   8K
+    INSERT INTO t1 SELECT randomblob(10), randomblob(4000) FROM t1;   --  16K
+    INSERT INTO t1 SELECT randomblob(10), randomblob(4000) FROM t1;   --  32K
+  
+  } {1 {database or disk is full}}
+
+  do_execsql_test 2.2 {
+    UPDATE t1 SET a=randomblob(9), b=randomblob(3900);
+    PRAGMA integrity_check;
+  } ok
+
+  db close
+  sqlite3 db test.db -vfs multiplex
+  sqlite3_multiplex_control db main chunk_size [expr 256*1024]
+
+  do_execsql_test 2.3 {
+    PRAGMA integrity_check;
+  } ok
+}
+
+catch { db close }
 catch { sqlite3_multiplex_shutdown }
 finish_test
