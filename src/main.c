@@ -257,6 +257,10 @@ int sqlite3_initialize(void){
 */
 int sqlite3_shutdown(void){
   if( sqlite3GlobalConfig.isInit ){
+#ifdef SQLITE_EXTRA_SHUTDOWN
+    void SQLITE_EXTRA_SHUTDOWN(void);
+    SQLITE_EXTRA_SHUTDOWN();
+#endif
     sqlite3_os_end();
     sqlite3_reset_auto_extension();
     sqlite3GlobalConfig.isInit = 0;

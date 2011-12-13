@@ -1,5 +1,5 @@
-C Backport\sa\sminimal\sset\sof\schanges\sneeded\sto\sget\s8+3\sfilenames\sand\sthe\nmultiplexor\sshim\splaying\swell\stogether.
-D 2011-12-12T20:01:12.623
+C Add\sa\scompile-time\sshutdown\sprocedure\sto\sbe\scalled\sby\ssqlite3_shutdown()\s\nto\sundo\sthe\seffects\sof\sthe\scompile-time\sinitialization\sprocedure.
+D 2011-12-13T01:34:21.866
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -147,7 +147,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
 F src/loadext.c d0d2022a5a07274d408820b978b9e549189d314f
-F src/main.c 55cbc40465fb58708cb82d4a285a6ea8cf1e4581
+F src/main.c f6abb5b6e34cefce99e598a59da7f9282cb95476
 F src/malloc.c 591aedb20ae40813f1045f2ef253438a334775d9
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 7456e2ca0524609ebc06a9befeda5289d4575ad4
@@ -976,10 +976,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 1c45b2a0c055f6fc5da9d00ae2e9171099d904d4
-R d417f9c46d07ddef314e54db481adadc
-T *branch * nx-devkit
-T *sym-nx-devkit *
-T -sym-trunk *
+P c4e2ce486217c96373836bfe641f46abf891799a
+R d65c08a2f3d54828df6dbe84b5def66b
 U drh
-Z 6224f10399d131c42f88b8ba9dbbfa5d
+Z a5e8c7320fe29c2fddbea8503f1c5fe2
