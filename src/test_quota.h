@@ -158,10 +158,15 @@ size_t sqlite3_quota_fwrite(void*, size_t, size_t, quota_FILE*);
 
 /*
 ** Flush all written content held in memory buffers out to disk.
-** This is the equivalent of fflush() in the standard library - not
-** an fsync().
+** This is the equivalent of fflush() in the standard library.
+**
+** If the hardSync parameter is true (non-zero) then this routine
+** also forces OS buffers to disk - the equivalent of fsync().
+**
+** This routine return zero on success and non-zero if something goes
+** wrong.
 */
-int sqlite3_quota_fflush(quota_FILE*);
+int sqlite3_quota_fflush(quota_FILE*, int hardSync);
 
 /*
 ** Close a quota_FILE object and free all associated resources.  The

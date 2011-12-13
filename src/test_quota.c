@@ -404,6 +404,12 @@ static quotaFile *quotaFindFile(
 # endif
 #endif
 
+#if SQLITE_OS_UNIX
+# include <unistd.h>
+#endif
+#if SQLITE_OS_WIN
+# include <windows.h>
+#endif
 
 /*
 ** Translate UTF8 to MBCS for use in fopen() calls.  Return a pointer to the
@@ -412,8 +418,26 @@ static quotaFile *quotaFindFile(
 */
 static char *quota_utf8_to_mbcs(const char *zUtf8){
 #if SQLITE_OS_WIN
-  extern char *sqlite3_win32_utf8_to_mbcs(const char*);
-  return sqlite3_win32_utf8_to_mbcs(zUtf8);
+  int n;             /* Bytes in zUtf8 */
+  int nWide;         /* number of UTF-16 characters */
+  int nMbcs;         /* Bytes of MBCS */
+  LPWSTR zTmpWide;   /* The UTF16 text */
+  char *zMbcs;       /* The MBCS text */
+  int codepage;      /* Code page used by fopen() */
+
+  n = strlen(zUtf8);
+  nWide = MultiByteToWideChar(CP_UTF8, 0, zUtf8, -1, NULL, 0);
+  zTmpWide = sqlite3_malloc( nWide*sizeof(zTmpWide[0]) );
+  if( zTmpWide==0 ) return 0;
+  MultiByteToWideChar(CP_UTF8, 0, zUtf8, -1, zTmpWide, nWide);
+  codepage = AreFileApisANSI() ? CP_ACP : CP_OEMCP;
+  nMbcs = WideCharToMultiByte(codepage, 0, zTmpWide, nWide, 0, 0, 0, 0);
+  zMbcs = sqlite3_malloc( nMbcs+1 );
+  if( zMbcs ){
+    WideCharToMultiByte(codepage, 0, zTmpWide, nWide, zMbcs, nMbcs, 0, 0);
+  }
+  sqlite3_free(zTmpWide);
+  return zMbcs;
 #else
   return (char*)zUtf8;  /* No-op on unix */
 #endif  
@@ -1060,8 +1084,18 @@ int sqlite3_quota_fclose(quota_FILE *p){
 /*
 ** Flush memory buffers for a quota_FILE to disk.
 */
-int sqlite3_quota_fflush(quota_FILE *p){
-  return fflush(p->f);
+int sqlite3_quota_fflush(quota_FILE *p, int doFsync){
+  int rc;
+  rc = fflush(p->f);
+  if( rc==0 && doFsync ){
+#if SQLITE_OS_UNIX
+    rc = fsync(fileno(p->f));
+#endif
+#if SQLITE_OS_WIN
+    rc = 0==FlushFileBuffers((HANDLE)_fileno(p->f));
+#endif
+  }
+  return rc;
 }
 
 /*
@@ -1503,7 +1537,7 @@ static int test_quota_fclose(
 }
 
 /*
-** tclcmd: sqlite3_quota_fflush HANDLE
+** tclcmd: sqlite3_quota_fflush HANDLE ?HARDSYNC?
 */
 static int test_quota_fflush(
   void * clientData,
@@ -1513,13 +1547,17 @@ static int test_quota_fflush(
 ){
   quota_FILE *p;
   int rc;
+  int doSync = 0;
 
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "HANDLE");
+  if( objc!=2 && objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "HANDLE ?HARDSYNC?");
     return TCL_ERROR;
   }
   p = sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
-  rc = sqlite3_quota_fflush(p);
+  if( objc==3 ){
+    if( Tcl_GetBooleanFromObj(interp, objv[2], &doSync) ) return TCL_ERROR;
+  }
+  rc = sqlite3_quota_fflush(p, doSync);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
   return TCL_OK;
 }

@@ -177,7 +177,15 @@ do_test quota2-3.1 {
 do_test quota2-3.2 {
   standard_path [sqlite3_quota_dump]
 } {{*/quota2a/* 4000 100 {PWD/quota2a/x1/a.txt 100 1 0}}}
-do_test quota2-3.3 {
+do_test quota2-3.3a {
+  sqlite3_quota_fflush $::h1 0
+  standard_path [sqlite3_quota_dump]
+} {{*/quota2a/* 4000 100 {PWD/quota2a/x1/a.txt 100 1 0}}}
+do_test quota2-3.3b {
+  sqlite3_quota_fflush $::h1 1
+  standard_path [sqlite3_quota_dump]
+} {{*/quota2a/* 4000 100 {PWD/quota2a/x1/a.txt 100 1 0}}}
+do_test quota2-3.3c {
   sqlite3_quota_fflush $::h1
   standard_path [sqlite3_quota_dump]
 } {{*/quota2a/* 4000 100 {PWD/quota2a/x1/a.txt 100 1 0}}}
