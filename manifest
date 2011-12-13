@@ -1,5 +1,5 @@
-C When\san\ssqlite3_auto_extension()\sfunction\sfails,\sreport\sback\sits\sactual\nerror\scode,\snot\sthe\sgeneric\sSQLITE_ERROR.
-D 2011-12-13T04:08:36.892
+C Move\sthe\smultiplexor\schanges\sin\sthe\sexperimental\sbranch\n(check-ins\s[255d21499b]\sand\s[199f52bced])\sinto\sthe\snx-devkit\sbranch.
+D 2011-12-13T15:02:54.819
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -214,7 +214,7 @@ F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c 03313c693cca72959dcaaf79f8d76f21c01e19ff
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c 8d416f29ad8573f32601f6056c9d2b17472e9ad5
-F src/test_multiplex.c 56f837b9cafb0efb641a4073226f2b05a2c4872d
+F src/test_multiplex.c 10aaf8b7ebeb74f82d5c96e06c398b776917e457
 F src/test_multiplex.h e99c571bc4968b7a9363b661481f3934bfead61d
 F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
@@ -976,7 +976,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P dc8118cd89da71f2035c6ee07c0edb772bba2186
-R fcee0dd6fa555d5216e315a8c5784053
+P ce55f250f56fa3a1ca864f81e9e86f911b981490
+R cc774ebd7c088b6b617c7f855781c545
 U drh
-Z 9d7ca46858b8a86804ab1862673e090c
+Z 1b3d8d40cb48e276ed9ae7077034a64e
