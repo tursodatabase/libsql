@@ -2250,10 +2250,13 @@ static int openDatabase(
   /* Load automatic extensions - extensions that have been registered
   ** using the sqlite3_automatic_extension() API.
   */
-  sqlite3AutoLoadExtensions(db);
   rc = sqlite3_errcode(db);
-  if( rc!=SQLITE_OK ){
-    goto opendb_out;
+  if( rc==SQLITE_OK ){
+    sqlite3AutoLoadExtensions(db);
+    rc = sqlite3_errcode(db);
+    if( rc!=SQLITE_OK ){
+      goto opendb_out;
+    }
   }
 
 #ifdef SQLITE_ENABLE_FTS1
