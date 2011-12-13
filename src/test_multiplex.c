@@ -213,71 +213,6 @@ static int multiplexStrlen30(const char *z){
   return 0x3fffffff & (int)(z2 - z);
 }
 
-/*
-** Create a temporary file name in zBuf.  zBuf must be big enough to
-** hold at pOrigVfs->mxPathname characters.  This function departs
-** from the traditional temporary name generation in the os_win
-** and os_unix VFS in several ways, but is necessary so that 
-** the file name is known for temporary files (like those used 
-** during vacuum.)
-**
-** N.B. This routine assumes your underlying VFS is ok with using
-** "/" as a directory seperator.  This is the default for UNIXs
-** and is allowed (even mixed) for most versions of Windows.
-*/
-static int multiplexGetTempname(sqlite3_vfs *pOrigVfs, int nBuf, char *zBuf){
-  static char zChars[] =
-    "abcdefghijklmnopqrstuvwxyz"
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    "0123456789";
-  int i,j;
-  int attempts = 0;
-  int exists = 0;
-  int rc = SQLITE_ERROR;
-
-  /* Check that the output buffer is large enough for 
-  ** pVfs->mxPathname characters.
-  */
-  if( pOrigVfs->mxPathname <= nBuf ){
-    char *zTmp = sqlite3_malloc(pOrigVfs->mxPathname);
-    if( zTmp==0 ) return SQLITE_NOMEM;
-
-    /* sqlite3_temp_directory should always be less than
-    ** pVfs->mxPathname characters.
-    */
-    sqlite3_snprintf(pOrigVfs->mxPathname,
-                     zTmp,
-                     "%s/",
-                     sqlite3_temp_directory ? sqlite3_temp_directory : ".");
-    rc = pOrigVfs->xFullPathname(pOrigVfs, zTmp, nBuf, zBuf);
-    sqlite3_free(zTmp);
-    if( rc ) return rc;
-
-    /* Check that the output buffer is large enough for the temporary file 
-    ** name.
-    */
-    j = multiplexStrlen30(zBuf);
-    if( (j + 8 + 1 + 3 + 1) <= nBuf ){
-      /* Make 3 attempts to generate a unique name. */
-      do {
-        attempts++;
-        sqlite3_randomness(8, &zBuf[j]);
-        for(i=0; i<8; i++){
-          unsigned char uc = (unsigned char)zBuf[j+i];
-          zBuf[j+i] = (char)zChars[uc%(sizeof(zChars)-1)];
-        }
-        memcpy(&zBuf[j+i], ".tmp", 5);
-        rc = pOrigVfs->xAccess(pOrigVfs, zBuf, SQLITE_ACCESS_EXISTS, &exists);
-      } while ( (rc==SQLITE_OK) && exists && (attempts<3) );
-      if( rc==SQLITE_OK && exists ){
-        rc = SQLITE_ERROR;
-      }
-    }
-  }
-
-  return rc;
-}
-
 /* Compute the filename for the iChunk-th chunk
 */
 static int multiplexSubFilename(multiplexGroup *pGroup, int iChunk){
@@ -291,7 +226,7 @@ static int multiplexSubFilename(multiplexGroup *pGroup, int iChunk){
     pGroup->aReal = p;
     pGroup->nReal = iChunk+1;
   }
-  if( pGroup->aReal[iChunk].z==0 ){
+  if( pGroup->zName && pGroup->aReal[iChunk].z==0 ){
     char *z;
     int n = pGroup->nName;
     pGroup->aReal[iChunk].z = z = sqlite3_malloc( n+4 );
@@ -461,6 +396,7 @@ static int multiplexOpen(
 
   UNUSED_PARAMETER(pVfs);
   memset(pConn, 0, pVfs->szOsFile);
+  assert( zName || (flags & SQLITE_OPEN_DELETEONCLOSE) );
 
   /* We need to create a group structure and manage
   ** access to this group of files.
@@ -468,23 +404,9 @@ static int multiplexOpen(
   multiplexEnter();
   pMultiplexOpen = (multiplexConn*)pConn;
 
-  /* If the second argument to this function is NULL, generate a 
-  ** temporary file name to use.  This will be handled by the
-  ** original xOpen method.  We just need to allocate space for
-  ** it.
-  */
-  if( !zName ){
-    zName = zToFree = sqlite3_malloc( pOrigVfs->mxPathname + 10 );
-    if( zName==0 ){
-      rc = SQLITE_NOMEM;
-    }else{
-      rc = multiplexGetTempname(pOrigVfs, pOrigVfs->mxPathname, zToFree);
-    }
-  }
-
   if( rc==SQLITE_OK ){
     /* allocate space for group */
-    nName = multiplexStrlen30(zName);
+    nName = zName ? multiplexStrlen30(zName) : 0;
     sz = sizeof(multiplexGroup)                             /* multiplexGroup */
        + nName + 1;                                         /* zName */
     pGroup = sqlite3_malloc( sz );
@@ -495,32 +417,34 @@ static int multiplexOpen(
 
   if( rc==SQLITE_OK ){
     /* assign pointers to extra space allocated */
-    char *p = (char *)&pGroup[1];
-    pMultiplexOpen->pGroup = pGroup;
     memset(pGroup, 0, sz);
+    pMultiplexOpen->pGroup = pGroup;
     pGroup->bEnabled = -1;
     pGroup->szChunk = SQLITE_MULTIPLEX_CHUNK_SIZE;
-    if( flags & SQLITE_OPEN_URI ){
-      const char *zChunkSize;
-      zChunkSize = sqlite3_uri_parameter(zName, "chunksize");
-      if( zChunkSize ){
-        unsigned int n = 0;
-        int i;
-        for(i=0; zChunkSize[i]>='0' && zChunkSize[i]<='9'; i++){
-          n = n*10 + zChunkSize[i] - '0';
-        }
-        if( n>0 ){
-          pGroup->szChunk = (n+0xffff)&~0xffff;
-        }else{
-          /* A zero or negative chunksize disabled the multiplexor */
-          pGroup->bEnabled = 0;
+
+    if( zName ){
+      char *p = (char *)&pGroup[1];
+      if( flags & SQLITE_OPEN_URI ){
+        const char *zChunkSize;
+        zChunkSize = sqlite3_uri_parameter(zName, "chunksize");
+        if( zChunkSize ){
+          unsigned int n = 0;
+          int i;
+          for(i=0; zChunkSize[i]>='0' && zChunkSize[i]<='9'; i++){
+            n = n*10 + zChunkSize[i] - '0';
+          }
+          if( n>0 ){
+            pGroup->szChunk = (n+0xffff)&~0xffff;
+          }else{
+            /* A zero or negative chunksize disabled the multiplexor */
+            pGroup->bEnabled = 0;
+          }
         }
       }
+      pGroup->zName = p;
+      memcpy(pGroup->zName, zName, nName+1);
+      pGroup->nName = nName;
     }
-    pGroup->zName = p;
-    /* save off base filename, name length, and original open flags  */
-    memcpy(pGroup->zName, zName, nName+1);
-    pGroup->nName = nName;
     pGroup->flags = flags;
     rc = multiplexSubFilename(pGroup, 1);
     if( rc==SQLITE_OK ){
@@ -796,7 +720,6 @@ static int multiplexFileSize(sqlite3_file *pConn, sqlite3_int64 *pSize){
   multiplexConn *p = (multiplexConn*)pConn;
   multiplexGroup *pGroup = p->pGroup;
   int rc = SQLITE_OK;
-  int rc2;
   int i;
   multiplexEnter();
   if( !pGroup->bEnabled ){
@@ -809,38 +732,32 @@ static int multiplexFileSize(sqlite3_file *pConn, sqlite3_int64 *pSize){
   }else{
     sqlite3_vfs *pOrigVfs = gMultiplex.pOrigVfs;
     *pSize = 0;
-    for(i=0; 1; i++){
+    for(i=0; rc==SQLITE_OK; i++){
       sqlite3_file *pSubOpen = 0;
       int exists = 0;
       rc = multiplexSubFilename(pGroup, i);
-      if( rc ) break;
-      if( pGroup->flags & SQLITE_OPEN_DELETEONCLOSE ){
-        exists = pGroup->nReal>=i && pGroup->aReal[i].p!=0;
-        rc2 = SQLITE_OK;
-      }else{
-        rc2 = pOrigVfs->xAccess(pOrigVfs, pGroup->aReal[i].z,
-            SQLITE_ACCESS_EXISTS, &exists);
+      if( rc!=SQLITE_OK ) break;
+      if( pGroup->nReal>i && pGroup->aReal[i].p!=0 ){
+        exists = 1;
+      }else if( (pGroup->flags & SQLITE_OPEN_DELETEONCLOSE)==0 ){
+        const char *zReal = pGroup->aReal[i].z;
+        rc = pOrigVfs->xAccess(pOrigVfs, zReal, SQLITE_ACCESS_EXISTS, &exists);
       }
-      if( rc2==SQLITE_OK && exists){
-        /* if it exists, open it */
+      if( exists==0 ){
+        /* stop at first "gap" or IO error. */
+        break;
+      }
+      if( rc==SQLITE_OK ){
         pSubOpen = multiplexSubOpen(pGroup, i, &rc, NULL);
-      }else{
-        /* stop at first "gap" */
-        break;
       }
-      if( pSubOpen ){
-        sqlite3_int64 sz;
-        rc2 = pSubOpen->pMethods->xFileSize(pSubOpen, &sz);
-        if( rc2!=SQLITE_OK ){
-          rc = rc2;
-        }else{
-          if( sz>pGroup->szChunk ){
-            rc = SQLITE_IOERR_FSTAT;
-          }
-          *pSize += sz;
+      assert( pSubOpen || rc!=SQLITE_OK );
+      if( rc==SQLITE_OK ){
+        sqlite3_int64 sz = 0;
+        rc = pSubOpen->pMethods->xFileSize(pSubOpen, &sz);
+        if( rc==SQLITE_OK && sz>pGroup->szChunk ){
+          rc = SQLITE_IOERR_FSTAT;
         }
-      }else{
-        break;
+        *pSize += sz;
       }
     }
   }
@@ -1191,9 +1108,13 @@ static int test_multiplex_dump(
   for(pGroup=gMultiplex.pGroups; pGroup; pGroup=pGroup->pNext){
     pGroupTerm = Tcl_NewObj();
 
-    pGroup->zName[pGroup->nName] = '\0';
-    Tcl_ListObjAppendElement(interp, pGroupTerm,
+    if( pGroup->zName ){
+      pGroup->zName[pGroup->nName] = '\0';
+      Tcl_ListObjAppendElement(interp, pGroupTerm,
           Tcl_NewStringObj(pGroup->zName, -1));
+    }else{
+      Tcl_ListObjAppendElement(interp, pGroupTerm, Tcl_NewObj());
+    }
     Tcl_ListObjAppendElement(interp, pGroupTerm,
           Tcl_NewIntObj(pGroup->nName));
     Tcl_ListObjAppendElement(interp, pGroupTerm,
