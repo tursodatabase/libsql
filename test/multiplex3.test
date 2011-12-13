@@ -55,8 +55,7 @@ proc multiplex_restore_db {} {
   foreach f [glob -nocomplain test.*]    {forcedelete $f}
   foreach f [glob -nocomplain sv_test.*] {forcecopy $f [string range $f 3 end]} }
 
-
-do_test 1.0 {
+proc setup_and_save_db {} {
   multiplex_delete_db
   sqlite3 db file:test.db?8_3_names=1
   sqlite3_multiplex_control db main chunk_size [expr 256*1024]
@@ -76,14 +75,17 @@ do_test 1.0 {
   set ::cksum1 [execsql {SELECT md5sum(a, b) FROM t1 ORDER BY a}]
   db close
   multiplex_save_db
-} {}
+}
 
+do_test 1.0 { setup_and_save_db } {}
 do_faultsim_test 1 -prep {
   multiplex_restore_db
   sqlite3 db file:test.db?8_3_names=1
   sqlite3_multiplex_control db main chunk_size [expr 256*1024]
 } -body {
-  execsql "UPDATE t1 SET a=randomblob(12), b=randomblob(1500) WHERE (rowid%32)=0"
+  execsql {
+    UPDATE t1 SET a=randomblob(12), b=randomblob(1500) WHERE (rowid%32)=0
+  }
 } -test {
   faultsim_test_result {0 {}}
   if {$testrc!=0} {
@@ -92,8 +94,40 @@ do_faultsim_test 1 -prep {
   }
 }
 
-catch { db close }
+#-------------------------------------------------------------------------
+# The following tests verify that hot-journal rollback works. As follows:
+#
+#   1. Create a large database.
+#   2. Set the pager cache to be very small.
+#   3. Open a transaction. 
+#   4. Run the following 100 times:
+#      a. Update a row.
+#      b. Copy all files on disk to a new db location, including the journal.
+#      c. Verify that the new db can be opened and that the content matches
+#         the database created in step 1 (proving the journal was rolled
+#         back).
 
+do_test 2.0 { 
+  setup_and_save_db
+  multiplex_restore_db
+  sqlite3 db file:test.db?8_3_names=1
+  execsql { PRAGMA cache_size = 10 }
+  execsql { BEGIN }
+} {}
+
+for {set iTest 1} {$iTest<=100} {incr iTest} {
+  do_test 2.$iTest {
+    execsql { 
+      UPDATE t1 SET a=randomblob(12), b=randomblob(1400) WHERE rowid=5*$iTest
+    }
+    foreach f [glob -nocomplain test.*] {forcecopy $f "xx_$f"}
+    sqlite3 db2 file:xx_test.db?8_3_names=1
+    execsql {SELECT md5sum(a, b) FROM t1 ORDER BY a} db2
+  } $::cksum1
+
+  db2 close
+}
+
+catch { db close }
 sqlite3_multiplex_shutdown
 finish_test
-
