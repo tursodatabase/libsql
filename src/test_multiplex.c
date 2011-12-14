@@ -81,6 +81,9 @@
 #define sqlite3_mutex_notheld(X)  ((void)(X),1)
 #endif /* SQLITE_THREADSAFE==0 */
 
+/* First chunk for rollback journal files */
+#define SQLITE_MULTIPLEX_JOURNAL_8_3_OFFSET 400
+
 
 /************************ Shim Definitions ******************************/
 
@@ -97,7 +100,7 @@
 #endif
 
 /* This used to be the default limit on number of chunks, but
-** it is no longer enforced.  There is currently no limit to the
+** it is no longer enforced. There is currently no limit to the
 ** number of chunks.
 **
 ** May be changed by calling the xFileControl() interface.
@@ -241,10 +244,10 @@ static int multiplexSubFilename(multiplexGroup *pGroup, int iChunk){
       if( i>=n-4 ) n = i+1;
       if( pGroup->flags & (SQLITE_OPEN_MAIN_JOURNAL|SQLITE_OPEN_TEMP_JOURNAL) ){
         /* The extensions on overflow files for main databases are 001, 002,
-        ** 003 and so forth.  To avoid name collisions, add 100 to the 
-        ** extensions of journal files so that they are 101, 102, 103, ....
+        ** 003 and so forth.  To avoid name collisions, add 400 to the 
+        ** extensions of journal files so that they are 401, 402, 403, ....
         */
-        iChunk += 100;
+        iChunk += SQLITE_MULTIPLEX_JOURNAL_8_3_OFFSET;
       }
 #endif
       sqlite3_snprintf(4,&z[n],"%03d",iChunk);
@@ -264,6 +267,18 @@ static sqlite3_file *multiplexSubOpen(
 ){
   sqlite3_file *pSubOpen = 0;
   sqlite3_vfs *pOrigVfs = gMultiplex.pOrigVfs;        /* Real VFS */
+
+#ifdef SQLITE_ENABLE_8_3_NAMES
+  /* If JOURNAL_8_3_OFFSET is set to (say) 400, then any overflow files are 
+  ** part of a database journal are named db.401, db.402, and so on. A 
+  ** database may therefore not grow to larger than 400 chunks. Attempting
+  ** to open chunk 401 indicates the database is full. */
+  if( iChunk>=SQLITE_MULTIPLEX_JOURNAL_8_3_OFFSET ){
+    *rc = SQLITE_FULL;
+    return 0;
+  }
+#endif
+
   *rc = multiplexSubFilename(pGroup, iChunk);
   if( (*rc)==SQLITE_OK && (pSubOpen = pGroup->aReal[iChunk].p)==0 ){
     pSubOpen = sqlite3_malloc( pOrigVfs->szOsFile );
@@ -455,7 +470,7 @@ static int multiplexOpen(
       sqlite3_int64 sz;
 
       rc2 = pSubOpen->pMethods->xFileSize(pSubOpen, &sz);
-      if( rc2==SQLITE_OK ){
+      if( rc2==SQLITE_OK && zName ){
         /* If the first overflow file exists and if the size of the main file
         ** is different from the chunk size, that means the chunk size is set
         ** set incorrectly.  So fix it.
@@ -633,7 +648,7 @@ static int multiplexWrite(
       rc = pSubOpen->pMethods->xWrite(pSubOpen, pBuf, iAmt, iOfst);
     }
   }else{
-    while( iAmt > 0 ){
+    while( rc==SQLITE_OK && iAmt>0 ){
       int i = (int)(iOfst / pGroup->szChunk);
       sqlite3_file *pSubOpen = multiplexSubOpen(pGroup, i, &rc, NULL);
       if( pSubOpen ){
@@ -643,13 +658,9 @@ static int multiplexWrite(
         iAmt -= extra;
         rc = pSubOpen->pMethods->xWrite(pSubOpen, pBuf, iAmt,
                                         iOfst % pGroup->szChunk);
-        if( rc!=SQLITE_OK ) break;
         pBuf = (char *)pBuf + iAmt;
         iOfst += iAmt;
         iAmt = extra;
-      }else{
-        rc = SQLITE_IOERR_WRITE;
-        break;
       }
     }
   }
@@ -845,6 +856,9 @@ static int multiplexFileControl(sqlite3_file *pConn, int op, void *pArg){
       pSubOpen = multiplexSubOpen(pGroup, 0, &rc, NULL);
       if( pSubOpen ){
         rc = pSubOpen->pMethods->xFileControl(pSubOpen, op, pArg);
+        if( op==SQLITE_FCNTL_VFSNAME && rc==SQLITE_OK ){
+         *(char**)pArg = sqlite3_mprintf("multiplex/%z", *(char**)pArg);
+        }
       }
       break;
   }
@@ -857,7 +871,7 @@ static int multiplexSectorSize(sqlite3_file *pConn){
   multiplexConn *p = (multiplexConn*)pConn;
   int rc;
   sqlite3_file *pSubOpen = multiplexSubOpen(p->pGroup, 0, &rc, NULL);
-  if( pSubOpen ){
+  if( pSubOpen && pSubOpen->pMethods->xSectorSize ){
     return pSubOpen->pMethods->xSectorSize(pSubOpen);
   }
   return DEFAULT_SECTOR_SIZE;

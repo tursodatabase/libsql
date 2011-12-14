@@ -239,8 +239,8 @@ int sqlite3_initialize(void){
   */
 #ifdef SQLITE_EXTRA_INIT
   if( rc==SQLITE_OK && sqlite3GlobalConfig.isInit ){
-    int SQLITE_EXTRA_INIT(void);
-    rc = SQLITE_EXTRA_INIT();
+    int SQLITE_EXTRA_INIT(const char*);
+    rc = SQLITE_EXTRA_INIT(0);
   }
 #endif
 
