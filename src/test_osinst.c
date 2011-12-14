@@ -389,7 +389,11 @@ static int vfslogCheckReservedLock(sqlite3_file *pFile, int *pResOut){
 */
 static int vfslogFileControl(sqlite3_file *pFile, int op, void *pArg){
   VfslogFile *p = (VfslogFile *)pFile;
-  return p->pReal->pMethods->xFileControl(p->pReal, op, pArg);
+  int rc = p->pReal->pMethods->xFileControl(p->pReal, op, pArg);
+  if( op==SQLITE_FCNTL_VFSNAME && rc==SQLITE_OK ){
+    *(char**)pArg = sqlite3_mprintf("vfslog/%z", *(char**)pArg);
+  }
+  return rc;
 }
 
 /*

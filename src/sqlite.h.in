@@ -771,6 +771,17 @@ struct sqlite3_io_methods {
 ** a write transaction to indicate that, unless it is rolled back for some
 ** reason, the entire database file will be overwritten by the current 
 ** transaction. This is used by VACUUM operations.
+**
+** ^The [SQLITE_FCNTL_VFSNAME] opcode can be used to obtain the names of
+** all [VFSes] in the VFS stack.  The names are of all VFS shims and the
+** final bottom-level VFS are written into memory obtained from 
+** [sqlite3_malloc()] and the result is stored in the char* variable
+** that the fourth parameter of [sqlite3_file_control()] points to.
+** The caller is responsible for freeing the memory when done.  As with
+** all file-control actions, there is no guarantee that this will actually
+** do anything.  Callers should initialize the char* variable to a NULL
+** pointer in case this file-control is not implemented.  This file-control
+** is intended for diagnostic use only.
 */
 #define SQLITE_FCNTL_LOCKSTATE        1
 #define SQLITE_GET_LOCKPROXYFILE      2
@@ -783,6 +794,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_WIN32_AV_RETRY   9
 #define SQLITE_FCNTL_PERSIST_WAL     10
 #define SQLITE_FCNTL_OVERWRITE       11
+#define SQLITE_FCNTL_VFSNAME         12
 
 /*
 ** CAPI3REF: Mutex Handle
