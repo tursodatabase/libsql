@@ -81,6 +81,7 @@
 #define sqlite3_mutex_notheld(X)  ((void)(X),1)
 #endif /* SQLITE_THREADSAFE==0 */
 
+/* First chunk for rollback journal files */
 #define SQLITE_MULTIPLEX_JOURNAL_8_3_OFFSET 400
 
 
@@ -243,8 +244,8 @@ static int multiplexSubFilename(multiplexGroup *pGroup, int iChunk){
       if( i>=n-4 ) n = i+1;
       if( pGroup->flags & (SQLITE_OPEN_MAIN_JOURNAL|SQLITE_OPEN_TEMP_JOURNAL) ){
         /* The extensions on overflow files for main databases are 001, 002,
-        ** 003 and so forth.  To avoid name collisions, add 100 to the 
-        ** extensions of journal files so that they are 101, 102, 103, ....
+        ** 003 and so forth.  To avoid name collisions, add 400 to the 
+        ** extensions of journal files so that they are 401, 402, 403, ....
         */
         iChunk += SQLITE_MULTIPLEX_JOURNAL_8_3_OFFSET;
       }
@@ -268,10 +269,10 @@ static sqlite3_file *multiplexSubOpen(
   sqlite3_vfs *pOrigVfs = gMultiplex.pOrigVfs;        /* Real VFS */
 
 #ifdef SQLITE_ENABLE_8_3_NAMES
-  /* If JOURNAL_8_3_OFFSET is set to (say) 500, then any overflow files are 
-  ** part of a database journal are named db.501, db.502, and so on. A 
-  ** database may therefore not grow to larger than 500 chunks. Attempting
-  ** to open chunk 501 indicates the database is full. */
+  /* If JOURNAL_8_3_OFFSET is set to (say) 400, then any overflow files are 
+  ** part of a database journal are named db.401, db.402, and so on. A 
+  ** database may therefore not grow to larger than 400 chunks. Attempting
+  ** to open chunk 401 indicates the database is full. */
   if( iChunk>=SQLITE_MULTIPLEX_JOURNAL_8_3_OFFSET ){
     *rc = SQLITE_FULL;
     return 0;
