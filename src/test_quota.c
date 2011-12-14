@@ -427,12 +427,13 @@ static char *quota_utf8_to_mbcs(const char *zUtf8){
 
   n = strlen(zUtf8);
   nWide = MultiByteToWideChar(CP_UTF8, 0, zUtf8, -1, NULL, 0);
-  zTmpWide = sqlite3_malloc( nWide*sizeof(zTmpWide[0]) );
+  if( nWide==0 ) return 0;
+  zTmpWide = sqlite3_malloc( (nWide+1)*sizeof(zTmpWide[0]) );
   if( zTmpWide==0 ) return 0;
   MultiByteToWideChar(CP_UTF8, 0, zUtf8, -1, zTmpWide, nWide);
   codepage = AreFileApisANSI() ? CP_ACP : CP_OEMCP;
   nMbcs = WideCharToMultiByte(codepage, 0, zTmpWide, nWide, 0, 0, 0, 0);
-  zMbcs = sqlite3_malloc( nMbcs+1 );
+  zMbcs = nMbcs ? sqlite3_malloc( nMbcs+1 ) : 0;
   if( zMbcs ){
     WideCharToMultiByte(codepage, 0, zTmpWide, nWide, zMbcs, nMbcs, 0, 0);
   }

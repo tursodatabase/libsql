@@ -1,5 +1,5 @@
-C Enhancements\sto\stest_quota.c:\s\sRemove\sthe\sexternal\sdependency\son\s\nsqlite3_win32_utf8_to_msbc().\s\sAdd\san\sextra\sparameter\sto\squota_fflush()\nthat\swill\salso\sdo\san\sfsync\s(or\sthe\sequivalent).
-D 2011-12-13T23:26:10.637
+C Harden\sthe\sutf8-to-mbcs\sconverter\sin\sthe\squota\smodule\sagainst\sfailures.
+D 2011-12-14T00:04:52.373
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -220,7 +220,7 @@ F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
 F src/test_osinst.c 62b0b8ef21ce754cc94e17bb42377ed8795dba32
 F src/test_pcache.c a5cd24730cb43c5b18629043314548c9169abb00
-F src/test_quota.c fc7d4c4f8538396c1b0116efef695f9f33f984e7
+F src/test_quota.c 2552dfd897d2d74ecc368487fa5859e9a2b254ab
 F src/test_quota.h 9ffa1d3ad6d0a6a24e8670ea64b909c717ec3358
 F src/test_rtree.c 6d06306e29946dc36f528a3a2cdc3add794656f1
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
@@ -979,7 +979,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P f4534bd3023a599691018f35389a76045e49d831
-R 47ed3793a4d313cda8ae0615d4d258b5
+P 92f4188f90e3cdd71f1457a6e0eb22615e4a54f4
+R 628f1bcc3bb63f06518edb62745f94e5
 U drh
-Z a4d5e00fab55c6c4275b01f8f924030e
+Z 2cf614ef38a2cb741ec717409dbd005d
