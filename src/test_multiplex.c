@@ -856,6 +856,9 @@ static int multiplexFileControl(sqlite3_file *pConn, int op, void *pArg){
       pSubOpen = multiplexSubOpen(pGroup, 0, &rc, NULL);
       if( pSubOpen ){
         rc = pSubOpen->pMethods->xFileControl(pSubOpen, op, pArg);
+        if( op==SQLITE_FCNTL_VFSNAME && rc==SQLITE_OK ){
+         *(char**)pArg = sqlite3_mprintf("multiplex/%z", *(char**)pArg);
+        }
       }
       break;
   }

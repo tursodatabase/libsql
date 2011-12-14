@@ -589,7 +589,11 @@ static int quotaCheckReservedLock(sqlite3_file *pConn, int *pResOut){
 */
 static int quotaFileControl(sqlite3_file *pConn, int op, void *pArg){
   sqlite3_file *pSubOpen = quotaSubOpen(pConn);
-  return pSubOpen->pMethods->xFileControl(pSubOpen, op, pArg);
+  int rc = pSubOpen->pMethods->xFileControl(pSubOpen, op, pArg);
+  if( op==SQLITE_FCNTL_VFSNAME && rc==SQLITE_OK ){
+    *(char**)pArg = sqlite3_mprintf("quota/%z", *(char**)pArg);
+  }
+  return rc;
 }
 
 /* Pass xSectorSize requests through to the original VFS unchanged.

@@ -471,6 +471,10 @@ static int vfstraceFileControl(sqlite3_file *pFile, int op, void *pArg){
     }
     case SQLITE_FCNTL_FILE_POINTER: zOp = "FILE_POINTER";       break;
     case SQLITE_FCNTL_SYNC_OMITTED: zOp = "SYNC_OMITTED";       break;
+    case SQLITE_FCNTL_WIN32_AV_RETRY: zOp = "WIN32_AV_RETRY";   break;
+    case SQLITE_FCNTL_PERSIST_WAL:  zOp = "PERSIST_WAL";        break;
+    case SQLITE_FCNTL_OVERWRITE:    zOp = "OVERWRITE";          break;
+    case SQLITE_FCNTL_VFSNAME:      zOp = "VFSNAME";            break;
     case 0xca093fa0:                zOp = "DB_UNCHANGED";       break;
     default: {
       sqlite3_snprintf(sizeof zBuf, zBuf, "%d", op);
@@ -482,6 +486,10 @@ static int vfstraceFileControl(sqlite3_file *pFile, int op, void *pArg){
                   pInfo->zVfsName, p->zFName, zOp);
   rc = p->pReal->pMethods->xFileControl(p->pReal, op, pArg);
   vfstrace_print_errcode(pInfo, " -> %s\n", rc);
+  if( op==SQLITE_FCNTL_VFSNAME && rc==SQLITE_OK ){
+    *(char**)pArg = sqlite3_mprintf("vfstrace.%s/%z",
+                                    pInfo->zVfsName, *(char**)pArg);
+  }
   return rc;
 }
 

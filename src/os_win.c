@@ -2145,6 +2145,10 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       }
       return SQLITE_OK;
     }
+    case SQLITE_FCNTL_VFSNAME: {
+      *(char**)pArg = sqlite3_mprintf("win32");
+      return SQLITE_OK;
+    }
     case SQLITE_FCNTL_SYNC_OMITTED: {
       return SQLITE_OK;
     }
