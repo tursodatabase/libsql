@@ -918,6 +918,9 @@ static LPWSTR utf8ToUnicode(const char *zFilename){
   LPWSTR zWideFilename;
 
   nChar = osMultiByteToWideChar(CP_UTF8, 0, zFilename, -1, NULL, 0);
+  if( nChar==0 ){
+    return 0;
+  }
   zWideFilename = sqlite3_malloc( nChar*sizeof(zWideFilename[0]) );
   if( zWideFilename==0 ){
     return 0;
@@ -940,6 +943,9 @@ static char *unicodeToUtf8(LPCWSTR zWideFilename){
   char *zFilename;
 
   nByte = osWideCharToMultiByte(CP_UTF8, 0, zWideFilename, -1, 0, 0, 0, 0);
+  if( nByte == 0 ){
+    return 0;
+  }
   zFilename = sqlite3_malloc( nByte );
   if( zFilename==0 ){
     return 0;
@@ -967,6 +973,9 @@ static LPWSTR mbcsToUnicode(const char *zFilename){
 
   nByte = osMultiByteToWideChar(codepage, 0, zFilename, -1, NULL,
                                 0)*sizeof(WCHAR);
+  if( nByte==0 ){
+    return 0;
+  }
   zMbcsFilename = sqlite3_malloc( nByte*sizeof(zMbcsFilename[0]) );
   if( zMbcsFilename==0 ){
     return 0;
@@ -993,6 +1002,9 @@ static char *unicodeToMbcs(LPCWSTR zWideFilename){
   int codepage = osAreFileApisANSI() ? CP_ACP : CP_OEMCP;
 
   nByte = osWideCharToMultiByte(codepage, 0, zWideFilename, -1, 0, 0, 0, 0);
+  if( nByte == 0 ){
+    return 0;
+  }
   zFilename = sqlite3_malloc( nByte );
   if( zFilename==0 ){
     return 0;

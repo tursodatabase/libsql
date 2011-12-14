@@ -1,5 +1,5 @@
-C Merge\sthe\snx-devkit\schanges\sinto\strunk.
-D 2011-12-13T15:37:12.235
+C Treat\sa\szero\sreturn\svalue\sfrom\sthe\sWin32\sAPIs\sMultiByteToWideChar\sand\sWideCharToMultiByte\sas\san\serror\scondition.
+D 2011-12-14T00:37:45.399
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -167,7 +167,7 @@ F src/os.h 549b1a2e5e0ed1e1499f252dac126c4973e7379c
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c dcb42d74044efcf760c3c03c668e9e7314aa2427
-F src/os_win.c 8af100f78f157eb6185fd9153d7f35b829c4da04
+F src/os_win.c 745cfae00e887ba90452f7ef2a245272c4ed7374
 F src/pager.c d981f3bfcc0e4460537d983899620700ccf8f539
 F src/pager.h 5cd760857707529b403837d813d86b68938d6183
 F src/parse.y fabb2e7047417d840e6fdb3ef0988a86849a08ba
@@ -980,7 +980,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 169e12295cca701443746b1209bd6a7714fd8988 2eb79efbff9cdab843b172e9fa9fb400c542fab1
-R e5aa0bc552fbb5033b8311d030f5558d
-U drh
-Z afe5f3537b446035b4ee9315704cbe8b
+P 03a70c3dae8d912fccd9d72c575dc372b198d238
+R 29870a4086be96ebc531e67fe7235bdd
+U mistachkin
+Z fc2bb105d27bbafb8656bcd186800dc4
