@@ -216,6 +216,39 @@ static int multiplexStrlen30(const char *z){
   return 0x3fffffff & (int)(z2 - z);
 }
 
+/*
+** Generate the file-name for chunk iChunk of the group with base name
+** zBase. The file-name is written to buffer zOut before returning. Buffer
+** zOut must be allocated by the caller so that it is at least (nBase+4)
+** bytes in size, where nBase is the length of zBase, not including the
+** nul-terminator.
+*/
+static void multiplexFilename(
+  const char *zBase,              /* Filename for chunk 0 */
+  int nBase,                      /* Size of zBase in bytes (without \0) */
+  int flags,                      /* Flags used to open file */
+  int iChunk,                     /* Chunk to generate filename for */
+  char *zOut                      /* Buffer to write generated name to */
+){
+  memcpy(zOut, zBase, nBase+1);
+  if( iChunk!=0 && iChunk!=SQLITE_MULTIPLEX_JOURNAL_8_3_OFFSET ){
+    int n = nBase;
+#ifdef SQLITE_ENABLE_8_3_NAMES
+    int i;
+    for(i=n-1; i>0 && i>=n-4 && zOut[i]!='.'; i--){}
+    if( i>=n-4 ) n = i+1;
+    if( flags & SQLITE_OPEN_MAIN_JOURNAL ){
+      /* The extensions on overflow files for main databases are 001, 002,
+       ** 003 and so forth.  To avoid name collisions, add 400 to the 
+       ** extensions of journal files so that they are 401, 402, 403, ....
+       */
+      iChunk += SQLITE_MULTIPLEX_JOURNAL_8_3_OFFSET;
+    }
+#endif
+    sqlite3_snprintf(4,&zOut[n],"%03d",iChunk);
+  }
+}
+
 /* Compute the filename for the iChunk-th chunk
 */
 static int multiplexSubFilename(multiplexGroup *pGroup, int iChunk){
@@ -236,22 +269,7 @@ static int multiplexSubFilename(multiplexGroup *pGroup, int iChunk){
     if( z==0 ){
       return SQLITE_NOMEM;
     }
-    memcpy(z, pGroup->zName, n+1);
-    if( iChunk>0 ){
-#ifdef SQLITE_ENABLE_8_3_NAMES
-      int i;
-      for(i=n-1; i>0 && i>=n-4 && z[i]!='.'; i--){}
-      if( i>=n-4 ) n = i+1;
-      if( pGroup->flags & (SQLITE_OPEN_MAIN_JOURNAL|SQLITE_OPEN_TEMP_JOURNAL) ){
-        /* The extensions on overflow files for main databases are 001, 002,
-        ** 003 and so forth.  To avoid name collisions, add 400 to the 
-        ** extensions of journal files so that they are 401, 402, 403, ....
-        */
-        iChunk += SQLITE_MULTIPLEX_JOURNAL_8_3_OFFSET;
-      }
-#endif
-      sqlite3_snprintf(4,&z[n],"%03d",iChunk);
-    }
+    multiplexFilename(pGroup->zName, pGroup->nName, pGroup->flags, iChunk, z);
   }
   return SQLITE_OK;
 }
@@ -483,24 +501,43 @@ static int multiplexOpen(
 
       rc = pSubOpen->pMethods->xFileSize(pSubOpen, &sz);
       if( rc==SQLITE_OK && zName ){
-        int exists;
-
-        /* If the first overflow file exists and if the size of the main file
-        ** is different from the chunk size, that means the chunk size is set
-        ** set incorrectly.  So fix it.
-        **
-        ** Or, if the first overflow file does not exist and the main file is
-        ** larger than the chunk size, that means the chunk size is too small.
-        ** But we have no way of determining the intended chunk size, so 
-        ** just disable the multiplexor all togethre.
-        */
-        rc = pOrigVfs->xAccess(pOrigVfs, pGroup->aReal[1].z,
-            SQLITE_ACCESS_EXISTS, &exists);
-        if( rc==SQLITE_OK && exists && sz==(sz&0xffff0000) && sz>0
-            && sz!=pGroup->szChunk ){
-          pGroup->szChunk = sz;
-        }else if( rc==SQLITE_OK && !exists && sz>pGroup->szChunk ){
-          pGroup->bEnabled = 0;
+        int bExists;
+        if( sz==0 ){
+          if( flags & SQLITE_OPEN_MAIN_JOURNAL ){
+            /* If opening a main journal file and the first chunk is zero
+            ** bytes in size, delete any subsequent chunks from the 
+            ** file-system. */
+            int iChunk = 1;
+            do {
+              rc = pOrigVfs->xAccess(pOrigVfs, 
+                  pGroup->aReal[iChunk].z, SQLITE_ACCESS_EXISTS, &bExists
+              );
+              if( rc==SQLITE_OK && bExists ){
+                rc = pOrigVfs->xDelete(pOrigVfs, pGroup->aReal[iChunk].z, 0);
+                if( rc==SQLITE_OK ){
+                  rc = multiplexSubFilename(pGroup, ++iChunk);
+                }
+              }
+            }while( rc==SQLITE_OK && bExists );
+          }
+        }else{
+          /* If the first overflow file exists and if the size of the main file
+           ** is different from the chunk size, that means the chunk size is set
+           ** set incorrectly.  So fix it.
+           **
+           ** Or, if the first overflow file does not exist and the main file is
+           ** larger than the chunk size, that means the chunk size is too small.
+           ** But we have no way of determining the intended chunk size, so 
+           ** just disable the multiplexor all togethre.
+           */
+          rc = pOrigVfs->xAccess(pOrigVfs, pGroup->aReal[1].z,
+              SQLITE_ACCESS_EXISTS, &bExists);
+          if( rc==SQLITE_OK && bExists && sz==(sz&0xffff0000) && sz>0
+              && sz!=pGroup->szChunk ){
+            pGroup->szChunk = sz;
+          }else if( rc==SQLITE_OK && !bExists && sz>pGroup->szChunk ){
+            pGroup->bEnabled = 0;
+          }
         }
       }
     }
@@ -534,8 +571,33 @@ static int multiplexDelete(
   const char *zName,         /* Name of file to delete */
   int syncDir
 ){
+  int rc;
   sqlite3_vfs *pOrigVfs = gMultiplex.pOrigVfs;   /* Real VFS */
-  return pOrigVfs->xDelete(pOrigVfs, zName, syncDir);
+  rc = pOrigVfs->xDelete(pOrigVfs, zName, syncDir);
+  if( rc==SQLITE_OK ){
+    /* If the main chunk was deleted successfully, also delete any subsequent
+    ** chunks - starting with the last (highest numbered). 
+    */
+    int nName = strlen(zName);
+    char *z;
+    z = sqlite3_malloc(nName + 4);
+    if( z==0 ){
+      rc = SQLITE_IOERR_NOMEM;
+    }else{
+      int iChunk = 0;
+      int bExists;
+      do{
+        multiplexFilename(zName, nName, SQLITE_OPEN_MAIN_JOURNAL, ++iChunk, z);
+        rc = pOrigVfs->xAccess(pOrigVfs, z, SQLITE_ACCESS_EXISTS, &bExists);
+      }while( rc==SQLITE_OK && bExists );
+      while( rc==SQLITE_OK && iChunk>1 ){
+        multiplexFilename(zName, nName, SQLITE_OPEN_MAIN_JOURNAL, --iChunk, z);
+        rc = pOrigVfs->xDelete(pOrigVfs, z, syncDir);
+      }
+    }
+    sqlite3_free(z);
+  }
+  return rc;
 }
 
 static int multiplexAccess(sqlite3_vfs *a, const char *b, int c, int *d){
