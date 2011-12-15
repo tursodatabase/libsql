@@ -466,13 +466,15 @@ static int multiplexOpen(
     rc = multiplexSubFilename(pGroup, 1);
     if( rc==SQLITE_OK ){
       pSubOpen = multiplexSubOpen(pGroup, 0, &rc, pOutFlags);
+      assert( pSubOpen || rc!=SQLITE_OK );
     }
-    if( pSubOpen ){
-      int exists, rc2, rc3;
+    if( rc==SQLITE_OK ){
       sqlite3_int64 sz;
 
-      rc2 = pSubOpen->pMethods->xFileSize(pSubOpen, &sz);
-      if( rc2==SQLITE_OK && zName ){
+      rc = pSubOpen->pMethods->xFileSize(pSubOpen, &sz);
+      if( rc==SQLITE_OK && zName ){
+        int exists;
+
         /* If the first overflow file exists and if the size of the main file
         ** is different from the chunk size, that means the chunk size is set
         ** set incorrectly.  So fix it.
@@ -482,16 +484,18 @@ static int multiplexOpen(
         ** But we have no way of determining the intended chunk size, so 
         ** just disable the multiplexor all togethre.
         */
-        rc3 = pOrigVfs->xAccess(pOrigVfs, pGroup->aReal[1].z,
+        rc = pOrigVfs->xAccess(pOrigVfs, pGroup->aReal[1].z,
             SQLITE_ACCESS_EXISTS, &exists);
-        if( rc3==SQLITE_OK && exists && sz==(sz&0xffff0000) && sz>0
+        if( rc==SQLITE_OK && exists && sz==(sz&0xffff0000) && sz>0
             && sz!=pGroup->szChunk ){
           pGroup->szChunk = sz;
-        }else if( rc3==SQLITE_OK && !exists && sz>pGroup->szChunk ){
+        }else if( rc==SQLITE_OK && !exists && sz>pGroup->szChunk ){
           pGroup->bEnabled = 0;
         }
       }
+    }
 
+    if( rc==SQLITE_OK ){
       if( pSubOpen->pMethods->iVersion==1 ){
         pMultiplexOpen->base.pMethods = &gMultiplex.sIoMethodsV1;
       }else{
