@@ -462,6 +462,16 @@ static int multiplexOpen(
       memcpy(pGroup->zName, zName, nName+1);
       pGroup->nName = nName;
     }
+    if( pGroup->bEnabled ){
+      /* Make sure that the chunksize is not such that the pending byte
+      ** falls at the end of a chunk.  A region of up to 64K following
+      ** the pending byte is never written, so if the pending byte occurs
+      ** near the end of a chunk, that chunk will be too small. */
+      extern int sqlite3PendingByte;
+      while( (sqlite3PendingByte % pGroup->szChunk)>=(pGroup->szChunk-65536) ){
+        pGroup->szChunk += 65536;
+      }
+    }
     pGroup->flags = flags;
     rc = multiplexSubFilename(pGroup, 1);
     if( rc==SQLITE_OK ){
