@@ -365,7 +365,9 @@ static void multiplexSubClose(
   sqlite3_file *pSubOpen = pGroup->aReal[iChunk].p;
   if( pSubOpen ){
     pSubOpen->pMethods->xClose(pSubOpen);
-    if( pOrigVfs ) pOrigVfs->xDelete(pOrigVfs, pGroup->aReal[iChunk].z, 0);
+    if( pOrigVfs && pGroup->aReal[iChunk].z ){
+      pOrigVfs->xDelete(pOrigVfs, pGroup->aReal[iChunk].z, 0);
+    }
     sqlite3_free(pGroup->aReal[iChunk].p);
   }
   sqlite3_free(pGroup->aReal[iChunk].z);
@@ -768,7 +770,7 @@ static int multiplexFileSize(sqlite3_file *pConn, sqlite3_int64 *pSize){
         if( rc==SQLITE_OK && sz>pGroup->szChunk ){
           rc = SQLITE_IOERR_FSTAT;
         }
-        *pSize += sz;
+        *pSize = i*(sqlite3_int64)pGroup->szChunk + sz;
       }
     }
   }
