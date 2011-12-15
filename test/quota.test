@@ -50,6 +50,7 @@ do_test quota-1.8 { sqlite3_quota_shutdown }               {SQLITE_OK}
 #   
 sqlite3_quota_initialize "" 1
 
+unset -nocomplain quota_request_ok
 proc quota_check {filename limitvar size} {
   upvar $limitvar limit
 
