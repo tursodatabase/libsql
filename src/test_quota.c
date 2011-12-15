@@ -409,6 +409,7 @@ static quotaFile *quotaFindFile(
 #endif
 #if SQLITE_OS_WIN
 # include <windows.h>
+# include <io.h>
 #endif
 
 /*
@@ -428,12 +429,12 @@ static char *quota_utf8_to_mbcs(const char *zUtf8){
   n = strlen(zUtf8);
   nWide = MultiByteToWideChar(CP_UTF8, 0, zUtf8, -1, NULL, 0);
   if( nWide==0 ) return 0;
-  zTmpWide = sqlite3_malloc( (nWide+1)*sizeof(zTmpWide[0]) );
+  zTmpWide = (LPWSTR)sqlite3_malloc( (nWide+1)*sizeof(zTmpWide[0]) );
   if( zTmpWide==0 ) return 0;
   MultiByteToWideChar(CP_UTF8, 0, zUtf8, -1, zTmpWide, nWide);
   codepage = AreFileApisANSI() ? CP_ACP : CP_OEMCP;
   nMbcs = WideCharToMultiByte(codepage, 0, zTmpWide, nWide, 0, 0, 0, 0);
-  zMbcs = nMbcs ? sqlite3_malloc( nMbcs+1 ) : 0;
+  zMbcs = nMbcs ? (char*)sqlite3_malloc( nMbcs+1 ) : 0;
   if( zMbcs ){
     WideCharToMultiByte(codepage, 0, zTmpWide, nWide, zMbcs, nMbcs, 0, 0);
   }
@@ -714,7 +715,13 @@ static int quotaCheckReservedLock(sqlite3_file *pConn, int *pResOut){
 */
 static int quotaFileControl(sqlite3_file *pConn, int op, void *pArg){
   sqlite3_file *pSubOpen = quotaSubOpen(pConn);
-  return pSubOpen->pMethods->xFileControl(pSubOpen, op, pArg);
+  int rc = pSubOpen->pMethods->xFileControl(pSubOpen, op, pArg);
+#if defined(SQLITE_FCNTL_VFSNAME)
+  if( op==SQLITE_FCNTL_VFSNAME && rc==SQLITE_OK ){
+    *(char**)pArg = sqlite3_mprintf("quota/%z", *(char**)pArg);
+  }
+#endif
+  return rc;
 }
 
 /* Pass xSectorSize requests through to the original VFS unchanged.
@@ -1093,10 +1100,10 @@ int sqlite3_quota_fflush(quota_FILE *p, int doFsync){
     rc = fsync(fileno(p->f));
 #endif
 #if SQLITE_OS_WIN
-    rc = 0==FlushFileBuffers((HANDLE)_fileno(p->f));
+    rc = _commit(_fileno(p->f));
 #endif
   }
-  return rc;
+  return rc!=0;
 }
 
 /*
