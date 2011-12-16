@@ -1842,11 +1842,16 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     if( zMaster==0 ) return SQLITE_NOMEM;
     do {
       u32 iRandom;
-      if( retryCount++>100 ){
-        sqlite3_log(SQLITE_FULL, "cannot find unique master-journal");
-        sqlite3OsDelete(pVfs, zMaster, 0);
-        break;
+      if( retryCount ){
+        if( retryCount>100 ){
+          sqlite3_log(SQLITE_FULL, "MJ delete: %s", zMaster);
+          sqlite3OsDelete(pVfs, zMaster, 0);
+          break;
+        }else if( retryCount==1 ){
+          sqlite3_log(SQLITE_FULL, "MJ collide: %s", zMaster);
+        }
       }
+      retryCount++;
       sqlite3_randomness(sizeof(iRandom), &iRandom);
       sqlite3_snprintf(13, &zMaster[nMainFile], "-mj%06X9%02X",
                                (iRandom>>8)&0xffffff, iRandom&0xff);
