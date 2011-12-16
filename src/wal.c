@@ -418,11 +418,13 @@ struct Wal {
   volatile u32 **apWiData;   /* Pointer to wal-index content in memory */
   u32 szPage;                /* Database page size */
   i16 readLock;              /* Which read lock is being held.  -1 for none */
+  u8 syncFlags;              /* Flags to use to sync header writes */
   u8 exclusiveMode;          /* Non-zero if connection is in exclusive mode */
   u8 writeLock;              /* True if in a write transaction */
   u8 ckptLock;               /* True if holding a checkpoint lock */
   u8 readOnly;               /* WAL_RDWR, WAL_RDONLY, or WAL_SHM_RDONLY */
   u8 truncateOnCommit;       /* True to truncate WAL file on commit */
+  u8 noSyncHeader;           /* Avoid WAL header fsyncs if true */
   WalIndexHdr hdr;           /* Wal-index header for current transaction */
   const char *zWalName;      /* Name of WAL file */
   u32 nCkpt;                 /* Checkpoint sequence counter in the wal-header */
@@ -1297,6 +1299,8 @@ int sqlite3WalOpen(
     sqlite3OsClose(pRet->pWalFd);
     sqlite3_free(pRet);
   }else{
+    int iDC = sqlite3OsDeviceCharacteristics(pRet->pWalFd);
+    if( iDC & SQLITE_IOCAP_SEQUENTIAL ){ pRet->noSyncHeader = 1; }
     *ppWal = pRet;
     WALTRACE(("WAL%d: opened\n", pRet));
   }
@@ -2633,7 +2637,10 @@ static int walWriteToLog(
   sqlite3_int64 iOffset      /* Start writing at this offset */
 ){
   int rc;
-  if( iOffset>=pWal->szFirstBlock || iOffset+iAmt<pWal->szFirstBlock ){
+  if( iOffset>=pWal->szFirstBlock
+   || iOffset+iAmt<pWal->szFirstBlock
+   || pWal->syncFlags==0
+  ){
     /* The common and fast case.  Just write the data. */
     rc = sqlite3OsWrite(pWal->pWalFd, pContent, iAmt, iOffset);
   }else{
@@ -2643,7 +2650,8 @@ static int walWriteToLog(
     assert( iFirstAmt>0 && iFirstAmt<iAmt );
     rc = sqlite3OsWrite(pWal->pWalFd, pContent, iFirstAmt, iOffset);
     if( rc ) return rc;
-    rc = sqlite3OsSync(pWal->pWalFd, SQLITE_SYNC_NORMAL);
+    assert( pWal->syncFlags & (SQLITE_SYNC_NORMAL|SQLITE_SYNC_FULL) );
+    rc = sqlite3OsSync(pWal->pWalFd, pWal->syncFlags);
     if( rc ) return rc;
     pContent = (void*)(iFirstAmt + (char*)pContent);
     rc = sqlite3OsWrite(pWal->pWalFd, pContent,
@@ -2721,9 +2729,15 @@ int sqlite3WalFrames(
   }
   assert( (int)pWal->szPage==szPage );
 
-  /* The size of the block containing the WAL header */
-  pWal->szFirstBlock = sqlite3OsSectorSize(pWal->pWalFd);
-  if( szPage>pWal->szFirstBlock ) pWal->szFirstBlock = szPage;
+  /* Setup information needed to do the WAL header sync */
+  if( pWal->noSyncHeader ){
+    assert( pWal->szFirstBlock==0 );
+    assert( pWal->syncFlags==0 );
+  }else{
+    pWal->szFirstBlock = sqlite3OsSectorSize(pWal->pWalFd);
+    if( szPage>pWal->szFirstBlock ) pWal->szFirstBlock = szPage;
+    pWal->syncFlags = sync_flags & SQLITE_SYNC_MASK;
+  }
 
   /* Write the log file. */
   for(p=pList; p; p=p->pDirty){
@@ -2756,11 +2770,10 @@ int sqlite3WalFrames(
   }
 
   /* Sync the log file if the 'isSync' flag was specified. */
-  if( sync_flags ){
+  if( isCommit && (sync_flags & WAL_SYNC_TRANSACTIONS)!=0 ){
     i64 iSegment = sqlite3OsSectorSize(pWal->pWalFd);
     i64 iOffset = walFrameOffset(iFrame+1, szPage);
 
-    assert( isCommit );
     assert( iSegment>0 );
 
     iSegment = (((iOffset+iSegment-1)/iSegment) * iSegment);
@@ -2786,7 +2799,7 @@ int sqlite3WalFrames(
       iOffset += szPage;
     }
 
-    rc = sqlite3OsSync(pWal->pWalFd, sync_flags);
+    rc = sqlite3OsSync(pWal->pWalFd, sync_flags & SQLITE_SYNC_MASK);
   }
 
   if( isCommit && pWal->truncateOnCommit && pWal->mxWalSize>=0 ){

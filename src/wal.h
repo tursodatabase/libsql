@@ -87,6 +87,12 @@ int sqlite3WalSavepointUndo(Wal *pWal, u32 *aWalData);
 /* Write a frame or frames to the log. */
 int sqlite3WalFrames(Wal *pWal, int, PgHdr *, Pgno, int, int);
 
+/* Additional values that can be added to the sync_flags argument of
+** sqlite3WalFrames():
+*/
+#define WAL_SYNC_TRANSACTIONS  0x20   /* Sync at the end of each transaction */
+#define SQLITE_SYNC_MASK       0x13   /* Mask off the SQLITE_SYNC_* values */
+
 /* Copy pages from the log to the database file */ 
 int sqlite3WalCheckpoint(
   Wal *pWal,                      /* Write-ahead log connection */
