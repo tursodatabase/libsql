@@ -90,5 +90,37 @@ do_test walpersist-2.2 {
   db close
   concat [file exists test.db-wal] [file size test.db-wal]
 } {1 0}
+do_test walpersist-2.3 {
+  sqlite3 db test.db
+  execsql { PRAGMA integrity_check }
+} {ok}
+
+do_test 3.1 {
+  catch {db close}
+  forcedelete test.db test.db-shm test.db-wal
+  sqlite3 db test.db
+  execsql {
+    PRAGMA page_size = 1024;
+    PRAGMA journal_mode = WAL;
+    PRAGMA wal_autocheckpoint=128;
+    PRAGMA journal_size_limit=16384;
+    CREATE TABLE t1(a, b, PRIMARY KEY(a, b));
+  }
+} {wal 128 16384}
+do_test 3.2 {
+  for {set i 0} {$i<200} {incr i} {
+    execsql { INSERT INTO t1 VALUES(randomblob(500), randomblob(500)) }
+  }
+  file_control_persist_wal db 1
+  db close
+} {}
+do_test walpersist-3.3 { 
+  file size test.db-wal 
+} {0}
+do_test walpersist-3.4 { 
+  sqlite3 db test.db
+  execsql { PRAGMA integrity_check }
+} {ok}
+ 
 
 finish_test

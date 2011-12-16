@@ -1,5 +1,5 @@
-C Merge\sthe\sfix\sfor\s[a1fa75cbdd02]\sfrom\sthe\sexperimental\sbranch.\s\sAlso\nfix\sthe\spersistent-wal\smode\sfeature\sof\struncating\sthe\sWAL\son\sclose\sso\sthat\nit\salways\struncates\sthe\sWAL\sto\szero\sbytes.
-D 2011-12-16T15:38:52.854
+C Add\scode\sfor\sa\stest\sthat\swas\sfailing\sbefore\sthe\spersistent-wal\srelated\schanges\sof\s[9ccc4a1be].
+D 2011-12-16T17:01:04.486
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -919,7 +919,7 @@ F test/walfault.test efb0d5724893133e71b8d9d90abdb781845a6bb0
 F test/walhook.test ed00a40ba7255da22d6b66433ab61fab16a63483
 F test/walmode.test 4022fe03ae6e830583672caa101f046438a0473c
 F test/walnoshm.test 84ca10c544632a756467336b7c3b864d493ee496
-F test/walpersist.test 4d308b7f16470e85cb389636e59c455fe6b3a61a
+F test/walpersist.test 8c6b7e3ec1ba91b5e4dc4e0921d6d3f87cd356a6
 F test/walro.test e6bb27762c9f22601cbb8bff6e0acfd124e74b63
 F test/walshared.test 6dda2293880c300baf5d791c307f653094585761
 F test/walslow.test e7be6d9888f83aa5d3d3c7c08aa9b5c28b93609a
@@ -984,7 +984,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P b1005ef46cc2b46dd8e448ae1a9a9508bd5666ab 6492af76ea6585a1b377d69751af930c0ccfe688
-R 5e90bbe7156facb03e2de52b2217bc8c
-U drh
-Z 290df3a9d2eb83a09d72442af4b2f315
+P 09ccc4a1be7ba81890f10aac6623dd90dab4f990
+R 28af0dbcab33b710b481512f3ea16256
+U dan
+Z ddd1a9a132526961a13184bc513a99bd
