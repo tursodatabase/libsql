@@ -1,5 +1,5 @@
-C Add\sstdio\ssupport\sto\sthe\squota\sVFS.
-D 2011-12-15T17:44:33.259
+C Merge\sthe\snx-devkit\schanges\sinto\strunk.
+D 2011-12-16T13:42:03.408
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -214,7 +214,7 @@ F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c 03313c693cca72959dcaaf79f8d76f21c01e19ff
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c 8d416f29ad8573f32601f6056c9d2b17472e9ad5
-F src/test_multiplex.c 80677a47c75ca6a035d1ac66fb59186ffd4cdd19
+F src/test_multiplex.c 6e07b94e2fe430f7f4f0d7d67b5e58f504dea655
 F src/test_multiplex.h e99c571bc4968b7a9363b661481f3934bfead61d
 F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
@@ -238,13 +238,13 @@ F src/tokenize.c c819d9f72168a035d545a5bdafe9b085b20df705
 F src/trigger.c ee7e178fb9188f44b532cebd449a7c1df90fb684
 F src/update.c d3076782c887c10e882996550345da9c4c9f9dea
 F src/utf.c 890c67dcfcc7a74623c95baac7535aadfe265e84
-F src/util.c 01238e2b0f24a14779181dbf991fe02620a80e31
+F src/util.c 343508d359df65685b62e63964a40e7af4cfbe05
 F src/vacuum.c 0c0ba2242355c6048d65e2b333abe0f7c06348fa
 F src/vdbe.c 029add0c5197a61db588824a58570547330b9d8f
 F src/vdbe.h 18f581cac1f4339ec3299f3e0cc6e11aec654cdb
 F src/vdbeInt.h 48c158b2fceca9682d1577e61c62da3c58cf0748
 F src/vdbeapi.c 86189ebba2c49791d75eaa12929f3ce6527596bd
-F src/vdbeaux.c 61a3cc2b3a713aa244598a13035471cc30b307e1
+F src/vdbeaux.c 4a96cddec7c8cc33f98da703c1baf2a654b50cab
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c 2fc78b3e0fabcc1eaa23cd79dd2e30e6dcfe1e56
 F src/vdbesort.c 468d43c057063e54da4f1988b38b4f46d60e7790
@@ -983,7 +983,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P da118e02c0576ce16f7a26663f59413316223d55 e85cfe9a17a2943ee0cf7915451ff6cc05908030
-R 4fb854e64d34a9b880548a23455e8f4d
+P 322bd15f97143d39b3a88d5f6cf7afb454e0666e bb40338887c912be70cb6fe3b760d87c14bb88a5
+R a70f90ef372516f64947505d1ba22869
 U drh
-Z 1f8384d1da732a66b49bdc6038214de7
+Z a2e5ef34107012b45c32946167d7851d

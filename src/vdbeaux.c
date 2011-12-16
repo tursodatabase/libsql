@@ -1833,16 +1833,26 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     sqlite3_file *pMaster = 0;
     i64 offset = 0;
     int res;
+    int retryCount = 0;
+    int nMainFile;
 
     /* Select a master journal file name */
+    nMainFile = sqlite3Strlen30(zMainFile);
+    zMaster = sqlite3MPrintf(db, "%s-mjXXXXXX9XX", zMainFile);
+    if( zMaster==0 ) return SQLITE_NOMEM;
     do {
       u32 iRandom;
-      sqlite3DbFree(db, zMaster);
-      sqlite3_randomness(sizeof(iRandom), &iRandom);
-      zMaster = sqlite3MPrintf(db, "%s-mj%08X", zMainFile, iRandom&0x7fffffff);
-      if( !zMaster ){
-        return SQLITE_NOMEM;
+      if( retryCount++>100 ){
+        sqlite3_log(SQLITE_FULL, "cannot find unique master-journal");
+        sqlite3OsDelete(pVfs, zMaster, 0);
+        break;
       }
+      sqlite3_randomness(sizeof(iRandom), &iRandom);
+      sqlite3_snprintf(13, &zMaster[nMainFile], "-mj%06X9%02X",
+                               (iRandom>>8)&0xffffff, iRandom&0xff);
+      /* The antipenultimate character of the master journal name must
+      ** be "9" to avoid name collisions when using 8+3 filenames. */
+      assert( zMaster[sqlite3Strlen30(zMaster)-3]=='9' );
       sqlite3FileSuffix3(zMainFile, zMaster);
       rc = sqlite3OsAccess(pVfs, zMaster, SQLITE_ACCESS_EXISTS, &res);
     }while( rc==SQLITE_OK && res );
