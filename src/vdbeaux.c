@@ -1834,6 +1834,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     do {
       u32 iRandom;
       if( retryCount++>100 ){
+        sqlite3_log(SQLITE_FULL, "cannot find unique master-journal");
         sqlite3OsDelete(pVfs, zMaster, 0);
         break;
       }

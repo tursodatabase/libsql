@@ -1,5 +1,5 @@
-C A\sbetter\ssolution\sto\sbeing\sunable\sto\sfind\sa\sunique\smaster-journal\sfilename:\njust\sdelete\san\sexisting\smaster-journal\sand\sreuse\sit.
-D 2011-12-16T01:21:31.882
+C Call\ssqlite3_log()\swith\san\sappropriate\smessage\sif\sunable\sto\sfind\sa\sunique\nmaster-journal\sfilename.
+D 2011-12-16T01:30:15.388
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -243,7 +243,7 @@ F src/vdbe.c a7ab9993ec5a4d9479dc99671faec061fbf9b889
 F src/vdbe.h f0725ee997db869ecae5bb70a71612aabeca7755
 F src/vdbeInt.h 9498fc98a2c9e349a4ef13455ff5a3e898f40176
 F src/vdbeapi.c 4dbba7f94f127f6ea8d2d0505ee1f98e5ffbf546
-F src/vdbeaux.c 7bae4d94d7e41e8005824a6d1da54b73d47f52b1
+F src/vdbeaux.c 52ebf2a62d6b66ded536d0a2745f2236771097c7
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c 2fc78b3e0fabcc1eaa23cd79dd2e30e6dcfe1e56
 F src/vdbesort.c 468d43c057063e54da4f1988b38b4f46d60e7790
@@ -978,7 +978,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 34a0483605d36e6cf03065ed0df33fb1f7c8a272
-R dac1ae186d64bf5089bb1df4a91a9793
+P 2685c2b949061f18bf6a4940eac8c8148873abb6
+R 45a748a7c5e87682cd34056f04633da7
 U drh
-Z cdecba57f424e5a33e7e2e3955b5bd95
+Z 8c7f37ab067ed94fde60690f325712e2
