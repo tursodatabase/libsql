@@ -1169,6 +1169,7 @@ int sqlite3AbsInt32(int x){
 **     test.db-journal    =>   test.nal
 **     test.db-wal        =>   test.wal
 **     test.db-shm        =>   test.shm
+**     test.db-mj7f3319fa =>   test.9fa
 */
 void sqlite3FileSuffix3(const char *zBaseFilename, char *z){
 #if SQLITE_ENABLE_8_3_NAMES<2
