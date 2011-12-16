@@ -414,6 +414,7 @@ struct Wal {
   u32 iCallback;             /* Value to pass to log callback (or 0) */
   i64 mxWalSize;             /* Truncate WAL to this size upon reset */
   int nWiData;               /* Size of array apWiData */
+  int szFirstBlock;          /* Size of first block written to WAL file */
   volatile u32 **apWiData;   /* Pointer to wal-index content in memory */
   u32 szPage;                /* Database page size */
   i16 readLock;              /* Which read lock is being held.  -1 for none */
@@ -2617,6 +2618,40 @@ static int walRestartLog(Wal *pWal){
   return rc;
 }
 
+/*
+** Write iAmt bytes of content into the WAL file beginning at iOffset.
+**
+** When crossing the boundary between the first and second sectors of the
+** file, first write all of the first sector content, then fsync(), then
+** continue writing content for the second sector.  This ensures that
+** the WAL header is overwritten before the first commit mark.
+*/
+static int walWriteToLog(
+  Wal *pWal,                 /* WAL to write to */
+  void *pContent,            /* Content to be written */
+  int iAmt,                  /* Number of bytes to write */
+  sqlite3_int64 iOffset      /* Start writing at this offset */
+){
+  int rc;
+  if( iOffset>=pWal->szFirstBlock || iOffset+iAmt<pWal->szFirstBlock ){
+    /* The common and fast case.  Just write the data. */
+    rc = sqlite3OsWrite(pWal->pWalFd, pContent, iAmt, iOffset);
+  }else{
+    /* If this write will cross the first sector boundary, it has to
+    ** be split it two with a sync in between. */
+    int iFirstAmt = pWal->szFirstBlock - iOffset;
+    assert( iFirstAmt>0 && iFirstAmt<iAmt );
+    rc = sqlite3OsWrite(pWal->pWalFd, pContent, iFirstAmt, iOffset);
+    if( rc ) return rc;
+    rc = sqlite3OsSync(pWal->pWalFd, SQLITE_SYNC_NORMAL);
+    if( rc ) return rc;
+    pContent = (void*)(iFirstAmt + (char*)pContent);
+    rc = sqlite3OsWrite(pWal->pWalFd, pContent,
+                        iAmt-iFirstAmt, iOffset+iFirstAmt);
+  }
+  return rc;
+}
+
 /* 
 ** Write a set of frames to the log. The caller must hold the write-lock
 ** on the log file (obtained using sqlite3WalBeginWriteTransaction()).
@@ -2686,6 +2721,10 @@ int sqlite3WalFrames(
   }
   assert( (int)pWal->szPage==szPage );
 
+  /* The size of the block containing the WAL header */
+  pWal->szFirstBlock = sqlite3OsSectorSize(pWal->pWalFd);
+  if( szPage>pWal->szFirstBlock ) pWal->szFirstBlock = szPage;
+
   /* Write the log file. */
   for(p=pList; p; p=p->pDirty){
     u32 nDbsize;                  /* Db-size field for frame header */
@@ -2703,13 +2742,13 @@ int sqlite3WalFrames(
     pData = p->pData;
 #endif
     walEncodeFrame(pWal, p->pgno, nDbsize, pData, aFrame);
-    rc = sqlite3OsWrite(pWal->pWalFd, aFrame, sizeof(aFrame), iOffset);
+    rc = walWriteToLog(pWal, aFrame, sizeof(aFrame), iOffset);
     if( rc!=SQLITE_OK ){
       return rc;
     }
 
     /* Write the page data */
-    rc = sqlite3OsWrite(pWal->pWalFd, pData, szPage, iOffset+sizeof(aFrame));
+    rc = walWriteToLog(pWal, pData, szPage, iOffset+sizeof(aFrame));
     if( rc!=SQLITE_OK ){
       return rc;
     }
@@ -2734,12 +2773,12 @@ int sqlite3WalFrames(
 #endif
       walEncodeFrame(pWal, pLast->pgno, nTruncate, pData, aFrame);
       /* testcase( IS_BIG_INT(iOffset) ); // requires a 4GiB WAL */
-      rc = sqlite3OsWrite(pWal->pWalFd, aFrame, sizeof(aFrame), iOffset);
+      rc = walWriteToLog(pWal, aFrame, sizeof(aFrame), iOffset);
       if( rc!=SQLITE_OK ){
         return rc;
       }
       iOffset += WAL_FRAME_HDRSIZE;
-      rc = sqlite3OsWrite(pWal->pWalFd, pData, szPage, iOffset); 
+      rc = walWriteToLog(pWal, pData, szPage, iOffset);
       if( rc!=SQLITE_OK ){
         return rc;
       }
