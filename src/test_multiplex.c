@@ -305,7 +305,7 @@ static sqlite3_file *multiplexSubOpen(
 
   *rc = multiplexSubFilename(pGroup, iChunk);
   if( (*rc)==SQLITE_OK && (pSubOpen = pGroup->aReal[iChunk].p)==0 ){
-    int flags, rc2, bExists;
+    int flags, bExists;
     if( iChunk==0 ) createFlag = (pGroup->flags & SQLITE_OPEN_CREATE)!=0;
     flags = pGroup->flags;
     if( createFlag ){
@@ -324,9 +324,9 @@ static sqlite3_file *multiplexSubOpen(
       return 0;
     }
     pGroup->aReal[iChunk].p = pSubOpen;
-    rc2 = pOrigVfs->xOpen(pOrigVfs, pGroup->aReal[iChunk].z, pSubOpen,
+    *rc = pOrigVfs->xOpen(pOrigVfs, pGroup->aReal[iChunk].z, pSubOpen,
                           flags, pOutFlags);
-    if( rc2!=SQLITE_OK ){
+    if( (*rc)!=SQLITE_OK ){
       sqlite3_free(pSubOpen);
       pGroup->aReal[iChunk].p = 0;
       return 0;
