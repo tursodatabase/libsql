@@ -421,6 +421,7 @@ struct Wal {
   u8 writeLock;              /* True if in a write transaction */
   u8 ckptLock;               /* True if holding a checkpoint lock */
   u8 readOnly;               /* WAL_RDWR, WAL_RDONLY, or WAL_SHM_RDONLY */
+  u8 truncateOnCommit;       /* True to truncate WAL file on commit */
   WalIndexHdr hdr;           /* Wal-index header for current transaction */
   const char *zWalName;      /* Name of WAL file */
   u32 nCkpt;                 /* Checkpoint sequence counter in the wal-header */
@@ -1782,22 +1783,20 @@ static int walCheckpoint(
 }
 
 /*
-** Attempt to limit the WAL size to the size limit defined by
-** PRAGMA journal_size_limit.
+** If the WAL file is currently larger than nMax bytes in size, truncate
+** it to exactly nMax bytes. If an error occurs while doing so, ignore it.
 */
-static void walLimitSize(Wal *pWal){
-  if( pWal->mxWalSize>=0 ){
-    i64 sz;
-    int rx;
-    sqlite3BeginBenignMalloc();
-    rx = sqlite3OsFileSize(pWal->pWalFd, &sz);
-    if( rx==SQLITE_OK && (sz > pWal->mxWalSize) ){
-      rx = sqlite3OsTruncate(pWal->pWalFd, pWal->mxWalSize);
-    }
-    sqlite3EndBenignMalloc();
-    if( rx ){
-      sqlite3_log(rx, "cannot limit WAL size: %s", pWal->zWalName);
-    }
+static void walLimitSize(Wal *pWal, i64 nMax){
+  i64 sz;
+  int rx;
+  sqlite3BeginBenignMalloc();
+  rx = sqlite3OsFileSize(pWal->pWalFd, &sz);
+  if( rx==SQLITE_OK && (sz > nMax ) ){
+    rx = sqlite3OsTruncate(pWal->pWalFd, nMax);
+  }
+  sqlite3EndBenignMalloc();
+  if( rx ){
+    sqlite3_log(rx, "cannot limit WAL size: %s", pWal->zWalName);
   }
 }
 
@@ -1824,18 +1823,29 @@ int sqlite3WalClose(
     */
     rc = sqlite3OsLock(pWal->pDbFd, SQLITE_LOCK_EXCLUSIVE);
     if( rc==SQLITE_OK ){
-      int bPersistWal = -1;
       if( pWal->exclusiveMode==WAL_NORMAL_MODE ){
         pWal->exclusiveMode = WAL_EXCLUSIVE_MODE;
       }
       rc = sqlite3WalCheckpoint(
           pWal, SQLITE_CHECKPOINT_PASSIVE, 0, 0, sync_flags, nBuf, zBuf, 0, 0
       );
-      sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_PERSIST_WAL, &bPersistWal);
-      if( rc==SQLITE_OK && bPersistWal!=1 ){
-        isDelete = 1;
-      }else{
-        walLimitSize(pWal);
+      if( rc==SQLITE_OK ){
+        int bPersist = -1;
+        sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_PERSIST_WAL, &bPersist);
+        if( bPersist!=1 ){
+          /* Try to delete the WAL file if the checkpoint completed and
+          ** fsyned (rc==SQLITE_OK) and if we are not in persistent-wal
+          ** mode (!bPersist) */
+          isDelete = 1;
+        }else if( pWal->mxWalSize>=0 ){
+          /* Try to truncate the WAL file to zero bytes if the checkpoint
+          ** completed and fsynced (rc==SQLITE_OK) and we are in persistent
+          ** WAL mode (bPersist) and if the PRAGMA journal_size_limit is a
+          ** non-negative value (pWal->mxWalSize>=0).  Note that we truncate
+          ** to zero bytes as truncating to the journal_size_limit might
+          ** leave a corrupt WAL file on disk. */
+          walLimitSize(pWal, 0);
+        }
       }
     }
 
@@ -2444,6 +2454,7 @@ int sqlite3WalEndWriteTransaction(Wal *pWal){
   if( pWal->writeLock ){
     walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
     pWal->writeLock = 0;
+    pWal->truncateOnCommit = 0;
   }
   return SQLITE_OK;
 }
@@ -2578,7 +2589,6 @@ static int walRestartLog(Wal *pWal){
         int i;                    /* Loop counter */
         u32 *aSalt = pWal->hdr.aSalt;       /* Big-endian salt values */
 
-        walLimitSize(pWal);
         pWal->nCkpt++;
         pWal->hdr.mxFrame = 0;
         sqlite3Put4byte((u8*)&aSalt[0], 1 + sqlite3Get4byte((u8*)&aSalt[0]));
@@ -2666,6 +2676,7 @@ int sqlite3WalFrames(
     pWal->hdr.bigEndCksum = SQLITE_BIGENDIAN;
     pWal->hdr.aFrameCksum[0] = aCksum[0];
     pWal->hdr.aFrameCksum[1] = aCksum[1];
+    pWal->truncateOnCommit = 1;
 
     rc = sqlite3OsWrite(pWal->pWalFd, aWalHdr, sizeof(aWalHdr), 0);
     WALTRACE(("WAL%p: wal-header write %s\n", pWal, rc ? "failed" : "ok"));
@@ -2737,6 +2748,15 @@ int sqlite3WalFrames(
     }
 
     rc = sqlite3OsSync(pWal->pWalFd, sync_flags);
+  }
+
+  if( isCommit && pWal->truncateOnCommit && pWal->mxWalSize>=0 ){
+    i64 sz = pWal->mxWalSize;
+    if( walFrameOffset(iFrame+nLast+1, szPage)>pWal->mxWalSize ){
+      sz = walFrameOffset(iFrame+nLast+1, szPage);
+    }
+    walLimitSize(pWal, sz);
+    pWal->truncateOnCommit = 0;
   }
 
   /* Append data to the wal-index. It is not necessary to lock the 
