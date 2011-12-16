@@ -306,10 +306,12 @@ static sqlite3_file *multiplexSubOpen(
   *rc = multiplexSubFilename(pGroup, iChunk);
   if( (*rc)==SQLITE_OK && (pSubOpen = pGroup->aReal[iChunk].p)==0 ){
     int flags, bExists;
-    if( iChunk==0 ) createFlag = (pGroup->flags & SQLITE_OPEN_CREATE)!=0;
+    createFlag = (pGroup->flags & SQLITE_OPEN_CREATE)!=0;
     flags = pGroup->flags;
     if( createFlag ){
       flags |= SQLITE_OPEN_CREATE;
+    }else if( iChunk==0 ){
+      /* Fall through */
     }else if( pGroup->aReal[iChunk].z==0 ){
       return 0;
     }else{
@@ -320,7 +322,7 @@ static sqlite3_file *multiplexSubOpen(
     }
     pSubOpen = sqlite3_malloc( pOrigVfs->szOsFile );
     if( pSubOpen==0 ){
-      *rc = SQLITE_NOMEM;
+      *rc = SQLITE_IOERR_NOMEM;
       return 0;
     }
     pGroup->aReal[iChunk].p = pSubOpen;
