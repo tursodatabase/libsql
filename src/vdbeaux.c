@@ -1825,25 +1825,24 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     i64 offset = 0;
     int res;
     int retryCount = 0;
+    int nMainFile;
 
     /* Select a master journal file name */
+    nMainFile = sqlite3Strlen30(zMainFile);
+    zMaster = sqlite3MPrintf(db, "%s-mjXXXXXX9XX", zMainFile);
+    if( zMaster==0 ) return SQLITE_NOMEM;
     do {
       u32 iRandom;
       if( retryCount++>100 ){
-        sqlite3_log(SQLITE_FULL, "cannot create a master journal filename");
-        rc = SQLITE_FULL;
+        sqlite3OsDelete(pVfs, zMaster, 0);
         break;
       }
-      sqlite3DbFree(db, zMaster);
       sqlite3_randomness(sizeof(iRandom), &iRandom);
-      zMaster = sqlite3MPrintf(db, "%s-mj%06X9%02X", zMainFile,
+      sqlite3_snprintf(13, &zMaster[nMainFile], "-mj%06X9%02X",
                                (iRandom>>8)&0xffffff, iRandom&0xff);
-      if( !zMaster ){
-        return SQLITE_NOMEM;
-      }
       /* The antipenultimate character of the master journal name must
       ** be "9" to avoid name collisions when using 8+3 filenames. */
-      assert( zMaster[strlen(zMaster)-3]=='9' );
+      assert( zMaster[sqlite3Strlen30(zMaster)-3]=='9' );
       sqlite3FileSuffix3(zMainFile, zMaster);
       rc = sqlite3OsAccess(pVfs, zMaster, SQLITE_ACCESS_EXISTS, &res);
     }while( rc==SQLITE_OK && res );
