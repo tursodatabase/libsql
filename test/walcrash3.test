@@ -70,6 +70,60 @@ for {set i 2} {$i<1000} {incr i} {
     db2 close
   }
 }
+catch { db close }
+tvfs delete
+
+#--------------------------------------------------------------------------
+#
+catch { db close }
+forcedelete test.db
+
+do_test 2.1 {
+  sqlite3 db test.db
+  execsql {
+    PRAGMA page_size = 512;
+    PRAGMA journal_mode = WAL;
+    PRAGMA wal_autocheckpoint = 128;
+    CREATE TABLE t1(a PRIMARY KEY, b);
+    INSERT INTO t1 VALUES(randomblob(25), randomblob(200));
+  }
+
+  for {set i 0} {$i < 1500} {incr i} {
+    execsql { INSERT INTO t1 VALUES(randomblob(25), randomblob(200)) }
+  }
+
+  db_save
+  db close
+} {}
+
+set nInitialErr [set_test_counter errors]
+for {set i 2} {$i<10000 && [set_test_counter errors]==$nInitialErr} {incr i} {
+
+  do_test 2.$i.1 {
+    catch { db close } 
+    db_restore
+    crashsql -delay 2 -file test.db-wal -seed $i {
+      SELECT * FROM sqlite_master;
+      PRAGMA synchronous = full;
+      PRAGMA wal_checkpoint;
+      BEGIN;
+        INSERT INTO t1 VALUES(randomblob(26), randomblob(200));
+        INSERT INTO t1 VALUES(randomblob(26), randomblob(200));
+        INSERT INTO t1 VALUES(randomblob(26), randomblob(200));
+        INSERT INTO t1 VALUES(randomblob(26), randomblob(200));
+        INSERT INTO t1 VALUES(randomblob(26), randomblob(200));
+        INSERT INTO t1 VALUES(randomblob(26), randomblob(200));
+        INSERT INTO t1 VALUES(randomblob(26), randomblob(200));
+        INSERT INTO t1 VALUES(randomblob(26), randomblob(200));
+      COMMIT;
+    }
+  } {1 {child process exited abnormally}}
+
+  do_test 2.$i.2 {
+    sqlite3 db test.db
+    execsql { PRAGMA integrity_check } 
+  } {ok}
+}
 
 finish_test
 
