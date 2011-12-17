@@ -716,6 +716,7 @@ static int processDevSymArgs(
     { "atomic64k",   SQLITE_IOCAP_ATOMIC64K   },
     { "sequential",  SQLITE_IOCAP_SEQUENTIAL  },
     { "safe_append", SQLITE_IOCAP_SAFE_APPEND },
+    { "zero_damage", SQLITE_IOCAP_ZERO_DAMAGE },
     { 0, 0 }
   };
 

@@ -425,6 +425,7 @@ struct Wal {
   u8 readOnly;               /* WAL_RDWR, WAL_RDONLY, or WAL_SHM_RDONLY */
   u8 truncateOnCommit;       /* True to truncate WAL file on commit */
   u8 noSyncHeader;           /* Avoid WAL header fsyncs if true */
+  u8 noPadding;              /* No need to pad transactions to sector size */
   WalIndexHdr hdr;           /* Wal-index header for current transaction */
   const char *zWalName;      /* Name of WAL file */
   u32 nCkpt;                 /* Checkpoint sequence counter in the wal-header */
@@ -1310,6 +1311,7 @@ int sqlite3WalOpen(
   }else{
     int iDC = sqlite3OsDeviceCharacteristics(pRet->pWalFd);
     if( iDC & SQLITE_IOCAP_SEQUENTIAL ){ pRet->noSyncHeader = 1; }
+    if( iDC & SQLITE_IOCAP_ZERO_DAMAGE ){ pRet->noPadding = 1; }
     *ppWal = pRet;
     WALTRACE(("WAL%d: opened\n", pRet));
   }
@@ -2780,34 +2782,36 @@ int sqlite3WalFrames(
 
   /* Sync the log file if the 'isSync' flag was specified. */
   if( isCommit && (sync_flags & WAL_SYNC_TRANSACTIONS)!=0 ){
-    i64 iSegment = sqlite3OsSectorSize(pWal->pWalFd);
-    i64 iOffset = walFrameOffset(iFrame+1, szPage);
-
-    assert( iSegment>0 );
-
-    iSegment = (((iOffset+iSegment-1)/iSegment) * iSegment);
-    while( iOffset<iSegment ){
-      void *pData;
+    if( !pWal->noPadding ){
+      i64 iSegment = sqlite3OsSectorSize(pWal->pWalFd);
+      i64 iOffset = walFrameOffset(iFrame+1, szPage);
+  
+      assert( iSegment>0 );
+  
+      iSegment = (((iOffset+iSegment-1)/iSegment) * iSegment);
+      while( iOffset<iSegment ){
+        void *pData;
 #if defined(SQLITE_HAS_CODEC)
-      if( (pData = sqlite3PagerCodec(pLast))==0 ) return SQLITE_NOMEM;
+        if( (pData = sqlite3PagerCodec(pLast))==0 ) return SQLITE_NOMEM;
 #else
-      pData = pLast->pData;
+        pData = pLast->pData;
 #endif
-      walEncodeFrame(pWal, pLast->pgno, nTruncate, pData, aFrame);
-      /* testcase( IS_BIG_INT(iOffset) ); // requires a 4GiB WAL */
-      rc = walWriteToLog(pWal, aFrame, sizeof(aFrame), iOffset);
-      if( rc!=SQLITE_OK ){
-        return rc;
+        walEncodeFrame(pWal, pLast->pgno, nTruncate, pData, aFrame);
+        /* testcase( IS_BIG_INT(iOffset) ); // requires a 4GiB WAL */
+        rc = walWriteToLog(pWal, aFrame, sizeof(aFrame), iOffset);
+        if( rc!=SQLITE_OK ){
+          return rc;
+        }
+        iOffset += WAL_FRAME_HDRSIZE;
+        rc = walWriteToLog(pWal, pData, szPage, iOffset);
+        if( rc!=SQLITE_OK ){
+          return rc;
+        }
+        nLast++;
+        iOffset += szPage;
       }
-      iOffset += WAL_FRAME_HDRSIZE;
-      rc = walWriteToLog(pWal, pData, szPage, iOffset);
-      if( rc!=SQLITE_OK ){
-        return rc;
-      }
-      nLast++;
-      iOffset += szPage;
     }
-
+  
     rc = sqlite3OsSync(pWal->pWalFd, sync_flags & SQLITE_SYNC_MASK);
   }
 

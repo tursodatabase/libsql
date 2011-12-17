@@ -2213,7 +2213,8 @@ static int winSectorSize(sqlite3_file *id){
 */
 static int winDeviceCharacteristics(sqlite3_file *id){
   UNUSED_PARAMETER(id);
-  return SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN;
+  return SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN |
+         SQLITE_IOCAP_ZERO_DAMAGE;
 }
 
 #ifndef SQLITE_OMIT_WAL

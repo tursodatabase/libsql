@@ -1174,6 +1174,7 @@ static int testvfs_obj_cmd(
         { "sequential",            SQLITE_IOCAP_SEQUENTIAL  },
         { "safe_append",           SQLITE_IOCAP_SAFE_APPEND },
         { "undeletable_when_open", SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN },
+        { "zero_damage",           SQLITE_IOCAP_ZERO_DAMAGE },
         { 0, 0 }
       };
       Tcl_Obj *pRet;

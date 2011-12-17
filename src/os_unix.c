@@ -3609,7 +3609,7 @@ static int unixSectorSize(sqlite3_file *pFile){
 */
 static int unixDeviceCharacteristics(sqlite3_file *NotUsed){
   UNUSED_PARAMETER(NotUsed);
-  return 0;
+  return SQLITE_IOCAP_ZERO_DAMAGE;
 }
 
 #ifndef SQLITE_OMIT_WAL

@@ -2515,11 +2515,22 @@ static int pager_truncate(Pager *pPager, Pgno nPage){
 ** the value returned by the xSectorSize() method rounded up to 32 if
 ** it is less than 32, or rounded down to MAX_SECTOR_SIZE if it
 ** is greater than MAX_SECTOR_SIZE.
+**
+** If the file has the SQLITE_IOCAP_ZERO_DAMAGE property, then set the
+** effective sector size to its minimum value (512).  The purpose of
+** pPager->sectorSize is to define the "blast radius" of bytes that
+** might change if a crash occurs while writing to a single byte in
+** that range.  But with ZERO_DAMAGE, the blast radius is zero, so
+** we minimize the sector size.  For backwards compatibility of the
+** rollback journal file format, we cannot reduce the effective sector
+** size below 512.
 */
 static void setSectorSize(Pager *pPager){
   assert( isOpen(pPager->fd) || pPager->tempFile );
 
-  if( !pPager->tempFile ){
+  if( !pPager->tempFile
+   && (sqlite3OsDeviceCharacteristics(pPager->fd)&SQLITE_IOCAP_ZERO_DAMAGE)==0
+  ){
     /* Sector size doesn't matter for temporary files. Also, the file
     ** may not have been opened yet, in which case the OsSectorSize()
     ** call will segfault.

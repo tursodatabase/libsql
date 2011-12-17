@@ -504,7 +504,13 @@ int sqlite3_exec(
 ** first then the size of the file is extended, never the other
 ** way around.  The SQLITE_IOCAP_SEQUENTIAL property means that
 ** information is written to disk in the same order as calls
-** to xWrite().
+** to xWrite().  The SQLITE_IOCAP_ZERO_DAMAGE property means that
+** after reboot following a crash or power loss, the value of
+** each byte in a file is a value that was actually written
+** into that byte at some point.  In other words, a crash will
+** not introduce garbage or randomness into a file, and byte of
+** a file that are never written will not change values due to
+** writes to nearby bytes.
 */
 #define SQLITE_IOCAP_ATOMIC                 0x00000001
 #define SQLITE_IOCAP_ATOMIC512              0x00000002
@@ -518,6 +524,7 @@ int sqlite3_exec(
 #define SQLITE_IOCAP_SAFE_APPEND            0x00000200
 #define SQLITE_IOCAP_SEQUENTIAL             0x00000400
 #define SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN  0x00000800
+#define SQLITE_IOCAP_ZERO_DAMAGE            0x00001000
 
 /*
 ** CAPI3REF: File Locking Levels
