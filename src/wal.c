@@ -414,14 +414,17 @@ struct Wal {
   u32 iCallback;             /* Value to pass to log callback (or 0) */
   i64 mxWalSize;             /* Truncate WAL to this size upon reset */
   int nWiData;               /* Size of array apWiData */
+  int szFirstBlock;          /* Size of first block written to WAL file */
   volatile u32 **apWiData;   /* Pointer to wal-index content in memory */
   u32 szPage;                /* Database page size */
   i16 readLock;              /* Which read lock is being held.  -1 for none */
+  u8 syncFlags;              /* Flags to use to sync header writes */
   u8 exclusiveMode;          /* Non-zero if connection is in exclusive mode */
   u8 writeLock;              /* True if in a write transaction */
   u8 ckptLock;               /* True if holding a checkpoint lock */
   u8 readOnly;               /* WAL_RDWR, WAL_RDONLY, or WAL_SHM_RDONLY */
   u8 truncateOnCommit;       /* True to truncate WAL file on commit */
+  u8 noSyncHeader;           /* Avoid WAL header fsyncs if true */
   WalIndexHdr hdr;           /* Wal-index header for current transaction */
   const char *zWalName;      /* Name of WAL file */
   u32 nCkpt;                 /* Checkpoint sequence counter in the wal-header */
@@ -1094,6 +1097,7 @@ static int walIndexRecover(Wal *pWal){
     int szPage;                   /* Page size according to the log */
     u32 magic;                    /* Magic value read from WAL header */
     u32 version;                  /* Magic value read from WAL header */
+    int isValid;                  /* True if this frame is valid */
 
     /* Read in the WAL header. */
     rc = sqlite3OsRead(pWal->pWalFd, aBuf, WAL_HDRSIZE, 0);
@@ -1149,17 +1153,25 @@ static int walIndexRecover(Wal *pWal){
 
     /* Read all frames from the log file. */
     iFrame = 0;
+    isValid = 1;
     for(iOffset=WAL_HDRSIZE; (iOffset+szFrame)<=nSize; iOffset+=szFrame){
       u32 pgno;                   /* Database page number for frame */
       u32 nTruncate;              /* dbsize field from frame header */
-      int isValid;                /* True if this frame is valid */
 
       /* Read and decode the next log frame. */
+      iFrame++;
       rc = sqlite3OsRead(pWal->pWalFd, aFrame, szFrame, iOffset);
       if( rc!=SQLITE_OK ) break;
+      if( sqlite3Get4byte(&aFrame[8]) ==
+            1+sqlite3Get4byte((u8*)&pWal->hdr.aSalt[0]) ){
+        pWal->hdr.mxFrame = 0;
+        pWal->hdr.nPage = 0;
+        break;
+      }
+      if( !isValid ) continue;
       isValid = walDecodeFrame(pWal, &pgno, &nTruncate, aData, aFrame);
-      if( !isValid ) break;
-      rc = walIndexAppend(pWal, ++iFrame, pgno);
+      if( !isValid ) continue;
+      rc = walIndexAppend(pWal, iFrame, pgno);
       if( rc!=SQLITE_OK ) break;
 
       /* If nTruncate is non-zero, this is a commit record. */
@@ -1296,6 +1308,8 @@ int sqlite3WalOpen(
     sqlite3OsClose(pRet->pWalFd);
     sqlite3_free(pRet);
   }else{
+    int iDC = sqlite3OsDeviceCharacteristics(pRet->pWalFd);
+    if( iDC & SQLITE_IOCAP_SEQUENTIAL ){ pRet->noSyncHeader = 1; }
     *ppWal = pRet;
     WALTRACE(("WAL%d: opened\n", pRet));
   }
@@ -2617,6 +2631,44 @@ static int walRestartLog(Wal *pWal){
   return rc;
 }
 
+/*
+** Write iAmt bytes of content into the WAL file beginning at iOffset.
+**
+** When crossing the boundary between the first and second sectors of the
+** file, first write all of the first sector content, then fsync(), then
+** continue writing content for the second sector.  This ensures that
+** the WAL header is overwritten before the first commit mark.
+*/
+static int walWriteToLog(
+  Wal *pWal,                 /* WAL to write to */
+  void *pContent,            /* Content to be written */
+  int iAmt,                  /* Number of bytes to write */
+  sqlite3_int64 iOffset      /* Start writing at this offset */
+){
+  int rc;
+  if( iOffset>=pWal->szFirstBlock
+   || iOffset+iAmt<pWal->szFirstBlock
+   || pWal->syncFlags==0
+  ){
+    /* The common and fast case.  Just write the data. */
+    rc = sqlite3OsWrite(pWal->pWalFd, pContent, iAmt, iOffset);
+  }else{
+    /* If this write will cross the first sector boundary, it has to
+    ** be split it two with a sync in between. */
+    int iFirstAmt = pWal->szFirstBlock - iOffset;
+    assert( iFirstAmt>0 && iFirstAmt<iAmt );
+    rc = sqlite3OsWrite(pWal->pWalFd, pContent, iFirstAmt, iOffset);
+    if( rc ) return rc;
+    assert( pWal->syncFlags & (SQLITE_SYNC_NORMAL|SQLITE_SYNC_FULL) );
+    rc = sqlite3OsSync(pWal->pWalFd, pWal->syncFlags);
+    if( rc ) return rc;
+    pContent = (void*)(iFirstAmt + (char*)pContent);
+    rc = sqlite3OsWrite(pWal->pWalFd, pContent,
+                        iAmt-iFirstAmt, iOffset+iFirstAmt);
+  }
+  return rc;
+}
+
 /* 
 ** Write a set of frames to the log. The caller must hold the write-lock
 ** on the log file (obtained using sqlite3WalBeginWriteTransaction()).
@@ -2686,6 +2738,16 @@ int sqlite3WalFrames(
   }
   assert( (int)pWal->szPage==szPage );
 
+  /* Setup information needed to do the WAL header sync */
+  if( pWal->noSyncHeader ){
+    assert( pWal->szFirstBlock==0 );
+    assert( pWal->syncFlags==0 );
+  }else{
+    pWal->szFirstBlock = sqlite3OsSectorSize(pWal->pWalFd);
+    if( szPage>pWal->szFirstBlock ) pWal->szFirstBlock = szPage;
+    pWal->syncFlags = sync_flags & SQLITE_SYNC_MASK;
+  }
+
   /* Write the log file. */
   for(p=pList; p; p=p->pDirty){
     u32 nDbsize;                  /* Db-size field for frame header */
@@ -2703,13 +2765,13 @@ int sqlite3WalFrames(
     pData = p->pData;
 #endif
     walEncodeFrame(pWal, p->pgno, nDbsize, pData, aFrame);
-    rc = sqlite3OsWrite(pWal->pWalFd, aFrame, sizeof(aFrame), iOffset);
+    rc = walWriteToLog(pWal, aFrame, sizeof(aFrame), iOffset);
     if( rc!=SQLITE_OK ){
       return rc;
     }
 
     /* Write the page data */
-    rc = sqlite3OsWrite(pWal->pWalFd, pData, szPage, iOffset+sizeof(aFrame));
+    rc = walWriteToLog(pWal, pData, szPage, iOffset+sizeof(aFrame));
     if( rc!=SQLITE_OK ){
       return rc;
     }
@@ -2717,11 +2779,10 @@ int sqlite3WalFrames(
   }
 
   /* Sync the log file if the 'isSync' flag was specified. */
-  if( sync_flags ){
+  if( isCommit && (sync_flags & WAL_SYNC_TRANSACTIONS)!=0 ){
     i64 iSegment = sqlite3OsSectorSize(pWal->pWalFd);
     i64 iOffset = walFrameOffset(iFrame+1, szPage);
 
-    assert( isCommit );
     assert( iSegment>0 );
 
     iSegment = (((iOffset+iSegment-1)/iSegment) * iSegment);
@@ -2734,12 +2795,12 @@ int sqlite3WalFrames(
 #endif
       walEncodeFrame(pWal, pLast->pgno, nTruncate, pData, aFrame);
       /* testcase( IS_BIG_INT(iOffset) ); // requires a 4GiB WAL */
-      rc = sqlite3OsWrite(pWal->pWalFd, aFrame, sizeof(aFrame), iOffset);
+      rc = walWriteToLog(pWal, aFrame, sizeof(aFrame), iOffset);
       if( rc!=SQLITE_OK ){
         return rc;
       }
       iOffset += WAL_FRAME_HDRSIZE;
-      rc = sqlite3OsWrite(pWal->pWalFd, pData, szPage, iOffset); 
+      rc = walWriteToLog(pWal, pData, szPage, iOffset);
       if( rc!=SQLITE_OK ){
         return rc;
       }
@@ -2747,7 +2808,7 @@ int sqlite3WalFrames(
       iOffset += szPage;
     }
 
-    rc = sqlite3OsSync(pWal->pWalFd, sync_flags);
+    rc = sqlite3OsSync(pWal->pWalFd, sync_flags & SQLITE_SYNC_MASK);
   }
 
   if( isCommit && pWal->truncateOnCommit && pWal->mxWalSize>=0 ){

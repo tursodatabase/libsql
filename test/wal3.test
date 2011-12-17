@@ -217,6 +217,7 @@ foreach {tn syncmode synccount} {
   
     execsql "PRAGMA synchronous = $syncmode"
     execsql { PRAGMA journal_mode = WAL }
+    execsql { CREATE TABLE filler(a,b,c); }
 
     set ::syncs [list]
     T filter xSync
