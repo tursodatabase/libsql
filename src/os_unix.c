@@ -122,6 +122,10 @@
 #ifndef SQLITE_OMIT_WAL
 #include <sys/mman.h>
 #endif
+#ifndef MISSING_STATVFS
+#include <sys/statvfs.h>
+#endif
+
 
 #if SQLITE_ENABLE_LOCKING_STYLE
 # include <sys/ioctl.h>
@@ -217,6 +221,7 @@ struct unixFile {
   const char *zPath;                  /* Name of the file */
   unixShm *pShm;                      /* Shared memory segment information */
   int szChunk;                        /* Configured by FCNTL_CHUNK_SIZE */
+  int szSector;                       /* Sector size */
 #if SQLITE_ENABLE_LOCKING_STYLE
   int openFlags;                      /* The flags specified at open() */
 #endif
@@ -413,6 +418,14 @@ static struct unix_syscall {
 
   { "rmdir",        (sqlite3_syscall_ptr)rmdir,           0 },
 #define osRmdir     ((int(*)(const char*))aSyscall[19].pCurrent)
+
+#if defined(MISSING_STATVFS)
+  { "statvfs",      (sqlite3_syscall_ptr)0,               0 },
+#define osStatvfs   ((int(*)(const char*,void*))aSyscall[20].pCurrent)
+#else
+  { "statvfs",      (sqlite3_syscall_ptr)statvfs,         0 },
+#define osStatvfs   ((int(*)(const char*,struct statvfs*))aSyscall[20].pCurrent)
+#endif
 
 }; /* End of the overrideable system calls */
 
@@ -3572,9 +3585,23 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
 ** a database and its journal file) that the sector size will be the
 ** same for both.
 */
-static int unixSectorSize(sqlite3_file *NotUsed){
-  UNUSED_PARAMETER(NotUsed);
-  return SQLITE_DEFAULT_SECTOR_SIZE;
+static int unixSectorSize(sqlite3_file *pFile){
+  unixFile *p = (unixFile*)pFile;
+  if( p->szSector==0 ){
+#ifdef MISSING_STATVFS
+    p->szSector = SQLITE_DEFAULT_SECTOR_SIZE;
+#else
+    struct statvfs x;
+    int sz;
+    memset(&x, 0, sizeof(x));
+    osStatvfs(p->zPath, &x);
+    p->szSector = sz = (int)x.f_frsize;
+    if( sz<512 || sz>65536 || (sz&(sz-1))!=0 ){
+      p->szSector = SQLITE_DEFAULT_SECTOR_SIZE;
+    }
+  }
+#endif
+  return p->szSector;
 }
 
 /*
@@ -6777,7 +6804,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==20 );
+  assert( ArraySize(aSyscall)==21 );
 
   /* Register all VFSes defined in the aVfs[] array */
   for(i=0; i<(sizeof(aVfs)/sizeof(sqlite3_vfs)); i++){

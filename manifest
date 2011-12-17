@@ -1,5 +1,5 @@
-C Merge\sin\schanges\sthat\scause\sthe\sfirst\ssector\sof\sthe\sWAL\sfile\sto\sbe\ssynced\nwhen\sthe\sWAL\srestarts.\s\sThis\sis\sa\sfix\sfor\sthe\spower-loss\scorruption\nproblem\sdescribed\sin\sticket\s[ff5be73dee086]
-D 2011-12-17T13:45:28.989
+C Add\ssupport\sfor\sstatvfs()\sin\sos_unix.c,\sfor\sdetermining\sthe\ssector\ssize.\nThis\scauses\smany\sTCL\stest\sfailures\sunder\sLinux.
+D 2011-12-17T16:09:16.668
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/os.c 28bbdab2170dfce84d86c45456a18eab1d0f99a9
 F src/os.h 549b1a2e5e0ed1e1499f252dac126c4973e7379c
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 7dc7df10331942b139032328449a3723e051979e
+F src/os_unix.c 987407fd031dda051cd1ce483e98cdd10c876406
 F src/os_win.c 197d23ce8a0dff748e766e034bf95ff756dd3884
 F src/pager.c c7c32a1c279e0bbbde3578172985c41d4c5efc35
 F src/pager.h 5cd760857707529b403837d813d86b68938d6183
@@ -984,7 +984,10 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P d76880428013ae2c5be00d87bb3e1695af6f706f 9799241f7de952c4d1ea8bf6508b577d2b57a370
-R a66c21780a9737a3739ef721dbd80b71
+P 44ca4d123385d759c11919865525c998c2e35bdb
+R 7de59b5af451aa5e783f935f751fa23e
+T *branch * statvfs
+T *sym-statvfs *
+T -sym-trunk *
 U drh
-Z 8683a36598a7c916281a4627e543388f
+Z 2ad2e7d7ae34e5854d882a8ab2c85c44
