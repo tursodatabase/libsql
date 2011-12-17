@@ -3599,8 +3599,8 @@ static int unixSectorSize(sqlite3_file *pFile){
     if( sz<512 || sz>65536 || (sz&(sz-1))!=0 ){
       p->szSector = SQLITE_DEFAULT_SECTOR_SIZE;
     }
-  }
 #endif
+  }
   return p->szSector;
 }
 
