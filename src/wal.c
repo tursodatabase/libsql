@@ -425,7 +425,7 @@ struct Wal {
   u8 readOnly;               /* WAL_RDWR, WAL_RDONLY, or WAL_SHM_RDONLY */
   u8 truncateOnCommit;       /* True to truncate WAL file on commit */
   u8 noSyncHeader;           /* Avoid WAL header fsyncs if true */
-  u8 noPadding;              /* No need to pad transactions to sector size */
+  u8 padToSectorBoundary;    /* Pad transactions out to the next sector */
   WalIndexHdr hdr;           /* Wal-index header for current transaction */
   const char *zWalName;      /* Name of WAL file */
   u32 nCkpt;                 /* Checkpoint sequence counter in the wal-header */
@@ -1295,6 +1295,7 @@ int sqlite3WalOpen(
   pRet->readLock = -1;
   pRet->mxWalSize = mxWalSize;
   pRet->zWalName = zWalName;
+  pRet->padToSectorBoundary = 1;
   pRet->exclusiveMode = (bNoShm ? WAL_HEAPMEMORY_MODE: WAL_NORMAL_MODE);
 
   /* Open file handle on the write-ahead log file. */
@@ -1311,7 +1312,7 @@ int sqlite3WalOpen(
   }else{
     int iDC = sqlite3OsDeviceCharacteristics(pRet->pWalFd);
     if( iDC & SQLITE_IOCAP_SEQUENTIAL ){ pRet->noSyncHeader = 1; }
-    if( iDC & SQLITE_IOCAP_ZERO_DAMAGE ){ pRet->noPadding = 1; }
+    if( iDC & SQLITE_IOCAP_ZERO_DAMAGE ){ pRet->padToSectorBoundary = 0; }
     *ppWal = pRet;
     WALTRACE(("WAL%d: opened\n", pRet));
   }
@@ -2782,7 +2783,7 @@ int sqlite3WalFrames(
 
   /* Sync the log file if the 'isSync' flag was specified. */
   if( isCommit && (sync_flags & WAL_SYNC_TRANSACTIONS)!=0 ){
-    if( !pWal->noPadding ){
+    if( pWal->padToSectorBoundary ){
       i64 iSegment = sqlite3OsSectorSize(pWal->pWalFd);
       i64 iOffset = walFrameOffset(iFrame+1, szPage);
   

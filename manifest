@@ -1,5 +1,5 @@
-C Add\sSQLITE_IOCAP_ZERO_DAMAGE\sand\senable\sit\sfor\sboth\sunix\sand\swindows.\s\sUse\nthis\sdevice\scharacteristic\sto\sreduce\sthe\srequired\swork\sin\sjournaling.\nA\sside\seffect\sis\sthat\sthis\schanges\sthe\sdefault\spage\sexists\sback\sto\s1024\neven\swith\sthe\suse\sof\sstatvfs().
-D 2011-12-17T19:49:02.976
+C For\simproved\sclarity\sof\spresentation,\s\nrefactor\ssome\sof\sthe\scode\sassociated\swith\sZERO_DAMAGE\sand\ssector-size.
+D 2011-12-17T20:02:11.301
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c e2b96f85eb91c962765005892014b014db3e6478
 F src/os_win.c 3cf34661f5ef47be81bb7be541582d6e14852159
-F src/pager.c 2fb503c73714eafb8bf82283c5c08e895124277b
+F src/pager.c c9bd2f7183edba480bea1dd49361a02d0c3d8f43
 F src/pager.h 5cd760857707529b403837d813d86b68938d6183
 F src/parse.y fabb2e7047417d840e6fdb3ef0988a86849a08ba
 F src/pcache.c 1fdd77978c1525d1ca4b9ef48eb80abca710cb4c
@@ -250,7 +250,7 @@ F src/vdbemem.c 2fc78b3e0fabcc1eaa23cd79dd2e30e6dcfe1e56
 F src/vdbesort.c 468d43c057063e54da4f1988b38b4f46d60e7790
 F src/vdbetrace.c d6e50e04e1ec498150e519058f617d91b8f5c843
 F src/vtab.c e9318d88feac85be8e27ee783ac8f5397933fc8a
-F src/wal.c dc06acfaa4f5ae90b06f6a960d0e45d1a1044843
+F src/wal.c 645fdf75d57f2a1b437241513f0ef0904233b8f2
 F src/wal.h 42f8313f7aaf8913e2d1fdf7b47025c23491ea1d
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c af623942514571895818b9b7ae11db95ae3b3d88
@@ -984,7 +984,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 915713ffe4d02ddf1d09a82e39a47b88d3d95ea0
-R 93369b47da918caf4a8833cb9ab9735c
+P a0be6ea464695fdf1eaf2b7cf0652778617814f2
+R a3ac9d3b46a9e1f98e50427074558d5c
 U drh
-Z 681bcd70ccdd44fe7553ce96599b2b2b
+Z c1eb985167dfc5f7ffec7a557d306f46
