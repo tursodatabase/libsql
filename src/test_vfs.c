@@ -1208,7 +1208,7 @@ static int testvfs_obj_cmd(
           iNew |= aFlag[idx].iValue;
         }
 
-        p->iDevchar = iNew;
+        p->iDevchar = iNew| 0x10000000;
       }
 
       pRet = Tcl_NewObj();

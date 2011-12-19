@@ -546,7 +546,7 @@ do_multiclient_test tn {
   } {1 2 3 4 5 6 7 8 9 10}
   do_test wal-10.$tn.12 {
     catchsql { PRAGMA wal_checkpoint } 
-  } {0 {0 13 13}}   ;# Reader no longer block checkpoints
+  } {0 {0 7 7}}   ;# Reader no longer block checkpoints
   do_test wal-10.$tn.13 {
     execsql { INSERT INTO t1 VALUES(11, 12) }
     sql2 {SELECT * FROM t1}
@@ -556,7 +556,7 @@ do_multiclient_test tn {
   #
   do_test wal-10.$tn.14 {
     catchsql { PRAGMA wal_checkpoint } 
-  } {0 {0 15 13}}
+  } {0 {0 8 7}}
 
   # The following series of test cases used to verify another blocking
   # case in WAL - a case which no longer blocks.
@@ -566,10 +566,10 @@ do_multiclient_test tn {
   } {1 2 3 4 5 6 7 8 9 10 11 12}
   do_test wal-10.$tn.16 {
     catchsql { PRAGMA wal_checkpoint } 
-  } {0 {0 15 15}}
+  } {0 {0 8 8}}
   do_test wal-10.$tn.17 {
     execsql { PRAGMA wal_checkpoint } 
-  } {0 15 15}
+  } {0 8 8}
   do_test wal-10.$tn.18 {
     sql3 { BEGIN; SELECT * FROM t1 }
   } {1 2 3 4 5 6 7 8 9 10 11 12}
@@ -592,13 +592,13 @@ do_multiclient_test tn {
   #
   do_test wal-10.$tn.23 {
     execsql { PRAGMA wal_checkpoint }
-  } {0 17 17}
+  } {0 9 9}
   do_test wal-10.$tn.24 {
     sql2 { BEGIN; SELECT * FROM t1; }
   } {1 2 3 4 5 6 7 8 9 10 11 12 13 14}
   do_test wal-10.$tn.25 {
     execsql { PRAGMA wal_checkpoint }
-  } {0 17 17}
+  } {0 9 9}
   do_test wal-10.$tn.26 {
     catchsql { INSERT INTO t1 VALUES(15, 16) }
   } {0 {}}
@@ -615,11 +615,11 @@ do_multiclient_test tn {
   do_test wal-10.$tn.29 {
     execsql { INSERT INTO t1 VALUES(19, 20) }
     catchsql { PRAGMA wal_checkpoint }
-  } {0 {0 6 0}}
+  } {0 {0 3 0}}
   do_test wal-10.$tn.30 {
     code3 { sqlite3_finalize $::STMT }
     execsql { PRAGMA wal_checkpoint }
-  } {0 6 0}
+  } {0 3 0}
 
   # At one point, if a reader failed to upgrade to a writer because it
   # was reading an old snapshot, the write-locks were not being released.
@@ -658,7 +658,7 @@ do_multiclient_test tn {
   } {a b c d}
   do_test wal-10.$tn.36 {
     catchsql { PRAGMA wal_checkpoint }
-  } {0 {0 16 16}}
+  } {0 {0 8 8}}
   do_test wal-10.$tn.36 {
     sql3 { INSERT INTO t1 VALUES('e', 'f') }
     sql2 { SELECT * FROM t1 }
@@ -666,7 +666,7 @@ do_multiclient_test tn {
   do_test wal-10.$tn.37 {
     sql2 COMMIT
     execsql { PRAGMA wal_checkpoint }
-  } {0 18 18}
+  } {0 9 9}
 }
 
 #-------------------------------------------------------------------------

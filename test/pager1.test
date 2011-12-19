@@ -1312,6 +1312,7 @@ foreach sectorsize {
     4096 8192 16384 32768 65536 131072 262144
 } {
   tv sectorsize $sectorsize
+  tv devchar {}
   set eff $sectorsize
   if {$sectorsize < 512}   { set eff 512 }
   if {$sectorsize > 65536} { set eff 65536 }
