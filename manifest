@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\stest\scases\sto\saccount\sfor\sthe\smaster-journal\sname\srelated\schange\sin\s[cf3bccc2].
-D 2011-12-19T11:16:39.956
+C Add\stest\sfor\sWAL\smode\sto\sunixexcl.test.
+D 2011-12-19T15:46:51.583
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -871,7 +871,7 @@ F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
 F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
 F test/types3.test 99e009491a54f4dc02c06bdbc0c5eea56ae3e25a
 F test/unique.test 083c7fff74695bcc27a71d75699deba3595bc9c2
-F test/unixexcl.test 9d80a54d86d2261f660758928959368ffc36151e
+F test/unixexcl.test 892937c53d0c16e76631674e38a0fce052ae5e9c
 F test/unordered.test f53095cee37851bf30130fa1bf299a8845e837bb
 F test/update.test 8bc86fd7ef1a00014f76dc6a6a7c974df4aef172
 F test/uri.test 0d289d32396bdbc491e9dc845f1a52e13f861e0b
@@ -984,7 +984,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 44ca4d123385d759c11919865525c998c2e35bdb
-R 84fa60a337903d6e9b8a452659d1b330
+P 21b76af6edd48f665cdd3af5f99d477f030c7668
+R e3e501a911a193a6cca08b5fc467fda0
 U dan
-Z ebf66ca7938806efd839391c15a281c8
+Z 8da8eb99ffcc8591296a31b08a15f7c3
