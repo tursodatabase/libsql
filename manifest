@@ -1,5 +1,5 @@
-C Modify\stest\scases\sto\saccount\sfor\sthe\sZERO_DAMAGE\schange.
-D 2011-12-19T10:07:56.428
+C Merge\s[21b76af6ed]\sinto\sstatvfs\sbranch.
+D 2011-12-19T11:57:41.110
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -619,7 +619,7 @@ F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
 F test/oserror.test 50417780d0e0d7cd23cf12a8277bb44024765df3
-F test/pager1.test 6fad92deb869a67197dd6afb8646375ecd57ca66
+F test/pager1.test 9e9f5f1c6d4df4831dbff213b1262ef94bf72118
 F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
 F test/pagerfault.test 452f2cc23e3bfcfa935f4442aec1da4fe1dc0442
@@ -984,7 +984,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 41891b231e20a1d32b1d7449e7863470eb38ca0a
-R b6f691c6a328a432146fee6719bfa23f
+P 68684495f1a62a41ad27934f3a6d3bc9d290a57d 21b76af6edd48f665cdd3af5f99d477f030c7668
+R 13c6e9f68f2269f9e8e46485261d751c
 U dan
-Z d70b0c6ac6bdf4b36159c16417e96ac5
+Z 3609ee926071d362fe7af243818ae9ac
