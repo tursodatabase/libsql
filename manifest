@@ -1,5 +1,5 @@
-C Some\sfixes\sto\sthe\stest\ssuite\sso\sthat\sit\sworks\swith\sZERO_DAMAGE\sset\sto\strue.\nStill\slots\smore\sproblems\sremain.
-D 2011-12-19T00:31:09.781
+C Modify\stest\scases\sto\saccount\sfor\sthe\sZERO_DAMAGE\schange.
+D 2011-12-19T10:07:56.428
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -703,7 +703,7 @@ F test/subquery.test b524f57c9574b2c0347045b4510ef795d4686796
 F test/subquery2.test edcad5c118f0531c2e21bf16a09bbb105252d4cd
 F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
-F test/superlock.test 7b1167925e9d30a5d1f0701d24812fdda42c3a86
+F test/superlock.test 1cde669f68d2dd37d6c9bd35eee1d95491ae3fc2
 F test/sync.test a34cd43e98b7fb84eabbf38f7ed8f7349b3f3d85
 F test/syscall.test 265cda616f56a297406728ee1e74c9b4a93aa6dd
 F test/sysfault.test c79441d88d23696fbec7b147dba98d42a04f523f
@@ -901,11 +901,11 @@ F test/vtabF.test fd5ad376f5a34fe0891df1f3cddb4fe7c3eb077e
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
-F test/wal.test 626ada15351fb27838f4a6e3047f34b1491286b1
-F test/wal2.test 29e2cbe840582fc6efd0487b4f6337caed4b3e80
-F test/wal3.test 29a6e8843e5f5fd13f33cb0407d2923107020d32
+F test/wal.test edefe316b4125d7f68004ea53c5e73c398d436cc
+F test/wal2.test f11883dd3cb7f647c5d2acfd7b5c6d4ba5770cc9
+F test/wal3.test 0f9bb79aa5712e9fa2343d1cdc9e2785adddcfc2
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
-F test/wal5.test 1bbfaa316dc2a1d0d1fac3f4500c38a90055a41b
+F test/wal5.test f58ed4b8b542f71c7441da12fbd769d99b362437
 F test/wal6.test 2e3bc767d9c2ce35c47106148d43fcbd072a93b3
 F test/wal7.test 2ae8f427d240099cc4b2dfef63cff44e2a68a1bd
 F test/wal_common.tcl a98f17fba96206122eff624db0ab13ec377be4fe
@@ -984,7 +984,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 1dde96c9ee88af1c4e37c2e65acb7c0fe6a20e2a
-R 62e195e48920f4d65e051058065d4cbf
-U drh
-Z 81e91113a96aa8ccbd0fc3b095654fd3
+P 41891b231e20a1d32b1d7449e7863470eb38ca0a
+R b6f691c6a328a432146fee6719bfa23f
+U dan
+Z d70b0c6ac6bdf4b36159c16417e96ac5
