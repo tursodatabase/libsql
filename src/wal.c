@@ -2691,6 +2691,10 @@ int sqlite3WalFrames(
   assert( pList );
   assert( pWal->writeLock );
 
+  /* If this frame set completes a transaction, then nTruncate>0.  If
+  ** nTruncate==0 then this frame set does not complete the transaction. */
+  assert( (isCommit!=0)==(nTruncate!=0) );
+
 #if defined(SQLITE_TEST) && defined(SQLITE_DEBUG)
   { int cnt; for(cnt=0, p=pList; p; p=p->pDirty, cnt++){}
     WALTRACE(("WAL%p: frame write begin. %d frames. mxFrame=%d. %s\n",
