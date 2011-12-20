@@ -1163,15 +1163,8 @@ static int walIndexRecover(Wal *pWal){
       iFrame++;
       rc = sqlite3OsRead(pWal->pWalFd, aFrame, szFrame, iOffset);
       if( rc!=SQLITE_OK ) break;
-      if( sqlite3Get4byte(&aFrame[8]) ==
-            1+sqlite3Get4byte((u8*)&pWal->hdr.aSalt[0]) ){
-        pWal->hdr.mxFrame = 0;
-        pWal->hdr.nPage = 0;
-        break;
-      }
-      if( !isValid ) continue;
       isValid = walDecodeFrame(pWal, &pgno, &nTruncate, aData, aFrame);
-      if( !isValid ) continue;
+      if( !isValid ) break;
       rc = walIndexAppend(pWal, iFrame, pgno);
       if( rc!=SQLITE_OK ) break;
 
