@@ -215,13 +215,13 @@ struct unixFile {
   int h;                              /* The file descriptor */
   unsigned char eFileLock;            /* The type of lock held on this fd */
   unsigned char ctrlFlags;            /* Behavioral bits.  UNIXFILE_* flags */
+  unsigned char szSector;             /* Sectorsize/512 */
   int lastErrno;                      /* The unix errno from last I/O error */
   void *lockingContext;               /* Locking style specific state */
   UnixUnusedFd *pUnused;              /* Pre-allocated UnixUnusedFd */
   const char *zPath;                  /* Name of the file */
   unixShm *pShm;                      /* Shared memory segment information */
   int szChunk;                        /* Configured by FCNTL_CHUNK_SIZE */
-  int szSector;                       /* Sector size */
 #if SQLITE_ENABLE_LOCKING_STYLE
   int openFlags;                      /* The flags specified at open() */
 #endif
@@ -263,6 +263,7 @@ struct unixFile {
 #else
 # define UNIXFILE_DIRSYNC    0x00
 #endif
+#define UNIXFILE_ZERO_DAMAGE 0x10     /* True if SQLITE_IOCAP_ZERO_DAMAGE */
 
 /*
 ** Include code that is common to all os_*.c files
@@ -3512,6 +3513,22 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
 }
 
 /*
+** If *pArg is inititially negative then this is a query.  Set *pArg to
+** 1 or 0 depending on whether or not bit mask of pFile->ctrlFlags is set.
+**
+** If *pArg is 0 or 1, then clear or set the mask bit of pFile->ctrlFlags.
+*/
+static void unixModeBit(unixFile *pFile, unsigned char mask, int *pArg){
+  if( *pArg<0 ){
+    *pArg = (pFile->ctrlFlags & mask)!=0;
+  }else if( (*pArg)==0 ){
+    pFile->ctrlFlags &= ~mask;
+  }else{
+    pFile->ctrlFlags |= mask;
+  }
+}
+
+/*
 ** Information and control of an open file handle.
 */
 static int unixFileControl(sqlite3_file *id, int op, void *pArg){
@@ -3537,14 +3554,11 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       return rc;
     }
     case SQLITE_FCNTL_PERSIST_WAL: {
-      int bPersist = *(int*)pArg;
-      if( bPersist<0 ){
-        *(int*)pArg = (pFile->ctrlFlags & UNIXFILE_PERSIST_WAL)!=0;
-      }else if( bPersist==0 ){
-        pFile->ctrlFlags &= ~UNIXFILE_PERSIST_WAL;
-      }else{
-        pFile->ctrlFlags |= UNIXFILE_PERSIST_WAL;
-      }
+      unixModeBit(pFile, UNIXFILE_PERSIST_WAL, (int*)pArg);
+      return SQLITE_OK;
+    }
+    case SQLITE_FCNTL_ZERO_DAMAGE: {
+      unixModeBit(pFile, UNIXFILE_ZERO_DAMAGE, (int*)pArg);
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_VFSNAME: {
@@ -3589,27 +3603,37 @@ static int unixSectorSize(sqlite3_file *pFile){
   unixFile *p = (unixFile*)pFile;
   if( p->szSector==0 ){
 #ifdef MISSING_STATVFS
-    p->szSector = SQLITE_DEFAULT_SECTOR_SIZE;
+    p->szSector = SQLITE_DEFAULT_SECTOR_SIZE/512;
 #else
     struct statvfs x;
     int sz;
     memset(&x, 0, sizeof(x));
     osStatvfs(p->zPath, &x);
-    p->szSector = sz = (int)x.f_frsize;
+    sz = (int)x.f_frsize;
     if( sz<512 || sz>65536 || (sz&(sz-1))!=0 ){
-      p->szSector = SQLITE_DEFAULT_SECTOR_SIZE;
+      sz = SQLITE_DEFAULT_SECTOR_SIZE;
     }
+    p->szSector = sz/512;
 #endif
   }
-  return p->szSector;
+  return p->szSector*512;
 }
 
 /*
-** Return the device characteristics for the file. This is always 0 for unix.
+** Return the device characteristics for the file.
+**
+** This VFS is set up to return SQLITE_IOCAP_ZERO_DAMAGE by default.
+** However, that choice is contraversial sicne technically the underlying
+** file system does not always provide ZERO_DAMAGE.  (In other words, after
+** a power-loss event, parts of the file that were never written might end
+** up being altered.)  However, non-ZERO-DAMAGE behavior is very, very rare.
+** And asserting ZERO_DAMAGE makes a large reduction in the amount of required
+** I/O.  Hence, while ZERO_DAMAGE is on by default, there is a file-control
+** available to turn it off.
 */
-static int unixDeviceCharacteristics(sqlite3_file *NotUsed){
-  UNUSED_PARAMETER(NotUsed);
-  return SQLITE_IOCAP_ZERO_DAMAGE;
+static int unixDeviceCharacteristics(sqlite3_file *id){
+  unixFile *p = (unixFile*)id;
+  return (p->ctrlFlags & UNIXFILE_ZERO_DAMAGE) ? SQLITE_IOCAP_ZERO_DAMAGE : 0;
 }
 
 #ifndef SQLITE_OMIT_WAL
@@ -4568,6 +4592,7 @@ static int fillInUnixFile(
   const sqlite3_io_methods *pLockingStyle;
   unixFile *pNew = (unixFile *)pId;
   int rc = SQLITE_OK;
+  const char *zZeroDam;   /* Value of the zero_damage query parameter */
 
   assert( pNew->pInode==NULL );
 
@@ -4594,10 +4619,11 @@ static int fillInUnixFile(
   pNew->h = h;
   pNew->pVfs = pVfs;
   pNew->zPath = zFilename;
+  zZeroDam = sqlite3_uri_parameter(zFilename, "zero_damage");
+  if( zZeroDam==0 ) zZeroDam = "1";
+  pNew->ctrlFlags = atoi(zZeroDam) ? UNIXFILE_ZERO_DAMAGE : 1;
   if( memcmp(pVfs->zName,"unix-excl",10)==0 ){
-    pNew->ctrlFlags = UNIXFILE_EXCL;
-  }else{
-    pNew->ctrlFlags = 0;
+    pNew->ctrlFlags |= UNIXFILE_EXCL;
   }
   if( isReadOnly ){
     pNew->ctrlFlags |= UNIXFILE_RDONLY;

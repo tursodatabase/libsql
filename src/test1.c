@@ -5235,6 +5235,38 @@ static int file_control_persist_wal(
   return TCL_OK;  
 }
 
+/*
+** tclcmd:   file_control_zero_damage DB ZERO-DAMAGE-FLAG
+**
+** This TCL command runs the sqlite3_file_control interface with
+** the SQLITE_FCNTL_ZERO_DAMAGE opcode.
+*/
+static int file_control_zero_damage(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3 *db;
+  int rc;
+  int bDamage;
+  char z[100];
+
+  if( objc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+        Tcl_GetStringFromObj(objv[0], 0), " DB FLAG", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(interp, objv[2], &bDamage) ) return TCL_ERROR;
+  rc = sqlite3_file_control(db, NULL, SQLITE_FCNTL_ZERO_DAMAGE,(void*)&bDamage);
+  sqlite3_snprintf(sizeof(z), z, "%d %d", rc, bDamage);
+  Tcl_AppendResult(interp, z, (char*)0);
+  return TCL_OK;  
+}
+
 
 /*
 ** tclcmd:   file_control_vfsname DB ?AUXDB?
@@ -6093,6 +6125,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "file_control_sizehint_test",  file_control_sizehint_test,   0   },
      { "file_control_win32_av_retry", file_control_win32_av_retry,  0   },
      { "file_control_persist_wal",    file_control_persist_wal,     0   },
+     { "file_control_zero_damage",    file_control_zero_damage,     0   },
      { "file_control_vfsname",        file_control_vfsname,         0   },
      { "sqlite3_vfs_list",           vfs_list,     0   },
      { "sqlite3_create_function_v2", test_create_function_v2, 0 },

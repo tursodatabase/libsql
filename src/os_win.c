@@ -59,7 +59,7 @@ struct winFile {
   HANDLE h;               /* Handle for accessing the file */
   u8 locktype;            /* Type of lock currently held on this file */
   short sharedLockByte;   /* Randomly chosen byte used as a shared lock */
-  u8 bPersistWal;         /* True to persist WAL files */
+  u8 ctrlFlags;           /* Flags.  See WINFILE_* below */
   DWORD lastErrno;        /* The Windows errno from the last I/O error */
   DWORD sectorSize;       /* Sector size of the device file is on */
   winShm *pShm;           /* Instance of shared memory on this file */
@@ -73,6 +73,12 @@ struct winFile {
   winceLock *shared;      /* Global shared lock memory for the file  */
 #endif
 };
+
+/*
+** Allowed values for winFile.ctrlFlags
+*/
+#define WINFILE_PERSIST_WAL     0x04   /* Persistent WAL mode */
+#define WINFILE_ZERO_DAMAGE     0x10   /* True if SQLITE_IOCAP_ZERO_DAMAGE */
 
 /*
  * If compiled with SQLITE_WIN32_MALLOC on Windows, we will use the
@@ -2126,6 +2132,22 @@ static int winUnlock(sqlite3_file *id, int locktype){
 }
 
 /*
+** If *pArg is inititially negative then this is a query.  Set *pArg to
+** 1 or 0 depending on whether or not bit mask of pFile->ctrlFlags is set.
+**
+** If *pArg is 0 or 1, then clear or set the mask bit of pFile->ctrlFlags.
+*/
+static void winModeBit(winFile *pFile, unsigned char mask, int *pArg){
+  if( *pArg<0 ){
+    *pArg = (pFile->ctrlFlags & mask)!=0;
+  }else if( (*pArg)==0 ){
+    pFile->ctrlFlags &= ~mask;
+  }else{
+    pFile->ctrlFlags |= mask;
+  }
+}
+
+/*
 ** Control and query of the open file handle.
 */
 static int winFileControl(sqlite3_file *id, int op, void *pArg){
@@ -2160,12 +2182,11 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_PERSIST_WAL: {
-      int bPersist = *(int*)pArg;
-      if( bPersist<0 ){
-        *(int*)pArg = pFile->bPersistWal;
-      }else{
-        pFile->bPersistWal = bPersist!=0;
-      }
+      winModeBit(pFile, WINFILE_PERSIST_WAL, (int*)pArg);
+      return SQLITE_OK;
+    }
+    case SQLITE_FCNTL_ZERO_DAMAGE: {
+      winModeBit(pFile, WINFILE_ZERO_DAMAGE, (int*)pArg);
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_VFSNAME: {
@@ -2212,9 +2233,9 @@ static int winSectorSize(sqlite3_file *id){
 ** Return a vector of device characteristics.
 */
 static int winDeviceCharacteristics(sqlite3_file *id){
-  UNUSED_PARAMETER(id);
+  winFile *p = (winFile*)id;
   return SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN |
-         SQLITE_IOCAP_ZERO_DAMAGE;
+         ((p->ctrlFlags & WINFILE_ZERO_DAMAGE)?SQLITE_IOCAP_ZERO_DAMAGE:0);
 }
 
 #ifndef SQLITE_OMIT_WAL
@@ -3004,6 +3025,7 @@ static int winOpen(
   void *zConverted;              /* Filename in OS encoding */
   const char *zUtf8Name = zName; /* Filename in UTF-8 encoding */
   int cnt = 0;
+  const char *zZeroDam;          /* Value of zero_damage query parameter */
 
   /* If argument zPath is a NULL pointer, this function is required to open
   ** a temporary file. Use this buffer to store the file name in.
@@ -3179,6 +3201,9 @@ static int winOpen(
   pFile->pVfs = pVfs;
   pFile->pShm = 0;
   pFile->zPath = zName;
+  zZeroDam = sqlite3_uri_parameter(zName, "zero_damage");
+  if( zZeroDam==0 ) zZeroDam = "1";
+  pFile->ctrlFlags = atoi(zZeroDam) ? WINFILE_ZERO_DAMAGE : 1;
   pFile->sectorSize = getSectorSize(pVfs, zUtf8Name);
 
 #if SQLITE_OS_WINCE

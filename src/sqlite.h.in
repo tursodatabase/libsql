@@ -774,6 +774,15 @@ struct sqlite3_io_methods {
 ** WAL mode.  If the integer is -1, then it is overwritten with the current
 ** WAL persistence setting.
 **
+** ^The [SQLITE_FCNTL_ZERO_DAMAGE] opcode is used to set or query the
+** persistent zero-damage setting.  The zero-damage setting determines
+** the [SQLITE_IOCAP_ZERO_DAMAGE] bit of the xDeviceCharacteristics methods.
+** The fourth parameter to
+** [sqlite3_file_control()] for this opcode should be a pointer to an integer.
+** That integer is 0 to disable zero-damage mode or 1 to enable zero-damage
+** mode.  If the integer is -1, then it is overwritten with the current
+** zero-damage mode setting.
+**
 ** ^The [SQLITE_FCNTL_OVERWRITE] opcode is invoked by SQLite after opening
 ** a write transaction to indicate that, unless it is rolled back for some
 ** reason, the entire database file will be overwritten by the current 
@@ -802,6 +811,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_PERSIST_WAL     10
 #define SQLITE_FCNTL_OVERWRITE       11
 #define SQLITE_FCNTL_VFSNAME         12
+#define SQLITE_FCNTL_ZERO_DAMAGE     13
 
 /*
 ** CAPI3REF: Mutex Handle
