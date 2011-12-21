@@ -1,5 +1,5 @@
-C Assert\sthat\sthe\sisCommit\sparameter\sto\ssqlite3WalFrames()\sis\szero\sif\sand\nonly\sif\sthe\snTruncate\sparameter\sis\szero.
-D 2011-12-20T13:13:09.326
+C Avoid\s32-bit\soverflow\swhen\scalculating\sthe\sbyte\soffset\sof\san\soverflow\spage\sin\sSQLITE_DIRECT_OVERFLOW_READ\scode.\sFix\sfor\s[ac0ff496b7].
+D 2011-12-21T17:00:16.841
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -125,7 +125,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 4368158da74d4711888e03264105c5c527d76caf
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 80ea65224512884bb72976c93810d2dcaecc1353
+F src/btree.c 2fdde7d16c80bd4e8a0913038e766c4297818f6f
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h ea863a819224d3e6845ad1e39954d41558b8cd8b
 F src/build.c 8915bb6d72ead998f94c2756ea8d143c77709b70
@@ -297,6 +297,7 @@ F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
 F test/badutf2.test f5bc7f2d280670ecd79b9cf4f0f1760c607fe51f
 F test/between.test 16b1776c6323faadb097a52d673e8e3d8be7d070
 F test/bigfile.test a8ec8073a20207456dab01a29ad9cde42b0dd103
+F test/bigfile2.test f8e83eca9abef60692a34255a2ebcb96aff897fc
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bind.test 3c7b320969000c441a70952b0b15938fbb66237c
 F test/bindxfer.test efecd12c580c14df5f4ad3b3e83c667744a4f7e0
@@ -984,7 +985,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 4d518bd4801c31bb1e4fb0329ad057e549035237
-R b6fa212f141f93e02b36860230812df1
-U drh
-Z ec529eca7ddb3f43acff46ddca1c2443
+P 979daf92e09305665d943e197b93b81139197c5b
+R 3ca2d5c9a0922c80f51a136db15c2655
+U dan
+Z 686f6e4400cb272609dcad0347caf0ec

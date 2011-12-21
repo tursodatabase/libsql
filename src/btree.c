@@ -3979,7 +3979,7 @@ static int accessPayload(
           u8 aSave[4];
           u8 *aWrite = &pBuf[-4];
           memcpy(aSave, aWrite, 4);
-          rc = sqlite3OsRead(fd, aWrite, a+4, pBt->pageSize * (nextPage-1));
+          rc = sqlite3OsRead(fd, aWrite, a+4, (i64)pBt->pageSize*(nextPage-1));
           nextPage = get4byte(aWrite);
           memcpy(aWrite, aSave, 4);
         }else
