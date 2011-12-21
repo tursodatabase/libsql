@@ -1,5 +1,5 @@
-C Avoid\s32-bit\soverflow\swhen\scalculating\sthe\sbyte\soffset\sof\san\soverflow\spage\sin\sSQLITE_DIRECT_OVERFLOW_READ\scode.\sFix\sfor\s[ac0ff496b7].
-D 2011-12-21T17:00:16.841
+C Fix\sother\sproblems\swhere\s32-bit\sinteger\soverflow\smay\scause\sa\sproblem.\sTwo\sthat\srequire\san\simprobably\slarge\ssub-journal\sand\stwo\sin\stest\sharness\scode.
+D 2011-12-21T18:04:41.417
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 7dc7df10331942b139032328449a3723e051979e
 F src/os_win.c 197d23ce8a0dff748e766e034bf95ff756dd3884
-F src/pager.c c7c32a1c279e0bbbde3578172985c41d4c5efc35
+F src/pager.c 523c64f6ca707e820d5cf10ed8371238ecac8333
 F src/pager.h 5cd760857707529b403837d813d86b68938d6183
 F src/parse.y fabb2e7047417d840e6fdb3ef0988a86849a08ba
 F src/pcache.c 1fdd77978c1525d1ca4b9ef48eb80abca710cb4c
@@ -211,7 +211,7 @@ F src/test_hexio.c c4773049603151704a6ab25ac5e936b5109caf5a
 F src/test_init.c 3cbad7ce525aec925f8fda2192d576d47f0d478a
 F src/test_intarray.c d879bbf8e4ce085ab966d1f3c896a7c8b4f5fc99
 F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
-F src/test_journal.c 03313c693cca72959dcaaf79f8d76f21c01e19ff
+F src/test_journal.c 2c06e4be6584d51b935dc8b353980a9388de62ef
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c 8d416f29ad8573f32601f6056c9d2b17472e9ad5
 F src/test_multiplex.c 6e07b94e2fe430f7f4f0d7d67b5e58f504dea655
@@ -225,7 +225,7 @@ F src/test_quota.h 9ffa1d3ad6d0a6a24e8670ea64b909c717ec3358
 F src/test_rtree.c 6d06306e29946dc36f528a3a2cdc3add794656f1
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
-F src/test_stat.c 69de4361c7a69fc1136d31ab7144408cd00805c7
+F src/test_stat.c 80271ad7d776a79babe0e025bb3a1bfcd3a3cfb1
 F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c a992d8c80ea91fbf21fb2dd570db40e77dd7e6ae
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
@@ -985,7 +985,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 979daf92e09305665d943e197b93b81139197c5b
-R 3ca2d5c9a0922c80f51a136db15c2655
+P c5256b59ad70104c1e181b9f49d1d712cf4cc9f6
+R 67d063070f0e350ae5f59b7b697ace26
 U dan
-Z 686f6e4400cb272609dcad0347caf0ec
+Z bef61bfcf61cf3a9e556e6b3194dc0ce
