@@ -1470,6 +1470,7 @@ int sqlite3Fts3SegReaderPending(
   Fts3SegReader **ppReader        /* OUT: SegReader for pending-terms */
 ){
   Fts3SegReader *pReader = 0;     /* Fts3SegReader object to return */
+  Fts3HashElem *pE;               /* Iterator variable */
   Fts3HashElem **aElem = 0;       /* Array of term hash entries to scan */
   int nElem = 0;                  /* Size of array at aElem */
   int rc = SQLITE_OK;             /* Return Code */
@@ -1478,7 +1479,6 @@ int sqlite3Fts3SegReaderPending(
   pHash = &p->aIndex[iIndex].hPending;
   if( bPrefix ){
     int nAlloc = 0;               /* Size of allocated array at aElem */
-    Fts3HashElem *pE = 0;         /* Iterator variable */
 
     for(pE=fts3HashFirst(pHash); pE; pE=fts3HashNext(pE)){
       char *zKey = (char *)fts3HashKey(pE);
@@ -1512,8 +1512,13 @@ int sqlite3Fts3SegReaderPending(
 
   }else{
     /* The query is a simple term lookup that matches at most one term in
-    ** the index. All that is required is a straight hash-lookup. */
-    Fts3HashElem *pE = fts3HashFindElem(pHash, zTerm, nTerm);
+    ** the index. All that is required is a straight hash-lookup. 
+    **
+    ** Because the stack address of pE may be accessed via the aElem pointer
+    ** below, the "Fts3HashElem *pE" must be declared so that it is valid
+    ** within this entire function, not just this "else{...}" block.
+    */
+    pE = fts3HashFindElem(pHash, zTerm, nTerm);
     if( pE ){
       aElem = &pE;
       nElem = 1;
