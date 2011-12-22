@@ -1193,7 +1193,7 @@ static int deserializeGeometry(sqlite3_value *pValue, RtreeConstraint *pCons){
   int nBlob;
 
   /* Check that value is actually a blob. */
-  if( !sqlite3_value_type(pValue)==SQLITE_BLOB ) return SQLITE_ERROR;
+  if( sqlite3_value_type(pValue)!=SQLITE_BLOB ) return SQLITE_ERROR;
 
   /* Check that the blob is roughly the right size. */
   nBlob = sqlite3_value_bytes(pValue);

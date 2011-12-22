@@ -10,10 +10,6 @@
 **
 ******************************************************************************
 **
-*/
-#if SQLITE_TEST          /* This file is used for testing only */
-
-/*
 ** This file contains the implementation of the Tcl [testvfs] command,
 ** used to create SQLite VFS implementations with various properties and
 ** instrumentation to support testing SQLite.
@@ -28,6 +24,7 @@
 **   -mxpathname INTEGER        (Value for sqlite3_vfs.mxPathname)
 **   -iversion   INTEGER        (Value for sqlite3_vfs.iVersion)
 */
+#if SQLITE_TEST          /* This file is used for testing only */
 
 #include "sqlite3.h"
 #include "sqliteInt.h"
@@ -82,8 +79,6 @@ struct Testvfs {
   sqlite3_vfs *pVfs;              /* The testvfs registered with SQLite */
   Tcl_Interp *interp;             /* Interpreter to run script in */
   Tcl_Obj *pScript;               /* Script to execute */
-  int nScript;                    /* Number of elements in array apScript */
-  Tcl_Obj **apScript;             /* Array version of pScript */
   TestvfsBuffer *pBuffer;         /* List of shared buffers */
   int isNoshm;
 
@@ -114,20 +109,23 @@ struct Testvfs {
 **   + Simulating IO errors, and
 **   + Invoking the Tcl callback script.
 */
-#define TESTVFS_SHMOPEN_MASK    0x00000001
-#define TESTVFS_SHMLOCK_MASK    0x00000010
-#define TESTVFS_SHMMAP_MASK     0x00000020
-#define TESTVFS_SHMBARRIER_MASK 0x00000040
-#define TESTVFS_SHMCLOSE_MASK   0x00000080
+#define TESTVFS_SHMOPEN_MASK      0x00000001
+#define TESTVFS_SHMLOCK_MASK      0x00000010
+#define TESTVFS_SHMMAP_MASK       0x00000020
+#define TESTVFS_SHMBARRIER_MASK   0x00000040
+#define TESTVFS_SHMCLOSE_MASK     0x00000080
 
-#define TESTVFS_OPEN_MASK       0x00000100
-#define TESTVFS_SYNC_MASK       0x00000200
-#define TESTVFS_DELETE_MASK     0x00000400
-#define TESTVFS_CLOSE_MASK      0x00000800
-#define TESTVFS_WRITE_MASK      0x00001000
-#define TESTVFS_TRUNCATE_MASK   0x00002000
-#define TESTVFS_ACCESS_MASK     0x00004000
-#define TESTVFS_ALL_MASK        0x00007FFF
+#define TESTVFS_OPEN_MASK         0x00000100
+#define TESTVFS_SYNC_MASK         0x00000200
+#define TESTVFS_DELETE_MASK       0x00000400
+#define TESTVFS_CLOSE_MASK        0x00000800
+#define TESTVFS_WRITE_MASK        0x00001000
+#define TESTVFS_TRUNCATE_MASK     0x00002000
+#define TESTVFS_ACCESS_MASK       0x00004000
+#define TESTVFS_FULLPATHNAME_MASK 0x00008000
+#define TESTVFS_READ_MASK         0x00010000
+
+#define TESTVFS_ALL_MASK          0x0001FFFF
 
 
 #define TESTVFS_MAX_PAGES 1024
@@ -269,47 +267,25 @@ static void tvfsExecTcl(
   Tcl_Obj *arg3
 ){
   int rc;                         /* Return code from Tcl_EvalObj() */
-  int nArg;                       /* Elements in eval'd list */
-  int nScript;
-  Tcl_Obj ** ap;
-
+  Tcl_Obj *pEval;
   assert( p->pScript );
 
-  if( !p->apScript ){
-    int nByte;
-    int i;
-    if( TCL_OK!=Tcl_ListObjGetElements(p->interp, p->pScript, &nScript, &ap) ){
-      Tcl_BackgroundError(p->interp);
-      Tcl_ResetResult(p->interp);
-      return;
-    }
-    p->nScript = nScript;
-    nByte = (nScript+TESTVFS_MAX_ARGS)*sizeof(Tcl_Obj *);
-    p->apScript = (Tcl_Obj **)ckalloc(nByte);
-    memset(p->apScript, 0, nByte);
-    for(i=0; i<nScript; i++){
-      p->apScript[i] = ap[i];
-    }
-  }
+  assert( zMethod );
+  assert( p );
+  assert( arg2==0 || arg1!=0 );
+  assert( arg3==0 || arg2!=0 );
 
-  p->apScript[p->nScript] = Tcl_NewStringObj(zMethod, -1);
-  p->apScript[p->nScript+1] = arg1;
-  p->apScript[p->nScript+2] = arg2;
-  p->apScript[p->nScript+3] = arg3;
+  pEval = Tcl_DuplicateObj(p->pScript);
+  Tcl_IncrRefCount(p->pScript);
+  Tcl_ListObjAppendElement(p->interp, pEval, Tcl_NewStringObj(zMethod, -1));
+  if( arg1 ) Tcl_ListObjAppendElement(p->interp, pEval, arg1);
+  if( arg2 ) Tcl_ListObjAppendElement(p->interp, pEval, arg2);
+  if( arg3 ) Tcl_ListObjAppendElement(p->interp, pEval, arg3);
 
-  for(nArg=p->nScript; p->apScript[nArg]; nArg++){
-    Tcl_IncrRefCount(p->apScript[nArg]);
-  }
-
-  rc = Tcl_EvalObjv(p->interp, nArg, p->apScript, TCL_EVAL_GLOBAL);
+  rc = Tcl_EvalObjEx(p->interp, pEval, TCL_EVAL_GLOBAL);
   if( rc!=TCL_OK ){
     Tcl_BackgroundError(p->interp);
     Tcl_ResetResult(p->interp);
-  }
-
-  for(nArg=p->nScript; p->apScript[nArg]; nArg++){
-    Tcl_DecrRefCount(p->apScript[nArg]);
-    p->apScript[nArg] = 0;
   }
 }
 
@@ -351,8 +327,22 @@ static int tvfsRead(
   int iAmt, 
   sqlite_int64 iOfst
 ){
-  TestvfsFd *p = tvfsGetFd(pFile);
-  return sqlite3OsRead(p->pReal, zBuf, iAmt, iOfst);
+  int rc = SQLITE_OK;
+  TestvfsFd *pFd = tvfsGetFd(pFile);
+  Testvfs *p = (Testvfs *)pFd->pVfs->pAppData;
+  if( p->pScript && p->mask&TESTVFS_READ_MASK ){
+    tvfsExecTcl(p, "xRead", 
+        Tcl_NewStringObj(pFd->zFilename, -1), pFd->pShmId, 0
+    );
+    tvfsResultCode(p, &rc);
+  }
+  if( rc==SQLITE_OK && p->mask&TESTVFS_READ_MASK && tvfsInjectIoerr(p) ){
+    rc = SQLITE_IOERR;
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3OsRead(pFd->pReal, zBuf, iAmt, iOfst);
+  }
+  return rc;
 }
 
 /*
@@ -545,7 +535,7 @@ static int tvfsOpen(
 
   /* Evaluate the Tcl script: 
   **
-  **   SCRIPT xOpen FILENAME
+  **   SCRIPT xOpen FILENAME KEY-VALUE-ARGS
   **
   ** If the script returns an SQLite error code other than SQLITE_OK, an
   ** error is returned to the caller. If it returns SQLITE_OK, the new
@@ -554,7 +544,19 @@ static int tvfsOpen(
   */
   Tcl_ResetResult(p->interp);
   if( p->pScript && p->mask&TESTVFS_OPEN_MASK ){
-    tvfsExecTcl(p, "xOpen", Tcl_NewStringObj(pFd->zFilename, -1), 0, 0);
+    Tcl_Obj *pArg = Tcl_NewObj();
+    Tcl_IncrRefCount(pArg);
+    if( flags&SQLITE_OPEN_MAIN_DB ){
+      const char *z = &zName[strlen(zName)+1];
+      while( *z ){
+        Tcl_ListObjAppendElement(0, pArg, Tcl_NewStringObj(z, -1));
+        z += strlen(z) + 1;
+        Tcl_ListObjAppendElement(0, pArg, Tcl_NewStringObj(z, -1));
+        z += strlen(z) + 1;
+      }
+    }
+    tvfsExecTcl(p, "xOpen", Tcl_NewStringObj(pFd->zFilename, -1), pArg, 0);
+    Tcl_DecrRefCount(pArg);
     if( tvfsResultCode(p, &rc) ){
       if( rc!=SQLITE_OK ) return rc;
     }else{
@@ -663,6 +665,14 @@ static int tvfsFullPathname(
   int nOut, 
   char *zOut
 ){
+  Testvfs *p = (Testvfs *)pVfs->pAppData;
+  if( p->pScript && p->mask&TESTVFS_FULLPATHNAME_MASK ){
+    int rc;
+    tvfsExecTcl(p, "xFullPathname", Tcl_NewStringObj(zPath, -1), 0, 0);
+    if( tvfsResultCode(p, &rc) ){
+      if( rc!=SQLITE_OK ) return rc;
+    }
+  }
   return sqlite3OsFullPathname(PARENTVFS(pVfs), zPath, nOut, zOut);
 }
 
@@ -978,7 +988,7 @@ static int testvfs_obj_cmd(
   switch( aSubcmd[i].eCmd ){
     case CMD_SHM: {
       Tcl_Obj *pObj;
-      int i;
+      int i, rc;
       TestvfsBuffer *pBuffer;
       char *zName;
       if( objc!=3 && objc!=4 ){
@@ -986,10 +996,16 @@ static int testvfs_obj_cmd(
         return TCL_ERROR;
       }
       zName = ckalloc(p->pParent->mxPathname);
-      p->pParent->xFullPathname(
+      rc = p->pParent->xFullPathname(
           p->pParent, Tcl_GetString(objv[2]), 
           p->pParent->mxPathname, zName
       );
+      if( rc!=SQLITE_OK ){
+        Tcl_AppendResult(interp, "failed to get full path: ",
+                         Tcl_GetString(objv[2]), 0);
+        ckfree(zName);
+        return TCL_ERROR;
+      }
       for(pBuffer=p->pBuffer; pBuffer; pBuffer=pBuffer->pNext){
         if( 0==strcmp(pBuffer->zFile, zName) ) break;
       }
@@ -1028,18 +1044,20 @@ static int testvfs_obj_cmd(
         char *zName;
         int mask;
       } vfsmethod [] = {
-        { "xShmOpen",    TESTVFS_SHMOPEN_MASK },
-        { "xShmLock",    TESTVFS_SHMLOCK_MASK },
-        { "xShmBarrier", TESTVFS_SHMBARRIER_MASK },
-        { "xShmUnmap",   TESTVFS_SHMCLOSE_MASK },
-        { "xShmMap",     TESTVFS_SHMMAP_MASK },
-        { "xSync",       TESTVFS_SYNC_MASK },
-        { "xDelete",     TESTVFS_DELETE_MASK },
-        { "xWrite",      TESTVFS_WRITE_MASK },
-        { "xTruncate",   TESTVFS_TRUNCATE_MASK },
-        { "xOpen",       TESTVFS_OPEN_MASK },
-        { "xClose",      TESTVFS_CLOSE_MASK },
-        { "xAccess",     TESTVFS_ACCESS_MASK },
+        { "xShmOpen",      TESTVFS_SHMOPEN_MASK },
+        { "xShmLock",      TESTVFS_SHMLOCK_MASK },
+        { "xShmBarrier",   TESTVFS_SHMBARRIER_MASK },
+        { "xShmUnmap",     TESTVFS_SHMCLOSE_MASK },
+        { "xShmMap",       TESTVFS_SHMMAP_MASK },
+        { "xSync",         TESTVFS_SYNC_MASK },
+        { "xDelete",       TESTVFS_DELETE_MASK },
+        { "xWrite",        TESTVFS_WRITE_MASK },
+        { "xRead",         TESTVFS_READ_MASK },
+        { "xTruncate",     TESTVFS_TRUNCATE_MASK },
+        { "xOpen",         TESTVFS_OPEN_MASK },
+        { "xClose",        TESTVFS_CLOSE_MASK },
+        { "xAccess",       TESTVFS_ACCESS_MASK },
+        { "xFullPathname", TESTVFS_FULLPATHNAME_MASK },
       };
       Tcl_Obj **apElem = 0;
       int nElem = 0;
@@ -1076,9 +1094,6 @@ static int testvfs_obj_cmd(
         int nByte;
         if( p->pScript ){
           Tcl_DecrRefCount(p->pScript);
-          ckfree((char *)p->apScript);
-          p->apScript = 0;
-          p->nScript = 0;
           p->pScript = 0;
         }
         Tcl_GetStringFromObj(objv[2], &nByte);
@@ -1232,7 +1247,6 @@ static void testvfs_obj_del(ClientData cd){
   Testvfs *p = (Testvfs *)cd;
   if( p->pScript ) Tcl_DecrRefCount(p->pScript);
   sqlite3_vfs_unregister(p->pVfs);
-  ckfree((char *)p->apScript);
   ckfree((char *)p->pVfs);
   ckfree((char *)p);
 }

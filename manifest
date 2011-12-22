@@ -1,5 +1,5 @@
-C Give\sthe\sosLocaltime()\sfunction\sfile\sscope\sin\sdate.c.
-D 2011-06-21T15:58:14.587
+C Backport\sthe\sfixes\sfor\sCoverity-discovered\sproblems\s\nin\s[1c27d84216],\s[676acce274],\sand\s[f9c4a7c8f4]\sfrom\strunk\sto\sthe\n3.7.6\sbranch.
+D 2011-12-22T18:44:13.151
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -74,14 +74,14 @@ F ext/fts3/fts3_snippet.c e857c6a89d81d3b89df59f3b44b35c68d8ed5c62
 F ext/fts3/fts3_tokenizer.c 055f3dc7369585350b28db1ee0f3b214dca6724d
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 6e5cbaa588924ac578263a598e4fb9f5c9bb179d
-F ext/fts3/fts3_write.c 813495ed106eb9461044e3c0374f4db69b37eb09
+F ext/fts3/fts3_write.c d0a3a60e7351e3d4c2ee7155d1eb2d9340691ddc
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c eb9ae1d79046bd7871aa97ee6da51eb770134b5a
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c f5fa951eba03c41d292958064604a033021acdee
+F ext/rtree/rtree.c eec44ad20b00c338aaeb5827271db3c01d8233b7
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test dbd4250ac0ad367a262eb9676f7e3080b0368206
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -144,7 +144,7 @@ F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 3ae0d52da013a6326310655be6473fd472347b85
 F src/main.c a3a968b6b0405a849c855451eb825f597cc2a43f
-F src/malloc.c 788f2ed928786dfe305b6783d551d6b1a9080976
+F src/malloc.c 758b53e49fa21c029efa364c3602a14f66210de5
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 00bd8265c81abb665c48fea1e0c234eb3b922206
 F src/mem2.c e307323e86b5da1853d7111b68fd6b84ad6f09cf
@@ -178,7 +178,7 @@ F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 649a6f10f7eb7b52a5a28847773cb9968a828ae8
 F src/shell.c 72e7e176bf46d5c6518d15ac4ad6847c4bb5df79
-F src/sqlite.h.in 91e79bcf895101ac55520f708840df7f36b4528a
+F src/sqlite.h.in bfab0d236f8aabe8b5a876b971cb6a9a9611741c
 F src/sqlite3ext.h c90bd5507099f62043832d73f6425d8d5c5da754
 F src/sqliteInt.h 6d605800a055f613ec43a02b4d35894b4c9ee291
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -225,7 +225,7 @@ F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c 162c4ec0137a549c009bb9ecab550527743cfc5d
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c 361ae0a0f1cbf5a28ad0388a258b104017a370c0
-F src/test_vfs.c 2ed8853c1e51ac6f9ea091f7ce4e0d618bba8b86
+F src/test_vfs.c 27b7d9de40630f603b9e2cf9ef2a7c81d31c4515
 F src/test_vfstrace.c 2265c9895f350c8d3c39b079998fbe7481505cc1
 F src/test_wholenumber.c 6129adfbe7c7444f2e60cc785927f3aa74e12290
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
@@ -596,7 +596,7 @@ F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test af02ed0a9cbc0d2a61b8f35171d4d117e588e4ec
 F test/oserror.test 498d8337e9d15543eb7b004fef8594bf204ff43c
-F test/pager1.test d8672fd0af5f4f9b99b06283d00f01547809bebe
+F test/pager1.test 2f2f93411c1c5afa44ebdaf19152e4bd4d9cb1b3
 F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
 F test/pagerfault.test 9de4d3e0c59970b4c6cb8dac511fa242f335d8a7
@@ -931,7 +931,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 5d4b0c5bfc5be1b16b05d43f943cd8f755d23d0e
-R 81e0dab466898284c5ec5a84e35d07bc
-U dan
-Z 480a6904404a452960c694f5fec1e3e4
+P 1abce55a1ed8bce2c3852b726b33bc050590eeb6
+R ed2ae42eead4ec0e7048db86821f851b
+U drh
+Z c794c93c1434d774ab75042b9dfc8adb

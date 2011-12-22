@@ -1653,7 +1653,7 @@ for {set i 0} {$i<513} {incr i 3} {
 testvfs tv -default 1
 tv script xOpenCb
 tv filter xOpen
-proc xOpenCb {method filename} {
+proc xOpenCb {method filename args} {
   set ::file_len [string length $filename]
 }
 sqlite3 db test.db

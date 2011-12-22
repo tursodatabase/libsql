@@ -1170,7 +1170,6 @@ int sqlite3Fts3SegReaderNew(
   int nRoot,                      /* Size of buffer containing root node */
   Fts3SegReader **ppReader        /* OUT: Allocated Fts3SegReader */
 ){
-  int rc = SQLITE_OK;             /* Return code */
   Fts3SegReader *pReader;         /* Newly allocated SegReader object */
   int nExtra = 0;                 /* Bytes to allocate segment root node */
 
@@ -1198,13 +1197,8 @@ int sqlite3Fts3SegReaderNew(
   }else{
     pReader->iCurrentBlock = iStartLeaf-1;
   }
-
-  if( rc==SQLITE_OK ){
-    *ppReader = pReader;
-  }else{
-    sqlite3Fts3SegReaderFree(pReader);
-  }
-  return rc;
+  *ppReader = pReader;
+  return SQLITE_OK;
 }
 
 /*
@@ -1238,13 +1232,13 @@ int sqlite3Fts3SegReaderPending(
   Fts3SegReader **ppReader        /* OUT: SegReader for pending-terms */
 ){
   Fts3SegReader *pReader = 0;     /* Fts3SegReader object to return */
+  Fts3HashElem *pE;               /* Iterator variable */
   Fts3HashElem **aElem = 0;       /* Array of term hash entries to scan */
   int nElem = 0;                  /* Size of array at aElem */
   int rc = SQLITE_OK;             /* Return Code */
 
   if( isPrefix ){
     int nAlloc = 0;               /* Size of allocated array at aElem */
-    Fts3HashElem *pE = 0;         /* Iterator variable */
 
     for(pE=fts3HashFirst(&p->pendingTerms); pE; pE=fts3HashNext(pE)){
       char *zKey = (char *)fts3HashKey(pE);

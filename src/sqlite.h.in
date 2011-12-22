@@ -4329,7 +4329,8 @@ int sqlite3_release_memory(int);
 ** is advisory only.
 **
 ** ^The return value from sqlite3_soft_heap_limit64() is the size of
-** the soft heap limit prior to the call.  ^If the argument N is negative
+** the soft heap limit prior to the call, or negative in the case of an
+** error.  ^If the argument N is negative
 ** then no change is made to the soft heap limit.  Hence, the current
 ** size of the soft heap limit can be determined by invoking
 ** sqlite3_soft_heap_limit64() with a negative argument.
