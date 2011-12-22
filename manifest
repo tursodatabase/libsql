@@ -1,5 +1,5 @@
-C Check\sthe\sreturn\scode\sfrom\ssqlite3_initialize()\scalled\sfrom\swithin\nsqlite3_soft_heap_limit64()\sand\sreturn\san\serror\sfrom\ssqlite3_soft_heap_limit64()\nif\ssqlite3_initialize()\sfails.
-D 2011-12-22T17:10:35.691
+C Fix\sminor\sissues\swith\sFTS\sand\sRTREE\sdiscovered\sby\scoverity.
+D 2011-12-22T17:31:17.125
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,14 +78,14 @@ F ext/fts3/fts3_test.c 24fa13f330db011500acb95590da9eee24951894
 F ext/fts3/fts3_tokenizer.c 9ff7ec66ae3c5c0340fa081958e64f395c71a106
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 0dde8f307b8045565cf63797ba9acfaff1c50c68
-F ext/fts3/fts3_write.c fb1998be659ff85b7045513ab625bbdcf9b804d8
+F ext/fts3/fts3_write.c fdf0c99830360146ec7128150271c8c014a8fef7
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c eb9ae1d79046bd7871aa97ee6da51eb770134b5a
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 692e9192d148f318b3dca9f744600346a175eedd
+F ext/rtree/rtree.c b92ab2e91e35c4964644647322813419c65fe1ce
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 28e1b8da4da98093ce3210187434dd760a8d89d8
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -985,7 +985,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P f9c4a7c8f4e5821b47c1393d6272e32416d8886c
-R 362f49b95b21624f3aae30c0009ec92f
+P 676acce274fec692a1eb34d27ee4b1327b4b3334
+R 8a1d21156d0abc4e02d468720492bfd4
 U drh
-Z 1c719257426fd1979e90548de4947ab1
+Z d6b64802c9259af408f51c1ca44ff382

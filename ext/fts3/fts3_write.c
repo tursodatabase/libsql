@@ -1386,7 +1386,6 @@ int sqlite3Fts3SegReaderNew(
   int nRoot,                      /* Size of buffer containing root node */
   Fts3SegReader **ppReader        /* OUT: Allocated Fts3SegReader */
 ){
-  int rc = SQLITE_OK;             /* Return code */
   Fts3SegReader *pReader;         /* Newly allocated SegReader object */
   int nExtra = 0;                 /* Bytes to allocate segment root node */
 
@@ -1414,13 +1413,8 @@ int sqlite3Fts3SegReaderNew(
   }else{
     pReader->iCurrentBlock = iStartLeaf-1;
   }
-
-  if( rc==SQLITE_OK ){
-    *ppReader = pReader;
-  }else{
-    sqlite3Fts3SegReaderFree(pReader);
-  }
-  return rc;
+  *ppReader = pReader;
+  return SQLITE_OK;
 }
 
 /*
