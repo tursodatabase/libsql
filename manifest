@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sfts3_write.c\scausing\sstack\smemory\sto\sbe\sreferenced\safter\sit\sis\sout\sof\sscope.
-D 2011-12-22T15:30:46.102
+C Check\sthe\sreturn\scode\sfrom\ssqlite3_initialize()\scalled\sfrom\swithin\nsqlite3_soft_heap_limit64()\sand\sreturn\san\serror\sfrom\ssqlite3_soft_heap_limit64()\nif\ssqlite3_initialize()\sfails.
+D 2011-12-22T17:10:35.691
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -148,7 +148,7 @@ F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
 F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
 F src/main.c c837e24182e8ec7121c61e44f547b59cbe413e7f
-F src/malloc.c 591aedb20ae40813f1045f2ef253438a334775d9
+F src/malloc.c 15afac5e59b6584efe072e9933aefb4230e74f97
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 7998e7003a3047e323c849a26dda004debc04d03
 F src/mem2.c e307323e86b5da1853d7111b68fd6b84ad6f09cf
@@ -182,7 +182,7 @@ F src/resolve.c 3d3e80a98f203ac6b9329e9621e29eda85ddfd40
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c a1d075db66a0ea42807353501b62997969e5be79
 F src/shell.c aa4183d4a5243d8110b1d3d77faa4aea7e9c9c2d
-F src/sqlite.h.in e3e45b5c69ab3236c7ec4591a5858221863cecd4
+F src/sqlite.h.in e884dffa91721080e1792e73a2260485c9d2ffc1
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h 165409fa8adc8701148830804febeded3f2e4448
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -985,7 +985,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P c723e3e18a008922281d8d6e8e3aba07941eb173
-R a473dabc4c74a83ea005d83d596de923
-U dan
-Z 9db758f12d3cf045a211ef0d51186bd2
+P f9c4a7c8f4e5821b47c1393d6272e32416d8886c
+R 362f49b95b21624f3aae30c0009ec92f
+U drh
+Z 1c719257426fd1979e90548de4947ab1
