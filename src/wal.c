@@ -1154,7 +1154,6 @@ static int walIndexRecover(Wal *pWal){
 
     /* Read all frames from the log file. */
     iFrame = 0;
-    isValid = 1;
     for(iOffset=WAL_HDRSIZE; (iOffset+szFrame)<=nSize; iOffset+=szFrame){
       u32 pgno;                   /* Database page number for frame */
       u32 nTruncate;              /* dbsize field from frame header */
