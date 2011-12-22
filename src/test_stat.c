@@ -369,7 +369,7 @@ static void statSizeAndOffset(StatCursor *pCsr){
 
   /* The default page size and offset */
   pCsr->szPage = sqlite3BtreeGetPageSize(pBt);
-  pCsr->iOffset = pCsr->szPage * (pCsr->iPageno - 1);
+  pCsr->iOffset = (i64)pCsr->szPage * (pCsr->iPageno - 1);
 
   /* If connected to a ZIPVFS backend, override the page size and
   ** offset with actual values obtained from ZIPVFS.

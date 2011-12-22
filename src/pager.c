@@ -3279,13 +3279,13 @@ static int pagerPlaybackSavepoint(Pager *pPager, PagerSavepoint *pSavepoint){
   */
   if( pSavepoint ){
     u32 ii;            /* Loop counter */
-    i64 offset = pSavepoint->iSubRec*(4+pPager->pageSize);
+    i64 offset = (i64)pSavepoint->iSubRec*(4+pPager->pageSize);
 
     if( pagerUseWal(pPager) ){
       rc = sqlite3WalSavepointUndo(pPager->pWal, pSavepoint->aWalData);
     }
     for(ii=pSavepoint->iSubRec; rc==SQLITE_OK && ii<pPager->nSubRec; ii++){
-      assert( offset==ii*(4+pPager->pageSize) );
+      assert( offset==(i64)ii*(4+pPager->pageSize) );
       rc = pager_playback_one_page(pPager, &offset, pDone, 0, 1);
     }
     assert( rc!=SQLITE_DONE );
@@ -4137,7 +4137,7 @@ static int subjournalPage(PgHdr *pPg){
     ** write the journal record into the file.  */
     if( rc==SQLITE_OK ){
       void *pData = pPg->pData;
-      i64 offset = pPager->nSubRec*(4+pPager->pageSize);
+      i64 offset = (i64)pPager->nSubRec*(4+pPager->pageSize);
       char *pData2;
   
       CODEC2(pPager, pData, pPg->pgno, 7, return SQLITE_NOMEM, pData2);

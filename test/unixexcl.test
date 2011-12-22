@@ -80,4 +80,48 @@ do_multiclient_test tn {
   } {0 {hello world}}
 }
 
+do_multiclient_test tn {
+  do_test unixexcl-3.$tn.1 {
+    code1 { db close; sqlite3 db test.db -vfs unix-excl }
+    code2 { db2 close; sqlite3 db2 test.db -vfs unix-excl }
+    sql1 {
+      PRAGMA journal_mode = WAL;
+      CREATE TABLE t1(a, b);
+      INSERT INTO t1 VALUES(1, 2);
+    }
+  } {wal}
+
+  if {$tn==1} {
+    do_test unixexcl-3.$tn.1.multiproc {
+      csql2 { SELECT * FROM t1; }
+    } {1 {database is locked}}
+  } else {
+    do_test unixexcl-3.$tn.1.singleproc {
+      sql2 { SELECT * FROM t1; }
+    } {1 2}
+
+    do_test unixexcl-3.$tn.2 {
+      sql2 { 
+        BEGIN;
+          SELECT * FROM t1;
+      }
+    } {1 2}
+    do_test unixexcl-3.$tn.3 {
+      sql1 { PRAGMA wal_checkpoint; INSERT INTO t1 VALUES(3, 4); }
+    } {0 5 5}
+    do_test unixexcl-3.$tn.4 {
+      sql2 { SELECT * FROM t1; }
+    } {1 2}
+    do_test unixexcl-3.$tn.5 {
+      sql1 { SELECT * FROM t1; }
+    } {1 2 3 4}
+    do_test unixexcl-3.$tn.6 {
+      sql2 { COMMIT; SELECT * FROM t1; }
+    } {1 2 3 4}
+    do_test unixexcl-3.$tn.7 {
+      sql1 { PRAGMA wal_checkpoint; }
+    } {0 7 7}
+  }
+}
+
 finish_test
