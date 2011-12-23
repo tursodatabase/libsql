@@ -495,35 +495,19 @@ static int multiplexOpen(
     memset(pGroup, 0, sz);
     pMultiplexOpen->pGroup = pGroup;
     pGroup->bEnabled = -1;
-    pGroup->bTruncate = (flags & SQLITE_OPEN_MAIN_DB)==0;
-    pGroup->szChunk = SQLITE_MULTIPLEX_CHUNK_SIZE;
-
+    pGroup->bTruncate = sqlite3_uri_boolean(zName, "truncate", 
+                                 (flags & SQLITE_OPEN_MAIN_DB)==0);
+    pGroup->szChunk = sqlite3_uri_int64(zName, "chunksize",
+                                        SQLITE_MULTIPLEX_CHUNK_SIZE);
+    pGroup->szChunk = (pGroup->szChunk+0xffff)&~0xffff;
     if( zName ){
       char *p = (char *)&pGroup[1];
-      if( flags & SQLITE_OPEN_URI ){
-        const char *zChunkSize;
-        zChunkSize = sqlite3_uri_parameter(zName, "chunksize");
-        if( zChunkSize ){
-          unsigned int n = 0;
-          int i;
-          for(i=0; zChunkSize[i]>='0' && zChunkSize[i]<='9'; i++){
-            n = n*10 + zChunkSize[i] - '0';
-          }
-          if( n>0 ){
-            pGroup->szChunk = (n+0xffff)&~0xffff;
-          }else{
-            /* A zero or negative chunksize disabled the multiplexor */
-            pGroup->bEnabled = 0;
-          }
-        }
-        if( sqlite3_uri_parameter(zName, "truncate") ) pGroup->bTruncate = 1;
-      }
       pGroup->zName = p;
       memcpy(pGroup->zName, zName, nName+1);
       pGroup->nName = nName;
     }
     if( pGroup->bEnabled ){
-      /* Make sure that the chunksize is not such that the pending byte
+      /* Make sure that the chunksize is such that the pending byte does not
       ** falls at the end of a chunk.  A region of up to 64K following
       ** the pending byte is never written, so if the pending byte occurs
       ** near the end of a chunk, that chunk will be too small. */

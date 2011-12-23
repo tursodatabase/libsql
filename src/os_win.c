@@ -3025,7 +3025,6 @@ static int winOpen(
   void *zConverted;              /* Filename in OS encoding */
   const char *zUtf8Name = zName; /* Filename in UTF-8 encoding */
   int cnt = 0;
-  const char *zZeroDam;          /* Value of zero_damage query parameter */
 
   /* If argument zPath is a NULL pointer, this function is required to open
   ** a temporary file. Use this buffer to store the file name in.
@@ -3201,9 +3200,9 @@ static int winOpen(
   pFile->pVfs = pVfs;
   pFile->pShm = 0;
   pFile->zPath = zName;
-  zZeroDam = sqlite3_uri_parameter(zName, "zero_damage");
-  if( zZeroDam==0 ) zZeroDam = "1";
-  pFile->ctrlFlags = atoi(zZeroDam) ? WINFILE_ZERO_DAMAGE : 1;
+  if( sqlite3_uri_boolean(zName, "zero_damage", 1) ){
+    pFile->ctrlFlags |= WINFILE_ZERO_DAMAGE;
+  }
   pFile->sectorSize = getSectorSize(pVfs, zUtf8Name);
 
 #if SQLITE_OS_WINCE

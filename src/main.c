@@ -2989,6 +2989,30 @@ const char *sqlite3_uri_parameter(const char *zFilename, const char *zParam){
 }
 
 /*
+** Return a boolean value for a query parameter.
+*/
+int sqlite3_uri_boolean(const char *zFilename, const char *zParam, int bDflt){
+  const char *z = sqlite3_uri_parameter(zFilename, zParam);
+  return z ? sqlite3GetBoolean(z) : (bDflt!=0);
+}
+
+/*
+** Return a 64-bit integer value for a query parameter.
+*/
+sqlite3_int64 sqlite3_uri_int64(
+  const char *zFilename,    /* Filename as passed to xOpen */
+  const char *zParam,       /* URI parameter sought */
+  sqlite3_int64 bDflt       /* return if parameter is missing */
+){
+  const char *z = sqlite3_uri_parameter(zFilename, zParam);
+  sqlite3_int64 v;
+  if( z && sqlite3Atoi64(z, &v, sqlite3Strlen30(z), SQLITE_UTF8)==SQLITE_OK ){
+    bDflt = v;
+  }
+  return bDflt;
+}
+
+/*
 ** Return the filename of the database associated with a database
 ** connection.
 */

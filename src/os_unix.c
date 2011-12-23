@@ -3917,10 +3917,8 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
     }
 
     if( pInode->bProcessLock==0 ){
-      const char *zRO;
       int openFlags = O_RDWR | O_CREAT;
-      zRO = sqlite3_uri_parameter(pDbFd->zPath, "readonly_shm");
-      if( zRO && sqlite3GetBoolean(zRO) ){
+      if( sqlite3_uri_boolean(pDbFd->zPath, "readonly_shm", 0) ){
         openFlags = O_RDONLY;
         pShmNode->isReadonly = 1;
       }
@@ -4592,7 +4590,6 @@ static int fillInUnixFile(
   const sqlite3_io_methods *pLockingStyle;
   unixFile *pNew = (unixFile *)pId;
   int rc = SQLITE_OK;
-  const char *zZeroDam;   /* Value of the zero_damage query parameter */
 
   assert( pNew->pInode==NULL );
 
@@ -4619,9 +4616,10 @@ static int fillInUnixFile(
   pNew->h = h;
   pNew->pVfs = pVfs;
   pNew->zPath = zFilename;
-  zZeroDam = sqlite3_uri_parameter(zFilename, "zero_damage");
-  if( zZeroDam==0 ) zZeroDam = "1";
-  pNew->ctrlFlags = atoi(zZeroDam) ? UNIXFILE_ZERO_DAMAGE : 1;
+  pNew->ctrlFlags = 0;
+  if( sqlite3_uri_boolean(zFilename, "zero_damage", 1) ){
+    pNew->ctrlFlags |= UNIXFILE_ZERO_DAMAGE;
+  }
   if( memcmp(pVfs->zName,"unix-excl",10)==0 ){
     pNew->ctrlFlags |= UNIXFILE_EXCL;
   }
