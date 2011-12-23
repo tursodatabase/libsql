@@ -9,29 +9,32 @@
 #
 #***********************************************************************
 # 
-# This file implements tests of the SQLITE_IOCAP_ZERO_DAMAGE property
-# and the SQLITE_FCNTL_ZERO_DAMAGE file-control for manipulating it.
+# This file implements tests of the SQLITE_IOCAP_POWERSAFE_OVERWRITE property
+# and the SQLITE_FCNTL_POWERSAFE_OVERWRITE file-control for manipulating it.
+#
+# The name of this file comes from the fact that we used to call the
+# POWERSAFE_OVERWRITE property ZERO_DAMAGE.
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix wal5
 
-# ZERO_DAMAGE defaults to true
+# POWERSAFE_OVERWRITE defaults to true
 #
 do_test zerodamage-1.0 {
-  file_control_zero_damage db -1
+  file_control_powersafe_overwrite db -1
 } {0 1}
 
 # Check the ability to turn zero-damage on and off.
 #
 do_test zerodamage-1.1 {
-  file_control_zero_damage db 0
-  file_control_zero_damage db -1
+  file_control_powersafe_overwrite db 0
+  file_control_powersafe_overwrite db -1
 } {0 0}
 do_test zerodamage-1.2 {
-  file_control_zero_damage db 1
-  file_control_zero_damage db -1
+  file_control_powersafe_overwrite db 1
+  file_control_powersafe_overwrite db -1
 } {0 1}
 
 # Run a transaction with zero-damage on, a small page size and a much larger
@@ -42,7 +45,7 @@ do_test zerodamage-2.0 {
   db close
   testvfs tv -default 1
   tv sectorsize 8192
-  sqlite3 db file:test.db?zero_damage=1 -uri 1
+  sqlite3 db file:test.db?psow=TRUE -uri 1
   unset -nocomplain ::max_journal_size
   set ::max_journal_size 0
   proc xDeleteCallback {method file args} {
@@ -65,7 +68,7 @@ do_test zerodamage-2.0 {
   db eval {
     UPDATE t1 SET y=randomblob(50) WHERE x=123;
   }
-  concat [file_control_zero_damage db -1] [set ::max_journal_size]
+  concat [file_control_powersafe_overwrite db -1] [set ::max_journal_size]
 } {0 1 2576}
 
 # Repeat the previous step with zero-damage turned off.  This time the
@@ -74,14 +77,14 @@ do_test zerodamage-2.0 {
 do_test zerodamage-2.1 {
   set ::max_journal_size 0
   db close
-  sqlite3 db file:test.db?zero_damage=0 -uri 1
+  sqlite3 db file:test.db?psow=FALSE -uri 1
   db eval {
     UPDATE t1 SET y=randomblob(50) WHERE x=124;
   }
-  concat [file_control_zero_damage db -1] [set ::max_journal_size]
+  concat [file_control_powersafe_overwrite db -1] [set ::max_journal_size]
 } {0 0 24704}
 
-# Run a WAL-mode transaction with ZERO_DAMAGE on to verify that the
+# Run a WAL-mode transaction with POWERSAFE_OVERWRITE on to verify that the
 # WAL file does not get too big.
 #
 do_test zerodamage-3.0 {
@@ -89,19 +92,19 @@ do_test zerodamage-3.0 {
      PRAGMA journal_mode=WAL;
   }
   db close
-  sqlite3 db file:test.db?zero_damage=1 -uri 1
+  sqlite3 db file:test.db?psow=TRUE -uri 1
   db eval {
      UPDATE t1 SET y=randomblob(50) WHERE x=124;
   }
   file size test.db-wal
 } {1080}
 
-# Repeat the previous with ZERO_DAMAGE off.  Verify that the WAL file
+# Repeat the previous with POWERSAFE_OVERWRITE off.  Verify that the WAL file
 # is padded.
 #
 do_test zerodamage-3.1 {
   db close
-  sqlite3 db file:test.db?zero_damage=0 -uri 1
+  sqlite3 db file:test.db?psow=FALSE -uri 1
   db eval {
      UPDATE t1 SET y=randomblob(50) WHERE x=124;
   }

@@ -263,7 +263,7 @@ struct unixFile {
 #else
 # define UNIXFILE_DIRSYNC    0x00
 #endif
-#define UNIXFILE_ZERO_DAMAGE 0x10     /* True if SQLITE_IOCAP_ZERO_DAMAGE */
+#define UNIXFILE_PSOW        0x10     /* SQLITE_IOCAP_POWERSAFE_OVERWRITE */
 
 /*
 ** Include code that is common to all os_*.c files
@@ -3557,8 +3557,8 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       unixModeBit(pFile, UNIXFILE_PERSIST_WAL, (int*)pArg);
       return SQLITE_OK;
     }
-    case SQLITE_FCNTL_ZERO_DAMAGE: {
-      unixModeBit(pFile, UNIXFILE_ZERO_DAMAGE, (int*)pArg);
+    case SQLITE_FCNTL_POWERSAFE_OVERWRITE: {
+      unixModeBit(pFile, UNIXFILE_PSOW, (int*)pArg);
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_VFSNAME: {
@@ -3622,18 +3622,23 @@ static int unixSectorSize(sqlite3_file *pFile){
 /*
 ** Return the device characteristics for the file.
 **
-** This VFS is set up to return SQLITE_IOCAP_ZERO_DAMAGE by default.
-** However, that choice is contraversial sicne technically the underlying
-** file system does not always provide ZERO_DAMAGE.  (In other words, after
-** a power-loss event, parts of the file that were never written might end
-** up being altered.)  However, non-ZERO-DAMAGE behavior is very, very rare.
-** And asserting ZERO_DAMAGE makes a large reduction in the amount of required
-** I/O.  Hence, while ZERO_DAMAGE is on by default, there is a file-control
-** available to turn it off.
+** This VFS is set up to return SQLITE_IOCAP_POWERSAFE_OVERWRITE by default.
+** However, that choice is contraversial since technically the underlying
+** file system does not always provide powersafe overwrites.  (In other
+** words, after a power-loss event, parts of the file that were never
+** written might end up being altered.)  However, non-PSOW behavior is very,
+** very rare.  And asserting PSOW makes a large reduction in the amount
+** of required I/O for journaling, since a lot of padding is eliminated.
+**  Hence, while POWERSAFE_OVERWRITE is on by default, there is a file-control
+** available to turn it off and URI query parameter available to turn it off.
 */
 static int unixDeviceCharacteristics(sqlite3_file *id){
   unixFile *p = (unixFile*)id;
-  return (p->ctrlFlags & UNIXFILE_ZERO_DAMAGE) ? SQLITE_IOCAP_ZERO_DAMAGE : 0;
+  if( p->ctrlFlags & UNIXFILE_PSOW ){
+    return SQLITE_IOCAP_POWERSAFE_OVERWRITE;
+  }else{
+    return 0;
+  }
 }
 
 #ifndef SQLITE_OMIT_WAL
@@ -4617,8 +4622,8 @@ static int fillInUnixFile(
   pNew->pVfs = pVfs;
   pNew->zPath = zFilename;
   pNew->ctrlFlags = 0;
-  if( sqlite3_uri_boolean(zFilename, "zero_damage", 1) ){
-    pNew->ctrlFlags |= UNIXFILE_ZERO_DAMAGE;
+  if( sqlite3_uri_boolean(zFilename, "psow", SQLITE_POWERSAFE_OVERWRITE) ){
+    pNew->ctrlFlags |= UNIXFILE_PSOW;
   }
   if( memcmp(pVfs->zName,"unix-excl",10)==0 ){
     pNew->ctrlFlags |= UNIXFILE_EXCL;

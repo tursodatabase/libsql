@@ -78,7 +78,7 @@ struct winFile {
 ** Allowed values for winFile.ctrlFlags
 */
 #define WINFILE_PERSIST_WAL     0x04   /* Persistent WAL mode */
-#define WINFILE_ZERO_DAMAGE     0x10   /* True if SQLITE_IOCAP_ZERO_DAMAGE */
+#define WINFILE_PSOW            0x10   /* SQLITE_IOCAP_POWERSAFE_OVERWRITE */
 
 /*
  * If compiled with SQLITE_WIN32_MALLOC on Windows, we will use the
@@ -2185,8 +2185,8 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       winModeBit(pFile, WINFILE_PERSIST_WAL, (int*)pArg);
       return SQLITE_OK;
     }
-    case SQLITE_FCNTL_ZERO_DAMAGE: {
-      winModeBit(pFile, WINFILE_ZERO_DAMAGE, (int*)pArg);
+    case SQLITE_FCNTL_POWERSAFE_OVERWRITE: {
+      winModeBit(pFile, WINFILE_PSOW, (int*)pArg);
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_VFSNAME: {
@@ -2235,7 +2235,7 @@ static int winSectorSize(sqlite3_file *id){
 static int winDeviceCharacteristics(sqlite3_file *id){
   winFile *p = (winFile*)id;
   return SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN |
-         ((p->ctrlFlags & WINFILE_ZERO_DAMAGE)?SQLITE_IOCAP_ZERO_DAMAGE:0);
+         ((p->ctrlFlags & WINFILE_PSOW)?SQLITE_IOCAP_POWERSAFE_OVERWRITE:0);
 }
 
 #ifndef SQLITE_OMIT_WAL
@@ -3200,8 +3200,8 @@ static int winOpen(
   pFile->pVfs = pVfs;
   pFile->pShm = 0;
   pFile->zPath = zName;
-  if( sqlite3_uri_boolean(zName, "zero_damage", 1) ){
-    pFile->ctrlFlags |= WINFILE_ZERO_DAMAGE;
+  if( sqlite3_uri_boolean(zName, "psow", SQLITE_POWERSAFE_OVERWRITE) ){
+    pFile->ctrlFlags |= WINFILE_PSOW;
   }
   pFile->sectorSize = getSectorSize(pVfs, zUtf8Name);
 

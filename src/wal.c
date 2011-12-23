@@ -1305,7 +1305,9 @@ int sqlite3WalOpen(
   }else{
     int iDC = sqlite3OsDeviceCharacteristics(pRet->pWalFd);
     if( iDC & SQLITE_IOCAP_SEQUENTIAL ){ pRet->syncHeader = 0; }
-    if( iDC & SQLITE_IOCAP_ZERO_DAMAGE ){ pRet->padToSectorBoundary = 0; }
+    if( iDC & SQLITE_IOCAP_POWERSAFE_OVERWRITE ){
+      pRet->padToSectorBoundary = 0;
+    }
     *ppWal = pRet;
     WALTRACE(("WAL%d: opened\n", pRet));
   }
@@ -2810,9 +2812,9 @@ int sqlite3WalFrames(
   ** transaction and if PRAGMA synchronous=FULL.  If synchronous==NORMAL
   ** or synchonous==OFF, then no padding or syncing are needed.
   **
-  ** If SQLITE_IOCAP_ZERO_DAMAGE is defined, then padding is not needed
-  ** and only the sync is done.  If padding is needed, then the final
-  ** frame is repeated (with its commit mark) until the next sector
+  ** If SQLITE_IOCAP_POWERSAFE_OVERWRITE is defined, then padding is not
+  ** needed and only the sync is done.  If padding is needed, then the
+  ** final frame is repeated (with its commit mark) until the next sector
   ** boundary is crossed.  Only the part of the WAL prior to the last
   ** sector boundary is synced; the part of the last frame that extends
   ** past the sector boundary is written after the sync.
