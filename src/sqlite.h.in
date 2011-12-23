@@ -505,13 +505,10 @@ int sqlite3_exec(
 ** way around.  The SQLITE_IOCAP_SEQUENTIAL property means that
 ** information is written to disk in the same order as calls
 ** to xWrite().  The SQLITE_IOCAP_POWERSAFE_OVERWRITE property means that
-** after reboot following a crash or power loss, the value of
-** each byte in a file is a value that was actually written
-** into that byte at some point.  In other words, a crash will
-** not cause unwritten bytes of the file to change nor introduce 
-** randomness into a file nor zero out parts of the file, and any byte of
-** a file that are never written will not change values due to
-** writes to nearby bytes.
+** after reboot following a crash or power loss, the only bytes in a
+** file that were written at the application level might have changed
+** and that adjacent bytes, even bytes within the same sector are
+** guaranteed to be unchanged.
 */
 #define SQLITE_IOCAP_ATOMIC                 0x00000001
 #define SQLITE_IOCAP_ATOMIC512              0x00000002

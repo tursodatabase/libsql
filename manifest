@@ -1,5 +1,5 @@
-C Avoid\sexcess\ssyncs\swhen\spadding\sa\stransaction\sin\sa\sWAL.
-D 2011-12-23T13:32:07.917
+C Documentation\supdates.\s\sNo\schanges\sto\scode.
+D 2011-12-23T20:49:26.881
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -182,7 +182,7 @@ F src/resolve.c 3d3e80a98f203ac6b9329e9621e29eda85ddfd40
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c a1d075db66a0ea42807353501b62997969e5be79
 F src/shell.c aa4183d4a5243d8110b1d3d77faa4aea7e9c9c2d
-F src/sqlite.h.in 3d1a77e27b9d9979fb7ec84834a8423602d29dc5
+F src/sqlite.h.in c78aa4b9e0eba0e671fdbef13d8d07125c504a32
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h b8fdd9c39c8d7f5c794f4ea917293d9c75b9aff2
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -986,7 +986,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 2370d70eb51d2259aaa8073d861ab79d6637cbd9
-R 070cfae8b4f17992d010f84eb7fc87cd
+P 1f24ae716df6232de768e245ea990049deee3c22
+R 3f80d501a005f63063af2f8ab95e37cd
 U drh
-Z ce9eb9870fa6375b9586d00c63492f9d
+Z 04aada2484a2858d2fcd0e96317998a2
