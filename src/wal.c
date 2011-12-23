@@ -2829,8 +2829,9 @@ int sqlite3WalFrames(
         iOffset += szFrame;
         nExtra++;
       }
+    }else{
+      rc = sqlite3OsSync(w.pFd, sync_flags & SQLITE_SYNC_MASK);
     }
-    rc = sqlite3OsSync(w.pFd, sync_flags & SQLITE_SYNC_MASK);
   }
 
   /* If this frame set completes the first transaction in the WAL and
