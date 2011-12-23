@@ -1162,18 +1162,19 @@ static int testvfs_obj_cmd(
         int iValue;
       } aFlag[] = {
         { "default",               -1 },
-        { "atomic",                SQLITE_IOCAP_ATOMIC      },
-        { "atomic512",             SQLITE_IOCAP_ATOMIC512   },
-        { "atomic1k",              SQLITE_IOCAP_ATOMIC1K    },
-        { "atomic2k",              SQLITE_IOCAP_ATOMIC2K    },
-        { "atomic4k",              SQLITE_IOCAP_ATOMIC4K    },
-        { "atomic8k",              SQLITE_IOCAP_ATOMIC8K    },
-        { "atomic16k",             SQLITE_IOCAP_ATOMIC16K   },
-        { "atomic32k",             SQLITE_IOCAP_ATOMIC32K   },
-        { "atomic64k",             SQLITE_IOCAP_ATOMIC64K   },
-        { "sequential",            SQLITE_IOCAP_SEQUENTIAL  },
-        { "safe_append",           SQLITE_IOCAP_SAFE_APPEND },
+        { "atomic",                SQLITE_IOCAP_ATOMIC                },
+        { "atomic512",             SQLITE_IOCAP_ATOMIC512             },
+        { "atomic1k",              SQLITE_IOCAP_ATOMIC1K              },
+        { "atomic2k",              SQLITE_IOCAP_ATOMIC2K              },
+        { "atomic4k",              SQLITE_IOCAP_ATOMIC4K              },
+        { "atomic8k",              SQLITE_IOCAP_ATOMIC8K              },
+        { "atomic16k",             SQLITE_IOCAP_ATOMIC16K             },
+        { "atomic32k",             SQLITE_IOCAP_ATOMIC32K             },
+        { "atomic64k",             SQLITE_IOCAP_ATOMIC64K             },
+        { "sequential",            SQLITE_IOCAP_SEQUENTIAL            },
+        { "safe_append",           SQLITE_IOCAP_SAFE_APPEND           },
         { "undeletable_when_open", SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN },
+        { "powersafe_overwrite",   SQLITE_IOCAP_POWERSAFE_OVERWRITE   },
         { 0, 0 }
       };
       Tcl_Obj *pRet;
@@ -1207,7 +1208,7 @@ static int testvfs_obj_cmd(
           iNew |= aFlag[idx].iValue;
         }
 
-        p->iDevchar = iNew;
+        p->iDevchar = iNew| 0x10000000;
       }
 
       pRet = Tcl_NewObj();

@@ -122,6 +122,10 @@
 #ifndef SQLITE_OMIT_WAL
 #include <sys/mman.h>
 #endif
+#ifndef MISSING_STATVFS
+#include <sys/statvfs.h>
+#endif
+
 
 #if SQLITE_ENABLE_LOCKING_STYLE
 # include <sys/ioctl.h>
@@ -211,6 +215,7 @@ struct unixFile {
   int h;                              /* The file descriptor */
   unsigned char eFileLock;            /* The type of lock held on this fd */
   unsigned char ctrlFlags;            /* Behavioral bits.  UNIXFILE_* flags */
+  unsigned char szSector;             /* Sectorsize/512 */
   int lastErrno;                      /* The unix errno from last I/O error */
   void *lockingContext;               /* Locking style specific state */
   UnixUnusedFd *pUnused;              /* Pre-allocated UnixUnusedFd */
@@ -258,6 +263,7 @@ struct unixFile {
 #else
 # define UNIXFILE_DIRSYNC    0x00
 #endif
+#define UNIXFILE_PSOW        0x10     /* SQLITE_IOCAP_POWERSAFE_OVERWRITE */
 
 /*
 ** Include code that is common to all os_*.c files
@@ -413,6 +419,14 @@ static struct unix_syscall {
 
   { "rmdir",        (sqlite3_syscall_ptr)rmdir,           0 },
 #define osRmdir     ((int(*)(const char*))aSyscall[19].pCurrent)
+
+#if defined(MISSING_STATVFS)
+  { "statvfs",      (sqlite3_syscall_ptr)0,               0 },
+#define osStatvfs   ((int(*)(const char*,void*))aSyscall[20].pCurrent)
+#else
+  { "statvfs",      (sqlite3_syscall_ptr)statvfs,         0 },
+#define osStatvfs   ((int(*)(const char*,struct statvfs*))aSyscall[20].pCurrent)
+#endif
 
 }; /* End of the overrideable system calls */
 
@@ -3499,6 +3513,22 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
 }
 
 /*
+** If *pArg is inititially negative then this is a query.  Set *pArg to
+** 1 or 0 depending on whether or not bit mask of pFile->ctrlFlags is set.
+**
+** If *pArg is 0 or 1, then clear or set the mask bit of pFile->ctrlFlags.
+*/
+static void unixModeBit(unixFile *pFile, unsigned char mask, int *pArg){
+  if( *pArg<0 ){
+    *pArg = (pFile->ctrlFlags & mask)!=0;
+  }else if( (*pArg)==0 ){
+    pFile->ctrlFlags &= ~mask;
+  }else{
+    pFile->ctrlFlags |= mask;
+  }
+}
+
+/*
 ** Information and control of an open file handle.
 */
 static int unixFileControl(sqlite3_file *id, int op, void *pArg){
@@ -3524,14 +3554,11 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       return rc;
     }
     case SQLITE_FCNTL_PERSIST_WAL: {
-      int bPersist = *(int*)pArg;
-      if( bPersist<0 ){
-        *(int*)pArg = (pFile->ctrlFlags & UNIXFILE_PERSIST_WAL)!=0;
-      }else if( bPersist==0 ){
-        pFile->ctrlFlags &= ~UNIXFILE_PERSIST_WAL;
-      }else{
-        pFile->ctrlFlags |= UNIXFILE_PERSIST_WAL;
-      }
+      unixModeBit(pFile, UNIXFILE_PERSIST_WAL, (int*)pArg);
+      return SQLITE_OK;
+    }
+    case SQLITE_FCNTL_POWERSAFE_OVERWRITE: {
+      unixModeBit(pFile, UNIXFILE_PSOW, (int*)pArg);
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_VFSNAME: {
@@ -3572,17 +3599,46 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
 ** a database and its journal file) that the sector size will be the
 ** same for both.
 */
-static int unixSectorSize(sqlite3_file *NotUsed){
-  UNUSED_PARAMETER(NotUsed);
-  return SQLITE_DEFAULT_SECTOR_SIZE;
+static int unixSectorSize(sqlite3_file *pFile){
+  unixFile *p = (unixFile*)pFile;
+  if( p->szSector==0 ){
+#ifdef MISSING_STATVFS
+    p->szSector = SQLITE_DEFAULT_SECTOR_SIZE/512;
+#else
+    struct statvfs x;
+    int sz;
+    memset(&x, 0, sizeof(x));
+    osStatvfs(p->zPath, &x);
+    sz = (int)x.f_frsize;
+    if( sz<512 || sz>65536 || (sz&(sz-1))!=0 ){
+      sz = SQLITE_DEFAULT_SECTOR_SIZE;
+    }
+    p->szSector = sz/512;
+#endif
+  }
+  return p->szSector*512;
 }
 
 /*
-** Return the device characteristics for the file. This is always 0 for unix.
+** Return the device characteristics for the file.
+**
+** This VFS is set up to return SQLITE_IOCAP_POWERSAFE_OVERWRITE by default.
+** However, that choice is contraversial since technically the underlying
+** file system does not always provide powersafe overwrites.  (In other
+** words, after a power-loss event, parts of the file that were never
+** written might end up being altered.)  However, non-PSOW behavior is very,
+** very rare.  And asserting PSOW makes a large reduction in the amount
+** of required I/O for journaling, since a lot of padding is eliminated.
+**  Hence, while POWERSAFE_OVERWRITE is on by default, there is a file-control
+** available to turn it off and URI query parameter available to turn it off.
 */
-static int unixDeviceCharacteristics(sqlite3_file *NotUsed){
-  UNUSED_PARAMETER(NotUsed);
-  return 0;
+static int unixDeviceCharacteristics(sqlite3_file *id){
+  unixFile *p = (unixFile*)id;
+  if( p->ctrlFlags & UNIXFILE_PSOW ){
+    return SQLITE_IOCAP_POWERSAFE_OVERWRITE;
+  }else{
+    return 0;
+  }
 }
 
 #ifndef SQLITE_OMIT_WAL
@@ -4565,10 +4621,12 @@ static int fillInUnixFile(
   pNew->h = h;
   pNew->pVfs = pVfs;
   pNew->zPath = zFilename;
+  pNew->ctrlFlags = 0;
+  if( sqlite3_uri_boolean(zFilename, "psow", SQLITE_POWERSAFE_OVERWRITE) ){
+    pNew->ctrlFlags |= UNIXFILE_PSOW;
+  }
   if( memcmp(pVfs->zName,"unix-excl",10)==0 ){
-    pNew->ctrlFlags = UNIXFILE_EXCL;
-  }else{
-    pNew->ctrlFlags = 0;
+    pNew->ctrlFlags |= UNIXFILE_EXCL;
   }
   if( isReadOnly ){
     pNew->ctrlFlags |= UNIXFILE_RDONLY;
@@ -6775,7 +6833,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==20 );
+  assert( ArraySize(aSyscall)==21 );
 
   /* Register all VFSes defined in the aVfs[] array */
   for(i=0; i<(sizeof(aVfs)/sizeof(sqlite3_vfs)); i++){

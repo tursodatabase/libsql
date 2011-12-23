@@ -2515,23 +2515,36 @@ static int pager_truncate(Pager *pPager, Pgno nPage){
 ** the value returned by the xSectorSize() method rounded up to 32 if
 ** it is less than 32, or rounded down to MAX_SECTOR_SIZE if it
 ** is greater than MAX_SECTOR_SIZE.
+**
+** If the file has the SQLITE_IOCAP_POWERSAFE_OVERWRITE property, then set
+** the effective sector size to its minimum value (512).  The purpose of
+** pPager->sectorSize is to define the "blast radius" of bytes that
+** might change if a crash occurs while writing to a single byte in
+** that range.  But with POWERSAFE_OVERWRITE, the blast radius is zero
+** (that is what POWERSAFE_OVERWRITE means), so we minimize the sector
+** size.  For backwards compatibility of the rollback journal file format,
+** we cannot reduce the effective sector size below 512.
 */
 static void setSectorSize(Pager *pPager){
   assert( isOpen(pPager->fd) || pPager->tempFile );
 
-  if( !pPager->tempFile ){
+  if( pPager->tempFile
+   || (sqlite3OsDeviceCharacteristics(pPager->fd) & 
+              SQLITE_IOCAP_POWERSAFE_OVERWRITE)!=0
+  ){
     /* Sector size doesn't matter for temporary files. Also, the file
     ** may not have been opened yet, in which case the OsSectorSize()
-    ** call will segfault.
-    */
-    pPager->sectorSize = sqlite3OsSectorSize(pPager->fd);
-  }
-  if( pPager->sectorSize<32 ){
+    ** call will segfault. */
     pPager->sectorSize = 512;
-  }
-  if( pPager->sectorSize>MAX_SECTOR_SIZE ){
-    assert( MAX_SECTOR_SIZE>=512 );
-    pPager->sectorSize = MAX_SECTOR_SIZE;
+  }else{
+    pPager->sectorSize = sqlite3OsSectorSize(pPager->fd);
+    if( pPager->sectorSize<32 ){
+      pPager->sectorSize = 512;
+    }
+    if( pPager->sectorSize>MAX_SECTOR_SIZE ){
+      assert( MAX_SECTOR_SIZE>=512 );
+      pPager->sectorSize = MAX_SECTOR_SIZE;
+    }
   }
 }
 
