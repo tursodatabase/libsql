@@ -1270,7 +1270,7 @@ int sqlite3Fts3SegReaderPending(
     }
 
   }else{
-    Fts3HashElem *pE = fts3HashFindElem(&p->pendingTerms, zTerm, nTerm);
+    pE = fts3HashFindElem(&p->pendingTerms, zTerm, nTerm);
     if( pE ){
       aElem = &pE;
       nElem = 1;

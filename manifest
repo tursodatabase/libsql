@@ -1,5 +1,5 @@
-C Backport\sthe\sfixes\sfor\sCoverity-discovered\sproblems\s\nin\s[1c27d84216],\s[676acce274],\sand\s[f9c4a7c8f4]\sfrom\strunk\sto\sthe\n3.7.6\sbranch.
-D 2011-12-22T18:44:13.151
+C Fix\sa\sproblem\swith\s[f9c4a7c8f4]\sas\sapplied\sto\sthis\sbranch.
+D 2011-12-23T11:07:06.197
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a4d9524721d40ef9ee26f93f9bd6a51dba106f2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -74,7 +74,7 @@ F ext/fts3/fts3_snippet.c e857c6a89d81d3b89df59f3b44b35c68d8ed5c62
 F ext/fts3/fts3_tokenizer.c 055f3dc7369585350b28db1ee0f3b214dca6724d
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 6e5cbaa588924ac578263a598e4fb9f5c9bb179d
-F ext/fts3/fts3_write.c d0a3a60e7351e3d4c2ee7155d1eb2d9340691ddc
+F ext/fts3/fts3_write.c 1041f612d35fcb2b031fdb4283a8f168e534925e
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
@@ -931,7 +931,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1abce55a1ed8bce2c3852b726b33bc050590eeb6
-R ed2ae42eead4ec0e7048db86821f851b
-U drh
-Z c794c93c1434d774ab75042b9dfc8adb
+P a61786e760abf4bdae5b35a45c9be5f56955a85d
+R 230afc192f70535513938f759682f7da
+U dan
+Z c15098dc2d04d1cdf90a1f3e3eabce26
