@@ -2608,21 +2608,37 @@ int sqlite3_open_v2(
 /*
 ** CAPI3REF: Obtain Values For URI Parameters
 **
-** This is a utility routine, useful to VFS implementations, that checks
+** These are utility routines, useful to VFS implementations, that check
 ** to see if a database file was a URI that contained a specific query 
-** parameter, and if so obtains the value of the query parameter.
+** parameter, and if so obtains the value of that query parameter.
 **
-** The zFilename argument is the filename pointer passed into the xOpen()
-** method of a VFS implementation.  The zParam argument is the name of the
-** query parameter we seek.  This routine returns the value of the zParam
-** parameter if it exists.  If the parameter does not exist, this routine
-** returns a NULL pointer.
+** If F is the filename pointer passed into the xOpen() method of a VFS
+** implementation and P is the name of the query parameter, then
+** sqlite3_uri_parameter(F,P) returns the value of the P
+** parameter if it exists or a NULL pointer if P does not appear as a 
+** query parameter on F.  If P is a query parameter of F
+** has no explicit value, then sqlite3_uri_parameter(F,P) returns
+** a pointer to an empty string.
 **
-** If the zFilename argument to this function is not a pointer that SQLite
-** passed into the xOpen VFS method, then the behavior of this routine
-** is undefined and probably undesirable.
+** The sqlite3_uri_boolean(F,P,B) routine assumes that P is a boolean
+** parameter and returns true (1) or false (0) according to the value
+** of P.  The value of P is true if it is "yes" or "true" or "on" or 
+** a non-zero number and is false otherwise.  If P is not a query parameter
+** on F then sqlite3_uri_boolean(F,P,B) returns (B!=0).
+**
+** The sqlite3_uri_int64(F,P,D) routine converts the value of P into a
+** 64-bit signed integer and returns that integer, or D if P does not
+** exist.  If the value of P is something other than an integer, then
+** zero is returned.
+** 
+** If F is a NULL pointer, then sqlite3_uri_parameter(F,P) returns NULL and
+** sqlite3_uri_boolean(F,P,B) returns B.  If F is not a NULL pointer and
+** is not a pathname pointer that SQLite passed into the xOpen VFS method,
+** then the behavior of this routine is undefined and probably undesirable.
 */
 const char *sqlite3_uri_parameter(const char *zFilename, const char *zParam);
+int sqlite3_uri_boolean(const char *zFile, const char *zParam, int bDefault);
+sqlite3_int64 sqlite3_uri_int64(const char*, const char*, sqlite3_int64);
 
 
 /*

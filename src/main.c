@@ -2977,6 +2977,7 @@ int sqlite3_test_control(int op, ...){
 ** returns a NULL pointer.
 */
 const char *sqlite3_uri_parameter(const char *zFilename, const char *zParam){
+  if( zFilename==0 ) return 0;
   zFilename += sqlite3Strlen30(zFilename) + 1;
   while( zFilename[0] ){
     int x = strcmp(zFilename, zParam);
@@ -2985,6 +2986,30 @@ const char *sqlite3_uri_parameter(const char *zFilename, const char *zParam){
     zFilename += sqlite3Strlen30(zFilename) + 1;
   }
   return 0;
+}
+
+/*
+** Return a boolean value for a query parameter.
+*/
+int sqlite3_uri_boolean(const char *zFilename, const char *zParam, int bDflt){
+  const char *z = sqlite3_uri_parameter(zFilename, zParam);
+  return z ? sqlite3GetBoolean(z) : (bDflt!=0);
+}
+
+/*
+** Return a 64-bit integer value for a query parameter.
+*/
+sqlite3_int64 sqlite3_uri_int64(
+  const char *zFilename,    /* Filename as passed to xOpen */
+  const char *zParam,       /* URI parameter sought */
+  sqlite3_int64 bDflt       /* return if parameter is missing */
+){
+  const char *z = sqlite3_uri_parameter(zFilename, zParam);
+  sqlite3_int64 v;
+  if( z && sqlite3Atoi64(z, &v, sqlite3Strlen30(z), SQLITE_UTF8)==SQLITE_OK ){
+    bDflt = v;
+  }
+  return bDflt;
 }
 
 /*

@@ -3866,10 +3866,8 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
     }
 
     if( pInode->bProcessLock==0 ){
-      const char *zRO;
       int openFlags = O_RDWR | O_CREAT;
-      zRO = sqlite3_uri_parameter(pDbFd->zPath, "readonly_shm");
-      if( zRO && sqlite3GetBoolean(zRO) ){
+      if( sqlite3_uri_boolean(pDbFd->zPath, "readonly_shm", 0) ){
         openFlags = O_RDONLY;
         pShmNode->isReadonly = 1;
       }
