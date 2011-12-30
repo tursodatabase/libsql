@@ -4615,7 +4615,7 @@ int sqlite3_release_memory(int);
 /*
 ** CAPI3REF: Free Memory Used By A Database Connection
 **
-** ^The sqlite3_db_shrink(D) interface attempts to free as much heap
+** ^The sqlite3_db_release_memory(D) interface attempts to free as much heap
 ** memory as possible from database connection D. Unlike the
 ** [sqlite3_release_memory()] interface, this interface is effect even
 ** when then [SQLITE_ENABLE_MEMORY_MANAGEMENT] compile-time option is

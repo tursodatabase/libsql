@@ -540,6 +540,7 @@ sqlite3_mutex *sqlite3_db_mutex(sqlite3 *db){
 */
 int sqlite3_db_release_memory(sqlite3 *db){
   int i;
+  sqlite3_mutex_enter(db->mutex);
   sqlite3BtreeEnterAll(db);
   for(i=0; i<db->nDb; i++){
     Btree *pBt = db->aDb[i].pBt;
@@ -549,6 +550,7 @@ int sqlite3_db_release_memory(sqlite3 *db){
     }
   }
   sqlite3BtreeLeaveAll(db);
+  sqlite3_mutex_leave(db->mutex);
   return SQLITE_OK;
 }
 

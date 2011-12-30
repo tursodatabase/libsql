@@ -1,5 +1,5 @@
-C Minor\schanges\sto\sfix\scompilation\swith\sSQLITE_OMIT_WAL\sand\sSQLITE_OMIT_WSD\sdefined.
-D 2011-12-30T10:54:24.715
+C Hold\sthe\sdatabase\shandle\smutex\sfor\sthe\sduration\sof\ssqlite3_db_release_memory().
+D 2011-12-30T11:43:59.164
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -147,7 +147,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
 F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
-F src/main.c e2e3fb34be05658f41ac65ee5d9a44e00a358b48
+F src/main.c 34646375b3ee13918e7def246d2e8af31a8cca78
 F src/malloc.c 15afac5e59b6584efe072e9933aefb4230e74f97
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 7998e7003a3047e323c849a26dda004debc04d03
@@ -182,7 +182,7 @@ F src/resolve.c 3d3e80a98f203ac6b9329e9621e29eda85ddfd40
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c a1d075db66a0ea42807353501b62997969e5be79
 F src/shell.c aa4183d4a5243d8110b1d3d77faa4aea7e9c9c2d
-F src/sqlite.h.in 5d2d6c3f542ec484e769784014ef659b86e30aaa
+F src/sqlite.h.in 49398dec1abb0a2caecff17da6202179ca487fe8
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h b8fdd9c39c8d7f5c794f4ea917293d9c75b9aff2
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -986,7 +986,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 6a71ba9ce930838d44ed8d399075ba0723c9132b
-R 579eb5da5cf1f5387840a047b3fbeef2
+P 26a513a8d2dddfde82f5fd0a0e1cc186c9b0df94
+R d333c596d678fa72a4469b4e5cebba2a
 U dan
-Z 6dd1d82cc9bb099d02383a4750cf40f4
+Z ce6f0cbc05a184731b495119899185ea
