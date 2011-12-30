@@ -366,7 +366,7 @@ int sqlite3_exec(
 ** KEYWORDS: {result code} {result codes}
 **
 ** Many SQLite functions return an integer result code from the set shown
-** here in order to indicates success or failure.
+** here in order to indicate success or failure.
 **
 ** New error codes may be added in future versions of SQLite.
 **
@@ -744,12 +744,12 @@ struct sqlite3_io_methods {
 **
 ** ^The [SQLITE_FCNTL_WIN32_AV_RETRY] opcode is used to configure automatic
 ** retry counts and intervals for certain disk I/O operations for the
-** windows [VFS] in order to work to provide robustness against
+** windows [VFS] in order to provide robustness in the presence of
 ** anti-virus programs.  By default, the windows VFS will retry file read,
 ** file write, and file delete operations up to 10 times, with a delay
 ** of 25 milliseconds before the first retry and with the delay increasing
 ** by an additional 25 milliseconds with each subsequent retry.  This
-** opcode allows those to values (10 retries and 25 milliseconds of delay)
+** opcode allows these two values (10 retries and 25 milliseconds of delay)
 ** to be adjusted.  The values are changed for all database connections
 ** within the same process.  The argument is a pointer to an array of two
 ** integers where the first integer i the new retry count and the second
@@ -2015,7 +2015,7 @@ void sqlite3_free_table(char **result);
 ** All of the usual printf() formatting options apply.  In addition, there
 ** is are "%q", "%Q", and "%z" options.
 **
-** ^(The %q option works like %s in that it substitutes a null-terminated
+** ^(The %q option works like %s in that it substitutes a nul-terminated
 ** string from the argument list.  But %q also doubles every '\'' character.
 ** %q is designed for use inside a string literal.)^  By doubling each '\''
 ** character it escapes that character and allows it to be inserted into
@@ -3535,7 +3535,7 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** bytes in the string, not the number of characters.
 **
 ** ^Strings returned by sqlite3_column_text() and sqlite3_column_text16(),
-** even empty strings, are always zero terminated.  ^The return
+** even empty strings, are always zero-terminated.  ^The return
 ** value from sqlite3_column_blob() for a zero-length BLOB is a NULL pointer.
 **
 ** ^The object returned by [sqlite3_column_value()] is an
@@ -5596,7 +5596,7 @@ struct sqlite3_mutex_methods {
 ** ^These routines should return true if the mutex in their argument
 ** is held or not held, respectively, by the calling thread.
 **
-** ^The implementation is not required to provided versions of these
+** ^The implementation is not required to provide versions of these
 ** routines that actually work. If the implementation does not provide working
 ** versions of these routines, it should at least provide stubs that always
 ** return true so that one does not get spurious assertion failures.
