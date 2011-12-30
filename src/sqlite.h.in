@@ -864,7 +864,7 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 ** from xFullPathname() with an optional suffix added.
 ** ^If a suffix is added to the zFilename parameter, it will
 ** consist of a single "-" character followed by no more than
-** 10 alphanumeric and/or "-" characters.
+** 11 alphanumeric and/or "-" characters.
 ** ^SQLite further guarantees that
 ** the string will be valid and unchanged until xClose() is
 ** called. Because of the previous sentence,
@@ -6078,7 +6078,7 @@ struct sqlite3_pcache_page {
 ** ^(The xInit() method is called once for each effective 
 ** call to [sqlite3_initialize()])^
 ** (usually only once during the lifetime of the process). ^(The xInit()
-** method is passed a copy of the sqlite3_pcache_methods.pArg value.)^
+** method is passed a copy of the sqlite3_pcache_methods2.pArg value.)^
 ** The intent of the xInit() method is to set up global data structures 
 ** required by the custom page cache implementation. 
 ** ^(If the xInit() method is NULL, then the 
@@ -6199,7 +6199,7 @@ struct sqlite3_pcache_page {
 ** ^The xDestroy() method is used to delete a cache allocated by xCreate().
 ** All resources associated with the specified cache should be freed. ^After
 ** calling the xDestroy() method, SQLite considers the [sqlite3_pcache*]
-** handle invalid, and will not use it with any other sqlite3_pcache_methods
+** handle invalid, and will not use it with any other sqlite3_pcache_methods2
 ** functions.
 **
 ** [[the xShrink() page cache method]]
