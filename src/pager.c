@@ -4029,7 +4029,9 @@ static int pager_write_pagelist(Pager *pPager, PgHdr *pList){
   assert( rc!=SQLITE_OK || isOpen(pPager->fd) );
   if( rc==SQLITE_OK && pPager->dbSize>pPager->dbHintSize ){
     sqlite3_int64 szFile = pPager->pageSize * (sqlite3_int64)pPager->dbSize;
+    sqlite3BeginBenignMalloc();
     sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_SIZE_HINT, &szFile);
+    sqlite3EndBenignMalloc();
     pPager->dbHintSize = pPager->dbSize;
   }
 

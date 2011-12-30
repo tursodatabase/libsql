@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sthe\sdocumentation\sfor\sPCACHE2.\s\sNo\schanges\sto\scode.
-D 2011-12-30T16:16:56.830
+C Add\scalls\sto\sthe\sBenignMalloc()\sfunctions\saround\sthe\sSQLITE_FCNTL_SIZE_HINT\scall\sin\spager.c.
+D 2011-12-30T18:16:02.598
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 3a441671f35569df4b72641e928fdb1ab5cd8576
 F src/os_win.c 569fe7448e781bfb8116aa79081df0eadf576fc6
-F src/pager.c 0ae6079dd6109d475e54ff2ce3131dd0a3fea24f
+F src/pager.c 4ee26909f1092239ed39e50d4f4438de11f32275
 F src/pager.h 5cd760857707529b403837d813d86b68938d6183
 F src/parse.y fabb2e7047417d840e6fdb3ef0988a86849a08ba
 F src/pcache.c 1fdd77978c1525d1ca4b9ef48eb80abca710cb4c
@@ -986,7 +986,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 6f2010c862105a113b55e90018b86a9ece298d4d
-R 7e79df782114fbf75cf072c51937066b
-U drh
-Z 49ff10403d9172f7b7e8e3deec0c0e68
+P 46e7903ab993b08251c87239bd4a7320e6781cee
+R f1370d9592311ee925b065af7c5e925d
+U dan
+Z 7b10c47157901b03eeddf5ba0f182b05
