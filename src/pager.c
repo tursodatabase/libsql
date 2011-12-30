@@ -4370,7 +4370,8 @@ int sqlite3PagerOpen(
       z += sqlite3Strlen30(z)+1;
       z += sqlite3Strlen30(z)+1;
     }
-    nUri = &z[1] - zUri;
+    nUri = (int)(&z[1] - zUri);
+    assert( nUri>=0 );
     if( rc==SQLITE_OK && nPathname+8>pVfs->mxPathname ){
       /* This branch is taken when the journal path required by
       ** the database being opened will be more than pVfs->mxPathname
