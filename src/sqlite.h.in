@@ -6104,7 +6104,7 @@ struct sqlite3_pcache_page {
 ** ^SQLite invokes the xCreate() method to construct a new cache instance.
 ** SQLite will typically create one cache instance for each open database file,
 ** though this is not guaranteed. ^The
-** parameter parameter, szPage, is the size in bytes of the pages that must
+** first parameter, szPage, is the size in bytes of the pages that must
 ** be allocated by the cache.  ^szPage will always a power of two.  ^The
 ** second parameter szExtra is a number of bytes of extra storage 
 ** associated with each page cache entry.  ^The szExtra parameter will

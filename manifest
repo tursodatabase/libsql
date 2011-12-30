@@ -1,5 +1,5 @@
-C Change\sdbstatus.test\sto\saccount\sfor\sthe\sfact\sthat\sthe\svalue\sreported\sby\sDBSTATUS_SCHEMA_USED\smay\sbe\sslightly\slower\sthan\sthe\sactual\smemory\sused\son\sosx
-D 2011-12-30T16:09:50.209
+C Fix\sa\stypo\sin\sthe\sdocumentation\sfor\sPCACHE2.\s\sNo\schanges\sto\scode.
+D 2011-12-30T16:16:56.830
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -182,7 +182,7 @@ F src/resolve.c 3d3e80a98f203ac6b9329e9621e29eda85ddfd40
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c a1d075db66a0ea42807353501b62997969e5be79
 F src/shell.c aa4183d4a5243d8110b1d3d77faa4aea7e9c9c2d
-F src/sqlite.h.in e6c0f4500a3264fff2cee2b2f4bad8a6cdc94e02
+F src/sqlite.h.in f3e91b55ddd62f99677c9e8391e53bd755f476ac
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h b8fdd9c39c8d7f5c794f4ea917293d9c75b9aff2
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -986,7 +986,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 1bb23a3b5297e07e08c26362f71aef0c5b978875
-R 5519d15ccab3182a8de12d0e5781f16b
-U dan
-Z 7cafc8456631d3e0c14ea4d8ad93c1b3
+P 6f2010c862105a113b55e90018b86a9ece298d4d
+R 7e79df782114fbf75cf072c51937066b
+U drh
+Z 49ff10403d9172f7b7e8e3deec0c0e68
