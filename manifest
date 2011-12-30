@@ -1,5 +1,5 @@
-C Fix\sup\srequirements\smarks\sfor\ssyntax\sdiagrams\sto\sreflect\sthe\snew\sand\simproved\nGIF\srenderings.
-D 2011-12-30T16:07:37.766
+C Change\sdbstatus.test\sto\saccount\sfor\sthe\sfact\sthat\sthe\svalue\sreported\sby\sDBSTATUS_SCHEMA_USED\smay\sbe\sslightly\slower\sthan\sthe\sactual\smemory\sused\son\sosx
+D 2011-12-30T16:09:50.209
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -363,7 +363,7 @@ F test/createtab.test b5de160630b209c4b8925bdcbbaf48cc90b67fe8
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
 F test/ctime.test 7bd009071e242aac4f18521581536b652b789a47
 F test/date.test a18a2ce81add84b17b06559e82ad7bb91bc6ddff
-F test/dbstatus.test 179575499759241bf92ca2fb86bd3ccc8a562aac
+F test/dbstatus.test 3e978f8bdb2362a36a4be63c36a59f542c4cc2a3
 F test/dbstatus2.test dc57b0d9610851c0ff58a8e1b5b191678398b72a
 F test/default.test 6faf23ccb300114924353007795aa9a8ec0aa9dc
 F test/delete.test a065b05d2ebf60fd16639c579a4adfb7c381c701
@@ -986,7 +986,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P f945c41a72519d6bcfb478730ba0254bb24e5331
-R 083e04872607f66ed041353fe8d84c15
-U drh
-Z ee6ec02cb8c689b8dd9c361989e990ed
+P 1bb23a3b5297e07e08c26362f71aef0c5b978875
+R 5519d15ccab3182a8de12d0e5781f16b
+U dan
+Z 7cafc8456631d3e0c14ea4d8ad93c1b3
