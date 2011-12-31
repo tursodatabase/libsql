@@ -50,7 +50,7 @@ const char *sqlite3_sourceid(void){ return SQLITE_SOURCE_ID; }
 int sqlite3_libversion_number(void){ return SQLITE_VERSION_NUMBER; }
 
 /* IMPLEMENTATION-OF: R-54823-41343 The sqlite3_threadsafe() function returns
-** zero if and only if SQLite was compiled mutexing code omitted due to
+** zero if and only if SQLite was compiled with mutexing code omitted due to
 ** the SQLITE_THREADSAFE compile-time option being set to 0.
 */
 int sqlite3_threadsafe(void){ return SQLITE_THREADSAFE; }

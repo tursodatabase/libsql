@@ -172,7 +172,7 @@ const char *sqlite3_compileoption_get(int N);
 ** CAPI3REF: Test To See If The Library Is Threadsafe
 **
 ** ^The sqlite3_threadsafe() function returns zero if and only if
-** SQLite was compiled mutexing code omitted due to the
+** SQLite was compiled with mutexing code omitted due to the
 ** [SQLITE_THREADSAFE] compile-time option being set to 0.
 **
 ** SQLite can be compiled with or without mutexes.  When

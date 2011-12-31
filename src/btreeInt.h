@@ -370,7 +370,7 @@ struct Btree {
 /*
 ** An instance of this object represents a single database file.
 ** 
-** A single database file can be in use as the same time by two
+** A single database file can be in use at the same time by two
 ** or more database connections.  When two or more connections are
 ** sharing the same database file, each connection has it own
 ** private Btree object for the file and each of those Btrees points
@@ -476,7 +476,7 @@ struct CellInfo {
 ** The entry is identified by its MemPage and the index in
 ** MemPage.aCell[] of the entry.
 **
-** A single database file can shared by two more database connections,
+** A single database file can be shared by two more database connections,
 ** but cursors cannot be shared.  Each cursor is associated with a
 ** particular database connection identified BtCursor.pBtree.db.
 **
@@ -637,7 +637,7 @@ struct IntegrityCk {
 };
 
 /*
-** Read or write a two- and four-byte big-endian integer values.
+** Routines to read or write a two- and four-byte big-endian integer values.
 */
 #define get2byte(x)   ((x)[0]<<8 | (x)[1])
 #define put2byte(p,v) ((p)[0] = (u8)((v)>>8), (p)[1] = (u8)(v))

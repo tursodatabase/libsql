@@ -1,5 +1,5 @@
-C Add\scalls\sto\sthe\sBenignMalloc()\sfunctions\saround\sthe\sSQLITE_FCNTL_OVERWRITE\scall\sin\sbackup.c.
-D 2011-12-31T10:18:00.048
+C Fix\stypos\sin\scomments.\s\sNo\schanges\sto\scode.
+D 2011-12-31T21:51:55.629
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -127,7 +127,7 @@ F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 2fdde7d16c80bd4e8a0913038e766c4297818f6f
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
-F src/btreeInt.h ea863a819224d3e6845ad1e39954d41558b8cd8b
+F src/btreeInt.h 6e57bacaa4feb7dd56719678133e63a7c289c6e7
 F src/build.c 8915bb6d72ead998f94c2756ea8d143c77709b70
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
@@ -147,7 +147,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
 F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
-F src/main.c 34646375b3ee13918e7def246d2e8af31a8cca78
+F src/main.c bcf8cd3036122b64586b65c4db0c5f339ede4a8f
 F src/malloc.c 15afac5e59b6584efe072e9933aefb4230e74f97
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 7998e7003a3047e323c849a26dda004debc04d03
@@ -182,7 +182,7 @@ F src/resolve.c 3d3e80a98f203ac6b9329e9621e29eda85ddfd40
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c a1d075db66a0ea42807353501b62997969e5be79
 F src/shell.c aa4183d4a5243d8110b1d3d77faa4aea7e9c9c2d
-F src/sqlite.h.in f3e91b55ddd62f99677c9e8391e53bd755f476ac
+F src/sqlite.h.in 80115fdec17acf32f93adbf950960b889de98b79
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h b8fdd9c39c8d7f5c794f4ea917293d9c75b9aff2
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -240,10 +240,10 @@ F src/update.c d3076782c887c10e882996550345da9c4c9f9dea
 F src/utf.c 890c67dcfcc7a74623c95baac7535aadfe265e84
 F src/util.c 19ae3ee0dfa88e6054838afc5920327c5918fa2b
 F src/vacuum.c 0c0ba2242355c6048d65e2b333abe0f7c06348fa
-F src/vdbe.c 029add0c5197a61db588824a58570547330b9d8f
+F src/vdbe.c 50f0cf69eb64e11185042d15062bec8a1373a8a2
 F src/vdbe.h 18f581cac1f4339ec3299f3e0cc6e11aec654cdb
 F src/vdbeInt.h 48c158b2fceca9682d1577e61c62da3c58cf0748
-F src/vdbeapi.c 86189ebba2c49791d75eaa12929f3ce6527596bd
+F src/vdbeapi.c 3662b6a468a2a4605a15dfab313baa6dff81ad91
 F src/vdbeaux.c 3015179b27672cb773d014495023eaa4a8cd8f9c
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c 5e8c0831bd0a270ff81af385e891ff381dec900f
@@ -986,7 +986,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P c17a3f5e5d72187c06b598ef071d43ef89328e19
-R 11347eca51418811296406b6ca6391d4
-U dan
-Z e290df4c733c56ee941822f3e8c85381
+P 3e0833dbb736a1aca08d17941d6d33901b15a03b
+R ace5a10cf9ac7f9252c85c4d0ddd28cb
+U drh
+Z cb1b01f06ed7e6e96727a1a0146b31c3

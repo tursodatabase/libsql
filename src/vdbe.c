@@ -1152,7 +1152,7 @@ case OP_ResultRow: {
 
   /* Make sure the results of the current row are \000 terminated
   ** and have an assigned type.  The results are de-ephemeralized as
-  ** as side effect.
+  ** a side effect.
   */
   pMem = p->pResultSet = &aMem[pOp->p1];
   for(i=0; i<pOp->p2; i++){
