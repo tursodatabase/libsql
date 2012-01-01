@@ -1,5 +1,5 @@
-C Fix\stypos\sin\scomments.\s\sNo\schanges\sto\scode.
-D 2011-12-31T21:51:55.629
+C Tweaks\sto\simprove\stestability.
+D 2012-01-01T13:58:53.511
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -244,13 +244,13 @@ F src/vdbe.c 50f0cf69eb64e11185042d15062bec8a1373a8a2
 F src/vdbe.h 18f581cac1f4339ec3299f3e0cc6e11aec654cdb
 F src/vdbeInt.h 48c158b2fceca9682d1577e61c62da3c58cf0748
 F src/vdbeapi.c 3662b6a468a2a4605a15dfab313baa6dff81ad91
-F src/vdbeaux.c 3015179b27672cb773d014495023eaa4a8cd8f9c
+F src/vdbeaux.c 6b6c7acacdb47af51853b1f2a19a9b755ffe2aba
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c 5e8c0831bd0a270ff81af385e891ff381dec900f
 F src/vdbesort.c 468d43c057063e54da4f1988b38b4f46d60e7790
 F src/vdbetrace.c d6e50e04e1ec498150e519058f617d91b8f5c843
 F src/vtab.c e9318d88feac85be8e27ee783ac8f5397933fc8a
-F src/wal.c 4800adb021db953138eafdda825f95bc050e5b98
+F src/wal.c 932f09509d70fc115a7cc3d494d6fdcb825099ed
 F src/wal.h eaa00b9a403ddda2b56d01b7afc19ef600f9363f
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c af623942514571895818b9b7ae11db95ae3b3d88
@@ -986,7 +986,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 3e0833dbb736a1aca08d17941d6d33901b15a03b
-R ace5a10cf9ac7f9252c85c4d0ddd28cb
+P 6827338ecbe43e28da88d919851ebffde9f6d398
+R c2dd931589fd30a5a91f7fea2672cfd8
 U drh
-Z cb1b01f06ed7e6e96727a1a0146b31c3
+Z 649f8c400641c466a926a4b1d755f8fd

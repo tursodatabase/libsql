@@ -2857,7 +2857,7 @@ int sqlite3WalFrames(
     iFrame++;
     rc = walIndexAppend(pWal, iFrame, p->pgno);
   }
-  while( nExtra>0 && rc==SQLITE_OK ){
+  while( rc==SQLITE_OK && nExtra>0 ){
     iFrame++;
     nExtra--;
     rc = walIndexAppend(pWal, iFrame, pLast->pgno);

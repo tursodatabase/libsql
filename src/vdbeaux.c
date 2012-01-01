@@ -1487,6 +1487,7 @@ void sqlite3VdbeMakeReady(
   nCursor = pParse->nTab;
   nArg = pParse->nMaxArg;
   nOnce = pParse->nOnce;
+  if( nOnce==0 ) nOnce = 1; /* Ensure at least one byte in p->aOnceFlag[] */
   
   /* For each cursor required, also allocate a memory cell. Memory
   ** cells (nMem+1-nCursor)..nMem, inclusive, will never be used by
