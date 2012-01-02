@@ -1,5 +1,5 @@
-C Have\sSQLITE_FCNTL_SYNC_OMITTED\suse\sthe\snormal\smethod\sof\sreturning\san\serror\scode.
-D 2012-01-02T14:50:12.973
+C Make\ssure\slarge\snegative\sarguments\sto\sPRAGMA\scache_size\sdo\snot\scause\n32-bit\ssigned\sinteger\soverflow.\s\sAlso\scorrect\sa\srequirements\smark.
+D 2012-01-02T15:45:12.548
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -147,7 +147,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
 F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
-F src/main.c bcf8cd3036122b64586b65c4db0c5f339ede4a8f
+F src/main.c e60abee4a7ca3da31b67745ccf02b8d29f138614
 F src/malloc.c 15afac5e59b6584efe072e9933aefb4230e74f97
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 7998e7003a3047e323c849a26dda004debc04d03
@@ -171,7 +171,7 @@ F src/os_win.c 569fe7448e781bfb8116aa79081df0eadf576fc6
 F src/pager.c a21a3191ab75310ea75bb61149e63b835f77f5f0
 F src/pager.h 5cd760857707529b403837d813d86b68938d6183
 F src/parse.y fabb2e7047417d840e6fdb3ef0988a86849a08ba
-F src/pcache.c 1fdd77978c1525d1ca4b9ef48eb80abca710cb4c
+F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h b1d8775a9bddf44e65edb0d20bfc57a4982f840f
 F src/pcache1.c 9d735349ac87ef08076c6b1230f04cd83b15c6da
 F src/pragma.c dd66f21fafe7be40e1a48ad4195764cc191cf583
@@ -986,7 +986,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P d9761f15a175724c6c28a52335c979304737b188
-R 82d9c69c5da42ef30dc006ee831a69fd
-U dan
-Z 8ee537d5237b81fef6f749f1defb7865
+P fd3822f1f2e6ea181f663e99bfe788d8404176ee
+R 6a506042b7b9b54c17254c10f96e54fb
+U drh
+Z c1922e4cc60e8bf7e7f5fefa3fe55bc1

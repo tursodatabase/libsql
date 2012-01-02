@@ -205,7 +205,7 @@ static int numberOfCachePages(PCache *p){
   if( p->szCache>=0 ){
     return p->szCache;
   }else{
-    return (-1024*p->szCache)/(p->szPage+p->szExtra);
+    return (int)((-1024*(i64)p->szCache)/(p->szPage+p->szExtra));
   }
 }
 
