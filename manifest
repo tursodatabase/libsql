@@ -1,5 +1,5 @@
-C Tweaks\sto\simprove\stestability.
-D 2012-01-01T13:58:53.511
+C Fix\sthe\sbuild\sso\sthat\sit\sworks\swhen\sSQLITE_ENABLE_8_3_NAMES=1.
+D 2012-01-02T12:41:53.461
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -238,7 +238,7 @@ F src/tokenize.c 1e86210d3976717a19238ea7b047fac481fe8c12
 F src/trigger.c ee7e178fb9188f44b532cebd449a7c1df90fb684
 F src/update.c d3076782c887c10e882996550345da9c4c9f9dea
 F src/utf.c 890c67dcfcc7a74623c95baac7535aadfe265e84
-F src/util.c 19ae3ee0dfa88e6054838afc5920327c5918fa2b
+F src/util.c 9e07bd67dfafe9c75b1da78c87ba030cebbb5388
 F src/vacuum.c 0c0ba2242355c6048d65e2b333abe0f7c06348fa
 F src/vdbe.c 50f0cf69eb64e11185042d15062bec8a1373a8a2
 F src/vdbe.h 18f581cac1f4339ec3299f3e0cc6e11aec654cdb
@@ -986,7 +986,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 6827338ecbe43e28da88d919851ebffde9f6d398
-R c2dd931589fd30a5a91f7fea2672cfd8
+P e3a929e43180f41095cc2cd00c6b0781856a4474
+R ebe54cc51516118d00ec9f963dc0c725
 U drh
-Z 649f8c400641c466a926a4b1d755f8fd
+Z f0855acf7bf6b1fdb217f7703ac74727

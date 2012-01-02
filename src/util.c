@@ -1173,7 +1173,7 @@ int sqlite3AbsInt32(int x){
 */
 void sqlite3FileSuffix3(const char *zBaseFilename, char *z){
 #if SQLITE_ENABLE_8_3_NAMES<2
-  if( sqlite3_uri_boolean(zBaseFilename, "8_3_names") )
+  if( sqlite3_uri_boolean(zBaseFilename, "8_3_names", 0) )
 #endif
   {
     int i, sz;
