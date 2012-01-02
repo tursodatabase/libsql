@@ -5696,7 +5696,10 @@ int sqlite3PagerSync(Pager *pPager){
     rc = sqlite3OsSync(pPager->fd, pPager->syncFlags);
   }else if( isOpen(pPager->fd) ){
     assert( !MEMDB );
-    sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_SYNC_OMITTED, (void *)&rc);
+    rc = sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_SYNC_OMITTED, 0);
+    if( rc==SQLITE_NOTFOUND ){
+      rc = SQLITE_OK;
+    }
   }
   return rc;
 }

@@ -1,5 +1,5 @@
-C Fix\sthe\sbuild\sso\sthat\sit\sworks\swhen\sSQLITE_ENABLE_8_3_NAMES=1.
-D 2012-01-02T12:41:53.461
+C Have\sSQLITE_FCNTL_SYNC_OMITTED\suse\sthe\snormal\smethod\sof\sreturning\san\serror\scode.
+D 2012-01-02T14:50:12.973
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 3a441671f35569df4b72641e928fdb1ab5cd8576
 F src/os_win.c 569fe7448e781bfb8116aa79081df0eadf576fc6
-F src/pager.c 4ee26909f1092239ed39e50d4f4438de11f32275
+F src/pager.c a21a3191ab75310ea75bb61149e63b835f77f5f0
 F src/pager.h 5cd760857707529b403837d813d86b68938d6183
 F src/parse.y fabb2e7047417d840e6fdb3ef0988a86849a08ba
 F src/pcache.c 1fdd77978c1525d1ca4b9ef48eb80abca710cb4c
@@ -986,7 +986,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P e3a929e43180f41095cc2cd00c6b0781856a4474
-R ebe54cc51516118d00ec9f963dc0c725
-U drh
-Z f0855acf7bf6b1fdb217f7703ac74727
+P d9761f15a175724c6c28a52335c979304737b188
+R 82d9c69c5da42ef30dc006ee831a69fd
+U dan
+Z 8ee537d5237b81fef6f749f1defb7865
