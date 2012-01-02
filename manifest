@@ -1,5 +1,5 @@
-C Make\ssure\slarge\snegative\sarguments\sto\sPRAGMA\scache_size\sdo\snot\scause\n32-bit\ssigned\sinteger\soverflow.\s\sAlso\scorrect\sa\srequirements\smark.
-D 2012-01-02T15:45:12.548
+C Remove\san\sincorrect\sassert()\sin\sbtree.c.
+D 2012-01-02T16:38:57.512
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -125,7 +125,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 80d713109d295cc3a674f55cfe6446afb9b024ad
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 2fdde7d16c80bd4e8a0913038e766c4297818f6f
+F src/btree.c 8f683b1fcfd9ac92efa781c9c56c537e080a7117
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h 6e57bacaa4feb7dd56719678133e63a7c289c6e7
 F src/build.c 8915bb6d72ead998f94c2756ea8d143c77709b70
@@ -986,7 +986,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P fd3822f1f2e6ea181f663e99bfe788d8404176ee
-R 6a506042b7b9b54c17254c10f96e54fb
+P 17c30634a71051158f8d37fd51b3c2a125ad8bd2
+R 6c012a7774ed9e5a330a66726436b4a2
 U drh
-Z c1922e4cc60e8bf7e7f5fefa3fe55bc1
+Z fcdcf01f58c77f738eb120329f0033fc
