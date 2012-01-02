@@ -1,5 +1,5 @@
-C Remove\san\sincorrect\sassert()\sin\sbtree.c.
-D 2012-01-02T16:38:57.512
+C Change\spage\squantities\sin\spcache1.c\sto\sunsigned.
+D 2012-01-02T18:00:55.564
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +173,7 @@ F src/pager.h 5cd760857707529b403837d813d86b68938d6183
 F src/parse.y fabb2e7047417d840e6fdb3ef0988a86849a08ba
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h b1d8775a9bddf44e65edb0d20bfc57a4982f840f
-F src/pcache1.c 9d735349ac87ef08076c6b1230f04cd83b15c6da
+F src/pcache1.c e1aaa3bc9bbfd8b0bc391ca731f5f8185467375d
 F src/pragma.c dd66f21fafe7be40e1a48ad4195764cc191cf583
 F src/prepare.c ec4989f7f480544bdc4192fe663470d2a2d7d61e
 F src/printf.c 7ffb4ebb8b341f67e049695ba031da717b3d2699
@@ -986,7 +986,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 17c30634a71051158f8d37fd51b3c2a125ad8bd2
-R 6c012a7774ed9e5a330a66726436b4a2
+P c1691d998a03fee3bef137ccf2e8ca45acac2df4
+R 84be2ca283aa4d12d0883d5cb3ef90ca
 U drh
-Z fcdcf01f58c77f738eb120329f0033fc
+Z 981c2603df115cccf0c78e5588d3bb18
