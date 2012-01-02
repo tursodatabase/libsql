@@ -61,7 +61,6 @@ struct winFile {
   short sharedLockByte;   /* Randomly chosen byte used as a shared lock */
   u8 ctrlFlags;           /* Flags.  See WINFILE_* below */
   DWORD lastErrno;        /* The Windows errno from the last I/O error */
-  DWORD sectorSize;       /* Sector size of the device file is on */
   winShm *pShm;           /* Instance of shared memory on this file */
   const char *zPath;      /* Full pathname of this file */
   int szChunk;            /* Chunk size configured by FCNTL_CHUNK_SIZE */
@@ -150,14 +149,6 @@ static void winMemShutdown(void *pAppData);
 
 const sqlite3_mem_methods *sqlite3MemGetWin32(void);
 #endif /* SQLITE_WIN32_MALLOC */
-
-/*
-** Forward prototypes.
-*/
-static int getSectorSize(
-    sqlite3_vfs *pVfs,
-    const char *zRelative     /* UTF-8 file name */
-);
 
 /*
 ** The following variable is (normally) set once and never changes
@@ -2225,8 +2216,8 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
 ** same for both.
 */
 static int winSectorSize(sqlite3_file *id){
-  assert( id!=0 );
-  return (int)(((winFile*)id)->sectorSize);
+  (void)id;
+  return SQLITE_DEFAULT_SECTOR_SIZE;
 }
 
 /*
@@ -3203,7 +3194,6 @@ static int winOpen(
   if( sqlite3_uri_boolean(zName, "psow", SQLITE_POWERSAFE_OVERWRITE) ){
     pFile->ctrlFlags |= WINFILE_PSOW;
   }
-  pFile->sectorSize = getSectorSize(pVfs, zUtf8Name);
 
 #if SQLITE_OS_WINCE
   if( isReadWrite && eType==SQLITE_OPEN_MAIN_DB
@@ -3446,81 +3436,6 @@ static int winFullPathname(
     return SQLITE_IOERR_NOMEM;
   }
 #endif
-}
-
-/*
-** Get the sector size of the device used to store
-** file.
-*/
-static int getSectorSize(
-    sqlite3_vfs *pVfs,
-    const char *zRelative     /* UTF-8 file name */
-){
-  DWORD bytesPerSector = SQLITE_DEFAULT_SECTOR_SIZE;
-  /* GetDiskFreeSpace is not supported under WINCE */
-#if SQLITE_OS_WINCE
-  UNUSED_PARAMETER(pVfs);
-  UNUSED_PARAMETER(zRelative);
-#else
-  char zFullpath[MAX_PATH+1];
-  int rc;
-  DWORD dwRet = 0;
-  DWORD dwDummy;
-
-  /*
-  ** We need to get the full path name of the file
-  ** to get the drive letter to look up the sector
-  ** size.
-  */
-  SimulateIOErrorBenign(1);
-  sqlite3BeginBenignMalloc();
-  rc = winFullPathname(pVfs, zRelative, MAX_PATH, zFullpath);
-  sqlite3EndBenignMalloc();
-  SimulateIOErrorBenign(0);
-  if( rc == SQLITE_OK )
-  {
-    void *zConverted;
-    sqlite3BeginBenignMalloc();
-    zConverted = convertUtf8Filename(zFullpath);
-    sqlite3EndBenignMalloc();
-    if( zConverted ){
-      if( isNT() ){
-        /* trim path to just drive reference */
-        LPWSTR p = zConverted;
-        for(;*p;p++){
-          if( *p == '\\' ){
-            *p = '\0';
-            break;
-          }
-        }
-        dwRet = osGetDiskFreeSpaceW((LPCWSTR)zConverted,
-                                    &dwDummy,
-                                    &bytesPerSector,
-                                    &dwDummy,
-                                    &dwDummy);
-      }else{
-        /* trim path to just drive reference */
-        char *p = (char *)zConverted;
-        for(;*p;p++){
-          if( *p == '\\' ){
-            *p = '\0';
-            break;
-          }
-        }
-        dwRet = osGetDiskFreeSpaceA((char*)zConverted,
-                                    &dwDummy,
-                                    &bytesPerSector,
-                                    &dwDummy,
-                                    &dwDummy);
-      }
-      sqlite3_free(zConverted);
-    }
-    if( !dwRet ){
-      bytesPerSector = SQLITE_DEFAULT_SECTOR_SIZE;
-    }
-  }
-#endif
-  return (int) bytesPerSector; 
 }
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION

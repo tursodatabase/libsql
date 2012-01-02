@@ -119,7 +119,7 @@
 ** The default size of a disk sector
 */
 #ifndef SQLITE_DEFAULT_SECTOR_SIZE
-# define SQLITE_DEFAULT_SECTOR_SIZE 512
+# define SQLITE_DEFAULT_SECTOR_SIZE 4096
 #endif
 
 /*

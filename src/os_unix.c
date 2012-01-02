@@ -122,9 +122,6 @@
 #ifndef SQLITE_OMIT_WAL
 #include <sys/mman.h>
 #endif
-#ifndef MISSING_STATVFS
-#include <sys/statvfs.h>
-#endif
 
 
 #if SQLITE_ENABLE_LOCKING_STYLE
@@ -215,7 +212,6 @@ struct unixFile {
   int h;                              /* The file descriptor */
   unsigned char eFileLock;            /* The type of lock held on this fd */
   unsigned char ctrlFlags;            /* Behavioral bits.  UNIXFILE_* flags */
-  unsigned char szSector;             /* Sectorsize/512 */
   int lastErrno;                      /* The unix errno from last I/O error */
   void *lockingContext;               /* Locking style specific state */
   UnixUnusedFd *pUnused;              /* Pre-allocated UnixUnusedFd */
@@ -419,14 +415,6 @@ static struct unix_syscall {
 
   { "rmdir",        (sqlite3_syscall_ptr)rmdir,           0 },
 #define osRmdir     ((int(*)(const char*))aSyscall[19].pCurrent)
-
-#if defined(MISSING_STATVFS)
-  { "statvfs",      (sqlite3_syscall_ptr)0,               0 },
-#define osStatvfs   ((int(*)(const char*,void*))aSyscall[20].pCurrent)
-#else
-  { "statvfs",      (sqlite3_syscall_ptr)statvfs,         0 },
-#define osStatvfs   ((int(*)(const char*,struct statvfs*))aSyscall[20].pCurrent)
-#endif
 
 }; /* End of the overrideable system calls */
 
@@ -3600,23 +3588,8 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
 ** same for both.
 */
 static int unixSectorSize(sqlite3_file *pFile){
-  unixFile *p = (unixFile*)pFile;
-  if( p->szSector==0 ){
-#ifdef MISSING_STATVFS
-    p->szSector = SQLITE_DEFAULT_SECTOR_SIZE/512;
-#else
-    struct statvfs x;
-    int sz;
-    memset(&x, 0, sizeof(x));
-    osStatvfs(p->zPath, &x);
-    sz = (int)x.f_frsize;
-    if( sz<512 || sz>65536 || (sz&(sz-1))!=0 ){
-      sz = SQLITE_DEFAULT_SECTOR_SIZE;
-    }
-    p->szSector = sz/512;
-#endif
-  }
-  return p->szSector*512;
+  (void)pFile;
+  return SQLITE_DEFAULT_SECTOR_SIZE;
 }
 
 /*
@@ -6833,7 +6806,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==21 );
+  assert( ArraySize(aSyscall)==20 );
 
   /* Register all VFSes defined in the aVfs[] array */
   for(i=0; i<(sizeof(aVfs)/sizeof(sqlite3_vfs)); i++){
