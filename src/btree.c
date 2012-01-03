@@ -901,10 +901,17 @@ static void btreeParseCellPtr(
 ){
   u16 n;                  /* Number bytes in cell content header */
   u32 nPayload;           /* Number of bytes of cell payload */
+  u8 cellBuf[20];
 
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
 
   pInfo->pCell = pCell;
+  if( pCell >= pPage->aDataEnd - sizeof(cellBuf) && pCell < pPage->aDataEnd ){
+    int x = pPage->aDataEnd - pCell;
+    memcpy(cellBuf, pCell, x);
+    memset(&cellBuf[x], 0, sizeof(cellBuf)-x);
+    pCell = cellBuf;
+  }
   assert( pPage->leaf==0 || pPage->leaf==1 );
   n = pPage->childPtrSize;
   assert( n==4-4*pPage->leaf );
@@ -977,8 +984,9 @@ static void btreeParseCell(
 ** the space used by the cell pointer.
 */
 static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
-  u8 *pIter = &pCell[pPage->childPtrSize];
+  u8 *pX = pCell;
   u32 nSize;
+  u8 cellBuf[25];
 
 #ifdef SQLITE_DEBUG
   /* The value returned by this function should always be the same as
@@ -989,10 +997,17 @@ static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
   btreeParseCellPtr(pPage, pCell, &debuginfo);
 #endif
 
+  if( pX >= pPage->aDataEnd - sizeof(cellBuf) && pX < pPage->aDataEnd ){
+    int x = pPage->aDataEnd - pX;
+    memcpy(cellBuf, pCell, x);
+    memset(&cellBuf[x], 0, sizeof(cellBuf)-x);
+    pX = pCell = cellBuf;
+  }
+  pX += pPage->childPtrSize;
   if( pPage->intKey ){
     u8 *pEnd;
     if( pPage->hasData ){
-      pIter += getVarint32(pIter, nSize);
+      pX += getVarint32(pX, nSize);
     }else{
       nSize = 0;
     }
@@ -1000,10 +1015,10 @@ static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
     /* pIter now points at the 64-bit integer key value, a variable length 
     ** integer. The following block moves pIter to point at the first byte
     ** past the end of the key value. */
-    pEnd = &pIter[9];
-    while( (*pIter++)&0x80 && pIter<pEnd );
+    pEnd = &pX[9];
+    while( (*pX++)&0x80 && pX<pEnd );
   }else{
-    pIter += getVarint32(pIter, nSize);
+    pX += getVarint32(pX, nSize);
   }
 
   testcase( nSize==pPage->maxLocal );
@@ -1018,7 +1033,7 @@ static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
     }
     nSize += 4;
   }
-  nSize += (u32)(pIter - pCell);
+  nSize += (u32)(pX - pCell);
 
   /* The minimum size of any cell is 4 bytes. */
   if( nSize<4 ){
