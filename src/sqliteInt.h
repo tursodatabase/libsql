@@ -126,6 +126,14 @@
 #endif
 
 /*
+** Powersafe overwrite is on by default.  But can be turned off using
+** the -DSQLITE_POWERSAFE_OVERWRITE=0 command-line option.
+*/
+#ifndef SQLITE_POWERSAFE_OVERWRITE
+# define SQLITE_POWERSAFE_OVERWRITE 1
+#endif
+
+/*
 ** The SQLITE_DEFAULT_MEMSTATUS macro must be defined as either 0 or 1.
 ** It determines whether or not the features related to 
 ** SQLITE_CONFIG_MEMSTATUS are available by default or not. This value can
@@ -1717,10 +1725,10 @@ struct Expr {
 #define EP_FixedDest  0x0200  /* Result needed in a specific register */
 #define EP_IntValue   0x0400  /* Integer value contained in u.iValue */
 #define EP_xIsSelect  0x0800  /* x.pSelect is valid (otherwise x.pList is) */
-
-#define EP_Reduced    0x1000  /* Expr struct is EXPR_REDUCEDSIZE bytes only */
-#define EP_TokenOnly  0x2000  /* Expr struct is EXPR_TOKENONLYSIZE bytes only */
-#define EP_Static     0x4000  /* Held in memory not obtained from malloc() */
+#define EP_Hint       0x1000  /* Optimizer hint. Not required for correctness */
+#define EP_Reduced    0x2000  /* Expr struct is EXPR_REDUCEDSIZE bytes only */
+#define EP_TokenOnly  0x4000  /* Expr struct is EXPR_TOKENONLYSIZE bytes only */
+#define EP_Static     0x8000  /* Held in memory not obtained from malloc() */
 
 /*
 ** The following are the meanings of bits in the Expr.flags2 field.
@@ -1782,7 +1790,7 @@ struct ExprList {
     char *zSpan;           /* Original text of the expression */
     u8 sortOrder;          /* 1 for DESC or 0 for ASC */
     u8 done;               /* A flag to indicate when processing is finished */
-    u16 iCol;              /* For ORDER BY, column number in result set */
+    u16 iOrderByCol;       /* For ORDER BY, column number in result set */
     u16 iAlias;            /* Index into Parse.aAlias[] for zName */
   } *a;                  /* One entry for each expression */
 };
@@ -2214,6 +2222,7 @@ struct Parse {
   int nTab;            /* Number of previously allocated VDBE cursors */
   int nMem;            /* Number of memory cells used so far */
   int nSet;            /* Number of sets used so far */
+  int nOnce;           /* Number of OP_Once instructions so far */
   int ckBase;          /* Base register of data during check constraints */
   int iCacheLevel;     /* ColCache valid when aColCache[].iLevel<=iCacheLevel */
   int iCacheCnt;       /* Counter used to generate aColCache[].lru values */
@@ -2660,6 +2669,29 @@ char *sqlite3MAppendf(sqlite3*,char*,const char*,...);
 #if defined(SQLITE_TEST)
   void *sqlite3TestTextToPtr(const char*);
 #endif
+
+/* Output formatting for SQLITE_TESTCTRL_EXPLAIN */
+#if defined(SQLITE_ENABLE_TREE_EXPLAIN)
+  void sqlite3ExplainBegin(Vdbe*);
+  void sqlite3ExplainPrintf(Vdbe*, const char*, ...);
+  void sqlite3ExplainNL(Vdbe*);
+  void sqlite3ExplainPush(Vdbe*);
+  void sqlite3ExplainPop(Vdbe*);
+  void sqlite3ExplainFinish(Vdbe*);
+  void sqlite3ExplainSelect(Vdbe*, Select*);
+  void sqlite3ExplainExpr(Vdbe*, Expr*);
+  void sqlite3ExplainExprList(Vdbe*, ExprList*);
+  const char *sqlite3VdbeExplanation(Vdbe*);
+#else
+# define sqlite3ExplainBegin(X)
+# define sqlite3ExplainSelect(A,B)
+# define sqlite3ExplainExpr(A,B)
+# define sqlite3ExplainExprList(A,B)
+# define sqlite3ExplainFinish(X)
+# define sqlite3VdbeExplanation(X) 0
+#endif
+
+
 void sqlite3SetString(char **, sqlite3*, const char*, ...);
 void sqlite3ErrorMsg(Parse*, const char*, ...);
 int sqlite3Dequote(char*);
@@ -2702,6 +2734,7 @@ void sqlite3AddCollateType(Parse*, Token*);
 void sqlite3EndTable(Parse*,Token*,Token*,Select*);
 int sqlite3ParseUri(const char*,const char*,unsigned int*,
                     sqlite3_vfs**,char**,char **);
+int sqlite3CodeOnce(Parse *);
 
 Bitvec *sqlite3BitvecCreate(u32);
 int sqlite3BitvecTest(Bitvec*, u32);
@@ -3040,6 +3073,7 @@ int sqlite3OpenTempDatabase(Parse *);
 
 void sqlite3StrAccumInit(StrAccum*, char*, int, int);
 void sqlite3StrAccumAppend(StrAccum*,const char*,int);
+void sqlite3AppendSpace(StrAccum*,int);
 char *sqlite3StrAccumFinish(StrAccum*);
 void sqlite3StrAccumReset(StrAccum*);
 void sqlite3SelectDestInit(SelectDest*,int,int);

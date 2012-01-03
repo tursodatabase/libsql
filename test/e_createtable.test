@@ -58,7 +58,7 @@ proc table_list {} {
 }
 
 
-# EVIDENCE-OF: R-25262-01881 -- syntax diagram type-name
+# EVIDENCE-OF: R-47266-09114 -- syntax diagram type-name
 #
 do_createtable_tests 0.1.1 -repair {
   drop_all_tables
@@ -79,12 +79,7 @@ do_createtable_tests 0.1.2 -error {
 }
 
 
-# EVIDENCE-OF: R-18762-12428 -- syntax diagram column-constraint
-#
-#   Note: Not shown in the syntax diagram is the "NULL" constraint. This
-#         is the opposite of "NOT NULL" - it implies that the column may
-#         take a NULL value. This is the default anyway, so this type of
-#         constraint is rarely used.
+# EVIDENCE-OF: R-60689-48779 -- syntax diagram column-constraint
 #
 do_createtable_tests 0.2.1 -repair {
   drop_all_tables 
@@ -131,7 +126,7 @@ do_createtable_tests 0.2.1 -repair {
   } {}
 }
 
-# EVIDENCE-OF: R-17905-31923 -- syntax diagram table-constraint
+# EVIDENCE-OF: R-58169-51804 -- syntax diagram table-constraint
 #
 do_createtable_tests 0.3.1 -repair {
   drop_all_tables 
@@ -150,7 +145,7 @@ do_createtable_tests 0.3.1 -repair {
   4.1   "CREATE TABLE t1(c1, c2, FOREIGN KEY(c1) REFERENCES t2)"           {}
 }
 
-# EVIDENCE-OF: R-18765-31171 -- syntax diagram column-def
+# EVIDENCE-OF: R-44826-22243 -- syntax diagram column-def
 #
 do_createtable_tests 0.4.1 -repair {
   drop_all_tables 
@@ -165,7 +160,7 @@ do_createtable_tests 0.4.1 -repair {
         } {}
 }
 
-# EVIDENCE-OF: R-59573-11075 -- syntax diagram create-table-stmt
+# EVIDENCE-OF: R-45698-45677 -- syntax diagram create-table-stmt
 #
 do_createtable_tests 0.5.1 -repair {
   drop_all_tables 
@@ -190,7 +185,7 @@ do_createtable_tests 0.5.1 -repair {
   15    "CREATE TABLE t1 AS SELECT count(*), max(b), min(a) FROM t2"  {}
 }
 
-# EVIDENCE-OF: R-32138-02228 -- syntax diagram foreign-key-clause
+# EVIDENCE-OF: R-24369-11919 -- syntax diagram foreign-key-clause
 #
 #   1:         Explicit parent-key columns.
 #   2:         Implicit child-key columns.

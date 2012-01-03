@@ -78,7 +78,7 @@ proc do_join_test {tn select res} {
 # The following tests check that all paths on the syntax diagrams on
 # the lang_select.html page may be taken.
 #
-# EVIDENCE-OF: R-18428-22111 -- syntax diagram join-constraint
+# EVIDENCE-OF: R-11353-33501 -- syntax diagram join-constraint
 #
 do_join_test e_select-0.1.1 {
   SELECT count(*) FROM t1 %JOIN% t2 ON (t1.a=t2.a)
@@ -96,7 +96,7 @@ do_catchsql_test e_select-0.1.5 {
   SELECT count(*) FROM t1, t2 USING (a) ON (t1.a=t2.a)
 } {1 {near "ON": syntax error}}
 
-# EVIDENCE-OF: R-44854-11739 -- syntax diagram select-core
+# EVIDENCE-OF: R-40919-40941 -- syntax diagram select-core
 #
 #   0: SELECT ...
 #   1: SELECT DISTINCT ...
@@ -221,7 +221,7 @@ do_select_tests e_select-0.2 {
 }
 
 
-# EVIDENCE-OF: R-23316-20169 -- syntax diagram result-column
+# EVIDENCE-OF: R-41378-26734 -- syntax diagram result-column
 #
 do_select_tests e_select-0.3 {
   1  "SELECT * FROM t1" {a one b two c three}
@@ -231,9 +231,9 @@ do_select_tests e_select-0.3 {
   5  "SELECT 'x'||a||'x' AS alias FROM t1" {xax xbx xcx}
 }
 
-# EVIDENCE-OF: R-41233-21397 -- syntax diagram join-source
+# EVIDENCE-OF: R-43129-35648 -- syntax diagram join-source
 #
-# EVIDENCE-OF: R-45040-11121 -- syntax diagram join-op
+# EVIDENCE-OF: R-36683-37460 -- syntax diagram join-op
 #
 do_select_tests e_select-0.4 {
   1  "SELECT t1.rowid FROM t1" {1 2 3}
@@ -258,7 +258,7 @@ do_select_tests e_select-0.4 {
   16 "SELECT t1.rowid FROM t1 CROSS JOIN t3" {1 1 2 2 3 3}
 }
 
-# EVIDENCE-OF: R-56911-63533 -- syntax diagram compound-operator
+# EVIDENCE-OF: R-28308-37813 -- syntax diagram compound-operator
 #
 do_select_tests e_select-0.5 {
   1  "SELECT rowid FROM t1 UNION ALL SELECT rowid+2 FROM t4" {1 2 3 3 4}
@@ -267,7 +267,7 @@ do_select_tests e_select-0.5 {
   4  "SELECT rowid FROM t1 EXCEPT    SELECT rowid+2 FROM t4" {1 2}
 }
 
-# EVIDENCE-OF: R-60388-27458 -- syntax diagram ordering-term
+# EVIDENCE-OF: R-06480-34950 -- syntax diagram ordering-term
 #
 do_select_tests e_select-0.6 {
   1  "SELECT b||a FROM t1 ORDER BY b||a"                  {onea threec twob}
@@ -276,7 +276,7 @@ do_select_tests e_select-0.6 {
   4  "SELECT b||a FROM t1 ORDER BY (b||a) DESC"           {twob threec onea}
 }
 
-# EVIDENCE-OF: R-36494-33519 -- syntax diagram select-stmt
+# EVIDENCE-OF: R-23926-36668 -- syntax diagram select-stmt
 #
 do_select_tests e_select-0.7 {
   1  "SELECT * FROM t1" {a one b two c three}

@@ -136,7 +136,7 @@ static char et_getdigit(LONGDOUBLE_TYPE *val, int *cnt){
 /*
 ** Append N space characters to the given string buffer.
 */
-static void appendSpace(StrAccum *pAccum, int N){
+void sqlite3AppendSpace(StrAccum *pAccum, int N){
   static const char zSpaces[] = "                             ";
   while( N>=(int)sizeof(zSpaces)-1 ){
     sqlite3StrAccumAppend(pAccum, zSpaces, sizeof(zSpaces)-1);
@@ -664,7 +664,7 @@ void sqlite3VXPrintf(
       register int nspace;
       nspace = width-length;
       if( nspace>0 ){
-        appendSpace(pAccum, nspace);
+        sqlite3AppendSpace(pAccum, nspace);
       }
     }
     if( length>0 ){
@@ -674,7 +674,7 @@ void sqlite3VXPrintf(
       register int nspace;
       nspace = width-length;
       if( nspace>0 ){
-        appendSpace(pAccum, nspace);
+        sqlite3AppendSpace(pAccum, nspace);
       }
     }
     sqlite3_free(zExtra);

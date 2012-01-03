@@ -69,7 +69,7 @@ proc droptrigger_reopen_db {{event INSERT}} {
 }
 
 
-# EVIDENCE-OF: R-52650-16855 -- syntax diagram drop-trigger-stmt
+# EVIDENCE-OF: R-27975-10951 -- syntax diagram drop-trigger-stmt
 #
 do_droptrigger_tests 1.1 -repair {
   droptrigger_reopen_db

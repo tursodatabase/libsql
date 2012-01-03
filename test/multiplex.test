@@ -20,6 +20,16 @@ if { ![path_is_local "."] } {
   return 
 }
 
+# The tests in this file assume that SQLite is compiled without
+# ENABLE_8_3_NAMES.
+#
+ifcapable 8_3_names {
+  puts -nonewline "SQLite compiled with SQLITE_ENABLE_8_3_NAMES. "
+  puts            "Skipping tests multiplex-*."
+  finish_test
+  return
+}
+
 set g_chunk_size [ expr ($::SQLITE_MAX_PAGE_SIZE*16384) ]
 set g_max_chunks 32
 

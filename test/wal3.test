@@ -19,10 +19,6 @@ source $testdir/lock_common.tcl
 source $testdir/wal_common.tcl
 source $testdir/malloc_common.tcl
 ifcapable !wal {finish_test ; return }
-if { ![wal_is_ok] } {
-  finish_test 
-  return 
-}
 
 set a_string_counter 1
 proc a_string {n} {
@@ -207,16 +203,6 @@ foreach {tn syncmode synccount} {
     {test.db-wal normal test.db-wal normal test.db-wal normal test.db normal}
 } {
 
-  if { $::sqlite_options(default_ckptfullfsync) } {
-    # checkpoint_fullfsync on by default
-    if { $tn == 2} {
-      set synccount {test.db-wal full test.db full}
-    }
-    if { $tn == 3} {
-      set synccount {test.db-wal normal test.db-wal normal test.db-wal full test.db full}
-    }
-  }
-
   proc sync_counter {args} { 
     foreach {method filename id flags} $args break
     lappend ::syncs [file tail $filename] $flags
@@ -229,9 +215,9 @@ foreach {tn syncmode synccount} {
     T script sync_counter
     sqlite3 db test.db -vfs T
   
-    execsql { PRAGMA journal_mode = WAL }
-    execsql { SELECT * FROM sqlite_master }
     execsql "PRAGMA synchronous = $syncmode"
+    execsql { PRAGMA journal_mode = WAL }
+    execsql { CREATE TABLE filler(a,b,c); }
 
     set ::syncs [list]
     T filter xSync
@@ -443,7 +429,7 @@ do_test wal3-6.1.2 {
 } {o t t f}
 do_test wal3-6.1.3 {
   execsql { PRAGMA wal_checkpoint } db2
-} [list 0 [wal_frames db 4 3] [wal_frames db 4 3]]
+} {0 4 4}
 
 # At this point the log file has been fully checkpointed. However, 
 # connection [db3] holds a lock that prevents the log from being wrapped.
@@ -532,7 +518,7 @@ proc lock_callback {method file handle spec} {
 }
 do_test wal3-6.2.2 {
   execsql { PRAGMA wal_checkpoint }
-} [list 0 [wal_frames db 4 3] [wal_frames db 4 3]]
+} {0 4 4}
 do_test wal3-6.2.3 {
   set ::R
 } {h h l b}
@@ -629,8 +615,8 @@ T delete
 
 #-------------------------------------------------------------------------
 # 
-do_test wal3-8.1.1 {
-  forcedelete test.db test.db-journal test.db wal .test.db-conch
+do_test wal3-8.1 {
+  forcedelete test.db test.db-journal test.db wal
   sqlite3 db test.db
   sqlite3 db2 test.db
   execsql {
@@ -640,12 +626,9 @@ do_test wal3-8.1.1 {
     INSERT INTO b VALUES('Tehran');
     INSERT INTO b VALUES('Qom');
     INSERT INTO b VALUES('Markazi');
+    PRAGMA wal_checkpoint;
   }
-} {wal}
-
-do_test wal3.8.1.2 {
-  execsql { PRAGMA wal_checkpoint; }
-} [list 0 [wal_frames db 5 4] [wal_frames db 5 4]]
+} {wal 0 5 5}
 do_test wal3-8.2 {
   execsql { SELECT * FROM b }
 } {Tehran Qom Markazi}

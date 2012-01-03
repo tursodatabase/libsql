@@ -33,6 +33,9 @@ typedef unsigned char Bool;
 /* Opaque type used by code in vdbesort.c */
 typedef struct VdbeSorter VdbeSorter;
 
+/* Opaque type used by the explainer */
+typedef struct Explain Explain;
+
 /*
 ** A cursor is a pointer into a single BTree within a database file.
 ** The cursor can seek to a BTree entry with a particular key, or
@@ -117,6 +120,8 @@ struct VdbeFrame {
   int nOp;                /* Size of aOp array */
   Mem *aMem;              /* Array of memory cells for parent frame */
   int nMem;               /* Number of entries in aMem */
+  u8 *aOnceFlag;          /* Array of OP_Once flags for parent frame */
+  int nOnceFlag;          /* Number of entries in aOnceFlag */
   VdbeCursor **apCsr;     /* Array of Vdbe cursors for parent frame */
   u16 nCursor;            /* Number of entries in apCsr */
   void *token;            /* Copy of SubProgram.token */
@@ -256,6 +261,18 @@ struct sqlite3_context {
 };
 
 /*
+** An Explain object accumulates indented output which is helpful
+** in describing recursive data structures.
+*/
+struct Explain {
+  Vdbe *pVdbe;       /* Attach the explanation to this Vdbe */
+  StrAccum str;      /* The string being accumulated */
+  int nIndent;       /* Number of elements in aIndent */
+  u16 aIndent[100];  /* Levels of indentation */
+  char zBase[100];   /* Initial space */
+};
+
+/*
 ** An instance of the virtual machine.  This structure contains the complete
 ** state of the virtual machine.
 **
@@ -321,11 +338,17 @@ struct Vdbe {
 #ifdef SQLITE_DEBUG
   FILE *trace;            /* Write an execution trace here, if not NULL */
 #endif
+#ifdef SQLITE_ENABLE_TREE_EXPLAIN
+  Explain *pExplain;      /* The explainer */
+  char *zExplain;         /* Explanation of data structures */
+#endif
   VdbeFrame *pFrame;      /* Parent frame */
   VdbeFrame *pDelFrame;   /* List of frame objects to free on VM reset */
   int nFrame;             /* Number of frames in pFrame list */
   u32 expmask;            /* Binding to these vars invalidates VM */
   SubProgram *pProgram;   /* Linked list of all sub-programs used by VM */
+  int nOnceFlag;          /* Size of array aOnceFlag[] */
+  u8 *aOnceFlag;          /* Flags for OP_Once */
 };
 
 /*

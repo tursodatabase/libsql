@@ -66,26 +66,6 @@
 #endif
 
 /*
-** Determine if we are dealing with Windows NT.
-*/
-#if defined(_WIN32_WINNT)
-# define SQLITE_OS_WINNT 1
-#else
-# define SQLITE_OS_WINNT 0
-#endif
-
-/*
-** Determine if we are dealing with WindowsCE - which has a much
-** reduced API.
-*/
-#if defined(_WIN32_WCE)
-# define SQLITE_OS_WINCE 1
-#else
-# define SQLITE_OS_WINCE 0
-#endif
-
-
-/*
 ** Define the maximum size of a temporary filename
 */
 #if SQLITE_OS_WIN
@@ -109,6 +89,25 @@
 # define SQLITE_TEMPNAME_SIZE 200
 #endif
 
+/*
+** Determine if we are dealing with Windows NT.
+*/
+#if defined(_WIN32_WINNT)
+# define SQLITE_OS_WINNT 1
+#else
+# define SQLITE_OS_WINNT 0
+#endif
+
+/*
+** Determine if we are dealing with WindowsCE - which has a much
+** reduced API.
+*/
+#if defined(_WIN32_WCE)
+# define SQLITE_OS_WINCE 1
+#else
+# define SQLITE_OS_WINCE 0
+#endif
+
 /* If the SET_FULLSYNC macro is not defined above, then make it
 ** a no-op
 */
@@ -120,7 +119,7 @@
 ** The default size of a disk sector
 */
 #ifndef SQLITE_DEFAULT_SECTOR_SIZE
-# define SQLITE_DEFAULT_SECTOR_SIZE 512
+# define SQLITE_DEFAULT_SECTOR_SIZE 4096
 #endif
 
 /*

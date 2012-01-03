@@ -529,6 +529,7 @@ static void analyzeOneTable(
     sqlite3VdbeAddOp2(v, OP_Integer, 0, regNumEq);
     sqlite3VdbeAddOp2(v, OP_Integer, 0, regNumLt);
     sqlite3VdbeAddOp2(v, OP_Integer, -1, regNumDLt);
+    sqlite3VdbeAddOp3(v, OP_Null, 0, regSample, regAccum);
     sqlite3VdbeAddOp4(v, OP_Function, 1, regCount, regAccum,
                       (char*)&stat3InitFuncdef, P4_FUNCDEF);
     sqlite3VdbeChangeP5(v, 2);

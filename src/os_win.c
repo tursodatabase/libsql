@@ -59,9 +59,8 @@ struct winFile {
   HANDLE h;               /* Handle for accessing the file */
   u8 locktype;            /* Type of lock currently held on this file */
   short sharedLockByte;   /* Randomly chosen byte used as a shared lock */
-  u8 bPersistWal;         /* True to persist WAL files */
+  u8 ctrlFlags;           /* Flags.  See WINFILE_* below */
   DWORD lastErrno;        /* The Windows errno from the last I/O error */
-  DWORD sectorSize;       /* Sector size of the device file is on */
   winShm *pShm;           /* Instance of shared memory on this file */
   const char *zPath;      /* Full pathname of this file */
   int szChunk;            /* Chunk size configured by FCNTL_CHUNK_SIZE */
@@ -73,6 +72,12 @@ struct winFile {
   winceLock *shared;      /* Global shared lock memory for the file  */
 #endif
 };
+
+/*
+** Allowed values for winFile.ctrlFlags
+*/
+#define WINFILE_PERSIST_WAL     0x04   /* Persistent WAL mode */
+#define WINFILE_PSOW            0x10   /* SQLITE_IOCAP_POWERSAFE_OVERWRITE */
 
 /*
  * If compiled with SQLITE_WIN32_MALLOC on Windows, we will use the
@@ -144,14 +149,6 @@ static void winMemShutdown(void *pAppData);
 
 const sqlite3_mem_methods *sqlite3MemGetWin32(void);
 #endif /* SQLITE_WIN32_MALLOC */
-
-/*
-** Forward prototypes.
-*/
-static int getSectorSize(
-    sqlite3_vfs *pVfs,
-    const char *zRelative     /* UTF-8 file name */
-);
 
 /*
 ** The following variable is (normally) set once and never changes
@@ -918,6 +915,9 @@ static LPWSTR utf8ToUnicode(const char *zFilename){
   LPWSTR zWideFilename;
 
   nChar = osMultiByteToWideChar(CP_UTF8, 0, zFilename, -1, NULL, 0);
+  if( nChar==0 ){
+    return 0;
+  }
   zWideFilename = sqlite3_malloc( nChar*sizeof(zWideFilename[0]) );
   if( zWideFilename==0 ){
     return 0;
@@ -940,6 +940,9 @@ static char *unicodeToUtf8(LPCWSTR zWideFilename){
   char *zFilename;
 
   nByte = osWideCharToMultiByte(CP_UTF8, 0, zWideFilename, -1, 0, 0, 0, 0);
+  if( nByte == 0 ){
+    return 0;
+  }
   zFilename = sqlite3_malloc( nByte );
   if( zFilename==0 ){
     return 0;
@@ -967,6 +970,9 @@ static LPWSTR mbcsToUnicode(const char *zFilename){
 
   nByte = osMultiByteToWideChar(codepage, 0, zFilename, -1, NULL,
                                 0)*sizeof(WCHAR);
+  if( nByte==0 ){
+    return 0;
+  }
   zMbcsFilename = sqlite3_malloc( nByte*sizeof(zMbcsFilename[0]) );
   if( zMbcsFilename==0 ){
     return 0;
@@ -993,6 +999,9 @@ static char *unicodeToMbcs(LPCWSTR zWideFilename){
   int codepage = osAreFileApisANSI() ? CP_ACP : CP_OEMCP;
 
   nByte = osWideCharToMultiByte(codepage, 0, zWideFilename, -1, 0, 0, 0, 0);
+  if( nByte == 0 ){
+    return 0;
+  }
   zFilename = sqlite3_malloc( nByte );
   if( zFilename==0 ){
     return 0;
@@ -2114,6 +2123,22 @@ static int winUnlock(sqlite3_file *id, int locktype){
 }
 
 /*
+** If *pArg is inititially negative then this is a query.  Set *pArg to
+** 1 or 0 depending on whether or not bit mask of pFile->ctrlFlags is set.
+**
+** If *pArg is 0 or 1, then clear or set the mask bit of pFile->ctrlFlags.
+*/
+static void winModeBit(winFile *pFile, unsigned char mask, int *pArg){
+  if( *pArg<0 ){
+    *pArg = (pFile->ctrlFlags & mask)!=0;
+  }else if( (*pArg)==0 ){
+    pFile->ctrlFlags &= ~mask;
+  }else{
+    pFile->ctrlFlags |= mask;
+  }
+}
+
+/*
 ** Control and query of the open file handle.
 */
 static int winFileControl(sqlite3_file *id, int op, void *pArg){
@@ -2157,12 +2182,15 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_PERSIST_WAL: {
-      int bPersist = *(int*)pArg;
-      if( bPersist<0 ){
-        *(int*)pArg = pFile->bPersistWal;
-      }else{
-        pFile->bPersistWal = bPersist!=0;
-      }
+      winModeBit(pFile, WINFILE_PERSIST_WAL, (int*)pArg);
+      return SQLITE_OK;
+    }
+    case SQLITE_FCNTL_POWERSAFE_OVERWRITE: {
+      winModeBit(pFile, WINFILE_PSOW, (int*)pArg);
+      return SQLITE_OK;
+    }
+    case SQLITE_FCNTL_VFSNAME: {
+      *(char**)pArg = sqlite3_mprintf("win32");
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_SYNC_OMITTED: {
@@ -2197,16 +2225,17 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
 ** same for both.
 */
 static int winSectorSize(sqlite3_file *id){
-  assert( id!=0 );
-  return (int)(((winFile*)id)->sectorSize);
+  (void)id;
+  return SQLITE_DEFAULT_SECTOR_SIZE;
 }
 
 /*
 ** Return a vector of device characteristics.
 */
 static int winDeviceCharacteristics(sqlite3_file *id){
-  UNUSED_PARAMETER(id);
-  return SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN;
+  winFile *p = (winFile*)id;
+  return SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN |
+         ((p->ctrlFlags & WINFILE_PSOW)?SQLITE_IOCAP_POWERSAFE_OVERWRITE:0);
 }
 
 #ifndef SQLITE_OMIT_WAL
@@ -2446,7 +2475,7 @@ static int winOpenSharedMemory(winFile *pDbFd){
   if( p==0 ) return SQLITE_IOERR_NOMEM;
   memset(p, 0, sizeof(*p));
   nName = sqlite3Strlen30(pDbFd->zPath);
-  pNew = sqlite3_malloc( sizeof(*pShmNode) + nName + 15 );
+  pNew = sqlite3_malloc( sizeof(*pShmNode) + nName + 16 );
   if( pNew==0 ){
     sqlite3_free(p);
     return SQLITE_IOERR_NOMEM;
@@ -3171,7 +3200,9 @@ static int winOpen(
   pFile->pVfs = pVfs;
   pFile->pShm = 0;
   pFile->zPath = zName;
-  pFile->sectorSize = getSectorSize(pVfs, zUtf8Name);
+  if( sqlite3_uri_boolean(zName, "psow", SQLITE_POWERSAFE_OVERWRITE) ){
+    pFile->ctrlFlags |= WINFILE_PSOW;
+  }
 
 #if SQLITE_OS_WINCE
   if( isReadWrite && eType==SQLITE_OPEN_MAIN_DB
@@ -3414,81 +3445,6 @@ static int winFullPathname(
     return SQLITE_IOERR_NOMEM;
   }
 #endif
-}
-
-/*
-** Get the sector size of the device used to store
-** file.
-*/
-static int getSectorSize(
-    sqlite3_vfs *pVfs,
-    const char *zRelative     /* UTF-8 file name */
-){
-  DWORD bytesPerSector = SQLITE_DEFAULT_SECTOR_SIZE;
-  /* GetDiskFreeSpace is not supported under WINCE */
-#if SQLITE_OS_WINCE
-  UNUSED_PARAMETER(pVfs);
-  UNUSED_PARAMETER(zRelative);
-#else
-  char zFullpath[MAX_PATH+1];
-  int rc;
-  DWORD dwRet = 0;
-  DWORD dwDummy;
-
-  /*
-  ** We need to get the full path name of the file
-  ** to get the drive letter to look up the sector
-  ** size.
-  */
-  SimulateIOErrorBenign(1);
-  sqlite3BeginBenignMalloc();
-  rc = winFullPathname(pVfs, zRelative, MAX_PATH, zFullpath);
-  sqlite3EndBenignMalloc();
-  SimulateIOErrorBenign(0);
-  if( rc == SQLITE_OK )
-  {
-    void *zConverted;
-    sqlite3BeginBenignMalloc();
-    zConverted = convertUtf8Filename(zFullpath);
-    sqlite3EndBenignMalloc();
-    if( zConverted ){
-      if( isNT() ){
-        /* trim path to just drive reference */
-        LPWSTR p = zConverted;
-        for(;*p;p++){
-          if( *p == '\\' ){
-            *p = '\0';
-            break;
-          }
-        }
-        dwRet = osGetDiskFreeSpaceW((LPCWSTR)zConverted,
-                                    &dwDummy,
-                                    &bytesPerSector,
-                                    &dwDummy,
-                                    &dwDummy);
-      }else{
-        /* trim path to just drive reference */
-        char *p = (char *)zConverted;
-        for(;*p;p++){
-          if( *p == '\\' ){
-            *p = '\0';
-            break;
-          }
-        }
-        dwRet = osGetDiskFreeSpaceA((char*)zConverted,
-                                    &dwDummy,
-                                    &bytesPerSector,
-                                    &dwDummy,
-                                    &dwDummy);
-      }
-      sqlite3_free(zConverted);
-    }
-    if( !dwRet ){
-      bytesPerSector = SQLITE_DEFAULT_SECTOR_SIZE;
-    }
-  }
-#endif
-  return (int) bytesPerSector; 
 }
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION

@@ -34,7 +34,7 @@ proc a_string {n} {
 # characteristics flags to "SAFE_DELETE".
 #
 testvfs tvfs -default 1
-tvfs devchar undeletable_when_open
+tvfs devchar {undeletable_when_open powersafe_overwrite}
 
 # Set up a hook so that each time a journal file is opened, closed or
 # deleted, the method name ("xOpen", "xClose" or "xDelete") and the final
@@ -231,4 +231,3 @@ ifcapable wal {
 
 tvfs delete
 finish_test
-

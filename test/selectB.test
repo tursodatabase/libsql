@@ -194,19 +194,28 @@ do_test selectB-3.0 {
   }
 } {}
 
-for {set ii 3} {$ii <= 4} {incr ii} {
+for {set ii 3} {$ii <= 6} {incr ii} {
 
-  if {$ii == 4} {
-    do_test selectB-4.0 {
-      execsql {
-        CREATE INDEX i1 ON t1(a);
-        CREATE INDEX i2 ON t1(b);
-        CREATE INDEX i3 ON t1(c);
-        CREATE INDEX i4 ON t2(d);
-        CREATE INDEX i5 ON t2(e);
-        CREATE INDEX i6 ON t2(f);
-      }
-    } {}
+  switch $ii {
+    4 {
+      optimization_control db query-flattener off
+    }
+    5 {
+      optimization_control db query-flattener on
+      do_test selectB-5.0 {
+        execsql {
+          CREATE INDEX i1 ON t1(a);
+          CREATE INDEX i2 ON t1(b);
+          CREATE INDEX i3 ON t1(c);
+          CREATE INDEX i4 ON t2(d);
+          CREATE INDEX i5 ON t2(e);
+          CREATE INDEX i6 ON t2(f);
+        }
+      } {}
+    }
+    6 {
+      optimization_control db query-flattener off
+    }
   }
 
   do_test selectB-$ii.1 {
@@ -371,11 +380,47 @@ for {set ii 3} {$ii <= 4} {incr ii} {
     }
   } {2 4 6 3 6 9 8 10 12 12 15 18 14 16 18 21 24 27}
 
-  do_test selectB-$ii.21 {
+  do_test selectB-$ii.22 {
     execsql {
       SELECT * FROM (SELECT 345 UNION ALL SELECT d FROM t2) ORDER BY 1;
     }
   } {3 12 21 345}
+
+  do_test selectB-$ii.23 {
+    execsql {
+      SELECT x, y FROM (
+        SELECT a AS x, b AS y FROM t1
+        UNION ALL
+        SELECT a*10 + 0.1, f*10 + 0.1 FROM t1 JOIN t2 ON (c=d)
+        UNION ALL
+        SELECT a*100, b*100 FROM t1
+      ) ORDER BY 1;
+    }
+  } {2 4 8 10 14 16 80.1 180.1 200 400 800 1000 1400 1600}
+
+  do_test selectB-$ii.24 {
+    execsql {
+      SELECT x, y FROM (
+        SELECT a AS x, b AS y FROM t1
+        UNION ALL
+        SELECT a*10 + 0.1, f*10 + 0.1 FROM t1 LEFT JOIN t2 ON (c=d)
+        UNION ALL
+        SELECT a*100, b*100 FROM t1
+      ) ORDER BY 1;
+    }
+  } {2 4 8 10 14 16 20.1 {} 80.1 180.1 140.1 {} 200 400 800 1000 1400 1600}
+
+  do_test selectB-$ii.25 {
+    execsql {
+      SELECT x+y FROM (
+        SELECT a AS x, b AS y FROM t1
+        UNION ALL
+        SELECT a*10 + 0.1, f*10 + 0.1 FROM t1 LEFT JOIN t2 ON (c=d)
+        UNION ALL
+        SELECT a*100, b*100 FROM t1
+      ) WHERE y+x NOT NULL ORDER BY 1;
+    }
+  } {6 18 30 260.2 600 1800 3000}
 }
 
 finish_test

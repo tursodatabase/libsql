@@ -52,8 +52,8 @@ const char *sqlite3_sourceid(void){ return SQLITE_SOURCE_ID; }
 */
 int sqlite3_libversion_number(void){ return SQLITE_VERSION_NUMBER; }
 
-/* IMPLEMENTATION-OF: R-54823-41343 The sqlite3_threadsafe() function returns
-** zero if and only if SQLite was compiled mutexing code omitted due to
+/* IMPLEMENTATION-OF: R-20790-14025 The sqlite3_threadsafe() function returns
+** zero if and only if SQLite was compiled with mutexing code omitted due to
 ** the SQLITE_THREADSAFE compile-time option being set to 0.
 */
 int sqlite3_threadsafe(void){ return SQLITE_THREADSAFE; }
@@ -242,8 +242,8 @@ int sqlite3_initialize(void){
   */
 #ifdef SQLITE_EXTRA_INIT
   if( rc==SQLITE_OK && sqlite3GlobalConfig.isInit ){
-    int SQLITE_EXTRA_INIT(void);
-    rc = SQLITE_EXTRA_INIT();
+    int SQLITE_EXTRA_INIT(const char*);
+    rc = SQLITE_EXTRA_INIT(0);
   }
 #endif
 
@@ -260,6 +260,10 @@ int sqlite3_initialize(void){
 */
 int sqlite3_shutdown(void){
   if( sqlite3GlobalConfig.isInit ){
+#ifdef SQLITE_EXTRA_SHUTDOWN
+    void SQLITE_EXTRA_SHUTDOWN(void);
+    SQLITE_EXTRA_SHUTDOWN();
+#endif
     sqlite3_os_end();
     sqlite3_reset_auto_extension();
     sqlite3GlobalConfig.isInit = 0;
@@ -539,6 +543,7 @@ sqlite3_mutex *sqlite3_db_mutex(sqlite3 *db){
 */
 int sqlite3_db_release_memory(sqlite3 *db){
   int i;
+  sqlite3_mutex_enter(db->mutex);
   sqlite3BtreeEnterAll(db);
   for(i=0; i<db->nDb; i++){
     Btree *pBt = db->aDb[i].pBt;
@@ -548,6 +553,7 @@ int sqlite3_db_release_memory(sqlite3 *db){
     }
   }
   sqlite3BtreeLeaveAll(db);
+  sqlite3_mutex_leave(db->mutex);
   return SQLITE_OK;
 }
 
@@ -2260,10 +2266,13 @@ static int openDatabase(
   /* Load automatic extensions - extensions that have been registered
   ** using the sqlite3_automatic_extension() API.
   */
-  sqlite3AutoLoadExtensions(db);
   rc = sqlite3_errcode(db);
-  if( rc!=SQLITE_OK ){
-    goto opendb_out;
+  if( rc==SQLITE_OK ){
+    sqlite3AutoLoadExtensions(db);
+    rc = sqlite3_errcode(db);
+    if( rc!=SQLITE_OK ){
+      goto opendb_out;
+    }
   }
 
 #ifdef SQLITE_ENABLE_FTS1
@@ -2973,6 +2982,22 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 
+#if defined(SQLITE_ENABLE_TREE_EXPLAIN)
+    /*   sqlite3_test_control(SQLITE_TESTCTRL_EXPLAIN_STMT,
+    **                        sqlite3_stmt*,const char**);
+    **
+    ** If compiled with SQLITE_ENABLE_TREE_EXPLAIN, each sqlite3_stmt holds
+    ** a string that describes the optimized parse tree.  This test-control
+    ** returns a pointer to that string.
+    */
+    case SQLITE_TESTCTRL_EXPLAIN_STMT: {
+      sqlite3_stmt *pStmt = va_arg(ap, sqlite3_stmt*);
+      const char **pzRet = va_arg(ap, const char**);
+      *pzRet = sqlite3VdbeExplanation((Vdbe*)pStmt);
+      break;
+    }
+#endif
+
   }
   va_end(ap);
 #endif /* SQLITE_OMIT_BUILTIN_TEST */
@@ -2991,6 +3016,7 @@ int sqlite3_test_control(int op, ...){
 ** returns a NULL pointer.
 */
 const char *sqlite3_uri_parameter(const char *zFilename, const char *zParam){
+  if( zFilename==0 ) return 0;
   zFilename += sqlite3Strlen30(zFilename) + 1;
   while( zFilename[0] ){
     int x = strcmp(zFilename, zParam);
@@ -2999,6 +3025,30 @@ const char *sqlite3_uri_parameter(const char *zFilename, const char *zParam){
     zFilename += sqlite3Strlen30(zFilename) + 1;
   }
   return 0;
+}
+
+/*
+** Return a boolean value for a query parameter.
+*/
+int sqlite3_uri_boolean(const char *zFilename, const char *zParam, int bDflt){
+  const char *z = sqlite3_uri_parameter(zFilename, zParam);
+  return z ? sqlite3GetBoolean(z) : (bDflt!=0);
+}
+
+/*
+** Return a 64-bit integer value for a query parameter.
+*/
+sqlite3_int64 sqlite3_uri_int64(
+  const char *zFilename,    /* Filename as passed to xOpen */
+  const char *zParam,       /* URI parameter sought */
+  sqlite3_int64 bDflt       /* return if parameter is missing */
+){
+  const char *z = sqlite3_uri_parameter(zFilename, zParam);
+  sqlite3_int64 v;
+  if( z && sqlite3Atoi64(z, &v, sqlite3Strlen30(z), SQLITE_UTF8)==SQLITE_OK ){
+    bDflt = v;
+  }
+  return bDflt;
 }
 
 /*

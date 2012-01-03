@@ -4006,7 +4006,7 @@ static int accessPayload(
           u8 aSave[4];
           u8 *aWrite = &pBuf[-4];
           memcpy(aSave, aWrite, 4);
-          rc = sqlite3OsRead(fd, aWrite, a+4, pBt->pageSize * (nextPage-1));
+          rc = sqlite3OsRead(fd, aWrite, a+4, (i64)pBt->pageSize*(nextPage-1));
           nextPage = get4byte(aWrite);
           memcpy(aWrite, aSave, 4);
         }else
@@ -6230,8 +6230,14 @@ static int balance_nonroot(
   /* Either we found one or more cells (cntnew[0])>0) or pPage is
   ** a virtual root page.  A virtual root page is when the real root
   ** page is page 1 and we are the only child of that page.
+  **
+  ** UPDATE:  The assert() below is not necessarily true if the database
+  ** file is corrupt.  The corruption will be detected and reported later
+  ** in this procedure so there is no need to act upon it now.
   */
+#if 0
   assert( cntNew[0]>0 || (pParent->pgno==1 && pParent->nCell==0) );
+#endif
 
   TRACE(("BALANCE: old: %d %d %d  ",
     apOld[0]->pgno, 

@@ -391,7 +391,7 @@ static int openTransaction(jt_file *pMain, jt_file *pJournal){
     while( rc==SQLITE_OK && iTrunk>0 ){
       u32 nLeaf;
       u32 iLeaf;
-      sqlite3_int64 iOff = (iTrunk-1)*pMain->nPagesize;
+      sqlite3_int64 iOff = (i64)(iTrunk-1)*pMain->nPagesize;
       rc = sqlite3OsRead(p, aData, pMain->nPagesize, iOff);
       nLeaf = decodeUint32(&aData[4]);
       for(iLeaf=0; rc==SQLITE_OK && iLeaf<nLeaf; iLeaf++){

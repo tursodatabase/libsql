@@ -194,7 +194,7 @@ ifcapable wal {
   do_test 4.2.1 {
     execsql { PRAGMA wal_checkpoint }
     file size test.db-wal
-  } [wal_file_size [wal_frames db 2 1] 512]
+  } [expr {32+2*(512+24)}]
 
   do_test 4.3 {
     db close
@@ -208,7 +208,7 @@ ifcapable wal {
       if {$newsz>$maxsz} {set maxsz $newsz}
     }
     set maxsz 
-  } [wal_file_size [wal_frames db 3 1] 512]
+  } [expr {32+3*(512+24)}]
 }
 
 finish_test

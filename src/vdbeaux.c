@@ -913,13 +913,14 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
     }
     case P4_MEM: {
       Mem *pMem = pOp->p4.pMem;
-      assert( (pMem->flags & MEM_Null)==0 );
       if( pMem->flags & MEM_Str ){
         zP4 = pMem->z;
       }else if( pMem->flags & MEM_Int ){
         sqlite3_snprintf(nTemp, zTemp, "%lld", pMem->u.i);
       }else if( pMem->flags & MEM_Real ){
         sqlite3_snprintf(nTemp, zTemp, "%.16g", pMem->r);
+      }else if( pMem->flags & MEM_Null ){
+        sqlite3_snprintf(nTemp, zTemp, "NULL");
       }else{
         assert( pMem->flags & MEM_Blob );
         zP4 = "(blob)";
@@ -1094,7 +1095,7 @@ static void releaseMemArray(Mem *p, int N){
         p->zMalloc = 0;
       }
 
-      p->flags = MEM_Null;
+      p->flags = MEM_Invalid;
     }
     db->mallocFailed = malloc_failed;
   }
@@ -1469,6 +1470,7 @@ void sqlite3VdbeMakeReady(
   int nMem;                      /* Number of VM memory registers */
   int nCursor;                   /* Number of cursors required */
   int nArg;                      /* Number of arguments in subprograms */
+  int nOnce;                     /* Number of OP_Once instructions */
   int n;                         /* Loop counter */
   u8 *zCsr;                      /* Memory available for allocation */
   u8 *zEnd;                      /* First byte past allocated memory */
@@ -1484,6 +1486,8 @@ void sqlite3VdbeMakeReady(
   nMem = pParse->nMem;
   nCursor = pParse->nTab;
   nArg = pParse->nMaxArg;
+  nOnce = pParse->nOnce;
+  if( nOnce==0 ) nOnce = 1; /* Ensure at least one byte in p->aOnceFlag[] */
   
   /* For each cursor required, also allocate a memory cell. Memory
   ** cells (nMem+1-nCursor)..nMem, inclusive, will never be used by
@@ -1532,6 +1536,7 @@ void sqlite3VdbeMakeReady(
     p->azVar = allocSpace(p->azVar, nVar*sizeof(char*), &zCsr, zEnd, &nByte);
     p->apCsr = allocSpace(p->apCsr, nCursor*sizeof(VdbeCursor*),
                           &zCsr, zEnd, &nByte);
+    p->aOnceFlag = allocSpace(p->aOnceFlag, nOnce, &zCsr, zEnd, &nByte);
     if( nByte ){
       p->pFree = sqlite3DbMallocZero(db, nByte);
     }
@@ -1540,6 +1545,7 @@ void sqlite3VdbeMakeReady(
   }while( nByte && !db->mallocFailed );
 
   p->nCursor = (u16)nCursor;
+  p->nOnceFlag = nOnce;
   if( p->aVar ){
     p->nVar = (ynVar)nVar;
     for(n=0; n<nVar; n++){
@@ -1556,7 +1562,7 @@ void sqlite3VdbeMakeReady(
     p->aMem--;                      /* aMem[] goes from 1..nMem */
     p->nMem = nMem;                 /*       not from 0..nMem-1 */
     for(n=1; n<=nMem; n++){
-      p->aMem[n].flags = MEM_Null;
+      p->aMem[n].flags = MEM_Invalid;
       p->aMem[n].db = db;
     }
   }
@@ -1598,6 +1604,8 @@ void sqlite3VdbeFreeCursor(Vdbe *p, VdbeCursor *pCx){
 */
 int sqlite3VdbeFrameRestore(VdbeFrame *pFrame){
   Vdbe *v = pFrame->v;
+  v->aOnceFlag = pFrame->aOnceFlag;
+  v->nOnceFlag = pFrame->nOnceFlag;
   v->aOp = pFrame->aOp;
   v->nOp = pFrame->nOp;
   v->aMem = pFrame->aMem;
@@ -1660,8 +1668,10 @@ static void Cleanup(Vdbe *p){
   /* Execute assert() statements to ensure that the Vdbe.apCsr[] and 
   ** Vdbe.aMem[] arrays have already been cleaned up.  */
   int i;
-  for(i=0; i<p->nCursor; i++) assert( p->apCsr==0 || p->apCsr[i]==0 );
-  for(i=1; i<=p->nMem; i++) assert( p->aMem==0 || p->aMem[i].flags==MEM_Null );
+  if( p->apCsr ) for(i=0; i<p->nCursor; i++) assert( p->apCsr[i]==0 );
+  if( p->aMem ){
+    for(i=1; i<=p->nMem; i++) assert( p->aMem[i].flags==MEM_Invalid );
+  }
 #endif
 
   sqlite3DbFree(db, p->zErrMsg);
@@ -1826,16 +1836,31 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     sqlite3_file *pMaster = 0;
     i64 offset = 0;
     int res;
+    int retryCount = 0;
+    int nMainFile;
 
     /* Select a master journal file name */
+    nMainFile = sqlite3Strlen30(zMainFile);
+    zMaster = sqlite3MPrintf(db, "%s-mjXXXXXX9XXz", zMainFile);
+    if( zMaster==0 ) return SQLITE_NOMEM;
     do {
       u32 iRandom;
-      sqlite3DbFree(db, zMaster);
-      sqlite3_randomness(sizeof(iRandom), &iRandom);
-      zMaster = sqlite3MPrintf(db, "%s-mj%08X", zMainFile, iRandom&0x7fffffff);
-      if( !zMaster ){
-        return SQLITE_NOMEM;
+      if( retryCount ){
+        if( retryCount>100 ){
+          sqlite3_log(SQLITE_FULL, "MJ delete: %s", zMaster);
+          sqlite3OsDelete(pVfs, zMaster, 0);
+          break;
+        }else if( retryCount==1 ){
+          sqlite3_log(SQLITE_FULL, "MJ collide: %s", zMaster);
+        }
       }
+      retryCount++;
+      sqlite3_randomness(sizeof(iRandom), &iRandom);
+      sqlite3_snprintf(13, &zMaster[nMainFile], "-mj%06X9%02X",
+                               (iRandom>>8)&0xffffff, iRandom&0xff);
+      /* The antipenultimate character of the master journal name must
+      ** be "9" to avoid name collisions when using 8+3 filenames. */
+      assert( zMaster[sqlite3Strlen30(zMaster)-3]=='9' );
       sqlite3FileSuffix3(zMainFile, zMaster);
       rc = sqlite3OsAccess(pVfs, zMaster, SQLITE_ACCESS_EXISTS, &res);
     }while( rc==SQLITE_OK && res );
@@ -2129,6 +2154,7 @@ int sqlite3VdbeHalt(Vdbe *p){
   if( p->db->mallocFailed ){
     p->rc = SQLITE_NOMEM;
   }
+  if( p->aOnceFlag ) memset(p->aOnceFlag, 0, p->nOnceFlag);
   closeAllCursors(p);
   if( p->magic!=VDBE_MAGIC_RUN ){
     return SQLITE_OK;
@@ -2466,6 +2492,10 @@ void sqlite3VdbeDeleteObject(sqlite3 *db, Vdbe *p){
   sqlite3DbFree(db, p->aColName);
   sqlite3DbFree(db, p->zSql);
   sqlite3DbFree(db, p->pFree);
+#if defined(SQLITE_ENABLE_TREE_EXPLAIN)
+  sqlite3DbFree(db, p->zExplain);
+  sqlite3DbFree(db, p->pExplain);
+#endif
   sqlite3DbFree(db, p);
 }
 

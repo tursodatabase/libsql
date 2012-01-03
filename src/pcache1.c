@@ -48,10 +48,10 @@ typedef struct PGroup PGroup;
 */
 struct PGroup {
   sqlite3_mutex *mutex;          /* MUTEX_STATIC_LRU or NULL */
-  int nMaxPage;                  /* Sum of nMax for purgeable caches */
-  int nMinPage;                  /* Sum of nMin for purgeable caches */
-  int mxPinned;                  /* nMaxpage + 10 - nMinPage */
-  int nCurrentPage;              /* Number of purgeable pages allocated */
+  unsigned int nMaxPage;         /* Sum of nMax for purgeable caches */
+  unsigned int nMinPage;         /* Sum of nMin for purgeable caches */
+  unsigned int mxPinned;         /* nMaxpage + 10 - nMinPage */
+  unsigned int nCurrentPage;     /* Number of purgeable pages allocated */
   PgHdr1 *pLruHead, *pLruTail;   /* LRU list of unpinned pages */
 };
 
@@ -714,7 +714,7 @@ static sqlite3_pcache_page *pcache1Fetch(
   unsigned int iKey, 
   int createFlag
 ){
-  int nPinned;
+  unsigned int nPinned;
   PCache1 *pCache = (PCache1 *)p;
   PGroup *pGroup;
   PgHdr1 *pPage = 0;
@@ -749,13 +749,13 @@ static sqlite3_pcache_page *pcache1Fetch(
 #endif
 
   /* Step 3: Abort if createFlag is 1 but the cache is nearly full */
+  assert( pCache->nPage >= pCache->nRecyclable );
   nPinned = pCache->nPage - pCache->nRecyclable;
-  assert( nPinned>=0 );
   assert( pGroup->mxPinned == pGroup->nMaxPage + 10 - pGroup->nMinPage );
   assert( pCache->n90pct == pCache->nMax*9/10 );
   if( createFlag==1 && (
         nPinned>=pGroup->mxPinned
-     || nPinned>=(int)pCache->n90pct
+     || nPinned>=pCache->n90pct
      || pcache1UnderMemoryPressure(pCache)
   )){
     goto fetch_out;
@@ -928,7 +928,9 @@ static void pcache1Destroy(sqlite3_pcache *p){
   assert( pCache->bPurgeable || (pCache->nMax==0 && pCache->nMin==0) );
   pcache1EnterMutex(pGroup);
   pcache1TruncateUnsafe(pCache, 0);
+  assert( pGroup->nMaxPage >= pCache->nMax );
   pGroup->nMaxPage -= pCache->nMax;
+  assert( pGroup->nMinPage >= pCache->nMin );
   pGroup->nMinPage -= pCache->nMin;
   pGroup->mxPinned = pGroup->nMaxPage + 10 - pGroup->nMinPage;
   pcache1EnforceMaxPage(pGroup);
@@ -1010,8 +1012,8 @@ void sqlite3PcacheStats(
     nRecyclable++;
   }
   *pnCurrent = pcache1.grp.nCurrentPage;
-  *pnMax = pcache1.grp.nMaxPage;
-  *pnMin = pcache1.grp.nMinPage;
+  *pnMax = (int)pcache1.grp.nMaxPage;
+  *pnMin = (int)pcache1.grp.nMinPage;
   *pnRecyclable = nRecyclable;
 }
 #endif
