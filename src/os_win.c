@@ -2466,7 +2466,7 @@ static int winOpenSharedMemory(winFile *pDbFd){
   if( p==0 ) return SQLITE_IOERR_NOMEM;
   memset(p, 0, sizeof(*p));
   nName = sqlite3Strlen30(pDbFd->zPath);
-  pNew = sqlite3_malloc( sizeof(*pShmNode) + nName + 15 );
+  pNew = sqlite3_malloc( sizeof(*pShmNode) + nName + 16 );
   if( pNew==0 ){
     sqlite3_free(p);
     return SQLITE_IOERR_NOMEM;

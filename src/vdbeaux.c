@@ -1839,7 +1839,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
 
     /* Select a master journal file name */
     nMainFile = sqlite3Strlen30(zMainFile);
-    zMaster = sqlite3MPrintf(db, "%s-mjXXXXXX9XX", zMainFile);
+    zMaster = sqlite3MPrintf(db, "%s-mjXXXXXX9XXz", zMainFile);
     if( zMaster==0 ) return SQLITE_NOMEM;
     do {
       u32 iRandom;

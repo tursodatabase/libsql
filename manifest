@@ -1,5 +1,5 @@
-C Remove\sthe\scode\sthat\sattempts\sto\sfind\sthe\ssector\ssize\sfrom\sthe\sOS\sand\nhardcode\sthe\sxSectorSize\smethods\sof\sthe\sunix\sand\swindows\sVFSes\sto\sreturn\nSQLITE_DEFAULT_SECTOR_SIZE,\swhich\sis\snow\sset\sto\s4096\sunless\soverridden.
-D 2012-01-02T18:20:14.209
+C Make\ssure\sfilenames\spassed\sinto\ssqlite3OsOpen()\salways\shave\sthe\sextra\nzero-terminators\sneeded\sby\ssqlite3_uri_parameter().
+D 2012-01-03T14:50:45.695
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,9 +166,9 @@ F src/os.c 519bdf7c608c4848024e1d87934f9305454145f4
 F src/os.h c7d888830f168a9b681b3aec30789f4ad2445c17
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 51acd5477f7c92321bbc665282a710556f19b4a7
-F src/os_win.c 0d3522dd0ad82b615748d4d391211af62b57ae03
-F src/pager.c a21a3191ab75310ea75bb61149e63b835f77f5f0
+F src/os_unix.c aff2f5e6632065dec09a53af1daf1e75fe12dce5
+F src/os_win.c f1057db64d481dffb15776147b06b15f4f8d7b87
+F src/pager.c 5b89ab92631a8fc488b87cc663ab064802173fec
 F src/pager.h 5cd760857707529b403837d813d86b68938d6183
 F src/parse.y fabb2e7047417d840e6fdb3ef0988a86849a08ba
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -238,13 +238,13 @@ F src/tokenize.c 1e86210d3976717a19238ea7b047fac481fe8c12
 F src/trigger.c ee7e178fb9188f44b532cebd449a7c1df90fb684
 F src/update.c d3076782c887c10e882996550345da9c4c9f9dea
 F src/utf.c 890c67dcfcc7a74623c95baac7535aadfe265e84
-F src/util.c 9e07bd67dfafe9c75b1da78c87ba030cebbb5388
+F src/util.c ad06374bc92b98071f221f00d553daea514f2b60
 F src/vacuum.c 0c0ba2242355c6048d65e2b333abe0f7c06348fa
 F src/vdbe.c 50f0cf69eb64e11185042d15062bec8a1373a8a2
 F src/vdbe.h 18f581cac1f4339ec3299f3e0cc6e11aec654cdb
 F src/vdbeInt.h 48c158b2fceca9682d1577e61c62da3c58cf0748
 F src/vdbeapi.c 3662b6a468a2a4605a15dfab313baa6dff81ad91
-F src/vdbeaux.c 6b6c7acacdb47af51853b1f2a19a9b755ffe2aba
+F src/vdbeaux.c 01fe6e35e5923c401a912b4662f0909d62453a1d
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c 5e8c0831bd0a270ff81af385e891ff381dec900f
 F src/vdbesort.c 468d43c057063e54da4f1988b38b4f46d60e7790
@@ -986,7 +986,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P da52e6e8b490508bc1ee4700aa45a79f398363da
-R a0b8de10aeee04558967b4b25ead4061
+P 03d8362cd2cadab8e1cc5b18a3194152f2bd0a84
+R bab430cac57fc8357d76990e6c780f64
 U drh
-Z d686dcd0a4de73c84f2800d730af321e
+Z 242be7d816ac09f954d1b623be157dd8

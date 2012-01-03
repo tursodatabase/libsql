@@ -3866,9 +3866,9 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
     }
 
 #ifdef SQLITE_SHM_DIRECTORY
-    nShmFilename = sizeof(SQLITE_SHM_DIRECTORY) + 30;
+    nShmFilename = sizeof(SQLITE_SHM_DIRECTORY) + 31;
 #else
-    nShmFilename = 5 + (int)strlen(pDbFd->zPath);
+    nShmFilename = 6 + (int)strlen(pDbFd->zPath);
 #endif
     pShmNode = sqlite3_malloc( sizeof(*pShmNode) + nShmFilename );
     if( pShmNode==0 ){

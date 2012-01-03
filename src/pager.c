@@ -4407,9 +4407,9 @@ int sqlite3PagerOpen(
     ROUND8(pVfs->szOsFile) +       /* The main db file */
     journalFileSize * 2 +          /* The two journal files */ 
     nPathname + 1 + nUri +         /* zFilename */
-    nPathname + 8 + 1              /* zJournal */
+    nPathname + 8 + 2              /* zJournal */
 #ifndef SQLITE_OMIT_WAL
-    + nPathname + 4 + 1              /* zWal */
+    + nPathname + 4 + 2            /* zWal */
 #endif
   );
   assert( EIGHT_BYTE_ALIGNMENT(SQLITE_INT_TO_PTR(journalFileSize)) );
@@ -4432,12 +4432,12 @@ int sqlite3PagerOpen(
     memcpy(pPager->zFilename, zPathname, nPathname);
     memcpy(&pPager->zFilename[nPathname+1], zUri, nUri);
     memcpy(pPager->zJournal, zPathname, nPathname);
-    memcpy(&pPager->zJournal[nPathname], "-journal", 8);
+    memcpy(&pPager->zJournal[nPathname], "-journal\000", 8+1);
     sqlite3FileSuffix3(pPager->zFilename, pPager->zJournal);
 #ifndef SQLITE_OMIT_WAL
     pPager->zWal = &pPager->zJournal[nPathname+8+1];
     memcpy(pPager->zWal, zPathname, nPathname);
-    memcpy(&pPager->zWal[nPathname], "-wal", 4);
+    memcpy(&pPager->zWal[nPathname], "-wal\000", 4+1);
     sqlite3FileSuffix3(pPager->zFilename, pPager->zWal);
 #endif
     sqlite3_free(zPathname);
