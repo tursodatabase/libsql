@@ -1107,7 +1107,7 @@ insert_cleanup:
 **                                cause sqlite3_exec() to return immediately
 **                                with SQLITE_CONSTRAINT.
 **
-**  any              FAIL         Sqlite_exec() returns immediately with a
+**  any              FAIL         Sqlite3_exec() returns immediately with a
 **                                return code of SQLITE_CONSTRAINT.  The
 **                                transaction is not rolled back and any
 **                                prior changes are retained.

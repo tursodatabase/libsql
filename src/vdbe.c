@@ -52,7 +52,7 @@
 ** not misused.
 */
 #ifdef SQLITE_DEBUG
-# define memAboutToChange(P,M) sqlite3VdbeMemPrepareToChange(P,M)
+# define memAboutToChange(P,M) sqlite3VdbeMemAboutToChange(P,M)
 #else
 # define memAboutToChange(P,M)
 #endif
@@ -70,8 +70,8 @@ int sqlite3_search_count = 0;
 
 /*
 ** When this global variable is positive, it gets decremented once before
-** each instruction in the VDBE.  When reaches zero, the u1.isInterrupted
-** field of the sqlite3 structure is set in order to simulate and interrupt.
+** each instruction in the VDBE.  When it reaches zero, the u1.isInterrupted
+** field of the sqlite3 structure is set in order to simulate an interrupt.
 **
 ** This facility is used for testing purposes only.  It does not function
 ** in an ordinary build.
@@ -196,7 +196,7 @@ static VdbeCursor *allocateCursor(
   Vdbe *p,              /* The virtual machine */
   int iCur,             /* Index of the new VdbeCursor */
   int nField,           /* Number of fields in the table or index */
-  int iDb,              /* When database the cursor belongs to, or -1 */
+  int iDb,              /* Database the cursor belongs to, or -1 */
   int isBtreeCursor     /* True for B-Tree.  False for pseudo-table or vtab */
 ){
   /* Find the memory cell that will be used to store the blob of memory
@@ -478,7 +478,7 @@ static void registerTrace(FILE *out, int iReg, Mem *p){
 **
 ** This macro added to every instruction that does a jump in order to
 ** implement a loop.  This test used to be on every single instruction,
-** but that meant we more testing that we needed.  By only testing the
+** but that meant we more testing than we needed.  By only testing the
 ** flag on jump instructions, we get a (small) speed improvement.
 */
 #define CHECK_FOR_INTERRUPT \
@@ -673,7 +673,7 @@ int sqlite3VdbeExec(
       assert( pOp->p2<=p->nMem );
       pOut = &aMem[pOp->p2];
       memAboutToChange(p, pOut);
-      MemReleaseExt(pOut);
+      VdbeMemRelease(pOut);
       pOut->flags = MEM_Int;
     }
 
@@ -977,7 +977,7 @@ case OP_Null: {           /* out2-prerelease */
   while( cnt>0 ){
     pOut++;
     memAboutToChange(p, pOut);
-    MemReleaseExt(pOut);
+    VdbeMemRelease(pOut);
     pOut->flags = MEM_Null;
     cnt--;
   }
@@ -2375,7 +2375,7 @@ case OP_Column: {
   if( aOffset[p2] ){
     assert( rc==SQLITE_OK );
     if( zRec ){
-      MemReleaseExt(pDest);
+      VdbeMemRelease(pDest);
       sqlite3VdbeSerialGet((u8 *)&zRec[aOffset[p2]], aType[p2], pDest);
     }else{
       len = sqlite3VdbeSerialTypeLen(aType[p2]);

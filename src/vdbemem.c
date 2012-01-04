@@ -292,7 +292,7 @@ void sqlite3VdbeMemReleaseExternal(Mem *p){
 ** (Mem.type==SQLITE_TEXT).
 */
 void sqlite3VdbeMemRelease(Mem *p){
-  MemReleaseExt(p);
+  VdbeMemRelease(p);
   sqlite3DbFree(p->db, p->zMalloc);
   p->z = 0;
   p->zMalloc = 0;
@@ -588,7 +588,7 @@ int sqlite3VdbeMemTooBig(Mem *p){
 ** This is used for testing and debugging only - to make sure shallow
 ** copies are not misused.
 */
-void sqlite3VdbeMemPrepareToChange(Vdbe *pVdbe, Mem *pMem){
+void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
   int i;
   Mem *pX;
   for(i=1, pX=&pVdbe->aMem[1]; i<=pVdbe->nMem; i++, pX++){
@@ -614,7 +614,7 @@ void sqlite3VdbeMemPrepareToChange(Vdbe *pVdbe, Mem *pMem){
 */
 void sqlite3VdbeMemShallowCopy(Mem *pTo, const Mem *pFrom, int srcType){
   assert( (pFrom->flags & MEM_RowSet)==0 );
-  MemReleaseExt(pTo);
+  VdbeMemRelease(pTo);
   memcpy(pTo, pFrom, MEMCELLSIZE);
   pTo->xDel = 0;
   if( (pFrom->flags&MEM_Static)==0 ){
@@ -632,7 +632,7 @@ int sqlite3VdbeMemCopy(Mem *pTo, const Mem *pFrom){
   int rc = SQLITE_OK;
 
   assert( (pFrom->flags & MEM_RowSet)==0 );
-  MemReleaseExt(pTo);
+  VdbeMemRelease(pTo);
   memcpy(pTo, pFrom, MEMCELLSIZE);
   pTo->flags &= ~MEM_Dyn;
 

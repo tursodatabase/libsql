@@ -348,4 +348,4 @@ sqlite3_mutex_methods const *sqlite3DefaultMutex(void){
   return &sMutex;
 }
 
-#endif /* SQLITE_MUTEX_PTHREAD */
+#endif /* SQLITE_MUTEX_PTHREADS */
