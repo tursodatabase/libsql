@@ -1,5 +1,5 @@
-C Remove\sthe\sSQLITE_FCNTL_SYNC_OMITTED\scases\sfrom\sthe\sunix\sand\swindows\sVFSes\nas\sthey\sare\sno\slonger\sneeded\sbecause\sof\scheck-in\s[fd3822f1f2].
-D 2012-01-05T11:43:10.883
+C Ensure\s8-byte\salignment\sof\sIndex.aiRowEst[]\selements\seven\sif\sthe\ssize\sof\nan\sIndex\sobject\sis\snot\sa\smultiple\sof\s8\sbytes.
+D 2012-01-05T12:38:02.435
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -128,7 +128,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 8f683b1fcfd9ac92efa781c9c56c537e080a7117
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h 6e57bacaa4feb7dd56719678133e63a7c289c6e7
-F src/build.c 8915bb6d72ead998f94c2756ea8d143c77709b70
+F src/build.c 8e2a4dedad860fed982270ef43968505f35ec57f
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c a9c26822515f81ec21588cbb482ca6724be02e33
@@ -986,7 +986,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P e9d05cbb7676cbda83f1b3b71447404d7edde898
-R 6615d318658492419d159ab8371d00f5
+P 7cf568a101cda20ab6005bd250154b7f6960193a
+R 17a54c6dc9279f1461f74799fcc0456e
 U drh
-Z cda129bb9172ce6754b58d4da58725d3
+Z e2b3f0a5a9dd1fb18b07ce4e17a75f03
