@@ -1,5 +1,5 @@
-C Change\sthe\sunix\sVFS\sso\sthat\sit\signores\sall\sbut\sthe\sleast-significant\sbit\nof\sthe\ssyncDir\sflag\sto\sxDelete.\s\sAdd\san\sassert\sto\sprove\sthat\sthe\score\sonly\never\suses\sthat\sone\sbit.
-D 2012-01-05T16:07:30.209
+C Fix\san\sincorrect\sassert()\son\sthe\ssqlite3FileSuffix3()\sfunction.
+D 2012-01-05T18:33:40.197
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -238,7 +238,7 @@ F src/tokenize.c 1e86210d3976717a19238ea7b047fac481fe8c12
 F src/trigger.c ee7e178fb9188f44b532cebd449a7c1df90fb684
 F src/update.c d3076782c887c10e882996550345da9c4c9f9dea
 F src/utf.c 890c67dcfcc7a74623c95baac7535aadfe265e84
-F src/util.c ad06374bc92b98071f221f00d553daea514f2b60
+F src/util.c d124c1f192bdcac733908fadd186f943788e7d2b
 F src/vacuum.c 0c0ba2242355c6048d65e2b333abe0f7c06348fa
 F src/vdbe.c d5062ca4c623b92cecbfa005458a9a4b92f162cf
 F src/vdbe.h 18f581cac1f4339ec3299f3e0cc6e11aec654cdb
@@ -986,7 +986,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 1378f905d37544701776d38987fe7a312b255983
-R e3fe2e2961216736cb0dde749803d09d
+P e75fd3b27423272b988921ac0e272f9600818b8c
+R 76291a7da652a8d036f3df422b973e8c
 U drh
-Z d2ae5820d0aa451c58938d7eb1217fca
+Z 191c07423f75264679a3a47c68379691

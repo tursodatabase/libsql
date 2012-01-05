@@ -1176,7 +1176,7 @@ int sqlite3AbsInt32(int x){
 **     test.db-mj7f3319fa =>   test.9fa
 */
 void sqlite3FileSuffix3(const char *zBaseFilename, char *z){
-  assert( zBaseFilename[strlen(zBaseFilename)+1]==0 );
+  assert( z[strlen(z)+1]==0 );  /* z[] has no query parameters */
 #if SQLITE_ENABLE_8_3_NAMES<2
   if( sqlite3_uri_boolean(zBaseFilename, "8_3_names", 0) )
 #endif
