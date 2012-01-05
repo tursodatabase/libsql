@@ -14,6 +14,8 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/malloc_common.tcl
 
+unset -nocomplain defaultVfs
+set defaultVfs [file_control_vfsname db]
 db close
 
 do_test quota-1.1 { sqlite3_quota_initialize nosuchvfs 1 } {SQLITE_ERROR}
@@ -48,6 +50,7 @@ do_test quota-1.8 { sqlite3_quota_shutdown }               {SQLITE_OK}
 #   
 sqlite3_quota_initialize "" 1
 
+unset -nocomplain quota_request_ok
 proc quota_check {filename limitvar size} {
   upvar $limitvar limit
 
@@ -73,6 +76,9 @@ do_test quota-2.1.2 {
   }
   set ::quota
 } {}
+do_test quota-2.1.2.1 {
+  file_control_vfsname db
+} quota/$defaultVfs
 do_test quota-2.1.3 { file size test.db } {4096}
 do_test quota-2.1.4 {
   catchsql { INSERT INTO t1 VALUES(3, randomblob(1100)) }

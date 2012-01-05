@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  
 #
 # This file is devoted to testing the sqlite3_next_stmt and
-# sqlite3_stmt_readonly interfaces.
+# sqlite3_stmt_readonly and sqlite3_stmt_busy interfaces.
 #
 # $Id: capi3d.test,v 1.2 2008/07/14 15:11:20 drh Exp $
 #
@@ -112,5 +112,29 @@ do_test capi3-2.99 {
   sqlite3_stmt_readonly 0
 } 1
 
+# Tests for sqlite3_stmt_busy
+#
+do_test capi3d-3.1 {
+  db eval {INSERT INTO t1 VALUES(6); INSERT INTO t1 VALUES(7);}
+  set STMT [sqlite3_prepare db {SELECT * FROM t1} -1 TAIL]
+  sqlite3_stmt_busy $STMT
+} {0}
+do_test capi3d-3.2 {
+  sqlite3_step $STMT
+  sqlite3_stmt_busy $STMT
+} {1}
+do_test capi3d-3.3 {
+  sqlite3_step $STMT
+  sqlite3_stmt_busy $STMT
+} {1}
+do_test capi3d-3.4 {
+  sqlite3_reset $STMT
+  sqlite3_stmt_busy $STMT
+} {0}
+
+do_test capi3d-3.99 {
+  sqlite3_finalize $STMT
+  sqlite3_stmt_busy 0
+} {0}
 
 finish_test

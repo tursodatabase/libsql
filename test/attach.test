@@ -51,6 +51,25 @@ do_test attach-1.3 {
     SELECT * FROM two.t2;
   }
 } {1 x 2 y}
+
+# Tests for the sqlite3_db_filename interface
+#
+do_test attach-1.3.1 {
+  file tail [sqlite3_db_filename db main]
+} {test.db}
+do_test attach-1.3.2 {
+  file tail [sqlite3_db_filename db MAIN]
+} {test.db}
+do_test attach-1.3.3 {
+  file tail [sqlite3_db_filename db temp]
+} {}
+do_test attach-1.3.4 {
+  file tail [sqlite3_db_filename db two]
+} {test2.db}
+do_test attach-1.3.5 {
+  file tail [sqlite3_db_filename db three]
+} {}
+
 do_test attach-1.4 {
   execsql {
     SELECT * FROM t2;

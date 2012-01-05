@@ -361,7 +361,9 @@ do_test wal2-4.1 {
     INSERT INTO data VALUES('need xShmOpen to see this');
     PRAGMA wal_checkpoint;
   }
-} {wal 0 5 5}
+  # Three pages in the WAL file at this point: One copy of page 1 and two
+  # of the root page for table "data".
+} {wal 0 3 3}
 do_test wal2-4.2 {
   db close
   testvfs tvfs -noshm 1
@@ -730,7 +732,7 @@ do_test wal2-6.5.1 {
     INSERT INTO t2 VALUES('I', 'II');
     PRAGMA journal_mode;
   }
-} {wal exclusive 0 3 3 wal}
+} {wal exclusive 0 2 2 wal}
 do_test wal2-6.5.2 {
   execsql {
     PRAGMA locking_mode = normal;
@@ -741,7 +743,7 @@ do_test wal2-6.5.2 {
 } {normal exclusive I II III IV}
 do_test wal2-6.5.3 {
   execsql { PRAGMA wal_checkpoint }
-} {0 4 4}
+} {0 2 2}
 db close
 
 proc lock_control {method filename handle spec} {
@@ -1176,14 +1178,15 @@ if {$::tcl_platform(platform) == "unix"} {
 # Test that "PRAGMA checkpoint_fullsync" appears to be working.
 #
 foreach {tn sql reslist} {
-  1 { }                                 {8 0 3 0 5 0}
-  2 { PRAGMA checkpoint_fullfsync = 1 } {8 4 3 2 5 2}
-  3 { PRAGMA checkpoint_fullfsync = 0 } {8 0 3 0 5 0}
+  1 { }                                 {10 0 4 0 6 0}
+  2 { PRAGMA checkpoint_fullfsync = 1 } {10 4 4 2 6 2}
+  3 { PRAGMA checkpoint_fullfsync = 0 } {10 0 4 0 6 0}
 } {
   faultsim_delete_and_reopen
 
   execsql {PRAGMA auto_vacuum = 0}
   execsql $sql
+  do_execsql_test wal2-14.$tn.0 { PRAGMA page_size = 4096 }   {}
   do_execsql_test wal2-14.$tn.1 { PRAGMA journal_mode = WAL } {wal}
 
   set sqlite_sync_count 0
@@ -1192,14 +1195,14 @@ foreach {tn sql reslist} {
   do_execsql_test wal2-14.$tn.2 {
     PRAGMA wal_autocheckpoint = 10;
     CREATE TABLE t1(a, b);                -- 2 wal syncs
-    INSERT INTO t1 VALUES(1, 2);          -- 1 wal sync
+    INSERT INTO t1 VALUES(1, 2);          -- 2 wal sync
     PRAGMA wal_checkpoint;                -- 1 wal sync, 1 db sync
     BEGIN;
       INSERT INTO t1 VALUES(3, 4);
       INSERT INTO t1 VALUES(5, 6);
-    COMMIT;                               -- 1 wal sync
+    COMMIT;                               -- 2 wal sync
     PRAGMA wal_checkpoint;                -- 1 wal sync, 1 db sync
-  } {10 0 5 5 0 2 2}
+  } {10 0 3 3 0 1 1}
 
   do_test wal2-14.$tn.3 {
     cond_incr_sync_count 1
@@ -1233,22 +1236,22 @@ catch { db close }
 # PRAGMA fullfsync
 # PRAGMA synchronous
 #
-foreach {tn settings commit_sync ckpt_sync} {
-  1  {0 0 off}     {0 0}  {0 0}
-  2  {0 0 normal}  {0 0}  {2 0}
-  3  {0 0 full}    {1 0}  {2 0}
+foreach {tn settings restart_sync commit_sync ckpt_sync} {
+  1  {0 0 off}     {0 0}  {0 0}  {0 0}
+  2  {0 0 normal}  {1 0}  {0 0}  {2 0}
+  3  {0 0 full}    {2 0}  {1 0}  {2 0}
 
-  4  {0 1 off}     {0 0}  {0 0}
-  5  {0 1 normal}  {0 0}  {0 2}
-  6  {0 1 full}    {0 1}  {0 2}
+  4  {0 1 off}     {0 0}  {0 0}  {0 0}
+  5  {0 1 normal}  {0 1}  {0 0}  {0 2}
+  6  {0 1 full}    {0 2}  {0 1}  {0 2}
 
-  7  {1 0 off}     {0 0}  {0 0}
-  8  {1 0 normal}  {0 0}  {0 2}
-  9  {1 0 full}    {1 0}  {0 2}
+  7  {1 0 off}     {0 0}  {0 0}  {0 0}
+  8  {1 0 normal}  {1 0}  {0 0}  {0 2}
+  9  {1 0 full}    {2 0}  {1 0}  {0 2}
 
-  10 {1 1 off}     {0 0}  {0 0}
-  11 {1 1 normal}  {0 0}  {0 2}
-  12 {1 1 full}    {0 1}  {0 2}
+  10 {1 1 off}     {0 0}  {0 0}  {0 0}
+  11 {1 1 normal}  {0 1}  {0 0}  {0 2}
+  12 {1 1 full}    {0 2}  {0 1}  {0 2}
 } {
   forcedelete test.db
 
@@ -1261,28 +1264,38 @@ foreach {tn settings commit_sync ckpt_sync} {
 
   sqlite3 db test.db
   do_execsql_test 15.$tn.1 "
+    PRAGMA page_size = 4096;
     CREATE TABLE t1(x);
+    PRAGMA wal_autocheckpoint = OFF;
     PRAGMA journal_mode = WAL;
     PRAGMA checkpoint_fullfsync = [lindex $settings 0];
     PRAGMA fullfsync = [lindex $settings 1];
     PRAGMA synchronous = [lindex $settings 2];
-  " {wal}
+  " {0 wal}
 
+if { $tn==2} breakpoint
   do_test 15.$tn.2 {
+    set sync(normal) 0
+    set sync(full) 0
+    execsql { INSERT INTO t1 VALUES('abc') }
+    list $::sync(normal) $::sync(full)
+  } $restart_sync
+
+  do_test 15.$tn.3 {
     set sync(normal) 0
     set sync(full) 0
     execsql { INSERT INTO t1 VALUES('abc') }
     list $::sync(normal) $::sync(full)
   } $commit_sync
 
-  do_test 15.$tn.3 {
+  do_test 15.$tn.4 {
     set sync(normal) 0
     set sync(full) 0
     execsql { INSERT INTO t1 VALUES('def') }
     list $::sync(normal) $::sync(full)
   } $commit_sync
 
-  do_test 15.$tn.4 {
+  do_test 15.$tn.5 {
     set sync(normal) 0
     set sync(full) 0
     execsql { PRAGMA wal_checkpoint }

@@ -20,7 +20,7 @@ struct PCache {
   PgHdr *pDirty, *pDirtyTail;         /* List of dirty pages in LRU order */
   PgHdr *pSynced;                     /* Last synced page in dirty page list */
   int nRef;                           /* Number of referenced pages */
-  int nMax;                           /* Configured cache size */
+  int szCache;                        /* Configured cache size */
   int szPage;                         /* Size of every page in this cache */
   int szExtra;                        /* Size of extra space for each page */
   int bPurgeable;                     /* True if pages are on backing store */
@@ -131,7 +131,7 @@ static void pcacheUnpin(PgHdr *p){
     if( p->pgno==1 ){
       pCache->pPage1 = 0;
     }
-    sqlite3GlobalConfig.pcache.xUnpin(pCache->pCache, p, 0);
+    sqlite3GlobalConfig.pcache2.xUnpin(pCache->pCache, p->pPage, 0);
   }
 }
 
@@ -141,18 +141,18 @@ static void pcacheUnpin(PgHdr *p){
 ** functions are threadsafe.
 */
 int sqlite3PcacheInitialize(void){
-  if( sqlite3GlobalConfig.pcache.xInit==0 ){
+  if( sqlite3GlobalConfig.pcache2.xInit==0 ){
     /* IMPLEMENTATION-OF: R-26801-64137 If the xInit() method is NULL, then the
     ** built-in default page cache is used instead of the application defined
     ** page cache. */
     sqlite3PCacheSetDefault();
   }
-  return sqlite3GlobalConfig.pcache.xInit(sqlite3GlobalConfig.pcache.pArg);
+  return sqlite3GlobalConfig.pcache2.xInit(sqlite3GlobalConfig.pcache2.pArg);
 }
 void sqlite3PcacheShutdown(void){
-  if( sqlite3GlobalConfig.pcache.xShutdown ){
+  if( sqlite3GlobalConfig.pcache2.xShutdown ){
     /* IMPLEMENTATION-OF: R-26000-56589 The xShutdown() method may be NULL. */
-    sqlite3GlobalConfig.pcache.xShutdown(sqlite3GlobalConfig.pcache.pArg);
+    sqlite3GlobalConfig.pcache2.xShutdown(sqlite3GlobalConfig.pcache2.pArg);
   }
 }
 
@@ -181,7 +181,7 @@ void sqlite3PcacheOpen(
   p->bPurgeable = bPurgeable;
   p->xStress = xStress;
   p->pStress = pStress;
-  p->nMax = 100;
+  p->szCache = 100;
 }
 
 /*
@@ -191,11 +191,22 @@ void sqlite3PcacheOpen(
 void sqlite3PcacheSetPageSize(PCache *pCache, int szPage){
   assert( pCache->nRef==0 && pCache->pDirty==0 );
   if( pCache->pCache ){
-    sqlite3GlobalConfig.pcache.xDestroy(pCache->pCache);
+    sqlite3GlobalConfig.pcache2.xDestroy(pCache->pCache);
     pCache->pCache = 0;
     pCache->pPage1 = 0;
   }
   pCache->szPage = szPage;
+}
+
+/*
+** Compute the number of pages of cache requested.
+*/
+static int numberOfCachePages(PCache *p){
+  if( p->szCache>=0 ){
+    return p->szCache;
+  }else{
+    return (int)((-1024*(i64)p->szCache)/(p->szPage+p->szExtra));
+  }
 }
 
 /*
@@ -207,7 +218,8 @@ int sqlite3PcacheFetch(
   int createFlag,       /* If true, create page if it does not exist already */
   PgHdr **ppPage        /* Write the page here */
 ){
-  PgHdr *pPage = 0;
+  sqlite3_pcache_page *pPage = 0;
+  PgHdr *pPgHdr = 0;
   int eCreate;
 
   assert( pCache!=0 );
@@ -219,19 +231,19 @@ int sqlite3PcacheFetch(
   */
   if( !pCache->pCache && createFlag ){
     sqlite3_pcache *p;
-    int nByte;
-    nByte = pCache->szPage + pCache->szExtra + sizeof(PgHdr);
-    p = sqlite3GlobalConfig.pcache.xCreate(nByte, pCache->bPurgeable);
+    p = sqlite3GlobalConfig.pcache2.xCreate(
+        pCache->szPage, pCache->szExtra + sizeof(PgHdr), pCache->bPurgeable
+    );
     if( !p ){
       return SQLITE_NOMEM;
     }
-    sqlite3GlobalConfig.pcache.xCachesize(p, pCache->nMax);
+    sqlite3GlobalConfig.pcache2.xCachesize(p, numberOfCachePages(pCache));
     pCache->pCache = p;
   }
 
   eCreate = createFlag * (1 + (!pCache->bPurgeable || !pCache->pDirty));
   if( pCache->pCache ){
-    pPage = sqlite3GlobalConfig.pcache.xFetch(pCache->pCache, pgno, eCreate);
+    pPage = sqlite3GlobalConfig.pcache2.xFetch(pCache->pCache, pgno, eCreate);
   }
 
   if( !pPage && eCreate==1 ){
@@ -258,7 +270,7 @@ int sqlite3PcacheFetch(
                   "spill page %d making room for %d - cache used: %d/%d",
                   pPg->pgno, pgno,
                   sqlite3GlobalConfig.pcache.xPagecount(pCache->pCache),
-                  pCache->nMax);
+                  numberOfCachePages(pCache));
 #endif
       rc = pCache->xStress(pCache->pStress, pPg);
       if( rc!=SQLITE_OK && rc!=SQLITE_BUSY ){
@@ -266,33 +278,36 @@ int sqlite3PcacheFetch(
       }
     }
 
-    pPage = sqlite3GlobalConfig.pcache.xFetch(pCache->pCache, pgno, 2);
+    pPage = sqlite3GlobalConfig.pcache2.xFetch(pCache->pCache, pgno, 2);
   }
 
   if( pPage ){
-    if( !pPage->pData ){
-      memset(pPage, 0, sizeof(PgHdr));
-      pPage->pData = (void *)&pPage[1];
-      pPage->pExtra = (void*)&((char *)pPage->pData)[pCache->szPage];
-      memset(pPage->pExtra, 0, pCache->szExtra);
-      pPage->pCache = pCache;
-      pPage->pgno = pgno;
-    }
-    assert( pPage->pCache==pCache );
-    assert( pPage->pgno==pgno );
-    assert( pPage->pData==(void *)&pPage[1] );
-    assert( pPage->pExtra==(void *)&((char *)&pPage[1])[pCache->szPage] );
+    pPgHdr = (PgHdr *)pPage->pExtra;
 
-    if( 0==pPage->nRef ){
+    if( !pPgHdr->pPage ){
+      memset(pPgHdr, 0, sizeof(PgHdr));
+      pPgHdr->pPage = pPage;
+      pPgHdr->pData = pPage->pBuf;
+      pPgHdr->pExtra = (void *)&pPgHdr[1];
+      memset(pPgHdr->pExtra, 0, pCache->szExtra);
+      pPgHdr->pCache = pCache;
+      pPgHdr->pgno = pgno;
+    }
+    assert( pPgHdr->pCache==pCache );
+    assert( pPgHdr->pgno==pgno );
+    assert( pPgHdr->pData==pPage->pBuf );
+    assert( pPgHdr->pExtra==(void *)&pPgHdr[1] );
+
+    if( 0==pPgHdr->nRef ){
       pCache->nRef++;
     }
-    pPage->nRef++;
+    pPgHdr->nRef++;
     if( pgno==1 ){
-      pCache->pPage1 = pPage;
+      pCache->pPage1 = pPgHdr;
     }
   }
-  *ppPage = pPage;
-  return (pPage==0 && eCreate) ? SQLITE_NOMEM : SQLITE_OK;
+  *ppPage = pPgHdr;
+  return (pPgHdr==0 && eCreate) ? SQLITE_NOMEM : SQLITE_OK;
 }
 
 /*
@@ -339,7 +354,7 @@ void sqlite3PcacheDrop(PgHdr *p){
   if( p->pgno==1 ){
     pCache->pPage1 = 0;
   }
-  sqlite3GlobalConfig.pcache.xUnpin(pCache->pCache, p, 1);
+  sqlite3GlobalConfig.pcache2.xUnpin(pCache->pCache, p->pPage, 1);
 }
 
 /*
@@ -397,7 +412,7 @@ void sqlite3PcacheMove(PgHdr *p, Pgno newPgno){
   PCache *pCache = p->pCache;
   assert( p->nRef>0 );
   assert( newPgno>0 );
-  sqlite3GlobalConfig.pcache.xRekey(pCache->pCache, p, p->pgno, newPgno);
+  sqlite3GlobalConfig.pcache2.xRekey(pCache->pCache, p->pPage, p->pgno,newPgno);
   p->pgno = newPgno;
   if( (p->flags&PGHDR_DIRTY) && (p->flags&PGHDR_NEED_SYNC) ){
     pcacheRemoveFromDirtyList(p);
@@ -434,7 +449,7 @@ void sqlite3PcacheTruncate(PCache *pCache, Pgno pgno){
       memset(pCache->pPage1->pData, 0, pCache->szPage);
       pgno = 1;
     }
-    sqlite3GlobalConfig.pcache.xTruncate(pCache->pCache, pgno+1);
+    sqlite3GlobalConfig.pcache2.xTruncate(pCache->pCache, pgno+1);
   }
 }
 
@@ -443,7 +458,7 @@ void sqlite3PcacheTruncate(PCache *pCache, Pgno pgno){
 */
 void sqlite3PcacheClose(PCache *pCache){
   if( pCache->pCache ){
-    sqlite3GlobalConfig.pcache.xDestroy(pCache->pCache);
+    sqlite3GlobalConfig.pcache2.xDestroy(pCache->pCache);
   }
 }
 
@@ -555,7 +570,7 @@ int sqlite3PcachePageRefcount(PgHdr *p){
 int sqlite3PcachePagecount(PCache *pCache){
   int nPage = 0;
   if( pCache->pCache ){
-    nPage = sqlite3GlobalConfig.pcache.xPagecount(pCache->pCache);
+    nPage = sqlite3GlobalConfig.pcache2.xPagecount(pCache->pCache);
   }
   return nPage;
 }
@@ -565,7 +580,7 @@ int sqlite3PcachePagecount(PCache *pCache){
 ** Get the suggested cache-size value.
 */
 int sqlite3PcacheGetCachesize(PCache *pCache){
-  return pCache->nMax;
+  return numberOfCachePages(pCache);
 }
 #endif
 
@@ -573,9 +588,19 @@ int sqlite3PcacheGetCachesize(PCache *pCache){
 ** Set the suggested cache-size value.
 */
 void sqlite3PcacheSetCachesize(PCache *pCache, int mxPage){
-  pCache->nMax = mxPage;
+  pCache->szCache = mxPage;
   if( pCache->pCache ){
-    sqlite3GlobalConfig.pcache.xCachesize(pCache->pCache, mxPage);
+    sqlite3GlobalConfig.pcache2.xCachesize(pCache->pCache,
+                                           numberOfCachePages(pCache));
+  }
+}
+
+/*
+** Free up as much memory as possible from the page cache.
+*/
+void sqlite3PcacheShrink(PCache *pCache){
+  if( pCache->pCache ){
+    sqlite3GlobalConfig.pcache2.xShrink(pCache->pCache);
   }
 }
 

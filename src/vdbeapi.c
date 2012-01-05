@@ -354,7 +354,7 @@ static int sqlite3Step(Vdbe *p){
     **
     ** Nevertheless, some published applications that were originally written
     ** for version 3.6.23 or earlier do in fact depend on SQLITE_MISUSE 
-    ** returns, and the so were broken by the automatic-reset change.  As a
+    ** returns, and those were broken by the automatic-reset change.  As a
     ** a work-around, the SQLITE_OMIT_AUTORESET compile-time restores the
     ** legacy behavior of returning SQLITE_MISUSE for cases where the 
     ** previous sqlite3_step() returned something other than a SQLITE_LOCKED
@@ -720,13 +720,13 @@ static Mem *columnMem(sqlite3_stmt *pStmt, int i){
     /* If the value passed as the second argument is out of range, return
     ** a pointer to the following static Mem object which contains the
     ** value SQL NULL. Even though the Mem structure contains an element
-    ** of type i64, on certain architecture (x86) with certain compiler
+    ** of type i64, on certain architectures (x86) with certain compiler
     ** switches (-Os), gcc may align this Mem object on a 4-byte boundary
     ** instead of an 8-byte one. This all works fine, except that when
     ** running with SQLITE_DEBUG defined the SQLite code sometimes assert()s
     ** that a Mem structure is located on an 8-byte boundary. To prevent
-    ** this assert() from failing, when building with SQLITE_DEBUG defined
-    ** using gcc, force nullMem to be 8-byte aligned using the magical
+    ** these assert()s from failing, when building with SQLITE_DEBUG defined
+    ** using gcc, we force nullMem to be 8-byte aligned using the magical
     ** __attribute__((aligned(8))) macro.  */
     static const Mem nullMem 
 #if defined(SQLITE_DEBUG) && defined(__GNUC__)
@@ -1295,6 +1295,14 @@ sqlite3 *sqlite3_db_handle(sqlite3_stmt *pStmt){
 */
 int sqlite3_stmt_readonly(sqlite3_stmt *pStmt){
   return pStmt ? ((Vdbe*)pStmt)->readOnly : 1;
+}
+
+/*
+** Return true if the prepared statement is in need of being reset.
+*/
+int sqlite3_stmt_busy(sqlite3_stmt *pStmt){
+  Vdbe *v = (Vdbe*)pStmt;
+  return v!=0 && v->pc>0 && v->magic==VDBE_MAGIC_RUN;
 }
 
 /*

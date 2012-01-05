@@ -416,6 +416,7 @@ do_test wal-8.3 {
 do_test wal-9.1 {
   reopen_db
   execsql {
+    PRAGMA cache_size=2000;
     CREATE TABLE t1(x PRIMARY KEY);
     INSERT INTO t1 VALUES(blob(900));
     INSERT INTO t1 VALUES(blob(900));
@@ -545,7 +546,7 @@ do_multiclient_test tn {
   } {1 2 3 4 5 6 7 8 9 10}
   do_test wal-10.$tn.12 {
     catchsql { PRAGMA wal_checkpoint } 
-  } {0 {0 13 13}}   ;# Reader no longer block checkpoints
+  } {0 {0 7 7}}   ;# Reader no longer block checkpoints
   do_test wal-10.$tn.13 {
     execsql { INSERT INTO t1 VALUES(11, 12) }
     sql2 {SELECT * FROM t1}
@@ -555,7 +556,7 @@ do_multiclient_test tn {
   #
   do_test wal-10.$tn.14 {
     catchsql { PRAGMA wal_checkpoint } 
-  } {0 {0 15 13}}
+  } {0 {0 8 7}}
 
   # The following series of test cases used to verify another blocking
   # case in WAL - a case which no longer blocks.
@@ -565,10 +566,10 @@ do_multiclient_test tn {
   } {1 2 3 4 5 6 7 8 9 10 11 12}
   do_test wal-10.$tn.16 {
     catchsql { PRAGMA wal_checkpoint } 
-  } {0 {0 15 15}}
+  } {0 {0 8 8}}
   do_test wal-10.$tn.17 {
     execsql { PRAGMA wal_checkpoint } 
-  } {0 15 15}
+  } {0 8 8}
   do_test wal-10.$tn.18 {
     sql3 { BEGIN; SELECT * FROM t1 }
   } {1 2 3 4 5 6 7 8 9 10 11 12}
@@ -591,13 +592,13 @@ do_multiclient_test tn {
   #
   do_test wal-10.$tn.23 {
     execsql { PRAGMA wal_checkpoint }
-  } {0 17 17}
+  } {0 9 9}
   do_test wal-10.$tn.24 {
     sql2 { BEGIN; SELECT * FROM t1; }
   } {1 2 3 4 5 6 7 8 9 10 11 12 13 14}
   do_test wal-10.$tn.25 {
     execsql { PRAGMA wal_checkpoint }
-  } {0 17 17}
+  } {0 9 9}
   do_test wal-10.$tn.26 {
     catchsql { INSERT INTO t1 VALUES(15, 16) }
   } {0 {}}
@@ -614,11 +615,11 @@ do_multiclient_test tn {
   do_test wal-10.$tn.29 {
     execsql { INSERT INTO t1 VALUES(19, 20) }
     catchsql { PRAGMA wal_checkpoint }
-  } {0 {0 6 0}}
+  } {0 {0 3 0}}
   do_test wal-10.$tn.30 {
     code3 { sqlite3_finalize $::STMT }
     execsql { PRAGMA wal_checkpoint }
-  } {0 6 0}
+  } {0 3 0}
 
   # At one point, if a reader failed to upgrade to a writer because it
   # was reading an old snapshot, the write-locks were not being released.
@@ -657,7 +658,7 @@ do_multiclient_test tn {
   } {a b c d}
   do_test wal-10.$tn.36 {
     catchsql { PRAGMA wal_checkpoint }
-  } {0 {0 16 16}}
+  } {0 {0 8 8}}
   do_test wal-10.$tn.36 {
     sql3 { INSERT INTO t1 VALUES('e', 'f') }
     sql2 { SELECT * FROM t1 }
@@ -665,7 +666,7 @@ do_multiclient_test tn {
   do_test wal-10.$tn.37 {
     sql2 COMMIT
     execsql { PRAGMA wal_checkpoint }
-  } {0 18 18}
+  } {0 9 9}
 }
 
 #-------------------------------------------------------------------------
@@ -1039,7 +1040,7 @@ foreach {tn ckpt_cmd ckpt_res ckpt_main ckpt_aux} {
   5 {sqlite3_wal_checkpoint db aux}          SQLITE_OK     0 1
   6 {sqlite3_wal_checkpoint db temp}         SQLITE_OK     0 0
   7 {db eval "PRAGMA main.wal_checkpoint"}   {0 10 10}     1 0
-  8 {db eval "PRAGMA aux.wal_checkpoint"}    {0 16 16}     0 1
+  8 {db eval "PRAGMA aux.wal_checkpoint"}    {0 13 13}     0 1
   9 {db eval "PRAGMA temp.wal_checkpoint"}   {0 -1 -1}     0 0
 } {
   do_test wal-16.$tn.1 {
@@ -1053,7 +1054,8 @@ foreach {tn ckpt_cmd ckpt_res ckpt_main ckpt_aux} {
       PRAGMA aux.auto_vacuum = 0;
       PRAGMA main.journal_mode = WAL;
       PRAGMA aux.journal_mode = WAL;
-      PRAGMA synchronous = NORMAL;
+      PRAGMA main.synchronous = NORMAL;
+      PRAGMA aux.synchronous = NORMAL;
     }
   } {wal wal}
 
@@ -1071,7 +1073,7 @@ foreach {tn ckpt_cmd ckpt_res ckpt_main ckpt_aux} {
   } [list [expr 1*1024] [wal_file_size 10 1024]]
   do_test wal-16.$tn.3 {
     list [file size test2.db] [file size test2.db-wal]
-  } [list [expr 1*1024] [wal_file_size 16 1024]]
+  } [list [expr 1*1024] [wal_file_size 13 1024]]
   
   do_test wal-16.$tn.4 [list eval $ckpt_cmd] $ckpt_res
   
@@ -1081,7 +1083,7 @@ foreach {tn ckpt_cmd ckpt_res ckpt_main ckpt_aux} {
 
   do_test wal-16.$tn.6 {
     list [file size test2.db] [file size test2.db-wal]
-  } [list [expr ($ckpt_aux ? 7 : 1)*1024] [wal_file_size 16 1024]]
+  } [list [expr ($ckpt_aux ? 7 : 1)*1024] [wal_file_size 13 1024]]
 
   catch { db close }
 }
@@ -1124,6 +1126,7 @@ foreach {tn sectorsize logsize} "
     execsql {
       PRAGMA auto_vacuum = 0;
       PRAGMA page_size = 512;
+      PRAGMA cache_size = -2000;
       PRAGMA journal_mode = WAL;
       PRAGMA synchronous = FULL;
     }
@@ -1550,9 +1553,13 @@ ifcapable autovacuum {
     }
     file size test.db
   } [expr 3 * 1024]
+
+  # WAL file now contains a single frame - the new root page for table t1.
+  # It would be two frames (the new root page and a padding frame) if the
+  # ZERO_DAMAGE flag were not set.
   do_test 24.5 {
     file size test.db-wal
-  } 2128
+  } [wal_file_size 1 1024]
 }
 
 db close

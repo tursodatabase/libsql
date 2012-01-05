@@ -68,7 +68,7 @@ proc reset_highwater_marks {} {
   sqlite3_status SQLITE_STATUS_PARSER_STACK 1
 }
 
-set xtra_size 256
+set xtra_size 290
 
 # Test 1:  Both PAGECACHE and SCRATCH are shut down.
 #
@@ -97,9 +97,11 @@ reset_highwater_marks
 build_test_db memsubsys1-2 {PRAGMA page_size=1024}
 #show_memstats
 set MEMORY_MANAGEMENT $sqlite_options(memorymanage)
-do_test memsubsys1-2.3 {
-  set pg_ovfl [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_OVERFLOW 0] 2]
-} [expr ($TEMP_STORE>1 || $MEMORY_MANAGEMENT==0)*1024]
+ifcapable !malloc_usable_size {
+ do_test memsubsys1-2.3 {
+    set pg_ovfl [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_OVERFLOW 0] 2]
+  } [expr ($TEMP_STORE>1 || $MEMORY_MANAGEMENT==0)*1024]
+}
 do_test memsubsys1-2.4 {
   set pg_used [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_USED 0] 2]
 } 20

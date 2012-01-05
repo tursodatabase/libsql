@@ -627,7 +627,7 @@ do_test e_expr-11.7.1 { sqlite3_finalize $stmt } SQLITE_OK
 #-------------------------------------------------------------------------
 # "Test" the syntax diagrams in lang_expr.html.
 #
-# EVIDENCE-OF: R-62067-43884 -- syntax diagram signed-number
+# EVIDENCE-OF: R-02989-21050 -- syntax diagram signed-number
 #
 do_execsql_test e_expr-12.1.1 { SELECT 0, +0, -0 } {0 0 0}
 do_execsql_test e_expr-12.1.2 { SELECT 1, +1, -1 } {1 1 -1}
@@ -642,7 +642,7 @@ do_execsql_test e_expr-12.1.6 {
   SELECT 0.0001, +0.0001, -0.0001 
 } {0.0001 0.0001 -0.0001}
 
-# EVIDENCE-OF: R-21258-25489 -- syntax diagram literal-value
+# EVIDENCE-OF: R-43188-60852 -- syntax diagram literal-value
 #
 set sqlite_current_time 1
 do_execsql_test e_expr-12.2.1 {SELECT 123}               {123}
@@ -655,7 +655,7 @@ do_execsql_test e_expr-12.2.7 {SELECT CURRENT_DATE}      {1970-01-01}
 do_execsql_test e_expr-12.2.8 {SELECT CURRENT_TIMESTAMP} {{1970-01-01 00:00:01}}
 set sqlite_current_time 0
 
-# EVIDENCE-OF: R-57598-59332 -- syntax diagram expr
+# EVIDENCE-OF: R-50544-32159 -- syntax diagram expr
 #
 forcedelete test.db2
 execsql {
@@ -812,7 +812,7 @@ foreach {tn expr} {
   }
 }
 
-# EVIDENCE-OF: R-49462-56079 -- syntax diagram raise-function
+# EVIDENCE-OF: R-39820-63916 -- syntax diagram raise-function
 #
 foreach {tn raiseexpr} {
   1 "RAISE(IGNORE)"

@@ -604,7 +604,7 @@ static WhereTerm *findTerm(
          && pTerm->u.leftColumn==iColumn
          && (pTerm->eOperator & op)!=0
       ){
-        if( pIdx && pTerm->eOperator!=WO_ISNULL ){
+        if( iColumn>=0 && pIdx && pTerm->eOperator!=WO_ISNULL ){
           Expr *pX = pTerm->pExpr;
           CollSeq *pColl;
           char idxaff;
@@ -2005,7 +2005,6 @@ static void constructAutomaticIndex(
   int nByte;                  /* Byte of memory needed for pIdx */
   Index *pIdx;                /* Object describing the transient index */
   Vdbe *v;                    /* Prepared statement under construction */
-  int regIsInit;              /* Register set by initialization */
   int addrInit;               /* Address of the initialization bypass jump */
   Table *pTable;              /* The table being indexed */
   KeyInfo *pKeyinfo;          /* Key information for the index */   
@@ -2022,8 +2021,7 @@ static void constructAutomaticIndex(
   ** transient index on 2nd and subsequent iterations of the loop. */
   v = pParse->pVdbe;
   assert( v!=0 );
-  regIsInit = ++pParse->nMem;
-  addrInit = sqlite3VdbeAddOp1(v, OP_Once, regIsInit);
+  addrInit = sqlite3CodeOnce(pParse);
 
   /* Count the number of columns that will be added to the index
   ** and used to match WHERE clause constraints */
@@ -3052,10 +3050,24 @@ static void bestBtreeIndex(
 #endif
       used |= pTerm->prereqRight;
     }
-
-    /* Determine the value of rangeDiv */
-    if( nEq<pProbe->nColumn && pProbe->bUnordered==0 ){
-      int j = pProbe->aiColumn[nEq];
+ 
+    /* If the index being considered is UNIQUE, and there is an equality 
+    ** constraint for all columns in the index, then this search will find
+    ** at most a single row. In this case set the WHERE_UNIQUE flag to 
+    ** indicate this to the caller.
+    **
+    ** Otherwise, if the search may find more than one row, test to see if
+    ** there is a range constraint on indexed column (nEq+1) that can be 
+    ** optimized using the index. 
+    */
+    if( nEq==pProbe->nColumn && pProbe->onError!=OE_None ){
+      testcase( wsFlags & WHERE_COLUMN_IN );
+      testcase( wsFlags & WHERE_COLUMN_NULL );
+      if( (wsFlags & (WHERE_COLUMN_IN|WHERE_COLUMN_NULL))==0 ){
+        wsFlags |= WHERE_UNIQUE;
+      }
+    }else if( pProbe->bUnordered==0 ){
+      int j = (nEq==pProbe->nColumn ? -1 : pProbe->aiColumn[nEq]);
       if( findTerm(pWC, iCur, j, notReady, WO_LT|WO_LE|WO_GT|WO_GE, pIdx) ){
         WhereTerm *pTop = findTerm(pWC, iCur, j, notReady, WO_LT|WO_LE, pIdx);
         WhereTerm *pBtm = findTerm(pWC, iCur, j, notReady, WO_GT|WO_GE, pIdx);
@@ -3073,12 +3085,6 @@ static void bestBtreeIndex(
           testcase( pBtm->pWC!=pWC );
         }
         wsFlags |= (WHERE_COLUMN_RANGE|WHERE_ROWID_RANGE);
-      }
-    }else if( pProbe->onError!=OE_None ){
-      testcase( wsFlags & WHERE_COLUMN_IN );
-      testcase( wsFlags & WHERE_COLUMN_NULL );
-      if( (wsFlags & (WHERE_COLUMN_IN|WHERE_COLUMN_NULL))==0 ){
-        wsFlags |= WHERE_UNIQUE;
       }
     }
 
@@ -3690,10 +3696,12 @@ static char *explainIndexRange(sqlite3 *db, WhereLevel *pLevel, Table *pTab){
 
   j = i;
   if( pPlan->wsFlags&WHERE_BTM_LIMIT ){
-    explainAppendTerm(&txt, i++, aCol[aiColumn[j]].zName, ">");
+    char *z = (j==pIndex->nColumn ) ? "rowid" : aCol[aiColumn[j]].zName;
+    explainAppendTerm(&txt, i++, z, ">");
   }
   if( pPlan->wsFlags&WHERE_TOP_LIMIT ){
-    explainAppendTerm(&txt, i, aCol[aiColumn[j]].zName, "<");
+    char *z = (j==pIndex->nColumn ) ? "rowid" : aCol[aiColumn[j]].zName;
+    explainAppendTerm(&txt, i, z, "<");
   }
   sqlite3StrAccumAppend(&txt, ")", 1);
   return sqlite3StrAccumFinish(&txt);
@@ -4051,7 +4059,7 @@ static Bitmask codeOneLoopStart(
 
     pIdx = pLevel->plan.u.pIdx;
     iIdxCur = pLevel->iIdxCur;
-    k = pIdx->aiColumn[nEq];     /* Column for inequality constraints */
+    k = (nEq==pIdx->nColumn ? -1 : pIdx->aiColumn[nEq]);
 
     /* If this loop satisfies a sort order (pOrderBy) request that 
     ** was passed to this function to implement a "SELECT min(x) ..." 
@@ -4097,7 +4105,9 @@ static Bitmask codeOneLoopStart(
     ** a forward order scan on a descending index, interchange the 
     ** start and end terms (pRangeStart and pRangeEnd).
     */
-    if( nEq<pIdx->nColumn && bRev==(pIdx->aSortOrder[nEq]==SQLITE_SO_ASC) ){
+    if( (nEq<pIdx->nColumn && bRev==(pIdx->aSortOrder[nEq]==SQLITE_SO_ASC))
+     || (bRev && pIdx->nColumn==nEq)
+    ){
       SWAP(WhereTerm *, pRangeEnd, pRangeStart);
     }
 

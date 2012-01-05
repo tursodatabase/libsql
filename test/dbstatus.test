@@ -62,6 +62,11 @@ ifcapable stat3 {
   set STAT3 0
 }
 
+ifcapable malloc_usable_size {
+  finish_test
+  return
+}
+
 #---------------------------------------------------------------------------
 # Run the dbstatus-2 and dbstatus-3 tests with several of different
 # lookaside buffer sizes.
@@ -207,8 +212,13 @@ foreach ::lookaside_buffer_size {0 64 120} {
     # Some of the memory used for sqlite_stat3 is unaccounted for by
     # dbstatus.
     #
+    # Finally, on osx the estimate of memory used by the schema may be
+    # slightly low. 
+    #
     if {[string match *x $tn] || $AUTOVACUUM
-         || ([string match *y $tn] && $STAT3)} {
+         || ([string match *y $tn] && $STAT3)
+         || ($::tcl_platform(os) == "Darwin")
+    } {
       do_test dbstatus-2.$tn.ax { expr {($nSchema1-$nSchema2)<=$nFree} } 1
     } else {
       do_test dbstatus-2.$tn.a { expr {$nSchema1-$nSchema2} } $nFree

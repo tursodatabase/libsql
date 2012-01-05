@@ -45,7 +45,7 @@ proc do_insert_tests {args} {
   uplevel do_select_tests $args
 }
 
-# EVIDENCE-OF: R-41448-54465 -- syntax diagram insert-stmt
+# EVIDENCE-OF: R-55375-41353 -- syntax diagram insert-stmt
 #
 do_insert_tests e_insert-0 {
      1  "INSERT             INTO a1 DEFAULT VALUES"                   {}

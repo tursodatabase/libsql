@@ -70,7 +70,7 @@ proc do_dropview_tests {nm args} {
   uplevel do_select_tests $nm $args
 }
 
-# EVIDENCE-OF: R-21739-51207 -- syntax diagram drop-view-stmt
+# EVIDENCE-OF: R-53136-36436 -- syntax diagram drop-view-stmt
 #
 # All paths in the syntax diagram for DROP VIEW are tested by tests 1.*.
 #

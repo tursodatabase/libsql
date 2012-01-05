@@ -191,7 +191,7 @@ ifcapable wal {
       PRAGMA wal_checkpoint;
     }
     file size test.db-wal
-  } {1640}
+  } [expr {32+2*(512+24)}]
 
   do_test 4.3 {
     db close
@@ -205,7 +205,7 @@ ifcapable wal {
       if {$newsz>$maxsz} {set maxsz $newsz}
     }
     set maxsz 
-  } {2176}
+  } [expr {32+3*(512+24)}]
 }
 
 finish_test

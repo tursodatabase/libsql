@@ -990,8 +990,19 @@ do_test pager1-5.4.1 {
       INSERT INTO t2 VALUES(85, 'Gorbachev');
     COMMIT;
   }
-  set ::max_journal
-} [expr 2615+[string length [pwd]]]
+
+  # The size of the journal file is now:
+  # 
+  #   1) 512 byte header +
+  #   2) 2 * (1024+8) byte records +
+  #   3) 20+N bytes of master-journal pointer, where N is the size of 
+  #      the master-journal name encoded as utf-8 with no nul term.
+  #
+  set mj_pointer [expr {
+    20 + [string length [pwd]] + [string length "/test.db-mjXXXXXX9XX"]
+  }]
+  expr {$::max_journal==(512+2*(1024+8)+$mj_pointer)}
+} 1
 do_test pager1-5.4.2 {
   set ::max_journal 0
   execsql {
@@ -1001,8 +1012,16 @@ do_test pager1-5.4.2 {
       DELETE FROM t2 WHERE b = 'Lenin';
     COMMIT;
   }
-  set ::max_journal
-} [expr 3111+[string length [pwd]]]
+
+  # In synchronous=full mode, the master-journal pointer is not written
+  # directly after the last record in the journal file. Instead, it is
+  # written starting at the next (in this case 512 byte) sector boundary.
+  #
+  set mj_pointer [expr {
+    20 + [string length [pwd]] + [string length "/test.db-mjXXXXXX9XX"]
+  }]
+  expr {$::max_journal==(((512+2*(1024+8)+511)/512)*512 + $mj_pointer)}
+} 1
 db close
 tv delete
 
@@ -1312,6 +1331,7 @@ foreach sectorsize {
     4096 8192 16384 32768 65536 131072 262144
 } {
   tv sectorsize $sectorsize
+  tv devchar {}
   set eff $sectorsize
   if {$sectorsize < 512}   { set eff 512 }
   if {$sectorsize > 65536} { set eff 65536 }

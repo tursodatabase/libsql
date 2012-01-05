@@ -19,6 +19,12 @@
 
 #include "sqliteInt.h"
 
+/* Additional values that can be added to the sync_flags argument of
+** sqlite3WalFrames():
+*/
+#define WAL_SYNC_TRANSACTIONS  0x20   /* Sync at the end of each transaction */
+#define SQLITE_SYNC_MASK       0x13   /* Mask off the SQLITE_SYNC_* values */
+
 #ifdef SQLITE_OMIT_WAL
 # define sqlite3WalOpen(x,y,z)                   0
 # define sqlite3WalLimit(x,y)

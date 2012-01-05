@@ -33,12 +33,10 @@
   UNUSED_PARAMETER(yymajor);  /* Silence some compiler warnings */
   assert( TOKEN.z[0] );  /* The tokenizer always gives us a token */
   sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", &TOKEN);
-  pParse->parseError = 1;
 }
 %stack_overflow {
   UNUSED_PARAMETER(yypMinor); /* Silence some compiler warnings */
   sqlite3ErrorMsg(pParse, "parser stack overflow");
-  pParse->parseError = 1;
 }
 
 // The name of the generated procedure that implements the parser
@@ -396,6 +394,9 @@ cmd ::= DROP VIEW ifexists(E) fullname(X). {
 cmd ::= select(X).  {
   SelectDest dest = {SRT_Output, 0, 0, 0, 0};
   sqlite3Select(pParse, X, &dest);
+  sqlite3ExplainBegin(pParse->pVdbe);
+  sqlite3ExplainSelect(pParse->pVdbe, X);
+  sqlite3ExplainFinish(pParse->pVdbe);
   sqlite3SelectDelete(pParse->db, X);
 }
 

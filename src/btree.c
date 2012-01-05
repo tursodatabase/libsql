@@ -859,7 +859,7 @@ static int ptrmapGet(BtShared *pBt, Pgno key, u8 *pEType, Pgno *pPgno){
 ** This routine works only for pages that do not contain overflow cells.
 */
 #define findCell(P,I) \
-  ((P)->aData + ((P)->maskPage & get2byte(&(P)->aData[(P)->cellOffset+2*(I)])))
+  ((P)->aData + ((P)->maskPage & get2byte(&(P)->aCellIdx[2*(I)])))
 #define findCellv2(D,M,O,I) (D+(M&get2byte(D+(O+2*(I)))))
 
 
@@ -1409,6 +1409,8 @@ static int btreeInitPage(MemPage *pPage){
     pPage->nOverflow = 0;
     usableSize = pBt->usableSize;
     pPage->cellOffset = cellOffset = hdr + 12 - 4*pPage->leaf;
+    pPage->aDataEnd = &data[usableSize];
+    pPage->aCellIdx = &data[cellOffset];
     top = get2byteNotZero(&data[hdr+5]);
     pPage->nCell = get2byte(&data[hdr+3]);
     if( pPage->nCell>MX_CELL(pBt) ){
@@ -1512,6 +1514,8 @@ static void zeroPage(MemPage *pPage, int flags){
   decodeFlags(pPage, flags);
   pPage->hdrOffset = hdr;
   pPage->cellOffset = first;
+  pPage->aDataEnd = &data[pBt->usableSize];
+  pPage->aCellIdx = &data[first];
   pPage->nOverflow = 0;
   assert( pBt->pageSize>=512 && pBt->pageSize<=65536 );
   pPage->maskPage = (u16)(pBt->pageSize - 1);
@@ -1772,7 +1776,12 @@ int sqlite3BtreeOpen(
         sqlite3_free(p);
         return SQLITE_NOMEM;
       }
-      sqlite3OsFullPathname(pVfs, zFilename, nFullPathname, zFullPathname);
+      rc = sqlite3OsFullPathname(pVfs, zFilename, nFullPathname, zFullPathname);
+      if( rc ){
+        sqlite3_free(zFullPathname);
+        sqlite3_free(p);
+        return rc;
+      }
 #if SQLITE_THREADSAFE
       mutexOpen = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_OPEN);
       sqlite3_mutex_enter(mutexOpen);
@@ -3970,7 +3979,7 @@ static int accessPayload(
           u8 aSave[4];
           u8 *aWrite = &pBuf[-4];
           memcpy(aSave, aWrite, 4);
-          rc = sqlite3OsRead(fd, aWrite, a+4, pBt->pageSize * (nextPage-1));
+          rc = sqlite3OsRead(fd, aWrite, a+4, (i64)pBt->pageSize*(nextPage-1));
           nextPage = get4byte(aWrite);
           memcpy(aWrite, aSave, 4);
         }else
@@ -4550,16 +4559,22 @@ int sqlite3BtreeMovetoUnpacked(
         ** 2 bytes of the cell.
         */
         int nCell = pCell[0];
-        if( !(nCell & 0x80) && nCell<=pPage->maxLocal ){
+        if( !(nCell & 0x80)
+         && nCell<=pPage->maxLocal
+         && (pCell+nCell+1)<=pPage->aDataEnd
+        ){
           /* This branch runs if the record-size field of the cell is a
           ** single byte varint and the record fits entirely on the main
           ** b-tree page.  */
+          testcase( pCell+nCell+1==pPage->aDataEnd );
           c = sqlite3VdbeRecordCompare(nCell, (void*)&pCell[1], pIdxKey);
         }else if( !(pCell[1] & 0x80) 
           && (nCell = ((nCell&0x7f)<<7) + pCell[1])<=pPage->maxLocal
+          && (pCell+nCell+2)<=pPage->aDataEnd
         ){
           /* The record-size field is a 2 byte varint and the record 
           ** fits entirely on the main b-tree page.  */
+          testcase( pCell+nCell+2==pPage->aDataEnd );
           c = sqlite3VdbeRecordCompare(nCell, (void*)&pCell[2], pIdxKey);
         }else{
           /* The record flows over onto one or more overflow pages. In
@@ -5454,7 +5469,7 @@ static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   data = pPage->aData;
-  ptr = &data[pPage->cellOffset + 2*idx];
+  ptr = &pPage->aCellIdx[2*idx];
   pc = get2byte(ptr);
   hdr = pPage->hdrOffset;
   testcase( pc==get2byte(&data[hdr+5]) );
@@ -5468,7 +5483,7 @@ static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
     *pRC = rc;
     return;
   }
-  endPtr = &data[pPage->cellOffset + 2*pPage->nCell - 2];
+  endPtr = &pPage->aCellIdx[2*pPage->nCell - 2];
   assert( (SQLITE_PTR_TO_INT(ptr)&1)==0 );  /* ptr is always 2-byte aligned */
   while( ptr<endPtr ){
     *(u16*)ptr = *(u16*)&ptr[2];
@@ -5610,7 +5625,7 @@ static void assemblePage(
   assert( pPage->nCell==0 );
   assert( get2byteNotZero(&data[hdr+5])==nUsable );
 
-  pCellptr = &data[pPage->cellOffset + nCell*2];
+  pCellptr = &pPage->aCellIdx[nCell*2];
   cellbody = nUsable;
   for(i=nCell-1; i>=0; i--){
     u16 sz = aSize[i];
@@ -6188,8 +6203,14 @@ static int balance_nonroot(
   /* Either we found one or more cells (cntnew[0])>0) or pPage is
   ** a virtual root page.  A virtual root page is when the real root
   ** page is page 1 and we are the only child of that page.
+  **
+  ** UPDATE:  The assert() below is not necessarily true if the database
+  ** file is corrupt.  The corruption will be detected and reported later
+  ** in this procedure so there is no need to act upon it now.
   */
+#if 0
   assert( cntNew[0]>0 || (pParent->pgno==1 && pParent->nCell==0) );
+#endif
 
   TRACE(("BALANCE: old: %d %d %d  ",
     apOld[0]->pgno, 

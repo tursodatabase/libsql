@@ -99,7 +99,7 @@ do_test pragma-1.5 {
     PRAGMA default_cache_size;
     PRAGMA synchronous;
   }
-} [list 4321 $DFLT_CACHE_SZ 0]
+} [list -4321 $DFLT_CACHE_SZ 0]
 do_test pragma-1.6 {
   execsql {
     PRAGMA synchronous=ON;
@@ -107,7 +107,7 @@ do_test pragma-1.6 {
     PRAGMA default_cache_size;
     PRAGMA synchronous;
   }
-} [list 4321 $DFLT_CACHE_SZ 1]
+} [list -4321 $DFLT_CACHE_SZ 1]
 do_test pragma-1.7 {
   db close
   sqlite3 db test.db
