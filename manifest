@@ -1,5 +1,5 @@
-C Fix\stypos\sand\scomments\sand\smake\sminor\schanges\sto\sa\sfew\sfunction\snames,\nas\ssuggested\sby\sreadership.
-D 2012-01-04T12:57:45.610
+C Remove\sthe\sSQLITE_FCNTL_SYNC_OMITTED\scases\sfrom\sthe\sunix\sand\swindows\sVFSes\nas\sthey\sare\sno\slonger\sneeded\sbecause\sof\scheck-in\s[fd3822f1f2].
+D 2012-01-05T11:43:10.883
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,8 +166,8 @@ F src/os.c 519bdf7c608c4848024e1d87934f9305454145f4
 F src/os.h c7d888830f168a9b681b3aec30789f4ad2445c17
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c aff2f5e6632065dec09a53af1daf1e75fe12dce5
-F src/os_win.c f1057db64d481dffb15776147b06b15f4f8d7b87
+F src/os_unix.c f19ca2ef603e4f6510f3daf206e244476a68413d
+F src/os_win.c 88b35c8fe7b32c7398ceace727ea01120cb21989
 F src/pager.c 5b89ab92631a8fc488b87cc663ab064802173fec
 F src/pager.h 5cd760857707529b403837d813d86b68938d6183
 F src/parse.y fabb2e7047417d840e6fdb3ef0988a86849a08ba
@@ -986,7 +986,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P d73e93cfdc9441ade77b796dcdcf6eeb753cb398
-R 393cb6b00a2ad516972e1693f3526c0a
+P e9d05cbb7676cbda83f1b3b71447404d7edde898
+R 6615d318658492419d159ab8371d00f5
 U drh
-Z b9855855a204c8fcbbc8d1530cb14b4f
+Z cda129bb9172ce6754b58d4da58725d3
