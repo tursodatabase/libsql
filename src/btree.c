@@ -243,7 +243,7 @@ static int querySharedCacheTableLock(Btree *p, Pgno iTab, u8 eLock){
   /* If some other connection is holding an exclusive lock, the
   ** requested lock may not be obtained.
   */
-  if( pBt->pWriter!=p && pBt->isExclusive ){
+  if( pBt->pWriter!=p && (pBt->btsFlags & BTS_EXCLUSIVE)!=0 ){
     sqlite3ConnectionBlocked(p->db, pBt->pWriter->db);
     return SQLITE_LOCKED_SHAREDCACHE;
   }
@@ -264,7 +264,7 @@ static int querySharedCacheTableLock(Btree *p, Pgno iTab, u8 eLock){
       sqlite3ConnectionBlocked(p->db, pIter->pBtree->db);
       if( eLock==WRITE_LOCK ){
         assert( p==pBt->pWriter );
-        pBt->isPending = 1;
+        pBt->btsFlags |= BTS_PENDING;
       }
       return SQLITE_LOCKED_SHAREDCACHE;
     }
@@ -352,7 +352,7 @@ static int setSharedCacheTableLock(Btree *p, Pgno iTable, u8 eLock){
 ** the setSharedCacheTableLock() procedure) held by Btree object p.
 **
 ** This function assumes that Btree p has an open read or write 
-** transaction. If it does not, then the BtShared.isPending variable
+** transaction. If it does not, then the BTS_PENDING flag
 ** may be incorrectly cleared.
 */
 static void clearAllSharedCacheTableLocks(Btree *p){
@@ -365,7 +365,7 @@ static void clearAllSharedCacheTableLocks(Btree *p){
 
   while( *ppIter ){
     BtLock *pLock = *ppIter;
-    assert( pBt->isExclusive==0 || pBt->pWriter==pLock->pBtree );
+    assert( (pBt->btsFlags & BTS_EXCLUSIVE)==0 || pBt->pWriter==pLock->pBtree );
     assert( pLock->pBtree->inTrans>=pLock->eLock );
     if( pLock->pBtree==p ){
       *ppIter = pLock->pNext;
@@ -378,22 +378,21 @@ static void clearAllSharedCacheTableLocks(Btree *p){
     }
   }
 
-  assert( pBt->isPending==0 || pBt->pWriter );
+  assert( (pBt->btsFlags & BTS_PENDING)==0 || pBt->pWriter );
   if( pBt->pWriter==p ){
     pBt->pWriter = 0;
-    pBt->isExclusive = 0;
-    pBt->isPending = 0;
+    pBt->btsFlags &= ~(BTS_EXCLUSIVE|BTS_PENDING);
   }else if( pBt->nTransaction==2 ){
     /* This function is called when Btree p is concluding its 
     ** transaction. If there currently exists a writer, and p is not
     ** that writer, then the number of locks held by connections other
     ** than the writer must be about to drop to zero. In this case
-    ** set the isPending flag to 0.
+    ** set the BTS_PENDING flag to 0.
     **
-    ** If there is not currently a writer, then BtShared.isPending must
+    ** If there is not currently a writer, then BTS_PENDING must
     ** be zero already. So this next line is harmless in that case.
     */
-    pBt->isPending = 0;
+    pBt->btsFlags &= ~BTS_PENDING;
   }
 }
 
@@ -405,8 +404,7 @@ static void downgradeAllSharedCacheTableLocks(Btree *p){
   if( pBt->pWriter==p ){
     BtLock *pLock;
     pBt->pWriter = 0;
-    pBt->isExclusive = 0;
-    pBt->isPending = 0;
+    pBt->btsFlags &= ~(BTS_EXCLUSIVE|BTS_PENDING);
     for(pLock=pBt->pLock; pLock; pLock=pLock->pNext){
       assert( pLock->eLock==READ_LOCK || pLock->pBtree==p );
       pLock->eLock = READ_LOCK;
@@ -1264,7 +1262,7 @@ static int freeSpace(MemPage *pPage, int start, int size){
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   assert( size>=0 );   /* Minimum cell size is 4 */
 
-  if( pPage->pBt->secureDelete ){
+  if( pPage->pBt->btsFlags & BTS_SECURE_DELETE ){
     /* Overwrite deleted information with zeros when the secure_delete
     ** option is enabled */
     memset(&data[start], 0, size);
@@ -1367,6 +1365,7 @@ static int decodeFlags(MemPage *pPage, int flagByte){
   }else{
     return SQLITE_CORRUPT_BKPT;
   }
+  pPage->max1bytePayload = pBt->max1bytePayload;
   return SQLITE_OK;
 }
 
@@ -1502,7 +1501,7 @@ static void zeroPage(MemPage *pPage, int flags){
   assert( sqlite3PagerGetData(pPage->pDbPage) == data );
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   assert( sqlite3_mutex_held(pBt->mutex) );
-  if( pBt->secureDelete ){
+  if( pBt->btsFlags & BTS_SECURE_DELETE ){
     memset(&data[hdr], 0, pBt->usableSize - hdr);
   }
   data[hdr] = (char)flags;
@@ -1855,9 +1854,9 @@ int sqlite3BtreeOpen(
   
     pBt->pCursor = 0;
     pBt->pPage1 = 0;
-    pBt->readOnly = sqlite3PagerIsreadonly(pBt->pPager);
+    if( sqlite3PagerIsreadonly(pBt->pPager) ) pBt->btsFlags |= BTS_READ_ONLY;
 #ifdef SQLITE_SECURE_DELETE
-    pBt->secureDelete = 1;
+    pBt->btsFlags |= BTS_SECURE_DELETE;
 #endif
     pBt->pageSize = (zDbHeader[16]<<8) | (zDbHeader[17]<<16);
     if( pBt->pageSize<512 || pBt->pageSize>SQLITE_MAX_PAGE_SIZE
@@ -1878,7 +1877,7 @@ int sqlite3BtreeOpen(
       nReserve = 0;
     }else{
       nReserve = zDbHeader[20];
-      pBt->pageSizeFixed = 1;
+      pBt->btsFlags |= BTS_PAGESIZE_FIXED;
 #ifndef SQLITE_OMIT_AUTOVACUUM
       pBt->autoVacuum = (get4byte(&zDbHeader[36 + 4*4])?1:0);
       pBt->incrVacuum = (get4byte(&zDbHeader[36 + 7*4])?1:0);
@@ -2166,7 +2165,7 @@ int sqlite3BtreeSyncDisabled(Btree *p){
 ** If parameter nReserve is less than zero, then the number of reserved
 ** bytes per page is left unchanged.
 **
-** If the iFix!=0 then the pageSizeFixed flag is set so that the page size
+** If the iFix!=0 then the BTS_PAGESIZE_FIXED flag is set so that the page size
 ** and autovacuum mode can no longer be changed.
 */
 int sqlite3BtreeSetPageSize(Btree *p, int pageSize, int nReserve, int iFix){
@@ -2174,7 +2173,7 @@ int sqlite3BtreeSetPageSize(Btree *p, int pageSize, int nReserve, int iFix){
   BtShared *pBt = p->pBt;
   assert( nReserve>=-1 && nReserve<=255 );
   sqlite3BtreeEnter(p);
-  if( pBt->pageSizeFixed ){
+  if( pBt->btsFlags & BTS_PAGESIZE_FIXED ){
     sqlite3BtreeLeave(p);
     return SQLITE_READONLY;
   }
@@ -2191,7 +2190,7 @@ int sqlite3BtreeSetPageSize(Btree *p, int pageSize, int nReserve, int iFix){
   }
   rc = sqlite3PagerSetPagesize(pBt->pPager, &pBt->pageSize, nReserve);
   pBt->usableSize = pBt->pageSize - (u16)nReserve;
-  if( iFix ) pBt->pageSizeFixed = 1;
+  if( iFix ) pBt->btsFlags |= BTS_PAGESIZE_FIXED;
   sqlite3BtreeLeave(p);
   return rc;
 }
@@ -2231,8 +2230,8 @@ int sqlite3BtreeMaxPageCount(Btree *p, int mxPage){
 }
 
 /*
-** Set the secureDelete flag if newFlag is 0 or 1.  If newFlag is -1,
-** then make no changes.  Always return the value of the secureDelete
+** Set the BTS_SECURE_DELETE flag if newFlag is 0 or 1.  If newFlag is -1,
+** then make no changes.  Always return the value of the BTS_SECURE_DELETE
 ** setting after the change.
 */
 int sqlite3BtreeSecureDelete(Btree *p, int newFlag){
@@ -2240,9 +2239,10 @@ int sqlite3BtreeSecureDelete(Btree *p, int newFlag){
   if( p==0 ) return 0;
   sqlite3BtreeEnter(p);
   if( newFlag>=0 ){
-    p->pBt->secureDelete = (newFlag!=0) ? 1 : 0;
+    p->pBt->btsFlags &= ~BTS_SECURE_DELETE;
+    if( newFlag ) p->pBt->btsFlags |= BTS_SECURE_DELETE;
   } 
-  b = p->pBt->secureDelete;
+  b = (p->pBt->btsFlags & BTS_SECURE_DELETE)!=0;
   sqlite3BtreeLeave(p);
   return b;
 }
@@ -2263,7 +2263,7 @@ int sqlite3BtreeSetAutoVacuum(Btree *p, int autoVacuum){
   u8 av = (u8)autoVacuum;
 
   sqlite3BtreeEnter(p);
-  if( pBt->pageSizeFixed && (av ?1:0)!=pBt->autoVacuum ){
+  if( (pBt->btsFlags & BTS_PAGESIZE_FIXED)!=0 && (av ?1:0)!=pBt->autoVacuum ){
     rc = SQLITE_READONLY;
   }else{
     pBt->autoVacuum = av ?1:0;
@@ -2337,14 +2337,14 @@ static int lockBtree(BtShared *pBt){
 
 #ifdef SQLITE_OMIT_WAL
     if( page1[18]>1 ){
-      pBt->readOnly = 1;
+      pBt->btsFlags |= BTS_READ_ONLY;
     }
     if( page1[19]>1 ){
       goto page1_init_failed;
     }
 #else
     if( page1[18]>2 ){
-      pBt->readOnly = 1;
+      pBt->btsFlags |= BTS_READ_ONLY;
     }
     if( page1[19]>2 ){
       goto page1_init_failed;
@@ -2358,7 +2358,7 @@ static int lockBtree(BtShared *pBt){
     ** may not be the latest version - there may be a newer one in the log
     ** file.
     */
-    if( page1[19]==2 && pBt->doNotUseWAL==0 ){
+    if( page1[19]==2 && (pBt->btsFlags & BTS_NO_WAL)==0 ){
       int isOpen = 0;
       rc = sqlite3PagerOpenWal(pBt->pPager, &isOpen);
       if( rc!=SQLITE_OK ){
@@ -2435,6 +2435,11 @@ static int lockBtree(BtShared *pBt){
   pBt->minLocal = (u16)((pBt->usableSize-12)*32/255 - 23);
   pBt->maxLeaf = (u16)(pBt->usableSize - 35);
   pBt->minLeaf = (u16)((pBt->usableSize-12)*32/255 - 23);
+  if( pBt->maxLocal>127 ){
+    pBt->max1bytePayload = 127;
+  }else{
+    pBt->max1bytePayload = pBt->maxLocal;
+  }
   assert( pBt->maxLeaf + 23 <= MX_CELL_SIZE(pBt) );
   pBt->pPage1 = pPage1;
   pBt->nPage = nPage;
@@ -2498,7 +2503,7 @@ static int newDatabase(BtShared *pBt){
   data[23] = 32;
   memset(&data[24], 0, 100-24);
   zeroPage(pP1, PTF_INTKEY|PTF_LEAF|PTF_LEAFDATA );
-  pBt->pageSizeFixed = 1;
+  pBt->btsFlags |= BTS_PAGESIZE_FIXED;
 #ifndef SQLITE_OMIT_AUTOVACUUM
   assert( pBt->autoVacuum==1 || pBt->autoVacuum==0 );
   assert( pBt->incrVacuum==1 || pBt->incrVacuum==0 );
@@ -2562,7 +2567,7 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
   }
 
   /* Write transactions are not possible on a read-only database */
-  if( pBt->readOnly && wrflag ){
+  if( (pBt->btsFlags & BTS_READ_ONLY)!=0 && wrflag ){
     rc = SQLITE_READONLY;
     goto trans_begun;
   }
@@ -2572,7 +2577,9 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
   ** on this shared-btree structure and a second write transaction is
   ** requested, return SQLITE_LOCKED.
   */
-  if( (wrflag && pBt->inTransaction==TRANS_WRITE) || pBt->isPending ){
+  if( (wrflag && pBt->inTransaction==TRANS_WRITE)
+   || (pBt->btsFlags & BTS_PENDING)!=0
+  ){
     pBlock = pBt->pWriter->db;
   }else if( wrflag>1 ){
     BtLock *pIter;
@@ -2596,7 +2603,8 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
   rc = querySharedCacheTableLock(p, MASTER_ROOT, READ_LOCK);
   if( SQLITE_OK!=rc ) goto trans_begun;
 
-  pBt->initiallyEmpty = (u8)(pBt->nPage==0);
+  pBt->btsFlags &= ~BTS_INITIALLY_EMPTY;
+  if( pBt->nPage==0 ) pBt->btsFlags |= BTS_INITIALLY_EMPTY;
   do {
     /* Call lockBtree() until either pBt->pPage1 is populated or
     ** lockBtree() returns something other than SQLITE_OK. lockBtree()
@@ -2608,7 +2616,7 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
     while( pBt->pPage1==0 && SQLITE_OK==(rc = lockBtree(pBt)) );
 
     if( rc==SQLITE_OK && wrflag ){
-      if( pBt->readOnly ){
+      if( (pBt->btsFlags & BTS_READ_ONLY)!=0 ){
         rc = SQLITE_READONLY;
       }else{
         rc = sqlite3PagerBegin(pBt->pPager,wrflag>1,sqlite3TempInMemory(p->db));
@@ -2645,7 +2653,8 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
 #ifndef SQLITE_OMIT_SHARED_CACHE
       assert( !pBt->pWriter );
       pBt->pWriter = p;
-      pBt->isExclusive = (u8)(wrflag>1);
+      pBt->btsFlags &= ~BTS_EXCLUSIVE;
+      if( wrflag>1 ) pBt->btsFlags |= BTS_EXCLUSIVE;
 #endif
 
       /* If the db-size header field is incorrect (as it may be if an old
@@ -3374,7 +3383,7 @@ int sqlite3BtreeBeginStmt(Btree *p, int iStatement){
   BtShared *pBt = p->pBt;
   sqlite3BtreeEnter(p);
   assert( p->inTrans==TRANS_WRITE );
-  assert( pBt->readOnly==0 );
+  assert( (pBt->btsFlags & BTS_READ_ONLY)==0 );
   assert( iStatement>0 );
   assert( iStatement>p->db->nSavepoint );
   assert( pBt->inTransaction==TRANS_WRITE );
@@ -3409,7 +3418,9 @@ int sqlite3BtreeSavepoint(Btree *p, int op, int iSavepoint){
     sqlite3BtreeEnter(p);
     rc = sqlite3PagerSavepoint(pBt->pPager, op, iSavepoint);
     if( rc==SQLITE_OK ){
-      if( iSavepoint<0 && pBt->initiallyEmpty ) pBt->nPage = 0;
+      if( iSavepoint<0 && (pBt->btsFlags & BTS_INITIALLY_EMPTY)!=0 ){
+        pBt->nPage = 0;
+      }
       rc = newDatabase(pBt);
       pBt->nPage = get4byte(28 + pBt->pPage1->aData);
 
@@ -3479,7 +3490,7 @@ static int btreeCursor(
   assert( wrFlag==0 || p->inTrans==TRANS_WRITE );
   assert( pBt->pPage1 && pBt->pPage1->aData );
 
-  if( NEVER(wrFlag && pBt->readOnly) ){
+  if( NEVER(wrFlag && (pBt->btsFlags & BTS_READ_ONLY)!=0) ){
     return SQLITE_READONLY;
   }
   if( iTable==1 && btreePagecount(pBt)==0 ){
@@ -4559,9 +4570,8 @@ int sqlite3BtreeMovetoUnpacked(
         ** 2 bytes of the cell.
         */
         int nCell = pCell[0];
-        if( !(nCell & 0x80)
-         && nCell<=pPage->maxLocal
-         && (pCell+nCell+1)<=pPage->aDataEnd
+        if( nCell<=pPage->max1bytePayload
+         /* && (pCell+nCell)<pPage->aDataEnd */
         ){
           /* This branch runs if the record-size field of the cell is a
           ** single byte varint and the record fits entirely on the main
@@ -4570,7 +4580,7 @@ int sqlite3BtreeMovetoUnpacked(
           c = sqlite3VdbeRecordCompare(nCell, (void*)&pCell[1], pIdxKey);
         }else if( !(pCell[1] & 0x80) 
           && (nCell = ((nCell&0x7f)<<7) + pCell[1])<=pPage->maxLocal
-          && (pCell+nCell+2)<=pPage->aDataEnd
+          /* && (pCell+nCell+2)<=pPage->aDataEnd */
         ){
           /* The record-size field is a 2 byte varint and the record 
           ** fits entirely on the main b-tree page.  */
@@ -5116,7 +5126,7 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
   nFree = get4byte(&pPage1->aData[36]);
   put4byte(&pPage1->aData[36], nFree+1);
 
-  if( pBt->secureDelete ){
+  if( pBt->btsFlags & BTS_SECURE_DELETE ){
     /* If the secure_delete option is enabled, then
     ** always fully overwrite deleted information with zeros.
     */
@@ -5177,7 +5187,7 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
       if( rc==SQLITE_OK ){
         put4byte(&pTrunk->aData[4], nLeaf+1);
         put4byte(&pTrunk->aData[8+nLeaf*4], iPage);
-        if( pPage && !pBt->secureDelete ){
+        if( pPage && (pBt->btsFlags & BTS_SECURE_DELETE)==0 ){
           sqlite3PagerDontWrite(pPage->pDbPage);
         }
         rc = btreeSetHasContent(pBt, iPage);
@@ -6018,7 +6028,7 @@ static int balance_nonroot(
       ** In this case, temporarily copy the cell into the aOvflSpace[]
       ** buffer. It will be copied out again as soon as the aSpace[] buffer
       ** is allocated.  */
-      if( pBt->secureDelete ){
+      if( pBt->btsFlags & BTS_SECURE_DELETE ){
         int iOff;
 
         iOff = SQLITE_PTR_TO_INT(apDiv[i]) - SQLITE_PTR_TO_INT(pParent->aData);
@@ -6760,7 +6770,8 @@ int sqlite3BtreeInsert(
   }
 
   assert( cursorHoldsMutex(pCur) );
-  assert( pCur->wrFlag && pBt->inTransaction==TRANS_WRITE && !pBt->readOnly );
+  assert( pCur->wrFlag && pBt->inTransaction==TRANS_WRITE
+              && (pBt->btsFlags & BTS_READ_ONLY)==0 );
   assert( hasSharedCacheTableLock(p, pCur->pgnoRoot, pCur->pKeyInfo!=0, 2) );
 
   /* Assert that the caller has been consistent. If this cursor was opened
@@ -6889,7 +6900,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
 
   assert( cursorHoldsMutex(pCur) );
   assert( pBt->inTransaction==TRANS_WRITE );
-  assert( !pBt->readOnly );
+  assert( (pBt->btsFlags & BTS_READ_ONLY)==0 );
   assert( pCur->wrFlag );
   assert( hasSharedCacheTableLock(p, pCur->pgnoRoot, pCur->pKeyInfo!=0, 2) );
   assert( !hasReadConflicts(p, pCur->pgnoRoot) );
@@ -7010,7 +7021,7 @@ static int btreeCreateTable(Btree *p, int *piTable, int createTabFlags){
 
   assert( sqlite3BtreeHoldsMutex(p) );
   assert( pBt->inTransaction==TRANS_WRITE );
-  assert( !pBt->readOnly );
+  assert( (pBt->btsFlags & BTS_READ_ONLY)==0 );
 
 #ifdef SQLITE_OMIT_AUTOVACUUM
   rc = allocateBtreePage(pBt, &pRoot, &pgnoRoot, 1, 0);
@@ -7384,7 +7395,9 @@ void sqlite3BtreeGetMeta(Btree *p, int idx, u32 *pMeta){
   /* If auto-vacuum is disabled in this build and this is an auto-vacuum
   ** database, mark the database as read-only.  */
 #ifdef SQLITE_OMIT_AUTOVACUUM
-  if( idx==BTREE_LARGEST_ROOT_PAGE && *pMeta>0 ) pBt->readOnly = 1;
+  if( idx==BTREE_LARGEST_ROOT_PAGE && *pMeta>0 ){
+    pBt->btsFlags |= BTS_READ_ONLY;
+  }
 #endif
 
   sqlite3BtreeLeave(p);
@@ -8184,7 +8197,8 @@ int sqlite3BtreePutData(BtCursor *pCsr, u32 offset, u32 amt, void *z){
   if( !pCsr->wrFlag ){
     return SQLITE_READONLY;
   }
-  assert( !pCsr->pBt->readOnly && pCsr->pBt->inTransaction==TRANS_WRITE );
+  assert( (pCsr->pBt->btsFlags & BTS_READ_ONLY)==0
+              && pCsr->pBt->inTransaction==TRANS_WRITE );
   assert( hasSharedCacheTableLock(pCsr->pBtree, pCsr->pgnoRoot, 0, 2) );
   assert( !hasReadConflicts(pCsr->pBtree, pCsr->pgnoRoot) );
   assert( pCsr->apPage[pCsr->iPage]->intKey );
@@ -8224,7 +8238,8 @@ int sqlite3BtreeSetVersion(Btree *pBtree, int iVersion){
   /* If setting the version fields to 1, do not automatically open the
   ** WAL connection, even if the version fields are currently set to 2.
   */
-  pBt->doNotUseWAL = (u8)(iVersion==1);
+  pBt->btsFlags &= ~BTS_NO_WAL;
+  if( iVersion==1 ) pBt->btsFlags |= BTS_NO_WAL;
 
   rc = sqlite3BtreeBeginTrans(pBtree, 0);
   if( rc==SQLITE_OK ){
@@ -8241,6 +8256,6 @@ int sqlite3BtreeSetVersion(Btree *pBtree, int iVersion){
     }
   }
 
-  pBt->doNotUseWAL = 0;
+  pBt->btsFlags &= ~BTS_NO_WAL;
   return rc;
 }
