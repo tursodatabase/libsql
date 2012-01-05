@@ -5216,7 +5216,7 @@ static int unixDelete(
     return unixLogError(SQLITE_IOERR_DELETE, "unlink", zPath);
   }
 #ifndef SQLITE_DISABLE_DIRSYNC
-  if( dirSync ){
+  if( (dirSync & 1)!=0 ){
     int fd;
     rc = osOpenDirectory(zPath, &fd);
     if( rc==SQLITE_OK ){
