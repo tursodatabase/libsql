@@ -3872,7 +3872,7 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
       rc = SQLITE_NOMEM;
       goto shm_open_err;
     }
-    memset(pShmNode, 0, sizeof(*pShmNode));
+    memset(pShmNode, 0, sizeof(*pShmNode)+nShmFilename);
     zShmFilename = pShmNode->zFilename = (char*)&pShmNode[1];
 #ifdef SQLITE_SHM_DIRECTORY
     sqlite3_snprintf(nShmFilename, zShmFilename, 

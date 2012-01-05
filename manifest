@@ -1,5 +1,5 @@
-C Fix\san\sincorrect\sassert()\son\sthe\ssqlite3FileSuffix3()\sfunction.
-D 2012-01-05T18:33:40.197
+C Make\ssure\sthe\sname\sof\sthe\sshared\smemory\sfile\shas\stwo\szero-terminators\sin\sthe\nUNIX\sVFS,\sso\sthat\ssqlite3_uri_parameter()\swill\swork\scorrectly\son\sthat\sname.
+D 2012-01-05T21:19:54.626
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/os.c f03339a44ded105eafcd7185a420a51d51e0f6ee
 F src/os.h c7d888830f168a9b681b3aec30789f4ad2445c17
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c b65e2d9084283de26037f26380973808a771756d
+F src/os_unix.c 2ad4366b3c41dc813345d6dbb3cab97d62d60b96
 F src/os_win.c 88b35c8fe7b32c7398ceace727ea01120cb21989
 F src/pager.c 5b89ab92631a8fc488b87cc663ab064802173fec
 F src/pager.h 5cd760857707529b403837d813d86b68938d6183
@@ -986,7 +986,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P e75fd3b27423272b988921ac0e272f9600818b8c
-R 76291a7da652a8d036f3df422b973e8c
+P 24db54bd49ed91c74a9797faca02df2d39553240
+R 2bb4f522f7fd78f7f0ad9be16bb7fe6a
 U drh
-Z 191c07423f75264679a3a47c68379691
+Z 747c3b45525cc604860d4ca837772828
