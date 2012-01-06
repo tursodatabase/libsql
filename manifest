@@ -1,5 +1,5 @@
-C Combine\svarious\sboolean\svariables\sin\sthe\sBtShared\sstructure\sinto\sa\ssingle\nboolean\svector.\s\sAlso\smake\sperformance\simprovement\ssimplifications\sto\nsqlite3BtreeMovetoUnpacked().
-D 2012-01-05T23:32:06.822
+C Add\smissing\sfinish_test\sto\sthe\send\sof\sthe\szerodamage.test\smodule.\s\sDisable\nthe\szerodamage\smodule\sif\svirtual\stables\sare\somitted\sfrom\sthe\sbuild.
+D 2012-01-06T13:58:04.857
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -941,7 +941,7 @@ F test/whereC.test 13ff5ec0dba407c0e0c075980c75b3275a6774e5
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/win32lock.test b2a539e85ae6b2d78475e016a9636b4451dc7fb9
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
-F test/zerodamage.test 7ef0680559163118705975be132933898d349674
+F test/zerodamage.test 0de750389990b1078bab203c712dc3fefd1d8b82
 F tool/build-shell.sh 12aa4391073a777fcb6dcc490b219a018ae98bac
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
@@ -986,7 +986,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 3d088ba5e36c0b6bccc86986f8fa9a22b340c297
-R 11f64ffe2a890f6e13699aea0d104d59
+P 119493318e0ad4c2858fe1484b0d71669bd81531
+R 12ca6aee48cd7ee8bacfbe37c52ebf0f
 U drh
-Z 3860a00946d621bbfe921bb22b18d17e
+Z bb27892dfc871497436b04576e485c46
