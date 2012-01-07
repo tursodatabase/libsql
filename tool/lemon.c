@@ -686,8 +686,9 @@ void FindFirstSets(struct lemon *lemp)
     for(rp=lemp->rule; rp; rp=rp->next){
       if( rp->lhs->lambda ) continue;
       for(i=0; i<rp->nrhs; i++){
-         struct symbol *sp = rp->rhs[i];
-         if( sp->type!=TERMINAL || sp->lambda==LEMON_FALSE ) break;
+        struct symbol *sp = rp->rhs[i];
+        assert( sp->type==NONTERMINAL || sp->lambda==LEMON_FALSE );
+        if( sp->lambda==LEMON_FALSE ) break;
       }
       if( i==rp->nrhs ){
         rp->lhs->lambda = LEMON_TRUE;
