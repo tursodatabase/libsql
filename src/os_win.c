@@ -2463,12 +2463,12 @@ static int winOpenSharedMemory(winFile *pDbFd){
   if( p==0 ) return SQLITE_IOERR_NOMEM;
   memset(p, 0, sizeof(*p));
   nName = sqlite3Strlen30(pDbFd->zPath);
-  pNew = sqlite3_malloc( sizeof(*pShmNode) + nName + 16 );
+  pNew = sqlite3_malloc( sizeof(*pShmNode) + nName + 17 );
   if( pNew==0 ){
     sqlite3_free(p);
     return SQLITE_IOERR_NOMEM;
   }
-  memset(pNew, 0, sizeof(*pNew));
+  memset(pNew, 0, sizeof(*pNew) + nName + 17);
   pNew->zFilename = (char*)&pNew[1];
   sqlite3_snprintf(nName+15, pNew->zFilename, "%s-shm", pDbFd->zPath);
   sqlite3FileSuffix3(pDbFd->zPath, pNew->zFilename); 

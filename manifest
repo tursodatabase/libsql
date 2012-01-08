@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning\sseen\swith\sMSVC.
-D 2012-01-08T00:54:02.861
+C Make\ssure\sthe\sshared-memory\sfilename\ssythesized\sby\sos_win.c\sis\ndouble-zero\sterminated,\sso\sthat\sit\scan\sbe\sused\swith\nsqlite3_uri_parameter().
+D 2012-01-08T12:32:09.101
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -167,7 +167,7 @@ F src/os.h c7d888830f168a9b681b3aec30789f4ad2445c17
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 2ad4366b3c41dc813345d6dbb3cab97d62d60b96
-F src/os_win.c 88b35c8fe7b32c7398ceace727ea01120cb21989
+F src/os_win.c 5f24afbcbdd6bda4ddcf37f634af37a08f9e5b01
 F src/pager.c 5b89ab92631a8fc488b87cc663ab064802173fec
 F src/pager.h 5cd760857707529b403837d813d86b68938d6183
 F src/parse.y fabb2e7047417d840e6fdb3ef0988a86849a08ba
@@ -986,7 +986,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P ce32775b232da894343f62deefaf19b0ec484636
-R 6f17126c629f0d285a4c36d9ff2269f9
-U mistachkin
-Z 4d382f8e884a1c7125f36631da069e82
+P 9612bcd648c7654050ddb2f955a28cbc527a8c2e
+R 95d1a97796762e7fa611b2e7679423fa
+U drh
+Z 0e6e9f43dd6869980e38d7503d0545f4
