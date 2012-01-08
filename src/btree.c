@@ -2438,7 +2438,7 @@ static int lockBtree(BtShared *pBt){
   if( pBt->maxLocal>127 ){
     pBt->max1bytePayload = 127;
   }else{
-    pBt->max1bytePayload = pBt->maxLocal;
+    pBt->max1bytePayload = (u8)pBt->maxLocal;
   }
   assert( pBt->maxLeaf + 23 <= MX_CELL_SIZE(pBt) );
   pBt->pPage1 = pPage1;
