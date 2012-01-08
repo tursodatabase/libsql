@@ -465,8 +465,10 @@ int sqlite3VdbeMemHandleBom(Mem *pMem);
 
 #ifndef SQLITE_OMIT_INCRBLOB
   int sqlite3VdbeMemExpandBlob(Mem *);
+  #define ExpandBlob(P) (((P)->flags&MEM_Zero)?sqlite3VdbeMemExpandBlob(P):0)
 #else
   #define sqlite3VdbeMemExpandBlob(x) SQLITE_OK
+  #define ExpandBlob(P) SQLITE_OK
 #endif
 
 #endif /* !defined(_VDBEINT_H_) */

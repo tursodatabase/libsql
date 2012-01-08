@@ -151,12 +151,6 @@ int sqlite3_found_count = 0;
    if( ((P)->flags&MEM_Ephem)!=0 \
        && sqlite3VdbeMemMakeWriteable(P) ){ goto no_mem;}
 
-/*
-** Call sqlite3VdbeMemExpandBlob() on the supplied value (type Mem*)
-** P if required.
-*/
-#define ExpandBlob(P) (((P)->flags&MEM_Zero)?sqlite3VdbeMemExpandBlob(P):0)
-
 /* Return true if the cursor was opened using the OP_OpenSorter opcode. */
 #ifdef SQLITE_OMIT_MERGE_SORT
 # define isSorter(x) 0
