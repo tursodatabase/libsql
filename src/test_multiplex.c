@@ -220,9 +220,27 @@ static int multiplexStrlen30(const char *z){
 /*
 ** Generate the file-name for chunk iChunk of the group with base name
 ** zBase. The file-name is written to buffer zOut before returning. Buffer
-** zOut must be allocated by the caller so that it is at least (nBase+4)
+** zOut must be allocated by the caller so that it is at least (nBase+5)
 ** bytes in size, where nBase is the length of zBase, not including the
 ** nul-terminator.
+**
+** If iChunk is 0 (or 400 - the number for the first journal file chunk),
+** the output is a copy of the input string. Otherwise, if 
+** SQLITE_ENABLE_8_3_NAMES is not defined or the input buffer does not contain
+** a "." character, then the output is a copy of the input string with the 
+** three-digit zero-padded decimal representation if iChunk appended to it. 
+** For example:
+**
+**   zBase="test.db", iChunk=4  ->  zOut="test.db004"
+**
+** Or, if SQLITE_ENABLE_8_3_NAMES is defined and the input buffer contains
+** a "." character, then everything after the "." is replaced by the 
+** three-digit representation of iChunk.
+**
+**   zBase="test.db", iChunk=4  ->  zOut="test.004"
+**
+** The output buffer string is terminated by 2 0x00 bytes. This makes it safe
+** to pass to sqlite3_uri_parameter() and similar.
 */
 static void multiplexFilename(
   const char *zBase,              /* Filename for chunk 0 */
@@ -231,9 +249,9 @@ static void multiplexFilename(
   int iChunk,                     /* Chunk to generate filename for */
   char *zOut                      /* Buffer to write generated name to */
 ){
-  memcpy(zOut, zBase, nBase+1);
+  int n = nBase;
+  memcpy(zOut, zBase, n+1);
   if( iChunk!=0 && iChunk!=SQLITE_MULTIPLEX_JOURNAL_8_3_OFFSET ){
-    int n = nBase;
 #ifdef SQLITE_ENABLE_8_3_NAMES
     int i;
     for(i=n-1; i>0 && i>=n-4 && zOut[i]!='.'; i--){}
@@ -247,7 +265,11 @@ static void multiplexFilename(
     }
 #endif
     sqlite3_snprintf(4,&zOut[n],"%03d",iChunk);
+    n += 3;
   }
+
+  assert( zOut[n]=='\0' );
+  zOut[n+1] = '\0';
 }
 
 /* Compute the filename for the iChunk-th chunk
@@ -266,7 +288,7 @@ static int multiplexSubFilename(multiplexGroup *pGroup, int iChunk){
   if( pGroup->zName && pGroup->aReal[iChunk].z==0 ){
     char *z;
     int n = pGroup->nName;
-    pGroup->aReal[iChunk].z = z = sqlite3_malloc( n+4 );
+    pGroup->aReal[iChunk].z = z = sqlite3_malloc( n+5 );
     if( z==0 ){
       return SQLITE_NOMEM;
     }
@@ -611,7 +633,7 @@ static int multiplexDelete(
     */
     int nName = strlen(zName);
     char *z;
-    z = sqlite3_malloc(nName + 4);
+    z = sqlite3_malloc(nName + 5);
     if( z==0 ){
       rc = SQLITE_IOERR_NOMEM;
     }else{
