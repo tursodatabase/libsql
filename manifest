@@ -1,5 +1,5 @@
-C Have\stest_multiplex.c\sadd\sa\ssecond\snul-terminator\sbyte\sto\sthe\sstrings\sthat\sit\spasses\sto\sthe\sxOpen\smethod\sof\sthe\sunderlying\sVFS,\sin\scase\sthat\sVFS\spasses\sthe\sstring\sto\ssqlite3_uri_parameter()\sor\ssimilar.
-D 2012-01-09T11:37:34.923
+C Make\ssure\sthe\smultiplexor\sdoes\snot\screate\sunnecessary\soverflow\sfiles.
+D 2012-01-09T13:41:59.702
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -214,7 +214,7 @@ F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c 2c06e4be6584d51b935dc8b353980a9388de62ef
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c 8d416f29ad8573f32601f6056c9d2b17472e9ad5
-F src/test_multiplex.c 5dc22dbeb43b304373b6d5c6fe6ea295d78caf02
+F src/test_multiplex.c 6415713a7f36caa91d27fc9a53afbee235e65ab6
 F src/test_multiplex.h e99c571bc4968b7a9363b661481f3934bfead61d
 F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
@@ -607,7 +607,7 @@ F test/misc5.test 528468b26d03303b1f047146e5eefc941b9069f5
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test eafaa41b9133d7a2ded4641bbe5f340731d35a52
 F test/misuse.test ba4fb5d1a6101d1c171ea38b3c613d0661c83054
-F test/multiplex.test 8bc3c71f73fe833bc8a659d454d320044a33b5da
+F test/multiplex.test e08cc7177bd6d85990ee1d71100bb6c684c02256
 F test/multiplex2.test 580ca5817c7edbe4cc68fa150609c9473393003a
 F test/multiplex3.test 15903c343f1eaa4b00998b7ceacfc4987e4ccfe9
 F test/mutex1.test 78b2b9bb320e51d156c4efdb71b99b051e7a4b41
@@ -986,7 +986,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P fc9179e154751b51ddef429600d30a89d4a098bd
-R b97de21d05351bae95745d0c83332eb7
-U dan
-Z 54c888cc6eca4296547cf85c4dc77f0c
+P 12f5b8c9c9a15bd9e6aabdc708d4e869ff918e76
+R 7be4dd306837566ff2393e9f2689caa7
+U drh
+Z e058baf38f303757c1b04445e55c411b

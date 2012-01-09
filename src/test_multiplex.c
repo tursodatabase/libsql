@@ -328,7 +328,6 @@ static sqlite3_file *multiplexSubOpen(
   *rc = multiplexSubFilename(pGroup, iChunk);
   if( (*rc)==SQLITE_OK && (pSubOpen = pGroup->aReal[iChunk].p)==0 ){
     int flags, bExists;
-    createFlag = (pGroup->flags & SQLITE_OPEN_CREATE)!=0;
     flags = pGroup->flags;
     if( createFlag ){
       flags |= SQLITE_OPEN_CREATE;
