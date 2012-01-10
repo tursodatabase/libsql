@@ -101,6 +101,11 @@ int sqlite3OsFileControl(sqlite3_file *id, int op, void *pArg){
   DO_OS_MALLOC_TEST(id);
   return id->pMethods->xFileControl(id, op, pArg);
 }
+#ifdef SQLITE_TEST
+int sqlite3OsFileControlNoFail(sqlite3_file *id, int op, void *pArg){
+  return id->pMethods->xFileControl(id, op, pArg);
+}
+#endif
 int sqlite3OsSectorSize(sqlite3_file *id){
   int (*xSectorSize)(sqlite3_file*) = id->pMethods->xSectorSize;
   return (xSectorSize ? xSectorSize(id) : SQLITE_DEFAULT_SECTOR_SIZE);

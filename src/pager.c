@@ -2747,10 +2747,12 @@ end_playback:
   ** SQLITE_FCNTL_DB_UNCHANGED file-control method to disable the
   ** assertion that the transaction counter was modified.
   */
+  sqlite3BeginBenignMalloc();
   assert(
     pPager->fd->pMethods==0 ||
-    sqlite3OsFileControl(pPager->fd,SQLITE_FCNTL_DB_UNCHANGED,0)>=SQLITE_OK
+    sqlite3OsFileControlNoFail(pPager->fd,SQLITE_FCNTL_DB_UNCHANGED,0)>=0
   );
+  sqlite3EndBenignMalloc();
 
   /* If this playback is happening automatically as a result of an IO or 
   ** malloc error that occurred after the change-counter was updated but 
@@ -4029,9 +4031,7 @@ static int pager_write_pagelist(Pager *pPager, PgHdr *pList){
   assert( rc!=SQLITE_OK || isOpen(pPager->fd) );
   if( rc==SQLITE_OK && pPager->dbSize>pPager->dbHintSize ){
     sqlite3_int64 szFile = pPager->pageSize * (sqlite3_int64)pPager->dbSize;
-    sqlite3BeginBenignMalloc();
-    sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_SIZE_HINT, &szFile);
-    sqlite3EndBenignMalloc();
+    sqlite3OsFileControlNoFail(pPager->fd, SQLITE_FCNTL_SIZE_HINT, &szFile);
     pPager->dbHintSize = pPager->dbSize;
   }
 

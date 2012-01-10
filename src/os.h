@@ -260,6 +260,12 @@ int sqlite3OsShmLock(sqlite3_file *id, int, int, int);
 void sqlite3OsShmBarrier(sqlite3_file *id);
 int sqlite3OsShmUnmap(sqlite3_file *id, int);
 
+#ifdef SQLITE_TEST
+int sqlite3OsFileControlNoFail(sqlite3_file*,int,void*);
+#else
+# define sqlite3OsFileControlNoFail(x,y,z) sqlite3OsFileControl(x,y,z)
+#endif
+
 /* 
 ** Functions for accessing sqlite3_vfs methods 
 */
