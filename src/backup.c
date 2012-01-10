@@ -678,7 +678,9 @@ int sqlite3BtreeCopyFile(Btree *pTo, Btree *pFrom){
   pFd = sqlite3PagerFile(sqlite3BtreePager(pTo));
   if( pFd->pMethods ){
     i64 nByte = sqlite3BtreeGetPageSize(pFrom)*(i64)sqlite3BtreeLastPage(pFrom);
-    sqlite3OsFileControl(pFd, SQLITE_FCNTL_OVERWRITE, &nByte);
+    rc = sqlite3OsFileControl(pFd, SQLITE_FCNTL_OVERWRITE, &nByte);
+    if( rc==SQLITE_NOTFOUND ) rc = SQLITE_OK;
+    if( rc ) goto copy_finished;
   }
 
   /* Set up an sqlite3_backup object. sqlite3_backup.pDestDb must be set
@@ -709,6 +711,7 @@ int sqlite3BtreeCopyFile(Btree *pTo, Btree *pFrom){
   }
 
   assert( sqlite3BtreeIsInTrans(pTo)==0 );
+copy_finished:
   sqlite3BtreeLeave(pFrom);
   sqlite3BtreeLeave(pTo);
   return rc;
