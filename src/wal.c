@@ -1727,7 +1727,7 @@ static int walCheckpoint(
       i64 nReq = ((i64)mxPage * szPage);
       rc = sqlite3OsFileSize(pWal->pDbFd, &nSize);
       if( rc==SQLITE_OK && nSize<nReq ){
-        sqlite3OsFileControlNoFail(pWal->pDbFd, SQLITE_FCNTL_SIZE_HINT, &nReq);
+        sqlite3OsFileControlHint(pWal->pDbFd, SQLITE_FCNTL_SIZE_HINT, &nReq);
       }
     }
 
@@ -1843,7 +1843,7 @@ int sqlite3WalClose(
       );
       if( rc==SQLITE_OK ){
         int bPersist = -1;
-        sqlite3OsFileControlNoFail(
+        sqlite3OsFileControlHint(
             pWal->pDbFd, SQLITE_FCNTL_PERSIST_WAL, &bPersist
         );
         if( bPersist!=1 ){

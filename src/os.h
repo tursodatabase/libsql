@@ -252,6 +252,7 @@ int sqlite3OsLock(sqlite3_file*, int);
 int sqlite3OsUnlock(sqlite3_file*, int);
 int sqlite3OsCheckReservedLock(sqlite3_file *id, int *pResOut);
 int sqlite3OsFileControl(sqlite3_file*,int,void*);
+void sqlite3OsFileControlHint(sqlite3_file*,int,void*);
 #define SQLITE_FCNTL_DB_UNCHANGED 0xca093fa0
 int sqlite3OsSectorSize(sqlite3_file *id);
 int sqlite3OsDeviceCharacteristics(sqlite3_file *id);
@@ -260,11 +261,6 @@ int sqlite3OsShmLock(sqlite3_file *id, int, int, int);
 void sqlite3OsShmBarrier(sqlite3_file *id);
 int sqlite3OsShmUnmap(sqlite3_file *id, int);
 
-#ifdef SQLITE_TEST
-int sqlite3OsFileControlNoFail(sqlite3_file*,int,void*);
-#else
-# define sqlite3OsFileControlNoFail(x,y,z) sqlite3OsFileControl(x,y,z)
-#endif
 
 /* 
 ** Functions for accessing sqlite3_vfs methods 

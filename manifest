@@ -1,5 +1,5 @@
-C Avoid\spassing\sstrings\swith\sa\ssingle\snul-terminator\s(two\sare\srequired)\sto\sthe\sVFS\sxOpen()\smethod\sfrom\swithin\sthe\scode\sthat\schecks\sto\ssee\sif\sa\smaster-journal\sfile\smay\sbe\ssafely\sdeleted.
-D 2012-01-10T17:28:10.499
+C Refactor\ssqlite3OsFileControlNoFail()\sinto\ssqlite3FileControlHint().
+D 2012-01-10T17:59:59.268
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -162,19 +162,19 @@ F src/mutex_os2.c 882d735098c07c8c6a5472b8dd66e19675fe117f
 F src/mutex_unix.c c3a4e00f96ba068a8dbef34084465979aaf369cc
 F src/mutex_w32.c 5e54f3ba275bcb5d00248b8c23107df2e2f73e33
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
-F src/os.c dedfe4786cc4a88033bbf43fcf1fb01cbec03dcc
-F src/os.h 7a24446bcd9834d868b2bc303ec3bd38e64e04bc
+F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
+F src/os.h a2219c3b05ce31230bb000fdc4f1a542b33ee649
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 2ad4366b3c41dc813345d6dbb3cab97d62d60b96
 F src/os_win.c e344ccb73aaeb5caab2c3419fba2857f914198d7
-F src/pager.c f2a3a87da34b6e1ff7f74fb22e6014087ecdf5e4
+F src/pager.c 355f00af21d490a88e2e2e6aec26237a621de1be
 F src/pager.h 5cd760857707529b403837d813d86b68938d6183
 F src/parse.y fabb2e7047417d840e6fdb3ef0988a86849a08ba
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h b1d8775a9bddf44e65edb0d20bfc57a4982f840f
 F src/pcache1.c 281822d22265245b19f908cb3f5df725f7e11b06
-F src/pragma.c 492fabe0b360776354024a3372b96995e81910fb
+F src/pragma.c fb979b7b5103ad0db1b72bcf349c83f5dec62574
 F src/prepare.c ec4989f7f480544bdc4192fe663470d2a2d7d61e
 F src/printf.c 7ffb4ebb8b341f67e049695ba031da717b3d2699
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -250,7 +250,7 @@ F src/vdbemem.c 4f7d25d5ea2e2040254095b8f6de07f8dbbadf80
 F src/vdbesort.c 468d43c057063e54da4f1988b38b4f46d60e7790
 F src/vdbetrace.c d6e50e04e1ec498150e519058f617d91b8f5c843
 F src/vtab.c e9318d88feac85be8e27ee783ac8f5397933fc8a
-F src/wal.c 1e96783f757706e934cd9495f0c354c5bd63c2e9
+F src/wal.c 5f7bcc0610af759953defd769eacebfd98a22bc8
 F src/wal.h eaa00b9a403ddda2b56d01b7afc19ef600f9363f
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c af623942514571895818b9b7ae11db95ae3b3d88
@@ -986,7 +986,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P af59b182d797642e5ec3ddf291cf62662a136bd1
-R 47a7f4ba0fc3538cc9b5e527d944f9de
-U dan
-Z 553d33d7ac54e78ccf7479f534ea4295
+P 2544f233f1041a42bbdbb5413d2bc92b2a2e0397
+R 90d4428386a9e255bbb4a91446028664
+U drh
+Z 45ce0d11ceb0dbbfe189c0194c677275
