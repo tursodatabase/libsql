@@ -2428,7 +2428,9 @@ static void winShmPurge(sqlite3_vfs *pVfs, int deleteFlag){
       }
       if( deleteFlag ){
         SimulateIOErrorBenign(1);
+        sqlite3BeginBenignMalloc();
         winDelete(pVfs, p->zFilename, 0);
+        sqlite3EndBenignMalloc();
         SimulateIOErrorBenign(0);
       }
       *pp = p->pNext;

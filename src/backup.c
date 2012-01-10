@@ -678,9 +678,7 @@ int sqlite3BtreeCopyFile(Btree *pTo, Btree *pFrom){
   pFd = sqlite3PagerFile(sqlite3BtreePager(pTo));
   if( pFd->pMethods ){
     i64 nByte = sqlite3BtreeGetPageSize(pFrom)*(i64)sqlite3BtreeLastPage(pFrom);
-    sqlite3BeginBenignMalloc();
     sqlite3OsFileControl(pFd, SQLITE_FCNTL_OVERWRITE, &nByte);
-    sqlite3EndBenignMalloc();
   }
 
   /* Set up an sqlite3_backup object. sqlite3_backup.pDestDb must be set

@@ -1,5 +1,5 @@
-C Cosmetic\schanges\sto\slemon.\s\sNo\schanges\sto\score\sfunctionality\snor\simpact\son\nSQLite.
-D 2012-01-09T14:19:05.358
+C Remove\sthe\sBenignMalloc()\sfrom\saround\sthe\scall\sto\sFCNTL_OVERWRITE.\s\sAdd\nnew\sones\saround\ssqlite3OsDelete().\s\sFix\san\sassert\sthat\scauses\sproblems\sfor\nthe\snx-devkit.
+D 2012-01-10T00:24:59.279
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -122,7 +122,7 @@ F src/alter.c ac80a0f31189f8b4a524ebf661e47e84536ee7f5
 F src/analyze.c f32ff304da413851eefa562b04e61ff6cb88248b
 F src/attach.c 12c6957996908edc31c96d7c68d4942c2474405f
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
-F src/backup.c 62e969b041adf54a0e982eafd3d7569dc01b9bfe
+F src/backup.c 52a4450a134096a59053583af47b0f0eee12ea6c
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 378a0f39d6e25cc3f7c40db3d90ec6f0a29e7733
@@ -167,8 +167,8 @@ F src/os.h c7d888830f168a9b681b3aec30789f4ad2445c17
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 2ad4366b3c41dc813345d6dbb3cab97d62d60b96
-F src/os_win.c 5f24afbcbdd6bda4ddcf37f634af37a08f9e5b01
-F src/pager.c 5b89ab92631a8fc488b87cc663ab064802173fec
+F src/os_win.c e344ccb73aaeb5caab2c3419fba2857f914198d7
+F src/pager.c 818ae6c440e7387690271d01b5764bc234cf3e92
 F src/pager.h 5cd760857707529b403837d813d86b68938d6183
 F src/parse.y fabb2e7047417d840e6fdb3ef0988a86849a08ba
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -250,7 +250,7 @@ F src/vdbemem.c 4f7d25d5ea2e2040254095b8f6de07f8dbbadf80
 F src/vdbesort.c 468d43c057063e54da4f1988b38b4f46d60e7790
 F src/vdbetrace.c d6e50e04e1ec498150e519058f617d91b8f5c843
 F src/vtab.c e9318d88feac85be8e27ee783ac8f5397933fc8a
-F src/wal.c 932f09509d70fc115a7cc3d494d6fdcb825099ed
+F src/wal.c 32dd3bda6aa6b2311af9269fcbadd42ffb2ceeea
 F src/wal.h eaa00b9a403ddda2b56d01b7afc19ef600f9363f
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c af623942514571895818b9b7ae11db95ae3b3d88
@@ -986,7 +986,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 1238619756c0c26e43d3c1c873cbdeca22ce9d61
-R 54fe0375d405cde80ba5684365164922
+P 393fc78a18004c839d889de2a25ec046ad6f13fc
+R 9da4d78c41dff2dd67ad0c526f0529da
 U drh
-Z 6b9173eec4755efd3a5ae0cd88c84841
+Z 57daf1f62c13fa4dbe43cebca4af9d0c

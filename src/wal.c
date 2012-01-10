@@ -1864,7 +1864,9 @@ int sqlite3WalClose(
     walIndexClose(pWal, isDelete);
     sqlite3OsClose(pWal->pWalFd);
     if( isDelete ){
+      sqlite3BeginBenignMalloc();
       sqlite3OsDelete(pWal->pVfs, pWal->zWalName, 0);
+      sqlite3EndBenignMalloc();
     }
     WALTRACE(("WAL%p: closed\n", pWal));
     sqlite3_free((void *)pWal->apWiData);
