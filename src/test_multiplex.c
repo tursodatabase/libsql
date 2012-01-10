@@ -512,13 +512,14 @@ static int multiplexOpen(
   }
 
   if( rc==SQLITE_OK ){
+    const char *zUri = (flags & SQLITE_OPEN_URI) ? zName : 0;
     /* assign pointers to extra space allocated */
     memset(pGroup, 0, sz);
     pMultiplexOpen->pGroup = pGroup;
     pGroup->bEnabled = -1;
-    pGroup->bTruncate = sqlite3_uri_boolean(zName, "truncate", 
-                                 (flags & SQLITE_OPEN_MAIN_DB)==0);
-    pGroup->szChunk = sqlite3_uri_int64(zName, "chunksize",
+    pGroup->bTruncate = sqlite3_uri_boolean(zUri, "truncate", 
+                                   (flags & SQLITE_OPEN_MAIN_DB)==0);
+    pGroup->szChunk = sqlite3_uri_int64(zUri, "chunksize",
                                         SQLITE_MULTIPLEX_CHUNK_SIZE);
     pGroup->szChunk = (pGroup->szChunk+0xffff)&~0xffff;
     if( zName ){
