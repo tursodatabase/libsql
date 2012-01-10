@@ -2391,19 +2391,39 @@ static int pager_delmaster(Pager *pPager, const char *zMaster){
   rc = sqlite3OsFileSize(pMaster, &nMasterJournal);
   if( rc!=SQLITE_OK ) goto delmaster_out;
   nMasterPtr = pVfs->mxPathname+1;
-  zMasterJournal = sqlite3Malloc((int)nMasterJournal + nMasterPtr + 1);
+  zMasterJournal = sqlite3Malloc((int)nMasterJournal + nMasterPtr + 2);
   if( !zMasterJournal ){
     rc = SQLITE_NOMEM;
     goto delmaster_out;
   }
-  zMasterPtr = &zMasterJournal[nMasterJournal+1];
+  zMasterPtr = &zMasterJournal[nMasterJournal+2];
   rc = sqlite3OsRead(pMaster, zMasterJournal, (int)nMasterJournal, 0);
   if( rc!=SQLITE_OK ) goto delmaster_out;
+
+  /* Ensure that even if the contents of the master journal file are corrupt,
+  ** they are terminated by a pair of 0x00 bytes. This prevents buffer 
+  ** overreads in any calls made to sqlite3_uri_xxx() via sqlite3OsOpen()
+  ** below.  */
   zMasterJournal[nMasterJournal] = 0;
+  zMasterJournal[nMasterJournal+1] = 0;
 
   zJournal = zMasterJournal;
   while( (zJournal-zMasterJournal)<nMasterJournal ){
+    char c;
     int exists;
+    int nJournal = sqlite3Strlen30(zJournal);
+
+    /* The sqlite3OsAccess() and sqlite3OsOpen() functions require argument
+    ** strings that may be passed to the sqlite3_uri_xxx() API functions.
+    ** In this case that means strings terminated by a pair of 0x00 bytes.
+    ** But the master-journal file contains strings terminated by a single
+    ** 0x00 only. So temporarily replace the first byte of the following
+    ** string with a second 0x00. The original value is restored before the
+    ** next iteration of this loop.  */
+    assert( &zJournal[nJournal+1] < zMasterPtr );
+    c = zJournal[nJournal+1];
+    zJournal[nJournal+1] = '\0';
+
     rc = sqlite3OsAccess(pVfs, zJournal, SQLITE_ACCESS_EXISTS, &exists);
     if( rc!=SQLITE_OK ){
       goto delmaster_out;
@@ -2413,7 +2433,6 @@ static int pager_delmaster(Pager *pPager, const char *zMaster){
       ** Open it and check if it points at the master journal. If
       ** so, return without deleting the master journal file.
       */
-      int c;
       int flags = (SQLITE_OPEN_READONLY|SQLITE_OPEN_MAIN_JOURNAL);
       rc = sqlite3OsOpen(pVfs, zJournal, pJournal, flags, 0);
       if( rc!=SQLITE_OK ){
@@ -2426,13 +2445,13 @@ static int pager_delmaster(Pager *pPager, const char *zMaster){
         goto delmaster_out;
       }
 
-      c = zMasterPtr[0]!=0 && strcmp(zMasterPtr, zMaster)==0;
-      if( c ){
+      if( zMasterPtr[0]!=0 && strcmp(zMasterPtr, zMaster)==0 ){
         /* We have a match. Do not delete the master journal file. */
         goto delmaster_out;
       }
     }
-    zJournal += (sqlite3Strlen30(zJournal)+1);
+    zJournal += nJournal+1;
+    zJournal[0] = c;
   }
  
   sqlite3OsClose(pMaster);
