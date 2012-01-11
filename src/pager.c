@@ -2489,7 +2489,6 @@ static int pager_truncate(Pager *pPager, Pgno nPage){
       }else if( (currentSize+szPage)<=newSize ){
         char *pTmp = pPager->pTmpSpace;
         memset(pTmp, 0, szPage);
-        testcase( (newSize-szPage) <  currentSize );
         testcase( (newSize-szPage) == currentSize );
         testcase( (newSize-szPage) >  currentSize );
         rc = sqlite3OsWrite(pPager->fd, pTmp, szPage, newSize-szPage);
@@ -3089,9 +3088,6 @@ static int pagerPagecount(Pager *pPager, Pgno *pnPage){
       }
     }
     nPage = (Pgno)((n+pPager->pageSize-1) / pPager->pageSize);
-    if( nPage==0 && n>0 ){
-      nPage = 1;
-    }
   }
 
   /* If the current number of pages in the file is greater than the
