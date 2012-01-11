@@ -2506,7 +2506,6 @@ static int winOpenSharedMemory(winFile *pDbFd){
                  SQLITE_OPEN_WAL | SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, /* Mode flags */
                  0);
     if( SQLITE_OK!=rc ){
-      rc = SQLITE_CANTOPEN_BKPT;
       goto shm_open_err;
     }
 
@@ -2929,7 +2928,7 @@ static int getTempname(int nBuf, char *zBuf){
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "0123456789";
   size_t i, j;
-  char zTempPath[MAX_PATH+1];
+  char zTempPath[MAX_PATH+2];
 
   /* It's odd to simulate an io-error here, but really this is just
   ** using the io-error infrastructure to test that SQLite handles this
@@ -2972,14 +2971,14 @@ static int getTempname(int nBuf, char *zBuf){
   /* Check that the output buffer is large enough for the temporary file 
   ** name. If it is not, return SQLITE_ERROR.
   */
-  if( (sqlite3Strlen30(zTempPath) + sqlite3Strlen30(SQLITE_TEMP_FILE_PREFIX) + 17) >= nBuf ){
+  if( (sqlite3Strlen30(zTempPath) + sqlite3Strlen30(SQLITE_TEMP_FILE_PREFIX) + 18) >= nBuf ){
     return SQLITE_ERROR;
   }
 
   for(i=sqlite3Strlen30(zTempPath); i>0 && zTempPath[i-1]=='\\'; i--){}
   zTempPath[i] = 0;
 
-  sqlite3_snprintf(nBuf-17, zBuf,
+  sqlite3_snprintf(nBuf-18, zBuf,
                    "%s\\"SQLITE_TEMP_FILE_PREFIX, zTempPath);
   j = sqlite3Strlen30(zBuf);
   sqlite3_randomness(15, &zBuf[j]);
@@ -2987,6 +2986,7 @@ static int getTempname(int nBuf, char *zBuf){
     zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
   }
   zBuf[j] = 0;
+  zBuf[j+1] = 0;
 
   OSTRACE(("TEMP FILENAME: %s\n", zBuf));
   return SQLITE_OK; 
@@ -3019,7 +3019,7 @@ static int winOpen(
   /* If argument zPath is a NULL pointer, this function is required to open
   ** a temporary file. Use this buffer to store the file name in.
   */
-  char zTmpname[MAX_PATH+1];     /* Buffer used to create temp filename */
+  char zTmpname[MAX_PATH+2];     /* Buffer used to create temp filename */
 
   int rc = SQLITE_OK;            /* Function Return Code */
 #if !defined(NDEBUG) || SQLITE_OS_WINCE
@@ -3078,12 +3078,19 @@ static int winOpen(
   */
   if( !zUtf8Name ){
     assert(isDelete && !isOpenJournal);
-    rc = getTempname(MAX_PATH+1, zTmpname);
+    rc = getTempname(MAX_PATH+2, zTmpname);
     if( rc!=SQLITE_OK ){
       return rc;
     }
     zUtf8Name = zTmpname;
   }
+
+  /* Database filenames are double-zero terminated if they are not
+  ** URIs with parameters.  Hence, they can always be passed into
+  ** sqlite3_uri_parameter().
+  */
+  assert( (eType!=SQLITE_OPEN_MAIN_DB) || (flags & SQLITE_OPEN_URI) ||
+        zUtf8Name[strlen(zUtf8Name)+1]==0 );
 
   /* Convert the filename to the system encoding. */
   zConverted = convertUtf8Filename(zUtf8Name);
