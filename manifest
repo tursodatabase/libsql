@@ -1,5 +1,5 @@
-C Prevent\swinOpenSharedMemory\sfrom\smasking\sthe\sreal\sreturn\scode\sfrom\sits\scall\sto\swinOpen.\s\sAlso,\sadd\sasserts\sto\scheck\sthe\sdouble-zero\stermination\sof\sdatabase\sfile\snames.
-D 2012-01-11T01:01:02.707
+C Fix\sthe\ssqlite3_quota_file()\sfunction\sin\stest_quota.c\sso\sthat\sit\sadds\sthe\ssecond\snul-terminator\sto\sall\sfile\snames\sthat\swill\sbe\spassed\sto\sa\sVFS\sxOpen\smethod.
+D 2012-01-11T11:20:42.615
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -220,7 +220,7 @@ F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
 F src/test_osinst.c 6abf0a37ce831120c4ef1b913afdd813e7ac1a73
 F src/test_pcache.c a5cd24730cb43c5b18629043314548c9169abb00
-F src/test_quota.c 1a5874e3ee9074426f43b37e8d7404948065b585
+F src/test_quota.c b4a6519417d87870e7ef5838dbf3cae164dcc28d
 F src/test_quota.h 9ffa1d3ad6d0a6a24e8670ea64b909c717ec3358
 F src/test_rtree.c 6d06306e29946dc36f528a3a2cdc3add794656f1
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
@@ -986,7 +986,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P d0a868607e8f46941ece9f9d7b8ba220a7fb4e2b
-R 22997c9d805abc30d95375b077a30497
-U mistachkin
-Z dd5ebb5a1b41f14f902314717dcdb894
+P 93a65776dc8f496485e206a5eab11eeba579b5da
+R 3805735c0ca2b6b98ec127d6abb27a40
+U dan
+Z 357b348e0dbbb80764282a97fc7e130f
