@@ -1,5 +1,5 @@
-C Remove\scode\smade\sunreachable\sby\sthe\senhancement\sof\sthe\sprevious\scheck-in.
-D 2012-01-11T16:16:08.656
+C Remove\ssome\sassert()\sstatements\sthat\scan\sfail\swith\scorrupt\sdatabases.
+D 2012-01-12T14:25:55.908
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -125,7 +125,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c e9538bad2d4a4fcd4308f1aed7cb18a0fbc968f9
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 378a0f39d6e25cc3f7c40db3d90ec6f0a29e7733
+F src/btree.c 8276f939669ed652dfe073b1290fe0094ff92458
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h 6c9960645c431c9456ca56498f43a2b3bf1fa8c2
 F src/build.c 8e2a4dedad860fed982270ef43968505f35ec57f
@@ -349,6 +349,7 @@ F test/corruptB.test 20d4a20cbed23958888c3e8995b424a47223d647
 F test/corruptC.test 62a767fe64acb1975f58cc6171192839c783edbb
 F test/corruptD.test 99b1999dbfa7cc04aaeac9d695a2445d4e7c7458
 F test/corruptE.test 1b9eb20a8711251ce57b44a257e241085b39b52d
+F test/corruptF.test 984b1706c9c0e4248141b056c21124612628d12e
 F test/count.test 454e1ce985c94d13efeac405ce54439f49336163
 F test/crash.test 519dc29f6fea151f015a23236e555239353946eb
 F test/crash2.test 5b14d4eb58b880e231361d3b609b216acda86651
@@ -986,7 +987,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 629108c8e5376f989cd66e11437949a54c33a5b8
-R 0e3f2b6eff759aa9860b31ea731b9403
-U drh
-Z 39b800b2fc63936bd07e49ea34b13ab2
+P 9e31a275ef494ea8713a1d60a15b84157e57c3ff
+R 04391ebd30f10ed455a6246275bb3b80
+U dan
+Z 8b2af6d3a0a6ab469514bfcff8c006db

@@ -4194,7 +4194,7 @@ static int moveToChild(BtCursor *pCur, u32 newPgno){
   return SQLITE_OK;
 }
 
-#ifndef NDEBUG
+#if 0
 /*
 ** Page pParent is an internal (non-leaf) tree page. This function 
 ** asserts that page number iChild is the left-child if the iIdx'th
@@ -4227,11 +4227,21 @@ static void moveToParent(BtCursor *pCur){
   assert( pCur->eState==CURSOR_VALID );
   assert( pCur->iPage>0 );
   assert( pCur->apPage[pCur->iPage] );
+
+  /* UPDATE: It is actually possible for the condition tested by the assert
+  ** below to be untrue if the database file is corrupt. This can occur if
+  ** one cursor has modified page pParent while a reference to it is held 
+  ** by a second cursor. Which can only happen if a single page is linked
+  ** into more than one b-tree structure in a corrupt database.  */
+#if 0
   assertParentIndex(
     pCur->apPage[pCur->iPage-1], 
     pCur->aiIdx[pCur->iPage-1], 
     pCur->apPage[pCur->iPage]->pgno
   );
+#endif
+  testcase( iIdx>pParent->nCell );
+
   releasePage(pCur->apPage[pCur->iPage]);
   pCur->iPage--;
   pCur->info.nSize = 0;
@@ -4701,7 +4711,13 @@ int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
   pPage = pCur->apPage[pCur->iPage];
   idx = ++pCur->aiIdx[pCur->iPage];
   assert( pPage->isInit );
-  assert( idx<=pPage->nCell );
+
+  /* If the database file is corrupt, it is possible for the value of idx 
+  ** to be invalid here. This can only occur if a second cursor modifies
+  ** the page while cursor pCur is holding a reference to it. Which can
+  ** only happen if the database is corrupt in such a way as to link the
+  ** page into more than one b-tree structure. */
+  testcase( idx>pPage->nCell );
 
   pCur->info.nSize = 0;
   pCur->validNKey = 0;
