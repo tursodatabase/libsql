@@ -1,5 +1,5 @@
-C Remove\ssome\sassert()\sstatements\sthat\scan\sfail\swith\scorrupt\sdatabases.
-D 2012-01-12T14:25:55.908
+C Fix\stypos\sin\sa\stestcase()\smacro\sintroduced\sby\sthe\sprevious\scommit.
+D 2012-01-12T15:05:03.289
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -125,7 +125,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c e9538bad2d4a4fcd4308f1aed7cb18a0fbc968f9
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 8276f939669ed652dfe073b1290fe0094ff92458
+F src/btree.c a65816cc000bdd421772986e64c88c9035331332
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h 6c9960645c431c9456ca56498f43a2b3bf1fa8c2
 F src/build.c 8e2a4dedad860fed982270ef43968505f35ec57f
@@ -987,7 +987,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 9e31a275ef494ea8713a1d60a15b84157e57c3ff
-R 04391ebd30f10ed455a6246275bb3b80
+P 7654ae71bd26ae5d713935624d2b6cb8d2e4633f
+R 33431986c289266a94f0fa110d701456
 U dan
-Z 8b2af6d3a0a6ab469514bfcff8c006db
+Z 90cd7ad67a8044e310fc88d02ef207fb
