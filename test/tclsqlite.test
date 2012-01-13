@@ -25,7 +25,7 @@ source $testdir/tester.tcl
 if {[sqlite3 -has-codec]} {
   set r "sqlite_orig HANDLE FILENAME ?-key CODEC-KEY?"
 } else {
-  set r "sqlite_orig HANDLE FILENAME ?-vfs VFSNAME? ?-readonly BOOLEAN? ?-create BOOLEAN? ?-nomutex BOOLEAN? ?-fullmutex BOOLEAN?"
+  set r "sqlite_orig HANDLE FILENAME ?-vfs VFSNAME? ?-readonly BOOLEAN? ?-create BOOLEAN? ?-nomutex BOOLEAN? ?-fullmutex BOOLEAN? ?-uri BOOLEAN?"
 }
 do_test tcl-1.1 {
   set v [catch {sqlite3 bogus} msg]
