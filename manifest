@@ -1,5 +1,5 @@
-C Do\snot\sthrow\san\serror\sfrom\swithin\stest_journal.c\sif\sa\sdatabase\sfile\ssize\sis\snot\san\sinteger\smultiple\sof\sthe\spage-size.
-D 2012-01-13T14:50:29.345
+C Fix\sbackup2.test\sso\sthat\sit\spasses\son\sOpenBSD\s(which\sproduces\sa\sslightly\sdifferent\serror\smessage\sin\sone\scase).
+D 2012-01-13T15:21:07.523
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -290,7 +290,7 @@ F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
 F test/backcompat.test 71eeb75ea567c060774c4e8db4b0e703f21c7677
 F test/backup.test 6970614b002b056ae5bab5b76559905e02b6f0b2
-F test/backup2.test b4966934b2dc10a9a6546114566ea69b34a5185e
+F test/backup2.test 34986ef926ea522911a51dfdb2f8e99b7b75ebcf
 F test/backup_ioerr.test 40d208bc9224b666ee3ed423f49bc9062a36a9d0
 F test/backup_malloc.test 7162d604ec2b4683c4b3799a48657fb8b5e2d450
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
@@ -987,7 +987,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 0c0051b1a548591180e4b02f2e74a1a8a63318a3
-R b9914ff3f427bc835fd7127e1f4e42d4
+P 3f4899a923f06d48edf6eeeb1c52b01958779efc
+R 8282b4acb12e09eca726a3ea9ed80d3a
 U dan
-Z 64cbd7ce630abf1ccfd450b8e38c5afa
+Z d481ab93d6d7db386c4493125e7648e2

@@ -142,21 +142,18 @@ do_test backup2-9 {
 # Try to restore from an unreadable file.
 #
 if {$tcl_platform(platform)=="windows"} {
-  do_test backup2-10 {
-    forcedelete bu3.db
-    file mkdir bu3.db
-    set rc [catch {db restore temp bu3.db} res]
-    lappend rc $res
-  } {1 {cannot open source database: unable to open database file}}
+  set msg {cannot open source database: unable to open database file}
+} elseif {$tcl_platform(os)=="OpenBSD"} {
+  set msg {restore failed: file is encrypted or is not a database}
+} else {
+  set msg {cannot open source database: disk I/O error}
 }
-if {$tcl_platform(platform)!="windows"} {
-  do_test backup2-10 {
-    forcedelete bu3.db
-    file mkdir bu3.db
-    set rc [catch {db restore temp bu3.db} res]
-    lappend rc $res
-  } {1 {cannot open source database: disk I/O error}}
-}
+do_test backup2-10 {
+  forcedelete bu3.db
+  file mkdir bu3.db
+  set rc [catch {db restore temp bu3.db} res]
+  lappend rc $res
+} [list 1 $msg]
 
 # Try to restore from something that is not a database file.
 #
