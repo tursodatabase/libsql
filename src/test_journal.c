@@ -662,7 +662,7 @@ static int jtCheckReservedLock(sqlite3_file *pFile, int *pResOut){
 */
 static int jtFileControl(sqlite3_file *pFile, int op, void *pArg){
   jt_file *p = (jt_file *)pFile;
-  return sqlite3OsFileControl(p->pReal, op, pArg);
+  return p->pReal->pMethods->xFileControl(p->pReal, op, pArg);
 }
 
 /*

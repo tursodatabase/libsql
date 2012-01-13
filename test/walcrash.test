@@ -76,7 +76,7 @@ for {set i 1} {$i < $REPEATS} {incr i} {
 for {set i 1} {$i < $REPEATS} {incr i} {
   forcedelete test.db test.db-wal
   do_test walcrash-2.$i.1 {
-    crashsql -delay 4 -file test.db-wal -seed [incr seed] {
+    crashsql -delay 5 -file test.db-wal -seed [incr seed] {
       PRAGMA journal_mode = WAL;
       CREATE TABLE t1(a PRIMARY KEY, b);
       INSERT INTO t1 VALUES(1, 2);
@@ -147,7 +147,7 @@ for {set i 1} {$i < $REPEATS} {incr i} {
   forcedelete test2.db test2.db-wal
 
   do_test walcrash-4.$i.1 {
-    crashsql -delay 3 -file test.db-wal -seed [incr seed] -blocksize 4096 {
+    crashsql -delay 4 -file test.db-wal -seed [incr seed] -blocksize 4096 {
       PRAGMA journal_mode = WAL;
       PRAGMA page_size = 1024;
       CREATE TABLE t1(a PRIMARY KEY, b);
@@ -175,7 +175,7 @@ for {set i 1} {$i < $REPEATS} {incr i} {
   forcedelete test2.db test2.db-wal
 
   do_test walcrash-5.$i.1 {
-    crashsql -delay 11 -file test.db-wal -seed [incr seed] -blocksize 4096 {
+    crashsql -delay 13 -file test.db-wal -seed [incr seed] -blocksize 4096 {
       PRAGMA journal_mode = WAL;
       PRAGMA page_size = 1024;
       BEGIN;
@@ -216,7 +216,7 @@ for {set i 1} {$i < $REPEATS} {incr i} {
   forcedelete test2.db test2.db-wal
 
   do_test walcrash-6.$i.1 {
-    crashsql -delay 12 -file test.db-wal -seed [incr seed] -blocksize 512 {
+    crashsql -delay 14 -file test.db-wal -seed [incr seed] -blocksize 512 {
       PRAGMA journal_mode = WAL;
       PRAGMA page_size = 1024;
       BEGIN;
@@ -234,9 +234,9 @@ for {set i 1} {$i < $REPEATS} {incr i} {
       INSERT INTO t1 SELECT randomblob(900) FROM t1 LIMIT 4;   /* 32 */
 
       PRAGMA wal_checkpoint;
-      INSERT INTO t1 VALUES(randomblob(900));
-      INSERT INTO t1 VALUES(randomblob(900));
-      INSERT INTO t1 VALUES(randomblob(900));
+      INSERT INTO t1 VALUES(randomblob(9000));
+      INSERT INTO t1 VALUES(randomblob(9000));
+      INSERT INTO t1 VALUES(randomblob(9000));
     }
   } {1 {child process exited abnormally}}
 

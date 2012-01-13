@@ -1,5 +1,5 @@
-C Fix\sissues\sin\stest\scases\sso\sthat\sthey\swork\swith\sDEFAULT_AUTOVACUUM\sdefined.\sAnd\swith\sa\ssmall\sdefault\scache-size.
-D 2012-01-12T16:41:30.466
+C Fix\stest\scase\sissues\srelated\sto\serrors\sin\sfile-controls\sand\sthe\sPSOW\sflag.
+D 2012-01-13T10:04:10.932
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -211,7 +211,7 @@ F src/test_hexio.c c4773049603151704a6ab25ac5e936b5109caf5a
 F src/test_init.c 3cbad7ce525aec925f8fda2192d576d47f0d478a
 F src/test_intarray.c d879bbf8e4ce085ab966d1f3c896a7c8b4f5fc99
 F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
-F src/test_journal.c 2c06e4be6584d51b935dc8b353980a9388de62ef
+F src/test_journal.c a70f1b79de153ba84179103ff9da16145e8ba8fc
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c 8d416f29ad8573f32601f6056c9d2b17472e9ad5
 F src/test_multiplex.c 67c210e2cdd63c4962c5cb20bd8fd2fd4d7a8410
@@ -573,7 +573,7 @@ F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
 F test/malloc.test bc745155ff4252d4f35ec8316625b0dfe2abc659
 F test/malloc3.test de8eca0c3e748878845fdca3663ec4b642073caf
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
-F test/malloc5.test 30dc30b57fa22552eba0d8c95210d96c3d958a39
+F test/malloc5.test a577cbbcc1594c7763b9b3515b3633555751c7f0
 F test/malloc6.test 2f039d9821927eacae43e1831f815e157659a151
 F test/malloc7.test 7c68a32942858bc715284856c5507446bba88c3a
 F test/malloc8.test 9b7a3f8cb9cf0b12fff566e80a980b1767bd961d
@@ -914,10 +914,10 @@ F test/wal_common.tcl a98f17fba96206122eff624db0ab13ec377be4fe
 F test/walbak.test b9f68e39646375c2b877be906babcc15d38b4877
 F test/walbig.test 0ab8a430ef420a3114f7092e0f30fc9585ffa155
 F test/walcksum.test f5447800a157c9e2234fbb8e80243f0813941bde
-F test/walcrash.test 4fcb661faf71db91214156d52d43ee327f52bde1
+F test/walcrash.test 4457436593be8c136f9148487c7dccd5e9013af2
 F test/walcrash2.test 019d60b89d96c1937adb2b30b850ac7e86e5a142
 F test/walcrash3.test 595e44c6197f0d0aa509fc135be2fd0209d11a2c
-F test/walfault.test efb0d5724893133e71b8d9d90abdb781845a6bb0
+F test/walfault.test 97394d8de82a99f7abf1c12ed229640607fd0ad2
 F test/walhook.test ed00a40ba7255da22d6b66433ab61fab16a63483
 F test/walmode.test 4022fe03ae6e830583672caa101f046438a0473c
 F test/walnoshm.test 84ca10c544632a756467336b7c3b864d493ee496
@@ -987,7 +987,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 0467742fd6ef33dfe4df66e5046f075fe8e0260d
-R dd3d13d79dc3e9b0b9529198f7413d55
+P a298465c3919c331b9d8b60351c42b96d2efacdc
+R 25093ee4ac993f71853ced1ffdfa85f4
 U dan
-Z a57c3c407c104db6d6c999d32ebde15f
+Z 24b0c93c8a15d345f8e3f4a1f43cb770
