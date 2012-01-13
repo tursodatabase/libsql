@@ -530,6 +530,8 @@ test_suite "inmemory_journal" -description {
   # Exclude stmt.test, which expects sub-journals to use temporary files.
   stmt.test
 
+  zerodamage.test
+
   # WAL mode is different.
   wal* tkt-2d1a5c67d.test backcompat.test
 }]
