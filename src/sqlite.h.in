@@ -2650,7 +2650,7 @@ int sqlite3_open_v2(
 ** 
 ** If F is a NULL pointer, then sqlite3_uri_parameter(F,P) returns NULL and
 ** sqlite3_uri_boolean(F,P,B) returns B.  If F is not a NULL pointer and
-** is not a databaes file pathname pointer that SQLite passed into the xOpen
+** is not a database file pathname pointer that SQLite passed into the xOpen
 ** VFS method, then the behavior of this routine is undefined and probably
 ** undesirable.
 */
@@ -6208,7 +6208,7 @@ struct sqlite3_pcache_page {
 ** [[the xShrink() page cache method]]
 ** ^SQLite invokes the xShrink() method when it wants the page cache to
 ** free up as much of heap memory as possible.  The page cache implementation
-** is not obligated to free any memory, but well-behaved implementions should
+** is not obligated to free any memory, but well-behaved implementations should
 ** do their best.
 */
 typedef struct sqlite3_pcache_methods2 sqlite3_pcache_methods2;

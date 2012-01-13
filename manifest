@@ -1,5 +1,5 @@
-C Add\sthe\s-uri\soption\sto\sthe\susage\scomment\sthat\sis\sprinted\sby\sthe\s"sqlite3"\nTCL\scommand\swhen\san\sunknown\scommand-line\soption\sis\ssupplied.
-D 2012-01-13T16:16:10.024
+C Fix\sdocumentation\stypos.\s\sNo\schanges\sto\scode.
+D 2012-01-13T16:48:07.715
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -182,7 +182,7 @@ F src/resolve.c 3d3e80a98f203ac6b9329e9621e29eda85ddfd40
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c a1d075db66a0ea42807353501b62997969e5be79
 F src/shell.c aa4183d4a5243d8110b1d3d77faa4aea7e9c9c2d
-F src/sqlite.h.in 8f46bc8c0d2f08abd9965ebcd0aaef5607ffa27f
+F src/sqlite.h.in 53516617d2945a411d028674d7fa20dd394b9ec0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h b8fdd9c39c8d7f5c794f4ea917293d9c75b9aff2
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -987,7 +987,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 08230a3a8c88f275bfc0ba72d3fea3260f24fc63
-R 22c66172c879896f2a704680b88f3b03
+P 7987e285786161b1513ab77694d79e95fc76b0e5
+R 36075dd9c00b8295abf401b64281d0fe
 U drh
-Z 3e0506307b4594426b40dcb894997066
+Z 248d2f817329858f334dd2041175f659
