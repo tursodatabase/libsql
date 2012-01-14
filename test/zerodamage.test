@@ -20,6 +20,11 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix wal5
 
+ifcapable !vtab {
+  finish_test
+  return
+}
+
 # POWERSAFE_OVERWRITE defaults to true
 #
 do_test zerodamage-1.0 {
@@ -110,3 +115,5 @@ do_test zerodamage-3.1 {
   }
   file size test.db-wal
 } {8416}
+
+finish_test

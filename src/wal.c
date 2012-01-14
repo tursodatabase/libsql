@@ -1732,7 +1732,7 @@ static int walCheckpoint(
       i64 nReq = ((i64)mxPage * szPage);
       rc = sqlite3OsFileSize(pWal->pDbFd, &nSize);
       if( rc==SQLITE_OK && nSize<nReq ){
-        sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_SIZE_HINT, &nReq);
+        sqlite3OsFileControlHint(pWal->pDbFd, SQLITE_FCNTL_SIZE_HINT, &nReq);
       }
     }
 
@@ -1848,7 +1848,9 @@ int sqlite3WalClose(
       );
       if( rc==SQLITE_OK ){
         int bPersist = -1;
-        sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_PERSIST_WAL, &bPersist);
+        sqlite3OsFileControlHint(
+            pWal->pDbFd, SQLITE_FCNTL_PERSIST_WAL, &bPersist
+        );
         if( bPersist!=1 ){
           /* Try to delete the WAL file if the checkpoint completed and
           ** fsyned (rc==SQLITE_OK) and if we are not in persistent-wal
@@ -1869,7 +1871,9 @@ int sqlite3WalClose(
     walIndexClose(pWal, isDelete);
     sqlite3OsClose(pWal->pWalFd);
     if( isDelete ){
+      sqlite3BeginBenignMalloc();
       sqlite3OsDelete(pWal->pVfs, pWal->zWalName, 0);
+      sqlite3EndBenignMalloc();
     }
     WALTRACE(("WAL%p: closed\n", pWal));
     sqlite3_free((void *)pWal->apWiData);

@@ -40,7 +40,7 @@ typedef struct PGroup PGroup;
 ** Mode 1 uses more memory (since PCache instances are not able to rob
 ** unused pages from other PCaches) but it also operates without a mutex,
 ** and is therefore often faster.  Mode 2 requires a mutex in order to be
-** threadsafe, but is able recycle pages more efficient.
+** threadsafe, but recycles pages more efficiently.
 **
 ** For mode (1), PGroup.mutex is NULL.  For mode (2) there is only a single
 ** PGroup which is the pcache1.grp global variable and its mutex is
@@ -66,7 +66,7 @@ struct PGroup {
 struct PCache1 {
   /* Cache configuration parameters. Page size (szPage) and the purgeable
   ** flag (bPurgeable) are set when the cache is created. nMax may be 
-  ** modified at any time by a call to the pcache1CacheSize() method.
+  ** modified at any time by a call to the pcache1Cachesize() method.
   ** The PGroup mutex must be held when accessing nMax.
   */
   PGroup *pGroup;                     /* PGroup this cache belongs to */
@@ -357,7 +357,7 @@ void sqlite3PageFree(void *p){
 ** for all page cache needs and we should not need to spill the
 ** allocation onto the heap.
 **
-** Or, the heap is used for all page cache memory put the heap is
+** Or, the heap is used for all page cache memory but the heap is
 ** under memory pressure, then again it is desirable to avoid
 ** allocating a new page cache entry in order to avoid stressing
 ** the heap even further.
@@ -668,7 +668,7 @@ static int pcache1Pagecount(sqlite3_pcache *p){
 ** For a non-purgeable cache (a cache used as the storage for an in-memory
 ** database) there is really no difference between createFlag 1 and 2.  So
 ** the calling function (pcache.c) will never have a createFlag of 1 on
-** a non-purgable cache.
+** a non-purgeable cache.
 **
 ** There are three different approaches to obtaining space for a page,
 ** depending on the value of parameter createFlag (which may be 0, 1 or 2).

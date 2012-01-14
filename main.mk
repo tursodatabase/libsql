@@ -333,23 +333,6 @@ HDR = \
 # Header files used by extensions
 #
 EXTHDR += \
-  $(TOP)/ext/fts1/fts1.h \
-  $(TOP)/ext/fts1/fts1_hash.h \
-  $(TOP)/ext/fts1/fts1_tokenizer.h
-EXTHDR += \
-  $(TOP)/ext/fts2/fts2.h \
-  $(TOP)/ext/fts2/fts2_hash.h \
-  $(TOP)/ext/fts2/fts2_tokenizer.h
-EXTHDR += \
-  $(TOP)/ext/fts3/fts3.h \
-  $(TOP)/ext/fts3/fts3Int.h \
-  $(TOP)/ext/fts3/fts3_hash.h \
-  $(TOP)/ext/fts3/fts3_tokenizer.h
-EXTHDR += \
-  $(TOP)/ext/rtree/rtree.h
-EXTHDR += \
-  $(TOP)/ext/icu/sqliteicu.h
-EXTHDR += \
   $(TOP)/ext/sqlrr/sqlrr.h
 
 # This is the default Makefile target.  The objects listed here

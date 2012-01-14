@@ -97,10 +97,23 @@ int sqlite3OsCheckReservedLock(sqlite3_file *id, int *pResOut){
   DO_OS_MALLOC_TEST(id);
   return id->pMethods->xCheckReservedLock(id, pResOut);
 }
+
+/*
+** Use sqlite3OsFileControl() when we are doing something that might fail
+** and we need to know about the failures.  Use sqlite3OsFileControlHint()
+** when simply tossing information over the wall to the VFS and we do not
+** really care if the VFS receives and understands the information since it
+** is only a hint and can be safely ignored.  The sqlite3OsFileControlHint()
+** routine has no return value since the return value would be meaningless.
+*/
 int sqlite3OsFileControl(sqlite3_file *id, int op, void *pArg){
   DO_OS_MALLOC_TEST(id);
   return id->pMethods->xFileControl(id, op, pArg);
 }
+void sqlite3OsFileControlHint(sqlite3_file *id, int op, void *pArg){
+  (void)id->pMethods->xFileControl(id, op, pArg);
+}
+
 int sqlite3OsSectorSize(sqlite3_file *id){
   int (*xSectorSize)(sqlite3_file*) = id->pMethods->xSectorSize;
   return (xSectorSize ? xSectorSize(id) : SQLITE_DEFAULT_SECTOR_SIZE);
@@ -157,6 +170,7 @@ int sqlite3OsOpen(
 }
 int sqlite3OsDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
   DO_OS_MALLOC_TEST(0);
+  assert( dirSync==0 || dirSync==1 );
   return pVfs->xDelete(pVfs, zPath, dirSync);
 }
 int sqlite3OsAccess(

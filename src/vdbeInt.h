@@ -408,7 +408,7 @@ int sqlite3VdbeMemNumerify(Mem*);
 int sqlite3VdbeMemFromBtree(BtCursor*,int,int,int,Mem*);
 void sqlite3VdbeMemRelease(Mem *p);
 void sqlite3VdbeMemReleaseExternal(Mem *p);
-#define MemReleaseExt(X)  \
+#define VdbeMemRelease(X)  \
   if((X)->flags&(MEM_Agg|MEM_Dyn|MEM_RowSet|MEM_Frame)) \
     sqlite3VdbeMemReleaseExternal(X);
 int sqlite3VdbeMemFinalize(Mem*, FuncDef*);
@@ -447,7 +447,7 @@ int sqlite3VdbeSorterCompare(VdbeCursor *, Mem *, int *);
 #endif
 
 #ifdef SQLITE_DEBUG
-void sqlite3VdbeMemPrepareToChange(Vdbe*,Mem*);
+void sqlite3VdbeMemAboutToChange(Vdbe*,Mem*);
 #endif
 
 #ifndef SQLITE_OMIT_FOREIGN_KEY
@@ -465,8 +465,10 @@ int sqlite3VdbeMemHandleBom(Mem *pMem);
 
 #ifndef SQLITE_OMIT_INCRBLOB
   int sqlite3VdbeMemExpandBlob(Mem *);
+  #define ExpandBlob(P) (((P)->flags&MEM_Zero)?sqlite3VdbeMemExpandBlob(P):0)
 #else
   #define sqlite3VdbeMemExpandBlob(x) SQLITE_OK
+  #define ExpandBlob(P) SQLITE_OK
 #endif
 
 #endif /* !defined(_VDBEINT_H_) */

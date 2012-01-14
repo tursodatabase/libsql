@@ -196,7 +196,8 @@ int sqlite3VdbeAddOp4(
 
 /*
 ** Add an OP_ParseSchema opcode.  This routine is broken out from
-** sqlite3VdbeAddOp4() since it needs to also local all btrees.
+** sqlite3VdbeAddOp4() since it needs to also needs to mark all btrees
+** as having been used.
 **
 ** The zWhere string must have been obtained from sqlite3_malloc().
 ** This routine will take ownership of the allocated memory.
@@ -963,8 +964,9 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
 ** Declare to the Vdbe that the BTree object at db->aDb[i] is used.
 **
 ** The prepared statements need to know in advance the complete set of
-** attached databases that they will be using.  A mask of these databases
-** is maintained in p->btreeMask and is used for locking and other purposes.
+** attached databases that will be use.  A mask of these databases
+** is maintained in p->btreeMask.  The p->lockMask value is the subset of
+** p->btreeMask of databases that will require a lock.
 */
 void sqlite3VdbeUsesBtree(Vdbe *p, int i){
   assert( i>=0 && i<p->db->nDb && i<(int)sizeof(yDbMask)*8 );
