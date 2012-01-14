@@ -2486,10 +2486,9 @@ static int pager_truncate(Pager *pPager, Pgno nPage){
     if( rc==SQLITE_OK && currentSize!=newSize ){
       if( currentSize>newSize ){
         rc = sqlite3OsTruncate(pPager->fd, newSize);
-      }else{
+      }else if( (currentSize+szPage)<=newSize ){
         char *pTmp = pPager->pTmpSpace;
         memset(pTmp, 0, szPage);
-        testcase( (newSize-szPage) <  currentSize );
         testcase( (newSize-szPage) == currentSize );
         testcase( (newSize-szPage) >  currentSize );
         rc = sqlite3OsWrite(pPager->fd, pTmp, szPage, newSize-szPage);
@@ -2747,10 +2746,11 @@ end_playback:
   ** SQLITE_FCNTL_DB_UNCHANGED file-control method to disable the
   ** assertion that the transaction counter was modified.
   */
-  assert(
-    pPager->fd->pMethods==0 ||
-    sqlite3OsFileControl(pPager->fd,SQLITE_FCNTL_DB_UNCHANGED,0)>=SQLITE_OK
-  );
+#ifdef SQLITE_DEBUG
+  if( pPager->fd->pMethods ){
+    sqlite3OsFileControlHint(pPager->fd,SQLITE_FCNTL_DB_UNCHANGED,0);
+  }
+#endif
 
   /* If this playback is happening automatically as a result of an IO or 
   ** malloc error that occurred after the change-counter was updated but 
@@ -3087,10 +3087,7 @@ static int pagerPagecount(Pager *pPager, Pgno *pnPage){
         return rc;
       }
     }
-    nPage = (Pgno)(n / pPager->pageSize);
-    if( nPage==0 && n>0 ){
-      nPage = 1;
-    }
+    nPage = (Pgno)((n+pPager->pageSize-1) / pPager->pageSize);
   }
 
   /* If the current number of pages in the file is greater than the
@@ -3521,7 +3518,7 @@ int sqlite3PagerSetPagesize(Pager *pPager, u32 *pPageSize, int nReserve){
 
     if( rc==SQLITE_OK ){
       pager_reset(pPager);
-      pPager->dbSize = (Pgno)(nByte/pageSize);
+      pPager->dbSize = (Pgno)((nByte+pageSize-1)/pageSize);
       pPager->pageSize = pageSize;
       sqlite3PageFree(pPager->pTmpSpace);
       pPager->pTmpSpace = pNew;
@@ -4029,9 +4026,7 @@ static int pager_write_pagelist(Pager *pPager, PgHdr *pList){
   assert( rc!=SQLITE_OK || isOpen(pPager->fd) );
   if( rc==SQLITE_OK && pPager->dbSize>pPager->dbHintSize ){
     sqlite3_int64 szFile = pPager->pageSize * (sqlite3_int64)pPager->dbSize;
-    sqlite3BeginBenignMalloc();
-    sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_SIZE_HINT, &szFile);
-    sqlite3EndBenignMalloc();
+    sqlite3OsFileControlHint(pPager->fd, SQLITE_FCNTL_SIZE_HINT, &szFile);
     pPager->dbHintSize = pPager->dbSize;
   }
 
@@ -6055,7 +6050,8 @@ int sqlite3PagerRollback(Pager *pPager){
   }
 
   assert( pPager->eState==PAGER_READER || rc!=SQLITE_OK );
-  assert( rc==SQLITE_OK || rc==SQLITE_FULL || (rc&0xFF)==SQLITE_IOERR );
+  assert( rc==SQLITE_OK || rc==SQLITE_FULL
+          || rc==SQLITE_NOMEM || (rc&0xFF)==SQLITE_IOERR );
 
   /* If an error occurs during a ROLLBACK, we can no longer trust the pager
   ** cache. So call pager_error() on the way out to make any error persistent.

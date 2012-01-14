@@ -123,7 +123,6 @@ do_faultsim_test walfault-3 -prep {
   faultsim_test_result {0 {}}
 }
 
-
 #--------------------------------------------------------------------------
 #
 if {[permutation] != "inmemory_journal"} {
@@ -141,7 +140,9 @@ if {[permutation] != "inmemory_journal"} {
       SELECT * FROM t1;
     }
   } -test {
-    faultsim_test_result {0 {wal 0 7 7 a b}}
+    # Update: The following changed from {0 {wal 0 7 7 a b}} as a result
+    # of PSOW being set by default.
+    faultsim_test_result {0 {wal 0 5 5 a b}}
     faultsim_integrity_check
   } 
 }
@@ -542,10 +543,11 @@ do_faultsim_test walfault-14 -prep {
     INSERT INTO abc VALUES(randomblob(1500));
   }
 } -test {
-  faultsim_test_result {0 {0 10 10}}
+  faultsim_test_result {0 {0 9 9}}
   faultsim_integrity_check
   set nRow [db eval {SELECT count(*) FROM abc}]
   if {!(($nRow==2 && $testrc) || $nRow==3)} { error "Bad db content" }
 }
+finish_test
 
 finish_test

@@ -225,7 +225,6 @@ struct unixFile {
   unsigned fsFlags;                   /* cached details from statfs() */
 #endif
 #if OS_VXWORKS
-  int isDelete;                       /* Delete on close if true */
   struct vxworksFileId *pId;          /* Unique file ID */
 #endif
 #ifndef NDEBUG
@@ -260,6 +259,9 @@ struct unixFile {
 # define UNIXFILE_DIRSYNC    0x00
 #endif
 #define UNIXFILE_PSOW        0x10     /* SQLITE_IOCAP_POWERSAFE_OVERWRITE */
+#define UNIXFILE_DELETE      0x20     /* Delete on close */
+#define UNIXFILE_URI         0x40     /* Filename might have query parameters */
+#define UNIXFILE_NOLOCK      0x80     /* Do no file locking */
 
 /*
 ** Include code that is common to all os_*.c files
@@ -1765,7 +1767,7 @@ static int closeUnixFile(sqlite3_file *id){
   }
 #if OS_VXWORKS
   if( pFile->pId ){
-    if( pFile->isDelete ){
+    if( pFile->ctrlFlags & UNIXFILE_DELETE ){
       osUnlink(pFile->pId->zCanonicalName);
     }
     vxworksReleaseFileId(pFile->pId);
@@ -3872,7 +3874,7 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
       rc = SQLITE_NOMEM;
       goto shm_open_err;
     }
-    memset(pShmNode, 0, sizeof(*pShmNode));
+    memset(pShmNode, 0, sizeof(*pShmNode)+nShmFilename);
     zShmFilename = pShmNode->zFilename = (char*)&pShmNode[1];
 #ifdef SQLITE_SHM_DIRECTORY
     sqlite3_snprintf(nShmFilename, zShmFilename, 
@@ -4555,23 +4557,15 @@ typedef const sqlite3_io_methods *(*finder_type)(const char*,unixFile*);
 static int fillInUnixFile(
   sqlite3_vfs *pVfs,      /* Pointer to vfs object */
   int h,                  /* Open file descriptor of file being opened */
-  int syncDir,            /* True to sync directory on first sync */
   sqlite3_file *pId,      /* Write to the unixFile structure here */
   const char *zFilename,  /* Name of the file being opened */
-  int noLock,             /* Omit locking if true */
-  int isDelete,           /* Delete on close if true */
-  int isReadOnly          /* True if the file is opened read-only */
+  int ctrlFlags           /* Zero or more UNIXFILE_* values */
 ){
   const sqlite3_io_methods *pLockingStyle;
   unixFile *pNew = (unixFile *)pId;
   int rc = SQLITE_OK;
 
   assert( pNew->pInode==NULL );
-
-  /* Parameter isDelete is only used on vxworks. Express this explicitly 
-  ** here to prevent compiler warnings about unused parameters.
-  */
-  UNUSED_PARAMETER(isDelete);
 
   /* Usually the path zFilename should not be a relative pathname. The
   ** exception is when opening the proxy "conch" file in builds that
@@ -4585,35 +4579,30 @@ static int fillInUnixFile(
 #endif
 
   /* No locking occurs in temporary files */
-  assert( zFilename!=0 || noLock );
+  assert( zFilename!=0 || (ctrlFlags & UNIXFILE_NOLOCK)!=0 );
 
   OSTRACE(("OPEN    %-3d %s\n", h, zFilename));
   pNew->h = h;
   pNew->pVfs = pVfs;
   pNew->zPath = zFilename;
-  pNew->ctrlFlags = 0;
-  if( sqlite3_uri_boolean(zFilename, "psow", SQLITE_POWERSAFE_OVERWRITE) ){
+  pNew->ctrlFlags = (u8)ctrlFlags;
+  if( sqlite3_uri_boolean(((ctrlFlags & UNIXFILE_URI) ? zFilename : 0),
+                           "psow", SQLITE_POWERSAFE_OVERWRITE) ){
     pNew->ctrlFlags |= UNIXFILE_PSOW;
   }
   if( memcmp(pVfs->zName,"unix-excl",10)==0 ){
     pNew->ctrlFlags |= UNIXFILE_EXCL;
   }
-  if( isReadOnly ){
-    pNew->ctrlFlags |= UNIXFILE_RDONLY;
-  }
-  if( syncDir ){
-    pNew->ctrlFlags |= UNIXFILE_DIRSYNC;
-  }
 
 #if OS_VXWORKS
   pNew->pId = vxworksFindFileId(zFilename);
   if( pNew->pId==0 ){
-    noLock = 1;
+    ctrlFlags |= UNIXFILE_NOLOCK;
     rc = SQLITE_NOMEM;
   }
 #endif
 
-  if( noLock ){
+  if( ctrlFlags & UNIXFILE_NOLOCK ){
     pLockingStyle = &nolockIoMethods;
   }else{
     pLockingStyle = (**(finder_type*)pVfs->pAppData)(zFilename, pNew);
@@ -4734,7 +4723,7 @@ static int fillInUnixFile(
     osUnlink(zFilename);
     isDelete = 0;
   }
-  pNew->isDelete = isDelete;
+  if( isDelete ) pNew->ctrlFlags |= UNIXFILE_DELETE;
 #endif
   if( rc!=SQLITE_OK ){
     if( h>=0 ) robust_close(pNew, h, __LINE__);
@@ -4799,18 +4788,19 @@ static int unixGetTempname(int nBuf, char *zBuf){
   /* Check that the output buffer is large enough for the temporary file 
   ** name. If it is not, return SQLITE_ERROR.
   */
-  if( (strlen(zDir) + strlen(SQLITE_TEMP_FILE_PREFIX) + 17) >= (size_t)nBuf ){
+  if( (strlen(zDir) + strlen(SQLITE_TEMP_FILE_PREFIX) + 18) >= (size_t)nBuf ){
     return SQLITE_ERROR;
   }
 
   do{
-    sqlite3_snprintf(nBuf-17, zBuf, "%s/"SQLITE_TEMP_FILE_PREFIX, zDir);
+    sqlite3_snprintf(nBuf-18, zBuf, "%s/"SQLITE_TEMP_FILE_PREFIX, zDir);
     j = (int)strlen(zBuf);
     sqlite3_randomness(15, &zBuf[j]);
     for(i=0; i<15; i++, j++){
       zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
     }
     zBuf[j] = 0;
+    zBuf[j+1] = 0;
   }while( osAccess(zBuf,0)==0 );
   return SQLITE_OK;
 }
@@ -4989,6 +4979,7 @@ static int unixOpen(
   int eType = flags&0xFFFFFF00;  /* Type of file to open */
   int noLock;                    /* True to omit locking primitives */
   int rc = SQLITE_OK;            /* Function Return Code */
+  int ctrlFlags = 0;             /* UNIXFILE_* flags */
 
   int isExclusive  = (flags & SQLITE_OPEN_EXCLUSIVE);
   int isDelete     = (flags & SQLITE_OPEN_DELETEONCLOSE);
@@ -5015,7 +5006,7 @@ static int unixOpen(
   /* If argument zPath is a NULL pointer, this function is required to open
   ** a temporary file. Use this buffer to store the file name in.
   */
-  char zTmpname[MAX_PATHNAME+1];
+  char zTmpname[MAX_PATHNAME+2];
   const char *zName = zPath;
 
   /* Check the following statements are true: 
@@ -5058,14 +5049,24 @@ static int unixOpen(
       }
     }
     p->pUnused = pUnused;
+
+    /* Database filenames are double-zero terminated if they are not
+    ** URIs with parameters.  Hence, they can always be passed into
+    ** sqlite3_uri_parameter(). */
+    assert( (flags & SQLITE_OPEN_URI) || zName[strlen(zName)+1]==0 );
+
   }else if( !zName ){
     /* If zName is NULL, the upper layer is requesting a temp file. */
     assert(isDelete && !syncDir);
-    rc = unixGetTempname(MAX_PATHNAME+1, zTmpname);
+    rc = unixGetTempname(MAX_PATHNAME+2, zTmpname);
     if( rc!=SQLITE_OK ){
       return rc;
     }
     zName = zTmpname;
+
+    /* Generated temporary filenames are always double-zero terminated
+    ** for use by sqlite3_uri_parameter(). */
+    assert( zName[strlen(zName)+1]==0 );
   }
 
   /* Determine the value of the flags parameter passed to POSIX function
@@ -5142,7 +5143,14 @@ static int unixOpen(
     ((unixFile*)pFile)->fsFlags |= SQLITE_FSFLAGS_IS_MSDOS;
   }
 #endif
-  
+
+  /* Set up appropriate ctrlFlags */
+  if( isDelete )                ctrlFlags |= UNIXFILE_DELETE;
+  if( isReadonly )              ctrlFlags |= UNIXFILE_RDONLY;
+  if( noLock )                  ctrlFlags |= UNIXFILE_NOLOCK;
+  if( syncDir )                 ctrlFlags |= UNIXFILE_DIRSYNC;
+  if( flags & SQLITE_OPEN_URI ) ctrlFlags |= UNIXFILE_URI;
+
 #if SQLITE_ENABLE_LOCKING_STYLE
 #if SQLITE_PREFER_PROXY_LOCKING
   isAutoProxy = 1;
@@ -5172,8 +5180,7 @@ static int unixOpen(
       useProxy = !(fsInfo.f_flags&MNT_LOCAL);
     }
     if( useProxy ){
-      rc = fillInUnixFile(pVfs, fd, syncDir, pFile, zPath, noLock,
-                          isDelete, isReadonly);
+      rc = fillInUnixFile(pVfs, fd, pFile, zPath, ctrlFlags);
       if( rc==SQLITE_OK ){
         rc = proxyTransformUnixFile((unixFile*)pFile, ":auto:");
         if( rc!=SQLITE_OK ){
@@ -5190,8 +5197,8 @@ static int unixOpen(
   }
 #endif
   
-  rc = fillInUnixFile(pVfs, fd, syncDir, pFile, zPath, noLock,
-                      isDelete, isReadonly);
+  rc = fillInUnixFile(pVfs, fd, pFile, zPath, ctrlFlags);
+
 open_finished:
   if( rc!=SQLITE_OK ){
     sqlite3_free(p->pUnused);
@@ -5216,7 +5223,7 @@ static int unixDelete(
     return unixLogError(SQLITE_IOERR_DELETE, "unlink", zPath);
   }
 #ifndef SQLITE_DISABLE_DIRSYNC
-  if( dirSync ){
+  if( (dirSync & 1)!=0 ){
     int fd;
     rc = osOpenDirectory(zPath, &fd);
     if( rc==SQLITE_OK ){
@@ -5862,7 +5869,7 @@ static int proxyCreateUnixFile(
   pUnused->flags = openFlags;
   pNew->pUnused = pUnused;
   
-  rc = fillInUnixFile(&dummyVfs, fd, 0, (sqlite3_file*)pNew, path, 0, 0, 0);
+  rc = fillInUnixFile(&dummyVfs, fd, (sqlite3_file*)pNew, path, 0);
   if( rc==SQLITE_OK ){
     *ppFile = pNew;
     return SQLITE_OK;

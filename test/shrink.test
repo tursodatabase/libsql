@@ -19,6 +19,7 @@ source $testdir/tester.tcl
 unset -nocomplain baseline
 do_test shrink-1.1 {
   db eval {
+    PRAGMA cache_size = 2000;
     CREATE TABLE t1(x,y);
     INSERT INTO t1 VALUES(randomblob(1000000),1);
   }

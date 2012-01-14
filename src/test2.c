@@ -537,6 +537,8 @@ static int fake_big_file(
   int rc;
   int n;
   i64 offset;
+  char *zFile;
+  int nFile;
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
        " N-MEGABYTES FILE\"", 0);
@@ -545,17 +547,24 @@ static int fake_big_file(
   if( Tcl_GetInt(interp, argv[1], &n) ) return TCL_ERROR;
 
   pVfs = sqlite3_vfs_find(0);
-  rc = sqlite3OsOpenMalloc(pVfs, argv[2], &fd, 
+  nFile = strlen(argv[2]);
+  zFile = sqlite3_malloc( nFile+2 );
+  if( zFile==0 ) return TCL_ERROR;
+  memcpy(zFile, argv[2], nFile+1);
+  zFile[nFile+1] = 0;
+  rc = sqlite3OsOpenMalloc(pVfs, zFile, &fd, 
       (SQLITE_OPEN_CREATE|SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_DB), 0
   );
   if( rc ){
     Tcl_AppendResult(interp, "open failed: ", errorName(rc), 0);
+    sqlite3_free(zFile);
     return TCL_ERROR;
   }
   offset = n;
   offset *= 1024*1024;
   rc = sqlite3OsWrite(fd, "Hello, World!", 14, offset);
   sqlite3OsCloseFree(fd);
+  sqlite3_free(zFile);
   if( rc ){
     Tcl_AppendResult(interp, "write failed: ", errorName(rc), 0);
     return TCL_ERROR;

@@ -937,30 +937,38 @@ int sqlite3_quota_file(const char *zFilename){
   int rc;
   int outFlags = 0;
   sqlite3_int64 iSize;
-  fd = (sqlite3_file*)sqlite3_malloc(gQuota.sThisVfs.szOsFile +
-                                     gQuota.sThisVfs.mxPathname+1);
-  if( fd==0 ) return SQLITE_NOMEM;
-  zFull = gQuota.sThisVfs.szOsFile + (char*)fd;
-  rc = gQuota.pOrigVfs->xFullPathname(gQuota.pOrigVfs, zFilename,
-                                      gQuota.sThisVfs.mxPathname+1, zFull);
+  int nAlloc = gQuota.sThisVfs.szOsFile + gQuota.sThisVfs.mxPathname+2;
+
+  /* Allocate space for a file-handle and the full path for file zFilename */
+  fd = (sqlite3_file *)sqlite3_malloc(nAlloc);
+  if( fd==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    zFull = &((char *)fd)[gQuota.sThisVfs.szOsFile];
+    rc = gQuota.pOrigVfs->xFullPathname(gQuota.pOrigVfs, zFilename,
+        gQuota.sThisVfs.mxPathname+1, zFull);
+  }
+
   if( rc==SQLITE_OK ){
+    zFull[strlen(zFull)+1] = '\0';
     rc = quotaOpen(&gQuota.sThisVfs, zFull, fd, 
                    SQLITE_OPEN_READONLY | SQLITE_OPEN_MAIN_DB, &outFlags);
-  }
-  if( rc==SQLITE_OK ){
-    fd->pMethods->xFileSize(fd, &iSize);
-    fd->pMethods->xClose(fd);
-  }else if( rc==SQLITE_CANTOPEN ){
-    quotaGroup *pGroup;
-    quotaFile *pFile;
-    quotaEnter();
-    pGroup = quotaGroupFind(zFull);
-    if( pGroup ){
-      pFile = quotaFindFile(pGroup, zFull, 0);
-      if( pFile ) quotaRemoveFile(pFile);
+    if( rc==SQLITE_OK ){
+      fd->pMethods->xFileSize(fd, &iSize);
+      fd->pMethods->xClose(fd);
+    }else if( rc==SQLITE_CANTOPEN ){
+      quotaGroup *pGroup;
+      quotaFile *pFile;
+      quotaEnter();
+      pGroup = quotaGroupFind(zFull);
+      if( pGroup ){
+        pFile = quotaFindFile(pGroup, zFull, 0);
+        if( pFile ) quotaRemoveFile(pFile);
+      }
+      quotaLeave();
     }
-    quotaLeave();
   }
+
   sqlite3_free(fd);
   return rc;
 }
