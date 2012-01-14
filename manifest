@@ -1,5 +1,5 @@
-C Fix\sdocumentation\stypos.\s\sNo\schanges\sto\scode.
-D 2012-01-13T16:48:07.715
+C In\sthe\smultiplexor\sroutine\sthat\sdetermines\sthe\ssize\sof\san\soverflow\sfile,\nreturn\s0\sand\sleave\sthe\serror\scode\sunchanges\sif\sthere\swere\sprior\serrors.\nThis\sprevents\ssome\sI/O\serrors\sfrom\sgoing\sunreported\sin\snx-devkit\stests.
+D 2012-01-14T00:42:40.809
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -214,7 +214,7 @@ F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c a6a6baf343f79b942331f13378d045e7e270ae64
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c 8d416f29ad8573f32601f6056c9d2b17472e9ad5
-F src/test_multiplex.c 67c210e2cdd63c4962c5cb20bd8fd2fd4d7a8410
+F src/test_multiplex.c afab2c9d292677ab31e0dd4b3dde2420fb655c5f
 F src/test_multiplex.h e99c571bc4968b7a9363b661481f3934bfead61d
 F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
@@ -987,7 +987,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 7987e285786161b1513ab77694d79e95fc76b0e5
-R 36075dd9c00b8295abf401b64281d0fe
+P 0b857613e2415a59e61df2181ff33aa12bed987e
+R 8c4aad526dd4773efecb725162955513
 U drh
-Z 248d2f817329858f334dd2041175f659
+Z 7b97ff4831c80bd385dd7cdd63ba77f9

@@ -371,6 +371,7 @@ static sqlite3_int64 multiplexSubSize(
   sqlite3_file *pSub;
   sqlite3_int64 sz = 0;
 
+  if( *rc ) return 0;
   pSub = multiplexSubOpen(pGroup, iChunk, rc, NULL, 0);
   if( pSub==0 ) return 0;
   *rc = pSub->pMethods->xFileSize(pSub, &sz);
