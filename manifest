@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sEXTERN\smacro\sis\sproperly\sdefined\swhen\sbuilding\stargets\sthat\srequire\sit\s(e.g.\son\sMinGW).
-D 2012-01-14T03:34:24.129
+C Rebuild\sthe\sconfigure\sscript\susing\sautoconf\s2.68\ssince\sautoconf\s2.65\n(previously\sused)\sappears\sto\sbuild\sincorrect\sscripts\sfor\sMac.
+D 2012-01-16T13:00:05.003
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -23,7 +23,7 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 31cc8c4943f56e60c4aa4fba929c9d4c70e418b4
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure cdfb8a907ded1f8e75b6967e3e3bd35718884aff x
+F configure 5c1cf496e63a233d2abcccf7a3570ba84d5dce01 x
 F configure.ac 75323bdac56fb0e69f6a3fc5b23f24359550b9d9
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 3091574143dd3415669b6745843ff8d011d33549
@@ -987,7 +987,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 6da0821a4717253221b25fb22e05cd9c13492f3d
-R 60e95146390d8e5cafff65c7013a6898
-U mistachkin
-Z 628b160b9efffdc491244097b11ce639
+P 88ad2f23c5036cbb4a69b73ce5792bd5c33a9177
+R 81a3b6b323708ac95becda2f7731a3a4
+U drh
+Z 34c87c1888437b7f0fdbac21879ca54c
