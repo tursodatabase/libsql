@@ -1,5 +1,5 @@
-C Version\s3.7.10
-D 2012-01-16T13:28:40.069
+C Test\sthe\sfts4\scontent\sand\sprefix\soptions\stogether.
+D 2012-01-16T16:39:36.406
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -494,7 +494,7 @@ F test/fts3shared.test 8bb266521d7c5495c0ae522bb4d376ad5387d4a2
 F test/fts3snippet.test 8e956051221a34c7daeb504f023cb54d5fa5a8b2
 F test/fts3sort.test 95be0b19d7e41c44b29014f13ea8bddd495fd659
 F test/fts4aa.test 6e7f90420b837b2c685f3bcbe84c868492d40a68
-F test/fts4content.test 2624253c7e5a32d0c0d51f776dcd4526f0a51097
+F test/fts4content.test 17b2360f7d1a9a7e5aa8022783f5c5731b6dfd4f
 F test/func.test 6c5ce11e3a0021ca3c0649234e2d4454c89110ca
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 001021e5b88bd02a3b365a5c5fd8f6f49d39744a
@@ -987,8 +987,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 9da1cd0a06aca4eb3fb21fa4d321b9e3e07444b4
-R 81a3b6b323708ac95becda2f7731a3a4
-T +sym-version-3.7.10 *
-U drh
-Z 1c2c75389d69d7c8466f72bd2161ada0
+P ebd01a8deffb5024a5d7494eef800d2366d97204
+R 40287a4cf4afc5ee1880263d8270c08c
+U dan
+Z 8212754ed5e92bf82a949bd6834df88c
