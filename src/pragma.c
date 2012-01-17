@@ -189,7 +189,6 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
 #endif
     /* The following is VERY experimental */
     { "writable_schema",          SQLITE_WriteSchema|SQLITE_RecoveryMode },
-    { "omit_readlock",            SQLITE_NoReadlock    },
 
     /* TODO: Maybe it shouldn't be possible to change the ReadUncommitted
     ** flag if there are any active statements. */

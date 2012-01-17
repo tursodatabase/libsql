@@ -946,8 +946,7 @@ struct sqlite3 {
 #define SQLITE_SqlTrace       0x00004000  /* Debug print SQL as it executes */
 #define SQLITE_VdbeListing    0x00008000  /* Debug listings of VDBE programs */
 #define SQLITE_WriteSchema    0x00010000  /* OK to update SQLITE_MASTER */
-#define SQLITE_NoReadlock     0x00020000  /* Readlocks are omitted when 
-                                          ** accessing read-only databases */
+                         /*   0x00020000  Unused */
 #define SQLITE_IgnoreChecks   0x00040000  /* Do not enforce check constraints */
 #define SQLITE_ReadUncommitted 0x0080000  /* For shared-cache mode */
 #define SQLITE_LegacyFileFmt  0x00100000  /* Create new databases in format 1 */

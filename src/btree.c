@@ -1689,11 +1689,8 @@ static int btreeInvokeBusyHandler(void *pArg){
 ** If zFilename is ":memory:" then an in-memory database is created
 ** that is automatically destroyed when it is closed.
 **
-** The "flags" parameter is a bitmask that might contain bits
-** BTREE_OMIT_JOURNAL and/or BTREE_NO_READLOCK.  The BTREE_NO_READLOCK
-** bit is also set if the SQLITE_NoReadlock flags is set in db->flags.
-** These flags are passed through into sqlite3PagerOpen() and must
-** be the same values as PAGER_OMIT_JOURNAL and PAGER_NO_READLOCK.
+** The "flags" parameter is a bitmask that might contain bits like
+** BTREE_OMIT_JOURNAL and/or BTREE_MEMORY.
 **
 ** If the database is already opened in the same database connection
 ** and we are in shared cache mode, then the open will fail with an
@@ -1740,9 +1737,6 @@ int sqlite3BtreeOpen(
   /* A BTREE_SINGLE database is always a temporary and/or ephemeral */
   assert( (flags & BTREE_SINGLE)==0 || isTempDb );
 
-  if( db->flags & SQLITE_NoReadlock ){
-    flags |= BTREE_NO_READLOCK;
-  }
   if( isMemdb ){
     flags |= BTREE_MEMORY;
   }
