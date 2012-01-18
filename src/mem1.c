@@ -62,7 +62,7 @@
 #if !defined(HAVE_MALLOC_USABLE_SIZE) && SQLITE_OS_WIN \
       && !defined(SQLITE_WITHOUT_MSIZE)
 # define HAVE_MALLOC_USABLE_SIZE 1
-# define malloc_usable_size _msize
+# define SQLITE_MALLOCSIZE _msize
 #endif
 
 #if defined(__APPLE__) && !defined(SQLITE_WITHOUT_ZONEMALLOC)
@@ -92,10 +92,12 @@ static malloc_zone_t* _sqliteZone_;
 #define SQLITE_REALLOC(x,y) realloc((x),(y))
 
 #ifdef HAVE_MALLOC_USABLE_SIZE
-#include <malloc.h>
-#define SQLITE_MALLOCSIZE(x) malloc_usable_size(x)
+# ifndef SQLITE_MALLOCSIZE
+#  include <malloc.h>
+#  define SQLITE_MALLOCSIZE(x) malloc_usable_size(x)
+# endif
 #else
-#undef SQLITE_MALLOCSIZE
+# undef SQLITE_MALLOCSIZE
 #endif
 
 #endif /* __APPLE__ or not __APPLE__ */
