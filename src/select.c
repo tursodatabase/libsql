@@ -4595,4 +4595,4 @@ void sqlite3ExplainSelect(Vdbe *pVdbe, Select *p){
 
 /* End of the structure debug printing code
 *****************************************************************************/
-#endif /* defined(SQLITE_TEST) || defined(SQLITE_DEBUG) */
+#endif /* defined(SQLITE_ENABLE_TREE_EXPLAIN) */
