@@ -5167,7 +5167,6 @@ case OP_Program: {        /* jump */
   p->nOp = pProgram->nOp;
   p->aOnceFlag = (u8 *)&p->apCsr[p->nCursor];
   p->nOnceFlag = pProgram->nOnce;
-  p->nOp = pProgram->nOp;
   pc = -1;
   memset(p->aOnceFlag, 0, p->nOnceFlag);
 

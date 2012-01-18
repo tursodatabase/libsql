@@ -1,5 +1,5 @@
-C Fix\stypo\sin\scomment.
-D 2012-01-18T01:09:57.792
+C Remove\sa\sredundant\sassignment\sfrom\sthe\sVM.
+D 2012-01-18T01:14:42.982
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -240,7 +240,7 @@ F src/update.c d3076782c887c10e882996550345da9c4c9f9dea
 F src/utf.c 890c67dcfcc7a74623c95baac7535aadfe265e84
 F src/util.c 9e07bd67dfafe9c75b1da78c87ba030cebbb5388
 F src/vacuum.c 0c0ba2242355c6048d65e2b333abe0f7c06348fa
-F src/vdbe.c 64e3fc0bb56c54ceac3cc1d1e65257bfda21550e
+F src/vdbe.c fc1b97fa6816bac5de2f631b7d4a9b8d8daf6c03
 F src/vdbe.h 18f581cac1f4339ec3299f3e0cc6e11aec654cdb
 F src/vdbeInt.h ef9b8584b23b033894a0804dc6b90196c6779fb9
 F src/vdbeapi.c 3662b6a468a2a4605a15dfab313baa6dff81ad91
@@ -987,7 +987,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 96900c47e4fc6ed55cefc10d55d3d8d16bcb1d31
-R 175ef7a71fb3c5882f301c7c4157d81f
-U mistachkin
-Z 7d21b6bed939fc03041ce15942ad0969
+P 199edb6869977ccd7abf886af5cf9b344c857d1e
+R 8b52b1a8cfe111f7da7f61e6df78ea28
+U drh
+Z f117d6ca2550ce95a5e0fc5cae8dc0b7
