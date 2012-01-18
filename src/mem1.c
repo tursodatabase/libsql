@@ -15,7 +15,35 @@
 ** to obtain the memory it needs.
 **
 ** This file contains implementations of the low-level memory allocation
-** routines specified in the sqlite3_mem_methods object.
+** routines specified in the sqlite3_mem_methods object.  The content of
+** this file is only used if SQLITE_SYSTEM_MALLOC is defined.  The
+** SQLITE_SYSTEM_MALLOC macro is defined automatically if neither the
+** SQLITE_MEMDEBUG nor the SQLITE_WIN32_MALLOC macros are defined.  The
+** default configuration is to use memory allocation routines in this
+** file.
+**
+** C-preprocessor macro summary:
+**
+**    HAVE_MALLOC_USABLE_SIZE     The configure script sets this symbol if
+**                                the malloc_usable_size() interface exists
+**                                on the target platform.  Or, this symbol
+**                                can be set manually, if desired.
+**                                If an equivalent interface exists by
+**                                a different name, using a separate -D
+**                                option to rename it.  This symbol will
+**                                be enabled automatically on windows
+**                                systems, and malloc_usable_size() will
+**                                be redefined to _msize(), unless the
+**                                SQLITE_WITHOUT_MSIZE macro is defined.
+**    
+**    SQLITE_WITHOUT_ZONEMALLOC   Some older macs lack support for the zone
+**                                memory allocator.  Set this symbol to enable
+**                                building on older macs.
+**
+**    SQLITE_WITHOUT_MSIZE        Set this symbol to disable the use of
+**                                _msize() on windows systems.  This might
+**                                be necessary when compiling for Delphi,
+**                                for example.
 */
 #include "sqliteInt.h"
 
@@ -27,17 +55,21 @@
 #ifdef SQLITE_SYSTEM_MALLOC
 
 /*
-** Windows systems have malloc_usable_size() but it is called _msize()
+** Windows systems have malloc_usable_size() but it is called _msize().
+** The use of _msize() is automatic, but can be disabled by compiling
+** with -DSQLITE_WITHOUT_MSIZE
 */
-#if !defined(HAVE_MALLOC_USABLE_SIZE) && SQLITE_OS_WIN
+#if !defined(HAVE_MALLOC_USABLE_SIZE) && SQLITE_OS_WIN \
+      && !defined(SQLITE_WITHOUT_MSIZE)
 # define HAVE_MALLOC_USABLE_SIZE 1
 # define malloc_usable_size _msize
 #endif
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) && !defined(SQLITE_WITHOUT_ZONEMALLOC)
 
 /*
-** Use the zone allocator available on apple products
+** Use the zone allocator available on apple products unless the
+** SQLITE_WITHOUT_ZONEMALLOC symbol is defined.
 */
 #include <sys/sysctl.h>
 #include <malloc/malloc.h>
@@ -52,7 +84,8 @@ static malloc_zone_t* _sqliteZone_;
 #else /* if not __APPLE__ */
 
 /*
-** Use standard C library malloc and free on non-Apple systems.
+** Use standard C library malloc and free on non-Apple systems.  
+** Also used by Apple systems if SQLITE_WITHOUT_ZONEMALLOC is defined.
 */
 #define SQLITE_MALLOC(x)    malloc(x)
 #define SQLITE_FREE(x)      free(x)
@@ -184,7 +217,7 @@ static int sqlite3MemRoundup(int n){
 ** Initialize this module.
 */
 static int sqlite3MemInit(void *NotUsed){
-#if defined(__APPLE__)
+#if defined(__APPLE__) && !defined(SQLITE_WITHOUT_ZONEMALLOC)
   int cpuCount;
   size_t len;
   if( _sqliteZone_ ){

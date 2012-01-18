@@ -1,5 +1,5 @@
-C Remove\sa\sredundant\sassignment\sfrom\sthe\sVM.
-D 2012-01-18T01:14:42.982
+C Add\sthe\sSQLITE_WITHOUT_MSIZE\sand\sSQLITE_WITHOUT_ZONEMALLOC\smacros\sin\smem1.c\nto\sdisable\sthe\suse\sof\s_msize()\son\swindows\sand\sthe\szone\smemory\sallocator\non\sApple\sproducts,\srespectively.
+D 2012-01-18T12:46:47.040
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -150,7 +150,7 @@ F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
 F src/main.c e60abee4a7ca3da31b67745ccf02b8d29f138614
 F src/malloc.c 15afac5e59b6584efe072e9933aefb4230e74f97
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
-F src/mem1.c 7998e7003a3047e323c849a26dda004debc04d03
+F src/mem1.c 3137fd0e24d55554028a0a07d01240dc506101ee
 F src/mem2.c e307323e86b5da1853d7111b68fd6b84ad6f09cf
 F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
 F src/mem5.c c2c63b7067570b00bf33d751c39af24182316f7f
@@ -987,7 +987,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 199edb6869977ccd7abf886af5cf9b344c857d1e
-R 8b52b1a8cfe111f7da7f61e6df78ea28
+P d0dabe2f37b5fa7c2c6bb728b8591af00cdd835b
+R 0cad542fee6809889fa727063bfca9db
 U drh
-Z f117d6ca2550ce95a5e0fc5cae8dc0b7
+Z cc476ae956a6554c8c6b5581c191930f
