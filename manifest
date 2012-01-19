@@ -1,5 +1,5 @@
-C Avoid\soverriding\sthe\smalloc_usable_size\ssymbol\susing\sthe\sC\spreprocessor\sas\nthis\smight\sbe\sconfusing\sthe\sbuild\son\ssome\ssystems.
-D 2012-01-18T18:22:44.221
+C Make\sthe\suse\sand\sfunction\sof\sSQLITE_DYNAMIC\sclearer.\s\sAdd\sassert()\sstatement\nto\shelp\sensure\sthat\sSQLITE_DYNAMIC\sis\snot\smisused.
+D 2012-01-19T16:57:16.202
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -184,7 +184,7 @@ F src/select.c 2d45c1b7894fda3ba6f36996cc9f0dcfd2072ef1
 F src/shell.c f492df9fc2de27e4700ecbaa948729fc47af88d7
 F src/sqlite.h.in 53516617d2945a411d028674d7fa20dd394b9ec0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h b2bceb669152129283e4b7d6f699e0788a7fb5ec
+F src/sqliteInt.h 60d36e72f08029bc637f8d62c1f88a5df5089c70
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 4568e72dfd36b6a5911f93457364deb072e0b03a
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -246,7 +246,7 @@ F src/vdbeInt.h ef9b8584b23b033894a0804dc6b90196c6779fb9
 F src/vdbeapi.c 3662b6a468a2a4605a15dfab313baa6dff81ad91
 F src/vdbeaux.c eb13a6917ed7455b5b49236fe5cfb3d3c3e4c57b
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
-F src/vdbemem.c 4f7d25d5ea2e2040254095b8f6de07f8dbbadf80
+F src/vdbemem.c 3c171040c28a95084fb5024ab731140a86fd5439
 F src/vdbesort.c 468d43c057063e54da4f1988b38b4f46d60e7790
 F src/vdbetrace.c d6e50e04e1ec498150e519058f617d91b8f5c843
 F src/vtab.c e9318d88feac85be8e27ee783ac8f5397933fc8a
@@ -987,7 +987,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 238e35a4411a5b2231576254dba39b802947d4f3
-R 2f9a38f200fa803aebab14874180ccba
+P bbaec351dd7784fd0af24b916110844176810f82
+R aa0aa0540224de8aa5787ea242d48be2
 U drh
-Z 16294f0096eebc0abb45ed8fd23fbf16
+Z 32d7eff19deb7325b14dd6d96fc6430e

@@ -561,9 +561,13 @@ struct BusyHandler {
 
 /*
 ** The following value as a destructor means to use sqlite3DbFree().
-** This is an internal extension to SQLITE_STATIC and SQLITE_TRANSIENT.
+** The sqlite3DbFree() routine requires two parameters instead of the 
+** one parameter that destructors normally want.  So we have to introduce 
+** this magic value that the code knows to handle differently.  Any 
+** pointer will work here as long as it is distinct from SQLITE_STATIC
+** and SQLITE_TRANSIENT.
 */
-#define SQLITE_DYNAMIC   ((sqlite3_destructor_type)sqlite3DbFree)
+#define SQLITE_DYNAMIC   ((sqlite3_destructor_type)sqlite3MallocSize)
 
 /*
 ** When SQLITE_OMIT_WSD is defined, it means that the target platform does

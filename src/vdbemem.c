@@ -92,6 +92,7 @@ int sqlite3VdbeMemGrow(Mem *pMem, int n, int preserve){
     memcpy(pMem->zMalloc, pMem->z, pMem->n);
   }
   if( pMem->flags&MEM_Dyn && pMem->xDel ){
+    assert( pMem->xDel!=SQLITE_DYNAMIC );
     pMem->xDel((void *)(pMem->z));
   }
 
@@ -271,6 +272,7 @@ void sqlite3VdbeMemReleaseExternal(Mem *p){
     sqlite3VdbeMemRelease(p);
   }else if( p->flags&MEM_Dyn && p->xDel ){
     assert( (p->flags&MEM_RowSet)==0 );
+    assert( p->xDel!=SQLITE_DYNAMIC );
     p->xDel((void *)p->z);
     p->xDel = 0;
   }else if( p->flags&MEM_RowSet ){
