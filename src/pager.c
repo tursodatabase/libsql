@@ -2485,7 +2485,7 @@ static int pager_truncate(Pager *pPager, Pgno nPage){
     if( rc==SQLITE_OK && currentSize!=newSize ){
       if( currentSize>newSize ){
         rc = sqlite3OsTruncate(pPager->fd, newSize);
-      }else{
+      }else if( (currentSize+szPage)<=newSize ){
         char *pTmp = pPager->pTmpSpace;
         memset(pTmp, 0, szPage);
         testcase( (newSize-szPage) <  currentSize );
@@ -3074,7 +3074,7 @@ static int pagerPagecount(Pager *pPager, Pgno *pnPage){
         return rc;
       }
     }
-    nPage = (Pgno)(n / pPager->pageSize);
+    nPage = (Pgno)((n+pPager->pageSize-1) / pPager->pageSize);
     if( nPage==0 && n>0 ){
       nPage = 1;
     }
@@ -3504,7 +3504,7 @@ int sqlite3PagerSetPagesize(Pager *pPager, u32 *pPageSize, int nReserve){
 
     if( rc==SQLITE_OK ){
       pager_reset(pPager);
-      pPager->dbSize = (Pgno)(nByte/pageSize);
+      pPager->dbSize = (Pgno)((nByte+pageSize-1)/pageSize);
       pPager->pageSize = pageSize;
       sqlite3PageFree(pPager->pTmpSpace);
       pPager->pTmpSpace = pNew;
