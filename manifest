@@ -1,5 +1,5 @@
-C Make\sthe\suse\sand\sfunction\sof\sSQLITE_DYNAMIC\sclearer.\s\sAdd\sassert()\sstatement\nto\shelp\sensure\sthat\sSQLITE_DYNAMIC\sis\snot\smisused.
-D 2012-01-19T16:57:16.202
+C Changes\sto\sthe\sasync-io\smodule\sso\sthat\sthe\sxFileControl\smethod\sreturns\sSQLITE_NOTFOUND\swhen\sa\sfile-control\sis\snot\srecognized\sand\sso\sthat\sit\sadds\sthe\ssecond\snul-terminator\sbyte\sto\sfilenames\spassed\sto\sthe\sxOpen\smethod\sof\sthe\sunderlying\sVFS.
+D 2012-01-24T10:08:26.737
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -31,7 +31,7 @@ F doc/pager-invariants.txt 870107036470d7c419e93768676fae2f8749cf9e
 F doc/vfs-shm.txt e101f27ea02a8387ce46a05be2b1a902a021d37a
 F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
 F ext/async/README.txt 0c541f418b14b415212264cbaaf51c924ec62e5b
-F ext/async/sqlite3async.c a7c6078c82c0bac3b7bea95bc52d5ce7ed58083a
+F ext/async/sqlite3async.c 733a9f21b1066f44ff07b9c0da973b1e483d1e0c
 F ext/async/sqlite3async.h a21e1252deb14a2c211f0e165c4b9122a8f1f344
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
@@ -987,7 +987,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P bbaec351dd7784fd0af24b916110844176810f82
-R aa0aa0540224de8aa5787ea242d48be2
-U drh
-Z 32d7eff19deb7325b14dd6d96fc6430e
+P ab80f2c3b2f1eea6e35989d3e9b6137b51091754
+R 3216920d2e27b11857b2b54fad4907a8
+U dan
+Z f6abf7311320f3c384ed2a6d12cef7c5
