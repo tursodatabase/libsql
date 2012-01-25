@@ -1,5 +1,5 @@
-C Fix\san\sFTS\sproblem\striggered\sby\squerying\sfor\san\sN\scharacter\sprefix\susing\san\sN+1\scharacter\sprefix\sindex\safter\srows\shave\sbeen\sdeleted\sfrom\sthe\sFTS\stable.
-D 2012-01-25T16:29:45.749
+C Only\sinvalidate\sthe\sschema\swhen\sthe\sOP_ParseSchema\sopcode\sfails,\snot\non\sany\sgeneral\sfailure\sof\sa\svdbe\sprogram.
+D 2012-01-25T20:43:22.828
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -240,11 +240,11 @@ F src/update.c d3076782c887c10e882996550345da9c4c9f9dea
 F src/utf.c 890c67dcfcc7a74623c95baac7535aadfe265e84
 F src/util.c 9e07bd67dfafe9c75b1da78c87ba030cebbb5388
 F src/vacuum.c 0c0ba2242355c6048d65e2b333abe0f7c06348fa
-F src/vdbe.c fc1b97fa6816bac5de2f631b7d4a9b8d8daf6c03
+F src/vdbe.c 595a240233b88960dd99380edf2fb7ec4317ee24
 F src/vdbe.h 18f581cac1f4339ec3299f3e0cc6e11aec654cdb
 F src/vdbeInt.h ef9b8584b23b033894a0804dc6b90196c6779fb9
 F src/vdbeapi.c 3662b6a468a2a4605a15dfab313baa6dff81ad91
-F src/vdbeaux.c eb13a6917ed7455b5b49236fe5cfb3d3c3e4c57b
+F src/vdbeaux.c e8cf7b251b93b9690f659deb8d95608f11139ff7
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c 3c171040c28a95084fb5024ab731140a86fd5439
 F src/vdbesort.c 468d43c057063e54da4f1988b38b4f46d60e7790
@@ -988,7 +988,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 7036886e83fccad32187668306ee2ae3f950dfce
-R 57813aba0c543953696b45a4603bd663
-U dan
-Z c267c1375aaf1973adf1dbf05cf88f8d
+P c05c3fd20d93f430140d762ead23bacd337ffb4d
+R 5aa59fe283a6d87f44afad865139b28c
+U drh
+Z 2035157af4127fd9885fd84104456171

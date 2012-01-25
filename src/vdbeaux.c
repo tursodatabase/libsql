@@ -2292,12 +2292,6 @@ int sqlite3VdbeHalt(Vdbe *p){
       }
       p->nChange = 0;
     }
-  
-    /* Rollback or commit any schema changes that occurred. */
-    if( p->rc!=SQLITE_OK && db->flags&SQLITE_InternChanges ){
-      sqlite3ResetInternalSchema(db, -1);
-      db->flags = (db->flags | SQLITE_InternChanges);
-    }
 
     /* Release the locks */
     sqlite3VdbeLeave(p);

@@ -4833,6 +4833,7 @@ case OP_ParseSchema: {
       db->init.busy = 0;
     }
   }
+  if( rc ) sqlite3ResetInternalSchema(db, -1);
   if( rc==SQLITE_NOMEM ){
     goto no_mem;
   }
