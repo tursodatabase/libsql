@@ -110,6 +110,7 @@ struct Fts3DeferredToken {
 */
 struct Fts3SegReader {
   int iIdx;                       /* Index within level, or 0x7FFFFFFF for PT */
+  int bLookup;                    /* True for a lookup only */
 
   sqlite3_int64 iStartBlock;      /* Rowid of first leaf block to traverse */
   sqlite3_int64 iLeafEndBlock;    /* Rowid of final leaf block to traverse */
@@ -1089,6 +1090,18 @@ static int fts3SegReaderRequire(Fts3SegReader *pReader, char *pFrom, int nByte){
 }
 
 /*
+** Set an Fts3SegReader cursor to point at EOF.
+*/
+static void fts3SegReaderSetEof(Fts3SegReader *pSeg){
+  if( !fts3SegReaderIsRootOnly(pSeg) ){
+    sqlite3_free(pSeg->aNode);
+    sqlite3_blob_close(pSeg->pBlob);
+    pSeg->pBlob = 0;
+  }
+  pSeg->aNode = 0;
+}
+
+/*
 ** Move the iterator passed as the first argument to the next term in the
 ** segment. If successful, SQLITE_OK is returned. If there is no next term,
 ** SQLITE_DONE. Otherwise, an SQLite error code.
@@ -1127,12 +1140,7 @@ static int fts3SegReaderNext(
       return SQLITE_OK;
     }
 
-    if( !fts3SegReaderIsRootOnly(pReader) ){
-      sqlite3_free(pReader->aNode);
-      sqlite3_blob_close(pReader->pBlob);
-      pReader->pBlob = 0;
-    }
-    pReader->aNode = 0;
+    fts3SegReaderSetEof(pReader);
 
     /* If iCurrentBlock>=iLeafEndBlock, this is an EOF condition. All leaf 
     ** blocks have already been traversed.  */
@@ -1379,6 +1387,7 @@ void sqlite3Fts3SegReaderFree(Fts3SegReader *pReader){
 */
 int sqlite3Fts3SegReaderNew(
   int iAge,                       /* Segment "age". */
+  int bLookup,                    /* True for a lookup only */
   sqlite3_int64 iStartLeaf,       /* First leaf to traverse */
   sqlite3_int64 iEndLeaf,         /* Final leaf to traverse */
   sqlite3_int64 iEndBlock,        /* Final block of segment */
@@ -1401,6 +1410,7 @@ int sqlite3Fts3SegReaderNew(
   }
   memset(pReader, 0, sizeof(Fts3SegReader));
   pReader->iIdx = iAge;
+  pReader->bLookup = bLookup;
   pReader->iStartBlock = iStartLeaf;
   pReader->iLeafEndBlock = iEndLeaf;
   pReader->iEndBlock = iEndBlock;
@@ -2403,11 +2413,16 @@ static int fts3SegReaderStart(
   ** b-tree leaf nodes contain more than one term.
   */
   for(i=0; pCsr->bRestart==0 && i<pCsr->nSegment; i++){
+    int res;
     Fts3SegReader *pSeg = pCsr->apSegment[i];
     do {
       int rc = fts3SegReaderNext(p, pSeg, 0);
       if( rc!=SQLITE_OK ) return rc;
-    }while( zTerm && fts3SegReaderTermCmp(pSeg, zTerm, nTerm)<0 );
+    }while( zTerm && (res = fts3SegReaderTermCmp(pSeg, zTerm, nTerm))<0 );
+
+    if( pSeg->bLookup && res!=0 ){
+      fts3SegReaderSetEof(pSeg);
+    }
   }
   fts3SegReaderSort(pCsr->apSegment, nSeg, nSeg, fts3SegReaderCmp);
 
@@ -2528,7 +2543,12 @@ int sqlite3Fts3SegReaderStep(
     ** forward. Then sort the list in order of current term again.  
     */
     for(i=0; i<pCsr->nAdvance; i++){
-      rc = fts3SegReaderNext(p, apSegment[i], 0);
+      Fts3SegReader *pSeg = apSegment[i];
+      if( pSeg->bLookup ){
+        fts3SegReaderSetEof(pSeg);
+      }else{
+        rc = fts3SegReaderNext(p, pSeg, 0);
+      }
       if( rc!=SQLITE_OK ) return rc;
     }
     fts3SegReaderSort(apSegment, nSegment, pCsr->nAdvance, fts3SegReaderCmp);
