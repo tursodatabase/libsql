@@ -1,5 +1,5 @@
-C Only\sinvalidate\sthe\sschema\swhen\sthe\sOP_ParseSchema\sopcode\sfails,\snot\non\sany\sgeneral\sfailure\sof\sa\svdbe\sprogram.
-D 2012-01-25T20:43:22.828
+C Add\ssupport\sfor\smultiple\srows\sof\sVALUES\sin\san\sINSERT\sstatement.
+D 2012-01-28T15:22:22.673
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -170,7 +170,7 @@ F src/os_unix.c 657672fab2580a84116c140b36ee3d6b6fc75b4e
 F src/os_win.c 5ac061ae1326a71500cee578ed0fd9113b4f6a37
 F src/pager.c 2d892f7b901a8867a33bc21742086165a3a99af8
 F src/pager.h a435da8421dc7844b7f9c7f37b636c160c50208a
-F src/parse.y fabb2e7047417d840e6fdb3ef0988a86849a08ba
+F src/parse.y 203ea3305abf7441ec55dde8714246fc87dff981
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h b1d8775a9bddf44e65edb0d20bfc57a4982f840f
 F src/pcache1.c 281822d22265245b19f908cb3f5df725f7e11b06
@@ -180,11 +180,11 @@ F src/printf.c 7ffb4ebb8b341f67e049695ba031da717b3d2699
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 3d3e80a98f203ac6b9329e9621e29eda85ddfd40
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
-F src/select.c 2d45c1b7894fda3ba6f36996cc9f0dcfd2072ef1
+F src/select.c 1ad267692ab09afe05092eddcb5aba96b796afe1
 F src/shell.c f492df9fc2de27e4700ecbaa948729fc47af88d7
 F src/sqlite.h.in 53516617d2945a411d028674d7fa20dd394b9ec0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h 60d36e72f08029bc637f8d62c1f88a5df5089c70
+F src/sqliteInt.h ee35c21bb13099df24b3675eabb0ff820213ed9d
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 4568e72dfd36b6a5911f93457364deb072e0b03a
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -526,7 +526,7 @@ F test/index4.test 2983216eb8c86ee62d9ed7cb206b5cc3331c0026
 F test/indexedby.test be501e381b82b2f8ab406309ba7aac46e221f4ad
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
-F test/insert.test aef273dd1cee84cc92407469e6bd1b3cdcb76908
+F test/insert.test d540650825c98d8082d32f786c611d70e1c21a80
 F test/insert2.test 4f3a04d168c728ed5ec2c88842e772606c7ce435
 F test/insert3.test 1b7db95a03ad9c5013fdf7d6722b6cd66ee55e30
 F test/insert4.test 87f6798f31d60c4e177622fcc3663367e6ecbd90
@@ -856,7 +856,7 @@ F test/trace2.test 962175290996d5f06dc4402ca218bbfc7df4cb20
 F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
 F test/trans2.test d5337e61de45e66b1fcbf9db833fa8c82e624b22
 F test/trans3.test d728abaa318ca364dc370e06576aa7e5fbed7e97
-F test/trigger1.test 38c657eaf9907344c9e0bcb16af94a452c6babde
+F test/trigger1.test 38524d80ac26c232d23ecec4b037eb60fb67eedd
 F test/trigger2.test 834187beafd1db383af0c659cfa49b0576832816
 F test/trigger3.test d2c60d8be271c355d61727411e753181e877230a
 F test/trigger4.test 74700b76ebf3947b2f7a92405141eb2cf2a5d359
@@ -988,7 +988,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P c05c3fd20d93f430140d762ead23bacd337ffb4d
-R 5aa59fe283a6d87f44afad865139b28c
+P 11f68d997da4aadf3f51c12c5139f3fdda8678bf
+R c77c00103abe24fe57aac8dfef87e492
 U drh
-Z 2035157af4127fd9885fd84104456171
+Z 48c6e58778740de0aff3a3cb036591d9

@@ -2090,6 +2090,7 @@ struct Select {
 #define SF_Expanded        0x10  /* sqlite3SelectExpand() called on this */
 #define SF_HasTypeInfo     0x20  /* FROM subqueries have Table metadata */
 #define SF_UseSorter       0x40  /* Sort using a sorter */
+#define SF_Values          0x80  /* Synthesized from VALUES clause */
 
 
 /*

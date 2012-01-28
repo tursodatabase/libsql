@@ -94,6 +94,14 @@ struct TrigEvent { int a; IdList * b; };
 */
 struct AttachKey { int type;  Token key; };
 
+/*
+** One or more VALUES claues
+*/
+struct ValueList {
+  ExprList *pList;
+  Select *pSelect;
+};
+
 } // end %include
 
 // Input is a single SQL command
@@ -679,9 +687,8 @@ setlist(A) ::= nm(X) EQ expr(Y). {
 
 ////////////////////////// The INSERT command /////////////////////////////////
 //
-cmd ::= insert_cmd(R) INTO fullname(X) inscollist_opt(F) 
-        VALUES LP itemlist(Y) RP.
-            {sqlite3Insert(pParse, X, Y, 0, F, R);}
+cmd ::= insert_cmd(R) INTO fullname(X) inscollist_opt(F) valuelist(Y).
+            {sqlite3Insert(pParse, X, Y.pList, Y.pSelect, F, R);}
 cmd ::= insert_cmd(R) INTO fullname(X) inscollist_opt(F) select(S).
             {sqlite3Insert(pParse, X, 0, S, F, R);}
 cmd ::= insert_cmd(R) INTO fullname(X) inscollist_opt(F) DEFAULT VALUES.
@@ -691,14 +698,41 @@ cmd ::= insert_cmd(R) INTO fullname(X) inscollist_opt(F) DEFAULT VALUES.
 insert_cmd(A) ::= INSERT orconf(R).   {A = R;}
 insert_cmd(A) ::= REPLACE.            {A = OE_Replace;}
 
-
-%type itemlist {ExprList*}
-%destructor itemlist {sqlite3ExprListDelete(pParse->db, $$);}
-
-itemlist(A) ::= itemlist(X) COMMA expr(Y).
-    {A = sqlite3ExprListAppend(pParse,X,Y.pExpr);}
-itemlist(A) ::= expr(X).
-    {A = sqlite3ExprListAppend(pParse,0,X.pExpr);}
+// A ValueList is either a single VALUES clause or a comma-separated list
+// of VALUES clauses.  If it is a single VALUES clause then the
+// ValueList.pList field points to the expression list of that clause.
+// If it is a list of VALUES clauses, then those clauses are transformed
+// into a set of SELECT statements without FROM clauses and connected by
+// UNION ALL and the ValueList.pSelect points to the right-most SELECT in
+// that compound.
+%type valuelist {struct ValueList}
+%destructor valuelist {
+  sqlite3ExprListDelete(pParse->db, $$.pList);
+  sqlite3SelectDelete(pParse->db, $$.pSelect);
+}
+valuelist(A) ::= VALUES LP nexprlist(X) RP. {
+  A.pList = X;
+  A.pSelect = 0;
+}
+valuelist(A) ::= valuelist(X) COMMA LP exprlist(Y) RP. {
+  Select *pRight = sqlite3SelectNew(pParse, Y, 0, 0, 0, 0, 0, 0, 0, 0);
+  if( X.pList ){
+    X.pSelect = sqlite3SelectNew(pParse, X.pList, 0, 0, 0, 0, 0, 0, 0, 0);
+    X.pList = 0;
+  }
+  A.pList = 0;
+  if( X.pSelect==0 || pRight==0 ){
+    sqlite3SelectDelete(pParse->db, pRight);
+    sqlite3SelectDelete(pParse->db, X.pSelect);
+    A.pSelect = 0;
+  }else{
+    pRight->op = TK_ALL;
+    pRight->pPrior = X.pSelect;
+    pRight->selFlags |= SF_Values;
+    pRight->pPrior->selFlags |= SF_Values;
+    A.pSelect = pRight;
+  }
+}
 
 %type inscollist_opt {IdList*}
 %destructor inscollist_opt {sqlite3IdListDelete(pParse->db, $$);}
@@ -1261,8 +1295,8 @@ trigger_cmd(A) ::=
 
 // INSERT
 trigger_cmd(A) ::=
-   insert_cmd(R) INTO trnm(X) inscollist_opt(F) VALUES LP itemlist(Y) RP.  
-   {A = sqlite3TriggerInsertStep(pParse->db, &X, F, Y, 0, R);}
+   insert_cmd(R) INTO trnm(X) inscollist_opt(F) valuelist(Y).
+   {A = sqlite3TriggerInsertStep(pParse->db, &X, F, Y.pList, Y.pSelect, R);}
 
 trigger_cmd(A) ::= insert_cmd(R) INTO trnm(X) inscollist_opt(F) select(S).
                {A = sqlite3TriggerInsertStep(pParse->db, &X, F, 0, S, R);}
