@@ -1390,8 +1390,9 @@ kwcolumn_opt ::= COLUMNKW.
 %ifndef SQLITE_OMIT_VIRTUALTABLE
 cmd ::= create_vtab.                       {sqlite3VtabFinishParse(pParse,0);}
 cmd ::= create_vtab LP vtabarglist RP(X).  {sqlite3VtabFinishParse(pParse,&X);}
-create_vtab ::= createkw VIRTUAL TABLE nm(X) dbnm(Y) USING nm(Z). {
-    sqlite3VtabBeginParse(pParse, &X, &Y, &Z);
+create_vtab ::= createkw VIRTUAL TABLE ifnotexists(E)
+                nm(X) dbnm(Y) USING nm(Z). {
+    sqlite3VtabBeginParse(pParse, &X, &Y, &Z, E);
 }
 vtabarglist ::= vtabarg.
 vtabarglist ::= vtabarglist COMMA vtabarg.

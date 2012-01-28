@@ -3127,7 +3127,7 @@ void sqlite3AutoLoadExtensions(sqlite3*);
 #  define sqlite3VtabInSync(db) ((db)->nVTrans>0 && (db)->aVTrans==0)
 #endif
 void sqlite3VtabMakeWritable(Parse*,Table*);
-void sqlite3VtabBeginParse(Parse*, Token*, Token*, Token*);
+void sqlite3VtabBeginParse(Parse*, Token*, Token*, Token*, int);
 void sqlite3VtabFinishParse(Parse*, Token*);
 void sqlite3VtabArgInit(Parse*);
 void sqlite3VtabArgExtend(Parse*, Token*);
