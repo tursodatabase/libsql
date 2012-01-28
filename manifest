@@ -1,5 +1,5 @@
-C Remove\sa\scouple\sof\sunnecessary\snonterminals\sfrom\sthe\sgrammar.
-D 2012-01-28T19:44:22.866
+C Update\sthe\s.dump\scommand\sof\sthe\scommand-line\sshell\sso\sthat\sit\s(1)\savoids\nputting\sthe\ssemicolon\sof\sa\sDDL\sstatement\son\sthe\ssame\sline\sas\sa\scomment,\n(2)\savoids\slong\sexpression,\seven\swhen\sdumping\sa\stable\swith\smany\scolumns,\sand\n(3)\savoids\sunnecessary\squoting\sof\sthe\stable\sname.\s\sThis\sfixes\stickets\n[c04a8b8a4f]\sand\s[232637c465].\s\s\nShell\schange\sonly;\sno\schanges\sto\sthe\sSQLite\score.
+D 2012-01-28T21:08:51.203
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -181,7 +181,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 3d3e80a98f203ac6b9329e9621e29eda85ddfd40
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 1ad267692ab09afe05092eddcb5aba96b796afe1
-F src/shell.c f492df9fc2de27e4700ecbaa948729fc47af88d7
+F src/shell.c 60d147c2411dd2d79a5151cfb9a068de87c7babe
 F src/sqlite.h.in 53516617d2945a411d028674d7fa20dd394b9ec0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h 005e7da944fdb8c2b7883ebb345caf3835c1e162
@@ -988,7 +988,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 230983e86a897caa91a487ef2d4c1c7fb7c79f10
-R b7872693d49b83267a43c45a2cca2f46
+P 2b2a7d8d736d1e72f847f443b9957e41da6149c9
+R 5a7483ac490fc4e2695fc3318a7874ef
 U drh
-Z ab25b505b5ce6d1df5ddeff0b153564c
+Z e85ab90d7cc64a88d5a03e912d2818dd
