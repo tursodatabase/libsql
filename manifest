@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sIF\sNOT\sEXISTS\son\sCREATE\sVIRTUAL\sTABLE.
-D 2012-01-28T19:41:53.964
+C Remove\sa\scouple\sof\sunnecessary\snonterminals\sfrom\sthe\sgrammar.
+D 2012-01-28T19:44:22.866
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -170,7 +170,7 @@ F src/os_unix.c 657672fab2580a84116c140b36ee3d6b6fc75b4e
 F src/os_win.c 5ac061ae1326a71500cee578ed0fd9113b4f6a37
 F src/pager.c 2d892f7b901a8867a33bc21742086165a3a99af8
 F src/pager.h a435da8421dc7844b7f9c7f37b636c160c50208a
-F src/parse.y fcda1cc4bcb6152759285a1da0c76db40def8650
+F src/parse.y f36fb379d4f82be77fab088ae280b86ed524016c
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h b1d8775a9bddf44e65edb0d20bfc57a4982f840f
 F src/pcache1.c 281822d22265245b19f908cb3f5df725f7e11b06
@@ -988,7 +988,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 6f9b265dd099928208022f4006c93173a3c0b1c8
-R 56430bb5efcddc94e7a06c2adc4c5844
+P 230983e86a897caa91a487ef2d4c1c7fb7c79f10
+R b7872693d49b83267a43c45a2cca2f46
 U drh
-Z fff0b31769982710fff0c154a3894bb9
+Z ab25b505b5ce6d1df5ddeff0b153564c

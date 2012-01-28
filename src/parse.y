@@ -581,20 +581,17 @@ using_opt(U) ::= .                        {U = 0;}
 %destructor orderby_opt {sqlite3ExprListDelete(pParse->db, $$);}
 %type sortlist {ExprList*}
 %destructor sortlist {sqlite3ExprListDelete(pParse->db, $$);}
-%type sortitem {Expr*}
-%destructor sortitem {sqlite3ExprDelete(pParse->db, $$);}
 
 orderby_opt(A) ::= .                          {A = 0;}
 orderby_opt(A) ::= ORDER BY sortlist(X).      {A = X;}
-sortlist(A) ::= sortlist(X) COMMA sortitem(Y) sortorder(Z). {
-  A = sqlite3ExprListAppend(pParse,X,Y);
+sortlist(A) ::= sortlist(X) COMMA expr(Y) sortorder(Z). {
+  A = sqlite3ExprListAppend(pParse,X,Y.pExpr);
   if( A ) A->a[A->nExpr-1].sortOrder = (u8)Z;
 }
-sortlist(A) ::= sortitem(Y) sortorder(Z). {
-  A = sqlite3ExprListAppend(pParse,0,Y);
+sortlist(A) ::= expr(Y) sortorder(Z). {
+  A = sqlite3ExprListAppend(pParse,0,Y.pExpr);
   if( A && ALWAYS(A->a) ) A->a[0].sortOrder = (u8)Z;
 }
-sortitem(A) ::= expr(X).   {A = X.pExpr;}
 
 %type sortorder {int}
 
@@ -1197,11 +1194,10 @@ nmnum(A) ::= ON(X).                   {A = X;}
 nmnum(A) ::= DELETE(X).               {A = X;}
 nmnum(A) ::= DEFAULT(X).              {A = X;}
 %endif SQLITE_OMIT_PRAGMA
-plus_num(A) ::= plus_opt number(X).   {A = X;}
+plus_num(A) ::= PLUS number(X).       {A = X;}
+plus_num(A) ::= number(X).            {A = X;}
 minus_num(A) ::= MINUS number(X).     {A = X;}
 number(A) ::= INTEGER|FLOAT(X).       {A = X;}
-plus_opt ::= PLUS.
-plus_opt ::= .
 
 //////////////////////////// The CREATE TRIGGER command /////////////////////
 
