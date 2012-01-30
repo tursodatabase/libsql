@@ -1,5 +1,5 @@
-C Fix\scompiler\swarnings\sin\sthe\sTCL\stest\sharness.
-D 2012-01-30T18:00:31.259
+C Bring\sthe\sdocumentation\sand\simplementation\sof\ssqlite3_uri_boolean()\sinto\ncloser\sagreement.\s\sTicket\s[5f41597f7c9c]
+D 2012-01-30T18:40:55.907
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,7 +174,7 @@ F src/parse.y f36fb379d4f82be77fab088ae280b86ed524016c
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h b1d8775a9bddf44e65edb0d20bfc57a4982f840f
 F src/pcache1.c 281822d22265245b19f908cb3f5df725f7e11b06
-F src/pragma.c dbad8484b9e7d53c70c94b583f968eec9ee2ed78
+F src/pragma.c 8bf0fa74693484c58145f5c3e5acb3c16d125bbd
 F src/prepare.c ec4989f7f480544bdc4192fe663470d2a2d7d61e
 F src/printf.c 7ffb4ebb8b341f67e049695ba031da717b3d2699
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -182,7 +182,7 @@ F src/resolve.c 3d3e80a98f203ac6b9329e9621e29eda85ddfd40
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 1ad267692ab09afe05092eddcb5aba96b796afe1
 F src/shell.c 60d147c2411dd2d79a5151cfb9a068de87c7babe
-F src/sqlite.h.in 53516617d2945a411d028674d7fa20dd394b9ec0
+F src/sqlite.h.in 361f4289058abe004b37cc73d2b36a9931d980de
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h 005e7da944fdb8c2b7883ebb345caf3835c1e162
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -988,7 +988,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 1ce4d21d521c383f2607222006023b6812f147bc
-R 03f205afb499badd0c2c766b7232c0b6
+P c4cd38a0c71e2887e47bebb9d10baf30802a7f13
+R 7fde8eeb62a376509f20b27581447259
 U drh
-Z ef414c8f001fae266f6628345ee16ba4
+Z 860f94630072bb7ebd7ed81a707a450e

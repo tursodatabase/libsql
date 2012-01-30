@@ -16,14 +16,15 @@
 /*
 ** Interpret the given string as a safety level.  Return 0 for OFF,
 ** 1 for ON or NORMAL and 2 for FULL.  Return 1 for an empty or 
-** unrecognized string argument.
+** unrecognized string argument.  The FULL option is disallowed
+** if the omitFull parameter it 1.
 **
 ** Note that the values returned are one less that the values that
 ** should be passed into sqlite3BtreeSetSafetyLevel().  The is done
 ** to support legacy SQL code.  The safety level used to be boolean
 ** and older scripts may have used numbers 0 for OFF and 1 for ON.
 */
-static u8 getSafetyLevel(const char *z){
+static u8 getSafetyLevel(const char *z, int omitFull, int dflt){
                              /* 123456789 123456789 */
   static const char zText[] = "onoffalseyestruefull";
   static const u8 iOffset[] = {0, 1, 2, 4, 9, 12, 16};
@@ -34,19 +35,19 @@ static u8 getSafetyLevel(const char *z){
     return (u8)sqlite3Atoi(z);
   }
   n = sqlite3Strlen30(z);
-  for(i=0; i<ArraySize(iLength); i++){
+  for(i=0; i<ArraySize(iLength)-omitFull; i++){
     if( iLength[i]==n && sqlite3StrNICmp(&zText[iOffset[i]],z,n)==0 ){
       return iValue[i];
     }
   }
-  return 1;
+  return dflt;
 }
 
 /*
 ** Interpret the given string as a boolean value.
 */
 u8 sqlite3GetBoolean(const char *z){
-  return getSafetyLevel(z)&1;
+  return getSafetyLevel(z,1,0)!=0;
 }
 
 /* The sqlite3GetBoolean() function is used by other modules but the
@@ -841,7 +842,7 @@ void sqlite3Pragma(
         sqlite3ErrorMsg(pParse, 
             "Safety level may not be changed inside a transaction");
       }else{
-        pDb->safety_level = getSafetyLevel(zRight)+1;
+        pDb->safety_level = getSafetyLevel(zRight,0,1)+1;
       }
     }
   }else
