@@ -1,5 +1,5 @@
-C Cherrypick\sthe\sFTS\sfix\sin\s[c05c3fd0d]\sinto\sthe\snx-devkit\sbranch.\nTicket\s[edb497982c].
-D 2012-01-25T22:08:39.361
+C Do\snot\srely\son\sthe\s_WIN32_WINNT\smacro\sas\svs2005\sdoes\snot\sdefine\sit\sby\sdefault.\nInstead,\salways\sassume\swinNT\sunless\sthe\smakefile\sexplicitly\ssets\nSQLITE_OS_WINNT=0.
+D 2012-01-30T16:13:51.395
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,11 +163,11 @@ F src/mutex_unix.c b4f4e923bb8de93ec3f251fadb50855f23df9579
 F src/mutex_w32.c 5e54f3ba275bcb5d00248b8c23107df2e2f73e33
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c 28bbdab2170dfce84d86c45456a18eab1d0f99a9
-F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
+F src/os.h 3ee45fed34d174eabdafe27c659428a8a1ff973d
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c baad28b27adc563579170b6d765af0b0cc1d98c8
-F src/os_win.c 823f55855ceb062d72231409b828d0486f09125f
+F src/os_win.c f954207e8ce20b2b587c44404334aa92ae905961
 F src/pager.c afadbdf1563265756c3d09f2f77f541d6a1cfa73
 F src/pager.h 5cd760857707529b403837d813d86b68938d6183
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -980,7 +980,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P d7374568cbce156523f5a6930e473ba2653c758b
-R 235ae68a6e817a9f425469722e7042e9
+P 2a7170f03c746473aca38ddc4b4a4091fe8331eb
+R 7771b0501bb9a724c8846121d659b1dd
 U drh
-Z d7c6711940800f4ff3b02d671602e1e0
+Z 922c1cdd3a1ee3105226ea9e60bd0622
