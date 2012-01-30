@@ -273,7 +273,6 @@ static int sqlthread_open(
 
   const char *zFilename;
   sqlite3 *db;
-  int rc;
   char zBuf[100];
   extern void Md5_Register(sqlite3*);
 
@@ -281,11 +280,12 @@ static int sqlthread_open(
   UNUSED_PARAMETER(objc);
 
   zFilename = Tcl_GetString(objv[2]);
-  rc = sqlite3_open(zFilename, &db);
+  sqlite3_open(zFilename, &db);
 #ifdef SQLITE_HAS_CODEC
   if( db && objc>=4 ){
     const char *zKey;
     int nKey;
+    int rc;
     zKey = Tcl_GetStringFromObj(objv[3], &nKey);
     rc = sqlite3_key(db, zKey, nKey);
     if( rc!=SQLITE_OK ){

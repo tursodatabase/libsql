@@ -1,5 +1,5 @@
-C Do\snot\srely\son\sthe\s_WIN32_WINNT\smacro\sas\svs2005\sdoes\snot\sdefine\sit\sby\sdefault.\nInstead,\salways\sassume\swinNT\sunless\sthe\smakefile\sexplicitly\ssets\nSQLITE_OS_WINNT=0.
-D 2012-01-30T16:02:43.227
+C Fix\scompiler\swarnings\sin\sthe\sTCL\stest\sharness.
+D 2012-01-30T18:00:31.259
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -189,11 +189,11 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 4568e72dfd36b6a5911f93457364deb072e0b03a
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 2aeb69958965dad0842d5ea1456f1a958ef296e6
-F src/test1.c 1b1e514e85ffe7152b02cba38bd0a1ce8cd56113
+F src/test1.c 328cbe4a4ee6d10d67ece2a7adaa2770569fae0f
 F src/test2.c 711555927f1f7e8db9aab86b512bc6934a774abe
 F src/test3.c 91d3f1a09cfae3533ef17d8b484a160f3d1f1a21
 F src/test4.c d1e5a5e904d4b444cf572391fdcb017638e36ff7
-F src/test5.c e1a19845625144caf038031234a12185e40d315c
+F src/test5.c a6d1ac55ac054d0b2b8f37b5e655b6c92645a013
 F src/test6.c cf6ab27a59e1ab64b011bb251ba600131e803e59
 F src/test7.c 2e0781754905c8adc3268d8f0967e7633af58843
 F src/test8.c 99f70341d6ec480313775127f4cd14b4a47db557
@@ -213,7 +213,7 @@ F src/test_intarray.c d879bbf8e4ce085ab966d1f3c896a7c8b4f5fc99
 F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c a6a6baf343f79b942331f13378d045e7e270ae64
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
-F src/test_malloc.c 8d416f29ad8573f32601f6056c9d2b17472e9ad5
+F src/test_malloc.c cfe25d74333892ababde61196821a889b4756dee
 F src/test_multiplex.c afab2c9d292677ab31e0dd4b3dde2420fb655c5f
 F src/test_multiplex.h e99c571bc4968b7a9363b661481f3934bfead61d
 F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
@@ -229,7 +229,7 @@ F src/test_stat.c 80271ad7d776a79babe0e025bb3a1bfcd3a3cfb1
 F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c a992d8c80ea91fbf21fb2dd570db40e77dd7e6ae
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
-F src/test_thread.c 35022393dd54d147b998b6b7f7e945b01114d666
+F src/test_thread.c e286f2173563f2a1747c24bcda6b9d030bf4f4e4
 F src/test_vfs.c 07157a0bbfe161cb5e32cad2079abd26cd611c4b
 F src/test_vfstrace.c 065c7270a614254b2c68fbc7ba8d1fb1d5cbc823
 F src/test_wholenumber.c 6129adfbe7c7444f2e60cc785927f3aa74e12290
@@ -988,7 +988,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P e6eea8d50d6c307e3e34891758ed4912d368580b
-R d41d0e596905eec4813377a891733df0
+P 1ce4d21d521c383f2607222006023b6812f147bc
+R 03f205afb499badd0c2c766b7232c0b6
 U drh
-Z b751da7b0de6a1a7fd7886b082350257
+Z ef414c8f001fae266f6628345ee16ba4
