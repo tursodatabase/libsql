@@ -2412,7 +2412,7 @@ static int fts3SegReaderStart(
   ** b-tree leaf nodes contain more than one term.
   */
   for(i=0; pCsr->bRestart==0 && i<pCsr->nSegment; i++){
-    int res;
+    int res = 0;
     Fts3SegReader *pSeg = pCsr->apSegment[i];
     do {
       int rc = fts3SegReaderNext(p, pSeg, 0);

@@ -1,5 +1,5 @@
-C Futher\spedantic\sfixes\sto\sthe\ssqlite3_uri_boolean()\sinterface.
-D 2012-01-31T14:24:47.785
+C Fix\sa\scompiler\swarning\sin\sFTS4.
+D 2012-01-31T23:34:21.644
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/fts3_test.c 24fa13f330db011500acb95590da9eee24951894
 F ext/fts3/fts3_tokenizer.c 9ff7ec66ae3c5c0340fa081958e64f395c71a106
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 0dde8f307b8045565cf63797ba9acfaff1c50c68
-F ext/fts3/fts3_write.c 632fe0afc51a4755efb414cb0cc8cc757b9ffa18
+F ext/fts3/fts3_write.c 1721187a4dec29ef9ae648ad8478da741085af18
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
@@ -988,7 +988,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P b0a161791d66a40cea81dfc22f1cd2e9dfd067d0
-R 61b2dec58d0893ae3241f54ec4ca5e7e
+P 77b3430de69e23ba3feda3d618fe4880dd465023
+R f191bfcd96411e48ec1851acb8f72808
 U drh
-Z e6cd8d4dcd26dc228279b82a2bd49f29
+Z d40d7528f0b76b3cca9b28e4b7a22e35
