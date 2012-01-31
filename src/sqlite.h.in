@@ -2638,10 +2638,15 @@ int sqlite3_open_v2(
 ** a pointer to an empty string.
 **
 ** The sqlite3_uri_boolean(F,P,B) routine assumes that P is a boolean
-** parameter and returns true (non-zero) or false (0) according to the value
-** of P.  The value of P is true if it is "yes" or "true" or "on"
-** or if value of P begins with a non-zero number. If P is not a query
-** parameter on F then sqlite3_uri_boolean(F,P,B) returns (B!=0).
+** parameter and returns true (1) or false (0) according to the value
+** of P.  The sqlite3_uri_boolean(F,P,B) routine returns true (1) if the
+** value of query parameter P is one of "yes", "true", or "on" in any
+** case or if the value begins with a non-zero number.  The 
+** sqlite3_uri_boolean(F,P,B) routines returns false (0) if the value of
+** query parameter P is one of "no", "false", or "off" in any case or
+** if the value begins with a numeric zero.  If P is not a query
+** parameter on F or if the value of P is does not match any of the
+** above, then sqlite3_uri_boolean(F,P,B) returns (B!=0).
 **
 ** The sqlite3_uri_int64(F,P,D) routine converts the value of P into a
 ** 64-bit signed integer and returns that integer, or D if P does not
