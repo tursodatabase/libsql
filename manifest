@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\sdocumentation\sfor\ssqlite3_uri_boolean().
-D 2012-01-31T13:35:29.876
+C Futher\spedantic\sfixes\sto\sthe\ssqlite3_uri_boolean()\sinterface.
+D 2012-01-31T14:24:47.785
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -147,7 +147,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
 F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
-F src/main.c e60abee4a7ca3da31b67745ccf02b8d29f138614
+F src/main.c cb099cc4864b542f97938049fc74ea8ae6845ce4
 F src/malloc.c 15afac5e59b6584efe072e9933aefb4230e74f97
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 7e698fe3368c661e98a25dca9a20933bcb61e228
@@ -174,7 +174,7 @@ F src/parse.y f36fb379d4f82be77fab088ae280b86ed524016c
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h b1d8775a9bddf44e65edb0d20bfc57a4982f840f
 F src/pcache1.c 281822d22265245b19f908cb3f5df725f7e11b06
-F src/pragma.c 8bf0fa74693484c58145f5c3e5acb3c16d125bbd
+F src/pragma.c 350f59843f4ec4fca5dc63d497caf6433096bbdd
 F src/prepare.c ec4989f7f480544bdc4192fe663470d2a2d7d61e
 F src/printf.c 7ffb4ebb8b341f67e049695ba031da717b3d2699
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -184,7 +184,7 @@ F src/select.c 1ad267692ab09afe05092eddcb5aba96b796afe1
 F src/shell.c 60d147c2411dd2d79a5151cfb9a068de87c7babe
 F src/sqlite.h.in 371c30e4be94b9b0ea6400ed66663fcf8e891eb4
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h 005e7da944fdb8c2b7883ebb345caf3835c1e162
+F src/sqliteInt.h f388afe0c10584da55dd8978657fc218672bcb80
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 4568e72dfd36b6a5911f93457364deb072e0b03a
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -988,7 +988,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 313546b4566095aedccdaa27037036129b64d438
-R bf8c4343da628e7fc8856dda7f2f57a6
+P b0a161791d66a40cea81dfc22f1cd2e9dfd067d0
+R 61b2dec58d0893ae3241f54ec4ca5e7e
 U drh
-Z 5558e8f047916c20c70a621acc455417
+Z e6cd8d4dcd26dc228279b82a2bd49f29
