@@ -1,5 +1,5 @@
-C Fix\sALTER\sTABLE\sRENAME\sso\sthat\sit\scorrectly\shandles\striggers\sthat\sattach\nto\sthe\stable\susing\sthe\sname\sin\sa\sdifferent\scase.\nTicket\s[ae6794effd404].
-D 2012-02-01T01:13:10.326
+C Very\ssmall\sperformance\senhancement\sand\sreduction\sin\ssize\sof\sthe\ssqlite3_stmt\nobject.
+D 2012-02-01T19:03:38.503
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -242,9 +242,9 @@ F src/util.c 9e07bd67dfafe9c75b1da78c87ba030cebbb5388
 F src/vacuum.c 0c0ba2242355c6048d65e2b333abe0f7c06348fa
 F src/vdbe.c 595a240233b88960dd99380edf2fb7ec4317ee24
 F src/vdbe.h 18f581cac1f4339ec3299f3e0cc6e11aec654cdb
-F src/vdbeInt.h ef9b8584b23b033894a0804dc6b90196c6779fb9
+F src/vdbeInt.h 2e79ce66ff45a01411151957bb2899af680f1560
 F src/vdbeapi.c 3662b6a468a2a4605a15dfab313baa6dff81ad91
-F src/vdbeaux.c e8cf7b251b93b9690f659deb8d95608f11139ff7
+F src/vdbeaux.c 7683d772ad638faa4567142438c4594e47f173c4
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c 3c171040c28a95084fb5024ab731140a86fd5439
 F src/vdbesort.c 468d43c057063e54da4f1988b38b4f46d60e7790
@@ -988,7 +988,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P b4cad1ce78e6bb967c472bec5c562a24b4dfebaf
-R 985da4bec838dd9714f76d205f005a81
+P 0d78ebb8e41ba08b446b44694d9433e1e90e0a7e
+R 64a40856f24d267fa939185d6a829659
 U drh
-Z d4276c032755148e50e45d9812e19271
+Z 4b158c38a343d7d874c1c1063287a2d3
