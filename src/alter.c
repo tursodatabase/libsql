@@ -530,7 +530,7 @@ void sqlite3AlterRenameTable(
             "WHEN name LIKE 'sqlite_autoindex%%' AND type='index' THEN "
              "'sqlite_autoindex_' || %Q || substr(name,%d+18) "
             "ELSE name END "
-      "WHERE tbl_name=%Q AND "
+      "WHERE tbl_name=%Q COLLATE nocase AND "
           "(type='table' OR type='index' OR type='trigger');", 
       zDb, SCHEMA_TABLE(iDb), zName, zName, zName, 
 #ifndef SQLITE_OMIT_TRIGGER

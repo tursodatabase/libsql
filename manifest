@@ -1,5 +1,5 @@
-C Fix\sa\scompiler\swarning\sin\sFTS4.
-D 2012-01-31T23:34:21.644
+C Fix\sALTER\sTABLE\sRENAME\sso\sthat\sit\scorrectly\shandles\striggers\sthat\sattach\nto\sthe\stable\susing\sthe\sname\sin\sa\sdifferent\scase.\nTicket\s[ae6794effd404].
+D 2012-02-01T01:13:10.326
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -118,7 +118,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
-F src/alter.c ac80a0f31189f8b4a524ebf661e47e84536ee7f5
+F src/alter.c 149cc80d9257971b0bff34e58fb2263e01998289
 F src/analyze.c f32ff304da413851eefa562b04e61ff6cb88248b
 F src/attach.c 12c6957996908edc31c96d7c68d4942c2474405f
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
@@ -258,7 +258,7 @@ F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 52fc8dee494092031a556911d404ca30a749a30b
-F test/alter.test 66f5818f9848c4f22de022a345fae25bcd30f8fb
+F test/alter.test 57d96ec9b320bd07af77567034488dcb6642c748
 F test/alter2.test 7ea05c7d92ac99349a802ef7ada17294dd647060
 F test/alter3.test 49c9d9fba2b8fcdce2dedeca97bbf1f369cc548d
 F test/alter4.test b2debc14d8cbe4c1d12ccd6a41eef88a8c1f15d5
@@ -838,7 +838,7 @@ F test/tkt3793.test d90ffd75c52413908d15e1c44fc2ea9c80fcc449
 F test/tkt3810.test 90fa0635dfa7da9680c8cd3513350a49b3a8ae12
 F test/tkt3824.test 150aa00bb6220672e5f0eb14dc8eaa36750425f0
 F test/tkt3832.test 2300d10d57562b89875b72148338ac3e14f8847d
-F test/tkt3838.test d8490365a1c473d214f7878007e543410cbb715f
+F test/tkt3838.test 292e72489101cd1320d7278dc111c173ebf334d4
 F test/tkt3841.test 4659845bc53f809a5932c61c6ce8c5bb9d6b947f
 F test/tkt3871.test 43ecbc8d90dc83908e2a454aef345acc9d160c6f
 F test/tkt3879.test 2ad5bef2c87e9991ce941e054c31abe26ef7fb90
@@ -988,7 +988,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 77b3430de69e23ba3feda3d618fe4880dd465023
-R f191bfcd96411e48ec1851acb8f72808
+P b4cad1ce78e6bb967c472bec5c562a24b4dfebaf
+R 985da4bec838dd9714f76d205f005a81
 U drh
-Z d40d7528f0b76b3cca9b28e4b7a22e35
+Z d4276c032755148e50e45d9812e19271
