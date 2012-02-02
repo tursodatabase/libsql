@@ -926,12 +926,15 @@ IdList *sqlite3IdListDup(sqlite3 *db, IdList *p){
   if( p==0 ) return 0;
   pNew = sqlite3DbMallocRaw(db, sizeof(*pNew) );
   if( pNew==0 ) return 0;
-  pNew->nId = pNew->nAlloc = p->nId;
+  pNew->nId = p->nId;
   pNew->a = sqlite3DbMallocRaw(db, p->nId*sizeof(p->a[0]) );
   if( pNew->a==0 ){
     sqlite3DbFree(db, pNew);
     return 0;
   }
+  /* Note that because the size of the allocation for p->a[] is not
+  ** necessarily a power of two, sqlite3IdListAppend() may not be called
+  ** on the duplicate created by this function. */
   for(i=0; i<p->nId; i++){
     struct IdList_item *pNewItem = &pNew->a[i];
     struct IdList_item *pOldItem = &p->a[i];
@@ -3774,9 +3777,7 @@ static int addAggInfoColumn(sqlite3 *db, AggInfo *pInfo){
        db,
        pInfo->aCol,
        sizeof(pInfo->aCol[0]),
-       3,
        &pInfo->nColumn,
-       &pInfo->nColumnAlloc,
        &i
   );
   return i;
@@ -3792,9 +3793,7 @@ static int addAggInfoFunc(sqlite3 *db, AggInfo *pInfo){
        db, 
        pInfo->aFunc,
        sizeof(pInfo->aFunc[0]),
-       3,
        &pInfo->nFunc,
-       &pInfo->nFuncAlloc,
        &i
   );
   return i;

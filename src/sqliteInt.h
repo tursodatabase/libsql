@@ -1567,7 +1567,6 @@ struct AggInfo {
     Expr *pExpr;             /* The original expression */
   } *aCol;
   int nColumn;            /* Number of used entries in aCol[] */
-  int nColumnAlloc;       /* Number of slots allocated for aCol[] */
   int nAccumulator;       /* Number of columns that show through to the output.
                           ** Additional columns are used only as parameters to
                           ** aggregate functions */
@@ -1578,7 +1577,6 @@ struct AggInfo {
     int iDistinct;           /* Ephemeral table used to enforce DISTINCT */
   } *aFunc;
   int nFunc;              /* Number of entries in aFunc[] */
-  int nFuncAlloc;         /* Number of slots allocated for aFunc[] */
 };
 
 /*
@@ -1819,7 +1817,6 @@ struct IdList {
     int idx;          /* Index in some Table.aCol[] of a column named zName */
   } *a;
   int nId;         /* Number of identifiers on the list */
-  int nAlloc;      /* Number of entries allocated for a[] below */
 };
 
 /*
@@ -2762,7 +2759,7 @@ void sqlite3DeleteTable(sqlite3*, Table*);
 # define sqlite3AutoincrementEnd(X)
 #endif
 void sqlite3Insert(Parse*, SrcList*, ExprList*, Select*, IdList*, int);
-void *sqlite3ArrayAllocate(sqlite3*,void*,int,int,int*,int*,int*);
+void *sqlite3ArrayAllocate(sqlite3*,void*,int,int*,int*);
 IdList *sqlite3IdListAppend(sqlite3*, IdList*, Token*);
 int sqlite3IdListIndex(IdList*,const char*);
 SrcList *sqlite3SrcListEnlarge(sqlite3*, SrcList*, int, int);
