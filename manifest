@@ -1,5 +1,5 @@
-C For\squeries\sof\sthe\sform\s"SELECT\sp,\smax(q)\sFROM\st1",\sthe\svalue\sof\scolumn\sp\nreturned\sis\sthe\sone\son\sthe\ssame\srow\sthat\sholds\sthe\smaximum\svalue\sof\sq.
-D 2012-02-02T17:35:43.157
+C Fix\sa\sproblem\swith\sNULL\shandling\sin\saggregate\smin/max\swhen\sreturning\nvalues\sfrom\sthe\srow\scontaining\sthe\smin\sor\smax.
+D 2012-02-02T18:42:09.724
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -137,7 +137,7 @@ F src/delete.c 51d32f0a9c880663e54ce309f52e40c325d5e112
 F src/expr.c 00675123e0beec98f999aa4594d2cbe1fec33c1b
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 657212460bf5cfd3ae607d12ea62092844c227b5
-F src/func.c f66c87956c9afc098e1b74612d3c2b38760a41dc
+F src/func.c d7925f33a8ce2207f86dea5cfb1a4379413312fe
 F src/global.c 4cfdca5cb0edd33c4d021baec4ede958cb2c793b
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
@@ -386,7 +386,7 @@ F test/e_fts3.test 5c02288842e4f941896fd44afdef564dd5fc1459
 F test/e_insert.test 234242b71855af8e8a9b1e141c3533f6d43d8645
 F test/e_reindex.test dfedfc32c5a282b0596c6537cbcd4217fbb1a216
 F test/e_resolve.test dcce9308fb13b934ce29591105d031d3e14fbba6
-F test/e_select.test f0aa7a972a336e5e874700915b1f5abd7d63a7e2
+F test/e_select.test 99202f99a9a3273c6fb0d2e7592b98faeb6c206e
 F test/e_select2.test 5c3d3da19c7b3e90ae444579db2b70098599ab92
 F test/e_update.test dba988a4d079156549a40854074ba4890b0a4577
 F test/e_uri.test 6f35b491f80dac005c8144f38b2dfb4d96483596
@@ -601,6 +601,7 @@ F test/memsubsys2.test 3a1c1a9de48e5726faa85108b02459fae8cb9ee9
 F test/minmax.test 722d80816f7e096bf2c04f4111f1a6c1ba65453d
 F test/minmax2.test 33504c01a03bd99226144e4b03f7631a274d66e0
 F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
+F test/minmax4.test c1fa9505fd135007fdb1fb699334fb3d4ea7952e
 F test/misc1.test 55cb2bfbf4a8cd61f4be1effc30426ad41696bff
 F test/misc2.test 00d7de54eda90e237fc9a38b9e5ccc769ebf6d4d
 F test/misc3.test fe55130a43e444ee75e2156ff75dc96e964b5738
@@ -988,10 +989,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 0bc594e861ae1142e8c6c83f39b095e1432856bf
-R eff167ee91b10474f283fe35279e92e9
-T *branch * output-minmax-row
-T *sym-output-minmax-row *
-T -sym-trunk *
+P adb29232b659c5332b6841776372407fcc350b08
+R 087241beca277f1bd5ef577cbad5e6e6
 U drh
-Z cf65185cbe7093f978d4a185698ec6ea
+Z d29e9619f6216c8dbc76413eb249e3f2

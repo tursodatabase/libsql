@@ -800,7 +800,7 @@ do_select_tests e_select-4.1 {
 
   6  "SELECT count(*), * FROM z1"           {6 63 born -26}
   7  "SELECT max(a), * FROM z1"             {63 63 born -26}
-  8  "SELECT *, min(a) FROM z1"             {{} 67 quartets -5}
+  8  "SELECT *, min(a) FROM z1"             {-5 {} 75 -5}
 
   9  "SELECT *,* FROM z1,z2 LIMIT 1" {        
      51.65 -59.58 belfries {} 21 51.65 -59.58 belfries {} 21
