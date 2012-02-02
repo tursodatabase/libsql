@@ -1,5 +1,5 @@
-C Simplified\sarray\sallocation\sin\sthe\sIdList\sand\sAggInfo\sobjects.
-D 2012-02-02T03:38:30.479
+C Data\sstructure\scleanup.\s\sRemove\sunused\sfields.\s\sRearrange\sother\sfiles\sfor\ntighter\spacking\sand\sreduced\smemory\susage.
+D 2012-02-02T15:50:17.008
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -128,7 +128,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 24bde768288b3365bc6acfbb24030f76fefe7e1f
 F src/btree.h 46e9f04672f1390255bc56865a3238b384d0f2d5
 F src/btreeInt.h 6c9960645c431c9456ca56498f43a2b3bf1fa8c2
-F src/build.c 7a03d1772f906ca1ba905858b4f19d4d8b34e59d
+F src/build.c c4d36e527f457f9992a6663365871dfa7c5094b8
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c a9c26822515f81ec21588cbb482ca6724be02e33
@@ -172,7 +172,7 @@ F src/pager.c 2d892f7b901a8867a33bc21742086165a3a99af8
 F src/pager.h a435da8421dc7844b7f9c7f37b636c160c50208a
 F src/parse.y f36fb379d4f82be77fab088ae280b86ed524016c
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
-F src/pcache.h b1d8775a9bddf44e65edb0d20bfc57a4982f840f
+F src/pcache.h 1b5dcc3dc8103d03e625b177023ee67764fa6b7c
 F src/pcache1.c 281822d22265245b19f908cb3f5df725f7e11b06
 F src/pragma.c 350f59843f4ec4fca5dc63d497caf6433096bbdd
 F src/prepare.c ec4989f7f480544bdc4192fe663470d2a2d7d61e
@@ -184,7 +184,7 @@ F src/select.c b6eec9d11ec5df0d1fd11e8a0eed0fc2d2d96b25
 F src/shell.c 60d147c2411dd2d79a5151cfb9a068de87c7babe
 F src/sqlite.h.in 371c30e4be94b9b0ea6400ed66663fcf8e891eb4
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h e4275be35f82b3da4734d0d8eb97c618a91bb1a1
+F src/sqliteInt.h 736f3a7748434200db7a9e0a352b67d1b8759e0a
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 4568e72dfd36b6a5911f93457364deb072e0b03a
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -240,7 +240,7 @@ F src/update.c d3076782c887c10e882996550345da9c4c9f9dea
 F src/utf.c 890c67dcfcc7a74623c95baac7535aadfe265e84
 F src/util.c 9e07bd67dfafe9c75b1da78c87ba030cebbb5388
 F src/vacuum.c 0c0ba2242355c6048d65e2b333abe0f7c06348fa
-F src/vdbe.c 595a240233b88960dd99380edf2fb7ec4317ee24
+F src/vdbe.c 43ea77c83e7f35169328f13b20cc8140bd2cf473
 F src/vdbe.h 18f581cac1f4339ec3299f3e0cc6e11aec654cdb
 F src/vdbeInt.h 2e79ce66ff45a01411151957bb2899af680f1560
 F src/vdbeapi.c 3662b6a468a2a4605a15dfab313baa6dff81ad91
@@ -988,7 +988,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P a3553b8a035b70e76a5a325b9e9f379f84de3955
-R 0dee572dcbe8f4a7b8dff88e26875d80
+P 25df2a7458d025bc00380b4a0893637639f9f0d4
+R d2ba4c243c1dae496337618e0657e24d
 U drh
-Z 566ebf07e0f933f12b6e71767840fbdb
+Z ada6e2e4fcf7ab0bc8362d130037dce6

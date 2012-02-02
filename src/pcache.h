@@ -27,8 +27,8 @@ struct PgHdr {
   void *pData;                   /* Page data */
   void *pExtra;                  /* Extra content */
   PgHdr *pDirty;                 /* Transient list of dirty pages */
-  Pgno pgno;                     /* Page number for this page */
   Pager *pPager;                 /* The pager this page is part of */
+  Pgno pgno;                     /* Page number for this page */
 #ifdef SQLITE_CHECK_PAGES
   u32 pageHash;                  /* Hash of page content */
 #endif

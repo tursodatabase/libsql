@@ -1638,7 +1638,6 @@ void sqlite3EndTable(
       return;
     }
     pParse->pNewTable = 0;
-    db->nTable++;
     db->flags |= SQLITE_InternChanges;
 
 #ifndef SQLITE_OMIT_ALTERTABLE
