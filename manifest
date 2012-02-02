@@ -1,5 +1,5 @@
-C Very\ssmall\sperformance\senhancement\sand\sreduction\sin\ssize\sof\sthe\ssqlite3_stmt\nobject.
-D 2012-02-01T19:03:38.503
+C Remove\sthe\snAlloc\sfield\sfrom\sthe\sExprList\sobject.
+D 2012-02-02T01:58:08.811
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -134,7 +134,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c a9c26822515f81ec21588cbb482ca6724be02e33
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c 51d32f0a9c880663e54ce309f52e40c325d5e112
-F src/expr.c 537591e95eac74af783e4eb033954fb218cf398e
+F src/expr.c d644aac3409c67c9a9bcf9d5098641b18b47d925
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 657212460bf5cfd3ae607d12ea62092844c227b5
 F src/func.c 6261ce00aad9c63cd5b4219249b05683979060e9
@@ -184,7 +184,7 @@ F src/select.c 1ad267692ab09afe05092eddcb5aba96b796afe1
 F src/shell.c 60d147c2411dd2d79a5151cfb9a068de87c7babe
 F src/sqlite.h.in 371c30e4be94b9b0ea6400ed66663fcf8e891eb4
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h f388afe0c10584da55dd8978657fc218672bcb80
+F src/sqliteInt.h f6b1d14dbabf8bc86f7d48da64c1ed881c747eb8
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 4568e72dfd36b6a5911f93457364deb072e0b03a
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -988,7 +988,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 0d78ebb8e41ba08b446b44694d9433e1e90e0a7e
-R 64a40856f24d267fa939185d6a829659
+P a38d57a4e5d79a0baefdf776e0e2d61423681a4f
+R 77e04796737c9c6ab169ded8e9e97e0e
 U drh
-Z 4b158c38a343d7d874c1c1063287a2d3
+Z 60619f3cb0418eda9860a313b8f07415

@@ -1775,9 +1775,8 @@ struct Expr {
 */
 struct ExprList {
   int nExpr;             /* Number of expressions on the list */
-  int nAlloc;            /* Number of entries allocated below */
   int iECursor;          /* VDBE Cursor associated with this ExprList */
-  struct ExprList_item {
+  struct ExprList_item { /* For each expression in the list */
     Expr *pExpr;           /* The list of expressions */
     char *zName;           /* Token associated with this expression */
     char *zSpan;           /* Original text of the expression */
@@ -1785,7 +1784,7 @@ struct ExprList {
     u8 done;               /* A flag to indicate when processing is finished */
     u16 iOrderByCol;       /* For ORDER BY, column number in result set */
     u16 iAlias;            /* Index into Parse.aAlias[] for zName */
-  } *a;                  /* One entry for each expression */
+  } *a;                  /* Alloc a power of two greater or equal to nExpr */
 };
 
 /*

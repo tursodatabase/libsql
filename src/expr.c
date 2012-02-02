@@ -856,8 +856,9 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){
   pNew = sqlite3DbMallocRaw(db, sizeof(*pNew) );
   if( pNew==0 ) return 0;
   pNew->iECursor = 0;
-  pNew->nExpr = pNew->nAlloc = p->nExpr;
-  pNew->a = pItem = sqlite3DbMallocRaw(db,  p->nExpr*sizeof(p->a[0]) );
+  pNew->nExpr = i = p->nExpr;
+  if( (flags & EXPRDUP_REDUCE)==0 ) for(i=1; i<p->nExpr; i+=i){}
+  pNew->a = pItem = sqlite3DbMallocRaw(db,  i*sizeof(p->a[0]) );
   if( pItem==0 ){
     sqlite3DbFree(db, pNew);
     return 0;
@@ -992,17 +993,16 @@ ExprList *sqlite3ExprListAppend(
     if( pList==0 ){
       goto no_mem;
     }
-    assert( pList->nAlloc==0 );
-  }
-  if( pList->nAlloc<=pList->nExpr ){
+    pList->a = sqlite3DbMallocRaw(db, sizeof(pList->a[0]));
+    if( pList->a==0 ) goto no_mem;
+  }else if( (pList->nExpr & (pList->nExpr-1))==0 ){
     struct ExprList_item *a;
-    int n = pList->nAlloc*2 + 4;
-    a = sqlite3DbRealloc(db, pList->a, n*sizeof(pList->a[0]));
+    assert( pList->nExpr>0 );
+    a = sqlite3DbRealloc(db, pList->a, pList->nExpr*2*sizeof(pList->a[0]));
     if( a==0 ){
       goto no_mem;
     }
     pList->a = a;
-    pList->nAlloc = sqlite3DbMallocSize(db, a)/sizeof(a[0]);
   }
   assert( pList->a!=0 );
   if( 1 ){
@@ -1093,8 +1093,7 @@ void sqlite3ExprListDelete(sqlite3 *db, ExprList *pList){
   int i;
   struct ExprList_item *pItem;
   if( pList==0 ) return;
-  assert( pList->a!=0 || (pList->nExpr==0 && pList->nAlloc==0) );
-  assert( pList->nExpr<=pList->nAlloc );
+  assert( pList->a!=0 || pList->nExpr==0 );
   for(pItem=pList->a, i=0; i<pList->nExpr; i++, pItem++){
     sqlite3ExprDelete(db, pItem->pExpr);
     sqlite3DbFree(db, pItem->zName);
