@@ -29,6 +29,14 @@ static CollSeq *sqlite3GetFuncCollSeq(sqlite3_context *context){
 }
 
 /*
+** Indicate that the accumulator load should be skipped on this
+** iteration of the aggregate loop.
+*/
+static void sqlite3SkipAccumulatorLoad(sqlite3_context *context){
+  context->skipFlag = 1;
+}
+
+/*
 ** Implementation of the non-aggregate min() and max() functions
 */
 static void minmaxFunc(
@@ -1334,11 +1342,12 @@ static void minmaxStep(
   Mem *pBest;
   UNUSED_PARAMETER(NotUsed);
 
-  if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
   pBest = (Mem *)sqlite3_aggregate_context(context, sizeof(*pBest));
   if( !pBest ) return;
 
-  if( pBest->flags ){
+  if( sqlite3_value_type(argv[0])==SQLITE_NULL ){
+    if( pBest->flags ) sqlite3SkipAccumulatorLoad(context);
+  }else if( pBest->flags ){
     int max;
     int cmp;
     CollSeq *pColl = sqlite3GetFuncCollSeq(context);
@@ -1354,6 +1363,8 @@ static void minmaxStep(
     cmp = sqlite3MemCompare(pBest, pArg, pColl);
     if( (max && cmp<0) || (!max && cmp>0) ){
       sqlite3VdbeMemCopy(pBest, pArg);
+    }else{
+      sqlite3SkipAccumulatorLoad(context);
     }
   }else{
     sqlite3VdbeMemCopy(pBest, pArg);
@@ -1363,7 +1374,7 @@ static void minMaxFinalize(sqlite3_context *context){
   sqlite3_value *pRes;
   pRes = (sqlite3_value *)sqlite3_aggregate_context(context, 0);
   if( pRes ){
-    if( ALWAYS(pRes->flags) ){
+    if( pRes->flags ){
       sqlite3_result_value(context, pRes);
     }
     sqlite3VdbeMemRelease(pRes);

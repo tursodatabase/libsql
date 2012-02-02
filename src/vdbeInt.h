@@ -258,6 +258,7 @@ struct sqlite3_context {
   Mem *pMem;            /* Memory cell used to store aggregate context */
   int isError;          /* Error code returned by the function. */
   CollSeq *pColl;       /* Collating sequence */
+  int skipFlag;         /* Skip skip accumulator loading if true */
 };
 
 /*
