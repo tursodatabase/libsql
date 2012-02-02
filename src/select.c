@@ -2233,7 +2233,7 @@ static int multiSelectOrderBy(
         pNew->flags |= EP_IntValue;
         pNew->u.iValue = i;
         pOrderBy = sqlite3ExprListAppend(pParse, pOrderBy, pNew);
-        pOrderBy->a[nOrderBy++].iOrderByCol = (u16)i;
+        if( pOrderBy ) pOrderBy->a[nOrderBy++].iOrderByCol = (u16)i;
       }
     }
   }
