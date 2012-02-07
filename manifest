@@ -1,5 +1,5 @@
-C Do\snot\srely\son\sthe\s_WIN32_WINNT\smacro\sas\svs2005\sdoes\snot\sdefine\sit\sby\sdefault.\nInstead,\salways\sassume\swinNT\sunless\sthe\smakefile\sexplicitly\ssets\nSQLITE_OS_WINNT=0.
-D 2012-01-30T16:13:51.395
+C Port\sthe\scommand-line\sshell\senhancements\sincluding\sthe\snew\s--cmd\soption\nto\sthe\snx-devkit\sbranch.
+D 2012-02-07T14:22:18.660
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5b4a3e12a850b021547e43daf886b25133b44c07
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -181,7 +181,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 365ab1c870e38596d6869e76fb544fe6e4ffc809
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 80f3ac44a8514b1d107b80f5df4a424ae059d2b6
-F src/shell.c 670644f7bd82073ce0c97c6bff94be04c326beb8
+F src/shell.c 92e96bf5e465d63c55c5fe7fca38228c67ce7682
 F src/sqlite.h.in 84cd7be33f5bf39329e018f93eb34b4a345c9c23
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h f412e020e1009163c74be56eaac1bf7f6c0a4515
@@ -980,7 +980,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 2a7170f03c746473aca38ddc4b4a4091fe8331eb
-R 7771b0501bb9a724c8846121d659b1dd
+P 4f0997c7fab79cb7f12cf30f5ea5c87ce96bc266
+R 561353e13bf2215777cfa1f6329ca757
 U drh
-Z 922c1cdd3a1ee3105226ea9e60bd0622
+Z 522078f8b1fa54d140d6d449ff1e7d5c

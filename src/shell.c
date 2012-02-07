@@ -2657,28 +2657,29 @@ static int process_sqliterc(
 ** Show available command line options
 */
 static const char zOptions[] = 
-  "   -help                show this message\n"
-  "   -init filename       read/process named file\n"
-  "   -echo                print commands before execution\n"
-  "   -[no]header          turn headers on or off\n"
   "   -bail                stop after hitting an error\n"
-  "   -interactive         force interactive I/O\n"
   "   -batch               force batch I/O\n"
   "   -column              set output mode to 'column'\n"
+  "   -cmd command         run \"command\" before reading stdin\n"
   "   -csv                 set output mode to 'csv'\n"
+  "   -echo                print commands before execution\n"
+  "   -init filename       read/process named file\n"
+  "   -[no]header          turn headers on or off\n"
+  "   -help                show this message\n"
   "   -html                set output mode to HTML\n"
+  "   -interactive         force interactive I/O\n"
   "   -line                set output mode to 'line'\n"
   "   -list                set output mode to 'list'\n"
+#ifdef SQLITE_ENABLE_MULTIPLEX
+  "   -multiplex           enable the multiplexor VFS\n"
+#endif
+  "   -nullvalue 'text'    set text string for NULL values\n"
   "   -separator 'x'       set output field separator (|)\n"
   "   -stats               print memory stats before each finalize\n"
-  "   -nullvalue 'text'    set text string for NULL values\n"
   "   -version             show SQLite version\n"
   "   -vfs NAME            use NAME as the default VFS\n"
 #ifdef SQLITE_ENABLE_VFSTRACE
   "   -vfstrace            enable tracing of all VFS calls\n"
-#endif
-#ifdef SQLITE_ENABLE_MULTIPLEX
-  "   -multiplex           enable the multiplexor VFS\n"
 #endif
 ;
 static void usage(int showDetail){
@@ -2742,19 +2743,22 @@ int main(int argc, char **argv){
     char *z;
     if( argv[i][0]!='-' ) break;
     z = argv[i];
-    if( z[0]=='-' && z[1]=='-' ) z++;
-    if( strcmp(argv[i],"-separator")==0 || strcmp(argv[i],"-nullvalue")==0 ){
+    if( z[1]=='-' ) z++;
+    if( strcmp(z,"-separator")==0
+     || strcmp(z,"-nullvalue")==0
+     || strcmp(z,"-cmd")==0
+    ){
       i++;
-    }else if( strcmp(argv[i],"-init")==0 ){
+    }else if( strcmp(z,"-init")==0 ){
       i++;
       zInitFile = argv[i];
     /* Need to check for batch mode here to so we can avoid printing
     ** informational messages (like from process_sqliterc) before 
     ** we do the actual processing of arguments later in a second pass.
     */
-    }else if( strcmp(argv[i],"-batch")==0 ){
+    }else if( strcmp(z,"-batch")==0 ){
       stdin_is_interactive = 0;
-    }else if( strcmp(argv[i],"-heap")==0 ){
+    }else if( strcmp(z,"-heap")==0 ){
 #if defined(SQLITE_ENABLE_MEMSYS3) || defined(SQLITE_ENABLE_MEMSYS5)
       int j, c;
       const char *zSize;
@@ -2771,7 +2775,7 @@ int main(int argc, char **argv){
       sqlite3_config(SQLITE_CONFIG_HEAP, malloc((int)szHeap), (int)szHeap, 64);
 #endif
 #ifdef SQLITE_ENABLE_VFSTRACE
-    }else if( strcmp(argv[i],"-vfstrace")==0 ){
+    }else if( strcmp(z,"-vfstrace")==0 ){
       extern int vfstrace_register(
          const char *zTraceName,
          const char *zOldVfsName,
@@ -2782,11 +2786,11 @@ int main(int argc, char **argv){
       vfstrace_register("trace",0,(int(*)(const char*,void*))fputs,stderr,1);
 #endif
 #ifdef SQLITE_ENABLE_MULTIPLEX
-    }else if( strcmp(argv[i],"-multiplex")==0 ){
+    }else if( strcmp(z,"-multiplex")==0 ){
       extern int sqlite3_multiple_initialize(const char*,int);
       sqlite3_multiplex_initialize(0, 1);
 #endif
-    }else if( strcmp(argv[i],"-vfs")==0 ){
+    }else if( strcmp(z,"-vfs")==0 ){
       sqlite3_vfs *pVfs = sqlite3_vfs_find(argv[++i]);
       if( pVfs ){
         sqlite3_vfs_register(pVfs, 1);
@@ -2868,7 +2872,8 @@ int main(int argc, char **argv){
     }else if( strcmp(z,"-separator")==0 ){
       i++;
       if(i>=argc){
-        fprintf(stderr,"%s: Error: missing argument for option: %s\n", Argv0, z);
+        fprintf(stderr,"%s: Error: missing argument for option: %s\n",
+                        Argv0, z);
         fprintf(stderr,"Use -help for a list of options.\n");
         return 1;
       }
@@ -2877,7 +2882,8 @@ int main(int argc, char **argv){
     }else if( strcmp(z,"-nullvalue")==0 ){
       i++;
       if(i>=argc){
-        fprintf(stderr,"%s: Error: missing argument for option: %s\n", Argv0, z);
+        fprintf(stderr,"%s: Error: missing argument for option: %s\n",
+                        Argv0, z);
         fprintf(stderr,"Use -help for a list of options.\n");
         return 1;
       }
@@ -2912,8 +2918,26 @@ int main(int argc, char **argv){
     }else if( strcmp(z,"-multiplex")==0 ){
       i++;
 #endif
-    }else if( strcmp(z,"-help")==0 || strcmp(z, "--help")==0 ){
+    }else if( strcmp(z,"-help")==0 ){
       usage(1);
+    }else if( strcmp(z,"-cmd")==0 ){
+      if( i==argc-1 ) break;
+      i++;
+      z = argv[i];
+      if( z[0]=='.' ){
+        rc = do_meta_command(z, &data);
+        if( rc && bail_on_error ) return rc;
+      }else{
+        open_db(&data);
+        rc = shell_exec(data.db, z, shell_callback, &data, &zErrMsg);
+        if( zErrMsg!=0 ){
+          fprintf(stderr,"Error: %s\n", zErrMsg);
+          if( bail_on_error ) return rc!=0 ? rc : 1;
+        }else if( rc!=0 ){
+          fprintf(stderr,"Error: unable to process SQL \"%s\"\n", z);
+          if( bail_on_error ) return rc;
+        }
+      }
     }else{
       fprintf(stderr,"%s: Error: unknown option: %s\n", Argv0, z);
       fprintf(stderr,"Use -help for a list of options.\n");
