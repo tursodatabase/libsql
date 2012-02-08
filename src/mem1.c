@@ -91,9 +91,11 @@ static malloc_zone_t* _sqliteZone_;
 #define SQLITE_FREE(x)      free(x)
 #define SQLITE_REALLOC(x,y) realloc((x),(y))
 
+#if defined(HAVE_MALLOC_H) && defined(HAVE_MALLOC_USABLE_SIZE)
+# include <malloc.h>    /* Needed for malloc_usable_size on linux */
+#endif
 #ifdef HAVE_MALLOC_USABLE_SIZE
 # ifndef SQLITE_MALLOCSIZE
-#  include <malloc.h>
 #  define SQLITE_MALLOCSIZE(x) malloc_usable_size(x)
 # endif
 #else

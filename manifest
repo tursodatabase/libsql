@@ -1,5 +1,5 @@
-C Command-line\sshell\senhancements:\s\sReorganize\sthe\s"usage"\scomment\sso\sthat\noptions\sare\sin\salphabetical\sorder.\s\sAdd\sthe\snew\s"--cmd"\soption.\s\sAllow\neither\s"--option"\sor\s"-option"\sfor\soptions.
-D 2012-02-07T14:13:50.240
+C Add\san\sautoconf\stest\sfor\smalloc.h\sand\suse\sthe\sresults\sof\sthat\stest\sto\s\nconditionally\s#include\sthe\smalloc.h\sheader\sfile.
+D 2012-02-08T12:13:28.555
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -21,10 +21,10 @@ F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
-F config.h.in 31cc8c4943f56e60c4aa4fba929c9d4c70e418b4
+F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure c7497a17710f9304b9a405df5733576e6701fcab x
-F configure.ac 75323bdac56fb0e69f6a3fc5b23f24359550b9d9
+F configure 4ee31677412c454d0978a64872faf3ec36ff94ca x
+F configure.ac 9ee886c21c095b3272137b1553ae416c8b8c8557
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 3091574143dd3415669b6745843ff8d011d33549
 F doc/pager-invariants.txt 870107036470d7c419e93768676fae2f8749cf9e
@@ -150,7 +150,7 @@ F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
 F src/main.c cb099cc4864b542f97938049fc74ea8ae6845ce4
 F src/malloc.c 15afac5e59b6584efe072e9933aefb4230e74f97
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
-F src/mem1.c 7e698fe3368c661e98a25dca9a20933bcb61e228
+F src/mem1.c c953f3bfc8fcd31d4de2078697caefeb1dcfd7ff
 F src/mem2.c e307323e86b5da1853d7111b68fd6b84ad6f09cf
 F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
 F src/mem5.c c2c63b7067570b00bf33d751c39af24182316f7f
@@ -989,7 +989,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P f14e7f29ff7f2d7706dc3cdd715e103e04ba0ef1
-R 0c10dce0f67dfacb6b037220cf7eabfd
+P 9497893b1b9219eac4ec2183bd90b4e4b860d9fe
+R 42781c9b9d5eaab2d001ea7a2a23a84c
 U drh
-Z 0c5db2cd7b6e79afe1cc84f6912b794f
+Z f6736aaa24c5b87ef257c388626eabe2
