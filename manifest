@@ -1,5 +1,5 @@
-C Disable\sthe\sability\sto\shave\smultiple\svalues\sin\sthe\sVALUES\sclause\sof\san\nINSERT\sstatement\swhen\sSQLITE_OMIT_COMPOUND_SELECT\sis\sused.
-D 2012-02-10T17:38:58.524
+C Fix\sa\swarning\scoming\sfrom\sthe\sSolaris\sStudio\scompiler.
+D 2012-02-10T20:43:05.055
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -137,7 +137,7 @@ F src/delete.c 51d32f0a9c880663e54ce309f52e40c325d5e112
 F src/expr.c 00675123e0beec98f999aa4594d2cbe1fec33c1b
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 657212460bf5cfd3ae607d12ea62092844c227b5
-F src/func.c d7925f33a8ce2207f86dea5cfb1a4379413312fe
+F src/func.c 482fb61e26d1c0f983e788276d3700eee26442df
 F src/global.c 4cfdca5cb0edd33c4d021baec4ede958cb2c793b
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
@@ -989,7 +989,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 1a16db0bca717a2582a48332d81854ca90d6d49b
-R 4ae3522fd6eccbfc1737e8f5c9c63cf7
+P 92131195d0c24c0116992db51ed5d8316626ba57
+R adab601e293e6166c9f1fe94f2757bd1
 U drh
-Z 485b3d0d156b49609a8dc8c25c8298f5
+Z 57c4345b7c5ce6bd28783854ba285555

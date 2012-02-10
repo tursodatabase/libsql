@@ -416,7 +416,7 @@ static void randomFunc(
     ** 2s complement of that positive value.  The end result can
     ** therefore be no less than -9223372036854775807.
     */
-    r = -(r ^ (((sqlite3_int64)1)<<63));
+    r = -(r ^ (((sqlite3_uint64)1)<<63));
   }
   sqlite3_result_int64(context, r);
 }
