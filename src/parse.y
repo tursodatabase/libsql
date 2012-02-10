@@ -711,6 +711,10 @@ valuelist(A) ::= VALUES LP nexprlist(X) RP. {
   A.pList = X;
   A.pSelect = 0;
 }
+
+// Since a list of VALUEs is inplemented as a compound SELECT, we have
+// to disable the value list option if compound SELECTs are disabled.
+%ifndef SQLITE_OMIT_COMPOUND_SELECT
 valuelist(A) ::= valuelist(X) COMMA LP exprlist(Y) RP. {
   Select *pRight = sqlite3SelectNew(pParse, Y, 0, 0, 0, 0, 0, 0, 0, 0);
   if( X.pList ){
@@ -730,6 +734,7 @@ valuelist(A) ::= valuelist(X) COMMA LP exprlist(Y) RP. {
     A.pSelect = pRight;
   }
 }
+%endif SQLITE_OMIT_COMPOUND_SELECT
 
 %type inscollist_opt {IdList*}
 %destructor inscollist_opt {sqlite3IdListDelete(pParse->db, $$);}
