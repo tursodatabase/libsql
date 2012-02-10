@@ -2600,7 +2600,9 @@ static int fts3SegReaderCursor(
       }
  
       rc = sqlite3Fts3SegReaderNew(pCsr->nSegment+1, 
-          iStartBlock, iLeavesEndBlock, iEndBlock, zRoot, nRoot, &pSeg
+          (isPrefix==0 && isScan==0),
+          iStartBlock, iLeavesEndBlock, 
+          iEndBlock, zRoot, nRoot, &pSeg
       );
       if( rc!=SQLITE_OK ) goto finished;
       rc = fts3SegReaderCursorAppend(pCsr, pSeg);

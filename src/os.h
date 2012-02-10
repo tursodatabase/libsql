@@ -91,11 +91,23 @@
 
 /*
 ** Determine if we are dealing with Windows NT.
+**
+** We ought to be able to determine if we are compiling for win98 or winNT
+** using the _WIN32_WINNT macro as follows:
+**
+** #if defined(_WIN32_WINNT)
+** # define SQLITE_OS_WINNT 1
+** #else
+** # define SQLITE_OS_WINNT 0
+** #endif
+**
+** However, vs2005 does not set _WIN32_WINNT by default, as it ought to,
+** so the above test does not work.  We'll just assume that everything is
+** winNT unless the programmer explicitly says otherwise by setting
+** SQLITE_OS_WINNT to 0.
 */
-#if defined(_WIN32_WINNT)
+#if SQLITE_OS_WIN && !defined(SQLITE_OS_WINNT)
 # define SQLITE_OS_WINNT 1
-#else
-# define SQLITE_OS_WINNT 0
 #endif
 
 /*

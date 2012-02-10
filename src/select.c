@@ -73,6 +73,7 @@ Select *sqlite3SelectNew(
     pEList = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(db,TK_ALL,0));
   }
   pNew->pEList = pEList;
+  if( pSrc==0 ) pSrc = sqlite3DbMallocZero(db, sizeof(*pSrc));
   pNew->pSrc = pSrc;
   pNew->pWhere = pWhere;
   pNew->pGroupBy = pGroupBy;
@@ -1611,8 +1612,12 @@ static int multiSelect(
   */
   assert( p->pEList && pPrior->pEList );
   if( p->pEList->nExpr!=pPrior->pEList->nExpr ){
-    sqlite3ErrorMsg(pParse, "SELECTs to the left and right of %s"
-      " do not have the same number of result columns", selectOpName(p->op));
+    if( p->selFlags & SF_Values ){
+      sqlite3ErrorMsg(pParse, "all VALUES must have the same number of terms");
+    }else{
+      sqlite3ErrorMsg(pParse, "SELECTs to the left and right of %s"
+        " do not have the same number of result columns", selectOpName(p->op));
+    }
     rc = 1;
     goto multi_select_end;
   }
@@ -2228,7 +2233,7 @@ static int multiSelectOrderBy(
         pNew->flags |= EP_IntValue;
         pNew->u.iValue = i;
         pOrderBy = sqlite3ExprListAppend(pParse, pOrderBy, pNew);
-        pOrderBy->a[nOrderBy++].iOrderByCol = (u16)i;
+        if( pOrderBy ) pOrderBy->a[nOrderBy++].iOrderByCol = (u16)i;
       }
     }
   }
@@ -3591,6 +3596,8 @@ static void finalizeAggFunctions(Parse *pParse, AggInfo *pAggInfo){
 static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
   Vdbe *v = pParse->pVdbe;
   int i;
+  int regHit = 0;
+  int addrHitTest = 0;
   struct AggInfo_func *pF;
   struct AggInfo_col *pC;
 
@@ -3626,7 +3633,8 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
       if( !pColl ){
         pColl = pParse->db->pDfltColl;
       }
-      sqlite3VdbeAddOp4(v, OP_CollSeq, 0, 0, 0, (char *)pColl, P4_COLLSEQ);
+      if( regHit==0 && pAggInfo->nAccumulator ) regHit = ++pParse->nMem;
+      sqlite3VdbeAddOp4(v, OP_CollSeq, regHit, 0, 0, (char *)pColl, P4_COLLSEQ);
     }
     sqlite3VdbeAddOp4(v, OP_AggStep, 0, regAgg, pF->iMem,
                       (void*)pF->pFunc, P4_FUNCDEF);
@@ -3649,12 +3657,18 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
   ** Another solution would be to change the OP_SCopy used to copy cached
   ** values to an OP_Copy.
   */
+  if( regHit ){
+    addrHitTest = sqlite3VdbeAddOp1(v, OP_If, regHit);
+  }
   sqlite3ExprCacheClear(pParse);
   for(i=0, pC=pAggInfo->aCol; i<pAggInfo->nAccumulator; i++, pC++){
     sqlite3ExprCode(pParse, pC->pExpr, pC->iMem);
   }
   pAggInfo->directMode = 0;
   sqlite3ExprCacheClear(pParse);
+  if( addrHitTest ){
+    sqlite3VdbeJumpHere(v, addrHitTest);
+  }
 }
 
 /*
@@ -4595,4 +4609,4 @@ void sqlite3ExplainSelect(Vdbe *pVdbe, Select *p){
 
 /* End of the structure debug printing code
 *****************************************************************************/
-#endif /* defined(SQLITE_TEST) || defined(SQLITE_DEBUG) */
+#endif /* defined(SQLITE_ENABLE_TREE_EXPLAIN) */

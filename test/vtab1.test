@@ -51,12 +51,17 @@ ifcapable !vtab||!schema_pragmas {
 
 # We cannot create a virtual table if the module has not been registered.
 #
-do_test vtab1-1.1 {
+do_test vtab1-1.1.1 {
   explain {
     CREATE VIRTUAL TABLE t1 USING echo;
   }
   catchsql {
     CREATE VIRTUAL TABLE t1 USING echo;
+  }
+} {1 {no such module: echo}}
+do_test vtab1-1.1.2 {
+  catchsql {
+    CREATE VIRTUAL TABLE IF NOT EXISTS t1 USING echo;
   }
 } {1 {no such module: echo}}
 do_test vtab1-1.2 {
@@ -75,9 +80,14 @@ register_echo_module [sqlite3_connection_pointer db]
 # The "echo" module does not invoke sqlite3_declare_vtab() if it is
 # passed zero arguments.
 #
-do_test vtab1-1.3 {
+do_test vtab1-1.3.1 {
   catchsql {
     CREATE VIRTUAL TABLE t1 USING echo;
+  }
+} {1 {vtable constructor did not declare schema: t1}}
+do_test vtab1-1.3.2 {
+  catchsql {
+    CREATE VIRTUAL TABLE IF NOT EXISTS t1 USING echo;
   }
 } {1 {vtable constructor did not declare schema: t1}}
 do_test vtab1-1.4 {
@@ -90,9 +100,14 @@ do_test vtab1-1.4 {
 # the virtual table if it is passed an argument that does not correspond
 # to an existing real table in the same database.
 #
-do_test vtab1-1.5 {
+do_test vtab1-1.5.1 {
   catchsql {
     CREATE VIRTUAL TABLE t1 USING echo(no_such_table);
+  }
+} {1 {vtable constructor failed: t1}}
+do_test vtab1-1.5.2 {
+  catchsql {
+    CREATE VIRTUAL TABLE IF NOT EXISTS t1 USING echo(no_such_table);
   }
 } {1 {vtable constructor failed: t1}}
 do_test vtab1-1.6 {
@@ -128,17 +143,27 @@ do_test vtab-1.2152.4 {
 # select an illegal table-name (i.e a reserved name or the name of a
 # table that already exists).
 #
-do_test vtab1-1.7 {
+do_test vtab1-1.7.1 {
   catchsql {
     CREATE VIRTUAL TABLE sqlite_master USING echo;
   }
 } {1 {object name reserved for internal use: sqlite_master}}
-do_test vtab1-1.8 {
+do_test vtab1-1.7.2 {
+  catchsql {
+    CREATE VIRTUAL TABLE IF NOT EXISTS sqlite_master USING echo;
+  }
+} {1 {object name reserved for internal use: sqlite_master}}
+do_test vtab1-1.8.1 {
   catchsql {
     CREATE TABLE treal(a, b, c);
     CREATE VIRTUAL TABLE treal USING echo(treal);
   }
 } {1 {table treal already exists}}
+do_test vtab1-1.8.2 {
+  catchsql {
+    CREATE VIRTUAL TABLE IF NOT EXISTS treal USING echo(treal);
+  }
+} {0 {}}
 do_test vtab1-1.9 {
   execsql {
     DROP TABLE treal;

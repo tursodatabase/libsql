@@ -1638,7 +1638,6 @@ void sqlite3EndTable(
       return;
     }
     pParse->pNewTable = 0;
-    db->nTable++;
     db->flags |= SQLITE_InternChanges;
 
 #ifndef SQLITE_OMIT_ALTERTABLE
@@ -3059,27 +3058,23 @@ void *sqlite3ArrayAllocate(
   sqlite3 *db,      /* Connection to notify of malloc failures */
   void *pArray,     /* Array of objects.  Might be reallocated */
   int szEntry,      /* Size of each object in the array */
-  int initSize,     /* Suggested initial allocation, in elements */
   int *pnEntry,     /* Number of objects currently in use */
-  int *pnAlloc,     /* Current size of the allocation, in elements */
   int *pIdx         /* Write the index of a new slot here */
 ){
   char *z;
-  if( *pnEntry >= *pnAlloc ){
-    void *pNew;
-    int newSize;
-    newSize = (*pnAlloc)*2 + initSize;
-    pNew = sqlite3DbRealloc(db, pArray, newSize*szEntry);
+  int n = *pnEntry;
+  if( (n & (n-1))==0 ){
+    int sz = (n==0) ? 1 : 2*n;
+    void *pNew = sqlite3DbRealloc(db, pArray, sz*szEntry);
     if( pNew==0 ){
       *pIdx = -1;
       return pArray;
     }
-    *pnAlloc = sqlite3DbMallocSize(db, pNew)/szEntry;
     pArray = pNew;
   }
   z = (char*)pArray;
-  memset(&z[*pnEntry * szEntry], 0, szEntry);
-  *pIdx = *pnEntry;
+  memset(&z[n * szEntry], 0, szEntry);
+  *pIdx = n;
   ++*pnEntry;
   return pArray;
 }
@@ -3095,15 +3090,12 @@ IdList *sqlite3IdListAppend(sqlite3 *db, IdList *pList, Token *pToken){
   if( pList==0 ){
     pList = sqlite3DbMallocZero(db, sizeof(IdList) );
     if( pList==0 ) return 0;
-    pList->nAlloc = 0;
   }
   pList->a = sqlite3ArrayAllocate(
       db,
       pList->a,
       sizeof(pList->a[0]),
-      5,
       &pList->nId,
-      &pList->nAlloc,
       &i
   );
   if( i<0 ){

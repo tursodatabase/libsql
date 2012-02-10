@@ -93,17 +93,17 @@ typedef struct SorterRecord SorterRecord;
 ** being merged (rounded up to the next power of 2).
 */
 struct VdbeSorter {
-  int nInMemory;                  /* Current size of pRecord list as PMA */
-  int nTree;                      /* Used size of aTree/aIter (power of 2) */
-  VdbeSorterIter *aIter;          /* Array of iterators to merge */
-  int *aTree;                     /* Current state of incremental merge */
   i64 iWriteOff;                  /* Current write offset within file pTemp1 */
   i64 iReadOff;                   /* Current read offset within file pTemp1 */
-  sqlite3_file *pTemp1;           /* PMA file 1 */
+  int nInMemory;                  /* Current size of pRecord list as PMA */
+  int nTree;                      /* Used size of aTree/aIter (power of 2) */
   int nPMA;                       /* Number of PMAs stored in pTemp1 */
-  SorterRecord *pRecord;          /* Head of in-memory record list */
   int mnPmaSize;                  /* Minimum PMA size, in bytes */
   int mxPmaSize;                  /* Maximum PMA size, in bytes.  0==no limit */
+  VdbeSorterIter *aIter;          /* Array of iterators to merge */
+  int *aTree;                     /* Current state of incremental merge */
+  sqlite3_file *pTemp1;           /* PMA file 1 */
+  SorterRecord *pRecord;          /* Head of in-memory record list */
   UnpackedRecord *pUnpacked;      /* Used to unpack keys */
 };
 
@@ -114,10 +114,10 @@ struct VdbeSorter {
 struct VdbeSorterIter {
   i64 iReadOff;                   /* Current read offset */
   i64 iEof;                       /* 1 byte past EOF for this iterator */
-  sqlite3_file *pFile;            /* File iterator is reading from */
   int nAlloc;                     /* Bytes of space at aAlloc */
-  u8 *aAlloc;                     /* Allocated space */
   int nKey;                       /* Number of bytes in key */
+  sqlite3_file *pFile;            /* File iterator is reading from */
+  u8 *aAlloc;                     /* Allocated space */
   u8 *aKey;                       /* Pointer to current key */
 };
 

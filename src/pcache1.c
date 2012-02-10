@@ -76,6 +76,7 @@ struct PCache1 {
   unsigned int nMin;                  /* Minimum number of pages reserved */
   unsigned int nMax;                  /* Configured "cache_size" value */
   unsigned int n90pct;                /* nMax*9/10 */
+  unsigned int iMaxKey;               /* Largest key seen since xTruncate() */
 
   /* Hash table of all pages. The following variables may only be accessed
   ** when the accessor is holding the PGroup mutex.
@@ -84,8 +85,6 @@ struct PCache1 {
   unsigned int nPage;                 /* Total number of pages in apHash */
   unsigned int nHash;                 /* Number of slots in apHash[] */
   PgHdr1 **apHash;                    /* Hash table for fast lookup by key */
-
-  unsigned int iMaxKey;               /* Largest key seen since xTruncate() */
 };
 
 /*
@@ -129,8 +128,8 @@ static SQLITE_WSD struct PCacheGlobal {
   void *pStart, *pEnd;           /* Bounds of pagecache malloc range */
   /* Above requires no mutex.  Use mutex below for variable that follow. */
   sqlite3_mutex *mutex;          /* Mutex for accessing the following: */
-  int nFreeSlot;                 /* Number of unused pcache slots */
   PgFreeslot *pFree;             /* Free page blocks */
+  int nFreeSlot;                 /* Number of unused pcache slots */
   /* The following value requires a mutex to change.  We skip the mutex on
   ** reading because (1) most platforms read a 32-bit integer atomically and
   ** (2) even if an incorrect value is read, no great harm is done since this

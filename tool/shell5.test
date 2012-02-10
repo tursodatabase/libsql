@@ -194,7 +194,7 @@ SELECT COUNT(*) FROM t1;}]
 
 do_test shell5-1.4.10.2 {
   catchcmd "test.db" {SELECT b FROM t1 WHERE a='7';}
-} {0 {"Now is the time for all good men to come to the aid of their country."}}
+} {0 {Now is the time for all good men to come to the aid of their country.}}
 
 # check importing very long field
 do_test shell5-1.5.1 {

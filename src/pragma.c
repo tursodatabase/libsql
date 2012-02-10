@@ -16,14 +16,15 @@
 /*
 ** Interpret the given string as a safety level.  Return 0 for OFF,
 ** 1 for ON or NORMAL and 2 for FULL.  Return 1 for an empty or 
-** unrecognized string argument.
+** unrecognized string argument.  The FULL option is disallowed
+** if the omitFull parameter it 1.
 **
 ** Note that the values returned are one less that the values that
 ** should be passed into sqlite3BtreeSetSafetyLevel().  The is done
 ** to support legacy SQL code.  The safety level used to be boolean
 ** and older scripts may have used numbers 0 for OFF and 1 for ON.
 */
-static u8 getSafetyLevel(const char *z){
+static u8 getSafetyLevel(const char *z, int omitFull, int dflt){
                              /* 123456789 123456789 */
   static const char zText[] = "onoffalseyestruefull";
   static const u8 iOffset[] = {0, 1, 2, 4, 9, 12, 16};
@@ -34,19 +35,19 @@ static u8 getSafetyLevel(const char *z){
     return (u8)sqlite3Atoi(z);
   }
   n = sqlite3Strlen30(z);
-  for(i=0; i<ArraySize(iLength); i++){
+  for(i=0; i<ArraySize(iLength)-omitFull; i++){
     if( iLength[i]==n && sqlite3StrNICmp(&zText[iOffset[i]],z,n)==0 ){
       return iValue[i];
     }
   }
-  return 1;
+  return dflt;
 }
 
 /*
 ** Interpret the given string as a boolean value.
 */
-u8 sqlite3GetBoolean(const char *z){
-  return getSafetyLevel(z)&1;
+u8 sqlite3GetBoolean(const char *z, int dflt){
+  return getSafetyLevel(z,1,dflt)!=0;
 }
 
 /* The sqlite3GetBoolean() function is used by other modules but the
@@ -189,7 +190,6 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
 #endif
     /* The following is VERY experimental */
     { "writable_schema",          SQLITE_WriteSchema|SQLITE_RecoveryMode },
-    { "omit_readlock",            SQLITE_NoReadlock    },
 
     /* TODO: Maybe it shouldn't be possible to change the ReadUncommitted
     ** flag if there are any active statements. */
@@ -221,7 +221,7 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
             mask &= ~(SQLITE_ForeignKeys);
           }
 
-          if( sqlite3GetBoolean(zRight) ){
+          if( sqlite3GetBoolean(zRight, 0) ){
             db->flags |= mask;
           }else{
             db->flags &= ~mask;
@@ -437,7 +437,7 @@ void sqlite3Pragma(
     int b = -1;
     assert( pBt!=0 );
     if( zRight ){
-      b = sqlite3GetBoolean(zRight);
+      b = sqlite3GetBoolean(zRight, 0);
     }
     if( pId2->n==0 && b>=0 ){
       int ii;
@@ -842,7 +842,7 @@ void sqlite3Pragma(
         sqlite3ErrorMsg(pParse, 
             "Safety level may not be changed inside a transaction");
       }else{
-        pDb->safety_level = getSafetyLevel(zRight)+1;
+        pDb->safety_level = getSafetyLevel(zRight,0,1)+1;
       }
     }
   }else
@@ -1041,7 +1041,7 @@ void sqlite3Pragma(
 #ifndef NDEBUG
   if( sqlite3StrICmp(zLeft, "parser_trace")==0 ){
     if( zRight ){
-      if( sqlite3GetBoolean(zRight) ){
+      if( sqlite3GetBoolean(zRight, 0) ){
         sqlite3ParserTrace(stderr, "parser: ");
       }else{
         sqlite3ParserTrace(0, 0);
@@ -1055,7 +1055,7 @@ void sqlite3Pragma(
   */
   if( sqlite3StrICmp(zLeft, "case_sensitive_like")==0 ){
     if( zRight ){
-      sqlite3RegisterLikeFunctions(db, sqlite3GetBoolean(zRight));
+      sqlite3RegisterLikeFunctions(db, sqlite3GetBoolean(zRight, 0));
     }
   }else
 

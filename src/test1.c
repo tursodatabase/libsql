@@ -668,6 +668,7 @@ static int test_key(
   int argc,              /* Number of arguments */
   char **argv            /* Text of each argument */
 ){
+#ifdef SQLITE_HAS_CODEC
   sqlite3 *db;
   const char *zKey;
   int nKey;
@@ -679,7 +680,6 @@ static int test_key(
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
   zKey = argv[2];
   nKey = strlen(zKey);
-#ifdef SQLITE_HAS_CODEC
   sqlite3_key(db, zKey, nKey);
 #endif
   return TCL_OK;
@@ -696,6 +696,7 @@ static int test_rekey(
   int argc,              /* Number of arguments */
   char **argv            /* Text of each argument */
 ){
+#ifdef SQLITE_HAS_CODEC
   sqlite3 *db;
   const char *zKey;
   int nKey;
@@ -707,7 +708,6 @@ static int test_rekey(
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
   zKey = argv[2];
   nKey = strlen(zKey);
-#ifdef SQLITE_HAS_CODEC
   sqlite3_rekey(db, zKey, nKey);
 #endif
   return TCL_OK;
@@ -2369,7 +2369,6 @@ static int uses_stmt_journal(
   Tcl_Obj *CONST objv[]
 ){
   sqlite3_stmt *pStmt;
-  int rc;
 
   if( objc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
@@ -2378,7 +2377,7 @@ static int uses_stmt_journal(
   }
 
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
-  rc = sqlite3_stmt_readonly(pStmt);
+  sqlite3_stmt_readonly(pStmt);
   Tcl_SetObjResult(interp, Tcl_NewBooleanObj(((Vdbe *)pStmt)->usesStmtJournal));
   return TCL_OK;
 }
@@ -3858,7 +3857,6 @@ static int test_open(
 ){
   const char *zFilename;
   sqlite3 *db;
-  int rc;
   char zBuf[100];
 
   if( objc!=3 && objc!=2 && objc!=1 ){
@@ -3868,7 +3866,7 @@ static int test_open(
   }
 
   zFilename = objc>1 ? Tcl_GetString(objv[1]) : 0;
-  rc = sqlite3_open(zFilename, &db);
+  sqlite3_open(zFilename, &db);
   
   if( sqlite3TestMakePointerStr(interp, zBuf, db) ) return TCL_ERROR;
   Tcl_AppendResult(interp, zBuf, 0);
@@ -3957,7 +3955,6 @@ static int test_open16(
 #ifndef SQLITE_OMIT_UTF16
   const void *zFilename;
   sqlite3 *db;
-  int rc;
   char zBuf[100];
 
   if( objc!=3 ){
@@ -3967,7 +3964,7 @@ static int test_open16(
   }
 
   zFilename = Tcl_GetByteArrayFromObj(objv[1], 0);
-  rc = sqlite3_open16(zFilename, &db);
+  sqlite3_open16(zFilename, &db);
   
   if( sqlite3TestMakePointerStr(interp, zBuf, db) ) return TCL_ERROR;
   Tcl_AppendResult(interp, zBuf, 0);
@@ -5114,8 +5111,6 @@ static int file_control_lockproxy_test(
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
   sqlite3 *db;
-  const char *zPwd;
-  int nPwd;
   
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
@@ -5125,7 +5120,6 @@ static int file_control_lockproxy_test(
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
    return TCL_ERROR;
   }
-  zPwd = Tcl_GetStringFromObj(objv[2], &nPwd);
   
 #if !defined(SQLITE_ENABLE_LOCKING_STYLE)
 #  if defined(__APPLE__)
@@ -5138,8 +5132,11 @@ static int file_control_lockproxy_test(
   {
     char *testPath;
     int rc;
+    int nPwd;
+    const char *zPwd;
     char proxyPath[400];
     
+    zPwd = Tcl_GetStringFromObj(objv[2], &nPwd);
     if( sizeof(proxyPath)<nPwd+20 ){
       Tcl_AppendResult(interp, "PWD too big", (void*)0);
       return TCL_ERROR;

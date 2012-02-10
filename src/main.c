@@ -3016,7 +3016,8 @@ const char *sqlite3_uri_parameter(const char *zFilename, const char *zParam){
 */
 int sqlite3_uri_boolean(const char *zFilename, const char *zParam, int bDflt){
   const char *z = sqlite3_uri_parameter(zFilename, zParam);
-  return z ? sqlite3GetBoolean(z) : (bDflt!=0);
+  bDflt = bDflt!=0;
+  return z ? sqlite3GetBoolean(z, bDflt) : bDflt;
 }
 
 /*

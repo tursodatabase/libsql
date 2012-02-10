@@ -349,7 +349,8 @@ db func trigfunc trigfunc
 do_test alter-3.1.0 {
   execsql {
     CREATE TABLE t6(a, b, c);
-    CREATE TRIGGER trig1 AFTER INSERT ON t6 BEGIN
+    -- Different case for the table name in the trigger.
+    CREATE TRIGGER trig1 AFTER INSERT ON T6 BEGIN
       SELECT trigfunc('trig1', new.a, new.b, new.c);
     END;
   }

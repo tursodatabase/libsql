@@ -573,10 +573,10 @@ set chunkconfig [fts3_configure_incr_load 1 1]
 foreach {tn create pending} {
   1    "fts4(a, b)"                                  1
   2    "fts4(a, b, order=ASC, prefix=1)"             1
-  3    "fts4(a, b, order=ASC,  prefix=1,3)"          0
-  4    "fts4(a, b, order=DESC, prefix=2,4)"          0
-  5    "fts4(a, b, order=DESC, prefix=1)"            0
-  6    "fts4(a, b, order=ASC,  prefix=1,3)"          0
+  3    "fts4(a, b, order=ASC,  prefix=\"1,3\")"      0
+  4    "fts4(a, b, order=DESC, prefix=\"2,4\")"      0
+  5    "fts4(a, b, order=DESC, prefix=\"1\")"        0
+  6    "fts4(a, b, order=ASC,  prefix=\"1,3\")"      0
 } {
 
   execsql [subst {
