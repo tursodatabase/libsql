@@ -1,5 +1,5 @@
-C Add\san\sautoconf\stest\sfor\smalloc.h\sand\suse\sthe\sresults\sof\sthat\stest\sto\s\nconditionally\s#include\sthe\smalloc.h\sheader\sfile.
-D 2012-02-08T12:13:28.555
+C Fix\sa\sboundary\scase\sfor\sthe\sinteger\saffinity\sroutine\sfor\snon-x86\sprocessors.
+D 2012-02-10T01:25:13.282
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -246,7 +246,7 @@ F src/vdbeInt.h 6ff4180a05683566a8835d12f7ec504b22932c82
 F src/vdbeapi.c 3662b6a468a2a4605a15dfab313baa6dff81ad91
 F src/vdbeaux.c 7683d772ad638faa4567142438c4594e47f173c4
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
-F src/vdbemem.c 3c171040c28a95084fb5024ab731140a86fd5439
+F src/vdbemem.c fb0ac964ccbcd94f595eb993c05bfd9c52468a4a
 F src/vdbesort.c b25814d385895544ebc8118245c8311ded7f81c9
 F src/vdbetrace.c d6e50e04e1ec498150e519058f617d91b8f5c843
 F src/vtab.c ab90fb600a3f5e4b7c48d22a4cdb2d6b23239847
@@ -989,7 +989,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 9497893b1b9219eac4ec2183bd90b4e4b860d9fe
-R 42781c9b9d5eaab2d001ea7a2a23a84c
+P 16a471129d497f45935b5d00df7ce9ec731ee498
+R 6215b24575860936c7fbc53b2c141f64
 U drh
-Z f6736aaa24c5b87ef257c388626eabe2
+Z c3db51a3b8697db7ee0c8145390b81ef
