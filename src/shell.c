@@ -57,7 +57,7 @@
 # include <readline/history.h>
 #endif
 #if !defined(HAVE_EDITLINE) && (!defined(HAVE_READLINE) || HAVE_READLINE!=1)
-# define readline(p) local_getline(p,stdin)
+# define readline(p) local_getline(p,stdin,0)
 # define add_history(X)
 # define read_history(X)
 # define write_history(X)
@@ -334,10 +334,11 @@ static void shellstaticFunc(
 ** The interface is like "readline" but no command-line editing
 ** is done.
 */
-static char *local_getline(char *zPrompt, FILE *in){
+static char *local_getline(char *zPrompt, FILE *in, int csvFlag){
   char *zLine;
   int nLine;
   int n;
+  int inQuote = 0;
 
   if( zPrompt && *zPrompt ){
     printf("%s",zPrompt);
@@ -361,8 +362,11 @@ static char *local_getline(char *zPrompt, FILE *in){
       zLine[n] = 0;
       break;
     }
-    while( zLine[n] ){ n++; }
-    if( n>0 && zLine[n-1]=='\n' ){
+    while( zLine[n] ){
+      if( zLine[n]=='"' ) inQuote = !inQuote;
+      n++;
+    }
+    if( n>0 && zLine[n-1]=='\n' && (!inQuote || !csvFlag) ){
       n--;
       if( n>0 && zLine[n-1]=='\r' ) n--;
       zLine[n] = 0;
@@ -383,7 +387,7 @@ static char *one_input_line(const char *zPrior, FILE *in){
   char *zPrompt;
   char *zResult;
   if( in!=0 ){
-    return local_getline(0, in);
+    return local_getline(0, in, 0);
   }
   if( zPrior && zPrior[0] ){
     zPrompt = continuePrompt;
@@ -614,8 +618,7 @@ static const char needCsvQuote[] = {
 /*
 ** Output a single term of CSV.  Actually, p->separator is used for
 ** the separator, which may or may not be a comma.  p->nullvalue is
-** the null value.  Strings are quoted using ANSI-C rules.  Numbers
-** appear outside of quotes.
+** the null value.  Strings are quoted if necessary.
 */
 static void output_csv(struct callback_data *p, const char *z, int bSep){
   FILE *out = p->out;
@@ -934,11 +937,14 @@ static char *appendText(char *zIn, char const *zAppend, char quote){
 
 
 /*
-** Execute a query statement that has a single result column.  Print
-** that result column on a line by itself with a semicolon terminator.
+** Execute a query statement that will generate SQL output.  Print
+** the result columns, comma-separated, on a line and then add a
+** semicolon terminator to the end of that line.
 **
-** This is used, for example, to show the schema of the database by
-** querying the SQLITE_MASTER table.
+** If the number of columns is 1 and that column contains text "--"
+** then write the semicolon on a separate line.  That way, if a 
+** "--" comment occurs at the end of the statement, the comment
+** won't consume the semicolon terminator.
 */
 static int run_table_dump_query(
   struct callback_data *p, /* Query context */
@@ -947,6 +953,9 @@ static int run_table_dump_query(
 ){
   sqlite3_stmt *pSelect;
   int rc;
+  int nResult;
+  int i;
+  const char *z;
   rc = sqlite3_prepare(p->db, zSelect, -1, &pSelect, 0);
   if( rc!=SQLITE_OK || !pSelect ){
     fprintf(p->out, "/**** ERROR: (%d) %s *****/\n", rc, sqlite3_errmsg(p->db));
@@ -954,12 +963,24 @@ static int run_table_dump_query(
     return rc;
   }
   rc = sqlite3_step(pSelect);
+  nResult = sqlite3_column_count(pSelect);
   while( rc==SQLITE_ROW ){
     if( zFirstRow ){
       fprintf(p->out, "%s", zFirstRow);
       zFirstRow = 0;
     }
-    fprintf(p->out, "%s;\n", sqlite3_column_text(pSelect, 0));
+    z = (const char*)sqlite3_column_text(pSelect, 0);
+    fprintf(p->out, "%s", z);
+    for(i=1; i<nResult; i++){ 
+      fprintf(p->out, ",%s", sqlite3_column_text(pSelect, i));
+    }
+    if( z==0 ) z = "";
+    while( z[0] && (z[0]!='-' || z[1]!='-') ) z++;
+    if( z[0] ){
+      fprintf(p->out, "\n;\n");
+    }else{
+      fprintf(p->out, ";\n");
+    }    
     rc = sqlite3_step(pSelect);
   }
   rc = sqlite3_finalize(pSelect);
@@ -1266,6 +1287,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
     char *zTableInfo = 0;
     char *zTmp = 0;
     int nRow = 0;
+    int kk;
    
     zTableInfo = appendText(zTableInfo, "PRAGMA table_info(", 0);
     zTableInfo = appendText(zTableInfo, zTable, '"');
@@ -1278,7 +1300,12 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
     }
 
     zSelect = appendText(zSelect, "SELECT 'INSERT INTO ' || ", 0);
-    zTmp = appendText(zTmp, zTable, '"');
+    if( !isalpha(zTable[0]) ){
+      kk = 0;
+    }else{
+      for(kk=1; isalnum(zTable[kk]); kk++){}
+    }
+    zTmp = appendText(zTmp, zTable, zTable[kk] ? '"' : 0);
     if( zTmp ){
       zSelect = appendText(zSelect, zTmp, '\'');
     }
@@ -1290,7 +1317,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
       zSelect = appendText(zSelect, zText, '"');
       rc = sqlite3_step(pTableInfo);
       if( rc==SQLITE_ROW ){
-        zSelect = appendText(zSelect, ") || ',' || ", 0);
+        zSelect = appendText(zSelect, "), ", 0);
       }else{
         zSelect = appendText(zSelect, ") ", 0);
       }
@@ -1769,12 +1796,15 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     }
     sqlite3_exec(p->db, "BEGIN", 0, 0, 0);
     zCommit = "COMMIT";
-    while( (zLine = local_getline(0, in))!=0 ){
-      char *z;
+    while( (zLine = local_getline(0, in, 1))!=0 ){
+      char *z, c;
+      int inQuote = 0;
       lineno++;
       azCol[0] = zLine;
-      for(i=0, z=zLine; *z && *z!='\n' && *z!='\r'; z++){
-        if( *z==p->separator[0] && strncmp(z, p->separator, nSep)==0 ){
+      for(i=0, z=zLine; (c = *z)!=0; z++){
+        if( c=='"' ) inQuote = !inQuote;
+        if( c=='\n' ) lineno++;
+        if( !inQuote && c==p->separator[0] && strncmp(z,p->separator,nSep)==0 ){
           *z = 0;
           i++;
           if( i<nCol ){
@@ -1794,6 +1824,14 @@ static int do_meta_command(char *zLine, struct callback_data *p){
         break; /* from while */
       }
       for(i=0; i<nCol; i++){
+        if( azCol[i][0]=='"' ){
+          int k;
+          for(z=azCol[i], j=1, k=0; z[j]; j++){
+            if( z[j]=='"' ){ j++; if( z[j]==0 ) break; }
+            z[k++] = z[j];
+          }
+          z[k] = 0;
+        }
         sqlite3_bind_text(pStmt, i+1, azCol[i], -1, SQLITE_STATIC);
       }
       sqlite3_step(pStmt);
@@ -2666,28 +2704,29 @@ static int process_sqliterc(
 ** Show available command line options
 */
 static const char zOptions[] = 
-  "   -help                show this message\n"
-  "   -init filename       read/process named file\n"
-  "   -echo                print commands before execution\n"
-  "   -[no]header          turn headers on or off\n"
   "   -bail                stop after hitting an error\n"
-  "   -interactive         force interactive I/O\n"
   "   -batch               force batch I/O\n"
   "   -column              set output mode to 'column'\n"
+  "   -cmd command         run \"command\" before reading stdin\n"
   "   -csv                 set output mode to 'csv'\n"
+  "   -echo                print commands before execution\n"
+  "   -init filename       read/process named file\n"
+  "   -[no]header          turn headers on or off\n"
+  "   -help                show this message\n"
   "   -html                set output mode to HTML\n"
+  "   -interactive         force interactive I/O\n"
   "   -line                set output mode to 'line'\n"
   "   -list                set output mode to 'list'\n"
+#ifdef SQLITE_ENABLE_MULTIPLEX
+  "   -multiplex           enable the multiplexor VFS\n"
+#endif
+  "   -nullvalue 'text'    set text string for NULL values\n"
   "   -separator 'x'       set output field separator (|)\n"
   "   -stats               print memory stats before each finalize\n"
-  "   -nullvalue 'text'    set text string for NULL values\n"
   "   -version             show SQLite version\n"
   "   -vfs NAME            use NAME as the default VFS\n"
 #ifdef SQLITE_ENABLE_VFSTRACE
   "   -vfstrace            enable tracing of all VFS calls\n"
-#endif
-#ifdef SQLITE_ENABLE_MULTIPLEX
-  "   -multiplex           enable the multiplexor VFS\n"
 #endif
 ;
 static void usage(int showDetail){
@@ -2751,19 +2790,22 @@ int main(int argc, char **argv){
     char *z;
     if( argv[i][0]!='-' ) break;
     z = argv[i];
-    if( z[0]=='-' && z[1]=='-' ) z++;
-    if( strcmp(argv[i],"-separator")==0 || strcmp(argv[i],"-nullvalue")==0 ){
+    if( z[1]=='-' ) z++;
+    if( strcmp(z,"-separator")==0
+     || strcmp(z,"-nullvalue")==0
+     || strcmp(z,"-cmd")==0
+    ){
       i++;
-    }else if( strcmp(argv[i],"-init")==0 ){
+    }else if( strcmp(z,"-init")==0 ){
       i++;
       zInitFile = argv[i];
     /* Need to check for batch mode here to so we can avoid printing
     ** informational messages (like from process_sqliterc) before 
     ** we do the actual processing of arguments later in a second pass.
     */
-    }else if( strcmp(argv[i],"-batch")==0 ){
+    }else if( strcmp(z,"-batch")==0 ){
       stdin_is_interactive = 0;
-    }else if( strcmp(argv[i],"-heap")==0 ){
+    }else if( strcmp(z,"-heap")==0 ){
 #if defined(SQLITE_ENABLE_MEMSYS3) || defined(SQLITE_ENABLE_MEMSYS5)
       int j, c;
       const char *zSize;
@@ -2780,7 +2822,7 @@ int main(int argc, char **argv){
       sqlite3_config(SQLITE_CONFIG_HEAP, malloc((int)szHeap), (int)szHeap, 64);
 #endif
 #ifdef SQLITE_ENABLE_VFSTRACE
-    }else if( strcmp(argv[i],"-vfstrace")==0 ){
+    }else if( strcmp(z,"-vfstrace")==0 ){
       extern int vfstrace_register(
          const char *zTraceName,
          const char *zOldVfsName,
@@ -2791,11 +2833,11 @@ int main(int argc, char **argv){
       vfstrace_register("trace",0,(int(*)(const char*,void*))fputs,stderr,1);
 #endif
 #ifdef SQLITE_ENABLE_MULTIPLEX
-    }else if( strcmp(argv[i],"-multiplex")==0 ){
+    }else if( strcmp(z,"-multiplex")==0 ){
       extern int sqlite3_multiple_initialize(const char*,int);
       sqlite3_multiplex_initialize(0, 1);
 #endif
-    }else if( strcmp(argv[i],"-vfs")==0 ){
+    }else if( strcmp(z,"-vfs")==0 ){
       sqlite3_vfs *pVfs = sqlite3_vfs_find(argv[++i]);
       if( pVfs ){
         sqlite3_vfs_register(pVfs, 1);
@@ -2877,7 +2919,8 @@ int main(int argc, char **argv){
     }else if( strcmp(z,"-separator")==0 ){
       i++;
       if(i>=argc){
-        fprintf(stderr,"%s: Error: missing argument for option: %s\n", Argv0, z);
+        fprintf(stderr,"%s: Error: missing argument for option: %s\n",
+                        Argv0, z);
         fprintf(stderr,"Use -help for a list of options.\n");
         return 1;
       }
@@ -2886,7 +2929,8 @@ int main(int argc, char **argv){
     }else if( strcmp(z,"-nullvalue")==0 ){
       i++;
       if(i>=argc){
-        fprintf(stderr,"%s: Error: missing argument for option: %s\n", Argv0, z);
+        fprintf(stderr,"%s: Error: missing argument for option: %s\n",
+                        Argv0, z);
         fprintf(stderr,"Use -help for a list of options.\n");
         return 1;
       }
@@ -2921,8 +2965,26 @@ int main(int argc, char **argv){
     }else if( strcmp(z,"-multiplex")==0 ){
       i++;
 #endif
-    }else if( strcmp(z,"-help")==0 || strcmp(z, "--help")==0 ){
+    }else if( strcmp(z,"-help")==0 ){
       usage(1);
+    }else if( strcmp(z,"-cmd")==0 ){
+      if( i==argc-1 ) break;
+      i++;
+      z = argv[i];
+      if( z[0]=='.' ){
+        rc = do_meta_command(z, &data);
+        if( rc && bail_on_error ) return rc;
+      }else{
+        open_db(&data);
+        rc = shell_exec(data.db, z, shell_callback, &data, &zErrMsg);
+        if( zErrMsg!=0 ){
+          fprintf(stderr,"Error: %s\n", zErrMsg);
+          if( bail_on_error ) return rc!=0 ? rc : 1;
+        }else if( rc!=0 ){
+          fprintf(stderr,"Error: unable to process SQL \"%s\"\n", z);
+          if( bail_on_error ) return rc;
+        }
+      }
     }else{
       fprintf(stderr,"%s: Error: unknown option: %s\n", Argv0, z);
       fprintf(stderr,"Use -help for a list of options.\n");

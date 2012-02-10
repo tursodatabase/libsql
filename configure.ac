@@ -122,7 +122,7 @@ AC_CHECK_TYPES([int8_t, int16_t, int32_t, int64_t, intptr_t, uint8_t,
 
 #########
 # Check for needed/wanted headers
-AC_CHECK_HEADERS([sys/types.h stdlib.h stdint.h inttypes.h])
+AC_CHECK_HEADERS([sys/types.h stdlib.h stdint.h inttypes.h malloc.h])
 
 #########
 # Figure out whether or not we have these functions

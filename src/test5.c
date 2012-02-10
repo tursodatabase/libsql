@@ -64,7 +64,6 @@ static int test_value_overhead(
   int repeat_count;
   int i;
   Mem val;
-  const char *zVal;
 
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
@@ -82,7 +81,7 @@ static int test_value_overhead(
 
   for(i=0; i<repeat_count; i++){
     if( do_calls ){
-      zVal = (char*)sqlite3_value_text(&val);
+      sqlite3_value_text(&val);
     }
   }
 

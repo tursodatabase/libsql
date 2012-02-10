@@ -6305,7 +6305,7 @@ static int unixRandomness(sqlite3_vfs *NotUsed, int nBuf, char *zBuf){
   memset(zBuf, 0, nBuf);
 #if !defined(SQLITE_TEST)
   {
-    int pid, fd;
+    int pid, fd, got;
     fd = robust_open("/dev/urandom", O_RDONLY, 0);
     if( fd<0 ){
       time_t t;
@@ -6316,7 +6316,7 @@ static int unixRandomness(sqlite3_vfs *NotUsed, int nBuf, char *zBuf){
       assert( sizeof(t)+sizeof(pid)<=(size_t)nBuf );
       nBuf = sizeof(t) + sizeof(pid);
     }else{
-      do{ nBuf = osRead(fd, zBuf, nBuf); }while( nBuf<0 && errno==EINTR );
+      do{ got = osRead(fd, zBuf, nBuf); }while( got<0 && errno==EINTR );
       robust_close(0, fd, __LINE__);
     }
   }

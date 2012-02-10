@@ -284,10 +284,9 @@ struct MemPage {
   u16 nFree;           /* Number of free bytes on the page */
   u16 nCell;           /* Number of cells on this page, local and ovfl */
   u16 maskPage;        /* Mask for page offset */
-  struct _OvflCell {   /* Cells that will not fit on aData[] */
-    u8 *pCell;          /* Pointers to the body of the overflow cell */
-    u16 idx;            /* Insert this cell before idx-th non-overflow cell */
-  } aOvfl[5];
+  u16 aiOvfl[5];       /* Insert the i-th overflow cell before the aiOvfl-th
+                       ** non-overflow cell */
+  u8 *apOvfl[5];       /* Pointers to the body of overflow cells */
   BtShared *pBt;       /* Pointer to BtShared that this page is part of */
   u8 *aData;           /* Pointer to disk image of the page data */
   u8 *aDataEnd;        /* One byte past the end of usable data */
@@ -495,6 +494,9 @@ struct BtCursor {
   BtShared *pBt;            /* The BtShared this cursor points to */
   BtCursor *pNext, *pPrev;  /* Forms a linked list of all cursors */
   struct KeyInfo *pKeyInfo; /* Argument passed to comparison function */
+#ifndef SQLITE_OMIT_INCRBLOB
+  Pgno *aOverflow;          /* Cache of overflow page locations */
+#endif
   Pgno pgnoRoot;            /* The root page of this tree */
   sqlite3_int64 cachedRowid; /* Next rowid cache.  0 means not valid */
   CellInfo info;            /* A parse of the cell we are pointing at */
@@ -506,7 +508,6 @@ struct BtCursor {
   u8 validNKey;             /* True if info.nKey is valid */
   u8 eState;                /* One of the CURSOR_XXX constants (see below) */
 #ifndef SQLITE_OMIT_INCRBLOB
-  Pgno *aOverflow;          /* Cache of overflow page locations */
   u8 isIncrblobHandle;      /* True if this cursor is an incr. io handle */
 #endif
   i16 iPage;                            /* Index of current page in apPage */
@@ -635,8 +636,8 @@ typedef struct IntegrityCk IntegrityCk;
 struct IntegrityCk {
   BtShared *pBt;    /* The tree being checked out */
   Pager *pPager;    /* The associated pager.  Also accessible by pBt->pPager */
-  Pgno nPage;       /* Number of pages in the database */
   int *anRef;       /* Number of times each page is referenced */
+  Pgno nPage;       /* Number of pages in the database */
   int mxErr;        /* Stop accumulating errors when this reaches zero */
   int nErr;         /* Number of messages written to zErrMsg so far */
   int mallocFailed; /* A memory allocation error has occurred */

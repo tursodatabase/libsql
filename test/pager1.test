@@ -54,6 +54,8 @@ do_not_use_codec
 # pager1-16.*: Varying sqlite3_vfs.mxPathname
 #
 # pager1-17.*: Tests related to "PRAGMA omit_readlock"
+#              (The omit_readlock pragma has been removed and so have
+#              these tests.)
 #
 # pager1-18.*: Test that the pager layer responds correctly if the b-tree
 #              requests an invalid page number (due to db corruption).
@@ -1711,75 +1713,6 @@ for {set ii [expr $::file_len-5]} {$ii < [expr $::file_len+20]} {incr ii} {
   tv delete
 }
 
-#-------------------------------------------------------------------------
-# Test "PRAGMA omit_readlock". 
-#
-#   pager1-17.$tn.1.*: Test that if a second connection has an open 
-#                      read-transaction, it is not usually possible to write 
-#                      the database.
-#
-#   pager1-17.$tn.2.*: Test that if the second connection was opened with
-#                      the SQLITE_OPEN_READONLY flag, and 
-#                      "PRAGMA omit_readlock = 1" is executed before attaching
-#                      the database and opening a read-transaction on it, it is
-#                      possible to write the db.
-#
-#   pager1-17.$tn.3.*: Test that if the second connection was *not* opened with
-#                      the SQLITE_OPEN_READONLY flag, executing 
-#                      "PRAGMA omit_readlock = 1" has no effect.
-#
-do_multiclient_test tn {
-  do_test pager1-17.$tn.1.1 {
-    sql1 { 
-      CREATE TABLE t1(a, b);
-      INSERT INTO t1 VALUES(1, 2);
-    }
-    sql2 {
-      BEGIN;
-      SELECT * FROM t1;
-    }
-  } {1 2}
-  do_test pager1-17.$tn.1.2 {
-    csql1 { INSERT INTO t1 VALUES(3, 4) }
-  } {1 {database is locked}}
-  do_test pager1-17.$tn.1.3 {
-    sql2 { COMMIT }
-    sql1 { INSERT INTO t1 VALUES(3, 4) }
-  } {}
-
-  do_test pager1-17.$tn.2.1 {
-    code2 {
-      db2 close
-      sqlite3 db2 :memory: -readonly 1
-    }
-    sql2 { 
-      PRAGMA omit_readlock = 1;
-      ATTACH 'test.db' AS two;
-      BEGIN;
-      SELECT * FROM t1;
-    }
-  } {1 2 3 4}
-  do_test pager1-17.$tn.2.2 { sql1 "INSERT INTO t1 VALUES(5, 6)" } {}
-  do_test pager1-17.$tn.2.3 { sql2 "SELECT * FROM t1" }            {1 2 3 4}
-  do_test pager1-17.$tn.2.4 { sql2 "COMMIT ; SELECT * FROM t1" }   {1 2 3 4 5 6}
-
-  do_test pager1-17.$tn.3.1 {
-    code2 {
-      db2 close
-      sqlite3 db2 :memory:
-    }
-    sql2 { 
-      PRAGMA omit_readlock = 1;
-      ATTACH 'test.db' AS two;
-      BEGIN;
-      SELECT * FROM t1;
-    }
-  } {1 2 3 4 5 6}
-  do_test pager1-17.$tn.3.2 {
-  csql1 { INSERT INTO t1 VALUES(3, 4) }
-  } {1 {database is locked}}
-  do_test pager1-17.$tn.3.3 { sql2 COMMIT } {}
-}
 
 #-------------------------------------------------------------------------
 # Test the pagers response to the b-tree layer requesting illegal page 

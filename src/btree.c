@@ -876,12 +876,10 @@ static u8 *findOverflowCell(MemPage *pPage, int iCell){
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   for(i=pPage->nOverflow-1; i>=0; i--){
     int k;
-    struct _OvflCell *pOvfl;
-    pOvfl = &pPage->aOvfl[i];
-    k = pOvfl->idx;
+    k = pPage->aiOvfl[i];
     if( k<=iCell ){
       if( k==iCell ){
-        return pOvfl->pCell;
+        return pPage->apOvfl[i];
       }
       iCell--;
     }
@@ -1695,11 +1693,8 @@ static int btreeInvokeBusyHandler(void *pArg){
 ** If zFilename is ":memory:" then an in-memory database is created
 ** that is automatically destroyed when it is closed.
 **
-** The "flags" parameter is a bitmask that might contain bits
-** BTREE_OMIT_JOURNAL and/or BTREE_NO_READLOCK.  The BTREE_NO_READLOCK
-** bit is also set if the SQLITE_NoReadlock flags is set in db->flags.
-** These flags are passed through into sqlite3PagerOpen() and must
-** be the same values as PAGER_OMIT_JOURNAL and PAGER_NO_READLOCK.
+** The "flags" parameter is a bitmask that might contain bits like
+** BTREE_OMIT_JOURNAL and/or BTREE_MEMORY.
 **
 ** If the database is already opened in the same database connection
 ** and we are in shared cache mode, then the open will fail with an
@@ -1746,9 +1741,6 @@ int sqlite3BtreeOpen(
   /* A BTREE_SINGLE database is always a temporary and/or ephemeral */
   assert( (flags & BTREE_SINGLE)==0 || isTempDb );
 
-  if( db->flags & SQLITE_NoReadlock ){
-    flags |= BTREE_NO_READLOCK;
-  }
   if( isMemdb ){
     flags |= BTREE_MEMORY;
   }
@@ -5554,7 +5546,7 @@ static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
 ** If the cell content will fit on the page, then put it there.  If it
 ** will not fit, then make a copy of the cell content into pTemp if
 ** pTemp is not null.  Regardless of pTemp, allocate a new entry
-** in pPage->aOvfl[] and make it point to the cell content (either
+** in pPage->apOvfl[] and make it point to the cell content (either
 ** in pTemp or the original pCell) and also record its index. 
 ** Allocating a new entry in pPage->aCell[] implies that 
 ** pPage->nOverflow is incremented.
@@ -5588,7 +5580,8 @@ static void insertCell(
 
   assert( i>=0 && i<=pPage->nCell+pPage->nOverflow );
   assert( pPage->nCell<=MX_CELL(pPage->pBt) && MX_CELL(pPage->pBt)<=10921 );
-  assert( pPage->nOverflow<=ArraySize(pPage->aOvfl) );
+  assert( pPage->nOverflow<=ArraySize(pPage->apOvfl) );
+  assert( ArraySize(pPage->apOvfl)==ArraySize(pPage->aiOvfl) );
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   /* The cell should normally be sized correctly.  However, when moving a
   ** malformed cell from a leaf page to an interior page, if the cell size
@@ -5605,9 +5598,9 @@ static void insertCell(
       put4byte(pCell, iChild);
     }
     j = pPage->nOverflow++;
-    assert( j<(int)(sizeof(pPage->aOvfl)/sizeof(pPage->aOvfl[0])) );
-    pPage->aOvfl[j].pCell = pCell;
-    pPage->aOvfl[j].idx = (u16)i;
+    assert( j<(int)(sizeof(pPage->apOvfl)/sizeof(pPage->apOvfl[0])) );
+    pPage->apOvfl[j] = pCell;
+    pPage->aiOvfl[j] = (u16)i;
   }else{
     int rc = sqlite3PagerWrite(pPage->pDbPage);
     if( rc!=SQLITE_OK ){
@@ -5755,7 +5748,7 @@ static int balance_quick(MemPage *pParent, MemPage *pPage, u8 *pSpace){
   if( rc==SQLITE_OK ){
 
     u8 *pOut = &pSpace[4];
-    u8 *pCell = pPage->aOvfl[0].pCell;
+    u8 *pCell = pPage->apOvfl[0];
     u16 szCell = cellSizePtr(pPage, pCell);
     u8 *pStop;
 
@@ -5865,7 +5858,7 @@ static int ptrmapCheckPages(MemPage **apPage, int nPage){
 ** map entries are also updated so that the parent page is page pTo.
 **
 ** If pFrom is currently carrying any overflow cells (entries in the
-** MemPage.aOvfl[] array), they are not copied to pTo. 
+** MemPage.apOvfl[] array), they are not copied to pTo. 
 **
 ** Before returning, page pTo is reinitialized using btreeInitPage().
 **
@@ -6002,7 +5995,7 @@ static int balance_nonroot(
   ** is called (indirectly) from sqlite3BtreeDelete().
   */
   assert( pParent->nOverflow==0 || pParent->nOverflow==1 );
-  assert( pParent->nOverflow==0 || pParent->aOvfl[0].idx==iParentIdx );
+  assert( pParent->nOverflow==0 || pParent->aiOvfl[0]==iParentIdx );
 
   if( !aOvflSpace ){
     return SQLITE_NOMEM;
@@ -6049,8 +6042,8 @@ static int balance_nonroot(
     nMaxCells += 1+apOld[i]->nCell+apOld[i]->nOverflow;
     if( (i--)==0 ) break;
 
-    if( i+nxDiv==pParent->aOvfl[0].idx && pParent->nOverflow ){
-      apDiv[i] = pParent->aOvfl[0].pCell;
+    if( i+nxDiv==pParent->aiOvfl[0] && pParent->nOverflow ){
+      apDiv[i] = pParent->apOvfl[0];
       pgno = get4byte(apDiv[i]);
       szNew[i] = cellSizePtr(pParent, apDiv[i]);
       pParent->nOverflow = 0;
@@ -6491,7 +6484,7 @@ static int balance_nonroot(
     MemPage *pOld = apCopy[0];
     int nOverflow = pOld->nOverflow;
     int iNextOld = pOld->nCell + nOverflow;
-    int iOverflow = (nOverflow ? pOld->aOvfl[0].idx : -1);
+    int iOverflow = (nOverflow ? pOld->aiOvfl[0] : -1);
     j = 0;                             /* Current 'old' sibling page */
     k = 0;                             /* Current 'new' sibling page */
     for(i=0; i<nCell; i++){
@@ -6505,14 +6498,14 @@ static int balance_nonroot(
         iNextOld = i + !leafData + pOld->nCell + pOld->nOverflow;
         if( pOld->nOverflow ){
           nOverflow = pOld->nOverflow;
-          iOverflow = i + !leafData + pOld->aOvfl[0].idx;
+          iOverflow = i + !leafData + pOld->aiOvfl[0];
         }
         isDivider = !leafData;  
       }
 
       assert(nOverflow>0 || iOverflow<i );
-      assert(nOverflow<2 || pOld->aOvfl[0].idx==pOld->aOvfl[1].idx-1);
-      assert(nOverflow<3 || pOld->aOvfl[1].idx==pOld->aOvfl[2].idx-1);
+      assert(nOverflow<2 || pOld->aiOvfl[0]==pOld->aiOvfl[1]-1);
+      assert(nOverflow<3 || pOld->aiOvfl[1]==pOld->aiOvfl[2]-1);
       if( i==iOverflow ){
         isDivider = 1;
         if( (--nOverflow)>0 ){
@@ -6633,7 +6626,10 @@ static int balance_deeper(MemPage *pRoot, MemPage **ppChild){
   TRACE(("BALANCE: copy root %d into %d\n", pRoot->pgno, pChild->pgno));
 
   /* Copy the overflow cells from pRoot to pChild */
-  memcpy(pChild->aOvfl, pRoot->aOvfl, pRoot->nOverflow*sizeof(pRoot->aOvfl[0]));
+  memcpy(pChild->aiOvfl, pRoot->aiOvfl,
+         pRoot->nOverflow*sizeof(pRoot->aiOvfl[0]));
+  memcpy(pChild->apOvfl, pRoot->apOvfl,
+         pRoot->nOverflow*sizeof(pRoot->apOvfl[0]));
   pChild->nOverflow = pRoot->nOverflow;
 
   /* Zero the contents of pRoot. Then install pChild as the right-child. */
@@ -6696,7 +6692,7 @@ static int balance(BtCursor *pCur){
 #ifndef SQLITE_OMIT_QUICKBALANCE
         if( pPage->hasData
          && pPage->nOverflow==1
-         && pPage->aOvfl[0].idx==pPage->nCell
+         && pPage->aiOvfl[0]==pPage->nCell
          && pParent->pgno!=1
          && pParent->nCell==iIdx
         ){

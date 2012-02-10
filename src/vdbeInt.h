@@ -115,21 +115,21 @@ typedef struct VdbeCursor VdbeCursor;
 typedef struct VdbeFrame VdbeFrame;
 struct VdbeFrame {
   Vdbe *v;                /* VM this frame belongs to */
-  int pc;                 /* Program Counter in parent (calling) frame */
+  VdbeFrame *pParent;     /* Parent of this frame, or NULL if parent is main */
   Op *aOp;                /* Program instructions for parent frame */
-  int nOp;                /* Size of aOp array */
   Mem *aMem;              /* Array of memory cells for parent frame */
-  int nMem;               /* Number of entries in aMem */
   u8 *aOnceFlag;          /* Array of OP_Once flags for parent frame */
-  int nOnceFlag;          /* Number of entries in aOnceFlag */
   VdbeCursor **apCsr;     /* Array of Vdbe cursors for parent frame */
-  u16 nCursor;            /* Number of entries in apCsr */
   void *token;            /* Copy of SubProgram.token */
+  i64 lastRowid;          /* Last insert rowid (sqlite3.lastRowid) */
+  u16 nCursor;            /* Number of entries in apCsr */
+  int pc;                 /* Program Counter in parent (calling) frame */
+  int nOp;                /* Size of aOp array */
+  int nMem;               /* Number of entries in aMem */
+  int nOnceFlag;          /* Number of entries in aOnceFlag */
   int nChildMem;          /* Number of memory cells for child frame */
   int nChildCsr;          /* Number of cursors for child frame */
-  i64 lastRowid;          /* Last insert rowid (sqlite3.lastRowid) */
   int nChange;            /* Statement changes (Vdbe.nChanges)     */
-  VdbeFrame *pParent;     /* Parent of this frame, or NULL if parent is main */
 };
 
 #define VdbeFrameMem(p) ((Mem *)&((u8 *)p)[ROUND8(sizeof(VdbeFrame))])
@@ -256,8 +256,9 @@ struct sqlite3_context {
   VdbeFunc *pVdbeFunc;  /* Auxilary data, if created. */
   Mem s;                /* The return value is stored here */
   Mem *pMem;            /* Memory cell used to store aggregate context */
-  int isError;          /* Error code returned by the function. */
   CollSeq *pColl;       /* Collating sequence */
+  int isError;          /* Error code returned by the function. */
+  int skipFlag;         /* Skip skip accumulator loading if true */
 };
 
 /*
@@ -298,7 +299,6 @@ struct Vdbe {
   int nOp;                /* Number of instructions in the program */
   int nOpAlloc;           /* Number of slots allocated for aOp[] */
   int nLabel;             /* Number of labels used */
-  int nLabelAlloc;        /* Number of slots allocated in aLabel[] */
   int *aLabel;            /* Space to hold the labels */
   u16 nResColumn;         /* Number of columns in one row of the result set */
   u16 nCursor;            /* Number of slots in apCsr[] */

@@ -151,6 +151,12 @@ db2 close
 # Test that nothing goes horribly wrong when attaching a database
 # after the omit_readlock pragma has been exercised.
 #
+# Note:  The PRAGMA omit_readlock was an early hack to disable the
+# fcntl() calls for read-only databases so that read-only databases could
+# be read on broken NFS systems.  That pragma has now been removed.
+# (Use the unix-none VFS as a replacement, if needed.)  But these tests
+# do not really depend on omit_readlock, so we left them in place.
+#
 do_test misc7-7.1 {
   forcedelete test2.db
   forcedelete test2.db-journal

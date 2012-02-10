@@ -240,14 +240,11 @@ int sqlite3VdbeAddOp4Int(
 ** Zero is returned if a malloc() fails.
 */
 int sqlite3VdbeMakeLabel(Vdbe *p){
-  int i;
-  i = p->nLabel++;
+  int i = p->nLabel++;
   assert( p->magic==VDBE_MAGIC_INIT );
-  if( i>=p->nLabelAlloc ){
-    int n = p->nLabelAlloc*2 + 5;
-    p->aLabel = sqlite3DbReallocOrFree(p->db, p->aLabel,
-                                       n*sizeof(p->aLabel[0]));
-    p->nLabelAlloc = sqlite3DbMallocSize(p->db, p->aLabel)/sizeof(p->aLabel[0]);
+  if( (i & (i-1))==0 ){
+    p->aLabel = sqlite3DbReallocOrFree(p->db, p->aLabel, 
+                                       (i*2+1)*sizeof(p->aLabel[0]));
   }
   if( p->aLabel ){
     p->aLabel[i] = -1;
@@ -2293,12 +2290,6 @@ int sqlite3VdbeHalt(Vdbe *p){
         sqlite3VdbeSetChanges(db, 0);
       }
       p->nChange = 0;
-    }
-  
-    /* Rollback or commit any schema changes that occurred. */
-    if( p->rc!=SQLITE_OK && db->flags&SQLITE_InternChanges ){
-      sqlite3ResetInternalSchema(db, -1);
-      db->flags = (db->flags | SQLITE_InternChanges);
     }
 
     /* Release the locks */
