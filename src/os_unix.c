@@ -211,7 +211,7 @@ struct unixFile {
   unixInodeInfo *pInode;              /* Info about locks on this inode */
   int h;                              /* The file descriptor */
   unsigned char eFileLock;            /* The type of lock held on this fd */
-  unsigned char ctrlFlags;            /* Behavioral bits.  UNIXFILE_* flags */
+  unsigned short int ctrlFlags;       /* Behavioral bits.  UNIXFILE_* flags */
   int lastErrno;                      /* The unix errno from last I/O error */
   void *lockingContext;               /* Locking style specific state */
   UnixUnusedFd *pUnused;              /* Pre-allocated UnixUnusedFd */
@@ -262,6 +262,7 @@ struct unixFile {
 #define UNIXFILE_DELETE      0x20     /* Delete on close */
 #define UNIXFILE_URI         0x40     /* Filename might have query parameters */
 #define UNIXFILE_NOLOCK      0x80     /* Do no file locking */
+#define UNIXFILE_CHOWN      0x100     /* File ownership was changed */
 
 /*
 ** Include code that is common to all os_*.c files
@@ -3908,9 +3909,13 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
       /* If this process is running as root, make sure that the SHM file
       ** is owned by the same user that owns the original database.  Otherwise,
       ** the original owner will not be able to connect. If this process is
-      ** not root, the following fchown() will fail, but we don't care.
+      ** not root, the following fchown() will fail, but we don't care.  The
+      ** if(){..} and the UNIXFILE_CHOWN flag are purely to silence compiler
+      ** warnings.
       */
-      fchown(pShmNode->h, sStat.st_uid, sStat.st_gid);
+      if( fchown(pShmNode->h, sStat.st_uid, sStat.st_gid)==0 ){
+        pDbFd->ctrlFlags |= UNIXFILE_CHOWN;
+      }
   
       /* Check to see if another process is holding the dead-man switch.
       ** If not, truncate the file to zero length. 
@@ -5119,11 +5124,12 @@ static int unixOpen(
     /* If this process is running as root and if creating a new rollback
     ** journal or WAL file, set the ownership of the journal or WAL to be
     ** the same as the original database.  If we are not running as root,
-    ** then the fchown() call will fail, but that's ok - there is nothing
-    ** we can do about it so just ignore the error.
+    ** then the fchown() call will fail, but that's ok.  The "if(){}" and
+    ** the setting of the UNIXFILE_CHOWN flag are purely to silence compiler
+    ** warnings from gcc.
     */
     if( flags & (SQLITE_OPEN_WAL|SQLITE_OPEN_MAIN_JOURNAL) ){
-      fchown(fd, uid, gid);
+      if( fchown(fd, uid, gid)==0 ){ p->ctrlFlags |= UNIXFILE_CHOWN; }
     }
   }
   assert( fd>=0 );
