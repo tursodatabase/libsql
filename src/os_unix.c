@@ -3904,6 +3904,13 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
         rc = unixLogError(SQLITE_CANTOPEN_BKPT, "open", zShmFilename);
         goto shm_open_err;
       }
+
+      /* If this process is running as root, make sure that the SHM file
+      ** is owned by the same user that owns the original database.  Otherwise,
+      ** the original owner will not be able to connect. If this process is
+      ** not root, the following fchown() will fail, but we don't care.
+      */
+      fchown(pShmNode->h, sStat.st_uid, sStat.st_gid);
   
       /* Check to see if another process is holding the dead-man switch.
       ** If not, truncate the file to zero length. 
@@ -4896,10 +4903,14 @@ static UnixUnusedFd *findReusableFd(const char *zPath, int flags){
 static int findCreateFileMode(
   const char *zPath,              /* Path of file (possibly) being created */
   int flags,                      /* Flags passed as 4th argument to xOpen() */
-  mode_t *pMode                   /* OUT: Permissions to open file with */
+  mode_t *pMode,                  /* OUT: Permissions to open file with */
+  uid_t *pUid,                    /* OUT: uid to set on the file */
+  gid_t *pGid                     /* OUT: gid to set on the file */
 ){
   int rc = SQLITE_OK;             /* Return Code */
   *pMode = SQLITE_DEFAULT_FILE_PERMISSIONS;
+  *pUid = 0;
+  *pGid = 0;
   if( flags & (SQLITE_OPEN_WAL|SQLITE_OPEN_MAIN_JOURNAL) ){
     char zDb[MAX_PATHNAME+1];     /* Database file path */
     int nDb;                      /* Number of valid bytes in zDb */
@@ -4933,6 +4944,8 @@ static int findCreateFileMode(
 
     if( 0==osStat(zDb, &sStat) ){
       *pMode = sStat.st_mode & 0777;
+      *pUid = sStat.st_uid;
+      *pGid = sStat.st_gid;
     }else{
       rc = SQLITE_IOERR_FSTAT;
     }
@@ -5079,7 +5092,9 @@ static int unixOpen(
 
   if( fd<0 ){
     mode_t openMode;              /* Permissions to create file with */
-    rc = findCreateFileMode(zName, flags, &openMode);
+    uid_t uid;                    /* Userid for the file */
+    gid_t gid;                    /* Groupid for the file */
+    rc = findCreateFileMode(zName, flags, &openMode, &uid, &gid);
     if( rc!=SQLITE_OK ){
       assert( !p->pUnused );
       assert( eType==SQLITE_OPEN_WAL || eType==SQLITE_OPEN_MAIN_JOURNAL );
@@ -5099,6 +5114,16 @@ static int unixOpen(
     if( fd<0 ){
       rc = unixLogError(SQLITE_CANTOPEN_BKPT, "open", zName);
       goto open_finished;
+    }
+
+    /* If this process is running as root and if creating a new rollback
+    ** journal or WAL file, set the ownership of the journal or WAL to be
+    ** the same as the original database.  If we are not running as root,
+    ** then the fchown() call will fail, but that's ok - there is nothing
+    ** we can do about it so just ignore the error.
+    */
+    if( flags & (SQLITE_OPEN_WAL|SQLITE_OPEN_MAIN_JOURNAL) ){
+      fchown(fd, uid, gid);
     }
   }
   assert( fd>=0 );
