@@ -1,5 +1,5 @@
-C Silence\sGCC\scompiler\swarnings\sabout\sunused\sreturn\svalue\sfrom\sfchown().
-D 2012-02-11T21:21:17.335
+C Revise\sthe\spreprocessor\sdirectives\sused\sto\shandle\smalloc.h\sand\s_msize,\sin\sorder\sto\sdetect\sand\shandle\sthe\sMSVC\sspecial-case\sautomatically.
+D 2012-02-11T21:56:59.602
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -150,7 +150,7 @@ F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
 F src/main.c cb099cc4864b542f97938049fc74ea8ae6845ce4
 F src/malloc.c 15afac5e59b6584efe072e9933aefb4230e74f97
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
-F src/mem1.c c953f3bfc8fcd31d4de2078697caefeb1dcfd7ff
+F src/mem1.c b3677415e69603d6a0e7c5410a1b3731d55beda1
 F src/mem2.c e307323e86b5da1853d7111b68fd6b84ad6f09cf
 F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
 F src/mem5.c c2c63b7067570b00bf33d751c39af24182316f7f
@@ -989,7 +989,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 768df4e11670ac704d96e3b601d009aaa2fd793a
-R 356443deb3c82ed63a280950a7c5c72e
-U drh
-Z 590e6955e1a8261beb6491e7ffa39206
+P b022547389a40930cf0d2a75f5eb293acc9fbfe0
+R 505ec6116aaad3f58b25fecf5b680204
+U mistachkin
+Z 5a203944499c3c7e187ed1e9bd783469
