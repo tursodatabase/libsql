@@ -1,5 +1,5 @@
-C Cleanup\ssome\sdirectories\sand\sfiles\sleft\sby\sthe\sMinGW\sbuild,\seven\swhen\susing\sthe\sMSVC\sMakefile.
-D 2012-02-11T22:19:26.264
+C Make\sfchown()\san\soverrideable\ssystem\scall\sin\sos_unix.c.
+D 2012-02-11T23:55:15.455
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 59beba555b65a450bd1d804220532971d4299f60
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 3dd0399fe024df37af2980c99f1a3c1d3cc6a782
+F src/os_unix.c 55fbf23bb9807412a6ec95c5cc489222e56a4d58
 F src/os_win.c 5ac061ae1326a71500cee578ed0fd9113b4f6a37
 F src/pager.c 2d892f7b901a8867a33bc21742086165a3a99af8
 F src/pager.h a435da8421dc7844b7f9c7f37b636c160c50208a
@@ -709,7 +709,7 @@ F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
 F test/superlock.test 1cde669f68d2dd37d6c9bd35eee1d95491ae3fc2
 F test/sync.test a34cd43e98b7fb84eabbf38f7ed8f7349b3f3d85
-F test/syscall.test 265cda616f56a297406728ee1e74c9b4a93aa6dd
+F test/syscall.test 8a1bd9575ea1e8bdc0513fc5be7753fa4c3c04fb
 F test/sysfault.test c79441d88d23696fbec7b147dba98d42a04f523f
 F test/table.test a59d985ca366e39b17b175f387f9d5db5a18d4e2
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
@@ -989,7 +989,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 90e73dc3682680847238e625d415b27fa9c59ba8
-R 6d21c0cf3bea5fa0f98de70e56cbbd21
-U mistachkin
-Z df222febfd73cd10d8b058c8ec5473c1
+P 3ab89e255d1f2f8004d3256515ac43f74e57f39b
+R c7e080a7342ae25512a1d89fb1e6a36a
+U drh
+Z 57dd073c92c9b4505dfd0c4c6af07210

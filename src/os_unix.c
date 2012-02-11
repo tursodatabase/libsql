@@ -419,6 +419,9 @@ static struct unix_syscall {
   { "rmdir",        (sqlite3_syscall_ptr)rmdir,           0 },
 #define osRmdir     ((int(*)(const char*))aSyscall[19].pCurrent)
 
+  { "fchown",       (sqlite3_syscall_ptr)fchown,          0 },
+#define osFchown    ((int(*)(const char*,uid_t,gid_t))aSyscall[20].pCurrent)
+
 }; /* End of the overrideable system calls */
 
 /*
@@ -3913,7 +3916,7 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
       ** if(){..} and the UNIXFILE_CHOWN flag are purely to silence compiler
       ** warnings.
       */
-      if( fchown(pShmNode->h, sStat.st_uid, sStat.st_gid)==0 ){
+      if( osFchown(pShmNode->h, sStat.st_uid, sStat.st_gid)==0 ){
         pDbFd->ctrlFlags |= UNIXFILE_CHOWN;
       }
   
@@ -5129,7 +5132,7 @@ static int unixOpen(
     ** warnings from gcc.
     */
     if( flags & (SQLITE_OPEN_WAL|SQLITE_OPEN_MAIN_JOURNAL) ){
-      if( fchown(fd, uid, gid)==0 ){ p->ctrlFlags |= UNIXFILE_CHOWN; }
+      if( osFchown(fd, uid, gid)==0 ){ p->ctrlFlags |= UNIXFILE_CHOWN; }
     }
   }
   assert( fd>=0 );
@@ -6839,7 +6842,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==20 );
+  assert( ArraySize(aSyscall)==21 );
 
   /* Register all VFSes defined in the aVfs[] array */
   for(i=0; i<(sizeof(aVfs)/sizeof(sqlite3_vfs)); i++){
