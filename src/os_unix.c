@@ -3901,10 +3901,8 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
       }
       pShmNode->h = robust_open(zShmFilename, openFlags, (sStat.st_mode&0777));
       if( pShmNode->h<0 ){
-        if( pShmNode->h<0 ){
-          rc = unixLogError(SQLITE_CANTOPEN_BKPT, "open", zShmFilename);
-          goto shm_open_err;
-        }
+        rc = unixLogError(SQLITE_CANTOPEN_BKPT, "open", zShmFilename);
+        goto shm_open_err;
       }
   
       /* Check to see if another process is holding the dead-man switch.

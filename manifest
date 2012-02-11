@@ -1,5 +1,5 @@
-C Fix\sa\swarning\scoming\sfrom\sthe\sSolaris\sStudio\scompiler.
-D 2012-02-10T20:43:05.055
+C Remove\sa\sredundant\stest\sfrom\sthe\sshared-memory\slogic\sin\sos_unix.c.
+D 2012-02-11T18:51:34.899
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 59beba555b65a450bd1d804220532971d4299f60
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c d509b369ed376c77bc547961844a105d3907e4fa
+F src/os_unix.c 35fb4bc9bc1acf2fb67d4c3b78d1ab471e22a0fd
 F src/os_win.c 5ac061ae1326a71500cee578ed0fd9113b4f6a37
 F src/pager.c 2d892f7b901a8867a33bc21742086165a3a99af8
 F src/pager.h a435da8421dc7844b7f9c7f37b636c160c50208a
@@ -989,7 +989,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 92131195d0c24c0116992db51ed5d8316626ba57
-R adab601e293e6166c9f1fe94f2757bd1
+P 33294bbd1724665832464b33f865a29dc82b90f6
+R 00b08584e9c041156461ca40087c2e4e
 U drh
-Z 57c4345b7c5ce6bd28783854ba285555
+Z c9bd46f5e0e3af1639554e403a310b26
