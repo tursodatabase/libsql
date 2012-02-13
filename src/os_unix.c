@@ -530,7 +530,7 @@ static const char *unixNextSystemCall(sqlite3_vfs *p, const char *zName){
 static int robust_open(const char *z, int f, mode_t m){
   int rc;
   mode_t m2;
-  mode_t origM;
+  mode_t origM = 0;
   if( m==0 ){
     m2 = SQLITE_DEFAULT_FILE_PERMISSIONS;
   }else{

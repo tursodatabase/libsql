@@ -1,5 +1,5 @@
-C On\sunix,\signore\sthe\sumask\swhen\screating\sjournal\sfiles.\s\sThat\sway,\sjournal\sfiles\nwill\shave\sexactly\sthe\ssame\spermissions\sas\sthe\soriginal\sdatabase\sand\sany\nprocess\sthat\shas\spermission\sto\swrite\sto\sthe\sdatabase\scan\salso\srecover\nhot\sjournals.
-D 2012-02-13T20:16:37.535
+C Fix\sa\sharmless\scompiler\swarning\sintroduced\sby\sthe\sprevious\scheck-in.
+D 2012-02-13T20:28:15.804
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 59beba555b65a450bd1d804220532971d4299f60
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 8035d8af66d205b6bfd249c1ed0eb708c8411a3c
+F src/os_unix.c 0e3d2942d228d0366fb80a3640f35caf413b66d1
 F src/os_win.c 5ac061ae1326a71500cee578ed0fd9113b4f6a37
 F src/pager.c 2d892f7b901a8867a33bc21742086165a3a99af8
 F src/pager.h a435da8421dc7844b7f9c7f37b636c160c50208a
@@ -989,7 +989,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 76bb649ee2633226324130f5898622c348f93769
-R b5d60671b244f9108cc239280d062aa2
+P 84b324606adc8437338c086404eb157f30f04130
+R d3286eff693659b9b4732d3698634dbe
 U drh
-Z 7eb3e8117d2ffa2020d44f7552f02a09
+Z ade107925d4b7260ea92f951a93b4e84
