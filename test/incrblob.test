@@ -473,15 +473,9 @@ if {[permutation] != "memsubsys1"} {
     flush $::blob
   } {}
   
-  # At this point rollback should be illegal (because 
-  # there is an open blob channel).  But commit is also illegal because
-  # the open blob is read-write.
+  # At this point commit should be illegal (because 
+  # there is an open blob channel).
   #
-  do_test incrblob-6.10 {
-    catchsql {
-      ROLLBACK;
-    } db2
-  } {1 {cannot rollback transaction - SQL statements in progress}}
   do_test incrblob-6.11 {
     catchsql {
       COMMIT;

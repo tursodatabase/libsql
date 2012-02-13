@@ -1,5 +1,5 @@
-C Changes\sto\svarious\stest\sscripts\sso\sthat\sveryquick.test\sruns\swith\sOMIT_COMPOUND_SELECT\sdefined.
-D 2012-02-13T10:00:35.138
+C Change\sthe\sROLLBACK\scommand\sso\sthat\spending\sstatements\sto\snot\sblock\sit.\s\sThe\npending\sstatements\sinstead\sreturn\sSQLITE_ABORT\supon\snext\saccess.\s\sNote:\sThis\ncauses\sseparate\sshared-cache\sconnections\sin\sread_uncommitted\smode\sto\sabort\sas\nwell.
+D 2012-02-13T16:43:16.086
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -122,11 +122,11 @@ F src/alter.c 149cc80d9257971b0bff34e58fb2263e01998289
 F src/analyze.c f32ff304da413851eefa562b04e61ff6cb88248b
 F src/attach.c 12c6957996908edc31c96d7c68d4942c2474405f
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
-F src/backup.c e9538bad2d4a4fcd4308f1aed7cb18a0fbc968f9
+F src/backup.c 6be23a344d3301ae38e92fddb3a33b91c309fce4
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c bb0132a725b4d5ed077924399c4f6d4b9390a721
-F src/btree.h 46e9f04672f1390255bc56865a3238b384d0f2d5
+F src/btree.c 253c3147a4ebbaee42cd329dbdc0856200bbbda7
+F src/btree.h 48a013f8964f12d944d90e4700df47b72dd6d923
 F src/btreeInt.h 26d8ca625b141927fe6620c1d2cf58eaf494ca0c
 F src/build.c c4d36e527f457f9992a6663365871dfa7c5094b8
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
@@ -147,7 +147,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
 F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
-F src/main.c cb099cc4864b542f97938049fc74ea8ae6845ce4
+F src/main.c 4aa7f1994a7cf810d7d754cb30202543b40bb726
 F src/malloc.c 15afac5e59b6584efe072e9933aefb4230e74f97
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c b3677415e69603d6a0e7c5410a1b3731d55beda1
@@ -184,7 +184,7 @@ F src/select.c 232283a2e60d91cbd9a5ddf2f6f7ecf53d590075
 F src/shell.c aa28f117033ba3e44b5eaaf2ad572222bcdfd66e
 F src/sqlite.h.in 371c30e4be94b9b0ea6400ed66663fcf8e891eb4
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h 736f3a7748434200db7a9e0a352b67d1b8759e0a
+F src/sqliteInt.h ea24b5f2d2e3ae7e0c1126a78c0e025ed4e98f4b
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 4568e72dfd36b6a5911f93457364deb072e0b03a
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -240,11 +240,11 @@ F src/update.c d3076782c887c10e882996550345da9c4c9f9dea
 F src/utf.c 890c67dcfcc7a74623c95baac7535aadfe265e84
 F src/util.c 9e07bd67dfafe9c75b1da78c87ba030cebbb5388
 F src/vacuum.c 0c0ba2242355c6048d65e2b333abe0f7c06348fa
-F src/vdbe.c 40b14dff04692b1ee421db40c67d4921ecf17a9d
+F src/vdbe.c 2afc9b0260dfe47786211e1eb815a52f27c661b7
 F src/vdbe.h 18f581cac1f4339ec3299f3e0cc6e11aec654cdb
 F src/vdbeInt.h 6ff4180a05683566a8835d12f7ec504b22932c82
 F src/vdbeapi.c 3662b6a468a2a4605a15dfab313baa6dff81ad91
-F src/vdbeaux.c 7683d772ad638faa4567142438c4594e47f173c4
+F src/vdbeaux.c dce061e42f89cd6d0af15c03a854bcc89bd5deb0
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c fb0ac964ccbcd94f595eb993c05bfd9c52468a4a
 F src/vdbesort.c b25814d385895544ebc8118245c8311ded7f81c9
@@ -314,9 +314,9 @@ F test/boundary4.test 89e02fa66397b8a325d5eb102b5806f961f8ec4b
 F test/busy.test 76b4887f8b9160ba903c1ac22e8ff406ad6ae2f0
 F test/cache.test f64136b0893c293d0b910ed057b3b711249099a7
 F test/capi2.test 835d4cee9f542ea50fa8d01f3fe6de80b0627360
-F test/capi3.test 7200dff6acb17b9a4b6f9918f554eaae04968ddd
+F test/capi3.test 9c8b58b6a6aeb14e69bd8c8c7721b47d640464d1
 F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
-F test/capi3c.test ccf0acf045dbacd09f6229aa4efed670aaba76a9
+F test/capi3c.test 1b5424d2ac57b7b443b5de5b9a287642c02279b6
 F test/capi3d.test 17b57ca28be3e37e14c2ba8f787d292d84b724a1
 F test/capi3e.test f7408dda65c92b9056199fdc180f893015f83dde
 F test/cast.test 4c275cbdc8202d6f9c54a3596701719868ac7dc3
@@ -511,7 +511,7 @@ F test/in.test a7b8a0f43da81cd08645b7a710099ffe9ad1126b
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
 F test/in4.test 64f3cc1acde1b9161ccdd8e5bde3daefdb5b2617
-F test/incrblob.test 3307c04876fe025e10256e3cc8050ab5a84aa27f
+F test/incrblob.test 26fde912a1e0aff158b3a84ef3b265f046aad3be
 F test/incrblob2.test edc3a96e557bd61fb39acc8d2edd43371fbbaa19
 F test/incrblob3.test aedbb35ea1b6450c33b98f2b6ed98e5020be8dc7
 F test/incrblob_err.test d2562d2771ebffd4b3af89ef64c140dd44371597
@@ -654,7 +654,7 @@ F test/rollback.test a1b4784b864331eae8b2a98c189efa2a8b11ff07
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test e58e0acef38b527ed1b0b70d3ada588f804af287
 F test/rtree.test 0c8d9dd458d6824e59683c19ab2ffa9ef946f798
-F test/savepoint.test 42ba63b632df4ce1bef8acdba62e4182d6505125
+F test/savepoint.test f5acd87d0c7a5f4ad6c547b47fd18c0e1aeaf048
 F test/savepoint2.test 9b8543940572a2f01a18298c3135ad0c9f4f67d7
 F test/savepoint3.test e328085853b14898d78ceea00dfe7db18bb6a9ec
 F test/savepoint4.test c8f8159ade6d2acd9128be61e1230f1c1edc6cc0
@@ -679,7 +679,7 @@ F test/selectB.test 954e4e49cf1f896d61794e440669e03a27ceea25
 F test/selectC.test 871fb55d884d3de5943c4057ebd22c2459e71977
 F test/server1.test 46803bd3fe8b99b30dbc5ff38ffc756f5c13a118
 F test/shared.test 34945a516532b11182c3eb26e31247eee3c9ae48
-F test/shared2.test 8f71d4eb4d5261280de92284df74172545c852cc
+F test/shared2.test 03eb4a8d372e290107d34b6ce1809919a698e879
 F test/shared3.test ebf77f023f4bdaa8f74f65822b559e86ce5c6257
 F test/shared4.test 72d90821e8d2fc918a08f16d32880868d8ee8e9d
 F test/shared6.test 866bb4982c45ce216c61ded5e8fde4e7e2f3ffa9
@@ -989,7 +989,10 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P bfbfe05b81919ecc3d6e7be4c24994f795f16582
-R 6250e4472fb78736176921352e48e2f9
-U dan
-Z f0319cf74449ae83da7435ab8330767c
+P 76bb649ee2633226324130f5898622c348f93769
+R 99d7e91688392c96521a36db0be702a8
+T *branch * nonblocking-rollback
+T *sym-nonblocking-rollback *
+T -sym-trunk *
+U drh
+Z 742e7385f2147385b0b62b5bc1ba4557
