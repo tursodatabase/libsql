@@ -29,7 +29,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-ifcapable {!trigger} {
+ifcapable !trigger||!compound {
   finish_test
   return
 }

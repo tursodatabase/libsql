@@ -649,10 +649,8 @@ if {[wal_is_wal_mode]==0} {
       CREATE TABLE main.t1(x, y);
       CREATE TABLE aux1.t2(x, y);
       CREATE TABLE aux2.t3(x, y);
-      SELECT name FROM sqlite_master 
-        UNION ALL
-      SELECT name FROM aux1.sqlite_master 
-        UNION ALL
+      SELECT name FROM sqlite_master;
+      SELECT name FROM aux1.sqlite_master;
       SELECT name FROM aux2.sqlite_master;
     }
   } {t1 t2 t3}
@@ -691,7 +689,7 @@ if {[wal_is_wal_mode]==0} {
     execsql { PRAGMA lock_status }
   } [list main reserved temp $templockstate aux1 reserved aux2 reserved]
   do_test savepoint-10.2.9 {
-    execsql { SELECT 'a', * FROM t1 UNION ALL SELECT 'b', * FROM t3 }
+    execsql { SELECT 'a', * FROM t1 ; SELECT 'b', * FROM t3 }
   } {a 1 2 b 3 4}
   do_test savepoint-10.2.9 {
     execsql {

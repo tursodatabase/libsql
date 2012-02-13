@@ -17,6 +17,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+ifcapable !compound {
+  finish_test
+  return
+}
+
 do_test tkt-f7772-1.1 {
   execsql {
      CREATE TEMP TABLE t1(x UNIQUE);

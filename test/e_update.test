@@ -381,11 +381,9 @@ do_execsql_test e_update-2.2.X {
 # attached).
 #
 do_execsql_test e_update-2.3.0 {
-  SELECT 'main', tbl_name FROM main.sqlite_master WHERE type = 'table'
-    UNION ALL
-  SELECT 'temp', tbl_name FROM sqlite_temp_master WHERE type = 'table'
-    UNION ALL
-  SELECT 'aux', tbl_name FROM aux.sqlite_master WHERE type = 'table'
+  SELECT 'main', tbl_name FROM main.sqlite_master WHERE type = 'table';
+  SELECT 'temp', tbl_name FROM sqlite_temp_master WHERE type = 'table';
+  SELECT 'aux', tbl_name FROM aux.sqlite_master WHERE type = 'table';
 } [list {*}{
     main t1
     main t2

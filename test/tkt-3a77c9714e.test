@@ -16,6 +16,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+ifcapable !compound {
+  finish_test
+  return
+}
+
 set testprefix "tkt-3a77c9714e"
 
 do_execsql_test 1.1 {

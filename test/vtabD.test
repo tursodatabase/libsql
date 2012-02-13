@@ -49,17 +49,15 @@ do_test vtabD-1.5 {
 do_test vtabD-1.6 {
   execsql { SELECT * FROM tv1 WHERE a < 500 OR b = 810000 }
 } [execsql {
-  SELECT * FROM t1 WHERE a < 500
-    UNION ALL
-  SELECT * FROM t1 WHERE b = 810000 AND NOT (a < 500)
+  SELECT * FROM t1 WHERE a < 500;
+  SELECT * FROM t1 WHERE b = 810000 AND NOT (a < 500);
 }]
 
 do_test vtabD-1.7 {
   execsql { SELECT * FROM tv1 WHERE a < 90000 OR b = 8100000000 }
 } [execsql {
-  SELECT * FROM t1 WHERE a < 90000
-    UNION ALL
-  SELECT * FROM t1 WHERE b = 8100000000 AND NOT (a < 90000)
+  SELECT * FROM t1 WHERE a < 90000;
+  SELECT * FROM t1 WHERE b = 8100000000 AND NOT (a < 90000);
 }]
 
 if {[working_64bit_int]} {

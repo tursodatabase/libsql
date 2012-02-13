@@ -15,7 +15,7 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-ifcapable !or_opt {
+ifcapable !or_opt||!compound {
   finish_test
   return
 }
