@@ -1193,8 +1193,8 @@ int sqlite3VdbeList(
   if( i>=nRow ){
     p->rc = SQLITE_OK;
     rc = SQLITE_DONE;
-  }else if( db->u1.isInterrupted ){
-    p->rc = SQLITE_INTERRUPT;
+  }else if( db->nInterrupt!=p->nInterrupt ){
+    p->rc = db->errcodeInterrupt;
     rc = SQLITE_ERROR;
     sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3ErrStr(p->rc));
   }else{

@@ -1050,7 +1050,8 @@ int sqlite3_busy_timeout(sqlite3 *db, int ms){
 ** Cause any pending operation to stop at its earliest opportunity.
 */
 void sqlite3_interrupt(sqlite3 *db){
-  db->u1.isInterrupted = 1;
+  db->errcodeInterrupt = SQLITE_INTERRUPT;
+  db->nInterrupt++;
 }
 
 

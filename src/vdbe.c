@@ -476,7 +476,7 @@ static void registerTrace(FILE *out, int iReg, Mem *p){
 ** flag on jump instructions, we get a (small) speed improvement.
 */
 #define CHECK_FOR_INTERRUPT \
-   if( db->u1.isInterrupted ) goto abort_due_to_interrupt;
+   if( db->nInterrupt!=p->nInterrupt ) goto abort_due_to_interrupt;
 
 
 #ifndef NDEBUG
@@ -6177,8 +6177,8 @@ abort_due_to_error:
   ** flag.
   */
 abort_due_to_interrupt:
-  assert( db->u1.isInterrupted );
-  rc = SQLITE_INTERRUPT;
+  assert( db->nInterrupt!=p->nInterrupt );
+  rc = db->errcodeInterrupt;
   p->rc = rc;
   sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3ErrStr(rc));
   goto vdbe_error_halt;

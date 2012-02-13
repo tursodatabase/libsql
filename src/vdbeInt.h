@@ -313,6 +313,7 @@ struct Vdbe {
   u32 cacheCtr;           /* VdbeCursor row cache generation counter */
   int pc;                 /* The program counter */
   int rc;                 /* Value to return */
+  u32 nInterrupt;         /* Interrupts prior to start of this statement */
   u8 errorAction;         /* Recovery action to do in case of an error */
   u8 explain;             /* True if EXPLAIN present on SQL command */
   u8 changeCntOn;         /* True to update the change-counter */

@@ -854,10 +854,8 @@ struct sqlite3 {
   sqlite3_value *pErr;          /* Most recent error message */
   char *zErrMsg;                /* Most recent error message (UTF-8 encoded) */
   char *zErrMsg16;              /* Most recent error message (UTF-16 encoded) */
-  union {
-    volatile int isInterrupted; /* True if sqlite3_interrupt has been called */
-    double notUsed1;            /* Spacer */
-  } u1;
+  u32 nInterrupt;               /* Increment on each sqlite3_interrupt() */
+  int errcodeInterrupt;         /* Reason for the most recent interrupt */
   Lookaside lookaside;          /* Lookaside malloc configuration */
 #ifndef SQLITE_OMIT_AUTHORIZATION
   int (*xAuth)(void*,int,const char*,const char*,const char*,const char*);
@@ -2173,6 +2171,7 @@ struct Parse {
   char *zErrMsg;       /* An error message */
   Vdbe *pVdbe;         /* An engine for executing database bytecode */
   int rc;              /* Return code from execution */
+  u32 nInterrupt;      /* Interrupts seen prior to this parse */
   u8 colNamesSet;      /* TRUE after OP_ColumnName has been issued to pVdbe */
   u8 checkSchema;      /* Causes schema cookie check after an error */
   u8 nested;           /* Number of nested calls to the parser/code generator */

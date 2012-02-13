@@ -396,9 +396,6 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
 
 
   mxSqlLen = db->aLimit[SQLITE_LIMIT_SQL_LENGTH];
-  if( db->activeVdbeCnt==0 ){
-    db->u1.isInterrupted = 0;
-  }
   pParse->rc = SQLITE_OK;
   pParse->zTail = zSql;
   i = 0;
@@ -426,7 +423,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
     }
     switch( tokenType ){
       case TK_SPACE: {
-        if( db->u1.isInterrupted ){
+        if( db->nInterrupt!=pParse->nInterrupt ){
           sqlite3ErrorMsg(pParse, "interrupt");
           pParse->rc = SQLITE_INTERRUPT;
           goto abort_parse;

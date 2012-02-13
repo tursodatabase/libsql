@@ -384,14 +384,6 @@ static int sqlite3Step(Vdbe *p){
     goto end_of_step;
   }
   if( p->pc<0 ){
-    /* If there are no other statements currently running, then
-    ** reset the interrupt flag.  This prevents a call to sqlite3_interrupt
-    ** from interrupting a statement that has not yet started.
-    */
-    if( db->activeVdbeCnt==0 ){
-      db->u1.isInterrupted = 0;
-    }
-
     assert( db->writeVdbeCnt>0 || db->autoCommit==0 || db->nDeferredCons==0 );
 
 #ifndef SQLITE_OMIT_TRACE
@@ -403,6 +395,7 @@ static int sqlite3Step(Vdbe *p){
     db->activeVdbeCnt++;
     if( p->readOnly==0 ) db->writeVdbeCnt++;
     p->pc = 0;
+    p->nInterrupt = db->nInterrupt;
   }
 #ifndef SQLITE_OMIT_EXPLAIN
   if( p->explain ){

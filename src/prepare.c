@@ -543,6 +543,7 @@ static int sqlite3Prepare(
     goto end_prepare;
   }
   pParse->pReprepare = pReprepare;
+  pParse->nInterrupt = db->nInterrupt;
   assert( ppStmt && *ppStmt==0 );
   assert( !db->mallocFailed );
   assert( sqlite3_mutex_held(db->mutex) );
