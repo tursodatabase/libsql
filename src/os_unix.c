@@ -420,7 +420,7 @@ static struct unix_syscall {
 #define osRmdir     ((int(*)(const char*))aSyscall[19].pCurrent)
 
   { "fchown",       (sqlite3_syscall_ptr)fchown,          0 },
-#define osFchown    ((int(*)(const char*,uid_t,gid_t))aSyscall[20].pCurrent)
+#define osFchown    ((int(*)(int,uid_t,gid_t))aSyscall[20].pCurrent)
 
 }; /* End of the overrideable system calls */
 
