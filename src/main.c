@@ -920,12 +920,21 @@ const char *sqlite3ErrStr(int rc){
     /* SQLITE_RANGE       */ "bind or column index out of range",
     /* SQLITE_NOTADB      */ "file is encrypted or is not a database",
   };
-  rc &= 0xff;
-  if( ALWAYS(rc>=0) && rc<(int)(sizeof(aMsg)/sizeof(aMsg[0])) && aMsg[rc]!=0 ){
-    return aMsg[rc];
-  }else{
-    return "unknown error";
+  const char *zErr = "unknown error";
+  switch( rc ){
+    case SQLITE_ABORT_ROLLBACK: {
+      zErr = "abort due to ROLLBACK";
+      break;
+    }
+    default: {
+      rc &= 0xff;
+      if( ALWAYS(rc>=0) && rc<ArraySize(aMsg) && aMsg[rc]!=0 ){
+        zErr = aMsg[rc];
+      }
+      break;
+    }
   }
+  return zErr;
 }
 
 /*

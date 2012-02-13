@@ -2806,7 +2806,7 @@ case OP_AutoCommit: {
   }else if( desiredAutoCommit!=db->autoCommit ){
     if( iRollback ){
       assert( desiredAutoCommit==1 );
-      sqlite3RollbackAll(db, SQLITE_ABORT);
+      sqlite3RollbackAll(db, SQLITE_ABORT_ROLLBACK);
       db->autoCommit = 1;
     }else if( (rc = sqlite3VdbeCheckFk(p, 1))!=SQLITE_OK ){
       goto vdbe_return;

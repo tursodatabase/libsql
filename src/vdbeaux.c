@@ -2166,7 +2166,7 @@ int sqlite3VdbeHalt(Vdbe *p){
           /* We are forced to roll back the active transaction. Before doing
           ** so, abort any other statements this handle currently has active.
           */
-          sqlite3RollbackAll(db, SQLITE_ABORT);
+          sqlite3RollbackAll(db, SQLITE_ABORT_ROLLBACK);
           sqlite3CloseSavepoints(db);
           db->autoCommit = 1;
         }
@@ -2223,7 +2223,7 @@ int sqlite3VdbeHalt(Vdbe *p){
       }else if( p->errorAction==OE_Abort ){
         eStatementOp = SAVEPOINT_ROLLBACK;
       }else{
-        sqlite3RollbackAll(db, SQLITE_ABORT);
+        sqlite3RollbackAll(db, SQLITE_ABORT_ROLLBACK);
         sqlite3CloseSavepoints(db);
         db->autoCommit = 1;
       }
@@ -2243,7 +2243,7 @@ int sqlite3VdbeHalt(Vdbe *p){
           sqlite3DbFree(db, p->zErrMsg);
           p->zErrMsg = 0;
         }
-        sqlite3RollbackAll(db, SQLITE_ABORT);
+        sqlite3RollbackAll(db, SQLITE_ABORT_ROLLBACK);
         sqlite3CloseSavepoints(db);
         db->autoCommit = 1;
       }
