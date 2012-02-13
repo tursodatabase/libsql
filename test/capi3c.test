@@ -849,17 +849,18 @@ do_test capi3c-11.9.2 {
   catchsql {
     ROLLBACK;
   }
-} {1 {cannot rollback transaction - SQL statements in progress}}
+} {0 {}}
 do_test capi3c-11.9.3 {
   sqlite3_get_autocommit $DB
-} 0
+} 1
 do_test capi3c-11.10 {
   sqlite3_step $STMT
-} {SQLITE_ROW}
+} {SQLITE_ABORT}
 do_test capi3c-11.11 {
   sqlite3_step $STMT
 } {SQLITE_ROW}
 do_test capi3c-11.12 {
+  sqlite3_step $STMT
   sqlite3_step $STMT
 } {SQLITE_DONE}
 do_test capi3c-11.13 {
@@ -869,15 +870,15 @@ do_test capi3c-11.14 {
   execsql {
     SELECT a FROM t2;
   }
-} {1 2 3}
+} {1 2}
 do_test capi3c-11.14.1 {
   sqlite3_get_autocommit $DB
-} 0
+} 1
 do_test capi3c-11.15 {
   catchsql {
     ROLLBACK;
   }
-} {0 {}}
+} {1 {cannot rollback - no transaction is active}}
 do_test capi3c-11.15.1 {
   sqlite3_get_autocommit $DB
 } 1

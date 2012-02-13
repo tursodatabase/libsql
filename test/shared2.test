@@ -79,48 +79,6 @@ do_test shared2-1.3 {
   list $a $count
 } {32 64}
 
-#---------------------------------------------------------------------------
-# These tests, shared2.2.*, test the outcome when data is added to or 
-# removed from a table due to a rollback while a read-uncommitted 
-# cursor is scanning it.
-#
-do_test shared2-2.1 {
-  execsql {
-    INSERT INTO numbers VALUES(1, 'Medium length text field');
-    INSERT INTO numbers VALUES(2, 'Medium length text field');
-    INSERT INTO numbers VALUES(3, 'Medium length text field');
-    INSERT INTO numbers VALUES(4, 'Medium length text field');
-    BEGIN;
-    DELETE FROM numbers WHERE (a%2)=0;
-  } db1
-  set res [list]
-  db2 eval {
-    SELECT a FROM numbers ORDER BY a;
-  } {
-    lappend res $a
-    if {$a==3} {
-      execsql {ROLLBACK} db1
-    }
-  }
-  set res
-} {1 3 4}
-do_test shared2-2.2 {
-  execsql {
-    BEGIN;
-    INSERT INTO numbers VALUES(5, 'Medium length text field');
-    INSERT INTO numbers VALUES(6, 'Medium length text field');
-  } db1
-  set res [list]
-  db2 eval {
-    SELECT a FROM numbers ORDER BY a;
-  } {
-    lappend res $a
-    if {$a==5} {
-      execsql {ROLLBACK} db1
-    }
-  }
-  set res
-} {1 2 3 4 5}
 
 db1 close
 db2 close

@@ -42,7 +42,7 @@ do_test tkt-f7772-1.2 {
     BEGIN IMMEDIATE;
     SELECT x, force_rollback(), EXISTS(SELECT 1 FROM t3 WHERE w=x) FROM t2;
   }
-} {1 {callback requested query abort}}
+} {1 {abort due to ROLLBACK}}
 do_test tkt-f7772-1.3 {
   sqlite3_get_autocommit db
 } {1}
