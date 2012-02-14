@@ -43,6 +43,64 @@ do_test fuzzer1-1.3 {
   }
 } {abcde 0 abcda 1 ebcde 10 ebcda 11 abcdo 100 ebcdo 110 obcde 110 obcda 111 obcdo 210}
 
+do_test fuzzer1-1.4 {
+  db eval {
+    INSERT INTO f1(ruleset, cfrom, cto, cost) VALUES(1,'b','x',1);
+    INSERT INTO f1(ruleset, cfrom, cto, cost) VALUES(1,'d','y',10);
+    INSERT INTO f1(ruleset, cfrom, cto, cost) VALUES(1,'y','z',100);
+  }
+} {}
+do_test fuzzer1-1.5 {
+  db eval {
+    SELECT word, distance FROM f1 WHERE word MATCH 'abcde'
+  }
+} {abcde 0 abcda 1 ebcde 10 ebcda 11 abcdo 100 ebcdo 110 obcde 110 obcda 111 obcdo 210}
+do_test fuzzer1-1.6 {
+  db eval {
+    SELECT word, distance FROM f1 WHERE word MATCH 'abcde' AND ruleset=0
+  }
+} {abcde 0 abcda 1 ebcde 10 ebcda 11 abcdo 100 ebcdo 110 obcde 110 obcda 111 obcdo 210}
+do_test fuzzer1-1.7 {
+  db eval {
+    SELECT word, distance FROM f1 WHERE word MATCH 'abcde' AND ruleset=1
+  }
+} {abcde 0 axcde 1 axcda 2 abcye 10 abcya 11 axcye 11 axcya 12 abcze 110 abcza 111 axcze 111 axcza 112}
+do_test fuzzer1-1.8 {
+  db eval {
+    SELECT word, distance FROM f1 WHERE word MATCH 'abcde' AND distance<100
+  }
+} {abcde 0 abcda 1 ebcde 10 ebcda 11}
+do_test fuzzer1-1.9 {
+  db eval {
+    SELECT word, distance FROM f1 WHERE word MATCH 'abcde' AND distance<=100
+  }
+} {abcde 0 abcda 1 ebcde 10 ebcda 11 abcdo 100}
+do_test fuzzer1-1.10 {
+  db eval {
+    SELECT word, distance FROM f1
+     WHERE word MATCH 'abcde' AND distance<100 AND ruleset=0
+  }
+} {abcde 0 abcda 1 ebcde 10 ebcda 11}
+do_test fuzzer1-1.11 {
+  db eval {
+    SELECT word, distance FROM f1
+    WHERE word MATCH 'abcde' AND distance<=100 AND ruleset=0
+  }
+} {abcde 0 abcda 1 ebcde 10 ebcda 11 abcdo 100}
+do_test fuzzer1-1.12 {
+  db eval {
+    SELECT word, distance FROM f1
+     WHERE word MATCH 'abcde' AND distance<12 AND ruleset=1
+  }
+} {abcde 0 axcde 1 axcda 2 abcye 10 abcya 11 axcye 11}
+do_test fuzzer1-1.13 {
+  db eval {
+    SELECT word, distance FROM f1
+    WHERE word MATCH 'abcde' AND distance<=12 AND ruleset=1
+  }
+} {abcde 0 axcde 1 axcda 2 abcye 10 abcya 11 axcye 11 axcya 12}
+
+
 do_test fuzzer1-2.0 {
   execsql {
     CREATE VIRTUAL TABLE temp.f2 USING fuzzer;
