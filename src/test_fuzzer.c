@@ -147,14 +147,14 @@ typedef struct fuzzer_stem fuzzer_stem;
 */
 typedef int fuzzer_cost;
 typedef signed char fuzzer_len;
-typedef unsigned char fuzzer_ruleid;
+typedef int fuzzer_ruleid;
 
 /*
 ** Limits
 */
-#define FUZZER_MX_LENGTH   50   /* Maximum length of a search string */
-#define FUZZER_MX_RULEID   50   /* Maximum rule ID */
-#define FUZZER_MX_COST   1000   /* Maximum single-rule cost */
+#define FUZZER_MX_LENGTH           50   /* Maximum length of a search string */
+#define FUZZER_MX_RULEID   2147483647   /* Maximum rule ID */
+#define FUZZER_MX_COST           1000   /* Maximum single-rule cost */
 
 
 /*
