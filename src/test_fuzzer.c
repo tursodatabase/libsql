@@ -480,6 +480,7 @@ static int fuzzerSeen(fuzzer_cursor *pCur, fuzzer_stem *pStem){
 static int fuzzerAdvance(fuzzer_cursor *pCur, fuzzer_stem *pStem){
   const fuzzer_rule *pRule;
   while( (pRule = pStem->pRule)!=0 ){
+    assert( pRule==&pCur->nullRule || pRule->iRuleset==pCur->iRuleset );
     while( pStem->n < pStem->nBasis - pRule->nFrom ){
       pStem->n++;
       if( pRule->nFrom==0
@@ -626,6 +627,9 @@ static fuzzer_stem *fuzzerNewStem(
   pNew->nBasis = strlen(zWord);
   memcpy(pNew->zBasis, zWord, pNew->nBasis+1);
   pNew->pRule = pCur->pVtab->pRule;
+  while( pNew->pRule && pNew->pRule->iRuleset!=pCur->iRuleset ){
+    pNew->pRule = pNew->pRule->pNext;
+  }
   pNew->n = -1;
   pNew->rBaseCost = pNew->rCostX = rBaseCost;
   h = fuzzerHash(pNew->zBasis);

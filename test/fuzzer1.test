@@ -64,7 +64,7 @@ do_test fuzzer1-1.7 {
   db eval {
     SELECT word, distance FROM f1 WHERE word MATCH 'abcde' AND ruleset=1
   }
-} {abcde 0 axcde 1 axcda 2 abcye 10 abcya 11 axcye 11 axcya 12 abcze 110 abcza 111 axcze 111 axcza 112}
+} {abcde 0 axcde 1 abcye 10 axcye 11 abcze 110 axcze 111}
 do_test fuzzer1-1.8 {
   db eval {
     SELECT word, distance FROM f1 WHERE word MATCH 'abcde' AND distance<100
@@ -90,16 +90,15 @@ do_test fuzzer1-1.11 {
 do_test fuzzer1-1.12 {
   db eval {
     SELECT word, distance FROM f1
-     WHERE word MATCH 'abcde' AND distance<12 AND ruleset=1
+     WHERE word MATCH 'abcde' AND distance<11 AND ruleset=1
   }
-} {abcde 0 axcde 1 axcda 2 abcye 10 abcya 11 axcye 11}
+} {abcde 0 axcde 1 abcye 10}
 do_test fuzzer1-1.13 {
   db eval {
     SELECT word, distance FROM f1
-    WHERE word MATCH 'abcde' AND distance<=12 AND ruleset=1
+    WHERE word MATCH 'abcde' AND distance<=11 AND ruleset=1
   }
-} {abcde 0 axcde 1 axcda 2 abcye 10 abcya 11 axcye 11 axcya 12}
-
+} {abcde 0 axcde 1 abcye 10 axcye 11}
 
 do_test fuzzer1-2.0 {
   execsql {
@@ -1436,5 +1435,13 @@ do_test fuzzer1-2.3 {
   }
 } {{tyler finley} trailer taymouth steelewood tallia tallu talwyn thelema}
 
+
+do_execsql_test fuzzer1-3.1 {
+  CREATE VIRTUAL TABLE temp.f3 USING fuzzer;
+  CREATE TABLE f3(ruleset, cfrom, cto, cost);
+  INSERT INTO f3(ruleset, cfrom, cto, cost) VALUES(0, 'x','y', 10);
+  INSERT INTO f3(ruleset, cfrom, cto, cost) VALUES(1, 'a','b', 10);
+  SELECT word FROM f3 WHERE word MATCH 'ax'
+} {ax ay}
 
 finish_test
