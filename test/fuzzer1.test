@@ -147,11 +147,21 @@ do_test fuzzer1-1.13 {
     WHERE word MATCH 'abcde' AND distance<=11 AND ruleset=1
   }
 } {abcde 0 axcde 1 abcye 10 axcye 11}
+do_test fuzzer1-1.14 {
+  catchsql {INSERT INTO f1 VALUES(1)}
+} {1 {table f1 may not be modified}}
+do_test fuzzer1-1.15 {
+  catchsql {DELETE FROM f1}
+} {1 {table f1 may not be modified}}
+do_test fuzzer1-1.16 {
+  catchsql {UPDATE f1 SET rowid=rowid+10000}
+} {1 {table f1 may not be modified}}
+
 
 do_test fuzzer1-2.0 {
   execsql {
     -- costs based on English letter frequencies
-    CREATE TEMP TABLE f2_rules(ruleset, cFrom, cTo, cost);
+    CREATE TEMP TABLE f2_rules(ruleset DEFAULT 0, cFrom, cTo, cost);
     INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('a','e',24);
     INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('a','o',47);
     INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('a','u',50);
@@ -220,6 +230,18 @@ do_test fuzzer1-2.0 {
     INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('y','',100);
     INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','z',120);
     INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('z','',120);
+    INSERT INTO f2_rules(ruleset,cFrom,cTo,cost)
+      SELECT 1, cFrom, cTo, 100 FROM f2_rules WHERE ruleset=0;
+    INSERT INTO f2_rules(ruleset,cFrom,cTo,cost)
+      SELECT 2, cFrom, cTo, 200-cost FROM f2_rules WHERE ruleset=0;
+    INSERT INTO f2_rules(ruleset,cFrom,cTo,cost)
+      SELECT 3, cFrom, cTo, cost FROM f2_rules WHERE ruleset=0;
+    INSERT INTO f2_rules(ruleset,cFrom,cTo,cost)
+      VALUES(3, 'mallard','duck',50),
+            (3, 'duck', 'mallard', 50),
+            (3, 'rock', 'stone', 50),
+            (3, 'stone', 'rock', 50);
+
 
     CREATE VIRTUAL TABLE temp.f2 USING fuzzer(f2_rules);
 
@@ -1483,6 +1505,28 @@ do_test fuzzer1-2.3 {
        AND streetname.n>=f2.word AND streetname.n<=(f2.word || x'F7BFBFBF')
   }
 } {{tyler finley} trailer taymouth steelewood tallia tallu talwyn thelema}
+do_test fuzzer1-2.4 {
+  execsql {
+    SELECT DISTINCT streetname.n
+      FROM f2 JOIN streetname
+        ON (streetname.n>=f2.word AND streetname.n<=(f2.word || 'zzzzzz'))
+     WHERE f2.word MATCH 'duck'
+       AND f2.distance<150
+       AND f2.ruleset=3
+     ORDER BY 1
+  }
+} {mallard {mallard cove} {mallard forest} {mallard grove} {mallard hill} {mallard park} {mallard ridge} {mallard view}}
+do_test fuzzer1-2.5 {
+  execsql {
+    SELECT DISTINCT streetname.n
+      FROM f2 JOIN streetname
+        ON (streetname.n>=f2.word AND streetname.n<=(f2.word || 'zzzzzz'))
+     WHERE f2.word MATCH 'duck'
+       AND f2.distance<150
+       AND f2.ruleset=2
+     ORDER BY 1
+  }
+} {}
 
 forcedelete test.db2
 do_execsql_test fuzzer1-4.1 {

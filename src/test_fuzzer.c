@@ -28,13 +28,13 @@
 ** that consist of four columns). It does not matter what the columns are
 ** named. 
 **
-** Each row in the fuzzer table represents a single character transformation. 
-** The left most column of the row (column 0) contains an integer value -
-** the identifier of the ruleset to which the transformation rule belongs
-** (see "MULTIPLE RULE SETS" below). The second column of the row (column 0)
-** contains the input character or characters. The third column contains the
-** output character or characters. And the fourth column contains the integer 
-** cost of making the transformation. For example:
+** Each row in the fuzzer data table represents a single character
+** transformation. The left most column of the row (column 0) contains an
+** integer value - the identifier of the ruleset to which the transformation
+** rule belongs (see "MULTIPLE RULE SETS" below). The second column of the
+** row (column 0) contains the input character or characters. The third 
+** column contains the output character or characters. And the fourth column
+** contains the integer cost of making the transformation. For example:
 **
 **    CREATE TABLE f_data(ruleset, cFrom, cTo, Cost);
 **    INSERT INTO f_data(ruleset, cFrom, cTo, Cost) VALUES(0, '', 'a', 100);
@@ -46,9 +46,9 @@
 ** above indicates that the cost of inserting a letter 'a' is 100.  (All 
 ** costs are integers.  We recommend that costs be scaled so that the 
 ** average cost is around 100.) The second INSERT statement creates a rule
-** that the cost of that the cost of deleting a single letter 'b' is 87.
-** The third and fourth INSERT statements mean that the cost of transforming 
-** a single letter "o" into the two-letter sequence "oe" is 38 and that the
+** saying that the cost of deleting a single letter 'b' is 87.  The third
+** and fourth INSERT statements mean that the cost of transforming a
+** single letter "o" into the two-letter sequence "oe" is 38 and that the
 ** cost of transforming "oe" back into "o" is 40.
 **
 ** The contents of the fuzzer data table are loaded into main memory when
@@ -58,6 +58,8 @@
 ** If you do need to modify the contents of the fuzzer data table, it is
 ** recommended that the associated fuzzer table be dropped, the fuzzer data
 ** table edited, and the fuzzer table recreated within a single transaction.
+** Alternatively, the fuzzer data table can be edited then the database
+** connection can be closed and reopened.
 **
 ** Once it has been created, the fuzzer table can be queried as follows:
 **
@@ -73,6 +75,9 @@
 ** target string into the output string then the lowest cost transform is
 ** the one that is returned.  In the example, the search is limited to 
 ** strings with a total distance of less than 200.
+**
+** The fuzzer is a read-only table.  Any attempt to DELETE, INSERT, or
+** UPDATE on a fuzzer table will throw an error.
 **
 ** It is important to put some kind of a limit on the fuzzer output.  This
 ** can be either in the form of a LIMIT clause at the end of the query,
@@ -129,6 +134,12 @@
 **
 ** If no "ruleset = ?" constraint is specified in the WHERE clause, ruleset 
 ** 0 is used.
+**
+** LIMITS
+**
+** The maximum ruleset number is 2147483647.  The maximum length of either
+** of the strings in the second or third column of the fuzzer data table
+** is 50 bytes.  The maximum cost on a rule is 1000.
 */
 #include "sqlite3.h"
 #include <stdlib.h>
@@ -777,6 +788,7 @@ static fuzzer_stem *fuzzerNewStem(
   fuzzer_cost rBaseCost
 ){
   fuzzer_stem *pNew;
+  fuzzer_rule *pRule;
   unsigned int h;
 
   pNew = sqlite3_malloc( sizeof(*pNew) + strlen(zWord) + 1 );
@@ -785,10 +797,11 @@ static fuzzer_stem *fuzzerNewStem(
   pNew->zBasis = (char*)&pNew[1];
   pNew->nBasis = strlen(zWord);
   memcpy(pNew->zBasis, zWord, pNew->nBasis+1);
-  pNew->pRule = pCur->pVtab->pRule;
-  while( pNew->pRule && pNew->pRule->iRuleset!=pCur->iRuleset ){
-    pNew->pRule = pNew->pRule->pNext;
+  pRule = pCur->pVtab->pRule;
+  while( pRule && pRule->iRuleset!=pCur->iRuleset ){
+    pRule = pRule->pNext;
   }
+  pNew->pRule = pRule;
   pNew->n = -1;
   pNew->rBaseCost = pNew->rCostX = rBaseCost;
   h = fuzzerHash(pNew->zBasis);
