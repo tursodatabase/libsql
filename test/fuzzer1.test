@@ -23,48 +23,96 @@ ifcapable !vtab {
 }
 
 register_fuzzer_module db
-do_test fuzzer1-1.0 {
-  catchsql {CREATE VIRTUAL TABLE fault1 USING fuzzer;}
-} {1 {fuzzer virtual tables must be TEMP}}
-do_test fuzzer1-1.1 {
-  db eval {CREATE VIRTUAL TABLE temp.f1 USING fuzzer;}
-} {}
-do_test fuzzer1-1.2 {
-  db eval {
-    INSERT INTO f1(cfrom, cto, cost) VALUES('e','a',1);
-    INSERT INTO f1(cfrom, cto, cost) VALUES('a','e',10);
-    INSERT INTO f1(cfrom, cto, cost) VALUES('e','o',100);
-  }
+
+
+
+# Check configuration errors.
+#
+do_catchsql_test fuzzer1-1.1 {
+  CREATE VIRTUAL TABLE f USING fuzzer;
+} {1 {fuzzer: wrong number of CREATE VIRTUAL TABLE arguments}}
+
+do_catchsql_test fuzzer1-1.2 {
+  CREATE VIRTUAL TABLE f USING fuzzer(one, two);
+} {1 {fuzzer: wrong number of CREATE VIRTUAL TABLE arguments}}
+
+do_catchsql_test fuzzer1-1.3 {
+  CREATE VIRTUAL TABLE f USING fuzzer(nosuchtable);
+} {1 {fuzzer: no such table: main.nosuchtable}}
+
+do_catchsql_test fuzzer1-1.4 {
+  CREATE TEMP TABLE nosuchtable(a, b, c, d);
+  CREATE VIRTUAL TABLE f USING fuzzer(nosuchtable);
+} {1 {fuzzer: no such table: main.nosuchtable}}
+
+do_catchsql_test fuzzer1-1.5 {
+  DROP TABLE temp.nosuchtable;
+  CREATE TABLE nosuchtable(a, b, c, d);
+  CREATE VIRTUAL TABLE temp.f USING fuzzer(nosuchtable);
+} {1 {fuzzer: no such table: temp.nosuchtable}}
+
+do_catchsql_test fuzzer1-1.6 {
+  DROP TABLE IF EXISTS f_rules;
+  CREATE TABLE f_rules(a, b, c);
+  CREATE VIRTUAL TABLE f USING fuzzer(f_rules);
+} {1 {fuzzer: f_rules has 3 columns, expected 4}}
+
+do_catchsql_test fuzzer1-1.7 {
+  DROP TABLE IF EXISTS f_rules;
+  CREATE TABLE f_rules(a, b, c, d, e);
+  CREATE VIRTUAL TABLE f USING fuzzer(f_rules);
+} {1 {fuzzer: f_rules has 5 columns, expected 4}}
+
+
+do_execsql_test fuzzer1-2.1 {
+  CREATE TABLE f1_rules(ruleset DEFAULT 0, cfrom, cto, cost);
+  INSERT INTO f1_rules(cfrom, cto, cost) VALUES('e','a',1);
+  INSERT INTO f1_rules(cfrom, cto, cost) VALUES('a','e',10);
+  INSERT INTO f1_rules(cfrom, cto, cost) VALUES('e','o',100);
+
+  CREATE VIRTUAL TABLE f1 USING fuzzer(f1_rules);
 } {}
 
-do_test fuzzer1-1.3 {
-  db eval {
+do_execsql_test fuzzer1-2.1 {
     SELECT word, distance FROM f1 WHERE word MATCH 'abcde'
-  }
-} {abcde 0 abcda 1 ebcde 10 ebcda 11 abcdo 100 ebcdo 110 obcde 110 obcda 111 obcdo 210}
+} {
+  abcde 0   abcda 1   ebcde 10 
+  ebcda 11  abcdo 100 ebcdo 110 
+  obcde 110 obcda 111 obcdo 210
+}
 
-do_test fuzzer1-1.4 {
-  db eval {
-    INSERT INTO f1(ruleset, cfrom, cto, cost) VALUES(1,'b','x',1);
-    INSERT INTO f1(ruleset, cfrom, cto, cost) VALUES(1,'d','y',10);
-    INSERT INTO f1(ruleset, cfrom, cto, cost) VALUES(1,'y','z',100);
-  }
+do_execsql_test fuzzer1-2.4 {
+  INSERT INTO f1_rules(ruleset, cfrom, cto, cost) VALUES(1,'b','x',1);
+  INSERT INTO f1_rules(ruleset, cfrom, cto, cost) VALUES(1,'d','y',10);
+  INSERT INTO f1_rules(ruleset, cfrom, cto, cost) VALUES(1,'y','z',100);
+
+  DROP TABLE f1;
+  CREATE VIRTUAL TABLE f1 USING fuzzer(f1_rules);
 } {}
-do_test fuzzer1-1.5 {
-  db eval {
-    SELECT word, distance FROM f1 WHERE word MATCH 'abcde'
-  }
-} {abcde 0 abcda 1 ebcde 10 ebcda 11 abcdo 100 ebcdo 110 obcde 110 obcda 111 obcdo 210}
-do_test fuzzer1-1.6 {
-  db eval {
-    SELECT word, distance FROM f1 WHERE word MATCH 'abcde' AND ruleset=0
-  }
-} {abcde 0 abcda 1 ebcde 10 ebcda 11 abcdo 100 ebcdo 110 obcde 110 obcda 111 obcdo 210}
-do_test fuzzer1-1.7 {
-  db eval {
-    SELECT word, distance FROM f1 WHERE word MATCH 'abcde' AND ruleset=1
-  }
-} {abcde 0 axcde 1 abcye 10 axcye 11 abcze 110 axcze 111}
+
+do_execsql_test fuzzer1-2.5 {
+  SELECT word, distance FROM f1 WHERE word MATCH 'abcde'
+} {
+  abcde 0   abcda 1   ebcde 10 
+  ebcda 11  abcdo 100 ebcdo 110 
+  obcde 110 obcda 111 obcdo 210
+}
+
+do_execsql_test fuzzer1-2.6 {
+  SELECT word, distance FROM f1 WHERE word MATCH 'abcde' AND ruleset=0
+} {
+  abcde 0   abcda 1   ebcde 10 
+  ebcda 11  abcdo 100 ebcdo 110 
+  obcde 110 obcda 111 obcdo 210
+}
+
+do_execsql_test fuzzer1-2.7 {
+  SELECT word, distance FROM f1 WHERE word MATCH 'abcde' AND ruleset=1
+} {
+  abcde 0 axcde 1 abcye 10 
+  axcye 11 abcze 110 axcze 111
+}
+
 do_test fuzzer1-1.8 {
   db eval {
     SELECT word, distance FROM f1 WHERE word MATCH 'abcde' AND distance<100
@@ -102,77 +150,78 @@ do_test fuzzer1-1.13 {
 
 do_test fuzzer1-2.0 {
   execsql {
-    CREATE VIRTUAL TABLE temp.f2 USING fuzzer;
     -- costs based on English letter frequencies
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('a','e',24);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('a','o',47);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('a','u',50);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('e','a',23);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('e','i',33);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('e','o',37);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('i','e',33);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('i','y',33);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('o','a',41);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('o','e',46);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('o','u',57);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('u','o',58);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('y','i',33);
+    CREATE TEMP TABLE f2_rules(ruleset, cFrom, cTo, cost);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('a','e',24);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('a','o',47);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('a','u',50);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('e','a',23);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('e','i',33);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('e','o',37);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('i','e',33);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('i','y',33);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('o','a',41);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('o','e',46);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('o','u',57);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('u','o',58);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('y','i',33);
 
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('t','th',70);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('th','t',66);
-
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('t','th',70);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('th','t',66);
  
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('a','',84);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','b',106);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('b','',106);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','c',94);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('c','',94);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','d',89);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('d','',89);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','e',83);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('e','',83);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','f',97);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('f','',97);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','g',99);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('g','',99);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','h',86);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('h','',86);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','i',85);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('i','',85);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','j',120);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('j','',120);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','k',120);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('k','',120);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','l',89);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('l','',89);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','m',96);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('m','',96);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','n',85);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('n','',85);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','o',85);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('o','',85);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','p',100);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('p','',100);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','q',120);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('q','',120);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','r',86);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('r','',86);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','s',86);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('s','',86);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','t',84);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('t','',84);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','u',94);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('u','',94);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','v',120);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('v','',120);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','w',96);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('w','',96);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','x',120);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('x','',120);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','y',100);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('y','',100);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','z',120);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('z','',120);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('a','',84);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','b',106);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('b','',106);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','c',94);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('c','',94);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','d',89);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('d','',89);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','e',83);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('e','',83);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','f',97);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('f','',97);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','g',99);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('g','',99);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','h',86);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('h','',86);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','i',85);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('i','',85);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','j',120);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('j','',120);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','k',120);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('k','',120);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','l',89);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('l','',89);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','m',96);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('m','',96);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','n',85);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('n','',85);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','o',85);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('o','',85);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','p',100);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('p','',100);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','q',120);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('q','',120);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','r',86);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('r','',86);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','s',86);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('s','',86);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','t',84);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('t','',84);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','u',94);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('u','',94);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','v',120);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('v','',120);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','w',96);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('w','',96);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','x',120);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('x','',120);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','y',100);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('y','',100);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','z',120);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('z','',120);
+
+    CREATE VIRTUAL TABLE temp.f2 USING fuzzer(f2_rules);
 
     -- Street names for the 28269 ZIPCODE.
     --
@@ -1435,12 +1484,13 @@ do_test fuzzer1-2.3 {
   }
 } {{tyler finley} trailer taymouth steelewood tallia tallu talwyn thelema}
 
-
-do_execsql_test fuzzer1-3.1 {
-  CREATE VIRTUAL TABLE temp.f3 USING fuzzer;
-  CREATE TABLE f3(ruleset, cfrom, cto, cost);
-  INSERT INTO f3(ruleset, cfrom, cto, cost) VALUES(0, 'x','y', 10);
-  INSERT INTO f3(ruleset, cfrom, cto, cost) VALUES(1, 'a','b', 10);
+forcedelete test.db2
+do_execsql_test fuzzer1-4.1 {
+  ATTACH 'test.db2' AS aux;
+  CREATE TABLE aux.f3_rules(ruleset, cfrom, cto, cost);
+  INSERT INTO f3_rules(ruleset, cfrom, cto, cost) VALUES(0, 'x','y', 10);
+  INSERT INTO f3_rules(ruleset, cfrom, cto, cost) VALUES(1, 'a','b', 10);
+  CREATE VIRTUAL TABLE aux.f3 USING fuzzer(f3_rules);
   SELECT word FROM f3 WHERE word MATCH 'ax'
 } {ax ay}
 

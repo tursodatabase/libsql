@@ -10,43 +10,56 @@
 **
 *************************************************************************
 **
-** Code for demonstartion virtual table that generates variations
+** Code for a demonstration virtual table that generates variations
 ** on an input word at increasing edit distances from the original.
 **
 ** A fuzzer virtual table is created like this:
 **
-**     CREATE VIRTUAL TABLE temp.f USING fuzzer;
+**     CREATE VIRTUAL TABLE f USING fuzzer(<fuzzer-data-table>);
 **
-** The name of the new virtual table in the example above is "f".
-** Note that all fuzzer virtual tables must be TEMP tables.  The
-** "temp." prefix in front of the table name is required when the
-** table is being created.  The "temp." prefix can be omitted when
-** using the table as long as the name is unambiguous.
+** When it is created, the new fuzzer table must be supplied with the
+** name of a "fuzzer data table", which must reside in the same database
+** file as the new fuzzer table. The fuzzer data table contains the various
+** transformations and their costs that the fuzzer logic uses to generate
+** variations.
 **
-** Before being used, the fuzzer needs to be programmed by giving it
-** character transformations and a cost associated with each transformation.
-** Examples:
+** The fuzzer data table must contain exactly four columns (more precisely,
+** the statement "SELECT * FROM <fuzzer_data_table>" must return records
+** that consist of four columns). It does not matter what the columns are
+** named. 
 **
-**    INSERT INTO f(cFrom,cTo,Cost) VALUES('','a',100);
+** Each row in the fuzzer table represents a single character transformation. 
+** The left most column of the row (column 0) contains an integer value -
+** the identifier of the ruleset to which the transformation rule belongs
+** (see "MULTIPLE RULE SETS" below). The second column of the row (column 0)
+** contains the input character or characters. The third column contains the
+** output character or characters. And the fourth column contains the integer 
+** cost of making the transformation. For example:
 **
-** The above statement says that the cost of inserting a letter 'a' is
-** 100.  (All costs are integers.  We recommend that costs be scaled so
-** that the average cost is around 100.)
+**    CREATE TABLE f_data(ruleset, cFrom, cTo, Cost);
+**    INSERT INTO f_data(ruleset, cFrom, cTo, Cost) VALUES(0, '', 'a', 100);
+**    INSERT INTO f_data(ruleset, cFrom, cTo, Cost) VALUES(0, 'b', '', 87);
+**    INSERT INTO f_data(ruleset, cFrom, cTo, Cost) VALUES(0, 'o', 'oe', 38);
+**    INSERT INTO f_data(ruleset, cFrom, cTo, Cost) VALUES(0, 'oe', 'o', 40);
 **
-**    INSERT INTO f(cFrom,cTo,Cost) VALUES('b','',87);
-**
-** The above statement says that the cost of deleting a single letter
-** 'b' is 87.
-**
-**    INSERT INTO f(cFrom,cTo,Cost) VALUES('o','oe',38);
-**    INSERT INTO f(cFrom,cTo,Cost) VALUES('oe','o',40);
-**
-** This third example says that the cost of transforming the single
-** letter "o" into the two-letter sequence "oe" is 38 and that the
+** The first row inserted into the fuzzer data table by the SQL script
+** above indicates that the cost of inserting a letter 'a' is 100.  (All 
+** costs are integers.  We recommend that costs be scaled so that the 
+** average cost is around 100.) The second INSERT statement creates a rule
+** that the cost of that the cost of deleting a single letter 'b' is 87.
+** The third and fourth INSERT statements mean that the cost of transforming 
+** a single letter "o" into the two-letter sequence "oe" is 38 and that the
 ** cost of transforming "oe" back into "o" is 40.
 **
-** After all the transformation costs have been set, the fuzzer table
-** can be queried as follows:
+** The contents of the fuzzer data table are loaded into main memory when
+** a fuzzer table is first created, and may be internally reloaded by the
+** system at any subsequent time. Therefore, the fuzzer data table should be 
+** populated before the fuzzer table is created and not modified thereafter.
+** If you do need to modify the contents of the fuzzer data table, it is
+** recommended that the associated fuzzer table be dropped, the fuzzer data
+** table edited, and the fuzzer table recreated within a single transaction.
+**
+** Once it has been created, the fuzzer table can be queried as follows:
 **
 **    SELECT word, distance FROM f
 **     WHERE word MATCH 'abcdefg'
@@ -96,19 +109,16 @@
 **
 ** MULTIPLE RULE SETS
 **
-** An enhancement as of 2012-02-14 allows multiple rule sets to coexist in
-** the same fuzzer.  This allows, for example, the fuzzer to operate in
+** Normally, the "ruleset" value associated with all character transformations
+** in the fuzzer data table is zero. However, if required, the fuzzer table
+** allows multiple rulesets to be defined. Each query uses only a single
+** ruleset. This allows, for example, a single fuzzer table to support 
 ** multiple languages.
 **
-** A new column "ruleset" is added to the table.  This column must have a
-** value between 0 and 49.  The default value for the ruleset is 0.  But
-** alternative values can be specified.  For example:
-**
-**    INSERT INTO f(ruleset,cFrom,cTo,Cost) VALUES(1,'qu','k',100);
-**
-** Only one ruleset will be used at a time.  When running a MATCH query,
-** specify the desired ruleset using a "ruleset=N" term in the WHERE clause.
-** For example:
+** By default, only the rules from ruleset 0 are used. To specify an 
+** alternative ruleset, a "ruleset = ?" expression must be added to the
+** WHERE clause of a SELECT, where ? is the identifier of the desired 
+** ruleset. For example:
 **
 **   SELECT vocabulary.w FROM f, vocabulary
 **    WHERE f.word MATCH $word
@@ -117,7 +127,8 @@
 **      AND f.ruleset=1  -- Specify the ruleset to use here
 **    LIMIT 20
 **
-** If no ruleset is specified in the WHERE clause, ruleset 0 is used.
+** If no "ruleset = ?" constraint is specified in the WHERE clause, ruleset 
+** 0 is used.
 */
 #include "sqlite3.h"
 #include <stdlib.h>
@@ -199,7 +210,6 @@ struct fuzzer_vtab {
   sqlite3_vtab base;         /* Base class - must be first */
   char *zClassName;          /* Name of this class.  Default: "fuzzer" */
   fuzzer_rule *pRule;        /* All active rules in this fuzzer */
-  fuzzer_rule *pNewRule;     /* New rules to add when last cursor expires */
   int nCursor;               /* Number of active cursors */
 };
 
@@ -223,51 +233,6 @@ struct fuzzer_cursor {
   fuzzer_rule nullRule;      /* Null rule used first */
   fuzzer_stem *apHash[FUZZER_HASH]; /* Hash of previously generated terms */
 };
-
-/* Methods for the fuzzer module */
-static int fuzzerConnect(
-  sqlite3 *db,
-  void *pAux,
-  int argc, const char *const*argv,
-  sqlite3_vtab **ppVtab,
-  char **pzErr
-){
-  fuzzer_vtab *pNew;
-  int n;
-  if( strcmp(argv[1],"temp")!=0 ){
-    *pzErr = sqlite3_mprintf("%s virtual tables must be TEMP", argv[0]);
-    return SQLITE_ERROR;
-  }
-  n = strlen(argv[0]) + 1;
-  pNew = sqlite3_malloc( sizeof(*pNew) + n );
-  if( pNew==0 ) return SQLITE_NOMEM;
-  pNew->zClassName = (char*)&pNew[1];
-  memcpy(pNew->zClassName, argv[0], n);
-  sqlite3_declare_vtab(db,
-     "CREATE TABLE x(word,distance,ruleset,cFrom,cTo,cost)");
-  memset(pNew, 0, sizeof(*pNew));
-  *ppVtab = &pNew->base;
-  return SQLITE_OK;
-}
-/* Note that for this virtual table, the xCreate and xConnect
-** methods are identical. */
-
-static int fuzzerDisconnect(sqlite3_vtab *pVtab){
-  fuzzer_vtab *p = (fuzzer_vtab*)pVtab;
-  assert( p->nCursor==0 );
-  do{
-    while( p->pRule ){
-      fuzzer_rule *pRule = p->pRule;
-      p->pRule = pRule->pNext;
-      sqlite3_free(pRule);
-    }
-    p->pRule = p->pNewRule;
-    p->pNewRule = 0;
-  }while( p->pRule );
-  sqlite3_free(p);
-  return SQLITE_OK;
-}
-/* The xDisconnect and xDestroy methods are also the same */
 
 /*
 ** The two input rule lists are both sorted in order of increasing
@@ -298,6 +263,218 @@ static fuzzer_rule *fuzzerMergeRules(fuzzer_rule *pA, fuzzer_rule *pB){
   return head.pNext;
 }
 
+/*
+** Statement pStmt currently points to a row in the fuzzer data table. This
+** function allocates and populates a fuzzer_rule structure according to
+** the content of the row.
+**
+** If successful, *ppRule is set to point to the new object and SQLITE_OK
+** is returned. Otherwise, *ppRule is zeroed, *pzErr may be set to point
+** to an error message and an SQLite error code returned.
+*/
+static int fuzzerLoadOneRule(
+  fuzzer_vtab *p,                 /* Fuzzer virtual table handle */
+  sqlite3_stmt *pStmt,            /* Base rule on statements current row */
+  fuzzer_rule **ppRule,           /* OUT: New rule object */
+  char **pzErr                    /* OUT: Error message */
+){
+  int iRuleset = sqlite3_column_int(pStmt, 0);
+  const char *zFrom = (const char *)sqlite3_column_text(pStmt, 1);
+  const char *zTo = (const char *)sqlite3_column_text(pStmt, 2);
+  int nCost = sqlite3_column_int(pStmt, 3);
+
+  int rc = SQLITE_OK;             /* Return code */
+  int nFrom;                      /* Size of string zFrom, in bytes */
+  int nTo;                        /* Size of string zTo, in bytes */
+  fuzzer_rule *pRule = 0;         /* New rule object to return */
+
+  if( zFrom==0 ) zFrom = "";
+  if( zTo==0 ) zTo = "";
+  nFrom = strlen(zFrom);
+  nTo = strlen(zTo);
+
+  /* Silently ignore null transformations */
+  if( strcmp(zFrom, zTo)==0 ){
+    *ppRule = 0;
+    return SQLITE_OK;
+  }
+
+  if( nCost<=0 || nCost>FUZZER_MX_COST ){
+    *pzErr = sqlite3_mprintf("cost must be between 1 and %d", FUZZER_MX_COST);
+    rc = SQLITE_ERROR;
+  }else
+  if( nFrom>FUZZER_MX_LENGTH || nTo>FUZZER_MX_LENGTH ){
+    *pzErr = sqlite3_mprintf("maximum string length is %d", FUZZER_MX_LENGTH);
+    rc = SQLITE_ERROR;    
+  }else
+  if( iRuleset<0 || iRuleset>FUZZER_MX_RULEID ){
+    *pzErr = sqlite3_mprintf(
+        "ruleset must be between 0 and %d", FUZZER_MX_RULEID);
+    rc = SQLITE_ERROR;    
+  }else{
+
+    pRule = sqlite3_malloc( sizeof(*pRule) + nFrom + nTo );
+    if( pRule==0 ){
+      rc = SQLITE_NOMEM;
+    }else{
+      memset(pRule, 0, sizeof(*pRule));
+      pRule->zFrom = &pRule->zTo[nTo+1];
+      pRule->nFrom = nFrom;
+      memcpy(pRule->zFrom, zFrom, nFrom+1);
+      memcpy(pRule->zTo, zTo, nTo+1);
+      pRule->nTo = nTo;
+      pRule->rCost = nCost;
+      pRule->iRuleset = iRuleset;
+    }
+  }
+
+  *ppRule = pRule;
+  return rc;
+}
+
+/*
+** Load the content of the fuzzer data table into memory.
+*/
+static int fuzzerLoadRules(
+  sqlite3 *db,                    /* Database handle */
+  fuzzer_vtab *p,                 /* Virtual fuzzer table to configure */
+  const char *zDb,                /* Database containing rules data */
+  const char *zData,              /* Table containing rules data */
+  char **pzErr                    /* OUT: Error message */
+){
+  int rc = SQLITE_OK;             /* Return code */
+  char *zSql;                     /* SELECT used to read from rules table */
+  fuzzer_rule *pHead = 0;
+
+  zSql = sqlite3_mprintf("SELECT * FROM %Q.%Q", zDb, zData);
+  if( zSql==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    int rc2;                      /* finalize() return code */
+    sqlite3_stmt *pStmt = 0;
+    rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+    if( rc!=SQLITE_OK ){
+      *pzErr = sqlite3_mprintf("%s: %s", p->zClassName, sqlite3_errmsg(db));
+    }else if( sqlite3_column_count(pStmt)!=4 ){
+      *pzErr = sqlite3_mprintf("%s: %s has %d columns, expected 4",
+          p->zClassName, zData, sqlite3_column_count(pStmt)
+      );
+      rc = SQLITE_ERROR;
+    }else{
+      while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
+        fuzzer_rule *pRule = 0;
+        rc = fuzzerLoadOneRule(p, pStmt, &pRule, pzErr);
+        if( pRule ){
+          pRule->pNext = pHead;
+          pHead = pRule;
+        }
+      }
+    }
+    rc2 = sqlite3_finalize(pStmt);
+    if( rc==SQLITE_OK ) rc = rc2;
+  }
+  sqlite3_free(zSql);
+
+  /* All rules are now in a singly linked list starting at pHead. This
+  ** block sorts them by cost and then sets fuzzer_vtab.pRule to point to 
+  ** point to the head of the sorted list.
+  */
+  if( rc==SQLITE_OK ){
+    unsigned int i;
+    fuzzer_rule *pX;
+    fuzzer_rule *a[15];
+    for(i=0; i<sizeof(a)/sizeof(a[0]); i++) a[i] = 0;
+    while( (pX = pHead)!=0 ){
+      pHead = pX->pNext;
+      pX->pNext = 0;
+      for(i=0; a[i] && i<sizeof(a)/sizeof(a[0])-1; i++){
+        pX = fuzzerMergeRules(a[i], pX);
+        a[i] = 0;
+      }
+      a[i] = fuzzerMergeRules(a[i], pX);
+    }
+    for(pX=a[0], i=1; i<sizeof(a)/sizeof(a[0]); i++){
+      pX = fuzzerMergeRules(a[i], pX);
+    }
+    p->pRule = fuzzerMergeRules(p->pRule, pX);
+  }else{
+    /* An error has occurred. Setting p->pRule to point to the head of the
+    ** allocated list ensures that the list will be cleaned up in this case.
+    */
+    assert( p->pRule==0 );
+    p->pRule = pHead;
+  }
+
+  return rc;
+}
+
+
+/*
+** xConnect/xCreate method for the fuzzer module. Arguments are:
+**
+**   argv[0]   -> module name  ("fuzzer")
+**   argv[1]   -> database name
+**   argv[2]   -> table name
+**   argv[3]   -> fuzzer rule table name
+*/
+static int fuzzerConnect(
+  sqlite3 *db,
+  void *pAux,
+  int argc, const char *const*argv,
+  sqlite3_vtab **ppVtab,
+  char **pzErr
+){
+  int rc = SQLITE_OK;             /* Return code */
+  fuzzer_vtab *pNew = 0;          /* New virtual table */
+  const char *zModule = argv[0];
+  const char *zDb = argv[1];
+
+  if( argc!=4 ){
+    *pzErr = sqlite3_mprintf(
+        "%s: wrong number of CREATE VIRTUAL TABLE arguments", zModule
+    );
+    rc = SQLITE_ERROR;
+  }else{
+    int nModule;                  /* Length of zModule, in bytes */
+
+    nModule = strlen(zModule);
+    pNew = sqlite3_malloc( sizeof(*pNew) + nModule + 1);
+    if( pNew==0 ){
+      rc = SQLITE_NOMEM;
+    }else{
+      memset(pNew, 0, sizeof(*pNew));
+      pNew->zClassName = (char*)&pNew[1];
+      memcpy(pNew->zClassName, zModule, nModule+1);
+
+      rc = fuzzerLoadRules(db, pNew, zDb, argv[3], pzErr);
+      if( rc==SQLITE_OK ){
+        sqlite3_declare_vtab(db, "CREATE TABLE x(word, distance,ruleset)");
+      }else{
+        sqlite3_free(pNew);
+        pNew = 0;
+      }
+    }
+  }
+
+  *ppVtab = (sqlite3_vtab *)pNew;
+  return rc;
+}
+/* Note that for this virtual table, the xCreate and xConnect
+** methods are identical. */
+
+static int fuzzerDisconnect(sqlite3_vtab *pVtab){
+  fuzzer_vtab *p = (fuzzer_vtab*)pVtab;
+  assert( p->nCursor==0 );
+  while( p->pRule ){
+    fuzzer_rule *pRule = p->pRule;
+    p->pRule = pRule->pNext;
+    sqlite3_free(pRule);
+  }
+  sqlite3_free(p);
+  return SQLITE_OK;
+}
+/* The xDisconnect and xDestroy methods are also the same */
+
 
 /*
 ** Open a new fuzzer cursor.
@@ -310,25 +487,6 @@ static int fuzzerOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   memset(pCur, 0, sizeof(*pCur));
   pCur->pVtab = p;
   *ppCursor = &pCur->base;
-  if( p->nCursor==0 && p->pNewRule ){
-    unsigned int i;
-    fuzzer_rule *pX;
-    fuzzer_rule *a[15];
-    for(i=0; i<sizeof(a)/sizeof(a[0]); i++) a[i] = 0;
-    while( (pX = p->pNewRule)!=0 ){
-      p->pNewRule = pX->pNext;
-      pX->pNext = 0;
-      for(i=0; a[i] && i<sizeof(a)/sizeof(a[0])-1; i++){
-        pX = fuzzerMergeRules(a[i], pX);
-        a[i] = 0;
-      }
-      a[i] = fuzzerMergeRules(a[i], pX);
-    }
-    for(pX=a[0], i=1; i<sizeof(a)/sizeof(a[0]); i++){
-      pX = fuzzerMergeRules(a[i], pX);
-    }
-    p->pRule = fuzzerMergeRules(p->pRule, pX);
-  }
   p->nCursor++;
   return SQLITE_OK;
 }
@@ -479,6 +637,7 @@ static int fuzzerSeen(fuzzer_cursor *pCur, fuzzer_stem *pStem){
 */
 static int fuzzerAdvance(fuzzer_cursor *pCur, fuzzer_stem *pStem){
   const fuzzer_rule *pRule;
+  const int iSet = pCur->iRuleset;
   while( (pRule = pStem->pRule)!=0 ){
     assert( pRule==&pCur->nullRule || pRule->iRuleset==pCur->iRuleset );
     while( pStem->n < pStem->nBasis - pRule->nFrom ){
@@ -498,7 +657,7 @@ static int fuzzerAdvance(fuzzer_cursor *pCur, fuzzer_stem *pStem){
     pStem->n = -1;
     do{
       pRule = pRule->pNext;
-    }while( pRule && pRule->iRuleset!=pCur->iRuleset );
+    }while( pRule && pRule->iRuleset!=iSet );
     pStem->pRule = pRule;
     if( pRule && fuzzerCost(pStem)>pCur->rLimit ) pStem->pRule = 0;
   }
@@ -865,86 +1024,6 @@ static int fuzzerBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
 }
 
 /*
-** Disallow all attempts to DELETE or UPDATE.  Only INSERTs are allowed.
-**
-** On an insert, the cFrom, cTo, and cost columns are used to construct
-** a new rule.   All other columns are ignored.  The rule is ignored
-** if cFrom and cTo are identical.  A NULL value for cFrom or cTo is
-** interpreted as an empty string.  The cost must be positive.
-*/
-static int fuzzerUpdate(
-  sqlite3_vtab *pVTab,
-  int argc,
-  sqlite3_value **argv,
-  sqlite_int64 *pRowid
-){
-  fuzzer_vtab *p = (fuzzer_vtab*)pVTab;
-  fuzzer_rule *pRule;
-  const char *zFrom;
-  int nFrom;
-  const char *zTo;
-  int nTo;
-  fuzzer_cost rCost;
-  int rulesetId;
-  if( argc!=8 ){
-    sqlite3_free(pVTab->zErrMsg);
-    pVTab->zErrMsg = sqlite3_mprintf("cannot delete from a %s virtual table",
-                                     p->zClassName);
-    return SQLITE_CONSTRAINT;
-  }
-  if( sqlite3_value_type(argv[0])!=SQLITE_NULL ){
-    sqlite3_free(pVTab->zErrMsg);
-    pVTab->zErrMsg = sqlite3_mprintf("cannot update a %s virtual table",
-                                     p->zClassName);
-    return SQLITE_CONSTRAINT;
-  }
-  zFrom = (char*)sqlite3_value_text(argv[5]);
-  if( zFrom==0 ) zFrom = "";
-  zTo = (char*)sqlite3_value_text(argv[6]);
-  if( zTo==0 ) zTo = "";
-  if( strcmp(zFrom,zTo)==0 ){
-    /* Silently ignore null transformations */
-    return SQLITE_OK;
-  }
-  rCost = sqlite3_value_int(argv[7]);
-  if( rCost<=0 || rCost>FUZZER_MX_COST ){
-    sqlite3_free(pVTab->zErrMsg);
-    pVTab->zErrMsg = sqlite3_mprintf("cost must be between 1 and %d",
-                                     FUZZER_MX_COST);
-    return SQLITE_CONSTRAINT;    
-  }
-  nFrom = strlen(zFrom);
-  nTo = strlen(zTo);
-  if( nFrom>FUZZER_MX_LENGTH || nTo>FUZZER_MX_LENGTH ){
-    sqlite3_free(pVTab->zErrMsg);
-    pVTab->zErrMsg = sqlite3_mprintf("maximum string length is %d",
-                                     FUZZER_MX_LENGTH);
-    return SQLITE_CONSTRAINT;    
-  }
-  rulesetId = sqlite3_value_int(argv[4]);
-  if( rulesetId<0 || rulesetId>FUZZER_MX_RULEID ){
-    sqlite3_free(pVTab->zErrMsg);
-    pVTab->zErrMsg = sqlite3_mprintf("rulesetid must be between 0 and %d",
-                                     FUZZER_MX_RULEID);
-    return SQLITE_CONSTRAINT;    
-  }
-  pRule = sqlite3_malloc( sizeof(*pRule) + nFrom + nTo );
-  if( pRule==0 ){
-    return SQLITE_NOMEM;
-  }
-  pRule->zFrom = &pRule->zTo[nTo+1];
-  pRule->nFrom = nFrom;
-  memcpy(pRule->zFrom, zFrom, nFrom+1);
-  memcpy(pRule->zTo, zTo, nTo+1);
-  pRule->nTo = nTo;
-  pRule->rCost = rCost;
-  pRule->pNext = p->pNewRule;
-  pRule->iRuleset = rulesetId;
-  p->pNewRule = pRule;
-  return SQLITE_OK;
-}
-
-/*
 ** A virtual table module that provides read-only access to a
 ** Tcl global variable namespace.
 */
@@ -962,7 +1041,7 @@ static sqlite3_module fuzzerModule = {
   fuzzerEof,                   /* xEof - check for end of scan */
   fuzzerColumn,                /* xColumn - read data */
   fuzzerRowid,                 /* xRowid - read data */
-  fuzzerUpdate,                /* xUpdate - INSERT */
+  0,                           /* xUpdate */
   0,                           /* xBegin */
   0,                           /* xSync */
   0,                           /* xCommit */
