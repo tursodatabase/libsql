@@ -143,7 +143,7 @@
 */
 
 /* If SQLITE_DEBUG is not defined, disable assert statements. */
-#ifndef SQLITE_DEBUG
+#if !defined(NDEBUG) && !defined(SQLITE_DEBUG)
 # define NDEBUG
 #endif
 
