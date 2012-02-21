@@ -532,8 +532,9 @@ static int fuzzerConnect(
       }
 
       if( rc==SQLITE_OK ){
-        sqlite3_declare_vtab(db, "CREATE TABLE x(word, distance, ruleset)");
-      }else{
+        rc = sqlite3_declare_vtab(db, "CREATE TABLE x(word,distance,ruleset)");
+      }
+      if( rc!=SQLITE_OK ){
         fuzzerDisconnect((sqlite3_vtab *)pNew);
         pNew = 0;
       }

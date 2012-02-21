@@ -1695,7 +1695,6 @@ do_execsql_test 6.2.2 {
   ORDER BY cost asc, rowid asc LIMIT 9;
 } {hw hx hy hz ia ib ic id ie}
 
-
 #-------------------------------------------------------------------------
 # Test using different types of quotes with CREATE VIRTUAL TABLE 
 # arguments.
@@ -1716,6 +1715,115 @@ foreach {tn sql} {
     SELECT word FROM x2 WHERE word MATCH 'aaa' 
   } {aaa baa aba aab bab abb bba bbb}
 }
+
+#-------------------------------------------------------------------------
+# Test using a fuzzer table in different contexts.
+#
+do_execsql_test 8.1 {
+  CREATE TABLE x3_rules(rule_set, cFrom, cTo, cost);
+  INSERT INTO x3_rules VALUES(2, 'a', 'x', 10);
+  INSERT INTO x3_rules VALUES(2, 'a', 'y',  9);
+  INSERT INTO x3_rules VALUES(2, 'a', 'z',  8);
+  CREATE VIRTUAL TABLE x3 USING fuzzer(x3_rules);
+}
+
+do_execsql_test 8.2.1 {
+  SELECT cFrom, cTo, word 
+    FROM x3_rules CROSS JOIN x3 
+    WHERE word MATCH 'a' AND cost=distance AND ruleset=2;
+} {a x x a y y a z z}
+
+do_execsql_test 8.2.2 {
+  SELECT cFrom, cTo, word 
+    FROM x3 CROSS JOIN x3_rules
+    WHERE word MATCH 'a' AND cost=distance AND ruleset=2;
+} {a z z a y y a x x}
+
+do_execsql_test 8.2.3 {
+  SELECT cFrom, cTo, word 
+    FROM x3_rules, x3 
+    WHERE word MATCH 'a' AND cost=distance AND ruleset=2;
+} {a z z a y y a x x}
+
+do_execsql_test 8.2.4 {
+  SELECT cFrom, cTo, word 
+    FROM x3, x3_rules
+    WHERE word MATCH 'a' AND cost=distance AND ruleset=2;
+} {a z z a y y a x x}
+
+do_execsql_test 8.2.5 {
+  CREATE INDEX i1 ON x3_rules(cost);
+  SELECT cFrom, cTo, word 
+    FROM x3_rules, x3 
+    WHERE word MATCH 'a' AND cost=distance AND ruleset=2;
+} {a z z a y y a x x}
+
+do_execsql_test 8.2.5 {
+  SELECT word FROM x3_rules, x3 WHERE word MATCH x3_rules.cFrom AND ruleset=2;
+} {a z y x a z y x a z y x}
+
+do_execsql_test 8.2.6 {
+  SELECT word FROM x3_rules, x3 
+  WHERE word MATCH x3_rules.cFrom 
+    AND ruleset=2 
+    AND x3_rules.cost=8;
+} {a z y x}
+
+do_execsql_test 8.2.7 {
+  CREATE TABLE t1(a, b);
+  CREATE INDEX i2 ON t1(b);
+  SELECT word, distance FROM x3, t1 
+    WHERE x3.word MATCH t1.a AND ruleset=2 AND distance=t1.b;
+} {}
+
+do_execsql_test 8.2.8 {
+  INSERT INTO x3_rules VALUES(1, 'a', 't',  5);
+  INSERT INTO x3_rules VALUES(1, 'a', 'u',  4);
+  INSERT INTO x3_rules VALUES(1, 'a', 'v',  3);
+  DROP TABLE x3;
+  CREATE VIRTUAL TABLE x3 USING fuzzer(x3_rules);
+  SELECT * FROM x3_rules;
+} {
+  2 a x 10 
+  2 a y 9 
+  2 a z 8 
+  1 a t 5 
+  1 a u 4 
+  1 a v 3
+}
+
+do_catchsql_test 8.2.9 {
+  SELECT word FROM x3 WHERE ruleset=2 AND word MATCH 'a' AND WORD MATCH 'b';
+} {1 {unable to use function MATCH in the requested context}}
+
+do_execsql_test 8.2.10 {
+  SELECT word FROM x3 WHERE ruleset=1 AND word MATCH 'a'
+} {a v u t}
+
+# The term "ruleset<=1" is not handled by the fuzzer module. Instead, it
+# is handled by SQLite, which assumes that all rows have a NULL value in
+# the ruleset column. Since NULL<=1 is never true, this query returns
+# no rows.
+do_execsql_test 8.2.11 {
+  SELECT word FROM x3 WHERE ruleset<=1 AND word MATCH 'a'
+} {}
+
+do_execsql_test 8.2.12 {
+  SELECT word FROM x3 WHERE ruleset=1 AND word MATCH 'a' ORDER BY distance ASC;
+} {a v u t}
+
+do_execsql_test 8.2.13 {
+  SELECT word FROM x3 WHERE ruleset=1 AND word MATCH 'a' ORDER BY distance DESC;
+} {t u v a}
+
+do_execsql_test 8.2.13 {
+  SELECT word FROM x3 WHERE ruleset=1 AND word MATCH 'a' ORDER BY word ASC;
+} {a t u v}
+
+do_execsql_test 8.2.14 {
+  SELECT word FROM x3 WHERE ruleset=1 AND word MATCH 'a' ORDER BY word DESC;
+} {v u t a}
+
 
 finish_test
 
