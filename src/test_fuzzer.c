@@ -141,6 +141,12 @@
 ** of the strings in the second or third column of the fuzzer data table
 ** is 50 bytes.  The maximum cost on a rule is 1000.
 */
+
+/* If SQLITE_DEBUG is not defined, disable assert statements. */
+#ifndef SQLITE_DEBUG
+# define NDEBUG
+#endif
+
 #include "sqlite3.h"
 #include <stdlib.h>
 #include <string.h>
@@ -289,7 +295,7 @@ static int fuzzerLoadOneRule(
   fuzzer_rule **ppRule,           /* OUT: New rule object */
   char **pzErr                    /* OUT: Error message */
 ){
-  int iRuleset = sqlite3_column_int(pStmt, 0);
+  sqlite3_int64 iRuleset = sqlite3_column_int64(pStmt, 0);
   const char *zFrom = (const char *)sqlite3_column_text(pStmt, 1);
   const char *zTo = (const char *)sqlite3_column_text(pStmt, 2);
   int nCost = sqlite3_column_int(pStmt, 3);
@@ -311,16 +317,21 @@ static int fuzzerLoadOneRule(
   }
 
   if( nCost<=0 || nCost>FUZZER_MX_COST ){
-    *pzErr = sqlite3_mprintf("cost must be between 1 and %d", FUZZER_MX_COST);
+    *pzErr = sqlite3_mprintf("%s: cost must be between 1 and %d", 
+        p->zClassName, FUZZER_MX_COST
+    );
     rc = SQLITE_ERROR;
   }else
   if( nFrom>FUZZER_MX_LENGTH || nTo>FUZZER_MX_LENGTH ){
-    *pzErr = sqlite3_mprintf("maximum string length is %d", FUZZER_MX_LENGTH);
+    *pzErr = sqlite3_mprintf("%s: maximum string length is %d", 
+        p->zClassName, FUZZER_MX_LENGTH
+    );
     rc = SQLITE_ERROR;    
   }else
   if( iRuleset<0 || iRuleset>FUZZER_MX_RULEID ){
-    *pzErr = sqlite3_mprintf(
-        "ruleset must be between 0 and %d", FUZZER_MX_RULEID);
+    *pzErr = sqlite3_mprintf("%s: ruleset must be between 0 and %d", 
+        p->zClassName, FUZZER_MX_RULEID
+    );
     rc = SQLITE_ERROR;    
   }else{
 
@@ -335,7 +346,7 @@ static int fuzzerLoadOneRule(
       memcpy(pRule->zTo, zTo, nTo+1);
       pRule->nTo = nTo;
       pRule->rCost = nCost;
-      pRule->iRuleset = iRuleset;
+      pRule->iRuleset = (int)iRuleset;
     }
   }
 
@@ -419,6 +430,59 @@ static int fuzzerLoadRules(
   return rc;
 }
 
+/*
+** This function converts an SQL quoted string into an unquoted string
+** and returns a pointer to a buffer allocated using sqlite3_malloc() 
+** containing the result. The caller should eventually free this buffer
+** using sqlite3_free.
+**
+** Examples:
+**
+**     "abc"   becomes   abc
+**     'xyz'   becomes   xyz
+**     [pqr]   becomes   pqr
+**     `mno`   becomes   mno
+*/
+static char *fuzzerDequote(const char *zIn){
+  int nIn;                        /* Size of input string, in bytes */
+  char *zOut;                     /* Output (dequoted) string */
+
+  nIn = strlen(zIn);
+  zOut = sqlite3_malloc(nIn+1);
+  if( zOut ){
+    char q = zIn[0];              /* Quote character (if any ) */
+
+    if( q!='[' && q!= '\'' && q!='"' && q!='`' ){
+      memcpy(zOut, zIn, nIn+1);
+    }else{
+      int iOut = 0;               /* Index of next byte to write to output */
+      int iIn;                    /* Index of next byte to read from input */
+
+      if( q=='[' ) q = ']';
+      for(iIn=1; iIn<nIn; iIn++){
+        if( zIn[iIn]==q ) iIn++;
+        zOut[iOut++] = zIn[iIn];
+      }
+    }
+    assert( strlen(zOut)<=nIn );
+  }
+  return zOut;
+}
+
+/*
+** xDisconnect/xDestroy method for the fuzzer module.
+*/
+static int fuzzerDisconnect(sqlite3_vtab *pVtab){
+  fuzzer_vtab *p = (fuzzer_vtab*)pVtab;
+  assert( p->nCursor==0 );
+  while( p->pRule ){
+    fuzzer_rule *pRule = p->pRule;
+    p->pRule = pRule->pNext;
+    sqlite3_free(pRule);
+  }
+  sqlite3_free(p);
+  return SQLITE_OK;
+}
 
 /*
 ** xConnect/xCreate method for the fuzzer module. Arguments are:
@@ -453,15 +517,24 @@ static int fuzzerConnect(
     if( pNew==0 ){
       rc = SQLITE_NOMEM;
     }else{
+      char *zTab;                 /* Dequoted name of fuzzer data table */
+
       memset(pNew, 0, sizeof(*pNew));
       pNew->zClassName = (char*)&pNew[1];
       memcpy(pNew->zClassName, zModule, nModule+1);
 
-      rc = fuzzerLoadRules(db, pNew, zDb, argv[3], pzErr);
-      if( rc==SQLITE_OK ){
-        sqlite3_declare_vtab(db, "CREATE TABLE x(word, distance,ruleset)");
+      zTab = fuzzerDequote(argv[3]);
+      if( zTab==0 ){
+        rc = SQLITE_NOMEM;
       }else{
-        sqlite3_free(pNew);
+        rc = fuzzerLoadRules(db, pNew, zDb, zTab, pzErr);
+        sqlite3_free(zTab);
+      }
+
+      if( rc==SQLITE_OK ){
+        sqlite3_declare_vtab(db, "CREATE TABLE x(word, distance, ruleset)");
+      }else{
+        fuzzerDisconnect((sqlite3_vtab *)pNew);
         pNew = 0;
       }
     }
@@ -470,22 +543,6 @@ static int fuzzerConnect(
   *ppVtab = (sqlite3_vtab *)pNew;
   return rc;
 }
-/* Note that for this virtual table, the xCreate and xConnect
-** methods are identical. */
-
-static int fuzzerDisconnect(sqlite3_vtab *pVtab){
-  fuzzer_vtab *p = (fuzzer_vtab*)pVtab;
-  assert( p->nCursor==0 );
-  while( p->pRule ){
-    fuzzer_rule *pRule = p->pRule;
-    p->pRule = pRule->pNext;
-    sqlite3_free(pRule);
-  }
-  sqlite3_free(p);
-  return SQLITE_OK;
-}
-/* The xDisconnect and xDestroy methods are also the same */
-
 
 /*
 ** Open a new fuzzer cursor.

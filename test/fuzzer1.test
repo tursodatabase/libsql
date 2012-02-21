@@ -22,6 +22,8 @@ ifcapable !vtab {
   return
 }
 
+set ::testprefix fuzzer1
+
 register_fuzzer_module db
 
 
@@ -1538,4 +1540,182 @@ do_execsql_test fuzzer1-4.1 {
   SELECT word FROM f3 WHERE word MATCH 'ax'
 } {ax ay}
 
+#-------------------------------------------------------------------------
+#
+#  1.5.1 - Check things work with a fuzzer data table name that requires
+#          quoting. Also that NULL entries in the "from" column of the
+#          data table are treated as zero length strings ('').
+#
+#  1.5.2 - Check that no-op rules (i.e. C->C) are ignored. Test NULL in
+#          the "to" column of a fuzzer data table.
+#  
+#  1.5.3 - Test out-of-range values for the cost field of the data table.
+#
+#  1.5.4 - Test out-of-range values for the string fields of the data table.
+#
+#  1.5.5 - Test out-of-range values for the ruleset field of the data table.
+#
+do_execsql_test 5.1 {
+  CREATE TABLE "fuzzer [x] rules table"(a, b, c, d);
+  INSERT INTO "fuzzer [x] rules table" VALUES(0, NULL, 'abc', 10);
+  CREATE VIRTUAL TABLE x USING fuzzer('fuzzer [x] rules table');
+  SELECT word, distance FROM x WHERE word MATCH '123' LIMIT 4;
+} {123 0 abc123 10 1abc23 10 12abc3 10}
+
+do_execsql_test 5.2 {
+  DELETE FROM "fuzzer [x] rules table";
+  INSERT INTO "fuzzer [x] rules table" VALUES(0, 'x', NULL, 20);
+  INSERT INTO "fuzzer [x] rules table" VALUES(0, NULL, NULL, 10);
+  INSERT INTO "fuzzer [x] rules table" VALUES(0, 'x', 'x', 10);
+
+  DROP TABLE x;
+  CREATE VIRTUAL TABLE x USING fuzzer('fuzzer [x] rules table');
+
+  SELECT word, distance FROM x WHERE word MATCH 'xx';
+} {xx 0 x 20 {} 40}
+
+do_execsql_test 5.3.1 {
+  DROP TABLE IF EXISTS x;
+  INSERT INTO "fuzzer [x] rules table" VALUES(0, 'c', 'd', 1001);
+}
+do_catchsql_test 5.3.2 {
+  CREATE VIRTUAL TABLE x USING fuzzer('fuzzer [x] rules table');
+} {1 {fuzzer: cost must be between 1 and 1000}}
+
+do_execsql_test 5.3.3 {
+  DROP TABLE IF EXISTS x;
+  DELETE FROM "fuzzer [x] rules table";
+  INSERT INTO "fuzzer [x] rules table" VALUES(0, 'd', 'c', 0);
+}
+do_catchsql_test 5.3.4 {
+  CREATE VIRTUAL TABLE x USING fuzzer('fuzzer [x] rules table');
+} {1 {fuzzer: cost must be between 1 and 1000}}
+
+do_execsql_test 5.3.5 {
+  DROP TABLE IF EXISTS x;
+  DELETE FROM "fuzzer [x] rules table";
+  INSERT INTO "fuzzer [x] rules table" VALUES(0, 'd', 'c', -20);
+}
+do_catchsql_test 5.3.6 {
+  CREATE VIRTUAL TABLE x USING fuzzer('fuzzer [x] rules table');
+} {1 {fuzzer: cost must be between 1 and 1000}}
+
+do_execsql_test 5.4.1 {
+  DROP TABLE IF EXISTS x;
+  DELETE FROM "fuzzer [x] rules table";
+  INSERT INTO "fuzzer [x] rules table" VALUES(
+    0, 'x', '12345678901234567890123456789012345678901234567890', 2
+  );
+  CREATE VIRTUAL TABLE x USING fuzzer('fuzzer [x] rules table');
+  SELECT word FROM x WHERE word MATCH 'x';
+} {x 12345678901234567890123456789012345678901234567890}
+
+do_execsql_test 5.4.2 {
+  DROP TABLE IF EXISTS x;
+  DELETE FROM "fuzzer [x] rules table";
+  INSERT INTO "fuzzer [x] rules table" VALUES(
+    0, 'x', '123456789012345678901234567890123456789012345678901', 2
+  );
+} 
+do_catchsql_test 5.4.3 {
+  CREATE VIRTUAL TABLE x USING fuzzer('fuzzer [x] rules table');
+} {1 {fuzzer: maximum string length is 50}}
+
+do_execsql_test 5.4.4 {
+  DROP TABLE IF EXISTS x;
+  DELETE FROM "fuzzer [x] rules table";
+  INSERT INTO "fuzzer [x] rules table" VALUES(
+    0, '123456789012345678901234567890123456789012345678901', 'x', 2
+  );
+} 
+do_catchsql_test 5.4.5 {
+  CREATE VIRTUAL TABLE x USING fuzzer('fuzzer [x] rules table');
+} {1 {fuzzer: maximum string length is 50}}
+
+do_execsql_test 5.5.1 {
+  DROP TABLE IF EXISTS x;
+  DELETE FROM "fuzzer [x] rules table";
+  INSERT INTO "fuzzer [x] rules table" VALUES(-1, 'x', 'y', 2);
+} 
+do_catchsql_test 5.5.2 {
+  CREATE VIRTUAL TABLE x USING fuzzer('fuzzer [x] rules table');
+} {1 {fuzzer: ruleset must be between 0 and 2147483647}}
+
+do_execsql_test 5.5.3 {
+  DROP TABLE IF EXISTS x;
+  DELETE FROM "fuzzer [x] rules table";
+  INSERT INTO "fuzzer [x] rules table" VALUES((1<<32)+100, 'x', 'y', 2);
+} 
+do_catchsql_test 5.5.4 {
+  CREATE VIRTUAL TABLE x USING fuzzer('fuzzer [x] rules table');
+} {1 {fuzzer: ruleset must be between 0 and 2147483647}}
+
+#-------------------------------------------------------------------------
+# This test uses a fuzzer table with many rules. There is one rule to
+# map each possible two character string, where characters are lower-case
+# letters used in the English language, to all other possible two character
+# strings. In total, (26^4)-(26^2) mappings (the subtracted term represents
+# the no-op mappings discarded automatically by the fuzzer).
+#
+#
+do_execsql_test 6.1.1 {
+  DROP TABLE IF EXISTS x1;
+  DROP TABLE IF EXISTS x1_rules;
+  CREATE TABLE x1_rules(ruleset, cFrom, cTo, cost);
+}
+puts "This test is slow - perhaps around 7 seconds on an average pc"
+do_test 6.1.2 {
+  set LETTERS {a b c d e f g h i j k l m n o p q r s t u v w x y z}
+  set cost 1
+  db transaction {
+    foreach c1 $LETTERS { 
+      foreach c2 $LETTERS { 
+        foreach c3 $LETTERS { 
+          foreach c4 $LETTERS { 
+            db eval {INSERT INTO x1_rules VALUES(0, $c1||$c2, $c3||$c4, $cost)}
+            set cost [expr ($cost%1000) + 1]
+          }
+        }
+      }
+    }
+    db eval {UPDATE x1_rules SET cost = 20 WHERE cost<20 AND cFrom!='xx'}
+  }
+} {}
+
+do_execsql_test 6.2 {
+  SELECT count(*) FROM x1_rules WHERE cTo!=cFrom;
+} [expr 26*26*26*26 - 26*26]
+
+do_execsql_test 6.2.1 {
+  CREATE VIRTUAL TABLE x1 USING fuzzer(x1_rules);
+  SELECT word FROM x1 WHERE word MATCH 'xx' LIMIT 10;
+} {xx hw hx hy hz ia ib ic id ie}
+do_execsql_test 6.2.2 {
+  SELECT cTo FROM x1_rules WHERE cFrom='xx' 
+  ORDER BY cost asc, rowid asc LIMIT 9;
+} {hw hx hy hz ia ib ic id ie}
+
+
+#-------------------------------------------------------------------------
+# Test using different types of quotes with CREATE VIRTUAL TABLE 
+# arguments.
+#
+do_execsql_test 7.1 {
+  CREATE TABLE [x2 "rules] (a, b, c, d);
+  INSERT INTO [x2 "rules] VALUES(0, 'a', 'b', 5);
+}
+foreach {tn sql} {
+  1 { CREATE VIRTUAL TABLE x2 USING fuzzer( [x2 "rules] ) }
+  2 { CREATE VIRTUAL TABLE x2 USING fuzzer( "x2 ""rules" ) }
+  3 { CREATE VIRTUAL TABLE x2 USING fuzzer( 'x2 "rules' ) }
+  4 { CREATE VIRTUAL TABLE x2 USING fuzzer( `x2 "rules` ) }
+} {
+  do_execsql_test 7.2.$tn.1 { DROP TABLE IF EXISTS x2 }
+  do_execsql_test 7.2.$tn.2 $sql
+  do_execsql_test 7.2.$tn.3 { 
+    SELECT word FROM x2 WHERE word MATCH 'aaa' 
+  } {aaa baa aba aab bab abb bba bbb}
+}
+
 finish_test
+
