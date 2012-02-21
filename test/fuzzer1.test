@@ -24,9 +24,12 @@ ifcapable !vtab {
 
 set ::testprefix fuzzer1
 
+# Test of test code. Only here to make the coverage metric better.
+do_test 0.1 {
+  list [catch { register_fuzzer_module a b c } msg] $msg
+} {1 {wrong # args: should be "register_fuzzer_module DB"}}
+
 register_fuzzer_module db
-
-
 
 # Check configuration errors.
 #
@@ -1824,6 +1827,42 @@ do_execsql_test 8.2.14 {
   SELECT word FROM x3 WHERE ruleset=1 AND word MATCH 'a' ORDER BY word DESC;
 } {v u t a}
 
+#-------------------------------------------------------------------------
+#
+do_execsql_test 9.1 {
+  CREATE TABLE x4_rules(a, b, c, d);
+  INSERT INTO x4_rules VALUES(0, 'a', 'b', 10);
+  INSERT INTO x4_rules VALUES(0, 'a', 'c', 11);
+  INSERT INTO x4_rules VALUES(0, 'bx', 'zz', 20);
+  INSERT INTO x4_rules VALUES(0, 'cx', 'yy', 15);
+  INSERT INTO x4_rules VALUES(0, 'zz', '!!', 50);
+  CREATE VIRTUAL TABLE x4 USING fuzzer(x4_rules);
+}
+
+do_execsql_test 9.2 {
+  SELECT word, distance FROM x4 WHERE word MATCH 'ax';
+} {ax 0 bx 10 cx 11 yy 26 zz 30 !! 80}
+
+
+do_execsql_test 10.1 {
+  CREATE TABLE x5_rules(a, b, c, d);
+  CREATE VIRTUAL TABLE x5 USING fuzzer(x5_rules);
+}
+
+do_execsql_test 10.2 {
+  SELECT word, distance FROM x5 WHERE word MATCH 
+    'aaaaaaaaaXaaaaaaaaaXaaaaaaaaaXaaaaaaaaaXaaaaaaaaa' || 
+    'aaaaaaaaaXaaaaaaaaaXaaaaaaaaaXaaaaaaaaaXaaaaaaaaa' || 
+    'aaaaaaaaaXaaaaaaaaaXaaaaaaaaaXaaaaaaaaaXaaaaaaaaa'
+} {}
+
+do_execsql_test 10.3 {
+  INSERT INTO x5_rules VALUES(0, 'a', '0.1.2.3.4.5.6.7.8.9.a', 1);
+  DROP TABLE x5;
+  CREATE VIRTUAL TABLE x5 USING fuzzer(x5_rules);
+  SELECT length(word) FROM x5 WHERE word MATCH 'a' LIMIT 50;
+} {1 21 41 61 81}
 
 finish_test
+
 
