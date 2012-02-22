@@ -496,6 +496,10 @@ static int tvfsFileControl(sqlite3_file *pFile, int op, void *pArg){
       }
       return rc;
     }
+    if( sqlite3_stricmp(argv[1], "filename")==0 ){
+      argv[0] = sqlite3_mprintf("%s", p->zFilename);
+      return SQLITE_OK;
+    }
   }
   return sqlite3OsFileControl(p->pReal, op, pArg);
 }

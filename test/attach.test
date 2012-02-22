@@ -272,17 +272,6 @@ ifcapable schema_pragmas {
 } ;# ifcapable schema_pragmas
 
 
-if {[regexp unix [file_control_vfsname db]]} {
-  ifcapable debug {
-    do_test attach-1.30.1 {
-      file tail [db eval {PRAGMA main.filename}]
-    } {test.db}
-    do_test attach-1.30.2 {
-      db eval {PRAGMA temp.filename}
-    } {}
-  }
-}
-
 ifcapable {trigger} {  # Only do the following tests if triggers are enabled
 do_test attach-2.1 {
   execsql {
