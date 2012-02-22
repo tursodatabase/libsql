@@ -1,5 +1,5 @@
-C Make\sbenign\sany\smalloc\sfailures\sinside\sthe\ssqlite3_file_control()\scall\swithin\nPRAGMA\sparsing.\s\sAdd\sa\scouple\ssimple\stests\sfor\sSQLITE_FCNTL_PRAGMA.
-D 2012-02-22T18:21:20.823
+C Disable\sthe\s"filename"\spragma\simplemented\sby\sos_unix.c\sexcept\swhen\scompiled\nwith\sSQLITE_TEST.
+D 2012-02-22T19:03:19.757
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 59beba555b65a450bd1d804220532971d4299f60
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 497e355ab617a875bf45f4d58bacca82952339d5
+F src/os_unix.c 49e10d7d5783df93684b3c232f03394ad7171ee3
 F src/os_win.c 5ac061ae1326a71500cee578ed0fd9113b4f6a37
 F src/pager.c 2d892f7b901a8867a33bc21742086165a3a99af8
 F src/pager.h a435da8421dc7844b7f9c7f37b636c160c50208a
@@ -990,7 +990,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P fd8d7440277b17f57a6dc0a210f42adf1fa2dcd2
-R 77f865c04d434abb001a6242927d5d25
+P a1f29fa653b788f563967f55c3d20e64cbe3f549
+R 69256c5b535e2ca4839b991d3bdc0dd8
 U drh
-Z d262af2f28e1a265375911629e3a952e
+Z 24345afb75f6875260101e2916714082
