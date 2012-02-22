@@ -357,7 +357,9 @@ void sqlite3Pragma(
   aFcntl[1] = zLeft;
   aFcntl[2] = zRight;
   aFcntl[3] = 0;
+  sqlite3BeginBenignMalloc();
   rc = sqlite3_file_control(db, zDb, SQLITE_FCNTL_PRAGMA, (void*)aFcntl);
+  sqlite3EndBenignMalloc();
   if( rc==SQLITE_OK ){
     if( aFcntl[0] ){
       int mem = ++pParse->nMem;
