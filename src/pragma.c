@@ -357,9 +357,7 @@ void sqlite3Pragma(
   aFcntl[1] = zLeft;
   aFcntl[2] = zRight;
   aFcntl[3] = 0;
-  sqlite3BeginBenignMalloc();
   rc = sqlite3_file_control(db, zDb, SQLITE_FCNTL_PRAGMA, (void*)aFcntl);
-  sqlite3EndBenignMalloc();
   if( rc==SQLITE_OK ){
     if( aFcntl[0] ){
       int mem = ++pParse->nMem;
@@ -369,7 +367,14 @@ void sqlite3Pragma(
       sqlite3VdbeAddOp2(v, OP_ResultRow, mem, 1);
       sqlite3_free(aFcntl[0]);
     }
-  }else
+  }else if( rc!=SQLITE_NOTFOUND ){
+    if( aFcntl[0] ){
+      sqlite3ErrorMsg(pParse, "%s", aFcntl[0]);
+      sqlite3_free(aFcntl[0]);
+    }
+    pParse->nErr++;
+    pParse->rc = rc;
+  }
                             
  
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS) && !defined(SQLITE_OMIT_DEPRECATED)
