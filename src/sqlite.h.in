@@ -797,6 +797,15 @@ struct sqlite3_io_methods {
 ** do anything.  Callers should initialize the char* variable to a NULL
 ** pointer in case this file-control is not implemented.  This file-control
 ** is intended for diagnostic use only.
+**
+** ^Whenever a [PRAGMA] statement is parsed, an [SQLITE_FCNTL_PRAGMA] 
+** file control is sent to the open [sqlite3_file] object corresponding
+** to the database file to which the pragma statement refers.  ^If the
+** [SQLITE_FCNTL_PRAGMA] file control returns [SQLITE_NOTFOUND], then normal 
+** [PRAGMA] processing continues.  ^However, if the [SQLITE_FCNTL_PRAGMA]
+** file control returns [SQLITE_OK], then the parser assumes that the
+** VFS has handled the pragma itself and the parser generates a no-op
+** prepared statement.
 */
 #define SQLITE_FCNTL_LOCKSTATE               1
 #define SQLITE_GET_LOCKPROXYFILE             2
@@ -811,6 +820,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_OVERWRITE              11
 #define SQLITE_FCNTL_VFSNAME                12
 #define SQLITE_FCNTL_POWERSAFE_OVERWRITE    13
+#define SQLITE_FCNTL_PRAGMA                 14
 
 /*
 ** CAPI3REF: Mutex Handle
