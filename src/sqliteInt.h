@@ -2553,7 +2553,7 @@ int sqlite3CantopenError(int);
 /*
 ** Internal function prototypes
 */
-int sqlite3StrICmp(const char *, const char *);
+#define sqlite3StrICmp sqlite3_stricmp
 int sqlite3Strlen30(const char*);
 #define sqlite3StrNICmp sqlite3_strnicmp
 

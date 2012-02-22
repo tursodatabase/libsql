@@ -312,7 +312,7 @@ void sqlite3Pragma(
   const char *zDb = 0;   /* The database name */
   Token *pId;            /* Pointer to <id> token */
   int iDb;               /* Database index for <database> */
-  const char *aFcntl[3];       /* Argument to SQLITE_FCNTL_PRAGMA */
+  char *aFcntl[4];       /* Argument to SQLITE_FCNTL_PRAGMA */
   int rc;                      /* return value form SQLITE_FCNTL_PRAGMA */
   sqlite3 *db = pParse->db;    /* The database connection */
   Db *pDb;                     /* The specific database being pragmaed */
@@ -353,13 +353,21 @@ void sqlite3Pragma(
   ** connection.  If it returns SQLITE_OK, then assume that the VFS
   ** handled the pragma and generate a no-op prepared statement.
   */
-  aFcntl[0] = zLeft;
-  aFcntl[1] = zRight;
-  aFcntl[2] = 0;
+  aFcntl[0] = 0;
+  aFcntl[1] = zLeft;
+  aFcntl[2] = zRight;
+  aFcntl[3] = 0;
   rc = sqlite3_file_control(db, zDb, SQLITE_FCNTL_PRAGMA, (void*)aFcntl);
   if( rc==SQLITE_OK ){
-    zLeft = "";
-  }
+    if( aFcntl[0] ){
+      int mem = ++pParse->nMem;
+      sqlite3VdbeAddOp4(v, OP_String8, 0, mem, 0, aFcntl[0], 0);
+      sqlite3VdbeSetNumCols(v, 1);
+      sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "result", SQLITE_STATIC);
+      sqlite3VdbeAddOp2(v, OP_ResultRow, mem, 1);
+      sqlite3_free(aFcntl[0]);
+    }
+  }else
                             
  
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS) && !defined(SQLITE_OMIT_DEPRECATED)

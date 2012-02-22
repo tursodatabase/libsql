@@ -3587,6 +3587,14 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       *(char**)pArg = sqlite3_mprintf("%s", pFile->pVfs->zName);
       return SQLITE_OK;
     }
+    case SQLITE_FCNTL_PRAGMA: {
+      char **azArg = (char**)pArg;
+      if( sqlite3_stricmp(azArg[1], "filename")==0 ){
+        azArg[0] = sqlite3_mprintf("%s", pFile->zPath);
+        return SQLITE_OK;
+      }
+      break;
+    }
 #ifndef NDEBUG
     /* The pager calls this method to signal that it has done
     ** a rollback and that the database is therefore unchanged and

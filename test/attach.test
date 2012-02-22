@@ -70,6 +70,7 @@ do_test attach-1.3.5 {
   file tail [sqlite3_db_filename db three]
 } {}
 
+
 do_test attach-1.4 {
   execsql {
     SELECT * FROM t2;
@@ -269,6 +270,16 @@ ifcapable schema_pragmas {
     } {0 main}
   }
 } ;# ifcapable schema_pragmas
+
+
+if {[regexp unix [file_control_vfsname db]]} {
+  do_test attach-1.30.1 {
+    file tail [db eval {PRAGMA main.filename}]
+  } {test.db}
+  do_test attach-1.30.2 {
+    db eval {PRAGMA temp.filename}
+  } {}
+}
 
 ifcapable {trigger} {  # Only do the following tests if triggers are enabled
 do_test attach-2.1 {
