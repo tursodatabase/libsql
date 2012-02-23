@@ -144,6 +144,8 @@ int sqlite3PagerWalCallback(Pager *pPager);
 int sqlite3PagerOpenWal(Pager *pPager, int *pisOpen);
 int sqlite3PagerCloseWal(Pager *pPager);
 
+int sqlite3PagerWalFramesize(Pager *pPager);
+
 /* Functions used to query pager state and configuration. */
 u8 sqlite3PagerIsreadonly(Pager*);
 int sqlite3PagerRefcount(Pager*);
