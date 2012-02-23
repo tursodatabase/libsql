@@ -480,6 +480,27 @@ static int tvfsCheckReservedLock(sqlite3_file *pFile, int *pResOut){
 */
 static int tvfsFileControl(sqlite3_file *pFile, int op, void *pArg){
   TestvfsFd *p = tvfsGetFd(pFile);
+  if( op==SQLITE_FCNTL_PRAGMA ){
+    char **argv = (char**)pArg;
+    if( sqlite3_stricmp(argv[1],"error")==0 ){
+      int rc = SQLITE_ERROR;
+      if( argv[2] ){
+        const char *z = argv[2];
+        int x = atoi(z);
+        if( x ){
+          rc = x;
+          while( sqlite3Isdigit(z[0]) ){ z++; }
+          while( sqlite3Isspace(z[0]) ){ z++; }
+        }
+        if( z[0] ) argv[0] = sqlite3_mprintf("%s", z);
+      }
+      return rc;
+    }
+    if( sqlite3_stricmp(argv[1], "filename")==0 ){
+      argv[0] = sqlite3_mprintf("%s", p->zFilename);
+      return SQLITE_OK;
+    }
+  }
   return sqlite3OsFileControl(p->pReal, op, pArg);
 }
 

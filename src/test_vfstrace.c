@@ -476,6 +476,12 @@ static int vfstraceFileControl(sqlite3_file *pFile, int op, void *pArg){
     case SQLITE_FCNTL_OVERWRITE:    zOp = "OVERWRITE";          break;
     case SQLITE_FCNTL_VFSNAME:      zOp = "VFSNAME";            break;
     case 0xca093fa0:                zOp = "DB_UNCHANGED";       break;
+    case SQLITE_FCNTL_PRAGMA: {
+      const char *const* a = (const char*const*)pArg;
+      sqlite3_snprintf(sizeof(zBuf), zBuf, "PRAGMA,[%s,%s]",a[1],a[2]);
+      zOp = zBuf;
+      break;
+    }
     default: {
       sqlite3_snprintf(sizeof zBuf, zBuf, "%d", op);
       zOp = zBuf;
@@ -489,6 +495,10 @@ static int vfstraceFileControl(sqlite3_file *pFile, int op, void *pArg){
   if( op==SQLITE_FCNTL_VFSNAME && rc==SQLITE_OK ){
     *(char**)pArg = sqlite3_mprintf("vfstrace.%s/%z",
                                     pInfo->zVfsName, *(char**)pArg);
+  }
+  if( op==SQLITE_FCNTL_PRAGMA && rc==SQLITE_OK && *(char**)pArg ){
+    vfstrace_printf(pInfo, "%s.xFileControl(%s,%s) returns %s",
+                    pInfo->zVfsName, p->zFName, zOp, *(char**)pArg);
   }
   return rc;
 }
