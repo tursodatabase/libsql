@@ -6879,7 +6879,7 @@ int sqlite3PagerCloseWal(Pager *pPager){
 ** is empty, return 0.
 */
 int sqlite3PagerWalFramesize(Pager *pPager){
-  assert( pPager->eState==PAGER_SHARED );
+  assert( pPager->eState==PAGER_READER );
   return sqlite3WalFramesize(pPager->pWal);
 }
 

@@ -3074,7 +3074,6 @@ int sqlite3WalHeapMemory(Wal *pWal){
 ** or zero if it is not (or if pWal is NULL).
 */
 int sqlite3WalFramesize(Wal *pWal){
-  int nRet = 0;
   assert( pWal==0 || pWal->readLock>=0 );
   return (pWal ? pWal->szPage : 0);
 }
