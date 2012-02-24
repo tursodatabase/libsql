@@ -3844,7 +3844,7 @@ case OP_NewRowid: {           /* out2-prerelease */
           assert( sqlite3BtreeCursorIsValid(pC->pCursor) );
           rc = sqlite3BtreeKeySize(pC->pCursor, &v);
           assert( rc==SQLITE_OK );   /* Cannot fail following BtreeLast() */
-          if( v==MAX_ROWID ){
+          if( v>=MAX_ROWID ){
             pC->useRandomRowid = 1;
           }else{
             v++;   /* IMP: R-29538-34987 */
