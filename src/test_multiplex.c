@@ -256,7 +256,7 @@ static void multiplexFilename(
     int i;
     for(i=n-1; i>0 && i>=n-4 && zOut[i]!='.'; i--){}
     if( i>=n-4 ) n = i+1;
-    if( flags & SQLITE_OPEN_MAIN_JOURNAL ){
+    if( flags & (SQLITE_OPEN_MAIN_JOURNAL|SQLITE_OPEN_WAL) ){
       /* The extensions on overflow files for main databases are 001, 002,
        ** 003 and so forth.  To avoid name collisions, add 400 to the 
        ** extensions of journal files so that they are 401, 402, 403, ....
