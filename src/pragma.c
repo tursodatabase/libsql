@@ -663,7 +663,7 @@ void sqlite3Pragma(
         ** creates the database file. It is important that it is created
         ** as an auto-vacuum capable db.
         */
-        int rc = sqlite3BtreeSetAutoVacuum(pBt, eAuto);
+        rc = sqlite3BtreeSetAutoVacuum(pBt, eAuto);
         if( rc==SQLITE_OK && (eAuto==1 || eAuto==2) ){
           /* When setting the auto_vacuum mode to either "full" or 
           ** "incremental", write the value of meta[6] in the database
@@ -781,7 +781,6 @@ void sqlite3Pragma(
     }else{
 #ifndef SQLITE_OMIT_WSD
       if( zRight[0] ){
-        int rc;
         int res;
         rc = sqlite3OsAccess(db->pVfs, zRight, SQLITE_ACCESS_READWRITE, &res);
         if( rc!=SQLITE_OK || res==0 ){

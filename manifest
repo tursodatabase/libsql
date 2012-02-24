@@ -1,5 +1,5 @@
-C If\sthe\sSQLITE_FCNTL_PRAGMA\sfile\scontrol\sreturns\ssomething\sother\sthan\nSQLITE_NOTFOUND,\sthen\sskip\sthe\srest\sof\sPragma\scode\sgeneration.
-D 2012-02-24T00:03:12.589
+C Add\s#ifdef\sSQLITE_ENABLE_ZIPVFS\saround\sthose\sbits\sof\scode\sthat\sare\sonly\nused\sby\sZIPVFS.
+D 2012-02-24T14:33:28.413
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,13 +168,13 @@ F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 0e3d2942d228d0366fb80a3640f35caf413b66d1
 F src/os_win.c 5ac061ae1326a71500cee578ed0fd9113b4f6a37
-F src/pager.c 25733ab94de3c058b98b7481ed0d7163cd9471cf
-F src/pager.h 0ccc8260fadff8e0ce5193392faea6954178bf3d
+F src/pager.c 3955b62cdb5bb64559607cb474dd12a6c8e1d4a5
+F src/pager.h ef1eaf8593e78f73885c1dfac27ad83bee23bdc5
 F src/parse.y 1ddd71ae55f4b7cbb2672526ea4de023de0f519e
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h 1b5dcc3dc8103d03e625b177023ee67764fa6b7c
 F src/pcache1.c b30b1c35908346ecc43d8d9d17f2ddf6817f8f60
-F src/pragma.c 11f5fff828e00ece318eefc8c8808b4fc9835739
+F src/pragma.c e708b3bb5704605816f617e0b1d63a5488060715
 F src/prepare.c ec4989f7f480544bdc4192fe663470d2a2d7d61e
 F src/printf.c 7ffb4ebb8b341f67e049695ba031da717b3d2699
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -250,8 +250,8 @@ F src/vdbemem.c fb0ac964ccbcd94f595eb993c05bfd9c52468a4a
 F src/vdbesort.c b25814d385895544ebc8118245c8311ded7f81c9
 F src/vdbetrace.c d6e50e04e1ec498150e519058f617d91b8f5c843
 F src/vtab.c ab90fb600a3f5e4b7c48d22a4cdb2d6b23239847
-F src/wal.c ef05bdbff7ad30eb950222b2783dac21f7b8acb4
-F src/wal.h 9a300673e86f04eeb7442348d3557eecc5a9509a
+F src/wal.c c164c39e8625b2b6e7d7b2aab5e7296ebd7e8190
+F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c af623942514571895818b9b7ae11db95ae3b3d88
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
@@ -990,7 +990,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P f9df4063fbd100ce306a89fc649c1860fd801f31
-R 918c6dd4ec2727a8cb49f3dbede7e930
+P 9e6d340f557c2f2c8a07300ac60357af9906a7fa
+R ea57edcd6f93a841cf2e153be1c9f0e7
 U drh
-Z a93fbf9532fae037d0b7a67217939ce5
+Z 92fb8a3e30d52bd11c67570a5d62f0a2

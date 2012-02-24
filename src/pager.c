@@ -6871,6 +6871,7 @@ int sqlite3PagerCloseWal(Pager *pPager){
   return rc;
 }
 
+#ifdef SQLITE_ENABLE_ZIPVFS
 /*
 ** A read-lock must be held on the pager when this function is called. If
 ** the pager is in WAL mode and the WAL file currently contains one or more
@@ -6882,6 +6883,7 @@ int sqlite3PagerWalFramesize(Pager *pPager){
   assert( pPager->eState==PAGER_READER );
   return sqlite3WalFramesize(pPager->pWal);
 }
+#endif
 
 #ifdef SQLITE_HAS_CODEC
 /*

@@ -3068,6 +3068,7 @@ int sqlite3WalHeapMemory(Wal *pWal){
   return (pWal && pWal->exclusiveMode==WAL_HEAPMEMORY_MODE );
 }
 
+#ifdef SQLITE_ENABLE_ZIPVFS
 /*
 ** If the argument is not NULL, it points to a Wal object that holds a
 ** read-lock. This function returns the database page-size if it is known,
@@ -3077,5 +3078,6 @@ int sqlite3WalFramesize(Wal *pWal){
   assert( pWal==0 || pWal->readLock>=0 );
   return (pWal ? pWal->szPage : 0);
 }
+#endif
 
 #endif /* #ifndef SQLITE_OMIT_WAL */

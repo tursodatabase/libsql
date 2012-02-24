@@ -125,10 +125,12 @@ int sqlite3WalExclusiveMode(Wal *pWal, int op);
 */
 int sqlite3WalHeapMemory(Wal *pWal);
 
+#ifdef SQLITE_ENABLE_ZIPVFS
 /* If the WAL file is not empty, return the number of bytes of content
 ** stored in each frame (i.e. the db page-size when the WAL was created).
 */
 int sqlite3WalFramesize(Wal *pWal);
+#endif
 
 #endif /* ifndef SQLITE_OMIT_WAL */
 #endif /* _WAL_H_ */
