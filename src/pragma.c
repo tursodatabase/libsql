@@ -374,7 +374,7 @@ void sqlite3Pragma(
     }
     pParse->nErr++;
     pParse->rc = rc;
-  }
+  }else
                             
  
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS) && !defined(SQLITE_OMIT_DEPRECATED)
