@@ -2397,7 +2397,7 @@ int sqlite3WalRead(
     iOffset = walFrameOffset(iRead, sz) + WAL_FRAME_HDRSIZE;
     *pInWal = 1;
     /* testcase( IS_BIG_INT(iOffset) ); // requires a 4GiB WAL */
-    return sqlite3OsRead(pWal->pWalFd, pOut, nOut, iOffset);
+    return sqlite3OsRead(pWal->pWalFd, pOut, (nOut>sz ? sz : nOut), iOffset);
   }
 
   *pInWal = 0;

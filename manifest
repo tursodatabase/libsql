@@ -1,5 +1,5 @@
-C Fix\sa\scase\swhere\san\serror\scode\swas\sbeing\soverwritten\sin\smultiplexDelete().
-D 2012-02-28T11:52:12.825
+C Fix\sspurious\serrors\sthat\smay\soccur\sif\san\sempty\sdatabase\sis\sopened\sand\sthen\sinitialized\sas\sa\sWAL\sdatabase\sby\sa\ssecond\sconnection.
+D 2012-02-28T17:57:34.628
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -239,7 +239,7 @@ F src/trigger.c ee7e178fb9188f44b532cebd449a7c1df90fb684
 F src/update.c d3076782c887c10e882996550345da9c4c9f9dea
 F src/utf.c 890c67dcfcc7a74623c95baac7535aadfe265e84
 F src/util.c 906731099c4397bf8adf3fa90a833355e7472af0
-F src/vacuum.c 0c0ba2242355c6048d65e2b333abe0f7c06348fa
+F src/vacuum.c bfd53f9bd20a8fdb70b0fa8e77182b866875c0d8
 F src/vdbe.c 32720e873ed0a23e6ee928b676cd995864b984d6
 F src/vdbe.h 18f581cac1f4339ec3299f3e0cc6e11aec654cdb
 F src/vdbeInt.h 6ff4180a05683566a8835d12f7ec504b22932c82
@@ -250,7 +250,7 @@ F src/vdbemem.c fb0ac964ccbcd94f595eb993c05bfd9c52468a4a
 F src/vdbesort.c b25814d385895544ebc8118245c8311ded7f81c9
 F src/vdbetrace.c d6e50e04e1ec498150e519058f617d91b8f5c843
 F src/vtab.c ab90fb600a3f5e4b7c48d22a4cdb2d6b23239847
-F src/wal.c c164c39e8625b2b6e7d7b2aab5e7296ebd7e8190
+F src/wal.c 7bb3ad807afc7973406c805d5157ec7a2f65e146
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c af623942514571895818b9b7ae11db95ae3b3d88
@@ -913,6 +913,7 @@ F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
 F test/wal5.test f58ed4b8b542f71c7441da12fbd769d99b362437
 F test/wal6.test 2e3bc767d9c2ce35c47106148d43fcbd072a93b3
 F test/wal7.test 2ae8f427d240099cc4b2dfef63cff44e2a68a1bd
+F test/wal8.test 5ab217d21f7e5e86af2933a4ffd0d8357cc2c0bd
 F test/wal_common.tcl a98f17fba96206122eff624db0ab13ec377be4fe
 F test/walbak.test b9f68e39646375c2b877be906babcc15d38b4877
 F test/walbig.test 0ab8a430ef420a3114f7092e0f30fc9585ffa155
@@ -990,7 +991,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P e44e26771e5aa48f3bfa14d6db3e669b5b2a1e73
-R a83bd20b956aa8e93cec00d5fc1e4306
+P c267893a0813beb1764071409025e178318e1ca3
+R 751c4f9505bcae82ab2d498f42151225
 U dan
-Z a4ff6a0dae74370332c0513312e14191
+Z aacac9f6818b59f3fbe792ef77401913
