@@ -657,14 +657,16 @@ static int multiplexDelete(
         multiplexFilename(zName, nName, SQLITE_OPEN_MAIN_JOURNAL, --iChunk, z);
         rc = pOrigVfs->xDelete(pOrigVfs, z, syncDir);
       }
-      iChunk = 0;
-      do{
-        multiplexFilename(zName, nName, SQLITE_OPEN_WAL, ++iChunk, z);
-        rc = pOrigVfs->xAccess(pOrigVfs, z, SQLITE_ACCESS_EXISTS, &bExists);
-      }while( rc==SQLITE_OK && bExists );
-      while( rc==SQLITE_OK && iChunk>1 ){
-        multiplexFilename(zName, nName, SQLITE_OPEN_WAL, --iChunk, z);
-        rc = pOrigVfs->xDelete(pOrigVfs, z, syncDir);
+      if( rc==SQLITE_OK ){
+        iChunk = 0;
+        do{
+          multiplexFilename(zName, nName, SQLITE_OPEN_WAL, ++iChunk, z);
+          rc = pOrigVfs->xAccess(pOrigVfs, z, SQLITE_ACCESS_EXISTS, &bExists);
+        }while( rc==SQLITE_OK && bExists );
+        while( rc==SQLITE_OK && iChunk>1 ){
+          multiplexFilename(zName, nName, SQLITE_OPEN_WAL, --iChunk, z);
+          rc = pOrigVfs->xDelete(pOrigVfs, z, syncDir);
+        }
       }
     }
     sqlite3_free(z);
