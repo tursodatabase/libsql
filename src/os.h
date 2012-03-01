@@ -66,30 +66,6 @@
 #endif
 
 /*
-** Define the maximum size of a temporary filename
-*/
-#if SQLITE_OS_WIN
-# include <windows.h>
-# define SQLITE_TEMPNAME_SIZE (MAX_PATH+50)
-#elif SQLITE_OS_OS2
-# if (__GNUC__ > 3 || __GNUC__ == 3 && __GNUC_MINOR__ >= 3) && defined(OS2_HIGH_MEMORY)
-#  include <os2safe.h> /* has to be included before os2.h for linking to work */
-# endif
-# define INCL_DOSDATETIME
-# define INCL_DOSFILEMGR
-# define INCL_DOSERRORS
-# define INCL_DOSMISC
-# define INCL_DOSPROCESS
-# define INCL_DOSMODULEMGR
-# define INCL_DOSSEMAPHORES
-# include <os2.h>
-# include <uconv.h>
-# define SQLITE_TEMPNAME_SIZE (CCHMAXPATHCOMP)
-#else
-# define SQLITE_TEMPNAME_SIZE 200
-#endif
-
-/*
 ** Determine if we are dealing with Windows NT.
 **
 ** We ought to be able to determine if we are compiling for win98 or winNT
