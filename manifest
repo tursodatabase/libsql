@@ -1,5 +1,5 @@
-C Fix\sspurious\serrors\sthat\smay\soccur\sif\san\sempty\sdatabase\sis\sopened\sand\sthen\sinitialized\sas\sa\sWAL\sdatabase\sby\sa\ssecond\sconnection.
-D 2012-02-28T17:57:34.628
+C Fix\sa\stypo\sin\sthe\sheader\scomment\sof\ssqlite3_commit_hook().
+D 2012-03-01T21:30:44.361
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -147,7 +147,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
 F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
-F src/main.c e936269fbc1af78cef79c27980e89209aeb20a07
+F src/main.c dcb4a15254dca9cc59dba63e813a8c140c021832
 F src/malloc.c 15afac5e59b6584efe072e9933aefb4230e74f97
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c b3677415e69603d6a0e7c5410a1b3731d55beda1
@@ -991,7 +991,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P c267893a0813beb1764071409025e178318e1ca3
-R 751c4f9505bcae82ab2d498f42151225
-U dan
-Z aacac9f6818b59f3fbe792ef77401913
+P 16330a2f7262173a32ae48a72c0ee2522b6dc554
+R 4fca0028f2954d371f8ed29b9be73d18
+U drh
+Z a58e0a8dbfee9129245f4f54328583b6

@@ -1312,9 +1312,8 @@ void *sqlite3_profile(
 }
 #endif /* SQLITE_OMIT_TRACE */
 
-/*** EXPERIMENTAL ***
-**
-** Register a function to be invoked when a transaction comments.
+/*
+** Register a function to be invoked when a transaction commits.
 ** If the invoked function returns non-zero, then the commit becomes a
 ** rollback.
 */
