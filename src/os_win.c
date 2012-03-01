@@ -168,17 +168,11 @@ int sqlite3_os_type = 0;
 static int sqlite3_os_type = 0;
 #endif
 
-/*
-** Many system calls are accessed through pointer-to-functions so that
-** they may be overridden at runtime to facilitate fault injection during
-** testing and sandboxing.  The following array holds the names and pointers
-** to all overrideable system calls.
-*/
-#if !SQLITE_OS_WINCE
+#if !SQLITE_OS_WINCE || SQLITE_OS_WINRT
 #  define SQLITE_WIN32_HAS_ANSI
 #endif
 
-#if SQLITE_OS_WINCE || SQLITE_OS_WINNT
+#if SQLITE_OS_WINCE || SQLITE_OS_WINNT || SQLITE_OS_WINRT
 #  define SQLITE_WIN32_HAS_WIDE
 #endif
 
@@ -207,6 +201,12 @@ static int sqlite3_os_type = 0;
 #  define osLockFileEx              LockFileEx
 #endif
 
+/*
+** Many system calls are accessed through pointer-to-functions so that
+** they may be overridden at runtime to facilitate fault injection during
+** testing and sandboxing.  The following array holds the names and pointers
+** to all overrideable system calls.
+*/
 static struct win_syscall {
   const char *zName;            /* Name of the sytem call */
   sqlite3_syscall_ptr pCurrent; /* Current value of the system call */
@@ -572,7 +572,11 @@ static struct win_syscall {
 #define osSetFilePointer ((DWORD(WINAPI*)(HANDLE,LONG,PLONG, \
         DWORD))aSyscall[52].pCurrent)
 
+#if SQLITE_OS_WINRT
+  { "Sleep",                   (SYSCALL)0,                       0 },
+#else
   { "Sleep",                   (SYSCALL)Sleep,                   0 },
+#endif
 
 #define osSleep ((VOID(WINAPI*)(DWORD))aSyscall[53].pCurrent)
 
@@ -699,6 +703,21 @@ static const char *winNextSystemCall(sqlite3_vfs *p, const char *zName){
 }
 
 /*
+** The following routine Suspends the thread for at least ms milliseconds.  This is equivalent
+** to the win32 Sleep() interface.
+*/
+#if SQLITE_OS_WINRT
+static HANDLE sleepObj;
+static void portableSleep(int ms){
+  WaitForSingleObjectEx(sleepObj, ms, FALSE);
+}
+#else
+static void portableSleep(int ms){
+  osSleep(ms); 
+}
+#endif
+
+/*
 ** Return true (non-zero) if we are running under WinNT, Win2K, WinXP,
 ** or WinCE.  Return false (zero) for Win95, Win98, or WinME.
 **
@@ -709,7 +728,7 @@ static const char *winNextSystemCall(sqlite3_vfs *p, const char *zName){
 ** WinNT/2K/XP so that we will know whether or not we can safely call
 ** the LockFileEx() API.
 */
-#if SQLITE_OS_WINCE
+#if SQLITE_OS_WINCE  || SQLITE_OS_WINRT
 # define isNT()  (1)
 #else
   static int isNT(void){
@@ -1190,7 +1209,7 @@ static int retryIoerr(int *pnRetry, DWORD *pError){
   if( e==ERROR_ACCESS_DENIED ||
       e==ERROR_LOCK_VIOLATION ||
       e==ERROR_SHARING_VIOLATION ){
-    osSleep(win32IoerrRetryDelay*(1+*pnRetry));
+    portableSleep(win32IoerrRetryDelay*(1+*pnRetry));
     ++*pnRetry;
     return 1;
   }
@@ -1599,7 +1618,7 @@ static int winClose(sqlite3_file *id){
   do{
     rc = osCloseHandle(pFile->h);
     /* SimulateIOError( rc=0; cnt=MX_CLOSE_ATTEMPT; ); */
-  }while( rc==0 && ++cnt < MX_CLOSE_ATTEMPT && (osSleep(100), 1) );
+  }while( rc==0 && ++cnt < MX_CLOSE_ATTEMPT && (portableSleep(100), 1) );
 #if SQLITE_OS_WINCE
 #define WINCE_DELETION_ATTEMPTS 3
   winceDestroyLock(pFile);
@@ -1610,7 +1629,7 @@ static int winClose(sqlite3_file *id){
         && osGetFileAttributesW(pFile->zDeleteOnClose)!=0xffffffff 
         && cnt++ < WINCE_DELETION_ATTEMPTS
     ){
-       osSleep(100);  /* Wait a little before trying again */
+       portableSleep(100);  /* Wait a little before trying again */
     }
     sqlite3_free(pFile->zDeleteOnClose);
   }
@@ -1976,7 +1995,7 @@ static int winLock(sqlite3_file *id, int locktype){
       ** copy this retry logic.  It is a hack intended for Windows only.
       */
       OSTRACE(("could not get a PENDING lock. cnt=%d\n", cnt));
-      if( cnt ) osSleep(1);
+      if( cnt ) portableSleep(1);
     }
     gotPendingLock = res;
     if( !res ){
@@ -3535,7 +3554,7 @@ static int winRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
 ** Sleep for a little while.  Return the amount of time slept.
 */
 static int winSleep(sqlite3_vfs *pVfs, int microsec){
-  osSleep((microsec+999)/1000);
+  portableSleep((microsec+999)/1000);
   UNUSED_PARAMETER(pVfs);
   return ((microsec+999)/1000)*1000;
 }
@@ -3679,6 +3698,11 @@ int sqlite3_os_init(void){
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
   assert( ArraySize(aSyscall)==60 );
 
+#if SQLITE_OS_WINRT
+  sleepObj = CreateEventEx(NULL, NULL, CREATE_EVENT_MANUAL_RESET, 
+                                  EVENT_ALL_ACCESS);
+#endif
+
 #ifndef SQLITE_OMIT_WAL
   /* get memory map allocation granularity */
   memset(&winSysInfo, 0, sizeof(SYSTEM_INFO));
@@ -3691,6 +3715,9 @@ int sqlite3_os_init(void){
 }
 
 int sqlite3_os_end(void){ 
+#if SQLITE_OS_WINRT
+  CloseHandle(sleepObj);
+#endif
   return SQLITE_OK;
 }
 
