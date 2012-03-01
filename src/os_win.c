@@ -388,7 +388,11 @@ static struct win_syscall {
 #define osGetFileAttributesExW ((BOOL(WINAPI*)(LPCWSTR,GET_FILEEX_INFO_LEVELS, \
         LPVOID))aSyscall[22].pCurrent)
 
+#if SQLITE_OS_WINRT
+  { "GetFileSize",             (SYSCALL)0,                       0 },
+#else
   { "GetFileSize",             (SYSCALL)GetFileSize,             0 },
+#endif
 
 #define osGetFileSize ((DWORD(WINAPI*)(HANDLE,LPDWORD))aSyscall[23].pCurrent)
 
@@ -1861,23 +1865,39 @@ static int winSync(sqlite3_file *id, int flags){
 ** Determine the current size of a file in bytes
 */
 static int winFileSize(sqlite3_file *id, sqlite3_int64 *pSize){
-  DWORD upperBits;
-  DWORD lowerBits;
   winFile *pFile = (winFile*)id;
-  DWORD lastErrno;
+  int rc = SQLITE_OK;
 
   assert( id!=0 );
   SimulateIOError(return SQLITE_IOERR_FSTAT);
-  lowerBits = osGetFileSize(pFile->h, &upperBits);
-  if(   (lowerBits == INVALID_FILE_SIZE)
-     && ((lastErrno = osGetLastError())!=NO_ERROR) )
+#if SQLITE_OS_WINRT
   {
-    pFile->lastErrno = lastErrno;
-    return winLogError(SQLITE_IOERR_FSTAT, pFile->lastErrno,
-             "winFileSize", pFile->zPath);
+    FILE_STANDARD_INFO info;
+    if( GetFileInformationByHandleEx(pFile->h, FileStandardInfo,
+                                     &info, sizeof(info)) ){
+      *pSize = info.EndOfFile.QuadPart;
+    }else{
+      rc = winLogError(SQLITE_IOERR_FSTAT, pFile->lastErrno,
+                       "winFileSize", pFile->zPath);
+    }
   }
-  *pSize = (((sqlite3_int64)upperBits)<<32) + lowerBits;
-  return SQLITE_OK;
+#else
+  {
+    DWORD upperBits;
+    DWORD lowerBits;
+    DWORD lastErrno;
+
+    lowerBits = osGetFileSize(pFile->h, &upperBits);
+    *pSize = (((sqlite3_int64)upperBits)<<32) + lowerBits;
+    if(   (lowerBits == INVALID_FILE_SIZE)
+       && ((lastErrno = osGetLastError())!=NO_ERROR) ){
+      pFile->lastErrno = lastErrno;
+      rc = winLogError(SQLITE_IOERR_FSTAT, pFile->lastErrno,
+             "winFileSize", pFile->zPath);
+    }
+  }
+#endif
+  return rc;
 }
 
 /*
