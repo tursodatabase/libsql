@@ -567,7 +567,11 @@ static struct win_syscall {
 
 #define osSetEndOfFile ((BOOL(WINAPI*)(HANDLE))aSyscall[51].pCurrent)
 
+#if SQLITE_OS_WINRT
+  { "SetFilePointer",          (SYSCALL)0,                       0 },
+#else
   { "SetFilePointer",          (SYSCALL)SetFilePointer,          0 },
+#endif
 
 #define osSetFilePointer ((DWORD(WINAPI*)(HANDLE,LONG,PLONG, \
         DWORD))aSyscall[52].pCurrent)
@@ -1563,6 +1567,7 @@ static BOOL winceLockFileEx(
 # define INVALID_SET_FILE_POINTER ((DWORD)-1)
 #endif
 
+#if SQLITE_OS_WINRT==0
 /*
 ** Move the current position of the file handle passed as the first 
 ** argument to offset iOffset within the file. If successful, return 0. 
@@ -1596,6 +1601,17 @@ static int seekWinFile(winFile *pFile, sqlite3_int64 iOffset){
 
   return 0;
 }
+#else /* if SQLITE_OS_WINRT==1 */
+/* 
+** Same function as above, except that this implementation works for
+** windowsRT.
+*/
+static int seekWinFile(winFile *pFile, sqlite3_int64 iOffset){
+  LARGE_INTEGER x;
+  x.QuadPart = iOffset;
+  return SetFilePointerEx(pFile->h, x, 0, FILE_BEGIN) ? 0 : 1;
+}
+#endif
 
 /*
 ** Close a file.

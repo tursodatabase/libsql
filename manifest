@@ -1,5 +1,5 @@
-C Use\sWaitForSingleObjectEx()\sas\sa\ssubstitute\sfor\sSleep\son\swinRT.
-D 2012-03-01T21:19:39.132
+C Use\sSetFilePointerEx()\sinstead\sof\sSetFilePointer()\son\swinRT.
+D 2012-03-01T22:06:30.213
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -167,7 +167,7 @@ F src/os.h c3a9db9e8e16f564e1a40cea1687dad69634262c
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 0e3d2942d228d0366fb80a3640f35caf413b66d1
-F src/os_win.c b9c36459cf8f37d16a24f35cca934c21d74f0e5b
+F src/os_win.c f5d551ef6c6988fb5ed96c4f60eb67bd5cce78e4
 F src/pager.c 3955b62cdb5bb64559607cb474dd12a6c8e1d4a5
 F src/pager.h ef1eaf8593e78f73885c1dfac27ad83bee23bdc5
 F src/parse.y 1ddd71ae55f4b7cbb2672526ea4de023de0f519e
@@ -991,7 +991,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 8b7ca8a09f7b69db1fe766616cba0307e681a6f3
-R 8f274d295cc98eee7dadf7a129e9b0df
+P bf897be0daa2f7e16f63b78849ffb76ce02d48f1
+R c83dc412475e58f58086f3dd45db2c02
 U drh
-Z a00ee944783dbe7653fdca656eaa2c07
+Z c05dce97a97e437048d5758229e96bc3
