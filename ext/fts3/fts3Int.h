@@ -192,6 +192,7 @@ struct Fts3Table {
   char **azColumn;                /* column names.  malloced */
   sqlite3_tokenizer *pTokenizer;  /* tokenizer for inserts and queries */
   char *zContentTbl;              /* content=xxx option, or NULL */
+  char *zLanguageid;              /* languageid=xxx option, or NULL */
 
   /* Precompiled statements used by the implementation. Each of these 
   ** statements is run and reset within a single virtual table API call. 
@@ -211,12 +212,12 @@ struct Fts3Table {
 
   /* TODO: Fix the first paragraph of this comment.
   **
-  ** The following hash table is used to buffer pending index updates during
-  ** transactions. Variable nPendingData estimates the memory size of the 
-  ** pending data, including hash table overhead, but not malloc overhead. 
-  ** When nPendingData exceeds nMaxPendingData, the buffer is flushed 
-  ** automatically. Variable iPrevDocid is the docid of the most recently
-  ** inserted record.
+  ** The following array of hash tables is used to buffer pending index 
+  ** updates during transactions. Variable nPendingData estimates the memory 
+  ** size of the pending data, including hash table overhead, not including
+  ** malloc overhead.  When nPendingData exceeds nMaxPendingData, the buffer 
+  ** is flushed automatically. Variable iPrevDocid is the docid of the most 
+  ** recently inserted record.
   **
   ** A single FTS4 table may have multiple full-text indexes. For each index
   ** there is an entry in the aIndex[] array. Index 0 is an index of all the
@@ -231,12 +232,13 @@ struct Fts3Table {
   int nMaxPendingData;            /* Max pending data before flush to disk */
   int nPendingData;               /* Current bytes of pending data */
   sqlite_int64 iPrevDocid;        /* Docid of most recently inserted document */
+  int iPrevLangid;                /* Langid of recently inserted document */
 
 #if defined(SQLITE_DEBUG) || defined(SQLITE_COVERAGE_TEST)
   /* State variables used for validating that the transaction control
   ** methods of the virtual table are called at appropriate times.  These
-  ** values do not contribution to the FTS computation; they are used for
-  ** verifying the SQLite core.
+  ** values do not contribute to FTS functionality; they are used for
+  ** verifying the operation of the SQLite core.
   */
   int inTransaction;     /* True after xBegin but before xCommit/xRollback */
   int mxSavepoint;       /* Largest valid xSavepoint integer */
@@ -255,6 +257,7 @@ struct Fts3Cursor {
   u8 isRequireSeek;               /* True if must seek pStmt to %_content row */
   sqlite3_stmt *pStmt;            /* Prepared statement in use by the cursor */
   Fts3Expr *pExpr;                /* Parsed MATCH query string */
+  int iLangid;                    /* Language being queried for */
   int nPhrase;                    /* Number of matchable phrases in query */
   Fts3DeferredToken *pDeferred;   /* Deferred search tokens, if any */
   sqlite3_int64 iPrevId;          /* Previous id read from aDoclist */
@@ -406,7 +409,7 @@ int sqlite3Fts3SegReaderNew(int, int, sqlite3_int64,
 int sqlite3Fts3SegReaderPending(
   Fts3Table*,int,const char*,int,int,Fts3SegReader**);
 void sqlite3Fts3SegReaderFree(Fts3SegReader *);
-int sqlite3Fts3AllSegdirs(Fts3Table*, int, int, sqlite3_stmt **);
+int sqlite3Fts3AllSegdirs(Fts3Table*, int, int, int, sqlite3_stmt **);
 int sqlite3Fts3ReadLock(Fts3Table *);
 int sqlite3Fts3ReadBlock(Fts3Table*, sqlite3_int64, char **, int*, int*);
 
@@ -427,8 +430,8 @@ int sqlite3Fts3SegReaderStart(Fts3Table*, Fts3MultiSegReader*, Fts3SegFilter*);
 int sqlite3Fts3SegReaderStep(Fts3Table *, Fts3MultiSegReader *);
 void sqlite3Fts3SegReaderFinish(Fts3MultiSegReader *);
 
-int sqlite3Fts3SegReaderCursor(
-    Fts3Table *, int, int, const char *, int, int, int, Fts3MultiSegReader *);
+int sqlite3Fts3SegReaderCursor(Fts3Table *, 
+    int, int, int, const char *, int, int, int, Fts3MultiSegReader *);
 
 /* Flags allowed as part of the 4th argument to SegmentReaderIterate() */
 #define FTS3_SEGMENT_REQUIRE_POS   0x00000001
