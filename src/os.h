@@ -115,6 +115,14 @@
 # define SQLITE_OS_WINCE 0
 #endif
 
+/*
+** Determine if we are dealing with WindowsRT (Metro) as this has a different and
+** incompatible API from win32.
+*/
+#if !defined(SQLITE_OS_WINRT)
+# define SQLITE_OS_WINRT 0
+#endif
+
 /* If the SET_FULLSYNC macro is not defined above, then make it
 ** a no-op
 */

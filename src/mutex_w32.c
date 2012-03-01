@@ -114,7 +114,11 @@ static int winMutexInit(void){
   if( InterlockedCompareExchange(&winMutex_lock, 1, 0)==0 ){
     int i;
     for(i=0; i<ArraySize(winMutex_staticMutexes); i++){
+#if SQLITE_OS_WINRT
+      InitializeCriticalSectionEx(&winMutex_staticMutexes[i].mutex, 0, 0);
+#else
       InitializeCriticalSection(&winMutex_staticMutexes[i].mutex);
+#endif
     }
     winMutex_isInit = 1;
   }else{

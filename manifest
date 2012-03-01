@@ -1,9 +1,9 @@
-C Add\sback\sin\ssome\s#includes\sthat\swere\sremoved\sincorrectly\sby\sthe\nprevious\scheck-in.
-D 2012-03-01T19:14:13.642
+C Add\srecognition\sof\sthe\sSQLITE_OS_WINRT\scompile-time\soption.\s\s\nUse\sInitializeCriticalSectionEx()\sunder\swinRT.
+D 2012-03-01T20:05:41.277
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 3a5582a858b8071af43cd459bd757f7d0748f66a
+F Makefile.msc 0e67f253439ebc333b7b49f373d5932a93209c6a
 F Makefile.vxworks 1deb39c8bb047296c30161ffa10c1b5423e632f9
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION bb4c2a86abe53ea3c1d6ea515b69a426040e2414
@@ -160,10 +160,10 @@ F src/mutex.h 2a79e0c10c26412546b501ee0f3d92b42decf63e
 F src/mutex_noop.c 7682796b7d8d39bf1c138248858efcd10c9e1553
 F src/mutex_os2.c 882d735098c07c8c6a5472b8dd66e19675fe117f
 F src/mutex_unix.c c3a4e00f96ba068a8dbef34084465979aaf369cc
-F src/mutex_w32.c 5e54f3ba275bcb5d00248b8c23107df2e2f73e33
+F src/mutex_w32.c ddd2a783230e22831ab44fca181b5904e48a7318
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
-F src/os.h a8c6a8aeda6c9a1b1deea675aa79bae82fa7c15f
+F src/os.h c3a9db9e8e16f564e1a40cea1687dad69634262c
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 0e3d2942d228d0366fb80a3640f35caf413b66d1
@@ -991,7 +991,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P c0891296b49fb95917db8a881425f8131cbf6de7
-R 6e4cb882ea93ae9339007a493ca76cc2
+P 718905367ff3f86a449c2c27f724089ba31dea3a
+R 465a0789e63e9500d164032936751907
 U drh
-Z 1990475c2c72ee94b7f89b5294ac0476
+Z 36d2e47a7d135f112024e54b1ccd201a
