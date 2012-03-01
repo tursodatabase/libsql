@@ -1,5 +1,5 @@
-C Use\sSetFilePointerEx()\sinstead\sof\sSetFilePointer()\son\swinRT.
-D 2012-03-01T22:06:30.213
+C Do\snot\srun\sthe\slarge\sfile\stests\sif\sa\sfile\snamed\s"skip-big-file"\sexists\nin\sthe\stest\sdirectory.\s\sThis\senables\stests\sto\sbe\srun\smuch\sfaster\son\nsystems\sthat\slack\ssparse\sfile\ssupport.
+D 2012-03-01T22:33:41.379
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -296,8 +296,8 @@ F test/backup_malloc.test 7162d604ec2b4683c4b3799a48657fb8b5e2d450
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
 F test/badutf2.test f5bc7f2d280670ecd79b9cf4f0f1760c607fe51f
 F test/between.test 16b1776c6323faadb097a52d673e8e3d8be7d070
-F test/bigfile.test a8ec8073a20207456dab01a29ad9cde42b0dd103
-F test/bigfile2.test f8e83eca9abef60692a34255a2ebcb96aff897fc
+F test/bigfile.test 40922053e5fa37b5e1277183d8392d7ce9fe632f
+F test/bigfile2.test 284026c778fcb97d16a4438c921458ad6e2ecd09
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bind.test 3c7b320969000c441a70952b0b15938fbb66237c
 F test/bindxfer.test efecd12c580c14df5f4ad3b3e83c667744a4f7e0
@@ -991,7 +991,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P bf897be0daa2f7e16f63b78849ffb76ce02d48f1
-R c83dc412475e58f58086f3dd45db2c02
+P 36efafc618017b6448f222776d0143e5f98d1e65
+R 86df3dcfb999c945a7ab3c5f3898aaba
 U drh
-Z c05dce97a97e437048d5758229e96bc3
+Z a38013646615f1ec6a50fcd20d1bf262

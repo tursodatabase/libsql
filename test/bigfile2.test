@@ -13,6 +13,8 @@
 # files larger than 4GB.
 #
 
+if {[file exists skip-big-file]} return
+
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix bigfile2
