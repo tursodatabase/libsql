@@ -625,6 +625,47 @@ static struct win_syscall {
 #define osWriteFile ((BOOL(WINAPI*)(HANDLE,LPCVOID,DWORD,LPDWORD, \
         LPOVERLAPPED))aSyscall[59].pCurrent)
 
+#if !SQLITE_OS_WINCE
+  { "CreateEventEx",           (SYSCALL)CreateEventEx,           0 },
+
+#define osCreateEventEx ((HANDLE(WINAPI*)(LPSECURITY_ATTRIBUTES,LPCTSTR, \
+        DWORD,DWORD))aSyscall[60].pCurrent)
+#else
+  { "CreateEventEx",           (SYSCALL)0,                       0 },
+#endif
+
+  { "WaitForSingleObject",     (SYSCALL)WaitForSingleObject,     0 },
+
+#define osWaitForSingleObject ((DWORD(WINAPI*)(HANDLE, \
+        DWORD))aSyscall[61].pCurrent)
+
+#if !SQLITE_OS_WINCE
+  { "WaitForSingleObjectEx",   (SYSCALL)WaitForSingleObjectEx,   0 },
+
+#define osWaitForSingleObjectEx ((DWORD(WINAPI*)(HANDLE,DWORD, \
+        BOOL))aSyscall[62].pCurrent)
+#else
+  { "WaitForSingleObjectEx",   (SYSCALL)0,                       0 },
+#endif
+
+#if !SQLITE_OS_WINCE
+  { "SetFilePointerEx",        (SYSCALL)SetFilePointerEx,        0 },
+
+#define osSetFilePointerEx ((BOOL(WINAPI*)(HANDLE,LARGE_INTEGER, \
+        PLARGE_INTEGER,DWORD))aSyscall[63].pCurrent)
+#else
+  { "SetFilePointerEx",        (SYSCALL)0,                       0 },
+#endif
+
+#if !SQLITE_OS_WINCE
+  { "GetFileInformationByHandleEx", (SYSCALL)GetFileInformationByHandleEx, 0 },
+
+#define osGetFileInformationByHandleEx ((BOOL(WINAPI*)(HANDLE, \
+        FILE_INFO_BY_HANDLE_CLASS,LPVOID,DWORD))aSyscall[64].pCurrent)
+#else
+  { "GetFileInformationByHandleEx", (SYSCALL)0,                  0 },
+#endif
+
 }; /* End of the overrideable system calls */
 
 /*
@@ -717,7 +758,7 @@ static const char *winNextSystemCall(sqlite3_vfs *p, const char *zName){
 #if SQLITE_OS_WINRT
 static HANDLE sleepObj;
 static void portableSleep(int ms){
-  WaitForSingleObjectEx(sleepObj, ms, FALSE);
+  osWaitForSingleObjectEx(sleepObj, ms, FALSE);
 }
 #else
 static void portableSleep(int ms){
@@ -1275,7 +1316,7 @@ struct tm *__cdecl localtime(const time_t *t)
 static void winceMutexAcquire(HANDLE h){
    DWORD dwErr;
    do {
-     dwErr = WaitForSingleObject(h, INFINITE);
+     dwErr = osWaitForSingleObject(h, INFINITE);
    } while (dwErr != WAIT_OBJECT_0 && dwErr != WAIT_ABANDONED);
 }
 /*
@@ -1608,9 +1649,20 @@ static int seekWinFile(winFile *pFile, sqlite3_int64 iOffset){
 ** windowsRT.
 */
 static int seekWinFile(winFile *pFile, sqlite3_int64 iOffset){
-  LARGE_INTEGER x;
+  LARGE_INTEGER x;                /* The new offset */
+  BOOL bRet;                      /* Value returned by SetFilePointerEx() */
+
   x.QuadPart = iOffset;
-  return SetFilePointerEx(pFile->h, x, 0, FILE_BEGIN) ? 0 : 1;
+  bRet = osSetFilePointerEx(pFile->h, x, 0, FILE_BEGIN);
+
+  if(!bRet){
+    pFile->lastErrno = osGetLastError();
+    winLogError(SQLITE_IOERR_SEEK, pFile->lastErrno,
+             "seekWinFile", pFile->zPath);
+    return 1;
+  }
+
+  return 0;
 }
 #endif
 
@@ -1870,10 +1922,11 @@ static int winFileSize(sqlite3_file *id, sqlite3_int64 *pSize){
 #if SQLITE_OS_WINRT
   {
     FILE_STANDARD_INFO info;
-    if( GetFileInformationByHandleEx(pFile->h, FileStandardInfo,
+    if( osGetFileInformationByHandleEx(pFile->h, FileStandardInfo,
                                      &info, sizeof(info)) ){
       *pSize = info.EndOfFile.QuadPart;
     }else{
+      pFile->lastErrno = osGetLastError();
       rc = winLogError(SQLITE_IOERR_FSTAT, pFile->lastErrno,
                        "winFileSize", pFile->zPath);
     }
@@ -3707,10 +3760,10 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==60 );
+  assert( ArraySize(aSyscall)==65 );
 
 #if SQLITE_OS_WINRT
-  sleepObj = CreateEventEx(NULL, NULL, CREATE_EVENT_MANUAL_RESET, 
+  sleepObj = osCreateEventEx(NULL, NULL, CREATE_EVENT_MANUAL_RESET, 
                                   EVENT_ALL_ACCESS);
 #endif
 
@@ -3727,7 +3780,7 @@ int sqlite3_os_init(void){
 
 int sqlite3_os_end(void){ 
 #if SQLITE_OS_WINRT
-  CloseHandle(sleepObj);
+  osCloseHandle(sleepObj);
 #endif
   return SQLITE_OK;
 }
