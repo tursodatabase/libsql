@@ -800,12 +800,17 @@ static char *fts3ReadExprList(Fts3Table *p, const char *zFunc, int *pRc){
     for(i=0; i<p->nColumn; i++){
       fts3Appendf(pRc, &zRet, ",%s(x.'c%d%q')", zFunction, i, p->azColumn[i]);
     }
-    if( p->zLanguageid ) fts3Appendf(pRc, &zRet, ",langid");
+    if( p->zLanguageid ){
+      fts3Appendf(pRc, &zRet, ", x.%Q", "langid");
+    }
     sqlite3_free(zFree);
   }else{
     fts3Appendf(pRc, &zRet, "rowid");
     for(i=0; i<p->nColumn; i++){
       fts3Appendf(pRc, &zRet, ", x.'%q'", p->azColumn[i]);
+    }
+    if( p->zLanguageid ){
+      fts3Appendf(pRc, &zRet, ", x.%Q", p->zLanguageid);
     }
   }
   fts3Appendf(pRc, &zRet, " FROM '%q'.'%q%s' AS x", 
@@ -1215,8 +1220,20 @@ static int fts3InitVtab(
       sqlite3_free((void*)aCol); 
       aCol = 0;
       rc = fts3ContentColumns(db, argv[1], zContent, &aCol, &nCol, &nString);
+
+      /* If a languageid= option was specified, remove the language id
+      ** column from the aCol[] array. */ 
+      if( rc==SQLITE_OK && zLanguageid ){
+        int j;
+        for(j=0; j<nCol; j++){
+          if( sqlite3_stricmp(zLanguageid, aCol[j])==0 ){
+            memmove(&aCol[j], &aCol[j+1], (nCol-j) * sizeof(aCol[0]));
+            nCol--;
+            break;
+          }
+        }
+      }
     }
-    assert( rc!=SQLITE_OK || nCol>0 );
   }
   if( rc!=SQLITE_OK ) goto fts3_init_out;
 
@@ -3045,6 +3062,8 @@ static int fts3ColumnMethod(
     /* The extra column whose name is the same as the table.
     ** Return a blob which is a pointer to the cursor.  */
     sqlite3_result_blob(pCtx, &pCsr, sizeof(pCsr), SQLITE_TRANSIENT);
+  }else if( iCol==p->nColumn+2 && pCsr->pExpr ){
+    sqlite3_result_int64(pCtx, pCsr->iLangid);
   }else{
     /* The requested column is either a user column (one that contains 
     ** indexed data), or the language-id column.  */

@@ -1,5 +1,5 @@
-C Add\stest\sfor\sFTS\s'rebuild'\scommand.
-D 2012-03-02T16:18:21.845
+C Fix\sproblems\swith\scombining\scontent=\sand\slanguageid=\sin\sa\ssingle\sfts4\stable.
+D 2012-03-02T19:53:02.350
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -63,7 +63,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 93a8eb6e6eb4cd0aa4856d841a9d8d0025a2784a
+F ext/fts3/fts3.c fd89caa4169520c32cf46ca5a62df6dd48201422
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 521d300f2af4e741f53c4e2dd540275fb64533eb
 F ext/fts3/fts3_aux.c 72de4cb43db7bfc2f68fbda04b7d8095ae9a6239
@@ -496,7 +496,7 @@ F test/fts3snippet.test 8e956051221a34c7daeb504f023cb54d5fa5a8b2
 F test/fts3sort.test 95be0b19d7e41c44b29014f13ea8bddd495fd659
 F test/fts4aa.test 6e7f90420b837b2c685f3bcbe84c868492d40a68
 F test/fts4content.test 17b2360f7d1a9a7e5aa8022783f5c5731b6dfd4f
-F test/fts4langid.test 343a65d54419b45a318a1acdb1c37749f26fdc79
+F test/fts4langid.test be989b5cddcd7596b87232af193f6c4560a34272
 F test/func.test 6c5ce11e3a0021ca3c0649234e2d4454c89110ca
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 001021e5b88bd02a3b365a5c5fd8f6f49d39744a
@@ -992,7 +992,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 65fa693729a336e4d905ce72e6b9ccf4faa772bd
-R 4e2c13b79ff592d73e478288d906b721
+P 181bc35731f19c3e4497ba3338c209918d34ea69
+R acfb20f690a18ac8d67e116ae8c76f7d
 U dan
-Z bcf6ed8432a11d3fdd53825eba08d4d7
+Z b771fbbc3f5dd49e39970a5f917fc8b7

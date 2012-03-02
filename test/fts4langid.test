@@ -37,17 +37,17 @@ set ::testprefix fts4langid
 #
 #   2.3.* - Same as 2.1.*, after a 'rebuild' command.
 #
-#   3.* - Test that if one is provided, the tokenizer xLanguage method
+#   3.* - Tests with content= tables. Both where there is a real 
+#         underlying content table and where there is not.
+#
+#
+#   4.* - Test that if one is provided, the tokenizer xLanguage method
 #         is called to configure the tokenizer before tokenizing query
 #         or document text.
 #
-#   4.* - Test the fts4aux table when the associated FTS4 table contains
+#   5.* - Test the fts4aux table when the associated FTS4 table contains
 #         multiple languages.
 #
-#   5.* - Tests with content= tables. Both where there is a real 
-#         underlying content table and where there is not.
-#
-
 
 do_execsql_test 1.1 {
   CREATE VIRTUAL TABLE t1 USING fts4(a, b, languageid=lang_id);
@@ -151,6 +151,11 @@ proc build_multilingual_db_1 {db} {
 
     $db eval { INSERT INTO t2(docid, x, y, l) VALUES($i, $x, $y, $iLangid) }
   }
+
+  $db eval {
+    CREATE TABLE data(x, y, l);
+    INSERT INTO data(rowid, x, y, l) SELECT docid, x, y, l FROM t2;
+  }
 }
 
 proc rowid_list_set_langid {langid} {
@@ -159,9 +164,9 @@ proc rowid_list_set_langid {langid} {
 proc rowid_list {pattern} {
   set langid $::rowid_list_langid
   set res [list]
-  db eval {SELECT docid, x, y FROM t2 WHERE l = $langid ORDER BY docid ASC} {
+  db eval {SELECT rowid, x, y FROM data WHERE l = $langid ORDER BY rowid ASC} {
     if {[string match "*$pattern*" $x] || [string match "*$pattern*" $y]} {
-      lappend res $docid
+      lappend res $rowid
     }
   }
   return $res
@@ -235,7 +240,7 @@ do_test 2.0 {
   build_multilingual_db_1 db
 } {}
 
-proc do_test_2 {tn query res_script} {
+proc do_test_query1 {tn query res_script} {
   for {set langid 0} {$langid < 10} {incr langid} {
     rowid_list_set_langid $langid
     set res [eval $res_script]
@@ -243,17 +248,17 @@ proc do_test_2 {tn query res_script} {
     set actual [
       execsql {SELECT docid FROM t2 WHERE t2 MATCH $query AND l = $langid}
     ]
-    do_test 2.$tn.$langid [list set {} $actual] $res
+    do_test $tn.$langid [list set {} $actual] $res
   }
 }
 
 # Run some queries. 
-do_test_2 1.1  {delta}          { rowid_list delta }
-do_test_2 1.2  {"zero one two"} { rowid_list "zero one two" }
-do_test_2 1.3  {zero one two} {
+do_test_query1 2.1.1  {delta}          { rowid_list delta }
+do_test_query1 2.1.2  {"zero one two"} { rowid_list "zero one two" }
+do_test_query1 2.1.3  {zero one two} {
   and_merge_lists [rowid_list zero] [rowid_list one] [rowid_list two]
 }
-do_test_2 1.4  {"zero one" OR "one two"} {
+do_test_query1 2.1.4  {"zero one" OR "one two"} {
   or_merge_lists [rowid_list "zero one"] [rowid_list "one two"]
 }
 
@@ -264,12 +269,12 @@ do_execsql_test 2.2 {
   INSERT INTO t2(t2) VALUES('optimize');
   SELECT count(*) FROM t2_segdir;
 } {9}
-do_test_2 2.1 {delta}          { rowid_list delta }
-do_test_2 2.2 {"zero one two"} { rowid_list "zero one two" }
-do_test_2 2.3 {zero one two} {
+do_test_query1 2.2.1 {delta}          { rowid_list delta }
+do_test_query1 2.2.2 {"zero one two"} { rowid_list "zero one two" }
+do_test_query1 2.2.3 {zero one two} {
   and_merge_lists [rowid_list zero] [rowid_list one] [rowid_list two]
 }
-do_test_2 2.4 {"zero one" OR "one two"} {
+do_test_query1 2.2.4 {"zero one" OR "one two"} {
   or_merge_lists [rowid_list "zero one"] [rowid_list "one two"]
 }
 
@@ -280,14 +285,64 @@ do_test 2.3 {
   build_multilingual_db_1 db
   execsql { INSERT INTO t2(t2) VALUES('rebuild') }
 } {}
-do_test_2 3.1 {delta}          { rowid_list delta }
-do_test_2 3.2 {"zero one two"} { rowid_list "zero one two" }
-do_test_2 3.3 {zero one two} {
+do_test_query1 2.3.1 {delta}          { rowid_list delta }
+do_test_query1 2.3.2 {"zero one two"} { rowid_list "zero one two" }
+do_test_query1 2.3.3 {zero one two} {
   and_merge_lists [rowid_list zero] [rowid_list one] [rowid_list two]
 }
-do_test_2 3.4 {"zero one" OR "one two"} {
+do_test_query1 2.3.4 {"zero one" OR "one two"} {
   or_merge_lists [rowid_list "zero one"] [rowid_list "one two"]
 }
+
+#-------------------------------------------------------------------------
+# Test cases 3.*
+#
+do_test 3.0 {
+  reset_db
+  build_multilingual_db_1 db
+  execsql {
+    CREATE TABLE t3_data(l, x, y);
+    INSERT INTO t3_data(rowid, l, x, y) SELECT docid, l, x, y FROM t2;
+    DROP TABLE t2;
+  }
+} {}
+do_execsql_test 3.1 {
+  CREATE VIRTUAL TABLE t2 USING fts4(content=t3_data, languageid=l);
+  INSERT INTO t2(t2) VALUES('rebuild');
+}
+
+do_test_query1 3.1.1 {delta}          { rowid_list delta }
+do_test_query1 3.1.2 {"zero one two"} { rowid_list "zero one two" }
+do_test_query1 3.1.3 {zero one two} {
+  and_merge_lists [rowid_list zero] [rowid_list one] [rowid_list two]
+}
+do_test_query1 3.1.4 {"zero one" OR "one two"} {
+  or_merge_lists [rowid_list "zero one"] [rowid_list "one two"]
+}
+
+do_execsql_test 3.2.1 {
+  DROP TABLE t2;
+  CREATE VIRTUAL TABLE t2 USING fts4(x, y, languageid=l, content=nosuchtable);
+}
+
+do_execsql_test 3.2.2 {
+  INSERT INTO t2(docid, x, y, l) SELECT rowid, x, y, l FROM t3_data;
+}
+
+do_execsql_test 3.2.3 {
+  DROP TABLE t3_data;
+}
+
+do_test_query1 3.3.1 {delta}          { rowid_list delta }
+do_test_query1 3.3.2 {"zero one two"} { rowid_list "zero one two" }
+do_test_query1 3.3.3 {zero one two} {
+  and_merge_lists [rowid_list zero] [rowid_list one] [rowid_list two]
+}
+do_test_query1 3.3.4 {"zero one" OR "one two"} {
+  or_merge_lists [rowid_list "zero one"] [rowid_list "one two"]
+}
+
+
 
 finish_test
 
