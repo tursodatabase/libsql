@@ -1277,6 +1277,49 @@ static void logIoerr(int nRetry){
   }
 }
 
+/*
+** Lock a file region.
+*/
+static BOOL winLockFile(
+  HANDLE hFile,
+  DWORD flags,
+  DWORD offsetLow,
+  DWORD offsetHigh,
+  DWORD numBytesLow,
+  DWORD numBytesHigh
+){
+  if( isNT() ){
+    OVERLAPPED ovlp;
+    memset(&ovlp, 0, sizeof(OVERLAPPED));
+    ovlp.Offset = offsetLow;
+    ovlp.OffsetHigh = offsetHigh;
+    return osLockFileEx(hFile, flags, 0, numBytesLow, numBytesHigh, &ovlp);
+  }else{
+    return osLockFile(hFile, offsetLow, offsetHigh, numBytesLow, numBytesHigh);
+  }
+}
+
+/*
+** Unlock a file region.
+ */
+static BOOL winUnlockFile(
+  HANDLE hFile,
+  DWORD offsetLow,
+  DWORD offsetHigh,
+  DWORD numBytesLow,
+  DWORD numBytesHigh
+){
+  if( isNT() ){
+    OVERLAPPED ovlp;
+    memset(&ovlp, 0, sizeof(OVERLAPPED));
+    ovlp.Offset = offsetLow;
+    ovlp.OffsetHigh = offsetHigh;
+    return osUnlockFileEx(hFile, 0, numBytesLow, numBytesHigh, &ovlp);
+  }else{
+    return osUnlockFile(hFile, offsetLow, offsetHigh, numBytesLow, numBytesHigh);
+  }
+}
+
 #if SQLITE_OS_WINCE
 /*************************************************************************
 ** This section contains code for WinCE only.
@@ -1957,6 +2000,30 @@ static int winFileSize(sqlite3_file *id, sqlite3_int64 *pSize){
 # define LOCKFILE_FAIL_IMMEDIATELY 1
 #endif
 
+#ifndef LOCKFILE_EXCLUSIVE_LOCK
+# define LOCKFILE_EXCLUSIVE_LOCK 2
+#endif
+
+/*
+** Historically, SQLite has used both the LockFile and LockFileEx functions.
+** When the LockFile function was used, it was always expected to fail
+** immediately if the lock could not be obtained.  Also, it always expected to
+** obtain an exclusive lock.  These flags are used with the LockFileEx function
+** and reflect those expectations; therefore, they should not be changed.
+*/
+#ifndef SQLITE_LOCKFILE_FLAGS
+# define SQLITE_LOCKFILE_FLAGS   (LOCKFILE_FAIL_IMMEDIATELY | \
+                                  LOCKFILE_EXCLUSIVE_LOCK)
+#endif
+
+/*
+** Currently, SQLite never calls the LockFileEx function without wanting the
+** call to fail immediately if the lock cannot be obtained.
+*/
+#ifndef SQLITE_LOCKFILEEX_FLAGS
+# define SQLITE_LOCKFILEEX_FLAGS (LOCKFILE_FAIL_IMMEDIATELY)
+#endif
+
 /*
 ** Acquire a reader lock.
 ** Different API routines are called depending on whether or not this
@@ -1965,19 +2032,16 @@ static int winFileSize(sqlite3_file *id, sqlite3_int64 *pSize){
 static int getReadLock(winFile *pFile){
   int res;
   if( isNT() ){
-    OVERLAPPED ovlp;
-    ovlp.Offset = SHARED_FIRST;
-    ovlp.OffsetHigh = 0;
-    ovlp.hEvent = 0;
-    res = osLockFileEx(pFile->h, LOCKFILE_FAIL_IMMEDIATELY,
-                       0, SHARED_SIZE, 0, &ovlp);
+    res = winLockFile(pFile->h, SQLITE_LOCKFILEEX_FLAGS, SHARED_FIRST, 0,
+                      SHARED_SIZE, 0);
   }
 #ifdef SQLITE_WIN32_HAS_ANSI
   else{
     int lk;
     sqlite3_randomness(sizeof(lk), &lk);
     pFile->sharedLockByte = (short)((lk & 0x7fffffff)%(SHARED_SIZE - 1));
-    res = osLockFile(pFile->h, SHARED_FIRST+pFile->sharedLockByte, 0, 1, 0);
+    res = winLockFile(pFile->h, SQLITE_LOCKFILE_FLAGS,
+                      SHARED_FIRST+pFile->sharedLockByte, 0, 1, 0);
   }
 #endif
   if( res == 0 ){
@@ -1994,11 +2058,11 @@ static int unlockReadLock(winFile *pFile){
   int res;
   DWORD lastErrno;
   if( isNT() ){
-    res = osUnlockFile(pFile->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
+    res = winUnlockFile(pFile->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
   }
 #ifdef SQLITE_WIN32_HAS_ANSI
   else{
-    res = osUnlockFile(pFile->h, SHARED_FIRST + pFile->sharedLockByte, 0, 1, 0);
+    res = winUnlockFile(pFile->h, SHARED_FIRST+pFile->sharedLockByte, 0, 1, 0);
   }
 #endif
   if( res==0 && ((lastErrno = osGetLastError())!=ERROR_NOT_LOCKED) ){
@@ -2071,7 +2135,8 @@ static int winLock(sqlite3_file *id, int locktype){
          && (pFile->locktype==RESERVED_LOCK))
   ){
     int cnt = 3;
-    while( cnt-->0 && (res = osLockFile(pFile->h, PENDING_BYTE, 0, 1, 0))==0 ){
+    while( cnt-->0 && (res = winLockFile(pFile->h, SQLITE_LOCKFILE_FLAGS,
+                                         PENDING_BYTE, 0, 1, 0))==0 ){
       /* Try 3 times to get the pending lock.  This is needed to work
       ** around problems caused by indexing and/or anti-virus software on
       ** Windows systems.
@@ -2103,7 +2168,7 @@ static int winLock(sqlite3_file *id, int locktype){
   */
   if( locktype==RESERVED_LOCK && res ){
     assert( pFile->locktype==SHARED_LOCK );
-    res = osLockFile(pFile->h, RESERVED_BYTE, 0, 1, 0);
+    res = winLockFile(pFile->h, SQLITE_LOCKFILE_FLAGS, RESERVED_BYTE, 0, 1, 0);
     if( res ){
       newLocktype = RESERVED_LOCK;
     }else{
@@ -2124,7 +2189,8 @@ static int winLock(sqlite3_file *id, int locktype){
     assert( pFile->locktype>=SHARED_LOCK );
     res = unlockReadLock(pFile);
     OSTRACE(("unreadlock = %d\n", res));
-    res = osLockFile(pFile->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
+    res = winLockFile(pFile->h, SQLITE_LOCKFILE_FLAGS, SHARED_FIRST, 0,
+                      SHARED_SIZE, 0);
     if( res ){
       newLocktype = EXCLUSIVE_LOCK;
     }else{
@@ -2138,7 +2204,7 @@ static int winLock(sqlite3_file *id, int locktype){
   ** release it now.
   */
   if( gotPendingLock && locktype==SHARED_LOCK ){
-    osUnlockFile(pFile->h, PENDING_BYTE, 0, 1, 0);
+    winUnlockFile(pFile->h, PENDING_BYTE, 0, 1, 0);
   }
 
   /* Update the state of the lock has held in the file descriptor then
@@ -2172,9 +2238,9 @@ static int winCheckReservedLock(sqlite3_file *id, int *pResOut){
     rc = 1;
     OSTRACE(("TEST WR-LOCK %d %d (local)\n", pFile->h, rc));
   }else{
-    rc = osLockFile(pFile->h, RESERVED_BYTE, 0, 1, 0);
+    rc = winLockFile(pFile->h, SQLITE_LOCKFILE_FLAGS, RESERVED_BYTE, 0, 1, 0);
     if( rc ){
-      osUnlockFile(pFile->h, RESERVED_BYTE, 0, 1, 0);
+      winUnlockFile(pFile->h, RESERVED_BYTE, 0, 1, 0);
     }
     rc = !rc;
     OSTRACE(("TEST WR-LOCK %d %d (remote)\n", pFile->h, rc));
@@ -2204,7 +2270,7 @@ static int winUnlock(sqlite3_file *id, int locktype){
           pFile->locktype, pFile->sharedLockByte));
   type = pFile->locktype;
   if( type>=EXCLUSIVE_LOCK ){
-    osUnlockFile(pFile->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
+    winUnlockFile(pFile->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
     if( locktype==SHARED_LOCK && !getReadLock(pFile) ){
       /* This should never happen.  We should always be able to
       ** reacquire the read lock */
@@ -2213,13 +2279,13 @@ static int winUnlock(sqlite3_file *id, int locktype){
     }
   }
   if( type>=RESERVED_LOCK ){
-    osUnlockFile(pFile->h, RESERVED_BYTE, 0, 1, 0);
+    winUnlockFile(pFile->h, RESERVED_BYTE, 0, 1, 0);
   }
   if( locktype==NO_LOCK && type>=SHARED_LOCK ){
     unlockReadLock(pFile);
   }
   if( type>=PENDING_LOCK ){
-    osUnlockFile(pFile->h, PENDING_BYTE, 0, 1, 0);
+    winUnlockFile(pFile->h, PENDING_BYTE, 0, 1, 0);
   }
   pFile->locktype = (u8)locktype;
   return rc;
@@ -2457,25 +2523,19 @@ static int winShmSystemLock(
   int ofst,             /* Offset to first byte to be locked/unlocked */
   int nByte             /* Number of bytes to lock or unlock */
 ){
-  OVERLAPPED ovlp;
-  DWORD dwFlags;
   int rc = 0;           /* Result code form Lock/UnlockFileEx() */
 
   /* Access to the winShmNode object is serialized by the caller */
   assert( sqlite3_mutex_held(pFile->mutex) || pFile->nRef==0 );
 
-  /* Initialize the locking parameters */
-  dwFlags = LOCKFILE_FAIL_IMMEDIATELY;
-  if( lockType == _SHM_WRLCK ) dwFlags |= LOCKFILE_EXCLUSIVE_LOCK;
-
-  memset(&ovlp, 0, sizeof(OVERLAPPED));
-  ovlp.Offset = ofst;
-
   /* Release/Acquire the system-level lock */
   if( lockType==_SHM_UNLCK ){
-    rc = osUnlockFileEx(pFile->hFile.h, 0, nByte, 0, &ovlp);
+    rc = winUnlockFile(pFile->hFile.h, ofst, 0, nByte, 0);
   }else{
-    rc = osLockFileEx(pFile->hFile.h, dwFlags, 0, nByte, 0, &ovlp);
+    /* Initialize the locking parameters */
+    DWORD dwFlags = LOCKFILE_FAIL_IMMEDIATELY;
+    if( lockType == _SHM_WRLCK ) dwFlags |= LOCKFILE_EXCLUSIVE_LOCK;
+    rc = winLockFile(pFile->hFile.h, dwFlags, ofst, 0, nByte, 0);
   }
   
   if( rc!= 0 ){
