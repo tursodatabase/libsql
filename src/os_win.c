@@ -1132,6 +1132,17 @@ static int getLastErrorMsg(DWORD lastErrno, int nBuf, char *zBuf){
   char *zOut = 0;
 
   if( isNT() ){
+#if SQLITE_OS_WINRT
+    WCHAR zTempWide[MAX_PATH+1]; /* NOTE: Somewhat arbitrary. */
+    dwLen = osFormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM |
+                             FORMAT_MESSAGE_IGNORE_INSERTS,
+                             NULL,
+                             lastErrno,
+                             0,
+                             zTempWide,
+                             MAX_PATH,
+                             0);
+#else
     LPWSTR zTempWide = NULL;
     dwLen = osFormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
                              FORMAT_MESSAGE_FROM_SYSTEM |
@@ -1142,13 +1153,16 @@ static int getLastErrorMsg(DWORD lastErrno, int nBuf, char *zBuf){
                              (LPWSTR) &zTempWide,
                              0,
                              0);
+#endif
     if( dwLen > 0 ){
       /* allocate a buffer and convert to UTF8 */
       sqlite3BeginBenignMalloc();
       zOut = unicodeToUtf8(zTempWide);
       sqlite3EndBenignMalloc();
+#if !SQLITE_OS_WINRT
       /* free the system buffer allocated by FormatMessage */
       osLocalFree(zTempWide);
+#endif
     }
   }
 #ifdef SQLITE_WIN32_HAS_ANSI
