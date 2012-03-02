@@ -232,6 +232,8 @@ struct SegmentNode {
 
 #define SQL_DELETE_SEGDIR_RANGE       26
 
+#define SQL_SELECT_ALL_LANGID         27
+
 /*
 ** This function is used to obtain an SQLite prepared statement handle
 ** for the statement identified by the second argument. If successful,
@@ -285,6 +287,7 @@ static int fts3SqlStmt(
 /* 25 */  "",
 
 /* 26 */ "DELETE FROM %Q.'%q_segdir' WHERE level BETWEEN ? AND ?",
+/* 27 */ "SELECT DISTINCT level / (1024 * ?) FROM %Q.'%q_segdir'",
 
   };
   int rc = SQLITE_OK;
@@ -2229,7 +2232,12 @@ static int fts3IsEmpty(Fts3Table *p, sqlite3_value *pRowid, int *pisEmpty){
 **
 ** Return SQLITE_OK if successful, or an SQLite error code if not.
 */
-static int fts3SegmentMaxLevel(Fts3Table *p, int iIndex, int *pnMax){
+static int fts3SegmentMaxLevel(
+  Fts3Table *p, 
+  int iLangid,
+  int iIndex, 
+  int *pnMax
+){
   sqlite3_stmt *pStmt;
   int rc;
   assert( iIndex>=0 && iIndex<p->nIndex );
@@ -2242,8 +2250,10 @@ static int fts3SegmentMaxLevel(Fts3Table *p, int iIndex, int *pnMax){
   */
   rc = fts3SqlStmt(p, SQL_SELECT_SEGDIR_MAX_LEVEL, &pStmt, 0);
   if( rc!=SQLITE_OK ) return rc;
-  sqlite3_bind_int(pStmt, 1, iIndex*FTS3_SEGDIR_MAXLEVEL);
-  sqlite3_bind_int(pStmt, 2, (iIndex+1)*FTS3_SEGDIR_MAXLEVEL - 1);
+  sqlite3_bind_int(pStmt, 1, getAbsoluteLevel(p, iLangid, iIndex, 0));
+  sqlite3_bind_int(pStmt, 2, 
+      getAbsoluteLevel(p, iLangid, iIndex, FTS3_SEGDIR_MAXLEVEL-1)
+  );
   if( SQLITE_ROW==sqlite3_step(pStmt) ){
     *pnMax = sqlite3_column_int(pStmt, 0);
   }
@@ -2804,7 +2814,7 @@ static int fts3SegmentMerge(
       rc = SQLITE_DONE;
       goto finished;
     }
-    rc = fts3SegmentMaxLevel(p, iIndex, &iNewLevel);
+    rc = fts3SegmentMaxLevel(p, iLangid, iIndex, &iNewLevel);
     bIgnoreEmpty = 1;
 
   }else if( iLevel==FTS3_SEGCURSOR_PENDING ){
@@ -3019,16 +3029,29 @@ static void fts3UpdateDocTotals(
 ** iIndex/iLangid combination.
 */
 static int fts3DoOptimize(Fts3Table *p, int bReturnDone){
-  int i;
   int bSeenDone = 0;
-  int rc = SQLITE_OK;
-  for(i=0; rc==SQLITE_OK && i<p->nIndex; i++){
-    rc = fts3SegmentMerge(p, 0, i, FTS3_SEGCURSOR_ALL);
-    if( rc==SQLITE_DONE ){
-      bSeenDone = 1;
-      rc = SQLITE_OK;
+  int rc;
+  sqlite3_stmt *pAllLangid = 0;
+
+  rc = fts3SqlStmt(p, SQL_SELECT_ALL_LANGID, &pAllLangid, 0);
+  if( rc==SQLITE_OK ){
+    int rc2;
+    sqlite3_bind_int(pAllLangid, 1, p->nIndex);
+    while( sqlite3_step(pAllLangid)==SQLITE_ROW ){
+      int i;
+      int iLangid = sqlite3_column_int(pAllLangid, 0);
+      for(i=0; rc==SQLITE_OK && i<p->nIndex; i++){
+        rc = fts3SegmentMerge(p, iLangid, i, FTS3_SEGCURSOR_ALL);
+        if( rc==SQLITE_DONE ){
+          bSeenDone = 1;
+          rc = SQLITE_OK;
+        }
+      }
     }
+    rc2 = sqlite3_reset(pAllLangid);
+    if( rc==SQLITE_OK ) rc = rc2;
   }
+
   sqlite3Fts3SegmentsClose(p);
   sqlite3Fts3PendingTermsClear(p);
 

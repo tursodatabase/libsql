@@ -234,7 +234,7 @@ do_test 2.0 {
   build_multilingual_db_1 db
 } {}
 
-proc do_test_2.1 {tn query res_script} {
+proc do_test_2 {tn query res_script} {
   for {set langid 0} {$langid < 10} {incr langid} {
     rowid_list_set_langid $langid
     set res [eval $res_script]
@@ -242,16 +242,32 @@ proc do_test_2.1 {tn query res_script} {
     set actual [
       execsql {SELECT docid FROM t2 WHERE t2 MATCH $query AND l = $langid}
     ]
-    do_test 2.1.$tn.$langid [list set {} $actual] $res
+    do_test 2.$tn.$langid [list set {} $actual] $res
   }
 }
 
-do_test_2.1 1  {delta}          { rowid_list delta }
-do_test_2.1 2  {"zero one two"} { rowid_list "zero one two" }
-do_test_2.1 3  {zero one two} {
+# Run some queries. 
+do_test_2 1.1  {delta}          { rowid_list delta }
+do_test_2 1.2  {"zero one two"} { rowid_list "zero one two" }
+do_test_2 1.3  {zero one two} {
   and_merge_lists [rowid_list zero] [rowid_list one] [rowid_list two]
 }
-do_test_2.1 4  {"zero one" OR "one two"} {
+do_test_2 1.4  {"zero one" OR "one two"} {
+  or_merge_lists [rowid_list "zero one"] [rowid_list "one two"]
+}
+
+# Now try the same tests as above, but after running the 'optimize'
+# command on the FTS table.
+do_execsql_test 2.2 {
+  INSERT INTO t2(t2) VALUES('optimize');
+  SELECT count(*) FROM t2_segdir;
+} {9}
+do_test_2 2.1  {delta}          { rowid_list delta }
+do_test_2 2.2  {"zero one two"} { rowid_list "zero one two" }
+do_test_2 2.3  {zero one two} {
+  and_merge_lists [rowid_list zero] [rowid_list one] [rowid_list two]
+}
+do_test_2 2.4  {"zero one" OR "one two"} {
   or_merge_lists [rowid_list "zero one"] [rowid_list "one two"]
 }
 
