@@ -1,5 +1,5 @@
-C Add\sthe\s"languageid="\soption\sto\sfts4.\sThis\scode\sis\sstill\slargely\suntested\sand\salsmost\scertainly\sbuggy.
-D 2012-03-01T19:44:20.362
+C Fix\sa\sbug\sin\smerging\sFTS\slanguage\stables\sfor\slanguages\sother\sthan\slanguage\s0.
+D 2012-03-02T11:48:50.564
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/fts3_test.c 24fa13f330db011500acb95590da9eee24951894
 F ext/fts3/fts3_tokenizer.c 9ff7ec66ae3c5c0340fa081958e64f395c71a106
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 0dde8f307b8045565cf63797ba9acfaff1c50c68
-F ext/fts3/fts3_write.c 489d262b1ee9ab1dbb4da48bd8737fac15d0f58f
+F ext/fts3/fts3_write.c 36fc2e3a28f51ee135a344877c1e4be0a9f45e6e
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
@@ -496,7 +496,7 @@ F test/fts3snippet.test 8e956051221a34c7daeb504f023cb54d5fa5a8b2
 F test/fts3sort.test 95be0b19d7e41c44b29014f13ea8bddd495fd659
 F test/fts4aa.test 6e7f90420b837b2c685f3bcbe84c868492d40a68
 F test/fts4content.test 17b2360f7d1a9a7e5aa8022783f5c5731b6dfd4f
-F test/fts4langid.test 3d968b7c0afb8be1609794267f34b89d378a81ea
+F test/fts4langid.test 7ab7be619d3acb3727e4bef3230ba3dbcf2e0556
 F test/func.test 6c5ce11e3a0021ca3c0649234e2d4454c89110ca
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 001021e5b88bd02a3b365a5c5fd8f6f49d39744a
@@ -992,10 +992,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 16330a2f7262173a32ae48a72c0ee2522b6dc554
-R 86036df8ba11902f17395620671e5794
-T *branch * fts4-languageid
-T *sym-fts4-languageid *
-T -sym-trunk *
+P bea257f70f10dd1111d79cabd1e1462dc651704d
+R a3a9247d2c76c9d90f9fc486f3311f0d
 U dan
-Z 6902c01b6e8a000d5e06f8fe8778490f
+Z f1e998b56e58f712fe6da1411961b8ef

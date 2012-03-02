@@ -24,6 +24,27 @@ ifcapable !fts3 {
 
 set ::testprefix fts4langid
 
+#---------------------------------------------------------------------------
+# Test plan:
+#
+#   1.* - Warm-body tests created for specific purposes during development.
+#         Passing these doesn't really prove much.
+#
+#   2.* - Test that FTS queries only ever return rows associated with
+#         the requested language.
+#
+#   3.* - Test that the 'optimize' and 'rebuild' commands work correctly.
+#
+#   4.* - Test that if one is provided, the tokenizer xLanguage method
+#         is called to configure the tokenizer before tokenizing query
+#         or document text.
+#
+#   5.* - Test the fts4aux table when the associated FTS4 table contains
+#         multiple languages.
+#
+#   6.* - Tests with content= tables. Both where there is a real 
+#         underlying content table and where there is not.
+#
 
 
 do_execsql_test 1.1 {
@@ -73,6 +94,166 @@ do_execsql_test 1.16 {
 do_catchsql_test 1.17 {
   INSERT INTO t1(content, lang_id) VALUES('123', -1);
 } {1 {constraint failed}}
+
+do_execsql_test 1.18 {
+  DROP TABLE t1;
+  CREATE VIRTUAL TABLE t1 USING fts4(languageid=lang_id);
+  INSERT INTO t1(content, lang_id) VALUES('A', 13);
+  INSERT INTO t1(content, lang_id) VALUES('B', 13);
+  INSERT INTO t1(content, lang_id) VALUES('C', 13);
+  INSERT INTO t1(content, lang_id) VALUES('D', 13);
+  INSERT INTO t1(content, lang_id) VALUES('E', 13);
+  INSERT INTO t1(content, lang_id) VALUES('F', 13);
+  INSERT INTO t1(content, lang_id) VALUES('G', 13);
+  INSERT INTO t1(content, lang_id) VALUES('H', 13);
+  INSERT INTO t1(content, lang_id) VALUES('I', 13);
+  INSERT INTO t1(content, lang_id) VALUES('J', 13);
+  INSERT INTO t1(content, lang_id) VALUES('K', 13);
+  INSERT INTO t1(content, lang_id) VALUES('L', 13);
+  INSERT INTO t1(content, lang_id) VALUES('M', 13);
+  INSERT INTO t1(content, lang_id) VALUES('N', 13);
+  INSERT INTO t1(content, lang_id) VALUES('O', 13);
+  INSERT INTO t1(content, lang_id) VALUES('P', 13);
+  INSERT INTO t1(content, lang_id) VALUES('Q', 13);
+  INSERT INTO t1(content, lang_id) VALUES('R', 13);
+  INSERT INTO t1(content, lang_id) VALUES('S', 13);
+  SELECT rowid FROM t1 WHERE t1 MATCH 'A';
+} {}
+
+
+#-------------------------------------------------------------------------
+# Test cases 2.*
+#
+
+proc build_multilingual_db_1 {db} {
+  $db eval { CREATE VIRTUAL TABLE t2 USING fts4(x, y, languageid=l) }
+
+  set xwords [list zero one two three four five six seven eight nine ten]
+  set ywords [list alpha beta gamma delta epsilon zeta eta theta iota kappa]
+
+  for {set i 0} {$i < 1000} {incr i} {
+    set iLangid [expr $i%9]
+    set x ""
+    set y ""
+
+    set x [list]
+    lappend x [lindex $xwords [expr ($i / 1000) % 10]]
+    lappend x [lindex $xwords [expr ($i / 100)  % 10]]
+    lappend x [lindex $xwords [expr ($i / 10)   % 10]]
+    lappend x [lindex $xwords [expr ($i / 1)   % 10]]
+
+    set y [list]
+    lappend y [lindex $ywords [expr ($i / 1000) % 10]]
+    lappend y [lindex $ywords [expr ($i / 100)  % 10]]
+    lappend y [lindex $ywords [expr ($i / 10)   % 10]]
+    lappend y [lindex $ywords [expr ($i / 1)   % 10]]
+
+    $db eval { INSERT INTO t2(docid, x, y, l) VALUES($i, $x, $y, $iLangid) }
+  }
+}
+
+proc rowid_list_set_langid {langid} {
+  set ::rowid_list_langid $langid
+}
+proc rowid_list {pattern} {
+  set langid $::rowid_list_langid
+  set res [list]
+  db eval {SELECT docid, x, y FROM t2 WHERE l = $langid ORDER BY docid ASC} {
+    if {[string match "*$pattern*" $x] || [string match "*$pattern*" $y]} {
+      lappend res $docid
+    }
+  }
+  return $res
+}
+
+proc or_merge_list {list1 list2} {
+  set res [list]
+
+  set i1 0
+  set i2 0
+
+  set n1 [llength $list1]
+  set n2 [llength $list2]
+
+  while {$i1 < $n1 && $i2 < $n2} {
+    set e1 [lindex $list1 $i1]
+    set e2 [lindex $list2 $i2]
+
+    if {$e1==$e2} {
+      lappend res $e1
+      incr i1
+      incr i2
+    } elseif {$e1 < $e2} {
+      lappend res $e1
+      incr i1
+    } else {
+      lappend res $e2
+      incr i2
+    }
+  }
+
+  concat $res [lrange $list1 $i1 end] [lrange $list2 $i2 end]
+}
+
+proc or_merge_lists {args} {
+  set res [lindex $args 0]
+  for {set i 1} {$i < [llength $args]} {incr i} {
+    set res [or_merge_list $res [lindex $args $i]]
+  }
+  set res
+}
+
+proc and_merge_list {list1 list2} {
+  foreach i $list2 { set a($i) 1 }
+  set res [list]
+  foreach i $list1 {
+    if {[info exists a($i)]} {lappend res $i}
+  }
+  set res
+}
+
+
+proc and_merge_lists {args} {
+  set res [lindex $args 0]
+  for {set i 1} {$i < [llength $args]} {incr i} {
+    set res [and_merge_list $res [lindex $args $i]]
+  }
+  set res
+}
+
+proc filter_list {list langid} {
+  set res [list]
+  foreach i $list {
+    if {($i % 9) == $langid} {lappend res $i}
+  }
+  set res
+}
+
+do_test 2.0 { 
+  reset_db
+  build_multilingual_db_1 db
+} {}
+
+proc do_test_2.1 {tn query res_script} {
+  for {set langid 0} {$langid < 10} {incr langid} {
+    rowid_list_set_langid $langid
+    set res [eval $res_script]
+
+    set actual [
+      execsql {SELECT docid FROM t2 WHERE t2 MATCH $query AND l = $langid}
+    ]
+    do_test 2.1.$tn.$langid [list set {} $actual] $res
+  }
+}
+
+do_test_2.1 1  {delta}          { rowid_list delta }
+do_test_2.1 2  {"zero one two"} { rowid_list "zero one two" }
+do_test_2.1 3  {zero one two} {
+  and_merge_lists [rowid_list zero] [rowid_list one] [rowid_list two]
+}
+do_test_2.1 4  {"zero one" OR "one two"} {
+  or_merge_lists [rowid_list "zero one"] [rowid_list "one two"]
+}
 
 finish_test
 

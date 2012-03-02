@@ -488,7 +488,7 @@ int sqlite3Fts3AllSegdirs(
     /* "SELECT * FROM %_segdir WHERE level = ? ORDER BY ..." */
     rc = fts3SqlStmt(p, SQL_SELECT_LEVEL, &pStmt, 0);
     if( rc==SQLITE_OK ){ 
-      sqlite3_bind_int(pStmt, 1, iLevel+iIndex*FTS3_SEGDIR_MAXLEVEL);
+      sqlite3_bind_int(pStmt, 1, getAbsoluteLevel(p, iLangid, iIndex, iLevel));
     }
   }
   *ppStmt = pStmt;
