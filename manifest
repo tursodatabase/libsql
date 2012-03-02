@@ -1,5 +1,5 @@
-C Remove\san\sobsolete\scomment\sfrom\sFTS3.\s\sNo\scode\schanges.
-D 2012-03-02T20:34:57.831
+C Fix\stest\spragma-19.5\sso\sthat\sit\sworks\son\sfile\snames\sthat\smay\scontain\sspaces\sand/or\sbackslashes.
+D 2012-03-02T22:41:06.784
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -635,7 +635,7 @@ F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/permutations.test fa6f0e5f13fe0b1d3f7a7613179b7f7b20028184
-F test/pragma.test f6111ded4d56b79436a60a757d62f3c96a9cf3f5
+F test/pragma.test f11c59ec935a52edb4d3d5676d456588121fcefa
 F test/pragma2.test 3a55f82b954242c642f8342b17dffc8b47472947
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301
@@ -991,7 +991,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 3784d1475b49f24e4a51450edc94aee66fd48fe4
-R 8b20c4d4f44baa368677e57454570c9f
-U drh
-Z 21e716094cd8c8ff2e7fa8079fce4100
+P 74d224b14467d8a6915d3cf372f45e0d28708fa2
+R 1b3b0133ab927bace43b063fe5fb3563
+U mistachkin
+Z 8931ed203e5c3d9dfd3529ebd0c654df
