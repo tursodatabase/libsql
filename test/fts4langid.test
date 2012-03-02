@@ -30,19 +30,21 @@ set ::testprefix fts4langid
 #   1.* - Warm-body tests created for specific purposes during development.
 #         Passing these doesn't really prove much.
 #
-#   2.* - Test that FTS queries only ever return rows associated with
-#         the requested language.
+#   2.1.* - Test that FTS queries only ever return rows associated with
+#           the requested language.
 #
-#   3.* - Test that the 'optimize' and 'rebuild' commands work correctly.
+#   2.2.* - Same as 2.1.*, after an 'optimize' command.
 #
-#   4.* - Test that if one is provided, the tokenizer xLanguage method
+#   2.3.* - Same as 2.1.*, after a 'rebuild' command.
+#
+#   3.* - Test that if one is provided, the tokenizer xLanguage method
 #         is called to configure the tokenizer before tokenizing query
 #         or document text.
 #
-#   5.* - Test the fts4aux table when the associated FTS4 table contains
+#   4.* - Test the fts4aux table when the associated FTS4 table contains
 #         multiple languages.
 #
-#   6.* - Tests with content= tables. Both where there is a real 
+#   5.* - Tests with content= tables. Both where there is a real 
 #         underlying content table and where there is not.
 #
 
@@ -124,7 +126,6 @@ do_execsql_test 1.18 {
 #-------------------------------------------------------------------------
 # Test cases 2.*
 #
-
 proc build_multilingual_db_1 {db} {
   $db eval { CREATE VIRTUAL TABLE t2 USING fts4(x, y, languageid=l) }
 
@@ -258,16 +259,33 @@ do_test_2 1.4  {"zero one" OR "one two"} {
 
 # Now try the same tests as above, but after running the 'optimize'
 # command on the FTS table.
+#
 do_execsql_test 2.2 {
   INSERT INTO t2(t2) VALUES('optimize');
   SELECT count(*) FROM t2_segdir;
 } {9}
-do_test_2 2.1  {delta}          { rowid_list delta }
-do_test_2 2.2  {"zero one two"} { rowid_list "zero one two" }
-do_test_2 2.3  {zero one two} {
+do_test_2 2.1 {delta}          { rowid_list delta }
+do_test_2 2.2 {"zero one two"} { rowid_list "zero one two" }
+do_test_2 2.3 {zero one two} {
   and_merge_lists [rowid_list zero] [rowid_list one] [rowid_list two]
 }
-do_test_2 2.4  {"zero one" OR "one two"} {
+do_test_2 2.4 {"zero one" OR "one two"} {
+  or_merge_lists [rowid_list "zero one"] [rowid_list "one two"]
+}
+
+# And rebuild.
+#
+do_test 2.3 { 
+  reset_db
+  build_multilingual_db_1 db
+  execsql { INSERT INTO t2(t2) VALUES('rebuild') }
+} {}
+do_test_2 3.1 {delta}          { rowid_list delta }
+do_test_2 3.2 {"zero one two"} { rowid_list "zero one two" }
+do_test_2 3.3 {zero one two} {
+  and_merge_lists [rowid_list zero] [rowid_list one] [rowid_list two]
+}
+do_test_2 3.4 {"zero one" OR "one two"} {
   or_merge_lists [rowid_list "zero one"] [rowid_list "one two"]
 }
 
