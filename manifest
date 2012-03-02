@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sthe\sheader\scomment\sof\ssqlite3_commit_hook().
-D 2012-03-01T21:30:44.361
+C Remove\san\sobsolete\scomment\sfrom\sFTS3.\s\sNo\scode\schanges.
+D 2012-03-02T20:34:57.831
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -63,7 +63,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 4cf7b8e5bbb6667f5d7818fa0bf064fbbb72b086
+F ext/fts3/fts3.c 96ae9e273a770e2c249117360ec68e38aa0b13fa
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h ce958a6fa92a95462853aa3acc0b69bcda39102f
 F ext/fts3/fts3_aux.c 0ebfa7b86cf8ff6a0861605fcc63b83ec1b70691
@@ -991,7 +991,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 16330a2f7262173a32ae48a72c0ee2522b6dc554
-R 4fca0028f2954d371f8ed29b9be73d18
+P 3784d1475b49f24e4a51450edc94aee66fd48fe4
+R 8b20c4d4f44baa368677e57454570c9f
 U drh
-Z a58e0a8dbfee9129245f4f54328583b6
+Z 21e716094cd8c8ff2e7fa8079fce4100

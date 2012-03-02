@@ -286,10 +286,6 @@
 ** will eventually overtake the earlier data and knock it out.  The
 ** query logic likewise merges doclists so that newer data knocks out
 ** older data.
-**
-** TODO(shess) Provide a VACUUM type operation to clear out all
-** deletions and duplications.  This would basically be a forced merge
-** into a single segment.
 */
 
 #include "fts3Int.h"
