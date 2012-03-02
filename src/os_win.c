@@ -168,7 +168,7 @@ int sqlite3_os_type = 0;
 static int sqlite3_os_type = 0;
 #endif
 
-#if !SQLITE_OS_WINCE || SQLITE_OS_WINRT
+#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT
 #  define SQLITE_WIN32_HAS_ANSI
 #endif
 
@@ -1109,12 +1109,9 @@ static int getLastErrorMsg(DWORD lastErrno, int nBuf, char *zBuf){
       /* free the system buffer allocated by FormatMessage */
       osLocalFree(zTempWide);
     }
-/* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
-** Since the ANSI version of these Windows API do not exist for WINCE,
-** it's important to not reference them for WINCE builds.
-*/
-#if SQLITE_OS_WINCE==0
-  }else{
+  }
+#ifdef SQLITE_WIN32_HAS_ANSI
+  else{
     char *zTemp = NULL;
     dwLen = osFormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER |
                              FORMAT_MESSAGE_FROM_SYSTEM |
@@ -1133,8 +1130,8 @@ static int getLastErrorMsg(DWORD lastErrno, int nBuf, char *zBuf){
       /* free the system buffer allocated by FormatMessage */
       osLocalFree(zTemp);
     }
-#endif
   }
+#endif
   if( 0 == dwLen ){
     sqlite3_snprintf(nBuf, zBuf, "OsError 0x%x (%u)", lastErrno, lastErrno);
   }else{
@@ -1921,16 +1918,15 @@ static int getReadLock(winFile *pFile){
     ovlp.hEvent = 0;
     res = osLockFileEx(pFile->h, LOCKFILE_FAIL_IMMEDIATELY,
                        0, SHARED_SIZE, 0, &ovlp);
-/* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
-*/
-#if SQLITE_OS_WINCE==0
-  }else{
+  }
+#ifdef SQLITE_WIN32_HAS_ANSI
+  else{
     int lk;
     sqlite3_randomness(sizeof(lk), &lk);
     pFile->sharedLockByte = (short)((lk & 0x7fffffff)%(SHARED_SIZE - 1));
     res = osLockFile(pFile->h, SHARED_FIRST+pFile->sharedLockByte, 0, 1, 0);
-#endif
   }
+#endif
   if( res == 0 ){
     pFile->lastErrno = osGetLastError();
     /* No need to log a failure to lock */
@@ -1946,13 +1942,12 @@ static int unlockReadLock(winFile *pFile){
   DWORD lastErrno;
   if( isNT() ){
     res = osUnlockFile(pFile->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
-/* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
-*/
-#if SQLITE_OS_WINCE==0
-  }else{
-    res = osUnlockFile(pFile->h, SHARED_FIRST + pFile->sharedLockByte, 0, 1, 0);
-#endif
   }
+#ifdef SQLITE_WIN32_HAS_ANSI
+  else{
+    res = osUnlockFile(pFile->h, SHARED_FIRST + pFile->sharedLockByte, 0, 1, 0);
+  }
+#endif
   if( res==0 && ((lastErrno = osGetLastError())!=ERROR_NOT_LOCKED) ){
     pFile->lastErrno = lastErrno;
     winLogError(SQLITE_IOERR_UNLOCK, pFile->lastErrno,
@@ -2962,13 +2957,12 @@ static void *convertUtf8Filename(const char *zFilename){
   void *zConverted = 0;
   if( isNT() ){
     zConverted = utf8ToUnicode(zFilename);
-/* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
-*/
-#if SQLITE_OS_WINCE==0
-  }else{
-    zConverted = sqlite3_win32_utf8_to_mbcs(zFilename);
-#endif
   }
+#ifdef SQLITE_WIN32_HAS_ANSI
+  else{
+    zConverted = sqlite3_win32_utf8_to_mbcs(zFilename);
+  }
+#endif
   /* caller will handle out of memory */
   return zConverted;
 }
@@ -3004,12 +2998,9 @@ static int getTempname(int nBuf, char *zBuf){
     }else{
       return SQLITE_IOERR_NOMEM;
     }
-/* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
-** Since the ANSI version of these Windows API do not exist for WINCE,
-** it's important to not reference them for WINCE builds.
-*/
-#if SQLITE_OS_WINCE==0
-  }else{
+  }
+#ifdef SQLITE_WIN32_HAS_ANSI
+  else{
     char *zUtf8;
     char zMbcsPath[MAX_PATH];
     osGetTempPathA(MAX_PATH-30, zMbcsPath);
@@ -3020,8 +3011,8 @@ static int getTempname(int nBuf, char *zBuf){
     }else{
       return SQLITE_IOERR_NOMEM;
     }
-#endif
   }
+#endif
 
   /* Check that the output buffer is large enough for the temporary file 
   ** name. If it is not, return SQLITE_ERROR.
@@ -3203,12 +3194,9 @@ static int winOpen(
                               dwFlagsAndAttributes,
                               NULL))==INVALID_HANDLE_VALUE &&
                               retryIoerr(&cnt, &lastErrno) ){}
-/* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
-** Since the ANSI version of these Windows API do not exist for WINCE,
-** it's important to not reference them for WINCE builds.
-*/
-#if SQLITE_OS_WINCE==0
-  }else{
+  }
+#ifdef SQLITE_WIN32_HAS_ANSI
+  else{
     while( (h = osCreateFileA((LPCSTR)zConverted,
                               dwDesiredAccess,
                               dwShareMode, NULL,
@@ -3216,9 +3204,8 @@ static int winOpen(
                               dwFlagsAndAttributes,
                               NULL))==INVALID_HANDLE_VALUE &&
                               retryIoerr(&cnt, &lastErrno) ){}
-#endif
   }
-
+#endif
   logIoerr(cnt);
 
   OSTRACE(("OPEN %d %s 0x%lx %s\n", 
@@ -3310,18 +3297,15 @@ static int winDelete(
     while( osGetFileAttributesW(zConverted)!=INVALID_FILE_ATTRIBUTES &&
          (rc = osDeleteFileW(zConverted))==0 && retryIoerr(&cnt, &lastErrno) ){}
     rc = rc ? SQLITE_OK : SQLITE_ERROR;
-/* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
-** Since the ANSI version of these Windows API do not exist for WINCE,
-** it's important to not reference them for WINCE builds.
-*/
-#if SQLITE_OS_WINCE==0
-  }else{
+  }
+#ifdef SQLITE_WIN32_HAS_ANSI
+  else{
     rc = 1;
     while( osGetFileAttributesA(zConverted)!=INVALID_FILE_ATTRIBUTES &&
          (rc = osDeleteFileA(zConverted))==0 && retryIoerr(&cnt, &lastErrno) ){}
     rc = rc ? SQLITE_OK : SQLITE_ERROR;
-#endif
   }
+#endif
   if( rc ){
     rc = winLogError(SQLITE_IOERR_DELETE, lastErrno,
              "winDelete", zFilename);
@@ -3381,15 +3365,12 @@ static int winAccess(
         attr = INVALID_FILE_ATTRIBUTES;
       }
     }
-/* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
-** Since the ANSI version of these Windows API do not exist for WINCE,
-** it's important to not reference them for WINCE builds.
-*/
-#if SQLITE_OS_WINCE==0
-  }else{
-    attr = osGetFileAttributesA((char*)zConverted);
-#endif
   }
+#ifdef SQLITE_WIN32_HAS_ANSI
+  else{
+    attr = osGetFileAttributesA((char*)zConverted);
+  }
+#endif
   sqlite3_free(zConverted);
   switch( flags ){
     case SQLITE_ACCESS_READ:
@@ -3470,12 +3451,9 @@ static int winFullPathname(
     sqlite3_free(zConverted);
     zOut = unicodeToUtf8(zTemp);
     sqlite3_free(zTemp);
-/* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
-** Since the ANSI version of these Windows API do not exist for WINCE,
-** it's important to not reference them for WINCE builds.
-*/
-#if SQLITE_OS_WINCE==0
-  }else{
+  }
+#ifdef SQLITE_WIN32_HAS_ANSI
+  else{
     char *zTemp;
     nByte = osGetFullPathNameA((char*)zConverted, 0, 0, 0) + 3;
     zTemp = sqlite3_malloc( nByte*sizeof(zTemp[0]) );
@@ -3487,8 +3465,8 @@ static int winFullPathname(
     sqlite3_free(zConverted);
     zOut = sqlite3_win32_mbcs_to_utf8(zTemp);
     sqlite3_free(zTemp);
-#endif
   }
+#endif
   if( zOut ){
     sqlite3_snprintf(pVfs->mxPathname, zFull, "%s", zOut);
     sqlite3_free(zOut);
@@ -3517,15 +3495,12 @@ static void *winDlOpen(sqlite3_vfs *pVfs, const char *zFilename){
   }
   if( isNT() ){
     h = osLoadLibraryW((LPCWSTR)zConverted);
-/* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
-** Since the ANSI version of these Windows API do not exist for WINCE,
-** it's important to not reference them for WINCE builds.
-*/
-#if SQLITE_OS_WINCE==0
-  }else{
-    h = osLoadLibraryA((char*)zConverted);
-#endif
   }
+#ifdef SQLITE_WIN32_HAS_ANSI
+  else{
+    h = osLoadLibraryA((char*)zConverted);
+  }
+#endif
   sqlite3_free(zConverted);
   return (void*)h;
 }
