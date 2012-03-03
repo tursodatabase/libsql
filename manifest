@@ -1,5 +1,5 @@
-C Fix\sa\sbug\s[3557ad65a07]\sthat\scauses\sincorrect\sDISTINCT\sprocessing\son\nan\sindexed\squery\sinvolving\sthe\sIN\soperator.
-D 2012-03-03T00:34:47.462
+C Add\sa\stest\scase\sfor\sticket\s[3557ad65a076c].
+D 2012-03-03T01:44:12.761
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -669,7 +669,7 @@ F test/securedel.test 87a2561151af1f1e349071a89fdd77059f50113c
 F test/select1.test deba017eed9daa5af33de868676c997e7eebb931
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
 F test/select3.test 2ce595f8fb8e2ac10071d3b4e424cadd4634a054
-F test/select4.test 44aa6e7110592e18110b0b9cf5c024d37d23be17
+F test/select4.test 00179be44e531fe04c1c3f15df216439dff2519d
 F test/select5.test e758b8ef94f69b111df4cb819008856655dcd535
 F test/select6.test cc25a8650cf9a4d4f74e586c45a75f9836516b18
 F test/select7.test dad6f00f0d49728a879d6eb6451d4752db0b0abe
@@ -991,7 +991,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 9aaa1ab7c63c9045fecf5e965b333cc5f28b0791
-R 0fde9a1f5b219b6e9128e202fe652a01
+P dec9a995d7012a1f85be4edb71240b9d4f07c60e
+R b4cefaed66b163e0022c525667456b34
 U drh
-Z 8bae0564fba3f81fa4a316b685f23026
+Z 8282af4a85e83e5f9dade049cda1072b
