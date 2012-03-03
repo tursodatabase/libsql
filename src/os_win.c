@@ -666,6 +666,11 @@ static struct win_syscall {
   { "GetFileInformationByHandleEx", (SYSCALL)0,                  0 },
 #endif
 
+  { "MapViewOfFileEx",         (SYSCALL)MapViewOfFileEx,         0 },
+
+#define osMapViewOfFileEx ((LPVOID(WINAPI*)(HANDLE,DWORD,DWORD,DWORD,SIZE_T, \
+        LPVOID))aSyscall[65].pCurrent)
+
 }; /* End of the overrideable system calls */
 
 /*
@@ -2996,9 +3001,15 @@ static int winShmMap(
       if( hMap ){
         int iOffset = pShmNode->nRegion*szRegion;
         int iOffsetShift = iOffset % winSysInfo.dwAllocationGranularity;
+#if SQLITE_OS_WINRT
+        pMap = osMapViewOfFileEx(hMap, FILE_MAP_WRITE | FILE_MAP_READ,
+            0, iOffset - iOffsetShift, szRegion + iOffsetShift, NULL
+        );
+#else
         pMap = osMapViewOfFile(hMap, FILE_MAP_WRITE | FILE_MAP_READ,
             0, iOffset - iOffsetShift, szRegion + iOffsetShift
         );
+#endif
         OSTRACE(("SHM-MAP pid-%d map region=%d offset=%d size=%d %s\n",
                  (int)osGetCurrentProcessId(), pShmNode->nRegion, iOffset,
                  szRegion, pMap ? "ok" : "failed"));
@@ -3419,15 +3430,21 @@ static int winDelete(
   if( zConverted==0 ){
     return SQLITE_IOERR_NOMEM;
   }
+  rc = 1;
   if( isNT() ){
-    rc = 1;
+#if SQLITE_OS_WINRT
+    WIN32_FILE_ATTRIBUTE_DATA sAttrData;
+    memset(&sAttrData, 0, sizeof(sAttrData));
+    while( osGetFileAttributesExW(zConverted, GetFileExInfoStandard,
+                                  &sAttrData) &&
+#else
     while( osGetFileAttributesW(zConverted)!=INVALID_FILE_ATTRIBUTES &&
+#endif
          (rc = osDeleteFileW(zConverted))==0 && retryIoerr(&cnt, &lastErrno) ){}
     rc = rc ? SQLITE_OK : SQLITE_ERROR;
   }
 #ifdef SQLITE_WIN32_HAS_ANSI
   else{
-    rc = 1;
     while( osGetFileAttributesA(zConverted)!=INVALID_FILE_ATTRIBUTES &&
          (rc = osDeleteFileA(zConverted))==0 && retryIoerr(&cnt, &lastErrno) ){}
     rc = rc ? SQLITE_OK : SQLITE_ERROR;
@@ -3834,7 +3851,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==65 );
+  assert( ArraySize(aSyscall)==66 );
 
 #if SQLITE_OS_WINRT
   sleepObj = osCreateEventEx(NULL, NULL, CREATE_EVENT_MANUAL_RESET, 
@@ -3855,6 +3872,7 @@ int sqlite3_os_init(void){
 int sqlite3_os_end(void){ 
 #if SQLITE_OS_WINRT
   osCloseHandle(sleepObj);
+  sleepObj = NULL;
 #endif
   return SQLITE_OK;
 }
