@@ -498,7 +498,7 @@ void sqlite3Fts3Snippet(sqlite3_context *, Fts3Cursor *, const char *,
 void sqlite3Fts3Matchinfo(sqlite3_context *, Fts3Cursor *, const char *);
 
 /* fts3_expr.c */
-int sqlite3Fts3ExprParse(sqlite3_tokenizer *, 
+int sqlite3Fts3ExprParse(sqlite3_tokenizer *, int,
   char **, int, int, int, const char *, int, Fts3Expr **
 );
 void sqlite3Fts3ExprFree(Fts3Expr *);
@@ -506,6 +506,10 @@ void sqlite3Fts3ExprFree(Fts3Expr *);
 int sqlite3Fts3ExprInitTestInterface(sqlite3 *db);
 int sqlite3Fts3InitTerm(sqlite3 *db);
 #endif
+
+int sqlite3Fts3OpenTokenizer(sqlite3_tokenizer *, int, const char *, int,
+  sqlite3_tokenizer_cursor **
+);
 
 /* fts3_aux.c */
 int sqlite3Fts3InitAux(sqlite3 *db);

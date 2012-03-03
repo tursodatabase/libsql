@@ -657,6 +657,7 @@ static int fts3PendingTermsAddOne(
 */
 static int fts3PendingTermsAdd(
   Fts3Table *p,                   /* Table into which text will be inserted */
+  int iLangid,                    /* Language id to use */
   const char *zText,              /* Text of document to be inserted */
   int iCol,                       /* Column into which text is being inserted */
   u32 *pnWord                     /* OUT: Number of tokens inserted */
@@ -686,11 +687,10 @@ static int fts3PendingTermsAdd(
     return SQLITE_OK;
   }
 
-  rc = pModule->xOpen(pTokenizer, zText, -1, &pCsr);
+  rc = sqlite3Fts3OpenTokenizer(pTokenizer, iLangid, zText, -1, &pCsr);
   if( rc!=SQLITE_OK ){
     return rc;
   }
-  pCsr->pTokenizer = pTokenizer;
 
   xNext = pModule->xNext;
   while( SQLITE_OK==rc
@@ -783,11 +783,16 @@ void sqlite3Fts3PendingTermsClear(Fts3Table *p){
 ** Argument apVal is the same as the similarly named argument passed to
 ** fts3InsertData(). Parameter iDocid is the docid of the new row.
 */
-static int fts3InsertTerms(Fts3Table *p, sqlite3_value **apVal, u32 *aSz){
+static int fts3InsertTerms(
+  Fts3Table *p, 
+  int iLangid, 
+  sqlite3_value **apVal, 
+  u32 *aSz
+){
   int i;                          /* Iterator variable */
   for(i=2; i<p->nColumn+2; i++){
     const char *zText = (const char *)sqlite3_value_text(apVal[i]);
-    int rc = fts3PendingTermsAdd(p, zText, i-2, &aSz[i-2]);
+    int rc = fts3PendingTermsAdd(p, iLangid, zText, i-2, &aSz[i-2]);
     if( rc!=SQLITE_OK ){
       return rc;
     }
@@ -933,13 +938,11 @@ static void fts3DeleteTerms(
   if( rc==SQLITE_OK ){
     if( SQLITE_ROW==sqlite3_step(pSelect) ){
       int i;
-      rc = fts3PendingTermsDocid(p, 
-          langidFromSelect(p, pSelect), 
-          sqlite3_column_int64(pSelect, 0)
-      );
+      int iLangid = langidFromSelect(p, pSelect);
+      rc = fts3PendingTermsDocid(p, iLangid, sqlite3_column_int64(pSelect, 0));
       for(i=1; rc==SQLITE_OK && i<=p->nColumn; i++){
         const char *zText = (const char *)sqlite3_column_text(pSelect, i);
-        rc = fts3PendingTermsAdd(p, zText, -1, &aSz[i-1]);
+        rc = fts3PendingTermsAdd(p, iLangid, zText, -1, &aSz[i-1]);
         aSz[p->nColumn] += sqlite3_column_bytes(pSelect, i);
       }
       if( rc!=SQLITE_OK ){
@@ -3102,13 +3105,12 @@ static int fts3DoRebuild(Fts3Table *p){
 
     while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
       int iCol;
-      rc = fts3PendingTermsDocid(p, 
-          langidFromSelect(p, pStmt), sqlite3_column_int64(pStmt, 0)
-      );
+      int iLangid = langidFromSelect(p, pStmt);
+      rc = fts3PendingTermsDocid(p, iLangid, sqlite3_column_int64(pStmt, 0));
       aSz[p->nColumn] = 0;
       for(iCol=0; rc==SQLITE_OK && iCol<p->nColumn; iCol++){
         const char *z = (const char *) sqlite3_column_text(pStmt, iCol+1);
-        rc = fts3PendingTermsAdd(p, z, iCol, &aSz[iCol]);
+        rc = fts3PendingTermsAdd(p, iLangid, z, iCol, &aSz[iCol]);
         aSz[p->nColumn] += sqlite3_column_bytes(pStmt, iCol+1);
       }
       if( p->bHasDocsize ){
@@ -3227,14 +3229,13 @@ int sqlite3Fts3CacheDeferredDoclists(Fts3Cursor *pCsr){
       const char *zText = (const char *)sqlite3_column_text(pCsr->pStmt, i+1);
       sqlite3_tokenizer_cursor *pTC = 0;
   
-      rc = pModule->xOpen(pT, zText, -1, &pTC);
+      rc = sqlite3Fts3OpenTokenizer(pT, pCsr->iLangid, zText, -1, &pTC);
       while( rc==SQLITE_OK ){
         char const *zToken;       /* Buffer containing token */
         int nToken;               /* Number of bytes in token */
         int iDum1, iDum2;         /* Dummy variables */
         int iPos;                 /* Position of token in zText */
   
-        pTC->pTokenizer = pT;
         rc = pModule->xNext(pTC, &zToken, &nToken, &iDum1, &iDum2, &iPos);
         for(pDef=pCsr->pDeferred; pDef && rc==SQLITE_OK; pDef=pDef->pNext){
           Fts3PhraseToken *pPT = pDef->pToken;
@@ -3467,6 +3468,7 @@ int sqlite3Fts3UpdateMethod(
   
   /* If this is an INSERT or UPDATE operation, insert the new record. */
   if( nArg>1 && rc==SQLITE_OK ){
+    int iLangid = sqlite3_value_int(apVal[2 + p->nColumn + 2]);
     if( bInsertDone==0 ){
       rc = fts3InsertData(p, apVal, pRowid);
       if( rc==SQLITE_CONSTRAINT && p->zContentTbl==0 ){
@@ -3474,14 +3476,11 @@ int sqlite3Fts3UpdateMethod(
       }
     }
     if( rc==SQLITE_OK && (!isRemove || *pRowid!=p->iPrevDocid ) ){
-      rc = fts3PendingTermsDocid(p, 
-          sqlite3_value_int(apVal[2 + p->nColumn + 2]),
-          *pRowid
-      );
+      rc = fts3PendingTermsDocid(p, iLangid, *pRowid);
     }
     if( rc==SQLITE_OK ){
       assert( p->iPrevDocid==*pRowid );
-      rc = fts3InsertTerms(p, apVal, aSzIns);
+      rc = fts3InsertTerms(p, iLangid, apVal, aSzIns);
     }
     if( p->bHasDocsize ){
       fts3InsertDocsize(&rc, p, aSzIns);

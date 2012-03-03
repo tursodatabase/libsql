@@ -288,11 +288,10 @@ static void testFunc(
     goto finish;
   }
   pTokenizer->pModule = p;
-  if( SQLITE_OK!=p->xOpen(pTokenizer, zInput, nInput, &pCsr) ){
+  if( sqlite3Fts3OpenTokenizer(pTokenizer, 0, zInput, nInput, &pCsr) ){
     zErr = "error in xOpen()";
     goto finish;
   }
-  pCsr->pTokenizer = pTokenizer;
 
   while( SQLITE_OK==p->xNext(pCsr, &zToken, &nToken, &iStart, &iEnd, &iPos) ){
     Tcl_ListObjAppendElement(0, pRet, Tcl_NewIntObj(iPos));

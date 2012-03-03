@@ -2958,8 +2958,11 @@ static int fts3FilterMethod(
       return SQLITE_NOMEM;
     }
 
-    rc = sqlite3Fts3ExprParse(p->pTokenizer, p->azColumn, p->bHasStat, 
-        p->nColumn, iCol, zQuery, -1, &pCsr->pExpr
+    pCsr->iLangid = 0;
+    if( nVal==2 ) pCsr->iLangid = sqlite3_value_int(apVal[1]);
+
+    rc = sqlite3Fts3ExprParse(p->pTokenizer, pCsr->iLangid,
+        p->azColumn, p->bHasStat, p->nColumn, iCol, zQuery, -1, &pCsr->pExpr
     );
     if( rc!=SQLITE_OK ){
       if( rc==SQLITE_ERROR ){
@@ -2968,9 +2971,6 @@ static int fts3FilterMethod(
       }
       return rc;
     }
-
-    pCsr->iLangid = 0;
-    if( nVal==2 ) pCsr->iLangid = sqlite3_value_int(apVal[1]);
 
     rc = sqlite3Fts3ReadLock(p);
     if( rc!=SQLITE_OK ) return rc;
