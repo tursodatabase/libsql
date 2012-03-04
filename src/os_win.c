@@ -3855,7 +3855,7 @@ int sqlite3_os_init(void){
 
 #if SQLITE_OS_WINRT
   sleepObj = osCreateEventEx(NULL, NULL, CREATE_EVENT_MANUAL_RESET, 
-                                  EVENT_ALL_ACCESS);
+                             SYNCHRONIZE);
 #endif
 
 #ifndef SQLITE_OMIT_WAL
