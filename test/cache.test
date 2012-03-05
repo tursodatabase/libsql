@@ -14,7 +14,7 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-ifcapable {!pager_pragmas} {
+ifcapable !pager_pragmas||!compound {
   finish_test
   return
 }

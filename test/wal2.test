@@ -1042,7 +1042,10 @@ tvfs delete
 #
 if {$::tcl_platform(platform) == "unix"} {
   faultsim_delete_and_reopen
-  set umask [exec /bin/sh -c umask]
+  # Changed on 2012-02-13: umask is deliberately ignored for -wal files.
+  #set umask [exec /bin/sh -c umask]
+  set umask 0
+  
 
   do_test wal2-12.1 {
     sqlite3 db test.db

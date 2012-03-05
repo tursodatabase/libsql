@@ -16,6 +16,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+ifcapable !compound {
+  finish_test
+  return
+}
+
 do_execsql_test e_select-1.0 {
   CREATE TABLE t1(a, b);
   INSERT INTO t1 VALUES('a', 'one');

@@ -303,11 +303,19 @@ ifcapable incrblob {
     execsql  {SAVEPOINT abc}
     catchsql {ROLLBACK TO def}
   } {1 {no such savepoint: def}}
-  do_test savepoint-5.3.2 {
+  do_test savepoint-5.3.2.1 {
     execsql  {SAVEPOINT def}
     set fd [db incrblob -readonly blobs x 1]
+    set rc [catch {seek $fd 0;read $fd} res]
+    lappend rc $res
+  } {0 {hellontyeight character blob}}
+  do_test savepoint-5.3.2.2 {
     catchsql {ROLLBACK TO def}
-  } {1 {cannot rollback savepoint - SQL statements in progress}}
+  } {0 {}}
+  do_test savepoint-5.3.2.3 {
+    set rc [catch {seek $fd 0; read $fd} res]
+    set rc
+  } {1}
   do_test savepoint-5.3.3 {
     catchsql  {RELEASE def}
   } {0 {}}
@@ -649,10 +657,8 @@ if {[wal_is_wal_mode]==0} {
       CREATE TABLE main.t1(x, y);
       CREATE TABLE aux1.t2(x, y);
       CREATE TABLE aux2.t3(x, y);
-      SELECT name FROM sqlite_master 
-        UNION ALL
-      SELECT name FROM aux1.sqlite_master 
-        UNION ALL
+      SELECT name FROM sqlite_master;
+      SELECT name FROM aux1.sqlite_master;
       SELECT name FROM aux2.sqlite_master;
     }
   } {t1 t2 t3}
@@ -691,7 +697,7 @@ if {[wal_is_wal_mode]==0} {
     execsql { PRAGMA lock_status }
   } [list main reserved temp $templockstate aux1 reserved aux2 reserved]
   do_test savepoint-10.2.9 {
-    execsql { SELECT 'a', * FROM t1 UNION ALL SELECT 'b', * FROM t3 }
+    execsql { SELECT 'a', * FROM t1 ; SELECT 'b', * FROM t3 }
   } {a 1 2 b 3 4}
   do_test savepoint-10.2.9 {
     execsql {

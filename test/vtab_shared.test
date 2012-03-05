@@ -124,23 +124,25 @@ breakpoint
   execsql { SELECT * FROM t3 } db2
 } {1 2 3 4 5 6}
 
-do_test vtab_shared-1.12.1 {
-  db close
-  execsql { 
-    SELECT * FROM t1 UNION ALL
-    SELECT * FROM t2 UNION ALL
-    SELECT * FROM t3 
-  } db2
-} {1 2 3 4 5 6 1 2 3 4 5 6 1 2 3 4 5 6}
-do_test vtab_shared-1.12.2 {
-  sqlite3 db test.db
-  register_echo_module [sqlite3_connection_pointer db]
-  execsql { 
-    SELECT * FROM t1 UNION ALL
-    SELECT * FROM t2 UNION ALL
-    SELECT * FROM t3 
-  } db
-} {1 2 3 4 5 6 1 2 3 4 5 6 1 2 3 4 5 6}
+ifcapable compound {
+  do_test vtab_shared-1.12.1 {
+    db close
+    execsql { 
+      SELECT * FROM t1 UNION ALL
+      SELECT * FROM t2 UNION ALL
+      SELECT * FROM t3 
+    } db2
+  } {1 2 3 4 5 6 1 2 3 4 5 6 1 2 3 4 5 6}
+  do_test vtab_shared-1.12.2 {
+    sqlite3 db test.db
+    register_echo_module [sqlite3_connection_pointer db]
+    execsql { 
+      SELECT * FROM t1 UNION ALL
+      SELECT * FROM t2 UNION ALL
+      SELECT * FROM t3 
+    } db
+  } {1 2 3 4 5 6 1 2 3 4 5 6 1 2 3 4 5 6}
+}
 
 # Try a rename or two.
 #

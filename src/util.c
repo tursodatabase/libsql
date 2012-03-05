@@ -222,7 +222,7 @@ int sqlite3Dequote(char *z){
 ** definition of case independence that SQLite uses internally when
 ** comparing identifiers.
 */
-int sqlite3StrICmp(const char *zLeft, const char *zRight){
+int sqlite3_stricmp(const char *zLeft, const char *zRight){
   register unsigned char *a, *b;
   a = (unsigned char *)zLeft;
   b = (unsigned char *)zRight;

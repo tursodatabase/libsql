@@ -13,6 +13,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+ifcapable !compound {
+  finish_test
+  return
+}
+
 set testprefix eqp
 
 #-------------------------------------------------------------------------

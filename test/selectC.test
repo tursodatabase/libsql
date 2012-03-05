@@ -151,7 +151,7 @@ do_test selectC-1.14.2 {
 
 # The following query used to leak memory.  Verify that has been fixed.
 #
-ifcapable trigger {
+ifcapable trigger&&compound {
   do_test selectC-2.1 {
     catchsql {
       CREATE TABLE t21a(a,b);

@@ -124,26 +124,28 @@ do_test join6-3.6 {
   }
 } {1 91 92 3 93 5 91 2 93 94 4 95 6 99}
 
-do_test join6-4.1 {
-  execsql {
-    SELECT * FROM
-       (SELECT 1 AS a, 91 AS x, 92 AS y UNION SELECT 2, 93, 94)
-       NATURAL JOIN t2 NATURAL JOIN t3
-  }
-} {1 91 92 3 93 5}
-do_test join6-4.2 {
-  execsql {
-    SELECT * FROM t1 NATURAL JOIN
-       (SELECT 3 AS b, 92 AS y, 93 AS z UNION SELECT 4, 94, 95)
-       NATURAL JOIN t3
-  }
-} {1 91 92 3 93 5}
-do_test join6-4.3 {
-  execsql {
-    SELECT * FROM t1 NATURAL JOIN t2 NATURAL JOIN
-       (SELECT 5 AS c, 91 AS x, 93 AS z UNION SELECT 6, 99, 95)
-  }
-} {1 91 92 3 93 5}
+ifcapable compound {
+  do_test join6-4.1 {
+    execsql {
+      SELECT * FROM
+         (SELECT 1 AS a, 91 AS x, 92 AS y UNION SELECT 2, 93, 94)
+         NATURAL JOIN t2 NATURAL JOIN t3
+    }
+  } {1 91 92 3 93 5}
+  do_test join6-4.2 {
+    execsql {
+      SELECT * FROM t1 NATURAL JOIN
+         (SELECT 3 AS b, 92 AS y, 93 AS z UNION SELECT 4, 94, 95)
+         NATURAL JOIN t3
+    }
+  } {1 91 92 3 93 5}
+  do_test join6-4.3 {
+    execsql {
+      SELECT * FROM t1 NATURAL JOIN t2 NATURAL JOIN
+         (SELECT 5 AS c, 91 AS x, 93 AS z UNION SELECT 6, 99, 95)
+    }
+  } {1 91 92 3 93 5}
+}
 
 
 

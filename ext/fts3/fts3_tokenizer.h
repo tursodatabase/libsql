@@ -52,7 +52,7 @@ typedef struct sqlite3_tokenizer_cursor sqlite3_tokenizer_cursor;
 struct sqlite3_tokenizer_module {
 
   /*
-  ** Structure version. Should always be set to 0.
+  ** Structure version. Should always be set to 0 or 1.
   */
   int iVersion;
 
@@ -133,6 +133,15 @@ struct sqlite3_tokenizer_module {
     int *piEndOffset,    /* OUT: Byte offset of end of token in input buffer */
     int *piPosition      /* OUT: Number of tokens returned before this one */
   );
+
+  /***********************************************************************
+  ** Methods below this point are only available if iVersion>=1.
+  */
+
+  /* 
+  ** Configure the language id of a tokenizer cursor.
+  */
+  int (*xLanguageid)(sqlite3_tokenizer_cursor *pCsr, int iLangid);
 };
 
 struct sqlite3_tokenizer {
