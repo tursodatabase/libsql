@@ -405,7 +405,7 @@ static struct win_syscall {
 #define osGetFullPathNameA ((DWORD(WINAPI*)(LPCSTR,DWORD,LPSTR, \
         LPSTR*))aSyscall[24].pCurrent)
 
-#if !SQLITE_OS_WINCE && defined(SQLITE_WIN32_HAS_WIDE)
+#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_WIDE)
   { "GetFullPathNameW",        (SYSCALL)GetFullPathNameW,        0 },
 #else
   { "GetFullPathNameW",        (SYSCALL)0,                       0 },
@@ -455,7 +455,7 @@ static struct win_syscall {
 
 #define osGetTempPathA ((DWORD(WINAPI*)(DWORD,LPSTR))aSyscall[31].pCurrent)
 
-#if defined(SQLITE_WIN32_HAS_WIDE)
+#if !SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_WIDE)
   { "GetTempPathW",            (SYSCALL)GetTempPathW,            0 },
 #else
   { "GetTempPathW",            (SYSCALL)0,                       0 },
@@ -3123,9 +3123,13 @@ static int getTempname(int nBuf, char *zBuf){
   */
   SimulateIOError( return SQLITE_IOERR );
 
+  memset(zTempPath, 0, MAX_PATH+2);
+
   if( sqlite3_temp_directory ){
     sqlite3_snprintf(MAX_PATH-30, zTempPath, "%s", sqlite3_temp_directory);
-  }else if( isNT() ){
+  }
+#if !SQLITE_OS_WINRT
+  else if( isNT() ){
     char *zMulti;
     WCHAR zWidePath[MAX_PATH];
     osGetTempPathW(MAX_PATH-30, zWidePath);
@@ -3150,6 +3154,7 @@ static int getTempname(int nBuf, char *zBuf){
       return SQLITE_IOERR_NOMEM;
     }
   }
+#endif
 #endif
 
   /* Check that the output buffer is large enough for the temporary file 
@@ -3552,7 +3557,7 @@ static int winFullPathname(
   return SQLITE_OK;
 #endif
 
-#if SQLITE_OS_WINCE
+#if SQLITE_OS_WINCE || SQLITE_OS_WINRT
   SimulateIOError( return SQLITE_ERROR );
   UNUSED_PARAMETER(nFull);
   /* WinCE has no concept of a relative pathname, or so I am told. */
@@ -3560,7 +3565,7 @@ static int winFullPathname(
   return SQLITE_OK;
 #endif
 
-#if !SQLITE_OS_WINCE && !defined(__CYGWIN__)
+#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && !defined(__CYGWIN__)
   int nByte;
   void *zConverted;
   char *zOut;

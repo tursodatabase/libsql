@@ -19,6 +19,7 @@
 #
 # Commands to manipulate the db and the file-system at a high level:
 #
+#      is_relative_file
 #      copy_file              FROM TO
 #      delete_file            FILENAME
 #      drop_all_tables        ?DB?
@@ -191,6 +192,12 @@ proc do_copy_file {force from to} {
       file copy $from $to
     }
   }
+}
+
+# Check if a file name is relative
+#
+proc is_relative_file { file } {
+  return [expr {[file pathtype $file] != "absolute"}]
 }
 
 # Delete a file or directory
