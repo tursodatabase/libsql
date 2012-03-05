@@ -1,5 +1,5 @@
-C Merge\sthe\sfts4-languageid\sbranch\swith\sthe\strunk.
-D 2012-03-05T15:33:32.751
+C Fix\sa\sproblem\scompiling\sthe\stest\scode\sin\sfts3_test.c\swhen\sSQLITE_ENABLE_FTS3\sis\snot\sdefined.
+D 2012-03-05T16:24:26.279
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -74,7 +74,7 @@ F ext/fts3/fts3_icu.c 6c8f395cdf9e1e3afa7fadb7e523dbbf381c6dfa
 F ext/fts3/fts3_porter.c b7e5276f9f0a5fc7018b6fa55ce0f31f269ef881
 F ext/fts3/fts3_snippet.c c9e126c20760988aa7c43c6ea1379db34738282e
 F ext/fts3/fts3_term.c d3466cf99432291be08e379d89645462431809d6
-F ext/fts3/fts3_test.c a026412a41450a014ccb7abdd5efaa7c9711d49e
+F ext/fts3/fts3_test.c 6b7cc68aef4efb084e1449f7d20c4b20d3bdf6b4
 F ext/fts3/fts3_tokenizer.c 3da7254a9881f7e270ab28e2004e0d22b3212bce
 F ext/fts3/fts3_tokenizer.h 66dec98e365854b6cd2d54f1a96bb6d428fc5a68
 F ext/fts3/fts3_tokenizer1.c 0dde8f307b8045565cf63797ba9acfaff1c50c68
@@ -992,7 +992,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 4f34d7077b9acf7926c5e7375ca870d4ed3c60b9 f8e9c445dd358c40e5a7bf3756b9f291909dbea7
-R 6e003d0f8aa6b8eacd50254a31c50e6a
+P 99a9073b5e411ce94f38ce49608baaa15de8b850
+R d0dc4635c0ac977f7342c0a0dac9e48b
 U dan
-Z c6f6d9c6291c4c182b564ddd4b9e0a68
+Z d6573fd4e75425ab6ee13bee3b518e09
