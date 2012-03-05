@@ -271,7 +271,7 @@ static int fts3termFilterMethod(
   pCsr->filter.flags = FTS3_SEGMENT_REQUIRE_POS|FTS3_SEGMENT_IGNORE_EMPTY;
   pCsr->filter.flags |= FTS3_SEGMENT_SCAN;
 
-  rc = sqlite3Fts3SegReaderCursor(pFts3, p->iIndex, FTS3_SEGCURSOR_ALL,
+  rc = sqlite3Fts3SegReaderCursor(pFts3, 0, p->iIndex, FTS3_SEGCURSOR_ALL,
       pCsr->filter.zTerm, pCsr->filter.nTerm, 0, 1, &pCsr->csr
   );
   if( rc==SQLITE_OK ){
