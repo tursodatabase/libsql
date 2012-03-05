@@ -22,6 +22,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+ifcapable !compound {
+  finish_test
+  return
+}
+
 # Create test data
 #
 do_test randexpr1-1.1 {

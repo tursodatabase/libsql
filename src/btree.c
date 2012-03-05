@@ -2041,7 +2041,7 @@ int sqlite3BtreeClose(Btree *p){
   ** The call to sqlite3BtreeRollback() drops any table-locks held by
   ** this handle.
   */
-  sqlite3BtreeRollback(p);
+  sqlite3BtreeRollback(p, SQLITE_OK);
   sqlite3BtreeLeave(p);
 
   /* If there are still other outstanding references to the shared-btree
@@ -3279,6 +3279,7 @@ static int countWriteCursors(BtShared *pBt){
 */
 void sqlite3BtreeTripAllCursors(Btree *pBtree, int errCode){
   BtCursor *p;
+  if( pBtree==0 ) return;
   sqlite3BtreeEnter(pBtree);
   for(p=pBtree->pBt->pCursor; p; p=p->pNext){
     int i;
@@ -3302,25 +3303,20 @@ void sqlite3BtreeTripAllCursors(Btree *pBtree, int errCode){
 ** This will release the write lock on the database file.  If there
 ** are no active cursors, it also releases the read lock.
 */
-int sqlite3BtreeRollback(Btree *p){
+int sqlite3BtreeRollback(Btree *p, int tripCode){
   int rc;
   BtShared *pBt = p->pBt;
   MemPage *pPage1;
 
   sqlite3BtreeEnter(p);
-  rc = saveAllCursors(pBt, 0, 0);
-#ifndef SQLITE_OMIT_SHARED_CACHE
-  if( rc!=SQLITE_OK ){
-    /* This is a horrible situation. An IO or malloc() error occurred whilst
-    ** trying to save cursor positions. If this is an automatic rollback (as
-    ** the result of a constraint, malloc() failure or IO error) then 
-    ** the cache may be internally inconsistent (not contain valid trees) so
-    ** we cannot simply return the error to the caller. Instead, abort 
-    ** all queries that may be using any of the cursors that failed to save.
-    */
-    sqlite3BtreeTripAllCursors(p, rc);
+  if( tripCode==SQLITE_OK ){
+    rc = tripCode = saveAllCursors(pBt, 0, 0);
+  }else{
+    rc = SQLITE_OK;
   }
-#endif
+  if( tripCode ){
+    sqlite3BtreeTripAllCursors(p, tripCode);
+  }
   btreeIntegrity(p);
 
   if( p->inTrans==TRANS_WRITE ){

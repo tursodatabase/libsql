@@ -2562,7 +2562,7 @@ int sqlite3CantopenError(int);
 /*
 ** Internal function prototypes
 */
-int sqlite3StrICmp(const char *, const char *);
+#define sqlite3StrICmp sqlite3_stricmp
 int sqlite3Strlen30(const char*);
 #define sqlite3StrNICmp sqlite3_strnicmp
 
@@ -2809,7 +2809,7 @@ Vdbe *sqlite3GetVdbe(Parse*);
 void sqlite3PrngSaveState(void);
 void sqlite3PrngRestoreState(void);
 void sqlite3PrngResetState(void);
-void sqlite3RollbackAll(sqlite3*);
+void sqlite3RollbackAll(sqlite3*,int);
 void sqlite3CodeVerifySchema(Parse*, int);
 void sqlite3CodeVerifyNamedSchema(Parse*, const char *zDb);
 void sqlite3BeginTransaction(Parse*, int);

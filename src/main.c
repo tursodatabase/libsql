@@ -849,19 +849,23 @@ int sqlite3_close(sqlite3 *db){
 }
 
 /*
-** Rollback all database files.
+** Rollback all database files.  If tripCode is not SQLITE_OK, then
+** any open cursors are invalidated ("tripped" - as in "tripping a circuit
+** breaker") and made to return tripCode if there are any further
+** attempts to use that cursor.
 */
-void sqlite3RollbackAll(sqlite3 *db){
+void sqlite3RollbackAll(sqlite3 *db, int tripCode){
   int i;
   int inTrans = 0;
   assert( sqlite3_mutex_held(db->mutex) );
   sqlite3BeginBenignMalloc();
   for(i=0; i<db->nDb; i++){
-    if( db->aDb[i].pBt ){
-      if( sqlite3BtreeIsInTrans(db->aDb[i].pBt) ){
+    Btree *p = db->aDb[i].pBt;
+    if( p ){
+      if( sqlite3BtreeIsInTrans(p) ){
         inTrans = 1;
       }
-      sqlite3BtreeRollback(db->aDb[i].pBt);
+      sqlite3BtreeRollback(p, tripCode);
       db->aDb[i].inTrans = 0;
     }
   }
@@ -916,12 +920,21 @@ const char *sqlite3ErrStr(int rc){
     /* SQLITE_RANGE       */ "bind or column index out of range",
     /* SQLITE_NOTADB      */ "file is encrypted or is not a database",
   };
-  rc &= 0xff;
-  if( ALWAYS(rc>=0) && rc<(int)(sizeof(aMsg)/sizeof(aMsg[0])) && aMsg[rc]!=0 ){
-    return aMsg[rc];
-  }else{
-    return "unknown error";
+  const char *zErr = "unknown error";
+  switch( rc ){
+    case SQLITE_ABORT_ROLLBACK: {
+      zErr = "abort due to ROLLBACK";
+      break;
+    }
+    default: {
+      rc &= 0xff;
+      if( ALWAYS(rc>=0) && rc<ArraySize(aMsg) && aMsg[rc]!=0 ){
+        zErr = aMsg[rc];
+      }
+      break;
+    }
   }
+  return zErr;
 }
 
 /*
@@ -1299,9 +1312,8 @@ void *sqlite3_profile(
 }
 #endif /* SQLITE_OMIT_TRACE */
 
-/*** EXPERIMENTAL ***
-**
-** Register a function to be invoked when a transaction comments.
+/*
+** Register a function to be invoked when a transaction commits.
 ** If the invoked function returns non-zero, then the commit becomes a
 ** rollback.
 */

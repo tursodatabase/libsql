@@ -30,12 +30,8 @@
 **                                can be set manually, if desired.
 **                                If an equivalent interface exists by
 **                                a different name, using a separate -D
-**                                option to rename it.  This symbol will
-**                                be enabled automatically on windows
-**                                systems, and malloc_usable_size() will
-**                                be redefined to _msize(), unless the
-**                                SQLITE_WITHOUT_MSIZE macro is defined.
-**    
+**                                option to rename it.
+**
 **    SQLITE_WITHOUT_ZONEMALLOC   Some older macs lack support for the zone
 **                                memory allocator.  Set this symbol to enable
 **                                building on older macs.
@@ -55,13 +51,11 @@
 #ifdef SQLITE_SYSTEM_MALLOC
 
 /*
-** Windows systems have malloc_usable_size() but it is called _msize().
+** The MSVCRT has malloc_usable_size() but it is called _msize().
 ** The use of _msize() is automatic, but can be disabled by compiling
 ** with -DSQLITE_WITHOUT_MSIZE
 */
-#if !defined(HAVE_MALLOC_USABLE_SIZE) && SQLITE_OS_WIN \
-      && !defined(SQLITE_WITHOUT_MSIZE)
-# define HAVE_MALLOC_USABLE_SIZE 1
+#if defined(_MSC_VER) && !defined(SQLITE_WITHOUT_MSIZE)
 # define SQLITE_MALLOCSIZE _msize
 #endif
 
@@ -91,7 +85,8 @@ static malloc_zone_t* _sqliteZone_;
 #define SQLITE_FREE(x)      free(x)
 #define SQLITE_REALLOC(x,y) realloc((x),(y))
 
-#if defined(HAVE_MALLOC_H) && defined(HAVE_MALLOC_USABLE_SIZE)
+#if (defined(_MSC_VER) && !defined(SQLITE_WITHOUT_MSIZE)) \
+      || (defined(HAVE_MALLOC_H) && defined(HAVE_MALLOC_USABLE_SIZE))
 # include <malloc.h>    /* Needed for malloc_usable_size on linux */
 #endif
 #ifdef HAVE_MALLOC_USABLE_SIZE

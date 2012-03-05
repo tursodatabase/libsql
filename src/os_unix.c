@@ -211,7 +211,7 @@ struct unixFile {
   unixInodeInfo *pInode;              /* Info about locks on this inode */
   int h;                              /* The file descriptor */
   unsigned char eFileLock;            /* The type of lock held on this fd */
-  unsigned char ctrlFlags;            /* Behavioral bits.  UNIXFILE_* flags */
+  unsigned short int ctrlFlags;       /* Behavioral bits.  UNIXFILE_* flags */
   int lastErrno;                      /* The unix errno from last I/O error */
   void *lockingContext;               /* Locking style specific state */
   UnixUnusedFd *pUnused;              /* Pre-allocated UnixUnusedFd */
@@ -262,6 +262,7 @@ struct unixFile {
 #define UNIXFILE_DELETE      0x20     /* Delete on close */
 #define UNIXFILE_URI         0x40     /* Filename might have query parameters */
 #define UNIXFILE_NOLOCK      0x80     /* Do no file locking */
+#define UNIXFILE_CHOWN      0x100     /* File ownership was changed */
 
 /*
 ** Include code that is common to all os_*.c files
@@ -418,6 +419,12 @@ static struct unix_syscall {
   { "rmdir",        (sqlite3_syscall_ptr)rmdir,           0 },
 #define osRmdir     ((int(*)(const char*))aSyscall[19].pCurrent)
 
+  { "fchown",       (sqlite3_syscall_ptr)fchown,          0 },
+#define osFchown    ((int(*)(int,uid_t,gid_t))aSyscall[20].pCurrent)
+
+  { "umask",        (sqlite3_syscall_ptr)umask,           0 },
+#define osUmask     ((mode_t(*)(mode_t))aSyscall[21].pCurrent)
+
 }; /* End of the overrideable system calls */
 
 /*
@@ -504,11 +511,36 @@ static const char *unixNextSystemCall(sqlite3_vfs *p, const char *zName){
 }
 
 /*
-** Retry open() calls that fail due to EINTR
+** Invoke open().  Do so multiple times, until it either succeeds or
+** files for some reason other than EINTR.
+**
+** If the file creation mode "m" is 0 then set it to the default for
+** SQLite.  The default is SQLITE_DEFAULT_FILE_PERMISSIONS (normally
+** 0644) as modified by the system umask.  If m is not 0, then
+** make the file creation mode be exactly m ignoring the umask.
+**
+** The m parameter will be non-zero only when creating -wal, -journal,
+** and -shm files.  We want those files to have *exactly* the same
+** permissions as their original database, unadulterated by the umask.
+** In that way, if a database file is -rw-rw-rw or -rw-rw-r-, and a
+** transaction crashes and leaves behind hot journals, then any
+** process that is able to write to the database will also be able to
+** recover the hot journals.
 */
-static int robust_open(const char *z, int f, int m){
+static int robust_open(const char *z, int f, mode_t m){
   int rc;
-  do{ rc = osOpen(z,f,m); }while( rc<0 && errno==EINTR );
+  mode_t m2;
+  mode_t origM = 0;
+  if( m==0 ){
+    m2 = SQLITE_DEFAULT_FILE_PERMISSIONS;
+  }else{
+    m2 = m;
+    origM = osUmask(0);
+  }
+  do{ rc = osOpen(z,f,m2); }while( rc<0 && errno==EINTR );
+  if( m ){
+    osUmask(origM);
+  }
   return rc;
 }
 
@@ -3856,8 +3888,7 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
 
     /* Call fstat() to figure out the permissions on the database file. If
     ** a new *-shm file is created, an attempt will be made to create it
-    ** with the same permissions. The actual permissions the file is created
-    ** with are subject to the current umask setting.
+    ** with the same permissions.
     */
     if( osFstat(pDbFd->h, &sStat) && pInode->bProcessLock==0 ){
       rc = SQLITE_IOERR_FSTAT;
@@ -3901,10 +3932,19 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
       }
       pShmNode->h = robust_open(zShmFilename, openFlags, (sStat.st_mode&0777));
       if( pShmNode->h<0 ){
-        if( pShmNode->h<0 ){
-          rc = unixLogError(SQLITE_CANTOPEN_BKPT, "open", zShmFilename);
-          goto shm_open_err;
-        }
+        rc = unixLogError(SQLITE_CANTOPEN_BKPT, "open", zShmFilename);
+        goto shm_open_err;
+      }
+
+      /* If this process is running as root, make sure that the SHM file
+      ** is owned by the same user that owns the original database.  Otherwise,
+      ** the original owner will not be able to connect. If this process is
+      ** not root, the following fchown() will fail, but we don't care.  The
+      ** if(){..} and the UNIXFILE_CHOWN flag are purely to silence compiler
+      ** warnings.
+      */
+      if( osFchown(pShmNode->h, sStat.st_uid, sStat.st_gid)==0 ){
+        pDbFd->ctrlFlags |= UNIXFILE_CHOWN;
       }
   
       /* Check to see if another process is holding the dead-man switch.
@@ -4879,12 +4919,10 @@ static UnixUnusedFd *findReusableFd(const char *zPath, int flags){
 ** written to *pMode. If an IO error occurs, an SQLite error code is 
 ** returned and the value of *pMode is not modified.
 **
-** If the file being opened is a temporary file, it is always created with
-** the octal permissions 0600 (read/writable by owner only). If the file
-** is a database or master journal file, it is created with the permissions 
-** mask SQLITE_DEFAULT_FILE_PERMISSIONS.
-**
-** Finally, if the file being opened is a WAL or regular journal file, then 
+** In most cases cases, this routine sets *pMode to 0, which will become
+** an indication to robust_open() to create the file using
+** SQLITE_DEFAULT_FILE_PERMISSIONS adjusted by the umask.
+** But if the file being opened is a WAL or regular journal file, then 
 ** this function queries the file-system for the permissions on the 
 ** corresponding database file and sets *pMode to this value. Whenever 
 ** possible, WAL and journal files are created using the same permissions 
@@ -4898,10 +4936,14 @@ static UnixUnusedFd *findReusableFd(const char *zPath, int flags){
 static int findCreateFileMode(
   const char *zPath,              /* Path of file (possibly) being created */
   int flags,                      /* Flags passed as 4th argument to xOpen() */
-  mode_t *pMode                   /* OUT: Permissions to open file with */
+  mode_t *pMode,                  /* OUT: Permissions to open file with */
+  uid_t *pUid,                    /* OUT: uid to set on the file */
+  gid_t *pGid                     /* OUT: gid to set on the file */
 ){
   int rc = SQLITE_OK;             /* Return Code */
-  *pMode = SQLITE_DEFAULT_FILE_PERMISSIONS;
+  *pMode = 0;
+  *pUid = 0;
+  *pGid = 0;
   if( flags & (SQLITE_OPEN_WAL|SQLITE_OPEN_MAIN_JOURNAL) ){
     char zDb[MAX_PATHNAME+1];     /* Database file path */
     int nDb;                      /* Number of valid bytes in zDb */
@@ -4935,6 +4977,8 @@ static int findCreateFileMode(
 
     if( 0==osStat(zDb, &sStat) ){
       *pMode = sStat.st_mode & 0777;
+      *pUid = sStat.st_uid;
+      *pGid = sStat.st_gid;
     }else{
       rc = SQLITE_IOERR_FSTAT;
     }
@@ -5081,7 +5125,9 @@ static int unixOpen(
 
   if( fd<0 ){
     mode_t openMode;              /* Permissions to create file with */
-    rc = findCreateFileMode(zName, flags, &openMode);
+    uid_t uid;                    /* Userid for the file */
+    gid_t gid;                    /* Groupid for the file */
+    rc = findCreateFileMode(zName, flags, &openMode, &uid, &gid);
     if( rc!=SQLITE_OK ){
       assert( !p->pUnused );
       assert( eType==SQLITE_OPEN_WAL || eType==SQLITE_OPEN_MAIN_JOURNAL );
@@ -5101,6 +5147,17 @@ static int unixOpen(
     if( fd<0 ){
       rc = unixLogError(SQLITE_CANTOPEN_BKPT, "open", zName);
       goto open_finished;
+    }
+
+    /* If this process is running as root and if creating a new rollback
+    ** journal or WAL file, set the ownership of the journal or WAL to be
+    ** the same as the original database.  If we are not running as root,
+    ** then the fchown() call will fail, but that's ok.  The "if(){}" and
+    ** the setting of the UNIXFILE_CHOWN flag are purely to silence compiler
+    ** warnings from gcc.
+    */
+    if( flags & (SQLITE_OPEN_WAL|SQLITE_OPEN_MAIN_JOURNAL) ){
+      if( osFchown(fd, uid, gid)==0 ){ p->ctrlFlags |= UNIXFILE_CHOWN; }
     }
   }
   assert( fd>=0 );
@@ -5828,17 +5885,17 @@ static int proxyCreateUnixFile(
     }
   }
   if( fd<0 ){
-    fd = robust_open(path, openFlags, SQLITE_DEFAULT_FILE_PERMISSIONS);
+    fd = robust_open(path, openFlags, 0);
     terrno = errno;
     if( fd<0 && errno==ENOENT && islockfile ){
       if( proxyCreateLockPath(path) == SQLITE_OK ){
-        fd = robust_open(path, openFlags, SQLITE_DEFAULT_FILE_PERMISSIONS);
+        fd = robust_open(path, openFlags, 0);
       }
     }
   }
   if( fd<0 ){
     openFlags = O_RDONLY;
-    fd = robust_open(path, openFlags, SQLITE_DEFAULT_FILE_PERMISSIONS);
+    fd = robust_open(path, openFlags, 0);
     terrno = errno;
   }
   if( fd<0 ){
@@ -5962,8 +6019,7 @@ static int proxyBreakConchLock(unixFile *pFile, uuid_t myHostID){
     goto end_breaklock;
   }
   /* write it out to the temporary break file */
-  fd = robust_open(tPath, (O_RDWR|O_CREAT|O_EXCL),
-                   SQLITE_DEFAULT_FILE_PERMISSIONS);
+  fd = robust_open(tPath, (O_RDWR|O_CREAT|O_EXCL), 0);
   if( fd<0 ){
     sqlite3_snprintf(sizeof(errmsg), errmsg, "create failed (%d)", errno);
     goto end_breaklock;
@@ -6240,8 +6296,7 @@ static int proxyTakeConch(unixFile *pFile){
           robust_close(pFile, pFile->h, __LINE__);
         }
         pFile->h = -1;
-        fd = robust_open(pCtx->dbPath, pFile->openFlags,
-                      SQLITE_DEFAULT_FILE_PERMISSIONS);
+        fd = robust_open(pCtx->dbPath, pFile->openFlags, 0);
         OSTRACE(("TRANSPROXY: OPEN  %d\n", fd));
         if( fd>=0 ){
           pFile->h = fd;
@@ -6810,7 +6865,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==20 );
+  assert( ArraySize(aSyscall)==22 );
 
   /* Register all VFSes defined in the aVfs[] array */
   for(i=0; i<(sizeof(aVfs)/sizeof(sqlite3_vfs)); i++){

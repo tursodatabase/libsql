@@ -49,10 +49,12 @@ do_execsql_test 1.2 {
 
 do_execsql_test 1.3 { DELETE FROM t3 }
 
-do_execsql_test 1.4 {
-  INSERT INTO t3(t3_a) SELECT 1 UNION SELECT 2 UNION SELECT 3;
-  SELECT * FROM t3;
-} {1 I 2 II 3 III}
+ifcapable compound {
+  do_execsql_test 1.4 {
+    INSERT INTO t3(t3_a) SELECT 1 UNION SELECT 2 UNION SELECT 3;
+    SELECT * FROM t3;
+  } {1 I 2 II 3 III}
+}
 
 
 

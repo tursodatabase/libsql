@@ -64,14 +64,13 @@ do_test trans3-1.5 {
      }
   } errmsg]
   lappend x $errmsg
-} {1 {cannot rollback transaction - SQL statements in progress}}
+} {1 {abort due to ROLLBACK}}
 do_test trans3-1.6 {
   set ::ecode
-} {SQLITE_BUSY}
+} {}
 do_test trans3-1.7 {
-  db eval COMMIT
   db eval {SELECT * FROM t1}
-} {1 2 3 4 5}
+} {1 2 3 4}
 unset -nocomplain ecode
 
 finish_test

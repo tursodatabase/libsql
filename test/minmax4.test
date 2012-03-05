@@ -20,6 +20,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+ifcapable !compound {
+  finish_test
+  return
+}
+
 do_test minmax4-1.1 {
   db eval {
     CREATE TABLE t1(p,q);

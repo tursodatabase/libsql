@@ -164,11 +164,13 @@ do_execsql_test 303 {
     (b='B' AND c IN (SELECT c FROM t1))
 } {A B C D E}
 
-do_execsql_test 304 {
-  SELECT * FROM t1, t2 WHERE
-    (a='A' AND d='E') OR
-    (b='B' AND c IN (SELECT 'B' UNION SELECT 'C' UNION SELECT 'D'))
-} {A B C D E}
+ifcapable compound {
+  do_execsql_test 304 {
+    SELECT * FROM t1, t2 WHERE
+      (a='A' AND d='E') OR
+      (b='B' AND c IN (SELECT 'B' UNION SELECT 'C' UNION SELECT 'D'))
+  } {A B C D E}
+}
 
 do_execsql_test 305 {
   SELECT * FROM t1, t2 WHERE
@@ -182,10 +184,12 @@ do_execsql_test 306 {
     (a='A' AND d='E')
 } {A B C D E}
 
-do_execsql_test 307 {
-  SELECT * FROM t1, t2 WHERE
-    (b='B' AND c IN (SELECT 'B' UNION SELECT 'C' UNION SELECT 'D')) OR
-    (a='A' AND d='E')
-} {A B C D E}
+ifcapable compound {
+  do_execsql_test 307 {
+    SELECT * FROM t1, t2 WHERE
+      (b='B' AND c IN (SELECT 'B' UNION SELECT 'C' UNION SELECT 'D')) OR
+      (a='A' AND d='E')
+  } {A B C D E}
+}
 
 finish_test

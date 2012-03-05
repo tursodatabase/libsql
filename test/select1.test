@@ -1066,5 +1066,11 @@ if {[db one {PRAGMA locking_mode}]=="normal"} {
     execsql { SELECT 2 IN (SELECT a FROM t1) }
   } {1}
 }
+
+# Crash bug reported on the mailing list on 2012-02-23
+#
+do_test select1-16.1 {
+  catchsql {SELECT 1 FROM (SELECT *)}
+} {1 {no tables specified}}
   
 finish_test

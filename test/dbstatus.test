@@ -15,6 +15,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+ifcapable !compound {
+  finish_test
+  return
+}
+
 # Memory statistics must be enabled for this test.
 db close
 sqlite3_shutdown

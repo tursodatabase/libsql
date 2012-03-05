@@ -532,6 +532,7 @@ static int fts3StringAppend(
 */
 static int fts3SnippetShift(
   Fts3Table *pTab,                /* FTS3 table snippet comes from */
+  int iLangid,                    /* Language id to use in tokenizing */
   int nSnippet,                   /* Number of tokens desired for snippet */
   const char *zDoc,               /* Document text to extract snippet from */
   int nDoc,                       /* Size of buffer zDoc in bytes */
@@ -567,11 +568,10 @@ static int fts3SnippetShift(
       /* Open a cursor on zDoc/nDoc. Check if there are (nSnippet+nDesired)
       ** or more tokens in zDoc/nDoc.
       */
-      rc = pMod->xOpen(pTab->pTokenizer, zDoc, nDoc, &pC);
+      rc = sqlite3Fts3OpenTokenizer(pTab->pTokenizer, iLangid, zDoc, nDoc, &pC);
       if( rc!=SQLITE_OK ){
         return rc;
       }
-      pC->pTokenizer = pTab->pTokenizer;
       while( rc==SQLITE_OK && iCurrent<(nSnippet+nDesired) ){
         const char *ZDUMMY; int DUMMY1, DUMMY2, DUMMY3;
         rc = pMod->xNext(pC, &ZDUMMY, &DUMMY1, &DUMMY2, &DUMMY3, &iCurrent);
@@ -631,11 +631,10 @@ static int fts3SnippetText(
 
   /* Open a token cursor on the document. */
   pMod = (sqlite3_tokenizer_module *)pTab->pTokenizer->pModule;
-  rc = pMod->xOpen(pTab->pTokenizer, zDoc, nDoc, &pC);
+  rc = sqlite3Fts3OpenTokenizer(pTab->pTokenizer, pCsr->iLangid, zDoc,nDoc,&pC);
   if( rc!=SQLITE_OK ){
     return rc;
   }
-  pC->pTokenizer = pTab->pTokenizer;
 
   while( rc==SQLITE_OK ){
     int iBegin;                   /* Offset in zDoc of start of token */
@@ -657,7 +656,9 @@ static int fts3SnippetText(
 
     if( !isShiftDone ){
       int n = nDoc - iBegin;
-      rc = fts3SnippetShift(pTab, nSnippet, &zDoc[iBegin], n, &iPos, &hlmask);
+      rc = fts3SnippetShift(
+          pTab, pCsr->iLangid, nSnippet, &zDoc[iBegin], n, &iPos, &hlmask
+      );
       isShiftDone = 1;
 
       /* Now that the shift has been done, check if the initial "..." are
@@ -1390,9 +1391,10 @@ void sqlite3Fts3Offsets(
     }
 
     /* Initialize a tokenizer iterator to iterate through column iCol. */
-    rc = pMod->xOpen(pTab->pTokenizer, zDoc, nDoc, &pC);
+    rc = sqlite3Fts3OpenTokenizer(pTab->pTokenizer, pCsr->iLangid,
+        zDoc, nDoc, &pC
+    );
     if( rc!=SQLITE_OK ) goto offsets_out;
-    pC->pTokenizer = pTab->pTokenizer;
 
     rc = pMod->xNext(pC, &ZDUMMY, &NDUMMY, &iStart, &iEnd, &iCurrent);
     while( rc==SQLITE_OK ){

@@ -3103,7 +3103,9 @@ static void bestBtreeIndex(
     /* If there is a DISTINCT qualifier and this index will scan rows in
     ** order of the DISTINCT expressions, clear bDist and set the appropriate
     ** flags in wsFlags. */
-    if( isDistinctIndex(pParse, pWC, pProbe, iCur, pDistinct, nEq) ){
+    if( isDistinctIndex(pParse, pWC, pProbe, iCur, pDistinct, nEq)
+     && (wsFlags & WHERE_COLUMN_IN)==0
+    ){
       bDist = 0;
       wsFlags |= WHERE_ROWID_RANGE|WHERE_COLUMN_RANGE|WHERE_DISTINCT;
     }

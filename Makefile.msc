@@ -995,9 +995,12 @@ sqlite3_analyzer.exe:	sqlite3_analyzer.c
 
 clean:
 	del /Q *.lo *.ilk *.lib *.obj *.pdb sqlite3.exe libsqlite3.lib
+	del /Q *.da *.bb *.bbg gmon.out
 	del /Q sqlite3.h opcodes.c opcodes.h
 	del /Q lemon.exe lempar.c parse.*
 	del /Q mkkeywordhash.exe keywordhash.h
+	-rmdir /Q/S .deps
+	-rmdir /Q/S .libs
 	-rmdir /Q/S tsrc
 	del /Q .target_source
 	del /Q tclsqlite3.exe

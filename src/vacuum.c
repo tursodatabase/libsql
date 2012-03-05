@@ -176,6 +176,18 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   }
 #endif
 
+  rc = execSql(db, pzErrMsg, "PRAGMA vacuum_db.synchronous=OFF");
+  if( rc!=SQLITE_OK ) goto end_of_vacuum;
+
+  /* Begin a transaction and take an exclusive lock on the main database
+  ** file. This is done before the sqlite3BtreeGetPageSize(pMain) call below,
+  ** to ensure that we do not try to change the page-size on a WAL database.
+  */
+  rc = execSql(db, pzErrMsg, "BEGIN;");
+  if( rc!=SQLITE_OK ) goto end_of_vacuum;
+  rc = sqlite3BtreeBeginTrans(pMain, 2);
+  if( rc!=SQLITE_OK ) goto end_of_vacuum;
+
   /* Do not attempt to change the page size for a WAL database */
   if( sqlite3PagerGetJournalMode(sqlite3BtreePager(pMain))
                                                ==PAGER_JOURNALMODE_WAL ){
@@ -189,19 +201,11 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
     rc = SQLITE_NOMEM;
     goto end_of_vacuum;
   }
-  rc = execSql(db, pzErrMsg, "PRAGMA vacuum_db.synchronous=OFF");
-  if( rc!=SQLITE_OK ){
-    goto end_of_vacuum;
-  }
 
 #ifndef SQLITE_OMIT_AUTOVACUUM
   sqlite3BtreeSetAutoVacuum(pTemp, db->nextAutovac>=0 ? db->nextAutovac :
                                            sqlite3BtreeGetAutoVacuum(pMain));
 #endif
-
-  /* Begin a transaction */
-  rc = execSql(db, pzErrMsg, "BEGIN EXCLUSIVE;");
-  if( rc!=SQLITE_OK ) goto end_of_vacuum;
 
   /* Query the schema of the main database. Create a mirror schema
   ** in the temporary database.

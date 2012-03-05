@@ -127,6 +127,39 @@ for {set iTest 1} {$iTest<=100} {incr iTest} {
 
   db2 close
 }
+catch { db close }
+
+
+do_test 3.0 { setup_and_save_db } {}
+do_faultsim_test 3 -faults ioerr-trans* -prep {
+
+  forcedelete test2.db
+  set fd [open test2.wal w]
+  seek $fd 4095
+  puts -nonewline $fd x
+  close $fd
+
+  multiplex_restore_db
+  sqlite3 db file:test.db?8_3_names=1
+  sqlite3 db2 file:test2.db?8_3_names=1
+  sqlite3_multiplex_control db main chunk_size [expr 256*1024]
+  sqlite3_multiplex_control db2 main chunk_size [expr 256*1024]
+} -body {
+  sqlite3_backup B db2 main db main
+  B step 100000
+  set rc [B finish]
+  if { [string match SQLITE_IOERR_* $rc] } {error "disk I/O error"}
+  set rc
+} -test {
+  faultsim_test_result {0 SQLITE_OK}
+  if {$testrc==0} {
+    set cksum2 [execsql {SELECT md5sum(a, b) FROM t1 ORDER BY a} db2]
+    if {$cksum2 != $::cksum1} { error "data mismatch" }
+  }
+  catch { B finish }
+  catch { db close }
+  catch { db2 close }
+}
 
 catch { db close }
 sqlite3_multiplex_shutdown

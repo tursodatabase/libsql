@@ -22,7 +22,9 @@ source $testdir/malloc_common.tcl
 #
 if {$::tcl_platform(platform) == "unix"} {
 
-  set umask [exec /bin/sh -c umask]
+  # Changed on 2012-02-13:  umask is deliberately ignored for -wal, -journal,
+  # and -shm files.
+  #set umask [exec /bin/sh -c umask]
   faultsim_delete_and_reopen
   do_test journal3-1.1 { execsql { CREATE TABLE tx(y, z) } } {}
 
@@ -33,7 +35,8 @@ if {$::tcl_platform(platform) == "unix"} {
    4 00755
   } {
     db close
-    set effective [format %.5o [expr $permissions & ~$umask]]
+    #set effective [format %.5o [expr $permissions & ~$umask]]
+    set effective $permissions
     do_test journal3-1.2.$tn.1 {
       catch { forcedelete test.db-journal }
       file attributes test.db -permissions $permissions

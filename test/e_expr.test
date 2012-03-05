@@ -17,6 +17,10 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/malloc_common.tcl
 
+ifcapable !compound {
+  finish_test
+  return
+}
 
 proc do_expr_test {tn expr type value} {
   uplevel do_execsql_test $tn [list "SELECT typeof($expr), $expr"] [

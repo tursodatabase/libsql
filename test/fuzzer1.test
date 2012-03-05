@@ -22,100 +22,233 @@ ifcapable !vtab {
   return
 }
 
+set ::testprefix fuzzer1
+
+# Test of test code. Only here to make the coverage metric better.
+do_test 0.1 {
+  list [catch { register_fuzzer_module a b c } msg] $msg
+} {1 {wrong # args: should be "register_fuzzer_module DB"}}
+
 register_fuzzer_module db
-do_test fuzzer1-1.0 {
-  catchsql {CREATE VIRTUAL TABLE fault1 USING fuzzer;}
-} {1 {fuzzer virtual tables must be TEMP}}
-do_test fuzzer1-1.1 {
-  db eval {CREATE VIRTUAL TABLE temp.f1 USING fuzzer;}
-} {}
-do_test fuzzer1-1.2 {
-  db eval {
-    INSERT INTO f1(cfrom, cto, cost) VALUES('e','a',1);
-    INSERT INTO f1(cfrom, cto, cost) VALUES('a','e',10);
-    INSERT INTO f1(cfrom, cto, cost) VALUES('e','o',100);
-  }
+
+# Check configuration errors.
+#
+do_catchsql_test fuzzer1-1.1 {
+  CREATE VIRTUAL TABLE f USING fuzzer;
+} {1 {fuzzer: wrong number of CREATE VIRTUAL TABLE arguments}}
+
+do_catchsql_test fuzzer1-1.2 {
+  CREATE VIRTUAL TABLE f USING fuzzer(one, two);
+} {1 {fuzzer: wrong number of CREATE VIRTUAL TABLE arguments}}
+
+do_catchsql_test fuzzer1-1.3 {
+  CREATE VIRTUAL TABLE f USING fuzzer(nosuchtable);
+} {1 {fuzzer: no such table: main.nosuchtable}}
+
+do_catchsql_test fuzzer1-1.4 {
+  CREATE TEMP TABLE nosuchtable(a, b, c, d);
+  CREATE VIRTUAL TABLE f USING fuzzer(nosuchtable);
+} {1 {fuzzer: no such table: main.nosuchtable}}
+
+do_catchsql_test fuzzer1-1.5 {
+  DROP TABLE temp.nosuchtable;
+  CREATE TABLE nosuchtable(a, b, c, d);
+  CREATE VIRTUAL TABLE temp.f USING fuzzer(nosuchtable);
+} {1 {fuzzer: no such table: temp.nosuchtable}}
+
+do_catchsql_test fuzzer1-1.6 {
+  DROP TABLE IF EXISTS f_rules;
+  CREATE TABLE f_rules(a, b, c);
+  CREATE VIRTUAL TABLE f USING fuzzer(f_rules);
+} {1 {fuzzer: f_rules has 3 columns, expected 4}}
+
+do_catchsql_test fuzzer1-1.7 {
+  DROP TABLE IF EXISTS f_rules;
+  CREATE TABLE f_rules(a, b, c, d, e);
+  CREATE VIRTUAL TABLE f USING fuzzer(f_rules);
+} {1 {fuzzer: f_rules has 5 columns, expected 4}}
+
+
+do_execsql_test fuzzer1-2.1 {
+  CREATE TABLE f1_rules(ruleset DEFAULT 0, cfrom, cto, cost);
+  INSERT INTO f1_rules(cfrom, cto, cost) VALUES('e','a',1);
+  INSERT INTO f1_rules(cfrom, cto, cost) VALUES('a','e',10);
+  INSERT INTO f1_rules(cfrom, cto, cost) VALUES('e','o',100);
+
+  CREATE VIRTUAL TABLE f1 USING fuzzer(f1_rules);
 } {}
 
-do_test fuzzer1-1.3 {
-  db eval {
+do_execsql_test fuzzer1-2.1 {
     SELECT word, distance FROM f1 WHERE word MATCH 'abcde'
+} {
+  abcde 0   abcda 1   ebcde 10 
+  ebcda 11  abcdo 100 ebcdo 110 
+  obcde 110 obcda 111 obcdo 210
+}
+
+do_execsql_test fuzzer1-2.4 {
+  INSERT INTO f1_rules(ruleset, cfrom, cto, cost) VALUES(1,'b','x',1);
+  INSERT INTO f1_rules(ruleset, cfrom, cto, cost) VALUES(1,'d','y',10);
+  INSERT INTO f1_rules(ruleset, cfrom, cto, cost) VALUES(1,'y','z',100);
+
+  DROP TABLE f1;
+  CREATE VIRTUAL TABLE f1 USING fuzzer(f1_rules);
+} {}
+
+do_execsql_test fuzzer1-2.5 {
+  SELECT word, distance FROM f1 WHERE word MATCH 'abcde'
+} {
+  abcde 0   abcda 1   ebcde 10 
+  ebcda 11  abcdo 100 ebcdo 110 
+  obcde 110 obcda 111 obcdo 210
+}
+
+do_execsql_test fuzzer1-2.6 {
+  SELECT word, distance FROM f1 WHERE word MATCH 'abcde' AND ruleset=0
+} {
+  abcde 0   abcda 1   ebcde 10 
+  ebcda 11  abcdo 100 ebcdo 110 
+  obcde 110 obcda 111 obcdo 210
+}
+
+do_execsql_test fuzzer1-2.7 {
+  SELECT word, distance FROM f1 WHERE word MATCH 'abcde' AND ruleset=1
+} {
+  abcde 0 axcde 1 abcye 10 
+  axcye 11 abcze 110 axcze 111
+}
+
+do_test fuzzer1-1.8 {
+  db eval {
+    SELECT word, distance FROM f1 WHERE word MATCH 'abcde' AND distance<100
   }
-} {abcde 0 abcda 1 ebcde 10 ebcda 11 abcdo 100 ebcdo 110 obcde 110 obcda 111 obcdo 210}
+} {abcde 0 abcda 1 ebcde 10 ebcda 11}
+do_test fuzzer1-1.9 {
+  db eval {
+    SELECT word, distance FROM f1 WHERE word MATCH 'abcde' AND distance<=100
+  }
+} {abcde 0 abcda 1 ebcde 10 ebcda 11 abcdo 100}
+do_test fuzzer1-1.10 {
+  db eval {
+    SELECT word, distance FROM f1
+     WHERE word MATCH 'abcde' AND distance<100 AND ruleset=0
+  }
+} {abcde 0 abcda 1 ebcde 10 ebcda 11}
+do_test fuzzer1-1.11 {
+  db eval {
+    SELECT word, distance FROM f1
+    WHERE word MATCH 'abcde' AND distance<=100 AND ruleset=0
+  }
+} {abcde 0 abcda 1 ebcde 10 ebcda 11 abcdo 100}
+do_test fuzzer1-1.12 {
+  db eval {
+    SELECT word, distance FROM f1
+     WHERE word MATCH 'abcde' AND distance<11 AND ruleset=1
+  }
+} {abcde 0 axcde 1 abcye 10}
+do_test fuzzer1-1.13 {
+  db eval {
+    SELECT word, distance FROM f1
+    WHERE word MATCH 'abcde' AND distance<=11 AND ruleset=1
+  }
+} {abcde 0 axcde 1 abcye 10 axcye 11}
+do_test fuzzer1-1.14 {
+  catchsql {INSERT INTO f1 VALUES(1)}
+} {1 {table f1 may not be modified}}
+do_test fuzzer1-1.15 {
+  catchsql {DELETE FROM f1}
+} {1 {table f1 may not be modified}}
+do_test fuzzer1-1.16 {
+  catchsql {UPDATE f1 SET rowid=rowid+10000}
+} {1 {table f1 may not be modified}}
+
 
 do_test fuzzer1-2.0 {
   execsql {
-    CREATE VIRTUAL TABLE temp.f2 USING fuzzer;
     -- costs based on English letter frequencies
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('a','e',24);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('a','o',47);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('a','u',50);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('e','a',23);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('e','i',33);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('e','o',37);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('i','e',33);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('i','y',33);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('o','a',41);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('o','e',46);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('o','u',57);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('u','o',58);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('y','i',33);
+    CREATE TEMP TABLE f2_rules(ruleset DEFAULT 0, cFrom, cTo, cost);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('a','e',24);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('a','o',47);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('a','u',50);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('e','a',23);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('e','i',33);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('e','o',37);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('i','e',33);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('i','y',33);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('o','a',41);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('o','e',46);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('o','u',57);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('u','o',58);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('y','i',33);
 
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('t','th',70);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('th','t',66);
-
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('t','th',70);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('th','t',66);
  
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('a','',84);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','b',106);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('b','',106);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','c',94);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('c','',94);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','d',89);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('d','',89);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','e',83);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('e','',83);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','f',97);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('f','',97);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','g',99);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('g','',99);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','h',86);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('h','',86);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','i',85);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('i','',85);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','j',120);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('j','',120);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','k',120);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('k','',120);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','l',89);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('l','',89);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','m',96);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('m','',96);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','n',85);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('n','',85);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','o',85);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('o','',85);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','p',100);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('p','',100);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','q',120);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('q','',120);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','r',86);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('r','',86);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','s',86);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('s','',86);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','t',84);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('t','',84);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','u',94);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('u','',94);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','v',120);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('v','',120);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','w',96);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('w','',96);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','x',120);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('x','',120);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','y',100);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('y','',100);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('','z',120);
-    INSERT INTO f2(cFrom,cTo,cost) VALUES('z','',120);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('a','',84);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','b',106);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('b','',106);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','c',94);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('c','',94);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','d',89);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('d','',89);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','e',83);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('e','',83);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','f',97);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('f','',97);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','g',99);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('g','',99);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','h',86);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('h','',86);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','i',85);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('i','',85);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','j',120);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('j','',120);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','k',120);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('k','',120);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','l',89);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('l','',89);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','m',96);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('m','',96);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','n',85);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('n','',85);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','o',85);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('o','',85);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','p',100);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('p','',100);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','q',120);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('q','',120);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','r',86);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('r','',86);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','s',86);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('s','',86);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','t',84);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('t','',84);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','u',94);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('u','',94);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','v',120);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('v','',120);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','w',96);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('w','',96);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','x',120);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('x','',120);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','y',100);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('y','',100);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('','z',120);
+    INSERT INTO f2_rules(cFrom,cTo,cost) VALUES('z','',120);
+    INSERT INTO f2_rules(ruleset,cFrom,cTo,cost)
+      SELECT 1, cFrom, cTo, 100 FROM f2_rules WHERE ruleset=0;
+    INSERT INTO f2_rules(ruleset,cFrom,cTo,cost)
+      SELECT 2, cFrom, cTo, 200-cost FROM f2_rules WHERE ruleset=0;
+    INSERT INTO f2_rules(ruleset,cFrom,cTo,cost)
+      SELECT 3, cFrom, cTo, cost FROM f2_rules WHERE ruleset=0;
+    INSERT INTO f2_rules(ruleset,cFrom,cTo,cost)
+      VALUES(3, 'mallard','duck',50),
+            (3, 'duck', 'mallard', 50),
+            (3, 'rock', 'stone', 50),
+            (3, 'stone', 'rock', 50);
+
+
+    CREATE VIRTUAL TABLE temp.f2 USING fuzzer(f2_rules);
 
     -- Street names for the 28269 ZIPCODE.
     --
@@ -1377,6 +1510,359 @@ do_test fuzzer1-2.3 {
        AND streetname.n>=f2.word AND streetname.n<=(f2.word || x'F7BFBFBF')
   }
 } {{tyler finley} trailer taymouth steelewood tallia tallu talwyn thelema}
+do_test fuzzer1-2.4 {
+  execsql {
+    SELECT DISTINCT streetname.n
+      FROM f2 JOIN streetname
+        ON (streetname.n>=f2.word AND streetname.n<=(f2.word || 'zzzzzz'))
+     WHERE f2.word MATCH 'duck'
+       AND f2.distance<150
+       AND f2.ruleset=3
+     ORDER BY 1
+  }
+} {mallard {mallard cove} {mallard forest} {mallard grove} {mallard hill} {mallard park} {mallard ridge} {mallard view}}
+do_test fuzzer1-2.5 {
+  execsql {
+    SELECT DISTINCT streetname.n
+      FROM f2 JOIN streetname
+        ON (streetname.n>=f2.word AND streetname.n<=(f2.word || 'zzzzzz'))
+     WHERE f2.word MATCH 'duck'
+       AND f2.distance<150
+       AND f2.ruleset=2
+     ORDER BY 1
+  }
+} {}
 
+forcedelete test.db2
+do_execsql_test fuzzer1-4.1 {
+  ATTACH 'test.db2' AS aux;
+  CREATE TABLE aux.f3_rules(ruleset, cfrom, cto, cost);
+  INSERT INTO f3_rules(ruleset, cfrom, cto, cost) VALUES(0, 'x','y', 10);
+  INSERT INTO f3_rules(ruleset, cfrom, cto, cost) VALUES(1, 'a','b', 10);
+  CREATE VIRTUAL TABLE aux.f3 USING fuzzer(f3_rules);
+  SELECT word FROM f3 WHERE word MATCH 'ax'
+} {ax ay}
+
+#-------------------------------------------------------------------------
+#
+#  1.5.1 - Check things work with a fuzzer data table name that requires
+#          quoting. Also that NULL entries in the "from" column of the
+#          data table are treated as zero length strings ('').
+#
+#  1.5.2 - Check that no-op rules (i.e. C->C) are ignored. Test NULL in
+#          the "to" column of a fuzzer data table.
+#  
+#  1.5.3 - Test out-of-range values for the cost field of the data table.
+#
+#  1.5.4 - Test out-of-range values for the string fields of the data table.
+#
+#  1.5.5 - Test out-of-range values for the ruleset field of the data table.
+#
+do_execsql_test 5.1 {
+  CREATE TABLE "fuzzer [x] rules table"(a, b, c, d);
+  INSERT INTO "fuzzer [x] rules table" VALUES(0, NULL, 'abc', 10);
+  CREATE VIRTUAL TABLE x USING fuzzer('fuzzer [x] rules table');
+  SELECT word, distance FROM x WHERE word MATCH '123' LIMIT 4;
+} {123 0 abc123 10 1abc23 10 12abc3 10}
+
+do_execsql_test 5.2 {
+  DELETE FROM "fuzzer [x] rules table";
+  INSERT INTO "fuzzer [x] rules table" VALUES(0, 'x', NULL, 20);
+  INSERT INTO "fuzzer [x] rules table" VALUES(0, NULL, NULL, 10);
+  INSERT INTO "fuzzer [x] rules table" VALUES(0, 'x', 'x', 10);
+
+  DROP TABLE x;
+  CREATE VIRTUAL TABLE x USING fuzzer('fuzzer [x] rules table');
+
+  SELECT word, distance FROM x WHERE word MATCH 'xx';
+} {xx 0 x 20 {} 40}
+
+do_execsql_test 5.3.1 {
+  DROP TABLE IF EXISTS x;
+  INSERT INTO "fuzzer [x] rules table" VALUES(0, 'c', 'd', 1001);
+}
+do_catchsql_test 5.3.2 {
+  CREATE VIRTUAL TABLE x USING fuzzer('fuzzer [x] rules table');
+} {1 {fuzzer: cost must be between 1 and 1000}}
+
+do_execsql_test 5.3.3 {
+  DROP TABLE IF EXISTS x;
+  DELETE FROM "fuzzer [x] rules table";
+  INSERT INTO "fuzzer [x] rules table" VALUES(0, 'd', 'c', 0);
+}
+do_catchsql_test 5.3.4 {
+  CREATE VIRTUAL TABLE x USING fuzzer('fuzzer [x] rules table');
+} {1 {fuzzer: cost must be between 1 and 1000}}
+
+do_execsql_test 5.3.5 {
+  DROP TABLE IF EXISTS x;
+  DELETE FROM "fuzzer [x] rules table";
+  INSERT INTO "fuzzer [x] rules table" VALUES(0, 'd', 'c', -20);
+}
+do_catchsql_test 5.3.6 {
+  CREATE VIRTUAL TABLE x USING fuzzer('fuzzer [x] rules table');
+} {1 {fuzzer: cost must be between 1 and 1000}}
+
+do_execsql_test 5.4.1 {
+  DROP TABLE IF EXISTS x;
+  DELETE FROM "fuzzer [x] rules table";
+  INSERT INTO "fuzzer [x] rules table" VALUES(
+    0, 'x', '12345678901234567890123456789012345678901234567890', 2
+  );
+  CREATE VIRTUAL TABLE x USING fuzzer('fuzzer [x] rules table');
+  SELECT word FROM x WHERE word MATCH 'x';
+} {x 12345678901234567890123456789012345678901234567890}
+
+do_execsql_test 5.4.2 {
+  DROP TABLE IF EXISTS x;
+  DELETE FROM "fuzzer [x] rules table";
+  INSERT INTO "fuzzer [x] rules table" VALUES(
+    0, 'x', '123456789012345678901234567890123456789012345678901', 2
+  );
+} 
+do_catchsql_test 5.4.3 {
+  CREATE VIRTUAL TABLE x USING fuzzer('fuzzer [x] rules table');
+} {1 {fuzzer: maximum string length is 50}}
+
+do_execsql_test 5.4.4 {
+  DROP TABLE IF EXISTS x;
+  DELETE FROM "fuzzer [x] rules table";
+  INSERT INTO "fuzzer [x] rules table" VALUES(
+    0, '123456789012345678901234567890123456789012345678901', 'x', 2
+  );
+} 
+do_catchsql_test 5.4.5 {
+  CREATE VIRTUAL TABLE x USING fuzzer('fuzzer [x] rules table');
+} {1 {fuzzer: maximum string length is 50}}
+
+do_execsql_test 5.5.1 {
+  DROP TABLE IF EXISTS x;
+  DELETE FROM "fuzzer [x] rules table";
+  INSERT INTO "fuzzer [x] rules table" VALUES(-1, 'x', 'y', 2);
+} 
+do_catchsql_test 5.5.2 {
+  CREATE VIRTUAL TABLE x USING fuzzer('fuzzer [x] rules table');
+} {1 {fuzzer: ruleset must be between 0 and 2147483647}}
+
+do_execsql_test 5.5.3 {
+  DROP TABLE IF EXISTS x;
+  DELETE FROM "fuzzer [x] rules table";
+  INSERT INTO "fuzzer [x] rules table" VALUES((1<<32)+100, 'x', 'y', 2);
+} 
+do_catchsql_test 5.5.4 {
+  CREATE VIRTUAL TABLE x USING fuzzer('fuzzer [x] rules table');
+} {1 {fuzzer: ruleset must be between 0 and 2147483647}}
+
+#-------------------------------------------------------------------------
+# This test uses a fuzzer table with many rules. There is one rule to
+# map each possible two character string, where characters are lower-case
+# letters used in the English language, to all other possible two character
+# strings. In total, (26^4)-(26^2) mappings (the subtracted term represents
+# the no-op mappings discarded automatically by the fuzzer).
+#
+#
+do_execsql_test 6.1.1 {
+  DROP TABLE IF EXISTS x1;
+  DROP TABLE IF EXISTS x1_rules;
+  CREATE TABLE x1_rules(ruleset, cFrom, cTo, cost);
+}
+puts "This test is slow - perhaps around 7 seconds on an average pc"
+do_test 6.1.2 {
+  set LETTERS {a b c d e f g h i j k l m n o p q r s t u v w x y z}
+  set cost 1
+  db transaction {
+    foreach c1 $LETTERS { 
+      foreach c2 $LETTERS { 
+        foreach c3 $LETTERS { 
+          foreach c4 $LETTERS { 
+            db eval {INSERT INTO x1_rules VALUES(0, $c1||$c2, $c3||$c4, $cost)}
+            set cost [expr ($cost%1000) + 1]
+          }
+        }
+      }
+    }
+    db eval {UPDATE x1_rules SET cost = 20 WHERE cost<20 AND cFrom!='xx'}
+  }
+} {}
+
+do_execsql_test 6.2 {
+  SELECT count(*) FROM x1_rules WHERE cTo!=cFrom;
+} [expr 26*26*26*26 - 26*26]
+
+do_execsql_test 6.2.1 {
+  CREATE VIRTUAL TABLE x1 USING fuzzer(x1_rules);
+  SELECT word FROM x1 WHERE word MATCH 'xx' LIMIT 10;
+} {xx hw hx hy hz ia ib ic id ie}
+do_execsql_test 6.2.2 {
+  SELECT cTo FROM x1_rules WHERE cFrom='xx' 
+  ORDER BY cost asc, rowid asc LIMIT 9;
+} {hw hx hy hz ia ib ic id ie}
+
+#-------------------------------------------------------------------------
+# Test using different types of quotes with CREATE VIRTUAL TABLE 
+# arguments.
+#
+do_execsql_test 7.1 {
+  CREATE TABLE [x2 "rules] (a, b, c, d);
+  INSERT INTO [x2 "rules] VALUES(0, 'a', 'b', 5);
+}
+foreach {tn sql} {
+  1 { CREATE VIRTUAL TABLE x2 USING fuzzer( [x2 "rules] ) }
+  2 { CREATE VIRTUAL TABLE x2 USING fuzzer( "x2 ""rules" ) }
+  3 { CREATE VIRTUAL TABLE x2 USING fuzzer( 'x2 "rules' ) }
+  4 { CREATE VIRTUAL TABLE x2 USING fuzzer( `x2 "rules` ) }
+} {
+  do_execsql_test 7.2.$tn.1 { DROP TABLE IF EXISTS x2 }
+  do_execsql_test 7.2.$tn.2 $sql
+  do_execsql_test 7.2.$tn.3 { 
+    SELECT word FROM x2 WHERE word MATCH 'aaa' 
+  } {aaa baa aba aab bab abb bba bbb}
+}
+
+#-------------------------------------------------------------------------
+# Test using a fuzzer table in different contexts.
+#
+do_execsql_test 8.1 {
+  CREATE TABLE x3_rules(rule_set, cFrom, cTo, cost);
+  INSERT INTO x3_rules VALUES(2, 'a', 'x', 10);
+  INSERT INTO x3_rules VALUES(2, 'a', 'y',  9);
+  INSERT INTO x3_rules VALUES(2, 'a', 'z',  8);
+  CREATE VIRTUAL TABLE x3 USING fuzzer(x3_rules);
+}
+
+do_execsql_test 8.2.1 {
+  SELECT cFrom, cTo, word 
+    FROM x3_rules CROSS JOIN x3 
+    WHERE word MATCH 'a' AND cost=distance AND ruleset=2;
+} {a x x a y y a z z}
+
+do_execsql_test 8.2.2 {
+  SELECT cFrom, cTo, word 
+    FROM x3 CROSS JOIN x3_rules
+    WHERE word MATCH 'a' AND cost=distance AND ruleset=2;
+} {a z z a y y a x x}
+
+do_execsql_test 8.2.3 {
+  SELECT cFrom, cTo, word 
+    FROM x3_rules, x3 
+    WHERE word MATCH 'a' AND cost=distance AND ruleset=2;
+} {a z z a y y a x x}
+
+do_execsql_test 8.2.4 {
+  SELECT cFrom, cTo, word 
+    FROM x3, x3_rules
+    WHERE word MATCH 'a' AND cost=distance AND ruleset=2;
+} {a z z a y y a x x}
+
+do_execsql_test 8.2.5 {
+  CREATE INDEX i1 ON x3_rules(cost);
+  SELECT cFrom, cTo, word 
+    FROM x3_rules, x3 
+    WHERE word MATCH 'a' AND cost=distance AND ruleset=2;
+} {a z z a y y a x x}
+
+do_execsql_test 8.2.5 {
+  SELECT word FROM x3_rules, x3 WHERE word MATCH x3_rules.cFrom AND ruleset=2;
+} {a z y x a z y x a z y x}
+
+do_execsql_test 8.2.6 {
+  SELECT word FROM x3_rules, x3 
+  WHERE word MATCH x3_rules.cFrom 
+    AND ruleset=2 
+    AND x3_rules.cost=8;
+} {a z y x}
+
+do_execsql_test 8.2.7 {
+  CREATE TABLE t1(a, b);
+  CREATE INDEX i2 ON t1(b);
+  SELECT word, distance FROM x3, t1 
+    WHERE x3.word MATCH t1.a AND ruleset=2 AND distance=t1.b;
+} {}
+
+do_execsql_test 8.2.8 {
+  INSERT INTO x3_rules VALUES(1, 'a', 't',  5);
+  INSERT INTO x3_rules VALUES(1, 'a', 'u',  4);
+  INSERT INTO x3_rules VALUES(1, 'a', 'v',  3);
+  DROP TABLE x3;
+  CREATE VIRTUAL TABLE x3 USING fuzzer(x3_rules);
+  SELECT * FROM x3_rules;
+} {
+  2 a x 10 
+  2 a y 9 
+  2 a z 8 
+  1 a t 5 
+  1 a u 4 
+  1 a v 3
+}
+
+do_catchsql_test 8.2.9 {
+  SELECT word FROM x3 WHERE ruleset=2 AND word MATCH 'a' AND WORD MATCH 'b';
+} {1 {unable to use function MATCH in the requested context}}
+
+do_execsql_test 8.2.10 {
+  SELECT word FROM x3 WHERE ruleset=1 AND word MATCH 'a'
+} {a v u t}
+
+# The term "ruleset<=1" is not handled by the fuzzer module. Instead, it
+# is handled by SQLite, which assumes that all rows have a NULL value in
+# the ruleset column. Since NULL<=1 is never true, this query returns
+# no rows.
+do_execsql_test 8.2.11 {
+  SELECT word FROM x3 WHERE ruleset<=1 AND word MATCH 'a'
+} {}
+
+do_execsql_test 8.2.12 {
+  SELECT word FROM x3 WHERE ruleset=1 AND word MATCH 'a' ORDER BY distance ASC;
+} {a v u t}
+
+do_execsql_test 8.2.13 {
+  SELECT word FROM x3 WHERE ruleset=1 AND word MATCH 'a' ORDER BY distance DESC;
+} {t u v a}
+
+do_execsql_test 8.2.13 {
+  SELECT word FROM x3 WHERE ruleset=1 AND word MATCH 'a' ORDER BY word ASC;
+} {a t u v}
+
+do_execsql_test 8.2.14 {
+  SELECT word FROM x3 WHERE ruleset=1 AND word MATCH 'a' ORDER BY word DESC;
+} {v u t a}
+
+#-------------------------------------------------------------------------
+#
+do_execsql_test 9.1 {
+  CREATE TABLE x4_rules(a, b, c, d);
+  INSERT INTO x4_rules VALUES(0, 'a', 'b', 10);
+  INSERT INTO x4_rules VALUES(0, 'a', 'c', 11);
+  INSERT INTO x4_rules VALUES(0, 'bx', 'zz', 20);
+  INSERT INTO x4_rules VALUES(0, 'cx', 'yy', 15);
+  INSERT INTO x4_rules VALUES(0, 'zz', '!!', 50);
+  CREATE VIRTUAL TABLE x4 USING fuzzer(x4_rules);
+}
+
+do_execsql_test 9.2 {
+  SELECT word, distance FROM x4 WHERE word MATCH 'ax';
+} {ax 0 bx 10 cx 11 yy 26 zz 30 !! 80}
+
+
+do_execsql_test 10.1 {
+  CREATE TABLE x5_rules(a, b, c, d);
+  CREATE VIRTUAL TABLE x5 USING fuzzer(x5_rules);
+}
+
+do_execsql_test 10.2 {
+  SELECT word, distance FROM x5 WHERE word MATCH 
+    'aaaaaaaaaXaaaaaaaaaXaaaaaaaaaXaaaaaaaaaXaaaaaaaaa' || 
+    'aaaaaaaaaXaaaaaaaaaXaaaaaaaaaXaaaaaaaaaXaaaaaaaaa' || 
+    'aaaaaaaaaXaaaaaaaaaXaaaaaaaaaXaaaaaaaaaXaaaaaaaaa'
+} {}
+
+do_execsql_test 10.3 {
+  INSERT INTO x5_rules VALUES(0, 'a', '0.1.2.3.4.5.6.7.8.9.a', 1);
+  DROP TABLE x5;
+  CREATE VIRTUAL TABLE x5 USING fuzzer(x5_rules);
+  SELECT length(word) FROM x5 WHERE word MATCH 'a' LIMIT 50;
+} {1 21 41 61 81}
 
 finish_test
+
+

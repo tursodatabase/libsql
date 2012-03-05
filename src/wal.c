@@ -2397,7 +2397,7 @@ int sqlite3WalRead(
     iOffset = walFrameOffset(iRead, sz) + WAL_FRAME_HDRSIZE;
     *pInWal = 1;
     /* testcase( IS_BIG_INT(iOffset) ); // requires a 4GiB WAL */
-    return sqlite3OsRead(pWal->pWalFd, pOut, nOut, iOffset);
+    return sqlite3OsRead(pWal->pWalFd, pOut, (nOut>sz ? sz : nOut), iOffset);
   }
 
   *pInWal = 0;
@@ -3067,5 +3067,17 @@ int sqlite3WalExclusiveMode(Wal *pWal, int op){
 int sqlite3WalHeapMemory(Wal *pWal){
   return (pWal && pWal->exclusiveMode==WAL_HEAPMEMORY_MODE );
 }
+
+#ifdef SQLITE_ENABLE_ZIPVFS
+/*
+** If the argument is not NULL, it points to a Wal object that holds a
+** read-lock. This function returns the database page-size if it is known,
+** or zero if it is not (or if pWal is NULL).
+*/
+int sqlite3WalFramesize(Wal *pWal){
+  assert( pWal==0 || pWal->readLock>=0 );
+  return (pWal ? pWal->szPage : 0);
+}
+#endif
 
 #endif /* #ifndef SQLITE_OMIT_WAL */
