@@ -1,5 +1,5 @@
-C Add\scompile-time\sdefine\sto\sindicate\sif\sthe\sVFS\ssupports\sthe\sconcept\sof\sa\scurrent\sdirectory\s(as\sWinCE\sand\sWinRT\sdo\snot).\s\sAvoid\susing\sthe\sGetTempPath\sand\sGetFullPathName\sAPIs\son\sWinRT.\s\sSome\stests\sstill\sneed\sadjustments.
-D 2012-03-05T22:52:33.397
+C Fix\sfor\stest\sissues\swhen\sthere\sis\sno\scurrent\sdirectory\ssupport\sdue\sto\sbeing\scompiled\sfor\sWinRT.
+D 2012-03-06T03:00:49.815
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -389,7 +389,7 @@ F test/e_resolve.test dcce9308fb13b934ce29591105d031d3e14fbba6
 F test/e_select.test f5d4b81205701deacfae42051ae200969c41d2c0
 F test/e_select2.test 5c3d3da19c7b3e90ae444579db2b70098599ab92
 F test/e_update.test 161d5dc6a3ed9dd08f5264d13e20735d7a89f00c
-F test/e_uri.test 6f35b491f80dac005c8144f38b2dfb4d96483596
+F test/e_uri.test 2a9f7fbc259751f49019cd8cb778a2e40eebb607
 F test/e_vacuum.test 331da289ae186656cf5f2eb27f577a89c0c221af
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 796c59832e2b9a52842f382ffda8f3e989db03ad
@@ -642,8 +642,8 @@ F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
 F test/quota-glob.test 32901e9eed6705d68ca3faee2a06b73b57cb3c26
-F test/quota.test af47d25c166aa7b33ef25f21bb7f2afb29d82c77
-F test/quota2.test 1b8df088e604f2df573f96e726b5e518cb0cddaa
+F test/quota.test 6911189e2854b7a30420af284fb096e650683f7c
+F test/quota2.test 964ef836996cb512a1cb29aee4dbb4874544fb0d
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/randexpr1.tcl 40dec52119ed3a2b8b2a773bce24b63a3a746459
 F test/randexpr1.test eda062a97e60f9c38ae8d806b03b0ddf23d796df
@@ -679,7 +679,7 @@ F test/selectA.test 06d1032fa9009314c95394f2ca2e60d9f7ae8532
 F test/selectB.test 954e4e49cf1f896d61794e440669e03a27ceea25
 F test/selectC.test 871fb55d884d3de5943c4057ebd22c2459e71977
 F test/server1.test 46803bd3fe8b99b30dbc5ff38ffc756f5c13a118
-F test/shared.test 34945a516532b11182c3eb26e31247eee3c9ae48
+F test/shared.test 52e637790cc98727a64c3bdba330005354cebcab
 F test/shared2.test 03eb4a8d372e290107d34b6ce1809919a698e879
 F test/shared3.test ebf77f023f4bdaa8f74f65822b559e86ce5c6257
 F test/shared4.test 72d90821e8d2fc918a08f16d32880868d8ee8e9d
@@ -718,7 +718,7 @@ F test/tclsqlite.test 1597d353308531527583481d14d9da52ea8ed0af
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test 51edd31c65ed1560dd600b1796e8325df96318e2
 F test/temptrigger.test 26670ed7a39cf2296a7f0a9e0a1d7bdb7abe936d
-F test/tester.tcl 31baf0d92ca1151903b56c0e137ef6a038597c21
+F test/tester.tcl 89ff87968ca1f8101c2ea5dfae430ccd6ec69cad
 F test/thread001.test 7cc2ce08f9cde95964736d11e91f9ab610f82f91
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -879,7 +879,7 @@ F test/unique.test 083c7fff74695bcc27a71d75699deba3595bc9c2
 F test/unixexcl.test a9870e46cc6f8390a494513d4f2bf55b5a8b3e46
 F test/unordered.test f53095cee37851bf30130fa1bf299a8845e837bb
 F test/update.test 8bc86fd7ef1a00014f76dc6a6a7c974df4aef172
-F test/uri.test 0d289d32396bdbc491e9dc845f1a52e13f861e0b
+F test/uri.test 7ef16ff2213177c5e44f57b8dda75fa363eeb2d2
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
 F test/vacuum.test ce91c39f7f91a4273bf620efad21086b5aa6ef1d
 F test/vacuum2.test af432e6e3bfc0ea20a80cb86a03c7d9876d38324
@@ -991,7 +991,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P ed603d75941ace159773b1a22ace84d51b630ad5
-R 8dc77ea6ed646d5c79820ac4402d9981
+P 86c049a171acc3f4a43771f3e7176a90210d7799
+R 314d419e8c040139a13a4d217d38fb16
 U mistachkin
-Z 687362d63f53a7c55f33c0c80d00dc38
+Z 7d9d47d1c51b3cc8f2a457004146579d

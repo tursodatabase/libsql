@@ -20,6 +20,7 @@
 # Commands to manipulate the db and the file-system at a high level:
 #
 #      is_relative_file
+#      test_pwd
 #      copy_file              FROM TO
 #      delete_file            FILENAME
 #      drop_all_tables        ?DB?
@@ -198,6 +199,28 @@ proc do_copy_file {force from to} {
 #
 proc is_relative_file { file } {
   return [expr {[file pathtype $file] != "absolute"}]
+}
+
+# If the VFS supports using the current directory, returns [pwd];
+# otherwise, it returns only the provided suffix string (which is
+# empty by default).
+#
+proc test_pwd { args } {
+  if {[llength $args] > 0} {
+    set suffix1 [lindex $args 0]
+    if {[llength $args] > 1} {
+      set suffix2 [lindex $args 1]
+    } else {
+      set suffix2 $suffix1
+    }
+  } else {
+    set suffix1 ""; set suffix2 ""
+  }
+  ifcapable curdir {
+    return "[pwd]$suffix1"
+  } else {
+    return $suffix2
+  }
 }
 
 # Delete a file or directory

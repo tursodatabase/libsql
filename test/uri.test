@@ -52,12 +52,14 @@ foreach {tn uri file} {
   16     file://localhostPWD/test.db%3Fhello  test.db?hello
 } {
   
+
+  ifcapable !curdir { if {$tn==3} break }
+
   if {$tcl_platform(platform)=="windows"} {
     if {$tn>14} break
-    set uri  [string map [list PWD /[pwd]] $uri]
-  } else {
-    set uri  [string map [list PWD [pwd]] $uri]
   }
+
+  set uri  [string map [list PWD/ [test_pwd /]] $uri]
 
   if {[file isdir $file]} {error "$file is a directory"}
   forcedelete $file
