@@ -1,5 +1,5 @@
-C Merge\sin\sthe\slatest\strunk\schanges.
-D 2012-03-07T16:52:38.729
+C When\scompiled\sfor\sWinRT,\suse\sthe\sCreateFile2\sand\sLoadPackagedLibrary\sfunctions\sinstead\sof\sCreateFile\sand\sLoadLibrary.
+D 2012-03-07T20:11:47.006
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -167,7 +167,7 @@ F src/os.h 38aabd5e3ecd4162332076f55bb09cec02165cca
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 0e3d2942d228d0366fb80a3640f35caf413b66d1
-F src/os_win.c 75d5de49067252dbd98fb8b1a2b2fabe7938e53c
+F src/os_win.c ca9ff6340c72aa45adf5a444a036f3c87f437f0f
 F src/pager.c 3955b62cdb5bb64559607cb474dd12a6c8e1d4a5
 F src/pager.h ef1eaf8593e78f73885c1dfac27ad83bee23bdc5
 F src/parse.y 1ddd71ae55f4b7cbb2672526ea4de023de0f519e
@@ -992,7 +992,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P a811cb01528beab8afd899411d187d4d960ddcc8 b00ccda307caae597c143ab0586f90acb77f79cf
-R 94c51b7fbb263e5f4c52b0a46e76906b
-U drh
-Z b68dd77698ec2e059d1157847d82dd91
+P ca4708531a5e0debbe3d0999a4d210ef2a347972
+R a847917f3cb0516bcd40d98583b4bef4
+U mistachkin
+Z f23820be67631a5e2a405c3799a1a747

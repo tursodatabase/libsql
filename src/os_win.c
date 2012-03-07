@@ -31,6 +31,14 @@
 # define INVALID_FILE_ATTRIBUTES ((DWORD)-1) 
 #endif
 
+#ifndef FILE_FLAG_MASK
+# define FILE_FLAG_MASK          (0xFF3C0000)
+#endif
+
+#ifndef FILE_ATTRIBUTE_MASK
+# define FILE_ATTRIBUTE_MASK     (0x0003FFF7)
+#endif
+
 /* Forward references */
 typedef struct winShm winShm;           /* A connection to shared-memory */
 typedef struct winShmNode winShmNode;   /* A region of shared-memory */
@@ -670,6 +678,24 @@ static struct win_syscall {
 
 #define osMapViewOfFileEx ((LPVOID(WINAPI*)(HANDLE,DWORD,DWORD,DWORD,SIZE_T, \
         LPVOID))aSyscall[65].pCurrent)
+
+#if SQLITE_OS_WINRT && 0 /* DISABLED: Can be compiled with WinRT only. */
+  { "CreateFile2",         (SYSCALL)CreateFile2,                 0 },
+#else
+  { "CreateFile2",         (SYSCALL)0,                           0 },
+#endif
+
+#define osCreateFile2 ((HANDLE(WINAPI*)(LPCWSTR,DWORD,DWORD,DWORD, \
+        LPCREATEFILE2_EXTENDED_PARAMETERS))aSyscall[66].pCurrent)
+
+#if SQLITE_OS_WINRT && 0 /* DISABLED: Can be compiled with WinRT only. */
+  { "LoadPackagedLibrary", (SYSCALL)LoadPackagedLibrary,         0 },
+#else
+  { "LoadPackagedLibrary", (SYSCALL)0,                           0 },
+#endif
+
+#define osLoadPackagedLibrary ((HMODULE(WINAPI*)(LPCWSTR, \
+        DWORD))aSyscall[67].pCurrent)
 
 }; /* End of the overrideable system calls */
 
@@ -3330,6 +3356,22 @@ static int winOpen(
 #endif
 
   if( isNT() ){
+#if SQLITE_OS_WINRT && 0 /* DISABLED: Can be compiled with WinRT only. */
+    CREATEFILE2_EXTENDED_PARAMETERS extendedParameters;
+    extendedParameters.dwSize = sizeof(CREATEFILE2_EXTENDED_PARAMETERS);
+    extendedParameters.dwFileAttributes =
+            dwFlagsAndAttributes & FILE_ATTRIBUTE_MASK;
+    extendedParameters.dwFileFlags = dwFlagsAndAttributes & FILE_FLAG_MASK;
+    extendedParameters.dwSecurityQosFlags = SECURITY_ANONYMOUS;
+    extendedParameters.lpSecurityAttributes = NULL;
+    extendedParameters.hTemplateFile = NULL;
+    while( (h = osCreateFile2((LPCWSTR)zConverted,
+                              dwDesiredAccess,
+                              dwShareMode,
+                              dwCreationDisposition,
+                              &extendedParameters))==INVALID_HANDLE_VALUE &&
+                              retryIoerr(&cnt, &lastErrno) ){}
+#else
     while( (h = osCreateFileW((LPCWSTR)zConverted,
                               dwDesiredAccess,
                               dwShareMode, NULL,
@@ -3337,6 +3379,7 @@ static int winOpen(
                               dwFlagsAndAttributes,
                               NULL))==INVALID_HANDLE_VALUE &&
                               retryIoerr(&cnt, &lastErrno) ){}
+#endif
   }
 #ifdef SQLITE_WIN32_HAS_ANSI
   else{
@@ -3643,7 +3686,11 @@ static void *winDlOpen(sqlite3_vfs *pVfs, const char *zFilename){
     return 0;
   }
   if( isNT() ){
+#if SQLITE_OS_WINRT && 0 /* DISABLED: Can be compiled with WinRT only. */
+    h = osLoadPackagedLibrary((LPCWSTR)zConverted, 0);
+#else
     h = osLoadLibraryW((LPCWSTR)zConverted);
+#endif
   }
 #ifdef SQLITE_WIN32_HAS_ANSI
   else{
@@ -3856,7 +3903,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==66 );
+  assert( ArraySize(aSyscall)==68 );
 
 #if SQLITE_OS_WINRT
   sleepObj = osCreateEventEx(NULL, NULL, CREATE_EVENT_MANUAL_RESET, 
