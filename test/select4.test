@@ -805,4 +805,23 @@ do_test select4-12.1 {
 
 } ;# ifcapable compound
 
+
+# Ticket [3557ad65a076c] - Incorrect DISTINCT processing with an
+# indexed query using IN.
+#
+do_test select4-13.1 {
+  sqlite3 db test.db
+  db eval {
+    CREATE TABLE t13(a,b);
+    INSERT INTO t13 VALUES(1,1);
+    INSERT INTO t13 VALUES(2,1);
+    INSERT INTO t13 VALUES(3,1);
+    INSERT INTO t13 VALUES(2,2);
+    INSERT INTO t13 VALUES(3,2);
+    INSERT INTO t13 VALUES(4,2);
+    CREATE INDEX t13ab ON t13(a,b);
+    SELECT DISTINCT b from t13 WHERE a IN (1,2,3);
+  }
+} {1 2}
+
 finish_test
