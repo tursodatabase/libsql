@@ -273,10 +273,10 @@ signed ::= minus_num.
 // "carglist" is a list of additional constraints that come after the
 // column name and column type in a CREATE TABLE statement.
 //
-carglist ::= carglist carg.
+carglist ::= carglist cname ccons.
 carglist ::= .
-carg ::= CONSTRAINT nm ccons.
-carg ::= ccons.
+cname ::= CONSTRAINT nm(X).           {pParse->constraintName = X;}
+cname ::= .                           {pParse->constraintName.n = 0;}
 ccons ::= DEFAULT term(X).            {sqlite3AddDefaultValue(pParse,&X);}
 ccons ::= DEFAULT LP expr(X) RP.      {sqlite3AddDefaultValue(pParse,&X);}
 ccons ::= DEFAULT PLUS term(X).       {sqlite3AddDefaultValue(pParse,&X);}
