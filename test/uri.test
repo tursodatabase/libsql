@@ -54,9 +54,9 @@ foreach {tn uri file} {
   
   if {$tcl_platform(platform)=="windows"} {
     if {$tn>14} break
-    set uri  [string map [list PWD /[pwd]] $uri]
+    set uri  [string map [list PWD /[get_pwd]] $uri]
   } else {
-    set uri  [string map [list PWD [pwd]] $uri]
+    set uri  [string map [list PWD [get_pwd]] $uri]
   }
 
   if {[file isdir $file]} {error "$file is a directory"}
@@ -274,9 +274,9 @@ foreach {tn uri res} {
 } {
 
   if {$tcl_platform(platform)=="windows"} {
-    set uri  [string map [list PWD [string range [pwd] 3 end]] $uri]
+    set uri  [string map [list PWD [string range [get_pwd] 3 end]] $uri]
   } else {
-    set uri  [string map [list PWD [string range [pwd] 1 end]] $uri]
+    set uri  [string map [list PWD [string range [get_pwd] 1 end]] $uri]
   }
 
   do_test 6.$tn {

@@ -535,7 +535,7 @@ proc copy_on_mj_delete {method filename args} {
   return SQLITE_OK
 }
 
-set pwd [pwd]
+set pwd [get_pwd]
 foreach {tn1 tcl} {
   1 { set prefix "test.db" }
   2 { 
@@ -1001,7 +1001,7 @@ do_test pager1-5.4.1 {
   #      the master-journal name encoded as utf-8 with no nul term.
   #
   set mj_pointer [expr {
-    20 + [string length [pwd]] + [string length "/test.db-mjXXXXXX9XX"]
+    20 + [string length [get_pwd]] + [string length "/test.db-mjXXXXXX9XX"]
   }]
   expr {$::max_journal==(512+2*(1024+8)+$mj_pointer)}
 } 1
@@ -1020,7 +1020,7 @@ do_test pager1-5.4.2 {
   # written starting at the next (in this case 512 byte) sector boundary.
   #
   set mj_pointer [expr {
-    20 + [string length [pwd]] + [string length "/test.db-mjXXXXXX9XX"]
+    20 + [string length [get_pwd]] + [string length "/test.db-mjXXXXXX9XX"]
   }]
   expr {$::max_journal==(((512+2*(1024+8)+511)/512)*512 + $mj_pointer)}
 } 1

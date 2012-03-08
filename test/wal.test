@@ -1477,7 +1477,7 @@ foreach pgsz {512 1024 2048 4096 8192 16384 32768 65536} {
 # Test that when 1 or more pages are recovered from a WAL file, 
 # sqlite3_log() is invoked to report this to the user.
 #
-set walfile [file nativename [file join [pwd] test.db-wal]]
+set walfile [file nativename [file join [get_pwd] test.db-wal]]
 catch {db close}
 forcedelete test.db
 do_test wal-23.1 {
