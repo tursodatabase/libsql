@@ -1,5 +1,5 @@
-C Merge\sand\smanually\sresolve\stesting\supdates\sfrom\strunk.
-D 2012-03-08T20:22:42.680
+C Merge\stest\scurrent\sdirectory\svalue\sfix\sfrom\strunk\sand\sfix\suri\stests.
+D 2012-03-08T20:39:08.983
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -719,7 +719,7 @@ F test/tclsqlite.test 1597d353308531527583481d14d9da52ea8ed0af
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test 51edd31c65ed1560dd600b1796e8325df96318e2
 F test/temptrigger.test 26670ed7a39cf2296a7f0a9e0a1d7bdb7abe936d
-F test/tester.tcl b443ad34242882018924a70fc87fca6f4c64953f
+F test/tester.tcl d06382066250b1c68b199d3656d090db5f9a9a16
 F test/thread001.test 7cc2ce08f9cde95964736d11e91f9ab610f82f91
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -880,7 +880,7 @@ F test/unique.test 083c7fff74695bcc27a71d75699deba3595bc9c2
 F test/unixexcl.test a9870e46cc6f8390a494513d4f2bf55b5a8b3e46
 F test/unordered.test f53095cee37851bf30130fa1bf299a8845e837bb
 F test/update.test 8bc86fd7ef1a00014f76dc6a6a7c974df4aef172
-F test/uri.test c23abcb4c4c762b2a57f2d330ede9522de081835
+F test/uri.test 63e03df051620a18f794b4f4adcdefb3c23b6751
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
 F test/vacuum.test ce91c39f7f91a4273bf620efad21086b5aa6ef1d
 F test/vacuum2.test af432e6e3bfc0ea20a80cb86a03c7d9876d38324
@@ -992,7 +992,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 27d6942ca270d6e724ffd230ed58a8683d67dfa4 82bcd7ec1531f6d71c079578434c58d3ce46a1de
-R caba4c03942074fd6664aa09d852cc9e
+P 5eecdb44dd809e91002b8ecf59ada72f4b56549a efee39e64bd95c284220fdb0ae8ee6c1847fadab
+R 4259e5e6648b2026d8327fd947148d80
 U mistachkin
-Z 3683990d956f3e16ca5627ca9508a920
+Z 18b9a0728cfebb78df49400835a7c03c
