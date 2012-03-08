@@ -276,9 +276,9 @@ foreach {tn uri res} {
 } {
 
   if {$tcl_platform(platform)=="windows"} {
-    set uri  [string map [list PWD [string range [pwd] 3 end]] $uri]
+    set uri  [string map [list PWD [string range [get_pwd] 3 end]] $uri]
   } else {
-    set uri  [string map [list PWD [string range [pwd] 1 end]] $uri]
+    set uri  [string map [list PWD [string range [get_pwd] 1 end]] $uri]
   }
 
   do_test 6.$tn {

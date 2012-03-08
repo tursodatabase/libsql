@@ -21,6 +21,7 @@
 #
 #      is_relative_file
 #      test_pwd
+#      get_pwd
 #      copy_file              FROM TO
 #      delete_file            FILENAME
 #      drop_all_tables        ?DB?
@@ -150,6 +151,18 @@ proc getFileRetryDelay {} {
   return $::G(file-retry-delay)
 }
 
+# Return the string representing the name of the current directory.  On
+# Windows, the result is "normalized" to whatever our parent command shell
+# is using to prevent case-mismatch issues.
+#
+proc get_pwd {} {
+  if {$::tcl_platform(platform) eq "windows"} {
+    return [string trim [exec -- $::env(ComSpec) /c echo %CD%]]
+  } else {
+    return [pwd]
+  }
+}
+
 # Copy file $from into $to. This is used because some versions of
 # TCL for windows (notably the 8.4.1 binary package shipped with the
 # current mingw release) have a broken "file copy" command.
@@ -217,7 +230,7 @@ proc test_pwd { args } {
     set suffix1 ""; set suffix2 ""
   }
   ifcapable curdir {
-    return "[pwd]$suffix1"
+    return "[get_pwd]$suffix1"
   } else {
     return $suffix2
   }
@@ -1014,7 +1027,7 @@ proc crashsql {args} {
   # $crashfile gets compared to the native filename in 
   # cfSync(), which can be different then what TCL uses by
   # default, so here we force it to the "nativename" format.
-  set cfile [string map {\\ \\\\} [file nativename [file join [pwd] $crashfile]]]
+  set cfile [string map {\\ \\\\} [file nativename [file join [get_pwd] $crashfile]]]
 
   set f [open crash.tcl w]
   puts $f "sqlite3_crash_enable 1"

@@ -524,7 +524,7 @@ db close
 # file-system is saved just before the xDelete() call to remove the 
 # master journal file from the file-system.
 #
-set pwd [pwd]
+set pwd [get_pwd]
 testvfs tv -default 1
 tv script copy_on_mj_delete
 set ::mj_filename_length 0
@@ -1019,7 +1019,7 @@ do_test pager1-5.4.1 {
   #         part of the total size; otherwise, they are.
   #
   ifcapable curdir {
-    set mj_pointer [expr {$mj_pointer + [string length [pwd]] + 1}]
+    set mj_pointer [expr {$mj_pointer + [string length [get_pwd]] + 1}]
   }
   expr {$::max_journal==(512+2*(1024+8)+$mj_pointer)}
 } 1
@@ -1047,7 +1047,7 @@ do_test pager1-5.4.2 {
   #         size; otherwise, they are.
   #
   ifcapable curdir {
-    set mj_pointer [expr {$mj_pointer + [string length [pwd]] + 1}]
+    set mj_pointer [expr {$mj_pointer + [string length [get_pwd]] + 1}]
   }
   expr {$::max_journal==(((512+2*(1024+8)+511)/512)*512 + $mj_pointer)}
 } 1
