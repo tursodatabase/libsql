@@ -46,6 +46,7 @@ proc fts3_integrity_check {tbl} {
   fts3_read2 $tbl 1 A
 
   foreach zTerm [array names A] {
+    #puts $zTerm
     foreach doclist $A($zTerm) {
       set docid 0
       while {[string length $doclist]>0} {
@@ -233,7 +234,8 @@ proc fts3_readleaf {blob} {
 
     set zTerm [string range $zPrev 0 [expr $nPrefix-1]]
     append zTerm [gobble_string blob $nSuffix]
-    set doclist [gobble_string blob [gobble_varint blob]]
+    set nDoclist [gobble_varint blob]
+    set doclist [gobble_string blob $nDoclist]
 
     lappend terms $zTerm $doclist
     set zPrev $zTerm
@@ -249,7 +251,9 @@ proc fts3_read2 {tbl where varname} {
             FROM ${tbl}_segdir WHERE $where
             ORDER BY level ASC, idx DESC
   " {
-    if {$start_block == 0} {
+    set c 0
+    binary scan $root c c
+    if {$c==0} {
       foreach {t d} [fts3_readleaf $root] { lappend a($t) $d }
     } else {
       db eval " SELECT block 
@@ -258,7 +262,6 @@ proc fts3_read2 {tbl where varname} {
                 ORDER BY blockid
       " {
         foreach {t d} [fts3_readleaf $block] { lappend a($t) $d }
-
       }
     }
   }

@@ -67,6 +67,9 @@ extern const sqlite3_api_routines *sqlite3_api;
 #ifndef MIN
 # define MIN(x,y) ((x)<(y)?(x):(y))
 #endif
+#ifndef MAX
+# define MAX(x,y) ((x)>(y)?(x):(y))
+#endif
 
 /*
 ** Maximum length of a varint encoded integer. The varint format is different
@@ -197,7 +200,7 @@ struct Fts3Table {
   /* Precompiled statements used by the implementation. Each of these 
   ** statements is run and reset within a single virtual table API call. 
   */
-  sqlite3_stmt *aStmt[28];
+  sqlite3_stmt *aStmt[35];
 
   char *zReadExprlist;
   char *zWriteExprlist;
