@@ -155,7 +155,13 @@ proc getFileRetryDelay {} {
 #
 proc get_pwd {} {
   if {$::tcl_platform(platform) eq "windows"} {
-    return [string trim [exec -- $::env(ComSpec) /c echo %CD%]]
+    #
+    # NOTE: Cannot use [file normalize] here because it would alter the
+    #       case of the result to what Tcl considers canonical, which would
+    #       defeat the purpose of this procedure.
+    #
+    return [string map [list \\ /] \
+        [string trim [exec -- $::env(ComSpec) /c echo %CD%]]]
   } else {
     return [pwd]
   }

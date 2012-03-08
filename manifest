@@ -1,5 +1,5 @@
-C On\sWindows,\smake\ssure\sthe\scurrent\sdirectory\svalue\sused\sby\sthe\stest\ssuite\sis\s'normalized'\sto\swhat\sthe\sparent\scommand\sshell\ssees.\s\sAlso,\sclean\sthe\stest\sdirectories\sused\sby\sthe\squota2.test\sfile.
-D 2012-03-08T20:00:36.181
+C On\sWindows,\smake\ssure\sthe\sreturned\stest\scurrent\sdirectory\svalue\sdoes\snot\scontain\sany\sbackslashes.
+D 2012-03-08T20:28:31.444
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -719,7 +719,7 @@ F test/tclsqlite.test 1597d353308531527583481d14d9da52ea8ed0af
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test 51edd31c65ed1560dd600b1796e8325df96318e2
 F test/temptrigger.test 26670ed7a39cf2296a7f0a9e0a1d7bdb7abe936d
-F test/tester.tcl 1fd85b1f508eab104085427c2c4b77c81ad5adb6
+F test/tester.tcl 7db9e90e4a9cc57ea92118ee011634f86dc8e847
 F test/thread001.test 7cc2ce08f9cde95964736d11e91f9ab610f82f91
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -992,7 +992,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P b00ccda307caae597c143ab0586f90acb77f79cf
-R 73d2728d68d6731f1970faf64d7b9793
+P 82bcd7ec1531f6d71c079578434c58d3ce46a1de
+R 481f07eae7a20043918617293f6bf255
 U mistachkin
-Z 6e64cf730fea76ed50d0faa61eface55
+Z e4b7999e3f65d6915663c98d5d60a2e1
