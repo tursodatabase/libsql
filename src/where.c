@@ -4342,10 +4342,25 @@ static Bitmask codeOneLoopStart(
     ** Then for every term xN, evaluate as the subexpression: xN AND z
     ** That way, terms in y that are factored into the disjunction will
     ** be picked up by the recursive calls to sqlite3WhereBegin() below.
+    **
+    ** Actually, each subexpression is converted to "xN AND w" where w is
+    ** the "interesting" terms of z - terms that did not originate in the
+    ** ON or USING clause of a LEFT JOIN, and terms that are usable as 
+    ** indices.
     */
     if( pWC->nTerm>1 ){
-      pAndExpr = sqlite3ExprAlloc(pParse->db, TK_AND, 0, 0);
-      pAndExpr->pRight = pWhere;
+      int ii;
+      for(ii=0; ii<pWC->nTerm; ii++){
+        Expr *pExpr = pWC->a[ii].pExpr;
+        if( ExprHasProperty(pExpr, EP_FromJoin) ) continue;
+        if( pWC->a[ii].wtFlags & (TERM_VIRTUAL|TERM_ORINFO) ) continue;
+        if( (pWC->a[ii].eOperator & WO_ALL)==0 ) continue;
+        pExpr = sqlite3ExprDup(pParse->db, pExpr, 0);
+        pAndExpr = sqlite3ExprAnd(pParse->db, pAndExpr, pExpr);
+      }
+      if( pAndExpr ){
+        pAndExpr = sqlite3PExpr(pParse, TK_AND, 0, pAndExpr, 0);
+      }
     }
 
     for(ii=0; ii<pOrWc->nTerm; ii++){
@@ -4387,7 +4402,10 @@ static Bitmask codeOneLoopStart(
         }
       }
     }
-    sqlite3DbFree(pParse->db, pAndExpr);
+    if( pAndExpr ){
+      pAndExpr->pLeft = 0;
+      sqlite3ExprDelete(pParse->db, pAndExpr);
+    }
     sqlite3VdbeChangeP1(v, iRetInit, sqlite3VdbeCurrentAddr(v));
     sqlite3VdbeAddOp2(v, OP_Goto, 0, pLevel->addrBrk);
     sqlite3VdbeResolveLabel(v, iLoopBody);

@@ -1,5 +1,5 @@
-C On\sWindows,\smake\ssure\sthe\sreturned\stest\scurrent\sdirectory\svalue\sdoes\snot\scontain\sany\sbackslashes.
-D 2012-03-08T20:28:31.444
+C Candidate\sfix\sfor\sthe\soptimizer\sproblem\sdescribed\sin\sticket\s\n[b7c8682cc17f3]\swhich\scan\scauses\sa\sLEFT\sJOIN\sto\sbe\schanged\ninto\sa\sINNER\sJOIN\sif\sthere\sare\sOR\sterms\sin\sthe\sWHERE\sclause.
+D 2012-03-09T22:02:08.875
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -253,7 +253,7 @@ F src/vtab.c ab90fb600a3f5e4b7c48d22a4cdb2d6b23239847
 F src/wal.c 7bb3ad807afc7973406c805d5157ec7a2f65e146
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c f2cf59751f7facb4c422adf83ddc989aa5772874
+F src/where.c d4ce63a2887dab037d9d9830abbfcac2643e308a
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -937,10 +937,10 @@ F test/where3.test 667e75642102c97a00bf9b23d3cb267db321d006
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
-F test/where7.test 814d7373413398e074f134cff5f8872e2c08bd3b
+F test/where7.test 5c566388f0cc318b0032ce860f4ac5548e3c265a
 F test/where8.test a6c740fd286d7883e274e17b6230a9d672a7ab1f
 F test/where8m.test da346596e19d54f0aba35ebade032a7c47d79739
-F test/where9.test cd4ee5e455799ddba7041e5ac539044bb24e3874
+F test/where9.test ae98dc22ef9b6f2bc81e9f164e41b38faa9bda06
 F test/whereA.test 24c234263c8fe358f079d5e57d884fb569d2da0a
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/whereC.test 13ff5ec0dba407c0e0c075980c75b3275a6774e5
@@ -992,7 +992,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 82bcd7ec1531f6d71c079578434c58d3ce46a1de
-R 481f07eae7a20043918617293f6bf255
-U mistachkin
-Z e4b7999e3f65d6915663c98d5d60a2e1
+P efee39e64bd95c284220fdb0ae8ee6c1847fadab
+R bea1320a1e93f035f866bb48777a9a0b
+U drh
+Z baafcf2bb8e1f4793d13146917501256
