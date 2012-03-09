@@ -4132,9 +4132,18 @@ static int fts3IncrmergeChomp(
   return rc;
 }
 
+/*
+** Attempt an incremental merge that writes nMerge leaf pages.
+**
+** Incremental merges happen two segments at a time.  The two
+** segments to be merged are the two oldest segments (the ones with
+** the smallest index) in the highest level that has at least
+** nMin segments.  Multiple segment pair merges might occur in
+** an attempt to write the quota of nMerge leaf pages.
+*/
 static int fts3Incrmerge(Fts3Table *p, int nMerge, int nMin){
   int rc = SQLITE_OK;             /* Return code */
-  int nRem = nMerge;
+  int nRem = nMerge;              /* Number of leaf pages yet to  be written */
 
   assert( nMin>=2 );
 
@@ -4161,7 +4170,7 @@ static int fts3Incrmerge(Fts3Table *p, int nMerge, int nMin){
     if( rc!=SQLITE_OK ) return rc;
 
     /* Open a cursor to iterate through the contents of indexes 0 and 1 of
-     ** the selected absolute level. */
+    ** the selected absolute level. */
     rc = fts3IncrmergeCsr(p, iAbsLevel, &csr);
     if( rc!=SQLITE_OK ) return rc;
     memset(&filter, 0, sizeof(Fts3SegFilter));
@@ -4171,13 +4180,13 @@ static int fts3Incrmerge(Fts3Table *p, int nMerge, int nMin){
     assert( rc!=SQLITE_ABORT );
     if( SQLITE_ROW==(rc = sqlite3Fts3SegReaderStep(p, &csr)) ){
       rc = fts3IncrmergeWriter(p, iAbsLevel, csr.zTerm, csr.nTerm, &writer);
-    assert( rc!=SQLITE_ABORT );
+      assert( rc!=SQLITE_ABORT );
       if( rc==SQLITE_OK ){
         do {
           rc = fts3IncrmergeAppend(p, &writer, &csr);
-    assert( rc!=SQLITE_ABORT );
+          assert( rc!=SQLITE_ABORT );
           if( rc==SQLITE_OK ) rc = sqlite3Fts3SegReaderStep(p, &csr);
-    assert( rc!=SQLITE_ABORT );
+          assert( rc!=SQLITE_ABORT );
           if( writer.nWork>=nRem && rc==SQLITE_ROW ) rc = SQLITE_OK;
         }while( rc==SQLITE_ROW );
       }
@@ -4197,10 +4206,15 @@ static int fts3Incrmerge(Fts3Table *p, int nMerge, int nMin){
   return rc;
 }
 
-static int fts3_isdigit(char c){
-  return (c>='0' && c<='9');
-}
-
+/*
+** Process statements of the form:
+**
+**    INSERT INTO table(table) VALUES('merge=A,B');
+**
+** A and B are integers that decode to be the number of leaf pages
+** written for the merge, and the minimum number of segments on a level
+** before it will be selected for a merge, respectively.
+*/
 static int fts3DoIncrmerge(Fts3Table *p, const char *zParam){
   int rc;
   int nMin = (FTS3_MERGE_COUNT / 2);
@@ -4208,7 +4222,7 @@ static int fts3DoIncrmerge(Fts3Table *p, const char *zParam){
   const char *z = zParam;
 
   /* Read the first integer value */
-  for(z=zParam; fts3_isdigit(z[0]); z++){
+  for(z=zParam; z[0]>='0' && z[0]<='9'; z++){
     nMerge = nMerge * 10 + (z[0] - '0');
   }
 
@@ -4217,7 +4231,7 @@ static int fts3DoIncrmerge(Fts3Table *p, const char *zParam){
   if( z[0]==',' && z[1]!='\0' ){
     z++;
     nMin = 0;
-    while( fts3_isdigit(z[0]) ){
+    while( z[0]>='0' && z[0]<='9' ){
       nMin = nMin * 10 + (z[0] - '0');
       z++;
     }
