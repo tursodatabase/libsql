@@ -1,5 +1,5 @@
-C More\schanges\srequired\sto\scompile\sfor\sWinRT\susing\sVS\s11\sbeta.\s\sAlso,\sreplace\smore\sAPIs\swith\stheir\sWinRT\salternatives.
-D 2012-03-13T01:16:57.353
+C Cleanup\sthe\sWindows\ssyscall\stable,\sremoving\sthe\sunused\sCreateFileMapping\sentry.
+D 2012-03-13T01:30:20.255
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -167,7 +167,7 @@ F src/os.h 38aabd5e3ecd4162332076f55bb09cec02165cca
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 0e3d2942d228d0366fb80a3640f35caf413b66d1
-F src/os_win.c 3dc4b1a7bafdca23f71439b0ca691668fb65f3c1
+F src/os_win.c 8e0c3142f06e049cead46bc1d83bbc939f582a67
 F src/pager.c 3955b62cdb5bb64559607cb474dd12a6c8e1d4a5
 F src/pager.h ef1eaf8593e78f73885c1dfac27ad83bee23bdc5
 F src/parse.y 1ddd71ae55f4b7cbb2672526ea4de023de0f519e
@@ -992,7 +992,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 88963c33c19a051280f7f31bdc1b322d6837cf43
-R d6ea1d137f9bbc6d3552b399f2e0cfe5
+P 6b997d9c32076c480ff4f101ff93bae3f443e252
+R 6cc20b48ffd82e276454874a3dd9ea0d
 U mistachkin
-Z 69539dbb9e14faecbb37484031cfeaaf
+Z b8edd09153177d0ea866248aa43a320b
