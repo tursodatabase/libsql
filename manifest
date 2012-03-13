@@ -1,5 +1,5 @@
-C Minor\scommenting\sand\sstylistic\schanges\sonly.
-D 2012-03-09T12:52:43.195
+C Fix\ssome\sbugs\sin\sthe\sincremental\smerge\scode.\sSome\sremain.
+D 2012-03-13T19:56:34.883
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/fts3_test.c 6b7cc68aef4efb084e1449f7d20c4b20d3bdf6b4
 F ext/fts3/fts3_tokenizer.c 3da7254a9881f7e270ab28e2004e0d22b3212bce
 F ext/fts3/fts3_tokenizer.h 66dec98e365854b6cd2d54f1a96bb6d428fc5a68
 F ext/fts3/fts3_tokenizer1.c 0dde8f307b8045565cf63797ba9acfaff1c50c68
-F ext/fts3/fts3_write.c 80863b8ef7849c8c225071258e13326f30bf00f3
+F ext/fts3/fts3_write.c d26ef19833b4a5058f4bd0c8b9f00b3d197d0e28
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
@@ -993,7 +993,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 741b8f897750eac3c9774fd65de7e40bb89781b1
-R ef47488babfef36b031a8c9c8f291bcb
-U drh
-Z 0b165accece5454f4134f86269851728
+P a1747086c5e0c152fcf4bd9fa80a61b6f03f4a94
+R 4dfb01ab70bf7b72368d08052c15c6ea
+U dan
+Z 2b44052e1e88ac3fc7ddfb07e6e262a4

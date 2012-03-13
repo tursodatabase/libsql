@@ -3721,15 +3721,20 @@ static int fts3IncrmergeLoad(
       pWriter->iAbsLevel = iAbsLevel;
       pWriter->iIdx = iIdx;
 
+      for(i=nHeight+1; i<FTS_MAX_APPENDABLE_HEIGHT; i++){
+        pWriter->aLayer[i].iBlock = pWriter->iStart + i*pWriter->nLeafEst;
+      }
+
       pLayer = &pWriter->aLayer[nHeight];
-      pLayer->iBlock = pWriter->iStart + nHeight*FTS_MAX_APPENDABLE_HEIGHT;
+      pLayer->iBlock = pWriter->iStart;
+      pLayer->iBlock += pWriter->nLeafEst*FTS_MAX_APPENDABLE_HEIGHT;
       blobGrowBuffer(&pLayer->block, MAX(nRoot, p->nNodeSize), &rc);
       if( rc==SQLITE_OK ){
         memcpy(pLayer->block.a, aRoot, nRoot);
         pLayer->block.n = nRoot;
       }
 
-      for(i=(int)aRoot[0]; i>=0 && rc==SQLITE_OK; i--){
+      for(i=nHeight; i>=0 && rc==SQLITE_OK; i--){
         pLayer = &pWriter->aLayer[i];
         NodeReader reader;
 
@@ -3866,14 +3871,14 @@ static int fts3IncrmergeWriter(
     rc = fts3WriteSegment(p, pWriter->iEnd, 0, 0);
   }
 
+  pWriter->iAbsLevel = iAbsLevel;
+  pWriter->nLeafEst = nLeafEst;
+  pWriter->iIdx = iIdx;
+
   /* Set up the array of LayerWriter objects */
   for(i=0; i<FTS_MAX_APPENDABLE_HEIGHT; i++){
     pWriter->aLayer[i].iBlock = pWriter->iStart + i*pWriter->nLeafEst;
   }
-
-  pWriter->iAbsLevel = iAbsLevel;
-  pWriter->nLeafEst = nLeafEst;
-  pWriter->iIdx = iIdx;
   return SQLITE_OK;
 }
 
@@ -3962,6 +3967,14 @@ static void fts3StartNode(Blob *pNode, int iHeight, sqlite3_int64 iChild){
   }
 }
 
+/*
+** The first two arguments are a pointer to and the size of a segment b-tree
+** node. The node may be a leaf or an internal node.
+**
+** This function creates a new node image in blob object *pNew by copying
+** all terms that are greater than or equal to zTerm/nTerm (for leaf nodes)
+** or greater than zTerm/nTerm (for internal nodes) from aNode/nNode.
+*/
 static int fts3TruncateNode(
   const char *aNode,              /* Current node image */
   int nNode,                      /* Size of aNode in bytes */
@@ -3974,6 +3987,7 @@ static int fts3TruncateNode(
   Blob prev = {0, 0, 0};
   int rc = SQLITE_OK;
   int bStarted = 0;
+  int bLeaf = aNode[0]=='\0';     /* True for a leaf node */
 
   /* Allocate required output space */
   blobGrowBuffer(pNew, nNode, &rc);
@@ -3986,7 +4000,8 @@ static int fts3TruncateNode(
       rc = nodeReaderNext(&reader)
   ){
     if( bStarted==0 ){
-      if( fts3TermCmp(reader.term.a, reader.term.n, zTerm, nTerm)<0 ) continue;
+      int res = fts3TermCmp(reader.term.a, reader.term.n, zTerm, nTerm);
+      if( res<0 || (bLeaf==0 && res==0) ) continue;
       pNew->a[0] = aNode[0];
       fts3StartNode(pNew, (int)aNode[0], reader.iChild);
       *piBlock = reader.iChild;
@@ -4180,13 +4195,10 @@ static int fts3Incrmerge(Fts3Table *p, int nMerge, int nMin){
     assert( rc!=SQLITE_ABORT );
     if( SQLITE_ROW==(rc = sqlite3Fts3SegReaderStep(p, &csr)) ){
       rc = fts3IncrmergeWriter(p, iAbsLevel, csr.zTerm, csr.nTerm, &writer);
-      assert( rc!=SQLITE_ABORT );
       if( rc==SQLITE_OK ){
         do {
           rc = fts3IncrmergeAppend(p, &writer, &csr);
-          assert( rc!=SQLITE_ABORT );
           if( rc==SQLITE_OK ) rc = sqlite3Fts3SegReaderStep(p, &csr);
-          assert( rc!=SQLITE_ABORT );
           if( writer.nWork>=nRem && rc==SQLITE_ROW ) rc = SQLITE_OK;
         }while( rc==SQLITE_ROW );
       }
