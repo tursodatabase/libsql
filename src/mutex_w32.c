@@ -109,6 +109,8 @@ static int winMutex_isInit = 0;
 */
 static long winMutex_lock = 0;
 
+extern void sqlite3_win32_sleep(DWORD milliseconds); /* os_win.c */
+
 static int winMutexInit(void){ 
   /* The first to increment to 1 does actual initialization */
   if( InterlockedCompareExchange(&winMutex_lock, 1, 0)==0 ){
@@ -124,11 +126,7 @@ static int winMutexInit(void){
   }else{
     /* Someone else is in the process of initing the static mutexes */
     while( !winMutex_isInit ){
-#if SQLITE_OS_WINRT
-      Yield(); /* NOP */
-#else
-      Sleep(1);
-#endif
+      sqlite3_win32_sleep(1);
     }
   }
   return SQLITE_OK; 

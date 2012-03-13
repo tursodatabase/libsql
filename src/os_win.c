@@ -25,6 +25,13 @@
 #include "os_common.h"
 
 /*
+** Macro to find the minimum of two numeric values.
+*/
+#ifndef MIN
+# define MIN(x,y) ((x)<(y)?(x):(y))
+#endif
+
+/*
 ** Some Microsoft compilers lack this definition.
 */
 #ifndef INVALID_FILE_ATTRIBUTES
@@ -86,6 +93,13 @@ struct winFile {
 */
 #define WINFILE_PERSIST_WAL     0x04   /* Persistent WAL mode */
 #define WINFILE_PSOW            0x10   /* SQLITE_IOCAP_POWERSAFE_OVERWRITE */
+
+/*
+ * The size of the buffer used by sqlite3_win32_write_debug().
+ */
+#ifndef SQLITE_WIN32_DBG_BUF_SIZE
+#  define SQLITE_WIN32_DBG_BUF_SIZE   (4096-sizeof(DWORD))
+#endif
 
 /*
  * If compiled with SQLITE_WIN32_MALLOC on Windows, we will use the
@@ -748,6 +762,22 @@ static struct win_syscall {
 #define osGetNativeSystemInfo ((VOID(WINAPI*)( \
         LPSYSTEM_INFO))aSyscall[68].pCurrent)
 
+#if defined(SQLITE_WIN32_HAS_ANSI)
+  { "OutputDebugStringA",      (SYSCALL)OutputDebugStringA,      0 },
+#else
+  { "OutputDebugStringA",      (SYSCALL)0,                       0 },
+#endif
+
+#define osOutputDebugStringA ((VOID(WINAPI*)(LPCSTR))aSyscall[69].pCurrent)
+
+#if defined(SQLITE_WIN32_HAS_WIDE)
+  { "OutputDebugStringW",      (SYSCALL)OutputDebugStringW,      0 },
+#else
+  { "OutputDebugStringW",      (SYSCALL)0,                       0 },
+#endif
+
+#define osOutputDebugStringW ((VOID(WINAPI*)(LPCWSTR))aSyscall[70].pCurrent)
+
 }; /* End of the overrideable system calls */
 
 /*
@@ -834,19 +864,61 @@ static const char *winNextSystemCall(sqlite3_vfs *p, const char *zName){
 }
 
 /*
-** The following routine Suspends the thread for at least ms milliseconds.  This is equivalent
-** to the win32 Sleep() interface.
+** This function outputs the specified (ANSI) string to the Win32 debugger
+** (if available).
+*/
+
+void sqlite3_win32_write_debug(char *zBuf, int nBuf){
+  char zDbgBuf[SQLITE_WIN32_DBG_BUF_SIZE];
+  int nMin = MIN(nBuf,SQLITE_WIN32_DBG_BUF_SIZE-1); /* may be negative. */
+  if( nMin<-1 ) nMin = -1; /* all negative values become -1. */
+#if defined(SQLITE_WIN32_HAS_ANSI)
+  if( nMin>0 ){
+    memset(zDbgBuf, 0, SQLITE_WIN32_DBG_BUF_SIZE);
+    memcpy(zDbgBuf, zBuf, nMin);
+    OutputDebugStringA(zDbgBuf);
+  }else{
+    OutputDebugStringA(zBuf);
+  }
+#elif defined(SQLITE_WIN32_HAS_WIDE)
+  memset(zDbgBuf, 0, SQLITE_WIN32_DBG_BUF_SIZE);
+  if ( osMultiByteToWideChar(
+          osAreFileApisANSI() ? CP_ACP : CP_OEMCP, 0, zBuf,
+          nMin, zDbgBuf, SQLITE_WIN32_DBG_BUF_SIZE/sizeof(WCHAR))<=0 ){
+    return;
+  }
+  OutputDebugStringW(zDbgBuf);
+#else
+  if( nMin>0 ){
+    memset(zDbgBuf, 0, SQLITE_WIN32_DBG_BUF_SIZE);
+    memcpy(zDbgBuf, zBuf, nMin);
+    fprintf(stderr, "%s", zDbgBuf);
+  }else{
+    fprintf(stderr, "%s", zBuf);
+  }
+#endif
+}
+
+/*
+** The following routine suspends the current thread for at least ms
+** milliseconds.  This is equivalent to the Win32 Sleep() interface.
 */
 #if SQLITE_OS_WINRT
-static HANDLE sleepObj;
-static void portableSleep(int ms){
-  osWaitForSingleObjectEx(sleepObj, ms, FALSE);
-}
-#else
-static void portableSleep(int ms){
-  osSleep(ms); 
-}
+static HANDLE sleepObj = NULL;
 #endif
+
+void sqlite3_win32_sleep(DWORD milliseconds){
+#if SQLITE_OS_WINRT
+  if ( sleepObj==NULL ){
+    sleepObj = osCreateEventExW(NULL, NULL, CREATE_EVENT_MANUAL_RESET,
+                                SYNCHRONIZE);
+  }
+  assert( sleepObj!=NULL );
+  osWaitForSingleObjectEx(sleepObj, milliseconds, FALSE);
+#else
+  osSleep(milliseconds);
+#endif
+}
 
 /*
 ** Return true (non-zero) if we are running under WinNT, Win2K, WinXP,
@@ -1351,7 +1423,7 @@ static int retryIoerr(int *pnRetry, DWORD *pError){
   if( e==ERROR_ACCESS_DENIED ||
       e==ERROR_LOCK_VIOLATION ||
       e==ERROR_SHARING_VIOLATION ){
-    portableSleep(win32IoerrRetryDelay*(1+*pnRetry));
+    sqlite3_win32_sleep(win32IoerrRetryDelay*(1+*pnRetry));
     ++*pnRetry;
     return 1;
   }
@@ -1824,7 +1896,7 @@ static int winClose(sqlite3_file *id){
   do{
     rc = osCloseHandle(pFile->h);
     /* SimulateIOError( rc=0; cnt=MX_CLOSE_ATTEMPT; ); */
-  }while( rc==0 && ++cnt < MX_CLOSE_ATTEMPT && (portableSleep(100), 1) );
+  }while( rc==0 && ++cnt < MX_CLOSE_ATTEMPT && (sqlite3_win32_sleep(100), 1) );
 #if SQLITE_OS_WINCE
 #define WINCE_DELETION_ATTEMPTS 3
   winceDestroyLock(pFile);
@@ -1835,7 +1907,7 @@ static int winClose(sqlite3_file *id){
         && osGetFileAttributesW(pFile->zDeleteOnClose)!=0xffffffff 
         && cnt++ < WINCE_DELETION_ATTEMPTS
     ){
-       portableSleep(100);  /* Wait a little before trying again */
+       sqlite3_win32_sleep(100);  /* Wait a little before trying again */
     }
     sqlite3_free(pFile->zDeleteOnClose);
   }
@@ -2238,7 +2310,7 @@ static int winLock(sqlite3_file *id, int locktype){
       ** copy this retry logic.  It is a hack intended for Windows only.
       */
       OSTRACE(("could not get a PENDING lock. cnt=%d\n", cnt));
-      if( cnt ) portableSleep(1);
+      if( cnt ) sqlite3_win32_sleep(1);
     }
     gotPendingLock = res;
     if( !res ){
@@ -3819,7 +3891,7 @@ static int winRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
 ** Sleep for a little while.  Return the amount of time slept.
 */
 static int winSleep(sqlite3_vfs *pVfs, int microsec){
-  portableSleep((microsec+999)/1000);
+  sqlite3_win32_sleep((microsec+999)/1000);
   UNUSED_PARAMETER(pVfs);
   return ((microsec+999)/1000)*1000;
 }
@@ -3961,12 +4033,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==70 );
-
-#if SQLITE_OS_WINRT
-  sleepObj = osCreateEventExW(NULL, NULL, CREATE_EVENT_MANUAL_RESET, 
-                             SYNCHRONIZE);
-#endif
+  assert( ArraySize(aSyscall)==71 );
 
 #ifndef SQLITE_OMIT_WAL
   /* get memory map allocation granularity */
@@ -3985,8 +4052,10 @@ int sqlite3_os_init(void){
 
 int sqlite3_os_end(void){ 
 #if SQLITE_OS_WINRT
-  osCloseHandle(sleepObj);
-  sleepObj = NULL;
+  if( sleepObj != NULL ){
+    osCloseHandle(sleepObj);
+    sleepObj = NULL;
+  }
 #endif
   return SQLITE_OK;
 }

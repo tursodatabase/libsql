@@ -1,5 +1,5 @@
-C Cleanup\sthe\sWindows\ssyscall\stable,\sremoving\sthe\sunused\sCreateFileMapping\sentry.
-D 2012-03-13T01:30:20.255
+C Defer\screation\sof\sthe\ssleep\sevent\sobject\suntil\sit\sis\sneeded.\s\sAdded\ssqlite3_win32_write_debug\sand\ssqlite3_win32_sleep\sAPIs\sto\sassist\sin\sportability\sto\sWinRT.
+D 2012-03-13T03:35:07.176
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -160,14 +160,14 @@ F src/mutex.h 2a79e0c10c26412546b501ee0f3d92b42decf63e
 F src/mutex_noop.c 7682796b7d8d39bf1c138248858efcd10c9e1553
 F src/mutex_os2.c 882d735098c07c8c6a5472b8dd66e19675fe117f
 F src/mutex_unix.c c3a4e00f96ba068a8dbef34084465979aaf369cc
-F src/mutex_w32.c be6dc2be432aa27e1b0d0a19a0da7bace9e4e441
+F src/mutex_w32.c 1170f64d08dc35cd43f6d0bfa833cac5da979279
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 38aabd5e3ecd4162332076f55bb09cec02165cca
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 0e3d2942d228d0366fb80a3640f35caf413b66d1
-F src/os_win.c 8e0c3142f06e049cead46bc1d83bbc939f582a67
+F src/os_win.c 30a479f366f206b663d4d5a6c647aa76d18055d0
 F src/pager.c 3955b62cdb5bb64559607cb474dd12a6c8e1d4a5
 F src/pager.h ef1eaf8593e78f73885c1dfac27ad83bee23bdc5
 F src/parse.y 1ddd71ae55f4b7cbb2672526ea4de023de0f519e
@@ -992,7 +992,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 6b997d9c32076c480ff4f101ff93bae3f443e252
-R 6cc20b48ffd82e276454874a3dd9ea0d
+P fb7d8bf6ec5c0ef9a948bc14c28770e34f57db1a
+R 4746d41be07bb3c220103324ba770fee
 U mistachkin
-Z b8edd09153177d0ea866248aa43a320b
+Z d05d3c51b5da1f2a8562520fe1f66220
