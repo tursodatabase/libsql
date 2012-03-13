@@ -124,7 +124,11 @@ static int winMutexInit(void){
   }else{
     /* Someone else is in the process of initing the static mutexes */
     while( !winMutex_isInit ){
+#if SQLITE_OS_WINRT
+      Yield(); /* NOP */
+#else
       Sleep(1);
+#endif
     }
   }
   return SQLITE_OK; 
@@ -198,7 +202,11 @@ static sqlite3_mutex *winMutexAlloc(int iType){
 #ifdef SQLITE_DEBUG
         p->id = iType;
 #endif
+#if SQLITE_OS_WINRT
+        InitializeCriticalSectionEx(&p->mutex, 0, 0);
+#else
         InitializeCriticalSection(&p->mutex);
+#endif
       }
       break;
     }

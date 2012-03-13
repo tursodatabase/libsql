@@ -1,5 +1,5 @@
-C Merge\stest\scurrent\sdirectory\svalue\sfix\sfrom\strunk\sand\sfix\suri\stests.
-D 2012-03-08T20:39:08.983
+C More\schanges\srequired\sto\scompile\sfor\sWinRT\susing\sVS\s11\sbeta.\s\sAlso,\sreplace\smore\sAPIs\swith\stheir\sWinRT\salternatives.
+D 2012-03-13T01:16:57.353
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -160,14 +160,14 @@ F src/mutex.h 2a79e0c10c26412546b501ee0f3d92b42decf63e
 F src/mutex_noop.c 7682796b7d8d39bf1c138248858efcd10c9e1553
 F src/mutex_os2.c 882d735098c07c8c6a5472b8dd66e19675fe117f
 F src/mutex_unix.c c3a4e00f96ba068a8dbef34084465979aaf369cc
-F src/mutex_w32.c ddd2a783230e22831ab44fca181b5904e48a7318
+F src/mutex_w32.c be6dc2be432aa27e1b0d0a19a0da7bace9e4e441
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 38aabd5e3ecd4162332076f55bb09cec02165cca
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 0e3d2942d228d0366fb80a3640f35caf413b66d1
-F src/os_win.c ca9ff6340c72aa45adf5a444a036f3c87f437f0f
+F src/os_win.c 3dc4b1a7bafdca23f71439b0ca691668fb65f3c1
 F src/pager.c 3955b62cdb5bb64559607cb474dd12a6c8e1d4a5
 F src/pager.h ef1eaf8593e78f73885c1dfac27ad83bee23bdc5
 F src/parse.y 1ddd71ae55f4b7cbb2672526ea4de023de0f519e
@@ -992,7 +992,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 5eecdb44dd809e91002b8ecf59ada72f4b56549a efee39e64bd95c284220fdb0ae8ee6c1847fadab
-R 4259e5e6648b2026d8327fd947148d80
+P 88963c33c19a051280f7f31bdc1b322d6837cf43
+R d6ea1d137f9bbc6d3552b399f2e0cfe5
 U mistachkin
-Z 18b9a0728cfebb78df49400835a7c03c
+Z 69539dbb9e14faecbb37484031cfeaaf

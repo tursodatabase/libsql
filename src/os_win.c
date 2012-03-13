@@ -203,10 +203,17 @@ static int sqlite3_os_type = 0;
 ** defines here refer to the macros defined just above.
  */
 
-#  define osAreFileApisANSI()       1
 #  define osLockFile                LockFile
 #  define osUnlockFile              UnlockFile
 #  define osLockFileEx              LockFileEx
+#endif
+
+/*
+** This function is not available on Windows CE or WinRT.
+ */
+
+#if SQLITE_OS_WINCE || SQLITE_OS_WINRT
+#  define osAreFileApisANSI()       1
 #endif
 
 /*
@@ -220,13 +227,13 @@ static struct win_syscall {
   sqlite3_syscall_ptr pCurrent; /* Current value of the system call */
   sqlite3_syscall_ptr pDefault; /* Default value */
 } aSyscall[] = {
-#if !SQLITE_OS_WINCE
+#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT
   { "AreFileApisANSI",         (SYSCALL)AreFileApisANSI,         0 },
-
-#define osAreFileApisANSI ((BOOL(WINAPI*)(VOID))aSyscall[0].pCurrent)
 #else
   { "AreFileApisANSI",         (SYSCALL)0,                       0 },
 #endif
+
+#define osAreFileApisANSI ((BOOL(WINAPI*)(VOID))aSyscall[0].pCurrent)
 
 #if SQLITE_OS_WINCE && defined(SQLITE_WIN32_HAS_WIDE)
   { "CharLowerW",              (SYSCALL)CharLowerW,              0 },
@@ -257,7 +264,7 @@ static struct win_syscall {
 #define osCreateFileA ((HANDLE(WINAPI*)(LPCSTR,DWORD,DWORD, \
         LPSECURITY_ATTRIBUTES,DWORD,DWORD,HANDLE))aSyscall[4].pCurrent)
 
-#if defined(SQLITE_WIN32_HAS_WIDE)
+#if !SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_WIDE)
   { "CreateFileW",             (SYSCALL)CreateFileW,             0 },
 #else
   { "CreateFileW",             (SYSCALL)0,                       0 },
@@ -266,10 +273,8 @@ static struct win_syscall {
 #define osCreateFileW ((HANDLE(WINAPI*)(LPCWSTR,DWORD,DWORD, \
         LPSECURITY_ATTRIBUTES,DWORD,DWORD,HANDLE))aSyscall[5].pCurrent)
 
-  { "CreateFileMapping",       (SYSCALL)CreateFileMapping,       0 },
-
-#define osCreateFileMapping ((HANDLE(WINAPI*)(HANDLE,LPSECURITY_ATTRIBUTES, \
-        DWORD,DWORD,DWORD,LPCTSTR))aSyscall[6].pCurrent)
+  /* TODO: REMOVE */
+  { "CreateFileMapping",       (SYSCALL)0,                       0 },
 
 #if defined(SQLITE_WIN32_HAS_WIDE)
   { "CreateFileMappingW",      (SYSCALL)CreateFileMappingW,      0 },
@@ -280,7 +285,7 @@ static struct win_syscall {
 #define osCreateFileMappingW ((HANDLE(WINAPI*)(HANDLE,LPSECURITY_ATTRIBUTES, \
         DWORD,DWORD,DWORD,LPCWSTR))aSyscall[7].pCurrent)
 
-#if defined(SQLITE_WIN32_HAS_WIDE)
+#if !SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_WIDE)
   { "CreateMutexW",            (SYSCALL)CreateMutexW,            0 },
 #else
   { "CreateMutexW",            (SYSCALL)0,                       0 },
@@ -362,7 +367,7 @@ static struct win_syscall {
 #define osGetDiskFreeSpaceA ((BOOL(WINAPI*)(LPCSTR,LPDWORD,LPDWORD,LPDWORD, \
         LPDWORD))aSyscall[18].pCurrent)
 
-#if !SQLITE_OS_WINCE && defined(SQLITE_WIN32_HAS_WIDE)
+#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_WIDE)
   { "GetDiskFreeSpaceW",       (SYSCALL)GetDiskFreeSpaceW,       0 },
 #else
   { "GetDiskFreeSpaceW",       (SYSCALL)0,                       0 },
@@ -379,7 +384,7 @@ static struct win_syscall {
 
 #define osGetFileAttributesA ((DWORD(WINAPI*)(LPCSTR))aSyscall[20].pCurrent)
 
-#if defined(SQLITE_WIN32_HAS_WIDE)
+#if !SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_WIDE)
   { "GetFileAttributesW",      (SYSCALL)GetFileAttributesW,      0 },
 #else
   { "GetFileAttributesW",      (SYSCALL)0,                       0 },
@@ -396,10 +401,10 @@ static struct win_syscall {
 #define osGetFileAttributesExW ((BOOL(WINAPI*)(LPCWSTR,GET_FILEEX_INFO_LEVELS, \
         LPVOID))aSyscall[22].pCurrent)
 
-#if SQLITE_OS_WINRT
-  { "GetFileSize",             (SYSCALL)0,                       0 },
-#else
+#if !SQLITE_OS_WINRT
   { "GetFileSize",             (SYSCALL)GetFileSize,             0 },
+#else
+  { "GetFileSize",             (SYSCALL)0,                       0 },
 #endif
 
 #define osGetFileSize ((DWORD(WINAPI*)(HANDLE,LPDWORD))aSyscall[23].pCurrent)
@@ -438,7 +443,11 @@ static struct win_syscall {
 #define osGetProcAddressA ((FARPROC(WINAPI*)(HMODULE, \
         LPCSTR))aSyscall[27].pCurrent)
 
+#if !SQLITE_OS_WINRT
   { "GetSystemInfo",           (SYSCALL)GetSystemInfo,           0 },
+#else
+  { "GetSystemInfo",           (SYSCALL)0,                       0 },
+#endif
 
 #define osGetSystemInfo ((VOID(WINAPI*)(LPSYSTEM_INFO))aSyscall[28].pCurrent)
 
@@ -471,7 +480,11 @@ static struct win_syscall {
 
 #define osGetTempPathW ((DWORD(WINAPI*)(DWORD,LPWSTR))aSyscall[32].pCurrent)
 
+#if !SQLITE_OS_WINRT
   { "GetTickCount",            (SYSCALL)GetTickCount,            0 },
+#else
+  { "GetTickCount",            (SYSCALL)0,                       0 },
+#endif
 
 #define osGetTickCount ((DWORD(WINAPI*)(VOID))aSyscall[33].pCurrent)
 
@@ -489,12 +502,20 @@ static struct win_syscall {
 #define osHeapAlloc ((LPVOID(WINAPI*)(HANDLE,DWORD, \
         SIZE_T))aSyscall[35].pCurrent)
 
+#if !SQLITE_OS_WINRT
   { "HeapCreate",              (SYSCALL)HeapCreate,              0 },
+#else
+  { "HeapCreate",              (SYSCALL)0,                       0 },
+#endif
 
 #define osHeapCreate ((HANDLE(WINAPI*)(DWORD,SIZE_T, \
         SIZE_T))aSyscall[36].pCurrent)
 
+#if !SQLITE_OS_WINRT
   { "HeapDestroy",             (SYSCALL)HeapDestroy,             0 },
+#else
+  { "HeapDestroy",             (SYSCALL)0,                       0 },
+#endif
 
 #define osHeapDestroy ((BOOL(WINAPI*)(HANDLE))aSyscall[37].pCurrent)
 
@@ -512,7 +533,11 @@ static struct win_syscall {
 #define osHeapSize ((SIZE_T(WINAPI*)(HANDLE,DWORD, \
         LPCVOID))aSyscall[40].pCurrent)
 
+#if !SQLITE_OS_WINRT
   { "HeapValidate",            (SYSCALL)HeapValidate,            0 },
+#else
+  { "HeapValidate",            (SYSCALL)0,                       0 },
+#endif
 
 #define osHeapValidate ((BOOL(WINAPI*)(HANDLE,DWORD, \
         LPCVOID))aSyscall[41].pCurrent)
@@ -525,7 +550,7 @@ static struct win_syscall {
 
 #define osLoadLibraryA ((HMODULE(WINAPI*)(LPCSTR))aSyscall[42].pCurrent)
 
-#if defined(SQLITE_WIN32_HAS_WIDE)
+#if !SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_WIDE)
   { "LoadLibraryW",            (SYSCALL)LoadLibraryW,            0 },
 #else
   { "LoadLibraryW",            (SYSCALL)0,                       0 },
@@ -533,18 +558,22 @@ static struct win_syscall {
 
 #define osLoadLibraryW ((HMODULE(WINAPI*)(LPCWSTR))aSyscall[43].pCurrent)
 
+#if !SQLITE_OS_WINRT
   { "LocalFree",               (SYSCALL)LocalFree,               0 },
+#else
+  { "LocalFree",               (SYSCALL)0,                       0 },
+#endif
 
 #define osLocalFree ((HLOCAL(WINAPI*)(HLOCAL))aSyscall[44].pCurrent)
 
-#if !SQLITE_OS_WINCE
+#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT
   { "LockFile",                (SYSCALL)LockFile,                0 },
-
-#define osLockFile ((BOOL(WINAPI*)(HANDLE,DWORD,DWORD,DWORD, \
-        DWORD))aSyscall[45].pCurrent)
 #else
   { "LockFile",                (SYSCALL)0,                       0 },
 #endif
+
+#define osLockFile ((BOOL(WINAPI*)(HANDLE,DWORD,DWORD,DWORD, \
+        DWORD))aSyscall[45].pCurrent)
 
 #if !SQLITE_OS_WINCE
   { "LockFileEx",              (SYSCALL)LockFileEx,              0 },
@@ -555,7 +584,11 @@ static struct win_syscall {
   { "LockFileEx",              (SYSCALL)0,                       0 },
 #endif
 
+#if !SQLITE_OS_WINRT
   { "MapViewOfFile",           (SYSCALL)MapViewOfFile,           0 },
+#else
+  { "MapViewOfFile",           (SYSCALL)0,                       0 },
+#endif
 
 #define osMapViewOfFile ((LPVOID(WINAPI*)(HANDLE,DWORD,DWORD,DWORD, \
         SIZE_T))aSyscall[47].pCurrent)
@@ -579,19 +612,19 @@ static struct win_syscall {
 
 #define osSetEndOfFile ((BOOL(WINAPI*)(HANDLE))aSyscall[51].pCurrent)
 
-#if SQLITE_OS_WINRT
-  { "SetFilePointer",          (SYSCALL)0,                       0 },
-#else
+#if !SQLITE_OS_WINRT
   { "SetFilePointer",          (SYSCALL)SetFilePointer,          0 },
+#else
+  { "SetFilePointer",          (SYSCALL)0,                       0 },
 #endif
 
 #define osSetFilePointer ((DWORD(WINAPI*)(HANDLE,LONG,PLONG, \
         DWORD))aSyscall[52].pCurrent)
 
-#if SQLITE_OS_WINRT
-  { "Sleep",                   (SYSCALL)0,                       0 },
-#else
+#if !SQLITE_OS_WINRT
   { "Sleep",                   (SYSCALL)Sleep,                   0 },
+#else
+  { "Sleep",                   (SYSCALL)0,                       0 },
 #endif
 
 #define osSleep ((VOID(WINAPI*)(DWORD))aSyscall[53].pCurrent)
@@ -601,23 +634,23 @@ static struct win_syscall {
 #define osSystemTimeToFileTime ((BOOL(WINAPI*)(CONST SYSTEMTIME*, \
         LPFILETIME))aSyscall[54].pCurrent)
 
-#if !SQLITE_OS_WINCE
+#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT
   { "UnlockFile",              (SYSCALL)UnlockFile,              0 },
-
-#define osUnlockFile ((BOOL(WINAPI*)(HANDLE,DWORD,DWORD,DWORD, \
-        DWORD))aSyscall[55].pCurrent)
 #else
   { "UnlockFile",              (SYSCALL)0,                       0 },
 #endif
 
+#define osUnlockFile ((BOOL(WINAPI*)(HANDLE,DWORD,DWORD,DWORD, \
+        DWORD))aSyscall[55].pCurrent)
+
 #if !SQLITE_OS_WINCE
   { "UnlockFileEx",            (SYSCALL)UnlockFileEx,            0 },
-
-#define osUnlockFileEx ((BOOL(WINAPI*)(HANDLE,DWORD,DWORD,DWORD, \
-        LPOVERLAPPED))aSyscall[56].pCurrent)
 #else
   { "UnlockFileEx",            (SYSCALL)0,                       0 },
 #endif
+
+#define osUnlockFileEx ((BOOL(WINAPI*)(HANDLE,DWORD,DWORD,DWORD, \
+        LPOVERLAPPED))aSyscall[56].pCurrent)
 
   { "UnmapViewOfFile",         (SYSCALL)UnmapViewOfFile,         0 },
 
@@ -634,15 +667,19 @@ static struct win_syscall {
         LPOVERLAPPED))aSyscall[59].pCurrent)
 
 #if !SQLITE_OS_WINCE
-  { "CreateEventEx",           (SYSCALL)CreateEventEx,           0 },
-
-#define osCreateEventEx ((HANDLE(WINAPI*)(LPSECURITY_ATTRIBUTES,LPCTSTR, \
-        DWORD,DWORD))aSyscall[60].pCurrent)
+  { "CreateEventExW",          (SYSCALL)CreateEventExW,          0 },
 #else
-  { "CreateEventEx",           (SYSCALL)0,                       0 },
+  { "CreateEventExW",          (SYSCALL)0,                       0 },
 #endif
 
+#define osCreateEventExW ((HANDLE(WINAPI*)(LPSECURITY_ATTRIBUTES,LPCWSTR, \
+        DWORD,DWORD))aSyscall[60].pCurrent)
+
+#if !SQLITE_OS_WINRT
   { "WaitForSingleObject",     (SYSCALL)WaitForSingleObject,     0 },
+#else
+  { "WaitForSingleObject",     (SYSCALL)0,                       0 },
+#endif
 
 #define osWaitForSingleObject ((DWORD(WINAPI*)(HANDLE, \
         DWORD))aSyscall[61].pCurrent)
@@ -679,23 +716,40 @@ static struct win_syscall {
 #define osMapViewOfFileEx ((LPVOID(WINAPI*)(HANDLE,DWORD,DWORD,DWORD,SIZE_T, \
         LPVOID))aSyscall[65].pCurrent)
 
-#if SQLITE_OS_WINRT && 0 /* DISABLED: Can be compiled with WinRT only. */
-  { "CreateFile2",         (SYSCALL)CreateFile2,                 0 },
+#if SQLITE_OS_WINRT
+  { "CreateFile2",             (SYSCALL)CreateFile2,             0 },
 #else
-  { "CreateFile2",         (SYSCALL)0,                           0 },
+  { "CreateFile2",             (SYSCALL)0,                       0 },
 #endif
 
 #define osCreateFile2 ((HANDLE(WINAPI*)(LPCWSTR,DWORD,DWORD,DWORD, \
         LPCREATEFILE2_EXTENDED_PARAMETERS))aSyscall[66].pCurrent)
 
-#if SQLITE_OS_WINRT && 0 /* DISABLED: Can be compiled with WinRT only. */
-  { "LoadPackagedLibrary", (SYSCALL)LoadPackagedLibrary,         0 },
+#if SQLITE_OS_WINRT
+  { "LoadPackagedLibrary",     (SYSCALL)LoadPackagedLibrary,     0 },
 #else
-  { "LoadPackagedLibrary", (SYSCALL)0,                           0 },
+  { "LoadPackagedLibrary",     (SYSCALL)0,                       0 },
 #endif
 
 #define osLoadPackagedLibrary ((HMODULE(WINAPI*)(LPCWSTR, \
         DWORD))aSyscall[67].pCurrent)
+
+#if SQLITE_OS_WINRT
+  { "GetTickCount64",          (SYSCALL)GetTickCount64,          0 },
+#else
+  { "GetTickCount64",          (SYSCALL)0,                       0 },
+#endif
+
+#define osGetTickCount64 ((ULONGLONG(WINAPI*)(VOID))aSyscall[68].pCurrent)
+
+#if SQLITE_OS_WINRT
+  { "GetNativeSystemInfo",     (SYSCALL)GetNativeSystemInfo,     0 },
+#else
+  { "GetNativeSystemInfo",     (SYSCALL)0,                       0 },
+#endif
+
+#define osGetNativeSystemInfo ((VOID(WINAPI*)( \
+        LPSYSTEM_INFO))aSyscall[69].pCurrent)
 
 }; /* End of the overrideable system calls */
 
@@ -808,7 +862,7 @@ static void portableSleep(int ms){
 ** WinNT/2K/XP so that we will know whether or not we can safely call
 ** the LockFileEx() API.
 */
-#if SQLITE_OS_WINCE  || SQLITE_OS_WINRT
+#if SQLITE_OS_WINCE || SQLITE_OS_WINRT
 # define isNT()  (1)
 #else
   static int isNT(void){
@@ -1697,13 +1751,13 @@ static BOOL winceLockFileEx(
 # define INVALID_SET_FILE_POINTER ((DWORD)-1)
 #endif
 
-#if SQLITE_OS_WINRT==0
 /*
 ** Move the current position of the file handle passed as the first 
 ** argument to offset iOffset within the file. If successful, return 0. 
 ** Otherwise, set pFile->lastErrno and return non-zero.
 */
 static int seekWinFile(winFile *pFile, sqlite3_int64 iOffset){
+#if !SQLITE_OS_WINRT
   LONG upperBits;                 /* Most sig. 32 bits of new offset */
   LONG lowerBits;                 /* Least sig. 32 bits of new offset */
   DWORD dwRet;                    /* Value returned by SetFilePointer() */
@@ -1730,13 +1784,11 @@ static int seekWinFile(winFile *pFile, sqlite3_int64 iOffset){
   }
 
   return 0;
-}
-#else /* if SQLITE_OS_WINRT==1 */
-/* 
-** Same function as above, except that this implementation works for
-** windowsRT.
-*/
-static int seekWinFile(winFile *pFile, sqlite3_int64 iOffset){
+#else
+  /*
+  ** Same as above, except that this implementation works for WinRT.
+  */
+
   LARGE_INTEGER x;                /* The new offset */
   BOOL bRet;                      /* Value returned by SetFilePointerEx() */
 
@@ -1751,8 +1803,8 @@ static int seekWinFile(winFile *pFile, sqlite3_int64 iOffset){
   }
 
   return 0;
-}
 #endif
+}
 
 /*
 ** Close a file.
@@ -3018,7 +3070,7 @@ static int winShmMap(
       HANDLE hMap;                /* file-mapping handle */
       void *pMap = 0;             /* Mapped memory region */
      
-      hMap = osCreateFileMapping(pShmNode->hFile.h, 
+      hMap = osCreateFileMappingW(pShmNode->hFile.h, 
           NULL, PAGE_READWRITE, 0, nByte, NULL
       );
       OSTRACE(("SHM-MAP pid-%d create region=%d nbyte=%d %s\n",
@@ -3356,7 +3408,7 @@ static int winOpen(
 #endif
 
   if( isNT() ){
-#if SQLITE_OS_WINRT && 0 /* DISABLED: Can be compiled with WinRT only. */
+#if SQLITE_OS_WINRT
     CREATEFILE2_EXTENDED_PARAMETERS extendedParameters;
     extendedParameters.dwSize = sizeof(CREATEFILE2_EXTENDED_PARAMETERS);
     extendedParameters.dwFileAttributes =
@@ -3604,6 +3656,7 @@ static int winFullPathname(
   SimulateIOError( return SQLITE_ERROR );
   UNUSED_PARAMETER(nFull);
   /* WinCE has no concept of a relative pathname, or so I am told. */
+  /* WinRT has no way to convert a relative path to an absolute one. */
   sqlite3_snprintf(pVfs->mxPathname, zFull, "%s", zRelative);
   return SQLITE_OK;
 #endif
@@ -3686,7 +3739,7 @@ static void *winDlOpen(sqlite3_vfs *pVfs, const char *zFilename){
     return 0;
   }
   if( isNT() ){
-#if SQLITE_OS_WINRT && 0 /* DISABLED: Can be compiled with WinRT only. */
+#if SQLITE_OS_WINRT
     h = osLoadPackagedLibrary((LPCWSTR)zConverted, 0);
 #else
     h = osLoadLibraryW((LPCWSTR)zConverted);
@@ -3741,11 +3794,19 @@ static int winRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
     memcpy(&zBuf[n], &pid, sizeof(pid));
     n += sizeof(pid);
   }
+#if SQLITE_OS_WINRT
+  if( sizeof(ULONGLONG)<=nBuf-n ){
+    ULONGLONG cnt = osGetTickCount64();
+    memcpy(&zBuf[n], &cnt, sizeof(cnt));
+    n += sizeof(cnt);
+  }
+#else
   if( sizeof(DWORD)<=nBuf-n ){
     DWORD cnt = osGetTickCount();
     memcpy(&zBuf[n], &cnt, sizeof(cnt));
     n += sizeof(cnt);
   }
+#endif
   if( sizeof(LARGE_INTEGER)<=nBuf-n ){
     LARGE_INTEGER i;
     osQueryPerformanceCounter(&i);
@@ -3903,17 +3964,21 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==68 );
+  assert( ArraySize(aSyscall)==70 );
 
 #if SQLITE_OS_WINRT
-  sleepObj = osCreateEventEx(NULL, NULL, CREATE_EVENT_MANUAL_RESET, 
+  sleepObj = osCreateEventExW(NULL, NULL, CREATE_EVENT_MANUAL_RESET, 
                              SYNCHRONIZE);
 #endif
 
 #ifndef SQLITE_OMIT_WAL
   /* get memory map allocation granularity */
   memset(&winSysInfo, 0, sizeof(SYSTEM_INFO));
+#if SQLITE_OS_WINRT
+  osGetNativeSystemInfo(&winSysInfo);
+#else
   osGetSystemInfo(&winSysInfo);
+#endif
   assert(winSysInfo.dwAllocationGranularity > 0);
 #endif
 
