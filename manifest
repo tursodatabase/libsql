@@ -1,5 +1,5 @@
-C Defer\screation\sof\sthe\ssleep\sevent\sobject\suntil\sit\sis\sneeded.\s\sAdded\ssqlite3_win32_write_debug\sand\ssqlite3_win32_sleep\sAPIs\sto\sassist\sin\sportability\sto\sWinRT.
-D 2012-03-13T03:35:07.176
+C Add\sassert\sto\sverify\sthe\snumber\sof\scharacters\sto\swrite\sin\ssqlite3_win32_write_debug.
+D 2012-03-13T03:38:22.981
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -167,7 +167,7 @@ F src/os.h 38aabd5e3ecd4162332076f55bb09cec02165cca
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 0e3d2942d228d0366fb80a3640f35caf413b66d1
-F src/os_win.c 30a479f366f206b663d4d5a6c647aa76d18055d0
+F src/os_win.c c47a86a8b8a958fc8cae06a45e56ed3217a686e4
 F src/pager.c 3955b62cdb5bb64559607cb474dd12a6c8e1d4a5
 F src/pager.h ef1eaf8593e78f73885c1dfac27ad83bee23bdc5
 F src/parse.y 1ddd71ae55f4b7cbb2672526ea4de023de0f519e
@@ -992,7 +992,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P fb7d8bf6ec5c0ef9a948bc14c28770e34f57db1a
-R 4746d41be07bb3c220103324ba770fee
+P 7af88ad306612dd316827c506dbf8df7477b2ec1
+R 733fe38048c4d65e48f1419dbebc0b16
 U mistachkin
-Z d05d3c51b5da1f2a8562520fe1f66220
+Z ac12a0ffda13979ead9c043455a8d437

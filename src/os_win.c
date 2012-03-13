@@ -872,6 +872,7 @@ void sqlite3_win32_write_debug(char *zBuf, int nBuf){
   char zDbgBuf[SQLITE_WIN32_DBG_BUF_SIZE];
   int nMin = MIN(nBuf,SQLITE_WIN32_DBG_BUF_SIZE-1); /* may be negative. */
   if( nMin<-1 ) nMin = -1; /* all negative values become -1. */
+  assert( nMin==-1 || nMin==0 || nMin<SQLITE_WIN32_DBG_BUF_SIZE );
 #if defined(SQLITE_WIN32_HAS_ANSI)
   if( nMin>0 ){
     memset(zDbgBuf, 0, SQLITE_WIN32_DBG_BUF_SIZE);
