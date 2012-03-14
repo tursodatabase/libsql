@@ -98,7 +98,7 @@ struct winFile {
  * The size of the buffer used by sqlite3_win32_write_debug().
  */
 #ifndef SQLITE_WIN32_DBG_BUF_SIZE
-#  define SQLITE_WIN32_DBG_BUF_SIZE   (4096-sizeof(DWORD))
+#  define SQLITE_WIN32_DBG_BUF_SIZE   ((int)(4096-sizeof(DWORD)))
 #endif
 
 /*
@@ -788,7 +788,7 @@ static struct win_syscall {
 
   { "GetProcessHeap",          (SYSCALL)GetProcessHeap,          0 },
 
-#define osGetProcessHeap() ((HANDLE(WINAPI*)(VOID))aSyscall[71].pCurrent)
+#define osGetProcessHeap ((HANDLE(WINAPI*)(VOID))aSyscall[71].pCurrent)
 
 }; /* End of the overrideable system calls */
 
@@ -882,7 +882,7 @@ static const char *winNextSystemCall(sqlite3_vfs *p, const char *zName){
 
 void sqlite3_win32_write_debug(char *zBuf, int nBuf){
   char zDbgBuf[SQLITE_WIN32_DBG_BUF_SIZE];
-  int nMin = MIN(nBuf,SQLITE_WIN32_DBG_BUF_SIZE-1); /* may be negative. */
+  int nMin = MIN(nBuf, (SQLITE_WIN32_DBG_BUF_SIZE - 1)); /* may be negative. */
   if( nMin<-1 ) nMin = -1; /* all negative values become -1. */
   assert( nMin==-1 || nMin==0 || nMin<SQLITE_WIN32_DBG_BUF_SIZE );
 #if defined(SQLITE_WIN32_HAS_ANSI)
