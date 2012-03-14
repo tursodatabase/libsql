@@ -25,7 +25,7 @@
 #include <stdlib.h>
 
 
-#define FTS_MAX_APPENDABLE_HEIGHT 10
+#define FTS_MAX_APPENDABLE_HEIGHT 16
 
 /*
 ** When full-text index nodes are loaded from disk, the buffer that they
@@ -4164,17 +4164,15 @@ static int fts3Incrmerge(Fts3Table *p, int nMerge, int nMin){
   while( rc==SQLITE_OK && nRem>0 ){
     sqlite3_int64 iAbsLevel;        /* Absolute level number to work on */
     sqlite3_stmt *pFindLevel = 0;   /* SQL used to determine iAbsLevel */
-    Fts3MultiSegReader csr;         /* Cursor used to read input data */
-    Fts3SegFilter filter;           /* Filter used with cursor csr */
-    IncrmergeWriter writer;         /* Writer object */
-
-    memset(&writer, 0, sizeof(IncrmergeWriter));
+    Fts3MultiSegReader *pCsr;       /* Cursor used to read input data */
+    Fts3SegFilter *pFilter;         /* Filter used with cursor pCsr */
+    IncrmergeWriter *pWriter;       /* Writer object */
+    const int nAlloc = sizeof(*pCsr) + sizeof(*pFilter) + sizeof(*pWriter);
 
     /* Determine which level to merge segments from. Any level, from any
     ** prefix or language index may be selected. Stack variable iAbsLevel 
     ** is set to the absolute level number of the level to merge from.  */
     rc = fts3SqlStmt(p, SQL_FIND_MERGE_LEVEL, &pFindLevel, 0);
-    if( rc!=SQLITE_OK ) return rc;
     sqlite3_bind_int(pFindLevel, 1, nMin);
     if( sqlite3_step(pFindLevel)!=SQLITE_ROW ){
       return sqlite3_reset(pFindLevel);
@@ -4183,35 +4181,41 @@ static int fts3Incrmerge(Fts3Table *p, int nMerge, int nMin){
     rc = sqlite3_reset(pFindLevel);
     if( rc!=SQLITE_OK ) return rc;
 
+    /* Allocate space for the cursor, filter and writer objects */
+    pWriter = (IncrmergeWriter *)sqlite3_malloc(nAlloc);
+    if( !pWriter ) return SQLITE_NOMEM;
+    memset(pWriter, 0, nAlloc);
+    pFilter = (Fts3SegFilter *)&pWriter[1];
+    pCsr = (Fts3MultiSegReader *)&pFilter[1];
+
     /* Open a cursor to iterate through the contents of indexes 0 and 1 of
     ** the selected absolute level. */
-    rc = fts3IncrmergeCsr(p, iAbsLevel, &csr);
-    if( rc!=SQLITE_OK ) return rc;
-    memset(&filter, 0, sizeof(Fts3SegFilter));
-    filter.flags = FTS3_SEGMENT_REQUIRE_POS;
+    pFilter->flags = FTS3_SEGMENT_REQUIRE_POS;
+    rc = fts3IncrmergeCsr(p, iAbsLevel, pCsr);
 
-    rc = sqlite3Fts3SegReaderStart(p, &csr, &filter);
-    assert( rc!=SQLITE_ABORT );
-    if( SQLITE_ROW==(rc = sqlite3Fts3SegReaderStep(p, &csr)) ){
-      rc = fts3IncrmergeWriter(p, iAbsLevel, csr.zTerm, csr.nTerm, &writer);
-      if( rc==SQLITE_OK ){
-        do {
-          rc = fts3IncrmergeAppend(p, &writer, &csr);
-          if( rc==SQLITE_OK ) rc = sqlite3Fts3SegReaderStep(p, &csr);
-          if( writer.nWork>=nRem && rc==SQLITE_ROW ) rc = SQLITE_OK;
-        }while( rc==SQLITE_ROW );
+    if( rc==SQLITE_OK ){
+      rc = sqlite3Fts3SegReaderStart(p, pCsr, pFilter);
+      if( SQLITE_ROW==(rc = sqlite3Fts3SegReaderStep(p, pCsr)) ){
+        rc = fts3IncrmergeWriter(p, iAbsLevel, pCsr->zTerm,pCsr->nTerm,pWriter);
+        if( rc==SQLITE_OK ){
+          do {
+            rc = fts3IncrmergeAppend(p, pWriter, pCsr);
+            if( rc==SQLITE_OK ) rc = sqlite3Fts3SegReaderStep(p, pCsr);
+            if( pWriter->nWork>=nRem && rc==SQLITE_ROW ) rc = SQLITE_OK;
+          }while( rc==SQLITE_ROW );
+        }
       }
     }
-    assert( rc!=SQLITE_ABORT );
-    fts3IncrmergeRelease(p, &writer, &rc);
-    nRem -= (1 + writer.nWork);
+    fts3IncrmergeRelease(p, pWriter, &rc);
+    nRem -= (1 + pWriter->nWork);
 
     /* Update or delete the input segments */
     if( rc==SQLITE_OK ){
-      rc = fts3IncrmergeChomp(p, iAbsLevel, &csr);
+      rc = fts3IncrmergeChomp(p, iAbsLevel, pCsr);
     }
 
-    sqlite3Fts3SegReaderFinish(&csr);
+    sqlite3Fts3SegReaderFinish(pCsr);
+    sqlite3_free(pWriter);
   }
 
   return rc;
