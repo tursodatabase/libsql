@@ -970,7 +970,7 @@ static void *winMemMalloc(int nBytes){
   hHeap = winMemGetHeap();
   assert( hHeap!=0 );
   assert( hHeap!=INVALID_HANDLE_VALUE );
-#ifdef !SQLITE_OS_WINRT && SQLITE_WIN32_MALLOC_VALIDATE
+#if !SQLITE_OS_WINRT && defined(SQLITE_WIN32_MALLOC_VALIDATE)
   assert ( osHeapValidate(hHeap, SQLITE_WIN32_HEAP_FLAGS, NULL) );
 #endif
   assert( nBytes>=0 );
@@ -992,7 +992,7 @@ static void winMemFree(void *pPrior){
   hHeap = winMemGetHeap();
   assert( hHeap!=0 );
   assert( hHeap!=INVALID_HANDLE_VALUE );
-#ifdef !SQLITE_OS_WINRT && SQLITE_WIN32_MALLOC_VALIDATE
+#if !SQLITE_OS_WINRT && defined(SQLITE_WIN32_MALLOC_VALIDATE)
   assert ( osHeapValidate(hHeap, SQLITE_WIN32_HEAP_FLAGS, pPrior) );
 #endif
   if( !pPrior ) return; /* Passing NULL to HeapFree is undefined. */
@@ -1013,7 +1013,7 @@ static void *winMemRealloc(void *pPrior, int nBytes){
   hHeap = winMemGetHeap();
   assert( hHeap!=0 );
   assert( hHeap!=INVALID_HANDLE_VALUE );
-#ifdef !SQLITE_OS_WINRT && SQLITE_WIN32_MALLOC_VALIDATE
+#if !SQLITE_OS_WINRT && defined(SQLITE_WIN32_MALLOC_VALIDATE)
   assert ( osHeapValidate(hHeap, SQLITE_WIN32_HEAP_FLAGS, pPrior) );
 #endif
   assert( nBytes>=0 );
@@ -1041,7 +1041,7 @@ static int winMemSize(void *p){
   hHeap = winMemGetHeap();
   assert( hHeap!=0 );
   assert( hHeap!=INVALID_HANDLE_VALUE );
-#ifdef !SQLITE_OS_WINRT && SQLITE_WIN32_MALLOC_VALIDATE
+#if !SQLITE_OS_WINRT && defined(SQLITE_WIN32_MALLOC_VALIDATE)
   assert ( osHeapValidate(hHeap, SQLITE_WIN32_HEAP_FLAGS, NULL) );
 #endif
   if( !p ) return 0;
@@ -1097,7 +1097,7 @@ static int winMemInit(void *pAppData){
 #endif
   assert( pWinMemData->hHeap!=0 );
   assert( pWinMemData->hHeap!=INVALID_HANDLE_VALUE );
-#ifdef !SQLITE_OS_WINRT && SQLITE_WIN32_MALLOC_VALIDATE
+#if !SQLITE_OS_WINRT && defined(SQLITE_WIN32_MALLOC_VALIDATE)
   assert( osHeapValidate(pWinMemData->hHeap, SQLITE_WIN32_HEAP_FLAGS, NULL) );
 #endif
   return SQLITE_OK;
@@ -1112,7 +1112,7 @@ static void winMemShutdown(void *pAppData){
   if( !pWinMemData ) return;
   if( pWinMemData->hHeap ){
     assert( pWinMemData->hHeap!=INVALID_HANDLE_VALUE );
-#ifdef !SQLITE_OS_WINRT && SQLITE_WIN32_MALLOC_VALIDATE
+#if !SQLITE_OS_WINRT && defined(SQLITE_WIN32_MALLOC_VALIDATE)
     assert( osHeapValidate(pWinMemData->hHeap, SQLITE_WIN32_HEAP_FLAGS, NULL) );
 #endif
     if( pWinMemData->bOwned ){
