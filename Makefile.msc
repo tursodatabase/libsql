@@ -47,7 +47,7 @@ BCC = cl.exe
 # will run on the target platform.  (BCC and TCC are usually the
 # same unless your are cross-compiling.)
 #
-TCC = cl.exe -W3 -DSQLITE_OS_WIN=1 -DSQLITE_OS_WINRT=0 -I. -I$(TOP)\src -fp:precise
+TCC = cl.exe -W3 -DSQLITE_OS_WIN=1 -I. -I$(TOP)\src -fp:precise
 
 # The mksqlite3c.tcl and mksqlite3h.tcl scripts will pull in 
 # any extension header files by default.  For non-amalgamation

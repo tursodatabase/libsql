@@ -1,9 +1,9 @@
-C Add\swarning\sto\sthe\sdocs\sabout\schanging\sthe\sdata\sdirectory\swhen\sa\sdatabase\sconnection\sis\sopen.
-D 2012-03-14T01:28:35.372
+C Remove\sSQLITE_OS_WINRT\ssetting\sfrom\sMSVC\smakefile.
+D 2012-03-14T03:41:32.617
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc c8e27f878adc9aa70682b9aa986e02e9d597b8d0
+F Makefile.msc 7849a871b6cdb20fd51baee6bbe5965a03326be4
 F Makefile.vxworks 3b7fe7a0571fdadc61363ebc1b23732d2d6363ca
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION bb4c2a86abe53ea3c1d6ea515b69a426040e2414
@@ -992,7 +992,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 7354ae8fd3eccee2cf9f6501da5b1a014c31556f
-R 170d0fdac9fdf0b052c62efc8d999504
+P c07cd85ca9698b48f960b164cab3a38472a17640
+R 25f557bcc396ad7a4290697a9464ba77
 U mistachkin
-Z aea70d1fe458e9c31aee5d47ae6bde38
+Z 55001cc87e573530757b1e4bf77ede4f
