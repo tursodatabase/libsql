@@ -124,7 +124,7 @@ extern const sqlite3_api_routines *sqlite3_api;
 # define NEVER(X)  (0)
 #else
 # define ALWAYS(x) (x)
-# define NEVER(X)  (x)
+# define NEVER(x)  (x)
 #endif
 
 /*

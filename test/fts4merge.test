@@ -23,35 +23,6 @@ ifcapable !fts3 {
   return
 }
 
-proc fts3_build_db_1 {n} {
-
-  if {$n > 10000} {error "n must be <= 10000"}
-
-  db eval { CREATE VIRTUAL TABLE t1 USING fts4(x, y) }
-
-  set xwords [list zero one two three four five six seven eight nine ten]
-  set ywords [list alpha beta gamma delta epsilon zeta eta theta iota kappa]
-
-  for {set i 0} {$i < $n} {incr i} {
-    set x ""
-    set y ""
-
-    set x [list]
-    lappend x [lindex $xwords [expr ($i / 1000) % 10]]
-    lappend x [lindex $xwords [expr ($i / 100)  % 10]]
-    lappend x [lindex $xwords [expr ($i / 10)   % 10]]
-    lappend x [lindex $xwords [expr ($i / 1)   % 10]]
-
-    set y [list]
-    lappend y [lindex $ywords [expr ($i / 1000) % 10]]
-    lappend y [lindex $ywords [expr ($i / 100)  % 10]]
-    lappend y [lindex $ywords [expr ($i / 10)   % 10]]
-    lappend y [lindex $ywords [expr ($i / 1)   % 10]]
-
-    db eval { INSERT INTO t1(docid, x, y) VALUES($i, $x, $y) }
-  }
-}
-
 #-------------------------------------------------------------------------
 # Test cases 1.*
 #
@@ -98,6 +69,57 @@ do_execsql_test 1.5 {
   3 {0 1 2}
 }
 
+#-------------------------------------------------------------------------
+# Test cases 2.* test that errors in the xxx part of the 'merge=xxx' are
+# handled correctly.
+#
+do_execsql_test 2.0 { CREATE VIRTUAL TABLE t2 USING fts4 }
+
+foreach {tn arg} {
+  1   {merge=abc}
+  2   {merge=%%%}
+  3   {merge=,}
+  4   {merge=5,}
+  5   {merge=6,%}
+  6   {merge=6,six}
+  7   {merge=6,1}
+  8   {merge=6,0}
+} {
+  do_catchsql_test 2.$tn { 
+    INSERT INTO t2(t2) VALUES($arg);
+  } {1 {SQL logic error or missing database}}
+}
+
+#-------------------------------------------------------------------------
+# Test cases 3.*
+#
+do_test 3.0 { 
+  reset_db
+  execsql { PRAGMA page_size = 512 }
+  fts3_build_db_2 30040 
+} {}
+do_test 3.1 { fts3_integrity_check t2 } {ok}
+
+do_execsql_test 3.2 { 
+  SELECT level, group_concat(idx, ' ') FROM t2_segdir GROUP BY level 
+} {
+  0 {0 1 2 3 4 5 6 7} 
+  1 {0 1 2 3 4} 
+  2 {0 1 2 3 4} 
+  3 {0 1 2 3 4 5 6}
+}
+
+do_execsql_test 3.3 { 
+  INSERT INTO t2(t2) VALUES('merge=1000000,2');
+  SELECT level, group_concat(idx, ' ') FROM t2_segdir GROUP BY level 
+} {
+  0 {0 1} 
+  1 {0 1} 
+  2 0 
+  3 {0 1}  
+  4 {0 1} 
+  5 0
+}
 
 finish_test
 

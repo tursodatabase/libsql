@@ -14,6 +14,67 @@
 # to use Tcl.
 #
 
+
+#-------------------------------------------------------------------------
+# USAGE: fts3_build_db_1 N
+#
+# Build a sample FTS table in the database opened by database connection 
+# [db]. The name of the new table is "t1".
+#
+proc fts3_build_db_1 {n} {
+
+  if {$n > 10000} {error "n must be <= 10000"}
+
+  db eval { CREATE VIRTUAL TABLE t1 USING fts4(x, y) }
+
+  set xwords [list zero one two three four five six seven eight nine ten]
+  set ywords [list alpha beta gamma delta epsilon zeta eta theta iota kappa]
+
+  for {set i 0} {$i < $n} {incr i} {
+    set x ""
+    set y ""
+
+    set x [list]
+    lappend x [lindex $xwords [expr ($i / 1000) % 10]]
+    lappend x [lindex $xwords [expr ($i / 100)  % 10]]
+    lappend x [lindex $xwords [expr ($i / 10)   % 10]]
+    lappend x [lindex $xwords [expr ($i / 1)   % 10]]
+
+    set y [list]
+    lappend y [lindex $ywords [expr ($i / 1000) % 10]]
+    lappend y [lindex $ywords [expr ($i / 100)  % 10]]
+    lappend y [lindex $ywords [expr ($i / 10)   % 10]]
+    lappend y [lindex $ywords [expr ($i / 1)   % 10]]
+
+    db eval { INSERT INTO t1(docid, x, y) VALUES($i, $x, $y) }
+  }
+}
+
+#-------------------------------------------------------------------------
+# USAGE: fts3_build_db_2 N
+#
+# Build a sample FTS table in the database opened by database connection 
+# [db]. The name of the new table is "t2".
+#
+proc fts3_build_db_2 {n} {
+
+  if {$n > 100000} {error "n must be <= 100000"}
+
+  db eval { CREATE VIRTUAL TABLE t2 USING fts4 }
+
+  set chars [list a b c d e f g h  i j k l m n o p  q r s t u v w x  y z ""]
+
+  for {set i 0} {$i < $n} {incr i} {
+    set word ""
+    set n [llength $chars]
+    append word [lindex $chars [expr {($i / 1)   % $n}]]
+    append word [lindex $chars [expr {($i / $n)  % $n}]]
+    append word [lindex $chars [expr {($i / ($n*$n)) % $n}]]
+
+    db eval { INSERT INTO t2(docid, content) VALUES($i, $word) }
+  }
+}
+
 #-------------------------------------------------------------------------
 # USAGE: fts3_integrity_check TBL
 #
@@ -98,7 +159,7 @@ proc fts3_integrity_check {tbl} {
           set es "Error at docid=$iDoc col=$iCol pos=$pos. Index is missing"
           lappend errors $es
         } else {
-          if {$C($iDoc,$iCol,$pos) != "$term"} {
+          if {[string compare $C($iDoc,$iCol,$pos) $term]} {
             set    es "Error at docid=$iDoc col=$iCol pos=$pos. Index "
             append es "has \"$C($iDoc,$iCol,$pos)\", document has \"$term\""
             lappend errors $es
