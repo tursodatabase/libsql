@@ -1,5 +1,5 @@
-C Add\sexperimental\ssupport\sfor\sresolving\srelative\sdatabase\sfile\spaths\susing\sa\sfixed\suser-defined\sdirectory.
-D 2012-03-14T00:44:01.952
+C Add\swarning\sto\sthe\sdocs\sabout\schanging\sthe\sdata\sdirectory\swhen\sa\sdatabase\sconnection\sis\sopen.
+D 2012-03-14T01:28:35.372
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -182,7 +182,7 @@ F src/resolve.c 3d3e80a98f203ac6b9329e9621e29eda85ddfd40
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 44ccdcb5d2a1c48622c179b2d72167b716388581
 F src/shell.c aa28f117033ba3e44b5eaaf2ad572222bcdfd66e
-F src/sqlite.h.in 21d17ec95bc6004908f8d8158ffd9021790d1b06
+F src/sqlite.h.in 733a91460165e21b868c6b716318637b893abb2c
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h b013dab7d43fb67c3ca2f0253d7863abb37e233c
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -992,7 +992,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 8083f6164f3308c1c1d4f4d84be1894e382fe2e6
-R ecb2eb3e3cb321cdfbc1971b31d42211
+P 7354ae8fd3eccee2cf9f6501da5b1a014c31556f
+R 170d0fdac9fdf0b052c62efc8d999504
 U mistachkin
-Z 0c49ed1cd4cd58d4e2dd23c2fb64b825
+Z aea70d1fe458e9c31aee5d47ae6bde38

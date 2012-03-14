@@ -4455,6 +4455,9 @@ SQLITE_EXTERN char *sqlite3_temp_directory;
 ** with a relative pathname are relative to the current directory
 ** for the process.
 **
+** Changing the value of this variable while a database connection is
+** open can result in a corrupt database.
+**
 ** It is not safe to read or modify this variable in more than one
 ** thread at a time.  It is not safe to read or modify this variable
 ** if a [database connection] is being used at the same time in a separate
