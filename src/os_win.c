@@ -247,7 +247,9 @@ static struct win_syscall {
   { "AreFileApisANSI",         (SYSCALL)0,                       0 },
 #endif
 
+#ifndef osAreFileApisANSI
 #define osAreFileApisANSI ((BOOL(WINAPI*)(VOID))aSyscall[0].pCurrent)
+#endif
 
 #if SQLITE_OS_WINCE && defined(SQLITE_WIN32_HAS_WIDE)
   { "CharLowerW",              (SYSCALL)CharLowerW,              0 },
@@ -583,8 +585,10 @@ static struct win_syscall {
   { "LockFile",                (SYSCALL)0,                       0 },
 #endif
 
+#ifndef osLockFile
 #define osLockFile ((BOOL(WINAPI*)(HANDLE,DWORD,DWORD,DWORD, \
         DWORD))aSyscall[44].pCurrent)
+#endif
 
 #if !SQLITE_OS_WINCE
   { "LockFileEx",              (SYSCALL)LockFileEx,              0 },
@@ -592,8 +596,10 @@ static struct win_syscall {
   { "LockFileEx",              (SYSCALL)0,                       0 },
 #endif
 
+#ifndef osLockFileEx
 #define osLockFileEx ((BOOL(WINAPI*)(HANDLE,DWORD,DWORD,DWORD,DWORD, \
         LPOVERLAPPED))aSyscall[45].pCurrent)
+#endif
 
 #if !SQLITE_OS_WINRT
   { "MapViewOfFile",           (SYSCALL)MapViewOfFile,           0 },
@@ -651,8 +657,10 @@ static struct win_syscall {
   { "UnlockFile",              (SYSCALL)0,                       0 },
 #endif
 
+#ifndef osUnlockFile
 #define osUnlockFile ((BOOL(WINAPI*)(HANDLE,DWORD,DWORD,DWORD, \
         DWORD))aSyscall[54].pCurrent)
+#endif
 
 #if !SQLITE_OS_WINCE
   { "UnlockFileEx",            (SYSCALL)UnlockFileEx,            0 },
@@ -778,6 +786,10 @@ static struct win_syscall {
 
 #define osOutputDebugStringW ((VOID(WINAPI*)(LPCWSTR))aSyscall[70].pCurrent)
 
+  { "GetProcessHeap",          (SYSCALL)GetProcessHeap,          0 },
+
+#define osGetProcessHeap() ((HANDLE(WINAPI*)(VOID))aSyscall[71].pCurrent)
+
 }; /* End of the overrideable system calls */
 
 /*
@@ -885,10 +897,10 @@ void sqlite3_win32_write_debug(char *zBuf, int nBuf){
   memset(zDbgBuf, 0, SQLITE_WIN32_DBG_BUF_SIZE);
   if ( osMultiByteToWideChar(
           osAreFileApisANSI() ? CP_ACP : CP_OEMCP, 0, zBuf,
-          nMin, zDbgBuf, SQLITE_WIN32_DBG_BUF_SIZE/sizeof(WCHAR))<=0 ){
+          nMin, (LPWSTR)zDbgBuf, SQLITE_WIN32_DBG_BUF_SIZE/sizeof(WCHAR))<=0 ){
     return;
   }
-  OutputDebugStringW(zDbgBuf);
+  osOutputDebugStringW((LPCWSTR)zDbgBuf);
 #else
   if( nMin>0 ){
     memset(zDbgBuf, 0, SQLITE_WIN32_DBG_BUF_SIZE);
@@ -958,7 +970,7 @@ static void *winMemMalloc(int nBytes){
   hHeap = winMemGetHeap();
   assert( hHeap!=0 );
   assert( hHeap!=INVALID_HANDLE_VALUE );
-#ifdef SQLITE_WIN32_MALLOC_VALIDATE
+#ifdef !SQLITE_OS_WINRT && SQLITE_WIN32_MALLOC_VALIDATE
   assert ( osHeapValidate(hHeap, SQLITE_WIN32_HEAP_FLAGS, NULL) );
 #endif
   assert( nBytes>=0 );
@@ -980,7 +992,7 @@ static void winMemFree(void *pPrior){
   hHeap = winMemGetHeap();
   assert( hHeap!=0 );
   assert( hHeap!=INVALID_HANDLE_VALUE );
-#ifdef SQLITE_WIN32_MALLOC_VALIDATE
+#ifdef !SQLITE_OS_WINRT && SQLITE_WIN32_MALLOC_VALIDATE
   assert ( osHeapValidate(hHeap, SQLITE_WIN32_HEAP_FLAGS, pPrior) );
 #endif
   if( !pPrior ) return; /* Passing NULL to HeapFree is undefined. */
@@ -1001,7 +1013,7 @@ static void *winMemRealloc(void *pPrior, int nBytes){
   hHeap = winMemGetHeap();
   assert( hHeap!=0 );
   assert( hHeap!=INVALID_HANDLE_VALUE );
-#ifdef SQLITE_WIN32_MALLOC_VALIDATE
+#ifdef !SQLITE_OS_WINRT && SQLITE_WIN32_MALLOC_VALIDATE
   assert ( osHeapValidate(hHeap, SQLITE_WIN32_HEAP_FLAGS, pPrior) );
 #endif
   assert( nBytes>=0 );
@@ -1029,7 +1041,7 @@ static int winMemSize(void *p){
   hHeap = winMemGetHeap();
   assert( hHeap!=0 );
   assert( hHeap!=INVALID_HANDLE_VALUE );
-#ifdef SQLITE_WIN32_MALLOC_VALIDATE
+#ifdef !SQLITE_OS_WINRT && SQLITE_WIN32_MALLOC_VALIDATE
   assert ( osHeapValidate(hHeap, SQLITE_WIN32_HEAP_FLAGS, NULL) );
 #endif
   if( !p ) return 0;
@@ -1057,6 +1069,8 @@ static int winMemInit(void *pAppData){
 
   if( !pWinMemData ) return SQLITE_ERROR;
   assert( pWinMemData->magic==WINMEM_MAGIC );
+
+#if !SQLITE_OS_WINRT
   if( !pWinMemData->hHeap ){
     pWinMemData->hHeap = osHeapCreate(SQLITE_WIN32_HEAP_FLAGS,
                                       SQLITE_WIN32_HEAP_INIT_SIZE,
@@ -1069,10 +1083,21 @@ static int winMemInit(void *pAppData){
       return SQLITE_NOMEM;
     }
     pWinMemData->bOwned = TRUE;
+    assert( pWinMemData->bOwned );
   }
+#else
+  pWinMemData->hHeap = osGetProcessHeap();
+  if( !pWinMemData->hHeap ){
+    sqlite3_log(SQLITE_NOMEM,
+        "failed to GetProcessHeap (%d)", osGetLastError());
+    return SQLITE_NOMEM;
+  }
+  pWinMemData->bOwned = FALSE;
+  assert( !pWinMemData->bOwned );
+#endif
   assert( pWinMemData->hHeap!=0 );
   assert( pWinMemData->hHeap!=INVALID_HANDLE_VALUE );
-#ifdef SQLITE_WIN32_MALLOC_VALIDATE
+#ifdef !SQLITE_OS_WINRT && SQLITE_WIN32_MALLOC_VALIDATE
   assert( osHeapValidate(pWinMemData->hHeap, SQLITE_WIN32_HEAP_FLAGS, NULL) );
 #endif
   return SQLITE_OK;
@@ -1087,7 +1112,7 @@ static void winMemShutdown(void *pAppData){
   if( !pWinMemData ) return;
   if( pWinMemData->hHeap ){
     assert( pWinMemData->hHeap!=INVALID_HANDLE_VALUE );
-#ifdef SQLITE_WIN32_MALLOC_VALIDATE
+#ifdef !SQLITE_OS_WINRT && SQLITE_WIN32_MALLOC_VALIDATE
     assert( osHeapValidate(pWinMemData->hHeap, SQLITE_WIN32_HEAP_FLAGS, NULL) );
 #endif
     if( pWinMemData->bOwned ){
@@ -4112,7 +4137,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==71 );
+  assert( ArraySize(aSyscall)==72 );
 
 #ifndef SQLITE_OMIT_WAL
   /* get memory map allocation granularity */
