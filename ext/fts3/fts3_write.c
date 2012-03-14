@@ -3726,8 +3726,7 @@ static int fts3IncrmergeLoad(
       }
 
       pLayer = &pWriter->aLayer[nHeight];
-      pLayer->iBlock = pWriter->iStart;
-      pLayer->iBlock += pWriter->nLeafEst*FTS_MAX_APPENDABLE_HEIGHT;
+      pLayer->iBlock = pWriter->iStart + pWriter->nLeafEst*nHeight;
       blobGrowBuffer(&pLayer->block, MAX(nRoot, p->nNodeSize), &rc);
       if( rc==SQLITE_OK ){
         memcpy(pLayer->block.a, aRoot, nRoot);
@@ -3750,7 +3749,7 @@ static int fts3IncrmergeLoad(
             pLayer = &pWriter->aLayer[i-1];
             pLayer->iBlock = reader.iChild;
             rc = sqlite3Fts3ReadBlock(p, reader.iChild, &aBlock, &nBlock, 0);
-            blobGrowBuffer(&pLayer->block, nBlock, &rc);
+            blobGrowBuffer(&pLayer->block, MAX(nBlock, p->nNodeSize), &rc);
             if( rc==SQLITE_OK ){
               memcpy(pLayer->block.a, aBlock, nBlock);
               pLayer->block.n = nBlock;
