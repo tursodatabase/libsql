@@ -3704,6 +3704,43 @@ static int winAccess(
 
 
 /*
+** Returns non-zero if the specified path name should be used verbatim.  If
+** non-zero is returned from this function, the calling function must simply
+** use the provided path name verbatim -OR- resolve it into a full path name
+** using the GetFullPathName Win32 API function (if available).
+*/
+static BOOL winIsVerbatimPathname(
+  const char *zPathname
+){
+  /*
+  ** If the path name starts with a forward slash or a backslash, it is either
+  ** a legal UNC name, a volume relative path, or an absolute path name in the
+  ** "Unix" format on Windows.  There is no easy way to differentiate between
+  ** the final two cases; therefore, we return the safer return value of TRUE
+  ** so that callers of this function will simply use it verbatim.
+  */
+  if ( zPathname[0]=='/' || zPathname[0]=='\\' ){
+    return TRUE;
+  }
+
+  /*
+  ** If the path name starts with a letter and a colon it is either a volume
+  ** relative path or an absolute path.  Callers of this function must not
+  ** attempt to treat it as a relative path name (i.e. they should simply use
+  ** it verbatim).
+  */
+  if ( sqlite3Isalpha(zPathname[0]) && zPathname[1]==':' ){
+    return TRUE;
+  }
+
+  /*
+  ** If we get to this point, the path name should almost certainly be a purely
+  ** relative one (i.e. not a UNC name, not absolute, and not volume relative).
+  */
+  return FALSE;
+}
+
+/*
 ** Turn a relative pathname into a full pathname.  Write the full
 ** pathname into zOut[].  zOut[] will be at least pVfs->mxPathname
 ** bytes in size.
@@ -3718,16 +3755,47 @@ static int winFullPathname(
 #if defined(__CYGWIN__)
   SimulateIOError( return SQLITE_ERROR );
   UNUSED_PARAMETER(nFull);
-  cygwin_conv_to_full_win32_path(zRelative, zFull);
+  assert( pVfs->mxPathname>=MAX_PATH );
+  assert( nFull>=pVfs->mxPathname );
+  if ( sqlite3_data_directory && !winIsVerbatimPathname(zRelative) ){
+    /*
+    ** NOTE: We are dealing with a relative path name and the data
+    **       directory has been set.  Therefore, use it as the basis
+    **       for converting the relative path name to an absolute
+    **       one by prepending the data directory and a slash.
+    */
+    char zOut[MAX_PATH+1];
+    memset(zOut, 0, MAX_PATH+1);
+    cygwin_conv_to_win32_path(zRelative, zOut); /* POSIX to Win32 */
+    sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s\\%s",
+                     sqlite3_data_directory, zOut);
+  }else{
+    /*
+    ** NOTE: The Cygwin docs state that the maximum length needed
+    **       for the buffer passed to cygwin_conv_to_full_win32_path
+    **       is MAX_PATH.
+    */
+    cygwin_conv_to_full_win32_path(zRelative, zFull);
+  }
   return SQLITE_OK;
 #endif
 
-#if SQLITE_OS_WINCE || SQLITE_OS_WINRT
+#if (SQLITE_OS_WINCE || SQLITE_OS_WINRT) && !defined(__CYGWIN__)
   SimulateIOError( return SQLITE_ERROR );
-  UNUSED_PARAMETER(nFull);
   /* WinCE has no concept of a relative pathname, or so I am told. */
   /* WinRT has no way to convert a relative path to an absolute one. */
-  sqlite3_snprintf(pVfs->mxPathname, zFull, "%s", zRelative);
+  if ( sqlite3_data_directory && !winIsVerbatimPathname(zRelative) ){
+    /*
+    ** NOTE: We are dealing with a relative path name and the data
+    **       directory has been set.  Therefore, use it as the basis
+    **       for converting the relative path name to an absolute
+    **       one by prepending the data directory and a backslash.
+    */
+    sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s\\%s",
+                     sqlite3_data_directory, zRelative);
+  }else{
+    sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s", zRelative);
+  }
   return SQLITE_OK;
 #endif
 
@@ -3749,7 +3817,17 @@ static int winFullPathname(
   ** current working directory has been unlinked.
   */
   SimulateIOError( return SQLITE_ERROR );
-  UNUSED_PARAMETER(nFull);
+  if ( sqlite3_data_directory && !winIsVerbatimPathname(zRelative) ){
+    /*
+    ** NOTE: We are dealing with a relative path name and the data
+    **       directory has been set.  Therefore, use it as the basis
+    **       for converting the relative path name to an absolute
+    **       one by prepending the data directory and a backslash.
+    */
+    sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s\\%s",
+                     sqlite3_data_directory, zRelative);
+    return SQLITE_OK;
+  }
   zConverted = convertUtf8Filename(zRelative);
   if( zConverted==0 ){
     return SQLITE_IOERR_NOMEM;
@@ -3783,7 +3861,7 @@ static int winFullPathname(
   }
 #endif
   if( zOut ){
-    sqlite3_snprintf(pVfs->mxPathname, zFull, "%s", zOut);
+    sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s", zOut);
     sqlite3_free(zOut);
     return SQLITE_OK;
   }else{

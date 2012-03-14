@@ -1,5 +1,5 @@
-C Add\sassert\sto\sverify\sthe\snumber\sof\scharacters\sto\swrite\sin\ssqlite3_win32_write_debug.
-D 2012-03-13T03:38:22.981
+C Add\sexperimental\ssupport\sfor\sresolving\srelative\sdatabase\sfile\spaths\susing\sa\sfixed\suser-defined\sdirectory.
+D 2012-03-14T00:44:01.952
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -147,7 +147,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
 F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
-F src/main.c dcb4a15254dca9cc59dba63e813a8c140c021832
+F src/main.c 5808bc6e2d2a80c3d73c42622fa162dc3cc24893
 F src/malloc.c 15afac5e59b6584efe072e9933aefb4230e74f97
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c b3677415e69603d6a0e7c5410a1b3731d55beda1
@@ -167,14 +167,14 @@ F src/os.h 38aabd5e3ecd4162332076f55bb09cec02165cca
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 0e3d2942d228d0366fb80a3640f35caf413b66d1
-F src/os_win.c c47a86a8b8a958fc8cae06a45e56ed3217a686e4
+F src/os_win.c ed4f4f5cad8c708d5e443139df0d65e9354b8368
 F src/pager.c 3955b62cdb5bb64559607cb474dd12a6c8e1d4a5
 F src/pager.h ef1eaf8593e78f73885c1dfac27ad83bee23bdc5
 F src/parse.y 1ddd71ae55f4b7cbb2672526ea4de023de0f519e
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h 1b5dcc3dc8103d03e625b177023ee67764fa6b7c
 F src/pcache1.c b30b1c35908346ecc43d8d9d17f2ddf6817f8f60
-F src/pragma.c e708b3bb5704605816f617e0b1d63a5488060715
+F src/pragma.c 149d8400ff783741d41389176832241cbff8f856
 F src/prepare.c ec4989f7f480544bdc4192fe663470d2a2d7d61e
 F src/printf.c 7ffb4ebb8b341f67e049695ba031da717b3d2699
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -182,14 +182,14 @@ F src/resolve.c 3d3e80a98f203ac6b9329e9621e29eda85ddfd40
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 44ccdcb5d2a1c48622c179b2d72167b716388581
 F src/shell.c aa28f117033ba3e44b5eaaf2ad572222bcdfd66e
-F src/sqlite.h.in f46e368d1a28b09d876e35444785674d170f2d62
+F src/sqlite.h.in 21d17ec95bc6004908f8d8158ffd9021790d1b06
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h b013dab7d43fb67c3ca2f0253d7863abb37e233c
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 4568e72dfd36b6a5911f93457364deb072e0b03a
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 2aeb69958965dad0842d5ea1456f1a958ef296e6
-F src/test1.c 328cbe4a4ee6d10d67ece2a7adaa2770569fae0f
+F src/test1.c 8e1e72e09d7941d9d22fd6a544df39e2e3f4efd9
 F src/test2.c 711555927f1f7e8db9aab86b512bc6934a774abe
 F src/test3.c 91d3f1a09cfae3533ef17d8b484a160f3d1f1a21
 F src/test4.c d1e5a5e904d4b444cf572391fdcb017638e36ff7
@@ -636,7 +636,7 @@ F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/permutations.test 2b5a1b64a8e5114757457fbce9010387d1fe7682
-F test/pragma.test c51c148defe32bf4a419a522f95d26838d5cf677
+F test/pragma.test eba5bd337ae68870985cd1776659bb136b33dada
 F test/pragma2.test 3a55f82b954242c642f8342b17dffc8b47472947
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301
@@ -992,7 +992,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 7af88ad306612dd316827c506dbf8df7477b2ec1
-R 733fe38048c4d65e48f1419dbebc0b16
+P 8083f6164f3308c1c1d4f4d84be1894e382fe2e6
+R ecb2eb3e3cb321cdfbc1971b31d42211
 U mistachkin
-Z ac12a0ffda13979ead9c043455a8d437
+Z 0c49ed1cd4cd58d4e2dd23c2fb64b825

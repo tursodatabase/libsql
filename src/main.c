@@ -75,6 +75,15 @@ void (*sqlite3IoTrace)(const char*, ...) = 0;
 char *sqlite3_temp_directory = 0;
 
 /*
+** If the following global variable points to a string which is the
+** name of a directory, then that directory will be used to store
+** all database files specified with a relative pathname.
+**
+** See also the "PRAGMA data_store_directory" SQL command.
+*/
+char *sqlite3_data_directory = 0;
+
+/*
 ** Initialize SQLite.  
 **
 ** This routine must be called to initialize the memory allocation,
