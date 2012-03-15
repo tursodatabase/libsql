@@ -66,10 +66,10 @@ proc fts3_build_db_2 {n} {
 
   for {set i 0} {$i < $n} {incr i} {
     set word ""
-    set n [llength $chars]
-    append word [lindex $chars [expr {($i / 1)   % $n}]]
-    append word [lindex $chars [expr {($i / $n)  % $n}]]
-    append word [lindex $chars [expr {($i / ($n*$n)) % $n}]]
+    set nChar [llength $chars]
+    append word [lindex $chars [expr {($i / 1)   % $nChar}]]
+    append word [lindex $chars [expr {($i / $nChar)  % $nChar}]]
+    append word [lindex $chars [expr {($i / ($nChar*$nChar)) % $nChar}]]
 
     db eval { INSERT INTO t2(docid, content) VALUES($i, $word) }
   }

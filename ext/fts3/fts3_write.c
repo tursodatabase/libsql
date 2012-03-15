@@ -306,10 +306,10 @@ static int fts3SqlStmt(
          "  ORDER BY (level %% 1024) DESC LIMIT 1",
 
 /* Estimate the upper limit on the number of leaf nodes in a new segment
-** created by merging the two segments with idx=0 and idx=1 from absolute
-** level ?. See function fts3Incrmerge() for details.  */
+** created by merging the oldest :2 segments from absolute level :1. See 
+** function fts3Incrmerge() for details.  */
 /* 29 */ "SELECT 2 * total(1 + leaves_end_block - start_block) "
-         "  FROM %Q.'%q_segdir' WHERE level = ? AND idx BETWEEN 0 AND 1",
+         "  FROM %Q.'%q_segdir' WHERE level = ? AND idx < ?",
 
 /* SQL_DELETE_SEGDIR_ENTRY
 **   Delete the %_segdir entry on absolute level :1 with index :2.  */
@@ -1077,6 +1077,9 @@ static int fts3AllocateSegdirIdx(
     ** if iNext is less than FTS3_MERGE_COUNT, allocate index iNext.
     */
     if( iNext>=FTS3_MERGE_COUNT ){
+sqlite3_log(SQLITE_OK, 
+    "16-way merge at level=%d langid=%d index=%d", iLevel, iLangid, iIndex
+);
       rc = fts3SegmentMerge(p, iLangid, iIndex, iLevel);
       *piIdx = 0;
     }else{
@@ -3232,25 +3235,30 @@ static int fts3DoRebuild(Fts3Table *p){
 static int fts3IncrmergeCsr(
   Fts3Table *p,                   /* FTS3 table handle */
   sqlite3_int64 iAbsLevel,        /* Absolute level to open */
+  int nSeg,                       /* Number of segments to merge */
   Fts3MultiSegReader *pCsr        /* Cursor object to populate */
 ){
   int rc;                         /* Return Code */
-  sqlite3_stmt *pStmt = 0;
+  sqlite3_stmt *pStmt = 0;        /* Statement used to read %_segdir entry */  
+  int nByte;                      /* Bytes allocated at pCsr->apSegment[] */
 
+  assert( nSeg>=2 );
   memset(pCsr, 0, sizeof(*pCsr));
-  pCsr->apSegment = (Fts3SegReader **)sqlite3_malloc(sizeof(Fts3SegReader *)*2);
+  nByte = sizeof(Fts3SegReader *) * nSeg;
+
+  pCsr->apSegment = (Fts3SegReader **)sqlite3_malloc(nByte);
   if( pCsr->apSegment==0 ){
     rc = SQLITE_NOMEM;
   }else{
-    memset(pCsr->apSegment, 0, sizeof(Fts3SegReader *)*2);
-    pCsr->nSegment = 2;
+    memset(pCsr->apSegment, 0, nByte);
+    pCsr->nSegment = nSeg;
     rc = fts3SqlStmt(p, SQL_SELECT_LEVEL, &pStmt, 0);
   }
   if( rc==SQLITE_OK ){
     int i;
     int rc2;
     sqlite3_bind_int64(pStmt, 1, iAbsLevel);
-    for(i=0; rc==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW && i<2; i++){
+    for(i=0; rc==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW && i<nSeg; i++){
       rc = sqlite3Fts3SegReaderNew(i, 0,
           sqlite3_column_int64(pStmt, 1),        /* segdir.start_block */
           sqlite3_column_int64(pStmt, 2),        /* segdir.leaves_end_block */
@@ -3818,8 +3826,7 @@ static int fts3IncrmergeLoad(
 static int fts3IncrmergeWriter( 
   Fts3Table *p,                   /* Fts3 table handle */
   sqlite3_int64 iAbsLevel,        /* Absolute level of input segments */
-  const char *zKey,               /* First key to write */
-  int nKey,                       /* Number of bytes in nKey */
+  Fts3MultiSegReader *pCsr,       /* Cursor that data will be read from */
   IncrmergeWriter *pWriter        /* Populate this object */
 ){
   int rc;                         /* Return Code */
@@ -3829,6 +3836,8 @@ static int fts3IncrmergeWriter(
   sqlite3_stmt *pLeafEst = 0;     /* SQL used to determine nLeafEst */
   sqlite3_stmt *pFirstBlock = 0;  /* SQL used to determine first block */
   sqlite3_stmt *pOutputIdx = 0;   /* SQL used to find output index */
+  const char *zKey = pCsr->zTerm;
+  int nKey = pCsr->nTerm;
 
   rc = fts3SqlStmt(p, SQL_NEXT_SEGMENT_INDEX, &pOutputIdx, 0);
   if( rc==SQLITE_OK ){
@@ -3849,6 +3858,7 @@ static int fts3IncrmergeWriter(
   rc = fts3SqlStmt(p, SQL_MAX_LEAF_NODE_ESTIMATE, &pLeafEst, 0);
   if( rc==SQLITE_OK ){
     sqlite3_bind_int64(pLeafEst, 1, iAbsLevel);
+    sqlite3_bind_int64(pLeafEst, 2, pCsr->nSegment);
     if( SQLITE_ROW==sqlite3_step(pLeafEst) ){
       nLeafEst = sqlite3_column_int(pLeafEst, 0);
     }
@@ -4120,15 +4130,17 @@ static int fts3IncrmergeChomp(
   int i;
   int rc = SQLITE_OK;
 
-  assert( pCsr->nSegment==2 );
-  assert( (pCsr->apSegment[0]->iIdx==0 && pCsr->apSegment[1]->iIdx==1)
-       || (pCsr->apSegment[1]->iIdx==0 && pCsr->apSegment[0]->iIdx==1) 
-  );
+  for(i=pCsr->nSegment-1; i>=0 && rc==SQLITE_OK; i--){
+    Fts3SegReader *pSeg = 0;
+    int j;
 
-  for(i=1; i>=0 && rc==SQLITE_OK; i--){
-    Fts3SegReader *pSeg = pCsr->apSegment[0];
-    if( pSeg->iIdx!=i ) pSeg = pCsr->apSegment[1];
-    assert( pSeg->iIdx==i );
+    /* Find the Fts3SegReader object with Fts3SegReader.iIdx==i. It is hiding
+    ** somewhere in the pCsr->apSegment[] array.  */
+    for(j=0; ALWAYS(j<pCsr->nSegment); j++){
+      pSeg = pCsr->apSegment[j];
+      if( pSeg->iIdx==i ) break;
+    }
+    assert( j<pCsr->nSegment && pSeg->iIdx==i );
 
     if( pSeg->aNode==0 ){
       /* Seg-reader is at EOF. Remove the entire input segment. */
@@ -4178,6 +4190,8 @@ static int fts3Incrmerge(Fts3Table *p, int nMerge, int nMin){
     rc = fts3SqlStmt(p, SQL_FIND_MERGE_LEVEL, &pFindLevel, 0);
     sqlite3_bind_int(pFindLevel, 1, nMin);
     if( sqlite3_step(pFindLevel)!=SQLITE_ROW ){
+      /* There are no levels with nMin or more segments. Or an error has
+      ** occurred. Either way, exit early.  */
       return sqlite3_reset(pFindLevel);
     }
     iAbsLevel = sqlite3_column_int64(pFindLevel, 0);
@@ -4193,14 +4207,16 @@ static int fts3Incrmerge(Fts3Table *p, int nMerge, int nMin){
     /* Open a cursor to iterate through the contents of indexes 0 and 1 of
     ** the selected absolute level. */
     pFilter->flags = FTS3_SEGMENT_REQUIRE_POS;
-    rc = fts3IncrmergeCsr(p, iAbsLevel, pCsr);
-
+    rc = fts3IncrmergeCsr(p, iAbsLevel, nMin, pCsr);
+sqlite3_log(SQLITE_OK, "%d-way merge from level=%d to level=%d", 
+    nMin, (int)iAbsLevel, (int)iAbsLevel+1
+);
     if( rc==SQLITE_OK ){
       rc = sqlite3Fts3SegReaderStart(p, pCsr, pFilter);
     }
     if( rc==SQLITE_OK ){
       if( SQLITE_ROW==(rc = sqlite3Fts3SegReaderStep(p, pCsr)) ){
-        rc = fts3IncrmergeWriter(p, iAbsLevel, pCsr->zTerm,pCsr->nTerm,pWriter);
+        rc = fts3IncrmergeWriter(p, iAbsLevel, pCsr, pWriter);
         if( rc==SQLITE_OK ){
           do {
             rc = fts3IncrmergeAppend(p, pWriter, pCsr);

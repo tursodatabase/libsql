@@ -1,5 +1,5 @@
-C Add\stests\sfor\sincremental\smerge\scode.
-D 2012-03-14T20:01:52.250
+C Modify\sincremental\smerge\scode\sto\smerge\snMin\ssegments\sat\sa\stime.
+D 2012-03-15T17:45:50.857
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/fts3_test.c 6b7cc68aef4efb084e1449f7d20c4b20d3bdf6b4
 F ext/fts3/fts3_tokenizer.c 3da7254a9881f7e270ab28e2004e0d22b3212bce
 F ext/fts3/fts3_tokenizer.h 66dec98e365854b6cd2d54f1a96bb6d428fc5a68
 F ext/fts3/fts3_tokenizer1.c 0dde8f307b8045565cf63797ba9acfaff1c50c68
-F ext/fts3/fts3_write.c 355121666034ece7d2472caa3f322d0cb61b0f0d
+F ext/fts3/fts3_write.c be60aaf4a887a68aaf0d7541bc78413e7ba66291
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
@@ -448,7 +448,7 @@ F test/fts2q.test b2fbbe038b7a31a52a6079b215e71226d8c6a682
 F test/fts2r.test b154c30b63061d8725e320fba1a39e2201cadd5e
 F test/fts2token.test d8070b241a15ff13592a9ae4a8b7c171af6f445a
 F test/fts3.test 672a040ea57036fb4b6fdc09027c18d7d24ab654
-F test/fts3_common.tcl 1b2e522476236a018c1a4b8ae4f7599ce29b7be0
+F test/fts3_common.tcl d65de7e21c2b933bf17152830eb924356f197c8f
 F test/fts3aa.test 909d5f530d30a8e36b9328d67285eae6537c79c0
 F test/fts3ab.test 09aeaa162aee6513d9ff336b6932211008b9d1f9
 F test/fts3ac.test 636ed7486043055d4f126a0e385f2d5a82ebbf63
@@ -497,7 +497,7 @@ F test/fts3sort.test 95be0b19d7e41c44b29014f13ea8bddd495fd659
 F test/fts4aa.test 6e7f90420b837b2c685f3bcbe84c868492d40a68
 F test/fts4content.test 17b2360f7d1a9a7e5aa8022783f5c5731b6dfd4f
 F test/fts4langid.test fabdd5a8db0fa00292e0704809f566e3fb6dba3a
-F test/fts4merge.test d841f283bf9557d549afde513fe38d0b48adc4f7
+F test/fts4merge.test 1c3389a3be18498934baf76afe67663d8b4b5e42
 F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
 F test/func.test 6c5ce11e3a0021ca3c0649234e2d4454c89110ca
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
@@ -994,7 +994,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 36ae510de45be44efd34cff242d02fb21b7419ac
-R 326f29ae3378aab5424c0bd2deaa1142
+P 570473729d6561d81e6e5f8884fd18487008636e
+R 8deb5f38fb61fdd986c036580c00c7d8
 U dan
-Z 9fe983241614f7794efd59c0386308c4
+Z c18f3e75d81727125e658ae77334fefb
