@@ -106,6 +106,25 @@ struct winFile {
  * various Win32 API heap functions instead of our own.
  */
 #ifdef SQLITE_WIN32_MALLOC
+
+/*
+ * If this is non-zero, an isolated heap will be created by the native Win32
+ * allocator subsystem; otherwise, the default process heap will be used.  This
+ * setting has no effect when compiling for WinRT.  By default, this is enabled
+ * and an isolated heap will be created to store all allocated data.
+ *
+ ******************************************************************************
+ * WARNING: It is important to note that when this setting is non-zero and the
+ *          winMemShutdown function is called (e.g. by the sqlite3_shutdown
+ *          function), all data that was allocated using the isolated heap will
+ *          be freed immediately and any attempt to access any of that freed
+ *          data will almost certainly result in an immediate access violation.
+ ******************************************************************************
+ */
+#ifndef SQLITE_WIN32_HEAP_CREATE
+#  define SQLITE_WIN32_HEAP_CREATE    (TRUE)
+#endif
+
 /*
  * The initial size of the Win32-specific heap.  This value may be zero.
  */
@@ -1070,7 +1089,7 @@ static int winMemInit(void *pAppData){
   if( !pWinMemData ) return SQLITE_ERROR;
   assert( pWinMemData->magic==WINMEM_MAGIC );
 
-#if !SQLITE_OS_WINRT
+#if !SQLITE_OS_WINRT && SQLITE_WIN32_HEAP_CREATE
   if( !pWinMemData->hHeap ){
     pWinMemData->hHeap = osHeapCreate(SQLITE_WIN32_HEAP_FLAGS,
                                       SQLITE_WIN32_HEAP_INIT_SIZE,
