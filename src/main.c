@@ -2704,35 +2704,27 @@ int sqlite3_extended_result_codes(sqlite3 *db, int onoff){
 */
 int sqlite3_file_control(sqlite3 *db, const char *zDbName, int op, void *pArg){
   int rc = SQLITE_ERROR;
-  int iDb;
+  Btree *pBtree;
+
   sqlite3_mutex_enter(db->mutex);
-  if( zDbName==0 ){
-    iDb = 0;
-  }else{
-    for(iDb=0; iDb<db->nDb; iDb++){
-      if( strcmp(db->aDb[iDb].zName, zDbName)==0 ) break;
+  pBtree = sqlite3DbNameToBtree(db, zDbName);
+  if( pBtree ){
+    Pager *pPager;
+    sqlite3_file *fd;
+    sqlite3BtreeEnter(pBtree);
+    pPager = sqlite3BtreePager(pBtree);
+    assert( pPager!=0 );
+    fd = sqlite3PagerFile(pPager);
+    assert( fd!=0 );
+    if( op==SQLITE_FCNTL_FILE_POINTER ){
+      *(sqlite3_file**)pArg = fd;
+      rc = SQLITE_OK;
+    }else if( fd->pMethods ){
+      rc = sqlite3OsFileControl(fd, op, pArg);
+    }else{
+      rc = SQLITE_NOTFOUND;
     }
-  }
-  if( iDb<db->nDb ){
-    Btree *pBtree = db->aDb[iDb].pBt;
-    if( pBtree ){
-      Pager *pPager;
-      sqlite3_file *fd;
-      sqlite3BtreeEnter(pBtree);
-      pPager = sqlite3BtreePager(pBtree);
-      assert( pPager!=0 );
-      fd = sqlite3PagerFile(pPager);
-      assert( fd!=0 );
-      if( op==SQLITE_FCNTL_FILE_POINTER ){
-        *(sqlite3_file**)pArg = fd;
-        rc = SQLITE_OK;
-      }else if( fd->pMethods ){
-        rc = sqlite3OsFileControl(fd, op, pArg);
-      }else{
-        rc = SQLITE_NOTFOUND;
-      }
-      sqlite3BtreeLeave(pBtree);
-    }
+    sqlite3BtreeLeave(pBtree);
   }
   sqlite3_mutex_leave(db->mutex);
   return rc;   
@@ -3028,15 +3020,34 @@ sqlite3_int64 sqlite3_uri_int64(
 }
 
 /*
+** Return the Btree pointer identified by zDbName.  Return NULL if not found.
+*/
+Btree *sqlite3DbNameToBtree(sqlite3 *db, const char *zDbName){
+  int i;
+  for(i=0; i<db->nDb; i++){
+    if( db->aDb[i].pBt
+     && (zDbName==0 || sqlite3StrICmp(zDbName, db->aDb[i].zName)==0)
+    ){
+      return db->aDb[i].pBt;
+    }
+  }
+  return 0;
+}
+
+/*
 ** Return the filename of the database associated with a database
 ** connection.
 */
 const char *sqlite3_db_filename(sqlite3 *db, const char *zDbName){
-  int i;
-  for(i=0; i<db->nDb; i++){
-    if( db->aDb[i].pBt && sqlite3StrICmp(zDbName, db->aDb[i].zName)==0 ){
-      return sqlite3BtreeGetFilename(db->aDb[i].pBt);
-    }
-  }
-  return 0;
+  Btree *pBt = sqlite3DbNameToBtree(db, zDbName);
+  return pBt ? sqlite3BtreeGetFilename(pBt) : 0;
+}
+
+/*
+** Return 1 if database is read-only or 0 if read/write.  Return -1 if
+** no such database exists.
+*/
+int sqlite3_db_readonly(sqlite3 *db, const char *zDbName){
+  Btree *pBt = sqlite3DbNameToBtree(db, zDbName);
+  return pBt ? sqlite3PagerIsreadonly(sqlite3BtreePager(pBt)) : -1;
 }
