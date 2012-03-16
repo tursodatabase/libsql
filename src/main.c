@@ -287,6 +287,15 @@ int sqlite3_shutdown(void){
     sqlite3GlobalConfig.isMutexInit = 0;
   }
 
+  /* The heap subsystem has now been shutdown and these values are supposed
+  ** to be NULL or point to memory that was obtained from sqlite3_malloc(),
+  ** which would rely on that heap subsystem; therefore, make sure these
+  ** values cannot refer to heap memory that was just invalidated when the
+  ** heap subsystem was shutdown.
+  */
+  sqlite3_data_directory = 0;
+  sqlite3_temp_directory = 0;
+
   return SQLITE_OK;
 }
 
