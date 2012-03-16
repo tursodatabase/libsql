@@ -1,5 +1,5 @@
-C Modify\sincremental\smerge\scode\sto\smerge\snMin\ssegments\sat\sa\stime.
-D 2012-03-15T17:45:50.857
+C Add\sa\scomment\sto\sthe\sFTS\sgetAbsoluteLevel()\sfunction.\sNo\sactual\scode\schanges.
+D 2012-03-16T14:54:07.123
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/fts3_test.c 6b7cc68aef4efb084e1449f7d20c4b20d3bdf6b4
 F ext/fts3/fts3_tokenizer.c 3da7254a9881f7e270ab28e2004e0d22b3212bce
 F ext/fts3/fts3_tokenizer.h 66dec98e365854b6cd2d54f1a96bb6d428fc5a68
 F ext/fts3/fts3_tokenizer1.c 0dde8f307b8045565cf63797ba9acfaff1c50c68
-F ext/fts3/fts3_write.c be60aaf4a887a68aaf0d7541bc78413e7ba66291
+F ext/fts3/fts3_write.c fab92bcc6de43fb6dfd3937ac67e2cb45c834a2b
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
@@ -994,7 +994,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 570473729d6561d81e6e5f8884fd18487008636e
-R 8deb5f38fb61fdd986c036580c00c7d8
+P cd34bc1af4ba608ea3b52bab55bcfe0086711900
+R c9f36e032863c0b8f751fc4c1ff8b5a5
 U dan
-Z c18f3e75d81727125e658ae77334fefb
+Z b14699878441d211e25f75f7c2630c95

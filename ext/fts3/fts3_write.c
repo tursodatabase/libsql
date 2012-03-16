@@ -481,11 +481,34 @@ int sqlite3Fts3ReadLock(Fts3Table *p){
   return rc;
 }
 
+/*
+** FTS maintains a separate indexes for each language-id (a 32-bit integer).
+** Within each language id, a separate index is maintained to store the
+** document terms, and each configured prefix size (configured the FTS 
+** "prefix=" option). And each index consists of multiple levels ("relative
+** levels").
+**
+** All three of these values (the language id, the specific index and the
+** level within the index) are encoded in 64-bit integer values stored
+** in the %_segdir table on disk. This function is used to convert three
+** separate component values into the single 64-bit integer value that
+** can be used to query the %_segdir table.
+**
+** Specifically, each language-id/index combination is allocated 1024 
+** 64-bit integer level values ("absolute levels"). The main terms index
+** for language-id 0 is allocate values 0-1023. The first prefix index
+** (if any) for language-id 0 is allocated values 1024-2047. And so on.
+** Language 1 indexes are allocated immediately following language 0.
+**
+** So, for a system with nPrefix prefix indexes configured, the block of
+** absolute levels that corresponds to language-id iLangid and index 
+** iIndex starts at absolute level ((iLangid * (nPrefix+1) + iIndex) * 1024).
+*/
 static sqlite3_int64 getAbsoluteLevel(
-  Fts3Table *p, 
-  int iLangid, 
-  int iIndex, 
-  int iLevel
+  Fts3Table *p,                   /* FTS3 table handle */
+  int iLangid,                    /* Language id */
+  int iIndex,                     /* Index in p->aIndex[] */
+  int iLevel                      /* Level of segments */
 ){
   assert( iLangid>=0 );
   assert( p->nIndex>0 );
