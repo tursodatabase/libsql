@@ -218,6 +218,7 @@ static const sqlite3_tokenizer_module simpleTokenizerModule = {
   simpleOpen,
   simpleClose,
   simpleNext,
+  0,
 };
 
 /*

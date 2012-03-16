@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_db_readonly()\sAPI\sto\strunk.
-D 2012-03-15T22:54:37.033
+C Fix\sharmless\scompiler\swarnings.
+D 2012-03-16T00:28:11.282
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -71,13 +71,13 @@ F ext/fts3/fts3_expr.c dbc7ba4c3a6061adde0f38ed8e9b349568299551
 F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
 F ext/fts3/fts3_hash.h 8331fb2206c609f9fc4c4735b9ab5ad6137c88ec
 F ext/fts3/fts3_icu.c 6c8f395cdf9e1e3afa7fadb7e523dbbf381c6dfa
-F ext/fts3/fts3_porter.c b7e5276f9f0a5fc7018b6fa55ce0f31f269ef881
+F ext/fts3/fts3_porter.c a465b49fcb8249a755792f87516eff182efa42b3
 F ext/fts3/fts3_snippet.c c9e126c20760988aa7c43c6ea1379db34738282e
 F ext/fts3/fts3_term.c d3466cf99432291be08e379d89645462431809d6
 F ext/fts3/fts3_test.c 6b7cc68aef4efb084e1449f7d20c4b20d3bdf6b4
 F ext/fts3/fts3_tokenizer.c 3da7254a9881f7e270ab28e2004e0d22b3212bce
 F ext/fts3/fts3_tokenizer.h 66dec98e365854b6cd2d54f1a96bb6d428fc5a68
-F ext/fts3/fts3_tokenizer1.c 0dde8f307b8045565cf63797ba9acfaff1c50c68
+F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_write.c f87bb2d27d31cb7a7bf306747079095393c9d073
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
@@ -253,7 +253,7 @@ F src/vtab.c ab90fb600a3f5e4b7c48d22a4cdb2d6b23239847
 F src/wal.c 7bb3ad807afc7973406c805d5157ec7a2f65e146
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c d4ce63a2887dab037d9d9830abbfcac2643e308a
+F src/where.c 6baab5dfcf4472552c0346d04f6fd2f4f8539c78
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -992,7 +992,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 0dc4cb935514131c99172175d57feec3a1743aa9 254f99ea9ff1534948bdb179e69ab0c940c87ec1
-R 16a5b52f9383f81bfef8d52e60214ef8
+P fed134a5f395533de0c9d76950697c060ddb126d
+R 9a71f3ab5326ee35b9bbd87536e2a1d5
 U drh
-Z 7730c197df8d847371e263295817abcb
+Z 60cd8a049ba54606f3a162ca33790b57

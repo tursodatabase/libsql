@@ -3802,8 +3802,7 @@ static Bitmask codeOneLoopStart(
   WhereInfo *pWInfo,   /* Complete information about the WHERE clause */
   int iLevel,          /* Which level of pWInfo->a[] should be coded */
   u16 wctrlFlags,      /* One of the WHERE_* flags defined in sqliteInt.h */
-  Bitmask notReady,    /* Which tables are currently available */
-  Expr *pWhere         /* Complete WHERE clause */
+  Bitmask notReady     /* Which tables are currently available */
 ){
   int j, k;            /* Loop counters */
   int iCur;            /* The VDBE cursor for the table */
@@ -4349,12 +4348,12 @@ static Bitmask codeOneLoopStart(
     ** indices.
     */
     if( pWC->nTerm>1 ){
-      int ii;
-      for(ii=0; ii<pWC->nTerm; ii++){
-        Expr *pExpr = pWC->a[ii].pExpr;
+      int iTerm;
+      for(iTerm=0; iTerm<pWC->nTerm; iTerm++){
+        Expr *pExpr = pWC->a[iTerm].pExpr;
         if( ExprHasProperty(pExpr, EP_FromJoin) ) continue;
-        if( pWC->a[ii].wtFlags & (TERM_VIRTUAL|TERM_ORINFO) ) continue;
-        if( (pWC->a[ii].eOperator & WO_ALL)==0 ) continue;
+        if( pWC->a[iTerm].wtFlags & (TERM_VIRTUAL|TERM_ORINFO) ) continue;
+        if( (pWC->a[iTerm].eOperator & WO_ALL)==0 ) continue;
         pExpr = sqlite3ExprDup(pParse->db, pExpr, 0);
         pAndExpr = sqlite3ExprAnd(pParse->db, pAndExpr, pExpr);
       }
@@ -5061,7 +5060,7 @@ WhereInfo *sqlite3WhereBegin(
   for(i=0; i<nTabList; i++){
     pLevel = &pWInfo->a[i];
     explainOneScan(pParse, pTabList, pLevel, i, pLevel->iFrom, wctrlFlags);
-    notReady = codeOneLoopStart(pWInfo, i, wctrlFlags, notReady, pWhere);
+    notReady = codeOneLoopStart(pWInfo, i, wctrlFlags, notReady);
     pWInfo->iContinue = pLevel->addrCont;
   }
 
