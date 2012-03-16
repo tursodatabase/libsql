@@ -510,10 +510,13 @@ static sqlite3_int64 getAbsoluteLevel(
   int iIndex,                     /* Index in p->aIndex[] */
   int iLevel                      /* Level of segments */
 ){
+  sqlite3_int64 iBase;            /* First absolute level for iLangid/iIndex */
   assert( iLangid>=0 );
   assert( p->nIndex>0 );
   assert( iIndex>=0 && iIndex<p->nIndex );
-  return (iLangid * p->nIndex + iIndex) * FTS3_SEGDIR_MAXLEVEL + iLevel;
+
+  iBase = ((sqlite3_int64)iLangid * p->nIndex + iIndex) * FTS3_SEGDIR_MAXLEVEL;
+  return iBase + iLevel;
 }
 
 /*
@@ -556,7 +559,7 @@ int sqlite3Fts3AllSegdirs(
   Fts3Table *p,                   /* FTS3 table */
   int iLangid,                    /* Language being queried */
   int iIndex,                     /* Index for p->aIndex[] */
-  int iLevel,                     /* Level to select */
+  int iLevel,                     /* Level to select (relative level) */
   sqlite3_stmt **ppStmt           /* OUT: Compiled statement */
 ){
   int rc;
@@ -571,7 +574,7 @@ int sqlite3Fts3AllSegdirs(
     rc = fts3SqlStmt(p, SQL_SELECT_LEVEL_RANGE, &pStmt, 0);
     if( rc==SQLITE_OK ){ 
       sqlite3_bind_int64(pStmt, 1, getAbsoluteLevel(p, iLangid, iIndex, 0));
-      sqlite3_bind_int(pStmt, 2, 
+      sqlite3_bind_int64(pStmt, 2, 
           getAbsoluteLevel(p, iLangid, iIndex, FTS3_SEGDIR_MAXLEVEL-1)
       );
     }
@@ -579,7 +582,7 @@ int sqlite3Fts3AllSegdirs(
     /* "SELECT * FROM %_segdir WHERE level = ? ORDER BY ..." */
     rc = fts3SqlStmt(p, SQL_SELECT_LEVEL, &pStmt, 0);
     if( rc==SQLITE_OK ){ 
-      sqlite3_bind_int(pStmt, 1, getAbsoluteLevel(p, iLangid, iIndex, iLevel));
+      sqlite3_bind_int64(pStmt, 1, getAbsoluteLevel(p, iLangid, iIndex,iLevel));
     }
   }
   *ppStmt = pStmt;
@@ -1854,7 +1857,7 @@ static int fts3WriteSegment(
 */
 static int fts3WriteSegdir(
   Fts3Table *p,                   /* Virtual table handle */
-  int iLevel,                     /* Value for "level" field */
+  sqlite3_int64 iLevel,           /* Value for "level" field (absolute level) */
   int iIdx,                       /* Value for "idx" field */
   sqlite3_int64 iStartBlock,      /* Value for "start_block" field */
   sqlite3_int64 iLeafEndBlock,    /* Value for "leaves_end_block" field */
@@ -1865,7 +1868,7 @@ static int fts3WriteSegdir(
   sqlite3_stmt *pStmt;
   int rc = fts3SqlStmt(p, SQL_INSERT_SEGDIR, &pStmt, 0);
   if( rc==SQLITE_OK ){
-    sqlite3_bind_int(pStmt, 1, iLevel);
+    sqlite3_bind_int64(pStmt, 1, iLevel);
     sqlite3_bind_int(pStmt, 2, iIdx);
     sqlite3_bind_int64(pStmt, 3, iStartBlock);
     sqlite3_bind_int64(pStmt, 4, iLeafEndBlock);
@@ -2248,7 +2251,7 @@ static int fts3SegWriterAdd(
 static int fts3SegWriterFlush(
   Fts3Table *p,                   /* Virtual table handle */
   SegmentWriter *pWriter,         /* SegmentWriter to flush to the db */
-  int iLevel,                     /* Value for 'level' column of %_segdir */
+  sqlite3_int64 iLevel,           /* Value for 'level' column of %_segdir */
   int iIdx                        /* Value for 'idx' column of %_segdir */
 ){
   int rc;                         /* Return code */
@@ -2330,7 +2333,7 @@ static int fts3SegmentMaxLevel(
   Fts3Table *p, 
   int iLangid,
   int iIndex, 
-  int *pnMax
+  sqlite3_int64 *pnMax
 ){
   sqlite3_stmt *pStmt;
   int rc;
@@ -2344,12 +2347,12 @@ static int fts3SegmentMaxLevel(
   */
   rc = fts3SqlStmt(p, SQL_SELECT_SEGDIR_MAX_LEVEL, &pStmt, 0);
   if( rc!=SQLITE_OK ) return rc;
-  sqlite3_bind_int(pStmt, 1, getAbsoluteLevel(p, iLangid, iIndex, 0));
-  sqlite3_bind_int(pStmt, 2, 
+  sqlite3_bind_int64(pStmt, 1, getAbsoluteLevel(p, iLangid, iIndex, 0));
+  sqlite3_bind_int64(pStmt, 2, 
       getAbsoluteLevel(p, iLangid, iIndex, FTS3_SEGDIR_MAXLEVEL-1)
   );
   if( SQLITE_ROW==sqlite3_step(pStmt) ){
-    *pnMax = sqlite3_column_int(pStmt, 0);
+    *pnMax = sqlite3_column_int64(pStmt, 0);
   }
   return sqlite3_reset(pStmt);
 }
@@ -2414,15 +2417,17 @@ static int fts3DeleteSegdir(
   if( iLevel==FTS3_SEGCURSOR_ALL ){
     rc = fts3SqlStmt(p, SQL_DELETE_SEGDIR_RANGE, &pDelete, 0);
     if( rc==SQLITE_OK ){
-      sqlite3_bind_int(pDelete, 1, getAbsoluteLevel(p, iLangid, iIndex, 0));
-      sqlite3_bind_int(pDelete, 2, 
+      sqlite3_bind_int64(pDelete, 1, getAbsoluteLevel(p, iLangid, iIndex, 0));
+      sqlite3_bind_int64(pDelete, 2, 
           getAbsoluteLevel(p, iLangid, iIndex, FTS3_SEGDIR_MAXLEVEL-1)
       );
     }
   }else{
     rc = fts3SqlStmt(p, SQL_DELETE_SEGDIR_LEVEL, &pDelete, 0);
     if( rc==SQLITE_OK ){
-      sqlite3_bind_int(pDelete, 1, getAbsoluteLevel(p, iLangid, iIndex,iLevel));
+      sqlite3_bind_int64(
+          pDelete, 1, getAbsoluteLevel(p, iLangid, iIndex, iLevel)
+      );
     }
   }
 
@@ -2899,7 +2904,7 @@ static int fts3SegmentMerge(
 ){
   int rc;                         /* Return code */
   int iIdx = 0;                   /* Index of new segment */
-  int iNewLevel = 0;              /* Level/index to create new segment at */
+  sqlite3_int64 iNewLevel = 0;    /* Level/index to create new segment at */
   SegmentWriter *pWriter = 0;     /* Used to write the new, merged, segment */
   Fts3SegFilter filter;           /* Segment term filter condition */
   Fts3MultiSegReader csr;         /* Cursor to iterate through level(s) */
@@ -3864,7 +3869,7 @@ static int fts3IncrmergeWriter(
 
   rc = fts3SqlStmt(p, SQL_NEXT_SEGMENT_INDEX, &pOutputIdx, 0);
   if( rc==SQLITE_OK ){
-    sqlite3_bind_int(pOutputIdx, 1, iAbsLevel+1);
+    sqlite3_bind_int64(pOutputIdx, 1, iAbsLevel+1);
     sqlite3_step(pOutputIdx);
     iIdx = sqlite3_column_int(pOutputIdx, 0) - 1;
     rc = sqlite3_reset(pOutputIdx);

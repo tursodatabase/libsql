@@ -382,4 +382,106 @@ do_catchsql_test 4.1.5 {
   INSERT INTO t4(content, lid) VALUES('hello world', 101)
 } {1 {SQL logic error or missing database}}
 
+#-------------------------------------------------------------------------
+# Test cases 5.*
+#
+# The following test cases are designed to detect a 32-bit overflow bug
+# that existed at one point.
+#
+proc build_multilingual_db_3 {db} {
+  $db eval {
+    CREATE VIRTUAL TABLE t5 USING fts4(languageid=lid);
+  }
+  set languages [list 0 1 2 [expr 1<<30]]
+
+  foreach lid $languages {
+    execsql {
+      INSERT INTO t5(docid, content, lid) VALUES(
+          $lid, 'My language is ' || $lid, $lid
+      ) 
+    }
+  }
+}
+
+do_test 5.1.0 {
+  reset_db
+  build_multilingual_db_3 db
+} {}
+
+do_execsql_test 5.1.1 {
+  SELECT level FROM t5_segdir;
+} [list 0 1024 2048 [expr 1<<40]]
+
+do_execsql_test 5.1.2 {SELECT docid FROM t5 WHERE t5 MATCH 'language'} 0
+foreach langid [list 0 1 2 [expr 1<<30]] {
+  do_execsql_test 5.2.$langid { 
+    SELECT docid FROM t5 WHERE t5 MATCH 'language' AND lid = $langid
+  } $langid
+}
+
+set lid [expr 1<<30]
+do_execsql_test 5.3.1 {
+  CREATE VIRTUAL TABLE t6 USING fts4(languageid=lid);
+  INSERT INTO t6 VALUES('I belong to language 0!');
+}
+do_test 5.3.2 {
+  for {set i 0} {$i < 20} {incr i} {
+    execsql {
+      INSERT INTO t6(content, lid) VALUES(
+        'I (row '||$i||') belong to langauge N!', $lid
+      );
+    }
+  }
+  execsql { SELECT docid FROM t6 WHERE t6 MATCH 'belong' }
+} {1}
+
+do_test 5.3.3 {
+  execsql { SELECT docid FROM t6 WHERE t6 MATCH 'belong' AND lid=$lid}
+} {2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21}
+
+do_execsql_test 5.3.4 { INSERT INTO t6(t6) VALUES('optimize') } {}
+do_execsql_test 5.3.5 { SELECT docid FROM t6 WHERE t6 MATCH 'belong' } {1}
+do_execsql_test 5.3.6 { 
+  SELECT docid FROM t6 WHERE t6 MATCH 'belong' AND lid=$lid
+} {2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21}
+
+
+set lid [expr 1<<30]
+foreach lid [list 4 [expr 1<<30]] {
+  do_execsql_test 5.4.$lid.1 {
+    DELETE FROM t6;
+    SELECT count(*) FROM t6_segdir;
+    SELECT count(*) FROM t6_segments;
+  } {0 0}
+  do_execsql_test 5.4.$lid.2 {
+    INSERT INTO t6(content, lid) VALUES('zero zero zero', $lid);
+    INSERT INTO t6(content, lid) VALUES('zero zero one', $lid);
+    INSERT INTO t6(content, lid) VALUES('zero one zero', $lid);
+    INSERT INTO t6(content, lid) VALUES('zero one one', $lid);
+    INSERT INTO t6(content, lid) VALUES('one zero zero', $lid);
+    INSERT INTO t6(content, lid) VALUES('one zero one', $lid);
+    INSERT INTO t6(content, lid) VALUES('one one zero', $lid);
+    INSERT INTO t6(content, lid) VALUES('one one one', $lid);
+
+    SELECT docid FROM t6 WHERE t6 MATCH '"zero zero"' AND lid=$lid;
+  } {1 2 5}
+
+  do_execsql_test 5.4.$lid.3 {
+    SELECT count(*) FROM t6_segdir;
+    SELECT count(*) FROM t6_segments;
+  } {8 0}
+
+  do_execsql_test 5.4.$lid.4 {
+    INSERT INTO t6(t6) VALUES('merge=100,3');
+    INSERT INTO t6(t6) VALUES('merge=100,3');
+    SELECT docid FROM t6 WHERE t6 MATCH '"zero zero"' AND lid=$lid;
+  } {1 2 5}
+
+  do_execsql_test 5.4.$lid.5 {
+    SELECT count(*) FROM t6_segdir;
+    SELECT count(*) FROM t6_segments;
+  } {4 4}
+}
+
+
 finish_test
