@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2012-03-16T00:28:11.282
+C Cherrypick\sthe\s[3475092cff]\sfix\sfor\s32-bit\soverflow\swith\slarge\slanguage-ids\ninto\strunk.
+D 2012-03-16T16:52:54.032
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/fts3_test.c 6b7cc68aef4efb084e1449f7d20c4b20d3bdf6b4
 F ext/fts3/fts3_tokenizer.c 3da7254a9881f7e270ab28e2004e0d22b3212bce
 F ext/fts3/fts3_tokenizer.h 66dec98e365854b6cd2d54f1a96bb6d428fc5a68
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
-F ext/fts3/fts3_write.c f87bb2d27d31cb7a7bf306747079095393c9d073
+F ext/fts3/fts3_write.c 8eedfeb2e61114cfd94fd1d917daf3658203332c
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
@@ -496,7 +496,7 @@ F test/fts3snippet.test 8e956051221a34c7daeb504f023cb54d5fa5a8b2
 F test/fts3sort.test 95be0b19d7e41c44b29014f13ea8bddd495fd659
 F test/fts4aa.test 6e7f90420b837b2c685f3bcbe84c868492d40a68
 F test/fts4content.test 17b2360f7d1a9a7e5aa8022783f5c5731b6dfd4f
-F test/fts4langid.test fabdd5a8db0fa00292e0704809f566e3fb6dba3a
+F test/fts4langid.test 2081c357bb6f170f34ef8e08c6abb88002b95c69
 F test/func.test 6c5ce11e3a0021ca3c0649234e2d4454c89110ca
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 001021e5b88bd02a3b365a5c5fd8f6f49d39744a
@@ -992,7 +992,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P fed134a5f395533de0c9d76950697c060ddb126d
-R 9a71f3ab5326ee35b9bbd87536e2a1d5
+P 74eadeec34c4b19cf5f8b7f648db3b7ad601a00e
+R da59c6040c440e1d087c29c77d94171a
 U drh
-Z 60cd8a049ba54606f3a162ca33790b57
+Z 86f53efe49c877ef67da98d4e974121b
