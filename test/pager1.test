@@ -899,8 +899,8 @@ do_test pager1.4.8.2 {
 } {-1}
 do_test pager1.4.8.3 {
   db close
-  catch {file attributes test.db -permissions rw-rw-rw-}
   catch {file attributes test.db -readonly 0}
+  catch {file attributes test.db -permissions rw-rw-rw-} msg
   sqlite3 db test.db
   db eval { SELECT * FROM t1 }
   sqlite3_db_readonly db main

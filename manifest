@@ -1,5 +1,5 @@
-C Modify\sa\stest\sin\sioerr2.test\sto\saccount\sfor\sthe\snew\sSQLITE_ABORT_ROLLBACK\sextended\serror\scode.
-D 2012-03-17T09:43:09.270
+C In\spager1.test,\suse\s"file\sattr\stest.db\s-readonly\s0"\sbefore\s"file\sattr\stest.db\s-perm\srw-rw-rw-",\snot\safter.
+D 2012-03-17T15:12:16.594
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -625,7 +625,7 @@ F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
 F test/oserror.test 50417780d0e0d7cd23cf12a8277bb44024765df3
-F test/pager1.test 6e43e79d6ac1fc31b494ff3a0b56445b7eda5d2b
+F test/pager1.test cf8f40cf77b5c4f762b1e8492390d61b46a81623
 F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
 F test/pagerfault.test 452f2cc23e3bfcfa935f4442aec1da4fe1dc0442
@@ -992,7 +992,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P a11528ac575fa20fd8022756d042a32fe1272e12
-R bf459f233481ca6a2e168e0f56c2e565
+P affaebde109e8dd851474ffe7b7d48b1aae8c7ed
+R c4a04a92e8486010645a44f1a08a5af3
 U dan
-Z da996c893d138c803cabbc3bbda32cec
+Z 7e2f94cd0ef8dfee62915c8ab2714a0c
