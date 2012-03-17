@@ -213,19 +213,22 @@ struct Fts3Table {
   char *zSegmentsTbl;             /* Name of %_segments table */
   sqlite3_blob *pSegments;        /* Blob handle open on %_segments table */
 
-  /* TODO: Fix the first paragraph of this comment.
-  **
+  /* 
   ** The following array of hash tables is used to buffer pending index 
-  ** updates during transactions. Variable nPendingData estimates the memory 
-  ** size of the pending data, including hash table overhead, not including
-  ** malloc overhead.  When nPendingData exceeds nMaxPendingData, the buffer 
-  ** is flushed automatically. Variable iPrevDocid is the docid of the most 
-  ** recently inserted record.
+  ** updates during transactions. All pending updates buffered at any one
+  ** time must share a common language-id (see the FTS4 langid= feature).
+  ** The current language id is stored in variable iPrevLangid.
   **
   ** A single FTS4 table may have multiple full-text indexes. For each index
   ** there is an entry in the aIndex[] array. Index 0 is an index of all the
   ** terms that appear in the document set. Each subsequent index in aIndex[]
   ** is an index of prefixes of a specific length.
+  **
+  ** Variable nPendingData contains an estimate the memory consumed by the 
+  ** pending data structures, including hash table overhead, but not including
+  ** malloc overhead.  When nPendingData exceeds nMaxPendingData, all hash
+  ** tables are flushed to disk. Variable iPrevDocid is the docid of the most 
+  ** recently inserted record.
   */
   int nIndex;                     /* Size of aIndex[] */
   struct Fts3Index {

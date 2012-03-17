@@ -1,5 +1,5 @@
-C Fix\ssome\sinteger\soverflow\sproblems\sthat\scan\soccur\swhen\susing\slarge\slangauge\sid\svalues.
-D 2012-03-16T15:54:19.453
+C Fix\svarious\sincorrect\sand\smissing\scomments\sand\sother\sstyle\sissues\sin\sand\saround\sthe\sFTS\sincremental\smerge\scode.
+D 2012-03-17T16:56:57.450
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3f79a373e57c3b92dabf76f40b065e719d31ac34
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -65,7 +65,7 @@ F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts3/fts3.c 806632fd0020eed966ab82ea25fe09f1a4c86907
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 1da6d2af6b079cdd74cd2350761182dedb8bd892
+F ext/fts3/fts3Int.h caa745f80405bc0c0a45a2f83e120d5a2c13753c
 F ext/fts3/fts3_aux.c 72de4cb43db7bfc2f68fbda04b7d8095ae9a6239
 F ext/fts3/fts3_expr.c dbc7ba4c3a6061adde0f38ed8e9b349568299551
 F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
@@ -78,7 +78,7 @@ F ext/fts3/fts3_test.c 6b7cc68aef4efb084e1449f7d20c4b20d3bdf6b4
 F ext/fts3/fts3_tokenizer.c 3da7254a9881f7e270ab28e2004e0d22b3212bce
 F ext/fts3/fts3_tokenizer.h 66dec98e365854b6cd2d54f1a96bb6d428fc5a68
 F ext/fts3/fts3_tokenizer1.c 0dde8f307b8045565cf63797ba9acfaff1c50c68
-F ext/fts3/fts3_write.c 548d034e16ecad0ec5dfd542c48c591564c343d3
+F ext/fts3/fts3_write.c a78deea7b575b244d50eea1fdb9bf228c0dd00bb
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
@@ -994,7 +994,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 7e0f861beda4d74d0c3c9fb4abb3ddb5fee346bd
-R 3c4572a4f07a3af6855856a4d0059330
+P 3475092cff862080a020d386076d739f0d22c9b2
+R ca4e10aa887c331ab5ee7949ea058bc8
 U dan
-Z 5aeec06647e7b858688ed8df27a75aed
+Z 5217f3a7f5fecf12c3e93b43d9936afd
