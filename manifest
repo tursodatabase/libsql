@@ -1,5 +1,5 @@
-C Update\sthe\strace2.test\sscript\sfor\slanguageid.
-D 2012-03-16T17:00:49.764
+C Modify\sa\stest\sin\sioerr2.test\sto\saccount\sfor\sthe\snew\sSQLITE_ABORT_ROLLBACK\sextended\serror\scode.
+D 2012-03-17T09:43:09.270
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -538,7 +538,7 @@ F test/interrupt.test 42e7cf98646fd9cb4a3b131a93ed3c50b9e149f1
 F test/intpkey.test 537669fd535f62632ca64828e435b9e54e8d677f
 F test/io.test b278aa8fa609ed0dcc825df31b2d9f526c5a52bd
 F test/ioerr.test 40bb2cfcab63fb6aa7424cd97812a84bc16b5fb8
-F test/ioerr2.test 1b56cb80d5b0726ee3ba325ca175734541e32955
+F test/ioerr2.test 9d71166f8466eda510f1af6137bdabaa82b5408d
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
@@ -992,7 +992,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 2755edc7f1186ba8955f2c3550a90f40a55ddae2
-R ec577cf791cfb44b791ae9dc3e0f7343
-U drh
-Z d80fb6c4fb859b25e151c85bda23f682
+P a11528ac575fa20fd8022756d042a32fe1272e12
+R bf459f233481ca6a2e168e0f56c2e565
+U dan
+Z da996c893d138c803cabbc3bbda32cec
