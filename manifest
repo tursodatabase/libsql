@@ -1,5 +1,5 @@
-C Reset\sthe\ssqlite3_data_directory\sand\ssqlite3_temp_directory\svariables\swhen\sthe\ssqlite3_shutdown\sfunction\sis\scalled\ssince\sthey\smay\srefer\sto\smemory\sallocated\sby\sthe\sheap\ssubsystem\sthat\swas\sjust\sshutdown.
-D 2012-03-16T10:28:40.323
+C Add\sSQLITE_OMIT_SHUTDOWN_DIRECTORIES\scompile-time\soption\sto\sdisable\sclearing\sthe\ssqlite3_data_directory\sand\ssqlite3_temp_directory\svariables\sduring\ssqlite3_shutdown.\s\sAlso,\sonly\sclear\sthe\svariables\sif\sthe\sheap\swas\sactually\sshutdown.
+D 2012-03-18T01:32:44.771
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -147,7 +147,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
 F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
-F src/main.c d5ee3f6b60ed3692ffaa2ecfd1f9ea75439320f9
+F src/main.c fbb345088f5719f1842056e0613ea3f9a889f4fa
 F src/malloc.c 15afac5e59b6584efe072e9933aefb4230e74f97
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c b3677415e69603d6a0e7c5410a1b3731d55beda1
@@ -992,7 +992,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 8693fb652ecd1ad0b03e9067839970b321c3f904
-R 82dc6fe8495302f5fea0d7d19dfd1f47
+P cd70bc4b788b947d47a7a7158c27028160df06bd
+R d1f4973510f77bf75cb97abcded45ca7
 U mistachkin
-Z d2503b8281f3d675b1a2c9e9f5230508
+Z 1223d82df9680759dd17a896969e8fb1
