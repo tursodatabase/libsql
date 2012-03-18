@@ -3307,6 +3307,7 @@ static int getTempname(int nBuf, char *zBuf){
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "0123456789";
   size_t i, j;
+  int nTempPath;
   char zTempPath[MAX_PATH+2];
 
   /* It's odd to simulate an io-error here, but really this is just
@@ -3352,15 +3353,18 @@ static int getTempname(int nBuf, char *zBuf){
   /* Check that the output buffer is large enough for the temporary file 
   ** name. If it is not, return SQLITE_ERROR.
   */
-  if( (sqlite3Strlen30(zTempPath) + sqlite3Strlen30(SQLITE_TEMP_FILE_PREFIX) + 18) >= nBuf ){
+  nTempPath = sqlite3Strlen30(zTempPath);
+
+  if( (nTempPath + sqlite3Strlen30(SQLITE_TEMP_FILE_PREFIX) + 18) >= nBuf ){
     return SQLITE_ERROR;
   }
 
-  for(i=sqlite3Strlen30(zTempPath); i>0 && zTempPath[i-1]=='\\'; i--){}
+  for(i=nTempPath; i>0 && zTempPath[i-1]=='\\'; i--){}
   zTempPath[i] = 0;
 
-  sqlite3_snprintf(nBuf-18, zBuf,
-                   "%s\\"SQLITE_TEMP_FILE_PREFIX, zTempPath);
+  sqlite3_snprintf(nBuf-18, zBuf, (nTempPath > 0) ?
+                       "%s\\"SQLITE_TEMP_FILE_PREFIX : SQLITE_TEMP_FILE_PREFIX,
+                   zTempPath);
   j = sqlite3Strlen30(zBuf);
   sqlite3_randomness(15, &zBuf[j]);
   for(i=0; i<15; i++, j++){
