@@ -4496,6 +4496,15 @@ sqlite3 *sqlite3_db_handle(sqlite3_stmt*);
 const char *sqlite3_db_filename(sqlite3 *db, const char *zDbName);
 
 /*
+** CAPI3REF: Determine if a database is read-only
+**
+** ^The sqlite3_db_readonly(D,N) interface returns 1 if the database N
+** of connection D is read-only, 0 if it is read/write, or -1 if N is not
+** the name of a database on connection D.
+*/
+int sqlite3_db_readonly(sqlite3 *db, const char *zDbName);
+
+/*
 ** CAPI3REF: Find the next prepared statement
 **
 ** ^This interface returns a pointer to the next [prepared statement] after

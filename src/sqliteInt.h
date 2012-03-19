@@ -2711,6 +2711,7 @@ void sqlite3AddCollateType(Parse*, Token*);
 void sqlite3EndTable(Parse*,Token*,Token*,Select*);
 int sqlite3ParseUri(const char*,const char*,unsigned int*,
                     sqlite3_vfs**,char**,char **);
+Btree *sqlite3DbNameToBtree(sqlite3*,const char*);
 int sqlite3CodeOnce(Parse *);
 
 Bitvec *sqlite3BitvecCreate(u32);

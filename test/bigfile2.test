@@ -29,7 +29,7 @@ do_execsql_test 1.1 {
 # are actually in use and new pages will be appended to the file.
 #
 db close
-if {[catch {fake_big_file 4096 [pwd]/test.db} msg]} {
+if {[catch {fake_big_file 4096 [get_pwd]/test.db} msg]} {
   puts "**** Unable to create a file larger than 4096 MB. *****"
   finish_test
   return

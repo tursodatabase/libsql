@@ -741,7 +741,7 @@ static void fts3Appendf(
 static char *fts3QuoteId(char const *zInput){
   int nRet;
   char *zRet;
-  nRet = 2 + strlen(zInput)*2 + 1;
+  nRet = 2 + (int)strlen(zInput)*2 + 1;
   zRet = sqlite3_malloc(nRet);
   if( zRet ){
     int i;
@@ -997,7 +997,7 @@ static int fts3ContentColumns(
     nCol = sqlite3_column_count(pStmt);
     for(i=0; i<nCol; i++){
       const char *zCol = sqlite3_column_name(pStmt, i);
-      nStr += strlen(zCol) + 1;
+      nStr += (int)strlen(zCol) + 1;
     }
 
     /* Allocate and populate the array to return. */
@@ -1008,7 +1008,7 @@ static int fts3ContentColumns(
       char *p = (char *)&azCol[nCol];
       for(i=0; i<nCol; i++){
         const char *zCol = sqlite3_column_name(pStmt, i);
-        int n = strlen(zCol)+1;
+        int n = (int)strlen(zCol)+1;
         memcpy(p, zCol, n);
         azCol[i] = p;
         p += n;
@@ -1223,7 +1223,8 @@ static int fts3InitVtab(
         int j;
         for(j=0; j<nCol; j++){
           if( sqlite3_stricmp(zLanguageid, aCol[j])==0 ){
-            memmove(&aCol[j], &aCol[j+1], (nCol-j) * sizeof(aCol[0]));
+            int k;
+            for(k=j; k<nCol; k++) aCol[k] = aCol[k+1];
             nCol--;
             break;
           }
@@ -2330,7 +2331,7 @@ static int fts3DoclistOrMerge(
   }
 
   *paOut = aOut;
-  *pnOut = (p-aOut);
+  *pnOut = (int)(p-aOut);
   assert( *pnOut<=n1+n2+FTS3_VARINT_MAX-1 );
   return SQLITE_OK;
 }
@@ -2394,7 +2395,7 @@ static void fts3DoclistPhraseMerge(
     }
   }
 
-  *pnRight = p - aOut;
+  *pnRight = (int)(p - aOut);
 }
 
 /*
@@ -3775,7 +3776,7 @@ static int fts3EvalDeferredPhrase(Fts3Cursor *pCsr, Fts3Phrase *pPhrase){
         fts3PoslistPhraseMerge(&aOut, iToken-iPrev, 0, 1, &p1, &p2);
         sqlite3_free(aPoslist);
         aPoslist = pList;
-        nPoslist = aOut - aPoslist;
+        nPoslist = (int)(aOut - aPoslist);
         if( nPoslist==0 ){
           sqlite3_free(aPoslist);
           pPhrase->doclist.pList = 0;
@@ -3819,7 +3820,7 @@ static int fts3EvalDeferredPhrase(Fts3Cursor *pCsr, Fts3Phrase *pPhrase){
       pPhrase->doclist.pList = aOut;
       if( fts3PoslistPhraseMerge(&aOut, nDistance, 0, 1, &p1, &p2) ){
         pPhrase->doclist.bFreeList = 1;
-        pPhrase->doclist.nList = (aOut - pPhrase->doclist.pList);
+        pPhrase->doclist.nList = (int)(aOut - pPhrase->doclist.pList);
       }else{
         sqlite3_free(aOut);
         pPhrase->doclist.pList = 0;
@@ -3915,7 +3916,7 @@ void sqlite3Fts3DoclistPrev(
       iMul = (bDescIdx ? -1 : 1);
     }
 
-    *pnList = pEnd - pNext;
+    *pnList = (int)(pEnd - pNext);
     *ppIter = pNext;
     *piDocid = iDocid;
   }else{
@@ -3929,7 +3930,7 @@ void sqlite3Fts3DoclistPrev(
     }else{
       char *pSave = p;
       fts3ReversePoslist(aDoclist, &p);
-      *pnList = (pSave - p);
+      *pnList = (int)(pSave - p);
     }
     *ppIter = p;
   }
@@ -3989,7 +3990,7 @@ static int fts3EvalPhraseNext(
       }
       pDL->pList = pIter;
       fts3PoslistCopy(0, &pIter);
-      pDL->nList = (pIter - pDL->pList);
+      pDL->nList = (int)(pIter - pDL->pList);
 
       /* pIter now points just past the 0x00 that terminates the position-
       ** list for document pDL->iDocid. However, if this position-list was
@@ -4347,8 +4348,8 @@ static int fts3EvalStart(Fts3Cursor *pCsr){
       Fts3Expr **ppOr = apOr;
 
       fts3EvalTokenCosts(pCsr, 0, pCsr->pExpr, &pTC, &ppOr, &rc);
-      nToken = pTC-aTC;
-      nOr = ppOr-apOr;
+      nToken = (int)(pTC-aTC);
+      nOr = (int)(ppOr-apOr);
 
       if( rc==SQLITE_OK ){
         rc = fts3EvalSelectDeferred(pCsr, 0, aTC, nToken);
@@ -4420,7 +4421,7 @@ static int fts3EvalNearTrim(
     &pOut, aTmp, nParam1, nParam2, paPoslist, &p2
   );
   if( res ){
-    nNew = (pOut - pPhrase->doclist.pList) - 1;
+    nNew = (int)(pOut - pPhrase->doclist.pList) - 1;
     assert( pPhrase->doclist.pList[nNew]=='\0' );
     assert( nNew<=pPhrase->doclist.nList && nNew>0 );
     memset(&pPhrase->doclist.pList[nNew], 0, pPhrase->doclist.nList - nNew);

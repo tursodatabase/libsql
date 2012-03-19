@@ -483,7 +483,7 @@ do_test misc7-20.1 {
 # Try to open a really long file name.
 #
 do_test misc7-21.1 {
-  set zFile [file join [pwd] "[string repeat abcde 104].db"]
+  set zFile [file join [get_pwd] "[string repeat abcde 104].db"]
   set rc [catch {sqlite3 db2 $zFile} msg]
   list $rc $msg
 } {1 {unable to open database file}}

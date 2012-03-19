@@ -69,7 +69,7 @@ do_test bigfile-1.1 {
 # large files.  So skip all of the remaining tests in this file.
 #
 db close
-if {[catch {fake_big_file 4096 [pwd]/test.db} msg]} {
+if {[catch {fake_big_file 4096 [get_pwd]/test.db} msg]} {
   puts "**** Unable to create a file larger than 4096 MB. *****"
   finish_test
   return
@@ -109,7 +109,7 @@ do_test bigfile-1.4 {
 } $::MAGIC_SUM
 
 db close
-if {[catch {fake_big_file 8192 [pwd]/test.db}]} {
+if {[catch {fake_big_file 8192 [get_pwd]/test.db}]} {
   puts "**** Unable to create a file larger than 8192 MB. *****"
   finish_test
   return
@@ -148,7 +148,7 @@ do_test bigfile-1.9 {
 } $::MAGIC_SUM
 
 db close
-if {[catch {fake_big_file 16384 [pwd]/test.db}]} {
+if {[catch {fake_big_file 16384 [get_pwd]/test.db}]} {
   puts "**** Unable to create a file larger than 16384 MB. *****"
   finish_test
   return

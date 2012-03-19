@@ -990,7 +990,7 @@ do_test pragma-9.4 {
 } {}
 ifcapable wsd {
   do_test pragma-9.5 {
-    set pwd [string map {' ''} [file nativename [pwd]]]
+    set pwd [string map {' ''} [file nativename [get_pwd]]]
     execsql "
       PRAGMA temp_store_directory='$pwd';
     "
@@ -999,7 +999,7 @@ ifcapable wsd {
     execsql { 
       PRAGMA temp_store_directory;
     }
-  } [list [file nativename [pwd]]]
+  } [list [file nativename [get_pwd]]]
   do_test pragma-9.7 {
     catchsql { 
       PRAGMA temp_store_directory='/NON/EXISTENT/PATH/FOOBAR';

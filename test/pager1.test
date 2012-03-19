@@ -535,7 +535,7 @@ proc copy_on_mj_delete {method filename args} {
   return SQLITE_OK
 }
 
-set pwd [pwd]
+set pwd [get_pwd]
 if {![forced_proxy_locking]} {
   # proxy locking uses can't deal with auto proxy file paths longer than MAXPATHLEN
 foreach {tn1 tcl} {
@@ -890,6 +890,24 @@ do_test pager1.4.7.3 {
   delete_file test.db-journal
   file exists test.db-journal
 } {0}
+do_test pager1.4.8.1 {
+  catch {file attributes test.db -permissions r--------}
+  catch {file attributes test.db -readonly 1}
+  sqlite3 db test.db
+  db eval { SELECT * FROM t1 }
+  sqlite3_db_readonly db main
+} {1}
+do_test pager1.4.8.2 {
+  sqlite3_db_readonly db xyz
+} {-1}
+do_test pager1.4.8.3 {
+  db close
+  catch {file attributes test.db -readonly 0}
+  catch {file attributes test.db -permissions rw-rw-rw-} msg
+  sqlite3 db test.db
+  db eval { SELECT * FROM t1 }
+  sqlite3_db_readonly db main
+} {0}
 
 #-------------------------------------------------------------------------
 # The following tests deal with multi-file commits.
@@ -1004,7 +1022,7 @@ do_test pager1-5.4.1 {
   #      the master-journal name encoded as utf-8 with no nul term.
   #
   set mj_pointer [expr {
-    20 + [string length [pwd]] + [string length "/test.db-mjXXXXXX9XX"]
+    20 + [string length [get_pwd]] + [string length "/test.db-mjXXXXXX9XX"]
   }]
   expr {$::max_journal==(512+2*(1024+8)+$mj_pointer)}
 } 1
@@ -1023,7 +1041,7 @@ do_test pager1-5.4.2 {
   # written starting at the next (in this case 512 byte) sector boundary.
   #
   set mj_pointer [expr {
-    20 + [string length [pwd]] + [string length "/test.db-mjXXXXXX9XX"]
+    20 + [string length [get_pwd]] + [string length "/test.db-mjXXXXXX9XX"]
   }]
   expr {$::max_journal==(((512+2*(1024+8)+511)/512)*512 + $mj_pointer)}
 } 1

@@ -657,6 +657,7 @@ clean:
 	rm -f lemon lempar.c parse.* sqlite*.tar.gz mkkeywordhash keywordhash.h
 	rm -f $(PUBLISH)
 	rm -f *.da *.bb *.bbg gmon.out
+	rm -rf quota2a quota2b quota2c
 	rm -rf tsrc target_source
 	rm -f testloadext.dll libtestloadext.so
 	rm -f sqlite3.c fts?amal.c tclsqlite3.c

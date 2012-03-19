@@ -28,7 +28,7 @@ foreach dir {quota2a quota2a/x1 quota2a/x2 quota2b quota2c} {
 # that is the same across platforms.
 #
 unset -nocomplain ::quota_pwd ::quota_mapping
-set ::quota_pwd [string map {\\ /} [pwd]]
+set ::quota_pwd [string map {\\ /} [get_pwd]]
 set ::quota_mapping [list $::quota_pwd PWD]
 proc standard_path {x} {
   set x [string map {\\ /} $x]
