@@ -1,5 +1,5 @@
-C Avoid\sa\scompiler\swarning\s(an\sincorrect\scompiler\swarning,\sat\sthat)\sin\svs2010.
-D 2012-03-19T14:28:43.536
+C Suppress\sharmless\scompiler\swarnings\son\swindows\sin\sFTS4\sand\sRTREE.
+D 2012-03-19T14:51:19.261
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -63,10 +63,10 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c bd94c6628103e784bfe33ba205646726da7c0e32
+F ext/fts3/fts3.c cb5b77609ebe3405f482b81a419e12dd00b5d9b5
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h d1d7f964ddee067bcd16a6af4ba7ecf66220056d
-F ext/fts3/fts3_aux.c 72de4cb43db7bfc2f68fbda04b7d8095ae9a6239
+F ext/fts3/fts3_aux.c 5205182bd8f372782597888156404766edf5781e
 F ext/fts3/fts3_expr.c dbc7ba4c3a6061adde0f38ed8e9b349568299551
 F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
 F ext/fts3/fts3_hash.h 8331fb2206c609f9fc4c4735b9ab5ad6137c88ec
@@ -85,7 +85,7 @@ F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c eb9ae1d79046bd7871aa97ee6da51eb770134b5a
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c b92ab2e91e35c4964644647322813419c65fe1ce
+F ext/rtree/rtree.c 4c1878818fc50efe5c2c7b8809d5cd0d88c7d396
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 28e1b8da4da98093ce3210187434dd760a8d89d8
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -992,7 +992,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 32bb1ecee4e43a4683512dbca047abf735afd313
-R ed4fb23df7efa8e74e6f92a8846cc121
+P 7dd97f12cd268cac1241f0f3e8de94bb629b97c7
+R 3d835a8bbdb81ada9b824f3c7c84ac79
 U drh
-Z 7cab511ff894771705dde4352fc09dcf
+Z 908ca5c15e2aee882328fc436d7a8c0f
