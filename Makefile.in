@@ -934,6 +934,7 @@ clean:
 	rm -f mkkeywordhash$(BEXE) keywordhash.h
 	rm -f $(PUBLISH)
 	rm -f *.da *.bb *.bbg gmon.out
+	rm -rf quota2a quota2b quota2c
 	rm -rf tsrc .target_source
 	rm -f tclsqlite3$(TEXE)
 	rm -f testfixture$(TEXE) test.db

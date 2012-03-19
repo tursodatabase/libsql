@@ -1001,6 +1001,9 @@ clean:
 	del /Q mkkeywordhash.exe keywordhash.h
 	-rmdir /Q/S .deps
 	-rmdir /Q/S .libs
+	-rmdir /Q/S quota2a
+	-rmdir /Q/S quota2b
+	-rmdir /Q/S quota2c
 	-rmdir /Q/S tsrc
 	del /Q .target_source
 	del /Q tclsqlite3.exe

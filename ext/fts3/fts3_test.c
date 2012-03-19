@@ -317,6 +317,7 @@ static int fts3_configure_incr_load_cmd(
   return TCL_OK;
 }
 
+#ifdef SQLITE_ENABLE_FTS3
 /**************************************************************************
 ** Beginning of test tokenizer code.
 **
@@ -479,6 +480,7 @@ static int testTokenizerLanguage(
   }
   return rc;
 }
+#endif
 
 static int fts3_test_tokenizer_cmd(
   ClientData clientData,
@@ -486,6 +488,7 @@ static int fts3_test_tokenizer_cmd(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
+#ifdef SQLITE_ENABLE_FTS3
   static const sqlite3_tokenizer_module testTokenizerModule = {
     1,
     testTokenizerCreate,
@@ -503,6 +506,7 @@ static int fts3_test_tokenizer_cmd(
   Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(
     (const unsigned char *)&pPtr, sizeof(sqlite3_tokenizer_module *)
   ));
+#endif
   return TCL_OK;
 }
 

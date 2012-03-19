@@ -130,7 +130,7 @@ do_test ioerr2-5 {
     }
   } msg]
   list $rc $msg
-} {1 {callback requested query abort}}
+} {1 {abort due to ROLLBACK}}
 
 if {$::tcl_platform(platform) == "unix"} {
   # Cause the call to xAccess used by [pragma temp_store_directory] to

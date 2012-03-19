@@ -47,7 +47,7 @@ for {set ii 0} {$ii < 10} {incr ii} {
     do_test crash5-$ii.$jj.1 {
       crashsql -delay 1 -file test.db-journal -seed $ii -tclbody [join [list \
         [list set iFail $jj] {
-        sqlite3_crashparams 0 [file join [pwd] test.db-journal]
+        sqlite3_crashparams 0 [file join [get_pwd] test.db-journal]
       
         # Begin a transaction and evaluate a "CREATE INDEX" statement
         # with the iFail'th malloc() set to fail. This operation will
@@ -89,7 +89,7 @@ for {set ii 0} {$ii < 10} {incr ii} {
         # by writing page 4 out to the db file. If it crashes later on,
         # before syncing the journal... Corruption!
         #
-        sqlite3_crashparams 1 [file join [pwd] test.db-journal]
+        sqlite3_crashparams 1 [file join [get_pwd] test.db-journal]
         sqlite3_release_memory 8092
       }]] {}
       expr 1

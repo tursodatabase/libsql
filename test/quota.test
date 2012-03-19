@@ -221,7 +221,7 @@ do_test quota-3.3.1 {
   execsql { INSERT INTO t1 VALUES(randomblob(500), randomblob(500)) } db2a
   execsql { INSERT INTO t1 VALUES(randomblob(500), randomblob(500)) } db2b
   set ::quota
-} [list [file join [pwd] test.db] 5120]
+} [list [file join [get_pwd] test.db] 5120]
 
 do_test quota-3.2.X {
   foreach db {db1a db2a db2b db1b} { catch { $db close } }

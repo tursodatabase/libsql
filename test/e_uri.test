@@ -131,10 +131,10 @@ sqlite3_config_uri 1
 if {$tcl_platform(platform) == "unix"} {
   set flags [list SQLITE_OPEN_READWRITE SQLITE_OPEN_CREATE SQLITE_OPEN_URI]
   foreach {tn uri error} "
-    1    {file://localhost[pwd]/test.db}     {not an error}
-    2    {file://[pwd]/test.db}              {not an error}
-    3    {file://x[pwd]/test.db}             {invalid uri authority: x}
-    4    {file://invalid[pwd]/test.db}       {invalid uri authority: invalid}
+    1    {file://localhost[get_pwd]/test.db}   {not an error}
+    2    {file://[get_pwd]/test.db}            {not an error}
+    3    {file://x[get_pwd]/test.db}           {invalid uri authority: x}
+    4    {file://invalid[get_pwd]/test.db}     {invalid uri authority: invalid}
   " {
     do_test 2.$tn {
       set DB [sqlite3_open_v2 $uri $flags ""]
@@ -153,9 +153,9 @@ if {$tcl_platform(platform) == "unix"} {
 #   parameters passed through to the VFS xOpen() methods.
 #
 foreach {tn uri parse} "
-  1    {file:test.db#abc}     {[pwd]/test.db {}}
-  2    {file:test.db?a=b#abc} {[pwd]/test.db {a b}}
-  3    {file:test.db?a=b#?c=d} {[pwd]/test.db {a b}}
+  1    {file:test.db#abc}      {[get_pwd]/test.db {}}
+  2    {file:test.db?a=b#abc}  {[get_pwd]/test.db {a b}}
+  3    {file:test.db?a=b#?c=d} {[get_pwd]/test.db {a b}}
 " {
   do_filepath_test 3.$tn { parse_uri $uri } $parse
 }
@@ -171,7 +171,7 @@ foreach {tn uri parse} "
 # path is interpreted as a relative path.
 #
 foreach {tn uri parse} "
-  1    {file:test.db}             {[pwd]/test.db {}}
+  1    {file:test.db}             {[get_pwd]/test.db {}}
   2    {file:/test.db}            {/test.db {}}
   3    {file:///test.db}          {/test.db {}}
   4    {file://localhost/test.db} {/test.db {}}
