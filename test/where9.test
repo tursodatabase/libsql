@@ -364,7 +364,7 @@ ifcapable explain {
   } {
     0 0 0 {SEARCH TABLE t1 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
     0 1 1 {SEARCH TABLE t2 USING INDEX t2d (d=?) (~2 rows)} 
-    0 1 1 {SEARCH TABLE t2 USING COVERING INDEX t2f (f=?) (~5 rows)}
+    0 1 1 {SEARCH TABLE t2 USING COVERING INDEX t2f (f=?) (~10 rows)}
   }
   do_execsql_test where9-3.2 {
     EXPLAIN QUERY PLAN
@@ -374,7 +374,7 @@ ifcapable explain {
   } {
     0 0 0 {SEARCH TABLE t1 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
     0 1 1 {SEARCH TABLE t2 USING INDEX t2d (d=?) (~2 rows)} 
-    0 1 1 {SEARCH TABLE t2 USING COVERING INDEX t2f (f=?) (~5 rows)}
+    0 1 1 {SEARCH TABLE t2 USING COVERING INDEX t2f (f=?) (~10 rows)}
   }
 } 
 
@@ -453,8 +453,8 @@ ifcapable explain {
   do_execsql_test where9-5.1 {
     EXPLAIN QUERY PLAN SELECT a FROM t1 WHERE b>1000 AND (c=31031 OR d IS NULL)
   } {
-    0 0 0 {SEARCH TABLE t1 USING INDEX t1c (c=?) (~2 rows)} 
-    0 0 0 {SEARCH TABLE t1 USING INDEX t1d (d=?) (~2 rows)}
+    0 0 0 {SEARCH TABLE t1 USING INDEX t1c (c=?) (~3 rows)} 
+    0 0 0 {SEARCH TABLE t1 USING INDEX t1d (d=?) (~3 rows)}
   }
 
   # In contrast, b=1000 is preferred over any OR-clause.
@@ -856,5 +856,25 @@ do_test where9-7.3.2 {
   }
 } {79 81}
 
+# Fix for ticket [b7c8682cc17f32903f03a610bd0d35ffd3c1e6e4]
+# "Incorrect result from LEFT JOIN with OR in the WHERE clause"
+#
+do_test where9-8.1 {
+  db eval {
+    CREATE TABLE t81(a INTEGER PRIMARY KEY, b, c, d);
+    CREATE TABLE t82(x INTEGER PRIMARY KEY, y);
+    CREATE TABLE t83(p INTEGER PRIMARY KEY, q);
+    
+    INSERT INTO t81 VALUES(2,3,4,5);
+    INSERT INTO t81 VALUES(3,4,5,6);
+    INSERT INTO t82 VALUES(2,4);
+    INSERT INTO t83 VALUES(5,55);
+    
+    SELECT *
+      FROM t81 LEFT JOIN t82 ON y=b JOIN t83
+     WHERE c==p OR d==p
+     ORDER BY +a;
+  }
+} {2 3 4 5 {} {} 5 55 3 4 5 6 2 4 5 55}
 
 finish_test

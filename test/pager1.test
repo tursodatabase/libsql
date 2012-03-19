@@ -896,6 +896,24 @@ do_test pager1.4.7.3 {
   delete_file test.db-journal
   file exists test.db-journal
 } {0}
+do_test pager1.4.8.1 {
+  catch {file attributes test.db -permissions r--------}
+  catch {file attributes test.db -readonly 1}
+  sqlite3 db test.db
+  db eval { SELECT * FROM t1 }
+  sqlite3_db_readonly db main
+} {1}
+do_test pager1.4.8.2 {
+  sqlite3_db_readonly db xyz
+} {-1}
+do_test pager1.4.8.3 {
+  db close
+  catch {file attributes test.db -readonly 0}
+  catch {file attributes test.db -permissions rw-rw-rw-} msg
+  sqlite3 db test.db
+  db eval { SELECT * FROM t1 }
+  sqlite3_db_readonly db main
+} {0}
 
 #-------------------------------------------------------------------------
 # The following tests deal with multi-file commits.
