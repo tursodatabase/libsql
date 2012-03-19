@@ -1223,7 +1223,8 @@ static int fts3InitVtab(
         int j;
         for(j=0; j<nCol; j++){
           if( sqlite3_stricmp(zLanguageid, aCol[j])==0 ){
-            memmove(&aCol[j], &aCol[j+1], (nCol-j) * sizeof(aCol[0]));
+            int k;
+            for(k=j; k<nCol; k++) aCol[k] = aCol[k+1];
             nCol--;
             break;
           }

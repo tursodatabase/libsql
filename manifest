@@ -1,5 +1,5 @@
-C Ensure\sthat\scompatible\smalloc\sand\sfree\sfunctions\sare\sused\swith\sstat3\sdata\sif\sSQLITE_ENABLE_STAT3\sis\sdefined.
-D 2012-03-19T10:21:37.927
+C Avoid\sa\scompiler\swarning\s(an\sincorrect\scompiler\swarning,\sat\sthat)\sin\svs2010.
+D 2012-03-19T14:28:43.536
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -63,7 +63,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 806632fd0020eed966ab82ea25fe09f1a4c86907
+F ext/fts3/fts3.c bd94c6628103e784bfe33ba205646726da7c0e32
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h d1d7f964ddee067bcd16a6af4ba7ecf66220056d
 F ext/fts3/fts3_aux.c 72de4cb43db7bfc2f68fbda04b7d8095ae9a6239
@@ -992,7 +992,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 4f5283f18f570a09b95c26e5aa14885ada518dd2
-R 86b82af92d1239c76d6157fdd039db02
-U dan
-Z fc0fdf7e77db24e47eb9fd009ed1d240
+P 32bb1ecee4e43a4683512dbca047abf735afd313
+R ed4fb23df7efa8e74e6f92a8846cc121
+U drh
+Z 7cab511ff894771705dde4352fc09dcf
