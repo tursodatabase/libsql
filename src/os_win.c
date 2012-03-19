@@ -908,9 +908,9 @@ void sqlite3_win32_write_debug(char *zBuf, int nBuf){
   if( nMin>0 ){
     memset(zDbgBuf, 0, SQLITE_WIN32_DBG_BUF_SIZE);
     memcpy(zDbgBuf, zBuf, nMin);
-    OutputDebugStringA(zDbgBuf);
+    osOutputDebugStringA(zDbgBuf);
   }else{
-    OutputDebugStringA(zBuf);
+    osOutputDebugStringA(zBuf);
   }
 #elif defined(SQLITE_WIN32_HAS_WIDE)
   memset(zDbgBuf, 0, SQLITE_WIN32_DBG_BUF_SIZE);
