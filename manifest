@@ -1,5 +1,5 @@
-C Suppress\sharmless\scompiler\swarnings\son\swindows\sin\sFTS4\sand\sRTREE.
-D 2012-03-19T14:51:19.261
+C Fix\sone\smore\scompiler\swarning\smissed\sby\sthe\sprevious\scheck-in.
+D 2012-03-19T14:57:49.232
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -63,7 +63,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c cb5b77609ebe3405f482b81a419e12dd00b5d9b5
+F ext/fts3/fts3.c a62e09140c00f9c401efca661e7f2ae9909194f6
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h d1d7f964ddee067bcd16a6af4ba7ecf66220056d
 F ext/fts3/fts3_aux.c 5205182bd8f372782597888156404766edf5781e
@@ -992,7 +992,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 7dd97f12cd268cac1241f0f3e8de94bb629b97c7
-R 3d835a8bbdb81ada9b824f3c7c84ac79
+P 4fd68647c8d4b120e04d054617cef31001f44c6f
+R d0de9386b7862d0d496b567825b3fc4a
 U drh
-Z 908ca5c15e2aee882328fc436d7a8c0f
+Z d75a5126aa3d9bafa8a4a6d3f6859d6d

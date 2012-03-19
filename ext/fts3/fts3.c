@@ -3990,7 +3990,7 @@ static int fts3EvalPhraseNext(
       }
       pDL->pList = pIter;
       fts3PoslistCopy(0, &pIter);
-      pDL->nList = (pIter - pDL->pList);
+      pDL->nList = (int)(pIter - pDL->pList);
 
       /* pIter now points just past the 0x00 that terminates the position-
       ** list for document pDL->iDocid. However, if this position-list was
