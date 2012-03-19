@@ -1,5 +1,5 @@
-C In\spager1.test,\suse\s"file\sattr\stest.db\s-readonly\s0"\sbefore\s"file\sattr\stest.db\s-perm\srw-rw-rw-",\snot\safter.
-D 2012-03-17T15:12:16.594
+C Ensure\sthat\scompatible\smalloc\sand\sfree\sfunctions\sare\sused\swith\sstat3\sdata\sif\sSQLITE_ENABLE_STAT3\sis\sdefined.
+D 2012-03-19T10:21:37.927
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -119,7 +119,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c 149cc80d9257971b0bff34e58fb2263e01998289
-F src/analyze.c f32ff304da413851eefa562b04e61ff6cb88248b
+F src/analyze.c 70c46504c0d2543ea5cdca01140b2cd3e1d886e7
 F src/attach.c 12c6957996908edc31c96d7c68d4942c2474405f
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 6be23a344d3301ae38e92fddb3a33b91c309fce4
@@ -992,7 +992,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P affaebde109e8dd851474ffe7b7d48b1aae8c7ed
-R c4a04a92e8486010645a44f1a08a5af3
+P 4f5283f18f570a09b95c26e5aa14885ada518dd2
+R 86b82af92d1239c76d6157fdd039db02
 U dan
-Z 7e2f94cd0ef8dfee62915c8ab2714a0c
+Z fc0fdf7e77db24e47eb9fd009ed1d240
