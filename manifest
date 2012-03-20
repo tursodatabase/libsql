@@ -1,9 +1,9 @@
-C Merge\supdates\sfrom\strunk.
-D 2012-03-19T23:32:26.041
+C Remove\sversion\sinformation\sfrom\sthe\sMSVC\smakefile\sas\sit\sis\sno\slonger\snecessary.
+D 2012-03-20T02:10:22.489
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 7849a871b6cdb20fd51baee6bbe5965a03326be4
+F Makefile.msc cf6c1ccb084eb8c395140bf4cb7685ee780c81ce
 F Makefile.vxworks 3b7fe7a0571fdadc61363ebc1b23732d2d6363ca
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION bb4c2a86abe53ea3c1d6ea515b69a426040e2414
@@ -992,7 +992,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 9598c2a398a6e7d9c3ee8b2ae32c21538ad3e15a 036395c0a8e08883b11df025e3da9e2461e4b1eb
-R 4006015c648fef4fba98d6e258af08ad
+P 4ab1ffd45d4c25368b9b393a3336068b747d8b22
+R 88d2fc3da22f2b36e021c04d194b99ab
 U mistachkin
-Z 2aee651a229c029a1a978eb8aa068968
+Z d118e4ad7168d3a2bc00838d34ef8c36

@@ -32,12 +32,6 @@ SYMBOLS = 1
 #
 DEBUG = 0
 
-# Version numbers and release number for the SQLite being compiled.
-#
-VERSION = 3.7
-VERSION_NUMBER = 3007009
-RELEASE = 3.7.9
-
 # C Compiler and options for use in building executables that
 # will run on the platform that is doing the build.
 #
