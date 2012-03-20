@@ -43,7 +43,14 @@ BCC = cl.exe
 #
 TCC = cl.exe -W3 -DSQLITE_OS_WIN=1 -I. -I$(TOP)\src -fp:precise
 
-# The mksqlite3c.tcl and mksqlite3h.tcl scripts will pull in 
+# When compiling the library for use in the WinRT environment,
+# the following compile-time option must be used as well to
+# disable use of Win32 APIs that are not available and to enable
+# use of Win32 APIs that are specific to Windows 8 and/or WinRT.
+#
+# TCC = $(TCC) -DSQLITE_OS_WINRT=1
+
+# The mksqlite3c.tcl and mksqlite3h.tcl scripts will pull in
 # any extension header files by default.  For non-amalgamation
 # builds, we need to make sure the compiler can find these.
 #
