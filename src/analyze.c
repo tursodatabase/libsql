@@ -932,6 +932,7 @@ static int loadStat3(sqlite3 *db, const char *zDb){
   int eType;                    /* Datatype of a sample */
   IndexSample *pSample;         /* A slot in pIdx->aSample[] */
 
+  assert( db->lookaside.bEnabled==0 );
   if( !sqlite3FindTable(db, "sqlite_stat3", zDb) ){
     return SQLITE_OK;
   }
@@ -958,7 +959,7 @@ static int loadStat3(sqlite3 *db, const char *zDb){
     if( pIdx==0 ) continue;
     assert( pIdx->nSample==0 );
     pIdx->nSample = nSample;
-    pIdx->aSample = sqlite3MallocZero( nSample*sizeof(IndexSample) );
+    pIdx->aSample = sqlite3DbMallocZero(db, nSample*sizeof(IndexSample));
     pIdx->avgEq = pIdx->aiRowEst[1];
     if( pIdx->aSample==0 ){
       db->mallocFailed = 1;
@@ -1031,7 +1032,7 @@ static int loadStat3(sqlite3 *db, const char *zDb){
         if( n < 1){
           pSample->u.z = 0;
         }else{
-          pSample->u.z = sqlite3Malloc(n);
+          pSample->u.z = sqlite3DbMallocRaw(db, n);
           if( pSample->u.z==0 ){
             db->mallocFailed = 1;
             sqlite3_finalize(pStmt);
@@ -1107,7 +1108,10 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
   /* Load the statistics from the sqlite_stat3 table. */
 #ifdef SQLITE_ENABLE_STAT3
   if( rc==SQLITE_OK ){
+    int lookasideEnabled = db->lookaside.bEnabled;
+    db->lookaside.bEnabled = 0;
     rc = loadStat3(db, sInfo.zDatabase);
+    db->lookaside.bEnabled = lookasideEnabled;
   }
 #endif
 

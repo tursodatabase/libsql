@@ -19,6 +19,7 @@
 #
 # Commands to manipulate the db and the file-system at a high level:
 #
+#      get_pwd
 #      copy_file              FROM TO
 #      delete_file            FILENAME
 #      drop_all_tables        ?DB?
@@ -146,6 +147,24 @@ proc getFileRetryDelay {} {
     return 100; # TODO: Good default?
   }
   return $::G(file-retry-delay)
+}
+
+# Return the string representing the name of the current directory.  On
+# Windows, the result is "normalized" to whatever our parent command shell
+# is using to prevent case-mismatch issues.
+#
+proc get_pwd {} {
+  if {$::tcl_platform(platform) eq "windows"} {
+    #
+    # NOTE: Cannot use [file normalize] here because it would alter the
+    #       case of the result to what Tcl considers canonical, which would
+    #       defeat the purpose of this procedure.
+    #
+    return [string map [list \\ /] \
+        [string trim [exec -- $::env(ComSpec) /c echo %CD%]]]
+  } else {
+    return [pwd]
+  }
 }
 
 # Copy file $from into $to. This is used because some versions of
@@ -984,7 +1003,7 @@ proc crashsql {args} {
   # $crashfile gets compared to the native filename in 
   # cfSync(), which can be different then what TCL uses by
   # default, so here we force it to the "nativename" format.
-  set cfile [string map {\\ \\\\} [file nativename [file join [pwd] $crashfile]]]
+  set cfile [string map {\\ \\\\} [file nativename [file join [get_pwd] $crashfile]]]
 
   set f [open crash.tcl w]
   puts $f "sqlite3_crash_enable 1"

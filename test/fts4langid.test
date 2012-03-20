@@ -482,6 +482,4 @@ foreach lid [list 4 [expr 1<<30]] {
     SELECT count(*) FROM t6_segments;
   } {4 4}
 }
-
-
 finish_test

@@ -630,6 +630,7 @@ static const sqlite3_tokenizer_module porterTokenizerModule = {
   porterOpen,
   porterClose,
   porterNext,
+  0
 };
 
 /*

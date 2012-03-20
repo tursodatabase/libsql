@@ -831,13 +831,10 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     if( !isIgnoreUsable && !pConstraint->usable ) continue;
 
     iCol = pConstraint->iColumn;
-    if( pVtab->aIndex[iCol] || iCol<0 ){
-      char *zCol = pVtab->aCol[iCol];
+    if( iCol<0 || pVtab->aIndex[iCol] ){
+      char *zCol = iCol>=0 ? pVtab->aCol[iCol] : "rowid";
       char *zOp = 0;
       useIdx = 1;
-      if( iCol<0 ){
-        zCol = "rowid";
-      }
       switch( pConstraint->op ){
         case SQLITE_INDEX_CONSTRAINT_EQ:
           zOp = "="; break;
@@ -870,13 +867,12 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   ** on a column that this virtual table has an index for, then consume 
   ** the ORDER BY clause.
   */
-  if( pIdxInfo->nOrderBy==1 && pVtab->aIndex[pIdxInfo->aOrderBy->iColumn] ){
+  if( pIdxInfo->nOrderBy==1 && (
+        pIdxInfo->aOrderBy->iColumn<0 ||
+        pVtab->aIndex[pIdxInfo->aOrderBy->iColumn]) ){
     int iCol = pIdxInfo->aOrderBy->iColumn;
-    char *zCol = pVtab->aCol[iCol];
+    char *zCol = iCol>=0 ? pVtab->aCol[iCol] : "rowid";
     char *zDir = pIdxInfo->aOrderBy->desc?"DESC":"ASC";
-    if( iCol<0 ){
-      zCol = "rowid";
-    }
     zNew = sqlite3_mprintf(" ORDER BY %s %s", zCol, zDir);
     string_concat(&zQuery, zNew, 1, &rc);
     pIdxInfo->orderByConsumed = 1;

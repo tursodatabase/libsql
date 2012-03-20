@@ -476,7 +476,15 @@ static int cfSync(sqlite3_file *pFile, int flags){
     if( nName>nCrashFile ) nName = nCrashFile;
   }
 
+#ifdef TRACE_CRASHTEST
+  printf("cfSync(): nName = %d, nCrashFile = %d, zName = %s, zCrashFile = %s\n",
+         nName, nCrashFile, zName, zCrashFile);
+#endif
+
   if( nName==nCrashFile && 0==memcmp(zName, zCrashFile, nName) ){
+#ifdef TRACE_CRASHTEST
+    printf("cfSync(): name matched, g.iCrash = %d\n", g.iCrash);
+#endif
     if( (--g.iCrash)==0 ) isCrash = 1;
   }
 

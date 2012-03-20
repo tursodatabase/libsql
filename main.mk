@@ -601,6 +601,7 @@ clean:
 	rm -f mkkeywordhash mkkeywordhash.exe keywordhash.h
 	rm -f $(PUBLISH)
 	rm -f *.da *.bb *.bbg gmon.out
+	rm -rf quota2a quota2b quota2c
 	rm -rf tsrc target_source
 	rm -f testloadext.dll libtestloadext.so
 	rm -f amalgamation-testfixture amalgamation-testfixture.exe

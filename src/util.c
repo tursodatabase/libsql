@@ -216,11 +216,11 @@ int sqlite3Dequote(char *z){
 ** Some systems have stricmp().  Others have strcasecmp().  Because
 ** there is no consistency, we will define our own.
 **
-** IMPLEMENTATION-OF: R-20522-24639 The sqlite3_strnicmp() API allows
-** applications and extensions to compare the contents of two buffers
-** containing UTF-8 strings in a case-independent fashion, using the same
-** definition of case independence that SQLite uses internally when
-** comparing identifiers.
+** IMPLEMENTATION-OF: R-30243-02494 The sqlite3_stricmp() and
+** sqlite3_strnicmp() APIs allow applications and extensions to compare
+** the contents of two buffers containing UTF-8 strings in a
+** case-independent fashion, using the same definition of "case
+** independence" that SQLite uses internally when comparing identifiers.
 */
 int sqlite3_stricmp(const char *zLeft, const char *zRight){
   register unsigned char *a, *b;
