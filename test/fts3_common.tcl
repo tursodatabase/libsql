@@ -14,6 +14,35 @@
 # to use Tcl.
 #
 
+#-------------------------------------------------------------------------
+# INSTRUCTIONS
+#
+# The following commands are available:
+#
+#   fts3_build_db_1 N
+#     Using database handle [db] create an FTS4 table named t1 and populate
+#     it with N rows of data. N must be less than 10,000. Refer to the
+#     header comments above the proc implementation below for details.
+#
+#   fts3_build_db_2 N
+#     Using database handle [db] create an FTS4 table named t2 and populate
+#     it with N rows of data. N must be less than 100,000. Refer to the
+#     header comments above the proc implementation below for details.
+#
+#   fts3_integrity_check TBL
+#     TBL must be an FTS table in the database currently opened by handle
+#     [db]. This proc loads and tokenizes all documents within the table,
+#     then checks that the current contents of the FTS index matches the
+#     results.
+#
+#   fts3_terms TBL WHERE
+#     Todo.
+#
+#   fts3_doclist TBL TERM WHERE
+#     Todo.
+#
+#
+#
 
 #-------------------------------------------------------------------------
 # USAGE: fts3_build_db_1 N
@@ -51,16 +80,19 @@ proc fts3_build_db_1 {n} {
 }
 
 #-------------------------------------------------------------------------
-# USAGE: fts3_build_db_2 N
+# USAGE: fts3_build_db_2 N ARGS
 #
 # Build a sample FTS table in the database opened by database connection 
 # [db]. The name of the new table is "t2".
 #
-proc fts3_build_db_2 {n} {
+proc fts3_build_db_2 {n args} {
 
   if {$n > 100000} {error "n must be <= 100000"}
 
-  db eval { CREATE VIRTUAL TABLE t2 USING fts4 }
+  set sql "CREATE VIRTUAL TABLE t2 USING fts4(content"
+  foreach a $args { append sql ", " $a }
+  append sql ")"
+  db eval $sql
 
   set chars [list a b c d e f g h  i j k l m n o p  q r s t u v w x  y z ""]
 
