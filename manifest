@@ -1,5 +1,5 @@
-C Following\san\sincr-merge\soperation\sthat\sdoes\snot\scompletely\sconsume\sits\sinput\ssegments,\sstore\scontext\sin\sthe\srowid==1\srow\sof\sthe\s%_stat\stable\sthat\sallows\sthe\snext\sincr-merge\sto\spick\sup\swhere\sthe\sprevious\sleft\soff.
-D 2012-03-22T16:48:12.328
+C Add\stest\scases\sto\sfts4merge.test.
+D 2012-03-22T17:48:00.732
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -498,7 +498,7 @@ F test/fts3sort.test 95be0b19d7e41c44b29014f13ea8bddd495fd659
 F test/fts4aa.test 6e7f90420b837b2c685f3bcbe84c868492d40a68
 F test/fts4content.test 17b2360f7d1a9a7e5aa8022783f5c5731b6dfd4f
 F test/fts4langid.test 24a6e41063b416bbdf371ff6b4476fa41c194aa7
-F test/fts4merge.test 8e092654ab874afcc4a25f2255497eeb37da74e9
+F test/fts4merge.test 663607bef5575027295d0b7168370ccd0bae6522
 F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
 F test/fts4merge3.test 2d2008772f45afc617fc34d10bcafbc8de1ca2ae
 F test/func.test 6c5ce11e3a0021ca3c0649234e2d4454c89110ca
@@ -996,7 +996,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 903ec5126dd981da6d7bab45c568f34b99446159
-R 36f0dde084aa3ea3b70c7d9b0328ed18
+P ab0a4f44fb67e9f0cb82297b80e728ca58cdb0fb
+R ad6c9794089ec45a4e493d1d79b6555f
 U dan
-Z c1efcc23c92abcdb78f85442afae1924
+Z 8189e23423b7ab0255c97e908b40cc3e

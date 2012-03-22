@@ -162,5 +162,98 @@ do_execsql_test 4.4.2 {
   SELECT level, group_concat(idx, ' ') FROM t4_segdir GROUP BY level;
 } "0 {0 1 2 3 4 5}                     1 0"
 
+#-------------------------------------------------------------------------
+# Test cases 5.*
+#
+# Test that if a crisis-merge occurs that disrupts an ongoing incremental
+# merge, the next call to "merge=A,B" identifies this and starts a new
+# incremental merge. There are two scenarios:
+#
+#   * There are less segments on the input level that the disrupted
+#     incremental merge operated on, or
+#   
+#   * Sufficient segments exist on the input level but the segments 
+#     contain keys smaller than the largest key in the potential output 
+#     segment.
+# 
+do_test 5.1 {
+  reset_db
+  fts3_build_db_1 1000
+} {}
+
+do_execsql_test 5.2 {
+  SELECT level, group_concat(idx, ' ') FROM t1_segdir GROUP BY level;
+} {
+  0 {0 1 2 3 4 5 6 7} 
+  1 {0 1 2 3 4 5 6 7 8 9 10 11 12 13} 
+  2 {0 1 2}
+}
+
+do_execsql_test 5.3 {
+  INSERT INTO t1(t1) VALUES('merge=1,4');
+  SELECT level, group_concat(idx, ' ') FROM t1_segdir GROUP BY level;
+} {
+  0 {0 1 2 3 4 5 6 7} 
+  1 {0 1 2 3 4 5 6 7 8 9 10 11 12 13} 
+  2 {0 1 2 3}
+}
+
+do_execsql_test 5.4 {SELECT quote(value) from t1_stat WHERE rowid=1} {X'0104'}
+do_test 5.5 {
+  foreach docid [execsql {SELECT docid FROM t1}] {
+    execsql {INSERT INTO t1 SELECT * FROM t1 WHERE docid=$docid}
+  }
+} {}
+
+do_execsql_test 5.6 {SELECT quote(value) from t1_stat WHERE rowid=1} {X'0104'}
+
+do_execsql_test 5.7 {
+  SELECT level, group_concat(idx, ' ') FROM t1_segdir GROUP BY level;
+  SELECT quote(value) from t1_stat WHERE rowid=1;
+} {
+  0 {0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15} 
+  1 {0 1 2 3 4 5 6 7 8 9 10 11} 
+  2 {0 1 2 3 4 5 6 7}
+  X'0104'
+}
+
+do_execsql_test 5.8 {
+  INSERT INTO t1(t1) VALUES('merge=1,4');
+  SELECT level, group_concat(idx, ' ') FROM t1_segdir GROUP BY level;
+  SELECT quote(value) from t1_stat WHERE rowid=1;
+} {
+  0 {0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15} 
+  1 {0 1 2 3 4 5 6 7 8 9 10 11} 
+  2 {0 1 2 3 4 5 6 7}
+  3 {0}
+  X'0204'
+}
+
+do_test 5.9 {
+  set L [expr 16*16*8 + 16*4 + 1]
+  foreach docid [execsql {
+      SELECT docid FROM t1 UNION ALL SELECT docid FROM t1 LIMIT $L
+  }] {
+    execsql {INSERT INTO t1 SELECT * FROM t1 WHERE docid=$docid}
+  }
+} {}
+
+do_execsql_test 5.10 {
+  SELECT level, group_concat(idx, ' ') FROM t1_segdir GROUP BY level;
+  SELECT quote(value) from t1_stat WHERE rowid=1;
+} {
+  0 0   1 0   2 0   3 {0 1}
+  X'0204'
+}
+
+do_execsql_test 5.11 {
+  INSERT INTO t1(t1) VALUES('merge=10,4');
+  SELECT level, group_concat(idx, ' ') FROM t1_segdir GROUP BY level;
+  SELECT quote(value) from t1_stat WHERE rowid=1;
+} {
+  0 0   1 0   2 0   3 {0 1}
+  X'0000'
+}
+
 
 finish_test
