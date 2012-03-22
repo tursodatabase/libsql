@@ -66,6 +66,12 @@ int test_fts3_node_chunk_threshold = (4*1024)*4;
 # define FTS3_NODE_CHUNK_THRESHOLD (FTS3_NODE_CHUNKSIZE*4)
 #endif
 
+/*
+** The two values that may be meaningfully bound to the :1 parameter in
+** statements SQL_REPLACE_STAT and SQL_SELECT_STAT.
+*/
+#define FTS_STAT_DOCTOTAL      0
+#define FTS_STAT_INCRMERGEHINT 1
 
 /*
 ** If FTS_LOG_MERGES is defined, call sqlite3_log() to report each automatic
@@ -243,8 +249,8 @@ struct SegmentNode {
 #define SQL_DELETE_DOCSIZE            19
 #define SQL_REPLACE_DOCSIZE           20
 #define SQL_SELECT_DOCSIZE            21
-#define SQL_SELECT_DOCTOTAL           22
-#define SQL_REPLACE_DOCTOTAL          23
+#define SQL_SELECT_STAT               22
+#define SQL_REPLACE_STAT              23
 
 #define SQL_SELECT_ALL_PREFIX_LEVEL   24
 #define SQL_DELETE_ALL_TERMS_SEGDIR   25
@@ -305,8 +311,8 @@ static int fts3SqlStmt(
 /* 19 */  "DELETE FROM %Q.'%q_docsize' WHERE docid = ?",
 /* 20 */  "REPLACE INTO %Q.'%q_docsize' VALUES(?,?)",
 /* 21 */  "SELECT size FROM %Q.'%q_docsize' WHERE docid=?",
-/* 22 */  "SELECT value FROM %Q.'%q_stat' WHERE id=0",
-/* 23 */  "REPLACE INTO %Q.'%q_stat' VALUES(0,?)",
+/* 22 */  "SELECT value FROM %Q.'%q_stat' WHERE id=?",
+/* 23 */  "REPLACE INTO %Q.'%q_stat' VALUES(?,?)",
 /* 24 */  "",
 /* 25 */  "",
 
@@ -318,7 +324,7 @@ static int fts3SqlStmt(
 ** of the oldest level in the db that contains at least ? segments. Or,
 ** if no level in the FTS index contains more than ? segments, the statement
 ** returns zero rows.  */
-/* 28 */ "SELECT level FROM %Q.'%q_segdir' GROUP BY level HAVING count(*)>?"
+/* 28 */ "SELECT level FROM %Q.'%q_segdir' GROUP BY level HAVING count(*)>=?"
          "  ORDER BY (level %% 1024) DESC LIMIT 1",
 
 /* Estimate the upper limit on the number of leaf nodes in a new segment
@@ -392,20 +398,15 @@ static int fts3SqlStmt(
 
 static int fts3SelectDocsize(
   Fts3Table *pTab,                /* FTS3 table handle */
-  int eStmt,                      /* Either SQL_SELECT_DOCSIZE or DOCTOTAL */
   sqlite3_int64 iDocid,           /* Docid to bind for SQL_SELECT_DOCSIZE */
   sqlite3_stmt **ppStmt           /* OUT: Statement handle */
 ){
   sqlite3_stmt *pStmt = 0;        /* Statement requested from fts3SqlStmt() */
   int rc;                         /* Return code */
 
-  assert( eStmt==SQL_SELECT_DOCSIZE || eStmt==SQL_SELECT_DOCTOTAL );
-
-  rc = fts3SqlStmt(pTab, eStmt, &pStmt, 0);
+  rc = fts3SqlStmt(pTab, SQL_SELECT_DOCSIZE, &pStmt, 0);
   if( rc==SQLITE_OK ){
-    if( eStmt==SQL_SELECT_DOCSIZE ){
-      sqlite3_bind_int64(pStmt, 1, iDocid);
-    }
+    sqlite3_bind_int64(pStmt, 1, iDocid);
     rc = sqlite3_step(pStmt);
     if( rc!=SQLITE_ROW || sqlite3_column_type(pStmt, 0)!=SQLITE_BLOB ){
       rc = sqlite3_reset(pStmt);
@@ -424,7 +425,21 @@ int sqlite3Fts3SelectDoctotal(
   Fts3Table *pTab,                /* Fts3 table handle */
   sqlite3_stmt **ppStmt           /* OUT: Statement handle */
 ){
-  return fts3SelectDocsize(pTab, SQL_SELECT_DOCTOTAL, 0, ppStmt);
+  sqlite3_stmt *pStmt = 0;
+  int rc;
+  rc = fts3SqlStmt(pTab, SQL_SELECT_STAT, &pStmt, 0);
+  if( rc==SQLITE_OK ){
+    sqlite3_bind_int(pStmt, 1, FTS_STAT_DOCTOTAL);
+    if( sqlite3_step(pStmt)!=SQLITE_ROW
+     || sqlite3_column_type(pStmt, 0)!=SQLITE_BLOB
+    ){
+      rc = sqlite3_reset(pStmt);
+      if( rc==SQLITE_OK ) rc = FTS_CORRUPT_VTAB;
+      pStmt = 0;
+    }
+  }
+  *ppStmt = pStmt;
+  return rc;
 }
 
 int sqlite3Fts3SelectDocsize(
@@ -432,7 +447,7 @@ int sqlite3Fts3SelectDocsize(
   sqlite3_int64 iDocid,           /* Docid to read size data for */
   sqlite3_stmt **ppStmt           /* OUT: Statement handle */
 ){
-  return fts3SelectDocsize(pTab, SQL_SELECT_DOCSIZE, iDocid, ppStmt);
+  return fts3SelectDocsize(pTab, iDocid, ppStmt);
 }
 
 /*
@@ -3094,12 +3109,13 @@ static void fts3UpdateDocTotals(
     return;
   }
   pBlob = (char*)&a[nStat];
-  rc = fts3SqlStmt(p, SQL_SELECT_DOCTOTAL, &pStmt, 0);
+  rc = fts3SqlStmt(p, SQL_SELECT_STAT, &pStmt, 0);
   if( rc ){
     sqlite3_free(a);
     *pRC = rc;
     return;
   }
+  sqlite3_bind_int(pStmt, 1, FTS_STAT_DOCTOTAL);
   if( sqlite3_step(pStmt)==SQLITE_ROW ){
     fts3DecodeIntArray(nStat, a,
          sqlite3_column_blob(pStmt, 0),
@@ -3123,13 +3139,14 @@ static void fts3UpdateDocTotals(
     a[i+1] = x;
   }
   fts3EncodeIntArray(nStat, a, pBlob, &nBlob);
-  rc = fts3SqlStmt(p, SQL_REPLACE_DOCTOTAL, &pStmt, 0);
+  rc = fts3SqlStmt(p, SQL_REPLACE_STAT, &pStmt, 0);
   if( rc ){
     sqlite3_free(a);
     *pRC = rc;
     return;
   }
-  sqlite3_bind_blob(pStmt, 1, pBlob, nBlob, SQLITE_STATIC);
+  sqlite3_bind_int(pStmt, 1, FTS_STAT_DOCTOTAL);
+  sqlite3_bind_blob(pStmt, 2, pBlob, nBlob, SQLITE_STATIC);
   sqlite3_step(pStmt);
   *pRC = sqlite3_reset(pStmt);
   sqlite3_free(a);
@@ -3277,13 +3294,13 @@ static int fts3IncrmergeCsr(
     rc = SQLITE_NOMEM;
   }else{
     memset(pCsr->apSegment, 0, nByte);
-    pCsr->nSegment = nSeg;
     rc = fts3SqlStmt(p, SQL_SELECT_LEVEL, &pStmt, 0);
   }
   if( rc==SQLITE_OK ){
     int i;
     int rc2;
     sqlite3_bind_int64(pStmt, 1, iAbsLevel);
+    assert( pCsr->nSegment==0 );
     for(i=0; rc==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW && i<nSeg; i++){
       rc = sqlite3Fts3SegReaderNew(i, 0,
           sqlite3_column_int64(pStmt, 1),        /* segdir.start_block */
@@ -3293,6 +3310,7 @@ static int fts3IncrmergeCsr(
           sqlite3_column_bytes(pStmt, 4),        /* segdir.root */
           &pCsr->apSegment[i]
       );
+      pCsr->nSegment++;
     }
     rc2 = sqlite3_reset(pStmt);
     if( rc==SQLITE_OK ) rc = rc2;
@@ -3970,11 +3988,37 @@ static int fts3IncrmergeLoad(
   return rc;
 }
 
+/*
+** Determine the largest segment index value that exists within absolute
+** level iAbsLevel+1. If no error occurs, set *piIdx to this value plus
+** one before returning SQLITE_OK. Or, if there are no segments at all 
+** within level iAbsLevel, set *piIdx to zero.
+**
+** If an error occurs, return an SQLite error code. The final value of
+** *piIdx is undefined in this case.
+*/
+static int fts3IncrmergeOutputIdx( 
+  Fts3Table *p,                   /* FTS Table handle */
+  sqlite3_int64 iAbsLevel,        /* Absolute index of input segments */
+  int *piIdx                      /* OUT: Next free index at iAbsLevel+1 */
+){
+  int rc;
+  sqlite3_stmt *pOutputIdx = 0;   /* SQL used to find output index */
+
+  rc = fts3SqlStmt(p, SQL_NEXT_SEGMENT_INDEX, &pOutputIdx, 0);
+  if( rc==SQLITE_OK ){
+    sqlite3_bind_int64(pOutputIdx, 1, iAbsLevel+1);
+    sqlite3_step(pOutputIdx);
+    *piIdx = sqlite3_column_int(pOutputIdx, 0);
+    rc = sqlite3_reset(pOutputIdx);
+  }
+
+  return rc;
+}
+
 /* 
-** Either allocate an output segment or locate an existing appendable 
-** output segment to append to. An "appendable" output segment is
-** slightly different to a normal one, as the required range of keys in
-** the %_segments table must be allocated up front.
+** Allocate an appendable output segment on absolute level iAbsLevel+1
+** with idx value iIdx.
 **
 ** In the %_segdir table, a segment is defined by the values in three
 ** columns:
@@ -4001,33 +4045,15 @@ static int fts3IncrmergeLoad(
 static int fts3IncrmergeWriter( 
   Fts3Table *p,                   /* Fts3 table handle */
   sqlite3_int64 iAbsLevel,        /* Absolute level of input segments */
+  int iIdx,                       /* Index of new output segment */
   Fts3MultiSegReader *pCsr,       /* Cursor that data will be read from */
   IncrmergeWriter *pWriter        /* Populate this object */
 ){
   int rc;                         /* Return Code */
   int i;                          /* Iterator variable */
   int nLeafEst;                   /* Blocks allocated for leaf nodes */
-  int iIdx;                       /* Index of output segment */
   sqlite3_stmt *pLeafEst = 0;     /* SQL used to determine nLeafEst */
   sqlite3_stmt *pFirstBlock = 0;  /* SQL used to determine first block */
-  sqlite3_stmt *pOutputIdx = 0;   /* SQL used to find output index */
-  const char *zKey = pCsr->zTerm; /* First key to be appended to output */
-  int nKey = pCsr->nTerm;         /* Size of zKey in bytes */
-
-  rc = fts3SqlStmt(p, SQL_NEXT_SEGMENT_INDEX, &pOutputIdx, 0);
-  if( rc==SQLITE_OK ){
-    sqlite3_bind_int64(pOutputIdx, 1, iAbsLevel+1);
-    sqlite3_step(pOutputIdx);
-    iIdx = sqlite3_column_int(pOutputIdx, 0) - 1;
-    rc = sqlite3_reset(pOutputIdx);
-  }
-  if( rc!=SQLITE_OK ) return rc;
-
-  assert( zKey );
-  assert( pWriter->nLeafEst==0 );
-  rc = fts3IncrmergeLoad(p, iAbsLevel, iIdx, zKey, nKey, pWriter);
-  if( rc!=SQLITE_OK || pWriter->nLeafEst ) return rc;
-  iIdx++;
 
   /* Calculate nLeafEst. */
   rc = fts3SqlStmt(p, SQL_MAX_LEAF_NODE_ESTIMATE, &pLeafEst, 0);
@@ -4190,7 +4216,7 @@ static int fts3TruncateSegment(
   sqlite3_int64 iAbsLevel,        /* Absolute level of segment to modify */
   int iIdx,                       /* Index within level of segment to modify */
   const char *zTerm,              /* Remove terms smaller than this */
-  int nTerm                       /* Number of bytes in buffer zTerm */
+  int nTerm                      /* Number of bytes in buffer zTerm */
 ){
   int rc = SQLITE_OK;             /* Return code */
   Blob root = {0,0,0};            /* New root page image */
@@ -4198,22 +4224,22 @@ static int fts3TruncateSegment(
   sqlite3_int64 iBlock = 0;       /* Block id */
   sqlite3_int64 iNewStart = 0;    /* New value for iStartBlock */
   sqlite3_int64 iOldStart = 0;    /* Old value for iStartBlock */
-  int rc2;                        /* sqlite3_reset() return code */
   sqlite3_stmt *pFetch = 0;       /* Statement used to fetch segdir */
 
-  assert( p->aStmt[SQL_SELECT_SEGDIR] );
-  pFetch = p->aStmt[SQL_SELECT_SEGDIR];
-
-  sqlite3_bind_int64(pFetch, 1, iAbsLevel);
-  sqlite3_bind_int(pFetch, 2, iIdx);
-  if( SQLITE_ROW==sqlite3_step(pFetch) ){
-    const char *aRoot = sqlite3_column_blob(pFetch, 4);
-    int nRoot = sqlite3_column_bytes(pFetch, 4);
-    iOldStart = sqlite3_column_int64(pFetch, 1);
-    rc = fts3TruncateNode(aRoot, nRoot, &root, zTerm, nTerm, &iBlock);
+  rc = fts3SqlStmt(p, SQL_SELECT_SEGDIR, &pFetch, 0);
+  if( rc==SQLITE_OK ){
+    int rc2;                      /* sqlite3_reset() return code */
+    sqlite3_bind_int64(pFetch, 1, iAbsLevel);
+    sqlite3_bind_int(pFetch, 2, iIdx);
+    if( SQLITE_ROW==sqlite3_step(pFetch) ){
+      const char *aRoot = sqlite3_column_blob(pFetch, 4);
+      int nRoot = sqlite3_column_bytes(pFetch, 4);
+      iOldStart = sqlite3_column_int64(pFetch, 1);
+      rc = fts3TruncateNode(aRoot, nRoot, &root, zTerm, nTerm, &iBlock);
+    }
+    rc2 = sqlite3_reset(pFetch);
+    if( rc==SQLITE_OK ) rc = rc2;
   }
-  rc2 = sqlite3_reset(pFetch);
-  if( rc==SQLITE_OK ) rc = rc2;
 
   while( rc==SQLITE_OK && iBlock ){
     char *aBlock = 0;
@@ -4273,9 +4299,11 @@ static int fts3TruncateSegment(
 static int fts3IncrmergeChomp(
   Fts3Table *p,                   /* FTS table handle */
   sqlite3_int64 iAbsLevel,        /* Absolute level containing segments */
-  Fts3MultiSegReader *pCsr        /* Chomp all segments opened by this cursor */
+  Fts3MultiSegReader *pCsr,       /* Chomp all segments opened by this cursor */
+  int *pnRem                      /* Number of segments not deleted */
 ){
   int i;
+  int nRem = 0;
   int rc = SQLITE_OK;
 
   for(i=pCsr->nSegment-1; i>=0 && rc==SQLITE_OK; i--){
@@ -4296,6 +4324,7 @@ static int fts3IncrmergeChomp(
       if( rc==SQLITE_OK ){
         rc = fts3RemoveSegdirEntry(p, iAbsLevel, pSeg->iIdx);
       }
+      *pnRem = 0;
     }else{
       /* The incremental merge did not copy all the data from this 
       ** segment to the upper level. The segment is modified in place
@@ -4303,7 +4332,74 @@ static int fts3IncrmergeChomp(
       const char *zTerm = pSeg->zTerm;
       int nTerm = pSeg->nTerm;
       rc = fts3TruncateSegment(p, iAbsLevel, pSeg->iIdx, zTerm, nTerm);
+      nRem++;
     }
+  }
+
+  *pnRem = nRem;
+  return rc;
+}
+
+/*
+** Store an incr-merge hint in the database.
+*/
+static int fts3IncrmergeHintStore(
+  Fts3Table *p,                   /* FTS3 table handle */
+  sqlite3_int64 iAbsLevel,        /* Absolute level to read input data from */
+  int nMerge                      /* Number of segments to merge */
+){
+  char aBlob[FTS3_VARINT_MAX * 2];
+  int nBlob = 0;
+  int rc;
+  sqlite3_stmt *pReplace = 0;
+
+  assert( p->bHasStat );
+  nBlob += sqlite3Fts3PutVarint(&aBlob[nBlob], iAbsLevel);
+  nBlob += sqlite3Fts3PutVarint(&aBlob[nBlob], nMerge);
+
+  rc = fts3SqlStmt(p, SQL_REPLACE_STAT, &pReplace, 0);
+  if( rc==SQLITE_OK ){
+    sqlite3_bind_int(pReplace, 1, FTS_STAT_INCRMERGEHINT);
+    sqlite3_bind_blob(pReplace, 2, aBlob, nBlob, SQLITE_TRANSIENT);
+    sqlite3_step(pReplace);
+    rc = sqlite3_reset(pReplace);
+  }
+
+  return rc;
+}
+
+/*
+** Load an incr-merge hint from the database.
+**
+** The incr-merge hint, if one exists, is stored in the rowid==1 row of
+** the %_stat table.
+*/
+static int fts3IncrmergeHintLoad(
+  Fts3Table *p,                   /* FTS3 table handle */
+  sqlite3_int64 *piAbsLevel,      /* Absolute level to read input data from */
+  int *pnMerge                    /* Number of segments to merge */
+){
+  sqlite3_stmt *pSelect = 0;
+  int rc;
+
+  *pnMerge = 0;
+  *piAbsLevel = 0;
+
+  rc = fts3SqlStmt(p, SQL_SELECT_STAT, &pSelect, 0);
+  if( rc==SQLITE_OK ){
+    sqlite3_bind_int(pSelect, 1, FTS_STAT_INCRMERGEHINT);
+    if( SQLITE_ROW==sqlite3_step(pSelect) ){
+      char *aHint = sqlite3_column_blob(pSelect, 0);
+      int nHint = sqlite3_column_bytes(pSelect, 0);
+      if( aHint ){
+        int i;
+        char aBlob[FTS3_VARINT_MAX * 2];
+        memcpy(aBlob, aHint, MAX(sizeof(aBlob), nHint));
+        i = sqlite3Fts3GetVarint(aBlob, piAbsLevel);
+        sqlite3Fts3GetVarint32(&aBlob[i], pnMerge);
+      }
+    }
+    rc = sqlite3_reset(pSelect);
   }
 
   return rc;
@@ -4319,31 +4415,48 @@ static int fts3IncrmergeChomp(
 ** quota of nMerge leaf blocks.
 */
 static int fts3Incrmerge(Fts3Table *p, int nMerge, int nMin){
-  int rc = SQLITE_OK;             /* Return code */
+  int rc;                         /* Return code */
   int nRem = nMerge;              /* Number of leaf pages yet to  be written */
+  int bUseHint = 1;               /* True if hint has not yet been attempted */
+  sqlite3_int64 iHintAbsLevel = 0;/* Hint level */
+  int nHintSeg = 0;               /* Hint number of segments */
+  int nSeg = 0;                   /* Number of input segments */
+  sqlite3_int64 iAbsLevel = 0;    /* Absolute level number to work on */
 
   assert( nMin>=2 );
 
+  rc = fts3IncrmergeHintLoad(p, &iHintAbsLevel, &nHintSeg);
+  if( nHintSeg==0 ) bUseHint = 0;
+
   while( rc==SQLITE_OK && nRem>0 ){
-    sqlite3_int64 iAbsLevel;        /* Absolute level number to work on */
-    sqlite3_stmt *pFindLevel = 0;   /* SQL used to determine iAbsLevel */
     Fts3MultiSegReader *pCsr;       /* Cursor used to read input data */
     Fts3SegFilter *pFilter;         /* Filter used with cursor pCsr */
     IncrmergeWriter *pWriter;       /* Writer object */
     const int nAlloc = sizeof(*pCsr) + sizeof(*pFilter) + sizeof(*pWriter);
 
-    /* Determine which level to merge segments from. Any level, from any
-    ** prefix or language index may be selected. Stack variable iAbsLevel 
-    ** is set to the absolute level number of the level to merge from.  */
-    rc = fts3SqlStmt(p, SQL_FIND_MERGE_LEVEL, &pFindLevel, 0);
-    sqlite3_bind_int(pFindLevel, 1, nMin);
-    if( sqlite3_step(pFindLevel)!=SQLITE_ROW ){
-      /* There are no levels with nMin or more segments. Or an error has
-      ** occurred. Either way, exit early.  */
-      return sqlite3_reset(pFindLevel);
+    if( bUseHint ){
+      iAbsLevel = iHintAbsLevel;
+      nSeg = nHintSeg;
+    }else{
+      sqlite3_stmt *pFindLevel = 0; /* SQL used to determine iAbsLevel */
+
+      /* Determine which level to merge segments from. Any level, from any
+      ** prefix or language index may be selected. Stack variable iAbsLevel 
+      ** is set to the absolute level number of the level to merge from.  */
+      rc = fts3SqlStmt(p, SQL_FIND_MERGE_LEVEL, &pFindLevel, 0);
+      sqlite3_bind_int(pFindLevel, 1, nMin);
+      if( sqlite3_step(pFindLevel)!=SQLITE_ROW ){
+        /* There are no levels with nMin or more segments. Or an error has
+         ** occurred. Either way, exit early.  */
+        rc = sqlite3_reset(pFindLevel);
+        iAbsLevel = 0;
+        nSeg = 0;
+        break;
+      }
+      iAbsLevel = sqlite3_column_int64(pFindLevel, 0);
+      nSeg = nMin;
+      sqlite3_reset(pFindLevel);
     }
-    iAbsLevel = sqlite3_column_int64(pFindLevel, 0);
-    sqlite3_reset(pFindLevel);
 
     /* Allocate space for the cursor, filter and writer objects */
     pWriter = (IncrmergeWriter *)sqlite3_malloc(nAlloc);
@@ -4352,36 +4465,56 @@ static int fts3Incrmerge(Fts3Table *p, int nMerge, int nMin){
     pFilter = (Fts3SegFilter *)&pWriter[1];
     pCsr = (Fts3MultiSegReader *)&pFilter[1];
 
-    /* Open a cursor to iterate through the contents of indexes 0 and 1 of
-    ** the selected absolute level. */
+    /* Open a cursor to iterate through the contents of the oldest nSeg 
+    ** indexes of absolute level iAbsLevel. If this cursor is opened using 
+    ** the 'hint' parameters, it is possible that there are less than nSeg
+    ** segments available in level iAbsLevel. In this case, no work is
+    ** done on iAbsLevel - fall through to the next iteration of the loop 
+    ** to start work on some other level.  */
     pFilter->flags = FTS3_SEGMENT_REQUIRE_POS;
-    rc = fts3IncrmergeCsr(p, iAbsLevel, nMin, pCsr);
-    fts3LogMerge(nMin, iAbsLevel);
-    if( rc==SQLITE_OK ){
-      rc = sqlite3Fts3SegReaderStart(p, pCsr, pFilter);
-    }
-    if( rc==SQLITE_OK ){
-      if( SQLITE_ROW==(rc = sqlite3Fts3SegReaderStep(p, pCsr)) ){
-        rc = fts3IncrmergeWriter(p, iAbsLevel, pCsr, pWriter);
-        if( rc==SQLITE_OK ){
-          do {
-            rc = fts3IncrmergeAppend(p, pWriter, pCsr);
-            if( rc==SQLITE_OK ) rc = sqlite3Fts3SegReaderStep(p, pCsr);
-            if( pWriter->nWork>=nRem && rc==SQLITE_ROW ) rc = SQLITE_OK;
-          }while( rc==SQLITE_ROW );
+    rc = fts3IncrmergeCsr(p, iAbsLevel, nSeg, pCsr);
+    if( pCsr->nSegment==nSeg && SQLITE_OK==rc
+     && SQLITE_OK ==(rc = sqlite3Fts3SegReaderStart(p, pCsr, pFilter))
+     && SQLITE_ROW==(rc = sqlite3Fts3SegReaderStep(p, pCsr))
+    ){
+      int iIdx = 0;               /* Largest idx in level (iAbsLevel+1) */
+      rc = fts3IncrmergeOutputIdx(p, iAbsLevel, &iIdx);
+      if( rc==SQLITE_OK ){
+        if( bUseHint && iIdx>0 ){
+          const char *zKey = pCsr->zTerm;
+          int nKey = pCsr->nTerm;
+          rc = fts3IncrmergeLoad(p, iAbsLevel, iIdx-1, zKey, nKey, pWriter);
+        }else{
+          rc = fts3IncrmergeWriter(p, iAbsLevel, iIdx, pCsr, pWriter);
         }
       }
-    }
-    fts3IncrmergeRelease(p, pWriter, &rc);
-    nRem -= (1 + pWriter->nWork);
 
-    /* Update or delete the input segments */
-    if( rc==SQLITE_OK ){
-      rc = fts3IncrmergeChomp(p, iAbsLevel, pCsr);
+      if( rc==SQLITE_OK && pWriter->nLeafEst ){
+        fts3LogMerge(nSeg, iAbsLevel);
+        do {
+          rc = fts3IncrmergeAppend(p, pWriter, pCsr);
+          if( rc==SQLITE_OK ) rc = sqlite3Fts3SegReaderStep(p, pCsr);
+          if( pWriter->nWork>=nRem && rc==SQLITE_ROW ) rc = SQLITE_OK;
+        }while( rc==SQLITE_ROW );
+
+        /* Update or delete the input segments */
+        if( rc==SQLITE_OK ){
+          nRem -= (1 + pWriter->nWork);
+          rc = fts3IncrmergeChomp(p, iAbsLevel, pCsr, &nSeg);
+        }
+      }
+
+      fts3IncrmergeRelease(p, pWriter, &rc);
     }
 
     sqlite3Fts3SegReaderFinish(pCsr);
     sqlite3_free(pWriter);
+    bUseHint = 0;
+  }
+
+  /* Write the hint values into the %_stat table for the next incr-merger */
+  if( rc==SQLITE_OK && (iAbsLevel!=iHintAbsLevel || nHintSeg!=nSeg) ){
+    rc = fts3IncrmergeHintStore(p, iAbsLevel, nSeg);
   }
 
   return rc;

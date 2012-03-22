@@ -63,9 +63,7 @@ for {set i 0} {$i<100} {incr i} {
 do_execsql_test 1.5 { 
   SELECT level, group_concat(idx, ' ') FROM t1_segdir GROUP BY level 
 } {
-  0 {0 1 2 3} 
-  1 {0 1 2} 
-  2 0
+  2 {0 1}
   3 0
 }
 
@@ -114,12 +112,55 @@ do_execsql_test 3.3 {
   SELECT level, group_concat(idx, ' ') FROM t2_segdir GROUP BY level 
 } {
   0 0 
-  1 {0 1} 
-  2 0 
-  3 {0 1} 
-  4 {0 1} 
-  5 0
+  2 0
+  3 0 
+  4 0
+  6 0
 }
 
-finish_test
+#-------------------------------------------------------------------------
+# Test cases 4.*
+#
+reset_db
+do_execsql_test 4.1 {
+  PRAGMA page_size = 512;
+  CREATE VIRTUAL TABLE t4 USING fts4;
+  PRAGMA main.page_size;
+} {512}
 
+do_test 4.2 {
+  foreach x {a c b d e f g h i j k l m n o p} {
+    execsql "INSERT INTO t4 VALUES('[string repeat $x 600]')"
+  }
+  execsql {SELECT level, group_concat(idx, ' ') FROM t4_segdir GROUP BY level}
+} {0 {0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15}}
+
+foreach {tn expect} {
+  1  "0 {0 1 2 3 4 5 6 7 8 9 10 11 12 13} 1 0"
+  2  "0 {0 1 2 3 4 5 6 7 8 9 10 11 12}    1 0"
+  3  "0 {0 1 2 3 4 5 6 7 8 9 10 11}       1 0"
+  4  "0 {0 1 2 3 4 5 6 7 8 9 10}          1 0"
+  5  "0 {0 1 2 3 4 5 6 7 8 9}             1 0"
+  6  "0 {0 1 2 3 4 5 6 7 8}               1 0"
+  7  "0 {0 1 2 3 4 5 6 7}                 1 0"
+  8  "0 {0 1 2 3 4 5 6}                   1 0"
+  9  "0 {0 1 2 3 4 5}                     1 0"
+} {
+  do_execsql_test 4.3.$tn {
+    INSERT INTO t4(t4) VALUES('merge=1,16');
+    SELECT level, group_concat(idx, ' ') FROM t4_segdir GROUP BY level;
+  } $expect
+}
+
+do_execsql_test 4.4.1 {
+  SELECT quote(value) FROM t4_stat WHERE rowid=1
+} {X'0006'}
+
+do_execsql_test 4.4.2 {
+  DELETE FROM t4_stat WHERE rowid=1;
+  INSERT INTO t4(t4) VALUES('merge=1,12');
+  SELECT level, group_concat(idx, ' ') FROM t4_segdir GROUP BY level;
+} "0 {0 1 2 3 4 5}                     1 0"
+
+
+finish_test
