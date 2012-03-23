@@ -1,5 +1,5 @@
-C Update\sa\scouple\sof\sexisting\stest\scases.
-D 2012-03-23T11:07:22.067
+C When\san\sincremental\sblob\scursor\sis\sinvalidated\s(occurs\swhen\san\sSQL\sstatement\smodifies\sor\sdeletes\sthe\srow\sthe\sblob\scursor\spoints\sto)\srelease\sall\spage\sreferences\sheld\sby\sthe\scursor.\sOtherwise,\sthe\spresence\sof\sthese\sreferences\smay\scause\sother\scode\sin\sbtree.c\sto\sincorrectly\sinfer\sthat\sthe\sdatabase\sis\scorrupt.
+D 2012-03-23T11:09:59.261
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -125,7 +125,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 6be23a344d3301ae38e92fddb3a33b91c309fce4
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 253c3147a4ebbaee42cd329dbdc0856200bbbda7
+F src/btree.c 02aeee1f6d425e11f7b9b2d9d461ac501645ed6f
 F src/btree.h 48a013f8964f12d944d90e4700df47b72dd6d923
 F src/btreeInt.h 26d8ca625b141927fe6620c1d2cf58eaf494ca0c
 F src/build.c c4d36e527f457f9992a6663365871dfa7c5094b8
@@ -520,6 +520,7 @@ F test/in4.test 64f3cc1acde1b9161ccdd8e5bde3daefdb5b2617
 F test/incrblob.test 26fde912a1e0aff158b3a84ef3b265f046aad3be
 F test/incrblob2.test edc3a96e557bd61fb39acc8d2edd43371fbbaa19
 F test/incrblob3.test aedbb35ea1b6450c33b98f2b6ed98e5020be8dc7
+F test/incrblob4.test 09be37d3dd996a31ea6993bba7837ece549414a8
 F test/incrblob_err.test d2562d2771ebffd4b3af89ef64c140dd44371597
 F test/incrblobfault.test 917c0292224c64a56ef7215fd633a3a82f805be0
 F test/incrvacuum.test d2a6ddf5e429720b5fe502766af747915ccf6c32
@@ -996,7 +997,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P ecab2083334dcdde24a3c56864114979b7a6f25a
-R 1ee2743e0728dfd5b16085c25faca723
+P dcb8fa0f77a44250df0e8c4f6cfb9f6e181982d7
+R 290f1c272852728c6b51f5c4cfcf23c3
 U dan
-Z 1978b788ff30c8d67f82270e25799f6e
+Z a40c41b170a152c43db8b0f47b2a047b
