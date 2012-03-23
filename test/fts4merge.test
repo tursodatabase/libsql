@@ -162,6 +162,7 @@ do_execsql_test 4.4.2 {
   SELECT level, group_concat(idx, ' ') FROM t4_segdir GROUP BY level;
 } "0 {0 1 2 3 4 5}                     1 0"
 
+
 #-------------------------------------------------------------------------
 # Test cases 5.*
 #
@@ -255,5 +256,35 @@ do_execsql_test 5.11 {
   X'0000'
 }
 
+#-------------------------------------------------------------------------
+# Test cases 6.*
+#
+# At one point the following test caused an assert() to fail (because the
+# second 'merge=1,2' operation below actually "merges" a single input
+# segment, which was unexpected).
+#
+do_test 6.1 {
+  reset_db
+  set a [string repeat a 900]
+  set b [string repeat b 900]
+  set c [string repeat c 900]
+  set d [string repeat d 900]
+  execsql {
+    CREATE VIRTUAL TABLE t1 USING fts4;
+    BEGIN;
+      INSERT INTO t1 VALUES($a);
+      INSERT INTO t1 VALUES($b);
+    COMMIT;
+    BEGIN;
+      INSERT INTO t1 VALUES($c);
+      INSERT INTO t1 VALUES($d);
+    COMMIT;
+  }
+
+  execsql {
+    INSERT INTO t1(t1) VALUES('merge=1,2');
+    INSERT INTO t1(t1) VALUES('merge=1,2');
+  }
+} {}
 
 finish_test

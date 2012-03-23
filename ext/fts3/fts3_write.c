@@ -3285,7 +3285,6 @@ static int fts3IncrmergeCsr(
   int nByte;                      /* Bytes allocated at pCsr->apSegment[] */
 
   /* Allocate space for the Fts3MultiSegReader.aCsr[] array */
-  assert( nSeg>=2 );
   memset(pCsr, 0, sizeof(*pCsr));
   nByte = sizeof(Fts3SegReader *) * nSeg;
   pCsr->apSegment = (Fts3SegReader **)sqlite3_malloc(nByte);
@@ -4389,7 +4388,7 @@ static int fts3IncrmergeHintLoad(
   if( rc==SQLITE_OK ){
     sqlite3_bind_int(pSelect, 1, FTS_STAT_INCRMERGEHINT);
     if( SQLITE_ROW==sqlite3_step(pSelect) ){
-      char *aHint = sqlite3_column_blob(pSelect, 0);
+      const char *aHint = sqlite3_column_blob(pSelect, 0);
       int nHint = sqlite3_column_bytes(pSelect, 0);
       if( aHint ){
         int i;
