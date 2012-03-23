@@ -287,4 +287,44 @@ do_test 6.1 {
   }
 } {}
 
+#-------------------------------------------------------------------------
+# Test cases 7.*
+#
+# Test that the value returned by sqlite3_total_changes() increases by
+# 1 following a no-op "merge=A,B", or by more than 1 if actual work is
+# performed.
+#
+do_test 7.0 {
+  reset_db
+  fts3_build_db_1 1000
+} {}
+
+do_execsql_test 7.1 {
+  SELECT level, group_concat(idx, ' ') FROM t1_segdir GROUP BY level
+} {
+  0 {0 1 2 3 4 5 6 7} 
+  1 {0 1 2 3 4 5 6 7 8 9 10 11 12 13} 
+  2 {0 1 2}
+}
+do_test 7.2 {
+  set x [db total_changes]
+  execsql { INSERT INTO t1(t1) VALUES('merge=2,10') }
+  expr { ([db total_changes] - $x)>1 }
+} {1}
+do_test 7.3 {
+  set x [db total_changes]
+  execsql { INSERT INTO t1(t1) VALUES('merge=200,10') }
+  expr { ([db total_changes] - $x)>1 }
+} {1}
+do_test 7.4 {
+  set x [db total_changes]
+  execsql { INSERT INTO t1(t1) VALUES('merge=200,10') }
+  expr { ([db total_changes] - $x)>1 }
+} {0}
+do_test 7.5 {
+  set x [db total_changes]
+  execsql { INSERT INTO t1(t1) VALUES('merge=200,10') }
+  expr { ([db total_changes] - $x)>1 }
+} {0}
+
 finish_test
