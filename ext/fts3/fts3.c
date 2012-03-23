@@ -3412,11 +3412,15 @@ static int fts3RenameMethod(
 ** Flush the contents of the pending-terms table to disk.
 */
 static int fts3SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
+  int rc = SQLITE_OK;
   UNUSED_PARAMETER(iSavepoint);
   assert( ((Fts3Table *)pVtab)->inTransaction );
   assert( ((Fts3Table *)pVtab)->mxSavepoint < iSavepoint );
   TESTONLY( ((Fts3Table *)pVtab)->mxSavepoint = iSavepoint );
-  return fts3SyncMethod(pVtab);
+  if( ((Fts3Table *)pVtab)->bIgnoreSavepoint==0 ){
+    rc = fts3SyncMethod(pVtab);
+  }
+  return rc;
 }
 
 /*

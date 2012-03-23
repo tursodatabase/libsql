@@ -200,7 +200,7 @@ struct Fts3Table {
   /* Precompiled statements used by the implementation. Each of these 
   ** statements is run and reset within a single virtual table API call. 
   */
-  sqlite3_stmt *aStmt[35];
+  sqlite3_stmt *aStmt[36];
 
   char *zReadExprlist;
   char *zWriteExprlist;
@@ -209,6 +209,7 @@ struct Fts3Table {
   u8 bHasStat;                    /* True if %_stat table exists */
   u8 bHasDocsize;                 /* True if %_docsize table exists */
   u8 bDescIdx;                    /* True if doclists are in reverse order */
+  u8 bIgnoreSavepoint;            /* True to ignore xSavepoint invocations */
   int nPgsz;                      /* Page size for host database */
   char *zSegmentsTbl;             /* Name of %_segments table */
   sqlite3_blob *pSegments;        /* Blob handle open on %_segments table */

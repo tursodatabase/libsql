@@ -259,10 +259,11 @@ struct SegmentNode {
 #define SQL_FIND_MERGE_LEVEL          28
 #define SQL_MAX_LEAF_NODE_ESTIMATE    29
 #define SQL_DELETE_SEGDIR_ENTRY       30
-#define SQL_SHIFT_SEGDIR_ENTRIES      31
+#define SQL_SHIFT_SEGDIR_ENTRY        31
 #define SQL_SELECT_SEGDIR             32
 #define SQL_CHOMP_SEGDIR              33
 #define SQL_SEGMENT_IS_APPENDABLE     34
+#define SQL_SELECT_INDEXES            35
 
 /*
 ** This function is used to obtain an SQLite prepared statement handle
@@ -337,10 +338,10 @@ static int fts3SqlStmt(
 **   Delete the %_segdir entry on absolute level :1 with index :2.  */
 /* 30 */ "DELETE FROM %Q.'%q_segdir' WHERE level = ? AND idx = ?",
 
-/* SQL_SHIFT_SEGDIR_ENTRIES
-**   Reduce by one the idx values of all segments on absolute level :1 with
-**   an index greater than :2.  */
-/* 31 */ "UPDATE %Q.'%q_segdir' SET idx = idx - 1 WHERE level = ? AND idx>:2",
+/* SQL_SHIFT_SEGDIR_ENTRY
+**   Modify the idx value for the segment with idx=:3 on absolute level :2
+**   to :1.  */
+/* 31 */ "UPDATE %Q.'%q_segdir' SET idx = ? WHERE level=? AND idx=?",
 
 /* SQL_SELECT_SEGDIR
 **   Read a single entry from the %_segdir table. The entry from absolute 
@@ -357,7 +358,11 @@ static int fts3SqlStmt(
 /* SQL_SEGMENT_IS_APPENDABLE
 **   Return a single row if the segment with end_block=? is appendable. Or
 **   no rows otherwise.  */
-/* 34 */  "SELECT 1 FROM %Q.'%q_segments' WHERE blockid=? AND block IS NULL"
+/* 34 */  "SELECT 1 FROM %Q.'%q_segments' WHERE blockid=? AND block IS NULL",
+
+/* SQL_SELECT_INDEXES
+**   Return the list of valid segment indexes for absolute level ?  */
+/* 35 */  "SELECT idx FROM %Q.'%q_segdir' WHERE level=? ORDER BY 1 ASC"
   };
   int rc = SQLITE_OK;
   sqlite3_stmt *pStmt;
@@ -4113,7 +4118,6 @@ static int fts3RemoveSegdirEntry(
 ){
   int rc;                         /* Return code */
   sqlite3_stmt *pDelete = 0;      /* DELETE statement */
-  sqlite3_stmt *pUpdate = 0;      /* UPDATE statement */
 
   rc = fts3SqlStmt(p, SQL_DELETE_SEGDIR_ENTRY, &pDelete, 0);
   if( rc==SQLITE_OK ){
@@ -4123,16 +4127,67 @@ static int fts3RemoveSegdirEntry(
     rc = sqlite3_reset(pDelete);
   }
 
+  return rc;
+}
+
+/*
+** One or more segments have just been removed from absolute level iAbsLevel.
+** Update the 'idx' values of the remaining segments in the level so that
+** the idx values are a contiguous sequence starting from 0.
+*/
+static int fts3RepackSegdirLevel(
+  Fts3Table *p,                   /* FTS3 table handle */
+  sqlite3_int64 iAbsLevel         /* Absolute level to repack */
+){
+  int rc;                         /* Return code */
+  int *aIdx = 0;                  /* Array of remaining idx values */
+  int nIdx = 0;                   /* Valid entries in aIdx[] */
+  int nAlloc = 0;                 /* Allocated size of aIdx[] */
+  int i;                          /* Iterator variable */
+  sqlite3_stmt *pSelect = 0;      /* Select statement to read idx values */
+  sqlite3_stmt *pUpdate = 0;      /* Update statement to modify idx values */
+
+  rc = fts3SqlStmt(p, SQL_SELECT_INDEXES, &pSelect, 0);
   if( rc==SQLITE_OK ){
-    rc = fts3SqlStmt(p, SQL_SHIFT_SEGDIR_ENTRIES, &pUpdate, 0);
-  }
-  if( rc==SQLITE_OK ){
-    sqlite3_bind_int64(pUpdate, 1, iAbsLevel);
-    sqlite3_bind_int(pUpdate, 2, iIdx);
-    sqlite3_step(pUpdate);
-    rc = sqlite3_reset(pUpdate);
+    int rc2;
+    sqlite3_bind_int64(pSelect, 1, iAbsLevel);
+    while( SQLITE_ROW==sqlite3_step(pSelect) ){
+      if( nIdx>=nAlloc ){
+        int *aNew;
+        nAlloc += 16;
+        aNew = sqlite3_realloc(aIdx, nAlloc*sizeof(int));
+        if( !aNew ){
+          rc = SQLITE_NOMEM;
+          break;
+        }
+        aIdx = aNew;
+      }
+      aIdx[nIdx++] = sqlite3_column_int(pSelect, 0);
+    }
+    rc2 = sqlite3_reset(pSelect);
+    if( rc==SQLITE_OK ) rc = rc2;
   }
 
+  if( rc==SQLITE_OK ){
+    rc = fts3SqlStmt(p, SQL_SHIFT_SEGDIR_ENTRY, &pUpdate, 0);
+  }
+  if( rc==SQLITE_OK ){
+    sqlite3_bind_int64(pUpdate, 2, iAbsLevel);
+  }
+
+  assert( p->bIgnoreSavepoint==0 );
+  p->bIgnoreSavepoint = 1;
+  for(i=0; rc==SQLITE_OK && i<nIdx; i++){
+    if( aIdx[i]!=i ){
+      sqlite3_bind_int(pUpdate, 3, aIdx[i]);
+      sqlite3_bind_int(pUpdate, 1, i);
+      sqlite3_step(pUpdate);
+      rc = sqlite3_reset(pUpdate);
+    }
+  }
+  p->bIgnoreSavepoint = 0;
+
+  sqlite3_free(aIdx);
   return rc;
 }
 
@@ -4333,6 +4388,10 @@ static int fts3IncrmergeChomp(
       rc = fts3TruncateSegment(p, iAbsLevel, pSeg->iIdx, zTerm, nTerm);
       nRem++;
     }
+  }
+
+  if( rc==SQLITE_OK && nRem!=pCsr->nSegment ){
+    rc = fts3RepackSegdirLevel(p, iAbsLevel);
   }
 
   *pnRem = nRem;
