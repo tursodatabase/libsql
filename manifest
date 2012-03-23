@@ -1,9 +1,9 @@
-C Add\sWinRT\scomments\sto\sMSVC\smakefile.
-D 2012-03-20T02:18:42.086
+C Update\sMSVC\smakefile\sto\ssupport\scompiling\sfor\sWinRT\susing\sone\ssetting.
+D 2012-03-23T12:28:21.645
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc a42ae17632258af9ca0c94847e1c072644b38887
+F Makefile.msc 47c5fd7e41e773835f78e2d8d32f67b0c8734113
 F Makefile.vxworks 3b7fe7a0571fdadc61363ebc1b23732d2d6363ca
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION bb4c2a86abe53ea3c1d6ea515b69a426040e2414
@@ -992,7 +992,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 6f0c1f9761be0402b82945517fdb3a36aeacbaeb
-R 0313ae77c5dbe64845daebd70988142f
+P ddea657bd8fe3762bd460524ac9223f0a5b09752
+R 73aeb52e562bd72810737fc034c57c72
 U mistachkin
-Z cd021cef313ab330e262afa3df1b88ed
+Z de85e312d806eace4ad69be21292db54
