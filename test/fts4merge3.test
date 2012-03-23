@@ -88,7 +88,7 @@ do_all_bc_test {
 
     do_test 1.15 { sql2 { 
       SELECT level, count(*) FROM t2_segdir GROUP BY level ORDER BY 1
-    } } {5 1}
+    } } {6 1}
   }
 }
 
