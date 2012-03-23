@@ -1,5 +1,5 @@
-C When\san\sincremental\sblob\scursor\sis\sinvalidated\s(occurs\swhen\san\sSQL\sstatement\smodifies\sor\sdeletes\sthe\srow\sthe\sblob\scursor\spoints\sto)\srelease\sall\spage\sreferences\sheld\sby\sthe\scursor.\sOtherwise,\sthe\spresence\sof\sthese\sreferences\smay\scause\sother\scode\sin\sbtree.c\sto\sincorrectly\sinfer\sthat\sthe\sdatabase\sis\scorrupt.
-D 2012-03-23T11:09:59.261
+C Fix\sanother\stest\scase\sissue\sin\strace2.test.
+D 2012-03-23T13:40:59.728
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -860,7 +860,7 @@ F test/tkt3997.test a335fa41ca3985660a139df7b734a26ef53284bd
 F test/tkt4018.test 7c2c9ba4df489c676a0a7a0e809a1fb9b2185bd1
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 4b36a41a3e9c7842151af6da5998f5080cdad9e5
-F test/trace2.test 9e4c0b3d4a85494acf1c1e077276d1e934100ce4
+F test/trace2.test c1dc104a8d11a347c870cfea6235e3fc6f6cb06d
 F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
 F test/trans2.test d5337e61de45e66b1fcbf9db833fa8c82e624b22
 F test/trans3.test 373ac5183cc56be69f48ae44090e7f672939f732
@@ -997,7 +997,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P dcb8fa0f77a44250df0e8c4f6cfb9f6e181982d7
-R 290f1c272852728c6b51f5c4cfcf23c3
+P 82c3f2ba42f2c75ba6951cc2743148886a4dc0bc
+R 8a1a17690cd4174645797512470efb7b
 U dan
-Z a40c41b170a152c43db8b0f47b2a047b
+Z 4882f51212a5dac4b2ac7a10dc446a83
