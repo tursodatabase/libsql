@@ -1,5 +1,5 @@
-C Add\sSQLITE_DBSTATUS_CACHE_WRITE.\sUsed\sto\squery\sa\sdatabase\sconnection\sfor\sthe\scumulative\snumber\sof\sdatabase\spages\swritten.
-D 2012-03-24T20:06:14.659
+C Add\sSQLITE_DBSTATUS_CACHE_WRITE\sto\sthe\scommand-line\sshell.
+D 2012-03-24T20:09:33.655
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -181,7 +181,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 3d3e80a98f203ac6b9329e9621e29eda85ddfd40
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 44ccdcb5d2a1c48622c179b2d72167b716388581
-F src/shell.c 55e09ef7126768b940427d95dc0a8cb7138e95da
+F src/shell.c 3179db5d4ff33d62d59a024dbfd2a116390ef7b0
 F src/sqlite.h.in 11a883919b0baf4ffaa7550cfeef99be613ec2bf
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h e65429a6f19b41720561b9434b2192574a91cfa2
@@ -993,7 +993,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 341b703ce16361a64ed8bba64ff46792132c0b56
-R 5fc0d309f5291091fecac64a52bbafac
+P 05f98d4eec0f029b76fd471f8d9edf2807de6b55
+R e738d7f44036c20e9a6d260035957782
 U drh
-Z 8ee550c76390e8fc0f8077b27e0ba8b4
+Z 629ce9245a7ac409b2481f6f2ccdf959
