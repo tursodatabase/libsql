@@ -3113,7 +3113,7 @@ static int fts3SyncMethod(sqlite3_vtab *pVtab){
 
     rc = sqlite3Fts3MaxLevel(p, &mxLevel);
     assert( rc==SQLITE_OK || mxLevel==0 );
-    A = p->nLeafAdd * p->mxLevel;
+    A = p->nLeafAdd * mxLevel;
     A += (A/2);
     if( A>nMinMerge ) rc = sqlite3Fts3Incrmerge(p, A, 8);
   }

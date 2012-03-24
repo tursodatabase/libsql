@@ -1875,14 +1875,6 @@ static int fts3WriteSegment(
 }
 
 /*
-** Update the Fts3Table.mxLevel field, if appropriate
-*/
-static void fts3UpdateMaxLevel(Fts3Table *p, sqlite3_int64 iLevel){
-  iLevel %= FTS3_SEGDIR_MAXLEVEL;
-  if( iLevel>p->mxLevel ) p->mxLevel = iLevel;
-}
-
-/*
 ** Find the largest relative level number in the table. If successful, set
 ** *pnMax to this value and return SQLITE_OK. Otherwise, if an error occurs,
 ** set *pnMax to zero and return an SQLite error code.
@@ -1920,7 +1912,6 @@ static int fts3WriteSegdir(
   int rc = fts3SqlStmt(p, SQL_INSERT_SEGDIR, &pStmt, 0);
   if( rc==SQLITE_OK ){
     sqlite3_bind_int64(pStmt, 1, iLevel);
-    fts3UpdateMaxLevel(p, iLevel);
     sqlite3_bind_int(pStmt, 2, iIdx);
     sqlite3_bind_int64(pStmt, 3, iStartBlock);
     sqlite3_bind_int64(pStmt, 4, iLeafEndBlock);
@@ -2407,7 +2398,6 @@ static int fts3SegmentMaxLevel(
   );
   if( SQLITE_ROW==sqlite3_step(pStmt) ){
     *pnMax = sqlite3_column_int64(pStmt, 0);
-    fts3UpdateMaxLevel(p, *pnMax);
   }
   return sqlite3_reset(pStmt);
 }

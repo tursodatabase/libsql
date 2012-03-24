@@ -197,7 +197,6 @@ struct Fts3Table {
   char *zContentTbl;              /* content=xxx option, or NULL */
   char *zLanguageid;              /* languageid=xxx option, or NULL */
   u8 bAutoincrmerge;              /* True if automerge=1 */
-  int mxLevel;                    /* Maximum level seen on this transaction */
   u32 nLeafAdd;                   /* Number of leaf blocks added this trans */
 
   /* Precompiled statements used by the implementation. Each of these 
