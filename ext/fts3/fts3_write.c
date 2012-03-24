@@ -1127,7 +1127,7 @@ static int fts3AllocateSegdirIdx(
     ** if iNext is less than FTS3_MERGE_COUNT, allocate index iNext.
     */
     if( iNext>=FTS3_MERGE_COUNT ){
-      fts3LogMerge(16, getAbsoluteLevel(p, iLevel, iLangid, iIndex));
+      fts3LogMerge(16, getAbsoluteLevel(p, iLangid, iIndex, iLevel));
       rc = fts3SegmentMerge(p, iLangid, iIndex, iLevel);
       *piIdx = 0;
     }else{

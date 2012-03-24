@@ -1,5 +1,5 @@
-C Add\sa\scomment\sto\sfts3SyncMethod()\sto\sjustify\sthe\snMinMerge=64\sconstant.
-D 2012-03-24T16:43:55.163
+C Fix\sa\sfailing\sassert()\sin\sthe\sFTS3_LOG_MERGES\srelated\scode.
+D 2012-03-24T17:09:11.161
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/fts3_test.c 6b7cc68aef4efb084e1449f7d20c4b20d3bdf6b4
 F ext/fts3/fts3_tokenizer.c 3da7254a9881f7e270ab28e2004e0d22b3212bce
 F ext/fts3/fts3_tokenizer.h 66dec98e365854b6cd2d54f1a96bb6d428fc5a68
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
-F ext/fts3/fts3_write.c d96bd53e22074c4b35b3db3b9544ac3e55616333
+F ext/fts3/fts3_write.c ee3aeaa51aa633ada26e6d14073b1f893f094973
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
@@ -997,7 +997,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 2e06babf49de844d0e878d68114dbcc5ad4d6e54
-R 432c0c36d101ff48a9d07485fc32e9b8
+P af55ca5fc6778cb6d1a79a17dfa2d4e567ea1ccc
+R c679b33a6e75fcdd2f180faacc012668
 U dan
-Z 314cc4329e06c95183ea81ebec52b3f5
+Z 4d0762459d11aa2e9f32a4956c0ceb5b
