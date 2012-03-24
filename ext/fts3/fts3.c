@@ -3103,12 +3103,19 @@ static int fts3UpdateMethod(
 ** hash-table to the database.
 */
 static int fts3SyncMethod(sqlite3_vtab *pVtab){
+  const int nMinMerge = 64;       /* Minimum amount of incr-merge work to do */
   Fts3Table *p = (Fts3Table*)pVtab;
   int rc = sqlite3Fts3PendingTermsFlush(p);
-  if( rc==SQLITE_OK && p->bAutoincrmerge==1 && p->nLeafAdd>0 ){
-    int A = p->nLeafAdd * p->mxLevel;
-    A += A/2;
-    rc = sqlite3Fts3Incrmerge(p, A, 8);
+
+  if( rc==SQLITE_OK && p->bAutoincrmerge==1 && p->nLeafAdd>(nMinMerge/16) ){
+    int mxLevel = 0;              /* Maximum relative level value in db */
+    int A;                        /* Incr-merge parameter A */
+
+    rc = sqlite3Fts3MaxLevel(p, &mxLevel);
+    assert( rc==SQLITE_OK || mxLevel==0 );
+    A = p->nLeafAdd * p->mxLevel;
+    A += (A/2);
+    if( A>nMinMerge ) rc = sqlite3Fts3Incrmerge(p, A, 8);
   }
   sqlite3Fts3SegmentsClose(p);
   return rc;

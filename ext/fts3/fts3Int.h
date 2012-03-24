@@ -203,7 +203,7 @@ struct Fts3Table {
   /* Precompiled statements used by the implementation. Each of these 
   ** statements is run and reset within a single virtual table API call. 
   */
-  sqlite3_stmt *aStmt[36];
+  sqlite3_stmt *aStmt[37];
 
   char *zReadExprlist;
   char *zWriteExprlist;
@@ -431,6 +431,7 @@ int sqlite3Fts3DeferToken(Fts3Cursor *, Fts3PhraseToken *, int);
 int sqlite3Fts3CacheDeferredDoclists(Fts3Cursor *);
 void sqlite3Fts3FreeDeferredDoclists(Fts3Cursor *);
 void sqlite3Fts3SegmentsClose(Fts3Table *);
+int sqlite3Fts3MaxLevel(Fts3Table *, int *);
 
 /* Special values interpreted by sqlite3SegReaderCursor() */
 #define FTS3_SEGCURSOR_PENDING        -1

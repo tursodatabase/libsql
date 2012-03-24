@@ -265,6 +265,7 @@ struct SegmentNode {
 #define SQL_CHOMP_SEGDIR              33
 #define SQL_SEGMENT_IS_APPENDABLE     34
 #define SQL_SELECT_INDEXES            35
+#define SQL_SELECT_MXLEVEL            36
 
 /*
 ** This function is used to obtain an SQLite prepared statement handle
@@ -363,7 +364,11 @@ static int fts3SqlStmt(
 
 /* SQL_SELECT_INDEXES
 **   Return the list of valid segment indexes for absolute level ?  */
-/* 35 */  "SELECT idx FROM %Q.'%q_segdir' WHERE level=? ORDER BY 1 ASC"
+/* 35 */  "SELECT idx FROM %Q.'%q_segdir' WHERE level=? ORDER BY 1 ASC",
+
+/* SQL_SELECT_MXLEVEL
+**   Return the largest relative level in the FTS index or indexes.  */
+/* 36 */  "SELECT max( level %% 1024 ) FROM %Q.'%q_segdir'"
   };
   int rc = SQLITE_OK;
   sqlite3_stmt *pStmt;
@@ -1877,6 +1882,27 @@ static void fts3UpdateMaxLevel(Fts3Table *p, sqlite3_int64 iLevel){
   if( iLevel>p->mxLevel ) p->mxLevel = iLevel;
 }
 
+/*
+** Find the largest relative level number in the table. If successful, set
+** *pnMax to this value and return SQLITE_OK. Otherwise, if an error occurs,
+** set *pnMax to zero and return an SQLite error code.
+*/
+int sqlite3Fts3MaxLevel(Fts3Table *p, int *pnMax){
+  int rc;
+  int mxLevel = 0;
+  sqlite3_stmt *pStmt = 0;
+
+  rc = fts3SqlStmt(p, SQL_SELECT_MXLEVEL, &pStmt, 0);
+  if( rc==SQLITE_OK ){
+    if( SQLITE_ROW==sqlite3_step(pStmt) ){
+      mxLevel = sqlite3_column_int(pStmt, 0);
+    }
+    rc = sqlite3_reset(pStmt);
+  }
+  *pnMax = mxLevel;
+  return rc;
+}
+
 /* 
 ** Insert a record into the %_segdir table.
 */
@@ -2194,6 +2220,7 @@ static int fts3SegWriterAdd(
     /* The current leaf node is full. Write it out to the database. */
     rc = fts3WriteSegment(p, pWriter->iFree++, pWriter->aData, nData);
     if( rc!=SQLITE_OK ) return rc;
+    p->nLeafAdd++;
 
     /* Add the current term to the interior node tree. The term added to
     ** the interior tree must:
@@ -2302,6 +2329,7 @@ static int fts3SegWriterFlush(
     rc = fts3WriteSegdir(
         p, iLevel, iIdx, 0, 0, 0, pWriter->aData, pWriter->nData);
   }
+  p->nLeafAdd++;
   return rc;
 }
 
@@ -3011,7 +3039,6 @@ int sqlite3Fts3PendingTermsFlush(Fts3Table *p){
   int rc = SQLITE_OK;
   int i;
         
-  p->nLeafAdd += (p->nPendingData + p->nNodeSize - 1)/p->nNodeSize;
   for(i=0; rc==SQLITE_OK && i<p->nIndex; i++){
     rc = fts3SegmentMerge(p, p->iPrevLangid, i, FTS3_SEGCURSOR_PENDING);
     if( rc==SQLITE_DONE ) rc = SQLITE_OK;

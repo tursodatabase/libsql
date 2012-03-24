@@ -1,5 +1,5 @@
-C An\sattempt\sat\sautomatic\sincremental\smerging\sfor\sFTS4.
-D 2012-03-24T02:20:43.242
+C Modify\sthe\sway\sthe\snumber\sof\sleaves\swritten\sand\sthe\smaximum\srelative\slevel\sare\scalculated\sin\sthe\sauto-incr-merge\scode.
+D 2012-03-24T14:45:19.279
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -63,9 +63,9 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c ef3d7af4a635beacf5546ea6c8c03329e263fd30
+F ext/fts3/fts3.c 442f0ccf5c1a6a63844b9712b6f66bf8adb603b6
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 1e635c9ba3a384496a4524f7b94d7d0525930552
+F ext/fts3/fts3Int.h f65df0fd76617cd43cb9795e5eec27e90ee4cbab
 F ext/fts3/fts3_aux.c 5205182bd8f372782597888156404766edf5781e
 F ext/fts3/fts3_expr.c dbc7ba4c3a6061adde0f38ed8e9b349568299551
 F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
@@ -78,7 +78,7 @@ F ext/fts3/fts3_test.c 6b7cc68aef4efb084e1449f7d20c4b20d3bdf6b4
 F ext/fts3/fts3_tokenizer.c 3da7254a9881f7e270ab28e2004e0d22b3212bce
 F ext/fts3/fts3_tokenizer.h 66dec98e365854b6cd2d54f1a96bb6d428fc5a68
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
-F ext/fts3/fts3_write.c 663f2fa51e7096d8f496f94db5f215c6d8d22820
+F ext/fts3/fts3_write.c c71f84711f189bc18a82560949ac1656318fd2c5
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
@@ -997,10 +997,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P ed7c17ea165f6348506bd23ebc58c427bb65d697
-R c65796e564760bf2b3e7eed574e1eb1f
-T *branch * fts4-auto-incr-merge
-T *sym-fts4-auto-incr-merge *
-T -sym-fts4-incr-merge *
-U drh
-Z 9b979efabd6b6c201cc4798b465233ce
+P ed69434cd89084f4b57bd2cc4f5cc558904af565
+R bf494068b52a47b15eebd4119e5e6c0c
+U dan
+Z 7eb3af40022cc7568ef4099b19e62140
