@@ -571,6 +571,18 @@ static void fts3DeclareVtab(int *pRc, Fts3Table *p){
 }
 
 /*
+** Create the %_stat table if it does not already exist.
+*/
+void sqlite3Fts3CreateStatTable(int *pRc, Fts3Table *p){
+  fts3DbExec(pRc, p->db, 
+      "CREATE TABLE IF NOT EXISTS %Q.'%q_stat'"
+          "(id INTEGER PRIMARY KEY, value BLOB);",
+      p->zDb, p->zName
+  );
+  if( (*pRc)==SQLITE_OK ) p->bHasStat = 1;
+}
+
+/*
 ** Create the backing store tables (%_content, %_segments and %_segdir)
 ** required by the FTS3 table passed as the only argument. This is done
 ** as part of the vtab xCreate() method.
@@ -631,10 +643,7 @@ static int fts3CreateTables(Fts3Table *p){
     );
   }
   if( p->bHasStat ){
-    fts3DbExec(&rc, db, 
-        "CREATE TABLE %Q.'%q_stat'(id INTEGER PRIMARY KEY, value BLOB);",
-        p->zDb, p->zName
-    );
+    sqlite3Fts3CreateStatTable(&rc, p);
   }
   return rc;
 }
@@ -1327,6 +1336,16 @@ static int fts3InitVtab(
   */
   if( isCreate ){
     rc = fts3CreateTables(p);
+  }
+
+  /* Check to see if a legacy fts3 table has been "upgraded" by the
+  ** addition of a %_stat table so that it can use incremental merge.
+  */
+  if( !isFts4 && !isCreate ){
+    int rc2 = SQLITE_OK;
+    fts3DbExec(&rc2, db, "SELECT 1 FROM %Q.'%q_stat' WHERE id=2",
+               p->zDb, p->zName);
+    if( rc2==SQLITE_OK ) p->bHasStat = 1;
   }
 
   /* Figure out the page-size for the database. This is required in order to

@@ -493,6 +493,7 @@ void sqlite3Fts3Dequote(char *);
 void sqlite3Fts3DoclistPrev(int,char*,int,char**,sqlite3_int64*,int*,u8*);
 int sqlite3Fts3EvalPhraseStats(Fts3Cursor *, Fts3Expr *, u32 *);
 int sqlite3Fts3FirstFilter(sqlite3_int64, char *, int, char *);
+void sqlite3Fts3CreateStatTable(int*, Fts3Table*);
 
 /* fts3_tokenizer.c */
 const char *sqlite3Fts3NextToken(const char *, int *);
