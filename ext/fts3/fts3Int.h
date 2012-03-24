@@ -196,6 +196,9 @@ struct Fts3Table {
   sqlite3_tokenizer *pTokenizer;  /* tokenizer for inserts and queries */
   char *zContentTbl;              /* content=xxx option, or NULL */
   char *zLanguageid;              /* languageid=xxx option, or NULL */
+  u8 bAutoincrmerge;              /* True if automerge=1 */
+  int mxLevel;                    /* Maximum level seen on this transaction */
+  u32 nLeafAdd;                   /* Number of leaf blocks added this trans */
 
   /* Precompiled statements used by the implementation. Each of these 
   ** statements is run and reset within a single virtual table API call. 
@@ -478,6 +481,8 @@ struct Fts3MultiSegReader {
   char *aDoclist;                 /* Pointer to doclist buffer */
   int nDoclist;                   /* Size of aDoclist[] in bytes */
 };
+
+int sqlite3Fts3Incrmerge(Fts3Table*,int,int);
 
 /* fts3.c */
 int sqlite3Fts3PutVarint(char *, sqlite3_int64);

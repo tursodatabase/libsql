@@ -72,6 +72,7 @@ int test_fts3_node_chunk_threshold = (4*1024)*4;
 */
 #define FTS_STAT_DOCTOTAL      0
 #define FTS_STAT_INCRMERGEHINT 1
+#define FTS_STAT_AUTOINCRMERGE 2
 
 /*
 ** If FTS_LOG_MERGES is defined, call sqlite3_log() to report each automatic
@@ -330,7 +331,7 @@ static int fts3SqlStmt(
 
 /* Estimate the upper limit on the number of leaf nodes in a new segment
 ** created by merging the oldest :2 segments from absolute level :1. See 
-** function fts3Incrmerge() for details.  */
+** function sqlite3Fts3Incrmerge() for details.  */
 /* 29 */ "SELECT 2 * total(1 + leaves_end_block - start_block) "
          "  FROM %Q.'%q_segdir' WHERE level = ? AND idx < ?",
 
@@ -1868,6 +1869,14 @@ static int fts3WriteSegment(
   return rc;
 }
 
+/*
+** Update the Fts3Table.mxLevel field, if appropriate
+*/
+static void fts3UpdateMaxLevel(Fts3Table *p, sqlite3_int64 iLevel){
+  iLevel %= FTS3_SEGDIR_MAXLEVEL;
+  if( iLevel>p->mxLevel ) p->mxLevel = iLevel;
+}
+
 /* 
 ** Insert a record into the %_segdir table.
 */
@@ -1885,6 +1894,7 @@ static int fts3WriteSegdir(
   int rc = fts3SqlStmt(p, SQL_INSERT_SEGDIR, &pStmt, 0);
   if( rc==SQLITE_OK ){
     sqlite3_bind_int64(pStmt, 1, iLevel);
+    fts3UpdateMaxLevel(p, iLevel);
     sqlite3_bind_int(pStmt, 2, iIdx);
     sqlite3_bind_int64(pStmt, 3, iStartBlock);
     sqlite3_bind_int64(pStmt, 4, iLeafEndBlock);
@@ -2369,6 +2379,7 @@ static int fts3SegmentMaxLevel(
   );
   if( SQLITE_ROW==sqlite3_step(pStmt) ){
     *pnMax = sqlite3_column_int64(pStmt, 0);
+    fts3UpdateMaxLevel(p, *pnMax);
   }
   return sqlite3_reset(pStmt);
 }
@@ -2999,11 +3010,29 @@ static int fts3SegmentMerge(
 int sqlite3Fts3PendingTermsFlush(Fts3Table *p){
   int rc = SQLITE_OK;
   int i;
+        
+  p->nLeafAdd += (p->nPendingData + p->nNodeSize - 1)/p->nNodeSize;
   for(i=0; rc==SQLITE_OK && i<p->nIndex; i++){
     rc = fts3SegmentMerge(p, p->iPrevLangid, i, FTS3_SEGCURSOR_PENDING);
     if( rc==SQLITE_DONE ) rc = SQLITE_OK;
   }
   sqlite3Fts3PendingTermsClear(p);
+
+  /* Determine the auto-incr-merge setting if unknown.  If enabled,
+  ** estimate the number of leaf blocks of content to be written
+  */
+  if( rc==SQLITE_OK && p->bHasStat
+   && p->bAutoincrmerge==0xff && p->nLeafAdd>0
+  ){
+    sqlite3_stmt *pStmt = 0;
+    rc = fts3SqlStmt(p, SQL_SELECT_STAT, &pStmt, 0);
+    if( rc==SQLITE_OK ){
+      sqlite3_bind_int(pStmt, 1, FTS_STAT_AUTOINCRMERGE);
+      rc = sqlite3_step(pStmt);
+      p->bAutoincrmerge = (rc==SQLITE_ROW && sqlite3_column_int(pStmt, 0));
+      rc = sqlite3_reset(pStmt);
+    }
+  }
   return rc;
 }
 
@@ -4472,7 +4501,7 @@ static int fts3IncrmergeHintLoad(
 ** nMin segments. Multiple merges might occur in an attempt to write the 
 ** quota of nMerge leaf blocks.
 */
-static int fts3Incrmerge(Fts3Table *p, int nMerge, int nMin){
+int sqlite3Fts3Incrmerge(Fts3Table *p, int nMerge, int nMin){
   int rc;                         /* Return code */
   int nRem = nMerge;              /* Number of leaf pages yet to  be written */
   int bUseHint = 1;               /* True if hint has not yet been attempted */
@@ -4579,6 +4608,19 @@ static int fts3Incrmerge(Fts3Table *p, int nMerge, int nMin){
 }
 
 /*
+** Convert the text beginning at *pz into an integer and return
+** its value.  Advance *pz to point to the first character past
+** the integer.
+*/
+static int fts3Getint(const char **pz){
+  const char *z = *pz;
+  int i = 0;
+  while( (*z)>='0' && (*z)<='9' ) i = 10*i + *(z++) - '0';
+  *pz = z;
+  return i;
+}
+
+/*
 ** Process statements of the form:
 **
 **    INSERT INTO table(table) VALUES('merge=A,B');
@@ -4597,29 +4639,48 @@ static int fts3DoIncrmerge(
   const char *z = zParam;
 
   /* Read the first integer value */
-  for(z=zParam; z[0]>='0' && z[0]<='9'; z++){
-    nMerge = nMerge * 10 + (z[0] - '0');
-  }
+  nMerge = fts3Getint(&z);
 
   /* If the first integer value is followed by a ',',  read the second
   ** integer value. */
   if( z[0]==',' && z[1]!='\0' ){
     z++;
-    nMin = 0;
-    while( z[0]>='0' && z[0]<='9' ){
-      nMin = nMin * 10 + (z[0] - '0');
-      z++;
-    }
+    nMin = fts3Getint(&z);
   }
 
   if( z[0]!='\0' || nMin<2 ){
     rc = SQLITE_ERROR;
   }else{
-    rc = fts3Incrmerge(p, nMerge, nMin);
+    rc = sqlite3Fts3Incrmerge(p, nMerge, nMin);
     sqlite3Fts3SegmentsClose(p);
   }
   return rc;
 }
+
+/*
+** Process statements of the form:
+**
+**    INSERT INTO table(table) VALUES('automerge=X');
+**
+** where X is an integer.  X==0 means to turn automerge off.  X!=0 means
+** turn it on.  The setting is persistent.
+*/
+static int fts3DoAutoincrmerge(
+  Fts3Table *p,                   /* FTS3 table handle */
+  const char *zParam              /* Nul-terminated string containing boolean */
+){
+  int rc;
+  sqlite3_stmt *pStmt = 0;
+  p->bAutoincrmerge = fts3Getint(&zParam)!=0;
+  rc = fts3SqlStmt(p, SQL_REPLACE_STAT, &pStmt, 0);
+  if( rc ) return rc;;
+  sqlite3_bind_int(pStmt, 1, FTS_STAT_AUTOINCRMERGE);
+  sqlite3_bind_int(pStmt, 2, p->bAutoincrmerge);
+  sqlite3_step(pStmt);
+  rc = sqlite3_reset(pStmt);
+  return rc;
+}
+
 
 /*
 ** Handle a 'special' INSERT of the form:
@@ -4642,6 +4703,8 @@ static int fts3SpecialInsert(Fts3Table *p, sqlite3_value *pVal){
     rc = fts3DoRebuild(p);
   }else if( nVal>6 && 0==sqlite3_strnicmp(zVal, "merge=", 6) ){
     rc = fts3DoIncrmerge(p, &zVal[6]);
+  }else if( nVal>10 && 0==sqlite3_strnicmp(zVal, "automerge=", 10) ){
+    rc = fts3DoAutoincrmerge(p, &zVal[10]);
 #ifdef SQLITE_TEST
   }else if( nVal>9 && 0==sqlite3_strnicmp(zVal, "nodesize=", 9) ){
     p->nNodeSize = atoi(&zVal[9]);
