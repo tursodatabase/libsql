@@ -1,5 +1,5 @@
-C When\san\sincremental\sblob\scursor\sis\sinvalidated\s(occurs\swhen\san\sSQL\sstatement\smodifies\sor\sdeletes\sthe\srow\sthe\sblob\scursor\spoints\sto)\srelease\sall\spage\sreferences\sheld\sby\sthe\scursor.\sOtherwise,\sthe\spresence\sof\sthese\sreferences\smay\scause\sother\scode\sin\sbtree.c\sto\sincorrectly\sinfer\sthat\sthe\sdatabase\sis\scorrupt.
-D 2012-03-23T14:23:52.727
+C Add\sSQLITE_DBSTATUS_CACHE_WRITE.\sUsed\sto\squery\sa\sdatabase\sconnection\sfor\sthe\scumulative\snumber\sof\sdatabase\spages\swritten.
+D 2012-03-24T20:06:14.659
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 0e3d2942d228d0366fb80a3640f35caf413b66d1
 F src/os_win.c 5ac061ae1326a71500cee578ed0fd9113b4f6a37
-F src/pager.c 3955b62cdb5bb64559607cb474dd12a6c8e1d4a5
+F src/pager.c 85988507fa20acc60defb834722eddf4633e4aeb
 F src/pager.h ef1eaf8593e78f73885c1dfac27ad83bee23bdc5
 F src/parse.y 1ddd71ae55f4b7cbb2672526ea4de023de0f519e
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -182,11 +182,11 @@ F src/resolve.c 3d3e80a98f203ac6b9329e9621e29eda85ddfd40
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 44ccdcb5d2a1c48622c179b2d72167b716388581
 F src/shell.c 55e09ef7126768b940427d95dc0a8cb7138e95da
-F src/sqlite.h.in 6af2d92925bfed3dfd2c022fef48469762ccd435
+F src/sqlite.h.in 11a883919b0baf4ffaa7550cfeef99be613ec2bf
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h e65429a6f19b41720561b9434b2192574a91cfa2
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
-F src/status.c 4568e72dfd36b6a5911f93457364deb072e0b03a
+F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 086dfdd72e5892de223968a258e1ccbd9693e717
 F src/test1.c 07f30e8714bab94d8de8a88865d9c59bc512a1a8
@@ -213,7 +213,7 @@ F src/test_intarray.c d879bbf8e4ce085ab966d1f3c896a7c8b4f5fc99
 F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c a6a6baf343f79b942331f13378d045e7e270ae64
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
-F src/test_malloc.c cfe25d74333892ababde61196821a889b4756dee
+F src/test_malloc.c 3f5903a1528fd32fe4c472a3bd0259128d8faaef
 F src/test_multiplex.c 0404a61d7795438be5ee5fd3711eed80724df34d
 F src/test_multiplex.h e99c571bc4968b7a9363b661481f3934bfead61d
 F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
@@ -365,7 +365,7 @@ F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
 F test/ctime.test 7bd009071e242aac4f18521581536b652b789a47
 F test/date.test a18a2ce81add84b17b06559e82ad7bb91bc6ddff
 F test/dbstatus.test 207e5b63fcb7b9c3bb8e1fdf38ebd4654ad0e54b
-F test/dbstatus2.test dc57b0d9610851c0ff58a8e1b5b191678398b72a
+F test/dbstatus2.test b1de8250fde1f3474d6b86f0e89de38d84794f56
 F test/default.test 6faf23ccb300114924353007795aa9a8ec0aa9dc
 F test/delete.test a065b05d2ebf60fd16639c579a4adfb7c381c701
 F test/delete2.test 3a03f2cca1f9a67ec469915cb8babd6485db43fa
@@ -993,7 +993,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 638b71150281a211f89b4057b0d5d32d3fbcf323
-R bf4ea56b709d8c66bd287b12bb865310
+P 341b703ce16361a64ed8bba64ff46792132c0b56
+R 5fc0d309f5291091fecac64a52bbafac
 U drh
-Z 71976091f9202f9aa459dff852dbcf55
+Z 8ee550c76390e8fc0f8077b27e0ba8b4
