@@ -670,9 +670,9 @@ struct Pager {
   char *zJournal;             /* Name of the journal file */
   int (*xBusyHandler)(void*); /* Function to call when busy */
   void *pBusyHandlerArg;      /* Context argument for xBusyHandler */
-  int nHit, nMiss;            /* Total cache hits and misses */
+  int aStat[3];               /* Total cache hits, misses and writes */
 #ifdef SQLITE_TEST
-  int nRead, nWrite;          /* Database pages read/written */
+  int nRead;                  /* Database pages read */
 #endif
   void (*xReiniter)(DbPage*); /* Call this routine when reloading pages */
 #ifdef SQLITE_HAS_CODEC
@@ -688,6 +688,15 @@ struct Pager {
   char *zWal;                 /* File name for write-ahead log */
 #endif
 };
+
+/*
+** Indexes for use with Pager.aStat[]. The Pager.aStat[] array contains
+** the values accessed by passing SQLITE_DBSTATUS_CACHE_HIT, CACHE_MISS 
+** or CACHE_WRITE to sqlite3_db_status().
+*/
+#define PAGER_STAT_HIT   0
+#define PAGER_STAT_MISS  1
+#define PAGER_STAT_WRITE 2
 
 /*
 ** The following global variables hold counters used for
@@ -2971,6 +2980,7 @@ static int pagerWalFrames(
   int isCommit                    /* True if this is a commit */
 ){
   int rc;                         /* Return code */
+  int nList;                      /* Number of pages in pList */
 #if defined(SQLITE_DEBUG) || defined(SQLITE_CHECK_PAGES)
   PgHdr *p;                       /* For looping over pages */
 #endif
@@ -2984,6 +2994,7 @@ static int pagerWalFrames(
   }
 #endif
 
+  assert( pList->pDirty==0 || isCommit );
   if( isCommit ){
     /* If a WAL transaction is being committed, there is no point in writing
     ** any pages with page numbers greater than nTruncate into the WAL file.
@@ -2991,11 +3002,18 @@ static int pagerWalFrames(
     ** list here. */
     PgHdr *p;
     PgHdr **ppNext = &pList;
+    nList = 0;
     for(p=pList; (*ppNext = p); p=p->pDirty){
-      if( p->pgno<=nTruncate ) ppNext = &p->pDirty;
+      if( p->pgno<=nTruncate ){
+        ppNext = &p->pDirty;
+        nList++;
+      }
     }
     assert( pList );
+  }else{
+    nList = 1;
   }
+  pPager->aStat[PAGER_STAT_WRITE] += nList;
 
   if( pList->pgno==1 ) pager_write_changecounter(pList);
   rc = sqlite3WalFrames(pPager->pWal, 
@@ -4063,6 +4081,7 @@ static int pager_write_pagelist(Pager *pPager, PgHdr *pList){
       if( pgno>pPager->dbFileSize ){
         pPager->dbFileSize = pgno;
       }
+      pPager->aStat[PAGER_STAT_WRITE]++;
 
       /* Update any backup objects copying the contents of this pager. */
       sqlite3BackupUpdate(pPager->pBackup, pgno, (u8*)pList->pData);
@@ -4071,7 +4090,6 @@ static int pager_write_pagelist(Pager *pPager, PgHdr *pList){
                    PAGERID(pPager), pgno, pager_pagehash(pList)));
       IOTRACE(("PGOUT %p %d\n", pPager, pgno));
       PAGER_INCR(sqlite3_pager_writedb_count);
-      PAGER_INCR(pPager->nWrite);
     }else{
       PAGERTRACE(("NOSTORE %d page %d\n", PAGERID(pPager), pgno));
     }
@@ -5029,7 +5047,7 @@ int sqlite3PagerAcquire(
     /* In this case the pcache already contains an initialized copy of
     ** the page. Return without further ado.  */
     assert( pgno<=PAGER_MAX_PGNO && pgno!=PAGER_MJ_PGNO(pPager) );
-    pPager->nHit++;
+    pPager->aStat[PAGER_STAT_HIT]++;
     return SQLITE_OK;
 
   }else{
@@ -5071,7 +5089,7 @@ int sqlite3PagerAcquire(
       IOTRACE(("ZERO %p %d\n", pPager, pgno));
     }else{
       assert( pPg->pPager==pPager );
-      pPager->nMiss++;
+      pPager->aStat[PAGER_STAT_MISS]++;
       rc = readDbPage(pPg);
       if( rc!=SQLITE_OK ){
         goto pager_acquire_err;
@@ -5656,6 +5674,7 @@ static int pager_incr_changecounter(Pager *pPager, int isDirectMode){
         CODEC2(pPager, pPgHdr->pData, 1, 6, rc=SQLITE_NOMEM, zBuf);
         if( rc==SQLITE_OK ){
           rc = sqlite3OsWrite(pPager->fd, zBuf, pPager->pageSize, 0);
+          pPager->aStat[PAGER_STAT_WRITE]++;
         }
         if( rc==SQLITE_OK ){
           pPager->changeCountDone = 1;
@@ -6099,11 +6118,11 @@ int *sqlite3PagerStats(Pager *pPager){
   a[3] = pPager->eState==PAGER_OPEN ? -1 : (int) pPager->dbSize;
   a[4] = pPager->eState;
   a[5] = pPager->errCode;
-  a[6] = pPager->nHit;
-  a[7] = pPager->nMiss;
+  a[6] = pPager->aStat[PAGER_STAT_HIT];
+  a[7] = pPager->aStat[PAGER_STAT_MISS];
   a[8] = 0;  /* Used to be pPager->nOvfl */
   a[9] = pPager->nRead;
-  a[10] = pPager->nWrite;
+  a[10] = pPager->aStat[PAGER_STAT_WRITE];
   return a;
 }
 #endif
@@ -6116,20 +6135,19 @@ int *sqlite3PagerStats(Pager *pPager){
 ** returning.
 */
 void sqlite3PagerCacheStat(Pager *pPager, int eStat, int reset, int *pnVal){
-  int *piStat;
 
   assert( eStat==SQLITE_DBSTATUS_CACHE_HIT
        || eStat==SQLITE_DBSTATUS_CACHE_MISS
+       || eStat==SQLITE_DBSTATUS_CACHE_WRITE
   );
-  if( eStat==SQLITE_DBSTATUS_CACHE_HIT ){
-    piStat = &pPager->nHit;
-  }else{
-    piStat = &pPager->nMiss;
-  }
 
-  *pnVal += *piStat;
+  assert( SQLITE_DBSTATUS_CACHE_HIT+1==SQLITE_DBSTATUS_CACHE_MISS );
+  assert( SQLITE_DBSTATUS_CACHE_HIT+2==SQLITE_DBSTATUS_CACHE_WRITE );
+  assert( PAGER_STAT_HIT==0 && PAGER_STAT_MISS==1 && PAGER_STAT_WRITE==2 );
+
+  *pnVal += pPager->aStat[eStat - SQLITE_DBSTATUS_CACHE_HIT];
   if( reset ){
-    *piStat = 0;
+    pPager->aStat[eStat - SQLITE_DBSTATUS_CACHE_HIT] = 0;
   }
 }
 
