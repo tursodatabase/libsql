@@ -1,5 +1,5 @@
-C Fix\sa\sspurious\sSQLITE_CONSTRAINT\serror\sthat\smay\sbe\sreturned\sby\san\sincr-merge\soperation.
-D 2012-03-23T18:26:11.608
+C Merge\sauto-incr-merge\swith\sincr-merge\sbranch.
+D 2012-03-24T14:45:59.366
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -63,9 +63,9 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c c47bb6fe7a6bde82cbdf4c504302221710699d64
+F ext/fts3/fts3.c 442f0ccf5c1a6a63844b9712b6f66bf8adb603b6
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 5fe1651db88206ca68f421cf62bb8501395677a3
+F ext/fts3/fts3Int.h f65df0fd76617cd43cb9795e5eec27e90ee4cbab
 F ext/fts3/fts3_aux.c 5205182bd8f372782597888156404766edf5781e
 F ext/fts3/fts3_expr.c dbc7ba4c3a6061adde0f38ed8e9b349568299551
 F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
@@ -78,7 +78,7 @@ F ext/fts3/fts3_test.c 6b7cc68aef4efb084e1449f7d20c4b20d3bdf6b4
 F ext/fts3/fts3_tokenizer.c 3da7254a9881f7e270ab28e2004e0d22b3212bce
 F ext/fts3/fts3_tokenizer.h 66dec98e365854b6cd2d54f1a96bb6d428fc5a68
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
-F ext/fts3/fts3_write.c e3b750530132b3237aed3e5f008845cc4d7865f9
+F ext/fts3/fts3_write.c c71f84711f189bc18a82560949ac1656318fd2c5
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
@@ -295,7 +295,7 @@ F test/backup_ioerr.test 40d208bc9224b666ee3ed423f49bc9062a36a9d0
 F test/backup_malloc.test 7162d604ec2b4683c4b3799a48657fb8b5e2d450
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
 F test/badutf2.test f5bc7f2d280670ecd79b9cf4f0f1760c607fe51f
-F test/bc_common.tcl df4c51ae0de0cb414a18027be2abb2bd7693ce7a
+F test/bc_common.tcl 5c8689cc6d2fb44b7c0968ae4f85eb26d50022fa
 F test/between.test 16b1776c6323faadb097a52d673e8e3d8be7d070
 F test/bigfile.test 82dfe93ee7eb9e2e05641afa2b39ffd947a92ff1
 F test/bigfile2.test 852f948cb492aadab45b58f4d2f3b0832a115cb0
@@ -997,7 +997,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 1c72cecc6bf5be2a5c04ad6214a6bac22a29f860
-R c0998f3b8bc74543bb7322ba65e1257e
+P ed7c17ea165f6348506bd23ebc58c427bb65d697 0d841c957c6ec4afecb49504177c6279e09d7012
+R bf494068b52a47b15eebd4119e5e6c0c
 U dan
-Z 3e48c8e93d6fd57a390b8a97532e70ea
+Z a37d5b74ba1d4a69b01095005645cefa

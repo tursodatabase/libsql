@@ -196,11 +196,14 @@ struct Fts3Table {
   sqlite3_tokenizer *pTokenizer;  /* tokenizer for inserts and queries */
   char *zContentTbl;              /* content=xxx option, or NULL */
   char *zLanguageid;              /* languageid=xxx option, or NULL */
+  u8 bAutoincrmerge;              /* True if automerge=1 */
+  int mxLevel;                    /* Maximum level seen on this transaction */
+  u32 nLeafAdd;                   /* Number of leaf blocks added this trans */
 
   /* Precompiled statements used by the implementation. Each of these 
   ** statements is run and reset within a single virtual table API call. 
   */
-  sqlite3_stmt *aStmt[36];
+  sqlite3_stmt *aStmt[37];
 
   char *zReadExprlist;
   char *zWriteExprlist;
@@ -428,6 +431,7 @@ int sqlite3Fts3DeferToken(Fts3Cursor *, Fts3PhraseToken *, int);
 int sqlite3Fts3CacheDeferredDoclists(Fts3Cursor *);
 void sqlite3Fts3FreeDeferredDoclists(Fts3Cursor *);
 void sqlite3Fts3SegmentsClose(Fts3Table *);
+int sqlite3Fts3MaxLevel(Fts3Table *, int *);
 
 /* Special values interpreted by sqlite3SegReaderCursor() */
 #define FTS3_SEGCURSOR_PENDING        -1
@@ -478,6 +482,8 @@ struct Fts3MultiSegReader {
   char *aDoclist;                 /* Pointer to doclist buffer */
   int nDoclist;                   /* Size of aDoclist[] in bytes */
 };
+
+int sqlite3Fts3Incrmerge(Fts3Table*,int,int);
 
 /* fts3.c */
 int sqlite3Fts3PutVarint(char *, sqlite3_int64);

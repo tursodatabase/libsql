@@ -17,7 +17,7 @@ proc bc_find_binaries {zCaption} {
 
   if {[llength $binaries]==0} {
     puts "WARNING: No historical binaries to test against."
-    puts "WARNING: Omitting backwards-compatibility tests $zFile"
+    puts "WARNING: Omitting backwards-compatibility tests"
   }
 
   foreach bin $binaries {
@@ -70,7 +70,3 @@ proc do_all_bc_test {script} {
     uplevel [list do_bc_test $bin $script]
   }
 }
-
-
-
-

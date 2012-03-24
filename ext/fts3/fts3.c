@@ -1276,6 +1276,7 @@ static int fts3InitVtab(
   p->bHasDocsize = (isFts4 && bNoDocsize==0);
   p->bHasStat = isFts4;
   p->bDescIdx = bDescIdx;
+  p->bAutoincrmerge = 0xff;   /* 0xff means setting unknown */
   p->zContentTbl = zContent;
   p->zLanguageid = zLanguageid;
   zContent = 0;
@@ -3102,8 +3103,21 @@ static int fts3UpdateMethod(
 ** hash-table to the database.
 */
 static int fts3SyncMethod(sqlite3_vtab *pVtab){
-  int rc = sqlite3Fts3PendingTermsFlush((Fts3Table *)pVtab);
-  sqlite3Fts3SegmentsClose((Fts3Table *)pVtab);
+  const int nMinMerge = 64;       /* Minimum amount of incr-merge work to do */
+  Fts3Table *p = (Fts3Table*)pVtab;
+  int rc = sqlite3Fts3PendingTermsFlush(p);
+
+  if( rc==SQLITE_OK && p->bAutoincrmerge==1 && p->nLeafAdd>(nMinMerge/16) ){
+    int mxLevel = 0;              /* Maximum relative level value in db */
+    int A;                        /* Incr-merge parameter A */
+
+    rc = sqlite3Fts3MaxLevel(p, &mxLevel);
+    assert( rc==SQLITE_OK || mxLevel==0 );
+    A = p->nLeafAdd * p->mxLevel;
+    A += (A/2);
+    if( A>nMinMerge ) rc = sqlite3Fts3Incrmerge(p, A, 8);
+  }
+  sqlite3Fts3SegmentsClose(p);
   return rc;
 }
 
@@ -3118,6 +3132,7 @@ static int fts3BeginMethod(sqlite3_vtab *pVtab){
   assert( p->inTransaction!=1 );
   TESTONLY( p->inTransaction = 1 );
   TESTONLY( p->mxSavepoint = -1; );
+  p->nLeafAdd = 0;
   return SQLITE_OK;
 }
 
