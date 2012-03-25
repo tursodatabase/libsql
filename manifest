@@ -1,12 +1,12 @@
-C Add\sSQLITE_DBSTATUS_CACHE_WRITE\sto\sthe\scommand-line\sshell.
-D 2012-03-24T20:09:33.655
+C Increase\sthe\sversion\snumber\sto\s3.7.12
+D 2012-03-25T17:25:38.638
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 7849a871b6cdb20fd51baee6bbe5965a03326be4
 F Makefile.vxworks 3b7fe7a0571fdadc61363ebc1b23732d2d6363ca
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
-F VERSION bb4c2a86abe53ea3c1d6ea515b69a426040e2414
+F VERSION f9313d88cb77df8617059a88eb382291321ef6bc
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 17dc593f791f874d2c23a0f9360850ded0286531
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -993,7 +993,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 05f98d4eec0f029b76fd471f8d9edf2807de6b55
-R e738d7f44036c20e9a6d260035957782
+P 30b8dd326d28c0c08543989e376011ea41773a7e
+R 9c26fe2aaab0d138abb3ef6a21a226f0
 U drh
-Z 629ce9245a7ac409b2481f6f2ccdf959
+Z 54613266ba9e6cb2a27d5ad8392e74a5
