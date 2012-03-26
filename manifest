@@ -1,5 +1,5 @@
-C Fix\sFTS3\sso\sthat\sit\sworks\seven\swithout\sSQLITE_DEBUG.
-D 2012-03-26T14:36:42.908
+C Add\sthe\sfts3view\sutility\sprogram.
+D 2012-03-26T21:57:53.278
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -81,6 +81,7 @@ F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_write.c 6014014cf0257d314d29d7eb50e0c88d85356d65
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
+F ext/fts3/tool/fts3view.c 005efba99f4de1ab104456f7652f955603a81d7f
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c eb9ae1d79046bd7871aa97ee6da51eb770134b5a
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
@@ -999,7 +1000,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P f907fc3fb387e74bb66babcbf050748cb253a6fa
-R c007d11e260643139d517e8dc5ea9d00
+P a18c103121529c2e3c6a8ada16a4c40d14080670
+R ad0002e6aa190f63417466651f9099fc
 U drh
-Z d7453c1ea386bbab453c1602af9f7003
+Z 38d7fb610b5e9fceb6186edb4298f4d3
