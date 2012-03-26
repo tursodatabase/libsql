@@ -4901,6 +4901,29 @@ static int fts3IntegrityCheck(Fts3Table *p, int *pbOk){
 **
 ** Or, if an error (e.g. an OOM or IO error) occurs, return an SQLite 
 ** error code.
+**
+** The integrity-check works as follows. For each token and indexed token
+** prefix in the document set, a 64-bit checksum is calculated (by code
+** in fts3ChecksumEntry()) based on the following:
+**
+**     + The index number (0 for the main index, 1 for the first prefix
+**       index etc.),
+**     + The token (or token prefix) text itself, 
+**     + The language-id of the row it appears in,
+**     + The docid of the row it appears in,
+**     + The column it appears in, and
+**     + The tokens position within that column.
+**
+** The checksums for all entries in the index are XORed together to create
+** a single checksum for the entire index.
+**
+** The integrity-check code calculates the same checksum in two ways:
+**
+**     1. By scanning the contents of the FTS index, and 
+**     2. By scanning and tokenizing the content table.
+**
+** If the two checksums are identical, the integrity-check is deemed to have
+** passed.
 */
 static int fts3DoIntegrityCheck(
   Fts3Table *p                    /* FTS3 table handle */
