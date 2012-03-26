@@ -3611,6 +3611,7 @@ static int fts3IncrmergePush(
   }
 
   assert( 0 );
+  return 0;
 }
 
 /*
@@ -4710,7 +4711,7 @@ static int fts3DoAutoincrmerge(
 ** Return a 64-bit checksum for the FTS index entry specified by the
 ** arguments to this function.
 */
-static i64 fts3ChecksumEntry(
+static u64 fts3ChecksumEntry(
   const char *zTerm,              /* Pointer to buffer containing term */
   int nTerm,                      /* Size of zTerm in bytes */
   int iLangid,                    /* Language id for current row */
@@ -4720,7 +4721,7 @@ static i64 fts3ChecksumEntry(
   int iPos                        /* Position */
 ){
   int i;
-  i64 ret = iDocid;
+  u64 ret = (u64)iDocid;
 
   ret += (ret<<3) + iLangid;
   ret += (ret<<3) + iIndex;
@@ -4740,7 +4741,7 @@ static i64 fts3ChecksumEntry(
 ** Otherwise, if an error occurs, *pRc is set to an SQLite error code. The
 ** return value is undefined in this case.
 */
-static i64 fts3ChecksumIndex(
+static u64 fts3ChecksumIndex(
   Fts3Table *p,                   /* FTS3 table handle */
   int iLangid,                    /* Language id to return cksum for */
   int iIndex,                     /* Index to cksum (0..p->nIndex-1) */
@@ -4749,7 +4750,7 @@ static i64 fts3ChecksumIndex(
   Fts3SegFilter filter;
   Fts3MultiSegReader csr;
   int rc;
-  i64 cksum = 0;
+  u64 cksum = 0;
 
   assert( *pRc==SQLITE_OK );
 
@@ -4815,8 +4816,8 @@ static i64 fts3ChecksumIndex(
 */
 static int fts3IntegrityCheck(Fts3Table *p, int *pbOk){
   int rc = SQLITE_OK;             /* Return code */
-  i64 cksum1 = 0;                 /* Checksum based on FTS index contents */
-  i64 cksum2 = 0;                 /* Checksum based on %_content contents */
+  u64 cksum1 = 0;                 /* Checksum based on FTS index contents */
+  u64 cksum2 = 0;                 /* Checksum based on %_content contents */
   sqlite3_stmt *pAllLangid = 0;   /* Statement to return all language-ids */
 
   /* This block calculates the checksum according to the FTS index. */
