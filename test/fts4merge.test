@@ -23,6 +23,11 @@ ifcapable !fts3 {
   return
 }
 
+proc fts3_integrity_check {tbl} {
+  db eval "INSERT INTO $tbl ($tbl) VALUES('integrity-check')"
+  return "ok"
+}
+
 #-------------------------------------------------------------------------
 # Test cases 1.*
 #

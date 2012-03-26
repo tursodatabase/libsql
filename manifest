@@ -1,5 +1,5 @@
-C Add\sSQLITE_DBSTATUS_CACHE_WRITE.\sUsed\sto\squery\sa\sdatabase\sconnection\sfor\sthe\scumulative\snumber\sof\sdatabase\spages\swritten.
-D 2012-03-24T19:44:56.637
+C Add\san\sexperimental\sintegrity-check\sfunction\sto\sFTS.
+D 2012-03-26T10:36:55.434
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -63,9 +63,9 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 95409b49801ee7736755d7e307e606571b754a58
+F ext/fts3/fts3.c a36f2add4c795b9e1ca1e1a16bd1e45c697a1f37
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h eb749124db7c94b6f89d793cdd4d993a52c46646
+F ext/fts3/fts3Int.h 133e5c613ac6920be5b914d43acc1478df1332e1
 F ext/fts3/fts3_aux.c 5205182bd8f372782597888156404766edf5781e
 F ext/fts3/fts3_expr.c dbc7ba4c3a6061adde0f38ed8e9b349568299551
 F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
@@ -78,7 +78,7 @@ F ext/fts3/fts3_test.c 6b7cc68aef4efb084e1449f7d20c4b20d3bdf6b4
 F ext/fts3/fts3_tokenizer.c 3da7254a9881f7e270ab28e2004e0d22b3212bce
 F ext/fts3/fts3_tokenizer.h 66dec98e365854b6cd2d54f1a96bb6d428fc5a68
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
-F ext/fts3/fts3_write.c 6a092ee27198716969bfbaa2194aa67eabeb2ff6
+F ext/fts3/fts3_write.c a95e0f29a438bbba69ef686c75f03fbdf7ac79ac
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
@@ -497,9 +497,10 @@ F test/fts3shared.test 8bb266521d7c5495c0ae522bb4d376ad5387d4a2
 F test/fts3snippet.test 8e956051221a34c7daeb504f023cb54d5fa5a8b2
 F test/fts3sort.test 95be0b19d7e41c44b29014f13ea8bddd495fd659
 F test/fts4aa.test 6e7f90420b837b2c685f3bcbe84c868492d40a68
+F test/fts4check.test 72134071f4e9f8bed76af1f2375fd5aff0c5ea48
 F test/fts4content.test 17b2360f7d1a9a7e5aa8022783f5c5731b6dfd4f
 F test/fts4langid.test 24a6e41063b416bbdf371ff6b4476fa41c194aa7
-F test/fts4merge.test 120e0baf17a01f0cb696d6f6f9b6506e1587ef90
+F test/fts4merge.test 16ba38960dc06ffd0c47c5487ec1060b5130661f
 F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
 F test/fts4merge3.test e0e21332f592fc003fcab112928ea891407d83cb
 F test/func.test 6c5ce11e3a0021ca3c0649234e2d4454c89110ca
@@ -641,7 +642,7 @@ F test/pageropt.test 9191867ed19a2b3db6c42d1b36b6fbc657cd1ab0
 F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
-F test/permutations.test 0ab1e7748de5d29c4c648ba5ce3b983ab80653d1
+F test/permutations.test dbda172249564f43ec556108a704581044c57dbd
 F test/pragma.test c51c148defe32bf4a419a522f95d26838d5cf677
 F test/pragma2.test 3a55f82b954242c642f8342b17dffc8b47472947
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -998,7 +999,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P cc051fc0b2d89603b27b94cf2afdbda417ee9d94
-R 9ca09f80a0e10e381b2361a47e7d01bf
+P 3cb6a879f1220db03a66429d63330e27e8ca6e49
+R a8a5e3d4a755c2fc6211bbe12afb7dcc
 U dan
-Z e2a698085c147deaded5cb32de63b51c
+Z 32d9f92fc095c5c84155b7497aaefe53

@@ -134,6 +134,7 @@ typedef unsigned char u8;         /* 1-byte (or larger) unsigned integer */
 typedef short int i16;            /* 2-byte (or larger) signed integer */
 typedef unsigned int u32;         /* 4-byte unsigned integer */
 typedef sqlite3_uint64 u64;       /* 8-byte unsigned integer */
+typedef sqlite3_int64 i64;        /* 8-byte signed integer */
 
 /*
 ** Macro used to suppress compiler warnings for unused parameters.

@@ -2691,7 +2691,7 @@ static int fts3SegReaderCursor(
 */
 int sqlite3Fts3SegReaderCursor(
   Fts3Table *p,                   /* FTS3 table handle */
-  int iLangid,
+  int iLangid,                    /* Language-id to search */
   int iIndex,                     /* Index to search (from 0 to p->nIndex-1) */
   int iLevel,                     /* Level of segments to scan */
   const char *zTerm,              /* Term to query for */
@@ -2709,12 +2709,7 @@ int sqlite3Fts3SegReaderCursor(
   assert( FTS3_SEGCURSOR_ALL<0 && FTS3_SEGCURSOR_PENDING<0 );
   assert( isPrefix==0 || isScan==0 );
 
-  /* "isScan" is only set to true by the ft4aux module, an ordinary
-  ** full-text tables. */
-  assert( isScan==0 || p->aIndex==0 );
-
   memset(pCsr, 0, sizeof(Fts3MultiSegReader));
-
   return fts3SegReaderCursor(
       p, iLangid, iIndex, iLevel, zTerm, nTerm, isPrefix, isScan, pCsr
   );
@@ -5205,6 +5200,7 @@ void sqlite3Fts3EvalPhraseCleanup(Fts3Phrase *pPhrase){
     }
   }
 }
+
 
 /*
 ** Return SQLITE_CORRUPT_VTAB.
