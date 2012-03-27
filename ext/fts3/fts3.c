@@ -642,6 +642,7 @@ static int fts3CreateTables(Fts3Table *p){
         p->zDb, p->zName
     );
   }
+  assert( p->bHasStat==p->bFts4 );
   if( p->bHasStat ){
     sqlite3Fts3CreateStatTable(&rc, p);
   }
@@ -1284,6 +1285,7 @@ static int fts3InitVtab(
   p->nMaxPendingData = FTS3_MAX_PENDING_DATA;
   p->bHasDocsize = (isFts4 && bNoDocsize==0);
   p->bHasStat = isFts4;
+  p->bFts4 = isFts4;
   p->bDescIdx = bDescIdx;
   p->bAutoincrmerge = 0xff;   /* 0xff means setting unknown */
   p->zContentTbl = zContent;
@@ -2974,7 +2976,7 @@ static int fts3FilterMethod(
     if( nVal==2 ) pCsr->iLangid = sqlite3_value_int(apVal[1]);
 
     rc = sqlite3Fts3ExprParse(p->pTokenizer, pCsr->iLangid,
-        p->azColumn, p->bHasStat, p->nColumn, iCol, zQuery, -1, &pCsr->pExpr
+        p->azColumn, p->bFts4, p->nColumn, iCol, zQuery, -1, &pCsr->pExpr
     );
     if( rc!=SQLITE_OK ){
       if( rc==SQLITE_ERROR ){
@@ -4385,7 +4387,7 @@ static int fts3EvalStart(Fts3Cursor *pCsr){
   fts3EvalAllocateReaders(pCsr, pCsr->pExpr, &nToken, &nOr, &rc);
 
   /* Determine which, if any, tokens in the expression should be deferred. */
-  if( rc==SQLITE_OK && nToken>1 && pTab->bHasStat ){
+  if( rc==SQLITE_OK && nToken>1 && pTab->bFts4 ){
     Fts3TokenAndCost *aTC;
     Fts3Expr **apOr;
     aTC = (Fts3TokenAndCost *)sqlite3_malloc(

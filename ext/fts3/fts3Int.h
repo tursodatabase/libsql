@@ -209,6 +209,7 @@ struct Fts3Table {
   char *zWriteExprlist;
 
   int nNodeSize;                  /* Soft limit for node size */
+  u8 bFts4;                       /* True for FTS4, false for FTS3 */
   u8 bHasStat;                    /* True if %_stat table exists */
   u8 bHasDocsize;                 /* True if %_docsize table exists */
   u8 bDescIdx;                    /* True if doclists are in reverse order */

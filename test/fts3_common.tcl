@@ -45,16 +45,29 @@
 #
 
 #-------------------------------------------------------------------------
-# USAGE: fts3_build_db_1 N
+# USAGE: fts3_build_db_1 SWITCHES N
 #
 # Build a sample FTS table in the database opened by database connection 
 # [db]. The name of the new table is "t1".
 #
-proc fts3_build_db_1 {n} {
+proc fts3_build_db_1 {args} {
+
+  set default(-module) fts4
+
+  set nArg [llength $args]
+  if {($nArg%2)==0} {
+    error "wrong # args: should be \"fts3_build_db_1 ?switches? n\""
+  }
+
+  set n [lindex $args [expr $nArg-1]]
+  array set opts [array get default]
+  array set opts [lrange $args 0 [expr $nArg-2]]
+  foreach k [array names opts] {
+    if {0==[info exists default($k)]} { error "unknown option: $k" }
+  }
 
   if {$n > 10000} {error "n must be <= 10000"}
-
-  db eval { CREATE VIRTUAL TABLE t1 USING fts4(x, y) }
+  db eval "CREATE VIRTUAL TABLE t1 USING $opts(-module) (x, y)"
 
   set xwords [list zero one two three four five six seven eight nine ten]
   set ywords [list alpha beta gamma delta epsilon zeta eta theta iota kappa]
@@ -85,12 +98,29 @@ proc fts3_build_db_1 {n} {
 # Build a sample FTS table in the database opened by database connection 
 # [db]. The name of the new table is "t2".
 #
-proc fts3_build_db_2 {n args} {
+proc fts3_build_db_2 {args} {
+
+  set default(-module) fts4
+  set default(-extra)   ""
+
+  set nArg [llength $args]
+  if {($nArg%2)==0} {
+    error "wrong # args: should be \"fts3_build_db_1 ?switches? n\""
+  }
+
+  set n [lindex $args [expr $nArg-1]]
+  array set opts [array get default]
+  array set opts [lrange $args 0 [expr $nArg-2]]
+  foreach k [array names opts] {
+    if {0==[info exists default($k)]} { error "unknown option: $k" }
+  }
 
   if {$n > 100000} {error "n must be <= 100000"}
 
-  set sql "CREATE VIRTUAL TABLE t2 USING fts4(content"
-  foreach a $args { append sql ", " $a }
+  set sql "CREATE VIRTUAL TABLE t2 USING $opts(-module) (content"
+  if {$opts(-extra) != ""} {
+    append sql ", " $opts(-extra)
+  }
   append sql ")"
   db eval $sql
 

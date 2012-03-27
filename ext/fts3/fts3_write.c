@@ -1516,7 +1516,7 @@ int sqlite3Fts3MsrOvfl(
   int rc = SQLITE_OK;
   int pgsz = p->nPgsz;
 
-  assert( p->bHasStat );
+  assert( p->bFts4 );
   assert( pgsz>0 );
 
   for(ii=0; rc==SQLITE_OK && ii<pMsr->nSegment; ii++){
@@ -3302,7 +3302,7 @@ static int fts3DoRebuild(Fts3Table *p){
         }
       }
     }
-    if( p->bHasStat ){
+    if( p->bFts4 ){
       fts3UpdateDocTotals(&rc, p, aSzIns, aSzDel, nEntry);
     }
     sqlite3_free(aSz);
@@ -4729,7 +4729,10 @@ static int fts3DoIncrmerge(
     rc = SQLITE_ERROR;
   }else{
     rc = SQLITE_OK;
-    if( !p->bHasStat ) sqlite3Fts3CreateStatTable(&rc, p);
+    if( !p->bHasStat ){
+      assert( p->bFts4==0 );
+      sqlite3Fts3CreateStatTable(&rc, p);
+    }
     if( rc==SQLITE_OK ){
       rc = sqlite3Fts3Incrmerge(p, nMerge, nMin);
     }
@@ -4754,6 +4757,7 @@ static int fts3DoAutoincrmerge(
   sqlite3_stmt *pStmt = 0;
   p->bAutoincrmerge = fts3Getint(&zParam)!=0;
   if( !p->bHasStat ){
+    assert( p->bFts4==0 );
     sqlite3Fts3CreateStatTable(&rc, p);
     if( rc ) return rc;
   }
@@ -5347,7 +5351,7 @@ int sqlite3Fts3UpdateMethod(
     nChng++;
   }
 
-  if( p->bHasStat ){
+  if( p->bFts4 ){
     fts3UpdateDocTotals(&rc, p, aSzIns, aSzDel, nChng);
   }
 

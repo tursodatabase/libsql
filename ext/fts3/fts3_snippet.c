@@ -794,8 +794,8 @@ static int fts3MatchinfoCheck(
 ){
   if( (cArg==FTS3_MATCHINFO_NPHRASE)
    || (cArg==FTS3_MATCHINFO_NCOL)
-   || (cArg==FTS3_MATCHINFO_NDOC && pTab->bHasStat)
-   || (cArg==FTS3_MATCHINFO_AVGLENGTH && pTab->bHasStat)
+   || (cArg==FTS3_MATCHINFO_NDOC && pTab->bFts4)
+   || (cArg==FTS3_MATCHINFO_AVGLENGTH && pTab->bFts4)
    || (cArg==FTS3_MATCHINFO_LENGTH && pTab->bHasDocsize)
    || (cArg==FTS3_MATCHINFO_LCS)
    || (cArg==FTS3_MATCHINFO_HITS)
