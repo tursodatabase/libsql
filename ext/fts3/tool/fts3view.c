@@ -75,14 +75,16 @@ static sqlite3_stmt *prepare(sqlite3 *db, const char *zFormat, ...){
 /*
 ** Run an SQL statement
 */
-static void runSql(sqlite3 *db, const char *zFormat, ...){
+static int runSql(sqlite3 *db, const char *zFormat, ...){
   va_list ap;
   char *zSql;
+  int rc;
 
   va_start(ap, zFormat);
   zSql = sqlite3_vmprintf(zFormat, ap);
-  sqlite3_exec(db, zSql, 0, 0, 0);
+  rc = sqlite3_exec(db, zSql, 0, 0, 0);
   va_end(ap);
+  return rc;
 }
 
 /*
@@ -107,6 +109,22 @@ static void showSchema(sqlite3 *db, const char *zTab){
   pStmt = prepare(db, "PRAGMA journal_mode");
   while( sqlite3_step(pStmt)==SQLITE_ROW ){
     printf("PRAGMA journal_mode=%s;\n", sqlite3_column_text(pStmt, 0));
+  }
+  sqlite3_finalize(pStmt);
+  pStmt = prepare(db, "PRAGMA auto_vacuum");
+  while( sqlite3_step(pStmt)==SQLITE_ROW ){
+    const char *zType = "???";
+    switch( sqlite3_column_int(pStmt, 0) ){
+      case 0:  zType = "OFF";         break;
+      case 1:  zType = "FULL";        break;
+      case 2:  zType = "INCREMENTAL"; break;
+    }
+    printf("PRAGMA auto_vacuum=%s;\n", zType);
+  }
+  sqlite3_finalize(pStmt);
+  pStmt = prepare(db, "PRAGMA encoding");
+  while( sqlite3_step(pStmt)==SQLITE_ROW ){
+    printf("PRAGMA encoding=%s;\n", sqlite3_column_text(pStmt, 0));
   }
   sqlite3_finalize(pStmt);
 }
@@ -801,6 +819,7 @@ int main(int argc, char **argv){
   int rc;
   const char *zTab;
   const char *zCmd;
+
   if( argc<2 ) usage(argv[0]);
   rc = sqlite3_open(argv[1], &db);
   if( rc ){
