@@ -1,5 +1,5 @@
-C Remove\sthe\sfts3merge.test\sscript\sin\sfavour\sof\schanging\sthe\sfts4merge.test\sscript\sso\sthat\sit\sruns\stests\susing\sboth\sfts4\sand\sfts3.\sFix\ssome\sproblems\swith\sincr-merge\sand\sFTS3\stables.
-D 2012-03-27T15:00:06.725
+C Really\sdelete\sthe\sfts3merge.test\sscript\s(should\shave\sbeen\sdeleted\sby\sthe\sprevious\scommit).
+D 2012-03-27T15:10:50.636
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -488,7 +488,6 @@ F test/fts3fault2.test b62a2bc843c20414405f80e5eeb78e39bc68fe53
 F test/fts3first.test dbdedd20914c8d539aa3206c9b34a23775644641
 F test/fts3malloc.test b86ea33db9e8c58c0c2f8027a9fcadaf6a1568be
 F test/fts3matchinfo.test 6507fe1c342e542300d65ea637d4110eccf894e6
-F test/fts3merge.test acb0be43658029565e7b448f8968149de80549d7
 F test/fts3near.test 2e318ee434d32babd27c167142e2b94ddbab4844
 F test/fts3prefix.test b36d4f00b128a51e7b386cc013a874246d9d7dc1
 F test/fts3prefix2.test 477ca96e67f60745b7ac931cfa6e9b080c562da5
@@ -1000,7 +999,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 04aea0245e4183fef3664609f5a6353b65d71a85
-R b8c319973c3298c33d22a9e309ade35c
+P 5c447e226afca0d46b9ed994dea26a16a9ae168c
+R 5d18089d511e28a909d4de9046e3cbed
 U dan
-Z fbf5edaf3f2b7351822253f4d48708a9
+Z f30e1777f0eaeb639d51fafd86db0092
