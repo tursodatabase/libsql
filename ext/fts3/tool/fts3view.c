@@ -419,6 +419,22 @@ static void printTreeLine(sqlite3_int64 iLower, sqlite3_int64 iUpper){
 }
 
 /*
+** Check to see if the block of a %_segments entry is NULL.
+*/
+static int isNullSegment(sqlite3 *db, const char *zTab, sqlite3_int64 iBlockId){
+  sqlite3_stmt *pStmt;
+  int rc = 1;
+
+  pStmt = prepare(db, "SELECT block IS NULL FROM '%q_segments'"
+                      " WHERE blockid=%lld", zTab, iBlockId);
+  if( sqlite3_step(pStmt)==SQLITE_ROW ){
+    rc = sqlite3_column_int(pStmt, 0);
+  }
+  sqlite3_finalize(pStmt);
+  return rc;
+}
+
+/*
 ** Show a map of segments derived from the %_segdir table.
 */
 static void showSegdirMap(sqlite3 *db, const char *zTab){
@@ -459,13 +475,16 @@ static void showSegdirMap(sqlite3 *db, const char *zTab){
       sqlite3_int64 iStart = sqlite3_column_int64(pStmt, 2);
       sqlite3_int64 iLEnd = sqlite3_column_int64(pStmt, 3);
       sqlite3_int64 iEnd = sqlite3_column_int64(pStmt, 4);
+      char rtag[20];
       if( iLevel!=prevLevel ){
         printf("level %2d idx %2d", iLevel, iIdx);
         prevLevel = iLevel;
       }else{
         printf("         idx %2d", iIdx);
       }
-      printf("  root     r%lld\n", sqlite3_column_int64(pStmt, 5));
+      sqlite3_snprintf(sizeof(rtag), rtag, "r%lld",
+                       sqlite3_column_int64(pStmt,5));
+      printf("  root   %9s\n", rtag);
       if( iLEnd>iStart ){
         sqlite3_int64 iLower, iPrev, iX;
         if( iLEnd+1<=iEnd ){
@@ -484,7 +503,15 @@ static void showSegdirMap(sqlite3 *db, const char *zTab){
             }
           }
           sqlite3_reset(pStmt2);
-          if( iLower>=0 ) printTreeLine(iLower, iPrev);
+          if( iLower>=0 ){
+            if( iLower==iPrev && iLower==iEnd
+             && isNullSegment(db,zTab,iLower)
+            ){
+              printf("                 null   %9lld\n", iLower);
+            }else{
+              printTreeLine(iLower, iPrev);
+            }
+          }
         }
         printf("                 leaves %9lld thru %9lld  (%lld blocks)\n",
                iStart, iLEnd, iLEnd - iStart + 1);
