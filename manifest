@@ -1,5 +1,5 @@
-C Minor\scorrect\serrors\sin\sthe\sfile\sformat\sdescription\sfor\sFTS3/4\scontained\sin\nthe\sfts3.c\sheader\scomment.
-D 2012-03-27T00:38:33.806
+C Merge\sthe\sfts4-incr-merge-exp\sbranch\swith\sfts4-incr-merge.
+D 2012-03-27T13:44:28.992
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/fts3_test.c 6b7cc68aef4efb084e1449f7d20c4b20d3bdf6b4
 F ext/fts3/fts3_tokenizer.c 3da7254a9881f7e270ab28e2004e0d22b3212bce
 F ext/fts3/fts3_tokenizer.h 66dec98e365854b6cd2d54f1a96bb6d428fc5a68
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
-F ext/fts3/fts3_write.c 6014014cf0257d314d29d7eb50e0c88d85356d65
+F ext/fts3/fts3_write.c a9990753ba132cd79b666c61ec58ae15eb032387
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 71d6149a268e8375cd9e5c8224868fa7460614c3
@@ -501,7 +501,7 @@ F test/fts4aa.test 6e7f90420b837b2c685f3bcbe84c868492d40a68
 F test/fts4check.test 72134071f4e9f8bed76af1f2375fd5aff0c5ea48
 F test/fts4content.test 17b2360f7d1a9a7e5aa8022783f5c5731b6dfd4f
 F test/fts4langid.test 24a6e41063b416bbdf371ff6b4476fa41c194aa7
-F test/fts4merge.test 16ba38960dc06ffd0c47c5487ec1060b5130661f
+F test/fts4merge.test c7ee5fbb3b316d1496f1d2fa861c53840b84cef9
 F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
 F test/fts4merge3.test e0e21332f592fc003fcab112928ea891407d83cb
 F test/func.test 6c5ce11e3a0021ca3c0649234e2d4454c89110ca
@@ -1000,7 +1000,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 6d09de231b68dd9520d99c65d133f26e90eb784f
-R 52fac8e81373757809153ddbb5601b3a
-U drh
-Z 7768dc9c0ca55bddb36c9095acc2e9ee
+P fb8aacdd8fbdc946cb271cc589f76b806387937d 7ed9d2f24a650b424b97dfc19b8042c4cf09c82c
+R a481c2564099a87723843f2e40a259a7
+U dan
+Z cbd151378395e54c0cdc970e0e7f2163
