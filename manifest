@@ -1,5 +1,5 @@
-C Add\sthe\sfts3view\sutility\sprogram.
-D 2012-03-26T21:57:53.278
+C Enhance\sfts3view\sto\sshow\sdecodes\sof\ssegments\sand\sdoclists.
+D 2012-03-27T00:34:04.336
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -81,7 +81,7 @@ F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_write.c 6014014cf0257d314d29d7eb50e0c88d85356d65
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
-F ext/fts3/tool/fts3view.c 005efba99f4de1ab104456f7652f955603a81d7f
+F ext/fts3/tool/fts3view.c 71d6149a268e8375cd9e5c8224868fa7460614c3
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c eb9ae1d79046bd7871aa97ee6da51eb770134b5a
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
@@ -1000,7 +1000,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P a18c103121529c2e3c6a8ada16a4c40d14080670
-R ad0002e6aa190f63417466651f9099fc
+P f936c8ea16d21345fd1622272dc7e9850acb2493
+R a7bfe1f32748865cb6cf2cbcda903177
 U drh
-Z 38d7fb610b5e9fceb6186edb4298f4d3
+Z fcd448737f1da3e5558671112d888fce

@@ -18,6 +18,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include "sqlite3.h"
 
 /*
@@ -436,7 +437,7 @@ static void showSegdirMap(sqlite3 *db, const char *zTab){
 
   printf("Number of inverted indices............... %3d\n", mxIndex+1);
   pStmt = prepare(db,
-    "SELECT level, idx, start_block, leaves_end_block, end_block"
+    "SELECT level, idx, start_block, leaves_end_block, end_block, rowid"
     "  FROM '%q_segdir'"
     " WHERE level/1024==?"
     " ORDER BY level DESC, idx",
@@ -464,10 +465,9 @@ static void showSegdirMap(sqlite3 *db, const char *zTab){
       }else{
         printf("         idx %2d", iIdx);
       }
+      printf("  root     r%lld\n", sqlite3_column_int64(pStmt, 5));
       if( iLEnd>iStart ){
         sqlite3_int64 iLower, iPrev, iX;
-        printf("  leaves %9lld thru %9lld  (%lld blocks)\n",
-               iStart, iLEnd, iLEnd - iStart + 1);
         if( iLEnd+1<=iEnd ){
           sqlite3_bind_int64(pStmt2, 1, iLEnd+1);
           sqlite3_bind_int64(pStmt2, 2, iEnd);
@@ -486,8 +486,8 @@ static void showSegdirMap(sqlite3 *db, const char *zTab){
           sqlite3_reset(pStmt2);
           if( iLower>=0 ) printTreeLine(iLower, iPrev);
         }
-      }else{
-        printf("  root only\n");
+        printf("                 leaves %9lld thru %9lld  (%lld blocks)\n",
+               iStart, iLEnd, iLEnd - iStart + 1);
       }
     }
     sqlite3_reset(pStmt);
@@ -496,17 +496,249 @@ static void showSegdirMap(sqlite3 *db, const char *zTab){
   sqlite3_finalize(pStmt2);
 }
 
+/*
+** Decode a single segment block and display the results on stdout.
+*/
+static void decodeSegment(
+  const unsigned char *aData,   /* Content to print */
+  int nData                     /* Number of bytes of content */
+){
+  sqlite3_int64 iChild;
+  sqlite3_int64 iPrefix;
+  sqlite3_int64 nTerm;
+  sqlite3_int64 n;
+  sqlite3_int64 iDocsz;
+  int iHeight;
+  int i = 0;
+  int cnt = 0;
+  char zTerm[1000];
+
+  i += getVarint(aData, &n);
+  iHeight = (int)n;
+  printf("height: %d\n", iHeight);
+  if( iHeight>0 ){
+    i += getVarint(aData+i, &iChild);
+    printf("left-child: %lld\n", iChild);
+  }
+  while( i<nData ){
+    if( (cnt++)>0 ){
+      i += getVarint(aData+i, &iPrefix);
+    }else{
+      iPrefix = 0;
+    }
+    i += getVarint(aData+i, &nTerm);
+    if( iPrefix+nTerm+1 >= sizeof(zTerm) ){
+      fprintf(stderr, "term to long\n");
+      exit(1);
+    }
+    memcpy(zTerm+iPrefix, aData+i, nTerm);
+    zTerm[iPrefix+nTerm] = 0;
+    i += nTerm;
+    if( iHeight==0 ){
+      i += getVarint(aData+i, &iDocsz);
+      printf("term: %-25s doclist %7lld bytes offset %d\n", zTerm, iDocsz, i);
+      i += iDocsz;
+    }else{
+      printf("term: %-25s child %lld\n", zTerm, ++iChild);
+    }
+  }
+}
+  
+  
+/*
+** Print a a blob as hex and ascii.
+*/
+static void printBlob(
+  const unsigned char *aData,   /* Content to print */
+  int nData                     /* Number of bytes of content */
+){
+  int i, j;
+  const char *zOfstFmt;
+  const int perLine = 16;
+
+  if( (nData&~0xfff)==0 ){
+    zOfstFmt = " %03x: ";
+  }else if( (nData&~0xffff)==0 ){
+    zOfstFmt = " %04x: ";
+  }else if( (nData&~0xfffff)==0 ){
+    zOfstFmt = " %05x: ";
+  }else if( (nData&~0xffffff)==0 ){
+    zOfstFmt = " %06x: ";
+  }else{
+    zOfstFmt = " %08x: ";
+  }
+
+  for(i=0; i<nData; i += perLine){
+    fprintf(stdout, zOfstFmt, i);
+    for(j=0; j<perLine; j++){
+      if( i+j>nData ){
+        fprintf(stdout, "   ");
+      }else{
+        fprintf(stdout,"%02x ", aData[i+j]);
+      }
+    }
+    for(j=0; j<perLine; j++){
+      if( i+j>nData ){
+        fprintf(stdout, " ");
+      }else{
+        fprintf(stdout,"%c", isprint(aData[i+j]) ? aData[i+j] : '.');
+      }
+    }
+    fprintf(stdout,"\n");
+  }
+}
+
+/*
+** Convert text to a 64-bit integer
+*/
+static sqlite3_int64 atoi64(const char *z){
+  sqlite3_int64 v = 0;
+  while( z[0]>='0' && z[0]<='9' ){
+     v = v*10 + z[0] - '0';
+     z++;
+  }
+  return v;
+}
+
+/*
+** Return a prepared statement which, when stepped, will return in its
+** first column the blob associated with segment zId.  If zId begins with
+** 'r' then it is a rowid of a %_segdir entry.  Otherwise it is a
+** %_segment entry.
+*/
+static sqlite3_stmt *prepareToGetSegment(
+  sqlite3 *db,         /* The database */
+  const char *zTab,    /* The FTS3/4 table name */
+  const char *zId      /* ID of the segment to open */
+){
+  sqlite3_stmt *pStmt;
+  if( zId[0]=='r' ){
+    pStmt = prepare(db, "SELECT root FROM '%q_segdir' WHERE rowid=%lld",
+                    zTab, atoi64(zId+1));
+  }else{
+    pStmt = prepare(db, "SELECT block FROM '%q_segments' WHERE blockid=%lld",
+                    zTab, atoi64(zId));
+  }
+  return pStmt;
+}
+
+/*
+** Print the content of a segment or of the root of a segdir.  The segment
+** or root is identified by azExtra[0].  If the first character of azExtra[0]
+** is 'r' then the remainder is the integer rowid of the %_segdir entry.
+** If the first character of azExtra[0] is not 'r' then, then all of
+** azExtra[0] is an integer which is the block number.
+**
+** If the --raw option is present in azExtra, then a hex dump is provided.
+** Otherwise a decoding is shown.
+*/
+static void showSegment(sqlite3 *db, const char *zTab){
+  const unsigned char *aData;
+  int nData;
+  sqlite3_stmt *pStmt;
+
+  pStmt = prepareToGetSegment(db, zTab, azExtra[0]);
+  if( sqlite3_step(pStmt)!=SQLITE_ROW ){
+    sqlite3_finalize(pStmt);
+    return;
+  }
+  nData = sqlite3_column_bytes(pStmt, 0);
+  aData = sqlite3_column_blob(pStmt, 0);
+  printf("Segment %s of size %d bytes:\n", azExtra[0], nData);
+  if( findOption("raw", 0, 0)!=0 ){
+    printBlob(aData, nData);
+  }else{
+    decodeSegment(aData, nData);
+  }
+  sqlite3_finalize(pStmt);
+}
+
+/*
+** Decode a single doclist and display the results on stdout.
+*/
+static void decodeDoclist(
+  const unsigned char *aData,   /* Content to print */
+  int nData                     /* Number of bytes of content */
+){
+  sqlite3_int64 iPrevDocid = 0;
+  sqlite3_int64 iDocid;
+  sqlite3_int64 iPos;
+  sqlite3_int64 iPrevPos = 0;
+  sqlite3_int64 iCol;
+  int i = 0;
+
+  while( i<nData ){
+    i += getVarint(aData+i, &iDocid);
+    printf("docid %lld col0", iDocid+iPrevDocid);
+    iPrevDocid += iDocid;
+    iPrevPos = 0;
+    while( 1 ){
+      i += getVarint(aData+i, &iPos);
+      if( iPos==1 ){
+        i += getVarint(aData+i, &iCol);
+        printf(" col%lld", iCol);
+        iPrevPos = 0;
+      }else if( iPos==0 ){
+        printf("\n");
+        break;
+      }else{
+        printf(" %lld", iPrevPos + iPos - 2);
+        iPrevPos = iPos - 2;
+      }
+    }
+  }
+}
+  
+
+/*
+** Print the content of a doclist.  The segment or segdir-root is
+** identified by azExtra[0].  If the first character of azExtra[0]
+** is 'r' then the remainder is the integer rowid of the %_segdir entry.
+** If the first character of azExtra[0] is not 'r' then, then all of
+** azExtra[0] is an integer which is the block number.  The offset
+** into the segment is identified by azExtra[1].  The size of the doclist
+** is azExtra[2].
+**
+** If the --raw option is present in azExtra, then a hex dump is provided.
+** Otherwise a decoding is shown.
+*/
+static void showDoclist(sqlite3 *db, const char *zTab){
+  const unsigned char *aData;
+  sqlite3_int64 offset, nData;
+  sqlite3_stmt *pStmt;
+
+  offset = atoi64(azExtra[1]);
+  nData = atoi64(azExtra[2]);
+  pStmt = prepareToGetSegment(db, zTab, azExtra[0]);
+  if( sqlite3_step(pStmt)!=SQLITE_ROW ){
+    sqlite3_finalize(pStmt);
+    return;
+  }
+  aData = sqlite3_column_blob(pStmt, 0);
+  printf("Doclist at %s offset %lld of size %lld bytes:\n",
+         azExtra[0], offset, nData);
+  if( findOption("raw", 0, 0)!=0 ){
+    printBlob(aData+offset, nData);
+  }else{
+    decodeDoclist(aData+offset, nData);
+  }
+  sqlite3_finalize(pStmt);
+}
+
+
 
 static void usage(const char *argv0){
   fprintf(stderr, "Usage: %s DATABASE\n"
                   "   or: %s DATABASE FTS3TABLE ARGS...\n", argv0, argv0);
   fprintf(stderr,
     "ARGS:\n"
-    "  schema                        FTS table schema\n"
-    "  segdir                        directory of segments\n"
-    "  segment-stats                 information about segment sizes\n"
-    "  stat                          content of the %%_stat table\n"
-    "  vocabulary --top N            information on the document vocabulary\n"
+    "  doclist BLOCKID OFFSET SIZE [--raw]       Decode a doclist\n"
+    "  schema                                    FTS table schema\n"
+    "  segdir                                    directory of segments\n"
+    "  segment BLOCKID [--raw]                   content of a segment\n"
+    "  segment-stats                             info on segment sizes\n"
+    "  stat                                      the %%_stat table\n"
+    "  vocabulary [--top N]                      document vocabulary\n"
   );
   exit(1);
 }
@@ -545,10 +777,16 @@ int main(int argc, char **argv){
   zCmd = argv[3];
   nExtra = argc-4;
   azExtra = argv+4;
-  if( strcmp(zCmd,"schema")==0 ){
+  if( strcmp(zCmd,"doclist")==0 ){
+    if( argc<7 ) usage(argv[0]);
+    showDoclist(db, zTab);
+  }else if( strcmp(zCmd,"schema")==0 ){
     showSchema(db, zTab);
   }else if( strcmp(zCmd,"segdir")==0 ){
     showSegdirMap(db, zTab);
+  }else if( strcmp(zCmd,"segment")==0 ){
+    if( argc<5 ) usage(argv[0]);
+    showSegment(db, zTab);
   }else if( strcmp(zCmd,"segment-stats")==0 ){
     showSegmentStats(db, zTab);
   }else if( strcmp(zCmd,"stat")==0 ){
