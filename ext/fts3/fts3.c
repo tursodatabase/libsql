@@ -70,7 +70,7 @@
 ** A doclist is stored like this:
 **
 ** array {
-**   varint docid;
+**   varint docid;          (delta from previous doclist)
 **   array {                (position list for column 0)
 **     varint position;     (2 more than the delta from previous position)
 **   }
@@ -101,8 +101,8 @@
 ** at D signals the start of a new column; the 1 at E indicates that the
 ** new column is column number 1.  There are two positions at 12 and 45
 ** (14-2 and 35-2+12).  The 0 at H indicate the end-of-document.  The
-** 234 at I is the next docid.  It has one position 72 (72-2) and then
-** terminates with the 0 at K.
+** 234 at I is the delta to next docid (357).  It has one position 70
+** (72-2) and then terminates with the 0 at K.
 **
 ** A "position-list" is the list of positions for multiple columns for
 ** a single docid.  A "column-list" is the set of positions for a single

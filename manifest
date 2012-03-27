@@ -1,5 +1,5 @@
-C Enhance\sfts3view\sto\sshow\sdecodes\sof\ssegments\sand\sdoclists.
-D 2012-03-27T00:34:04.336
+C Minor\scorrect\serrors\sin\sthe\sfile\sformat\sdescription\sfor\sFTS3/4\scontained\sin\nthe\sfts3.c\sheader\scomment.
+D 2012-03-27T00:38:33.806
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -63,7 +63,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c f2dd409e14eb84ff560a8bfe9c8fc7c93a853c2c
+F ext/fts3/fts3.c 5e2d74de50f5b591703923b765e74832621b7c3a
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 133e5c613ac6920be5b914d43acc1478df1332e1
 F ext/fts3/fts3_aux.c 5205182bd8f372782597888156404766edf5781e
@@ -1000,7 +1000,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P f936c8ea16d21345fd1622272dc7e9850acb2493
-R a7bfe1f32748865cb6cf2cbcda903177
+P 6d09de231b68dd9520d99c65d133f26e90eb784f
+R 52fac8e81373757809153ddbb5601b3a
 U drh
-Z fcd448737f1da3e5558671112d888fce
+Z 7768dc9c0ca55bddb36c9095acc2e9ee
