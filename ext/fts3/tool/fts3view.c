@@ -682,8 +682,8 @@ static void decodeDoclist(
         printf("\n");
         break;
       }else{
-        printf(" %lld", iPrevPos + iPos - 2);
-        iPrevPos = iPos - 2;
+        iPrevPos += iPos - 2;
+        printf(" %lld", iPrevPos);
       }
     }
   }
@@ -725,6 +725,31 @@ static void showDoclist(sqlite3 *db, const char *zTab){
   sqlite3_finalize(pStmt);
 }
 
+/*
+** Show the top N largest segments
+*/
+static void listBigSegments(sqlite3 *db, const char *zTab){
+  int nTop, i;
+  sqlite3_stmt *pStmt;
+  sqlite3_int64 sz;
+  sqlite3_int64 id;
+
+  nTop = atoi(findOption("top", 1, "25"));
+  printf("The %d largest segments:\n", nTop);
+  pStmt = prepare(db,
+            "SELECT blockid, length(block) AS len FROM '%q_segments'"
+            " ORDER BY 2 DESC, 1"
+            " LIMIT %d", zTab, nTop);
+  i = 0;
+  while( sqlite3_step(pStmt)==SQLITE_ROW ){
+    i++;
+    id = sqlite3_column_int64(pStmt, 0);
+    sz = sqlite3_column_int64(pStmt, 1);
+    printf("  %2d. %9lld size %lld\n", i, id, sz);
+  }
+  sqlite3_finalize(pStmt);
+}
+
 
 
 static void usage(const char *argv0){
@@ -732,6 +757,7 @@ static void usage(const char *argv0){
                   "   or: %s DATABASE FTS3TABLE ARGS...\n", argv0, argv0);
   fprintf(stderr,
     "ARGS:\n"
+    "  big-segments [--top N]                    show the largest segments\n"
     "  doclist BLOCKID OFFSET SIZE [--raw]       Decode a doclist\n"
     "  schema                                    FTS table schema\n"
     "  segdir                                    directory of segments\n"
@@ -777,7 +803,9 @@ int main(int argc, char **argv){
   zCmd = argv[3];
   nExtra = argc-4;
   azExtra = argv+4;
-  if( strcmp(zCmd,"doclist")==0 ){
+  if( strcmp(zCmd,"big-segments")==0 ){
+    listBigSegments(db, zTab);
+  }else if( strcmp(zCmd,"doclist")==0 ){
     if( argc<7 ) usage(argv[0]);
     showDoclist(db, zTab);
   }else if( strcmp(zCmd,"schema")==0 ){
