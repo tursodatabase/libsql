@@ -2381,11 +2381,12 @@ case OP_Column: {
   if( aOffset[p2] ){
     assert( rc==SQLITE_OK );
     if( zRec ){
+      /* This is the common case where the whole row fits on a single page */
       VdbeMemRelease(pDest);
       sqlite3VdbeSerialGet((u8 *)&zRec[aOffset[p2]], aType[p2], pDest);
     }else{
+      /* This branch happens only when the row overflows onto multiple pages */
       t = aType[p2];
-      len = sqlite3VdbeSerialTypeLen(t);
       if( (pOp->p5 & (OPFLAG_LENGTHARG|OPFLAG_TYPEOFARG))!=0
        && ((t>=12 && (t&1)==0) || (pOp->p5 & OPFLAG_TYPEOFARG)!=0)
       ){
@@ -2396,6 +2397,7 @@ case OP_Column: {
         ** will work for everything else. */
         zData = t<12 ? (char*)&payloadSize64 : 0;
       }else{
+        len = sqlite3VdbeSerialTypeLen(t);
         sqlite3VdbeMemMove(&sMem, pDest);
         rc = sqlite3VdbeMemFromBtree(pCrsr, aOffset[p2], len,  pC->isIndex,
                                      &sMem);
