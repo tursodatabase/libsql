@@ -1,5 +1,5 @@
-C Evaluate\stypeof(X)\sand\slength(Y)\swhere\sX\sis\sany\scolumn\sand\sY\sis\sa\sblob\scolumn\nwithout\sactually\sloading\sX\sand\sY\sfrom\sdisk.
-D 2012-03-28T01:34:47.425
+C Fix\sthe\stypeof()\sand\slength()\soptimization\sso\sthat\sit\sworks\sfor\saggregates\nas\swell\sas\sscalar\squeries.
+D 2012-03-28T02:43:20.877
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -134,7 +134,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c a9c26822515f81ec21588cbb482ca6724be02e33
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c 4c20ea4f6213b3bc1c6a510586864b679946e05e
-F src/expr.c 86711d201e6ee0e795571900edf20722d008e3ab
+F src/expr.c 1c351f385950a40b0283328eb925641a3aa50a84
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 657212460bf5cfd3ae607d12ea62092844c227b5
 F src/func.c c6b3c94320253a35bda43fb69cc292618e3285d6
@@ -993,7 +993,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P d95f9fb713c7ba4e570556d835fbd77e574afdea
-R 89de5eb864ab0dd31529150cd7eba40a
+P b899dbeb60752843287e2c6ad3577e1d00f0d587
+R f4c337d261ff97dcd84dc2dd2a1e0095
 U drh
-Z 999e726acb9e2120206bfa344ce7af80
+Z 615304a5ba3b27e6b38911664d03f093

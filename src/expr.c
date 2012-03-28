@@ -2599,9 +2599,11 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         ** loading.
         */
         if( (pDef->flags & (SQLITE_FUNC_LENGTH|SQLITE_FUNC_TYPEOF))!=0 ){
+          u8 op;
           assert( nFarg==1 );
           assert( pFarg->a[0].pExpr!=0 );
-          if( pFarg->a[0].pExpr->op==TK_COLUMN ){
+          op = pFarg->a[0].pExpr->op;
+          if( op==TK_COLUMN || op==TK_AGG_COLUMN ){
             assert( SQLITE_FUNC_LENGTH==OPFLAG_LENGTHARG );
             assert( SQLITE_FUNC_TYPEOF==OPFLAG_TYPEOFARG );
             testcase( pDef->flags==SQLITE_FUNC_LENGTH );
