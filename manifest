@@ -1,5 +1,5 @@
-C Test\scases\sfor\slength()\sof\sa\slarge\sblob\sin\san\saggregate\squery.
-D 2012-03-28T02:51:51.807
+C Improvements\sto\scomments.\s\sMinor\schanges\sto\scode\sin\sthe\shot\spath\sof\nOP_Column\s-\swith\sthe\shope\sof\sget\sa\sfew\scycles\sof\sperformance\simprovement.
+D 2012-03-28T13:41:10.884
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -240,7 +240,7 @@ F src/update.c d3076782c887c10e882996550345da9c4c9f9dea
 F src/utf.c 890c67dcfcc7a74623c95baac7535aadfe265e84
 F src/util.c 4f6cfad661b2e3454b0cdd5b1b9d39a54942d0e3
 F src/vacuum.c bfd53f9bd20a8fdb70b0fa8e77182b866875c0d8
-F src/vdbe.c b91a9135fa4ecd73805cfda7b051dbcc155a0fb8
+F src/vdbe.c 807532457744a264d19e929b2075dbec90d2a36d
 F src/vdbe.h 18f581cac1f4339ec3299f3e0cc6e11aec654cdb
 F src/vdbeInt.h 6ff4180a05683566a8835d12f7ec504b22932c82
 F src/vdbeapi.c 3662b6a468a2a4605a15dfab313baa6dff81ad91
@@ -993,7 +993,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P bc18215a8a660442db6ddeeda4a88df0acffe0f7
-R 3ecaca7bd152423dde5d0467891373c7
+P d095fa4bfabd765c8e935ed227a334161097dd34
+R 78ef170f6dad0ba0a0f49e941cd533cb
 U drh
-Z c57e0152e24243ecb61f7c7f2f11b01f
+Z 6f108b9c2dd42e83ba81e7472cbc6ad3
