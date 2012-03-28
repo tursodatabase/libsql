@@ -2127,6 +2127,11 @@ case OP_NotNull: {            /* same as TK_NOTNULL, jump, in1 */
 ** then the cache of the cursor is reset prior to extracting the column.
 ** The first OP_Column against a pseudo-table after the value of the content
 ** register has changed should have this bit set.
+**
+** If the OPFLAG_LENGTHARG bit is set on P5 then the result is guaranteed
+** to only be used as the argument of a length() or typeof() function and
+** so loading of large blobs and strings can be skipped - all that is necessary
+** is that the size and type information be set.
 */
 case OP_Column: {
   u32 payloadSize;   /* Number of bytes in the record */
@@ -2380,12 +2385,24 @@ case OP_Column: {
       sqlite3VdbeSerialGet((u8 *)&zRec[aOffset[p2]], aType[p2], pDest);
     }else{
       len = sqlite3VdbeSerialTypeLen(aType[p2]);
-      sqlite3VdbeMemMove(&sMem, pDest);
-      rc = sqlite3VdbeMemFromBtree(pCrsr, aOffset[p2], len, pC->isIndex, &sMem);
-      if( rc!=SQLITE_OK ){
-        goto op_column_out;
+      if( (pOp->p5 & (OPFLAG_LENGTHARG|OPFLAG_TYPEOFARG))!=0
+       && (((t = aType[p2])>=12 && (t&1)==0) || (pOp->p5 & OPFLAG_TYPEOFARG)!=0)
+      ){
+        /* Content is irrelevant for the typeof() function and for
+        ** the length(x) function is x is a blob.  So we might as well use
+        ** bogus content rather than reading content from disk.  NULL works
+        ** for text and blob and whatever is in the payloadSize64 variable
+        ** will work for everything else. */
+        zData = t<12 ? (char*)&payloadSize64 : 0;
+      }else{
+        sqlite3VdbeMemMove(&sMem, pDest);
+        rc = sqlite3VdbeMemFromBtree(pCrsr, aOffset[p2], len,  pC->isIndex,
+                                     &sMem);
+        if( rc!=SQLITE_OK ){
+          goto op_column_out;
+        }
+        zData = sMem.z;
       }
-      zData = sMem.z;
       sqlite3VdbeSerialGet((u8*)zData, aType[p2], pDest);
     }
     pDest->enc = encoding;
