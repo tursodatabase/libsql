@@ -2211,7 +2211,7 @@ static int fts3SegWriterAdd(
     /* The current leaf node is full. Write it out to the database. */
     rc = fts3WriteSegment(p, pWriter->iFree++, pWriter->aData, nData);
     if( rc!=SQLITE_OK ) return rc;
-    p->nLeafAdd++;
+    p->nLeafAdd += ((nData / p->nPgsz) + 1);
 
     /* Add the current term to the interior node tree. The term added to
     ** the interior tree must:
@@ -2319,6 +2319,7 @@ static int fts3SegWriterFlush(
     /* The entire tree fits on the root node. Write it to the segdir table. */
     rc = fts3WriteSegdir(
         p, iLevel, iIdx, 0, 0, 0, pWriter->aData, pWriter->nData);
+    p->nLeafAdd += (pWriter->nData / p->nPgsz);
   }
   p->nLeafAdd++;
   return rc;
@@ -3716,7 +3717,7 @@ static int fts3IncrmergeAppend(
   ** bytes, write this block out to the database. */
   if( pLeaf->block.n>0 && (pLeaf->block.n + nSpace)>p->nNodeSize ){
     rc = fts3WriteSegment(p, pLeaf->iBlock, pLeaf->block.a, pLeaf->block.n);
-    pWriter->nWork++;
+    pWriter->nWork += 1 + (pLeaf->block.n / p->nPgsz);
 
     /* Add the current term to the parent node. The term added to the 
     ** parent must:

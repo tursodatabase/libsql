@@ -198,7 +198,7 @@ struct Fts3Table {
   char *zContentTbl;              /* content=xxx option, or NULL */
   char *zLanguageid;              /* languageid=xxx option, or NULL */
   u8 bAutoincrmerge;              /* True if automerge=1 */
-  u32 nLeafAdd;                   /* Number of leaf blocks added this trans */
+  u32 nLeafAdd;                   /* Number of leaf pages added this trans */
 
   /* Precompiled statements used by the implementation. Each of these 
   ** statements is run and reset within a single virtual table API call. 
