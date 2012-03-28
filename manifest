@@ -1,5 +1,5 @@
-C Add\soutput\sof\sPRAGMAs\sauto_vacuum\sand\sencoding\sto\sthe\s"schema"\scommand\sof\sthe\nfts3view\sutility\sprogram.
-D 2012-03-27T18:00:05.762
+C Fix\sa\sproblem\sin\sfts4merge3.test.
+D 2012-03-28T13:55:29.023
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -502,7 +502,7 @@ F test/fts4content.test 17b2360f7d1a9a7e5aa8022783f5c5731b6dfd4f
 F test/fts4langid.test 24a6e41063b416bbdf371ff6b4476fa41c194aa7
 F test/fts4merge.test c424309743fdd203f8e56a1f1cd7872cd66cc0ee
 F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
-F test/fts4merge3.test e0e21332f592fc003fcab112928ea891407d83cb
+F test/fts4merge3.test 7ca2225996f6c4e12efbd4fe34ce8a805adecfb2
 F test/func.test 6c5ce11e3a0021ca3c0649234e2d4454c89110ca
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 001021e5b88bd02a3b365a5c5fd8f6f49d39744a
@@ -999,7 +999,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 83838149d9dd7956c5f48f760c2f321180d2db5f
-R 1fdbec6e653dc840496748cca8fc7c51
-U drh
-Z bdf85c43146250da50e5176dbc98907c
+P e31076319363a46905836880765bae3bf204ed19
+R 8261f69797f0415c0a684d0e5b4da417
+U dan
+Z 6d2d05b1946beea93ba45e372e1569b3
