@@ -15,6 +15,129 @@
 #
 
 #-------------------------------------------------------------------------
+# INSTRUCTIONS
+#
+# The following commands are available:
+#
+#   fts3_build_db_1 N
+#     Using database handle [db] create an FTS4 table named t1 and populate
+#     it with N rows of data. N must be less than 10,000. Refer to the
+#     header comments above the proc implementation below for details.
+#
+#   fts3_build_db_2 N
+#     Using database handle [db] create an FTS4 table named t2 and populate
+#     it with N rows of data. N must be less than 100,000. Refer to the
+#     header comments above the proc implementation below for details.
+#
+#   fts3_integrity_check TBL
+#     TBL must be an FTS table in the database currently opened by handle
+#     [db]. This proc loads and tokenizes all documents within the table,
+#     then checks that the current contents of the FTS index matches the
+#     results.
+#
+#   fts3_terms TBL WHERE
+#     Todo.
+#
+#   fts3_doclist TBL TERM WHERE
+#     Todo.
+#
+#
+#
+
+#-------------------------------------------------------------------------
+# USAGE: fts3_build_db_1 SWITCHES N
+#
+# Build a sample FTS table in the database opened by database connection 
+# [db]. The name of the new table is "t1".
+#
+proc fts3_build_db_1 {args} {
+
+  set default(-module) fts4
+
+  set nArg [llength $args]
+  if {($nArg%2)==0} {
+    error "wrong # args: should be \"fts3_build_db_1 ?switches? n\""
+  }
+
+  set n [lindex $args [expr $nArg-1]]
+  array set opts [array get default]
+  array set opts [lrange $args 0 [expr $nArg-2]]
+  foreach k [array names opts] {
+    if {0==[info exists default($k)]} { error "unknown option: $k" }
+  }
+
+  if {$n > 10000} {error "n must be <= 10000"}
+  db eval "CREATE VIRTUAL TABLE t1 USING $opts(-module) (x, y)"
+
+  set xwords [list zero one two three four five six seven eight nine ten]
+  set ywords [list alpha beta gamma delta epsilon zeta eta theta iota kappa]
+
+  for {set i 0} {$i < $n} {incr i} {
+    set x ""
+    set y ""
+
+    set x [list]
+    lappend x [lindex $xwords [expr ($i / 1000) % 10]]
+    lappend x [lindex $xwords [expr ($i / 100)  % 10]]
+    lappend x [lindex $xwords [expr ($i / 10)   % 10]]
+    lappend x [lindex $xwords [expr ($i / 1)   % 10]]
+
+    set y [list]
+    lappend y [lindex $ywords [expr ($i / 1000) % 10]]
+    lappend y [lindex $ywords [expr ($i / 100)  % 10]]
+    lappend y [lindex $ywords [expr ($i / 10)   % 10]]
+    lappend y [lindex $ywords [expr ($i / 1)   % 10]]
+
+    db eval { INSERT INTO t1(docid, x, y) VALUES($i, $x, $y) }
+  }
+}
+
+#-------------------------------------------------------------------------
+# USAGE: fts3_build_db_2 N ARGS
+#
+# Build a sample FTS table in the database opened by database connection 
+# [db]. The name of the new table is "t2".
+#
+proc fts3_build_db_2 {args} {
+
+  set default(-module) fts4
+  set default(-extra)   ""
+
+  set nArg [llength $args]
+  if {($nArg%2)==0} {
+    error "wrong # args: should be \"fts3_build_db_1 ?switches? n\""
+  }
+
+  set n [lindex $args [expr $nArg-1]]
+  array set opts [array get default]
+  array set opts [lrange $args 0 [expr $nArg-2]]
+  foreach k [array names opts] {
+    if {0==[info exists default($k)]} { error "unknown option: $k" }
+  }
+
+  if {$n > 100000} {error "n must be <= 100000"}
+
+  set sql "CREATE VIRTUAL TABLE t2 USING $opts(-module) (content"
+  if {$opts(-extra) != ""} {
+    append sql ", " $opts(-extra)
+  }
+  append sql ")"
+  db eval $sql
+
+  set chars [list a b c d e f g h  i j k l m n o p  q r s t u v w x  y z ""]
+
+  for {set i 0} {$i < $n} {incr i} {
+    set word ""
+    set nChar [llength $chars]
+    append word [lindex $chars [expr {($i / 1)   % $nChar}]]
+    append word [lindex $chars [expr {($i / $nChar)  % $nChar}]]
+    append word [lindex $chars [expr {($i / ($nChar*$nChar)) % $nChar}]]
+
+    db eval { INSERT INTO t2(docid, content) VALUES($i, $word) }
+  }
+}
+
+#-------------------------------------------------------------------------
 # USAGE: fts3_integrity_check TBL
 #
 # This proc is used to verify that the full-text index is consistent with
@@ -46,6 +169,7 @@ proc fts3_integrity_check {tbl} {
   fts3_read2 $tbl 1 A
 
   foreach zTerm [array names A] {
+    #puts $zTerm
     foreach doclist $A($zTerm) {
       set docid 0
       while {[string length $doclist]>0} {
@@ -97,7 +221,7 @@ proc fts3_integrity_check {tbl} {
           set es "Error at docid=$iDoc col=$iCol pos=$pos. Index is missing"
           lappend errors $es
         } else {
-          if {$C($iDoc,$iCol,$pos) != "$term"} {
+          if {[string compare $C($iDoc,$iCol,$pos) $term]} {
             set    es "Error at docid=$iDoc col=$iCol pos=$pos. Index "
             append es "has \"$C($iDoc,$iCol,$pos)\", document has \"$term\""
             lappend errors $es
@@ -233,7 +357,8 @@ proc fts3_readleaf {blob} {
 
     set zTerm [string range $zPrev 0 [expr $nPrefix-1]]
     append zTerm [gobble_string blob $nSuffix]
-    set doclist [gobble_string blob [gobble_varint blob]]
+    set nDoclist [gobble_varint blob]
+    set doclist [gobble_string blob $nDoclist]
 
     lappend terms $zTerm $doclist
     set zPrev $zTerm
@@ -249,7 +374,9 @@ proc fts3_read2 {tbl where varname} {
             FROM ${tbl}_segdir WHERE $where
             ORDER BY level ASC, idx DESC
   " {
-    if {$start_block == 0} {
+    set c 0
+    binary scan $root c c
+    if {$c==0} {
       foreach {t d} [fts3_readleaf $root] { lappend a($t) $d }
     } else {
       db eval " SELECT block 
@@ -258,7 +385,6 @@ proc fts3_read2 {tbl where varname} {
                 ORDER BY blockid
       " {
         foreach {t d} [fts3_readleaf $block] { lappend a($t) $d }
-
       }
     }
   }

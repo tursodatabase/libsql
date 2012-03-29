@@ -70,7 +70,7 @@
 ** A doclist is stored like this:
 **
 ** array {
-**   varint docid;
+**   varint docid;          (delta from previous doclist)
 **   array {                (position list for column 0)
 **     varint position;     (2 more than the delta from previous position)
 **   }
@@ -101,8 +101,8 @@
 ** at D signals the start of a new column; the 1 at E indicates that the
 ** new column is column number 1.  There are two positions at 12 and 45
 ** (14-2 and 35-2+12).  The 0 at H indicate the end-of-document.  The
-** 234 at I is the next docid.  It has one position 72 (72-2) and then
-** terminates with the 0 at K.
+** 234 at I is the delta to next docid (357).  It has one position 70
+** (72-2) and then terminates with the 0 at K.
 **
 ** A "position-list" is the list of positions for multiple columns for
 ** a single docid.  A "column-list" is the set of positions for a single
@@ -571,6 +571,18 @@ static void fts3DeclareVtab(int *pRc, Fts3Table *p){
 }
 
 /*
+** Create the %_stat table if it does not already exist.
+*/
+void sqlite3Fts3CreateStatTable(int *pRc, Fts3Table *p){
+  fts3DbExec(pRc, p->db, 
+      "CREATE TABLE IF NOT EXISTS %Q.'%q_stat'"
+          "(id INTEGER PRIMARY KEY, value BLOB);",
+      p->zDb, p->zName
+  );
+  if( (*pRc)==SQLITE_OK ) p->bHasStat = 1;
+}
+
+/*
 ** Create the backing store tables (%_content, %_segments and %_segdir)
 ** required by the FTS3 table passed as the only argument. This is done
 ** as part of the vtab xCreate() method.
@@ -630,11 +642,9 @@ static int fts3CreateTables(Fts3Table *p){
         p->zDb, p->zName
     );
   }
+  assert( p->bHasStat==p->bFts4 );
   if( p->bHasStat ){
-    fts3DbExec(&rc, db, 
-        "CREATE TABLE %Q.'%q_stat'(id INTEGER PRIMARY KEY, value BLOB);",
-        p->zDb, p->zName
-    );
+    sqlite3Fts3CreateStatTable(&rc, p);
   }
   return rc;
 }
@@ -1275,7 +1285,9 @@ static int fts3InitVtab(
   p->nMaxPendingData = FTS3_MAX_PENDING_DATA;
   p->bHasDocsize = (isFts4 && bNoDocsize==0);
   p->bHasStat = isFts4;
+  p->bFts4 = isFts4;
   p->bDescIdx = bDescIdx;
+  p->bAutoincrmerge = 0xff;   /* 0xff means setting unknown */
   p->zContentTbl = zContent;
   p->zLanguageid = zLanguageid;
   zContent = 0;
@@ -1326,6 +1338,16 @@ static int fts3InitVtab(
   */
   if( isCreate ){
     rc = fts3CreateTables(p);
+  }
+
+  /* Check to see if a legacy fts3 table has been "upgraded" by the
+  ** addition of a %_stat table so that it can use incremental merge.
+  */
+  if( !isFts4 && !isCreate ){
+    int rc2 = SQLITE_OK;
+    fts3DbExec(&rc2, db, "SELECT 1 FROM %Q.'%q_stat' WHERE id=2",
+               p->zDb, p->zName);
+    if( rc2==SQLITE_OK ) p->bHasStat = 1;
   }
 
   /* Figure out the page-size for the database. This is required in order to
@@ -2671,7 +2693,7 @@ static int fts3SegReaderCursor(
 */
 int sqlite3Fts3SegReaderCursor(
   Fts3Table *p,                   /* FTS3 table handle */
-  int iLangid,
+  int iLangid,                    /* Language-id to search */
   int iIndex,                     /* Index to search (from 0 to p->nIndex-1) */
   int iLevel,                     /* Level of segments to scan */
   const char *zTerm,              /* Term to query for */
@@ -2689,12 +2711,7 @@ int sqlite3Fts3SegReaderCursor(
   assert( FTS3_SEGCURSOR_ALL<0 && FTS3_SEGCURSOR_PENDING<0 );
   assert( isPrefix==0 || isScan==0 );
 
-  /* "isScan" is only set to true by the ft4aux module, an ordinary
-  ** full-text tables. */
-  assert( isScan==0 || p->aIndex==0 );
-
   memset(pCsr, 0, sizeof(Fts3MultiSegReader));
-
   return fts3SegReaderCursor(
       p, iLangid, iIndex, iLevel, zTerm, nTerm, isPrefix, isScan, pCsr
   );
@@ -2959,7 +2976,7 @@ static int fts3FilterMethod(
     if( nVal==2 ) pCsr->iLangid = sqlite3_value_int(apVal[1]);
 
     rc = sqlite3Fts3ExprParse(p->pTokenizer, pCsr->iLangid,
-        p->azColumn, p->bHasStat, p->nColumn, iCol, zQuery, -1, &pCsr->pExpr
+        p->azColumn, p->bFts4, p->nColumn, iCol, zQuery, -1, &pCsr->pExpr
     );
     if( rc!=SQLITE_OK ){
       if( rc==SQLITE_ERROR ){
@@ -3102,8 +3119,42 @@ static int fts3UpdateMethod(
 ** hash-table to the database.
 */
 static int fts3SyncMethod(sqlite3_vtab *pVtab){
-  int rc = sqlite3Fts3PendingTermsFlush((Fts3Table *)pVtab);
-  sqlite3Fts3SegmentsClose((Fts3Table *)pVtab);
+
+  /* Following an incremental-merge operation, assuming that the input
+  ** segments are not completely consumed (the usual case), they are updated
+  ** in place to remove the entries that have already been merged. This
+  ** involves updating the leaf block that contains the smallest unmerged
+  ** entry and each block (if any) between the leaf and the root node. So
+  ** if the height of the input segment b-trees is N, and input segments
+  ** are merged eight at a time, updating the input segments at the end
+  ** of an incremental-merge requires writing (8*(1+N)) blocks. N is usually
+  ** small - often between 0 and 2. So the overhead of the incremental
+  ** merge is somewhere between 8 and 24 blocks. To avoid this overhead
+  ** dwarfing the actual productive work accomplished, the incremental merge
+  ** is only attempted if it will write at least 64 leaf blocks. Hence
+  ** nMinMerge.
+  **
+  ** Of course, updating the input segments also involves deleting a bunch
+  ** of blocks from the segments table. But this is not considered overhead
+  ** as it would also be required by a crisis-merge that used the same input 
+  ** segments.
+  */
+  const int nMinMerge = 64;       /* Minimum amount of incr-merge work to do */
+
+  Fts3Table *p = (Fts3Table*)pVtab;
+  int rc = sqlite3Fts3PendingTermsFlush(p);
+
+  if( rc==SQLITE_OK && p->bAutoincrmerge==1 && p->nLeafAdd>(nMinMerge/16) ){
+    int mxLevel = 0;              /* Maximum relative level value in db */
+    int A;                        /* Incr-merge parameter A */
+
+    rc = sqlite3Fts3MaxLevel(p, &mxLevel);
+    assert( rc==SQLITE_OK || mxLevel==0 );
+    A = p->nLeafAdd * mxLevel;
+    A += (A/2);
+    if( A>nMinMerge ) rc = sqlite3Fts3Incrmerge(p, A, 8);
+  }
+  sqlite3Fts3SegmentsClose(p);
   return rc;
 }
 
@@ -3111,13 +3162,14 @@ static int fts3SyncMethod(sqlite3_vtab *pVtab){
 ** Implementation of xBegin() method. This is a no-op.
 */
 static int fts3BeginMethod(sqlite3_vtab *pVtab){
-  TESTONLY( Fts3Table *p = (Fts3Table*)pVtab );
+  Fts3Table *p = (Fts3Table*)pVtab;
   UNUSED_PARAMETER(pVtab);
   assert( p->pSegments==0 );
   assert( p->nPendingData==0 );
   assert( p->inTransaction!=1 );
   TESTONLY( p->inTransaction = 1 );
   TESTONLY( p->mxSavepoint = -1; );
+  p->nLeafAdd = 0;
   return SQLITE_OK;
 }
 
@@ -3412,11 +3464,15 @@ static int fts3RenameMethod(
 ** Flush the contents of the pending-terms table to disk.
 */
 static int fts3SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
+  int rc = SQLITE_OK;
   UNUSED_PARAMETER(iSavepoint);
   assert( ((Fts3Table *)pVtab)->inTransaction );
   assert( ((Fts3Table *)pVtab)->mxSavepoint < iSavepoint );
   TESTONLY( ((Fts3Table *)pVtab)->mxSavepoint = iSavepoint );
-  return fts3SyncMethod(pVtab);
+  if( ((Fts3Table *)pVtab)->bIgnoreSavepoint==0 ){
+    rc = fts3SyncMethod(pVtab);
+  }
+  return rc;
 }
 
 /*
@@ -4331,7 +4387,7 @@ static int fts3EvalStart(Fts3Cursor *pCsr){
   fts3EvalAllocateReaders(pCsr, pCsr->pExpr, &nToken, &nOr, &rc);
 
   /* Determine which, if any, tokens in the expression should be deferred. */
-  if( rc==SQLITE_OK && nToken>1 && pTab->bHasStat ){
+  if( rc==SQLITE_OK && nToken>1 && pTab->bFts4 ){
     Fts3TokenAndCost *aTC;
     Fts3Expr **apOr;
     aTC = (Fts3TokenAndCost *)sqlite3_malloc(
@@ -5146,6 +5202,7 @@ void sqlite3Fts3EvalPhraseCleanup(Fts3Phrase *pPhrase){
     }
   }
 }
+
 
 /*
 ** Return SQLITE_CORRUPT_VTAB.
