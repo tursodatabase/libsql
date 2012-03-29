@@ -1,5 +1,5 @@
-C Avoid\sloading\soverflow\spages\sjust\sto\ssatisfy\stypeof()\sor\slength()\sfunctions\nif\sthe\scorrect\sresult\scan\sbe\scomputed\swithout\sthe\sextra\spage\sfetches.
-D 2012-03-28T16:22:03.615
+C Fix\san\sout\sof\sdate\scomment\son\ssqlite3ArrayAllocate().
+D 2012-03-29T07:51:45.964
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -128,7 +128,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 02aeee1f6d425e11f7b9b2d9d461ac501645ed6f
 F src/btree.h 48a013f8964f12d944d90e4700df47b72dd6d923
 F src/btreeInt.h 26d8ca625b141927fe6620c1d2cf58eaf494ca0c
-F src/build.c c4d36e527f457f9992a6663365871dfa7c5094b8
+F src/build.c 139dc386ebdaa78d2198247ebcf003305a5babe3
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c a9c26822515f81ec21588cbb482ca6724be02e33
@@ -993,7 +993,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P d95f9fb713c7ba4e570556d835fbd77e574afdea 868394761e41b7483a5874426ee052dfb3a9e2be
-R 14c36b139bb9a241f9fc5fc1fa96e28f
-U drh
-Z 15a5058e7b3160b8bbe377cfe96ccfbc
+P 0733c98c329bc9942460746e9bbaf4b4c94c1520
+R cdd95431de81f865d03de0c1a140cd52
+U dan
+Z 5c9d2afc31444fe45f09b85b23502baf
