@@ -1,5 +1,5 @@
-C Fix\san\sout\sof\sdate\scomment\son\ssqlite3ArrayAllocate().
-D 2012-03-29T07:51:45.964
+C Disable\sthe\sLIKE\soptimization\sif\sthe\scolumn\son\sthe\sleft-hand-side\sof\sthe\sLIKE\soperator\sbelongs\sto\sa\svirtual\stable.
+D 2012-03-29T14:29:07.705
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -253,7 +253,7 @@ F src/vtab.c ab90fb600a3f5e4b7c48d22a4cdb2d6b23239847
 F src/wal.c 7bb3ad807afc7973406c805d5157ec7a2f65e146
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 44d78f5811594065ebbb5354da7f9e6b8b1306d6
+F src/where.c 2112422a404dcca5d47f6630bdf180bccd36c62b
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -890,7 +890,7 @@ F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 7701bb609fe8bf6535514e8b849a309e8f00573b
 F test/view.test b182a67ec43f490b156b5a710827a341be83dd17
-F test/vtab1.test 17d0db1096b603a357f943a9dcbdc3e30c6f04f2
+F test/vtab1.test e429a6835faa3870016c55d1178dcfead85f936a
 F test/vtab2.test 7bcffc050da5c68f4f312e49e443063e2d391c0d
 F test/vtab3.test baad99fd27217f5d6db10660522e0b7192446de1
 F test/vtab4.test 942f8b8280b3ea8a41dae20e7822d065ca1cb275
@@ -993,7 +993,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 0733c98c329bc9942460746e9bbaf4b4c94c1520
-R cdd95431de81f865d03de0c1a140cd52
+P 4afdd5ae53ef0ff7c0fde74eaa04638c923c679b
+R def111c8a7bf40297c8914cb6a05a57c
 U dan
-Z 5c9d2afc31444fe45f09b85b23502baf
+Z 4348a3207684ec0ef401a834e1562981
