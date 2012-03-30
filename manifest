@@ -1,5 +1,5 @@
-C Update\sMSVC\smakefile\sto\ssupport\scompiling\sfor\sWinRT\susing\sone\ssetting.
-D 2012-03-23T12:28:21.645
+C Simplify\sthe\swinRead\sand\swinWrite\sVFS\sfunctions\sto\sreduce\sthe\snumber\sof\ssystem\scalls.
+D 2012-03-30T12:27:55.620
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -167,7 +167,7 @@ F src/os.h 38aabd5e3ecd4162332076f55bb09cec02165cca
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 0e3d2942d228d0366fb80a3640f35caf413b66d1
-F src/os_win.c d96547173049f48b6727972fd34b9fd9613d28e5
+F src/os_win.c 6f8080e783082d3d94ea56537f2248df4e273843
 F src/pager.c 3955b62cdb5bb64559607cb474dd12a6c8e1d4a5
 F src/pager.h ef1eaf8593e78f73885c1dfac27ad83bee23bdc5
 F src/parse.y 1ddd71ae55f4b7cbb2672526ea4de023de0f519e
@@ -992,7 +992,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P ddea657bd8fe3762bd460524ac9223f0a5b09752
-R 73aeb52e562bd72810737fc034c57c72
+P c10794bfac0989c611ec3ea98d069cb9631a7b15
+R 23bdb0c42f14336dabd08b128245de8d
 U mistachkin
-Z de85e312d806eace4ad69be21292db54
+Z 736498e20bf38fd876d04def8440845b
