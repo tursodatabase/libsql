@@ -75,7 +75,7 @@ struct LimitVal {
 */
 struct LikeOp {
   Token eOperator;  /* "like" or "glob" or "regexp" */
-  int not;         /* True if the NOT keyword is present */
+  int bNot;         /* True if the NOT keyword is present */
 };
 
 /*
@@ -881,16 +881,16 @@ expr(A) ::= expr(X) STAR|SLASH|REM(OP) expr(Y).
                                         {spanBinaryExpr(&A,pParse,@OP,&X,&Y);}
 expr(A) ::= expr(X) CONCAT(OP) expr(Y). {spanBinaryExpr(&A,pParse,@OP,&X,&Y);}
 %type likeop {struct LikeOp}
-likeop(A) ::= LIKE_KW(X).     {A.eOperator = X; A.not = 0;}
-likeop(A) ::= NOT LIKE_KW(X). {A.eOperator = X; A.not = 1;}
-likeop(A) ::= MATCH(X).       {A.eOperator = X; A.not = 0;}
-likeop(A) ::= NOT MATCH(X).   {A.eOperator = X; A.not = 1;}
+likeop(A) ::= LIKE_KW(X).     {A.eOperator = X; A.bNot = 0;}
+likeop(A) ::= NOT LIKE_KW(X). {A.eOperator = X; A.bNot = 1;}
+likeop(A) ::= MATCH(X).       {A.eOperator = X; A.bNot = 0;}
+likeop(A) ::= NOT MATCH(X).   {A.eOperator = X; A.bNot = 1;}
 expr(A) ::= expr(X) likeop(OP) expr(Y).  [LIKE_KW]  {
   ExprList *pList;
   pList = sqlite3ExprListAppend(pParse,0, Y.pExpr);
   pList = sqlite3ExprListAppend(pParse,pList, X.pExpr);
   A.pExpr = sqlite3ExprFunction(pParse, pList, &OP.eOperator);
-  if( OP.not ) A.pExpr = sqlite3PExpr(pParse, TK_NOT, A.pExpr, 0, 0);
+  if( OP.bNot ) A.pExpr = sqlite3PExpr(pParse, TK_NOT, A.pExpr, 0, 0);
   A.zStart = X.zStart;
   A.zEnd = Y.zEnd;
   if( A.pExpr ) A.pExpr->flags |= EP_InfixFunc;
@@ -901,7 +901,7 @@ expr(A) ::= expr(X) likeop(OP) expr(Y) ESCAPE expr(E).  [LIKE_KW]  {
   pList = sqlite3ExprListAppend(pParse,pList, X.pExpr);
   pList = sqlite3ExprListAppend(pParse,pList, E.pExpr);
   A.pExpr = sqlite3ExprFunction(pParse, pList, &OP.eOperator);
-  if( OP.not ) A.pExpr = sqlite3PExpr(pParse, TK_NOT, A.pExpr, 0, 0);
+  if( OP.bNot ) A.pExpr = sqlite3PExpr(pParse, TK_NOT, A.pExpr, 0, 0);
   A.zStart = X.zStart;
   A.zEnd = E.zEnd;
   if( A.pExpr ) A.pExpr->flags |= EP_InfixFunc;

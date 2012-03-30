@@ -1,5 +1,5 @@
-C In\sthe\s".output"\scommand-line\sshell,\sif\sthe\sfirst\scharacter\sof\sthe\soutput\nfilename\sis\s'|'\sthen\suse\spopen()\sinstead\sof\sfopen().
-D 2012-03-30T00:05:57.960
+C Change\sthe\sname\sof\sa\slocal\svariable\sfrom\s"not"\sto\s"bNot"\sto\slessen\sthe\nchances\sof\sit\scolliding\swith\ssome\sprior\s#define\sin\sthe\sappliation.
+D 2012-03-30T12:10:38.151
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -171,7 +171,7 @@ F src/os_unix.c 0e3d2942d228d0366fb80a3640f35caf413b66d1
 F src/os_win.c 5ac061ae1326a71500cee578ed0fd9113b4f6a37
 F src/pager.c 85988507fa20acc60defb834722eddf4633e4aeb
 F src/pager.h ef1eaf8593e78f73885c1dfac27ad83bee23bdc5
-F src/parse.y 1ddd71ae55f4b7cbb2672526ea4de023de0f519e
+F src/parse.y 537c8db136af5f481630becdc0c8bdd36a704c30
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h 1b5dcc3dc8103d03e625b177023ee67764fa6b7c
 F src/pcache1.c b30b1c35908346ecc43d8d9d17f2ddf6817f8f60
@@ -999,7 +999,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P b451c0f97f0abe78ebe6c62ff489ec1ad8a1f767
-R c9f2c82ab656ee1565b2ea7a350213e8
+P fa82062c659ffbe7ad01106d3ef54d7bb44f1f44
+R e9f2b9678dec950221629d45134c94ac
 U drh
-Z 500f8e52607292e3d3c61e303b3bc0be
+Z d33972f4357f472f3903792c8f2dee06
