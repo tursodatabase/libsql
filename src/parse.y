@@ -273,10 +273,10 @@ signed ::= minus_num.
 // "carglist" is a list of additional constraints that come after the
 // column name and column type in a CREATE TABLE statement.
 //
-carglist ::= carglist carg.
+carglist ::= carglist cname ccons.
 carglist ::= .
-carg ::= CONSTRAINT nm ccons.
-carg ::= ccons.
+cname ::= CONSTRAINT nm(X).           {pParse->constraintName = X;}
+cname ::= .                           {pParse->constraintName.n = 0;}
 ccons ::= DEFAULT term(X).            {sqlite3AddDefaultValue(pParse,&X);}
 ccons ::= DEFAULT LP expr(X) RP.      {sqlite3AddDefaultValue(pParse,&X);}
 ccons ::= DEFAULT PLUS term(X).       {sqlite3AddDefaultValue(pParse,&X);}
@@ -339,15 +339,10 @@ init_deferred_pred_opt(A) ::= .                       {A = 0;}
 init_deferred_pred_opt(A) ::= INITIALLY DEFERRED.     {A = 1;}
 init_deferred_pred_opt(A) ::= INITIALLY IMMEDIATE.    {A = 0;}
 
-// For the time being, the only constraint we care about is the primary
-// key and UNIQUE.  Both create indices.
-//
 conslist_opt(A) ::= .                   {A.n = 0; A.z = 0;}
 conslist_opt(A) ::= COMMA(X) conslist.  {A = X;}
-conslist ::= conslist COMMA tcons.
-conslist ::= conslist tcons.
-conslist ::= tcons.
-tcons ::= CONSTRAINT nm.
+conslist ::= conslist COMMA cname tcons.
+conslist ::= cname tcons.
 tcons ::= PRIMARY KEY LP idxlist(X) autoinc(I) RP onconf(R).
                                  {sqlite3AddPrimaryKey(pParse,X,R,I,0);}
 tcons ::= UNIQUE LP idxlist(X) RP onconf(R).

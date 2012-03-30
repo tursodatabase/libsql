@@ -1,5 +1,5 @@
-C Fix\sMSVC\scompiler\swarnings\sin\stest\scode.
-D 2012-03-30T14:59:43.262
+C When\sa\snamed\sCHECK\sconstraint\sfails,\sinclude\sthe\sname\sof\sthe\sconstraint\nin\sthe\serror\smessage.
+D 2012-03-30T15:48:48.787
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -129,7 +129,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 02aeee1f6d425e11f7b9b2d9d461ac501645ed6f
 F src/btree.h 48a013f8964f12d944d90e4700df47b72dd6d923
 F src/btreeInt.h 26d8ca625b141927fe6620c1d2cf58eaf494ca0c
-F src/build.c 139dc386ebdaa78d2198247ebcf003305a5babe3
+F src/build.c 987c6933ea170e443dc6a79d52f8d2506206b12b
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c a9c26822515f81ec21588cbb482ca6724be02e33
@@ -143,7 +143,7 @@ F src/global.c 4cfdca5cb0edd33c4d021baec4ede958cb2c793b
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c d7c69718acbb92e10e4b121da7bed13903342962
+F src/insert.c 93eb9542ae1376d9317a7c8335d7e379f010aa76
 F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
@@ -171,7 +171,7 @@ F src/os_unix.c 0e3d2942d228d0366fb80a3640f35caf413b66d1
 F src/os_win.c 5ac061ae1326a71500cee578ed0fd9113b4f6a37
 F src/pager.c 85988507fa20acc60defb834722eddf4633e4aeb
 F src/pager.h ef1eaf8593e78f73885c1dfac27ad83bee23bdc5
-F src/parse.y 537c8db136af5f481630becdc0c8bdd36a704c30
+F src/parse.y eb054bb40a5bf90d3422a01ed0e5df229461727a
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h 1b5dcc3dc8103d03e625b177023ee67764fa6b7c
 F src/pcache1.c b30b1c35908346ecc43d8d9d17f2ddf6817f8f60
@@ -185,7 +185,7 @@ F src/select.c f6f141cb1ea13f1e6564d3e162700e4937baa2a1
 F src/shell.c abf18d6ee54f2631860a98fdd7ab1327f470db67
 F src/sqlite.h.in 11a883919b0baf4ffaa7550cfeef99be613ec2bf
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h 3756ece33f1e7f8fe2adf8e523566825c809316e
+F src/sqliteInt.h d701123ab4c8774ee2837cd4ade84e370d665f87
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -322,7 +322,7 @@ F test/capi3c.test 1b5424d2ac57b7b443b5de5b9a287642c02279b6
 F test/capi3d.test 17b57ca28be3e37e14c2ba8f787d292d84b724a1
 F test/capi3e.test f7408dda65c92b9056199fdc180f893015f83dde
 F test/cast.test 4c275cbdc8202d6f9c54a3596701719868ac7dc3
-F test/check.test db2b29d557544347d28e25b8406f5d5ecc3d1bc3
+F test/check.test 06795c188bf1776673fd2ac0787aa1c7238970d8
 F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
 F test/collate1.test e3eaa48c21e150814be1a7b852d2a8af24458d04
 F test/collate2.test 04cebe4a033be319d6ddbb3bbc69464e01700b49
@@ -999,7 +999,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 36aa6665e709b5942b3558afbd555058b42f2c78
-R 19f0f46e7579b91721fe0a073b822b78
+P cb7a850439c9a4a7887650d6b81d95ab8025de5b 9a0f90d9deb335ac71044b8afa81538d85cc7ccf
+R 3383713cde4154ba8c7927e87d965912
 U drh
-Z 3f9228d0d5429417687badcbcda00070
+Z 044e1c348f17a4e06833c51581164485
