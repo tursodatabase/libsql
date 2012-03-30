@@ -3986,7 +3986,7 @@ static int fts3IncrmergeLoad(
       int nHeight = (int)aRoot[0];
       NodeWriter *pNode;
 
-      pWriter->nLeafEst = ((iEnd - iStart) + 1) / FTS_MAX_APPENDABLE_HEIGHT;
+      pWriter->nLeafEst = (int)((iEnd - iStart) + 1)/FTS_MAX_APPENDABLE_HEIGHT;
       pWriter->iStart = iStart;
       pWriter->iEnd = iEnd;
       pWriter->iAbsLevel = iAbsLevel;
@@ -4005,8 +4005,8 @@ static int fts3IncrmergeLoad(
       }
 
       for(i=nHeight; i>=0 && rc==SQLITE_OK; i--){
-        pNode = &pWriter->aNodeWriter[i];
         NodeReader reader;
+        pNode = &pWriter->aNodeWriter[i];
 
         rc = nodeReaderInit(&reader, pNode->block.a, pNode->block.n);
         while( reader.aNode && rc==SQLITE_OK ) rc = nodeReaderNext(&reader);
@@ -4102,7 +4102,7 @@ static int fts3IncrmergeWriter(
 ){
   int rc;                         /* Return Code */
   int i;                          /* Iterator variable */
-  int nLeafEst;                   /* Blocks allocated for leaf nodes */
+  int nLeafEst = 0;               /* Blocks allocated for leaf nodes */
   sqlite3_stmt *pLeafEst = 0;     /* SQL used to determine nLeafEst */
   sqlite3_stmt *pFirstBlock = 0;  /* SQL used to determine first block */
 
@@ -4855,7 +4855,8 @@ static u64 fts3ChecksumIndex(
           }else{
             iPos += (iVal - 2);
             cksum = cksum ^ fts3ChecksumEntry(
-                csr.zTerm, csr.nTerm, iLangid, iIndex, iDocid, iCol, iPos
+                csr.zTerm, csr.nTerm, iLangid, iIndex, iDocid,
+                (int)iCol, (int)iPos
             );
           }
         }

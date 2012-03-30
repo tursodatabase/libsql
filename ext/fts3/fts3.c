@@ -3139,7 +3139,7 @@ static int fts3SyncMethod(sqlite3_vtab *pVtab){
   ** as it would also be required by a crisis-merge that used the same input 
   ** segments.
   */
-  const int nMinMerge = 64;       /* Minimum amount of incr-merge work to do */
+  const u32 nMinMerge = 64;       /* Minimum amount of incr-merge work to do */
 
   Fts3Table *p = (Fts3Table*)pVtab;
   int rc = sqlite3Fts3PendingTermsFlush(p);
@@ -3152,7 +3152,7 @@ static int fts3SyncMethod(sqlite3_vtab *pVtab){
     assert( rc==SQLITE_OK || mxLevel==0 );
     A = p->nLeafAdd * mxLevel;
     A += (A/2);
-    if( A>nMinMerge ) rc = sqlite3Fts3Incrmerge(p, A, 8);
+    if( A>(int)nMinMerge ) rc = sqlite3Fts3Incrmerge(p, A, 8);
   }
   sqlite3Fts3SegmentsClose(p);
   return rc;
