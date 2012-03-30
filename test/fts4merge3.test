@@ -25,6 +25,7 @@ if {"" == [bc_find_binaries backcompat.test]} {
   return
 }
 
+db close
 do_all_bc_test {
 
   sql2 { PRAGMA page_size = 512 }
