@@ -3056,8 +3056,8 @@ static int rtreeInit(
   sqlite3_vtab_config(db, SQLITE_VTAB_CONSTRAINT_SUPPORT, 1);
 
   /* Allocate the sqlite3_vtab structure */
-  nDb = strlen(argv[1]);
-  nName = strlen(argv[2]);
+  nDb = (int)strlen(argv[1]);
+  nName = (int)strlen(argv[2]);
   pRtree = (Rtree *)sqlite3_malloc(sizeof(Rtree)+nDb+nName+2);
   if( !pRtree ){
     return SQLITE_NOMEM;
@@ -3152,10 +3152,10 @@ static void rtreenode(sqlite3_context *ctx, int nArg, sqlite3_value **apArg){
 
     nodeGetCell(&tree, &node, ii, &cell);
     sqlite3_snprintf(512-nCell,&zCell[nCell],"%lld", cell.iRowid);
-    nCell = strlen(zCell);
+    nCell = (int)strlen(zCell);
     for(jj=0; jj<tree.nDim*2; jj++){
       sqlite3_snprintf(512-nCell,&zCell[nCell]," %f",(double)cell.aCoord[jj].f);
-      nCell = strlen(zCell);
+      nCell = (int)strlen(zCell);
     }
 
     if( zText ){

@@ -161,6 +161,8 @@ static int fts3_near_match_cmd(
   Tcl_Obj **apExprToken;
   int nExprToken;
 
+  UNUSED_PARAMETER(clientData);
+
   /* Must have 3 or more arguments. */
   if( objc<3 || (objc%2)==0 ){
     Tcl_WrongNumArgs(interp, 1, objv, "DOCUMENT EXPR ?OPTION VALUE?...");
@@ -314,6 +316,7 @@ static int fts3_configure_incr_load_cmd(
   Tcl_SetObjResult(interp, pRet);
   Tcl_DecrRefCount(pRet);
 #endif
+  UNUSED_PARAMETER(clientData);
   return TCL_OK;
 }
 
@@ -352,6 +355,8 @@ static int testTokenizerCreate(
   sqlite3_tokenizer **ppTokenizer
 ){
   test_tokenizer *pNew;
+  UNUSED_PARAMETER(argc);
+  UNUSED_PARAMETER(argv);
 
   pNew = sqlite3_malloc(sizeof(test_tokenizer));
   if( !pNew ) return SQLITE_NOMEM;
@@ -507,6 +512,7 @@ static int fts3_test_tokenizer_cmd(
     (const unsigned char *)&pPtr, sizeof(sqlite3_tokenizer_module *)
   ));
 #endif
+  UNUSED_PARAMETER(clientData);
   return TCL_OK;
 }
 

@@ -1247,4 +1247,48 @@ do_test func-28.1 {
   }
 } {1 {unknown function: nosuchfunc()}}
 
+# Verify that the length() and typeof() functions do not actually load
+# the content of their argument.
+#
+do_test func-29.1 {
+  db eval {
+    CREATE TABLE t29(id INTEGER PRIMARY KEY, x, y);
+    INSERT INTO t29 VALUES(1, 2, 3), (2, NULL, 4), (3, 4.5, 5);
+    INSERT INTO t29 VALUES(4, randomblob(1000000), 6);
+    INSERT INTO t29 VALUES(5, "hello", 7);
+  }
+  db close
+  sqlite3 db test.db
+  sqlite3_db_status db CACHE_MISS 1
+  db eval {SELECT typeof(x), length(x), typeof(y) FROM t29 ORDER BY id}
+} {integer 1 integer null {} integer real 3 integer blob 1000000 integer text 5 integer}
+do_test func-29.2 {
+  set x [lindex [sqlite3_db_status db CACHE_MISS 1] 1]
+  if {$x<5} {set x 1}
+  set x
+} {1}
+do_test func-29.3 {
+  db close
+  sqlite3 db test.db
+  sqlite3_db_status db CACHE_MISS 1
+  db eval {SELECT typeof(+x) FROM t29 ORDER BY id}
+} {integer null real blob text}
+do_test func-29.4 {
+  set x [lindex [sqlite3_db_status db CACHE_MISS 1] 1]
+  if {$x>100} {set x many}
+  set x
+} {many}
+do_test func-29.5 {
+  db close
+  sqlite3 db test.db
+  sqlite3_db_status db CACHE_MISS 1
+  db eval {SELECT sum(length(x)) FROM t29}
+} {1000009}
+do_test func-29.6 {
+  set x [lindex [sqlite3_db_status db CACHE_MISS 1] 1]
+  if {$x<5} {set x 1}
+  set x
+} {1}
+  
+
 finish_test

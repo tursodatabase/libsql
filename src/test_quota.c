@@ -1060,7 +1060,7 @@ size_t sqlite3_quota_fwrite(
       }
       if( szNew>pGroup->iLimit && pGroup->iLimit>0 ){
         iEnd = pGroup->iLimit - pGroup->iSize + pFile->iSize;
-        nmemb = (iEnd - iOfst)/size;
+        nmemb = (size_t)((iEnd - iOfst)/size);
         iEnd = iOfst + size*nmemb;
         szNew = pGroup->iSize - pFile->iSize + iEnd;
       }

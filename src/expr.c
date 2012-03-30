@@ -2032,15 +2032,6 @@ void sqlite3ExprCacheStore(Parse *pParse, int iTab, int iCol, int iReg){
   */
 #ifndef NDEBUG
   for(i=0, p=pParse->aColCache; i<SQLITE_N_COLCACHE; i++, p++){
-#if 0 /* This code wold remove the entry from the cache if it existed */
-    if( p->iReg && p->iTable==iTab && p->iColumn==iCol ){
-      cacheEntryClear(pParse, p);
-      p->iLevel = pParse->iCacheLevel;
-      p->iReg = iReg;
-      p->lru = pParse->iCacheCnt++;
-      return;
-    }
-#endif
     assert( p->iReg==0 || p->iTable!=iTab || p->iColumn!=iCol );
   }
 #endif
@@ -2175,7 +2166,8 @@ int sqlite3ExprCodeGetColumn(
   Table *pTab,     /* Description of the table we are reading from */
   int iColumn,     /* Index of the table column */
   int iTable,      /* The cursor pointing to the table */
-  int iReg         /* Store results here */
+  int iReg,        /* Store results here */
+  u8 p5            /* P5 value for OP_Column */
 ){
   Vdbe *v = pParse->pVdbe;
   int i;
@@ -2190,7 +2182,11 @@ int sqlite3ExprCodeGetColumn(
   }  
   assert( v!=0 );
   sqlite3ExprCodeGetColumnOfTable(v, pTab, iTable, iColumn, iReg);
-  sqlite3ExprCacheStore(pParse, iTable, iColumn, iReg);
+  if( p5 ){
+    sqlite3VdbeChangeP5(v, p5);
+  }else{   
+    sqlite3ExprCacheStore(pParse, iTable, iColumn, iReg);
+  }
   return iReg;
 }
 
@@ -2318,7 +2314,8 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         inReg = pExpr->iColumn + pParse->ckBase;
       }else{
         inReg = sqlite3ExprCodeGetColumn(pParse, pExpr->pTab,
-                                 pExpr->iColumn, pExpr->iTable, target);
+                                 pExpr->iColumn, pExpr->iTable, target,
+                                 pExpr->op2);
       }
       break;
     }
@@ -2595,6 +2592,25 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
 
       if( pFarg ){
         r1 = sqlite3GetTempRange(pParse, nFarg);
+
+        /* For length() and typeof() functions with a column argument,
+        ** set the P5 parameter to the OP_Column opcode to OPFLAG_LENGTHARG
+        ** or OPFLAG_TYPEOFARG respectively, to avoid unnecessary data
+        ** loading.
+        */
+        if( (pDef->flags & (SQLITE_FUNC_LENGTH|SQLITE_FUNC_TYPEOF))!=0 ){
+          u8 exprOp;
+          assert( nFarg==1 );
+          assert( pFarg->a[0].pExpr!=0 );
+          exprOp = pFarg->a[0].pExpr->op;
+          if( exprOp==TK_COLUMN || exprOp==TK_AGG_COLUMN ){
+            assert( SQLITE_FUNC_LENGTH==OPFLAG_LENGTHARG );
+            assert( SQLITE_FUNC_TYPEOF==OPFLAG_TYPEOFARG );
+            testcase( pDef->flags==SQLITE_FUNC_LENGTH );
+            pFarg->a[0].pExpr->op2 = pDef->flags;
+          }
+        }
+
         sqlite3ExprCachePush(pParse);     /* Ticket 2ea2425d34be */
         sqlite3ExprCodeExprList(pParse, pFarg, r1, 1);
         sqlite3ExprCachePop(pParse, 1);   /* Ticket 2ea2425d34be */

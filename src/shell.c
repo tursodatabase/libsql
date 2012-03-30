@@ -68,6 +68,8 @@
 # include <io.h>
 #define isatty(h) _isatty(h)
 #define access(f,m) _access((f),(m))
+#define popen(a,b) _popen((a),(b))
+#define pclose(x) _pclose(x)
 #else
 /* Make sure isatty() has a prototype.
 */
@@ -1077,6 +1079,9 @@ static int display_stats(
     sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_MISS, &iCur, &iHiwtr, 1);
     fprintf(pArg->out, "Page cache misses:                   %d\n", iCur); 
     iHiwtr = iCur = -1;
+    sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_WRITE, &iCur, &iHiwtr, 1);
+    fprintf(pArg->out, "Page cache writes:                   %d\n", iCur); 
+    iHiwtr = iCur = -1;
     sqlite3_db_status(db, SQLITE_DBSTATUS_SCHEMA_USED, &iCur, &iHiwtr, bReset);
     fprintf(pArg->out, "Schema Heap Usage:                   %d bytes\n", iCur); 
     iHiwtr = iCur = -1;
@@ -1287,7 +1292,6 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
     char *zTableInfo = 0;
     char *zTmp = 0;
     int nRow = 0;
-    int kk;
    
     zTableInfo = appendText(zTableInfo, "PRAGMA table_info(", 0);
     zTableInfo = appendText(zTableInfo, zTable, '"');
@@ -1300,12 +1304,9 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
     }
 
     zSelect = appendText(zSelect, "SELECT 'INSERT INTO ' || ", 0);
-    if( !isalpha(zTable[0]) ){
-      kk = 0;
-    }else{
-      for(kk=1; isalnum(zTable[kk]); kk++){}
-    }
-    zTmp = appendText(zTmp, zTable, zTable[kk] ? '"' : 0);
+    /* Always quote the table name, even if it appears to be pure ascii,
+    ** in case it is a keyword. Ex:  INSERT INTO "table" ... */
+    zTmp = appendText(zTmp, zTable, '"');
     if( zTmp ){
       zSelect = appendText(zSelect, zTmp, '\'');
     }
@@ -2000,11 +2001,24 @@ static int do_meta_command(char *zLine, struct callback_data *p){
 
   if( c=='o' && strncmp(azArg[0], "output", n)==0 && nArg==2 ){
     if( p->out!=stdout ){
-      fclose(p->out);
+      if( p->outfile[0]=='|' ){
+        pclose(p->out);
+      }else{
+        fclose(p->out);
+      }
     }
     if( strcmp(azArg[1],"stdout")==0 ){
       p->out = stdout;
       sqlite3_snprintf(sizeof(p->outfile), p->outfile, "stdout");
+    }else if( azArg[1][0]=='|' ){
+      p->out = popen(&azArg[1][1], "w");
+      if( p->out==0 ){
+        fprintf(stderr,"Error: cannot open pipe \"%s\"\n", &azArg[1][1]);
+        p->out = stdout;
+        rc = 1;
+      }else{
+        sqlite3_snprintf(sizeof(p->outfile), p->outfile, "%s", azArg[1]);
+      }
     }else{
       p->out = fopen(azArg[1], "wb");
       if( p->out==0 ){

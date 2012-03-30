@@ -130,11 +130,11 @@ ifcapable fts3 {
     "INSERT INTO x1 VALUES('North northwest wind between 8 and 14 mph');" 
     "-- INSERT INTO 'main'.'x1_content' VALUES(?,(?))" 
     "-- REPLACE INTO 'main'.'x1_docsize' VALUES(?,?)" 
-    "-- SELECT value FROM 'main'.'x1_stat' WHERE id=0" 
-    "-- REPLACE INTO 'main'.'x1_stat' VALUES(0,?)" 
+    "-- SELECT value FROM 'main'.'x1_stat' WHERE id=?" 
+    "-- REPLACE INTO 'main'.'x1_stat' VALUES(?,?)" 
     "-- SELECT (SELECT max(idx) FROM 'main'.'x1_segdir' WHERE level = ?) + 1" 
     "-- SELECT coalesce((SELECT max(blockid) FROM 'main'.'x1_segments') + 1, 1)"
-    "-- INSERT INTO 'main'.'x1_segdir' VALUES(?,?,?,?,?,?)"
+    "-- REPLACE INTO 'main'.'x1_segdir' VALUES(?,?,?,?,?,?)"
   }
 
   do_trace_test 2.3 {
@@ -146,7 +146,7 @@ ifcapable fts3 {
     "-- SELECT max(level) FROM 'main'.'x1_segdir' WHERE level BETWEEN ? AND ?"
     "-- SELECT coalesce((SELECT max(blockid) FROM 'main'.'x1_segments') + 1, 1)"
     "-- DELETE FROM 'main'.'x1_segdir' WHERE level BETWEEN ? AND ?"
-    "-- INSERT INTO 'main'.'x1_segdir' VALUES(?,?,?,?,?,?)"
+    "-- REPLACE INTO 'main'.'x1_segdir' VALUES(?,?,?,?,?,?)"
   }
 }
 

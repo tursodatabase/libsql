@@ -2137,6 +2137,11 @@ case OP_NotNull: {            /* same as TK_NOTNULL, jump, in1 */
 ** then the cache of the cursor is reset prior to extracting the column.
 ** The first OP_Column against a pseudo-table after the value of the content
 ** register has changed should have this bit set.
+**
+** If the OPFLAG_LENGTHARG and OPFLAG_TYPEOFARG bits are set on P5 when
+** the result is guaranteed to only be used as the argument of a length()
+** or typeof() function, respectively.  The loading of large blobs can be
+** skipped for length() and all content loading can be skipped for typeof().
 */
 case OP_Column: {
   u32 payloadSize;   /* Number of bytes in the record */
@@ -2277,7 +2282,7 @@ case OP_Column: {
         pC->aRow = 0;
       }
     }
-    /* The following assert is true in all cases accept when
+    /* The following assert is true in all cases except when
     ** the database file has been corrupted externally.
     **    assert( zRec!=0 || avail>=payloadSize || avail>=9 ); */
     szHdr = getVarint32((u8*)zData, offset);
@@ -2352,11 +2357,11 @@ case OP_Column: {
           break;
         }
       }else{
-        /* If i is less that nField, then there are less fields in this
+        /* If i is less that nField, then there are fewer fields in this
         ** record than SetNumColumns indicated there are columns in the
         ** table. Set the offset for any extra columns not present in
-        ** the record to 0. This tells code below to store a NULL
-        ** instead of deserializing a value from the record.
+        ** the record to 0. This tells code below to store the default value
+        ** for the column instead of deserializing a value from the record.
         */
         aOffset[i] = 0;
       }
@@ -2386,17 +2391,32 @@ case OP_Column: {
   if( aOffset[p2] ){
     assert( rc==SQLITE_OK );
     if( zRec ){
+      /* This is the common case where the whole row fits on a single page */
       VdbeMemRelease(pDest);
       sqlite3VdbeSerialGet((u8 *)&zRec[aOffset[p2]], aType[p2], pDest);
     }else{
-      len = sqlite3VdbeSerialTypeLen(aType[p2]);
-      sqlite3VdbeMemMove(&sMem, pDest);
-      rc = sqlite3VdbeMemFromBtree(pCrsr, aOffset[p2], len, pC->isIndex, &sMem);
-      if( rc!=SQLITE_OK ){
-        goto op_column_out;
+      /* This branch happens only when the row overflows onto multiple pages */
+      t = aType[p2];
+      if( (pOp->p5 & (OPFLAG_LENGTHARG|OPFLAG_TYPEOFARG))!=0
+       && ((t>=12 && (t&1)==0) || (pOp->p5 & OPFLAG_TYPEOFARG)!=0)
+      ){
+        /* Content is irrelevant for the typeof() function and for
+        ** the length(X) function if X is a blob.  So we might as well use
+        ** bogus content rather than reading content from disk.  NULL works
+        ** for text and blob and whatever is in the payloadSize64 variable
+        ** will work for everything else. */
+        zData = t<12 ? (char*)&payloadSize64 : 0;
+      }else{
+        len = sqlite3VdbeSerialTypeLen(t);
+        sqlite3VdbeMemMove(&sMem, pDest);
+        rc = sqlite3VdbeMemFromBtree(pCrsr, aOffset[p2], len,  pC->isIndex,
+                                     &sMem);
+        if( rc!=SQLITE_OK ){
+          goto op_column_out;
+        }
+        zData = sMem.z;
       }
-      zData = sMem.z;
-      sqlite3VdbeSerialGet((u8*)zData, aType[p2], pDest);
+      sqlite3VdbeSerialGet((u8*)zData, t, pDest);
     }
     pDest->enc = encoding;
   }else{

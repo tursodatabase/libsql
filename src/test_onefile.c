@@ -288,7 +288,7 @@ static int tmpWrite(
 ){
   tmp_file *pTmp = (tmp_file *)pFile;
   if( (iAmt+iOfst)>pTmp->nAlloc ){
-    int nNew = 2*(iAmt+iOfst+pTmp->nAlloc);
+    int nNew = (int)(2*(iAmt+iOfst+pTmp->nAlloc));
     char *zNew = sqlite3_realloc(pTmp->zAlloc, nNew);
     if( !zNew ){
       return SQLITE_NOMEM;
@@ -297,7 +297,7 @@ static int tmpWrite(
     pTmp->nAlloc = nNew;
   }
   memcpy(&pTmp->zAlloc[iOfst], zBuf, iAmt);
-  pTmp->nSize = MAX(pTmp->nSize, iOfst+iAmt);
+  pTmp->nSize = (int)MAX(pTmp->nSize, iOfst+iAmt);
   return SQLITE_OK;
 }
 
@@ -306,7 +306,7 @@ static int tmpWrite(
 */
 static int tmpTruncate(sqlite3_file *pFile, sqlite_int64 size){
   tmp_file *pTmp = (tmp_file *)pFile;
-  pTmp->nSize = MIN(pTmp->nSize, size);
+  pTmp->nSize = (int)MIN(pTmp->nSize, size);
   return SQLITE_OK;
 }
 
@@ -418,7 +418,7 @@ static int fsRead(
     /* Journal file. */
     int iRem = iAmt;
     int iBuf = 0;
-    int ii = iOfst;
+    int ii = (int)iOfst;
     while( iRem>0 && rc==SQLITE_OK ){
       int iRealOff = pReal->nBlob - BLOCKSIZE*((ii/BLOCKSIZE)+1) + ii%BLOCKSIZE;
       int iRealAmt = MIN(iRem, BLOCKSIZE - (iRealOff%BLOCKSIZE));
@@ -453,14 +453,14 @@ static int fsWrite(
     }else{
       rc = pF->pMethods->xWrite(pF, zBuf, iAmt, iOfst+BLOCKSIZE);
       if( rc==SQLITE_OK ){
-        pReal->nDatabase = MAX(pReal->nDatabase, iAmt+iOfst);
+        pReal->nDatabase = (int)MAX(pReal->nDatabase, iAmt+iOfst);
       }
     }
   }else{
     /* Journal file. */
     int iRem = iAmt;
     int iBuf = 0;
-    int ii = iOfst;
+    int ii = (int)iOfst;
     while( iRem>0 && rc==SQLITE_OK ){
       int iRealOff = pReal->nBlob - BLOCKSIZE*((ii/BLOCKSIZE)+1) + ii%BLOCKSIZE;
       int iRealAmt = MIN(iRem, BLOCKSIZE - (iRealOff%BLOCKSIZE));
@@ -475,7 +475,7 @@ static int fsWrite(
       }
     }
     if( rc==SQLITE_OK ){
-      pReal->nJournal = MAX(pReal->nJournal, iAmt+iOfst);
+      pReal->nJournal = (int)MAX(pReal->nJournal, iAmt+iOfst);
     }
   }
 
@@ -489,9 +489,9 @@ static int fsTruncate(sqlite3_file *pFile, sqlite_int64 size){
   fs_file *p = (fs_file *)pFile;
   fs_real_file *pReal = p->pReal;
   if( p->eType==DATABASE_FILE ){
-    pReal->nDatabase = MIN(pReal->nDatabase, size);
+    pReal->nDatabase = (int)MIN(pReal->nDatabase, size);
   }else{
-    pReal->nJournal = MIN(pReal->nJournal, size);
+    pReal->nJournal = (int)MIN(pReal->nJournal, size);
   }
   return SQLITE_OK;
 }
@@ -641,7 +641,7 @@ static int fsOpen(
       pReal->nBlob = BLOBSIZE;
     }else{
       unsigned char zS[4];
-      pReal->nBlob = size;
+      pReal->nBlob = (int)size;
       rc = pRealFile->pMethods->xRead(pRealFile, zS, 4, 0);
       pReal->nDatabase = (zS[0]<<24)+(zS[1]<<16)+(zS[2]<<8)+zS[3];
       if( rc==SQLITE_OK ){
