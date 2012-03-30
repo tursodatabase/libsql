@@ -1636,7 +1636,9 @@ static int winRead(
   int amt,                   /* Number of bytes to read */
   sqlite3_int64 offset       /* Begin reading at this offset */
 ){
+#if !SQLITE_OS_WINCE
   OVERLAPPED overlapped;          /* The offset for ReadFile. */
+#endif
   winFile *pFile = (winFile*)id;  /* file handle */
   DWORD nRead;                    /* Number of bytes actually read from file */
   int nRetry = 0;                 /* Number of retrys */
@@ -1645,11 +1647,18 @@ static int winRead(
   SimulateIOError(return SQLITE_IOERR_READ);
   OSTRACE(("READ %d lock=%d\n", pFile->h, pFile->locktype));
 
+#if SQLITE_OS_WINCE
+  if( seekWinFile(pFile, offset) ){
+    return SQLITE_FULL;
+  }
+  while( !osReadFile(pFile->h, pBuf, amt, &nRead, 0) ){
+#else
   memset(&overlapped, 0, sizeof(OVERLAPPED));
   overlapped.Offset = (LONG)(offset & 0xffffffff);
   overlapped.OffsetHigh = (LONG)((offset>>32) & 0x7fffffff);
   while( !osReadFile(pFile->h, pBuf, amt, &nRead, &overlapped) &&
          osGetLastError()!=ERROR_HANDLE_EOF ){
+#endif
     DWORD lastErrno;
     if( retryIoerr(&nRetry, &lastErrno) ) continue;
     pFile->lastErrno = lastErrno;
@@ -1687,19 +1696,32 @@ static int winWrite(
 
   OSTRACE(("WRITE %d lock=%d\n", pFile->h, pFile->locktype));
 
+#if SQLITE_OS_WINCE
+  rc = seekWinFile(pFile, offset);
+  if( rc==0 ){
+#else
   {
+#endif
+#if !SQLITE_OS_WINCE
     OVERLAPPED overlapped;        /* The offset for WriteFile. */
+#endif
     u8 *aRem = (u8 *)pBuf;        /* Data yet to be written */
     int nRem = amt;               /* Number of bytes yet to be written */
     DWORD nWrite;                 /* Bytes written by each WriteFile() call */
     DWORD lastErrno = NO_ERROR;   /* Value returned by GetLastError() */
 
+#if !SQLITE_OS_WINCE
     memset(&overlapped, 0, sizeof(OVERLAPPED));
     overlapped.Offset = (LONG)(offset & 0xffffffff);
     overlapped.OffsetHigh = (LONG)((offset>>32) & 0x7fffffff);
+#endif
 
     while( nRem>0 ){
+#if SQLITE_OS_WINCE
+      if( !osWriteFile(pFile->h, aRem, nRem, &nWrite, 0) ){
+#else
       if( !osWriteFile(pFile->h, aRem, nRem, &nWrite, &overlapped) ){
+#endif
         if( retryIoerr(&nRetry, &lastErrno) ) continue;
         break;
       }
@@ -1707,9 +1729,11 @@ static int winWrite(
         lastErrno = osGetLastError();
         break;
       }
+#if !SQLITE_OS_WINCE
       offset += nWrite;
       overlapped.Offset = (LONG)(offset & 0xffffffff);
       overlapped.OffsetHigh = (LONG)((offset>>32) & 0x7fffffff);
+#endif
       aRem += nWrite;
       nRem -= nWrite;
     }

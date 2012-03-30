@@ -1,5 +1,5 @@
-C Simplify\sthe\swinRead\sand\swinWrite\sVFS\sfunctions\sto\sreduce\sthe\snumber\nof\ssystem\scalls.
-D 2012-03-30T15:57:45.451
+C Avoid\susing\sthe\sOVERLAPPED\sstruct\son\sWinCE.
+D 2012-03-30T16:44:33.303
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/os.h 59beba555b65a450bd1d804220532971d4299f60
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 0e3d2942d228d0366fb80a3640f35caf413b66d1
-F src/os_win.c c7b26b78c5e62de7355ad79e0ce79d7b0f5fccc4
+F src/os_win.c 5e9e933a412ab35de2a6506b3c6a8295b31b309e
 F src/pager.c 85988507fa20acc60defb834722eddf4633e4aeb
 F src/pager.h ef1eaf8593e78f73885c1dfac27ad83bee23bdc5
 F src/parse.y eb054bb40a5bf90d3422a01ed0e5df229461727a
@@ -999,7 +999,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 1b75f301affac654bee24fa247046ea0782d3c4d
-R 2cc6bffd476fbc89b05bef18789bd072
-U drh
-Z 6ac97e4f60396b50617248087122bd36
+P b34491869c4fb31d2fdd14c94a7db2e1c0e572ba
+R 7c7c91e4f03aba786b8f3e6627280744
+U mistachkin
+Z 7d31e5badb9fd33ec4e58af382112a75
