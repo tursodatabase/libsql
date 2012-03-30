@@ -68,6 +68,8 @@
 # include <io.h>
 #define isatty(h) _isatty(h)
 #define access(f,m) _access((f),(m))
+#define popen(a,b) _popen((a),(b))
+#define pclose(x) _pclose(x)
 #else
 /* Make sure isatty() has a prototype.
 */
@@ -1999,11 +2001,24 @@ static int do_meta_command(char *zLine, struct callback_data *p){
 
   if( c=='o' && strncmp(azArg[0], "output", n)==0 && nArg==2 ){
     if( p->out!=stdout ){
-      fclose(p->out);
+      if( p->outfile[0]=='|' ){
+        pclose(p->out);
+      }else{
+        fclose(p->out);
+      }
     }
     if( strcmp(azArg[1],"stdout")==0 ){
       p->out = stdout;
       sqlite3_snprintf(sizeof(p->outfile), p->outfile, "stdout");
+    }else if( azArg[1][0]=='|' ){
+      p->out = popen(&azArg[1][1], "w");
+      if( p->out==0 ){
+        fprintf(stderr,"Error: cannot open pipe \"%s\"\n", &azArg[1][1]);
+        p->out = stdout;
+        rc = 1;
+      }else{
+        sqlite3_snprintf(sizeof(p->outfile), p->outfile, "%s", azArg[1]);
+      }
     }else{
       p->out = fopen(azArg[1], "wb");
       if( p->out==0 ){
