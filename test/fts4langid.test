@@ -472,15 +472,14 @@ foreach lid [list 4 [expr 1<<30]] {
   } {8 0}
 
   do_execsql_test 5.4.$lid.4 {
-    INSERT INTO t6(t6) VALUES('optimize');
+    INSERT INTO t6(t6) VALUES('merge=100,3');
+    INSERT INTO t6(t6) VALUES('merge=100,3');
     SELECT docid FROM t6 WHERE t6 MATCH '"zero zero"' AND lid=$lid;
   } {1 2 5}
 
   do_execsql_test 5.4.$lid.5 {
     SELECT count(*) FROM t6_segdir;
     SELECT count(*) FROM t6_segments;
-  } {1 0}
+  } {4 4}
 }
-
-
 finish_test

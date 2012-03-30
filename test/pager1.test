@@ -1795,7 +1795,7 @@ do_test pager1-18.2 {
   catchsql { SELECT count(*) FROM t1 } db2
 } {1 {database disk image is malformed}}
 db2 close
-do_test pager1-18.3 {
+do_test pager1-18.3.1 {
   execsql {
     CREATE TABLE t2(x);
     INSERT INTO t2 VALUES(a_string(5000));
@@ -1803,13 +1803,38 @@ do_test pager1-18.3 {
   set pgno [expr ([file size test.db] / 1024)-2]
   hexio_write test.db [expr ($pgno-1)*1024] 00000000
   sqlite3 db2 test.db
-  catchsql { SELECT length(x) FROM t2 } db2
+  # even though x is malformed, because typeof() does
+  # not load the content of x, the error is not noticed.
+  catchsql { SELECT typeof(x) FROM t2 } db2
+} {0 text}
+do_test pager1-18.3.2 {
+  # in this case, the value of x is loaded and so the error is
+  # detected
+  catchsql { SELECT length(x||'') FROM t2 } db2
+} {1 {database disk image is malformed}}
+db2 close
+do_test pager1-18.3.3 {
+  execsql {
+    DELETE FROM t2;
+    INSERT INTO t2 VALUES(randomblob(5000));
+  }
+  set pgno [expr ([file size test.db] / 1024)-2]
+  hexio_write test.db [expr ($pgno-1)*1024] 00000000
+  sqlite3 db2 test.db
+  # even though x is malformed, because length() and typeof() do
+  # not load the content of x, the error is not noticed.
+  catchsql { SELECT length(x), typeof(x) FROM t2 } db2
+} {0 {5000 blob}}
+do_test pager1-18.3.4 {
+  # in this case, the value of x is loaded and so the error is
+  # detected
+  catchsql { SELECT length(x||'') FROM t2 } db2
 } {1 {database disk image is malformed}}
 db2 close
 do_test pager1-18.4 {
   hexio_write test.db [expr ($pgno-1)*1024] 90000000
   sqlite3 db2 test.db
-  catchsql { SELECT length(x) FROM t2 } db2
+  catchsql { SELECT length(x||'') FROM t2 } db2
 } {1 {database disk image is malformed}}
 db2 close
 do_test pager1-18.5 {

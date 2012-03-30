@@ -6037,6 +6037,17 @@ int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiwtr, int resetFlg);
 ** occurred.)^ ^The highwater mark associated with SQLITE_DBSTATUS_CACHE_MISS 
 ** is always 0.
 ** </dd>
+**
+** [[SQLITE_DBSTATUS_CACHE_WRITE]] ^(<dt>SQLITE_DBSTATUS_CACHE_WRITE</dt>
+** <dd>This parameter returns the number of dirty cache entries that have
+** been written to disk. Specifically, the number of pages written to the
+** wal file in wal mode databases, or the number of pages written to the
+** database file in rollback mode databases. Any pages written as part of
+** transaction rollback or database recovery operations are not included.
+** If an IO or other error occurs while writing a page to disk, the effect
+** on subsequent SQLITE_DBSTATUS_CACHE_WRITE requests is undefined). ^The
+** highwater mark associated with SQLITE_DBSTATUS_CACHE_WRITE is always 0.
+** </dd>
 ** </dl>
 */
 #define SQLITE_DBSTATUS_LOOKASIDE_USED       0
@@ -6048,7 +6059,8 @@ int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiwtr, int resetFlg);
 #define SQLITE_DBSTATUS_LOOKASIDE_MISS_FULL  6
 #define SQLITE_DBSTATUS_CACHE_HIT            7
 #define SQLITE_DBSTATUS_CACHE_MISS           8
-#define SQLITE_DBSTATUS_MAX                  8   /* Largest defined DBSTATUS */
+#define SQLITE_DBSTATUS_CACHE_WRITE          9
+#define SQLITE_DBSTATUS_MAX                  9   /* Largest defined DBSTATUS */
 
 
 /*

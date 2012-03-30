@@ -184,7 +184,8 @@ test_suite "fts3" -prefix "" -description {
   fts3aux1.test fts3comp1.test fts3auto.test
   fts4aa.test fts4content.test
   fts3conf.test fts3prefix.test fts3fault2.test fts3corrupt.test
-  fts3corrupt2.test fts3first.test fts4langid.test
+  fts3corrupt2.test fts3first.test fts4langid.test fts4merge.test
+  fts4check.test
 }
 
 
