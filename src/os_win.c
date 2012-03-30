@@ -1616,6 +1616,9 @@ static int winClose(sqlite3_file *id){
   }
 #endif
   OSTRACE(("CLOSE %d %s\n", pFile->h, rc ? "ok" : "failed"));
+  if( rc ){
+    pFile->h = NULL;
+  }
   OpenCounter(-1);
   return rc ? SQLITE_OK
             : winLogError(SQLITE_IOERR_CLOSE, osGetLastError(),
@@ -1633,6 +1636,7 @@ static int winRead(
   int amt,                   /* Number of bytes to read */
   sqlite3_int64 offset       /* Begin reading at this offset */
 ){
+  OVERLAPPED overlapped;          /* The offset for ReadFile. */
   winFile *pFile = (winFile*)id;  /* file handle */
   DWORD nRead;                    /* Number of bytes actually read from file */
   int nRetry = 0;                 /* Number of retrys */
@@ -1641,10 +1645,11 @@ static int winRead(
   SimulateIOError(return SQLITE_IOERR_READ);
   OSTRACE(("READ %d lock=%d\n", pFile->h, pFile->locktype));
 
-  if( seekWinFile(pFile, offset) ){
-    return SQLITE_FULL;
-  }
-  while( !osReadFile(pFile->h, pBuf, amt, &nRead, 0) ){
+  memset(&overlapped, 0, sizeof(OVERLAPPED));
+  overlapped.Offset = (LONG)(offset & 0xffffffff);
+  overlapped.OffsetHigh = (LONG)((offset>>32) & 0x7fffffff);
+  while( !osReadFile(pFile->h, pBuf, amt, &nRead, &overlapped) &&
+         osGetLastError()!=ERROR_HANDLE_EOF ){
     DWORD lastErrno;
     if( retryIoerr(&nRetry, &lastErrno) ) continue;
     pFile->lastErrno = lastErrno;
@@ -1671,7 +1676,7 @@ static int winWrite(
   int amt,                        /* Number of bytes to write */
   sqlite3_int64 offset            /* Offset into the file to begin writing at */
 ){
-  int rc;                         /* True if error has occured, else false */
+  int rc = 0;                     /* True if error has occured, else false */
   winFile *pFile = (winFile*)id;  /* File handle */
   int nRetry = 0;                 /* Number of retries */
 
@@ -1682,19 +1687,29 @@ static int winWrite(
 
   OSTRACE(("WRITE %d lock=%d\n", pFile->h, pFile->locktype));
 
-  rc = seekWinFile(pFile, offset);
-  if( rc==0 ){
+  {
+    OVERLAPPED overlapped;        /* The offset for WriteFile. */
     u8 *aRem = (u8 *)pBuf;        /* Data yet to be written */
     int nRem = amt;               /* Number of bytes yet to be written */
     DWORD nWrite;                 /* Bytes written by each WriteFile() call */
     DWORD lastErrno = NO_ERROR;   /* Value returned by GetLastError() */
 
+    memset(&overlapped, 0, sizeof(OVERLAPPED));
+    overlapped.Offset = (LONG)(offset & 0xffffffff);
+    overlapped.OffsetHigh = (LONG)((offset>>32) & 0x7fffffff);
+
     while( nRem>0 ){
-      if( !osWriteFile(pFile->h, aRem, nRem, &nWrite, 0) ){
+      if( !osWriteFile(pFile->h, aRem, nRem, &nWrite, &overlapped) ){
         if( retryIoerr(&nRetry, &lastErrno) ) continue;
         break;
       }
-      if( nWrite<=0 ) break;
+      if( nWrite<=0 ){
+        lastErrno = osGetLastError();
+        break;
+      }
+      offset += nWrite;
+      overlapped.Offset = (LONG)(offset & 0xffffffff);
+      overlapped.OffsetHigh = (LONG)((offset>>32) & 0x7fffffff);
       aRem += nWrite;
       nRem -= nWrite;
     }

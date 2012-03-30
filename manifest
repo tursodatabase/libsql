@@ -1,5 +1,5 @@
-C When\sa\snamed\sCHECK\sconstraint\sfails,\sinclude\sthe\sname\sof\sthe\sconstraint\nin\sthe\serror\smessage.
-D 2012-03-30T15:48:48.787
+C Simplify\sthe\swinRead\sand\swinWrite\sVFS\sfunctions\sto\sreduce\sthe\snumber\nof\ssystem\scalls.
+D 2012-03-30T15:57:45.451
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/os.h 59beba555b65a450bd1d804220532971d4299f60
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 0e3d2942d228d0366fb80a3640f35caf413b66d1
-F src/os_win.c 5ac061ae1326a71500cee578ed0fd9113b4f6a37
+F src/os_win.c c7b26b78c5e62de7355ad79e0ce79d7b0f5fccc4
 F src/pager.c 85988507fa20acc60defb834722eddf4633e4aeb
 F src/pager.h ef1eaf8593e78f73885c1dfac27ad83bee23bdc5
 F src/parse.y eb054bb40a5bf90d3422a01ed0e5df229461727a
@@ -999,7 +999,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P cb7a850439c9a4a7887650d6b81d95ab8025de5b 9a0f90d9deb335ac71044b8afa81538d85cc7ccf
-R 3383713cde4154ba8c7927e87d965912
+P 1b75f301affac654bee24fa247046ea0782d3c4d
+R 2cc6bffd476fbc89b05bef18789bd072
 U drh
-Z 044e1c348f17a4e06833c51581164485
+Z 6ac97e4f60396b50617248087122bd36
