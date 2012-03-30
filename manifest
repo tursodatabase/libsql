@@ -1,5 +1,5 @@
-C Fix\san\sFTS4\stest\sscript\sproblem\sfor\swindows.
-D 2012-03-30T13:34:17.656
+C Fix\sMSVC\scompiler\swarnings\sin\stest\scode.
+D 2012-03-30T14:59:43.262
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -73,8 +73,8 @@ F ext/fts3/fts3_hash.h 8331fb2206c609f9fc4c4735b9ab5ad6137c88ec
 F ext/fts3/fts3_icu.c 6c8f395cdf9e1e3afa7fadb7e523dbbf381c6dfa
 F ext/fts3/fts3_porter.c a465b49fcb8249a755792f87516eff182efa42b3
 F ext/fts3/fts3_snippet.c 51a3a34c217e24678a133782c1dfb6f2f70fe559
-F ext/fts3/fts3_term.c d3466cf99432291be08e379d89645462431809d6
-F ext/fts3/fts3_test.c 6b7cc68aef4efb084e1449f7d20c4b20d3bdf6b4
+F ext/fts3/fts3_term.c 41e82ad335213d1c24356cf310dca1d3c13e7366
+F ext/fts3/fts3_test.c f3ef8ae1b802383c4d24fd70774cb87d52841d5f
 F ext/fts3/fts3_tokenizer.c 3da7254a9881f7e270ab28e2004e0d22b3212bce
 F ext/fts3/fts3_tokenizer.h 66dec98e365854b6cd2d54f1a96bb6d428fc5a68
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
@@ -190,12 +190,12 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 086dfdd72e5892de223968a258e1ccbd9693e717
-F src/test1.c 07f30e8714bab94d8de8a88865d9c59bc512a1a8
+F src/test1.c 8631f728c9c3afcf79e3e22b510e451435e3d15e
 F src/test2.c 711555927f1f7e8db9aab86b512bc6934a774abe
-F src/test3.c 91d3f1a09cfae3533ef17d8b484a160f3d1f1a21
+F src/test3.c f82399ec50d9cd7378bf9d6db6c1409d5e77b042
 F src/test4.c d1e5a5e904d4b444cf572391fdcb017638e36ff7
 F src/test5.c a6d1ac55ac054d0b2b8f37b5e655b6c92645a013
-F src/test6.c 846ed1ed2f470de9b1e205fe3878a12e237b3e19
+F src/test6.c 3329df2dbc0293031d763947ec08c9eef982ef1d
 F src/test7.c 2e0781754905c8adc3268d8f0967e7633af58843
 F src/test8.c 61b41d79509a479dec1ac32b6d4209b27c4b1ba5
 F src/test9.c bea1e8cf52aa93695487badedd6e1886c321ea60
@@ -212,28 +212,28 @@ F src/test_hexio.c c4773049603151704a6ab25ac5e936b5109caf5a
 F src/test_init.c 3cbad7ce525aec925f8fda2192d576d47f0d478a
 F src/test_intarray.c d879bbf8e4ce085ab966d1f3c896a7c8b4f5fc99
 F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
-F src/test_journal.c a6a6baf343f79b942331f13378d045e7e270ae64
+F src/test_journal.c b964473ff1b7a65626763f068fa6a810385d1fbf
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c 3f5903a1528fd32fe4c472a3bd0259128d8faaef
-F src/test_multiplex.c 0404a61d7795438be5ee5fd3711eed80724df34d
+F src/test_multiplex.c 30ca0348953abd3add46fe4ee19e3f9e669b7e56
 F src/test_multiplex.h e99c571bc4968b7a9363b661481f3934bfead61d
 F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
-F src/test_onefile.c 40cf9e212a377a6511469384a64b01e6e34b2eec
-F src/test_osinst.c 6abf0a37ce831120c4ef1b913afdd813e7ac1a73
+F src/test_onefile.c 5e1382e7844c703c77c4c2aee82f8359555b5a8e
+F src/test_osinst.c 7f790ac89c5a585d51b341274d9691c3391e0923
 F src/test_pcache.c a5cd24730cb43c5b18629043314548c9169abb00
-F src/test_quota.c b4a6519417d87870e7ef5838dbf3cae164dcc28d
+F src/test_quota.c a545115f837da4ef32f6b5578f147b44cfb13fd7
 F src/test_quota.h 9ffa1d3ad6d0a6a24e8670ea64b909c717ec3358
 F src/test_rtree.c 6d06306e29946dc36f528a3a2cdc3add794656f1
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
-F src/test_stat.c 80271ad7d776a79babe0e025bb3a1bfcd3a3cfb1
+F src/test_stat.c d7035cfcc0ff1f93c000b621f36524318e004e11
 F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c a992d8c80ea91fbf21fb2dd570db40e77dd7e6ae
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c e286f2173563f2a1747c24bcda6b9d030bf4f4e4
 F src/test_vfs.c 73f46bd9b5183ebcb77da22773886b81157cdc3d
 F src/test_vfstrace.c 6b28adb2a0e8ecd0f2e3581482e1f658b11b4067
-F src/test_wholenumber.c 6129adfbe7c7444f2e60cc785927f3aa74e12290
+F src/test_wholenumber.c 3d2b9ed1505c40ad5c5ca2ad16ae7a289d6cc251
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c 1e86210d3976717a19238ea7b047fac481fe8c12
 F src/trigger.c ee7e178fb9188f44b532cebd449a7c1df90fb684
@@ -999,7 +999,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P cbdd86387630600b309de4aaeaa131ec7b053ce2
-R 88f6eca232fcd821cd715bbadb803c37
+P 36aa6665e709b5942b3558afbd555058b42f2c78
+R 19f0f46e7579b91721fe0a073b822b78
 U drh
-Z a41a68a88bffc936799088c08283176f
+Z 3f9228d0d5429417687badcbcda00070

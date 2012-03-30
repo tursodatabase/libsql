@@ -242,7 +242,7 @@ static sqlite3_uint64 vfslog_time(){
 }
 #endif
 
-static void vfslog_call(sqlite3_vfs *, int, int, int, int, int, int);
+static void vfslog_call(sqlite3_vfs *, int, int, sqlite3_int64, int, int, int);
 static void vfslog_string(sqlite3_vfs *, const char *);
 
 /*
@@ -648,7 +648,7 @@ static void vfslog_call(
   sqlite3_vfs *pVfs,
   int eEvent,
   int iFileid,
-  int nClick,
+  sqlite3_int64 nClick,
   int return_code,
   int size,
   int offset
@@ -661,7 +661,7 @@ static void vfslog_call(
   zRec = (unsigned char *)&p->aBuf[p->nBuf];
   put32bits(&zRec[0], eEvent);
   put32bits(&zRec[4], iFileid);
-  put32bits(&zRec[8], nClick);
+  put32bits(&zRec[8], (unsigned int)(nClick&0xffff));
   put32bits(&zRec[12], return_code);
   put32bits(&zRec[16], size);
   put32bits(&zRec[20], offset);
@@ -1043,7 +1043,7 @@ static int vlogColumn(
     }
     case 1: {
       char *zStr = pCsr->zTransient;
-      if( val!=0 && val<pCsr->nFile ){
+      if( val!=0 && val<(unsigned)pCsr->nFile ){
         zStr = pCsr->azFile[val];
       }
       sqlite3_result_text(ctx, zStr, -1, SQLITE_TRANSIENT);
