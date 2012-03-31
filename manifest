@@ -1,5 +1,5 @@
-C Modify\sselectColumnsFromExprList()\sto\savoid\sever\sincorrectly\sreturning\sSQLITE_NOMEM.
-D 2012-03-31T15:08:56.437
+C Do\snot\sabort\spending\squeries\son\sa\sRELEASE\sof\sa\snested\sSAVEPOINT.\nThis\sis\sa\scandidate\sfix\sfor\sticket\s[27ca74af3c083f787].
+D 2012-03-31T17:17:26.610
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -241,7 +241,7 @@ F src/update.c d3076782c887c10e882996550345da9c4c9f9dea
 F src/utf.c 890c67dcfcc7a74623c95baac7535aadfe265e84
 F src/util.c 4f6cfad661b2e3454b0cdd5b1b9d39a54942d0e3
 F src/vacuum.c bfd53f9bd20a8fdb70b0fa8e77182b866875c0d8
-F src/vdbe.c 8913926230bfc9d183fcd44e3d023c6d393b6548
+F src/vdbe.c e1d26b98288889c22f00cf4851ec351ee67ad8b9
 F src/vdbe.h 18f581cac1f4339ec3299f3e0cc6e11aec654cdb
 F src/vdbeInt.h 6ff4180a05683566a8835d12f7ec504b22932c82
 F src/vdbeapi.c 3662b6a468a2a4605a15dfab313baa6dff81ad91
@@ -999,7 +999,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 04298f1ac42c40cb2a48092b415acf96a08954b7
-R 0f878dd95f65af523296a3016003b93f
-U dan
-Z 97900e673e834268c29dd651e4b74076
+P e7cb6b73ac079d0751b3f9429d0f6a35ca8ec853
+R f0ffd709c4ab4135fdb232e59d421d85
+U drh
+Z 3d7ccacc940dee0121ee183657c9b6bd
