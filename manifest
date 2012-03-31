@@ -1,5 +1,5 @@
-C Do\snot\sabort\spending\squeries\son\sa\sRELEASE\sof\sa\snested\sSAVEPOINT.\nThis\sis\sa\scandidate\sfix\sfor\sticket\s[27ca74af3c083f787].
-D 2012-03-31T17:17:26.610
+C Test\scases\sfor\sRELEASE\sand\sROLLBACK\sTO\sof\sa\snested\ssavepoint\swhile\squeries\nare\spending.
+D 2012-03-31T17:50:12.845
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -669,6 +669,7 @@ F test/savepoint3.test e328085853b14898d78ceea00dfe7db18bb6a9ec
 F test/savepoint4.test c8f8159ade6d2acd9128be61e1230f1c1edc6cc0
 F test/savepoint5.test 0735db177e0ebbaedc39812c8d065075d563c4fd
 F test/savepoint6.test f41279c5e137139fa5c21485773332c7adb98cd7
+F test/savepoint7.test fbf319a7b2dda089ec5be30a424a0e95f121d423
 F test/schema.test 8f7999be894260f151adf15c2c7540f1c6d6a481
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/schema3.test 1bc1008e1f8cb5654b248c55f27249366eb7ed38
@@ -999,7 +1000,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P e7cb6b73ac079d0751b3f9429d0f6a35ca8ec853
-R f0ffd709c4ab4135fdb232e59d421d85
+P 79a4a3a84f0b367d54da5e69e64ffca474264717
+R 5586a2611754af43053579b114e3a967
 U drh
-Z 3d7ccacc940dee0121ee183657c9b6bd
+Z a414f1804c098ddade6c474c97e8199c
