@@ -484,8 +484,14 @@ Expr *sqlite3PExpr(
   Expr *pRight,           /* Right operand */
   const Token *pToken     /* Argument token */
 ){
-  Expr *p = sqlite3ExprAlloc(pParse->db, op, pToken, 1);
-  sqlite3ExprAttachSubtrees(pParse->db, p, pLeft, pRight);
+  Expr *p;
+  if( op==TK_AND && pLeft && pRight ){
+    /* Take advantage of short-circuit false optimization for AND */
+    p = sqlite3ExprAnd(pParse->db, pLeft, pRight);
+  }else{
+    p = sqlite3ExprAlloc(pParse->db, op, pToken, 1);
+    sqlite3ExprAttachSubtrees(pParse->db, p, pLeft, pRight);
+  }
   if( p ) {
     sqlite3ExprCheckHeight(pParse, p->nHeight);
   }
@@ -493,14 +499,40 @@ Expr *sqlite3PExpr(
 }
 
 /*
+** Return 1 if an expression must be FALSE in all cases and 0 if the
+** expression might be true.  This is an optimization.  If is OK to
+** return 0 here even if the expression really is always false (a 
+** false negative).  But it is a bug to return 1 if the expression
+** might be true in some rare circumstances (a false positive.)
+**
+** Note that if the expression is part of conditional for a
+** LEFT JOIN, then we cannot determine at compile-time whether or not
+** is it true or false, so always return 0.
+*/
+static int exprAlwaysFalse(Expr *p){
+  int v = 0;
+  if( ExprHasProperty(p, EP_FromJoin) ) return 0;
+  if( !sqlite3ExprIsInteger(p, &v) ) return 0;
+  return v==0;
+}
+
+/*
 ** Join two expressions using an AND operator.  If either expression is
 ** NULL, then just return the other expression.
+**
+** If one side or the other of the AND is known to be false, then instead
+** of returning an AND expression, just return a constant expression with
+** a value of false.
 */
 Expr *sqlite3ExprAnd(sqlite3 *db, Expr *pLeft, Expr *pRight){
   if( pLeft==0 ){
     return pRight;
   }else if( pRight==0 ){
     return pLeft;
+  }else if( exprAlwaysFalse(pLeft) || exprAlwaysFalse(pRight) ){
+    sqlite3ExprDelete(db, pLeft);
+    sqlite3ExprDelete(db, pRight);
+    return sqlite3ExprAlloc(db, TK_INTEGER, &sqlite3IntTokens[0], 0);
   }else{
     Expr *pNew = sqlite3ExprAlloc(db, TK_AND, 0, 0);
     sqlite3ExprAttachSubtrees(db, pNew, pLeft, pRight);

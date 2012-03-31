@@ -1,5 +1,5 @@
-C Avoid\susing\sthe\sOVERLAPPED\sstruct\son\sWinCE.
-D 2012-03-30T16:44:33.303
+C Do\smore\saggressive\soptimization\sof\sthe\sAND\soperator\swhere\sone\sside\sor\sthe\nother\sis\salways\sfalse.
+D 2012-03-31T02:34:35.585
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -135,7 +135,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c a9c26822515f81ec21588cbb482ca6724be02e33
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c 4c20ea4f6213b3bc1c6a510586864b679946e05e
-F src/expr.c 7e40ea9f6899e31134be3c1b88b8347cf9ec40d7
+F src/expr.c ebb0e2b21379d4ec0c5c2c7c952784cb300c8436
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 657212460bf5cfd3ae607d12ea62092844c227b5
 F src/func.c c6b3c94320253a35bda43fb69cc292618e3285d6
@@ -515,7 +515,7 @@ F test/fuzzer1.test 69cf1036b92fd3b8e1fd65bef4d7ee3f085c28fb
 F test/fuzzerfault.test ff2282c81797b6a355f0748d8b54c7287c5d2b25
 F test/hook.test 5f3749de6462a6b87b4209b74adf7df5ac2df639
 F test/icu.test 70df4faca133254c042d02ae342c0a141f2663f4
-F test/in.test a7b8a0f43da81cd08645b7a710099ffe9ad1126b
+F test/in.test 5941096407d8c133b9eff15bd3e666624b6cbde3
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
 F test/in4.test 64f3cc1acde1b9161ccdd8e5bde3daefdb5b2617
@@ -999,7 +999,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P b34491869c4fb31d2fdd14c94a7db2e1c0e572ba
-R 7c7c91e4f03aba786b8f3e6627280744
-U mistachkin
-Z 7d31e5badb9fd33ec4e58af382112a75
+P 196ca3a8b007b9f792e969893d981f6c5aa2fccc
+R d4cee1bded14d0c2a35aac2c2a8ea01d
+U drh
+Z c8013359e2c16f7dbb75906fb62e335f
