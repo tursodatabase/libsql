@@ -1019,14 +1019,18 @@ struct FuncDestructor {
 };
 
 /*
-** Possible values for FuncDef.flags
+** Possible values for FuncDef.flags.  Note that the _LENGTH and _TYPEOF
+** values must correspond to OPFLAG_LENGTHARG and OPFLAG_TYPEOFARG.  There
+** are assert() statements in the code to verify this.
 */
 #define SQLITE_FUNC_LIKE     0x01 /* Candidate for the LIKE optimization */
 #define SQLITE_FUNC_CASE     0x02 /* Case-sensitive LIKE-type function */
 #define SQLITE_FUNC_EPHEM    0x04 /* Ephemeral.  Delete with VDBE */
 #define SQLITE_FUNC_NEEDCOLL 0x08 /* sqlite3GetFuncCollSeq() might be called */
-#define SQLITE_FUNC_COUNT    0x20 /* Built-in count(*) aggregate */
-#define SQLITE_FUNC_COALESCE 0x40 /* Built-in coalesce() or ifnull() function */
+#define SQLITE_FUNC_COUNT    0x10 /* Built-in count(*) aggregate */
+#define SQLITE_FUNC_COALESCE 0x20 /* Built-in coalesce() or ifnull() function */
+#define SQLITE_FUNC_LENGTH   0x40 /* Built-in length() function */
+#define SQLITE_FUNC_TYPEOF   0x80 /* Built-in typeof() function */
 
 /*
 ** The following three macros, FUNCTION(), LIKEFUNC() and AGGREGATE() are
@@ -1054,7 +1058,10 @@ struct FuncDestructor {
 **     parameter.
 */
 #define FUNCTION(zName, nArg, iArg, bNC, xFunc) \
-  {nArg, SQLITE_UTF8, bNC*SQLITE_FUNC_NEEDCOLL, \
+  {nArg, SQLITE_UTF8, (bNC*SQLITE_FUNC_NEEDCOLL), \
+   SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, #zName, 0, 0}
+#define FUNCTION2(zName, nArg, iArg, bNC, xFunc, extraFlags) \
+  {nArg, SQLITE_UTF8, (bNC*SQLITE_FUNC_NEEDCOLL)|extraFlags, \
    SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, #zName, 0, 0}
 #define STR_FUNCTION(zName, nArg, pArg, bNC, xFunc) \
   {nArg, SQLITE_UTF8, bNC*SQLITE_FUNC_NEEDCOLL, \
@@ -1284,7 +1291,7 @@ struct Table {
   FKey *pFKey;         /* Linked list of all foreign keys in this table */
   char *zColAff;       /* String defining the affinity of each column */
 #ifndef SQLITE_OMIT_CHECK
-  Expr *pCheck;        /* The AND of all CHECK constraints */
+  ExprList *pCheck;    /* All CHECK constraints */
 #endif
 #ifndef SQLITE_OMIT_ALTERTABLE
   int addColOffset;    /* Offset in CREATE TABLE stmt to add a new column */
@@ -1677,6 +1684,7 @@ struct Expr {
   i16 iRightJoinTable;   /* If EP_FromJoin, the right table of the join */
   u8 flags2;             /* Second set of flags.  EP2_... */
   u8 op2;                /* If a TK_REGISTER, the original value of Expr.op */
+                         /* If TK_COLUMN, the value of p5 for OP_Column */
   AggInfo *pAggInfo;     /* Used by TK_AGG_COLUMN and TK_AGG_FUNCTION */
   Table *pTab;           /* Table for TK_COLUMN expressions. */
 #if SQLITE_MAX_EXPR_DEPTH>0
@@ -1699,7 +1707,7 @@ struct Expr {
 #define EP_FixedDest  0x0200  /* Result needed in a specific register */
 #define EP_IntValue   0x0400  /* Integer value contained in u.iValue */
 #define EP_xIsSelect  0x0800  /* x.pSelect is valid (otherwise x.pList is) */
-#define EP_Hint       0x1000  /* Optimizer hint. Not required for correctness */
+#define EP_Hint       0x1000  /* Not used */
 #define EP_Reduced    0x2000  /* Expr struct is EXPR_REDUCEDSIZE bytes only */
 #define EP_TokenOnly  0x4000  /* Expr struct is EXPR_TOKENONLYSIZE bytes only */
 #define EP_Static     0x8000  /* Held in memory not obtained from malloc() */
@@ -2218,6 +2226,7 @@ struct Parse {
   int regRowid;        /* Register holding rowid of CREATE TABLE entry */
   int regRoot;         /* Register holding root page number for new objects */
   int nMaxArg;         /* Max args passed to user function by sub-program */
+  Token constraintName;/* Name of the constraint currently being parsed */
 #ifndef SQLITE_OMIT_SHARED_CACHE
   int nTableLock;        /* Number of locks in aTableLock */
   TableLock *aTableLock; /* Required table locks for shared-cache mode */
@@ -2286,7 +2295,7 @@ struct AuthContext {
 };
 
 /*
-** Bitfield flags for P5 value in OP_Insert and OP_Delete
+** Bitfield flags for P5 value in various opcodes.
 */
 #define OPFLAG_NCHANGE       0x01    /* Set to update db->nChange */
 #define OPFLAG_LASTROWID     0x02    /* Set to update db->lastRowid */
@@ -2294,6 +2303,8 @@ struct AuthContext {
 #define OPFLAG_APPEND        0x08    /* This is likely to be an append */
 #define OPFLAG_USESEEKRESULT 0x10    /* Try to avoid a seek in BtreeInsert() */
 #define OPFLAG_CLEARCACHE    0x20    /* Clear pseudo-table cache in OP_Column */
+#define OPFLAG_LENGTHARG     0x40    /* OP_Column only used for length() */
+#define OPFLAG_TYPEOFARG     0x80    /* OP_Column only used for typeof() */
 
 /*
  * Each trigger present in the database schema is stored as an instance of
@@ -2777,7 +2788,7 @@ void sqlite3DeleteFrom(Parse*, SrcList*, Expr*);
 void sqlite3Update(Parse*, SrcList*, ExprList*, Expr*, int);
 WhereInfo *sqlite3WhereBegin(Parse*, SrcList*, Expr*, ExprList**,ExprList*,u16);
 void sqlite3WhereEnd(WhereInfo*);
-int sqlite3ExprCodeGetColumn(Parse*, Table*, int, int, int);
+int sqlite3ExprCodeGetColumn(Parse*, Table*, int, int, int, u8);
 void sqlite3ExprCodeGetColumnOfTable(Vdbe*, Table*, int, int, int);
 void sqlite3ExprCodeMove(Parse*, int, int, int);
 void sqlite3ExprCodeCopy(Parse*, int, int, int);

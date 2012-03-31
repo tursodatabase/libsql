@@ -50,7 +50,7 @@ proc do_insert_tests {args} {
   uplevel do_select_tests $args
 }
 
-# EVIDENCE-OF: R-55375-41353 -- syntax diagram insert-stmt
+# EVIDENCE-OF: R-21350-31508 -- syntax diagram insert-stmt
 #
 do_insert_tests e_insert-0 {
      1  "INSERT             INTO a1 DEFAULT VALUES"                   {}
@@ -123,6 +123,20 @@ do_insert_tests e_insert-0 {
     68  "INSERT OR IGNORE   INTO a1      (b, a) SELECT c, b FROM a2"  {}
     69  "REPLACE            INTO a1      (b, a) SELECT c, b FROM a2"  {}
     70  "REPLACE            INTO main.a1 (b, a) SELECT c, b FROM a2"  {}
+    71  "INSERT             INTO a1      (b, a) VALUES(1, 2),(3,4)"   {}
+    72  "INSERT             INTO main.a1 (b, a) VALUES(1, 2),(3,4)"   {}
+    73  "INSERT OR ROLLBACK INTO main.a1 (b, a) VALUES(1, 2),(3,4)"   {}
+    74  "INSERT OR ROLLBACK INTO a1      (b, a) VALUES(1, 2),(3,4)"   {}
+    75  "INSERT OR ABORT    INTO main.a1 (b, a) VALUES(1, 2),(3,4)"   {}
+    76  "INSERT OR ABORT    INTO a1      (b, a) VALUES(1, 2),(3,4)"   {}
+    77  "INSERT OR REPLACE  INTO main.a1 (b, a) VALUES(1, 2),(3,4)"   {}
+    78  "INSERT OR REPLACE  INTO a1      (b, a) VALUES(1, 2),(3,4)"   {}
+    79  "INSERT OR FAIL     INTO main.a1 (b, a) VALUES(1, 2),(3,4)"   {}
+    80  "INSERT OR FAIL     INTO a1      (b, a) VALUES(1, 2),(3,4)"   {}
+    81  "INSERT OR FAIL     INTO main.a1 (b, a) VALUES(1, 2),(3,4)"   {}
+    82  "INSERT OR IGNORE   INTO a1      (b, a) VALUES(1, 2),(3,4)"   {}
+    83  "REPLACE            INTO a1      (b, a) VALUES(1, 2),(3,4)"   {}
+    84  "REPLACE            INTO main.a1 (b, a) VALUES(1, 2),(3,4)"   {}
 }
 
 delete_all_data

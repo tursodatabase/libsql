@@ -3263,7 +3263,7 @@ static int test_bind_text16(
   char *value;
   int rc;
 
-  void (*xDel)() = (objc==6?SQLITE_STATIC:SQLITE_TRANSIENT);
+  void (*xDel)(void*) = (objc==6?SQLITE_STATIC:SQLITE_TRANSIENT);
   Tcl_Obj *oStmt    = objv[objc-4];
   Tcl_Obj *oN       = objv[objc-3];
   Tcl_Obj *oString  = objv[objc-2];
@@ -3629,7 +3629,7 @@ static int test_prepare(
     if( bytes>=0 ){
       bytes = bytes - (zTail-zSql);
     }
-    if( strlen(zTail)<bytes ){
+    if( (int)strlen(zTail)<bytes ){
       bytes = strlen(zTail);
     }
     Tcl_ObjSetVar2(interp, objv[4], 0, Tcl_NewStringObj(zTail, bytes), 0);
@@ -6004,6 +6004,7 @@ struct win32FileLocker {
 
 
 #if SQLITE_OS_WIN
+#include <process.h>
 /*
 ** The background thread that does file locking.
 */
@@ -6317,7 +6318,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #endif
 #ifdef SQLITE_ENABLE_COLUMN_METADATA
 {"sqlite3_column_database_name16",
-  test_stmt_utf16, sqlite3_column_database_name16},
+  test_stmt_utf16, (void*)sqlite3_column_database_name16},
 {"sqlite3_column_table_name16", test_stmt_utf16, (void*)sqlite3_column_table_name16},
 {"sqlite3_column_origin_name16", test_stmt_utf16, (void*)sqlite3_column_origin_name16},
 #endif

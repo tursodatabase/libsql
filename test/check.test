@@ -117,9 +117,9 @@ do_test check-1.17 {
 do_test check-2.1 {
   execsql {
     CREATE TABLE t2(
-      x INTEGER CHECK( typeof(coalesce(x,0))=="integer" ),
-      y REAL CHECK( typeof(coalesce(y,0.1))=='real' ),
-      z TEXT CHECK( typeof(coalesce(z,''))=='text' )
+      x INTEGER CONSTRAINT one CHECK( typeof(coalesce(x,0))=="integer" ),
+      y REAL CONSTRAINT two CHECK( typeof(coalesce(y,0.1))=='real' ),
+      z TEXT CONSTRAINT three CHECK( typeof(coalesce(z,''))=='text' )
     );
   }
 } {}
@@ -141,17 +141,17 @@ do_test check-2.4 {
   catchsql {
     INSERT INTO t2 VALUES(1.1, NULL, NULL);
   }
-} {1 {constraint failed}}
+} {1 {constraint one failed}}
 do_test check-2.5 {
   catchsql {
     INSERT INTO t2 VALUES(NULL, 5, NULL);
   }
-} {1 {constraint failed}}
+} {1 {constraint two failed}}
 do_test check-2.6 {
   catchsql {
     INSERT INTO t2 VALUES(NULL, NULL, 3.14159);
   }
-} {1 {constraint failed}}
+} {1 {constraint three failed}}
 
 ifcapable subquery {
   do_test check-3.1 {

@@ -529,7 +529,7 @@ static int multiplexOpen(
     pGroup->bEnabled = -1;
     pGroup->bTruncate = sqlite3_uri_boolean(zUri, "truncate", 
                                    (flags & SQLITE_OPEN_MAIN_DB)==0);
-    pGroup->szChunk = sqlite3_uri_int64(zUri, "chunksize",
+    pGroup->szChunk = (int)sqlite3_uri_int64(zUri, "chunksize",
                                         SQLITE_MULTIPLEX_CHUNK_SIZE);
     pGroup->szChunk = (pGroup->szChunk+0xffff)&~0xffff;
     if( zName ){
@@ -597,7 +597,7 @@ static int multiplexOpen(
           bExists = multiplexSubSize(pGroup, 1, &rc)>0;
           if( rc==SQLITE_OK && bExists  && sz==(sz&0xffff0000) && sz>0
               && sz!=pGroup->szChunk ){
-            pGroup->szChunk = sz;
+            pGroup->szChunk = (int)sz;
           }else if( rc==SQLITE_OK && !bExists && sz>pGroup->szChunk ){
             pGroup->bEnabled = 0;
           }

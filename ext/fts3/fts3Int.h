@@ -67,6 +67,9 @@ extern const sqlite3_api_routines *sqlite3_api;
 #ifndef MIN
 # define MIN(x,y) ((x)<(y)?(x):(y))
 #endif
+#ifndef MAX
+# define MAX(x,y) ((x)>(y)?(x):(y))
+#endif
 
 /*
 ** Maximum length of a varint encoded integer. The varint format is different
@@ -121,7 +124,7 @@ extern const sqlite3_api_routines *sqlite3_api;
 # define NEVER(X)  (0)
 #else
 # define ALWAYS(x) (x)
-# define NEVER(X)  (x)
+# define NEVER(x)  (x)
 #endif
 
 /*
@@ -131,6 +134,7 @@ typedef unsigned char u8;         /* 1-byte (or larger) unsigned integer */
 typedef short int i16;            /* 2-byte (or larger) signed integer */
 typedef unsigned int u32;         /* 4-byte unsigned integer */
 typedef sqlite3_uint64 u64;       /* 8-byte unsigned integer */
+typedef sqlite3_int64 i64;        /* 8-byte signed integer */
 
 /*
 ** Macro used to suppress compiler warnings for unused parameters.
@@ -193,36 +197,43 @@ struct Fts3Table {
   sqlite3_tokenizer *pTokenizer;  /* tokenizer for inserts and queries */
   char *zContentTbl;              /* content=xxx option, or NULL */
   char *zLanguageid;              /* languageid=xxx option, or NULL */
+  u8 bAutoincrmerge;              /* True if automerge=1 */
+  u32 nLeafAdd;                   /* Number of leaf blocks added this trans */
 
   /* Precompiled statements used by the implementation. Each of these 
   ** statements is run and reset within a single virtual table API call. 
   */
-  sqlite3_stmt *aStmt[28];
+  sqlite3_stmt *aStmt[37];
 
   char *zReadExprlist;
   char *zWriteExprlist;
 
   int nNodeSize;                  /* Soft limit for node size */
+  u8 bFts4;                       /* True for FTS4, false for FTS3 */
   u8 bHasStat;                    /* True if %_stat table exists */
   u8 bHasDocsize;                 /* True if %_docsize table exists */
   u8 bDescIdx;                    /* True if doclists are in reverse order */
+  u8 bIgnoreSavepoint;            /* True to ignore xSavepoint invocations */
   int nPgsz;                      /* Page size for host database */
   char *zSegmentsTbl;             /* Name of %_segments table */
   sqlite3_blob *pSegments;        /* Blob handle open on %_segments table */
 
-  /* TODO: Fix the first paragraph of this comment.
-  **
+  /* 
   ** The following array of hash tables is used to buffer pending index 
-  ** updates during transactions. Variable nPendingData estimates the memory 
-  ** size of the pending data, including hash table overhead, not including
-  ** malloc overhead.  When nPendingData exceeds nMaxPendingData, the buffer 
-  ** is flushed automatically. Variable iPrevDocid is the docid of the most 
-  ** recently inserted record.
+  ** updates during transactions. All pending updates buffered at any one
+  ** time must share a common language-id (see the FTS4 langid= feature).
+  ** The current language id is stored in variable iPrevLangid.
   **
   ** A single FTS4 table may have multiple full-text indexes. For each index
   ** there is an entry in the aIndex[] array. Index 0 is an index of all the
   ** terms that appear in the document set. Each subsequent index in aIndex[]
   ** is an index of prefixes of a specific length.
+  **
+  ** Variable nPendingData contains an estimate the memory consumed by the 
+  ** pending data structures, including hash table overhead, but not including
+  ** malloc overhead.  When nPendingData exceeds nMaxPendingData, all hash
+  ** tables are flushed to disk. Variable iPrevDocid is the docid of the most 
+  ** recently inserted record.
   */
   int nIndex;                     /* Size of aIndex[] */
   struct Fts3Index {
@@ -421,6 +432,7 @@ int sqlite3Fts3DeferToken(Fts3Cursor *, Fts3PhraseToken *, int);
 int sqlite3Fts3CacheDeferredDoclists(Fts3Cursor *);
 void sqlite3Fts3FreeDeferredDoclists(Fts3Cursor *);
 void sqlite3Fts3SegmentsClose(Fts3Table *);
+int sqlite3Fts3MaxLevel(Fts3Table *, int *);
 
 /* Special values interpreted by sqlite3SegReaderCursor() */
 #define FTS3_SEGCURSOR_PENDING        -1
@@ -472,6 +484,8 @@ struct Fts3MultiSegReader {
   int nDoclist;                   /* Size of aDoclist[] in bytes */
 };
 
+int sqlite3Fts3Incrmerge(Fts3Table*,int,int);
+
 /* fts3.c */
 int sqlite3Fts3PutVarint(char *, sqlite3_int64);
 int sqlite3Fts3GetVarint(const char *, sqlite_int64 *);
@@ -481,6 +495,7 @@ void sqlite3Fts3Dequote(char *);
 void sqlite3Fts3DoclistPrev(int,char*,int,char**,sqlite3_int64*,int*,u8*);
 int sqlite3Fts3EvalPhraseStats(Fts3Cursor *, Fts3Expr *, u32 *);
 int sqlite3Fts3FirstFilter(sqlite3_int64, char *, int, char *);
+void sqlite3Fts3CreateStatTable(int*, Fts3Table*);
 
 /* fts3_tokenizer.c */
 const char *sqlite3Fts3NextToken(const char *, int *);

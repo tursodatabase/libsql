@@ -27,36 +27,12 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 source $testdir/malloc_common.tcl
+source $testdir/bc_common.tcl
 db close
 
-# Search for binaries to test against. Any executable files that match
-# our naming convention are assumed to be testfixture binaries to test
-# against.
-#
-set binaries [list]
-set pattern "[file tail [info nameofexec]]?*"
-if {$tcl_platform(platform)=="windows"} {
-  set pattern [string map {\.exe {}} $pattern]
-}
-foreach file [glob -nocomplain $pattern] {
-  if {[file executable $file] && [file isfile $file]} {lappend binaries $file}
-}
-if {[llength $binaries]==0} {
-  puts "WARNING: No historical binaries to test against."
-  puts "WARNING: No backwards-compatibility tests have been run."
+if {"" == [bc_find_binaries backcompat.test]} {
   finish_test
   return
-}
-proc get_version {binary} {
-  set chan [launch_testfixture $binary]
-  set v [testfixture $chan { sqlite3 -version }]
-  close $chan
-  set v
-}
-foreach bin $binaries {
-  puts -nonewline "Testing against $bin - "
-  flush stdout
-  puts "version [get_version $bin]"
 }
 
 proc do_backcompat_test {rv bin1 bin2 script} {
@@ -93,7 +69,7 @@ proc do_backcompat_test {rv bin1 bin2 script} {
 array set ::incompatible [list]
 proc do_allbackcompat_test {script} {
 
-  foreach bin $::binaries {
+  foreach bin $::BC(binaries) {
     set nErr [set_test_counter errors]
     foreach dir {0 1} {
 
