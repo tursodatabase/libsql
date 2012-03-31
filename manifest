@@ -1,5 +1,5 @@
-C Test\scases\sfor\sRELEASE\sand\sROLLBACK\sTO\sof\sa\snested\ssavepoint\swhile\squeries\nare\spending.
-D 2012-03-31T17:50:12.845
+C Fix\sa\scompiler\swarning\sby\sremoving\sa\sredundant\svariable.
+D 2012-03-31T19:12:23.626
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -143,7 +143,7 @@ F src/global.c 4cfdca5cb0edd33c4d021baec4ede958cb2c793b
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 93eb9542ae1376d9317a7c8335d7e379f010aa76
+F src/insert.c 0bbffe75c254c62a5686ab5e7f88e29235e16174
 F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
@@ -1000,7 +1000,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 79a4a3a84f0b367d54da5e69e64ffca474264717
-R 5586a2611754af43053579b114e3a967
+P d2bf0efa7da59448a62f5be795403be4e5b7fb7f
+R eb9cf6d41e33e7a95085e4fba3205ff0
 U drh
-Z a414f1804c098ddade6c474c97e8199c
+Z 4e3dd4b5d13ad4c124b7a657b2e6b48c
