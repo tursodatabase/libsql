@@ -19,10 +19,7 @@ source $testdir/malloc_common.tcl
 source $testdir/lock_common.tcl
 
 ifcapable !wal {finish_test ; return }
-if { ![wal_is_ok] } {
-  finish_test 
-  return 
-}
+if ![wal_is_ok] { finish_test; return }
 
 #-------------------------------------------------------------------------
 # This test case, walfault-1-*, simulates faults while executing a

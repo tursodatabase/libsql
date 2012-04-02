@@ -5068,6 +5068,16 @@ static int file_control_lasterrno_test(
 /* From sqlite3_priavet.h */
 # ifndef SQLITE_TRUNCATE_DATABASE
 # define SQLITE_TRUNCATE_DATABASE      101
+# define SQLITE_TRUNCATE_JOURNALMODE_WAL           (0x1<<0)
+# define SQLITE_TRUNCATE_AUTOVACUUM_MASK           (0x3<<2)
+# define SQLITE_TRUNCATE_AUTOVACUUM_OFF            (0x1<<2)
+# define SQLITE_TRUNCATE_AUTOVACUUM_FULL           (0x2<<2)
+# define SQLITE_TRUNCATE_AUTOVACUUM_INCREMENTAL    (0x3<<2)
+# define SQLITE_TRUNCATE_PAGESIZE_MASK             (0x7<<4)
+# define SQLITE_TRUNCATE_PAGESIZE_1024             (0x1<<4)
+# define SQLITE_TRUNCATE_PAGESIZE_2048             (0x2<<4)
+# define SQLITE_TRUNCATE_PAGESIZE_4096             (0x3<<4)
+# define SQLITE_TRUNCATE_PAGESIZE_8192             (0x4<<4)
 # endif
 # ifndef SQLITE_REPLACE_DATABASE
 # define SQLITE_REPLACE_DATABASE       102

@@ -28,10 +28,7 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 ifcapable !wal {finish_test ; return }
-if { ![wal_is_ok] } {
-  finish_test 
-  return 
-}
+if ![wal_is_ok] { finish_test; return }
 
 db close
 

@@ -22,6 +22,7 @@ source $testdir/wal_common.tcl
 set testprefix wal2
 
 ifcapable !wal {finish_test ; return }
+if ![wal_is_ok] {finish_test ; return }
 
 set sqlite_sync_count 0
 proc cond_incr_sync_count {adj} {
@@ -68,6 +69,13 @@ proc incr_tvfs_hdr {file idx incrval} {
   incr v $incrval
   lset ints $idx $v
   set_tvfs_hdr $file $ints
+}
+
+set shmpath test.db-shm
+if {[forced_proxy_locking]} {
+  sqlite3 db test.db
+  set shmpath [execsql { pragma lock_proxy_file }]-shm
+  db close
 }
 
 
@@ -942,6 +950,9 @@ do_test wal2-10.1.1 {
     INSERT INTO t1 VALUES(1, 2);
     INSERT INTO t1 VALUES(3, 4);
   }
+  if {[forced_proxy_locking]} {
+    forcecopy $shmpath sv_test.db-shm
+  }
   faultsim_save_and_close
 } {}
 do_test wal2-10.1.2 {
@@ -1041,6 +1052,11 @@ tvfs delete
 # file itself. Test this.
 #
 if {$::tcl_platform(platform) == "unix"} {
+  if {[forced_proxy_locking]} {
+    # faultsim_delete_and_reopen doesn't know about the shm file redirect...
+    forcedelete $shmpath
+  }
+  
   faultsim_delete_and_reopen
   # Changed on 2012-02-13: umask is deliberately ignored for -wal files.
   #set umask [exec /bin/sh -c umask]
@@ -1054,7 +1070,7 @@ if {$::tcl_platform(platform) == "unix"} {
       PRAGMA journal_mode = WAL;
     }
     db close
-    list [file exists test.db-wal] [file exists test.db-shm]
+    list [file exists test.db-wal] [file exists $shmpath]
   } {0 0}
   
   foreach {tn permissions} {
@@ -1069,19 +1085,19 @@ if {$::tcl_platform(platform) == "unix"} {
       file attributes test.db -permissions
     } $permissions
     do_test wal2-12.2.$tn.2 {
-      list [file exists test.db-wal] [file exists test.db-shm]
+      list [file exists test.db-wal] [file exists $shmpath]
     } {0 0}
     do_test wal2-12.2.$tn.3 {
       sqlite3 db test.db
       execsql { INSERT INTO tx DEFAULT VALUES }
-      list [file exists test.db-wal] [file exists test.db-shm]
+      list [file exists test.db-wal] [file exists $shmpath]
     } {1 1}
     do_test wal2-12.2.$tn.4 {
-      list [file attr test.db-wal -perm] [file attr test.db-shm -perm]
+      list [file attr test.db-wal -perm] [file attr $shmpath -perm]
     } [list $effective $effective]
     do_test wal2-12.2.$tn.5 {
       db close
-      list [file exists test.db-wal] [file exists test.db-shm]
+      list [file exists test.db-wal] [file exists $shmpath]
     } {0 0}
   }
 }
@@ -1094,7 +1110,7 @@ if {$::tcl_platform(platform) == "unix"} {
 if {$::tcl_platform(platform) == "unix"} {
   proc perm {} {
     set L [list]
-    foreach f {test.db test.db-wal test.db-shm} {
+    foreach f {test.db test.db-wal $shmpath} {
       if {[file exists $f]} {
         lappend L [file attr $f -perm]
       } else {
@@ -1104,6 +1120,10 @@ if {$::tcl_platform(platform) == "unix"} {
     set L
   }
 
+  if {[forced_proxy_locking]} {
+    # faultsim_delete_and_reopen doesn't know about the shm file redirect...
+    forcedelete $shmpath
+  }
   faultsim_delete_and_reopen
   execsql {
     PRAGMA journal_mode = WAL;
@@ -1112,8 +1132,11 @@ if {$::tcl_platform(platform) == "unix"} {
     INSERT INTO t1 VALUES('3.14', '2.72');
   }
   do_test wal2-13.1.1 {
-    list [file exists test.db-shm] [file exists test.db-wal]
+    list [file exists $shmpath] [file exists test.db-wal]
   } {1 1}
+  if {[forced_proxy_locking]} {
+    forcecopy $shmpath proxysv_test.db-shm 
+  }
   faultsim_save_and_close
 
   foreach {tn db_perm wal_perm shm_perm can_open can_read can_write} {
@@ -1127,14 +1150,17 @@ if {$::tcl_platform(platform) == "unix"} {
     9   00000   00644   00644   0   0   0
   } {
     faultsim_restore
+    if {[forced_proxy_locking]} {
+      forcecopy proxysv_test.db-shm $shmpath  
+    }
     do_test wal2-13.$tn.1 {
       file attr test.db     -perm $db_perm
       file attr test.db-wal -perm $wal_perm
-      file attr test.db-shm -perm $shm_perm
+      file attr $shmpath -perm $shm_perm
 
       set     L [file attr test.db -perm]
       lappend L [file attr test.db-wal -perm]
-      lappend L [file attr test.db-shm -perm]
+      lappend L [file attr $shmpath -perm]
     } [list $db_perm $wal_perm $shm_perm]
 
     # If $can_open is true, then it should be possible to open a database
@@ -1180,10 +1206,10 @@ if {$::tcl_platform(platform) == "unix"} {
 #-------------------------------------------------------------------------
 # Test that "PRAGMA checkpoint_fullsync" appears to be working.
 #
-foreach {tn sql reslist} {
-  1 { }                                 {10 0 4 0 6 0}
-  2 { PRAGMA checkpoint_fullfsync = 1 } {10 4 4 2 6 2}
-  3 { PRAGMA checkpoint_fullfsync = 0 } {10 0 4 0 6 0}
+foreach {tn sql reslist altreslist} {
+  1 { }                                 {10 0 4 0 6 0} {7 4 3 2 3 2}
+  2 { PRAGMA checkpoint_fullfsync = 1 } {10 4 4 2 6 2} {7 4 3 2 3 2}
+  3 { PRAGMA checkpoint_fullfsync = 0 } {10 0 4 0 6 0} {7 0 3 0 3 0}
 } {
   faultsim_delete_and_reopen
 
@@ -1194,6 +1220,11 @@ foreach {tn sql reslist} {
 
   set sqlite_sync_count 0
   set sqlite_fullsync_count 0
+
+  set useres $reslist
+  if $::sqlite_options(default_wal_safetylevel) {
+    set useres $altreslist
+  }
 
   do_execsql_test wal2-14.$tn.2 {
     PRAGMA wal_autocheckpoint = 10;
@@ -1210,7 +1241,7 @@ foreach {tn sql reslist} {
   do_test wal2-14.$tn.3 {
     cond_incr_sync_count 1
     list $sqlite_sync_count $sqlite_fullsync_count
-  } [lrange $reslist 0 1]
+  } [lrange $useres 0 1]
 
   set sqlite_sync_count 0
   set sqlite_fullsync_count 0
@@ -1218,7 +1249,7 @@ foreach {tn sql reslist} {
   do_test wal2-14.$tn.4 {
     execsql { INSERT INTO t1 VALUES(7, zeroblob(12*4096)) }
     list $sqlite_sync_count $sqlite_fullsync_count
-  } [lrange $reslist 2 3]
+  } [lrange $useres 2 3]
 
   set sqlite_sync_count 0
   set sqlite_fullsync_count 0
@@ -1230,7 +1261,7 @@ foreach {tn sql reslist} {
     execsql { INSERT INTO t1 VALUES(13, 14) }
     db close
     list $sqlite_sync_count $sqlite_fullsync_count
-  } [lrange $reslist 4 5]
+  } [lrange $useres 4 5]
 }
 
 catch { db close }

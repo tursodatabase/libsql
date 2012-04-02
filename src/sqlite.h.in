@@ -833,9 +833,9 @@ struct sqlite3_io_methods {
 ** </ul>
 */
 #define SQLITE_FCNTL_LOCKSTATE               1
-#define SQLITE_GET_LOCKPROXYFILE             2
-#define SQLITE_SET_LOCKPROXYFILE             3
-#define SQLITE_LAST_ERRNO                    4
+#define SQLITE_FCNTL_GET_LOCKPROXYFILE       2
+#define SQLITE_FCNTL_SET_LOCKPROXYFILE       3
+#define SQLITE_FCNTL_LAST_ERRNO              4
 #define SQLITE_FCNTL_SIZE_HINT               5
 #define SQLITE_FCNTL_CHUNK_SIZE              6
 #define SQLITE_FCNTL_FILE_POINTER            7
@@ -846,6 +846,10 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_VFSNAME                12
 #define SQLITE_FCNTL_POWERSAFE_OVERWRITE    13
 #define SQLITE_FCNTL_PRAGMA                 14
+/* deprecated names */
+#define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE
+#define SQLITE_SET_LOCKPROXYFILE      SQLITE_FCNTL_SET_LOCKPROXYFILE
+#define SQLITE_LAST_ERRNO             SQLITE_FCNTL_LAST_ERRNO
 
 /*
 ** CAPI3REF: Mutex Handle

@@ -22,10 +22,7 @@ source $testdir/tester.tcl
 source $testdir/wal_common.tcl
 
 ifcapable !wal {finish_test ; return }
-if { ![wal_is_ok] } {
-  finish_test 
-  return 
-}
+if ![wal_is_ok] { finish_test; return }
 
 set ::wal_hook [list]
 proc wal_hook {zDb nEntry} {

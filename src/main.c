@@ -1850,6 +1850,7 @@ int sqlite3_limit(sqlite3 *db, int limitId, int newLimit){
   return oldLimit;                     /* IMP: R-53341-35419 */
 }
 #if defined(SQLITE_ENABLE_AUTO_PROFILE)
+/* stderr logging */
 void _sqlite_auto_profile(void *aux, const char *sql, u64 ns);
 void _sqlite_auto_trace(void *aux, const char *sql);
 void _sqlite_auto_profile(void *aux, const char *sql, u64 ns) {
@@ -1858,6 +1859,32 @@ void _sqlite_auto_profile(void *aux, const char *sql, u64 ns) {
 }
 void _sqlite_auto_trace(void *aux, const char *sql) {
 	fprintf(stderr, "TraceSQL(%p): %s\n", aux, sql);
+}
+
+/* syslog logging */
+#include <asl.h>
+static aslclient autolog_client = NULL;
+static void _close_asl_log() {
+  if( NULL!=autolog_client ){
+    asl_close(autolog_client);
+    autolog_client = NULL;
+  }
+}
+static void _open_asl_log() {
+  if( NULL==autolog_client ){
+    autolog_client = asl_open("SQLite", NULL, 0);
+    atexit(_close_asl_log);
+  }
+}
+
+void _sqlite_auto_profile_syslog(void *aux, const char *sql, u64 ns);
+void _sqlite_auto_trace_syslog(void *aux, const char *sql);
+void _sqlite_auto_profile_syslog(void *aux, const char *sql, u64 ns) {
+#pragma unused(aux)
+	asl_log(autolog_client, NULL, ASL_LEVEL_NOTICE, "Query: %s\n Execution Time: %llu ms\n", sql, ns / 1000000);
+}
+void _sqlite_auto_trace_syslog(void *aux, const char *sql) {
+	asl_log(autolog_client, NULL, ASL_LEVEL_NOTICE, "TraceSQL(%p): %s\n", aux, sql);
 }
 #endif
 
@@ -2090,6 +2117,57 @@ int sqlite3ParseUri(
   return rc;
 }
 
+#if defined(SQLITE_ENABLE_AUTO_PROFILE)
+#define SQLITE_AUTOLOGGING_STDERR 1
+#define SQLITE_AUTOLOGGING_SYSLOG 2
+static void enableAutoLogging(
+  sqlite3 *db
+){
+  char *envprofile = getenv("SQLITE_AUTO_PROFILE");
+  
+  if( envprofile!=NULL ){
+    int where = 0;
+    if( !strncasecmp("1", envprofile, 1) ){
+      if( isatty(STDERR_FILENO) ){
+        where = SQLITE_AUTOLOGGING_STDERR;
+      }else{
+        where = SQLITE_AUTOLOGGING_SYSLOG;
+      }
+    } else if( !strncasecmp("stderr", envprofile, 6) ){
+      where = SQLITE_AUTOLOGGING_STDERR;
+    } else if( !strncasecmp("syslog", envprofile, 6) ){
+      where = SQLITE_AUTOLOGGING_SYSLOG;
+    }
+    if( where==SQLITE_AUTOLOGGING_STDERR ){
+      sqlite3_profile(db, _sqlite_auto_profile, db);
+    }else if( where==SQLITE_AUTOLOGGING_SYSLOG ){
+      _open_asl_log();
+      sqlite3_profile(db, _sqlite_auto_profile_syslog, db);
+    }
+  }
+  char *envtrace = getenv("SQLITE_AUTO_TRACE");
+  if( envtrace!=NULL ){
+    int where = 0;
+    if( !strncasecmp("1", envtrace, 1) ){
+      if( isatty(STDERR_FILENO) ){
+        where = SQLITE_AUTOLOGGING_STDERR;
+      }else{
+        where = SQLITE_AUTOLOGGING_SYSLOG;
+      }
+    } else if( !strncasecmp("stderr", envtrace, 6) ){
+      where = SQLITE_AUTOLOGGING_STDERR;
+    } else if( !strncasecmp("syslog", envtrace, 6) ){
+      where = SQLITE_AUTOLOGGING_SYSLOG;
+    }
+    if( where==SQLITE_AUTOLOGGING_STDERR ){
+      sqlite3_trace(db, _sqlite_auto_trace, db);
+    }else if( where==SQLITE_AUTOLOGGING_SYSLOG ){
+      _open_asl_log();
+      sqlite3_trace(db, _sqlite_auto_trace_syslog, db);
+    }
+  }
+}
+#endif
 
 /*
 ** This routine does the work of opening a database on behalf of
@@ -2351,17 +2429,24 @@ opendb_out:
   }else if( rc!=SQLITE_OK ){
     db->magic = SQLITE_MAGIC_SICK;
   }
+#if defined(__APPLE__) && ENABLE_FORCE_WAL
+  if( db && !rc ){
+    if ((0 == access("/var/db/enableForceWAL", R_OK))) {
+#ifdef SQLITE_DEBUG
+      fprintf(stderr, "SQLite WAL journal_mode ENABLED by default.\n");
+#endif
+      
+      sqlite3_exec(db, "pragma journal_mode=wal", NULL, NULL, NULL);
+#ifdef SQLITE_DEBUG
+//    } else {
+//      fprintf(stderr, "SQLite WAL journal_mode NOT ENABLED by default.\n");
+#endif
+    }
+  }
+#endif
 #if defined(SQLITE_ENABLE_AUTO_PROFILE)
   if( db && !rc ){
-    char *envprofile = getenv("SQLITE_AUTO_PROFILE");
-    char *envtrace = getenv("SQLITE_AUTO_TRACE");
-    
-    if( envprofile!=NULL ){
-      sqlite3_profile(db, _sqlite_auto_profile, db);
-    }
-    if( envtrace!=NULL ){
-      sqlite3_trace(db, _sqlite_auto_trace, db);
-    }
+    enableAutoLogging(db);
   }
 #endif
   *ppDb = db;
@@ -3107,6 +3192,9 @@ int _sqlite3_lockstate(const char *path, pid_t pid){
     sqlite3_close(db);
     int state = lockstate.state;
     return state;
+  }
+  if( NULL!=db ){ 
+    sqlite3_close(db); /* need to close even if open returns an error */
   }
   return SQLITE_LOCKSTATE_ERROR;
 }

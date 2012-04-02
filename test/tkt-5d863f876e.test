@@ -18,6 +18,10 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 
+ifcapable !wal { finish_test; return }
+if ![wal_is_ok] { finish_test; return }
+
+
 do_multiclient_test tn {
   do_test $tn.1 {
     sql1 {

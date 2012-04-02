@@ -43,6 +43,11 @@ set testprefix superlock
 #        
 #
 
+if {[forced_proxy_locking]} {
+  finish_test 
+  return 
+}
+
 do_execsql_test 1.1 {
   CREATE TABLE t1(a, b);
   INSERT INTO t1 VALUES(1, 2);

@@ -146,6 +146,8 @@ ifcapable !wal {
   finish_test
   return
 }
+if ![wal_is_ok] { finish_test; return }
+
 db close
 forcedelete test.db
 do_test 8_3_names-5.0 {

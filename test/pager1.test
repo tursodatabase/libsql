@@ -1126,7 +1126,7 @@ do_execsql_test pager1-6.12 { PRAGMA max_page_count }      {11}
 #   $ws:  The expected size of the WAL file, in bytes, after executing
 #         the SQL script. Or -1 if the WAL is not expected to exist.
 #
-ifcapable wal {
+if {$::sqlite_options(wal) && [wal_is_ok]} {
   faultsim_delete_and_reopen
   foreach {tn sql res js ws} [subst {
   
@@ -1930,7 +1930,7 @@ do_test pager1-20.2.2 {
   }
 } {}
 
-ifcapable wal {
+if {$::sqlite_options(wal) && [wal_is_ok]} {
   do_test pager1-20.3.1 {
     faultsim_delete_and_reopen
     db func a_string a_string
@@ -1965,7 +1965,7 @@ ifcapable wal {
 #   pager1-21.1.*: The VFS has an iVersion less than 2, or
 #   pager1-21.2.*: The VFS does not provide xShmXXX() methods.
 #
-ifcapable wal {
+if {$::sqlite_options(wal) && [wal_is_ok]} {
   do_test pager1-21.0 {
     faultsim_delete_and_reopen
     execsql {
@@ -2274,7 +2274,7 @@ do_test pager1.27.1 {
 # the same database.
 #
 catch { db close }
-ifcapable wal {
+if {$::sqlite_options(wal) && [wal_is_ok]} {
   do_multiclient_test tn {
     do_test pager1-28.$tn.1 {
       sql1 { 

@@ -80,6 +80,7 @@ foreach {name f} $files {
     set mode wal
   }
   ifcapable !wal { set mode delete }
+  if ![wal_is_ok] { set mode delete }
   lappend L $mode
   append S "
     PRAGMA $name.journal_mode = WAL;

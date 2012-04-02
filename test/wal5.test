@@ -18,6 +18,7 @@ source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 source $testdir/wal_common.tcl
 ifcapable !wal {finish_test ; return }
+if ![wal_is_ok] { finish_test; return }
 
 set testprefix wal5
 

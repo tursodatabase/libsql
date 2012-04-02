@@ -16,10 +16,7 @@ source $testdir/lock_common.tcl
 source $testdir/wal_common.tcl
 
 ifcapable !wal {finish_test ; return }
-if { ![wal_is_ok] } {
-  finish_test 
-  return 
-}
+if ![wal_is_ok] { finish_test; return }
 
 # Read and return the contents of file $filename. Treat the content as
 # binary data.

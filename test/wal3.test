@@ -19,6 +19,7 @@ source $testdir/lock_common.tcl
 source $testdir/wal_common.tcl
 source $testdir/malloc_common.tcl
 ifcapable !wal {finish_test ; return }
+if ![wal_is_ok] {finish_test ; return }
 
 set a_string_counter 1
 proc a_string {n} {
@@ -194,19 +195,27 @@ catch {db close}
 # in WAL mode the xSync method is invoked as expected for each of
 # synchronous=off, synchronous=normal and synchronous=full.
 #
-foreach {tn syncmode synccount} {
+foreach {tn syncmode synccount altsynccount} {
   1 off     
+    {}
     {}
   2 normal  
     {test.db-wal normal test.db normal}
+    {test.db-wal full test.db full}
   3 full    
     {test.db-wal normal test.db-wal normal test.db-wal normal test.db normal}
+    {test.db-wal normal test.db-wal normal test.db-wal full test.db full}
 } {
 
   proc sync_counter {args} { 
     foreach {method filename id flags} $args break
     lappend ::syncs [file tail $filename] $flags
   }
+  set usecount $synccount
+  if $::sqlite_options(default_wal_safetylevel) {
+    set usecount $altsynccount
+  }
+
   do_test wal3-3.$tn {
     forcedelete test.db test.db-wal test.db-journal
   
@@ -228,7 +237,7 @@ foreach {tn syncmode synccount} {
     }
     T filter {}
     set ::syncs
-  } $synccount
+  } $usecount
 
   db close
   T delete

@@ -2652,6 +2652,10 @@ typedef struct WalWriter {
   sqlite3_int64 iSyncPoint;    /* Fsync at this offset */
   int syncFlags;               /* Flags for the fsync */
   int szPage;                  /* Size of one page */
+#if defined(SQLITE_WRITE_WALFRAME_PREBUFFERED)
+  void *aFrameBuf;             /* Frame buffer */
+  size_t szFrameBuf;           /* Size of frame buffer */
+#endif
 } WalWriter;
 
 /*
@@ -2695,17 +2699,32 @@ static int walWriteOneFrame(
 ){
   int rc;                         /* Result code from subfunctions */
   void *pData;                    /* Data actually written */
+#if defined(SQLITE_WRITE_WALFRAME_PREBUFFERED)
+  void *aFrame;
+
+  assert(sizeof(p->aFrameBuf) == (p->szPage + WAL_FRAME_HDRSIZE));
+  aFrame = p->aFrameBuf;
+#else
   u8 aFrame[WAL_FRAME_HDRSIZE];   /* Buffer to assemble frame-header in */
+#endif
+  
 #if defined(SQLITE_HAS_CODEC)
   if( (pData = sqlite3PagerCodec(pPage))==0 ) return SQLITE_NOMEM;
 #else
   pData = pPage->pData;
 #endif
+
   walEncodeFrame(p->pWal, pPage->pgno, nTruncate, pData, aFrame);
+  
+#if defined(SQLITE_WRITE_WALFRAME_PREBUFFERED)
+  memcpy(&aFrame[WAL_FRAME_HDRSIZE], pData, p->szPage);
+  rc = walWriteToLog(p, aFrame, (p->szPage + WAL_FRAME_HDRSIZE), iOffset);
+#else
   rc = walWriteToLog(p, aFrame, sizeof(aFrame), iOffset);
   if( rc ) return rc;
   /* Write the page data */
   rc = walWriteToLog(p, pData, p->szPage, iOffset+sizeof(aFrame));
+#endif
   return rc;
 }
 
@@ -2804,6 +2823,13 @@ int sqlite3WalFrames(
   w.szPage = szPage;
   iOffset = walFrameOffset(iFrame+1, szPage);
   szFrame = szPage + WAL_FRAME_HDRSIZE;
+#if defined(SQLITE_WRITE_WALFRAME_PREBUFFERED)
+  w.aFrameBuf = (void *)malloc(szFrame);
+  if( NULL==w.aFrameBuf ){
+    return SQLITE_NOMEM;
+  }
+#endif
+
 
   /* Write all frames into the log file exactly once */
   for(p=pList; p; p=p->pDirty){
@@ -2846,6 +2872,9 @@ int sqlite3WalFrames(
     }
   }
 
+#if defined(SQLITE_WRITE_WALFRAME_PREBUFFERED)
+  free(w.aFrameBuf);
+#endif
   /* If this frame set completes the first transaction in the WAL and
   ** if PRAGMA journal_size_limit is set, then truncate the WAL to the
   ** journal size limit, if possible.

@@ -21,10 +21,7 @@ source $testdir/malloc_common.tcl
 do_not_use_codec
 
 ifcapable !wal {finish_test ; return }
-if { ![wal_is_ok] } {
-  finish_test 
-  return 
-}
+if { ![wal_is_ok] } { finish_test ; return }
 
 
 # Test organization:

@@ -135,6 +135,8 @@ do_test incrvacuum2-3.2 {
 
 integrity_check incrvacuum2-3.3
 
+if ![wal_is_ok] { finish_test; return }
+
 ifcapable wal {
   # At one point, when a specific page was being extracted from the b-tree
   # free-list (e.g. during an incremental-vacuum), all trunk pages that
