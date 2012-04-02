@@ -31,7 +31,11 @@ typedef struct sqlite3_rtree_geometry sqlite3_rtree_geometry;
 int sqlite3_rtree_geometry_callback(
   sqlite3 *db,
   const char *zGeom,
-  int (*xGeom)(sqlite3_rtree_geometry *, int nCoord, double *aCoord, int *pRes),
+#ifdef SQLITE_RTREE_INT_ONLY
+  int (*xGeom)(sqlite3_rtree_geometry*, int n, sqlite3_int64 *a, int *pRes),
+#else
+  int (*xGeom)(sqlite3_rtree_geometry*, int n, double *a, int *pRes),
+#endif
   void *pContext
 );
 

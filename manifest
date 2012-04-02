@@ -1,5 +1,5 @@
-C Add\s#ifdefs\sto\sallow\sa\stest\sbuild\sto\ssucceed\seven\sif\sSQLITE_ENABLE_FTS3\sis\nnot\sdefined.
-D 2012-04-02T17:18:23.248
+C The\sSQLITE_RTREE_INT_ONLY\scompile-time\soption\scauses\sthe\sRTree\sextension\s\nto\suse\sonly\sinteger\smath\sand\sstore\sonly\sinteger\scoordinates.
+D 2012-04-02T21:35:42.939
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -86,22 +86,22 @@ F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c eb9ae1d79046bd7871aa97ee6da51eb770134b5a
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 4c1878818fc50efe5c2c7b8809d5cd0d88c7d396
+F ext/rtree/rtree.c 73502e5336162fdc8f5d1c4bdd4ec6b1299c2f2a
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
-F ext/rtree/rtree1.test 28e1b8da4da98093ce3210187434dd760a8d89d8
+F ext/rtree/rtree1.test e474a2b5eff231496dbd073fe67e5fbaf7f444c9
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
 F ext/rtree/rtree3.test a494da55c30ee0bc9b01a91c80c81b387b22d2dc
-F ext/rtree/rtree4.test 0061e6f464fd3dc6a79f82454c5a1c3dadbe42af
-F ext/rtree/rtree5.test ce3d7ccae2cfd9d2e1052b462424964c9bdcda12
-F ext/rtree/rtree6.test 0b380bd9af93f3bc496eef42502a336f58949c1b
-F ext/rtree/rtree7.test bcb647b42920b3b5d025846689147778485cc318
+F ext/rtree/rtree4.test c8fe384f60ebd49540a5fecc990041bf452eb6e0
+F ext/rtree/rtree5.test 9a229678a00f40e6aedb40cb3a07ec5444af892c
+F ext/rtree/rtree6.test f67ed7d362ab9a0d13dc2b3d34939e69e0829542
+F ext/rtree/rtree7.test 1fa710b9e6bf997a0c1a537b81be7bb6fded1971
 F ext/rtree/rtree8.test 9772e16da71e17e02bdebf0a5188590f289ab37d
-F ext/rtree/rtree9.test df9843d1a9195249c8d3b4ea6aedda2d5c73e9c2
+F ext/rtree/rtree9.test d86ebf08ff6328895613ed577dd8a2a37c472c34
 F ext/rtree/rtreeA.test ace05e729a36e342d40cf94e9efc7b4723d9dcdf
-F ext/rtree/rtreeB.test b1916a9cecb86b02529c4cc5a546e8d6e7ff10da
+F ext/rtree/rtreeB.test 983e567b49b5dca165940f66b87e161aa30e82b2
 F ext/rtree/rtree_perf.tcl 6c18c1f23cd48e0f948930c98dfdd37dfccb5195
 F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
-F ext/rtree/sqlite3rtree.h 1af0899c63a688e272d69d8e746f24e76f10a3f0
+F ext/rtree/sqlite3rtree.h c34c1e41d1ab80bb8ad09aae402c9c956871a765
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
@@ -203,7 +203,7 @@ F src/test_async.c 0612a752896fad42d55c3999a5122af10dcf22ad
 F src/test_autoext.c 30e7bd98ab6d70a62bb9ba572e4c7df347fe645e
 F src/test_backup.c c129c91127e9b46e335715ae2e75756e25ba27de
 F src/test_btree.c 47cd771250f09cdc6e12dda5bc71bc0b3abc96e2
-F src/test_config.c a036a69b550ebc477ab9ca2b37269201f888436e
+F src/test_config.c 0de329e736eb4aa5845069bed630e5c72f012264
 F src/test_demovfs.c 20a4975127993f4959890016ae9ce5535a880094
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_func.c 6232d722a4ddb193035aa13a03796bf57d6c12fd
@@ -223,7 +223,7 @@ F src/test_osinst.c 7f790ac89c5a585d51b341274d9691c3391e0923
 F src/test_pcache.c a5cd24730cb43c5b18629043314548c9169abb00
 F src/test_quota.c a545115f837da4ef32f6b5578f147b44cfb13fd7
 F src/test_quota.h 9ffa1d3ad6d0a6a24e8670ea64b909c717ec3358
-F src/test_rtree.c 6d06306e29946dc36f528a3a2cdc3add794656f1
+F src/test_rtree.c aba603c949766c4193f1068b91c787f57274e0d9
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
 F src/test_stat.c d7035cfcc0ff1f93c000b621f36524318e004e11
@@ -1000,7 +1000,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P af602d87736b52802a4e760ffeeaa28112b99d9a
-R 1de8fb5482810a4710e15863a31ff0ee
+P fb121980e48af368353431fd04924e414b65c852
+R 5f487522a2da2d1baf5cda41d792b333
 U drh
-Z 057914300e7aa29e2f4f5068087794b4
+Z f6050a33b89113e7c2cd85615563f7a3
