@@ -2702,7 +2702,6 @@ static int walWriteOneFrame(
 #if defined(SQLITE_WRITE_WALFRAME_PREBUFFERED)
   void *aFrame;
 
-  assert(sizeof(p->aFrameBuf) == (p->szPage + WAL_FRAME_HDRSIZE));
   aFrame = p->aFrameBuf;
 #else
   u8 aFrame[WAL_FRAME_HDRSIZE];   /* Buffer to assemble frame-header in */
