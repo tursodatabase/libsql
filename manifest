@@ -1,5 +1,5 @@
-C If\sthe\sSELECT\sthat\sfinds\sall\sroot\spages\sin\sthe\sshowdb\sfails,\sthen\sreport\nan\serror.
-D 2012-04-03T15:10:34.981
+C Rerun\sautoconf\sto\supdate\sthe\sconfigure\sscript\sfor\sversion\s3.7.12
+D 2012-04-03T17:01:36.071
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -23,7 +23,7 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 4ee31677412c454d0978a64872faf3ec36ff94ca x
+F configure eb9e5e7f4c1601b5acf674a724e1a778481d2835 x
 F configure.ac 9ee886c21c095b3272137b1553ae416c8b8c8557
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 3091574143dd3415669b6745843ff8d011d33549
@@ -1000,7 +1000,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 4b5737014c6f1638de9dc162463508ea7dfe333d
-R 84ab6304cfe006dbe7cfc59187764161
+P 4b16141501655faa23e7d34ad05570ea929abb7c
+R a3eb7ac55825b623c91bd4b43a16c073
 U drh
-Z d270e8613e5392cdea76e9c49f53ec67
+Z a16c1855861d082310638d4ebfce5b46
