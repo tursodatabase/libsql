@@ -654,6 +654,8 @@ static void page_usage_report(const char *zDbName){
       int pgno = sqlite3_column_int(pStmt, 2);
       page_usage_btree(pgno, 0, 0, sqlite3_column_text(pStmt, 1));
     }
+  }else{
+    printf("ERROR: cannot query database: %s\n", sqlite3_errmsg(db));
   }
   sqlite3_finalize(pStmt);
   sqlite3_close(db);

@@ -1,5 +1,5 @@
-C Enhance\sthe\s"showdb"\sutility\sprogram\swith\sthe\s"pgidx"\soption.\s\sNow\srequires\nlinkage\swith\sthe\samalgamation.
-D 2012-04-03T14:59:50.844
+C If\sthe\sSELECT\sthat\sfinds\sall\sroot\spages\sin\sthe\sshowdb\sfails,\sthen\sreport\nan\serror.
+D 2012-04-03T15:10:34.981
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -982,7 +982,7 @@ F tool/shell2.test 5dc76b8005b465f420fed8241621da7513060ff3
 F tool/shell3.test 4fad469e8003938426355afdf34155f08c587836
 F tool/shell4.test 35f9c3d452b4e76d5013c63e1fd07478a62f14ce
 F tool/shell5.test 0e987fb8d40638bb5c90163cb58cbe3e07dbed56
-F tool/showdb.c 9cdc45377f7512902232bdc18bd5119cc2512a1a
+F tool/showdb.c 2e28d8e499b016485672e9a7ac65dacc0d28ff69
 F tool/showjournal.c b62cecaab86a4053d944c276bb5232e4d17ece02
 F tool/showwal.c f09e5a80a293919290ec85a6a37c85a5ddcf37d9
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
@@ -1000,7 +1000,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 02b7640f5118e0a635b68f65765191bb3171b7bd
-R 4634bc5c716828f15113d298489e79da
+P 4b5737014c6f1638de9dc162463508ea7dfe333d
+R 84ab6304cfe006dbe7cfc59187764161
 U drh
-Z b9b2c57600f8181cc1cad22a91aba3cd
+Z d270e8613e5392cdea76e9c49f53ec67
