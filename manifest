@@ -1,5 +1,5 @@
-C Rerun\sautoconf\sto\supdate\sthe\sconfigure\sscript\sfor\sversion\s3.7.12
-D 2012-04-03T17:01:36.071
+C Fix\sa\stypo\sin\sthe\srtree6.test\sscript\sthat\sprevented\sit\sfrom\srunning.
+D 2012-04-03T17:05:16.797
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -93,7 +93,7 @@ F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
 F ext/rtree/rtree3.test a494da55c30ee0bc9b01a91c80c81b387b22d2dc
 F ext/rtree/rtree4.test c8fe384f60ebd49540a5fecc990041bf452eb6e0
 F ext/rtree/rtree5.test 9a229678a00f40e6aedb40cb3a07ec5444af892c
-F ext/rtree/rtree6.test f67ed7d362ab9a0d13dc2b3d34939e69e0829542
+F ext/rtree/rtree6.test 3ff9113b4a872fa935309e3511cd9b7cdb4d2472
 F ext/rtree/rtree7.test 1fa710b9e6bf997a0c1a537b81be7bb6fded1971
 F ext/rtree/rtree8.test 9772e16da71e17e02bdebf0a5188590f289ab37d
 F ext/rtree/rtree9.test d86ebf08ff6328895613ed577dd8a2a37c472c34
@@ -1000,7 +1000,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 4b16141501655faa23e7d34ad05570ea929abb7c
-R a3eb7ac55825b623c91bd4b43a16c073
+P 6d73eb20e825f51143a1b59ad33f44e6448ef760
+R 1bfa9697c3ee58e945b220e1f2e117e6
 U drh
-Z a16c1855861d082310638d4ebfce5b46
+Z 04df2a29417f5db40a26641a7a738bb8
