@@ -1,5 +1,5 @@
-C Modify\sthe\sintegrity-check\scode\sto\sreduce\sthe\ssize\sof\sthe\slarge\sallocation\sfrom\s4\sbytes\sto\s1\sbit\sfor\seach\spage\sin\sthe\sdatabase\sfile.
-D 2012-04-03T17:43:28.322
+C Modify\scapi3.test\sand\scapi3c.test\sso\sthat\sthey\swork\swith\sSQLITE_OMIT_AUTORESET\sbuilds.
+D 2012-04-03T18:33:43.337
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -316,9 +316,9 @@ F test/boundary4.test 89e02fa66397b8a325d5eb102b5806f961f8ec4b
 F test/busy.test 76b4887f8b9160ba903c1ac22e8ff406ad6ae2f0
 F test/cache.test f64136b0893c293d0b910ed057b3b711249099a7
 F test/capi2.test 835d4cee9f542ea50fa8d01f3fe6de80b0627360
-F test/capi3.test 9c8b58b6a6aeb14e69bd8c8c7721b47d640464d1
+F test/capi3.test 8dedb0050610e9ff95cd9d487beb0ce5f33a31ee
 F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
-F test/capi3c.test 1b5424d2ac57b7b443b5de5b9a287642c02279b6
+F test/capi3c.test 01f197d73f4d4d66316483662f475cab7ab5bd60
 F test/capi3d.test 17b57ca28be3e37e14c2ba8f787d292d84b724a1
 F test/capi3e.test f7408dda65c92b9056199fdc180f893015f83dde
 F test/cast.test 4c275cbdc8202d6f9c54a3596701719868ac7dc3
@@ -1000,7 +1000,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 221fe4a8ea5bea90031e459746ea71ff173e6f52
-R 32aad9893eefdebd852afcbce9893d62
+P fa3a498dfe9ed59c30da5eaa0d7cad167fd4e393
+R 93f41d5cd0dd5634edd499aa7b12c353
 U dan
-Z 24eef38a1ddea33d5b3c726c6b9516d2
+Z 6ebde95baa77d452c6bdb9a26f49bf26
