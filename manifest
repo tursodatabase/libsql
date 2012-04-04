@@ -1,5 +1,5 @@
-C In\sthe\smultiplexor\sextension,\simprove\sthe\serror\slogging\swhen\sa\schunk\sfails\nto\sopen.
-D 2012-04-04T13:43:13.686
+C Fix\sthe\smultiplexor\slogging\sso\sthat\sit\sworks\swith\sSQLITE_ENABLE_8_3_NAMES.
+D 2012-04-04T13:58:19.112
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -215,7 +215,7 @@ F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c b964473ff1b7a65626763f068fa6a810385d1fbf
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c 3f5903a1528fd32fe4c472a3bd0259128d8faaef
-F src/test_multiplex.c 151f66e79b4a7e2cf66e6149deace77b461e0360
+F src/test_multiplex.c 3dffd0fe6c96ac7c5150485b55244e73faab5380
 F src/test_multiplex.h e99c571bc4968b7a9363b661481f3934bfead61d
 F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 5e1382e7844c703c77c4c2aee82f8359555b5a8e
@@ -1000,7 +1000,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 0506bf86d31e821a905e3a8a03c4817e326f7f44
-R fbd3d19fe8454971555d508563f6c5ba
+P 781453c686656a7bd4a274a3b3204ceb6ecae8df
+R c73cb9ac19cc77c57d2e11c87f4932e5
 U drh
-Z a9ed2607a4279c682b012061bc35b79f
+Z d5193cf8e689933624e4e4454cffd3d6

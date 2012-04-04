@@ -329,7 +329,7 @@ static sqlite3_file *multiplexSubOpen(
   ** database may therefore not grow to larger than 400 chunks. Attempting
   ** to open chunk 401 indicates the database is full. */
   if( iChunk>=SQLITE_MULTIPLEX_JOURNAL_8_3_OFFSET ){
-    sqlite3_log(SQLITE_FULL, "multiplexed chunk overflow: %s", zName);
+    sqlite3_log(SQLITE_FULL, "multiplexed chunk overflow: %s", pGroup->zName);
     *rc = SQLITE_FULL;
     return 0;
   }
