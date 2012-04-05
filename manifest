@@ -1,5 +1,5 @@
-C Performance\simprovements\sfor\sthe\sRowSet\sobject\swhen\sit\sundergoes\smany\ncycles\sbetween\sRowSetInsert\sand\sRowSetTest.
-D 2012-04-05T01:37:32.902
+C Ignore\sthe\svalue\sof\sSQLITE_FCNTL_CHUNK_SIZE\sif\sit\sis\snegative.
+D 2012-04-05T20:04:39.277
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -167,7 +167,7 @@ F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 59beba555b65a450bd1d804220532971d4299f60
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 0e3d2942d228d0366fb80a3640f35caf413b66d1
+F src/os_unix.c 75eff7b41cdc9f319eb0c610c19fd9bb37093e5d
 F src/os_win.c 5e9e933a412ab35de2a6506b3c6a8295b31b309e
 F src/pager.c 85988507fa20acc60defb834722eddf4633e4aeb
 F src/pager.h ef1eaf8593e78f73885c1dfac27ad83bee23bdc5
@@ -1000,7 +1000,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P b9ac3d7e340eb616fd23cc7dbdef6fdd66a79fe4
-R a1d15ac4a2f200ebad8c15bdd80077ea
+P 49d20ede5f4c0895a165126d5cf7c95a0510ba35
+R 6fcd7b8559835dc1ae4791a624b5bb49
 U drh
-Z 3eabbe65a412e07d9d0e849fd433908a
+Z c7852355bd734400b5b2791a5df22d3c
