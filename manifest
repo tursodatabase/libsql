@@ -1,5 +1,5 @@
-C Ignore\sthe\svalue\sof\sSQLITE_FCNTL_CHUNK_SIZE\sif\sit\sis\snegative.
-D 2012-04-05T20:04:39.277
+C Update\ssqlite3_analyzer\sto\scorrectly\sfind\sall\sdatabase\sfiles\swhen\sthe\nmultiplexor\sis\sbeing\sused.
+D 2012-04-06T00:09:27.071
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -987,7 +987,7 @@ F tool/showjournal.c b62cecaab86a4053d944c276bb5232e4d17ece02
 F tool/showwal.c f09e5a80a293919290ec85a6a37c85a5ddcf37d9
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b
-F tool/spaceanal.tcl 15f6cd939b4ecc14d061de7e8ace89e26c30c40b
+F tool/spaceanal.tcl e42273000686a4afbf6a5e5d7fb12be65e92afb1
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
@@ -1000,7 +1000,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 49d20ede5f4c0895a165126d5cf7c95a0510ba35
-R 6fcd7b8559835dc1ae4791a624b5bb49
+P 1b08fef9451f4d59148548faed115d1a5d0bcd98
+R 220148404893713f89fb8c5c7ad54b6d
 U drh
-Z c7852355bd734400b5b2791a5df22d3c
+Z 737b7c44e8ad27216e6474b5a72beb32

@@ -49,15 +49,14 @@ if {$true_file_size<512} {
 #
 set extension [file extension $file_to_analyze]
 set pattern $file_to_analyze
-append pattern {[0-9][0-9]}
+append pattern {[0-3][0-9][0-9]}
 foreach f [glob -nocomplain $pattern] {
   incr true_file_size [file size $f]
   set extension {}
 }
 if {[string length $extension]>=2 && [string length $extension]<=4} {
   set pattern [file rootname $file_to_analyze]
-  append pattern [string range $extension 0 1]
-  append pattern {[0-9][0-9]}
+  append pattern {.[0-3][0-9][0-9]}
   foreach f [glob -nocomplain $pattern] {
     incr true_file_size [file size $f]
   }
