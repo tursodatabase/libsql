@@ -223,38 +223,57 @@ CollSeq *sqlite3FindCollSeq(
 ** that uses encoding enc. The value returned indicates how well the
 ** request is matched. A higher value indicates a better match.
 **
+** If nArg is -1 that means to only return a match (non-zero) if p->nArg
+** is also -1.  In other words, we are searching for a function that
+** takes a variable number of arguments.
+**
+** If nArg is -2 that means that we are searching for any function 
+** regardless of the number of arguments it uses, so return a positive
+** match score for any
+**
 ** The returned value is always between 0 and 6, as follows:
 **
-** 0: Not a match, or if nArg<0 and the function is has no implementation.
-** 1: A variable arguments function that prefers UTF-8 when a UTF-16
-**    encoding is requested, or vice versa.
-** 2: A variable arguments function that uses UTF-16BE when UTF-16LE is
-**    requested, or vice versa.
-** 3: A variable arguments function using the same text encoding.
-** 4: A function with the exact number of arguments requested that
-**    prefers UTF-8 when a UTF-16 encoding is requested, or vice versa.
-** 5: A function with the exact number of arguments requested that
-**    prefers UTF-16LE when UTF-16BE is requested, or vice versa.
-** 6: An exact match.
+** 0: Not a match.
+** 1: UTF8/16 conversion required and function takes any number of arguments.
+** 2: UTF16 byte order change required and function takes any number of args.
+** 3: encoding matches and function takes any number of arguments
+** 4: UTF8/16 conversion required - argument count matches exactly
+** 5: UTF16 byte order conversion required - argument count matches exactly
+** 6: Perfect match:  encoding and argument count match exactly.
 **
+** If nArg==(-2) then any function with a non-null xStep or xFunc is
+** a perfect match and any function with both xStep and xFunc NULL is
+** a non-match.
 */
-static int matchQuality(FuncDef *p, int nArg, u8 enc){
-  int match = 0;
-  if( p->nArg==-1 || p->nArg==nArg 
-   || (nArg==-1 && (p->xFunc!=0 || p->xStep!=0))
-  ){
+#define FUNC_PERFECT_MATCH 6  /* The score for a perfect match */
+static int matchQuality(
+  FuncDef *p,     /* The function we are evaluating for match quality */
+  int nArg,       /* Desired number of arguments.  (-1)==any */
+  u8 enc          /* Desired text encoding */
+){
+  int match;
+
+  /* nArg of -2 is a special case */
+  if( nArg==(-2) ) return (p->xFunc==0 && p->xStep==0) ? 0 : FUNC_PERFECT_MATCH;
+
+  /* Wrong number of arguments means "no match" */
+  if( p->nArg!=nArg && p->nArg>=0 ) return 0;
+
+  /* Give a better score to a function with a specific number of arguments
+  ** than to function that accepts any number of arguments. */
+  if( p->nArg==nArg ){
+    match = 4;
+  }else{
     match = 1;
-    if( p->nArg==nArg || nArg==-1 ){
-      match = 4;
-    }
-    if( enc==p->iPrefEnc ){
-      match += 2;
-    }
-    else if( (enc==SQLITE_UTF16LE && p->iPrefEnc==SQLITE_UTF16BE) ||
-             (enc==SQLITE_UTF16BE && p->iPrefEnc==SQLITE_UTF16LE) ){
-      match += 1;
-    }
   }
+
+  /* Bonus points if the text encoding matches */
+  if( enc==p->iPrefEnc ){
+    match += 2;  /* Exact encoding match */
+  }else if( (enc & p->iPrefEnc & 2)!=0 ){
+    match += 1;  /* Both are UTF16, but with different byte orders */
+  }
+
   return match;
 }
 
@@ -310,13 +329,12 @@ void sqlite3FuncDefInsert(
 **
 ** If the createFlag argument is true, then a new (blank) FuncDef
 ** structure is created and liked into the "db" structure if a
-** no matching function previously existed.  When createFlag is true
-** and the nArg parameter is -1, then only a function that accepts
-** any number of arguments will be returned.
+** no matching function previously existed.
 **
-** If createFlag is false and nArg is -1, then the first valid
-** function found is returned.  A function is valid if either xFunc
-** or xStep is non-zero.
+** If nArg is -2, then the first valid function found is returned.  A
+** function is valid if either xFunc or xStep is non-zero.  The nArg==(-2)
+** case is used to see if zName is a valid function name for some number
+** of arguments.  If nArg is -2, then createFlag must be 0.
 **
 ** If createFlag is false, then a function with the required name and
 ** number of arguments may be returned even if the eTextRep flag does not
@@ -328,14 +346,15 @@ FuncDef *sqlite3FindFunction(
   int nName,         /* Number of characters in the name */
   int nArg,          /* Number of arguments.  -1 means any number */
   u8 enc,            /* Preferred text encoding */
-  int createFlag     /* Create new entry if true and does not otherwise exist */
+  u8 createFlag      /* Create new entry if true and does not otherwise exist */
 ){
   FuncDef *p;         /* Iterator variable */
   FuncDef *pBest = 0; /* Best match found so far */
   int bestScore = 0;  /* Score of best match */
   int h;              /* Hash value */
 
-
+  assert( nArg>=(-2) );
+  assert( nArg>=(-1) || createFlag==0 );
   assert( enc==SQLITE_UTF8 || enc==SQLITE_UTF16LE || enc==SQLITE_UTF16BE );
   h = (sqlite3UpperToLower[(u8)zName[0]] + nName) % ArraySize(db->aFunc.a);
 
@@ -381,7 +400,7 @@ FuncDef *sqlite3FindFunction(
   ** exact match for the name, number of arguments and encoding, then add a
   ** new entry to the hash table and return it.
   */
-  if( createFlag && (bestScore<6 || pBest->nArg!=nArg) && 
+  if( createFlag && bestScore<FUNC_PERFECT_MATCH && 
       (pBest = sqlite3DbMallocZero(db, sizeof(*pBest)+nName+1))!=0 ){
     pBest->zName = (char *)&pBest[1];
     pBest->nArg = (u16)nArg;
