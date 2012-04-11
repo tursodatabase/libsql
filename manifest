@@ -1,5 +1,5 @@
-C Fix\sharmless\sstatic-analysis\swarnings,\smosting\shaving\sto\sdo\swith\smemory\nleaks\sin\sthe\scommand-line\sshell.\s\sAdd\sa\sclang\sanalysis\sof\sthe\scommand-line\nshell\sto\sthe\s"warnings-clang.sh"\sscript.\s\sOther\sminor\scleanups\sto\sthe\ncommand-line\sshell\scode.
-D 2012-04-11T11:38:53.434
+C Add\sa\stestcase()\smacro\sto\sensure\sthat\sthe\ssqlite3AuthCheck()\scall\sinside\nthe\squery\sflattener\sreally\sis\seffective.
+D 2012-04-11T23:22:37.290
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -181,7 +181,7 @@ F src/printf.c 7ffb4ebb8b341f67e049695ba031da717b3d2699
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 969ec2bc52db1b068054ecf5ddc74f244102a71d
 F src/rowset.c f6a49f3e9579428024662f6e2931832511f831a1
-F src/select.c 5e0e481c7d215d3c7ca8ccae1e688aa30163c6c1
+F src/select.c d7b9018b7dd2e821183d69477ab55c39b8272335
 F src/shell.c 6fef5d2cd1eccd0a692d5d458897d815afaea908
 F src/sqlite.h.in 11a883919b0baf4ffaa7550cfeef99be613ec2bf
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
@@ -1000,7 +1000,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 2fa9f54309aea9927fb3695a986febd4963df7d1
-R fcc323db955b3488f04a596dcdc692dc
+P 93a0f452a7023898ad3d62ee81b39a80477c332f
+R e9fd1d5d0b8f93fe215615b822bcbcda
 U drh
-Z 36fed4c702c105f246b456f165a799df
+Z 0df74aef7de935c06b3b8d7464efe846
