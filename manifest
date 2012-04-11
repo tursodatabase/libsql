@@ -1,5 +1,5 @@
-C Add\snew\sinterfaces\sto\sthe\stest_quota.c\smodule:\s\ssqlite3_quota_ftruncate(),\nsqlite3_quota_file_size(),\ssqlite3_quota_file_truesize(),\sand\nsqlite3_quota_file_mtime().
-D 2012-04-10T17:53:47.880
+C Fix\sharmless\sstatic-analysis\swarnings,\smosting\shaving\sto\sdo\swith\smemory\nleaks\sin\sthe\scommand-line\sshell.\s\sAdd\sa\sclang\sanalysis\sof\sthe\scommand-line\nshell\sto\sthe\s"warnings-clang.sh"\sscript.\s\sOther\sminor\scleanups\sto\sthe\ncommand-line\sshell\scode.
+D 2012-04-11T11:38:53.434
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/fts3_test.c f153a121c763993e3d94cc99c012ee68d13231ae
 F ext/fts3/fts3_tokenizer.c 3da7254a9881f7e270ab28e2004e0d22b3212bce
 F ext/fts3/fts3_tokenizer.h 66dec98e365854b6cd2d54f1a96bb6d428fc5a68
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
-F ext/fts3/fts3_write.c 545c3e2add64c27b2b03f9c79619ac5e47043252
+F ext/fts3/fts3_write.c cd4af00b3b0512b4d76177a267fcaafab44cbce4
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
@@ -182,7 +182,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 969ec2bc52db1b068054ecf5ddc74f244102a71d
 F src/rowset.c f6a49f3e9579428024662f6e2931832511f831a1
 F src/select.c 5e0e481c7d215d3c7ca8ccae1e688aa30163c6c1
-F src/shell.c ce4d41582182b8fad3be364e2fa295b70bc342ab
+F src/shell.c 6fef5d2cd1eccd0a692d5d458897d815afaea908
 F src/sqlite.h.in 11a883919b0baf4ffaa7550cfeef99be613ec2bf
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h ce7d8404f15db6cbe73cf196d3d6198aaa4e3924
@@ -956,7 +956,7 @@ F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/win32lock.test b2a539e85ae6b2d78475e016a9636b4451dc7fb9
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test 0de750389990b1078bab203c712dc3fefd1d8b82
-F tool/build-shell.sh 12aa4391073a777fcb6dcc490b219a018ae98bac
+F tool/build-shell.sh b64a481901fc9ffe5ca8812a2a9255b6cfb77381
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
@@ -998,9 +998,9 @@ F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh fec58532668296d7c7dc48be9c87f75ccdb5814f
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
+F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 7433f2b5508ebf09d0e3e32a995f1126eaab8999
-R 85564f41a960bd198f1c0cd3cc4e501c
+P 2fa9f54309aea9927fb3695a986febd4963df7d1
+R fcc323db955b3488f04a596dcdc692dc
 U drh
-Z b7da54f2c32a033935fc1a3628198083
+Z 36fed4c702c105f246b456f165a799df

@@ -1310,6 +1310,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
     zTmp = appendText(zTmp, zTable, '"');
     if( zTmp ){
       zSelect = appendText(zSelect, zTmp, '\'');
+      free(zTmp);
     }
     zSelect = appendText(zSelect, " || ' VALUES(' || ", 0);
     rc = sqlite3_step(pTableInfo);
@@ -1338,7 +1339,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
       zSelect = appendText(zSelect, " ORDER BY rowid DESC", 0);
       run_table_dump_query(p, zSelect, 0);
     }
-    if( zSelect ) free(zSelect);
+    free(zSelect);
   }
   return 0;
 }
@@ -2642,12 +2643,11 @@ static int process_input(struct callback_data *p, FILE *in){
 
 /*
 ** Return a pathname which is the user's home directory.  A
-** 0 return indicates an error of some kind.  Space to hold the
-** resulting string is obtained from malloc().  The calling
-** function should free the result.
+** 0 return indicates an error of some kind.
 */
 static char *find_home_dir(void){
-  char *home_dir = NULL;
+  static char *home_dir = NULL;
+  if( home_dir ) return home_dir;
 
 #if !defined(_WIN32) && !defined(WIN32) && !defined(__OS2__) && !defined(_WIN32_WCE) && !defined(__RTP__) && !defined(_WRS_KERNEL)
   struct passwd *pwent;
@@ -2660,7 +2660,7 @@ static char *find_home_dir(void){
 #if defined(_WIN32_WCE)
   /* Windows CE (arm-wince-mingw32ce-gcc) does not provide getenv()
    */
-  home_dir = strdup("/");
+  home_dir = "/";
 #else
 
 #if defined(_WIN32) || defined(WIN32) || defined(__OS2__)
@@ -2716,7 +2716,6 @@ static int process_sqliterc(
   const char *sqliterc = sqliterc_override;
   char *zBuf = 0;
   FILE *in = NULL;
-  int nBuf;
   int rc = 0;
 
   if (sqliterc == NULL) {
@@ -2727,15 +2726,8 @@ static int process_sqliterc(
 #endif
       return 1;
     }
-    nBuf = strlen30(home_dir) + 16;
-    zBuf = malloc( nBuf );
-    if( zBuf==0 ){
-      fprintf(stderr,"%s: Error: out of memory\n",Argv0);
-      return 1;
-    }
-    sqlite3_snprintf(nBuf, zBuf,"%s/.sqliterc",home_dir);
-    free(home_dir);
-    sqliterc = (const char*)zBuf;
+    zBuf = sqlite3_mprintf("%s/.sqliterc",home_dir);
+    sqliterc = zBuf;
   }
   in = fopen(sqliterc,"rb");
   if( in ){
@@ -2745,7 +2737,7 @@ static int process_sqliterc(
     rc = process_input(p,in);
     fclose(in);
   }
-  free(zBuf);
+  sqlite3_free(zBuf);
   return rc;
 }
 
@@ -3086,7 +3078,6 @@ int main(int argc, char **argv){
         write_history(zHistory);
         free(zHistory);
       }
-      free(zHome);
     }else{
       rc = process_input(&data, stdin);
     }
