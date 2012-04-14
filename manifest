@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sa\scomment\sthat\sis\sextracted\sfor\sdocumentation.\s\sNo\schanges\sto\s\ncode.
-D 2012-04-14T11:48:25.387
+C In\sthe\sunix\sVFS,\salways\sset\severy\sopen\sfile\sto\sclose-on-exec\susing\seither\nO_CLOEXEC\sat\sopen\s(preferred)\sor\sFD_CLOEXEC\sin\san\sioctl\safter\sopening.\s\sBefore\nthis\schanges,\smany\sfiles\swere\sdone\sthis\sway,\sbut\snot\sall.
+D 2012-04-14T13:25:11.842
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -167,7 +167,7 @@ F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 59beba555b65a450bd1d804220532971d4299f60
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 75eff7b41cdc9f319eb0c610c19fd9bb37093e5d
+F src/os_unix.c 424d46e0edab969293c2223f09923b2178171f47
 F src/os_win.c 5e9e933a412ab35de2a6506b3c6a8295b31b309e
 F src/pager.c 85988507fa20acc60defb834722eddf4633e4aeb
 F src/pager.h ef1eaf8593e78f73885c1dfac27ad83bee23bdc5
@@ -1000,7 +1000,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P a134e6e739cbb27701b092b33033244feb164cdf
-R dc8223e1fbe157a1af14143d14cea055
+P e87371c5081ce28431a4c7ceaa81ff966a378c66
+R 7b4651c870902ae8ed7532d13f371f85
 U drh
-Z e383e3414cd7f05936f8f4b15cd51898
+Z 1af9fe4892fd87b77f8c0791d9bcac7c
