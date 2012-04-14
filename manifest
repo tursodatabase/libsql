@@ -1,5 +1,5 @@
-C Add\sa\stestcase()\smacro\sto\sensure\sthat\sthe\ssqlite3AuthCheck()\scall\sinside\nthe\squery\sflattener\sreally\sis\seffective.
-D 2012-04-11T23:22:37.290
+C Fix\sa\stypo\sin\sa\scomment\sthat\sis\sextracted\sfor\sdocumentation.\s\sNo\schanges\sto\s\ncode.
+D 2012-04-14T11:48:25.387
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -183,7 +183,7 @@ F src/resolve.c 969ec2bc52db1b068054ecf5ddc74f244102a71d
 F src/rowset.c f6a49f3e9579428024662f6e2931832511f831a1
 F src/select.c d7b9018b7dd2e821183d69477ab55c39b8272335
 F src/shell.c 6fef5d2cd1eccd0a692d5d458897d815afaea908
-F src/sqlite.h.in 11a883919b0baf4ffaa7550cfeef99be613ec2bf
+F src/sqlite.h.in 4338f299fc83dada8407358d585c0e240ecb76a3
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h ce7d8404f15db6cbe73cf196d3d6198aaa4e3924
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -1000,7 +1000,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 93a0f452a7023898ad3d62ee81b39a80477c332f
-R e9fd1d5d0b8f93fe215615b822bcbcda
+P a134e6e739cbb27701b092b33033244feb164cdf
+R dc8223e1fbe157a1af14143d14cea055
 U drh
-Z 0df74aef7de935c06b3b8d7464efe846
+Z e383e3414cd7f05936f8f4b15cd51898
