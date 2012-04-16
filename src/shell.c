@@ -1369,7 +1369,7 @@ static int run_schema_dump_query(
     }
     zQ2 = malloc( len+100 );
     if( zQ2==0 ) return rc;
-    sqlite3_snprintf(sizeof(zQ2), zQ2, "%s ORDER BY rowid DESC", zQuery);
+    sqlite3_snprintf(len+100, zQ2, "%s ORDER BY rowid DESC", zQuery);
     rc = sqlite3_exec(p->db, zQ2, dump_callback, p, &zErr);
     if( rc ){
       fprintf(p->out, "/****** ERROR: %s ******/\n", zErr);
