@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\scommand-line\sshell\slogic\sthat\sattempts\sto\scontinue\swith\sa\n".dump"\seven\safter\sencountering\sdatabase\scorruption.
-D 2012-04-16T17:22:30.904
+C Add\san\sundocumented\sand\spossibly\sephemeral\s".breakpoint"\scommand\sto\sthe\s\ncommand-line\sshell,\sto\scall\sa\sno-op\sroutine\son\swhich\sit\sis\sconvenient\sto\s\nset\sa\ssymbolic\sdebugger\sbreakpoint.
+D 2012-04-17T09:09:33.765
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -182,7 +182,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 969ec2bc52db1b068054ecf5ddc74f244102a71d
 F src/rowset.c f6a49f3e9579428024662f6e2931832511f831a1
 F src/select.c d7b9018b7dd2e821183d69477ab55c39b8272335
-F src/shell.c 5d2484bea27d1fb8a733077c436482a06c1d30f2
+F src/shell.c 11185a9a4574f363bd4268a2780d37480ae00040
 F src/sqlite.h.in 4338f299fc83dada8407358d585c0e240ecb76a3
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h ce7d8404f15db6cbe73cf196d3d6198aaa4e3924
@@ -1000,7 +1000,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 9efbeb11ae0d480a13ff1353820c12f3a8bff452
-R 8554990f6e5abd69d8539d60c8a20e9c
+P 020b5e90f950a42299074ff770612b9e68850d95
+R b1350dfbc2eb46aaca5347bd8a799d07
 U drh
-Z 6fed7a84ff8fa569c38ca78c5c084864
+Z ed107cd283f4ba98c58e464c44f875e3

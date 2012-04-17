@@ -1563,6 +1563,15 @@ static void sql_trace_callback(void *pArg, const char *z){
 }
 
 /*
+** A no-op routine that runs with the ".breakpoint" doc-command.  This is
+** a useful spot to set a debugger breakpoint.
+*/
+static void test_breakpoint(void){
+  static int nCall = 0;
+  nCall++;
+}
+
+/*
 ** If an input line begins with "." then invoke this routine to
 ** process that line.
 **
@@ -1639,6 +1648,13 @@ static int do_meta_command(char *zLine, struct callback_data *p){
 
   if( c=='b' && n>=3 && strncmp(azArg[0], "bail", n)==0 && nArg>1 && nArg<3 ){
     bail_on_error = booleanValue(azArg[1]);
+  }else
+
+  /* The undocumented ".breakpoint" command causes a call to the no-op
+  ** routine named test_breakpoint().
+  */
+  if( c=='b' && n>=3 && strncmp(azArg[0], "breakpoint", n)==0 ){
+    test_breakpoint();
   }else
 
   if( c=='d' && n>1 && strncmp(azArg[0], "databases", n)==0 && nArg==1 ){
