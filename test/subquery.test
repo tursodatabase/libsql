@@ -331,6 +331,53 @@ do_test subquery-3.3.5 {
   }
 } {1 1 2 1}
 
+# The following tests check for aggregate subqueries in an aggregate
+# query.
+#
+do_test subquery-3.4.1 {
+  execsql {
+    CREATE TABLE t34(x,y);
+    INSERT INTO t34 VALUES(106,4), (107,3), (106,5), (107,5);
+    SELECT a.x, avg(a.y)
+      FROM t34 AS a
+     GROUP BY a.x
+     HAVING NOT EXISTS( SELECT b.x, avg(b.y)
+                          FROM t34 AS b
+                         GROUP BY b.x
+                         HAVING avg(a.y) > avg(b.y));
+  }
+} {107 4.0}
+do_test subquery-3.4.2 {
+  execsql {
+    SELECT a.x, avg(a.y) AS avg1
+      FROM t34 AS a
+     GROUP BY a.x
+     HAVING NOT EXISTS( SELECT b.x, avg(b.y) AS avg2
+                          FROM t34 AS b
+                         GROUP BY b.x
+                         HAVING avg1 > avg2);
+  }
+} {107 4.0}
+do_test subquery-3.4.3 {
+  execsql {
+    SELECT
+       a.x,
+       avg(a.y),
+       NOT EXISTS ( SELECT b.x, avg(b.y)
+                      FROM t34 AS b
+                      GROUP BY b.x
+                     HAVING avg(a.y) > avg(b.y)),
+       EXISTS ( SELECT c.x, avg(c.y)
+                  FROM t34 AS c
+                  GROUP BY c.x
+                 HAVING avg(a.y) > avg(c.y))
+      FROM t34 AS a
+     GROUP BY a.x
+     ORDER BY a.x;
+  }
+} {106 4.5 0 1 107 4.0 1 0}
+
+
 #------------------------------------------------------------------
 # These tests - subquery-4.* - use the TCL statement cache to try 
 # and expose bugs to do with re-using statements that have been 
