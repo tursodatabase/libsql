@@ -1,9 +1,9 @@
-C Merge\sthe\slatest\strunk\schanges\sinto\sthe\swinrt\sbranch.
-D 2012-03-30T14:01:40.977
+C When\scompiling\sfor\sWinRT,\salways\suse\sthe\s'appcontainer'\slinker\soption.
+D 2012-04-17T21:00:12.605
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 47c5fd7e41e773835f78e2d8d32f67b0c8734113
+F Makefile.msc 71b1e756a0afe19fd6ef2b1e60bf2135118ed4d5
 F Makefile.vxworks 3b7fe7a0571fdadc61363ebc1b23732d2d6363ca
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION f9313d88cb77df8617059a88eb382291321ef6bc
@@ -999,7 +999,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 10ce846759f6f22e70bb9b67bea7a0c2b8a156fe 36aa6665e709b5942b3558afbd555058b42f2c78
-R cfe4287a455a52ef8be1acca1474bbf5
-U drh
-Z 8c9488054f5fc194d8a0020e67475da7
+P a1a85b846aac07979e732a9f36d178bd567e103a
+R 4b6ce0aef842e29a9d007bcf92b1249b
+U mistachkin
+Z ed5b0893d8bcb11e5301ff71a81a98a7

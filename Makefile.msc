@@ -234,6 +234,14 @@ LTLINKOPTS = /MACHINE:$(PLATFORM)
 LTLIBOPTS = /MACHINE:$(PLATFORM)
 !ENDIF
 
+# When compiling for use in the WinRT environment, the following
+# linker option must be used to mark the executable as runnable
+# only in the context of an application container.
+#
+!IF $(FOR_WINRT)!=0
+LTLINKOPTS = $(LTLINKOPTS) /APPCONTAINER
+!ENDIF
+
 # If debugging is enabled, enable PDBs.
 !IF $(DEBUG)>0 || $(SYMBOLS)!=0
 LTLINKOPTS = $(LTLINKOPTS) /DEBUG
