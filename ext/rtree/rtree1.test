@@ -104,6 +104,18 @@ for {set nCol 1} {$nCol<[llength $cols]} {incr nCol} {
   catchsql { DROP TABLE t1 }
 }
 
+# Like execsql except display output as integer where that can be
+# done without loss of information.
+#
+proc execsql_intout {sql} {
+  set out {}
+  foreach term [execsql $sql] {
+    regsub {\.0$} $term {} term
+    lappend out $term
+  }
+  return $out
+}
+
 # Test that it is possible to open an existing database that contains
 # r-tree tables.
 #
@@ -117,8 +129,8 @@ do_test rtree-1.4.1 {
 do_test rtree-1.4.2 {
   db close
   sqlite3 db test.db
-  execsql { SELECT * FROM t1 ORDER BY ii }
-} {1 5.0 10.0 2 15.0 20.0}
+  execsql_intout { SELECT * FROM t1 ORDER BY ii }
+} {1 5 10 2 15 20}
 do_test rtree-1.4.3 {
   execsql { DROP TABLE t1 }
 } {}
@@ -127,12 +139,12 @@ do_test rtree-1.4.3 {
 # column names.
 #
 do_test rtree-1.5.1 {
-  execsql {
+  execsql_intout {
     CREATE VIRTUAL TABLE t1 USING rtree("the key", "x dim.", "x2'dim");
     INSERT INTO t1 VALUES(1, 2, 3);
     SELECT "the key", "x dim.", "x2'dim" FROM t1;
   }
-} {1 2.0 3.0}
+} {1 2 3}
 do_test rtree-1.5.1 {
   execsql { DROP TABLE t1 }
 } {}
@@ -161,8 +173,8 @@ do_test rtree-2.1.1 {
 
 do_test rtree-2.1.2 {
   execsql { INSERT INTO t1 VALUES(NULL, 1, 3, 2, 4) }
-  execsql { SELECT * FROM t1 }
-} {1 1.0 3.0 2.0 4.0}
+  execsql_intout { SELECT * FROM t1 }
+} {1 1 3 2 4}
 do_test rtree-2.1.3 {
   execsql { INSERT INTO t1 VALUES(NULL, 1, 3, 2, 4) }
   execsql { SELECT rowid FROM t1 ORDER BY rowid }
@@ -201,17 +213,17 @@ do_test rtree-3.1.1 {
   }
 } {}
 do_test rtree-3.1.2 {
-  execsql { 
+  execsql_intout { 
     INSERT INTO t1 VALUES(5, 1, 3, 2, 4);
     SELECT * FROM t1;
   }
-} {5 1.0 3.0 2.0 4.0}
+} {5 1 3 2 4}
 do_test rtree-3.1.3 {
-  execsql {
+  execsql_intout {
     INSERT INTO t1 VALUES(6, 2, 6, 4, 8);
     SELECT * FROM t1;
   }
-} {5 1.0 3.0 2.0 4.0 6 2.0 6.0 4.0 8.0}
+} {5 1 3 2 4 6 2 6 4 8}
 
 # Test the constraint on the coordinates (c[i]<=c[i+1] where (i%2==0)):
 do_test rtree-3.2.1 {
@@ -228,25 +240,25 @@ do_test rtree-5.1.1 {
   execsql { CREATE VIRTUAL TABLE t2 USING rtree(ii, x1, x2) }
 } {}
 do_test rtree-5.1.2 {
-  execsql { 
+  execsql_intout { 
     INSERT INTO t2 VALUES(1, 10, 20);
     INSERT INTO t2 VALUES(2, 30, 40);
     INSERT INTO t2 VALUES(3, 50, 60);
     SELECT * FROM t2 ORDER BY ii;
   }
-} {1 10.0 20.0 2 30.0 40.0 3 50.0 60.0}
+} {1 10 20 2 30 40 3 50 60}
 do_test rtree-5.1.3 {
-  execsql { 
+  execsql_intout { 
     DELETE FROM t2 WHERE ii=2;
     SELECT * FROM t2 ORDER BY ii;
   }
-} {1 10.0 20.0 3 50.0 60.0}
+} {1 10 20 3 50 60}
 do_test rtree-5.1.4 {
-  execsql { 
+  execsql_intout { 
     DELETE FROM t2 WHERE ii=1;
     SELECT * FROM t2 ORDER BY ii;
   }
-} {3 50.0 60.0}
+} {3 50 60}
 do_test rtree-5.1.5 {
   execsql { 
     DELETE FROM t2 WHERE ii=3;
@@ -264,16 +276,16 @@ do_test rtree-6.1.1 {
   execsql { CREATE VIRTUAL TABLE t3 USING rtree(ii, x1, x2, y1, y2) }
 } {}
 do_test rtree-6.1.2 {
-  execsql {
+  execsql_intout {
     INSERT INTO t3 VALUES(1, 2, 3, 4, 5);
     UPDATE t3 SET x2=5;
     SELECT * FROM t3;
   }
-} {1 2.0 5.0 4.0 5.0}
+} {1 2 5 4 5}
 do_test rtree-6.1.3 {
   execsql { UPDATE t3 SET ii = 2 }
-  execsql { SELECT * FROM t3 }
-} {2 2.0 5.0 4.0 5.0}
+  execsql_intout { SELECT * FROM t3 }
+} {2 2 5 4 5}
 
 #----------------------------------------------------------------------------
 # Test cases rtree-7.* test rename operations.
@@ -286,29 +298,29 @@ do_test rtree-7.1.1 {
 } {}
 do_test rtree-7.1.2 {
   execsql { ALTER TABLE t4 RENAME TO t5 }
-  execsql { SELECT * FROM t5 }
-} {1 2.0 3.0 4.0 5.0 6.0 7.0}
+  execsql_intout { SELECT * FROM t5 }
+} {1 2 3 4 5 6 7}
 do_test rtree-7.1.3 {
   db close
   sqlite3 db test.db
-  execsql { SELECT * FROM t5 }
-} {1 2.0 3.0 4.0 5.0 6.0 7.0}
+  execsql_intout { SELECT * FROM t5 }
+} {1 2 3 4 5 6 7}
 do_test rtree-7.1.4 {
   execsql { ALTER TABLE t5 RENAME TO 'raisara "one"'''}
-  execsql { SELECT * FROM "raisara ""one""'" }
-} {1 2.0 3.0 4.0 5.0 6.0 7.0}
+  execsql_intout { SELECT * FROM "raisara ""one""'" }
+} {1 2 3 4 5 6 7}
 do_test rtree-7.1.5 {
-  execsql { SELECT * FROM 'raisara "one"''' }
-} {1 2.0 3.0 4.0 5.0 6.0 7.0}
+  execsql_intout { SELECT * FROM 'raisara "one"''' }
+} {1 2 3 4 5 6 7}
 do_test rtree-7.1.6 {
   execsql { ALTER TABLE "raisara ""one""'" RENAME TO "abc 123" }
-  execsql { SELECT * FROM "abc 123" }
-} {1 2.0 3.0 4.0 5.0 6.0 7.0}
+  execsql_intout { SELECT * FROM "abc 123" }
+} {1 2 3 4 5 6 7}
 do_test rtree-7.1.7 {
   db close
   sqlite3 db test.db
-  execsql { SELECT * FROM "abc 123" }
-} {1 2.0 3.0 4.0 5.0 6.0 7.0}
+  execsql_intout { SELECT * FROM "abc 123" }
+} {1 2 3 4 5 6 7}
 
 # An error midway through a rename operation.
 do_test rtree-7.2.1 {
@@ -318,8 +330,8 @@ do_test rtree-7.2.1 {
   catchsql { ALTER TABLE "abc 123" RENAME TO t4 }
 } {1 {SQL logic error or missing database}}
 do_test rtree-7.2.2 {
-  execsql { SELECT * FROM "abc 123" }
-} {1 2.0 3.0 4.0 5.0 6.0 7.0}
+  execsql_intout { SELECT * FROM "abc 123" }
+} {1 2 3 4 5 6 7}
 do_test rtree-7.2.3 {
   execsql { 
     DROP TABLE t4_node;
@@ -330,13 +342,13 @@ do_test rtree-7.2.3 {
 do_test rtree-7.2.4 {
   db close
   sqlite3 db test.db
-  execsql { SELECT * FROM "abc 123" }
-} {1 2.0 3.0 4.0 5.0 6.0 7.0}
+  execsql_intout { SELECT * FROM "abc 123" }
+} {1 2 3 4 5 6 7}
 do_test rtree-7.2.5 {
   execsql { DROP TABLE t4_rowid }
   execsql { ALTER TABLE "abc 123" RENAME TO t4 }
-  execsql { SELECT * FROM t4 }
-} {1 2.0 3.0 4.0 5.0 6.0 7.0}
+  execsql_intout { SELECT * FROM t4 }
+} {1 2 3 4 5 6 7}
 
 
 #----------------------------------------------------------------------------

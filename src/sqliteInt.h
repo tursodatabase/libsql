@@ -2019,7 +2019,6 @@ struct NameContext {
   u8 allowAgg;         /* Aggregate functions allowed here */
   u8 hasAgg;           /* True if aggregates are seen */
   u8 isCheck;          /* True if resolving names in a CHECK constraint */
-  int nDepth;          /* Depth of subquery recursion. 1 for no recursion */
   AggInfo *pAggInfo;   /* Information about aggregates at this level */
   NameContext *pNext;  /* Next outer name context.  NULL for outermost */
 };
@@ -2489,6 +2488,7 @@ struct Walker {
   union {                                   /* Extra data for callback */
     NameContext *pNC;                          /* Naming context */
     int i;                                     /* Integer value */
+    SrcList *pSrcList;                         /* FROM clause */
   } u;
 };
 
@@ -2857,7 +2857,7 @@ SrcList *sqlite3SrcListDup(sqlite3*,SrcList*,int);
 IdList *sqlite3IdListDup(sqlite3*,IdList*);
 Select *sqlite3SelectDup(sqlite3*,Select*,int);
 void sqlite3FuncDefInsert(FuncDefHash*, FuncDef*);
-FuncDef *sqlite3FindFunction(sqlite3*,const char*,int,int,u8,int);
+FuncDef *sqlite3FindFunction(sqlite3*,const char*,int,int,u8,u8);
 void sqlite3RegisterBuiltinFunctions(sqlite3*);
 void sqlite3RegisterDateTimeFunctions(void);
 void sqlite3RegisterGlobalFunctions(void);

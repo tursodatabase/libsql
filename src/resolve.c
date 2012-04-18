@@ -533,7 +533,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       nId = sqlite3Strlen30(zId);
       pDef = sqlite3FindFunction(pParse->db, zId, nId, n, enc, 0);
       if( pDef==0 ){
-        pDef = sqlite3FindFunction(pParse->db, zId, nId, -1, enc, 0);
+        pDef = sqlite3FindFunction(pParse->db, zId, nId, -2, enc, 0);
         if( pDef==0 ){
           no_such_func = 1;
         }else{

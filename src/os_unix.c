@@ -165,8 +165,8 @@
 #endif
 
 /*
- ** Default permissions when creating auto proxy dir
- */
+** Default permissions when creating auto proxy dir
+*/
 #ifndef SQLITE_DEFAULT_PROXYDIR_PERMISSIONS
 # define SQLITE_DEFAULT_PROXYDIR_PERMISSIONS 0755
 #endif
@@ -512,7 +512,7 @@ static const char *unixNextSystemCall(sqlite3_vfs *p, const char *zName){
 
 /*
 ** Invoke open().  Do so multiple times, until it either succeeds or
-** files for some reason other than EINTR.
+** fails for some reason other than EINTR.
 **
 ** If the file creation mode "m" is 0 then set it to the default for
 ** SQLite.  The default is SQLITE_DEFAULT_FILE_PERMISSIONS (normally
@@ -528,7 +528,7 @@ static const char *unixNextSystemCall(sqlite3_vfs *p, const char *zName){
 ** recover the hot journals.
 */
 static int robust_open(const char *z, int f, mode_t m){
-  int rc;
+  int fd;
   mode_t m2;
   mode_t origM = 0;
   if( m==0 ){
@@ -537,11 +537,20 @@ static int robust_open(const char *z, int f, mode_t m){
     m2 = m;
     origM = osUmask(0);
   }
-  do{ rc = osOpen(z,f,m2); }while( rc<0 && errno==EINTR );
+  do{
+#if defined(O_CLOEXEC)
+    fd = osOpen(z,f|O_CLOEXEC,m2);
+#else
+    fd = osOpen(z,f,m2);
+#endif
+  }while( fd<0 && errno==EINTR );
   if( m ){
     osUmask(origM);
   }
-  return rc;
+#if defined(FD_CLOEXEC) && (!defined(O_CLOEXEC) || O_CLOEXEC==0)
+  if( fd>=0 ) osFcntl(fd, F_SETFD, osFcntl(fd, F_GETFD, 0) | FD_CLOEXEC);
+#endif
+  return fd;
 }
 
 /*
@@ -3336,9 +3345,6 @@ static int openDirectory(const char *zFilename, int *pFd){
     zDirname[ii] = '\0';
     fd = robust_open(zDirname, O_RDONLY|O_BINARY, 0);
     if( fd>=0 ){
-#ifdef FD_CLOEXEC
-      osFcntl(fd, F_SETFD, osFcntl(fd, F_GETFD, 0) | FD_CLOEXEC);
-#endif
       OSTRACE(("OPENDIR %-3d %s\n", fd, zDirname));
     }
   }
@@ -3421,7 +3427,7 @@ static int unixTruncate(sqlite3_file *id, i64 nByte){
   ** actual file size after the operation may be larger than the requested
   ** size).
   */
-  if( pFile->szChunk ){
+  if( pFile->szChunk>0 ){
     nByte = ((nByte + pFile->szChunk - 1)/pFile->szChunk) * pFile->szChunk;
   }
 
@@ -5181,10 +5187,6 @@ static int unixOpen(
   else{
     p->openFlags = openFlags;
   }
-#endif
-
-#ifdef FD_CLOEXEC
-  osFcntl(fd, F_SETFD, osFcntl(fd, F_GETFD, 0) | FD_CLOEXEC);
 #endif
 
   noLock = eType!=SQLITE_OPEN_MAIN_DB;

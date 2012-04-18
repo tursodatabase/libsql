@@ -258,16 +258,28 @@ do_test in-7.5 {
     SELECT a FROM t1 WHERE a IN (5) AND b NOT IN ();
   }
 } {5}
-do_test in-7.6 {
+do_test in-7.6.1 {
   execsql {
     SELECT a FROM ta WHERE a IN ();
   }
 } {}
+do_test in-7.6.2 {
+  db status step
+} {0}
 do_test in-7.7 {
   execsql {
     SELECT a FROM ta WHERE a NOT IN ();
   }
 } {1 2 3 4 6 8 10}
+
+do_test in-7.8.1 {
+  execsql {
+    SELECT * FROM ta LEFT JOIN tb ON (ta.b=tb.b) WHERE ta.a IN ();
+  }
+} {}
+do_test in-7.8.2 {
+  db status step
+} {0}
 
 do_test in-8.1 {
   execsql {

@@ -22,7 +22,8 @@
 #include <string.h>
 #include <assert.h>
 
-#ifdef SQLITE_TEST
+#if defined(SQLITE_TEST)
+#if defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4)
 
 /* Required so that the "ifdef SQLITE_ENABLE_FTS3" below works */
 #include "fts3Int.h"
@@ -530,4 +531,5 @@ int Sqlitetestfts3_Init(Tcl_Interp *interp){
   );
   return TCL_OK;
 }
+#endif                  /* SQLITE_ENABLE_FTS3 || SQLITE_ENABLE_FTS4 */
 #endif                  /* ifdef SQLITE_TEST */

@@ -24,6 +24,18 @@ ifcapable !rtree||!vacuum {
   return
 }
 
+# Like execsql except display output as integer where that can be
+# done without loss of information.
+#
+proc execsql_intout {sql} {
+  set out {}
+  foreach term [execsql $sql] {
+    regsub {\.0$} $term {} term
+    lappend out $term
+  }
+  return $out
+}
+
 do_test rtree7-1.1 {
   execsql {
     PRAGMA page_size = 1024;
@@ -32,27 +44,27 @@ do_test rtree7-1.1 {
   }
 } {}
 do_test rtree7-1.2 {
-  execsql { SELECT * FROM rt }
-} {1 1.0 2.0 3.0 4.0}
+  execsql_intout { SELECT * FROM rt }
+} {1 1 2 3 4}
 do_test rtree7-1.3 {
-  execsql { 
+  execsql_intout { 
     PRAGMA page_size = 2048;
     VACUUM;
     SELECT * FROM rt;
   }
-} {1 1.0 2.0 3.0 4.0}
+} {1 1 2 3 4}
 do_test rtree7-1.4 {
   for {set i 2} {$i <= 51} {incr i} {
     execsql { INSERT INTO rt VALUES($i, 1, 2, 3, 4) }
   }
-  execsql { SELECT sum(x1), sum(x2), sum(y1), sum(y2) FROM rt }
-} {51.0 102.0 153.0 204.0}
+  execsql_intout { SELECT sum(x1), sum(x2), sum(y1), sum(y2) FROM rt }
+} {51 102 153 204}
 do_test rtree7-1.5 {
-  execsql { 
+  execsql_intout { 
     PRAGMA page_size = 512;
     VACUUM;
     SELECT sum(x1), sum(x2), sum(y1), sum(y2) FROM rt
   }
-} {51.0 102.0 153.0 204.0}
+} {51 102 153 204}
 
 finish_test
