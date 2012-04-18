@@ -20,6 +20,11 @@ source $testdir/bc_common.tcl
 
 set ::testprefix fts4merge3
 
+ifcapable !fts3 {
+  finish_test
+  return
+}
+
 if {"" == [bc_find_binaries backcompat.test]} {
   finish_test
   return

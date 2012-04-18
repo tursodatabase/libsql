@@ -1157,9 +1157,11 @@ void sqlite3GenerateConstraintChecks(
   int regData;        /* Register containing first data column */
   int iCur;           /* Table cursor number */
   Index *pIdx;         /* Pointer to one of the indices */
+  sqlite3 *db;         /* Database connection */
   int seenReplace = 0; /* True if REPLACE is used to resolve INT PK conflict */
   int regOldRowid = (rowidChng && isUpdate) ? rowidChng : regRowid;
 
+  db = pParse->db;
   v = sqlite3GetVdbe(pParse);
   assert( v!=0 );
   assert( pTab->pSelect==0 );  /* This table is not a VIEW */
@@ -1192,7 +1194,7 @@ void sqlite3GenerateConstraintChecks(
         char *zMsg;
         sqlite3VdbeAddOp3(v, OP_HaltIfNull,
                                   SQLITE_CONSTRAINT, onError, regData+i);
-        zMsg = sqlite3MPrintf(pParse->db, "%s.%s may not be NULL",
+        zMsg = sqlite3MPrintf(db, "%s.%s may not be NULL",
                               pTab->zName, pTab->aCol[i].zName);
         sqlite3VdbeChangeP4(v, -1, zMsg, P4_DYNAMIC);
         break;
@@ -1214,18 +1216,27 @@ void sqlite3GenerateConstraintChecks(
   /* Test all CHECK constraints
   */
 #ifndef SQLITE_OMIT_CHECK
-  if( pTab->pCheck && (pParse->db->flags & SQLITE_IgnoreChecks)==0 ){
-    int allOk = sqlite3VdbeMakeLabel(v);
+  if( pTab->pCheck && (db->flags & SQLITE_IgnoreChecks)==0 ){
+    ExprList *pCheck = pTab->pCheck;
     pParse->ckBase = regData;
-    sqlite3ExprIfTrue(pParse, pTab->pCheck, allOk, SQLITE_JUMPIFNULL);
     onError = overrideError!=OE_Default ? overrideError : OE_Abort;
-    if( onError==OE_Ignore ){
-      sqlite3VdbeAddOp2(v, OP_Goto, 0, ignoreDest);
-    }else{
-      if( onError==OE_Replace ) onError = OE_Abort; /* IMP: R-15569-63625 */
-      sqlite3HaltConstraint(pParse, onError, 0, 0);
+    for(i=0; i<pCheck->nExpr; i++){
+      int allOk = sqlite3VdbeMakeLabel(v);
+      sqlite3ExprIfTrue(pParse, pCheck->a[i].pExpr, allOk, SQLITE_JUMPIFNULL);
+      if( onError==OE_Ignore ){
+        sqlite3VdbeAddOp2(v, OP_Goto, 0, ignoreDest);
+      }else{
+        char *zConsName = pCheck->a[i].zName;
+        if( onError==OE_Replace ) onError = OE_Abort; /* IMP: R-15569-63625 */
+        if( zConsName ){
+          zConsName = sqlite3MPrintf(db, "constraint %s failed", zConsName);
+        }else{
+          zConsName = 0;
+        }
+        sqlite3HaltConstraint(pParse, onError, zConsName, P4_DYNAMIC);
+      }
+      sqlite3VdbeResolveLabel(v, allOk);
     }
-    sqlite3VdbeResolveLabel(v, allOk);
   }
 #endif /* !defined(SQLITE_OMIT_CHECK) */
 
@@ -1281,7 +1292,7 @@ void sqlite3GenerateConstraintChecks(
         ** table.
         */
         Trigger *pTrigger = 0;
-        if( pParse->db->flags&SQLITE_RecTriggers ){
+        if( db->flags&SQLITE_RecTriggers ){
           pTrigger = sqlite3TriggersExist(pParse, pTab, TK_DELETE, 0, 0);
         }
         if( pTrigger || sqlite3FkRequired(pParse, pTab, 0, 0) ){
@@ -1370,7 +1381,7 @@ void sqlite3GenerateConstraintChecks(
         char *zErr;
 
         sqlite3StrAccumInit(&errMsg, 0, 0, 200);
-        errMsg.db = pParse->db;
+        errMsg.db = db;
         zSep = pIdx->nColumn>1 ? "columns " : "column ";
         for(j=0; j<pIdx->nColumn; j++){
           char *zCol = pTab->aCol[pIdx->aiColumn[j]].zName;
@@ -1394,7 +1405,7 @@ void sqlite3GenerateConstraintChecks(
         Trigger *pTrigger = 0;
         assert( onError==OE_Replace );
         sqlite3MultiWrite(pParse);
-        if( pParse->db->flags&SQLITE_RecTriggers ){
+        if( db->flags&SQLITE_RecTriggers ){
           pTrigger = sqlite3TriggersExist(pParse, pTab, TK_DELETE, 0, 0);
         }
         sqlite3GenerateRowDelete(
@@ -1724,7 +1735,7 @@ static int xferOptimization(
     }
   }
 #ifndef SQLITE_OMIT_CHECK
-  if( pDest->pCheck && sqlite3ExprCompare(pSrc->pCheck, pDest->pCheck) ){
+  if( pDest->pCheck && sqlite3ExprListCompare(pSrc->pCheck, pDest->pCheck) ){
     return 0;   /* Tables have different CHECK constraints.  Ticket #2252 */
   }
 #endif

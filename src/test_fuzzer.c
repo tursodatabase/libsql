@@ -1127,8 +1127,7 @@ static int fuzzerBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
 }
 
 /*
-** A virtual table module that provides read-only access to a
-** Tcl global variable namespace.
+** A virtual table module that implements the "fuzzer".
 */
 static sqlite3_module fuzzerModule = {
   0,                           /* iVersion */

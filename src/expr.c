@@ -484,8 +484,14 @@ Expr *sqlite3PExpr(
   Expr *pRight,           /* Right operand */
   const Token *pToken     /* Argument token */
 ){
-  Expr *p = sqlite3ExprAlloc(pParse->db, op, pToken, 1);
-  sqlite3ExprAttachSubtrees(pParse->db, p, pLeft, pRight);
+  Expr *p;
+  if( op==TK_AND && pLeft && pRight ){
+    /* Take advantage of short-circuit false optimization for AND */
+    p = sqlite3ExprAnd(pParse->db, pLeft, pRight);
+  }else{
+    p = sqlite3ExprAlloc(pParse->db, op, pToken, 1);
+    sqlite3ExprAttachSubtrees(pParse->db, p, pLeft, pRight);
+  }
   if( p ) {
     sqlite3ExprCheckHeight(pParse, p->nHeight);
   }
@@ -493,14 +499,40 @@ Expr *sqlite3PExpr(
 }
 
 /*
+** Return 1 if an expression must be FALSE in all cases and 0 if the
+** expression might be true.  This is an optimization.  If is OK to
+** return 0 here even if the expression really is always false (a 
+** false negative).  But it is a bug to return 1 if the expression
+** might be true in some rare circumstances (a false positive.)
+**
+** Note that if the expression is part of conditional for a
+** LEFT JOIN, then we cannot determine at compile-time whether or not
+** is it true or false, so always return 0.
+*/
+static int exprAlwaysFalse(Expr *p){
+  int v = 0;
+  if( ExprHasProperty(p, EP_FromJoin) ) return 0;
+  if( !sqlite3ExprIsInteger(p, &v) ) return 0;
+  return v==0;
+}
+
+/*
 ** Join two expressions using an AND operator.  If either expression is
 ** NULL, then just return the other expression.
+**
+** If one side or the other of the AND is known to be false, then instead
+** of returning an AND expression, just return a constant expression with
+** a value of false.
 */
 Expr *sqlite3ExprAnd(sqlite3 *db, Expr *pLeft, Expr *pRight){
   if( pLeft==0 ){
     return pRight;
   }else if( pRight==0 ){
     return pLeft;
+  }else if( exprAlwaysFalse(pLeft) || exprAlwaysFalse(pRight) ){
+    sqlite3ExprDelete(db, pLeft);
+    sqlite3ExprDelete(db, pRight);
+    return sqlite3ExprAlloc(db, TK_INTEGER, &sqlite3IntTokens[0], 0);
   }else{
     Expr *pNew = sqlite3ExprAlloc(db, TK_AND, 0, 0);
     sqlite3ExprAttachSubtrees(db, pNew, pLeft, pRight);
@@ -3746,7 +3778,7 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB){
     if( !ExprHasProperty(pB, EP_IntValue) || pA->u.iValue!=pB->u.iValue ){
       return 2;
     }
-  }else if( pA->op!=TK_COLUMN && pA->u.zToken ){
+  }else if( pA->op!=TK_COLUMN && pA->op!=TK_AGG_COLUMN && pA->u.zToken ){
     if( ExprHasProperty(pB, EP_IntValue) || NEVER(pB->u.zToken==0) ) return 2;
     if( strcmp(pA->u.zToken,pB->u.zToken)!=0 ){
       return 2;
@@ -3780,6 +3812,41 @@ int sqlite3ExprListCompare(ExprList *pA, ExprList *pB){
     if( pA->a[i].sortOrder!=pB->a[i].sortOrder ) return 1;
     if( sqlite3ExprCompare(pExprA, pExprB) ) return 1;
   }
+  return 0;
+}
+
+/*
+** This is the expression callback for sqlite3FunctionUsesOtherSrc().
+**
+** Determine if an expression references any table other than one of the
+** tables in pWalker->u.pSrcList and abort if it does.
+*/
+static int exprUsesOtherSrc(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op==TK_COLUMN || pExpr->op==TK_AGG_COLUMN ){
+    int i;
+    SrcList *pSrc = pWalker->u.pSrcList;
+    for(i=0; i<pSrc->nSrc; i++){
+      if( pExpr->iTable==pSrc->a[i].iCursor ) return WRC_Continue;
+    }
+    return WRC_Abort;
+  }else{
+    return WRC_Continue;
+  }
+}
+
+/*
+** Determine if any of the arguments to the pExpr Function references
+** any SrcList other than pSrcList.  Return true if they do.  Return
+** false if pExpr has no argument or has only constant arguments or
+** only references tables named in pSrcList.
+*/
+static int sqlite3FunctionUsesOtherSrc(Expr *pExpr, SrcList *pSrcList){
+  Walker w;
+  assert( pExpr->op==TK_AGG_FUNCTION );
+  memset(&w, 0, sizeof(w));
+  w.xExprCallback = exprUsesOtherSrc;
+  w.u.pSrcList = pSrcList;
+  if( sqlite3WalkExprList(&w, pExpr->x.pList)!=WRC_Continue ) return 1;
   return 0;
 }
 
@@ -3898,9 +3965,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
       return WRC_Prune;
     }
     case TK_AGG_FUNCTION: {
-      /* The pNC->nDepth==0 test causes aggregate functions in subqueries
-      ** to be ignored */
-      if( pNC->nDepth==0 ){
+      if( !sqlite3FunctionUsesOtherSrc(pExpr, pSrcList) ){
         /* Check to see if pExpr is a duplicate of another aggregate 
         ** function that is already in the pAggInfo structure
         */
@@ -3944,15 +4009,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
   return WRC_Continue;
 }
 static int analyzeAggregatesInSelect(Walker *pWalker, Select *pSelect){
-  NameContext *pNC = pWalker->u.pNC;
-  if( pNC->nDepth==0 ){
-    pNC->nDepth++;
-    sqlite3WalkSelect(pWalker, pSelect);
-    pNC->nDepth--;
-    return WRC_Prune;
-  }else{
-    return WRC_Continue;
-  }
+  return WRC_Continue;
 }
 
 /*
@@ -3965,6 +4022,7 @@ static int analyzeAggregatesInSelect(Walker *pWalker, Select *pSelect){
 */
 void sqlite3ExprAnalyzeAggregates(NameContext *pNC, Expr *pExpr){
   Walker w;
+  memset(&w, 0, sizeof(w));
   w.xExprCallback = analyzeAggregate;
   w.xSelectCallback = analyzeAggregatesInSelect;
   w.u.pNC = pNC;

@@ -329,6 +329,7 @@ static sqlite3_file *multiplexSubOpen(
   ** database may therefore not grow to larger than 400 chunks. Attempting
   ** to open chunk 401 indicates the database is full. */
   if( iChunk>=SQLITE_MULTIPLEX_JOURNAL_8_3_OFFSET ){
+    sqlite3_log(SQLITE_FULL, "multiplexed chunk overflow: %s", pGroup->zName);
     *rc = SQLITE_FULL;
     return 0;
   }
@@ -347,7 +348,13 @@ static sqlite3_file *multiplexSubOpen(
     }else{
       *rc = pOrigVfs->xAccess(pOrigVfs, pGroup->aReal[iChunk].z,
                               SQLITE_ACCESS_EXISTS, &bExists);
-      if( *rc || !bExists ) return 0;
+     if( *rc || !bExists ){
+        if( *rc ){
+          sqlite3_log(*rc, "multiplexor.xAccess failure on %s",
+                      pGroup->aReal[iChunk].z);
+        }
+        return 0;
+      }
       flags &= ~SQLITE_OPEN_CREATE;
     }
     pSubOpen = sqlite3_malloc( pOrigVfs->szOsFile );
@@ -359,6 +366,8 @@ static sqlite3_file *multiplexSubOpen(
     *rc = pOrigVfs->xOpen(pOrigVfs, pGroup->aReal[iChunk].z, pSubOpen,
                           flags, pOutFlags);
     if( (*rc)!=SQLITE_OK ){
+      sqlite3_log(*rc, "multiplexor.xOpen failure on %s",
+                  pGroup->aReal[iChunk].z);
       sqlite3_free(pSubOpen);
       pGroup->aReal[iChunk].p = 0;
       return 0;
@@ -529,7 +538,7 @@ static int multiplexOpen(
     pGroup->bEnabled = -1;
     pGroup->bTruncate = sqlite3_uri_boolean(zUri, "truncate", 
                                    (flags & SQLITE_OPEN_MAIN_DB)==0);
-    pGroup->szChunk = sqlite3_uri_int64(zUri, "chunksize",
+    pGroup->szChunk = (int)sqlite3_uri_int64(zUri, "chunksize",
                                         SQLITE_MULTIPLEX_CHUNK_SIZE);
     pGroup->szChunk = (pGroup->szChunk+0xffff)&~0xffff;
     if( zName ){
@@ -597,7 +606,7 @@ static int multiplexOpen(
           bExists = multiplexSubSize(pGroup, 1, &rc)>0;
           if( rc==SQLITE_OK && bExists  && sz==(sz&0xffff0000) && sz>0
               && sz!=pGroup->szChunk ){
-            pGroup->szChunk = sz;
+            pGroup->szChunk = (int)sz;
           }else if( rc==SQLITE_OK && !bExists && sz>pGroup->szChunk ){
             pGroup->bEnabled = 0;
           }

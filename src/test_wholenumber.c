@@ -33,8 +33,8 @@
 typedef struct wholenumber_cursor wholenumber_cursor;
 struct wholenumber_cursor {
   sqlite3_vtab_cursor base;  /* Base class - must be first */
-  unsigned iValue;           /* Current value */
-  unsigned mxValue;          /* Maximum value */
+  sqlite3_int64 iValue;      /* Current value */
+  sqlite3_int64 mxValue;     /* Maximum value */
 };
 
 /* Methods for the wholenumber module */

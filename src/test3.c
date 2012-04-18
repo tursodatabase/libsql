@@ -465,7 +465,7 @@ static int btree_varint_test(
   if( Tcl_GetInt(interp, argv[4], (int*)&incr) ) return TCL_ERROR;
   in = start;
   in *= mult;
-  for(i=0; i<count; i++){
+  for(i=0; i<(int)count; i++){
     char zErr[200];
     n1 = putVarint(zBuf, in);
     if( n1>9 || n1<1 ){

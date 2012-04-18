@@ -1281,7 +1281,7 @@ struct Table {
   FKey *pFKey;         /* Linked list of all foreign keys in this table */
   char *zColAff;       /* String defining the affinity of each column */
 #ifndef SQLITE_OMIT_CHECK
-  Expr *pCheck;        /* The AND of all CHECK constraints */
+  ExprList *pCheck;    /* All CHECK constraints */
 #endif
 #ifndef SQLITE_OMIT_ALTERTABLE
   int addColOffset;    /* Offset in CREATE TABLE stmt to add a new column */
@@ -2011,7 +2011,6 @@ struct NameContext {
   u8 allowAgg;         /* Aggregate functions allowed here */
   u8 hasAgg;           /* True if aggregates are seen */
   u8 isCheck;          /* True if resolving names in a CHECK constraint */
-  int nDepth;          /* Depth of subquery recursion. 1 for no recursion */
   AggInfo *pAggInfo;   /* Information about aggregates at this level */
   NameContext *pNext;  /* Next outer name context.  NULL for outermost */
 };
@@ -2216,6 +2215,7 @@ struct Parse {
   int regRowid;        /* Register holding rowid of CREATE TABLE entry */
   int regRoot;         /* Register holding root page number for new objects */
   int nMaxArg;         /* Max args passed to user function by sub-program */
+  Token constraintName;/* Name of the constraint currently being parsed */
 #ifndef SQLITE_OMIT_SHARED_CACHE
   int nTableLock;        /* Number of locks in aTableLock */
   TableLock *aTableLock; /* Required table locks for shared-cache mode */
@@ -2476,6 +2476,7 @@ struct Walker {
   union {                                   /* Extra data for callback */
     NameContext *pNC;                          /* Naming context */
     int i;                                     /* Integer value */
+    SrcList *pSrcList;                         /* FROM clause */
   } u;
 };
 
@@ -2844,7 +2845,7 @@ SrcList *sqlite3SrcListDup(sqlite3*,SrcList*,int);
 IdList *sqlite3IdListDup(sqlite3*,IdList*);
 Select *sqlite3SelectDup(sqlite3*,Select*,int);
 void sqlite3FuncDefInsert(FuncDefHash*, FuncDef*);
-FuncDef *sqlite3FindFunction(sqlite3*,const char*,int,int,u8,int);
+FuncDef *sqlite3FindFunction(sqlite3*,const char*,int,int,u8,u8);
 void sqlite3RegisterBuiltinFunctions(sqlite3*);
 void sqlite3RegisterDateTimeFunctions(void);
 void sqlite3RegisterGlobalFunctions(void);

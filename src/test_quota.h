@@ -29,6 +29,14 @@
 #ifndef _QUOTA_H_
 #include "sqlite3.h"
 #include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#if SQLITE_OS_UNIX
+# include <unistd.h>
+#endif
+#if SQLITE_OS_WIN
+# include <windows.h>
+#endif
 
 /* Make this callable from C++ */
 #ifdef __cplusplus
@@ -181,6 +189,48 @@ int sqlite3_quota_fclose(quota_FILE*);
 int sqlite3_quota_fseek(quota_FILE*, long, int);
 void sqlite3_quota_rewind(quota_FILE*);
 long sqlite3_quota_ftell(quota_FILE*);
+
+/*
+** Truncate a file previously opened by sqlite3_quota_fopen().  Return
+** zero on success and non-zero on any kind of failure.
+**
+** The newSize argument must be less than or equal to the current file size.
+** Any attempt to "truncate" a file to a larger size results in 
+** undefined behavior.
+*/
+int sqlite3_quota_ftrunate(quota_FILE*, sqlite3_int64 newSize);
+
+/*
+** Return the last modification time of the opened file, in seconds
+** since 1970.
+*/
+int sqlite3_quota_file_mtime(quota_FILE*, time_t *pTime);
+
+/*
+** Return the size of the file as it is known to the quota system.
+**
+** This size might be different from the true size of the file on
+** disk if some outside process has modified the file without using the
+** quota mechanism, or if calls to sqlite3_quota_fwrite() have occurred
+** which have increased the file size, but those writes have not yet been
+** forced to disk using sqlite3_quota_fflush().
+**
+** Return -1 if the file is not participating in quota management.
+*/
+sqlite3_int64 sqlite3_quota_file_size(quota_FILE*);
+
+/*
+** Return the true size of the file.
+**
+** The true size should be the same as the size of the file as known
+** to the quota system, however the sizes might be different if the
+** file has been extended or truncated via some outside process or if
+** pending writes have not yet been flushed to disk.
+**
+** Return -1 if the file does not exist or if the size of the file
+** cannot be determined for some reason.
+*/
+sqlite3_int64 sqlite3_quota_file_truesize(quota_FILE*);
 
 /*
 ** Delete a file from the disk, if that file is under quota management.

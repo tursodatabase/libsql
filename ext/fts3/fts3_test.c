@@ -22,7 +22,8 @@
 #include <string.h>
 #include <assert.h>
 
-#ifdef SQLITE_TEST
+#if defined(SQLITE_TEST)
+#if defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4)
 
 /* Required so that the "ifdef SQLITE_ENABLE_FTS3" below works */
 #include "fts3Int.h"
@@ -160,6 +161,8 @@ static int fts3_near_match_cmd(
   
   Tcl_Obj **apExprToken;
   int nExprToken;
+
+  UNUSED_PARAMETER(clientData);
 
   /* Must have 3 or more arguments. */
   if( objc<3 || (objc%2)==0 ){
@@ -314,6 +317,7 @@ static int fts3_configure_incr_load_cmd(
   Tcl_SetObjResult(interp, pRet);
   Tcl_DecrRefCount(pRet);
 #endif
+  UNUSED_PARAMETER(clientData);
   return TCL_OK;
 }
 
@@ -352,6 +356,8 @@ static int testTokenizerCreate(
   sqlite3_tokenizer **ppTokenizer
 ){
   test_tokenizer *pNew;
+  UNUSED_PARAMETER(argc);
+  UNUSED_PARAMETER(argv);
 
   pNew = sqlite3_malloc(sizeof(test_tokenizer));
   if( !pNew ) return SQLITE_NOMEM;
@@ -507,6 +513,7 @@ static int fts3_test_tokenizer_cmd(
     (const unsigned char *)&pPtr, sizeof(sqlite3_tokenizer_module *)
   ));
 #endif
+  UNUSED_PARAMETER(clientData);
   return TCL_OK;
 }
 
@@ -524,4 +531,5 @@ int Sqlitetestfts3_Init(Tcl_Interp *interp){
   );
   return TCL_OK;
 }
+#endif                  /* SQLITE_ENABLE_FTS3 || SQLITE_ENABLE_FTS4 */
 #endif                  /* ifdef SQLITE_TEST */
