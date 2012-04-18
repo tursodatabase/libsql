@@ -1,5 +1,5 @@
-C Improved\shandling\sof\saggregate\ssubqueries\swithin\san\saggregate\squery.
-D 2012-04-17T16:38:53.916
+C Fix\sa\stypecast\sproblem\sin\slemon\sthat\scould\scause\sproblems\son\s64-bit\smachines.
+D 2012-04-18T09:59:56.596
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -963,7 +963,7 @@ F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
-F tool/lemon.c 445f18999b700d83b83a5d9be00c596546c21052
+F tool/lemon.c 90f46af31c92b940fec25b491f39409fd95dcdfa
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkkeywordhash.c d2e6b4a5965e23afb80fbe74bb54648cd371f309
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
@@ -1000,7 +1000,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 8e2363ad76446e863d03ead91fd621e59d5cb495
-R f4f12ce6163c2f6bb1a71deb9cb7039c
+P 430bb59d798286a86c351de92c429345f016b3f0
+R 113ef85b9c52f3c834e9782e53798156
 U drh
-Z 58b2a5ebe7a572f77bef677b95126ab0
+Z ce1db25d2f193d39fb492e3f8624ae7b
