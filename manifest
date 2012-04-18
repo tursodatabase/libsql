@@ -1,9 +1,9 @@
-C Import\sall\sthe\slatest\strunk\schanges\sinto\sthe\sWinRT\sbranch.\s\sRefactor\sand/or\sremove\sWinCE-specific\smacros\sand\sfunctions\sused\sfor\sfile\slocking\sto\simprove\sclarity\sof\spresentation.
-D 2012-04-18T05:57:38.819
+C Merge\sbuild\stool\supdates\sfrom\strunk.\s\sAlso,\smodify\sMSVC\smakefile\sto\sallow\sfor\sdebugging\sof\sbuild\stool\sissues.
+D 2012-04-18T10:29:21.047
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 71b1e756a0afe19fd6ef2b1e60bf2135118ed4d5
+F Makefile.msc f1450260e62a44bdd5fbb4f11389505167188df9
 F Makefile.vxworks 3b7fe7a0571fdadc61363ebc1b23732d2d6363ca
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION f9313d88cb77df8617059a88eb382291321ef6bc
@@ -963,9 +963,9 @@ F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
-F tool/lemon.c 445f18999b700d83b83a5d9be00c596546c21052
+F tool/lemon.c 90f46af31c92b940fec25b491f39409fd95dcdfa
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
-F tool/mkkeywordhash.c d2e6b4a5965e23afb80fbe74bb54648cd371f309
+F tool/mkkeywordhash.c bb52064aa614e1426445e4b2b9b00eeecd23cc79
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 105023aa86f696a74b1d6a4929d1e1c3baf9471c
@@ -1000,7 +1000,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 300bcfe31102d4428567d56810b57d1d54c1d43b 430bb59d798286a86c351de92c429345f016b3f0
-R f8499f4b4cfea9459167b2ec1c6f0e24
+P ad5cd15f49b286896f94ab1ff207077beee40e12 6015200beb3be7ec141ce36de694278e3ba11a02
+R f7f672d0d1f7d8f661126d329aacae85
 U mistachkin
-Z c68bf45e8579755b27c882f840c88e2c
+Z 5f8778fd5913269d27b5a934d131dc8a
