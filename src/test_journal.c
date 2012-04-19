@@ -290,9 +290,9 @@ static jt_file *locateDatabaseHandle(const char *zJournal){
   jt_file *pMain = 0;
   enterJtMutex();
   for(pMain=g.pList; pMain; pMain=pMain->pNext){
-    int nName = strlen(zJournal) - strlen("-journal");
+    int nName = (int)(strlen(zJournal) - strlen("-journal"));
     if( (pMain->flags&SQLITE_OPEN_MAIN_DB)
-     && (strlen(pMain->zName)==nName)
+     && ((int)strlen(pMain->zName)==nName)
      && 0==memcmp(pMain->zName, zJournal, nName)
      && (pMain->eLock>=SQLITE_LOCK_RESERVED)
     ){
@@ -723,7 +723,7 @@ static int jtOpen(
 ** returning.
 */
 static int jtDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
-  int nPath = strlen(zPath);
+  int nPath = (int)strlen(zPath);
   if( nPath>8 && 0==strcmp("-journal", &zPath[nPath-8]) ){
     /* Deleting a journal file. The end of a transaction. */
     jt_file *pMain = locateDatabaseHandle(zPath);

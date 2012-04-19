@@ -390,7 +390,7 @@ static int testTokenizerOpen(
     memset(pCsr, 0, sizeof(test_tokenizer_cursor));
     pCsr->aInput = pInput;
     if( nBytes<0 ){
-      pCsr->nInput = strlen(pInput);
+      pCsr->nInput = (int)strlen(pInput);
     }else{
       pCsr->nInput = nBytes;
     }
@@ -443,7 +443,7 @@ static int testTokenizerNext(
     const char *pToken = p;
     int nToken;
     while( p<pEnd && testIsTokenChar(*p) ) p++;
-    nToken = p-pToken;
+    nToken = (int)(p-pToken);
 
     /* Copy the token into the buffer */
     if( nToken>pCsr->nBuffer ){
@@ -461,12 +461,12 @@ static int testTokenizerNext(
         for(i=0; i<nToken; i++) pCsr->aBuffer[i] = testTolower(pToken[i]);
       }
       pCsr->iToken++;
-      pCsr->iInput = p - pCsr->aInput;
+      pCsr->iInput = (int)(p - pCsr->aInput);
 
       *ppToken = pCsr->aBuffer;
       *pnBytes = nToken;
-      *piStartOffset = pToken - pCsr->aInput;
-      *piEndOffset = p - pCsr->aInput;
+      *piStartOffset = (int)(pToken - pCsr->aInput);
+      *piEndOffset = (int)(p - pCsr->aInput);
       *piPosition = pCsr->iToken;
     }
   }

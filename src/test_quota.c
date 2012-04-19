@@ -344,7 +344,7 @@ static quotaFile *quotaFindFile(
     pFile = pFile->pNext;
   }
   if( pFile==0 && createFlag ){
-    int nName = strlen(zName);
+    int nName = (int)(strlen(zName) & 0x3fffffff);
     pFile = (quotaFile *)sqlite3_malloc( sizeof(*pFile) + nName + 1 );
     if( pFile ){
       memset(pFile, 0, sizeof(*pFile));
@@ -422,7 +422,7 @@ static quotaFile *quotaFindFile(
 */
 static char *quota_utf8_to_mbcs(const char *zUtf8){
 #if SQLITE_OS_WIN
-  int n;             /* Bytes in zUtf8 */
+  size_t n;          /* Bytes in zUtf8 */
   int nWide;         /* number of UTF-16 characters */
   int nMbcs;         /* Bytes of MBCS */
   LPWSTR zTmpWide;   /* The UTF16 text */
@@ -900,7 +900,7 @@ int sqlite3_quota_set(
     pGroup = pGroup->pNext;
   }
   if( pGroup==0 ){
-    int nPattern = strlen(zPattern);
+    int nPattern = (int)(strlen(zPattern) & 0x3fffffff);
     if( iLimit<=0 ){
       quotaLeave();
       return SQLITE_OK;
@@ -1242,7 +1242,7 @@ sqlite3_int64 sqlite3_quota_file_size(quota_FILE *p){
 */
 int sqlite3_quota_remove(const char *zFilename){
   char *zFull;            /* Full pathname for zFilename */
-  int nFull;              /* Number of bytes in zFilename */
+  size_t nFull;           /* Number of bytes in zFilename */
   int rc;                 /* Result code */
   quotaGroup *pGroup;     /* Group containing zFilename */
   quotaFile *pFile;       /* A file in the group */
@@ -1582,7 +1582,7 @@ static int test_quota_fread(
   char *zBuf;
   int sz;
   int nElem;
-  int got;
+  size_t got;
 
   if( objc!=4 ){
     Tcl_WrongNumArgs(interp, 1, objv, "HANDLE SIZE NELEM");
@@ -1617,7 +1617,7 @@ static int test_quota_fwrite(
   char *zBuf;
   int sz;
   int nElem;
-  int got;
+  size_t got;
 
   if( objc!=5 ){
     Tcl_WrongNumArgs(interp, 1, objv, "HANDLE SIZE NELEM CONTENT");
@@ -1628,7 +1628,7 @@ static int test_quota_fwrite(
   if( Tcl_GetIntFromObj(interp, objv[3], &nElem) ) return TCL_ERROR;
   zBuf = Tcl_GetString(objv[4]);
   got = sqlite3_quota_fwrite(zBuf, sz, nElem, p);
-  Tcl_SetObjResult(interp, Tcl_NewIntObj(got));
+  Tcl_SetObjResult(interp, Tcl_NewWideIntObj(got));
   return TCL_OK;
 }
 

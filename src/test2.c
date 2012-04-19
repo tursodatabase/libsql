@@ -547,7 +547,7 @@ static int fake_big_file(
   if( Tcl_GetInt(interp, argv[1], &n) ) return TCL_ERROR;
 
   pVfs = sqlite3_vfs_find(0);
-  nFile = strlen(argv[2]);
+  nFile = (int)strlen(argv[2]);
   zFile = sqlite3_malloc( nFile+2 );
   if( zFile==0 ) return TCL_ERROR;
   memcpy(zFile, argv[2], nFile+1);

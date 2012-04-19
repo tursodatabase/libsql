@@ -202,7 +202,7 @@ static void test_auxdata(
       }else {
         zRet[i*2] = '0';
       }
-      n = strlen(z) + 1;
+      n = (int)strlen(z) + 1;
       zAux = testContextMalloc(pCtx, n);
       if( zAux ){
         memcpy(zAux, z, n);
