@@ -421,6 +421,7 @@ struct callback_data {
   int statsOn;           /* True to display memory stats before each finalize */
   int cnt;               /* Number of records displayed so far */
   FILE *out;             /* Write results here */
+  FILE *traceOut;        /* Output for sqlite3_trace() */
   int nErr;              /* Number of errors seen */
   int mode;              /* An output mode setting */
   int writableSchema;    /* True if PRAGMA writable_schema=ON */
@@ -1309,6 +1310,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
     zTmp = appendText(zTmp, zTable, '"');
     if( zTmp ){
       zSelect = appendText(zSelect, zTmp, '\'');
+      free(zTmp);
     }
     zSelect = appendText(zSelect, " || ' VALUES(' || ", 0);
     rc = sqlite3_step(pTableInfo);
@@ -1337,7 +1339,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
       zSelect = appendText(zSelect, " ORDER BY rowid DESC", 0);
       run_table_dump_query(p, zSelect, 0);
     }
-    if( zSelect ) free(zSelect);
+    free(zSelect);
   }
   return 0;
 }
@@ -1367,7 +1369,7 @@ static int run_schema_dump_query(
     }
     zQ2 = malloc( len+100 );
     if( zQ2==0 ) return rc;
-    sqlite3_snprintf(sizeof(zQ2), zQ2, "%s ORDER BY rowid DESC", zQuery);
+    sqlite3_snprintf(len+100, zQ2, "%s ORDER BY rowid DESC", zQuery);
     rc = sqlite3_exec(p->db, zQ2, dump_callback, p, &zErr);
     if( rc ){
       fprintf(p->out, "/****** ERROR: %s ******/\n", zErr);
@@ -1433,6 +1435,7 @@ static char zHelp[] =
   "                         If TABLE specified, only list tables matching\n"
   "                         LIKE pattern TABLE.\n"
   ".timeout MS            Try opening locked tables for MS milliseconds\n"
+  ".trace FILE|off        Output each SQL statement as it is run\n"
   ".vfsname ?AUX?         Print the name of the VFS stack\n"
   ".width NUM1 NUM2 ...   Set column widths for \"column\" mode\n"
 ;
@@ -1523,6 +1526,52 @@ static int booleanValue(char *zArg){
 }
 
 /*
+** Close an output file, assuming it is not stderr or stdout
+*/
+static void output_file_close(FILE *f){
+  if( f && f!=stdout && f!=stderr ) fclose(f);
+}
+
+/*
+** Try to open an output file.   The names "stdout" and "stderr" are
+** recognized and do the right thing.  NULL is returned if the output 
+** filename is "off".
+*/
+static FILE *output_file_open(const char *zFile){
+  FILE *f;
+  if( strcmp(zFile,"stdout")==0 ){
+    f = stdout;
+  }else if( strcmp(zFile, "stderr")==0 ){
+    f = stderr;
+  }else if( strcmp(zFile, "off")==0 ){
+    f = 0;
+  }else{
+    f = fopen(zFile, "wb");
+    if( f==0 ){
+      fprintf(stderr, "Error: cannot open \"%s\"\n", zFile);
+    }
+  }
+  return f;
+}
+
+/*
+** A routine for handling output from sqlite3_trace().
+*/
+static void sql_trace_callback(void *pArg, const char *z){
+  FILE *f = (FILE*)pArg;
+  if( f ) fprintf(f, "%s\n", z);
+}
+
+/*
+** A no-op routine that runs with the ".breakpoint" doc-command.  This is
+** a useful spot to set a debugger breakpoint.
+*/
+static void test_breakpoint(void){
+  static int nCall = 0;
+  nCall++;
+}
+
+/*
 ** If an input line begins with "." then invoke this routine to
 ** process that line.
 **
@@ -1599,6 +1648,13 @@ static int do_meta_command(char *zLine, struct callback_data *p){
 
   if( c=='b' && n>=3 && strncmp(azArg[0], "bail", n)==0 && nArg>1 && nArg<3 ){
     bail_on_error = booleanValue(azArg[1]);
+  }else
+
+  /* The undocumented ".breakpoint" command causes a call to the no-op
+  ** routine named test_breakpoint().
+  */
+  if( c=='b' && n>=3 && strncmp(azArg[0], "breakpoint", n)==0 ){
+    test_breakpoint();
   }else
 
   if( c=='d' && n>1 && strncmp(azArg[0], "databases", n)==0 && nArg==1 ){
@@ -1932,22 +1988,8 @@ static int do_meta_command(char *zLine, struct callback_data *p){
 
   if( c=='l' && strncmp(azArg[0], "log", n)==0 && nArg>=2 ){
     const char *zFile = azArg[1];
-    if( p->pLog && p->pLog!=stdout && p->pLog!=stderr ){
-      fclose(p->pLog);
-      p->pLog = 0;
-    }
-    if( strcmp(zFile,"stdout")==0 ){
-      p->pLog = stdout;
-    }else if( strcmp(zFile, "stderr")==0 ){
-      p->pLog = stderr;
-    }else if( strcmp(zFile, "off")==0 ){
-      p->pLog = 0;
-    }else{
-      p->pLog = fopen(zFile, "w");
-      if( p->pLog==0 ){
-        fprintf(stderr, "Error: cannot open \"%s\"\n", zFile);
-      }
-    }
+    output_file_close(p->pLog);
+    p->pLog = output_file_open(zFile);
   }else
 
   if( c=='m' && strncmp(azArg[0], "mode", n)==0 && nArg==2 ){
@@ -2000,17 +2042,13 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   }else
 
   if( c=='o' && strncmp(azArg[0], "output", n)==0 && nArg==2 ){
-    if( p->out!=stdout ){
-      if( p->outfile[0]=='|' ){
-        pclose(p->out);
-      }else{
-        fclose(p->out);
-      }
+    if( p->outfile[0]=='|' ){
+      pclose(p->out);
+    }else{
+      output_file_close(p->out);
     }
-    if( strcmp(azArg[1],"stdout")==0 ){
-      p->out = stdout;
-      sqlite3_snprintf(sizeof(p->outfile), p->outfile, "stdout");
-    }else if( azArg[1][0]=='|' ){
+    p->outfile[0] = 0;
+    if( azArg[1][0]=='|' ){
       p->out = popen(&azArg[1][1], "w");
       if( p->out==0 ){
         fprintf(stderr,"Error: cannot open pipe \"%s\"\n", &azArg[1][1]);
@@ -2020,13 +2058,15 @@ static int do_meta_command(char *zLine, struct callback_data *p){
         sqlite3_snprintf(sizeof(p->outfile), p->outfile, "%s", azArg[1]);
       }
     }else{
-      p->out = fopen(azArg[1], "wb");
+      p->out = output_file_open(azArg[1]);
       if( p->out==0 ){
-        fprintf(stderr,"Error: cannot write to \"%s\"\n", azArg[1]);
+        if( strcmp(azArg[1],"off")!=0 ){
+          fprintf(stderr,"Error: cannot write to \"%s\"\n", azArg[1]);
+        }
         p->out = stdout;
         rc = 1;
       } else {
-         sqlite3_snprintf(sizeof(p->outfile), p->outfile, "%s", azArg[1]);
+        sqlite3_snprintf(sizeof(p->outfile), p->outfile, "%s", azArg[1]);
       }
     }
   }else
@@ -2396,6 +2436,18 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     enableTimer = booleanValue(azArg[1]);
   }else
   
+  if( c=='t' && strncmp(azArg[0], "trace", n)==0 && nArg>1 ){
+    output_file_close(p->traceOut);
+    p->traceOut = output_file_open(azArg[1]);
+#ifndef SQLITE_OMIT_TRACE
+    if( p->traceOut==0 ){
+      sqlite3_trace(p->db, 0, 0);
+    }else{
+      sqlite3_trace(p->db, sql_trace_callback, p->traceOut);
+    }
+#endif
+  }else
+
   if( c=='v' && strncmp(azArg[0], "version", n)==0 ){
     printf("SQLite %s %s\n" /*extra-version-info*/,
         sqlite3_libversion(), sqlite3_sourceid());
@@ -2607,12 +2659,11 @@ static int process_input(struct callback_data *p, FILE *in){
 
 /*
 ** Return a pathname which is the user's home directory.  A
-** 0 return indicates an error of some kind.  Space to hold the
-** resulting string is obtained from malloc().  The calling
-** function should free the result.
+** 0 return indicates an error of some kind.
 */
 static char *find_home_dir(void){
-  char *home_dir = NULL;
+  static char *home_dir = NULL;
+  if( home_dir ) return home_dir;
 
 #if !defined(_WIN32) && !defined(WIN32) && !defined(__OS2__) && !defined(_WIN32_WCE) && !defined(__RTP__) && !defined(_WRS_KERNEL)
   struct passwd *pwent;
@@ -2625,7 +2676,7 @@ static char *find_home_dir(void){
 #if defined(_WIN32_WCE)
   /* Windows CE (arm-wince-mingw32ce-gcc) does not provide getenv()
    */
-  home_dir = strdup("/");
+  home_dir = "/";
 #else
 
 #if defined(_WIN32) || defined(WIN32) || defined(__OS2__)
@@ -2681,7 +2732,6 @@ static int process_sqliterc(
   const char *sqliterc = sqliterc_override;
   char *zBuf = 0;
   FILE *in = NULL;
-  int nBuf;
   int rc = 0;
 
   if (sqliterc == NULL) {
@@ -2692,15 +2742,8 @@ static int process_sqliterc(
 #endif
       return 1;
     }
-    nBuf = strlen30(home_dir) + 16;
-    zBuf = malloc( nBuf );
-    if( zBuf==0 ){
-      fprintf(stderr,"%s: Error: out of memory\n",Argv0);
-      return 1;
-    }
-    sqlite3_snprintf(nBuf, zBuf,"%s/.sqliterc",home_dir);
-    free(home_dir);
-    sqliterc = (const char*)zBuf;
+    zBuf = sqlite3_mprintf("%s/.sqliterc",home_dir);
+    sqliterc = zBuf;
   }
   in = fopen(sqliterc,"rb");
   if( in ){
@@ -2710,7 +2753,7 @@ static int process_sqliterc(
     rc = process_input(p,in);
     fclose(in);
   }
-  free(zBuf);
+  sqlite3_free(zBuf);
   return rc;
 }
 
@@ -3051,7 +3094,6 @@ int main(int argc, char **argv){
         write_history(zHistory);
         free(zHistory);
       }
-      free(zHome);
     }else{
       rc = process_input(&data, stdin);
     }

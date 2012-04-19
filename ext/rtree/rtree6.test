@@ -16,7 +16,7 @@ if {![info exists testdir]} {
 } 
 source $testdir/tester.tcl
 
-ifcapable !rtree {
+ifcapable {!rtree || rtree_int_only} {
   finish_test
   return
 }

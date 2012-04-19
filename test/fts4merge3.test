@@ -20,6 +20,11 @@ source $testdir/bc_common.tcl
 
 set ::testprefix fts4merge3
 
+ifcapable !fts3 {
+  finish_test
+  return
+}
+
 if {"" == [bc_find_binaries backcompat.test]} {
   finish_test
   return
@@ -39,7 +44,10 @@ do_all_bc_test {
     do_test 1.2 { sql1 "SELECT docid FROM t2 WHERE t2 MATCH 'abc'" } {1485}
     do_test 1.3 { sql2 "SELECT docid FROM t2 WHERE t2 MATCH 'abc'" } {1485}
 
-    do_test 1.4 { sql2 "PRAGMA page_count" } {1286}
+    do_test 1.4 {
+      set x [sql2 "PRAGMA page_count"]
+      expr {$x>=1284 && $x<=1286}
+    } {1}
     do_test 1.5 { sql2 { 
       SELECT level, count(*) FROM t2_segdir GROUP BY level ORDER BY 1
     } } [list 0 15    1 1     2 14    3 4]

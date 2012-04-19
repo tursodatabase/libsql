@@ -2734,8 +2734,10 @@ case OP_Savepoint: {
         rc = p->rc;
       }else{
         iSavepoint = db->nSavepoint - iSavepoint - 1;
-        for(ii=0; ii<db->nDb; ii++){
-          sqlite3BtreeTripAllCursors(db->aDb[ii].pBt, SQLITE_ABORT);
+        if( p1==SAVEPOINT_ROLLBACK ){
+          for(ii=0; ii<db->nDb; ii++){
+            sqlite3BtreeTripAllCursors(db->aDb[ii].pBt, SQLITE_ABORT);
+          }
         }
         for(ii=0; ii<db->nDb; ii++){
           rc = sqlite3BtreeSavepoint(db->aDb[ii].pBt, p1, iSavepoint);

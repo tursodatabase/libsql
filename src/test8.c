@@ -192,7 +192,7 @@ static int getColumnNames(
         rc = SQLITE_NOMEM;
         goto out;
       }
-      nBytes += strlen(zName)+1;
+      nBytes += (int)strlen(zName)+1;
     }
     aCol = (char **)sqlite3MallocZero(nBytes);
     if( !aCol ){
@@ -1217,7 +1217,7 @@ static int echoRename(sqlite3_vtab *vtab, const char *zNewName){
   }
 
   if( p->isPattern ){
-    int nThis = strlen(p->zThis);
+    int nThis = (int)strlen(p->zThis);
     char *zSql = sqlite3_mprintf("ALTER TABLE %s RENAME TO %s%s", 
         p->zTableName, zNewName, &p->zTableName[nThis]
     );

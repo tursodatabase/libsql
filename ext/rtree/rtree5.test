@@ -49,9 +49,11 @@ do_test rtree5-1.6 {
 do_test rtree5-1.7 { 
   execsql { SELECT count(*) FROM t1 WHERE x1==5 }
 } {1}
-do_test rtree5-1.8 { 
-  execsql { SELECT count(*) FROM t1 WHERE x1==5.2 }
-} {0}
+ifcapable !rtree_int_only {
+  do_test rtree5-1.8 { 
+    execsql { SELECT count(*) FROM t1 WHERE x1==5.2 }
+  } {0}
+}
 do_test rtree5-1.9 { 
   execsql { SELECT count(*) FROM t1 WHERE x1==5.0 }
 } {1}

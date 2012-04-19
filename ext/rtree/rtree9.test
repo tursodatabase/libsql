@@ -17,6 +17,7 @@ if {![info exists testdir]} {
 } 
 source $testdir/tester.tcl
 ifcapable !rtree { finish_test ; return }
+ifcapable rtree_int_only { finish_test; return }
 
 register_cube_geom db
 

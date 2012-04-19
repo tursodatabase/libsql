@@ -308,8 +308,8 @@ static int fuzzerLoadOneRule(
 
   if( zFrom==0 ) zFrom = "";
   if( zTo==0 ) zTo = "";
-  nFrom = strlen(zFrom);
-  nTo = strlen(zTo);
+  nFrom = (int)strlen(zFrom);
+  nTo = (int)strlen(zTo);
 
   /* Silently ignore null transformations */
   if( strcmp(zFrom, zTo)==0 ){
@@ -448,7 +448,7 @@ static char *fuzzerDequote(const char *zIn){
   int nIn;                        /* Size of input string, in bytes */
   char *zOut;                     /* Output (dequoted) string */
 
-  nIn = strlen(zIn);
+  nIn = (int)strlen(zIn);
   zOut = sqlite3_malloc(nIn+1);
   if( zOut ){
     char q = zIn[0];              /* Quote character (if any ) */
@@ -465,7 +465,7 @@ static char *fuzzerDequote(const char *zIn){
         zOut[iOut++] = zIn[iIn];
       }
     }
-    assert( strlen(zOut)<=nIn );
+    assert( (int)strlen(zOut)<=nIn );
   }
   return zOut;
 }
@@ -513,7 +513,7 @@ static int fuzzerConnect(
   }else{
     int nModule;                  /* Length of zModule, in bytes */
 
-    nModule = strlen(zModule);
+    nModule = (int)strlen(zModule);
     pNew = sqlite3_malloc( sizeof(*pNew) + nModule + 1);
     if( pNew==0 ){
       rc = SQLITE_NOMEM;
@@ -870,11 +870,11 @@ static fuzzer_stem *fuzzerNewStem(
   fuzzer_rule *pRule;
   unsigned int h;
 
-  pNew = sqlite3_malloc( sizeof(*pNew) + strlen(zWord) + 1 );
+  pNew = sqlite3_malloc( sizeof(*pNew) + (int)strlen(zWord) + 1 );
   if( pNew==0 ) return 0;
   memset(pNew, 0, sizeof(*pNew));
   pNew->zBasis = (char*)&pNew[1];
-  pNew->nBasis = strlen(zWord);
+  pNew->nBasis = (int)strlen(zWord);
   memcpy(pNew->zBasis, zWord, pNew->nBasis+1);
   pRule = pCur->pVtab->pRule;
   while( fuzzerSkipRule(pRule, pNew, pCur->iRuleset) ){
@@ -997,7 +997,7 @@ static int fuzzerFilter(
 
   /* If the query term is longer than FUZZER_MX_OUTPUT_LENGTH bytes, this
   ** query will return zero rows.  */
-  if( strlen(zWord)<FUZZER_MX_OUTPUT_LENGTH ){
+  if( (int)strlen(zWord)<FUZZER_MX_OUTPUT_LENGTH ){
     pCur->pStem = pStem = fuzzerNewStem(pCur, zWord, (fuzzer_cost)0);
     if( pStem==0 ) return SQLITE_NOMEM;
     pStem->pRule = &pCur->nullRule;
@@ -1127,8 +1127,7 @@ static int fuzzerBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
 }
 
 /*
-** A virtual table module that provides read-only access to a
-** Tcl global variable namespace.
+** A virtual table module that implements the "fuzzer".
 */
 static sqlite3_module fuzzerModule = {
   0,                           /* iVersion */

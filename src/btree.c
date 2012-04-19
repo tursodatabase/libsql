@@ -7581,6 +7581,25 @@ static void checkAppendMsg(
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
 
 #ifndef SQLITE_OMIT_INTEGRITY_CHECK
+
+/*
+** Return non-zero if the bit in the IntegrityCk.aPgRef[] array that
+** corresponds to page iPg is already set.
+*/
+static int getPageReferenced(IntegrityCk *pCheck, Pgno iPg){
+  assert( iPg<=pCheck->nPage && sizeof(pCheck->aPgRef[0])==1 );
+  return (pCheck->aPgRef[iPg/8] & (1 << (iPg & 0x07)));
+}
+
+/*
+** Set the bit in the IntegrityCk.aPgRef[] array that corresponds to page iPg.
+*/
+static void setPageReferenced(IntegrityCk *pCheck, Pgno iPg){
+  assert( iPg<=pCheck->nPage && sizeof(pCheck->aPgRef[0])==1 );
+  pCheck->aPgRef[iPg/8] |= (1 << (iPg & 0x07));
+}
+
+
 /*
 ** Add 1 to the reference count for page iPage.  If this is the second
 ** reference to the page, add an error message to pCheck->zErrMsg.
@@ -7595,11 +7614,12 @@ static int checkRef(IntegrityCk *pCheck, Pgno iPage, char *zContext){
     checkAppendMsg(pCheck, zContext, "invalid page number %d", iPage);
     return 1;
   }
-  if( pCheck->anRef[iPage]==1 ){
+  if( getPageReferenced(pCheck, iPage) ){
     checkAppendMsg(pCheck, zContext, "2nd reference to page %d", iPage);
     return 1;
   }
-  return  (pCheck->anRef[iPage]++)>1;
+  setPageReferenced(pCheck, iPage);
+  return 0;
 }
 
 #ifndef SQLITE_OMIT_AUTOVACUUM
@@ -7975,17 +7995,15 @@ char *sqlite3BtreeIntegrityCheck(
     sqlite3BtreeLeave(p);
     return 0;
   }
-  sCheck.anRef = sqlite3Malloc( (sCheck.nPage+1)*sizeof(sCheck.anRef[0]) );
-  if( !sCheck.anRef ){
+
+  sCheck.aPgRef = sqlite3MallocZero((sCheck.nPage / 8)+ 1);
+  if( !sCheck.aPgRef ){
     *pnErr = 1;
     sqlite3BtreeLeave(p);
     return 0;
   }
-  for(i=0; i<=sCheck.nPage; i++){ sCheck.anRef[i] = 0; }
   i = PENDING_BYTE_PAGE(pBt);
-  if( i<=sCheck.nPage ){
-    sCheck.anRef[i] = 1;
-  }
+  if( i<=sCheck.nPage ) setPageReferenced(&sCheck, i);
   sqlite3StrAccumInit(&sCheck.errMsg, zErr, sizeof(zErr), 20000);
   sCheck.errMsg.useMalloc = 2;
 
@@ -8010,18 +8028,18 @@ char *sqlite3BtreeIntegrityCheck(
   */
   for(i=1; i<=sCheck.nPage && sCheck.mxErr; i++){
 #ifdef SQLITE_OMIT_AUTOVACUUM
-    if( sCheck.anRef[i]==0 ){
+    if( getPageReferenced(&sCheck, i)==0 ){
       checkAppendMsg(&sCheck, 0, "Page %d is never used", i);
     }
 #else
     /* If the database supports auto-vacuum, make sure no tables contain
     ** references to pointer-map pages.
     */
-    if( sCheck.anRef[i]==0 && 
+    if( getPageReferenced(&sCheck, i)==0 && 
        (PTRMAP_PAGENO(pBt, i)!=i || !pBt->autoVacuum) ){
       checkAppendMsg(&sCheck, 0, "Page %d is never used", i);
     }
-    if( sCheck.anRef[i]!=0 && 
+    if( getPageReferenced(&sCheck, i)!=0 && 
        (PTRMAP_PAGENO(pBt, i)==i && pBt->autoVacuum) ){
       checkAppendMsg(&sCheck, 0, "Pointer map page %d is referenced", i);
     }
@@ -8042,7 +8060,7 @@ char *sqlite3BtreeIntegrityCheck(
   /* Clean  up and report errors.
   */
   sqlite3BtreeLeave(p);
-  sqlite3_free(sCheck.anRef);
+  sqlite3_free(sCheck.aPgRef);
   if( sCheck.mallocFailed ){
     sqlite3StrAccumReset(&sCheck.errMsg);
     *pnErr = sCheck.nErr+1;

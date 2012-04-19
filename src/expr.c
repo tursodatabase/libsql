@@ -3778,7 +3778,7 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB){
     if( !ExprHasProperty(pB, EP_IntValue) || pA->u.iValue!=pB->u.iValue ){
       return 2;
     }
-  }else if( pA->op!=TK_COLUMN && pA->u.zToken ){
+  }else if( pA->op!=TK_COLUMN && pA->op!=TK_AGG_COLUMN && pA->u.zToken ){
     if( ExprHasProperty(pB, EP_IntValue) || NEVER(pB->u.zToken==0) ) return 2;
     if( strcmp(pA->u.zToken,pB->u.zToken)!=0 ){
       return 2;
@@ -3812,6 +3812,41 @@ int sqlite3ExprListCompare(ExprList *pA, ExprList *pB){
     if( pA->a[i].sortOrder!=pB->a[i].sortOrder ) return 1;
     if( sqlite3ExprCompare(pExprA, pExprB) ) return 1;
   }
+  return 0;
+}
+
+/*
+** This is the expression callback for sqlite3FunctionUsesOtherSrc().
+**
+** Determine if an expression references any table other than one of the
+** tables in pWalker->u.pSrcList and abort if it does.
+*/
+static int exprUsesOtherSrc(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op==TK_COLUMN || pExpr->op==TK_AGG_COLUMN ){
+    int i;
+    SrcList *pSrc = pWalker->u.pSrcList;
+    for(i=0; i<pSrc->nSrc; i++){
+      if( pExpr->iTable==pSrc->a[i].iCursor ) return WRC_Continue;
+    }
+    return WRC_Abort;
+  }else{
+    return WRC_Continue;
+  }
+}
+
+/*
+** Determine if any of the arguments to the pExpr Function references
+** any SrcList other than pSrcList.  Return true if they do.  Return
+** false if pExpr has no argument or has only constant arguments or
+** only references tables named in pSrcList.
+*/
+static int sqlite3FunctionUsesOtherSrc(Expr *pExpr, SrcList *pSrcList){
+  Walker w;
+  assert( pExpr->op==TK_AGG_FUNCTION );
+  memset(&w, 0, sizeof(w));
+  w.xExprCallback = exprUsesOtherSrc;
+  w.u.pSrcList = pSrcList;
+  if( sqlite3WalkExprList(&w, pExpr->x.pList)!=WRC_Continue ) return 1;
   return 0;
 }
 
@@ -3930,9 +3965,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
       return WRC_Prune;
     }
     case TK_AGG_FUNCTION: {
-      /* The pNC->nDepth==0 test causes aggregate functions in subqueries
-      ** to be ignored */
-      if( pNC->nDepth==0 ){
+      if( !sqlite3FunctionUsesOtherSrc(pExpr, pSrcList) ){
         /* Check to see if pExpr is a duplicate of another aggregate 
         ** function that is already in the pAggInfo structure
         */
@@ -3976,15 +4009,9 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
   return WRC_Continue;
 }
 static int analyzeAggregatesInSelect(Walker *pWalker, Select *pSelect){
-  NameContext *pNC = pWalker->u.pNC;
-  if( pNC->nDepth==0 ){
-    pNC->nDepth++;
-    sqlite3WalkSelect(pWalker, pSelect);
-    pNC->nDepth--;
-    return WRC_Prune;
-  }else{
-    return WRC_Continue;
-  }
+  UNUSED_PARAMETER(pWalker);
+  UNUSED_PARAMETER(pSelect);
+  return WRC_Continue;
 }
 
 /*
@@ -3997,6 +4024,7 @@ static int analyzeAggregatesInSelect(Walker *pWalker, Select *pSelect){
 */
 void sqlite3ExprAnalyzeAggregates(NameContext *pNC, Expr *pExpr){
   Walker w;
+  memset(&w, 0, sizeof(w));
   w.xExprCallback = analyzeAggregate;
   w.xSelectCallback = analyzeAggregatesInSelect;
   w.u.pNC = pNC;

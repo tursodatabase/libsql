@@ -27,21 +27,38 @@ if {[info exists G(isquick)] && $G(isquick)} {
   set ::NROW 250
 }
 
-# Return a floating point number between -X and X.
-# 
-proc rand {X} {
-  return [expr {int((rand()-0.5)*1024.0*$X)/512.0}]
-}
-
-# Return a positive floating point number less than or equal to X
-#
-proc randincr {X} {
-  while 1 {
-    set r [expr {int(rand()*$X*32.0)/32.0}]
-    if {$r>0.0} {return $r}
+ifcapable !rtree_int_only {
+  # Return a floating point number between -X and X.
+  # 
+  proc rand {X} {
+    return [expr {int((rand()-0.5)*1024.0*$X)/512.0}]
+  }
+  
+  # Return a positive floating point number less than or equal to X
+  #
+  proc randincr {X} {
+    while 1 {
+      set r [expr {int(rand()*$X*32.0)/32.0}]
+      if {$r>0.0} {return $r}
+    }
+  }
+} else {
+  # For rtree_int_only, return an number between -X and X.
+  # 
+  proc rand {X} {
+    return [expr {int((rand()-0.5)*2*$X)}]
+  }
+  
+  # Return a positive integer less than or equal to X
+  #
+  proc randincr {X} {
+    while 1 {
+      set r [expr {int(rand()*$X)+1}]
+      if {$r>0} {return $r}
+    }
   }
 }
-
+  
 # Scramble the $inlist into a random order.
 #
 proc scramble {inlist} {

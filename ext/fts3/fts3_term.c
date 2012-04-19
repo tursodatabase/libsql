@@ -88,9 +88,9 @@ static int fts3termConnectMethod(
   }
 
   zDb = argv[1]; 
-  nDb = strlen(zDb);
+  nDb = (int)strlen(zDb);
   zFts3 = argv[3];
-  nFts3 = strlen(zFts3);
+  nFts3 = (int)strlen(zFts3);
 
   rc = sqlite3_declare_vtab(db, FTS3_TERMS_SCHEMA);
   if( rc!=SQLITE_OK ) return rc;

@@ -110,7 +110,10 @@ static int icuOpen(
 
   *ppCursor = 0;
 
-  if( nInput<0 ){
+  if( zInput==0 ){
+    nInput = 0;
+    zInput = "";
+  }else if( nInput<0 ){
     nInput = strlen(zInput);
   }
   nChar = nInput+1;

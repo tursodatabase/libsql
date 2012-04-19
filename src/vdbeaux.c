@@ -1239,7 +1239,7 @@ int sqlite3VdbeList(
         for(j=0; j<nSub; j++){
           if( apSub[j]==pOp->p4.pProgram ) break;
         }
-        if( j==nSub && SQLITE_OK==sqlite3VdbeMemGrow(pSub, nByte, 1) ){
+        if( j==nSub && SQLITE_OK==sqlite3VdbeMemGrow(pSub, nByte, nSub!=0) ){
           apSub = (SubProgram **)pSub->z;
           apSub[nSub++] = pOp->p4.pProgram;
           pSub->flags |= MEM_Blob;

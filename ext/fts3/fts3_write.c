@@ -3739,7 +3739,6 @@ static int fts3IncrmergeAppend(
     pLeaf->key.n = 0;
     pLeaf->block.n = 0;
 
-    nPrefix = 0;
     nSuffix = nTerm;
     nSpace  = 1;
     nSpace += sqlite3Fts3VarintLen(nSuffix) + nSuffix;

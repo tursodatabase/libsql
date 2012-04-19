@@ -22,7 +22,8 @@
 #include <string.h>
 #include <assert.h>
 
-#ifdef SQLITE_TEST
+#if defined(SQLITE_TEST)
+#if defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4)
 
 /* Required so that the "ifdef SQLITE_ENABLE_FTS3" below works */
 #include "fts3Int.h"
@@ -389,7 +390,7 @@ static int testTokenizerOpen(
     memset(pCsr, 0, sizeof(test_tokenizer_cursor));
     pCsr->aInput = pInput;
     if( nBytes<0 ){
-      pCsr->nInput = strlen(pInput);
+      pCsr->nInput = (int)strlen(pInput);
     }else{
       pCsr->nInput = nBytes;
     }
@@ -442,7 +443,7 @@ static int testTokenizerNext(
     const char *pToken = p;
     int nToken;
     while( p<pEnd && testIsTokenChar(*p) ) p++;
-    nToken = p-pToken;
+    nToken = (int)(p-pToken);
 
     /* Copy the token into the buffer */
     if( nToken>pCsr->nBuffer ){
@@ -460,12 +461,12 @@ static int testTokenizerNext(
         for(i=0; i<nToken; i++) pCsr->aBuffer[i] = testTolower(pToken[i]);
       }
       pCsr->iToken++;
-      pCsr->iInput = p - pCsr->aInput;
+      pCsr->iInput = (int)(p - pCsr->aInput);
 
       *ppToken = pCsr->aBuffer;
       *pnBytes = nToken;
-      *piStartOffset = pToken - pCsr->aInput;
-      *piEndOffset = p - pCsr->aInput;
+      *piStartOffset = (int)(pToken - pCsr->aInput);
+      *piEndOffset = (int)(p - pCsr->aInput);
       *piPosition = pCsr->iToken;
     }
   }
@@ -530,4 +531,5 @@ int Sqlitetestfts3_Init(Tcl_Interp *interp){
   );
   return TCL_OK;
 }
+#endif                  /* SQLITE_ENABLE_FTS3 || SQLITE_ENABLE_FTS4 */
 #endif                  /* ifdef SQLITE_TEST */

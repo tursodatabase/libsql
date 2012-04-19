@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include "sqlite3.h"
 
 
 static int pagesize = 1024;     /* Size of a database page */
@@ -451,6 +452,224 @@ static void decode_trunk_page(
 }
 
 /*
+** A short text comment on the use of each page.
+*/
+static char **zPageUse;
+
+/*
+** Add a comment on the use of a page.
+*/
+static void page_usage_msg(int pgno, const char *zFormat, ...){
+  va_list ap;
+  char *zMsg;
+
+  va_start(ap, zFormat);
+  zMsg = sqlite3_vmprintf(zFormat, ap);
+  va_end(ap);
+  if( pgno<=0 || pgno>mxPage ){
+    printf("ERROR: page %d out of bounds.  Range=1..%d.  Msg: %s\n",
+            pgno, mxPage, zMsg);
+    sqlite3_free(zMsg);
+    return;
+  }
+  if( zPageUse[pgno]!=0 ){
+    printf("ERROR: page %d used multiple times:\n", pgno);
+    printf("ERROR:    previous: %s\n", zPageUse[pgno]);
+    printf("ERROR:    current:  %s\n", zPageUse[pgno]);
+    sqlite3_free(zPageUse[pgno]);
+  }
+  zPageUse[pgno] = zMsg;
+}
+
+/*
+** Find overflow pages of a cell and describe their usage.
+*/
+static void page_usage_cell(
+  unsigned char cType,    /* Page type */
+  unsigned char *a,       /* Cell content */
+  int pgno,               /* page containing the cell */
+  int cellno              /* Index of the cell on the page */
+){
+  int i;
+  int nDesc = 0;
+  int n = 0;
+  i64 nPayload;
+  i64 rowid;
+  int nLocal;
+  i = 0;
+  if( cType<=5 ){
+    a += 4;
+    n += 4;
+  }
+  if( cType!=5 ){
+    i = decodeVarint(a, &nPayload);
+    a += i;
+    n += i;
+    nLocal = localPayload(nPayload, cType);
+  }else{
+    nPayload = nLocal = 0;
+  }
+  if( cType==5 || cType==13 ){
+    i = decodeVarint(a, &rowid);
+    a += i;
+    n += i;
+  }
+  if( nLocal<nPayload ){
+    int ovfl = decodeInt32(a+nLocal);
+    int cnt = 0;
+    while( ovfl && (cnt++)<mxPage ){
+      page_usage_msg(ovfl, "overflow %d from cell %d of page %d",
+                     cnt, cellno, pgno);
+      a = getContent((ovfl-1)*pagesize, 4);
+      ovfl = decodeInt32(a);
+      free(a);
+    }
+  }
+}
+
+
+/*
+** Describe the usages of a b-tree page
+*/
+static void page_usage_btree(
+  int pgno,             /* Page to describe */
+  int parent,           /* Parent of this page.  0 for root pages */
+  int idx,              /* Which child of the parent */
+  const char *zName     /* Name of the table */
+){
+  unsigned char *a;
+  const char *zType = "corrupt node";
+  int nCell;
+  int i;
+  int hdr = pgno==1 ? 100 : 0;
+
+  if( pgno<=0 || pgno>mxPage ) return;
+  a = getContent((pgno-1)*pagesize, pagesize);
+  switch( a[hdr] ){
+    case 2:  zType = "interior node of index";  break;
+    case 5:  zType = "interior node of table";  break;
+    case 10: zType = "leaf of index";           break;
+    case 13: zType = "leaf of table";           break;
+  }
+  if( parent ){
+    page_usage_msg(pgno, "%s [%s], child %d of page %d",
+                   zType, zName, idx, parent);
+  }else{
+    page_usage_msg(pgno, "root %s [%s]", zType, zName);
+  }
+  nCell = a[hdr+3]*256 + a[hdr+4];
+  if( a[hdr]==2 || a[hdr]==5 ){
+    int cellstart = hdr+12;
+    unsigned int child;
+    for(i=0; i<nCell; i++){
+      int ofst;
+
+      ofst = cellstart + i*2;
+      ofst = a[ofst]*256 + a[ofst+1];
+      child = decodeInt32(a+ofst);
+      page_usage_btree(child, pgno, i, zName);
+    }
+    child = decodeInt32(a+cellstart-4);
+    page_usage_btree(child, pgno, i, zName);
+  }
+  if( a[hdr]==2 || a[hdr]==10 || a[hdr]==13 ){
+    int cellstart = hdr + 8 + 4*(a[hdr]<=5);
+    for(i=0; i<nCell; i++){
+      int ofst;
+      ofst = cellstart + i*2;
+      ofst = a[ofst]*256 + a[ofst+1];
+      page_usage_cell(a[hdr], a+ofst, pgno, i);
+    }
+  }
+  free(a);
+}
+
+/*
+** Determine page usage by the freelist
+*/
+static void page_usage_freelist(int pgno){
+  unsigned char *a;
+  int cnt = 0;
+  int i;
+  int n;
+  int iNext;
+  int parent = 1;
+
+  while( pgno>0 && pgno<=mxPage && (cnt++)<mxPage ){
+    page_usage_msg(pgno, "freelist trunk #%d child of %d", cnt, parent);
+    a = getContent((pgno-1)*pagesize, pagesize);
+    iNext = decodeInt32(a);
+    n = decodeInt32(a+4);
+    for(i=0; i<n; i++){
+      int child = decodeInt32(a + (i*4+8));
+      page_usage_msg(child, "freelist leaf, child %d of trunk page %d",
+                     i, pgno);
+    }
+    free(a);
+    parent = pgno;
+    pgno = iNext;
+  }
+}
+
+/*
+** Try to figure out how every page in the database file is being used.
+*/
+static void page_usage_report(const char *zDbName){
+  int i;
+  int rc;
+  sqlite3 *db;
+  sqlite3_stmt *pStmt;
+  unsigned char *a;
+
+  /* Avoid the pathological case */
+  if( mxPage<1 ){
+    printf("empty database\n");
+    return;
+  }
+
+  /* Open the database file */
+  rc = sqlite3_open(zDbName, &db);
+  if( rc ){
+    printf("cannot open database: %s\n", sqlite3_errmsg(db));
+    sqlite3_close(db);
+    return;
+  }
+
+  /* Set up global variables zPageUse[] and mxPage to record page
+  ** usages */
+  zPageUse = sqlite3_malloc( sizeof(zPageUse[0])*(mxPage+1) );
+  if( zPageUse==0 ) out_of_memory();
+  memset(zPageUse, 0, sizeof(zPageUse[0])*(mxPage+1));
+
+  /* Discover the usage of each page */
+  a = getContent(0, 100);
+  page_usage_freelist(decodeInt32(a+32));
+  free(a);
+  page_usage_btree(1, 0, 0, "sqlite_master");
+  rc = sqlite3_prepare_v2(db,
+           "SELECT type, name, rootpage FROM SQLITE_MASTER WHERE rootpage",
+           -1, &pStmt, 0);
+  if( rc==SQLITE_OK ){
+    while( sqlite3_step(pStmt)==SQLITE_ROW ){
+      int pgno = sqlite3_column_int(pStmt, 2);
+      page_usage_btree(pgno, 0, 0, sqlite3_column_text(pStmt, 1));
+    }
+  }else{
+    printf("ERROR: cannot query database: %s\n", sqlite3_errmsg(db));
+  }
+  sqlite3_finalize(pStmt);
+  sqlite3_close(db);
+
+  /* Print the report and free memory used */
+  for(i=1; i<=mxPage; i++){
+    printf("%5d: %s\n", i, zPageUse[i] ? zPageUse[i] : "???");
+    sqlite3_free(zPageUse[i]);
+  }
+  sqlite3_free(zPageUse);
+  zPageUse = 0;
+}
+
+/*
 ** Print a usage comment
 */
 static void usage(const char *argv0){
@@ -458,6 +677,7 @@ static void usage(const char *argv0){
   fprintf(stderr,
     "args:\n"
     "    dbheader        Show database header\n"
+    "    pgidx           Index of how each page is used\n"
     "    NNN..MMM        Show hex of pages NNN through MMM\n"
     "    NNN..end        Show hex of pages NNN through end of file\n"
     "    NNNb            Decode btree page NNN\n"
@@ -501,6 +721,10 @@ int main(int argc, char **argv){
       char *zLeft;
       if( strcmp(argv[i], "dbheader")==0 ){
         print_db_header();
+        continue;
+      }
+      if( strcmp(argv[i], "pgidx")==0 ){
+        page_usage_report(argv[1]);
         continue;
       }
       if( !isdigit(argv[i][0]) ){

@@ -329,6 +329,7 @@ static sqlite3_file *multiplexSubOpen(
   ** database may therefore not grow to larger than 400 chunks. Attempting
   ** to open chunk 401 indicates the database is full. */
   if( iChunk>=SQLITE_MULTIPLEX_JOURNAL_8_3_OFFSET ){
+    sqlite3_log(SQLITE_FULL, "multiplexed chunk overflow: %s", pGroup->zName);
     *rc = SQLITE_FULL;
     return 0;
   }
@@ -347,7 +348,13 @@ static sqlite3_file *multiplexSubOpen(
     }else{
       *rc = pOrigVfs->xAccess(pOrigVfs, pGroup->aReal[iChunk].z,
                               SQLITE_ACCESS_EXISTS, &bExists);
-      if( *rc || !bExists ) return 0;
+     if( *rc || !bExists ){
+        if( *rc ){
+          sqlite3_log(*rc, "multiplexor.xAccess failure on %s",
+                      pGroup->aReal[iChunk].z);
+        }
+        return 0;
+      }
       flags &= ~SQLITE_OPEN_CREATE;
     }
     pSubOpen = sqlite3_malloc( pOrigVfs->szOsFile );
@@ -359,6 +366,8 @@ static sqlite3_file *multiplexSubOpen(
     *rc = pOrigVfs->xOpen(pOrigVfs, pGroup->aReal[iChunk].z, pSubOpen,
                           flags, pOutFlags);
     if( (*rc)!=SQLITE_OK ){
+      sqlite3_log(*rc, "multiplexor.xOpen failure on %s",
+                  pGroup->aReal[iChunk].z);
       sqlite3_free(pSubOpen);
       pGroup->aReal[iChunk].p = 0;
       return 0;
@@ -641,7 +650,7 @@ static int multiplexDelete(
     /* If the main chunk was deleted successfully, also delete any subsequent
     ** chunks - starting with the last (highest numbered). 
     */
-    int nName = strlen(zName);
+    int nName = (int)strlen(zName);
     char *z;
     z = sqlite3_malloc(nName + 5);
     if( z==0 ){
