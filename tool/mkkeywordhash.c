@@ -360,7 +360,7 @@ int main(int argc, char **argv){
   /* Fill in the lengths of strings and hashes for all entries. */
   for(i=0; i<nKeyword; i++){
     Keyword *p = &aKeywordTable[i];
-    p->len = strlen(p->zName);
+    p->len = (int)strlen(p->zName);
     assert( p->len<sizeof(p->zOrigName) );
     strcpy(p->zOrigName, p->zName);
     totalLen += p->len;

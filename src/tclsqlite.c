@@ -1207,7 +1207,7 @@ static int dbPrepareAndBind(
     memset(pPreStmt, 0, nByte);
 
     pPreStmt->pStmt = pStmt;
-    pPreStmt->nSql = (*pzOut - zSql);
+    pPreStmt->nSql = (int)(*pzOut - zSql);
     pPreStmt->zSql = sqlite3_sql(pStmt);
     pPreStmt->apParm = (Tcl_Obj **)&pPreStmt[1];
 #ifdef SQLITE_TEST
@@ -3616,7 +3616,7 @@ static int md5file_cmd(void*cd, Tcl_Interp*interp, int argc, const char **argv){
   MD5Init(&ctx);
   for(;;){
     int n;
-    n = fread(zBuf, 1, sizeof(zBuf), in);
+    n = (int)fread(zBuf, 1, sizeof(zBuf), in);
     if( n<=0 ) break;
     MD5Update(&ctx, (unsigned char*)zBuf, (unsigned)n);
   }
@@ -3662,7 +3662,7 @@ static void md5step(sqlite3_context *context, int argc, sqlite3_value **argv){
   for(i=0; i<argc; i++){
     const char *zData = (char*)sqlite3_value_text(argv[i]);
     if( zData ){
-      MD5Update(p, (unsigned char*)zData, strlen(zData));
+      MD5Update(p, (unsigned char*)zData, (int)strlen(zData));
     }
   }
 }

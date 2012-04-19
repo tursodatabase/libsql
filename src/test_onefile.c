@@ -606,7 +606,7 @@ static int fsOpen(
   p->eType = eType;
 
   assert(strlen("-journal")==8);
-  nName = strlen(zName)-((eType==JOURNAL_FILE)?8:0);
+  nName = (int)strlen(zName)-((eType==JOURNAL_FILE)?8:0);
   pReal=pFsVfs->pFileList; 
   for(; pReal && strncmp(pReal->zName, zName, nName); pReal=pReal->pNext);
 
@@ -687,7 +687,7 @@ static int fsDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
   fs_vfs_t *pFsVfs = (fs_vfs_t *)pVfs;
   fs_real_file *pReal;
   sqlite3_file *pF;
-  int nName = strlen(zPath) - 8;
+  int nName = (int)strlen(zPath) - 8;
 
   assert(strlen("-journal")==8);
   assert(strcmp("-journal", &zPath[nName])==0);
@@ -717,7 +717,7 @@ static int fsAccess(
   fs_vfs_t *pFsVfs = (fs_vfs_t *)pVfs;
   fs_real_file *pReal;
   int isJournal = 0;
-  int nName = strlen(zPath);
+  int nName = (int)strlen(zPath);
 
   if( flags!=SQLITE_ACCESS_EXISTS ){
     sqlite3_vfs *pParent = ((fs_vfs_t *)pVfs)->pParent;

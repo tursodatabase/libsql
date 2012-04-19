@@ -671,7 +671,7 @@ static void vfslog_call(
 static void vfslog_string(sqlite3_vfs *pVfs, const char *zStr){
   VfslogVfs *p = (VfslogVfs *)pVfs;
   unsigned char *zRec;
-  int nStr = zStr ? strlen(zStr) : 0;
+  int nStr = zStr ? (int)strlen(zStr) : 0;
   if( (4+nStr+p->nBuf)>sizeof(p->aBuf) ){
     vfslog_flush(p);
   }
@@ -720,7 +720,7 @@ int sqlite3_vfslog_new(
     return SQLITE_ERROR;
   }
 
-  nVfs = strlen(zVfs);
+  nVfs = (int)strlen(zVfs);
   nByte = sizeof(VfslogVfs) + pParent->szOsFile + nVfs+1+pParent->mxPathname+1;
   p = (VfslogVfs *)sqlite3_malloc(nByte);
   memset(p, 0, nByte);

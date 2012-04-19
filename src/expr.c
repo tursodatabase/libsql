@@ -4009,6 +4009,8 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
   return WRC_Continue;
 }
 static int analyzeAggregatesInSelect(Walker *pWalker, Select *pSelect){
+  UNUSED_PARAMETER(pWalker);
+  UNUSED_PARAMETER(pSelect);
   return WRC_Continue;
 }
 

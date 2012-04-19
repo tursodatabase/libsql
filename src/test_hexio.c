@@ -126,7 +126,7 @@ static int hexio_read(
     return TCL_ERROR;
   }
   fseek(in, offset, SEEK_SET);
-  got = fread(zBuf, 1, amt, in);
+  got = (int)fread(zBuf, 1, amt, in);
   fclose(in);
   if( got<0 ){
     got = 0;
@@ -178,7 +178,7 @@ static int hexio_write(
     return TCL_ERROR;
   }
   fseek(out, offset, SEEK_SET);
-  written = fwrite(aOut, 1, nOut, out);
+  written = (int)fwrite(aOut, 1, nOut, out);
   sqlite3_free(aOut);
   fclose(out);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(written));
