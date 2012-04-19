@@ -1163,7 +1163,7 @@ static int dbPrepareAndBind(
     memset(pPreStmt, 0, nByte);
 
     pPreStmt->pStmt = pStmt;
-    pPreStmt->nSql = (*pzOut - zSql);
+    pPreStmt->nSql = (int)(*pzOut - zSql);
     pPreStmt->zSql = sqlite3_sql(pStmt);
     pPreStmt->apParm = (Tcl_Obj **)&pPreStmt[1];
 #ifdef SQLITE_TEST
