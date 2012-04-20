@@ -77,20 +77,27 @@ do_execsql_test 1.0 {
 
   CREATE TABLE t2(x INTEGER PRIMARY KEY, y);
 
-  CREATE TABLE t3(c1 PRIMARY KEY, c2);
+  CREATE TABLE t3(c1 PRIMARY KEY NOT NULL, c2 NOT NULL);
   CREATE INDEX i3 ON t3(c2);
+
+  CREATE TABLE t4(a, b NOT NULL, c NOT NULL, d NOT NULL);
+  CREATE UNIQUE INDEX t4i1 ON t4(b, c);
+  CREATE UNIQUE INDEX t4i2 ON t4(d COLLATE nocase);
 }
 foreach {tn noop sql} {
 
-  1   1   "SELECT DISTINCT b, c FROM t1"
-  2   1   "SELECT DISTINCT c FROM t1 WHERE b = ?"
+  1.1 0   "SELECT DISTINCT b, c FROM t1"
+  1.2 1   "SELECT DISTINCT b, c FROM t4"
+  2.1 0   "SELECT DISTINCT c FROM t1 WHERE b = ?"
+  2.2 1   "SELECT DISTINCT c FROM t4 WHERE b = ?"
   3   1   "SELECT DISTINCT rowid FROM t1"
   4   1   "SELECT DISTINCT rowid, a FROM t1"
   5   1   "SELECT DISTINCT x FROM t2"
   6   1   "SELECT DISTINCT * FROM t2"
   7   1   "SELECT DISTINCT * FROM (SELECT * FROM t2)"
 
-  8   1   "SELECT DISTINCT * FROM t1"
+  8.1 0   "SELECT DISTINCT * FROM t1"
+  8.2 1   "SELECT DISTINCT * FROM t4"
 
   8   0   "SELECT DISTINCT a, b FROM t1"
 
@@ -98,11 +105,16 @@ foreach {tn noop sql} {
   10  0   "SELECT DISTINCT c FROM t1"
   11  0   "SELECT DISTINCT b FROM t1"
 
-  12  0   "SELECT DISTINCT a, d FROM t1"
-  13  0   "SELECT DISTINCT a, b, c COLLATE nocase FROM t1"
-  14  1   "SELECT DISTINCT a, d COLLATE nocase FROM t1"
-  15  0   "SELECT DISTINCT a, d COLLATE binary FROM t1"
-  16  1   "SELECT DISTINCT a, b, c COLLATE binary FROM t1"
+  12.1 0   "SELECT DISTINCT a, d FROM t1"
+  12.2 0   "SELECT DISTINCT a, d FROM t4"
+  13.1 0   "SELECT DISTINCT a, b, c COLLATE nocase FROM t1"
+  13.2 0   "SELECT DISTINCT a, b, c COLLATE nocase FROM t4"
+  14.1 0   "SELECT DISTINCT a, d COLLATE nocase FROM t1"
+  14.2 1   "SELECT DISTINCT a, d COLLATE nocase FROM t4"
+
+  15   0   "SELECT DISTINCT a, d COLLATE binary FROM t1"
+  16.1 0   "SELECT DISTINCT a, b, c COLLATE binary FROM t1"
+  16.2 1   "SELECT DISTINCT a, b, c COLLATE binary FROM t4"
 
   16  0   "SELECT DISTINCT t1.rowid FROM t1, t2"
   17  0   { /* Technically, it would be possible to detect that DISTINCT
@@ -120,7 +132,8 @@ foreach {tn noop sql} {
 
   24  0   "SELECT DISTINCT rowid/2 FROM t1"
   25  1   "SELECT DISTINCT rowid/2, rowid FROM t1"
-  26  1   "SELECT DISTINCT rowid/2, b FROM t1 WHERE c = ?"
+  26.1  0   "SELECT DISTINCT rowid/2, b FROM t1 WHERE c = ?"
+  26.2  1   "SELECT DISTINCT rowid/2, b FROM t4 WHERE c = ?"
 } {
   if {$noop} {
     do_distinct_noop_test 1.$tn $sql

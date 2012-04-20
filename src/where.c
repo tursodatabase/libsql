@@ -1562,15 +1562,19 @@ static int isDistinctRedundant(
   **      list, or else the WHERE clause contains a term of the form "col=X",
   **      where X is a constant value. The collation sequences of the
   **      comparison and select-list expressions must match those of the index.
+  **
+  **   3. All of those index columns for which the WHERE clause does not
+  **      contain a "col=X" term are subject to a NOT NULL constraint.
   */
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
     if( pIdx->onError==OE_None ) continue;
     for(i=0; i<pIdx->nColumn; i++){
       int iCol = pIdx->aiColumn[i];
-      if( 0==findTerm(pWC, iBase, iCol, ~(Bitmask)0, WO_EQ, pIdx) 
-       && 0>findIndexCol(pParse, pDistinct, iBase, pIdx, i)
-      ){
-        break;
+      if( 0==findTerm(pWC, iBase, iCol, ~(Bitmask)0, WO_EQ, pIdx) ){
+        int iIdxCol = findIndexCol(pParse, pDistinct, iBase, pIdx, i);
+        if( iIdxCol<0 || pTab->aCol[pIdx->aiColumn[i]].notNull==0 ){
+          break;
+        }
       }
     }
     if( i==pIdx->nColumn ){
@@ -1737,7 +1741,7 @@ static int isSortingIndex(
     for(i=nEqCol; i<pIdx->nColumn; i++){
       if( aCol[pIdx->aiColumn[i]].notNull==0 ) break;
     }
-    return (i>=pIdx->nColumn);
+    return (i==pIdx->nColumn);
   }
   return 0;
 }
