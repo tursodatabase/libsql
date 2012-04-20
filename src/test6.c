@@ -468,8 +468,8 @@ static int cfSync(sqlite3_file *pFile, int flags){
 
   const char *zName = pCrash->zName;
   const char *zCrashFile = g.zCrashFile;
-  int nName = strlen(zName);
-  int nCrashFile = strlen(zCrashFile);
+  int nName = (int)strlen(zName);
+  int nCrashFile = (int)strlen(zCrashFile);
 
   if( nCrashFile>0 && zCrashFile[nCrashFile-1]=='*' ){
     nCrashFile--;

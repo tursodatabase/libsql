@@ -80,7 +80,7 @@ static int btree_open(
     sDb.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_RECURSIVE);
     sqlite3_mutex_enter(sDb.mutex);
   }
-  n = strlen(argv[1]);
+  n = (int)strlen(argv[1]);
   zFilename = sqlite3_malloc( n+2 );
   if( zFilename==0 ) return TCL_ERROR;
   memcpy(zFilename, argv[1], n+1);

@@ -650,7 +650,7 @@ static int multiplexDelete(
     /* If the main chunk was deleted successfully, also delete any subsequent
     ** chunks - starting with the last (highest numbered). 
     */
-    int nName = strlen(zName);
+    int nName = (int)strlen(zName);
     char *z;
     z = sqlite3_malloc(nName + 5);
     if( z==0 ){

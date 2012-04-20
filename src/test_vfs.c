@@ -784,7 +784,7 @@ static int tvfsShmOpen(sqlite3_file *pFile){
     if( 0==strcmp(pFd->zFilename, pBuffer->zFile) ) break;
   }
   if( !pBuffer ){
-    int nByte = sizeof(TestvfsBuffer) + strlen(pFd->zFilename) + 1;
+    int nByte = sizeof(TestvfsBuffer) + (int)strlen(pFd->zFilename) + 1;
     pBuffer = (TestvfsBuffer *)ckalloc(nByte);
     memset(pBuffer, 0, nByte);
     pBuffer->zFile = (char *)&pBuffer[1];
@@ -866,13 +866,13 @@ static int tvfsShmLock(
 
   if( p->pScript && p->mask&TESTVFS_SHMLOCK_MASK ){
     sqlite3_snprintf(sizeof(zLock), zLock, "%d %d", ofst, n);
-    nLock = strlen(zLock);
+    nLock = (int)strlen(zLock);
     if( flags & SQLITE_SHM_LOCK ){
       strcpy(&zLock[nLock], " lock");
     }else{
       strcpy(&zLock[nLock], " unlock");
     }
-    nLock += strlen(&zLock[nLock]);
+    nLock += (int)strlen(&zLock[nLock]);
     if( flags & SQLITE_SHM_SHARED ){
       strcpy(&zLock[nLock], " shared");
     }else{
@@ -1396,7 +1396,7 @@ static int testvfs_cmd(
   }
 
   zVfs = Tcl_GetString(objv[1]);
-  nByte = sizeof(Testvfs) + strlen(zVfs)+1;
+  nByte = sizeof(Testvfs) + (int)strlen(zVfs)+1;
   p = (Testvfs *)ckalloc(nByte);
   memset(p, 0, nByte);
   p->iDevchar = -1;
