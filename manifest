@@ -1,5 +1,5 @@
-C Remove\sobsolete\sart.
-D 2012-04-20T12:02:32.039
+C Fix\sfor\s2a5629202f.\sWhen\sconsidering\swhether\sor\snot\sa\sUNIQUE\sindex\smay\sbe\sused\sto\soptimize\san\sORDER\sBY\sclause,\sdo\snot\sassume\sthat\sall\sindex\sentries\sare\sdistinct\sunless\sthere\sis\ssome\sreason\sto\sbelieve\sthat\sthe\sindex\scontains\sno\sNULL\svalues.
+D 2012-04-20T15:24:53.110
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -246,7 +246,7 @@ F src/vtab.c ab90fb600a3f5e4b7c48d22a4cdb2d6b23239847
 F src/wal.c 7bb3ad807afc7973406c805d5157ec7a2f65e146
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 2112422a404dcca5d47f6630bdf180bccd36c62b
+F src/where.c e25ae482e94226df7f95fa4e0545cc7064e86574
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -733,6 +733,7 @@ F test/threadtest2.c ace893054fa134af3fc8d6e7cfecddb8e3acefb9
 F test/threadtest3.c 0ed13e09690f6204d7455fac3b0e8ece490f6eef
 F test/tkt-02a8e81d44.test 6c80d9c7514e2a42d4918bf87bf6bc54f379110c
 F test/tkt-26ff0c2d1e.test 888324e751512972c6e0d1a09df740d8f5aaf660
+F test/tkt-2a5629202f.test 1ab32e084e9fc3d36be6dee2617530846a0eb0b6
 F test/tkt-2d1a5c67d.test b028a811049eb472cb2d3a43fc8ce4f6894eebda
 F test/tkt-2ea2425d34.test 1cf13e6f75d149b3209a0cb32927a82d3d79fb28
 F test/tkt-31338dca7e.test 1f714c14b6682c5db715e0bda347926a3456f7a9
@@ -931,7 +932,7 @@ F test/walro.test e6bb27762c9f22601cbb8bff6e0acfd124e74b63
 F test/walshared.test 6dda2293880c300baf5d791c307f653094585761
 F test/walslow.test e7be6d9888f83aa5d3d3c7c08aa9b5c28b93609a
 F test/walthread.test a2ed5270eb695284d4ad27d252517bdc3317ee2a
-F test/where.test de337a3fe0a459ec7c93db16a519657a90552330
+F test/where.test 4c9f69987ed2aa0173fa930f2b41ab9879478cd8
 F test/where2.test 43d4becaf5a5df854e6c21d624a1cb84c6904554
 F test/where3.test 667e75642102c97a00bf9b23d3cb267db321d006
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
@@ -992,7 +993,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 3281972eaa46cb57fd9f0387063f47430dc0a3b4
-R 996fa506825219f1b7ce0687d37d97d8
-U drh
-Z 27a58991babc71a559ca9c653e33aa72
+P 372a90e2264a29ce543c093766cdec764d18b5a5
+R c55b0e9d6060c081eba144f695f549a1
+U dan
+Z 3f4edf7c59f1f66ed37303deb846aef3
