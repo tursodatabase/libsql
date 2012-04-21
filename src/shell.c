@@ -2572,7 +2572,9 @@ static int process_input(struct callback_data *p, FILE *in){
     free(zLine);
     zLine = one_input_line(zSql, in);
     if( zLine==0 ){
-      break;  /* We have reached EOF */
+      /* End of input */
+      if( stdin_is_interactive ) printf("\n");
+      break;
     }
     if( seenInterrupt ){
       if( in!=0 ) break;

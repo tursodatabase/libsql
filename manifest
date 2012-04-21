@@ -1,5 +1,5 @@
-C Do\snot\sconsider\sa\sDISTINCT\sclause\sredundant\sunless\sa\ssubset\sof\sthe\sresult-set\sis\scollectively\ssubject\sto\sa\sUNIQUE\sconstraint\sand\sit\scan\sbe\sguaranteed\sthat\sall\scolumns\sof\sthe\ssubset\sare\sNOT\sNULL\s(either\sdue\sto\sNOT\sNULL\sconstraints\sWHERE\sclause\sterms).\sFix\sfor\s[385a5b56b9].
-D 2012-04-20T16:59:24.885
+C If\sterminating\sinteractive\sinput\sto\sthe\scommand-line\sshell\swith\s^D,\sissue\nan\sextra\s\\n\sto\smove\sthe\scursor\sto\sthe\snext\sline\sbefore\sexiting.
+D 2012-04-21T11:33:39.769
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,7 +174,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 969ec2bc52db1b068054ecf5ddc74f244102a71d
 F src/rowset.c f6a49f3e9579428024662f6e2931832511f831a1
 F src/select.c d7b9018b7dd2e821183d69477ab55c39b8272335
-F src/shell.c 11185a9a4574f363bd4268a2780d37480ae00040
+F src/shell.c dec1a1896ffa9eaedd6d9907cd43aca4b9d3295d
 F src/sqlite.h.in 4338f299fc83dada8407358d585c0e240ecb76a3
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h c5e917c4f1453f3972b1fd0c81105dfe4f09cc32
@@ -218,6 +218,7 @@ F src/test_quota.h ee5da2ae7f84d1c8e0e0e2ab33f01d69f10259b5
 F src/test_rtree.c aba603c949766c4193f1068b91c787f57274e0d9
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
+F src/test_spellfix.c 495535f3eb57acdc384572da570e869bb1834bf4
 F src/test_stat.c d7035cfcc0ff1f93c000b621f36524318e004e11
 F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c a992d8c80ea91fbf21fb2dd570db40e77dd7e6ae
@@ -994,7 +995,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 9870e4c4fef10112c987c40cb1b95255a7214202
-R 7b0d4f32973f40703f4feb63496b017b
-U dan
-Z 293167d92a8f749c1bd20f8cdd573739
+P 7b8548b1872cc1225355ba8311e93dd08d6526e2
+R 6a28d821935f4caf8f00acbe95308ad8
+U drh
+Z a4a6f8d23b8334a25a8498dbc291bb1a
