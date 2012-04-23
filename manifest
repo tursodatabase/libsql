@@ -1,5 +1,5 @@
-C If\sterminating\sinteractive\sinput\sto\sthe\scommand-line\sshell\swith\s^D,\sissue\nan\sextra\s\\n\sto\smove\sthe\scursor\sto\sthe\snext\sline\sbefore\sexiting.
-D 2012-04-21T11:33:39.769
+C Update\sthe\s".table"\scommand\sin\sthe\sshell\sto\sshow\sall\stables\sin\sall\nattached\sdatabases,\sand\sto\savoid\susing\sthe\sdeprecated\ssqlite3_get_table()\nfunction.
+D 2012-04-23T12:38:05.598
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,7 +174,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 969ec2bc52db1b068054ecf5ddc74f244102a71d
 F src/rowset.c f6a49f3e9579428024662f6e2931832511f831a1
 F src/select.c d7b9018b7dd2e821183d69477ab55c39b8272335
-F src/shell.c dec1a1896ffa9eaedd6d9907cd43aca4b9d3295d
+F src/shell.c 151a17fe8464e40097c13672b6f756a38988147a
 F src/sqlite.h.in 4338f299fc83dada8407358d585c0e240ecb76a3
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h c5e917c4f1453f3972b1fd0c81105dfe4f09cc32
@@ -995,7 +995,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 7b8548b1872cc1225355ba8311e93dd08d6526e2
-R 6a28d821935f4caf8f00acbe95308ad8
+P feff1ef0b8f7b51ae80a9d34380b46a5103bf6cd
+R 684c337b6696cf99874c83d471c520fc
 U drh
-Z a4a6f8d23b8334a25a8498dbc291bb1a
+Z 459397b23e497549b544849ef1acdc2b
