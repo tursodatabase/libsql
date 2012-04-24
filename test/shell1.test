@@ -691,4 +691,33 @@ do_test shell1-3-28.1 {
      ".log stdout\nSELECT coalesce(sqlite_log(123,'hello'),'456');"
 } "0 {(123) hello\n456}"
 
+# Test the output of the ".dump" command
+#
+do_test shell1-4.1 {
+  db eval {
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES(null), (1), (2.25), ('hello'), (x'807f');
+  }
+  catchcmd test.db {.dump}
+} {0 {PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE t1(x);
+INSERT INTO "t1" VALUES(NULL);
+INSERT INTO "t1" VALUES(1);
+INSERT INTO "t1" VALUES(2.25);
+INSERT INTO "t1" VALUES('hello');
+INSERT INTO "t1" VALUES(X'807F');
+COMMIT;}}
+
+# Test the output of ".mode insert"
+#
+do_test shell1-4.2 {
+  catchcmd test.db ".mode insert t1\nselect * from t1;"
+} {0 {INSERT INTO t1 VALUES(NULL);
+INSERT INTO t1 VALUES(1);
+INSERT INTO t1 VALUES(2.25);
+INSERT INTO t1 VALUES('hello');
+INSERT INTO t1 VALUES(X'807f');}}
+
+
 finish_test
