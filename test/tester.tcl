@@ -518,6 +518,16 @@ proc do_test {name cmd expected} {
   flush stdout
 }
 
+proc catchcmd {db {cmd ""}} {
+  global CLI
+  set out [open cmds.txt w]
+  puts $out $cmd
+  close $out
+  set line "exec $CLI $db < cmds.txt"
+  set rc [catch { eval $line } msg]
+  list $rc $msg
+}
+
 proc filepath_normalize {p} {
   # test cases should be written to assume "unix"-like file paths
   if {$::tcl_platform(platform)!="unix"} {
