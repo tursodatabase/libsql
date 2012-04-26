@@ -1,5 +1,5 @@
-C New\stest\scases\sfor\sthe\s".dump"\sand\s".mode\sinsert"\scommands\sof\sthe\sshell.
-D 2012-04-24T13:14:49.245
+C All\svirtual\stable\sconstructors\sto\sbe\sinvoked\srecursively.\s\sA\stest\scase\sfor\nthis\shas\sbeen\sadded\sto\sTH3.
+D 2012-04-26T22:47:20.079
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -243,7 +243,7 @@ F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
 F src/vdbesort.c b25814d385895544ebc8118245c8311ded7f81c9
 F src/vdbetrace.c d6e50e04e1ec498150e519058f617d91b8f5c843
-F src/vtab.c ab90fb600a3f5e4b7c48d22a4cdb2d6b23239847
+F src/vtab.c ae657b1c22cff43863458e768a44f915c07bc0e4
 F src/wal.c 7bb3ad807afc7973406c805d5157ec7a2f65e146
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
@@ -995,7 +995,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 9fb7da6904e479f4671eeebf1a4b7e4e4e4f2b7b
-R 6b8677ba1888a50ec99e6b37809051dc
+P dfce8569765614462a3952d1761c10d579984665
+R bec439cef707f78d31474bb08e34e278
 U drh
-Z 48923fe0d240285d5799cf9cb9177252
+Z 9d4076ab5b78bad3c903da31eaeee8ce

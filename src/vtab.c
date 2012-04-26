@@ -447,7 +447,7 @@ static int vtabCallConstructor(
   int (*xConstruct)(sqlite3*,void*,int,const char*const*,sqlite3_vtab**,char**),
   char **pzErr
 ){
-  VtabCtx sCtx;
+  VtabCtx sCtx, *pPriorCtx;
   VTable *pVTable;
   int rc;
   const char *const*azArg = (const char *const*)pTab->azModuleArg;
@@ -472,9 +472,10 @@ static int vtabCallConstructor(
   assert( xConstruct );
   sCtx.pTab = pTab;
   sCtx.pVTable = pVTable;
+  pPriorCtx = db->pVtabCtx;
   db->pVtabCtx = &sCtx;
   rc = xConstruct(db, pMod->pAux, nArg, azArg, &pVTable->pVtab, &zErr);
-  db->pVtabCtx = 0;
+  db->pVtabCtx = pPriorCtx;
   if( rc==SQLITE_NOMEM ) db->mallocFailed = 1;
 
   if( SQLITE_OK!=rc ){
