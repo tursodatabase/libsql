@@ -1,5 +1,5 @@
-C All\svirtual\stable\sconstructors\sto\sbe\sinvoked\srecursively.\s\sA\stest\scase\sfor\nthis\shas\sbeen\sadded\sto\sTH3.
-D 2012-04-26T22:47:20.079
+C Enhance\sthe\sdo_test\sproc\sin\sthe\stest\ssuite\sso\sthat\sif\sthe\sexpected\sresult\nis\sof\sthe\sform\s"/.../"\sor\s"~/.../"\sthen\sregular\sexpression\smatching\sis\sdone\nbetween\sresult\sand\sthe\s"..."\spart\sof\sthe\sexpectation.\s\sIn\sthe\s~/.../\scase,\nwe\sexpect\sthere\sto\sbe\sno\smatch.
+D 2012-04-27T01:08:02.413
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -725,7 +725,7 @@ F test/tclsqlite.test 1597d353308531527583481d14d9da52ea8ed0af
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test 51edd31c65ed1560dd600b1796e8325df96318e2
 F test/temptrigger.test 26670ed7a39cf2296a7f0a9e0a1d7bdb7abe936d
-F test/tester.tcl dc0f9daa0a7c257df86a1a7603d5df2236e49145
+F test/tester.tcl 17b5f402d0e60e8c8ce751288b228fe9337f40c2
 F test/thread001.test 7cc2ce08f9cde95964736d11e91f9ab610f82f91
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -995,7 +995,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P dfce8569765614462a3952d1761c10d579984665
-R bec439cef707f78d31474bb08e34e278
+P 696a5a40bb28c4a54c9951f877b67015dc00bf55
+R cec8a879e3e3cce3faf837e46a46ad14
 U drh
-Z 9d4076ab5b78bad3c903da31eaeee8ce
+Z 3ce2501ea7e4d58e039b2073955afa3e

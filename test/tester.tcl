@@ -474,7 +474,6 @@ proc incr_ntest {} {
 # Invoke the do_test procedure to run a single test 
 #
 proc do_test {name cmd expected} {
-
   global argv cmdlinearg
 
   fix_testname name
@@ -505,11 +504,24 @@ proc do_test {name cmd expected} {
     if {[catch {uplevel #0 "$cmd;\n"} result]} {
       puts "\nError: $result"
       fail_test $name
-    } elseif {[string compare $result $expected]} {
-      puts "\nExpected: \[$expected\]\n     Got: \[$result\]"
-      fail_test $name
     } else {
-      puts " Ok"
+      if {[regexp {^~?/.*/$} $expected]} {
+        if {[string index $expected 0]=="~"} {
+          set re [string range $expected 2 end-1]
+          set ok [expr {![regexp $re $result]}]
+        } else {
+          set re [string range $expected 1 end-1]
+          set ok [regexp $re $result]
+        }
+      } else {
+        set ok [expr {[string compare $result $expected]==0}]
+      }
+      if {!$ok} {
+        puts "\nExpected: \[$expected\]\n     Got: \[$result\]"
+        fail_test $name
+      } else {
+        puts " Ok"
+      }
     }
   } else {
     puts " Omitted"
