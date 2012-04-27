@@ -1,5 +1,5 @@
-C Enhance\sthe\sprocessing\sof\sORDER\sBY\sclauses\son\scompound\squeries\sto\sbetter\nmatch\sterms\sof\sthe\sorder\sby\sagainst\sexpressions\sin\sthe\sresult\sset,\sin\sorder\nto\senable\sbetter\squery\soptimization.
-D 2012-04-27T01:09:06.388
+C Fix\sa\sminor\sdeviation\sfrom\sthe\scoding\sstyle\sguidelines.
+D 2012-04-27T16:38:11.705
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -161,7 +161,7 @@ F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 424d46e0edab969293c2223f09923b2178171f47
 F src/os_win.c 5e9e933a412ab35de2a6506b3c6a8295b31b309e
-F src/pager.c 85988507fa20acc60defb834722eddf4633e4aeb
+F src/pager.c bb5635dde0b152797836d1c72275284724bb563c
 F src/pager.h ef1eaf8593e78f73885c1dfac27ad83bee23bdc5
 F src/parse.y eb054bb40a5bf90d3422a01ed0e5df229461727a
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -995,7 +995,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P c9a734406c016329e80d887f7438206e41c52ce7
-R 726c49ce225b59d324679d0a91302d23
+P a49e909c8738317c8383ce93771c0a9c4cf270bc
+R b188dfa7c7a5aca6dba55435d29b09a3
 U drh
-Z fb90c7a1a92b2c585d3a7791f60ba9a6
+Z afa94c75b9ca22f35aabedc6458ef96f
