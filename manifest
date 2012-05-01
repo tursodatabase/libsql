@@ -1,5 +1,5 @@
-C Fix\sa\sminor\sdeviation\sfrom\sthe\scoding\sstyle\sguidelines.
-D 2012-04-27T16:38:11.705
+C Update\sa\stest\sin\sio.test\sto\saccount\sfor\s[05f98d4eec].
+D 2012-05-01T14:21:57.706
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -536,7 +536,7 @@ F test/insert5.test 394f96728d1258f406fe5f5aeb0aaf29487c39a6
 F test/intarray.test 066b7d7ac38d25bf96f87f1b017bfc687551cdd4
 F test/interrupt.test 42e7cf98646fd9cb4a3b131a93ed3c50b9e149f1
 F test/intpkey.test 537669fd535f62632ca64828e435b9e54e8d677f
-F test/io.test b278aa8fa609ed0dcc825df31b2d9f526c5a52bd
+F test/io.test 36d251507d72e92b965fb2f0801c2f0b56335bcf
 F test/ioerr.test 40bb2cfcab63fb6aa7424cd97812a84bc16b5fb8
 F test/ioerr2.test 9d71166f8466eda510f1af6137bdabaa82b5408d
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
@@ -995,7 +995,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P a49e909c8738317c8383ce93771c0a9c4cf270bc
-R b188dfa7c7a5aca6dba55435d29b09a3
-U drh
-Z afa94c75b9ca22f35aabedc6458ef96f
+P 1e51bffe777587cd05bd7db5e02d6291c3eb8c1a
+R 2c954175673c357079573f576ee6e960
+U dan
+Z 199b9a45180c95acb6ae422881191984
