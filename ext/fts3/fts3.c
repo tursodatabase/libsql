@@ -3543,10 +3543,11 @@ static void hashDestroy(void *p){
 }
 
 /*
-** The fts3 built-in tokenizers - "simple", "porter" and "icu"- are 
-** implemented in files fts3_tokenizer1.c, fts3_porter.c and fts3_icu.c
-** respectively. The following three forward declarations are for functions
-** declared in these files used to retrieve the respective implementations.
+** The fts3 built-in tokenizers - "simple", "porter", "transliterate01,
+** and "icu"- are implemented in files fts3_tokenizer1.c, fts3_porter.c,
+** fts3_transliterate01 and fts3_icu.c respectively. The following three
+** forward declarations are for functions declared in these files used
+** to retrieve the respective implementations.
 **
 ** Calling sqlite3Fts3SimpleTokenizerModule() sets the value pointed
 ** to by the argument to point to the "simple" tokenizer implementation.
@@ -3554,6 +3555,7 @@ static void hashDestroy(void *p){
 */
 void sqlite3Fts3SimpleTokenizerModule(sqlite3_tokenizer_module const**ppModule);
 void sqlite3Fts3PorterTokenizerModule(sqlite3_tokenizer_module const**ppModule);
+void sqlite3Fts3TranslitTokenizerModule(sqlite3_tokenizer_module const**);
 #ifdef SQLITE_ENABLE_ICU
 void sqlite3Fts3IcuTokenizerModule(sqlite3_tokenizer_module const**ppModule);
 #endif
@@ -3569,6 +3571,7 @@ int sqlite3Fts3Init(sqlite3 *db){
   Fts3Hash *pHash = 0;
   const sqlite3_tokenizer_module *pSimple = 0;
   const sqlite3_tokenizer_module *pPorter = 0;
+  const sqlite3_tokenizer_module *pTranslit = 0;
 
 #ifdef SQLITE_ENABLE_ICU
   const sqlite3_tokenizer_module *pIcu = 0;
@@ -3585,6 +3588,7 @@ int sqlite3Fts3Init(sqlite3 *db){
 
   sqlite3Fts3SimpleTokenizerModule(&pSimple);
   sqlite3Fts3PorterTokenizerModule(&pPorter);
+  sqlite3Fts3TranslitTokenizerModule(&pTranslit);
 
   /* Allocate and initialise the hash-table used to store tokenizers. */
   pHash = sqlite3_malloc(sizeof(Fts3Hash));
@@ -3598,6 +3602,7 @@ int sqlite3Fts3Init(sqlite3 *db){
   if( rc==SQLITE_OK ){
     if( sqlite3Fts3HashInsert(pHash, "simple", 7, (void *)pSimple)
      || sqlite3Fts3HashInsert(pHash, "porter", 7, (void *)pPorter) 
+     || sqlite3Fts3HashInsert(pHash, "transliterate01", 16, (void *)pTranslit) 
 #ifdef SQLITE_ENABLE_ICU
      || (pIcu && sqlite3Fts3HashInsert(pHash, "icu", 4, (void *)pIcu))
 #endif

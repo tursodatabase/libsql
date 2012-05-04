@@ -1,0 +1,68 @@
+# 2012 May 04
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is testing the FTS3/4 module, and in particular
+# the transliterate01 stemmer.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# If SQLITE_ENABLE_FTS4 is defined, omit this file.
+ifcapable !fts3 {
+  finish_test
+  return
+}
+
+# Test data for the Transliterator01 stemmer.  The first word of each line
+# is the input.  The second word is the desired output.
+#
+set translit01_test_data {
+  smörgåsbord      smoergaasbord
+  Ångström         aangstroem 
+  étude            etude
+  communiqué       communique
+  fiancée          fiancee
+  crèche           creche
+  Zürich           zuerich
+  Gödel            goedel
+  \u0427\u0430\u0439\u043a\u043e\u0301\u0432\u0441\u043a\u0438\u0439
+                   chaikovskii
+  \u0391\u1f30\u03c3\u03c7\u03cd\u03bb\u03bf\u03c2
+                   aschylos
+  \u03a3\u03c9\u03ba\u03c1\u03ac\u03c4\u03b7\u03c2
+                   sokratis
+  \u05d1\u05b5\u05bc\u05d9\u05ea\u05dc\u05b6\u05d7\u05b6\u05dd
+                   beaytlechem
+  \u05d9\u05b0\u05e8\u05d5\u05bc\u05e9\u05b8\u05c1\u05dc\u05b7\u05d9\u05b4\u05dd
+                   yervashashlayim
+}                         
+
+# Create a full-text index to use for testing the stemmer.
+#
+db close
+sqlite3 db :memory:
+db eval {
+  CREATE VIRTUAL TABLE t1 USING fts4(word, tokenize transliterate01);
+  CREATE VIRTUAL TABLE t1aux USING fts4aux(t1);
+}
+
+foreach {pfrom pto} $translit01_test_data {
+  do_test fts3translit01-$pfrom {
+    execsql {
+      DELETE FROM t1;
+      INSERT INTO t1(word) VALUES($pfrom);
+      SELECT term FROM t1aux where col=0;
+    }
+  } $pto
+}
+
+finish_test
