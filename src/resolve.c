@@ -883,7 +883,7 @@ static int resolveOrderGroupBy(
   ExprList *pOrderBy,   /* An ORDER BY or GROUP BY clause to resolve */
   const char *zType     /* Either "ORDER" or "GROUP", as appropriate */
 ){
-  int i;                         /* Loop counter */
+  int i, j;                      /* Loop counters */
   int iCol;                      /* Column number */
   struct ExprList_item *pItem;   /* A term of the ORDER BY clause */
   Parse *pParse;                 /* Parsing context */
@@ -919,6 +919,11 @@ static int resolveOrderGroupBy(
     pItem->iOrderByCol = 0;
     if( sqlite3ResolveExprNames(pNC, pE) ){
       return 1;
+    }
+    for(j=0; j<pSelect->pEList->nExpr; j++){
+      if( sqlite3ExprCompare(pE, pSelect->pEList->a[j].pExpr)==0 ){
+        pItem->iOrderByCol = j+1;
+      }
     }
   }
   return sqlite3ResolveOrderGroupBy(pParse, pSelect, pOrderBy, zType);
