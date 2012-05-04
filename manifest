@@ -1,5 +1,5 @@
-C Add\san\sexperimental\stokenizer\sto\sFTS3/4:\sone\sthat\stransliterates\slatin,\ngreek,\scyrillic,\sand\shebrew\scharacters\sinto\spure\sascii.
-D 2012-05-04T02:58:29.386
+C Minor\stweaks\sto\sthe\shebrew\stransliteration\stables.
+D 2012-05-04T13:22:42.928
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 502e53594fa43e920aa9d3a3a408f926e83fccb7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -70,12 +70,12 @@ F ext/fts3/fts3_test.c 348f7d08cae05285794e23dc4fe8b8fdf66e264a
 F ext/fts3/fts3_tokenizer.c 3da7254a9881f7e270ab28e2004e0d22b3212bce
 F ext/fts3/fts3_tokenizer.h 66dec98e365854b6cd2d54f1a96bb6d428fc5a68
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
-F ext/fts3/fts3_tokenizer2.c eaf0d4fde69318a69af68f907e38044b17b73578
+F ext/fts3/fts3_tokenizer2.c 13175d138fddd041d389068cafa0d9957ac837f2
 F ext/fts3/fts3_write.c cd4af00b3b0512b4d76177a267fcaafab44cbce4
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
-F ext/fts3/translit01.tcl ebf2a366be3a1f61bfdeaea5e1b7ca22e4cac373
+F ext/fts3/translit01.tcl 3d9ec48eb56ab9aaa0304c7c4fda44f60d7276cf
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c eb9ae1d79046bd7871aa97ee6da51eb770134b5a
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
@@ -491,7 +491,7 @@ F test/fts3rnd.test 1320d8826a845e38a96e769562bf83d7a92a15d0
 F test/fts3shared.test 8bb266521d7c5495c0ae522bb4d376ad5387d4a2
 F test/fts3snippet.test 8e956051221a34c7daeb504f023cb54d5fa5a8b2
 F test/fts3sort.test 95be0b19d7e41c44b29014f13ea8bddd495fd659
-F test/fts3translit01.test b98d51b181801f167c958fc57a0cd30e2f44142f
+F test/fts3translit01.test e5106f72be6d28161416aaac675ebd39cd6f7c52
 F test/fts4aa.test 6e7f90420b837b2c685f3bcbe84c868492d40a68
 F test/fts4check.test 66fa274cab2b615f2fb338b257713aba8fad88a8
 F test/fts4content.test 17b2360f7d1a9a7e5aa8022783f5c5731b6dfd4f
@@ -998,10 +998,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 1e51bffe777587cd05bd7db5e02d6291c3eb8c1a
-R 4025921e3305465b260475cce02023bd
-T *branch * translit-tokenizer
-T *sym-translit-tokenizer *
-T -sym-trunk *
+P 930115693aa20bcbeb919143098009f30907749a
+R d80972dc05430fb3727fd721db5129d8
 U drh
-Z 0c15510fecdd6820002a606cd4ea815d
+Z 8fb82806311f067e31e89d8965325302
