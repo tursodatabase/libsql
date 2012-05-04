@@ -146,11 +146,15 @@ do_test io-2.2 {
 # written because page 1 - the change-counter page - is written using
 # an out-of-band method that bypasses the write counter.
 #
+# UPDATE: As of [05f98d4eec] (adding SQLITE_DBSTATUS_CACHE_WRITE), the
+# second write is also counted. So this now reports two writes and a
+# single fsync.
+#
 sqlite3_simulate_device -char atomic
 do_test io-2.3 {
   execsql { INSERT INTO abc VALUES(3, 4) }
   list [nWrite db] [nSync]
-} {1 1}
+} {2 1}
 
 # Test that the journal file is not created and the change-counter is
 # updated when the atomic-write optimization is used.

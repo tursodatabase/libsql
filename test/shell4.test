@@ -19,33 +19,20 @@
 #
 #   shell4-1.*: Basic tests specific to the "stats" command.
 #
-
-set CLI "./sqlite3"
-
-proc do_test {name cmd expected} {
-  puts -nonewline "$name ..."
-  set res [uplevel $cmd]
-  if {$res eq $expected} {
-    puts Ok
-  } else {
-    puts Error
-    puts "  Got: $res"
-    puts "  Expected: $expected"
-    exit
-  }
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+if {$tcl_platform(platform)=="windows"} {
+  set CLI "sqlite3.exe"
+} else {
+  set CLI "./sqlite3"
 }
-
-proc catchcmd {db {cmd ""}} {
-  global CLI
-  set out [open cmds.txt w]
-  puts $out $cmd
-  close $out
-  set line "exec $CLI $db < cmds.txt"
-  set rc [catch { eval $line } msg]
-  list $rc $msg
+if {![file executable $CLI]} {
+  finish_test
+  return
 }
-
-file delete -force test.db test.db.journal
+db close
+forcedelete test.db test.db-journal test.db-wal
+sqlite3 db test.db
 
 #----------------------------------------------------------------------------
 # Test cases shell4-1.*: Tests specific to the "stats" command.
@@ -126,4 +113,4 @@ SELECT 1;
        [regexp {Autoindex Inserts} $res]
 } {1 1 1}
 
-puts "CLI tests completed successfully"
+finish_test
