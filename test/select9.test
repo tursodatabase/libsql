@@ -415,5 +415,40 @@ do_test select9-4.X {
   }
 } {}
 
+# Testing to make sure that queries involving a view of a compound select
+# are planned efficiently.  This detects a problem reported on the mailing
+# list on 2012-04-26.  See
+#
+#  http://www.mail-archive.com/sqlite-users%40sqlite.org/msg69746.html
+#
+# For additional information.
+#
+do_test select9-5.1 {
+  db eval {
+    CREATE TABLE t51(x, y);
+    CREATE TABLE t52(x, y);
+    CREATE VIEW v5 as
+       SELECT x, y FROM t51
+       UNION ALL
+       SELECT x, y FROM t52;
+    CREATE INDEX t51x ON t51(x);
+    CREATE INDEX t52x ON t52(x);
+    EXPLAIN QUERY PLAN
+       SELECT * FROM v5 WHERE x='12345' ORDER BY y;
+  }
+} {~/SCAN TABLE/}  ;# Uses indices with "*"
+do_test select9-5.2 {
+  db eval {
+    EXPLAIN QUERY PLAN
+       SELECT x, y FROM v5 WHERE x='12345' ORDER BY y;
+  }
+} {~/SCAN TABLE/}  ;# Uses indices with "x, y"
+do_test select9-5.3 {
+  db eval {
+    EXPLAIN QUERY PLAN
+       SELECT x, y FROM v5 WHERE +x='12345' ORDER BY y;
+  }
+} {/SCAN TABLE/}   ;# Full table scan if the "+x" prevents index usage.
+
 
 finish_test

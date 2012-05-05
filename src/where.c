@@ -1562,15 +1562,19 @@ static int isDistinctRedundant(
   **      list, or else the WHERE clause contains a term of the form "col=X",
   **      where X is a constant value. The collation sequences of the
   **      comparison and select-list expressions must match those of the index.
+  **
+  **   3. All of those index columns for which the WHERE clause does not
+  **      contain a "col=X" term are subject to a NOT NULL constraint.
   */
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
     if( pIdx->onError==OE_None ) continue;
     for(i=0; i<pIdx->nColumn; i++){
       int iCol = pIdx->aiColumn[i];
-      if( 0==findTerm(pWC, iBase, iCol, ~(Bitmask)0, WO_EQ, pIdx) 
-       && 0>findIndexCol(pParse, pDistinct, iBase, pIdx, i)
-      ){
-        break;
+      if( 0==findTerm(pWC, iBase, iCol, ~(Bitmask)0, WO_EQ, pIdx) ){
+        int iIdxCol = findIndexCol(pParse, pDistinct, iBase, pIdx, i);
+        if( iIdxCol<0 || pTab->aCol[pIdx->aiColumn[i]].notNull==0 ){
+          break;
+        }
       }
     }
     if( i==pIdx->nColumn ){
@@ -1718,14 +1722,26 @@ static int isSortingIndex(
   }
   if( pIdx->onError!=OE_None && i==pIdx->nColumn
       && (wsFlags & WHERE_COLUMN_NULL)==0
-      && !referencesOtherTables(pOrderBy, pMaskSet, j, base) ){
-    /* All terms of this index match some prefix of the ORDER BY clause
-    ** and the index is UNIQUE and no terms on the tail of the ORDER BY
-    ** clause reference other tables in a join.  If this is all true then
-    ** the order by clause is superfluous.  Not that if the matching
-    ** condition is IS NULL then the result is not necessarily unique
-    ** even on a UNIQUE index, so disallow those cases. */
-    return 1;
+      && !referencesOtherTables(pOrderBy, pMaskSet, j, base) 
+  ){
+    Column *aCol = pIdx->pTable->aCol;
+    int i;
+
+    /* All terms of this index match some prefix of the ORDER BY clause,
+    ** the index is UNIQUE, and no terms on the tail of the ORDER BY
+    ** refer to other tables in a join. So, assuming that the index entries
+    ** visited contain no NULL values, then this index delivers rows in
+    ** the required order.
+    **
+    ** It is not possible for any of the first nEqCol index fields to be
+    ** NULL (since the corresponding "=" operator in the WHERE clause would 
+    ** not be true). So if all remaining index columns have NOT NULL 
+    ** constaints attached to them, we can be confident that the visited
+    ** index entries are free of NULLs.  */
+    for(i=nEqCol; i<pIdx->nColumn; i++){
+      if( aCol[pIdx->aiColumn[i]].notNull==0 ) break;
+    }
+    return (i==pIdx->nColumn);
   }
   return 0;
 }

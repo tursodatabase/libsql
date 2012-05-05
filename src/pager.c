@@ -3011,7 +3011,7 @@ static int pagerWalFrames(
     PgHdr *p;
     PgHdr **ppNext = &pList;
     nList = 0;
-    for(p=pList; (*ppNext = p); p=p->pDirty){
+    for(p=pList; (*ppNext = p)!=0; p=p->pDirty){
       if( p->pgno<=nTruncate ){
         ppNext = &p->pDirty;
         nList++;
