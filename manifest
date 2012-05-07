@@ -1,5 +1,5 @@
-C Sync\sthe\slatest\strunk\schanges\sinto\sthe\swinRT\sbranch.
-D 2012-05-04T23:11:21.989
+C Merge\sWindows\sdirectory\schecking\schanges\sfrom\strunk.
+D 2012-05-07T20:28:19.785
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -160,7 +160,7 @@ F src/os.h 38aabd5e3ecd4162332076f55bb09cec02165cca
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 424d46e0edab969293c2223f09923b2178171f47
-F src/os_win.c c3487c9c506c1253bb4c65abc3caf988b9addb6c
+F src/os_win.c ce348d158b43883c5b1495f68be3f654b7d0c503
 F src/pager.c bb5635dde0b152797836d1c72275284724bb563c
 F src/pager.h ef1eaf8593e78f73885c1dfac27ad83bee23bdc5
 F src/parse.y eb054bb40a5bf90d3422a01ed0e5df229461727a
@@ -175,7 +175,7 @@ F src/resolve.c 748e75299faff345f34f0e5bd02a2bac8aa69fcd
 F src/rowset.c f6a49f3e9579428024662f6e2931832511f831a1
 F src/select.c d7b9018b7dd2e821183d69477ab55c39b8272335
 F src/shell.c 04399b2f9942bd02ed5ffee3b84bcdb39c52a1e6
-F src/sqlite.h.in 21eb2ff783710a8cf2b435890dc1ffc750058169
+F src/sqlite.h.in 457e6fb1eef84fbd97864c086499b1de64a05aa5
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h c5e917c4f1453f3972b1fd0c81105dfe4f09cc32
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -689,11 +689,11 @@ F test/shared6.test 866bb4982c45ce216c61ded5e8fde4e7e2f3ffa9
 F test/shared7.test 960760bc8d03e1419e70dea69cf41db62853616e
 F test/shared_err.test 91e26ec4f3fbe07951967955585137e2f18993de
 F test/sharedlock.test ffa0a3c4ac192145b310f1254f8afca4d553eabf
-F test/shell1.test 7dcd612b0018ddad783647d984fffa76791ffd3d w tool/shell1.test
-F test/shell2.test 037d6ad16e873354195d30bb2dc4b5321788154a w tool/shell2.test
-F test/shell3.test 9196c42772d575685e722c92b4b39053c6ebba59 w tool/shell3.test
-F test/shell4.test aa4eef8118b412d1a01477a53426ece169ea86a9 w tool/shell4.test
-F test/shell5.test fa2188bbb13fe2d183fd04a5f7b512650c35ef5d w tool/shell5.test
+F test/shell1.test 7dcd612b0018ddad783647d984fffa76791ffd3d
+F test/shell2.test 037d6ad16e873354195d30bb2dc4b5321788154a
+F test/shell3.test 9196c42772d575685e722c92b4b39053c6ebba59
+F test/shell4.test aa4eef8118b412d1a01477a53426ece169ea86a9
+F test/shell5.test fa2188bbb13fe2d183fd04a5f7b512650c35ef5d
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/shrink.test 8c70f62b6e8eb4d54533de6d65bd06b1b9a17868
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
@@ -995,7 +995,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 25478dcff59690a5f59c3b96600374184057eae9 bfa61e781cb442be641486e7e55a1518e888d830
-R ce5ef0f680ccee96865eacdf6d030fb3
-U drh
-Z e6cad85cf7d7f8dd84e66fcbcd8c3674
+P be4ab188cffbe97ae4f1f0520591bb7f0df185de a4555a53eab3f5d2f142c78a6b71189544e80ae6
+R d4541eb715733c4ea776ae24939baa95
+U mistachkin
+Z 7ca602c491f736ecdcb3f782ba71db3e

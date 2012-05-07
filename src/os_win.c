@@ -3405,6 +3405,35 @@ static int getTempname(int nBuf, char *zBuf){
 }
 
 /*
+** Return TRUE if the named file is really a directory.  Return false if
+** it is something other than a directory, or if there is any kind of memory
+** allocation failure.
+*/
+static int winIsDir(const void *zConverted){
+  DWORD attr;
+  int rc = 0;
+  DWORD lastErrno;
+
+  if( isNT() ){
+    int cnt = 0;
+    WIN32_FILE_ATTRIBUTE_DATA sAttrData;
+    memset(&sAttrData, 0, sizeof(sAttrData));
+    while( !(rc = osGetFileAttributesExW((LPCWSTR)zConverted,
+                             GetFileExInfoStandard,
+                             &sAttrData)) && retryIoerr(&cnt, &lastErrno) ){}
+    if( !rc ){
+      return 0; /* Invalid name? */
+    }
+    attr = sAttrData.dwFileAttributes;
+#if SQLITE_OS_WINCE==0
+  }else{
+    attr = osGetFileAttributesA((char*)zConverted);
+#endif
+  }
+  return (attr!=INVALID_FILE_ATTRIBUTES) && (attr&FILE_ATTRIBUTE_DIRECTORY);
+}
+
+/*
 ** Open a file.
 */
 static int winOpen(
@@ -3510,6 +3539,11 @@ static int winOpen(
     return SQLITE_IOERR_NOMEM;
   }
 
+  if( winIsDir(zConverted) ){
+    sqlite3_free(zConverted);
+    return SQLITE_CANTOPEN_ISDIR;
+  }
+
   if( isReadWrite ){
     dwDesiredAccess = GENERIC_READ | GENERIC_WRITE;
   }else{
@@ -3567,7 +3601,9 @@ static int winOpen(
                               dwShareMode,
                               dwCreationDisposition,
                               &extendedParameters))==INVALID_HANDLE_VALUE &&
-                              retryIoerr(&cnt, &lastErrno) ){}
+                              retryIoerr(&cnt, &lastErrno) ){
+               /* Noop */
+    }
 #else
     while( (h = osCreateFileW((LPCWSTR)zConverted,
                               dwDesiredAccess,
@@ -3575,7 +3611,9 @@ static int winOpen(
                               dwCreationDisposition,
                               dwFlagsAndAttributes,
                               NULL))==INVALID_HANDLE_VALUE &&
-                              retryIoerr(&cnt, &lastErrno) ){}
+                              retryIoerr(&cnt, &lastErrno) ){
+               /* Noop */
+    }
 #endif
   }
 #ifdef SQLITE_WIN32_HAS_ANSI
@@ -3586,7 +3624,9 @@ static int winOpen(
                               dwCreationDisposition,
                               dwFlagsAndAttributes,
                               NULL))==INVALID_HANDLE_VALUE &&
-                              retryIoerr(&cnt, &lastErrno) ){}
+                              retryIoerr(&cnt, &lastErrno) ){
+               /* Noop */
+    }
   }
 #endif
   logIoerr(cnt);
@@ -3665,6 +3705,7 @@ static int winDelete(
 ){
   int cnt = 0;
   int rc;
+  DWORD attr;
   DWORD lastErrno;
   void *zConverted;
   UNUSED_PARAMETER(pVfs);
@@ -3675,24 +3716,60 @@ static int winDelete(
   if( zConverted==0 ){
     return SQLITE_IOERR_NOMEM;
   }
-  rc = 1;
   if( isNT() ){
+    do {
 #if SQLITE_OS_WINRT
-    WIN32_FILE_ATTRIBUTE_DATA sAttrData;
-    memset(&sAttrData, 0, sizeof(sAttrData));
-    while( osGetFileAttributesExW(zConverted, GetFileExInfoStandard,
-                                  &sAttrData) &&
+      WIN32_FILE_ATTRIBUTE_DATA sAttrData;
+      memset(&sAttrData, 0, sizeof(sAttrData));
+      if ( osGetFileAttributesExW(zConverted, GetFileExInfoStandard,
+                                  &sAttrData) ){
+        attr = sAttrData.dwFileAttributes;
+      }else{
+        rc = SQLITE_OK; /* Already gone? */
+        break;
+      }
 #else
-    while( osGetFileAttributesW(zConverted)!=INVALID_FILE_ATTRIBUTES &&
+      attr = osGetFileAttributesW(zConverted);
 #endif
-         (rc = osDeleteFileW(zConverted))==0 && retryIoerr(&cnt, &lastErrno) ){}
-    rc = rc ? SQLITE_OK : SQLITE_ERROR;
+      if ( attr==INVALID_FILE_ATTRIBUTES ){
+        rc = SQLITE_OK; /* Already gone? */
+        break;
+      }
+      if ( attr&FILE_ATTRIBUTE_DIRECTORY ){
+        rc = SQLITE_ERROR; /* Files only. */
+        break;
+      }
+      if ( osDeleteFileW(zConverted) ){
+        rc = SQLITE_OK; /* Deleted OK. */
+        break;
+      }
+      if ( !retryIoerr(&cnt, &lastErrno) ){
+        rc = SQLITE_ERROR; /* No more retries. */
+        break;
+      }
+    } while(1);
   }
 #ifdef SQLITE_WIN32_HAS_ANSI
   else{
-    while( osGetFileAttributesA(zConverted)!=INVALID_FILE_ATTRIBUTES &&
-         (rc = osDeleteFileA(zConverted))==0 && retryIoerr(&cnt, &lastErrno) ){}
-    rc = rc ? SQLITE_OK : SQLITE_ERROR;
+    do {
+      attr = osGetFileAttributesA(zConverted);
+      if ( attr==INVALID_FILE_ATTRIBUTES ){
+        rc = SQLITE_OK; /* Already gone? */
+        break;
+      }
+      if ( attr&FILE_ATTRIBUTE_DIRECTORY ){
+        rc = SQLITE_ERROR; /* Files only. */
+        break;
+      }
+      if ( osDeleteFileA(zConverted) ){
+        rc = SQLITE_OK; /* Deleted OK. */
+        break;
+      }
+      if ( !retryIoerr(&cnt, &lastErrno) ){
+        rc = SQLITE_ERROR; /* No more retries. */
+        break;
+      }
+    } while(1);
   }
 #endif
   if( rc ){
