@@ -3031,6 +3031,29 @@ static int getTempname(int nBuf, char *zBuf){
   return SQLITE_OK; 
 }
 
+/* Forward reference */
+static int winAccess(sqlite3_vfs*,const char*,int,int*);
+
+/*
+** Return TRUE if the named file is really a directory.  Return false if
+** it is something other than a directory, or if there is any kind of memory
+** allocation failure.
+*/
+static int winIsDir(sqlite3_vfs *pVfs, const char *zName){
+  int isDir = 0;
+  int rc;
+  char *zDirName;
+
+  zDirName = sqlite3_mprintf("%s/nul", zName);
+  if( zDirName ){
+    rc = winAccess(pVfs, zDirName, SQLITE_ACCESS_EXISTS, &isDir);
+    sqlite3_free(zDirName);
+  }else{
+    rc = SQLITE_NOMEM;
+  }
+  return rc==SQLITE_OK && isDir;
+}
+
 /*
 ** Open a file.
 */
@@ -3185,12 +3208,11 @@ static int winOpen(
                               dwShareMode, NULL,
                               dwCreationDisposition,
                               dwFlagsAndAttributes,
-                              NULL))==INVALID_HANDLE_VALUE &&
-                              retryIoerr(&cnt, &lastErrno) ){}
-/* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
-** Since the ANSI version of these Windows API do not exist for WINCE,
-** it's important to not reference them for WINCE builds.
-*/
+                              NULL))==INVALID_HANDLE_VALUE
+        && !winIsDir(pVfs, zName)
+        && retryIoerr(&cnt, &lastErrno) ){
+               /* Noop */
+    }
 #if SQLITE_OS_WINCE==0
   }else{
     while( (h = osCreateFileA((LPCSTR)zConverted,
