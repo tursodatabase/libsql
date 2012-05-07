@@ -1,5 +1,5 @@
-C Update\sa\stest\sin\sio.test\sto\saccount\sfor\s[05f98d4eec].
-D 2012-05-01T14:21:57.706
+C Merge\sWindows\sdirectory\schecking\schanges\sto\strunk.
+D 2012-05-07T18:10:12.605
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -160,7 +160,7 @@ F src/os.h 59beba555b65a450bd1d804220532971d4299f60
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 424d46e0edab969293c2223f09923b2178171f47
-F src/os_win.c 5e9e933a412ab35de2a6506b3c6a8295b31b309e
+F src/os_win.c 412d6434133c7c81dc48b7702f3ea5e61c309e5c
 F src/pager.c bb5635dde0b152797836d1c72275284724bb563c
 F src/pager.h ef1eaf8593e78f73885c1dfac27ad83bee23bdc5
 F src/parse.y eb054bb40a5bf90d3422a01ed0e5df229461727a
@@ -175,7 +175,7 @@ F src/resolve.c 748e75299faff345f34f0e5bd02a2bac8aa69fcd
 F src/rowset.c f6a49f3e9579428024662f6e2931832511f831a1
 F src/select.c d7b9018b7dd2e821183d69477ab55c39b8272335
 F src/shell.c 04399b2f9942bd02ed5ffee3b84bcdb39c52a1e6
-F src/sqlite.h.in 4338f299fc83dada8407358d585c0e240ecb76a3
+F src/sqlite.h.in b8c6d77179cee6e4b8d6eb9f3c2917626d58acd3
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h c5e917c4f1453f3972b1fd0c81105dfe4f09cc32
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -995,7 +995,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 1e51bffe777587cd05bd7db5e02d6291c3eb8c1a
-R 2c954175673c357079573f576ee6e960
-U dan
-Z 199b9a45180c95acb6ae422881191984
+P bfa61e781cb442be641486e7e55a1518e888d830 b08530e1a02cba03afefd65dc101e074e8847c07
+R fce36c453dc0cfdd0c18e985348b50c5
+U mistachkin
+Z 6287c2c1d24bbcf6d142a68d76da7aa1
