@@ -2843,6 +2843,14 @@ int sqlite3_file_control(sqlite3 *db, const char *zDbName, int op, void *pArg){
       rc = SQLITE_OK;
     }else if( fd->pMethods ){
       rc = sqlite3OsFileControl(fd, op, pArg);
+#ifndef SQLITE_OMIT_WAL
+      if( (op==SQLITE_FCNTL_LAST_ERRNO)&&(*(int *)pArg==0) ){
+        sqlite3_file *pWalFd = sqlite3PagerWalFile(pPager);
+        if( pWalFd&&(pWalFd->pMethods) ){
+          rc = sqlite3OsFileControl(pWalFd, op, pArg);
+        }
+      }
+#endif
     }else{
       rc = SQLITE_NOTFOUND;
     }

@@ -76,6 +76,9 @@ int sqlite3WalRead(Wal *pWal, Pgno pgno, int *pInWal, int nOut, u8 *pOut);
 /* If the WAL is not empty, return the size of the database. */
 Pgno sqlite3WalDbsize(Wal *pWal);
 
+/* If a WAL journal file has been created, return it */
+sqlite3_file *sqlite3WalFile(Wal *pWal);
+  
 /* Obtain or release the WRITER lock. */
 int sqlite3WalBeginWriteTransaction(Wal *pWal);
 int sqlite3WalEndWriteTransaction(Wal *pWal);

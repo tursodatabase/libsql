@@ -72,8 +72,14 @@ do_test walhook-1.5 {
 } [expr 6*1024]
 
 db2 close
+ifcapable enable_persist_wal {
+  file_control_persist_wal db 0
+}
 db close
 sqlite3 db test.db
+ifcapable enable_persist_wal {
+  file_control_persist_wal db 0
+}
 do_test walhook-2.1 {
   execsql { PRAGMA synchronous = NORMAL }
   execsql { PRAGMA wal_autocheckpoint }

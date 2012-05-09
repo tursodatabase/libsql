@@ -88,6 +88,9 @@ do_test walmode-1.6 {
   file exists test.db-wal
 } {1}
 do_test walmode-1.7 {
+  ifcapable enable_persist_wal {
+    file_control_persist_wal db 0
+  }
   db close
   file exists test.db-wal
 } {0}
@@ -104,6 +107,9 @@ do_test walmode-2.2 {
   file exists test.db-wal
 } {1}
 do_test walmode-2.3 {
+  ifcapable enable_persist_wal {
+    file_control_persist_wal db 0
+  }
   db close
   file exists test.db-wal
 } {0}
@@ -126,6 +132,9 @@ do_test walmode-3.2 {
 #
 do_test walmode-4.1 {
   execsql { INSERT INTO t1 VALUES(1, 2) }
+  ifcapable enable_persist_wal {
+    file_control_persist_wal db 0
+  }
   execsql { PRAGMA journal_mode = persist }
 } {persist}
 do_test walmode-4.2 {
@@ -149,6 +158,9 @@ do_test walmode-4.5 {
 #
 do_test walmode-4.6 {
   sqlite3 db2 test.db
+  ifcapable enable_persist_wal {
+    file_control_persist_wal db2 0
+  }
   execsql { PRAGMA main.journal_mode } db2
 } {delete}
 do_test walmode-4.7 {
@@ -166,6 +178,9 @@ do_test walmode-4.10 {
 
 do_test walmode-4.11 {
   db2 close
+  ifcapable enable_persist_wal {
+    file_control_persist_wal db 0
+  }
   execsql { PRAGMA journal_mode = delete } db
 } {delete}
 do_test walmode-4.12 {
@@ -319,6 +334,9 @@ db close
 do_test walmode-7.0 {
   forcedelete test.db
   sqlite3 db test.db
+  ifcapable enable_persist_wal {
+    file_control_persist_wal db 0
+  }
   execsql {
     PRAGMA journal_mode = WAL;
     CREATE TABLE t1(a, b);

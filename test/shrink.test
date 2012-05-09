@@ -16,6 +16,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# purgeable pcache tracks memory differently
+ifcapable {enable_purgeable_pcache} {
+  finish_test
+  return
+}
 unset -nocomplain baseline
 do_test shrink-1.1 {
   db eval {

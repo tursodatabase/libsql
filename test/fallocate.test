@@ -81,10 +81,19 @@ if {![wal_is_ok]} { set skipwaltests 1 }
 if {!$skipwaltests} {
   db close
   forcedelete test.db
-  if {[forced_proxy_locking]} { file delete -force .test.db-conch }
+  ifcapable enable_persist_wal {
+    forcedelete test.db-journal
+    forcedelete test.db-wal
+    forcedelete test.db-shm
+  }
+  if {[forced_proxy_locking]} { 
+    forcedelete .test.db-conch
+  }
   sqlite3 db test.db
+  ifcapable enable_persist_wal {
+    file_control_persist_wal db 0
+  }
   file_control_chunksize_test db main [expr 32*1024]
-  
   do_test fallocate-2.1 {
     execsql {
       PRAGMA page_size = 1024;

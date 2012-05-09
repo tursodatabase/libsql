@@ -54,6 +54,9 @@ do_execsql_test 1.6 { INSERT INTO t1 VALUES(3, 4) }
 do_execsql_test 1.7 {
   PRAGMA locking_mode = normal;
 } {exclusive}
+ifcapable enable_persist_wal {
+  file_control_persist_wal db 0
+}
 do_execsql_test 1.8 {
   PRAGMA journal_mode = delete;
   PRAGMA main.locking_mode;

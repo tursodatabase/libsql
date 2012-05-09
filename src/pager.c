@@ -6344,6 +6344,15 @@ sqlite3_file *sqlite3PagerFile(Pager *pPager){
 }
 
 /*
+ ** Return the file handle for the WAL journal file associated
+ ** with the pager.  This might return NULL if the file has
+ ** not yet been opened.
+ */
+sqlite3_file *sqlite3PagerWalFile(Pager *pPager){
+  return ((pPager->pWal) ? sqlite3WalFile(pPager->pWal) : (NULL));
+}
+
+/*
 ** Return the full pathname of the journal file.
 */
 const char *sqlite3PagerJournalname(Pager *pPager){

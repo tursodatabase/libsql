@@ -57,7 +57,7 @@ LIBREADLINE = @TARGET_READLINE_LIBS@
 
 # Should the database engine be compiled threadsafe
 #
-TCC += -DSQLITE_THREADSAFE=@SQLITE_THREADSAFE@
+#TCC += -DSQLITE_THREADSAFE=@SQLITE_THREADSAFE@
 
 # Any target libraries which libsqlite must be linked against
 # 
@@ -108,7 +108,7 @@ TCLSH_CMD = @TCLSH_CMD@
 
 # Where do we want to install the tcl plugin
 #
-TCLLIBDIR = @TCLLIBDIR@
+TCLLIBDIR = /System/Library/Tcl
 
 # The suffix used on shared libraries.  Ex:  ".dll", ".so", ".dylib"
 #
@@ -505,9 +505,8 @@ libsqlite3.la:	$(LIBOBJ)
 libtclsqlite3.la:	tclsqlite.lo libsqlite3.la
 	$(LTLINK) -o $@ tclsqlite.lo \
 		libsqlite3.la @TCL_STUB_LIB_SPEC@ $(TLIBS) \
-		-rpath "$(TCLLIBDIR)" \
-		-version-info "8:6:8" \
-		-avoid-version
+                -rpath "$(TCLLIBDIR)/sqlite3" \
+		-version-info "8:6:8"
 
 sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
 	$(LTLINK) $(READLINE_FLAGS) \
@@ -933,12 +932,12 @@ install:	sqlite3$(BEXE) lib_install sqlite3.h sqlite3.pc ${HAVE_TCL:1=tcl_instal
 	$(INSTALL) -m 0644 sqlite3.pc $(DESTDIR)$(pkgconfigdir)
 
 pkgIndex.tcl:
-	echo 'package ifneeded sqlite3 $(RELEASE) [list load $(TCLLIBDIR)/libtclsqlite3.so sqlite3]' > $@
+	echo 'package ifneeded sqlite3 $(RELEASE) [list load [file join \$dir libtclsqlite3.so] Tclsqlite3]' > $@
 tcl_install:	lib_install libtclsqlite3.la pkgIndex.tcl
-	$(INSTALL) -d $(DESTDIR)$(TCLLIBDIR)
-	$(LTINSTALL) libtclsqlite3.la $(DESTDIR)$(TCLLIBDIR)
-	rm -f $(DESTDIR)$(TCLLIBDIR)/libtclsqlite3.la $(DESTDIR)$(TCLLIBDIR)/libtclsqlite3.a
-	$(INSTALL) -m 0644 pkgIndex.tcl $(DESTDIR)$(TCLLIBDIR)
+	$(INSTALL) -d $(DESTDIR)$(TCLLIBDIR)/sqlite3
+	$(LTINSTALL) libtclsqlite3.la $(DESTDIR)$(TCLLIBDIR)/sqlite3
+	rm -f $(DESTDIR)$(TCLLIBDIR)/sqlite3/libtclsqlite3.la $(DESTDIR)$(TCLLIBDIR)/sqlite3/libtclsqlite3.a
+	$(INSTALL) -m 0644 pkgIndex.tcl $(DESTDIR)$(TCLLIBDIR)/sqlite3
 
 clean:	
 	rm -f *.lo *.la *.o sqlite3$(TEXE) libsqlite3.la

@@ -154,6 +154,7 @@ int sqlite3PagerMemUsed(Pager*);
 const char *sqlite3PagerFilename(Pager*);
 const sqlite3_vfs *sqlite3PagerVfs(Pager*);
 sqlite3_file *sqlite3PagerFile(Pager*);
+sqlite3_file *sqlite3PagerWalFile(Pager *pPager);
 const char *sqlite3PagerJournalname(Pager*);
 int sqlite3PagerNosync(Pager*);
 void *sqlite3PagerTempSpace(Pager*);

@@ -107,12 +107,17 @@ do_execsql_test cache-2.3.3 {
 } {main exclusive temp closed}
 do_test cache-2.3.4 { pager_cache_size db } 2
 do_execsql_test cache-2.3.5 COMMIT
-do_test cache-2.3.6 { pager_cache_size db } 1
-
+if !$::sqlite_options(enable_purgeable_pcache) {
+  # purgeable pcache doesn't share cache between connections
+  do_test cache-2.3.6 { pager_cache_size db } 1
+}
 do_execsql_test cache-2.3.7 {
   SELECT * FROM t1 UNION SELECT * FROM t2;
 } {1 2 i j x y}
-do_test cache-2.3.8 { pager_cache_size db } 1
+if !$::sqlite_options(enable_purgeable_pcache) {
+  # purgeable pcache doesn't share cache between connections
+  do_test cache-2.3.8 { pager_cache_size db } 1
+}
 
 # Tests for cache_size = 0.
 #
@@ -130,11 +135,17 @@ do_execsql_test cache-2.4.3 {
 do_test cache-2.4.4 { pager_cache_size db } 2
 do_execsql_test cache-2.4.5 COMMIT
 
-do_test cache-2.4.6 { pager_cache_size db } 0
+if !$::sqlite_options(enable_purgeable_pcache) {
+  # purgeable pcache doesn't share cache between connections
+  do_test cache-2.4.6 { pager_cache_size db } 0
+}
 do_execsql_test cache-2.4.7 {
   SELECT * FROM t1 UNION SELECT * FROM t2;
 } {1 2 i j x y}
-do_test cache-2.4.8 { pager_cache_size db } 0
+if !$::sqlite_options(enable_purgeable_pcache) {
+  # purgeable pcache doesn't share cache between connections
+  do_test cache-2.4.8 { pager_cache_size db } 0
+}
 
 sqlite3_soft_heap_limit $cmdlinearg(soft-heap-limit)
 finish_test

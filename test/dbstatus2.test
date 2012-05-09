@@ -38,6 +38,9 @@ proc db_write {db {reset 0}} {
 }
 
 do_test 1.1 {
+  ifcapable enable_persist_wal {
+    file_control_persist_wal db 0
+  }
   db close
   sqlite3 db test.db
   expr {[file size test.db] / 1024}

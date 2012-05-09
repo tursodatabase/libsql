@@ -1162,6 +1162,9 @@ if {$::sqlite_options(wal) && [wal_is_ok]} {
     10 { SELECT * FROM t1 }               {1 2 3 4 5 6 7 8} 0 -1
   
   }] {
+    ifcapable enable_persist_wal {
+      file_control_persist_wal db 0
+    }
     do_execsql_test pager1-7.1.$tn.1 $sql $res
     catch { set J -1 ; set J [file size test.db-journal] }
     catch { set W -1 ; set W [file size test.db-wal] }

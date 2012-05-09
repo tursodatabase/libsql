@@ -49,6 +49,7 @@ extern int _sqlite3_lockstate(const char *path, pid_t pid);
 */
 #define SQLITE_FCNTL_TRUNCATE_DATABASE      101
 #define SQLITE_TRUNCATE_DATABASE            SQLITE_FCNTL_TRUNCATE_DATABASE
+#define SQLITE_TRUNCATE_INITIALIZE_HEADER_MASK    (0x63<<0)
 #define SQLITE_TRUNCATE_JOURNALMODE_WAL           (0x1<<0)
 #define SQLITE_TRUNCATE_AUTOVACUUM_MASK           (0x3<<2)
 #define SQLITE_TRUNCATE_AUTOVACUUM_OFF            (0x1<<2)
@@ -59,9 +60,10 @@ extern int _sqlite3_lockstate(const char *path, pid_t pid);
 #define SQLITE_TRUNCATE_PAGESIZE_2048             (0x2<<4)
 #define SQLITE_TRUNCATE_PAGESIZE_4096             (0x3<<4)
 #define SQLITE_TRUNCATE_PAGESIZE_8192             (0x4<<4)
+#define SQLITE_TRUNCATE_FORCE                     (0x1<<7)
 
 /*
-** Pass the SQLITE_REPLACE_DATABASE operation code to sqlite3_file_control() 
+** Pass the SQLITE_REPLACE_DATABASE operation code to sqlite3_file_control()
 ** and a sqlite3 pointer to another open database file to safely copy the 
 ** contents of that database file into the receiving database.
 */

@@ -79,6 +79,11 @@ foreach {testprefix do_wal_checkpoint} {
     }
 
     proc reopen_all {} {
+      ifcapable enable_persist_wal {
+        code1 { file_control_persist_wal db 0 }
+        code2 { file_control_persist_wal db2 0 }
+        code3 { file_control_persist_wal db3 0 }
+      }
       code1 {db close}
       code2 {db2 close}
       code3 {db3 close}
@@ -328,6 +333,11 @@ foreach {testprefix do_wal_checkpoint} {
 
     do_test 3.$tn.4 { code3 { do_wal_checkpoint db3 } } {0 2 2}
 
+    ifcapable enable_persist_wal {
+      code1 { file_control_persist_wal db 0 }
+      code2 { file_control_persist_wal db2 0 }
+      code3 { file_control_persist_wal db3 0 }
+    }
     code1 {db  close}
     code2 {db2 close}
     code3 {db3 close}

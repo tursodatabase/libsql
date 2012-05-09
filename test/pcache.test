@@ -116,7 +116,9 @@ do_test pcache-1.7 {
 # page. Because the number of allocated pages is greater than the 
 # configured maximum, this page should be freed immediately instead of
 # recycled.
-#
+# Note- purgable_pcache doesn't share caches between connections and these tests
+# are only useful for testing that feature.  
+if !$::sqlite_options(enable_purgeable_pcache) {
 do_test pcache-1.8 {
   execsql {ROLLBACK} db2
   pcache_stats
@@ -177,5 +179,8 @@ do_test pcache-1.15 {
   }
   pcache_stats
 } {current 14 max 15 min 10 recyclable 14}
+} else {
+  db2 close
+}
 
 finish_test

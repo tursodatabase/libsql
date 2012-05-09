@@ -576,9 +576,15 @@ do_test wal2-6.3.1 {
   list [file exists test.db-wal] [file exists test.db-journal]
 } {1 0}
 do_test wal2-6.3.2 {
+  ifcapable enable_persist_wal {
+    file_control_persist_wal db 0
+  }
   execsql { PRAGMA journal_mode = DELETE }
   file exists test.db-wal
 } {0}
+do_test wal2-6.3.2.1 {
+  execsql { PRAGMA journal_mode; }
+} {delete}
 do_test wal2-6.3.3 {
   execsql { PRAGMA lock_status }
 } {main exclusive temp closed}
@@ -725,7 +731,9 @@ foreach {tn sql res expected_locks} {
   do_test wal2-6.4.$tn.1 { execsql $S } $res
   do_test wal2-6.4.$tn.2 { set ::locks  } $L
 }
-
+ifcapable enable_persist_wal {
+  file_control_persist_wal db 0
+}
 db close
 tvfs delete
 
@@ -1096,6 +1104,9 @@ if {$::tcl_platform(platform) == "unix"} {
       list [file attr test.db-wal -perm] [file attr $shmpath -perm]
     } [list $effective $effective]
     do_test wal2-12.2.$tn.5 {
+      ifcapable enable_persist_wal {
+        file_control_persist_wal db 0
+      }
       db close
       list [file exists test.db-wal] [file exists $shmpath]
     } {0 0}

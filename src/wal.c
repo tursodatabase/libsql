@@ -2423,6 +2423,15 @@ Pgno sqlite3WalDbsize(Wal *pWal){
   return 0;
 }
 
+/* 
+ ** Return the file for this Wal journal (or zero, if unknown).
+ */
+sqlite3_file *sqlite3WalFile(Wal *pWal){
+  if( pWal ){
+    return pWal->pWalFd;
+  }
+  return 0;
+}
 
 /* 
 ** This function starts a write transaction on the WAL.

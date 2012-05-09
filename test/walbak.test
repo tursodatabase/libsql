@@ -323,6 +323,9 @@ foreach {tn src dest dest_final} {
   do_test walbak-4.$tn.1 {
     sqlite3 db test.db
     db eval "PRAGMA journal_mode = $src"
+    ifcapable enable_persist_wal {
+      file_control_persist_wal db 0
+    }
     db eval {
       CREATE TABLE t1(a, b);
       INSERT INTO t1 VALUES('I', 'II');
@@ -331,6 +334,9 @@ foreach {tn src dest dest_final} {
 
     sqlite3 db2 test.db2
     db2 eval "PRAGMA journal_mode = $dest"
+    ifcapable enable_persist_wal {
+      file_control_persist_wal db2 0
+    }
     db2 eval {
       CREATE TABLE t2(x, y);
       INSERT INTO t2 VALUES('1', '2');

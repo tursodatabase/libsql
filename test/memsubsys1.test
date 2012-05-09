@@ -98,9 +98,11 @@ build_test_db memsubsys1-2 {PRAGMA page_size=1024}
 #show_memstats
 set MEMORY_MANAGEMENT $sqlite_options(memorymanage)
 ifcapable !malloc_usable_size {
- do_test memsubsys1-2.3 {
-    set pg_ovfl [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_OVERFLOW 0] 2]
-  } [expr ($TEMP_STORE>1 || $MEMORY_MANAGEMENT==0)*1024]
+  if !$::sqlite_options(enable_purgeable_pcache) {
+    do_test memsubsys1-2.3 {
+      set pg_ovfl [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_OVERFLOW 0] 2]
+    } [expr ($TEMP_STORE>1 || $MEMORY_MANAGEMENT==0)*1024]
+  }
 }
 do_test memsubsys1-2.4 {
   set pg_used [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_USED 0] 2]
@@ -119,12 +121,14 @@ sqlite3_initialize
 reset_highwater_marks
 build_test_db memsubsys1-3.1 {PRAGMA page_size=1024}
 #show_memstats
-do_test memsubsys1-3.1.3 {
-  set pg_used [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_USED 0] 2]
-} 0
-do_test memsubsys1-3.1.4 {
-  set overflow [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_OVERFLOW 0] 2]
-} $max_pagecache
+if !$::sqlite_options(enable_purgeable_pcache) {
+  do_test memsubsys1-3.1.3 {
+    set pg_used [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_USED 0] 2]
+  } 0
+  do_test memsubsys1-3.1.4 {
+    set overflow [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_OVERFLOW 0] 2]
+  } $max_pagecache
+}
 do_test memsubsys1-3.1.5 {
   set s_used [lindex [sqlite3_status SQLITE_STATUS_SCRATCH_USED 0] 2]
 } 0
@@ -159,9 +163,11 @@ do_test memsubsys1-4.3 {
   set pg_used [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_USED 0] 2]
   expr {$pg_used>=45 && $pg_used<=50}
 } 1
-do_test memsubsys1-4.4 {
-  set pg_ovfl [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_OVERFLOW 0] 2]
-} 0
+if !$::sqlite_options(enable_purgeable_pcache) {
+  do_test memsubsys1-4.4 {
+    set pg_ovfl [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_OVERFLOW 0] 2]
+  } 0
+}
 do_test memsubsys1-4.5 {
   set maxreq [lindex [sqlite3_status SQLITE_STATUS_MALLOC_SIZE 0] 2]
   expr {$maxreq<7000}
@@ -244,13 +250,15 @@ do_test memsubsys1-7.3 {
   set pg_used [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_USED 0] 2]
   expr {$pg_used<24}
 } 1
-do_test memsubsys1-7.4 {
-  set pg_ovfl [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_OVERFLOW 0] 2]
-} 0
-do_test memsubsys1-7.5 {
-  set maxreq [lindex [sqlite3_status SQLITE_STATUS_MALLOC_SIZE 0] 2]
-  expr {$maxreq<4100}
-} 1
+if !$::sqlite_options(enable_purgeable_pcache) {
+  do_test memsubsys1-7.4 {
+    set pg_ovfl [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_OVERFLOW 0] 2]
+  } 0
+  do_test memsubsys1-7.5 {
+    set maxreq [lindex [sqlite3_status SQLITE_STATUS_MALLOC_SIZE 0] 2]
+    expr {$maxreq<4100}
+  } 1
+}
 do_test memsubsys1-7.6 {
   set s_used [lindex [sqlite3_status SQLITE_STATUS_SCRATCH_USED 0] 2]
 } 1

@@ -461,6 +461,11 @@ Tcl_SetVar2(interp, "sqlite_options", "long_double",
 #else
   Tcl_SetVar2(interp,"sqlite_options","prefer_proxy_locking","0",TCL_GLOBAL_ONLY);
 #endif
+#if defined(SQLITE_ENABLE_PURGEABLE_PCACHE) && defined(__APPLE__)
+  Tcl_SetVar2(interp,"sqlite_options","enable_purgeable_pcache","1",TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp,"sqlite_options","enable_purgeable_pcache","0",TCL_GLOBAL_ONLY);
+#endif
 #if SQLITE_DEFAULT_CKPTFULLFSYNC
   Tcl_SetVar2(interp,"sqlite_options","default_ckptfullfsync","1",TCL_GLOBAL_ONLY);
 #else
@@ -471,6 +476,11 @@ Tcl_SetVar2(interp, "sqlite_options", "long_double",
               STRINGVALUE(SQLITE_DEFAULT_WAL_SAFETYLEVEL),TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp,"sqlite_options","default_wal_safetylevel","0",TCL_GLOBAL_ONLY);
+#endif
+#if SQLITE_ENABLE_PERSIST_WAL
+  Tcl_SetVar2(interp,"sqlite_options","enable_persist_wal","1",TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp,"sqlite_options","enable_persist_wal","0",TCL_GLOBAL_ONLY);
 #endif
     
 #ifdef SQLITE_OMIT_SHARED_CACHE
