@@ -75,26 +75,27 @@ proc do_fts3query_test {tn args} {
     }
   }
 
-  get_near_results $tbl $match $deferred aMatchinfo
+  get_near_results $tbl $match $deferred aHit
+  get_near_results $tbl [string map {AND OR} $match] $deferred aMatchinfo
 
   set matchinfo_asc [list]
-  foreach docid [lsort -integer -incr [array names aMatchinfo]] {
+  foreach docid [lsort -integer -incr [array names aHit]] {
     lappend matchinfo_asc $docid $aMatchinfo($docid)
   }
   set matchinfo_desc [list]
-  foreach docid [lsort -integer -decr [array names aMatchinfo]] {
+  foreach docid [lsort -integer -decr [array names aHit]] {
     lappend matchinfo_desc $docid $aMatchinfo($docid)
   }
 
-  set title "(\"$match\" -> [llength [array names aMatchinfo]] rows)"
+  set title "(\"$match\" -> [llength [array names aHit]] rows)"
 
   do_execsql_test $tn$title.1 "
     SELECT docid FROM $tbl WHERE $tbl MATCH '$match' ORDER BY docid ASC
-  " [lsort -integer -incr [array names aMatchinfo]] 
+  " [lsort -integer -incr [array names aHit]] 
 
   do_execsql_test $tn$title.2 "
     SELECT docid FROM $tbl WHERE $tbl MATCH '$match' ORDER BY docid DESC
-  " [lsort -integer -decr [array names aMatchinfo]] 
+  " [lsort -integer -decr [array names aHit]] 
 
   do_execsql_test $tn$title.3 "
     SELECT docid, mit(matchinfo($tbl, 'x')) FROM $tbl 
@@ -650,6 +651,7 @@ foreach {tn pending create} {
   do_fts3query_test 6.$tn.2 t1 {b:G AND c:I}
   do_fts3query_test 6.$tn.3 t1 {b:G NEAR c:I}
   do_fts3query_test 6.$tn.4 t1 {a:C OR b:G OR c:K OR d:C}
+
   do_fts3query_test 6.$tn.5 t1 {a:G OR b:G}
 
   catchsql { COMMIT }
