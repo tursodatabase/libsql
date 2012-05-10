@@ -1,5 +1,5 @@
-C Update\sthe\ssessions\sbranch\swith\sall\sthe\slatest\schanges\sfrom\strunk.
-D 2012-05-04T23:31:14.883
+C Merge\sin\sthe\swindows\sAV-defense\senhancements\sfor\sopen()\sand\sthe\stable\nconstraint\sparser\sfixes\sfor\slegacy\sschemas,\sall\sfrom\strunk.
+D 2012-05-10T12:17:18.151
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,10 +172,10 @@ F src/os.h 59beba555b65a450bd1d804220532971d4299f60
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 424d46e0edab969293c2223f09923b2178171f47
-F src/os_win.c 5e9e933a412ab35de2a6506b3c6a8295b31b309e
+F src/os_win.c 412d6434133c7c81dc48b7702f3ea5e61c309e5c
 F src/pager.c bb5635dde0b152797836d1c72275284724bb563c
 F src/pager.h ef1eaf8593e78f73885c1dfac27ad83bee23bdc5
-F src/parse.y eb054bb40a5bf90d3422a01ed0e5df229461727a
+F src/parse.y de06f412a4b3a2978071215f657fd1cd70700444
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h 1b5dcc3dc8103d03e625b177023ee67764fa6b7c
 F src/pcache1.c b30b1c35908346ecc43d8d9d17f2ddf6817f8f60
@@ -187,7 +187,7 @@ F src/resolve.c 748e75299faff345f34f0e5bd02a2bac8aa69fcd
 F src/rowset.c f6a49f3e9579428024662f6e2931832511f831a1
 F src/select.c d7b9018b7dd2e821183d69477ab55c39b8272335
 F src/shell.c 04399b2f9942bd02ed5ffee3b84bcdb39c52a1e6
-F src/sqlite.h.in ad55acc42422c461719f3adaee434836ab00677b
+F src/sqlite.h.in 786cc6ee67ac7e19bfcbba5b840fffae449efe02
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h 572c5e6aca50256bdbc34919ece5f660dabf25cc
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -327,7 +327,7 @@ F test/capi3c.test 01f197d73f4d4d66316483662f475cab7ab5bd60
 F test/capi3d.test 17b57ca28be3e37e14c2ba8f787d292d84b724a1
 F test/capi3e.test f7408dda65c92b9056199fdc180f893015f83dde
 F test/cast.test 4c275cbdc8202d6f9c54a3596701719868ac7dc3
-F test/check.test 06795c188bf1776673fd2ac0787aa1c7238970d8
+F test/check.test 193f47ed43a8d29aca12b30cd30ceb105fbe710d
 F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
 F test/collate1.test e3eaa48c21e150814be1a7b852d2a8af24458d04
 F test/collate2.test 04cebe4a033be319d6ddbb3bbc69464e01700b49
@@ -679,6 +679,7 @@ F test/schema.test 8f7999be894260f151adf15c2c7540f1c6d6a481
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/schema3.test 1bc1008e1f8cb5654b248c55f27249366eb7ed38
 F test/schema4.test e6a66e20cc69f0e306667c08be7fda3d11707dc5
+F test/schema5.test b583e6e24adef3dce804bed040f24dd5fe789159
 F test/securedel.test 87a2561151af1f1e349071a89fdd77059f50113c
 F test/select1.test deba017eed9daa5af33de868676c997e7eebb931
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
@@ -702,11 +703,11 @@ F test/shared6.test 866bb4982c45ce216c61ded5e8fde4e7e2f3ffa9
 F test/shared7.test 960760bc8d03e1419e70dea69cf41db62853616e
 F test/shared_err.test 91e26ec4f3fbe07951967955585137e2f18993de
 F test/sharedlock.test ffa0a3c4ac192145b310f1254f8afca4d553eabf
-F test/shell1.test 7dcd612b0018ddad783647d984fffa76791ffd3d w tool/shell1.test
-F test/shell2.test 037d6ad16e873354195d30bb2dc4b5321788154a w tool/shell2.test
-F test/shell3.test 9196c42772d575685e722c92b4b39053c6ebba59 w tool/shell3.test
-F test/shell4.test aa4eef8118b412d1a01477a53426ece169ea86a9 w tool/shell4.test
-F test/shell5.test fa2188bbb13fe2d183fd04a5f7b512650c35ef5d w tool/shell5.test
+F test/shell1.test 7dcd612b0018ddad783647d984fffa76791ffd3d
+F test/shell2.test 037d6ad16e873354195d30bb2dc4b5321788154a
+F test/shell3.test 9196c42772d575685e722c92b4b39053c6ebba59
+F test/shell4.test aa4eef8118b412d1a01477a53426ece169ea86a9
+F test/shell5.test fa2188bbb13fe2d183fd04a5f7b512650c35ef5d
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/shrink.test 8c70f62b6e8eb4d54533de6d65bd06b1b9a17868
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
@@ -1008,7 +1009,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 2b7a91e61794ce9ffe210bad584454e52c79924e bfa61e781cb442be641486e7e55a1518e888d830
-R bed2e7cce64395c916783d9e3080c791
+P 0f347fbfc7d8821f56f1ae0d1a9472a375631e65 38bf90af1ede6ee64ef7be66392e895e60c9126e
+R 21dedc1a34649558aea7c289d84ec993
 U drh
-Z 95959a45df2928e15269c2ba6866d087
+Z bf3857ddf912fd88e60d600cf99c392f

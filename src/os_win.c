@@ -3032,6 +3032,35 @@ static int getTempname(int nBuf, char *zBuf){
 }
 
 /*
+** Return TRUE if the named file is really a directory.  Return false if
+** it is something other than a directory, or if there is any kind of memory
+** allocation failure.
+*/
+static int winIsDir(const void *zConverted){
+  DWORD attr;
+  int rc = 0;
+  DWORD lastErrno;
+
+  if( isNT() ){
+    int cnt = 0;
+    WIN32_FILE_ATTRIBUTE_DATA sAttrData;
+    memset(&sAttrData, 0, sizeof(sAttrData));
+    while( !(rc = osGetFileAttributesExW((LPCWSTR)zConverted,
+                             GetFileExInfoStandard,
+                             &sAttrData)) && retryIoerr(&cnt, &lastErrno) ){}
+    if( !rc ){
+      return 0; /* Invalid name? */
+    }
+    attr = sAttrData.dwFileAttributes;
+#if SQLITE_OS_WINCE==0
+  }else{
+    attr = osGetFileAttributesA((char*)zConverted);
+#endif
+  }
+  return (attr!=INVALID_FILE_ATTRIBUTES) && (attr&FILE_ATTRIBUTE_DIRECTORY);
+}
+
+/*
 ** Open a file.
 */
 static int winOpen(
@@ -3137,6 +3166,11 @@ static int winOpen(
     return SQLITE_IOERR_NOMEM;
   }
 
+  if( winIsDir(zConverted) ){
+    sqlite3_free(zConverted);
+    return SQLITE_CANTOPEN_ISDIR;
+  }
+
   if( isReadWrite ){
     dwDesiredAccess = GENERIC_READ | GENERIC_WRITE;
   }else{
@@ -3186,11 +3220,9 @@ static int winOpen(
                               dwCreationDisposition,
                               dwFlagsAndAttributes,
                               NULL))==INVALID_HANDLE_VALUE &&
-                              retryIoerr(&cnt, &lastErrno) ){}
-/* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
-** Since the ANSI version of these Windows API do not exist for WINCE,
-** it's important to not reference them for WINCE builds.
-*/
+                              retryIoerr(&cnt, &lastErrno) ){
+               /* Noop */
+    }
 #if SQLITE_OS_WINCE==0
   }else{
     while( (h = osCreateFileA((LPCSTR)zConverted,
@@ -3199,7 +3231,9 @@ static int winOpen(
                               dwCreationDisposition,
                               dwFlagsAndAttributes,
                               NULL))==INVALID_HANDLE_VALUE &&
-                              retryIoerr(&cnt, &lastErrno) ){}
+                              retryIoerr(&cnt, &lastErrno) ){
+               /* Noop */
+    }
 #endif
   }
 
@@ -3279,6 +3313,7 @@ static int winDelete(
 ){
   int cnt = 0;
   int rc;
+  DWORD attr;
   DWORD lastErrno;
   void *zConverted;
   UNUSED_PARAMETER(pVfs);
@@ -3290,20 +3325,50 @@ static int winDelete(
     return SQLITE_IOERR_NOMEM;
   }
   if( isNT() ){
-    rc = 1;
-    while( osGetFileAttributesW(zConverted)!=INVALID_FILE_ATTRIBUTES &&
-         (rc = osDeleteFileW(zConverted))==0 && retryIoerr(&cnt, &lastErrno) ){}
-    rc = rc ? SQLITE_OK : SQLITE_ERROR;
+    do {
+      attr = osGetFileAttributesW(zConverted);
+      if ( attr==INVALID_FILE_ATTRIBUTES ){
+        rc = SQLITE_OK; /* Already gone? */
+        break;
+      }
+      if ( attr&FILE_ATTRIBUTE_DIRECTORY ){
+        rc = SQLITE_ERROR; /* Files only. */
+        break;
+      }
+      if ( osDeleteFileW(zConverted) ){
+        rc = SQLITE_OK; /* Deleted OK. */
+        break;
+      }
+      if ( !retryIoerr(&cnt, &lastErrno) ){
+        rc = SQLITE_ERROR; /* No more retries. */
+        break;
+      }
+    } while(1);
 /* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
 ** Since the ANSI version of these Windows API do not exist for WINCE,
 ** it's important to not reference them for WINCE builds.
 */
 #if SQLITE_OS_WINCE==0
   }else{
-    rc = 1;
-    while( osGetFileAttributesA(zConverted)!=INVALID_FILE_ATTRIBUTES &&
-         (rc = osDeleteFileA(zConverted))==0 && retryIoerr(&cnt, &lastErrno) ){}
-    rc = rc ? SQLITE_OK : SQLITE_ERROR;
+    do {
+      attr = osGetFileAttributesA(zConverted);
+      if ( attr==INVALID_FILE_ATTRIBUTES ){
+        rc = SQLITE_OK; /* Already gone? */
+        break;
+      }
+      if ( attr&FILE_ATTRIBUTE_DIRECTORY ){
+        rc = SQLITE_ERROR; /* Files only. */
+        break;
+      }
+      if ( osDeleteFileA(zConverted) ){
+        rc = SQLITE_OK; /* Deleted OK. */
+        break;
+      }
+      if ( !retryIoerr(&cnt, &lastErrno) ){
+        rc = SQLITE_ERROR; /* No more retries. */
+        break;
+      }
+    } while(1);
 #endif
   }
   if( rc ){
