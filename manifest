@@ -1,5 +1,5 @@
-C Fix\sthe\swal2.test\sscript\sso\sthat\sit\sworks\son\sbig-endian\smachines.
-D 2012-05-11T23:01:33.025
+C Adjust\ssome\sof\sthe\spager\stests\sto\saccommodate\slonger\sdatabase\spathnames.
+D 2012-05-11T23:03:44.071
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -625,7 +625,7 @@ F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
 F test/oserror.test 50417780d0e0d7cd23cf12a8277bb44024765df3
-F test/pager1.test eb6d64d2e148dc4bfc6420605bee3717e2d5f10c
+F test/pager1.test 31fef8ff6d5cbb4643f430e31756312d361ecfdf
 F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
 F test/pagerfault.test 452f2cc23e3bfcfa935f4442aec1da4fe1dc0442
@@ -997,7 +997,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 40fe9088fb73eee7b37b574a1dda422266a58638
-R 7ad1fd82b0af3b7e2debf294961f2147
+P c4ab72f75090a420f73b85334b4c42a85af951a5
+R 067c564fd254fd189208b42c5ebf049c
 U drh
-Z f0bdb9ea9fcb27896d1034ea8e7a4479
+Z 0a1bc31b5a4dafd843413a695d442570
