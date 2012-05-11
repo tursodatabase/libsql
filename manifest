@@ -1,5 +1,5 @@
-C Fix\san\sevidence-mark\stypo\sin\sthe\scomments\sof\ssqlite3.h.\s\sNo\schanges\sto\scode.
-D 2012-05-11T15:31:47.296
+C Fix\sa\sharmless\scompiler\swarning\sinside\san\sassert()\sstatement\swithin\stest\scode.
+D 2012-05-11T15:53:18.956
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -219,7 +219,7 @@ F src/test_rtree.c aba603c949766c4193f1068b91c787f57274e0d9
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
 F src/test_spellfix.c 495535f3eb57acdc384572da570e869bb1834bf4
-F src/test_stat.c d7035cfcc0ff1f93c000b621f36524318e004e11
+F src/test_stat.c d1569c7a4839f13e80187e2c26b2ab4da2d03935
 F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c a992d8c80ea91fbf21fb2dd570db40e77dd7e6ae
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
@@ -997,7 +997,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 2b77301b9613c7caa02147095d728fd5b65dd120
-R 8b1620968a32a686e70391e41d6b3c42
+P 2b074085911d066a4411e46ce8e26a9d08cc0ce3
+R 161aa839758206b0695969d32edff9eb
 U drh
-Z 4d2db83289bee71a4862e7ddc43c0379
+Z 603a567c9eef7bb7ecf3ae51493c1e1b
