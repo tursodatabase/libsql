@@ -6923,6 +6923,12 @@ int sqlite3PagerCloseWal(Pager *pPager){
       rc = sqlite3WalClose(pPager->pWal, pPager->ckptSyncFlags,
                            pPager->pageSize, (u8*)pPager->pTmpSpace);
       pPager->pWal = 0;
+
+      /* Ensure that the WAL file is deleted even if the PERSIST_WAL
+      ** hint is enabled. */
+      if( rc==SQLITE_OK ){
+        rc = sqlite3OsDelete(pPager->pVfs, pPager->zWal, 0);
+      }
     }
   }
   return rc;
