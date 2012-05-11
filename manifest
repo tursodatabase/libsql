@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\swal.test\sscript\sso\sthat\sit\sworks\son\sbig-endian\ssystems.
-D 2012-05-11T20:43:47.467
+C Fix\sthe\swal2.test\sscript\sso\sthat\sit\sworks\son\sbig-endian\smachines.
+D 2012-05-11T23:01:33.025
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -918,7 +918,7 @@ F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 82f463886e18d7f8395a4b6167c91815efe54839
 F test/wal.test b3d28d655371bf3f6500c679f526e9860544fe70
-F test/wal2.test 8871e7fd2c86711ff415a5817d68ea3101a15312
+F test/wal2.test d5021064bebfc717fe2bf4db2536ea030b76a773
 F test/wal3.test 6504bbf348b2d6dfade64a064f1050fd617e8706
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
 F test/wal5.test f58ed4b8b542f71c7441da12fbd769d99b362437
@@ -997,7 +997,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P e68a3527decb434e8d0ac6b23a3cedba5992cedd
-R a090b3c3a973af6805a2cab405f07118
+P 40fe9088fb73eee7b37b574a1dda422266a58638
+R 7ad1fd82b0af3b7e2debf294961f2147
 U drh
-Z 0f7a2e9e8b15e03cc250b2aa8f971bbe
+Z f0bdb9ea9fcb27896d1034ea8e7a4479
