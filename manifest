@@ -1,5 +1,5 @@
-C Have\sthe\sFTS\sauxiliary\sfunctions\scorrectly\shandle\sterms\sthat\sappear\sin\snon-matching\sbranches\sof\sthe\sFTS\sexpression.\sFix\sfor\s[bdc6bbbb38].
-D 2012-05-10T17:43:14.961
+C Fix\sa\sharmless\scompiler\swarning.
+D 2012-05-11T11:28:40.757
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -247,7 +247,7 @@ F src/vtab.c ae657b1c22cff43863458e768a44f915c07bc0e4
 F src/wal.c 7bb3ad807afc7973406c805d5157ec7a2f65e146
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 8e9f01cd1604aa21cfa8e0258b7101e05082fa98
+F src/where.c 24c7494d8875ead994b4dfe5461340c27fd424ca
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -997,7 +997,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 38bf90af1ede6ee64ef7be66392e895e60c9126e
-R 8aa768ab15356f78201e8a08039f9508
-U dan
-Z 18c4ee9f4eaf33e7622486489a2f279a
+P 4d3e1673b309a3d6a6cac01d67dfd79a8007f991
+R e6a4d37553f1ca0a6a65cb7c9e4d3543
+U drh
+Z 37054e8b8e21371d1ecf313a74dfef6b
