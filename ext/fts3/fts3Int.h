@@ -535,7 +535,7 @@ int sqlite3Fts3MsrIncrStart(
     Fts3Table*, Fts3MultiSegReader*, int, const char*, int);
 int sqlite3Fts3MsrIncrNext(
     Fts3Table *, Fts3MultiSegReader *, sqlite3_int64 *, char **, int *);
-char *sqlite3Fts3EvalPhrasePoslist(Fts3Cursor *, Fts3Expr *, int iCol); 
+int sqlite3Fts3EvalPhrasePoslist(Fts3Cursor *, Fts3Expr *, int iCol, char **); 
 int sqlite3Fts3MsrOvfl(Fts3Cursor *, Fts3MultiSegReader *, int *);
 int sqlite3Fts3MsrIncrRestart(Fts3MultiSegReader *pCsr);
 

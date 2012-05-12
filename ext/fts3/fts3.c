@@ -3945,7 +3945,7 @@ void sqlite3Fts3DoclistPrev(
   int nDoclist,                   /* Length of aDoclist in bytes */
   char **ppIter,                  /* IN/OUT: Iterator pointer */
   sqlite3_int64 *piDocid,         /* IN/OUT: Docid pointer */
-  int *pnList,                    /* IN/OUT: List length pointer */
+  int *pnList,                    /* OUT: List length pointer */
   u8 *pbEof                       /* OUT: End-of-file flag */
 ){
   char *p = *ppIter;
@@ -3990,6 +3990,41 @@ void sqlite3Fts3DoclistPrev(
     }
     *ppIter = p;
   }
+}
+
+/*
+** Iterate forwards through a doclist.
+*/
+void sqlite3Fts3DoclistNext(
+  int bDescIdx,                   /* True if the doclist is desc */
+  char *aDoclist,                 /* Pointer to entire doclist */
+  int nDoclist,                   /* Length of aDoclist in bytes */
+  char **ppIter,                  /* IN/OUT: Iterator pointer */
+  sqlite3_int64 *piDocid,         /* IN/OUT: Docid pointer */
+  u8 *pbEof                       /* OUT: End-of-file flag */
+){
+  char *p = *ppIter;
+
+  assert( nDoclist>0 );
+  assert( *pbEof==0 );
+  assert( p || *piDocid==0 );
+  assert( !p || (p>=aDoclist && p<=&aDoclist[nDoclist]) );
+
+  if( p==0 ){
+    p = aDoclist;
+    p += sqlite3Fts3GetVarint(p, piDocid);
+  }else{
+    fts3PoslistCopy(0, &p);
+    if( p>=&aDoclist[nDoclist] ){
+      *pbEof = 1;
+    }else{
+      sqlite3_int64 iVar;
+      p += sqlite3Fts3GetVarint(p, &iVar);
+      *piDocid += ((bDescIdx ? -1 : 1) * iVar);
+    }
+  }
+
+  *ppIter = p;
 }
 
 /*
@@ -5147,26 +5182,87 @@ int sqlite3Fts3EvalPhraseStats(
 ** This function works regardless of whether or not the phrase is deferred,
 ** incremental, or neither.
 */
-char *sqlite3Fts3EvalPhrasePoslist(
+int sqlite3Fts3EvalPhrasePoslist(
   Fts3Cursor *pCsr,               /* FTS3 cursor object */
   Fts3Expr *pExpr,                /* Phrase to return doclist for */
-  int iCol                        /* Column to return position list for */
+  int iCol,                       /* Column to return position list for */
+  char **ppOut                    /* OUT: Pointer to position list */
 ){
   Fts3Phrase *pPhrase = pExpr->pPhrase;
   Fts3Table *pTab = (Fts3Table *)pCsr->base.pVtab;
-  char *pIter = pPhrase->doclist.pList;
+  char *pIter;
   int iThis;
+  sqlite3_int64 iDocid;
 
+  /* If this phrase is applies specifically to some column other than 
+  ** column iCol, return a NULL pointer.  */
+  *ppOut = 0;
   assert( iCol>=0 && iCol<pTab->nColumn );
-  if( !pIter 
-   || pExpr->bEof 
-   || pExpr->iDocid!=pCsr->iPrevId
-   || (pPhrase->iColumn<pTab->nColumn && pPhrase->iColumn!=iCol) 
-  ){
-    return 0;
+  if( (pPhrase->iColumn<pTab->nColumn && pPhrase->iColumn!=iCol) ){
+    return SQLITE_OK;
   }
 
-  assert( pPhrase->doclist.nList>0 );
+  iDocid = pExpr->iDocid;
+  pIter = pPhrase->doclist.pList;
+  if( iDocid!=pCsr->iPrevId || pExpr->bEof ){
+    int bDescDoclist = pTab->bDescIdx;      /* For DOCID_CMP macro */
+    int bOr = 0;
+    u8 bEof = 0;
+    Fts3Expr *p;
+
+    /* Check if this phrase descends from an OR expression node. If not, 
+    ** return NULL. Otherwise, the entry that corresponds to docid 
+    ** pCsr->iPrevId may lie earlier in the doclist buffer. */
+    for(p=pExpr->pParent; p; p=p->pParent){
+      if( p->eType==FTSQUERY_OR ) bOr = 1;
+    }
+    if( bOr==0 ) return SQLITE_OK;
+
+    /* This is the descendent of an OR node. In this case we cannot use
+    ** an incremental phrase. Load the entire doclist for the phrase
+    ** into memory in this case.  */
+    if( pPhrase->bIncr ){
+      int rc = SQLITE_OK;
+      int bEofSave = pExpr->bEof;
+      fts3EvalRestart(pCsr, pExpr, &rc);
+      while( rc==SQLITE_OK && !pExpr->bEof ){
+        fts3EvalNextRow(pCsr, pExpr, &rc);
+        if( bEofSave==0 && pExpr->iDocid==iDocid ) break;
+      }
+      pIter = pPhrase->doclist.pList;
+      assert( rc!=SQLITE_OK || pPhrase->bIncr==0 );
+      if( rc!=SQLITE_OK ) return rc;
+    }
+
+    if( pExpr->bEof ){
+      pIter = 0;
+      iDocid = 0;
+    }
+    bEof = (pPhrase->doclist.nAll==0);
+    assert( bDescDoclist==0 || bDescDoclist==1 );
+    assert( pCsr->bDesc==0 || pCsr->bDesc==1 );
+
+    if( pCsr->bDesc==bDescDoclist ){
+      int dummy;
+      while( (pIter==0 || DOCID_CMP(iDocid, pCsr->iPrevId)>0 ) && bEof==0 ){
+        sqlite3Fts3DoclistPrev(
+            bDescDoclist, pPhrase->doclist.aAll, pPhrase->doclist.nAll, 
+            &pIter, &iDocid, &dummy, &bEof
+        );
+      }
+    }else{
+      while( (pIter==0 || DOCID_CMP(iDocid, pCsr->iPrevId)<0 ) && bEof==0 ){
+        sqlite3Fts3DoclistNext(
+            bDescDoclist, pPhrase->doclist.aAll, pPhrase->doclist.nAll, 
+            &pIter, &iDocid, &bEof
+        );
+      }
+    }
+
+    if( bEof || iDocid!=pCsr->iPrevId ) pIter = 0;
+  }
+  if( pIter==0 ) return SQLITE_OK;
+
   if( *pIter==0x01 ){
     pIter++;
     pIter += sqlite3Fts3GetVarint32(pIter, &iThis);
@@ -5180,7 +5276,8 @@ char *sqlite3Fts3EvalPhrasePoslist(
     pIter += sqlite3Fts3GetVarint32(pIter, &iThis);
   }
 
-  return ((iCol==iThis)?pIter:0);
+  *ppOut = ((iCol==iThis)?pIter:0);
+  return SQLITE_OK;
 }
 
 /*
