@@ -1,5 +1,5 @@
-C Parser\sbug\sfix:\s\sMake\ssure\sthe\stable\sconstraints\sallowed\sby\sprior\sreleases\ncan\sstill\sbe\sparsed,\seven\sif\sthey\sare\stechnically\snot\sallowed\sby\sthe\nsyntax\sdiagram.
-D 2012-05-12T18:29:53.630
+C Fix\sa\stypo\sin\sa\scomment\swhich\sis\sused\sto\sgenerate\sdocumentation.\s\sNo\schanges\nto\scode.
+D 2012-05-12T22:36:03.426
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/resolve.c 748e75299faff345f34f0e5bd02a2bac8aa69fcd
 F src/rowset.c f6a49f3e9579428024662f6e2931832511f831a1
 F src/select.c d7b9018b7dd2e821183d69477ab55c39b8272335
 F src/shell.c 04399b2f9942bd02ed5ffee3b84bcdb39c52a1e6
-F src/sqlite.h.in 5f2eedc52ee7e9f8c560faf862cffbb86d81eb44
+F src/sqlite.h.in 4f4d4792f6fb00387c877af013cb09d955643f12
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h c5e917c4f1453f3972b1fd0c81105dfe4f09cc32
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -997,7 +997,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P f84d87bcc0e4f6f56d01556b2b1dc27ebef9ce26
-R 56007d3a5f2586e7ed6d00169463dc3b
+P e536ac041815b118c461ceee798f9b7283269f58
+R 25bb989b178d8b31e0e59b449786abed
 U drh
-Z caadb417ae73f32a079142a2986e8436
+Z b4b28095cac59544ebae1a4c402b4209
