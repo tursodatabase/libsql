@@ -1656,5 +1656,8 @@ proc db_delete_and_reopen {{file test.db}} {
 # to non-zero, then set the global variable $AUTOVACUUM to 1.
 set AUTOVACUUM $sqlite_options(default_autovacuum)
 
+# Make sure the FTS enhanced query syntax is disabled.
+set sqlite_fts3_enable_parentheses 0
+
 source $testdir/thread_common.tcl
 source $testdir/malloc_common.tcl

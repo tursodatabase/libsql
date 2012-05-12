@@ -1725,7 +1725,6 @@ static int isSortingIndex(
       && !referencesOtherTables(pOrderBy, pMaskSet, j, base) 
   ){
     Column *aCol = pIdx->pTable->aCol;
-    int i;
 
     /* All terms of this index match some prefix of the ORDER BY clause,
     ** the index is UNIQUE, and no terms on the tail of the ORDER BY
