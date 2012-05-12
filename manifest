@@ -1,5 +1,5 @@
-C Before\srunning\seach\stest\sscript,\smake\ssure\sthe\sFTS\senhanced\squery\ssyntax\sis\sdisabled.
-D 2012-05-12T05:30:29.959
+C Parser\sbug\sfix:\s\sMake\ssure\sthe\stable\sconstraints\sallowed\sby\sprior\sreleases\ncan\sstill\sbe\sparsed,\seven\sif\sthey\sare\stechnically\snot\sallowed\sby\sthe\nsyntax\sdiagram.
+D 2012-05-12T18:29:53.630
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,7 +163,7 @@ F src/os_unix.c 424d46e0edab969293c2223f09923b2178171f47
 F src/os_win.c 412d6434133c7c81dc48b7702f3ea5e61c309e5c
 F src/pager.c bb5635dde0b152797836d1c72275284724bb563c
 F src/pager.h ef1eaf8593e78f73885c1dfac27ad83bee23bdc5
-F src/parse.y de06f412a4b3a2978071215f657fd1cd70700444
+F src/parse.y f29df90bd3adc64b33114ab1de9fb7768fcf2099
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h 1b5dcc3dc8103d03e625b177023ee67764fa6b7c
 F src/pcache1.c b30b1c35908346ecc43d8d9d17f2ddf6817f8f60
@@ -667,7 +667,7 @@ F test/schema.test 8f7999be894260f151adf15c2c7540f1c6d6a481
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/schema3.test 1bc1008e1f8cb5654b248c55f27249366eb7ed38
 F test/schema4.test e6a66e20cc69f0e306667c08be7fda3d11707dc5
-F test/schema5.test b583e6e24adef3dce804bed040f24dd5fe789159
+F test/schema5.test 0103e4c0313b3725b5ae5600bdca53006ab53db3
 F test/securedel.test 87a2561151af1f1e349071a89fdd77059f50113c
 F test/select1.test deba017eed9daa5af33de868676c997e7eebb931
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
@@ -997,7 +997,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 93061c6e063fddfa6b5d21064a36b58cc97599f1
-R 1266fdc6649c7c37fc945bf3a68e25cb
-U dan
-Z efae0d0fc97871bb7b1020786a272a5c
+P f84d87bcc0e4f6f56d01556b2b1dc27ebef9ce26
+R 56007d3a5f2586e7ed6d00169463dc3b
+U drh
+Z caadb417ae73f32a079142a2986e8436
