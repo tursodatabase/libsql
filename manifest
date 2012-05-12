@@ -1,5 +1,5 @@
-C Adjust\ssome\sof\sthe\spager\stests\sto\saccommodate\slonger\sdatabase\spathnames.
-D 2012-05-11T23:03:44.071
+C Use\sthe\sregexp\sresult\soption\sfor\sa\stest\scase\sin\sshell1.test.
+D 2012-05-12T01:14:27.949
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -690,7 +690,7 @@ F test/shared6.test 866bb4982c45ce216c61ded5e8fde4e7e2f3ffa9
 F test/shared7.test 960760bc8d03e1419e70dea69cf41db62853616e
 F test/shared_err.test 91e26ec4f3fbe07951967955585137e2f18993de
 F test/sharedlock.test ffa0a3c4ac192145b310f1254f8afca4d553eabf
-F test/shell1.test 7dcd612b0018ddad783647d984fffa76791ffd3d
+F test/shell1.test cd9f846702d1d471225a988fee590a153be8192c
 F test/shell2.test 037d6ad16e873354195d30bb2dc4b5321788154a
 F test/shell3.test 9196c42772d575685e722c92b4b39053c6ebba59
 F test/shell4.test aa4eef8118b412d1a01477a53426ece169ea86a9
@@ -997,7 +997,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P c4ab72f75090a420f73b85334b4c42a85af951a5
-R 067c564fd254fd189208b42c5ebf049c
+P 22eef1d8a81ea95612f7973e242fa333c51ae399
+R 74df4c06a278cd6025933ea00b52e97f
 U drh
-Z 0a1bc31b5a4dafd843413a695d442570
+Z 88b1427b1537909fafe38797c50a931e
