@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sa\scomment\swhich\sis\sused\sto\sgenerate\sdocumentation.\s\sNo\schanges\nto\scode.
-D 2012-05-12T22:36:03.426
+C Version\s3.7.12
+D 2012-05-14T01:41:23.304
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -997,7 +997,10 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P e536ac041815b118c461ceee798f9b7283269f58
+P af525b5d25b5dee20528acc8321b8c6ca9aa98ae
 R 25bb989b178d8b31e0e59b449786abed
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.7.12 *
 U drh
-Z b4b28095cac59544ebae1a4c402b4209
+Z 093fff96464341c2fff7d3363f677b3a
