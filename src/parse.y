@@ -340,12 +340,12 @@ init_deferred_pred_opt(A) ::= INITIALLY DEFERRED.     {A = 1;}
 init_deferred_pred_opt(A) ::= INITIALLY IMMEDIATE.    {A = 0;}
 
 conslist_opt(A) ::= .                         {A.n = 0; A.z = 0;}
-conslist_opt(A) ::= COMMA(X) conslist cname.  {A = X;}
-conslist ::= conslist COMMA cname tcons.
-conslist ::= conslist cname tcons.
-conslist ::= cname tcons.
-cname ::= .                      {pParse->constraintName.n = 0;}
-cname ::= CONSTRAINT nm(X).      {pParse->constraintName = X;}
+conslist_opt(A) ::= COMMA(X) conslist.        {A = X;}
+conslist ::= conslist tconscomma tcons.
+conslist ::= tcons.
+tconscomma ::= COMMA.            {pParse->constraintName.n = 0;}
+tconscomma ::= .
+tcons ::= CONSTRAINT nm(X).      {pParse->constraintName = X;}
 tcons ::= PRIMARY KEY LP idxlist(X) autoinc(I) RP onconf(R).
                                  {sqlite3AddPrimaryKey(pParse,X,R,I,0);}
 tcons ::= UNIQUE LP idxlist(X) RP onconf(R).
