@@ -3101,6 +3101,7 @@ void sqlite3AutoLoadExtensions(sqlite3*);
 #  define sqlite3GetVTable(X,Y)  ((VTable*)0)
 #else
    void sqlite3VtabClear(sqlite3 *db, Table*);
+   void sqlite3VtabDisconnect(sqlite3 *db, Table *p);
    int sqlite3VtabSync(sqlite3 *db, char **);
    int sqlite3VtabRollback(sqlite3 *db);
    int sqlite3VtabCommit(sqlite3 *db);

@@ -1,5 +1,5 @@
-C Add\sassert()s\sto\sverify\sthat\sTable\sobjects\sin\sthe\sschema\snever\suse\nlookaside\smemory.
-D 2012-05-15T12:49:32.294
+C When\sa\sconnection\sdisconnects\sfrom\sa\sshared-cache\sdatabase,\sonly\sdelete\sthe\sin-memory\sschema\sif\sthere\sare\sno\sother\sconnections.
+D 2012-05-15T17:15:34.812
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -140,7 +140,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
 F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
-F src/main.c 91458c713e9b7f8dbc98d79e78f1150f0ca9c2a1
+F src/main.c 62146c65069408bc66ad72954655c9cc14bd8f01
 F src/malloc.c 15afac5e59b6584efe072e9933aefb4230e74f97
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c b3677415e69603d6a0e7c5410a1b3731d55beda1
@@ -177,7 +177,7 @@ F src/select.c d7b9018b7dd2e821183d69477ab55c39b8272335
 F src/shell.c 04399b2f9942bd02ed5ffee3b84bcdb39c52a1e6
 F src/sqlite.h.in 4f4d4792f6fb00387c877af013cb09d955643f12
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h c5e917c4f1453f3972b1fd0c81105dfe4f09cc32
+F src/sqliteInt.h cef468b8f16c847c235cb9a3d06253389abe3bc9
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -243,7 +243,7 @@ F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
 F src/vdbesort.c b25814d385895544ebc8118245c8311ded7f81c9
 F src/vdbetrace.c d6e50e04e1ec498150e519058f617d91b8f5c843
-F src/vtab.c ae657b1c22cff43863458e768a44f915c07bc0e4
+F src/vtab.c 1fbe133809ae542a9cf3a3d8187774b68436fa85
 F src/wal.c 7bb3ad807afc7973406c805d5157ec7a2f65e146
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
@@ -309,7 +309,7 @@ F test/boundary4.test 89e02fa66397b8a325d5eb102b5806f961f8ec4b
 F test/busy.test 76b4887f8b9160ba903c1ac22e8ff406ad6ae2f0
 F test/cache.test f64136b0893c293d0b910ed057b3b711249099a7
 F test/capi2.test 835d4cee9f542ea50fa8d01f3fe6de80b0627360
-F test/capi3.test 8dedb0050610e9ff95cd9d487beb0ce5f33a31ee
+F test/capi3.test 8a33b82c4a2469977aed91b6eb99ae3ca1546444
 F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
 F test/capi3c.test 01f197d73f4d4d66316483662f475cab7ab5bd60
 F test/capi3d.test 17b57ca28be3e37e14c2ba8f787d292d84b724a1
@@ -688,6 +688,7 @@ F test/shared3.test ebf77f023f4bdaa8f74f65822b559e86ce5c6257
 F test/shared4.test 72d90821e8d2fc918a08f16d32880868d8ee8e9d
 F test/shared6.test 866bb4982c45ce216c61ded5e8fde4e7e2f3ffa9
 F test/shared7.test 960760bc8d03e1419e70dea69cf41db62853616e
+F test/shared8.test b27befbefbe7f4517f1d6b7ff8f64a41ec74165d
 F test/shared_err.test 91e26ec4f3fbe07951967955585137e2f18993de
 F test/sharedlock.test ffa0a3c4ac192145b310f1254f8afca4d553eabf
 F test/shell1.test cd9f846702d1d471225a988fee590a153be8192c
@@ -997,7 +998,10 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 0bb1cfc63f982db7b29c8e6be6698a6dad100f70
-R 040b7c6409bc9c8d46165baae8f02a6f
-U drh
-Z 46fb04131884f3e5ee0e8870b1bd5af5
+P 736d6ea677f58e4aa2914fa79a3156b775c5a3f5
+R cdb1dff646b0010ea62b89ecb700e74c
+T *branch * shared-schema
+T *sym-shared-schema *
+T -sym-trunk *
+U dan
+Z 9910d0bfd0815b5cd0d4b52750333b7f
