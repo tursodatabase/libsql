@@ -1,5 +1,5 @@
-C Add\san\sassert()\sthat\sverifies\sthat\sthe\sstatement\spointer\sfrom\s\nthe\ssqlite3_prepare()\sfamily\sof\sfunctions\sis\salways\sNULL\sif\sthe\sroutines\nreturn\sother\sthan\sSQLITE_OK.
-D 2012-05-14T12:20:54.347
+C Add\sassert()s\sto\sverify\sthat\sTable\sobjects\sin\sthe\sschema\snever\suse\nlookaside\smemory.
+D 2012-05-15T12:49:32.294
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -121,7 +121,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c df800f10896bc2ddaa1125c532d6e7a7b9efc532
 F src/btree.h 48a013f8964f12d944d90e4700df47b72dd6d923
 F src/btreeInt.h 38a639c0542c29fe8331a221c4aed0cb8686249e
-F src/build.c 987c6933ea170e443dc6a79d52f8d2506206b12b
+F src/build.c 95fd8aa1bf81acf15e9ef46b07d1f70111ea88d0
 F src/callback.c 0cb4228cdcd827dcc5def98fb099edcc9142dbcd
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c a9c26822515f81ec21588cbb482ca6724be02e33
@@ -997,7 +997,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 8654aa9540fe9fd210899d83d17f3f407096c004
-R 0a00ace346f978ead4e8eda443adff7b
+P 0bb1cfc63f982db7b29c8e6be6698a6dad100f70
+R 040b7c6409bc9c8d46165baae8f02a6f
 U drh
-Z 6b79d382c12877c842863c97c5282a5e
+Z 46fb04131884f3e5ee0e8870b1bd5af5
