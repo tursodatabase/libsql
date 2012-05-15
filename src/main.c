@@ -806,7 +806,7 @@ int sqlite3_close(sqlite3 *db){
 
   /* This call frees the schema associated with the temp database only (if
   ** any). It also frees the db->aDb array, if required.  */
-  sqlite3ResetInternalSchema(db, -1);
+  sqlite3ResetAllSchemasOfConnection(db);
   assert( db->nDb<=2 );
   assert( db->aDb==db->aDbStatic );
 
@@ -901,7 +901,7 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
 
   if( db->flags&SQLITE_InternChanges ){
     sqlite3ExpirePreparedStatements(db);
-    sqlite3ResetInternalSchema(db, -1);
+    sqlite3ResetAllSchemasOfConnection(db);
   }
 
   /* Any deferred constraint violations have now been resolved. */

@@ -22,8 +22,8 @@
 ** are invoked only from within xCreate and xConnect methods.
 */
 struct VtabCtx {
-  Table *pTab;
-  VTable *pVTable;
+  VTable *pVTable;    /* The virtual table being constructed */
+  Table *pTab;        /* The Table object to which the virtual table belongs */
 };
 
 /*
@@ -54,7 +54,7 @@ static int createModule(
     pMod->xDestroy = xDestroy;
     pDel = (Module *)sqlite3HashInsert(&db->aModule, zCopy, nName, (void*)pMod);
     if( pDel && pDel->xDestroy ){
-      sqlite3ResetInternalSchema(db, -1);
+      sqlite3ResetAllSchemasOfConnection(db);
       pDel->xDestroy(pDel->pAux);
     }
     sqlite3DbFree(db, pDel);
