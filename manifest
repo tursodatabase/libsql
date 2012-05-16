@@ -1,5 +1,5 @@
-C Version\s3.7.12
-D 2012-05-14T02:05:15.770
+C Improve\serror\sreporting\sfrom\ssqlite3_file_control,\sSQLITE_FCNTL_REPLACE_DATABASE\sshouldn't\scopy\sfile\ssecurity/ACL\smetadata,\sbad\sbit\smask\sfixed
+D 2012-05-16T22:08:18.407
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 957c9693400fca6cb8b533b589e69ddee7bcb27c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -143,7 +143,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c 015826a958f690302d27e096a68d50b3657e4201
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
 F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
-F src/main.c 75cdf5977022fe92a8fc2327934fd2ab4ccd29c0
+F src/main.c 9c3003dc0a5e2c7e1d79cf94a08229dd803fd8df
 F src/malloc.c 15afac5e59b6584efe072e9933aefb4230e74f97
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c b3677415e69603d6a0e7c5410a1b3731d55beda1
@@ -162,7 +162,7 @@ F src/os.c 4c8c8d72a6c58ad2fde4865783e8ae26b494a85e
 F src/os.h 59beba555b65a450bd1d804220532971d4299f60
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c f8c943a0f9c4e2e7fae9facb3a243cb58cc8ceb5
+F src/os_unix.c a87e927ca7c7d8cab313f8263cd24ea06fc20169
 F src/os_win.c 24b57b4aec07ec78ae759244ab6d9759a70fe29b
 F src/pager.c 544cc84d50fea0ca921d448037b217ecabba359b
 F src/pager.h 42926ac0fe69e9d7e17a54e6b37417e581a429d7
@@ -179,7 +179,7 @@ F src/rowset.c f6a49f3e9579428024662f6e2931832511f831a1
 F src/select.c cf2f8f771bab6417e51a0f17b086a87bb74d624c
 F src/shell.c 04399b2f9942bd02ed5ffee3b84bcdb39c52a1e6
 F src/sqlite.h.in 192eb22f3f217c00ff48a8da356a8a020f6b4a8e
-F src/sqlite3_private.h 97a1e15b3a078bb583622da01a2e9bc96c6edf14
+F src/sqlite3_private.h a81a9c5f97c095cc3e86914a05f8fabe0011f4a1
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h ec90f0d797bbc93dd849629f18513b57bfd9a787
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -1002,7 +1002,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P bf57f0fb73500f384fc57cbe2501343c97dc433e 8654aa9540fe9fd210899d83d17f3f407096c004
-R 12b92e18e3ce253aa9f29c615d138e39
-U drh
-Z f2b43ef80e7018715193d790be637b9b
+P d9348b2a4e15873756adfd092e8128d9f1cf72b4
+R e2d571d2583903dcbc6ab145be90448d
+U adam
+Z f6b6e32f1d1ba2c99da3b7a6e5f275fb

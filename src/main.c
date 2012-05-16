@@ -2844,7 +2844,7 @@ int sqlite3_file_control(sqlite3 *db, const char *zDbName, int op, void *pArg){
     }else if( fd->pMethods ){
       rc = sqlite3OsFileControl(fd, op, pArg);
 #ifndef SQLITE_OMIT_WAL
-      if( (op==SQLITE_FCNTL_LAST_ERRNO)&&(*(int *)pArg==0) ){
+      if( (rc==SQLITE_OK)&&(op==SQLITE_FCNTL_LAST_ERRNO)&&(*(int *)pArg==0) ){
         sqlite3_file *pWalFd = sqlite3PagerWalFile(pPager);
         if( pWalFd&&(pWalFd->pMethods) ){
           rc = sqlite3OsFileControl(pWalFd, op, pArg);
@@ -2856,8 +2856,9 @@ int sqlite3_file_control(sqlite3 *db, const char *zDbName, int op, void *pArg){
     }
     sqlite3BtreeLeave(pBtree);
   }
+  sqlite3Error(db, rc, 0);
   sqlite3_mutex_leave(db->mutex);
-  return rc;   
+  return rc;
 }
 
 /*

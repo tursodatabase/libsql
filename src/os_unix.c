@@ -3972,6 +3972,47 @@ static int unixTruncateDatabase(unixFile *, int);
 
 static int unixInvalidateSupportFiles(unixFile *, int);
 
+static int findCreateFileMode(const char *, int, mode_t*, uid_t *,gid_t *);
+
+/* opens a read/write connection to a file zName inheriting the appropriate
+ ** user/perms from the database file if running as root.  Returns the file 
+ ** descriptor by reference */
+static int unixOpenChildFile(const char *zName, int openFlags, int dbOpenFlags, int protFlags, int *pFd) {
+  int fd = -1;
+  mode_t openMode;              /* Permissions to create file with */
+  uid_t uid;                    /* Userid for the file */
+  gid_t gid;                    /* Groupid for the file */
+  int rc;
+  
+  assert(pFd!=NULL);
+  rc = findCreateFileMode(zName, dbOpenFlags, &openMode, &uid, &gid);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
+  fd = robust_open(zName, openFlags, openMode);
+  OSTRACE(("OPENX   %-3d %s 0%o\n", fd, zName, openFlags));
+  if( fd<0 ){
+    rc = unixLogError(SQLITE_CANTOPEN_BKPT, "open", zName);
+    return rc;
+  }
+  /* if we're opening the wal or journal and running as root, set the journal uid/gid */
+  if( dbOpenFlags & (SQLITE_OPEN_WAL|SQLITE_OPEN_MAIN_JOURNAL) ){
+    uid_t euid = geteuid();
+    if( euid==0 && (euid!=uid || getegid()!=gid) ){
+      if( fchown(fd, uid, gid) ){
+        rc = SQLITE_CANTOPEN_BKPT;
+      }
+    }
+  }
+  if( rc==SQLITE_OK ){
+    *pFd = fd;
+  } else {
+    *pFd = -1;
+    close(fd);
+  }
+  return rc;
+}
+
 static int unixReplaceDatabase(unixFile *pFile, sqlite3 *srcdb) {
   sqlite3_file *id = (sqlite3_file *)pFile;
   Btree *pSrcBtree = NULL;
@@ -4072,14 +4113,16 @@ static int unixReplaceDatabase(unixFile *pFile, sqlite3 *srcdb) {
   if( !(srcWalFD<0) ){
     char dstWalPath[MAXPATHLEN+5];
     int dstWalFD = -1;
+    int protFlags = 0;
     strlcpy(dstWalPath, pFile->zPath, MAXPATHLEN+5);
     strlcat(dstWalPath, "-wal", MAXPATHLEN+5);
-    dstWalFD = open(dstWalPath, O_RDWR|O_CREAT, SQLITE_DEFAULT_FILE_PERMISSIONS);
-    if( !(dstWalFD<0) ){
+
+    rc = unixOpenChildFile(dstWalPath, O_RDWR|O_CREAT, SQLITE_OPEN_WAL, protFlags, &dstWalFD);
+    if( rc==SQLITE_OK ){
       s = copyfile_state_alloc();
       lseek(srcWalFD, 0, SEEK_SET);
       lseek(dstWalFD, 0, SEEK_SET);
-      if( fcopyfile(srcWalFD, dstWalFD, s, COPYFILE_ALL) ){
+      if( fcopyfile(srcWalFD, dstWalFD, s, COPYFILE_DATA) ){
         int err=errno;
         switch(err) {
           case ENOMEM:
@@ -4106,7 +4149,7 @@ static int unixReplaceDatabase(unixFile *pFile, sqlite3 *srcdb) {
     s = copyfile_state_alloc();
     lseek(pSrcFile->h, 0, SEEK_SET);
     lseek(pFile->h, 0, SEEK_SET);
-    if( fcopyfile(pSrcFile->h, pFile->h, s, COPYFILE_ALL) ){
+    if( fcopyfile(pSrcFile->h, pFile->h, s, COPYFILE_DATA) ){
       int err=errno;
       switch(err) {
         case ENOMEM:
@@ -5093,6 +5136,9 @@ static int unixUnsafeTruncateDatabase(unixFile *pFile){
   char walPath[MAXPATHLEN];
   int rc = SQLITE_OK;
   
+#ifdef DEBUG
+  fprintf(stderr, "Force truncating database %s\n", pFile->zPath);
+#endif
   strlcpy(journalPath, pFile->zPath, MAXPATHLEN);
   strlcat(journalPath, "-journal", MAXPATHLEN);
   strlcpy(walPath, pFile->zPath, MAXPATHLEN);
@@ -5167,7 +5213,8 @@ static int unixTruncateDatabase(unixFile *pFile, int bFlags) {
   int corruptFileLock = 0;
   int isCorrupt = 0;
   int force = (bFlags & SQLITE_TRUNCATE_FORCE);
-  
+  int safeFailed = 0;
+
 #if SQLITE_ENABLE_DATA_PROTECTION
   flags |= pFile->protFlags;
 #endif
@@ -5186,6 +5233,7 @@ static int unixTruncateDatabase(unixFile *pFile, int bFlags) {
     if( rc && !force ){
       return rc;
     }
+    rc = SQLITE_OK; /* Ignore the locking failure if force is true */
   }
   if( (bFlags&SQLITE_TRUNCATE_INITIALIZE_HEADER_MASK)!=0 ){
     /* initialize a new database in TMPDIR and copy the contents over */
@@ -5200,10 +5248,7 @@ static int unixTruncateDatabase(unixFile *pFile, int bFlags) {
     if( tFd==-1 ){
       storeLastErrno(pFile, errno);
       rc = SQLITE_IOERR;
-      if( force ){
-        /* attempt the truncation, even if we can't seed the database in a temp directory */
-        rc = pFile->pMethod->xTruncate(id, ((pFile->fsFlags & SQLITE_FSFLAGS_IS_MSDOS) != 0) ? 1L : 0L);
-      }
+      safeFailed = 1;
     }else{
       sqlite3 *tDb = NULL;
       copyfile_state_t s;
@@ -5247,28 +5292,38 @@ static int unixTruncateDatabase(unixFile *pFile, int bFlags) {
       s = copyfile_state_alloc();
       lseek(tFd, 0, SEEK_SET);
       lseek(pFile->h, 0, SEEK_SET);
-      if( fcopyfile(tFd, pFile->h, s, COPYFILE_ALL) ){
+      if( fcopyfile(tFd, pFile->h, s, COPYFILE_DATA) ){
         int err=errno;
         switch(err) {
           case ENOMEM:
-            rc = SQLITE_NOMEM;
+            trc = SQLITE_NOMEM;
             break;
           default:
             storeLastErrno(pFile, err);
-            rc = SQLITE_IOERR;
+            trc = SQLITE_IOERR;
         }
       }
       copyfile_state_free(s);
       fsync(pFile->h);
       close(tFd);
       unlink(tDbPath);
+      if( trc!=SQLITE_OK ){
+        safeFailed = 1;
+        rc = trc;
+      }
     }
     free(tDbPath);
   } else {
     rc = pFile->pMethod->xTruncate(id, ((pFile->fsFlags & SQLITE_FSFLAGS_IS_MSDOS) != 0) ? 1L : 0L);
+    if( rc ){
+      safeFailed = 1;
+    }
   }
   if( rc==SQLITE_OK || force ){
-    unixInvalidateSupportFiles(pFile, 0);
+    rc = unixInvalidateSupportFiles(pFile, 0);
+    if( rc ){
+      safeFailed = 1;
+    }
   }
   pFile->pMethod->xSync(id, SQLITE_SYNC_FULL);
 
@@ -5281,8 +5336,8 @@ static int unixTruncateDatabase(unixFile *pFile, int bFlags) {
     assert(force);
   }
   
-  if( rc!=SQLITE_OK && force){
-    unixUnsafeTruncateDatabase(pFile);
+  if( force && safeFailed){
+    rc = unixUnsafeTruncateDatabase(pFile);
   }
   
   return rc;

@@ -49,7 +49,7 @@ extern int _sqlite3_lockstate(const char *path, pid_t pid);
 */
 #define SQLITE_FCNTL_TRUNCATE_DATABASE      101
 #define SQLITE_TRUNCATE_DATABASE            SQLITE_FCNTL_TRUNCATE_DATABASE
-#define SQLITE_TRUNCATE_INITIALIZE_HEADER_MASK    (0x63<<0)
+#define SQLITE_TRUNCATE_INITIALIZE_HEADER_MASK    (0x7F<<0)
 #define SQLITE_TRUNCATE_JOURNALMODE_WAL           (0x1<<0)
 #define SQLITE_TRUNCATE_AUTOVACUUM_MASK           (0x3<<2)
 #define SQLITE_TRUNCATE_AUTOVACUUM_OFF            (0x1<<2)
