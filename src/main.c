@@ -793,6 +793,7 @@ int sqlite3_close(sqlite3 *db){
   /* Free any outstanding Savepoint structures. */
   sqlite3CloseSavepoints(db);
 
+  /* Close all database connections */
   for(j=0; j<db->nDb; j++){
     struct Db *pDb = &db->aDb[j];
     if( pDb->pBt ){
@@ -803,10 +804,14 @@ int sqlite3_close(sqlite3 *db){
       }
     }
   }
+  /* Clear the TEMP schema separately and last */
+  if( db->aDb[1].pSchema ){
+    sqlite3SchemaClear(db->aDb[1].pSchema);
+  }
+  sqlite3VtabUnlockList(db);
 
-  /* This call frees the schema associated with the temp database only (if
-  ** any). It also frees the db->aDb array, if required.  */
-  sqlite3ResetAllSchemasOfConnection(db);
+  /* Free up the array of auxiliary databases */
+  sqlite3CollapseDatabaseArray(db);
   assert( db->nDb<=2 );
   assert( db->aDb==db->aDbStatic );
 
