@@ -1,5 +1,5 @@
-C Avoid\susing\ssqlite3ResetAllSchemasOfConnection()\spurely\sfor\sits\sside-effects.
-D 2012-05-16T01:24:34.201
+C Return\sSQLITE_MISUSE\sif\san\sapplication\sattempts\sto\sregister\sa\svirtual\stable\smodule\swith\sthe\ssame\sname\sas\san\sexisting\smodule.
+D 2012-05-16T14:29:11.421
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -189,7 +189,7 @@ F src/test4.c d1e5a5e904d4b444cf572391fdcb017638e36ff7
 F src/test5.c a6d1ac55ac054d0b2b8f37b5e655b6c92645a013
 F src/test6.c 417e1e214734393c24a8ee80b41485a9c4169123
 F src/test7.c 2e0781754905c8adc3268d8f0967e7633af58843
-F src/test8.c 5ecbffe6712da81d5d10454e9d77d6c5bac95fe8
+F src/test8.c 235f1d19716fa768c46fc461ccbf529b2c9e4399
 F src/test9.c bea1e8cf52aa93695487badedd6e1886c321ea60
 F src/test_async.c 0612a752896fad42d55c3999a5122af10dcf22ad
 F src/test_autoext.c 30e7bd98ab6d70a62bb9ba572e4c7df347fe645e
@@ -243,7 +243,7 @@ F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
 F src/vdbesort.c b25814d385895544ebc8118245c8311ded7f81c9
 F src/vdbetrace.c d6e50e04e1ec498150e519058f617d91b8f5c843
-F src/vtab.c 4c1d7e7206aa330da12cfbed29bbe08a5fd2c08e
+F src/vtab.c bb8ea3a26608bb1357538a5d2fc72beba6638998
 F src/wal.c 7bb3ad807afc7973406c805d5157ec7a2f65e146
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
@@ -900,7 +900,7 @@ F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 7701bb609fe8bf6535514e8b849a309e8f00573b
 F test/view.test b182a67ec43f490b156b5a710827a341be83dd17
-F test/vtab1.test e429a6835faa3870016c55d1178dcfead85f936a
+F test/vtab1.test 331ca61ba0b5df4d2f2e55ee2b9596fde4228dbe
 F test/vtab2.test 7bcffc050da5c68f4f312e49e443063e2d391c0d
 F test/vtab3.test baad99fd27217f5d6db10660522e0b7192446de1
 F test/vtab4.test 942f8b8280b3ea8a41dae20e7822d065ca1cb275
@@ -998,7 +998,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P aa0c3493d3647d7efe527067e9fcccefda8e3008
-R f77d3725cc1e7473c355856cafd6e6e6
-U drh
-Z 8c590823c466df3da4ff72040b91d983
+P 5587c73badc07d3e01a7c5c5964e178b5112dd24
+R c4833805a7760d62c8726aeccbf50a1f
+U dan
+Z 29dbe9b5d386a5757fe1ec7bc83d13ea

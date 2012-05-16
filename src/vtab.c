@@ -38,33 +38,35 @@ static int createModule(
   void *pAux,                     /* Context pointer for xCreate/xConnect */
   void (*xDestroy)(void *)        /* Module destructor function */
 ){
-  int rc, nName;
-  Module *pMod;
+  int rc = SQLITE_OK;
+  int nName;
 
   sqlite3_mutex_enter(db->mutex);
   nName = sqlite3Strlen30(zName);
-  pMod = (Module *)sqlite3DbMallocRaw(db, sizeof(Module) + nName + 1);
-  if( pMod ){
-    Module *pDel;
-    char *zCopy = (char *)(&pMod[1]);
-    memcpy(zCopy, zName, nName+1);
-    pMod->zName = zCopy;
-    pMod->pModule = pModule;
-    pMod->pAux = pAux;
-    pMod->xDestroy = xDestroy;
-    pDel = (Module *)sqlite3HashInsert(&db->aModule, zCopy, nName, (void*)pMod);
-    if( pDel && pDel->xDestroy ){
-      sqlite3ResetAllSchemasOfConnection(db);
-      pDel->xDestroy(pDel->pAux);
+  if( sqlite3HashFind(&db->aModule, zName, nName) ){
+    rc = SQLITE_MISUSE_BKPT;
+  }else{
+    Module *pMod;
+    pMod = (Module *)sqlite3DbMallocRaw(db, sizeof(Module) + nName + 1);
+    if( pMod ){
+      Module *pDel;
+      char *zCopy = (char *)(&pMod[1]);
+      memcpy(zCopy, zName, nName+1);
+      pMod->zName = zCopy;
+      pMod->pModule = pModule;
+      pMod->pAux = pAux;
+      pMod->xDestroy = xDestroy;
+      pDel = (Module *)sqlite3HashInsert(&db->aModule,zCopy,nName,(void*)pMod);
+      assert( pDel==0 || pDel==pMod );
+      if( pDel ){
+        db->mallocFailed = 1;
+        sqlite3DbFree(db, pDel);
+      }
     }
-    sqlite3DbFree(db, pDel);
-    if( pDel==pMod ){
-      db->mallocFailed = 1;
-    }
-  }else if( xDestroy ){
-    xDestroy(pAux);
   }
-  rc = sqlite3ApiExit(db, SQLITE_OK);
+  rc = sqlite3ApiExit(db, rc);
+  if( rc!=SQLITE_OK && xDestroy ) xDestroy(pAux);
+
   sqlite3_mutex_leave(db->mutex);
   return rc;
 }
