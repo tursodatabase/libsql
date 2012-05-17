@@ -462,7 +462,7 @@ do_test pager1.4.2.3 {
 } {64 ok}
 do_test pager1.4.2.4 {
   faultsim_restore_and_reopen
-  hexio_write test.db-journal [expr [file size test.db-journal]-20] 123456
+  hexio_write test.db-journal [expr [file size test.db-journal]-30] 123456
   execsql {
     SELECT count(*) FROM t1;
     PRAGMA integrity_check;
@@ -470,7 +470,7 @@ do_test pager1.4.2.4 {
 } {4 ok}
 do_test pager1.4.2.5 {
   faultsim_restore_and_reopen
-  hexio_write test.db-journal [expr [file size test.db-journal]-20] 123456
+  hexio_write test.db-journal [expr [file size test.db-journal]-30] 123456
   foreach f [glob test.db-mj*] { forcedelete $f }
   execsql {
     SELECT count(*) FROM t1;

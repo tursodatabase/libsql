@@ -1223,10 +1223,11 @@ proc logcksum {ckv1 ckv2 blob} {
   upvar $ckv1 c1
   upvar $ckv2 c2
 
-  set scanpattern I*
-  if {$::tcl_platform(byteOrder) eq "littleEndian"} {
-    set scanpattern i*
-  }
+  # Since the magic number at the start of the -wal file header is
+  # 931071618 that indicates that the content should always be read as
+  # little-endian.
+  # 
+  set scanpattern i*
 
   binary scan $blob $scanpattern values
   foreach {v1 v2} $values {

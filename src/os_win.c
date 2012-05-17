@@ -684,7 +684,7 @@ static struct win_syscall {
 #define osWriteFile ((BOOL(WINAPI*)(HANDLE,LPCVOID,DWORD,LPDWORD, \
         LPOVERLAPPED))aSyscall[58].pCurrent)
 
-#if !SQLITE_OS_WINCE
+#if SQLITE_OS_WINRT
   { "CreateEventExW",          (SYSCALL)CreateEventExW,          0 },
 #else
   { "CreateEventExW",          (SYSCALL)0,                       0 },
@@ -720,7 +720,7 @@ static struct win_syscall {
 #define osSetFilePointerEx ((BOOL(WINAPI*)(HANDLE,LARGE_INTEGER, \
         PLARGE_INTEGER,DWORD))aSyscall[62].pCurrent)
 
-#if !SQLITE_OS_WINCE
+#if SQLITE_OS_WINRT
   { "GetFileInformationByHandleEx", (SYSCALL)GetFileInformationByHandleEx, 0 },
 #else
   { "GetFileInformationByHandleEx", (SYSCALL)0,                  0 },

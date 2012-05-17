@@ -706,6 +706,7 @@ static int sqlite3LockAndPrepare(
   }
   sqlite3BtreeLeaveAll(db);
   sqlite3_mutex_leave(db->mutex);
+  assert( rc==SQLITE_OK || *ppStmt==0 );
   return rc;
 }
 

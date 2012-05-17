@@ -328,7 +328,7 @@ static int statDecodePage(Btree *pBt, StatPage *p){
         getLocalPayload(nUsable, p->flags, nPayload, &nLocal);
         pCell->nLocal = nLocal;
         assert( nLocal>=0 );
-        assert( nPayload>=nLocal );
+        assert( nPayload>=(u32)nLocal );
         assert( nLocal<=(nUsable-35) );
         if( nPayload>(u32)nLocal ){
           int j;
