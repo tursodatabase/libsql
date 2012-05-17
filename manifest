@@ -1,5 +1,5 @@
-C Improve\serror\sreporting\sfrom\ssqlite3_file_control,\sSQLITE_FCNTL_REPLACE_DATABASE\sshouldn't\scopy\sfile\ssecurity/ACL\smetadata,\sbad\sbit\smask\sfixed
-D 2012-05-16T22:08:18.407
+C Stylistic\sfixes:\slimit\ssource\scode\sline\slength\sto\s80\scharacters.\s\sC89-style\ncomments\sonly,\snot\sC++/C99\sstyle.
+D 2012-05-17T14:17:13.662
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 957c9693400fca6cb8b533b589e69ddee7bcb27c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -162,7 +162,7 @@ F src/os.c 4c8c8d72a6c58ad2fde4865783e8ae26b494a85e
 F src/os.h 59beba555b65a450bd1d804220532971d4299f60
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c a87e927ca7c7d8cab313f8263cd24ea06fc20169
+F src/os_unix.c d0eeadc475783bf595646da42bd263ec9063e267
 F src/os_win.c 24b57b4aec07ec78ae759244ab6d9759a70fe29b
 F src/pager.c 544cc84d50fea0ca921d448037b217ecabba359b
 F src/pager.h 42926ac0fe69e9d7e17a54e6b37417e581a429d7
@@ -1002,7 +1002,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P d9348b2a4e15873756adfd092e8128d9f1cf72b4
-R e2d571d2583903dcbc6ab145be90448d
-U adam
-Z f6b6e32f1d1ba2c99da3b7a6e5f275fb
+P 92e7bb907802c905f99ed4c47669f97723f63ed3
+R f3f2773d6a682ce0fd18d2ccb31ff7ae
+U drh
+Z 709f855ac1ee73fe28f0a0a5f9d3ed60
