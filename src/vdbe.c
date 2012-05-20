@@ -6204,6 +6204,7 @@ abort_due_to_interrupt:
   assert( db->u1.isInterrupted );
   rc = SQLITE_INTERRUPT;
   p->rc = rc;
+printf("INTERRUPT [%s]\n", p->zSql); fflush(stdout);
   sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3ErrStr(rc));
   goto vdbe_error_halt;
 }
