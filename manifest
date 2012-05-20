@@ -1,5 +1,5 @@
-C Add\sassert()s\sto\sverify\sthat\sTable\sobjects\sin\sthe\sschema\snever\suse\nlookaside\smemory.
-D 2012-05-15T12:49:32.294
+C Fix\sa\stest\scase\sso\sthat\sit\sworks\seven\swith\svery\slong\spathnames.
+D 2012-05-20T20:23:19.508
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -690,7 +690,7 @@ F test/shared6.test 866bb4982c45ce216c61ded5e8fde4e7e2f3ffa9
 F test/shared7.test 960760bc8d03e1419e70dea69cf41db62853616e
 F test/shared_err.test 91e26ec4f3fbe07951967955585137e2f18993de
 F test/sharedlock.test ffa0a3c4ac192145b310f1254f8afca4d553eabf
-F test/shell1.test cd9f846702d1d471225a988fee590a153be8192c
+F test/shell1.test e3228ec90949e4a51797d452983584932a6c6372
 F test/shell2.test 037d6ad16e873354195d30bb2dc4b5321788154a
 F test/shell3.test 9196c42772d575685e722c92b4b39053c6ebba59
 F test/shell4.test aa4eef8118b412d1a01477a53426ece169ea86a9
@@ -997,7 +997,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 0bb1cfc63f982db7b29c8e6be6698a6dad100f70
-R 040b7c6409bc9c8d46165baae8f02a6f
+P 736d6ea677f58e4aa2914fa79a3156b775c5a3f5 0c0a03987cc144fa017b0a0f9cf45c36e74fbd9f
+R b39858dce93e892d97ed47aa7e814c98
 U drh
-Z 46fb04131884f3e5ee0e8870b1bd5af5
+Z 230bf582b42ce0798a6de278a8dabf1f
