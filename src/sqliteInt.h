@@ -2006,14 +2006,20 @@ struct NameContext {
   Parse *pParse;       /* The parser */
   SrcList *pSrcList;   /* One or more tables used to resolve names */
   ExprList *pEList;    /* Optional list of named expressions */
-  int nRef;            /* Number of names resolved by this context */
-  int nErr;            /* Number of errors encountered while resolving names */
-  u8 allowAgg;         /* Aggregate functions allowed here */
-  u8 hasAgg;           /* True if aggregates are seen */
-  u8 isCheck;          /* True if resolving names in a CHECK constraint */
   AggInfo *pAggInfo;   /* Information about aggregates at this level */
   NameContext *pNext;  /* Next outer name context.  NULL for outermost */
+  int nRef;            /* Number of names resolved by this context */
+  int nErr;            /* Number of errors encountered while resolving names */
+  u8 ncFlags;          /* Zero or more NC_* flags defined below */
 };
+
+/*
+** Allowed values for the NameContext, ncFlags field.
+*/
+#define NC_AllowAgg  0x01    /* Aggregate functions are allowed here */
+#define NC_HasAgg    0x02    /* One or more aggregate functions seen */
+#define NC_IsCheck   0x04    /* True if resolving names in a CHECK constraint */
+#define NC_InAggFunc 0x08    /* True if analyzing arguments to an agg func */
 
 /*
 ** An instance of the following structure contains all information
