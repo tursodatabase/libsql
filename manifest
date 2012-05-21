@@ -1,5 +1,5 @@
-C Make\ssure\slookaside\smemory\sallocations\sare\sunusable\safter\sthey\sare\sfreed.
-D 2012-05-21T16:59:16.604
+C Convert\sthe\sNameContext\sobject\sfrom\susing\su8\sbooleans\sto\susing\sindividual\nbits\sin\sa\ssingle\su8\sas\sits\sbooleans.\s\sThis\schange\smight\sbecome\sa\sbasis\sfor\na\sfix\sfor\s[c2ad16f997ee9c].
+D 2012-05-21T19:11:25.681
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -121,7 +121,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c df800f10896bc2ddaa1125c532d6e7a7b9efc532
 F src/btree.h 48a013f8964f12d944d90e4700df47b72dd6d923
 F src/btreeInt.h 38a639c0542c29fe8331a221c4aed0cb8686249e
-F src/build.c 95fd8aa1bf81acf15e9ef46b07d1f70111ea88d0
+F src/build.c 2bb2163bb1e69f59e9f36a9413079ead42fa1d2c
 F src/callback.c 0cb4228cdcd827dcc5def98fb099edcc9142dbcd
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c a9c26822515f81ec21588cbb482ca6724be02e33
@@ -171,13 +171,13 @@ F src/pragma.c e708b3bb5704605816f617e0b1d63a5488060715
 F src/prepare.c 9a00a9612ebf80203fbb41f8a29ab8cb27a05f40
 F src/printf.c 7ffb4ebb8b341f67e049695ba031da717b3d2699
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
-F src/resolve.c 748e75299faff345f34f0e5bd02a2bac8aa69fcd
+F src/resolve.c b3c70ab28cac60de33684c9aa9e5138dcf71d6dd
 F src/rowset.c f6a49f3e9579428024662f6e2931832511f831a1
-F src/select.c d7b9018b7dd2e821183d69477ab55c39b8272335
+F src/select.c c5c2d1b6cf3e9ec9727e4eeba7e0b448ec48a626
 F src/shell.c c16f72e34f611f060546709564c121a67cb2b31b
 F src/sqlite.h.in 4f4d4792f6fb00387c877af013cb09d955643f12
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h c5e917c4f1453f3972b1fd0c81105dfe4f09cc32
+F src/sqliteInt.h 59a27074efe1b68a375d4210b324cf78a91850b1
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -997,7 +997,10 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P fda1ea0bee0fe283e0ed5710058fdfc403519bac
-R 6e4bfedf4c57499c35337d815d50cfb9
+P 3869aef6348018f584137f36f6924193a790e52f
+R d536666e711097bf22b04b86f6cd78bb
+T *branch * nested-agg
+T *sym-nested-agg *
+T -sym-trunk *
 U drh
-Z bde27247c00eb88661bdbd820aaab779
+Z 728d097c901f031eef175d490bde1189
