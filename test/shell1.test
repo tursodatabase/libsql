@@ -578,6 +578,18 @@ do_test shell1-3.21.3 {
   catchcmd "test.db" ".schema FOO BAD"
 } {1 {Error: unknown command or invalid arguments:  "schema". Enter ".help" for help}}
 
+do_test shell1-3.21.4 {
+  catchcmd "test.db" {
+     CREATE TABLE t1(x);
+     CREATE VIEW v2 AS SELECT x+1 AS y FROM t1;
+     CREATE VIEW v1 AS SELECT y+1 FROM v2;
+  }
+  catchcmd "test.db" ".schema"
+} {0 {CREATE TABLE t1(x);
+CREATE VIEW v2 AS SELECT x+1 AS y FROM t1;
+CREATE VIEW v1 AS SELECT y+1 FROM v2;}}
+db eval {DROP VIEW v1; DROP VIEW v2; DROP TABLE t1;}
+
 # .separator STRING      Change separator used by output mode and .import
 do_test shell1-3.22.1 {
   catchcmd "test.db" ".separator"

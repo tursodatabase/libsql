@@ -1,5 +1,5 @@
-C Fix\sa\stest\scase\sso\sthat\sit\sworks\seven\swith\svery\slong\spathnames.
-D 2012-05-20T20:23:19.508
+C Change\sthe\s".schema"\scommand\sof\sthe\sshell\sto\soutput\sVIEWs\sin\sdeclared\sorder,\nrather\sthan\salphabetical\sorder,\sso\sthat\snested\sviews\swill\sappear\sin\sthe\s\ncorrect\sorder.\s\sFix\sfor\sticket\s[cfe84e86839e59e8].
+D 2012-05-21T03:15:06.394
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,7 +174,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 748e75299faff345f34f0e5bd02a2bac8aa69fcd
 F src/rowset.c f6a49f3e9579428024662f6e2931832511f831a1
 F src/select.c d7b9018b7dd2e821183d69477ab55c39b8272335
-F src/shell.c 04399b2f9942bd02ed5ffee3b84bcdb39c52a1e6
+F src/shell.c c16f72e34f611f060546709564c121a67cb2b31b
 F src/sqlite.h.in 4f4d4792f6fb00387c877af013cb09d955643f12
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h c5e917c4f1453f3972b1fd0c81105dfe4f09cc32
@@ -690,7 +690,7 @@ F test/shared6.test 866bb4982c45ce216c61ded5e8fde4e7e2f3ffa9
 F test/shared7.test 960760bc8d03e1419e70dea69cf41db62853616e
 F test/shared_err.test 91e26ec4f3fbe07951967955585137e2f18993de
 F test/sharedlock.test ffa0a3c4ac192145b310f1254f8afca4d553eabf
-F test/shell1.test e3228ec90949e4a51797d452983584932a6c6372
+F test/shell1.test cb78ef3222fb03d7ae4653f7f85d857decb45121
 F test/shell2.test 037d6ad16e873354195d30bb2dc4b5321788154a
 F test/shell3.test 9196c42772d575685e722c92b4b39053c6ebba59
 F test/shell4.test aa4eef8118b412d1a01477a53426ece169ea86a9
@@ -997,7 +997,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 736d6ea677f58e4aa2914fa79a3156b775c5a3f5 0c0a03987cc144fa017b0a0f9cf45c36e74fbd9f
-R b39858dce93e892d97ed47aa7e814c98
+P ecd4a0635909a0127ed7b802af9ea9041e56ddf1
+R 7b82113b70768ae41785351914a93cd1
 U drh
-Z 230bf582b42ce0798a6de278a8dabf1f
+Z ad8c28ba7511e336cc1b2ac2cf546d31
