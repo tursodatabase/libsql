@@ -1,5 +1,5 @@
-C Candidate\sfix\sfor\sthe\snested\saggregate\squery\sproblem\sof\sticket\n[c2ad16f997ee9c8e].
-D 2012-05-21T20:13:39.889
+C Mark\sand\salways-true\sconditional\sas\ssuch.\s\sAdd\sthe\sfuzz-oss1.test\stest\smodule.
+D 2012-05-21T21:20:57.295
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -127,7 +127,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c a9c26822515f81ec21588cbb482ca6724be02e33
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c 4c20ea4f6213b3bc1c6a510586864b679946e05e
-F src/expr.c e2d55b411e1d0726fa1c0ffc88b9a83013ba718d
+F src/expr.c 06a7733d19dc725dc46ba51afd9feadb4b85d991
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 657212460bf5cfd3ae607d12ea62092844c227b5
 F src/func.c c6b3c94320253a35bda43fb69cc292618e3285d6
@@ -499,6 +499,7 @@ F test/fts4merge3.test aab02a09f50fe6baaddc2e159c3eabc116d45fc7
 F test/func.test 9809b7622d721904a8cc33c1ffb87f46d506ed01
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 001021e5b88bd02a3b365a5c5fd8f6f49d39744a
+F test/fuzz-oss1.test b108e46744d80e0574c69fc5774eab0c0b61950d
 F test/fuzz.test 77fd50afc12847af50fcf1941679d90adebadde6
 F test/fuzz2.test 207d0f9d06db3eaf47a6b7bfc835b8e2fc397167
 F test/fuzz3.test aec64345184d1662bd30e6a17851ff659d596dc5
@@ -997,7 +998,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 722260969306778029b738402f22e3c154dd77a1
-R 9cea2398dc784c95fabf6a16b4f454f9
+P f3dd1fafd4718558de1f06139419a8c560d727f5
+R 15d4dbbc25fb6a4a0d7e19b673fed210
 U drh
-Z 2172aaf922e57d28da6d28e661889326
+Z 98ab51ffc1b65623ce8c0d9d22f1a6dd
