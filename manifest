@@ -1,5 +1,5 @@
-C Change\sthe\s".schema"\scommand\sof\sthe\sshell\sto\soutput\sVIEWs\sin\sdeclared\sorder,\nrather\sthan\salphabetical\sorder,\sso\sthat\snested\sviews\swill\sappear\sin\sthe\s\ncorrect\sorder.\s\sFix\sfor\sticket\s[cfe84e86839e59e8].
-D 2012-05-21T03:15:06.394
+C Allow\sthe\ssqlite3ExplainBegin\sfunction\sto\sbe\scompiled\sby\sMSVC.
+D 2012-05-21T05:02:22.947
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -242,7 +242,7 @@ F src/vdbeaux.c d52c8a424fdd4b1d5cf1ac93cc7cd20da023ec5c
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
 F src/vdbesort.c b25814d385895544ebc8118245c8311ded7f81c9
-F src/vdbetrace.c d6e50e04e1ec498150e519058f617d91b8f5c843
+F src/vdbetrace.c 79059ebd17b3c8545fab2a24253713e77e4ab392
 F src/vtab.c ae657b1c22cff43863458e768a44f915c07bc0e4
 F src/wal.c 7bb3ad807afc7973406c805d5157ec7a2f65e146
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
@@ -997,7 +997,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P ecd4a0635909a0127ed7b802af9ea9041e56ddf1
-R 7b82113b70768ae41785351914a93cd1
-U drh
-Z ad8c28ba7511e336cc1b2ac2cf546d31
+P e092ff69e25363f97495adc622f4250041ca9708
+R 98fdb1438485e2ea50218758d88f3077
+U mistachkin
+Z df057846a351e557c58506254eeed09c
