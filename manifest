@@ -1,5 +1,5 @@
-C Allow\sthe\ssqlite3ExplainBegin\sfunction\sto\sbe\scompiled\sby\sMSVC.
-D 2012-05-21T05:02:22.947
+C Move\ssome\s#defines\searlier\sin\sthe\sfile\sfor\stest_quota.c\sin\sorder\sto\savoid\na\suse\sbefore\sdefinition.
+D 2012-05-21T12:25:42.843
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -213,7 +213,7 @@ F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 0396f220561f3b4eedc450cef26d40c593c69a25
 F src/test_osinst.c 90a845c8183013d80eccb1f29e8805608516edba
 F src/test_pcache.c a5cd24730cb43c5b18629043314548c9169abb00
-F src/test_quota.c 9d6be9cd3bb132df2b964193b6a4ec850f50a210
+F src/test_quota.c 47cb7b606160ce8f603a7d47143dd1f74de09058
 F src/test_quota.h ee5da2ae7f84d1c8e0e0e2ab33f01d69f10259b5
 F src/test_rtree.c aba603c949766c4193f1068b91c787f57274e0d9
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
@@ -997,7 +997,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P e092ff69e25363f97495adc622f4250041ca9708
-R 98fdb1438485e2ea50218758d88f3077
-U mistachkin
-Z df057846a351e557c58506254eeed09c
+P 18555128f59b59d8c67446cd778ece9a181b30a5
+R 41d96253a9094efb4790259997ac64f1
+U drh
+Z c3ba29202e0608ecc60ef4730bb3beee
