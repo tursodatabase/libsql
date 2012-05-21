@@ -1,5 +1,5 @@
-C Move\ssome\s#defines\searlier\sin\sthe\sfile\sfor\stest_quota.c\sin\sorder\sto\savoid\na\suse\sbefore\sdefinition.
-D 2012-05-21T12:25:42.843
+C Make\ssure\slookaside\smemory\sallocations\sare\sunusable\safter\sthey\sare\sfreed.
+D 2012-05-21T16:59:16.604
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -141,7 +141,7 @@ F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
 F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
 F src/main.c 91458c713e9b7f8dbc98d79e78f1150f0ca9c2a1
-F src/malloc.c 15afac5e59b6584efe072e9933aefb4230e74f97
+F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c b3677415e69603d6a0e7c5410a1b3731d55beda1
 F src/mem2.c e307323e86b5da1853d7111b68fd6b84ad6f09cf
@@ -997,7 +997,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 18555128f59b59d8c67446cd778ece9a181b30a5
-R 41d96253a9094efb4790259997ac64f1
+P fda1ea0bee0fe283e0ed5710058fdfc403519bac
+R 6e4bfedf4c57499c35337d815d50cfb9
 U drh
-Z c3ba29202e0608ecc60ef4730bb3beee
+Z bde27247c00eb88661bdbd820aaab779
