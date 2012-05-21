@@ -1,12 +1,12 @@
-C Merge\sthe\snested\saggregate\squery\sfix\s(ticket\s[c2ad16f997ee9c8ed])\sunto\strunk.
-D 2012-05-21T21:26:17.383
+C Increase\sthe\sversion\snumber\sto\s3.7.12.1.\s\sMinor\schanges\sto\stest\sscripts.
+D 2012-05-21T22:45:35.101
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 7849a871b6cdb20fd51baee6bbe5965a03326be4
 F Makefile.vxworks 3b7fe7a0571fdadc61363ebc1b23732d2d6363ca
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
-F VERSION f9313d88cb77df8617059a88eb382291321ef6bc
+F VERSION 1e25ebddd2ed5811c10bdabe914cd46d2dc38af8
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 17dc593f791f874d2c23a0f9360850ded0286531
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -15,7 +15,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure eb9e5e7f4c1601b5acf674a724e1a778481d2835 x
+F configure faa04198b719ec9cb2166aa0b163558e9b8ddd77 x
 F configure.ac 9ee886c21c095b3272137b1553ae416c8b8c8557
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 3091574143dd3415669b6745843ff8d011d33549
@@ -499,7 +499,7 @@ F test/fts4merge3.test aab02a09f50fe6baaddc2e159c3eabc116d45fc7
 F test/func.test 9809b7622d721904a8cc33c1ffb87f46d506ed01
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 001021e5b88bd02a3b365a5c5fd8f6f49d39744a
-F test/fuzz-oss1.test b108e46744d80e0574c69fc5774eab0c0b61950d
+F test/fuzz-oss1.test 4912e528ec9cf2f42134456933659d371c9e0d74
 F test/fuzz.test 77fd50afc12847af50fcf1941679d90adebadde6
 F test/fuzz2.test 207d0f9d06db3eaf47a6b7bfc835b8e2fc397167
 F test/fuzz3.test aec64345184d1662bd30e6a17851ff659d596dc5
@@ -691,7 +691,7 @@ F test/shared6.test 866bb4982c45ce216c61ded5e8fde4e7e2f3ffa9
 F test/shared7.test 960760bc8d03e1419e70dea69cf41db62853616e
 F test/shared_err.test 91e26ec4f3fbe07951967955585137e2f18993de
 F test/sharedlock.test ffa0a3c4ac192145b310f1254f8afca4d553eabf
-F test/shell1.test cb78ef3222fb03d7ae4653f7f85d857decb45121
+F test/shell1.test 6e3013bc50e2b73f00d17e491f776decc82a71c8
 F test/shell2.test 037d6ad16e873354195d30bb2dc4b5321788154a
 F test/shell3.test 9196c42772d575685e722c92b4b39053c6ebba59
 F test/shell4.test aa4eef8118b412d1a01477a53426ece169ea86a9
@@ -998,7 +998,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 3869aef6348018f584137f36f6924193a790e52f bdc01fd0fa0c15efbb32bf18527c71e3e4dc48ed
-R 15d4dbbc25fb6a4a0d7e19b673fed210
+P e459c3360ba2543e52b5736d7a84f1ce67388d5c
+R f9f0e59804fa7e60869ace7ace22bd3d
 U drh
-Z 861d1d99d6fb7da6ba53d2868b8d367e
+Z eaa5c0cfadf12606b69ebab384743042

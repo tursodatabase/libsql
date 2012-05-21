@@ -174,8 +174,7 @@ do_test shell1-1.15.3 {
 # -version             show SQLite version
 do_test shell1-1.16.1 {
   set x [catchcmd "-version test.db" ""]
-  regexp {0 \{3.\d.\d+ 20\d\d-[01]\d-\d\d \d\d:\d\d:\d\d [0-9a-f]+\}} $x 
-} 1
+} {/3.[0-9.]+ 20\d\d-[01]\d-\d\d \d\d:\d\d:\d\d [0-9a-f]+/}
 
 #----------------------------------------------------------------------------
 # Test cases shell1-2.*: Basic "dot" command token parsing.

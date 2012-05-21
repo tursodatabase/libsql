@@ -318,6 +318,14 @@ explain
   }
 } {/.* Goto .*/}
 
+# The next test requires FTS4
+ifcapable !fts3 {
+  finish_test
+  return
+}
+
+# Taken from the gnome-shell project
+#
 db close
 forcedelete test.db
 sqlite3 db test.db
