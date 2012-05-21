@@ -2019,6 +2019,7 @@ struct NameContext {
 #define NC_AllowAgg  0x01    /* Aggregate functions are allowed here */
 #define NC_HasAgg    0x02    /* One or more aggregate functions seen */
 #define NC_IsCheck   0x04    /* True if resolving names in a CHECK constraint */
+#define NC_InAggFunc 0x08    /* True if analyzing arguments to an agg func */
 
 /*
 ** An instance of the following structure contains all information

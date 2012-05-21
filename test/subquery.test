@@ -377,6 +377,44 @@ do_test subquery-3.4.3 {
   }
 } {106 4.5 0 1 107 4.0 1 0}
 
+do_test subquery-3.5.1 {
+  execsql {
+    CREATE TABLE t35a(x); INSERT INTO t35a VALUES(1),(2),(3);
+    CREATE TABLE t35b(y); INSERT INTO t35b VALUES(98), (99);
+    SELECT max((SELECT avg(y) FROM t35b)) FROM t35a;
+  }
+} {98.5}
+do_test subquery-3.5.2 {
+  execsql {
+    SELECT max((SELECT count(y) FROM t35b)) FROM t35a;
+  }
+} {2}
+do_test subquery-3.5.3 {
+  execsql {
+    SELECT max((SELECT count() FROM t35b)) FROM t35a;
+  }
+} {2}
+do_test subquery-3.5.4 {
+  catchsql {
+    SELECT max((SELECT count(x) FROM t35b)) FROM t35a;
+  }
+} {1 {misuse of aggregate: count()}}
+do_test subquery-3.5.5 {
+  catchsql {
+    SELECT max((SELECT count(x) FROM t35b)) FROM t35a;
+  }
+} {1 {misuse of aggregate: count()}}
+do_test subquery-3.5.6 {
+  catchsql {
+    SELECT max((SELECT a FROM (SELECT count(x) AS a FROM t35b))) FROM t35a;
+  }
+} {1 {misuse of aggregate: count()}}
+do_test subquery-3.5.7 {
+  execsql {
+    SELECT max((SELECT a FROM (SELECT count(y) AS a FROM t35b))) FROM t35a;
+  }
+} {2}
+
 
 #------------------------------------------------------------------
 # These tests - subquery-4.* - use the TCL statement cache to try 
