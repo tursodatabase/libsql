@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sto\s3.7.12.1.\s\sMinor\schanges\sto\stest\sscripts.
-D 2012-05-21T22:45:35.101
+C Version\s3.7.12.1
+D 2012-05-22T02:45:53.459
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -998,7 +998,10 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P e459c3360ba2543e52b5736d7a84f1ce67388d5c
+P 5519cc5ef471e32a59995a34be811b46478dca1e
 R f9f0e59804fa7e60869ace7ace22bd3d
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.7.12.1 *
 U drh
-Z eaa5c0cfadf12606b69ebab384743042
+Z a30e57621f706278c1c64a3624297cbb
