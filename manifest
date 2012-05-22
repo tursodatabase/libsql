@@ -1,5 +1,5 @@
-C Merge\sthe\s3.7.12.1\strunk\schanges\sinto\sthe\sWinRT\sbranch.
-D 2012-05-22T17:39:00.851
+C Use\sthe\snew\stest\ssuite\shelper\sprocedure\s'get_pwd'\sto\squery\sthe\scurrent\sdirectory\sfrom\stests.
+D 2012-05-22T19:25:51.250
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -691,7 +691,7 @@ F test/shared6.test 866bb4982c45ce216c61ded5e8fde4e7e2f3ffa9
 F test/shared7.test 960760bc8d03e1419e70dea69cf41db62853616e
 F test/shared_err.test 91e26ec4f3fbe07951967955585137e2f18993de
 F test/sharedlock.test ffa0a3c4ac192145b310f1254f8afca4d553eabf
-F test/shell1.test 6e3013bc50e2b73f00d17e491f776decc82a71c8
+F test/shell1.test 9895ee3013742a02e5afd8d77793729967ffd195
 F test/shell2.test 037d6ad16e873354195d30bb2dc4b5321788154a
 F test/shell3.test 9196c42772d575685e722c92b4b39053c6ebba59
 F test/shell4.test aa4eef8118b412d1a01477a53426ece169ea86a9
@@ -998,7 +998,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 224c65e4a5c6ede076c364c93933cedd17f1e70b 6d326d44fd1d626aae0e8456e5fa2049f1ce0789
-R 4f25f9545051a609810b52e6c59078d1
-U drh
-Z b60ecf5beb2c5144541d29fa3c1ce0f9
+P b9ed0b26debd225a4530eb17d25b857e8e883a85
+R 862fc76bca700646e8a6c3acf8f2d307
+U mistachkin
+Z fe4e5d83d2f708a7c0601e6c2f510bd5
