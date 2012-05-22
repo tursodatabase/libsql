@@ -491,6 +491,10 @@ void sqlite3DbFree(sqlite3 *db, void *p){
     }
     if( isLookaside(db, p) ){
       LookasideSlot *pBuf = (LookasideSlot*)p;
+#if SQLITE_DEBUG
+      /* Trash all content in the buffer being freed */
+      memset(p, 0xaa, db->lookaside.sz);
+#endif
       pBuf->pNext = db->lookaside.pFree;
       db->lookaside.pFree = pBuf;
       db->lookaside.nOut--;

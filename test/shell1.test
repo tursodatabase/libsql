@@ -174,8 +174,7 @@ do_test shell1-1.15.3 {
 # -version             show SQLite version
 do_test shell1-1.16.1 {
   set x [catchcmd "-version test.db" ""]
-  regexp {0 \{3.\d.\d+ 20\d\d-[01]\d-\d\d \d\d:\d\d:\d\d [0-9a-f]+\}} $x 
-} 1
+} {/3.[0-9.]+ 20\d\d-[01]\d-\d\d \d\d:\d\d:\d\d [0-9a-f]+/}
 
 #----------------------------------------------------------------------------
 # Test cases shell1-2.*: Basic "dot" command token parsing.
@@ -284,7 +283,7 @@ do_test shell1-3.2.4 {
 # .databases             List names and files of attached databases
 do_test shell1-3.3.1 {
   catchcmd "-csv test.db" ".databases"
-} {/0 +.*main +.*test.db.*/}
+} "/0 +.*main +[string map {/ .} [string range [pwd] 0 10]].*/"
 do_test shell1-3.3.2 {
   # too many arguments
   catchcmd "test.db" ".databases BAD"
@@ -577,6 +576,18 @@ do_test shell1-3.21.3 {
   # too many arguments
   catchcmd "test.db" ".schema FOO BAD"
 } {1 {Error: unknown command or invalid arguments:  "schema". Enter ".help" for help}}
+
+do_test shell1-3.21.4 {
+  catchcmd "test.db" {
+     CREATE TABLE t1(x);
+     CREATE VIEW v2 AS SELECT x+1 AS y FROM t1;
+     CREATE VIEW v1 AS SELECT y+1 FROM v2;
+  }
+  catchcmd "test.db" ".schema"
+} {0 {CREATE TABLE t1(x);
+CREATE VIEW v2 AS SELECT x+1 AS y FROM t1;
+CREATE VIEW v1 AS SELECT y+1 FROM v2;}}
+db eval {DROP VIEW v1; DROP VIEW v2; DROP TABLE t1;}
 
 # .separator STRING      Change separator used by output mode and .import
 do_test shell1-3.22.1 {
