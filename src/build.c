@@ -502,15 +502,28 @@ static void sqliteDeleteColumnNames(sqlite3 *db, Table *pTable){
 ** the table data structure from the hash table.  But it does destroy
 ** memory structures of the indices and foreign keys associated with 
 ** the table.
+**
+** The db parameter is optional.  It is needed if the Table object 
+** contains lookaside memory.  (Table objects in the schema do not use
+** lookaside memory, but some ephemeral Table objects do.)  Or the
+** db parameter can be used with db->pnBytesFreed to measure the memory
+** used by the Table object.
 */
 void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
   Index *pIndex, *pNext;
+  TESTONLY( int nLookaside; ) /* Used to verify lookaside not used for schema */
 
   assert( !pTable || pTable->nRef>0 );
 
   /* Do not delete the table until the reference count reaches zero. */
   if( !pTable ) return;
   if( ((!db || db->pnBytesFreed==0) && (--pTable->nRef)>0) ) return;
+
+  /* Record the number of outstanding lookaside allocations in schema Tables
+  ** prior to doing any free() operations.  Since schema Tables do not use
+  ** lookaside, this number should not change. */
+  TESTONLY( nLookaside = (db && (pTable->tabFlags & TF_Ephemeral)==0) ?
+                         db->lookaside.nOut : 0 );
 
   /* Delete all indices associated with this table. */
   for(pIndex = pTable->pIndex; pIndex; pIndex=pNext){
@@ -543,6 +556,9 @@ void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
   sqlite3VtabClear(db, pTable);
 #endif
   sqlite3DbFree(db, pTable);
+
+  /* Verify that no lookaside memory was used by schema tables */
+  assert( nLookaside==0 || nLookaside==db->lookaside.nOut );
 }
 
 /*
@@ -1491,7 +1507,7 @@ void sqlite3EndTable(
     sSrc.a[0].iCursor = -1;
     sNC.pParse = pParse;
     sNC.pSrcList = &sSrc;
-    sNC.isCheck = 1;
+    sNC.ncFlags = NC_IsCheck;
     pList = p->pCheck;
     for(i=0; i<pList->nExpr; i++){
       if( sqlite3ResolveExprNames(&sNC, pList->a[i].pExpr) ){
