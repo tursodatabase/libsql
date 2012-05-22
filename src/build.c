@@ -1507,7 +1507,7 @@ void sqlite3EndTable(
     sSrc.a[0].iCursor = -1;
     sNC.pParse = pParse;
     sNC.pSrcList = &sSrc;
-    sNC.isCheck = 1;
+    sNC.ncFlags = NC_IsCheck;
     pList = p->pCheck;
     for(i=0; i<pList->nExpr; i++){
       if( sqlite3ResolveExprNames(&sNC, pList->a[i].pExpr) ){
