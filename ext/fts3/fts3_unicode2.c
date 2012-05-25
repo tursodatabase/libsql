@@ -121,8 +121,13 @@ int sqlite3FtsUnicodeIsalnum(int c){
     0x38008060, 0x380400F0, 0x3C000001, 0x3FFFF401, 0x40000001,
     0x43FFF401,
   };
+  static const unsigned int aAscii[4] = {
+    0xFFFFFFFF, 0xFC00FFFF, 0xF8000001, 0xF8000001,
+  };
 
-  if( c<(1<<22) ){
+  if( c<128 ){
+    return ( (aAscii[c >> 5] & (1 << (c & 0x001F)))==0 );
+  }else if( c<(1<<22) ){
     unsigned int key = (((unsigned int)c)<<10) | 0x000003FF;
     int iRes;
     int iHi = sizeof(aEntry)/sizeof(aEntry[0]) - 1;
@@ -236,7 +241,9 @@ int sqlite3FtsUnicodeTolower(int c){
   assert( c>=0 );
   assert( sizeof(unsigned short)==2 && sizeof(unsigned char)==1 );
 
-  if( c<65536 ){
+  if( c<128 ){
+    if( c>='A' && c<='Z' ) ret = c + ('a' - 'A');
+  }else if( c<65536 ){
     int iHi = sizeof(aEntry)/sizeof(aEntry[0]) - 1;
     int iLo = 0;
     int iRes = -1;

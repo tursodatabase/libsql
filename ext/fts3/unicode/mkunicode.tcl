@@ -105,6 +105,27 @@ proc an_print_range_array {lRange} {
   puts "  \};"
 }
 
+proc an_print_ascii_bitmap {lRange} {
+  foreach range $lRange {
+    foreach {iFirst nRange} $range {}
+    for {set i $iFirst} {$i < ($iFirst+$nRange)} {incr i} {
+      if {$i<=127} { set a($i) 1 }
+    }
+  }
+
+  set aAscii [list 0 0 0 0]
+  foreach key [array names a] {
+    set idx [expr $key >> 5]
+    lset aAscii $idx [expr [lindex $aAscii $idx] | (1 << ($key&0x001F))]
+  }
+
+  puts "  static const unsigned int aAscii\[4\] = \{"
+  puts -nonewline "   "
+  foreach v $aAscii { puts -nonewline [format " 0x%08X," $v] }
+  puts ""
+  puts "  \};"
+}
+
 proc print_isalnum {zFunc lRange} {
   puts "/*"
   puts "** Return true if the argument corresponds to a unicode codepoint"
@@ -115,8 +136,11 @@ proc print_isalnum {zFunc lRange} {
   puts "*/"
   puts "int ${zFunc}\(int c)\{"
   an_print_range_array $lRange
+  an_print_ascii_bitmap $lRange
   puts {
-  if( c<(1<<22) ){
+  if( c<128 ){
+    return ( (aAscii[c >> 5] & (1 << (c & 0x001F)))==0 );
+  }else if( c<(1<<22) ){
     unsigned int key = (((unsigned int)c)<<10) | 0x000003FF;
     int iRes;
     int iHi = sizeof(aEntry)/sizeof(aEntry[0]) - 1;
@@ -365,7 +389,9 @@ proc print_tolower {zFunc} {
   assert( c>=0 );
   assert( sizeof(unsigned short)==2 && sizeof(unsigned char)==1 );
 
-  if( c<65536 ){
+  if( c<128 ){
+    if( c>='A' && c<='Z' ) ret = c + ('a' - 'A');
+  }else if( c<65536 ){
     int iHi = sizeof(aEntry)/sizeof(aEntry[0]) - 1;
     int iLo = 0;
     int iRes = -1;

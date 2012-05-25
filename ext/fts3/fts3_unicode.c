@@ -201,6 +201,7 @@ static int unicodeNext(
       if( !zNew ) return SQLITE_NOMEM;
       zOut = &zNew[zOut - pCsr->zToken];
       pCsr->zToken = zNew;
+      pCsr->nAlloc += 64;
     }
 
     /* Write the folded case of the last character read to the output */
