@@ -55,6 +55,7 @@ LIBOBJ+= alter.o analyze.o attach.o auth.o \
          callback.o complete.o ctime.o date.o delete.o expr.o fault.o fkey.o \
          fts3.o fts3_aux.o fts3_expr.o fts3_hash.o fts3_icu.o fts3_porter.o \
          fts3_snippet.o fts3_tokenizer.o fts3_tokenizer1.o \
+	 fts3_unicode.o fts3_unicode2.o \
          fts3_write.o func.o global.o hash.o \
          icu.o insert.o journal.o legacy.o loadext.o \
          main.o malloc.o mem0.o mem1.o mem2.o mem3.o mem5.o \
@@ -198,6 +199,8 @@ SRC += \
   $(TOP)/ext/fts3/fts3_tokenizer.h \
   $(TOP)/ext/fts3/fts3_tokenizer.c \
   $(TOP)/ext/fts3/fts3_tokenizer1.c \
+  $(TOP)/ext/fts3/fts3_unicode.c \
+  $(TOP)/ext/fts3/fts3_unicode2.c \
   $(TOP)/ext/fts3/fts3_write.c
 SRC += \
   $(TOP)/ext/icu/sqliteicu.h \
@@ -507,6 +510,12 @@ fts3_tokenizer.o:	$(TOP)/ext/fts3/fts3_tokenizer.c $(HDR) $(EXTHDR)
 
 fts3_tokenizer1.o:	$(TOP)/ext/fts3/fts3_tokenizer1.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_tokenizer1.c
+
+fts3_unicode.o:	$(TOP)/ext/fts3/fts3_unicode.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_unicode.c
+
+fts3_unicode2.o:	$(TOP)/ext/fts3/fts3_unicode2.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_unicode2.c
 
 fts3_write.o:	$(TOP)/ext/fts3/fts3_write.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_write.c

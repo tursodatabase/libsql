@@ -3554,6 +3554,7 @@ static void hashDestroy(void *p){
 */
 void sqlite3Fts3SimpleTokenizerModule(sqlite3_tokenizer_module const**ppModule);
 void sqlite3Fts3PorterTokenizerModule(sqlite3_tokenizer_module const**ppModule);
+void sqlite3Fts3UnicodeTokenizer(sqlite3_tokenizer_module const**ppModule);
 #ifdef SQLITE_ENABLE_ICU
 void sqlite3Fts3IcuTokenizerModule(sqlite3_tokenizer_module const**ppModule);
 #endif
@@ -3569,6 +3570,7 @@ int sqlite3Fts3Init(sqlite3 *db){
   Fts3Hash *pHash = 0;
   const sqlite3_tokenizer_module *pSimple = 0;
   const sqlite3_tokenizer_module *pPorter = 0;
+  const sqlite3_tokenizer_module *pUnicode = 0;
 
 #ifdef SQLITE_ENABLE_ICU
   const sqlite3_tokenizer_module *pIcu = 0;
@@ -3585,6 +3587,7 @@ int sqlite3Fts3Init(sqlite3 *db){
 
   sqlite3Fts3SimpleTokenizerModule(&pSimple);
   sqlite3Fts3PorterTokenizerModule(&pPorter);
+  sqlite3Fts3UnicodeTokenizer(&pUnicode);
 
   /* Allocate and initialise the hash-table used to store tokenizers. */
   pHash = sqlite3_malloc(sizeof(Fts3Hash));
@@ -3598,6 +3601,7 @@ int sqlite3Fts3Init(sqlite3 *db){
   if( rc==SQLITE_OK ){
     if( sqlite3Fts3HashInsert(pHash, "simple", 7, (void *)pSimple)
      || sqlite3Fts3HashInsert(pHash, "porter", 7, (void *)pPorter) 
+     || sqlite3Fts3HashInsert(pHash, "unicode", 8, (void *)pUnicode) 
 #ifdef SQLITE_ENABLE_ICU
      || (pIcu && sqlite3Fts3HashInsert(pHash, "icu", 4, (void *)pIcu))
 #endif
