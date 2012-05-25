@@ -1,10 +1,41 @@
 /*
+** 2012 May 25
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+******************************************************************************
+*/
+
+/*
 ** DO NOT EDIT THIS MACHINE GENERATED FILE.
 */
 
 #include <assert.h>
 
+/*
+** Return true if the argument corresponds to a unicode codepoint
+** classified as either a letter or a number. Otherwise false.
+**
+** The results are undefined if the value passed to this function
+** is less than zero.
+*/
 int sqlite3FtsUnicodeIsalnum(int c){
+  /* Each unsigned integer in the following array corresponds to a contiguous
+  ** range of unicode codepoints that are not either letters or numbers (i.e.
+  ** codepoints for which this function should return 0).
+  **
+  ** The most significant 22 bits in each 32-bit value contain the first 
+  ** codepoint in the range. The least significant 10 bits are used to store
+  ** the size of the range (always at least 1). In other words, the value 
+  ** ((C<<22) + N) represents a range of N codepoints starting with codepoint 
+  ** C. It is not possible to represent a range larger than 1023 codepoints 
+  ** using this format.
+  */
   const static unsigned int aEntry[] = {
     0x00000030, 0x0000E807, 0x00016C06, 0x0001EC2F, 0x0002AC07,
     0x0002D001, 0x0002D803, 0x0002EC01, 0x0002FC01, 0x00035C01,
@@ -113,6 +144,15 @@ int sqlite3FtsUnicodeIsalnum(int c){
 }
 
 
+/*
+** Interpret the argument as a unicode codepoint. If the codepoint
+** is an upper case character that has a lower case equivalent,
+** return the codepoint corresponding to the lower case version.
+** Otherwise, return a copy of the argument.
+**
+** The results are undefined if the value passed to this function
+** is less than zero.
+*/
 int sqlite3FtsUnicodeTolower(int c){
   /* Each entry in the following array defines a rule for folding a range
   ** of codepoints to lower case. The rule applies to a range of nRange

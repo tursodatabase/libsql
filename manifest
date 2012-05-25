@@ -1,5 +1,5 @@
-C Add\san\sexperimental\stokenizer\sto\sfts4\s-\s"unicode".\sThis\stokenizer\sworks\sin\sthe\ssame\sway\sexcept\sthat\sit\sunderstands\sunicode\s"simple\scase\sfolding"\sand\srecognizes\sall\scharacters\snot\sclassified\sas\s"Letters"\sor\s"Numbers"\sby\sunicode\sas\stoken\sseparators.
-D 2012-05-25T17:50:19.893
+C Fix\scomments\sin\sgenerated\sfile\sfts3_unicode2.c.
+D 2012-05-25T18:48:48.456
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -71,14 +71,14 @@ F ext/fts3/fts3_tokenizer.c 3da7254a9881f7e270ab28e2004e0d22b3212bce
 F ext/fts3/fts3_tokenizer.h 66dec98e365854b6cd2d54f1a96bb6d428fc5a68
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 033ee5d10d1a69613890d892829e6d3cf7177e40
-F ext/fts3/fts3_unicode2.c 83ad4e6a2e5ef96d89d0822810be74748a91b94f
+F ext/fts3/fts3_unicode2.c 6989db92aff500ae9795c1b16720ff5a17bfbf0f
 F ext/fts3/fts3_write.c cd4af00b3b0512b4d76177a267fcaafab44cbce4
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
 F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
-F ext/fts3/unicode/mkunicode.tcl 1f50ed0021cb7415b3d24505512996037b2e5ec4
+F ext/fts3/unicode/mkunicode.tcl 3ff244e41222fa5e43c60739c501131a2395b310
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c eb9ae1d79046bd7871aa97ee6da51eb770134b5a
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
@@ -1004,10 +1004,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 6d326d44fd1d626aae0e8456e5fa2049f1ce0789
-R cf548df9de4c764e0b1e09fe3f006b01
-T *branch * fts4-unicode
-T *sym-fts4-unicode *
-T -sym-trunk *
+P 0c13570ec78c6887103dc99b81b470829fa28385
+R 9b33e64eb6dd16074aa14c4bbd40c221
 U dan
-Z 9e1fccc2ef84e29acb91c1b6fba69301
+Z a6323715198787ea389cc785d187a551

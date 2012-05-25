@@ -77,6 +77,20 @@ proc an_print_range_array {lRange} {
   if {$iFirstMax >= (1<<22)} {error "first-max is too large for format"}
   if {$nRangeMax >= (1<<10)} {error "range-max is too large for format"}
 
+  puts -nonewline "  "
+  puts [string trim {
+  /* Each unsigned integer in the following array corresponds to a contiguous
+  ** range of unicode codepoints that are not either letters or numbers (i.e.
+  ** codepoints for which this function should return 0).
+  **
+  ** The most significant 22 bits in each 32-bit value contain the first 
+  ** codepoint in the range. The least significant 10 bits are used to store
+  ** the size of the range (always at least 1). In other words, the value 
+  ** ((C<<22) + N) represents a range of N codepoints starting with codepoint 
+  ** C. It is not possible to represent a range larger than 1023 codepoints 
+  ** using this format.
+  */
+  }]
   puts -nonewline "  const static unsigned int aEntry\[\] = \{"
   set i 0
   foreach range $lRange {
@@ -92,6 +106,13 @@ proc an_print_range_array {lRange} {
 }
 
 proc print_isalnum {zFunc lRange} {
+  puts "/*"
+  puts "** Return true if the argument corresponds to a unicode codepoint"
+  puts "** classified as either a letter or a number. Otherwise false."
+  puts "**"
+  puts "** The results are undefined if the value passed to this function"
+  puts "** is less than zero."
+  puts "*/"
   puts "int ${zFunc}\(int c)\{"
   an_print_range_array $lRange
   puts {
@@ -321,6 +342,15 @@ proc print_tolower {zFunc} {
   set lRecord [tl_create_records]
 
   set lHigh [list]
+  puts "/*"
+  puts "** Interpret the argument as a unicode codepoint. If the codepoint"
+  puts "** is an upper case character that has a lower case equivalent,"
+  puts "** return the codepoint corresponding to the lower case version."
+  puts "** Otherwise, return a copy of the argument."
+  puts "**"
+  puts "** The results are undefined if the value passed to this function"
+  puts "** is less than zero."
+  puts "*/"
   puts "int ${zFunc}\(int c)\{"
   tl_print_table_header
   foreach entry $lRecord { 
@@ -398,6 +428,19 @@ proc print_tolower_test {zFunc} {
 proc print_fileheader {} {
   puts [string trim {
 /*
+** 2012 May 25
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+******************************************************************************
+*/
+
+/*
 ** DO NOT EDIT THIS MACHINE GENERATED FILE.
 */
   }]
@@ -461,6 +504,4 @@ if {$::generate_test_code} {
   print_tolower_test sqlite3FtsUnicodeTolower 
   print_test_main 
 }
-
-
 
