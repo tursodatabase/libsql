@@ -135,5 +135,93 @@ foreach {tn query snippet} {
   } [list [mapdoc $snippet]]
 }
 
+#-------------------------------------------------------------------------
+# Make sure the unicode61 tokenizer does not crash if it is passed a 
+# NULL pointer.
+reset_db
+do_execsql_test 3.1 {
+  CREATE VIRTUAL TABLE t1 USING fts4(tokenize=unicode61, x, y);
+  INSERT INTO t1 VALUES(NULL, 'a b c');
+}
+
+do_execsql_test 3.2 {
+  SELECT snippet(t1, '[', ']') FROM t1 WHERE t1 MATCH 'b'
+} {{a [b] c}}
+
+do_execsql_test 3.3 {
+  BEGIN;
+  DELETE FROM t1;
+  INSERT INTO t1 VALUES('b b b b b b b b b b b', 'b b b b b b b b b b b b b');
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 VALUES('a b c', NULL);
+  INSERT INTO t1 VALUES('a x c', NULL);
+  COMMIT;
+}
+
+do_execsql_test 3.4 {
+  SELECT * FROM t1 WHERE t1 MATCH 'a b';
+} {{a b c} {}}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+
+do_test 4.1 {
+  set a "abc\uFFFEdef"
+  set b "abc\uD800def"
+  set c "\uFFFEdef"
+  set d "\uD800def"
+  execsql {
+    CREATE VIRTUAL TABLE t1 USING fts4(tokenize=unicode61, x);
+    INSERT INTO t1 VALUES($a);
+    INSERT INTO t1 VALUES($b);
+    INSERT INTO t1 VALUES($c);
+    INSERT INTO t1 VALUES($d);
+  }
+} {}
+
+do_test 4.2 {
+  set a [binary format c* {0x61 0xF7 0xBF 0xBF 0xBF 0x62}]
+  set b [binary format c* {0x61 0xF7 0xBF 0xBF 0xBF 0xBF 0x62}]
+  set c [binary format c* {0x61 0xF7 0xBF 0xBF 0xBF 0xBF 0xBF 0x62}]
+  set d [binary format c* {0x61 0xF7 0xBF 0xBF 0xBF 0xBF 0xBF 0xBF 0x62}]
+  execsql {
+    INSERT INTO t1 VALUES($a);
+    INSERT INTO t1 VALUES($b);
+    INSERT INTO t1 VALUES($c);
+    INSERT INTO t1 VALUES($d);
+  }
+} {}
+
+do_test 4.3 {
+  set a [binary format c* {0xF7 0xBF 0xBF 0xBF}]
+  set b [binary format c* {0xF7 0xBF 0xBF 0xBF 0xBF}]
+  set c [binary format c* {0xF7 0xBF 0xBF 0xBF 0xBF 0xBF}]
+  set d [binary format c* {0xF7 0xBF 0xBF 0xBF 0xBF 0xBF 0xBF}]
+  execsql {
+    INSERT INTO t1 VALUES($a);
+    INSERT INTO t1 VALUES($b);
+    INSERT INTO t1 VALUES($c);
+    INSERT INTO t1 VALUES($d);
+  }
+} {}
+
+
+
 finish_test
 
