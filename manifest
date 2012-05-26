@@ -1,5 +1,5 @@
-C Add\scoverage\stests\sfor\sfts3_unicode.c.
-D 2012-05-26T16:22:56.288
+C Change\sthe\sformat\sof\sthe\stables\sused\sby\ssqlite3FtsUnicodeTolower()\sto\smake\sthem\sa\slittle\ssmaller.
+D 2012-05-26T17:57:02.187
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -71,14 +71,14 @@ F ext/fts3/fts3_tokenizer.c 3da7254a9881f7e270ab28e2004e0d22b3212bce
 F ext/fts3/fts3_tokenizer.h 66dec98e365854b6cd2d54f1a96bb6d428fc5a68
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c f487c6ef0ac2cc35aec3c3636c0a35483da6453c
-F ext/fts3/fts3_unicode2.c 75fa8f249a5c17d324969e90d7066e7021a90874
+F ext/fts3/fts3_unicode2.c e43024fe05db9316b7825bfce809479fad6ce44e
 F ext/fts3/fts3_write.c 6a6391d6b01114f885e24e1f66bbc11ffba0e9e2
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
 F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
-F ext/fts3/unicode/mkunicode.tcl a7214d1705cb57ff56fb828002fa811192a25524
+F ext/fts3/unicode/mkunicode.tcl 2775280062b6595dd18e44ddef6327239ab290ab
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c eb9ae1d79046bd7871aa97ee6da51eb770134b5a
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
@@ -1004,7 +1004,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P ed28c48a3dd7e766e60db0d96ef5460bf9913e6b
-R 176e1514c35e0583f83fa067066b2e60
+P 07d3ea8a3cb179fab6c48934fc6751f53b507d36
+R fbb3511eb94203c7d1dd12033a92a0a8
 U dan
-Z c30e5b012ccf32e4cc1eaae6ee3b132f
+Z d24d4148848cb3328b6f3577a1e7fca3
