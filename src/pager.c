@@ -4360,9 +4360,12 @@ int sqlite3PagerOpen(
 #ifndef SQLITE_OMIT_MEMORYDB
   if( flags & PAGER_MEMORY ){
     memDb = 1;
-    zPathname = sqlite3DbStrDup(0, zFilename);
-    nPathname = sqlite3Strlen30(zPathname);
-    zFilename = 0;
+    if( zFilename ){
+      zPathname = sqlite3DbStrDup(0, zFilename);
+      if( zPathname==0  ) return SQLITE_NOMEM;
+      nPathname = sqlite3Strlen30(zPathname);
+      zFilename = 0;
+    }
   }
 #endif
 
