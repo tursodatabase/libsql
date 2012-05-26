@@ -3601,7 +3601,7 @@ int sqlite3Fts3Init(sqlite3 *db){
   if( rc==SQLITE_OK ){
     if( sqlite3Fts3HashInsert(pHash, "simple", 7, (void *)pSimple)
      || sqlite3Fts3HashInsert(pHash, "porter", 7, (void *)pPorter) 
-     || sqlite3Fts3HashInsert(pHash, "unicode", 8, (void *)pUnicode) 
+     || sqlite3Fts3HashInsert(pHash, "unicode61", 10, (void *)pUnicode) 
 #ifdef SQLITE_ENABLE_ICU
      || (pIcu && sqlite3Fts3HashInsert(pHash, "icu", 4, (void *)pIcu))
 #endif

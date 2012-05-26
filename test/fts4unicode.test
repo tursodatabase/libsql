@@ -20,7 +20,7 @@ set ::testprefix fts4unicode
 proc do_unicode_token_test {tn input res} {
   set input [string map {' ''} $input]
   uplevel [list do_execsql_test $tn "
-    SELECT fts3_tokenizer_test('unicode', '$input');
+    SELECT fts3_tokenizer_test('unicode61', '$input');
   " [list [list {*}$res]]]
 }
 
@@ -38,6 +38,101 @@ do_unicode_token_test 1.6 "The quick brown fox" {
 }
 do_unicode_token_test 1.7 "The\u00bfquick\u224ebrown\u2263fox" {
   0 the The 1 quick quick 2 brown brown 3 fox fox
+}
+
+#-------------------------------------------------------------------------
+#
+set docs [list {
+  Enhance the INSERT syntax to allow multiple rows to be inserted via the
+  VALUES clause.
+} {
+  Enhance the CREATE VIRTUAL TABLE command to support the IF NOT EXISTS clause.
+} {
+  Added the sqlite3_stricmp() interface as a counterpart to sqlite3_strnicmp().
+} {
+  Added the sqlite3_db_readonly() interface.
+} {
+  Added the SQLITE_FCNTL_PRAGMA file control, giving VFS implementations the
+  ability to add new PRAGMA statements or to override built-in PRAGMAs.  
+} {
+  Queries of the form: "SELECT max(x), y FROM table" returns the value of y on
+  the same row that contains the maximum x value.
+} {
+  Added support for the FTS4 languageid option.
+} {
+  Documented support for the FTS4 content option. This feature has actually
+  been in the code since version 3.7.9 but is only now considered to be
+  officially supported.  
+} {
+  Pending statements no longer block ROLLBACK. Instead, the pending statement
+  will return SQLITE_ABORT upon next access after the ROLLBACK.  
+} {
+  Improvements to the handling of CSV inputs in the command-line shell
+} {
+  Fix a bug introduced in version 3.7.10 that might cause a LEFT JOIN to be
+  incorrectly converted into an INNER JOIN if the WHERE clause indexable terms
+  connected by OR.  
+}]
+
+set map(a) [list "\u00C4" "\u00E4"]  ; # LATIN LETTER A WITH DIAERESIS
+set map(e) [list "\u00CB" "\u00EB"]  ; # LATIN LETTER E WITH DIAERESIS
+set map(i) [list "\u00CF" "\u00EF"]  ; # LATIN LETTER I WITH DIAERESIS
+set map(o) [list "\u00D6" "\u00F6"]  ; # LATIN LETTER O WITH DIAERESIS
+set map(u) [list "\u00DC" "\u00FC"]  ; # LATIN LETTER U WITH DIAERESIS
+set map(y) [list "\u0178" "\u00FF"]  ; # LATIN LETTER Y WITH DIAERESIS
+set map(h) [list "\u1E26" "\u1E27"]  ; # LATIN LETTER H WITH DIAERESIS
+set map(w) [list "\u1E84" "\u1E85"]  ; # LATIN LETTER W WITH DIAERESIS
+set map(x) [list "\u1E8C" "\u1E8D"]  ; # LATIN LETTER X WITH DIAERESIS
+foreach k [array names map] {
+  lappend mappings [string toupper $k] [lindex $map($k) 0] 
+  lappend mappings $k [lindex $map($k) 1]
+}
+proc mapdoc {doc} { 
+  set doc [regsub -all {[[:space:]]+} $doc " "]
+  string map $::mappings [string trim $doc] 
+}
+
+do_test 2.0 {
+  execsql { CREATE VIRTUAL TABLE t2 USING fts4(tokenize=unicode61, x); }
+  foreach doc $docs {
+    set d [mapdoc $doc]
+    execsql { INSERT INTO t2 VALUES($d) }
+  }
+} {}
+
+do_test 2.1 {
+  set q [mapdoc "row"]
+  execsql { SELECT * FROM t2 WHERE t2 MATCH $q }
+} [list [mapdoc {
+  Queries of the form: "SELECT max(x), y FROM table" returns the value of y on
+  the same row that contains the maximum x value.
+}]]
+
+foreach {tn query snippet} {
+  2 "row" {
+     ...returns the value of y on the same [row] that contains 
+     the maximum x value.
+  }
+  3 "ROW" {
+     ...returns the value of y on the same [row] that contains 
+     the maximum x value.
+  }
+  4 "rollback" {
+     ...[ROLLBACK]. Instead, the pending statement
+     will return SQLITE_ABORT upon next access after the [ROLLBACK].
+  }
+  5 "rOllback" {
+     ...[ROLLBACK]. Instead, the pending statement
+     will return SQLITE_ABORT upon next access after the [ROLLBACK].
+  }
+  6 "lang*" {
+     Added support for the FTS4 [languageid] option.
+  }
+} {
+  do_test 2.$tn {
+    set q [mapdoc $query]
+    execsql { SELECT snippet(t2, '[', ']', '...') FROM t2 WHERE t2 MATCH $q }
+  } [list [mapdoc $snippet]]
 }
 
 finish_test
