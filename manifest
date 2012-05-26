@@ -1,5 +1,5 @@
-C Version\s3.7.12.1
-D 2012-05-22T02:45:53.459
+C Merge\sfts4-unicode\sbranch\swith\strunk.
+D 2012-05-26T18:42:21.996
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -53,11 +53,11 @@ F ext/fts2/fts2_tokenizer1.c 0123d21078e053bd98fd6186c5c6dc6d67969f2e
 F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
-F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
+F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c a7adf6747d1fdd627ecd421c1709996741ca6693
+F ext/fts3/fts3.c 41824d0db7d244ca335ce98162df1244863a05c4
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h aca752b99c15ee738f5bcf0910eafb9e4aeb1b97
+F ext/fts3/fts3Int.h 7b163fa22e7a625c404c424f2779a4d7b14c14ad
 F ext/fts3/fts3_aux.c 5205182bd8f372782597888156404766edf5781e
 F ext/fts3/fts3_expr.c dbc7ba4c3a6061adde0f38ed8e9b349568299551
 F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
@@ -70,10 +70,15 @@ F ext/fts3/fts3_test.c 348f7d08cae05285794e23dc4fe8b8fdf66e264a
 F ext/fts3/fts3_tokenizer.c 3da7254a9881f7e270ab28e2004e0d22b3212bce
 F ext/fts3/fts3_tokenizer.h 66dec98e365854b6cd2d54f1a96bb6d428fc5a68
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
-F ext/fts3/fts3_write.c cd4af00b3b0512b4d76177a267fcaafab44cbce4
+F ext/fts3/fts3_unicode.c 76b6f6fe6e86acd75b08272502fae74a13cef310
+F ext/fts3/fts3_unicode2.c 46ff2289f52e661ef030b4aed4c9e5b6132b6ea9
+F ext/fts3/fts3_write.c 6a6391d6b01114f885e24e1f66bbc11ffba0e9e2
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
+F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
+F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
+F ext/fts3/unicode/mkunicode.tcl de64862abd50307c6e40622970eb9c8f2f14ed0e
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c eb9ae1d79046bd7871aa97ee6da51eb770134b5a
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
@@ -98,7 +103,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk a80771d44176a0c744d9d4e048497e7ed0b4040d
+F main.mk 84ed9c324cf0b8f4eb6f276553d1fd092b5ae0f4
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -195,7 +200,7 @@ F src/test_async.c 0612a752896fad42d55c3999a5122af10dcf22ad
 F src/test_autoext.c 30e7bd98ab6d70a62bb9ba572e4c7df347fe645e
 F src/test_backup.c c129c91127e9b46e335715ae2e75756e25ba27de
 F src/test_btree.c 47cd771250f09cdc6e12dda5bc71bc0b3abc96e2
-F src/test_config.c 0de329e736eb4aa5845069bed630e5c72f012264
+F src/test_config.c d2da9f1490c38d9b9cb52f399b6adb81d538273a
 F src/test_demovfs.c 20a4975127993f4959890016ae9ce5535a880094
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_func.c 090f2c3339e85c2c964435f99aed6f3da9d59525
@@ -477,7 +482,7 @@ F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3expr.test 5e745b2b6348499d9ef8d59015de3182072c564c
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
 F test/fts3fault.test cb72dccb0a3b9f730f16c5240f3fcb9303eb1660
-F test/fts3fault2.test b62a2bc843c20414405f80e5eeb78e39bc68fe53
+F test/fts3fault2.test 3198eef2804deea7cac8403e771d9cbcb752d887
 F test/fts3first.test dbdedd20914c8d539aa3206c9b34a23775644641
 F test/fts3malloc.test b86ea33db9e8c58c0c2f8027a9fcadaf6a1568be
 F test/fts3matchinfo.test 6507fe1c342e542300d65ea637d4110eccf894e6
@@ -496,6 +501,7 @@ F test/fts4langid.test 24a6e41063b416bbdf371ff6b4476fa41c194aa7
 F test/fts4merge.test c424309743fdd203f8e56a1f1cd7872cd66cc0ee
 F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
 F test/fts4merge3.test aab02a09f50fe6baaddc2e159c3eabc116d45fc7
+F test/fts4unicode.test c812e9cf843e26ba633f58b36a2629f878af20fd
 F test/func.test 9809b7622d721904a8cc33c1ffb87f46d506ed01
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 001021e5b88bd02a3b365a5c5fd8f6f49d39744a
@@ -636,7 +642,7 @@ F test/pageropt.test 9191867ed19a2b3db6c42d1b36b6fbc657cd1ab0
 F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
-F test/permutations.test dbda172249564f43ec556108a704581044c57dbd
+F test/permutations.test ea7b6948eaa22993fcfa662eb704ce29ddb24b2a
 F test/pragma.test c51c148defe32bf4a419a522f95d26838d5cf677
 F test/pragma2.test 3a55f82b954242c642f8342b17dffc8b47472947
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -972,7 +978,7 @@ F tool/mkkeywordhash.c bb52064aa614e1426445e4b2b9b00eeecd23cc79
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 105023aa86f696a74b1d6a4929d1e1c3baf9471c
-F tool/mksqlite3c.tcl 9fbac513cd9d5ac95ad55630f49bb16c5347ab75
+F tool/mksqlite3c.tcl f289ba51f74f45c71a80c13e6c74a6dd92763253
 F tool/mksqlite3h.tcl 78013ad79a5e492e5f764f3c7a8ef834255061f8
 F tool/mksqlite3internalh.tcl 7b43894e21bcb1bb39e11547ce7e38a063357e87
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
@@ -998,10 +1004,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 5519cc5ef471e32a59995a34be811b46478dca1e
-R f9f0e59804fa7e60869ace7ace22bd3d
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.7.12.1 *
-U drh
-Z a30e57621f706278c1c64a3624297cbb
+P 6d326d44fd1d626aae0e8456e5fa2049f1ce0789 e71495a817b479bc23c5403d99255e3f098eb054
+R 721b18aaca6e897933f70f12a0639abb
+U dan
+Z ae28fe2fc4311d40e0d8bc0f1e62fc1e
