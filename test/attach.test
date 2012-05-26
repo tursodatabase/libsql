@@ -857,6 +857,6 @@ do_test attach-10.2 {
   lrange [execsql {
     PRAGMA database_list;
   }] 9 end
-} {4 noname {} 5 inmem {}}
+} {4 noname {} 5 inmem :memory:}
 
 finish_test

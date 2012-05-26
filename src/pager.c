@@ -4360,6 +4360,8 @@ int sqlite3PagerOpen(
 #ifndef SQLITE_OMIT_MEMORYDB
   if( flags & PAGER_MEMORY ){
     memDb = 1;
+    zPathname = sqlite3DbStrDup(0, zFilename);
+    nPathname = sqlite3Strlen30(zPathname);
     zFilename = 0;
   }
 #endif
@@ -6743,7 +6745,8 @@ int sqlite3PagerWalCallback(Pager *pPager){
 */
 int sqlite3PagerWalSupported(Pager *pPager){
   const sqlite3_io_methods *pMethods = pPager->fd->pMethods;
-  return pPager->exclusiveMode || (pMethods->iVersion>=2 && pMethods->xShmMap);
+  return pPager->memDb==0 && 
+        (pPager->exclusiveMode || (pMethods->iVersion>=2 && pMethods->xShmMap));
 }
 
 /*

@@ -1757,7 +1757,7 @@ int sqlite3BtreeOpen(
   ** If this Btree is a candidate for shared cache, try to find an
   ** existing BtShared object that we can share with
   */
-  if( isMemdb==0 && isTempDb==0 ){
+  if( isTempDb==0 ){
     if( vfsFlags & SQLITE_OPEN_SHAREDCACHE ){
       int nFullPathname = pVfs->mxPathname+1;
       char *zFullPathname = sqlite3Malloc(nFullPathname);
@@ -1767,11 +1767,16 @@ int sqlite3BtreeOpen(
         sqlite3_free(p);
         return SQLITE_NOMEM;
       }
-      rc = sqlite3OsFullPathname(pVfs, zFilename, nFullPathname, zFullPathname);
-      if( rc ){
-        sqlite3_free(zFullPathname);
-        sqlite3_free(p);
-        return rc;
+      if( isMemdb ){
+        memcpy(zFullPathname, zFilename, sqlite3Strlen30(zFilename)+1);
+      }else{
+        rc = sqlite3OsFullPathname(pVfs, zFilename,
+                                   nFullPathname, zFullPathname);
+        if( rc ){
+          sqlite3_free(zFullPathname);
+          sqlite3_free(p);
+          return rc;
+        }
       }
 #if SQLITE_THREADSAFE
       mutexOpen = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_OPEN);
