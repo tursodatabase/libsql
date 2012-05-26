@@ -14,7 +14,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-ifcapable !fts3 { finish_test ; return }
+ifcapable !fts3_unicode { finish_test ; return }
 set ::testprefix fts4unicode
 
 proc do_unicode_token_test {tn input res} {

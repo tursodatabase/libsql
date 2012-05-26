@@ -507,6 +507,8 @@ proc print_fileheader {} {
 */
   }]
   puts ""
+  puts "#ifndef SQLITE_DISABLE_FTS3_UNICODE"
+  puts ""
   puts "#include <assert.h>"
   puts ""
 }
@@ -566,4 +568,6 @@ if {$::generate_test_code} {
   print_tolower_test sqlite3FtsUnicodeTolower 
   print_test_main 
 }
+
+puts "#endif /* ifndef SQLITE_DISABLE_FTS3_UNICODE */"
 
