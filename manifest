@@ -1,5 +1,5 @@
-C Change\sthe\sname\sof\sthe\s"unicode"\stokenizer\sto\s"unicode61"\sto\semphasize\sthat\sthe\scase\sfolding\sand\sseparator-character\sidentification\sroutines\sare\sbased\son\sunicode\sversion\s6.1.
-D 2012-05-26T14:54:50.307
+C Add\sfault-injection\stests\sthat\suse\sthe\sunicode61\stokenizer.\sFix\sa\sproblem\srevealed\sby\sthe\ssame.
+D 2012-05-26T15:44:08.203
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -72,7 +72,7 @@ F ext/fts3/fts3_tokenizer.h 66dec98e365854b6cd2d54f1a96bb6d428fc5a68
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c f487c6ef0ac2cc35aec3c3636c0a35483da6453c
 F ext/fts3/fts3_unicode2.c 75fa8f249a5c17d324969e90d7066e7021a90874
-F ext/fts3/fts3_write.c cd4af00b3b0512b4d76177a267fcaafab44cbce4
+F ext/fts3/fts3_write.c 6a6391d6b01114f885e24e1f66bbc11ffba0e9e2
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
@@ -482,7 +482,7 @@ F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3expr.test 5e745b2b6348499d9ef8d59015de3182072c564c
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
 F test/fts3fault.test cb72dccb0a3b9f730f16c5240f3fcb9303eb1660
-F test/fts3fault2.test b62a2bc843c20414405f80e5eeb78e39bc68fe53
+F test/fts3fault2.test 9e3a0a0a9b0e29623e3fa9f96df346324d18fd48
 F test/fts3first.test dbdedd20914c8d539aa3206c9b34a23775644641
 F test/fts3malloc.test b86ea33db9e8c58c0c2f8027a9fcadaf6a1568be
 F test/fts3matchinfo.test 6507fe1c342e542300d65ea637d4110eccf894e6
@@ -1004,7 +1004,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P cf7b25d47687635a04f4347d45f135c686b9d758
-R 5906d3a9fcf2b2ea0b4312db10ed028e
+P 8f3e60aa2253f21bcee5d03982cfdd7f16c00060
+R 3d2f1bb51c27bff0bd5cecd0eb44e3da
 U dan
-Z 9d1b06ce70a747334f00416ba78508e5
+Z 7bda7fa29c2b43029321295214f1a951

@@ -3174,7 +3174,12 @@ static void fts3UpdateDocTotals(
   }else{
     memset(a, 0, sizeof(u32)*(nStat) );
   }
-  sqlite3_reset(pStmt);
+  rc = sqlite3_reset(pStmt);
+  if( rc!=SQLITE_OK ){
+    sqlite3_free(a);
+    *pRC = rc;
+    return;
+  }
   if( nChng<0 && a[0]<(u32)(-nChng) ){
     a[0] = 0;
   }else{
