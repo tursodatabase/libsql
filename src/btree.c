@@ -1786,7 +1786,7 @@ int sqlite3BtreeOpen(
 #endif
       for(pBt=GLOBAL(BtShared*,sqlite3SharedCacheList); pBt; pBt=pBt->pNext){
         assert( pBt->nRef>0 );
-        if( 0==strcmp(zFullPathname, sqlite3PagerFilename(pBt->pPager))
+        if( 0==strcmp(zFullPathname, sqlite3PagerFilename(pBt->pPager, 0))
                  && sqlite3PagerVfs(pBt->pPager)==pVfs ){
           int iDb;
           for(iDb=db->nDb-1; iDb>=0; iDb--){
@@ -8051,14 +8051,15 @@ char *sqlite3BtreeIntegrityCheck(
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
 
 /*
-** Return the full pathname of the underlying database file.
+** Return the full pathname of the underlying database file.  Return
+** an empty string if the database is in-memory or a TEMP database.
 **
 ** The pager filename is invariant as long as the pager is
 ** open so it is safe to access without the BtShared mutex.
 */
 const char *sqlite3BtreeGetFilename(Btree *p){
   assert( p->pBt->pPager!=0 );
-  return sqlite3PagerFilename(p->pBt->pPager);
+  return sqlite3PagerFilename(p->pBt->pPager, 1);
 }
 
 /*

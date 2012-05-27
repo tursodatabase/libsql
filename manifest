@@ -1,5 +1,5 @@
-C Only\sallow\s:memory:\sdatabases\sto\sshare\scache\sif\sthere\sare\screated\susing\sa\nURI\sfilename.\s\sThis\sminimizes\sthe\srisk\sof\sbreakages\sin\slegacy\sapplications\nthat\shave\sshared-cache\senabled\sbut\salso\suse\s:memory:\sdatabases\swhich\sthey\nexpect\sto\skeep\sseparate.
-D 2012-05-26T20:08:49.030
+C Have\suser\sinterfaces\sreport\sout\sthe\sfilename\sof\sin-memory\sdatabases\sas\san\nempty\sstring,\sas\sit\salways\shas.\s\sThis\ssimplifies\sthe\schanges.
+D 2012-05-27T01:19:04.951
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -118,7 +118,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 6be23a344d3301ae38e92fddb3a33b91c309fce4
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c e5e992199f1368343071a22dbebd467f4009f6a5
+F src/btree.c 964c7862e1e27c543d2fff2e537ceadc4026c682
 F src/btree.h 48a013f8964f12d944d90e4700df47b72dd6d923
 F src/btreeInt.h 38a639c0542c29fe8331a221c4aed0cb8686249e
 F src/build.c 2bb2163bb1e69f59e9f36a9413079ead42fa1d2c
@@ -161,8 +161,8 @@ F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 424d46e0edab969293c2223f09923b2178171f47
 F src/os_win.c 412d6434133c7c81dc48b7702f3ea5e61c309e5c
-F src/pager.c 5a86e85e393705d09fd60e9e525cfb9ff59a8022
-F src/pager.h ef1eaf8593e78f73885c1dfac27ad83bee23bdc5
+F src/pager.c 9d4d6406512002d9a243ec27b9c01e93fda43e36
+F src/pager.h 8b8c9bc065a3c66769df8724dfdf492ee1aab3c5
 F src/parse.y f29df90bd3adc64b33114ab1de9fb7768fcf2099
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h 1b5dcc3dc8103d03e625b177023ee67764fa6b7c
@@ -194,7 +194,7 @@ F src/test9.c bea1e8cf52aa93695487badedd6e1886c321ea60
 F src/test_async.c 0612a752896fad42d55c3999a5122af10dcf22ad
 F src/test_autoext.c 30e7bd98ab6d70a62bb9ba572e4c7df347fe645e
 F src/test_backup.c c129c91127e9b46e335715ae2e75756e25ba27de
-F src/test_btree.c 47cd771250f09cdc6e12dda5bc71bc0b3abc96e2
+F src/test_btree.c 5b89601dcb42a33ba8b820a6b763cc9cb48bac16
 F src/test_config.c 0de329e736eb4aa5845069bed630e5c72f012264
 F src/test_demovfs.c 20a4975127993f4959890016ae9ce5535a880094
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
@@ -234,7 +234,7 @@ F src/update.c d3076782c887c10e882996550345da9c4c9f9dea
 F src/utf.c 890c67dcfcc7a74623c95baac7535aadfe265e84
 F src/util.c 4f6cfad661b2e3454b0cdd5b1b9d39a54942d0e3
 F src/vacuum.c bfd53f9bd20a8fdb70b0fa8e77182b866875c0d8
-F src/vdbe.c e1d26b98288889c22f00cf4851ec351ee67ad8b9
+F src/vdbe.c b6cb2ac43263843a5612892c0ad2309609b32c26
 F src/vdbe.h 18f581cac1f4339ec3299f3e0cc6e11aec654cdb
 F src/vdbeInt.h 6ff4180a05683566a8835d12f7ec504b22932c82
 F src/vdbeapi.c 3662b6a468a2a4605a15dfab313baa6dff81ad91
@@ -269,7 +269,7 @@ F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
 F test/async3.test d73a062002376d7edc1fe3edff493edbec1fc2f7
 F test/async4.test 1787e3952128aa10238bf39945126de7ca23685a
 F test/async5.test 0dd8701bd588bf6e70c2557a22ae3f22b2567b4c
-F test/attach.test 29cf17b5793ad345f97fbfedcaabe6c06a0b5e8e
+F test/attach.test 0d112b7713611fdf0340260192749737135fda5f
 F test/attach2.test e54436ed956d3d88bdee61221da59bf3935a0966
 F test/attach3.test d89ccfe4fe6e2b5e368d480fcdfe4b496c54cf4e
 F test/attach4.test 53bf502f17647c6d6c5add46dda6bac8b6f4665c
@@ -998,7 +998,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 4590e433f2a595bb80fb061024b0a3d2ca25b7b2
-R 150ee74d31f8ee4186fa530c4e755088
+P e3ad61e0308a8442c2bdb7cdb3465576cd39ed4a
+R c398af805389f6295630a739d754fa6b
 U drh
-Z d012f21feec13fdb57a1a9d954ad6a98
+Z e51262406d85326f19add0be1c076b3b
