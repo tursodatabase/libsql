@@ -2055,6 +2055,7 @@ int sqlite3ParseUri(
     memcpy(zFile, zUri, nUri);
     zFile[nUri] = '\0';
     zFile[nUri+1] = '\0';
+    flags &= ~SQLITE_OPEN_URI;
   }
 
   *ppVfs = sqlite3_vfs_find(zVfs);
