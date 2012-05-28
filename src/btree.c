@@ -1721,7 +1721,8 @@ int sqlite3BtreeOpen(
   const int isMemdb = 0;
 #else
   const int isMemdb = (zFilename && strcmp(zFilename, ":memory:")==0)
-                       || (isTempDb && sqlite3TempInMemory(db));
+                       || (isTempDb && sqlite3TempInMemory(db))
+                       || (vfsFlags & SQLITE_OPEN_MEMORY)!=0;
 #endif
 
   assert( db!=0 );
