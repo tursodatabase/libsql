@@ -2739,14 +2739,12 @@ static int rtreeDeleteRowid(Rtree *pRtree, sqlite3_int64 iDelete){
   return rc;
 }
 
+#if !defined(SQLITE_RTREE_INT_ONLY)
 /*
 ** Convert an sqlite3_value into an RtreeValue (presumably a float)
 ** while taking care to round toward negative or positive, respectively.
 */
 static RtreeValue rtreeValueDown(sqlite3_value *v){
-#ifdef SQLITE_RTREE_INT_ONLY
-  return (RtreeValue)sqlite3_value_double(v);
-#else
   double d = sqlite3_value_double(v);
   float f = (float)d;
   if( f>d ){
@@ -2757,12 +2755,8 @@ static RtreeValue rtreeValueDown(sqlite3_value *v){
     }
   }
   return f;
-#endif
 }
 static RtreeValue rtreeValueUp(sqlite3_value *v){
-#ifdef SQLITE_RTREE_INT_ONLY
-  return (RtreeValue)sqlite3_value_double(v);
-#else
   double d = sqlite3_value_double(v);
   float f = (float)d;
   if( f<d ){
@@ -2773,8 +2767,9 @@ static RtreeValue rtreeValueUp(sqlite3_value *v){
     }
   }
   return f;
-#endif
 }
+#endif /* !defined(SQLITE_RTREE_INT_ONLY) */
+
 
 /*
 ** The xUpdate method for rtree module virtual tables.

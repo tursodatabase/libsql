@@ -1,5 +1,5 @@
-C When\sconverting\s64-bit\sfloating\spoint\scoordinates\sto\s32-bit\sin\sRTree,\stake\ncare\sto\sround\sthe\svalues\ssuch\sthat\sthe\ssize\sof\sthe\sbounding\sbox\sis\senlarged.
-D 2012-05-28T19:19:25.608
+C Simplification\sto\sthe\scoordinate\srounding\slogic\sin\sRTree.
+D 2012-05-28T20:16:42.392
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4f37eb61be9d38643cdd839a74b8e3bad724cfcf
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -83,7 +83,7 @@ F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c eb9ae1d79046bd7871aa97ee6da51eb770134b5a
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c b8d6cb9273fa39ec722c3d4b624ddfc3aef0d12a
+F ext/rtree/rtree.c 529aad2011bdeae0e310590b523fe0a07f934906
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test e474a2b5eff231496dbd073fe67e5fbaf7f444c9
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -1004,10 +1004,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P bcc72d413e8db5fe8b32147ac22d406e2cd6bb60
-R 7a42d74c66db2417ce1792aea469c273
-T *branch * rtree-32bit-rounding
-T *sym-rtree-32bit-rounding *
-T -sym-trunk *
+P f4e8ff03eae70334632455a867859cfcc25682be
+R bc6bf69f14471e3fbe5247d9db42468b
 U drh
-Z 73d8e377047fc0765362a5432157fce8
+Z a79ca44958f115bb818431edcabdbadb
