@@ -1,12 +1,12 @@
-C Add\sthe\smode=memory\soption\sto\sURI\sfilenames,\swhich\swhen\spresent\sforces\sthe\ndatabase\sto\sbe\san\sin-memory\sdatabase.\s\sThis\senables\snamed\sin-memory\sdatabases.
-D 2012-05-28T13:58:00.304
+C Fix\sMakefile.in\sso\sthat\sit\sworks\swith\sthe\snew\sunicode\stokenizer\sof\sFTS3/4.\nUpdate\sthe\sversion\snumber\sto\s3.7.13.
+D 2012-05-28T15:32:09.872
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
+F Makefile.in 4f37eb61be9d38643cdd839a74b8e3bad724cfcf
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 7849a871b6cdb20fd51baee6bbe5965a03326be4
 F Makefile.vxworks 3b7fe7a0571fdadc61363ebc1b23732d2d6363ca
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
-F VERSION 1e25ebddd2ed5811c10bdabe914cd46d2dc38af8
+F VERSION 3e857b9b826e818eec9411eafe2c3fa22c1dbb8a
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 17dc593f791f874d2c23a0f9360850ded0286531
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -15,7 +15,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure faa04198b719ec9cb2166aa0b163558e9b8ddd77 x
+F configure 79405675c313ce4a5e94afac6ec880bb3e27b4f1 x
 F configure.ac 9ee886c21c095b3272137b1553ae416c8b8c8557
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 3091574143dd3415669b6745843ff8d011d33549
@@ -1004,7 +1004,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P c00bb5d4601efc15933f222349e96a043b610a19
-R 9e44b5ae3872c9bc977aa50c770bf24a
+P 651520fa84ee0c488bef660bab9865500309d5e9
+R f3c8a67425dabbd564ab692dd7aa94a5
 U drh
-Z 18aef601d2d3d45f555f16b789eead33
+Z 58dc5143c398d49dd07e91ba15cc103e
