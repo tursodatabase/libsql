@@ -316,6 +316,8 @@ foreach file {
    fts3_tokenizer1.c
    fts3_write.c
    fts3_snippet.c
+   fts3_unicode.c
+   fts3_unicode2.c
 
    rtree.c
    icu.c
