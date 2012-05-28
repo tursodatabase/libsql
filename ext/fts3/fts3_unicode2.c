@@ -15,7 +15,8 @@
 ** DO NOT EDIT THIS MACHINE GENERATED FILE.
 */
 
-#ifndef SQLITE_DISABLE_FTS3_UNICODE
+#if !defined(SQLITE_DISABLE_FTS3_UNICODE)
+#if defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4)
 
 #include <assert.h>
 
@@ -291,4 +292,5 @@ int sqlite3FtsUnicodeTolower(int c){
 
   return ret;
 }
-#endif /* ifndef SQLITE_DISABLE_FTS3_UNICODE */
+#endif /* defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4) */
+#endif /* !defined(SQLITE_DISABLE_FTS3_UNICODE) */

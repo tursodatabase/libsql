@@ -1,5 +1,5 @@
-C Merge\sinto\strunk\sthe\schanges\sthat\spermit\s:memory:\sdatabases\sto\suse\sshared\scache.
-D 2012-05-27T22:42:57.161
+C Omit\sthe\sfts3\sunicode\scharacter\sclass\sroutines\sfrom\sthe\sbuild\sif\sfts3/4\nis\sdisabled.
+D 2012-05-28T12:22:00.527
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -71,14 +71,14 @@ F ext/fts3/fts3_tokenizer.c 3da7254a9881f7e270ab28e2004e0d22b3212bce
 F ext/fts3/fts3_tokenizer.h 66dec98e365854b6cd2d54f1a96bb6d428fc5a68
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 76b6f6fe6e86acd75b08272502fae74a13cef310
-F ext/fts3/fts3_unicode2.c 46ff2289f52e661ef030b4aed4c9e5b6132b6ea9
+F ext/fts3/fts3_unicode2.c 3ddf1728a396a03b5a73ff0f11ecfd2009de117d
 F ext/fts3/fts3_write.c 6a6391d6b01114f885e24e1f66bbc11ffba0e9e2
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
 F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
-F ext/fts3/unicode/mkunicode.tcl de64862abd50307c6e40622970eb9c8f2f14ed0e
+F ext/fts3/unicode/mkunicode.tcl 2029991cc2cd0bf71df12768578a29c852bf54d1
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c eb9ae1d79046bd7871aa97ee6da51eb770134b5a
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
@@ -1004,7 +1004,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 25ba1f84f2b98d50ac1e2b9849b59ee902c2cca7 595dfdbffefb2598cba89980f885289d1c5f5833
-R 5e75bcca6ded2fde27198872e2249f50
+P e72179f3a43e4df36b7c2955eaacce6c804272c6
+R c3df2d9f62e340f7317d2a936c704930
 U drh
-Z 8ecdf8c27648824577a4fdb2f7f5e787
+Z bb072a5d158a0ecbca30cdcf64cbb02f

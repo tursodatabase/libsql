@@ -507,7 +507,8 @@ proc print_fileheader {} {
 */
   }]
   puts ""
-  puts "#ifndef SQLITE_DISABLE_FTS3_UNICODE"
+  puts "#if !defined(SQLITE_DISABLE_FTS3_UNICODE)"
+  puts "#if defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4)"
   puts ""
   puts "#include <assert.h>"
   puts ""
@@ -534,7 +535,7 @@ proc print_test_main {} {
 # our liking.
 #
 proc usage {} {
-  puts -nonewline stderr "Usage: $::argv0 ?-test? i"
+  puts -nonewline stderr "Usage: $::argv0 ?-test? "
   puts            stderr "<CaseFolding.txt file> <UnicodeData.txt file>"
   exit 1
 }
@@ -569,5 +570,5 @@ if {$::generate_test_code} {
   print_test_main 
 }
 
-puts "#endif /* ifndef SQLITE_DISABLE_FTS3_UNICODE */"
-
+puts "#endif /* defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4) */"
+puts "#endif /* !defined(SQLITE_DISABLE_FTS3_UNICODE) */"
