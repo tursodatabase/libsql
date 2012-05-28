@@ -250,8 +250,9 @@ LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
          backup.lo bitvec.lo btmutex.lo btree.lo build.lo \
          callback.lo complete.lo ctime.lo date.lo delete.lo \
          expr.lo fault.lo fkey.lo \
-         fts3.lo fts3_aux.lo fts3_expr.lo fts3_hash.lo fts3_icu.lo fts3_porter.lo \
-         fts3_snippet.lo fts3_tokenizer.lo fts3_tokenizer1.lo fts3_write.lo \
+         fts3.lo fts3_aux.lo fts3_expr.lo fts3_hash.lo fts3_icu.lo \
+         fts3_porter.lo fts3_snippet.lo fts3_tokenizer.lo fts3_tokenizer1.lo \
+         fts3_unicode.lo fts3_unicode2.lo fts3_write.lo \
          func.lo global.lo hash.lo \
          icu.lo insert.lo journal.lo legacy.lo loadext.lo \
          main.lo malloc.lo mem0.lo mem1.lo mem2.lo mem3.lo mem5.lo \
@@ -405,6 +406,8 @@ SRC = $(SRC) \
   $(TOP)\ext\fts3\fts3_tokenizer.h \
   $(TOP)\ext\fts3\fts3_tokenizer.c \
   $(TOP)\ext\fts3\fts3_tokenizer1.c \
+  $(TOP)\ext\fts3\fts3_unicode.c \
+  $(TOP)\ext\fts3\fts3_unicode2.c \
   $(TOP)\ext\fts3\fts3_write.c
 SRC = $(SRC) \
   $(TOP)\ext\icu\sqliteicu.h \
@@ -512,6 +515,8 @@ TESTSRC2 = \
   $(TOP)\ext\fts3\fts3_aux.c \
   $(TOP)\ext\fts3\fts3_expr.c \
   $(TOP)\ext\fts3\fts3_tokenizer.c \
+  $(TOP)\ext\fts3\fts3_unicode.c \
+  $(TOP)\ext\fts3\fts3_unicode2.c \
   $(TOP)\ext\fts3\fts3_write.c \
   $(TOP)\ext\async\sqlite3async.c
 
@@ -925,6 +930,12 @@ fts3_tokenizer.lo:	$(TOP)\ext\fts3\fts3_tokenizer.c $(HDR) $(EXTHDR)
 
 fts3_tokenizer1.lo:	$(TOP)\ext\fts3\fts3_tokenizer1.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)\ext\fts3\fts3_tokenizer1.c
+
+fts3_unicode.lo:	$(TOP)\ext\fts3\fts3_unicode.c $(HDR) $(EXTHDR)
+	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)\ext\fts3\fts3_unicode.c
+
+fts3_unicode2.lo:	$(TOP)\ext\fts3\fts3_unicode2.c $(HDR) $(EXTHDR)
+	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)\ext\fts3\fts3_unicode2.c
 
 fts3_write.lo:	$(TOP)\ext\fts3\fts3_write.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)\ext\fts3\fts3_write.c

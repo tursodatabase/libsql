@@ -1,9 +1,9 @@
-C Updates\sregarding\sURI\squery\sparameters\sand\sshared\scache\sin\sthe\sdocumentation\nderived\sfrom\scomments\sin\ssqlite.h.in.\s\sNo\schanges\sto\scode.
-D 2012-05-28T17:51:53.434
+C Fix\sthe\sMSVC\smakefile\sso\sthat\sit\sworks\swith\sthe\sunicode61\stokenizer.
+D 2012-05-28T20:22:16.462
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4f37eb61be9d38643cdd839a74b8e3bad724cfcf
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 7849a871b6cdb20fd51baee6bbe5965a03326be4
+F Makefile.msc 0891f992d012d6b2976f86e80a82ae6839fa9ded
 F Makefile.vxworks 3b7fe7a0571fdadc61363ebc1b23732d2d6363ca
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 3e857b9b826e818eec9411eafe2c3fa22c1dbb8a
@@ -1004,7 +1004,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P b8720d0416b8d4af7d131f1ddc3d280d196a9eda
-R 348c03cfec043fa2accf5b24f56b9e07
+P bcc72d413e8db5fe8b32147ac22d406e2cd6bb60
+R 3124713b2110812cfce2d07ccce3e9e9
 U drh
-Z 4dd2c323458ec95fb0cf85be25b240a2
+Z e96acf301cc5f997fc3e1f3cdf1b6355
