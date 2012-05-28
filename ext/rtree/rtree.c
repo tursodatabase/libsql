@@ -2740,6 +2740,43 @@ static int rtreeDeleteRowid(Rtree *pRtree, sqlite3_int64 iDelete){
 }
 
 /*
+** Convert an sqlite3_value into an RtreeValue (presumably a float)
+** while taking care to round toward negative or positive, respectively.
+*/
+static RtreeValue rtreeValueDown(sqlite3_value *v){
+#ifdef SQLITE_RTREE_INT_ONLY
+  return (RtreeValue)sqlite3_value_double(v);
+#else
+  double d = sqlite3_value_double(v);
+  float f = (float)d;
+  if( f>d ){
+    if( f<0.0 ){
+      f += f/8388608.0;
+    }else{
+      f -= f/8388608.0;
+    }
+  }
+  return f;
+#endif
+}
+static RtreeValue rtreeValueUp(sqlite3_value *v){
+#ifdef SQLITE_RTREE_INT_ONLY
+  return (RtreeValue)sqlite3_value_double(v);
+#else
+  double d = sqlite3_value_double(v);
+  float f = (float)d;
+  if( f<d ){
+    if( f<0.0 ){
+      f -= f/8388608.0;
+    }else{
+      f += f/8388608.0;
+    }
+  }
+  return f;
+#endif
+}
+
+/*
 ** The xUpdate method for rtree module virtual tables.
 */
 static int rtreeUpdate(
@@ -2775,8 +2812,8 @@ static int rtreeUpdate(
 #ifndef SQLITE_RTREE_INT_ONLY
     if( pRtree->eCoordType==RTREE_COORD_REAL32 ){
       for(ii=0; ii<(pRtree->nDim*2); ii+=2){
-        cell.aCoord[ii].f = (RtreeValue)sqlite3_value_double(azData[ii+3]);
-        cell.aCoord[ii+1].f = (RtreeValue)sqlite3_value_double(azData[ii+4]);
+        cell.aCoord[ii].f = rtreeValueDown(azData[ii+3]);
+        cell.aCoord[ii+1].f = rtreeValueUp(azData[ii+4]);
         if( cell.aCoord[ii].f>cell.aCoord[ii+1].f ){
           rc = SQLITE_CONSTRAINT;
           goto constraint;
