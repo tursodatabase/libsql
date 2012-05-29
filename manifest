@@ -1,9 +1,9 @@
-C Merge\sthe\sunicode61\stokenizer\sand\sthe\sshared-cache-memory\sdatabase\schanges\ninto\sthe\ssessions\sbranch.
-D 2012-05-28T18:22:41.850
+C Merge\sthe\s64-to-32-bit\sRTree\srounding\sfixes\sfrom\strunk\sinto\sthe\ssessions\sbranch.
+D 2012-05-29T00:48:55.913
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4f37eb61be9d38643cdd839a74b8e3bad724cfcf
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc efc373edae0f99cb3b04672ccefea8162664d40b
+F Makefile.msc bcc41c5232d1355faa59e4bc96d1561f69b5192a
 F Makefile.vxworks 3b7fe7a0571fdadc61363ebc1b23732d2d6363ca
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 3e857b9b826e818eec9411eafe2c3fa22c1dbb8a
@@ -83,7 +83,7 @@ F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c eb9ae1d79046bd7871aa97ee6da51eb770134b5a
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 73502e5336162fdc8f5d1c4bdd4ec6b1299c2f2a
+F ext/rtree/rtree.c d17aecb7a92762efa7b1f5d5fd7c88fd77d70827
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test e474a2b5eff231496dbd073fe67e5fbaf7f444c9
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -1017,7 +1017,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P d07b7b67d1b3bf65cfe8d96d45a7f1d387bea7ce bcc72d413e8db5fe8b32147ac22d406e2cd6bb60
-R b36c04fadd1ffa2ea62f85f8b70ce2d4
+P df817e70afc3f41e680d8f84dfa5772d5b3ae4d9 0abdc2903d8b3f86cad426e1bac2a959d1b1f7dd
+R f8bdf16e0b6379c99170e71117fa9c48
 U drh
-Z 8ba551aeea4cedaaff2626e9d4283953
+Z a23d222ba42cdc5e20627a5287bd3b9c
