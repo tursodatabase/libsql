@@ -1,5 +1,5 @@
-C Fix\sa\stypo\s(a\srepeated\s"or")\sin\sthe\sdocumentation.\s\sNo\schanges\sto\scode.
-D 2012-05-29T17:59:11.464
+C Link\sthe\sNDEBUG\smacro\sto\sSQLITE_DEBUG\sso\sthat\swhen\sSQLITE_DEBUG\sis\sdefined,\nNDEBUG\sis\sautomatically\sundefined\san\sdwhen\sSQLITE_DEBUG\sis\sundefined\nNDEBUG\sis\sautomatically\sdefined.
+D 2012-05-29T19:25:20.175
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4f37eb61be9d38643cdd839a74b8e3bad724cfcf
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -182,7 +182,7 @@ F src/select.c f6c4833c4d8e94714761d99013d74f381e084f1d
 F src/shell.c c16f72e34f611f060546709564c121a67cb2b31b
 F src/sqlite.h.in 922d2907cc2b0177b2c4a3b462f04937750d6edd
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h 97ccae71ae0a4e924dcb9fab14eb4fc4839790da
+F src/sqliteInt.h 64cffc7ff43725ade0cdfdbab0ef6a56ef3b682f
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1004,7 +1004,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 8e3025709e4954803919c84f3a810c7c63c60601
-R e031c8ae243dc6a28631e4783394147f
+P 6fec6cf1fbac881a33a35ea99aac2f5f1cf27c2a
+R 04c27600577da03816e15c318dd7df31
 U drh
-Z 995b9ed856717b20346127daae7e1bdf
+Z 9df1e8f50925fc882f32cc14d2630547
