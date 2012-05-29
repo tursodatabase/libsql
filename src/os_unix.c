@@ -227,7 +227,7 @@ struct unixFile {
 #if OS_VXWORKS
   struct vxworksFileId *pId;          /* Unique file ID */
 #endif
-#ifndef NDEBUG
+#ifdef SQLITE_DEBUG
   /* The next group of variables are used to track whether or not the
   ** transaction counter in bytes 24-27 of database files are updated
   ** whenever any part of the database changes.  An assertion fault will
@@ -1563,7 +1563,7 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   }
   
 
-#ifndef NDEBUG
+#ifdef SQLITE_DEBUG
   /* Set up the transaction-counter change checking flags when
   ** transitioning from a SHARED to a RESERVED lock.  The change
   ** from SHARED to RESERVED marks the beginning of a normal
@@ -1642,7 +1642,7 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
   if( pFile->eFileLock>SHARED_LOCK ){
     assert( pInode->eFileLock==pFile->eFileLock );
 
-#ifndef NDEBUG
+#ifdef SQLITE_DEBUG
     /* When reducing a lock such that other processes can start
     ** reading the database file again, make sure that the
     ** transaction counter was updated if any part of the database
@@ -2841,7 +2841,7 @@ static int afpUnlock(sqlite3_file *id, int eFileLock) {
     SimulateIOError( h=(-1) )
     SimulateIOErrorBenign(0);
     
-#ifndef NDEBUG
+#ifdef SQLITE_DEBUG
     /* When reducing a lock such that other processes can start
     ** reading the database file again, make sure that the
     ** transaction counter was updated if any part of the database
@@ -3145,7 +3145,7 @@ static int unixWrite(
   );
 #endif
 
-#ifndef NDEBUG
+#ifdef SQLITE_DEBUG
   /* If we are doing a normal write to a database file (as opposed to
   ** doing a hot-journal rollback or a write to some file other than a
   ** normal database file) then record the fact that the database
@@ -3436,7 +3436,7 @@ static int unixTruncate(sqlite3_file *id, i64 nByte){
     pFile->lastErrno = errno;
     return unixLogError(SQLITE_IOERR_TRUNCATE, "ftruncate", pFile->zPath);
   }else{
-#ifndef NDEBUG
+#ifdef SQLITE_DEBUG
     /* If we are doing a normal write to a database file (as opposed to
     ** doing a hot-journal rollback or a write to some file other than a
     ** normal database file) and we truncate the file to zero length,
@@ -3593,7 +3593,7 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       *(char**)pArg = sqlite3_mprintf("%s", pFile->pVfs->zName);
       return SQLITE_OK;
     }
-#ifndef NDEBUG
+#ifdef SQLITE_DEBUG
     /* The pager calls this method to signal that it has done
     ** a rollback and that the database is therefore unchanged and
     ** it hence it is OK for the transaction change counter to be

@@ -1,5 +1,5 @@
-C In\sthe\sRTree\smodule,\smake\ssure\sall\sdouble-to-float\sconversions\sround\sin\sa\ndirection\sto\sincrease\sthe\ssize\sof\selement\sbounding\sboxes.
-D 2012-05-29T00:39:50.223
+C Changes\ssome\sNDEBUG\smacros\sto\sSQLITE_DEBUG\sin\sos_unix.c.\s\sThe\sis\sa\snotational\nchange\sonly\sand\sreally\sshould\snot\seffect\sthe\scode.
+D 2012-05-29T17:02:40.005
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4f37eb61be9d38643cdd839a74b8e3bad724cfcf
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -164,7 +164,7 @@ F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 59beba555b65a450bd1d804220532971d4299f60
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 424d46e0edab969293c2223f09923b2178171f47
+F src/os_unix.c 8a90a7cdfc19ed0f233d76b63825d8effcae302a
 F src/os_win.c 412d6434133c7c81dc48b7702f3ea5e61c309e5c
 F src/pager.c 9d4d6406512002d9a243ec27b9c01e93fda43e36
 F src/pager.h 8b8c9bc065a3c66769df8724dfdf492ee1aab3c5
@@ -1004,7 +1004,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 480158143be1256cbe4dba52ef1a5b96e172b38c f607ad27c1ede27af24dbee10ca867c8f7761ee3
-R 38bedd0c37f624ccf215394e11ad9336
+P 0abdc2903d8b3f86cad426e1bac2a959d1b1f7dd
+R 99e554d1747c9743d7f383f83e1b186d
 U drh
-Z 4bf39e44bbbf20a271c4dc152544fd6f
+Z 66446fe8bdcb030202f3dea3dae3cedf
