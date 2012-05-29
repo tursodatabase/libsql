@@ -2581,7 +2581,7 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 **     access, as if SQLITE_OPEN_READWRITE (but not SQLITE_OPEN_CREATE) had 
 **     been set. ^Value "rwc" is equivalent to setting both 
 **     SQLITE_OPEN_READWRITE and SQLITE_OPEN_CREATE.  ^If the mode option is
-**     set to "memory" then a pure [in-memory database] that never reads or
+**     set to "memory" then a pure [in-memory database] that never reads
 **     or writes from disk is used. ^It is an error to specify a value for
 **     the mode parameter that is less restrictive than that specified by
 **     the flags passed in the third parameter to sqlite3_open_v2().
