@@ -2739,6 +2739,12 @@ static int rtreeDeleteRowid(Rtree *pRtree, sqlite3_int64 iDelete){
   return rc;
 }
 
+/*
+** Rounding constants for float->double conversion.
+*/
+#define RNDTOWARDS  (1.0 - 1.0/8388608.0)  /* Round towards zero */
+#define RNDAWAY     (1.0 + 1.0/8388608.0)  /* Round away from zero */
+
 #if !defined(SQLITE_RTREE_INT_ONLY)
 /*
 ** Convert an sqlite3_value into an RtreeValue (presumably a float)
@@ -2748,11 +2754,7 @@ static RtreeValue rtreeValueDown(sqlite3_value *v){
   double d = sqlite3_value_double(v);
   float f = (float)d;
   if( f>d ){
-    if( f<0.0 ){
-      f += f/8388608.0;
-    }else{
-      f -= f/8388608.0;
-    }
+    f = (float)(d*(d<0 ? RNDAWAY : RNDTOWARDS));
   }
   return f;
 }
@@ -2760,11 +2762,7 @@ static RtreeValue rtreeValueUp(sqlite3_value *v){
   double d = sqlite3_value_double(v);
   float f = (float)d;
   if( f<d ){
-    if( f<0.0 ){
-      f -= f/8388608.0;
-    }else{
-      f += f/8388608.0;
-    }
+    f = (float)(d*(d<0 ? RNDTOWARDS : RNDAWAY));
   }
   return f;
 }
