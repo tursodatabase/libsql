@@ -288,7 +288,7 @@ static struct win_syscall {
 #define osCreateFileW ((HANDLE(WINAPI*)(LPCWSTR,DWORD,DWORD, \
         LPSECURITY_ATTRIBUTES,DWORD,DWORD,HANDLE))aSyscall[5].pCurrent)
 
-#if defined(SQLITE_WIN32_HAS_WIDE)
+#if !SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_WIDE)
   { "CreateFileMappingW",      (SYSCALL)CreateFileMappingW,      0 },
 #else
   { "CreateFileMappingW",      (SYSCALL)0,                       0 },
@@ -684,7 +684,7 @@ static struct win_syscall {
 #define osWriteFile ((BOOL(WINAPI*)(HANDLE,LPCVOID,DWORD,LPDWORD, \
         LPOVERLAPPED))aSyscall[58].pCurrent)
 
-#if SQLITE_OS_WINRT
+#if !SQLITE_OS_WINCE
   { "CreateEventExW",          (SYSCALL)CreateEventExW,          0 },
 #else
   { "CreateEventExW",          (SYSCALL)0,                       0 },
@@ -720,7 +720,7 @@ static struct win_syscall {
 #define osSetFilePointerEx ((BOOL(WINAPI*)(HANDLE,LARGE_INTEGER, \
         PLARGE_INTEGER,DWORD))aSyscall[62].pCurrent)
 
-#if SQLITE_OS_WINRT
+#if !SQLITE_OS_WINCE
   { "GetFileInformationByHandleEx", (SYSCALL)GetFileInformationByHandleEx, 0 },
 #else
   { "GetFileInformationByHandleEx", (SYSCALL)0,                  0 },
@@ -729,14 +729,14 @@ static struct win_syscall {
 #define osGetFileInformationByHandleEx ((BOOL(WINAPI*)(HANDLE, \
         FILE_INFO_BY_HANDLE_CLASS,LPVOID,DWORD))aSyscall[63].pCurrent)
 
-#if !SQLITE_OS_WINCE
-  { "MapViewOfFileEx",         (SYSCALL)MapViewOfFileEx,         0 },
+#if SQLITE_OS_WINRT
+  { "MapViewOfFileFromApp",    (SYSCALL)MapViewOfFileFromApp,    0 },
 #else
-  { "MapViewOfFileEx",         (SYSCALL)0,                       0 },
+  { "MapViewOfFileFromApp",    (SYSCALL)0,                       0 },
 #endif
 
-#define osMapViewOfFileEx ((LPVOID(WINAPI*)(HANDLE,DWORD,DWORD,DWORD,SIZE_T, \
-        LPVOID))aSyscall[64].pCurrent)
+#define osMapViewOfFileFromApp ((LPVOID(WINAPI*)(HANDLE,ULONG,ULONG64, \
+        SIZE_T))aSyscall[64].pCurrent)
 
 #if SQLITE_OS_WINRT
   { "CreateFile2",             (SYSCALL)CreateFile2,             0 },
@@ -792,6 +792,15 @@ static struct win_syscall {
   { "GetProcessHeap",          (SYSCALL)GetProcessHeap,          0 },
 
 #define osGetProcessHeap ((HANDLE(WINAPI*)(VOID))aSyscall[71].pCurrent)
+
+#if SQLITE_OS_WINRT
+  { "CreateFileMappingFromApp", (SYSCALL)CreateFileMappingFromApp, 0 },
+#else
+  { "CreateFileMappingFromApp", (SYSCALL)0,                      0 },
+#endif
+
+#define osCreateFileMappingFromApp ((HANDLE(WINAPI*)(HANDLE, \
+        LPSECURITY_ATTRIBUTES,ULONG,ULONG64,LPCWSTR))aSyscall[72].pCurrent)
 
 }; /* End of the overrideable system calls */
 
@@ -3211,9 +3220,15 @@ static int winShmMap(
       HANDLE hMap;                /* file-mapping handle */
       void *pMap = 0;             /* Mapped memory region */
      
+#if SQLITE_OS_WINRT
+      hMap = osCreateFileMappingFromApp(pShmNode->hFile.h,
+          NULL, PAGE_READWRITE, nByte, NULL
+      );
+#else
       hMap = osCreateFileMappingW(pShmNode->hFile.h, 
           NULL, PAGE_READWRITE, 0, nByte, NULL
       );
+#endif
       OSTRACE(("SHM-MAP pid-%d create region=%d nbyte=%d %s\n",
                (int)osGetCurrentProcessId(), pShmNode->nRegion, nByte,
                hMap ? "ok" : "failed"));
@@ -3221,8 +3236,8 @@ static int winShmMap(
         int iOffset = pShmNode->nRegion*szRegion;
         int iOffsetShift = iOffset % winSysInfo.dwAllocationGranularity;
 #if SQLITE_OS_WINRT
-        pMap = osMapViewOfFileEx(hMap, FILE_MAP_WRITE | FILE_MAP_READ,
-            0, iOffset - iOffsetShift, szRegion + iOffsetShift, NULL
+        pMap = osMapViewOfFileFromApp(hMap, FILE_MAP_WRITE | FILE_MAP_READ,
+            iOffset - iOffsetShift, szRegion + iOffsetShift
         );
 #else
         pMap = osMapViewOfFile(hMap, FILE_MAP_WRITE | FILE_MAP_READ,
@@ -4264,7 +4279,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==72 );
+  assert( ArraySize(aSyscall)==73 );
 
 #ifndef SQLITE_OMIT_WAL
   /* get memory map allocation granularity */
