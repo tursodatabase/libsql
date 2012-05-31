@@ -1,5 +1,5 @@
-C Link\sthe\sNDEBUG\smacro\sto\sSQLITE_DEBUG\sso\sthat\swhen\sSQLITE_DEBUG\sis\sdefined,\nNDEBUG\sis\sautomatically\sundefined\san\sdwhen\sSQLITE_DEBUG\sis\sundefined\nNDEBUG\sis\sautomatically\sdefined.
-D 2012-05-29T19:25:20.175
+C Avoid\scalling\sfchown()\sif\sthe\sprocess\sis\snot\srunning\sas\sroot.
+D 2012-05-31T13:10:49.376
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4f37eb61be9d38643cdd839a74b8e3bad724cfcf
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -164,7 +164,7 @@ F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 59beba555b65a450bd1d804220532971d4299f60
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c 8a90a7cdfc19ed0f233d76b63825d8effcae302a
+F src/os_unix.c d7c96b5d140f550f07345870112fae5d7ef99757
 F src/os_win.c 412d6434133c7c81dc48b7702f3ea5e61c309e5c
 F src/pager.c 9d4d6406512002d9a243ec27b9c01e93fda43e36
 F src/pager.h 8b8c9bc065a3c66769df8724dfdf492ee1aab3c5
@@ -1004,7 +1004,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 6fec6cf1fbac881a33a35ea99aac2f5f1cf27c2a
-R 04c27600577da03816e15c318dd7df31
+P 07935d10d341fe6265cfd3b09e2c4ef4005c4826
+R db0f48be730e02610af744a3fe432e51
 U drh
-Z 9df1e8f50925fc882f32cc14d2630547
+Z a3e118b76a7afa02078e1c319e3927b5
