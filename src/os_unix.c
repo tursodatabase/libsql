@@ -4704,17 +4704,6 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
         goto shm_open_err;
       }
 
-      /* If this process is running as root, make sure that the SHM file
-      ** is owned by the same user that owns the original database.  Otherwise,
-      ** the original owner will not be able to connect. If this process is
-      ** not root, the following fchown() will fail, but we don't care.  The
-      ** if(){..} and the UNIXFILE_CHOWN flag are purely to silence compiler
-      ** warnings.
-      */
-      if( osFchown(pShmNode->h, sStat.st_uid, sStat.st_gid)==0 ){
-        pDbFd->ctrlFlags |= UNIXFILE_CHOWN;
-      }
-  
       /* Check to see if another process is holding the dead-man switch.
       ** If not, truncate the file to zero length. 
       */
@@ -4726,9 +4715,11 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
           /* If running as root set the uid/gid of the shm file to match
           ** the database */
           uid_t euid = geteuid();
-          if( euid==0 && (euid!=sStat.st_uid || getegid()!=sStat.st_gid) ){
-            if( fchown(pShmNode->h, sStat.st_uid, sStat.st_gid) ){
+          if( (!pShmNode->isReadonly) && euid==0 && (euid!=sStat.st_uid || getegid()!=sStat.st_gid) ){
+            if( osFchown(pShmNode->h, sStat.st_uid, sStat.st_gid) ){
               rc = SQLITE_IOERR_SHMOPEN;
+            }else{
+              pDbFd->ctrlFlags |= UNIXFILE_CHOWN;
             }
           }
         }
@@ -5257,12 +5248,17 @@ static int unixTruncateDatabase(unixFile *pFile, int bFlags) {
   if( (bFlags&SQLITE_TRUNCATE_INITIALIZE_HEADER_MASK)!=0 ){
     /* initialize a new database in TMPDIR and copy the contents over */
     const char *tDir = unixTempFileDir();
-    int tLen = sizeof(char) * (strlen(tDir) + 11);
+    int tDirLen = strlen(tDir);
+    int tLen = sizeof(char) * (tDirLen + 12);
     char *tDbPath = (char *)malloc(tLen);
     int tFd = -1;
     
     strlcpy(tDbPath, tDir, tLen);
-    strlcat(tDbPath, "tmpdbXXXXX", tLen);
+    if( tDbPath[(tDirLen-1)] != '/' ){
+      strlcat(tDbPath, "/tmpdbXXXXX", tLen);
+    } else {
+      strlcat(tDbPath, "tmpdbXXXXX", tLen);
+    }
     tFd = mkstemp(tDbPath);
     if( tFd==-1 ){
       storeLastErrno(pFile, errno);
@@ -6352,22 +6348,12 @@ static int unixOpen(
     if( !isReadonly && (flags & (SQLITE_OPEN_WAL|SQLITE_OPEN_MAIN_JOURNAL)) ){
       uid_t euid = geteuid();
       if( euid==0 && (euid!=uid || getegid()!=gid) ){
-        if( fchown(fd, uid, gid) ){
+        if( osFchown(fd, uid, gid) ){
           rc = SQLITE_CANTOPEN_BKPT;
           goto open_finished;
         }
+        p->ctrlFlags |= UNIXFILE_CHOWN;
       }
-    }
-
-    /* If this process is running as root and if creating a new rollback
-    ** journal or WAL file, set the ownership of the journal or WAL to be
-    ** the same as the original database.  If we are not running as root,
-    ** then the fchown() call will fail, but that's ok.  The "if(){}" and
-    ** the setting of the UNIXFILE_CHOWN flag are purely to silence compiler
-    ** warnings from gcc.
-    */
-    if( flags & (SQLITE_OPEN_WAL|SQLITE_OPEN_MAIN_JOURNAL) ){
-      if( osFchown(fd, uid, gid)==0 ){ p->ctrlFlags |= UNIXFILE_CHOWN; }
     }
   }
   assert( fd>=0 );

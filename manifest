@@ -1,5 +1,5 @@
-C Version\s3.7.12.1
-D 2012-05-22T13:11:12.948
+C Only\scall\sfchown\swhen\srunning\sas\sroot\sand\ssupporting\sfiles\smismatch\sthe\sdatabase\sowner\s&\sperms
+D 2012-05-31T00:21:28.876
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 957c9693400fca6cb8b533b589e69ddee7bcb27c
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -162,7 +162,7 @@ F src/os.c 4c8c8d72a6c58ad2fde4865783e8ae26b494a85e
 F src/os.h 59beba555b65a450bd1d804220532971d4299f60
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
-F src/os_unix.c d0eeadc475783bf595646da42bd263ec9063e267
+F src/os_unix.c 1f91f7309b09950ffdad97dc57d139894904a621
 F src/os_win.c 24b57b4aec07ec78ae759244ab6d9759a70fe29b
 F src/pager.c 544cc84d50fea0ca921d448037b217ecabba359b
 F src/pager.h 42926ac0fe69e9d7e17a54e6b37417e581a429d7
@@ -1003,7 +1003,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 4068abe05c3a94c9ac7cff72b77fb8e47a2b1a5d 6d326d44fd1d626aae0e8456e5fa2049f1ce0789
-R c922f8f99b5b09d1465707239bb63cb8
-U drh
-Z 7d8c65e663650788e8582bc64982bc90
+P 972e75bb5d7349297b94cec2f19561ee105a22cf
+R dc2606f2c7e5fe470f213999e83f4d98
+U adam
+Z f9040a054a2aa40cbe8724b598475c77
