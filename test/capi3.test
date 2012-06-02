@@ -647,20 +647,14 @@ do_test capi3-6.0 {
 } {0}
 do_test capi3-6.1 {
   db cache flush
-  sqlite3_close $DB
-} {SQLITE_BUSY}
+  db close
+} {}
 do_test capi3-6.2 {
   sqlite3_step $STMT
 } {SQLITE_ERROR}
-#check_data $STMT capi3-6.3 {INTEGER} {1} {1.0} {1}
 do_test capi3-6.3 {
   sqlite3_finalize $STMT
 } {SQLITE_SCHEMA}
-do_test capi3-6.4-misuse {
-  db cache flush
-  sqlite3_close $DB
-} {SQLITE_OK}
-db close
 
 # This procedure sets the value of the file-format in file 'test.db'
 # to $newval. Also, the schema cookie is incremented.

@@ -419,11 +419,8 @@ do_test backup-4.3.1 {
 } {B}
 do_test backup-4.3.2 {
   db2 cache flush
-  sqlite3_close db2
-} {SQLITE_BUSY}
-do_test backup-4.3.3 {
-  sqlite3_errmsg db2
-} {unable to close due to unfinished backup operation}
+  db2 close   ;# close will be deferred until the backup finishes
+} {}
 do_test backup-4.3.4 {
   B step 50
 } {SQLITE_DONE}
@@ -436,7 +433,7 @@ do_test backup-4.4.1 {
   list $rc [sqlite3_errcode db] [sqlite3_errmsg db]
 } {1 SQLITE_ERROR {source and destination must be distinct}}
 db close
-db2 close
+
 
 do_test backup-4.5.1 {
   catch { forcedelete test.db }
