@@ -1,5 +1,5 @@
-C Avoid\scalling\sfchown()\sif\sthe\sprocess\sis\snot\srunning\sas\sroot.
-D 2012-05-31T13:10:49.376
+C Add\ssqlite3_quota_ferror()\sand\ssqlite3_quota_file_available()\sinterfaces\sto\ntest_quota.c.\s\sChange\ssqlite3_quota_fwrite()\sto\suse\sa\sconst\sinput\sbuffer.
+D 2012-06-05T13:56:15.352
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4f37eb61be9d38643cdd839a74b8e3bad724cfcf
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -218,8 +218,8 @@ F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 0396f220561f3b4eedc450cef26d40c593c69a25
 F src/test_osinst.c 90a845c8183013d80eccb1f29e8805608516edba
 F src/test_pcache.c a5cd24730cb43c5b18629043314548c9169abb00
-F src/test_quota.c 47cb7b606160ce8f603a7d47143dd1f74de09058
-F src/test_quota.h ee5da2ae7f84d1c8e0e0e2ab33f01d69f10259b5
+F src/test_quota.c 0af3e1e9a1f22bc5f431dd3efcc32762f4109f58
+F src/test_quota.h 8761e463b25e75ebc078bd67d70e39b9c817a0cb
 F src/test_rtree.c aba603c949766c4193f1068b91c787f57274e0d9
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
@@ -651,7 +651,7 @@ F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
 F test/quota-glob.test 32901e9eed6705d68ca3faee2a06b73b57cb3c26
 F test/quota.test c2f778dab4c7fb07bcfa962cc5c762f36d8061dc
-F test/quota2.test bc9fdb2e46aace691c1a01a9cc8d097bd4d7c1ab
+F test/quota2.test 52175f1c94fb01711da38095a7d3988d0c7d6575
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/randexpr1.tcl 40dec52119ed3a2b8b2a773bce24b63a3a746459
 F test/randexpr1.test eda062a97e60f9c38ae8d806b03b0ddf23d796df
@@ -1004,7 +1004,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 07935d10d341fe6265cfd3b09e2c4ef4005c4826
-R db0f48be730e02610af744a3fe432e51
+P 70c419a434be77b042a23174483d6a411899eb5d
+R 6f34bdd03e1922ea3b6cb56fd9309a2c
 U drh
-Z a3e118b76a7afa02078e1c319e3927b5
+Z 1b017ff1370375c5086bff54a1d45078
