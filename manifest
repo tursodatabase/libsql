@@ -1,5 +1,5 @@
-C When\snot\scompiling\sfor\sWinRT,\sskip\susing\sa\scouple\sWin32\sAPIs\sunavailable\swhen\scompiling\swith\sMinGW.
-D 2012-06-04T05:18:32.951
+C Correct\sdocs\sregarding\suse\sof\smalloc\sand\sfree\sby\sthe\sWindows\sVFS\slayer.\s\sNo\schanges\sto\scode.
+D 2012-06-05T02:24:54.043
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/resolve.c b3c70ab28cac60de33684c9aa9e5138dcf71d6dd
 F src/rowset.c f6a49f3e9579428024662f6e2931832511f831a1
 F src/select.c f6c4833c4d8e94714761d99013d74f381e084f1d
 F src/shell.c c16f72e34f611f060546709564c121a67cb2b31b
-F src/sqlite.h.in 51b406bc156dcdfbb2af45ba11555256f23937be
+F src/sqlite.h.in 06a5141bdc5cc8959fe04bc0f59b0fe0ff742c90
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h 97ccae71ae0a4e924dcb9fab14eb4fc4839790da
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -998,7 +998,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 54de739f056749b53b198f6b074d9e649520cf00
-R 3d3156f22dcbc533103d303a20808da1
+P eb29e2d93984c29756430b55c08501d7e1783df0
+R c0cc15c1965faab4224b374fdd762280
 U mistachkin
-Z 5ca4b04744121d2d2667ad0e95a12f12
+Z 5d7036d126f9e49518f298514203b768
