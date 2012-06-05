@@ -11,7 +11,7 @@
     );
 
   The built-in tokenizers (valid values to pass as <tokenizer name>) are
-  "simple" and "porter".
+  "simple", "porter" and "unicode".
 
   <tokenizer-args> should consist of zero or more white-space separated
   arguments to pass to the selected tokenizer implementation. The 

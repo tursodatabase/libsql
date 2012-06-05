@@ -2044,10 +2044,14 @@ int sqlite3ParseUri(
             { "ro",  SQLITE_OPEN_READONLY },
             { "rw",  SQLITE_OPEN_READWRITE }, 
             { "rwc", SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE },
+            { "memory",
+                    SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE 
+                       | SQLITE_OPEN_MEMORY },
             { 0, 0 }
           };
 
-          mask = SQLITE_OPEN_READONLY|SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
+          mask = SQLITE_OPEN_READONLY | SQLITE_OPEN_READWRITE
+                   | SQLITE_OPEN_CREATE | SQLITE_OPEN_MEMORY;
           aMode = aOpenMode;
           limit = mask & flags;
           zModeType = "access";
@@ -2068,7 +2072,7 @@ int sqlite3ParseUri(
             rc = SQLITE_ERROR;
             goto parse_uri_out;
           }
-          if( mode>limit ){
+          if( (mode & ~SQLITE_OPEN_MEMORY)>limit ){
             *pzErrMsg = sqlite3_mprintf("%s mode not allowed: %s",
                                         zModeType, zVal);
             rc = SQLITE_PERM;
@@ -2087,6 +2091,7 @@ int sqlite3ParseUri(
     memcpy(zFile, zUri, nUri);
     zFile[nUri] = '\0';
     zFile[nUri+1] = '\0';
+    flags &= ~SQLITE_OPEN_URI;
   }
 
   *ppVfs = sqlite3_vfs_find(zVfs);

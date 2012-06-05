@@ -151,7 +151,7 @@ int sqlite3PagerCloseWal(Pager *pPager);
 u8 sqlite3PagerIsreadonly(Pager*);
 int sqlite3PagerRefcount(Pager*);
 int sqlite3PagerMemUsed(Pager*);
-const char *sqlite3PagerFilename(Pager*);
+const char *sqlite3PagerFilename(Pager*, int);
 const sqlite3_vfs *sqlite3PagerVfs(Pager*);
 sqlite3_file *sqlite3PagerFile(Pager*);
 const char *sqlite3PagerJournalname(Pager*);

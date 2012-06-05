@@ -131,4 +131,28 @@ do_faultsim_test 4.1 -prep {
   faultsim_test_result {0 {}}
 }
 
+ifcapable fts3_unicode {
+  do_test 5.0 {
+    faultsim_delete_and_reopen
+    execsql {
+      CREATE VIRTUAL TABLE ft USING fts4(a, tokenize=unicode61);
+    }
+    faultsim_save_and_close
+  } {}
+  
+  do_faultsim_test 5.1 -faults oom* -prep {
+    faultsim_restore_and_reopen
+    db eval {SELECT * FROM sqlite_master}
+  } -body {
+    execsql { INSERT INTO ft VALUES('the quick brown fox'); }
+    execsql { INSERT INTO ft VALUES(
+       'theunusuallylongtokenthatjustdragsonandonandonandthendragsonsomemoreeof'
+      );
+    }
+    execsql { SELECT docid FROM ft WHERE ft MATCH 'th*' }
+  } -test {
+    faultsim_test_result {0 {1 2}}
+  }
+}
+
 finish_test

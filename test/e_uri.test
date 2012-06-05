@@ -254,6 +254,8 @@ foreach {tn uri error} "
   4    {file:test.db?mode=Ro}    {no such access mode: Ro}
   5    {file:test.db?mode=Rw}    {no such access mode: Rw}
   6    {file:test.db?mode=Rwc}   {no such access mode: Rwc}
+  7    {file:test.db?mode=memory} {not an error}
+  8    {file:test.db?mode=MEMORY} {no such access mode: MEMORY}
 " {
   do_test 7.$tn { open_uri_error $uri } $error
 }

@@ -3778,7 +3778,7 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB){
     if( !ExprHasProperty(pB, EP_IntValue) || pA->u.iValue!=pB->u.iValue ){
       return 2;
     }
-  }else if( pA->op!=TK_COLUMN && pA->op!=TK_AGG_COLUMN && pA->u.zToken ){
+  }else if( pA->op!=TK_COLUMN && ALWAYS(pA->op!=TK_AGG_COLUMN) && pA->u.zToken){
     if( ExprHasProperty(pB, EP_IntValue) || NEVER(pB->u.zToken==0) ) return 2;
     if( strcmp(pA->u.zToken,pB->u.zToken)!=0 ){
       return 2;
@@ -3965,7 +3965,9 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
       return WRC_Prune;
     }
     case TK_AGG_FUNCTION: {
-      if( !sqlite3FunctionUsesOtherSrc(pExpr, pSrcList) ){
+      if( (pNC->ncFlags & NC_InAggFunc)==0
+       && !sqlite3FunctionUsesOtherSrc(pExpr, pSrcList)
+      ){
         /* Check to see if pExpr is a duplicate of another aggregate 
         ** function that is already in the pAggInfo structure
         */
@@ -4002,8 +4004,8 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
         ExprSetIrreducible(pExpr);
         pExpr->iAgg = (i16)i;
         pExpr->pAggInfo = pAggInfo;
-        return WRC_Prune;
       }
+      return WRC_Prune;
     }
   }
   return WRC_Continue;

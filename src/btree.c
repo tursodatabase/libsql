@@ -1721,7 +1721,8 @@ int sqlite3BtreeOpen(
   const int isMemdb = 0;
 #else
   const int isMemdb = (zFilename && strcmp(zFilename, ":memory:")==0)
-                       || (isTempDb && sqlite3TempInMemory(db));
+                       || (isTempDb && sqlite3TempInMemory(db))
+                       || (vfsFlags & SQLITE_OPEN_MEMORY)!=0;
 #endif
 
   assert( db!=0 );
@@ -1757,7 +1758,7 @@ int sqlite3BtreeOpen(
   ** If this Btree is a candidate for shared cache, try to find an
   ** existing BtShared object that we can share with
   */
-  if( isMemdb==0 && isTempDb==0 ){
+  if( isTempDb==0 && (isMemdb==0 || (vfsFlags&SQLITE_OPEN_URI)!=0) ){
     if( vfsFlags & SQLITE_OPEN_SHAREDCACHE ){
       int nFullPathname = pVfs->mxPathname+1;
       char *zFullPathname = sqlite3Malloc(nFullPathname);
@@ -1767,11 +1768,16 @@ int sqlite3BtreeOpen(
         sqlite3_free(p);
         return SQLITE_NOMEM;
       }
-      rc = sqlite3OsFullPathname(pVfs, zFilename, nFullPathname, zFullPathname);
-      if( rc ){
-        sqlite3_free(zFullPathname);
-        sqlite3_free(p);
-        return rc;
+      if( isMemdb ){
+        memcpy(zFullPathname, zFilename, sqlite3Strlen30(zFilename)+1);
+      }else{
+        rc = sqlite3OsFullPathname(pVfs, zFilename,
+                                   nFullPathname, zFullPathname);
+        if( rc ){
+          sqlite3_free(zFullPathname);
+          sqlite3_free(p);
+          return rc;
+        }
       }
 #if SQLITE_THREADSAFE
       mutexOpen = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_OPEN);
@@ -1781,7 +1787,7 @@ int sqlite3BtreeOpen(
 #endif
       for(pBt=GLOBAL(BtShared*,sqlite3SharedCacheList); pBt; pBt=pBt->pNext){
         assert( pBt->nRef>0 );
-        if( 0==strcmp(zFullPathname, sqlite3PagerFilename(pBt->pPager))
+        if( 0==strcmp(zFullPathname, sqlite3PagerFilename(pBt->pPager, 0))
                  && sqlite3PagerVfs(pBt->pPager)==pVfs ){
           int iDb;
           for(iDb=db->nDb-1; iDb>=0; iDb--){
@@ -8046,14 +8052,15 @@ char *sqlite3BtreeIntegrityCheck(
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
 
 /*
-** Return the full pathname of the underlying database file.
+** Return the full pathname of the underlying database file.  Return
+** an empty string if the database is in-memory or a TEMP database.
 **
 ** The pager filename is invariant as long as the pager is
 ** open so it is safe to access without the BtShared mutex.
 */
 const char *sqlite3BtreeGetFilename(Btree *p){
   assert( p->pBt->pPager!=0 );
-  return sqlite3PagerFilename(p->pBt->pPager);
+  return sqlite3PagerFilename(p->pBt->pPager, 1);
 }
 
 /*

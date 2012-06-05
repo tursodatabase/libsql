@@ -227,7 +227,7 @@ struct unixFile {
 #if OS_VXWORKS
   struct vxworksFileId *pId;          /* Unique file ID */
 #endif
-#ifndef NDEBUG
+#ifdef SQLITE_DEBUG
   /* The next group of variables are used to track whether or not the
   ** transaction counter in bytes 24-27 of database files are updated
   ** whenever any part of the database changes.  An assertion fault will
@@ -262,7 +262,6 @@ struct unixFile {
 #define UNIXFILE_DELETE      0x20     /* Delete on close */
 #define UNIXFILE_URI         0x40     /* Filename might have query parameters */
 #define UNIXFILE_NOLOCK      0x80     /* Do no file locking */
-#define UNIXFILE_CHOWN      0x100     /* File ownership was changed */
 
 /*
 ** Include code that is common to all os_*.c files
@@ -306,6 +305,15 @@ struct unixFile {
 */
 static int posixOpen(const char *zFile, int flags, int mode){
   return open(zFile, flags, mode);
+}
+
+/*
+** On some systems, calls to fchown() will trigger a message in a security
+** log if they come from non-root processes.  So avoid calling fchown() if
+** we are not running as root.
+*/
+static int posixFchown(int fd, uid_t uid, gid_t gid){
+  return geteuid() ? 0 : fchown(fd,uid,gid);
 }
 
 /* Forward reference */
@@ -419,7 +427,7 @@ static struct unix_syscall {
   { "rmdir",        (sqlite3_syscall_ptr)rmdir,           0 },
 #define osRmdir     ((int(*)(const char*))aSyscall[19].pCurrent)
 
-  { "fchown",       (sqlite3_syscall_ptr)fchown,          0 },
+  { "fchown",       (sqlite3_syscall_ptr)posixFchown,     0 },
 #define osFchown    ((int(*)(int,uid_t,gid_t))aSyscall[20].pCurrent)
 
   { "umask",        (sqlite3_syscall_ptr)umask,           0 },
@@ -1563,7 +1571,7 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   }
   
 
-#ifndef NDEBUG
+#ifdef SQLITE_DEBUG
   /* Set up the transaction-counter change checking flags when
   ** transitioning from a SHARED to a RESERVED lock.  The change
   ** from SHARED to RESERVED marks the beginning of a normal
@@ -1642,7 +1650,7 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
   if( pFile->eFileLock>SHARED_LOCK ){
     assert( pInode->eFileLock==pFile->eFileLock );
 
-#ifndef NDEBUG
+#ifdef SQLITE_DEBUG
     /* When reducing a lock such that other processes can start
     ** reading the database file again, make sure that the
     ** transaction counter was updated if any part of the database
@@ -2841,7 +2849,7 @@ static int afpUnlock(sqlite3_file *id, int eFileLock) {
     SimulateIOError( h=(-1) )
     SimulateIOErrorBenign(0);
     
-#ifndef NDEBUG
+#ifdef SQLITE_DEBUG
     /* When reducing a lock such that other processes can start
     ** reading the database file again, make sure that the
     ** transaction counter was updated if any part of the database
@@ -3145,7 +3153,7 @@ static int unixWrite(
   );
 #endif
 
-#ifndef NDEBUG
+#ifdef SQLITE_DEBUG
   /* If we are doing a normal write to a database file (as opposed to
   ** doing a hot-journal rollback or a write to some file other than a
   ** normal database file) then record the fact that the database
@@ -3436,7 +3444,7 @@ static int unixTruncate(sqlite3_file *id, i64 nByte){
     pFile->lastErrno = errno;
     return unixLogError(SQLITE_IOERR_TRUNCATE, "ftruncate", pFile->zPath);
   }else{
-#ifndef NDEBUG
+#ifdef SQLITE_DEBUG
     /* If we are doing a normal write to a database file (as opposed to
     ** doing a hot-journal rollback or a write to some file other than a
     ** normal database file) and we truncate the file to zero length,
@@ -3593,7 +3601,7 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       *(char**)pArg = sqlite3_mprintf("%s", pFile->pVfs->zName);
       return SQLITE_OK;
     }
-#ifndef NDEBUG
+#ifdef SQLITE_DEBUG
     /* The pager calls this method to signal that it has done
     ** a rollback and that the database is therefore unchanged and
     ** it hence it is OK for the transaction change counter to be
@@ -3944,14 +3952,9 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
 
       /* If this process is running as root, make sure that the SHM file
       ** is owned by the same user that owns the original database.  Otherwise,
-      ** the original owner will not be able to connect. If this process is
-      ** not root, the following fchown() will fail, but we don't care.  The
-      ** if(){..} and the UNIXFILE_CHOWN flag are purely to silence compiler
-      ** warnings.
+      ** the original owner will not be able to connect.
       */
-      if( osFchown(pShmNode->h, sStat.st_uid, sStat.st_gid)==0 ){
-        pDbFd->ctrlFlags |= UNIXFILE_CHOWN;
-      }
+      osFchown(pShmNode->h, sStat.st_uid, sStat.st_gid);
   
       /* Check to see if another process is holding the dead-man switch.
       ** If not, truncate the file to zero length. 
@@ -5157,13 +5160,10 @@ static int unixOpen(
 
     /* If this process is running as root and if creating a new rollback
     ** journal or WAL file, set the ownership of the journal or WAL to be
-    ** the same as the original database.  If we are not running as root,
-    ** then the fchown() call will fail, but that's ok.  The "if(){}" and
-    ** the setting of the UNIXFILE_CHOWN flag are purely to silence compiler
-    ** warnings from gcc.
+    ** the same as the original database.
     */
     if( flags & (SQLITE_OPEN_WAL|SQLITE_OPEN_MAIN_JOURNAL) ){
-      if( osFchown(fd, uid, gid)==0 ){ p->ctrlFlags |= UNIXFILE_CHOWN; }
+      osFchown(fd, uid, gid);
     }
   }
   assert( fd>=0 );

@@ -4360,7 +4360,12 @@ int sqlite3PagerOpen(
 #ifndef SQLITE_OMIT_MEMORYDB
   if( flags & PAGER_MEMORY ){
     memDb = 1;
-    zFilename = 0;
+    if( zFilename && zFilename[0] ){
+      zPathname = sqlite3DbStrDup(0, zFilename);
+      if( zPathname==0  ) return SQLITE_NOMEM;
+      nPathname = sqlite3Strlen30(zPathname);
+      zFilename = 0;
+    }
   }
 #endif
 
@@ -6296,9 +6301,16 @@ int sqlite3PagerSavepoint(Pager *pPager, int op, int iSavepoint){
 
 /*
 ** Return the full pathname of the database file.
+**
+** Except, if the pager is in-memory only, then return an empty string if
+** nullIfMemDb is true.  This routine is called with nullIfMemDb==1 when
+** used to report the filename to the user, for compatibility with legacy
+** behavior.  But when the Btree needs to know the filename for matching to
+** shared cache, it uses nullIfMemDb==0 so that in-memory databases can
+** participate in shared-cache.
 */
-const char *sqlite3PagerFilename(Pager *pPager){
-  return pPager->zFilename;
+const char *sqlite3PagerFilename(Pager *pPager, int nullIfMemDb){
+  return (nullIfMemDb && pPager->memDb) ? "" : pPager->zFilename;
 }
 
 /*

@@ -167,8 +167,9 @@ char *sqlite3VdbeExpandSql(
 */
 void sqlite3ExplainBegin(Vdbe *pVdbe){
   if( pVdbe ){
+    Explain *p;
     sqlite3BeginBenignMalloc();
-    Explain *p = sqlite3_malloc( sizeof(Explain) );
+    p = sqlite3_malloc( sizeof(Explain) );
     if( p ){
       memset(p, 0, sizeof(*p));
       p->pVdbe = pVdbe;

@@ -429,10 +429,11 @@ void sqlite3CollapseDatabaseArray(sqlite3 *db){
 ** TEMP schema.
 */
 void sqlite3ResetOneSchema(sqlite3 *db, int iDb){
+  Db *pDb;
   assert( iDb<db->nDb );
 
   /* Case 1:  Reset the single schema identified by iDb */
-  Db *pDb = &db->aDb[iDb];
+  pDb = &db->aDb[iDb];
   assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
   assert( pDb->pSchema!=0 );
   sqlite3SchemaClear(pDb->pSchema);
@@ -1508,7 +1509,7 @@ void sqlite3EndTable(
     sSrc.a[0].iCursor = -1;
     sNC.pParse = pParse;
     sNC.pSrcList = &sSrc;
-    sNC.isCheck = 1;
+    sNC.ncFlags = NC_IsCheck;
     pList = p->pCheck;
     for(i=0; i<pList->nExpr; i++){
       if( sqlite3ResolveExprNames(&sNC, pList->a[i].pExpr) ){
