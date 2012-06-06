@@ -56,7 +56,7 @@ struct sqlite3_mutex {
 ** this out as well.
 */
 #if 0
-#if SQLITE_OS_WINCE
+#if SQLITE_OS_WINCE || SQLITE_OS_WINRT
 # define mutexIsNT()  (1)
 #else
   static int mutexIsNT(void){

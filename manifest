@@ -1,5 +1,5 @@
-C Merge\sthe\schanges\sneed\sto\scompile\son\sWinRT\sinto\strunk.
-D 2012-06-06T23:23:23.374
+C Fix\san\s#if\sthat\sis\sapplicable\sto\sWinRT,\seven\sthought\sit\sis\scurrently\sdisabled\sby\sanother\s#if.
+D 2012-06-06T23:25:33.382
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4f37eb61be9d38643cdd839a74b8e3bad724cfcf
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -158,7 +158,7 @@ F src/mutex.h 2a79e0c10c26412546b501ee0f3d92b42decf63e
 F src/mutex_noop.c 7682796b7d8d39bf1c138248858efcd10c9e1553
 F src/mutex_os2.c 882d735098c07c8c6a5472b8dd66e19675fe117f
 F src/mutex_unix.c c3a4e00f96ba068a8dbef34084465979aaf369cc
-F src/mutex_w32.c 1170f64d08dc35cd43f6d0bfa833cac5da979279
+F src/mutex_w32.c db8970270841e2385a43602477e84c4b19aff1db
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 38aabd5e3ecd4162332076f55bb09cec02165cca
@@ -1005,7 +1005,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P eccd6b6580637084495b80e9232262188ba0cf8d 8e8590a4dc8d9b0fa12ce288cdfd0146223fee6c
-R e54f5d64d1e08d0a0f77f7e82ee4ca4c
-U drh
-Z b901cb0ca598db2780e99899aea938ab
+P 61360ca6ca3448477d5c662d3642beef6dd2079e
+R a8e059bd0c09878cce709aac9edcf4a3
+U mistachkin
+Z 60750c2a7d3cb45d526c9f1bc86a508c
