@@ -52,11 +52,24 @@ foreach {tn uri file} {
   16     file://localhostPWD/test.db%3Fhello  test.db?hello
 } {
   
+
+  ifcapable !curdir { if {$tn==3} break }
+
   if {$tcl_platform(platform)=="windows"} {
+    #
+    # NOTE: Due to limits on legal characters for file names imposed by
+    #       Windows, we must skip the final two tests here (i.e. the
+    #       question mark is illegal in a file name on Windows).
+    #
     if {$tn>14} break
-    set uri  [string map [list PWD /[get_pwd]] $uri]
+
+    #
+    # NOTE: On Windows, we need to account for the fact that the current
+    #       directory does not start with a forward slash.
+    #
+    set uri  [string map [list PWD/ /[test_pwd /]] $uri]
   } else {
-    set uri  [string map [list PWD [get_pwd]] $uri]
+    set uri  [string map [list PWD/ [test_pwd /]] $uri]
   }
 
   if {[file isdir $file]} {error "$file is a directory"}

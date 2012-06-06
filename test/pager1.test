@@ -524,18 +524,27 @@ db close
 # file-system is saved just before the xDelete() call to remove the 
 # master journal file from the file-system.
 #
+set pwd [get_pwd]
 testvfs tv -default 1
 tv script copy_on_mj_delete
 set ::mj_filename_length 0
 proc copy_on_mj_delete {method filename args} {
   if {[string match *mj* [file tail $filename]]} { 
-    set ::mj_filename_length [string length $filename]
+    #
+    # NOTE: Is the file name relative?  If so, add the length of the current
+    #       directory.
+    #
+    if {[is_relative_file $filename]} {
+      set ::mj_filename_length \
+        [expr {[string length $filename] + [string length $::pwd]}]
+    } else {
+      set ::mj_filename_length [string length $filename]
+    }
     faultsim_save 
   }
   return SQLITE_OK
 }
 
-set pwd [get_pwd]
 foreach {tn1 tcl} {
   1 { set prefix "test.db" }
   2 { 
@@ -1019,8 +1028,17 @@ do_test pager1-5.4.1 {
   #      the master-journal name encoded as utf-8 with no nul term.
   #
   set mj_pointer [expr {
-    20 + [string length [get_pwd]] + [string length "/test.db-mjXXXXXX9XX"]
+    20 + [string length "test.db-mjXXXXXX9XX"]
   }]
+  #
+  #   NOTE: For item 3 above, if the current SQLite VFS lacks the concept of a
+  #         current directory, the length of the current directory name plus 1
+  #         character for the directory separator character are NOT counted as
+  #         part of the total size; otherwise, they are.
+  #
+  ifcapable curdir {
+    set mj_pointer [expr {$mj_pointer + [string length [get_pwd]] + 1}]
+  }
   expr {$::max_journal==(512+2*(1024+8)+$mj_pointer)}
 } 1
 do_test pager1-5.4.2 {
@@ -1038,8 +1056,17 @@ do_test pager1-5.4.2 {
   # written starting at the next (in this case 512 byte) sector boundary.
   #
   set mj_pointer [expr {
-    20 + [string length [get_pwd]] + [string length "/test.db-mjXXXXXX9XX"]
+    20 + [string length "test.db-mjXXXXXX9XX"]
   }]
+  #
+  #   NOTE: If the current SQLite VFS lacks the concept of a current directory,
+  #         the length of the current directory name plus 1 character for the
+  #         directory separator character are NOT counted as part of the total
+  #         size; otherwise, they are.
+  #
+  ifcapable curdir {
+    set mj_pointer [expr {$mj_pointer + [string length [get_pwd]] + 1}]
+  }
   expr {$::max_journal==(((512+2*(1024+8)+511)/512)*512 + $mj_pointer)}
 } 1
 db close

@@ -2165,12 +2165,12 @@ char *sqlite3_vsnprintf(int,char*,const char*, va_list);
 ** implementation of these routines to be omitted.  That capability
 ** is no longer provided.  Only built-in memory allocators can be used.
 **
-** The Windows OS interface layer calls
+** Prior to SQLite version 3.7.10, the Windows OS interface layer called
 ** the system malloc() and free() directly when converting
 ** filenames between the UTF-8 encoding used by SQLite
 ** and whatever filename encoding is used by the particular Windows
-** installation.  Memory allocation errors are detected, but
-** they are reported back as [SQLITE_CANTOPEN] or
+** installation.  Memory allocation errors were detected, but
+** they were reported back as [SQLITE_CANTOPEN] or
 ** [SQLITE_IOERR] rather than [SQLITE_NOMEM].
 **
 ** The pointer arguments to [sqlite3_free()] and [sqlite3_realloc()]
@@ -4446,6 +4446,42 @@ int sqlite3_sleep(int);
 ** or else the use of the [temp_store_directory pragma] should be avoided.
 */
 SQLITE_EXTERN char *sqlite3_temp_directory;
+
+/*
+** CAPI3REF: Name Of The Folder Holding Database Files
+**
+** ^(If this global variable is made to point to a string which is
+** the name of a folder (a.k.a. directory), then all database files
+** specified with a relative pathname and created or accessed by
+** SQLite when using a built-in [sqlite3_vfs | VFS] will be assumed
+** to be relative to that directory.)^ ^If this variable is a NULL
+** pointer, then SQLite assumes that all database files specified
+** with a relative pathname are relative to the current directory
+** for the process.
+**
+** Changing the value of this variable while a database connection is
+** open can result in a corrupt database.
+**
+** It is not safe to read or modify this variable in more than one
+** thread at a time.  It is not safe to read or modify this variable
+** if a [database connection] is being used at the same time in a separate
+** thread.
+** It is intended that this variable be set once
+** as part of process initialization and before any SQLite interface
+** routines have been called and that this variable remain unchanged
+** thereafter.
+**
+** ^The [data_store_directory pragma] may modify this variable and cause
+** it to point to memory obtained from [sqlite3_malloc].  ^Furthermore,
+** the [data_store_directory pragma] always assumes that any string
+** that this variable points to is held in memory obtained from 
+** [sqlite3_malloc] and the pragma may attempt to free that memory
+** using [sqlite3_free].
+** Hence, if this variable is modified directly, either it should be
+** made NULL or made to point to memory obtained from [sqlite3_malloc]
+** or else the use of the [data_store_directory pragma] should be avoided.
+*/
+SQLITE_EXTERN char *sqlite3_data_directory;
 
 /*
 ** CAPI3REF: Test For Auto-Commit Mode
