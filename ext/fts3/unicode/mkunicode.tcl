@@ -1,4 +1,208 @@
 
+#
+# Parameter $zName must be a path to the file UnicodeData.txt. This command
+# reads the file and returns a list of mappings required to remove all
+# diacritical marks from a unicode string. Each mapping is itself a list
+# consisting of two elements - the unicode codepoint and the single ASCII
+# character that it should be replaced with, or an empty string if the 
+# codepoint should simply be removed from the input. Examples:
+#
+#   { 224 a  }     (replace codepoint 224 to "a")
+#   { 769 "" }     (remove codepoint 769 from input)
+#
+# Mappings are only returned for non-upper case codepoints. It is assumed
+# that the input has already been folded to lower case.
+#
+proc rd_load_unicodedata_text {zName} {
+  global tl_lookup_table
+
+  set fd [open $zName]
+  set lField {
+    code
+    character_name
+    general_category
+    canonical_combining_classes
+    bidirectional_category
+    character_decomposition_mapping
+    decimal_digit_value
+    digit_value
+    numeric_value
+    mirrored
+    unicode_1_name
+    iso10646_comment_field
+    uppercase_mapping
+    lowercase_mapping
+    titlecase_mapping
+  }
+  set lRet [list]
+
+  while { ![eof $fd] } {
+    set line [gets $fd]
+    if {$line == ""} continue
+
+    set fields [split $line ";"]
+    if {[llength $fields] != [llength $lField]} { error "parse error: $line" }
+    foreach $lField $fields {}
+    if { [llength $character_decomposition_mapping]!=2
+      || [string is xdigit [lindex $character_decomposition_mapping 0]]==0
+    } {
+      continue
+    }
+
+    set iCode  [expr "0x$code"]
+    set iAscii [expr "0x[lindex $character_decomposition_mapping 0]"]
+    set iDia   [expr "0x[lindex $character_decomposition_mapping 1]"]
+
+    if {[info exists tl_lookup_table($iCode)]} continue
+
+    if { ($iAscii >= 97 && $iAscii <= 122)
+      || ($iAscii >= 65 && $iAscii <= 90)
+    } {
+      lappend lRet [list $iCode [string tolower [format %c $iAscii]]]
+      set dia($iDia) 1
+    }
+  }
+
+  foreach d [array names dia] {
+    lappend lRet [list $d ""]
+  }
+  set lRet [lsort -integer -index 0 $lRet]
+
+  close $fd
+  set lRet
+}
+
+
+proc print_rd {map} {
+  global tl_lookup_table
+  set aChar [list]
+  set lRange [list]
+
+  set nRange 1
+  set iFirst  [lindex $map 0 0]
+  set cPrev   [lindex $map 0 1]
+
+  foreach m [lrange $map 1 end] {
+    foreach {i c} $m {}
+
+    if {$cPrev == $c} {
+      for {set j [expr $iFirst+$nRange]} {$j<$i} {incr j} {
+        if {[info exists tl_lookup_table($j)]==0} break
+      }
+
+      if {$j==$i} {
+        set nNew [expr {(1 + $i - $iFirst)}]
+        if {$nNew<=8} {
+          set nRange $nNew
+          continue
+        }
+      }
+    }
+
+    lappend lRange [list $iFirst $nRange]
+    lappend aChar  $cPrev
+
+    set iFirst $i
+    set cPrev  $c
+    set nRange 1
+  }
+  lappend lRange [list $iFirst $nRange]
+  lappend aChar $cPrev
+
+  puts "/*"
+  puts "** If the argument is a codepoint corresponding to a lowercase letter"
+  puts "** in the ASCII range with a diacritic added, return the codepoint"
+  puts "** of the ASCII letter only. For example, if passed 235 - \"LATIN"
+  puts "** SMALL LETTER E WITH DIAERESIS\" - return 65 (\"LATIN SMALL LETTER"
+  puts "** E\"). The resuls of passing a codepoint that corresponds to an"
+  puts "** uppercase letter are undefined."
+  puts "*/"
+  puts "static int remove_diacritic(int c)\{"
+  puts "  unsigned short aDia\[\] = \{"
+  puts -nonewline "        0, "
+  set i 1
+  foreach r $lRange {
+    foreach {iCode nRange} $r {}
+    if {($i % 8)==0} {puts "" ; puts -nonewline "    " }
+    incr i
+
+    puts -nonewline [format "%5d" [expr ($iCode<<3) + $nRange-1]]
+    puts -nonewline ", "
+  }
+  puts ""
+  puts "  \};"
+  puts "  char aChar\[\] = \{"
+  puts -nonewline "    '\\0', "
+  set i 1
+  foreach c $aChar {
+    set str "'$c',  "
+    if {$c == ""} { set str "'\\0', " }
+
+    if {($i % 12)==0} {puts "" ; puts -nonewline "    " }
+    incr i
+    puts -nonewline "$str"
+  }
+  puts ""
+  puts "  \};"
+  puts {
+  unsigned int key = (((unsigned int)c)<<3) | 0x00000007;
+  int iRes = 0;
+  int iHi = sizeof(aDia)/sizeof(aDia[0]) - 1;
+  int iLo = 0;
+  while( iHi>=iLo ){
+    int iTest = (iHi + iLo) / 2;
+    if( key >= aDia[iTest] ){
+      iRes = iTest;
+      iLo = iTest+1;
+    }else{
+      iHi = iTest-1;
+    }
+  }
+  assert( key>=aDia[iRes] );
+  return ((c > (aDia[iRes]>>3) + (aDia[iRes]&0x07)) ? c : (int)aChar[iRes]);}
+  puts "\};"
+}
+
+proc print_isdiacritic {zFunc map} {
+
+  set lCode [list]
+  foreach m $map {
+    foreach {code char} $m {}
+    if {$code && $char == ""} { lappend lCode $code }
+  }
+  set lCode [lsort -integer $lCode]
+  set iFirst [lindex $lCode 0]
+  set iLast [lindex $lCode end]
+
+  set i1 0
+  set i2 0
+
+  foreach c $lCode {
+    set i [expr $c - $iFirst]
+    if {$i < 32} {
+      set i1 [expr {$i1 | (1<<$i)}]
+    } else {
+      set i2 [expr {$i2 | (1<<($i-32))}]
+    }
+  }
+
+  puts "/*"
+  puts "** Return true if the argument interpreted as a unicode codepoint" 
+  puts "** is a diacritical modifier character."
+  puts "*/"
+  puts "int ${zFunc}\(int c)\{"
+  puts "  unsigned int mask0 = [format "0x%08X" $i1];"
+  puts "  unsigned int mask1 = [format "0x%08X" $i2];"
+
+  puts "  if( c<$iFirst || c>$iLast ) return 0;"
+  puts "  return (c < $iFirst+32) ?"
+  puts "      (mask0 & (1 << (c-$iFirst))) :"
+  puts "      (mask1 & (1 << (c-$iFirst-32)));"
+  puts "\}"
+}
+
+
+#-------------------------------------------------------------------------
 
 # Parameter $zName must be a path to the file UnicodeData.txt. This command
 # reads the file and returns a list of codepoints (integers). The list
@@ -393,7 +597,7 @@ proc tl_print_ioff_table {liOff} {
 
 }
 
-proc print_tolower {zFunc} {
+proc print_fold {zFunc} {
 
   set lRecord [tl_create_records]
 
@@ -407,7 +611,7 @@ proc print_tolower {zFunc} {
   puts "** The results are undefined if the value passed to this function"
   puts "** is less than zero."
   puts "*/"
-  puts "int ${zFunc}\(int c)\{"
+  puts "int ${zFunc}\(int c, int bRemoveDiacritic)\{"
 
   set liOff [tl_generate_ioff_table $lRecord]
   tl_print_table_header
@@ -451,6 +655,8 @@ proc print_tolower {zFunc} {
         assert( ret>0 );
       }
     }
+
+    if( bRemoveDiacritic ) ret = remove_diacritic(ret);
   }
   }
 
@@ -463,22 +669,38 @@ proc print_tolower {zFunc} {
   puts "\}"
 }
 
-proc print_tolower_test {zFunc} {
+proc print_fold_test {zFunc mappings} {
   global tl_lookup_table
 
-  puts "static int tolower_test(int *piCode)\{"
+  foreach m $mappings {
+    set c [lindex $m 1]
+    if {$c == ""} {
+      set extra([lindex $m 0]) 0
+    } else {
+      scan $c %c i
+      set extra([lindex $m 0]) $i
+    }
+  }
+
+  puts "static int fold_test(int *piCode)\{"
   puts -nonewline "  static int aLookup\[\] = \{"
   for {set i 0} {$i < 70000} {incr i} {
+
     set expected $i
     catch { set expected $tl_lookup_table($i) }
-    if {($i % 8)==0}  { puts "" ; puts -nonewline "    " }
-    puts -nonewline "$expected, "
+    set expected2 $expected
+    catch { set expected2 $extra($expected2) }
+
+    if {($i % 4)==0}  { puts "" ; puts -nonewline "    " }
+    puts -nonewline "$expected, $expected2, "
   }
   puts "  \};"
   puts "  int i;"
   puts "  for(i=0; i<sizeof(aLookup)/sizeof(aLookup\[0\]); i++)\{"
-  puts "    if( ${zFunc}\(i)!=aLookup\[i\] )\{"
-  puts "      *piCode = i;"
+  puts "    int iCode = (i/2);"
+  puts "    int bFlag = i & 0x0001;"
+  puts "    if( ${zFunc}\(iCode, bFlag)!=aLookup\[i\] )\{"
+  puts "      *piCode = iCode;"
   puts "      return 1;"
   puts "    \}"
   puts "  \}"
@@ -524,9 +746,9 @@ proc print_test_main {} {
   puts "  r1 = isalnum_test(&code);"
   puts "  if( r1 ) printf(\"isalnum(): Problem with code %d\\n\",code);"
   puts "  else printf(\"isalnum(): test passed\\n\");"
-  puts "  r2 = tolower_test(&code);"
-  puts "  if( r2 ) printf(\"tolower(): Problem with code %d\\n\",code);"
-  puts "  else printf(\"tolower(): test passed\\n\");"
+  puts "  r2 = fold_test(&code);"
+  puts "  if( r2 ) printf(\"fold(): Problem with code %d\\n\",code);"
+  puts "  else printf(\"fold(): test passed\\n\");"
   puts "  return (r1 || r2);"
   puts "\}"
 }
@@ -545,9 +767,10 @@ set unicodedata.txt [lindex $argv end]
 set casefolding.txt [lindex $argv end-1]
 set generate_test_code [expr {[llength $argv]==3}]
 
+print_fileheader
+
 # Print the isalnum() function to stdout.
 #
-print_fileheader
 set lRange [an_load_separator_ranges]
 print_isalnum sqlite3FtsUnicodeIsalnum $lRange
 
@@ -556,17 +779,28 @@ print_isalnum sqlite3FtsUnicodeIsalnum $lRange
 puts ""
 puts ""
 
-# Print the tolower() function to stdout.
-#
+# Load the fold data. This is used by the [rd_XXX] commands
+# as well as [print_fold].
 tl_load_casefolding_txt ${casefolding.txt}
-print_tolower sqlite3FtsUnicodeTolower
+
+set mappings [rd_load_unicodedata_text ${unicodedata.txt}]
+print_rd $mappings
+puts ""
+puts ""
+print_isdiacritic sqlite3FtsUnicodeIsdiacritic $mappings
+puts ""
+puts ""
+
+# Print the fold() function to stdout.
+#
+print_fold sqlite3FtsUnicodeFold
 
 # Print the test routines and main() function to stdout, if -test 
 # was specified.
 #
 if {$::generate_test_code} {
   print_test_isalnum sqlite3FtsUnicodeIsalnum $lRange
-  print_tolower_test sqlite3FtsUnicodeTolower 
+  print_fold_test sqlite3FtsUnicodeFold $mappings
   print_test_main 
 }
 

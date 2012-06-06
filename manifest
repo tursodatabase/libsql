@@ -1,5 +1,5 @@
-C Avoid\sresetting\sthe\sshared-cache\sschema\swhen\son\sof\sthe\sconnections\susing\nthe\sshared\scache\scloses.\s\sDelay\sresetting\sthe\sschema\suntil\sthe\slast\sconnection\ncloses.
-D 2012-06-06T19:01:13.928
+C Have\sthe\sFTS\sunicode61\sstrip\sout\sdiacritics\swhen\stokenizing\stext.\sThis\scan\sbe\sdisabled\sby\sspecifying\sthe\stokenizer\soption\s"remove_diacritics=0".
+D 2012-06-06T19:30:38.602
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4f37eb61be9d38643cdd839a74b8e3bad724cfcf
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -57,7 +57,7 @@ F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts3/fts3.c 41824d0db7d244ca335ce98162df1244863a05c4
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 7b163fa22e7a625c404c424f2779a4d7b14c14ad
+F ext/fts3/fts3Int.h 11c711068474ffe66548d21a2a8498b3dea25348
 F ext/fts3/fts3_aux.c 5205182bd8f372782597888156404766edf5781e
 F ext/fts3/fts3_expr.c dbc7ba4c3a6061adde0f38ed8e9b349568299551
 F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
@@ -70,15 +70,15 @@ F ext/fts3/fts3_test.c 348f7d08cae05285794e23dc4fe8b8fdf66e264a
 F ext/fts3/fts3_tokenizer.c 3da7254a9881f7e270ab28e2004e0d22b3212bce
 F ext/fts3/fts3_tokenizer.h 66dec98e365854b6cd2d54f1a96bb6d428fc5a68
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
-F ext/fts3/fts3_unicode.c 76b6f6fe6e86acd75b08272502fae74a13cef310
-F ext/fts3/fts3_unicode2.c 3ddf1728a396a03b5a73ff0f11ecfd2009de117d
+F ext/fts3/fts3_unicode.c a3c1b0780f764c75844bd13afd9fba139049a121
+F ext/fts3/fts3_unicode2.c 6381bcfd621b2800df134a560737eaa1ed07cb17
 F ext/fts3/fts3_write.c 6a6391d6b01114f885e24e1f66bbc11ffba0e9e2
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
 F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
-F ext/fts3/unicode/mkunicode.tcl 2029991cc2cd0bf71df12768578a29c852bf54d1
+F ext/fts3/unicode/mkunicode.tcl 7a9bc018e2962abb79563c5a39fe581fcbf2f675
 F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c eb9ae1d79046bd7871aa97ee6da51eb770134b5a
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
@@ -501,7 +501,7 @@ F test/fts4langid.test 24a6e41063b416bbdf371ff6b4476fa41c194aa7
 F test/fts4merge.test c424309743fdd203f8e56a1f1cd7872cd66cc0ee
 F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
 F test/fts4merge3.test aab02a09f50fe6baaddc2e159c3eabc116d45fc7
-F test/fts4unicode.test c812e9cf843e26ba633f58b36a2629f878af20fd
+F test/fts4unicode.test f394585139ff878f9af0c83791a5f612d45a5984
 F test/func.test 9809b7622d721904a8cc33c1ffb87f46d506ed01
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 001021e5b88bd02a3b365a5c5fd8f6f49d39744a
@@ -1005,7 +1005,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 61669c95859e187618fb2fb4249306a947ae8d26 c469850b2eb61a63150cc5fc7d2fe98f0b5abffb
-R 4e8ba0ec11cbdf49789a46888b404344
-U drh
-Z 7052addf7652de59fa1313dd54313af2
+P 635e3a762ddeb1f952f66a08c1d4d53e3f42c9eb
+R 24f67134e172119b7ccb50ae93a76cbd
+U dan
+Z 32c2f5c3d9b162b4ae41c62d929207f9

@@ -20,6 +20,13 @@ set ::testprefix fts4unicode
 proc do_unicode_token_test {tn input res} {
   set input [string map {' ''} $input]
   uplevel [list do_execsql_test $tn "
+    SELECT fts3_tokenizer_test('unicode61', 'remove_diacritics=0', '$input');
+  " [list [list {*}$res]]]
+}
+
+proc do_unicode_token_test2 {tn input res} {
+  set input [string map {' ''} $input]
+  uplevel [list do_execsql_test $tn "
     SELECT fts3_tokenizer_test('unicode61', '$input');
   " [list [list {*}$res]]]
 }
@@ -39,6 +46,14 @@ do_unicode_token_test 1.6 "The quick brown fox" {
 do_unicode_token_test 1.7 "The\u00bfquick\u224ebrown\u2263fox" {
   0 the The 1 quick quick 2 brown brown 3 fox fox
 }
+
+do_unicode_token_test2 1.8  {a B c D} {0 a a 1 b B 2 c c 3 d D}
+do_unicode_token_test2 1.9  {Ä Ö Ü} {0 a Ä 1 o Ö 2 u Ü}
+do_unicode_token_test2 1.10 {xÄx xÖx xÜx} {0 xax xÄx 1 xox xÖx 2 xux xÜx}
+
+# Check that diacritics are removed if remove_diacritics=1 is specified.
+# And that they do not break tokens.
+do_unicode_token_test2 1.10 "xx\u0301xx" "0 xxxx xx\u301xx"
 
 #-------------------------------------------------------------------------
 #

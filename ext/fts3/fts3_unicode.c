@@ -82,6 +82,7 @@ typedef struct unicode_cursor unicode_cursor;
 
 struct unicode_tokenizer {
   sqlite3_tokenizer base;
+  int bRemoveDiacritic;
 };
 
 struct unicode_cursor {
@@ -103,11 +104,30 @@ static int unicodeCreate(
   sqlite3_tokenizer **pp          /* OUT: New tokenizer handle */
 ){
   unicode_tokenizer *pNew;        /* New tokenizer object */
+  int i;
   pNew = (unicode_tokenizer *) sqlite3_malloc(sizeof(unicode_tokenizer));
   if( pNew==NULL ){
     return SQLITE_NOMEM;
   }
   memset(pNew, 0, sizeof(unicode_tokenizer));
+  pNew->bRemoveDiacritic = 1;
+
+  for(i=0; i<nArg; i++){
+    const char *z = azArg[i];
+    int n = strlen(z);
+
+    if( n==19 && memcmp("remove_diacritics=1", z, 19)==0 ){
+      pNew->bRemoveDiacritic = 1;
+    }
+    else if( n==19 && memcmp("remove_diacritics=0", z, 19)==0 ){
+      pNew->bRemoveDiacritic = 0;
+    }
+    else{
+      /* Unrecognized argument */
+      return SQLITE_ERROR;
+    }
+  }
+
   *pp = &pNew->base;
   return SQLITE_OK;
 }
@@ -197,6 +217,8 @@ static int unicodeNext(
 
   zOut = pCsr->zToken;
   do {
+    int iOut;
+
     /* Grow the output buffer if required. */
     if( (zOut-pCsr->zToken)>=(pCsr->nAlloc-4) ){
       char *zNew = sqlite3_realloc(pCsr->zToken, pCsr->nAlloc+64);
@@ -208,12 +230,19 @@ static int unicodeNext(
 
     /* Write the folded case of the last character read to the output */
     zEnd = z;
-    WRITE_UTF8(zOut, sqlite3FtsUnicodeTolower(iCode));
+    iOut = sqlite3FtsUnicodeFold(iCode, 
+        ((unicode_tokenizer *)pCsr->base.pTokenizer)->bRemoveDiacritic
+    );
+    if( iOut ){
+      WRITE_UTF8(zOut, iOut);
+    }
 
     /* If the cursor is not at EOF, read the next character */
     if( z>=zTerm ) break;
     READ_UTF8(z, zTerm, iCode);
-  }while( sqlite3FtsUnicodeIsalnum(iCode) );
+  }while( sqlite3FtsUnicodeIsalnum(iCode) 
+       || sqlite3FtsUnicodeIsdiacritic(iCode)
+  );
 
   /* Set the output variables and return. */
   pCsr->iOff = (z - pCsr->aInput);
