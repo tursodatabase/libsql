@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\schanges\sinto\sshared-schema\sbranch.\s\sAlso\sfix\sa\sC99-ism\s\nin\sthat\sbranch.
-D 2012-06-05T19:20:03.039
+C Make\ssure\sthe\sIndex.azColl\spointers\sdo\snot\spoint\sto\sconnection-specific\smemory.\nAlso,\sremove\san\sunnecessary\sreinitialization\sto\ssqlite3.pDfltColl.
+D 2012-06-06T10:56:22.535
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4f37eb61be9d38643cdd839a74b8e3bad724cfcf
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -126,7 +126,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c f0b71054103cb77eb5e782088c16998ec4f06624
 F src/btree.h 48a013f8964f12d944d90e4700df47b72dd6d923
 F src/btreeInt.h 38a639c0542c29fe8331a221c4aed0cb8686249e
-F src/build.c 178b24b35ada3688aa63d04cd6a2f972cb481aea
+F src/build.c 47c4506afe4bcb4ed1f4b5357582d1cb3402f8ad
 F src/callback.c 0cb4228cdcd827dcc5def98fb099edcc9142dbcd
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c a9c26822515f81ec21588cbb482ca6724be02e33
@@ -173,7 +173,7 @@ F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h 1b5dcc3dc8103d03e625b177023ee67764fa6b7c
 F src/pcache1.c b30b1c35908346ecc43d8d9d17f2ddf6817f8f60
 F src/pragma.c 28d7955a9e9a27d41cb462690228d39e3cec231c
-F src/prepare.c ef197444dac110ee57a5f49745368b447a8c6bd1
+F src/prepare.c 33291b83cca285718048d219c67b8298501fa3a5
 F src/printf.c 7ffb4ebb8b341f67e049695ba031da717b3d2699
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c b3c70ab28cac60de33684c9aa9e5138dcf71d6dd
@@ -1005,7 +1005,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P ea2cd55e098b21cd8997fd6c1978131d3ef2fab4 61669c95859e187618fb2fb4249306a947ae8d26
-R fc7cb647ad4d37ffcdbbdbe50e659acc
+P 42338e9e6979bb497823527f8f39e96f63623c59
+R 4e8ba0ec11cbdf49789a46888b404344
 U drh
-Z 0c46cbc562d7f9db30fca97ff8d69c33
+Z a16a791ba70d8a38d9ba353fda40937d

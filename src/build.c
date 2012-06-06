@@ -2765,7 +2765,7 @@ Index *sqlite3CreateIndex(
     }else{
       zColl = pTab->aCol[j].zColl;
       if( !zColl ){
-        zColl = db->pDfltColl->zName;
+        zColl = "BINARY";
       }
     }
     if( !db->init.busy && !sqlite3LocateCollSeq(pParse, zColl) ){
