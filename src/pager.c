@@ -4446,7 +4446,7 @@ int sqlite3PagerOpen(
     assert( nPathname>0 );
     pPager->zJournal =   (char*)(pPtr += nPathname + 1 + nUri);
     memcpy(pPager->zFilename, zPathname, nPathname);
-    memcpy(&pPager->zFilename[nPathname+1], zUri, nUri);
+    if( nUri ) memcpy(&pPager->zFilename[nPathname+1], zUri, nUri);
     memcpy(pPager->zJournal, zPathname, nPathname);
     memcpy(&pPager->zJournal[nPathname], "-journal\000", 8+1);
     sqlite3FileSuffix3(pPager->zFilename, pPager->zJournal);

@@ -1,5 +1,5 @@
-C Fix\san\s#if\sthat\sis\sapplicable\sto\sWinRT,\seven\sthought\sit\sis\scurrently\sdisabled\sby\sanother\s#if.
-D 2012-06-06T23:25:33.382
+C Fix\sharmless\sClang\swarnings.
+D 2012-06-06T23:59:36.067
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4f37eb61be9d38643cdd839a74b8e3bad724cfcf
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c d7c96b5d140f550f07345870112fae5d7ef99757
 F src/os_win.c e3d3d3e26b65a35d4293d753137a58510bd3299b
-F src/pager.c 9d4d6406512002d9a243ec27b9c01e93fda43e36
+F src/pager.c a1147e04bb1f64ee31bba8da2351f5e727f62179
 F src/pager.h 8b8c9bc065a3c66769df8724dfdf492ee1aab3c5
 F src/parse.y f29df90bd3adc64b33114ab1de9fb7768fcf2099
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -1003,9 +1003,9 @@ F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh fec58532668296d7c7dc48be9c87f75ccdb5814f
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
+F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 61360ca6ca3448477d5c662d3642beef6dd2079e
-R a8e059bd0c09878cce709aac9edcf4a3
-U mistachkin
-Z 60750c2a7d3cb45d526c9f1bc86a508c
+P baa8b7830779d5797e210a2e057181413412e152
+R f3c80d376d96bec331a1d34f3039877a
+U drh
+Z 3a2862b939ba347e67b7710215b7f1c2
