@@ -1300,6 +1300,7 @@ static sqlite3_module echoModuleV2 = {
 ** Decode a pointer to an sqlite3 object.
 */
 extern int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb);
+extern const char *sqlite3TestErrorName(int rc);
 
 static void moduleDestroy(void *p){
   sqlite3_free(p);
@@ -1314,6 +1315,7 @@ static int register_echo_module(
   int objc,              /* Number of arguments */
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
+  int rc;
   sqlite3 *db;
   EchoModule *pMod;
   if( objc!=2 ){
@@ -1325,14 +1327,20 @@ static int register_echo_module(
   /* Virtual table module "echo" */
   pMod = sqlite3_malloc(sizeof(EchoModule));
   pMod->interp = interp;
-  sqlite3_create_module_v2(db, "echo", &echoModule, (void*)pMod, moduleDestroy);
+  rc = sqlite3_create_module_v2(
+      db, "echo", &echoModule, (void*)pMod, moduleDestroy
+  );
 
   /* Virtual table module "echo_v2" */
-  pMod = sqlite3_malloc(sizeof(EchoModule));
-  pMod->interp = interp;
-  sqlite3_create_module_v2(db, "echo_v2", 
-      &echoModuleV2, (void*)pMod, moduleDestroy
-  );
+  if( rc==SQLITE_OK ){
+    pMod = sqlite3_malloc(sizeof(EchoModule));
+    pMod->interp = interp;
+    rc = sqlite3_create_module_v2(db, "echo_v2", 
+        &echoModuleV2, (void*)pMod, moduleDestroy
+    );
+  }
+
+  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_STATIC);
   return TCL_OK;
 }
 

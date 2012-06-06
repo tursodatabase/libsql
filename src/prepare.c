@@ -262,7 +262,6 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
       encoding = (u8)meta[BTREE_TEXT_ENCODING-1] & 3;
       if( encoding==0 ) encoding = SQLITE_UTF8;
       ENC(db) = encoding;
-      db->pDfltColl = sqlite3FindCollSeq(db, SQLITE_UTF8, "BINARY", 0);
     }else{
       /* If opening an attached database, the encoding much match ENC(db) */
       if( meta[BTREE_TEXT_ENCODING-1]!=ENC(db) ){
@@ -342,7 +341,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   }
   if( db->mallocFailed ){
     rc = SQLITE_NOMEM;
-    sqlite3ResetInternalSchema(db, -1);
+    sqlite3ResetAllSchemasOfConnection(db);
   }
   if( rc==SQLITE_OK || (db->flags&SQLITE_RecoveryMode)){
     /* Black magic: If the SQLITE_RecoveryMode flag is set, then consider
@@ -395,7 +394,7 @@ int sqlite3Init(sqlite3 *db, char **pzErrMsg){
     if( DbHasProperty(db, i, DB_SchemaLoaded) || i==1 ) continue;
     rc = sqlite3InitOne(db, i, pzErrMsg);
     if( rc ){
-      sqlite3ResetInternalSchema(db, i);
+      sqlite3ResetOneSchema(db, i);
     }
   }
 
@@ -408,7 +407,7 @@ int sqlite3Init(sqlite3 *db, char **pzErrMsg){
                     && !DbHasProperty(db, 1, DB_SchemaLoaded) ){
     rc = sqlite3InitOne(db, 1, pzErrMsg);
     if( rc ){
-      sqlite3ResetInternalSchema(db, 1);
+      sqlite3ResetOneSchema(db, 1);
     }
   }
 #endif
@@ -476,7 +475,7 @@ static void schemaIsValid(Parse *pParse){
     sqlite3BtreeGetMeta(pBt, BTREE_SCHEMA_VERSION, (u32 *)&cookie);
     assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
     if( cookie!=db->aDb[iDb].pSchema->schema_cookie ){
-      sqlite3ResetInternalSchema(db, iDb);
+      sqlite3ResetOneSchema(db, iDb);
       pParse->rc = SQLITE_SCHEMA;
     }
 

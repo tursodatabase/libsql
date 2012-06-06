@@ -22,8 +22,8 @@
 ** are invoked only from within xCreate and xConnect methods.
 */
 struct VtabCtx {
-  Table *pTab;
-  VTable *pVTable;
+  VTable *pVTable;    /* The virtual table being constructed */
+  Table *pTab;        /* The Table object to which the virtual table belongs */
 };
 
 /*
@@ -38,33 +38,35 @@ static int createModule(
   void *pAux,                     /* Context pointer for xCreate/xConnect */
   void (*xDestroy)(void *)        /* Module destructor function */
 ){
-  int rc, nName;
-  Module *pMod;
+  int rc = SQLITE_OK;
+  int nName;
 
   sqlite3_mutex_enter(db->mutex);
   nName = sqlite3Strlen30(zName);
-  pMod = (Module *)sqlite3DbMallocRaw(db, sizeof(Module) + nName + 1);
-  if( pMod ){
-    Module *pDel;
-    char *zCopy = (char *)(&pMod[1]);
-    memcpy(zCopy, zName, nName+1);
-    pMod->zName = zCopy;
-    pMod->pModule = pModule;
-    pMod->pAux = pAux;
-    pMod->xDestroy = xDestroy;
-    pDel = (Module *)sqlite3HashInsert(&db->aModule, zCopy, nName, (void*)pMod);
-    if( pDel && pDel->xDestroy ){
-      sqlite3ResetInternalSchema(db, -1);
-      pDel->xDestroy(pDel->pAux);
+  if( sqlite3HashFind(&db->aModule, zName, nName) ){
+    rc = SQLITE_MISUSE_BKPT;
+  }else{
+    Module *pMod;
+    pMod = (Module *)sqlite3DbMallocRaw(db, sizeof(Module) + nName + 1);
+    if( pMod ){
+      Module *pDel;
+      char *zCopy = (char *)(&pMod[1]);
+      memcpy(zCopy, zName, nName+1);
+      pMod->zName = zCopy;
+      pMod->pModule = pModule;
+      pMod->pAux = pAux;
+      pMod->xDestroy = xDestroy;
+      pDel = (Module *)sqlite3HashInsert(&db->aModule,zCopy,nName,(void*)pMod);
+      assert( pDel==0 || pDel==pMod );
+      if( pDel ){
+        db->mallocFailed = 1;
+        sqlite3DbFree(db, pDel);
+      }
     }
-    sqlite3DbFree(db, pDel);
-    if( pDel==pMod ){
-      db->mallocFailed = 1;
-    }
-  }else if( xDestroy ){
-    xDestroy(pAux);
   }
-  rc = sqlite3ApiExit(db, SQLITE_OK);
+  rc = sqlite3ApiExit(db, rc);
+  if( rc!=SQLITE_OK && xDestroy ) xDestroy(pAux);
+
   sqlite3_mutex_leave(db->mutex);
   return rc;
 }
@@ -178,6 +180,31 @@ static VTable *vtabDisconnectAll(sqlite3 *db, Table *p){
 
   assert( !db || pRet );
   return pRet;
+}
+
+/*
+** Table *p is a virtual table. This function removes the VTable object
+** for table *p associated with database connection db from the linked
+** list in p->pVTab. It also decrements the VTable ref count. This is
+** used when closing database connection db to free all of its VTable
+** objects without disturbing the rest of the Schema object (which may
+** be being used by other shared-cache connections).
+*/
+void sqlite3VtabDisconnect(sqlite3 *db, Table *p){
+  VTable **ppVTab;
+
+  assert( IsVirtual(p) );
+  assert( sqlite3BtreeHoldsAllMutexes(db) );
+  assert( sqlite3_mutex_held(db->mutex) );
+
+  for(ppVTab=&p->pVTable; *ppVTab; ppVTab=&(*ppVTab)->pNext){
+    if( (*ppVTab)->db==db  ){
+      VTable *pVTab = *ppVTab;
+      *ppVTab = pVTab->pNext;
+      sqlite3VtabUnlock(pVTab);
+      break;
+    }
+  }
 }
 
 

@@ -721,6 +721,30 @@ static void functionDestroy(sqlite3 *db, FuncDef *p){
 }
 
 /*
+** Disconnect all sqlite3_vtab objects that belong to database connection
+** db. This is called when db is being closed.
+*/
+static void disconnectAllVtab(sqlite3 *db){
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  int i;
+  sqlite3BtreeEnterAll(db);
+  for(i=0; i<db->nDb; i++){
+    Schema *pSchema = db->aDb[i].pSchema;
+    if( db->aDb[i].pSchema ){
+      HashElem *p;
+      for(p=sqliteHashFirst(&pSchema->tblHash); p; p=sqliteHashNext(p)){
+        Table *pTab = (Table *)sqliteHashData(p);
+        if( IsVirtual(pTab) ) sqlite3VtabDisconnect(db, pTab);
+      }
+    }
+  }
+  sqlite3BtreeLeaveAll(db);
+#else
+  UNUSED_PARAMETER(db);
+#endif
+}
+
+/*
 ** Close an existing SQLite database
 */
 int sqlite3_close(sqlite3 *db){
@@ -735,10 +759,10 @@ int sqlite3_close(sqlite3 *db){
   }
   sqlite3_mutex_enter(db->mutex);
 
-  /* Force xDestroy calls on all virtual tables */
-  sqlite3ResetInternalSchema(db, -1);
+  /* Force xDisconnect calls on all virtual tables */
+  disconnectAllVtab(db);
 
-  /* If a transaction is open, the ResetInternalSchema() call above
+  /* If a transaction is open, the disconnectAllVtab() call above
   ** will not have called the xDisconnect() method on any virtual
   ** tables in the db->aVTrans[] array. The following sqlite3VtabRollback()
   ** call will do so. We need to do this before the check for active
@@ -769,6 +793,7 @@ int sqlite3_close(sqlite3 *db){
   /* Free any outstanding Savepoint structures. */
   sqlite3CloseSavepoints(db);
 
+  /* Close all database connections */
   for(j=0; j<db->nDb; j++){
     struct Db *pDb = &db->aDb[j];
     if( pDb->pBt ){
@@ -779,15 +804,22 @@ int sqlite3_close(sqlite3 *db){
       }
     }
   }
-  sqlite3ResetInternalSchema(db, -1);
+  /* Clear the TEMP schema separately and last */
+  if( db->aDb[1].pSchema ){
+    sqlite3SchemaClear(db->aDb[1].pSchema);
+  }
+  sqlite3VtabUnlockList(db);
+
+  /* Free up the array of auxiliary databases */
+  sqlite3CollapseDatabaseArray(db);
+  assert( db->nDb<=2 );
+  assert( db->aDb==db->aDbStatic );
 
   /* Tell the code in notify.c that the connection no longer holds any
   ** locks and does not require any further unlock-notify callbacks.
   */
   sqlite3ConnectionClosed(db);
 
-  assert( db->nDb<=2 );
-  assert( db->aDb==db->aDbStatic );
   for(j=0; j<ArraySize(db->aFunc.a); j++){
     FuncDef *pNext, *pHash, *p;
     for(p=db->aFunc.a[j]; p; p=pHash){
@@ -874,7 +906,7 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
 
   if( db->flags&SQLITE_InternChanges ){
     sqlite3ExpirePreparedStatements(db);
-    sqlite3ResetInternalSchema(db, -1);
+    sqlite3ResetAllSchemasOfConnection(db);
   }
 
   /* Any deferred constraint violations have now been resolved. */

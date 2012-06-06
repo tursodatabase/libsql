@@ -649,13 +649,18 @@ do_test capi3-6.1 {
   db cache flush
   sqlite3_close $DB
 } {SQLITE_BUSY}
+
+# 6.2 and 6.3 used to return SQLITE_ERROR and SQLITE_SCHEMA, respectively.
+# But since attempting to close a connection no longer resets the internal
+# schema and expires all statements, this is no longer the case.
 do_test capi3-6.2 {
   sqlite3_step $STMT
-} {SQLITE_ERROR}
+} {SQLITE_ROW}
 #check_data $STMT capi3-6.3 {INTEGER} {1} {1.0} {1}
 do_test capi3-6.3 {
   sqlite3_finalize $STMT
-} {SQLITE_SCHEMA}
+} {SQLITE_OK}
+
 do_test capi3-6.4-misuse {
   db cache flush
   sqlite3_close $DB

@@ -118,7 +118,7 @@ static int invalidateTempStorage(Parse *pParse){
     }
     sqlite3BtreeClose(db->aDb[1].pBt);
     db->aDb[1].pBt = 0;
-    sqlite3ResetInternalSchema(db, -1);
+    sqlite3ResetAllSchemasOfConnection(db);
   }
   return SQLITE_OK;
 }
