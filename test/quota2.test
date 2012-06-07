@@ -12,6 +12,13 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+# If SQLITE_CURDIR is not defined, omit this file.
+ifcapable !curdir {
+  finish_test
+  return
+}
+
 source $testdir/malloc_common.tcl
 
 db close
@@ -164,11 +171,17 @@ do_test quota2-2.1 {
 do_test quota2-2.2 {
   set ::quota
 } {}
-do_test quota2-2.3 {
+do_test quota2-2.3.1 {
   sqlite3_quota_rewind $::h1
+  sqlite3_quota_file_available $::h1
+} {7000}
+do_test quota2-2.3.2 {
   set ::x [sqlite3_quota_fread $::h1 1001 7]
   string length $::x
 } {6006}
+do_test quota2-2.3.3 {
+  sqlite3_quota_file_available $::h1
+} {0}
 do_test quota2-2.4 {
   string match $::x [string range $::bigtext 0 6005]
 } {1}
@@ -180,21 +193,39 @@ do_test quota2-2.6 {
   sqlite3_quota_fseek $::h1 -100 SEEK_END
   sqlite3_quota_ftell $::h1
 } {6900}
+do_test quota2-2.6.1 {
+  sqlite3_quota_file_available $::h1
+} {100}
 do_test quota2-2.7 {
   sqlite3_quota_fseek $::h1 -100 SEEK_CUR
   sqlite3_quota_ftell $::h1
 } {6800}
+do_test quota2-2.7.1 {
+  sqlite3_quota_file_available $::h1
+} {200}
 do_test quota2-2.8 {
   sqlite3_quota_fseek $::h1 50 SEEK_CUR
   sqlite3_quota_ftell $::h1
 } {6850}
+do_test quota2-2.8.1 {
+  sqlite3_quota_file_available $::h1
+} {150}
 do_test quota2-2.9 {
   sqlite3_quota_fseek $::h1 50 SEEK_SET
   sqlite3_quota_ftell $::h1
 } {50}
+do_test quota2-2.9.1 {
+  sqlite3_quota_file_available $::h1
+} {6950}
 do_test quota2-2.10 {
   sqlite3_quota_rewind $::h1
   sqlite3_quota_ftell $::h1
+} {0}
+do_test quota2-2.10.1 {
+  sqlite3_quota_file_available $::h1
+} {7000}
+do_test quota2-2.10.2 {
+  sqlite3_quota_ferror $::h1
 } {0}
 do_test quota2-2.11 {
   standard_path [sqlite3_quota_dump]

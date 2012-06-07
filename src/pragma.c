@@ -118,7 +118,7 @@ static int invalidateTempStorage(Parse *pParse){
     }
     sqlite3BtreeClose(db->aDb[1].pBt);
     db->aDb[1].pBt = 0;
-    sqlite3ResetInternalSchema(db, -1);
+    sqlite3ResetAllSchemasOfConnection(db);
   }
   return SQLITE_OK;
 }
@@ -803,6 +803,50 @@ void sqlite3Pragma(
 #endif /* SQLITE_OMIT_WSD */
     }
   }else
+
+#if SQLITE_OS_WIN
+  /*
+  **   PRAGMA data_store_directory
+  **   PRAGMA data_store_directory = ""|"directory_name"
+  **
+  ** Return or set the local value of the data_store_directory flag.  Changing
+  ** the value sets a specific directory to be used for database files that
+  ** were specified with a relative pathname.  Setting to a null string reverts
+  ** to the default database directory, which for database files specified with
+  ** a relative path will probably be based on the current directory for the
+  ** process.  Database file specified with an absolute path are not impacted
+  ** by this setting, regardless of its value.
+  **
+  */
+  if( sqlite3StrICmp(zLeft, "data_store_directory")==0 ){
+    if( !zRight ){
+      if( sqlite3_data_directory ){
+        sqlite3VdbeSetNumCols(v, 1);
+        sqlite3VdbeSetColName(v, 0, COLNAME_NAME, 
+            "data_store_directory", SQLITE_STATIC);
+        sqlite3VdbeAddOp4(v, OP_String8, 0, 1, 0, sqlite3_data_directory, 0);
+        sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
+      }
+    }else{
+#ifndef SQLITE_OMIT_WSD
+      if( zRight[0] ){
+        int res;
+        rc = sqlite3OsAccess(db->pVfs, zRight, SQLITE_ACCESS_READWRITE, &res);
+        if( rc!=SQLITE_OK || res==0 ){
+          sqlite3ErrorMsg(pParse, "not a writable directory");
+          goto pragma_out;
+        }
+      }
+      sqlite3_free(sqlite3_data_directory);
+      if( zRight[0] ){
+        sqlite3_data_directory = sqlite3_mprintf("%s", zRight);
+      }else{
+        sqlite3_data_directory = 0;
+      }
+#endif /* SQLITE_OMIT_WSD */
+    }
+  }else
+#endif
 
 #if !defined(SQLITE_ENABLE_LOCKING_STYLE)
 #  if defined(__APPLE__)

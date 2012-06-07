@@ -40,6 +40,7 @@ do_not_use_codec
 # pragma-15.*: Test that the value set using the cache_size pragma is not
 #              reset when the schema is reloaded.
 # pragma-16.*: Test proxy locking
+# pragma-20.*: Test data_store_directory.
 #
 
 ifcapable !pragma {
@@ -1510,5 +1511,47 @@ do_test pragma-19.5 {
   file tail [lindex [execsql {PRAGMA filename}] 0]
 } {test.db}
 
+if {$tcl_platform(platform)=="windows"} {
+# Test data_store_directory pragma
+#
+db close
+sqlite3 db test.db
+file mkdir data_dir
+do_test pragma-20.1 {
+  catchsql {PRAGMA data_store_directory}
+} {0 {}}
+do_test pragma-20.2 {
+  set pwd [string map {' ''} [file nativename [get_pwd]]]
+  catchsql "PRAGMA data_store_directory='$pwd';"
+} {0 {}}
+do_test pragma-20.3 {
+  catchsql {PRAGMA data_store_directory}
+} [list 0 [list [file nativename [get_pwd]]]]
+do_test pragma-20.4 {
+  set pwd [string map {' ''} [file nativename \
+    [file join [get_pwd] data_dir]]]
+  catchsql "PRAGMA data_store_directory='$pwd';"
+} {0 {}}
+do_test pragma-20.5 {
+  sqlite3 db2 test2.db
+  catchsql "PRAGMA database_list;" db2
+} [list 0 [list 0 main [file nativename \
+    [file join [get_pwd] data_dir test2.db]]]]
+catch {db2 close}
+do_test pragma-20.6 {
+  sqlite3 db2 [file join [get_pwd] test2.db]
+  catchsql "PRAGMA database_list;" db2
+} [list 0 [list 0 main [file nativename \
+    [file join [get_pwd] test2.db]]]]
+catch {db2 close}
+do_test pragma-20.7 {
+  catchsql "PRAGMA data_store_directory='';"
+} {0 {}}
+do_test pragma-20.8 {
+  catchsql {PRAGMA data_store_directory}
+} {0 {}}
+
+forcedelete data_dir
+} ;# endif windows
 
 finish_test

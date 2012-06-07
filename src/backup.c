@@ -414,7 +414,7 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
       rc = sqlite3BtreeUpdateMeta(p->pDest,1,p->iDestSchema+1);
       if( rc==SQLITE_OK ){
         if( p->pDestDb ){
-          sqlite3ResetInternalSchema(p->pDestDb, -1);
+          sqlite3ResetAllSchemasOfConnection(p->pDestDb);
         }
         if( destMode==PAGER_JOURNALMODE_WAL ){
           rc = sqlite3BtreeSetVersion(p->pDest, 2);

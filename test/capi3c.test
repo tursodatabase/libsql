@@ -751,6 +751,7 @@ foreach {code english} $code2english {
 }
 
 # Test the error message when a "real" out of memory occurs.
+if { [permutation] != "nofaultsim" } {
 ifcapable memdebug {
   do_test capi3c-10-1 {
     sqlite3 db test.db
@@ -770,6 +771,7 @@ ifcapable memdebug {
   }
   db close
   sqlite3_memdebug_fail -1
+}
 }
 
 # The following tests - capi3c-11.* - test that a COMMIT or ROLLBACK

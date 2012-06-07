@@ -75,6 +75,15 @@ void (*sqlite3IoTrace)(const char*, ...) = 0;
 char *sqlite3_temp_directory = 0;
 
 /*
+** If the following global variable points to a string which is the
+** name of a directory, then that directory will be used to store
+** all database files specified with a relative pathname.
+**
+** See also the "PRAGMA data_store_directory" SQL command.
+*/
+char *sqlite3_data_directory = 0;
+
+/*
 ** Initialize SQLite.  
 **
 ** This routine must be called to initialize the memory allocation,
@@ -272,6 +281,18 @@ int sqlite3_shutdown(void){
   if( sqlite3GlobalConfig.isMallocInit ){
     sqlite3MallocEnd();
     sqlite3GlobalConfig.isMallocInit = 0;
+
+#ifndef SQLITE_OMIT_SHUTDOWN_DIRECTORIES
+    /* The heap subsystem has now been shutdown and these values are supposed
+    ** to be NULL or point to memory that was obtained from sqlite3_malloc(),
+    ** which would rely on that heap subsystem; therefore, make sure these
+    ** values cannot refer to heap memory that was just invalidated when the
+    ** heap subsystem was shutdown.  This is only done if the current call to
+    ** this function resulted in the heap subsystem actually being shutdown.
+    */
+    sqlite3_data_directory = 0;
+    sqlite3_temp_directory = 0;
+#endif
   }
   if( sqlite3GlobalConfig.isMutexInit ){
     sqlite3MutexEnd();
@@ -721,6 +742,30 @@ static void functionDestroy(sqlite3 *db, FuncDef *p){
 }
 
 /*
+** Disconnect all sqlite3_vtab objects that belong to database connection
+** db. This is called when db is being closed.
+*/
+static void disconnectAllVtab(sqlite3 *db){
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  int i;
+  sqlite3BtreeEnterAll(db);
+  for(i=0; i<db->nDb; i++){
+    Schema *pSchema = db->aDb[i].pSchema;
+    if( db->aDb[i].pSchema ){
+      HashElem *p;
+      for(p=sqliteHashFirst(&pSchema->tblHash); p; p=sqliteHashNext(p)){
+        Table *pTab = (Table *)sqliteHashData(p);
+        if( IsVirtual(pTab) ) sqlite3VtabDisconnect(db, pTab);
+      }
+    }
+  }
+  sqlite3BtreeLeaveAll(db);
+#else
+  UNUSED_PARAMETER(db);
+#endif
+}
+
+/*
 ** Close an existing SQLite database
 */
 int sqlite3_close(sqlite3 *db){
@@ -735,10 +780,10 @@ int sqlite3_close(sqlite3 *db){
   }
   sqlite3_mutex_enter(db->mutex);
 
-  /* Force xDestroy calls on all virtual tables */
-  sqlite3ResetInternalSchema(db, -1);
+  /* Force xDisconnect calls on all virtual tables */
+  disconnectAllVtab(db);
 
-  /* If a transaction is open, the ResetInternalSchema() call above
+  /* If a transaction is open, the disconnectAllVtab() call above
   ** will not have called the xDisconnect() method on any virtual
   ** tables in the db->aVTrans[] array. The following sqlite3VtabRollback()
   ** call will do so. We need to do this before the check for active
@@ -769,6 +814,7 @@ int sqlite3_close(sqlite3 *db){
   /* Free any outstanding Savepoint structures. */
   sqlite3CloseSavepoints(db);
 
+  /* Close all database connections */
   for(j=0; j<db->nDb; j++){
     struct Db *pDb = &db->aDb[j];
     if( pDb->pBt ){
@@ -779,15 +825,22 @@ int sqlite3_close(sqlite3 *db){
       }
     }
   }
-  sqlite3ResetInternalSchema(db, -1);
+  /* Clear the TEMP schema separately and last */
+  if( db->aDb[1].pSchema ){
+    sqlite3SchemaClear(db->aDb[1].pSchema);
+  }
+  sqlite3VtabUnlockList(db);
+
+  /* Free up the array of auxiliary databases */
+  sqlite3CollapseDatabaseArray(db);
+  assert( db->nDb<=2 );
+  assert( db->aDb==db->aDbStatic );
 
   /* Tell the code in notify.c that the connection no longer holds any
   ** locks and does not require any further unlock-notify callbacks.
   */
   sqlite3ConnectionClosed(db);
 
-  assert( db->nDb<=2 );
-  assert( db->aDb==db->aDbStatic );
   for(j=0; j<ArraySize(db->aFunc.a); j++){
     FuncDef *pNext, *pHash, *p;
     for(p=db->aFunc.a[j]; p; p=pHash){
@@ -874,7 +927,7 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
 
   if( db->flags&SQLITE_InternChanges ){
     sqlite3ExpirePreparedStatements(db);
-    sqlite3ResetInternalSchema(db, -1);
+    sqlite3ResetAllSchemasOfConnection(db);
   }
 
   /* Any deferred constraint violations have now been resolved. */
@@ -2033,9 +2086,7 @@ int sqlite3ParseUri(
             { "ro",  SQLITE_OPEN_READONLY },
             { "rw",  SQLITE_OPEN_READWRITE }, 
             { "rwc", SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE },
-            { "memory",
-                    SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE 
-                       | SQLITE_OPEN_MEMORY },
+            { "memory", SQLITE_OPEN_MEMORY },
             { 0, 0 }
           };
 

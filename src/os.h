@@ -65,13 +65,11 @@
 # endif
 #endif
 
-/*
-** Define the maximum size of a temporary filename
-*/
 #if SQLITE_OS_WIN
 # include <windows.h>
-# define SQLITE_TEMPNAME_SIZE (MAX_PATH+50)
-#elif SQLITE_OS_OS2
+#endif
+
+#if SQLITE_OS_OS2
 # if (__GNUC__ > 3 || __GNUC__ == 3 && __GNUC_MINOR__ >= 3) && defined(OS2_HIGH_MEMORY)
 #  include <os2safe.h> /* has to be included before os2.h for linking to work */
 # endif
@@ -84,9 +82,6 @@
 # define INCL_DOSSEMAPHORES
 # include <os2.h>
 # include <uconv.h>
-# define SQLITE_TEMPNAME_SIZE (CCHMAXPATHCOMP)
-#else
-# define SQLITE_TEMPNAME_SIZE 200
 #endif
 
 /*
@@ -118,6 +113,22 @@
 # define SQLITE_OS_WINCE 1
 #else
 # define SQLITE_OS_WINCE 0
+#endif
+
+/*
+** Determine if we are dealing with WindowsRT (Metro) as this has a different and
+** incompatible API from win32.
+*/
+#if !defined(SQLITE_OS_WINRT)
+# define SQLITE_OS_WINRT 0
+#endif
+
+/*
+** When compiled for WinCE or WinRT, there is no concept of the current
+** directory.
+ */
+#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT
+# define SQLITE_CURDIR 1
 #endif
 
 /* If the SET_FULLSYNC macro is not defined above, then make it

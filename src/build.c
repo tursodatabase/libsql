@@ -394,58 +394,15 @@ void sqlite3UnlinkAndDeleteIndex(sqlite3 *db, int iDb, const char *zIdxName){
 }
 
 /*
-** Erase all schema information from the in-memory hash tables of
-** a single database.  This routine is called to reclaim memory
-** before the database closes.  It is also called during a rollback
-** if there were schema changes during the transaction or if a
-** schema-cookie mismatch occurs.
+** Look through the list of open database files in db->aDb[] and if
+** any have been closed, remove them from the list.  Reallocate the
+** db->aDb[] structure to a smaller size, if possible.
 **
-** If iDb<0 then reset the internal schema tables for all database
-** files.  If iDb>=0 then reset the internal schema for only the
-** single file indicated.
+** Entry 0 (the "main" database) and entry 1 (the "temp" database)
+** are never candidates for being collapsed.
 */
-void sqlite3ResetInternalSchema(sqlite3 *db, int iDb){
+void sqlite3CollapseDatabaseArray(sqlite3 *db){
   int i, j;
-  assert( iDb<db->nDb );
-
-  if( iDb>=0 ){
-    /* Case 1:  Reset the single schema identified by iDb */
-    Db *pDb = &db->aDb[iDb];
-    assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
-    assert( pDb->pSchema!=0 );
-    sqlite3SchemaClear(pDb->pSchema);
-
-    /* If any database other than TEMP is reset, then also reset TEMP
-    ** since TEMP might be holding triggers that reference tables in the
-    ** other database.
-    */
-    if( iDb!=1 ){
-      pDb = &db->aDb[1];
-      assert( pDb->pSchema!=0 );
-      sqlite3SchemaClear(pDb->pSchema);
-    }
-    return;
-  }
-  /* Case 2 (from here to the end): Reset all schemas for all attached
-  ** databases. */
-  assert( iDb<0 );
-  sqlite3BtreeEnterAll(db);
-  for(i=0; i<db->nDb; i++){
-    Db *pDb = &db->aDb[i];
-    if( pDb->pSchema ){
-      sqlite3SchemaClear(pDb->pSchema);
-    }
-  }
-  db->flags &= ~SQLITE_InternChanges;
-  sqlite3VtabUnlockList(db);
-  sqlite3BtreeLeaveAll(db);
-
-  /* If one or more of the auxiliary database files has been closed,
-  ** then remove them from the auxiliary database list.  We take the
-  ** opportunity to do this here since we have just deleted all of the
-  ** schema hash tables and therefore do not have to make any changes
-  ** to any of those tables.
-  */
   for(i=j=2; i<db->nDb; i++){
     struct Db *pDb = &db->aDb[i];
     if( pDb->pBt==0 ){
@@ -465,6 +422,51 @@ void sqlite3ResetInternalSchema(sqlite3 *db, int iDb){
     sqlite3DbFree(db, db->aDb);
     db->aDb = db->aDbStatic;
   }
+}
+
+/*
+** Reset the schema for the database at index iDb.  Also reset the
+** TEMP schema.
+*/
+void sqlite3ResetOneSchema(sqlite3 *db, int iDb){
+  Db *pDb;
+  assert( iDb<db->nDb );
+
+  /* Case 1:  Reset the single schema identified by iDb */
+  pDb = &db->aDb[iDb];
+  assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
+  assert( pDb->pSchema!=0 );
+  sqlite3SchemaClear(pDb->pSchema);
+
+  /* If any database other than TEMP is reset, then also reset TEMP
+  ** since TEMP might be holding triggers that reference tables in the
+  ** other database.
+  */
+  if( iDb!=1 ){
+    pDb = &db->aDb[1];
+    assert( pDb->pSchema!=0 );
+    sqlite3SchemaClear(pDb->pSchema);
+  }
+  return;
+}
+
+/*
+** Erase all schema information from all attached databases (including
+** "main" and "temp") for a single database connection.
+*/
+void sqlite3ResetAllSchemasOfConnection(sqlite3 *db){
+  int i;
+  sqlite3BtreeEnterAll(db);
+  for(i=0; i<db->nDb; i++){
+    Db *pDb = &db->aDb[i];
+    if( pDb->pSchema ){
+      sqlite3SchemaClear(pDb->pSchema);
+    }
+  }
+  db->flags &= ~SQLITE_InternChanges;
+  sqlite3VtabUnlockList(db);
+  sqlite3BtreeLeaveAll(db);
+  sqlite3CollapseDatabaseArray(db);
 }
 
 /*
@@ -2763,7 +2765,7 @@ Index *sqlite3CreateIndex(
     }else{
       zColl = pTab->aCol[j].zColl;
       if( !zColl ){
-        zColl = db->pDfltColl->zName;
+        zColl = "BINARY";
       }
     }
     if( !db->init.busy && !sqlite3LocateCollSeq(pParse, zColl) ){

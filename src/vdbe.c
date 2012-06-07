@@ -2757,7 +2757,7 @@ case OP_Savepoint: {
         }
         if( p1==SAVEPOINT_ROLLBACK && (db->flags&SQLITE_InternChanges)!=0 ){
           sqlite3ExpirePreparedStatements(db);
-          sqlite3ResetInternalSchema(db, -1);
+          sqlite3ResetAllSchemasOfConnection(db);
           db->flags = (db->flags | SQLITE_InternChanges);
         }
       }
@@ -3061,7 +3061,7 @@ case OP_VerifyCookie: {
     ** a v-table method.
     */
     if( db->aDb[pOp->p1].pSchema->schema_cookie!=iMeta ){
-      sqlite3ResetInternalSchema(db, pOp->p1);
+      sqlite3ResetOneSchema(db, pOp->p1);
     }
 
     p->expired = 1;
@@ -4266,7 +4266,6 @@ case OP_RowData: {
   assert( pC!=0 );
   assert( pC->nullRow==0 );
   assert( pC->pseudoTableReg==0 );
-  assert( !pC->isSorter );
   assert( pC->pCursor!=0 );
   pCrsr = pC->pCursor;
   assert( sqlite3BtreeCursorIsValid(pCrsr) );
@@ -4916,7 +4915,7 @@ case OP_ParseSchema: {
       db->init.busy = 0;
     }
   }
-  if( rc ) sqlite3ResetInternalSchema(db, -1);
+  if( rc ) sqlite3ResetAllSchemasOfConnection(db);
   if( rc==SQLITE_NOMEM ){
     goto no_mem;
   }
@@ -6211,7 +6210,7 @@ vdbe_error_halt:
   if( rc==SQLITE_IOERR_NOMEM ) db->mallocFailed = 1;
   rc = SQLITE_ERROR;
   if( resetSchemaOnFault>0 ){
-    sqlite3ResetInternalSchema(db, resetSchemaOnFault-1);
+    sqlite3ResetOneSchema(db, resetSchemaOnFault-1);
   }
 
   /* This is the only way out of this procedure.  We have to

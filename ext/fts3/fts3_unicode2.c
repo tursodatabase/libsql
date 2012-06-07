@@ -15,7 +15,7 @@
 ** DO NOT EDIT THIS MACHINE GENERATED FILE.
 */
 
-#if !defined(SQLITE_DISABLE_FTS3_UNICODE)
+#if defined(SQLITE_ENABLE_FTS4_UNICODE61)
 #if defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4)
 
 #include <assert.h>
@@ -153,6 +153,74 @@ int sqlite3FtsUnicodeIsalnum(int c){
 
 
 /*
+** If the argument is a codepoint corresponding to a lowercase letter
+** in the ASCII range with a diacritic added, return the codepoint
+** of the ASCII letter only. For example, if passed 235 - "LATIN
+** SMALL LETTER E WITH DIAERESIS" - return 65 ("LATIN SMALL LETTER
+** E"). The resuls of passing a codepoint that corresponds to an
+** uppercase letter are undefined.
+*/
+static int remove_diacritic(int c){
+  unsigned short aDia[] = {
+        0,  1797,  1848,  1859,  1891,  1928,  1940,  1995, 
+     2024,  2040,  2060,  2110,  2168,  2206,  2264,  2286, 
+     2344,  2383,  2472,  2488,  2516,  2596,  2668,  2732, 
+     2782,  2842,  2894,  2954,  2984,  3000,  3028,  3336, 
+     3456,  3696,  3712,  3728,  3744,  3896,  3912,  3928, 
+     3968,  4008,  4040,  4106,  4138,  4170,  4202,  4234, 
+     4266,  4296,  4312,  4344,  4408,  4424,  4472,  4504, 
+     6148,  6198,  6264,  6280,  6360,  6429,  6505,  6529, 
+    61448, 61468, 61534, 61592, 61642, 61688, 61704, 61726, 
+    61784, 61800, 61836, 61880, 61914, 61948, 61998, 62122, 
+    62154, 62200, 62218, 62302, 62364, 62442, 62478, 62536, 
+    62554, 62584, 62604, 62640, 62648, 62656, 62664, 62730, 
+    62924, 63050, 63082, 63274, 63390, 
+  };
+  char aChar[] = {
+    '\0', 'a',  'c',  'e',  'i',  'n',  'o',  'u',  'y',  'y',  'a',  'c',  
+    'd',  'e',  'e',  'g',  'h',  'i',  'j',  'k',  'l',  'n',  'o',  'r',  
+    's',  't',  'u',  'u',  'w',  'y',  'z',  'o',  'u',  'a',  'i',  'o',  
+    'u',  'g',  'k',  'o',  'j',  'g',  'n',  'a',  'e',  'i',  'o',  'r',  
+    'u',  's',  't',  'h',  'a',  'e',  'o',  'y',  '\0', '\0', '\0', '\0', 
+    '\0', '\0', '\0', '\0', 'a',  'b',  'd',  'd',  'e',  'f',  'g',  'h',  
+    'h',  'i',  'k',  'l',  'l',  'm',  'n',  'p',  'r',  'r',  's',  't',  
+    'u',  'v',  'w',  'w',  'x',  'y',  'z',  'h',  't',  'w',  'y',  'a',  
+    'e',  'i',  'o',  'u',  'y',  
+  };
+
+  unsigned int key = (((unsigned int)c)<<3) | 0x00000007;
+  int iRes = 0;
+  int iHi = sizeof(aDia)/sizeof(aDia[0]) - 1;
+  int iLo = 0;
+  while( iHi>=iLo ){
+    int iTest = (iHi + iLo) / 2;
+    if( key >= aDia[iTest] ){
+      iRes = iTest;
+      iLo = iTest+1;
+    }else{
+      iHi = iTest-1;
+    }
+  }
+  assert( key>=aDia[iRes] );
+  return ((c > (aDia[iRes]>>3) + (aDia[iRes]&0x07)) ? c : (int)aChar[iRes]);
+};
+
+
+/*
+** Return true if the argument interpreted as a unicode codepoint
+** is a diacritical modifier character.
+*/
+int sqlite3FtsUnicodeIsdiacritic(int c){
+  unsigned int mask0 = 0x08029FDF;
+  unsigned int mask1 = 0x000361F8;
+  if( c<768 || c>817 ) return 0;
+  return (c < 768+32) ?
+      (mask0 & (1 << (c-768))) :
+      (mask1 & (1 << (c-768-32)));
+}
+
+
+/*
 ** Interpret the argument as a unicode codepoint. If the codepoint
 ** is an upper case character that has a lower case equivalent,
 ** return the codepoint corresponding to the lower case version.
@@ -161,7 +229,7 @@ int sqlite3FtsUnicodeIsalnum(int c){
 ** The results are undefined if the value passed to this function
 ** is less than zero.
 */
-int sqlite3FtsUnicodeTolower(int c){
+int sqlite3FtsUnicodeFold(int c, int bRemoveDiacritic){
   /* Each entry in the following array defines a rule for folding a range
   ** of codepoints to lower case. The rule applies to a range of nRange
   ** codepoints starting at codepoint iCode.
@@ -284,6 +352,8 @@ int sqlite3FtsUnicodeTolower(int c){
         assert( ret>0 );
       }
     }
+
+    if( bRemoveDiacritic ) ret = remove_diacritic(ret);
   }
   
   else if( c>=66560 && c<66600 ){
@@ -293,4 +363,4 @@ int sqlite3FtsUnicodeTolower(int c){
   return ret;
 }
 #endif /* defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4) */
-#endif /* !defined(SQLITE_DISABLE_FTS3_UNICODE) */
+#endif /* !defined(SQLITE_ENABLE_FTS4_UNICODE61) */
