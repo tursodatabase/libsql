@@ -209,10 +209,9 @@ int sqlite3Fts3InitTokenizer(
 /*
 ** Implementation of a special SQL scalar function for testing tokenizers 
 ** designed to be used in concert with the Tcl testing framework. This
-** function must be called with two arguments:
+** function must be called with two or more arguments:
 **
-**   SELECT <function-name>(<key-name>, <input-string>);
-**   SELECT <function-name>(<key-name>, <pointer>);
+**   SELECT <function-name>(<key-name>, ..., <input-string>);
 **
 ** where <function-name> is the name passed as the second argument
 ** to the sqlite3Fts3InitHashTable() function (e.g. 'fts3_tokenizer')
@@ -249,26 +248,26 @@ static void testFunc(
   const char *zInput;
   int nInput;
 
-  const char *zArg = 0;
+  const char *azArg[64];
 
   const char *zToken;
   int nToken;
   int iStart;
   int iEnd;
   int iPos;
+  int i;
 
   Tcl_Obj *pRet;
 
-  assert( argc==2 || argc==3 );
+  if( argc<2 ){
+    sqlite3_result_error(context, "insufficient arguments", -1);
+    return;
+  }
 
   nName = sqlite3_value_bytes(argv[0]);
   zName = (const char *)sqlite3_value_text(argv[0]);
   nInput = sqlite3_value_bytes(argv[argc-1]);
   zInput = (const char *)sqlite3_value_text(argv[argc-1]);
-
-  if( argc==3 ){
-    zArg = (const char *)sqlite3_value_text(argv[1]);
-  }
 
   pHash = (Fts3Hash *)sqlite3_user_data(context);
   p = (sqlite3_tokenizer_module *)sqlite3Fts3HashFind(pHash, zName, nName+1);
@@ -283,7 +282,11 @@ static void testFunc(
   pRet = Tcl_NewObj();
   Tcl_IncrRefCount(pRet);
 
-  if( SQLITE_OK!=p->xCreate(zArg ? 1 : 0, &zArg, &pTokenizer) ){
+  for(i=1; i<argc-1; i++){
+    azArg[i-1] = (const char *)sqlite3_value_text(argv[i]);
+  }
+
+  if( SQLITE_OK!=p->xCreate(argc-2, azArg, &pTokenizer) ){
     zErr = "error in xCreate()";
     goto finish;
   }
@@ -467,10 +470,7 @@ int sqlite3Fts3InitHashTable(
   }
 #ifdef SQLITE_TEST
   if( SQLITE_OK==rc ){
-    rc = sqlite3_create_function(db, zTest, 2, any, p, testFunc, 0, 0);
-  }
-  if( SQLITE_OK==rc ){
-    rc = sqlite3_create_function(db, zTest, 3, any, p, testFunc, 0, 0);
+    rc = sqlite3_create_function(db, zTest, -1, any, p, testFunc, 0, 0);
   }
   if( SQLITE_OK==rc ){
     rc = sqlite3_create_function(db, zTest2, 0, any, pdb, intTestFunc, 0, 0);

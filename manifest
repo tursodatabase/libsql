@@ -1,5 +1,5 @@
-C Fix\sa\smalloc/free\smismatch\sin\spager.c\s(sqlite3_free()\scalled\son\sa\sbuffer\sallocated\sby\ssqlite3DbMalloc()).
-D 2012-06-07T07:24:04.829
+C Add\sthe\s"tokenchars="\sand\s"separators="\soptions,\sfor\scustomizing\sthe\sset\sof\scharacters\sconsidered\sto\sbe\stoken\sseparators,\sto\sthe\sunicode61\stokenizer.
+D 2012-06-07T15:53:48.974
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4f37eb61be9d38643cdd839a74b8e3bad724cfcf
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -67,10 +67,10 @@ F ext/fts3/fts3_porter.c a465b49fcb8249a755792f87516eff182efa42b3
 F ext/fts3/fts3_snippet.c bf67520ae9d2352a65368ed101729ff701c08808
 F ext/fts3/fts3_term.c a521f75132f9a495bdca1bdd45949b3191c52763
 F ext/fts3/fts3_test.c 348f7d08cae05285794e23dc4fe8b8fdf66e264a
-F ext/fts3/fts3_tokenizer.c 3da7254a9881f7e270ab28e2004e0d22b3212bce
+F ext/fts3/fts3_tokenizer.c e94a8b901066031437ccfe4769fc76370257cede
 F ext/fts3/fts3_tokenizer.h 66dec98e365854b6cd2d54f1a96bb6d428fc5a68
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
-F ext/fts3/fts3_unicode.c b9660ab4d7231d92d1853f34dc1a035efb59aa6d
+F ext/fts3/fts3_unicode.c 49e36e6ba59f79e6bd6a8bfe434570fe48d20559
 F ext/fts3/fts3_unicode2.c 2965d217c37079f1dbbdbd2c58f843be285d73f2
 F ext/fts3/fts3_write.c 6a6391d6b01114f885e24e1f66bbc11ffba0e9e2
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
@@ -501,7 +501,7 @@ F test/fts4langid.test 24a6e41063b416bbdf371ff6b4476fa41c194aa7
 F test/fts4merge.test c424309743fdd203f8e56a1f1cd7872cd66cc0ee
 F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
 F test/fts4merge3.test aab02a09f50fe6baaddc2e159c3eabc116d45fc7
-F test/fts4unicode.test f394585139ff878f9af0c83791a5f612d45a5984
+F test/fts4unicode.test 247e6c64563b5f930aec0f89a5b01ed6b4b129cd
 F test/func.test 9809b7622d721904a8cc33c1ffb87f46d506ed01
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 001021e5b88bd02a3b365a5c5fd8f6f49d39744a
@@ -1005,7 +1005,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 208825cd830748a2ca456affc57be75bbe618e47
-R 615bebd2a4edb95abd2eb071a3babed8
+P 506008f000ba4af0b35da023b8c52f7a3f5033bd
+R 90fdd2c25413aca73a47ceb66fb14b8e
 U dan
-Z def87c7e203d2567dcd1543b1ddecb6d
+Z 483c809c7f7cc8104f2baffc94efe46a
