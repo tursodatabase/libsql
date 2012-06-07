@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\spreventing\sa\sshared\sin-memory\sdatabase\sfrom\sbeing\sattached\sto\sa\sread-only\sconnection.
-D 2012-06-07T17:16:04.548
+C Documentation\sand\sevidence\smark\supdates.\s\sRemove\sa\sredundant\sassert().
+D 2012-06-07T17:57:23.952
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4f37eb61be9d38643cdd839a74b8e3bad724cfcf
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -180,7 +180,7 @@ F src/resolve.c b3c70ab28cac60de33684c9aa9e5138dcf71d6dd
 F src/rowset.c f6a49f3e9579428024662f6e2931832511f831a1
 F src/select.c f6c4833c4d8e94714761d99013d74f381e084f1d
 F src/shell.c c16f72e34f611f060546709564c121a67cb2b31b
-F src/sqlite.h.in f801a04e1ebd1c7f958017661545422ada06b9ce
+F src/sqlite.h.in 39f041ce71a0d994e2487014fc9e8721595f5bc0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h 29b5348f0056d9b46d0bb94d4853db21568afde9
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -239,7 +239,7 @@ F src/update.c d3076782c887c10e882996550345da9c4c9f9dea
 F src/utf.c 890c67dcfcc7a74623c95baac7535aadfe265e84
 F src/util.c 4f6cfad661b2e3454b0cdd5b1b9d39a54942d0e3
 F src/vacuum.c 587a52bb8833d7ac15af8916f25437e2575028bd
-F src/vdbe.c 76ae5ef2a0227681c3808ce20fe2d8b194bac634
+F src/vdbe.c f5ad3c06dc3fe647097065829c013f3f1b9eadca
 F src/vdbe.h 18f581cac1f4339ec3299f3e0cc6e11aec654cdb
 F src/vdbeInt.h 6ff4180a05683566a8835d12f7ec504b22932c82
 F src/vdbeapi.c 3662b6a468a2a4605a15dfab313baa6dff81ad91
@@ -389,7 +389,7 @@ F test/e_resolve.test dcce9308fb13b934ce29591105d031d3e14fbba6
 F test/e_select.test f5d4b81205701deacfae42051ae200969c41d2c0
 F test/e_select2.test 5c3d3da19c7b3e90ae444579db2b70098599ab92
 F test/e_update.test 161d5dc6a3ed9dd08f5264d13e20735d7a89f00c
-F test/e_uri.test 32b8e0b99a0e215f25996516c64b90c525810d02
+F test/e_uri.test 9e190ca799d9190eec6e43f2aadf1d10c06a57a3
 F test/e_vacuum.test 331da289ae186656cf5f2eb27f577a89c0c221af
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 796c59832e2b9a52842f382ffda8f3e989db03ad
@@ -1005,7 +1005,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P e56fb462aa1f11bb23303ae0dc62815c21e26a52
-R c4a4e9b18038a632e311884087895d83
-U dan
-Z 4c745cb080fa9884975801ad4cff0525
+P 7caca1939ce70d5b14ae8ca8ff6afb62f8aff361
+R 7d7d8055ffab93415bb0679c51b1e783
+U drh
+Z 4e021c1abd989c10ef460664cb392a3f

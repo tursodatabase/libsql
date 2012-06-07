@@ -4453,11 +4453,12 @@ SQLITE_EXTERN char *sqlite3_temp_directory;
 ** ^(If this global variable is made to point to a string which is
 ** the name of a folder (a.k.a. directory), then all database files
 ** specified with a relative pathname and created or accessed by
-** SQLite when using a built-in [sqlite3_vfs | VFS] will be assumed
+** SQLite when using a built-in windows [sqlite3_vfs | VFS] will be assumed
 ** to be relative to that directory.)^ ^If this variable is a NULL
 ** pointer, then SQLite assumes that all database files specified
 ** with a relative pathname are relative to the current directory
-** for the process.
+** for the process.  Only the windows VFS makes use of this global
+** variable; it is ignored by the unix VFS.
 **
 ** Changing the value of this variable while a database connection is
 ** open can result in a corrupt database.

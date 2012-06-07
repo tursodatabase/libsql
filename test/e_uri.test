@@ -241,9 +241,9 @@ do_test 6.1 {
 } {no such vfs: nosuchvfs}
 
 
-# EVIDENCE-OF: R-60479-64270 The mode parameter may be set to either
-# "ro", "rw" or "rwc". Attempting to set it to any other value is an
-# error
+# EVIDENCE-OF: R-44013-13102 The mode parameter may be set to either
+# "ro", "rw", "rwc", or "memory". Attempting to set it to any other
+# value is an error
 #
 sqlite3 db test.db
 db close
@@ -308,10 +308,9 @@ foreach {tn uri read write create} {
   catch {db close}
 }
 
-# EVIDENCE-OF: R-56032-32287 If sqlite3_open_v2() is used, it is an
-# error to specify a value for the mode parameter that is less
-# restrictive than that specified by the flags passed as the third
-# parameter.
+# EVIDENCE-OF: R-20590-08726 It is an error to specify a value for the
+# mode parameter that is less restrictive than that specified by the
+# flags passed in the third parameter to sqlite3_open_v2().
 #
 forcedelete test.db
 sqlite3 db test.db
