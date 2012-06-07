@@ -2065,9 +2065,7 @@ int sqlite3ParseUri(
             { "ro",  SQLITE_OPEN_READONLY },
             { "rw",  SQLITE_OPEN_READWRITE }, 
             { "rwc", SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE },
-            { "memory",
-                    SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE 
-                       | SQLITE_OPEN_MEMORY },
+            { "memory", SQLITE_OPEN_MEMORY },
             { 0, 0 }
           };
 

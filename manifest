@@ -1,5 +1,5 @@
-C Add\sthe\s"tokenchars="\sand\s"separators="\soptions,\sfor\scustomizing\sthe\sset\sof\scharacters\sconsidered\sto\sbe\stoken\sseparators,\sto\sthe\sunicode61\stokenizer.
-D 2012-06-07T15:53:48.974
+C Fix\sa\sproblem\spreventing\sa\sshared\sin-memory\sdatabase\sfrom\sbeing\sattached\sto\sa\sread-only\sconnection.
+D 2012-06-07T17:16:04.548
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4f37eb61be9d38643cdd839a74b8e3bad724cfcf
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -145,7 +145,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
 F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
-F src/main.c 81e75dd5b37122369927b400b9e1322b73d725a7
+F src/main.c 07e05ba330b5994fa20d3b2e8c1c146133587d68
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c b3677415e69603d6a0e7c5410a1b3731d55beda1
@@ -689,7 +689,7 @@ F test/selectA.test 06d1032fa9009314c95394f2ca2e60d9f7ae8532
 F test/selectB.test 954e4e49cf1f896d61794e440669e03a27ceea25
 F test/selectC.test 871fb55d884d3de5943c4057ebd22c2459e71977
 F test/server1.test 46803bd3fe8b99b30dbc5ff38ffc756f5c13a118
-F test/shared.test 1acdf03fef43ea13604786424de8c4908170eece
+F test/shared.test 1da9dbad400cee0d93f252ccf76e1ae007a63746
 F test/shared2.test 03eb4a8d372e290107d34b6ce1809919a698e879
 F test/shared3.test ebf77f023f4bdaa8f74f65822b559e86ce5c6257
 F test/shared4.test 72d90821e8d2fc918a08f16d32880868d8ee8e9d
@@ -1005,7 +1005,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 506008f000ba4af0b35da023b8c52f7a3f5033bd
-R 90fdd2c25413aca73a47ceb66fb14b8e
+P e56fb462aa1f11bb23303ae0dc62815c21e26a52
+R c4a4e9b18038a632e311884087895d83
 U dan
-Z 483c809c7f7cc8104f2baffc94efe46a
+Z 4c745cb080fa9884975801ad4cff0525
