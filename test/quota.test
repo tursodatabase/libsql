@@ -12,6 +12,13 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+# If SQLITE_CURDIR is not defined, omit this file.
+ifcapable !curdir {
+  finish_test
+  return
+}
+
 source $testdir/malloc_common.tcl
 
 unset -nocomplain defaultVfs

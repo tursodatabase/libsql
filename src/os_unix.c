@@ -238,7 +238,7 @@ struct unixFile {
 #if OS_VXWORKS
   struct vxworksFileId *pId;          /* Unique file ID */
 #endif
-#ifndef NDEBUG
+#ifdef SQLITE_DEBUG
   /* The next group of variables are used to track whether or not the
   ** transaction counter in bytes 24-27 of database files are updated
   ** whenever any part of the database changes.  An assertion fault will
@@ -273,7 +273,6 @@ struct unixFile {
 #define UNIXFILE_DELETE      0x20     /* Delete on close */
 #define UNIXFILE_URI         0x40     /* Filename might have query parameters */
 #define UNIXFILE_NOLOCK      0x80     /* Do no file locking */
-#define UNIXFILE_CHOWN      0x100     /* File ownership was changed */
 
 /*
 ** Include code that is common to all os_*.c files
@@ -603,6 +602,15 @@ static int posixOpen(const char *zFile, int flags, int mode){
   return open(zFile, flags, mode);
 }
 
+/*
+** On some systems, calls to fchown() will trigger a message in a security
+** log if they come from non-root processes.  So avoid calling fchown() if
+** we are not running as root.
+*/
+static int posixFchown(int fd, uid_t uid, gid_t gid){
+  return geteuid() ? 0 : fchown(fd,uid,gid);
+}
+
 /* Forward reference */
 static int openDirectory(const char*, int*);
 
@@ -714,7 +722,7 @@ static struct unix_syscall {
   { "rmdir",        (sqlite3_syscall_ptr)rmdir,           0 },
 #define osRmdir     ((int(*)(const char*))aSyscall[19].pCurrent)
 
-  { "fchown",       (sqlite3_syscall_ptr)fchown,          0 },
+  { "fchown",       (sqlite3_syscall_ptr)posixFchown,     0 },
 #define osFchown    ((int(*)(int,uid_t,gid_t))aSyscall[20].pCurrent)
 
   { "umask",        (sqlite3_syscall_ptr)umask,           0 },
@@ -1889,7 +1897,7 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   }
   
 
-#ifndef NDEBUG
+#ifdef SQLITE_DEBUG
   /* Set up the transaction-counter change checking flags when
   ** transitioning from a SHARED to a RESERVED lock.  The change
   ** from SHARED to RESERVED marks the beginning of a normal
@@ -1968,7 +1976,7 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
   if( pFile->eFileLock>SHARED_LOCK ){
     assert( pInode->eFileLock==pFile->eFileLock );
 
-#ifndef NDEBUG
+#ifdef SQLITE_DEBUG
     /* When reducing a lock such that other processes can start
     ** reading the database file again, make sure that the
     ** transaction counter was updated if any part of the database
@@ -3242,7 +3250,7 @@ static int afpUnlock(sqlite3_file *id, int eFileLock) {
     SimulateIOError( h=(-1) )
     SimulateIOErrorBenign(0);
     
-#ifndef NDEBUG
+#ifdef SQLITE_DEBUG
     /* When reducing a lock such that other processes can start
     ** reading the database file again, make sure that the
     ** transaction counter was updated if any part of the database
@@ -3545,7 +3553,7 @@ static int unixWrite(
   );
 #endif
 
-#ifndef NDEBUG
+#ifdef SQLITE_DEBUG
   /* If we are doing a normal write to a database file (as opposed to
   ** doing a hot-journal rollback or a write to some file other than a
   ** normal database file) then record the fact that the database
@@ -3858,7 +3866,7 @@ static int unixTruncate(sqlite3_file *id, i64 nByte){
     storeLastErrno(pFile, errno);
     return unixLogError(SQLITE_IOERR_TRUNCATE, "ftruncate", pFile->zPath);
   }else{
-#ifndef NDEBUG
+#ifdef SQLITE_DEBUG
     /* If we are doing a normal write to a database file (as opposed to
     ** doing a hot-journal rollback or a write to some file other than a
     ** normal database file) and we truncate the file to zero length,
@@ -3968,7 +3976,10 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
 #include <copyfile.h>
 static int getDbPathForUnixFile(unixFile *pFile, char *dbPath);
 #endif
+
+#if SQLITE_ENABLE_LOCKING_STYLE
 static int isProxyLockingMode(unixFile *);
+#endif
 
 #if (SQLITE_ENABLE_APPLE_SPI>0) && defined(__APPLE__)
 static int unixTruncateDatabase(unixFile *, int);
@@ -4314,7 +4325,7 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       *(char**)pArg = sqlite3_mprintf("%s", pFile->pVfs->zName);
       return SQLITE_OK;
     }
-#ifndef NDEBUG
+#ifdef SQLITE_DEBUG
     /* The pager calls this method to signal that it has done
     ** a rollback and that the database is therefore unchanged and
     ** it hence it is OK for the transaction change counter to be
@@ -4575,7 +4586,9 @@ static void unixShmPurge(unixFile *pFd){
   }
 }
 
+#if defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE
 static const char *proxySharedMemoryBasePath(unixFile *);
+#endif
 
 /*
 ** Open a shared-memory area associated with open database file pDbFd.  
@@ -4718,8 +4731,6 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
           if( (!pShmNode->isReadonly) && euid==0 && (euid!=sStat.st_uid || getegid()!=sStat.st_gid) ){
             if( osFchown(pShmNode->h, sStat.st_uid, sStat.st_gid) ){
               rc = SQLITE_IOERR_SHMOPEN;
-            }else{
-              pDbFd->ctrlFlags |= UNIXFILE_CHOWN;
             }
           }
         }
@@ -6343,6 +6354,7 @@ static int unixOpen(
       rc = unixLogError(SQLITE_CANTOPEN_BKPT, "open", zName);
       goto open_finished;
     }
+
     /* if we're opening the wal or journal and running as root, set the
     ** journal uid/gid */
     if( !isReadonly && (flags & (SQLITE_OPEN_WAL|SQLITE_OPEN_MAIN_JOURNAL)) ){
@@ -6352,7 +6364,6 @@ static int unixOpen(
           rc = SQLITE_CANTOPEN_BKPT;
           goto open_finished;
         }
-        p->ctrlFlags |= UNIXFILE_CHOWN;
       }
     }
   }
@@ -7049,10 +7060,13 @@ static int proxyCreateLockPath(const char *lockPath){
   return 0;
 }
 
+#if SQLITE_ENABLE_LOCKING_STYLE
 static int isProxyLockingMode(unixFile *pFile) {
   return (pFile->pMethod == &proxyIoMethods) ? 1 : 0;
 }
+#endif
 
+#if defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE
 /*
 ** Return the shared memory base path based on the lock proxy file if the 
 ** lock proxy file is hosted on a shared memory compatible FS
@@ -7070,6 +7084,7 @@ static const char *proxySharedMemoryBasePath(unixFile *pFile) {
   }
   return NULL;
 }
+#endif
 
 /*
 ** Create a new VFS file descriptor (stored in memory obtained from

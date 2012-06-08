@@ -185,9 +185,24 @@ test_suite "fts3" -prefix "" -description {
   fts4aa.test fts4content.test
   fts3conf.test fts3prefix.test fts3fault2.test fts3corrupt.test
   fts3corrupt2.test fts3first.test fts4langid.test fts4merge.test
-  fts4check.test
+  fts4check.test fts4unicode.test
 }
 
+test_suite "nofaultsim" -prefix "" -description {
+  "Very" quick test suite. Runs in less than 5 minutes on a workstation. 
+  This test suite is the same as the "quick" tests, except that some files
+  that test malloc and IO errors are omitted.
+} -files [
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault*
+] -initialize {
+  catch {db close}
+  sqlite3_shutdown
+  install_malloc_faultsim 0
+  sqlite3_initialize
+  autoinstall_test_functions
+} -shutdown {
+  unset -nocomplain ::G(valgrind)
+}
 
 lappend ::testsuitelist xxx
 #-------------------------------------------------------------------------

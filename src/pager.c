@@ -4372,7 +4372,12 @@ int sqlite3PagerOpen(
 #ifndef SQLITE_OMIT_MEMORYDB
   if( flags & PAGER_MEMORY ){
     memDb = 1;
-    zFilename = 0;
+    if( zFilename && zFilename[0] ){
+      zPathname = sqlite3DbStrDup(0, zFilename);
+      if( zPathname==0  ) return SQLITE_NOMEM;
+      nPathname = sqlite3Strlen30(zPathname);
+      zFilename = 0;
+    }
   }
 #endif
 
@@ -4383,7 +4388,7 @@ int sqlite3PagerOpen(
   if( zFilename && zFilename[0] ){
     const char *z;
     nPathname = pVfs->mxPathname+1;
-    zPathname = sqlite3Malloc(nPathname*2);
+    zPathname = sqlite3DbMallocRaw(0, nPathname*2);
     if( zPathname==0 ){
       return SQLITE_NOMEM;
     }
@@ -4407,7 +4412,7 @@ int sqlite3PagerOpen(
       rc = SQLITE_CANTOPEN_BKPT;
     }
     if( rc!=SQLITE_OK ){
-      sqlite3_free(zPathname);
+      sqlite3DbFree(0, zPathname);
       return rc;
     }
   }
@@ -4437,7 +4442,7 @@ int sqlite3PagerOpen(
   );
   assert( EIGHT_BYTE_ALIGNMENT(SQLITE_INT_TO_PTR(journalFileSize)) );
   if( !pPtr ){
-    sqlite3_free(zPathname);
+    sqlite3DbFree(0, zPathname);
     return SQLITE_NOMEM;
   }
   pPager =              (Pager*)(pPtr);
@@ -4453,7 +4458,7 @@ int sqlite3PagerOpen(
     assert( nPathname>0 );
     pPager->zJournal =   (char*)(pPtr += nPathname + 1 + nUri);
     memcpy(pPager->zFilename, zPathname, nPathname);
-    memcpy(&pPager->zFilename[nPathname+1], zUri, nUri);
+    if( nUri ) memcpy(&pPager->zFilename[nPathname+1], zUri, nUri);
     memcpy(pPager->zJournal, zPathname, nPathname);
     memcpy(&pPager->zJournal[nPathname], "-journal\000", 8+1);
     sqlite3FileSuffix3(pPager->zFilename, pPager->zJournal);
@@ -4463,7 +4468,7 @@ int sqlite3PagerOpen(
     memcpy(&pPager->zWal[nPathname], "-wal\000", 4+1);
     sqlite3FileSuffix3(pPager->zFilename, pPager->zWal);
 #endif
-    sqlite3_free(zPathname);
+    sqlite3DbFree(0, zPathname);
   }
   pPager->pVfs = pVfs;
   pPager->vfsFlags = vfsFlags;
@@ -6322,9 +6327,16 @@ int sqlite3PagerSavepoint(Pager *pPager, int op, int iSavepoint){
 
 /*
 ** Return the full pathname of the database file.
+**
+** Except, if the pager is in-memory only, then return an empty string if
+** nullIfMemDb is true.  This routine is called with nullIfMemDb==1 when
+** used to report the filename to the user, for compatibility with legacy
+** behavior.  But when the Btree needs to know the filename for matching to
+** shared cache, it uses nullIfMemDb==0 so that in-memory databases can
+** participate in shared-cache.
 */
-const char *sqlite3PagerFilename(Pager *pPager){
-  return pPager->zFilename;
+const char *sqlite3PagerFilename(Pager *pPager, int nullIfMemDb){
+  return (nullIfMemDb && pPager->memDb) ? "" : pPager->zFilename;
 }
 
 /*

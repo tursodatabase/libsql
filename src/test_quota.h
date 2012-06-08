@@ -162,7 +162,7 @@ quota_FILE *sqlite3_quota_fopen(const char *zFilename, const char *zMode);
 ** the sum of sizes of all files from going over quota.
 */
 size_t sqlite3_quota_fread(void*, size_t, size_t, quota_FILE*);
-size_t sqlite3_quota_fwrite(void*, size_t, size_t, quota_FILE*);
+size_t sqlite3_quota_fwrite(const void*, size_t, size_t, quota_FILE*);
 
 /*
 ** Flush all written content held in memory buffers out to disk.
@@ -191,6 +191,13 @@ void sqlite3_quota_rewind(quota_FILE*);
 long sqlite3_quota_ftell(quota_FILE*);
 
 /*
+** Test the error indicator for the given file.
+**
+** Return non-zero if the error indicator is set.
+*/
+int sqlite3_quota_ferror(quota_FILE*);
+
+/*
 ** Truncate a file previously opened by sqlite3_quota_fopen().  Return
 ** zero on success and non-zero on any kind of failure.
 **
@@ -198,7 +205,7 @@ long sqlite3_quota_ftell(quota_FILE*);
 ** Any attempt to "truncate" a file to a larger size results in 
 ** undefined behavior.
 */
-int sqlite3_quota_ftrunate(quota_FILE*, sqlite3_int64 newSize);
+int sqlite3_quota_ftruncate(quota_FILE*, sqlite3_int64 newSize);
 
 /*
 ** Return the last modification time of the opened file, in seconds
@@ -231,6 +238,14 @@ sqlite3_int64 sqlite3_quota_file_size(quota_FILE*);
 ** cannot be determined for some reason.
 */
 sqlite3_int64 sqlite3_quota_file_truesize(quota_FILE*);
+
+/*
+** Determine the amount of data in bytes available for reading
+** in the given file.
+**
+** Return -1 if the amount cannot be determined for some reason.
+*/
+long sqlite3_quota_file_available(quota_FILE*);
 
 /*
 ** Delete a file from the disk, if that file is under quota management.

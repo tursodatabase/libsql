@@ -131,10 +131,10 @@ sqlite3_config_uri 1
 if {$tcl_platform(platform) == "unix"} {
   set flags [list SQLITE_OPEN_READWRITE SQLITE_OPEN_CREATE SQLITE_OPEN_URI]
   foreach {tn uri error} "
-    1    {file://localhost[get_pwd]/test.db}   {not an error}
-    2    {file://[get_pwd]/test.db}            {not an error}
-    3    {file://x[get_pwd]/test.db}           {invalid uri authority: x}
-    4    {file://invalid[get_pwd]/test.db}     {invalid uri authority: invalid}
+    1  {file://localhost[test_pwd /]test.db}   {not an error}
+    2  {file://[test_pwd /]test.db}            {not an error}
+    3  {file://x[test_pwd /]test.db}           {invalid uri authority: x}
+    4  {file://invalid[test_pwd /]test.db}     {invalid uri authority: invalid}
   " {
     do_test 2.$tn {
       set DB [sqlite3_open_v2 $uri $flags ""]
@@ -153,9 +153,9 @@ if {$tcl_platform(platform) == "unix"} {
 #   parameters passed through to the VFS xOpen() methods.
 #
 foreach {tn uri parse} "
-  1    {file:test.db#abc}      {[get_pwd]/test.db {}}
-  2    {file:test.db?a=b#abc}  {[get_pwd]/test.db {a b}}
-  3    {file:test.db?a=b#?c=d} {[get_pwd]/test.db {a b}}
+  1    {file:test.db#abc}      {[test_pwd / {}]test.db {}}
+  2    {file:test.db?a=b#abc}  {[test_pwd / {}]test.db {a b}}
+  3    {file:test.db?a=b#?c=d} {[test_pwd / {}]test.db {a b}}
 " {
   do_filepath_test 3.$tn { parse_uri $uri } $parse
 }
@@ -171,7 +171,7 @@ foreach {tn uri parse} "
 # path is interpreted as a relative path.
 #
 foreach {tn uri parse} "
-  1    {file:test.db}             {[get_pwd]/test.db {}}
+  1    {file:test.db}             {[test_pwd / {}]test.db {}}
   2    {file:/test.db}            {/test.db {}}
   3    {file:///test.db}          {/test.db {}}
   4    {file://localhost/test.db} {/test.db {}}
@@ -241,9 +241,9 @@ do_test 6.1 {
 } {no such vfs: nosuchvfs}
 
 
-# EVIDENCE-OF: R-60479-64270 The mode parameter may be set to either
-# "ro", "rw" or "rwc". Attempting to set it to any other value is an
-# error
+# EVIDENCE-OF: R-44013-13102 The mode parameter may be set to either
+# "ro", "rw", "rwc", or "memory". Attempting to set it to any other
+# value is an error
 #
 sqlite3 db test.db
 db close
@@ -254,6 +254,8 @@ foreach {tn uri error} "
   4    {file:test.db?mode=Ro}    {no such access mode: Ro}
   5    {file:test.db?mode=Rw}    {no such access mode: Rw}
   6    {file:test.db?mode=Rwc}   {no such access mode: Rwc}
+  7    {file:test.db?mode=memory} {not an error}
+  8    {file:test.db?mode=MEMORY} {no such access mode: MEMORY}
 " {
   do_test 7.$tn { open_uri_error $uri } $error
 }
@@ -306,10 +308,9 @@ foreach {tn uri read write create} {
   catch {db close}
 }
 
-# EVIDENCE-OF: R-56032-32287 If sqlite3_open_v2() is used, it is an
-# error to specify a value for the mode parameter that is less
-# restrictive than that specified by the flags passed as the third
-# parameter.
+# EVIDENCE-OF: R-20590-08726 It is an error to specify a value for the
+# mode parameter that is less restrictive than that specified by the
+# flags passed in the third parameter to sqlite3_open_v2().
 #
 forcedelete test.db
 sqlite3 db test.db

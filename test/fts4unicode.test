@@ -1,0 +1,330 @@
+# 2012 May 25
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+#
+# The tests in this file focus on testing the "unicode" FTS tokenizer.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+ifcapable !fts3_unicode { finish_test ; return }
+set ::testprefix fts4unicode
+
+proc do_unicode_token_test {tn input res} {
+  set input [string map {' ''} $input]
+  uplevel [list do_execsql_test $tn "
+    SELECT fts3_tokenizer_test('unicode61', 'remove_diacritics=0', '$input');
+  " [list [list {*}$res]]]
+}
+
+proc do_unicode_token_test2 {tn input res} {
+  set input [string map {' ''} $input]
+  uplevel [list do_execsql_test $tn "
+    SELECT fts3_tokenizer_test('unicode61', '$input');
+  " [list [list {*}$res]]]
+}
+
+proc do_unicode_token_test3 {tn args} {
+  set res   [lindex $args end]
+  set sql "SELECT fts3_tokenizer_test('unicode61'"
+  foreach a [lrange $args 0 end-1] {
+    append sql ", '"
+    append sql [string map {' ''} $a]
+    append sql "'"
+  }
+  append sql ")"
+  uplevel [list do_execsql_test $tn $sql [list [list {*}$res]]]
+}
+
+do_unicode_token_test 1.0 {a B c D} {0 a a 1 b B 2 c c 3 d D}
+do_unicode_token_test 1.1 {Ä Ö Ü} {0 ä Ä 1 ö Ö 2 ü Ü}
+do_unicode_token_test 1.2 {xÄx xÖx xÜx} {0 xäx xÄx 1 xöx xÖx 2 xüx xÜx}
+
+# 0x00DF is a small "sharp s". 0x1E9E is a capital sharp s.
+do_unicode_token_test 1.3 "\uDF" "0 \uDF \uDF"
+do_unicode_token_test 1.4 "\u1E9E" "0 ß \u1E9E"
+do_unicode_token_test 1.5 "\u1E9E" "0 \uDF \u1E9E"
+
+do_unicode_token_test 1.6 "The quick brown fox" {
+  0 the The 1 quick quick 2 brown brown 3 fox fox
+}
+do_unicode_token_test 1.7 "The\u00bfquick\u224ebrown\u2263fox" {
+  0 the The 1 quick quick 2 brown brown 3 fox fox
+}
+
+do_unicode_token_test2 1.8  {a B c D} {0 a a 1 b B 2 c c 3 d D}
+do_unicode_token_test2 1.9  {Ä Ö Ü} {0 a Ä 1 o Ö 2 u Ü}
+do_unicode_token_test2 1.10 {xÄx xÖx xÜx} {0 xax xÄx 1 xox xÖx 2 xux xÜx}
+
+# Check that diacritics are removed if remove_diacritics=1 is specified.
+# And that they do not break tokens.
+do_unicode_token_test2 1.10 "xx\u0301xx" "0 xxxx xx\u301xx"
+
+#-------------------------------------------------------------------------
+#
+set docs [list {
+  Enhance the INSERT syntax to allow multiple rows to be inserted via the
+  VALUES clause.
+} {
+  Enhance the CREATE VIRTUAL TABLE command to support the IF NOT EXISTS clause.
+} {
+  Added the sqlite3_stricmp() interface as a counterpart to sqlite3_strnicmp().
+} {
+  Added the sqlite3_db_readonly() interface.
+} {
+  Added the SQLITE_FCNTL_PRAGMA file control, giving VFS implementations the
+  ability to add new PRAGMA statements or to override built-in PRAGMAs.  
+} {
+  Queries of the form: "SELECT max(x), y FROM table" returns the value of y on
+  the same row that contains the maximum x value.
+} {
+  Added support for the FTS4 languageid option.
+} {
+  Documented support for the FTS4 content option. This feature has actually
+  been in the code since version 3.7.9 but is only now considered to be
+  officially supported.  
+} {
+  Pending statements no longer block ROLLBACK. Instead, the pending statement
+  will return SQLITE_ABORT upon next access after the ROLLBACK.  
+} {
+  Improvements to the handling of CSV inputs in the command-line shell
+} {
+  Fix a bug introduced in version 3.7.10 that might cause a LEFT JOIN to be
+  incorrectly converted into an INNER JOIN if the WHERE clause indexable terms
+  connected by OR.  
+}]
+
+set map(a) [list "\u00C4" "\u00E4"]  ; # LATIN LETTER A WITH DIAERESIS
+set map(e) [list "\u00CB" "\u00EB"]  ; # LATIN LETTER E WITH DIAERESIS
+set map(i) [list "\u00CF" "\u00EF"]  ; # LATIN LETTER I WITH DIAERESIS
+set map(o) [list "\u00D6" "\u00F6"]  ; # LATIN LETTER O WITH DIAERESIS
+set map(u) [list "\u00DC" "\u00FC"]  ; # LATIN LETTER U WITH DIAERESIS
+set map(y) [list "\u0178" "\u00FF"]  ; # LATIN LETTER Y WITH DIAERESIS
+set map(h) [list "\u1E26" "\u1E27"]  ; # LATIN LETTER H WITH DIAERESIS
+set map(w) [list "\u1E84" "\u1E85"]  ; # LATIN LETTER W WITH DIAERESIS
+set map(x) [list "\u1E8C" "\u1E8D"]  ; # LATIN LETTER X WITH DIAERESIS
+foreach k [array names map] {
+  lappend mappings [string toupper $k] [lindex $map($k) 0] 
+  lappend mappings $k [lindex $map($k) 1]
+}
+proc mapdoc {doc} { 
+  set doc [regsub -all {[[:space:]]+} $doc " "]
+  string map $::mappings [string trim $doc] 
+}
+
+do_test 2.0 {
+  execsql { CREATE VIRTUAL TABLE t2 USING fts4(tokenize=unicode61, x); }
+  foreach doc $docs {
+    set d [mapdoc $doc]
+    execsql { INSERT INTO t2 VALUES($d) }
+  }
+} {}
+
+do_test 2.1 {
+  set q [mapdoc "row"]
+  execsql { SELECT * FROM t2 WHERE t2 MATCH $q }
+} [list [mapdoc {
+  Queries of the form: "SELECT max(x), y FROM table" returns the value of y on
+  the same row that contains the maximum x value.
+}]]
+
+foreach {tn query snippet} {
+  2 "row" {
+     ...returns the value of y on the same [row] that contains 
+     the maximum x value.
+  }
+  3 "ROW" {
+     ...returns the value of y on the same [row] that contains 
+     the maximum x value.
+  }
+  4 "rollback" {
+     ...[ROLLBACK]. Instead, the pending statement
+     will return SQLITE_ABORT upon next access after the [ROLLBACK].
+  }
+  5 "rOllback" {
+     ...[ROLLBACK]. Instead, the pending statement
+     will return SQLITE_ABORT upon next access after the [ROLLBACK].
+  }
+  6 "lang*" {
+     Added support for the FTS4 [languageid] option.
+  }
+} {
+  do_test 2.$tn {
+    set q [mapdoc $query]
+    execsql { SELECT snippet(t2, '[', ']', '...') FROM t2 WHERE t2 MATCH $q }
+  } [list [mapdoc $snippet]]
+}
+
+#-------------------------------------------------------------------------
+# Make sure the unicode61 tokenizer does not crash if it is passed a 
+# NULL pointer.
+reset_db
+do_execsql_test 3.1 {
+  CREATE VIRTUAL TABLE t1 USING fts4(tokenize=unicode61, x, y);
+  INSERT INTO t1 VALUES(NULL, 'a b c');
+}
+
+do_execsql_test 3.2 {
+  SELECT snippet(t1, '[', ']') FROM t1 WHERE t1 MATCH 'b'
+} {{a [b] c}}
+
+do_execsql_test 3.3 {
+  BEGIN;
+  DELETE FROM t1;
+  INSERT INTO t1 VALUES('b b b b b b b b b b b', 'b b b b b b b b b b b b b');
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 SELECT * FROM t1;
+  INSERT INTO t1 VALUES('a b c', NULL);
+  INSERT INTO t1 VALUES('a x c', NULL);
+  COMMIT;
+}
+
+do_execsql_test 3.4 {
+  SELECT * FROM t1 WHERE t1 MATCH 'a b';
+} {{a b c} {}}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+
+do_test 4.1 {
+  set a "abc\uFFFEdef"
+  set b "abc\uD800def"
+  set c "\uFFFEdef"
+  set d "\uD800def"
+  execsql {
+    CREATE VIRTUAL TABLE t1 USING fts4(tokenize=unicode61, x);
+    INSERT INTO t1 VALUES($a);
+    INSERT INTO t1 VALUES($b);
+    INSERT INTO t1 VALUES($c);
+    INSERT INTO t1 VALUES($d);
+  }
+} {}
+
+do_test 4.2 {
+  set a [binary format c* {0x61 0xF7 0xBF 0xBF 0xBF 0x62}]
+  set b [binary format c* {0x61 0xF7 0xBF 0xBF 0xBF 0xBF 0x62}]
+  set c [binary format c* {0x61 0xF7 0xBF 0xBF 0xBF 0xBF 0xBF 0x62}]
+  set d [binary format c* {0x61 0xF7 0xBF 0xBF 0xBF 0xBF 0xBF 0xBF 0x62}]
+  execsql {
+    INSERT INTO t1 VALUES($a);
+    INSERT INTO t1 VALUES($b);
+    INSERT INTO t1 VALUES($c);
+    INSERT INTO t1 VALUES($d);
+  }
+} {}
+
+do_test 4.3 {
+  set a [binary format c* {0xF7 0xBF 0xBF 0xBF}]
+  set b [binary format c* {0xF7 0xBF 0xBF 0xBF 0xBF}]
+  set c [binary format c* {0xF7 0xBF 0xBF 0xBF 0xBF 0xBF}]
+  set d [binary format c* {0xF7 0xBF 0xBF 0xBF 0xBF 0xBF 0xBF}]
+  execsql {
+    INSERT INTO t1 VALUES($a);
+    INSERT INTO t1 VALUES($b);
+    INSERT INTO t1 VALUES($c);
+    INSERT INTO t1 VALUES($d);
+  }
+} {}
+
+#-------------------------------------------------------------------------
+
+do_unicode_token_test3 5.1 {tokenchars=} {
+  sqlite3_reset sqlite3_column_int
+} {
+  0 sqlite3 sqlite3 
+  1 reset reset 
+  2 sqlite3 sqlite3 
+  3 column column 
+  4 int int
+}
+
+do_unicode_token_test3 5.2 {tokenchars=_} {
+  sqlite3_reset sqlite3_column_int
+} {
+  0 sqlite3_reset sqlite3_reset 
+  1 sqlite3_column_int sqlite3_column_int
+}
+
+do_unicode_token_test3 5.3 {separators=xyz} {
+  Laotianxhorseyrunszfast
+} {
+  0 laotian Laotian
+  1 horse horse
+  2 runs runs
+  3 fast fast
+}
+
+do_unicode_token_test3 5.4 {tokenchars=xyz} {
+  Laotianxhorseyrunszfast
+} {
+  0 laotianxhorseyrunszfast Laotianxhorseyrunszfast
+}
+
+do_unicode_token_test3 5.5 {tokenchars=_} {separators=zyx} {
+  sqlite3_resetxsqlite3_column_intyhonda_phantom
+} {
+  0 sqlite3_reset sqlite3_reset 
+  1 sqlite3_column_int sqlite3_column_int
+  2 honda_phantom honda_phantom
+}
+
+do_unicode_token_test3 5.6 "separators=\u05D1" "abc\u05D1def" {
+  0 abc abc 1 def def
+}
+
+do_unicode_token_test3 5.7                             \
+  "tokenchars=\u2444\u2445"                            \
+  "separators=\u05D0\u05D1\u05D2"                      \
+  "\u2444fre\u2445sh\u05D0water\u05D2fish.\u2445timer" \
+  [list                                                \
+    0 \u2444fre\u2445sh \u2444fre\u2445sh              \
+    1 water water                                      \
+    2 fish fish                                        \
+    3 \u2445timer \u2445timer                          \
+  ]
+
+# Check that it is not possible to add a standalone diacritic codepoint 
+# to either separators or tokenchars.
+do_unicode_token_test3 5.8 "separators=\u0301" \
+  "hello\u0301world \u0301helloworld"          \
+  "0 helloworld hello\u0301world 1 helloworld helloworld"
+
+do_unicode_token_test3 5.9 "tokenchars=\u0301" \
+  "hello\u0301world \u0301helloworld"          \
+  "0 helloworld hello\u0301world 1 helloworld helloworld"
+
+do_unicode_token_test3 5.10 "separators=\u0301" \
+  "remove_diacritics=0"                        \
+  "hello\u0301world \u0301helloworld"          \
+  "0 hello\u0301world hello\u0301world 1 helloworld helloworld"
+
+do_unicode_token_test3 5.11 "tokenchars=\u0301" \
+  "remove_diacritics=0"                         \
+  "hello\u0301world \u0301helloworld"           \
+  "0 hello\u0301world hello\u0301world 1 helloworld helloworld"
+
+
+finish_test
+

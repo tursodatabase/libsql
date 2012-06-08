@@ -56,7 +56,7 @@ struct sqlite3_mutex {
 ** this out as well.
 */
 #if 0
-#if SQLITE_OS_WINCE
+#if SQLITE_OS_WINCE || SQLITE_OS_WINRT
 # define mutexIsNT()  (1)
 #else
   static int mutexIsNT(void){
@@ -109,18 +109,24 @@ static int winMutex_isInit = 0;
 */
 static long winMutex_lock = 0;
 
+extern void sqlite3_win32_sleep(DWORD milliseconds); /* os_win.c */
+
 static int winMutexInit(void){ 
   /* The first to increment to 1 does actual initialization */
   if( InterlockedCompareExchange(&winMutex_lock, 1, 0)==0 ){
     int i;
     for(i=0; i<ArraySize(winMutex_staticMutexes); i++){
+#if SQLITE_OS_WINRT
+      InitializeCriticalSectionEx(&winMutex_staticMutexes[i].mutex, 0, 0);
+#else
       InitializeCriticalSection(&winMutex_staticMutexes[i].mutex);
+#endif
     }
     winMutex_isInit = 1;
   }else{
     /* Someone else is in the process of initing the static mutexes */
     while( !winMutex_isInit ){
-      Sleep(1);
+      sqlite3_win32_sleep(1);
     }
   }
   return SQLITE_OK; 
@@ -194,7 +200,11 @@ static sqlite3_mutex *winMutexAlloc(int iType){
 #ifdef SQLITE_DEBUG
         p->id = iType;
 #endif
+#if SQLITE_OS_WINRT
+        InitializeCriticalSectionEx(&p->mutex, 0, 0);
+#else
         InitializeCriticalSection(&p->mutex);
+#endif
       }
       break;
     }

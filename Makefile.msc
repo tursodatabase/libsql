@@ -15,6 +15,12 @@ USE_AMALGAMATION = 1
 #
 USE_ICU = 0
 
+# Set this non-0 to compile binaries suitable for the WinRT environment.
+# This setting does not apply to any binaries that require Tcl to operate
+# properly (i.e. the text fixture, etc).
+#
+FOR_WINRT = 0
+
 # Set this to non-0 to create and use PDBs.
 #
 SYMBOLS = 1
@@ -32,16 +38,10 @@ SYMBOLS = 1
 #
 DEBUG = 0
 
-# Version numbers and release number for the SQLite being compiled.
-#
-VERSION = 3.7
-VERSION_NUMBER = 3007009
-RELEASE = 3.7.9
-
 # C Compiler and options for use in building executables that
 # will run on the platform that is doing the build.
 #
-BCC = cl.exe
+BCC = cl.exe -W3
 
 # C Compile and options for use in building executables that
 # will run on the target platform.  (BCC and TCC are usually the
@@ -49,7 +49,18 @@ BCC = cl.exe
 #
 TCC = cl.exe -W3 -DSQLITE_OS_WIN=1 -I. -I$(TOP)\src -fp:precise
 
-# The mksqlite3c.tcl and mksqlite3h.tcl scripts will pull in 
+# When compiling the library for use in the WinRT environment,
+# the following compile-time options must be used as well to
+# disable use of Win32 APIs that are not available and to enable
+# use of Win32 APIs that are specific to Windows 8 and/or WinRT.
+# Also, we need to dynamically link to the MSVC runtime when
+# compiling for WinRT.
+#
+!IF $(FOR_WINRT)!=0
+TCC = $(TCC) -DSQLITE_OS_WINRT=1 -MD
+!ENDIF
+
+# The mksqlite3c.tcl and mksqlite3h.tcl scripts will pull in
 # any extension header files by default.  For non-amalgamation
 # builds, we need to make sure the compiler can find these.
 #
@@ -64,6 +75,7 @@ TCC = $(TCC) -I$(TOP)\ext\rtree
 #
 !IF $(DEBUG)==0
 TCC = $(TCC) -DNDEBUG
+BCC = $(BCC) -DNDEBUG
 !ENDIF
 
 !IF $(DEBUG)>1
@@ -82,6 +94,7 @@ TCC = $(TCC) -DSQLITE_ENABLE_IOTRACE
 # Prevent warnings about "insecure" runtime library functions being used.
 #
 TCC = $(TCC) -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS
+BCC = $(BCC) -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS
 
 #
 # Use native Win32 heap instead of malloc/free?
@@ -194,12 +207,15 @@ TCC = $(TCC) $(OPTS)
 # If debugging is enabled, disable all optimizations and enable PDBs.
 !IF $(DEBUG)>0
 TCC = $(TCC) -Od -D_DEBUG
+BCC = $(BCC) -Od -D_DEBUG
 !ELSE
 TCC = $(TCC) -O2
+BCC = $(BCC) -O2
 !ENDIF
 
 !IF $(DEBUG)>0 || $(SYMBOLS)!=0
 TCC = $(TCC) -Zi
+BCC = $(BCC) -Zi
 !ENDIF
 
 # If ICU support is enabled, add the compiler options for it.
@@ -223,9 +239,18 @@ LTLINKOPTS = /MACHINE:$(PLATFORM)
 LTLIBOPTS = /MACHINE:$(PLATFORM)
 !ENDIF
 
-# If debugging is enabled, enable PDBs.
+# When compiling for use in the WinRT environment, the following
+# linker option must be used to mark the executable as runnable
+# only in the context of an application container.
+#
+!IF $(FOR_WINRT)!=0
+LTLINKOPTS = $(LTLINKOPTS) /APPCONTAINER
+!ENDIF
+
+# If either debugging or symbols are enabled, enable PDBs.
 !IF $(DEBUG)>0 || $(SYMBOLS)!=0
 LTLINKOPTS = $(LTLINKOPTS) /DEBUG
+BCC = $(BCC) /DEBUG
 !ENDIF
 
 # Start with the Tcl related linker options.
@@ -250,8 +275,9 @@ LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
          backup.lo bitvec.lo btmutex.lo btree.lo build.lo \
          callback.lo complete.lo ctime.lo date.lo delete.lo \
          expr.lo fault.lo fkey.lo \
-         fts3.lo fts3_aux.lo fts3_expr.lo fts3_hash.lo fts3_icu.lo fts3_porter.lo \
-         fts3_snippet.lo fts3_tokenizer.lo fts3_tokenizer1.lo fts3_write.lo \
+         fts3.lo fts3_aux.lo fts3_expr.lo fts3_hash.lo fts3_icu.lo \
+         fts3_porter.lo fts3_snippet.lo fts3_tokenizer.lo fts3_tokenizer1.lo \
+         fts3_unicode.lo fts3_unicode2.lo fts3_write.lo \
          func.lo global.lo hash.lo \
          icu.lo insert.lo journal.lo legacy.lo loadext.lo \
          main.lo malloc.lo mem0.lo mem1.lo mem2.lo mem3.lo mem5.lo \
@@ -405,6 +431,8 @@ SRC = $(SRC) \
   $(TOP)\ext\fts3\fts3_tokenizer.h \
   $(TOP)\ext\fts3\fts3_tokenizer.c \
   $(TOP)\ext\fts3\fts3_tokenizer1.c \
+  $(TOP)\ext\fts3\fts3_unicode.c \
+  $(TOP)\ext\fts3\fts3_unicode2.c \
   $(TOP)\ext\fts3\fts3_write.c
 SRC = $(SRC) \
   $(TOP)\ext\icu\sqliteicu.h \
@@ -512,6 +540,8 @@ TESTSRC2 = \
   $(TOP)\ext\fts3\fts3_aux.c \
   $(TOP)\ext\fts3\fts3_expr.c \
   $(TOP)\ext\fts3\fts3_tokenizer.c \
+  $(TOP)\ext\fts3\fts3_unicode.c \
+  $(TOP)\ext\fts3\fts3_unicode2.c \
   $(TOP)\ext\fts3\fts3_write.c \
   $(TOP)\ext\async\sqlite3async.c
 
@@ -925,6 +955,12 @@ fts3_tokenizer.lo:	$(TOP)\ext\fts3\fts3_tokenizer.c $(HDR) $(EXTHDR)
 
 fts3_tokenizer1.lo:	$(TOP)\ext\fts3\fts3_tokenizer1.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)\ext\fts3\fts3_tokenizer1.c
+
+fts3_unicode.lo:	$(TOP)\ext\fts3\fts3_unicode.c $(HDR) $(EXTHDR)
+	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)\ext\fts3\fts3_unicode.c
+
+fts3_unicode2.lo:	$(TOP)\ext\fts3\fts3_unicode2.c $(HDR) $(EXTHDR)
+	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)\ext\fts3\fts3_unicode2.c
 
 fts3_write.lo:	$(TOP)\ext\fts3\fts3_write.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)\ext\fts3\fts3_write.c

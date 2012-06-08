@@ -48,6 +48,9 @@ static const char * const azCompileOpt[] = {
 #ifdef SQLITE_COVERAGE_TEST
   "COVERAGE_TEST",
 #endif
+#ifdef SQLITE_CURDIR
+  "CURDIR",
+#endif
 #ifdef SQLITE_DEBUG
   "DEBUG",
 #endif

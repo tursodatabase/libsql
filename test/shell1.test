@@ -283,7 +283,7 @@ do_test shell1-3.2.4 {
 # .databases             List names and files of attached databases
 do_test shell1-3.3.1 {
   catchcmd "-csv test.db" ".databases"
-} "/0 +.*main +[string map {/ .} [string range [pwd] 0 10]].*/"
+} "/0 +.*main +[string map {/ .} [string range [get_pwd] 0 10]].*/"
 do_test shell1-3.3.2 {
   # too many arguments
   catchcmd "test.db" ".databases BAD"
