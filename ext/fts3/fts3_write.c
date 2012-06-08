@@ -136,7 +136,8 @@ struct Fts3DeferredToken {
 */
 struct Fts3SegReader {
   int iIdx;                       /* Index within level, or 0x7FFFFFFF for PT */
-  int bLookup;                    /* True for a lookup only */
+  u8 bLookup;                     /* True for a lookup only */
+  u8 rootOnly;                    /* True for a root-only reader */
 
   sqlite3_int64 iStartBlock;      /* Rowid of first leaf block to traverse */
   sqlite3_int64 iLeafEndBlock;    /* Rowid of final leaf block to traverse */
@@ -170,7 +171,7 @@ struct Fts3SegReader {
 };
 
 #define fts3SegReaderIsPending(p) ((p)->ppNextElem!=0)
-#define fts3SegReaderIsRootOnly(p) ((p)->aNode==(char *)&(p)[1])
+#define fts3SegReaderIsRootOnly(p) ((p)->rootOnly!=0)
 
 /*
 ** An instance of this structure is used to create a segment b-tree in the
@@ -1581,7 +1582,7 @@ int sqlite3Fts3SegReaderNew(
   }
   memset(pReader, 0, sizeof(Fts3SegReader));
   pReader->iIdx = iAge;
-  pReader->bLookup = bLookup;
+  pReader->bLookup = bLookup!=0;
   pReader->iStartBlock = iStartLeaf;
   pReader->iLeafEndBlock = iEndLeaf;
   pReader->iEndBlock = iEndBlock;
@@ -1589,6 +1590,7 @@ int sqlite3Fts3SegReaderNew(
   if( nExtra ){
     /* The entire segment is stored in the root node. */
     pReader->aNode = (char *)&pReader[1];
+    pReader->rootOnly = 1;
     pReader->nNode = nRoot;
     memcpy(pReader->aNode, zRoot, nRoot);
     memset(&pReader->aNode[nRoot], 0, FTS3_NODE_PADDING);

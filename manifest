@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\svtab1.test\scausing\sit\sto\sfail\swhen\srun\swith\sany\spermutation\sthat\sexecutes\sSQL\swithin\sthe\stcl\s"sqlite3"\scommand.
-D 2012-06-08T11:48:40.417
+C Fix\san\sobscure\smemory\sleak\sin\sFTS3\sthat\scan\scome\sabout\swhen\stwo\smemory\nallocations\sare\simmediately\sadjacent\sto\sone\sanother.
+D 2012-06-08T14:01:53.027
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4f37eb61be9d38643cdd839a74b8e3bad724cfcf
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -72,7 +72,7 @@ F ext/fts3/fts3_tokenizer.h 66dec98e365854b6cd2d54f1a96bb6d428fc5a68
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 49e36e6ba59f79e6bd6a8bfe434570fe48d20559
 F ext/fts3/fts3_unicode2.c 2965d217c37079f1dbbdbd2c58f843be285d73f2
-F ext/fts3/fts3_write.c 6a6391d6b01114f885e24e1f66bbc11ffba0e9e2
+F ext/fts3/fts3_write.c 794438f904cdf4516b258e530c0065efadb7b9b5
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
@@ -1005,7 +1005,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P cfcbf9375fddd0aae0dd17bdc76a710ab77ef667
-R 8ff78017c6658336dad044270ecb0a43
-U dan
-Z 28491c4fd8a5cdbccb56a6e17a0bf165
+P 006db555260273209933371d17afb33d557baa68
+R a3c1e8a9e6eec9c51478c97a48291850
+U drh
+Z d9212c98f4fefc48d255111660b350de
