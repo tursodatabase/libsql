@@ -1222,6 +1222,10 @@ do_test vtab1-17.1 {
   }
 } {}
 
+do_test vtab1-17.2 {
+  execsql { DELETE FROM sqlite_master WHERE sql LIKE 'insert%' }
+} {}
+
 #-------------------------------------------------------------------------
 # The following tests - vtab1-18.* - test that the optimization of LIKE
 # constraints in where.c plays well with virtual tables.

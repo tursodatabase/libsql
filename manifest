@@ -1,5 +1,5 @@
-C Merge\strunk\schanges\sinto\sthe\sapple-osx\sbranch.
-D 2012-06-08T01:13:17.906
+C Merge\sthe\svtab1\stest\sscript\sfix\sand\sthe\sFTS3\smemory\sleak\sfix\sfrom\strunk\ninto\sthe\sapple-osx\sbranch.
+D 2012-06-08T14:11:30.151
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f4e42073f1092a09a9cbd42aecf2f33790208cb5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -72,7 +72,7 @@ F ext/fts3/fts3_tokenizer.h 66dec98e365854b6cd2d54f1a96bb6d428fc5a68
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 49e36e6ba59f79e6bd6a8bfe434570fe48d20559
 F ext/fts3/fts3_unicode2.c 2965d217c37079f1dbbdbd2c58f843be285d73f2
-F ext/fts3/fts3_write.c 6a6391d6b01114f885e24e1f66bbc11ffba0e9e2
+F ext/fts3/fts3_write.c 794438f904cdf4516b258e530c0065efadb7b9b5
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
@@ -912,7 +912,7 @@ F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 7701bb609fe8bf6535514e8b849a309e8f00573b
 F test/view.test b182a67ec43f490b156b5a710827a341be83dd17
-F test/vtab1.test 331ca61ba0b5df4d2f2e55ee2b9596fde4228dbe
+F test/vtab1.test 10fb9e656fe4b318cd82ff1616a340acc01aac4b
 F test/vtab2.test 7bcffc050da5c68f4f312e49e443063e2d391c0d
 F test/vtab3.test baad99fd27217f5d6db10660522e0b7192446de1
 F test/vtab4.test 942f8b8280b3ea8a41dae20e7822d065ca1cb275
@@ -1010,7 +1010,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P ed53b645cc791e2c75885866ecb668fff14f8e7e cfcbf9375fddd0aae0dd17bdc76a710ab77ef667
-R a2bdb973ff39fb5034d6425a7a821a3b
+P 9d1b8515625ce7fbde170180126bd1a273bb4994 025227be5495f950c466dfabac140cba69e498be
+R 73fc9d898a1621cfcd2d0602a720ceb8
 U drh
-Z 91498d3a538de86f544b60346b3f3742
+Z 70bd5ce96a21e994af0322978beb4b1b
