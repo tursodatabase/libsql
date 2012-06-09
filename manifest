@@ -1,7 +1,7 @@
-C Merge\sall\strunk\schanges,\sincluding\sthe\sWinRT\senhancements,\sinto\sthe\nsessions\sbranch.
-D 2012-06-07T23:58:36.424
+C Merge\slatest\strunk\schanges\swith\ssessions\sbranch.
+D 2012-06-09T19:15:43.423
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 4f37eb61be9d38643cdd839a74b8e3bad724cfcf
+F Makefile.in d17fddaa4e81f93a7c9c7c0808aacb3fc95f79f4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc f4c1ecc6adf3e81857ccae612247db401df63e4c
 F Makefile.vxworks 3b7fe7a0571fdadc61363ebc1b23732d2d6363ca
@@ -72,7 +72,7 @@ F ext/fts3/fts3_tokenizer.h 66dec98e365854b6cd2d54f1a96bb6d428fc5a68
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 49e36e6ba59f79e6bd6a8bfe434570fe48d20559
 F ext/fts3/fts3_unicode2.c 2965d217c37079f1dbbdbd2c58f843be285d73f2
-F ext/fts3/fts3_write.c 6a6391d6b01114f885e24e1f66bbc11ffba0e9e2
+F ext/fts3/fts3_write.c 794438f904cdf4516b258e530c0065efadb7b9b5
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
@@ -920,7 +920,7 @@ F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 7701bb609fe8bf6535514e8b849a309e8f00573b
 F test/view.test b182a67ec43f490b156b5a710827a341be83dd17
-F test/vtab1.test 331ca61ba0b5df4d2f2e55ee2b9596fde4228dbe
+F test/vtab1.test 10fb9e656fe4b318cd82ff1616a340acc01aac4b
 F test/vtab2.test 7bcffc050da5c68f4f312e49e443063e2d391c0d
 F test/vtab3.test baad99fd27217f5d6db10660522e0b7192446de1
 F test/vtab4.test 942f8b8280b3ea8a41dae20e7822d065ca1cb275
@@ -1018,7 +1018,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 7eff45c28058fd1cb06dfd7f253cf2e4866e8c7c cfcbf9375fddd0aae0dd17bdc76a710ab77ef667
-R dbfa0f0e08ebf8fec274eb616318eec9
-U drh
-Z efdc5269554081bca5634d27aa5c834f
+P c62140398344fd1a68a3e6dfe8b4fab280731ebb 0ae0ce630a2e11f81dca50a9cfb04c4a41c03b2d
+R 3d7646a2017b0e596385909c0de9563e
+U dan
+Z 770dd5c1bc35db7eb59646895dc3fb87
