@@ -1,7 +1,7 @@
-C Fix\san\sobscure\smemory\sleak\sin\sFTS3\sthat\scan\scome\sabout\swhen\stwo\smemory\nallocations\sare\simmediately\sadjacent\sto\sone\sanother.
-D 2012-06-08T14:01:53.027
+C Add\smissing\stargets\sfor\sfts3_unicode.lo\sand\sfts3_unicode2.lo\sto\sMakefile.in.
+D 2012-06-09T18:52:29.837
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 4f37eb61be9d38643cdd839a74b8e3bad724cfcf
+F Makefile.in d17fddaa4e81f93a7c9c7c0808aacb3fc95f79f4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc fd86027849a59a2f621b791b79eabf3f8ffbd684
 F Makefile.vxworks 3b7fe7a0571fdadc61363ebc1b23732d2d6363ca
@@ -1005,7 +1005,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 006db555260273209933371d17afb33d557baa68
-R a3c1e8a9e6eec9c51478c97a48291850
-U drh
-Z d9212c98f4fefc48d255111660b350de
+P 025227be5495f950c466dfabac140cba69e498be
+R 45dae5fdb66a9a88c8595b45bd7db627
+U dan
+Z b0a689d65a4b2d791e77df9966396ebf
