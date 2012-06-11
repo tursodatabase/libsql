@@ -1,5 +1,5 @@
-C Add\smissing\stargets\sfor\sfts3_unicode.lo\sand\sfts3_unicode2.lo\sto\sMakefile.in.
-D 2012-06-09T18:52:29.837
+C Version\s3.7.13
+D 2012-06-11T02:05:22.539
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d17fddaa4e81f93a7c9c7c0808aacb3fc95f79f4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1005,7 +1005,10 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 025227be5495f950c466dfabac140cba69e498be
+P 0ae0ce630a2e11f81dca50a9cfb04c4a41c03b2d
 R 45dae5fdb66a9a88c8595b45bd7db627
-U dan
-Z b0a689d65a4b2d791e77df9966396ebf
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.7.13 *
+U drh
+Z c0babe9c1caac24f66a10b2544a508b6
