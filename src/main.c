@@ -895,7 +895,6 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3 *db){
     sqlite3_free(db->lookaside.pStart);
   }
   sqlite3_free(db);
-  return SQLITE_OK;
 }
 
 /*

@@ -1,5 +1,5 @@
-C Revert\ssqlite3_close()\sto\slegacy\sbehavior.\s\sCreate\sa\snew\ssqlite3_close_v2()\ninterface\sthat\sexhibits\sthe\sdeferred-close\sbehavior.\s\sThis\sminimizes\sthe\nchance\sof\sbreakage\sin\slegacy\sapps.
-D 2012-06-02T17:09:46.071
+C Fix\scompiler\swarning.
+D 2012-06-15T20:42:43.595
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4f37eb61be9d38643cdd839a74b8e3bad724cfcf
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -145,7 +145,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
 F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
-F src/main.c 4f47dad00c32092a28cac06d2e7cdcde024af432
+F src/main.c aacb100c6bae0141b8afbc846b5e0cfc3c28236e
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c b3677415e69603d6a0e7c5410a1b3731d55beda1
@@ -1004,7 +1004,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh a8a0a3babda96dfb1ff51adda3cbbf3dfb7266c2
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P e276a02b7f54e804caa553dca99023416a415e1c
-R 8a810a07bd449d4ae1bace844f29b96d
-U drh
-Z 06fa4191b1c8c7f470cba6494d9b6a75
+P c4b8621125ce77308b06692d92f70586b10055a9
+R 57c11cdb4c652e2e66fa754b88986502
+U mistachkin
+Z bfc433cff95e9f96663878f602826ba1
