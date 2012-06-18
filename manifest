@@ -1,5 +1,5 @@
-C In\sLemon,\swhen\scomparing\sthe\soutput\sto\sthe\s*.h\sfile\sto\ssee\sif\sit\shas\schanged,\nmake\ssure\sthat\sthe\sproposed\snew\soutput\sand\sthe\spreexisting\soutput\sare\sthe\nsame\ssize\sbefore\sdeciding\sthat\sthey\sare\sthe\ssame.
-D 2012-06-16T15:26:31.082
+C Fix\sa\sfew\scompilation\sissues\sthat\scan\soccur\swith\scertain\scompilers\s(e.g.\sGCC\s2.95.3,\sMSVC).
+D 2012-06-18T08:00:56.560
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d17fddaa4e81f93a7c9c7c0808aacb3fc95f79f4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -71,7 +71,7 @@ F ext/fts3/fts3_tokenizer.c e94a8b901066031437ccfe4769fc76370257cede
 F ext/fts3/fts3_tokenizer.h 66dec98e365854b6cd2d54f1a96bb6d428fc5a68
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 49e36e6ba59f79e6bd6a8bfe434570fe48d20559
-F ext/fts3/fts3_unicode2.c 2965d217c37079f1dbbdbd2c58f843be285d73f2
+F ext/fts3/fts3_unicode2.c a863f05f758af36777dffc2facc898bc73fec896
 F ext/fts3/fts3_write.c 794438f904cdf4516b258e530c0065efadb7b9b5
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
@@ -158,7 +158,7 @@ F src/mutex.h 2a79e0c10c26412546b501ee0f3d92b42decf63e
 F src/mutex_noop.c 7682796b7d8d39bf1c138248858efcd10c9e1553
 F src/mutex_os2.c 882d735098c07c8c6a5472b8dd66e19675fe117f
 F src/mutex_unix.c c3a4e00f96ba068a8dbef34084465979aaf369cc
-F src/mutex_w32.c db8970270841e2385a43602477e84c4b19aff1db
+F src/mutex_w32.c aedeaae3a850f6237ad142206911e3053a393e02
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 38aabd5e3ecd4162332076f55bb09cec02165cca
@@ -179,7 +179,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c b3c70ab28cac60de33684c9aa9e5138dcf71d6dd
 F src/rowset.c f6a49f3e9579428024662f6e2931832511f831a1
 F src/select.c f6c4833c4d8e94714761d99013d74f381e084f1d
-F src/shell.c c16f72e34f611f060546709564c121a67cb2b31b
+F src/shell.c 79cbf565f50c7b9ab0a622e0a7d612ad3b97a685
 F src/sqlite.h.in 39f041ce71a0d994e2487014fc9e8721595f5bc0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h 29b5348f0056d9b46d0bb94d4853db21568afde9
@@ -1005,7 +1005,10 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P f5b5a13f7394dc143aa136f1d4faba6839eaa6dc
-R 1f8bdd1a411e91223aef9522ba34a3e6
-U drh
-Z 53f96406b6eec20edfa4ee33fc7d7346
+P 0c2fb18d25217ada7e75dcab8b342bbc632875d8
+R 1fec034065f8f455e31652ddfa62f1cf
+T *branch * compiler-compat
+T *sym-compiler-compat *
+T -sym-trunk *
+U mistachkin
+Z 855dea24159ac5797cf9bffe7655aa6d

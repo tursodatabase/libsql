@@ -146,7 +146,7 @@ int sqlite3FtsUnicodeIsalnum(int c){
     }
     assert( aEntry[0]<key );
     assert( key>=aEntry[iRes] );
-    return (c >= ((aEntry[iRes]>>10) + (aEntry[iRes]&0x3FF)));
+    return (((unsigned int)c) >= ((aEntry[iRes]>>10) + (aEntry[iRes]&0x3FF)));
   }
   return 1;
 }
