@@ -1,5 +1,5 @@
-C In\sLemon,\swhen\scomparing\sthe\soutput\sto\sthe\s*.h\sfile\sto\ssee\sif\sit\shas\schanged,\nmake\ssure\sthat\sthe\sproposed\snew\soutput\sand\sthe\spreexisting\soutput\sare\sthe\nsame\ssize\sbefore\sdeciding\sthat\sthey\sare\sthe\ssame.
-D 2012-06-16T15:26:31.082
+C Fix\sa\sproblem\swith\sidentifying\swhite-space\scharacters\soutside\sof\sthe\sascii\srange\sin\sthe\sICU\stokenizer.
+D 2012-06-18T20:52:32.200
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d17fddaa4e81f93a7c9c7c0808aacb3fc95f79f4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -62,7 +62,7 @@ F ext/fts3/fts3_aux.c 5205182bd8f372782597888156404766edf5781e
 F ext/fts3/fts3_expr.c dbc7ba4c3a6061adde0f38ed8e9b349568299551
 F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
 F ext/fts3/fts3_hash.h 8331fb2206c609f9fc4c4735b9ab5ad6137c88ec
-F ext/fts3/fts3_icu.c 62ec177c55f6a5c6e994dd3e5fd3194b4045c347
+F ext/fts3/fts3_icu.c b85eca4a52e5ec11b94392de5167974c11906d4a
 F ext/fts3/fts3_porter.c a465b49fcb8249a755792f87516eff182efa42b3
 F ext/fts3/fts3_snippet.c bf67520ae9d2352a65368ed101729ff701c08808
 F ext/fts3/fts3_term.c a521f75132f9a495bdca1bdd45949b3191c52763
@@ -464,7 +464,7 @@ F test/fts3al.test 07d64326e79bbdbab20ee87fc3328fbf01641c9f
 F test/fts3am.test 218aa6ba0dfc50c7c16b2022aac5c6be593d08d8
 F test/fts3an.test a49ccadc07a2f7d646ec1b81bc09da2d85a85b18
 F test/fts3ao.test e7b80272efcced57d1d087a9da5c690dd7c21fd9
-F test/fts3atoken.test 402ef2f7c2fb4b3d4fa0587df6441c1447e799b3
+F test/fts3atoken.test fb398ab50aa232489e2a17f9b29d7ad3a3885f36
 F test/fts3auto.test b39f3f51227aea145eae6638690355dbdf9abf18
 F test/fts3aux1.test 0b02743955d56fc0d4d66236a26177bd1b726de0
 F test/fts3b.test e93bbb653e52afde110ad53bbd793f14fe7a8984
@@ -1005,7 +1005,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P f5b5a13f7394dc143aa136f1d4faba6839eaa6dc
-R 1f8bdd1a411e91223aef9522ba34a3e6
-U drh
-Z 53f96406b6eec20edfa4ee33fc7d7346
+P 0c2fb18d25217ada7e75dcab8b342bbc632875d8
+R de31ab49b2137fc2f97d1253270053d5
+U dan
+Z 2c0f1a3c7e342f99735e428af302d9d8
