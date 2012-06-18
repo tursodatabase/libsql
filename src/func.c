@@ -841,6 +841,44 @@ static void compileoptiongetFunc(
 }
 #endif /* SQLITE_OMIT_COMPILEOPTION_DIAGS */
 
+/*
+** 64-bit byte swap on little-endian platforms.  No-op on bigenidan.
+*/
+static void byteSwap64(unsigned char *x){
+  if( !SQLITE_BIGENDIAN ){
+    unsigned char c;
+    int i;
+    for(i=0; i<4; i++){
+      c = x[i];
+      x[i] = x[7-i];
+      x[7-i] = c;
+    }
+  }
+}
+
+/*
+** The ieee754() function converts a blob into a REAL.  The blob must be
+** an big-endian ieee754 floating point number.
+**
+** Any argument other than an 8-byte blob returns NULL.
+*/
+static void ieee754Func(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  assert( argc==1 );
+  UNUSED_PARAMETER(argc);
+  if( sqlite3_value_type(argv[0])==SQLITE_BLOB
+   && sqlite3_value_bytes(argv[0])==8
+  ){
+    double r;
+    memcpy(&r, sqlite3_value_blob(argv[0]), 8);
+    byteSwap64((unsigned char*)&r);
+    sqlite3_result_double(context, r);
+  }
+}
+
 /* Array for converting from half-bytes (nybbles) into ASCII hex
 ** digits. */
 static const char hexdigits[] = {
@@ -863,8 +901,31 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   assert( argc==1 );
   UNUSED_PARAMETER(argc);
   switch( sqlite3_value_type(argv[0]) ){
-    case SQLITE_INTEGER:
     case SQLITE_FLOAT: {
+      union {
+        double r;
+        unsigned char x[8];
+      } v;
+      sqlite3_int64 vi;
+      int i;
+      char zAns[30];
+      v.r = sqlite3_value_double(argv[0]);
+      vi = (sqlite3_int64)v.r;
+      if( v.r==(double)vi ){
+        sqlite3_result_value(context, argv[0]);
+      }else{
+        byteSwap64(v.x);
+                  /*  0123456789 123456789 12345678 */
+        memcpy(zAns, "ieee754(X'----------------')", 29);
+        for(i=0; i<8; i++){
+          zAns[10+i*2] = hexdigits[v.x[i]>>4];
+          zAns[11+i*2] = hexdigits[v.x[i]&0xf];
+        }
+        sqlite3_result_text(context, zAns, 28, SQLITE_TRANSIENT);
+      }
+      break;
+    }
+    case SQLITE_INTEGER: {
       sqlite3_result_value(context, argv[0]);
       break;
     }
@@ -1568,6 +1629,9 @@ void sqlite3RegisterGlobalFunctions(void){
     FUNCTION(sqlite_compileoption_used,1, 0, 0, compileoptionusedFunc  ),
     FUNCTION(sqlite_compileoption_get, 1, 0, 0, compileoptiongetFunc  ),
 #endif /* SQLITE_OMIT_COMPILEOPTION_DIAGS */
+#ifndef SQLITE_OMIT_FLOATING_POINT
+    FUNCTION(ieee754,            1, 0, 0, ieee754Func      ),
+#endif
     FUNCTION(quote,              1, 0, 0, quoteFunc        ),
     FUNCTION(last_insert_rowid,  0, 0, 0, last_insert_rowid),
     FUNCTION(changes,            0, 0, 0, changes          ),

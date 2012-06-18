@@ -1,5 +1,5 @@
-C In\sLemon,\swhen\scomparing\sthe\soutput\sto\sthe\s*.h\sfile\sto\ssee\sif\sit\shas\schanged,\nmake\ssure\sthat\sthe\sproposed\snew\soutput\sand\sthe\spreexisting\soutput\sare\sthe\nsame\ssize\sbefore\sdeciding\sthat\sthey\sare\sthe\ssame.
-D 2012-06-16T15:26:31.082
+C Add\sthe\sieee754()\sSQL\sfunction\sthat\sinterprets\sa\sblob\sas\sa\sbig-endian\sdouble.\nArrange\sfor\sthe\squote()\sSQL\sfunction\sto\semit\sieee754()\sfunctions\sin\sits\soutput\nso\sthat\sfloating-point\svalues\sin\sthe\sdatabase\sare\sexactly\spreserved\sby\sa\n".dump"\scommand\sin\sthe\sshell.
+D 2012-06-18T14:23:06.889
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d17fddaa4e81f93a7c9c7c0808aacb3fc95f79f4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -135,7 +135,7 @@ F src/delete.c 4c20ea4f6213b3bc1c6a510586864b679946e05e
 F src/expr.c 06a7733d19dc725dc46ba51afd9feadb4b85d991
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 657212460bf5cfd3ae607d12ea62092844c227b5
-F src/func.c c6b3c94320253a35bda43fb69cc292618e3285d6
+F src/func.c fab8831959557d4668decd4114da5686c5919d42
 F src/global.c 4cfdca5cb0edd33c4d021baec4ede958cb2c793b
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
@@ -1005,7 +1005,10 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P f5b5a13f7394dc143aa136f1d4faba6839eaa6dc
-R 1f8bdd1a411e91223aef9522ba34a3e6
+P 0c2fb18d25217ada7e75dcab8b342bbc632875d8
+R a69dd6288fa77a5b1431e7d5145e0a60
+T *branch * ieee754-func
+T *sym-ieee754-func *
+T -sym-trunk *
 U drh
-Z 53f96406b6eec20edfa4ee33fc7d7346
+Z f2065a600167b98e49c11fee712be824
