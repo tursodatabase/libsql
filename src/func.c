@@ -865,8 +865,8 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   switch( sqlite3_value_type(argv[0]) ){
     case SQLITE_FLOAT: {
       double r1, r2;
-      r1 = sqlite3_value_double(argv[0]);
       char zBuf[50];
+      r1 = sqlite3_value_double(argv[0]);
       sqlite3_snprintf(sizeof(zBuf), zBuf, "%!.15g", r1);
       sqlite3AtoF(zBuf, &r2, 20, SQLITE_UTF8);
       if( r1!=r2 ){

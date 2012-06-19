@@ -1,5 +1,5 @@
-C Fix\san\sincorrect\stestcase\sfor\sthe\sround()\sfunction.\s\sAll\stests\sare\spassing\nnow,\sincluding\snew\sreal->text->real\sround-trip\stests.
-D 2012-06-19T03:59:30.382
+C Move\svariable\sdeclaration\sto\sfix\scompilation\swith\sMSVC.
+D 2012-06-19T04:36:48.907
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d17fddaa4e81f93a7c9c7c0808aacb3fc95f79f4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -135,7 +135,7 @@ F src/delete.c 4c20ea4f6213b3bc1c6a510586864b679946e05e
 F src/expr.c 06a7733d19dc725dc46ba51afd9feadb4b85d991
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 657212460bf5cfd3ae607d12ea62092844c227b5
-F src/func.c 22a180ac02e725a16aed586c3ae1c1c0f7c79cfd
+F src/func.c 18dfedfb857e100b05755a1b12e88b389f957879
 F src/global.c 4cfdca5cb0edd33c4d021baec4ede958cb2c793b
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
@@ -1006,7 +1006,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P fd7bd4a59361be41b10522abc212cf56fb5e35b4
-R c0c29fe1d0e93cd15c8e76222be12539
-U drh
-Z 5bd3e2acf922536517e034479b86dc68
+P 963eb24f737f184d5fcdcd92ebf90466f818cfd8
+R f969ff33ef926829900ede45cb301833
+U mistachkin
+Z 0dc9aadbc42938d9910cf216fa3f6f99
