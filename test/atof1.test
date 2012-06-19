@@ -16,7 +16,7 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 expr srand(1)
-for {set i 1} {$i<10000} {incr i} {
+for {set i 1} {$i<20000} {incr i} {
   set pow [expr {int((rand()-0.5)*100)}]
   set x [expr {pow((rand()-0.5)*2*rand(),$pow)}]
   set xf [format %.32e $x]
@@ -34,11 +34,6 @@ for {set i 1} {$i<10000} {incr i} {
     }
     set y
   } {1}
-
-  # FIX ME.  The following tests (real->text->real round-trips) sometimes
-  # fail for large floating-point values.  Skip them for now...
-  #
-  if {abs($x)>1e50} continue
 
   # Verify that round-trip real->text->real conversions using the quote()
   # function preserve the bits of the numeric value exactly.

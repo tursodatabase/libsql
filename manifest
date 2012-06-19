@@ -1,5 +1,5 @@
-C Improved\saccuracy\son\stext-to-real\sand\sreal-to-text\sconversions.\s\sMost\nconversions\snow\sround-trip\scorrectly.\s\sStill\sneed\sto\sfix\ssome\scorner\ncases.
-D 2012-06-19T03:11:25.621
+C Round-trip\sconversions\sof\sreal->text->real\sare\snow\slossless\son\sx64\swith\sGCC.\nUntested\son\sother\splatforms\sso\sfar.\s\sStill\sa\scorner-case\sproblem\swith\sround().
+D 2012-06-19T03:35:05.368
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d17fddaa4e81f93a7c9c7c0808aacb3fc95f79f4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,7 +174,7 @@ F src/pcache.h 1b5dcc3dc8103d03e625b177023ee67764fa6b7c
 F src/pcache1.c 2234d84f9c003d800a57f00f8535c91667fa4f6c
 F src/pragma.c eee3e3161f82a1e06f632a8d2a82b29ba3c45889
 F src/prepare.c 33291b83cca285718048d219c67b8298501fa3a5
-F src/printf.c 263748c3b1e41f9f16a567ef2cbe4cf95b897a1a
+F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c b3c70ab28cac60de33684c9aa9e5138dcf71d6dd
 F src/rowset.c f6a49f3e9579428024662f6e2931832511f831a1
@@ -274,7 +274,7 @@ F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
 F test/async3.test d73a062002376d7edc1fe3edff493edbec1fc2f7
 F test/async4.test 1787e3952128aa10238bf39945126de7ca23685a
 F test/async5.test 0dd8701bd588bf6e70c2557a22ae3f22b2567b4c
-F test/atof1.test 6e6d41337133cb98e61262fa385780e04e9de165
+F test/atof1.test b765ba6bc09aa6a16234d2d66a71a5079f2a6d8a
 F test/attach.test 0d112b7713611fdf0340260192749737135fda5f
 F test/attach2.test e54436ed956d3d88bdee61221da59bf3935a0966
 F test/attach3.test d89ccfe4fe6e2b5e368d480fcdfe4b496c54cf4e
@@ -1006,10 +1006,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 699b792c6a0e989994549959b11ec1bfad8bbd92
-R 9adb61fbfc8a4b0255b08c19fe781f44
-T *branch * floating-point-conversions
-T *sym-floating-point-conversions *
-T -sym-trunk *
+P 8ecffca900cd6a8922001fd458a266ce8c83fb66
+R 4b19672a1a06e137614a87d3123c24fd
 U drh
-Z 93861bbc3afe941842927198b8f68ac0
+Z 1cc55456093d3d8044d88cb7bcd1bdba
