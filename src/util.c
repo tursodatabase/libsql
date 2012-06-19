@@ -371,7 +371,7 @@ do_atof_calc:
     /* if exponent, scale significand as appropriate
     ** and store in result. */
     if( e ){
-      double scale = 1.0;
+      LONGDOUBLE_TYPE scale = 1.0;
       /* attempt to handle extremely small/large numbers better */
       if( e>307 && e<342 ){
         while( e%308 ) { scale *= 1.0e+1; e -= 1; }
