@@ -1,5 +1,5 @@
-C Improved\srounding\saccuracy\son\stest-to-float\sconversions.
-D 2012-06-19T00:45:16.776
+C Add\stests\sto\scheck\sthat\sthe\s"unicode61"\sand\s"icu"\stokenizers\sboth\sidentify\swhite-space\scodepoints\soutside\sthe\sASCII\srange.
+D 2012-06-19T06:35:39.290
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d17fddaa4e81f93a7c9c7c0808aacb3fc95f79f4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -502,7 +502,7 @@ F test/fts4langid.test 24a6e41063b416bbdf371ff6b4476fa41c194aa7
 F test/fts4merge.test c424309743fdd203f8e56a1f1cd7872cd66cc0ee
 F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
 F test/fts4merge3.test aab02a09f50fe6baaddc2e159c3eabc116d45fc7
-F test/fts4unicode.test 247e6c64563b5f930aec0f89a5b01ed6b4b129cd
+F test/fts4unicode.test aad033abdcfa0f87ce5f56468f59fdf2a0acbcef
 F test/func.test 9809b7622d721904a8cc33c1ffb87f46d506ed01
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 001021e5b88bd02a3b365a5c5fd8f6f49d39744a
@@ -1006,7 +1006,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 892b74116a3b23268895b96433d18ef00c1433d8
-R f92cf3b5f19c2cdf0a1f4043259e76e0
-U drh
-Z 37917877b4f7a2aac8f4f47ec8031274
+P 699b792c6a0e989994549959b11ec1bfad8bbd92
+R fcc8a5f96c6c9d1a1ba2f2345cbe909b
+U dan
+Z 04e7a9f69aa11cdd2b90d7abb2bd52a9
