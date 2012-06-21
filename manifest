@@ -1,12 +1,12 @@
-C Fix\sthe\sSQLITE_ZERO_MALLOC\scompile-time\soption\sso\sthat\sit\sworks\son\swindows.
-D 2012-06-21T14:25:17.094
+C Increase\sthe\sversion\snumber\sto\s3.7.14\sand\srerun\sautoconf
+D 2012-06-21T14:31:40.163
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8f6d858bf3df9978ba43df19985146a1173025e4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc e893726c32ff402760eea125c7baaf928ed24257
 F Makefile.vxworks 3b7fe7a0571fdadc61363ebc1b23732d2d6363ca
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
-F VERSION 3e857b9b826e818eec9411eafe2c3fa22c1dbb8a
+F VERSION a71848df48082f1d6585d4b0819d530fc455485d
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 17dc593f791f874d2c23a0f9360850ded0286531
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -15,7 +15,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 79405675c313ce4a5e94afac6ec880bb3e27b4f1 x
+F configure 8f973617dbc3fca46d26104070b75c17ef70beb7 x
 F configure.ac 9ee886c21c095b3272137b1553ae416c8b8c8557
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 3091574143dd3415669b6745843ff8d011d33549
@@ -1004,7 +1004,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P d3d491a5461e21d84c6425977b80deedc7fa8a3a
-R 4e4a92cea90d72a4247a162f53436ce4
+P b80bc52f8964569f948c5671e9d58e4d199a08dc
+R d9c7ca44b5bae5cf9a1d5fac839a060e
 U drh
-Z 2bf16bd82723641a320d98b1a298580f
+Z 9bb5699eedb76c21c7cf92db7d26e31a
