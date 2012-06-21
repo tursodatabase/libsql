@@ -53,8 +53,6 @@ proc run_quick_test {dir omit_symbol_list} {
   if {$::tcl_platform(platform)=="windows"} {
     append opts "OPTS += -DSQLITE_OS_WIN=1\n"
     set target "testfixture.exe"
-  } elseif {$::tcl_platform(platform)=="os2"} {
-    append opts "OPTS += -DSQLITE_OS_OS2=1\n"
   } else {
     append opts "OPTS += -DSQLITE_OS_UNIX=1\n"
   }
@@ -93,7 +91,7 @@ proc run_quick_test {dir omit_symbol_list} {
   # of trying to build the sqlite shell. The sqlite shell won't build 
   # with some of the OMIT options (i.e OMIT_COMPLETE).
   set sqlite3_dummy $dir/sqlite3
-  if {$::tcl_platform(platform)=="windows" || $::tcl_platform(platform)=="os2"} {
+  if {$::tcl_platform(platform)=="windows"} {
     append sqlite3_dummy ".exe"
   }
   if {![file exists $sqlite3_dummy]} {
@@ -127,8 +125,8 @@ proc run_quick_test {dir omit_symbol_list} {
 #
 proc process_options {argv} {
   set ::MAKEBIN make                        ;# Default value
-  if {$::tcl_platform(platform)=="windows" || $::tcl_platform(platform)=="os2"} {
-    set ::MAKEFILE ./Makefile               ;# Default value on Windows and OS2
+  if {$::tcl_platform(platform)=="windows"} {
+    set ::MAKEFILE ./Makefile               ;# Default value on Windows
   } else {
     set ::MAKEFILE ./Makefile.linux-gcc     ;# Default value
   }

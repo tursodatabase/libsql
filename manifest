@@ -1,10 +1,10 @@
-C Increase\sthe\sversion\snumber\sto\s3.7.14\sand\srerun\sautoconf
-D 2012-06-21T14:31:40.163
+C Remove\smore\sreferences\sto\sOS/2.
+D 2012-06-21T15:09:20.823
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8f6d858bf3df9978ba43df19985146a1173025e4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc e893726c32ff402760eea125c7baaf928ed24257
-F Makefile.vxworks 3b7fe7a0571fdadc61363ebc1b23732d2d6363ca
+F Makefile.msc 0100213e86c66ed5ac37ea98446406c06f012203
+F Makefile.vxworks 879f034a64062a364b21000266bbd5bc6e0c19b9
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION a71848df48082f1d6585d4b0819d530fc455485d
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -178,7 +178,7 @@ F src/resolve.c b3c70ab28cac60de33684c9aa9e5138dcf71d6dd
 F src/rowset.c f6a49f3e9579428024662f6e2931832511f831a1
 F src/select.c f6c4833c4d8e94714761d99013d74f381e084f1d
 F src/shell.c 74e47ddb99bf7997985dc89bbdd5875637501ad1
-F src/sqlite.h.in 39f041ce71a0d994e2487014fc9e8721595f5bc0
+F src/sqlite.h.in 34640d183e570e81ae1e057a668fdbb55625e802
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h aedc97651f686dccebd8a5c742835a2a5e8e99c0
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -566,7 +566,7 @@ F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
 F test/like.test 7b4aaa4a8192fdec90e0a905984c92a688c51e48
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/limit.test 2db7b3b34fb925b8e847d583d2eb67531d0ce67e
-F test/loadext.test dab17f7014f8079698dbd4b02705562b0ce6db5f
+F test/loadext.test 2b5e249c51c986a5aff1f0950cf7ba30976c8f22
 F test/loadext2.test 0bcaeb4d81cd5b6e883fdfea3c1bdbe1f173cbca
 F test/lock.test db74fdf5a73bad29ab3d862ea78bf1068972cc1d
 F test/lock2.test 5242d8ac4e2d59c403aebff606af449b455aceff
@@ -616,7 +616,7 @@ F test/misc3.test fe55130a43e444ee75e2156ff75dc96e964b5738
 F test/misc4.test 9c078510fbfff05a9869a0b6d8b86a623ad2c4f6
 F test/misc5.test 528468b26d03303b1f047146e5eefc941b9069f5
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
-F test/misc7.test 4337d84e441f36cee62656f9f7ba8bc22a7ca721
+F test/misc7.test f00dad9a004da659330013e6f21819d018b683d3
 F test/misuse.test ba4fb5d1a6101d1c171ea38b3c613d0661c83054
 F test/multiplex.test e08cc7177bd6d85990ee1d71100bb6c684c02256
 F test/multiplex2.test 580ca5817c7edbe4cc68fa150609c9473393003a
@@ -657,7 +657,7 @@ F test/randexpr1.test eda062a97e60f9c38ae8d806b03b0ddf23d796df
 F test/rdonly.test c267d050a1d9a6a321de502b737daf28821a518d
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
 F test/releasetest.mk 2eced2f9ae701fd0a29e714a241760503ccba25a
-F test/releasetest.tcl fa302d03fd9acfce6d910553a33473bfcf561958
+F test/releasetest.tcl 4014e2bfb93f276d82a604e7a5eda62c129916c9
 F test/rollback.test a1b4784b864331eae8b2a98c189efa2a8b11ff07
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test e58e0acef38b527ed1b0b70d3ada588f804af287
@@ -977,12 +977,12 @@ F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkkeywordhash.c bb52064aa614e1426445e4b2b9b00eeecd23cc79
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
-F tool/mksqlite3c-noext.tcl 105023aa86f696a74b1d6a4929d1e1c3baf9471c
+F tool/mksqlite3c-noext.tcl 8bce31074e4cbe631bb7676526a048335f4c9f02
 F tool/mksqlite3c.tcl 589c7f44e990be1b8443cfe4808dce392b0327fa
 F tool/mksqlite3h.tcl 78013ad79a5e492e5f764f3c7a8ef834255061f8
-F tool/mksqlite3internalh.tcl 7b43894e21bcb1bb39e11547ce7e38a063357e87
+F tool/mksqlite3internalh.tcl 3dca7bb5374cee003379b8cbac73714f610ef795
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
-F tool/omittest.tcl 72a49b8a9a8b0bf213a438180307a0df836d4380
+F tool/omittest.tcl 4665982e95a6e5c1bd806cf7bc3dea95be422d77
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
@@ -1004,7 +1004,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P b80bc52f8964569f948c5671e9d58e4d199a08dc
-R d9c7ca44b5bae5cf9a1d5fac839a060e
-U drh
-Z 9bb5699eedb76c21c7cf92db7d26e31a
+P 8c9f564a2a07603f1852ccb45089fe84591cf68f
+R fcffc83b93b7e49de73883c31a2c7d5e
+U mistachkin
+Z 5f63191d32609910374c52c28186aa72
