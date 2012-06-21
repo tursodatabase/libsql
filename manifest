@@ -1,5 +1,5 @@
-C Remove\smore\sreferences\sto\sOS/2.
-D 2012-06-21T15:09:20.823
+C Fix\sspelling\stypo.
+D 2012-06-21T15:12:30.926
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8f6d858bf3df9978ba43df19985146a1173025e4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -180,7 +180,7 @@ F src/select.c f6c4833c4d8e94714761d99013d74f381e084f1d
 F src/shell.c 74e47ddb99bf7997985dc89bbdd5875637501ad1
 F src/sqlite.h.in 34640d183e570e81ae1e057a668fdbb55625e802
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h aedc97651f686dccebd8a5c742835a2a5e8e99c0
+F src/sqliteInt.h 4e092561a4d9c384c3b9dfeebdef868a3566561c
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1004,7 +1004,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 8c9f564a2a07603f1852ccb45089fe84591cf68f
-R fcffc83b93b7e49de73883c31a2c7d5e
+P eebd594d6bd09c77727620a818d7dc0b091f55b4
+R be7f54310076aeaf2e41fd02ae207bae
 U mistachkin
-Z 5f63191d32609910374c52c28186aa72
+Z 44f889ecf2b83e0a51162901a7e23f5e
