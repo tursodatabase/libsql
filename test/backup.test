@@ -423,7 +423,7 @@ do_test backup-4.3.2 {
 } {SQLITE_BUSY}
 do_test backup-4.3.3 {
   sqlite3_errmsg db2
-} {unable to close due to unfinished backup operation}
+} {unable to close due to unfinalized statements or unfinished backups}
 do_test backup-4.3.4 {
   B step 50
 } {SQLITE_DONE}

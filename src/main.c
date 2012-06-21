@@ -766,12 +766,24 @@ static void disconnectAllVtab(sqlite3 *db){
 }
 
 /*
+** Return TRUE if database connection db has unfinalized prepared
+** statements or unfinished sqlite3_backup objects.  
+*/
+static int connectionIsBusy(sqlite3 *db){
+  int j;
+  assert( sqlite3_mutex_held(db->mutex) );
+  if( db->pVdbe ) return 1;
+  for(j=0; j<db->nDb; j++){
+    Btree *pBt = db->aDb[j].pBt;
+    if( pBt && sqlite3BtreeIsInBackup(pBt) ) return 1;
+  }
+  return 0;
+}
+
+/*
 ** Close an existing SQLite database
 */
-int sqlite3_close(sqlite3 *db){
-  HashElem *i;                    /* Hash table iterator */
-  int j;
-
+static int sqlite3Close(sqlite3 *db, int forceZombie){
   if( !db ){
     return SQLITE_OK;
   }
@@ -792,24 +804,62 @@ int sqlite3_close(sqlite3 *db){
   */
   sqlite3VtabRollback(db);
 
-  /* If there are any outstanding VMs, return SQLITE_BUSY. */
-  if( db->pVdbe ){
-    sqlite3Error(db, SQLITE_BUSY, 
-        "unable to close due to unfinalised statements");
+  /* Legacy behavior (sqlite3_close() behavior) is to return
+  ** SQLITE_BUSY if the connection can not be closed immediately.
+  */
+  if( !forceZombie && connectionIsBusy(db) ){
+    sqlite3Error(db, SQLITE_BUSY, "unable to close due to unfinalized "
+       "statements or unfinished backups");
     sqlite3_mutex_leave(db->mutex);
     return SQLITE_BUSY;
   }
-  assert( sqlite3SafetyCheckSickOrOk(db) );
 
-  for(j=0; j<db->nDb; j++){
-    Btree *pBt = db->aDb[j].pBt;
-    if( pBt && sqlite3BtreeIsInBackup(pBt) ){
-      sqlite3Error(db, SQLITE_BUSY, 
-          "unable to close due to unfinished backup operation");
-      sqlite3_mutex_leave(db->mutex);
-      return SQLITE_BUSY;
-    }
+  /* Convert the connection into a zombie and then close it.
+  */
+  db->magic = SQLITE_MAGIC_ZOMBIE;
+  sqlite3LeaveMutexAndCloseZombie(db);
+  return SQLITE_OK;
+}
+
+/*
+** Two variations on the public interface for closing a database
+** connection. The sqlite3_close() version returns SQLITE_BUSY and
+** leaves the connection option if there are unfinalized prepared
+** statements or unfinished sqlite3_backups.  The sqlite3_close_v2()
+** version forces the connection to become a zombie if there are
+** unclosed resources, and arranges for deallocation when the last
+** prepare statement or sqlite3_backup closes.
+*/
+int sqlite3_close(sqlite3 *db){ return sqlite3Close(db,0); }
+int sqlite3_close_v2(sqlite3 *db){ return sqlite3Close(db,1); }
+
+
+/*
+** Close the mutex on database connection db.
+**
+** Furthermore, if database connection db is a zombie (meaning that there
+** has been a prior call to sqlite3_close(db) or sqlite3_close_v2(db)) and
+** every sqlite3_stmt has now been finalized and every sqlite3_backup has
+** finished, then free all resources.
+*/
+void sqlite3LeaveMutexAndCloseZombie(sqlite3 *db){
+  HashElem *i;                    /* Hash table iterator */
+  int j;
+
+  /* If there are outstanding sqlite3_stmt or sqlite3_backup objects
+  ** or if the connection has not yet been closed by sqlite3_close_v2(),
+  ** then just leave the mutex and return.
+  */
+  if( db->magic!=SQLITE_MAGIC_ZOMBIE || connectionIsBusy(db) ){
+    sqlite3_mutex_leave(db->mutex);
+    return;
   }
+
+  /* If we reach this point, it means that the database connection has
+  ** closed all sqlite3_stmt and sqlite3_backup objects and has been
+  ** pased to sqlite3_close (meaning that it is a zombie).  Therefore,
+  ** go ahead and free all resources.
+  */
 
   /* Free any outstanding Savepoint structures. */
   sqlite3CloseSavepoints(db);
@@ -898,7 +948,6 @@ int sqlite3_close(sqlite3 *db){
     sqlite3_free(db->lookaside.pStart);
   }
   sqlite3_free(db);
-  return SQLITE_OK;
 }
 
 /*

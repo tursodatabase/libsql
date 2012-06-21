@@ -1,5 +1,5 @@
-C Merge\schanges\sto\strunk\sthat\sensure\sthat\sfloating\spoint\svalues\sare\sexactly\npreserved\son\sa\sround-trip\sthrough\s".dump".
-D 2012-06-21T15:22:04.664
+C Add\sthe\ssqlite3_close_v2()\sinterface\s(from\sthe\sdeferred-close\sbranch)\sthat\nallows\sclose\soperations\sto\shappen\sout-of-order\sin\sbindings\sto\ngarbage-collected\slangauges.
+D 2012-06-21T15:51:42.711
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8f6d858bf3df9978ba43df19985146a1173025e4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -120,7 +120,7 @@ F src/alter.c 149cc80d9257971b0bff34e58fb2263e01998289
 F src/analyze.c 70c46504c0d2543ea5cdca01140b2cd3e1d886e7
 F src/attach.c 577bf5675b0c50495fc28549f2fcbdb1bac71143
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
-F src/backup.c d7fb4c6d2ad3fe51a4ce1a897fde7b00f4de5fef
+F src/backup.c 5524df36810668b3b5a6de2d7e3910b98e721e33
 F src/bitvec.c af50f1c8c0ff54d6bdb7a80e2fceca5a93670bef
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c f0b71054103cb77eb5e782088c16998ec4f06624
@@ -145,7 +145,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
 F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
-F src/main.c 07e05ba330b5994fa20d3b2e8c1c146133587d68
+F src/main.c 02255cf1da50956c5427c469abddb15bccc4ba09
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c b3677415e69603d6a0e7c5410a1b3731d55beda1
@@ -178,9 +178,9 @@ F src/resolve.c b3c70ab28cac60de33684c9aa9e5138dcf71d6dd
 F src/rowset.c f6a49f3e9579428024662f6e2931832511f831a1
 F src/select.c f6c4833c4d8e94714761d99013d74f381e084f1d
 F src/shell.c 74e47ddb99bf7997985dc89bbdd5875637501ad1
-F src/sqlite.h.in 34640d183e570e81ae1e057a668fdbb55625e802
+F src/sqlite.h.in 310ae7e538883fa1619ab0638c775ce11ad43015
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h 4e092561a4d9c384c3b9dfeebdef868a3566561c
+F src/sqliteInt.h 2bc2ebc2ff1a2b530ee5ed9ffd46c6fce93b244c
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -240,8 +240,8 @@ F src/vacuum.c 587a52bb8833d7ac15af8916f25437e2575028bd
 F src/vdbe.c f5ad3c06dc3fe647097065829c013f3f1b9eadca
 F src/vdbe.h 18f581cac1f4339ec3299f3e0cc6e11aec654cdb
 F src/vdbeInt.h 6ff4180a05683566a8835d12f7ec504b22932c82
-F src/vdbeapi.c 3662b6a468a2a4605a15dfab313baa6dff81ad91
-F src/vdbeaux.c d52c8a424fdd4b1d5cf1ac93cc7cd20da023ec5c
+F src/vdbeapi.c f8ba09132fe654ffd068058cef490426aca9fca6
+F src/vdbeaux.c dce80038c3c41f2680e5ab4dd0f7e0d8b7ff9071
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
 F src/vdbesort.c b25814d385895544ebc8118245c8311ded7f81c9
@@ -287,7 +287,7 @@ F test/autovacuum.test fcaf4616ae5bb18098db1cb36262565e5c841c3c
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
 F test/backcompat.test bccbc64769d9c755ad65ee7c2f7336b86e3cc0c8
-F test/backup.test 717346db953e9e435c2a94916e4af177330d60d3
+F test/backup.test c9cdd23a495864b9edf75a9fa66f5cb7e10fcf62
 F test/backup2.test 34986ef926ea522911a51dfdb2f8e99b7b75ebcf
 F test/backup_ioerr.test 40d208bc9224b666ee3ed423f49bc9062a36a9d0
 F test/backup_malloc.test 7162d604ec2b4683c4b3799a48657fb8b5e2d450
@@ -1004,7 +1004,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 6131a0002fea5d6f3b416a63a466bf2b69d1e12d 0f706acfc7181f2714a06b2c232677ebeede3a44
-R 24446b639b8f30cdeaec2dbb61cdf6f2
+P 4cebd60704f92bb3689c126f46feadc3516d3d45 37d9bc061d5ecfe37ccbd6f559986d7ae0449179
+R 41d5610ed2033955b4202ff788697dde
 U drh
-Z b1dc391973e1c634a2e4e6388b5cc239
+Z c18db60333d2fd8d859babd08906006b
