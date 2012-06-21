@@ -2693,10 +2693,12 @@ static char *find_home_dir(void){
   if( home_dir ) return home_dir;
 
 #if !defined(_WIN32) && !defined(WIN32) && !defined(_WIN32_WCE) && !defined(__RTP__) && !defined(_WRS_KERNEL)
-  struct passwd *pwent;
-  uid_t uid = getuid();
-  if( (pwent=getpwuid(uid)) != NULL) {
-    home_dir = pwent->pw_dir;
+  {
+    struct passwd *pwent;
+    uid_t uid = getuid();
+    if( (pwent=getpwuid(uid)) != NULL) {
+      home_dir = pwent->pw_dir;
+    }
   }
 #endif
 

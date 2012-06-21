@@ -1,5 +1,5 @@
-C Remove\ssupport\sfor\sOS/2\sfrom\sthe\ssource\stree.
-D 2012-06-21T13:00:37.211
+C Merge\sseveral\scompiler\scompatibility\sfixes\sto\strunk.
+D 2012-06-21T14:05:15.442
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8f6d858bf3df9978ba43df19985146a1173025e4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -71,7 +71,7 @@ F ext/fts3/fts3_tokenizer.c e94a8b901066031437ccfe4769fc76370257cede
 F ext/fts3/fts3_tokenizer.h 66dec98e365854b6cd2d54f1a96bb6d428fc5a68
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 49e36e6ba59f79e6bd6a8bfe434570fe48d20559
-F ext/fts3/fts3_unicode2.c 2965d217c37079f1dbbdbd2c58f843be285d73f2
+F ext/fts3/fts3_unicode2.c a863f05f758af36777dffc2facc898bc73fec896
 F ext/fts3/fts3_write.c 794438f904cdf4516b258e530c0065efadb7b9b5
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
@@ -157,7 +157,7 @@ F src/mutex.c d3b66a569368015e0fcb1ac15f81c119f504d3bc
 F src/mutex.h 5bc526e19dccc412b7ff04642f6fdad3fdfdabea
 F src/mutex_noop.c 7682796b7d8d39bf1c138248858efcd10c9e1553
 F src/mutex_unix.c c3a4e00f96ba068a8dbef34084465979aaf369cc
-F src/mutex_w32.c db8970270841e2385a43602477e84c4b19aff1db
+F src/mutex_w32.c 32a9b3841e2d757355f0012b860b1bc5e01eafa0
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h c2ebd26a68a4223fe170b003852b97d9e7211498
@@ -177,7 +177,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c b3c70ab28cac60de33684c9aa9e5138dcf71d6dd
 F src/rowset.c f6a49f3e9579428024662f6e2931832511f831a1
 F src/select.c f6c4833c4d8e94714761d99013d74f381e084f1d
-F src/shell.c d332251457860fa2fe365a4ac623266d2b262319
+F src/shell.c 74e47ddb99bf7997985dc89bbdd5875637501ad1
 F src/sqlite.h.in 39f041ce71a0d994e2487014fc9e8721595f5bc0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h 29b5348f0056d9b46d0bb94d4853db21568afde9
@@ -1004,7 +1004,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P f6be345ad5ff739bd64114489930bab970e7972e
-R 492386d04a647f2a6a5176511e3c5436
-U drh
-Z a98b35ee88892c9758a44c5d42a86c30
+P ff828c67e5d3c1afa5bc3a304b9c6fcc7b3ea5fa 21266c68afb067ff40062df1e8b383dfd247c17b
+R 2cae3db7f4ceb9e36c95e758c69ad1d1
+U mistachkin
+Z 41747913182fa12ccba50300e60c3ef8
