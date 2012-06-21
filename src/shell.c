@@ -36,17 +36,13 @@
 #include <ctype.h>
 #include <stdarg.h>
 
-#if !defined(_WIN32) && !defined(WIN32) && !defined(__OS2__)
+#if !defined(_WIN32) && !defined(WIN32)
 # include <signal.h>
 # if !defined(__RTP__) && !defined(_WRS_KERNEL)
 #  include <pwd.h>
 # endif
 # include <unistd.h>
 # include <sys/types.h>
-#endif
-
-#ifdef __OS2__
-# include <unistd.h>
 #endif
 
 #ifdef HAVE_EDITLINE
@@ -92,7 +88,7 @@ static int enableTimer = 0;
 #define IsDigit(X)  isdigit((unsigned char)X)
 #define ToLower(X)  (char)tolower((unsigned char)X)
 
-#if !defined(_WIN32) && !defined(WIN32) && !defined(__OS2__) && !defined(__RTP__) && !defined(_WRS_KERNEL)
+#if !defined(_WIN32) && !defined(WIN32) && !defined(_WRS_KERNEL)
 #include <sys/time.h>
 #include <sys/resource.h>
 
@@ -2696,7 +2692,7 @@ static char *find_home_dir(void){
   static char *home_dir = NULL;
   if( home_dir ) return home_dir;
 
-#if !defined(_WIN32) && !defined(WIN32) && !defined(__OS2__) && !defined(_WIN32_WCE) && !defined(__RTP__) && !defined(_WRS_KERNEL)
+#if !defined(_WIN32) && !defined(WIN32) && !defined(_WIN32_WCE) && !defined(__RTP__) && !defined(_WRS_KERNEL)
   struct passwd *pwent;
   uid_t uid = getuid();
   if( (pwent=getpwuid(uid)) != NULL) {
@@ -2710,7 +2706,7 @@ static char *find_home_dir(void){
   home_dir = "/";
 #else
 
-#if defined(_WIN32) || defined(WIN32) || defined(__OS2__)
+#if defined(_WIN32) || defined(WIN32)
   if (!home_dir) {
     home_dir = getenv("USERPROFILE");
   }
@@ -2720,7 +2716,7 @@ static char *find_home_dir(void){
     home_dir = getenv("HOME");
   }
 
-#if defined(_WIN32) || defined(WIN32) || defined(__OS2__)
+#if defined(_WIN32) || defined(WIN32)
   if (!home_dir) {
     char *zDrive, *zPath;
     int n;
@@ -2936,11 +2932,7 @@ int main(int argc, char **argv){
     }
   }
   if( i<argc ){
-#if defined(SQLITE_OS_OS2) && SQLITE_OS_OS2
-    data.zDbFilename = (const char *)convertCpPathToUtf8( argv[i++] );
-#else
     data.zDbFilename = argv[i++];
-#endif
   }else{
 #ifndef SQLITE_OMIT_MEMORYDB
     data.zDbFilename = ":memory:";

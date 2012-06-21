@@ -1,7 +1,7 @@
-C When\slinking\sto\sthe\sMSVC\sruntime\slibrary,\suse\sthe\sdebug\slibrary\swhen\snecessary.\s\sAlso,\slink\sdynamically\sto\sthe\sMSVC\sruntime\slibrary\swhen\srequired\s(e.g.\sWinRT)\sor\srequested\svia\sthe\sUSE_CRT_DLL\sbuild\smacro.
-D 2012-06-21T04:21:35.689
+C Remove\ssupport\sfor\sOS/2\sfrom\sthe\ssource\stree.
+D 2012-06-21T13:00:37.211
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in d17fddaa4e81f93a7c9c7c0808aacb3fc95f79f4
+F Makefile.in 8f6d858bf3df9978ba43df19985146a1173025e4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc e893726c32ff402760eea125c7baaf928ed24257
 F Makefile.vxworks 3b7fe7a0571fdadc61363ebc1b23732d2d6363ca
@@ -103,7 +103,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk 84ed9c324cf0b8f4eb6f276553d1fd092b5ae0f4
+F main.mk d109a9342d1fe135d3900aca9f5563f9480a991d
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -154,16 +154,14 @@ F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
 F src/mem5.c c2c63b7067570b00bf33d751c39af24182316f7f
 F src/memjournal.c 0ebce851677a7ac035ba1512a7e65851b34530c6
 F src/mutex.c d3b66a569368015e0fcb1ac15f81c119f504d3bc
-F src/mutex.h 2a79e0c10c26412546b501ee0f3d92b42decf63e
+F src/mutex.h 5bc526e19dccc412b7ff04642f6fdad3fdfdabea
 F src/mutex_noop.c 7682796b7d8d39bf1c138248858efcd10c9e1553
-F src/mutex_os2.c 882d735098c07c8c6a5472b8dd66e19675fe117f
 F src/mutex_unix.c c3a4e00f96ba068a8dbef34084465979aaf369cc
 F src/mutex_w32.c db8970270841e2385a43602477e84c4b19aff1db
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
-F src/os.h 38aabd5e3ecd4162332076f55bb09cec02165cca
+F src/os.h c2ebd26a68a4223fe170b003852b97d9e7211498
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c d7c96b5d140f550f07345870112fae5d7ef99757
 F src/os_win.c e3d3d3e26b65a35d4293d753137a58510bd3299b
 F src/pager.c e381c118b77dc22021a1a59d3fec24815e91df78
@@ -179,7 +177,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c b3c70ab28cac60de33684c9aa9e5138dcf71d6dd
 F src/rowset.c f6a49f3e9579428024662f6e2931832511f831a1
 F src/select.c f6c4833c4d8e94714761d99013d74f381e084f1d
-F src/shell.c c16f72e34f611f060546709564c121a67cb2b31b
+F src/shell.c d332251457860fa2fe365a4ac623266d2b262319
 F src/sqlite.h.in 39f041ce71a0d994e2487014fc9e8721595f5bc0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h 29b5348f0056d9b46d0bb94d4853db21568afde9
@@ -218,7 +216,7 @@ F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 0396f220561f3b4eedc450cef26d40c593c69a25
 F src/test_osinst.c 90a845c8183013d80eccb1f29e8805608516edba
 F src/test_pcache.c a5cd24730cb43c5b18629043314548c9169abb00
-F src/test_quota.c 0af3e1e9a1f22bc5f431dd3efcc32762f4109f58
+F src/test_quota.c 8ab295092c70903ca6f3209fa4c75f5cb6c1bf8e
 F src/test_quota.h 8761e463b25e75ebc078bd67d70e39b9c817a0cb
 F src/test_rtree.c aba603c949766c4193f1068b91c787f57274e0d9
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
@@ -980,7 +978,7 @@ F tool/mkkeywordhash.c bb52064aa614e1426445e4b2b9b00eeecd23cc79
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 105023aa86f696a74b1d6a4929d1e1c3baf9471c
-F tool/mksqlite3c.tcl f289ba51f74f45c71a80c13e6c74a6dd92763253
+F tool/mksqlite3c.tcl 589c7f44e990be1b8443cfe4808dce392b0327fa
 F tool/mksqlite3h.tcl 78013ad79a5e492e5f764f3c7a8ef834255061f8
 F tool/mksqlite3internalh.tcl 7b43894e21bcb1bb39e11547ce7e38a063357e87
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
@@ -1006,7 +1004,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P bfb2d4730cbbe18fb940e72f4fde9122d550734e
-R b751ec9a0e2895a08497a9ce16da8150
-U mistachkin
-Z 261d93d15033b394b92302b9665ce94e
+P f6be345ad5ff739bd64114489930bab970e7972e
+R 492386d04a647f2a6a5176511e3c5436
+U drh
+Z a98b35ee88892c9758a44c5d42a86c30
