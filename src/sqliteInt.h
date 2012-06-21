@@ -149,6 +149,7 @@
 **
 **     SQLITE_SYSTEM_MALLOC          // Use normal system malloc()
 **     SQLITE_WIN32_MALLOC           // Use Win32 native heap API
+**     SQLITE_ZERO_MALLOC            // Use a stub allocator that always fails
 **     SQLITE_MEMDEBUG               // Debugging version of system malloc()
 **
 ** On Windows, if the SQLITE_WIN32_MALLOC_VALIDATE macro is defined and the
@@ -162,11 +163,19 @@
 ** If none of the above are defined, then set SQLITE_SYSTEM_MALLOC as
 ** the default.
 */
-#if defined(SQLITE_SYSTEM_MALLOC)+defined(SQLITE_WIN32_MALLOC)+defined(SQLITE_MEMDEBUG)>1
-# error "At most one of the following compile-time configuration options\
- is allows: SQLITE_SYSTEM_MALLOC, SQLITE_WIN32_MALLOC, SQLITE_MEMDEBUG"
+#if defined(SQLITE_SYSTEM_MALLOC) \
+  + defined(SQLITE_WIN32_MALLOC) \
+  + defined(SQLITE_ZERO_MALLOC) \
+  + defined(SQLITE_MEMDEBUG)>1
+# error "Two or more of the following compile-time configuration options\
+ are defined but at most one is allows:\
+ SQLITE_SYSTEM_MALLOC, SQLITE_WIN32_MALLOC, SQLITE_MEMDEBUG,\
+ SQLITE_ZERO_MALLOC"
 #endif
-#if defined(SQLITE_SYSTEM_MALLOC)+defined(SQLITE_WIN32_MALLOC)+defined(SQLITE_MEMDEBUG)==0
+#if defined(SQLITE_SYSTEM_MALLOC) \
+  + defined(SQLITE_WIN32_MALLOC) \
+  + defined(SQLITE_ZERO_MALLOC) \
+  + defined(SQLITE_MEMDEBUG)==0
 # define SQLITE_SYSTEM_MALLOC 1
 #endif
 

@@ -1,5 +1,5 @@
-C Merge\sseveral\scompiler\scompatibility\sfixes\sto\strunk.
-D 2012-06-21T14:05:15.442
+C Fix\sthe\sSQLITE_ZERO_MALLOC\scompile-time\soption\sso\sthat\sit\sworks\son\swindows.
+D 2012-06-21T14:25:17.094
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8f6d858bf3df9978ba43df19985146a1173025e4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -180,7 +180,7 @@ F src/select.c f6c4833c4d8e94714761d99013d74f381e084f1d
 F src/shell.c 74e47ddb99bf7997985dc89bbdd5875637501ad1
 F src/sqlite.h.in 39f041ce71a0d994e2487014fc9e8721595f5bc0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h 29b5348f0056d9b46d0bb94d4853db21568afde9
+F src/sqliteInt.h aedc97651f686dccebd8a5c742835a2a5e8e99c0
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1004,7 +1004,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P ff828c67e5d3c1afa5bc3a304b9c6fcc7b3ea5fa 21266c68afb067ff40062df1e8b383dfd247c17b
-R 2cae3db7f4ceb9e36c95e758c69ad1d1
-U mistachkin
-Z 41747913182fa12ccba50300e60c3ef8
+P d3d491a5461e21d84c6425977b80deedc7fa8a3a
+R 4e4a92cea90d72a4247a162f53436ce4
+U drh
+Z 2bf16bd82723641a320d98b1a298580f
