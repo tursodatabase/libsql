@@ -15,6 +15,10 @@ USE_AMALGAMATION = 1
 #
 USE_ICU = 0
 
+# Set this non-0 to dynamically link to the MSVC runtime library.
+#
+USE_CRT_DLL = 0
+
 # Set this non-0 to compile binaries suitable for the WinRT environment.
 # This setting does not apply to any binaries that require Tcl to operate
 # properly (i.e. the text fixture, etc).
@@ -53,11 +57,28 @@ TCC = cl.exe -W3 -DSQLITE_OS_WIN=1 -I. -I$(TOP)\src -fp:precise
 # the following compile-time options must be used as well to
 # disable use of Win32 APIs that are not available and to enable
 # use of Win32 APIs that are specific to Windows 8 and/or WinRT.
-# Also, we need to dynamically link to the MSVC runtime when
-# compiling for WinRT.
 #
 !IF $(FOR_WINRT)!=0
-TCC = $(TCC) -DSQLITE_OS_WINRT=1 -MD
+TCC = $(TCC) -DSQLITE_OS_WINRT=1
+!ENDIF
+
+# Also, we need to dynamically link to the correct MSVC runtime
+# when compiling for WinRT (e.g. debug or release) OR if the
+# USE_CRT_DLL option is set to force dynamically linking to the
+# MSVC runtime library.
+#
+!IF $(FOR_WINRT)!=0 || $(USE_CRT_DLL)!=0
+!IF $(DEBUG)>0
+TCC = $(TCC) -MDd
+!ELSE
+TCC = $(TCC) -MD
+!ENDIF
+!ELSE
+!IF $(DEBUG)>0
+TCC = $(TCC) -MTd
+!ELSE
+TCC = $(TCC) -MT
+!ENDIF
 !ENDIF
 
 # The mksqlite3c.tcl and mksqlite3h.tcl scripts will pull in

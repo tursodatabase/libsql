@@ -1,9 +1,9 @@
-C Add\stests\sto\scheck\sthat\sthe\s"unicode61"\sand\s"icu"\stokenizers\sboth\sidentify\swhite-space\scodepoints\soutside\sthe\sASCII\srange.
-D 2012-06-19T06:35:39.290
+C When\slinking\sto\sthe\sMSVC\sruntime\slibrary,\suse\sthe\sdebug\slibrary\swhen\snecessary.\s\sAlso,\slink\sdynamically\sto\sthe\sMSVC\sruntime\slibrary\swhen\srequired\s(e.g.\sWinRT)\sor\srequested\svia\sthe\sUSE_CRT_DLL\sbuild\smacro.
+D 2012-06-21T04:21:35.689
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d17fddaa4e81f93a7c9c7c0808aacb3fc95f79f4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc fd86027849a59a2f621b791b79eabf3f8ffbd684
+F Makefile.msc e893726c32ff402760eea125c7baaf928ed24257
 F Makefile.vxworks 3b7fe7a0571fdadc61363ebc1b23732d2d6363ca
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 3e857b9b826e818eec9411eafe2c3fa22c1dbb8a
@@ -1006,7 +1006,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 699b792c6a0e989994549959b11ec1bfad8bbd92
-R fcc8a5f96c6c9d1a1ba2f2345cbe909b
-U dan
-Z 04e7a9f69aa11cdd2b90d7abb2bd52a9
+P bfb2d4730cbbe18fb940e72f4fde9122d550734e
+R b751ec9a0e2895a08497a9ce16da8150
+U mistachkin
+Z 261d93d15033b394b92302b9665ce94e
