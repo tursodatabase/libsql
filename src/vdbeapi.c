@@ -74,7 +74,6 @@ int sqlite3_finalize(sqlite3_stmt *pStmt){
     if( vdbeSafety(v) ) return SQLITE_MISUSE_BKPT;
     sqlite3_mutex_enter(db->mutex);
     rc = sqlite3VdbeFinalize(v);
-    if( (rc&0xff)==SQLITE_MISUSE ) rc = SQLITE_OK;
     rc = sqlite3ApiExit(db, rc);
     sqlite3LeaveMutexAndCloseZombie(db);
   }
