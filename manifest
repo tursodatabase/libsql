@@ -1,5 +1,5 @@
-C Fix\sspelling\stypo.
-D 2012-06-21T15:12:30.926
+C Merge\schanges\sto\strunk\sthat\sensure\sthat\sfloating\spoint\svalues\sare\sexactly\npreserved\son\sa\sround-trip\sthrough\s".dump".
+D 2012-06-21T15:22:04.664
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8f6d858bf3df9978ba43df19985146a1173025e4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -135,7 +135,7 @@ F src/delete.c 4c20ea4f6213b3bc1c6a510586864b679946e05e
 F src/expr.c 06a7733d19dc725dc46ba51afd9feadb4b85d991
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 657212460bf5cfd3ae607d12ea62092844c227b5
-F src/func.c c6b3c94320253a35bda43fb69cc292618e3285d6
+F src/func.c 18dfedfb857e100b05755a1b12e88b389f957879
 F src/global.c 4cfdca5cb0edd33c4d021baec4ede958cb2c793b
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
@@ -172,7 +172,7 @@ F src/pcache.h 1b5dcc3dc8103d03e625b177023ee67764fa6b7c
 F src/pcache1.c 2234d84f9c003d800a57f00f8535c91667fa4f6c
 F src/pragma.c eee3e3161f82a1e06f632a8d2a82b29ba3c45889
 F src/prepare.c 33291b83cca285718048d219c67b8298501fa3a5
-F src/printf.c 7ffb4ebb8b341f67e049695ba031da717b3d2699
+F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c b3c70ab28cac60de33684c9aa9e5138dcf71d6dd
 F src/rowset.c f6a49f3e9579428024662f6e2931832511f831a1
@@ -198,7 +198,7 @@ F src/test_async.c 0612a752896fad42d55c3999a5122af10dcf22ad
 F src/test_autoext.c 30e7bd98ab6d70a62bb9ba572e4c7df347fe645e
 F src/test_backup.c c129c91127e9b46e335715ae2e75756e25ba27de
 F src/test_btree.c 5b89601dcb42a33ba8b820a6b763cc9cb48bac16
-F src/test_config.c 4f7b8030287d62fe56a1d99e68b41760feae381a
+F src/test_config.c 9b37587750f247186ebeb02a02e8f17c611d1866
 F src/test_demovfs.c 20a4975127993f4959890016ae9ce5535a880094
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_func.c 3a8dd37c08ab43b76d38eea2836e34a3897bf170
@@ -272,7 +272,7 @@ F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
 F test/async3.test d73a062002376d7edc1fe3edff493edbec1fc2f7
 F test/async4.test 1787e3952128aa10238bf39945126de7ca23685a
 F test/async5.test 0dd8701bd588bf6e70c2557a22ae3f22b2567b4c
-F test/atof1.test 1f6dc0f47f6697e32fa51dd154412e1172984928
+F test/atof1.test 9bf1d25180a2e05fc12ce3940cc8003033642f68
 F test/attach.test 0d112b7713611fdf0340260192749737135fda5f
 F test/attach2.test e54436ed956d3d88bdee61221da59bf3935a0966
 F test/attach3.test d89ccfe4fe6e2b5e368d480fcdfe4b496c54cf4e
@@ -362,7 +362,7 @@ F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test b5de160630b209c4b8925bdcbbaf48cc90b67fe8
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
 F test/ctime.test 7bd009071e242aac4f18521581536b652b789a47
-F test/date.test a18a2ce81add84b17b06559e82ad7bb91bc6ddff
+F test/date.test f3228180c87bbe5d39c9397bf001c0095c3821b9
 F test/dbstatus.test 207e5b63fcb7b9c3bb8e1fdf38ebd4654ad0e54b
 F test/dbstatus2.test b1de8250fde1f3474d6b86f0e89de38d84794f56
 F test/default.test 6faf23ccb300114924353007795aa9a8ec0aa9dc
@@ -501,7 +501,7 @@ F test/fts4merge.test c424309743fdd203f8e56a1f1cd7872cd66cc0ee
 F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
 F test/fts4merge3.test aab02a09f50fe6baaddc2e159c3eabc116d45fc7
 F test/fts4unicode.test aad033abdcfa0f87ce5f56468f59fdf2a0acbcef
-F test/func.test 9809b7622d721904a8cc33c1ffb87f46d506ed01
+F test/func.test 0d89043dab9a8853358d14c68e028ee0093bf066
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 001021e5b88bd02a3b365a5c5fd8f6f49d39744a
 F test/fuzz-oss1.test 4912e528ec9cf2f42134456933659d371c9e0d74
@@ -1004,7 +1004,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P eebd594d6bd09c77727620a818d7dc0b091f55b4
-R be7f54310076aeaf2e41fd02ae207bae
-U mistachkin
-Z 44f889ecf2b83e0a51162901a7e23f5e
+P 6131a0002fea5d6f3b416a63a466bf2b69d1e12d 0f706acfc7181f2714a06b2c232677ebeede3a44
+R 24446b639b8f30cdeaec2dbb61cdf6f2
+U drh
+Z b1dc391973e1c634a2e4e6388b5cc239
