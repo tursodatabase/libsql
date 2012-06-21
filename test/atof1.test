@@ -15,6 +15,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+if {![info exists __GNUC__]} {
+  finish_test
+  return
+}
+
 expr srand(1)
 for {set i 1} {$i<20000} {incr i} {
   set pow [expr {int((rand()-0.5)*100)}]
@@ -24,7 +29,7 @@ for {set i 1} {$i<20000} {incr i} {
   # Verify that text->real conversions get exactly same ieee754 floating-
   # point value in SQLite as they do in TCL.
   #
-  do_test 1.$i.1 {
+  do_test atof1-1.$i.1 {
     set y [db eval "SELECT $xf=\$x"]
     if {!$y} {
       puts -nonewline \173[db eval "SELECT real2hex($xf), real2hex(\$x)"]\175
@@ -38,7 +43,7 @@ for {set i 1} {$i<20000} {incr i} {
   # Verify that round-trip real->text->real conversions using the quote()
   # function preserve the bits of the numeric value exactly.
   #
-  do_test 1.$i.2 {
+  do_test atof1-1.$i.2 {
     set y [db eval {SELECT $x=CAST(quote($x) AS real)}]
     if {!$y} {
       db eval {SELECT real2hex($x) a, real2hex(CAST(quote($x) AS real)) b} {}
