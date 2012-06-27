@@ -1,5 +1,5 @@
-C Remove\scode\sthat\swas\sincorrectly\schanging\sSQLITE_MISUSE\serrors\sinto\sSQLITE_OK\nin\ssqlite3_finalize().
-D 2012-06-21T17:21:52.202
+C Update\sthe\sshell\sso\sthat\sit\sworks\swith\sSQLITE_OMIT_FLOATING_POINT\sand\nSQLITE_OMIT_AUTOINIT.
+D 2012-06-27T16:12:27.595
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8f6d858bf3df9978ba43df19985146a1173025e4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -177,7 +177,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c b3c70ab28cac60de33684c9aa9e5138dcf71d6dd
 F src/rowset.c f6a49f3e9579428024662f6e2931832511f831a1
 F src/select.c f6c4833c4d8e94714761d99013d74f381e084f1d
-F src/shell.c 74e47ddb99bf7997985dc89bbdd5875637501ad1
+F src/shell.c 88e34bc18cc385c243b2de2c7c6db33826b32147
 F src/sqlite.h.in 310ae7e538883fa1619ab0638c775ce11ad43015
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h 2bc2ebc2ff1a2b530ee5ed9ffd46c6fce93b244c
@@ -1004,7 +1004,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P fb8893abeefabe9de44e34dcf4327764481189f5
-R 1407ab77c9d83dad7f51ec0e9878a545
+P d5e6880279210ca63e2d5e7f6d009f30566f1242
+R 6769e93fb0dcc5b38c2d7d47cf25ddd0
 U drh
-Z f514219a89248d947572eba2b55a152c
+Z aef2b290fbb1b4163dab2604e1f1a752
