@@ -2772,6 +2772,7 @@ static int process_sqliterc(
 #endif
       return 1;
     }
+    sqlite3_initialize();
     zBuf = sqlite3_mprintf("%s/.sqliterc",home_dir);
     sqliterc = zBuf;
   }
