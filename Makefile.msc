@@ -50,6 +50,14 @@ DEBUG = 0
 CC = cl.exe
 !ENDIF
 
+# Check for the command macro LD.  This should point to the linker binary for
+# the target platform.  If it does not exist, simply define it to the legacy
+# default value 'link.exe'.
+#
+!IFNDEF LD
+LD = link.exe
+!ENDIF
+
 # Check for the command macro NCC.  This should point to the compiler binary
 # for the platform the compilation process is taking place on.  If it does not
 # exist, simply define it to have the same value as the CC macro.  When
@@ -292,8 +300,7 @@ LTLINKOPTS = $(LTLINKOPTS) /APPCONTAINER
 
 # If either debugging or symbols are enabled, enable PDBs.
 !IF $(DEBUG)>0 || $(SYMBOLS)!=0
-LTLINKOPTS = $(LTLINKOPTS) /DEBUG
-BCC = $(BCC) /DEBUG
+LDFLAGS = /DEBUG
 !ENDIF
 
 # Start with the Tcl related linker options.
@@ -933,7 +940,7 @@ sqlite3.h:	$(TOP)\src\sqlite.h.in $(TOP)\manifest.uuid $(TOP)\VERSION
 	$(TCLSH_CMD) $(TOP)\tool\mksqlite3h.tcl $(TOP) > sqlite3.h
 
 mkkeywordhash.exe:	$(TOP)\tool\mkkeywordhash.c
-	$(BCC) -Femkkeywordhash.exe $(OPT_FEATURE_FLAGS) $(OPTS) $(TOP)\tool\mkkeywordhash.c
+	$(BCC) -Fe$@ $(OPT_FEATURE_FLAGS) $(OPTS) $(TOP)\tool\mkkeywordhash.c
 
 keywordhash.h:	$(TOP)\tool\mkkeywordhash.c mkkeywordhash.exe
 	.\mkkeywordhash.exe > keywordhash.h
@@ -1078,4 +1085,4 @@ sqlite3.def: libsqlite3.lib
 		| sort >> sqlite3.def
 
 sqlite3.dll: $(LIBOBJ) sqlite3.def
-	link $(LTLINKOPTS) $(LTLIBPATHS) /DLL /DEF:sqlite3.def /OUT:$@ $(LIBOBJ) $(LTLIBS) $(TLIBS)
+	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL /DEF:sqlite3.def /OUT:$@ $(LIBOBJ) $(LTLIBS) $(TLIBS)
