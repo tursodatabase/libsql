@@ -42,16 +42,38 @@ SYMBOLS = 1
 #
 DEBUG = 0
 
+# Check for the predefined command macro CC.  This should point to the compiler
+# binary for the target platform.  If it does not exist, simply define it to
+# the legacy default value 'cl.exe'.
+#
+!IFNDEF CC
+CC = cl.exe
+!ENDIF
+
+# Check for the command macro NCC.  This should point to the compiler binary
+# for the platform the compilation process is taking place on.  If it does not
+# exist, simply define it to have the same value as the CC macro.  When
+# cross-compiling, it is suggested that this macro be modified via the command
+# line (since nmake itself does not provide a built-in method to guess it).
+# For example, to use the x86 compiler when cross-compiling for x64, a command
+# line similar to the following could be used:
+#
+#           nmake /f Makefile.msc "NCC=""%VCINSTALLDIR%\bin\cl.exe"""
+#
+!IFNDEF NCC
+NCC = $(CC)
+!ENDIF
+
 # C Compiler and options for use in building executables that
 # will run on the platform that is doing the build.
 #
-BCC = cl.exe -W3
+BCC = $(NCC) -W3
 
 # C Compile and options for use in building executables that
 # will run on the target platform.  (BCC and TCC are usually the
 # same unless your are cross-compiling.)
 #
-TCC = cl.exe -W3 -DSQLITE_OS_WIN=1 -I. -I$(TOP)\src -fp:precise
+TCC = $(CC) -W3 -DSQLITE_OS_WIN=1 -I. -I$(TOP)\src -fp:precise
 
 # When compiling the library for use in the WinRT environment,
 # the following compile-time options must be used as well to
@@ -135,43 +157,43 @@ TCC = $(TCC) -DSQLITE_WIN32_MALLOC_VALIDATE=1
 # prior to running nmake in order to match the actual installed location and
 # version on this machine.
 #
-!if "$(TCLINCDIR)" == ""
+!IFNDEF TCLINCDIR
 TCLINCDIR = c:\tcl\include
-!endif
+!ENDIF
 
-!if "$(TCLLIBDIR)" == ""
+!IFNDEF TCLLIBDIR
 TCLLIBDIR = c:\tcl\lib
-!endif
+!ENDIF
 
-!if "$(LIBTCL)" == ""
+!IFNDEF LIBTCL
 LIBTCL = tcl85.lib
-!endif
+!ENDIF
 
 # The locations of the ICU header and library files.  These variables
 # (ICUINCDIR, ICULIBDIR, and LIBICU) may be overridden via the environment
 # prior to running nmake in order to match the actual installed location on
 # this machine.
 #
-!if "$(ICUINCDIR)" == ""
+!IFNDEF ICUINCDIR
 ICUINCDIR = c:\icu\include
-!endif
+!ENDIF
 
-!if "$(ICULIBDIR)" == ""
+!IFNDEF ICULIBDIR
 ICULIBDIR = c:\icu\lib
-!endif
+!ENDIF
 
-!if "$(LIBICU)" == ""
+!IFNDEF LIBICU
 LIBICU = icuuc.lib icuin.lib
-!endif
+!ENDIF
 
 # This is the command to use for tclsh - normally just "tclsh", but we may
 # know the specific version we want to use.  This variable (TCLSH_CMD) may be
 # overridden via the environment prior to running nmake in order to select a
 # specific Tcl shell to use.
 #
-!if "$(TCLSH_CMD)" == ""
+!IFNDEF TCLSH_CMD
 TCLSH_CMD = tclsh85
-!endif
+!ENDIF
 
 # Compiler options needed for programs that use the readline() library.
 #
@@ -191,9 +213,9 @@ TCC = $(TCC) -DSQLITE_THREAD_OVERRIDE_LOCK=-1
 
 # Any target libraries which libsqlite must be linked against
 #
-!if "$(TLIBS)" == ""
+!IFNDEF TLIBS
 TLIBS =
-!endif
+!ENDIF
 
 # Flags controlling use of the in memory btree implementation
 #
@@ -255,7 +277,7 @@ LTLINK = $(TCC) -Fe$@
 # Note that the vcvars*.bat family of batch files typically
 # set this for you.  Otherwise, the linker will attempt
 # to deduce the binary type based on the object files.
-!IF "$(PLATFORM)"!=""
+!IFDEF PLATFORM
 LTLINKOPTS = /MACHINE:$(PLATFORM)
 LTLIBOPTS = /MACHINE:$(PLATFORM)
 !ENDIF

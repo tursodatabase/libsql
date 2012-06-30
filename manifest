@@ -1,9 +1,9 @@
-C Another\schanges\sto\sthe\sshell\sin\ssupport\sof\sSQLITE_OMIT_AUTOINIT.
-D 2012-06-27T16:41:31.500
+C Make\suse\sof\sthe\spredefined\snmake\scommand\smacro\sCC\swhen\spossible\sinstead\sof\sthe\sliteral\sstring\s'cl.exe'.\s\sImprove\ssupport\sfor\scross-compilation.\s\sEliminate\sproblematic\suse\sof\sdouble\squotes\sin\smacro\spreprocessing\sexpressions.
+D 2012-06-30T16:22:05.485
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8f6d858bf3df9978ba43df19985146a1173025e4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 0100213e86c66ed5ac37ea98446406c06f012203
+F Makefile.msc d5fe268f23e35af9a6b8c6c7df983dda65f0a017
 F Makefile.vxworks 879f034a64062a364b21000266bbd5bc6e0c19b9
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION a71848df48082f1d6585d4b0819d530fc455485d
@@ -1004,7 +1004,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 95c0c995fd18c2de907a39fc52299c8abe502b68
-R 8764407565c7470a7af4e28914ff89fc
-U drh
-Z 848177401525cd9b79cf5683d5f4213a
+P 3b4f5add04259eec145066312bcd532182cc339c
+R 437136894c0f887fea4db99bcef8bbec
+U mistachkin
+Z e6de48dad2c2672c700a9587a09ef1b4
