@@ -1,9 +1,9 @@
-C Simplify\susage\sof\ssome\slinker\soptions\sin\sthe\sMSVC\smakefile.
-D 2012-06-30T19:24:09.458
+C Setup\sthe\snecessary\slibrary\spaths\sfor\scross-compilation\swith\sMSVC.
+D 2012-06-30T22:22:34.095
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8f6d858bf3df9978ba43df19985146a1173025e4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 04ebadf5e94d566d4ef9f636416f68e17205120f
+F Makefile.msc 56ff0fcc3fc3b275aec7f6acb34b3c0526c684bc
 F Makefile.vxworks 879f034a64062a364b21000266bbd5bc6e0c19b9
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION a71848df48082f1d6585d4b0819d530fc455485d
@@ -1004,7 +1004,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 6c88229aa39775a7438befebe1640a30affc72c8
-R 0706037ca6af4d59d9bcb1545687aa13
+P 03016020664a7459cb01c8ac9016b20af8a416bb
+R 3838aec4be451692e3019372e4566300
 U mistachkin
-Z 4412848c1478fd90700fa3f54861d772
+Z 6999152625f8f616344bc02a959eabf4

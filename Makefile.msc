@@ -19,6 +19,11 @@ USE_ICU = 0
 #
 USE_CRT_DLL = 0
 
+# Set this non-0 to use the native libraries paths for cross-compiling
+# the command line tools needed during the compilation process.
+#
+USE_NATIVE_LIBPATHS = 0
+
 # Set this non-0 to compile binaries suitable for the WinRT environment.
 # This setting does not apply to any binaries that require Tcl to operate
 # properly (i.e. the text fixture, etc).
@@ -43,7 +48,7 @@ SYMBOLS = 1
 DEBUG = 0
 
 # Check for the predefined command macro CC.  This should point to the compiler
-# binary for the target platform.  If it does not exist, simply define it to
+# binary for the target platform.  If it is not defined, simply define it to
 # the legacy default value 'cl.exe'.
 #
 !IFNDEF CC
@@ -51,7 +56,7 @@ CC = cl.exe
 !ENDIF
 
 # Check for the command macro LD.  This should point to the linker binary for
-# the target platform.  If it does not exist, simply define it to the legacy
+# the target platform.  If it is not defined, simply define it to the legacy
 # default value 'link.exe'.
 #
 !IFNDEF LD
@@ -59,25 +64,53 @@ LD = link.exe
 !ENDIF
 
 # Check for the command macro NCC.  This should point to the compiler binary
-# for the platform the compilation process is taking place on.  If it does not
-# exist, simply define it to have the same value as the CC macro.  When
+# for the platform the compilation process is taking place on.  If it is not
+# defined, simply define it to have the same value as the CC macro.  When
 # cross-compiling, it is suggested that this macro be modified via the command
 # line (since nmake itself does not provide a built-in method to guess it).
 # For example, to use the x86 compiler when cross-compiling for x64, a command
-# line similar to the following could be used:
+# line similar to the following could be used (all on one line):
 #
-#           nmake /f Makefile.msc "NCC=""%VCINSTALLDIR%\bin\cl.exe"""
+#     nmake /f Makefile.msc
+#           "NCC=""%VCINSTALLDIR%\bin\cl.exe"""
+#           USE_NATIVE_LIBPATHS=1
 #
 !IFNDEF NCC
 NCC = $(CC)
 !ENDIF
 
-# C Compiler and options for use in building executables that
+# Check for the MSVC runtime library path macro.  Othertise, this
+# value will default to the 'lib' directory underneath the MSVC
+# installation directory.
+#
+!IFNDEF NCRTLIBPATH
+NCRTLIBPATH = $(VCINSTALLDIR)\lib
+!ENDIF
+
+# Check for the Platform SDK library path macro.  Othertise, this
+# value will default to the 'lib' directory underneath the Windows
+# SDK installation directory (the environment variable used appears
+# to be available when using Visual C++ 2008 or later via the
+# command line).
+#
+!IFNDEF NSDKLIBPATH
+NSDKLIBPATH = $(WINDOWSSDKDIR)\lib
+!ENDIF
+
+# C compiler and options for use in building executables that
 # will run on the platform that is doing the build.
 #
 BCC = $(NCC) -W3
 
-# C Compile and options for use in building executables that
+# Check if the native library paths should be used when compiling
+# the command line tools used during the compilation process.  If
+# so, set the necessary macro now.
+#
+!IF $(USE_NATIVE_LIBPATHS)!=0
+NLTLIBPATHS = "/LIBPATH:$(NCRTLIBPATH)" "/LIBPATH:$(NSDKLIBPATH)"
+!ENDIF
+
+# C compiler and options for use in building executables that
 # will run on the target platform.  (BCC and TCC are usually the
 # same unless your are cross-compiling.)
 #
@@ -142,10 +175,17 @@ TCC = $(TCC) -DSQLITE_ENABLE_IOTRACE
 !ENDIF
 
 #
-# Prevent warnings about "insecure" runtime library functions being used.
+# Prevent warnings about "insecure" MSVC runtime library functions
+# being used.
 #
 TCC = $(TCC) -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS
 BCC = $(BCC) -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS
+
+#
+# Prevent warnings about "deprecated" POSIX functions being used.
+#
+TCC = $(TCC) -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_NONSTDC_NO_WARNINGS
+BCC = $(BCC) -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_NONSTDC_NO_WARNINGS
 
 #
 # Use native Win32 heap instead of malloc/free?
@@ -684,7 +724,7 @@ lempar.c:	$(TOP)\src\lempar.c
 	copy $(TOP)\src\lempar.c .
 
 lemon.exe:	$(TOP)\tool\lemon.c lempar.c
-	$(BCC) -Fe$@ $(TOP)\tool\lemon.c
+	$(BCC) -Daccess=_access -Fe$@ $(TOP)\tool\lemon.c /link $(NLTLIBPATHS)
 
 # Rules to build individual *.lo files from generated *.c files. This
 # applies to:
@@ -940,7 +980,7 @@ sqlite3.h:	$(TOP)\src\sqlite.h.in $(TOP)\manifest.uuid $(TOP)\VERSION
 	$(TCLSH_CMD) $(TOP)\tool\mksqlite3h.tcl $(TOP) > sqlite3.h
 
 mkkeywordhash.exe:	$(TOP)\tool\mkkeywordhash.c
-	$(BCC) -Fe$@ $(OPT_FEATURE_FLAGS) $(OPTS) $(TOP)\tool\mkkeywordhash.c
+	$(BCC) -Fe$@ $(OPT_FEATURE_FLAGS) $(OPTS) $(TOP)\tool\mkkeywordhash.c /link $(NLTLIBPATHS)
 
 keywordhash.h:	$(TOP)\tool\mkkeywordhash.c mkkeywordhash.exe
 	.\mkkeywordhash.exe > keywordhash.h
