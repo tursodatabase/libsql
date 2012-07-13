@@ -1,5 +1,5 @@
-C Update\stest_spellfix.c\swith\slatest\schanges.
-D 2012-07-13T16:15:20.128
+C Add\sthe\s"matchlen"\scolumn\sto\sthe\sspellfix1\svirtual\stable.
+D 2012-07-13T19:26:34.617
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8f6d858bf3df9978ba43df19985146a1173025e4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -221,7 +221,7 @@ F src/test_quota.h 8761e463b25e75ebc078bd67d70e39b9c817a0cb
 F src/test_rtree.c aba603c949766c4193f1068b91c787f57274e0d9
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
-F src/test_spellfix.c 1de8d8c086efa50bb6660ea5988e8630ef9144aa
+F src/test_spellfix.c 1c900928dad9b71c0fdcbdda9e2f52234f283660
 F src/test_stat.c d1569c7a4839f13e80187e2c26b2ab4da2d03935
 F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c a992d8c80ea91fbf21fb2dd570db40e77dd7e6ae
@@ -716,6 +716,7 @@ F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
+F test/spellfix.test 936be6f7ba1c4d096adb280c68b32f4848af8d2e
 F test/sqllimits1.test b1aae27cc98eceb845e7f7adf918561256e31298
 F test/stat.test 08e8185b3fd5b010c90d7ad82b9dd4ea1cbf14b0
 F test/stmt.test 25d64e3dbf9a3ce89558667d7f39d966fe2a71b9
@@ -1004,7 +1005,10 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 7fac56ed9feda819e66070bd5e06db8cad77e8bd
-R 8322d35d4441c91cd733d64b44bd2f2e
+P cba2a65870481df213e006b07e74f0ca19d2d57c
+R 79ffd07a9c878240f73dd72d96e3ef36
+T *branch * spellfix-matchlen
+T *sym-spellfix-matchlen *
+T -sym-trunk *
 U dan
-Z 4817f8644451c5f84c464c55e7d56257
+Z 642149d4a86bbb287ab54c68c79dc818
