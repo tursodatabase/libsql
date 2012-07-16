@@ -1,5 +1,5 @@
-C Merge\strunk\schanges.
-D 2012-07-16T10:25:54.662
+C Fix\sa\sbug\sin\sthe\sphonetic-hash\sroutine\sin\sspellfix1:\sEven\sif\sthe\sfirst\scharacter\sof\sa\sword\sis\sdeemed\sto\sbe\s"silent",\sdo\snot\sapply\sthe\sspecial\shandling\sintended\sfor\sthe\sfirst\scharacter\sof\seach\sword\sto\sthe\ssecond.
+D 2012-07-16T14:52:49.791
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8f6d858bf3df9978ba43df19985146a1173025e4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -221,7 +221,7 @@ F src/test_quota.h 8761e463b25e75ebc078bd67d70e39b9c817a0cb
 F src/test_rtree.c aba603c949766c4193f1068b91c787f57274e0d9
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
-F src/test_spellfix.c 1c900928dad9b71c0fdcbdda9e2f52234f283660
+F src/test_spellfix.c 1b31d1ea6404dab6353eb2b07871344940c4469d
 F src/test_stat.c d1569c7a4839f13e80187e2c26b2ab4da2d03935
 F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c a992d8c80ea91fbf21fb2dd570db40e77dd7e6ae
@@ -1005,7 +1005,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P f24b9d87f6b0e8b4d26669d5c1191f9280ba14a3 4353e40b74f577f224f190c429bfe03cf6a5c6d6
-R 41982e9e09fbd84544b16a8024815a54
+P 90df64ab803001819b3ebbb41d596aedbd9961b1
+R 6fff5cd40b7efe568d75dafae19dd7da
 U dan
-Z df39f17a0a50d7df733c6d4551aaf8e2
+Z 85a8e8a94773032ba7ff59559399f217

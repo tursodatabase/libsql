@@ -479,6 +479,7 @@ static unsigned char *phoneticHash(const unsigned char *zIn, int nIn){
     c = aClass[c&0x7f];
     if( c==CCLASS_SPACE ) continue;
     if( c==CCLASS_OTHER && cPrev!=CCLASS_DIGIT ) continue;
+    aClass = midClass;
     if( c==CCLASS_VOWEL && (cPrevX==CCLASS_R || cPrevX==CCLASS_L) ){
        continue; /* No vowels beside L or R */ 
     }
@@ -488,8 +489,6 @@ static unsigned char *phoneticHash(const unsigned char *zIn, int nIn){
     cPrev = c;
     if( c==CCLASS_SILENT ) continue;
     cPrevX = c;
-    if( c==CCLASS_SPACE ) continue;
-    aClass = midClass;
     c = className[c];
     if( c!=zOut[nOut-1] ) zOut[nOut++] = c;
   }
