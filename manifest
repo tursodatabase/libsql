@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\sphonetic-hash\sroutine\sin\sspellfix1:\sEven\sif\sthe\sfirst\scharacter\sof\sa\sword\sis\sdeemed\sto\sbe\s"silent",\sdo\snot\sapply\sthe\sspecial\shandling\sintended\sfor\sthe\sfirst\scharacter\sof\seach\sword\sto\sthe\ssecond.
-D 2012-07-16T14:52:49.791
+C Fix\scompiler\swarnings\sabout\sunused\scode\sin\sspellfix.\s\sFix\sthe\seditDist3Core()\nroutine\sto\sreturn\sthe\smatchlen\sin\scharacters\sinstead\sof\sbytes.
+D 2012-07-16T22:16:44.619
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8f6d858bf3df9978ba43df19985146a1173025e4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,7 +192,7 @@ F src/test4.c d1e5a5e904d4b444cf572391fdcb017638e36ff7
 F src/test5.c a6d1ac55ac054d0b2b8f37b5e655b6c92645a013
 F src/test6.c 417e1e214734393c24a8ee80b41485a9c4169123
 F src/test7.c 2e0781754905c8adc3268d8f0967e7633af58843
-F src/test8.c c4bcd39c9b157a28f5c4efefbb6bb1174037cace
+F src/test8.c 8bcce65e5ee027fbfd7da41d28371aabbfd369ff
 F src/test9.c bea1e8cf52aa93695487badedd6e1886c321ea60
 F src/test_async.c 0612a752896fad42d55c3999a5122af10dcf22ad
 F src/test_autoext.c 30e7bd98ab6d70a62bb9ba572e4c7df347fe645e
@@ -221,7 +221,7 @@ F src/test_quota.h 8761e463b25e75ebc078bd67d70e39b9c817a0cb
 F src/test_rtree.c aba603c949766c4193f1068b91c787f57274e0d9
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
-F src/test_spellfix.c 1b31d1ea6404dab6353eb2b07871344940c4469d
+F src/test_spellfix.c 5ed989693d4040f4d343316c338e25c5a6a1f05d
 F src/test_stat.c d1569c7a4839f13e80187e2c26b2ab4da2d03935
 F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c a992d8c80ea91fbf21fb2dd570db40e77dd7e6ae
@@ -1005,7 +1005,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 90df64ab803001819b3ebbb41d596aedbd9961b1
-R 6fff5cd40b7efe568d75dafae19dd7da
-U dan
-Z 85a8e8a94773032ba7ff59559399f217
+P 6333b42dd292e8e567c3fce1c371d6f58021af88
+R 30ab5f90b7df8ebe4d6fa220655edbc4
+U drh
+Z d0f2f984dce6f521f6a371c3f57d729a

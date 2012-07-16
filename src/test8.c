@@ -1381,8 +1381,6 @@ static int register_spellfix_module(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  static sqlite3_module aMod[3];
-  int iMod;
   sqlite3 *db;
 
   if( objc!=2 ){

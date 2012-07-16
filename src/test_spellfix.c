@@ -1113,6 +1113,7 @@ static EditDist3FromString *editDist3FromStringNew(
   return pStr;
 }
 
+#if 0 /* No longer used */
 /*
 ** Return the number of bytes in the common prefix of two UTF8 strings.
 ** Only complete characters are considered.
@@ -1134,6 +1135,7 @@ static int editDist3SuffixLen(const char *z1, int n1, const char *z2, int n2){
   while( n1<origN1 && (z1[n1]&0xc0)==0x80 ){ n1++; n2++; }
   return origN1 - n1;
 }
+#endif /* 0 */
 
 /*
 ** Update entry m[i] such that it is the minimum of its current value
@@ -1305,17 +1307,22 @@ static int editDist3Core(
 
   /* Free memory allocations and return the result */
   res = (int)m[szRow*(n2+1)-1];
+  n = n2;
   if( f.isPrefix ){
-    *pnMatch = n2;
     for(i2=1; i2<=n2; i2++){
       int b = m[szRow*i2-1];
       if( b<=res ){ 
         res = b;
-        if( pnMatch ) *pnMatch = i2-1;
+        n = i2 - 1;
       }
     }
-  }else if( pnMatch ){
-    *pnMatch = n2;
+  }
+  if( pnMatch ){
+    int nExtra = 0;
+    for(k=0; k<n; k++){
+      if( (z2[k] & 0xc0)==0x80 ) nExtra++;
+    }
+    *pnMatch = n - nExtra;
   }
 
 editDist3Abort:
