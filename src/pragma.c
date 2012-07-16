@@ -1160,6 +1160,19 @@ void sqlite3Pragma(
 
     int isQuick = (sqlite3Tolower(zLeft[0])=='q');
 
+    /* If the PRAGMA command was of the form "PRAGMA <db>.integrity_check",
+    ** then iDb is set to the index of the database identified by <db>.
+    ** In this case, the integrity of database iDb only is verified by
+    ** the VDBE created below.
+    **
+    ** Otherwise, if the command was simply "PRAGMA integrity_check" (or
+    ** "PRAGMA quick_check"), then iDb is set to 0. In this case, set iDb
+    ** to -1 here, to indicate that the VDBE should verify the integrity
+    ** of all attached databases.  */
+    assert( iDb>=0 );
+    assert( iDb==0 || pId2->z );
+    if( pId2->z==0 ) iDb = -1;
+
     /* Initialize the VDBE program */
     if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     pParse->nMem = 6;
@@ -1183,6 +1196,7 @@ void sqlite3Pragma(
       int cnt = 0;
 
       if( OMIT_TEMPDB && i==1 ) continue;
+      if( iDb>=0 && i!=iDb ) continue;
 
       sqlite3CodeVerifySchema(pParse, i);
       addr = sqlite3VdbeAddOp1(v, OP_IfPos, 1); /* Halt if out of errors */
@@ -1194,7 +1208,7 @@ void sqlite3Pragma(
       ** Begin by filling registers 2, 3, ... with the root pages numbers
       ** for all tables and indices in the database.
       */
-      assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
+      assert( sqlite3SchemaMutexHeld(db, i, 0) );
       pTbls = &db->aDb[i].pSchema->tblHash;
       for(x=sqliteHashFirst(pTbls); x; x=sqliteHashNext(x)){
         Table *pTab = sqliteHashData(x);

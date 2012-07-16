@@ -1,5 +1,5 @@
-C Update\stest_spellfix.c\swith\slatest\schanges.
-D 2012-07-13T16:15:20.128
+C If\sa\sspecific\sdatabase\sis\snominated\sas\spart\sof\sa\s"PRAGMA\sintegrity_check"\sor\s"PRAGMA\squick_check"\scommand,\ssearch\sfor\sproblems\sin\sthe\snominated\sdatabase\sonly.\si.e.\s"PRAGMA\smain.quick_check"\snow\sonly\sscans\sthe\smain\sdatabase,\snot\sall\sattached\sdatabases\sas\sbefore.
+D 2012-07-16T10:06:12.788
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8f6d858bf3df9978ba43df19985146a1173025e4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -170,7 +170,7 @@ F src/parse.y f29df90bd3adc64b33114ab1de9fb7768fcf2099
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h 1b5dcc3dc8103d03e625b177023ee67764fa6b7c
 F src/pcache1.c 2234d84f9c003d800a57f00f8535c91667fa4f6c
-F src/pragma.c eee3e3161f82a1e06f632a8d2a82b29ba3c45889
+F src/pragma.c 97f9357f0e7e5fb46a2519f14539550aa07db49f
 F src/prepare.c 33291b83cca285718048d219c67b8298501fa3a5
 F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -642,7 +642,7 @@ F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/permutations.test 2af90e00cea9e7e7c0a6b16d34727cb5bbae14dd
-F test/pragma.test cb736bcc75b8b629af21ac0ad83ba1d054a2107b
+F test/pragma.test a62f73293b0f0d79b0c87f8dd32d46fe53b0bd17
 F test/pragma2.test 3a55f82b954242c642f8342b17dffc8b47472947
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301
@@ -1004,7 +1004,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 7fac56ed9feda819e66070bd5e06db8cad77e8bd
-R 8322d35d4441c91cd733d64b44bd2f2e
+P cba2a65870481df213e006b07e74f0ca19d2d57c
+R 2c8947c00bca721d7703f91176d94433
 U dan
-Z 4817f8644451c5f84c464c55e7d56257
+Z f57f4dc603e6879ace3edbe2fb8156d2
