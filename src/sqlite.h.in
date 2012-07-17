@@ -1341,6 +1341,7 @@ struct sqlite3_mem_methods {
   int (*xInit)(void*);           /* Initialize the memory allocator */
   void (*xShutdown)(void*);      /* Deinitialize the memory allocator */
   void *pAppData;                /* Argument to xInit() and xShutdown() */
+  void *(*xCalloc)(int);         /* Zeroed memory allocation function */
 };
 
 /*
@@ -1577,8 +1578,8 @@ struct sqlite3_mem_methods {
 #define SQLITE_CONFIG_PAGECACHE     7  /* void*, int sz, int N */
 #define SQLITE_CONFIG_HEAP          8  /* void*, int nByte, int min */
 #define SQLITE_CONFIG_MEMSTATUS     9  /* boolean */
-#define SQLITE_CONFIG_MUTEX        10  /* sqlite3_mutex_methods* */
-#define SQLITE_CONFIG_GETMUTEX     11  /* sqlite3_mutex_methods* */
+#define SQLITE_CONFIG_MUTEX        10  /* sqlite3_mutex_methods* no xCalloc() */
+#define SQLITE_CONFIG_GETMUTEX     11  /* sqlite3_mutex_methods* no xCalloc() */
 /* previously SQLITE_CONFIG_CHUNKALLOC 12 which is now unused. */ 
 #define SQLITE_CONFIG_LOOKASIDE    13  /* int int */
 #define SQLITE_CONFIG_PCACHE       14  /* no-op */
@@ -1587,6 +1588,8 @@ struct sqlite3_mem_methods {
 #define SQLITE_CONFIG_URI          17  /* int */
 #define SQLITE_CONFIG_PCACHE2      18  /* sqlite3_pcache_methods2* */
 #define SQLITE_CONFIG_GETPCACHE2   19  /* sqlite3_pcache_methods2* */
+#define SQLITE_CONFIG_MALLOC2      20  /* sqlite3_mem_methods* incl xCalloc() */
+#define SQLITE_CONFIG_GETMALLOC2   21  /* sqlite3_mem_methods* incl xCalloc() */
 
 /*
 ** CAPI3REF: Database Connection Configuration Options

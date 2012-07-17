@@ -70,6 +70,7 @@
 #include <libkern/OSAtomic.h>
 static malloc_zone_t* _sqliteZone_;
 #define SQLITE_MALLOC(x) malloc_zone_malloc(_sqliteZone_, (x))
+#define SQLITE_CALLOC(x) malloc_zone_calloc(_sqliteZone_, (x), 1)
 #define SQLITE_FREE(x) malloc_zone_free(_sqliteZone_, (x));
 #define SQLITE_REALLOC(x,y) malloc_zone_realloc(_sqliteZone_, (x), (y))
 #define SQLITE_MALLOCSIZE(x) \
@@ -82,6 +83,7 @@ static malloc_zone_t* _sqliteZone_;
 ** Also used by Apple systems if SQLITE_WITHOUT_ZONEMALLOC is defined.
 */
 #define SQLITE_MALLOC(x)    malloc(x)
+#define SQLITE_CALLOC(x)    calloc((x), 1)
 #define SQLITE_FREE(x)      free(x)
 #define SQLITE_REALLOC(x,y) realloc((x),(y))
 
@@ -100,16 +102,17 @@ static malloc_zone_t* _sqliteZone_;
 #endif /* __APPLE__ or not __APPLE__ */
 
 /*
-** Like malloc(), but remember the size of the allocation
-** so that we can find it later using sqlite3MemSize().
+** Like malloc() (if bZero==0) or calloc() (if bZero!=0), except remember 
+** the size of the allocation so that we can find it later using 
+** sqlite3MemSize().
 **
 ** For this low-level routine, we are guaranteed that nByte>0 because
 ** cases of nByte<=0 will be intercepted and dealt with by higher level
 ** routines.
 */
-static void *sqlite3MemMalloc(int nByte){
+static void *memMalloc(int nByte, int bZero){
 #ifdef SQLITE_MALLOCSIZE
-  void *p = SQLITE_MALLOC( nByte );
+  void *p = (bZero ? SQLITE_CALLOC( nByte ) : SQLITE_MALLOC( nByte ));
   if( p==0 ){
     testcase( sqlite3GlobalConfig.xLog!=0 );
     sqlite3_log(SQLITE_NOMEM, "failed to allocate %u bytes of memory", nByte);
@@ -119,7 +122,7 @@ static void *sqlite3MemMalloc(int nByte){
   sqlite3_int64 *p;
   assert( nByte>0 );
   nByte = ROUND8(nByte);
-  p = SQLITE_MALLOC( nByte+8 );
+  p = (bZero ? SQLITE_CALLOC( nByte+8 ) : SQLITE_MALLOC( nByte+8 ));
   if( p ){
     p[0] = nByte;
     p++;
@@ -129,6 +132,13 @@ static void *sqlite3MemMalloc(int nByte){
   }
   return (void *)p;
 #endif
+}
+
+static void *sqlite3MemMalloc(int nByte){
+  return memMalloc(nByte, 0);
+}
+static void *sqlite3MemCalloc(int nByte){
+  return memMalloc(nByte, 1);
 }
 
 /*
@@ -271,9 +281,10 @@ void sqlite3MemSetDefault(void){
      sqlite3MemRoundup,
      sqlite3MemInit,
      sqlite3MemShutdown,
-     0
+     0,
+     sqlite3MemCalloc
   };
-  sqlite3_config(SQLITE_CONFIG_MALLOC, &defaultMethods);
+  sqlite3_config(SQLITE_CONFIG_MALLOC2, &defaultMethods);
 }
 
 #endif /* SQLITE_SYSTEM_MALLOC */

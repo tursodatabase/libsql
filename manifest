@@ -1,5 +1,5 @@
-C Ensure\sthat\sthere\sis\salways\sat\sleast\sone\saReadMark\sslot\susable\sby\san\sunprivileged\sreader\swhile\sa\scheckpoint\sis\srunning.\sAlso,\sif\sone\sor\smore\stransactions\sare\srecovered\sfrom\sa\slog\sfile,\sinitialize\sone\sof\sthe\saReadMark\sslots\sto\scontain\smxFrame\sas\spart\sof\sthe\srecovery\sprocess.
-D 2012-07-17T14:37:12.494
+C Enhance\sthe\scustom\smemory\sallocation\sinterface\sto\sallow\sthe\suser\sto\sspecify\sa\scalloc()\sfunction.
+D 2012-07-17T19:32:32.796
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8f6d858bf3df9978ba43df19985146a1173025e4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -145,10 +145,10 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
 F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
-F src/main.c 02255cf1da50956c5427c469abddb15bccc4ba09
-F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
+F src/main.c 0ce67958cf9cd68330c9c77d78dae275c867418e
+F src/malloc.c e80dccc5d2be2fc0335fb6f430247460e4211388
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
-F src/mem1.c b3677415e69603d6a0e7c5410a1b3731d55beda1
+F src/mem1.c bc33172c15cbd3d15f0e962311da955c8aba1295
 F src/mem2.c e307323e86b5da1853d7111b68fd6b84ad6f09cf
 F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
 F src/mem5.c c2c63b7067570b00bf33d751c39af24182316f7f
@@ -178,7 +178,7 @@ F src/resolve.c b3c70ab28cac60de33684c9aa9e5138dcf71d6dd
 F src/rowset.c f6a49f3e9579428024662f6e2931832511f831a1
 F src/select.c f6c4833c4d8e94714761d99013d74f381e084f1d
 F src/shell.c 076e1c90d594644f36027c8ecff9a392cf2d3a06
-F src/sqlite.h.in 310ae7e538883fa1619ab0638c775ce11ad43015
+F src/sqlite.h.in c660e2c8c5b5412d1ce51d58807353fa1dfdbee0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h 2bc2ebc2ff1a2b530ee5ed9ffd46c6fce93b244c
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -1005,7 +1005,10 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 8c9ee1d78f99394eef73a177141ca9e1c67e4e07
-R 21a0c6942de3e9593e3e93f462c443c7
+P e4163596339c2166f9c4356ab824fff8bda8d0b0
+R 884dbf95b40a83feea70896cc9aa3953
+T *branch * calloc
+T *sym-calloc *
+T -sym-trunk *
 U dan
-Z a98d8c358c03bd601d60af308961371e
+Z a86d2e070abe26c339e2a7663eba53d5

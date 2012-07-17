@@ -303,6 +303,17 @@ int sqlite3_shutdown(void){
 }
 
 /*
+** If a custom memory allocator is configured using the legacy 
+** SQLITE_CONFIG_MALLOC interface, this function is used as the xCalloc()
+** method.
+*/
+static void *syntheticCalloc(int nByte){
+  void *pRet = sqlite3GlobalConfig.m.xMalloc(nByte);
+  if( pRet ) memset(pRet, 0, nByte);
+  return pRet;
+}
+
+/*
 ** This API allows applications to modify the global configuration of
 ** the SQLite library at run-time.
 **
@@ -357,18 +368,33 @@ int sqlite3_config(int op, ...){
     }
 #endif
 
-
     case SQLITE_CONFIG_MALLOC: {
+      /* Specify an alternative malloc implementation */
+      int nCopy = offsetof(sqlite3_mem_methods, xCalloc);
+      memcpy(&sqlite3GlobalConfig.m, va_arg(ap, sqlite3_mem_methods*), nCopy);
+      sqlite3GlobalConfig.m.xCalloc = syntheticCalloc;
+      break;
+    }
+    case SQLITE_CONFIG_GETMALLOC: {
+      /* Retrieve the current malloc() implementation */
+      int nCopy = offsetof(sqlite3_mem_methods, xCalloc);
+      if( sqlite3GlobalConfig.m.xMalloc==0 ) sqlite3MemSetDefault();
+      memcpy(va_arg(ap, sqlite3_mem_methods*), &sqlite3GlobalConfig.m, nCopy);
+      break;
+    }
+
+    case SQLITE_CONFIG_MALLOC2: {
       /* Specify an alternative malloc implementation */
       sqlite3GlobalConfig.m = *va_arg(ap, sqlite3_mem_methods*);
       break;
     }
-    case SQLITE_CONFIG_GETMALLOC: {
+    case SQLITE_CONFIG_GETMALLOC2: {
       /* Retrieve the current malloc() implementation */
       if( sqlite3GlobalConfig.m.xMalloc==0 ) sqlite3MemSetDefault();
       *va_arg(ap, sqlite3_mem_methods*) = sqlite3GlobalConfig.m;
       break;
     }
+
     case SQLITE_CONFIG_MEMSTATUS: {
       /* Enable or disable the malloc status collection */
       sqlite3GlobalConfig.bMemstat = va_arg(ap, int);
