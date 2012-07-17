@@ -1,5 +1,5 @@
-C Merge\sthe\sspellfix1\schanges\sfor\ssupporting\smatchlen\sinto\strunk.
-D 2012-07-16T23:13:19.737
+C Amplification\sof\sa\scomment\sin\swal.c.\s\sChange\sthe\saReadMark[]\sprocessing\sso\nthat\sone\sread\smark\sis\sleft\sat\szero\swhen\sa\sWAL\sresets.
+D 2012-07-17T02:56:05.199
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8f6d858bf3df9978ba43df19985146a1173025e4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -247,7 +247,7 @@ F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
 F src/vdbesort.c b25814d385895544ebc8118245c8311ded7f81c9
 F src/vdbetrace.c 79059ebd17b3c8545fab2a24253713e77e4ab392
 F src/vtab.c bb8ea3a26608bb1357538a5d2fc72beba6638998
-F src/wal.c 7bb3ad807afc7973406c805d5157ec7a2f65e146
+F src/wal.c 16345cdccc95e13b493854f1253b8395fcd519fa
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 24c7494d8875ead994b4dfe5461340c27fd424ca
@@ -1005,7 +1005,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 4353e40b74f577f224f190c429bfe03cf6a5c6d6 f96d4e7bd7d81b05b1490bf5d79c77ff583e444c
-R 30ab5f90b7df8ebe4d6fa220655edbc4
+P 6f167adf6050632e8c52f9ac4fb5583bcf27c576
+R aff021ec3312340384303b11ff294204
 U drh
-Z 5a5e4c2b59deca5c96bae885212173df
+Z 0bb1d32f801f3ecf912dcdccb6dd8135
