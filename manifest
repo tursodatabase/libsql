@@ -1,5 +1,5 @@
-C Merge\sthe\svtab1\stest\sscript\sfix\sand\sthe\sFTS3\smemory\sleak\sfix\sfrom\strunk\ninto\sthe\sapple-osx\sbranch.
-D 2012-06-08T14:11:30.151
+C Cherrypick\s[8c9ee1d78f]\sand\s[e416359633]\sfrom\strunk:\nEnsure\sthat\sthere\sis\salways\sat\sleast\sone\saReadMark\sslot\susable\sby\san\sunprivileged\sreader\swhile\sa\scheckpoint\sis\srunning.\sAlso,\sif\sone\sor\smore\stransactions\sare\srecovered\sfrom\sa\slog\sfile,\sinitialize\sone\sof\sthe\saReadMark\sslots\sto\scontain\smxFrame\sas\spart\sof\sthe\srecovery\sprocess.
+D 2012-07-17T17:46:21.303
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f4e42073f1092a09a9cbd42aecf2f33790208cb5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -233,7 +233,7 @@ F src/test_superlock.c 12e2bc484c6c2ba837327d37f2e6a6fd9d1464f8
 F src/test_syscall.c a992d8c80ea91fbf21fb2dd570db40e77dd7e6ae
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c e286f2173563f2a1747c24bcda6b9d030bf4f4e4
-F src/test_vfs.c 9d934e111021d56c629efc73a796648c9519ad12
+F src/test_vfs.c da6d0d982b11756c94c1760196355d33d03ff745
 F src/test_vfstrace.c 6b28adb2a0e8ecd0f2e3581482e1f658b11b4067
 F src/test_wholenumber.c 3d2b9ed1505c40ad5c5ca2ad16ae7a289d6cc251
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
@@ -253,7 +253,7 @@ F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
 F src/vdbesort.c b25814d385895544ebc8118245c8311ded7f81c9
 F src/vdbetrace.c 6700008a6a05e6e39531ed252c32557ceb962b91
 F src/vtab.c bb8ea3a26608bb1357538a5d2fc72beba6638998
-F src/wal.c 1ff2ebb47ba29610abd768bf74cecd9c33049ebf
+F src/wal.c c981d242bbb28ae3fc4889528a5621cc564d3ed2
 F src/wal.h ce626f1f9000caf09a99a6634a8d794686f92e1b
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 24c7494d8875ead994b4dfe5461340c27fd424ca
@@ -931,8 +931,8 @@ F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 82f463886e18d7f8395a4b6167c91815efe54839
 F test/wal.test 5759631b0e610d616c33cc21124b3395f39cd0c7
-F test/wal2.test 0f616db53cbf93bbd7a8ef8b33f048a2b43d2f0a
-F test/wal3.test ae86a92d41d81730278fca0b71368f3e78e9c64a
+F test/wal2.test 583ce66003086387a7301c0b62e549026f2a50ed
+F test/wal3.test de822707fbc8e9d056edc895adfb8abcccee4590
 F test/wal4.test 5755887f321baa4c55de0b91066fa7d0cafcac9d
 F test/wal5.test 187ae92cc9ba1ec6803681b9025cad89af1a8c69
 F test/wal6.test c561d1e44c89f9cb458a7b03003ed4baac08ba07
@@ -950,7 +950,7 @@ F test/walhook.test 5d2bdb04fd3e220e2f96e6b566d57e00020bdaec
 F test/walmode.test aa45339b4afa435dde5d88e71a95459cc221a3f4
 F test/walnoshm.test 559b878f3aab838971d820329ca35f1caa7b038e
 F test/walpersist.test abd956d66e2f36d2d9d05d3a969f48be6d2ddbec
-F test/walro.test 180321fa4e7cf7e98b5df232763c3e0781673a41
+F test/walro.test 78f389d11e4a32e329feb9b63859ebc3081bbea0
 F test/walshared.test 04590b10c677f75318701818c50bc0dda5da64ab
 F test/walslow.test 658066419a92d3bd85be71a11ce477af4ffe9153
 F test/walthread.test c3aaf9ef7ad21ae79c2345425bfddb39cdac954f
@@ -1010,7 +1010,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 9d1b8515625ce7fbde170180126bd1a273bb4994 025227be5495f950c466dfabac140cba69e498be
-R 73fc9d898a1621cfcd2d0602a720ceb8
+P 892d8779cc3c4037d6e21c04c39796284d811157
+R ab4b327459cf45e2530a4cdced0d9405
 U drh
-Z 70bd5ce96a21e994af0322978beb4b1b
+Z 7a54c87c3e8e79189a731257e2592a5b

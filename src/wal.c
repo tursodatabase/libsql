@@ -142,8 +142,9 @@
 ** byte order of the host computer.
 **
 ** The purpose of the wal-index is to answer this question quickly:  Given
-** a page number P, return the index of the last frame for page P in the WAL,
-** or return NULL if there are no frames for page P in the WAL.
+** a page number P and a maximum frame index M, return the index of the 
+** last frame in the wal before frame M for page P in the WAL, or return
+** NULL if there are no frames for page P in the WAL prior to M.
 **
 ** The wal-index consists of a header region, followed by an one or
 ** more index blocks.  
@@ -1198,6 +1199,7 @@ finished:
     pInfo->nBackfill = 0;
     pInfo->aReadMark[0] = 0;
     for(i=1; i<WAL_NREADER; i++) pInfo->aReadMark[i] = READMARK_NOT_USED;
+    if( pWal->hdr.mxFrame ) pInfo->aReadMark[1] = pWal->hdr.mxFrame;
 
     /* If more than one frame was recovered from the log file, report an
     ** event via sqlite3_log(). This is to help with identifying performance
@@ -1703,7 +1705,7 @@ static int walCheckpoint(
       assert( y<=pWal->hdr.mxFrame );
       rc = walBusyLock(pWal, xBusy, pBusyArg, WAL_READ_LOCK(i), 1);
       if( rc==SQLITE_OK ){
-        pInfo->aReadMark[i] = READMARK_NOT_USED;
+        pInfo->aReadMark[i] = (i==1 ? mxSafeFrame : READMARK_NOT_USED);
         walUnlockExclusive(pWal, WAL_READ_LOCK(i), 1);
       }else if( rc==SQLITE_BUSY ){
         mxSafeFrame = y;
@@ -2628,7 +2630,8 @@ static int walRestartLog(Wal *pWal){
         aSalt[1] = salt1;
         walIndexWriteHdr(pWal);
         pInfo->nBackfill = 0;
-        for(i=1; i<WAL_NREADER; i++) pInfo->aReadMark[i] = READMARK_NOT_USED;
+        pInfo->aReadMark[1] = 0;
+        for(i=2; i<WAL_NREADER; i++) pInfo->aReadMark[i] = READMARK_NOT_USED;
         assert( pInfo->aReadMark[0]==0 );
         walUnlockExclusive(pWal, WAL_READ_LOCK(1), WAL_NREADER-1);
       }else if( rc!=SQLITE_BUSY ){
