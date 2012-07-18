@@ -552,7 +552,7 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
   }
   db->lookaside.pStart = pStart;
   db->lookaside.pFree = 0;
-  db->lookaside.sz = (u16)sz;
+  db->lookaside.szEnabled = db->lookaside.sz = (u16)sz;
   if( pStart ){
     int i;
     LookasideSlot *p;
@@ -564,12 +564,12 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
       p = (LookasideSlot*)&((u8*)p)[sz];
     }
     db->lookaside.pEnd = p;
-    db->lookaside.bEnabled = 1;
     db->lookaside.bMalloced = pBuf==0 ?1:0;
+    assert( db->lookaside.sz>0 );
   }else{
     db->lookaside.pEnd = 0;
-    db->lookaside.bEnabled = 0;
     db->lookaside.bMalloced = 0;
+    db->lookaside.sz = 0;
   }
   return SQLITE_OK;
 }

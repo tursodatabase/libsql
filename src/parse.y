@@ -152,7 +152,7 @@ create_table ::= createkw temp(T) TABLE ifnotexists(E) nm(Y) dbnm(Z). {
    sqlite3StartTable(pParse,&Y,&Z,T,0,0,E);
 }
 createkw(A) ::= CREATE(X).  {
-  pParse->db->lookaside.bEnabled = 0;
+  pParse->db->lookaside.sz = 0;
   A = X;
 }
 %type ifnotexists {int}
@@ -1378,7 +1378,7 @@ cmd ::= ALTER TABLE add_column_fullname ADD kwcolumn_opt column(Y). {
   sqlite3AlterFinishAddColumn(pParse, &Y);
 }
 add_column_fullname ::= fullname(X). {
-  pParse->db->lookaside.bEnabled = 0;
+  pParse->db->lookaside.sz = 0;
   sqlite3AlterBeginAddColumn(pParse, X);
 }
 kwcolumn_opt ::= .

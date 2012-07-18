@@ -1816,11 +1816,11 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   assert( pTable->pSelect );
   pSel = sqlite3SelectDup(db, pTable->pSelect, 0);
   if( pSel ){
-    u8 enableLookaside = db->lookaside.bEnabled;
+    u16 lookasideSz = db->lookaside.sz;
     n = pParse->nTab;
     sqlite3SrcListAssignCursors(pParse, pSel->pSrc);
     pTable->nCol = -1;
-    db->lookaside.bEnabled = 0;
+    db->lookaside.sz = 0;
 #ifndef SQLITE_OMIT_AUTHORIZATION
     xAuth = db->xAuth;
     db->xAuth = 0;
@@ -1829,7 +1829,7 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
 #else
     pSelTab = sqlite3ResultSetOfSelect(pParse, pSel);
 #endif
-    db->lookaside.bEnabled = enableLookaside;
+    db->lookaside.sz = lookasideSz;
     pParse->nTab = n;
     if( pSelTab ){
       assert( pTable->aCol==0 );

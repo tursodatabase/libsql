@@ -783,12 +783,14 @@ struct Schema {
 ** with a particular database connection.  Hence, schema information cannot
 ** be stored in lookaside because in shared cache mode the schema information
 ** is shared by multiple database connections.  Therefore, while parsing
-** schema information, the Lookaside.bEnabled flag is cleared so that
-** lookaside allocations are not used to construct the schema objects.
+** schema information, the Lookaside.sz variable is temporarily set to
+** zero so that lookaside allocations are not used to construct the schema 
+** objects. Lookaside.szEnabled always contains the allocation size that
+** Lookaside.sz is set to when the buffer is enabled.
 */
 struct Lookaside {
   u16 sz;                 /* Size of each buffer in bytes */
-  u8 bEnabled;            /* False to disable new lookaside allocations */
+  u16 szEnabled;          /* Value of 'sz' when buffer is enabled. */
   u8 bMalloced;           /* True if pStart obtained from sqlite3_malloc() */
   int nOut;               /* Number of buffers currently checked out */
   int mxOut;              /* Highwater mark for nOut */

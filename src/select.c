@@ -1398,9 +1398,9 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, Select *pSelect){
   if( pTab==0 ){
     return 0;
   }
-  /* The sqlite3ResultSetOfSelect() is only used n contexts where lookaside
-  ** is disabled */
-  assert( db->lookaside.bEnabled==0 );
+  /* The sqlite3ResultSetOfSelect() should only used in contexts where the
+  ** lookaside buffer is disabled. */
+  assert( db->lookaside.sz==0 );
   pTab->nRef = 1;
   pTab->zName = 0;
   pTab->nRowEst = 1000000;
