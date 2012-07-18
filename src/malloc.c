@@ -259,10 +259,9 @@ static void sqlite3MallocAlarm(int nByte){
 ** Do a memory allocation with statistics and alarms.  Assume the
 ** lock is already held.
 */
-static int mallocWithAlarm(
+static void *mallocWithAlarm(
   void *(*xAlloc)(int),          /* Memory allocation function */
-  int n,                         /* Bytes of memory to allocate */
-  void **pp                      /* OUT: Pointer to allocation */
+  int n                          /* Bytes of memory to allocate */
 ){
   int nFull;
   void *p;
@@ -294,8 +293,8 @@ static int mallocWithAlarm(
     sqlite3StatusAdd(SQLITE_STATUS_MEMORY_USED, nFull);
     sqlite3StatusAdd(SQLITE_STATUS_MALLOC_COUNT, 1);
   }
-  *pp = p;
-  return nFull;
+
+  return p;
 }
 
 /*
@@ -317,7 +316,7 @@ static void *memAllocate(
     p = 0;
   }else if( sqlite3GlobalConfig.bMemstat ){
     sqlite3_mutex_enter(mem0.mutex);
-    mallocWithAlarm(xAlloc, n, &p);
+    p = mallocWithAlarm(xAlloc, n);
     sqlite3_mutex_leave(mem0.mutex);
   }else{
     p = xAlloc(n);
@@ -388,8 +387,11 @@ void *sqlite3ScratchMalloc(int n){
   }else{
     if( sqlite3GlobalConfig.bMemstat ){
       sqlite3StatusSet(SQLITE_STATUS_SCRATCH_SIZE, n);
-      n = mallocWithAlarm(sqlite3GlobalConfig.m.xMalloc, n, &p);
-      if( p ) sqlite3StatusAdd(SQLITE_STATUS_SCRATCH_OVERFLOW, n);
+      p = mallocWithAlarm(sqlite3GlobalConfig.m.xMalloc, n);
+      if( p ){
+        n = sqlite3MallocSize(p);
+        sqlite3StatusAdd(SQLITE_STATUS_SCRATCH_OVERFLOW, n);
+      }
       sqlite3_mutex_leave(mem0.mutex);
     }else{
       sqlite3_mutex_leave(mem0.mutex);
@@ -597,8 +599,39 @@ void *sqlite3_realloc(void *pOld, int n){
 }
 
 /*
-** Allocate and, if bZero is true, zero memory. If the allocation 
-** fails, set the mallocFailed flag in the connection pointer.
+** Attempt to allocate an n byte block from the lookaside buffer of
+** connection db. If successful, return a pointer to the new allocation.
+** Otherwise, return a NULL pointer.
+*/
+#ifndef SQLITE_OMIT_LOOKASIDE
+static void *lookasideAlloc(sqlite3 *db, int n){
+  if( db->lookaside.bEnabled ){
+    if( n>db->lookaside.sz ){
+      db->lookaside.anStat[1]++;
+    }else{
+      LookasideSlot *pBuf;
+      if( (pBuf = db->lookaside.pFree)==0 ){
+        db->lookaside.anStat[2]++;
+      }else{
+        db->lookaside.pFree = pBuf->pNext;
+        db->lookaside.nOut++;
+        db->lookaside.anStat[0]++;
+        if( db->lookaside.nOut>db->lookaside.mxOut ){
+          db->lookaside.mxOut = db->lookaside.nOut;
+        }
+      }
+      return (void*)pBuf;
+    }
+  }
+  return 0;
+}
+#else
+# define lookasideAlloc(x,y) 0
+#endif
+
+/*
+** Allocate and zero memory. If the allocation fails, set the 
+** mallocFailed flag in the connection pointer.
 **
 ** If db!=0 and db->mallocFailed is true (indicating a prior malloc
 ** failure on the same database connection) then always return 0.
@@ -614,65 +647,51 @@ void *sqlite3_realloc(void *pOld, int n){
 ** In other words, if a subsequent malloc (ex: "b") worked, it is assumed
 ** that all prior mallocs (ex: "a") worked too.
 */
-static void *dbMalloc(sqlite3 *db, int n, int bZero){
+void *sqlite3DbMallocZero(sqlite3 *db, int n){
   void *p;
-  assert( db==0 || sqlite3_mutex_held(db->mutex) );
-  assert( db==0 || db->pnBytesFreed==0 );
-#ifndef SQLITE_OMIT_LOOKASIDE
-  if( db ){
-    LookasideSlot *pBuf;
-    if( db->mallocFailed ){
-      return 0;
-    }
-    if( db->lookaside.bEnabled ){
-      if( n>db->lookaside.sz ){
-        db->lookaside.anStat[1]++;
-      }else if( (pBuf = db->lookaside.pFree)==0 ){
-        db->lookaside.anStat[2]++;
-      }else{
-        db->lookaside.pFree = pBuf->pNext;
-        db->lookaside.nOut++;
-        db->lookaside.anStat[0]++;
-        if( db->lookaside.nOut>db->lookaside.mxOut ){
-          db->lookaside.mxOut = db->lookaside.nOut;
-        }
-        if( bZero ) memset(pBuf, 0, n);
-        return (void*)pBuf;
-      }
-    }
-  }
-#else
-  if( db && db->mallocFailed ){
-    return 0;
-  }
-#endif
-  if( bZero ){
-    p = sqlite3MallocZero(n);
+  if( db==0 ){
+    p = memAllocate(sqlite3GlobalConfig.m.xCalloc, n);
+  }else if( db->mallocFailed ){
+    p = 0;
   }else{
-    p = sqlite3Malloc(n);
+    if( (p = lookasideAlloc(db, n)) ){
+      memset(p, 0, n);
+    }else{
+      p = memAllocate(sqlite3GlobalConfig.m.xCalloc, n);
+      if( !p ) db->mallocFailed = 1;
+    }
   }
-  if( !p && db ){
-    db->mallocFailed = 1;
-  }
+
   sqlite3MemdebugSetType(p, MEMTYPE_DB |
          ((db && db->lookaside.bEnabled) ? MEMTYPE_LOOKASIDE : MEMTYPE_HEAP));
   return p;
-} 
-
-/*
-** Allocate and zero memory. If the allocation fails, set the 
-** mallocFailed flag in the connection pointer.
-*/
-void *sqlite3DbMallocZero(sqlite3 *db, int n){
-  return dbMalloc(db, n, 1);
 }
 
 /*
 ** Allocate memory. If the allocation fails, make the mallocFailed 
 ** flag in the connection pointer.
+**
+** If db!=0 and db->mallocFailed is true (indicating a prior malloc
+** failure on the same database connection) then always return 0.
+** See also comments above sqlite3DbMallocZero() for details.
 */
 void *sqlite3DbMallocRaw(sqlite3 *db, int n){
-  return dbMalloc(db, n, 0);
+  void *p;
+  if( db==0 ){
+    p = memAllocate(sqlite3GlobalConfig.m.xMalloc, n);
+  }else if( db->mallocFailed ){
+    p = 0;
+  }else{
+    p = lookasideAlloc(db, n);
+    if( !p ){
+      p = memAllocate(sqlite3GlobalConfig.m.xMalloc, n);
+      if( !p ) db->mallocFailed = 1;
+    }
+  }
+
+  sqlite3MemdebugSetType(p, MEMTYPE_DB |
+         ((db && db->lookaside.bEnabled) ? MEMTYPE_LOOKASIDE : MEMTYPE_HEAP));
+  return p;
 }
 
 /*

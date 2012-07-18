@@ -102,43 +102,60 @@ static malloc_zone_t* _sqliteZone_;
 #endif /* __APPLE__ or not __APPLE__ */
 
 /*
-** Like malloc() (if bZero==0) or calloc() (if bZero!=0), except remember 
-** the size of the allocation so that we can find it later using 
-** sqlite3MemSize().
+** A memory allocation of nByte bytes has failed. Log an error message
+** using sqlite3_log().
+*/
+static void logAllocationError(int nByte){
+  testcase( sqlite3GlobalConfig.xLog!=0 );
+  sqlite3_log(SQLITE_NOMEM, "failed to allocate %u bytes of memory", nByte);
+}
+
+/*
+** Allocate nByte bytes of memory.
 **
 ** For this low-level routine, we are guaranteed that nByte>0 because
 ** cases of nByte<=0 will be intercepted and dealt with by higher level
 ** routines.
 */
-static void *memMalloc(int nByte, int bZero){
+static void *sqlite3MemMalloc(int nByte){
+  i64 *p;
 #ifdef SQLITE_MALLOCSIZE
-  void *p = (bZero ? SQLITE_CALLOC( nByte ) : SQLITE_MALLOC( nByte ));
+  p = SQLITE_MALLOC(nByte);
   if( p==0 ){
-    testcase( sqlite3GlobalConfig.xLog!=0 );
-    sqlite3_log(SQLITE_NOMEM, "failed to allocate %u bytes of memory", nByte);
-  }
-  return p;
 #else
-  sqlite3_int64 *p;
-  assert( nByte>0 );
   nByte = ROUND8(nByte);
-  p = (bZero ? SQLITE_CALLOC( nByte+8 ) : SQLITE_MALLOC( nByte+8 ));
+  p = SQLITE_MALLOC(nByte+8);
   if( p ){
-    p[0] = nByte;
-    p++;
+    *(p++) = (i64)nByte;
   }else{
-    testcase( sqlite3GlobalConfig.xLog!=0 );
-    sqlite3_log(SQLITE_NOMEM, "failed to allocate %u bytes of memory", nByte);
+#endif
+    logAllocationError(nByte);
   }
   return (void *)p;
-#endif
 }
 
-static void *sqlite3MemMalloc(int nByte){
-  return memMalloc(nByte, 0);
-}
+/*
+** Allocate and zero nByte bytes of memory.
+**
+** For this low-level routine, we are guaranteed that nByte>0 because
+** cases of nByte<=0 will be intercepted and dealt with by higher level
+** routines.
+*/
 static void *sqlite3MemCalloc(int nByte){
-  return memMalloc(nByte, 1);
+  i64 *p;
+#ifdef SQLITE_MALLOCSIZE
+  p = SQLITE_CALLOC(nByte);
+  if( p==0 ){
+#else
+  nByte = ROUND8(nByte);
+  p = SQLITE_CALLOC(nByte+8);
+  if( p ){
+    *(p++) = (i64)nByte;
+  }else{
+#endif
+    logAllocationError(nByte);
+  }
+  return (void *)p;
 }
 
 /*
