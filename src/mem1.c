@@ -102,15 +102,6 @@ static malloc_zone_t* _sqliteZone_;
 #endif /* __APPLE__ or not __APPLE__ */
 
 /*
-** A memory allocation of nByte bytes has failed. Log an error message
-** using sqlite3_log().
-*/
-static void logAllocationError(int nByte){
-  testcase( sqlite3GlobalConfig.xLog!=0 );
-  sqlite3_log(SQLITE_NOMEM, "failed to allocate %u bytes of memory", nByte);
-}
-
-/*
 ** Allocate nByte bytes of memory.
 **
 ** For this low-level routine, we are guaranteed that nByte>0 because
@@ -118,20 +109,15 @@ static void logAllocationError(int nByte){
 ** routines.
 */
 static void *sqlite3MemMalloc(int nByte){
-  i64 *p;
 #ifdef SQLITE_MALLOCSIZE
-  p = SQLITE_MALLOC(nByte);
-  if( p==0 ){
+  return SQLITE_MALLOC( ROUND8(nByte) );
 #else
+  i64 *p;
   nByte = ROUND8(nByte);
   p = SQLITE_MALLOC(nByte+8);
-  if( p ){
-    *(p++) = (i64)nByte;
-  }else{
-#endif
-    logAllocationError(nByte);
-  }
+  if( p ) *(p++) = (i64)nByte;
   return (void *)p;
+#endif
 }
 
 /*
@@ -142,20 +128,15 @@ static void *sqlite3MemMalloc(int nByte){
 ** routines.
 */
 static void *sqlite3MemCalloc(int nByte){
-  i64 *p;
 #ifdef SQLITE_MALLOCSIZE
-  p = SQLITE_CALLOC(nByte);
-  if( p==0 ){
+  return SQLITE_CALLOC( ROUND8(nByte) );
 #else
+  i64 *p;
   nByte = ROUND8(nByte);
   p = SQLITE_CALLOC(nByte+8);
-  if( p ){
-    *(p++) = (i64)nByte;
-  }else{
-#endif
-    logAllocationError(nByte);
-  }
+  if( p ) *(p++) = (i64)nByte;
   return (void *)p;
+#endif
 }
 
 /*
@@ -301,7 +282,7 @@ void sqlite3MemSetDefault(void){
      0,
      sqlite3MemCalloc
   };
-  sqlite3_config(SQLITE_CONFIG_MALLOC2, &defaultMethods);
+  sqlite3_config(SQLITE_CONFIG_MALLOC, &defaultMethods);
 }
 
 #endif /* SQLITE_SYSTEM_MALLOC */

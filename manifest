@@ -1,5 +1,5 @@
-C Remove\sanother\sbranch\sfrom\sthe\sDbMalloc()\spaths.
-D 2012-07-18T16:07:24.009
+C Further\stweaks\sto\smalloc\spaths.
+D 2012-07-19T20:27:14.139
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8f6d858bf3df9978ba43df19985146a1173025e4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -146,9 +146,9 @@ F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
 F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
 F src/main.c 6241183d894ff51a2049bd6bf246aea877d648b5
-F src/malloc.c 9321b18a9224a4e4823129bd3e1e34cb3c18a7cb
+F src/malloc.c 57121e3ef46431b95a73651f9b5653f96867e358
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
-F src/mem1.c 5ac4fb90adf0aa2beb912abafc67100a6ce126dc
+F src/mem1.c 7ed7d5cd9a6ec97cc881ea80d996f6a16e8b7426
 F src/mem2.c e307323e86b5da1853d7111b68fd6b84ad6f09cf
 F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
 F src/mem5.c c2c63b7067570b00bf33d751c39af24182316f7f
@@ -1005,7 +1005,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 75c095ee463c0c76e9637edccd33e807f837eb4e
-R 4b3f5fc3616c1d2a9a882bbf6ef4a9dd
+P defd828e90a5494e58cc2cd14c8f4cce7fd2bb2b
+R 62a7b8739dbc0504b7043c6629065afd
 U dan
-Z d1a34a26ab7e5c2fc76d0e075bca051a
+Z f8c7a516451a2fad10c61fa887e0e873

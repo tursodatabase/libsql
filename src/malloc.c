@@ -263,17 +263,23 @@ static void *mallocWithAlarm(
   void *(*xAlloc)(int),          /* Memory allocation function */
   int n                          /* Bytes of memory to allocate */
 ){
-  int nFull;
-  void *p;
+  void *p;                       /* Pointer to allocated memory */
+  int nFull;                     /* Value returned by xRoundup (if required) */
 
   assert( sqlite3_mutex_held(mem0.mutex) );
   assert( xAlloc==sqlite3GlobalConfig.m.xMalloc 
        || xAlloc==sqlite3GlobalConfig.m.xCalloc 
   );
-  nFull = sqlite3GlobalConfig.m.xRoundup(n);
+
+  /* Note: At one point this function would call xRoundup() and use the
+  ** resulting value as the argument to xAlloc(). However, this is not
+  ** required. And it is a (small) drag on performance.  */
+  /* nFull = sqlite3GlobalConfig.m.xRoundup(n); */
+
   sqlite3StatusSet(SQLITE_STATUS_MALLOC_SIZE, n);
-  if( mem0.alarmCallback!=0 ){
+  if( mem0.alarmCallback ){
     int nUsed = sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED);
+    nFull = sqlite3GlobalConfig.m.xRoundup(n);
     if( nUsed >= mem0.alarmThreshold - nFull ){
       mem0.nearlyFull = 1;
       sqlite3MallocAlarm(nFull);
@@ -281,7 +287,8 @@ static void *mallocWithAlarm(
       mem0.nearlyFull = 0;
     }
   }
-  p = xAlloc(nFull);
+
+  p = xAlloc(n);
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   if( p==0 && mem0.alarmCallback ){
     sqlite3MallocAlarm(nFull);
@@ -289,9 +296,11 @@ static void *mallocWithAlarm(
   }
 #endif
   if( p ){
-    nFull = sqlite3MallocSize(p);
-    sqlite3StatusAdd(SQLITE_STATUS_MEMORY_USED, nFull);
+    sqlite3StatusAdd(SQLITE_STATUS_MEMORY_USED, sqlite3MallocSize(p));
     sqlite3StatusAdd(SQLITE_STATUS_MALLOC_COUNT, 1);
+  }else{
+    testcase( sqlite3GlobalConfig.xLog!=0 );
+    sqlite3_log(SQLITE_NOMEM, "failed to allocate %d bytes of memory", n);
   }
 
   return p;
@@ -301,6 +310,7 @@ static void *mallocWithAlarm(
 ** Use allocator function xAlloc to allocate n bytes of memory.
 */
 static void *memAllocate(
+  sqlite3 *db,
   void *(*xAlloc)(int),           /* Memory allocation function */
   int n                           /* Bytes of space to allocate */
 ){
@@ -314,14 +324,23 @@ static void *memAllocate(
     ** 255 bytes of overhead.  SQLite itself will never use anything near
     ** this amount.  The only way to reach the limit is with sqlite3_malloc() */
     p = 0;
-  }else if( sqlite3GlobalConfig.bMemstat ){
-    sqlite3_mutex_enter(mem0.mutex);
-    p = mallocWithAlarm(xAlloc, n);
-    sqlite3_mutex_leave(mem0.mutex);
   }else{
-    p = xAlloc(n);
+    if( sqlite3GlobalConfig.bMemstat ){
+      sqlite3_mutex_enter(mem0.mutex);
+      p = mallocWithAlarm(xAlloc, n);
+      sqlite3_mutex_leave(mem0.mutex);
+    }else{
+      p = xAlloc(n);
+    }
+    if( !p && db ) db->mallocFailed = 1;
   }
+
   assert( EIGHT_BYTE_ALIGNMENT(p) );  /* IMP: R-04675-44850 */
+  if( db ){
+    sqlite3MemdebugSetType(p, MEMTYPE_DB | 
+        ((db && db->lookaside.sz) ? MEMTYPE_LOOKASIDE : MEMTYPE_HEAP)
+    );
+  }
   return p;
 }
 
@@ -331,14 +350,14 @@ static void *memAllocate(
 ** assumes the memory subsystem has already been initialized.
 */
 void *sqlite3Malloc(int n){
-  return memAllocate(sqlite3GlobalConfig.m.xMalloc, n);
+  return memAllocate(0, sqlite3GlobalConfig.m.xMalloc, n);
 }
 
 /*
 ** Allocate and zero memory.
 */ 
 void *sqlite3MallocZero(int n){
-  return memAllocate(sqlite3GlobalConfig.m.xCalloc, n);
+  return memAllocate(0, sqlite3GlobalConfig.m.xCalloc, n);
 }
 
 /*
@@ -622,6 +641,7 @@ static void *lookasideAlloc(sqlite3 *db, int n){
         db->lookaside.mxOut = db->lookaside.nOut;
       }
     }
+    sqlite3MemdebugSetType((void *)pBuf, MEMTYPE_DB | MEMTYPE_LOOKASIDE);
     return (void*)pBuf;
   }
   return 0;
@@ -650,22 +670,15 @@ static void *lookasideAlloc(sqlite3 *db, int n){
 */
 void *sqlite3DbMallocZero(sqlite3 *db, int n){
   void *p;
-  if( db==0 ){
-    p = memAllocate(sqlite3GlobalConfig.m.xCalloc, n);
-  }else if( db->mallocFailed ){
-    p = 0;
-  }else{
+  if( db ){
+    if( db->mallocFailed ) return 0;
     if( (p = lookasideAlloc(db, n)) ){
       memset(p, 0, n);
-    }else{
-      p = memAllocate(sqlite3GlobalConfig.m.xCalloc, n);
-      if( !p ) db->mallocFailed = 1;
+      return p;
     }
   }
 
-  sqlite3MemdebugSetType(p, MEMTYPE_DB |
-         ((db && db->lookaside.sz) ? MEMTYPE_LOOKASIDE : MEMTYPE_HEAP));
-  return p;
+  return memAllocate(db, sqlite3GlobalConfig.m.xCalloc, n);
 }
 
 /*
@@ -678,21 +691,14 @@ void *sqlite3DbMallocZero(sqlite3 *db, int n){
 */
 void *sqlite3DbMallocRaw(sqlite3 *db, int n){
   void *p;
-  if( db==0 ){
-    p = memAllocate(sqlite3GlobalConfig.m.xMalloc, n);
-  }else if( db->mallocFailed ){
-    p = 0;
-  }else{
-    p = lookasideAlloc(db, n);
-    if( !p ){
-      p = memAllocate(sqlite3GlobalConfig.m.xMalloc, n);
-      if( !p ) db->mallocFailed = 1;
+  if( db ){
+    if( db->mallocFailed ) return 0;
+    if( (p = lookasideAlloc(db, n)) ){
+      return p;
     }
   }
 
-  sqlite3MemdebugSetType(p, MEMTYPE_DB |
-         ((db && db->lookaside.sz) ? MEMTYPE_LOOKASIDE : MEMTYPE_HEAP));
-  return p;
+  return memAllocate(db, sqlite3GlobalConfig.m.xMalloc, n);
 }
 
 /*
