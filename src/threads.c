@@ -47,19 +47,25 @@ int sqlite3ThreadCreate(
   SQLiteThread *p;
   int rc;
 
-  *ppThread = p = sqlite3Malloc(sizeof(*p));
-  if( p==0 ) return SQLITE_OK;
+  assert( ppThread!=0 );
+  assert( xTask!=0 );
+  *ppThread = 0;
+  p = sqlite3Malloc(sizeof(*p));
+  if( p==0 ) return SQLITE_NOMEM;
   rc = pthread_create(&p->tid, 0, xTask, pIn);
   if( rc ){
     sqlite3_free(p);
     return SQLITE_ERROR;
   }
+  *ppThread = p;
   return SQLITE_OK;
 }
 
 /* Get the results of the thread */
 int sqlite3ThreadJoin(SQLiteThread *p, void **ppOut){
   int rc;
+
+  assert( ppOut!=0 );
   if( p==0 ) return SQLITE_NOMEM;
   rc = pthread_join(p->tid, ppOut);
   sqlite3_free(p);
@@ -68,6 +74,71 @@ int sqlite3ThreadJoin(SQLiteThread *p, void **ppOut){
 
 #endif /* SQLITE_OS_UNIX && defined(SQLITE_MUTEX_PTHREADS) */
 /******************************** End Unix Pthreads *************************/
+
+
+/********************************* Win32 Threads ****************************/
+#if SQLITE_OS_WIN && !SQLITE_OS_WINRT
+
+#define SQLITE_THREADS_IMPLEMENTED 1  /* Prevent the single-thread code below */
+#include <process.h>
+
+/* A running thread */
+struct SQLiteThread {
+  uintptr_t tid;           /* The thread handle */
+  void *(*xTask)(void*);   /* The routine to run as a thread */
+  void *pIn;               /* Argument to xTask */
+  void *pResult;           /* Result of xTask */
+};
+
+/* Thread procedure Win32 compatibility shim */
+static void sqlite3ThreadProc(
+  void *pArg  /* IN: Pointer to the SQLiteThread structure */
+){
+  SQLiteThread *p = (SQLiteThread *)pArg;
+
+  assert( p!=0 );
+  assert( p->xTask!=0 );
+  p->pResult = p->xTask(p->pIn);
+  _endthread();
+}
+
+/* Create a new thread */
+int sqlite3ThreadCreate(
+  SQLiteThread **ppThread,  /* OUT: Write the thread object here */
+  void *(*xTask)(void*),    /* Routine to run in a separate thread */
+  void *pIn                 /* Argument passed into xTask() */
+){
+  SQLiteThread *p;
+
+  assert( ppThread!=0 );
+  assert( xTask!=0 );
+  *ppThread = 0;
+  p = sqlite3Malloc(sizeof(*p));
+  if( p==0 ) return SQLITE_NOMEM;
+  p->xTask = xTask; p->pIn = pIn;
+  p->tid = _beginthread(sqlite3ThreadProc, 0, p);
+  if( p->tid==(uintptr_t)-1 ){
+    sqlite3_free(p);
+    return SQLITE_ERROR;
+  }
+  *ppThread = p;
+  return SQLITE_OK;
+}
+
+/* Get the results of the thread */
+int sqlite3ThreadJoin(SQLiteThread *p, void **ppOut){
+  DWORD rc;
+
+  assert( ppOut!=0 );
+  if( p==0 ) return SQLITE_NOMEM;
+  rc = sqlite3Win32Wait((HANDLE)p->tid);
+  if( rc==WAIT_OBJECT_0 ) *ppOut = p->pResult;
+  sqlite3_free(p);
+  return (rc==WAIT_OBJECT_0) ? SQLITE_OK : SQLITE_ERROR;
+}
+
+#endif /* SQLITE_OS_WIN && !SQLITE_OS_WINRT */
+/******************************** End Win32 Threads *************************/
 
 
 /********************************* Single-Threaded **************************/
@@ -92,7 +163,11 @@ int sqlite3ThreadCreate(
   void *pIn                 /* Argument passed into xTask() */
 ){
   SQLiteThread *p;
-  *ppThread = p = sqlite3Malloc(sizeof(*p));
+
+  assert( ppThread!=0 );
+  assert( xTask!=0 );
+  *ppThread = 0;
+  p = sqlite3Malloc(sizeof(*p));
   if( p==0 ) return SQLITE_NOMEM;
   if( (SQLITE_PTR_TO_INT(p)/17)&1 ){
     p->xTask = xTask;
@@ -101,14 +176,16 @@ int sqlite3ThreadCreate(
     p->xTask = 0;
     p->pResult = xTask(pIn);
   }
-  return p;
+  *ppThread = p;
+  return SQLITE_OK;
 }
 
 /* Get the results of the thread */
 int sqlite3ThreadJoin(SQLiteThread *p, void **ppOut){
+  assert( ppOut!=0 );
   if( p==0 ) return SQLITE_NOMEM;
   if( p->xTask ){
-    *ppOut = = p->xTask(p->pIn);
+    *ppOut = p->xTask(p->pIn);
   }else{
     *ppOut = p->pResult;
   }
