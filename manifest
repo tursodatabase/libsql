@@ -1,9 +1,9 @@
-C Ensure\sthat\sthere\sis\salways\sat\sleast\sone\saReadMark\sslot\susable\sby\san\sunprivileged\sreader\swhile\sa\scheckpoint\sis\srunning.\sAlso,\sif\sone\sor\smore\stransactions\sare\srecovered\sfrom\sa\slog\sfile,\sinitialize\sone\sof\sthe\saReadMark\sslots\sto\scontain\smxFrame\sas\spart\sof\sthe\srecovery\sprocess.
-D 2012-07-17T14:37:12.494
+C Add\san\sinternal\sinterface\sthat\sallows\sthe\scode\sto\stake\sadvantage\sof\smultiple\ncores\sby\spushing\ssubcomputations\soff\sinto\sseparate\sthreads.\s\sThe\sinterface\nis\snot\scurrently\sused.
+D 2012-07-21T19:40:42.441
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 8f6d858bf3df9978ba43df19985146a1173025e4
+F Makefile.in 7a89f9692d1369faa4071310164ffba0504c324d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 56ff0fcc3fc3b275aec7f6acb34b3c0526c684bc
+F Makefile.msc 332c166048570b65127db33450bca22c53b4f0a2
 F Makefile.vxworks 879f034a64062a364b21000266bbd5bc6e0c19b9
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION a71848df48082f1d6585d4b0819d530fc455485d
@@ -103,7 +103,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk d109a9342d1fe135d3900aca9f5563f9480a991d
+F main.mk dd63e2de89cdcb9be441e8f046a0acce3fbae2a8
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -180,7 +180,7 @@ F src/select.c f6c4833c4d8e94714761d99013d74f381e084f1d
 F src/shell.c 076e1c90d594644f36027c8ecff9a392cf2d3a06
 F src/sqlite.h.in 310ae7e538883fa1619ab0638c775ce11ad43015
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h 2bc2ebc2ff1a2b530ee5ed9ffd46c6fce93b244c
+F src/sqliteInt.h 273e9d00296d3a76519c0446698c23787d8951f9
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -231,6 +231,7 @@ F src/test_vfs.c da6d0d982b11756c94c1760196355d33d03ff745
 F src/test_vfstrace.c 6b28adb2a0e8ecd0f2e3581482e1f658b11b4067
 F src/test_wholenumber.c 3d2b9ed1505c40ad5c5ca2ad16ae7a289d6cc251
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
+F src/threads.c df23fc534a54fe7e1ff935628fa14a9318d27ae3
 F src/tokenize.c 1e86210d3976717a19238ea7b047fac481fe8c12
 F src/trigger.c ee7e178fb9188f44b532cebd449a7c1df90fb684
 F src/update.c d3076782c887c10e882996550345da9c4c9f9dea
@@ -978,8 +979,8 @@ F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkkeywordhash.c bb52064aa614e1426445e4b2b9b00eeecd23cc79
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
-F tool/mksqlite3c-noext.tcl 8bce31074e4cbe631bb7676526a048335f4c9f02
-F tool/mksqlite3c.tcl 589c7f44e990be1b8443cfe4808dce392b0327fa
+F tool/mksqlite3c-noext.tcl 752f1a9d3287f6c0ef5738b1c4add0b96fbe0854
+F tool/mksqlite3c.tcl d4923e8e75b7710ddbe4eb37f83dda5eadef63d8
 F tool/mksqlite3h.tcl 78013ad79a5e492e5f764f3c7a8ef834255061f8
 F tool/mksqlite3internalh.tcl 3dca7bb5374cee003379b8cbac73714f610ef795
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
@@ -1005,7 +1006,10 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 8c9ee1d78f99394eef73a177141ca9e1c67e4e07
-R 21a0c6942de3e9593e3e93f462c443c7
-U dan
-Z a98d8c358c03bd601d60af308961371e
+P e4163596339c2166f9c4356ab824fff8bda8d0b0
+R e05d278833a84eb0e1d0c443cf6ae5d1
+T *branch * threads
+T *sym-threads *
+T -sym-trunk *
+U drh
+Z d49696325d34c649ba05b5124d6547e7

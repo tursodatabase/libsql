@@ -661,6 +661,7 @@ typedef struct Parse Parse;
 typedef struct RowSet RowSet;
 typedef struct Savepoint Savepoint;
 typedef struct Select Select;
+typedef struct SQLiteThread SQLiteThread;
 typedef struct SrcList SrcList;
 typedef struct StrAccum StrAccum;
 typedef struct Table Table;
@@ -3306,5 +3307,11 @@ SQLITE_EXTERN void (*sqlite3IoTrace)(const char*,...);
 #define MEMTYPE_SCRATCH    0x04  /* Scratch allocations */
 #define MEMTYPE_PCACHE     0x08  /* Page cache allocations */
 #define MEMTYPE_DB         0x10  /* Uses sqlite3DbMalloc, not sqlite_malloc */
+
+/*
+** Threading interface
+*/
+int sqlite3ThreadCreate(SQLiteThread**,void*(*)(void*),void*);
+int sqlite3ThreadJoin(SQLiteThread*, void**);
 
 #endif /* _SQLITEINT_H_ */

@@ -64,7 +64,7 @@ LIBOBJ+= alter.o analyze.o attach.o auth.o \
          notify.o opcodes.o os.o os_unix.o os_win.o \
          pager.o parse.o pcache.o pcache1.o pragma.o prepare.o printf.o \
          random.o resolve.o rowset.o rtree.o select.o status.o \
-         table.o tokenize.o trigger.o \
+         table.o threads.o tokenize.o trigger.o \
          update.o util.o vacuum.o \
          vdbe.o vdbeapi.o vdbeaux.o vdbeblob.o vdbemem.o vdbesort.o \
 	 vdbetrace.o wal.o walker.o where.o utf.o vtab.o
@@ -142,6 +142,7 @@ SRC = \
   $(TOP)/src/sqliteLimit.h \
   $(TOP)/src/table.c \
   $(TOP)/src/tclsqlite.c \
+  $(TOP)/src/threads.c \
   $(TOP)/src/tokenize.c \
   $(TOP)/src/trigger.c \
   $(TOP)/src/utf.c \
