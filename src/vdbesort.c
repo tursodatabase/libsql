@@ -321,17 +321,21 @@ static int vdbeSorterIterInit(
   }else{
     int iBuf;
 
-    iBuf = pIter->iReadOff % nBuf;
+    iBuf = iStart % nBuf;
     if( iBuf ){
+      int nRead = nBuf - iBuf;
+      if( (iStart + nRead) > pSorter->iWriteOff ){
+        nRead = pSorter->iWriteOff - iStart;
+      }
       rc = sqlite3OsRead(
-          pSorter->pTemp1, &pIter->aBuffer[iBuf], nBuf-iBuf, iStart
+          pSorter->pTemp1, &pIter->aBuffer[iBuf], nRead, iStart
       );
       assert( rc!=SQLITE_IOERR_SHORT_READ );
     }
 
     if( rc==SQLITE_OK ){
       u64 nByte;                       /* Size of PMA in bytes */
-      pIter->iEof = iStart + pIter->nBuffer;
+      pIter->iEof = pSorter->iWriteOff;
       rc = vdbeSorterIterVarint(db, pIter, &nByte);
       pIter->iEof = pIter->iReadOff + nByte;
       *pnByte += nByte;

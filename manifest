@@ -1,5 +1,5 @@
-C Modify\sthe\scode\sin\svdbesort.c\sso\sthat\smost\sreads\sand\swrites\sto\stemporary\sfiles\sare\saligned\spage-sized\sblocks.
-D 2012-07-23T19:25:39.921
+C Fix\san\sedge\scase\sin\svdbesort.c.
+D 2012-07-23T20:10:35.296
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8f6d858bf3df9978ba43df19985146a1173025e4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -244,7 +244,7 @@ F src/vdbeapi.c 88ea823bbcb4320f5a6607f39cd7c2d3cc4c26b1
 F src/vdbeaux.c dce80038c3c41f2680e5ab4dd0f7e0d8b7ff9071
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
-F src/vdbesort.c 6822221af97e57bd17091cfe5abec902c1ef04ad
+F src/vdbesort.c bd37dbd4a023f75e9cd1eec18e171aa6f2552d20
 F src/vdbetrace.c 79059ebd17b3c8545fab2a24253713e77e4ab392
 F src/vtab.c bb8ea3a26608bb1357538a5d2fc72beba6638998
 F src/wal.c 9294df6f96aae5909ae1a9b733fd1e1b4736978b
@@ -1005,10 +1005,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P e4163596339c2166f9c4356ab824fff8bda8d0b0
-R ed9539f5559c8070d5186f316e47e4b4
-T *branch * sorter-coalesce-writes
-T *sym-sorter-coalesce-writes *
-T -sym-trunk *
+P 55e47ef338c42f95f0f071d6ec92cd2480f9f1fe
+R c1d0187a30b4d8ec69c9c7f13c2ce356
 U dan
-Z 0e4fc9d4c65d0946db257b091fe0d573
+Z 60c5c030c4ed6dd425cd291cf7eefd27
