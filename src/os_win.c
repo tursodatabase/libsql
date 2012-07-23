@@ -946,7 +946,10 @@ void sqlite3_win32_sleep(DWORD milliseconds){
 }
 
 DWORD sqlite3Win32Wait(HANDLE hObject){
-  return osWaitForSingleObjectEx(hObject, INFINITE, TRUE);
+  DWORD rc;
+  while( (rc = osWaitForSingleObjectEx(hObject, INFINITE,
+                                       TRUE))==WAIT_IO_COMPLETION ){}
+  return rc;
 }
 
 /*
