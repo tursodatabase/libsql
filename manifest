@@ -1,5 +1,5 @@
-C Enhance\simplementation\sof\sthe\sWin32\sthread\swait\sfunction.
-D 2012-07-23T02:00:38.699
+C Add\san\sassert()\sto\shelp\sverify\sthe\sreturn\scode\sfrom\sthe\sWin32\sthread\swait\sfunction.
+D 2012-07-23T06:47:30.102
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7a89f9692d1369faa4071310164ffba0504c324d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -231,7 +231,7 @@ F src/test_vfs.c da6d0d982b11756c94c1760196355d33d03ff745
 F src/test_vfstrace.c 6b28adb2a0e8ecd0f2e3581482e1f658b11b4067
 F src/test_wholenumber.c 3d2b9ed1505c40ad5c5ca2ad16ae7a289d6cc251
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
-F src/threads.c 82ea90092f36d02f887e85f7559efc1519f9edd3
+F src/threads.c cde5bd24ab5b33bb694c59f4236ecd56ad8da9b5
 F src/tokenize.c 1e86210d3976717a19238ea7b047fac481fe8c12
 F src/trigger.c ee7e178fb9188f44b532cebd449a7c1df90fb684
 F src/update.c d3076782c887c10e882996550345da9c4c9f9dea
@@ -1006,7 +1006,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 793195d37109c75eba84f7190c8fe0b8722f76f7
-R 49885bc11b122527dda4cd8bcfe1cfa0
+P 049b04117353c3e163ffc87916cbe121403a2821
+R 8ad4cfcece99f2543c3fc25ff90ff8da
 U mistachkin
-Z b0f357746aebd8329bde52b662a0497e
+Z c7ca4753dded1e68bd82c1792e2c5272
