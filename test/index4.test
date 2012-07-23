@@ -17,6 +17,30 @@ source $testdir/tester.tcl
 
 set testprefix index4
 
+#proc str {n} { string range [string repeat [format %.06d. $n] 20] 0 101 }
+#db func str str
+#do_execsql_test 1.1 {
+#  BEGIN;
+#    CREATE TABLE t1(x);
+#    INSERT INTO t1 VALUES(str(1));
+#    INSERT INTO t1 SELECT str(rowid + 1) FROM t1;        --     2
+#    INSERT INTO t1 SELECT str(rowid + 2) FROM t1;        --     4
+#    INSERT INTO t1 SELECT str(rowid + 4) FROM t1;        --     8
+#    INSERT INTO t1 SELECT str(rowid + 8) FROM t1;        --    16
+#    INSERT INTO t1 SELECT str(rowid + 16) FROM t1;       --    32
+#    INSERT INTO t1 SELECT str(rowid + 32) FROM t1;       --    64
+#    INSERT INTO t1 SELECT str(rowid + 64) FROM t1;       --   128
+#    INSERT INTO t1 SELECT str(rowid + 128) FROM t1;      --   256
+#    INSERT INTO t1 SELECT str(rowid + 256) FROM t1;      --   512
+#    INSERT INTO t1 SELECT str(rowid + 512) FROM t1;      --  1024
+#    INSERT INTO t1 SELECT str(rowid + 1024) FROM t1;     --  2048
+#    INSERT INTO t1 SELECT str(rowid + 2048) FROM t1;     --  4096
+#    INSERT INTO t1 SELECT str(rowid + 4096) FROM t1;     --  8192
+#    INSERT INTO t1 SELECT str(rowid + 8192) FROM t1;     -- 16384
+#    INSERT INTO t1 SELECT str(rowid + 16384) FROM t1;    -- 32768
+#  COMMIT;
+#}
+
 do_execsql_test 1.1 {
   BEGIN;
     CREATE TABLE t1(x);

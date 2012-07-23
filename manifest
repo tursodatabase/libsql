@@ -1,5 +1,5 @@
-C Ensure\sthat\sthere\sis\salways\sat\sleast\sone\saReadMark\sslot\susable\sby\san\sunprivileged\sreader\swhile\sa\scheckpoint\sis\srunning.\sAlso,\sif\sone\sor\smore\stransactions\sare\srecovered\sfrom\sa\slog\sfile,\sinitialize\sone\sof\sthe\saReadMark\sslots\sto\scontain\smxFrame\sas\spart\sof\sthe\srecovery\sprocess.
-D 2012-07-17T14:37:12.494
+C Modify\sthe\scode\sin\svdbesort.c\sso\sthat\smost\sreads\sand\swrites\sto\stemporary\sfiles\sare\saligned\spage-sized\sblocks.
+D 2012-07-23T19:25:39.921
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8f6d858bf3df9978ba43df19985146a1173025e4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -244,7 +244,7 @@ F src/vdbeapi.c 88ea823bbcb4320f5a6607f39cd7c2d3cc4c26b1
 F src/vdbeaux.c dce80038c3c41f2680e5ab4dd0f7e0d8b7ff9071
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
-F src/vdbesort.c b25814d385895544ebc8118245c8311ded7f81c9
+F src/vdbesort.c 6822221af97e57bd17091cfe5abec902c1ef04ad
 F src/vdbetrace.c 79059ebd17b3c8545fab2a24253713e77e4ab392
 F src/vtab.c bb8ea3a26608bb1357538a5d2fc72beba6638998
 F src/wal.c 9294df6f96aae5909ae1a9b733fd1e1b4736978b
@@ -530,7 +530,7 @@ F test/incrvacuum_ioerr.test 22f208d01c528403240e05beecc41dc98ed01637
 F test/index.test b5429732b3b983fa810e3ac867d7ca85dae35097
 F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
 F test/index3.test 423a25c789fc8cc51aaf2a4370bbdde2d9e9eed7
-F test/index4.test 2983216eb8c86ee62d9ed7cb206b5cc3331c0026
+F test/index4.test 1e299862024012e0165531cce251572f7f084d15
 F test/indexedby.test be501e381b82b2f8ab406309ba7aac46e221f4ad
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
@@ -1005,7 +1005,10 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 8c9ee1d78f99394eef73a177141ca9e1c67e4e07
-R 21a0c6942de3e9593e3e93f462c443c7
+P e4163596339c2166f9c4356ab824fff8bda8d0b0
+R ed9539f5559c8070d5186f316e47e4b4
+T *branch * sorter-coalesce-writes
+T *sym-sorter-coalesce-writes *
+T -sym-trunk *
 U dan
-Z a98d8c358c03bd601d60af308961371e
+Z 0e4fc9d4c65d0946db257b091fe0d573
