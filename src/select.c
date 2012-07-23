@@ -36,10 +36,10 @@ static void clearSelect(sqlite3 *db, Select *p){
 */
 void sqlite3SelectDestInit(SelectDest *pDest, int eDest, int iParm){
   pDest->eDest = (u8)eDest;
-  pDest->iParm = iParm;
-  pDest->affinity = 0;
-  pDest->iMem = 0;
-  pDest->nMem = 0;
+  pDest->iSDParm = iParm;
+  pDest->affSdst = 0;
+  pDest->iSdst = 0;
+  pDest->nSdst = 0;
 }
 
 
@@ -551,7 +551,7 @@ static void selectInnerLoop(
   int hasDistinct;        /* True if the DISTINCT keyword is present */
   int regResult;              /* Start of memory holding result set */
   int eDest = pDest->eDest;   /* How to dispose of results */
-  int iParm = pDest->iParm;   /* First argument to disposal method */
+  int iParm = pDest->iSDParm; /* First argument to disposal method */
   int nResultCol;             /* Number of result columns */
 
   assert( v );
@@ -569,14 +569,14 @@ static void selectInnerLoop(
   }else{
     nResultCol = pEList->nExpr;
   }
-  if( pDest->iMem==0 ){
-    pDest->iMem = pParse->nMem+1;
-    pDest->nMem = nResultCol;
+  if( pDest->iSdst==0 ){
+    pDest->iSdst = pParse->nMem+1;
+    pDest->nSdst = nResultCol;
     pParse->nMem += nResultCol;
   }else{ 
-    assert( pDest->nMem==nResultCol );
+    assert( pDest->nSdst==nResultCol );
   }
-  regResult = pDest->iMem;
+  regResult = pDest->iSdst;
   if( nColumn>0 ){
     for(i=0; i<nColumn; i++){
       sqlite3VdbeAddOp3(v, OP_Column, srcTab, i, regResult+i);
@@ -655,7 +655,7 @@ static void selectInnerLoop(
     */
     case SRT_Set: {
       assert( nColumn==1 );
-      p->affinity = sqlite3CompareAffinity(pEList->a[0].pExpr, pDest->affinity);
+      p->affinity = sqlite3CompareAffinity(pEList->a[0].pExpr, pDest->affSdst);
       if( pOrderBy ){
         /* At first glance you would think we could optimize out the
         ** ORDER BY in this case since the order of entries in the set
@@ -710,7 +710,7 @@ static void selectInnerLoop(
         pushOntoSorter(pParse, pOrderBy, p, r1);
         sqlite3ReleaseTempReg(pParse, r1);
       }else if( eDest==SRT_Coroutine ){
-        sqlite3VdbeAddOp1(v, OP_Yield, pDest->iParm);
+        sqlite3VdbeAddOp1(v, OP_Yield, pDest->iSDParm);
       }else{
         sqlite3VdbeAddOp2(v, OP_ResultRow, regResult, nColumn);
         sqlite3ExprCacheAffinityChange(pParse, regResult, nColumn);
@@ -890,7 +890,7 @@ static void generateSortTail(
   ExprList *pOrderBy = p->pOrderBy;
 
   int eDest = pDest->eDest;
-  int iParm = pDest->iParm;
+  int iParm = pDest->iSDParm;
 
   int regRow;
   int regRowid;
@@ -949,17 +949,17 @@ static void generateSortTail(
       testcase( eDest==SRT_Output );
       testcase( eDest==SRT_Coroutine );
       for(i=0; i<nColumn; i++){
-        assert( regRow!=pDest->iMem+i );
-        sqlite3VdbeAddOp3(v, OP_Column, pseudoTab, i, pDest->iMem+i);
+        assert( regRow!=pDest->iSdst+i );
+        sqlite3VdbeAddOp3(v, OP_Column, pseudoTab, i, pDest->iSdst+i);
         if( i==0 ){
           sqlite3VdbeChangeP5(v, OPFLAG_CLEARCACHE);
         }
       }
       if( eDest==SRT_Output ){
-        sqlite3VdbeAddOp2(v, OP_ResultRow, pDest->iMem, nColumn);
-        sqlite3ExprCacheAffinityChange(pParse, pDest->iMem, nColumn);
+        sqlite3VdbeAddOp2(v, OP_ResultRow, pDest->iSdst, nColumn);
+        sqlite3ExprCacheAffinityChange(pParse, pDest->iSdst, nColumn);
       }else{
-        sqlite3VdbeAddOp1(v, OP_Yield, pDest->iParm);
+        sqlite3VdbeAddOp1(v, OP_Yield, pDest->iSDParm);
       }
       break;
     }
@@ -1610,7 +1610,7 @@ static int multiSelect(
   */
   if( dest.eDest==SRT_EphemTab ){
     assert( p->pEList );
-    sqlite3VdbeAddOp2(v, OP_OpenEphemeral, dest.iParm, p->pEList->nExpr);
+    sqlite3VdbeAddOp2(v, OP_OpenEphemeral, dest.iSDParm, p->pEList->nExpr);
     sqlite3VdbeChangeP5(v, BTREE_UNORDERED);
     dest.eDest = SRT_Table;
   }
@@ -1696,7 +1696,7 @@ static int multiSelect(
                                      ** of a 3-way or more compound */
         assert( p->pLimit==0 );      /* Not allowed on leftward elements */
         assert( p->pOffset==0 );     /* Not allowed on leftward elements */
-        unionTab = dest.iParm;
+        unionTab = dest.iSDParm;
       }else{
         /* We will need to create our own temporary table to hold the
         ** intermediate results.
@@ -1753,7 +1753,7 @@ static int multiSelect(
       /* Convert the data in the temporary table into whatever form
       ** it is that we currently need.
       */
-      assert( unionTab==dest.iParm || dest.eDest!=priorOp );
+      assert( unionTab==dest.iSDParm || dest.eDest!=priorOp );
       if( dest.eDest!=priorOp ){
         int iCont, iBreak, iStart;
         assert( p->pEList );
@@ -1817,7 +1817,7 @@ static int multiSelect(
       p->pLimit = 0;
       pOffset = p->pOffset;
       p->pOffset = 0;
-      intersectdest.iParm = tab2;
+      intersectdest.iSDParm = tab2;
       explainSetInteger(iSub2, pParse->iNextSelectId);
       rc = sqlite3Select(pParse, p, &intersectdest);
       testcase( rc!=SQLITE_OK );
@@ -1911,8 +1911,8 @@ static int multiSelect(
   }
 
 multi_select_end:
-  pDest->iMem = dest.iMem;
-  pDest->nMem = dest.nMem;
+  pDest->iSdst = dest.iSdst;
+  pDest->nSdst = dest.nSdst;
   sqlite3SelectDelete(db, pDelete);
   return rc;
 }
@@ -1922,8 +1922,8 @@ multi_select_end:
 ** Code an output subroutine for a coroutine implementation of a
 ** SELECT statment.
 **
-** The data to be output is contained in pIn->iMem.  There are
-** pIn->nMem columns to be output.  pDest is where the output should
+** The data to be output is contained in pIn->iSdst.  There are
+** pIn->nSdst columns to be output.  pDest is where the output should
 ** be sent.
 **
 ** regReturn is the number of the register holding the subroutine
@@ -1961,11 +1961,11 @@ static int generateOutputSubroutine(
   if( regPrev ){
     int j1, j2;
     j1 = sqlite3VdbeAddOp1(v, OP_IfNot, regPrev);
-    j2 = sqlite3VdbeAddOp4(v, OP_Compare, pIn->iMem, regPrev+1, pIn->nMem,
+    j2 = sqlite3VdbeAddOp4(v, OP_Compare, pIn->iSdst, regPrev+1, pIn->nSdst,
                               (char*)pKeyInfo, p4type);
     sqlite3VdbeAddOp3(v, OP_Jump, j2+2, iContinue, j2+2);
     sqlite3VdbeJumpHere(v, j1);
-    sqlite3ExprCodeCopy(pParse, pIn->iMem, regPrev+1, pIn->nMem);
+    sqlite3ExprCodeCopy(pParse, pIn->iSdst, regPrev+1, pIn->nSdst);
     sqlite3VdbeAddOp2(v, OP_Integer, 1, regPrev);
   }
   if( pParse->db->mallocFailed ) return 0;
@@ -1983,9 +1983,9 @@ static int generateOutputSubroutine(
       int r2 = sqlite3GetTempReg(pParse);
       testcase( pDest->eDest==SRT_Table );
       testcase( pDest->eDest==SRT_EphemTab );
-      sqlite3VdbeAddOp3(v, OP_MakeRecord, pIn->iMem, pIn->nMem, r1);
-      sqlite3VdbeAddOp2(v, OP_NewRowid, pDest->iParm, r2);
-      sqlite3VdbeAddOp3(v, OP_Insert, pDest->iParm, r1, r2);
+      sqlite3VdbeAddOp3(v, OP_MakeRecord, pIn->iSdst, pIn->nSdst, r1);
+      sqlite3VdbeAddOp2(v, OP_NewRowid, pDest->iSDParm, r2);
+      sqlite3VdbeAddOp3(v, OP_Insert, pDest->iSDParm, r1, r2);
       sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
       sqlite3ReleaseTempReg(pParse, r2);
       sqlite3ReleaseTempReg(pParse, r1);
@@ -1999,13 +1999,13 @@ static int generateOutputSubroutine(
     */
     case SRT_Set: {
       int r1;
-      assert( pIn->nMem==1 );
+      assert( pIn->nSdst==1 );
       p->affinity = 
-         sqlite3CompareAffinity(p->pEList->a[0].pExpr, pDest->affinity);
+         sqlite3CompareAffinity(p->pEList->a[0].pExpr, pDest->affSdst);
       r1 = sqlite3GetTempReg(pParse);
-      sqlite3VdbeAddOp4(v, OP_MakeRecord, pIn->iMem, 1, r1, &p->affinity, 1);
-      sqlite3ExprCacheAffinityChange(pParse, pIn->iMem, 1);
-      sqlite3VdbeAddOp2(v, OP_IdxInsert, pDest->iParm, r1);
+      sqlite3VdbeAddOp4(v, OP_MakeRecord, pIn->iSdst, 1, r1, &p->affinity, 1);
+      sqlite3ExprCacheAffinityChange(pParse, pIn->iSdst, 1);
+      sqlite3VdbeAddOp2(v, OP_IdxInsert, pDest->iSDParm, r1);
       sqlite3ReleaseTempReg(pParse, r1);
       break;
     }
@@ -2014,7 +2014,7 @@ static int generateOutputSubroutine(
     /* If any row exist in the result set, record that fact and abort.
     */
     case SRT_Exists: {
-      sqlite3VdbeAddOp2(v, OP_Integer, 1, pDest->iParm);
+      sqlite3VdbeAddOp2(v, OP_Integer, 1, pDest->iSDParm);
       /* The LIMIT clause will terminate the loop for us */
       break;
     }
@@ -2025,23 +2025,23 @@ static int generateOutputSubroutine(
     ** of the scan loop.
     */
     case SRT_Mem: {
-      assert( pIn->nMem==1 );
-      sqlite3ExprCodeMove(pParse, pIn->iMem, pDest->iParm, 1);
+      assert( pIn->nSdst==1 );
+      sqlite3ExprCodeMove(pParse, pIn->iSdst, pDest->iSDParm, 1);
       /* The LIMIT clause will jump out of the loop for us */
       break;
     }
 #endif /* #ifndef SQLITE_OMIT_SUBQUERY */
 
     /* The results are stored in a sequence of registers
-    ** starting at pDest->iMem.  Then the co-routine yields.
+    ** starting at pDest->iSdst.  Then the co-routine yields.
     */
     case SRT_Coroutine: {
-      if( pDest->iMem==0 ){
-        pDest->iMem = sqlite3GetTempRange(pParse, pIn->nMem);
-        pDest->nMem = pIn->nMem;
+      if( pDest->iSdst==0 ){
+        pDest->iSdst = sqlite3GetTempRange(pParse, pIn->nSdst);
+        pDest->nSdst = pIn->nSdst;
       }
-      sqlite3ExprCodeMove(pParse, pIn->iMem, pDest->iMem, pDest->nMem);
-      sqlite3VdbeAddOp1(v, OP_Yield, pDest->iParm);
+      sqlite3ExprCodeMove(pParse, pIn->iSdst, pDest->iSdst, pDest->nSdst);
+      sqlite3VdbeAddOp1(v, OP_Yield, pDest->iSDParm);
       break;
     }
 
@@ -2055,8 +2055,8 @@ static int generateOutputSubroutine(
     */
     default: {
       assert( pDest->eDest==SRT_Output );
-      sqlite3VdbeAddOp2(v, OP_ResultRow, pIn->iMem, pIn->nMem);
-      sqlite3ExprCacheAffinityChange(pParse, pIn->iMem, pIn->nMem);
+      sqlite3VdbeAddOp2(v, OP_ResultRow, pIn->iSdst, pIn->nSdst);
+      sqlite3ExprCacheAffinityChange(pParse, pIn->iSdst, pIn->nSdst);
       break;
     }
   }
@@ -2475,7 +2475,7 @@ static int multiSelectOrderBy(
   */
   sqlite3VdbeResolveLabel(v, labelCmpr);
   sqlite3VdbeAddOp4(v, OP_Permutation, 0, 0, 0, (char*)aPermute, P4_INTARRAY);
-  sqlite3VdbeAddOp4(v, OP_Compare, destA.iMem, destB.iMem, nOrderBy,
+  sqlite3VdbeAddOp4(v, OP_Compare, destA.iSdst, destB.iSdst, nOrderBy,
                          (char*)pKeyMerge, P4_KEYINFO_HANDOFF);
   sqlite3VdbeAddOp3(v, OP_Jump, addrAltB, addrAeqB, addrAgtB);
 
@@ -3721,23 +3721,24 @@ static void explainSimpleCount(
 **
 **     SRT_Mem         Only valid if the result is a single column.
 **                     Store the first column of the first result row
-**                     in register pDest->iParm then abandon the rest
+**                     in register pDest->iSDParm then abandon the rest
 **                     of the query.  This destination implies "LIMIT 1".
 **
 **     SRT_Set         The result must be a single column.  Store each
-**                     row of result as the key in table pDest->iParm. 
+**                     row of result as the key in table pDest->iSDParm. 
 **                     Apply the affinity pDest->affinity before storing
 **                     results.  Used to implement "IN (SELECT ...)".
 **
-**     SRT_Union       Store results as a key in a temporary table pDest->iParm.
+**     SRT_Union       Store results as a key in a temporary table 
+**                     identified by pDest->iSDParm.
 **
-**     SRT_Except      Remove results from the temporary table pDest->iParm.
+**     SRT_Except      Remove results from the temporary table pDest->iSDParm.
 **
-**     SRT_Table       Store results in temporary table pDest->iParm.
+**     SRT_Table       Store results in temporary table pDest->iSDParm.
 **                     This is like SRT_EphemTab except that the table
 **                     is assumed to already be open.
 **
-**     SRT_EphemTab    Create an temporary table pDest->iParm and store
+**     SRT_EphemTab    Create an temporary table pDest->iSDParm and store
 **                     the result there. The cursor is left open after
 **                     returning.  This is like SRT_Table except that
 **                     this destination uses OP_OpenEphemeral to create
@@ -3745,9 +3746,9 @@ static void explainSimpleCount(
 **
 **     SRT_Coroutine   Generate a co-routine that returns a new row of
 **                     results each time it is invoked.  The entry point
-**                     of the co-routine is stored in register pDest->iParm.
+**                     of the co-routine is stored in register pDest->iSDParm.
 **
-**     SRT_Exists      Store a 1 in memory cell pDest->iParm if the result
+**     SRT_Exists      Store a 1 in memory cell pDest->iSDParm if the result
 **                     set is not empty.
 **
 **     SRT_Discard     Throw the results away.  This is used by SELECT
@@ -3991,7 +3992,7 @@ int sqlite3Select(
   /* If the output is destined for a temporary table, open that table.
   */
   if( pDest->eDest==SRT_EphemTab ){
-    sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pDest->iParm, pEList->nExpr);
+    sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pDest->iSDParm, pEList->nExpr);
   }
 
   /* Set the limiter.
