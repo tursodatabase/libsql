@@ -123,6 +123,7 @@ TCC = $(CC) -W3 -DSQLITE_OS_WIN=1 -I. -I$(TOP)\src -fp:precise
 #
 !IF $(FOR_WINRT)!=0
 TCC = $(TCC) -DSQLITE_OS_WINRT=1
+TCC = $(TCC) -DWINAPI_FAMILY=WINAPI_PARTITION_APP
 !ENDIF
 
 # Also, we need to dynamically link to the correct MSVC runtime
