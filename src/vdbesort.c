@@ -259,7 +259,7 @@ static int vdbeSorterReadVarint(
 */
 static int vdbeSorterIterInit(
   sqlite3 *db,                    /* Database handle */
-  VdbeSorter *pSorter,            /* Sorter object */
+  const VdbeSorter *pSorter,      /* Sorter object */
   i64 iStart,                     /* Start offset in pFile */
   VdbeSorterIter *pIter,          /* Iterator to populate */
   i64 *pnByte                     /* IN/OUT: Increment this value by PMA size */
@@ -303,10 +303,10 @@ static int vdbeSorterIterInit(
 ** has been allocated and contains an unpacked record that is used as key2.
 */
 static void vdbeSorterCompare(
-  VdbeCursor *pCsr,               /* Cursor object (for pKeyInfo) */
+  const VdbeCursor *pCsr,         /* Cursor object (for pKeyInfo) */
   int bOmitRowid,                 /* Ignore rowid field at end of keys */
-  void *pKey1, int nKey1,         /* Left side of comparison */
-  void *pKey2, int nKey2,         /* Right side of comparison */
+  const void *pKey1, int nKey1,   /* Left side of comparison */
+  const void *pKey2, int nKey2,   /* Right side of comparison */
   int *pRes                       /* OUT: Result of comparison */
 ){
   KeyInfo *pKeyInfo = pCsr->pKeyInfo;
@@ -338,7 +338,7 @@ static void vdbeSorterCompare(
 ** multiple b-tree segments. Parameter iOut is the index of the aTree[] 
 ** value to recalculate.
 */
-static int vdbeSorterDoCompare(VdbeCursor *pCsr, int iOut){
+static int vdbeSorterDoCompare(const VdbeCursor *pCsr, int iOut){
   VdbeSorter *pSorter = pCsr->pSorter;
   int i1;
   int i2;
@@ -464,7 +464,7 @@ static int vdbeSorterOpenTempFile(sqlite3 *db, sqlite3_file **ppFile){
 ** Set *ppOut to the head of the new list.
 */
 static void vdbeSorterMerge(
-  VdbeCursor *pCsr,               /* For pKeyInfo */
+  const VdbeCursor *pCsr,         /* For pKeyInfo */
   SorterRecord *p1,               /* First list to merge */
   SorterRecord *p2,               /* Second list to merge */
   SorterRecord **ppOut            /* OUT: Head of merged list */
@@ -498,7 +498,7 @@ static void vdbeSorterMerge(
 ** if successful, or an SQLite error code (i.e. SQLITE_NOMEM) if an error
 ** occurs.
 */
-static int vdbeSorterSort(VdbeCursor *pCsr){
+static int vdbeSorterSort(const VdbeCursor *pCsr){
   int i;
   SorterRecord **aSlot;
   SorterRecord *p;
@@ -545,7 +545,7 @@ static int vdbeSorterSort(VdbeCursor *pCsr){
 **       Each record consists of a varint followed by a blob of data (the 
 **       key). The varint is the number of bytes in the blob of data.
 */
-static int vdbeSorterListToPMA(sqlite3 *db, VdbeCursor *pCsr){
+static int vdbeSorterListToPMA(sqlite3 *db, const VdbeCursor *pCsr){
   int rc = SQLITE_OK;             /* Return code */
   VdbeSorter *pSorter = pCsr->pSorter;
 
@@ -608,7 +608,7 @@ static int vdbeSorterListToPMA(sqlite3 *db, VdbeCursor *pCsr){
 */
 int sqlite3VdbeSorterWrite(
   sqlite3 *db,                    /* Database handle */
-  VdbeCursor *pCsr,               /* Sorter cursor */
+  const VdbeCursor *pCsr,               /* Sorter cursor */
   Mem *pVal                       /* Memory cell containing record */
 ){
   VdbeSorter *pSorter = pCsr->pSorter;
@@ -654,7 +654,7 @@ int sqlite3VdbeSorterWrite(
 */
 static int vdbeSorterInitMerge(
   sqlite3 *db,                    /* Database handle */
-  VdbeCursor *pCsr,               /* Cursor handle for this sorter */
+  const VdbeCursor *pCsr,         /* Cursor handle for this sorter */
   i64 *pnByte                     /* Sum of bytes in all opened PMAs */
 ){
   VdbeSorter *pSorter = pCsr->pSorter;
@@ -684,7 +684,7 @@ static int vdbeSorterInitMerge(
 ** Once the sorter has been populated, this function is called to prepare
 ** for iterating through its contents in sorted order.
 */
-int sqlite3VdbeSorterRewind(sqlite3 *db, VdbeCursor *pCsr, int *pbEof){
+int sqlite3VdbeSorterRewind(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
   VdbeSorter *pSorter = pCsr->pSorter;
   int rc;                         /* Return code */
   sqlite3_file *pTemp2 = 0;       /* Second temp file to use */
@@ -792,7 +792,7 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, VdbeCursor *pCsr, int *pbEof){
 /*
 ** Advance to the next element in the sorter.
 */
-int sqlite3VdbeSorterNext(sqlite3 *db, VdbeCursor *pCsr, int *pbEof){
+int sqlite3VdbeSorterNext(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
   VdbeSorter *pSorter = pCsr->pSorter;
   int rc;                         /* Return code */
 
@@ -822,7 +822,7 @@ int sqlite3VdbeSorterNext(sqlite3 *db, VdbeCursor *pCsr, int *pbEof){
 ** current key.
 */
 static void *vdbeSorterRowkey(
-  VdbeSorter *pSorter,            /* Sorter object */
+  const VdbeSorter *pSorter,      /* Sorter object */
   int *pnKey                      /* OUT: Size of current key in bytes */
 ){
   void *pKey;
@@ -841,7 +841,7 @@ static void *vdbeSorterRowkey(
 /*
 ** Copy the current sorter key into the memory cell pOut.
 */
-int sqlite3VdbeSorterRowkey(VdbeCursor *pCsr, Mem *pOut){
+int sqlite3VdbeSorterRowkey(const VdbeCursor *pCsr, Mem *pOut){
   VdbeSorter *pSorter = pCsr->pSorter;
   void *pKey; int nKey;           /* Sorter key to copy into pOut */
 
@@ -867,7 +867,7 @@ int sqlite3VdbeSorterRowkey(VdbeCursor *pCsr, Mem *pOut){
 ** key.
 */
 int sqlite3VdbeSorterCompare(
-  VdbeCursor *pCsr,               /* Sorter cursor */
+  const VdbeCursor *pCsr,         /* Sorter cursor */
   Mem *pVal,                      /* Value to compare to current sorter key */
   int *pRes                       /* OUT: Result of comparison */
 ){

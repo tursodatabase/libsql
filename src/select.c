@@ -3726,7 +3726,7 @@ static void explainSimpleCount(
 **
 **     SRT_Set         The result must be a single column.  Store each
 **                     row of result as the key in table pDest->iSDParm. 
-**                     Apply the affinity pDest->affinity before storing
+**                     Apply the affinity pDest->affSdst before storing
 **                     results.  Used to implement "IN (SELECT ...)".
 **
 **     SRT_Union       Store results as a key in a temporary table 

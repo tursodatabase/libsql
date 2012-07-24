@@ -1,5 +1,5 @@
-C Add\sanother\sdefine\sto\sthe\sMSVC\smakefile\sthat\sis\ssometimes\srequired\sto\sbuild\scleanly\sfor\sWinRT.
-D 2012-07-24T06:02:35.411
+C Mark\sparameters\sto\ssorter\sinterfaces\sas\sconst\swhere\sappropriate.
+D 2012-07-24T19:46:38.570
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8f6d858bf3df9978ba43df19985146a1173025e4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -176,7 +176,7 @@ F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c b3c70ab28cac60de33684c9aa9e5138dcf71d6dd
 F src/rowset.c f6a49f3e9579428024662f6e2931832511f831a1
-F src/select.c eecb852bc7d8c00253b9b9cbab9e528f0d4dd9a5
+F src/select.c a365da6d7a6d7d8a10ad60ca71837ab5e9369466
 F src/shell.c 076e1c90d594644f36027c8ecff9a392cf2d3a06
 F src/sqlite.h.in 310ae7e538883fa1619ab0638c775ce11ad43015
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
@@ -239,12 +239,12 @@ F src/util.c 0af2e515dc0dabacec931bca39525f6c3f1c5455
 F src/vacuum.c 587a52bb8833d7ac15af8916f25437e2575028bd
 F src/vdbe.c f5ad3c06dc3fe647097065829c013f3f1b9eadca
 F src/vdbe.h 18f581cac1f4339ec3299f3e0cc6e11aec654cdb
-F src/vdbeInt.h 6ff4180a05683566a8835d12f7ec504b22932c82
+F src/vdbeInt.h 986b6b11a13c517337355009e5438703ba5b0a40
 F src/vdbeapi.c 88ea823bbcb4320f5a6607f39cd7c2d3cc4c26b1
 F src/vdbeaux.c dce80038c3c41f2680e5ab4dd0f7e0d8b7ff9071
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
-F src/vdbesort.c b25814d385895544ebc8118245c8311ded7f81c9
+F src/vdbesort.c 628b2bc0cc82cae0e9946f70c5c81986e9fba91f
 F src/vdbetrace.c 79059ebd17b3c8545fab2a24253713e77e4ab392
 F src/vtab.c bb8ea3a26608bb1357538a5d2fc72beba6638998
 F src/wal.c 9294df6f96aae5909ae1a9b733fd1e1b4736978b
@@ -1005,7 +1005,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P b589f1efb3907a68058bf2ee981dca126d083e83
-R 75a13812cd02d645a4e2c62d598f937c
-U mistachkin
-Z 17af9fcca0ae08ed5daad968a9e3388d
+P d582cd890d88e873d76a23545bcd49cf093ee9d2
+R dfda5074dc19f89fe8c778d461e17987
+U drh
+Z 78ad216a54a8d01eec70f561ea3dc528
