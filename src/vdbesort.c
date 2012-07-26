@@ -180,51 +180,68 @@ static int vdbeSorterIterRead(
   int nByte,                      /* Bytes of data to read */
   u8 **ppOut                      /* OUT: Pointer to buffer containing data */
 ){
-  int iBuf;
-  int nAvail;
+  int iBuf;                       /* Offset within buffer to read from */
+  int nAvail;                     /* Bytes of data available in buffer */
   assert( p->aBuffer );
 
+  /* If there is no more data to be read from the buffer, read the next 
+  ** p->nBuffer bytes of data from the file into it. Or, if there are less
+  ** than p->nBuffer bytes remaining in the PMA, read all remaining data.  */
   iBuf = p->iReadOff % p->nBuffer;
   if( iBuf==0 ){
-    int nRead;
-    int rc;
+    int nRead;                    /* Bytes to read from disk */
+    int rc;                       /* sqlite3OsRead() return code */
 
+    /* Determine how many bytes of data to read. */
     nRead = p->iEof - p->iReadOff;
     if( nRead>p->nBuffer ) nRead = p->nBuffer;
     assert( nRead>0 );
+
+    /* Read data from the file. Return early if an error occurs. */
     rc = sqlite3OsRead(p->pFile, p->aBuffer, nRead, p->iReadOff);
     assert( rc!=SQLITE_IOERR_SHORT_READ );
     if( rc!=SQLITE_OK ) return rc;
   }
-  nAvail = p->nBuffer - iBuf;
+  nAvail = p->nBuffer - iBuf; 
 
   if( nByte<=nAvail ){
+    /* The requested data is available in the in-memory buffer. In this
+    ** case there is no need to make a copy of the data, just return a 
+    ** pointer into the buffer to the caller.  */
     *ppOut = &p->aBuffer[iBuf];
     p->iReadOff += nByte;
   }else{
-    int nRem;
+    /* The requested data is not all available in the in-memory buffer.
+    ** In this case, allocate space at p->aAlloc[] to copy the requested
+    ** range into. Then return a copy of pointer p->aAlloc to the caller.  */
+    int nRem;                     /* Bytes remaining to copy */
+
+    /* Extend the p->aAlloc[] allocation if required. */
     if( p->nAlloc<nByte ){
       int nNew = p->nAlloc*2;
       while( nByte>nNew ) nNew = nNew*2;
-
       p->aAlloc = sqlite3DbReallocOrFree(db, p->aAlloc, nNew);
       if( !p->aAlloc ) return SQLITE_NOMEM;
     }
 
+    /* Copy as much data as is available in the buffer into the start of
+    ** p->aAlloc[].  */
     memcpy(p->aAlloc, &p->aBuffer[iBuf], nAvail);
     p->iReadOff += nAvail;
     nRem = nByte - nAvail;
+
+    /* The following loop copies up to p->nBuffer bytes per iteration into
+    ** the p->aAlloc[] buffer.  */
     while( nRem>0 ){
-      int rc;
-      int nCopy;
-      u8 *aNext;
+      int rc;                     /* vdbeSorterIterRead() return code */
+      int nCopy;                  /* Number of bytes to copy */
+      u8 *aNext;                  /* Pointer to buffer to copy data from */
 
       nCopy = nRem;
       if( nRem>p->nBuffer ) nCopy = p->nBuffer;
       rc = vdbeSorterIterRead(db, p, nCopy, &aNext);
       if( rc!=SQLITE_OK ) return rc;
       assert( aNext!=p->aAlloc );
-
       memcpy(&p->aAlloc[nByte - nRem], aNext, nCopy);
       nRem -= nCopy;
     }

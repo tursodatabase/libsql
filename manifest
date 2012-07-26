@@ -1,5 +1,5 @@
-C Fix\san\sedge\scase\sin\svdbesort.c.
-D 2012-07-23T20:10:35.296
+C Update\ssome\scomments\sin\svdbesort.c.
+D 2012-07-26T09:21:14.241
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8f6d858bf3df9978ba43df19985146a1173025e4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -244,7 +244,7 @@ F src/vdbeapi.c 88ea823bbcb4320f5a6607f39cd7c2d3cc4c26b1
 F src/vdbeaux.c dce80038c3c41f2680e5ab4dd0f7e0d8b7ff9071
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
-F src/vdbesort.c bd37dbd4a023f75e9cd1eec18e171aa6f2552d20
+F src/vdbesort.c 106796cedf32a8209e92f28560d0523193c19a9a
 F src/vdbetrace.c 79059ebd17b3c8545fab2a24253713e77e4ab392
 F src/vtab.c bb8ea3a26608bb1357538a5d2fc72beba6638998
 F src/wal.c 9294df6f96aae5909ae1a9b733fd1e1b4736978b
@@ -1005,7 +1005,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 55e47ef338c42f95f0f071d6ec92cd2480f9f1fe
-R c1d0187a30b4d8ec69c9c7f13c2ce356
+P 4ba266fc534f390267180eca8d68b8d5f0b7f832
+R e276763c29e00cdde695ab89ab0038a7
 U dan
-Z 60c5c030c4ed6dd425cd291cf7eefd27
+Z 42e5e7096761a49ccf3e633dc0ad5716
