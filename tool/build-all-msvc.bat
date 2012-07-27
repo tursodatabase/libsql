@@ -123,6 +123,16 @@ SET TOOLPATH=%gawk.exe_PATH%;%tclsh85.exe_PATH%
 %_VECHO% ToolPath = '%TOOLPATH%'
 
 REM
+REM NOTE: Check for MSVC 2012 because the Windows SDK directory handling is
+REM       slightly different for that version.
+REM
+IF "%VisualStudioVersion%" == "11.0" (
+  SET SET_NSDKLIBPATH=1
+) ELSE (
+  CALL :fn_UnsetVariable SET_NSDKLIBPATH
+)
+
+REM
 REM NOTE: This is the outer loop.  There should be exactly one iteration per
 REM       platform.
 REM
@@ -149,11 +159,13 @@ FOR %%P IN (%PLATFORMS%) DO (
     REM       future to account for additional environment variables.
     REM
     CALL :fn_UnsetVariable DevEnvDir
+    CALL :fn_UnsetVariable ExtensionSdkDir
     CALL :fn_UnsetVariable Framework35Version
     CALL :fn_UnsetVariable FrameworkDir
     CALL :fn_UnsetVariable FrameworkDir32
     CALL :fn_UnsetVariable FrameworkVersion
     CALL :fn_UnsetVariable FrameworkVersion32
+    CALL :fn_UnsetVariable FSHARPINSTALLDIR
     CALL :fn_UnsetVariable INCLUDE
     CALL :fn_UnsetVariable LIB
     CALL :fn_UnsetVariable LIBPATH
@@ -161,6 +173,8 @@ FOR %%P IN (%PLATFORMS%) DO (
     REM CALL :fn_UnsetVariable VCINSTALLDIR
     CALL :fn_UnsetVariable VSINSTALLDIR
     CALL :fn_UnsetVariable WindowsSdkDir
+    CALL :fn_UnsetVariable WindowsSdkDir_35
+    CALL :fn_UnsetVariable WindowsSdkDir_old
 
     REM
     REM NOTE: Reset the PATH here to the absolute bare minimum required.
@@ -206,6 +220,17 @@ FOR %%P IN (%PLATFORMS%) DO (
           ECHO Cannot build, Windows SDK not found for platform %%P.
           GOTO errors
         )
+      )
+
+      REM
+      REM NOTE: When using MSVC 2012, the native SDK path cannot simply use
+      REM       the "lib" sub-directory beneath the location specified in the
+      REM       WindowsSdkDir environment variable because that location does
+      REM       not actually contain the necessary library files for x86.
+      REM
+      IF DEFINED SET_NSDKLIBPATH (
+        CALL :fn_SetVariable WindowsSdkDir NSDKLIBPATH
+        CALL :fn_AppendVariable NSDKLIBPATH lib\win8\um\x86
       )
 
       REM
@@ -305,6 +330,19 @@ GOTO no_errors
     SET %1=
     CALL :fn_ResetErrorLevel
   )
+  GOTO :EOF
+
+:fn_AppendVariable
+  SET __ECHO_CMD=ECHO %%%1%%
+  IF DEFINED %1 (
+    FOR /F "delims=" %%V IN ('%__ECHO_CMD%') DO (
+      SET %1=%%V%~2
+    )
+  ) ELSE (
+    SET %1=%~2
+  )
+  SET __ECHO_CMD=
+  CALL :fn_ResetErrorLevel
   GOTO :EOF
 
 :usage

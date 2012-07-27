@@ -80,7 +80,9 @@ LD = link.exe
 #           "NCC=""%VCINSTALLDIR%\bin\cl.exe"""
 #           USE_NATIVE_LIBPATHS=1
 #
-!IFNDEF NCC
+!IFDEF NCC
+NCC = $(NCC:\\=\)
+!ELSE
 NCC = $(CC)
 !ENDIF
 
@@ -90,6 +92,7 @@ NCC = $(CC)
 #
 !IFNDEF NCRTLIBPATH
 NCRTLIBPATH = $(VCINSTALLDIR)\lib
+NCRTLIBPATH = $(NCRTLIBPATH:\\=\)
 !ENDIF
 
 # Check for the Platform SDK library path macro.  Othertise, this
@@ -100,6 +103,7 @@ NCRTLIBPATH = $(VCINSTALLDIR)\lib
 #
 !IFNDEF NSDKLIBPATH
 NSDKLIBPATH = $(WINDOWSSDKDIR)\lib
+NSDKLIBPATH = $(NSDKLIBPATH:\\=\)
 !ENDIF
 
 # C compiler and options for use in building executables that
