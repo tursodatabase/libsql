@@ -1,9 +1,9 @@
-C Add\stool\sto\sgenerate\sa\sVSIX\spackage\susable\sby\sVisual\sStudio\s2012\sRC.
-D 2012-07-27T02:36:06.349
+C Add\stool\sto\sbuild\sthe\score\sDLL\sfor\smultiple\splatforms\susing\sMSVC.
+D 2012-07-27T07:13:25.700
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8f6d858bf3df9978ba43df19985146a1173025e4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc a2a8fcd4104a67e037351323c88e0e4822596926
+F Makefile.msc d598bf4a464d2e9ecbeeea809969c2ac3bf97359
 F Makefile.vxworks 879f034a64062a364b21000266bbd5bc6e0c19b9
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION a71848df48082f1d6585d4b0819d530fc455485d
@@ -966,6 +966,7 @@ F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/win32lock.test b2a539e85ae6b2d78475e016a9636b4451dc7fb9
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test 0de750389990b1078bab203c712dc3fefd1d8b82
+F tool/build-all-msvc.bat fe0f031dce6881469b0949283a3cfa8a93032eca x
 F tool/build-shell.sh b64a481901fc9ffe5ca8812a2a9255b6cfb77381
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
@@ -1007,7 +1008,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 84163b633f01f35cb47495c05dd2b640159677ff
-P d8da26f1f43610ac83af2a5d0e170be5abaf7aaa
-R e89b8d51f4ab3734c03bdfc7ca67399b
+P 8b90e0c4dbcedaf3e61c5d49452997705be1ef98
+R 352e3b46f2ff977e05b0828462f57f7b
 U mistachkin
-Z ca7c7ef3778a69af10a33d78de2dc884
+Z 1ba4e6125d90314090d1c67374bcfabc

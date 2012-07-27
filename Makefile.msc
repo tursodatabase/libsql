@@ -30,6 +30,11 @@ USE_NATIVE_LIBPATHS = 0
 #
 FOR_WINRT = 0
 
+# Set this non-0 to skip attempting to look for and/or link with the Tcl
+# runtime library.
+#
+NO_TCL = 0
+
 # Set this to non-0 to create and use PDBs.
 #
 SYMBOLS = 1
@@ -345,8 +350,10 @@ LDFLAGS = /DEBUG
 !ENDIF
 
 # Start with the Tcl related linker options.
+!IF $(NO_TCL)==0
 LTLIBPATHS = /LIBPATH:$(TCLLIBDIR)
 LTLIBS = $(LIBTCL)
+!ENDIF
 
 # If ICU support is enabled, add the linker options for it.
 !IF $(USE_ICU)!=0
