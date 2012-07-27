@@ -92,8 +92,9 @@ NCC = $(CC)
 #
 !IFNDEF NCRTLIBPATH
 NCRTLIBPATH = $(VCINSTALLDIR)\lib
-NCRTLIBPATH = $(NCRTLIBPATH:\\=\)
 !ENDIF
+
+NCRTLIBPATH = $(NCRTLIBPATH:\\=\)
 
 # Check for the Platform SDK library path macro.  Othertise, this
 # value will default to the 'lib' directory underneath the Windows
@@ -103,8 +104,9 @@ NCRTLIBPATH = $(NCRTLIBPATH:\\=\)
 #
 !IFNDEF NSDKLIBPATH
 NSDKLIBPATH = $(WINDOWSSDKDIR)\lib
-NSDKLIBPATH = $(NSDKLIBPATH:\\=\)
 !ENDIF
+
+NSDKLIBPATH = $(NSDKLIBPATH:\\=\)
 
 # C compiler and options for use in building executables that
 # will run on the platform that is doing the build.

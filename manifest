@@ -1,9 +1,9 @@
-C Minor\sadjustments\sto\sthe\smulti-platform\sbuild\stool\sfor\sMSVC.
-D 2012-07-27T22:29:26.000
+C Improve\sconsistency\sin\shandling\sof\sbuild\soutputs\sand\snative\slibrary\spaths\sin\sthe\smulti-platform\sbuild\stool\sfor\sMSVC.
+D 2012-07-27T23:03:47.862
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 4d7f170e4cef939bec3c90e149ab8241c8e36703
+F Makefile.msc c1293ece66e237b545eae4484e3e81571fb5f47c
 F Makefile.vxworks 879f034a64062a364b21000266bbd5bc6e0c19b9
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION a71848df48082f1d6585d4b0819d530fc455485d
@@ -966,7 +966,7 @@ F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/win32lock.test b2a539e85ae6b2d78475e016a9636b4451dc7fb9
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test 0de750389990b1078bab203c712dc3fefd1d8b82
-F tool/build-all-msvc.bat d0a65da7a96b15fabf5e8d9586ff30ebe2279163 x
+F tool/build-all-msvc.bat f8e272fc74c48e7697f4744aacce1ee4df5edb20 x
 F tool/build-shell.sh b64a481901fc9ffe5ca8812a2a9255b6cfb77381
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
@@ -1008,7 +1008,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 84163b633f01f35cb47495c05dd2b640159677ff
-P d575d9619abd03322b73f89882d6da7c0820f285
-R ddae9c94b79aa7fedb3193f520c7c29e
+P e76b8f7765a91f4306cddb245e731084008f0b8c
+R cb74972be2d529442347b1af34814a0a
 U mistachkin
-Z 7226a750f1ba945c71fd0c02712e92d7
+Z 1c22abf12838e6e39c724ae138286b68

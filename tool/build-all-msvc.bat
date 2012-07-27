@@ -225,16 +225,20 @@ FOR %%P IN (%PLATFORMS%) DO (
       REM       the "lib" sub-directory beneath the location specified in the
       REM       WindowsSdkDir environment variable because that location does
       REM       not actually contain the necessary library files for x86.
+      REM       This must be done for each iteration because it relies upon
+      REM       the WindowsSdkDir environment variable being set by the batch
+      REM       file used to setup the MSVC environment.
       REM
       IF DEFINED SET_NSDKLIBPATH (
         CALL :fn_SetVariable WindowsSdkDir NSDKLIBPATH
-        CALL :fn_AppendVariable NSDKLIBPATH lib\win8\um\x86
+        CALL :fn_AppendVariable NSDKLIBPATH \lib\win8\um\x86
       )
 
       REM
-      REM NOTE: Invoke NMAKE with the MSVC makefile to clean any stale build
-      REM       output from previous iterations of this loop and/or previous
-      REM       runs of this batch file, etc.
+      REM NOTE: Unless prevented from doing so, invoke NMAKE with the MSVC
+      REM       makefile to clean any stale build output from previous
+      REM       iterations of this loop and/or previous runs of this batch
+      REM       file, etc.
       REM
       IF NOT DEFINED NOCLEAN (
         %__ECHO% nmake -f Makefile.msc clean
@@ -243,6 +247,13 @@ FOR %%P IN (%PLATFORMS%) DO (
           ECHO Failed to clean for platform %%P.
           GOTO errors
         )
+      ) ELSE (
+        REM
+        REM NOTE: Even when the cleaning step has been disabled, we still need
+        REM       to remove the build output for the files we are specifically
+        REM       wanting to build for each platform.
+        REM
+        %__ECHO% DEL /Q sqlite3.dll sqlite3.lib
       )
 
       REM
