@@ -1,5 +1,5 @@
-C For\sthe\sclean\smakefile\stargets,\sdelete\sthe\sgenerated\sVSIX\sfile\sas\swell.
-D 2012-07-27T08:33:10.965
+C Minor\sadjustments\sto\sthe\smulti-platform\sbuild\stool\sfor\sMSVC.
+D 2012-07-27T22:29:26.000
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -966,7 +966,7 @@ F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/win32lock.test b2a539e85ae6b2d78475e016a9636b4451dc7fb9
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test 0de750389990b1078bab203c712dc3fefd1d8b82
-F tool/build-all-msvc.bat c739e5376cf8519ea7a9dce7e3f0c45f16a607f9 x
+F tool/build-all-msvc.bat d0a65da7a96b15fabf5e8d9586ff30ebe2279163 x
 F tool/build-shell.sh b64a481901fc9ffe5ca8812a2a9255b6cfb77381
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
@@ -1008,7 +1008,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 84163b633f01f35cb47495c05dd2b640159677ff
-P 95b65883bbf476a17f09ff978df4f51af615baab
-R cce28b8205971983dc12340f78f5f90e
+P d575d9619abd03322b73f89882d6da7c0820f285
+R ddae9c94b79aa7fedb3193f520c7c29e
 U mistachkin
-Z b490b4f938ec6505b50be516f96db421
+Z 7226a750f1ba945c71fd0c02712e92d7

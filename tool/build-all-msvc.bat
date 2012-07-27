@@ -181,8 +181,6 @@ FOR %%P IN (%PLATFORMS%) DO (
     REM
     SET PATH=%TOOLPATH%;%SystemRoot%\System32;%SystemRoot%
 
-    %_VECHO% Path = '%PATH%'
-
     REM
     REM NOTE: Launch a nested command shell to perform the following steps:
     REM
@@ -238,11 +236,13 @@ FOR %%P IN (%PLATFORMS%) DO (
       REM       output from previous iterations of this loop and/or previous
       REM       runs of this batch file, etc.
       REM
-      %__ECHO% nmake -f Makefile.msc clean
+      IF NOT DEFINED NOCLEAN (
+        %__ECHO% nmake -f Makefile.msc clean
 
-      IF ERRORLEVEL 1 (
-        ECHO Failed to clean for platform %%P.
-        GOTO errors
+        IF ERRORLEVEL 1 (
+          ECHO Failed to clean for platform %%P.
+          GOTO errors
+        )
       )
 
       REM
