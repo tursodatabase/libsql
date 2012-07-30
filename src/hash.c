@@ -116,14 +116,13 @@ static int rehash(Hash *pH, unsigned int new_size){
   ** allocation as a benign.
   */
   sqlite3BeginBenignMalloc();
-  new_ht = (struct _ht *)sqlite3Malloc( new_size*sizeof(struct _ht) );
+  new_ht = (struct _ht *)sqlite3MallocZero( new_size*sizeof(struct _ht) );
   sqlite3EndBenignMalloc();
 
   if( new_ht==0 ) return 0;
   sqlite3_free(pH->ht);
   pH->ht = new_ht;
   pH->htsize = new_size = sqlite3MallocSize(new_ht)/sizeof(struct _ht);
-  memset(new_ht, 0, new_size*sizeof(struct _ht));
   for(elem=pH->first, pH->first=0; elem; elem = next_elem){
     unsigned int h = strHash(elem->pKey, elem->nKey) % new_size;
     next_elem = elem->next;

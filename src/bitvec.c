@@ -340,10 +340,9 @@ int sqlite3BitvecBuiltinTest(int sz, int *aOp){
   /* Allocate the Bitvec to be tested and a linear array of
   ** bits to act as the reference */
   pBitvec = sqlite3BitvecCreate( sz );
-  pV = sqlite3_malloc( (sz+7)/8 + 1 );
+  pV = sqlite3MallocZero( (sz+7)/8 + 1 );
   pTmpSpace = sqlite3_malloc(BITVEC_SZ);
   if( pBitvec==0 || pV==0 || pTmpSpace==0  ) goto bitvec_end;
-  memset(pV, 0, (sz+7)/8 + 1);
 
   /* NULL pBitvec tests */
   sqlite3BitvecSet(0, 1);
