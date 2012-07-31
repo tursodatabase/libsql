@@ -1,5 +1,5 @@
-C Modify\smetadata\sfor\sthe\sVSIX\spackage\sand\sadd\stooling\ssupport\sfor\sPDBs.
-D 2012-07-31T00:43:31.954
+C Make\sthe\slist\sof\splatforms\sdynamic\sin\sthe\sSDK\smanifest\sinside\sthe\sVSIX\spackage.
+D 2012-07-31T08:15:56.966
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -983,7 +983,7 @@ F tool/mksqlite3c-noext.tcl 8bce31074e4cbe631bb7676526a048335f4c9f02
 F tool/mksqlite3c.tcl 589c7f44e990be1b8443cfe4808dce392b0327fa
 F tool/mksqlite3h.tcl 78013ad79a5e492e5f764f3c7a8ef834255061f8
 F tool/mksqlite3internalh.tcl 3dca7bb5374cee003379b8cbac73714f610ef795
-F tool/mkvsix.tcl ce2ad5da880752426e2597382f3bf1279d5646b3
+F tool/mkvsix.tcl 153187ce9f1911bc2d0caa7af9856d7b8b805e27
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
 F tool/omittest.tcl 4665982e95a6e5c1bd806cf7bc3dea95be422d77
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -1007,8 +1007,8 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-F tool/win/sqlite.vsix a8778c835bbfe8d9d2066c144542c245a29ac525
-P 305b6667265353b858b79bfea1745e64ff3bb7d3
-R bd2d8408dc9dbcc7a27c7ffc1e947c79
+F tool/win/sqlite.vsix 60c6a9864cd8dfa221215e9ef651781440f056fc
+P 12cbf6a9343ffb24065f77f679e50b67bc2e43f9
+R 7df148b047b8c83dabfec0a3d080b59e
 U mistachkin
-Z 91e5f70404ea58b1f716b323c3d5addd
+Z 610dc29b5bd32d7ba5eb2f794e90effb

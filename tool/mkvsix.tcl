@@ -300,7 +300,7 @@ if {![info exists fileNames(subst)]} then {
 # NOTE: Setup the list of platforms supported by this script.
 #
 if {![info exists platformNames]} then {
-  set platformNames [list ARM x64 x86]
+  set platformNames [list x86 x64 ARM]
 }
 
 ###############################################################################
