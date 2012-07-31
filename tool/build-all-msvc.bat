@@ -253,7 +253,7 @@ FOR %%P IN (%PLATFORMS%) DO (
         REM       to remove the build output for the files we are specifically
         REM       wanting to build for each platform.
         REM
-        %__ECHO% DEL /Q sqlite3.dll sqlite3.lib
+        %__ECHO% DEL /Q sqlite3.dll sqlite3.lib sqlite3.pdb
       )
 
       REM
@@ -290,6 +290,20 @@ FOR %%P IN (%PLATFORMS%) DO (
       IF ERRORLEVEL 1 (
         ECHO Failed to copy "sqlite3.lib" to "%BINARYDIRECTORY%\%%D\".
         GOTO errors
+      )
+
+      REM
+      REM NOTE: Copy the "sqlite3.pdb" file to the platform-specific directory
+      REM       beneath the binary directory unless we are prevented from doing
+      REM       so.
+      REM
+      IF NOT DEFINED NOSYMBOLS (
+        %__ECHO% XCOPY sqlite3.pdb "%BINARYDIRECTORY%\%%D\" %FFLAGS% %DFLAGS%
+
+        IF ERRORLEVEL 1 (
+          ECHO Failed to copy "sqlite3.pdb" to "%BINARYDIRECTORY%\%%D\".
+          GOTO errors
+        )
       )
     )
   )
