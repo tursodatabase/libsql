@@ -1,5 +1,5 @@
-C Make\sthe\slist\sof\splatforms\sdynamic\sin\sthe\sSDK\smanifest\sinside\sthe\sVSIX\spackage.
-D 2012-07-31T08:15:56.966
+C Fix\stypos\sof\sfunction\snames\ssqlite3_result_error_toobig\sand\ssqlite3_result_error_nomem\sin\sthe\sdocumentation.\sNo\schanges\sto\scode.
+D 2012-08-01T20:20:27.300
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -178,7 +178,7 @@ F src/resolve.c b3c70ab28cac60de33684c9aa9e5138dcf71d6dd
 F src/rowset.c f6a49f3e9579428024662f6e2931832511f831a1
 F src/select.c a365da6d7a6d7d8a10ad60ca71837ab5e9369466
 F src/shell.c 076e1c90d594644f36027c8ecff9a392cf2d3a06
-F src/sqlite.h.in 310ae7e538883fa1619ab0638c775ce11ad43015
+F src/sqlite.h.in 3e8035bc406b1571a5cc8ea46bcc831201676f1a
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h ed41801550b0b8fb8217fcfd2e362118062b30c0
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -1008,7 +1008,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 60c6a9864cd8dfa221215e9ef651781440f056fc
-P 12cbf6a9343ffb24065f77f679e50b67bc2e43f9
-R 7df148b047b8c83dabfec0a3d080b59e
+P 22b72e499d2aeba42d0531ae58f87ff023787f47
+R 7a9ae759b6585bddd1352351a6c5ae73
 U mistachkin
-Z 610dc29b5bd32d7ba5eb2f794e90effb
+Z 2e386fb6f10594ee697cff75e8a92cd8
