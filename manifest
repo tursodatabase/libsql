@@ -1,5 +1,5 @@
-C Fix\stypos\sof\sfunction\snames\ssqlite3_result_error_toobig\sand\ssqlite3_result_error_nomem\sin\sthe\sdocumentation.\sNo\schanges\sto\scode.
-D 2012-08-01T20:20:27.300
+C Correct\scomment\sabout\sWinRT\scompiler\sdefine.\s\sNo\schanges\sto\scode.
+D 2012-08-03T10:00:56.291
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -160,7 +160,7 @@ F src/mutex_unix.c c3a4e00f96ba068a8dbef34084465979aaf369cc
 F src/mutex_w32.c 32a9b3841e2d757355f0012b860b1bc5e01eafa0
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
-F src/os.h c2ebd26a68a4223fe170b003852b97d9e7211498
+F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c d7c96b5d140f550f07345870112fae5d7ef99757
 F src/os_win.c e3d3d3e26b65a35d4293d753137a58510bd3299b
@@ -1008,7 +1008,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 60c6a9864cd8dfa221215e9ef651781440f056fc
-P 22b72e499d2aeba42d0531ae58f87ff023787f47
-R 7a9ae759b6585bddd1352351a6c5ae73
+P bec97c98130f057321f3db1436a24377c3c64f81
+R 9ab8bb2549750bb239d2842c9dc60680
 U mistachkin
-Z 2e386fb6f10594ee697cff75e8a92cd8
+Z b6a365cc856116cf33aff81d6af1be2b
