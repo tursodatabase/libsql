@@ -5926,7 +5926,8 @@ static int balance_nonroot(
   MemPage *pParent,               /* Parent page of siblings being balanced */
   int iParentIdx,                 /* Index of "the page" in pParent */
   u8 *aOvflSpace,                 /* page-size bytes of space for parent ovfl */
-  int isRoot                      /* True if pParent is a root-page */
+  int isRoot,                     /* True if pParent is a root-page */
+  int bBulk                       /* True if this call is part of a bulk load */
 ){
   BtShared *pBt;               /* The whole database */
   int nCell = 0;               /* Number of cells in apCell[] */
@@ -6257,7 +6258,7 @@ static int balance_nonroot(
       if( rc ) goto balance_cleanup;
     }else{
       assert( i>0 );
-      rc = allocateBtreePage(pBt, &pNew, &pgno, pgno, 0);
+      rc = allocateBtreePage(pBt, &pNew, &pgno, (bBulk ? 1 : pgno), 0);
       if( rc ) goto balance_cleanup;
       apNew[i] = pNew;
       nNew++;
@@ -6707,7 +6708,7 @@ static int balance(BtCursor *pCur){
           ** pSpace buffer passed to the latter call to balance_nonroot().
           */
           u8 *pSpace = sqlite3PageMalloc(pCur->pBt->pageSize);
-          rc = balance_nonroot(pParent, iIdx, pSpace, iPage==1);
+          rc = balance_nonroot(pParent, iIdx, pSpace, iPage==1, pCur->hints);
           if( pFree ){
             /* If pFree is not NULL, it points to the pSpace buffer used 
             ** by a previous call to balance_nonroot(). Its contents are
@@ -8294,3 +8295,13 @@ int sqlite3BtreeSetVersion(Btree *pBtree, int iVersion){
   pBt->btsFlags &= ~BTS_NO_WAL;
   return rc;
 }
+
+/*
+** set the mask of hint flags for cursor pCsr. Currently the only valid
+** values are 0 and BTREE_BULKLOAD.
+*/
+void sqlite3BtreeCursorHints(BtCursor *pCsr, unsigned int mask){
+  assert( mask==BTREE_BULKLOAD || mask==0 );
+  pCsr->hints = mask;
+}
+

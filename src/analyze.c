@@ -176,7 +176,7 @@ static void openStatTable(
           "CREATE TABLE %Q.%s(%s)", pDb->zName, zTab, aTable[i].zCols
       );
       aRoot[i] = pParse->regRoot;
-      aCreateTbl[i] = 1;
+      aCreateTbl[i] = OPFLAG_P2ISREG;
     }else{
       /* The table already exists. If zWhere is not NULL, delete all entries 
       ** associated with the table zWhere. If zWhere is NULL, delete the

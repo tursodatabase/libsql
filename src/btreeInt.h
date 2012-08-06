@@ -510,6 +510,7 @@ struct BtCursor {
 #ifndef SQLITE_OMIT_INCRBLOB
   u8 isIncrblobHandle;      /* True if this cursor is an incr. io handle */
 #endif
+  u8 hints;                             /* As configured by CursorSetHints() */
   i16 iPage;                            /* Index of current page in apPage */
   u16 aiIdx[BTCURSOR_MAX_DEPTH];        /* Current index in apPage[i] */
   MemPage *apPage[BTCURSOR_MAX_DEPTH];  /* Pages from root to current page */
