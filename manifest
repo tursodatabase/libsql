@@ -1,5 +1,5 @@
-C Merge\sthe\ssorter-coalesce-writes\sbranch\sinto\sthe\strunk.\sThis\simproves\sCREATE\sINDEX\sperformance\son\ssome\splatforms.
-D 2012-08-06T19:28:20.956
+C Modify\sVSIX\spackage\sgeneration\stool\sto\sput\sthe\sPDB\sfiles\sin\sthe\sDebug\sdirectory.
+D 2012-08-06T22:29:26.747
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -984,7 +984,7 @@ F tool/mksqlite3c-noext.tcl 8bce31074e4cbe631bb7676526a048335f4c9f02
 F tool/mksqlite3c.tcl 589c7f44e990be1b8443cfe4808dce392b0327fa
 F tool/mksqlite3h.tcl 78013ad79a5e492e5f764f3c7a8ef834255061f8
 F tool/mksqlite3internalh.tcl 3dca7bb5374cee003379b8cbac73714f610ef795
-F tool/mkvsix.tcl 153187ce9f1911bc2d0caa7af9856d7b8b805e27
+F tool/mkvsix.tcl 19b2ab9ea16445953a76568a5bbe4cb864f92dfe
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
 F tool/omittest.tcl 4665982e95a6e5c1bd806cf7bc3dea95be422d77
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -1009,7 +1009,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 541e9310a7b88e0b40c6530947803527f28e51de 2e5741f774248abc678b50711c43e38ca30c9091
-R 9ea05a2580296dc700acf20c4ae23876
-U dan
-Z ec36f3ad854c62e55cc3fc27576cdc7b
+P e1e9cb08b011e67b767091e42225f22ec862fa64
+R e7789c6a450315035c3cc54a03a15b19
+U mistachkin
+Z 84444372179c1835c9283e74796447ef

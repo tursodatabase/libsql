@@ -273,7 +273,7 @@ if {![info exists fileNames(destination)]} then {
 
   if {![info exists no(symbols)]} then {
     lappend fileNames(destination) \
-        [file join $stagingDirectory Redist CommonConfiguration \
+        [file join $stagingDirectory Redist Debug \
             <platform> sqlite3.pdb]
   }
 }
