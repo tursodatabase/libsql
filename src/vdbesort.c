@@ -919,8 +919,9 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
         rc = vdbeSorterOpenTempFile(db, &pTemp2);
       }
 
-      rc = fileWriterInit(db, pTemp2, &writer, iWrite2);
-
+      if( rc==SQLITE_OK ){
+        rc = fileWriterInit(db, pTemp2, &writer, iWrite2);
+      }
       if( rc==SQLITE_OK ){
         rc = fileWriterWriteVarint(&writer, nWrite);
       }
