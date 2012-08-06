@@ -1,5 +1,5 @@
-C Correct\scomment\sabout\sWinRT\scompiler\sdefine.\s\sNo\schanges\sto\scode.
-D 2012-08-03T10:00:56.291
+C Update\sdescription\sstrings\sin\sthe\sVSIX\spackage.
+D 2012-08-06T10:51:55.331
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1007,8 +1007,8 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-F tool/win/sqlite.vsix 60c6a9864cd8dfa221215e9ef651781440f056fc
-P bec97c98130f057321f3db1436a24377c3c64f81
-R 9ab8bb2549750bb239d2842c9dc60680
+F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
+P 335e91e599555d9f4e42f90576d1676c381314f4
+R eadc6c87ec15f9db6747eb42f404a18d
 U mistachkin
-Z b6a365cc856116cf33aff81d6af1be2b
+Z 9bc32025e8412eea1e17719cbb9188be
