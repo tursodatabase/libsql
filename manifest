@@ -1,9 +1,9 @@
-C Version\s3.7.13
-D 2012-06-11T02:05:22.539
+C Backport\sVSIX\spackaging\ssupport\sand\srelated\schanges.
+D 2012-08-06T23:21:05.223
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d17fddaa4e81f93a7c9c7c0808aacb3fc95f79f4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc fd86027849a59a2f621b791b79eabf3f8ffbd684
+F Makefile.msc d95ad0a339193647036a7d0db441b323a2e4bc98
 F Makefile.vxworks 3b7fe7a0571fdadc61363ebc1b23732d2d6363ca
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 3e857b9b826e818eec9411eafe2c3fa22c1dbb8a
@@ -966,6 +966,7 @@ F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/win32lock.test b2a539e85ae6b2d78475e016a9636b4451dc7fb9
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test 0de750389990b1078bab203c712dc3fefd1d8b82
+F tool/build-all-msvc.bat 1a18aa39983ae7354d834bc55a850a54fc007576 x
 F tool/build-shell.sh b64a481901fc9ffe5ca8812a2a9255b6cfb77381
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
@@ -982,6 +983,7 @@ F tool/mksqlite3c-noext.tcl 105023aa86f696a74b1d6a4929d1e1c3baf9471c
 F tool/mksqlite3c.tcl f289ba51f74f45c71a80c13e6c74a6dd92763253
 F tool/mksqlite3h.tcl 78013ad79a5e492e5f764f3c7a8ef834255061f8
 F tool/mksqlite3internalh.tcl 7b43894e21bcb1bb39e11547ce7e38a063357e87
+F tool/mkvsix.tcl 19b2ab9ea16445953a76568a5bbe4cb864f92dfe
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
 F tool/omittest.tcl 72a49b8a9a8b0bf213a438180307a0df836d4380
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -1005,10 +1007,11 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 0ae0ce630a2e11f81dca50a9cfb04c4a41c03b2d
-R 45dae5fdb66a9a88c8595b45bd7db627
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.7.13 *
-U drh
-Z c0babe9c1caac24f66a10b2544a508b6
+F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
+P f5b5a13f7394dc143aa136f1d4faba6839eaa6dc
+R 52d11d3e50315aa019808706f6c354a0
+T *branch * vsix-3.7.13
+T *sym-vsix-3.7.13 *
+T -sym-trunk *
+U mistachkin
+Z 5965af1d21ac0216d85a0ca8ada1cdef
