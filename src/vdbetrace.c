@@ -169,9 +169,8 @@ void sqlite3ExplainBegin(Vdbe *pVdbe){
   if( pVdbe ){
     Explain *p;
     sqlite3BeginBenignMalloc();
-    p = sqlite3_malloc( sizeof(Explain) );
+    p = (Explain *)sqlite3MallocZero( sizeof(Explain) );
     if( p ){
-      memset(p, 0, sizeof(*p));
       p->pVdbe = pVdbe;
       sqlite3_free(pVdbe->pExplain);
       pVdbe->pExplain = p;

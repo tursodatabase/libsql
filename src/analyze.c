@@ -256,12 +256,11 @@ static void stat3Init(
   nRow = (tRowcnt)sqlite3_value_int64(argv[0]);
   mxSample = sqlite3_value_int(argv[1]);
   n = sizeof(*p) + sizeof(p->a[0])*mxSample;
-  p = sqlite3_malloc( n );
+  p = sqlite3MallocZero( n );
   if( p==0 ){
     sqlite3_result_error_nomem(context);
     return;
   }
-  memset(p, 0, n);
   p->a = (struct Stat3Sample*)&p[1];
   p->nRow = nRow;
   p->mxSample = mxSample;

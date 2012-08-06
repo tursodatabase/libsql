@@ -164,7 +164,7 @@ sqlite3_backup *sqlite3_backup_init(
     ** EVIDENCE-OF: R-64852-21591 The sqlite3_backup object is created by a
     ** call to sqlite3_backup_init() and is destroyed by a call to
     ** sqlite3_backup_finish(). */
-    p = (sqlite3_backup *)sqlite3_malloc(sizeof(sqlite3_backup));
+    p = (sqlite3_backup *)sqlite3MallocZero(sizeof(sqlite3_backup));
     if( !p ){
       sqlite3Error(pDestDb, SQLITE_NOMEM, 0);
     }
@@ -172,7 +172,6 @@ sqlite3_backup *sqlite3_backup_init(
 
   /* If the allocation succeeded, populate the new object. */
   if( p ){
-    memset(p, 0, sizeof(sqlite3_backup));
     p->pSrc = findBtree(pDestDb, pSrcDb, zSrcDb);
     p->pDest = findBtree(pDestDb, pDestDb, zDestDb);
     p->pDestDb = pDestDb;

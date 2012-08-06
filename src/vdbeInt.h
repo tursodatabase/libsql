@@ -431,11 +431,11 @@ int sqlite3VdbeTransferError(Vdbe *p);
 #else
 int sqlite3VdbeSorterInit(sqlite3 *, VdbeCursor *);
 void sqlite3VdbeSorterClose(sqlite3 *, VdbeCursor *);
-int sqlite3VdbeSorterRowkey(VdbeCursor *, Mem *);
-int sqlite3VdbeSorterNext(sqlite3 *, VdbeCursor *, int *);
-int sqlite3VdbeSorterRewind(sqlite3 *, VdbeCursor *, int *);
-int sqlite3VdbeSorterWrite(sqlite3 *, VdbeCursor *, Mem *);
-int sqlite3VdbeSorterCompare(VdbeCursor *, Mem *, int *);
+int sqlite3VdbeSorterRowkey(const VdbeCursor *, Mem *);
+int sqlite3VdbeSorterNext(sqlite3 *, const VdbeCursor *, int *);
+int sqlite3VdbeSorterRewind(sqlite3 *, const VdbeCursor *, int *);
+int sqlite3VdbeSorterWrite(sqlite3 *, const VdbeCursor *, Mem *);
+int sqlite3VdbeSorterCompare(const VdbeCursor *, Mem *, int *);
 #endif
 
 #if !defined(SQLITE_OMIT_SHARED_CACHE) && SQLITE_THREADSAFE>0
