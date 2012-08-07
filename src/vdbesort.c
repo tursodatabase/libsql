@@ -125,11 +125,13 @@ struct VdbeSorterIter {
 };
 
 /*
-** An instance of this structure is used to separate the stream of records
+** An instance of this structure is used to organize the stream of records
 ** being written to files by the merge-sort code into aligned, page-sized
-** blocks.
+** blocks.  Doing all I/O in aligned page-sized blocks helps I/O to go
+** faster on many operating systems.
 */
 struct FileWriter {
+  int eFWErr;                     /* Non-zero if in an error state */
   u8 *aBuffer;                    /* Pointer to write buffer */
   int nBuffer;                    /* Size of write buffer in bytes */
   int iBufStart;                  /* First byte of buffer to write */
@@ -264,15 +266,13 @@ static int vdbeSorterIterVarint(sqlite3 *db, VdbeSorterIter *p, u64 *pnOut){
   if( iBuf && (p->nBuffer-iBuf)>=9 ){
     p->iReadOff += sqlite3GetVarint(&p->aBuffer[iBuf], pnOut);
   }else{
-    u8 aVarint[9];
-    int i;
-    for(i=0; i<sizeof(aVarint); i++){
-      u8 *a;
-      int rc = vdbeSorterIterRead(db, p, 1, &a);
+    u8 aVarint[16], *a;
+    int i = 0, rc;
+    do{
+      rc = vdbeSorterIterRead(db, p, 1, &a);
       if( rc ) return rc;
-      aVarint[i] = *a;
-      if( (aVarint[i] & 0x80)==0 ) break;
-    }
+      aVarint[(i++)&0xf] = a[0];
+    }while( (a[0]&0x80)!=0 );
     sqlite3GetVarint(aVarint, pnOut);
   }
 
@@ -614,7 +614,7 @@ static int vdbeSorterSort(const VdbeCursor *pCsr){
 /*
 ** Initialize a file-writer object.
 */
-static int fileWriterInit(
+static void fileWriterInit(
   sqlite3 *db,                    /* Database (for malloc) */
   sqlite3_file *pFile,            /* File to write to */
   FileWriter *p,                  /* Object to populate */
@@ -624,22 +624,23 @@ static int fileWriterInit(
 
   memset(p, 0, sizeof(FileWriter));
   p->aBuffer = (u8 *)sqlite3DbMallocRaw(db, nBuf);
-  if( !p->aBuffer ) return SQLITE_NOMEM;
-
-  p->iBufEnd = p->iBufStart = (iStart % nBuf);
-  p->iWriteOff = iStart - p->iBufStart;
-  p->nBuffer = nBuf;
-  p->pFile = pFile;
-  return SQLITE_OK;
+  if( !p->aBuffer ){
+    p->eFWErr = SQLITE_NOMEM;
+  }else{
+    p->iBufEnd = p->iBufStart = (iStart % nBuf);
+    p->iWriteOff = iStart - p->iBufStart;
+    p->nBuffer = nBuf;
+    p->pFile = pFile;
+  }
 }
 
 /*
 ** Write nData bytes of data to the file-write object. Return SQLITE_OK
 ** if successful, or an SQLite error code if an error occurs.
 */
-static int fileWriterWrite(FileWriter *p, u8 *pData, int nData){
+static void fileWriterWrite(FileWriter *p, u8 *pData, int nData){
   int nRem = nData;
-  while( nRem>0 ){
+  while( nRem>0 && p->eFWErr==0 ){
     int nCopy = nRem;
     if( nCopy>(p->nBuffer - p->iBufEnd) ){
       nCopy = p->nBuffer - p->iBufEnd;
@@ -648,11 +649,10 @@ static int fileWriterWrite(FileWriter *p, u8 *pData, int nData){
     memcpy(&p->aBuffer[p->iBufEnd], &pData[nData-nRem], nCopy);
     p->iBufEnd += nCopy;
     if( p->iBufEnd==p->nBuffer ){
-      int rc = sqlite3OsWrite(p->pFile, 
+      p->eFWErr = sqlite3OsWrite(p->pFile, 
           &p->aBuffer[p->iBufStart], p->iBufEnd - p->iBufStart, 
           p->iWriteOff + p->iBufStart
       );
-      if( rc!=SQLITE_OK ) return rc;
       p->iBufStart = p->iBufEnd = 0;
       p->iWriteOff += p->nBuffer;
     }
@@ -660,8 +660,6 @@ static int fileWriterWrite(FileWriter *p, u8 *pData, int nData){
 
     nRem -= nCopy;
   }
-
-  return SQLITE_OK;
 }
 
 /*
@@ -674,15 +672,16 @@ static int fileWriterWrite(FileWriter *p, u8 *pData, int nData){
 ** last byte written to the file.
 */
 static int fileWriterFinish(sqlite3 *db, FileWriter *p, i64 *piEof){
-  int rc = SQLITE_OK;
-  if( p->aBuffer && p->iBufEnd>p->iBufStart ){
-    rc = sqlite3OsWrite(p->pFile, 
+  int rc;
+  if( p->eFWErr==0 && ALWAYS(p->aBuffer) && p->iBufEnd>p->iBufStart ){
+    p->eFWErr = sqlite3OsWrite(p->pFile, 
         &p->aBuffer[p->iBufStart], p->iBufEnd - p->iBufStart, 
         p->iWriteOff + p->iBufStart
     );
   }
   *piEof = (p->iWriteOff + p->iBufEnd);
   sqlite3DbFree(db, p->aBuffer);
+  rc = p->eFWErr;
   memset(p, 0, sizeof(FileWriter));
   return rc;
 }
@@ -691,11 +690,11 @@ static int fileWriterFinish(sqlite3 *db, FileWriter *p, i64 *piEof){
 ** Write value iVal encoded as a varint to the file-write object. Return 
 ** SQLITE_OK if successful, or an SQLite error code if an error occurs.
 */
-static int fileWriterWriteVarint(FileWriter *p, u64 iVal){
+static void fileWriterWriteVarint(FileWriter *p, u64 iVal){
   int nByte; 
   u8 aByte[10];
   nByte = sqlite3PutVarint(aByte, iVal);
-  return fileWriterWrite(p, aByte, nByte);
+  fileWriterWrite(p, aByte, nByte);
 }
 
 /*
@@ -713,7 +712,6 @@ static int fileWriterWriteVarint(FileWriter *p, u64 iVal){
 */
 static int vdbeSorterListToPMA(sqlite3 *db, const VdbeCursor *pCsr){
   int rc = SQLITE_OK;             /* Return code */
-  int rc2;                        /* fileWriterFinish return code */
   VdbeSorter *pSorter = pCsr->pSorter;
   FileWriter writer;
 
@@ -735,31 +733,21 @@ static int vdbeSorterListToPMA(sqlite3 *db, const VdbeCursor *pCsr){
   }
 
   if( rc==SQLITE_OK ){
-    rc = fileWriterInit(db, pSorter->pTemp1, &writer, pSorter->iWriteOff);
-  }
-
-  if( rc==SQLITE_OK ){
     SorterRecord *p;
     SorterRecord *pNext = 0;
 
-
+    fileWriterInit(db, pSorter->pTemp1, &writer, pSorter->iWriteOff);
     pSorter->nPMA++;
-    rc = fileWriterWriteVarint(&writer, pSorter->nInMemory);
-    for(p=pSorter->pRecord; rc==SQLITE_OK && p; p=pNext){
+    fileWriterWriteVarint(&writer, pSorter->nInMemory);
+    for(p=pSorter->pRecord; p; p=pNext){
       pNext = p->pNext;
-      rc = fileWriterWriteVarint(&writer, p->nVal);
-      if( rc==SQLITE_OK ){
-        rc = fileWriterWrite(&writer, p->pVal, p->nVal);
-      }
-
+      fileWriterWriteVarint(&writer, p->nVal);
+      fileWriterWrite(&writer, p->pVal, p->nVal);
       sqlite3DbFree(db, p);
     }
-
     pSorter->pRecord = p;
+    rc = fileWriterFinish(db, &writer, &pSorter->iWriteOff);
   }
-
-  rc2 = fileWriterFinish(db, &writer, &pSorter->iWriteOff);
-  if( rc==SQLITE_OK ) rc = rc2;
 
   return rc;
 }
@@ -921,30 +909,20 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
       }
 
       if( rc==SQLITE_OK ){
-        rc = fileWriterInit(db, pTemp2, &writer, iWrite2);
-      }
-      if( rc==SQLITE_OK ){
-        rc = fileWriterWriteVarint(&writer, nWrite);
-      }
-
-      if( rc==SQLITE_OK ){
         int bEof = 0;
+        fileWriterInit(db, pTemp2, &writer, iWrite2);
+        fileWriterWriteVarint(&writer, nWrite);
         while( rc==SQLITE_OK && bEof==0 ){
           VdbeSorterIter *pIter = &pSorter->aIter[ pSorter->aTree[1] ];
           assert( pIter->pFile );
 
-          rc = fileWriterWriteVarint(&writer, pIter->nKey);
-          if( rc==SQLITE_OK ){
-            rc = fileWriterWrite(&writer, pIter->aKey, pIter->nKey);
-          }
-          if( rc==SQLITE_OK ){
-            rc = sqlite3VdbeSorterNext(db, pCsr, &bEof);
-          }
+          fileWriterWriteVarint(&writer, pIter->nKey);
+          fileWriterWrite(&writer, pIter->aKey, pIter->nKey);
+          rc = sqlite3VdbeSorterNext(db, pCsr, &bEof);
         }
+        rc2 = fileWriterFinish(db, &writer, &iWrite2);
+        if( rc==SQLITE_OK ) rc = rc2;
       }
-
-      rc2 = fileWriterFinish(db, &writer, &iWrite2);
-      if( rc==SQLITE_OK ) rc = rc2;
     }
 
     if( pSorter->nPMA<=SORTER_MAX_MERGE_COUNT ){

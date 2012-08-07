@@ -1,5 +1,5 @@
-C Add\sextra\stests\sfor\ssecure-delete\smode.
-D 2012-08-07T17:41:50.005
+C Simplifications\sto\sthe\ssorter\sto\ssupport\sfull-coverage\stesting.
+D 2012-08-07T22:53:01.615
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -244,7 +244,7 @@ F src/vdbeapi.c 88ea823bbcb4320f5a6607f39cd7c2d3cc4c26b1
 F src/vdbeaux.c dce80038c3c41f2680e5ab4dd0f7e0d8b7ff9071
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
-F src/vdbesort.c 4897215f0a0c4e731aa5ac5fc0317b62a4919e79
+F src/vdbesort.c bd5ce83f9314bfb632c8c653e9e81db31928a753
 F src/vdbetrace.c 8bd5da325fc90f28464335e4cc4ad1407fe30835
 F src/vtab.c bb8ea3a26608bb1357538a5d2fc72beba6638998
 F src/wal.c 9294df6f96aae5909ae1a9b733fd1e1b4736978b
@@ -1010,7 +1010,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 17cb5e951e419b1221ae4595d20059d90a361a39
-R 2919015ca9831fb481e06469c7639f64
-U dan
-Z af24cb62793571f094423bbb394787f8
+P e380cd3ce34d509e184081ecccf27fda11ce1da7
+R 01110266752aaa08ec8ada6a46e26710
+U drh
+Z df7269861f33304988982e4a40d635e7
