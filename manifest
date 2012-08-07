@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\shash.c\sintroduced\sby\s[305b66672653].
-D 2012-08-07T15:19:27.578
+C Add\sextra\stests\sfor\ssecure-delete\smode.
+D 2012-08-07T17:41:50.005
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -642,7 +642,7 @@ F test/pageropt.test 9191867ed19a2b3db6c42d1b36b6fbc657cd1ab0
 F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
-F test/permutations.test 2af90e00cea9e7e7c0a6b16d34727cb5bbae14dd
+F test/permutations.test d12fabf8abdb71b79eb6c3ef3be5e875fe790071
 F test/pragma.test a62f73293b0f0d79b0c87f8dd32d46fe53b0bd17
 F test/pragma2.test 3a55f82b954242c642f8342b17dffc8b47472947
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -676,6 +676,7 @@ F test/schema3.test 1bc1008e1f8cb5654b248c55f27249366eb7ed38
 F test/schema4.test e6a66e20cc69f0e306667c08be7fda3d11707dc5
 F test/schema5.test 0103e4c0313b3725b5ae5600bdca53006ab53db3
 F test/securedel.test 87a2561151af1f1e349071a89fdd77059f50113c
+F test/securedel2.test 8e92bfb6559744f31e18d5c88a7076ae1deea0a8
 F test/select1.test deba017eed9daa5af33de868676c997e7eebb931
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
 F test/select3.test 2ce595f8fb8e2ac10071d3b4e424cadd4634a054
@@ -1009,7 +1010,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 26428b459b45d0fa9fcad7eb5e58bd60b04a0f83
-R 91c2befabc2142729ab9b898a169b7b2
+P 17cb5e951e419b1221ae4595d20059d90a361a39
+R 2919015ca9831fb481e06469c7639f64
 U dan
-Z 74786c71a4a2788ff8896e58e602bf71
+Z af24cb62793571f094423bbb394787f8
