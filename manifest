@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\swalthread.test\scausing\sintermittent\sfailures.
-D 2012-08-07T13:55:41.483
+C Do\snot\srun\stest\sscript\sspellfix.test\sif\sSQLITE_OMIT_VIRTUAL_TABLE\sis\sdefined.\sFix\swalro.test\sso\sthat\sit\sworks\sif\sDEFAULT_AUTOVACUUM\sis\sdefined.
+D 2012-08-07T14:18:18.405
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -717,7 +717,7 @@ F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/spellfix.test 936be6f7ba1c4d096adb280c68b32f4848af8d2e
+F test/spellfix.test 5af977d1a1a9e3801ed4239ee4dea92d70a53d35
 F test/sqllimits1.test b1aae27cc98eceb845e7f7adf918561256e31298
 F test/stat.test 08e8185b3fd5b010c90d7ad82b9dd4ea1cbf14b0
 F test/stmt.test 25d64e3dbf9a3ce89558667d7f39d966fe2a71b9
@@ -946,7 +946,7 @@ F test/walhook.test ed00a40ba7255da22d6b66433ab61fab16a63483
 F test/walmode.test 4022fe03ae6e830583672caa101f046438a0473c
 F test/walnoshm.test 84ca10c544632a756467336b7c3b864d493ee496
 F test/walpersist.test 8c6b7e3ec1ba91b5e4dc4e0921d6d3f87cd356a6
-F test/walro.test f183c0003060a64793f9bfafef4c479418ed7fa8
+F test/walro.test a31deb621033442a76c3a61e44929250d06f81b1
 F test/walshared.test 6dda2293880c300baf5d791c307f653094585761
 F test/walslow.test e7be6d9888f83aa5d3d3c7c08aa9b5c28b93609a
 F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
@@ -1009,7 +1009,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 9d0720833fd52b25e62aca9ab4cf1e234fd792aa
-R 949e37e42acb7f9147b680b8c86a82df
+P a192a718d513002b58ad585fcb3d8b9b49b4b123
+R 3c99e2c9fab7d765db4c9bc2b2b98c3c
 U dan
-Z 621c379326eb2bebdae5065332685c50
+Z c2d7ea3513555d2c297d13781c66bc21
