@@ -1,5 +1,5 @@
-C Modify\sVSIX\spackage\sgeneration\stool\sto\sput\sthe\sPDB\sfiles\sin\sthe\sDebug\sdirectory.
-D 2012-08-06T22:29:26.747
+C Fix\sa\sbug\sin\swalthread.test\scausing\sintermittent\sfailures.
+D 2012-08-07T13:55:41.483
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -949,7 +949,7 @@ F test/walpersist.test 8c6b7e3ec1ba91b5e4dc4e0921d6d3f87cd356a6
 F test/walro.test f183c0003060a64793f9bfafef4c479418ed7fa8
 F test/walshared.test 6dda2293880c300baf5d791c307f653094585761
 F test/walslow.test e7be6d9888f83aa5d3d3c7c08aa9b5c28b93609a
-F test/walthread.test a2ed5270eb695284d4ad27d252517bdc3317ee2a
+F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
 F test/where.test 4c9f69987ed2aa0173fa930f2b41ab9879478cd8
 F test/where2.test 43d4becaf5a5df854e6c21d624a1cb84c6904554
 F test/where3.test 667e75642102c97a00bf9b23d3cb267db321d006
@@ -1009,7 +1009,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P e1e9cb08b011e67b767091e42225f22ec862fa64
-R e7789c6a450315035c3cc54a03a15b19
-U mistachkin
-Z 84444372179c1835c9283e74796447ef
+P 9d0720833fd52b25e62aca9ab4cf1e234fd792aa
+R 949e37e42acb7f9147b680b8c86a82df
+U dan
+Z 621c379326eb2bebdae5065332685c50
