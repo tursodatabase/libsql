@@ -153,6 +153,48 @@ do_test check-2.6 {
   }
 } {1 {constraint three failed}}
 
+# Undocumented behavior:  The CONSTRAINT name clause can follow a constraint.
+# Such a clause is ignored.  But the parser must accept it for backwards
+# compatibility.
+#
+do_test check-2.10 {
+  execsql {
+    CREATE TABLE t2b(
+      x INTEGER CHECK( typeof(coalesce(x,0))=='integer' ) CONSTRAINT one,
+      y TEXT PRIMARY KEY constraint two,
+      z INTEGER,
+      UNIQUE(x,z) constraint three
+    );
+  }
+} {}
+do_test check-2.11 {
+  catchsql {
+    INSERT INTO t2b VALUES('xyzzy','hi',5);
+  }
+} {1 {constraint failed}}
+do_test check-2.12 {
+  execsql {
+    CREATE TABLE t2c(
+      x INTEGER CONSTRAINT x_one CONSTRAINT x_two
+          CHECK( typeof(coalesce(x,0))=='integer' )
+          CONSTRAINT x_two CONSTRAINT x_three,
+      y INTEGER, z INTEGER,
+      CONSTRAINT u_one UNIQUE(x,y,z) CONSTRAINT u_two
+    );
+  }
+} {}
+do_test check-2.13 {
+  catchsql {
+    INSERT INTO t2c VALUES('xyzzy',7,8);
+  }
+} {1 {constraint x_two failed}}
+do_test check-2.cleanup {
+  execsql {
+    DROP TABLE IF EXISTS t2b;
+    DROP TABLE IF EXISTS t2c;
+  }
+} {}
+
 ifcapable subquery {
   do_test check-3.1 {
     catchsql {

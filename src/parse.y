@@ -185,6 +185,7 @@ column(A) ::= columnid(X) type carglist. {
 columnid(A) ::= nm(X). {
   sqlite3AddColumn(pParse,&X);
   A = X;
+  pParse->constraintName.n = 0;
 }
 
 
@@ -273,10 +274,9 @@ signed ::= minus_num.
 // "carglist" is a list of additional constraints that come after the
 // column name and column type in a CREATE TABLE statement.
 //
-carglist ::= carglist cname ccons.
+carglist ::= carglist ccons.
 carglist ::= .
-cname ::= CONSTRAINT nm(X).           {pParse->constraintName = X;}
-cname ::= .                           {pParse->constraintName.n = 0;}
+ccons ::= CONSTRAINT nm(X).           {pParse->constraintName = X;}
 ccons ::= DEFAULT term(X).            {sqlite3AddDefaultValue(pParse,&X);}
 ccons ::= DEFAULT LP expr(X) RP.      {sqlite3AddDefaultValue(pParse,&X);}
 ccons ::= DEFAULT PLUS term(X).       {sqlite3AddDefaultValue(pParse,&X);}
@@ -339,10 +339,13 @@ init_deferred_pred_opt(A) ::= .                       {A = 0;}
 init_deferred_pred_opt(A) ::= INITIALLY DEFERRED.     {A = 1;}
 init_deferred_pred_opt(A) ::= INITIALLY IMMEDIATE.    {A = 0;}
 
-conslist_opt(A) ::= .                   {A.n = 0; A.z = 0;}
-conslist_opt(A) ::= COMMA(X) conslist.  {A = X;}
-conslist ::= conslist COMMA cname tcons.
-conslist ::= cname tcons.
+conslist_opt(A) ::= .                         {A.n = 0; A.z = 0;}
+conslist_opt(A) ::= COMMA(X) conslist.        {A = X;}
+conslist ::= conslist tconscomma tcons.
+conslist ::= tcons.
+tconscomma ::= COMMA.            {pParse->constraintName.n = 0;}
+tconscomma ::= .
+tcons ::= CONSTRAINT nm(X).      {pParse->constraintName = X;}
 tcons ::= PRIMARY KEY LP idxlist(X) autoinc(I) RP onconf(R).
                                  {sqlite3AddPrimaryKey(pParse,X,R,I,0);}
 tcons ::= UNIQUE LP idxlist(X) RP onconf(R).
