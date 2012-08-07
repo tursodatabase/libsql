@@ -1,5 +1,5 @@
-C Do\snot\srun\stest\sscript\sspellfix.test\sif\sSQLITE_OMIT_VIRTUAL_TABLE\sis\sdefined.\sFix\swalro.test\sso\sthat\sit\sworks\sif\sDEFAULT_AUTOVACUUM\sis\sdefined.
-D 2012-08-07T14:18:18.405
+C Fix\sa\sbug\sin\shash.c\sintroduced\sby\s[305b66672653].
+D 2012-08-07T15:19:27.578
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -137,7 +137,7 @@ F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 657212460bf5cfd3ae607d12ea62092844c227b5
 F src/func.c 18dfedfb857e100b05755a1b12e88b389f957879
 F src/global.c 4cfdca5cb0edd33c4d021baec4ede958cb2c793b
-F src/hash.c 1f35276f9664dd150451b463805a952892227c73
+F src/hash.c a4031441741932da9e7a65bee2b36b5d0e81c073
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
 F src/insert.c 770ed633830fb49d73d90c3fdf20b703973e1e84
@@ -1009,7 +1009,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P a192a718d513002b58ad585fcb3d8b9b49b4b123
-R 3c99e2c9fab7d765db4c9bc2b2b98c3c
+P 26428b459b45d0fa9fcad7eb5e58bd60b04a0f83
+R 91c2befabc2142729ab9b898a169b7b2
 U dan
-Z c2d7ea3513555d2c297d13781c66bc21
+Z 74786c71a4a2788ff8896e58e602bf71
