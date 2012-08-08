@@ -1,5 +1,5 @@
-C Simplifications\sto\sthe\ssorter\sto\ssupport\sfull-coverage\stesting.
-D 2012-08-07T22:53:01.615
+C Change\sto\ssecuredel2.test\sso\sthat\sit\sworks\seven\sif\sSQLITE_DEFAULT_AUTOVACUUM=1\sis\sdefined.
+D 2012-08-08T10:14:10.004
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -676,7 +676,7 @@ F test/schema3.test 1bc1008e1f8cb5654b248c55f27249366eb7ed38
 F test/schema4.test e6a66e20cc69f0e306667c08be7fda3d11707dc5
 F test/schema5.test 0103e4c0313b3725b5ae5600bdca53006ab53db3
 F test/securedel.test 87a2561151af1f1e349071a89fdd77059f50113c
-F test/securedel2.test 8e92bfb6559744f31e18d5c88a7076ae1deea0a8
+F test/securedel2.test f13a916155f790a6b9de835049641b14ef312986
 F test/select1.test deba017eed9daa5af33de868676c997e7eebb931
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
 F test/select3.test 2ce595f8fb8e2ac10071d3b4e424cadd4634a054
@@ -1010,7 +1010,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P e380cd3ce34d509e184081ecccf27fda11ce1da7
-R 01110266752aaa08ec8ada6a46e26710
-U drh
-Z df7269861f33304988982e4a40d635e7
+P de804f4c90f02ca98991da185ed5e28bdd319e92
+R cd5e84682b160ed0910b107d04268a4b
+U dan
+Z f570770213d0b1556a06e6e2542482b4

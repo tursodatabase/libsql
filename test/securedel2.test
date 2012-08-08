@@ -34,6 +34,7 @@ proc detect_blob {zFile iBlob} {
 
 do_test 1.1 {
   execsql { PRAGMA secure_delete = 1 }
+  execsql { PRAGMA auto_vacuum = 0 }
   execsql { CREATE TABLE t1(x, y) }
   for {set i 1} {$i <= 1000} {incr i} {
     set x "X'[string repeat $aBlob($i) 1]'"
