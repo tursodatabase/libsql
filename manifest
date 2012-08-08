@@ -1,5 +1,5 @@
-C Change\sto\ssecuredel2.test\sso\sthat\sit\sworks\seven\sif\sSQLITE_DEFAULT_AUTOVACUUM=1\sis\sdefined.
-D 2012-08-08T10:14:10.004
+C When\sbuilding\sa\sb-tree\sas\spart\sof\sa\sCREATE\sINDEX\sor\sREINDEX\sstatement,\sattempt\sto\spack\skeys\sinto\spages\sas\stightly\sas\spossible.
+D 2012-08-08T11:55:15.269
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -123,7 +123,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 5b31b24d6814b11de763debf342c8cd0a15a4910
 F src/bitvec.c 26675fe8e431dc555e6f2d0e11e651d172234aa1
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 1d366468b6f30234d76bf1da43e038d6f3ba2c9c
+F src/btree.c 3a2dbf6f1b377790bed9cf1bb141f622d7b8f5eb
 F src/btree.h 4aee02e879211bfcfd3f551769578d2e940ab6c2
 F src/btreeInt.h 4e5c2bd0f9b36b2a815a6d84f771a61a65830621
 F src/build.c 0f6b40ad6211dcaba6159d0f9a297f0704f22142
@@ -1010,7 +1010,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P de804f4c90f02ca98991da185ed5e28bdd319e92
-R cd5e84682b160ed0910b107d04268a4b
+P 1e6f5ea48174e3cb59e6d9fe1293fd87bd9c78f5
+R 5b5871247315ef7c9328782279895eef
 U dan
-Z f570770213d0b1556a06e6e2542482b4
+Z 279d19e350facc9c855651c896638780
