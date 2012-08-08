@@ -5991,18 +5991,19 @@ static int balance_nonroot(
   i = pParent->nOverflow + pParent->nCell;
   if( i<2 ){
     nxDiv = 0;
-    nOld = i+1;
   }else{
-    nOld = 3;
+    assert( bBulk==0 || bBulk==1 );
     if( iParentIdx==0 ){                 
       nxDiv = 0;
     }else if( iParentIdx==i ){
-      nxDiv = i-2;
+      nxDiv = i-2+bBulk;
     }else{
+      assert( bBulk==0 );
       nxDiv = iParentIdx-1;
     }
-    i = 2;
+    i = 2-bBulk;
   }
+  nOld = i+1;
   if( (i+nxDiv-pParent->nOverflow)==pParent->nCell ){
     pRight = &pParent->aData[pParent->hdrOffset+8];
   }else{
