@@ -6473,6 +6473,7 @@ static int balance_nonroot(
         ** sibling page j. If the siblings are not leaf pages of an
         ** intkey b-tree, then cell i was a divider cell. */
         assert( j+1 < ArraySize(apCopy) );
+        assert( j+1 < nOld );
         pOld = apCopy[++j];
         iNextOld = i + !leafData + pOld->nCell + pOld->nOverflow;
         if( pOld->nOverflow ){
@@ -8307,4 +8308,3 @@ void sqlite3BtreeCursorHints(BtCursor *pCsr, unsigned int mask){
   assert( mask==BTREE_BULKLOAD || mask==0 );
   pCsr->hints = mask;
 }
-
