@@ -195,7 +195,7 @@ static int vdbeSorterIterRead(
     int rc;                       /* sqlite3OsRead() return code */
 
     /* Determine how many bytes of data to read. */
-    nRead = p->iEof - p->iReadOff;
+    nRead = (int)(p->iEof - p->iReadOff);
     if( nRead>p->nBuffer ) nRead = p->nBuffer;
     assert( nRead>0 );
 
@@ -300,7 +300,7 @@ static int vdbeSorterIterNext(
   rc = vdbeSorterIterVarint(db, pIter, &nRec);
   if( rc==SQLITE_OK ){
     pIter->nKey = (int)nRec;
-    rc = vdbeSorterIterRead(db, pIter, nRec, &pIter->aKey);
+    rc = vdbeSorterIterRead(db, pIter, (int)nRec, &pIter->aKey);
   }
 
   return rc;
@@ -343,7 +343,7 @@ static int vdbeSorterIterInit(
     if( iBuf ){
       int nRead = nBuf - iBuf;
       if( (iStart + nRead) > pSorter->iWriteOff ){
-        nRead = pSorter->iWriteOff - iStart;
+        nRead = (int)(pSorter->iWriteOff - iStart);
       }
       rc = sqlite3OsRead(
           pSorter->pTemp1, &pIter->aBuffer[iBuf], nRead, iStart
