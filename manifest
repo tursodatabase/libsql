@@ -1,5 +1,5 @@
-C Refer\sto\sthe\sfile\smapping\sWin32\sAPI\sfunctions\sonly\swhen\sabsolutely\snecessary.
-D 2012-08-14T01:45:12.276
+C Update\sthe\sspellfix\svirtual\stable\sto\sthe\slatest\sdevelopment\scode.
+D 2012-08-14T17:29:27.517
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -221,7 +221,7 @@ F src/test_quota.h 8761e463b25e75ebc078bd67d70e39b9c817a0cb
 F src/test_rtree.c aba603c949766c4193f1068b91c787f57274e0d9
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
-F src/test_spellfix.c 5ed989693d4040f4d343316c338e25c5a6a1f05d
+F src/test_spellfix.c 3a260d237fabbf5884389aa8c0e516b4e61ab98a
 F src/test_stat.c d1569c7a4839f13e80187e2c26b2ab4da2d03935
 F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c a992d8c80ea91fbf21fb2dd570db40e77dd7e6ae
@@ -718,7 +718,7 @@ F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/spellfix.test 5af977d1a1a9e3801ed4239ee4dea92d70a53d35
+F test/spellfix.test 8bdb52dc612711660cfb64540b11830f21827983
 F test/sqllimits1.test b1aae27cc98eceb845e7f7adf918561256e31298
 F test/stat.test 08e8185b3fd5b010c90d7ad82b9dd4ea1cbf14b0
 F test/stmt.test 25d64e3dbf9a3ce89558667d7f39d966fe2a71b9
@@ -1010,7 +1010,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 9888ce9294c09749f5c958f965f949561867fea0
-R a98aa246c40b02fe38a0fee800dd8927
-U mistachkin
-Z 9b5874d2d03bd5e6df37f953a18d9b36
+P 1de2237d005fa1a1e1d034820d17daf64a860f81
+R c6a6a5e27cc06765fbb21bed044152b3
+U drh
+Z f62627106b46abb8dea1d772e4525d54

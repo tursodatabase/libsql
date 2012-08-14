@@ -137,12 +137,13 @@ do_test 3.2 {
 
 breakpoint
 foreach {tn word res} {
-  1   kos*     {kosher 3 kiosk 4 kudo 2 kappa 1 keypad 1}
-  2   kellj*   {killjoy 5 killed 4 killingly 4 kill 4 killer 4}
+  1   kos*     {kosher 3 kiosk 4 kudo 2 kiss 3 kissed 3}
+  2   kellj*   {killjoy 5 kill 4 killed 4 killer 4 killers 4}
   3   kellj    {kill 4 kills 5 killjoy 7 keel 4 killed 6}
 } {
   do_execsql_test 1.2.$tn {
-    SELECT word, matchlen FROM t3 WHERE word MATCH $word LIMIT 5
+    SELECT word, matchlen FROM t3 WHERE word MATCH $word
+     ORDER BY score, word LIMIT 5
   } $res
 } 
 
