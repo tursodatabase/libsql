@@ -1,5 +1,5 @@
-C Silence\sthree\sharmless\scompiler\swarnings\sin\svdbesort.c.
-D 2012-08-14T19:04:27.492
+C Experimental\schange\sto\sspeed\sup\sORDER\sBY\sclauses\sthat\ssort\sbased\son\sa\ssingle\sexpression.
+D 2012-08-15T15:57:30.655
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -237,14 +237,14 @@ F src/update.c d3076782c887c10e882996550345da9c4c9f9dea
 F src/utf.c 890c67dcfcc7a74623c95baac7535aadfe265e84
 F src/util.c 0af2e515dc0dabacec931bca39525f6c3f1c5455
 F src/vacuum.c 587a52bb8833d7ac15af8916f25437e2575028bd
-F src/vdbe.c 75da79cdcd58481825a06f045bc2f5ea3966eeae
+F src/vdbe.c 93b560a418a64c4a4dd6aadb30e79fad5c7eb0bc
 F src/vdbe.h 18f581cac1f4339ec3299f3e0cc6e11aec654cdb
-F src/vdbeInt.h 986b6b11a13c517337355009e5438703ba5b0a40
+F src/vdbeInt.h 4554c3a3c7f061c0b6b64366b97f8c3949f4dfe9
 F src/vdbeapi.c 88ea823bbcb4320f5a6607f39cd7c2d3cc4c26b1
 F src/vdbeaux.c dce80038c3c41f2680e5ab4dd0f7e0d8b7ff9071
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
-F src/vdbesort.c 0dc1b274dcb4d4c8e71b0b2b15261f286caba39b
+F src/vdbesort.c e4aa1c16532854ae312cc91fe9e373630aaa6463
 F src/vdbetrace.c 8bd5da325fc90f28464335e4cc4ad1407fe30835
 F src/vtab.c bb8ea3a26608bb1357538a5d2fc72beba6638998
 F src/wal.c 9294df6f96aae5909ae1a9b733fd1e1b4736978b
@@ -709,7 +709,7 @@ F test/shrink.test 8c70f62b6e8eb4d54533de6d65bd06b1b9a17868
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test c16709a16ad79fa43b32929b2e623d1d117ccf53
-F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
+F test/sort.test 7adab2fcb2bd4ee8ee024cc8eab5a9192762fd75
 F test/speed1.test f2974a91d79f58507ada01864c0e323093065452
 F test/speed1p.explain d841e650a04728b39e6740296b852dccdca9b2cb
 F test/speed1p.test c4a469f29f135f4d76c55b1f2a52f36e209466cc
@@ -1010,7 +1010,10 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 6730579cf5c6c74cb293e7237d896d3a3a36b691
-R 7ea1e8d09a42f7daed61f69d5f68ea70
-U drh
-Z 6a9fd56c83b0e144f530abdc3bddd4ea
+P a5431c86df442c6e6dfaeae8e8aa62b56d204e97
+R 2b92d91d7f760dd74de397b9ffc908eb
+T *branch * sorter-exp
+T *sym-sorter-exp *
+T -sym-trunk *
+U dan
+Z 040bce45e18c929d5310b23a13be7d4e

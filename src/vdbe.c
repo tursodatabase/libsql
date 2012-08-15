@@ -4150,13 +4150,11 @@ case OP_ResetCount: {
 */
 case OP_SorterCompare: {
   VdbeCursor *pC;
-  int res;
 
   pC = p->apCsr[pOp->p1];
   assert( isSorter(pC) );
   pIn3 = &aMem[pOp->p3];
-  rc = sqlite3VdbeSorterCompare(pC, pIn3, &res);
-  if( res ){
+  if( sqlite3VdbeSorterCompare(pC, pIn3) ){
     pc = pOp->p2-1;
   }
   break;
