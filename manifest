@@ -1,5 +1,5 @@
-C Change\sautoconf\sso\sthat\sthe\s--with-tcl=DIR\soption\swill\soverride\sthe\nTCL\sconfiguration\sthat\sis\sfound\susing\stclsh.
-D 2012-08-15T16:06:54.475
+C Changes\sto\sthe\sspellfix\stest\sscript\sto\smake\sthe\sresults\sdeterministic.
+D 2012-08-15T16:43:07.389
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -718,7 +718,7 @@ F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/spellfix.test 8bdb52dc612711660cfb64540b11830f21827983
+F test/spellfix.test 4e339920585e7555660bd3b11cf338af82c656ae
 F test/sqllimits1.test b1aae27cc98eceb845e7f7adf918561256e31298
 F test/stat.test 08e8185b3fd5b010c90d7ad82b9dd4ea1cbf14b0
 F test/stmt.test 25d64e3dbf9a3ce89558667d7f39d966fe2a71b9
@@ -1010,7 +1010,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P a5431c86df442c6e6dfaeae8e8aa62b56d204e97
-R 6123b9c9d97ee6d2b788aa279b8a3858
+P 772d0de3f311f2035f8a42f01371c96c9fa587ce
+R 5cf52533788596320f4b8771261628f7
 U drh
-Z 4d101c802bb37b58a1c59c63393cf7ab
+Z bf22097f18dc13a1f07a9f39f12dbcca
