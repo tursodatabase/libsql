@@ -1,5 +1,5 @@
-C Silence\sthree\sharmless\scompiler\swarnings\sin\svdbesort.c.
-D 2012-08-14T19:04:27.492
+C Change\sautoconf\sso\sthat\sthe\s--with-tcl=DIR\soption\swill\soverride\sthe\nTCL\sconfiguration\sthat\sis\sfound\susing\stclsh.
+D 2012-08-15T16:06:54.475
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -15,8 +15,8 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 8f973617dbc3fca46d26104070b75c17ef70beb7 x
-F configure.ac 9ee886c21c095b3272137b1553ae416c8b8c8557
+F configure e2d0e3b67d2b1b1049d389fd671275d79bb80457 x
+F configure.ac 6e909664785b8184db2179013cd9d574f96ca3a3
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 3091574143dd3415669b6745843ff8d011d33549
 F doc/pager-invariants.txt 870107036470d7c419e93768676fae2f8749cf9e
@@ -1010,7 +1010,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 6730579cf5c6c74cb293e7237d896d3a3a36b691
-R 7ea1e8d09a42f7daed61f69d5f68ea70
+P a5431c86df442c6e6dfaeae8e8aa62b56d204e97
+R 6123b9c9d97ee6d2b788aa279b8a3858
 U drh
-Z 6a9fd56c83b0e144f530abdc3bddd4ea
+Z 4d101c802bb37b58a1c59c63393cf7ab
