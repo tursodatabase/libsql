@@ -10,271 +10,9 @@
 **
 *************************************************************************
 **
-** This module implements a VIRTUAL TABLE that can be used to search
-** a large vocabulary for close matches.  For example, this virtual
-** table can be used to suggest corrections to misspelled words.  Or,
-** it could be used with FTS4 to do full-text search using potentially
-** misspelled words.
-**
-** Create an instance of the virtual table this way:
-**
-**    CREATE VIRTUAL TABLE demo USING spellfix1;
-**
-** The "spellfix1" term is the name of this module.  The "demo" is the
-** name of the virtual table you will be creating.  The table is initially
-** empty.  You have to populate it with your vocabulary.  Suppose you
-** have a list of words in a table named "big_vocabulary".  Then do this:
-**
-**    INSERT INTO demo(word) SELECT word FROM big_vocabulary;
-**
-** If you intend to use this virtual table in cooperation with an FTS4
-** table (for spelling correctly of search terms) then you can extract
-** the vocabulary using an fts3aux table:
-**
-**    INSERT INTO demo(word) SELECT term FROM search_aux WHERE col='*';
-**
-** You can also provide the virtual table with a "rank" for each word.
-** The "rank" is an estimate of how common the word is.  Larger numbers
-** mean the word is more common.  If you omit the rank when populating
-** the table, then a rank of 1 is assumed.  But if you have rank 
-** information, you can supply it and the virtual table will show a
-** slight preference for selecting more commonly used terms.  To
-** populate the rank from an fts4aux table "search_aux" do something
-** like this:
-**
-**    INSERT INTO demo(word,rank)
-**        SELECT term, documents FROM search_aux WHERE col='*';
-**
-** To query the virtual table, include a MATCH operator in the WHERE
-** clause.  For example:
-**
-**    SELECT word FROM demo WHERE word MATCH 'kennasaw';
-**
-** Using a dataset of American place names (derived from
-** http://geonames.usgs.gov/domestic/download_data.htm) the query above
-** returns 20 results beginning with:
-**
-**    kennesaw
-**    kenosha
-**    kenesaw
-**    kenaga
-**    keanak
-**
-** If you append the character '*' to the end of the pattern, then
-** a prefix search is performed.  For example:
-**
-**    SELECT word FROM demo WHERE word MATCH 'kennes*';
-**
-** Yields 20 results beginning with:
-**
-**    kennesaw
-**    kennestone
-**    kenneson
-**    kenneys
-**    keanes
-**    keenes
-**
-** The virtual table actually has a unique rowid with five columns plus three
-** extra hidden columns.  The columns are as follows:
-**
-**    rowid         A unique integer number associated with each
-**                  vocabulary item in the table.  This can be used
-**                  as a foreign key on other tables in the database.
-**
-**    word          The text of the word that matches the pattern.
-**                  Both word and pattern can contains unicode characters
-**                  and can be mixed case.
-**
-**    rank          This is the rank of the word, as specified in the
-**                  original INSERT statement.
-**
-**    distance      This is an edit distance or Levensthein distance going
-**                  from the pattern to the word.
-**
-**    langid        This is the language-id of the word.  All queries are
-**                  against a single language-id, which defaults to 0.
-**                  For any given query this value is the same on all rows.
-**
-**    score         The score is a combination of rank and distance.  The
-**                  idea is that a lower score is better.  The virtual table
-**                  attempts to find words with the lowest score and 
-**                  by default (unless overridden by ORDER BY) returns
-**                  results in order of increasing score.
-**
-**    top           (HIDDEN)  For any query, this value is the same on all
-**                  rows.  It is an integer which is the maximum number of
-**                  rows that will be output.  The actually number of rows
-**                  output might be less than this number, but it will never
-**                  be greater.  The default value for top is 20, but that
-**                  can be changed for each query by including a term of
-**                  the form "top=N" in the WHERE clause of the query.
-**
-**    scope         (HIDDEN)  For any query, this value is the same on all
-**                  rows.  The scope is a measure of how widely the virtual
-**                  table looks for matching words.  Smaller values of
-**                  scope cause a broader search.  The scope is normally
-**                  choosen automatically and is capped at 4.  Applications
-**                  can change the scope by including a term of the form
-**                  "scope=N" in the WHERE clause of the query.  Increasing
-**                  the scope will make the query run faster, but will reduce
-**                  the possible corrections.
-**
-**    srchcnt       (HIDDEN)  For any query, this value is the same on all
-**                  rows.  This value is an integer which is the number of
-**                  of words examined using the edit-distance algorithm to
-**                  find the top matches that are ultimately displayed.  This
-**                  value is for diagnostic use only.
-**
-**    soundslike    (HIDDEN)  When inserting vocabulary entries, this field
-**                  can be set to an spelling that matches what the word
-**                  sounds like.  See the DEALING WITH UNUSUAL AND DIFFICULT
-**                  SPELLINGS section below for details.
-**
-** When inserting into or updating the virtual table, only the rowid, word,
-** rank, and langid may be changes.  Any attempt to set or modify the values
-** of distance, score, top, scope, or srchcnt is silently ignored.
-**
-** ALGORITHM
-**
-** A shadow table named "%_vocab" (where the % is replaced by the name of
-** the virtual table; Ex: "demo_vocab" for the "demo" virtual table) is
-** constructed with these columns:
-**
-**    id            The unique id (INTEGER PRIMARY KEY)
-**
-**    rank          The rank of word.
-**
-**    langid        The language id for this entry.
-**
-**    word          The original UTF8 text of the vocabulary word
-**
-**    k1            The word transliterated into lower-case ASCII.  
-**                  There is a standard table of mappings from non-ASCII
-**                  characters into ASCII.  Examples: "æ" -> "ae",
-**                  "þ" -> "th", "ß" -> "ss", "á" -> "a", ...  The
-**                  accessory function spellfix1_translit(X) will do
-**                  the non-ASCII to ASCII mapping.  The built-in lower(X)
-**                  function will convert to lower-case.  Thus:
-**                  k1 = lower(spellfix1_translit(word)).
-**
-**    k2            This field holds a phonetic code derived from k1.  Letters
-**                  that have similar sounds are mapped into the same symbol.
-**                  For example, all vowels and vowel clusters become the
-**                  single symbol "A".  And the letters "p", "b", "f", and
-**                  "v" all become "B".  All nasal sounds are represented
-**                  as "N".  And so forth.  The mapping is base on
-**                  ideas found in Soundex, Metaphone, and other
-**                  long-standing phonetic matching systems.  This key can
-**                  be generated by the function spellfix1_charclass(X).  
-**                  Hence: k2 = spellfix1_charclass(k1)
-**
-** There is also a function for computing the Wagner edit distance or the
-** Levenshtein distance between a pattern and a word.  This function
-** is exposed as spellfix1_editdist(X,Y).  The edit distance function
-** returns the "cost" of converting X into Y.  Some transformations
-** cost more than others.  Changing one vowel into a different vowel,
-** for example is relatively cheap, as is doubling a constant, or
-** omitting the second character of a double-constant.  Other transformations
-** or more expensive.  The idea is that the edit distance function returns
-** a low cost of words that are similar and a higher cost for words
-** that are futher apart.  In this implementation, the maximum cost
-** of any single-character edit (delete, insert, or substitute) is 100,
-** with lower costs for some edits (such as transforming vowels).
-**
-** The "score" for a comparison is the edit distance between the pattern
-** and the word, adjusted down by the base-2 logorithm of the word rank.
-** For example, a match with distance 100 but rank 1000 would have a
-** score of 122 (= 100 - log2(1000) + 32) where as a match with distance
-** 100 with a rank of 1 would have a score of 131 (100 - log2(1) + 32).
-** (NB:  The constant 32 is added to each score to keep it from going
-** negative in case the edit distance is zero.)  In this way, frequently
-** used words get a slightly lower cost which tends to move them toward
-** the top of the list of alternative spellings.
-**
-** A straightforward implementation of a spelling corrector would be
-** to compare the search term against every word in the vocabulary
-** and select the 20 with the lowest scores.  However, there will 
-** typically be hundreds of thousands or millions of words in the
-** vocabulary, and so this approach is not fast enough.
-**
-** Suppose the term that is being spell-corrected is X.  To limit
-** the search space, X is converted to a k2-like key using the
-** equivalent of:
-**
-**    key = spellfix1_charclass(lower(spellfix1_translit(X)))
-**
-** This key is then limited to "scope" characters.  The default scope
-** value is 4, but an alternative scope can be specified using the
-** "scope=N" term in the WHERE clause.  After the key has been truncated,
-** the edit distance is run against every term in the vocabulary that
-** has a k2 value that begins with the abbreviated key.
-**
-** For example, suppose the input word is "Paskagula".  The phonetic 
-** key is "BACACALA" which is then truncated to 4 characters "BACA".
-** The edit distance is then run on the 4980 entries (out of
-** 272,597 entries total) of the vocabulary whose k2 values begin with
-** BACA, yielding "Pascagoula" as the best match.
-** 
-** Only terms of the vocabulary with a matching langid are searched.
-** Hence, the same table can contain entries from multiple languages
-** and only the requested language will be used.  The default langid
-** is 0.
-**
-** DEALING WITH UNUSUAL AND DIFFICULT SPELLINGS
-**
-** The algorithm above works quite well for most cases, but there are
-** exceptions.  These exceptions can be dealt with by making additional
-** entries in the virtual table using the "soundslike" column.
-**
-** For example, many words of Greek origin begin with letters "ps" where
-** the "p" is silent.  Ex:  psalm, pseudonym, psoriasis, psyche.  In
-** another example, many Scottish surnames can be spelled with an
-** initial "Mac" or "Mc".  Thus, "MacKay" and "McKay" are both pronounced
-** the same.
-**
-** Accommodation can be made for words that are not spelled as they
-** sound by making additional entries into the virtual table for the
-** same word, but adding an alternative spelling in the "soundslike"
-** column.  For example, the canonical entry for "psalm" would be this:
-**
-**   INSERT INTO demo(word) VALUES('psalm');
-**
-** To enhance the ability to correct the spelling of "salm" into
-** "psalm", make an addition entry like this:
-**
-**   INSERT INTO demo(word,soundslike) VALUES('psalm','salm');
-**
-** It is ok to make multiple entries for the same word as long as
-** each entry has a different soundslike value.  Note that if no
-** soundslike value is specified, the soundslike defaults to the word
-** itself.
-**
-** Listed below are some cases where it might make sense to add additional
-** soundslike entries.  The specific entries will depend on the application
-** and the target language.
-**
-**   *   Silent "p" in words beginning with "ps":  psalm, psyche
-**
-**   *   Silent "p" in words beginning with "pn":  pneumonia, pneumatic
-**
-**   *   Silent "p" in words beginning with "pt":  pterodactyl, ptolemaic
-**
-**   *   Silent "d" in words beginning with "dj":  djinn, Djikarta
-**
-**   *   Silent "k" in words beginning with "kn":  knight, Knuthson
-**
-**   *   Silent "g" in words beginning with "gn":  gnarly, gnome, gnat
-**
-**   *   "Mac" versus "Mc" beginning Scottish surnames
-**
-**   *   "Tch" sounds in Slavic words:  Tchaikovsky vs. Chaykovsky
-**
-**   *   The letter "j" pronounced like "h" in Spanish:  LaJolla
-**
-**   *   Words beginning with "wr" versus "r":  write vs. rite
-**
-**   *   Miscellanous problem words such as "debt", "tsetse",
-**       "Nguyen", "Van Nuyes".
+** This module implements the spellfix1 VIRTUAL TABLE that can be used
+** to search a large vocabulary for close matches.  See separate
+** documentation files (spellfix1.wiki and editdist3.wiki) for details.
 */
 #if SQLITE_CORE
 # include "sqliteInt.h"
@@ -285,6 +23,7 @@
 # include "sqlite3ext.h"
   SQLITE_EXTENSION_INIT1
 #endif /* !SQLITE_CORE */
+#include <ctype.h>
 
 /*
 ** Character classes for ASCII characters:
@@ -295,13 +34,14 @@
 **   3   'C'       Other fricatives or back stops:  C G J K Q S X Z
 **   4   'D'       Alveolar stops:  D T
 **   5   'H'       Letter H at the beginning of a word
-**   6   'L'       Glides:  L R
-**   7   'M'       Nasals:  M N
-**   8   'W'       Letter W at the beginning of a word
-**   9   'Y'       Letter Y at the beginning of a word.
-**   10  '9'       A digit: 0 1 2 3 4 5 6 7 8 9
-**   11  ' '       White space
-**   12  '?'       Other.
+**   6   'L'       Glide:  L
+**   7   'R'       Semivowel:  R
+**   8   'M'       Nasals:  M N
+**   9   'W'       Letter W at the beginning of a word
+**   10  'Y'       Letter Y at the beginning of a word.
+**   11  '9'       Digits: 0 1 2 3 4 5 6 7 8 9
+**   12  ' '       White space
+**   13  '?'       Other.
 */
 #define CCLASS_SILENT         0
 #define CCLASS_VOWEL          1
@@ -310,78 +50,177 @@
 #define CCLASS_D              4
 #define CCLASS_H              5
 #define CCLASS_L              6
-#define CCLASS_M              7
-#define CCLASS_W              8
-#define CCLASS_Y              9
-#define CCLASS_DIGIT         10
-#define CCLASS_SPACE         11
-#define CCLASS_OTHER         12
+#define CCLASS_R              7
+#define CCLASS_M              8
+#define CCLASS_W              9
+#define CCLASS_Y             10
+#define CCLASS_DIGIT         11
+#define CCLASS_SPACE         12
+#define CCLASS_OTHER         13
 
 /*
 ** The following table gives the character class for non-initial ASCII
 ** characters.
 */
 static const unsigned char midClass[] = {
-          /* x0  x1  x2  x3  x4  x5  x6  x7    x8  x9  xa  xb  xc  xd  xe  xf */
-  /* 0x */   12, 12, 12, 12, 12, 12, 12, 12,   12, 11, 11, 12, 11, 12, 12, 12,
-  /* 1x */   12, 12, 12, 12, 12, 12, 12, 12,   12, 12, 12, 12, 12, 12, 12, 12,
-  /* 2x */   11, 12, 12, 12, 12, 12, 12, 12,   12, 12, 12, 12, 12, 12, 12, 12,
-  /* 3x */   10, 10, 10, 10, 10, 10, 10, 10,   10, 10, 12, 12, 12, 12, 12, 12,
-  /* 4x */   12,  1,  2,  3,  4,  1,  2,  3,    0,  1,  3,  3,  6,  7,  7,  1,
-  /* 5x */    2,  3,  6,  3,  4,  1,  2,  0,    3,  1,  3, 12, 12, 12, 12, 12,
-  /* 6x */   12,  1,  2,  3,  4,  1,  2,  3,    0,  1,  3,  3,  6,  7,  7,  1,
-  /* 7x */    2,  3,  6,  3,  4,  1,  2,  0,    3,  1,  3, 12, 12, 12, 12, 12,
+ /*   */ CCLASS_OTHER,    /*   */ CCLASS_OTHER,   /*   */ CCLASS_OTHER,
+ /*   */ CCLASS_OTHER,    /*   */ CCLASS_OTHER,   /*   */ CCLASS_OTHER,
+ /*   */ CCLASS_OTHER,    /*   */ CCLASS_OTHER,   /*   */ CCLASS_OTHER,
+ /*   */ CCLASS_SPACE,    /*   */ CCLASS_OTHER,   /*   */ CCLASS_OTHER,
+ /*   */ CCLASS_SPACE,    /*   */ CCLASS_SPACE,   /*   */ CCLASS_OTHER,
+ /*   */ CCLASS_OTHER,    /*   */ CCLASS_OTHER,   /*   */ CCLASS_OTHER,
+ /*   */ CCLASS_OTHER,    /*   */ CCLASS_OTHER,   /*   */ CCLASS_OTHER,
+ /*   */ CCLASS_OTHER,    /*   */ CCLASS_OTHER,   /*   */ CCLASS_OTHER,
+ /*   */ CCLASS_OTHER,    /*   */ CCLASS_OTHER,   /*   */ CCLASS_OTHER,
+ /*   */ CCLASS_OTHER,    /*   */ CCLASS_OTHER,   /*   */ CCLASS_OTHER,
+ /*   */ CCLASS_OTHER,    /*   */ CCLASS_OTHER,   /*   */ CCLASS_SPACE,
+ /* ! */ CCLASS_OTHER,    /* " */ CCLASS_OTHER,   /* # */ CCLASS_OTHER,
+ /* $ */ CCLASS_OTHER,    /* % */ CCLASS_OTHER,   /* & */ CCLASS_OTHER,
+ /* ' */ CCLASS_SILENT,   /* ( */ CCLASS_OTHER,   /* ) */ CCLASS_OTHER,
+ /* * */ CCLASS_OTHER,    /* + */ CCLASS_OTHER,   /* , */ CCLASS_OTHER,
+ /* - */ CCLASS_OTHER,    /* . */ CCLASS_OTHER,   /* / */ CCLASS_OTHER,
+ /* 0 */ CCLASS_DIGIT,    /* 1 */ CCLASS_DIGIT,   /* 2 */ CCLASS_DIGIT,
+ /* 3 */ CCLASS_DIGIT,    /* 4 */ CCLASS_DIGIT,   /* 5 */ CCLASS_DIGIT,
+ /* 6 */ CCLASS_DIGIT,    /* 7 */ CCLASS_DIGIT,   /* 8 */ CCLASS_DIGIT,
+ /* 9 */ CCLASS_DIGIT,    /* : */ CCLASS_OTHER,   /* ; */ CCLASS_OTHER,
+ /* < */ CCLASS_OTHER,    /* = */ CCLASS_OTHER,   /* > */ CCLASS_OTHER,
+ /* ? */ CCLASS_OTHER,    /* @ */ CCLASS_OTHER,   /* A */ CCLASS_VOWEL,
+ /* B */ CCLASS_B,        /* C */ CCLASS_C,       /* D */ CCLASS_D,
+ /* E */ CCLASS_VOWEL,    /* F */ CCLASS_B,       /* G */ CCLASS_C,
+ /* H */ CCLASS_SILENT,   /* I */ CCLASS_VOWEL,   /* J */ CCLASS_C,
+ /* K */ CCLASS_C,        /* L */ CCLASS_L,       /* M */ CCLASS_M,
+ /* N */ CCLASS_M,        /* O */ CCLASS_VOWEL,   /* P */ CCLASS_B,
+ /* Q */ CCLASS_C,        /* R */ CCLASS_R,       /* S */ CCLASS_C,
+ /* T */ CCLASS_D,        /* U */ CCLASS_VOWEL,   /* V */ CCLASS_B,
+ /* W */ CCLASS_SILENT,   /* X */ CCLASS_C,       /* Y */ CCLASS_VOWEL,
+ /* Z */ CCLASS_C,        /* [ */ CCLASS_OTHER,   /* \ */ CCLASS_OTHER,
+ /* ] */ CCLASS_OTHER,    /* ^ */ CCLASS_OTHER,   /* _ */ CCLASS_OTHER,
+ /* ` */ CCLASS_OTHER,    /* a */ CCLASS_VOWEL,   /* b */ CCLASS_B,
+ /* c */ CCLASS_C,        /* d */ CCLASS_D,       /* e */ CCLASS_VOWEL,
+ /* f */ CCLASS_B,        /* g */ CCLASS_C,       /* h */ CCLASS_SILENT,
+ /* i */ CCLASS_VOWEL,    /* j */ CCLASS_C,       /* k */ CCLASS_C,
+ /* l */ CCLASS_L,        /* m */ CCLASS_M,       /* n */ CCLASS_M,
+ /* o */ CCLASS_VOWEL,    /* p */ CCLASS_B,       /* q */ CCLASS_C,
+ /* r */ CCLASS_R,        /* s */ CCLASS_C,       /* t */ CCLASS_D,
+ /* u */ CCLASS_VOWEL,    /* v */ CCLASS_B,       /* w */ CCLASS_SILENT,
+ /* x */ CCLASS_C,        /* y */ CCLASS_VOWEL,   /* z */ CCLASS_C,
+ /* { */ CCLASS_OTHER,    /* | */ CCLASS_OTHER,   /* } */ CCLASS_OTHER,
+ /* ~ */ CCLASS_OTHER,    /*   */ CCLASS_OTHER,   
 };
-
 /* 
 ** This tables gives the character class for ASCII characters that form the
 ** initial character of a word.  The only difference from midClass is with
 ** the letters H, W, and Y.
 */
 static const unsigned char initClass[] = {
-          /* x0  x1  x2  x3  x4  x5  x6  x7    x8  x9  xa  xb  xc  xd  xe  xf */
-  /* 0x */   12, 12, 12, 12, 12, 12, 12, 12,   12, 11, 11, 12, 11, 12, 12, 12,
-  /* 1x */   12, 12, 12, 12, 12, 12, 12, 12,   12, 12, 12, 12, 12, 12, 12, 12,
-  /* 2x */   11, 12, 12, 12, 12, 12, 12, 12,   12, 12, 12, 12, 12, 12, 12, 12,
-  /* 3x */   10, 10, 10, 10, 10, 10, 10, 10,   10, 10, 12, 12, 12, 12, 12, 12,
-  /* 4x */   12,  1,  2,  3,  4,  1,  2,  3,    5,  1,  3,  3,  6,  7,  7,  1,
-  /* 5x */    2,  3,  6,  3,  4,  1,  2,  8,    3,  9,  3, 12, 12, 12, 12, 12,
-  /* 6x */   12,  1,  2,  3,  4,  1,  2,  3,    5,  1,  3,  3,  6,  7,  7,  1,
-  /* 7x */    2,  3,  6,  3,  4,  1,  2,  8,    3,  9,  3, 12, 12, 12, 12, 12,
+ /*   */ CCLASS_OTHER,    /*   */ CCLASS_OTHER,   /*   */ CCLASS_OTHER,
+ /*   */ CCLASS_OTHER,    /*   */ CCLASS_OTHER,   /*   */ CCLASS_OTHER,
+ /*   */ CCLASS_OTHER,    /*   */ CCLASS_OTHER,   /*   */ CCLASS_OTHER,
+ /*   */ CCLASS_SPACE,    /*   */ CCLASS_OTHER,   /*   */ CCLASS_OTHER,
+ /*   */ CCLASS_SPACE,    /*   */ CCLASS_SPACE,   /*   */ CCLASS_OTHER,
+ /*   */ CCLASS_OTHER,    /*   */ CCLASS_OTHER,   /*   */ CCLASS_OTHER,
+ /*   */ CCLASS_OTHER,    /*   */ CCLASS_OTHER,   /*   */ CCLASS_OTHER,
+ /*   */ CCLASS_OTHER,    /*   */ CCLASS_OTHER,   /*   */ CCLASS_OTHER,
+ /*   */ CCLASS_OTHER,    /*   */ CCLASS_OTHER,   /*   */ CCLASS_OTHER,
+ /*   */ CCLASS_OTHER,    /*   */ CCLASS_OTHER,   /*   */ CCLASS_OTHER,
+ /*   */ CCLASS_OTHER,    /*   */ CCLASS_OTHER,   /*   */ CCLASS_SPACE,
+ /* ! */ CCLASS_OTHER,    /* " */ CCLASS_OTHER,   /* # */ CCLASS_OTHER,
+ /* $ */ CCLASS_OTHER,    /* % */ CCLASS_OTHER,   /* & */ CCLASS_OTHER,
+ /* ' */ CCLASS_OTHER,    /* ( */ CCLASS_OTHER,   /* ) */ CCLASS_OTHER,
+ /* * */ CCLASS_OTHER,    /* + */ CCLASS_OTHER,   /* , */ CCLASS_OTHER,
+ /* - */ CCLASS_OTHER,    /* . */ CCLASS_OTHER,   /* / */ CCLASS_OTHER,
+ /* 0 */ CCLASS_DIGIT,    /* 1 */ CCLASS_DIGIT,   /* 2 */ CCLASS_DIGIT,
+ /* 3 */ CCLASS_DIGIT,    /* 4 */ CCLASS_DIGIT,   /* 5 */ CCLASS_DIGIT,
+ /* 6 */ CCLASS_DIGIT,    /* 7 */ CCLASS_DIGIT,   /* 8 */ CCLASS_DIGIT,
+ /* 9 */ CCLASS_DIGIT,    /* : */ CCLASS_OTHER,   /* ; */ CCLASS_OTHER,
+ /* < */ CCLASS_OTHER,    /* = */ CCLASS_OTHER,   /* > */ CCLASS_OTHER,
+ /* ? */ CCLASS_OTHER,    /* @ */ CCLASS_OTHER,   /* A */ CCLASS_VOWEL,
+ /* B */ CCLASS_B,        /* C */ CCLASS_C,       /* D */ CCLASS_D,
+ /* E */ CCLASS_VOWEL,    /* F */ CCLASS_B,       /* G */ CCLASS_C,
+ /* H */ CCLASS_SILENT,   /* I */ CCLASS_VOWEL,   /* J */ CCLASS_C,
+ /* K */ CCLASS_C,        /* L */ CCLASS_L,       /* M */ CCLASS_M,
+ /* N */ CCLASS_M,        /* O */ CCLASS_VOWEL,   /* P */ CCLASS_B,
+ /* Q */ CCLASS_C,        /* R */ CCLASS_R,       /* S */ CCLASS_C,
+ /* T */ CCLASS_D,        /* U */ CCLASS_VOWEL,   /* V */ CCLASS_B,
+ /* W */ CCLASS_W,        /* X */ CCLASS_C,       /* Y */ CCLASS_Y,
+ /* Z */ CCLASS_C,        /* [ */ CCLASS_OTHER,   /* \ */ CCLASS_OTHER,
+ /* ] */ CCLASS_OTHER,    /* ^ */ CCLASS_OTHER,   /* _ */ CCLASS_OTHER,
+ /* ` */ CCLASS_OTHER,    /* a */ CCLASS_VOWEL,   /* b */ CCLASS_B,
+ /* c */ CCLASS_C,        /* d */ CCLASS_D,       /* e */ CCLASS_VOWEL,
+ /* f */ CCLASS_B,        /* g */ CCLASS_C,       /* h */ CCLASS_SILENT,
+ /* i */ CCLASS_VOWEL,    /* j */ CCLASS_C,       /* k */ CCLASS_C,
+ /* l */ CCLASS_L,        /* m */ CCLASS_M,       /* n */ CCLASS_M,
+ /* o */ CCLASS_VOWEL,    /* p */ CCLASS_B,       /* q */ CCLASS_C,
+ /* r */ CCLASS_R,        /* s */ CCLASS_C,       /* t */ CCLASS_D,
+ /* u */ CCLASS_VOWEL,    /* v */ CCLASS_B,       /* w */ CCLASS_W,
+ /* x */ CCLASS_C,        /* y */ CCLASS_Y,       /* z */ CCLASS_C,
+ /* { */ CCLASS_OTHER,    /* | */ CCLASS_OTHER,   /* } */ CCLASS_OTHER,
+ /* ~ */ CCLASS_OTHER,    /*   */ CCLASS_OTHER,   
 };
 
 /*
-** Mapping from the character class number (0-12) to a symbol for each
+** Mapping from the character class number (0-13) to a symbol for each
 ** character class.  Note that initClass[] can be used to map the class
 ** symbol back into the class number.
 */
-static const unsigned char className[] = ".ABCDHLMWY9 ?";
+static const unsigned char className[] = ".ABCDHLRMWY9 ?";
 
 /*
-** Generate a string of character classes corresponding to the
-** ASCII characters in the input string zIn.  If the input is not
-** ASCII then the behavior is undefined.
+** Generate a "phonetic hash" from a string of ASCII characters
+** in zIn[0..nIn-1].
+**
+**   * Map characters by character class as defined above.
+**   * Omit double-letters
+**   * Omit vowels beside R and L
+**   * Omit T when followed by CH
+**   * Omit W when followed by R
+**   * Omit D when followed by J or G
+**   * Omit K in KN or G in GN at the beginning of a word
 **
 ** Space to hold the result is obtained from sqlite3_malloc()
 **
 ** Return NULL if memory allocation fails.  
 */
-static unsigned char *characterClassString(const unsigned char *zIn, int nIn){
+static unsigned char *phoneticHash(const unsigned char *zIn, int nIn){
   unsigned char *zOut = sqlite3_malloc( nIn + 1 );
   int i;
   int nOut = 0;
   char cPrev = 0x77;
+  char cPrevX = 0x77;
   const unsigned char *aClass = initClass;
 
   if( zOut==0 ) return 0;
+  if( nIn>2 ){
+    switch( zIn[0] ){
+      case 'g': 
+      case 'k': {
+        if( zIn[1]=='n' ){ zIn++; nIn--; }
+        break;
+      }
+    }
+  }
   for(i=0; i<nIn; i++){
     unsigned char c = zIn[i];
+    if( i+1<nIn ){
+      if( c=='w' && zIn[i+1]=='r' ) continue;
+      if( c=='d' && (zIn[i+1]=='j' || zIn[i+1]=='g') ) continue;
+      if( i+2<nIn ){
+        if( c=='t' && zIn[i+1]=='c' && zIn[i+2]=='h' ) continue;
+      }
+    }
     c = aClass[c&0x7f];
+    if( c==CCLASS_SPACE ) continue;
     if( c==CCLASS_OTHER && cPrev!=CCLASS_DIGIT ) continue;
+    aClass = midClass;
+    if( c==CCLASS_VOWEL && (cPrevX==CCLASS_R || cPrevX==CCLASS_L) ){
+       continue; /* No vowels beside L or R */ 
+    }
+    if( (c==CCLASS_R || c==CCLASS_L) && cPrevX==CCLASS_VOWEL ){
+       nOut--;   /* No vowels beside L or R */
+    }
     cPrev = c;
     if( c==CCLASS_SILENT ) continue;
-    if( c==CCLASS_SPACE ) continue;
-    aClass = midClass;
+    cPrevX = c;
     c = className[c];
     if( c!=zOut[nOut-1] ) zOut[nOut++] = c;
   }
@@ -390,10 +229,10 @@ static unsigned char *characterClassString(const unsigned char *zIn, int nIn){
 }
 
 /*
-** This is an SQL function wrapper around characterClassString().  See
-** the description of characterClassString() for additional information.
+** This is an SQL function wrapper around phoneticHash().  See
+** the description of phoneticHash() for additional information.
 */
-static void characterClassSqlFunc(
+static void phoneticHashSqlFunc(
   sqlite3_context *context,
   int argc,
   sqlite3_value **argv
@@ -403,7 +242,7 @@ static void characterClassSqlFunc(
 
   zIn = sqlite3_value_text(argv[0]);
   if( zIn==0 ) return;
-  zOut = characterClassString(zIn, sqlite3_value_bytes(argv[0]));
+  zOut = phoneticHash(zIn, sqlite3_value_bytes(argv[0]));
   if( zOut==0 ){
     sqlite3_result_error_nomem(context);
   }else{
@@ -424,7 +263,7 @@ static char characterClass(char cPrev, char c){
 ** following character cPrev.  If cPrev==0, that means c is the first
 ** character of the word.
 */
-static int insertOrDeleteCost(char cPrev, char c){
+static int insertOrDeleteCost(char cPrev, char c, char cNext){
   char classC = characterClass(cPrev, c);
   char classCprev;
 
@@ -435,6 +274,9 @@ static int insertOrDeleteCost(char cPrev, char c){
   if( cPrev==c ){
     /* Repeated characters, or miss a repeat */
     return 10;
+  }
+  if( classC==CCLASS_VOWEL && (cPrev=='r' || cNext=='r') ){
+    return 20;  /* Insert a vowel before or after 'r' */
   }
   classCprev = characterClass(cPrev, cPrev);
   if( classC==classCprev ){
@@ -476,7 +318,7 @@ static int substituteCost(char cPrev, char cFrom, char cTo){
   classTo = characterClass(cPrev, cTo);
   if( classFrom==classTo ){
     /* Same character class */
-    return classFrom=='A' ? 25 : 40;
+    return 40;
   }
   if( classFrom>=CCLASS_B && classFrom<=CCLASS_Y
       && classTo>=CCLASS_B && classTo<=CCLASS_Y ){
@@ -499,12 +341,19 @@ static int substituteCost(char cPrev, char cFrom, char cTo){
 **    -1  One of the inputs is NULL
 **    -2  Non-ASCII characters on input
 **    -3  Unable to allocate memory 
+**
+** If pnMatch is not NULL, then *pnMatch is set to the number of bytes
+** of zB that matched the pattern in zA. If zA does not end with a '*',
+** then this value is always the number of bytes in zB (i.e. strlen(zB)).
+** If zA does end in a '*', then it is the number of bytes in the prefix
+** of zB that was deemed to match zA.
 */
-static int editdist(const char *zA, const char *zB){
+static int editdist1(const char *zA, const char *zB, int *pnMatch){
   int nA, nB;            /* Number of characters in zA[] and zB[] */
   int xA, xB;            /* Loop counters for zA[] and zB[] */
   char cA, cB;           /* Current character of zA and zB */
   char cAprev, cBprev;   /* Previous character of zA and zB */
+  char cAnext, cBnext;   /* Next character in zA and zB */
   int d;                 /* North-west cost value */
   int dc = 0;            /* North-west character value */
   int res;               /* Final result */
@@ -512,12 +361,14 @@ static int editdist(const char *zA, const char *zB){
   char *cx;              /* Corresponding character values */
   int *toFree = 0;       /* Malloced space */
   int mStack[60+15];     /* Stack space to use if not too much is needed */
+  int nMatch = 0;
 
   /* Early out if either input is NULL */
   if( zA==0 || zB==0 ) return -1;
 
   /* Skip any common prefix */
-  while( zA[0] && zA[0]==zB[0] ){ dc = zA[0]; zA++; zB++; }
+  while( zA[0] && zA[0]==zB[0] ){ dc = zA[0]; zA++; zB++; nMatch++; }
+  if( pnMatch ) *pnMatch = nMatch;
   if( zA[0]==0 && zB[0]==0 ) return 0;
 
 #if 0
@@ -526,17 +377,17 @@ static int editdist(const char *zA, const char *zB){
 
   /* Verify input strings and measure their lengths */
   for(nA=0; zA[nA]; nA++){
-    if( zA[nA]>127 ) return -2;
+    if( zA[nA]&0x80 ) return -2;
   }
   for(nB=0; zB[nB]; nB++){
-    if( zB[nB]>127 ) return -2;
+    if( zB[nB]&0x80 ) return -2;
   }
 
   /* Special processing if either string is empty */
   if( nA==0 ){
     cBprev = dc;
     for(xB=res=0; (cB = zB[xB])!=0; xB++){
-      res += insertOrDeleteCost(cBprev, cB)/FINAL_INS_COST_DIV;
+      res += insertOrDeleteCost(cBprev, cB, zB[xB+1])/FINAL_INS_COST_DIV;
       cBprev = cB;
     }
     return res;
@@ -544,7 +395,7 @@ static int editdist(const char *zA, const char *zB){
   if( nB==0 ){
     cAprev = dc;
     for(xA=res=0; (cA = zA[xA])!=0; xA++){
-      res += insertOrDeleteCost(cAprev, cA);
+      res += insertOrDeleteCost(cAprev, cA, zA[xA+1]);
       cAprev = cA;
     }
     return res;
@@ -567,30 +418,33 @@ static int editdist(const char *zA, const char *zB){
   cx[0] = dc;
   cBprev = dc;
   for(xB=1; xB<=nB; xB++){
+    cBnext = zB[xB];
     cB = zB[xB-1];
     cx[xB] = cB;
-    m[xB] = m[xB-1] + insertOrDeleteCost(cBprev, cB);
+    m[xB] = m[xB-1] + insertOrDeleteCost(cBprev, cB, cBnext);
     cBprev = cB;
   }
   cAprev = dc;
   for(xA=1; xA<=nA; xA++){
     int lastA = (xA==nA);
     cA = zA[xA-1];
+    cAnext = zA[xA];
     if( cA=='*' && lastA ) break;
     d = m[0];
     dc = cx[0];
-    m[0] = d + insertOrDeleteCost(cAprev, cA);
+    m[0] = d + insertOrDeleteCost(cAprev, cA, cAnext);
     cBprev = 0;
     for(xB=1; xB<=nB; xB++){
       int totalCost, insCost, delCost, subCost, ncx;
       cB = zB[xB-1];
+      cBnext = zB[xB];
 
       /* Cost to insert cB */
-      insCost = insertOrDeleteCost(cx[xB-1], cB);
+      insCost = insertOrDeleteCost(cx[xB-1], cB, cBnext);
       if( lastA ) insCost /= FINAL_INS_COST_DIV;
 
       /* Cost to delete cA */
-      delCost = insertOrDeleteCost(cx[xB], cA);
+      delCost = insertOrDeleteCost(cx[xB], cA, cBnext);
 
       /* Cost to substitute cA->cB */
       subCost = substituteCost(cx[xB-1], cA, cB);
@@ -624,13 +478,19 @@ static int editdist(const char *zA, const char *zB){
   }
 
   /* Free the wagner matrix and return the result */
-  if( cA=='*' && nB>nA ){
-    res = m[nA];
-    for(xB=nA+1; xB<=nB; xB++){
-      if( m[xB]<res ) res = m[xB];
+  if( cA=='*' ){
+    res = m[1];
+    for(xB=1; xB<=nB; xB++){
+      if( m[xB]<res ){
+        res = m[xB];
+        if( pnMatch ) *pnMatch = xB+nMatch;
+      }
     }
   }else{
     res = m[nB];
+    /* In the current implementation, pnMatch is always NULL if zA does
+    ** not end in "*" */
+    assert( pnMatch==0 );
   }
   sqlite3_free(toFree);
   return res;
@@ -649,8 +509,10 @@ static void editdistSqlFunc(
   int argc,
   sqlite3_value **argv
 ){
-  int res = editdist((const char*)sqlite3_value_text(argv[0]),
-                    (const char*)sqlite3_value_text(argv[1]));
+  int res = editdist1(
+                    (const char*)sqlite3_value_text(argv[0]),
+                    (const char*)sqlite3_value_text(argv[1]),
+                    0);
   if( res<0 ){
     if( res==(-3) ){
       sqlite3_result_error_nomem(context);
@@ -664,7 +526,598 @@ static void editdistSqlFunc(
   }
 }
 
-#if !SQLITE_CORE
+/* End of the fixed-cost edit distance implementation
+******************************************************************************
+*****************************************************************************
+** Begin: Configurable cost unicode edit distance routines
+*/
+/* Forward declaration of structures */
+typedef struct EditDist3Cost EditDist3Cost;
+typedef struct EditDist3Config EditDist3Config;
+typedef struct EditDist3Point EditDist3Point;
+typedef struct EditDist3From EditDist3From;
+typedef struct EditDist3FromString EditDist3FromString;
+typedef struct EditDist3To EditDist3To;
+typedef struct EditDist3ToString EditDist3ToString;
+typedef struct EditDist3Lang EditDist3Lang;
+
+
+/*
+** An entry in the edit cost table
+*/
+struct EditDist3Cost {
+  EditDist3Cost *pNext;     /* Next cost element */
+  u8 nFrom;                 /* Number of bytes in aFrom */
+  u8 nTo;                   /* Number of bytes in aTo */
+  u16 iCost;                /* Cost of this transformation */
+  char a[4]    ;            /* FROM string followed by TO string */
+  /* Additional TO and FROM string bytes appended as necessary */
+};
+
+/*
+** Edit costs for a particular language ID 
+*/
+struct EditDist3Lang {
+  int iLang;             /* Language ID */
+  int iInsCost;          /* Default insertion cost */
+  int iDelCost;          /* Default deletion cost */
+  int iSubCost;          /* Default substitution cost */
+  EditDist3Cost *pCost;  /* Costs */
+};
+
+
+/*
+** The default EditDist3Lang object, with default costs.
+*/
+static const EditDist3Lang editDist3Lang = { 0, 100, 100, 150, 0 };
+
+/*
+** Complete configuration
+*/
+struct EditDist3Config {
+  int nLang;             /* Number of language IDs.  Size of a[] */
+  EditDist3Lang *a;      /* One for each distinct language ID */
+};
+
+/*
+** Extra information about each character in the FROM string.
+*/
+struct EditDist3From {
+  int nSubst;              /* Number of substitution cost entries */
+  int nDel;                /* Number of deletion cost entries */
+  int nByte;               /* Number of bytes in this character */
+  EditDist3Cost **apSubst; /* Array of substitution costs for this element */
+  EditDist3Cost **apDel;   /* Array of deletion cost entries */
+};
+
+/*
+** A precompiled FROM string.
+*
+** In the common case we expect the FROM string to be reused multiple times.
+** In other words, the common case will be to measure the edit distance
+** from a single origin string to multiple target strings.
+*/
+struct EditDist3FromString {
+  char *z;                 /* The complete text of the FROM string */
+  int n;                   /* Number of characters in the FROM string */
+  int isPrefix;            /* True if ends with '*' character */
+  EditDist3From *a;        /* Extra info about each char of the FROM string */
+};
+
+/*
+** Extra information about each character in the TO string.
+*/
+struct EditDist3To {
+  int nIns;                /* Number of insertion cost entries */
+  int nByte;               /* Number of bytes in this character */
+  EditDist3Cost **apIns;   /* Array of deletion cost entries */
+};
+
+/*
+** A precompiled FROM string
+*/
+struct EditDist3ToString {
+  char *z;                 /* The complete text of the TO string */
+  int n;                   /* Number of characters in the TO string */
+  EditDist3To *a;          /* Extra info about each char of the TO string */
+};
+
+/*
+** Clear or delete an instance of the object that records all edit-distance
+** weights.
+*/
+static void editDist3ConfigClear(EditDist3Config *p){
+  int i;
+  if( p==0 ) return;
+  for(i=0; i<p->nLang; i++){
+    EditDist3Cost *pCost, *pNext;
+    pCost = p->a[i].pCost;
+    while( pCost ){
+      pNext = pCost->pNext;
+      sqlite3_free(pCost);
+      pCost = pNext;
+    }
+  }
+  sqlite3_free(p->a);
+  memset(p, 0, sizeof(*p));
+}
+static void editDist3ConfigDelete(void *pIn){
+  EditDist3Config *p = (EditDist3Config*)pIn;
+  editDist3ConfigClear(p);
+  sqlite3_free(p);
+}
+
+/*
+** Load all edit-distance weights from a table.
+*/
+static int editDist3ConfigLoad(
+  EditDist3Config *p,      /* The edit distance configuration to load */
+  sqlite3 *db,            /* Load from this database */
+  const char *zTable      /* Name of the table from which to load */
+){
+  sqlite3_stmt *pStmt;
+  int rc, rc2;
+  char *zSql;
+  int iLangPrev = -9999;
+  EditDist3Lang *pLang;
+
+  zSql = sqlite3_mprintf("SELECT iLang, cFrom, cTo, iCost"
+                         " FROM \"%w\" WHERE iLang>=0 ORDER BY iLang", zTable);
+  if( zSql==0 ) return SQLITE_NOMEM;
+  rc = sqlite3_prepare(db, zSql, -1, &pStmt, 0);
+  sqlite3_free(zSql);
+  if( rc ) return rc;
+  editDist3ConfigClear(p);
+  while( sqlite3_step(pStmt)==SQLITE_ROW ){
+    int iLang = sqlite3_column_int(pStmt, 0);
+    const char *zFrom = (const char*)sqlite3_column_text(pStmt, 1);
+    int nFrom = zFrom ? sqlite3_column_bytes(pStmt, 1) : 0;
+    const char *zTo = (const char*)sqlite3_column_text(pStmt, 2);
+    int nTo = zTo ? sqlite3_column_bytes(pStmt, 2) : 0;
+    int iCost = sqlite3_column_int(pStmt, 3);
+
+    assert( zFrom!=0 || nFrom==0 );
+    assert( zTo!=0 || nTo==0 );
+    if( nFrom>100 || nTo>100 ) continue;
+    if( iCost<0 ) continue;
+    if( iLang!=iLangPrev ){
+      EditDist3Lang *pNew;
+      pNew = sqlite3_realloc(p->a, (p->nLang+1)*sizeof(p->a[0]));
+      if( pNew==0 ){ rc = SQLITE_NOMEM; break; }
+      p->a = pNew;
+      pLang = &p->a[p->nLang];
+      p->nLang++;
+      pLang->iLang = iLang;
+      pLang->iInsCost = 100;
+      pLang->iDelCost = 100;
+      pLang->iSubCost = 150;
+      pLang->pCost = 0;
+      iLangPrev = iLang;
+    }
+    if( nFrom==1 && zFrom[0]=='?' && nTo==0 ){
+      pLang->iDelCost = iCost;
+    }else if( nFrom==0 && nTo==1 && zTo[0]=='?' ){
+      pLang->iInsCost = iCost;
+    }else if( nFrom==1 && nTo==1 && zFrom[0]=='?' && zTo[0]=='?' ){
+      pLang->iSubCost = iCost;
+    }else{
+      EditDist3Cost *pCost;
+      int nExtra = nFrom + nTo - 4;
+      if( nExtra<0 ) nExtra = 0;
+      pCost = sqlite3_malloc( sizeof(*pCost) + nExtra );
+      if( pCost==0 ){ rc = SQLITE_NOMEM; break; }
+      pCost->nFrom = nFrom;
+      pCost->nTo = nTo;
+      pCost->iCost = iCost;
+      memcpy(pCost->a, zFrom, nFrom);
+      memcpy(pCost->a + nFrom, zTo, nTo);
+      pCost->pNext = pLang->pCost;
+      pLang->pCost = pCost; 
+    }
+  }
+  rc2 = sqlite3_finalize(pStmt);
+  if( rc==SQLITE_OK ) rc = rc2;
+  return rc;
+}
+
+/*
+** Return the length (in bytes) of a utf-8 character.  Or return a maximum
+** of N.
+*/
+static int utf8Len(unsigned char c, int N){
+  int len = 1;
+  if( c>0x7f ){
+    if( (c&0xe0)==0xc0 ){
+      len = 2;
+    }else if( (c&0xf0)==0xe0 ){
+      len = 3;
+    }else{
+      len = 4;
+    }
+  }
+  if( len>N ) len = N;
+  return len;
+}
+
+/*
+** Return TRUE (non-zero) of the To side of the given cost matches
+** the given string.
+*/
+static int matchTo(EditDist3Cost *p, const char *z, int n){
+  if( p->nTo>n ) return 0;
+  if( memcmp(p->a+p->nFrom, z, p->nTo)!=0 ) return 0;
+  return 1;
+}
+
+/*
+** Return TRUE (non-zero) of the To side of the given cost matches
+** the given string.
+*/
+static int matchFrom(EditDist3Cost *p, const char *z, int n){
+  assert( p->nFrom<=n );
+  if( memcmp(p->a, z, p->nFrom)!=0 ) return 0;
+  return 1;
+}
+
+/*
+** Return TRUE (non-zero) of the next FROM character and the next TO
+** character are the same.
+*/
+static int matchFromTo(
+  EditDist3FromString *pStr,  /* Left hand string */
+  int n1,                     /* Index of comparison character on the left */
+  const char *z2,             /* Right-handl comparison character */
+  int n2                      /* Bytes remaining in z2[] */
+){
+  int b1 = pStr->a[n1].nByte;
+  if( b1>n2 ) return 0;
+  if( memcmp(pStr->z+n1, z2, b1)!=0 ) return 0;
+  return 1;
+}
+
+/*
+** Delete an EditDist3FromString objecct
+*/
+static void editDist3FromStringDelete(EditDist3FromString *p){
+  int i;
+  if( p ){
+    for(i=0; i<p->n; i++){
+      sqlite3_free(p->a[i].apDel);
+      sqlite3_free(p->a[i].apSubst);
+    }
+    sqlite3_free(p);
+  }
+}
+
+/*
+** Create a EditDist3FromString object.
+*/
+static EditDist3FromString *editDist3FromStringNew(
+  const EditDist3Lang *pLang,
+  const char *z,
+  int n
+){
+  EditDist3FromString *pStr;
+  EditDist3Cost *p;
+  int i;
+
+  if( z==0 ) return 0;
+  if( n<0 ) n = (int)strlen(z);
+  pStr = sqlite3_malloc( sizeof(*pStr) + sizeof(pStr->a[0])*n + n + 1 );
+  if( pStr==0 ) return 0;
+  pStr->a = (EditDist3From*)&pStr[1];
+  memset(pStr->a, 0, sizeof(pStr->a[0])*n);
+  pStr->n = n;
+  pStr->z = (char*)&pStr->a[n];
+  memcpy(pStr->z, z, n+1);
+  if( n && z[n-1]=='*' ){
+    pStr->isPrefix = 1;
+    n--;
+    pStr->n--;
+    pStr->z[n] = 0;
+  }else{
+    pStr->isPrefix = 0;
+  }
+
+  for(i=0; i<n; i++){
+    EditDist3From *pFrom = &pStr->a[i];
+    memset(pFrom, 0, sizeof(*pFrom));
+    pFrom->nByte = utf8Len((unsigned char)z[i], n-i);
+    for(p=pLang->pCost; p; p=p->pNext){
+      EditDist3Cost **apNew;
+      if( i+p->nFrom>n ) continue;
+      if( matchFrom(p, z+i, n-i)==0 ) continue;
+      if( p->nTo==0 ){
+        apNew = sqlite3_realloc(pFrom->apDel,
+                                sizeof(*apNew)*(pFrom->nDel+1));
+        if( apNew==0 ) break;
+        pFrom->apDel = apNew;
+        apNew[pFrom->nDel++] = p;
+      }else{
+        apNew = sqlite3_realloc(pFrom->apSubst,
+                                sizeof(*apNew)*(pFrom->nSubst+1));
+        if( apNew==0 ) break;
+        pFrom->apSubst = apNew;
+        apNew[pFrom->nSubst++] = p;
+      }
+    }
+    if( p ){
+      editDist3FromStringDelete(pStr);
+      pStr = 0;
+      break;
+    }
+  }
+  return pStr;
+}
+
+/*
+** Update entry m[i] such that it is the minimum of its current value
+** and m[j]+iCost.
+**
+** If the iCost is 1,000,000 or greater, then consider the cost to be
+** infinite and skip the update.
+*/
+static void updateCost(
+  unsigned int *m,
+  int i,
+  int j,
+  int iCost
+){
+  int b;
+  if( iCost<10000 ){
+    b = m[j] + iCost;
+    if( b<m[i] ) m[i] = b;
+  }
+}
+
+/* Compute the edit distance between two strings.
+**
+** If an error occurs, return a negative number which is the error code.
+**
+** If pnMatch is not NULL, then *pnMatch is set to the number of characters
+** (not bytes) in z2 that matched the search pattern in *pFrom. If pFrom does
+** not contain the pattern for a prefix-search, then this is always the number
+** of characters in z2. If pFrom does contain a prefix search pattern, then
+** it is the number of characters in the prefix of z2 that was deemed to 
+** match pFrom.
+*/
+static int editDist3Core(
+  EditDist3FromString *pFrom,  /* The FROM string */
+  const char *z2,              /* The TO string */
+  int n2,                      /* Length of the TO string */
+  const EditDist3Lang *pLang,  /* Edit weights for a particular language ID */
+  int *pnMatch                 /* OUT: Characters in matched prefix */
+){
+  int k, n;
+  int i1, b1;
+  int i2, b2;
+  EditDist3FromString f = *pFrom;
+  EditDist3To *a2;
+  unsigned int *m;
+  int szRow;
+  EditDist3Cost *p;
+  int res;
+
+  /* allocate the Wagner matrix and the aTo[] array for the TO string */
+  n = (f.n+1)*(n2+1);
+  n = (n+1)&~1;
+  m = sqlite3_malloc( n*sizeof(m[0]) + sizeof(a2[0])*n2 );
+  if( m==0 ) return -1;            /* Out of memory */
+  a2 = (EditDist3To*)&m[n];
+  memset(a2, 0, sizeof(a2[0])*n2);
+
+  /* Fill in the a1[] matrix for all characters of the TO string */
+  for(i2=0; i2<n2; i2++){
+    a2[i2].nByte = utf8Len((unsigned char)z2[i2], n2-i2);
+    for(p=pLang->pCost; p; p=p->pNext){
+      EditDist3Cost **apNew;
+      if( p->nFrom>0 ) continue;
+      if( i2+p->nTo>n2 ) continue;
+      if( matchTo(p, z2+i2, n2-i2)==0 ) continue;
+      a2[i2].nIns++;
+      apNew = sqlite3_realloc(a2[i2].apIns, sizeof(*apNew)*a2[i2].nIns);
+      if( apNew==0 ){
+        res = -1;  /* Out of memory */
+        goto editDist3Abort;
+      }
+      a2[i2].apIns = apNew;
+      a2[i2].apIns[a2[i2].nIns-1] = p;
+    }
+  }
+
+  /* Prepare to compute the minimum edit distance */
+  szRow = f.n+1;
+  memset(m, 0x01, (n2+1)*szRow*sizeof(m[0]));
+  m[0] = 0;
+
+  /* First fill in the top-row of the matrix with FROM deletion costs */
+  for(i1=0; i1<f.n; i1 += b1){
+    b1 = f.a[i1].nByte;
+    updateCost(m, i1+b1, i1, pLang->iDelCost);
+    for(k=0; k<f.a[i1].nDel; k++){
+      p = f.a[i1].apDel[k];
+      updateCost(m, i1+p->nFrom, i1, p->iCost);
+    }
+  }
+
+  /* Fill in all subsequent rows, top-to-bottom, left-to-right */
+  for(i2=0; i2<n2; i2 += b2){
+    int rx;      /* Starting index for current row */
+    int rxp;     /* Starting index for previous row */
+    b2 = a2[i2].nByte;
+    rx = szRow*(i2+b2);
+    rxp = szRow*i2;
+    updateCost(m, rx, rxp, pLang->iInsCost);
+    for(k=0; k<a2[i2].nIns; k++){
+      p = a2[i2].apIns[k];
+      updateCost(m, szRow*(i2+p->nTo), rxp, p->iCost);
+    }
+    for(i1=0; i1<f.n; i1+=b1){
+      int cx;    /* Index of current cell */
+      int cxp;   /* Index of cell immediately to the left */
+      int cxd;   /* Index of cell to the left and one row above */
+      int cxu;   /* Index of cell immediately above */
+      b1 = f.a[i1].nByte;
+      cxp = rx + i1;
+      cx = cxp + b1;
+      cxd = rxp + i1;
+      cxu = cxd + b1;
+      updateCost(m, cx, cxp, pLang->iDelCost);
+      for(k=0; k<f.a[i1].nDel; k++){
+        p = f.a[i1].apDel[k];
+        updateCost(m, cxp+p->nFrom, cxp, p->iCost);
+      }
+      updateCost(m, cx, cxu, pLang->iInsCost);
+      if( matchFromTo(&f, i1, z2+i2, n2-i2) ){
+        updateCost(m, cx, cxd, 0);
+      }
+      updateCost(m, cx, cxd, pLang->iSubCost);
+      for(k=0; k<f.a[i1].nSubst; k++){
+        p = f.a[i1].apSubst[k];
+        if( matchTo(p, z2+i2, n2-i2) ){
+          updateCost(m, cxd+p->nFrom+szRow*p->nTo, cxd, p->iCost);
+        }
+      }
+    }
+  }
+
+#if 0  /* Enable for debugging */
+  printf("         ^");
+  for(i1=0; i1<f.n; i1++) printf(" %c-%2x", f.z[i1], f.z[i1]&0xff);
+  printf("\n   ^:");
+  for(i1=0; i1<szRow; i1++){
+    int v = m[i1];
+    if( v>9999 ) printf(" ****");
+    else         printf(" %4d", v);
+  }
+  printf("\n");
+  for(i2=0; i2<n2; i2++){
+    printf("%c-%02x:", z2[i2], z2[i2]&0xff);
+    for(i1=0; i1<szRow; i1++){
+      int v = m[(i2+1)*szRow+i1];
+      if( v>9999 ) printf(" ****");
+      else         printf(" %4d", v);
+    }
+    printf("\n");
+  }
+#endif
+
+  /* Free memory allocations and return the result */
+  res = (int)m[szRow*(n2+1)-1];
+  n = n2;
+  if( f.isPrefix ){
+    for(i2=1; i2<=n2; i2++){
+      int b = m[szRow*i2-1];
+      if( b<=res ){ 
+        res = b;
+        n = i2 - 1;
+      }
+    }
+  }
+  if( pnMatch ){
+    int nExtra = 0;
+    for(k=0; k<n; k++){
+      if( (z2[k] & 0xc0)==0x80 ) nExtra++;
+    }
+    *pnMatch = n - nExtra;
+  }
+
+editDist3Abort:
+  for(i2=0; i2<n2; i2++) sqlite3_free(a2[i2].apIns);
+  sqlite3_free(m);
+  return res;
+}
+
+/*
+** Get an appropriate EditDist3Lang object.
+*/
+static const EditDist3Lang *editDist3FindLang(
+  EditDist3Config *pConfig,
+  int iLang
+){
+  int i;
+  for(i=0; i<pConfig->nLang; i++){
+    if( pConfig->a[i].iLang==iLang ) return &pConfig->a[i];
+  }
+  return &editDist3Lang;
+}
+
+/*
+** Function:    editdist3(A,B,iLang)
+**              editdist3(tablename)
+**
+** Return the cost of transforming string A into string B using edit
+** weights for iLang.
+**
+** The second form loads edit weights into memory from a table.
+*/
+static void editDist3SqlFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  EditDist3Config *pConfig = (EditDist3Config*)sqlite3_user_data(context);
+  sqlite3 *db = sqlite3_context_db_handle(context);
+  int rc;
+  if( argc==1 ){
+    const char *zTable = (const char*)sqlite3_value_text(argv[0]);
+    rc = editDist3ConfigLoad(pConfig, db, zTable);
+    if( rc ) sqlite3_result_error_code(context, rc);
+  }else{
+    const char *zA = (const char*)sqlite3_value_text(argv[0]);
+    const char *zB = (const char*)sqlite3_value_text(argv[1]);
+    int nA = sqlite3_value_bytes(argv[0]);
+    int nB = sqlite3_value_bytes(argv[1]);
+    int iLang = argc==3 ? sqlite3_value_int(argv[2]) : 0;
+    const EditDist3Lang *pLang = editDist3FindLang(pConfig, iLang);
+    EditDist3FromString *pFrom;
+    int dist;
+
+    pFrom = editDist3FromStringNew(pLang, zA, nA);
+    if( pFrom==0 ){
+      sqlite3_result_error_nomem(context);
+      return;
+    }
+    dist = editDist3Core(pFrom, zB, nB, pLang, 0);
+    editDist3FromStringDelete(pFrom);
+    if( dist==(-1) ){
+      sqlite3_result_error_nomem(context);
+    }else{
+      sqlite3_result_int(context, dist);
+    }
+  } 
+}
+
+/*
+** Register the editDist3 function with SQLite
+*/
+static int editDist3Install(sqlite3 *db){
+  int rc;
+  EditDist3Config *pConfig = sqlite3_malloc( sizeof(*pConfig) );
+  if( pConfig==0 ) return SQLITE_NOMEM;
+  memset(pConfig, 0, sizeof(*pConfig));
+  rc = sqlite3_create_function_v2(db, "editdist3",
+              2, SQLITE_UTF8, pConfig, editDist3SqlFunc, 0, 0, 0);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function_v2(db, "editdist3",
+                3, SQLITE_UTF8, pConfig, editDist3SqlFunc, 0, 0, 0);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function_v2(db, "editdist3",
+                1, SQLITE_UTF8, pConfig, editDist3SqlFunc, 0, 0,
+                editDist3ConfigDelete);
+  }else{
+    sqlite3_free(pConfig);
+  }
+  return rc;
+}
+/* End configurable cost unicode edit distance routines
+******************************************************************************
+******************************************************************************
+** Begin transliterate unicode-to-ascii implementation
+*/
+
+#if !SQLITE_AMALGAMATION
 /*
 ** This lookup table is used to help decode the first byte of
 ** a multi-byte UTF8 character.
@@ -687,7 +1140,9 @@ static const unsigned char sqlite3Utf8Trans1[] = {
 static int utf8Read(const unsigned char *z, int n, int *pSize){
   int c, i;
 
-  if( n==0 ){
+  /* All callers to this routine (in the current implementation)
+  ** always have n>0. */
+  if( NEVER(n==0) ){
     c = i = 0;
   }else{
     c = z[0];
@@ -701,6 +1156,21 @@ static int utf8Read(const unsigned char *z, int n, int *pSize){
   }
   *pSize = i;
   return c;
+}
+
+/*
+** Return the number of characters in the utf-8 string in the nIn byte
+** buffer pointed to by zIn.
+*/
+static int utf8Charlen(const char *zIn, int nIn){
+  int i;
+  int nChar = 0;
+  for(i=0; i<nIn; nChar++){
+    int sz;
+    utf8Read((const unsigned char *)&zIn[i], nIn-i, &sz);
+    i += sz;
+  }
+  return nChar;
 }
 
 /*
@@ -1018,7 +1488,9 @@ static const struct {
   { 0x0427,  0x43, 0x68 },  /* Ч to Ch */
   { 0x0428,  0x53, 0x68 },  /* Ш to Sh */
   { 0x0429,  0x53, 0x68 },  /* Щ to Shch */
+  { 0x042A,  0x61, 0x00 },  /*  to A */
   { 0x042B,  0x59, 0x00 },  /* Ы to Y */
+  { 0x042C,  0x59, 0x00 },  /*  to Y */
   { 0x042D,  0x45, 0x00 },  /* Э to E */
   { 0x042E,  0x49, 0x75 },  /* Ю to Iu */
   { 0x042F,  0x49, 0x61 },  /* Я to Ia */
@@ -1048,7 +1520,9 @@ static const struct {
   { 0x0447,  0x63, 0x68 },  /* ч to ch */
   { 0x0448,  0x73, 0x68 },  /* ш to sh */
   { 0x0449,  0x73, 0x68 },  /* щ to shch */
+  { 0x044A,  0x61, 0x00 },  /*  to a */
   { 0x044B,  0x79, 0x00 },  /* ы to y */
+  { 0x044C,  0x79, 0x00 },  /*  to y */
   { 0x044D,  0x65, 0x00 },  /* э to e */
   { 0x044E,  0x69, 0x75 },  /* ю to iu */
   { 0x044F,  0x69, 0x61 },  /* я to ia */
@@ -1109,10 +1583,10 @@ static const struct {
 */
 static unsigned char *transliterate(const unsigned char *zIn, int nIn){
   unsigned char *zOut = sqlite3_malloc( nIn*4 + 1 );
-  int i, c, sz, nOut;
+  int c, sz, nOut;
   if( zOut==0 ) return 0;
-  i = nOut = 0;
-  while( i<nIn ){
+  nOut = 0;
+  while( nIn>0 ){
     c = utf8Read(zIn, nIn, &sz);
     zIn += sz;
     nIn -= sz;
@@ -1148,6 +1622,45 @@ static unsigned char *transliterate(const unsigned char *zIn, int nIn){
   zOut[nOut] = 0;
   return zOut;
 }
+
+/*
+** Return the number of characters in the shortest prefix of the input
+** string that transliterates to an ASCII string nTrans bytes or longer.
+** Or, if the transliteration of the input string is less than nTrans
+** bytes in size, return the number of characters in the input string.
+*/
+static int translen_to_charlen(const char *zIn, int nIn, int nTrans){
+  int i, c, sz, nOut;
+  int nChar;
+
+  i = nOut = 0;
+  for(nChar=0; i<nIn && nOut<nTrans; nChar++){
+    c = utf8Read((const unsigned char *)&zIn[i], nIn-i, &sz);
+    i += sz;
+
+    nOut++;
+    if( c>=128 ){
+      int xTop, xBtm, x;
+      xTop = sizeof(translit)/sizeof(translit[0]) - 1;
+      xBtm = 0;
+      while( xTop>=xBtm ){
+        x = (xTop + xBtm)/2;
+        if( translit[x].cFrom==c ){
+          if( translit[x].cTo1 ) nOut++;
+          if( c==0x0429 || c== 0x0449 ) nOut += 2;
+          break;
+        }else if( translit[x].cFrom>c ){
+          xTop = x-1;
+        }else{
+          xBtm = x+1;
+        }
+      }
+    }
+  }
+
+  return nChar;
+}
+
 
 /*
 **    spellfix1_translit(X)
@@ -1222,38 +1735,52 @@ static void scriptCodeSqlFunc(
   sqlite3_result_int(context, res);
 }
 
-/*****************************************************************************
-** Fuzzy-search virtual table
-*****************************************************************************/
+/* End transliterate
+******************************************************************************
+******************************************************************************
+** Begin spellfix1 virtual table.
+*/
+
+/* Maximum length of a phonehash used for querying the shadow table */
+#define SPELLFIX_MX_HASH  8
+
+/* Maximum number of hash strings to examine per query */
+#define SPELLFIX_MX_RUN   1
 
 typedef struct spellfix1_vtab spellfix1_vtab;
 typedef struct spellfix1_cursor spellfix1_cursor;
 
 /* Fuzzy-search virtual table object */
 struct spellfix1_vtab {
-  sqlite3_vtab base;      /* Base class - must be first */
-  sqlite3 *db;            /* Database connection */
-  char *zDbName;          /* Name of database holding this table */
-  char *zTableName;       /* Name of the virtual table */
+  sqlite3_vtab base;         /* Base class - must be first */
+  sqlite3 *db;               /* Database connection */
+  char *zDbName;             /* Name of database holding this table */
+  char *zTableName;          /* Name of the virtual table */
+  char *zCostTable;          /* Table holding edit-distance cost numbers */
+  EditDist3Config *pConfig3; /* Parsed edit distance costs */
 };
 
 /* Fuzzy-search cursor object */
 struct spellfix1_cursor {
   sqlite3_vtab_cursor base;    /* Base class - must be first */
-  spellfix1_vtab *pVTab;         /* The table to which this cursor belongs */
+  spellfix1_vtab *pVTab;       /* The table to which this cursor belongs */
+  char *zPattern;              /* rhs of MATCH clause */
   int nRow;                    /* Number of rows of content */
   int nAlloc;                  /* Number of allocated rows */
   int iRow;                    /* Current row of content */
-  int iLang;                   /* Value of the lang= constraint */
+  int iLang;                   /* Value of the langid= constraint */
   int iTop;                    /* Value of the top= constraint */
   int iScope;                  /* Value of the scope= constraint */
   int nSearch;                 /* Number of vocabulary items checked */
-  struct spellfix1_row {         /* For each row of content */
+  sqlite3_stmt *pFullScan;     /* Shadow query for a full table scan */
+  struct spellfix1_row {       /* For each row of content */
     sqlite3_int64 iRowid;         /* Rowid for this row */
     char *zWord;                  /* Text for this row */
     int iRank;                    /* Rank for this row */
     int iDistance;                /* Distance from pattern for this row */
     int iScore;                   /* Score for sorting */
+    int iMatchlen;                /* Value of matchlen column (or -1) */
+    char zHash[SPELLFIX_MX_HASH]; /* the phonehash used for this match */
   } *a; 
 };
 
@@ -1297,6 +1824,8 @@ static int spellfix1Uninit(int isDestroy, sqlite3_vtab *pVTab){
   }
   if( rc==SQLITE_OK ){
     sqlite3_free(p->zTableName);
+    editDist3ConfigDelete(p->pConfig3);
+    sqlite3_free(p->zCostTable);
     sqlite3_free(p);
   }
   return rc;
@@ -1309,12 +1838,46 @@ static int spellfix1Destroy(sqlite3_vtab *pVTab){
 }
 
 /*
+** Make a copy of a string.  Remove leading and trailing whitespace
+** and dequote it.
+*/
+static char *spellfix1Dequote(const char *zIn){
+  char *zOut;
+  int i, j;
+  char c;
+  while( isspace(zIn[0]) ) zIn++;
+  zOut = sqlite3_mprintf("%s", zIn);
+  if( zOut==0 ) return 0;
+  i = (int)strlen(zOut);
+#if 0  /* The parser will never leave spaces at the end */
+  while( i>0 && isspace(zOut[i-1]) ){ i--; }
+#endif
+  zOut[i] = 0;
+  c = zOut[0];
+  if( c=='\'' || c=='"' ){
+    for(i=1, j=0; ALWAYS(zOut[i]); i++){
+      zOut[j++] = zOut[i];
+      if( zOut[i]==c ){
+        if( zOut[i+1]==c ){
+          i++;
+        }else{
+          zOut[j-1] = 0;
+          break;
+        }
+      }
+    }
+  }
+  return zOut;
+}
+
+
+/*
 ** xConnect/xCreate method for the spellfix1 module. Arguments are:
 **
 **   argv[0]   -> module name  ("spellfix1")
 **   argv[1]   -> database name
 **   argv[2]   -> table name
-**   argv[3].. -> optional arguments (currently ignored)
+**   argv[3].. -> optional arguments (i.e. "edit_cost_table" parameter)
 */
 static int spellfix1Init(
   int isCreate,
@@ -1330,56 +1893,77 @@ static int spellfix1Init(
   const char *zTableName = argv[2];
   int nDbName;
   int rc = SQLITE_OK;
+  int i;
 
-  if( argc<3 ){
-    *pzErr = sqlite3_mprintf(
-        "%s: wrong number of CREATE VIRTUAL TABLE arguments", argv[0]
-    );
-    rc = SQLITE_ERROR;
+  nDbName = strlen(zDbName);
+  pNew = sqlite3_malloc( sizeof(*pNew) + nDbName + 1);
+  if( pNew==0 ){
+    rc = SQLITE_NOMEM;
   }else{
-    nDbName = strlen(zDbName);
-    pNew = sqlite3_malloc( sizeof(*pNew) + nDbName + 1);
-    if( pNew==0 ){
+    memset(pNew, 0, sizeof(*pNew));
+    pNew->zDbName = (char*)&pNew[1];
+    memcpy(pNew->zDbName, zDbName, nDbName+1);
+    pNew->zTableName = sqlite3_mprintf("%s", zTableName);
+    pNew->db = db;
+    if( pNew->zTableName==0 ){
       rc = SQLITE_NOMEM;
     }else{
-      memset(pNew, 0, sizeof(*pNew));
-      pNew->zDbName = (char*)&pNew[1];
-      memcpy(pNew->zDbName, zDbName, nDbName+1);
-      pNew->zTableName = sqlite3_mprintf("%s", zTableName);
-      pNew->db = db;
-      if( pNew->zTableName==0 ){
-        rc = SQLITE_NOMEM;
-      }else{
-        rc = sqlite3_declare_vtab(db, 
-             "CREATE TABLE x(word,rank,distance,langid,"
-             "score,top HIDDEN,scope HIDDEN,srchcnt HIDDEN,"
-             "soundslike HIDDEN)"
-        );
+      rc = sqlite3_declare_vtab(db, 
+           "CREATE TABLE x(word,rank,distance,langid, "
+           "score, matchlen, phonehash HIDDEN, "
+           "top HIDDEN, scope HIDDEN, srchcnt HIDDEN, "
+           "soundslike HIDDEN, command HIDDEN)"
+      );
+#define SPELLFIX_COL_WORD            0
+#define SPELLFIX_COL_RANK            1
+#define SPELLFIX_COL_DISTANCE        2
+#define SPELLFIX_COL_LANGID          3
+#define SPELLFIX_COL_SCORE           4
+#define SPELLFIX_COL_MATCHLEN        5
+#define SPELLFIX_COL_PHONEHASH       6
+#define SPELLFIX_COL_TOP             7
+#define SPELLFIX_COL_SCOPE           8
+#define SPELLFIX_COL_SRCHCNT         9
+#define SPELLFIX_COL_SOUNDSLIKE     10
+#define SPELLFIX_COL_COMMAND        11
+    }
+    if( rc==SQLITE_OK && isCreate ){
+      sqlite3_uint64 r;
+      spellfix1DbExec(&rc, db,
+         "CREATE TABLE IF NOT EXISTS \"%w\".\"%w_vocab\"(\n"
+         "  id INTEGER PRIMARY KEY,\n"
+         "  rank INT,\n"
+         "  langid INT,\n"
+         "  word TEXT,\n"
+         "  k1 TEXT,\n"
+         "  k2 TEXT\n"
+         ");\n",
+         zDbName, zTableName
+      );
+      sqlite3_randomness(sizeof(r), &r);
+      spellfix1DbExec(&rc, db,
+         "CREATE INDEX IF NOT EXISTS \"%w\".\"%w_index_%llx\" "
+            "ON \"%w_vocab\"(langid,k2);",
+         zDbName, zModule, r, zTableName
+      );
+    }
+    for(i=3; rc==SQLITE_OK && i<argc; i++){
+      if( memcmp(argv[i],"edit_cost_table=",16)==0 && pNew->zCostTable==0 ){
+        pNew->zCostTable = spellfix1Dequote(&argv[i][16]);
+        if( pNew->zCostTable==0 ) rc = SQLITE_NOMEM;
+        continue;
       }
-      if( rc==SQLITE_OK && isCreate ){
-        sqlite3_uint64 r;
-        spellfix1DbExec(&rc, db,
-           "CREATE TABLE IF NOT EXISTS \"%w\".\"%w_vocab\"(\n"
-           "  id INTEGER PRIMARY KEY,\n"
-           "  rank INT,\n"
-           "  langid INT,\n"
-           "  word TEXT,\n"
-           "  k1 TEXT,\n"
-           "  k2 TEXT\n"
-           ");\n",
-           zDbName, zTableName
-        );
-        sqlite3_randomness(sizeof(r), &r);
-        spellfix1DbExec(&rc, db,
-           "CREATE INDEX IF NOT EXISTS \"%w\".\"%w_index_%llx\" "
-              "ON \"%w_vocab\"(langid,k2);",
-           zDbName, zModule, r, zTableName
-        );
-      }
+      *pzErr = sqlite3_mprintf("bad argument to spellfix1(): \"%s\"", argv[i]);
+      rc = SQLITE_ERROR; 
     }
   }
 
-  *ppVTab = (sqlite3_vtab *)pNew;
+  if( rc && pNew ){
+    *ppVTab = 0;
+    spellfix1Uninit(0, &pNew->base);
+  }else{
+    *ppVTab = (sqlite3_vtab *)pNew;
+  }
   return rc;
 }
 
@@ -1406,27 +1990,49 @@ static int spellfix1Create(
 }
 
 /*
-** Reset a cursor so that it contains zero rows of content but holds
-** space for N rows.
+** Clear all of the content from a cursor.
 */
-static void spellfix1ResetCursor(spellfix1_cursor *pCur, int N){
+static void spellfix1ResetCursor(spellfix1_cursor *pCur){
   int i;
   for(i=0; i<pCur->nRow; i++){
     sqlite3_free(pCur->a[i].zWord);
   }
-  pCur->a = sqlite3_realloc(pCur->a, sizeof(pCur->a[0])*N);
-  pCur->nAlloc = N;
   pCur->nRow = 0;
   pCur->iRow = 0;
   pCur->nSearch = 0;
+  if( pCur->pFullScan ){
+    sqlite3_finalize(pCur->pFullScan);
+    pCur->pFullScan = 0;
+  }
 }
+
+/*
+** Resize the cursor to hold up to N rows of content
+*/
+static void spellfix1ResizeCursor(spellfix1_cursor *pCur, int N){
+  struct spellfix1_row *aNew;
+  assert( N>=pCur->nRow );
+  aNew = sqlite3_realloc(pCur->a, sizeof(pCur->a[0])*N);
+  if( aNew==0 && N>0 ){
+    spellfix1ResetCursor(pCur);
+    sqlite3_free(pCur->a);
+    pCur->nAlloc = 0;
+    pCur->a = 0;
+  }else{
+    pCur->nAlloc = N;
+    pCur->a = aNew;
+  }
+}
+
 
 /*
 ** Close a fuzzy-search cursor.
 */
 static int spellfix1Close(sqlite3_vtab_cursor *cur){
   spellfix1_cursor *pCur = (spellfix1_cursor *)cur;
-  spellfix1ResetCursor(pCur, 0);
+  spellfix1ResetCursor(pCur);
+  spellfix1ResizeCursor(pCur, 0);
+  sqlite3_free(pCur->zPattern);
   sqlite3_free(pCur);
   return SQLITE_OK;
 }
@@ -1438,6 +2044,8 @@ static int spellfix1Close(sqlite3_vtab_cursor *cur){
 **   (B)    langid == $langid
 **   (C)    top = $top
 **   (D)    scope = $scope
+**   (E)    distance < $distance
+**   (F)    distance <= $distance
 **
 ** The plan number is a bit mask formed with these bits:
 **
@@ -1445,6 +2053,8 @@ static int spellfix1Close(sqlite3_vtab_cursor *cur){
 **   0x02   (B) is found
 **   0x04   (C) is found
 **   0x08   (D) is found
+**   0x10   (E) is found
+**   0x20   (F) is found
 **
 ** filter.argv[*] values contains $str, $langid, $top, and $scope,
 ** if specified and in that order.
@@ -1454,6 +2064,7 @@ static int spellfix1BestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   int iLangTerm = -1;
   int iTopTerm = -1;
   int iScopeTerm = -1;
+  int iDistTerm = -1;
   int i;
   const struct sqlite3_index_constraint *pConstraint;
   pConstraint = pIdxInfo->aConstraint;
@@ -1462,7 +2073,7 @@ static int spellfix1BestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
 
     /* Terms of the form:  word MATCH $str */
     if( (iPlan & 1)==0 
-     && pConstraint->iColumn==0
+     && pConstraint->iColumn==SPELLFIX_COL_WORD
      && pConstraint->op==SQLITE_INDEX_CONSTRAINT_MATCH
     ){
       iPlan |= 1;
@@ -1472,7 +2083,7 @@ static int spellfix1BestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
 
     /* Terms of the form:  langid = $langid  */
     if( (iPlan & 2)==0
-     && pConstraint->iColumn==3
+     && pConstraint->iColumn==SPELLFIX_COL_LANGID
      && pConstraint->op==SQLITE_INDEX_CONSTRAINT_EQ
     ){
       iPlan |= 2;
@@ -1481,7 +2092,7 @@ static int spellfix1BestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
 
     /* Terms of the form:  top = $top */
     if( (iPlan & 4)==0
-     && pConstraint->iColumn==5
+     && pConstraint->iColumn==SPELLFIX_COL_TOP
      && pConstraint->op==SQLITE_INDEX_CONSTRAINT_EQ
     ){
       iPlan |= 4;
@@ -1490,18 +2101,28 @@ static int spellfix1BestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
 
     /* Terms of the form:  scope = $scope */
     if( (iPlan & 8)==0
-     && pConstraint->iColumn==6
+     && pConstraint->iColumn==SPELLFIX_COL_SCOPE
      && pConstraint->op==SQLITE_INDEX_CONSTRAINT_EQ
     ){
       iPlan |= 8;
       iScopeTerm = i;
+    }
+
+    /* Terms of the form:  distance < $dist or distance <= $dist */
+    if( (iPlan & (16|32))==0
+     && pConstraint->iColumn==SPELLFIX_COL_DISTANCE
+     && (pConstraint->op==SQLITE_INDEX_CONSTRAINT_LT
+          || pConstraint->op==SQLITE_INDEX_CONSTRAINT_LE)
+    ){
+      iPlan |= pConstraint->op==SQLITE_INDEX_CONSTRAINT_LT ? 16 : 32;
+      iDistTerm = i;
     }
   }
   if( iPlan&1 ){
     int idx = 2;
     pIdxInfo->idxNum = iPlan;
     if( pIdxInfo->nOrderBy==1
-     && pIdxInfo->aOrderBy[0].iColumn==4
+     && pIdxInfo->aOrderBy[0].iColumn==SPELLFIX_COL_SCORE
      && pIdxInfo->aOrderBy[0].desc==0
     ){
       pIdxInfo->orderByConsumed = 1;  /* Default order by iScore */
@@ -1517,6 +2138,10 @@ static int spellfix1BestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     if( iPlan&8 ){
       pIdxInfo->aConstraintUsage[iScopeTerm].argvIndex = idx++;
       pIdxInfo->aConstraintUsage[iScopeTerm].omit = 1;
+    }
+    if( iPlan&(16|32) ){
+      pIdxInfo->aConstraintUsage[iDistTerm].argvIndex = idx++;
+      pIdxInfo->aConstraintUsage[iDistTerm].omit = 1;
     }
     pIdxInfo->estimatedCost = (double)10000;
   }else{
@@ -1561,6 +2186,156 @@ static int spellfix1RowCompare(const void *A, const void *B){
 }
 
 /*
+** A structure used to pass information from spellfix1FilterForMatch()
+** into spellfix1RunQuery().
+*/
+typedef struct MatchQuery {
+  spellfix1_cursor *pCur;          /* The cursor being queried */
+  sqlite3_stmt *pStmt;             /* shadow table query statment */
+  char zHash[SPELLFIX_MX_HASH];    /* The current phonehash for zPattern */
+  const char *zPattern;            /* Transliterated input string */
+  int nPattern;                    /* Length of zPattern */
+  EditDist3FromString *pMatchStr3; /* Original unicode string */
+  EditDist3Config *pConfig3;       /* Edit-distance cost coefficients */
+  const EditDist3Lang *pLang;      /* The selected language coefficients */
+  int iLang;                       /* The language id */
+  int iScope;                      /* Default scope */
+  int iMaxDist;                    /* Maximum allowed edit distance, or -1 */
+  int rc;                          /* Error code */
+  int nRun;                  /* Number of prior runs for the same zPattern */
+  char azPrior[SPELLFIX_MX_RUN][SPELLFIX_MX_HASH];  /* Prior hashes */
+} MatchQuery;
+
+/*
+** Run a query looking for the best matches against zPattern using
+** zHash as the character class seed hash.
+*/
+static void spellfix1RunQuery(MatchQuery *p, const char *zQuery, int nQuery){
+  const char *zK1;
+  const char *zWord;
+  int iDist;
+  int iRank;
+  int iScore;
+  int iWorst = 0;
+  int idx;
+  int idxWorst = -1;
+  int i;
+  int iScope = p->iScope;
+  spellfix1_cursor *pCur = p->pCur;
+  sqlite3_stmt *pStmt = p->pStmt;
+  char zHash1[SPELLFIX_MX_HASH];
+  char zHash2[SPELLFIX_MX_HASH];
+  char *zClass;
+  int nClass;
+  int rc;
+
+  if( pCur->a==0 || p->rc ) return;   /* Prior memory allocation failure */
+  zClass = (char*)phoneticHash((unsigned char*)zQuery, nQuery);
+  if( zClass==0 ){
+    p->rc = SQLITE_NOMEM;
+    return;
+  }
+  nClass = strlen(zClass);
+  if( nClass>SPELLFIX_MX_HASH-2 ){
+    nClass = SPELLFIX_MX_HASH-2;
+    zClass[nClass] = 0;
+  }
+  if( nClass<=iScope ){
+    if( nClass>2 ){
+      iScope = nClass-1;
+    }else{
+      iScope = nClass;
+    }
+  }
+  memcpy(zHash1, zClass, iScope);
+  sqlite3_free(zClass);
+  zHash1[iScope] = 0;
+  memcpy(zHash2, zHash1, iScope);
+  zHash2[iScope] = 'Z';
+  zHash2[iScope+1] = 0;
+#if SPELLFIX_MX_RUN>1
+  for(i=0; i<p->nRun; i++){
+    if( strcmp(p->azPrior[i], zHash1)==0 ) return;
+  }
+#endif
+  assert( p->nRun<SPELLFIX_MX_RUN );
+  memcpy(p->azPrior[p->nRun++], zHash1, iScope+1);
+  if( sqlite3_bind_text(pStmt, 1, zHash1, -1, SQLITE_STATIC)==SQLITE_NOMEM
+   || sqlite3_bind_text(pStmt, 2, zHash2, -1, SQLITE_STATIC)==SQLITE_NOMEM
+  ){
+    p->rc = SQLITE_NOMEM;
+    return;
+  }
+#if SPELLFIX_MX_RUN>1
+  for(i=0; i<pCur->nRow; i++){
+    if( pCur->a[i].iScore>iWorst ){
+      iWorst = pCur->a[i].iScore;
+      idxWorst = i;
+    }
+  }
+#endif
+  while( sqlite3_step(pStmt)==SQLITE_ROW ){
+    int iMatchlen = -1;
+    iRank = sqlite3_column_int(pStmt, 2);
+    if( p->pMatchStr3 ){
+      int nWord = sqlite3_column_bytes(pStmt, 1);
+      zWord = (const char*)sqlite3_column_text(pStmt, 1);
+      iDist = editDist3Core(p->pMatchStr3, zWord, nWord, p->pLang, &iMatchlen);
+    }else{
+      zK1 = (const char*)sqlite3_column_text(pStmt, 3);
+      if( zK1==0 ) continue;
+      iDist = editdist1(p->zPattern, zK1, 0);
+    }
+    if( iDist<0 ){
+      p->rc = SQLITE_NOMEM;
+      break;
+    }
+    pCur->nSearch++;
+    iScore = spellfix1Score(iDist,iRank);
+    if( p->iMaxDist>=0 ){
+      if( iDist>p->iMaxDist ) continue;
+      if( pCur->nRow>=pCur->nAlloc-1 ){
+        spellfix1ResizeCursor(pCur, pCur->nAlloc*2 + 10);
+        if( pCur->a==0 ) break;
+      }
+      idx = pCur->nRow;
+    }else if( pCur->nRow<pCur->nAlloc ){
+      idx = pCur->nRow;
+    }else if( iScore<iWorst ){
+      idx = idxWorst;
+      sqlite3_free(pCur->a[idx].zWord);
+    }else{
+      continue;
+    }
+    pCur->a[idx].zWord = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 1));
+    if( pCur->a[idx].zWord==0 ){
+      p->rc = SQLITE_NOMEM;
+      break;
+    }
+    pCur->a[idx].iRowid = sqlite3_column_int64(pStmt, 0);
+    pCur->a[idx].iRank = iRank;
+    pCur->a[idx].iDistance = iDist;
+    pCur->a[idx].iScore = iScore;
+    pCur->a[idx].iMatchlen = iMatchlen;
+    memcpy(pCur->a[idx].zHash, zHash1, iScope+1);
+    if( pCur->nRow<pCur->nAlloc ) pCur->nRow++;
+    if( pCur->nRow==pCur->nAlloc ){
+      iWorst = pCur->a[0].iScore;
+      idxWorst = 0;
+      for(i=1; i<pCur->nRow; i++){
+        iScore = pCur->a[i].iScore;
+        if( iWorst<iScore ){
+          iWorst = iScore;
+          idxWorst = i;
+        }
+      }
+    }
+  }
+  rc = sqlite3_reset(pStmt);
+  if( rc ) p->rc = rc;
+}
+
+/*
 ** This version of the xFilter method work if the MATCH term is present
 ** and we are doing a scan.
 */
@@ -1570,19 +2345,31 @@ static int spellfix1FilterForMatch(
   int argc,
   sqlite3_value **argv
 ){
-  const unsigned char *zPatternIn;
-  char *zPattern;
-  int nPattern;
-  char *zClass;
-  int nClass;
-  int iLimit = 20;
-  int iScope = 4;
-  int iLang = 0;
-  char *zSql;
-  int rc;
-  sqlite3_stmt *pStmt;
-  int idx = 1;
-  spellfix1_vtab *p = pCur->pVTab;
+  const unsigned char *zMatchThis;   /* RHS of the MATCH operator */
+  EditDist3FromString *pMatchStr3 = 0; /* zMatchThis as an editdist string */
+  char *zPattern;                    /* Transliteration of zMatchThis */
+  int nPattern;                      /* Length of zPattern */
+  int iLimit = 20;                   /* Max number of rows of output */
+  int iScope = 3;                    /* Use this many characters of zClass */
+  int iLang = 0;                     /* Language code */
+  char *zSql;                        /* SQL of shadow table query */
+  sqlite3_stmt *pStmt = 0;           /* Shadow table query */
+  int rc;                            /* Result code */
+  int idx = 1;                       /* Next available filter parameter */
+  spellfix1_vtab *p = pCur->pVTab;   /* The virtual table that owns pCur */
+  MatchQuery x;                      /* For passing info to RunQuery() */
+
+  /* Load the cost table if we have not already done so */
+  if( p->zCostTable!=0 && p->pConfig3==0 ){
+    p->pConfig3 = sqlite3_malloc( sizeof(p->pConfig3[0]) );
+    if( p->pConfig3==0 ) return SQLITE_NOMEM;
+    memset(p->pConfig3, 0, sizeof(p->pConfig3[0]));
+    rc = editDist3ConfigLoad(p->pConfig3, p->db, p->zCostTable);
+    if( rc ) return rc;
+  }
+  memset(&x, 0, sizeof(x));
+  x.iScope = 3;  /* Default scope if none specified by "WHERE scope=N" */
+  x.iMaxDist = -1;   /* Maximum allowed edit distance */
 
   if( idxNum&2 ){
     iLang = sqlite3_value_int(argv[idx++]);
@@ -1592,83 +2379,76 @@ static int spellfix1FilterForMatch(
     if( iLimit<1 ) iLimit = 1;
   }
   if( idxNum&8 ){
-    iScope = sqlite3_value_int(argv[idx++]);
-    if( iScope<1 ) iScope = 1;
+    x.iScope = sqlite3_value_int(argv[idx++]);
+    if( x.iScope<1 ) x.iScope = 1;
+    if( x.iScope>SPELLFIX_MX_HASH-2 ) x.iScope = SPELLFIX_MX_HASH-2;
   }
-  spellfix1ResetCursor(pCur, iLimit);
-  zPatternIn = sqlite3_value_text(argv[0]);
-  if( zPatternIn==0 ) return SQLITE_OK;
-  zPattern = (char*)transliterate(zPatternIn, sqlite3_value_bytes(argv[0]));
-  if( zPattern==0 ) return SQLITE_NOMEM;
+  if( idxNum&(16|32) ){
+    x.iMaxDist = sqlite3_value_int(argv[idx++]);
+    if( idxNum&16 ) x.iMaxDist--;
+    if( x.iMaxDist<0 ) x.iMaxDist = 0;
+  }
+  spellfix1ResetCursor(pCur);
+  spellfix1ResizeCursor(pCur, iLimit);
+  zMatchThis = sqlite3_value_text(argv[0]);
+  if( zMatchThis==0 ) return SQLITE_OK;
+  if( p->pConfig3 ){
+    x.pLang = editDist3FindLang(p->pConfig3, iLang);
+    pMatchStr3 = editDist3FromStringNew(x.pLang, (const char*)zMatchThis, -1);
+    if( pMatchStr3==0 ){
+      x.rc = SQLITE_NOMEM;
+      goto filter_exit;
+    }
+  }else{
+    x.pLang = 0;
+  }
+  zPattern = (char*)transliterate(zMatchThis, sqlite3_value_bytes(argv[0]));
+  sqlite3_free(pCur->zPattern);
+  pCur->zPattern = zPattern;
+  if( zPattern==0 ){
+    x.rc = SQLITE_NOMEM;
+    goto filter_exit;
+  }
   nPattern = strlen(zPattern);
   if( zPattern[nPattern-1]=='*' ) nPattern--;
-  if( nPattern<iScope ) iScope = nPattern;
-  zClass = (char*)characterClassString((unsigned char*)zPattern,
-                                       strlen(zPattern));
-  nClass = strlen(zClass);
-  if( nClass>iScope ){
-    zClass[iScope] = 0;
-    nClass = iScope;
-  }
   zSql = sqlite3_mprintf(
      "SELECT id, word, rank, k1"
      "  FROM \"%w\".\"%w_vocab\""
-     " WHERE langid=%d AND k2 GLOB '%q*'",
-     p->zDbName, p->zTableName, iLang, zClass
+     " WHERE langid=%d AND k2>=?1 AND k2<?2",
+     p->zDbName, p->zTableName, iLang
   );
+  if( zSql==0 ){
+    x.rc = SQLITE_NOMEM;
+    pStmt = 0;
+    goto filter_exit;
+  }
   rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
   sqlite3_free(zSql);
-  if( rc==SQLITE_OK ){
-    const char *zK1;
-    int iDist;
-    int iRank;
-    int iScore;
-    int iWorst = 999999999;
-    int idx;
-    int idxWorst;
-    int i;
-
-    while( sqlite3_step(pStmt)==SQLITE_ROW ){
-      zK1 = (const char*)sqlite3_column_text(pStmt, 3);
-      if( zK1==0 ) continue;
-      pCur->nSearch++;
-      iRank = sqlite3_column_int(pStmt, 2);
-      iDist = editdist(zPattern, zK1);
-      iScore = spellfix1Score(iDist,iRank);
-      if( pCur->nRow<pCur->nAlloc ){
-        idx = pCur->nRow;
-      }else if( iScore<iWorst ){
-        idx = idxWorst;
-        sqlite3_free(pCur->a[idx].zWord);
-      }else{
-        continue;
-      }
-      pCur->a[idx].zWord = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 1));
-      pCur->a[idx].iRowid = sqlite3_column_int64(pStmt, 0);
-      pCur->a[idx].iRank = iRank;
-      pCur->a[idx].iDistance = iDist;
-      pCur->a[idx].iScore = iScore;
-      if( pCur->nRow<pCur->nAlloc ) pCur->nRow++;
-      if( pCur->nRow==pCur->nAlloc ){
-        iWorst = pCur->a[0].iScore;
-        idxWorst = 0;
-        for(i=1; i<pCur->nRow; i++){
-          iScore = pCur->a[i].iScore;
-          if( iWorst<iScore ){
-            iWorst = iScore;
-            idxWorst = i;
-          }
-        }
-      }
-    }
+  pCur->iLang = iLang;
+  x.pCur = pCur;
+  x.pStmt = pStmt;
+  x.zPattern = zPattern;
+  x.nPattern = nPattern;
+  x.pMatchStr3 = pMatchStr3;
+  x.iLang = iLang;
+  x.rc = rc;
+  x.pConfig3 = p->pConfig3;
+  if( x.rc==SQLITE_OK ){
+    spellfix1RunQuery(&x, zPattern, nPattern);
   }
-  qsort(pCur->a, pCur->nRow, sizeof(pCur->a[0]), spellfix1RowCompare);
-  pCur->iTop = iLimit;
-  pCur->iScope = iScope;
+
+  if( pCur->a ){
+    qsort(pCur->a, pCur->nRow, sizeof(pCur->a[0]), spellfix1RowCompare);
+    pCur->iTop = iLimit;
+    pCur->iScope = iScope;
+  }else{
+    x.rc = SQLITE_NOMEM;
+  }
+
+filter_exit:
   sqlite3_finalize(pStmt);
-  sqlite3_free(zPattern);
-  sqlite3_free(zClass);
-  return SQLITE_OK;
+  editDist3FromStringDelete(pMatchStr3);
+  return x.rc;
 }
 
 /*
@@ -1680,8 +2460,25 @@ static int spellfix1FilterForFullScan(
   int argc,
   sqlite3_value **argv
 ){
-  spellfix1ResetCursor(pCur, 0);
-  return SQLITE_OK;
+  int rc;
+  char *zSql;
+  spellfix1_vtab *pVTab = pCur->pVTab;
+  spellfix1ResetCursor(pCur);
+  zSql = sqlite3_mprintf(
+     "SELECT word, rank, NULL, langid, id FROM \"%w\".\"%w_vocab\"",
+     pVTab->zDbName, pVTab->zTableName);
+  if( zSql==0 ) return SQLITE_NOMEM;
+  rc = sqlite3_prepare_v2(pVTab->db, zSql, -1, &pCur->pFullScan, 0);
+  sqlite3_free(zSql);
+  pCur->nRow = pCur->iRow = 0;
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_step(pCur->pFullScan);
+    if( rc==SQLITE_ROW ){ pCur->iRow = -1; rc = SQLITE_OK; }
+    if( rc==SQLITE_DONE ){ rc = SQLITE_OK; }
+  }else{
+    pCur->iRow = 0;
+  }
+  return rc;
 }
 
 
@@ -1711,7 +2508,14 @@ static int spellfix1Filter(
 */
 static int spellfix1Next(sqlite3_vtab_cursor *cur){
   spellfix1_cursor *pCur = (spellfix1_cursor *)cur;
-  if( pCur->iRow < pCur->nRow ) pCur->iRow++;
+  if( pCur->iRow < pCur->nRow ){
+    if( pCur->pFullScan ){
+      int rc = sqlite3_step(pCur->pFullScan);
+      if( rc!=SQLITE_ROW ) pCur->iRow = pCur->nRow;
+    }else{
+      pCur->iRow++;
+    }
+  }
   return SQLITE_OK;
 }
 
@@ -1726,38 +2530,78 @@ static int spellfix1Eof(sqlite3_vtab_cursor *cur){
 /*
 ** Return columns from the current row.
 */
-static int spellfix1Column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
+static int spellfix1Column(
+  sqlite3_vtab_cursor *cur,
+  sqlite3_context *ctx,
+  int i
+){
   spellfix1_cursor *pCur = (spellfix1_cursor*)cur;
+  if( pCur->pFullScan ){
+    if( i<=SPELLFIX_COL_LANGID ){
+      sqlite3_result_value(ctx, sqlite3_column_value(pCur->pFullScan, i));
+    }else{
+      sqlite3_result_null(ctx);
+    }
+    return SQLITE_OK;
+  }
   switch( i ){
-    case 0: {
+    case SPELLFIX_COL_WORD: {
       sqlite3_result_text(ctx, pCur->a[pCur->iRow].zWord, -1, SQLITE_STATIC);
       break;
     }
-    case 1: {
+    case SPELLFIX_COL_RANK: {
       sqlite3_result_int(ctx, pCur->a[pCur->iRow].iRank);
       break;
     }
-    case 2: {
+    case SPELLFIX_COL_DISTANCE: {
       sqlite3_result_int(ctx, pCur->a[pCur->iRow].iDistance);
       break;
     }
-    case 3: {
+    case SPELLFIX_COL_LANGID: {
       sqlite3_result_int(ctx, pCur->iLang);
       break;
     }
-    case 4: {
+    case SPELLFIX_COL_SCORE: {
       sqlite3_result_int(ctx, pCur->a[pCur->iRow].iScore);
       break;
     }
-    case 5: {
+    case SPELLFIX_COL_MATCHLEN: {
+      int iMatchlen = pCur->a[pCur->iRow].iMatchlen;
+      if( iMatchlen<0 ){
+        int nPattern = strlen(pCur->zPattern);
+        char *zWord = pCur->a[pCur->iRow].zWord;
+        int nWord = strlen(zWord);
+
+        if( nPattern>0 && pCur->zPattern[nPattern-1]=='*' ){
+          char *zTranslit;
+          int res;
+          zTranslit = (char *)transliterate((unsigned char *)zWord, nWord);
+          if( !zTranslit ) return SQLITE_NOMEM;
+          res = editdist1(pCur->zPattern, zTranslit, &iMatchlen);
+          sqlite3_free(zTranslit);
+          if( res<0 ) return SQLITE_NOMEM;
+          iMatchlen = translen_to_charlen(zWord, nWord, iMatchlen);
+        }else{
+          iMatchlen = utf8Charlen(zWord, nWord);
+        }
+      }
+
+      sqlite3_result_int(ctx, iMatchlen);
+      break;
+    }
+    case SPELLFIX_COL_PHONEHASH: {
+      sqlite3_result_text(ctx, pCur->a[pCur->iRow].zHash, -1, SQLITE_STATIC);
+      break;
+    }
+    case SPELLFIX_COL_TOP: {
       sqlite3_result_int(ctx, pCur->iTop);
       break;
     }
-    case 6: {
+    case SPELLFIX_COL_SCOPE: {
       sqlite3_result_int(ctx, pCur->iScope);
       break;
     }
-    case 7: {
+    case SPELLFIX_COL_SRCHCNT: {
       sqlite3_result_int(ctx, pCur->nSearch);
       break;
     }
@@ -1774,7 +2618,11 @@ static int spellfix1Column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i
 */
 static int spellfix1Rowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
   spellfix1_cursor *pCur = (spellfix1_cursor*)cur;
-  *pRowid = pCur->a[pCur->iRow].iRowid;
+  if( pCur->pFullScan ){
+    *pRowid = sqlite3_column_int64(pCur->pFullScan, 4);
+  }else{
+    *pRowid = pCur->a[pCur->iRow].iRowid;
+  }
   return SQLITE_OK;
 }
 
@@ -1799,20 +2647,37 @@ static int spellfix1Update(
                            " WHERE id=%lld",
                   p->zDbName, p->zTableName, rowid);
   }else{
-    const unsigned char *zWord = sqlite3_value_text(argv[2]);
-    int nWord = sqlite3_value_bytes(argv[2]);
-    int iLang = sqlite3_value_int(argv[5]);
-    int iRank = sqlite3_value_int(argv[3]);
-    const unsigned char *zSoundslike = sqlite3_value_text(argv[10]);
-    int nSoundslike = sqlite3_value_bytes(argv[10]);
+    const unsigned char *zWord = sqlite3_value_text(argv[SPELLFIX_COL_WORD+2]);
+    int nWord = sqlite3_value_bytes(argv[SPELLFIX_COL_WORD+2]);
+    int iLang = sqlite3_value_int(argv[SPELLFIX_COL_LANGID+2]);
+    int iRank = sqlite3_value_int(argv[SPELLFIX_COL_RANK+2]);
+    const unsigned char *zSoundslike =
+           sqlite3_value_text(argv[SPELLFIX_COL_SOUNDSLIKE+2]);
+    int nSoundslike = sqlite3_value_bytes(argv[SPELLFIX_COL_SOUNDSLIKE+2]);
     char *zK1, *zK2;
     int i;
     char c;
 
     if( zWord==0 ){
-      pVTab->zErrMsg = sqlite3_mprintf("%w.word may not be NULL",
-                            p->zTableName);
-      return SQLITE_CONSTRAINT;
+      /* Inserts of the form:  INSERT INTO table(command) VALUES('xyzzy');
+      ** cause zWord to be NULL, so we look at the "command" column to see
+      ** what special actions to take */
+      const char *zCmd = 
+         (const char*)sqlite3_value_text(argv[SPELLFIX_COL_COMMAND+2]);
+      if( zCmd==0 ){
+        pVTab->zErrMsg = sqlite3_mprintf("%s.word may not be NULL",
+                                         p->zTableName);
+        return SQLITE_CONSTRAINT;
+      }
+      if( strcmp(zCmd,"reset")==0 ){
+        /* Reset the  edit cost table (if there is one). */
+        editDist3ConfigDelete(p->pConfig3);
+        p->pConfig3 = 0;
+        return SQLITE_OK;
+      }
+      pVTab->zErrMsg = sqlite3_mprintf("unknown value for %s.command: \"%w\"",
+                                       p->zTableName, zCmd);
+      return SQLITE_ERROR;
     }
     if( iRank<1 ) iRank = 1;
     if( zSoundslike ){
@@ -1824,7 +2689,7 @@ static int spellfix1Update(
     for(i=0; (c = zK1[i])!=0; i++){
        if( c>='A' && c<='Z' ) zK1[i] += 'a' - 'A';
     }
-    zK2 = (char*)characterClassString((const unsigned char*)zK1, i);
+    zK2 = (char*)phoneticHash((const unsigned char*)zK1, i);
     if( zK2==0 ){
       sqlite3_free(zK1);
       return SQLITE_NOMEM;
@@ -1841,8 +2706,8 @@ static int spellfix1Update(
       rowid = sqlite3_value_int64(argv[0]);
       newRowid = *pRowid = sqlite3_value_int64(argv[1]);
       spellfix1DbExec(&rc, db,
-             "UPDATE \"%w\".\"%w_vocab\" SET id=%lld, rank=%d, lang=%d,"
-             " word=%Q, rank=%d, k1=%Q, k2=%Q WHERE id=%lld",
+             "UPDATE \"%w\".\"%w_vocab\" SET id=%lld, rank=%d, langid=%d,"
+             " word=%Q, k1=%Q, k2=%Q WHERE id=%lld",
              p->zDbName, p->zTableName, newRowid, iRank, iLang,
              zWord, zK1, zK2, rowid
       );
@@ -1871,6 +2736,8 @@ static int spellfix1Rename(sqlite3_vtab *pVTab, const char *zNew){
   if( rc==SQLITE_OK ){
     sqlite3_free(p->zTableName);
     p->zTableName = zNewName;
+  }else{
+    sqlite3_free(zNewName);
   }
   return rc;
 }
@@ -1912,16 +2779,17 @@ static int spellfix1Register(sqlite3 *db){
                                   transliterateSqlFunc, 0, 0);
   nErr += sqlite3_create_function(db, "spellfix1_editdist", 2, SQLITE_UTF8, 0,
                                   editdistSqlFunc, 0, 0);
-  nErr += sqlite3_create_function(db, "spellfix1_charclass", 1, SQLITE_UTF8, 0,
-                                  characterClassSqlFunc, 0, 0);
+  nErr += sqlite3_create_function(db, "spellfix1_phonehash", 1, SQLITE_UTF8, 0,
+                                  phoneticHashSqlFunc, 0, 0);
   nErr += sqlite3_create_function(db, "spellfix1_scriptcode", 1, SQLITE_UTF8, 0,
                                   scriptCodeSqlFunc, 0, 0);
   nErr += sqlite3_create_module(db, "spellfix1", &spellfix1Module, 0);
+  nErr += editDist3Install(db);
 
   /* Verify sanity of the translit[] table */
   for(i=0; i<sizeof(translit)/sizeof(translit[0])-1; i++){
     assert( translit[i].cFrom<translit[i+1].cFrom );
-  }  
+  }
 
   return nErr ? SQLITE_ERROR : SQLITE_OK;
 }

@@ -126,8 +126,10 @@ set RECOVER [list                                      \
   {1 7 unlock exclusive} {0 1 unlock exclusive}        \
 ]
 set READ [list                                         \
-  {4 1 lock exclusive} {4 1 unlock exclusive}          \
   {4 1 lock shared}    {4 1 unlock shared}             \
+]
+set INITSLOT [list                                     \
+  {4 1 lock exclusive} {4 1 unlock exclusive}          \
 ]
 
 foreach {tn iInsert res wal_index_hdr_mod wal_locks} "
@@ -141,7 +143,7 @@ foreach {tn iInsert res wal_index_hdr_mod wal_locks} "
          9   12   {12 78}   7             {$RECOVER $READ}
         10   13   {13 91}   8             {$RECOVER $READ}
         11   14   {14 105}  9             {$RECOVER $READ}
-        12   15   {15 120}  -1            {$READ}
+        12   15   {15 120}  -1            {$INITSLOT $READ}
 " {
 
   do_test wal2-1.$tn.1 {

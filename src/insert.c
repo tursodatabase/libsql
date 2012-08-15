@@ -597,7 +597,7 @@ void sqlite3Insert(
     VdbeComment((v, "SELECT eof flag"));
     sqlite3SelectDestInit(&dest, SRT_Coroutine, ++pParse->nMem);
     addrSelect = sqlite3VdbeCurrentAddr(v)+2;
-    sqlite3VdbeAddOp2(v, OP_Integer, addrSelect-1, dest.iParm);
+    sqlite3VdbeAddOp2(v, OP_Integer, addrSelect-1, dest.iSDParm);
     j1 = sqlite3VdbeAddOp2(v, OP_Goto, 0, 0);
     VdbeComment((v, "Jump over SELECT coroutine"));
 
@@ -608,15 +608,15 @@ void sqlite3Insert(
       goto insert_cleanup;
     }
     sqlite3VdbeAddOp2(v, OP_Integer, 1, regEof);         /* EOF <- 1 */
-    sqlite3VdbeAddOp1(v, OP_Yield, dest.iParm);   /* yield X */
+    sqlite3VdbeAddOp1(v, OP_Yield, dest.iSDParm);   /* yield X */
     sqlite3VdbeAddOp2(v, OP_Halt, SQLITE_INTERNAL, OE_Abort);
     VdbeComment((v, "End of SELECT coroutine"));
     sqlite3VdbeJumpHere(v, j1);                          /* label B: */
 
-    regFromSelect = dest.iMem;
+    regFromSelect = dest.iSdst;
     assert( pSelect->pEList );
     nColumn = pSelect->pEList->nExpr;
-    assert( dest.nMem==nColumn );
+    assert( dest.nSdst==nColumn );
 
     /* Set useTempTable to TRUE if the result of the SELECT statement
     ** should be written into a temporary table (template 4).  Set to
@@ -652,7 +652,7 @@ void sqlite3Insert(
       regRec = sqlite3GetTempReg(pParse);
       regTempRowid = sqlite3GetTempReg(pParse);
       sqlite3VdbeAddOp2(v, OP_OpenEphemeral, srcTab, nColumn);
-      addrTop = sqlite3VdbeAddOp1(v, OP_Yield, dest.iParm);
+      addrTop = sqlite3VdbeAddOp1(v, OP_Yield, dest.iSDParm);
       addrIf = sqlite3VdbeAddOp1(v, OP_If, regEof);
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regFromSelect, nColumn, regRec);
       sqlite3VdbeAddOp2(v, OP_NewRowid, srcTab, regTempRowid);
@@ -789,7 +789,7 @@ void sqlite3Insert(
     **         goto C
     **      D: ...
     */
-    addrCont = sqlite3VdbeAddOp1(v, OP_Yield, dest.iParm);
+    addrCont = sqlite3VdbeAddOp1(v, OP_Yield, dest.iSDParm);
     addrInsTop = sqlite3VdbeAddOp1(v, OP_If, regEof);
   }
 

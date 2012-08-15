@@ -1,0 +1,150 @@
+# 2012 July 12
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix spellfix
+
+ifcapable !vtab { finish_test ; return }
+
+register_spellfix_module db
+
+set vocab {
+rabbi rabbit rabbits rabble rabid rabies raccoon raccoons race raced racer
+racers races racetrack racial racially racing rack racked racket racketeer
+racketeering racketeers rackets racking racks radar radars radial radially
+radian radiance radiant radiantly radiate radiated radiates radiating radiation
+radiations radiator radiators radical radically radicals radices radii radio
+radioactive radioastronomy radioed radiography radioing radiology radios radish
+radishes radium radius radix radon raft rafter rafters rafts rag rage raged
+rages ragged raggedly raggedness raging rags ragweed raid raided raider raiders
+raiding raids rail railed railer railers railing railroad railroaded railroader
+railroaders railroading railroads rails railway railways raiment rain rainbow
+raincoat raincoats raindrop raindrops rained rainfall rainier rainiest raining
+rains rainstorm rainy raise raised raiser raisers raises raisin raising rake
+raked rakes raking rallied rallies rally rallying ram ramble rambler rambles
+rambling ramblings ramification ramifications ramp rampage rampant rampart
+ramps ramrod rams ran ranch ranched rancher ranchers ranches ranching rancid
+random randomization randomize randomized randomizes randomly randomness randy
+rang range ranged rangeland ranger rangers ranges ranging rangy rank ranked
+ranker rankers rankest ranking rankings rankle rankly rankness ranks ransack
+ransacked ransacking ransacks ransom ransomer ransoming ransoms rant ranted
+ranter ranters ranting rants rap rapacious rape raped raper rapes rapid
+rapidity rapidly rapids rapier raping rapport rapprochement raps rapt raptly
+rapture raptures rapturous rare rarely rareness rarer rarest rarity rascal
+rascally rascals rash rasher rashly rashness rasp raspberry rasped rasping
+rasps raster rat rate rated rater raters rates rather ratification ratified
+ratifies ratify ratifying rating ratings ratio ration rational rationale
+rationales rationalities rationality rationalization rationalizations
+rationalize rationalized rationalizes rationalizing rationally rationals
+rationing rations ratios rats rattle rattled rattler rattlers rattles
+rattlesnake rattlesnakes rattling raucous ravage ravaged ravager ravagers
+ravages ravaging rave raved raven ravening ravenous ravenously ravens raves
+ravine ravines raving ravings raw rawer rawest rawly rawness ray rays raze
+razor razors re reabbreviate reabbreviated reabbreviates reabbreviating reach
+reachability reachable reachably reached reacher reaches reaching reacquired
+react reacted reacting reaction reactionaries reactionary reactions reactivate
+reactivated reactivates reactivating reactivation reactive reactively
+reactivity reactor reactors reacts read readability readable reader readers
+readied readier readies readiest readily readiness reading readings readjusted
+readout readouts reads ready readying real realest realign realigned realigning
+realigns realism realist realistic realistically realists realities reality
+}
+
+do_test 1.1 {
+  execsql { CREATE VIRTUAL TABLE t1 USING spellfix1 }
+  foreach word $vocab {
+    execsql { INSERT INTO t1(word) VALUES($word) }
+  }
+} {}
+
+foreach {tn word res} {
+  1   raxpi*     {rasping 5 rasped 5 raspberry 6 rasp 4 rasps 4}
+  2   ril*       {rail 4 railway 4 railing 4 rails 4 railways 4}
+  3   rilis*     {realist 6 realistic 6 realistically 6 realists 6 realism 6}
+  4   reail*     {realities 3 reality 3 real 3 realest 3 realist 3}
+  5   ras*       {rasp 3 rash 3 rasped 3 rasping 3 rasps 3}
+  6   realistss* {realists 8 realigns 8 realistic 9 realistically 9 realest 7}
+  7   realistss  {realists 8 realist 7 realigns 8 realistic 9 realest 7}
+  8   rllation*  {realities 9 reality 7 rallied 7 railed 4}
+  9   renstom*   {rainstorm 8 ransomer 6 ransom 6 ransoming 6 ransoms 6}
+} {
+  do_execsql_test 1.2.$tn {
+    SELECT word, matchlen FROM t1 WHERE word MATCH $word LIMIT 5
+  } $res
+}
+
+
+do_execsql_test 2.1 {
+  CREATE VIRTUAL TABLE t2 USING spellfix1;
+  INSERT INTO t2 (word, soundslike) VALUES('school', 'skuul');
+  INSERT INTO t2 (word, soundslike) VALUES('psalm', 'sarm');
+  SELECT word, matchlen FROM t2 WHERE word MATCH 'sar*' LIMIT 5;
+} {psalm 4}
+
+do_execsql_test 2.2 {
+  SELECT word, matchlen FROM t2 WHERE word MATCH 'skol*' LIMIT 5;
+} {school 6}
+
+set vocab {
+kangaroo kanji kappa karate keel keeled keeling keels keen keener keenest
+keenly keenness keep keeper keepers keeping keeps ken kennel kennels kept
+kerchief kerchiefs kern kernel kernels kerosene ketchup kettle
+kettles key keyboard keyboards keyed keyhole keying keynote keypad keypads keys
+keystroke keystrokes keyword keywords kick kicked kicker kickers kicking
+kickoff kicks kid kidded kiddie kidding kidnap kidnapper kidnappers kidnapping
+kidnappings kidnaps kidney kidneys kids kill killed killer killers killing
+killingly killings killjoy kills kilobit kilobits kiloblock kilobyte kilobytes
+kilogram kilograms kilohertz kilohm kilojoule kilometer kilometers kiloton
+kilovolt kilowatt kiloword kimono kin kind kinder kindergarten kindest
+kindhearted kindle kindled kindles kindling kindly kindness kindred kinds
+kinetic king kingdom kingdoms kingly kingpin kings kink kinky kinship kinsman
+kiosk kiss kissed kisser kissers kisses kissing kit kitchen kitchenette
+kitchens kite kited kites kiting kits kitten kittenish kittens kitty klaxon
+kludge kludges klystron knack knapsack knapsacks knave knaves knead kneads knee
+kneecap kneed kneeing kneel kneeled kneeling kneels knees knell knells knelt
+knew knife knifed knifes knifing knight knighted knighthood knighting knightly
+knights knit knits knives knob knobs knock knockdown knocked knocker knockers
+knocking knockout knocks knoll knolls knot knots knotted knotting know knowable
+knower knowhow knowing knowingly knowledge knowledgeable known knows knuckle
+knuckled knuckles koala kosher kudo
+}
+
+do_execsql_test 3.1 {
+  CREATE TABLE costs(iLang, cFrom, cTo, iCost);
+  INSERT INTO costs VALUES(0, 'a', 'e', 1);
+  INSERT INTO costs VALUES(0, 'e', 'i', 1);
+  INSERT INTO costs VALUES(0, 'i', 'o', 1);
+  INSERT INTO costs VALUES(0, 'o', 'u', 1);
+  INSERT INTO costs VALUES(0, 'u', 'a', 1);
+  CREATE VIRTUAL TABLE t3 USING spellfix1(edit_cost_table=costs);
+}
+
+do_test 3.2 {
+  foreach w $vocab {
+    execsql { INSERT INTO t3(word) VALUES($w) }
+  }
+} {}
+
+breakpoint
+foreach {tn word res} {
+  1   kos*     {kosher 3 kiosk 4 kudo 2 kiss 3 kissed 3}
+  2   kellj*   {killjoy 5 kill 4 killed 4 killer 4 killers 4}
+  3   kellj    {kill 4 kills 5 killjoy 7 keel 4 killed 6}
+} {
+  do_execsql_test 1.2.$tn {
+    SELECT word, matchlen FROM t3 WHERE word MATCH $word
+     ORDER BY score, word LIMIT 5
+  } $res
+} 
+
+finish_test

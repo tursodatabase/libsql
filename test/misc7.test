@@ -377,7 +377,7 @@ do_test misc7-16.X {
 # These tests do not work on windows due to restrictions in the
 # windows file system.
 #
-if {$tcl_platform(platform)!="windows" && $tcl_platform(platform)!="os2"} {
+if {$tcl_platform(platform)!="windows"} {
 
   # Some network filesystems (ex: AFP) do not support setting read-only
   # permissions.  Only run these tests if full unix permission setting

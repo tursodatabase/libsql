@@ -61,8 +61,8 @@ LIBOBJ+= alter.o analyze.o attach.o auth.o \
          icu.o insert.o journal.o legacy.o loadext.o \
          main.o malloc.o mem0.o mem1.o mem2.o mem3.o mem5.o \
          memjournal.o \
-         mutex.o mutex_noop.o mutex_os2.o mutex_unix.o mutex_w32.o \
-         notify.o opcodes.o os.o os_os2.o os_unix.o os_win.o \
+         mutex.o mutex_noop.o mutex_unix.o mutex_w32.o \
+         notify.o opcodes.o os.o os_unix.o os_win.o \
          pager.o parse.o pcache.o pcache1.o pragma.o prepare.o printf.o \
          random.o resolve.o rowset.o rtree.o select.o status.o \
          table.o tokenize.o trigger.o \
@@ -114,14 +114,12 @@ SRC = \
   $(TOP)/src/mutex.c \
   $(TOP)/src/mutex.h \
   $(TOP)/src/mutex_noop.c \
-  $(TOP)/src/mutex_os2.c \
   $(TOP)/src/mutex_unix.c \
   $(TOP)/src/mutex_w32.c \
   $(TOP)/src/notify.c \
   $(TOP)/src/os.c \
   $(TOP)/src/os.h \
   $(TOP)/src/os_common.h \
-  $(TOP)/src/os_os2.c \
   $(TOP)/src/os_unix.c \
   $(TOP)/src/os_win.c \
   $(TOP)/src/pager.c \
@@ -283,7 +281,6 @@ TESTSRC2 = \
   $(TOP)/src/wal.c \
   $(TOP)/src/mem5.c \
   $(TOP)/src/os.c \
-  $(TOP)/src/os_os2.c \
   $(TOP)/src/os_unix.c \
   $(TOP)/src/os_win.c \
   $(TOP)/src/pager.c \
@@ -622,3 +619,4 @@ clean:
 	rm -f threadtest3 threadtest3.exe
 	rm -f sqlite3.c fts?amal.c tclsqlite3.c
 	rm -f sqlite3_analyzer sqlite3_analyzer.exe sqlite3_analyzer.c
+	rm -f sqlite-output.vsix

@@ -172,8 +172,8 @@ LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
          icu.lo insert.lo journal.lo legacy.lo loadext.lo \
          main.lo malloc.lo mem0.lo mem1.lo mem2.lo mem3.lo mem5.lo \
          memjournal.lo \
-         mutex.lo mutex_noop.lo mutex_os2.lo mutex_unix.lo mutex_w32.lo \
-         notify.lo opcodes.lo os.lo os_os2.lo os_unix.lo os_win.lo \
+         mutex.lo mutex_noop.lo mutex_unix.lo mutex_w32.lo \
+         notify.lo opcodes.lo os.lo os_unix.lo os_win.lo \
          pager.lo parse.lo pcache.lo pcache1.lo pragma.lo prepare.lo printf.lo \
          random.lo resolve.lo rowset.lo rtree.lo select.lo status.lo \
          table.lo tokenize.lo trigger.lo \
@@ -232,14 +232,12 @@ SRC = \
   $(TOP)/src/mutex.c \
   $(TOP)/src/mutex.h \
   $(TOP)/src/mutex_noop.c \
-  $(TOP)/src/mutex_os2.c \
   $(TOP)/src/mutex_unix.c \
   $(TOP)/src/mutex_w32.c \
   $(TOP)/src/notify.c \
   $(TOP)/src/os.c \
   $(TOP)/src/os.h \
   $(TOP)/src/os_common.h \
-  $(TOP)/src/os_os2.c \
   $(TOP)/src/os_unix.c \
   $(TOP)/src/os_win.c \
   $(TOP)/src/pager.c \
@@ -402,7 +400,6 @@ TESTSRC2 = \
   $(TOP)/src/wal.c \
   $(TOP)/src/mem5.c \
   $(TOP)/src/os.c \
-  $(TOP)/src/os_os2.c \
   $(TOP)/src/os_unix.c \
   $(TOP)/src/os_win.c \
   $(TOP)/src/pager.c \
@@ -657,9 +654,6 @@ mutex.lo:	$(TOP)/src/mutex.c $(HDR)
 mutex_noop.lo:	$(TOP)/src/mutex_noop.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mutex_noop.c
 
-mutex_os2.lo:	$(TOP)/src/mutex_os2.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mutex_os2.c
-
 mutex_unix.lo:	$(TOP)/src/mutex_unix.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mutex_unix.c
 
@@ -686,9 +680,6 @@ os_unix.lo:	$(TOP)/src/os_unix.c $(HDR)
 
 os_win.lo:	$(TOP)/src/os_win.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/os_win.c
-
-os_os2.lo:	$(TOP)/src/os_os2.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/os_os2.c
 
 pragma.lo:	$(TOP)/src/pragma.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/pragma.c
@@ -950,6 +941,7 @@ clean:
 	rm -f sqlite3.dll sqlite3.lib sqlite3.exp sqlite3.def
 	rm -f sqlite3.c
 	rm -f sqlite3_analyzer$(TEXE) sqlite3_analyzer.c
+	rm -f sqlite-output.vsix
 
 distclean:	clean
 	rm -f config.log config.status libtool Makefile sqlite3.pc

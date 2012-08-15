@@ -149,6 +149,7 @@
 **
 **     SQLITE_SYSTEM_MALLOC          // Use normal system malloc()
 **     SQLITE_WIN32_MALLOC           // Use Win32 native heap API
+**     SQLITE_ZERO_MALLOC            // Use a stub allocator that always fails
 **     SQLITE_MEMDEBUG               // Debugging version of system malloc()
 **
 ** On Windows, if the SQLITE_WIN32_MALLOC_VALIDATE macro is defined and the
@@ -162,11 +163,19 @@
 ** If none of the above are defined, then set SQLITE_SYSTEM_MALLOC as
 ** the default.
 */
-#if defined(SQLITE_SYSTEM_MALLOC)+defined(SQLITE_WIN32_MALLOC)+defined(SQLITE_MEMDEBUG)>1
-# error "At most one of the following compile-time configuration options\
- is allows: SQLITE_SYSTEM_MALLOC, SQLITE_WIN32_MALLOC, SQLITE_MEMDEBUG"
+#if defined(SQLITE_SYSTEM_MALLOC) \
+  + defined(SQLITE_WIN32_MALLOC) \
+  + defined(SQLITE_ZERO_MALLOC) \
+  + defined(SQLITE_MEMDEBUG)>1
+# error "Two or more of the following compile-time configuration options\
+ are defined but at most one is allowed:\
+ SQLITE_SYSTEM_MALLOC, SQLITE_WIN32_MALLOC, SQLITE_MEMDEBUG,\
+ SQLITE_ZERO_MALLOC"
 #endif
-#if defined(SQLITE_SYSTEM_MALLOC)+defined(SQLITE_WIN32_MALLOC)+defined(SQLITE_MEMDEBUG)==0
+#if defined(SQLITE_SYSTEM_MALLOC) \
+  + defined(SQLITE_WIN32_MALLOC) \
+  + defined(SQLITE_ZERO_MALLOC) \
+  + defined(SQLITE_MEMDEBUG)==0
 # define SQLITE_SYSTEM_MALLOC 1
 #endif
 
@@ -982,6 +991,7 @@ struct sqlite3 {
 #define SQLITE_MAGIC_SICK     0x4b771290  /* Error and awaiting close */
 #define SQLITE_MAGIC_BUSY     0xf03b7906  /* Database currently in use */
 #define SQLITE_MAGIC_ERROR    0xb5357930  /* An SQLITE_MISUSE error occurred */
+#define SQLITE_MAGIC_ZOMBIE   0x64cffc7f  /* Close with last statement close */
 
 /*
 ** Each SQL function is defined by an instance of the following
@@ -2116,10 +2126,10 @@ struct Select {
 typedef struct SelectDest SelectDest;
 struct SelectDest {
   u8 eDest;         /* How to dispose of the results */
-  u8 affinity;      /* Affinity used when eDest==SRT_Set */
-  int iParm;        /* A parameter used by the eDest disposal method */
-  int iMem;         /* Base register where results are written */
-  int nMem;         /* Number of registers allocated */
+  u8 affSdst;       /* Affinity used when eDest==SRT_Set */
+  int iSDParm;      /* A parameter used by the eDest disposal method */
+  int iSdst;        /* Base register where results are written */
+  int nSdst;        /* Number of registers allocated */
 };
 
 /*
@@ -2319,6 +2329,8 @@ struct AuthContext {
 #define OPFLAG_ISNOOP        0x40    /* OP_Delete does pre-update-hook only */
 #define OPFLAG_LENGTHARG     0x40    /* OP_Column only used for length() */
 #define OPFLAG_TYPEOFARG     0x80    /* OP_Column only used for typeof() */
+#define OPFLAG_BULKCSR       0x01    /* OP_Open** used to open bulk cursor */
+#define OPFLAG_P2ISREG       0x02    /* P2 to OP_Open** is a register number */
 
 /*
  * Each trigger present in the database schema is stored as an instance of
@@ -2847,6 +2859,7 @@ void sqlite3CommitTransaction(Parse*);
 void sqlite3RollbackTransaction(Parse*);
 void sqlite3Savepoint(Parse*, int, Token*);
 void sqlite3CloseSavepoints(sqlite3 *);
+void sqlite3LeaveMutexAndCloseZombie(sqlite3*);
 int sqlite3ExprIsConstant(Expr*);
 int sqlite3ExprIsConstantNotJoin(Expr*);
 int sqlite3ExprIsConstantOrFunction(Expr*);

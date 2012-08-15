@@ -176,7 +176,7 @@ static void openStatTable(
           "CREATE TABLE %Q.%s(%s)", pDb->zName, zTab, aTable[i].zCols
       );
       aRoot[i] = pParse->regRoot;
-      aCreateTbl[i] = 1;
+      aCreateTbl[i] = OPFLAG_P2ISREG;
     }else{
       /* The table already exists. If zWhere is not NULL, delete all entries 
       ** associated with the table zWhere. If zWhere is NULL, delete the
@@ -256,12 +256,11 @@ static void stat3Init(
   nRow = (tRowcnt)sqlite3_value_int64(argv[0]);
   mxSample = sqlite3_value_int(argv[1]);
   n = sizeof(*p) + sizeof(p->a[0])*mxSample;
-  p = sqlite3_malloc( n );
+  p = sqlite3MallocZero( n );
   if( p==0 ){
     sqlite3_result_error_nomem(context);
     return;
   }
-  memset(p, 0, n);
   p->a = (struct Stat3Sample*)&p[1];
   p->nRow = nRow;
   p->mxSample = mxSample;

@@ -81,6 +81,7 @@ struct Testvfs {
   Tcl_Obj *pScript;               /* Script to execute */
   TestvfsBuffer *pBuffer;         /* List of shared buffers */
   int isNoshm;
+  int isFullshm;
 
   int mask;                       /* Mask controlling [script] and [ioerr] */
 
@@ -360,7 +361,8 @@ static int tvfsWrite(
 
   if( p->pScript && p->mask&TESTVFS_WRITE_MASK ){
     tvfsExecTcl(p, "xWrite", 
-        Tcl_NewStringObj(pFd->zFilename, -1), pFd->pShmId, 0
+        Tcl_NewStringObj(pFd->zFilename, -1), pFd->pShmId, 
+        Tcl_NewWideIntObj(iOfst)
     );
     tvfsResultCode(p, &rc);
   }
@@ -760,6 +762,7 @@ static int tvfsShmOpen(sqlite3_file *pFile){
 
   pFd = tvfsGetFd(pFile);
   p = (Testvfs *)pFd->pVfs->pAppData;
+  assert( 0==p->isFullshm );
   assert( pFd->pShmId && pFd->pShm==0 && pFd->pNext==0 );
 
   /* Evaluate the Tcl script: 
@@ -820,6 +823,10 @@ static int tvfsShmMap(
   TestvfsFd *pFd = tvfsGetFd(pFile);
   Testvfs *p = (Testvfs *)(pFd->pVfs->pAppData);
 
+  if( p->isFullshm ){
+    return sqlite3OsShmMap(pFd->pReal, iPage, pgsz, isWrite, pp);
+  }
+
   if( 0==pFd->pShm ){
     rc = tvfsShmOpen(pFile);
     if( rc!=SQLITE_OK ){
@@ -863,6 +870,10 @@ static int tvfsShmLock(
   Testvfs *p = (Testvfs *)(pFd->pVfs->pAppData);
   int nLock;
   char zLock[80];
+
+  if( p->isFullshm ){
+    return sqlite3OsShmLock(pFd->pReal, ofst, n, flags);
+  }
 
   if( p->pScript && p->mask&TESTVFS_SHMLOCK_MASK ){
     sqlite3_snprintf(sizeof(zLock), zLock, "%d %d", ofst, n);
@@ -919,6 +930,11 @@ static void tvfsShmBarrier(sqlite3_file *pFile){
   TestvfsFd *pFd = tvfsGetFd(pFile);
   Testvfs *p = (Testvfs *)(pFd->pVfs->pAppData);
 
+  if( p->isFullshm ){
+    sqlite3OsShmBarrier(pFd->pReal);
+    return;
+  }
+
   if( p->pScript && p->mask&TESTVFS_SHMBARRIER_MASK ){
     tvfsExecTcl(p, "xShmBarrier", 
         Tcl_NewStringObj(pFd->pShm->zFile, -1), pFd->pShmId, 0
@@ -935,6 +951,10 @@ static int tvfsShmUnmap(
   Testvfs *p = (Testvfs *)(pFd->pVfs->pAppData);
   TestvfsBuffer *pBuffer = pFd->pShm;
   TestvfsFd **ppFd;
+
+  if( p->isFullshm ){
+    return sqlite3OsShmUnmap(pFd->pReal, deleteFlag);
+  }
 
   if( !pBuffer ) return SQLITE_OK;
   assert( pFd->pShmId && pFd->pShm );
@@ -1350,6 +1370,7 @@ static int testvfs_cmd(
 
   int i;
   int isNoshm = 0;                /* True if -noshm is passed */
+  int isFullshm = 0;              /* True if -fullshm is passed */
   int isDefault = 0;              /* True if -default is passed */
   int szOsFile = 0;               /* Value passed to -szosfile */
   int mxPathname = -1;            /* Value passed to -mxpathname */
@@ -1365,6 +1386,7 @@ static int testvfs_cmd(
       if( Tcl_GetBooleanFromObj(interp, objv[i+1], &isNoshm) ){
         return TCL_ERROR;
       }
+      if( isNoshm ) isFullshm = 0;
     }
     else if( nSwitch>2 && 0==strncmp("-default", zSwitch, nSwitch) ){
       if( Tcl_GetBooleanFromObj(interp, objv[i+1], &isDefault) ){
@@ -1385,6 +1407,12 @@ static int testvfs_cmd(
       if( Tcl_GetIntFromObj(interp, objv[i+1], &iVersion) ){
         return TCL_ERROR;
       }
+    }
+    else if( nSwitch>2 && 0==strncmp("-fullshm", zSwitch, nSwitch) ){
+      if( Tcl_GetBooleanFromObj(interp, objv[i+1], &isFullshm) ){
+        return TCL_ERROR;
+      }
+      if( isFullshm ) isNoshm = 0;
     }
     else{
       goto bad_args;
@@ -1427,6 +1455,7 @@ static int testvfs_cmd(
   pVfs->szOsFile = szOsFile;
   p->pVfs = pVfs;
   p->isNoshm = isNoshm;
+  p->isFullshm = isFullshm;
   p->mask = TESTVFS_ALL_MASK;
 
   sqlite3_vfs_register(pVfs, isDefault);

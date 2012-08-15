@@ -655,7 +655,7 @@ T filter xShmLock
 T script lock_callback
 
 proc lock_callback {method file handle spec} {
-  if {$spec == "4 1 unlock exclusive"} {
+  if {$spec == "1 7 unlock exclusive"} {
     T filter {}
     set ::r [catchsql { SELECT * FROM b } db2]
   }

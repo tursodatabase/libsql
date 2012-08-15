@@ -312,7 +312,7 @@ ifcapable floatingpoint {
     execsql {SELECT round(9999999999999.55,1);}
   } {9999999999999.6}
   do_test func-4.38 {
-    execsql {SELECT round(9999999999999.555,2);}
+    execsql {SELECT round(9999999999999.556,2);}
   } {9999999999999.56}
 }
 

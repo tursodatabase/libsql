@@ -218,8 +218,6 @@ proc run_test_suite {name testtarget config} {
 
   if {$::tcl_platform(platform)=="windows"} {
     append opts " -DSQLITE_OS_WIN=1"
-  } elseif {$::tcl_platform(platform)=="os2"} {
-    append opts " -DSQLITE_OS_OS2=1"
   } else {
     append opts " -DSQLITE_OS_UNIX=1"
   }

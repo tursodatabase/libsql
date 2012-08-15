@@ -71,17 +71,11 @@ int sqlite3_finalize(sqlite3_stmt *pStmt){
   }else{
     Vdbe *v = (Vdbe*)pStmt;
     sqlite3 *db = v->db;
-#if SQLITE_THREADSAFE
-    sqlite3_mutex *mutex;
-#endif
     if( vdbeSafety(v) ) return SQLITE_MISUSE_BKPT;
-#if SQLITE_THREADSAFE
-    mutex = v->db->mutex;
-#endif
-    sqlite3_mutex_enter(mutex);
+    sqlite3_mutex_enter(db->mutex);
     rc = sqlite3VdbeFinalize(v);
     rc = sqlite3ApiExit(db, rc);
-    sqlite3_mutex_leave(mutex);
+    sqlite3LeaveMutexAndCloseZombie(db);
   }
   return rc;
 }

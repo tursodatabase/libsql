@@ -15,11 +15,25 @@ USE_AMALGAMATION = 1
 #
 USE_ICU = 0
 
+# Set this non-0 to dynamically link to the MSVC runtime library.
+#
+USE_CRT_DLL = 0
+
+# Set this non-0 to use the native libraries paths for cross-compiling
+# the command line tools needed during the compilation process.
+#
+USE_NATIVE_LIBPATHS = 0
+
 # Set this non-0 to compile binaries suitable for the WinRT environment.
 # This setting does not apply to any binaries that require Tcl to operate
 # properly (i.e. the text fixture, etc).
 #
 FOR_WINRT = 0
+
+# Set this non-0 to skip attempting to look for and/or link with the Tcl
+# runtime library.
+#
+NO_TCL = 0
 
 # Set this to non-0 to create and use PDBs.
 #
@@ -38,26 +52,108 @@ SYMBOLS = 1
 #
 DEBUG = 0
 
-# C Compiler and options for use in building executables that
+# Check for the predefined command macro CC.  This should point to the compiler
+# binary for the target platform.  If it is not defined, simply define it to
+# the legacy default value 'cl.exe'.
+#
+!IFNDEF CC
+CC = cl.exe
+!ENDIF
+
+# Check for the command macro LD.  This should point to the linker binary for
+# the target platform.  If it is not defined, simply define it to the legacy
+# default value 'link.exe'.
+#
+!IFNDEF LD
+LD = link.exe
+!ENDIF
+
+# Check for the command macro NCC.  This should point to the compiler binary
+# for the platform the compilation process is taking place on.  If it is not
+# defined, simply define it to have the same value as the CC macro.  When
+# cross-compiling, it is suggested that this macro be modified via the command
+# line (since nmake itself does not provide a built-in method to guess it).
+# For example, to use the x86 compiler when cross-compiling for x64, a command
+# line similar to the following could be used (all on one line):
+#
+#     nmake /f Makefile.msc
+#           "NCC=""%VCINSTALLDIR%\bin\cl.exe"""
+#           USE_NATIVE_LIBPATHS=1
+#
+!IFDEF NCC
+NCC = $(NCC:\\=\)
+!ELSE
+NCC = $(CC)
+!ENDIF
+
+# Check for the MSVC runtime library path macro.  Othertise, this
+# value will default to the 'lib' directory underneath the MSVC
+# installation directory.
+#
+!IFNDEF NCRTLIBPATH
+NCRTLIBPATH = $(VCINSTALLDIR)\lib
+!ENDIF
+
+NCRTLIBPATH = $(NCRTLIBPATH:\\=\)
+
+# Check for the Platform SDK library path macro.  Othertise, this
+# value will default to the 'lib' directory underneath the Windows
+# SDK installation directory (the environment variable used appears
+# to be available when using Visual C++ 2008 or later via the
+# command line).
+#
+!IFNDEF NSDKLIBPATH
+NSDKLIBPATH = $(WINDOWSSDKDIR)\lib
+!ENDIF
+
+NSDKLIBPATH = $(NSDKLIBPATH:\\=\)
+
+# C compiler and options for use in building executables that
 # will run on the platform that is doing the build.
 #
-BCC = cl.exe -W3
+BCC = $(NCC) -W3
 
-# C Compile and options for use in building executables that
+# Check if the native library paths should be used when compiling
+# the command line tools used during the compilation process.  If
+# so, set the necessary macro now.
+#
+!IF $(USE_NATIVE_LIBPATHS)!=0
+NLTLIBPATHS = "/LIBPATH:$(NCRTLIBPATH)" "/LIBPATH:$(NSDKLIBPATH)"
+!ENDIF
+
+# C compiler and options for use in building executables that
 # will run on the target platform.  (BCC and TCC are usually the
 # same unless your are cross-compiling.)
 #
-TCC = cl.exe -W3 -DSQLITE_OS_WIN=1 -I. -I$(TOP)\src -fp:precise
+TCC = $(CC) -W3 -DSQLITE_OS_WIN=1 -I. -I$(TOP)\src -fp:precise
 
 # When compiling the library for use in the WinRT environment,
 # the following compile-time options must be used as well to
 # disable use of Win32 APIs that are not available and to enable
 # use of Win32 APIs that are specific to Windows 8 and/or WinRT.
-# Also, we need to dynamically link to the MSVC runtime when
-# compiling for WinRT.
 #
 !IF $(FOR_WINRT)!=0
-TCC = $(TCC) -DSQLITE_OS_WINRT=1 -MD
+TCC = $(TCC) -DSQLITE_OS_WINRT=1
+TCC = $(TCC) -DWINAPI_FAMILY=WINAPI_PARTITION_APP
+!ENDIF
+
+# Also, we need to dynamically link to the correct MSVC runtime
+# when compiling for WinRT (e.g. debug or release) OR if the
+# USE_CRT_DLL option is set to force dynamically linking to the
+# MSVC runtime library.
+#
+!IF $(FOR_WINRT)!=0 || $(USE_CRT_DLL)!=0
+!IF $(DEBUG)>0
+TCC = $(TCC) -MDd
+!ELSE
+TCC = $(TCC) -MD
+!ENDIF
+!ELSE
+!IF $(DEBUG)>0
+TCC = $(TCC) -MTd
+!ELSE
+TCC = $(TCC) -MT
+!ENDIF
 !ENDIF
 
 # The mksqlite3c.tcl and mksqlite3h.tcl scripts will pull in
@@ -91,10 +187,17 @@ TCC = $(TCC) -DSQLITE_ENABLE_IOTRACE
 !ENDIF
 
 #
-# Prevent warnings about "insecure" runtime library functions being used.
+# Prevent warnings about "insecure" MSVC runtime library functions
+# being used.
 #
 TCC = $(TCC) -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS
 BCC = $(BCC) -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS
+
+#
+# Prevent warnings about "deprecated" POSIX functions being used.
+#
+TCC = $(TCC) -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_NONSTDC_NO_WARNINGS
+BCC = $(BCC) -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_NONSTDC_NO_WARNINGS
 
 #
 # Use native Win32 heap instead of malloc/free?
@@ -114,43 +217,43 @@ TCC = $(TCC) -DSQLITE_WIN32_MALLOC_VALIDATE=1
 # prior to running nmake in order to match the actual installed location and
 # version on this machine.
 #
-!if "$(TCLINCDIR)" == ""
+!IFNDEF TCLINCDIR
 TCLINCDIR = c:\tcl\include
-!endif
+!ENDIF
 
-!if "$(TCLLIBDIR)" == ""
+!IFNDEF TCLLIBDIR
 TCLLIBDIR = c:\tcl\lib
-!endif
+!ENDIF
 
-!if "$(LIBTCL)" == ""
+!IFNDEF LIBTCL
 LIBTCL = tcl85.lib
-!endif
+!ENDIF
 
 # The locations of the ICU header and library files.  These variables
 # (ICUINCDIR, ICULIBDIR, and LIBICU) may be overridden via the environment
 # prior to running nmake in order to match the actual installed location on
 # this machine.
 #
-!if "$(ICUINCDIR)" == ""
+!IFNDEF ICUINCDIR
 ICUINCDIR = c:\icu\include
-!endif
+!ENDIF
 
-!if "$(ICULIBDIR)" == ""
+!IFNDEF ICULIBDIR
 ICULIBDIR = c:\icu\lib
-!endif
+!ENDIF
 
-!if "$(LIBICU)" == ""
+!IFNDEF LIBICU
 LIBICU = icuuc.lib icuin.lib
-!endif
+!ENDIF
 
 # This is the command to use for tclsh - normally just "tclsh", but we may
 # know the specific version we want to use.  This variable (TCLSH_CMD) may be
 # overridden via the environment prior to running nmake in order to select a
 # specific Tcl shell to use.
 #
-!if "$(TCLSH_CMD)" == ""
+!IFNDEF TCLSH_CMD
 TCLSH_CMD = tclsh85
-!endif
+!ENDIF
 
 # Compiler options needed for programs that use the readline() library.
 #
@@ -170,9 +273,9 @@ TCC = $(TCC) -DSQLITE_THREAD_OVERRIDE_LOCK=-1
 
 # Any target libraries which libsqlite must be linked against
 #
-!if "$(TLIBS)" == ""
+!IFNDEF TLIBS
 TLIBS =
-!endif
+!ENDIF
 
 # Flags controlling use of the in memory btree implementation
 #
@@ -236,7 +339,7 @@ LTLINK = $(TCC) -Fe$@
 # Note that the vcvars*.bat family of batch files typically
 # set this for you.  Otherwise, the linker will attempt
 # to deduce the binary type based on the object files.
-!IF "$(PLATFORM)"!=""
+!IFDEF PLATFORM
 LTLINKOPTS = /MACHINE:$(PLATFORM)
 LTLIBOPTS = /MACHINE:$(PLATFORM)
 !ENDIF
@@ -251,13 +354,14 @@ LTLINKOPTS = $(LTLINKOPTS) /APPCONTAINER
 
 # If either debugging or symbols are enabled, enable PDBs.
 !IF $(DEBUG)>0 || $(SYMBOLS)!=0
-LTLINKOPTS = $(LTLINKOPTS) /DEBUG
-BCC = $(BCC) /DEBUG
+LDFLAGS = /DEBUG
 !ENDIF
 
 # Start with the Tcl related linker options.
+!IF $(NO_TCL)==0
 LTLIBPATHS = /LIBPATH:$(TCLLIBDIR)
 LTLIBS = $(LIBTCL)
+!ENDIF
 
 # If ICU support is enabled, add the linker options for it.
 !IF $(USE_ICU)!=0
@@ -284,8 +388,8 @@ LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
          icu.lo insert.lo journal.lo legacy.lo loadext.lo \
          main.lo malloc.lo mem0.lo mem1.lo mem2.lo mem3.lo mem5.lo \
          memjournal.lo \
-         mutex.lo mutex_noop.lo mutex_os2.lo mutex_unix.lo mutex_w32.lo \
-         notify.lo opcodes.lo os.lo os_os2.lo os_unix.lo os_win.lo \
+         mutex.lo mutex_noop.lo mutex_unix.lo mutex_w32.lo \
+         notify.lo opcodes.lo os.lo os_unix.lo os_win.lo \
          pager.lo parse.lo pcache.lo pcache1.lo pragma.lo prepare.lo printf.lo \
          random.lo resolve.lo rowset.lo rtree.lo select.lo status.lo \
          table.lo tokenize.lo trigger.lo \
@@ -347,14 +451,12 @@ SRC = \
   $(TOP)\src\mutex.c \
   $(TOP)\src\mutex.h \
   $(TOP)\src\mutex_noop.c \
-  $(TOP)\src\mutex_os2.c \
   $(TOP)\src\mutex_unix.c \
   $(TOP)\src\mutex_w32.c \
   $(TOP)\src\notify.c \
   $(TOP)\src\os.c \
   $(TOP)\src\os.h \
   $(TOP)\src\os_common.h \
-  $(TOP)\src\os_os2.c \
   $(TOP)\src\os_unix.c \
   $(TOP)\src\os_win.c \
   $(TOP)\src\pager.c \
@@ -521,7 +623,6 @@ TESTSRC2 = \
   $(TOP)\src\wal.c \
   $(TOP)\src\mem5.c \
   $(TOP)\src\os.c \
-  $(TOP)\src\os_os2.c \
   $(TOP)\src\os_unix.c \
   $(TOP)\src\os_win.c \
   $(TOP)\src\pager.c \
@@ -653,7 +754,7 @@ lempar.c:	$(TOP)\src\lempar.c
 	copy $(TOP)\src\lempar.c .
 
 lemon.exe:	$(TOP)\tool\lemon.c lempar.c
-	$(BCC) -Fe$@ $(TOP)\tool\lemon.c
+	$(BCC) -Daccess=_access -Fe$@ $(TOP)\tool\lemon.c /link $(NLTLIBPATHS)
 
 # Rules to build individual *.lo files from generated *.c files. This
 # applies to:
@@ -771,9 +872,6 @@ mutex.lo:	$(TOP)\src\mutex.c $(HDR)
 mutex_noop.lo:	$(TOP)\src\mutex_noop.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)\src\mutex_noop.c
 
-mutex_os2.lo:	$(TOP)\src\mutex_os2.c $(HDR)
-	$(LTCOMPILE) -c $(TOP)\src\mutex_os2.c
-
 mutex_unix.lo:	$(TOP)\src\mutex_unix.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)\src\mutex_unix.c
 
@@ -800,9 +898,6 @@ os_unix.lo:	$(TOP)\src\os_unix.c $(HDR)
 
 os_win.lo:	$(TOP)\src\os_win.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)\src\os_win.c
-
-os_os2.lo:	$(TOP)\src\os_os2.c $(HDR)
-	$(LTCOMPILE) -c $(TOP)\src\os_os2.c
 
 pragma.lo:	$(TOP)\src\pragma.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)\src\pragma.c
@@ -915,7 +1010,7 @@ sqlite3.h:	$(TOP)\src\sqlite.h.in $(TOP)\manifest.uuid $(TOP)\VERSION
 	$(TCLSH_CMD) $(TOP)\tool\mksqlite3h.tcl $(TOP) > sqlite3.h
 
 mkkeywordhash.exe:	$(TOP)\tool\mkkeywordhash.c
-	$(BCC) -Femkkeywordhash.exe $(OPT_FEATURE_FLAGS) $(OPTS) $(TOP)\tool\mkkeywordhash.c
+	$(BCC) -Fe$@ $(OPT_FEATURE_FLAGS) $(OPTS) $(TOP)\tool\mkkeywordhash.c /link $(NLTLIBPATHS)
 
 keywordhash.h:	$(TOP)\tool\mkkeywordhash.c mkkeywordhash.exe
 	.\mkkeywordhash.exe > keywordhash.h
@@ -1047,6 +1142,7 @@ clean:
 	del /Q sqlite3.dll sqlite3.lib sqlite3.exp sqlite3.def
 	del /Q sqlite3.c
 	del /Q sqlite3_analyzer.exe sqlite3_analyzer.exp sqlite3_analyzer.c
+	del /Q sqlite-output.vsix
 
 #
 # Windows section
@@ -1060,4 +1156,4 @@ sqlite3.def: libsqlite3.lib
 		| sort >> sqlite3.def
 
 sqlite3.dll: $(LIBOBJ) sqlite3.def
-	link $(LTLINKOPTS) $(LTLIBPATHS) /DLL /DEF:sqlite3.def /OUT:$@ $(LIBOBJ) $(LTLIBS) $(TLIBS)
+	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL /DEF:sqlite3.def /OUT:$@ $(LIBOBJ) $(LTLIBS) $(TLIBS)
