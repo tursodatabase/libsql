@@ -105,6 +105,7 @@ struct VdbeSorter {
   int *aTree;                     /* Current state of incremental merge */
   sqlite3_file *pTemp1;           /* PMA file 1 */
   SorterRecord *pRecord;          /* Head of in-memory record list */
+  int nRecord;                    /* Number of elements on the pRecord list */
   UnpackedRecord *pUnpacked;      /* Used to unpack keys */
 };
 
@@ -387,14 +388,14 @@ static void vdbeSorterCompare(
   int bOmitRowid,                 /* Ignore rowid field at end of keys */
   const void *pKey1, int nKey1,   /* Left side of comparison */
   const void *pKey2, int nKey2,   /* Right side of comparison */
-  int *pRes                       /* OUT: Result of comparison */
+  int *pRes,                      /* OUT: Result of comparison */
+  UnpackedRecord *r2              /* Space to hold the unpacked Key2 record */
 ){
   KeyInfo *pKeyInfo = pCsr->pKeyInfo;
-  VdbeSorter *pSorter = pCsr->pSorter;
-  UnpackedRecord *r2 = pSorter->pUnpacked;
   int i;
 
   if( pKey2 ){
+    assert( r2!=0 );
     sqlite3VdbeRecordUnpack(pKeyInfo, nKey2, pKey2, r2);
   }
 
@@ -445,9 +446,9 @@ static int vdbeSorterDoCompare(const VdbeCursor *pCsr, int iOut){
     iRes = i1;
   }else{
     int res;
-    assert( pCsr->pSorter->pUnpacked!=0 );  /* allocated in vdbeSorterMerge() */
     vdbeSorterCompare(
-        pCsr, 0, p1->aKey, p1->nKey, p2->aKey, p2->nKey, &res
+        pCsr, 0, p1->aKey, p1->nKey, p2->aKey, p2->nKey, &res, 
+        pSorter->pUnpacked
     );
     if( res<=0 ){
       iRes = i1;
@@ -547,7 +548,8 @@ static void vdbeSorterMerge(
   const VdbeCursor *pCsr,         /* For pKeyInfo */
   SorterRecord *p1,               /* First list to merge */
   SorterRecord *p2,               /* Second list to merge */
-  SorterRecord **ppOut            /* OUT: Head of merged list */
+  SorterRecord **ppOut,           /* OUT: Head of merged list */
+  UnpackedRecord *pUnpacked       /* Space to hold an unpacked record */
 ){
   SorterRecord *pFinal = 0;
   SorterRecord **pp = &pFinal;
@@ -555,7 +557,8 @@ static void vdbeSorterMerge(
 
   while( p1 && p2 ){
     int res;
-    vdbeSorterCompare(pCsr, 0, p1->pVal, p1->nVal, pVal2, p2->nVal, &res);
+    vdbeSorterCompare(pCsr, 0, p1->pVal, p1->nVal, pVal2, p2->nVal, &res,
+                      pUnpacked);
     if( res<=0 ){
       *pp = p1;
       pp = &p1->pNext;
@@ -574,41 +577,113 @@ static void vdbeSorterMerge(
 }
 
 /*
+** Background sorting task
+*/
+typedef struct SortTask {
+  SorterRecord *pList;          /* List of elements to be sorted */
+  const VdbeCursor *pCsr;       /* Cursor.  Needed for pCur->pKeyInfo */
+  UnpackedRecord *pUnpacked;    /* Space to hold an unpacked key */
+  SorterRecord **apSlot;        /* Temp memory for the merge sort */
+} SortTask;
+
+/*
+** Do a sort in a background thread
+*/
+void *vdbeSorterBackgroundSort(SortTask *pTask){
+  SorterRecord *p = pTask->pList;
+  SorterRecord **a = pTask->apSlot;
+  int i;
+  for(i=0; i<64; i++) a[i] = 0;
+  while( p ){
+    SorterRecord *pNext = p->pNext;
+    p->pNext = 0;
+    for(i=0; a[i]; i++){
+      if( a[i]==0 ) break;
+      vdbeSorterMerge(pTask->pCsr, a[i], p, &p, pTask->pUnpacked);
+      a[i] = 0;
+    }
+    a[i] = p;
+    p = pNext;
+  }
+  p = 0;
+  for(i=0; i<64; i++){
+    vdbeSorterMerge(pTask->pCsr, a[i], p, &p, pTask->pUnpacked);
+  }
+  pTask->pList = p;
+  return p;
+}
+
+/*
+** Divide a linked list of SorterRecord objects into two separate
+** linked lists
+*/
+static void vdbeSorterDivideList(
+  SorterRecord *pIn,       /* The list to be divided */
+  SorterRecord **ppOut1,   /* Write the first list here */
+  SorterRecord **ppOut2    /* Write the second list here */
+){
+  int i = 0;
+  *ppOut1 = *ppOut2 = 0;
+  while( pIn ){
+    SorterRecord *pNext = pIn->pNext;
+    pIn->pNext = 0;
+    if( i & 1 ){
+      *ppOut1 = pIn;
+      ppOut1 = &pIn->pNext;
+    }else{
+      *ppOut2 = pIn;
+      ppOut2 = &pIn->pNext;
+    }
+    i++;
+    pIn = pNext;
+  }
+}
+
+/*
 ** Sort the linked list of records headed at pCsr->pRecord. Return SQLITE_OK
 ** if successful, or an SQLite error code (i.e. SQLITE_NOMEM) if an error
 ** occurs.
 */
 static int vdbeSorterSort(const VdbeCursor *pCsr){
-  int i;
-  SorterRecord **aSlot;
+  int rc;
   SorterRecord *p;
   VdbeSorter *pSorter = pCsr->pSorter;
+  char *pDummy = 0;
+  int nByteA, nByteB;
+  SortTask aTask[2];
+  SQLiteThread *pThread;
 
-  aSlot = (SorterRecord **)sqlite3MallocZero(64 * sizeof(SorterRecord *));
-  if( !aSlot ){
+  nByteA = 64*sizeof(SorterRecord*);
+  nByteB = ROUND8(sizeof(UnpackedRecord));
+  nByteB += sizeof(Mem)*(pCsr->pKeyInfo->nField+1);
+
+  aTask[0].apSlot = (SorterRecord **)sqlite3MallocZero(2*(nByteA + nByteB));
+  if( !aTask[0].apSlot ){
     return SQLITE_NOMEM;
   }
+  aTask[0].pCsr = pCsr;
+  aTask[0].pUnpacked = sqlite3VdbeAllocUnpackedRecord(pCsr->pKeyInfo,
+                          (char*)&aTask[0].apSlot[64], nByteB, &pDummy);
+  assert( pDummy==0 );
+  aTask[1].apSlot = (nByteA+nByteB)+(char*)aTask[0].apSlot;
+  aTask[1].pCsr = pCsr;
+  aTask[1].pUnpacked = sqlite3VdbeAllocUnpackedRecord(pCsr->pKeyInfo,
+                          (char*)&aTask[1].apSlot[64], nByteB, &pDummy);
+  assert( pDummy==0 );
 
-  p = pSorter->pRecord;
-  while( p ){
-    SorterRecord *pNext = p->pNext;
-    p->pNext = 0;
-    for(i=0; aSlot[i]; i++){
-      vdbeSorterMerge(pCsr, p, aSlot[i], &p);
-      aSlot[i] = 0;
-    }
-    aSlot[i] = p;
-    p = pNext;
+  vdbeSorterDivideList(pSorter->pRecord, &aTask[0].pList, &aTask[1].pList);
+  rc = sqlite3ThreadCreate(&pThread, 
+          (void*(*)(void*))vdbeSorterBackgroundSort, &aTask[0]);
+  vdbeSorterBackgroundSort(&aTask[1]);
+  if( rc==SQLITE_NOMEM ){
+    vdbeSorterBackgroundSort(&aTask[0]);
+  }else{
+    rc = sqlite3ThreadJoin(pThread, &pDummy);
   }
-
-  p = 0;
-  for(i=0; i<64; i++){
-    vdbeSorterMerge(pCsr, p, aSlot[i], &p);
-  }
-  pSorter->pRecord = p;
-
-  sqlite3_free(aSlot);
-  return SQLITE_OK;
+  vdbeSorterMerge(pCsr, aTask[0].pList, aTask[1].pList, &pSorter->pRecord,
+                  aTask[0].pUnpacked);
+  sqlite3_free(aTask[0].apSlot);
+  return rc;
 }
 
 /*
@@ -719,6 +794,7 @@ static int vdbeSorterListToPMA(sqlite3 *db, const VdbeCursor *pCsr){
 
   if( pSorter->nInMemory==0 ){
     assert( pSorter->pRecord==0 );
+    assert( pSorter->nRecord==0 );
     return rc;
   }
 
@@ -745,7 +821,8 @@ static int vdbeSorterListToPMA(sqlite3 *db, const VdbeCursor *pCsr){
       fileWriterWrite(&writer, p->pVal, p->nVal);
       sqlite3DbFree(db, p);
     }
-    pSorter->pRecord = p;
+    pSorter->pRecord = 0;
+    pSorter->nRecord = 0;
     rc = fileWriterFinish(db, &writer, &pSorter->iWriteOff);
   }
 
@@ -776,6 +853,7 @@ int sqlite3VdbeSorterWrite(
     pNew->nVal = pVal->n;
     pNew->pNext = pSorter->pRecord;
     pSorter->pRecord = pNew;
+    pSorter->nRecord++;
   }
 
   /* See if the contents of the sorter should now be written out. They
@@ -965,6 +1043,7 @@ int sqlite3VdbeSorterNext(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
   }else{
     SorterRecord *pFree = pSorter->pRecord;
     pSorter->pRecord = pFree->pNext;
+    pSorter->nRecord--;
     pFree->pNext = 0;
     vdbeSorterRecordFree(db, pFree);
     *pbEof = !pSorter->pRecord;
@@ -1031,7 +1110,8 @@ int sqlite3VdbeSorterCompare(
   void *pKey; int nKey;           /* Sorter key to compare pVal with */
 
   pKey = vdbeSorterRowkey(pSorter, &nKey);
-  vdbeSorterCompare(pCsr, 1, pVal->z, pVal->n, pKey, nKey, pRes);
+  vdbeSorterCompare(pCsr, 1, pVal->z, pVal->n, pKey, nKey, pRes,
+                    pSorter->pUnpacked);
   return SQLITE_OK;
 }
 

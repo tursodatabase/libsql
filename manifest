@@ -1,5 +1,5 @@
-C Update\sthe\sthreads\sbranch\sto\sinclude\sall\sthe\slatest\strunk\schanges.
-D 2012-08-16T11:24:22.980
+C Attempt\sto\suse\stwo\scores\sto\sdo\ssorting.\s\sUnfortunately,\sinstead\sof\smaking\ssorts\ngo\sfaster\sas\swas\shoped,\sthis\schanges\sslows\ssorting\sdown\sby\sabout\s10%.
+D 2012-08-16T20:05:43.061
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in adec39f15a9c7000f634b87a535b95279b0cbd09
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -245,7 +245,7 @@ F src/vdbeapi.c 88ea823bbcb4320f5a6607f39cd7c2d3cc4c26b1
 F src/vdbeaux.c dce80038c3c41f2680e5ab4dd0f7e0d8b7ff9071
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
-F src/vdbesort.c 0dc1b274dcb4d4c8e71b0b2b15261f286caba39b
+F src/vdbesort.c 3945ae71fe43e52727ec52103a07492e9df1776f
 F src/vdbetrace.c 8bd5da325fc90f28464335e4cc4ad1407fe30835
 F src/vtab.c bb8ea3a26608bb1357538a5d2fc72beba6638998
 F src/wal.c 9294df6f96aae5909ae1a9b733fd1e1b4736978b
@@ -1011,7 +1011,10 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P ed3dc7a89f3416622fcd741ae5fba437929d06d6 31c07db2560ee867723c41cdb634e2aa7993634d
-R 8983882407637c60aee542aa1d4c9bca
+P f4125771e21f1ca29d5442b5441dacfc06b8032b
+R 57dfe237bc5133c34791ea3daa8a6629
+T *branch * threads-sort-ex1
+T *sym-threads-sort-ex1 *
+T -sym-threads *
 U drh
-Z 9b3c8e4e1baa5816be48b30862221038
+Z 0c902f962545bc2a76e593bb4b7dad94
