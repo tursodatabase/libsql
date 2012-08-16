@@ -92,8 +92,8 @@
 #endif
 
 /*
-** Determine if we are dealing with WindowsRT (Metro) as this has a different and
-** incompatible API from win32.
+** Determine if we are dealing with WinRT, which provides only a subset of
+** the full Win32 API.
 */
 #if !defined(SQLITE_OS_WINRT)
 # define SQLITE_OS_WINRT 0

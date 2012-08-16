@@ -30,6 +30,11 @@ USE_NATIVE_LIBPATHS = 0
 #
 FOR_WINRT = 0
 
+# Set this non-0 to skip attempting to look for and/or link with the Tcl
+# runtime library.
+#
+NO_TCL = 0
+
 # Set this to non-0 to create and use PDBs.
 #
 SYMBOLS = 1
@@ -75,7 +80,9 @@ LD = link.exe
 #           "NCC=""%VCINSTALLDIR%\bin\cl.exe"""
 #           USE_NATIVE_LIBPATHS=1
 #
-!IFNDEF NCC
+!IFDEF NCC
+NCC = $(NCC:\\=\)
+!ELSE
 NCC = $(CC)
 !ENDIF
 
@@ -87,6 +94,8 @@ NCC = $(CC)
 NCRTLIBPATH = $(VCINSTALLDIR)\lib
 !ENDIF
 
+NCRTLIBPATH = $(NCRTLIBPATH:\\=\)
+
 # Check for the Platform SDK library path macro.  Othertise, this
 # value will default to the 'lib' directory underneath the Windows
 # SDK installation directory (the environment variable used appears
@@ -96,6 +105,8 @@ NCRTLIBPATH = $(VCINSTALLDIR)\lib
 !IFNDEF NSDKLIBPATH
 NSDKLIBPATH = $(WINDOWSSDKDIR)\lib
 !ENDIF
+
+NSDKLIBPATH = $(NSDKLIBPATH:\\=\)
 
 # C compiler and options for use in building executables that
 # will run on the platform that is doing the build.
@@ -123,6 +134,7 @@ TCC = $(CC) -W3 -DSQLITE_OS_WIN=1 -I. -I$(TOP)\src -fp:precise
 #
 !IF $(FOR_WINRT)!=0
 TCC = $(TCC) -DSQLITE_OS_WINRT=1
+TCC = $(TCC) -DWINAPI_FAMILY=WINAPI_PARTITION_APP
 !ENDIF
 
 # Also, we need to dynamically link to the correct MSVC runtime
@@ -344,8 +356,10 @@ LDFLAGS = /DEBUG
 !ENDIF
 
 # Start with the Tcl related linker options.
+!IF $(NO_TCL)==0
 LTLIBPATHS = /LIBPATH:$(TCLLIBDIR)
 LTLIBS = $(LIBTCL)
+!ENDIF
 
 # If ICU support is enabled, add the linker options for it.
 !IF $(USE_ICU)!=0
@@ -1116,6 +1130,7 @@ clean:
 	del /Q sqlite3.dll sqlite3.lib sqlite3.exp sqlite3.def
 	del /Q sqlite3.c
 	del /Q sqlite3_analyzer.exe sqlite3_analyzer.exp sqlite3_analyzer.c
+	del /Q sqlite-output.vsix
 
 #
 # Windows section

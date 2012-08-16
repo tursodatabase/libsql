@@ -361,7 +361,8 @@ static int tvfsWrite(
 
   if( p->pScript && p->mask&TESTVFS_WRITE_MASK ){
     tvfsExecTcl(p, "xWrite", 
-        Tcl_NewStringObj(pFd->zFilename, -1), pFd->pShmId, 0
+        Tcl_NewStringObj(pFd->zFilename, -1), pFd->pShmId, 
+        Tcl_NewWideIntObj(iOfst)
     );
     tvfsResultCode(p, &rc);
   }

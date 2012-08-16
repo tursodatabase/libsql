@@ -2119,10 +2119,10 @@ struct Select {
 typedef struct SelectDest SelectDest;
 struct SelectDest {
   u8 eDest;         /* How to dispose of the results */
-  u8 affinity;      /* Affinity used when eDest==SRT_Set */
-  int iParm;        /* A parameter used by the eDest disposal method */
-  int iMem;         /* Base register where results are written */
-  int nMem;         /* Number of registers allocated */
+  u8 affSdst;       /* Affinity used when eDest==SRT_Set */
+  int iSDParm;      /* A parameter used by the eDest disposal method */
+  int iSdst;        /* Base register where results are written */
+  int nSdst;        /* Number of registers allocated */
 };
 
 /*
@@ -2318,6 +2318,8 @@ struct AuthContext {
 #define OPFLAG_CLEARCACHE    0x20    /* Clear pseudo-table cache in OP_Column */
 #define OPFLAG_LENGTHARG     0x40    /* OP_Column only used for length() */
 #define OPFLAG_TYPEOFARG     0x80    /* OP_Column only used for typeof() */
+#define OPFLAG_BULKCSR       0x01    /* OP_Open** used to open bulk cursor */
+#define OPFLAG_P2ISREG       0x02    /* P2 to OP_Open** is a register number */
 
 /*
  * Each trigger present in the database schema is stored as an instance of

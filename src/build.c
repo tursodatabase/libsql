@@ -1581,7 +1581,7 @@ void sqlite3EndTable(
 
       assert(pParse->nTab==1);
       sqlite3VdbeAddOp3(v, OP_OpenWrite, 1, pParse->regRoot, iDb);
-      sqlite3VdbeChangeP5(v, 1);
+      sqlite3VdbeChangeP5(v, OPFLAG_P2ISREG);
       pParse->nTab = 2;
       sqlite3SelectDestInit(&dest, SRT_Table, 1);
       sqlite3Select(pParse, pSelect, &dest);
@@ -2397,9 +2397,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   pKey = sqlite3IndexKeyinfo(pParse, pIndex);
   sqlite3VdbeAddOp4(v, OP_OpenWrite, iIdx, tnum, iDb, 
                     (char *)pKey, P4_KEYINFO_HANDOFF);
-  if( memRootPage>=0 ){
-    sqlite3VdbeChangeP5(v, 1);
-  }
+  sqlite3VdbeChangeP5(v, OPFLAG_BULKCSR|((memRootPage>=0)?OPFLAG_P2ISREG:0));
 
 #ifndef SQLITE_OMIT_MERGE_SORT
   /* Open the sorter cursor if we are to use one. */

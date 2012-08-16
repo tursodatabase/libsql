@@ -396,11 +396,10 @@ static int pcache1ResizeHash(PCache1 *p){
 
   pcache1LeaveMutex(p->pGroup);
   if( p->nHash ){ sqlite3BeginBenignMalloc(); }
-  apNew = (PgHdr1 **)sqlite3_malloc(sizeof(PgHdr1 *)*nNew);
+  apNew = (PgHdr1 **)sqlite3MallocZero(sizeof(PgHdr1 *)*nNew);
   if( p->nHash ){ sqlite3EndBenignMalloc(); }
   pcache1EnterMutex(p->pGroup);
   if( apNew ){
-    memset(apNew, 0, sizeof(PgHdr1 *)*nNew);
     for(i=0; i<p->nHash; i++){
       PgHdr1 *pPage;
       PgHdr1 *pNext = p->apHash[i];
@@ -584,9 +583,8 @@ static sqlite3_pcache *pcache1Create(int szPage, int szExtra, int bPurgeable){
   assert( szExtra < 300 );
 
   sz = sizeof(PCache1) + sizeof(PGroup)*separateCache;
-  pCache = (PCache1 *)sqlite3_malloc(sz);
+  pCache = (PCache1 *)sqlite3MallocZero(sz);
   if( pCache ){
-    memset(pCache, 0, sz);
     if( separateCache ){
       pGroup = (PGroup*)&pCache[1];
       pGroup->mxPinned = 10;

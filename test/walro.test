@@ -56,6 +56,7 @@ do_multiclient_test tn {
   do_test 1.1.1 {
     code2 { sqlite3 db2 test.db }
     sql2 { 
+      PRAGMA auto_vacuum = 0;
       PRAGMA journal_mode = WAL;
       CREATE TABLE t1(x, y);
       INSERT INTO t1 VALUES('a', 'b');
@@ -268,6 +269,7 @@ do_multiclient_test tn {
     tv filter {}
     code1 { sqlite3 db test.db }
     csql1 { 
+      PRAGMA auto_vacuum = 0;
       PRAGMA journal_mode = WAL;
       BEGIN;
         CREATE TABLE t2(x, y);
