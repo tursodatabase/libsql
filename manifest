@@ -1,9 +1,9 @@
-C Changes\sto\sthe\sspellfix\stest\sscript\sto\smake\sthe\sresults\sdeterministic.
-D 2012-08-15T16:43:07.389
+C Skip\sdefining\ssome\sWAL\sspecific\sthings\sin\sthe\sWin32\sVFS\scode\swhen\scompiling\swithout\sWAL\ssupport.\s\sAlso,\sfix\san\sexample\scommand\sline\sin\sthe\sMSVC\smakefile.
+D 2012-08-17T11:47:32.116
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc c1293ece66e237b545eae4484e3e81571fb5f47c
+F Makefile.msc e89bdb795a841e58169ef9e26e543096dfc17c24
 F Makefile.vxworks 879f034a64062a364b21000266bbd5bc6e0c19b9
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION a71848df48082f1d6585d4b0819d530fc455485d
@@ -163,7 +163,7 @@ F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c d7c96b5d140f550f07345870112fae5d7ef99757
-F src/os_win.c 370c6f3399e3cd9f14343fb7dc4b2bbe8619d3bf
+F src/os_win.c b8fc659987a678c7924796585f5ae293ba5c896d
 F src/pager.c e381c118b77dc22021a1a59d3fec24815e91df78
 F src/pager.h 8b8c9bc065a3c66769df8724dfdf492ee1aab3c5
 F src/parse.y f29df90bd3adc64b33114ab1de9fb7768fcf2099
@@ -1010,7 +1010,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 772d0de3f311f2035f8a42f01371c96c9fa587ce
-R 5cf52533788596320f4b8771261628f7
-U drh
-Z bf22097f18dc13a1f07a9f39f12dbcca
+P 31c07db2560ee867723c41cdb634e2aa7993634d
+R a24bc21b8130ed9119365f8bb12a4fa8
+U mistachkin
+Z 0c3c87285201e10a599643fc4fe047d3
