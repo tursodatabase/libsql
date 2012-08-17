@@ -863,9 +863,9 @@ static void updateCost(
   int j,
   int iCost
 ){
-  int b;
+  assert( iCost>=0 );
   if( iCost<10000 ){
-    b = m[j] + iCost;
+    unsigned int b = m[j] + iCost;
     if( b<m[i] ) m[i] = b;
   }
 }

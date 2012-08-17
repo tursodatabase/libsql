@@ -1,5 +1,5 @@
-C Skip\sdefining\ssome\sWAL\sspecific\sthings\sin\sthe\sWin32\sVFS\scode\swhen\scompiling\swithout\sWAL\ssupport.\s\sAlso,\sfix\san\sexample\scommand\sline\sin\sthe\sMSVC\smakefile.
-D 2012-08-17T11:47:32.116
+C Fix\sMSVC\scompiler\swarning\sin\sthe\sspellfix\smodule.\s\sAlso,\sadd\san\sassert.
+D 2012-08-17T12:13:11.201
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -221,7 +221,7 @@ F src/test_quota.h 8761e463b25e75ebc078bd67d70e39b9c817a0cb
 F src/test_rtree.c aba603c949766c4193f1068b91c787f57274e0d9
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
-F src/test_spellfix.c 3a260d237fabbf5884389aa8c0e516b4e61ab98a
+F src/test_spellfix.c cdc21503c71a26ec379322f695654bceddb92dd9
 F src/test_stat.c d1569c7a4839f13e80187e2c26b2ab4da2d03935
 F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c a992d8c80ea91fbf21fb2dd570db40e77dd7e6ae
@@ -1010,7 +1010,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 31c07db2560ee867723c41cdb634e2aa7993634d
-R a24bc21b8130ed9119365f8bb12a4fa8
+P 61b1ae121782525b37882a559d0fbb7c85237fd5
+R 4a539007d16a7b2447dc6f1195076d94
 U mistachkin
-Z 0c3c87285201e10a599643fc4fe047d3
+Z d4535b1b3829b27511b2fc45cd393eb2
