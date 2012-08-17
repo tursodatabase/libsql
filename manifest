@@ -1,5 +1,5 @@
-C Fix\sMSVC\scompiler\swarning\sin\sthe\sspellfix\smodule.\s\sAlso,\sadd\san\sassert.
-D 2012-08-17T12:13:11.201
+C Clarify\sthat\sthe\snumber-of-bytes\sparameter\sto\ssqlite3_bind_blob()\smust\nbe\snon-negative.
+D 2012-08-17T13:44:31.839
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -178,7 +178,7 @@ F src/resolve.c b3c70ab28cac60de33684c9aa9e5138dcf71d6dd
 F src/rowset.c f6a49f3e9579428024662f6e2931832511f831a1
 F src/select.c a365da6d7a6d7d8a10ad60ca71837ab5e9369466
 F src/shell.c 076e1c90d594644f36027c8ecff9a392cf2d3a06
-F src/sqlite.h.in 3e8035bc406b1571a5cc8ea46bcc831201676f1a
+F src/sqlite.h.in f664797c68ced43c2ea2c541d4ec8e1e04ec68ac
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h c8169801f8bbfdf5873cc6fa45cb5df720c04db4
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -1010,7 +1010,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 61b1ae121782525b37882a559d0fbb7c85237fd5
-R 4a539007d16a7b2447dc6f1195076d94
-U mistachkin
-Z d4535b1b3829b27511b2fc45cd393eb2
+P e66cf0401fab766f62c1d263dcb1efb67b2075a9
+R b0faef55b691eb73f9d6281a2018b023
+U drh
+Z b53d17a639d0a2dddf7d584349060e4d
