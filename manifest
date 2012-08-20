@@ -1,5 +1,5 @@
-C Add\sa\scommand-line\sprogram\sto\stool/\sthat\swill\scheck\ssource\scode\sfiles\sfor\nthe\spresence\sof\stabs,\scarriage-returns,\swhitespace\sat\sthe\sends\sof\slines,\nand\sblank\slines\sat\sthe\sends\sof\sfiles.
-D 2012-08-20T15:46:08.616
+C Remove\stab\scharacters\sfrom\ssource\scode\sfiles.\s\sReplace\sthem\swith\sspaces.
+D 2012-08-20T15:53:54.334
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -123,10 +123,10 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 5b31b24d6814b11de763debf342c8cd0a15a4910
 F src/bitvec.c 26675fe8e431dc555e6f2d0e11e651d172234aa1
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 82b6fcbec3101ff951f47797f407d5eb5d06fa44
+F src/btree.c 32dc63ef18c6a8d448c37c030ced70cf23ccad75
 F src/btree.h 4aee02e879211bfcfd3f551769578d2e940ab6c2
 F src/btreeInt.h 4e5c2bd0f9b36b2a815a6d84f771a61a65830621
-F src/build.c 0f6b40ad6211dcaba6159d0f9a297f0704f22142
+F src/build.c 196734374128023e414a818f2051d836badb3526
 F src/callback.c 0cb4228cdcd827dcc5def98fb099edcc9142dbcd
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 500d019da966631ad957c37705642be87524463b
@@ -148,7 +148,7 @@ F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
 F src/main.c 02255cf1da50956c5427c469abddb15bccc4ba09
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
-F src/mem1.c b3677415e69603d6a0e7c5410a1b3731d55beda1
+F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
 F src/mem2.c e307323e86b5da1853d7111b68fd6b84ad6f09cf
 F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
 F src/mem5.c c2c63b7067570b00bf33d751c39af24182316f7f
@@ -162,7 +162,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c d7c96b5d140f550f07345870112fae5d7ef99757
+F src/os_unix.c b5149a3343a6acd6c9df4e3acf5085a6501c1f68
 F src/os_win.c b8fc659987a678c7924796585f5ae293ba5c896d
 F src/pager.c e381c118b77dc22021a1a59d3fec24815e91df78
 F src/pager.h 8b8c9bc065a3c66769df8724dfdf492ee1aab3c5
@@ -977,7 +977,7 @@ F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
-F tool/lemon.c 8b7afc12a6671e3a932a5209a9e64abbfbd0f025
+F tool/lemon.c 680980c7935bfa1edec20c804c9e5ba4b1dd96f5
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkkeywordhash.c bb52064aa614e1426445e4b2b9b00eeecd23cc79
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
@@ -1011,7 +1011,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P b1b01c4cd9798d69951665ed7d6d9f79f6b463a1
-R db3c2f86cbdcb0a11fb0992163e936bd
+P 656a9c8b47d262e0982ad3a35db490e2ff4d856e
+R 0e0adc036d304d5c4dd5e1ab38071ea8
 U drh
-Z c6dac7cfeec82346ac2dc26da1ee134c
+Z 448a9623866dd8e560b884c67dc8bc9d
