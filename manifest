@@ -1,5 +1,5 @@
-C Remove\stab\scharacters\sfrom\ssource\scode\sfiles.\s\sReplace\sthem\swith\sspaces.
-D 2012-08-20T15:53:54.334
+C Silence\sharmless\scompiler\swarnings\sin\sthe\stest\scode.
+D 2012-08-20T16:08:29.473
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -185,7 +185,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c fe5406573e1527957e00dcaf51edd9d8bd31b918
-F src/test1.c fc2acf0a2db517c8d19e5e55bda8e1237db77378
+F src/test1.c 3d70f7c5987f186884cfebbfa7151a7d3d67d86e
 F src/test2.c 4178056dd1e7d70f954ad8a1e3edb71a2a784daf
 F src/test3.c 3c3c2407fa6ec7a19e24ae23f7cb439d0275a60d
 F src/test4.c d1e5a5e904d4b444cf572391fdcb017638e36ff7
@@ -210,7 +210,7 @@ F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c f5c0a05b7b3d5930db769b5ee6c3766dc2221a64
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c 3f5903a1528fd32fe4c472a3bd0259128d8faaef
-F src/test_multiplex.c 66dcfca001ee22f04ef31ad353772ed05a017e53
+F src/test_multiplex.c ac0fbc1748e5b86a41a1d7a84654fae0d53a881d
 F src/test_multiplex.h e99c571bc4968b7a9363b661481f3934bfead61d
 F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 0396f220561f3b4eedc450cef26d40c593c69a25
@@ -221,7 +221,7 @@ F src/test_quota.h 8761e463b25e75ebc078bd67d70e39b9c817a0cb
 F src/test_rtree.c aba603c949766c4193f1068b91c787f57274e0d9
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
-F src/test_spellfix.c cdc21503c71a26ec379322f695654bceddb92dd9
+F src/test_spellfix.c deab0f9caf853d2ddbee7c4a680ad27621adf1bf
 F src/test_stat.c d1569c7a4839f13e80187e2c26b2ab4da2d03935
 F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c a992d8c80ea91fbf21fb2dd570db40e77dd7e6ae
@@ -1011,7 +1011,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 656a9c8b47d262e0982ad3a35db490e2ff4d856e
-R 0e0adc036d304d5c4dd5e1ab38071ea8
+P 7edd10a960d5ff121e470b0549b0aa9fb7760022
+R a7c7fd498f14b2f1551a5ff041e6fb79
 U drh
-Z 448a9623866dd8e560b884c67dc8bc9d
+Z 5fc0a92ff802ba7cd0b5d9f1b3ae83c1

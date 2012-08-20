@@ -659,7 +659,7 @@ static int editDist3ConfigLoad(
   int rc, rc2;
   char *zSql;
   int iLangPrev = -9999;
-  EditDist3Lang *pLang;
+  EditDist3Lang *pLang = 0;
 
   zSql = sqlite3_mprintf("SELECT iLang, cFrom, cTo, iCost"
                          " FROM \"%w\" WHERE iLang>=0 ORDER BY iLang", zTable);
@@ -680,7 +680,7 @@ static int editDist3ConfigLoad(
     assert( zTo!=0 || nTo==0 );
     if( nFrom>100 || nTo>100 ) continue;
     if( iCost<0 ) continue;
-    if( iLang!=iLangPrev ){
+    if( pLang==0 || iLang!=iLangPrev ){
       EditDist3Lang *pNew;
       pNew = sqlite3_realloc(p->a, (p->nLang+1)*sizeof(p->a[0]));
       if( pNew==0 ){ rc = SQLITE_NOMEM; break; }

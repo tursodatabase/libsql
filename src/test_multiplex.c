@@ -502,11 +502,11 @@ static int multiplexOpen(
 ){
   int rc = SQLITE_OK;                  /* Result code */
   multiplexConn *pMultiplexOpen;       /* The new multiplex file descriptor */
-  multiplexGroup *pGroup;              /* Corresponding multiplexGroup object */
+  multiplexGroup *pGroup = 0;          /* Corresponding multiplexGroup object */
   sqlite3_file *pSubOpen = 0;                    /* Real file descriptor */
   sqlite3_vfs *pOrigVfs = gMultiplex.pOrigVfs;   /* Real VFS */
-  int nName;
-  int sz;
+  int nName = 0;
+  int sz = 0;
   char *zToFree = 0;
 
   UNUSED_PARAMETER(pVfs);
