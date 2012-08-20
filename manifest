@@ -1,5 +1,5 @@
-C Clarify\sthat\sthe\snumber-of-bytes\sparameter\sto\ssqlite3_bind_blob()\smust\nbe\snon-negative.
-D 2012-08-17T13:44:31.839
+C Add\sa\scommand-line\sprogram\sto\stool/\sthat\swill\scheck\ssource\scode\sfiles\sfor\nthe\spresence\sof\stabs,\scarriage-returns,\swhitespace\sat\sthe\sends\sof\slines,\nand\sblank\slines\sat\sthe\sends\sof\sfiles.
+D 2012-08-20T15:46:08.616
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -970,6 +970,7 @@ F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test 0de750389990b1078bab203c712dc3fefd1d8b82
 F tool/build-all-msvc.bat 1a18aa39983ae7354d834bc55a850a54fc007576 x
 F tool/build-shell.sh b64a481901fc9ffe5ca8812a2a9255b6cfb77381
+F tool/checkSpacing.c 7971696f2749897ea3a7fd6431297a607934aa80
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
@@ -1010,7 +1011,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P e66cf0401fab766f62c1d263dcb1efb67b2075a9
-R b0faef55b691eb73f9d6281a2018b023
+P b1b01c4cd9798d69951665ed7d6d9f79f6b463a1
+R db3c2f86cbdcb0a11fb0992163e936bd
 U drh
-Z b53d17a639d0a2dddf7d584349060e4d
+Z c6dac7cfeec82346ac2dc26da1ee134c
