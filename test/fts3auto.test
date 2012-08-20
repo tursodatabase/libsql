@@ -67,7 +67,7 @@ proc do_fts3query_test {tn args} {
   foreach {k v} [lrange $args 0 [expr $nArg-3]] {
     switch -- $k {
       -deferred {
-        set deferred $v
+        ifcapable fts4_deferred { set deferred $v }
       }
       default {
         error "bad option \"$k\": must be -deferred"
@@ -509,9 +509,9 @@ foreach {tn create} {
 
   do_fts3query_test 3.$tn.2.1 t1 {a OR c}
 
-  do_test 3.$tn.3 { 
-    fts3_zero_long_segments t1 $limit 
-  } {1}
+  ifcapable fts4_deferred {
+    do_test 3.$tn.3 { fts3_zero_long_segments t1 $limit } {1}
+  }
 
   foreach {tn2 expr def} {
     1     {a NEAR c}            {}
@@ -550,7 +550,11 @@ foreach {tn create} {
   do_test 4.$tn.2 { 
     set limit [fts3_make_deferrable t1 five]
     execsql { INSERT INTO t1(t1) VALUES('optimize') }
-    expr {[fts3_zero_long_segments t1 $limit]>0}
+    ifcapable fts4_deferred {
+      expr {[fts3_zero_long_segments t1 $limit]>0}
+    } else {
+      expr 1
+    }
   } {1}
 
   do_fts3query_test 4.$tn.3.1 -deferred five t1 {one AND five}
