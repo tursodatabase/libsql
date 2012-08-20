@@ -1,5 +1,5 @@
-C Silence\sharmless\scompiler\swarnings\sin\sthe\stest\scode.
-D 2012-08-20T16:08:29.473
+C Change\sthe\scheckSpacing\sutility\sprogram\sto\signore\swhitespace\sat\send-of-line\nunless\sthe\s--wseol\soption\sis\sused.
+D 2012-08-20T16:23:36.995
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -970,7 +970,7 @@ F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test 0de750389990b1078bab203c712dc3fefd1d8b82
 F tool/build-all-msvc.bat 1a18aa39983ae7354d834bc55a850a54fc007576 x
 F tool/build-shell.sh b64a481901fc9ffe5ca8812a2a9255b6cfb77381
-F tool/checkSpacing.c 7971696f2749897ea3a7fd6431297a607934aa80
+F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
@@ -1011,7 +1011,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 7edd10a960d5ff121e470b0549b0aa9fb7760022
-R a7c7fd498f14b2f1551a5ff041e6fb79
+P 7653973a525638b5e5e70ea8459f64e1a88befca
+R a5b8e6d2b4446ec76e5e5bca66913847
 U drh
-Z 5fc0a92ff802ba7cd0b5d9f1b3ae83c1
+Z 527e591104d273b6a0b9a4827096d42e

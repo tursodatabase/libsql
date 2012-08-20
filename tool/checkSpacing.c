@@ -11,7 +11,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void checkSpacing(const char *zFile, int crok){
+#define CR_OK      0x001
+#define WSEOL_OK   0x002
+
+static void checkSpacing(const char *zFile, unsigned flags){
   FILE *in = fopen(zFile, "rb");
   int i;
   int seenSpace;
@@ -32,7 +35,7 @@ static void checkSpacing(const char *zFile, int crok){
         printf("%s:%d: tab (\\t) character\n", zFile, ln);
         seenTab = 1;
       }else if( zLine[i]=='\r' ){
-        if( !crok ){
+        if( (flags & CR_OK)==0 ){
           printf("%s:%d: carriage-return (\\r) character\n", zFile, ln);
         }
       }else if( zLine[i]==' ' ){
@@ -42,7 +45,7 @@ static void checkSpacing(const char *zFile, int crok){
         seenSpace = 0;
       }
     }
-    if( seenSpace ){
+    if( seenSpace && (flags & WSEOL_OK)==0 ){
       printf("%s:%d: whitespace at end-of-line\n", zFile, ln);
     }
   }
@@ -55,12 +58,26 @@ static void checkSpacing(const char *zFile, int crok){
 
 int main(int argc, char **argv){
   int i;
-  int crok = 0;
+  unsigned flags = WSEOL_OK;
   for(i=1; i<argc; i++){
-    if( strcmp(argv[i], "--crok")==0 ){
-      crok = 1;
+    const char *z = argv[i];
+    if( z[0]=='-' ){
+      while( z[0]=='-' ) z++;
+      if( strcmp(z,"crok")==0 ){
+        flags |= CR_OK;
+      }else if( strcmp(z, "wseol")==0 ){
+        flags &= ~WSEOL_OK;
+      }else if( strcmp(z, "help")==0 ){
+        printf("Usage: %s [options] FILE ...\n", argv[0]);
+        printf("  --crok      Do not report on carriage-returns\n");
+        printf("  --wseol     Complain about whitespace at end-of-line\n");
+        printf("  --help      This message\n");
+      }else{
+        printf("unknown command-line option: [%s]\n", argv[i]);
+        printf("use --help for additional information\n");
+      }
     }else{
-      checkSpacing(argv[i], crok);
+      checkSpacing(argv[i], flags);
     }
   }
   return 0;
