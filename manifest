@@ -1,5 +1,5 @@
-C Attempt\sto\suse\stwo\scores\sto\sdo\ssorting.\s\sUnfortunately,\sinstead\sof\smaking\ssorts\ngo\sfaster\sas\swas\shoped,\sthis\schanges\sslows\ssorting\sdown\sby\sabout\s10%.
-D 2012-08-16T20:05:43.061
+C Changes\sto\sthe\sthread\sroutines\sto\sdisable\sthem\swhen\sthreading\sis\sturned\noff\susing\ssqlite3_config().
+D 2012-08-20T12:36:53.934
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in adec39f15a9c7000f634b87a535b95279b0cbd09
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -231,7 +231,7 @@ F src/test_vfs.c c6260ef238c1142c8f8bd402db02216afd182ae3
 F src/test_vfstrace.c 6b28adb2a0e8ecd0f2e3581482e1f658b11b4067
 F src/test_wholenumber.c 3d2b9ed1505c40ad5c5ca2ad16ae7a289d6cc251
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
-F src/threads.c cde5bd24ab5b33bb694c59f4236ecd56ad8da9b5
+F src/threads.c 2b918d1f4f0b0831e8f41c49bcaa097f01490120
 F src/tokenize.c 1e86210d3976717a19238ea7b047fac481fe8c12
 F src/trigger.c ee7e178fb9188f44b532cebd449a7c1df90fb684
 F src/update.c d3076782c887c10e882996550345da9c4c9f9dea
@@ -1011,10 +1011,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P f4125771e21f1ca29d5442b5441dacfc06b8032b
-R 57dfe237bc5133c34791ea3daa8a6629
-T *branch * threads-sort-ex1
-T *sym-threads-sort-ex1 *
-T -sym-threads *
+P 11dd05e5984f0d5f98052458b94cbaf7d18c2e8f
+R e58875d0291e3b6cc3052f8dc1dd2fc4
 U drh
-Z 0c902f962545bc2a76e593bb4b7dad94
+Z bfd5ab54b6ff0aae15c2187f1069c92e
