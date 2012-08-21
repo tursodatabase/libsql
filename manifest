@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_DISABLE_FTS4_DEFERRED\scompile\stime\soption.
-D 2012-08-20T17:24:48.768
+C Update\sthe\sspellfix\svirtual\stable\sso\sthat\sall\sOOM\serrors\sare\sreported\sout\nto\sthe\sapplication.
+D 2012-08-21T17:44:05.685
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -221,7 +221,7 @@ F src/test_quota.h 8761e463b25e75ebc078bd67d70e39b9c817a0cb
 F src/test_rtree.c aba603c949766c4193f1068b91c787f57274e0d9
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
-F src/test_spellfix.c deab0f9caf853d2ddbee7c4a680ad27621adf1bf
+F src/test_spellfix.c fa83c9b4c4bdd1d41be4ad1e9241bf5a4fc9190f
 F src/test_stat.c d1569c7a4839f13e80187e2c26b2ab4da2d03935
 F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c a992d8c80ea91fbf21fb2dd570db40e77dd7e6ae
@@ -1011,7 +1011,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P be1faadebd9464f1c7d4cc26104f219ed35384b8
-R 9d3902f63cfac6bb8ee3fe0483a0e736
-U dan
-Z a16ab6913bdfea9d4fad9944795f8c23
+P e799222f3b8246e65657a758437914ece7069ba9
+R 5e828b4451d9abd5424b5fdb18a303b8
+U drh
+Z 86d779defb1a86a95d6cf62943de67e6

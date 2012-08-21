@@ -2508,15 +2508,17 @@ static int spellfix1Filter(
 */
 static int spellfix1Next(sqlite3_vtab_cursor *cur){
   spellfix1_cursor *pCur = (spellfix1_cursor *)cur;
+  int rc = SQLITE_OK;
   if( pCur->iRow < pCur->nRow ){
     if( pCur->pFullScan ){
-      int rc = sqlite3_step(pCur->pFullScan);
+      rc = sqlite3_step(pCur->pFullScan);
       if( rc!=SQLITE_ROW ) pCur->iRow = pCur->nRow;
+      if( rc==SQLITE_ROW || rc==SQLITE_DONE ) rc = SQLITE_OK;
     }else{
       pCur->iRow++;
     }
   }
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
@@ -2773,25 +2775,35 @@ static sqlite3_module spellfix1Module = {
 ** Register the various functions and the virtual table.
 */
 static int spellfix1Register(sqlite3 *db){
-  int nErr = 0;
+  int rc = SQLITE_OK;
   int i;
-  nErr += sqlite3_create_function(db, "spellfix1_translit", 1, SQLITE_UTF8, 0,
+  rc = sqlite3_create_function(db, "spellfix1_translit", 1, SQLITE_UTF8, 0,
                                   transliterateSqlFunc, 0, 0);
-  nErr += sqlite3_create_function(db, "spellfix1_editdist", 2, SQLITE_UTF8, 0,
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "spellfix1_editdist", 2, SQLITE_UTF8, 0,
                                   editdistSqlFunc, 0, 0);
-  nErr += sqlite3_create_function(db, "spellfix1_phonehash", 1, SQLITE_UTF8, 0,
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "spellfix1_phonehash", 1, SQLITE_UTF8, 0,
                                   phoneticHashSqlFunc, 0, 0);
-  nErr += sqlite3_create_function(db, "spellfix1_scriptcode", 1, SQLITE_UTF8, 0,
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "spellfix1_scriptcode", 1, SQLITE_UTF8, 0,
                                   scriptCodeSqlFunc, 0, 0);
-  nErr += sqlite3_create_module(db, "spellfix1", &spellfix1Module, 0);
-  nErr += editDist3Install(db);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_module(db, "spellfix1", &spellfix1Module, 0);
+  }
+  if( rc==SQLITE_OK ){
+    rc = editDist3Install(db);
+  }
 
   /* Verify sanity of the translit[] table */
   for(i=0; i<sizeof(translit)/sizeof(translit[0])-1; i++){
     assert( translit[i].cFrom<translit[i+1].cFrom );
   }
 
-  return nErr ? SQLITE_ERROR : SQLITE_OK;
+  return rc;
 }
 
 #if SQLITE_CORE || defined(SQLITE_TEST)
