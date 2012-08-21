@@ -76,7 +76,7 @@ LD = link.exe
 # For example, to use the x86 compiler when cross-compiling for x64, a command
 # line similar to the following could be used (all on one line):
 #
-#     nmake /f Makefile.msc
+#     nmake /f Makefile.msc sqlite3.dll
 #           "NCC=""%VCINSTALLDIR%\bin\cl.exe"""
 #           USE_NATIVE_LIBPATHS=1
 #

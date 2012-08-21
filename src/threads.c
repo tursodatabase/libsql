@@ -36,6 +36,8 @@
 /* A running thread */
 struct SQLiteThread {
   pthread_t tid;
+  int done;
+  void *pOut;
 };
 
 /* Create a new thread */
@@ -52,10 +54,12 @@ int sqlite3ThreadCreate(
   *ppThread = 0;
   p = sqlite3Malloc(sizeof(*p));
   if( p==0 ) return SQLITE_NOMEM;
-  rc = pthread_create(&p->tid, 0, xTask, pIn);
-  if( rc ){
-    sqlite3_free(p);
-    return SQLITE_ERROR;
+  memset(p, 0, sizeof(*p));
+  if( sqlite3GlobalConfig.bCoreMutex==0
+    || pthread_create(&p->tid, 0, xTask, pIn)!=0 
+  ){
+    p->done = 1;
+    p->pOut = xTask(pIn);
   }
   *ppThread = p;
   return SQLITE_OK;
@@ -67,7 +71,12 @@ int sqlite3ThreadJoin(SQLiteThread *p, void **ppOut){
 
   assert( ppOut!=0 );
   if( p==0 ) return SQLITE_NOMEM;
-  rc = pthread_join(p->tid, ppOut);
+  if( p->done ){
+    *ppOut = p->pOut;
+    rc = SQLITE_OK;
+  }else{
+    rc = pthread_join(p->tid, ppOut);
+  }
   sqlite3_free(p);
   return rc ? SQLITE_ERROR : SQLITE_OK;
 }
@@ -115,11 +124,18 @@ int sqlite3ThreadCreate(
   *ppThread = 0;
   p = sqlite3Malloc(sizeof(*p));
   if( p==0 ) return SQLITE_NOMEM;
-  p->xTask = xTask; p->pIn = pIn;
-  p->tid = _beginthread(sqlite3ThreadProc, 0, p);
-  if( p->tid==(uintptr_t)-1 ){
-    sqlite3_free(p);
-    return SQLITE_ERROR;
+  if( sqlite3GlobalConfig.bCoreMutex==0 ){
+    memset(p, 0, sizeof(*p));
+  }else{
+    p->xTask = xTask;
+    p->pIn = pIn;
+    p->tid = _beginthread(sqlite3ThreadProc, 0, p);
+    if( p->tid==(uintptr_t)-1 ){
+      memset(p, 0, sizeof(*p));
+    }
+  }
+  if( p->xTask==0 ){
+    p->pResult = xTask(pIn);
   }
   *ppThread = p;
   return SQLITE_OK;
@@ -131,8 +147,12 @@ int sqlite3ThreadJoin(SQLiteThread *p, void **ppOut){
 
   assert( ppOut!=0 );
   if( p==0 ) return SQLITE_NOMEM;
-  rc = sqlite3Win32Wait((HANDLE)p->tid);
-  assert( rc!=WAIT_IO_COMPLETION );
+  if( p->xTask==0 ){
+    rc = WAIT_OBJECT_O;
+  }else{
+    rc = sqlite3Win32Wait((HANDLE)p->tid);
+    assert( rc!=WAIT_IO_COMPLETION );
+  }
   if( rc==WAIT_OBJECT_0 ) *ppOut = p->pResult;
   sqlite3_free(p);
   return (rc==WAIT_OBJECT_0) ? SQLITE_OK : SQLITE_ERROR;

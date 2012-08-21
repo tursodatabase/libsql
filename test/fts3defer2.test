@@ -13,7 +13,10 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/malloc_common.tcl
-ifcapable !fts3 { finish_test ; return }
+ifcapable !fts3||!fts4_deferred {
+  finish_test 
+  return
+}
 
 set testprefix fts3defer2
 

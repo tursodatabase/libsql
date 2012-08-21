@@ -46,9 +46,11 @@
 # define FILE_ATTRIBUTE_MASK     (0x0003FFF7)
 #endif
 
+#ifndef SQLITE_OMIT_WAL
 /* Forward references */
 typedef struct winShm winShm;           /* A connection to shared-memory */
 typedef struct winShmNode winShmNode;   /* A region of shared-memory */
+#endif
 
 /*
 ** WinCE lacks native support for file locking so we have to fake it
@@ -76,7 +78,9 @@ struct winFile {
   short sharedLockByte;   /* Randomly chosen byte used as a shared lock */
   u8 ctrlFlags;           /* Flags.  See WINFILE_* below */
   DWORD lastErrno;        /* The Windows errno from the last I/O error */
+#ifndef SQLITE_OMIT_WAL
   winShm *pShm;           /* Instance of shared memory on this file */
+#endif
   const char *zPath;      /* Full pathname of this file */
   int szChunk;            /* Chunk size configured by FCNTL_CHUNK_SIZE */
 #if SQLITE_OS_WINCE
@@ -1937,7 +1941,9 @@ static int winClose(sqlite3_file *id){
   winFile *pFile = (winFile*)id;
 
   assert( id!=0 );
+#ifndef SQLITE_OMIT_WAL
   assert( pFile->pShm==0 );
+#endif
   OSTRACE(("CLOSE %d\n", pFile->h));
   do{
     rc = osCloseHandle(pFile->h);
@@ -3687,7 +3693,9 @@ static int winOpen(
   pFile->h = h;
   pFile->lastErrno = NO_ERROR;
   pFile->pVfs = pVfs;
+#ifndef SQLITE_OMIT_WAL
   pFile->pShm = 0;
+#endif
   pFile->zPath = zName;
   if( sqlite3_uri_boolean(zName, "psow", SQLITE_POWERSAFE_OVERWRITE) ){
     pFile->ctrlFlags |= WINFILE_PSOW;
