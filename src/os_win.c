@@ -106,6 +106,22 @@ struct winFile {
 #endif
 
 /*
+ * The value used with sqlite3_win32_set_directory() to specify that
+ * the data directory should be changed.
+ */
+#ifndef SQLITE_WIN32_DATA_DIRECTORY_TYPE
+#  define SQLITE_WIN32_DATA_DIRECTORY_TYPE (1)
+#endif
+
+/*
+ * The value used with sqlite3_win32_set_directory() to specify that
+ * the temporary directory should be changed.
+ */
+#ifndef SQLITE_WIN32_TEMP_DIRECTORY_TYPE
+#  define SQLITE_WIN32_TEMP_DIRECTORY_TYPE (2)
+#endif
+
+/*
  * If compiled with SQLITE_WIN32_MALLOC on Windows, we will use the
  * various Win32 API heap functions instead of our own.
  */
@@ -1318,6 +1334,41 @@ char *sqlite3_win32_utf8_to_mbcs(const char *zFilename){
   return zFilenameMbcs;
 }
 
+/*
+** This function sets the data directory or the temporary directory based on
+** the provided arguments.  The type argument must be 1 in order to set the
+** data directory or 2 in order to set the temporary directory.  The zValue
+** argument is the name of the directory to use.  The return value will be
+** SQLITE_OK if successful.
+*/
+int sqlite3_win32_set_directory(DWORD type, LPCWSTR zValue){
+  char **ppDirectory = 0;
+#ifndef SQLITE_OMIT_AUTOINIT
+  int rc = sqlite3_initialize();
+  if( rc ) return rc;
+#endif
+  if( type==SQLITE_WIN32_DATA_DIRECTORY_TYPE ){
+    ppDirectory = &sqlite3_data_directory;
+  }else if( type==SQLITE_WIN32_TEMP_DIRECTORY_TYPE ){
+    ppDirectory = &sqlite3_temp_directory;
+  }
+  assert( !ppDirectory || type==SQLITE_WIN32_DATA_DIRECTORY_TYPE
+          || type==SQLITE_WIN32_TEMP_DIRECTORY_TYPE
+  );
+  if( ppDirectory ){
+    char *zValueUtf8 = 0;
+    if( zValue && zValue[0] ){
+      zValueUtf8 = unicodeToUtf8(zValue);
+      if ( zValueUtf8==0 ){
+        return SQLITE_NOMEM;
+      }
+    }
+    sqlite3_free(*ppDirectory);
+    *ppDirectory = zValueUtf8;
+    return SQLITE_OK;
+  }
+  return SQLITE_ERROR;
+}
 
 /*
 ** The return value of getLastErrorMsg
