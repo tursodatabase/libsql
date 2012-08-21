@@ -715,9 +715,9 @@ static int sqliteErrorFromPosixError(int posixError, int sqliteIOErr) {
   case EACCES: 
     /* EACCES is like EAGAIN during locking operations, but not any other time*/
     if( (sqliteIOErr == SQLITE_IOERR_LOCK) || 
-	(sqliteIOErr == SQLITE_IOERR_UNLOCK) || 
-	(sqliteIOErr == SQLITE_IOERR_RDLOCK) ||
-	(sqliteIOErr == SQLITE_IOERR_CHECKRESERVEDLOCK) ){
+        (sqliteIOErr == SQLITE_IOERR_UNLOCK) || 
+        (sqliteIOErr == SQLITE_IOERR_RDLOCK) ||
+        (sqliteIOErr == SQLITE_IOERR_CHECKRESERVEDLOCK) ){
       return SQLITE_BUSY;
     }
     /* else fall through */
@@ -1764,7 +1764,7 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
         pInode->eFileLock = NO_LOCK;
       }else{
         rc = SQLITE_IOERR_UNLOCK;
-	pFile->lastErrno = errno;
+        pFile->lastErrno = errno;
         pInode->eFileLock = NO_LOCK;
         pFile->eFileLock = NO_LOCK;
       }
@@ -1780,7 +1780,7 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
       closePendingFds(pFile);
     }
   }
-	
+
 end_unlock:
   unixLeaveMutex();
   if( rc==SQLITE_OK ) pFile->eFileLock = eFileLock;
@@ -2047,7 +2047,7 @@ static int dotlockUnlock(sqlite3_file *id, int eFileLock) {
 
   assert( pFile );
   OSTRACE(("UNLOCK  %d %d was %d pid=%d (dotlock)\n", pFile->h, eFileLock,
-	   pFile->eFileLock, getpid()));
+           pFile->eFileLock, getpid()));
   assert( eFileLock<=SHARED_LOCK );
   
   /* no-op if possible */
@@ -2434,7 +2434,7 @@ static int semUnlock(sqlite3_file *id, int eFileLock) {
   assert( pFile );
   assert( pSem );
   OSTRACE(("UNLOCK  %d %d was %d pid=%d (sem)\n", pFile->h, eFileLock,
-	   pFile->eFileLock, getpid()));
+           pFile->eFileLock, getpid()));
   assert( eFileLock<=SHARED_LOCK );
   
   /* no-op if possible */
@@ -3024,7 +3024,7 @@ static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
       if( newOffset == -1 ){
         ((unixFile*)id)->lastErrno = errno;
       }else{
-        ((unixFile*)id)->lastErrno = 0;			
+        ((unixFile*)id)->lastErrno = 0;
       }
       return -1;
     }
@@ -3112,7 +3112,7 @@ static int seekAndWrite(unixFile *id, i64 offset, const void *pBuf, int cnt){
       if( newOffset == -1 ){
         ((unixFile*)id)->lastErrno = errno;
       }else{
-        ((unixFile*)id)->lastErrno = 0;			
+        ((unixFile*)id)->lastErrno = 0;
       }
       return -1;
     }
@@ -5626,7 +5626,7 @@ static int unixGetLastError(sqlite3_vfs *NotUsed, int NotUsed2, char *NotUsed3){
 ** address in the shared range is taken for a SHARED lock, the entire
 ** shared range is taken for an EXCLUSIVE lock):
 **
-**      PENDING_BYTE        0x40000000		   	
+**      PENDING_BYTE        0x40000000
 **      RESERVED_BYTE       0x40000001
 **      SHARED_RANGE        0x40000002 -> 0x40000200
 **

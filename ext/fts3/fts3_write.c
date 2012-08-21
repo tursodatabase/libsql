@@ -5046,6 +5046,7 @@ static int fts3SpecialInsert(Fts3Table *p, sqlite3_value *pVal){
   return rc;
 }
 
+#ifndef SQLITE_DISABLE_FTS4_DEFERRED
 /*
 ** Delete all cached deferred doclists. Deferred doclists are cached
 ** (allocated) by the sqlite3Fts3CacheDeferredDoclists() function.
@@ -5183,6 +5184,7 @@ int sqlite3Fts3DeferToken(
 
   return SQLITE_OK;
 }
+#endif
 
 /*
 ** SQLite value pRowid contains the rowid of a row that may or may not be

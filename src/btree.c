@@ -1461,7 +1461,7 @@ static int btreeInitPage(MemPage *pPage){
       size = get2byte(&data[pc+2]);
       if( (next>0 && next<=pc+size+3) || pc+size>usableSize ){
         /* Free blocks must be in ascending order. And the last byte of
-	** the free-block must lie on the database page.  */
+        ** the free-block must lie on the database page.  */
         return SQLITE_CORRUPT_BKPT; 
       }
       nFree = nFree + size;
@@ -2635,7 +2635,7 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
       pBt->nTransaction++;
 #ifndef SQLITE_OMIT_SHARED_CACHE
       if( p->sharable ){
-	assert( p->lock.pBtree==p && p->lock.iTable==1 );
+        assert( p->lock.pBtree==p && p->lock.iTable==1 );
         p->lock.eLock = READ_LOCK;
         p->lock.pNext = pBt->pLock;
         pBt->pLock = &p->lock;

@@ -659,7 +659,7 @@ static int editDist3ConfigLoad(
   int rc, rc2;
   char *zSql;
   int iLangPrev = -9999;
-  EditDist3Lang *pLang;
+  EditDist3Lang *pLang = 0;
 
   zSql = sqlite3_mprintf("SELECT iLang, cFrom, cTo, iCost"
                          " FROM \"%w\" WHERE iLang>=0 ORDER BY iLang", zTable);
@@ -680,7 +680,7 @@ static int editDist3ConfigLoad(
     assert( zTo!=0 || nTo==0 );
     if( nFrom>100 || nTo>100 ) continue;
     if( iCost<0 ) continue;
-    if( iLang!=iLangPrev ){
+    if( pLang==0 || iLang!=iLangPrev ){
       EditDist3Lang *pNew;
       pNew = sqlite3_realloc(p->a, (p->nLang+1)*sizeof(p->a[0]));
       if( pNew==0 ){ rc = SQLITE_NOMEM; break; }
@@ -863,9 +863,9 @@ static void updateCost(
   int j,
   int iCost
 ){
-  int b;
+  assert( iCost>=0 );
   if( iCost<10000 ){
-    b = m[j] + iCost;
+    unsigned int b = m[j] + iCost;
     if( b<m[i] ) m[i] = b;
   }
 }
@@ -2508,15 +2508,17 @@ static int spellfix1Filter(
 */
 static int spellfix1Next(sqlite3_vtab_cursor *cur){
   spellfix1_cursor *pCur = (spellfix1_cursor *)cur;
+  int rc = SQLITE_OK;
   if( pCur->iRow < pCur->nRow ){
     if( pCur->pFullScan ){
-      int rc = sqlite3_step(pCur->pFullScan);
+      rc = sqlite3_step(pCur->pFullScan);
       if( rc!=SQLITE_ROW ) pCur->iRow = pCur->nRow;
+      if( rc==SQLITE_ROW || rc==SQLITE_DONE ) rc = SQLITE_OK;
     }else{
       pCur->iRow++;
     }
   }
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
@@ -2773,25 +2775,35 @@ static sqlite3_module spellfix1Module = {
 ** Register the various functions and the virtual table.
 */
 static int spellfix1Register(sqlite3 *db){
-  int nErr = 0;
+  int rc = SQLITE_OK;
   int i;
-  nErr += sqlite3_create_function(db, "spellfix1_translit", 1, SQLITE_UTF8, 0,
+  rc = sqlite3_create_function(db, "spellfix1_translit", 1, SQLITE_UTF8, 0,
                                   transliterateSqlFunc, 0, 0);
-  nErr += sqlite3_create_function(db, "spellfix1_editdist", 2, SQLITE_UTF8, 0,
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "spellfix1_editdist", 2, SQLITE_UTF8, 0,
                                   editdistSqlFunc, 0, 0);
-  nErr += sqlite3_create_function(db, "spellfix1_phonehash", 1, SQLITE_UTF8, 0,
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "spellfix1_phonehash", 1, SQLITE_UTF8, 0,
                                   phoneticHashSqlFunc, 0, 0);
-  nErr += sqlite3_create_function(db, "spellfix1_scriptcode", 1, SQLITE_UTF8, 0,
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "spellfix1_scriptcode", 1, SQLITE_UTF8, 0,
                                   scriptCodeSqlFunc, 0, 0);
-  nErr += sqlite3_create_module(db, "spellfix1", &spellfix1Module, 0);
-  nErr += editDist3Install(db);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_module(db, "spellfix1", &spellfix1Module, 0);
+  }
+  if( rc==SQLITE_OK ){
+    rc = editDist3Install(db);
+  }
 
   /* Verify sanity of the translit[] table */
   for(i=0; i<sizeof(translit)/sizeof(translit[0])-1; i++){
     assert( translit[i].cFrom<translit[i+1].cFrom );
   }
 
-  return nErr ? SQLITE_ERROR : SQLITE_OK;
+  return rc;
 }
 
 #if SQLITE_CORE || defined(SQLITE_TEST)
