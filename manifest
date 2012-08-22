@@ -1,5 +1,5 @@
-C Added\ssqlite3_win32_set_directory\sAPI\sto\sassist\sin\sportability\sto\sWinRT.
-D 2012-08-21T23:33:45.221
+C Add\sassert\sto\scheck\sthat\sthe\smemory\sblock\sfor\sthe\sprevious\sdirectory\svalue\swas\sallocated\svia\ssqlite3_malloc\sor\srelated\sfunction.
+D 2012-08-22T00:18:27.016
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,7 +163,7 @@ F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c b5149a3343a6acd6c9df4e3acf5085a6501c1f68
-F src/os_win.c c177b87e25e189a17f1f797d7c9c586874a44b90
+F src/os_win.c 88f8cc4ffdbb47e0f8f8b60110fcf90e461c5fb4
 F src/pager.c e381c118b77dc22021a1a59d3fec24815e91df78
 F src/pager.h 8b8c9bc065a3c66769df8724dfdf492ee1aab3c5
 F src/parse.y f29df90bd3adc64b33114ab1de9fb7768fcf2099
@@ -1011,10 +1011,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 573770f5a66fa4d708931b30350149eb739da607
-R bf4b4382f33c3f3a7bd23f2197ce7bd3
-T *branch * win32SetDir
-T *sym-win32SetDir *
-T -sym-trunk *
+P 600de08d40ceead24f425d20429d60f5732f8ba7
+R 6c87c3e648e94de2b524ed53950bb61a
 U mistachkin
-Z fdab0a6682c0f1b3e699cc9646e4e11e
+Z f9a6c98c016742518046fb10cc8cbb02

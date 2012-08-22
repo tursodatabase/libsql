@@ -1355,6 +1355,7 @@ int sqlite3_win32_set_directory(DWORD type, LPCWSTR zValue){
   assert( !ppDirectory || type==SQLITE_WIN32_DATA_DIRECTORY_TYPE
           || type==SQLITE_WIN32_TEMP_DIRECTORY_TYPE
   );
+  assert( !ppDirectory || sqlite3MemdebugHasType(*ppDirectory, MEMTYPE_HEAP) );
   if( ppDirectory ){
     char *zValueUtf8 = 0;
     if( zValue && zValue[0] ){
