@@ -1575,7 +1575,7 @@ void sqlite3VdbeFreeCursor(Vdbe *p, VdbeCursor *pCx){
   if( pCx==0 ){
     return;
   }
-  sqlite3VdbeSorterClose(p->db, pCx);
+  sqlite3VdbeSorterClose(pCx);
   if( pCx->pBt ){
     sqlite3BtreeClose(pCx->pBt);
     /* The pCx->pCursor will be close automatically, if it exists, by

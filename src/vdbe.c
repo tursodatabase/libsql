@@ -4405,7 +4405,7 @@ case OP_Rewind: {        /* jump */
   assert( pC->isSorter==(pOp->opcode==OP_SorterSort) );
   res = 1;
   if( isSorter(pC) ){
-    rc = sqlite3VdbeSorterRewind(db, pC, &res);
+    rc = sqlite3VdbeSorterRewind(pC, &res);
   }else{
     pCrsr = pC->pCursor;
     assert( pCrsr );
@@ -4474,7 +4474,7 @@ case OP_Next: {        /* jump */
   assert( pC->isSorter==(pOp->opcode==OP_SorterNext) );
   if( isSorter(pC) ){
     assert( pOp->opcode==OP_SorterNext );
-    rc = sqlite3VdbeSorterNext(db, pC, &res);
+    rc = sqlite3VdbeSorterNext(pC, &res);
   }else{
     res = 1;
     assert( pC->deferredMoveto==0 );
@@ -4530,7 +4530,7 @@ case OP_IdxInsert: {        /* in2 */
     rc = ExpandBlob(pIn2);
     if( rc==SQLITE_OK ){
       if( isSorter(pC) ){
-        rc = sqlite3VdbeSorterWrite(db, pC, pIn2);
+        rc = sqlite3VdbeSorterWrite(pC, pIn2);
       }else{
         nKey = pIn2->n;
         zKey = pIn2->z;

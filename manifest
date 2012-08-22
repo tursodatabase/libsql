@@ -1,5 +1,5 @@
-C Merge\sin\sall\sthe\slatest\strunk\schanges.
-D 2012-08-21T17:46:18.408
+C Do\snot\slet\sthe\smulti-core\ssorter\suse\slookaside\smemory,\swhich\sis\snot\nthread-safe.
+D 2012-08-22T15:16:36.722
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in adec39f15a9c7000f634b87a535b95279b0cbd09
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -231,21 +231,21 @@ F src/test_vfs.c c6260ef238c1142c8f8bd402db02216afd182ae3
 F src/test_vfstrace.c 6b28adb2a0e8ecd0f2e3581482e1f658b11b4067
 F src/test_wholenumber.c 3d2b9ed1505c40ad5c5ca2ad16ae7a289d6cc251
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
-F src/threads.c 2b918d1f4f0b0831e8f41c49bcaa097f01490120
+F src/threads.c cde9d885fd562b5427f89a42a8829085f88b17df
 F src/tokenize.c 1e86210d3976717a19238ea7b047fac481fe8c12
 F src/trigger.c ee7e178fb9188f44b532cebd449a7c1df90fb684
 F src/update.c d3076782c887c10e882996550345da9c4c9f9dea
 F src/utf.c 890c67dcfcc7a74623c95baac7535aadfe265e84
 F src/util.c 0af2e515dc0dabacec931bca39525f6c3f1c5455
 F src/vacuum.c 587a52bb8833d7ac15af8916f25437e2575028bd
-F src/vdbe.c 75da79cdcd58481825a06f045bc2f5ea3966eeae
+F src/vdbe.c 1a451790e5abd4df1c0ad0c39d5d6398888b473f
 F src/vdbe.h 18f581cac1f4339ec3299f3e0cc6e11aec654cdb
-F src/vdbeInt.h 986b6b11a13c517337355009e5438703ba5b0a40
+F src/vdbeInt.h 3c238336fc5b186b193553dbac4e1979d91e0c0d
 F src/vdbeapi.c 88ea823bbcb4320f5a6607f39cd7c2d3cc4c26b1
-F src/vdbeaux.c dce80038c3c41f2680e5ab4dd0f7e0d8b7ff9071
+F src/vdbeaux.c 84bd15358329f4005a7bceefafc1e798592e987d
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
-F src/vdbesort.c 3945ae71fe43e52727ec52103a07492e9df1776f
+F src/vdbesort.c acaefad52f6345a06fcfe2ec7da0c7d7d2569c39
 F src/vdbetrace.c 8bd5da325fc90f28464335e4cc4ad1407fe30835
 F src/vtab.c bb8ea3a26608bb1357538a5d2fc72beba6638998
 F src/wal.c 9294df6f96aae5909ae1a9b733fd1e1b4736978b
@@ -1012,7 +1012,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 555fc07efd1a1bc597804dcacbbcd95e88e75e90 573770f5a66fa4d708931b30350149eb739da607
-R 6a248acc2b1ad3eddb9f82f26a87ebb7
+P 45cdc32f1e4d33959108dac94f551a4b8030424d
+R fe69bbfbdf0f9035e48cc3502476a4c4
 U drh
-Z eefdd7d4c689b509af3b4731cefe3c98
+Z cf3f449e5e4dc5f0a36f059aada3751c

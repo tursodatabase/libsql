@@ -422,19 +422,19 @@ int sqlite3VdbeTransferError(Vdbe *p);
 
 #ifdef SQLITE_OMIT_MERGE_SORT
 # define sqlite3VdbeSorterInit(Y,Z)      SQLITE_OK
-# define sqlite3VdbeSorterWrite(X,Y,Z)   SQLITE_OK
-# define sqlite3VdbeSorterClose(Y,Z)
+# define sqlite3VdbeSorterWrite(Y,Z)     SQLITE_OK
+# define sqlite3VdbeSorterClose(Z)
 # define sqlite3VdbeSorterRowkey(Y,Z)    SQLITE_OK
-# define sqlite3VdbeSorterRewind(X,Y,Z)  SQLITE_OK
-# define sqlite3VdbeSorterNext(X,Y,Z)    SQLITE_OK
-# define sqlite3VdbeSorterCompare(X,Y,Z) SQLITE_OK
+# define sqlite3VdbeSorterRewind(Y,Z)    SQLITE_OK
+# define sqlite3VdbeSorterNext(Y,Z)      SQLITE_OK
+# define sqlite3VdbeSorterCompare(Y,Z)   SQLITE_OK
 #else
 int sqlite3VdbeSorterInit(sqlite3 *, VdbeCursor *);
-void sqlite3VdbeSorterClose(sqlite3 *, VdbeCursor *);
+void sqlite3VdbeSorterClose(VdbeCursor *);
 int sqlite3VdbeSorterRowkey(const VdbeCursor *, Mem *);
-int sqlite3VdbeSorterNext(sqlite3 *, const VdbeCursor *, int *);
-int sqlite3VdbeSorterRewind(sqlite3 *, const VdbeCursor *, int *);
-int sqlite3VdbeSorterWrite(sqlite3 *, const VdbeCursor *, Mem *);
+int sqlite3VdbeSorterNext(const VdbeCursor *, int *);
+int sqlite3VdbeSorterRewind(const VdbeCursor *, int *);
+int sqlite3VdbeSorterWrite(const VdbeCursor *, Mem *);
 int sqlite3VdbeSorterCompare(const VdbeCursor *, Mem *, int *);
 #endif
 
