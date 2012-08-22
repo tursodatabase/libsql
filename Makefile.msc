@@ -39,6 +39,14 @@ NO_TCL = 0
 #
 SYMBOLS = 1
 
+# Set this to non-0 to use the SQLite debugging heap subsystem.
+#
+MEMDEBUG = 0
+
+# Set this to non-0 to use the Win32 native heap subsystem.
+#
+WIN32HEAP = 0
+
 # Set this to one of the following values to enable various debugging
 # features.  Each level includes the debugging options from the previous
 # levels.  Currently, the recognized values for DEBUG are:
@@ -200,15 +208,23 @@ TCC = $(TCC) -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_NONSTDC_NO_WARNINGS
 BCC = $(BCC) -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_NONSTDC_NO_WARNINGS
 
 #
-# Use native Win32 heap instead of malloc/free?
+# Use the SQLite debugging heap subsystem?
 #
-# TCC = $(TCC) -DSQLITE_WIN32_MALLOC=1
+!IF $(MEMDEBUG)!=0
+TCC = $(TCC) -DSQLITE_MEMDEBUG=1
+
+#
+# Use native Win32 heap subsystem instead of malloc/free?
+#
+!ELSEIF $(WIN32HEAP)!=0
+TCC = $(TCC) -DSQLITE_WIN32_MALLOC=1
 
 #
 # Validate the heap on every call into the native Win32 heap subsystem?
 #
 !IF $(DEBUG)>2
 TCC = $(TCC) -DSQLITE_WIN32_MALLOC_VALIDATE=1
+!ENDIF
 !ENDIF
 
 # The locations of the Tcl header and library files.  Also, the library that

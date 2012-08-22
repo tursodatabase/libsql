@@ -1,9 +1,9 @@
-C Update\sthe\sspellfix\svirtual\stable\sso\sthat\sall\sOOM\serrors\sare\sreported\sout\nto\sthe\sapplication.
-D 2012-08-21T17:44:05.685
+C Modify\sthe\sMSVC\smakefile\sto\smake\sit\seasier\sto\sselect\sthe\sheap\ssubsystem\sto\suse.
+D 2012-08-22T00:39:34.681
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc e89bdb795a841e58169ef9e26e543096dfc17c24
+F Makefile.msc 45dd3579cae399d73e3f5eab36f6f332783072e5
 F Makefile.vxworks 879f034a64062a364b21000266bbd5bc6e0c19b9
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION a71848df48082f1d6585d4b0819d530fc455485d
@@ -1011,7 +1011,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P e799222f3b8246e65657a758437914ece7069ba9
-R 5e828b4451d9abd5424b5fdb18a303b8
-U drh
-Z 86d779defb1a86a95d6cf62943de67e6
+P 573770f5a66fa4d708931b30350149eb739da607
+R 37de98f91b94867b24c6cd4084658a36
+U mistachkin
+Z 9fc3bc40456dded5ffdcfb8030fc95c3
