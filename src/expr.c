@@ -3123,9 +3123,12 @@ void sqlite3ExplainExpr(Vdbe *pOut, Expr *pExpr){
       }else{
         pFarg = pExpr->x.pList;
       }
-      sqlite3ExplainPrintf(pOut, "%sFUNCTION:%s(",
-                           op==TK_AGG_FUNCTION ? "AGG_" : "",
-                           pExpr->u.zToken);
+      if( op==TK_AGG_FUNCTION ){
+        sqlite3ExplainPrintf(pOut, "AGG_FUNCTION%d:%s(",
+                             pExpr->op2, pExpr->u.zToken);
+      }else{
+        sqlite3ExplainPrintf(pOut, "FUNCTION:%s(", pExpr->u.zToken);
+      }
       if( pFarg ){
         sqlite3ExplainExprList(pOut, pFarg);
       }
@@ -3818,8 +3821,8 @@ int sqlite3ExprListCompare(ExprList *pA, ExprList *pB){
 /*
 ** An instance of the following structure is used by the tree walker
 ** to count references to table columns in the arguments of an 
-** aggregate function, in order to implement the sqlite3FunctionUsesOtherSrc()
-** and sqlite3FunctionThisSrc() routines.
+** aggregate function, in order to implement the
+** sqlite3FunctionThisSrc() routine.
 */
 struct SrcCount {
   SrcList *pSrc;   /* One particular FROM clause in a nested query */
@@ -3845,26 +3848,6 @@ static int exprSrcCount(Walker *pWalker, Expr *pExpr){
     }
   }
   return WRC_Continue;
-}
-
-/*
-** Determine if any of the arguments to the pExpr Function references
-** any SrcList other than pSrcList.  Return true if they do.  Return
-** false if pExpr has no argument or has only constant arguments or
-** only references tables named in pSrcList.
-*/
-static int sqlite3FunctionUsesOtherSrc(Expr *pExpr, SrcList *pSrcList){
-  Walker w;
-  struct SrcCount cnt;
-  assert( pExpr->op==TK_AGG_FUNCTION );
-  memset(&w, 0, sizeof(w));
-  w.xExprCallback = exprSrcCount;
-  w.u.pSrcCount = &cnt;
-  cnt.pSrc = pSrcList;
-  cnt.nThis = 0;
-  cnt.nOther = 0;
-  sqlite3WalkExprList(&w, pExpr->x.pList);
-  return cnt.nOther>0;
 }
 
 /*
@@ -4003,7 +3986,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
     }
     case TK_AGG_FUNCTION: {
       if( (pNC->ncFlags & NC_InAggFunc)==0
-       && !sqlite3FunctionUsesOtherSrc(pExpr, pSrcList)
+       && pWalker->walkerDepth==pExpr->op2
       ){
         /* Check to see if pExpr is a duplicate of another aggregate 
         ** function that is already in the pAggInfo structure
