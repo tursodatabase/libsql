@@ -3816,22 +3816,35 @@ int sqlite3ExprListCompare(ExprList *pA, ExprList *pB){
 }
 
 /*
-** This is the expression callback for sqlite3FunctionUsesOtherSrc().
-**
-** Determine if an expression references any table other than one of the
-** tables in pWalker->u.pSrcList and abort if it does.
+** An instance of the following structure is used by the tree walker
+** to count references to table columns in the arguments of an 
+** aggregate function, in order to implement the sqlite3FunctionUsesOtherSrc()
+** and sqlite3FunctionThisSrc() routines.
 */
-static int exprUsesOtherSrc(Walker *pWalker, Expr *pExpr){
+struct SrcCount {
+  SrcList *pSrc;   /* One particular FROM clause in a nested query */
+  int nThis;       /* Number of references to columns in pSrcList */
+  int nOther;      /* Number of references to columns in other FROM clauses */
+};
+
+/*
+** Count the number of references to columns.
+*/
+static int exprSrcCount(Walker *pWalker, Expr *pExpr){
   if( pExpr->op==TK_COLUMN || pExpr->op==TK_AGG_COLUMN ){
     int i;
-    SrcList *pSrc = pWalker->u.pSrcList;
+    struct SrcCount *p = pWalker->u.pSrcCount;
+    SrcList *pSrc = p->pSrc;
     for(i=0; i<pSrc->nSrc; i++){
-      if( pExpr->iTable==pSrc->a[i].iCursor ) return WRC_Continue;
+      if( pExpr->iTable==pSrc->a[i].iCursor ) break;
     }
-    return WRC_Abort;
-  }else{
-    return WRC_Continue;
+    if( i<pSrc->nSrc ){
+      p->nThis++;
+    }else{
+      p->nOther++;
+    }
   }
+  return WRC_Continue;
 }
 
 /*
@@ -3842,12 +3855,36 @@ static int exprUsesOtherSrc(Walker *pWalker, Expr *pExpr){
 */
 static int sqlite3FunctionUsesOtherSrc(Expr *pExpr, SrcList *pSrcList){
   Walker w;
+  struct SrcCount cnt;
   assert( pExpr->op==TK_AGG_FUNCTION );
   memset(&w, 0, sizeof(w));
-  w.xExprCallback = exprUsesOtherSrc;
-  w.u.pSrcList = pSrcList;
-  if( sqlite3WalkExprList(&w, pExpr->x.pList)!=WRC_Continue ) return 1;
-  return 0;
+  w.xExprCallback = exprSrcCount;
+  w.u.pSrcCount = &cnt;
+  cnt.pSrc = pSrcList;
+  cnt.nThis = 0;
+  cnt.nOther = 0;
+  sqlite3WalkExprList(&w, pExpr->x.pList);
+  return cnt.nOther>0;
+}
+
+/*
+** Determine if any of the arguments to the pExpr Function reference
+** pSrcList.  Return true if they do.  Also return true if the function
+** has no arguments or has only constant arguments.  Return false if pExpr
+** references columns but not columns of tables found in pSrcList.
+*/
+int sqlite3FunctionUsesThisSrc(Expr *pExpr, SrcList *pSrcList){
+  Walker w;
+  struct SrcCount cnt;
+  assert( pExpr->op==TK_AGG_FUNCTION );
+  memset(&w, 0, sizeof(w));
+  w.xExprCallback = exprSrcCount;
+  w.u.pSrcCount = &cnt;
+  cnt.pSrc = pSrcList;
+  cnt.nThis = 0;
+  cnt.nOther = 0;
+  sqlite3WalkExprList(&w, pExpr->x.pList);
+  return cnt.nThis>0 || cnt.nOther==0;
 }
 
 /*

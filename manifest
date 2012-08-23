@@ -1,5 +1,5 @@
-C Modify\sthe\sMSVC\smakefile\sto\smake\sit\seasier\sto\sselect\sthe\sheap\ssubsystem\sto\suse.
-D 2012-08-22T00:39:34.681
+C Further\simprovements\sto\sthe\sprocessing\sof\snested\saggregate\squeries.
+D 2012-08-23T16:18:10.544
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -132,7 +132,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 500d019da966631ad957c37705642be87524463b
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c 4c20ea4f6213b3bc1c6a510586864b679946e05e
-F src/expr.c e2927abf9c69ce4ff9a931bd201946961c34819a
+F src/expr.c e03a5509b5c8f0d0b5e8210ea43addabc4a17f47
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 657212460bf5cfd3ae607d12ea62092844c227b5
 F src/func.c 18dfedfb857e100b05755a1b12e88b389f957879
@@ -174,13 +174,13 @@ F src/pragma.c 97f9357f0e7e5fb46a2519f14539550aa07db49f
 F src/prepare.c 33291b83cca285718048d219c67b8298501fa3a5
 F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
-F src/resolve.c b3c70ab28cac60de33684c9aa9e5138dcf71d6dd
+F src/resolve.c e60d1f7ce1f1d1ae13acf1c39b4e8bfd9e243847
 F src/rowset.c f6a49f3e9579428024662f6e2931832511f831a1
-F src/select.c a365da6d7a6d7d8a10ad60ca71837ab5e9369466
+F src/select.c cd051b460e7d0c3ac42e7727eef075fb29c23769
 F src/shell.c 076e1c90d594644f36027c8ecff9a392cf2d3a06
 F src/sqlite.h.in f664797c68ced43c2ea2c541d4ec8e1e04ec68ac
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h c8169801f8bbfdf5873cc6fa45cb5df720c04db4
+F src/sqliteInt.h f4748d18114510f61e6de8bac0d513dc76e8f21c
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -253,6 +253,7 @@ F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 24c7494d8875ead994b4dfe5461340c27fd424ca
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
+F test/aggnested.test 6c1efa2ed9f5dd0f80035b4fe794c6a278cd1ead
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 52fc8dee494092031a556911d404ca30a749a30b
 F test/alter.test 57d96ec9b320bd07af77567034488dcb6642c748
@@ -1011,7 +1012,10 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 573770f5a66fa4d708931b30350149eb739da607
-R 37de98f91b94867b24c6cd4084658a36
-U mistachkin
-Z 9fc3bc40456dded5ffdcfb8030fc95c3
+P b1dbf490869d7fc55ce797cf80cf3bf7141d2d15
+R 6f0858104ecac7c70bd80af9dbc9e718
+T *branch * nested-agg
+T *sym-nested-agg *
+T -sym-trunk *
+U drh
+Z fbb7622480ad2005f08fba3df589ccf6

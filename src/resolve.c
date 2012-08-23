@@ -568,13 +568,19 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
              nId, zId);
         pNC->nErr++;
       }
-      if( is_agg ){
-        pExpr->op = TK_AGG_FUNCTION;
-        pNC->ncFlags |= NC_HasAgg;
-      }
       if( is_agg ) pNC->ncFlags &= ~NC_AllowAgg;
       sqlite3WalkExprList(pWalker, pList);
-      if( is_agg ) pNC->ncFlags |= NC_AllowAgg;
+      if( is_agg ){
+        NameContext *pNC2 = pNC;
+        pExpr->op = TK_AGG_FUNCTION;
+        pExpr->op2 = 0;
+        while( pNC2 && !sqlite3FunctionUsesThisSrc(pExpr, pNC2->pSrcList) ){
+          pExpr->op2++;
+          pNC2 = pNC2->pNext;
+        }
+        if( pNC2 ) pNC2->ncFlags |= NC_HasAgg;
+        pNC->ncFlags |= NC_AllowAgg;
+      }
       /* FIX ME:  Compute pExpr->affinity based on the expected return
       ** type of the function 
       */
