@@ -1,5 +1,5 @@
-C Modify\sthe\sMSVC\smakefile\sto\smake\sit\seasier\sto\sselect\sthe\sheap\ssubsystem\sto\suse.
-D 2012-08-22T00:39:34.681
+C Merge\schanges\sfor\sthe\snew\ssqlite3_win32_set_directory\sAPI\sto\strunk.
+D 2012-08-23T22:45:34.016
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,7 +163,7 @@ F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c b5149a3343a6acd6c9df4e3acf5085a6501c1f68
-F src/os_win.c b8fc659987a678c7924796585f5ae293ba5c896d
+F src/os_win.c 88f8cc4ffdbb47e0f8f8b60110fcf90e461c5fb4
 F src/pager.c e381c118b77dc22021a1a59d3fec24815e91df78
 F src/pager.h 8b8c9bc065a3c66769df8724dfdf492ee1aab3c5
 F src/parse.y f29df90bd3adc64b33114ab1de9fb7768fcf2099
@@ -1011,7 +1011,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 573770f5a66fa4d708931b30350149eb739da607
-R 37de98f91b94867b24c6cd4084658a36
+P b1dbf490869d7fc55ce797cf80cf3bf7141d2d15 1246f15b146ebf6518fb8f5c92a1ebc9495cd9dc
+R 35479bceaf9a1b66b4c629b32ba58687
 U mistachkin
-Z 9fc3bc40456dded5ffdcfb8030fc95c3
+Z e3d10f82918ee1a10410c8802031890d
