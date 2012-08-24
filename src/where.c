@@ -4297,8 +4297,8 @@ static Bitmask codeOneLoopStart(
     */
     WhereClause *pOrWc;    /* The OR-clause broken out into subterms */
     SrcList *pOrTab;       /* Shortened table list or OR-clause generation */
-    Index *pCov = 0;       /* Potential covering index (or NULL) */
-    int iCovCur = 0;       /* Cursor used to open pCov */
+    Index *pCov = 0;             /* Potential covering index (or NULL) */
+    int iCovCur = pParse->nTab++;  /* Cursor used for index scans (if any) */
 
     int regReturn = ++pParse->nMem;           /* Register used with OP_Gosub */
     int regRowset = 0;                        /* Register for RowSet object */
@@ -4394,7 +4394,7 @@ static Bitmask codeOneLoopStart(
         /* Loop through table entries that match term pOrTerm. */
         pSubWInfo = sqlite3WhereBegin(pParse, pOrTab, pOrExpr, 0, 0,
                         WHERE_OMIT_OPEN_CLOSE | WHERE_AND_ONLY |
-                        WHERE_FORCE_TABLE | WHERE_ONETABLE_ONLY);
+                        WHERE_FORCE_TABLE | WHERE_ONETABLE_ONLY, iCovCur);
         assert( pSubWInfo || pParse->nErr || pParse->db->mallocFailed );
         if( pSubWInfo ){
           WhereLevel *pLvl;
@@ -4426,21 +4426,17 @@ static Bitmask codeOneLoopStart(
           ** If the call to sqlite3WhereBegin() above resulted in a scan that
           ** uses an index, and this is either the first OR-connected term
           ** processed or the index is the same as that used by all previous
-          ** terms, set pCov to the candidate covering index and iCovCur to
-          ** the cursor number used to open it. Otherwise, set pCov to NULL
-          ** to indicate that no candidate covering index will be available.
+          ** terms, set pCov to the candidate covering index. Otherwise, set 
+          ** pCov to NULL to indicate that no candidate covering index will 
+          ** be available.
           */
           pLvl = &pSubWInfo->a[0];
           if( (pLvl->plan.wsFlags & WHERE_INDEXED)!=0
            && (pLvl->plan.wsFlags & WHERE_TEMP_INDEX)==0
-           && (pLvl->iIdxCur==pParse->nTab-1)
-           && (ii==0 || (pLvl->plan.u.pIdx==pCov && pLvl->iIdxCur==iCovCur))
+           && (ii==0 || pLvl->plan.u.pIdx==pCov)
           ){
+            assert( pLvl->iIdxCur==iCovCur );
             pCov = pLvl->plan.u.pIdx;
-            iCovCur = pLvl->iIdxCur;
-            /* Decrement pParse->nTab in order to make cursor number iCovCur
-            ** available to the next OR-connected term.  */
-            pParse->nTab--;
           }else{
             pCov = 0;
           }
@@ -4450,11 +4446,6 @@ static Bitmask codeOneLoopStart(
         }
       }
     }
-    /* Increment pParse->nTab here to ensure that it really is larger than
-    ** the largest cursor number used by the VM (this may not be the case
-    ** if pParse->nTab was decremented by the final iteration of the loop
-    ** above).  */
-    pParse->nTab++;
     pLevel->pCovidx = pCov;
     pLevel->iIdxCur = iCovCur;
     if( pAndExpr ){
@@ -4674,7 +4665,8 @@ WhereInfo *sqlite3WhereBegin(
   Expr *pWhere,         /* The WHERE clause */
   ExprList **ppOrderBy, /* An ORDER BY clause, or NULL */
   ExprList *pDistinct,  /* The select-list for DISTINCT queries - or NULL */
-  u16 wctrlFlags        /* One of the WHERE_* flags defined in sqliteInt.h */
+  u16 wctrlFlags,       /* One of the WHERE_* flags defined in sqliteInt.h */
+  int iIdxCur           /* If WHERE_ONETABLE_ONLY is set, index cursor number */
 ){
   int i;                     /* Loop counter */
   int nByteWInfo;            /* Num. bytes allocated for WhereInfo struct */
@@ -4994,7 +4986,13 @@ WhereInfo *sqlite3WhereBegin(
     testcase( bestPlan.plan.wsFlags & WHERE_INDEXED );
     testcase( bestPlan.plan.wsFlags & WHERE_TEMP_INDEX );
     if( bestPlan.plan.wsFlags & (WHERE_INDEXED|WHERE_TEMP_INDEX) ){
-      pLevel->iIdxCur = pParse->nTab++;
+      if( (wctrlFlags & WHERE_ONETABLE_ONLY) 
+       && (bestPlan.plan.wsFlags & WHERE_TEMP_INDEX)==0 
+      ){
+        pLevel->iIdxCur = iIdxCur;
+      }else{
+        pLevel->iIdxCur = pParse->nTab++;
+      }
     }else{
       pLevel->iIdxCur = -1;
     }
