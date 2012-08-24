@@ -1,5 +1,5 @@
-C Merge\sthe\snested\saggregate\squery\senhancements\sinto\strunk.
-D 2012-08-24T01:07:52.214
+C Experimental\schange\sto\ssupport\sthe\scovering\sindex\soptimization\sfor\squeries\swith\sOR\sterms\sin\sthe\sWHERE\sclause\sthat\ssearch\sa\ssingle\sindex\smore\sthan\sonce.
+D 2012-08-24T10:52:35.794
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -180,7 +180,7 @@ F src/select.c 2c0291db072924cace54aadbff1996297e9b8de0
 F src/shell.c 076e1c90d594644f36027c8ecff9a392cf2d3a06
 F src/sqlite.h.in f664797c68ced43c2ea2c541d4ec8e1e04ec68ac
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h f4748d18114510f61e6de8bac0d513dc76e8f21c
+F src/sqliteInt.h 66b3bc97e63dcb65c71ceddd668c1c7ca30f78f7
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -250,7 +250,7 @@ F src/vtab.c bb8ea3a26608bb1357538a5d2fc72beba6638998
 F src/wal.c 9294df6f96aae5909ae1a9b733fd1e1b4736978b
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 24c7494d8875ead994b4dfe5461340c27fd424ca
+F src/where.c b4d98014de3ce6e0e9a63ba16018fff89dc72d73
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 0be144b453e0622a085fae8665c32f5676708e00
@@ -965,6 +965,7 @@ F test/where9.test ae98dc22ef9b6f2bc81e9f164e41b38faa9bda06
 F test/whereA.test 24c234263c8fe358f079d5e57d884fb569d2da0a
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/whereC.test 13ff5ec0dba407c0e0c075980c75b3275a6774e5
+F test/whereD.test 54e11307e85c2ae987744f0fefd34214f752ba49
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/win32lock.test b2a539e85ae6b2d78475e016a9636b4451dc7fb9
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
@@ -1012,7 +1013,10 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 20f184f2d5908badd9d44d4fe2ad7c9e182c8803 00b1dc71be4c3420730b5f7840af824ea86165e7
-R c1fab8e17aa8935c76d7626b4d7fe139
-U drh
-Z 3e9a3890be18a0a197379668b716e1a3
+P d4cd6017c9875947a05b1dc36538d4272fb18739
+R 0e14b06eb4293757e84906b2ad3f48bd
+T *branch * multi-or-covering-index
+T *sym-multi-or-covering-index *
+T -sym-trunk *
+U dan
+Z a3dcd5ab6d90b9bc7bd57494f6da388a

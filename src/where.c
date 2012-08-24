@@ -4297,6 +4297,8 @@ static Bitmask codeOneLoopStart(
     */
     WhereClause *pOrWc;    /* The OR-clause broken out into subterms */
     SrcList *pOrTab;       /* Shortened table list or OR-clause generation */
+    Index *pCov = 0;       /* Potential covering index (or NULL) */
+    int iCovCur = 0;       /* Cursor used to open pCov */
 
     int regReturn = ++pParse->nMem;           /* Register used with OP_Gosub */
     int regRowset = 0;                        /* Register for RowSet object */
@@ -4315,7 +4317,7 @@ static Bitmask codeOneLoopStart(
     pLevel->op = OP_Return;
     pLevel->p1 = regReturn;
 
-    /* Set up a new SrcList ni pOrTab containing the table being scanned
+    /* Set up a new SrcList in pOrTab containing the table being scanned
     ** by this loop in the a[0] slot and all notReady tables in a[1..] slots.
     ** This becomes the SrcList in the recursive call to sqlite3WhereBegin().
     */
@@ -4393,7 +4395,9 @@ static Bitmask codeOneLoopStart(
         pSubWInfo = sqlite3WhereBegin(pParse, pOrTab, pOrExpr, 0, 0,
                         WHERE_OMIT_OPEN_CLOSE | WHERE_AND_ONLY |
                         WHERE_FORCE_TABLE | WHERE_ONETABLE_ONLY);
+        assert( pSubWInfo || pParse->nErr || pParse->db->mallocFailed );
         if( pSubWInfo ){
+          WhereLevel *pLvl;
           explainOneScan(
               pParse, pOrTab, &pSubWInfo->a[0], iLevel, pLevel->iFrom, 0
           );
@@ -4414,11 +4418,45 @@ static Bitmask codeOneLoopStart(
           */
           if( pSubWInfo->untestedTerms ) untestedTerms = 1;
 
+          /* If all of the OR-connected terms are optimized using the same
+          ** index, and the index is opened using the same cursor number
+          ** by each call to sqlite3WhereBegin() made by this loop, it may
+          ** be possible to use that index as a covering index.
+          **
+          ** If the call to sqlite3WhereBegin() above resulted in a scan that
+          ** uses an index, and this is either the first OR-connected term
+          ** processed or the index is the same as that used by all previous
+          ** terms, set pCov to the candidate covering index and iCovCur to
+          ** the cursor number used to open it. Otherwise, set pCov to NULL
+          ** to indicate that no candidate covering index will be available.
+          */
+          pLvl = &pSubWInfo->a[0];
+          if( (pLvl->plan.wsFlags & WHERE_INDEXED)!=0
+           && (pLvl->plan.wsFlags & WHERE_TEMP_INDEX)==0
+           && (pLvl->iIdxCur==pParse->nTab-1)
+           && (ii==0 || (pLvl->plan.u.pIdx==pCov && pLvl->iIdxCur==iCovCur))
+          ){
+            pCov = pLvl->plan.u.pIdx;
+            iCovCur = pLvl->iIdxCur;
+            /* Decrement pParse->nTab in order to make cursor number iCovCur
+            ** available to the next OR-connected term.  */
+            pParse->nTab--;
+          }else{
+            pCov = 0;
+          }
+
           /* Finish the loop through table entries that match term pOrTerm. */
           sqlite3WhereEnd(pSubWInfo);
         }
       }
     }
+    /* Increment pParse->nTab here to ensure that it really is larger than
+    ** the largest cursor number used by the VM (this may not be the case
+    ** if pParse->nTab was decremented by the final iteration of the loop
+    ** above).  */
+    pParse->nTab++;
+    pLevel->pCovidx = pCov;
+    pLevel->iIdxCur = iCovCur;
     if( pAndExpr ){
       pAndExpr->pLeft = 0;
       sqlite3ExprDelete(pParse->db, pAndExpr);
@@ -5208,6 +5246,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
   */
   assert( pWInfo->nLevel==1 || pWInfo->nLevel==pTabList->nSrc );
   for(i=0, pLevel=pWInfo->a; i<pWInfo->nLevel; i++, pLevel++){
+    Index *pIdx = 0;
     struct SrcList_item *pTabItem = &pTabList->a[pLevel->iFrom];
     Table *pTab = pTabItem->pTab;
     assert( pTab!=0 );
@@ -5237,12 +5276,15 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     ** that reference the table and converts them into opcodes that
     ** reference the index.
     */
-    if( (pLevel->plan.wsFlags & WHERE_INDEXED)!=0 && !db->mallocFailed){
+    if( pLevel->plan.wsFlags & WHERE_INDEXED ){
+      pIdx = pLevel->plan.u.pIdx;
+    }else if( pLevel->plan.wsFlags & WHERE_MULTI_OR ){
+      pIdx = pLevel->pCovidx;
+    }
+    if( pIdx && !db->mallocFailed){
       int k, j, last;
       VdbeOp *pOp;
-      Index *pIdx = pLevel->plan.u.pIdx;
 
-      assert( pIdx!=0 );
       pOp = sqlite3VdbeGetOp(v, pWInfo->iTop);
       last = sqlite3VdbeCurrentAddr(v);
       for(k=pWInfo->iTop; k<last; k++, pOp++){
