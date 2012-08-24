@@ -3149,7 +3149,7 @@ static Table *isSimpleCount(Select *p, AggInfo *pAggInfo){
 
   if( IsVirtual(pTab) ) return 0;
   if( pExpr->op!=TK_AGG_FUNCTION ) return 0;
-  if( pAggInfo->nFunc==0 ) return 0;
+  if( NEVER(pAggInfo->nFunc==0) ) return 0;
   if( (pAggInfo->aFunc[0].pFunc->flags&SQLITE_FUNC_COUNT)==0 ) return 0;
   if( pExpr->flags&EP_Distinct ) return 0;
 
@@ -3521,7 +3521,7 @@ static void sqlite3SelectAddTypeInfo(Parse *pParse, Select *pSelect){
 
 
 /*
-** This routine sets of a SELECT statement for processing.  The
+** This routine sets up a SELECT statement for processing.  The
 ** following is accomplished:
 **
 **     *  VDBE Cursor numbers are assigned to all FROM-clause terms.
@@ -3553,7 +3553,8 @@ void sqlite3SelectPrep(
 **
 ** The aggregate accumulator is a set of memory cells that hold
 ** intermediate results while calculating an aggregate.  This
-** routine simply stores NULLs in all of those memory cells.
+** routine generates code that stores NULLs in all of those memory
+** cells.
 */
 static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
   Vdbe *v = pParse->pVdbe;

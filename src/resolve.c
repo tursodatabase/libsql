@@ -19,6 +19,29 @@
 #include <string.h>
 
 /*
+** Walk the expression tree pExpr and increase the aggregate function
+** depth (the Expr.op2 field) by N on every TK_AGG_FUNCTION node.
+** This needs to occur when copying a TK_AGG_FUNCTION node from an
+** outer query into an inner subquery.
+**
+** incrAggFunctionDepth(pExpr,n) is the main routine.  incrAggDepth(..)
+** is a helper function - a callback for the tree walker.
+*/
+static int incrAggDepth(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op==TK_AGG_FUNCTION ) pExpr->op2 += pWalker->u.i;
+  return WRC_Continue;
+}
+static void incrAggFunctionDepth(Expr *pExpr, int N){
+  if( N>0 ){
+    Walker w;
+    memset(&w, 0, sizeof(w));
+    w.xExprCallback = incrAggDepth;
+    w.u.i = N;
+    sqlite3WalkExpr(&w, pExpr);
+  }
+}
+
+/*
 ** Turn the pExpr expression into an alias for the iCol-th column of the
 ** result set in pEList.
 **
@@ -44,13 +67,20 @@
 ** The result of random()%5 in the GROUP BY clause is probably different
 ** from the result in the result-set.  We might fix this someday.  Or
 ** then again, we might not...
+**
+** The nSubquery parameter specifies how many levels of subquery the
+** alias is removed from the original expression.  The usually value is
+** zero but it might be more if the alias is contained within a subquery
+** of the original expression.  The Expr.op2 field of TK_AGG_FUNCTION
+** structures must be increased by the nSubquery amount.
 */
 static void resolveAlias(
   Parse *pParse,         /* Parsing context */
   ExprList *pEList,      /* A result set */
   int iCol,              /* A column in the result set.  0..pEList->nExpr-1 */
   Expr *pExpr,           /* Transform this into an alias to the result set */
-  const char *zType      /* "GROUP" or "ORDER" or "" */
+  const char *zType,     /* "GROUP" or "ORDER" or "" */
+  int nSubquery          /* Number of subqueries that the label is moving */
 ){
   Expr *pOrig;           /* The iCol-th column of the result set */
   Expr *pDup;            /* Copy of pOrig */
@@ -63,6 +93,7 @@ static void resolveAlias(
   db = pParse->db;
   if( pOrig->op!=TK_COLUMN && zType[0]!='G' ){
     pDup = sqlite3ExprDup(db, pOrig, 0);
+    incrAggFunctionDepth(pDup, nSubquery);
     pDup = sqlite3PExpr(pParse, TK_AS, pDup, 0, 0);
     if( pDup==0 ) return;
     if( pEList->a[iCol].iAlias==0 ){
@@ -151,9 +182,10 @@ static int lookupName(
   NameContext *pNC,    /* The name context used to resolve the name */
   Expr *pExpr          /* Make this EXPR node point to the selected column */
 ){
-  int i, j;            /* Loop counters */
+  int i, j;                         /* Loop counters */
   int cnt = 0;                      /* Number of matching column names */
   int cntTab = 0;                   /* Number of matching table names */
+  int nSubquery = 0;                /* How many levels of subquery */
   sqlite3 *db = pParse->db;         /* The database connection */
   struct SrcList_item *pItem;       /* Use for looping over pSrcList items */
   struct SrcList_item *pMatch = 0;  /* The matching pSrcList item */
@@ -315,7 +347,7 @@ static int lookupName(
             sqlite3ErrorMsg(pParse, "misuse of aliased aggregate %s", zAs);
             return WRC_Abort;
           }
-          resolveAlias(pParse, pEList, j, pExpr, "");
+          resolveAlias(pParse, pEList, j, pExpr, "", nSubquery);
           cnt = 1;
           pMatch = 0;
           assert( zTab==0 && zDb==0 );
@@ -329,6 +361,7 @@ static int lookupName(
     */
     if( cnt==0 ){
       pNC = pNC->pNext;
+      nSubquery++;
     }
   }
 
@@ -568,13 +601,19 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
              nId, zId);
         pNC->nErr++;
       }
-      if( is_agg ){
-        pExpr->op = TK_AGG_FUNCTION;
-        pNC->ncFlags |= NC_HasAgg;
-      }
       if( is_agg ) pNC->ncFlags &= ~NC_AllowAgg;
       sqlite3WalkExprList(pWalker, pList);
-      if( is_agg ) pNC->ncFlags |= NC_AllowAgg;
+      if( is_agg ){
+        NameContext *pNC2 = pNC;
+        pExpr->op = TK_AGG_FUNCTION;
+        pExpr->op2 = 0;
+        while( pNC2 && !sqlite3FunctionUsesThisSrc(pExpr, pNC2->pSrcList) ){
+          pExpr->op2++;
+          pNC2 = pNC2->pNext;
+        }
+        if( pNC2 ) pNC2->ncFlags |= NC_HasAgg;
+        pNC->ncFlags |= NC_AllowAgg;
+      }
       /* FIX ME:  Compute pExpr->affinity based on the expected return
       ** type of the function 
       */
@@ -853,7 +892,7 @@ int sqlite3ResolveOrderGroupBy(
         resolveOutOfRangeError(pParse, zType, i+1, pEList->nExpr);
         return 1;
       }
-      resolveAlias(pParse, pEList, pItem->iOrderByCol-1, pItem->pExpr, zType);
+      resolveAlias(pParse, pEList, pItem->iOrderByCol-1, pItem->pExpr, zType,0);
     }
   }
   return 0;
