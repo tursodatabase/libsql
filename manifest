@@ -1,5 +1,5 @@
-C Another\stest\sfor\swhereD.test.
-D 2012-08-24T19:58:18.909
+C Remove\sa\sNEVER()\sthat\sis\sin\sfact\sreachable\son\san\sOOM.\s\sThis\sprobably\nhas\snothing\sto\sdo\swith\sthe\smulti-or-covering-index\schange\sbut\sjust\shappened\nto\sbe\sfound\swhile\stesting\sthat\schange.
+D 2012-08-24T21:54:11.844
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -250,7 +250,7 @@ F src/vtab.c bb8ea3a26608bb1357538a5d2fc72beba6638998
 F src/wal.c 9294df6f96aae5909ae1a9b733fd1e1b4736978b
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c b95276a535d9096088ee3cbc3eee25652f1b0c93
+F src/where.c 27c9e43fecf88b843bf237564c7276ef51f67540
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 0be144b453e0622a085fae8665c32f5676708e00
@@ -1013,7 +1013,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 7e961eef6b7260dd8deb8b3812218a874c382885
-R 4a4adcf19c2ce08ddfc8921697497bb6
-U dan
-Z bec2b67844a62f1ca5d6df71780775af
+P 29d586178dcfdb99eaf7ce768668ab0aa9898c83
+R 858bc4272f754092a91123cbacf06ab0
+U drh
+Z 3f900117ffb7958920cf3a90738748c3

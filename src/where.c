@@ -3622,7 +3622,7 @@ static int codeAllEqualityTerms(
     int r1;
     int k = pIdx->aiColumn[j];
     pTerm = findTerm(pWC, iCur, k, notReady, pLevel->plan.wsFlags, pIdx);
-    if( NEVER(pTerm==0) ) break;
+    if( pTerm==0 ) break;
     /* The following true for indices with redundant columns. 
     ** Ex: CREATE INDEX i1 ON t1(a,b,a); SELECT * FROM t1 WHERE a=0 AND b=0; */
     testcase( (pTerm->wtFlags & TERM_CODED)!=0 );
