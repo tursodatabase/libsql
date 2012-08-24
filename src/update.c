@@ -313,7 +313,7 @@ void sqlite3Update(
   */
   sqlite3VdbeAddOp3(v, OP_Null, 0, regRowSet, regOldRowid);
   pWInfo = sqlite3WhereBegin(
-      pParse, pTabList, pWhere, 0, 0, WHERE_ONEPASS_DESIRED
+      pParse, pTabList, pWhere, 0, 0, WHERE_ONEPASS_DESIRED, 0
   );
   if( pWInfo==0 ) goto update_cleanup;
   okOnePass = pWInfo->okOnePass;
