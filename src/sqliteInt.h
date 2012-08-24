@@ -1947,8 +1947,8 @@ struct WhereLevel {
         int addrInTop;         /* Top of the IN loop */
       } *aInLoop;           /* Information about each nested IN operator */
     } in;                 /* Used when plan.wsFlags&WHERE_IN_ABLE */
+    Index *pCovidx;       /* Possible covering index for WHERE_MULTI_OR */
   } u;
-  Index *pCovidx;       /* Possible covering index for WHERE_MULTI_OR levels */
 
   /* The following field is really not part of the current level.  But
   ** we need a place to cache virtual table index information for each

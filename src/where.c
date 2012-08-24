@@ -4446,7 +4446,7 @@ static Bitmask codeOneLoopStart(
         }
       }
     }
-    pLevel->pCovidx = pCov;
+    pLevel->u.pCovidx = pCov;
     pLevel->iIdxCur = iCovCur;
     if( pAndExpr ){
       pAndExpr->pLeft = 0;
@@ -5277,7 +5277,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     if( pLevel->plan.wsFlags & WHERE_INDEXED ){
       pIdx = pLevel->plan.u.pIdx;
     }else if( pLevel->plan.wsFlags & WHERE_MULTI_OR ){
-      pIdx = pLevel->pCovidx;
+      pIdx = pLevel->u.pCovidx;
     }
     if( pIdx && !db->mallocFailed){
       int k, j, last;
