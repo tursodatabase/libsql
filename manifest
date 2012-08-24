@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sto\sdo\swith\smulti-or\squeries\sand\sautomatic\sindexes.
-D 2012-08-24T18:44:56.189
+C Add\sextra\stests\sto\swhereD.test.
+D 2012-08-24T19:52:25.350
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -965,7 +965,7 @@ F test/where9.test ae98dc22ef9b6f2bc81e9f164e41b38faa9bda06
 F test/whereA.test 24c234263c8fe358f079d5e57d884fb569d2da0a
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/whereC.test 13ff5ec0dba407c0e0c075980c75b3275a6774e5
-F test/whereD.test 1322fdcfbcc5e6eb6bb3b5d69930e231da388cc6
+F test/whereD.test 85b8aa329439b81e6844f65763eec84ae8db1604
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/win32lock.test b2a539e85ae6b2d78475e016a9636b4451dc7fb9
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
@@ -1013,7 +1013,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P e5c3190c27b69dc50f348c849a81b79031b2fb67
-R 1a9f451faf8fb885437a56c112ab8ef2
+P a3e26038a1d9f3331239f777c67d1920d904aab0
+R 818ec06d567f4218c34d00c712e0fbb7
 U dan
-Z 18419d426568216b7681f94d1ac9fe1c
+Z 17fe6aa0374a8f5f1fd6fa7c61adf7ad
