@@ -1,5 +1,5 @@
-C Experimental\schange\sto\ssupport\sthe\scovering\sindex\soptimization\sfor\squeries\swith\sOR\sterms\sin\sthe\sWHERE\sclause\sthat\ssearch\sa\ssingle\sindex\smore\sthan\sonce.
-D 2012-08-24T10:52:35.794
+C Additional\stest\scases\sfor\sOR-optimization\swith\scovering\sindices,\sincluding\none\stest\scase\sthat\scurrently\sfails.
+D 2012-08-24T15:29:03.804
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -965,7 +965,7 @@ F test/where9.test ae98dc22ef9b6f2bc81e9f164e41b38faa9bda06
 F test/whereA.test 24c234263c8fe358f079d5e57d884fb569d2da0a
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/whereC.test 13ff5ec0dba407c0e0c075980c75b3275a6774e5
-F test/whereD.test 54e11307e85c2ae987744f0fefd34214f752ba49
+F test/whereD.test 1aee8a7b3a0674d8d0119d764e069225ce426406
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/win32lock.test b2a539e85ae6b2d78475e016a9636b4451dc7fb9
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
@@ -1013,10 +1013,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P d4cd6017c9875947a05b1dc36538d4272fb18739
-R 0e14b06eb4293757e84906b2ad3f48bd
-T *branch * multi-or-covering-index
-T *sym-multi-or-covering-index *
-T -sym-trunk *
-U dan
-Z a3dcd5ab6d90b9bc7bd57494f6da388a
+P 1dc8c7c741a82bb98a07f3fdb8142d8bc8d8a98b
+R 0de9e52cb560b3160307382415072714
+U drh
+Z f74e9ea8f0417bf70ede532a4ecba542
