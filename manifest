@@ -1,5 +1,5 @@
-C When\sthe\ssame\sindex\sis\sused\sfor\sall\sOR-terms\sin\sa\sWHERE\sclause,\sthen\stry\sto\nuse\sthat\sindex\sas\sa\scovering\sindex.
-D 2012-08-24T23:56:19.679
+C Fix\sa\sharmless\scompiler\swarning.
+D 2012-08-25T02:11:13.487
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -250,7 +250,7 @@ F src/vtab.c bb8ea3a26608bb1357538a5d2fc72beba6638998
 F src/wal.c 9294df6f96aae5909ae1a9b733fd1e1b4736978b
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 9a28820fb0ead5674d5b45dfdb32aef913fe40c3
+F src/where.c 22783f4275f6fc09b663115a6091837cb5c510e0
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 0be144b453e0622a085fae8665c32f5676708e00
@@ -1013,7 +1013,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P d4cd6017c9875947a05b1dc36538d4272fb18739 b722143d075979ba3d92b7b29e576ce2307187d1
-R d51bc6dccf316fa29f046fa529eea646
+P 62678be3df35cdcb09172ba8c860f7b73517f1ea
+R 8f8d8faf27ea3974f9d239d934dc7769
 U drh
-Z 88e4cd6b2ce7efc36bc2db59aa6b0ac5
+Z 543f2e170a0025b269105a24582957fc
