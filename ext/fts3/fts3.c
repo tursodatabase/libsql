@@ -4436,6 +4436,7 @@ static int fts3EvalStart(Fts3Cursor *pCsr){
   fts3EvalAllocateReaders(pCsr, pCsr->pExpr, &nToken, &nOr, &rc);
 
   /* Determine which, if any, tokens in the expression should be deferred. */
+#ifndef SQLITE_DISABLE_FTS4_DEFERRED
   if( rc==SQLITE_OK && nToken>1 && pTab->bFts4 ){
     Fts3TokenAndCost *aTC;
     Fts3Expr **apOr;
@@ -4466,6 +4467,7 @@ static int fts3EvalStart(Fts3Cursor *pCsr){
       sqlite3_free(aTC);
     }
   }
+#endif
 
   fts3EvalStartReaders(pCsr, pCsr->pExpr, 1, &rc);
   return rc;
@@ -4849,6 +4851,7 @@ static int fts3EvalTestExpr(
         break;
 
       default: {
+#ifndef SQLITE_DISABLE_FTS4_DEFERRED
         if( pCsr->pDeferred 
          && (pExpr->iDocid==pCsr->iPrevId || pExpr->bDeferred)
         ){
@@ -4860,7 +4863,9 @@ static int fts3EvalTestExpr(
           *pRc = fts3EvalDeferredPhrase(pCsr, pPhrase);
           bHit = (pPhrase->doclist.pList!=0);
           pExpr->iDocid = pCsr->iPrevId;
-        }else{
+        }else
+#endif
+        {
           bHit = (pExpr->bEof==0 && pExpr->iDocid==pCsr->iPrevId);
         }
         break;

@@ -113,7 +113,11 @@ static int rehash(Hash *pH, unsigned int new_size){
 
   /* The inability to allocates space for a larger hash table is
   ** a performance hit but it is not a fatal error.  So mark the
-  ** allocation as a benign.
+  ** allocation as a benign. Use sqlite3Malloc()/memset(0) instead of 
+  ** sqlite3MallocZero() to make the allocation, as sqlite3MallocZero()
+  ** only zeroes the requested number of bytes whereas this module will
+  ** use the actual amount of space allocated for the hash table (which
+  ** may be larger than the requested amount).
   */
   sqlite3BeginBenignMalloc();
   new_ht = (struct _ht *)sqlite3Malloc( new_size*sizeof(struct _ht) );

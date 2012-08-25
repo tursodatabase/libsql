@@ -23,7 +23,7 @@
 /*
 ** Figure out if we are dealing with Unix, Windows, or some other
 ** operating system.  After the following block of preprocess macros,
-** all of SQLITE_OS_UNIX, SQLITE_OS_WIN, SQLITE_OS_OS2, and SQLITE_OS_OTHER 
+** all of SQLITE_OS_UNIX, SQLITE_OS_WIN, and SQLITE_OS_OTHER 
 ** will defined to either 1 or 0.  One of the four will be 1.  The other 
 ** three will be 0.
 */
@@ -33,8 +33,6 @@
 #   define SQLITE_OS_UNIX 0
 #   undef SQLITE_OS_WIN
 #   define SQLITE_OS_WIN 0
-#   undef SQLITE_OS_OS2
-#   define SQLITE_OS_OS2 0
 # else
 #   undef SQLITE_OS_OTHER
 # endif
@@ -45,19 +43,12 @@
 #   if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
 #     define SQLITE_OS_WIN 1
 #     define SQLITE_OS_UNIX 0
-#     define SQLITE_OS_OS2 0
-#   elif defined(__EMX__) || defined(_OS2) || defined(OS2) || defined(_OS2_) || defined(__OS2__)
-#     define SQLITE_OS_WIN 0
-#     define SQLITE_OS_UNIX 0
-#     define SQLITE_OS_OS2 1
 #   else
 #     define SQLITE_OS_WIN 0
 #     define SQLITE_OS_UNIX 1
-#     define SQLITE_OS_OS2 0
 #  endif
 # else
 #  define SQLITE_OS_UNIX 0
-#  define SQLITE_OS_OS2 0
 # endif
 #else
 # ifndef SQLITE_OS_WIN
@@ -67,21 +58,6 @@
 
 #if SQLITE_OS_WIN
 # include <windows.h>
-#endif
-
-#if SQLITE_OS_OS2
-# if (__GNUC__ > 3 || __GNUC__ == 3 && __GNUC_MINOR__ >= 3) && defined(OS2_HIGH_MEMORY)
-#  include <os2safe.h> /* has to be included before os2.h for linking to work */
-# endif
-# define INCL_DOSDATETIME
-# define INCL_DOSFILEMGR
-# define INCL_DOSERRORS
-# define INCL_DOSMISC
-# define INCL_DOSPROCESS
-# define INCL_DOSMODULEMGR
-# define INCL_DOSSEMAPHORES
-# include <os2.h>
-# include <uconv.h>
 #endif
 
 /*
@@ -116,8 +92,8 @@
 #endif
 
 /*
-** Determine if we are dealing with WindowsRT (Metro) as this has a different and
-** incompatible API from win32.
+** Determine if we are dealing with WinRT, which provides only a subset of
+** the full Win32 API.
 */
 #if !defined(SQLITE_OS_WINRT)
 # define SQLITE_OS_WINRT 0

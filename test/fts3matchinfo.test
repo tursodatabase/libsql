@@ -275,11 +275,14 @@ do_matchinfo_test 4.3.4 t5 {t5 MATCH 'a a a'}       { s {3 1} }
 do_matchinfo_test 4.3.5 t5 {t5 MATCH '"a b" "a b"'} { s {2} }
 do_matchinfo_test 4.3.6 t5 {t5 MATCH 'a OR b'}      { s {1 2 1 1} }
 
-do_execsql_test 4.4.0 {
-  INSERT INTO t5(t5) VALUES('optimize');
-  UPDATE t5_segments 
-  SET block = zeroblob(length(block)) 
-  WHERE length(block)>10000;
+do_execsql_test 4.4.0.1 { INSERT INTO t5(t5) VALUES('optimize') }
+
+ifcapable fts4_deferred {
+  do_execsql_test 4.4.0.2 {
+    UPDATE t5_segments 
+    SET block = zeroblob(length(block)) 
+    WHERE length(block)>10000;
+  }
 }
 
 do_matchinfo_test 4.4.2 t5 {t5 MATCH 'a b'}         { s {2} }

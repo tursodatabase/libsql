@@ -2471,6 +2471,7 @@ void sqlite3VdbeDelete(Vdbe *p){
 
   if( NEVER(p==0) ) return;
   db = p->db;
+  assert( sqlite3_mutex_held(db->mutex) );
   if( p->pPrev ){
     p->pPrev->pNext = p->pNext;
   }else{

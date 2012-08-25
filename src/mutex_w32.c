@@ -109,7 +109,7 @@ static int winMutex_isInit = 0;
 */
 static long winMutex_lock = 0;
 
-extern void sqlite3_win32_sleep(DWORD milliseconds); /* os_win.c */
+void sqlite3_win32_sleep(DWORD milliseconds); /* os_win.c */
 
 static int winMutexInit(void){ 
   /* The first to increment to 1 does actual initialization */

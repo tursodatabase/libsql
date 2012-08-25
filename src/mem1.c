@@ -231,14 +231,14 @@ static int sqlite3MemInit(void *NotUsed){
   }else{
     /* only 1 core, use our own zone to contention over global locks, 
     ** e.g. we have our own dedicated locks */
-    bool success;		
+    bool success;
     malloc_zone_t* newzone = malloc_create_zone(4096, 0);
     malloc_set_zone_name(newzone, "Sqlite_Heap");
     do{
       success = OSAtomicCompareAndSwapPtrBarrier(NULL, newzone, 
                                  (void * volatile *)&_sqliteZone_);
     }while(!_sqliteZone_);
-    if( !success ){	
+    if( !success ){
       /* somebody registered a zone first */
       malloc_destroy_zone(newzone);
     }

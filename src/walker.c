@@ -125,12 +125,18 @@ int sqlite3WalkSelect(Walker *pWalker, Select *p){
   int rc;
   if( p==0 || pWalker->xSelectCallback==0 ) return WRC_Continue;
   rc = WRC_Continue;
-  while( p  ){
+  pWalker->walkerDepth++;
+  while( p ){
     rc = pWalker->xSelectCallback(pWalker, p);
     if( rc ) break;
-    if( sqlite3WalkSelectExpr(pWalker, p) ) return WRC_Abort;
-    if( sqlite3WalkSelectFrom(pWalker, p) ) return WRC_Abort;
+    if( sqlite3WalkSelectExpr(pWalker, p)
+     || sqlite3WalkSelectFrom(pWalker, p)
+    ){
+      pWalker->walkerDepth--;
+      return WRC_Abort;
+    }
     p = p->pPrior;
   }
+  pWalker->walkerDepth--;
   return rc & WRC_Abort;
 }

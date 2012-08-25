@@ -61,7 +61,6 @@ foreach hdr {
    opcodes.h
    os_common.h
    os.h
-   os_os2.h
    pager.h
    parse.h
    sqlite3ext.h

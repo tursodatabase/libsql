@@ -111,7 +111,7 @@ set allquicktests [test_set $alltests -exclude {
   thread003.test thread004.test thread005.test trans2.test vacuum3.test 
   incrvacuum_ioerr.test autovacuum_crash.test btree8.test shared_err.test
   vtab_err.test walslow.test walcrash.test walcrash3.test
-  walthread.test rtree3.test indexfault.test 
+  walthread.test rtree3.test indexfault.test securedel2.test
 }]
 if {[info exists ::env(QUICKTEST_INCLUDE)]} {
   set allquicktests [concat $allquicktests $::env(QUICKTEST_INCLUDE)]

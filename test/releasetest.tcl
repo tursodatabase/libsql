@@ -151,6 +151,15 @@ array set ::Configs {
     -DSQLITE_ENABLE_OVERSIZE_CELL_CHECK=1
     -DSQLITE_MAX_ATTACHED=62
   }
+  "Devkit" {
+    -DSQLITE_DEFAULT_FILE_FORMAT=4
+    -DSQLITE_MAX_ATTACHED=30
+    -DSQLITE_ENABLE_COLUMN_METADATA
+    -DSQLITE_ENABLE_FTS4
+    -DSQLITE_ENABLE_FTS4_PARENTHESIS
+    -DSQLITE_DISABLE_FTS4_DEFERRED
+    -DSQLITE_ENABLE_RTREE
+  }
 }
 
 array set ::Platforms {
@@ -166,6 +175,7 @@ array set ::Platforms {
     "Device-One"              fulltest
   }
   Linux-i686 {
+    "Devkit"                  test
     "Unlock-Notify"           "QUICKTEST_INCLUDE=notify2.test test"
     "Device-One"              test
     "Device-Two"              test
@@ -218,8 +228,6 @@ proc run_test_suite {name testtarget config} {
 
   if {$::tcl_platform(platform)=="windows"} {
     append opts " -DSQLITE_OS_WIN=1"
-  } elseif {$::tcl_platform(platform)=="os2"} {
-    append opts " -DSQLITE_OS_OS2=1"
   } else {
     append opts " -DSQLITE_OS_UNIX=1"
   }

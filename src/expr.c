@@ -1701,7 +1701,7 @@ int sqlite3CodeSubselect(
 
         assert( !isRowid );
         sqlite3SelectDestInit(&dest, SRT_Set, pExpr->iTable);
-        dest.affinity = (u8)affinity;
+        dest.affSdst = (u8)affinity;
         assert( (pExpr->iTable&0x0000FFFF)==pExpr->iTable );
         pExpr->x.pSelect->iLimit = 0;
         if( sqlite3Select(pParse, pExpr->x.pSelect, &dest) ){
@@ -1794,11 +1794,11 @@ int sqlite3CodeSubselect(
       sqlite3SelectDestInit(&dest, 0, ++pParse->nMem);
       if( pExpr->op==TK_SELECT ){
         dest.eDest = SRT_Mem;
-        sqlite3VdbeAddOp2(v, OP_Null, 0, dest.iParm);
+        sqlite3VdbeAddOp2(v, OP_Null, 0, dest.iSDParm);
         VdbeComment((v, "Init subquery result"));
       }else{
         dest.eDest = SRT_Exists;
-        sqlite3VdbeAddOp2(v, OP_Integer, 0, dest.iParm);
+        sqlite3VdbeAddOp2(v, OP_Integer, 0, dest.iSDParm);
         VdbeComment((v, "Init EXISTS result"));
       }
       sqlite3ExprDelete(pParse->db, pSel->pLimit);
@@ -1808,7 +1808,7 @@ int sqlite3CodeSubselect(
       if( sqlite3Select(pParse, pSel, &dest) ){
         return 0;
       }
-      rReg = dest.iParm;
+      rReg = dest.iSDParm;
       ExprSetIrreducible(pExpr);
       break;
     }
@@ -3123,9 +3123,12 @@ void sqlite3ExplainExpr(Vdbe *pOut, Expr *pExpr){
       }else{
         pFarg = pExpr->x.pList;
       }
-      sqlite3ExplainPrintf(pOut, "%sFUNCTION:%s(",
-                           op==TK_AGG_FUNCTION ? "AGG_" : "",
-                           pExpr->u.zToken);
+      if( op==TK_AGG_FUNCTION ){
+        sqlite3ExplainPrintf(pOut, "AGG_FUNCTION%d:%s(",
+                             pExpr->op2, pExpr->u.zToken);
+      }else{
+        sqlite3ExplainPrintf(pOut, "FUNCTION:%s(", pExpr->u.zToken);
+      }
       if( pFarg ){
         sqlite3ExplainExprList(pOut, pFarg);
       }
@@ -3816,38 +3819,60 @@ int sqlite3ExprListCompare(ExprList *pA, ExprList *pB){
 }
 
 /*
-** This is the expression callback for sqlite3FunctionUsesOtherSrc().
-**
-** Determine if an expression references any table other than one of the
-** tables in pWalker->u.pSrcList and abort if it does.
+** An instance of the following structure is used by the tree walker
+** to count references to table columns in the arguments of an 
+** aggregate function, in order to implement the
+** sqlite3FunctionThisSrc() routine.
 */
-static int exprUsesOtherSrc(Walker *pWalker, Expr *pExpr){
-  if( pExpr->op==TK_COLUMN || pExpr->op==TK_AGG_COLUMN ){
+struct SrcCount {
+  SrcList *pSrc;   /* One particular FROM clause in a nested query */
+  int nThis;       /* Number of references to columns in pSrcList */
+  int nOther;      /* Number of references to columns in other FROM clauses */
+};
+
+/*
+** Count the number of references to columns.
+*/
+static int exprSrcCount(Walker *pWalker, Expr *pExpr){
+  /* The NEVER() on the second term is because sqlite3FunctionUsesThisSrc()
+  ** is always called before sqlite3ExprAnalyzeAggregates() and so the
+  ** TK_COLUMNs have not yet been converted into TK_AGG_COLUMN.  If
+  ** sqlite3FunctionUsesThisSrc() is used differently in the future, the
+  ** NEVER() will need to be removed. */
+  if( pExpr->op==TK_COLUMN || NEVER(pExpr->op==TK_AGG_COLUMN) ){
     int i;
-    SrcList *pSrc = pWalker->u.pSrcList;
+    struct SrcCount *p = pWalker->u.pSrcCount;
+    SrcList *pSrc = p->pSrc;
     for(i=0; i<pSrc->nSrc; i++){
-      if( pExpr->iTable==pSrc->a[i].iCursor ) return WRC_Continue;
+      if( pExpr->iTable==pSrc->a[i].iCursor ) break;
     }
-    return WRC_Abort;
-  }else{
-    return WRC_Continue;
+    if( i<pSrc->nSrc ){
+      p->nThis++;
+    }else{
+      p->nOther++;
+    }
   }
+  return WRC_Continue;
 }
 
 /*
-** Determine if any of the arguments to the pExpr Function references
-** any SrcList other than pSrcList.  Return true if they do.  Return
-** false if pExpr has no argument or has only constant arguments or
-** only references tables named in pSrcList.
+** Determine if any of the arguments to the pExpr Function reference
+** pSrcList.  Return true if they do.  Also return true if the function
+** has no arguments or has only constant arguments.  Return false if pExpr
+** references columns but not columns of tables found in pSrcList.
 */
-static int sqlite3FunctionUsesOtherSrc(Expr *pExpr, SrcList *pSrcList){
+int sqlite3FunctionUsesThisSrc(Expr *pExpr, SrcList *pSrcList){
   Walker w;
+  struct SrcCount cnt;
   assert( pExpr->op==TK_AGG_FUNCTION );
   memset(&w, 0, sizeof(w));
-  w.xExprCallback = exprUsesOtherSrc;
-  w.u.pSrcList = pSrcList;
-  if( sqlite3WalkExprList(&w, pExpr->x.pList)!=WRC_Continue ) return 1;
-  return 0;
+  w.xExprCallback = exprSrcCount;
+  w.u.pSrcCount = &cnt;
+  cnt.pSrc = pSrcList;
+  cnt.nThis = 0;
+  cnt.nOther = 0;
+  sqlite3WalkExprList(&w, pExpr->x.pList);
+  return cnt.nThis>0 || cnt.nOther==0;
 }
 
 /*
@@ -3966,7 +3991,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
     }
     case TK_AGG_FUNCTION: {
       if( (pNC->ncFlags & NC_InAggFunc)==0
-       && !sqlite3FunctionUsesOtherSrc(pExpr, pSrcList)
+       && pWalker->walkerDepth==pExpr->op2
       ){
         /* Check to see if pExpr is a duplicate of another aggregate 
         ** function that is already in the pAggInfo structure

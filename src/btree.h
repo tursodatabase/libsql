@@ -135,6 +135,12 @@ int sqlite3BtreeUpdateMeta(Btree*, int idx, u32 value);
 #define BTREE_USER_VERSION        6
 #define BTREE_INCR_VACUUM         7
 
+/*
+** Values that may be OR'd together to form the second argument of an
+** sqlite3BtreeCursorHints() call.
+*/
+#define BTREE_BULKLOAD 0x00000001
+
 int sqlite3BtreeCursor(
   Btree*,                              /* BTree containing table to open */
   int iTable,                          /* Index of root page */
@@ -178,8 +184,8 @@ struct Pager *sqlite3BtreePager(Btree*);
 int sqlite3BtreePutData(BtCursor*, u32 offset, u32 amt, void*);
 void sqlite3BtreeCacheOverflow(BtCursor *);
 void sqlite3BtreeClearCursor(BtCursor *);
-
 int sqlite3BtreeSetVersion(Btree *pBt, int iVersion);
+void sqlite3BtreeCursorHints(BtCursor *, unsigned int mask);
 
 #ifndef NDEBUG
 int sqlite3BtreeCursorIsValid(BtCursor*);

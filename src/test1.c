@@ -6126,7 +6126,7 @@ static int optimization_control(
   sqlite3 *db;
   const char *zOpt;
   int onoff;
-  int mask;
+  int mask = 0;
   static const struct {
     const char *zOptName;
     int mask;

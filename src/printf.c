@@ -124,7 +124,8 @@ static const et_info fmtinfo[] = {
 static char et_getdigit(LONGDOUBLE_TYPE *val, int *cnt){
   int digit;
   LONGDOUBLE_TYPE d;
-  if( (*cnt)++ >= 16 ) return '0';
+  if( (*cnt)<=0 ) return '0';
+  (*cnt)--;
   digit = (int)*val;
   d = digit;
   digit += '0';
@@ -428,9 +429,12 @@ void sqlite3VXPrintf(
           break;
         }
         if( realvalue>0.0 ){
-          while( realvalue>=1e32 && exp<=350 ){ realvalue *= 1e-32; exp+=32; }
-          while( realvalue>=1e8 && exp<=350 ){ realvalue *= 1e-8; exp+=8; }
-          while( realvalue>=10.0 && exp<=350 ){ realvalue *= 0.1; exp++; }
+          LONGDOUBLE_TYPE scale = 1.0;
+          while( realvalue>=1e100*scale && exp<=350 ){ scale *= 1e100;exp+=100;}
+          while( realvalue>=1e64*scale && exp<=350 ){ scale *= 1e64; exp+=64; }
+          while( realvalue>=1e8*scale && exp<=350 ){ scale *= 1e8; exp+=8; }
+          while( realvalue>=10.0*scale && exp<=350 ){ scale *= 10.0; exp++; }
+          realvalue /= scale;
           while( realvalue<1e-8 ){ realvalue *= 1e8; exp-=8; }
           while( realvalue<1.0 ){ realvalue *= 10.0; exp--; }
           if( exp>350 ){
@@ -463,7 +467,7 @@ void sqlite3VXPrintf(
             xtype = etFLOAT;
           }
         }else{
-          flag_rtz = 0;
+          flag_rtz = flag_altform2;
         }
         if( xtype==etEXP ){
           e2 = 0;
@@ -478,7 +482,7 @@ void sqlite3VXPrintf(
           }
         }
         zOut = bufpt;
-        nsd = 0;
+        nsd = 16 + flag_altform2*10;
         flag_dp = (precision>0 ?1:0) | flag_alternateform | flag_altform2;
         /* The sign in front of the number */
         if( prefix ){

@@ -319,6 +319,12 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "fts3_unicode", "0", TCL_GLOBAL_ONLY);
 #endif
 
+#ifdef SQLITE_DISABLE_FTS4_DEFERRED
+  Tcl_SetVar2(interp, "sqlite_options", "fts4_deferred", "0", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "fts4_deferred", "1", TCL_GLOBAL_ONLY);
+#endif
+
 #ifdef SQLITE_OMIT_GET_TABLE
   Tcl_SetVar2(interp, "sqlite_options", "gettable", "0", TCL_GLOBAL_ONLY);
 #else
@@ -652,6 +658,21 @@ Tcl_SetVar2(interp, "sqlite_options", "long_double",
     Tcl_LinkVar(interp, "TEMP_STORE", (char *)&(cv_TEMP_STORE),
                 TCL_LINK_INT | TCL_LINK_READ_ONLY);
   }
+
+#ifdef _MSC_VER
+  {
+    static const int cv__MSC_VER = 1;
+    Tcl_LinkVar(interp, "_MSC_VER", (char *)&(cv__MSC_VER),
+                TCL_LINK_INT | TCL_LINK_READ_ONLY);
+  }
+#endif
+#ifdef __GNUC__
+  {
+    static const int cv___GNUC__ = 1;
+    Tcl_LinkVar(interp, "__GNUC__", (char *)&(cv___GNUC__),
+                TCL_LINK_INT | TCL_LINK_READ_ONLY);
+  }
+#endif
 }
 
 

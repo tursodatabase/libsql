@@ -422,6 +422,43 @@ static void testHexToUtf16le(
 }
 #endif
 
+/*
+** SQL function:   real2hex(X)
+**
+** If argument X is a real number, then convert it into a string which is
+** the big-endian hexadecimal representation of the ieee754 encoding of
+** that number.  If X is not a real number, return NULL.
+*/
+static void real2hex(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  union {
+    sqlite3_uint64 i;
+    double r;
+    unsigned char x[8];
+  } v;
+  char zOut[20];
+  int i;
+  int bigEndian;
+  v.i = 1;
+  bigEndian = v.x[0]==0;
+  v.r = sqlite3_value_double(argv[0]);
+  for(i=0; i<8; i++){
+    if( bigEndian ){
+      zOut[i*2]   = "0123456789abcdef"[v.x[i]>>4];
+      zOut[i*2+1] = "0123456789abcdef"[v.x[i]&0xf];
+    }else{
+      zOut[14-i*2]   = "0123456789abcdef"[v.x[i]>>4];
+      zOut[14-i*2+1] = "0123456789abcdef"[v.x[i]&0xf];
+    }
+  }
+  zOut[16] = 0;
+  sqlite3_result_text(context, zOut, -1, SQLITE_TRANSIENT);
+}
+
+
 static int registerTestFunctions(sqlite3 *db){
   static const struct {
      char *zName;
@@ -444,6 +481,7 @@ static int registerTestFunctions(sqlite3 *db){
     { "test_eval",             1, SQLITE_UTF8, test_eval},
     { "test_isolation",        2, SQLITE_UTF8, test_isolation},
     { "test_counter",          1, SQLITE_UTF8, counterFunc},
+    { "real2hex",              1, SQLITE_UTF8, real2hex},
   };
   int i;
 

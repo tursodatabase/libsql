@@ -326,5 +326,62 @@ do_unicode_token_test3 5.11 "tokenchars=\u0301" \
   "0 hello\u0301world hello\u0301world 1 helloworld helloworld"
 
 
+#-------------------------------------------------------------------------
+
+proc do_tokenize {tokenizer txt} {
+  set res [list]
+  foreach {a b c} [db one {SELECT fts3_tokenizer_test($tokenizer, $txt)}] {
+    lappend res $b
+  }
+  set res
+}
+
+# Argument $lCodepoint must be a list of codepoints (integers) that 
+# correspond to whitespace characters. This command creates a string
+# $W from the codepoints, then tokenizes "${W}hello{$W}world${W}" 
+# using tokenizer $tokenizer. The test passes if the tokenizer successfully
+# extracts the two 5 character tokens.
+#
+proc do_isspace_test {tn tokenizer lCp} {
+  set whitespace [format [string repeat %c [llength $lCp]] {*}$lCp] 
+  set txt "${whitespace}hello${whitespace}world${whitespace}"
+  uplevel [list do_test $tn [list do_tokenize $tokenizer $txt] {hello world}]
+}
+
+set tokenizers [list unicode61]
+ifcapable icu { lappend tokenizers icu }
+
+# Some tests to check that the tokenizers can both identify white-space 
+# codepoints. All codepoints tested below are of type "Zs" in the
+# UnicodeData.txt file.
+foreach T $tokenizers {
+  do_isspace_test 6.$T.1 $T    32
+  do_isspace_test 6.$T.2 $T    160
+  do_isspace_test 6.$T.3 $T    5760
+  do_isspace_test 6.$T.4 $T    6158
+  do_isspace_test 6.$T.5 $T    8192
+  do_isspace_test 6.$T.6 $T    8193
+  do_isspace_test 6.$T.7 $T    8194
+  do_isspace_test 6.$T.8 $T    8195
+  do_isspace_test 6.$T.9 $T    8196
+  do_isspace_test 6.$T.10 $T    8197
+  do_isspace_test 6.$T.11 $T    8198
+  do_isspace_test 6.$T.12 $T    8199
+  do_isspace_test 6.$T.13 $T    8200
+  do_isspace_test 6.$T.14 $T    8201
+  do_isspace_test 6.$T.15 $T    8202
+  do_isspace_test 6.$T.16 $T    8239
+  do_isspace_test 6.$T.17 $T    8287
+  do_isspace_test 6.$T.18 $T   12288
+
+  do_isspace_test 6.$T.19 $T   {32 160 5760 6158}
+  do_isspace_test 6.$T.19 $T   {8192 8193 8194 8195}
+  do_isspace_test 6.$T.19 $T   {8196 8197 8198 8199}
+  do_isspace_test 6.$T.19 $T   {8200 8201 8202 8239}
+  do_isspace_test 6.$T.19 $T   {8287 12288}
+}
+
+
 finish_test
+
 

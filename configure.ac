@@ -388,14 +388,16 @@ if test "${use_tcl}" = "yes" ; then
     fi
 
     # Start autosearch by asking tclsh
-    if test x"$cross_compiling" = xno; then
-      for i in `echo 'puts stdout $auto_path' | ${TCLSH_CMD}`
-      do
-        if test -f "$i/tclConfig.sh" ; then
-          ac_cv_c_tclconfig="$i"
-          break
-        fi
-      done
+    if test x"${ac_cv_c_tclconfig}" = x ; then
+      if test x"$cross_compiling" = xno; then
+        for i in `echo 'puts stdout $auto_path' | ${TCLSH_CMD}`
+        do
+          if test -f "$i/tclConfig.sh" ; then
+            ac_cv_c_tclconfig="$i"
+            break
+          fi
+        done
+      fi
     fi
 
     # then check for a private Tcl installation

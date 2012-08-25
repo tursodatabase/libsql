@@ -164,7 +164,7 @@ sqlite3_backup *sqlite3_backup_init(
     ** EVIDENCE-OF: R-64852-21591 The sqlite3_backup object is created by a
     ** call to sqlite3_backup_init() and is destroyed by a call to
     ** sqlite3_backup_finish(). */
-    p = (sqlite3_backup *)sqlite3_malloc(sizeof(sqlite3_backup));
+    p = (sqlite3_backup *)sqlite3MallocZero(sizeof(sqlite3_backup));
     if( !p ){
       sqlite3Error(pDestDb, SQLITE_NOMEM, 0);
     }
@@ -172,7 +172,6 @@ sqlite3_backup *sqlite3_backup_init(
 
   /* If the allocation succeeded, populate the new object. */
   if( p ){
-    memset(p, 0, sizeof(sqlite3_backup));
     p->pSrc = findBtree(pDestDb, pSrcDb, zSrcDb);
     p->pDest = findBtree(pDestDb, pDestDb, zDestDb);
     p->pDestDb = pDestDb;
@@ -543,14 +542,14 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
 */
 int sqlite3_backup_finish(sqlite3_backup *p){
   sqlite3_backup **pp;                 /* Ptr to head of pagers backup list */
-  MUTEX_LOGIC( sqlite3_mutex *mutex; ) /* Mutex to protect source database */
+  sqlite3 *pSrcDb;                     /* Source database connection */
   int rc;                              /* Value to return */
 
   /* Enter the mutexes */
   if( p==0 ) return SQLITE_OK;
-  sqlite3_mutex_enter(p->pSrcDb->mutex);
+  pSrcDb = p->pSrcDb;
+  sqlite3_mutex_enter(pSrcDb->mutex);
   sqlite3BtreeEnter(p->pSrc);
-  MUTEX_LOGIC( mutex = p->pSrcDb->mutex; )
   if( p->pDestDb ){
     sqlite3_mutex_enter(p->pDestDb->mutex);
   }
@@ -576,7 +575,7 @@ int sqlite3_backup_finish(sqlite3_backup *p){
 
   /* Exit the mutexes and free the backup context structure. */
   if( p->pDestDb ){
-    sqlite3_mutex_leave(p->pDestDb->mutex);
+    sqlite3LeaveMutexAndCloseZombie(p->pDestDb);
   }
   sqlite3BtreeLeave(p->pSrc);
   if( p->pDestDb ){
@@ -585,7 +584,7 @@ int sqlite3_backup_finish(sqlite3_backup *p){
     ** sqlite3_backup_finish(). */
     sqlite3_free(p);
   }
-  sqlite3_mutex_leave(mutex);
+  sqlite3LeaveMutexAndCloseZombie(pSrcDb);
   return rc;
 }
 
