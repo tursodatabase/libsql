@@ -6083,7 +6083,7 @@ static int balance_nonroot(
   /*
   ** Load pointers to all cells on sibling pages and the divider cells
   ** into the local apCell[] array.  Make copies of the divider cells
-  ** into space obtained from aSpace1[] and remove the the divider Cells
+  ** into space obtained from aSpace1[] and remove the divider cells
   ** from pParent.
   **
   ** If the siblings are on leaf pages, then the child pointers of the

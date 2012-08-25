@@ -1464,7 +1464,7 @@ static int getLastErrorMsg(DWORD lastErrno, int nBuf, char *zBuf){
 ** The first argument passed to the macro should be the error code that
 ** will be returned to SQLite (e.g. SQLITE_IOERR_DELETE, SQLITE_CANTOPEN). 
 ** The two subsequent arguments should be the name of the OS function that
-** failed and the the associated file-system path, if any.
+** failed and the associated file-system path, if any.
 */
 #define winLogError(a,b,c,d)   winLogErrorAtLine(a,b,c,d,__LINE__)
 static int winLogErrorAtLine(

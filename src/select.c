@@ -1970,7 +1970,7 @@ static int generateOutputSubroutine(
   }
   if( pParse->db->mallocFailed ) return 0;
 
-  /* Suppress the the first OFFSET entries if there is an OFFSET clause
+  /* Suppress the first OFFSET entries if there is an OFFSET clause
   */
   codeOffset(v, p, iContinue);
 

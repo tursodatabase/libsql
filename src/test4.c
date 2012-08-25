@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** Code for testing the the SQLite library in a multithreaded environment.
+** Code for testing the SQLite library in a multithreaded environment.
 */
 #include "sqliteInt.h"
 #include "tcl.h"

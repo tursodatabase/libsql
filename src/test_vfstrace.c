@@ -45,7 +45,7 @@
 ** interprets VFS calls before passing them off to another VFS which does
 ** the actual work.  In this case the other VFS - the one that does the
 ** real work - is identified by the second parameter, zOldVfsName.  If
-** the the 2nd parameter is NULL then the default VFS is used.  The common
+** the 2nd parameter is NULL then the default VFS is used.  The common
 ** case is for the 2nd parameter to be NULL.
 **
 ** The third and fourth parameters are the pointer to the output function

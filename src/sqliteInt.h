@@ -1917,7 +1917,7 @@ struct WherePlan {
 /*
 ** For each nested loop in a WHERE clause implementation, the WhereInfo
 ** structure contains a single instance of this structure.  This structure
-** is intended to be private the the where.c module and should not be
+** is intended to be private to the where.c module and should not be
 ** access or modified by other modules.
 **
 ** The pIdxInfo field is used to help pick the best index on a

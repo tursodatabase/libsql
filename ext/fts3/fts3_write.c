@@ -2969,7 +2969,7 @@ static int fts3SegmentMerge(
 
   if( iLevel==FTS3_SEGCURSOR_ALL ){
     /* This call is to merge all segments in the database to a single
-    ** segment. The level of the new segment is equal to the the numerically 
+    ** segment. The level of the new segment is equal to the numerically
     ** greatest segment level currently present in the database for this
     ** index. The idx of the new segment is always 0.  */
     if( csr.nSegment==1 ){
@@ -3599,7 +3599,7 @@ static int fts3IncrmergePush(
         pNode->key.n = nTerm;
       }
     }else{
-      /* Otherwise, flush the the current node of layer iLayer to disk.
+      /* Otherwise, flush the current node of layer iLayer to disk.
       ** Then allocate a new, empty sibling node. The key will be written
       ** into the parent of this node. */
       rc = fts3WriteSegment(p, pNode->iBlock, pNode->block.a, pNode->block.n);
