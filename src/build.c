@@ -534,7 +534,7 @@ void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
     if( !db || db->pnBytesFreed==0 ){
       char *zName = pIndex->zName; 
       TESTONLY ( Index *pOld = ) sqlite3HashInsert(
-	  &pIndex->pSchema->idxHash, zName, sqlite3Strlen30(zName), 0
+         &pIndex->pSchema->idxHash, zName, sqlite3Strlen30(zName), 0
       );
       assert( db==0 || sqlite3SchemaMutexHeld(db, 0, pIndex->pSchema) );
       assert( pOld==pIndex || pOld==0 );

@@ -46,9 +46,11 @@
 # define FILE_ATTRIBUTE_MASK     (0x0003FFF7)
 #endif
 
+#ifndef SQLITE_OMIT_WAL
 /* Forward references */
 typedef struct winShm winShm;           /* A connection to shared-memory */
 typedef struct winShmNode winShmNode;   /* A region of shared-memory */
+#endif
 
 /*
 ** WinCE lacks native support for file locking so we have to fake it
@@ -76,7 +78,9 @@ struct winFile {
   short sharedLockByte;   /* Randomly chosen byte used as a shared lock */
   u8 ctrlFlags;           /* Flags.  See WINFILE_* below */
   DWORD lastErrno;        /* The Windows errno from the last I/O error */
+#ifndef SQLITE_OMIT_WAL
   winShm *pShm;           /* Instance of shared memory on this file */
+#endif
   const char *zPath;      /* Full pathname of this file */
   int szChunk;            /* Chunk size configured by FCNTL_CHUNK_SIZE */
 #if SQLITE_OS_WINCE
@@ -99,6 +103,22 @@ struct winFile {
  */
 #ifndef SQLITE_WIN32_DBG_BUF_SIZE
 #  define SQLITE_WIN32_DBG_BUF_SIZE   ((int)(4096-sizeof(DWORD)))
+#endif
+
+/*
+ * The value used with sqlite3_win32_set_directory() to specify that
+ * the data directory should be changed.
+ */
+#ifndef SQLITE_WIN32_DATA_DIRECTORY_TYPE
+#  define SQLITE_WIN32_DATA_DIRECTORY_TYPE (1)
+#endif
+
+/*
+ * The value used with sqlite3_win32_set_directory() to specify that
+ * the temporary directory should be changed.
+ */
+#ifndef SQLITE_WIN32_TEMP_DIRECTORY_TYPE
+#  define SQLITE_WIN32_TEMP_DIRECTORY_TYPE (2)
 #endif
 
 /*
@@ -1314,6 +1334,42 @@ char *sqlite3_win32_utf8_to_mbcs(const char *zFilename){
   return zFilenameMbcs;
 }
 
+/*
+** This function sets the data directory or the temporary directory based on
+** the provided arguments.  The type argument must be 1 in order to set the
+** data directory or 2 in order to set the temporary directory.  The zValue
+** argument is the name of the directory to use.  The return value will be
+** SQLITE_OK if successful.
+*/
+int sqlite3_win32_set_directory(DWORD type, LPCWSTR zValue){
+  char **ppDirectory = 0;
+#ifndef SQLITE_OMIT_AUTOINIT
+  int rc = sqlite3_initialize();
+  if( rc ) return rc;
+#endif
+  if( type==SQLITE_WIN32_DATA_DIRECTORY_TYPE ){
+    ppDirectory = &sqlite3_data_directory;
+  }else if( type==SQLITE_WIN32_TEMP_DIRECTORY_TYPE ){
+    ppDirectory = &sqlite3_temp_directory;
+  }
+  assert( !ppDirectory || type==SQLITE_WIN32_DATA_DIRECTORY_TYPE
+          || type==SQLITE_WIN32_TEMP_DIRECTORY_TYPE
+  );
+  assert( !ppDirectory || sqlite3MemdebugHasType(*ppDirectory, MEMTYPE_HEAP) );
+  if( ppDirectory ){
+    char *zValueUtf8 = 0;
+    if( zValue && zValue[0] ){
+      zValueUtf8 = unicodeToUtf8(zValue);
+      if ( zValueUtf8==0 ){
+        return SQLITE_NOMEM;
+      }
+    }
+    sqlite3_free(*ppDirectory);
+    *ppDirectory = zValueUtf8;
+    return SQLITE_OK;
+  }
+  return SQLITE_ERROR;
+}
 
 /*
 ** The return value of getLastErrorMsg
@@ -1930,7 +1986,9 @@ static int winClose(sqlite3_file *id){
   winFile *pFile = (winFile*)id;
 
   assert( id!=0 );
+#ifndef SQLITE_OMIT_WAL
   assert( pFile->pShm==0 );
+#endif
   OSTRACE(("CLOSE %d\n", pFile->h));
   do{
     rc = osCloseHandle(pFile->h);
@@ -3680,7 +3738,9 @@ static int winOpen(
   pFile->h = h;
   pFile->lastErrno = NO_ERROR;
   pFile->pVfs = pVfs;
+#ifndef SQLITE_OMIT_WAL
   pFile->pShm = 0;
+#endif
   pFile->zPath = zName;
   if( sqlite3_uri_boolean(zName, "psow", SQLITE_POWERSAFE_OVERWRITE) ){
     pFile->ctrlFlags |= WINFILE_PSOW;

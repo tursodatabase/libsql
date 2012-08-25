@@ -1698,8 +1698,9 @@ struct Expr {
   i16 iAgg;              /* Which entry in pAggInfo->aCol[] or ->aFunc[] */
   i16 iRightJoinTable;   /* If EP_FromJoin, the right table of the join */
   u8 flags2;             /* Second set of flags.  EP2_... */
-  u8 op2;                /* If a TK_REGISTER, the original value of Expr.op */
-                         /* If TK_COLUMN, the value of p5 for OP_Column */
+  u8 op2;                /* TK_REGISTER: original value of Expr.op
+                         ** TK_COLUMN: the value of p5 for OP_Column
+                         ** TK_AGG_FUNCTION: nesting depth */
   AggInfo *pAggInfo;     /* Used by TK_AGG_COLUMN and TK_AGG_FUNCTION */
   Table *pTab;           /* Table for TK_COLUMN expressions. */
 #if SQLITE_MAX_EXPR_DEPTH>0
@@ -1954,6 +1955,7 @@ struct WhereLevel {
         int addrInTop;         /* Top of the IN loop */
       } *aInLoop;           /* Information about each nested IN operator */
     } in;                 /* Used when plan.wsFlags&WHERE_IN_ABLE */
+    Index *pCovidx;       /* Possible covering index for WHERE_MULTI_OR */
   } u;
 
   /* The following field is really not part of the current level.  But
@@ -2510,10 +2512,12 @@ struct Walker {
   int (*xExprCallback)(Walker*, Expr*);     /* Callback for expressions */
   int (*xSelectCallback)(Walker*,Select*);  /* Callback for SELECTs */
   Parse *pParse;                            /* Parser context.  */
+  int walkerDepth;                          /* Number of subqueries */
   union {                                   /* Extra data for callback */
     NameContext *pNC;                          /* Naming context */
     int i;                                     /* Integer value */
     SrcList *pSrcList;                         /* FROM clause */
+    struct SrcCount *pSrcCount;                /* Counting column references */
   } u;
 };
 
@@ -2815,7 +2819,8 @@ Expr *sqlite3LimitWhere(Parse *, SrcList *, Expr *, ExprList *, Expr *, Expr *, 
 #endif
 void sqlite3DeleteFrom(Parse*, SrcList*, Expr*);
 void sqlite3Update(Parse*, SrcList*, ExprList*, Expr*, int);
-WhereInfo *sqlite3WhereBegin(Parse*, SrcList*, Expr*, ExprList**,ExprList*,u16);
+WhereInfo *sqlite3WhereBegin(
+    Parse*,SrcList*,Expr*,ExprList**,ExprList*,u16,int);
 void sqlite3WhereEnd(WhereInfo*);
 int sqlite3ExprCodeGetColumn(Parse*, Table*, int, int, int, u8);
 void sqlite3ExprCodeGetColumnOfTable(Vdbe*, Table*, int, int, int);
@@ -2847,6 +2852,7 @@ int sqlite3ExprCompare(Expr*, Expr*);
 int sqlite3ExprListCompare(ExprList*, ExprList*);
 void sqlite3ExprAnalyzeAggregates(NameContext*, Expr*);
 void sqlite3ExprAnalyzeAggList(NameContext*,ExprList*);
+int sqlite3FunctionUsesThisSrc(Expr*, SrcList*);
 Vdbe *sqlite3GetVdbe(Parse*);
 void sqlite3PrngSaveState(void);
 void sqlite3PrngRestoreState(void);

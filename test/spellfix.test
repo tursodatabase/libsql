@@ -69,17 +69,18 @@ do_test 1.1 {
 
 foreach {tn word res} {
   1   raxpi*     {rasping 5 rasped 5 raspberry 6 rasp 4 rasps 4}
-  2   ril*       {rail 4 railway 4 railing 4 rails 4 railways 4}
-  3   rilis*     {realist 6 realistic 6 realistically 6 realists 6 realism 6}
-  4   reail*     {realities 3 reality 3 real 3 realest 3 realist 3}
-  5   ras*       {rasp 3 rash 3 rasped 3 rasping 3 rasps 3}
+  2   ril*       {rail 4 railed 4 railer 4 railers 4 railing 4}
+  3   rilis*     {realism 6 realist 6 realistic 6 realistically 6 realists 6}
+  4   reail*     {real 3 realest 3 realign 3 realigned 3 realigning 3}
+  5   ras*       {rascal 3 rascally 3 rascals 3 rash 3 rasher 3}
   6   realistss* {realists 8 realigns 8 realistic 9 realistically 9 realest 7}
   7   realistss  {realists 8 realist 7 realigns 8 realistic 9 realest 7}
   8   rllation*  {realities 9 reality 7 rallied 7 railed 4}
-  9   renstom*   {rainstorm 8 ransomer 6 ransom 6 ransoming 6 ransoms 6}
+  9   renstom*   {rainstorm 8 ransom 6 ransomer 6 ransoming 6 ransoms 6}
 } {
   do_execsql_test 1.2.$tn {
-    SELECT word, matchlen FROM t1 WHERE word MATCH $word LIMIT 5
+    SELECT word, matchlen FROM t1 WHERE word MATCH $word 
+     ORDER BY score, word LIMIT 5
   } $res
 }
 

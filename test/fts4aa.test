@@ -1655,14 +1655,16 @@ do_test fts4aa-1.8 {
     SELECT docid FROM t1_docsize EXCEPT SELECT docid FROM t1
   }
 } {}
-do_test fts4aa-1.9 {
-  # Note: Token 'in' is being deferred in the following query. 
-  db eval {
-    SELECT docid, mit(matchinfo(t1, 'pcxnal')) FROM t1
-     WHERE t1 MATCH 'joseph died in egypt'
-     ORDER BY docid;
-  }
-} {1050026 {4 1 1 1 1 1 1 1 2 1 1 1 1 1 1 23 23}}
+ifcapable fts4_deferred {
+  do_test fts4aa-1.9 {
+    # Note: Token 'in' is being deferred in the following query. 
+    db eval {
+      SELECT docid, mit(matchinfo(t1, 'pcxnal')) FROM t1
+       WHERE t1 MATCH 'joseph died in egypt'
+       ORDER BY docid;
+    }
+  } {1050026 {4 1 1 1 1 1 1 1 2 1 1 1 1 1 1 23 23}}
+}
 
 # Should get the same search results from FTS3
 #
