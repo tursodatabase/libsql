@@ -116,6 +116,7 @@ do_test fts3query-4.1 {
     CREATE TABLE bt(title);
   }
 } {}
+if 0 {
 do_test fts3query-4.2 {
   eqp "SELECT t1.number FROM t1, ft WHERE t1.number=ft.rowid ORDER BY t1.date"
 } {0 0 {TABLE t1 WITH INDEX i1 ORDER BY} 1 1 {TABLE ft VIRTUAL TABLE INDEX 1:}}
@@ -128,7 +129,6 @@ do_test fts3query-4.4 {
 do_test fts3query-4.5 {
   eqp "SELECT t1.number FROM bt, t1 WHERE t1.number=bt.rowid ORDER BY t1.date"
 } {0 1 {TABLE t1 WITH INDEX i1 ORDER BY} 1 0 {TABLE bt USING PRIMARY KEY}}
-
+}
 
 finish_test
-

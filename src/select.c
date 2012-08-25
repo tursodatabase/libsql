@@ -3837,7 +3837,7 @@ int sqlite3Select(
     ExprList *pDist = (isDistinct ? p->pEList : 0);
 
     /* Begin the database scan. */
-    pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pOrderBy, pDist, 0);
+    pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pOrderBy, pDist, 0,0);
     if( pWInfo==0 ) goto select_end;
     if( pWInfo->nRowOut < p->nSelectRow ) p->nSelectRow = pWInfo->nRowOut;
 
@@ -4004,7 +4004,7 @@ int sqlite3Select(
       ** in the right order to begin with.
       */
       sqlite3VdbeAddOp2(v, OP_Gosub, regReset, addrReset);
-      pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pGroupBy, 0, 0);
+      pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pGroupBy, 0, 0, 0);
       if( pWInfo==0 ) goto select_end;
       if( pGroupBy==0 ){
         /* The optimizer is able to deliver rows in group by order so
@@ -4263,7 +4263,7 @@ int sqlite3Select(
         ** of output.
         */
         resetAccumulator(pParse, &sAggInfo);
-        pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pMinMax, 0, flag);
+        pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pMinMax,0,flag,0);
         if( pWInfo==0 ){
           sqlite3ExprListDelete(db, pDel);
           goto select_end;
