@@ -1,5 +1,5 @@
-C Fix\sall\sknown\sinstances\sof\s'repeated\sthe'\sstyle\stypos\sin\scomments.\s\sNo\schanges\sto\scode.
-D 2012-08-25T10:01:29.456
+C Fix\san\sincorrect\sassert\sin\sthe\svirtual\stable\slogic\s-\sit\scould\sfire\sfollowing\nan\sI/O\serror\safter\ssqlite3_close_v2()\swas\sadded.
+D 2012-08-27T14:39:47.359
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -246,7 +246,7 @@ F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
 F src/vdbesort.c 0dc1b274dcb4d4c8e71b0b2b15261f286caba39b
 F src/vdbetrace.c 8bd5da325fc90f28464335e4cc4ad1407fe30835
-F src/vtab.c bb8ea3a26608bb1357538a5d2fc72beba6638998
+F src/vtab.c d2c54fd22aa83eb34fc6f7cd9b097f2fc2b1e9de
 F src/wal.c 5acb3e7bbd31f10ba39acad9ce6b399055337a9d
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
@@ -1013,7 +1013,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 929b51840b83ee1ca5add8fe430913e7c4e2a3d6
-R 6e6b1c39535d5b3d0db6b2f4f5ffabb4
-U mistachkin
-Z b0c2ec5ca51055c07cc58e9bae28b36c
+P 9b19b847533f944f289d93dcdba29c0d67bf251c
+R 82ed09528ad5e2b2f9698e3182c607ef
+U drh
+Z 34bc59f1ddfbd35ac1cc9f60ac6109f9
