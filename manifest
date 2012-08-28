@@ -1,9 +1,9 @@
-C Formatting\schanges\sto\sthe\sC\scode\sexample\sin\sthe\sdocumentation\sfor\nsqlite3_temp_directory().\s\sNo\schanges\sto\scode.
-D 2012-08-28T00:17:56.511
+C Enable\sthe\suse\sof\sa\ssimpler\scommand\sline\swhen\scross-compiling\sin\sthe\sMSVC\sbuild\senvironment.
+D 2012-08-28T01:44:13.631
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 45dd3579cae399d73e3f5eab36f6f332783072e5
+F Makefile.msc f00ec5dc2e78eb63d32c3125ab7a999aa7fcf924
 F Makefile.vxworks 879f034a64062a364b21000266bbd5bc6e0c19b9
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION a71848df48082f1d6585d4b0819d530fc455485d
@@ -1013,7 +1013,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P eaeeb0699297dde824788e2907a0cfd2acd8f642
-R b192678e340c5e8aa627ed43b1e2a254
-U drh
-Z e9503f56b6779700b7164ab0051475d4
+P 5b4b39788ed9ac5962a17315d5549fc5e3f38c5e
+R 0a51fd3185f2bb057b5395e10c07c688
+U mistachkin
+Z 706c5b15d500beca34f770e5dc0a20e0
