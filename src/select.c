@@ -2689,6 +2689,12 @@ static void substSelect(
 **        operators have an implied DISTINCT which is disallowed by
 **        restriction (4).
 **
+**        Also, each component of the sub-query must return the same number
+**        of result columns. This is actually a requirement for any compound
+**        SELECT statement, but all the code here does is make sure that no
+**        such (illegal) sub-query is flattened. The caller will detect the
+**        syntax error and return a detailed message.
+**
 **  (18)  If the sub-query is a compound select, then all terms of the
 **        ORDER by clause of the parent must be simple references to 
 **        columns of the sub-query.
@@ -2832,6 +2838,7 @@ static int flattenSubquery(
       if( (pSub1->selFlags & (SF_Distinct|SF_Aggregate))!=0
        || (pSub1->pPrior && pSub1->op!=TK_ALL) 
        || pSub1->pSrc->nSrc<1
+       || pSub->pEList->nExpr!=pSub1->pEList->nExpr
       ){
         return 0;
       }

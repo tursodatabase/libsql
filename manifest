@@ -1,5 +1,5 @@
-C Issue\sa\slog\smessage\sif\sthe\stemporary\sdirectory\shas\snot\sbeen\sset\swhen\srunning\son\sWinRT.
-D 2012-08-28T04:20:56.059
+C Fix\sa\scase\swhere\sSQLite\swas\sfailing\sto\sdetect\sa\ssyntax\serror\sin\squeries\slike\s"SELECT\s...\sFROM\s(<select-1>\sUNION\sALL\s<select-2>)"\swhen\s<select-1>\sand\s<select-2>\sreturn\sdifferent\snumbers\sof\sresult\scolumns.
+D 2012-08-28T14:45:50.609
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -176,7 +176,7 @@ F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 9e28280ec98035f31900fdd1db01f86f68ca6c32
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 7c62350de1d619d058030f8dc2b11a95cfde77ac
+F src/select.c f843c872a97baa1594c2cc3d4c003409a7bd03af
 F src/shell.c 87953c5d9c73d9494db97d1607e2e2280418f261
 F src/sqlite.h.in c447d35212736c4c77d86bc2d00f6cf4d4c12131
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
@@ -683,7 +683,7 @@ F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
 F test/select3.test 2ce595f8fb8e2ac10071d3b4e424cadd4634a054
 F test/select4.test 00179be44e531fe04c1c3f15df216439dff2519d
 F test/select5.test e758b8ef94f69b111df4cb819008856655dcd535
-F test/select6.test cc25a8650cf9a4d4f74e586c45a75f9836516b18
+F test/select6.test e76bd10a56988f15726c097a5d5a7966fe82d3b2
 F test/select7.test dad6f00f0d49728a879d6eb6451d4752db0b0abe
 F test/select8.test 391de11bdd52339c30580dabbbbe97e3e9a3c79d
 F test/select9.test c0ca3cd87a8ebb04de2cb1402c77df55d911a0ea
@@ -1013,7 +1013,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 8ade136a038ee71d741af4a9f9e692fdff4e7911
-R 0fb2efee96b5058ad80340b8d86ef5c4
-U mistachkin
-Z 68b816fb6b2cb398ec0e5fa744bb47cf
+P 9ee39102942d4a4830417f61f0969f29ac0282a1
+R 964d2ea322a12f9b1ab84df9ade3057e
+U dan
+Z 760c5cbdabe0b897158bcd56b4671da6
