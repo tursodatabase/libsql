@@ -1,5 +1,5 @@
-C Update\sAPI\sdocs\sto\sinclude\snotes\sabout\sthe\sWinRT\stemporary\sdirectory.\s\sNo\schanges\sto\scode.
-D 2012-08-28T00:09:58.692
+C Formatting\schanges\sto\sthe\sC\scode\sexample\sin\sthe\sdocumentation\sfor\nsqlite3_temp_directory().\s\sNo\schanges\sto\scode.
+D 2012-08-28T00:17:56.511
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -178,7 +178,7 @@ F src/resolve.c 9e28280ec98035f31900fdd1db01f86f68ca6c32
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 7c62350de1d619d058030f8dc2b11a95cfde77ac
 F src/shell.c 87953c5d9c73d9494db97d1607e2e2280418f261
-F src/sqlite.h.in 53a8235ebece1090111da51f18833bdf3fbd869c
+F src/sqlite.h.in c447d35212736c4c77d86bc2d00f6cf4d4c12131
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h 053e03a532beb909ead2df0721db67cdb4c48ae8
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -1013,7 +1013,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 24420d6d2077d745cc26dd269e76b48c8a3eeb3c
-R 4d7c239911bd7fa3f3e3c10e34cdda68
-U mistachkin
-Z 594734f9dc4d43e32a96faebd1a64aa9
+P eaeeb0699297dde824788e2907a0cfd2acd8f642
+R b192678e340c5e8aa627ed43b1e2a254
+U drh
+Z e9503f56b6779700b7164ab0051475d4
