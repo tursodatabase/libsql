@@ -3590,6 +3590,13 @@ static int winOpen(
   assert( id!=0 );
   UNUSED_PARAMETER(pVfs);
 
+#if SQLITE_OS_WINRT
+  if( !sqlite3_temp_directory ){
+    sqlite3_log(SQLITE_ERROR,
+        "sqlite3_temp_directory variable should be set for WinRT");
+  }
+#endif
+
   pFile->h = INVALID_HANDLE_VALUE;
 
   /* If the second argument to this function is NULL, generate a 
