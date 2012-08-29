@@ -1,5 +1,5 @@
-C Fix\sa\scase\swhere\sSQLite\swas\sfailing\sto\sdetect\sa\ssyntax\serror\sin\squeries\slike\s"SELECT\s...\sFROM\s(<select-1>\sUNION\sALL\s<select-2>)"\swhen\s<select-1>\sand\s<select-2>\sreturn\sdifferent\snumbers\sof\sresult\scolumns.
-D 2012-08-28T14:45:50.609
+C Fix\sa\stypo\sin\sa\scomment\sin\svdbe.c.\s\sNo\schanges\sto\scode.
+D 2012-08-29T10:28:43.112
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -237,7 +237,7 @@ F src/update.c 28d2d098b43a2c70dae399896ea8a02f622410ef
 F src/utf.c 890c67dcfcc7a74623c95baac7535aadfe265e84
 F src/util.c 0af2e515dc0dabacec931bca39525f6c3f1c5455
 F src/vacuum.c 587a52bb8833d7ac15af8916f25437e2575028bd
-F src/vdbe.c 75da79cdcd58481825a06f045bc2f5ea3966eeae
+F src/vdbe.c 9c524bded348fd0a53adc19f2d7cad76ba3442b2
 F src/vdbe.h 18f581cac1f4339ec3299f3e0cc6e11aec654cdb
 F src/vdbeInt.h 986b6b11a13c517337355009e5438703ba5b0a40
 F src/vdbeapi.c 88ea823bbcb4320f5a6607f39cd7c2d3cc4c26b1
@@ -1013,7 +1013,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 9ee39102942d4a4830417f61f0969f29ac0282a1
-R 964d2ea322a12f9b1ab84df9ade3057e
-U dan
-Z 760c5cbdabe0b897158bcd56b4671da6
+P 200a81358c3117401d2258dd06bb8d2ea4f0ef51
+R 8a8b2d5907076b9a2c72b99614836b85
+U drh
+Z 58d7860c401fb255f3904a7a7432b3a2
