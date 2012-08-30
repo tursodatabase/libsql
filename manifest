@@ -1,5 +1,5 @@
-C Fix\san\sout-of-bounds\sread\sin\sthe\sdemonstration\scode\sin\stest_spellfix.c.
-D 2012-08-30T11:22:16.890
+C Exclude\sthe\satof1.test\stest\sscript\sfrom\sthe\svalgrind\spermutations\stest\ssince\nvalgrind\ssets\sup\sthe\sfloating\spoint\shardware\sin\san\sunusual\sway\sthat\smakes\natof1\sfail.
+D 2012-08-30T20:24:39.848
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -643,7 +643,7 @@ F test/pageropt.test 9191867ed19a2b3db6c42d1b36b6fbc657cd1ab0
 F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
-F test/permutations.test d12fabf8abdb71b79eb6c3ef3be5e875fe790071
+F test/permutations.test 1a8ac849b659445a0b3883caf42fa2c2a289f4a1
 F test/pragma.test a62f73293b0f0d79b0c87f8dd32d46fe53b0bd17
 F test/pragma2.test 3a55f82b954242c642f8342b17dffc8b47472947
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -1013,7 +1013,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 9fbe858b625a346690d5cefca3a6fa2a557bea11
-R 5495c22f5a8af629dc71eb4206b11e4c
-U dan
-Z 4194baf030b619413bfa4c9f6ef1f185
+P 59194311543b95c2aeebe2aba83da3c29b7c6460
+R 4c90620db5787f3ba83e3828a99de1d7
+U drh
+Z ac49cf015ef6faf4d4c2cd4fd75eca92
