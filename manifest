@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sa\scomment\sin\svdbe.c.\s\sNo\schanges\sto\scode.
-D 2012-08-29T10:28:43.112
+C Fix\san\sout-of-bounds\sread\sin\sthe\sdemonstration\scode\sin\stest_spellfix.c.
+D 2012-08-30T11:22:16.890
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -221,7 +221,7 @@ F src/test_quota.h 8761e463b25e75ebc078bd67d70e39b9c817a0cb
 F src/test_rtree.c aba603c949766c4193f1068b91c787f57274e0d9
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
-F src/test_spellfix.c fa83c9b4c4bdd1d41be4ad1e9241bf5a4fc9190f
+F src/test_spellfix.c 0a5b5b27fc48b00f9e6fd6700f9535de538a964f
 F src/test_stat.c d1569c7a4839f13e80187e2c26b2ab4da2d03935
 F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c a992d8c80ea91fbf21fb2dd570db40e77dd7e6ae
@@ -1013,7 +1013,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 200a81358c3117401d2258dd06bb8d2ea4f0ef51
-R 8a8b2d5907076b9a2c72b99614836b85
-U drh
-Z 58d7860c401fb255f3904a7a7432b3a2
+P 9fbe858b625a346690d5cefca3a6fa2a557bea11
+R 5495c22f5a8af629dc71eb4206b11e4c
+U dan
+Z 4194baf030b619413bfa4c9f6ef1f185
