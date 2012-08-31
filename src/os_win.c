@@ -1464,7 +1464,7 @@ static int getLastErrorMsg(DWORD lastErrno, int nBuf, char *zBuf){
 ** The first argument passed to the macro should be the error code that
 ** will be returned to SQLite (e.g. SQLITE_IOERR_DELETE, SQLITE_CANTOPEN). 
 ** The two subsequent arguments should be the name of the OS function that
-** failed and the the associated file-system path, if any.
+** failed and the associated file-system path, if any.
 */
 #define winLogError(a,b,c,d)   winLogErrorAtLine(a,b,c,d,__LINE__)
 static int winLogErrorAtLine(
@@ -3590,6 +3590,13 @@ static int winOpen(
   assert( id!=0 );
   UNUSED_PARAMETER(pVfs);
 
+#if SQLITE_OS_WINRT
+  if( !sqlite3_temp_directory ){
+    sqlite3_log(SQLITE_ERROR,
+        "sqlite3_temp_directory variable should be set for WinRT");
+  }
+#endif
+
   pFile->h = INVALID_HANDLE_VALUE;
 
   /* If the second argument to this function is NULL, generate a 
@@ -3903,7 +3910,7 @@ static int winAccess(
       }
     }else{
       logIoerr(cnt);
-      if( lastErrno!=ERROR_FILE_NOT_FOUND ){
+      if( lastErrno!=ERROR_FILE_NOT_FOUND && lastErrno!=ERROR_PATH_NOT_FOUND ){
         winLogError(SQLITE_IOERR_ACCESS, lastErrno, "winAccess", zFilename);
         sqlite3_free(zConverted);
         return SQLITE_IOERR_ACCESS;

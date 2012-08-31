@@ -75,7 +75,7 @@
 ** 
 ** Definition: Two databases (or the same database at two points it time)
 ** are said to be "logically equivalent" if they give the same answer to
-** all queries.  Note in particular the the content of freelist leaf
+** all queries.  Note in particular the content of freelist leaf
 ** pages can be changed arbitarily without effecting the logical equivalence
 ** of the database.
 ** 
@@ -3849,7 +3849,7 @@ void sqlite3PagerRef(DbPage *pPg){
 **
 ** If the Pager.noSync flag is set, then this function is a no-op.
 ** Otherwise, the actions required depend on the journal-mode and the 
-** device characteristics of the the file-system, as follows:
+** device characteristics of the file-system, as follows:
 **
 **   * If the journal file is an in-memory journal file, no action need
 **     be taken.

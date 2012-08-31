@@ -657,7 +657,7 @@ do_test rowid-11.4 {
 # Test the automatic generation of rowids when the table already contains
 # a rowid with the maximum value.
 #
-# Once the the maximum rowid is taken, rowids are normally chosen at
+# Once the maximum rowid is taken, rowids are normally chosen at
 # random.  By by reseting the random number generator, we can cause
 # the rowid guessing loop to collide with prior rowids, and test the
 # loop out to its limit of 100 iterations.  After 100 collisions, the

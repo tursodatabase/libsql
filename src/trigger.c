@@ -111,7 +111,7 @@ void sqlite3BeginTrigger(
     iDb = 1;
     pName = pName1;
   }else{
-    /* Figure out the db that the the trigger will be created in */
+    /* Figure out the db that the trigger will be created in */
     iDb = sqlite3TwoPartName(pParse, pName1, pName2, &pName);
     if( iDb<0 ){
       goto trigger_cleanup;

@@ -44,7 +44,7 @@
  
  *** Definition: Two databases (or the same database at two points it time)
      are said to be "logically equivalent" if they give the same answer to
-     all queries.  Note in particular the the content of freelist leaf
+     all queries.  Note in particular the content of freelist leaf
      pages can be changed arbitarily without effecting the logical equivalence
      of the database.
  

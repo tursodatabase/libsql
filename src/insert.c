@@ -1271,7 +1271,7 @@ void sqlite3GenerateConstraintChecks(
       case OE_Replace: {
         /* If there are DELETE triggers on this table and the
         ** recursive-triggers flag is set, call GenerateRowDelete() to
-        ** remove the conflicting row from the the table. This will fire
+        ** remove the conflicting row from the table. This will fire
         ** the triggers and remove both the table and index b-tree entries.
         **
         ** Otherwise, if there are no triggers or the recursive-triggers

@@ -222,7 +222,8 @@ static unsigned char *phoneticHash(const unsigned char *zIn, int nIn){
     if( c==CCLASS_SILENT ) continue;
     cPrevX = c;
     c = className[c];
-    if( c!=zOut[nOut-1] ) zOut[nOut++] = c;
+    assert( nOut>=0 );
+    if( nOut==0 || c!=zOut[nOut-1] ) zOut[nOut++] = c;
   }
   zOut[nOut] = 0;
   return zOut;
