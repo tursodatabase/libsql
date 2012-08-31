@@ -2536,7 +2536,7 @@ Index *sqlite3CreateIndex(
     assert( pName && pName->z );
 
 #ifndef SQLITE_OMIT_TEMPDB
-    /* If the index name was unqualified, check if the the table
+    /* If the index name was unqualified, check if the table
     ** is a temp table. If so, set the database to 1. Do not do this
     ** if initialising a database schema.
     */

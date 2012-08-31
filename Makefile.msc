@@ -19,6 +19,12 @@ USE_ICU = 0
 #
 USE_CRT_DLL = 0
 
+# Set this non-0 to attempt setting the native compiler automatically
+# for cross-compiling the command line tools needed during the compilation
+# process.
+#
+XCOMPILE = 0
+
 # Set this non-0 to use the native libraries paths for cross-compiling
 # the command line tools needed during the compilation process.
 #
@@ -85,10 +91,20 @@ LD = link.exe
 # line similar to the following could be used (all on one line):
 #
 #     nmake /f Makefile.msc sqlite3.dll
+#           XCOMPILE=1 USE_NATIVE_LIBPATHS=1
+#
+# Alternatively, the full path and file name to the compiler binary for the
+# platform the compilation process is taking place may be specified (all on
+# one line):
+#
+#     nmake /f Makefile.msc sqlite3.dll
 #           "NCC=""%VCINSTALLDIR%\bin\cl.exe"""
 #           USE_NATIVE_LIBPATHS=1
 #
 !IFDEF NCC
+NCC = $(NCC:\\=\)
+!ELSEIF $(XCOMPILE)!=0
+NCC = "$(VCINSTALLDIR)\bin\cl.exe"
 NCC = $(NCC:\\=\)
 !ELSE
 NCC = $(CC)

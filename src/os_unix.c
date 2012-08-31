@@ -1347,7 +1347,7 @@ static unixInodeInfo *inodeList = 0;
 ** The first argument passed to the macro should be the error code that
 ** will be returned to SQLite (e.g. SQLITE_IOERR_DELETE, SQLITE_CANTOPEN). 
 ** The two subsequent arguments should be the name of the OS function that
-** failed (e.g. "unlink", "open") and the the associated file-system path,
+** failed (e.g. "unlink", "open") and the associated file-system path,
 ** if any.
 */
 #define unixLogError(a,b,c)     unixLogErrorAtLine(a,b,c,__LINE__)
@@ -1370,7 +1370,7 @@ static int unixLogErrorAtLine(
   zErr = aErr;
 
   /* If STRERROR_R_CHAR_P (set by autoconf scripts) or __USE_GNU is defined,
-  ** assume that the system provides the the GNU version of strerror_r() that 
+  ** assume that the system provides the GNU version of strerror_r() that
   ** returns a pointer to a buffer containing the error message. That pointer 
   ** may point to aErr[], or it may point to some static storage somewhere. 
   ** Otherwise, assume that the system provides the POSIX version of 

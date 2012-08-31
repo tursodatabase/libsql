@@ -2233,7 +2233,7 @@ static void enableAutoLogging(
   if( envprofile!=NULL ){
     int where = 0;
     if( !strncasecmp("1", envprofile, 1) ){
-      if( isatty(STDERR_FILENO) ){
+      if( isatty(2) ){
         where = SQLITE_AUTOLOGGING_STDERR;
       }else{
         where = SQLITE_AUTOLOGGING_SYSLOG;
@@ -2254,7 +2254,7 @@ static void enableAutoLogging(
   if( envtrace!=NULL ){
     int where = 0;
     if( !strncasecmp("1", envtrace, 1) ){
-      if( isatty(STDERR_FILENO) ){
+      if( isatty(2) ){
         where = SQLITE_AUTOLOGGING_STDERR;
       }else{
         where = SQLITE_AUTOLOGGING_SYSLOG;

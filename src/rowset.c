@@ -440,7 +440,7 @@ int sqlite3RowSetNext(RowSet *p, i64 *pRowid){
 }
 
 /*
-** Check to see if element iRowid was inserted into the the rowset as
+** Check to see if element iRowid was inserted into the rowset as
 ** part of any insert batch prior to iBatch.  Return 1 or 0.
 **
 ** If this is the first test of a new batch and if there exist entires

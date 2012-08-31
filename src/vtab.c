@@ -131,7 +131,7 @@ void sqlite3VtabUnlock(VTable *pVTab){
 
   assert( db );
   assert( pVTab->nRef>0 );
-  assert( sqlite3SafetyCheckOk(db) );
+  assert( db->magic==SQLITE_MAGIC_OPEN || db->magic==SQLITE_MAGIC_ZOMBIE );
 
   pVTab->nRef--;
   if( pVTab->nRef==0 ){

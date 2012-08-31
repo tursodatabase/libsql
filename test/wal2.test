@@ -94,7 +94,7 @@ if {[forced_proxy_locking]} {
 #
 #   2. Attempt to read the database using the reader. Before the reader
 #      has a chance to snapshot the wal-index header, increment one
-#      of the the integer fields (so that the reader ends up with a corrupted
+#      of the integer fields (so that the reader ends up with a corrupted
 #      header).
 #
 #   3. Check that the reader recovers the wal-index and reads the correct

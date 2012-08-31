@@ -64,7 +64,9 @@
 # include <io.h>
 #define isatty(h) _isatty(h)
 #define access(f,m) _access((f),(m))
+#undef popen
 #define popen(a,b) _popen((a),(b))
+#undef pclose
 #define pclose(x) _pclose(x)
 #else
 /* Make sure isatty() has a prototype.

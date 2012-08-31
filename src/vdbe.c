@@ -656,7 +656,7 @@ int sqlite3VdbeExec(
     }
 #endif
 
-    /* On any opcode with the "out2-prerelase" tag, free any
+    /* On any opcode with the "out2-prerelease" tag, free any
     ** external allocations out of mem[p2] and set mem[p2] to be
     ** an undefined integer.  Opcodes will either fill in the integer
     ** value or convert mem[p2] to a different type.

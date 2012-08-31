@@ -119,7 +119,7 @@ do_test crash-1.11 {
 } {0 {}}
 
 #--------------------------------------------------------------------------
-# The following tests test recovery when both the database file and the the
+# The following tests test recovery when both the database file and the
 # journal file contain corrupt data. This can happen after pages are
 # written to the database file before a transaction is committed due to
 # cache-pressure.

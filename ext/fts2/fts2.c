@@ -5051,7 +5051,7 @@ static int leavesReaderAtEnd(LeavesReader *pReader){
 ** modification to control flow all over the place, though, so for now
 ** just punt.
 **
-** Note the the current system assumes that segment merges will run to
+** Note the current system assumes that segment merges will run to
 ** completion, which is why this particular probably hasn't arisen in
 ** this case.  Probably a brittle assumption.
 */

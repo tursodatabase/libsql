@@ -150,7 +150,7 @@
 ** more index blocks.  
 **
 ** The wal-index header contains the total number of frames within the WAL
-** in the the mxFrame field.  
+** in the mxFrame field.
 **
 ** Each index block except for the first contains information on 
 ** HASHTABLE_NPAGE frames. The first index block contains information on
