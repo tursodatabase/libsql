@@ -1,5 +1,5 @@
-C Exclude\sthe\satof1.test\stest\sscript\sfrom\sthe\svalgrind\spermutations\stest\ssince\nvalgrind\ssets\sup\sthe\sfloating\spoint\shardware\sin\san\sunusual\sway\sthat\smakes\natof1\sfail.
-D 2012-08-30T20:24:39.848
+C Changes\sfor\sERROR_PATH_NOT_FOUND\sin\saddition\sto\sERROR_FILE_NOT_FOUND\sin\s\nwinAccess().
+D 2012-08-31T12:31:18.969
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,7 +163,7 @@ F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 69b2fe66316524eebf5f1ce85c1fdfe2952307e9
-F src/os_win.c 3a18cdb28120ddc1211b6496b7e1e8547672a1e3
+F src/os_win.c 5dec8fe85ee547152075c020db72aec4382f0d0a
 F src/pager.c 5665fa9ecec51f11dabdfd8eefefa89391856007
 F src/pager.h 8b8c9bc065a3c66769df8724dfdf492ee1aab3c5
 F src/parse.y f29df90bd3adc64b33114ab1de9fb7768fcf2099
@@ -1013,7 +1013,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 59194311543b95c2aeebe2aba83da3c29b7c6460
-R 4c90620db5787f3ba83e3828a99de1d7
+P d3cf6832a59fe4c5723761abb4c89614406b03db
+R 3b56b1cf438f03ed04a187d25a245ed3
 U drh
-Z ac49cf015ef6faf4d4c2cd4fd75eca92
+Z 950f4ab8e7c8c7fcad5f5a96fb146fb0

@@ -3910,7 +3910,7 @@ static int winAccess(
       }
     }else{
       logIoerr(cnt);
-      if( lastErrno!=ERROR_FILE_NOT_FOUND ){
+      if( lastErrno!=ERROR_FILE_NOT_FOUND && lastErrno!=ERROR_PATH_NOT_FOUND ){
         winLogError(SQLITE_IOERR_ACCESS, lastErrno, "winAccess", zFilename);
         sqlite3_free(zConverted);
         return SQLITE_IOERR_ACCESS;
