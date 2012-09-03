@@ -823,7 +823,7 @@ sqlite3res.lo:	$(TOP)\src\sqlite3.rc $(HDR)
 	echo #ifndef SQLITE_RESOURCE_VERSION > sqlite3rc.h
 	for /F %%V in ('type VERSION') do ( \
 		echo #define SQLITE_RESOURCE_VERSION %%V \
-		| $(NAWK) "/.*/ { gsub(/[.]/,\",\");print }" >> sqlite3rc.h \
+			| $(NAWK) "/.*/ { gsub(/[.]/,\",\");print }" >> sqlite3rc.h \
 	)
 	echo #endif >> sqlite3rc.h
 	$(LTRCOMPILE) -fo sqlite3res.lo $(TOP)\src\sqlite3.rc

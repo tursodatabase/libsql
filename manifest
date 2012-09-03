@@ -1,9 +1,9 @@
-C Linking\sand\scleaning\sfixes\sfor\sthe\stclsqlite3.exe\starget\sin\sthe\sMSVC\smakefile.
-D 2012-09-03T11:01:21.786
+C Insert\sadditional\stab\scharacter.
+D 2012-09-03T11:14:53.144
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 494e71889c5f3480c53b83e3c42156ac17c99d68
+F Makefile.msc 2d696f01c228995e98b3b953a08b7bba1d48c130
 F Makefile.vxworks 879f034a64062a364b21000266bbd5bc6e0c19b9
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION a71848df48082f1d6585d4b0819d530fc455485d
@@ -1014,7 +1014,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P e2f27d28b590164bc6b0d856e79c9345e2188d03
-R 45efbc31964d33080b484210f8dbf86c
+P 96d43c7a35684cd8ca6ac0d8325193e69f102fb8
+R d73e64771e785a3e221346e08be6714e
 U mistachkin
-Z 5f858f893a53076d6a54458ec310e24b
+Z d6bddee65b5cfbe6b9d103d9c0b5c02d
