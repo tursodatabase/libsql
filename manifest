@@ -1,5 +1,5 @@
-C Fix\scompiler\swarnings\sin\stest_spellfix1.c
-D 2012-09-03T12:40:32.238
+C Version\s3.7.14
+D 2012-09-03T15:42:36.217
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1014,7 +1014,10 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P a15a70840e1af55ffe4035f53e894a2d582d8f74
+P ebb08d0b4d1ed674e4a23c3754206ca2df9063ff
 R 8bdf9ef517616ac5a5043f12bec4acdb
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.7.14 *
 U drh
-Z ba78db3487c242fdc928a99a33b20e48
+Z 126ab1aaea0f3a8cb5c4792cf0a82989
