@@ -1044,8 +1044,7 @@ tclsqlite-shell.lo:	$(TOP)\src\tclsqlite.c $(HDR)
 	$(LTCOMPILE) -DTCLSH=1 -DBUILD_sqlite -I$(TCLINCDIR) -c $(TOP)\src\tclsqlite.c
 
 tclsqlite3.exe:	tclsqlite-shell.lo libsqlite3.lib sqlite3res.lo
-	$(LTLINK) tclsqlite-shell.lo \
-		/link $(LTLINKOPTS) $(LTLIBPATHS) libsqlite3.lib sqlite3res.lo $(LTLIBS) $(TLIBS)
+	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /OUT:$@ libsqlite3.lib tclsqlite-shell.lo sqlite3res.lo $(LTLIBS) $(TLIBS)
 
 # Rules to build opcodes.c and opcodes.h
 #
@@ -1197,7 +1196,7 @@ clean:
 	-rmdir /Q/S quota2c
 	-rmdir /Q/S tsrc
 	del /Q .target_source
-	del /Q tclsqlite3.exe
+	del /Q tclsqlite3.exe tclsqlite3.exp
 	del /Q testfixture.exe testfixture.exp test.db
 	del /Q sqlite3.dll sqlite3.lib sqlite3.exp sqlite3.def
 	del /Q sqlite3.c
