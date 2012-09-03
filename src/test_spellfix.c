@@ -1894,7 +1894,7 @@ static int spellfix1Init(
   int rc = SQLITE_OK;
   int i;
 
-  nDbName = strlen(zDbName);
+  nDbName = (int)strlen(zDbName);
   pNew = sqlite3_malloc( sizeof(*pNew) + nDbName + 1);
   if( pNew==0 ){
     rc = SQLITE_NOMEM;
@@ -2234,7 +2234,7 @@ static void spellfix1RunQuery(MatchQuery *p, const char *zQuery, int nQuery){
     p->rc = SQLITE_NOMEM;
     return;
   }
-  nClass = strlen(zClass);
+  nClass = (int)strlen(zClass);
   if( nClass>SPELLFIX_MX_HASH-2 ){
     nClass = SPELLFIX_MX_HASH-2;
     zClass[nClass] = 0;
@@ -2408,7 +2408,7 @@ static int spellfix1FilterForMatch(
     x.rc = SQLITE_NOMEM;
     goto filter_exit;
   }
-  nPattern = strlen(zPattern);
+  nPattern = (int)strlen(zPattern);
   if( zPattern[nPattern-1]=='*' ) nPattern--;
   zSql = sqlite3_mprintf(
      "SELECT id, word, rank, k1"
@@ -2569,9 +2569,9 @@ static int spellfix1Column(
     case SPELLFIX_COL_MATCHLEN: {
       int iMatchlen = pCur->a[pCur->iRow].iMatchlen;
       if( iMatchlen<0 ){
-        int nPattern = strlen(pCur->zPattern);
+        int nPattern = (int)strlen(pCur->zPattern);
         char *zWord = pCur->a[pCur->iRow].zWord;
-        int nWord = strlen(zWord);
+        int nWord = (int)strlen(zWord);
 
         if( nPattern>0 && pCur->zPattern[nPattern-1]=='*' ){
           char *zTranslit;

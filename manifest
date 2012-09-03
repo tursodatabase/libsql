@@ -1,5 +1,5 @@
-C Add\sresources\sdescribing\sthe\sversion\snumber\sand\sother\sinformation\sto\sEXEs\nand\sDLLs\sgenerated\susing\sMSVC.
-D 2012-09-03T11:39:59.391
+C Fix\scompiler\swarnings\sin\stest_spellfix1.c
+D 2012-09-03T12:40:32.238
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -222,7 +222,7 @@ F src/test_quota.h 8761e463b25e75ebc078bd67d70e39b9c817a0cb
 F src/test_rtree.c aba603c949766c4193f1068b91c787f57274e0d9
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
-F src/test_spellfix.c 0f03970686403fe33fca1a74b0b60af42fb5929e
+F src/test_spellfix.c 76dd8d3111d2f5354c374f71fa23b752bd0b029c
 F src/test_stat.c d1569c7a4839f13e80187e2c26b2ab4da2d03935
 F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c a992d8c80ea91fbf21fb2dd570db40e77dd7e6ae
@@ -1014,7 +1014,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 7536101317c00fbb5bf555120feb55b9bc40e8ba 3af7c1a6afacea7b5e47bebce2541aa340c6e946
-R d73e64771e785a3e221346e08be6714e
+P a15a70840e1af55ffe4035f53e894a2d582d8f74
+R 8bdf9ef517616ac5a5043f12bec4acdb
 U drh
-Z 8fd21ce3038c1c5a5efd757200a7f3c6
+Z ba78db3487c242fdc928a99a33b20e48
