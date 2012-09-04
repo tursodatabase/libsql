@@ -6075,7 +6075,10 @@ case OP_Trace: {
   char *zTrace;
   char *z;
 
-  if( db->xTrace && (zTrace = (pOp->p4.z ? pOp->p4.z : p->zSql))!=0 ){
+  if( db->xTrace
+   && !p->doingRerun
+   && (zTrace = (pOp->p4.z ? pOp->p4.z : p->zSql))!=0
+  ){
     z = sqlite3VdbeExpandSql(p, zTrace);
     db->xTrace(db->pTraceArg, z);
     sqlite3DbFree(db, z);
