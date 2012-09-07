@@ -1156,6 +1156,7 @@ int sqlite3_busy_timeout(sqlite3 *db, int ms){
     db->busyTimeout = ms;
     sqlite3_busy_handler(db, sqliteDefaultBusyCallback, (void*)db);
   }else{
+    db->busyTimeout = 0;
     sqlite3_busy_handler(db, 0, 0);
   }
   return SQLITE_OK;
