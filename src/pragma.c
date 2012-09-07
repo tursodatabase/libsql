@@ -1541,9 +1541,9 @@ void sqlite3Pragma(
   **   PRAGMA busy_timeout = N
   **
   ** Call sqlite3_busy_timeout(db, N).  Return the current timeout value
-  ** if one is set.  If the busy handler is not set to the default 
-  ** busy callback, then the return value is undefined.  A value of N
-  ** which is 0 or negative disables the busy handler.
+  ** if one is set.  If no busy handler or a different busy handler is set
+  ** then 0 is returned.  Setting the busy_timeout to 0 or negative
+  ** disables the timeout.
   */
   if( sqlite3StrICmp(zLeft, "busy_timeout")==0 ){
     if( zRight ){

@@ -1,5 +1,5 @@
-C Add\san\sexperimental\sbusy_timeout\spragma\sto\sfacilitate\saccess\sto\sthe\nsqlite3_busy_timeout()\sinterfaces\sfor\sprogrammers\sthat\sare\sworking\sfrom\nbehind\sa\slanguage\swrapper\sthat\sdoes\snot\sexpose\sthat\sinterface.
-D 2012-09-07T16:46:59.378
+C Have\sPRAGMA\sbusy_timeout\sreturn\s0\sif\sthe\sbusy\shandler\shas\sbeen\schanged\nor\scancelled.
+D 2012-09-07T18:49:57.818
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -145,7 +145,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
 F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
-F src/main.c 31af732aa4363e85816b09794429c79fe4baa3ac
+F src/main.c 0b321fc873ff2c09b996dea9f74443e4cd9ae28d
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
@@ -170,7 +170,7 @@ F src/parse.y f29df90bd3adc64b33114ab1de9fb7768fcf2099
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h 1b5dcc3dc8103d03e625b177023ee67764fa6b7c
 F src/pcache1.c 9fd22671c270b35131ef480bbc00392b8b5f8ab9
-F src/pragma.c e09950b9d0a35c1bf2329038c10f38589e754ae8
+F src/pragma.c 360ac85ad9bfbab2302e8b7ba524af842f497cef
 F src/prepare.c 33291b83cca285718048d219c67b8298501fa3a5
 F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -1014,10 +1014,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 39f763bfc04174ee0fe2cdf6a92b7c12f726bd1b
-R 7a209eaa28bbe6aeaf699b5d2296eb6d
-T *branch * busy-timeout-pragma
-T *sym-busy-timeout-pragma *
-T -sym-trunk *
+P 22ebc668516bc3dd5782d6d3d42dc7fd2eed7d79
+R 123b3377f1885f394458b43e10ba3388
 U drh
-Z 3457f6820fedfafcfc1fb25157630cb3
+Z ffcbc3d2ba50a5d9635e1edbbde2b179
