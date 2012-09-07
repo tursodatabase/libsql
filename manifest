@@ -1,5 +1,5 @@
-C Have\sPRAGMA\sbusy_timeout\sreturn\s0\sif\sthe\sbusy\shandler\shas\sbeen\schanged\nor\scancelled.
-D 2012-09-07T18:49:57.818
+C Correct\stwo\stest\snames\sto\smake\sthem\sunique.
+D 2012-09-07T20:10:30.599
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -571,7 +571,7 @@ F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/limit.test 2db7b3b34fb925b8e847d583d2eb67531d0ce67e
 F test/loadext.test 2b5e249c51c986a5aff1f0950cf7ba30976c8f22
 F test/loadext2.test 0bcaeb4d81cd5b6e883fdfea3c1bdbe1f173cbca
-F test/lock.test 7e9eddd991b3af3a01caec2d9f030e0798deef74
+F test/lock.test 87af515b0c4cf928576d0f89946d67d7c265dfb4
 F test/lock2.test 5242d8ac4e2d59c403aebff606af449b455aceff
 F test/lock3.test f271375930711ae044080f4fe6d6eda930870d00
 F test/lock4.test e175ae13865bc87680607563bafba21f31a26f12
@@ -1014,7 +1014,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 22ebc668516bc3dd5782d6d3d42dc7fd2eed7d79
-R 123b3377f1885f394458b43e10ba3388
-U drh
-Z ffcbc3d2ba50a5d9635e1edbbde2b179
+P 7be5bc36798d30f50658b70fc0bd31af897f3a87
+R 0d92940b96f13ff3dc822c3dd51f8373
+U mistachkin
+Z ac2b57c54956518a08fcca693b6facfe

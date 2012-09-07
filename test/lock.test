@@ -271,10 +271,10 @@ do_test lock-2.12 {
   db2 eval {PRAGMA busy_timeout(0)}
   execsql COMMIT
 } {}
-do_test lock-2.11b {
+do_test lock-2.12b {
   db2 eval {PRAGMA busy_timeout}
 } {0}
-integrity_check lock-2.12
+integrity_check lock-2.13
 
 # Try to start two transactions in a row
 #
