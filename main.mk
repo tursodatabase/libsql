@@ -606,7 +606,9 @@ clean:
 	rm -f lemon lemon.exe lempar.c parse.* sqlite*.tar.gz
 	rm -f mkkeywordhash mkkeywordhash.exe keywordhash.h
 	rm -f $(PUBLISH)
+	rm -f A BAR file http testdb
 	rm -f *.da *.bb *.bbg gmon.out
+	rm -f *.bu *.csv *.db *.db2 *.db-shm *.db-wal *.tcl *.txt *.x
 	rm -rf quota2a quota2b quota2c
 	rm -rf tsrc target_source
 	rm -f testloadext.dll libtestloadext.so

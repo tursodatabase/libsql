@@ -1186,6 +1186,8 @@ sqlite3_analyzer.exe:	sqlite3_analyzer.c sqlite3res.lo
 clean:
 	del /Q *.lo *.ilk *.lib *.obj *.pdb sqlite3.exe libsqlite3.lib
 	del /Q *.da *.bb *.bbg gmon.out
+	del /Q *.bu *.csv *.db *.db2 *.db-shm *.db-wal *.tcl *.txt *.x
+	del /Q A BAR file http testdb
 	del /Q sqlite3.h opcodes.c opcodes.h
 	del /Q lemon.exe lempar.c parse.*
 	del /Q mkkeywordhash.exe keywordhash.h
