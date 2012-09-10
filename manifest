@@ -1,5 +1,5 @@
-C Avoid\susing\sthe\ssqlite3ErrStr\sfunction\sin\sthe\sTcl\spackage\sif\sUSE_SYSTEM_SQLITE\sis\sdefined.
-D 2012-09-10T09:33:09.064
+C Remove\sthe\sstale\simplementation\sof\sthe\sifnull\sand\scoalesce\sfunctions\s-\scode\nthat\shas\sbeen\scommented\sout\sfor\sages.\s\sNo\sfunctional\schanges.
+D 2012-09-10T15:02:32.827
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -135,7 +135,7 @@ F src/delete.c 335f36750dc6ac88d580aa36a6487459be9889de
 F src/expr.c 217840a107dcc1e5dbb57cea311daad04bedbb9a
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 9c77d842dc9961d92a06a65abb80c64ef1750296
-F src/func.c 18dfedfb857e100b05755a1b12e88b389f957879
+F src/func.c b4e88b92838fdab8e0088cc8411c06664b4dcf55
 F src/global.c 4cfdca5cb0edd33c4d021baec4ede958cb2c793b
 F src/hash.c a4031441741932da9e7a65bee2b36b5d0e81c073
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
@@ -1014,7 +1014,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P af870ca9827d2079a35dbb545660f670c7ca9512
-R 41116711b74a4531ffcdbedf61877a05
-U mistachkin
-Z 81d27ccc240f2f1ae0e0280e87c1196f
+P a716b9a3091072774d067c0a1258b0f4c39a4180
+R e24ef4a70ae15b9fa5b9d09102845b46
+U drh
+Z fa9683e591df1b702d6598781636d3de

@@ -367,33 +367,14 @@ static void lowerFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   }
 }
 
-
-#if 0  /* This function is never used. */
 /*
-** The COALESCE() and IFNULL() functions used to be implemented as shown
-** here.  But now they are implemented as VDBE code so that unused arguments
-** do not have to be computed.  This legacy implementation is retained as
-** comment.
+** The COALESCE() and IFNULL() functions are implemented as VDBE code so
+** that unused argument values do not have to be computed.  However, we
+** still need some kind of function implementation for this routines in
+** the function table.  That function implementation will never be called
+** so it doesn't matter what the implementation is.  We might as well use
+** the "version()" function as a substitute.
 */
-/*
-** Implementation of the IFNULL(), NVL(), and COALESCE() functions.  
-** All three do the same thing.  They return the first non-NULL
-** argument.
-*/
-static void ifnullFunc(
-  sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
-){
-  int i;
-  for(i=0; i<argc; i++){
-    if( SQLITE_NULL!=sqlite3_value_type(argv[i]) ){
-      sqlite3_result_value(context, argv[i]);
-      break;
-    }
-  }
-}
-#endif /* NOT USED */
 #define ifnullFunc versionFunc   /* Substitute function - never called */
 
 /*
