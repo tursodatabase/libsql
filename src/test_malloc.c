@@ -1094,9 +1094,7 @@ static int test_db_config_lookaside(
 }
 
 /*
-** Usage:
-**
-**   sqlite3_config_heap NBYTE NMINALLOC
+** Usage:    sqlite3_config_heap NBYTE NMINALLOC
 */
 static int test_config_heap(
   void * clientData, 
@@ -1133,7 +1131,7 @@ static int test_config_heap(
 }
 
 /*
-** tclcmd:     sqlite3_config_error  [DB]
+** Usage:    sqlite3_config_error  [DB]
 **
 ** Invoke sqlite3_config() or sqlite3_db_config() with invalid
 ** opcodes and verify that they return errors.
@@ -1171,10 +1169,10 @@ static int test_config_error(
 }
 
 /*
-** tclcmd:     sqlite3_config_uri  BOOLEAN
+** Usage:    sqlite3_config_uri  BOOLEAN
 **
-** Invoke sqlite3_config() or sqlite3_db_config() with invalid
-** opcodes and verify that they return errors.
+** Enables or disables interpretation of URI parameters by default using
+** SQLITE_CONFIG_URI.
 */
 static int test_config_uri(
   void * clientData, 
@@ -1200,10 +1198,8 @@ static int test_config_uri(
 }
 
 /*
-** Usage:    
-**
-**   sqlite3_dump_memsys3  FILENAME
-**   sqlite3_dump_memsys5  FILENAME
+** Usage:    sqlite3_dump_memsys3  FILENAME
+**           sqlite3_dump_memsys5  FILENAME
 **
 ** Write a summary of unfreed memsys3 allocations to FILENAME.
 */

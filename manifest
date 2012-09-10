@@ -1,5 +1,5 @@
-C Refine\serror\smessages\sin\sthe\ssqlite3\sTcl\scommand\swhen\sa\sNULL\sdatabase\sconnection\sis\sreturned\sfrom\ssqlite3_open_v2.
-D 2012-09-10T07:29:29.388
+C Make\sheader\scomments\sfor\ssome\sTcl\stest\scommands\smore\sconsistent.\s\sNo\schanges\sto\scode.
+D 2012-09-10T08:48:05.199
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -210,7 +210,7 @@ F src/test_intarray.c d879bbf8e4ce085ab966d1f3c896a7c8b4f5fc99
 F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c f5c0a05b7b3d5930db769b5ee6c3766dc2221a64
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
-F src/test_malloc.c 3f5903a1528fd32fe4c472a3bd0259128d8faaef
+F src/test_malloc.c 7c8e2511d9d9661c2fcf91960ce0fb801bae8d0a
 F src/test_multiplex.c ac0fbc1748e5b86a41a1d7a84654fae0d53a881d
 F src/test_multiplex.h e99c571bc4968b7a9363b661481f3934bfead61d
 F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
@@ -1014,7 +1014,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P b532120a4a567a3fa54b87dd8ab94cc2c0347c7c
-R 478bc906eac043275283b34d14cafa90
+P f260d7d567a1239c483c437d0b18a95bd0c96724
+R 36da01c96777fdf02072bd5dbf03de91
 U mistachkin
-Z 925d5e6a92a3b6e3fa634cf86d33ca4c
+Z d0e3237f44c1c6720ed7722cbf05a54d
