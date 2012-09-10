@@ -2462,6 +2462,7 @@ struct Sqlite3Config {
   int bCoreMutex;                   /* True to enable core mutexing */
   int bFullMutex;                   /* True to enable full mutexing */
   int bOpenUri;                     /* True to interpret filenames as URIs */
+  int bReadOnly;                    /* True to force read-only mode */
   int mxStrlen;                     /* Maximum string length */
   int szLookaside;                  /* Default lookaside buffer size */
   int nLookaside;                   /* Default lookaside buffer count */

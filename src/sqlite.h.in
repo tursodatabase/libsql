@@ -1562,6 +1562,19 @@ struct sqlite3_mem_methods {
 ** disabled. The default value may be changed by compiling with the
 ** [SQLITE_USE_URI] symbol defined.
 **
+** [[SQLITE_CONFIG_READONLY]] <dt>SQLITE_CONFIG_READONLY
+** <dd> This option takes a single argument of type int. If non-zero, then
+** read-only mode for opening databases is globally enabled. If the parameter
+** is zero, then read-only mode for opening databases is globally disabled. If
+** read-only mode for opening databases is globally enabled, all databases
+** opened by [sqlite3_open()], [sqlite3_open16()], or specified as part of
+** [ATTACH] commands will be opened in read-only mode. Additionally, all calls
+** to [sqlite3_open_v2()] must have the [SQLITE_OPEN_READONLY] flag set in the
+** third argument; otherwise, a [SQLITE_READONLY] error will be returned. If it
+** is globally disabled, [sqlite3_open()], [sqlite3_open16()],
+** [sqlite3_open_v2()], and [ATTACH] commands will function normally. By
+** default, read-only mode is globally disabled.
+**
 ** [[SQLITE_CONFIG_PCACHE]] [[SQLITE_CONFIG_GETPCACHE]]
 ** <dt>SQLITE_CONFIG_PCACHE and SQLITE_CONFIG_GETPCACHE
 ** <dd> These options are obsolete and should not be used by new code.
@@ -1587,6 +1600,7 @@ struct sqlite3_mem_methods {
 #define SQLITE_CONFIG_URI          17  /* int */
 #define SQLITE_CONFIG_PCACHE2      18  /* sqlite3_pcache_methods2* */
 #define SQLITE_CONFIG_GETPCACHE2   19  /* sqlite3_pcache_methods2* */
+#define SQLITE_CONFIG_READONLY     20  /* int */
 
 /*
 ** CAPI3REF: Database Connection Configuration Options

@@ -475,6 +475,11 @@ int sqlite3_config(int op, ...){
       break;
     }
 
+    case SQLITE_CONFIG_READONLY: {
+      sqlite3GlobalConfig.bReadOnly = va_arg(ap, int);
+      break;
+    }
+
     default: {
       rc = SQLITE_ERROR;
       break;
@@ -2187,7 +2192,8 @@ static int openDatabase(
   const char *zFilename, /* Database filename UTF-8 encoded */
   sqlite3 **ppDb,        /* OUT: Returned database handle */
   unsigned int flags,    /* Operational flags */
-  const char *zVfs       /* Name of the VFS to use */
+  const char *zVfs,      /* Name of the VFS to use */
+  int defaultFlags       /* Zero if opening via sqlite3_open_v2 */
 ){
   sqlite3 *db;                    /* Store allocated handle here */
   int rc;                         /* Return code */
@@ -2256,6 +2262,16 @@ static int openDatabase(
                SQLITE_OPEN_FULLMUTEX |
                SQLITE_OPEN_WAL
              );
+
+  /* Check for global read-only mode */
+  if( sqlite3GlobalConfig.bReadOnly ){
+    if( defaultFlags ){
+      flags &= ~(SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE);
+      flags |= SQLITE_OPEN_READONLY;
+    }else if( flags & SQLITE_OPEN_READWRITE ){
+      return SQLITE_READONLY;
+    }
+  }
 
   /* Allocate the sqlite data structure */
   db = sqlite3MallocZero( sizeof(sqlite3) );
@@ -2447,7 +2463,7 @@ int sqlite3_open(
   sqlite3 **ppDb 
 ){
   return openDatabase(zFilename, ppDb,
-                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, 0);
+                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, 0, 1);
 }
 int sqlite3_open_v2(
   const char *filename,   /* Database filename (UTF-8) */
@@ -2455,7 +2471,7 @@ int sqlite3_open_v2(
   int flags,              /* Flags */
   const char *zVfs        /* Name of VFS module to use */
 ){
-  return openDatabase(filename, ppDb, (unsigned int)flags, zVfs);
+  return openDatabase(filename, ppDb, (unsigned int)flags, zVfs, 0);
 }
 
 #ifndef SQLITE_OMIT_UTF16
@@ -2482,7 +2498,7 @@ int sqlite3_open16(
   zFilename8 = sqlite3ValueText(pVal, SQLITE_UTF8);
   if( zFilename8 ){
     rc = openDatabase(zFilename8, ppDb,
-                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, 0);
+                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, 0, 1);
     assert( *ppDb || rc==SQLITE_NOMEM );
     if( rc==SQLITE_OK && !DbHasProperty(*ppDb, 0, DB_SchemaLoaded) ){
       ENC(*ppDb) = SQLITE_UTF16NATIVE;

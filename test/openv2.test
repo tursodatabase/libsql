@@ -52,4 +52,42 @@ do_test openv2-2.2 {
 } {1 {attempt to write a readonly database}}
 
 
+# Attempt to open a database with SQLITE_OPEN_READWRITE when the
+# SQLITE_CONFIG_READONLY flag is enabled.
+#
+db close
+sqlite3_shutdown
+sqlite3_config_readonly 1
+sqlite3_initialize
+autoinstall_test_functions
+
+do_test openv2-3.1 {
+  list [catch {sqlite3 db :memory:} msg] $msg
+} {1 {attempt to write a readonly database}}
+catch {db close}
+do_test openv2-3.2 {
+  list [catch {sqlite3 db test.db} msg] $msg
+} {1 {attempt to write a readonly database}}
+catch {db close}
+do_test openv2-3.3 {
+  list [catch {sqlite3 db :memory: -readonly 1} msg] $msg
+} {0 {}}
+catch {db close}
+do_test openv2-3.4 {
+  list [catch {sqlite3 db test.db -readonly 1} msg] $msg
+} {0 {}}
+catch {db close}
+do_test openv2-3.5 {
+  list [catch {sqlite3 db :memory: -readonly 0} msg] $msg
+} {1 {attempt to write a readonly database}}
+catch {db close}
+do_test openv2-3.6 {
+  list [catch {sqlite3 db test.db -readonly 0} msg] $msg
+} {1 {attempt to write a readonly database}}
+catch {db close}
+
+sqlite3_shutdown
+sqlite3_config_readonly 0
+sqlite3_initialize
+autoinstall_test_functions
 finish_test

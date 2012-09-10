@@ -142,6 +142,7 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    1,                         /* bCoreMutex */
    SQLITE_THREADSAFE==1,      /* bFullMutex */
    SQLITE_USE_URI,            /* bOpenUri */
+   0,                         /* bReadOnly */
    0x7ffffffe,                /* mxStrlen */
    128,                       /* szLookaside */
    500,                       /* nLookaside */
