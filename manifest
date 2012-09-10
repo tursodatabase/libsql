@@ -1,5 +1,5 @@
-C Avoid\srepeating\scalls\sto\sthe\ssqlite3_trace()\scallback\swhen\sthe\ssame\sstatement\nis\sevaluted\smultiple\stimes\sby\ssqlite3_step()\sdue\sto\san\sSQLITE_SCHEMA\nreprepare.
-D 2012-09-04T21:34:26.807
+C Fix\stypo\sin\sdocumentation\sfor\ssqlite3_open_v2.\s\sNo\schanges\sto\scode.
+D 2012-09-10T06:02:57.720
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -178,7 +178,7 @@ F src/resolve.c 9e28280ec98035f31900fdd1db01f86f68ca6c32
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c f843c872a97baa1594c2cc3d4c003409a7bd03af
 F src/shell.c 87953c5d9c73d9494db97d1607e2e2280418f261
-F src/sqlite.h.in c447d35212736c4c77d86bc2d00f6cf4d4c12131
+F src/sqlite.h.in 39ddd714b62c651bfb5646440c594ca7ff6c7453
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h 053e03a532beb909ead2df0721db67cdb4c48ae8
@@ -1014,7 +1014,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P c0d89d4a9752922f9e367362366efde4f1b06f2a
-R f99616c13334ce584a8b1ebfcd476fa4
-U drh
-Z 2084e672100937502093a8dd98a48d0f
+P 39f763bfc04174ee0fe2cdf6a92b7c12f726bd1b
+R db2d221f8ec5049bd5a2f586e1b59db8
+U mistachkin
+Z 1863f6017f0a62e08566b39d66980410
