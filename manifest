@@ -1,5 +1,5 @@
-C Fix\stypo\sin\sdocumentation\sfor\ssqlite3_open_v2.\s\sNo\schanges\sto\scode.
-D 2012-09-10T06:02:57.720
+C Refine\serror\smessages\sin\sthe\ssqlite3\sTcl\scommand\swhen\sa\sNULL\sdatabase\sconnection\sis\sreturned\sfrom\ssqlite3_open_v2.
+D 2012-09-10T07:29:29.388
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -185,7 +185,7 @@ F src/sqliteInt.h 053e03a532beb909ead2df0721db67cdb4c48ae8
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c fe5406573e1527957e00dcaf51edd9d8bd31b918
+F src/tclsqlite.c 192dd01625381fb0614bc35f686de5b9d5fbe2bf
 F src/test1.c 3d70f7c5987f186884cfebbfa7151a7d3d67d86e
 F src/test2.c 4178056dd1e7d70f954ad8a1e3edb71a2a784daf
 F src/test3.c 3c3c2407fa6ec7a19e24ae23f7cb439d0275a60d
@@ -1014,7 +1014,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 39f763bfc04174ee0fe2cdf6a92b7c12f726bd1b
-R db2d221f8ec5049bd5a2f586e1b59db8
+P b532120a4a567a3fa54b87dd8ab94cc2c0347c7c
+R 478bc906eac043275283b34d14cafa90
 U mistachkin
-Z 1863f6017f0a62e08566b39d66980410
+Z 925d5e6a92a3b6e3fa634cf86d33ca4c
