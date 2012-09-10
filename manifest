@@ -1,5 +1,5 @@
-C Make\sheader\scomments\sfor\ssome\sTcl\stest\scommands\smore\sconsistent.\s\sNo\schanges\sto\scode.
-D 2012-09-10T08:48:05.199
+C Avoid\susing\sthe\ssqlite3ErrStr\sfunction\sin\sthe\sTcl\spackage\sif\sUSE_SYSTEM_SQLITE\sis\sdefined.
+D 2012-09-10T09:33:09.064
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -185,7 +185,7 @@ F src/sqliteInt.h 053e03a532beb909ead2df0721db67cdb4c48ae8
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c 192dd01625381fb0614bc35f686de5b9d5fbe2bf
+F src/tclsqlite.c f6bc566b5a52128759d6eb954b53930a6353ed58
 F src/test1.c 3d70f7c5987f186884cfebbfa7151a7d3d67d86e
 F src/test2.c 4178056dd1e7d70f954ad8a1e3edb71a2a784daf
 F src/test3.c 3c3c2407fa6ec7a19e24ae23f7cb439d0275a60d
@@ -1014,7 +1014,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P f260d7d567a1239c483c437d0b18a95bd0c96724
-R 36da01c96777fdf02072bd5dbf03de91
+P af870ca9827d2079a35dbb545660f670c7ca9512
+R 41116711b74a4531ffcdbedf61877a05
 U mistachkin
-Z d0e3237f44c1c6720ed7722cbf05a54d
+Z 81d27ccc240f2f1ae0e0280e87c1196f

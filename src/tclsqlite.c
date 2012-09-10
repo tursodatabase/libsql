@@ -45,7 +45,9 @@
 ** This function is used to translate a return code into an error
 ** message.
 */
+#ifndef USE_SYSTEM_SQLITE
 const char *sqlite3ErrStr(int rc);
+#endif
 
 /*
  * Windows needs to know which symbols to export.  Unix does not.
@@ -3042,15 +3044,19 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   zFile = Tcl_TranslateFileName(interp, zFile, &translatedFilename);
   rc = sqlite3_open_v2(zFile, &p->db, flags, zVfs);
   Tcl_DStringFree(&translatedFilename);
+#ifndef USE_SYSTEM_SQLITE
   if( p->db ){
+#endif
     if( SQLITE_OK!=sqlite3_errcode(p->db) ){
       zErrMsg = sqlite3_mprintf("%s", sqlite3_errmsg(p->db));
       sqlite3_close(p->db);
       p->db = 0;
     }
+#ifndef USE_SYSTEM_SQLITE
   }else{
     zErrMsg = sqlite3_mprintf("%s", sqlite3ErrStr(rc));
   }
+#endif
 #ifdef SQLITE_HAS_CODEC
   if( p->db ){
     sqlite3_key(p->db, pKey, nKey);
