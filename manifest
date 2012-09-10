@@ -1,5 +1,5 @@
-C Remove\sthe\sstale\simplementation\sof\sthe\sifnull\sand\scoalesce\sfunctions\s-\scode\nthat\shas\sbeen\scommented\sout\sfor\sages.\s\sNo\sfunctional\schanges.
-D 2012-09-10T15:02:32.827
+C Correct\stwo\sduplicated\stest\snames.
+D 2012-09-10T23:44:12.573
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -734,7 +734,7 @@ F test/syscall.test bea9bf329bff733c791310244617c2a76974e64a
 F test/sysfault.test c79441d88d23696fbec7b147dba98d42a04f523f
 F test/table.test a59d985ca366e39b17b175f387f9d5db5a18d4e2
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
-F test/tclsqlite.test 1597d353308531527583481d14d9da52ea8ed0af
+F test/tclsqlite.test a3d2df21ee98957f5de4f9dc1db0eab68047ab5d
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test 51edd31c65ed1560dd600b1796e8325df96318e2
 F test/temptrigger.test 26670ed7a39cf2296a7f0a9e0a1d7bdb7abe936d
@@ -1014,7 +1014,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P a716b9a3091072774d067c0a1258b0f4c39a4180
-R e24ef4a70ae15b9fa5b9d09102845b46
-U drh
-Z fa9683e591df1b702d6598781636d3de
+P c2ad691174b8af2e8b158d8840cfc93f75d7db71
+R 01a5d1c903c9a5a720ae8b76fe55d59d
+U mistachkin
+Z 8f15859569cbba9d92e0949a6ba62979
