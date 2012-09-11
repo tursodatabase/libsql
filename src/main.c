@@ -1768,6 +1768,15 @@ int sqlite3_extended_errcode(sqlite3 *db){
 }
 
 /*
+** Return a string that describes the kind of error specified in the
+** argument.  For now, this simply calls the internal sqlite3ErrStr()
+** function.
+*/
+const char *sqlite3_errstr(int rc){
+  return sqlite3ErrStr(rc);
+}
+
+/*
 ** Create a new collating function for database "db".  The name is zName
 ** and the encoding is enc.
 */

@@ -1,5 +1,5 @@
-C Correct\stwo\sduplicated\stest\snames.
-D 2012-09-10T23:44:12.573
+C Added\ssqlite3_errstr\sAPI\sto\stranslate\sa\sresult\scode\sto\sthe\scorresponding\serror\smessage.
+D 2012-09-11T02:00:25.116
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -145,7 +145,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
 F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
-F src/main.c 02255cf1da50956c5427c469abddb15bccc4ba09
+F src/main.c 259472ec0c694fe6a4fb6e8781be7fd8feacb09c
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
@@ -178,14 +178,14 @@ F src/resolve.c 9e28280ec98035f31900fdd1db01f86f68ca6c32
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c f843c872a97baa1594c2cc3d4c003409a7bd03af
 F src/shell.c 87953c5d9c73d9494db97d1607e2e2280418f261
-F src/sqlite.h.in 39ddd714b62c651bfb5646440c594ca7ff6c7453
+F src/sqlite.h.in 193c0496be6046604d1b8aa518012d3cf411f57f
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h 053e03a532beb909ead2df0721db67cdb4c48ae8
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c f6bc566b5a52128759d6eb954b53930a6353ed58
+F src/tclsqlite.c e4de2458b3ef38fdd0498bc4e5ea5367a241b0f3
 F src/test1.c 3d70f7c5987f186884cfebbfa7151a7d3d67d86e
 F src/test2.c 4178056dd1e7d70f954ad8a1e3edb71a2a784daf
 F src/test3.c 3c3c2407fa6ec7a19e24ae23f7cb439d0275a60d
@@ -1014,7 +1014,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P c2ad691174b8af2e8b158d8840cfc93f75d7db71
-R 01a5d1c903c9a5a720ae8b76fe55d59d
+P ced49974a969f11e5ebe2280bd7eec20b059e501
+R 96b0793061802196b5e5b329338c3e20
 U mistachkin
-Z 8f15859569cbba9d92e0949a6ba62979
+Z 09221de0840bfda8cdeb1fd3b6a60ff7
