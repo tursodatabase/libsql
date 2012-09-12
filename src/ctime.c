@@ -114,6 +114,9 @@ static const char * const azCompileOpt[] = {
 #ifdef SQLITE_ENABLE_OVERSIZE_CELL_CHECK
   "ENABLE_OVERSIZE_CELL_CHECK",
 #endif
+#ifdef SQLITE_ENABLE_REGEXP
+  "ENABLE_REGEXP",
+#endif
 #ifdef SQLITE_ENABLE_RTREE
   "ENABLE_RTREE",
 #endif

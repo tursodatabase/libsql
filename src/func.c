@@ -713,6 +713,64 @@ static void likeFunc(
   }
 }
 
+#if defined(SQLITE_ENABLE_REGEXP)
+#include <sys/types.h>
+#include <regex.h>
+
+/*
+** Free a regex_t object obtained from sqlite_malloc().
+*/
+static void regexpFree(void *pToFree){
+  regex_t *pRe = (regex_t*)pToFree;
+  regfree(pRe);
+  sqlite3_free(pRe);
+}
+
+/*
+** Implementation of the regexp() SQL function.  This function implements
+** the build-in REGEXP operator.  The first argument to the function is the
+** pattern and the second argument is the string.  So, the SQL statements:
+**
+**       A REGEXP B
+**
+** is implemented as regexp(B,A).
+*/
+static void regexpFunc(
+  sqlite3_context *context, 
+  int argc, 
+  sqlite3_value **argv
+){
+  regex_t *pRe;
+  int rc;
+  char zErr[100];
+
+  pRe = sqlite3_get_auxdata(context, 0);
+  if( pRe==0 ){
+    pRe = sqlite3_malloc( sizeof(*pRe) );
+    if( pRe==0 ){
+      sqlite3_result_error_nomem(context);
+      return;
+    }
+    memset(pRe, 0, sizeof(*pRe));
+    rc = regcomp(pRe, (const char*)sqlite3_value_text(argv[0]),
+                 REG_NOSUB|REG_EXTENDED);
+    if( rc ){
+      regerror(rc, pRe, zErr, sizeof(zErr));
+      sqlite3_result_error(context, zErr, -1);
+      regfree(pRe);
+    }else{
+      sqlite3_set_auxdata(context, 0, pRe, regexpFree);
+    }
+  }
+  rc = regexec(pRe, (const char*)sqlite3_value_text(argv[1]), 0, 0, 0);
+  if( rc==0 ){
+    sqlite3_result_int(context, 1);
+  }else{
+    sqlite3_result_int(context, 0);
+  }
+}
+#endif /* defined(SQLITE_ENABLE_REGEXP) */
+
 /*
 ** Implementation of the NULLIF(x,y) function.  The result is the first
 ** argument if the arguments are different.  The result is NULL if the
@@ -1590,6 +1648,10 @@ void sqlite3RegisterGlobalFunctions(void){
     LIKEFUNC(like, 2, &likeInfoNorm, SQLITE_FUNC_LIKE),
     LIKEFUNC(like, 3, &likeInfoNorm, SQLITE_FUNC_LIKE),
   #endif
+
+#if defined(SQLITE_ENABLE_REGEXP)
+    FUNCTION(regexp,             2, 0, 0, regexpFunc       ),
+#endif
   };
 
   int i;

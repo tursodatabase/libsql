@@ -1063,7 +1063,8 @@ do_execsql_test e_expr-17.3.3 { SELECT 'X' NOT GLOB 'Y' } 0
 do_test         e_expr-17.3.4 { set globargs } {Y X}
 sqlite3 db test.db
 
-# EVIDENCE-OF: R-41650-20872 No regexp() user function is defined by
+if 0 {
+# xxxxEVIDENCE-OF: R-41650-20872 No regexp() user function is defined by
 # default and so use of the REGEXP operator will normally result in an
 # error message.
 #
@@ -1076,6 +1077,7 @@ ifcapable !icu {
   do_catchsql_test e_expr-18.1.2 { 
     SELECT 'abc' REGEXP 'def'
   } {1 {no such function: REGEXP}}
+}
 }
 
 # EVIDENCE-OF: R-33693-50180 The REGEXP operator is a special syntax for

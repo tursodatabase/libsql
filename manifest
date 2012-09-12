@@ -1,5 +1,5 @@
-C Update\sversion\snumber\sto\s3.7.15.\s\sDelete\ssome\sobsolete\sbuild\sscripts.
-D 2012-09-12T00:11:20.574
+C Add\san\simplementation\sof\sthe\sREGEXP\soperator\sand\sfunction.\s\sOnly\sdefined\nif\scompiled\swith\sSQLITE_ENABLE_REGEXP.
+D 2012-09-12T18:45:31.050
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -127,13 +127,13 @@ F src/btreeInt.h 4e5c2bd0f9b36b2a815a6d84f771a61a65830621
 F src/build.c a3b700afd475e6387da59be6f2e86161e80d6d87
 F src/callback.c 0cb4228cdcd827dcc5def98fb099edcc9142dbcd
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
-F src/ctime.c 500d019da966631ad957c37705642be87524463b
+F src/ctime.c a67101c1a1175167b5f40d4a626bf2eae7a1a2c4
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c 335f36750dc6ac88d580aa36a6487459be9889de
 F src/expr.c 217840a107dcc1e5dbb57cea311daad04bedbb9a
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 9c77d842dc9961d92a06a65abb80c64ef1750296
-F src/func.c b4e88b92838fdab8e0088cc8411c06664b4dcf55
+F src/func.c 2290b491113e37df29c721c4b69a8aaf641b7664
 F src/global.c 4cfdca5cb0edd33c4d021baec4ede958cb2c793b
 F src/hash.c a4031441741932da9e7a65bee2b36b5d0e81c073
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
@@ -379,7 +379,7 @@ F test/e_createtable.test 48598b15e8fe6554d301e7b65a10c9851f177e84
 F test/e_delete.test 89aa84d3d1bd284a0689ede04bce10226a5aeaa5
 F test/e_droptrigger.test afd5c4d27dec607f5997a66bf7e2498a082cb235
 F test/e_dropview.test 583411e470458c5d76148542cfb5a5fa84c8f93e
-F test/e_expr.test 5489424d3d9a452ac3701cdf4b680ae31a157894
+F test/e_expr.test 5bc5c9a9eca98ae9a2be449869be7dea5105ed9b
 F test/e_fkey.test 057eed81a41a2b21b1790032f4e8aaba0b2b0e17
 F test/e_fts3.test 5c02288842e4f941896fd44afdef564dd5fc1459
 F test/e_insert.test c6ac239a97cb16dfbd0c16496f8cd871b4068c0c
@@ -564,7 +564,7 @@ F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
 F test/keyword1.test a2400977a2e4fde43bf33754c2929fda34dbca05
 F test/lastinsert.test 474d519c68cb79d07ecae56a763aa7f322c72f51
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
-F test/like.test 7b4aaa4a8192fdec90e0a905984c92a688c51e48
+F test/like.test 25bca9aab5ea225d98516deefcfe63f7980753bc
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/limit.test 2db7b3b34fb925b8e847d583d2eb67531d0ce67e
 F test/loadext.test 2b5e249c51c986a5aff1f0950cf7ba30976c8f22
@@ -1012,7 +1012,10 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P bf8a9ca5b58404112a8af666f5840b462b7bbfe1
-R 847379dec46339e4d4e3d3e07e9871f0
+P 9402f81fade5fcae0a3a6efdc7a5cdf71fc2e79f
+R b672680dc581b045b45a052a3b299996
+T *branch * regexp
+T *sym-regexp *
+T -sym-trunk *
 U drh
-Z a42f3ee2165757bae1503891985c3bca
+Z 41a8b832e7bd7f20e716b240445415a6

@@ -114,11 +114,15 @@ do_test like-1.10 {
 
 # Tests of the REGEXP operator
 #
-do_test like-2.1 {
+db eval {SELECT sqlite_compileoption_used('ENABLE_REGEXP') AS has_regexp} break;
+if {$has_regexp==0} {
   proc test_regexp {a b} {
     return [regexp $a $b]
   }
   db function regexp -argcount 2 test_regexp
+  puts "# installing substitute REGEXP function"
+}
+do_test like-2.1 {
   execsql {
     SELECT x FROM t1 WHERE x REGEXP 'abc' ORDER BY 1;
   }
