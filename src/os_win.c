@@ -1224,7 +1224,7 @@ static LPWSTR utf8ToUnicode(const char *zFilename){
   if( nChar==0 ){
     return 0;
   }
-  zWideFilename = sqlite3_malloc( nChar*sizeof(zWideFilename[0]) );
+  zWideFilename = sqlite3MallocZero( nChar*sizeof(zWideFilename[0]) );
   if( zWideFilename==0 ){
     return 0;
   }
@@ -1249,7 +1249,7 @@ static char *unicodeToUtf8(LPCWSTR zWideFilename){
   if( nByte == 0 ){
     return 0;
   }
-  zFilename = sqlite3_malloc( nByte );
+  zFilename = sqlite3MallocZero( nByte );
   if( zFilename==0 ){
     return 0;
   }
@@ -1279,7 +1279,7 @@ static LPWSTR mbcsToUnicode(const char *zFilename){
   if( nByte==0 ){
     return 0;
   }
-  zMbcsFilename = sqlite3_malloc( nByte*sizeof(zMbcsFilename[0]) );
+  zMbcsFilename = sqlite3MallocZero( nByte*sizeof(zMbcsFilename[0]) );
   if( zMbcsFilename==0 ){
     return 0;
   }
@@ -1308,7 +1308,7 @@ static char *unicodeToMbcs(LPCWSTR zWideFilename){
   if( nByte == 0 ){
     return 0;
   }
-  zFilename = sqlite3_malloc( nByte );
+  zFilename = sqlite3MallocZero( nByte );
   if( zFilename==0 ){
     return 0;
   }
@@ -2955,16 +2955,14 @@ static int winOpenSharedMemory(winFile *pDbFd){
   /* Allocate space for the new sqlite3_shm object.  Also speculatively
   ** allocate space for a new winShmNode and filename.
   */
-  p = sqlite3_malloc( sizeof(*p) );
+  p = sqlite3MallocZero( sizeof(*p) );
   if( p==0 ) return SQLITE_IOERR_NOMEM;
-  memset(p, 0, sizeof(*p));
   nName = sqlite3Strlen30(pDbFd->zPath);
-  pNew = sqlite3_malloc( sizeof(*pShmNode) + nName + 17 );
+  pNew = sqlite3MallocZero( sizeof(*pShmNode) + nName + 17 );
   if( pNew==0 ){
     sqlite3_free(p);
     return SQLITE_IOERR_NOMEM;
   }
-  memset(pNew, 0, sizeof(*pNew) + nName + 17);
   pNew->zFilename = (char*)&pNew[1];
   sqlite3_snprintf(nName+15, pNew->zFilename, "%s-shm", pDbFd->zPath);
   sqlite3FileSuffix3(pDbFd->zPath, pNew->zFilename); 
@@ -4064,7 +4062,7 @@ static int winFullPathname(
 #endif
 
 #if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && !defined(__CYGWIN__)
-  int nByte;
+  DWORD nByte;
   void *zConverted;
   char *zOut;
 
@@ -4098,13 +4096,27 @@ static int winFullPathname(
   }
   if( isNT() ){
     LPWSTR zTemp;
-    nByte = osGetFullPathNameW((LPCWSTR)zConverted, 0, 0, 0) + 3;
-    zTemp = sqlite3_malloc( nByte*sizeof(zTemp[0]) );
+    nByte = osGetFullPathNameW((LPCWSTR)zConverted, 0, 0, 0);
+    if( nByte==0 ){
+      winLogError(SQLITE_ERROR, osGetLastError(),
+                  "GetFullPathNameW1", zConverted);
+      sqlite3_free(zConverted);
+      return SQLITE_CANTOPEN_FULLPATH;
+    }
+    nByte += 3;
+    zTemp = sqlite3MallocZero( nByte*sizeof(zTemp[0]) );
     if( zTemp==0 ){
       sqlite3_free(zConverted);
       return SQLITE_IOERR_NOMEM;
     }
-    osGetFullPathNameW((LPCWSTR)zConverted, nByte, zTemp, 0);
+    nByte = osGetFullPathNameW((LPCWSTR)zConverted, nByte, zTemp, 0);
+    if( nByte==0 ){
+      winLogError(SQLITE_ERROR, osGetLastError(),
+                  "GetFullPathNameW2", zConverted);
+      sqlite3_free(zConverted);
+      sqlite3_free(zTemp);
+      return SQLITE_CANTOPEN_FULLPATH;
+    }
     sqlite3_free(zConverted);
     zOut = unicodeToUtf8(zTemp);
     sqlite3_free(zTemp);
@@ -4112,13 +4124,27 @@ static int winFullPathname(
 #ifdef SQLITE_WIN32_HAS_ANSI
   else{
     char *zTemp;
-    nByte = osGetFullPathNameA((char*)zConverted, 0, 0, 0) + 3;
-    zTemp = sqlite3_malloc( nByte*sizeof(zTemp[0]) );
+    nByte = osGetFullPathNameA((char*)zConverted, 0, 0, 0);
+    if( nByte==0 ){
+      winLogError(SQLITE_ERROR, osGetLastError(),
+                  "GetFullPathNameA1", zConverted);
+      sqlite3_free(zConverted);
+      return SQLITE_CANTOPEN_FULLPATH;
+    }
+    nByte += 3;
+    zTemp = sqlite3MallocZero( nByte*sizeof(zTemp[0]) );
     if( zTemp==0 ){
       sqlite3_free(zConverted);
       return SQLITE_IOERR_NOMEM;
     }
-    osGetFullPathNameA((char*)zConverted, nByte, zTemp, 0);
+    nByte = osGetFullPathNameA((char*)zConverted, nByte, zTemp, 0);
+    if( nByte==0 ){
+      winLogError(SQLITE_ERROR, osGetLastError(),
+                  "GetFullPathNameA2", zConverted);
+      sqlite3_free(zConverted);
+      sqlite3_free(zTemp);
+      return SQLITE_CANTOPEN_FULLPATH;
+    }
     sqlite3_free(zConverted);
     zOut = sqlite3_win32_mbcs_to_utf8(zTemp);
     sqlite3_free(zTemp);
