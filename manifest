@@ -1,5 +1,5 @@
-C Fix\sWAL\scapability\schecking\sin\sone\sof\sthe\stest\sfiles.
-D 2012-09-13T16:12:20.159
+C Improved\salignment\sof\sfields\sin\sthe\sExpr\sobject\sgives\san\s8-byte\ssize\nreduction\son\s64-bit\smachines.
+D 2012-09-13T19:59:09.165
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -179,7 +179,7 @@ F src/shell.c 87953c5d9c73d9494db97d1607e2e2280418f261
 F src/sqlite.h.in d1071b0fc6de9a0d11392bc01305803122c3ec61
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h f31b576c4d72e8baeb52ef7318d202ecc8cae205
+F src/sqliteInt.h 03ad3f925f07599cc39a7eebdb250c7f17fd57e6
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1013,7 +1013,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 39866c0ede5d6ef4dd4fd57c797f0e86a2d0dc5d
-R d2910a5e24c19f1da317dcfddcbc3001
-U mistachkin
-Z aabb08e0d4d9a13d909ab92ad6b20ffc
+P 0ebe7cc57408d6d85910cc976fb8af4436d6e594
+R b742c79022ff08cfe99db98bba004b78
+U drh
+Z 3cb58e8f20dd1433c3550c4182838eb5
