@@ -1,5 +1,5 @@
-C Change\sboolean\sfields\sin\sthe\sColumn\sobject\sfrom\sunsigned\scharacters\sinto\nbits\sin\sa\ssingle\sbit\smask\svariable.
-D 2012-09-13T14:22:47.070
+C Reduce\sthe\ssize\sof\sthe\sTable\sobject\sby\s16\sbytes\son\s64-bit\smachines,\smostly\nby\savoiding\sintermixing\spointer\sfields\swith\sinteger\sfields.
+D 2012-09-13T14:42:43.405
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,12 +174,12 @@ F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 9e28280ec98035f31900fdd1db01f86f68ca6c32
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c f843c872a97baa1594c2cc3d4c003409a7bd03af
+F src/select.c 171ec5fd5eae6d7a19b54f8f0abdfdd9a1c8f3ad
 F src/shell.c 87953c5d9c73d9494db97d1607e2e2280418f261
 F src/sqlite.h.in 193c0496be6046604d1b8aa518012d3cf411f57f
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h 3f34cdf7244eaf982bb34db8f12a5008554ed5b5
+F src/sqliteInt.h f31b576c4d72e8baeb52ef7318d202ecc8cae205
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1013,7 +1013,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 98b971fb24e0ee5f881b13401c7af51fc6effd0e
-R 37404b7ee37f0075d77806a21f845cbf
+P 4163f5f194741bc2bdf141973912661c6aac70f1
+R 778304ec4a7e956ad83c3af5d186ae35
 U drh
-Z 57c2a904e2436b132fb5cdefc09cde48
+Z f76221926d07d84fb53ed6ba4b6e00d7
