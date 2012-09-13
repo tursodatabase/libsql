@@ -1122,13 +1122,15 @@ struct Column {
   char *zDflt;     /* Original text of the default value */
   char *zType;     /* Data type for this column */
   char *zColl;     /* Collating sequence.  If NULL, use the default */
-  u8 notNull;      /* True if there is a NOT NULL constraint */
-  u8 isPrimKey;    /* True if this column is part of the PRIMARY KEY */
+  u8 notNull;      /* An OE_ code for handling a NOT NULL constraint */
   char affinity;   /* One of the SQLITE_AFF_... values */
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-  u8 isHidden;     /* True if this column is 'hidden' */
-#endif
+  u16 colFlags;    /* Boolean properties.  See COLFLAG_ defines below */
 };
+
+/* Allowed values for Column.colFlags:
+*/
+#define COLFLAG_PRIMKEY  0x0001    /* Column is part of the primary key */
+#define COLFLAG_HIDDEN   0x0002    /* A hidden column in a virtual table */
 
 /*
 ** A "Collating Sequence" is defined by an instance of the following
@@ -1330,7 +1332,7 @@ struct Table {
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #  define IsVirtual(X)      (((X)->tabFlags & TF_Virtual)!=0)
-#  define IsHiddenColumn(X) ((X)->isHidden)
+#  define IsHiddenColumn(X) (((X)->colFlags & COLFLAG_HIDDEN)!=0)
 #else
 #  define IsVirtual(X)      0
 #  define IsHiddenColumn(X) 0

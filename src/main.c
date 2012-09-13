@@ -2750,7 +2750,7 @@ int sqlite3_table_column_metadata(
     zDataType = pCol->zType;
     zCollSeq = pCol->zColl;
     notnull = pCol->notNull!=0;
-    primarykey  = pCol->isPrimKey!=0;
+    primarykey  = (pCol->colFlags & COLFLAG_PRIMKEY)!=0;
     autoinc = pTab->iPKey==iCol && (pTab->tabFlags & TF_Autoincrement)!=0;
   }else{
     zDataType = "INTEGER";

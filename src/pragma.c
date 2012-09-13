@@ -974,7 +974,8 @@ void sqlite3Pragma(
         }else{
           sqlite3VdbeAddOp2(v, OP_Null, 0, 5);
         }
-        sqlite3VdbeAddOp2(v, OP_Integer, pCol->isPrimKey, 6);
+        sqlite3VdbeAddOp2(v, OP_Integer,
+                            (pCol->colFlags&COLFLAG_PRIMKEY)!=0, 6);
         sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 6);
       }
     }

@@ -528,7 +528,7 @@ static int vtabCallConstructor(
       /* If everything went according to plan, link the new VTable structure
       ** into the linked list headed by pTab->pVTable. Then loop through the 
       ** columns of the table to see if any of them contain the token "hidden".
-      ** If so, set the Column.isHidden flag and remove the token from
+      ** If so, set the Column COLFLAG_HIDDEN flag and remove the token from
       ** the type string.  */
       pVTable->pNext = pTab->pVTable;
       pTab->pVTable = pVTable;
@@ -559,7 +559,7 @@ static int vtabCallConstructor(
             assert(zType[i-1]==' ');
             zType[i-1] = '\0';
           }
-          pTab->aCol[iCol].isHidden = 1;
+          pTab->aCol[iCol].colFlags |= COLFLAG_HIDDEN;
         }
       }
     }
