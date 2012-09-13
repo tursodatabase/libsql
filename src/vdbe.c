@@ -5495,7 +5495,9 @@ case OP_JournalMode: {    /* out2-prerelease */
   Pager *pPager;                  /* Pager associated with pBt */
   int eNew;                       /* New journal mode */
   int eOld;                       /* The old journal mode */
+#ifndef SQLITE_OMIT_WAL
   const char *zFilename;          /* Name of database file for pPager */
+#endif
 
   eNew = pOp->p3;
   assert( eNew==PAGER_JOURNALMODE_DELETE 

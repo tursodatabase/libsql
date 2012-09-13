@@ -1,5 +1,5 @@
-C Improved\sreporting\sof\sfilename\stranslation\serrors\sin\sthe\sWindows\sVFS.
-D 2012-09-13T15:24:29.956
+C Fix\san\sunused\svariable\swarning\swith\sSQLITE_OMIT_WAL.
+D 2012-09-13T15:26:44.979
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -236,7 +236,7 @@ F src/update.c 28d2d098b43a2c70dae399896ea8a02f622410ef
 F src/utf.c 890c67dcfcc7a74623c95baac7535aadfe265e84
 F src/util.c 0af2e515dc0dabacec931bca39525f6c3f1c5455
 F src/vacuum.c 587a52bb8833d7ac15af8916f25437e2575028bd
-F src/vdbe.c 64de1142b9f3a84f500a6ce964175c828f1e41da
+F src/vdbe.c fd82787f9fb5bfb48dea822d41f28c2a73c25e2e
 F src/vdbe.h 18f581cac1f4339ec3299f3e0cc6e11aec654cdb
 F src/vdbeInt.h a668b303644377433e31a18d3d9efb87eefb6332
 F src/vdbeapi.c 4c2418161cf45392ba76a7ca92f9a5f06b96f89c
@@ -1013,7 +1013,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 1cb9aedfcf81f0086fa741cb29a062ee87724a5e
-R afbad264292e31d19f2e6ab3cf693fdb
+P eb0f1c292e6fb00c4d9dbb2317fdc4717c5be96b
+R ab65e0d8e1f7196d9ddf588f14254b2c
 U mistachkin
-Z 0cf06bb96aad3721d20115c48db504c9
+Z 38005c55be0cabcef82c948cca80388d
