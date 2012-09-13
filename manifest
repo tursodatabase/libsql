@@ -1,5 +1,5 @@
-C Fix\san\sunused\svariable\swarning\swith\sSQLITE_OMIT_WAL.
-D 2012-09-13T15:26:44.979
+C Fix\sWAL\scapability\schecking\sin\sone\sof\sthe\stest\sfiles.
+D 2012-09-13T16:12:20.159
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -286,7 +286,7 @@ F test/autoindex1.test 058d0b331ae6840a61bbee910d8cbae27bfd5991
 F test/autovacuum.test fcaf4616ae5bb18098db1cb36262565e5c841c3c
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
-F test/backcompat.test e0d5a36828cc338754125059cf354c5813a4405f
+F test/backcompat.test ecd841f3a3bfb81518721879cc56a760670e3198
 F test/backup.test c9cdd23a495864b9edf75a9fa66f5cb7e10fcf62
 F test/backup2.test 34986ef926ea522911a51dfdb2f8e99b7b75ebcf
 F test/backup_ioerr.test 40d208bc9224b666ee3ed423f49bc9062a36a9d0
@@ -1013,7 +1013,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P eb0f1c292e6fb00c4d9dbb2317fdc4717c5be96b
-R ab65e0d8e1f7196d9ddf588f14254b2c
+P 39866c0ede5d6ef4dd4fd57c797f0e86a2d0dc5d
+R d2910a5e24c19f1da317dcfddcbc3001
 U mistachkin
-Z 38005c55be0cabcef82c948cca80388d
+Z aabb08e0d4d9a13d909ab92ad6b20ffc
