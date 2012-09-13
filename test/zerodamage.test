@@ -18,7 +18,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set testprefix wal5
+set testprefix zerodamage
 
 ifcapable !vtab {
   finish_test
@@ -89,31 +89,33 @@ do_test zerodamage-2.1 {
   concat [file_control_powersafe_overwrite db -1] [set ::max_journal_size]
 } {0 0 24704}
 
-# Run a WAL-mode transaction with POWERSAFE_OVERWRITE on to verify that the
-# WAL file does not get too big.
-#
-do_test zerodamage-3.0 {
-  db eval {
-     PRAGMA journal_mode=WAL;
-  }
-  db close
-  sqlite3 db file:test.db?psow=TRUE -uri 1
-  db eval {
-     UPDATE t1 SET y=randomblob(50) WHERE x=124;
-  }
-  file size test.db-wal
-} {1080}
+ifcapable wal {
+  # Run a WAL-mode transaction with POWERSAFE_OVERWRITE on to verify that the
+  # WAL file does not get too big.
+  #
+  do_test zerodamage-3.0 {
+    db eval {
+       PRAGMA journal_mode=WAL;
+    }
+    db close
+    sqlite3 db file:test.db?psow=TRUE -uri 1
+    db eval {
+       UPDATE t1 SET y=randomblob(50) WHERE x=124;
+    }
+    file size test.db-wal
+  } {1080}
 
-# Repeat the previous with POWERSAFE_OVERWRITE off.  Verify that the WAL file
-# is padded.
-#
-do_test zerodamage-3.1 {
-  db close
-  sqlite3 db file:test.db?psow=FALSE -uri 1
-  db eval {
-     UPDATE t1 SET y=randomblob(50) WHERE x=124;
-  }
-  file size test.db-wal
-} {8416}
+  # Repeat the previous with POWERSAFE_OVERWRITE off.  Verify that the WAL file
+  # is padded.
+  #
+  do_test zerodamage-3.1 {
+    db close
+    sqlite3 db file:test.db?psow=FALSE -uri 1
+    db eval {
+       UPDATE t1 SET y=randomblob(50) WHERE x=124;
+    }
+    file size test.db-wal
+  } {8416}
+}
 
 finish_test

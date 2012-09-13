@@ -889,6 +889,9 @@ fulltest:	testfixture$(TEXE) sqlite3$(TEXE)
 soaktest:	testfixture$(TEXE) sqlite3$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/all.test -soak=1
 
+fulltestonly:	testfixture$(TEXE) sqlite3$(TEXE)
+	./testfixture$(TEXE) $(TOP)/test/full.test
+
 test:	testfixture$(TEXE) sqlite3$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/veryquick.test
 

@@ -26,6 +26,7 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set ::testprefix wal8
+ifcapable !wal {finish_test ; return }
 
 db close
 forcedelete test.db test.db-wal

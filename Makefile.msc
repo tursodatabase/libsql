@@ -1169,6 +1169,9 @@ fulltest:	testfixture.exe sqlite3.exe
 soaktest:	testfixture.exe sqlite3.exe
 	.\testfixture.exe $(TOP)\test\all.test -soak=1
 
+fulltestonly:	testfixture.exe sqlite3.exe
+	.\testfixture.exe $(TOP)\test\full.test
+
 test:	testfixture.exe sqlite3.exe
 	.\testfixture.exe $(TOP)\test\veryquick.test
 
