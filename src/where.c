@@ -264,6 +264,7 @@ struct WhereCost {
 #define WHERE_MULTI_OR     0x10000000  /* OR using multiple indices */
 #define WHERE_TEMP_INDEX   0x20000000  /* Uses an ephemeral index */
 #define WHERE_DISTINCT     0x40000000  /* Correct order for DISTINCT */
+#define WHERE_COVER_SCAN   0x80000000  /* Full scan of a covering index */
 
 /*
 ** Initialize a preallocated WhereClause structure.
@@ -3133,7 +3134,7 @@ static void bestBtreeIndex(
     ** using the main table (i.e. if the index is a covering
     ** index for this query). If it is, set the WHERE_IDX_ONLY flag in
     ** wsFlags. Otherwise, set the bLookup variable to true.  */
-    if( pIdx && wsFlags ){
+    if( pIdx ){
       Bitmask m = pSrc->colUsed;
       int j;
       for(j=0; j<pIdx->nColumn; j++){
@@ -3198,7 +3199,16 @@ static void bestBtreeIndex(
     ** So this computation assumes table records are about twice as big
     ** as index records
     */
-    if( (wsFlags & WHERE_NOT_FULLSCAN)==0 ){
+    if( wsFlags==WHERE_IDX_ONLY
+     && (pWC->wctrlFlags & WHERE_ONEPASS_DESIRED)==0
+    ){
+      /* This index is not useful for indexing, but it is a covering index.
+      ** A full-scan of the index might be a little faster than a full-scan
+      ** of the table, so give this case a cost slightly less than a table
+      ** scan. */
+      cost = aiRowEst[0]*3;
+      wsFlags |= WHERE_COVER_SCAN|WHERE_COLUMN_RANGE;
+    }else if( (wsFlags & WHERE_NOT_FULLSCAN)==0 ){
       /* The cost of a full table scan is a number of move operations equal
       ** to the number of rows in the table.
       **
@@ -4252,6 +4262,11 @@ static Bitmask codeOneLoopStart(
       pLevel->op = OP_Next;
     }
     pLevel->p1 = iIdxCur;
+    if( pLevel->plan.wsFlags & WHERE_COVER_SCAN ){
+      pLevel->p5 = SQLITE_STMTSTATUS_FULLSCAN_STEP;
+    }else{
+      assert( pLevel->p5==0 );
+    }
   }else
 
 #ifndef SQLITE_OMIT_OR_OPTIMIZATION
@@ -5128,13 +5143,15 @@ WhereInfo *sqlite3WhereBegin(
   for(i=0; i<nTabList; i++){
     char *z;
     int n;
+    int w;
     pLevel = &pWInfo->a[i];
+    w = pLevel->plan.wsFlags;
     pTabItem = &pTabList->a[pLevel->iFrom];
     z = pTabItem->zAlias;
     if( z==0 ) z = pTabItem->pTab->zName;
     n = sqlite3Strlen30(z);
     if( n+nQPlan < sizeof(sqlite3_query_plan)-10 ){
-      if( pLevel->plan.wsFlags & WHERE_IDX_ONLY ){
+      if( (w & WHERE_IDX_ONLY)!=0 && (w & WHERE_COVER_SCAN)==0 ){
         memcpy(&sqlite3_query_plan[nQPlan], "{}", 2);
         nQPlan += 2;
       }else{
@@ -5143,12 +5160,12 @@ WhereInfo *sqlite3WhereBegin(
       }
       sqlite3_query_plan[nQPlan++] = ' ';
     }
-    testcase( pLevel->plan.wsFlags & WHERE_ROWID_EQ );
-    testcase( pLevel->plan.wsFlags & WHERE_ROWID_RANGE );
-    if( pLevel->plan.wsFlags & (WHERE_ROWID_EQ|WHERE_ROWID_RANGE) ){
+    testcase( w & WHERE_ROWID_EQ );
+    testcase( w & WHERE_ROWID_RANGE );
+    if( w & (WHERE_ROWID_EQ|WHERE_ROWID_RANGE) ){
       memcpy(&sqlite3_query_plan[nQPlan], "* ", 2);
       nQPlan += 2;
-    }else if( (pLevel->plan.wsFlags & WHERE_INDEXED)!=0 ){
+    }else if( (w & WHERE_INDEXED)!=0 && (w & WHERE_COVER_SCAN)==0 ){
       n = sqlite3Strlen30(pLevel->plan.u.pIdx->zName);
       if( n+nQPlan < sizeof(sqlite3_query_plan)-2 ){
         memcpy(&sqlite3_query_plan[nQPlan], pLevel->plan.u.pIdx->zName, n);

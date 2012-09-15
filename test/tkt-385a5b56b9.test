@@ -39,7 +39,7 @@ do_eqp_test 2.1 { SELECT DISTINCT x FROM t2 } {
 }
 
 do_eqp_test 2.2 { SELECT DISTINCT y FROM t2 } {
-  0 0 0 {SCAN TABLE t2 (~1000000 rows)}
+  0 0 0 {SCAN TABLE t2 USING COVERING INDEX t2y (~1000000 rows)}
 }
 
 do_eqp_test 2.3 { SELECT DISTINCT x, y FROM t2 WHERE y=10 } {
@@ -51,4 +51,3 @@ do_eqp_test 2.4 { SELECT DISTINCT x, y FROM t2 WHERE x=10 } {
 }
 
 finish_test
-

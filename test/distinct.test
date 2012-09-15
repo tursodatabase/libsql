@@ -175,7 +175,7 @@ foreach {tn sql temptables res} {
 }
 
 do_execsql_test 2.A {
-  SELECT (SELECT DISTINCT o.a FROM t1 AS i) FROM t1 AS o;
+  SELECT (SELECT DISTINCT o.a FROM t1 AS i) FROM t1 AS o ORDER BY rowid;
 } {a A a A}
 
 

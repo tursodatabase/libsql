@@ -406,7 +406,7 @@ do_test like-5.2 {
 do_test like-5.3 {
   execsql {
     CREATE TABLE t2(x TEXT COLLATE NOCASE);
-    INSERT INTO t2 SELECT * FROM t1;
+    INSERT INTO t2 SELECT * FROM t1 ORDER BY rowid;
     CREATE INDEX i2 ON t2(x COLLATE NOCASE);
   }
   set sqlite_like_count 0
@@ -662,8 +662,8 @@ ifcapable like_opt&&!icu {
       set res [sqlite3_exec_hex db {
          EXPLAIN QUERY PLAN SELECT x FROM t2 WHERE x LIKE '%ff%25'
       }]
-      regexp {INDEX i2} $res
-    } {0}
+      regexp {SCAN TABLE t2} $res
+    } {1}
   }
   do_test like-9.5.1 {
     set res [sqlite3_exec_hex db {
