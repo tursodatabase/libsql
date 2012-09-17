@@ -3201,12 +3201,16 @@ static void bestBtreeIndex(
     */
     if( wsFlags==WHERE_IDX_ONLY
      && (pWC->wctrlFlags & WHERE_ONEPASS_DESIRED)==0
+     && sqlite3GlobalConfig.bUseCis
+#ifndef SQLITE_OMIT_BUILTIN_TEST
+     && (pParse->db->flags & SQLITE_CoverIdxScan)==0
+#endif
     ){
       /* This index is not useful for indexing, but it is a covering index.
       ** A full-scan of the index might be a little faster than a full-scan
       ** of the table, so give this case a cost slightly less than a table
       ** scan. */
-      cost = aiRowEst[0]*3;
+      cost = aiRowEst[0]*3 + pProbe->nColumn;
       wsFlags |= WHERE_COVER_SCAN|WHERE_COLUMN_RANGE;
     }else if( (wsFlags & WHERE_NOT_FULLSCAN)==0 ){
       /* The cost of a full table scan is a number of move operations equal

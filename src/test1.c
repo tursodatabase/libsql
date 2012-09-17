@@ -5940,6 +5940,7 @@ static int optimization_control(
     { "factor-constants", SQLITE_FactorOutConst },
     { "real-as-int",      SQLITE_IdxRealAsInt   },
     { "distinct-opt",     SQLITE_DistinctOpt    },
+    { "cover-idx-scan",   SQLITE_CoverIdxScan   },
   };
 
   if( objc!=4 ){

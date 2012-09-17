@@ -968,6 +968,7 @@ struct sqlite3 {
 #define SQLITE_FactorOutConst 0x08   /* Disable factoring out constants */
 #define SQLITE_IdxRealAsInt   0x10   /* Store REAL as INT in indices */
 #define SQLITE_DistinctOpt    0x20   /* DISTINCT using indexes */
+#define SQLITE_CoverIdxScan   0x40   /* Disable covering index scans */
 #define SQLITE_OptMask        0xff   /* Mask of all disablable opts */
 
 /*
@@ -2461,6 +2462,7 @@ struct Sqlite3Config {
   int bCoreMutex;                   /* True to enable core mutexing */
   int bFullMutex;                   /* True to enable full mutexing */
   int bOpenUri;                     /* True to interpret filenames as URIs */
+  int bUseCis;                      /* Use covering indices for full-scans */
   int mxStrlen;                     /* Maximum string length */
   int szLookaside;                  /* Default lookaside buffer size */
   int nLookaside;                   /* Default lookaside buffer count */
