@@ -1662,6 +1662,7 @@ int sqlite3CodeSubselect(
     case TK_IN: {
       char affinity;              /* Affinity of the LHS of the IN */
       KeyInfo keyInfo;            /* Keyinfo for the generated table */
+      static u8 sortOrder = 0;    /* Fake aSortOrder for keyInfo */
       int addr;                   /* Address of OP_OpenEphemeral instruction */
       Expr *pLeft = pExpr->pLeft; /* the LHS of the IN operator */
 
@@ -1689,6 +1690,7 @@ int sqlite3CodeSubselect(
       if( rMayHaveNull==0 ) sqlite3VdbeChangeP5(v, BTREE_UNORDERED);
       memset(&keyInfo, 0, sizeof(keyInfo));
       keyInfo.nField = 1;
+      keyInfo.aSortOrder = &sortOrder;
 
       if( ExprHasProperty(pExpr, EP_xIsSelect) ){
         /* Case 1:     expr IN (SELECT ...)
@@ -1729,6 +1731,7 @@ int sqlite3CodeSubselect(
           affinity = SQLITE_AFF_NONE;
         }
         keyInfo.aColl[0] = sqlite3ExprCollSeq(pParse, pExpr->pLeft);
+        keyInfo.aSortOrder = &sortOrder;
 
         /* Loop through each expression in <exprlist>. */
         r1 = sqlite3GetTempReg(pParse);

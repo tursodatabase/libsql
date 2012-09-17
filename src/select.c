@@ -1892,6 +1892,7 @@ static int multiSelect(
         *apColl = db->pDfltColl;
       }
     }
+    pKeyInfo->aSortOrder = (u8*)apColl;
 
     for(pLoop=p; pLoop; pLoop=pLoop->pPrior){
       for(i=0; i<2; i++){
