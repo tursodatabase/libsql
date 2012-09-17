@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sKeyInfo.aSortOrder\sarray\sis\salways\sallocated\sso\sthat\swe\snever\nhave\sto\stest\sfor\sKeyInfo.aSortOrder==0\sin\sperformance-critical\sloops.
-D 2012-09-17T17:16:53.958
+C Remove\san\sunnecessary\sparameter\sfrom\ssqlite3Utf8Read()\sresulting\sin\sa\sslight\nperformance\sincrease.
+D 2012-09-17T18:56:32.167
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -133,7 +133,7 @@ F src/delete.c 335f36750dc6ac88d580aa36a6487459be9889de
 F src/expr.c 70ded09d6ac529718aec57589ddb378c23153693
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c c82a04e7a92bb728f9ab972b76590403283be2af
-F src/func.c b4e88b92838fdab8e0088cc8411c06664b4dcf55
+F src/func.c cbb90dc84b22eea25caf39528d342279e61b8898
 F src/global.c 4cfdca5cb0edd33c4d021baec4ede958cb2c793b
 F src/hash.c a4031441741932da9e7a65bee2b36b5d0e81c073
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
@@ -179,7 +179,7 @@ F src/shell.c 87953c5d9c73d9494db97d1607e2e2280418f261
 F src/sqlite.h.in d1071b0fc6de9a0d11392bc01305803122c3ec61
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h 0423f0a673e7365827584e86dfbab8c33cf32cf8
+F src/sqliteInt.h 3f2ed42529ad54561e6c8d565afbfc9bca27da9d
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -233,7 +233,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c 1e86210d3976717a19238ea7b047fac481fe8c12
 F src/trigger.c 3f258307040173aff383eb23fb74c44fe829078c
 F src/update.c 28d2d098b43a2c70dae399896ea8a02f622410ef
-F src/utf.c 890c67dcfcc7a74623c95baac7535aadfe265e84
+F src/utf.c 8d819e2e5104a430fc2005f018db14347c95a38f
 F src/util.c 0af2e515dc0dabacec931bca39525f6c3f1c5455
 F src/vacuum.c 587a52bb8833d7ac15af8916f25437e2575028bd
 F src/vdbe.c fd82787f9fb5bfb48dea822d41f28c2a73c25e2e
@@ -1013,7 +1013,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P ad298f52efd0ff123a1a4d6a0fa16fbd4c6b6dad
-R 399ab3eadb581c96415fb9d89f0fbcd1
+P 45793f0b844fee7445bc9269b403f89a58f77150
+R 8cd942fbb7e8235e37ae22bd18b6fe8b
 U drh
-Z 939733a13ef406dcc12020fe5915f839
+Z af8c124e8114c6e290ead5d3153e615a

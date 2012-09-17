@@ -2956,7 +2956,7 @@ int sqlite3GetInt32(const char *, int*);
 int sqlite3Atoi(const char*);
 int sqlite3Utf16ByteLen(const void *pData, int nChar);
 int sqlite3Utf8CharLen(const char *pData, int nByte);
-u32 sqlite3Utf8Read(const u8*, const u8**);
+u32 sqlite3Utf8Read(const u8**);
 
 /*
 ** Routines to read and write variable-length integers.  These used to
