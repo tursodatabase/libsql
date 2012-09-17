@@ -1,5 +1,5 @@
-C Add\sthe\sability\sto\sdisable\sthe\scovering-index-scan\soptimization\sat\scompile-time,\nstart-time,\sor\sat\srun-time.\s\sAdd\stest\scases\sto\scheck\sthis\sconfigurability.
-D 2012-09-17T20:44:46.604
+C Make\ssure\sthe\sWHERE_IDX_ONLY\sflag\sis\snot\sset\son\squery\splans\sthat\swill\snot\nbe\susing\san\sindex.
+D 2012-09-17T21:24:01.339
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -249,7 +249,7 @@ F src/vtab.c d8020c0a0e8ccc490ca449d7e665311b6e9f3ba9
 F src/wal.c 5acb3e7bbd31f10ba39acad9ce6b399055337a9d
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c b124d9d7c6fba803ae31fbcf605e2c1dca0d9b51
+F src/where.c cc3ef08bb6a6832e888291a89993ad0828689a36
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 0be144b453e0622a085fae8665c32f5676708e00
@@ -1014,7 +1014,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 1c0bf0305ce9528a0d07c86a390c5872e16bdb57
-R ea4a1c70fdbc9c60f0a72361b504925d
+P ccb8ecc30c8e6c7760131250297c2e452bbac43b
+R 954468a602d729e7590459a0c0d2a8fc
 U drh
-Z b5d12e2225cca01e9d4be0a180222322
+Z 17e6bbfde6ba16331a4c164b47402211

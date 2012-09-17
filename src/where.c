@@ -3223,6 +3223,7 @@ static void bestBtreeIndex(
       ** it seems to be working well enough at the moment.
       */
       cost = aiRowEst[0]*4;
+      wsFlags &= ~WHERE_IDX_ONLY;
     }else{
       log10N = estLog(aiRowEst[0]);
       cost = nRow;
