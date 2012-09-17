@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sname\sof\srollback\sjournal\sfiles\sare\sdouble-zero\sterminated\nwhen\sthey\sare\spassed\sinto\sthe\sVFS.
-D 2012-09-15T13:39:24.735
+C Performance\senhancement\sin\sthe\ssqlite3VdbeSerialType()\sroutine.
+D 2012-09-17T15:36:31.241
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -240,7 +240,7 @@ F src/vdbe.c fd82787f9fb5bfb48dea822d41f28c2a73c25e2e
 F src/vdbe.h 18f581cac1f4339ec3299f3e0cc6e11aec654cdb
 F src/vdbeInt.h a668b303644377433e31a18d3d9efb87eefb6332
 F src/vdbeapi.c 4c2418161cf45392ba76a7ca92f9a5f06b96f89c
-F src/vdbeaux.c 9c293fd3040211687e83d5d27bef2382933146c2
+F src/vdbeaux.c aeeee6c97e0c2ad31c376a781cb7462090b9827b
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
 F src/vdbesort.c 0dc1b274dcb4d4c8e71b0b2b15261f286caba39b
@@ -1013,7 +1013,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P a93ee09cdc15987848bf9023e69892ce9a5f989e
-R ecaebb814f51bb6e38f5c9d70e5c1467
+P 8711a8447d28275602287faf533de3d6e50d535d
+R 34d4f192c96f51569b1d84a4c81787ab
 U drh
-Z a699a11a3dac3cfd2b9a3a76bfd53ddc
+Z c99f61ab4f3b0b408fc647ac1fcea198
