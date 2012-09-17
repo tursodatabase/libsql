@@ -962,16 +962,13 @@ struct sqlite3 {
 ** sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS,...) interface.
 ** These must be the low-order bits of the flags field.
 */
-#define SQLITE_QueryFlattener 0x01        /* Disable query flattening */
-#define SQLITE_ColumnCache    0x02        /* Disable the column cache */
-#define SQLITE_IndexSort      0x04        /* Disable indexes for sorting */
-#define SQLITE_IndexSearch    0x08        /* Disable indexes for searching */
-#define SQLITE_IndexCover     0x10        /* Disable index covering table */
-#define SQLITE_GroupByOrder   0x20        /* Disable GROUPBY cover of ORDERBY */
-#define SQLITE_FactorOutConst 0x40        /* Disable factoring out constants */
-#define SQLITE_IdxRealAsInt   0x80        /* Store REAL as INT in indices */
-#define SQLITE_DistinctOpt    0x80        /* DISTINCT using indexes */
-#define SQLITE_OptMask        0xff        /* Mask of all disablable opts */
+#define SQLITE_QueryFlattener 0x01   /* Disable query flattening */
+#define SQLITE_ColumnCache    0x02   /* Disable the column cache */
+#define SQLITE_GroupByOrder   0x04   /* Disable GROUPBY cover of ORDERBY */
+#define SQLITE_FactorOutConst 0x08   /* Disable factoring out constants */
+#define SQLITE_IdxRealAsInt   0x10   /* Store REAL as INT in indices */
+#define SQLITE_DistinctOpt    0x20   /* DISTINCT using indexes */
+#define SQLITE_OptMask        0xff   /* Mask of all disablable opts */
 
 /*
 ** Possible values for the sqlite.magic field.
@@ -2956,7 +2953,7 @@ int sqlite3GetInt32(const char *, int*);
 int sqlite3Atoi(const char*);
 int sqlite3Utf16ByteLen(const void *pData, int nChar);
 int sqlite3Utf8CharLen(const char *pData, int nByte);
-u32 sqlite3Utf8Read(const u8*, const u8**);
+u32 sqlite3Utf8Read(const u8**);
 
 /*
 ** Routines to read and write variable-length integers.  These used to

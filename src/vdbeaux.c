@@ -745,10 +745,9 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
       u8 *aSortOrder;
       memcpy((char*)pKeyInfo, zP4, nByte - nField);
       aSortOrder = pKeyInfo->aSortOrder;
-      if( aSortOrder ){
-        pKeyInfo->aSortOrder = (unsigned char*)&pKeyInfo->aColl[nField];
-        memcpy(pKeyInfo->aSortOrder, aSortOrder, nField);
-      }
+      assert( aSortOrder!=0 );
+      pKeyInfo->aSortOrder = (unsigned char*)&pKeyInfo->aColl[nField];
+      memcpy(pKeyInfo->aSortOrder, aSortOrder, nField);
       pOp->p4type = P4_KEYINFO;
     }else{
       p->db->mallocFailed = 1;
@@ -861,6 +860,7 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
     case P4_KEYINFO: {
       int i, j;
       KeyInfo *pKeyInfo = pOp->p4.pKeyInfo;
+      assert( pKeyInfo->aSortOrder!=0 );
       sqlite3_snprintf(nTemp, zTemp, "keyinfo(%d", pKeyInfo->nField);
       i = sqlite3Strlen30(zTemp);
       for(j=0; j<pKeyInfo->nField; j++){
@@ -872,7 +872,7 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
             break;
           }
           zTemp[i++] = ',';
-          if( pKeyInfo->aSortOrder && pKeyInfo->aSortOrder[j] ){
+          if( pKeyInfo->aSortOrder[j] ){
             zTemp[i++] = '-';
           }
           memcpy(&zTemp[i], pColl->zName,n+1);
@@ -2583,9 +2583,6 @@ u32 sqlite3VdbeSerialType(Mem *pMem, int file_format){
 #   define MAX_6BYTE ((((i64)0x00008000)<<32)-1)
     i64 i = pMem->u.i;
     u64 u;
-    if( file_format>=4 && (i&1)==i ){
-      return 8+(u32)i;
-    }
     if( i<0 ){
       if( i<(-MAX_6BYTE) ) return 6;
       /* Previous test prevents:  u = -(-9223372036854775808) */
@@ -2593,7 +2590,9 @@ u32 sqlite3VdbeSerialType(Mem *pMem, int file_format){
     }else{
       u = i;
     }
-    if( u<=127 ) return 1;
+    if( u<=127 ){
+      return ((i&1)==i && file_format>=4) ? 8+(u32)u : 1;
+    }
     if( u<=32767 ) return 2;
     if( u<=8388607 ) return 3;
     if( u<=2147483647 ) return 4;
@@ -2878,6 +2877,7 @@ UnpackedRecord *sqlite3VdbeAllocUnpackedRecord(
   }
 
   p->aMem = (Mem*)&((char*)p)[ROUND8(sizeof(UnpackedRecord))];
+  assert( pKeyInfo->aSortOrder!=0 );
   p->pKeyInfo = pKeyInfo;
   p->nField = pKeyInfo->nField + 1;
   return p;
@@ -2971,6 +2971,7 @@ int sqlite3VdbeRecordCompare(
   idx1 = getVarint32(aKey1, szHdr1);
   d1 = szHdr1;
   nField = pKeyInfo->nField;
+  assert( pKeyInfo->aSortOrder!=0 );
   while( idx1<szHdr1 && i<pPKey2->nField ){
     u32 serial_type1;
 
@@ -2990,7 +2991,7 @@ int sqlite3VdbeRecordCompare(
       assert( mem1.zMalloc==0 );  /* See comment below */
 
       /* Invert the result if we are using DESC sort order. */
-      if( pKeyInfo->aSortOrder && i<nField && pKeyInfo->aSortOrder[i] ){
+      if( i<nField && pKeyInfo->aSortOrder[i] ){
         rc = -rc;
       }
     
