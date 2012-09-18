@@ -1,5 +1,5 @@
-C Enhance\sIN\sprocessing\sto\sallow\sefficient\suse\sof\sindices\swith\snumeric\saffinities.\nAdd\stest\scases\sfor\sIN\sprocessing\sthat\swould\shave\sspotted\sthe\serror\sin\sthe\n[2be661a48023f4]\scheck-in.
-D 2012-09-18T19:29:06.434
+C Silence\sharmless\scompiler\swarning\sseen\swith\sSQLITE_OMIT_DEPRECATED.
+D 2012-09-18T23:21:32.844
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -169,7 +169,7 @@ F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h 1b5dcc3dc8103d03e625b177023ee67764fa6b7c
 F src/pcache1.c 9fd22671c270b35131ef480bbc00392b8b5f8ab9
 F src/pragma.c de7f3bc6176a7ef8f0e39da61b77ab08789e28a0
-F src/prepare.c 33291b83cca285718048d219c67b8298501fa3a5
+F src/prepare.c 931ad0d852a0df48f79adcba6ce79ca5f475625c
 F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 9e28280ec98035f31900fdd1db01f86f68ca6c32
@@ -1015,7 +1015,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P b1a4c394995eb90b3fb43ab204704bda03799303
-R da249403d2133608cefd8edfe45e399b
-U drh
-Z 42a764f0a55cecb2c00b9d26b3eb328f
+P 5ded9b68388f4024425c11f09b03529ac89454ce
+R 8ee6066863b4421bc9631f7846e15100
+U mistachkin
+Z 92a1a23d1a7ee985df165e62f42bd758
