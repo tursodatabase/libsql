@@ -1,5 +1,5 @@
-C Update\sthe\svdbe-compress.tcl\sscript\sso\sthat\sit\saccepts\svariable\sdeclarations\ninside\sof\s#ifdef...#endif.\nThis\senhancement\sis\sneeded\sdue\sto\sthe\schange\sof\scheck-in\s[39866c0ede5d6ef4].
-D 2012-09-18T13:20:13.054
+C Add\sthe\sstack_usage.tcl\sscript\sfor\sanalyzing\sthe\soutput\sof\sobjdump\son\sthe\namalgamation\sand\sestimating\sthe\ssizes\sof\sstack\sframes\son\seach\sfunction.
+D 2012-09-18T14:00:54.587
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1006,6 +1006,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
+F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh fec58532668296d7c7dc48be9c87f75ccdb5814f
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
@@ -1013,7 +1014,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 4c21ee2d26466f83dec525153e2b1506bd956701
-R b047ef3cdc6a088ac63e246ab78c4764
+P e7db056a0d76b2411cadbae077890df189e49414
+R 563f678f5a4a0eeba1c7bc783391bc58
 U drh
-Z bfcdd96844256469f85fbd5fa7f23556
+Z 77a009fbade94f20c493a281c0066dcb
