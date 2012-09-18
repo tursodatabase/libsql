@@ -3278,6 +3278,7 @@ case OP_OpenEphemeral: {
 */
 case OP_SorterOpen: {
   VdbeCursor *pCx;
+
 #ifndef SQLITE_OMIT_MERGE_SORT
   pCx = allocateCursor(p, pOp->p1, pOp->p2, -1, 1);
   if( pCx==0 ) goto no_mem;
@@ -4168,6 +4169,7 @@ case OP_SorterCompare: {
 */
 case OP_SorterData: {
   VdbeCursor *pC;
+
 #ifndef SQLITE_OMIT_MERGE_SORT
   pOut = &aMem[pOp->p2];
   pC = p->apCsr[pOp->p1];
@@ -4706,6 +4708,7 @@ case OP_Destroy: {     /* out2-prerelease */
   int iCnt;
   Vdbe *pVdbe;
   int iDb;
+
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   iCnt = 0;
   for(pVdbe=db->pVdbe; pVdbe; pVdbe = pVdbe->pNext){

@@ -1,5 +1,5 @@
-C Remove\sobsolete\sbits\sfrom\sthe\sbitvector\sthat\sdefines\sdisabled\soptimizations\nin\sthe\sSQLITE_TESTCTRL_OPTIMIZATIONS\sverb\sof\ssqlite3_test_control().
-D 2012-09-17T19:12:39.992
+C Update\sthe\svdbe-compress.tcl\sscript\sso\sthat\sit\saccepts\svariable\sdeclarations\ninside\sof\s#ifdef...#endif.\nThis\senhancement\sis\sneeded\sdue\sto\sthe\schange\sof\scheck-in\s[39866c0ede5d6ef4].
+D 2012-09-18T13:20:13.054
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -236,7 +236,7 @@ F src/update.c 28d2d098b43a2c70dae399896ea8a02f622410ef
 F src/utf.c 8d819e2e5104a430fc2005f018db14347c95a38f
 F src/util.c 0af2e515dc0dabacec931bca39525f6c3f1c5455
 F src/vacuum.c 587a52bb8833d7ac15af8916f25437e2575028bd
-F src/vdbe.c fd82787f9fb5bfb48dea822d41f28c2a73c25e2e
+F src/vdbe.c 16e894bd59d11c4a2c184627906c794a6bdc6eff
 F src/vdbe.h 18f581cac1f4339ec3299f3e0cc6e11aec654cdb
 F src/vdbeInt.h a668b303644377433e31a18d3d9efb87eefb6332
 F src/vdbeapi.c 4c2418161cf45392ba76a7ca92f9a5f06b96f89c
@@ -1009,11 +1009,11 @@ F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh fec58532668296d7c7dc48be9c87f75ccdb5814f
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
-F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
+F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 8b962c94a2f829f71efdd0ca770469b02feea3e1
-R 67168a23b15c492a24fe7dbe4ad81c6a
+P 4c21ee2d26466f83dec525153e2b1506bd956701
+R b047ef3cdc6a088ac63e246ab78c4764
 U drh
-Z 95f03cf63c4263171e5518be35ff05c6
+Z bfcdd96844256469f85fbd5fa7f23556

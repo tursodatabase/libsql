@@ -79,6 +79,9 @@ while {![eof stdin]} {
         append unionDef "    $line\n"
         append afterUnion $line\n
         lappend vlist $vname
+      } elseif {[regexp {^#(if|endif)} $line] && [llength $vlist]>0} {
+        append unionDef "$line\n"
+        append afterUnion $line\n
       } else {
         break
       }
