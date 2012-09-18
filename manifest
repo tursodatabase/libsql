@@ -1,5 +1,5 @@
-C Add\sthe\sstack_usage.tcl\sscript\sfor\sanalyzing\sthe\soutput\sof\sobjdump\son\sthe\namalgamation\sand\sestimating\sthe\ssizes\sof\sstack\sframes\son\seach\sfunction.
-D 2012-09-18T14:00:54.587
+C Enhancements\sto\sthe\scomments\son\ssqlite3FindInIndex().\s\sNo\scode\schanges.
+D 2012-09-18T17:08:33.701
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -130,7 +130,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 72a70dcfda75d3a1f81041ce4573e7afddcd8e4e
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c 335f36750dc6ac88d580aa36a6487459be9889de
-F src/expr.c 70ded09d6ac529718aec57589ddb378c23153693
+F src/expr.c f0fc0101879ac92d145f625811f34f647b767f71
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c c82a04e7a92bb728f9ab972b76590403283be2af
 F src/func.c cbb90dc84b22eea25caf39528d342279e61b8898
@@ -1014,7 +1014,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P e7db056a0d76b2411cadbae077890df189e49414
-R 563f678f5a4a0eeba1c7bc783391bc58
+P 030013ff0c7af5f146a64f9ede31297ff003e0c4
+R 52fabcd4dbff22d0436068b591f13147
 U drh
-Z 77a009fbade94f20c493a281c0066dcb
+Z 0c0f749b44c88277a286b4f0b71de6ea

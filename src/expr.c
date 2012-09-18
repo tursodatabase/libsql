@@ -1420,12 +1420,16 @@ int sqlite3CodeOnce(Parse *pParse){
 
 /*
 ** This function is used by the implementation of the IN (...) operator.
-** It's job is to find or create a b-tree structure that may be used
-** either to test for membership of the (...) set or to iterate through
-** its members, skipping duplicates.
+** The pX parameter is the expression on the RHS of the IN operator, which
+** might be either a list of expressions or a subquery.
 **
-** The index of the cursor opened on the b-tree (database table, database index 
-** or ephermal table) is stored in pX->iTable before this function returns.
+** The job of this routine is to find or create a b-tree object that can
+** be used either to test for membership in the RHS set or to iterate through
+** all members of the RHS set, skipping duplicates.
+**
+** A cursor is opened on the b-tree object that the RHS of the IN operator
+** and pX->iTable is set to the index of that cursor.
+**
 ** The returned value of this function indicates the b-tree type, as follows:
 **
 **   IN_INDEX_ROWID - The cursor was opened on a database table.
@@ -1433,10 +1437,15 @@ int sqlite3CodeOnce(Parse *pParse){
 **   IN_INDEX_EPH -   The cursor was opened on a specially created and
 **                    populated epheremal table.
 **
-** An existing b-tree may only be used if the SELECT is of the simple
-** form:
+** An existing b-tree might be used if the RHS expression pX is a simple
+** subquery such as:
 **
 **     SELECT <column> FROM <table>
+**
+** If the RHS of the IN operator is a list or a more complex subquery, then
+** an ephemeral table might need to be generated from the RHS and then
+** pX->iTable made to point to the ephermeral table instead of an
+** existing table.  
 **
 ** If the prNotFound parameter is 0, then the b-tree will be used to iterate
 ** through the set members, skipping any duplicates. In this case an
