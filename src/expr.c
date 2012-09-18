@@ -1542,8 +1542,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
       ** comparison is the same as the affinity of the column. If
       ** it is not, it is not possible to use any index.
       */
-      char aff = comparisonAffinity(pX);
-      int affinity_ok = (pTab->aCol[iCol].affinity==aff||aff==SQLITE_AFF_NONE);
+      int affinity_ok = sqlite3IndexAffinityOk(pX, pTab->aCol[iCol].affinity);
 
       for(pIdx=pTab->pIndex; pIdx && eType==0 && affinity_ok; pIdx=pIdx->pNext){
         if( (pIdx->aiColumn[0]==iCol)
