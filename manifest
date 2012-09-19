@@ -1,5 +1,5 @@
-C Merge\sthe\scovering-index-scan\soptimization\sinto\strunk.
-D 2012-09-19T00:35:31.172
+C Add\scomments\sto\sthe\sWHERE_DISTINCT_*\smacros.\s\sNo\schanges\sto\scode.
+D 2012-09-19T17:31:15.874
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -179,7 +179,7 @@ F src/shell.c 87953c5d9c73d9494db97d1607e2e2280418f261
 F src/sqlite.h.in c76c38f9635590ff5844684a7976843878327137
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h 5cbd4340146b609a8b98b908d46020d8d15153fe
+F src/sqliteInt.h 7fa267db5593970061523081b29d8da7f5399a2c
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1016,7 +1016,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P c5cee969322d14114e4136510c3891a2e743520d 698b2a28004a9a2f0eabaadf36d833da4400b2bf
-R 8da95659b7aa774aee09e1ca7926ee73
+P ddd5d789e7ae4a66cd7b7fa79e48d2777f95350b
+R e46138ca39f138f4ac7a97431cbdd838
 U drh
-Z aa8acee5d32b23220a1be1b14b7c681d
+Z 26ec9a3d31b656e70959884bbce24366

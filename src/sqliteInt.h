@@ -1985,7 +1985,7 @@ struct WhereInfo {
   u16 wctrlFlags;      /* Flags originally passed to sqlite3WhereBegin() */
   u8 okOnePass;        /* Ok to use one-pass algorithm for UPDATE or DELETE */
   u8 untestedTerms;    /* Not all WHERE terms resolved by outer loop */
-  u8 eDistinct;
+  u8 eDistinct;                  /* One of the WHERE_DISTINCT_* values below */
   SrcList *pTabList;             /* List of tables in the join */
   int iTop;                      /* The very beginning of the WHERE loop */
   int iContinue;                 /* Jump here to continue with next record */
@@ -1997,8 +1997,10 @@ struct WhereInfo {
   WhereLevel a[1];               /* Information about each nest loop in WHERE */
 };
 
-#define WHERE_DISTINCT_UNIQUE 1
-#define WHERE_DISTINCT_ORDERED 2
+/* Allowed values for WhereInfo.eDistinct */
+#define WHERE_DISTINCT_NOT     0  /* May contain non-adjacent duplicates */
+#define WHERE_DISTINCT_UNIQUE  1  /* No duplicates */
+#define WHERE_DISTINCT_ORDERED 2  /* All duplicates are adjacent */
 
 /*
 ** A NameContext defines a context in which to resolve table and column
