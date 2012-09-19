@@ -1,5 +1,5 @@
-C Add\scomments\sto\sthe\sWHERE_DISTINCT_*\smacros.\s\sNo\schanges\sto\scode.
-D 2012-09-19T17:31:15.874
+C Tighter\sVDBE\scode\sfor\sthe\sWHERE_DISTINCT_ORDERED\scase\sof\sDISTINCT\skeyword\nhandling.
+D 2012-09-19T21:15:46.053
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,7 +174,7 @@ F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 9e28280ec98035f31900fdd1db01f86f68ca6c32
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 1278b07a8c9a7f2f65b8efa8565993a56c4a58a3
+F src/select.c 63206bbfd19e0f85e609307041db9276ddf9f2c2
 F src/shell.c 87953c5d9c73d9494db97d1607e2e2280418f261
 F src/sqlite.h.in c76c38f9635590ff5844684a7976843878327137
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
@@ -236,9 +236,9 @@ F src/update.c 28d2d098b43a2c70dae399896ea8a02f622410ef
 F src/utf.c 8d819e2e5104a430fc2005f018db14347c95a38f
 F src/util.c 0af2e515dc0dabacec931bca39525f6c3f1c5455
 F src/vacuum.c 587a52bb8833d7ac15af8916f25437e2575028bd
-F src/vdbe.c 16e894bd59d11c4a2c184627906c794a6bdc6eff
+F src/vdbe.c b0ac98789b74dfd58106578aee425c094ecb5c53
 F src/vdbe.h 18f581cac1f4339ec3299f3e0cc6e11aec654cdb
-F src/vdbeInt.h a668b303644377433e31a18d3d9efb87eefb6332
+F src/vdbeInt.h 573a43ab5697b648a1e8f3dfc7d8667d5ca55729
 F src/vdbeapi.c 4c2418161cf45392ba76a7ca92f9a5f06b96f89c
 F src/vdbeaux.c fac025c798ad19070451b41eddc5dcd4696fdd1e
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
@@ -374,7 +374,7 @@ F test/descidx1.test 533dcbda614b0463b0ea029527fd27e5a9ab2d66
 F test/descidx2.test 9f1a0c83fd57f8667c82310ca21b30a350888b5d
 F test/descidx3.test fe720e8b37d59f4cef808b0bf4e1b391c2e56b6f
 F test/diskfull.test 106391384780753ea6896b7b4f005d10e9866b6e
-F test/distinct.test 328c3930fc00da96147351aa48f91bd085ed226a
+F test/distinct.test c239558222e5ae357aade535bfe61aaabcb00bbf
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_createtable.test 0a2465736199cb5e084645a8714ee04299b81721
 F test/e_delete.test 89aa84d3d1bd284a0689ede04bce10226a5aeaa5
@@ -1016,7 +1016,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P ddd5d789e7ae4a66cd7b7fa79e48d2777f95350b
-R e46138ca39f138f4ac7a97431cbdd838
+P 82320501904f65030622a67836ba30f412169056
+R 9541e63a94fc58e6e6ac938d40479670
 U drh
-Z 26ec9a3d31b656e70959884bbce24366
+Z 981d7e657532e16949d872fc02730646

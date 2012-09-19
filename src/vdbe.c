@@ -956,23 +956,28 @@ case OP_String: {          /* out2-prerelease */
   break;
 }
 
-/* Opcode: Null * P2 P3 * *
+/* Opcode: Null P1 P2 P3 * *
 **
 ** Write a NULL into registers P2.  If P3 greater than P2, then also write
-** NULL into register P3 and ever register in between P2 and P3.  If P3
+** NULL into register P3 and every register in between P2 and P3.  If P3
 ** is less than P2 (typically P3 is zero) then only register P2 is
-** set to NULL
+** set to NULL.
+**
+** If the P1 value is non-zero, then also set the MEM_Cleared flag so that
+** NULL values will not compare equal even if SQLITE_NULLEQ is set on
+** OP_Ne or OP_Eq.
 */
 case OP_Null: {           /* out2-prerelease */
   int cnt;
+  u16 nullFlag;
   cnt = pOp->p3-pOp->p2;
   assert( pOp->p3<=p->nMem );
-  pOut->flags = MEM_Null;
+  pOut->flags = nullFlag = pOp->p1 ? (MEM_Null|MEM_Cleared) : MEM_Null;
   while( cnt>0 ){
     pOut++;
     memAboutToChange(p, pOut);
     VdbeMemRelease(pOut);
-    pOut->flags = MEM_Null;
+    pOut->flags = nullFlag;
     cnt--;
   }
   break;
@@ -1737,6 +1742,10 @@ case OP_ToReal: {                  /* same as TK_TO_REAL, in1 */
 **
 ** If the SQLITE_STOREP2 bit of P5 is set, then do not jump.  Instead,
 ** store a boolean result (either 0, or 1, or NULL) in register P2.
+**
+** If the SQLITE_NULLEQ bit is set in P5, then NULL values are considered
+** equal to one another, provided that they do not have their MEM_Cleared
+** bit set.
 */
 /* Opcode: Ne P1 P2 P3 P4 P5
 **
@@ -1803,7 +1812,15 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
       ** or not both operands are null.
       */
       assert( pOp->opcode==OP_Eq || pOp->opcode==OP_Ne );
-      res = (flags1 & flags3 & MEM_Null)==0;
+      assert( (flags1 & MEM_Cleared)==0 );
+      if( (flags1&MEM_Null)!=0
+       && (flags3&MEM_Null)!=0
+       && (flags3&MEM_Cleared)==0
+      ){
+        res = 0;  /* Results are equal */
+      }else{
+        res = 1;  /* Results are not equal */
+      }
     }else{
       /* SQLITE_NULLEQ is clear and at least one operand is NULL,
       ** then the result is always NULL.

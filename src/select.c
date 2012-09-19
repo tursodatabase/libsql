@@ -4059,29 +4059,35 @@ int sqlite3Select(
       if( pWInfo->eDistinct==WHERE_DISTINCT_ORDERED ){
         int iJump;
         int iExpr;
-        int iFlag = ++pParse->nMem;
+        int nExpr = pEList->nExpr;
         int iBase = pParse->nMem+1;
-        int iBase2 = iBase + pEList->nExpr;
+        int iBase2 = iBase + nExpr;
         pParse->nMem += (pEList->nExpr*2);
 
-        /* Change the OP_OpenEphemeral coded earlier to an OP_Integer. The
-        ** OP_Integer initializes the "first row" flag.  */
-        pOp->opcode = OP_Integer;
+        /* Change the OP_OpenEphemeral coded earlier to an OP_Null
+        ** sets the MEM_Cleared bit on the first register of the
+        ** previous value.  This will cause the OP_Ne below to always
+        ** fail on the first iteration of the loop even if the first
+        ** row is all NULLs.
+        */
+        pOp->opcode = OP_Null;
         pOp->p1 = 1;
-        pOp->p2 = iFlag;
+        pOp->p2 = iBase2;
+        pOp->p3 = iBase2 + nExpr - 1;
 
         sqlite3ExprCodeExprList(pParse, pEList, iBase, 1);
-        iJump = sqlite3VdbeCurrentAddr(v) + 1 + pEList->nExpr + 1 + 1;
-        sqlite3VdbeAddOp2(v, OP_If, iFlag, iJump-1);
-        for(iExpr=0; iExpr<pEList->nExpr; iExpr++){
+        iJump = sqlite3VdbeCurrentAddr(v) + pEList->nExpr;
+        for(iExpr=0; iExpr<nExpr; iExpr++){
           CollSeq *pColl = sqlite3ExprCollSeq(pParse, pEList->a[iExpr].pExpr);
-          sqlite3VdbeAddOp3(v, OP_Ne, iBase+iExpr, iJump, iBase2+iExpr);
+          if( iExpr<nExpr-1 ){
+            sqlite3VdbeAddOp3(v, OP_Ne, iBase+iExpr, iJump, iBase2+iExpr);
+          }else{
+            sqlite3VdbeAddOp3(v, OP_Eq, iBase+iExpr, pWInfo->iContinue,
+                              iBase2+iExpr);
+          }
           sqlite3VdbeChangeP4(v, -1, (const char *)pColl, P4_COLLSEQ);
           sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
         }
-        sqlite3VdbeAddOp2(v, OP_Goto, 0, pWInfo->iContinue);
-
-        sqlite3VdbeAddOp2(v, OP_Integer, 0, iFlag);
         assert( sqlite3VdbeCurrentAddr(v)==iJump );
         sqlite3VdbeAddOp3(v, OP_Move, iBase, iBase2, pEList->nExpr);
       }else{
