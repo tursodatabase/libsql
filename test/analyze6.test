@@ -61,14 +61,14 @@ do_test analyze6-1.0 {
 #
 do_test analyze6-1.1 {
   eqp {SELECT count(*) FROM ev, cat WHERE x=y}
-} {0 0 1 {SCAN TABLE cat (~16 rows)} 0 1 0 {SEARCH TABLE ev USING COVERING INDEX evy (y=?) (~32 rows)}}
+} {0 0 1 {SCAN TABLE cat USING COVERING INDEX catx (~16 rows)} 0 1 0 {SEARCH TABLE ev USING COVERING INDEX evy (y=?) (~32 rows)}}
 
 # The same plan is chosen regardless of the order of the tables in the
 # FROM clause.
 #
 do_test analyze6-1.2 {
   eqp {SELECT count(*) FROM cat, ev WHERE x=y}
-} {0 0 0 {SCAN TABLE cat (~16 rows)} 0 1 1 {SEARCH TABLE ev USING COVERING INDEX evy (y=?) (~32 rows)}}
+} {0 0 0 {SCAN TABLE cat USING COVERING INDEX catx (~16 rows)} 0 1 1 {SEARCH TABLE ev USING COVERING INDEX evy (y=?) (~32 rows)}}
 
 
 # Ticket [83ea97620bd3101645138b7b0e71c12c5498fe3d] 2011-03-30

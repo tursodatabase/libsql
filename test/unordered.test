@@ -51,7 +51,7 @@ foreach idxmode {ordered unordered} {
          0 0 0 {USE TEMP B-TREE FOR ORDER BY}}
     4   "SELECT max(a) FROM t1"
         {0 0 0 {SEARCH TABLE t1 USING COVERING INDEX i1 (~1 rows)}}
-        {0 0 0 {SEARCH TABLE t1 (~1 rows)}}
+        {0 0 0 {SEARCH TABLE t1 USING COVERING INDEX i1 (~1 rows)}}
     5   "SELECT group_concat(b) FROM t1 GROUP BY a"
         {0 0 0 {SCAN TABLE t1 USING INDEX i1 (~128 rows)}}
         {0 0 0 {SCAN TABLE t1 (~128 rows)} 0 0 0 {USE TEMP B-TREE FOR GROUP BY}}

@@ -94,7 +94,7 @@ do_test collate4-1.1.5 {
   cksort {SELECT b FROM collate4t1 ORDER BY b COLLATE TEXT}
 } {{} A B a b nosort}
 do_test collate4-1.1.6 {
-  cksort {SELECT b FROM collate4t1 ORDER BY b COLLATE NOCASE}
+  cksort {SELECT b FROM collate4t1 ORDER BY b COLLATE NOCASE, rowid}
 } {{} a A b B sort}
 
 do_test collate4-1.1.7 {
@@ -171,13 +171,13 @@ do_test collate4-1.1.21 {
   }
 } {}
 do_test collate4-1.1.22 {
-  cksort {SELECT a FROM collate4t4 ORDER BY a}
+  cksort {SELECT a FROM collate4t4 ORDER BY a, rowid}
 } {{} a A b B sort}
 do_test collate4-1.1.23 {
-  cksort {SELECT a FROM collate4t4 ORDER BY a COLLATE NOCASE}
+  cksort {SELECT a FROM collate4t4 ORDER BY a COLLATE NOCASE, rowid}
 } {{} a A b B sort}
 do_test collate4-1.1.24 {
-  cksort {SELECT a FROM collate4t4 ORDER BY a COLLATE TEXT}
+  cksort {SELECT a FROM collate4t4 ORDER BY a COLLATE TEXT, rowid}
 } {{} A B a b nosort}
 do_test collate4-1.1.25 {
   cksort {SELECT b FROM collate4t4 ORDER BY b}
@@ -222,7 +222,7 @@ do_test collate4-1.2.4 {
   cksort {SELECT a FROM collate4t1 ORDER BY a, b}
 } {{} A a B b nosort}
 do_test collate4-1.2.5 {
-  cksort {SELECT a FROM collate4t1 ORDER BY a, b COLLATE nocase}
+  cksort {SELECT a FROM collate4t1 ORDER BY a, b COLLATE nocase, rowid}
 } {{} a A b B sort}
 do_test collate4-1.2.6 {
   cksort {SELECT a FROM collate4t1 ORDER BY a, b COLLATE text}
@@ -271,10 +271,10 @@ do_test collate4-1.2.14 {
   }
 } {}
 do_test collate4-1.2.15 {
-  cksort {SELECT a FROM collate4t3 ORDER BY a}
+  cksort {SELECT a FROM collate4t3 ORDER BY a, rowid}
 } {{} a A b B sort}
 do_test collate4-1.2.16 {
-  cksort {SELECT a FROM collate4t3 ORDER BY a COLLATE nocase}
+  cksort {SELECT a FROM collate4t3 ORDER BY a COLLATE nocase, rowid}
 } {{} a A b B sort}
 do_test collate4-1.2.17 {
   cksort {SELECT a FROM collate4t3 ORDER BY a COLLATE text}
@@ -364,7 +364,8 @@ do_test collate4-2.1.4 {
     CREATE INDEX collate4i1 ON collate4t1(a COLLATE TEXT);
   }
   count {
-    SELECT * FROM collate4t2, collate4t1 WHERE a = b;
+    SELECT * FROM collate4t2, collate4t1 WHERE a = b
+     ORDER BY collate4t2.rowid, collate4t1.rowid
   }
 } {A a A A 19}
 do_test collate4-2.1.5 {
@@ -375,7 +376,8 @@ do_test collate4-2.1.5 {
 ifcapable subquery {
   do_test collate4-2.1.6 {
     count {
-      SELECT a FROM collate4t1 WHERE a IN (SELECT * FROM collate4t2);
+      SELECT a FROM collate4t1 WHERE a IN (SELECT * FROM collate4t2)
+       ORDER BY rowid
     }
   } {a A 10}
   do_test collate4-2.1.7 {
@@ -384,7 +386,8 @@ ifcapable subquery {
       CREATE INDEX collate4i1 ON collate4t1(a);
     }
     count {
-      SELECT a FROM collate4t1 WHERE a IN (SELECT * FROM collate4t2);
+      SELECT a FROM collate4t1 WHERE a IN (SELECT * FROM collate4t2)
+       ORDER BY rowid
     }
   } {a A 6}
   do_test collate4-2.1.8 {
@@ -398,7 +401,7 @@ ifcapable subquery {
       CREATE INDEX collate4i1 ON collate4t1(a COLLATE TEXT);
     }
     count {
-      SELECT a FROM collate4t1 WHERE a IN ('z', 'a');
+      SELECT a FROM collate4t1 WHERE a IN ('z', 'a') ORDER BY rowid;
     }
   } {a A 9}
 }

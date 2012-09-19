@@ -1026,7 +1026,7 @@ do_select_tests e_select-4.9 {
     4,5 f   1 o   7,6   s 3,2 t
   }
   2  "SELECT group_concat(one), sum(one) FROM b1 GROUP BY (one>4)" {
-    1,4,3,2 10    5,7,6 18
+    1,2,3,4 10    5,6,7 18
   }
   3  "SELECT group_concat(one) FROM b1 GROUP BY (two>'o'), one%2" {
     4  1,5    2,6   3,7

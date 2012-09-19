@@ -475,6 +475,11 @@ int sqlite3_config(int op, ...){
       break;
     }
 
+    case SQLITE_CONFIG_COVERING_INDEX_SCAN: {
+      sqlite3GlobalConfig.bUseCis = va_arg(ap, int);
+      break;
+    }
+
     default: {
       rc = SQLITE_ERROR;
       break;

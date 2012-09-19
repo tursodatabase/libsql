@@ -114,7 +114,7 @@ foreach delete_order $delete_orders {
     }
     do_test autovacuum-1.$tn.($delete).3 {
       execsql {
-        select a from av1
+        select a from av1 order by rowid
       }
     } $::tbl_data
   }

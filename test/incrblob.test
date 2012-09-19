@@ -437,7 +437,7 @@ if {[permutation] != "memsubsys1"} {
   } {}
   do_test incrblob-6.2 {
     execsql {
-      SELECT rowid FROM blobs
+      SELECT rowid FROM blobs ORDER BY rowid
     }
   } {1 2 3}
   do_test incrblob-6.3 {
