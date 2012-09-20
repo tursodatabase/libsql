@@ -541,7 +541,7 @@ static void selectInnerLoop(
   int srcTab,             /* Pull data from this table */
   int nColumn,            /* Number of columns in the source table */
   ExprList *pOrderBy,     /* If not NULL, sort results using this key */
-  int distinct,           /* If >=0, make sure results are distinct */
+  int distinctTab,        /* If >=0, make sure results are distinct */
   SelectDest *pDest,      /* How to dispose of the results */
   int iContinue,          /* Jump here to continue with next row */
   int iBreak              /* Jump here to break out of the inner loop */
@@ -557,7 +557,7 @@ static void selectInnerLoop(
   assert( v );
   if( NEVER(v==0) ) return;
   assert( pEList!=0 );
-  hasDistinct = distinct>=0;
+  hasDistinct = distinctTab>=0;
   if( pOrderBy==0 && !hasDistinct ){
     codeOffset(v, p, iContinue);
   }
@@ -597,7 +597,7 @@ static void selectInnerLoop(
   if( hasDistinct ){
     assert( pEList!=0 );
     assert( pEList->nExpr==nColumn );
-    codeDistinct(pParse, distinct, iContinue, nColumn, regResult);
+    codeDistinct(pParse, distinctTab, iContinue, nColumn, regResult);
     if( pOrderBy==0 ){
       codeOffset(v, p, iContinue);
     }
@@ -3787,7 +3787,7 @@ int sqlite3Select(
   ExprList *pGroupBy;    /* The GROUP BY clause.  May be NULL */
   Expr *pHaving;         /* The HAVING clause.  May be NULL */
   int isDistinct;        /* True if the DISTINCT keyword is present */
-  int distinct;          /* Table to use for the distinct set */
+  int distinctTab;       /* Table to use for the distinct set */
   int rc = 1;            /* Value to return from this function */
   int addrSortIndex;     /* Address of an OP_OpenEphemeral instruction */
   int addrDistinctIndex; /* Address of an OP_OpenEphemeral instruction */
@@ -4018,13 +4018,13 @@ int sqlite3Select(
   */
   if( p->selFlags & SF_Distinct ){
     KeyInfo *pKeyInfo;
-    distinct = pParse->nTab++;
+    distinctTab = pParse->nTab++;
     pKeyInfo = keyInfoFromExprList(pParse, p->pEList);
-    addrDistinctIndex = sqlite3VdbeAddOp4(v, OP_OpenEphemeral, distinct, 0, 0,
-        (char*)pKeyInfo, P4_KEYINFO_HANDOFF);
+    addrDistinctIndex = sqlite3VdbeAddOp4(v, OP_OpenEphemeral, distinctTab,
+                                   0, 0, (char*)pKeyInfo, P4_KEYINFO_HANDOFF);
     sqlite3VdbeChangeP5(v, BTREE_UNORDERED);
   }else{
-    distinct = addrDistinctIndex = -1;
+    distinctTab = addrDistinctIndex = -1;
   }
 
   /* Aggregate and non-aggregate queries are handled differently */
@@ -4049,13 +4049,14 @@ int sqlite3Select(
       VdbeOp *pOp;                /* No longer required OpenEphemeral instr. */
      
       assert( addrDistinctIndex>=0 );
+      sqlite3VdbeChangeToNoop(v, addrDistinctIndex);
       pOp = sqlite3VdbeGetOp(v, addrDistinctIndex);
 
       assert( isDistinct );
       assert( pWInfo->eDistinct==WHERE_DISTINCT_ORDERED 
            || pWInfo->eDistinct==WHERE_DISTINCT_UNIQUE 
       );
-      distinct = -1;
+      distinctTab = -1;
       if( pWInfo->eDistinct==WHERE_DISTINCT_ORDERED ){
         int iJump;
         int iExpr;
@@ -4073,7 +4074,6 @@ int sqlite3Select(
         pOp->opcode = OP_Null;
         pOp->p1 = 1;
         pOp->p2 = iBase2;
-        pOp->p3 = iBase2 + nExpr - 1;
 
         sqlite3ExprCodeExprList(pParse, pEList, iBase, 1);
         iJump = sqlite3VdbeCurrentAddr(v) + pEList->nExpr;
@@ -4090,13 +4090,11 @@ int sqlite3Select(
         }
         assert( sqlite3VdbeCurrentAddr(v)==iJump );
         sqlite3VdbeAddOp3(v, OP_Move, iBase, iBase2, pEList->nExpr);
-      }else{
-        pOp->opcode = OP_Noop;
       }
     }
 
     /* Use the standard inner loop. */
-    selectInnerLoop(pParse, p, pEList, 0, 0, pOrderBy, distinct, pDest,
+    selectInnerLoop(pParse, p, pEList, 0, 0, pOrderBy, distinctTab, pDest,
                     pWInfo->iContinue, pWInfo->iBreak);
 
     /* End the database scan loop.
@@ -4364,7 +4362,7 @@ int sqlite3Select(
       finalizeAggFunctions(pParse, &sAggInfo);
       sqlite3ExprIfFalse(pParse, pHaving, addrOutputRow+1, SQLITE_JUMPIFNULL);
       selectInnerLoop(pParse, p, p->pEList, 0, 0, pOrderBy,
-                      distinct, pDest,
+                      distinctTab, pDest,
                       addrOutputRow+1, addrSetAbort);
       sqlite3VdbeAddOp1(v, OP_Return, regOutputRow);
       VdbeComment((v, "end groupby result generator"));
@@ -4505,7 +4503,7 @@ int sqlite3Select(
     
   } /* endif aggregate query */
 
-  if( distinct>=0 ){
+  if( distinctTab>=0 ){
     explainTempTable(pParse, "DISTINCT");
   }
 

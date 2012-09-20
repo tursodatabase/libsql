@@ -2059,7 +2059,7 @@ struct NameContext {
 ** as the OP_OpenEphm instruction is coded because not
 ** enough information about the compound query is known at that point.
 ** The KeyInfo for addrOpenTran[0] and [1] contains collating sequences
-** for the result set.  The KeyInfo for addrOpenTran[2] contains collating
+** for the result set.  The KeyInfo for addrOpenEphm[2] contains collating
 ** sequences for the ORDER BY clause.
 */
 struct Select {
