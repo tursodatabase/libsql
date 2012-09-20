@@ -1,5 +1,5 @@
-C Refactoring\sof\sDISTINCT\scode.\s\sChange\sthe\sname\sof\sthe\slocal\svariable\n"distinct"\sto\s"distinctTab".\s\sGenerate\scleaner\scode\sw/o\sunnecessary\sP4\nand\sP5\svalues\son\sthe\sOP_Null\sfor\sWHERE_DISTINCT_ORDERED.
-D 2012-09-20T14:26:22.088
+C Continuing\sincremental\senhancements\sof\sSELECT\scode\sgeneration:\nRemove\sthe\sSelect.affinity\sfield.\s\sUse\sSelectDest.affSdst\sinstead.
+D 2012-09-20T15:41:31.865
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,12 +174,12 @@ F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 9e28280ec98035f31900fdd1db01f86f68ca6c32
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 7878dd564f5ec107e9b58af5f3eeb27ac640770b
+F src/select.c 7c6d028755131a47c0521a8b697428ebd382dbd3
 F src/shell.c 87953c5d9c73d9494db97d1607e2e2280418f261
 F src/sqlite.h.in c76c38f9635590ff5844684a7976843878327137
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h bcfaf463a0fecda2d10efd68a52fea11f1cff388
+F src/sqliteInt.h a9708835335a62d691602f25dacaab9cdab53613
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1016,7 +1016,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 94b48064db3cbb43e911fdf7183218b08146ec10
-R 5e2afb7573559eb5eba9ed47e068d0d2
+P 0cda241a2bcb3c6f2ae6c48f522780bc4eddfc02
+R 70c119f908e0321bfe68ed5f9f70b2c3
 U drh
-Z 5042a680f6b5da609676733ff0c80d03
+Z 768851de231def4398f466b3e6b7ba54

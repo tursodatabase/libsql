@@ -661,6 +661,7 @@ typedef struct Parse Parse;
 typedef struct RowSet RowSet;
 typedef struct Savepoint Savepoint;
 typedef struct Select Select;
+typedef struct SelectDest SelectDest;
 typedef struct SrcList SrcList;
 typedef struct StrAccum StrAccum;
 typedef struct Table Table;
@@ -2065,7 +2066,6 @@ struct NameContext {
 struct Select {
   ExprList *pEList;      /* The fields of the result */
   u8 op;                 /* One of: TK_UNION TK_ALL TK_INTERSECT TK_EXCEPT */
-  char affinity;         /* MakeRecord with this affinity for SRT_Set */
   u16 selFlags;          /* Various SF_* values */
   int iLimit, iOffset;   /* Memory registers holding LIMIT & OFFSET counters */
   int addrOpenEphm[3];   /* OP_OpenEphem opcodes related to this select */
@@ -2116,13 +2116,12 @@ struct Select {
 #define SRT_Coroutine   10  /* Generate a single row of result */
 
 /*
-** A structure used to customize the behavior of sqlite3Select(). See
-** comments above sqlite3Select() for details.
+** An instance of this object describes where to put of the results of
+** a SELECT statement.
 */
-typedef struct SelectDest SelectDest;
 struct SelectDest {
-  u8 eDest;         /* How to dispose of the results */
-  u8 affSdst;       /* Affinity used when eDest==SRT_Set */
+  u8 eDest;         /* How to dispose of the results.  On of SRT_* above. */
+  char affSdst;     /* Affinity used when eDest==SRT_Set */
   int iSDParm;      /* A parameter used by the eDest disposal method */
   int iSdst;        /* Base register where results are written */
   int nSdst;        /* Number of registers allocated */
