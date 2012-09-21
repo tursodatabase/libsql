@@ -2513,6 +2513,13 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     }
   }else
 
+#if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_WHERETRACE)
+  if( c=='w' && strncmp(azArg[0], "wheretrace", n)==0 ){
+    extern int sqlite3WhereTrace;
+    sqlite3WhereTrace = atoi(azArg[1]);
+  }else
+#endif
+
   if( c=='w' && strncmp(azArg[0], "width", n)==0 && nArg>1 ){
     int j;
     assert( nArg<=ArraySize(azArg) );

@@ -1,5 +1,5 @@
-C Command-line\sshell\senhancements:\s\sAdded\sthe\s".print"\scommand.\s\sEnhanced\nthe\s".width"\scommand\sso\sthat\snegative\swidths\swill\sright-justify.
-D 2012-09-21T13:40:02.707
+C Enable\squery\splanner\stracing\susing\sthe\snew\s(and\sundocumented)\s".wheretrace\s1"\ncommand\sin\sthe\scommand-line\sshell\sif\sboth\sthe\sshell\sand\sthe\score\sare\ncompiled\swith\sSQLITE_DEBUG\sand\sSQLITE_ENABLE_WHERETRACE.\s\sThis\sis\snot\sa\s\nsupported\sAPI.\sUse\sfor\stesting\sand\sdebugging\sonly.
+D 2012-09-21T22:50:45.067
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 9e28280ec98035f31900fdd1db01f86f68ca6c32
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c c2a83ada835d3554a4d724c5358d4475aa7e1e77
-F src/shell.c f41fbf4c21003a37d69b863d3c3c562a3db180a6
+F src/shell.c 8ee5a3cb502e2d574f97b43972e6c1e275e7bec7
 F src/sqlite.h.in c76c38f9635590ff5844684a7976843878327137
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
@@ -249,7 +249,7 @@ F src/vtab.c d8020c0a0e8ccc490ca449d7e665311b6e9f3ba9
 F src/wal.c 5acb3e7bbd31f10ba39acad9ce6b399055337a9d
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c cc3ef08bb6a6832e888291a89993ad0828689a36
+F src/where.c 3b52eeffab96e6ee3e1593af0967206cde09c221
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 0be144b453e0622a085fae8665c32f5676708e00
@@ -1016,7 +1016,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 79e922f7ae29bbe06d639d648fbd72523cf9a28e
-R e0319168dcbdc9e6aaca1f64320b5398
+P a1d8269da3868e41a6603c1a683e324fe21fb317
+R bef0447b960d60db80499ed2c662a2c0
 U drh
-Z e9c67fc218434dfa019e9bea621d5ceb
+Z 02d70638aa79d9b39eaea60d061c0a70
