@@ -1998,10 +1998,11 @@ struct WhereInfo {
   WhereLevel a[1];               /* Information about each nest loop in WHERE */
 };
 
-/* Allowed values for WhereInfo.eDistinct */
-#define WHERE_DISTINCT_NOT     0  /* May contain non-adjacent duplicates */
-#define WHERE_DISTINCT_UNIQUE  1  /* No duplicates */
-#define WHERE_DISTINCT_ORDERED 2  /* All duplicates are adjacent */
+/* Allowed values for WhereInfo.eDistinct and DistinctCtx.eTnctType */
+#define WHERE_DISTINCT_NOOP      0  /* DISTINCT keyword not used */
+#define WHERE_DISTINCT_UNIQUE    1  /* No duplicates */
+#define WHERE_DISTINCT_ORDERED   2  /* All duplicates are adjacent */
+#define WHERE_DISTINCT_UNORDERED 3  /* Duplicates are scattered */
 
 /*
 ** A NameContext defines a context in which to resolve table and column
@@ -2816,7 +2817,6 @@ void sqlite3WhereEnd(WhereInfo*);
 int sqlite3ExprCodeGetColumn(Parse*, Table*, int, int, int, u8);
 void sqlite3ExprCodeGetColumnOfTable(Vdbe*, Table*, int, int, int);
 void sqlite3ExprCodeMove(Parse*, int, int, int);
-void sqlite3ExprCodeCopy(Parse*, int, int, int);
 void sqlite3ExprCacheStore(Parse*, int, int, int);
 void sqlite3ExprCachePush(Parse*);
 void sqlite3ExprCachePop(Parse*, int);
