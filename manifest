@@ -1,5 +1,5 @@
-C Consolidate\smore\sof\sthe\sDISTINCT\sprocessing\slogic\sinto\sa\ssingle\sspot\sin\sthe\ncode.\s\sReduce\sthe\snumber\sof\sOP_Column\soperations\sneeded\sto\sperform\sa\nWHERE_DISTINCT_ORDERED.
-D 2012-09-21T00:04:28.345
+C Command-line\sshell\senhancements:\s\sAdded\sthe\s".print"\scommand.\s\sEnhanced\nthe\s".width"\scommand\sso\sthat\snegative\swidths\swill\sright-justify.
+D 2012-09-21T13:40:02.707
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 9e28280ec98035f31900fdd1db01f86f68ca6c32
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c c2a83ada835d3554a4d724c5358d4475aa7e1e77
-F src/shell.c 87953c5d9c73d9494db97d1607e2e2280418f261
+F src/shell.c f41fbf4c21003a37d69b863d3c3c562a3db180a6
 F src/sqlite.h.in c76c38f9635590ff5844684a7976843878327137
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
@@ -702,7 +702,7 @@ F test/shared7.test 960760bc8d03e1419e70dea69cf41db62853616e
 F test/shared8.test b27befbefbe7f4517f1d6b7ff8f64a41ec74165d
 F test/shared_err.test 91e26ec4f3fbe07951967955585137e2f18993de
 F test/sharedlock.test ffa0a3c4ac192145b310f1254f8afca4d553eabf
-F test/shell1.test 9895ee3013742a02e5afd8d77793729967ffd195
+F test/shell1.test 272384163432c0efd2c6817396beb0d119565d53
 F test/shell2.test 037d6ad16e873354195d30bb2dc4b5321788154a
 F test/shell3.test 9196c42772d575685e722c92b4b39053c6ebba59
 F test/shell4.test aa4eef8118b412d1a01477a53426ece169ea86a9
@@ -1016,7 +1016,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P cf40b7b5ebdacc3215d769aadacce8c9e7e9dfbb
-R d02ff4711c6f63d54e76f1ced6a5b15a
+P 79e922f7ae29bbe06d639d648fbd72523cf9a28e
+R e0319168dcbdc9e6aaca1f64320b5398
 U drh
-Z 9a19995b7c09e7ae5080d30ca61a0cd3
+Z e9c67fc218434dfa019e9bea621d5ceb

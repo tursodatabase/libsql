@@ -680,6 +680,15 @@ do_test shell1-3.26.4 {
   catchcmd "test.db" ".width 1 1"
   # this should be treated the same as a '1' width for col 1 and 2
 } {0 {}}
+do_test shell1-3.26.5 {
+  catchcmd "test.db" ".mode column\n.width 10 -10\nSELECT 'abcdefg', 123456;"
+  # this should be treated the same as a '1' width for col 1 and 2
+} {0 {abcdefg         123456}}
+do_test shell1-3.26.6 {
+  catchcmd "test.db" ".mode column\n.width -10 10\nSELECT 'abcdefg', 123456;"
+  # this should be treated the same as a '1' width for col 1 and 2
+} {0 {   abcdefg  123456    }}
+
 
 # .timer ON|OFF          Turn the CPU timer measurement on or off
 do_test shell1-3.27.1 {
@@ -700,6 +709,10 @@ do_test shell1-3-28.1 {
   catchcmd test.db \
      ".log stdout\nSELECT coalesce(sqlite_log(123,'hello'),'456');"
 } "0 {(123) hello\n456}"
+
+do_test shell1-3-29.1 {
+  catchcmd "test.db" ".print this is a test"
+} {0 {this is a test}}
 
 # Test the output of the ".dump" command
 #
