@@ -1,5 +1,5 @@
-C Change\sthe\sinternal\ssqlite3WhereBegin()\sto\sreport\sthat\sthe\sORDER\sBY\sclause\nis\ssatisfied\sby\sindices\susing\sthe\sWhereInfo.nOBSat\sfield\sof\sthe\sreturned\nstructure.
-D 2012-09-24T15:30:54.533
+C Remove\san\sunused\ssubfunction\sparameter\sand\san\sobsolete\scomment\sfrom\sthe\nquery\splanner\slogic\sin\swhere.c.
+D 2012-09-24T19:50:00.842
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -249,7 +249,7 @@ F src/vtab.c d8020c0a0e8ccc490ca449d7e665311b6e9f3ba9
 F src/wal.c 5acb3e7bbd31f10ba39acad9ce6b399055337a9d
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c af126a6cdb290c2d79ef18bb41bbca949c9cad61
+F src/where.c 40708330a0e9bf79c0ab97109b8014fa04cce858
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 0be144b453e0622a085fae8665c32f5676708e00
@@ -1016,7 +1016,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P e081890cd77ad8de4bf55a8f8cf9d63bfaaf8218
-R 4ad3ce4fdebd545cd663ab5469164871
+P 22989f3588531efd555cc29d6c576e7a34b7edc4
+R af274415395e47bec73279dd70f3872e
 U drh
-Z 1dbcfbc31e18555fa81506ef779ada01
+Z 2c59ca6ec247c019d5fe7043b4d83355

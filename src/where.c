@@ -1813,7 +1813,7 @@ static void TRACE_IDX_OUTPUTS(sqlite3_index_info *p){
 */
 static void bestIndex(
     Parse*, WhereClause*, struct SrcList_item*,
-    Bitmask, Bitmask, ExprList*, WhereCost*);
+    Bitmask, Bitmask, WhereCost*);
 
 /*
 ** This routine attempts to find an scanning strategy that can be used 
@@ -1867,7 +1867,7 @@ static void bestOrClauseIndex(
         ));
         if( pOrTerm->eOperator==WO_AND ){
           WhereClause *pAndWC = &pOrTerm->u.pAndInfo->wc;
-          bestIndex(pParse, pAndWC, pSrc, notReady, notValid, 0, &sTermCost);
+          bestIndex(pParse, pAndWC, pSrc, notReady, notValid, &sTermCost);
         }else if( pOrTerm->leftCursor==iCur ){
           WhereClause tempWC;
           tempWC.pParse = pWC->pParse;
@@ -1877,7 +1877,7 @@ static void bestOrClauseIndex(
           tempWC.a = pOrTerm;
           tempWC.wctrlFlags = 0;
           tempWC.nTerm = 1;
-          bestIndex(pParse, &tempWC, pSrc, notReady, notValid, 0, &sTermCost);
+          bestIndex(pParse, &tempWC, pSrc, notReady, notValid, &sTermCost);
         }else{
           continue;
         }
@@ -3388,6 +3388,12 @@ static void bestBtreeIndex(
 ** best query plan and its cost into the WhereCost object supplied 
 ** as the last parameter. This function may calculate the cost of
 ** both real and virtual table scans.
+**
+** This function does not take ORDER BY or DISTINCT into account.  Nor
+** does it remember the virtual table query plan.  All it does is compute
+** the cost while determining if an OR optimization is applicable.  The
+** details will be reconsidered later if the optimization is found to be
+** applicable.
 */
 static void bestIndex(
   Parse *pParse,              /* The parsing context */
@@ -3395,13 +3401,12 @@ static void bestIndex(
   struct SrcList_item *pSrc,  /* The FROM clause term to search */
   Bitmask notReady,           /* Mask of cursors not available for indexing */
   Bitmask notValid,           /* Cursors not available for any purpose */
-  ExprList *pOrderBy,         /* The ORDER BY clause */
   WhereCost *pCost            /* Lowest cost query plan */
 ){
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   if( IsVirtual(pSrc->pTab) ){
     sqlite3_index_info *p = 0;
-    bestVirtualIndex(pParse, pWC, pSrc, notReady, notValid, pOrderBy, pCost,&p);
+    bestVirtualIndex(pParse, pWC, pSrc, notReady, notValid, 0, pCost, &p);
     if( p->needToFreeIdxStr ){
       sqlite3_free(p->idxStr);
     }
@@ -3409,7 +3414,7 @@ static void bestIndex(
   }else
 #endif
   {
-    bestBtreeIndex(pParse, pWC, pSrc, notReady, notValid, pOrderBy, 0, pCost);
+    bestBtreeIndex(pParse, pWC, pSrc, notReady, notValid, 0, 0, pCost);
   }
 }
 
@@ -4698,7 +4703,7 @@ WhereInfo *sqlite3WhereBegin(
   WhereMaskSet *pMaskSet;    /* The expression mask set */
   WhereClause *pWC;               /* Decomposition of the WHERE clause */
   struct SrcList_item *pTabItem;  /* A single entry from pTabList */
-  WhereLevel *pLevel;             /* A single level in the pWInfo list */
+  WhereLevel *pLevel;             /* A single level in pWInfo->a[] */
   int iFrom;                      /* First unused FROM clause element */
   int andFlags;              /* AND-ed combination of all pWC->a[].wtFlags */
   sqlite3 *db;               /* Database connection */
@@ -4994,7 +4999,6 @@ WhereInfo *sqlite3WhereBegin(
     WHERETRACE(("*** Optimizer selects table %d for loop %d"
                 " with cost=%g and nRow=%g\n",
                 bestJ, pLevel-pWInfo->a, bestPlan.rCost, bestPlan.plan.nRow));
-    /* The ALWAYS() that follows was added to hush up clang scan-build */
     if( (bestPlan.plan.wsFlags & WHERE_ORDERBY)!=0 ){
       pWInfo->nOBSat = pOrderBy->nExpr;
     }
