@@ -4667,24 +4667,24 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
 **
 ** ORDER BY CLAUSE PROCESSING
 **
-** *ppOrderBy is a pointer to the ORDER BY clause of a SELECT statement,
+** pOrderBy is a pointer to the ORDER BY clause of a SELECT statement,
 ** if there is one.  If there is no ORDER BY clause or if this routine
-** is called from an UPDATE or DELETE statement, then ppOrderBy is NULL.
+** is called from an UPDATE or DELETE statement, then pOrderBy is NULL.
 **
 ** If an index can be used so that the natural output order of the table
 ** scan is correct for the ORDER BY clause, then that index is used and
-** *ppOrderBy is set to NULL.  This is an optimization that prevents an
-** unnecessary sort of the result set if an index appropriate for the
-** ORDER BY clause already exists.
+** the returned WhereInfo.nOBSat field is set to pOrderBy->nExpr.  This
+** is an optimization that prevents an unnecessary sort of the result set
+** if an index appropriate for the ORDER BY clause already exists.
 **
 ** If the where clause loops cannot be arranged to provide the correct
-** output order, then the *ppOrderBy is unchanged.
+** output order, then WhereInfo.nOBSat is 0.
 */
 WhereInfo *sqlite3WhereBegin(
   Parse *pParse,        /* The parser context */
   SrcList *pTabList,    /* A list of all tables to be scanned */
   Expr *pWhere,         /* The WHERE clause */
-  ExprList **ppOrderBy, /* An ORDER BY clause, or NULL */
+  ExprList *pOrderBy,   /* An ORDER BY clause, or NULL */
   ExprList *pDistinct,  /* The select-list for DISTINCT queries - or NULL */
   u16 wctrlFlags,       /* One of the WHERE_* flags defined in sqliteInt.h */
   int iIdxCur           /* If WHERE_ONETABLE_ONLY is set, index cursor number */
@@ -4909,7 +4909,7 @@ WhereInfo *sqlite3WhereBegin(
       for(j=iFrom, pTabItem=&pTabList->a[j]; j<nTabList; j++, pTabItem++){
         int doNotReorder;    /* True if this table should not be reordered */
         WhereCost sCost;     /* Cost information from best[Virtual]Index() */
-        ExprList *pOrderBy;  /* ORDER BY clause for index to optimize */
+        ExprList *pOB;       /* ORDER BY clause for index to optimize */
         ExprList *pDist;     /* DISTINCT clause for index to optimize */
   
         doNotReorder =  (pTabItem->jointype & (JT_LEFT|JT_CROSS))!=0;
@@ -4920,7 +4920,7 @@ WhereInfo *sqlite3WhereBegin(
           continue;
         }
         mask = (isOptimal ? m : notReady);
-        pOrderBy = ((i==0 && ppOrderBy )?*ppOrderBy:0);
+        pOB = (i==0) ? pOrderBy : 0;
         pDist = (i==0 ? pDistinct : 0);
         if( pTabItem->pIndex==0 ) nUnconstrained++;
   
@@ -4930,12 +4930,12 @@ WhereInfo *sqlite3WhereBegin(
 #ifndef SQLITE_OMIT_VIRTUALTABLE
         if( IsVirtual(pTabItem->pTab) ){
           sqlite3_index_info **pp = &pWInfo->a[j].pIdxInfo;
-          bestVirtualIndex(pParse, pWC, pTabItem, mask, notReady, pOrderBy,
+          bestVirtualIndex(pParse, pWC, pTabItem, mask, notReady, pOB,
                            &sCost, pp);
         }else 
 #endif
         {
-          bestBtreeIndex(pParse, pWC, pTabItem, mask, notReady, pOrderBy,
+          bestBtreeIndex(pParse, pWC, pTabItem, mask, notReady, pOB,
               pDist, &sCost);
         }
         assert( isOptimal || (sCost.used&notReady)==0 );
@@ -4995,8 +4995,8 @@ WhereInfo *sqlite3WhereBegin(
                 " with cost=%g and nRow=%g\n",
                 bestJ, pLevel-pWInfo->a, bestPlan.rCost, bestPlan.plan.nRow));
     /* The ALWAYS() that follows was added to hush up clang scan-build */
-    if( (bestPlan.plan.wsFlags & WHERE_ORDERBY)!=0 && ALWAYS(ppOrderBy) ){
-      *ppOrderBy = 0;
+    if( (bestPlan.plan.wsFlags & WHERE_ORDERBY)!=0 ){
+      pWInfo->nOBSat = pOrderBy->nExpr;
     }
     if( (bestPlan.plan.wsFlags & WHERE_DISTINCT)!=0 ){
       assert( pWInfo->eDistinct==0 );
@@ -5049,8 +5049,8 @@ WhereInfo *sqlite3WhereBegin(
   /* If the total query only selects a single row, then the ORDER BY
   ** clause is irrelevant.
   */
-  if( (andFlags & WHERE_UNIQUE)!=0 && ppOrderBy ){
-    *ppOrderBy = 0;
+  if( (andFlags & WHERE_UNIQUE)!=0 && pOrderBy ){
+    pWInfo->nOBSat = pOrderBy->nExpr;
   }
 
   /* If the caller is an UPDATE or DELETE statement that is requesting

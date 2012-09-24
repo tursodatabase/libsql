@@ -4098,10 +4098,11 @@ int sqlite3Select(
     ExprList *pDist = (sDistinct.isTnct ? p->pEList : 0);
 
     /* Begin the database scan. */
-    pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pOrderBy, pDist, 0,0);
+    pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pOrderBy, pDist, 0,0);
     if( pWInfo==0 ) goto select_end;
     if( pWInfo->nRowOut < p->nSelectRow ) p->nSelectRow = pWInfo->nRowOut;
     if( pWInfo->eDistinct ) sDistinct.eTnctType = pWInfo->eDistinct;
+    if( pOrderBy && pWInfo->nOBSat==pOrderBy->nExpr ) pOrderBy = 0;
 
     /* If sorting index that was created by a prior OP_OpenEphemeral 
     ** instruction ended up not being needed, then change the OP_OpenEphemeral
@@ -4229,14 +4230,13 @@ int sqlite3Select(
       ** in the right order to begin with.
       */
       sqlite3VdbeAddOp2(v, OP_Gosub, regReset, addrReset);
-      pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pGroupBy, 0, 0, 0);
+      pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pGroupBy, 0, 0, 0);
       if( pWInfo==0 ) goto select_end;
-      if( pGroupBy==0 ){
+      if( pWInfo->nOBSat==pGroupBy->nExpr ){
         /* The optimizer is able to deliver rows in group by order so
         ** we do not have to sort.  The OP_OpenEphemeral table will be
         ** cancelled later because we still need to use the pKeyInfo
         */
-        pGroupBy = p->pGroupBy;
         groupBySort = 0;
       }else{
         /* Rows are coming out in undetermined order.  We have to push
@@ -4486,6 +4486,7 @@ int sqlite3Select(
         u8 flag = minMaxQuery(p);
         if( flag ){
           assert( !ExprHasProperty(p->pEList->a[0].pExpr, EP_xIsSelect) );
+          assert( p->pEList->a[0].pExpr->x.pList->nExpr==1 );
           pMinMax = sqlite3ExprListDup(db, p->pEList->a[0].pExpr->x.pList,0);
           pDel = pMinMax;
           if( pMinMax && !db->mallocFailed ){
@@ -4499,13 +4500,13 @@ int sqlite3Select(
         ** of output.
         */
         resetAccumulator(pParse, &sAggInfo);
-        pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pMinMax,0,flag,0);
+        pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pMinMax,0,flag,0);
         if( pWInfo==0 ){
           sqlite3ExprListDelete(db, pDel);
           goto select_end;
         }
         updateAccumulator(pParse, &sAggInfo);
-        if( !pMinMax && flag ){
+        if( pWInfo->nOBSat>0 ){
           sqlite3VdbeAddOp2(v, OP_Goto, 0, pWInfo->iBreak);
           VdbeComment((v, "%s() by index",
                 (flag==WHERE_ORDERBY_MIN?"min":"max")));

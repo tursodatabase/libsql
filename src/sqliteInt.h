@@ -1982,20 +1982,21 @@ struct WhereLevel {
 ** into the second half to give some continuity.
 */
 struct WhereInfo {
-  Parse *pParse;       /* Parsing and code generating context */
-  u16 wctrlFlags;      /* Flags originally passed to sqlite3WhereBegin() */
-  u8 okOnePass;        /* Ok to use one-pass algorithm for UPDATE or DELETE */
-  u8 untestedTerms;    /* Not all WHERE terms resolved by outer loop */
-  u8 eDistinct;                  /* One of the WHERE_DISTINCT_* values below */
-  SrcList *pTabList;             /* List of tables in the join */
-  int iTop;                      /* The very beginning of the WHERE loop */
-  int iContinue;                 /* Jump here to continue with next record */
-  int iBreak;                    /* Jump here to break out of the loop */
-  int nLevel;                    /* Number of nested loop */
-  struct WhereClause *pWC;       /* Decomposition of the WHERE clause */
-  double savedNQueryLoop;        /* pParse->nQueryLoop outside the WHERE loop */
-  double nRowOut;                /* Estimated number of output rows */
-  WhereLevel a[1];               /* Information about each nest loop in WHERE */
+  Parse *pParse;            /* Parsing and code generating context */
+  SrcList *pTabList;        /* List of tables in the join */
+  u16 nOBSat;               /* Number of ORDER BY terms satisfied by indices */
+  u16 wctrlFlags;           /* Flags originally passed to sqlite3WhereBegin() */
+  u8 okOnePass;             /* Ok to use one-pass algorithm for UPDATE/DELETE */
+  u8 untestedTerms;         /* Not all WHERE terms resolved by outer loop */
+  u8 eDistinct;             /* One of the WHERE_DISTINCT_* values below */
+  int iTop;                 /* The very beginning of the WHERE loop */
+  int iContinue;            /* Jump here to continue with next record */
+  int iBreak;               /* Jump here to break out of the loop */
+  int nLevel;               /* Number of nested loop */
+  struct WhereClause *pWC;  /* Decomposition of the WHERE clause */
+  double savedNQueryLoop;   /* pParse->nQueryLoop outside the WHERE loop */
+  double nRowOut;           /* Estimated number of output rows */
+  WhereLevel a[1];          /* Information about each nest loop in WHERE */
 };
 
 /* Allowed values for WhereInfo.eDistinct and DistinctCtx.eTnctType */
@@ -2811,8 +2812,7 @@ Expr *sqlite3LimitWhere(Parse *, SrcList *, Expr *, ExprList *, Expr *, Expr *, 
 #endif
 void sqlite3DeleteFrom(Parse*, SrcList*, Expr*);
 void sqlite3Update(Parse*, SrcList*, ExprList*, Expr*, int);
-WhereInfo *sqlite3WhereBegin(
-    Parse*,SrcList*,Expr*,ExprList**,ExprList*,u16,int);
+WhereInfo *sqlite3WhereBegin(Parse*,SrcList*,Expr*,ExprList*,ExprList*,u16,int);
 void sqlite3WhereEnd(WhereInfo*);
 int sqlite3ExprCodeGetColumn(Parse*, Table*, int, int, int, u8);
 void sqlite3ExprCodeGetColumnOfTable(Vdbe*, Table*, int, int, int);
