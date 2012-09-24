@@ -4747,6 +4747,9 @@ void *sqlite3_update_hook(
 ** future releases of SQLite.  Applications that care about shared
 ** cache setting should set it explicitly.
 **
+** This interface is threadsafe on processors where writing a
+** 32-bit integer is atomic.
+**
 ** See Also:  [SQLite Shared-Cache Mode]
 */
 int sqlite3_enable_shared_cache(int);

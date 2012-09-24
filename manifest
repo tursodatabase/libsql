@@ -1,5 +1,5 @@
-C Enable\squery\splanner\stracing\susing\sthe\snew\s(and\sundocumented)\s".wheretrace\s1"\ncommand\sin\sthe\scommand-line\sshell\sif\sboth\sthe\sshell\sand\sthe\score\sare\ncompiled\swith\sSQLITE_DEBUG\sand\sSQLITE_ENABLE_WHERETRACE.\s\sThis\sis\snot\sa\s\nsupported\sAPI.\sUse\sfor\stesting\sand\sdebugging\sonly.
-D 2012-09-21T22:50:45.067
+C Update\sdocumentation\sto\sdescribe\sthe\sthreadsafety\sof\s\nsqlite3_enable_shared_cache().
+D 2012-09-24T11:43:43.748
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -176,7 +176,7 @@ F src/resolve.c 9e28280ec98035f31900fdd1db01f86f68ca6c32
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c c2a83ada835d3554a4d724c5358d4475aa7e1e77
 F src/shell.c 8ee5a3cb502e2d574f97b43972e6c1e275e7bec7
-F src/sqlite.h.in c76c38f9635590ff5844684a7976843878327137
+F src/sqlite.h.in cbe846facaba903654b4136c97e7f57b3ac0bac7
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h 6d02f0bbca677887bbbe1a69c69cdde6f54adb9c
@@ -1016,7 +1016,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P a1d8269da3868e41a6603c1a683e324fe21fb317
-R bef0447b960d60db80499ed2c662a2c0
+P 1be4b16b9e900181ae6848f2920ea646f407c9dc
+R 0efc5261436fa50b53879d926ef0509e
 U drh
-Z 02d70638aa79d9b39eaea60d061c0a70
+Z f86abf9bd38d08dcead454a5f06f2799
