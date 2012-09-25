@@ -284,6 +284,8 @@ struct WhereBestIdx {
   ExprList *pOrderBy;             /* The ORDER BY clause */
   ExprList *pDistinct;            /* The select-list if query is DISTINCT */
   sqlite3_index_info **ppIdxInfo; /* Index information passed to xBestIndex */
+  int i, n;                       /* Which loop is being coded; # of loops */
+  WhereLevel *a;                  /* Info about outer loops */
   WhereCost cost;                 /* Lowest cost query plan */
 };
 
@@ -3037,13 +3039,21 @@ static void bestBtreeIndex(WhereBestIdx *p){
     int nInMul = 1;               /* Number of distinct equalities to lookup */
     double rangeDiv = (double)1;  /* Estimated reduction in search space */
     int nBound = 0;               /* Number of range constraints seen */
-    int bSort = !!p->pOrderBy;    /* True if external sort required */
-    int bDist = !!p->pDistinct;   /* True if index cannot help with DISTINCT */
+    int bSort;                    /* True if external sort required */
+    int bDist;                    /* True if index cannot help with DISTINCT */
     int bLookup = 0;              /* True if not a covering index */
     WhereTerm *pTerm;             /* A single term of the WHERE clause */
 #ifdef SQLITE_ENABLE_STAT3
     WhereTerm *pFirstTerm = 0;    /* First term matching the index */
 #endif
+
+    if( (p->i) > 0 ){
+      bSort = 0;
+      bDist = 0;
+    }else{
+      bSort = p->pOrderBy!=0;
+      bDist = p->pDistinct!=0;
+    }
 
     /* Determine the values of nEq and nInMul */
     for(nEq=0; nEq<pProbe->nColumn; nEq++){
@@ -3114,7 +3124,7 @@ static void bestBtreeIndex(WhereBestIdx *p){
     ** naturally scan rows in the required order, set the appropriate flags
     ** in wsFlags. Otherwise, if there is an ORDER BY clause but the index
     ** will scan rows in a different order, set the bSort variable.  */
-    if( isSortingIndex(
+    if( bSort && isSortingIndex(
           pParse, pWC->pMaskSet, pProbe, iCur, p->pOrderBy, nEq, wsFlags, &rev)
     ){
       bSort = 0;
@@ -3125,7 +3135,8 @@ static void bestBtreeIndex(WhereBestIdx *p){
     /* If there is a DISTINCT qualifier and this index will scan rows in
     ** order of the DISTINCT expressions, clear bDist and set the appropriate
     ** flags in wsFlags. */
-    if( isDistinctIndex(pParse, pWC, pProbe, iCur, p->pDistinct, nEq)
+    if( bDist
+     && isDistinctIndex(pParse, pWC, pProbe, iCur, p->pDistinct, nEq)
      && (wsFlags & WHERE_COLUMN_IN)==0
     ){
       bDist = 0;
@@ -4690,7 +4701,6 @@ WhereInfo *sqlite3WhereBegin(
   u16 wctrlFlags,       /* One of the WHERE_* flags defined in sqliteInt.h */
   int iIdxCur           /* If WHERE_ONETABLE_ONLY is set, index cursor number */
 ){
-  int i;                     /* Loop counter */
   int nByteWInfo;            /* Num. bytes allocated for WhereInfo struct */
   int nTabList;              /* Number of elements in pTabList */
   WhereInfo *pWInfo;         /* Will become the return value of this function */
@@ -4701,6 +4711,7 @@ WhereInfo *sqlite3WhereBegin(
   WhereLevel *pLevel;        /* A single level in pWInfo->a[] */
   int iFrom;                 /* First unused FROM clause element */
   int andFlags;              /* AND-ed combination of all pWC->a[].wtFlags */
+  int ii;                    /* Loop counter */
   sqlite3 *db;               /* Database connection */
 
 
@@ -4751,6 +4762,7 @@ WhereInfo *sqlite3WhereBegin(
   pWInfo->wctrlFlags = wctrlFlags;
   pWInfo->savedNQueryLoop = pParse->nQueryLoop;
   pMaskSet = (WhereMaskSet*)&sWBI.pWC[1];
+  sWBI.a = pWInfo->a;
 
   /* Disable the DISTINCT optimization if SQLITE_DistinctOpt is set via
   ** sqlite3_test_ctrl(SQLITE_TESTCTRL_OPTIMIZATIONS,...) */
@@ -4794,19 +4806,19 @@ WhereInfo *sqlite3WhereBegin(
   ** WHERE_ONETABLE_ONLY flag is set.
   */
   assert( sWBI.pWC->vmask==0 && pMaskSet->n==0 );
-  for(i=0; i<pTabList->nSrc; i++){
-    createMask(pMaskSet, pTabList->a[i].iCursor);
+  for(ii=0; ii<pTabList->nSrc; ii++){
+    createMask(pMaskSet, pTabList->a[ii].iCursor);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-    if( ALWAYS(pTabList->a[i].pTab) && IsVirtual(pTabList->a[i].pTab) ){
-      sWBI.pWC->vmask |= ((Bitmask)1 << i);
+    if( ALWAYS(pTabList->a[ii].pTab) && IsVirtual(pTabList->a[ii].pTab) ){
+      sWBI.pWC->vmask |= ((Bitmask)1 << ii);
     }
 #endif
   }
 #ifndef NDEBUG
   {
     Bitmask toTheLeft = 0;
-    for(i=0; i<pTabList->nSrc; i++){
-      Bitmask m = getMask(pMaskSet, pTabList->a[i].iCursor);
+    for(ii=0; ii<pTabList->nSrc; ii++){
+      Bitmask m = getMask(pMaskSet, pTabList->a[ii].iCursor);
       assert( (m-1)==toTheLeft );
       toTheLeft |= m;
     }
@@ -4847,10 +4859,13 @@ WhereInfo *sqlite3WhereBegin(
   ** This loop also figures out the nesting order of tables in the FROM
   ** clause.
   */
-  notReady = ~(Bitmask)0;
+  sWBI.notValid = ~(Bitmask)0;
+  sWBI.pOrderBy = pOrderBy;
+  sWBI.n = nTabList;
+  sWBI.pDistinct = pDistinct;
   andFlags = ~0;
   WHERETRACE(("*** Optimizer Start ***\n"));
-  for(i=iFrom=0, pLevel=pWInfo->a; i<nTabList; i++, pLevel++){
+  for(sWBI.i=iFrom=0, pLevel=pWInfo->a; sWBI.i<nTabList; sWBI.i++, pLevel++){
     WhereCost bestPlan;         /* Most efficient plan seen so far */
     Index *pIdx;                /* Index for FROM table at pTabItem */
     int j;                      /* For looping over FROM tables */
@@ -4862,7 +4877,7 @@ WhereInfo *sqlite3WhereBegin(
 
     memset(&bestPlan, 0, sizeof(bestPlan));
     bestPlan.rCost = SQLITE_BIG_DBL;
-    WHERETRACE(("*** Begin search for loop %d ***\n", i));
+    WHERETRACE(("*** Begin search for loop %d ***\n", sWBI.i));
 
     /* Loop through the remaining entries in the FROM clause to find the
     ** next nested loop. The loop tests all FROM clause entries
@@ -4878,8 +4893,8 @@ WhereInfo *sqlite3WhereBegin(
     ** by waiting for other tables to run first.  This "optimal" test works
     ** by first assuming that the FROM clause is on the inner loop and finding
     ** its query plan, then checking to see if that query plan uses any
-    ** other FROM clause terms that are notReady.  If no notReady terms are
-    ** used then the "optimal" query plan works.
+    ** other FROM clause terms that are sWBI.notValid.  If no notValid terms
+    ** are used then the "optimal" query plan works.
     **
     ** Note that the WhereCost.nRow parameter for an optimal scan might
     ** not be as small as it would be if the table really were the innermost
@@ -4916,14 +4931,11 @@ WhereInfo *sqlite3WhereBegin(
         doNotReorder =  (sWBI.pSrc->jointype & (JT_LEFT|JT_CROSS))!=0;
         if( j!=iFrom && doNotReorder ) break;
         m = getMask(pMaskSet, sWBI.pSrc->iCursor);
-        if( (m & notReady)==0 ){
+        if( (m & sWBI.notValid)==0 ){
           if( j==iFrom ) iFrom++;
           continue;
         }
-        sWBI.notValid = notReady;
-        sWBI.notReady = (isOptimal ? m : notReady);
-        sWBI.pOrderBy = (i==0) ? pOrderBy : 0;
-        sWBI.pDistinct = (i==0 ? pDistinct : 0);
+        sWBI.notReady = (isOptimal ? m : sWBI.notValid);
         if( sWBI.pSrc->pIndex==0 ) nUnconstrained++;
   
         WHERETRACE(("=== trying table %d with isOptimal=%d ===\n",
@@ -4938,7 +4950,7 @@ WhereInfo *sqlite3WhereBegin(
         {
           bestBtreeIndex(&sWBI);
         }
-        assert( isOptimal || (sWBI.cost.used&notReady)==0 );
+        assert( isOptimal || (sWBI.cost.used&sWBI.notValid)==0 );
 
         /* If an INDEXED BY clause is present, then the plan must use that
         ** index if it uses any index at all */
@@ -4953,7 +4965,8 @@ WhereInfo *sqlite3WhereBegin(
         /* Conditions under which this table becomes the best so far:
         **
         **   (1) The table must not depend on other tables that have not
-        **       yet run.
+        **       yet run.  (In other words, it must not depend on tables
+        **       in inner loops.)
         **
         **   (2) A full-table-scan plan cannot supercede indexed plan unless
         **       the full-table-scan is an "optimal" plan as defined above.
@@ -4970,7 +4983,7 @@ WhereInfo *sqlite3WhereBegin(
         **   (4) The plan cost must be lower than prior plans or else the
         **       cost must be the same and the number of rows must be lower.
         */
-        if( (sWBI.cost.used&notReady)==0                         /* (1) */
+        if( (sWBI.cost.used&sWBI.notValid)==0                    /* (1) */
             && (bestJ<0 || (notIndexed&m)!=0                     /* (2) */
                 || (bestPlan.plan.wsFlags & WHERE_NOT_FULLSCAN)==0
                 || (sWBI.cost.plan.wsFlags & WHERE_NOT_FULLSCAN)!=0)
@@ -4990,7 +5003,7 @@ WhereInfo *sqlite3WhereBegin(
       }
     }
     assert( bestJ>=0 );
-    assert( notReady & getMask(pMaskSet, pTabList->a[bestJ].iCursor) );
+    assert( sWBI.notValid & getMask(pMaskSet, pTabList->a[bestJ].iCursor) );
     WHERETRACE(("*** Optimizer selects table %d for loop %d"
                 " with cost=%g and nRow=%g\n",
                 bestJ, pLevel-pWInfo->a, bestPlan.rCost, bestPlan.plan.nRow));
@@ -5016,7 +5029,7 @@ WhereInfo *sqlite3WhereBegin(
     }else{
       pLevel->iIdxCur = -1;
     }
-    notReady &= ~getMask(pMaskSet, pTabList->a[bestJ].iCursor);
+    sWBI.notValid &= ~getMask(pMaskSet, pTabList->a[bestJ].iCursor);
     pLevel->iFrom = (u8)bestJ;
     if( bestPlan.plan.nRow>=(double)1 ){
       pParse->nQueryLoop *= bestPlan.plan.nRow;
@@ -5069,7 +5082,7 @@ WhereInfo *sqlite3WhereBegin(
   sqlite3CodeVerifySchema(pParse, -1); /* Insert the cookie verifier Goto */
   notReady = ~(Bitmask)0;
   pWInfo->nRowOut = (double)1;
-  for(i=0, pLevel=pWInfo->a; i<nTabList; i++, pLevel++){
+  for(ii=0, pLevel=pWInfo->a; ii<nTabList; ii++, pLevel++){
     Table *pTab;     /* Table to open */
     int iDb;         /* Index of database containing table/index */
     struct SrcList_item *pTabItem;
@@ -5132,10 +5145,10 @@ WhereInfo *sqlite3WhereBegin(
   ** program.
   */
   notReady = ~(Bitmask)0;
-  for(i=0; i<nTabList; i++){
-    pLevel = &pWInfo->a[i];
-    explainOneScan(pParse, pTabList, pLevel, i, pLevel->iFrom, wctrlFlags);
-    notReady = codeOneLoopStart(pWInfo, i, wctrlFlags, notReady);
+  for(ii=0; ii<nTabList; ii++){
+    pLevel = &pWInfo->a[ii];
+    explainOneScan(pParse, pTabList, pLevel, ii, pLevel->iFrom, wctrlFlags);
+    notReady = codeOneLoopStart(pWInfo, ii, wctrlFlags, notReady);
     pWInfo->iContinue = pLevel->addrCont;
   }
 
@@ -5146,13 +5159,13 @@ WhereInfo *sqlite3WhereBegin(
   ** the index is listed as "{}".  If the primary key is used the
   ** index name is '*'.
   */
-  for(i=0; i<nTabList; i++){
+  for(ii=0; ii<nTabList; ii++){
     char *z;
     int n;
     int w;
     struct SrcList_item *pTabItem;
 
-    pLevel = &pWInfo->a[i];
+    pLevel = &pWInfo->a[ii];
     w = pLevel->plan.wsFlags;
     pTabItem = &pTabList->a[pLevel->iFrom];
     z = pTabItem->zAlias;
