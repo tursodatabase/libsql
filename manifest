@@ -1,5 +1,5 @@
-C Remove\san\sunused\ssubfunction\sparameter\sand\san\sobsolete\scomment\sfrom\sthe\nquery\splanner\slogic\sin\swhere.c.
-D 2012-09-24T19:50:00.842
+C Pass\sinformation\saround\sbetween\sthe\smajor\sroutines\sof\sthe\squery\splanner\nusing\sa\ssingle\spointer\sto\sa\sstructure\srather\sthan\sa\slong\slist\sof\sparameters.
+D 2012-09-25T14:29:39.134
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -249,7 +249,7 @@ F src/vtab.c d8020c0a0e8ccc490ca449d7e665311b6e9f3ba9
 F src/wal.c 5acb3e7bbd31f10ba39acad9ce6b399055337a9d
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 40708330a0e9bf79c0ab97109b8014fa04cce858
+F src/where.c 82be1d2f8f27012de0ed9d0977753ed24312b791
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 0be144b453e0622a085fae8665c32f5676708e00
@@ -1016,7 +1016,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 22989f3588531efd555cc29d6c576e7a34b7edc4
-R af274415395e47bec73279dd70f3872e
+P 349a55cd8ba9ce65ebfd987ecfebd1204f7d0a85
+R b0986bef8aa73322a60d8a15dd219873
+T *branch * qp-enhancements
+T *sym-qp-enhancements *
+T -sym-trunk *
 U drh
-Z 2c59ca6ec247c019d5fe7043b4d83355
+Z 6cfa0793222da70bc8fbd646a62c8a2a
