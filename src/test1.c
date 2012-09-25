@@ -5936,12 +5936,11 @@ static int optimization_control(
     { "all",              SQLITE_OptMask        },
     { "query-flattener",  SQLITE_QueryFlattener },
     { "column-cache",     SQLITE_ColumnCache    },
-    { "index-sort",       SQLITE_IndexSort      },
-    { "index-search",     SQLITE_IndexSearch    },
-    { "index-cover",      SQLITE_IndexCover     },
     { "groupby-order",    SQLITE_GroupByOrder   },
     { "factor-constants", SQLITE_FactorOutConst },
     { "real-as-int",      SQLITE_IdxRealAsInt   },
+    { "distinct-opt",     SQLITE_DistinctOpt    },
+    { "cover-idx-scan",   SQLITE_CoverIdxScan   },
   };
 
   if( objc!=4 ){

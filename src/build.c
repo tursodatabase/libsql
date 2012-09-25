@@ -1169,7 +1169,7 @@ void sqlite3AddPrimaryKey(
   pTab->tabFlags |= TF_HasPrimaryKey;
   if( pList==0 ){
     iCol = pTab->nCol - 1;
-    pTab->aCol[iCol].isPrimKey = 1;
+    pTab->aCol[iCol].colFlags |= COLFLAG_PRIMKEY;
   }else{
     for(i=0; i<pList->nExpr; i++){
       for(iCol=0; iCol<pTab->nCol; iCol++){
@@ -1178,7 +1178,7 @@ void sqlite3AddPrimaryKey(
         }
       }
       if( iCol<pTab->nCol ){
-        pTab->aCol[iCol].isPrimKey = 1;
+        pTab->aCol[iCol].colFlags |= COLFLAG_PRIMKEY;
       }
     }
     if( pList->nExpr>1 ) iCol = -1;

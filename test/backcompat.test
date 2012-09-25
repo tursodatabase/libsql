@@ -213,7 +213,9 @@ unset ::incompatible
 #
 do_allbackcompat_test {
   if {[code1 {sqlite3 -version}] >= "3.7.0"
+   && [code1 {set ::sqlite_options(wal)}]
    && [code2 {sqlite3 -version}] >= "3.7.0"
+   && [code2 {set ::sqlite_options(wal)}]
   } {
 
     do_test backcompat-2.1.1 { sql1 {

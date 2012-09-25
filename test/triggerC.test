@@ -222,7 +222,7 @@ foreach {n tdefn rc} {
     execsql  $tdefn
     catchsql {
       INSERT INTO t2 VALUES(10);
-      SELECT * FROM t2;
+      SELECT * FROM t2 ORDER BY rowid;
     }
   } $rc
 }
@@ -547,7 +547,7 @@ foreach {n insert log} {
     eval concat [execsql " 
       DELETE FROM log;
       $insert ; 
-      SELECT * FROM log;
+      SELECT * FROM log ORDER BY rowid;
     "]
   } [join $log " "]
 } 
@@ -584,8 +584,8 @@ foreach {n dml t5g t5} {
     execsql "
       BEGIN;
         $dml ;
-        SELECT * FROM t5g;
-        SELECT * FROM t5;
+        SELECT * FROM t5g ORDER BY rowid;
+        SELECT * FROM t5 ORDER BY rowid;
       ROLLBACK;
     "
   } [concat $t5g $t5]
@@ -611,8 +611,8 @@ foreach {n dml t5g t5} {
     execsql "
       BEGIN;
         $dml ;
-        SELECT * FROM t5g;
-        SELECT * FROM t5;
+        SELECT * FROM t5g ORDER BY rowid;
+        SELECT * FROM t5 ORDER BY rowid;
       ROLLBACK;
     "
   } [concat $t5g $t5]
@@ -633,8 +633,8 @@ foreach {n dml t5g t5} {
     execsql "
       BEGIN;
         $dml ;
-        SELECT * FROM t5g;
-        SELECT * FROM t5;
+        SELECT * FROM t5g ORDER BY rowid;
+        SELECT * FROM t5 ORDER BY rowid;
       ROLLBACK;
     "
   } [concat $t5g $t5]

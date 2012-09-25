@@ -85,10 +85,12 @@ do_test 2.3 { db_write db 1 } {0 4 0}
 do_test 2.4 { db_write db 0 } {0 0 0}
 do_test 2.5 { db_write db 1 } {0 0 0}
 
-do_test 2.6 { 
-  execsql { PRAGMA journal_mode = WAL }
-  db_write db 1
-} {0 1 0}
+ifcapable wal {
+  do_test 2.6 { 
+    execsql { PRAGMA journal_mode = WAL }
+    db_write db 1
+  } {0 1 0}
+}
 do_test 2.7 { 
   execsql { INSERT INTO t1 VALUES(5, randomblob(600)) }
   db_write db

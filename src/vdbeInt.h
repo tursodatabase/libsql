@@ -187,7 +187,9 @@ struct Mem {
 #define MEM_RowSet    0x0020   /* Value is a RowSet object */
 #define MEM_Frame     0x0040   /* Value is a VdbeFrame object */
 #define MEM_Invalid   0x0080   /* Value is undefined */
-#define MEM_TypeMask  0x00ff   /* Mask of type bits */
+#define MEM_Cleared   0x0100   /* NULL set by OP_Null, not from data */
+#define MEM_TypeMask  0x01ff   /* Mask of type bits */
+
 
 /* Whenever Mem contains a valid string or blob representation, one of
 ** the following flags must be set to determine the memory management
