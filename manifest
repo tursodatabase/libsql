@@ -1,5 +1,5 @@
-C Augment\sthe\sWhereBestIdx\sstructure\sto\spass\sdown\sinto\sthe\squery\splanner\s\ninformation\sthat\smight\sbe\sused\sto\sbetter\sdetect\sORDER\sBY\sand\sDISTINCT\noptimizations\sspanning\smultiple\stables\sof\sa\sjoin.
-D 2012-09-25T20:43:35.989
+C Further\srefactoring\sof\sthe\sORDER\sBY\srelated\squery-planning\slogic\sin\sorder\nto\smake\sit\seasier\sto\sextend\sto\ssupport\soptimizing\sout\sORDER\sBY\son\sjoins.\nNo\sactual\sbehavior\schanges,\syet.
+D 2012-09-26T23:17:01.276
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,12 +174,12 @@ F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 9e28280ec98035f31900fdd1db01f86f68ca6c32
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 1fad66b73a69c4004c9969a95b46d1f03390677d
+F src/select.c a91b651652b43a8baaeec0ad13a6a6b290a4d0af
 F src/shell.c 8ee5a3cb502e2d574f97b43972e6c1e275e7bec7
 F src/sqlite.h.in cbe846facaba903654b4136c97e7f57b3ac0bac7
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h 6b17114bb5c6ae30d360aeeef30ab40587afad4e
+F src/sqliteInt.h cbcd2dd649338598a1a773a9adaf9f62e7256852
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -249,7 +249,7 @@ F src/vtab.c d8020c0a0e8ccc490ca449d7e665311b6e9f3ba9
 F src/wal.c 5acb3e7bbd31f10ba39acad9ce6b399055337a9d
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c e75e67f0631182be4ff0d325c5a1e4c4ec3d0962
+F src/where.c 59b852d51d86fd3bf5935067994114bf88affbef
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 0be144b453e0622a085fae8665c32f5676708e00
@@ -1016,7 +1016,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 1104d42e104d561ce60d05d158acfe499ee9fd50
-R 660ef52f8cc671ae827c548793cfd963
+P 4226e51ff837f0ffe16355491a655d919d13488e
+R 82e96539fb8ddcfab6615c786a34a1ea
 U drh
-Z 10b5de991bc34ec524f2e3adc126c5c7
+Z e46432508017f3912d4e7cd1bd8daf63

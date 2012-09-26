@@ -4506,6 +4506,7 @@ int sqlite3Select(
           goto select_end;
         }
         updateAccumulator(pParse, &sAggInfo);
+        assert( pMinMax==0 || pMinMax->nExpr==1 );
         if( pWInfo->nOBSat>0 ){
           sqlite3VdbeAddOp2(v, OP_Goto, 0, pWInfo->iBreak);
           VdbeComment((v, "%s() by index",

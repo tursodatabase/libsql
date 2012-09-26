@@ -285,7 +285,7 @@ struct WhereBestIdx {
   ExprList *pDistinct;            /* The select-list if query is DISTINCT */
   sqlite3_index_info **ppIdxInfo; /* Index information passed to xBestIndex */
   int i, n;                       /* Which loop is being coded; # of loops */
-  WhereLevel *a;                  /* Info about outer loops */
+  WhereLevel *aLevel;             /* Info about outer loops */
   WhereCost cost;                 /* Lowest cost query plan */
 };
 
@@ -1431,22 +1431,18 @@ static void exprAnalyze(
 }
 
 /*
-** Return TRUE if any of the expressions in pList->a[iFirst...] contain
-** a reference to any table other than the iBase table.
+** Return TRUE if the given index is UNIQUE and all columns past the
+** first nSkip columns are NOT NULL.
 */
-static int referencesOtherTables(
-  ExprList *pList,          /* Search expressions in ths list */
-  WhereMaskSet *pMaskSet,   /* Mapping from tables to bitmaps */
-  int iFirst,               /* Be searching with the iFirst-th expression */
-  int iBase                 /* Ignore references to this table */
-){
-  Bitmask allowed = ~getMask(pMaskSet, iBase);
-  while( iFirst<pList->nExpr ){
-    if( (exprTableUsage(pMaskSet, pList->a[iFirst++].pExpr)&allowed)!=0 ){
-      return 1;
-    }
+static int indexIsUniqueNotNull(Index *pIdx, int nSkip){
+  Table *pTab = pIdx->pTable;
+  int i;
+  if( pIdx->onError==OE_None ) return 0;
+  for(i=nSkip; i<pIdx->nColumn; i++){
+    int j = pIdx->aiColumn[i];
+    if( j>=0 && pTab->aCol[j].notNull==0 ) return 0;
   }
-  return 0;
+  return 1;
 }
 
 /*
@@ -1612,43 +1608,54 @@ static int isDistinctRedundant(
 
 /*
 ** This routine decides if pIdx can be used to satisfy the ORDER BY
-** clause.  If it can, it returns 1.  If pIdx cannot satisfy the
-** ORDER BY clause, this routine returns 0.
+** clause, either in whole or in part.  The return value is the 
+** cumulative number of terms in the ORDER BY clause that are satisfied
+** by the index pIdx and other indices in outer loops.
 **
-** pOrderBy is an ORDER BY clause from a SELECT statement.  pTab is the
-** left-most table in the FROM clause of that same SELECT statement and
-** the table has a cursor number of "base".  pIdx is an index on pTab.
+** The table being queried has a cursor number of "base".  pIdx is the
+** index that is postulated for use to access the table.
 **
 ** nEqCol is the number of columns of pIdx that are used as equality
-** constraints.  Any of these columns may be missing from the ORDER BY
-** clause and the match can still be a success.
+** constraints and where the other side of the == is an ordered column
+** or constant.  An "order column" in the previous sentence means a column
+** in table from an outer loop whose values will always appear in the 
+** correct order due to othre index, or because the outer loop generates
+** a unique result.  Any of the first nEqCol columns of pIdx may be missing
+** from the ORDER BY clause and the match can still be a success.
 **
-** All terms of the ORDER BY that match against the index must be either
-** ASC or DESC.  (Terms of the ORDER BY clause past the end of a UNIQUE
-** index do not need to satisfy this constraint.)  The *pbRev value is
-** set to 1 if the ORDER BY clause is all DESC and it is set to 0 if
-** the ORDER BY clause is all ASC.
+** The *pbRev value is set to 0 order 1 depending on whether or not
+** pIdx should be run in the forward order or in reverse order.
 */
 static int isSortingIndex(
-  Parse *pParse,          /* Parsing context */
-  WhereMaskSet *pMaskSet, /* Mapping from table cursor numbers to bitmaps */
-  Index *pIdx,            /* The index we are testing */
-  int base,               /* Cursor number for the table to be sorted */
-  ExprList *pOrderBy,     /* The ORDER BY clause */
-  int nEqCol,             /* Number of index columns with == constraints */
-  int wsFlags,            /* Index usages flags */
-  int *pbRev              /* Set to 1 if ORDER BY is DESC */
+  WhereBestIdx *p,    /* Best index search context */
+  Index *pIdx,        /* The index we are testing */
+  int base,           /* Cursor number for the table to be sorted */
+  int nEqCol,         /* Number of index columns with ordered == constraints */
+  int wsFlags,        /* Index usages flags */
+  int bOuterRev,      /* True if outer loops scan in reverse order */
+  int *pbRev          /* Set to 1 for reverse-order scan of pIdx */
 ){
-  int i, j;                       /* Loop counters */
-  int sortOrder = 0;              /* XOR of index and ORDER BY sort direction */
-  int nTerm;                      /* Number of ORDER BY terms */
-  struct ExprList_item *pTerm;    /* A term of the ORDER BY clause */
-  sqlite3 *db = pParse->db;
+  int i;                        /* Number of pIdx terms used */
+  int j;                        /* Number of ORDER BY terms satisfied */
+  int sortOrder = 0;            /* XOR of index and ORDER BY sort direction */
+  int nTerm;                    /* Number of ORDER BY terms */
+  struct ExprList_item *pTerm;  /* A term of the ORDER BY clause */
+  ExprList *pOrderBy;           /* The ORDER BY clause */
+  Parse *pParse = p->pParse;    /* Parser context */
+  sqlite3 *db = pParse->db;     /* Database connection */
+  int nPriorSat;                /* ORDER BY terms satisfied by outer loops */
+  int seenRowid = 0;            /* True if an ORDER BY rowid term is seen */
 
-  if( !pOrderBy ) return 0;
-  if( wsFlags & WHERE_COLUMN_IN ) return 0;
-  if( pIdx->bUnordered ) return 0;
-
+  if( p->i==0 ){
+    nPriorSat = 0;
+  }else{
+    nPriorSat = p->aLevel[p->i-1].plan.nOBSat;
+  }
+  if( p->i>0 && nEqCol==0 /*&& !allOuterLoopsUnique(p)*/ ) return nPriorSat;
+  pOrderBy = p->pOrderBy;
+  if( !pOrderBy ) return nPriorSat;
+  if( wsFlags & WHERE_COLUMN_IN ) return nPriorSat;
+  if( pIdx->bUnordered ) return nPriorSat;
   nTerm = pOrderBy->nExpr;
   assert( nTerm>0 );
 
@@ -1665,7 +1672,7 @@ static int isSortingIndex(
   ** of the index is also allowed to match against the ORDER BY
   ** clause.
   */
-  for(i=j=0, pTerm=pOrderBy->a; j<nTerm && i<=pIdx->nColumn; i++){
+  for(i=0,j=nPriorSat,pTerm=&pOrderBy->a[j]; j<nTerm && i<=pIdx->nColumn; i++){
     Expr *pExpr;       /* The expression of the ORDER BY pTerm */
     CollSeq *pColl;    /* The collating sequence of pExpr */
     int termSortOrder; /* Sort order for this term */
@@ -1709,7 +1716,7 @@ static int isSortingIndex(
         /* If an index column fails to match and is not constrained by ==
         ** then the index cannot satisfy the ORDER BY constraint.
         */
-        return 0;
+        return nPriorSat;
       }
     }
     assert( pIdx->aSortOrder!=0 || iColumn==-1 );
@@ -1720,53 +1727,38 @@ static int isSortingIndex(
       if( termSortOrder!=sortOrder ){
         /* Indices can only be used if all ORDER BY terms past the
         ** equality constraints are all either DESC or ASC. */
-        return 0;
+        break;
       }
     }else{
       sortOrder = termSortOrder;
     }
     j++;
     pTerm++;
-    if( iColumn<0 && !referencesOtherTables(pOrderBy, pMaskSet, j, base) ){
-      /* If the indexed column is the primary key and everything matches
-      ** so far and none of the ORDER BY terms to the right reference other
-      ** tables in the join, then we are assured that the index can be used 
-      ** to sort because the primary key is unique and so none of the other
-      ** columns will make any difference
-      */
-      j = nTerm;
+    if( iColumn<0 ){
+      seenRowid = 1;
+      break;
     }
   }
+  *pbRev = bOuterRev ^ sortOrder;
 
-  *pbRev = sortOrder!=0;
-  if( j>=nTerm ){
-    /* All terms of the ORDER BY clause are covered by this index so
-    ** this index can be used for sorting. */
-    return 1;
-  }
-  if( pIdx->onError!=OE_None && i==pIdx->nColumn
-      && (wsFlags & WHERE_COLUMN_NULL)==0
-      && !referencesOtherTables(pOrderBy, pMaskSet, j, base) 
+  /* If there was an "ORDER BY rowid" term that matched, or it is only
+  ** possible for a single row from this table to match, then skip over
+  ** any additional ORDER BY terms dealing with this table.
+  */
+  if( seenRowid ||
+     (   (wsFlags & WHERE_COLUMN_NULL)==0
+      && i>=pIdx->nColumn
+      && indexIsUniqueNotNull(pIdx, nEqCol)
+     )
   ){
-    Column *aCol = pIdx->pTable->aCol;
-
-    /* All terms of this index match some prefix of the ORDER BY clause,
-    ** the index is UNIQUE, and no terms on the tail of the ORDER BY
-    ** refer to other tables in a join. So, assuming that the index entries
-    ** visited contain no NULL values, then this index delivers rows in
-    ** the required order.
-    **
-    ** It is not possible for any of the first nEqCol index fields to be
-    ** NULL (since the corresponding "=" operator in the WHERE clause would 
-    ** not be true). So if all remaining index columns have NOT NULL 
-    ** constaints attached to them, we can be confident that the visited
-    ** index entries are free of NULLs.  */
-    for(i=nEqCol; i<pIdx->nColumn; i++){
-      if( aCol[pIdx->aiColumn[i]].notNull==0 ) break;
+    /* Advance j over additional ORDER BY terms associated with base */
+    WhereMaskSet *pMS = p->pWC->pMaskSet;
+    Bitmask m = ~getMask(pMS, base);
+    while( j<nTerm && (exprTableUsage(pMS, pOrderBy->a[j].pExpr)&m)==0 ){
+      j++;
     }
-    return (i==pIdx->nColumn);
   }
-  return 0;
+  return j;
 }
 
 /*
@@ -2871,6 +2863,22 @@ static int whereInScanEst(
 }
 #endif /* defined(SQLITE_ENABLE_STAT3) */
 
+/*
+** pTerm is an == constraint.  Check to see if the other side of
+** the == is a constant or a value that is guaranteed to be ordered
+** by outer loops.  Return 1 if pTerm is ordered, and 0 if not.
+*/
+static int isOrderedTerm(WhereBestIdx *p, WhereTerm *pTerm, int *pbRev){
+  if( p->i==0 ){
+    return 1;  /* All == are ordered in the outer loop */
+  }
+
+
+
+  /* If we cannot prove that the constraint is ordered, assume it is not */
+  return 0;
+}
+
 
 /*
 ** Find the best query plan for accessing a particular table.  Write the
@@ -2968,7 +2976,7 @@ static void bestBtreeIndex(WhereBestIdx *p){
     double cost;                /* Cost of using pProbe */
     double nRow;                /* Estimated number of rows in result set */
     double log10N = (double)1;  /* base-10 logarithm of nRow (inexact) */
-    int rev;                    /* True to scan in reverse order */
+    int bRev = 2;               /* 0=forward scan.  1=reverse.  2=undecided */
     int wsFlags = 0;
     Bitmask used = 0;
 
@@ -3001,6 +3009,10 @@ static void bestBtreeIndex(WhereBestIdx *p){
     **    the sub-select is assumed to return 25 rows for the purposes of 
     **    determining nInMul.
     **
+    **  nOrdered:
+    **    The number of equality terms that are constrainted by outer loop
+    **    variables that are well-ordered.
+    **
     **  bInEst:  
     **    Set to true if there was at least one "x IN (SELECT ...)" term used 
     **    in determining the value of nInMul.  Note that the RHS of the
@@ -3019,6 +3031,10 @@ static void bestBtreeIndex(WhereBestIdx *p){
     **    external sort (i.e. scanning the index being evaluated will not 
     **    correctly order records).
     **
+    **  bDistinct:
+    **    Boolean. True if there is a DISTINCT clause that will require an 
+    **    external btree.
+    **
     **  bLookup: 
     **    Boolean. True if a table lookup is required for each index entry
     **    visited.  In other words, true if this is not a covering index.
@@ -3035,6 +3051,7 @@ static void bestBtreeIndex(WhereBestIdx *p){
     **             SELECT a, b, c FROM tbl WHERE a = 1;
     */
     int nEq;                      /* Number of == or IN terms matching index */
+    int nOrdered;                 /* Number of ordered terms matching index */
     int bInEst = 0;               /* True if "x IN (SELECT...)" seen */
     int nInMul = 1;               /* Number of distinct equalities to lookup */
     double rangeDiv = (double)1;  /* Estimated reduction in search space */
@@ -3042,11 +3059,14 @@ static void bestBtreeIndex(WhereBestIdx *p){
     int bSort;                    /* True if external sort required */
     int bDist;                    /* True if index cannot help with DISTINCT */
     int bLookup = 0;              /* True if not a covering index */
+    int nOBSat = 0;               /* Number of ORDER BY terms satisfied */
+    int nOrderBy;                 /* Number of ORDER BY terms */
     WhereTerm *pTerm;             /* A single term of the WHERE clause */
 #ifdef SQLITE_ENABLE_STAT3
     WhereTerm *pFirstTerm = 0;    /* First term matching the index */
 #endif
 
+    nOrderBy = p->pOrderBy ? p->pOrderBy->nExpr : 0;
     if( (p->i) > 0 ){
       bSort = 0;
       bDist = 0;
@@ -3056,7 +3076,7 @@ static void bestBtreeIndex(WhereBestIdx *p){
     }
 
     /* Determine the values of nEq and nInMul */
-    for(nEq=0; nEq<pProbe->nColumn; nEq++){
+    for(nEq=nOrdered=0; nEq<pProbe->nColumn; nEq++){
       int j = pProbe->aiColumn[nEq];
       pTerm = findTerm(pWC, iCur, j, p->notReady, eqTermMask, pIdx);
       if( pTerm==0 ) break;
@@ -3075,6 +3095,8 @@ static void bestBtreeIndex(WhereBestIdx *p){
         }
       }else if( pTerm->eOperator & WO_ISNULL ){
         wsFlags |= WHERE_COLUMN_NULL;
+      }else if( bSort && nEq==nOrdered && isOrderedTerm(p, pTerm, &bRev) ){
+        nOrdered++;
       }
 #ifdef SQLITE_ENABLE_STAT3
       if( nEq==0 && pProbe->aSample ) pFirstTerm = pTerm;
@@ -3124,12 +3146,18 @@ static void bestBtreeIndex(WhereBestIdx *p){
     ** naturally scan rows in the required order, set the appropriate flags
     ** in wsFlags. Otherwise, if there is an ORDER BY clause but the index
     ** will scan rows in a different order, set the bSort variable.  */
-    if( bSort && isSortingIndex(
-          pParse, pWC->pMaskSet, pProbe, iCur, p->pOrderBy, nEq, wsFlags, &rev)
-    ){
-      bSort = 0;
-      wsFlags |= WHERE_ROWID_RANGE|WHERE_COLUMN_RANGE|WHERE_ORDERBY;
-      wsFlags |= (rev ? WHERE_REVERSE : 0);
+    assert( bRev>=0 && bRev<=2 );
+    if( bSort ){
+      testcase( bRev==0 );
+      testcase( bRev==1 );
+      testcase( bRev==2 );
+      nOBSat = isSortingIndex(p, pProbe, iCur, nOrdered,
+                              wsFlags, bRev&1, &bRev);
+      if( nOrderBy==nOBSat ){
+        bSort = 0;
+        wsFlags |= WHERE_ROWID_RANGE|WHERE_COLUMN_RANGE|WHERE_ORDERBY;
+        wsFlags |= (bRev==1 ? WHERE_REVERSE : 0);
+      }
     }
 
     /* If there is a DISTINCT qualifier and this index will scan rows in
@@ -3272,7 +3300,7 @@ static void bestBtreeIndex(WhereBestIdx *p){
     ** difference and select C of 3.0.
     */
     if( bSort ){
-      cost += nRow*estLog(nRow)*3;
+      cost += nRow*estLog(nRow*(nOrderBy - nOBSat)/nOrderBy)*3;
     }
     if( bDist ){
       cost += nRow*estLog(nRow)*3;
@@ -3341,10 +3369,11 @@ static void bestBtreeIndex(WhereBestIdx *p){
 
     WHERETRACE((
       "%s(%s): nEq=%d nInMul=%d rangeDiv=%d bSort=%d bLookup=%d wsFlags=0x%x\n"
-      "         notReady=0x%llx log10N=%.1f nRow=%.1f cost=%.1f used=0x%llx\n",
+      "         notReady=0x%llx log10N=%.1f nRow=%.1f cost=%.1f used=0x%llx\n"
+      "         nOrdered=%d nOBSat=%d\n",
       pSrc->pTab->zName, (pIdx ? pIdx->zName : "ipk"), 
       nEq, nInMul, (int)rangeDiv, bSort, bLookup, wsFlags,
-      p->notReady, log10N, nRow, cost, used
+      p->notReady, log10N, nRow, cost, used, nOrdered, nOBSat
     ));
 
     /* If this index is the best we have seen so far, then record this
@@ -3358,6 +3387,7 @@ static void bestBtreeIndex(WhereBestIdx *p){
       p->cost.plan.nRow = nRow;
       p->cost.plan.wsFlags = (wsFlags&wsFlagMask);
       p->cost.plan.nEq = nEq;
+      p->cost.plan.nOBSat = nOBSat;
       p->cost.plan.u.pIdx = pIdx;
     }
 
@@ -4762,7 +4792,7 @@ WhereInfo *sqlite3WhereBegin(
   pWInfo->wctrlFlags = wctrlFlags;
   pWInfo->savedNQueryLoop = pParse->nQueryLoop;
   pMaskSet = (WhereMaskSet*)&sWBI.pWC[1];
-  sWBI.a = pWInfo->a;
+  sWBI.aLevel = pWInfo->a;
 
   /* Disable the DISTINCT optimization if SQLITE_DistinctOpt is set via
   ** sqlite3_test_ctrl(SQLITE_TESTCTRL_OPTIMIZATIONS,...) */

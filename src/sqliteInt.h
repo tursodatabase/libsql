@@ -1906,7 +1906,8 @@ struct SrcList {
 */
 struct WherePlan {
   u32 wsFlags;                   /* WHERE_* flags that describe the strategy */
-  u32 nEq;                       /* Number of == constraints */
+  u16 nEq;                       /* Number of == constraints */
+  u16 nOBSat;                    /* Number of ORDER BY terms satisfied */
   double nRow;                   /* Estimated number of rows (for EQP) */
   union {
     Index *pIdx;                   /* Index when WHERE_INDEXED is true */
