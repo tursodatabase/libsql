@@ -1,9 +1,9 @@
-C Merge\sthe\s"PRAGMA\sbusy_timeout"\schange\sinto\strunk.
-D 2012-09-27T12:11:25.613
+C Modify\sgeneration\sof\sresource\sheader\sfile\sfor\sMSVC\sso\sthat\sit\scan\swork\sfrom\soutside\sthe\sworking\sdirectory.
+D 2012-09-27T21:03:53.180
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc d97ae1025a1b7bb2b365b135fc0aa25247e736b2
+F Makefile.msc 1102ce2c75965b9b5534efce380007ffcb08c52e
 F Makefile.vxworks b18ad88e9a8c6a001f5cf4a389116a4f1a7ab45f
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION edab4af5a4623f8198833ea481ce98ab53750a8d
@@ -1016,7 +1016,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 349a55cd8ba9ce65ebfd987ecfebd1204f7d0a85 43e474d3e9364e6ed417db06e98faa3e5bc2eb26
-R 5a669a0b1c46b5fd25601e00205c57db
-U drh
-Z 91e60aa7644657f70b6c3a01cca7ec80
+P 1a679a1ef3b4f2d898c8cd83432d2b4c12bd93fa
+R 7d7f62653f839631b2ae10b7e4925e7c
+U mistachkin
+Z 55006677d3f8e37d2f9043a0e5e0a385
