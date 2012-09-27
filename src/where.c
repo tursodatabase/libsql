@@ -3067,13 +3067,8 @@ static void bestBtreeIndex(WhereBestIdx *p){
 #endif
 
     nOrderBy = p->pOrderBy ? p->pOrderBy->nExpr : 0;
-    if( (p->i) > 0 ){
-      bSort = 0;
-      bDist = 0;
-    }else{
-      bSort = p->pOrderBy!=0;
-      bDist = p->pDistinct!=0;
-    }
+    bSort = nOrderBy>0 && (p->i==0 || p->aLevel[p->i-1].plan.nOBSat<nOrderBy);
+    bDist = p->i==0 && p->pDistinct!=0;
 
     /* Determine the values of nEq and nInMul */
     for(nEq=nOrdered=0; nEq<pProbe->nColumn; nEq++){
@@ -3369,8 +3364,8 @@ static void bestBtreeIndex(WhereBestIdx *p){
 
     WHERETRACE((
       "%s(%s): nEq=%d nInMul=%d rangeDiv=%d bSort=%d bLookup=%d wsFlags=0x%x\n"
-      "         notReady=0x%llx log10N=%.1f nRow=%.1f cost=%.1f used=0x%llx\n"
-      "         nOrdered=%d nOBSat=%d\n",
+      "         notReady=0x%llx log10N=%.1f nRow=%.1f cost=%.1f\n"
+      "         used=0x%llx nOrdered=%d nOBSat=%d\n",
       pSrc->pTab->zName, (pIdx ? pIdx->zName : "ipk"), 
       nEq, nInMul, (int)rangeDiv, bSort, bLookup, wsFlags,
       p->notReady, log10N, nRow, cost, used, nOrdered, nOBSat
@@ -5024,8 +5019,9 @@ WhereInfo *sqlite3WhereBegin(
                  && sWBI.cost.plan.nRow<bestPlan.plan.nRow))
         ){
           WHERETRACE(("=== table %d is best so far"
-                      " with cost=%g and nRow=%g\n",
-                      j, sWBI.cost.rCost, sWBI.cost.plan.nRow));
+                      " with cost=%.1f, nRow=%.1f, nOBSat=%d\n",
+                      j, sWBI.cost.rCost, sWBI.cost.plan.nRow,
+                      sWBI.cost.plan.nOBSat));
           bestPlan = sWBI.cost;
           bestJ = j;
         }
@@ -5035,8 +5031,9 @@ WhereInfo *sqlite3WhereBegin(
     assert( bestJ>=0 );
     assert( sWBI.notValid & getMask(pMaskSet, pTabList->a[bestJ].iCursor) );
     WHERETRACE(("*** Optimizer selects table %d for loop %d"
-                " with cost=%g and nRow=%g\n",
-                bestJ, pLevel-pWInfo->a, bestPlan.rCost, bestPlan.plan.nRow));
+                " with cost=%.1f, nRow=%.1f, nOBSat=%d\n",
+                bestJ, pLevel-pWInfo->a, bestPlan.rCost, bestPlan.plan.nRow,
+                bestPlan.plan.nOBSat));
     if( (bestPlan.plan.wsFlags & WHERE_ORDERBY)!=0 ){
       pWInfo->nOBSat = pOrderBy->nExpr;
     }
