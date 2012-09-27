@@ -1121,6 +1121,7 @@ int sqlite3_busy_handler(
   db->busyHandler.xFunc = xBusy;
   db->busyHandler.pArg = pArg;
   db->busyHandler.nBusy = 0;
+  db->busyTimeout = 0;
   sqlite3_mutex_leave(db->mutex);
   return SQLITE_OK;
 }
@@ -1158,8 +1159,8 @@ void sqlite3_progress_handler(
 */
 int sqlite3_busy_timeout(sqlite3 *db, int ms){
   if( ms>0 ){
-    db->busyTimeout = ms;
     sqlite3_busy_handler(db, sqliteDefaultBusyCallback, (void*)db);
+    db->busyTimeout = ms;
   }else{
     sqlite3_busy_handler(db, 0, 0);
   }

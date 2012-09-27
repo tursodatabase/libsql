@@ -1,5 +1,5 @@
-C Remove\san\sunused\ssubfunction\sparameter\sand\san\sobsolete\scomment\sfrom\sthe\nquery\splanner\slogic\sin\swhere.c.
-D 2012-09-24T19:50:00.842
+C Merge\sthe\s"PRAGMA\sbusy_timeout"\schange\sinto\strunk.
+D 2012-09-27T12:11:25.613
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -143,7 +143,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
 F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
-F src/main.c 97d13e749ae84fe62238a5940c5b46b2b22cd369
+F src/main.c 46c1587731380919b00f375a829e1a19f89282e8
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
@@ -168,7 +168,7 @@ F src/parse.y f29df90bd3adc64b33114ab1de9fb7768fcf2099
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h 1b5dcc3dc8103d03e625b177023ee67764fa6b7c
 F src/pcache1.c 9fd22671c270b35131ef480bbc00392b8b5f8ab9
-F src/pragma.c 44304a69ae1486d7c3fd2d3bdd52cb555398a347
+F src/pragma.c 7f5a0fa6dead752d9af3a1e1d16bace81d22ef95
 F src/prepare.c 931ad0d852a0df48f79adcba6ce79ca5f475625c
 F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -572,7 +572,7 @@ F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/limit.test 2db7b3b34fb925b8e847d583d2eb67531d0ce67e
 F test/loadext.test 2b5e249c51c986a5aff1f0950cf7ba30976c8f22
 F test/loadext2.test 0bcaeb4d81cd5b6e883fdfea3c1bdbe1f173cbca
-F test/lock.test db74fdf5a73bad29ab3d862ea78bf1068972cc1d
+F test/lock.test 87af515b0c4cf928576d0f89946d67d7c265dfb4
 F test/lock2.test 5242d8ac4e2d59c403aebff606af449b455aceff
 F test/lock3.test f271375930711ae044080f4fe6d6eda930870d00
 F test/lock4.test e175ae13865bc87680607563bafba21f31a26f12
@@ -1016,7 +1016,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 22989f3588531efd555cc29d6c576e7a34b7edc4
-R af274415395e47bec73279dd70f3872e
+P 349a55cd8ba9ce65ebfd987ecfebd1204f7d0a85 43e474d3e9364e6ed417db06e98faa3e5bc2eb26
+R 5a669a0b1c46b5fd25601e00205c57db
 U drh
-Z 2c59ca6ec247c019d5fe7043b4d83355
+Z 91e60aa7644657f70b6c3a01cca7ec80
