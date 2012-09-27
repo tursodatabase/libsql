@@ -5941,7 +5941,6 @@ static int optimization_control(
     { "real-as-int",      SQLITE_IdxRealAsInt   },
     { "distinct-opt",     SQLITE_DistinctOpt    },
     { "cover-idx-scan",   SQLITE_CoverIdxScan   },
-    { "order-by-idx",     SQLITE_OrderByIdx     },
     { "order-by-idx-join",SQLITE_OrderByIdxJoin },
   };
 

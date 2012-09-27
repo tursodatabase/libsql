@@ -389,7 +389,7 @@ ifcapable subquery {
       SELECT a FROM collate4t1 WHERE a IN (SELECT * FROM collate4t2)
        ORDER BY rowid
     }
-  } {a A 5}
+  } {a A 6}
   do_test collate4-2.1.8 {
     count {
       SELECT a FROM collate4t1 WHERE a IN ('z', 'a');

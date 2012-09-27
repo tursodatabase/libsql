@@ -827,7 +827,7 @@ struct sqlite3 {
   unsigned int openFlags;       /* Flags passed to sqlite3_vfs.xOpen() */
   int errCode;                  /* Most recent error code (SQLITE_*) */
   int errMask;                  /* & result codes with this before returning */
-  u16 dbOptFlags;               /* Flags to enable/disable optimizations */
+  u8 dbOptFlags;                /* Flags to enable/disable optimizations */
   u8 autoCommit;                /* The auto-commit flag. */
   u8 temp_store;                /* 1: file 2: memory 0: default */
   u8 mallocFailed;              /* True if we have seen a malloc failure */
@@ -971,9 +971,8 @@ struct sqlite3 {
 #define SQLITE_IdxRealAsInt   0x0010   /* Store REAL as INT in indices */
 #define SQLITE_DistinctOpt    0x0020   /* DISTINCT using indexes */
 #define SQLITE_CoverIdxScan   0x0040   /* Covering index scans */
-#define SQLITE_OrderByIdx     0x0180   /* ORDER BY using indices */
-#define SQLITE_OrderByIdxJoin 0x0100   /* ORDER BY of joins via index */
-#define SQLITE_AllOpts        0x01ff   /* All optimizations */
+#define SQLITE_OrderByIdxJoin 0x0080   /* ORDER BY of joins via index */
+#define SQLITE_AllOpts        0x00ff   /* All optimizations */
 
 /*
 ** Macros for testing whether or not optimizations are enabled or disabled.

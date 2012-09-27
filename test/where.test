@@ -383,7 +383,7 @@ ifcapable subquery {
     count {
       SELECT * FROM t1 WHERE w IN (-1,1,2,3) order by 1;
     }
-  } {1 0 4 2 1 9 3 1 16 13}
+  } {1 0 4 2 1 9 3 1 16 14}
   do_test where-5.4 {
     count {
       SELECT * FROM t1 WHERE w+0 IN (-1,1,2,3) order by 1;

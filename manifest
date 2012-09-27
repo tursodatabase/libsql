@@ -1,5 +1,5 @@
-C More\stest\scases\san\sbug\sfixes\sfor\sthe\sORDER\sBY\soptimization\sof\sjoins.\s\sAll\nveryquick\stests\snow\spass.
-D 2012-09-27T19:53:38.142
+C Fix\ssome\scorner\scase\sbehavior\sin\sthe\snew\sORDER\sBY\soptimization\slogic.\nRemove\sthe\sSQLITE_OrderByIdx\sbit\sfrom\sthe\s\nSQLITE_TESTCTRL_OPTIMIZATIONS\smask,\ssince\senabling\sit\scaused\smany\nTH3\stests\sto\sfail\swhen\sthe\sNO_OPT\sconfiguration\sparameter\swas\sengaged,\nand\ssince\sthere\sreally\sisn't\sany\sneed\sto\sturn\sthat\soptimization\soff.\nThe\sSQLITE_OrderByIdxJoin\sbit\sremains.
+D 2012-09-27T23:27:23.679
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -179,12 +179,12 @@ F src/shell.c 8ee5a3cb502e2d574f97b43972e6c1e275e7bec7
 F src/sqlite.h.in cbe846facaba903654b4136c97e7f57b3ac0bac7
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h 6ad55f4efbd1bb209711032e40b7c81c8855d634
+F src/sqliteInt.h c29395d6e68cfbcb2661787ae4820e5e256c916a
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c e4de2458b3ef38fdd0498bc4e5ea5367a241b0f3
-F src/test1.c 9000293bfdcd67de05bf91d257343392c4b194f4
+F src/test1.c 0354b555639c92d2a63c0ad4e74ed152ba47e604
 F src/test2.c 4178056dd1e7d70f954ad8a1e3edb71a2a784daf
 F src/test3.c 3c3c2407fa6ec7a19e24ae23f7cb439d0275a60d
 F src/test4.c bf9fa9bece01de08e6f5e02314e4af5c13590dfa
@@ -249,7 +249,7 @@ F src/vtab.c d8020c0a0e8ccc490ca449d7e665311b6e9f3ba9
 F src/wal.c 5acb3e7bbd31f10ba39acad9ce6b399055337a9d
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c cd047c1223f6364f869d44b7d3941a687de7fcb6
+F src/where.c d836df3a2096c41c39e48ab5636f09f94ba02676
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 0be144b453e0622a085fae8665c32f5676708e00
@@ -324,7 +324,7 @@ F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
 F test/collate1.test e3eaa48c21e150814be1a7b852d2a8af24458d04
 F test/collate2.test 04cebe4a033be319d6ddbb3bbc69464e01700b49
 F test/collate3.test d28d2cfab2c3a3d4628ae4b2b7afc9965daa3b4c
-F test/collate4.test 27adc324b58ec367bdd0bc6baab628af5129e9f1
+F test/collate4.test d37682293d3c32223dec2e6afdeaf9de18415248
 F test/collate5.test 65d928034d30d2d263a80f6359f7549ee1598ec6
 F test/collate6.test 8be65a182abaac8011a622131486dafb8076e907
 F test/collate7.test 8ec29d98f3ee4ccebce6e16ce3863fb6b8c7b868
@@ -955,7 +955,7 @@ F test/walro.test a31deb621033442a76c3a61e44929250d06f81b1
 F test/walshared.test 6dda2293880c300baf5d791c307f653094585761
 F test/walslow.test e7be6d9888f83aa5d3d3c7c08aa9b5c28b93609a
 F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
-F test/where.test ea9659ff6e31681d0cdaf964747139cb10808200
+F test/where.test a6bfb5a29286811d798d326a8f1153a58c0fb2bd
 F test/where2.test 43d4becaf5a5df854e6c21d624a1cb84c6904554
 F test/where3.test 667e75642102c97a00bf9b23d3cb267db321d006
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
@@ -1017,7 +1017,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 75cda864ededb6dc0f84bd52ed3311753a58e351
-R 2ac4d1c44b199e10f1d07ecdc3868045
+P 0d573320057b0903a5589cabfb1b1ece1c57958e
+R 346b48b15f539e2a05bf762bef6378fa
 U drh
-Z 9df007fa9fa34b8089a8009c6ca9320b
+Z 489ee88372e320839eda2ae45521e844

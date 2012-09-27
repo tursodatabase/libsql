@@ -1647,7 +1647,6 @@ static int isSortingIndex(
   int seenRowid = 0;            /* True if an ORDER BY rowid term is seen */
   int nEqOneRow;                /* Idx columns that ref unique values */
 
-  if( OptimizationDisabled(db, SQLITE_OrderByIdx) ) return 0;
   if( p->i==0 ){
     nPriorSat = 0;
     nEqOneRow = nEqCol;
@@ -3154,6 +3153,7 @@ static void bestBtreeIndex(WhereBestIdx *p){
         }
       }else if( pTerm->eOperator & WO_ISNULL ){
         wsFlags |= WHERE_COLUMN_NULL;
+        if( nEq==nOrdered ) nOrdered++;
       }else if( bSort && nEq==nOrdered && isOrderedTerm(p, pTerm, &bRev) ){
         nOrdered++;
       }
@@ -3216,7 +3216,7 @@ static void bestBtreeIndex(WhereBestIdx *p){
         bSort = 0;
         wsFlags |= WHERE_ROWID_RANGE|WHERE_COLUMN_RANGE|WHERE_ORDERBY;
       }
-      if( bRev ) wsFlags |= WHERE_REVERSE;
+      if( bRev & 1 ) wsFlags |= WHERE_REVERSE;
     }
 
     /* If there is a DISTINCT qualifier and this index will scan rows in
