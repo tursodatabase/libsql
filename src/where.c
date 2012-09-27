@@ -2883,16 +2883,27 @@ static int isOrderedColumn(WhereBestIdx *p, int iTab, int iCol, int *pbRev){
     if( pLevel->iTabCur!=iTab ) continue;
     if( (pLevel->plan.wsFlags & WHERE_INDEXED)!=0 ){
       pIdx = pLevel->plan.u.pIdx;
-      for(j=0; j<pIdx->nColumn; j++){
-        if( iCol==pIdx->aiColumn[j] ) break;
+      if( iCol<0 ){
+        sortOrder = 0;
+        testcase( (pLevel->plan.wsFlags & WHERE_REVERSE)!=0 );
+      }else{
+        for(j=0; j<pIdx->nColumn; j++){
+          if( iCol==pIdx->aiColumn[j] ) break;
+        }
+        if( j>=pIdx->nColumn ) return 0;
+        sortOrder = pIdx->aSortOrder[j];
+        testcase( (pLevel->plan.wsFlags & WHERE_REVERSE)!=0 );
       }
-      if( j>=pIdx->nColumn ) return 0;
-      sortOrder = pIdx->aSortOrder[j];
     }else{
       if( iCol!=(-1) ) return 0;
       sortOrder = 0;
+      testcase( (pLevel->plan.wsFlags & WHERE_REVERSE)!=0 );
     }
-    if( (pLevel->plan.wsFlags & WHERE_REVERSE)!=0 ) sortOrder = 1 - sortOrder;
+    if( (pLevel->plan.wsFlags & WHERE_REVERSE)!=0 ){
+      assert( sortOrder==0 || sortOrder==1 );
+      testcase( sortOrder==1 );
+      sortOrder = 1 - sortOrder;
+    }
     if( *pbRev==2 ){
       *pbRev = sortOrder;
       return 1;
@@ -3200,8 +3211,8 @@ static void bestBtreeIndex(WhereBestIdx *p){
       if( nOrderBy==nOBSat ){
         bSort = 0;
         wsFlags |= WHERE_ROWID_RANGE|WHERE_COLUMN_RANGE|WHERE_ORDERBY;
-        wsFlags |= (bRev==1 ? WHERE_REVERSE : 0);
       }
+      if( bRev ) wsFlags |= WHERE_REVERSE;
     }
 
     /* If there is a DISTINCT qualifier and this index will scan rows in

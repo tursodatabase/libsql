@@ -1,5 +1,5 @@
-C Add\smore\sbits\sto\sthe\sbit\svector\sthat\sis\sused\sto\sdisable\soptimizations\sfor\nbuilt-in\stest.\s\sAdd\sspecific\sbit\spatterns\sto\sdisable\sORDER\sBY\susing\san\nindex\sin\sgeneral\sand\sfor\sjoins.\s\sUse\smacros\sto\stest\sfor\sbits\sin\sthe\s\ndisabled-optimization\sbit\svector,\sin\sorder\sto\smake\sthe\scode\sclearer.
-D 2012-09-27T15:05:54.735
+C Test\scases\sand\sbug\sfixes\sapplied\sto\sthe\sORDER\sBY\soptimization\sfor\sjoins.\nSome\stest\scases\sfail,\sbut\sexcept\sfor\sthe\snew\sorderby1.test\sfailures,\sall\nfailures\sappear\sto\sbe\sissues\swith\sthe\stests,\snot\swith\sthe\score\scode.
+D 2012-09-27T17:31:32.268
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -249,7 +249,7 @@ F src/vtab.c d8020c0a0e8ccc490ca449d7e665311b6e9f3ba9
 F src/wal.c 5acb3e7bbd31f10ba39acad9ce6b399055337a9d
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 4b837884c4747b022cf36bd00d9eddbb6b451241
+F src/where.c a537824b2eec986c203a6a370090520b955f258b
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 0be144b453e0622a085fae8665c32f5676708e00
@@ -324,8 +324,8 @@ F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
 F test/collate1.test e3eaa48c21e150814be1a7b852d2a8af24458d04
 F test/collate2.test 04cebe4a033be319d6ddbb3bbc69464e01700b49
 F test/collate3.test d28d2cfab2c3a3d4628ae4b2b7afc9965daa3b4c
-F test/collate4.test d37682293d3c32223dec2e6afdeaf9de18415248
-F test/collate5.test 67f1d3e848e230ff4802815a79acb0a8b5e69bd7
+F test/collate4.test 27adc324b58ec367bdd0bc6baab628af5129e9f1
+F test/collate5.test 65d928034d30d2d263a80f6359f7549ee1598ec6
 F test/collate6.test 8be65a182abaac8011a622131486dafb8076e907
 F test/collate7.test 8ec29d98f3ee4ccebce6e16ce3863fb6b8c7b868
 F test/collate8.test df26649cfcbddf109c04122b340301616d3a88f6
@@ -634,6 +634,7 @@ F test/notify3.test a86259abbfb923aa27d30f0fc038c88e5251488a
 F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
+F test/orderby1.test 868a4f88c4f4565684bcc18e8ed61a990ece431b
 F test/oserror.test 50417780d0e0d7cd23cf12a8277bb44024765df3
 F test/pager1.test 2163c6ef119f497a71a84137c957c63763e640ab
 F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
@@ -1016,7 +1017,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P c29538f9b1ee4d4869999570604c9618ca0d08ac
-R 112951e028390501419dede06d50cf2d
+P d2fcba1e143beca8c45724d2108870657c269e17
+R 388197fbdd69fccc34c9d73c7bc9f9e7
 U drh
-Z 58d07d9f2619813e6ef0c2cb6bcd8ae9
+Z f07796285dcd213d3100411a37b9d38f

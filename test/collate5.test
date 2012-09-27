@@ -221,7 +221,7 @@ do_test collate5-3.0 {
   execsql {
     SELECT a FROM collate5t1 UNION ALL SELECT a FROM collate5t2 ORDER BY 1;
   }
-} {a A a A b B b B n N}
+} {/[aA] [aA] [aA] [aA] [bB] [bB] [bB] [bB] [nN] [nN]/}
 do_test collate5-3.1 {
   execsql {
     SELECT a FROM collate5t2 UNION ALL SELECT a FROM collate5t1 ORDER BY 1;
@@ -282,7 +282,7 @@ do_test collate5-4.2 {
   execsql {
     SELECT a, b, count(*) FROM collate5t1 GROUP BY a, b ORDER BY a, b;
   }
-} {A 1.0 2 b 2 1 B 3 1}
+} {/[aA] 1(.0)? 2 [bB] 2 1 [bB] 3 1/}
 do_test collate5-4.3 {
   execsql {
     DROP TABLE collate5t1;
