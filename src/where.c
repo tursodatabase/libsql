@@ -2864,16 +2864,66 @@ static int whereInScanEst(
 #endif /* defined(SQLITE_ENABLE_STAT3) */
 
 /*
+** Check to see if column iCol of the table with cursor iTab will appear
+** in sorted order according to the current query plan.  Return true if
+** it will and false if not.  
+**
+** If *pbRev is initially 2 (meaning "unknown") then set *pbRev to the
+** sort order of iTab.iCol.  If *pbRev is 0 or 1 but does not match
+** the sort order of iTab.iCol, then consider the column to be unordered.
+*/
+static int isOrderedColumn(WhereBestIdx *p, int iTab, int iCol, int *pbRev){
+  int i, j;
+  WhereLevel *pLevel = &p->aLevel[p->i-1];
+  Index *pIdx;
+  u8 sortOrder;
+  for(i=p->i-1; i>=0; i--, pLevel--){
+    if( pLevel->iTabCur!=iTab ) continue;
+    if( (pLevel->plan.wsFlags & (WHERE_ROWID_EQ|WHERE_ROWID_RANGE))!=0 ){
+      if( iCol!=(-1) ) return 0;
+      sortOrder = 0;
+    }else if( (pLevel->plan.wsFlags & WHERE_INDEXED)!=0 ){
+      pIdx = pLevel->plan.u.pIdx;
+      for(j=0; j<pIdx->nColumn; j++){
+        if( iCol==pIdx->aiColumn[j] ) break;
+      }
+      if( j>=pIdx->nColumn ) return 0;
+      sortOrder = pIdx->aSortOrder[j];
+    }else{
+      if( iCol!=(-1) ) return 0;
+      sortOrder = 0;
+    }
+    if( (pLevel->plan.wsFlags & WHERE_REVERSE)!=0 ) sortOrder = 1 - sortOrder;
+    if( *pbRev==2 ){
+      *pbRev = sortOrder;
+      return 1;
+    }
+    return (*pbRev==sortOrder);
+  }
+  return 0;
+}
+
+/*
 ** pTerm is an == constraint.  Check to see if the other side of
 ** the == is a constant or a value that is guaranteed to be ordered
 ** by outer loops.  Return 1 if pTerm is ordered, and 0 if not.
 */
 static int isOrderedTerm(WhereBestIdx *p, WhereTerm *pTerm, int *pbRev){
+  Expr *pExpr = pTerm->pExpr;
+  assert( pExpr->op==TK_EQ );
+  assert( pExpr->pLeft!=0 && pExpr->pLeft->op==TK_COLUMN );
+  assert( pExpr->pRight!=0 );
   if( p->i==0 ){
     return 1;  /* All == are ordered in the outer loop */
   }
-
-
+  if( pTerm->prereqRight==0 ){
+    return 1;  /* RHS of the == is a constant */
+  }
+  if( pExpr->pRight->op==TK_COLUMN 
+   && isOrderedColumn(p, pExpr->pRight->iTable, pExpr->pRight->iColumn, pbRev)
+  ){
+    return 1;
+  }
 
   /* If we cannot prove that the constraint is ordered, assume it is not */
   return 0;

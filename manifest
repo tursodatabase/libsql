@@ -1,5 +1,5 @@
-C Further\stweaks\sto\sthe\squery\splanner\slogic\sin\spreparation\sfor\sadding\nORDER\sBY\sopt-out\sfor\sjoins.
-D 2012-09-27T12:05:09.522
+C Enable\sORDER\sBY\sclauses\sthat\sspan\sjoins\sto\sbe\soptimized\sout.
+D 2012-09-27T14:11:36.514
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -249,7 +249,7 @@ F src/vtab.c d8020c0a0e8ccc490ca449d7e665311b6e9f3ba9
 F src/wal.c 5acb3e7bbd31f10ba39acad9ce6b399055337a9d
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 67438c6192c5f777139e7abb642a9186a21a718d
+F src/where.c 36af33a92ccbf8b5be3bc7eae08a7f022afb60d8
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 0be144b453e0622a085fae8665c32f5676708e00
@@ -1016,7 +1016,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 96496ddae12a239b30a1fc997fbea43e3a75bfe7
-R 57ad7fba1d5db0bb9191afb65acee747
+P 53efc10af990d3f293551f3cd8ef2f8be2d9d716
+R d9d746ad3fd7e5c77ffbaf4f5251f6f8
 U drh
-Z 58fdbd300662a0c1ec2665b77df5f795
+Z 769b41d4cd58dfa3626d0858103449b9
