@@ -383,7 +383,7 @@ ifcapable subquery {
     count {
       SELECT * FROM t1 WHERE w IN (-1,1,2,3) order by 1;
     }
-  } {1 0 4 2 1 9 3 1 16 14}
+  } {1 0 4 2 1 9 3 1 16 13}
   do_test where-5.4 {
     count {
       SELECT * FROM t1 WHERE w+0 IN (-1,1,2,3) order by 1;
@@ -1109,13 +1109,13 @@ do_test where-14.5 {
   cksort {
     SELECT x.a || '/' || y.a FROM t8 x, t8 y ORDER BY x.b, x.a||x.b
   } 
-} {4/4 4/1 1/4 1/1 sort}
+} {/4/[14] 4/[14] 1/[14] 1/[14] sort/}
 do_test where-14.6 {
   # This test case changed from "nosort" to "sort". See ticket 2a5629202f.
   cksort {
     SELECT x.a || '/' || y.a FROM t8 x, t8 y ORDER BY x.b, x.a||x.b DESC
   } 
-} {4/4 4/1 1/4 1/1 sort}
+} {/4/[14] 4/[14] 1/[14] 1/[14] sort/}
 do_test where-14.7 {
   cksort {
     SELECT x.a || '/' || y.a FROM t8 x, t8 y ORDER BY x.b, y.a||y.b

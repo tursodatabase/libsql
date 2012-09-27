@@ -1645,13 +1645,17 @@ static int isSortingIndex(
   sqlite3 *db = pParse->db;     /* Database connection */
   int nPriorSat;                /* ORDER BY terms satisfied by outer loops */
   int seenRowid = 0;            /* True if an ORDER BY rowid term is seen */
+  int nEqOneRow;                /* Idx columns that ref unique values */
 
   if( OptimizationDisabled(db, SQLITE_OrderByIdx) ) return 0;
   if( p->i==0 ){
     nPriorSat = 0;
+    nEqOneRow = nEqCol;
   }else{
     if( OptimizationDisabled(db, SQLITE_OrderByIdxJoin) ) return 0;
     nPriorSat = p->aLevel[p->i-1].plan.nOBSat;
+    sortOrder = bOuterRev;
+    nEqOneRow = 0;
   }
   if( p->i>0 && nEqCol==0 /*&& !allOuterLoopsUnique(p)*/ ) return nPriorSat;
   pOrderBy = p->pOrderBy;
@@ -1725,7 +1729,7 @@ static int isSortingIndex(
     assert( pTerm->sortOrder==0 || pTerm->sortOrder==1 );
     assert( iSortOrder==0 || iSortOrder==1 );
     termSortOrder = iSortOrder ^ pTerm->sortOrder;
-    if( i>nEqCol ){
+    if( i>nEqOneRow ){
       if( termSortOrder!=sortOrder ){
         /* Indices can only be used if all ORDER BY terms past the
         ** equality constraints are all either DESC or ASC. */
@@ -1741,7 +1745,7 @@ static int isSortingIndex(
       break;
     }
   }
-  *pbRev = bOuterRev ^ sortOrder;
+  *pbRev = sortOrder;
 
   /* If there was an "ORDER BY rowid" term that matched, or it is only
   ** possible for a single row from this table to match, then skip over
@@ -3296,7 +3300,7 @@ static void bestBtreeIndex(WhereBestIdx *p){
     ** So this computation assumes table records are about twice as big
     ** as index records
     */
-    if( wsFlags==WHERE_IDX_ONLY
+    if( (wsFlags&~WHERE_REVERSE)==WHERE_IDX_ONLY
      && (pWC->wctrlFlags & WHERE_ONEPASS_DESIRED)==0
      && sqlite3GlobalConfig.bUseCis
      && OptimizationEnabled(pParse->db, SQLITE_CoverIdxScan)
@@ -3421,9 +3425,10 @@ static void bestBtreeIndex(WhereBestIdx *p){
 
 
     WHERETRACE((
-      "%s(%s): nEq=%d nInMul=%d rangeDiv=%d bSort=%d bLookup=%d wsFlags=0x%x\n"
-      "         notReady=0x%llx log10N=%.1f nRow=%.1f cost=%.1f\n"
-      "         used=0x%llx nOrdered=%d nOBSat=%d\n",
+      "%s(%s):\n"
+      "    nEq=%d nInMul=%d rangeDiv=%d bSort=%d bLookup=%d wsFlags=0x%08x\n"
+      "    notReady=0x%llx log10N=%.1f nRow=%.1f cost=%.1f\n"
+      "    used=0x%llx nOrdered=%d nOBSat=%d\n",
       pSrc->pTab->zName, (pIdx ? pIdx->zName : "ipk"), 
       nEq, nInMul, (int)rangeDiv, bSort, bLookup, wsFlags,
       p->notReady, log10N, nRow, cost, used, nOrdered, nOBSat
@@ -5088,10 +5093,10 @@ WhereInfo *sqlite3WhereBegin(
     }
     assert( bestJ>=0 );
     assert( sWBI.notValid & getMask(pMaskSet, pTabList->a[bestJ].iCursor) );
-    WHERETRACE(("*** Optimizer selects table %d for loop %d"
-                " with cost=%.1f, nRow=%.1f, nOBSat=%d\n",
+    WHERETRACE(("*** Optimizer selects table %d for loop %d with:\n"
+                "    cost=%.1f, nRow=%.1f, nOBSat=%d wsFlags=0x%08x\n",
                 bestJ, pLevel-pWInfo->a, bestPlan.rCost, bestPlan.plan.nRow,
-                bestPlan.plan.nOBSat));
+                bestPlan.plan.nOBSat, bestPlan.plan.wsFlags));
     if( (bestPlan.plan.wsFlags & WHERE_ORDERBY)!=0 ){
       pWInfo->nOBSat = pOrderBy->nExpr;
     }
