@@ -827,6 +827,7 @@ struct sqlite3 {
   unsigned int openFlags;       /* Flags passed to sqlite3_vfs.xOpen() */
   int errCode;                  /* Most recent error code (SQLITE_*) */
   int errMask;                  /* & result codes with this before returning */
+  u16 dbOptFlags;               /* Flags to enable/disable optimizations */
   u8 autoCommit;                /* The auto-commit flag. */
   u8 temp_store;                /* 1: file 2: memory 0: default */
   u8 mallocFailed;              /* True if we have seen a malloc failure */
@@ -931,46 +932,59 @@ struct sqlite3 {
 /*
 ** Possible values for the sqlite3.flags.
 */
-#define SQLITE_VdbeTrace      0x00000100  /* True to trace VDBE execution */
-#define SQLITE_InternChanges  0x00000200  /* Uncommitted Hash table changes */
-#define SQLITE_FullColNames   0x00000400  /* Show full column names on SELECT */
-#define SQLITE_ShortColNames  0x00000800  /* Show short columns names */
-#define SQLITE_CountRows      0x00001000  /* Count rows changed by INSERT, */
+#define SQLITE_VdbeTrace      0x00000001  /* True to trace VDBE execution */
+#define SQLITE_InternChanges  0x00000002  /* Uncommitted Hash table changes */
+#define SQLITE_FullColNames   0x00000004  /* Show full column names on SELECT */
+#define SQLITE_ShortColNames  0x00000008  /* Show short columns names */
+#define SQLITE_CountRows      0x00000010  /* Count rows changed by INSERT, */
                                           /*   DELETE, or UPDATE and return */
                                           /*   the count using a callback. */
-#define SQLITE_NullCallback   0x00002000  /* Invoke the callback once if the */
+#define SQLITE_NullCallback   0x00000020  /* Invoke the callback once if the */
                                           /*   result set is empty */
-#define SQLITE_SqlTrace       0x00004000  /* Debug print SQL as it executes */
-#define SQLITE_VdbeListing    0x00008000  /* Debug listings of VDBE programs */
-#define SQLITE_WriteSchema    0x00010000  /* OK to update SQLITE_MASTER */
-                         /*   0x00020000  Unused */
-#define SQLITE_IgnoreChecks   0x00040000  /* Do not enforce check constraints */
-#define SQLITE_ReadUncommitted 0x0080000  /* For shared-cache mode */
-#define SQLITE_LegacyFileFmt  0x00100000  /* Create new databases in format 1 */
-#define SQLITE_FullFSync      0x00200000  /* Use full fsync on the backend */
-#define SQLITE_CkptFullFSync  0x00400000  /* Use full fsync for checkpoint */
-#define SQLITE_RecoveryMode   0x00800000  /* Ignore schema errors */
-#define SQLITE_ReverseOrder   0x01000000  /* Reverse unordered SELECTs */
-#define SQLITE_RecTriggers    0x02000000  /* Enable recursive triggers */
-#define SQLITE_ForeignKeys    0x04000000  /* Enforce foreign key constraints  */
-#define SQLITE_AutoIndex      0x08000000  /* Enable automatic indexes */
-#define SQLITE_PreferBuiltin  0x10000000  /* Preference to built-in funcs */
-#define SQLITE_LoadExtension  0x20000000  /* Enable load_extension */
-#define SQLITE_EnableTrigger  0x40000000  /* True to enable triggers */
+#define SQLITE_SqlTrace       0x00000040  /* Debug print SQL as it executes */
+#define SQLITE_VdbeListing    0x00000080  /* Debug listings of VDBE programs */
+#define SQLITE_WriteSchema    0x00000100  /* OK to update SQLITE_MASTER */
+                         /*   0x00000200  Unused */
+#define SQLITE_IgnoreChecks   0x00000400  /* Do not enforce check constraints */
+#define SQLITE_ReadUncommitted 0x0000800  /* For shared-cache mode */
+#define SQLITE_LegacyFileFmt  0x00001000  /* Create new databases in format 1 */
+#define SQLITE_FullFSync      0x00002000  /* Use full fsync on the backend */
+#define SQLITE_CkptFullFSync  0x00004000  /* Use full fsync for checkpoint */
+#define SQLITE_RecoveryMode   0x00008000  /* Ignore schema errors */
+#define SQLITE_ReverseOrder   0x00010000  /* Reverse unordered SELECTs */
+#define SQLITE_RecTriggers    0x00020000  /* Enable recursive triggers */
+#define SQLITE_ForeignKeys    0x00040000  /* Enforce foreign key constraints  */
+#define SQLITE_AutoIndex      0x00080000  /* Enable automatic indexes */
+#define SQLITE_PreferBuiltin  0x00100000  /* Preference to built-in funcs */
+#define SQLITE_LoadExtension  0x00200000  /* Enable load_extension */
+#define SQLITE_EnableTrigger  0x00400000  /* True to enable triggers */
 
 /*
-** Bits of the sqlite3.flags field that are used by the
-** sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS,...) interface.
-** These must be the low-order bits of the flags field.
+** Bits of the sqlite3.dbOptFlags field that are used by the
+** sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS,...) interface to
+** selectively disable various optimizations.
 */
-#define SQLITE_QueryFlattener 0x01   /* Disable query flattening */
-#define SQLITE_ColumnCache    0x02   /* Disable the column cache */
-#define SQLITE_GroupByOrder   0x04   /* Disable GROUPBY cover of ORDERBY */
-#define SQLITE_FactorOutConst 0x08   /* Disable factoring out constants */
-#define SQLITE_IdxRealAsInt   0x10   /* Store REAL as INT in indices */
-#define SQLITE_DistinctOpt    0x20   /* DISTINCT using indexes */
-#define SQLITE_CoverIdxScan   0x40   /* Disable covering index scans */
-#define SQLITE_OptMask        0xff   /* Mask of all disablable opts */
+#define SQLITE_QueryFlattener 0x0001   /* Query flattening */
+#define SQLITE_ColumnCache    0x0002   /* Column cache */
+#define SQLITE_GroupByOrder   0x0004   /* GROUPBY cover of ORDERBY */
+#define SQLITE_FactorOutConst 0x0008   /* Constant factoring */
+#define SQLITE_IdxRealAsInt   0x0010   /* Store REAL as INT in indices */
+#define SQLITE_DistinctOpt    0x0020   /* DISTINCT using indexes */
+#define SQLITE_CoverIdxScan   0x0040   /* Covering index scans */
+#define SQLITE_OrderByIdx     0x0180   /* ORDER BY using indices */
+#define SQLITE_OrderByIdxJoin 0x0100   /* ORDER BY of joins via index */
+#define SQLITE_AllOpts        0x01ff   /* All optimizations */
+
+/*
+** Macros for testing whether or not optimizations are enabled or disabled.
+*/
+#ifndef SQLITE_OMIT_BUILTIN_TEST
+#define OptimizationDisabled(db, mask)  (((db)->dbOptFlags&(mask))!=0)
+#define OptimizationEnabled(db, mask)   (((db)->dbOptFlags&(mask))==0)
+#else
+#define OptimizationDisabled(db, mask)  0
+#define OptimizationEnabled(db, mask)   1
+#endif
 
 /*
 ** Possible values for the sqlite.magic field.

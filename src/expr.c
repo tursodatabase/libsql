@@ -2066,7 +2066,7 @@ void sqlite3ExprCacheStore(Parse *pParse, int iTab, int iCol, int iReg){
   ** for testing only - to verify that SQLite always gets the same answer
   ** with and without the column cache.
   */
-  if( pParse->db->flags & SQLITE_ColumnCache ) return;
+  if( OptimizationDisabled(pParse->db, SQLITE_ColumnCache) ) return;
 
   /* First replace any existing entry.
   **
@@ -3382,7 +3382,7 @@ static int evalConstExpr(Walker *pWalker, Expr *pExpr){
 void sqlite3ExprCodeConstants(Parse *pParse, Expr *pExpr){
   Walker w;
   if( pParse->cookieGoto ) return;
-  if( (pParse->db->flags & SQLITE_FactorOutConst)!=0 ) return;
+  if( OptimizationDisabled(pParse->db, SQLITE_FactorOutConst) ) return;
   w.xExprCallback = evalConstExpr;
   w.xSelectCallback = 0;
   w.pParse = pParse;

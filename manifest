@@ -1,5 +1,5 @@
-C Enable\sORDER\sBY\sclauses\sthat\sspan\sjoins\sto\sbe\soptimized\sout.
-D 2012-09-27T14:11:36.514
+C Add\smore\sbits\sto\sthe\sbit\svector\sthat\sis\sused\sto\sdisable\soptimizations\sfor\nbuilt-in\stest.\s\sAdd\sspecific\sbit\spatterns\sto\sdisable\sORDER\sBY\susing\san\nindex\sin\sgeneral\sand\sfor\sjoins.\s\sUse\smacros\sto\stest\sfor\sbits\sin\sthe\s\ndisabled-optimization\sbit\svector,\sin\sorder\sto\smake\sthe\scode\sclearer.
+D 2012-09-27T15:05:54.735
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -129,8 +129,8 @@ F src/callback.c 0cb4228cdcd827dcc5def98fb099edcc9142dbcd
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 72a70dcfda75d3a1f81041ce4573e7afddcd8e4e
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
-F src/delete.c 335f36750dc6ac88d580aa36a6487459be9889de
-F src/expr.c 4d1cef0fae6f3cf3c754773fd413f3e221021003
+F src/delete.c 4f7d773ec44b7db22b30ec9144f58a69154e09b7
+F src/expr.c 4de967b85f577ba00a7cdcb53d22070def6198db
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c c82a04e7a92bb728f9ab972b76590403283be2af
 F src/func.c cbb90dc84b22eea25caf39528d342279e61b8898
@@ -143,7 +143,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
 F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
-F src/main.c 97d13e749ae84fe62238a5940c5b46b2b22cd369
+F src/main.c c5fec9814efaa64fa1de83497553f5904aa1bbec
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
@@ -174,17 +174,17 @@ F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 9e28280ec98035f31900fdd1db01f86f68ca6c32
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c a91b651652b43a8baaeec0ad13a6a6b290a4d0af
+F src/select.c 75c5e37cc882c468383c9d9e07496b9a16cfae3e
 F src/shell.c 8ee5a3cb502e2d574f97b43972e6c1e275e7bec7
 F src/sqlite.h.in cbe846facaba903654b4136c97e7f57b3ac0bac7
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h cbcd2dd649338598a1a773a9adaf9f62e7256852
+F src/sqliteInt.h 6ad55f4efbd1bb209711032e40b7c81c8855d634
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c e4de2458b3ef38fdd0498bc4e5ea5367a241b0f3
-F src/test1.c bec5295347a7bc38a53ca955f01cfcaf116fdb88
+F src/test1.c 9000293bfdcd67de05bf91d257343392c4b194f4
 F src/test2.c 4178056dd1e7d70f954ad8a1e3edb71a2a784daf
 F src/test3.c 3c3c2407fa6ec7a19e24ae23f7cb439d0275a60d
 F src/test4.c bf9fa9bece01de08e6f5e02314e4af5c13590dfa
@@ -249,7 +249,7 @@ F src/vtab.c d8020c0a0e8ccc490ca449d7e665311b6e9f3ba9
 F src/wal.c 5acb3e7bbd31f10ba39acad9ce6b399055337a9d
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 36af33a92ccbf8b5be3bc7eae08a7f022afb60d8
+F src/where.c 4b837884c4747b022cf36bd00d9eddbb6b451241
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 0be144b453e0622a085fae8665c32f5676708e00
@@ -1016,7 +1016,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 53efc10af990d3f293551f3cd8ef2f8be2d9d716
-R d9d746ad3fd7e5c77ffbaf4f5251f6f8
+P c29538f9b1ee4d4869999570604c9618ca0d08ac
+R 112951e028390501419dede06d50cf2d
 U drh
-Z 769b41d4cd58dfa3626d0858103449b9
+Z 58d07d9f2619813e6ef0c2cb6bcd8ae9

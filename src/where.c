@@ -1646,9 +1646,11 @@ static int isSortingIndex(
   int nPriorSat;                /* ORDER BY terms satisfied by outer loops */
   int seenRowid = 0;            /* True if an ORDER BY rowid term is seen */
 
+  if( OptimizationDisabled(db, SQLITE_OrderByIdx) ) return 0;
   if( p->i==0 ){
     nPriorSat = 0;
   }else{
+    if( OptimizationDisabled(db, SQLITE_OrderByIdxJoin) ) return 0;
     nPriorSat = p->aLevel[p->i-1].plan.nOBSat;
   }
   if( p->i>0 && nEqCol==0 /*&& !allOuterLoopsUnique(p)*/ ) return nPriorSat;
@@ -2879,10 +2881,7 @@ static int isOrderedColumn(WhereBestIdx *p, int iTab, int iCol, int *pbRev){
   u8 sortOrder;
   for(i=p->i-1; i>=0; i--, pLevel--){
     if( pLevel->iTabCur!=iTab ) continue;
-    if( (pLevel->plan.wsFlags & (WHERE_ROWID_EQ|WHERE_ROWID_RANGE))!=0 ){
-      if( iCol!=(-1) ) return 0;
-      sortOrder = 0;
-    }else if( (pLevel->plan.wsFlags & WHERE_INDEXED)!=0 ){
+    if( (pLevel->plan.wsFlags & WHERE_INDEXED)!=0 ){
       pIdx = pLevel->plan.u.pIdx;
       for(j=0; j<pIdx->nColumn; j++){
         if( iCol==pIdx->aiColumn[j] ) break;
@@ -3289,9 +3288,7 @@ static void bestBtreeIndex(WhereBestIdx *p){
     if( wsFlags==WHERE_IDX_ONLY
      && (pWC->wctrlFlags & WHERE_ONEPASS_DESIRED)==0
      && sqlite3GlobalConfig.bUseCis
-#ifndef SQLITE_OMIT_BUILTIN_TEST
-     && (pParse->db->flags & SQLITE_CoverIdxScan)==0
-#endif
+     && OptimizationEnabled(pParse->db, SQLITE_CoverIdxScan)
     ){
       /* This index is not useful for indexing, but it is a covering index.
       ** A full-scan of the index might be a little faster than a full-scan
@@ -4841,7 +4838,7 @@ WhereInfo *sqlite3WhereBegin(
 
   /* Disable the DISTINCT optimization if SQLITE_DistinctOpt is set via
   ** sqlite3_test_ctrl(SQLITE_TESTCTRL_OPTIMIZATIONS,...) */
-  if( db->flags & SQLITE_DistinctOpt ) pDistinct = 0;
+  if( OptimizationDisabled(db, SQLITE_DistinctOpt) ) pDistinct = 0;
 
   /* Split the WHERE clause into separate subexpressions where each
   ** subexpression is separated by an AND operator.
