@@ -372,7 +372,9 @@ do_test 9.1.prep {
 } {}
 faultsim_save_and_close
 
-set answers [list {0 {}} {1 SQLITE_NOMEM} {1 {callback requested query abort}}]
+set answers [list {0 {}} {1 SQLITE_NOMEM} \
+                  {1 {callback requested query abort}} \
+                  {1 {abort due to ROLLBACK}}]
 do_faultsim_test 9.1 -faults oom-transient -prep {
   catch { unset ::c }
   faultsim_restore_and_reopen
@@ -409,7 +411,9 @@ do_test 9.2.prep {
 } {}
 faultsim_save_and_close
 
-set answers [list {0 {}} {1 SQLITE_NOMEM} {1 {callback requested query abort}}]
+set answers [list {0 {}} {1 SQLITE_NOMEM} \
+                  {1 {callback requested query abort}} \
+                  {1 {abort due to ROLLBACK}}]
 do_faultsim_test 9.2 -faults oom-transient -prep {
   catch { unset ::c }
   faultsim_restore_and_reopen

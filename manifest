@@ -1,5 +1,5 @@
-C Update\swith\slatest\strunk\schanges.
-D 2012-08-31T14:23:16.346
+C Update\sthe\ssessionfault-9.1\sand\s-9.2\stests\sto\saccount\sfor\sthe\schange\sin\nversion\s3.7.11\sin\swhich\sa\spending\sstatement\sno\slonger\sblocks\sROLLBACK\sbut\ninstead\scauses\sthe\snext\scall\son\sthat\sstatement\sto\sreturn\sSQLITE_ABORT.
+D 2012-09-28T12:55:56.421
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -109,7 +109,7 @@ F ext/session/session5.test 8fdfaf9dba28a2f1c6b89b06168bdab1fef2d478
 F ext/session/session6.test 443789bc2fca12e4f7075cf692c60b8a2bea1a26
 F ext/session/session8.test 7d35947ad329b8966f095d34f9617a9eff52dc65
 F ext/session/session_common.tcl 1539d8973b2aea0025c133eb0cc4c89fcef541a5
-F ext/session/sessionfault.test 891453e96630ee2915081487fc4b7226f0aa252f
+F ext/session/sessionfault.test 496291b287ba3c0b14ca2e074425e29cc92a64a6
 F ext/session/sqlite3session.c 57d04e1d6a3579e673e61dea29f214fb4e0fc505
 F ext/session/sqlite3session.h f374c9c4c96e08f67ac418871c29d423245c7673
 F ext/session/test_session.c ea4dc9b4a1895c8e6bddcbfe3838d7eb57df2d99
@@ -1026,7 +1026,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P aa62d6881b5aae64e15dbae70ce8e77bcc2a9f0b 527340abff18aedbcb0f82ac1296a9f548e24ac4
-R ce445dd99f7d73f4997bfaaffd71f58e
-U dan
-Z b7fa6fd6ef1ab9dd566a694a77a1f165
+P 87995dc9409482f0a7a367bfc51d78ac0f63b8c3
+R 0ffae7a510db2af1076692fe90154443
+U drh
+Z a5785b316a6ee7492de59cea784cd09f
