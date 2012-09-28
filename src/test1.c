@@ -5933,7 +5933,7 @@ static int optimization_control(
     const char *zOptName;
     int mask;
   } aOpt[] = {
-    { "all",              SQLITE_OptMask        },
+    { "all",              SQLITE_AllOpts        },
     { "query-flattener",  SQLITE_QueryFlattener },
     { "column-cache",     SQLITE_ColumnCache    },
     { "groupby-order",    SQLITE_GroupByOrder   },
@@ -5941,6 +5941,7 @@ static int optimization_control(
     { "real-as-int",      SQLITE_IdxRealAsInt   },
     { "distinct-opt",     SQLITE_DistinctOpt    },
     { "cover-idx-scan",   SQLITE_CoverIdxScan   },
+    { "order-by-idx-join",SQLITE_OrderByIdxJoin },
   };
 
   if( objc!=4 ){

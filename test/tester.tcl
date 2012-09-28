@@ -538,10 +538,10 @@ proc do_test {name cmd expected} {
     } else {
       if {[regexp {^~?/.*/$} $expected]} {
         if {[string index $expected 0]=="~"} {
-          set re [string range $expected 2 end-1]
+          set re [string map {# {[-0-9.]+}} [string range $expected 2 end-1]]
           set ok [expr {![regexp $re $result]}]
         } else {
-          set re [string range $expected 1 end-1]
+          set re [string map {# {[-0-9.]+}} [string range $expected 1 end-1]]
           set ok [regexp $re $result]
         }
       } else {
