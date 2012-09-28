@@ -76,11 +76,16 @@ do_test stat-1.4 {
 do_execsql_test stat-2.1 {
   CREATE TABLE t3(a PRIMARY KEY, b);
   INSERT INTO t3(rowid, a, b) VALUES(2, a_string(111), a_string(222));
-  INSERT INTO t3 SELECT a_string(110+rowid), a_string(221+rowid) FROM t3;
-  INSERT INTO t3 SELECT a_string(110+rowid), a_string(221+rowid) FROM t3;
-  INSERT INTO t3 SELECT a_string(110+rowid), a_string(221+rowid) FROM t3;
-  INSERT INTO t3 SELECT a_string(110+rowid), a_string(221+rowid) FROM t3;
-  INSERT INTO t3 SELECT a_string(110+rowid), a_string(221+rowid) FROM t3;
+  INSERT INTO t3 SELECT a_string(110+rowid), a_string(221+rowid) FROM t3
+   ORDER BY rowid;
+  INSERT INTO t3 SELECT a_string(110+rowid), a_string(221+rowid) FROM t3
+   ORDER BY rowid;
+  INSERT INTO t3 SELECT a_string(110+rowid), a_string(221+rowid) FROM t3
+   ORDER BY rowid;
+  INSERT INTO t3 SELECT a_string(110+rowid), a_string(221+rowid) FROM t3
+   ORDER BY rowid;
+  INSERT INTO t3 SELECT a_string(110+rowid), a_string(221+rowid) FROM t3
+   ORDER BY rowid;
   SELECT name, path, pageno, pagetype, ncell, payload, unused, mx_payload
     FROM stat WHERE name != 'sqlite_master';
 } [list \

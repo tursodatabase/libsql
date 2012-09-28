@@ -68,7 +68,7 @@ do_test 1.1 {
 } {}
 
 foreach {tn word res} {
-  1   raxpi*     {rasping 5 rasped 5 raspberry 6 rasp 4 rasps 4}
+  1   raxpi*     {rasping 5 rasped 5 ragweed 5 raspberry 6 rasp 4}
   2   ril*       {rail 4 railed 4 railer 4 railers 4 railing 4}
   3   rilis*     {realism 6 realist 6 realistic 6 realistically 6 realists 6}
   4   reail*     {real 3 realest 3 realign 3 realigned 3 realigning 3}

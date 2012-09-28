@@ -925,7 +925,8 @@ int sqlite3FkRequired(
           int iKey;
           for(iKey=0; iKey<pTab->nCol; iKey++){
             Column *pCol = &pTab->aCol[iKey];
-            if( (zKey ? !sqlite3StrICmp(pCol->zName, zKey) : pCol->isPrimKey) ){
+            if( (zKey ? !sqlite3StrICmp(pCol->zName, zKey)
+                      : (pCol->colFlags & COLFLAG_PRIMKEY)!=0) ){
               if( aChange[iKey]>=0 ) return 1;
               if( iKey==pTab->iPKey && chngRowid ) return 1;
             }

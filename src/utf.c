@@ -164,25 +164,23 @@ static const unsigned char sqlite3Utf8Trans1[] = {
         || (c&0xFFFFFFFE)==0xFFFE ){  c = 0xFFFD; }        \
   }
 u32 sqlite3Utf8Read(
-  const unsigned char *zIn,       /* First byte of UTF-8 character */
-  const unsigned char **pzNext    /* Write first byte past UTF-8 char here */
+  const unsigned char **pz    /* Pointer to string from which to read char */
 ){
   unsigned int c;
 
   /* Same as READ_UTF8() above but without the zTerm parameter.
   ** For this routine, we assume the UTF8 string is always zero-terminated.
   */
-  c = *(zIn++);
+  c = *((*pz)++);
   if( c>=0xc0 ){
     c = sqlite3Utf8Trans1[c-0xc0];
-    while( (*zIn & 0xc0)==0x80 ){
-      c = (c<<6) + (0x3f & *(zIn++));
+    while( (*(*pz) & 0xc0)==0x80 ){
+      c = (c<<6) + (0x3f & *((*pz)++));
     }
     if( c<0x80
         || (c&0xFFFFF800)==0xD800
         || (c&0xFFFFFFFE)==0xFFFE ){  c = 0xFFFD; }
   }
-  *pzNext = zIn;
   return c;
 }
 
@@ -283,7 +281,6 @@ int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
     if( desiredEnc==SQLITE_UTF16LE ){
       /* UTF-8 -> UTF-16 Little-endian */
       while( zIn<zTerm ){
-        /* c = sqlite3Utf8Read(zIn, zTerm, (const u8**)&zIn); */
         READ_UTF8(zIn, zTerm, c);
         WRITE_UTF16LE(z, c);
       }
@@ -291,7 +288,6 @@ int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
       assert( desiredEnc==SQLITE_UTF16BE );
       /* UTF-8 -> UTF-16 Big-endian */
       while( zIn<zTerm ){
-        /* c = sqlite3Utf8Read(zIn, zTerm, (const u8**)&zIn); */
         READ_UTF8(zIn, zTerm, c);
         WRITE_UTF16BE(z, c);
       }
@@ -419,7 +415,7 @@ int sqlite3Utf8To8(unsigned char *zIn){
   u32 c;
 
   while( zIn[0] && zOut<=zIn ){
-    c = sqlite3Utf8Read(zIn, (const u8**)&zIn);
+    c = sqlite3Utf8Read((const u8**)&zIn);
     if( c!=0xfffd ){
       WRITE_UTF8(zOut, c);
     }
@@ -524,7 +520,7 @@ void sqlite3UtfSelfTest(void){
     assert( n>0 && n<=4 );
     z[0] = 0;
     z = zBuf;
-    c = sqlite3Utf8Read(z, (const u8**)&z);
+    c = sqlite3Utf8Read((const u8**)&z);
     t = i;
     if( i>=0xD800 && i<=0xDFFF ) t = 0xFFFD;
     if( (i&0xFFFFFFFE)==0xFFFE ) t = 0xFFFD;

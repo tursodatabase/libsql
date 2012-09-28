@@ -31,6 +31,7 @@
 # Test the capability of the SQLite version built into the interpreter to
 # determine if a specific test can be run:
 #
+#      capable                EXPR
 #      ifcapable              EXPR
 #
 # Calulate checksums based on database contents:
@@ -134,7 +135,7 @@ proc getFileRetries {} {
     # NOTE: Return the default number of retries for [file] operations.  A
     #       value of zero or less here means "disabled".
     #
-    return [expr {$::tcl_platform(platform) eq "windows" ? 10 : 0}]
+    return [expr {$::tcl_platform(platform) eq "windows" ? 50 : 0}]
   }
   return $::G(file-retries)
 }
@@ -562,16 +563,19 @@ proc do_test {name cmd expected} {
     } else {
       if {[regexp {^~?/.*/$} $expected]} {
         if {[string index $expected 0]=="~"} {
-          set re [string range $expected 2 end-1]
+          set re [string map {# {[-0-9.]+}} [string range $expected 2 end-1]]
           set ok [expr {![regexp $re $result]}]
         } else {
-          set re [string range $expected 1 end-1]
+          set re [string map {# {[-0-9.]+}} [string range $expected 1 end-1]]
           set ok [regexp $re $result]
         }
       } else {
         set ok [expr {[string compare $result $expected]==0}]
       }
       if {!$ok} {
+        # if {![info exists ::testprefix] || $::testprefix eq ""} {
+        #   error "no test prefix"
+        # }
         puts "\nExpected: \[$expected\]\n     Got: \[$result\]"
         fail_test $name
       } else {
@@ -1021,6 +1025,12 @@ proc fix_ifcapable_expr {expr} {
   }
   if {$state} {append ret )}
   return $ret
+}
+
+# Returns non-zero if the capabilities are present; zero otherwise.
+#
+proc capable {expr} {
+  set e [fix_ifcapable_expr $expr]; return [expr ($e)]
 }
 
 # Evaluate a boolean expression of capabilities.  If true, execute the

@@ -692,7 +692,7 @@ do_test where9-6.5.3 {
 do_test where9-6.5.4 {
   db eval {
     SELECT count(*) FROM t1 UNION ALL
-    SELECT a FROM t1 WHERE a%100 IN (5,31,57,82,83,84,85,86,87);
+    SELECT a FROM t1 WHERE a%100 IN (5,31,57,82,83,84,85,86,87) ORDER BY rowid;
     ROLLBACK;
   }
 } {99 105 131 157 182 183 184 185 186 187}

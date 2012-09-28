@@ -664,7 +664,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   ** If there is a NOT NULL constraint, then the default value for the
   ** column must not be NULL.
   */
-  if( pCol->isPrimKey ){
+  if( pCol->colFlags & COLFLAG_PRIMKEY ){
     sqlite3ErrorMsg(pParse, "Cannot add a PRIMARY KEY column");
     return;
   }

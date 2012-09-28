@@ -473,6 +473,7 @@ int sqlite3_exec(
 #define SQLITE_BUSY_RECOVERY           (SQLITE_BUSY   |  (1<<8))
 #define SQLITE_CANTOPEN_NOTEMPDIR      (SQLITE_CANTOPEN | (1<<8))
 #define SQLITE_CANTOPEN_ISDIR          (SQLITE_CANTOPEN | (2<<8))
+#define SQLITE_CANTOPEN_FULLPATH       (SQLITE_CANTOPEN | (3<<8))
 #define SQLITE_CORRUPT_VTAB            (SQLITE_CORRUPT | (1<<8))
 #define SQLITE_READONLY_RECOVERY       (SQLITE_READONLY | (1<<8))
 #define SQLITE_READONLY_CANTLOCK       (SQLITE_READONLY | (2<<8))
@@ -1567,6 +1568,18 @@ struct sqlite3_mem_methods {
 ** disabled. The default value may be changed by compiling with the
 ** [SQLITE_USE_URI] symbol defined.
 **
+** [[SQLITE_CONFIG_COVERING_INDEX_SCAN]] <dt>SQLITE_CONFIG_COVERING_INDEX_SCAN
+** <dd> This option taks a single integer argument which is interpreted as
+** a boolean in order to enable or disable the use of covering indices for
+** full table scans in the query optimizer.  The default setting is determined
+** by the [SQLITE_ALLOW_COVERING_INDEX_SCAN] compile-time option, or is "on"
+** if that compile-time option is omitted.
+** The ability to disable the use of covering indices for full table scans
+** is because some incorrectly coded legacy applications might malfunction
+** malfunction when the optimization is enabled.  Providing the ability to
+** disable the optimization allows the older, buggy application code to work
+** without change even with newer versions of SQLite.
+**
 ** [[SQLITE_CONFIG_PCACHE]] [[SQLITE_CONFIG_GETPCACHE]]
 ** <dt>SQLITE_CONFIG_PCACHE and SQLITE_CONFIG_GETPCACHE
 ** <dd> These options are obsolete and should not be used by new code.
@@ -1592,6 +1605,7 @@ struct sqlite3_mem_methods {
 #define SQLITE_CONFIG_URI          17  /* int */
 #define SQLITE_CONFIG_PCACHE2      18  /* sqlite3_pcache_methods2* */
 #define SQLITE_CONFIG_GETPCACHE2   19  /* sqlite3_pcache_methods2* */
+#define SQLITE_CONFIG_COVERING_INDEX_SCAN 20  /* int */
 
 /*
 ** CAPI3REF: Database Connection Configuration Options
@@ -2600,7 +2614,7 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 **     an error)^. 
 **     ^If "ro" is specified, then the database is opened for read-only 
 **     access, just as if the [SQLITE_OPEN_READONLY] flag had been set in the 
-**     third argument to sqlite3_prepare_v2(). ^If the mode option is set to 
+**     third argument to sqlite3_open_v2(). ^If the mode option is set to 
 **     "rw", then the database is opened for read-write (but not create) 
 **     access, as if SQLITE_OPEN_READWRITE (but not SQLITE_OPEN_CREATE) had 
 **     been set. ^Value "rwc" is equivalent to setting both 
@@ -2752,6 +2766,11 @@ sqlite3_int64 sqlite3_uri_int64(const char*, const char*, sqlite3_int64);
 ** However, the error string might be overwritten or deallocated by
 ** subsequent calls to other SQLite interface functions.)^
 **
+** ^The sqlite3_errstr() interface returns the English-language text
+** that describes the [result code], as UTF-8.
+** ^(Memory to hold the error message string is managed internally
+** and must not be freed by the application)^.
+**
 ** When the serialized [threading mode] is in use, it might be the
 ** case that a second error occurs on a separate thread in between
 ** the time of the first error and the call to these interfaces.
@@ -2770,6 +2789,7 @@ int sqlite3_errcode(sqlite3 *db);
 int sqlite3_extended_errcode(sqlite3 *db);
 const char *sqlite3_errmsg(sqlite3*);
 const void *sqlite3_errmsg16(sqlite3*);
+const char *sqlite3_errstr(int);
 
 /*
 ** CAPI3REF: SQL Statement Object
@@ -4736,6 +4756,9 @@ void *sqlite3_update_hook(
 ** and will always return SQLITE_MISUSE, instead of calling this function
 ** shared cache mode should be enabled per-database connection via 
 ** sqlite3_open_v2 with SQLITE_OPEN_SHAREDCACHE instead.
+**
+** This interface is threadsafe on processors where writing a
+** 32-bit integer is atomic.
 **
 ** See Also:  [SQLite Shared-Cache Mode]
 */
