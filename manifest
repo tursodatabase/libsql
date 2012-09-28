@@ -1,5 +1,5 @@
-C Modify\sthe\sclearCell\sfunction\sto\suse\sSQLITE_CORRUPT_BKPT\sin\sthe\sone\splace\sit\swas\snot.
-D 2012-09-28T18:13:35.369
+C Avoid\scalling\ssqlite3BtreeEnter()\sin\sa\scorner\scase\swhere\sthe\scorresponding\sdatabase\shandle\smutex\s(sqlite3.mutex)\smay\snot\sbe\sheld.\sThis\sprevents\sa\spotential\sdeadlock\sor\scrash\sthat\scan\soccur\sif\sthe\sbackup\sAPI,\sshared-cache\smode\sand\sSQLITE_HAVE_CODEC\sare\sall\sin\suse.
+D 2012-09-28T20:23:42.567
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -118,11 +118,11 @@ F src/alter.c 0c1716aa8d248bd6bc750e23be4c68ad05f8668c
 F src/analyze.c 7553068d21e32a57fc33ab6b2393fc8c1ba41410
 F src/attach.c 577bf5675b0c50495fc28549f2fcbdb1bac71143
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
-F src/backup.c 5b31b24d6814b11de763debf342c8cd0a15a4910
+F src/backup.c afc067b9a9050ff48b9d46285c53d096c556a73d
 F src/bitvec.c 26675fe8e431dc555e6f2d0e11e651d172234aa1
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 6e1b481435d04055eda89d24ae93ecd7a99cdf56
-F src/btree.h 4aee02e879211bfcfd3f551769578d2e940ab6c2
+F src/btree.c 821615a1e1002346d84d2e341ecd5e947196454b
+F src/btree.h 5e6482bcabf39455385e39c9739a5954e4775bba
 F src/btreeInt.h 4e5c2bd0f9b36b2a815a6d84f771a61a65830621
 F src/build.c c4555e16f8ccdadb2616014c617ed8166c5a93f7
 F src/callback.c 0cb4228cdcd827dcc5def98fb099edcc9142dbcd
@@ -1017,7 +1017,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 1e874629d7cf568368b912b295bd3001147d0b52
-R f05735be438496d52bd0a75864235756
-U mistachkin
-Z ea13a29c0e73e27415324aa966ef2598
+P 472beb306a4fa7103837d4417aef7d66eef49993
+R ea9a9130bee4f18f6369bb310e898b80
+U dan
+Z 63a6a40692fb8e85a92f7431b790c782
