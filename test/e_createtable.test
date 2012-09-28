@@ -1591,7 +1591,7 @@ foreach {tn tbl res ac data} {
   " $res
 
   do_test e_createtable-4.17.$tn.3 { sqlite3_get_autocommit db } $ac
-  do_execsql_test 4.17.$tn.4 "SELECT * FROM $tbl" $data
+  do_execsql_test 4.17.$tn.4 "SELECT * FROM $tbl ORDER BY rowid" $data
 }
 catchsql COMMIT
 

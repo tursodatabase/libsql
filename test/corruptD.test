@@ -107,12 +107,12 @@ proc restore_file {} {
 do_test corruptD-1.1.1 {
   incr_change_counter
   hexio_write test.db [expr 1024+1] FFFF
-  catchsql { SELECT * FROM t1 }
+  catchsql { SELECT * FROM t1 ORDER BY rowid }
 } {1 {database disk image is malformed}}
 do_test corruptD-1.1.2 {
   incr_change_counter
   hexio_write test.db [expr 1024+1] [hexio_render_int32 1021]
-  catchsql { SELECT * FROM t1 }
+  catchsql { SELECT * FROM t1 ORDER BY rowid }
 } {1 {database disk image is malformed}}
 
 #-------------------------------------------------------------------------

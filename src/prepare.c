@@ -134,7 +134,9 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
 static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   int rc;
   int i;
+#ifndef SQLITE_OMIT_DEPRECATED
   int size;
+#endif
   Table *pTab;
   Db *pDb;
   char const *azArg[4];

@@ -175,10 +175,26 @@ foreach {tn sql temptables res} {
 }
 
 do_execsql_test 2.A {
-  SELECT (SELECT DISTINCT o.a FROM t1 AS i) FROM t1 AS o;
+  SELECT (SELECT DISTINCT o.a FROM t1 AS i) FROM t1 AS o ORDER BY rowid;
 } {a A a A}
 
-
-
+do_test 3.0 {
+  db eval {
+    CREATE TABLE t3(a INTEGER, b INTEGER, c, UNIQUE(a,b));
+    INSERT INTO t3 VALUES
+        (null, null, 1),
+        (null, null, 2),
+        (null, 3, 4),
+        (null, 3, 5),
+        (6, null, 7),
+        (6, null, 8);
+    SELECT DISTINCT a, b FROM t3 ORDER BY +a, +b;
+  }
+} {{} {} {} 3 6 {}}
+do_test 3.1 {
+  regexp {OpenEphemeral} [db eval {
+    EXPLAIN SELECT DISTINCT a, b FROM t3 ORDER BY +a, +b;
+  }]
+} {0}
 
 finish_test

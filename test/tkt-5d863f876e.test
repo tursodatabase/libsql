@@ -17,6 +17,8 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/lock_common.tcl
+set ::testprefix tkt-5d863f876e
+ifcapable !wal {finish_test ; return }
 
 do_multiclient_test tn {
   do_test $tn.1 {

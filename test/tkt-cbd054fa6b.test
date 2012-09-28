@@ -50,7 +50,7 @@ do_test tkt-cbd05-1.3 {
     WHERE idx = 't1_x' 
     GROUP BY tbl,idx
   }
-} {t1 t1_x { A B C D E F G H I}}
+} {/t1 t1_x .[ ABCDEFGHI]{10}./}
 
 do_test tkt-cbd05-2.1 {
   db eval {
@@ -82,6 +82,6 @@ do_test tkt-cbd05-2.3 {
     WHERE idx = 't1_x' 
     GROUP BY tbl,idx
   }
-} {t1 t1_x { A B C D E F G H I}}
+} {/t1 t1_x .[ ABCDEFGHI]{10}./}
 
 finish_test

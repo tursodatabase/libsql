@@ -376,7 +376,7 @@ do_test intpkey-5.1 {
 } {0 zero entry 0}
 do_test intpkey-5.2 {
   execsql {
-    SELECT rowid, a FROM t1
+    SELECT rowid, a FROM t1 ORDER BY rowid
   }
 } {-4 -4 0 0 5 5 6 6 11 11}
 

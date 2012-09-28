@@ -143,11 +143,11 @@ do_test tcl-1.21 {
   set v [catch {db total_changes xyz} msg]
   lappend v $msg
 } {1 {wrong # args: should be "db total_changes "}}
-do_test tcl-1.20 {
+do_test tcl-1.22 {
   set v [catch {db copy} msg]
   lappend v $msg
 } {1 {wrong # args: should be "db copy CONFLICT-ALGORITHM TABLE FILENAME ?SEPARATOR? ?NULLINDICATOR?"}}
-do_test tcl-1.21 {
+do_test tcl-1.23 {
   set v [catch {sqlite3 db2 test.db -vfs nosuchvfs} msg]
   lappend v $msg
 } {1 {no such vfs: nosuchvfs}}

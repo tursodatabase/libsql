@@ -650,7 +650,9 @@ int sqlite3GenerateIndexKey(
   }
   if( doMakeRec ){
     const char *zAff;
-    if( pTab->pSelect || (pParse->db->flags & SQLITE_IdxRealAsInt)!=0 ){
+    if( pTab->pSelect
+     || OptimizationDisabled(pParse->db, SQLITE_IdxRealAsInt)
+    ){
       zAff = 0;
     }else{
       zAff = sqlite3IndexAffinityStr(v, pIdx);

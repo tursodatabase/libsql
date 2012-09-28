@@ -2060,7 +2060,7 @@ do_test e_fkey-45.1 {
 do_test e_fkey-45.2 {
   execsql {
     DELETE FROM pA WHERE rowid = 3;
-    SELECT quote(x) FROM pA;
+    SELECT quote(x) FROM pA ORDER BY rowid;
   }
 } {X'0000' X'9999' X'1234'}
 do_test e_fkey-45.3 {
@@ -2069,7 +2069,7 @@ do_test e_fkey-45.3 {
 do_test e_fkey-45.4 {
   execsql {
     UPDATE pA SET x = X'8765' WHERE rowid = 4;
-    SELECT quote(x) FROM pA;
+    SELECT quote(x) FROM pA ORDER BY rowid;
   }
 } {X'0000' X'9999' X'8765'}
 do_test e_fkey-45.5 {
@@ -2325,7 +2325,7 @@ do_test e_fkey-51.1 {
 do_test e_fkey-51.2 {
   execsql {
     UPDATE parent SET x = 22;
-    SELECT * FROM parent ; SELECT 'xxx' ; SELECT a FROM child;
+    SELECT * FROM parent ORDER BY rowid; SELECT 'xxx' ; SELECT a FROM child;
   }
 } {22 21 23 xxx 22}
 do_test e_fkey-51.3 {
@@ -2335,7 +2335,7 @@ do_test e_fkey-51.3 {
     INSERT INTO parent VALUES(-1);
     INSERT INTO child VALUES(-1);
     UPDATE parent SET x = 22;
-    SELECT * FROM parent ; SELECT 'xxx' ; SELECT a FROM child;
+    SELECT * FROM parent ORDER BY rowid; SELECT 'xxx' ; SELECT a FROM child;
   }
 } {22 23 21 xxx 23}
 

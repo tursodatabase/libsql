@@ -99,7 +99,7 @@ if {$::tcl_platform(platform)!="unix"} {
 set alltests [test_set $alltests -exclude {
   all.test        async.test         quick.test  veryquick.test
   memleak.test    permutations.test  soak.test   fts3.test
-  mallocAll.test  rtree.test         session.test
+  mallocAll.test  rtree.test         full.test   session.test
 }]
 
 set allquicktests [test_set $alltests -exclude {

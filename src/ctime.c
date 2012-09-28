@@ -338,6 +338,9 @@ static const char * const azCompileOpt[] = {
 #ifdef SQLITE_PROXY_DEBUG
   "PROXY_DEBUG",
 #endif
+#ifdef SQLITE_RTREE_INT_ONLY
+  "RTREE_INT_ONLY",
+#endif
 #ifdef SQLITE_SECURE_DELETE
   "SECURE_DELETE",
 #endif

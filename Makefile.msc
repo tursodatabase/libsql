@@ -82,6 +82,14 @@ CC = cl.exe
 LD = link.exe
 !ENDIF
 
+# Check for the predefined command macro RC.  This should point to the resource
+# compiler binary for the target platform.  If it is not defined, simply define
+# it to the legacy default value 'rc.exe'.
+#
+!IFNDEF RC
+RC = rc.exe
+!ENDIF
+
 # Check for the command macro NCC.  This should point to the compiler binary
 # for the platform the compilation process is taking place on.  If it is not
 # defined, simply define it to have the same value as the CC macro.  When
@@ -149,7 +157,8 @@ NLTLIBPATHS = "/LIBPATH:$(NCRTLIBPATH)" "/LIBPATH:$(NSDKLIBPATH)"
 # will run on the target platform.  (BCC and TCC are usually the
 # same unless your are cross-compiling.)
 #
-TCC = $(CC) -W3 -DSQLITE_OS_WIN=1 -I. -I$(TOP)\src -fp:precise
+TCC = $(CC) -W3 -DSQLITE_OS_WIN=1 -I$(TOP) -I$(TOP)\src -fp:precise
+RCC = $(RC) -DSQLITE_OS_WIN=1 -I$(TOP) -I$(TOP)\src
 
 # When compiling the library for use in the WinRT environment,
 # the following compile-time options must be used as well to
@@ -158,7 +167,9 @@ TCC = $(CC) -W3 -DSQLITE_OS_WIN=1 -I. -I$(TOP)\src -fp:precise
 #
 !IF $(FOR_WINRT)!=0
 TCC = $(TCC) -DSQLITE_OS_WINRT=1
+RCC = $(RCC) -DSQLITE_OS_WINRT=1
 TCC = $(TCC) -DWINAPI_FAMILY=WINAPI_PARTITION_APP
+RCC = $(RCC) -DWINAPI_FAMILY=WINAPI_PARTITION_APP
 !ENDIF
 
 # Also, we need to dynamically link to the correct MSVC runtime
@@ -186,7 +197,9 @@ TCC = $(TCC) -MT
 #
 !IF $(USE_AMALGAMATION)==0
 TCC = $(TCC) -I$(TOP)\ext\fts3
+RCC = $(RCC) -I$(TOP)\ext\fts3
 TCC = $(TCC) -I$(TOP)\ext\rtree
+RCC = $(RCC) -I$(TOP)\ext\rtree
 !ENDIF
 
 # Define -DNDEBUG to compile without debugging (i.e., for production usage)
@@ -196,18 +209,22 @@ TCC = $(TCC) -I$(TOP)\ext\rtree
 !IF $(DEBUG)==0
 TCC = $(TCC) -DNDEBUG
 BCC = $(BCC) -DNDEBUG
+RCC = $(RCC) -DNDEBUG
 !ENDIF
 
 !IF $(DEBUG)>1
 TCC = $(TCC) -DSQLITE_DEBUG
+RCC = $(RCC) -DSQLITE_DEBUG
 !ENDIF
 
 !IF $(DEBUG)>3
 TCC = $(TCC) -DSQLITE_DEBUG_OS_TRACE=1
+RCC = $(RCC) -DSQLITE_DEBUG_OS_TRACE=1
 !ENDIF
 
 !IF $(DEBUG)>4
 TCC = $(TCC) -DSQLITE_ENABLE_IOTRACE
+RCC = $(RCC) -DSQLITE_ENABLE_IOTRACE
 !ENDIF
 
 #
@@ -216,30 +233,35 @@ TCC = $(TCC) -DSQLITE_ENABLE_IOTRACE
 #
 TCC = $(TCC) -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS
 BCC = $(BCC) -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS
+RCC = $(RCC) -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS
 
 #
 # Prevent warnings about "deprecated" POSIX functions being used.
 #
 TCC = $(TCC) -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_NONSTDC_NO_WARNINGS
 BCC = $(BCC) -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_NONSTDC_NO_WARNINGS
+RCC = $(RCC) -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_NONSTDC_NO_WARNINGS
 
 #
 # Use the SQLite debugging heap subsystem?
 #
 !IF $(MEMDEBUG)!=0
 TCC = $(TCC) -DSQLITE_MEMDEBUG=1
+RCC = $(RCC) -DSQLITE_MEMDEBUG=1
 
 #
 # Use native Win32 heap subsystem instead of malloc/free?
 #
 !ELSEIF $(WIN32HEAP)!=0
 TCC = $(TCC) -DSQLITE_WIN32_MALLOC=1
+RCC = $(RCC) -DSQLITE_WIN32_MALLOC=1
 
 #
 # Validate the heap on every call into the native Win32 heap subsystem?
 #
 !IF $(DEBUG)>2
 TCC = $(TCC) -DSQLITE_WIN32_MALLOC_VALIDATE=1
+RCC = $(RCC) -DSQLITE_WIN32_MALLOC_VALIDATE=1
 !ENDIF
 !ENDIF
 
@@ -298,10 +320,12 @@ LIBREADLINE =
 # Should the database engine be compiled threadsafe
 #
 TCC = $(TCC) -DSQLITE_THREADSAFE=1
+RCC = $(RCC) -DSQLITE_THREADSAFE=1
 
 # Do threads override each others locks by default (1), or do we test (-1)
 #
 TCC = $(TCC) -DSQLITE_THREAD_OVERRIDE_LOCK=-1
+RCC = $(RCC) -DSQLITE_THREAD_OVERRIDE_LOCK=-1
 
 # Any target libraries which libsqlite must be linked against
 #
@@ -316,6 +340,7 @@ TLIBS =
 # tables to always be in memory.
 #
 TCC = $(TCC) -DSQLITE_TEMP_STORE=1
+RCC = $(RCC) -DSQLITE_TEMP_STORE=1
 
 # Enable/disable loadable extensions, and other optional features
 # based on configuration. (-DSQLITE_OMIT*, -DSQLITE_ENABLE*).
@@ -335,16 +360,19 @@ OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_MAX_TRIGGER_DEPTH=100
 # END required Windows option
 
 TCC = $(TCC) $(OPT_FEATURE_FLAGS)
+RCC = $(RCC) $(OPT_FEATURE_FLAGS)
 
 # Add in any optional parameters specified on the make commane line
 # ie.  make "OPTS=-DSQLITE_ENABLE_FOO=1 -DSQLITE_OMIT_FOO=1".
 TCC = $(TCC) $(OPTS)
+RCC = $(RCC) $(OPTS)
 
 # If symbols are enabled, enable PDBs.
 # If debugging is enabled, disable all optimizations and enable PDBs.
 !IF $(DEBUG)>0
 TCC = $(TCC) -Od -D_DEBUG
 BCC = $(BCC) -Od -D_DEBUG
+RCC = $(RCC) -D_DEBUG
 !ELSE
 TCC = $(TCC) -O2
 BCC = $(BCC) -O2
@@ -358,12 +386,17 @@ BCC = $(BCC) -Zi
 # If ICU support is enabled, add the compiler options for it.
 !IF $(USE_ICU)!=0
 TCC = $(TCC) -DSQLITE_ENABLE_ICU=1
+RCC = $(RCC) -DSQLITE_ENABLE_ICU=1
 TCC = $(TCC) -I$(TOP)\ext\icu
+RCC = $(RCC) -I$(TOP)\ext\icu
 TCC = $(TCC) -I$(ICUINCDIR)
+RCC = $(RCC) -I$(ICUINCDIR)
 !ENDIF
 
-# libtool compile/link
+# Command line prefixes for compiling code, compiling resources,
+# linking, etc.
 LTCOMPILE = $(TCC) -Fo$@
+LTRCOMPILE = $(RCC) -r
 LTLIB = lib.exe
 LTLINK = $(TCC) -Fe$@
 
@@ -749,10 +782,10 @@ libsqlite3.lib:	$(LIBOBJ)
 libtclsqlite3.lib:	tclsqlite.lo libsqlite3.lib
 	$(LTLIB) $(LTLIBOPTS) $(LTLIBPATHS) /OUT:$@ tclsqlite.lo libsqlite3.lib $(LIBTCL:tcl=tclstub) $(TLIBS)
 
-sqlite3.exe:	$(TOP)\src\shell.c libsqlite3.lib sqlite3.h
+sqlite3.exe:	$(TOP)\src\shell.c libsqlite3.lib sqlite3res.lo sqlite3.h
 	$(LTLINK) $(READLINE_FLAGS) \
 		$(TOP)\src\shell.c \
-		/link $(LTLINKOPTS) $(LTLIBPATHS) libsqlite3.lib $(LIBREADLINE) $(LTLIBS) $(TLIBS)
+		/link $(LTLINKOPTS) $(LTLIBPATHS) libsqlite3.lib sqlite3res.lo $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
 # This target creates a directory named "tsrc" and fills it with
 # copies of all of the C source code and header files needed to
@@ -799,6 +832,17 @@ parse.lo:	parse.c $(HDR)
 
 opcodes.lo:	opcodes.c
 	$(LTCOMPILE) -c opcodes.c
+
+# Rule to build the Win32 resources object file.
+#
+sqlite3res.lo:	$(TOP)\src\sqlite3.rc $(HDR)
+	echo #ifndef SQLITE_RESOURCE_VERSION > sqlite3rc.h
+	for /F %%V in ('type "$(TOP)\VERSION"') do ( \
+		echo #define SQLITE_RESOURCE_VERSION %%V \
+			| $(NAWK) "/.*/ { gsub(/[.]/,\",\");print }" >> sqlite3rc.h \
+	)
+	echo #endif >> sqlite3rc.h
+	$(LTRCOMPILE) -fo sqlite3res.lo $(TOP)\src\sqlite3.rc
 
 # Rules to build individual *.lo files from files in the src directory.
 #
@@ -1015,9 +1059,8 @@ tclsqlite.lo:	$(TOP)\src\tclsqlite.c $(HDR)
 tclsqlite-shell.lo:	$(TOP)\src\tclsqlite.c $(HDR)
 	$(LTCOMPILE) -DTCLSH=1 -DBUILD_sqlite -I$(TCLINCDIR) -c $(TOP)\src\tclsqlite.c
 
-tclsqlite3.exe:	tclsqlite-shell.lo libsqlite3.lib
-	$(LTLINK) tclsqlite-shell.lo \
-		/link $(LTLINKOPTS) $(LTLIBPATHS) libsqlite3.lib $(LTLIBS) $(TLIBS)
+tclsqlite3.exe:	tclsqlite-shell.lo libsqlite3.lib sqlite3res.lo
+	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /OUT:$@ libsqlite3.lib tclsqlite-shell.lo sqlite3res.lo $(LTLIBS) $(TLIBS)
 
 # Rules to build opcodes.c and opcodes.h
 #
@@ -1130,17 +1173,20 @@ TESTFIXTURE_SRC = $(TESTSRC) $(TOP)\src\tclsqlite.c $(TESTFIXTURE_SRC0)
 TESTFIXTURE_SRC = $(TESTSRC) $(TOP)\src\tclsqlite.c $(TESTFIXTURE_SRC1)
 !ENDIF
 
-testfixture.exe:	$(TESTFIXTURE_SRC) $(HDR)
+testfixture.exe:	$(TESTFIXTURE_SRC) sqlite3res.lo $(HDR)
 	$(LTLINK) -DSQLITE_NO_SYNC=1 $(TESTFIXTURE_FLAGS) \
 		-DBUILD_sqlite -I$(TCLINCDIR) \
 		$(TESTFIXTURE_SRC) \
-		/link $(LTLINKOPTS) $(LTLIBPATHS) $(LTLIBS) $(TLIBS)
+		/link $(LTLINKOPTS) $(LTLIBPATHS) sqlite3res.lo $(LTLIBS) $(TLIBS)
 
 fulltest:	testfixture.exe sqlite3.exe
 	.\testfixture.exe $(TOP)\test\all.test
 
 soaktest:	testfixture.exe sqlite3.exe
 	.\testfixture.exe $(TOP)\test\all.test -soak=1
+
+fulltestonly:	testfixture.exe sqlite3.exe
+	.\testfixture.exe $(TOP)\test\full.test
 
 test:	testfixture.exe sqlite3.exe
 	.\testfixture.exe $(TOP)\test\veryquick.test
@@ -1152,9 +1198,9 @@ sqlite3_analyzer.c: sqlite3.c $(TOP)\src\test_stat.c $(TOP)\src\tclsqlite.c $(TO
 	$(NAWK) -f $(TOP)\tool\tostr.awk $(TOP)\tool\spaceanal.tcl >> $@
 	echo ; return zMainloop; } >> $@
 
-sqlite3_analyzer.exe:	sqlite3_analyzer.c
+sqlite3_analyzer.exe:	sqlite3_analyzer.c sqlite3res.lo
 	$(LTLINK) -DBUILD_sqlite -DTCLSH=2 -I$(TCLINCDIR) sqlite3_analyzer.c \
-		/link $(LTLINKOPTS) $(LTLIBPATHS) $(LTLIBS) $(TLIBS)
+		/link $(LTLINKOPTS) $(LTLIBPATHS) sqlite3res.lo $(LTLIBS) $(TLIBS)
 
 clean:
 	del /Q *.lo *.ilk *.lib *.obj *.pdb sqlite3.exe libsqlite3.lib
@@ -1169,15 +1215,15 @@ clean:
 	-rmdir /Q/S quota2c
 	-rmdir /Q/S tsrc
 	del /Q .target_source
-	del /Q tclsqlite3.exe
+	del /Q tclsqlite3.exe tclsqlite3.exp
 	del /Q testfixture.exe testfixture.exp test.db
 	del /Q sqlite3.dll sqlite3.lib sqlite3.exp sqlite3.def
 	del /Q sqlite3.c
+	del /Q sqlite3rc.h
 	del /Q sqlite3_analyzer.exe sqlite3_analyzer.exp sqlite3_analyzer.c
 	del /Q sqlite-output.vsix
 
-#
-# Windows section
+# Dynamic link library section.
 #
 dll: sqlite3.dll
 
@@ -1187,5 +1233,5 @@ sqlite3.def: libsqlite3.lib
 		| $(NAWK) "/ 1 _?sqlite3_/ { sub(/^.* _?/,\"\");print }" \
 		| sort >> sqlite3.def
 
-sqlite3.dll: $(LIBOBJ) sqlite3.def
-	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL /DEF:sqlite3.def /OUT:$@ $(LIBOBJ) $(LTLIBS) $(TLIBS)
+sqlite3.dll: $(LIBOBJ) sqlite3res.lo sqlite3.def
+	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL /DEF:sqlite3.def /OUT:$@ $(LIBOBJ) sqlite3res.lo $(LTLIBS) $(TLIBS)
