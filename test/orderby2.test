@@ -1,0 +1,71 @@
+# 2012 Sept 27
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing that the optimizations that disable
+# ORDER BY clauses when the natural order of a query is correct.
+#
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set ::testprefix orderby2
+
+# Generate test data for a join.  Verify that the join gets the
+# correct answer.
+#
+do_test 1.0 {
+  db eval {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+    INSERT INTO t1 VALUES(1,11), (2,22);
+    CREATE TABLE t2(d, e, UNIQUE(d,e));
+    INSERT INTO t2 VALUES(10, 'ten'), (11,'eleven'), (12,'twelve'),
+                         (11, 'oneteen');
+  }
+} {}
+
+do_test 1.1a {
+  db eval {
+    SELECT e FROM t1, t2 WHERE a=1 AND d=b ORDER BY d, e;
+  }
+} {eleven oneteen}
+do_test 1.1b {
+  db eval {
+    EXPLAIN QUERY PLAN
+    SELECT e FROM t1, t2 WHERE a=1 AND d=b ORDER BY d, e;
+  }
+} {~/ORDER BY/}
+
+do_test 1.2a {
+  db eval {
+    SELECT e FROM t1, t2 WHERE a=1 AND d=b ORDER BY e;
+  }
+} {eleven oneteen}
+do_test 1.2b {
+  db eval {
+    EXPLAIN QUERY PLAN
+    SELECT e FROM t1, t2 WHERE a=1 AND d=b ORDER BY e;
+  }
+} {~/ORDER BY/}
+
+do_test 1.3a {
+  db eval {
+    SELECT e, b FROM t1, t2 WHERE a=1 ORDER BY d, e;
+  }
+} {ten 11 eleven 11 oneteen 11 twelve 11}
+do_test 1.3b {
+  db eval {
+    EXPLAIN QUERY PLAN
+    SELECT e, b FROM t1, t2 WHERE a=1 ORDER BY d, e;
+  }
+} {~/ORDER BY/}
+
+
+finish_test
