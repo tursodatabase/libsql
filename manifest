@@ -1,5 +1,5 @@
-C Fix\scompiler\swarnings\sfound\son\sLion.
-D 2012-09-29T14:45:54.660
+C Disable\sthe\sbigfile\stests\son\sMacs.
+D 2012-09-29T15:45:12.074
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -295,8 +295,8 @@ F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
 F test/badutf2.test f5bc7f2d280670ecd79b9cf4f0f1760c607fe51f
 F test/bc_common.tcl 5c8689cc6d2fb44b7c0968ae4f85eb26d50022fa
 F test/between.test 16b1776c6323faadb097a52d673e8e3d8be7d070
-F test/bigfile.test 8f88b5ef065e31c615c49d725ede94155fbe9609
-F test/bigfile2.test 8a3c242c3c3481e7cde5a6ef2a66fdc367a095f7
+F test/bigfile.test aa74f4e5db51c8e54a1d9de9fa65d01d1eb20b59
+F test/bigfile2.test 7c79f1ef0c6c2c2bc1e7bd895596fab32bfb4796
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bind.test 3c7b320969000c441a70952b0b15938fbb66237c
 F test/bindxfer.test efecd12c580c14df5f4ad3b3e83c667744a4f7e0
@@ -1017,7 +1017,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 89b8c377a6f03d9fa885f3f94c1f0b1eec263dea
-R 2026aca949a95171eccb43b1c93409df
+P fd74d3d91721ca404537f195fed04c9edef20bf2
+R acef59cbf66888f83c956993bdbbc818
 U drh
-Z af8b2e345718b556d866a3b69f467a92
+Z 60d0d33f11d050cbca81ed7def74feb5
