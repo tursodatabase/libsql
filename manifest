@@ -1,5 +1,5 @@
-C Avoid\scalling\ssqlite3BtreeEnter()\sin\sa\scorner\scase\swhere\sthe\scorresponding\sdatabase\shandle\smutex\s(sqlite3.mutex)\smay\snot\sbe\sheld.\sThis\sprevents\sa\spotential\sdeadlock\sor\scrash\sthat\scan\soccur\sif\sthe\sbackup\sAPI,\sshared-cache\smode\sand\sSQLITE_HAVE_CODEC\sare\sall\sin\suse.
-D 2012-09-28T20:23:42.567
+C Fix\scompiler\swarnings\sfound\son\sLion.
+D 2012-09-29T14:45:54.660
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -183,8 +183,8 @@ F src/sqliteInt.h c29395d6e68cfbcb2661787ae4820e5e256c916a
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c e4de2458b3ef38fdd0498bc4e5ea5367a241b0f3
-F src/test1.c 0354b555639c92d2a63c0ad4e74ed152ba47e604
+F src/tclsqlite.c 22de426c579d01c7bd2c24fb9229fbd774613b42
+F src/test1.c 936afc02766403e5debca49a1817a780e116df7e
 F src/test2.c 4178056dd1e7d70f954ad8a1e3edb71a2a784daf
 F src/test3.c 3c3c2407fa6ec7a19e24ae23f7cb439d0275a60d
 F src/test4.c bf9fa9bece01de08e6f5e02314e4af5c13590dfa
@@ -204,7 +204,7 @@ F src/test_func.c 3a8dd37c08ab43b76d38eea2836e34a3897bf170
 F src/test_fuzzer.c 1d26aa965120420bc14807da29d4d4541bfa6148
 F src/test_hexio.c abfdecb6fa58c354623978efceb088ca18e379cd
 F src/test_init.c 3cbad7ce525aec925f8fda2192d576d47f0d478a
-F src/test_intarray.c d879bbf8e4ce085ab966d1f3c896a7c8b4f5fc99
+F src/test_intarray.c 07ddcebe4097d400ffca362770f1d883c112387a
 F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c f5c0a05b7b3d5930db769b5ee6c3766dc2221a64
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
@@ -215,7 +215,7 @@ F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 0396f220561f3b4eedc450cef26d40c593c69a25
 F src/test_osinst.c 90a845c8183013d80eccb1f29e8805608516edba
 F src/test_pcache.c a5cd24730cb43c5b18629043314548c9169abb00
-F src/test_quota.c 8ab295092c70903ca6f3209fa4c75f5cb6c1bf8e
+F src/test_quota.c e5fdb7d28e5afae1b619922804e544db0041ec81
 F src/test_quota.h 8761e463b25e75ebc078bd67d70e39b9c817a0cb
 F src/test_rtree.c aba603c949766c4193f1068b91c787f57274e0d9
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
@@ -1017,7 +1017,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 472beb306a4fa7103837d4417aef7d66eef49993
-R ea9a9130bee4f18f6369bb310e898b80
-U dan
-Z 63a6a40692fb8e85a92f7431b790c782
+P 89b8c377a6f03d9fa885f3f94c1f0b1eec263dea
+R 2026aca949a95171eccb43b1c93409df
+U drh
+Z af8b2e345718b556d866a3b69f467a92

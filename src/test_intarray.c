@@ -346,8 +346,9 @@ static int test_intarray_bind(
     return TCL_ERROR;
   }
   for(i=0; i<n; i++){
-    a[i] = 0;
-    Tcl_GetWideIntFromObj(0, objv[i+2], &a[i]);
+    Tcl_WideInt x = 0;
+    Tcl_GetWideIntFromObj(0, objv[i+2], &x);
+    a[i] = x;
   }
   rc = sqlite3_intarray_bind(pArray, n, a, sqlite3_free);
   if( rc!=SQLITE_OK ){
