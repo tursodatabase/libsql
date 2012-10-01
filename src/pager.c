@@ -3476,9 +3476,16 @@ void sqlite3PagerSetBusyhandler(
   Pager *pPager,                       /* Pager object */
   int (*xBusyHandler)(void *),         /* Pointer to busy-handler function */
   void *pBusyHandlerArg                /* Argument to pass to xBusyHandler */
-){  
+){
   pPager->xBusyHandler = xBusyHandler;
   pPager->pBusyHandlerArg = pBusyHandlerArg;
+
+  if( isOpen(pPager->fd) ){
+    void **ap = &pPager->xBusyHandler;
+    assert( ((int(*)(void *))(ap[0]))==xBusyHandler );
+    assert( ap[1]==pBusyHandlerArg );
+    sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_BUSYHANDLER, (void *)ap);
+  }
 }
 
 /*
