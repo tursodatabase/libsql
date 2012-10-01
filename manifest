@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\svalue\sreturned\sby\sxSectorSize()\sis\sreasonable\s(currently\sdefined\sas\sbetween\s2^5\sand\s2^16\sbytes)\sbefore\susing\sit\sto\scalculate\sthe\samount\sof\spadding\sto\sadd\sto\sa\swal\sfile.
-D 2012-10-01T06:50:55.576
+C Make\ssure\sthe\ssize\sparameter\sto\sread\sand\swrite\sVFS\smethods\sin\sthe\sunix\sVFS\ndo\snot\sbecome\stoo\sbig\sor\sgo\snegative.\s\sThis\swas\snot\sactually\spossible\sin\sthe\ncurrent\scode.\s\sThe\schecks\sare\sadded\sto\smake\ssure\ssome\sfuture\sbug\sdoes\snot\nmake\sit\spossible.
+D 2012-10-01T12:16:26.771
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -160,7 +160,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c 69b2fe66316524eebf5f1ce85c1fdfe2952307e9
+F src/os_unix.c a5a45a2857c43b37bac145b521064a85a544cd7a
 F src/os_win.c 90c7a1fe2698867555ba4266f5bd436c85d0d1dc
 F src/pager.c 9f5f2823594cc2848e151510f726af02896485b5
 F src/pager.h bdbc379557eb2e233dfec10986b3086877e72db7
@@ -1018,7 +1018,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 62225b4a4c4bfe1820ef54cb202edf2cd866429f
-R 09d3e5b05c9dfd1b20715f593e6818b6
-U dan
-Z 07828d460d32254f1342208677faf52f
+P 6b4ff83bff07d427af585c9fd03be90abf2fc82f
+R 43398c1dd9f4f691234256568baab7a2
+U drh
+Z 321bb2af8cac9de7aef8d0d7efaf3889
