@@ -1,5 +1,5 @@
-C Add\sSQLITE_FCNTL_BUSYHANDLER.\sInvoked\sto\sprovide\saccess\sto\sthe\sbusy-handler\scallback\sto\scustom\sVFS\simplementations.
-D 2012-10-01T18:44:33.687
+C Fix\sseveral\scompiler\swarnings\sseen\swith\sMSVC.
+D 2012-10-01T20:12:30.885
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -83,7 +83,7 @@ F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c eb9ae1d79046bd7871aa97ee6da51eb770134b5a
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c d17aecb7a92762efa7b1f5d5fd7c88fd77d70827
+F ext/rtree/rtree.c 47064ee2995a396bfb626337d2b43f12cc0af687
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test e474a2b5eff231496dbd073fe67e5fbaf7f444c9
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -143,7 +143,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
 F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
-F src/main.c 5249486037f88e765cce7c4870846dc5a2cd2ed1
+F src/main.c ca6784455f3207524b82d24141676d641d44f137
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
@@ -162,7 +162,7 @@ F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c a5a45a2857c43b37bac145b521064a85a544cd7a
 F src/os_win.c 90c7a1fe2698867555ba4266f5bd436c85d0d1dc
-F src/pager.c 52bfc72f7f8c6e49668803657e8f239e38c529dd
+F src/pager.c a7ad8c38809edf0be545e8f52da5bcbb88885b38
 F src/pager.h bdbc379557eb2e233dfec10986b3086877e72db7
 F src/parse.y f29df90bd3adc64b33114ab1de9fb7768fcf2099
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -1018,7 +1018,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P c12044df322283c9deb0d7dacd8a699ac53f27b6
-R d094915a20a7714c82c93282dde9246b
-U dan
-Z a39135b23d456d91a1a24c9caf254ec8
+P 1262d2f471214a3417dd02159a7aa2355b18f789
+R 0f744c0892eb0257285d51198fe0d093
+T *branch * msvcWarnings
+T *sym-msvcWarnings *
+T -sym-trunk *
+U mistachkin
+Z b42d95f34ab630c00d546c5b9df935b7
