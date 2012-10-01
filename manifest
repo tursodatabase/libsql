@@ -1,5 +1,5 @@
-C Omit\sthe\ssqlite3GetReservedNoMutex()\sroutine\sin\sbuild\sconfigurations\swhere\nit\sis\snot\sused.
-D 2012-10-01T12:44:26.787
+C Minor\schanges\sto\sthe\squery\splanner\sfor\simproved\stest\scoverage.
+D 2012-10-01T17:44:05.444
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -249,7 +249,7 @@ F src/vtab.c d8020c0a0e8ccc490ca449d7e665311b6e9f3ba9
 F src/wal.c e1fe8f92a0ea0fef8faa87ec43a127a478589d22
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c acc2ec5f6879721f332223da393777438ea5a606
+F src/where.c e676efbfa8d5fe04bf2e3955d83f88d699e6eecd
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 0be144b453e0622a085fae8665c32f5676708e00
@@ -1018,7 +1018,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P daebe3bd2d9bd7b6f876a8110cf5045eb3fee078
-R d91a487579faabb2d53225715f6d270e
+P f193dbb6b96b2f49dd0d6345802c9c006cd99e3c
+R cc743e0e8cc0407b063f795edee17263
 U drh
-Z ba2684210aeb6310a87308d43a7fd6e8
+Z 2fb8150c8641aac32ecd5d693f13df87

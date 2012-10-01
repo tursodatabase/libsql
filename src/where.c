@@ -1441,7 +1441,8 @@ static int indexIsUniqueNotNull(Index *pIdx, int nSkip){
   if( pIdx->onError==OE_None ) return 0;
   for(i=nSkip; i<pIdx->nColumn; i++){
     int j = pIdx->aiColumn[i];
-    if( j>=0 && pTab->aCol[j].notNull==0 ) return 0;
+    assert( j>=0 && j<pTab->nCol );
+    if( pTab->aCol[j].notNull==0 ) return 0;
   }
   return 1;
 }
@@ -1505,7 +1506,8 @@ static int isDistinctIndex(
   Bitmask mask = 0;               /* Mask of unaccounted for pDistinct exprs */
   int i;                          /* Iterator variable */
 
-  if( pIdx->zName==0 || pDistinct==0 || pDistinct->nExpr>=BMS ) return 0;
+  assert( pDistinct!=0 );
+  if( pIdx->zName==0 || pDistinct->nExpr>=BMS ) return 0;
   testcase( pDistinct->nExpr==BMS-1 );
 
   /* Loop through all the expressions in the distinct list. If any of them
@@ -3097,7 +3099,7 @@ static void bestBtreeIndex(WhereBestIdx *p){
     **    external sort (i.e. scanning the index being evaluated will not 
     **    correctly order records).
     **
-    **  bDistinct:
+    **  bDist:
     **    Boolean. True if there is a DISTINCT clause that will require an 
     **    external btree.
     **
