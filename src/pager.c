@@ -2510,6 +2510,21 @@ static int pager_truncate(Pager *pPager, Pgno nPage){
 }
 
 /*
+** Return a sanitized version of the sector-size of OS file pFile. The
+** return value is guaranteed to lie between 32 and MAX_SECTOR_SIZE.
+*/
+int sqlite3SectorSize(sqlite3_file *pFile){
+  int iRet = sqlite3OsSectorSize(pFile);
+  if( iRet<32 ){
+    iRet = 512;
+  }else if( iRet>MAX_SECTOR_SIZE ){
+    assert( MAX_SECTOR_SIZE>=512 );
+    iRet = MAX_SECTOR_SIZE;
+  }
+  return iRet;
+}
+
+/*
 ** Set the value of the Pager.sectorSize variable for the given
 ** pager based on the value returned by the xSectorSize method
 ** of the open database file. The sector size will be used used 
@@ -2544,14 +2559,7 @@ static void setSectorSize(Pager *pPager){
     ** call will segfault. */
     pPager->sectorSize = 512;
   }else{
-    pPager->sectorSize = sqlite3OsSectorSize(pPager->fd);
-    if( pPager->sectorSize<32 ){
-      pPager->sectorSize = 512;
-    }
-    if( pPager->sectorSize>MAX_SECTOR_SIZE ){
-      assert( MAX_SECTOR_SIZE>=512 );
-      pPager->sectorSize = MAX_SECTOR_SIZE;
-    }
+    pPager->sectorSize = sqlite3SectorSize(pPager->fd);
   }
 }
 

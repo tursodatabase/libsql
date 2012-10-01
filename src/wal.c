@@ -2828,7 +2828,7 @@ int sqlite3WalFrames(
   */
   if( isCommit && (sync_flags & WAL_SYNC_TRANSACTIONS)!=0 ){
     if( pWal->padToSectorBoundary ){
-      int sectorSize = sqlite3OsSectorSize(pWal->pWalFd);
+      int sectorSize = sqlite3SectorSize(pWal->pWalFd);
       w.iSyncPoint = ((iOffset+sectorSize-1)/sectorSize)*sectorSize;
       while( iOffset<w.iSyncPoint ){
         rc = walWriteOneFrame(&w, pLast, nTruncate, iOffset);
