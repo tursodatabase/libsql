@@ -2200,6 +2200,7 @@ int sqlite3BtreeGetPageSize(Btree *p){
   return p->pBt->pageSize;
 }
 
+#if defined(SQLITE_HAS_CODEC) || defined(SQLITE_DEBUG)
 /*
 ** This function is similar to sqlite3BtreeGetReserve(), except that it
 ** may only be called if it is guaranteed that the b-tree mutex is already
@@ -2215,6 +2216,7 @@ int sqlite3BtreeGetReserveNoMutex(Btree *p){
   assert( sqlite3_mutex_held(p->pBt->mutex) );
   return p->pBt->pageSize - p->pBt->usableSize;
 }
+#endif /* SQLITE_HAS_CODEC || SQLITE_DEBUG */
 
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS) || !defined(SQLITE_OMIT_VACUUM)
 /*
