@@ -1,5 +1,5 @@
-C Version\s3.7.14
-D 2012-09-03T15:42:36.217
+C Work\saround\san\soptimization\sissue\swith\sthe\sMSVC\scompiler\sfor\sARM.
+D 2012-10-02T23:26:39.086
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -123,7 +123,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 5b31b24d6814b11de763debf342c8cd0a15a4910
 F src/bitvec.c 26675fe8e431dc555e6f2d0e11e651d172234aa1
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 9cf6de113d23d47967df24b8d8ce6501c879d7e6
+F src/btree.c 97edf88abd2b66f31886ba977d2b3b2a21d81d4c
 F src/btree.h 4aee02e879211bfcfd3f551769578d2e940ab6c2
 F src/btreeInt.h 4e5c2bd0f9b36b2a815a6d84f771a61a65830621
 F src/build.c a3b700afd475e6387da59be6f2e86161e80d6d87
@@ -1014,10 +1014,10 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P ebb08d0b4d1ed674e4a23c3754206ca2df9063ff
-R 8bdf9ef517616ac5a5043f12bec4acdb
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.7.14 *
+P c0d89d4a9752922f9e367362366efde4f1b06f2a
+R bb518a4e673cc3897ae561da4db7b79e
+T *branch * branch-3.7.14
+T *sym-branch-3.7.14 *
+T -sym-trunk *
 U drh
-Z 126ab1aaea0f3a8cb5c4792cf0a82989
+Z 600158d31992ed6de175e1851cf47a76

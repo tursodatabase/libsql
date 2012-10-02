@@ -5922,6 +5922,9 @@ static void copyNodeContent(MemPage *pFrom, MemPage *pTo, int *pRC){
 ** If aOvflSpace is set to a null pointer, this function returns 
 ** SQLITE_NOMEM.
 */
+#if defined(_MSC_VER) && _MSC_VER >= 1700 && defined(_M_ARM)
+#pragma optimize("", off)
+#endif
 static int balance_nonroot(
   MemPage *pParent,               /* Parent page of siblings being balanced */
   int iParentIdx,                 /* Index of "the page" in pParent */
@@ -6552,6 +6555,9 @@ balance_cleanup:
 
   return rc;
 }
+#if defined(_MSC_VER) && _MSC_VER >= 1700 && defined(_M_ARM)
+#pragma optimize("", on)
+#endif
 
 
 /*
