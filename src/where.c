@@ -5116,6 +5116,7 @@ WhereInfo *sqlite3WhereBegin(
     }
     andFlags &= bestPlan.plan.wsFlags;
     pLevel->plan = bestPlan.plan;
+    pLevel->iTabCur = pTabList->a[bestJ].iCursor;
     testcase( bestPlan.plan.wsFlags & WHERE_INDEXED );
     testcase( bestPlan.plan.wsFlags & WHERE_TEMP_INDEX );
     if( bestPlan.plan.wsFlags & (WHERE_INDEXED|WHERE_TEMP_INDEX) ){
@@ -5189,7 +5190,6 @@ WhereInfo *sqlite3WhereBegin(
 
     pTabItem = &pTabList->a[pLevel->iFrom];
     pTab = pTabItem->pTab;
-    pLevel->iTabCur = pTabItem->iCursor;
     pWInfo->nRowOut *= pLevel->plan.nRow;
     iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
     if( (pTab->tabFlags & TF_Ephemeral)!=0 || pTab->pSelect ){
