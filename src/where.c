@@ -2736,10 +2736,13 @@ static int isOrderedColumn(WhereBestIdx *p, int iTab, int iCol, int *pbRev){
         sortOrder = 0;
         testcase( (pLevel->plan.wsFlags & WHERE_REVERSE)!=0 );
       }else{
-        for(j=0; j<pIdx->nColumn; j++){
+        int n = pLevel->plan.nOBSat;
+        if( p->i>=2 ) n -= pLevel[-1].plan.nOBSat;
+        assert( n<=pIdx->nColumn );
+        for(j=0; j<n; j++){
           if( iCol==pIdx->aiColumn[j] ) break;
         }
-        if( j>=pIdx->nColumn ) return 0;
+        if( j>=n ) return 0;
         sortOrder = pIdx->aSortOrder[j];
         testcase( (pLevel->plan.wsFlags & WHERE_REVERSE)!=0 );
       }

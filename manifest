@@ -1,5 +1,5 @@
-C Factor\san\sinvariant\sout\sthe\sloop\stermination\scondition\sfor\sthe\sORDER\sBY\nsatisfied-by-index\sanalyzer\sroutine.
-D 2012-10-02T01:46:48.203
+C Only\scontinue\san\sORDER\sBY\soptimization\sinto\sinner\sloops\sif\sthe\sequality\nconstraints\son\sthe\sinner\sloop\smatch\sterms\sof\san\souter\sordered\sindex\sthat\nare\sactually\sused\sby\sthe\sORDER\sBY\sclause.
+D 2012-10-02T14:11:29.949
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -249,7 +249,7 @@ F src/vtab.c d8020c0a0e8ccc490ca449d7e665311b6e9f3ba9
 F src/wal.c e1fe8f92a0ea0fef8faa87ec43a127a478589d22
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 58a99bf57e1e216210fa143f3ae3cd1a5928a36f
+F src/where.c d40f2fa13bbda673cc681a2baeb490fe7a22f17e
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 0be144b453e0622a085fae8665c32f5676708e00
@@ -634,8 +634,8 @@ F test/notify3.test a86259abbfb923aa27d30f0fc038c88e5251488a
 F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
-F test/orderby1.test 31c9865626046666e81cd22ecf8e1c24a4ea41b6
-F test/orderby2.test 295d6639e1ce522195354b88ab298d7ede169736
+F test/orderby1.test 1f7e942aec6074725d823edfff258e9187dd255f
+F test/orderby2.test d8fa5991d8948ae1f335c2f91d751e955bfee815
 F test/oserror.test 50417780d0e0d7cd23cf12a8277bb44024765df3
 F test/pager1.test 2163c6ef119f497a71a84137c957c63763e640ab
 F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
@@ -1018,7 +1018,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 351dc8d9cab8a222f28fb865d3a7d1c622d60d6f
-R e2343532e1485c60fb209fa3ba6a8cc6
+P 545bb33688663066cf3f09e4cdc4d5cfe59fb8db
+R 0244ec6263deff2d19e204ecc996e53d
 U drh
-Z 8f9278868782471bac046c34faf9fbb1
+Z 17cee407676b72dedd8bc51219c654fe

@@ -170,14 +170,14 @@ do_test 2.0 {
       name TEXT,
       UNIQUE(aid, tn)
     );
-    INSERT INTO album VALUES(1, '1-one'), (2, '2-two'), (3, '3-three');
+    INSERT INTO album VALUES(1, '1-one'), (20, '2-two'), (3, '3-three');
     INSERT INTO track VALUES
-        (1, 1, 'one-a'),
-        (2, 2, 'two-b'),
-        (3, 3, 'three-c'),
-        (1, 3, 'one-c'),
-        (2, 1, 'two-a'),
-        (3, 1, 'three-a');
+        (1,  1, 'one-a'),
+        (20, 2, 'two-b'),
+        (3,  3, 'three-c'),
+        (1,  3, 'one-c'),
+        (20, 1, 'two-a'),
+        (3,  1, 'three-a');
     COMMIT;
   }
 } {}
@@ -193,6 +193,18 @@ do_test 2.1b {
   db eval {
     EXPLAIN QUERY PLAN
     SELECT name FROM album JOIN track USING (aid) ORDER BY title, tn
+  }
+} {/ORDER BY/}  ;# ORDER BY required because of missing aid term in ORDER BY
+
+do_test 2.1c {
+  db eval {
+    SELECT name FROM album JOIN track USING (aid) ORDER BY title, aid, tn
+  }
+} {one-a one-c two-a two-b three-a three-c}
+do_test 2.1d {
+  db eval {
+    EXPLAIN QUERY PLAN
+    SELECT name FROM album JOIN track USING (aid) ORDER BY title, aid, tn
   }
 } {~/ORDER BY/}  ;# ORDER BY optimized out
 
@@ -284,7 +296,7 @@ do_test 2.6c {
     EXPLAIN QUERY PLAN
     SELECT name FROM album JOIN track USING (aid) ORDER BY title DESC, tn DESC
   }
-} {~/ORDER BY/}  ;# ORDER BY optimized-out
+} {/ORDER BY/}  ;# ORDER BY required
 
 
 # Generate another test dataset, but this time using mixed ASC/DESC indices.
