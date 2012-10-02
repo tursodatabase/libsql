@@ -2736,9 +2736,7 @@ static int isOrderedColumn(WhereBestIdx *p, int iTab, int iCol, int *pbRev){
         sortOrder = 0;
         testcase( (pLevel->plan.wsFlags & WHERE_REVERSE)!=0 );
       }else{
-        int n = pLevel->plan.nOBSat;
-        if( p->i>=2 ) n -= pLevel[-1].plan.nOBSat;
-        assert( n<=pIdx->nColumn );
+        int n = pIdx->nColumn;
         for(j=0; j<n; j++){
           if( iCol==pIdx->aiColumn[j] ) break;
         }
@@ -2840,7 +2838,7 @@ static int isSortingIndex(
   }else{
     if( nEqCol==0 ) return nPriorSat;
     sortOrder = bOuterRev;
-    nEqOneRow = 0;
+    nEqOneRow = -1;
   }
   pOrderBy = p->pOrderBy;
   assert( pOrderBy!=0 );
@@ -2917,7 +2915,7 @@ static int isSortingIndex(
     if( i>nEqOneRow ){
       if( termSortOrder!=sortOrder ){
         /* Indices can only be used if all ORDER BY terms past the
-        ** equality constraints are all either DESC or ASC. */
+        ** equality constraints have the correct DESC or ASC. */
         break;
       }
     }else{

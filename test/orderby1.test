@@ -194,7 +194,7 @@ do_test 2.1b {
     EXPLAIN QUERY PLAN
     SELECT name FROM album JOIN track USING (aid) ORDER BY title, tn
   }
-} {/ORDER BY/}  ;# ORDER BY required because of missing aid term in ORDER BY
+} {~/ORDER BY/}  ;# ORDER BY optimized out
 
 do_test 2.1c {
   db eval {
@@ -296,7 +296,7 @@ do_test 2.6c {
     EXPLAIN QUERY PLAN
     SELECT name FROM album JOIN track USING (aid) ORDER BY title DESC, tn DESC
   }
-} {/ORDER BY/}  ;# ORDER BY required
+} {~/ORDER BY/}  ;# ORDER BY optimized out
 
 
 # Generate another test dataset, but this time using mixed ASC/DESC indices.
