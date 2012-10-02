@@ -5034,8 +5034,8 @@ WhereInfo *sqlite3WhereBegin(
         sWBI.notReady = (isOptimal ? m : sWBI.notValid);
         if( sWBI.pSrc->pIndex==0 ) nUnconstrained++;
   
-        WHERETRACE(("=== trying table %d with isOptimal=%d ===\n",
-                    j, isOptimal));
+        WHERETRACE(("=== trying table %d (%s) with isOptimal=%d ===\n",
+                    j, sWBI.pSrc->pTab->zName, isOptimal));
         assert( sWBI.pSrc->pTab );
 #ifndef SQLITE_OMIT_VIRTUALTABLE
         if( IsVirtual(sWBI.pSrc->pTab) ){
@@ -5089,9 +5089,10 @@ WhereInfo *sqlite3WhereBegin(
                 || (sWBI.cost.rCost<=bestPlan.rCost 
                  && sWBI.cost.plan.nRow<bestPlan.plan.nRow))
         ){
-          WHERETRACE(("=== table %d is best so far"
+          WHERETRACE(("=== table %d (%s) is best so far"
                       " with cost=%.1f, nRow=%.1f, nOBSat=%d\n",
-                      j, sWBI.cost.rCost, sWBI.cost.plan.nRow,
+                      j, sWBI.pSrc->pTab->zName,
+                      sWBI.cost.rCost, sWBI.cost.plan.nRow,
                       sWBI.cost.plan.nOBSat));
           bestPlan = sWBI.cost;
           bestJ = j;
@@ -5101,9 +5102,10 @@ WhereInfo *sqlite3WhereBegin(
     }
     assert( bestJ>=0 );
     assert( sWBI.notValid & getMask(pMaskSet, pTabList->a[bestJ].iCursor) );
-    WHERETRACE(("*** Optimizer selects table %d for loop %d with:\n"
+    WHERETRACE(("*** Optimizer selects table %d (%s) for loop %d with:\n"
                 "    cost=%.1f, nRow=%.1f, nOBSat=%d wsFlags=0x%08x\n",
-                bestJ, pLevel-pWInfo->a, bestPlan.rCost, bestPlan.plan.nRow,
+                bestJ, pTabList->a[bestJ].pTab->zName,
+                pLevel-pWInfo->a, bestPlan.rCost, bestPlan.plan.nRow,
                 bestPlan.plan.nOBSat, bestPlan.plan.wsFlags));
     if( (bestPlan.plan.wsFlags & WHERE_ORDERBY)!=0 ){
       pWInfo->nOBSat = pOrderBy->nExpr;

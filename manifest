@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2012-10-01T20:32:38.373
+C Improvements\sto\sthe\swheretrace\soutput.
+D 2012-10-02T01:10:00.432
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -249,7 +249,7 @@ F src/vtab.c d8020c0a0e8ccc490ca449d7e665311b6e9f3ba9
 F src/wal.c e1fe8f92a0ea0fef8faa87ec43a127a478589d22
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c e676efbfa8d5fe04bf2e3955d83f88d699e6eecd
+F src/where.c 9f706f54008083dac6079a75463d6921eab2fecd
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 0be144b453e0622a085fae8665c32f5676708e00
@@ -1018,7 +1018,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 1262d2f471214a3417dd02159a7aa2355b18f789 8b5f617c2a5f0bf7bdbd9144aee58d69564db1e2
-R 0f744c0892eb0257285d51198fe0d093
+P 59c2be75ff8b8ccd77320b45e4088e5bf456a1d9
+R c1d8d9fb6c53d3d30af8c26e9e5fd207
 U drh
-Z 8e271de1fa8eae3da9424d1b1b2f682e
+Z 969a36303c6eae35969bc68961950155
