@@ -2859,7 +2859,7 @@ static int isSortingIndex(
   ** of the index is also allowed to match against the ORDER BY
   ** clause.
   */
-  for(i=0,j=nPriorSat,pTerm=&pOrderBy->a[j]; j<nTerm && i<=pIdx->nColumn; i++){
+  for(i=0,j=nPriorSat,pTerm=&pOrderBy->a[j]; j<nTerm; i++){
     Expr *pExpr;       /* The expression of the ORDER BY pTerm */
     CollSeq *pColl;    /* The collating sequence of pExpr */
     int termSortOrder; /* Sort order for this term */
@@ -2867,6 +2867,7 @@ static int isSortingIndex(
     int iSortOrder;    /* 1 for DESC, 0 for ASC on the i-th index term */
     const char *zColl; /* Name of the collating sequence for i-th index term */
 
+    assert( i<=pIdx->nColumn );
     pExpr = pTerm->pExpr;
     if( pExpr->op!=TK_COLUMN || pExpr->iTable!=base ){
       /* Can not use an index sort on anything that is not a column in the
