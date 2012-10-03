@@ -258,7 +258,7 @@ struct WhereCost {
 #define WHERE_BTM_LIMIT    0x00200000  /* x>EXPR or x>=EXPR constraint */
 #define WHERE_BOTH_LIMIT   0x00300000  /* Both x>EXPR and x<EXPR */
 #define WHERE_IDX_ONLY     0x00400000  /* Use index only - omit table */
-#define WHERE_ORDERBY      0x00800000  /* Output will appear in correct order */
+#define WHERE_ORDERED      0x00800000  /* Output will appear in correct order */
 #define WHERE_REVERSE      0x01000000  /* Scan in reverse order */
 #define WHERE_UNIQUE       0x02000000  /* Selects no more than one row */
 #define WHERE_ALL_UNIQUE   0x04000000  /* This and all prior have one row */
@@ -289,6 +289,17 @@ struct WhereBestIdx {
   WhereLevel *aLevel;             /* Info about outer loops */
   WhereCost cost;                 /* Lowest cost query plan */
 };
+
+/*
+** Return TRUE if the probe cost is less than the baseline cost
+*/
+static int compareCost(const WhereCost *pProbe, const WhereCost *pBaseline){
+  if( pProbe->rCost<pBaseline->rCost ) return 1;
+  if( pProbe->rCost>pBaseline->rCost ) return 0;
+  if( pProbe->plan.nOBSat>pBaseline->plan.nOBSat ) return 1;
+  if( pProbe->plan.nRow<pBaseline->plan.nRow ) return 1;
+  return 0;
+}
 
 /*
 ** Initialize a preallocated WhereClause structure.
@@ -1762,6 +1773,7 @@ static void bestOrClauseIndex(WhereBestIdx *p){
         p->cost.rCost = rTotal;
         p->cost.used = used;
         p->cost.plan.nRow = nRow;
+        p->cost.plan.nOBSat = p->i ? p->aLevel[p->i-1].plan.nOBSat : 0;
         p->cost.plan.wsFlags = flags;
         p->cost.plan.u.pTerm = pTerm;
       }
@@ -2304,7 +2316,10 @@ static void bestVirtualIndex(WhereBestIdx *p){
   }
   p->cost.plan.u.pVtabIdx = pIdxInfo;
   if( pIdxInfo->orderByConsumed ){
-    p->cost.plan.wsFlags |= WHERE_ORDERBY;
+    p->cost.plan.wsFlags |= WHERE_ORDERED;
+    p->cost.plan.nOBSat = nOrderBy;
+  }else{
+    p->cost.plan.nOBSat = p->i ? p->aLevel[p->i-1].plan.nOBSat : 0;
   }
   p->cost.plan.nEq = 0;
   pIdxInfo->nOrderBy = nOrderBy;
@@ -2730,8 +2745,10 @@ static int isOrderedColumn(WhereBestIdx *p, int iTab, int iCol, int *pbRev){
     if( (pLevel->plan.wsFlags & WHERE_ALL_UNIQUE)!=0 ){
       return 1;
     }
-    if( (pLevel->plan.wsFlags & WHERE_INDEXED)!=0 ){
-      pIdx = pLevel->plan.u.pIdx;
+    if( (pLevel->plan.wsFlags & WHERE_ORDERED)==0 ){
+      return 0;
+    }
+    if( (pIdx = pLevel->plan.u.pIdx)!=0 ){
       if( iCol<0 ){
         sortOrder = 0;
         testcase( (pLevel->plan.wsFlags & WHERE_REVERSE)!=0 );
@@ -2833,10 +2850,14 @@ static int isSortingIndex(
     nPriorSat = p->aLevel[p->i-1].plan.nOBSat;
     if( OptimizationDisabled(db, SQLITE_OrderByIdxJoin) ) return nPriorSat;
   }
-  if( p->i==0 || (p->aLevel[p->i-1].plan.wsFlags & WHERE_ALL_UNIQUE)!=0 ){
+  if( nEqCol==0 ){
+    if( p->i && (p->aLevel[p->i-1].plan.wsFlags & WHERE_ORDERED)==0 ){
+      return nPriorSat;
+    }
+    nEqOneRow = 0;
+  }else if( p->i==0 || (p->aLevel[p->i-1].plan.wsFlags & WHERE_ALL_UNIQUE)!=0 ){
     nEqOneRow = nEqCol;
   }else{
-    if( nEqCol==0 ) return nPriorSat;
     sortOrder = bOuterRev;
     nEqOneRow = -1;
   }
@@ -3043,18 +3064,16 @@ static void bestBtreeIndex(WhereBestIdx *p){
   */
   for(; pProbe; pIdx=pProbe=pProbe->pNext){
     const tRowcnt * const aiRowEst = pProbe->aiRowEst;
-    double cost;                /* Cost of using pProbe */
-    double nRow;                /* Estimated number of rows in result set */
+    WhereCost pc;               /* Cost of using pProbe */
     double log10N = (double)1;  /* base-10 logarithm of nRow (inexact) */
     int bRev = 2;               /* 0=forward scan.  1=reverse.  2=undecided */
-    int wsFlags = 0;
-    Bitmask used = 0;
+    memset(&pc, 0, sizeof(pc));
 
     /* The following variables are populated based on the properties of
     ** index being evaluated. They are then used to determine the expected
     ** cost and number of rows returned.
     **
-    **  nEq: 
+    **  pc.plan.nEq: 
     **    Number of equality terms that can be implemented using the index.
     **    In other words, the number of initial fields in the index that
     **    are used in == or IN or NOT NULL constraints of the WHERE clause.
@@ -3120,7 +3139,6 @@ static void bestBtreeIndex(WhereBestIdx *p){
     **             SELECT a, b    FROM tbl WHERE a = 1;
     **             SELECT a, b, c FROM tbl WHERE a = 1;
     */
-    int nEq;                      /* Number of == or IN terms matching index */
     int nOrdered;                 /* Number of ordered terms matching index */
     int bInEst = 0;               /* True if "x IN (SELECT...)" seen */
     int nInMul = 1;               /* Number of distinct equalities to lookup */
@@ -3129,7 +3147,7 @@ static void bestBtreeIndex(WhereBestIdx *p){
     int bSort;                    /* True if external sort required */
     int bDist;                    /* True if index cannot help with DISTINCT */
     int bLookup = 0;              /* True if not a covering index */
-    int nOBSat = 0;               /* Number of ORDER BY terms satisfied */
+    int nPriorSat;                /* ORDER BY terms satisfied by outer loops */
     int nOrderBy;                 /* Number of ORDER BY terms */
     WhereTerm *pTerm;             /* A single term of the WHERE clause */
 #ifdef SQLITE_ENABLE_STAT3
@@ -3137,19 +3155,26 @@ static void bestBtreeIndex(WhereBestIdx *p){
 #endif
 
     nOrderBy = p->pOrderBy ? p->pOrderBy->nExpr : 0;
-    bSort = nOrderBy>0 && (p->i==0 || p->aLevel[p->i-1].plan.nOBSat<nOrderBy);
-    bDist = p->i==0 && p->pDistinct!=0;
+    if( p->i ){
+      nPriorSat = pc.plan.nOBSat = p->aLevel[p->i-1].plan.nOBSat;
+      bSort = nPriorSat<nOrderBy;
+      bDist = 0;
+    }else{
+      nPriorSat = pc.plan.nOBSat = 0;
+      bSort = nOrderBy>0;
+      bDist = p->pDistinct!=0;
+    }
 
-    /* Determine the values of nEq and nInMul */
-    for(nEq=nOrdered=0; nEq<pProbe->nColumn; nEq++){
-      int j = pProbe->aiColumn[nEq];
+    /* Determine the values of pc.plan.nEq and nInMul */
+    for(pc.plan.nEq=nOrdered=0; pc.plan.nEq<pProbe->nColumn; pc.plan.nEq++){
+      int j = pProbe->aiColumn[pc.plan.nEq];
       pTerm = findTerm(pWC, iCur, j, p->notReady, eqTermMask, pIdx);
       if( pTerm==0 ) break;
-      wsFlags |= (WHERE_COLUMN_EQ|WHERE_ROWID_EQ);
+      pc.plan.wsFlags |= (WHERE_COLUMN_EQ|WHERE_ROWID_EQ);
       testcase( pTerm->pWC!=pWC );
       if( pTerm->eOperator & WO_IN ){
         Expr *pExpr = pTerm->pExpr;
-        wsFlags |= WHERE_COLUMN_IN;
+        pc.plan.wsFlags |= WHERE_COLUMN_IN;
         if( ExprHasProperty(pExpr, EP_xIsSelect) ){
           /* "x IN (SELECT ...)":  Assume the SELECT returns 25 rows */
           nInMul *= 25;
@@ -3159,15 +3184,15 @@ static void bestBtreeIndex(WhereBestIdx *p){
           nInMul *= pExpr->x.pList->nExpr;
         }
       }else if( pTerm->eOperator & WO_ISNULL ){
-        wsFlags |= WHERE_COLUMN_NULL;
-        if( nEq==nOrdered ) nOrdered++;
-      }else if( bSort && nEq==nOrdered && isOrderedTerm(p, pTerm, &bRev) ){
+        pc.plan.wsFlags |= WHERE_COLUMN_NULL;
+        if( pc.plan.nEq==nOrdered ) nOrdered++;
+      }else if( bSort && pc.plan.nEq==nOrdered && isOrderedTerm(p, pTerm, &bRev) ){
         nOrdered++;
       }
 #ifdef SQLITE_ENABLE_STAT3
-      if( nEq==0 && pProbe->aSample ) pFirstTerm = pTerm;
+      if( pc.plan.nEq==0 && pProbe->aSample ) pFirstTerm = pTerm;
 #endif
-      used |= pTerm->prereqRight;
+      pc.used |= pTerm->prereqRight;
     }
  
     /* If the index being considered is UNIQUE, and there is an equality 
@@ -3176,75 +3201,80 @@ static void bestBtreeIndex(WhereBestIdx *p){
     ** indicate this to the caller.
     **
     ** Otherwise, if the search may find more than one row, test to see if
-    ** there is a range constraint on indexed column (nEq+1) that can be 
+    ** there is a range constraint on indexed column (pc.plan.nEq+1) that can be 
     ** optimized using the index. 
     */
-    if( nEq==pProbe->nColumn && pProbe->onError!=OE_None ){
-      testcase( wsFlags & WHERE_COLUMN_IN );
-      testcase( wsFlags & WHERE_COLUMN_NULL );
-      if( (wsFlags & (WHERE_COLUMN_IN|WHERE_COLUMN_NULL))==0 ){
-        wsFlags |= WHERE_UNIQUE;
+    if( pc.plan.nEq==pProbe->nColumn && pProbe->onError!=OE_None ){
+      testcase( pc.plan.wsFlags & WHERE_COLUMN_IN );
+      testcase( pc.plan.wsFlags & WHERE_COLUMN_NULL );
+      if( (pc.plan.wsFlags & (WHERE_COLUMN_IN|WHERE_COLUMN_NULL))==0 ){
+        pc.plan.wsFlags |= WHERE_UNIQUE;
         if( p->i==0 || (p->aLevel[p->i-1].plan.wsFlags & WHERE_ALL_UNIQUE)!=0 ){
-          wsFlags |= WHERE_ALL_UNIQUE;
+          pc.plan.wsFlags |= WHERE_ALL_UNIQUE;
         }
       }
     }else if( pProbe->bUnordered==0 ){
-      int j = (nEq==pProbe->nColumn ? -1 : pProbe->aiColumn[nEq]);
+      int j;
+      j = (pc.plan.nEq==pProbe->nColumn ? -1 : pProbe->aiColumn[pc.plan.nEq]);
       if( findTerm(pWC, iCur, j, p->notReady, WO_LT|WO_LE|WO_GT|WO_GE, pIdx) ){
         WhereTerm *pTop, *pBtm;
         pTop = findTerm(pWC, iCur, j, p->notReady, WO_LT|WO_LE, pIdx);
         pBtm = findTerm(pWC, iCur, j, p->notReady, WO_GT|WO_GE, pIdx);
-        whereRangeScanEst(pParse, pProbe, nEq, pBtm, pTop, &rangeDiv);
+        whereRangeScanEst(pParse, pProbe, pc.plan.nEq, pBtm, pTop, &rangeDiv);
         if( pTop ){
           nBound = 1;
-          wsFlags |= WHERE_TOP_LIMIT;
-          used |= pTop->prereqRight;
+          pc.plan.wsFlags |= WHERE_TOP_LIMIT;
+          pc.used |= pTop->prereqRight;
           testcase( pTop->pWC!=pWC );
         }
         if( pBtm ){
           nBound++;
-          wsFlags |= WHERE_BTM_LIMIT;
-          used |= pBtm->prereqRight;
+          pc.plan.wsFlags |= WHERE_BTM_LIMIT;
+          pc.used |= pBtm->prereqRight;
           testcase( pBtm->pWC!=pWC );
         }
-        wsFlags |= (WHERE_COLUMN_RANGE|WHERE_ROWID_RANGE);
+        pc.plan.wsFlags |= (WHERE_COLUMN_RANGE|WHERE_ROWID_RANGE);
       }
     }
 
     /* If there is an ORDER BY clause and the index being considered will
     ** naturally scan rows in the required order, set the appropriate flags
-    ** in wsFlags. Otherwise, if there is an ORDER BY clause but the index
-    ** will scan rows in a different order, set the bSort variable.  */
+    ** in pc.plan.wsFlags. Otherwise, if there is an ORDER BY clause but
+    ** the index will scan rows in a different order, set the bSort
+    ** variable.  */
     assert( bRev>=0 && bRev<=2 );
     if( bSort ){
       testcase( bRev==0 );
       testcase( bRev==1 );
       testcase( bRev==2 );
-      nOBSat = isSortingIndex(p, pProbe, iCur, nOrdered,
-                              wsFlags, bRev&1, &bRev);
-      if( nOrderBy==nOBSat ){
-        bSort = 0;
-        wsFlags |= WHERE_ROWID_RANGE|WHERE_COLUMN_RANGE|WHERE_ORDERBY;
+      pc.plan.nOBSat = isSortingIndex(p, pProbe, iCur, nOrdered,
+                                 pc.plan.wsFlags, bRev&1, &bRev);
+      if( nPriorSat<pc.plan.nOBSat || (pc.plan.wsFlags & WHERE_UNIQUE)!=0 ){
+        pc.plan.wsFlags |= WHERE_ORDERED;
       }
-      if( bRev & 1 ) wsFlags |= WHERE_REVERSE;
+      if( nOrderBy==pc.plan.nOBSat ){
+        bSort = 0;
+        pc.plan.wsFlags |= WHERE_ROWID_RANGE|WHERE_COLUMN_RANGE;
+      }
+      if( bRev & 1 ) pc.plan.wsFlags |= WHERE_REVERSE;
     }
 
     /* If there is a DISTINCT qualifier and this index will scan rows in
     ** order of the DISTINCT expressions, clear bDist and set the appropriate
-    ** flags in wsFlags. */
+    ** flags in pc.plan.wsFlags. */
     if( bDist
-     && isDistinctIndex(pParse, pWC, pProbe, iCur, p->pDistinct, nEq)
-     && (wsFlags & WHERE_COLUMN_IN)==0
+     && isDistinctIndex(pParse, pWC, pProbe, iCur, p->pDistinct, pc.plan.nEq)
+     && (pc.plan.wsFlags & WHERE_COLUMN_IN)==0
     ){
       bDist = 0;
-      wsFlags |= WHERE_ROWID_RANGE|WHERE_COLUMN_RANGE|WHERE_DISTINCT;
+      pc.plan.wsFlags |= WHERE_ROWID_RANGE|WHERE_COLUMN_RANGE|WHERE_DISTINCT;
     }
 
     /* If currently calculating the cost of using an index (not the IPK
     ** index), determine if all required column data may be obtained without 
     ** using the main table (i.e. if the index is a covering
     ** index for this query). If it is, set the WHERE_IDX_ONLY flag in
-    ** wsFlags. Otherwise, set the bLookup variable to true.  */
+    ** pc.plan.wsFlags. Otherwise, set the bLookup variable to true.  */
     if( pIdx ){
       Bitmask m = pSrc->colUsed;
       int j;
@@ -3255,7 +3285,7 @@ static void bestBtreeIndex(WhereBestIdx *p){
         }
       }
       if( m==0 ){
-        wsFlags |= WHERE_IDX_ONLY;
+        pc.plan.wsFlags |= WHERE_IDX_ONLY;
       }else{
         bLookup = 1;
       }
@@ -3265,10 +3295,10 @@ static void bestBtreeIndex(WhereBestIdx *p){
     ** Estimate the number of rows of output.  For an "x IN (SELECT...)"
     ** constraint, do not let the estimate exceed half the rows in the table.
     */
-    nRow = (double)(aiRowEst[nEq] * nInMul);
-    if( bInEst && nRow*2>aiRowEst[0] ){
-      nRow = aiRowEst[0]/2;
-      nInMul = (int)(nRow / aiRowEst[nEq]);
+    pc.plan.nRow = (double)(aiRowEst[pc.plan.nEq] * nInMul);
+    if( bInEst && pc.plan.nRow*2>aiRowEst[0] ){
+      pc.plan.nRow = aiRowEst[0]/2;
+      nInMul = (int)(pc.plan.nRow / aiRowEst[pc.plan.nEq]);
     }
 
 #ifdef SQLITE_ENABLE_STAT3
@@ -3278,15 +3308,18 @@ static void bestBtreeIndex(WhereBestIdx *p){
     ** to get a better estimate on the number of rows based on
     ** VALUE and how common that value is according to the histogram.
     */
-    if( nRow>(double)1 && nEq==1 && pFirstTerm!=0 && aiRowEst[1]>1 ){
+    if( pc.plan.nRow>(double)1 && pc.plan.nEq==1
+     && pFirstTerm!=0 && aiRowEst[1]>1 ){
       assert( (pFirstTerm->eOperator & (WO_EQ|WO_ISNULL|WO_IN))!=0 );
       if( pFirstTerm->eOperator & (WO_EQ|WO_ISNULL) ){
         testcase( pFirstTerm->eOperator==WO_EQ );
         testcase( pFirstTerm->eOperator==WO_ISNULL );
-        whereEqualScanEst(pParse, pProbe, pFirstTerm->pExpr->pRight, &nRow);
+        whereEqualScanEst(pParse, pProbe, pFirstTerm->pExpr->pRight,
+                          &pc.plan.nRow);
       }else if( bInEst==0 ){
         assert( pFirstTerm->eOperator==WO_IN );
-        whereInScanEst(pParse, pProbe, pFirstTerm->pExpr->x.pList, &nRow);
+        whereInScanEst(pParse, pProbe, pFirstTerm->pExpr->x.pList,
+                       &pc.plan.nRow);
       }
     }
 #endif /* SQLITE_ENABLE_STAT3 */
@@ -3294,8 +3327,8 @@ static void bestBtreeIndex(WhereBestIdx *p){
     /* Adjust the number of output rows and downward to reflect rows
     ** that are excluded by range constraints.
     */
-    nRow = nRow/rangeDiv;
-    if( nRow<1 ) nRow = 1;
+    pc.plan.nRow = pc.plan.nRow/rangeDiv;
+    if( pc.plan.nRow<1 ) pc.plan.nRow = 1;
 
     /* Experiments run on real SQLite databases show that the time needed
     ** to do a binary search to locate a row in a table or index is roughly
@@ -3310,7 +3343,7 @@ static void bestBtreeIndex(WhereBestIdx *p){
     ** So this computation assumes table records are about twice as big
     ** as index records
     */
-    if( (wsFlags&~WHERE_REVERSE)==WHERE_IDX_ONLY
+    if( (pc.plan.wsFlags&~(WHERE_REVERSE|WHERE_ORDERED))==WHERE_IDX_ONLY
      && (pWC->wctrlFlags & WHERE_ONEPASS_DESIRED)==0
      && sqlite3GlobalConfig.bUseCis
      && OptimizationEnabled(pParse->db, SQLITE_CoverIdxScan)
@@ -3319,9 +3352,9 @@ static void bestBtreeIndex(WhereBestIdx *p){
       ** A full-scan of the index might be a little faster than a full-scan
       ** of the table, so give this case a cost slightly less than a table
       ** scan. */
-      cost = aiRowEst[0]*3 + pProbe->nColumn;
-      wsFlags |= WHERE_COVER_SCAN|WHERE_COLUMN_RANGE;
-    }else if( (wsFlags & WHERE_NOT_FULLSCAN)==0 ){
+      pc.rCost = aiRowEst[0]*3 + pProbe->nColumn;
+      pc.plan.wsFlags |= WHERE_COVER_SCAN|WHERE_COLUMN_RANGE;
+    }else if( (pc.plan.wsFlags & WHERE_NOT_FULLSCAN)==0 ){
       /* The cost of a full table scan is a number of move operations equal
       ** to the number of rows in the table.
       **
@@ -3331,11 +3364,11 @@ static void bestBtreeIndex(WhereBestIdx *p){
       ** decision and one which we expect to revisit in the future.  But
       ** it seems to be working well enough at the moment.
       */
-      cost = aiRowEst[0]*4;
-      wsFlags &= ~WHERE_IDX_ONLY;
+      pc.rCost = aiRowEst[0]*4;
+      pc.plan.wsFlags &= ~WHERE_IDX_ONLY;
     }else{
       log10N = estLog(aiRowEst[0]);
-      cost = nRow;
+      pc.rCost = pc.plan.nRow;
       if( pIdx ){
         if( bLookup ){
           /* For an index lookup followed by a table lookup:
@@ -3343,20 +3376,20 @@ static void bestBtreeIndex(WhereBestIdx *p){
           **  + nRow steps through the index
           **  + nRow table searches to lookup the table entry using the rowid
           */
-          cost += (nInMul + nRow)*log10N;
+          pc.rCost += (nInMul + pc.plan.nRow)*log10N;
         }else{
           /* For a covering index:
           **     nInMul index searches to find the initial entry 
           **   + nRow steps through the index
           */
-          cost += nInMul*log10N;
+          pc.rCost += nInMul*log10N;
         }
       }else{
         /* For a rowid primary key lookup:
         **    nInMult table searches to find the initial entry for each range
         **  + nRow steps through the table
         */
-        cost += nInMul*log10N;
+        pc.rCost += nInMul*log10N;
       }
     }
 
@@ -3367,10 +3400,12 @@ static void bestBtreeIndex(WhereBestIdx *p){
     ** difference and select C of 3.0.
     */
     if( bSort ){
-      cost += nRow*estLog(nRow*(nOrderBy - nOBSat)/nOrderBy)*3;
+      double m = estLog(pc.plan.nRow*(nOrderBy - pc.plan.nOBSat)/nOrderBy);
+      m *= (double)(pc.plan.nOBSat ? 2 : 3);
+      pc.rCost += pc.plan.nRow*m;
     }
     if( bDist ){
-      cost += nRow*estLog(nRow)*3;
+      pc.rCost += pc.plan.nRow*estLog(pc.plan.nRow)*3;
     }
 
     /**** Cost of using this index has now been computed ****/
@@ -3391,25 +3426,25 @@ static void bestBtreeIndex(WhereBestIdx *p){
     ** might be selected even when there exists an optimal index that has
     ** no such dependency.
     */
-    if( nRow>2 && cost<=p->cost.rCost ){
+    if( pc.plan.nRow>2 && pc.rCost<=p->cost.rCost ){
       int k;                       /* Loop counter */
-      int nSkipEq = nEq;           /* Number of == constraints to skip */
+      int nSkipEq = pc.plan.nEq;   /* Number of == constraints to skip */
       int nSkipRange = nBound;     /* Number of < constraints to skip */
       Bitmask thisTab;             /* Bitmap for pSrc */
 
       thisTab = getMask(pWC->pMaskSet, iCur);
-      for(pTerm=pWC->a, k=pWC->nTerm; nRow>2 && k; k--, pTerm++){
+      for(pTerm=pWC->a, k=pWC->nTerm; pc.plan.nRow>2 && k; k--, pTerm++){
         if( pTerm->wtFlags & TERM_VIRTUAL ) continue;
         if( (pTerm->prereqAll & p->notValid)!=thisTab ) continue;
         if( pTerm->eOperator & (WO_EQ|WO_IN|WO_ISNULL) ){
           if( nSkipEq ){
-            /* Ignore the first nEq equality matches since the index
+            /* Ignore the first pc.plan.nEq equality matches since the index
             ** has already accounted for these */
             nSkipEq--;
           }else{
             /* Assume each additional equality match reduces the result
             ** set size by a factor of 10 */
-            nRow /= 10;
+            pc.plan.nRow /= 10;
           }
         }else if( pTerm->eOperator & (WO_LT|WO_LE|WO_GT|WO_GE) ){
           if( nSkipRange ){
@@ -3423,14 +3458,14 @@ static void bestBtreeIndex(WhereBestIdx *p){
             ** more selective intentionally because of the subjective 
             ** observation that indexed range constraints really are more
             ** selective in practice, on average. */
-            nRow /= 3;
+            pc.plan.nRow /= 3;
           }
         }else if( pTerm->eOperator!=WO_NOOP ){
           /* Any other expression lowers the output row count by half */
-          nRow /= 2;
+          pc.plan.nRow /= 2;
         }
       }
-      if( nRow<2 ) nRow = 2;
+      if( pc.plan.nRow<2 ) pc.plan.nRow = 2;
     }
 
 
@@ -3440,22 +3475,17 @@ static void bestBtreeIndex(WhereBestIdx *p){
       "    notReady=0x%llx log10N=%.1f nRow=%.1f cost=%.1f\n"
       "    used=0x%llx nOrdered=%d nOBSat=%d\n",
       pSrc->pTab->zName, (pIdx ? pIdx->zName : "ipk"), 
-      nEq, nInMul, (int)rangeDiv, bSort, bLookup, wsFlags,
-      p->notReady, log10N, nRow, cost, used, nOrdered, nOBSat
+      pc.plan.nEq, nInMul, (int)rangeDiv, bSort, bLookup, pc.plan.wsFlags,
+      p->notReady, log10N, pc.plan.nRow, pc.rCost, pc.used, nOrdered,
+      pc.plan.nOBSat
     ));
 
     /* If this index is the best we have seen so far, then record this
-    ** index and its cost in the pCost structure.
+    ** index and its cost in the p->cost structure.
     */
-    if( (!pIdx || wsFlags)
-     && (cost<p->cost.rCost || (cost<=p->cost.rCost && nRow<p->cost.plan.nRow))
-    ){
-      p->cost.rCost = cost;
-      p->cost.used = used;
-      p->cost.plan.nRow = nRow;
-      p->cost.plan.wsFlags = (wsFlags&wsFlagMask);
-      p->cost.plan.nEq = nEq;
-      p->cost.plan.nOBSat = nOBSat;
+    if( (!pIdx || pc.plan.wsFlags) && compareCost(&pc, &p->cost) ){
+      p->cost = pc;
+      p->cost.plan.wsFlags &= wsFlagMask;
       p->cost.plan.u.pIdx = pIdx;
     }
 
@@ -3477,17 +3507,15 @@ static void bestBtreeIndex(WhereBestIdx *p){
     p->cost.plan.wsFlags |= WHERE_REVERSE;
   }
 
-  assert( p->pOrderBy || (p->cost.plan.wsFlags&WHERE_ORDERBY)==0 );
+  assert( p->pOrderBy || (p->cost.plan.wsFlags&WHERE_ORDERED)==0 );
   assert( p->cost.plan.u.pIdx==0 || (p->cost.plan.wsFlags&WHERE_ROWID_EQ)==0 );
   assert( pSrc->pIndex==0 
        || p->cost.plan.u.pIdx==0 
        || p->cost.plan.u.pIdx==pSrc->pIndex 
   );
 
-  WHERETRACE(("best index is: %s\n", 
-    ((p->cost.plan.wsFlags & WHERE_NOT_FULLSCAN)==0 ? "none" : 
-         p->cost.plan.u.pIdx ? p->cost.plan.u.pIdx->zName : "ipk")
-  ));
+  WHERETRACE(("best index is: %s\n",
+         p->cost.plan.u.pIdx ? p->cost.plan.u.pIdx->zName : "ipk"));
   
   bestOrClauseIndex(p);
   bestAutomaticIndex(p);
@@ -4215,7 +4243,7 @@ static Bitmask codeOneLoopStart(
     ** this requires some special handling.
     */
     if( (wctrlFlags&WHERE_ORDERBY_MIN)!=0
-     && (pLevel->plan.wsFlags&WHERE_ORDERBY)
+     && (pLevel->plan.wsFlags&WHERE_ORDERED)
      && (pIdx->nColumn>nEq)
     ){
       /* assert( pOrderBy->nExpr==1 ); */
@@ -5078,8 +5106,8 @@ WhereInfo *sqlite3WhereBegin(
         **       The NEVER() comes about because rule (2) above prevents
         **       An indexable full-table-scan from reaching rule (3).
         **
-        **   (4) The plan cost must be lower than prior plans or else the
-        **       cost must be the same and the number of rows must be lower.
+        **   (4) The plan cost must be lower than prior plans, where "cost"
+        **       is defined by the compareCost() function above. 
         */
         if( (sWBI.cost.used&sWBI.notValid)==0                    /* (1) */
             && (bestJ<0 || (notIndexed&m)!=0                     /* (2) */
@@ -5087,15 +5115,13 @@ WhereInfo *sqlite3WhereBegin(
                 || (sWBI.cost.plan.wsFlags & WHERE_NOT_FULLSCAN)!=0)
             && (nUnconstrained==0 || sWBI.pSrc->pIndex==0        /* (3) */
                 || NEVER((sWBI.cost.plan.wsFlags & WHERE_NOT_FULLSCAN)!=0))
-            && (bestJ<0 || sWBI.cost.rCost<bestPlan.rCost        /* (4) */
-                || (sWBI.cost.rCost<=bestPlan.rCost 
-                 && sWBI.cost.plan.nRow<bestPlan.plan.nRow))
+            && (bestJ<0 || compareCost(&sWBI.cost, &bestPlan))   /* (4) */
         ){
-          WHERETRACE(("=== table %d (%s) is best so far"
-                      " with cost=%.1f, nRow=%.1f, nOBSat=%d\n",
+          WHERETRACE(("=== table %d (%s) is best so far\n"
+                      "    cost=%.1f, nRow=%.1f, nOBSat=%d, wsFlags=%08x\n",
                       j, sWBI.pSrc->pTab->zName,
                       sWBI.cost.rCost, sWBI.cost.plan.nRow,
-                      sWBI.cost.plan.nOBSat));
+                      sWBI.cost.plan.nOBSat, sWBI.cost.plan.wsFlags));
           bestPlan = sWBI.cost;
           bestJ = j;
         }
@@ -5105,13 +5131,10 @@ WhereInfo *sqlite3WhereBegin(
     assert( bestJ>=0 );
     assert( sWBI.notValid & getMask(pMaskSet, pTabList->a[bestJ].iCursor) );
     WHERETRACE(("*** Optimizer selects table %d (%s) for loop %d with:\n"
-                "    cost=%.1f, nRow=%.1f, nOBSat=%d wsFlags=0x%08x\n",
+                "    cost=%.1f, nRow=%.1f, nOBSat=%d, wsFlags=0x%08x\n",
                 bestJ, pTabList->a[bestJ].pTab->zName,
                 pLevel-pWInfo->a, bestPlan.rCost, bestPlan.plan.nRow,
                 bestPlan.plan.nOBSat, bestPlan.plan.wsFlags));
-    if( (bestPlan.plan.wsFlags & WHERE_ORDERBY)!=0 ){
-      pWInfo->nOBSat = pOrderBy->nExpr;
-    }
     if( (bestPlan.plan.wsFlags & WHERE_DISTINCT)!=0 ){
       assert( pWInfo->eDistinct==0 );
       pWInfo->eDistinct = WHERE_DISTINCT_ORDERED;
@@ -5160,11 +5183,18 @@ WhereInfo *sqlite3WhereBegin(
   if( pParse->nErr || db->mallocFailed ){
     goto whereBeginError;
   }
+  if( nTabList ){
+    pLevel--;
+    pWInfo->nOBSat = pLevel->plan.nOBSat;
+  }else{
+    pWInfo->nOBSat = 0;
+  }
 
   /* If the total query only selects a single row, then the ORDER BY
   ** clause is irrelevant.
   */
   if( (andFlags & WHERE_UNIQUE)!=0 && pOrderBy ){
+    assert( nTabList==0 || (pLevel->plan.wsFlags & WHERE_ALL_UNIQUE)!=0 );
     pWInfo->nOBSat = pOrderBy->nExpr;
   }
 
