@@ -3366,6 +3366,7 @@ static void bestBtreeIndex(WhereBestIdx *p){
       */
       pc.rCost = aiRowEst[0]*4;
       pc.plan.wsFlags &= ~WHERE_IDX_ONLY;
+      if( pIdx ) pc.plan.wsFlags &= ~WHERE_ORDERED;
     }else{
       log10N = estLog(aiRowEst[0]);
       pc.rCost = pc.plan.nRow;

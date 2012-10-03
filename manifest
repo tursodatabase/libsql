@@ -1,5 +1,5 @@
-C Further\sattempts\sto\soptimize\sout\sunnecessary\sORDER\sBY\sclauses.
-D 2012-10-03T00:25:54.662
+C Fix\sa\squery\splanner\sproblem\sthat\sonly\soccurs\swhen\scovering-index-scan\sis\ndisabled.\s\sFix\sto\stests\swhose\soutput\schanged\sdue\sto\sthe\snew\sand\smore\naggressive\sORDER\sBY\soptimization.
+D 2012-10-03T12:38:19.551
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -249,7 +249,7 @@ F src/vtab.c d8020c0a0e8ccc490ca449d7e665311b6e9f3ba9
 F src/wal.c e1fe8f92a0ea0fef8faa87ec43a127a478589d22
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 76de1934899015c71d044093de51b308d608e1e5
+F src/where.c cd99218c11dc8df4836f18df0d8a8cc5c10aeb30
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 0be144b453e0622a085fae8665c32f5676708e00
@@ -956,7 +956,7 @@ F test/walro.test a31deb621033442a76c3a61e44929250d06f81b1
 F test/walshared.test 6dda2293880c300baf5d791c307f653094585761
 F test/walslow.test e7be6d9888f83aa5d3d3c7c08aa9b5c28b93609a
 F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
-F test/where.test a6bfb5a29286811d798d326a8f1153a58c0fb2bd
+F test/where.test 41b65069a227a61238c1387b050f029480ca5677
 F test/where2.test 43d4becaf5a5df854e6c21d624a1cb84c6904554
 F test/where3.test 667e75642102c97a00bf9b23d3cb267db321d006
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
@@ -1018,10 +1018,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 7d301fdfeec540e4a58f43bff04d219e9f769dc4
-R 062d037eebc135368ed6a1f30b2d19fc
-T *branch * qp-enhancements
-T *sym-qp-enhancements *
-T -sym-trunk *
+P 6744d9a37faffed59b4d5cb96c8671ec46a87ea7
+R 603241d0c48a2df1479c4d8cfb353c66
 U drh
-Z f0dc62fc9e20f7c7c36c5a741064bb38
+Z e697da84737ed0e1f148e3cf30d77940
