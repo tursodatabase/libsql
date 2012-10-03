@@ -1489,7 +1489,7 @@ static Tcl_Obj *dbEvalColumnValue(DbEvalContext *p, int iCol){
     }
   }
 
-  return Tcl_NewStringObj(sqlite3_column_text(pStmt, iCol), -1);
+  return Tcl_NewStringObj((char*)sqlite3_column_text(pStmt, iCol), -1);
 }
 
 /*

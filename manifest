@@ -1,5 +1,5 @@
-C Fix\sthe\sTCL\sinterface\sso\sthat\sSQL\sfunctions\simplemented\sin\sTCL\shonor\sthe\n"nullvalue"\ssetting.\s\sAlso\sremove\sfrom\sthe\sTCL\sinterface\ssome\sunused\s\nlegacy\sUTF8\stranslation\scode\sleft\sover\sfrom\sSQLite2.
-D 2012-10-03T11:02:33.741
+C Update\sthe\squery\splanner\sto\srecognize\smore\scases\swhere\sORDER\sBY\sclauses\ncan\sbe\soptimized\sout.\s\sAdd\stest\scases\sto\sverify\scorrect\sbehavior\sof\sthe\nORDER\sBY\soptimization\swhen\sthe\scovering-index-scan\soptimization\sis\sdisabled.\nFix\sa\sharmless\scompiler\swarning\sin\sthe\sTCL\sinterface.
+D 2012-10-03T12:56:18.398
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -183,7 +183,7 @@ F src/sqliteInt.h c29395d6e68cfbcb2661787ae4820e5e256c916a
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c fc9027118d5fa1b3d16a7b22c63684a54adeeb42
+F src/tclsqlite.c 515abd8e33e82aa330eeb54675185a7e1e5b6778
 F src/test1.c 936afc02766403e5debca49a1817a780e116df7e
 F src/test2.c 4178056dd1e7d70f954ad8a1e3edb71a2a784daf
 F src/test3.c 3c3c2407fa6ec7a19e24ae23f7cb439d0275a60d
@@ -249,7 +249,7 @@ F src/vtab.c d8020c0a0e8ccc490ca449d7e665311b6e9f3ba9
 F src/wal.c e1fe8f92a0ea0fef8faa87ec43a127a478589d22
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 69398e95e9c1012ae07ce9ea00f21b0e7bab8df1
+F src/where.c cd99218c11dc8df4836f18df0d8a8cc5c10aeb30
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 0be144b453e0622a085fae8665c32f5676708e00
@@ -512,7 +512,7 @@ F test/fuzz2.test 207d0f9d06db3eaf47a6b7bfc835b8e2fc397167
 F test/fuzz3.test aec64345184d1662bd30e6a17851ff659d596dc5
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
-F test/fuzzer1.test 69cf1036b92fd3b8e1fd65bef4d7ee3f085c28fb
+F test/fuzzer1.test a2e93bb1e19513dd6bf9c63d3d7c4673c983ca19
 F test/fuzzerfault.test ff2282c81797b6a355f0748d8b54c7287c5d2b25
 F test/hook.test 5f3749de6462a6b87b4209b74adf7df5ac2df639
 F test/icu.test 70df4faca133254c042d02ae342c0a141f2663f4
@@ -635,7 +635,7 @@ F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
 F test/orderby1.test 4875a2a0a87d81920f3600a3405dc42f233b8c82
-F test/orderby2.test d8fa5991d8948ae1f335c2f91d751e955bfee815
+F test/orderby2.test bc11009f7cd99d96b1b11e57b199b00633eb5b04
 F test/oserror.test 50417780d0e0d7cd23cf12a8277bb44024765df3
 F test/pager1.test 2163c6ef119f497a71a84137c957c63763e640ab
 F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
@@ -956,7 +956,7 @@ F test/walro.test a31deb621033442a76c3a61e44929250d06f81b1
 F test/walshared.test 6dda2293880c300baf5d791c307f653094585761
 F test/walslow.test e7be6d9888f83aa5d3d3c7c08aa9b5c28b93609a
 F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
-F test/where.test a6bfb5a29286811d798d326a8f1153a58c0fb2bd
+F test/where.test 41b65069a227a61238c1387b050f029480ca5677
 F test/where2.test 43d4becaf5a5df854e6c21d624a1cb84c6904554
 F test/where3.test 667e75642102c97a00bf9b23d3cb267db321d006
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
@@ -1018,7 +1018,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 7d301fdfeec540e4a58f43bff04d219e9f769dc4
-R 6327212080c41cdbc10c1e2eb094be0d
+P c1f10a2643179ec58f3879764e9e89676d4b5f91 0f9bb90100aa304a7f28023ca4173e68b445e8bd
+R 8774a06a6467942bbeb55b1c69f79903
 U drh
-Z 25d327c4e46a0608f83a0eb5d2f156c2
+Z dc6130441c34298b8082b4166a85e60e

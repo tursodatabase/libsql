@@ -1864,5 +1864,3 @@ do_execsql_test 10.3 {
 } {1 21 41 61 81}
 
 finish_test
-
-
