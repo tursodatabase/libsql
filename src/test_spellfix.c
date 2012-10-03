@@ -30,18 +30,17 @@
 **
 **   0   ''        Silent letters:   H W
 **   1   'A'       Any vowel:   A E I O U (Y)
-**   2   'B'       A bilabeal stop or fricative:  B F P V
+**   2   'B'       A bilabeal stop or fricative:  B F P V W
 **   3   'C'       Other fricatives or back stops:  C G J K Q S X Z
 **   4   'D'       Alveolar stops:  D T
 **   5   'H'       Letter H at the beginning of a word
 **   6   'L'       Glide:  L
 **   7   'R'       Semivowel:  R
 **   8   'M'       Nasals:  M N
-**   9   'W'       Letter W at the beginning of a word
-**   10  'Y'       Letter Y at the beginning of a word.
-**   11  '9'       Digits: 0 1 2 3 4 5 6 7 8 9
-**   12  ' '       White space
-**   13  '?'       Other.
+**   9   'Y'       Letter Y at the beginning of a word.
+**   10  '9'       Digits: 0 1 2 3 4 5 6 7 8 9
+**   11  ' '       White space
+**   12  '?'       Other.
 */
 #define CCLASS_SILENT         0
 #define CCLASS_VOWEL          1
@@ -52,11 +51,10 @@
 #define CCLASS_L              6
 #define CCLASS_R              7
 #define CCLASS_M              8
-#define CCLASS_W              9
-#define CCLASS_Y             10
-#define CCLASS_DIGIT         11
-#define CCLASS_SPACE         12
-#define CCLASS_OTHER         13
+#define CCLASS_Y              9
+#define CCLASS_DIGIT         10
+#define CCLASS_SPACE         11
+#define CCLASS_OTHER         12
 
 /*
 ** The following table gives the character class for non-initial ASCII
@@ -92,7 +90,7 @@ static const unsigned char midClass[] = {
  /* N */ CCLASS_M,        /* O */ CCLASS_VOWEL,   /* P */ CCLASS_B,
  /* Q */ CCLASS_C,        /* R */ CCLASS_R,       /* S */ CCLASS_C,
  /* T */ CCLASS_D,        /* U */ CCLASS_VOWEL,   /* V */ CCLASS_B,
- /* W */ CCLASS_SILENT,   /* X */ CCLASS_C,       /* Y */ CCLASS_VOWEL,
+ /* W */ CCLASS_B,        /* X */ CCLASS_C,       /* Y */ CCLASS_VOWEL,
  /* Z */ CCLASS_C,        /* [ */ CCLASS_OTHER,   /* \ */ CCLASS_OTHER,
  /* ] */ CCLASS_OTHER,    /* ^ */ CCLASS_OTHER,   /* _ */ CCLASS_OTHER,
  /* ` */ CCLASS_OTHER,    /* a */ CCLASS_VOWEL,   /* b */ CCLASS_B,
@@ -102,7 +100,7 @@ static const unsigned char midClass[] = {
  /* l */ CCLASS_L,        /* m */ CCLASS_M,       /* n */ CCLASS_M,
  /* o */ CCLASS_VOWEL,    /* p */ CCLASS_B,       /* q */ CCLASS_C,
  /* r */ CCLASS_R,        /* s */ CCLASS_C,       /* t */ CCLASS_D,
- /* u */ CCLASS_VOWEL,    /* v */ CCLASS_B,       /* w */ CCLASS_SILENT,
+ /* u */ CCLASS_VOWEL,    /* v */ CCLASS_B,       /* w */ CCLASS_B,
  /* x */ CCLASS_C,        /* y */ CCLASS_VOWEL,   /* z */ CCLASS_C,
  /* { */ CCLASS_OTHER,    /* | */ CCLASS_OTHER,   /* } */ CCLASS_OTHER,
  /* ~ */ CCLASS_OTHER,    /*   */ CCLASS_OTHER,   
@@ -142,7 +140,7 @@ static const unsigned char initClass[] = {
  /* N */ CCLASS_M,        /* O */ CCLASS_VOWEL,   /* P */ CCLASS_B,
  /* Q */ CCLASS_C,        /* R */ CCLASS_R,       /* S */ CCLASS_C,
  /* T */ CCLASS_D,        /* U */ CCLASS_VOWEL,   /* V */ CCLASS_B,
- /* W */ CCLASS_W,        /* X */ CCLASS_C,       /* Y */ CCLASS_Y,
+ /* W */ CCLASS_B,        /* X */ CCLASS_C,       /* Y */ CCLASS_Y,
  /* Z */ CCLASS_C,        /* [ */ CCLASS_OTHER,   /* \ */ CCLASS_OTHER,
  /* ] */ CCLASS_OTHER,    /* ^ */ CCLASS_OTHER,   /* _ */ CCLASS_OTHER,
  /* ` */ CCLASS_OTHER,    /* a */ CCLASS_VOWEL,   /* b */ CCLASS_B,
@@ -152,7 +150,7 @@ static const unsigned char initClass[] = {
  /* l */ CCLASS_L,        /* m */ CCLASS_M,       /* n */ CCLASS_M,
  /* o */ CCLASS_VOWEL,    /* p */ CCLASS_B,       /* q */ CCLASS_C,
  /* r */ CCLASS_R,        /* s */ CCLASS_C,       /* t */ CCLASS_D,
- /* u */ CCLASS_VOWEL,    /* v */ CCLASS_B,       /* w */ CCLASS_W,
+ /* u */ CCLASS_VOWEL,    /* v */ CCLASS_B,       /* w */ CCLASS_B,
  /* x */ CCLASS_C,        /* y */ CCLASS_Y,       /* z */ CCLASS_C,
  /* { */ CCLASS_OTHER,    /* | */ CCLASS_OTHER,   /* } */ CCLASS_OTHER,
  /* ~ */ CCLASS_OTHER,    /*   */ CCLASS_OTHER,   
@@ -163,7 +161,7 @@ static const unsigned char initClass[] = {
 ** character class.  Note that initClass[] can be used to map the class
 ** symbol back into the class number.
 */
-static const unsigned char className[] = ".ABCDHLRMWY9 ?";
+static const unsigned char className[] = ".ABCDHLRMY9 ?";
 
 /*
 ** Generate a "phonetic hash" from a string of ASCII characters
@@ -1896,7 +1894,7 @@ static int spellfix1Init(
   int rc = SQLITE_OK;
   int i;
 
-  nDbName = strlen(zDbName);
+  nDbName = (int)strlen(zDbName);
   pNew = sqlite3_malloc( sizeof(*pNew) + nDbName + 1);
   if( pNew==0 ){
     rc = SQLITE_NOMEM;
@@ -2236,7 +2234,7 @@ static void spellfix1RunQuery(MatchQuery *p, const char *zQuery, int nQuery){
     p->rc = SQLITE_NOMEM;
     return;
   }
-  nClass = strlen(zClass);
+  nClass = (int)strlen(zClass);
   if( nClass>SPELLFIX_MX_HASH-2 ){
     nClass = SPELLFIX_MX_HASH-2;
     zClass[nClass] = 0;
@@ -2410,7 +2408,7 @@ static int spellfix1FilterForMatch(
     x.rc = SQLITE_NOMEM;
     goto filter_exit;
   }
-  nPattern = strlen(zPattern);
+  nPattern = (int)strlen(zPattern);
   if( zPattern[nPattern-1]=='*' ) nPattern--;
   zSql = sqlite3_mprintf(
      "SELECT id, word, rank, k1"
@@ -2571,9 +2569,9 @@ static int spellfix1Column(
     case SPELLFIX_COL_MATCHLEN: {
       int iMatchlen = pCur->a[pCur->iRow].iMatchlen;
       if( iMatchlen<0 ){
-        int nPattern = strlen(pCur->zPattern);
+        int nPattern = (int)strlen(pCur->zPattern);
         char *zWord = pCur->a[pCur->iRow].zWord;
-        int nWord = strlen(zWord);
+        int nWord = (int)strlen(zWord);
 
         if( nPattern>0 && pCur->zPattern[nPattern-1]=='*' ){
           char *zTranslit;
