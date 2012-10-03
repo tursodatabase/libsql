@@ -319,14 +319,23 @@ do_test tcl-8.1 {
   execsql {INSERT INTO t1 VALUES(30,NULL)}
   db eval {SELECT * FROM t1 WHERE b IS NULL}
 } {30 NaN}
+proc concatFunc args {return [join $args {}]}
 do_test tcl-8.2 {
+  db function concat concatFunc
+  db eval {SELECT concat('a', b, 'z') FROM t1 WHERE b is NULL}
+} {aNaNz}
+do_test tcl-8.3 {
   db nullvalue NULL
   db nullvalue
 } {NULL}
-do_test tcl-8.3 {
+do_test tcl-8.4 {
   db nullvalue {}
   db eval {SELECT * FROM t1 WHERE b IS NULL}
 } {30 {}}
+do_test tcl-8.5 {
+  db function concat concatFunc
+  db eval {SELECT concat('a', b, 'z') FROM t1 WHERE b is NULL}
+} {az}
 
 # Test the return type of user-defined functions
 #

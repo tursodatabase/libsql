@@ -1,5 +1,5 @@
-C Work\saround\san\soptimization\sissue\swith\sthe\sMSVC\scompiler\sfor\sARM.
-D 2012-10-02T22:54:27.390
+C Fix\sthe\sTCL\sinterface\sso\sthat\sSQL\sfunctions\simplemented\sin\sTCL\shonor\sthe\n"nullvalue"\ssetting.\s\sAlso\sremove\sfrom\sthe\sTCL\sinterface\ssome\sunused\s\nlegacy\sUTF8\stranslation\scode\sleft\sover\sfrom\sSQLite2.
+D 2012-10-03T11:02:33.741
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -183,7 +183,7 @@ F src/sqliteInt.h c29395d6e68cfbcb2661787ae4820e5e256c916a
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c 22de426c579d01c7bd2c24fb9229fbd774613b42
+F src/tclsqlite.c fc9027118d5fa1b3d16a7b22c63684a54adeeb42
 F src/test1.c 936afc02766403e5debca49a1817a780e116df7e
 F src/test2.c 4178056dd1e7d70f954ad8a1e3edb71a2a784daf
 F src/test3.c 3c3c2407fa6ec7a19e24ae23f7cb439d0275a60d
@@ -737,7 +737,7 @@ F test/syscall.test bea9bf329bff733c791310244617c2a76974e64a
 F test/sysfault.test c79441d88d23696fbec7b147dba98d42a04f523f
 F test/table.test a59d985ca366e39b17b175f387f9d5db5a18d4e2
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
-F test/tclsqlite.test a3d2df21ee98957f5de4f9dc1db0eab68047ab5d
+F test/tclsqlite.test 37a61c2da7e3bfe3b8c1a2867199f6b860df5d43
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test 51edd31c65ed1560dd600b1796e8325df96318e2
 F test/temptrigger.test 26670ed7a39cf2296a7f0a9e0a1d7bdb7abe936d
@@ -1018,7 +1018,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P abcf6a5d054559ee5a093ba39180c47b4958d9cd
-R e2af9a84c8984f66075b1b5542126d99
-U mistachkin
-Z 2e5e5eca8b24072e2977c29980c9c33a
+P 7d301fdfeec540e4a58f43bff04d219e9f769dc4
+R 6327212080c41cdbc10c1e2eb094be0d
+U drh
+Z 25d327c4e46a0608f83a0eb5d2f156c2
