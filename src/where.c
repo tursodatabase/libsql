@@ -3067,7 +3067,6 @@ static void bestBtreeIndex(WhereBestIdx *p){
     WhereCost pc;               /* Cost of using pProbe */
     double log10N = (double)1;  /* base-10 logarithm of nRow (inexact) */
     int bRev = 2;               /* 0=forward scan.  1=reverse.  2=undecided */
-    memset(&pc, 0, sizeof(pc));
 
     /* The following variables are populated based on the properties of
     ** index being evaluated. They are then used to determine the expected
@@ -3154,6 +3153,7 @@ static void bestBtreeIndex(WhereBestIdx *p){
     WhereTerm *pFirstTerm = 0;    /* First term matching the index */
 #endif
 
+    memset(&pc, 0, sizeof(pc));
     nOrderBy = p->pOrderBy ? p->pOrderBy->nExpr : 0;
     if( p->i ){
       nPriorSat = pc.plan.nOBSat = p->aLevel[p->i-1].plan.nOBSat;
@@ -3186,7 +3186,8 @@ static void bestBtreeIndex(WhereBestIdx *p){
       }else if( pTerm->eOperator & WO_ISNULL ){
         pc.plan.wsFlags |= WHERE_COLUMN_NULL;
         if( pc.plan.nEq==nOrdered ) nOrdered++;
-      }else if( bSort && pc.plan.nEq==nOrdered && isOrderedTerm(p, pTerm, &bRev) ){
+      }else if( bSort && pc.plan.nEq==nOrdered
+             && isOrderedTerm(p,pTerm,&bRev) ){
         nOrdered++;
       }
 #ifdef SQLITE_ENABLE_STAT3
