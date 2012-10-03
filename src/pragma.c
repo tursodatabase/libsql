@@ -357,6 +357,7 @@ void sqlite3Pragma(
   aFcntl[1] = zLeft;
   aFcntl[2] = zRight;
   aFcntl[3] = 0;
+  db->busyHandler.nBusy = 0;
   rc = sqlite3_file_control(db, zDb, SQLITE_FCNTL_PRAGMA, (void*)aFcntl);
   if( rc==SQLITE_OK ){
     if( aFcntl[0] ){
@@ -1535,6 +1536,22 @@ void sqlite3Pragma(
   */
   if( sqlite3StrICmp(zLeft, "shrink_memory")==0 ){
     sqlite3_db_release_memory(db);
+  }else
+
+  /*
+  **   PRAGMA busy_timeout
+  **   PRAGMA busy_timeout = N
+  **
+  ** Call sqlite3_busy_timeout(db, N).  Return the current timeout value
+  ** if one is set.  If no busy handler or a different busy handler is set
+  ** then 0 is returned.  Setting the busy_timeout to 0 or negative
+  ** disables the timeout.
+  */
+  if( sqlite3StrICmp(zLeft, "busy_timeout")==0 ){
+    if( zRight ){
+      sqlite3_busy_timeout(db, sqlite3Atoi(zRight));
+    }
+    returnSingleInt(pParse, "timeout",  db->busyTimeout);
   }else
 
 #if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)

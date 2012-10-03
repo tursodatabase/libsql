@@ -2660,7 +2660,7 @@ static int newRowid(Rtree *pRtree, i64 *piRowid){
 */
 static int rtreeDeleteRowid(Rtree *pRtree, sqlite3_int64 iDelete){
   int rc;                         /* Return code */
-  RtreeNode *pLeaf;               /* Leaf node containing record iDelete */
+  RtreeNode *pLeaf = 0;           /* Leaf node containing record iDelete */
   int iCell;                      /* Index of iDelete cell in pLeaf */
   RtreeNode *pRoot;               /* Root node of rtree structure */
 
@@ -2863,7 +2863,7 @@ static int rtreeUpdate(
   */
   if( rc==SQLITE_OK && nData>1 ){
     /* Insert the new record into the r-tree */
-    RtreeNode *pLeaf;
+    RtreeNode *pLeaf = 0;
 
     /* Figure out the rowid of the new row. */
     if( bHaveRowid==0 ){

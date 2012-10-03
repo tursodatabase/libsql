@@ -2809,7 +2809,7 @@ static int flattenSubquery(
   */
   assert( p!=0 );
   assert( p->pPrior==0 );  /* Unable to flatten compound queries */
-  if( db->flags & SQLITE_QueryFlattener ) return 0;
+  if( OptimizationDisabled(db, SQLITE_QueryFlattener) ) return 0;
   pSrc = p->pSrc;
   assert( pSrc && iFrom>=0 && iFrom<pSrc->nSrc );
   pSubitem = &pSrc->a[iFrom];
@@ -4012,7 +4012,7 @@ int sqlite3Select(
   ** to disable this optimization for testing purposes.
   */
   if( sqlite3ExprListCompare(p->pGroupBy, pOrderBy)==0
-         && (db->flags & SQLITE_GroupByOrder)==0 ){
+         && OptimizationEnabled(db, SQLITE_GroupByOrder) ){
     pOrderBy = 0;
   }
 
@@ -4506,6 +4506,7 @@ int sqlite3Select(
           goto select_end;
         }
         updateAccumulator(pParse, &sAggInfo);
+        assert( pMinMax==0 || pMinMax->nExpr==1 );
         if( pWInfo->nOBSat>0 ){
           sqlite3VdbeAddOp2(v, OP_Goto, 0, pWInfo->iBreak);
           VdbeComment((v, "%s() by index",

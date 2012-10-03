@@ -1088,12 +1088,12 @@ do_test where-14.1 {
   cksort {
     SELECT x.a || '/' || y.a FROM t8 x, t8 y ORDER BY x.a, y.b
   } 
-} {1/4 1/1 4/4 4/1 sort}
+} {1/4 1/1 4/4 4/1 nosort}
 do_test where-14.2 {
   cksort {
     SELECT x.a || '/' || y.a FROM t8 x, t8 y ORDER BY x.a, y.b DESC
   } 
-} {1/1 1/4 4/1 4/4 sort}
+} {1/1 1/4 4/1 4/4 nosort}
 do_test where-14.3 {
   cksort {
     SELECT x.a || '/' || y.a FROM t8 x, t8 y ORDER BY x.a, x.b
@@ -1109,13 +1109,13 @@ do_test where-14.5 {
   cksort {
     SELECT x.a || '/' || y.a FROM t8 x, t8 y ORDER BY x.b, x.a||x.b
   } 
-} {4/4 4/1 1/4 1/1 sort}
+} {/4/[14] 4/[14] 1/[14] 1/[14] sort/}
 do_test where-14.6 {
   # This test case changed from "nosort" to "sort". See ticket 2a5629202f.
   cksort {
     SELECT x.a || '/' || y.a FROM t8 x, t8 y ORDER BY x.b, x.a||x.b DESC
   } 
-} {4/4 4/1 1/4 1/1 sort}
+} {/4/[14] 4/[14] 1/[14] 1/[14] sort/}
 do_test where-14.7 {
   cksort {
     SELECT x.a || '/' || y.a FROM t8 x, t8 y ORDER BY x.b, y.a||y.b

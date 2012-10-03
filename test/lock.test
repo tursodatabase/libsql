@@ -247,11 +247,34 @@ do_test lock-2.8 {
   execsql {UPDATE t1 SET a = 0 WHERE 0}
   catchsql {BEGIN EXCLUSIVE;} db2
 } {1 {database is locked}}
+do_test lock-2.8b {
+  db2 eval {PRAGMA busy_timeout}
+} {400}
 do_test lock-2.9 {
   db2 timeout 0
   execsql COMMIT
 } {}
+do_test lock-2.9b {
+  db2 eval {PRAGMA busy_timeout}
+} {0}
 integrity_check lock-2.10
+do_test lock-2.11 {
+  db2 eval {PRAGMA busy_timeout(400)}
+  execsql BEGIN
+  execsql {UPDATE t1 SET a = 0 WHERE 0}
+  catchsql {BEGIN EXCLUSIVE;} db2
+} {1 {database is locked}}
+do_test lock-2.11b {
+  db2 eval {PRAGMA busy_timeout}
+} {400}
+do_test lock-2.12 {
+  db2 eval {PRAGMA busy_timeout(0)}
+  execsql COMMIT
+} {}
+do_test lock-2.12b {
+  db2 eval {PRAGMA busy_timeout}
+} {0}
+integrity_check lock-2.13
 
 # Try to start two transactions in a row
 #

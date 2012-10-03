@@ -1073,7 +1073,7 @@ size_t sqlite3_quota_fwrite(
   /* If the write was incomplete, adjust the file size and group size
   ** downward */
   if( rc<nmemb && pFile ){
-    size_t nWritten = rc>=0 ? rc : 0;
+    size_t nWritten = rc;
     sqlite3_int64 iNewEnd = iOfst + size*nWritten;
     if( iNewEnd<iEnd ) iNewEnd = iEnd;
     quotaEnter();
@@ -1354,8 +1354,10 @@ static void tclQuotaCallback(
   rc = Tcl_EvalObjEx(p->interp, pEval, TCL_EVAL_GLOBAL);
 
   if( rc==TCL_OK ){
+    Tcl_WideInt x;
     Tcl_Obj *pLimit = Tcl_ObjGetVar2(p->interp, pVarname, 0, 0);
-    rc = Tcl_GetWideIntFromObj(p->interp, pLimit, piLimit);
+    rc = Tcl_GetWideIntFromObj(p->interp, pLimit, &x);
+    *piLimit = x;
     Tcl_UnsetVar(p->interp, Tcl_GetString(pVarname), 0);
   }
 
@@ -1437,7 +1439,7 @@ static int test_quota_set(
   Tcl_Obj *CONST objv[]
 ){
   const char *zPattern;           /* File pattern to configure */
-  sqlite3_int64 iLimit;           /* Initial quota in bytes */
+  Tcl_WideInt iLimit;             /* Initial quota in bytes */
   Tcl_Obj *pScript;               /* Tcl script to invoke to increase quota */
   int rc;                         /* Value returned by quota_set() */
   TclQuotaCallback *p;            /* Callback object */
@@ -1613,7 +1615,6 @@ static int test_quota_fread(
     return TCL_ERROR;
   }
   got = sqlite3_quota_fread(zBuf, sz, nElem, p);
-  if( got<0 ) got = 0;
   zBuf[got*sz] = 0;
   Tcl_SetResult(interp, zBuf, TCL_VOLATILE);
   sqlite3_free(zBuf);
