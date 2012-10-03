@@ -1,5 +1,5 @@
-C Work\saround\san\soptimization\sissue\swith\sthe\sMSVC\scompiler\sfor\sARM.
-D 2012-10-02T23:26:39.086
+C Fix\sthe\sTCL\sinterface\sso\sthat\sSQL\sfunctions\simplemented\sin\sTCL\shonor\sthe\n"nullvalue"\ssetting.\s\sAlso\sremove\sfrom\sthe\sTCL\sinterface\ssome\sunused\s\nlegacy\sUTF8\stranslation\scode\sleft\sover\sfrom\sSQLite2.
+D 2012-10-03T11:11:01.363
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -185,7 +185,7 @@ F src/sqliteInt.h 053e03a532beb909ead2df0721db67cdb4c48ae8
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c fe5406573e1527957e00dcaf51edd9d8bd31b918
+F src/tclsqlite.c d20022c647aa7a871d7b4038c4ec971cafe39744
 F src/test1.c 3d70f7c5987f186884cfebbfa7151a7d3d67d86e
 F src/test2.c 4178056dd1e7d70f954ad8a1e3edb71a2a784daf
 F src/test3.c 3c3c2407fa6ec7a19e24ae23f7cb439d0275a60d
@@ -734,7 +734,7 @@ F test/syscall.test bea9bf329bff733c791310244617c2a76974e64a
 F test/sysfault.test c79441d88d23696fbec7b147dba98d42a04f523f
 F test/table.test a59d985ca366e39b17b175f387f9d5db5a18d4e2
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
-F test/tclsqlite.test 1597d353308531527583481d14d9da52ea8ed0af
+F test/tclsqlite.test 952b772830bd380c9b5f58c03fb374189be53828
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test 51edd31c65ed1560dd600b1796e8325df96318e2
 F test/temptrigger.test 26670ed7a39cf2296a7f0a9e0a1d7bdb7abe936d
@@ -1014,10 +1014,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P c0d89d4a9752922f9e367362366efde4f1b06f2a
-R bb518a4e673cc3897ae561da4db7b79e
-T *branch * branch-3.7.14
-T *sym-branch-3.7.14 *
-T -sym-trunk *
+P 9fab9edd0dfa6c887cf89ec6cea58f3313dd2d1a
+R ce11a148e7a63a56c5baeba3578fadaf
 U drh
-Z 600158d31992ed6de175e1851cf47a76
+Z 324af163ae92e7ca960e21e81f6af5fa
