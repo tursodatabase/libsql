@@ -495,6 +495,40 @@ int sqlite3_config(int op, ...){
 }
 
 /*
+** This API allows applications to modify the global configuration of
+** the SQLite library at run-time.
+**
+** This routine differs from sqlite3_config() in that it may be called when
+** there are outstanding database connections and/or memory allocations.
+** This routine is threadsafe.
+*/
+int sqlite3_reconfig(int op, ...){
+  va_list ap;
+  int rc = SQLITE_OK;
+
+  va_start(ap, op);
+  switch( op ){
+    case SQLITE_CONFIG_READONLY: {
+      /*
+      ** On platforms where assignment of an integer value is atomic, there
+      ** is no need for a mutex here.  On other platforms, there could be a
+      ** subtle race condition here; however, the effect would simply be that
+      ** a call to open a database would fail with SQLITE_READONLY.
+      */
+      sqlite3GlobalConfig.bReadOnly = va_arg(ap, int);
+      break;
+    }
+
+    default: {
+      rc = SQLITE_ERROR;
+      break;
+    }
+  }
+  va_end(ap);
+  return rc;
+}
+
+/*
 ** Set up the lookaside buffers for a database connection.
 ** Return SQLITE_OK on success.  
 ** If lookaside is already active, return SQLITE_BUSY.

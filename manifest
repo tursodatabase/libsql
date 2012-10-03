@@ -1,5 +1,5 @@
-C Merge\supdates\sfrom\strunk.
-D 2012-09-25T12:45:03.240
+C Add\sexperimental\ssqlite3_reconfig()\sinterface\sto\smore\sfully\ssupport\sthe\sSQLITE_CONFIG_READONLY\soption.
+D 2012-10-03T20:20:15.903
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -143,7 +143,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
 F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
-F src/main.c aa1b70eb184c62be0e57939223f49616fa330c6f
+F src/main.c e538e0d91faf92a163bebb3d7e3183be92a99e78
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
@@ -176,7 +176,7 @@ F src/resolve.c 9e28280ec98035f31900fdd1db01f86f68ca6c32
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 1fad66b73a69c4004c9969a95b46d1f03390677d
 F src/shell.c 8ee5a3cb502e2d574f97b43972e6c1e275e7bec7
-F src/sqlite.h.in 360dadb3a8e24011349cfe45406a313657cc964c
+F src/sqlite.h.in 7a8c818775136fa20f8cd5d2a5ab2e15723f375f
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h a07fdc863510639b287d0721ba16a8d130af2c3e
@@ -208,7 +208,7 @@ F src/test_intarray.c d879bbf8e4ce085ab966d1f3c896a7c8b4f5fc99
 F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c f5c0a05b7b3d5930db769b5ee6c3766dc2221a64
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
-F src/test_malloc.c 3f25943939e8ec73fa5de60744f93381e138a126
+F src/test_malloc.c b813ffd7e62f5abe2f69cbe94ee3519f77147341
 F src/test_multiplex.c ac0fbc1748e5b86a41a1d7a84654fae0d53a881d
 F src/test_multiplex.h e99c571bc4968b7a9363b661481f3934bfead61d
 F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
@@ -633,7 +633,7 @@ F test/notify2.test 9503e51b9a272a5405c205ad61b7623d5a9ca489
 F test/notify3.test a86259abbfb923aa27d30f0fc038c88e5251488a
 F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
-F test/openv2.test d1dbebe1573a440dc4a4bd6b7e6125272a0ec56b
+F test/openv2.test 74c994537a13c7e31982d597eab555491133cee4
 F test/oserror.test 50417780d0e0d7cd23cf12a8277bb44024765df3
 F test/pager1.test 2163c6ef119f497a71a84137c957c63763e640ab
 F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
@@ -1016,7 +1016,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 7c3401657a0410dd121d49742db102c6e7494964 349a55cd8ba9ce65ebfd987ecfebd1204f7d0a85
-R ed3fa0fcbd93fed891c622a4358fe97e
+P 4a470741b65938dd38418c9c1a6e87dad6a84fc7
+R 3a95b597f4b95f489ae5426e808d1d1a
 U mistachkin
-Z d5df0a65995ef30255cb29bc68e328f8
+Z 77430a21fa898fed0cc20a439fb47dc9

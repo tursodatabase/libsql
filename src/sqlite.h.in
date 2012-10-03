@@ -1223,11 +1223,11 @@ int sqlite3_os_end(void);
 /*
 ** CAPI3REF: Configuring The SQLite Library
 **
-** The sqlite3_config() interface is used to make global configuration
-** changes to SQLite in order to tune SQLite to the specific needs of
-** the application.  The default configuration is recommended for most
-** applications and so this routine is usually not necessary.  It is
-** provided to support rare applications with unusual needs.
+** The sqlite3_config() and sqlite3_reconfig() interfaces are used to make
+** global configuration changes to SQLite in order to tune SQLite to the
+** specific needs of the application.  The default configuration is recommended
+** for most applications and so this routine is usually not necessary.  They
+** are provided to support rare applications with unusual needs.
 **
 ** The sqlite3_config() interface is not threadsafe.  The application
 ** must insure that no other SQLite interfaces are invoked by other
@@ -1239,17 +1239,23 @@ int sqlite3_os_end(void);
 ** Note, however, that ^sqlite3_config() can be called as part of the
 ** implementation of an application-defined [sqlite3_os_init()].
 **
-** The first argument to sqlite3_config() is an integer
-** [configuration option] that determines
+** The sqlite3_reconfig() interface is threadsafe and may be called at any
+** time.  However, it supports only a small subset of the configuration
+** options available for use with sqlite3_config().
+**
+** The first argument to both sqlite3_config() and sqlite3_reconfig() is an
+** integer [configuration option] that determines
 ** what property of SQLite is to be configured.  Subsequent arguments
 ** vary depending on the [configuration option]
 ** in the first argument.
 **
-** ^When a configuration option is set, sqlite3_config() returns [SQLITE_OK].
+** ^When a configuration option is set, both sqlite3_config() and
+** sqlite3_reconfig() return [SQLITE_OK].
 ** ^If the option is unknown or SQLite is unable to set the option
-** then this routine returns a non-zero [error code].
+** then these routines returns a non-zero [error code].
 */
 int sqlite3_config(int, ...);
+int sqlite3_reconfig(int, ...);
 
 /*
 ** CAPI3REF: Configure database connections

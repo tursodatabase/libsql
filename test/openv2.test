@@ -56,10 +56,7 @@ do_test openv2-2.2 {
 # SQLITE_CONFIG_READONLY flag is enabled.
 #
 db close
-sqlite3_shutdown
-sqlite3_config_readonly 1
-sqlite3_initialize
-autoinstall_test_functions
+sqlite3_reconfig_readonly 1
 
 do_test openv2-3.1 {
   list [catch {sqlite3 db :memory:} msg] $msg
@@ -86,8 +83,5 @@ do_test openv2-3.6 {
 } {1 {attempt to write a readonly database}}
 catch {db close}
 
-sqlite3_shutdown
-sqlite3_config_readonly 0
-sqlite3_initialize
-autoinstall_test_functions
+sqlite3_reconfig_readonly 0
 finish_test
