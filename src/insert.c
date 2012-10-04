@@ -1743,7 +1743,7 @@ static int xferOptimization(
   ** we have to check the semantics.
   */
   pItem = pSelect->pSrc->a;
-  pSrc = sqlite3LocateTable(pParse, 0, pItem->zName, pItem->zDatabase);
+  pSrc = sqlite3LocateTableItem(pParse, 0, pItem);
   if( pSrc==0 ){
     return 0;   /* FROM clause does not contain a real table */
   }
