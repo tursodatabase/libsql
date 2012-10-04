@@ -161,4 +161,29 @@ do_searchcount_test 3.5.2 {
   SELECT a, c FROM t3 WHERE (a=1 AND b='one') OR rowid=4
 } {1 i 2 ii search 2}
 
+# Ticket [d02e1406a58ea02d] (2012-10-04)
+# LEFT JOIN with an OR in the ON clause causes segfault 
+#
+do_test 4.1 {
+  db eval {
+    CREATE TABLE t41(a,b,c);
+    INSERT INTO t41 VALUES(1,2,3), (4,5,6);
+    CREATE TABLE t42(d,e,f);
+    INSERT INTO t42 VALUES(3,6,9), (4,8,12);
+    SELECT * FROM t41 AS x LEFT JOIN t42 AS y ON (y.d=x.c) OR (y.e=x.b);
+  }
+} {1 2 3 3 6 9 4 5 6 {} {} {}}
+do_test 4.2 {
+  db eval {
+    CREATE INDEX t42d ON t42(d);
+    CREATE INDEX t42e ON t42(e);
+    SELECT * FROM t41 AS x LEFT JOIN t42 AS y ON (y.d=x.c) OR (y.e=x.b);
+  }
+} {1 2 3 3 6 9 4 5 6 {} {} {}}
+do_test 4.2 {
+  db eval {
+    SELECT * FROM t41 AS x LEFT JOIN t42 AS y ON (y.d=x.c) OR (y.d=x.b);
+  }
+} {1 2 3 3 6 9 4 5 6 {} {} {}}
+
 finish_test

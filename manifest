@@ -1,12 +1,12 @@
-C Work\saround\san\soptimization\sissue\swith\sthe\sMSVC\scompiler\sfor\sARM.
-D 2012-10-03T18:26:39.323
+C Merge\sthe\s3.7.14.1\srelease\sincluding\sthe\sfix\sfor\sthe\sLEFT\sJOIN\sproblem\sinto\nthe\ssessions\sbranch.
+D 2012-10-04T22:45:58.218
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 2f3680c29a53135c2b45a5c9c5c5ee860ed1a34c
 F Makefile.vxworks 879f034a64062a364b21000266bbd5bc6e0c19b9
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
-F VERSION a71848df48082f1d6585d4b0819d530fc455485d
+F VERSION 9694dff497fc7e53037a5890f30ab069c26e8ab7
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 17dc593f791f874d2c23a0f9360850ded0286531
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -15,7 +15,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 4dd7d5fa033f649d7372e9ebd4aff68db6026da4 x
+F configure e2c3b28dec7f5d1f72dd7465c87bb37f6af1931f x
 F configure.ac 6e909664785b8184db2179013cd9d574f96ca3a3
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -197,7 +197,7 @@ F src/sqliteInt.h 569cb02b6555db22dbe38566ed904f40f0ae5eb8
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c e4feb5698ee09f8b32ee40baa1d3577871125042
+F src/tclsqlite.c 55b8c6fad0cac37a3472d7db1272ad1c9b4a244a
 F src/test1.c 3d70f7c5987f186884cfebbfa7151a7d3d67d86e
 F src/test2.c 4178056dd1e7d70f954ad8a1e3edb71a2a784daf
 F src/test3.c 3c3c2407fa6ec7a19e24ae23f7cb439d0275a60d
@@ -263,7 +263,7 @@ F src/vtab.c d2c54fd22aa83eb34fc6f7cd9b097f2fc2b1e9de
 F src/wal.c 5acb3e7bbd31f10ba39acad9ce6b399055337a9d
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 22783f4275f6fc09b663115a6091837cb5c510e0
+F src/where.c e74f9ed463b0153e7f2a0e5f291c2be16ae76b35
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 0be144b453e0622a085fae8665c32f5676708e00
@@ -747,7 +747,7 @@ F test/syscall.test bea9bf329bff733c791310244617c2a76974e64a
 F test/sysfault.test c79441d88d23696fbec7b147dba98d42a04f523f
 F test/table.test a59d985ca366e39b17b175f387f9d5db5a18d4e2
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
-F test/tclsqlite.test 2f2aa887763af30641f5561bdc26c5d3fbc73a88
+F test/tclsqlite.test 2052ca66640b14d33b8e17f3a24b946cddfb0ec2
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test 51edd31c65ed1560dd600b1796e8325df96318e2
 F test/temptrigger.test 26670ed7a39cf2296a7f0a9e0a1d7bdb7abe936d
@@ -979,7 +979,7 @@ F test/where9.test ae98dc22ef9b6f2bc81e9f164e41b38faa9bda06
 F test/whereA.test 24c234263c8fe358f079d5e57d884fb569d2da0a
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/whereC.test 13ff5ec0dba407c0e0c075980c75b3275a6774e5
-F test/whereD.test 304ccbe3c77e0d0764f37c91d43b8c4792a5e02f
+F test/whereD.test 11945e79899a97958d87d1e5ac6ae5abd827356b
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/win32lock.test b2a539e85ae6b2d78475e016a9636b4451dc7fb9
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
@@ -1027,7 +1027,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 86633e01fec2cbc00c749f6ef6ecda6acad2a82e
-R e98c79d5113be3b6fac2b737f0b78828
+P 2ce625fdbee78b2acbe3aa19b01ff92241c0d598 091570e46d04e84b67228e0bdbcd6e1fb60c6bdb
+R 05bcb07e9ac288a81b251a2d7eae2e18
 U drh
-Z 583a5f488427cc9879b99281d52c2986
+Z 261201057227005a81c4f41c6b14168e
