@@ -1,5 +1,5 @@
-C Candidate\sfix\sfor\sticket\s[d02e1406a58ea02].
-D 2012-10-04T16:00:24.836
+C Version\s3.7.14.1
+D 2012-10-04T19:37:12.994
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1014,7 +1014,10 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 972dbd5fccaa0dbde0a7ad904da74e31888e5062
+P 81fd941da62956e32d1c4ffcdb39abecba7a6f3b
 R a82bf185a73888ab1f23d02429bade9e
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.7.14.1 *
 U drh
-Z 9ae1686498486fc9c672c468947102ba
+Z 002ec98f7f5b76deaac3a726393245f3
