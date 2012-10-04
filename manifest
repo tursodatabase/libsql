@@ -1,12 +1,12 @@
-C Fix\sthe\sTCL\sinterface\sso\sthat\sSQL\sfunctions\simplemented\sin\sTCL\shonor\sthe\n"nullvalue"\ssetting.\s\sAlso\sremove\sfrom\sthe\sTCL\sinterface\ssome\sunused\s\nlegacy\sUTF8\stranslation\scode\sleft\sover\sfrom\sSQLite2.
-D 2012-10-03T11:11:01.363
+C Increase\sthe\sversion\snumber\sto\s3.7.14.1.\s\sThe\sversion\sof\sautoconf\sused\sis\ndifferent\sfrom\sthe\sprevious\srelease\sso\sthere\sare\shuge\sdifferences\sin\sthe\ngenerated\s"configure"\sscript.
+D 2012-10-04T15:36:03.876
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 2d696f01c228995e98b3b953a08b7bba1d48c130
 F Makefile.vxworks 879f034a64062a364b21000266bbd5bc6e0c19b9
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
-F VERSION a71848df48082f1d6585d4b0819d530fc455485d
+F VERSION 9694dff497fc7e53037a5890f30ab069c26e8ab7
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 17dc593f791f874d2c23a0f9360850ded0286531
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -15,7 +15,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure e2d0e3b67d2b1b1049d389fd671275d79bb80457 x
+F configure e2c3b28dec7f5d1f72dd7465c87bb37f6af1931f x
 F configure.ac 6e909664785b8184db2179013cd9d574f96ca3a3
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -1014,7 +1014,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 9fab9edd0dfa6c887cf89ec6cea58f3313dd2d1a
-R ce11a148e7a63a56c5baeba3578fadaf
+P 9bf64b6612c243ea66d04f502dc23f875ad45cd8
+R 073a340cb8e4b5d7bc2abb2bb9cb8ced
 U drh
-Z 324af163ae92e7ca960e21e81f6af5fa
+Z 32430ae0fe21d7aa54caae8c8fa4f7de
