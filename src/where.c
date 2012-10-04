@@ -4447,7 +4447,7 @@ static Bitmask codeOneLoopStart(
       }
     }
     pLevel->u.pCovidx = pCov;
-    pLevel->iIdxCur = iCovCur;
+    if( pCov ) pLevel->iIdxCur = iCovCur;
     if( pAndExpr ){
       pAndExpr->pLeft = 0;
       sqlite3ExprDelete(pParse->db, pAndExpr);
