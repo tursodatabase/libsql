@@ -210,7 +210,7 @@ do_test trigger1-1.12 {
       delete from t1 WHERE a=old.a+2;
     end;
   }
-} {1 {cannot create INSTEAD OF trigger on table: main.t1}}
+} {1 {cannot create INSTEAD OF trigger on table: t1}}
 
 ifcapable view {
 # Ensure that we cannot create BEFORE triggers on views
@@ -221,7 +221,7 @@ do_test trigger1-1.13 {
       delete from t1 WHERE a=old.a+2;
     end;
   }
-} {1 {cannot create BEFORE trigger on view: main.v1}}
+} {1 {cannot create BEFORE trigger on view: v1}}
 # Ensure that we cannot create AFTER triggers on views
 do_test trigger1-1.14 {
   catchsql {
@@ -231,7 +231,7 @@ do_test trigger1-1.14 {
       delete from t1 WHERE a=old.a+2;
     end;
   }
-} {1 {cannot create AFTER trigger on view: main.v1}}
+} {1 {cannot create AFTER trigger on view: v1}}
 } ;# ifcapable view
 
 # Check for memory leaks in the trigger parser

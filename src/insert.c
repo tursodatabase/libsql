@@ -1215,8 +1215,9 @@ void sqlite3GenerateConstraintChecks(
 #ifndef SQLITE_OMIT_CHECK
   if( pTab->pCheck && (pParse->db->flags & SQLITE_IgnoreChecks)==0 ){
     int allOk = sqlite3VdbeMakeLabel(v);
+    Expr *pDup = sqlite3ExprDup(pParse->db, pTab->pCheck, 0);
     pParse->ckBase = regData;
-    sqlite3ExprIfTrue(pParse, pTab->pCheck, allOk, SQLITE_JUMPIFNULL);
+    sqlite3ExprIfTrue(pParse, pDup, allOk, SQLITE_JUMPIFNULL);
     onError = overrideError!=OE_Default ? overrideError : OE_Abort;
     if( onError==OE_Ignore ){
       sqlite3VdbeAddOp2(v, OP_Goto, 0, ignoreDest);
@@ -1224,6 +1225,7 @@ void sqlite3GenerateConstraintChecks(
       if( onError==OE_Replace ) onError = OE_Abort; /* IMP: R-15569-63625 */
       sqlite3HaltConstraint(pParse, onError, 0, 0);
     }
+    sqlite3ExprDelete(pParse->db, pDup);
     sqlite3VdbeResolveLabel(v, allOk);
   }
 #endif /* !defined(SQLITE_OMIT_CHECK) */
@@ -1687,7 +1689,7 @@ static int xferOptimization(
   ** we have to check the semantics.
   */
   pItem = pSelect->pSrc->a;
-  pSrc = sqlite3LocateTable(pParse, 0, pItem->zName, pItem->zDatabase);
+  pSrc = sqlite3LocateTableItem(pParse, 0, pItem);
   if( pSrc==0 ){
     return 0;   /* FROM clause does not contain a real table */
   }
