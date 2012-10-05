@@ -1,5 +1,5 @@
-C Merge\sthe\sshared-cache\srelated\sfixes\sfrom\sthe\sshared-cache-fix\sbranch\sto\sthe\strunk.
-D 2012-10-05T17:44:51.191
+C Fix\sa\sproblem\sin\sshared-cache\smode\swhere\sa\sCOMMIT\sstatement\smight\scause\sa\sbusy-handler\sbelonging\sto\sa\sshared-cache\sconnection\sother\sthan\sthe\scurrent\swriter\sto\sbe\sinvoked.
+D 2012-10-05T19:43:02.225
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -240,7 +240,7 @@ F src/vdbe.c 31523df2b986fc6c959dd54ca640ba865884641b
 F src/vdbe.h 18f581cac1f4339ec3299f3e0cc6e11aec654cdb
 F src/vdbeInt.h 573a43ab5697b648a1e8f3dfc7d8667d5ca55729
 F src/vdbeapi.c 4c2418161cf45392ba76a7ca92f9a5f06b96f89c
-F src/vdbeaux.c fac025c798ad19070451b41eddc5dcd4696fdd1e
+F src/vdbeaux.c 674e969e026d1af1938942eba17071127839fc15
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
 F src/vdbesort.c 0dc1b274dcb4d4c8e71b0b2b15261f286caba39b
@@ -702,7 +702,7 @@ F test/shared4.test 72d90821e8d2fc918a08f16d32880868d8ee8e9d
 F test/shared6.test 866bb4982c45ce216c61ded5e8fde4e7e2f3ffa9
 F test/shared7.test 960760bc8d03e1419e70dea69cf41db62853616e
 F test/shared8.test b27befbefbe7f4517f1d6b7ff8f64a41ec74165d
-F test/shared9.test 3a5b09583e3ba3139a4bd66958061306b4331c7e
+F test/shared9.test 43cbbe6f59bd49abd7e40ac653a4aa8596feafcd
 F test/shared_err.test 91e26ec4f3fbe07951967955585137e2f18993de
 F test/sharedlock.test ffa0a3c4ac192145b310f1254f8afca4d553eabf
 F test/shell1.test 272384163432c0efd2c6817396beb0d119565d53
@@ -1019,7 +1019,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 8ea67522fb03134f355ecb776b70c6917241cab2 82b6aa77c8d8de4c6fad1960f5958457a929a821
-R 25900bb7c1310d28535793e9cff3e6d9
+P 698ec7769d4feea1782401479c61ce67d2113fd4
+R f57e31f66af3653aafd36cef29db2f9f
 U dan
-Z 6fd03f9d2f9680aaf35bc79001b16899
+Z 7483039414b69be1ce1710f91dbcd117

@@ -16,6 +16,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+source $testdir/lock_common.tcl
 set testprefix shared9
 
 ifcapable !view||!trigger {
@@ -134,6 +135,72 @@ do_test 2.4 {
   db2 close
   set ::invoked_mycollate_db1
 } {0}
+
+#-------------------------------------------------------------------------
+# This test verifies that a bug causing a busy-handler belonging to one
+# shared-cache connection to be executed as a result of an sqlite3_step()
+# on another has been fixed.
+#
+forcedelete test.db test.db2
+sqlite3 db1 test.db
+sqlite3 db2 test.db
+
+proc busyhandler {handle args} {
+  set ::busyhandler_invoked_for $handle
+  return 1
+}
+db1 busy [list busyhandler db1]
+db2 busy [list busyhandler db2]
+
+do_test 3.1 {
+  db1 eval {
+    BEGIN; 
+      CREATE TABLE t1(a, b);
+      CREATE TABLE t2(a, b);
+      INSERT INTO t1 VALUES(1, 2);
+      INSERT INTO t2 VALUES(1, 2);
+  }
+  # Keep this next COMMIT as a separate statement. This ensures that COMMIT
+  # has already been compiled and loaded into the tcl interface statement 
+  # cache when it is attempted below.
+  db1 eval COMMIT
+  db1 eval {
+    BEGIN;
+      INSERT INTO t1 VALUES(3, 4);
+  }
+} {}
+
+do_test 3.3 {
+  set ::tf [launch_testfixture]
+  testfixture $::tf {
+    sqlite3 db test.db
+    db eval {
+      BEGIN;
+        SELECT * FROM t1;
+    }
+  }
+} {1 2}
+
+do_test 3.2 {
+  db2 eval { SELECT * FROM t2 }
+} {1 2}
+
+do_test 3.3 {
+  list [catch { db1 eval COMMIT } msg] $msg
+} {1 {database is locked}}
+
+# At one point the following would fail, showing that the busy-handler
+# belonging to [db2] was invoked instead.
+do_test 3.4 {
+  set ::busyhandler_invoked_for
+} {db1}
+do_test 3.5 {
+  close $::tf
+  db1 eval COMMIT
+} {}
+  
+db1 close
+db2 close
 
 sqlite3_enable_shared_cache $::enable_shared_cache
 finish_test
