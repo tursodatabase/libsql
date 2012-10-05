@@ -1,5 +1,5 @@
-C Fix\san\sout-of-order\smemset()\sthat\soccurs\sbefore\sall\svariable\sdeclarations\nare\sfinished.\s\sAlso\sfix\sa\sline\sthat\sexceeds\sthe\s80-character\sline\slength\nlimit.
-D 2012-10-03T18:09:32.822
+C Rename\sa\stool\sbatch\sfile\ssubroutine\sto\savoid\sconfusion\sabout\sits\spurpose.
+D 2012-10-05T07:36:34.233
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -974,7 +974,7 @@ F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/win32lock.test b2a539e85ae6b2d78475e016a9636b4451dc7fb9
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test e7f77fded01dfcdf92ac2c5400f1e35d7a21463c
-F tool/build-all-msvc.bat 1a18aa39983ae7354d834bc55a850a54fc007576 x
+F tool/build-all-msvc.bat cd505f24717ca4ecd94c651f763d7bb4e7fe68af x
 F tool/build-shell.sh b64a481901fc9ffe5ca8812a2a9255b6cfb77381
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -1018,7 +1018,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 956e4d7f8958e7065ff2d61cd71519d6f4113d4a
-R 9f4b1a764df6137e6f14304dffc8ad1d
-U drh
-Z a3c3e4f99944b9339f658e73f3668f5f
+P ba2f492f957ab5556cd540e21a76ebb75efea725
+R 5327149995bfae724325c397eda64b6a
+U mistachkin
+Z 0e16eea60d3d1df7334d6e6fee7ae0d5
