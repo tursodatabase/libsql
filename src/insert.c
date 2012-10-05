@@ -1274,7 +1274,9 @@ void sqlite3GenerateConstraintChecks(
     onError = overrideError!=OE_Default ? overrideError : OE_Abort;
     for(i=0; i<pCheck->nExpr; i++){
       int allOk = sqlite3VdbeMakeLabel(v);
-      sqlite3ExprIfTrue(pParse, pCheck->a[i].pExpr, allOk, SQLITE_JUMPIFNULL);
+      Expr *pDup = sqlite3ExprDup(db, pCheck->a[i].pExpr, 0);
+      if( pDup==0 ) break;
+      sqlite3ExprIfTrue(pParse, pDup, allOk, SQLITE_JUMPIFNULL);
       if( onError==OE_Ignore ){
         sqlite3VdbeAddOp2(v, OP_Goto, 0, ignoreDest);
       }else{
@@ -1288,6 +1290,7 @@ void sqlite3GenerateConstraintChecks(
         sqlite3HaltConstraint(pParse, onError, zConsName, P4_DYNAMIC);
       }
       sqlite3VdbeResolveLabel(v, allOk);
+      sqlite3ExprDelete(db, pDup);
     }
   }
 #endif /* !defined(SQLITE_OMIT_CHECK) */

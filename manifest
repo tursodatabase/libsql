@@ -1,5 +1,5 @@
-C Shared-cache\smode\sfixes\sfor\sviews\sand\svirtual\stables.
-D 2012-10-04T19:33:00.992
+C Fix\sa\sproblem\swith\sshared-cache\smode\sand\sCHECK\sconstraints\scausing\sone\sdb\shandle\sto\sinvoke\sa\scollation\ssequence\sfunction\sregistered\swith\sanother.
+D 2012-10-05T16:30:10.692
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -138,7 +138,7 @@ F src/global.c fb44b11e02e06c995e6ed6642509edd23599d584
 F src/hash.c a4031441741932da9e7a65bee2b36b5d0e81c073
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c aefc97951fbac7f022d423170b9f74e82410bc13
+F src/insert.c b1d413e792e8f5e6747647625cb7c0e9f2e89e50
 F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
@@ -1019,10 +1019,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P ba2f492f957ab5556cd540e21a76ebb75efea725
-R a18cfd3cd9e6232f2cdfda7383e14e1c
-T *branch * shared-cache-fix
-T *sym-shared-cache-fix *
-T -sym-trunk *
+P 2b370dea704b59262c604af0efcef5660b194454
+R b8d4e5a86ac362df32fe82058e93d169
 U dan
-Z f1b4bf4b6486e150199936af81c3ec9e
+Z c2b386d7cf024f01e0a45b9a845b3c47
