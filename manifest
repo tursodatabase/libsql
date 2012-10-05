@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sshared-cache\smode\sand\sCHECK\sconstraints\scausing\sone\sdb\shandle\sto\sinvoke\sa\scollation\ssequence\sfunction\sregistered\swith\sanother.
-D 2012-10-05T16:30:10.692
+C Add\sa\stest\sfor\sthe\scollation-sequence/CHECK\sconstraint\sproblem\sfixed\sby\sthe\sprevious\scommit.
+D 2012-10-05T17:18:16.288
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -702,7 +702,7 @@ F test/shared4.test 72d90821e8d2fc918a08f16d32880868d8ee8e9d
 F test/shared6.test 866bb4982c45ce216c61ded5e8fde4e7e2f3ffa9
 F test/shared7.test 960760bc8d03e1419e70dea69cf41db62853616e
 F test/shared8.test b27befbefbe7f4517f1d6b7ff8f64a41ec74165d
-F test/shared9.test 61cf645c716451642ae9be2342fada8b200649c3
+F test/shared9.test 3a5b09583e3ba3139a4bd66958061306b4331c7e
 F test/shared_err.test 91e26ec4f3fbe07951967955585137e2f18993de
 F test/sharedlock.test ffa0a3c4ac192145b310f1254f8afca4d553eabf
 F test/shell1.test 272384163432c0efd2c6817396beb0d119565d53
@@ -1019,7 +1019,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 2b370dea704b59262c604af0efcef5660b194454
-R b8d4e5a86ac362df32fe82058e93d169
+P c2c776ab73828374836af008aa320cc670c081b5
+R 944a2743bc72c249d323dde91a15aa61
 U dan
-Z c2b386d7cf024f01e0a45b9a845b3c47
+Z fb89a86dbc14aadae3bf562a37bf56e5
