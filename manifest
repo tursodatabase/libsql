@@ -1,5 +1,5 @@
-C Backport\sfixes\sto\sshared-cache\smode,\sfrom\sthe\sshared-cache-fix\sbranch,\sto\nversion\s3.7.9
-D 2012-10-05T18:35:33.790
+C Fix\san\saccidental\sfork\son\sbranch-3.7.9.
+D 2012-10-05T18:38:26.507
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -128,7 +128,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 32199e2d939233ade25340eaba450f818b37c079
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
-F src/build.c 55c4e4a12a6e30487e028ff56e7a7c087a786c28
+F src/build.c d1acf9b8d20137dff6ce4d6f9f3b5028c7422a13
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c a9c26822515f81ec21588cbb482ca6724be02e33
@@ -974,10 +974,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P c7c6050ef060877ebe77b41d959e9df13f8c9b5e
-R 50b09b193c73b550b767159673e7a528
-T *branch * branch-3.7.9
-T *sym-branch-3.7.9 *
-T -sym-trunk *
+P ac81ae493f97e415f13ef517b0ff88a901bc276f 54cc11981127b52145e39f551d958580b1d45169
+R e6e980702c7bf7d25933d028023d21d6
 U drh
-Z 9b18ecc3685251961a5fbcd3b4cb1774
+Z 2d38929805a1813ccf9d39994a17a70d
