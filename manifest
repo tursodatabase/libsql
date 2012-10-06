@@ -1,9 +1,9 @@
-C Fix\sa\sproblem\sin\sshared-cache\smode\swhere\sa\sCOMMIT\sstatement\smight\scause\sa\sbusy-handler\sbelonging\sto\sa\sshared-cache\sconnection\sother\sthan\sthe\scurrent\swriter\sto\sbe\sinvoked.
-D 2012-10-05T19:43:02.225
+C Changes\sfor\sWinRT\scompatibility.\s\sAlso,\sallow\sversion\sresource\scompilation\sand\sembedding\sto\sbe\sdisabled\sat\scompile-time.
+D 2012-10-06T03:48:25.094
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 1102ce2c75965b9b5534efce380007ffcb08c52e
+F Makefile.msc a8495ef567c1872cd9e0679c96a02aafbf9c43b5
 F Makefile.vxworks b18ad88e9a8c6a001f5cf4a389116a4f1a7ab45f
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION edab4af5a4623f8198833ea481ce98ab53750a8d
@@ -161,7 +161,7 @@ F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c a5a45a2857c43b37bac145b521064a85a544cd7a
-F src/os_win.c 90c7a1fe2698867555ba4266f5bd436c85d0d1dc
+F src/os_win.c 44f39059279dfd40ead4f259001420105c20e710
 F src/pager.c a7ad8c38809edf0be545e8f52da5bcbb88885b38
 F src/pager.h bdbc379557eb2e233dfec10986b3086877e72db7
 F src/parse.y f29df90bd3adc64b33114ab1de9fb7768fcf2099
@@ -1019,7 +1019,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 698ec7769d4feea1782401479c61ce67d2113fd4
-R f57e31f66af3653aafd36cef29db2f9f
-U dan
-Z 7483039414b69be1ce1710f91dbcd117
+P e0c889d66ccf4af12cc77ac38c1e6477da63ac72
+R 7aa3a9ae530d62ad432ec99f0941dd9b
+U mistachkin
+Z dfd5a7d9cdc76e6d57eba7e1ef9d075b
