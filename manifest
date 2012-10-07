@@ -1,5 +1,5 @@
-C Changes\sfor\sWinRT\scompatibility.\s\sAlso,\sallow\sversion\sresource\scompilation\sand\sembedding\sto\sbe\sdisabled\sat\scompile-time.
-D 2012-10-06T03:48:25.094
+C Corrections\sto\stest\snames\sto\seliminate\sduplicates\sand\sfollow\snaming\sconventions.
+D 2012-10-07T05:34:39.472
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -702,7 +702,7 @@ F test/shared4.test 72d90821e8d2fc918a08f16d32880868d8ee8e9d
 F test/shared6.test 866bb4982c45ce216c61ded5e8fde4e7e2f3ffa9
 F test/shared7.test 960760bc8d03e1419e70dea69cf41db62853616e
 F test/shared8.test b27befbefbe7f4517f1d6b7ff8f64a41ec74165d
-F test/shared9.test 43cbbe6f59bd49abd7e40ac653a4aa8596feafcd
+F test/shared9.test 614a3ca431adc73c857632deb4eff75bcaee40ec
 F test/shared_err.test 91e26ec4f3fbe07951967955585137e2f18993de
 F test/sharedlock.test ffa0a3c4ac192145b310f1254f8afca4d553eabf
 F test/shell1.test 272384163432c0efd2c6817396beb0d119565d53
@@ -885,7 +885,7 @@ F test/trace2.test c1dc104a8d11a347c870cfea6235e3fc6f6cb06d
 F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
 F test/trans2.test d5337e61de45e66b1fcbf9db833fa8c82e624b22
 F test/trans3.test 373ac5183cc56be69f48ae44090e7f672939f732
-F test/trigger1.test 70acedb76532117bbcc873f8601cdc6905f1f455
+F test/trigger1.test 30f343f91586765874a28ad539c06f5a5f049931
 F test/trigger2.test 834187beafd1db383af0c659cfa49b0576832816
 F test/trigger3.test d2c60d8be271c355d61727411e753181e877230a
 F test/trigger4.test 74700b76ebf3947b2f7a92405141eb2cf2a5d359
@@ -1019,7 +1019,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P e0c889d66ccf4af12cc77ac38c1e6477da63ac72
-R 7aa3a9ae530d62ad432ec99f0941dd9b
+P 4b0facc13b1026419f9b89dab3453ba43071455c
+R 963a11ab0ec405d25d1ad37b4f26863a
 U mistachkin
-Z dfd5a7d9cdc76e6d57eba7e1ef9d075b
+Z 2db2f94384e1edd2a3e02fd4f28955ba

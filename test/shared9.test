@@ -170,7 +170,7 @@ do_test 3.1 {
   }
 } {}
 
-do_test 3.3 {
+do_test 3.2 {
   set ::tf [launch_testfixture]
   testfixture $::tf {
     sqlite3 db test.db
@@ -181,20 +181,20 @@ do_test 3.3 {
   }
 } {1 2}
 
-do_test 3.2 {
+do_test 3.3 {
   db2 eval { SELECT * FROM t2 }
 } {1 2}
 
-do_test 3.3 {
+do_test 3.4 {
   list [catch { db1 eval COMMIT } msg] $msg
 } {1 {database is locked}}
 
 # At one point the following would fail, showing that the busy-handler
 # belonging to [db2] was invoked instead.
-do_test 3.4 {
+do_test 3.5 {
   set ::busyhandler_invoked_for
 } {db1}
-do_test 3.5 {
+do_test 3.6 {
   close $::tf
   db1 eval COMMIT
 } {}
