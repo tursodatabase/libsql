@@ -34,6 +34,57 @@
 #endif
 
 /*
+** Are most of the Win32 ANSI APIs available (i.e. with certain exceptions
+** based on the sub-platform)?
+*/
+#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT
+#  define SQLITE_WIN32_HAS_ANSI
+#endif
+
+/*
+** Are most of the Win32 Unicode APIs available (i.e. with certain exceptions
+** based on the sub-platform)?
+*/
+#if SQLITE_OS_WINCE || SQLITE_OS_WINNT || SQLITE_OS_WINRT
+#  define SQLITE_WIN32_HAS_WIDE
+#endif
+
+/*
+** Do we need to manually define the Win32 file mapping APIs for use with WAL
+** mode (e.g. these APIs are available in the Windows CE SDK; however, they
+** are not present in the header file)?
+*/
+#if SQLITE_WIN32_FILEMAPPING_API && !defined(SQLITE_OMIT_WAL)
+/*
+** Two of the file mapping APIs are different under WinRT.  Figure out which
+** set we need.
+*/
+#if SQLITE_OS_WINRT
+HANDLE WINAPI CreateFileMappingFromApp(HANDLE, LPSECURITY_ATTRIBUTES, \
+        ULONG, ULONG64, LPCWSTR);
+
+LPVOID WINAPI MapViewOfFileFromApp(HANDLE, ULONG, ULONG64, SIZE_T);
+#else
+#if defined(SQLITE_WIN32_HAS_ANSI)
+HANDLE WINAPI CreateFileMappingA(HANDLE, LPSECURITY_ATTRIBUTES, DWORD, \
+        DWORD, DWORD, LPCSTR);
+#endif /* defined(SQLITE_WIN32_HAS_ANSI) */
+
+#if defined(SQLITE_WIN32_HAS_WIDE)
+HANDLE WINAPI CreateFileMappingW(HANDLE, LPSECURITY_ATTRIBUTES, DWORD, \
+        DWORD, DWORD, LPCWSTR);
+#endif /* defined(SQLITE_WIN32_HAS_WIDE) */
+
+LPVOID WINAPI MapViewOfFile(HANDLE, DWORD, DWORD, DWORD, SIZE_T);
+#endif /* SQLITE_OS_WINRT */
+
+/*
+** This file mapping API is common to both Win32 and WinRT.
+*/
+BOOL WINAPI UnmapViewOfFile(LPCVOID);
+#endif /* SQLITE_WIN32_FILEMAPPING_API && !defined(SQLITE_OMIT_WAL) */
+
+/*
 ** Macro to find the minimum of two numeric values.
 */
 #ifndef MIN
@@ -236,14 +287,6 @@ const sqlite3_mem_methods *sqlite3MemGetWin32(void);
 int sqlite3_os_type = 0;
 #else
 static int sqlite3_os_type = 0;
-#endif
-
-#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT
-#  define SQLITE_WIN32_HAS_ANSI
-#endif
-
-#if SQLITE_OS_WINCE || SQLITE_OS_WINNT || SQLITE_OS_WINRT
-#  define SQLITE_WIN32_HAS_WIDE
 #endif
 
 #ifndef SYSCALL
