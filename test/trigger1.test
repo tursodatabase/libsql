@@ -11,20 +11,20 @@
 # with the database COMMIT/ROLLBACK logic.
 #
 # 1. CREATE and DROP TRIGGER tests
-# trig-1.1: Error if table does not exist
-# trig-1.2: Error if trigger already exists
-# trig-1.3: Created triggers are deleted if the transaction is rolled back
-# trig-1.4: DROP TRIGGER removes trigger
-# trig-1.5: Dropped triggers are restored if the transaction is rolled back
-# trig-1.6: Error if dropped trigger doesn't exist
-# trig-1.7: Dropping the table automatically drops all triggers
-# trig-1.8: A trigger created on a TEMP table is not inserted into sqlite_master
-# trig-1.9: Ensure that we cannot create a trigger on sqlite_master
-# trig-1.10:
-# trig-1.11:
-# trig-1.12: Ensure that INSTEAD OF triggers cannot be created on tables
-# trig-1.13: Ensure that AFTER triggers cannot be created on views
-# trig-1.14: Ensure that BEFORE triggers cannot be created on views
+# trigger1-1.1: Error if table does not exist
+# trigger1-1.2: Error if trigger already exists
+# trigger1-1.3: Created triggers are deleted if the transaction is rolled back
+# trigger1-1.4: DROP TRIGGER removes trigger
+# trigger1-1.5: Dropped triggers are restored if the transaction is rolled back
+# trigger1-1.6: Error if dropped trigger doesn't exist
+# trigger1-1.7: Dropping the table automatically drops all triggers
+# trigger1-1.8: A trigger created on a TEMP table is not inserted into sqlite_master
+# trigger1-1.9: Ensure that we cannot create a trigger on sqlite_master
+# trigger1-1.10:
+# trigger1-1.11:
+# trigger1-1.12: Ensure that INSTEAD OF triggers cannot be created on tables
+# trigger1-1.13: Ensure that AFTER triggers cannot be created on views
+# trigger1-1.14: Ensure that BEFORE triggers cannot be created on views
 #
 
 set testdir [file dirname $argv0]
@@ -210,7 +210,7 @@ do_test trigger1-1.12 {
       delete from t1 WHERE a=old.a+2;
     end;
   }
-} {1 {cannot create INSTEAD OF trigger on table: main.t1}}
+} {1 {cannot create INSTEAD OF trigger on table: t1}}
 
 ifcapable view {
 # Ensure that we cannot create BEFORE triggers on views
@@ -221,7 +221,7 @@ do_test trigger1-1.13 {
       delete from t1 WHERE a=old.a+2;
     end;
   }
-} {1 {cannot create BEFORE trigger on view: main.v1}}
+} {1 {cannot create BEFORE trigger on view: v1}}
 # Ensure that we cannot create AFTER triggers on views
 do_test trigger1-1.14 {
   catchsql {
@@ -231,7 +231,7 @@ do_test trigger1-1.14 {
       delete from t1 WHERE a=old.a+2;
     end;
   }
-} {1 {cannot create AFTER trigger on view: main.v1}}
+} {1 {cannot create AFTER trigger on view: v1}}
 } ;# ifcapable view
 
 # Check for memory leaks in the trigger parser
@@ -265,32 +265,32 @@ ifcapable tempdb {
       END;
     }
   } {0 {}}
-  do_test trigger-3.2 {
+  do_test trigger1-3.2 {
     catchsql {
       INSERT INTO t1 VALUES(1,2);
       SELECT * FROM t2;
     }
   } {1 {no such table: main.t2}}
-  do_test trigger-3.3 {
+  do_test trigger1-3.3 {
     db close
     set rc [catch {sqlite3 db test.db} err]
     if {$rc} {lappend rc $err}
     set rc
   } {0}
-  do_test trigger-3.4 {
+  do_test trigger1-3.4 {
     catchsql {
       INSERT INTO t1 VALUES(1,2);
       SELECT * FROM t2;
     }
   } {1 {no such table: main.t2}}
-  do_test trigger-3.5 {
+  do_test trigger1-3.5 {
     catchsql {
       CREATE TEMP TABLE t2(x,y);
       INSERT INTO t1 VALUES(1,2);
       SELECT * FROM t2;
     }
   } {1 {no such table: main.t2}}
-  do_test trigger-3.6.1 {
+  do_test trigger1-3.6.1 {
     catchsql {
       DROP TRIGGER r1;
       CREATE TEMP TRIGGER r1 AFTER INSERT ON t1 BEGIN
@@ -300,7 +300,7 @@ ifcapable tempdb {
       SELECT * FROM t2;
     }
   } {0 {1 2 200 100}}
-  do_test trigger-3.6.2 {
+  do_test trigger1-3.6.2 {
     catchsql {
       DROP TRIGGER r1;
       DELETE FROM t1;
@@ -312,7 +312,7 @@ ifcapable tempdb {
       SELECT * FROM t2;
     }
   } {0 {1 2}}
-  do_test trigger-3.7 {
+  do_test trigger1-3.7 {
     execsql {
       DROP TABLE t2;
       CREATE TABLE t2(x,y);
@@ -320,7 +320,7 @@ ifcapable tempdb {
     }
   } {}
 
-  # There are two versions of trigger-3.8 and trigger-3.9. One that uses
+  # There are two versions of trigger1-3.8 and trigger1-3.9. One that uses
   # compound SELECT statements, and another that does not.
   ifcapable compound {
   do_test trigger1-3.8 {
@@ -446,7 +446,7 @@ do_test trigger1-6.8 {
   execsql {SELECT * FROM t2}
 } {3 4 7 8}
 
-integrity_check trigger-7.1
+integrity_check trigger1-7.1
 
 # Check to make sure the name of a trigger can be quoted so that keywords
 # can be used as trigger names.  Ticket #468
@@ -491,7 +491,7 @@ do_test trigger1-8.6 {
 ifcapable conflict {
   # Make sure REPLACE works inside of triggers.
   #
-  # There are two versions of trigger-9.1 and trigger-9.2. One that uses
+  # There are two versions of trigger1-9.1 and trigger1-9.2. One that uses
   # compound SELECT statements, and another that does not.
   ifcapable compound {
     do_test trigger1-9.1 {
@@ -612,7 +612,7 @@ ifcapable tempdb&&attach {
       SELECT * FROM insert_log;
     }
   } {main 11 12 13 temp 14 15 16 aux 17 18 19}
-  do_test trigger1-10.8 {
+  do_test trigger1-10.9 {
   # Drop and re-create the insert_log table in a different database. Note
   # that we can change the column names because the trigger programs don't
   # use them explicitly.
