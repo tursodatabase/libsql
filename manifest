@@ -1,5 +1,5 @@
-C Corrections\sto\stest\snames\sto\seliminate\sduplicates\sand\sfollow\snaming\sconventions.
-D 2012-10-07T05:34:39.472
+C Manually\sdefine\sthe\sWin32\sfile-mapping\sAPIs\sfor\sWAL\sif\sSQLITE_WIN32_FILEMAPPING_API\sis\sdefined.
+D 2012-10-08T14:36:42.399
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -161,7 +161,7 @@ F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c a5a45a2857c43b37bac145b521064a85a544cd7a
-F src/os_win.c 44f39059279dfd40ead4f259001420105c20e710
+F src/os_win.c 28bd027791252a4012dffd4d64355a1eb84d761c
 F src/pager.c a7ad8c38809edf0be545e8f52da5bcbb88885b38
 F src/pager.h bdbc379557eb2e233dfec10986b3086877e72db7
 F src/parse.y f29df90bd3adc64b33114ab1de9fb7768fcf2099
@@ -1019,7 +1019,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 4b0facc13b1026419f9b89dab3453ba43071455c
-R 963a11ab0ec405d25d1ad37b4f26863a
+P 50679889c75cd3205253b1682abfbddc5ff09175 585e2070eef3bc273f23d8e384a1261ee5fff5bd
+R 503e44f3173c52a30e9073d66f146916
 U mistachkin
-Z 2db2f94384e1edd2a3e02fd4f28955ba
+Z df468ad55877f504a34141d09c9c3204
