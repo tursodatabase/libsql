@@ -2920,7 +2920,7 @@ static int isSortingIndex(
                     pRight->iTable, pRight->iColumn));
         isEq = isOrderedColumn(p, pRight->iTable, pRight->iColumn);
         WHERETRACE((" -> isEq=%d\n", isEq));
-        if( isEq>=2 && isEq!=pOBItem->sortOrder+2 ){
+        if( isMatch && isEq>=2 && isEq!=pOBItem->sortOrder+2 ){
           break;
         }
       }else{
