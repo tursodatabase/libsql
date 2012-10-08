@@ -1,5 +1,5 @@
-C Merge\sORDER\sBY\soptimization\srefactoring\sand\srepair\sinto\strunk.
-D 2012-10-08T21:51:58.040
+C Changes\sto\sfacilitate\sfull\stest\scoverage.
+D 2012-10-08T23:25:07.490
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -124,7 +124,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 14de53ebb334633ee632ab3c5b9262cfe7cbe455
 F src/btree.h 078f76b28c338ab6eb6dd7324d63ee54463aeb6c
 F src/btreeInt.h 4e5c2bd0f9b36b2a815a6d84f771a61a65830621
-F src/build.c aaff8dbeb50c4a7fc48c4f9b65e633b991755ccf
+F src/build.c b21c130017820dfe8721e380325e128fd0c6e019
 F src/callback.c d7e46f40c3cf53c43550b7da7a1d0479910b62cc
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 72a70dcfda75d3a1f81041ce4573e7afddcd8e4e
@@ -138,7 +138,7 @@ F src/global.c fb44b11e02e06c995e6ed6642509edd23599d584
 F src/hash.c a4031441741932da9e7a65bee2b36b5d0e81c073
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c b1d413e792e8f5e6747647625cb7c0e9f2e89e50
+F src/insert.c ad0d8943d2a4f0b52ebf75b9e459f2da00117dbd
 F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 0ee69fca0be54cd93939df98d2aca4ca46f44416
@@ -1019,7 +1019,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 1c2c0a2880dd0ee8862352e307142b8de7e80d13 8314fd6078a3a71aea9d6386ff277cfeb592b4ba
-R b10014ed9089c50b134287e60971b9d3
+P c027a9af9137f3346dbb5c5e100a087c2e89797b
+R 7421bd1f29e4f1c03e6a7c48cc004fd6
 U drh
-Z c680ce318c399b8bae240279b61ec223
+Z d39c58ca060ec602a0c6c79ebdb80011
