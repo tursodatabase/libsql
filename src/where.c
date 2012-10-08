@@ -1443,22 +1443,6 @@ static void exprAnalyze(
 }
 
 /*
-** Return TRUE if the given index is UNIQUE and all columns past the
-** first nSkip columns are NOT NULL.
-*/
-static int indexIsUniqueNotNull(Index *pIdx, int nSkip){
-  Table *pTab = pIdx->pTable;
-  int i;
-  if( pIdx->onError==OE_None ) return 0;
-  for(i=nSkip; i<pIdx->nColumn; i++){
-    int j = pIdx->aiColumn[i];
-    assert( j>=0 && j<pTab->nCol );
-    if( pTab->aCol[j].notNull==0 ) return 0;
-  }
-  return 1;
-}
-
-/*
 ** This function searches the expression list passed as the second argument
 ** for an expression of type TK_COLUMN that refers to the same column and
 ** uses the same collation sequence as the iCol'th column of index pIdx.
@@ -2726,14 +2710,20 @@ static int whereInScanEst(
 
 /*
 ** Check to see if column iCol of the table with cursor iTab will appear
-** in sorted order according to the current query plan.  Return true if
-** it will and false if not.  
+** in sorted order according to the current query plan.
 **
-** If *pbRev is initially 2 (meaning "unknown") then set *pbRev to the
-** sort order of iTab.iCol.  If *pbRev is 0 or 1 but does not match
-** the sort order of iTab.iCol, then consider the column to be unordered.
+** Return values:
+**
+**    0   iCol is not ordered
+**    1   iCol has only a single value
+**    2   iCol is in ASC order
+**    3   iCol is in DESC order
 */
-static int isOrderedColumn(WhereBestIdx *p, int iTab, int iCol, int *pbRev){
+static int isOrderedColumn(
+  WhereBestIdx *p,
+  int iTab,
+  int iCol
+){
   int i, j;
   WhereLevel *pLevel = &p->aLevel[p->i-1];
   Index *pIdx;
@@ -2769,35 +2759,8 @@ static int isOrderedColumn(WhereBestIdx *p, int iTab, int iCol, int *pbRev){
       testcase( sortOrder==1 );
       sortOrder = 1 - sortOrder;
     }
-    if( *pbRev==2 ){
-      *pbRev = sortOrder;
-      return 1;
-    }
-    return (*pbRev==sortOrder);
+    return sortOrder+2;
   }
-  return 0;
-}
-
-/*
-** pTerm is an == constraint.  Check to see if the other side of
-** the == is a constant or a value that is guaranteed to be ordered
-** by outer loops.  Return 1 if pTerm is ordered, and 0 if not.
-*/
-static int isOrderedTerm(WhereBestIdx *p, WhereTerm *pTerm, int *pbRev){
-  Expr *pExpr = pTerm->pExpr;
-  assert( pExpr->op==TK_EQ );
-  assert( pExpr->pLeft!=0 && pExpr->pLeft->op==TK_COLUMN );
-  assert( pExpr->pRight!=0 );
-  if( pTerm->prereqRight==0 ){
-    return 1;  /* RHS of the == is a constant */
-  }
-  if( pExpr->pRight->op==TK_COLUMN 
-   && isOrderedColumn(p, pExpr->pRight->iTable, pExpr->pRight->iColumn, pbRev)
-  ){
-    return 1;
-  }
-
-  /* If we cannot prove that the constraint is ordered, assume it is not */
   return 0;
 }
 
@@ -2825,45 +2788,45 @@ static int isSortingIndex(
   WhereBestIdx *p,    /* Best index search context */
   Index *pIdx,        /* The index we are testing */
   int base,           /* Cursor number for the table to be sorted */
-  int nEqCol,         /* Number of index columns with ordered == constraints */
-  int wsFlags,        /* Index usages flags */
-  int bOuterRev,      /* True if outer loops scan in reverse order */
   int *pbRev          /* Set to 1 for reverse-order scan of pIdx */
 ){
   int i;                        /* Number of pIdx terms used */
   int j;                        /* Number of ORDER BY terms satisfied */
-  int sortOrder = 0;            /* XOR of index and ORDER BY sort direction */
+  int sortOrder = 2;            /* 0: forward.  1: backward.  2: unknown */
   int nTerm;                    /* Number of ORDER BY terms */
-  struct ExprList_item *pTerm;  /* A term of the ORDER BY clause */
+  struct ExprList_item *pOBItem;/* A term of the ORDER BY clause */
+  Table *pTab = pIdx->pTable;   /* Table that owns index pIdx */
   ExprList *pOrderBy;           /* The ORDER BY clause */
   Parse *pParse = p->pParse;    /* Parser context */
   sqlite3 *db = pParse->db;     /* Database connection */
   int nPriorSat;                /* ORDER BY terms satisfied by outer loops */
   int seenRowid = 0;            /* True if an ORDER BY rowid term is seen */
-  int nEqOneRow;                /* Idx columns that ref unique values */
+  int uniqueNotNull;            /* pIdx is UNIQUE with all terms are NOT NULL */
 
   if( p->i==0 ){
     nPriorSat = 0;
   }else{
     nPriorSat = p->aLevel[p->i-1].plan.nOBSat;
-    if( OptimizationDisabled(db, SQLITE_OrderByIdxJoin) ) return nPriorSat;
-  }
-  if( nEqCol==0 ){
-    if( p->i && (p->aLevel[p->i-1].plan.wsFlags & WHERE_ORDERED)==0 ){
+    if( (p->aLevel[p->i-1].plan.wsFlags & WHERE_ORDERED)==0 ){
+      /* This loop cannot be ordered unless the next outer loop is
+      ** also ordered */
       return nPriorSat;
     }
-    nEqOneRow = 0;
-  }else if( p->i==0 || (p->aLevel[p->i-1].plan.wsFlags & WHERE_ALL_UNIQUE)!=0 ){
-    nEqOneRow = nEqCol;
-  }else{
-    sortOrder = bOuterRev;
-    nEqOneRow = -1;
+    if( OptimizationDisabled(db, SQLITE_OrderByIdxJoin) ){
+      /* Only look at the outer-most loop if the OrderByIdxJoin
+      ** optimization is disabled */
+      return nPriorSat;
+    }
   }
   pOrderBy = p->pOrderBy;
   assert( pOrderBy!=0 );
-  if( wsFlags & WHERE_COLUMN_IN ) return nPriorSat;
-  if( pIdx->bUnordered ) return nPriorSat;
+  if( pIdx->bUnordered ){
+    /* Hash indices (indicated by the "unordered" tag on sqlite_stat1) cannot
+    ** be used for sorting */
+    return nPriorSat;
+  }
   nTerm = pOrderBy->nExpr;
+  uniqueNotNull = pIdx->onError!=OE_None;
   assert( nTerm>0 );
 
   /* Argument pIdx must either point to a 'real' named index structure, 
@@ -2879,25 +2842,28 @@ static int isSortingIndex(
   ** of the index is also allowed to match against the ORDER BY
   ** clause.
   */
-  for(i=0,j=nPriorSat,pTerm=&pOrderBy->a[j]; j<nTerm; i++){
-    Expr *pExpr;       /* The expression of the ORDER BY pTerm */
-    CollSeq *pColl;    /* The collating sequence of pExpr */
-    int termSortOrder; /* Sort order for this term */
-    int iColumn;       /* The i-th column of the index.  -1 for rowid */
-    int iSortOrder;    /* 1 for DESC, 0 for ASC on the i-th index term */
-    const char *zColl; /* Name of the collating sequence for i-th index term */
+  j = nPriorSat;
+  for(i=0,pOBItem=&pOrderBy->a[j]; j<nTerm && i<=pIdx->nColumn; i++){
+    Expr *pOBExpr;          /* The expression of the ORDER BY pOBItem */
+    CollSeq *pColl;         /* The collating sequence of pOBExpr */
+    int termSortOrder;      /* Sort order for this term */
+    int iColumn;            /* The i-th column of the index.  -1 for rowid */
+    int iSortOrder;         /* 1 for DESC, 0 for ASC on the i-th index term */
+    int isEq;               /* Subject to an == or IS NULL constraint */
+    int isMatch;            /* ORDER BY term matches the index term */
+    const char *zColl;      /* Name of collating sequence for i-th index term */
+    WhereTerm *pConstraint; /* A constraint in the WHERE clause */
 
-    assert( i<=pIdx->nColumn );
-    pExpr = pTerm->pExpr;
-    if( pExpr->op!=TK_COLUMN || pExpr->iTable!=base ){
-      /* Can not use an index sort on anything that is not a column in the
-      ** left-most table of the FROM clause */
+    /* If the next term of the ORDER BY clause refers to anything other than
+    ** a column in the "base" table, then this index will not be of any
+    ** further use in handling the ORDER BY. */
+    pOBExpr = pOBItem->pExpr;
+    if( pOBExpr->op!=TK_COLUMN || pOBExpr->iTable!=base ){
       break;
     }
-    pColl = sqlite3ExprCollSeq(pParse, pExpr);
-    if( !pColl ){
-      pColl = db->pDfltColl;
-    }
+
+    /* Find column number and collating sequence for the next entry
+    ** in the index */
     if( pIdx->zName && i<pIdx->nColumn ){
       iColumn = pIdx->aiColumn[i];
       if( iColumn==pIdx->pTable->iPKey ){
@@ -2905,60 +2871,97 @@ static int isSortingIndex(
       }
       iSortOrder = pIdx->aSortOrder[i];
       zColl = pIdx->azColl[i];
+      assert( zColl!=0 );
     }else{
       iColumn = -1;
       iSortOrder = 0;
-      zColl = pColl->zName;
+      zColl = 0;
     }
-    if( pExpr->iColumn!=iColumn || sqlite3StrICmp(pColl->zName, zColl) ){
-      /* Term j of the ORDER BY clause does not match column i of the index */
-      if( i<nEqCol ){
-        /* If an index column that is constrained by == fails to match an
-        ** ORDER BY term, that is OK.  Just ignore that column of the index
-        */
-        continue;
-      }else if( i==pIdx->nColumn ){
-        /* Index column i is the rowid.  All other terms match. */
-        break;
+
+    /* Check to see if the column number and collating sequence of the
+    ** index match the column number and collating sequence of the ORDER BY
+    ** clause entry.  Set isMatch to 1 if they both match. */
+    if( pOBExpr->iColumn==iColumn ){
+      if( zColl ){
+        pColl = sqlite3ExprCollSeq(pParse, pOBExpr);
+        if( !pColl ) pColl = db->pDfltColl;
+        isMatch = sqlite3StrICmp(pColl->zName, zColl)==0;
       }else{
-        /* If an index column fails to match and is not constrained by ==
-        ** then the index cannot satisfy the ORDER BY constraint.
-        */
-        return nPriorSat;
-      }
-    }
-    assert( pIdx->aSortOrder!=0 || iColumn==-1 );
-    assert( pTerm->sortOrder==0 || pTerm->sortOrder==1 );
-    assert( iSortOrder==0 || iSortOrder==1 );
-    termSortOrder = iSortOrder ^ pTerm->sortOrder;
-    if( i>nEqOneRow ){
-      if( termSortOrder!=sortOrder ){
-        /* Indices can only be used if all ORDER BY terms past the
-        ** equality constraints have the correct DESC or ASC. */
-        break;
+        isMatch = 1;
       }
     }else{
-      sortOrder = termSortOrder;
+      isMatch = 0;
+    }
+
+    /* termSortOrder is 0 or 1 for whether or not the access loop should
+    ** run forward or backwards (respectively) in order to satisfy this 
+    ** term of the ORDER BY clause. */
+    termSortOrder = iSortOrder ^ pOBItem->sortOrder;
+
+    /* If X is the column in the index and ORDER BY clause, check to see
+    ** if there are any X= or X IS NULL constraints in the WHERE clause. */
+    pConstraint = findTerm(p->pWC, base, iColumn, p->notReady,
+                           WO_EQ|WO_ISNULL|WO_IN, pIdx);
+    if( pConstraint==0 ){
+      isEq = 0;
+    }else if( pConstraint->eOperator==WO_IN ){
+      break;
+    }else if( pConstraint->eOperator==WO_ISNULL ){
+      uniqueNotNull = 0;
+      isEq = 1;
+    }else if( pConstraint->prereqRight==0 ){
+      isEq = 1;
+    }else{
+      Expr *pRight = pConstraint->pExpr->pRight;
+      if( pRight->op==TK_COLUMN ){
+        WHERETRACE(("       .. isOrderedColumn(tab=%d,col=%d)",
+                    pRight->iTable, pRight->iColumn));
+        isEq = isOrderedColumn(p, pRight->iTable, pRight->iColumn);
+        WHERETRACE((" -> isEq=%d\n", isEq));
+        if( isMatch && isEq>=2 && isEq!=pOBItem->sortOrder+2 ){
+          break;
+        }
+      }else{
+        isEq = 0;
+      }
+    }
+    assert( pOBItem->sortOrder==0 || pOBItem->sortOrder==1 );
+    assert( iSortOrder==0 || iSortOrder==1 );
+    if( !isMatch ){
+      if( isEq==0 ){
+        break;
+      }else{
+        continue;
+      }
+    }else if( isEq!=1 ){
+      if( sortOrder==2 ){
+        sortOrder = termSortOrder;
+      }else if( termSortOrder!=sortOrder ){
+        break;
+      }
     }
     j++;
-    pTerm++;
+    pOBItem++;
     if( iColumn<0 ){
       seenRowid = 1;
       break;
+    }else if( pTab->aCol[iColumn].notNull==0 && isEq==0 ){
+      uniqueNotNull = 0;
     }
   }
-  *pbRev = sortOrder;
+
+  /* If we have not found at least one ORDER BY term that matches the
+  ** index, then show no progress. */
+  if( pOBItem==&pOrderBy->a[nPriorSat] ) return nPriorSat;
+
+  /* Return the necessary scan order back to the caller */
+  *pbRev = sortOrder & 1;
 
   /* If there was an "ORDER BY rowid" term that matched, or it is only
   ** possible for a single row from this table to match, then skip over
   ** any additional ORDER BY terms dealing with this table.
   */
-  if( seenRowid ||
-     (   (wsFlags & WHERE_COLUMN_NULL)==0
-      && i>=pIdx->nColumn
-      && indexIsUniqueNotNull(pIdx, nEqCol)
-     )
-  ){
+  if( seenRowid || (uniqueNotNull && i>=pIdx->nColumn) ){
     /* Advance j over additional ORDER BY terms associated with base */
     WhereMaskSet *pMS = p->pWC->pMaskSet;
     Bitmask m = ~getMask(pMS, base);
@@ -3066,6 +3069,11 @@ static void bestBtreeIndex(WhereBestIdx *p){
     double log10N = (double)1;  /* base-10 logarithm of nRow (inexact) */
     int bRev = 2;               /* 0=forward scan.  1=reverse.  2=undecided */
 
+    WHERETRACE((
+      "   %s(%s):\n",
+      pSrc->pTab->zName, (pIdx ? pIdx->zName : "ipk")
+    ));
+
     /* The following variables are populated based on the properties of
     ** index being evaluated. They are then used to determine the expected
     ** cost and number of rows returned.
@@ -3094,10 +3102,6 @@ static void bestBtreeIndex(WhereBestIdx *p){
     **    If there exists a WHERE term of the form "x IN (SELECT ...)", then 
     **    the sub-select is assumed to return 25 rows for the purposes of 
     **    determining nInMul.
-    **
-    **  nOrdered:
-    **    The number of equality terms that are constrainted by outer loop
-    **    variables that are well-ordered.
     **
     **  bInEst:  
     **    Set to true if there was at least one "x IN (SELECT ...)" term used 
@@ -3136,7 +3140,6 @@ static void bestBtreeIndex(WhereBestIdx *p){
     **             SELECT a, b    FROM tbl WHERE a = 1;
     **             SELECT a, b, c FROM tbl WHERE a = 1;
     */
-    int nOrdered;                 /* Number of ordered terms matching index */
     int bInEst = 0;               /* True if "x IN (SELECT...)" seen */
     int nInMul = 1;               /* Number of distinct equalities to lookup */
     double rangeDiv = (double)1;  /* Estimated reduction in search space */
@@ -3164,7 +3167,7 @@ static void bestBtreeIndex(WhereBestIdx *p){
     }
 
     /* Determine the values of pc.plan.nEq and nInMul */
-    for(pc.plan.nEq=nOrdered=0; pc.plan.nEq<pProbe->nColumn; pc.plan.nEq++){
+    for(pc.plan.nEq=0; pc.plan.nEq<pProbe->nColumn; pc.plan.nEq++){
       int j = pProbe->aiColumn[pc.plan.nEq];
       pTerm = findTerm(pWC, iCur, j, p->notReady, eqTermMask, pIdx);
       if( pTerm==0 ) break;
@@ -3183,10 +3186,6 @@ static void bestBtreeIndex(WhereBestIdx *p){
         }
       }else if( pTerm->eOperator & WO_ISNULL ){
         pc.plan.wsFlags |= WHERE_COLUMN_NULL;
-        if( pc.plan.nEq==nOrdered ) nOrdered++;
-      }else if( bSort && pc.plan.nEq==nOrdered
-             && isOrderedTerm(p,pTerm,&bRev) ){
-        nOrdered++;
       }
 #ifdef SQLITE_ENABLE_STAT3
       if( pc.plan.nEq==0 && pProbe->aSample ) pFirstTerm = pTerm;
@@ -3242,12 +3241,12 @@ static void bestBtreeIndex(WhereBestIdx *p){
     ** the index will scan rows in a different order, set the bSort
     ** variable.  */
     assert( bRev>=0 && bRev<=2 );
-    if( bSort ){
-      testcase( bRev==0 );
-      testcase( bRev==1 );
-      testcase( bRev==2 );
-      pc.plan.nOBSat = isSortingIndex(p, pProbe, iCur, nOrdered,
-                                 pc.plan.wsFlags, bRev&1, &bRev);
+    if( bSort && (pSrc->jointype & JT_LEFT)==0 ){
+      int bRev = 2;
+      WHERETRACE(("      --> before isSortingIndex: nPriorSat=%d\n",nPriorSat));
+      pc.plan.nOBSat = isSortingIndex(p, pProbe, iCur, &bRev);
+      WHERETRACE(("      --> after  isSortingIndex: bRev=%d nOBSat=%d\n",
+                  bRev, pc.plan.nOBSat));
       if( nPriorSat<pc.plan.nOBSat || (pc.plan.wsFlags & WHERE_UNIQUE)!=0 ){
         pc.plan.wsFlags |= WHERE_ORDERED;
       }
@@ -3365,7 +3364,10 @@ static void bestBtreeIndex(WhereBestIdx *p){
       */
       pc.rCost = aiRowEst[0]*4;
       pc.plan.wsFlags &= ~WHERE_IDX_ONLY;
-      if( pIdx ) pc.plan.wsFlags &= ~WHERE_ORDERED;
+      if( pIdx ){
+        pc.plan.wsFlags &= ~WHERE_ORDERED;
+        pc.plan.nOBSat = nPriorSat;
+      }
     }else{
       log10N = estLog(aiRowEst[0]);
       pc.rCost = pc.plan.nRow;
@@ -3470,13 +3472,11 @@ static void bestBtreeIndex(WhereBestIdx *p){
 
 
     WHERETRACE((
-      "%s(%s):\n"
-      "    nEq=%d nInMul=%d rangeDiv=%d bSort=%d bLookup=%d wsFlags=0x%08x\n"
-      "    notReady=0x%llx log10N=%.1f nRow=%.1f cost=%.1f\n"
-      "    used=0x%llx nOrdered=%d nOBSat=%d\n",
-      pSrc->pTab->zName, (pIdx ? pIdx->zName : "ipk"), 
+      "      nEq=%d nInMul=%d rangeDiv=%d bSort=%d bLookup=%d wsFlags=0x%08x\n"
+      "      notReady=0x%llx log10N=%.1f nRow=%.1f cost=%.1f\n"
+      "      used=0x%llx nOBSat=%d\n",
       pc.plan.nEq, nInMul, (int)rangeDiv, bSort, bLookup, pc.plan.wsFlags,
-      p->notReady, log10N, pc.plan.nRow, pc.rCost, pc.used, nOrdered,
+      p->notReady, log10N, pc.plan.nRow, pc.rCost, pc.used,
       pc.plan.nOBSat
     ));
 
@@ -3514,7 +3514,7 @@ static void bestBtreeIndex(WhereBestIdx *p){
        || p->cost.plan.u.pIdx==pSrc->pIndex 
   );
 
-  WHERETRACE(("best index is: %s\n",
+  WHERETRACE(("   best index is: %s\n",
          p->cost.plan.u.pIdx ? p->cost.plan.u.pIdx->zName : "ipk"));
   
   bestOrClauseIndex(p);
@@ -5064,7 +5064,7 @@ WhereInfo *sqlite3WhereBegin(
         sWBI.notReady = (isOptimal ? m : sWBI.notValid);
         if( sWBI.pSrc->pIndex==0 ) nUnconstrained++;
   
-        WHERETRACE(("=== trying table %d (%s) with isOptimal=%d ===\n",
+        WHERETRACE(("   === trying table %d (%s) with isOptimal=%d ===\n",
                     j, sWBI.pSrc->pTab->zName, isOptimal));
         assert( sWBI.pSrc->pTab );
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -5117,8 +5117,8 @@ WhereInfo *sqlite3WhereBegin(
                 || NEVER((sWBI.cost.plan.wsFlags & WHERE_NOT_FULLSCAN)!=0))
             && (bestJ<0 || compareCost(&sWBI.cost, &bestPlan))   /* (4) */
         ){
-          WHERETRACE(("=== table %d (%s) is best so far\n"
-                      "    cost=%.1f, nRow=%.1f, nOBSat=%d, wsFlags=%08x\n",
+          WHERETRACE(("   === table %d (%s) is best so far\n"
+                      "       cost=%.1f, nRow=%.1f, nOBSat=%d, wsFlags=%08x\n",
                       j, sWBI.pSrc->pTab->zName,
                       sWBI.cost.rCost, sWBI.cost.plan.nRow,
                       sWBI.cost.plan.nOBSat, sWBI.cost.plan.wsFlags));

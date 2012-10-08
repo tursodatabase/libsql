@@ -1,5 +1,5 @@
-C Manually\sdefine\sthe\sWin32\sfile-mapping\sAPIs\sfor\sWAL\sif\sSQLITE_WIN32_FILEMAPPING_API\sis\sdefined.
-D 2012-10-08T14:36:42.399
+C Merge\sORDER\sBY\soptimization\srefactoring\sand\srepair\sinto\strunk.
+D 2012-10-08T21:51:58.040
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -249,7 +249,7 @@ F src/vtab.c c7671587d07b76582c495d9305b35c0172cad5d3
 F src/wal.c e1fe8f92a0ea0fef8faa87ec43a127a478589d22
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c bf45ec770aa6e5da55d6e9e9405ce990ff6ca201
+F src/where.c 56916abbd9572487713df7dd41a7cace9e5fae2a
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 0be144b453e0622a085fae8665c32f5676708e00
@@ -634,7 +634,7 @@ F test/notify3.test a86259abbfb923aa27d30f0fc038c88e5251488a
 F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
-F test/orderby1.test 4875a2a0a87d81920f3600a3405dc42f233b8c82
+F test/orderby1.test ef4f7c40df81b9a4303a718433d34052f07db47d
 F test/orderby2.test bc11009f7cd99d96b1b11e57b199b00633eb5b04
 F test/oserror.test 50417780d0e0d7cd23cf12a8277bb44024765df3
 F test/pager1.test 2163c6ef119f497a71a84137c957c63763e640ab
@@ -1019,7 +1019,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 50679889c75cd3205253b1682abfbddc5ff09175 585e2070eef3bc273f23d8e384a1261ee5fff5bd
-R 503e44f3173c52a30e9073d66f146916
-U mistachkin
-Z df468ad55877f504a34141d09c9c3204
+P 1c2c0a2880dd0ee8862352e307142b8de7e80d13 8314fd6078a3a71aea9d6386ff277cfeb592b4ba
+R b10014ed9089c50b134287e60971b9d3
+U drh
+Z c680ce318c399b8bae240279b61ec223
