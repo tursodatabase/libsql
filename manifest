@@ -1,5 +1,5 @@
-C Yet\sanother\srefactoring\sof\sORDER\sBY\slogic\sin\sthe\squery\splanner.\s\sThis\nparticular\scheck-in\sworks\smostly,\sbut\sstill\shas\sa\sfew\sminor\sissues.
-D 2012-10-04T12:10:25.997
+C Continued\srefactoring\sof\sthe\sORDER\sBY\soptimization\slogic.\s\sThis\scheck-in\nis\sclose\sto\sworking,\sbut\sit\sstill\shas\sissues.\s\sA\sfew\stest\scases\sfail.
+D 2012-10-08T18:23:51.612
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -249,7 +249,7 @@ F src/vtab.c d8020c0a0e8ccc490ca449d7e665311b6e9f3ba9
 F src/wal.c e1fe8f92a0ea0fef8faa87ec43a127a478589d22
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c f2468071088a73703cd0fa9c9a2a3014b6a5501b
+F src/where.c 968bea256016bdc32de4051fc2e921771ed945e6
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 0be144b453e0622a085fae8665c32f5676708e00
@@ -1018,10 +1018,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P ba2f492f957ab5556cd540e21a76ebb75efea725
-R 9e8b25b7e134451a912caf8748b81c9a
-T *branch * qp-enhancements
-T *sym-qp-enhancements *
-T -sym-trunk *
+P 8f4487450be1a2b0371f8251a967cbe341b2dea1
+R b898c44fee2dd1d4ef226b8a2707fa76
 U drh
-Z 0d6c8df6b2d44ceaf575eaf63391c9ce
+Z cd5853ba0dbcfea98f0be88905f219b5
