@@ -2803,17 +2803,30 @@ static int isSortingIndex(
   sqlite3 *db = pParse->db;     /* Database connection */
   int nPriorSat;                /* ORDER BY terms satisfied by outer loops */
   int seenRowid = 0;            /* True if an ORDER BY rowid term is seen */
-  int uniqueNotNull = 1;        /* pIdx is UNIQUE with all terms are NOT NULL */
+  int uniqueNotNull;            /* pIdx is UNIQUE with all terms are NOT NULL */
 
   if( p->i==0 ){
     nPriorSat = 0;
   }else{
     nPriorSat = p->aLevel[p->i-1].plan.nOBSat;
-    if( OptimizationDisabled(db, SQLITE_OrderByIdxJoin) ) return nPriorSat;
+    if( (p->aLevel[p->i-1].plan.wsFlags & WHERE_ORDERED)==0 ){
+      /* This loop cannot be ordered unless the next outer loop is
+      ** also ordered */
+      return nPriorSat;
+    }
+    if( OptimizationDisabled(db, SQLITE_OrderByIdxJoin) ){
+      /* Only look at the outer-most loop if the OrderByIdxJoin
+      ** optimization is disabled */
+      return nPriorSat;
+    }
   }
   pOrderBy = p->pOrderBy;
   assert( pOrderBy!=0 );
-  if( pIdx->bUnordered ) return nPriorSat;
+  if( pIdx->bUnordered ){
+    /* Hash indices (indicated by the "unordered" tag on sqlite_stat1) cannot
+    ** be used for sorting */
+    return nPriorSat;
+  }
   nTerm = pOrderBy->nExpr;
   uniqueNotNull = pIdx->onError!=OE_None;
   assert( nTerm>0 );
@@ -2936,6 +2949,12 @@ static int isSortingIndex(
       uniqueNotNull = 0;
     }
   }
+
+  /* If we have not found at least one ORDER BY term that matches the
+  ** index, then show no progress. */
+  if( pOBItem==&pOrderBy->a[nPriorSat] ) return nPriorSat;
+
+  /* Return the necessary scan order back to the caller */
   *pbRev = sortOrder & 1;
 
   /* If there was an "ORDER BY rowid" term that matched, or it is only
