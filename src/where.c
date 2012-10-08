@@ -2908,10 +2908,10 @@ static int isSortingIndex(
       isEq = 0;
     }else if( pConstraint->eOperator==WO_IN ){
       break;
-    }else if( pConstraint->prereqRight==0 ){
-      isEq = 1;
     }else if( pConstraint->eOperator==WO_ISNULL ){
       uniqueNotNull = 0;
+      isEq = 1;
+    }else if( pConstraint->prereqRight==0 ){
       isEq = 1;
     }else{
       Expr *pRight = pConstraint->pExpr->pRight;
@@ -2935,17 +2935,19 @@ static int isSortingIndex(
       }else{
         continue;
       }
-    }else if( sortOrder==2 ){
-      sortOrder = termSortOrder;
-    }else if( termSortOrder!=sortOrder ){
-      break;
+    }else if( isEq!=1 ){
+      if( sortOrder==2 ){
+        sortOrder = termSortOrder;
+      }else if( termSortOrder!=sortOrder ){
+        break;
+      }
     }
     j++;
     pOBItem++;
     if( iColumn<0 ){
       seenRowid = 1;
       break;
-    }else if( pTab->aCol[iColumn].notNull==0 ){
+    }else if( pTab->aCol[iColumn].notNull==0 && isEq==0 ){
       uniqueNotNull = 0;
     }
   }
