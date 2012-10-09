@@ -2771,14 +2771,6 @@ static int isOrderedColumn(
 ** The table being queried has a cursor number of "base".  pIdx is the
 ** index that is postulated for use to access the table.
 **
-** nEqCol is the number of columns of pIdx that are used as equality
-** constraints and where the other side of the == is an ordered column
-** or constant.  An "order column" in the previous sentence means a column
-** in table from an outer loop whose values will always appear in the 
-** correct order due to othre index, or because the outer loop generates
-** a unique result.  Any of the first nEqCol columns of pIdx may be missing
-** from the ORDER BY clause and the match can still be a success.
-**
 ** The *pbRev value is set to 0 order 1 depending on whether or not
 ** pIdx should be run in the forward order or in reverse order.
 */
@@ -2894,6 +2886,8 @@ static int isSortingIndex(
     /* termSortOrder is 0 or 1 for whether or not the access loop should
     ** run forward or backwards (respectively) in order to satisfy this 
     ** term of the ORDER BY clause. */
+    assert( pOBItem->sortOrder==0 || pOBItem->sortOrder==1 );
+    assert( iSortOrder==0 || iSortOrder==1 );
     termSortOrder = iSortOrder ^ pOBItem->sortOrder;
 
     /* If X is the column in the index and ORDER BY clause, check to see
@@ -2903,12 +2897,15 @@ static int isSortingIndex(
     if( pConstraint==0 ){
       isEq = 0;
     }else if( pConstraint->eOperator==WO_IN ){
+      /* Constraints of the form: "X IN ..." cannot be used with an ORDER BY
+      ** because we do not know in what order the values on the RHS of the IN
+      ** operator will occur. */
       break;
     }else if( pConstraint->eOperator==WO_ISNULL ){
       uniqueNotNull = 0;
-      isEq = 1;
+      isEq = 1;  /* "X IS NULL" means X has only a single value */
     }else if( pConstraint->prereqRight==0 ){
-      isEq = 1;
+      isEq = 1;  /* Constraint "X=constant" means X has only a single value */
     }else{
       Expr *pRight = pConstraint->pExpr->pRight;
       if( pRight->op==TK_COLUMN ){
@@ -2916,15 +2913,19 @@ static int isSortingIndex(
                     pRight->iTable, pRight->iColumn));
         isEq = isOrderedColumn(p, pRight->iTable, pRight->iColumn);
         WHERETRACE((" -> isEq=%d\n", isEq));
+
+        /* If the constraint is of the form X=Y where Y is an ordered value
+        ** in an outer loop, then make sure the sort order of Y matches the
+        ** sort order required for X. */
         if( isMatch && isEq>=2 && isEq!=pOBItem->sortOrder+2 ){
+          testcase( isEq==2 );
+          testcase( isEq==3 );
           break;
         }
       }else{
-        isEq = 0;
+        isEq = 0;  /* "X=expr" places no ordering constraints on X */
       }
     }
-    assert( pOBItem->sortOrder==0 || pOBItem->sortOrder==1 );
-    assert( iSortOrder==0 || iSortOrder==1 );
     if( !isMatch ){
       if( isEq==0 ){
         break;
@@ -2943,7 +2944,10 @@ static int isSortingIndex(
     if( iColumn<0 ){
       seenRowid = 1;
       break;
-    }else if( pTab->aCol[iColumn].notNull==0 && isEq==0 ){
+    }else if( pTab->aCol[iColumn].notNull==0 && isEq!=1 ){
+      testcase( isEq==0 );
+      testcase( isEq==2 );
+      testcase( isEq==3 );
       uniqueNotNull = 0;
     }
   }
