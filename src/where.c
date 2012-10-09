@@ -3065,12 +3065,6 @@ static void bestBtreeIndex(WhereBestIdx *p){
     const tRowcnt * const aiRowEst = pProbe->aiRowEst;
     WhereCost pc;               /* Cost of using pProbe */
     double log10N = (double)1;  /* base-10 logarithm of nRow (inexact) */
-    int bRev = 2;               /* 0=forward scan.  1=reverse.  2=undecided */
-
-    WHERETRACE((
-      "   %s(%s):\n",
-      pSrc->pTab->zName, (pIdx ? pIdx->zName : "ipk")
-    ));
 
     /* The following variables are populated based on the properties of
     ** index being evaluated. They are then used to determine the expected
@@ -3152,6 +3146,10 @@ static void bestBtreeIndex(WhereBestIdx *p){
     WhereTerm *pFirstTerm = 0;    /* First term matching the index */
 #endif
 
+    WHERETRACE((
+      "   %s(%s):\n",
+      pSrc->pTab->zName, (pIdx ? pIdx->zName : "ipk")
+    ));
     memset(&pc, 0, sizeof(pc));
     nOrderBy = p->pOrderBy ? p->pOrderBy->nExpr : 0;
     if( p->i ){
@@ -3238,7 +3236,6 @@ static void bestBtreeIndex(WhereBestIdx *p){
     ** in pc.plan.wsFlags. Otherwise, if there is an ORDER BY clause but
     ** the index will scan rows in a different order, set the bSort
     ** variable.  */
-    assert( bRev>=0 && bRev<=2 );
     if( bSort && (pSrc->jointype & JT_LEFT)==0 ){
       int bRev = 2;
       WHERETRACE(("      --> before isSortingIndex: nPriorSat=%d\n",nPriorSat));
