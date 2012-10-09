@@ -2733,9 +2733,7 @@ static int isOrderedColumn(
     if( (pLevel->plan.wsFlags & WHERE_ALL_UNIQUE)!=0 ){
       return 1;
     }
-    if( (pLevel->plan.wsFlags & WHERE_ORDERED)==0 ){
-      return 0;
-    }
+    assert( (pLevel->plan.wsFlags & WHERE_ORDERED)!=0 );
     if( (pIdx = pLevel->plan.u.pIdx)!=0 ){
       if( iCol<0 ){
         sortOrder = 0;
