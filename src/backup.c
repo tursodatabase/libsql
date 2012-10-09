@@ -219,13 +219,16 @@ static int backupOnePage(sqlite3_backup *p, Pgno iSrcPg, const u8 *zSrcData){
   const int nCopy = MIN(nSrcPgsz, nDestPgsz);
   const i64 iEnd = (i64)iSrcPg*(i64)nSrcPgsz;
 #ifdef SQLITE_HAS_CODEC
-  int nSrcReserve = sqlite3BtreeGetReserve(p->pSrc);
+  /* Use BtreeGetReserveNoMutex() for the source b-tree, as although it is
+  ** guaranteed that the shared-mutex is held by this thread, handle
+  ** p->pSrc may not actually be the owner.  */
+  int nSrcReserve = sqlite3BtreeGetReserveNoMutex(p->pSrc);
   int nDestReserve = sqlite3BtreeGetReserve(p->pDest);
 #endif
-
   int rc = SQLITE_OK;
   i64 iOff;
 
+  assert( sqlite3BtreeGetReserveNoMutex(p->pSrc)>=0 );
   assert( p->bDestLocked );
   assert( !isFatalError(p->rc) );
   assert( iSrcPg!=PENDING_BYTE_PAGE(p->pSrc->pBt) );

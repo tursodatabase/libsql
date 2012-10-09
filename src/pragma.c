@@ -357,6 +357,7 @@ void sqlite3Pragma(
   aFcntl[1] = zLeft;
   aFcntl[2] = zRight;
   aFcntl[3] = 0;
+  db->busyHandler.nBusy = 0;
   rc = sqlite3_file_control(db, zDb, SQLITE_FCNTL_PRAGMA, (void*)aFcntl);
   if( rc==SQLITE_OK ){
     if( aFcntl[0] ){

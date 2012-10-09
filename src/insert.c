@@ -1274,20 +1274,25 @@ void sqlite3GenerateConstraintChecks(
     onError = overrideError!=OE_Default ? overrideError : OE_Abort;
     for(i=0; i<pCheck->nExpr; i++){
       int allOk = sqlite3VdbeMakeLabel(v);
-      sqlite3ExprIfTrue(pParse, pCheck->a[i].pExpr, allOk, SQLITE_JUMPIFNULL);
-      if( onError==OE_Ignore ){
-        sqlite3VdbeAddOp2(v, OP_Goto, 0, ignoreDest);
-      }else{
-        char *zConsName = pCheck->a[i].zName;
-        if( onError==OE_Replace ) onError = OE_Abort; /* IMP: R-15569-63625 */
-        if( zConsName ){
-          zConsName = sqlite3MPrintf(db, "constraint %s failed", zConsName);
+      Expr *pDup = sqlite3ExprDup(db, pCheck->a[i].pExpr, 0);
+      if( !db->mallocFailed ){
+        assert( pDup!=0 );
+        sqlite3ExprIfTrue(pParse, pDup, allOk, SQLITE_JUMPIFNULL);
+        if( onError==OE_Ignore ){
+          sqlite3VdbeAddOp2(v, OP_Goto, 0, ignoreDest);
         }else{
-          zConsName = 0;
+          char *zConsName = pCheck->a[i].zName;
+          if( onError==OE_Replace ) onError = OE_Abort; /* IMP: R-15569-63625 */
+          if( zConsName ){
+            zConsName = sqlite3MPrintf(db, "constraint %s failed", zConsName);
+          }else{
+            zConsName = 0;
+          }
+          sqlite3HaltConstraint(pParse, onError, zConsName, P4_DYNAMIC);
         }
-        sqlite3HaltConstraint(pParse, onError, zConsName, P4_DYNAMIC);
+        sqlite3VdbeResolveLabel(v, allOk);
       }
-      sqlite3VdbeResolveLabel(v, allOk);
+      sqlite3ExprDelete(db, pDup);
     }
   }
 #endif /* !defined(SQLITE_OMIT_CHECK) */
@@ -1753,7 +1758,7 @@ static int xferOptimization(
   ** we have to check the semantics.
   */
   pItem = pSelect->pSrc->a;
-  pSrc = sqlite3LocateTable(pParse, 0, pItem->zName, pItem->zDatabase);
+  pSrc = sqlite3LocateTableItem(pParse, 0, pItem);
   if( pSrc==0 ){
     return 0;   /* FROM clause does not contain a real table */
   }

@@ -3010,6 +3010,8 @@ static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
   i64 newOffset;
 #endif
   TIMER_START;
+  assert( cnt==(cnt&0x1ffff) );
+  cnt &= 0x1ffff;
   do{
 #if defined(USE_PREAD)
     got = osPread(id->h, pBuf, cnt, offset);
@@ -3099,6 +3101,8 @@ static int seekAndWrite(unixFile *id, i64 offset, const void *pBuf, int cnt){
 #if (!defined(USE_PREAD) && !defined(USE_PREAD64))
   i64 newOffset;
 #endif
+  assert( cnt==(cnt&0x1ffff) );
+  cnt &= 0x1ffff;
   TIMER_START;
 #if defined(USE_PREAD)
   do{ got = osPwrite(id->h, pBuf, cnt, offset); }while( got<0 && errno==EINTR );

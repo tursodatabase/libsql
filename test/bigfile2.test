@@ -14,6 +14,7 @@
 #
 
 if {[file exists skip-big-file]} return
+if {$tcl_platform(os)=="Darwin"} return
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl

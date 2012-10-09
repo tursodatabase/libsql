@@ -142,7 +142,7 @@ FOR %%P IN (%PLATFORMS%) DO (
   REM       be used for the name of the platform-specific binary directory via
   REM       the environment variables setup earlier.
   REM
-  CALL :fn_SetVariable %%P_NAME PLATFORMNAME
+  CALL :fn_CopyVariable %%P_NAME PLATFORMNAME
 
   REM
   REM NOTE: This is the inner loop.  There should be exactly one iteration.
@@ -230,7 +230,7 @@ FOR %%P IN (%PLATFORMS%) DO (
       REM       file used to setup the MSVC environment.
       REM
       IF DEFINED SET_NSDKLIBPATH (
-        CALL :fn_SetVariable WindowsSdkDir NSDKLIBPATH
+        CALL :fn_CopyVariable WindowsSdkDir NSDKLIBPATH
         CALL :fn_AppendVariable NSDKLIBPATH \lib\win8\um\x86
       )
 
@@ -339,7 +339,7 @@ GOTO no_errors
   VERIFY MAYBE 2> NUL
   GOTO :EOF
 
-:fn_SetVariable
+:fn_CopyVariable
   SETLOCAL
   IF NOT DEFINED %1 GOTO :EOF
   IF "%2" == "" GOTO :EOF

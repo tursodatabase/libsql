@@ -75,17 +75,18 @@ static int synthCollSeq(sqlite3 *db, CollSeq *pColl){
 **
 ** The return value is either the collation sequence to be used in database
 ** db for collation type name zName, length nName, or NULL, if no collation
-** sequence can be found.
+** sequence can be found.  If no collation is found, leave an error message.
 **
 ** See also: sqlite3LocateCollSeq(), sqlite3FindCollSeq()
 */
 CollSeq *sqlite3GetCollSeq(
-  sqlite3* db,          /* The database connection */
+  Parse *pParse,        /* Parsing context */
   u8 enc,               /* The desired encoding for the collating sequence */
   CollSeq *pColl,       /* Collating sequence with native encoding, or NULL */
   const char *zName     /* Collating sequence name */
 ){
   CollSeq *p;
+  sqlite3 *db = pParse->db;
 
   p = pColl;
   if( !p ){
@@ -102,6 +103,9 @@ CollSeq *sqlite3GetCollSeq(
     p = 0;
   }
   assert( !p || p->xCmp );
+  if( p==0 ){
+    sqlite3ErrorMsg(pParse, "no such collation sequence: %s", zName);
+  }
   return p;
 }
 
@@ -120,10 +124,8 @@ int sqlite3CheckCollSeq(Parse *pParse, CollSeq *pColl){
   if( pColl ){
     const char *zName = pColl->zName;
     sqlite3 *db = pParse->db;
-    CollSeq *p = sqlite3GetCollSeq(db, ENC(db), pColl, zName);
+    CollSeq *p = sqlite3GetCollSeq(pParse, ENC(db), pColl, zName);
     if( !p ){
-      sqlite3ErrorMsg(pParse, "no such collation sequence: %s", zName);
-      pParse->nErr++;
       return SQLITE_ERROR;
     }
     assert( p==pColl );

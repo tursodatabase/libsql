@@ -34,6 +34,57 @@
 #endif
 
 /*
+** Are most of the Win32 ANSI APIs available (i.e. with certain exceptions
+** based on the sub-platform)?
+*/
+#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT
+#  define SQLITE_WIN32_HAS_ANSI
+#endif
+
+/*
+** Are most of the Win32 Unicode APIs available (i.e. with certain exceptions
+** based on the sub-platform)?
+*/
+#if SQLITE_OS_WINCE || SQLITE_OS_WINNT || SQLITE_OS_WINRT
+#  define SQLITE_WIN32_HAS_WIDE
+#endif
+
+/*
+** Do we need to manually define the Win32 file mapping APIs for use with WAL
+** mode (e.g. these APIs are available in the Windows CE SDK; however, they
+** are not present in the header file)?
+*/
+#if SQLITE_WIN32_FILEMAPPING_API && !defined(SQLITE_OMIT_WAL)
+/*
+** Two of the file mapping APIs are different under WinRT.  Figure out which
+** set we need.
+*/
+#if SQLITE_OS_WINRT
+WINBASEAPI HANDLE WINAPI CreateFileMappingFromApp(HANDLE, \
+        LPSECURITY_ATTRIBUTES, ULONG, ULONG64, LPCWSTR);
+
+WINBASEAPI LPVOID WINAPI MapViewOfFileFromApp(HANDLE, ULONG, ULONG64, SIZE_T);
+#else
+#if defined(SQLITE_WIN32_HAS_ANSI)
+WINBASEAPI HANDLE WINAPI CreateFileMappingA(HANDLE, LPSECURITY_ATTRIBUTES, \
+        DWORD, DWORD, DWORD, LPCSTR);
+#endif /* defined(SQLITE_WIN32_HAS_ANSI) */
+
+#if defined(SQLITE_WIN32_HAS_WIDE)
+WINBASEAPI HANDLE WINAPI CreateFileMappingW(HANDLE, LPSECURITY_ATTRIBUTES, \
+        DWORD, DWORD, DWORD, LPCWSTR);
+#endif /* defined(SQLITE_WIN32_HAS_WIDE) */
+
+WINBASEAPI LPVOID WINAPI MapViewOfFile(HANDLE, DWORD, DWORD, DWORD, SIZE_T);
+#endif /* SQLITE_OS_WINRT */
+
+/*
+** This file mapping API is common to both Win32 and WinRT.
+*/
+WINBASEAPI BOOL WINAPI UnmapViewOfFile(LPCVOID);
+#endif /* SQLITE_WIN32_FILEMAPPING_API && !defined(SQLITE_OMIT_WAL) */
+
+/*
 ** Macro to find the minimum of two numeric values.
 */
 #ifndef MIN
@@ -238,14 +289,6 @@ int sqlite3_os_type = 0;
 static int sqlite3_os_type = 0;
 #endif
 
-#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT
-#  define SQLITE_WIN32_HAS_ANSI
-#endif
-
-#if SQLITE_OS_WINCE || SQLITE_OS_WINNT || SQLITE_OS_WINRT
-#  define SQLITE_WIN32_HAS_WIDE
-#endif
-
 #ifndef SYSCALL
 #  define SYSCALL sqlite3_syscall_ptr
 #endif
@@ -402,7 +445,11 @@ static struct win_syscall {
 #define osFormatMessageW ((DWORD(WINAPI*)(DWORD,LPCVOID,DWORD,DWORD,LPWSTR, \
         DWORD,va_list*))aSyscall[15].pCurrent)
 
+#if !defined(SQLITE_OMIT_LOAD_EXTENSION)
   { "FreeLibrary",             (SYSCALL)FreeLibrary,             0 },
+#else
+  { "FreeLibrary",             (SYSCALL)0,                       0 },
+#endif
 
 #define osFreeLibrary ((BOOL(WINAPI*)(HMODULE))aSyscall[16].pCurrent)
 
@@ -483,6 +530,7 @@ static struct win_syscall {
 
 #define osGetLastError ((DWORD(WINAPI*)(VOID))aSyscall[26].pCurrent)
 
+#if !defined(SQLITE_OMIT_LOAD_EXTENSION)
 #if SQLITE_OS_WINCE
   /* The GetProcAddressA() routine is only available on Windows CE. */
   { "GetProcAddressA",         (SYSCALL)GetProcAddressA,         0 },
@@ -490,6 +538,9 @@ static struct win_syscall {
   /* All other Windows platforms expect GetProcAddress() to take
   ** an ANSI string regardless of the _UNICODE setting */
   { "GetProcAddressA",         (SYSCALL)GetProcAddress,          0 },
+#endif
+#else
+  { "GetProcAddressA",         (SYSCALL)0,                       0 },
 #endif
 
 #define osGetProcAddressA ((FARPROC(WINAPI*)(HMODULE, \
@@ -594,7 +645,7 @@ static struct win_syscall {
 #define osHeapValidate ((BOOL(WINAPI*)(HANDLE,DWORD, \
         LPCVOID))aSyscall[41].pCurrent)
 
-#if defined(SQLITE_WIN32_HAS_ANSI)
+#if defined(SQLITE_WIN32_HAS_ANSI) && !defined(SQLITE_OMIT_LOAD_EXTENSION)
   { "LoadLibraryA",            (SYSCALL)LoadLibraryA,            0 },
 #else
   { "LoadLibraryA",            (SYSCALL)0,                       0 },
@@ -602,7 +653,8 @@ static struct win_syscall {
 
 #define osLoadLibraryA ((HMODULE(WINAPI*)(LPCSTR))aSyscall[42].pCurrent)
 
-#if !SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_WIDE)
+#if !SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_WIDE) && \
+        !defined(SQLITE_OMIT_LOAD_EXTENSION)
   { "LoadLibraryW",            (SYSCALL)LoadLibraryW,            0 },
 #else
   { "LoadLibraryW",            (SYSCALL)0,                       0 },
@@ -791,7 +843,7 @@ static struct win_syscall {
 #define osCreateFile2 ((HANDLE(WINAPI*)(LPCWSTR,DWORD,DWORD,DWORD, \
         LPCREATEFILE2_EXTENDED_PARAMETERS))aSyscall[66].pCurrent)
 
-#if SQLITE_OS_WINRT
+#if SQLITE_OS_WINRT && !defined(SQLITE_OMIT_LOAD_EXTENSION)
   { "LoadPackagedLibrary",     (SYSCALL)LoadPackagedLibrary,     0 },
 #else
   { "LoadPackagedLibrary",     (SYSCALL)0,                       0 },

@@ -264,7 +264,7 @@ void sqlite3VtabClear(sqlite3 *db, Table *p){
   if( p->azModuleArg ){
     int i;
     for(i=0; i<p->nModuleArg; i++){
-      sqlite3DbFree(db, p->azModuleArg[i]);
+      if( i!=1 ) sqlite3DbFree(db, p->azModuleArg[i]);
     }
     sqlite3DbFree(db, p->azModuleArg);
   }
@@ -324,7 +324,7 @@ void sqlite3VtabBeginParse(
   pTable->tabFlags |= TF_Virtual;
   pTable->nModuleArg = 0;
   addModuleArgument(db, pTable, sqlite3NameFromToken(db, pModuleName));
-  addModuleArgument(db, pTable, sqlite3DbStrDup(db, db->aDb[iDb].zName));
+  addModuleArgument(db, pTable, 0);
   addModuleArgument(db, pTable, sqlite3DbStrDup(db, pTable->zName));
   pParse->sNameToken.n = (int)(&pModuleName->z[pModuleName->n] - pName1->z);
 
@@ -481,6 +481,7 @@ static int vtabCallConstructor(
   int nArg = pTab->nModuleArg;
   char *zErr = 0;
   char *zModuleName = sqlite3MPrintf(db, "%s", pTab->zName);
+  int iDb;
 
   if( !zModuleName ){
     return SQLITE_NOMEM;
@@ -494,6 +495,10 @@ static int vtabCallConstructor(
   pVTable->db = db;
   pVTable->pMod = pMod;
 
+  assert( pTab->azModuleArg[1]==0 );
+  iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+  pTab->azModuleArg[1] = db->aDb[iDb].zName;
+
   /* Invoke the virtual table constructor */
   assert( &db->pVtabCtx );
   assert( xConstruct );
@@ -504,6 +509,7 @@ static int vtabCallConstructor(
   rc = xConstruct(db, pMod->pAux, nArg, azArg, &pVTable->pVtab, &zErr);
   db->pVtabCtx = pPriorCtx;
   if( rc==SQLITE_NOMEM ) db->mallocFailed = 1;
+  pTab->azModuleArg[1] = 0;
 
   if( SQLITE_OK!=rc ){
     if( zErr==0 ){

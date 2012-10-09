@@ -3067,7 +3067,7 @@ static int test_bind_int64(
 ){
   sqlite3_stmt *pStmt;
   int idx;
-  i64 value;
+  Tcl_WideInt value;
   int rc;
 
   if( objc!=4 ){
@@ -4703,7 +4703,7 @@ static int test_soft_heap_limit(
   Tcl_Obj *CONST objv[]
 ){
   sqlite3_int64 amt;
-  sqlite3_int64 N = -1;
+  Tcl_WideInt N = -1;
   if( objc!=1 && objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "?N?");
     return TCL_ERROR;
@@ -5096,7 +5096,7 @@ static int file_control_sizehint_test(
   int objc,              /* Number of arguments */
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
-  sqlite3_int64 nSize;            /* Hinted size */
+  Tcl_WideInt nSize;              /* Hinted size */
   char *zDb;                      /* Db name ("main", "temp" etc.) */
   sqlite3 *db;                    /* Database handle */
   int rc;                         /* file_control() return code */
