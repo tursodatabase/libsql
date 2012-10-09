@@ -1,5 +1,5 @@
-C Bring\ssome\scomments\sup\sto\sdate\sin\sthe\squery\splanner,\sand\sespecially\sthe\nORDER\sBY\soptimizer.\s\sAlso\sadd\stestcase()\smacros.
-D 2012-10-09T09:26:28.770
+C Avoid\san\sassertion\sfault\sand/or\sfreeing\smemory\swhile\sit\sis\sstill\sin\suse\swhen\nan\serror\soccurs\sduring\svirtual\stable\sconstruction.
+D 2012-10-09T14:36:47.262
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -245,7 +245,7 @@ F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
 F src/vdbesort.c 0dc1b274dcb4d4c8e71b0b2b15261f286caba39b
 F src/vdbetrace.c 8bd5da325fc90f28464335e4cc4ad1407fe30835
-F src/vtab.c c7671587d07b76582c495d9305b35c0172cad5d3
+F src/vtab.c 9c64ae18af78c740610df841c6f49fc2d240a279
 F src/wal.c e1fe8f92a0ea0fef8faa87ec43a127a478589d22
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
@@ -1019,7 +1019,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 01dc032b5bbd9c9ebb1965f176ca5d732cda85ea
-R 321fa7d1d84b8152f712a4c09dc171f1
+P bb5c0f1c92b48631d4a12cd4f321b53cd07885c8
+R a8d4530b0140a5399b6136d03ddec9af
 U drh
-Z b6de6b5036402a601a629813c2656e44
+Z a4f133ff7d13d53e026b03f59090cbe2

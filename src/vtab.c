@@ -263,9 +263,8 @@ void sqlite3VtabClear(sqlite3 *db, Table *p){
   if( !db || db->pnBytesFreed==0 ) vtabDisconnectAll(0, p);
   if( p->azModuleArg ){
     int i;
-    assert( p->nModuleArg<2 || p->azModuleArg[1]==0 );
     for(i=0; i<p->nModuleArg; i++){
-      sqlite3DbFree(db, p->azModuleArg[i]);
+      if( i!=1 ) sqlite3DbFree(db, p->azModuleArg[i]);
     }
     sqlite3DbFree(db, p->azModuleArg);
   }
