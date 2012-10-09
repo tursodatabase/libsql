@@ -1,5 +1,5 @@
-C Attempt\sto\ssuppress\swarnings\sgenerated\sby\sCoverity.
-D 2012-10-09T18:51:44.830
+C Merge\sthe\sfix\sfor\sticket\s[d02e1406a58ea02]\sinto\strunk.
+D 2012-10-09T21:07:23.774
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -249,7 +249,7 @@ F src/vtab.c 9c64ae18af78c740610df841c6f49fc2d240a279
 F src/wal.c e1fe8f92a0ea0fef8faa87ec43a127a478589d22
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 410017c604713ab6c010a9e3731a7688a0c7a059
+F src/where.c 3e6c1f9efe4c6a029b0a750e0f6a63964f43bcce
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 0be144b453e0622a085fae8665c32f5676708e00
@@ -970,7 +970,7 @@ F test/where9.test bcab47eff78f1412a6aec1d6b8a3939d4a9db098
 F test/whereA.test 24c234263c8fe358f079d5e57d884fb569d2da0a
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/whereC.test 13ff5ec0dba407c0e0c075980c75b3275a6774e5
-F test/whereD.test 304ccbe3c77e0d0764f37c91d43b8c4792a5e02f
+F test/whereD.test 11945e79899a97958d87d1e5ac6ae5abd827356b
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/win32lock.test b2a539e85ae6b2d78475e016a9636b4451dc7fb9
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
@@ -1019,7 +1019,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P a02599ad85d02470c9effa51c02dbda7796bfa16
-R 9480dab5684a400f63b19ccf9c583f10
+P 7b1a6e6cb5099076bf19db142b17c99044a869cd
+R be72885bf56252f8dee8b341431608e8
 U drh
-Z 614c1f0e342f1a34e9d72c6839c7e21a
+Z b2e7ad100fcbd21ee114a71c75cd9f72
