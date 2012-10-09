@@ -2086,13 +2086,13 @@ static int dotlockUnlock(sqlite3_file *id, int eFileLock) {
 ** Close a file.  Make sure the lock has been released before closing.
 */
 static int dotlockClose(sqlite3_file *id) {
-  int rc;
+  int rc = SQLITE_OK;
   if( id ){
     unixFile *pFile = (unixFile*)id;
     dotlockUnlock(id, NO_LOCK);
     sqlite3_free(pFile->lockingContext);
+    rc = closeUnixFile(id);
   }
-  rc = closeUnixFile(id);
   return rc;
 }
 /****************** End of the dot-file lock implementation *******************
@@ -2296,10 +2296,12 @@ static int flockUnlock(sqlite3_file *id, int eFileLock) {
 ** Close a file.
 */
 static int flockClose(sqlite3_file *id) {
+  int rc = SQLITE_OK;
   if( id ){
     flockUnlock(id, NO_LOCK);
+    rc = closeUnixFile(id);
   }
-  return closeUnixFile(id);
+  return rc;
 }
 
 #endif /* SQLITE_ENABLE_LOCKING_STYLE && !OS_VXWORK */
@@ -4098,7 +4100,7 @@ static int unixShmMap(
       if( pShmNode->h>=0 ){
         pMem = mmap(0, szRegion,
             pShmNode->isReadonly ? PROT_READ : PROT_READ|PROT_WRITE, 
-            MAP_SHARED, pShmNode->h, pShmNode->nRegion*szRegion
+            MAP_SHARED, pShmNode->h, szRegion*(i64)pShmNode->nRegion
         );
         if( pMem==MAP_FAILED ){
           rc = unixLogError(SQLITE_IOERR_SHMMAP, "mmap", pShmNode->zFilename);
