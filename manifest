@@ -1,5 +1,5 @@
-C Define\sthe\ssqlite3PagerWalFramesize()\sfunction\seven\sif\sSQLITE_OMIT_WAL\sis\sused.
-D 2012-10-10T12:14:09.899
+C Fix\sduplicate\stest\sname\sin\swhereD.test.
+D 2012-10-10T13:59:11.378
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -970,7 +970,7 @@ F test/where9.test bcab47eff78f1412a6aec1d6b8a3939d4a9db098
 F test/whereA.test 24c234263c8fe358f079d5e57d884fb569d2da0a
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/whereC.test 13ff5ec0dba407c0e0c075980c75b3275a6774e5
-F test/whereD.test 11945e79899a97958d87d1e5ac6ae5abd827356b
+F test/whereD.test 3f3ee93825c94804f1fc91eef2de0d365981759a
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/win32lock.test b2a539e85ae6b2d78475e016a9636b4451dc7fb9
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
@@ -1019,7 +1019,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 6dc987d32ba4d09b811ef281cdae09be17ac936c
-R 159ea0884945008d33ec5244036d0a43
-U drh
-Z b23bfe4dc4840e6dc74ff476b4883de1
+P 96247853ef3d556a13b899b4c907b9fa2c78d513
+R eb33f3fc302126c0f34a21ed878e78ec
+U mistachkin
+Z 046d6c9be8479dde4d96235907c599c3

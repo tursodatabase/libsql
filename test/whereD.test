@@ -180,7 +180,7 @@ do_test 4.2 {
     SELECT * FROM t41 AS x LEFT JOIN t42 AS y ON (y.d=x.c) OR (y.e=x.b);
   }
 } {1 2 3 3 6 9 4 5 6 {} {} {}}
-do_test 4.2 {
+do_test 4.3 {
   db eval {
     SELECT * FROM t41 AS x LEFT JOIN t42 AS y ON (y.d=x.c) OR (y.d=x.b);
   }
