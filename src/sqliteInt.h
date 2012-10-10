@@ -3184,8 +3184,10 @@ void sqlite3ExprListCheckLength(Parse*, ExprList*, const char*);
 CollSeq *sqlite3BinaryCompareCollSeq(Parse *, Expr *, Expr *);
 int sqlite3TempInMemory(const sqlite3*);
 const char *sqlite3JournalModename(int);
-int sqlite3Checkpoint(sqlite3*, int, int, int*, int*);
-int sqlite3WalDefaultHook(void*,sqlite3*,const char*,int);
+#ifndef SQLITE_OMIT_WAL
+  int sqlite3Checkpoint(sqlite3*, int, int, int*, int*);
+  int sqlite3WalDefaultHook(void*,sqlite3*,const char*,int);
+#endif
 
 /* Declarations for functions in fkey.c. All of these are replaced by
 ** no-op macros if OMIT_FOREIGN_KEY is defined. In this case no foreign

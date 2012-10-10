@@ -1,5 +1,5 @@
-C Merge\sthe\sfix\sfor\sticket\s[d02e1406a58ea02]\sinto\strunk.
-D 2012-10-09T21:07:23.774
+C Move\sa\scouple\sof\sWAL-related\sfunction\sdeclarations\sin\ssqliteInt.h\sand\spager.h\sinto\s"#ifndef\sSQLITE_OMIT_WAL"\sblocks.\sOtherwise,\sthe\samalgamation\sfails\sto\sbuild\susing\ssome\scompilers\swith\sSQLITE_OMIT_WAL\s(static\sfunction\sdeclared\sbut\snot\sdefined).
+D 2012-10-10T09:46:29.216
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,7 +163,7 @@ F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 0d3a39dd576c9f384fd7772a2dadc67b144c6ce7
 F src/os_win.c 28bd027791252a4012dffd4d64355a1eb84d761c
 F src/pager.c a7ad8c38809edf0be545e8f52da5bcbb88885b38
-F src/pager.h bdbc379557eb2e233dfec10986b3086877e72db7
+F src/pager.h 1109a06578ec5574dc2c74cf8d9f69daf36fe3e0
 F src/parse.y f29df90bd3adc64b33114ab1de9fb7768fcf2099
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h 1b5dcc3dc8103d03e625b177023ee67764fa6b7c
@@ -179,7 +179,7 @@ F src/shell.c 8ee5a3cb502e2d574f97b43972e6c1e275e7bec7
 F src/sqlite.h.in c7be05ad191d2634292fcc77bdb2bcfa4526eb98
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h 1c5c35cc835e4c4e26be43e663661a237db74c59
+F src/sqliteInt.h b49674b1c92173e9796c94fd6f15c1679e3b10cc
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 35939e7e03abf1b7577ce311f48f682c40de3208
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1019,7 +1019,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 7b1a6e6cb5099076bf19db142b17c99044a869cd
-R be72885bf56252f8dee8b341431608e8
-U drh
-Z b2e7ad100fcbd21ee114a71c75cd9f72
+P dd34bec389359845b86f4cc4906ab440f92dcab9
+R 3b4a747cf1512ff22e3e686194a84c25
+U dan
+Z 3116faf0d406c9c6f0a7c3a027e788be
