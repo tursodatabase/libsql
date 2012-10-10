@@ -6916,6 +6916,8 @@ int sqlite3PagerCloseWal(Pager *pPager){
   return rc;
 }
 
+#endif /* !SQLITE_OMIT_WAL */
+
 #ifdef SQLITE_ENABLE_ZIPVFS
 /*
 ** A read-lock must be held on the pager when this function is called. If
@@ -6944,7 +6946,5 @@ void *sqlite3PagerCodec(PgHdr *pPg){
   return aData;
 }
 #endif /* SQLITE_HAS_CODEC */
-
-#endif /* !SQLITE_OMIT_WAL */
 
 #endif /* SQLITE_OMIT_DISKIO */
