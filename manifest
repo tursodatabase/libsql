@@ -1,5 +1,5 @@
-C Move\sa\scouple\sof\sWAL-related\sfunction\sdeclarations\sin\ssqliteInt.h\sand\spager.h\sinto\s"#ifndef\sSQLITE_OMIT_WAL"\sblocks.\sOtherwise,\sthe\samalgamation\sfails\sto\sbuild\susing\ssome\scompilers\swith\sSQLITE_OMIT_WAL\s(static\sfunction\sdeclared\sbut\snot\sdefined).
-D 2012-10-10T09:46:29.216
+C Add\ssupport\sfor\sURI\sfilenames\sin\ssqlite3_analyzer.
+D 2012-10-10T10:52:46.274
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1004,7 +1004,7 @@ F tool/showjournal.c b62cecaab86a4053d944c276bb5232e4d17ece02
 F tool/showwal.c f09e5a80a293919290ec85a6a37c85a5ddcf37d9
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b
-F tool/spaceanal.tcl e42273000686a4afbf6a5e5d7fb12be65e92afb1
+F tool/spaceanal.tcl 76f583a246a0b027f423252339e711f13198932e
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
@@ -1019,7 +1019,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P dd34bec389359845b86f4cc4906ab440f92dcab9
-R 3b4a747cf1512ff22e3e686194a84c25
-U dan
-Z 3116faf0d406c9c6f0a7c3a027e788be
+P f7437153b90b25a1b77294a0f8d1b0bd4bd08c08
+R 2105f393c264a64ba38b0302c232c7c9
+U drh
+Z 7d1ab82c25985c443fd0708e96445812

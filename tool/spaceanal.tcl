@@ -30,32 +30,34 @@ foreach arg $argv {
   }
 }
 if {$file_to_analyze==""} usage
-if {![file exists $file_to_analyze]} {
-  puts stderr "No such file: $file_to_analyze"
+set root_filename $file_to_analyze
+regexp {^file:(//)?([^?]*)} $file_to_analyze all x1 root_filename
+if {![file exists $root_filename]} {
+  puts stderr "No such file: $root_filename"
   exit 1
 }
-if {![file readable $file_to_analyze]} {
-  puts stderr "File is not readable: $file_to_analyze"
+if {![file readable $root_filename]} {
+  puts stderr "File is not readable: $root_filename"
   exit 1
 }
-set true_file_size [file size $file_to_analyze]
+set true_file_size [file size $root_filename]
 if {$true_file_size<512} {
-  puts stderr "Empty or malformed database: $file_to_analyze"
+  puts stderr "Empty or malformed database: $root_filename"
   exit 1
 }
 
 # Compute the total file size assuming test_multiplexor is being used.
 # Assume that SQLITE_ENABLE_8_3_NAMES might be enabled
 #
-set extension [file extension $file_to_analyze]
-set pattern $file_to_analyze
+set extension [file extension $root_filename]
+set pattern $root_filename
 append pattern {[0-3][0-9][0-9]}
 foreach f [glob -nocomplain $pattern] {
   incr true_file_size [file size $f]
   set extension {}
 }
 if {[string length $extension]>=2 && [string length $extension]<=4} {
-  set pattern [file rootname $file_to_analyze]
+  set pattern [file rootname $root_filename]
   append pattern {.[0-3][0-9][0-9]}
   foreach f [glob -nocomplain $pattern] {
     incr true_file_size [file size $f]
@@ -64,7 +66,10 @@ if {[string length $extension]>=2 && [string length $extension]<=4} {
 
 # Open the database
 #
-sqlite3 db $file_to_analyze
+if {[catch {sqlite3 db $file_to_analyze -uri 1} msg]} {
+  puts stderr "error trying to open $file_to_analyze: $msg"
+  exit 1
+}
 register_dbstat_vtab db
 
 db eval {SELECT count(*) FROM sqlite_master}
@@ -484,7 +489,7 @@ set user_percent [percent $user_payload $file_bytes]
 
 # Output the summary statistics calculated above.
 #
-puts "/** Disk-Space Utilization Report For $file_to_analyze"
+puts "/** Disk-Space Utilization Report For $root_filename"
 catch {
   puts "*** As of [clock format [clock seconds] -format {%Y-%b-%d %H:%M:%S}]"
 }
