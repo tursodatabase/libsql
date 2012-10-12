@@ -1,9 +1,9 @@
-C Version\s3.7.14.1
-D 2012-10-04T19:37:12.994
+C Backport\sof\stooling\ssupport\sfor\sincluding\sthe\sdebug\sbuild\sin\sthe\sVSIX\spackage.
+D 2012-10-12T18:22:51.788
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 2d696f01c228995e98b3b953a08b7bba1d48c130
+F Makefile.msc 1d8a5d3cf33b8b8d3247c99367a37af384cc7ebd
 F Makefile.vxworks 879f034a64062a364b21000266bbd5bc6e0c19b9
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 9694dff497fc7e53037a5890f30ab069c26e8ab7
@@ -971,7 +971,7 @@ F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/win32lock.test b2a539e85ae6b2d78475e016a9636b4451dc7fb9
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test 0de750389990b1078bab203c712dc3fefd1d8b82
-F tool/build-all-msvc.bat 1a18aa39983ae7354d834bc55a850a54fc007576 x
+F tool/build-all-msvc.bat 76b835e0ab91e30f22d8aa48db9dea4d2dc59e9f x
 F tool/build-shell.sh b64a481901fc9ffe5ca8812a2a9255b6cfb77381
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -989,7 +989,7 @@ F tool/mksqlite3c-noext.tcl 8bce31074e4cbe631bb7676526a048335f4c9f02
 F tool/mksqlite3c.tcl 589c7f44e990be1b8443cfe4808dce392b0327fa
 F tool/mksqlite3h.tcl 78013ad79a5e492e5f764f3c7a8ef834255061f8
 F tool/mksqlite3internalh.tcl 3dca7bb5374cee003379b8cbac73714f610ef795
-F tool/mkvsix.tcl 19b2ab9ea16445953a76568a5bbe4cb864f92dfe
+F tool/mkvsix.tcl a27951f30bb39c3504196610f17f687fc0b1c94d
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
 F tool/omittest.tcl 4665982e95a6e5c1bd806cf7bc3dea95be422d77
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -1014,10 +1014,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 81fd941da62956e32d1c4ffcdb39abecba7a6f3b
-R a82bf185a73888ab1f23d02429bade9e
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.7.14.1 *
-U drh
-Z 002ec98f7f5b76deaac3a726393245f3
+P 091570e46d04e84b67228e0bdbcd6e1fb60c6bdb
+R bcccfde8794119107a5caab4043fcd6f
+U mistachkin
+Z 3c221b4f8f4bd86b2446cbb21b2a832f

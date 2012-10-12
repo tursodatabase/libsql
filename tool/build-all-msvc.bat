@@ -10,6 +10,7 @@ SETLOCAL
 
 REM SET __ECHO=ECHO
 REM SET __ECHO2=ECHO
+REM SET __ECHO3=ECHO
 IF NOT DEFINED _AECHO (SET _AECHO=REM)
 IF NOT DEFINED _CECHO (SET _CECHO=REM)
 IF NOT DEFINED _VECHO (SET _VECHO=REM)
@@ -142,7 +143,7 @@ FOR %%P IN (%PLATFORMS%) DO (
   REM       be used for the name of the platform-specific binary directory via
   REM       the environment variables setup earlier.
   REM
-  CALL :fn_SetVariable %%P_NAME PLATFORMNAME
+  CALL :fn_CopyVariable %%P_NAME PLATFORMNAME
 
   REM
   REM NOTE: This is the inner loop.  There should be exactly one iteration.
@@ -181,128 +182,143 @@ FOR %%P IN (%PLATFORMS%) DO (
     REM
     SET PATH=%TOOLPATH%;%SystemRoot%\System32;%SystemRoot%
 
-    REM
-    REM NOTE: Launch a nested command shell to perform the following steps:
-    REM
-    REM       1. Setup the MSVC environment for this platform using the
-    REM          official batch file.
-    REM
-    REM       2. Make sure that no stale build output files are present.
-    REM
-    REM       3. Build the "sqlite3.dll" and "sqlite3.lib" binaries for this
-    REM          platform.
-    REM
-    REM       4. Copy the "sqlite3.dll" and "sqlite3.lib" binaries for this
-    REM          platform to the platform-specific directory beneath the
-    REM          binary directory.
-    REM
-    "%ComSpec%" /C (
+    FOR %%B IN (Debug Retail) DO (
       REM
-      REM NOTE: Attempt to setup the MSVC environment for this platform.
+      REM NOTE: When preparing the debug build, set the DEBUG and MEMDEBUG
+      REM       environment variables to be picked up by the MSVC makefile
+      REM       itself.
       REM
-      %__ECHO% CALL "%VCINSTALLDIR%\vcvarsall.bat" %%P
-
-      IF ERRORLEVEL 1 (
-        ECHO Failed to call "%VCINSTALLDIR%\vcvarsall.bat" for platform %%P.
-        GOTO errors
-      )
-
-      REM
-      REM NOTE: If this batch file is not running in "what-if" mode, check to
-      REM       be sure we were actually able to setup the MSVC environment as
-      REM       current versions of their official batch file do not set the
-      REM       exit code upon failure.
-      REM
-      IF NOT DEFINED __ECHO (
-        IF NOT DEFINED WindowsSdkDir (
-          ECHO Cannot build, Windows SDK not found for platform %%P.
-          GOTO errors
-        )
-      )
-
-      REM
-      REM NOTE: When using MSVC 2012, the native SDK path cannot simply use
-      REM       the "lib" sub-directory beneath the location specified in the
-      REM       WindowsSdkDir environment variable because that location does
-      REM       not actually contain the necessary library files for x86.
-      REM       This must be done for each iteration because it relies upon
-      REM       the WindowsSdkDir environment variable being set by the batch
-      REM       file used to setup the MSVC environment.
-      REM
-      IF DEFINED SET_NSDKLIBPATH (
-        CALL :fn_SetVariable WindowsSdkDir NSDKLIBPATH
-        CALL :fn_AppendVariable NSDKLIBPATH \lib\win8\um\x86
-      )
-
-      REM
-      REM NOTE: Unless prevented from doing so, invoke NMAKE with the MSVC
-      REM       makefile to clean any stale build output from previous
-      REM       iterations of this loop and/or previous runs of this batch
-      REM       file, etc.
-      REM
-      IF NOT DEFINED NOCLEAN (
-        %__ECHO% nmake -f Makefile.msc clean
-
-        IF ERRORLEVEL 1 (
-          ECHO Failed to clean for platform %%P.
-          GOTO errors
-        )
+      IF /I "%%B" == "Debug" (
+        SET DEBUG=2
+        SET MEMDEBUG=1
       ) ELSE (
+        CALL :fn_UnsetVariable DEBUG
+        CALL :fn_UnsetVariable MEMDEBUG
+      )
+
+      REM
+      REM NOTE: Launch a nested command shell to perform the following steps:
+      REM
+      REM       1. Setup the MSVC environment for this platform using the
+      REM          official batch file.
+      REM
+      REM       2. Make sure that no stale build output files are present.
+      REM
+      REM       3. Build the "sqlite3.dll" and "sqlite3.lib" binaries for this
+      REM          platform.
+      REM
+      REM       4. Copy the "sqlite3.dll" and "sqlite3.lib" binaries for this
+      REM          platform to the platform-specific directory beneath the
+      REM          binary directory.
+      REM
+      "%ComSpec%" /C (
         REM
-        REM NOTE: Even when the cleaning step has been disabled, we still need
-        REM       to remove the build output for the files we are specifically
-        REM       wanting to build for each platform.
+        REM NOTE: Attempt to setup the MSVC environment for this platform.
         REM
-        %__ECHO% DEL /Q sqlite3.dll sqlite3.lib sqlite3.pdb
-      )
-
-      REM
-      REM NOTE: Invoke NMAKE with the MSVC makefile to build the "sqlite3.dll"
-      REM       binary.  The x86 compiler will be used to compile the native
-      REM       command line tools needed during the build process itself.
-      REM       Also, disable looking for and/or linking to the native Tcl
-      REM       runtime library.
-      REM
-      %__ECHO% nmake -f Makefile.msc sqlite3.dll "NCC=""%VCINSTALLDIR%\bin\cl.exe""" USE_NATIVE_LIBPATHS=1 NO_TCL=1 %NMAKE_ARGS%
-
-      IF ERRORLEVEL 1 (
-        ECHO Failed to build "sqlite3.dll" for platform %%P.
-        GOTO errors
-      )
-
-      REM
-      REM NOTE: Copy the "sqlite3.dll" file to the platform-specific directory
-      REM       beneath the binary directory.
-      REM
-      %__ECHO% XCOPY sqlite3.dll "%BINARYDIRECTORY%\%%D\" %FFLAGS% %DFLAGS%
-
-      IF ERRORLEVEL 1 (
-        ECHO Failed to copy "sqlite3.dll" to "%BINARYDIRECTORY%\%%D\".
-        GOTO errors
-      )
-
-      REM
-      REM NOTE: Copy the "sqlite3.lib" file to the platform-specific directory
-      REM       beneath the binary directory.
-      REM
-      %__ECHO% XCOPY sqlite3.lib "%BINARYDIRECTORY%\%%D\" %FFLAGS% %DFLAGS%
-
-      IF ERRORLEVEL 1 (
-        ECHO Failed to copy "sqlite3.lib" to "%BINARYDIRECTORY%\%%D\".
-        GOTO errors
-      )
-
-      REM
-      REM NOTE: Copy the "sqlite3.pdb" file to the platform-specific directory
-      REM       beneath the binary directory unless we are prevented from doing
-      REM       so.
-      REM
-      IF NOT DEFINED NOSYMBOLS (
-        %__ECHO% XCOPY sqlite3.pdb "%BINARYDIRECTORY%\%%D\" %FFLAGS% %DFLAGS%
+        %__ECHO3% CALL "%VCINSTALLDIR%\vcvarsall.bat" %%P
 
         IF ERRORLEVEL 1 (
-          ECHO Failed to copy "sqlite3.pdb" to "%BINARYDIRECTORY%\%%D\".
+          ECHO Failed to call "%VCINSTALLDIR%\vcvarsall.bat" for platform %%P.
           GOTO errors
+        )
+
+        REM
+        REM NOTE: If this batch file is not running in "what-if" mode, check to
+        REM       be sure we were actually able to setup the MSVC environment
+        REM       as current versions of their official batch file do not set
+        REM       the exit code upon failure.
+        REM
+        IF NOT DEFINED __ECHO (
+          IF NOT DEFINED WindowsSdkDir (
+            ECHO Cannot build, Windows SDK not found for platform %%P.
+            GOTO errors
+          )
+        )
+
+        REM
+        REM NOTE: When using MSVC 2012, the native SDK path cannot simply use
+        REM       the "lib" sub-directory beneath the location specified in the
+        REM       WindowsSdkDir environment variable because that location does
+        REM       not actually contain the necessary library files for x86.
+        REM       This must be done for each iteration because it relies upon
+        REM       the WindowsSdkDir environment variable being set by the batch
+        REM       file used to setup the MSVC environment.
+        REM
+        IF DEFINED SET_NSDKLIBPATH (
+          CALL :fn_CopyVariable WindowsSdkDir NSDKLIBPATH
+          CALL :fn_AppendVariable NSDKLIBPATH \lib\win8\um\x86
+        )
+
+        REM
+        REM NOTE: Unless prevented from doing so, invoke NMAKE with the MSVC
+        REM       makefile to clean any stale build output from previous
+        REM       iterations of this loop and/or previous runs of this batch
+        REM       file, etc.
+        REM
+        IF NOT DEFINED NOCLEAN (
+          %__ECHO% nmake -f Makefile.msc clean
+
+          IF ERRORLEVEL 1 (
+            ECHO Failed to clean for platform %%P.
+            GOTO errors
+          )
+        ) ELSE (
+          REM
+          REM NOTE: Even when the cleaning step has been disabled, we still
+          REM       need to remove the build output for the files we are
+          REM       specifically wanting to build for each platform.
+          REM
+          %__ECHO% DEL /Q sqlite3.dll sqlite3.lib sqlite3.pdb
+        )
+
+        REM
+        REM NOTE: Call NMAKE with the MSVC makefile to build the "sqlite3.dll"
+        REM       binary.  The x86 compiler will be used to compile the native
+        REM       command line tools needed during the build process itself.
+        REM       Also, disable looking for and/or linking to the native Tcl
+        REM       runtime library.
+        REM
+        %__ECHO% nmake -f Makefile.msc sqlite3.dll XCOMPILE=1 USE_NATIVE_LIBPATHS=1 NO_TCL=1 %NMAKE_ARGS%
+
+        IF ERRORLEVEL 1 (
+          ECHO Failed to build %%B "sqlite3.dll" for platform %%P.
+          GOTO errors
+        )
+
+        REM
+        REM NOTE: Copy the "sqlite3.dll" file to the appropriate directory for
+        REM       the build and platform beneath the binary directory.
+        REM
+        %__ECHO% XCOPY sqlite3.dll "%BINARYDIRECTORY%\%%B\%%D\" %FFLAGS% %DFLAGS%
+
+        IF ERRORLEVEL 1 (
+          ECHO Failed to copy "sqlite3.dll" to "%BINARYDIRECTORY%\%%B\%%D\".
+          GOTO errors
+        )
+
+        REM
+        REM NOTE: Copy the "sqlite3.lib" file to the appropriate directory for
+        REM       the build and platform beneath the binary directory.
+        REM
+        %__ECHO% XCOPY sqlite3.lib "%BINARYDIRECTORY%\%%B\%%D\" %FFLAGS% %DFLAGS%
+
+        IF ERRORLEVEL 1 (
+          ECHO Failed to copy "sqlite3.lib" to "%BINARYDIRECTORY%\%%B\%%D\".
+          GOTO errors
+        )
+
+        REM
+        REM NOTE: Copy the "sqlite3.pdb" file to the appropriate directory for
+        REM       the build and platform beneath the binary directory unless we
+        REM       are prevented from doing so.
+        REM
+        IF NOT DEFINED NOSYMBOLS (
+          %__ECHO% XCOPY sqlite3.pdb "%BINARYDIRECTORY%\%%B\%%D\" %FFLAGS% %DFLAGS%
+
+          IF ERRORLEVEL 1 (
+            ECHO Failed to copy "sqlite3.pdb" to "%BINARYDIRECTORY%\%%B\%%D\".
+            GOTO errors
+          )
         )
       )
     )
@@ -339,7 +355,7 @@ GOTO no_errors
   VERIFY MAYBE 2> NUL
   GOTO :EOF
 
-:fn_SetVariable
+:fn_CopyVariable
   SETLOCAL
   IF NOT DEFINED %1 GOTO :EOF
   IF "%2" == "" GOTO :EOF
