@@ -21,7 +21,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set testprefix backup
+set testprefix backup4
 
 #-------------------------------------------------------------------------
 # At one point this test was failing because [db] was using an out of

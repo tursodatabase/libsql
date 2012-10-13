@@ -1,5 +1,5 @@
-C Ensure\sthat\swhen\sthe\ssource\sof\sa\sbackup\sis\sa\sdatabase\sthat\sis\szero\sbytes\sin\ssize,\sthe\sfinal\sdestination\sdatabase\sconsists\sof\sat\sleast\sone\spage.\sTruncating\sit\sto\szero\sbytes\sis\sequivalent\sto\szeroing\sthe\sschema\scookie\sand\schange\scounter,\swhich\scan\scause\sproblems\sfor\sexisting\sclients.
-D 2012-10-13T19:58:11.924
+C Modify\sbackup4\stest\sname\sprefix\sto\smake\sthe\sresulting\stest\snames\sunique.
+D 2012-10-13T20:20:09.891
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,7 +289,7 @@ F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
 F test/backcompat.test ecd841f3a3bfb81518721879cc56a760670e3198
 F test/backup.test c9cdd23a495864b9edf75a9fa66f5cb7e10fcf62
 F test/backup2.test 34986ef926ea522911a51dfdb2f8e99b7b75ebcf
-F test/backup4.test cd78366929236357d3b36cbec768a67258817830
+F test/backup4.test 3c3639d28f3cdb4a123694a0a7c5fa7bfe304e2a
 F test/backup_ioerr.test 40d208bc9224b666ee3ed423f49bc9062a36a9d0
 F test/backup_malloc.test 7162d604ec2b4683c4b3799a48657fb8b5e2d450
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
@@ -1020,10 +1020,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P dce391fc6302301e9ac53a5e4fc69f3bd7ba13a7
-R d0a8a8a7a76a5a8279230581af3ba8e0
-T *branch * zero-byte-backup-fix
-T *sym-zero-byte-backup-fix *
-T -sym-trunk *
-U dan
-Z 43bd238d77d2ace9bdb6f46c1f518da4
+P af5c9ee4a453f71c03f24ad08824ced6c1b97afb
+R 76f740bd7f7fabb5f9d26d6bbed204d3
+U mistachkin
+Z 51b927d4dccd037a1fd0df2401be8c08
