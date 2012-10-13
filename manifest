@@ -1,5 +1,5 @@
-C Allow\sthe\sshowdb\stool\sto\sbe\scompiled\swith\sMSVC.
-D 2012-10-13T09:31:20.156
+C Ensure\sthat\swhen\sthe\ssource\sof\sa\sbackup\sis\sa\sdatabase\sthat\sis\szero\sbytes\sin\ssize,\sthe\sfinal\sdestination\sdatabase\sconsists\sof\sat\sleast\sone\spage.\sTruncating\sit\sto\szero\sbytes\sis\sequivalent\sto\szeroing\sthe\sschema\scookie\sand\schange\scounter,\swhich\scan\scause\sproblems\sfor\sexisting\sclients.
+D 2012-10-13T19:58:11.924
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -118,11 +118,11 @@ F src/alter.c f8db986c03eb0bfb221523fc9bbb9d0b70de3168
 F src/analyze.c 7553068d21e32a57fc33ab6b2393fc8c1ba41410
 F src/attach.c 34c15ecd686e58f08e5bb1389e28a0b65c2c83db
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
-F src/backup.c afc067b9a9050ff48b9d46285c53d096c556a73d
+F src/backup.c cab40f2c1fe79d6eb93d3b4086c78c41ad2fa5d0
 F src/bitvec.c 26675fe8e431dc555e6f2d0e11e651d172234aa1
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 14de53ebb334633ee632ab3c5b9262cfe7cbe455
-F src/btree.h 078f76b28c338ab6eb6dd7324d63ee54463aeb6c
+F src/btree.c 299377f0793038ad3ea322907fbda7fbea615094
+F src/btree.h 3ad7964d6c5b1c7bff569aab6adfa075f8bf06cd
 F src/btreeInt.h 4e5c2bd0f9b36b2a815a6d84f771a61a65830621
 F src/build.c f35dac52924a6e8e6346a90f0c195a84e28b6f21
 F src/callback.c d7e46f40c3cf53c43550b7da7a1d0479910b62cc
@@ -289,6 +289,7 @@ F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
 F test/backcompat.test ecd841f3a3bfb81518721879cc56a760670e3198
 F test/backup.test c9cdd23a495864b9edf75a9fa66f5cb7e10fcf62
 F test/backup2.test 34986ef926ea522911a51dfdb2f8e99b7b75ebcf
+F test/backup4.test cd78366929236357d3b36cbec768a67258817830
 F test/backup_ioerr.test 40d208bc9224b666ee3ed423f49bc9062a36a9d0
 F test/backup_malloc.test 7162d604ec2b4683c4b3799a48657fb8b5e2d450
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
@@ -637,7 +638,7 @@ F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
 F test/orderby1.test ef4f7c40df81b9a4303a718433d34052f07db47d
 F test/orderby2.test bc11009f7cd99d96b1b11e57b199b00633eb5b04
 F test/oserror.test 50417780d0e0d7cd23cf12a8277bb44024765df3
-F test/pager1.test 2163c6ef119f497a71a84137c957c63763e640ab
+F test/pager1.test 07116f72a61960b882952e7472cc2846d161d6e2
 F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
 F test/pagerfault.test 452f2cc23e3bfcfa935f4442aec1da4fe1dc0442
@@ -1019,7 +1020,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P de784399ed1f0e27fc875e32719643d19819c8fb
-R eae4686c36e29e07358a0f64b1678cc7
-U mistachkin
-Z 3d1371a2f131ddfec977348963d5fb7d
+P dce391fc6302301e9ac53a5e4fc69f3bd7ba13a7
+R d0a8a8a7a76a5a8279230581af3ba8e0
+T *branch * zero-byte-backup-fix
+T *sym-zero-byte-backup-fix *
+T -sym-trunk *
+U dan
+Z 43bd238d77d2ace9bdb6f46c1f518da4
