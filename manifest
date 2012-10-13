@@ -1,5 +1,5 @@
-C Tooling\ssupport\sfor\sincluding\sthe\sdebug\sbuild\sin\sthe\sVSIX\spackage.
-D 2012-10-12T18:06:07.816
+C Allow\sthe\sshowdb\stool\sto\sbe\scompiled\swith\sMSVC.
+D 2012-10-13T09:31:20.156
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -999,7 +999,7 @@ F tool/omittest.tcl 4665982e95a6e5c1bd806cf7bc3dea95be422d77
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
-F tool/showdb.c 2e28d8e499b016485672e9a7ac65dacc0d28ff69
+F tool/showdb.c aca2644aa4de7c0cad5821e50bbd55397e0974b8
 F tool/showjournal.c b62cecaab86a4053d944c276bb5232e4d17ece02
 F tool/showwal.c f09e5a80a293919290ec85a6a37c85a5ddcf37d9
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
@@ -1019,7 +1019,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 1182b54af0fd43d5e6aa6399837e7915aa60a578
-R 9e8254ec6d4a71f688da7a8600f59454
+P de784399ed1f0e27fc875e32719643d19819c8fb
+R eae4686c36e29e07358a0f64b1678cc7
 U mistachkin
-Z 3494f0e2927d2f78ffed9eda067be39b
+Z 3d1371a2f131ddfec977348963d5fb7d
