@@ -117,6 +117,8 @@ void sqlite3BtreeTripAllCursors(Btree*, int);
 void sqlite3BtreeGetMeta(Btree *pBtree, int idx, u32 *pValue);
 int sqlite3BtreeUpdateMeta(Btree*, int idx, u32 value);
 
+int sqlite3BtreeNewDb(Btree *p);
+
 /*
 ** The second parameter to sqlite3BtreeGetMeta or sqlite3BtreeUpdateMeta
 ** should be one of the following values. The integer values are assigned 
