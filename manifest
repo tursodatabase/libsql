@@ -1,5 +1,5 @@
-C Ensure\sthat\swhen\sthe\ssource\sof\sa\sbackup\sis\sa\sdatabase\sthat\sis\szero\sbytes\s\nin\ssize,\sthe\sfinal\sdestination\sdatabase\sconsists\sof\sat\sleast\sone\spage.\s\nTruncating\sit\sto\szero\sbytes\sis\sequivalent\sto\szeroing\sthe\sschema\scookie\s\nand\schange\scounter,\swhich\scan\scause\sproblems\sfor\sexisting\sclients.
-D 2012-10-13T23:16:00.555
+C Fix\sa\sfailing\sassert()\sin\swal.c.
+D 2012-10-15T11:28:24.947
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -246,7 +246,7 @@ F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
 F src/vdbesort.c 0dc1b274dcb4d4c8e71b0b2b15261f286caba39b
 F src/vdbetrace.c 8bd5da325fc90f28464335e4cc4ad1407fe30835
 F src/vtab.c 9c64ae18af78c740610df841c6f49fc2d240a279
-F src/wal.c e1fe8f92a0ea0fef8faa87ec43a127a478589d22
+F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
 F src/where.c 3e6c1f9efe4c6a029b0a750e0f6a63964f43bcce
@@ -942,6 +942,7 @@ F test/wal5.test f58ed4b8b542f71c7441da12fbd769d99b362437
 F test/wal6.test 2e3bc767d9c2ce35c47106148d43fcbd072a93b3
 F test/wal7.test 2ae8f427d240099cc4b2dfef63cff44e2a68a1bd
 F test/wal8.test b3ee739fe8f7586aaebdc2367f477ebcf3e3b034
+F test/wal9.test b4eb5d27170c65ee9c8ff9c9e76babd902a13cfc
 F test/wal_common.tcl a98f17fba96206122eff624db0ab13ec377be4fe
 F test/walbak.test b9f68e39646375c2b877be906babcc15d38b4877
 F test/walbig.test f437473a16cfb314867c6b5d1dbcd519e73e3434
@@ -1020,7 +1021,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P dce391fc6302301e9ac53a5e4fc69f3bd7ba13a7 ae025cae2266a91d4226bbdb66f82b9d7714750a
-R 6411855ed00a2b0cd5f5a66552e9b1b4
-U drh
-Z 1d2efa01eaf44e38b73ed9ee9ed57fac
+P ca86138bda26c5ac5a7e67351acbd19fbd39b0ae
+R 1adb0472104019713641ff3149a537e4
+U dan
+Z 82a77f3539e233996c3bcae559658f67
