@@ -489,5 +489,39 @@ do_execsql_test 4.2 {
   SELECT * FROM x2 WHERE x2 MATCH 'a b c d e f g h i j k l m n o p q r s';
 } {{a b c d e f g h i j k l m n o p q r s t u v w x y m}}
 
+set tokenizers {1 simple}
+ifcapable icu { lappend tokenizers 2 {icu en_US} }
+foreach {tn tokenizer} $tokenizers {
+  do_execsql_test 5.$tn.1 "
+    CREATE VIRTUAL TABLE x3 USING FTS4(a, b, TOKENIZE $tokenizer)
+  "
+  do_execsql_test 5.$tn.2 {
+    BEGIN;
+    INSERT INTO x3 VALUES('b b b b b b b b b b b', 'b b b b b b b b b b b b b');
+    INSERT INTO x3 SELECT * FROM x3;
+    INSERT INTO x3 SELECT * FROM x3;
+    INSERT INTO x3 SELECT * FROM x3;
+    INSERT INTO x3 SELECT * FROM x3;
+    INSERT INTO x3 SELECT * FROM x3;
+    INSERT INTO x3 SELECT * FROM x3;
+    INSERT INTO x3 SELECT * FROM x3;
+    INSERT INTO x3 SELECT * FROM x3;
+    INSERT INTO x3 SELECT * FROM x3;
+    INSERT INTO x3 SELECT * FROM x3;
+    INSERT INTO x3 SELECT * FROM x3;
+    INSERT INTO x3 SELECT * FROM x3;
+    INSERT INTO x3 SELECT * FROM x3;
+    INSERT INTO x3 SELECT * FROM x3;
+    INSERT INTO x3 SELECT * FROM x3;
+    INSERT INTO x3 SELECT * FROM x3;
+    INSERT INTO x3 VALUES('a b c', NULL);
+    INSERT INTO x3 VALUES('a x c', NULL);
+    COMMIT;
+
+    SELECT * FROM x3 WHERE x3 MATCH 'a b';
+  } {{a b c} {}}
+
+  do_execsql_test 5.$tn.3 { DROP TABLE x3 }
+}
 
 finish_test
