@@ -354,23 +354,30 @@ eval $extractCommand
 ###############################################################################
 
 #
-# NOTE: Process each file in the master file list.  There are actually four
-#       parallel lists that contain the source file names, destination file
-#       names, the platform-neutral flags, and the use-subst flags.  When the
+# NOTE: Process each file in the master file list.  There are actually seven
+#       parallel lists that contain the source file names, the destination file
+#       names, the build-neutral flags, the platform-neutral flags, the
+#       use-subst flags, the no-debug flags, and the no-retail flags.  If the
 #       platform-neutral flag is non-zero, the file is not platform-specific.
-#       When the use-subst flag is non-zero, the file is considered to be a
-#       text file that may contain Tcl variable and/or command replacements,
-#       to be dynamically replaced during processing.  If the source file name
-#       is an empty string, then the destination file name will be assumed to
-#       already exist in the staging directory and will not be copied; however,
-#       dynamic replacements may still be performed on the destination file
-#       prior to the package being re-zipped.
+#       If the build-neutral flag is non-zero, the file is not build-specific.
+#       If the use-subst flag is non-zero, the file is considered to be a text
+#       file that may contain Tcl variable and/or command replacements, to be
+#       dynamically replaced during processing.  If the no-debug flag is
+#       non-zero, the file will be skipped when processing for the debug build.
+#       If the no-retail flag is non-zero, the file will be skipped when
+#       processing for the retail build.  If the source file name is an empty
+#       string, then the destination file name will be assumed to already exist
+#       in the staging directory and will not be copied; however, dynamic
+#       replacements may still be performed on the destination file prior to
+#       the package being re-zipped.
 #
-foreach sourceFileName $fileNames(source) \
-    destinationFileName $fileNames(destination) \
-    buildNeutral $fileNames(buildNeutral) platformNeutral \
-    $fileNames(platformNeutral) useSubst $fileNames(subst) \
-    noDebug $fileNames(noDebug) noRetail $fileNames(noRetail) {
+foreach sourceFileName      $fileNames(source) \
+        destinationFileName $fileNames(destination) \
+        buildNeutral        $fileNames(buildNeutral) \
+        platformNeutral     $fileNames(platformNeutral) \
+        useSubst            $fileNames(subst) \
+        noDebug             $fileNames(noDebug) \
+        noRetail            $fileNames(noRetail) {
   #
   # NOTE: If the current file is build-neutral, then only one build will
   #       be processed for it, namely "CommonConfiguration"; otherwise, each

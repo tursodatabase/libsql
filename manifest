@@ -1,5 +1,5 @@
-C Hold\sthe\smutex\son\sthe\sshared-cache\sfor\sthe\sduration\sof\sa\sVACUUM\soperation.
-D 2012-10-15T18:02:57.236
+C Correct\scomments\sand\senhance\sreadability\sof\sthe\smkvsix\stool.
+D 2012-10-15T20:28:22.029
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -995,7 +995,7 @@ F tool/mksqlite3c-noext.tcl 8bce31074e4cbe631bb7676526a048335f4c9f02
 F tool/mksqlite3c.tcl 589c7f44e990be1b8443cfe4808dce392b0327fa
 F tool/mksqlite3h.tcl 78013ad79a5e492e5f764f3c7a8ef834255061f8
 F tool/mksqlite3internalh.tcl 3dca7bb5374cee003379b8cbac73714f610ef795
-F tool/mkvsix.tcl a27951f30bb39c3504196610f17f687fc0b1c94d
+F tool/mkvsix.tcl adc17f82e3812787fdb015098d006e31804d6aa5
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
 F tool/omittest.tcl 4665982e95a6e5c1bd806cf7bc3dea95be422d77
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -1021,7 +1021,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 5526e0aa3ccb24988a4f351ac994907b6e89018a
-R ae9cdd994bee7b7367d1b3e8955984b7
-U dan
-Z a44ad9d15114468612331138128e563b
+P 629a42d47a0d8f73de900f469845ce800bdb8959
+R c7830c7c0cb344c8cb6a175c95e5eb7f
+U mistachkin
+Z f2086ddd83e8b281e8d53ba90c91d2db
