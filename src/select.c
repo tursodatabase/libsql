@@ -3098,10 +3098,9 @@ static int flattenSubquery(
     pList = pParent->pEList;
     for(i=0; i<pList->nExpr; i++){
       if( pList->a[i].zName==0 ){
-        const char *zSpan = pList->a[i].zSpan;
-        if( ALWAYS(zSpan) ){
-          pList->a[i].zName = sqlite3DbStrDup(db, zSpan);
-        }
+        char *zName = sqlite3DbStrDup(db, pList->a[i].zSpan);
+        sqlite3Dequote(zName);
+        pList->a[i].zName = zName;
       }
     }
     substExprList(db, pParent->pEList, iParent, pSub->pEList);
