@@ -1,5 +1,5 @@
-C Dequote\scolumn\snames\sgenerated\sby\sthe\squery\sflattener.
-D 2012-10-15T16:24:07.585
+C Hold\sthe\smutex\son\sthe\sshared-cache\sfor\sthe\sduration\sof\sa\sVACUUM\soperation.
+D 2012-10-15T18:02:57.236
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -235,7 +235,7 @@ F src/trigger.c 3f258307040173aff383eb23fb74c44fe829078c
 F src/update.c 28d2d098b43a2c70dae399896ea8a02f622410ef
 F src/utf.c 8d819e2e5104a430fc2005f018db14347c95a38f
 F src/util.c 0af2e515dc0dabacec931bca39525f6c3f1c5455
-F src/vacuum.c 587a52bb8833d7ac15af8916f25437e2575028bd
+F src/vacuum.c 2727bdd08847fcb6b2d2da6d14f018910e8645d3
 F src/vdbe.c 31523df2b986fc6c959dd54ca640ba865884641b
 F src/vdbe.h 18f581cac1f4339ec3299f3e0cc6e11aec654cdb
 F src/vdbeInt.h 573a43ab5697b648a1e8f3dfc7d8667d5ca55729
@@ -1021,7 +1021,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 8745530b9a877db77fe2ca3ea9c6bc99ce033055
-R 695fea8e01da23e7ae53b29020bcbd82
-U drh
-Z 09ce5f99475f4fd2d49afd9b8510012d
+P 5526e0aa3ccb24988a4f351ac994907b6e89018a
+R ae9cdd994bee7b7367d1b3e8955984b7
+U dan
+Z a44ad9d15114468612331138128e563b
