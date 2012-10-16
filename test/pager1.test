@@ -1365,7 +1365,7 @@ do_test pager1-9.4.1 {
 } {SQLITE_DONE SQLITE_OK}
 do_test pager1-9.4.2 {
   list [file size test.db2] [file size test.db]
-} {0 0}
+} {1024 0}
 db2 close
 
 #-------------------------------------------------------------------------

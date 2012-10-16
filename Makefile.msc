@@ -9,53 +9,75 @@ TOP = .
 
 # Set this non-0 to create and use the SQLite amalgamation file.
 #
+!IFNDEF USE_AMALGAMATION
 USE_AMALGAMATION = 1
+!ENDIF
 
 # Set this non-0 to use the International Components for Unicode (ICU).
 #
+!IFNDEF USE_ICU
 USE_ICU = 0
+!ENDIF
 
 # Set this non-0 to dynamically link to the MSVC runtime library.
 #
+!IFNDEF USE_CRT_DLL
 USE_CRT_DLL = 0
+!ENDIF
 
 # Set this non-0 to attempt setting the native compiler automatically
 # for cross-compiling the command line tools needed during the compilation
 # process.
 #
+!IFNDEF XCOMPILE
 XCOMPILE = 0
+!ENDIF
 
 # Set this non-0 to use the native libraries paths for cross-compiling
 # the command line tools needed during the compilation process.
 #
+!IFNDEF USE_NATIVE_LIBPATHS
 USE_NATIVE_LIBPATHS = 0
+!ENDIF
 
 # Set this 0 to skip the compiling and embedding of version resources.
 #
+!IFNDEF USE_RC
 USE_RC = 1
+!ENDIF
 
 # Set this non-0 to compile binaries suitable for the WinRT environment.
 # This setting does not apply to any binaries that require Tcl to operate
 # properly (i.e. the text fixture, etc).
 #
+!IFNDEF FOR_WINRT
 FOR_WINRT = 0
+!ENDIF
 
 # Set this non-0 to skip attempting to look for and/or link with the Tcl
 # runtime library.
 #
+!IFNDEF NO_TCL
 NO_TCL = 0
+!ENDIF
 
 # Set this to non-0 to create and use PDBs.
 #
+!IFNDEF SYMBOLS
 SYMBOLS = 1
+!ENDIF
 
 # Set this to non-0 to use the SQLite debugging heap subsystem.
 #
+!IFNDEF MEMDEBUG
 MEMDEBUG = 0
+!ENDIF
 
 # Set this to non-0 to use the Win32 native heap subsystem.
 #
+!IFNDEF WIN32HEAP
 WIN32HEAP = 0
+!ENDIF
 
 # Set this to one of the following values to enable various debugging
 # features.  Each level includes the debugging options from the previous
@@ -68,7 +90,9 @@ WIN32HEAP = 0
 # 4 == SQLITE_DEBUG_OS_TRACE: Enables output from the OSTRACE() macros.
 # 5 == SQLITE_ENABLE_IOTRACE: Enables output from the IOTRACE() macros.
 #
+!IFNDEF DEBUG
 DEBUG = 0
+!ENDIF
 
 # Check for the predefined command macro CC.  This should point to the compiler
 # binary for the target platform.  If it is not defined, simply define it to

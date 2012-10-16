@@ -90,12 +90,13 @@ proc substFile { fileName } {
   return [writeFile $fileName [uplevel 1 [list subst [readFile $fileName]]]]
 }
 
-proc replacePlatform { fileName platformName } {
+proc replaceBuildAndPlatform { fileName buildName platformName } {
   #
   # NOTE: Returns the specified file name containing the platform name instead
   #       of platform placeholder tokens.
   #
-  return [string map [list <platform> $platformName] $fileName]
+  return [string map [list <build> $buildName <platform> $platformName] \
+      $fileName]
 }
 
 set script [file normalize [info script]]
@@ -249,12 +250,12 @@ if {![regexp -line -- $pattern $data dummy version]} then {
 if {![info exists fileNames(source)]} then {
   set fileNames(source) [list "" "" "" \
       [file join $sourceDirectory sqlite3.h] \
-      [file join $binaryDirectory <platform> sqlite3.lib] \
-      [file join $binaryDirectory <platform> sqlite3.dll]]
+      [file join $binaryDirectory <build> <platform> sqlite3.lib] \
+      [file join $binaryDirectory <build> <platform> sqlite3.dll]]
 
   if {![info exists no(symbols)]} then {
     lappend fileNames(source) \
-        [file join $binaryDirectory <platform> sqlite3.pdb]
+        [file join $binaryDirectory <build> <platform> sqlite3.pdb]
   }
 }
 
@@ -262,27 +263,31 @@ if {![info exists fileNames(destination)]} then {
   set fileNames(destination) [list \
       [file join $stagingDirectory extension.vsixmanifest] \
       [file join $stagingDirectory SDKManifest.xml] \
-      [file join $stagingDirectory DesignTime CommonConfiguration \
-          <platform> SQLite.WinRT.props] \
-      [file join $stagingDirectory DesignTime CommonConfiguration \
-          <platform> sqlite3.h] \
-      [file join $stagingDirectory DesignTime CommonConfiguration \
-          <platform> sqlite3.lib] \
-      [file join $stagingDirectory Redist CommonConfiguration \
-          <platform> sqlite3.dll]]
+      [file join $stagingDirectory DesignTime <build> <platform> \
+          SQLite.WinRT.props] \
+      [file join $stagingDirectory DesignTime <build> <platform> sqlite3.h] \
+      [file join $stagingDirectory DesignTime <build> <platform> sqlite3.lib] \
+      [file join $stagingDirectory Redist <build> <platform> sqlite3.dll]]
 
   if {![info exists no(symbols)]} then {
     lappend fileNames(destination) \
-        [file join $stagingDirectory Redist Debug \
-            <platform> sqlite3.pdb]
+        [file join $stagingDirectory Redist <build> <platform> sqlite3.pdb]
   }
 }
 
-if {![info exists fileNames(neutral)]} then {
-  set fileNames(neutral) [list 1 1 1 1 0 0]
+if {![info exists fileNames(buildNeutral)]} then {
+  set fileNames(buildNeutral) [list 1 1 1 1 0 0]
 
   if {![info exists no(symbols)]} then {
-    lappend fileNames(neutral) 0
+    lappend fileNames(buildNeutral) 0
+  }
+}
+
+if {![info exists fileNames(platformNeutral)]} then {
+  set fileNames(platformNeutral) [list 1 1 1 1 0 0]
+
+  if {![info exists no(symbols)]} then {
+    lappend fileNames(platformNeutral) 0
   }
 }
 
@@ -292,6 +297,31 @@ if {![info exists fileNames(subst)]} then {
   if {![info exists no(symbols)]} then {
     lappend fileNames(subst) 0
   }
+}
+
+if {![info exists fileNames(noDebug)]} then {
+  set fileNames(noDebug) [list 0 0 0 0 0 0]
+
+  if {![info exists no(symbols)]} then {
+    lappend fileNames(noDebug) 0
+  }
+}
+
+if {![info exists fileNames(noRetail)]} then {
+  set fileNames(noRetail) [list 0 0 0 0 0 0]
+
+  if {![info exists no(symbols)]} then {
+    lappend fileNames(noRetail) 1
+  }
+}
+
+###############################################################################
+
+#
+# NOTE: Setup the list of builds supported by this script.
+#
+if {![info exists buildNames]} then {
+  set buildNames [list Debug Retail]
 }
 
 ###############################################################################
@@ -324,59 +354,84 @@ eval $extractCommand
 ###############################################################################
 
 #
-# NOTE: Process each file in the master file list.  There are actually four
-#       parallel lists that contain the source file names, destination file
-#       names, the platform-neutral flags, and the use-subst flags.  When the
+# NOTE: Process each file in the master file list.  There are actually seven
+#       parallel lists that contain the source file names, the destination file
+#       names, the build-neutral flags, the platform-neutral flags, the
+#       use-subst flags, the no-debug flags, and the no-retail flags.  If the
 #       platform-neutral flag is non-zero, the file is not platform-specific.
-#       When the use-subst flag is non-zero, the file is considered to be a
-#       text file that may contain Tcl variable and/or command replacements,
-#       to be dynamically replaced during processing.  If the source file name
-#       is an empty string, then the destination file name will be assumed to
-#       already exist in the staging directory and will not be copied; however,
-#       dynamic replacements may still be performed on the destination file
-#       prior to the package being re-zipped.
+#       If the build-neutral flag is non-zero, the file is not build-specific.
+#       If the use-subst flag is non-zero, the file is considered to be a text
+#       file that may contain Tcl variable and/or command replacements, to be
+#       dynamically replaced during processing.  If the no-debug flag is
+#       non-zero, the file will be skipped when processing for the debug build.
+#       If the no-retail flag is non-zero, the file will be skipped when
+#       processing for the retail build.  If the source file name is an empty
+#       string, then the destination file name will be assumed to already exist
+#       in the staging directory and will not be copied; however, dynamic
+#       replacements may still be performed on the destination file prior to
+#       the package being re-zipped.
 #
-foreach sourceFileName $fileNames(source) \
-    destinationFileName $fileNames(destination) \
-    isNeutral $fileNames(neutral) useSubst $fileNames(subst) {
+foreach sourceFileName      $fileNames(source) \
+        destinationFileName $fileNames(destination) \
+        buildNeutral        $fileNames(buildNeutral) \
+        platformNeutral     $fileNames(platformNeutral) \
+        useSubst            $fileNames(subst) \
+        noDebug             $fileNames(noDebug) \
+        noRetail            $fileNames(noRetail) {
   #
-  # NOTE: If the current file is platform-neutral, then only one platform will
-  #       be processed for it, namely "neutral"; otherwise, each supported
-  #       platform will be processed for it individually.
+  # NOTE: If the current file is build-neutral, then only one build will
+  #       be processed for it, namely "CommonConfiguration"; otherwise, each
+  #       supported build will be processed for it individually.
   #
-  foreach platformName [expr {$isNeutral ? [list neutral] : $platformNames}] {
+  foreach buildName \
+      [expr {$buildNeutral ? [list CommonConfiguration] : $buildNames}] {
     #
-    # NOTE: Use the actual platform name in the destination file name.
+    # NOTE: Should the current file be skipped for this build?
     #
-    set newDestinationFileName [replacePlatform $destinationFileName \
-        $platformName]
-
-    #
-    # NOTE: Does the source file need to be copied to the destination file?
-    #
-    if {[string length $sourceFileName] > 0} then {
-      #
-      # NOTE: First, make sure the destination directory exists.
-      #
-      file mkdir [file dirname $newDestinationFileName]
-
-      #
-      # NOTE: Then, copy the source file to the destination file verbatim.
-      #
-      file copy [replacePlatform $sourceFileName $platformName] \
-          $newDestinationFileName
+    if {[info exists no${buildName}] && [set no${buildName}]} then {
+      continue
     }
 
     #
-    # NOTE: Does the destination file contain dynamic replacements that must
-    #       be processed now?
+    # NOTE: If the current file is platform-neutral, then only one platform
+    #       will be processed for it, namely "neutral"; otherwise, each
+    #       supported platform will be processed for it individually.
     #
-    if {$useSubst} then {
+    foreach platformName \
+        [expr {$platformNeutral ? [list neutral] : $platformNames}] {
       #
-      # NOTE: Perform any dynamic replacements contained in the destination
-      #       file and then re-write it in-place.
+      # NOTE: Use the actual platform name in the destination file name.
       #
-      substFile $newDestinationFileName
+      set newDestinationFileName [replaceBuildAndPlatform \
+          $destinationFileName $buildName $platformName]
+
+      #
+      # NOTE: Does the source file need to be copied to the destination file?
+      #
+      if {[string length $sourceFileName] > 0} then {
+        #
+        # NOTE: First, make sure the destination directory exists.
+        #
+        file mkdir [file dirname $newDestinationFileName]
+
+        #
+        # NOTE: Then, copy the source file to the destination file verbatim.
+        #
+        file copy [replaceBuildAndPlatform $sourceFileName $buildName \
+            $platformName] $newDestinationFileName
+      }
+
+      #
+      # NOTE: Does the destination file contain dynamic replacements that must
+      #       be processed now?
+      #
+      if {$useSubst} then {
+        #
+        # NOTE: Perform any dynamic replacements contained in the destination
+        #       file and then re-write it in-place.
+        #
+        substFile $newDestinationFileName
+      }
     }
   }
 }

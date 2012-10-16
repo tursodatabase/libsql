@@ -2532,6 +2532,20 @@ static int newDatabase(BtShared *pBt){
 }
 
 /*
+** Initialize the first page of the database file (creating a database
+** consisting of a single page and no schema objects). Return SQLITE_OK
+** if successful, or an SQLite error code otherwise.
+*/
+int sqlite3BtreeNewDb(Btree *p){
+  int rc;
+  sqlite3BtreeEnter(p);
+  p->pBt->nPage = 0;
+  rc = newDatabase(p->pBt);
+  sqlite3BtreeLeave(p);
+  return rc;
+}
+
+/*
 ** Attempt to start a new transaction. A write-transaction
 ** is started if the second argument is nonzero, otherwise a read-
 ** transaction.  If the second argument is 2 or more and exclusive

@@ -2019,6 +2019,7 @@ static void destroyTable(Parse *pParse, Table *pTab){
       return;
     }else{
       int iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
+      assert( iDb>=0 && iDb<pParse->db->nDb );
       destroyRootPage(pParse, iLargest, iDb);
       iDestroyed = iLargest;
     }
@@ -2577,7 +2578,8 @@ Index *sqlite3CreateIndex(
       assert(0);
     }
     pTab = sqlite3LocateTableItem(pParse, 0, &pTblName->a[0]);
-    if( !pTab || db->mallocFailed ) goto exit_create_index;
+    assert( db->mallocFailed==0 || pTab==0 );
+    if( pTab==0 ) goto exit_create_index;
     assert( db->aDb[iDb].pSchema==pTab->pSchema );
   }else{
     assert( pName==0 );
