@@ -998,7 +998,9 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
   in_op(A) ::= IN.      {A = 0;}
   in_op(A) ::= NOT IN.  {A = 1;}
   expr(A) ::= expr(X) in_op(N) LP exprlist(Y) RP(E). [IN] {
-    if( Y==0 ){
+    sqlite3 *db = pParse->db;
+    ExprList *pY = Y;
+    if( pY==0 ){
       /* Expressions of the form
       **
       **      expr1 IN ()
@@ -1008,14 +1010,24 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
       ** regardless of the value of expr1.
       */
       A.pExpr = sqlite3PExpr(pParse, TK_INTEGER, 0, 0, &sqlite3IntTokens[N]);
-      sqlite3ExprDelete(pParse->db, X.pExpr);
+      sqlite3ExprDelete(db, X.pExpr);
+    }else if( pY->nExpr==1 ){
+      /* If the RHS of the IN operator has a single term, simplify as follows:
+      **
+      **      expr1 IN (Y)        -->      expr1 = Y
+      **      expr1 NOT IN (Y)    -->      expr1 <> Y
+      */
+      assert( TK_EQ==TK_NE+1 );
+      A.pExpr = sqlite3PExpr(pParse, TK_EQ-N, X.pExpr, pY->a[0].pExpr, 0);
+      pY->a[0].pExpr = 0;
+      sqlite3ExprListDelete(db, pY);
     }else{
       A.pExpr = sqlite3PExpr(pParse, TK_IN, X.pExpr, 0, 0);
       if( A.pExpr ){
-        A.pExpr->x.pList = Y;
+        A.pExpr->x.pList = pY;
         sqlite3ExprSetHeight(pParse, A.pExpr);
       }else{
-        sqlite3ExprListDelete(pParse->db, Y);
+        sqlite3ExprListDelete(pParse->db, pY);
       }
       if( N ) A.pExpr = sqlite3PExpr(pParse, TK_NOT, A.pExpr, 0, 0);
     }
