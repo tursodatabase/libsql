@@ -1,5 +1,5 @@
-C Correct\scomments\sand\senhance\sreadability\sof\sthe\smkvsix\stool.
-D 2012-10-15T20:28:22.029
+C Enable\soptimization\sof\sIN\soperators\son\sconstraints\sto\svirtual\stables.
+D 2012-10-16T23:17:14.207
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -249,7 +249,7 @@ F src/vtab.c 9c64ae18af78c740610df841c6f49fc2d240a279
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 3e6c1f9efe4c6a029b0a750e0f6a63964f43bcce
+F src/where.c 62f667db8cdbb81028bf1c55ba4b0e845b79622c
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 0be144b453e0622a085fae8665c32f5676708e00
@@ -916,7 +916,7 @@ F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 7701bb609fe8bf6535514e8b849a309e8f00573b
 F test/view.test b182a67ec43f490b156b5a710827a341be83dd17
-F test/vtab1.test 10fb9e656fe4b318cd82ff1616a340acc01aac4b
+F test/vtab1.test 524beb672c42463fe3d37351b74253c0b835498d
 F test/vtab2.test 7bcffc050da5c68f4f312e49e443063e2d391c0d
 F test/vtab3.test baad99fd27217f5d6db10660522e0b7192446de1
 F test/vtab4.test 942f8b8280b3ea8a41dae20e7822d065ca1cb275
@@ -1021,7 +1021,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 629a42d47a0d8f73de900f469845ce800bdb8959
-R c7830c7c0cb344c8cb6a175c95e5eb7f
-U mistachkin
-Z f2086ddd83e8b281e8d53ba90c91d2db
+P 2c3af657fee6153842d660a6ce29aa7d791ebd38
+R 5cbef12c646a3899761eba454f8c4105
+T *branch * vtab-IN-opt
+T *sym-vtab-IN-opt *
+T -sym-trunk *
+U drh
+Z 07568d163c180c755b6278e856d28eda

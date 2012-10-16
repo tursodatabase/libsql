@@ -253,7 +253,7 @@ struct WhereCost {
 #define WHERE_COLUMN_NULL  0x00080000  /* x IS NULL */
 #define WHERE_INDEXED      0x000f0000  /* Anything that uses an index */
 #define WHERE_NOT_FULLSCAN 0x100f3000  /* Does not do a full table scan */
-#define WHERE_IN_ABLE      0x000f1000  /* Able to support an IN operator */
+#define WHERE_IN_ABLE      0x080f1000  /* Able to support an IN operator */
 #define WHERE_TOP_LIMIT    0x00100000  /* x<EXPR or x<=EXPR constraint */
 #define WHERE_BTM_LIMIT    0x00200000  /* x>EXPR or x>=EXPR constraint */
 #define WHERE_BOTH_LIMIT   0x00300000  /* Both x>EXPR and x<EXPR */
@@ -2038,7 +2038,7 @@ static sqlite3_index_info *allocateIndexInfo(WhereBestIdx *p){
     assert( (pTerm->eOperator&(pTerm->eOperator-1))==0 );
     testcase( pTerm->eOperator==WO_IN );
     testcase( pTerm->eOperator==WO_ISNULL );
-    if( pTerm->eOperator & (WO_IN|WO_ISNULL) ) continue;
+    if( pTerm->eOperator & (WO_ISNULL) ) continue;
     if( pTerm->wtFlags & TERM_VNULL ) continue;
     nTerm++;
   }
@@ -2086,15 +2086,18 @@ static sqlite3_index_info *allocateIndexInfo(WhereBestIdx *p){
                                                                    pUsage;
 
   for(i=j=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
+    u8 op;
     if( pTerm->leftCursor != pSrc->iCursor ) continue;
     assert( (pTerm->eOperator&(pTerm->eOperator-1))==0 );
     testcase( pTerm->eOperator==WO_IN );
     testcase( pTerm->eOperator==WO_ISNULL );
-    if( pTerm->eOperator & (WO_IN|WO_ISNULL) ) continue;
+    if( pTerm->eOperator & (WO_ISNULL) ) continue;
     if( pTerm->wtFlags & TERM_VNULL ) continue;
     pIdxCons[j].iColumn = pTerm->u.leftColumn;
     pIdxCons[j].iTermOffset = i;
-    pIdxCons[j].op = (u8)pTerm->eOperator;
+    op = (u8)pTerm->eOperator;
+    if( op==WO_IN ) op = WO_EQ;
+    pIdxCons[j].op = op;
     /* The direct assignment in the previous line is possible only because
     ** the WO_ and SQLITE_INDEX_CONSTRAINT_ codes are identical.  The
     ** following asserts verify this fact. */
@@ -2104,7 +2107,7 @@ static sqlite3_index_info *allocateIndexInfo(WhereBestIdx *p){
     assert( WO_GT==SQLITE_INDEX_CONSTRAINT_GT );
     assert( WO_GE==SQLITE_INDEX_CONSTRAINT_GE );
     assert( WO_MATCH==SQLITE_INDEX_CONSTRAINT_MATCH );
-    assert( pTerm->eOperator & (WO_EQ|WO_LT|WO_LE|WO_GT|WO_GE|WO_MATCH) );
+    assert( pTerm->eOperator & (WO_IN|WO_EQ|WO_LT|WO_LE|WO_GT|WO_GE|WO_MATCH) );
     j++;
   }
   for(i=0; i<nOrderBy; i++){
@@ -4030,6 +4033,7 @@ static Bitmask codeOneLoopStart(
     **          to access the data.
     */
     int iReg;   /* P3 Value for OP_VFilter */
+    int addrNotFound;
     sqlite3_index_info *pVtabIdx = pLevel->plan.u.pVtabIdx;
     int nConstraint = pVtabIdx->nConstraint;
     struct sqlite3_index_constraint_usage *aUsage =
@@ -4039,11 +4043,18 @@ static Bitmask codeOneLoopStart(
 
     sqlite3ExprCachePush(pParse);
     iReg = sqlite3GetTempRange(pParse, nConstraint+2);
+    addrNotFound = pLevel->addrBrk;
     for(j=1; j<=nConstraint; j++){
       for(k=0; k<nConstraint; k++){
         if( aUsage[k].argvIndex==j ){
-          int iTerm = aConstraint[k].iTermOffset;
-          sqlite3ExprCode(pParse, pWC->a[iTerm].pExpr->pRight, iReg+j+1);
+          WhereTerm *pTerm = &pWC->a[aConstraint[k].iTermOffset];
+          int iTarget = iReg+j+1;
+          if( pTerm->eOperator & WO_IN ){
+            codeEqualityTerm(pParse, pTerm, pLevel, iTarget);
+            addrNotFound = pLevel->addrNxt;
+          }else{
+            sqlite3ExprCode(pParse, pTerm->pExpr->pRight, iTarget);
+          }
           break;
         }
       }
@@ -4051,7 +4062,7 @@ static Bitmask codeOneLoopStart(
     }
     sqlite3VdbeAddOp2(v, OP_Integer, pVtabIdx->idxNum, iReg);
     sqlite3VdbeAddOp2(v, OP_Integer, j-1, iReg+1);
-    sqlite3VdbeAddOp4(v, OP_VFilter, iCur, addrBrk, iReg, pVtabIdx->idxStr,
+    sqlite3VdbeAddOp4(v, OP_VFilter, iCur, addrNotFound, iReg, pVtabIdx->idxStr,
                       pVtabIdx->needToFreeIdxStr ? P4_MPRINTF : P4_STATIC);
     pVtabIdx->needToFreeIdxStr = 0;
     for(j=0; j<nConstraint; j++){
