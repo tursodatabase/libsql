@@ -1,5 +1,5 @@
-C Change\sthe\sway\sthe\stcl\scrash-test\scode\sworks\sto\savoid\striggering\san\sassert()\sin\sos_unix.c.
-D 2012-10-17T15:28:26.766
+C Add\sa\stest\sfor\sthe\sproblem\sfixed\sby\s[bf44d73d3e].
+D 2012-10-17T16:20:36.056
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -189,7 +189,7 @@ F src/test2.c 4178056dd1e7d70f954ad8a1e3edb71a2a784daf
 F src/test3.c 3c3c2407fa6ec7a19e24ae23f7cb439d0275a60d
 F src/test4.c bf9fa9bece01de08e6f5e02314e4af5c13590dfa
 F src/test5.c a6d1ac55ac054d0b2b8f37b5e655b6c92645a013
-F src/test6.c 0e47537ba157896ffaab64228fbf3bc1bd13622e
+F src/test6.c e0fc0551afc349acd081a7264627354c682629ca
 F src/test7.c 2e0781754905c8adc3268d8f0967e7633af58843
 F src/test8.c 8bcce65e5ee027fbfd7da41d28371aabbfd369ff
 F src/test9.c bea1e8cf52aa93695487badedd6e1886c321ea60
@@ -358,7 +358,7 @@ F test/crash3.test 8f5de9d32ab9ab95475a9efe7f47a940aa889418
 F test/crash4.test fe2821baf37168dc59dd733dcf7dba2a401487bc
 F test/crash5.test 13b9ca94e048194bca070e26160ce76b406c56be
 F test/crash6.test 4c56f1e40d0291e1110790a99807aa875b1647ba
-F test/crash7.test 6c6a369af266af2ef50ab34df8f94d719065e2c1
+F test/crash7.test 1a194c4900a255258cf94b7fcbfd29536db572df
 F test/crash8.test 38767cb504bbe491de6be4a7006b154973a2309f
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test b5de160630b209c4b8925bdcbbaf48cc90b67fe8
@@ -1021,7 +1021,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P bf44d73d3e4ec403947d361d2fa150cc240c4d45
-R 952a26a9f71a580bdba3323d9c78b6cc
+P b8b7b8f9e97a5c34f0f199b46347e0bf85005a4d
+R a4dfd3d078e8ee41afe324f37d50f373
 U dan
-Z f98feedce000e0221af4d7c87f85bbd8
+Z 88b5376feb5c14bb90a0188d33469c69

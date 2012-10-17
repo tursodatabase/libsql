@@ -312,8 +312,8 @@ static int writeListSync(CrashFile *pFile, int isCrash){
         assert(pWrite->zBuf);
 
 #ifdef TRACE_CRASHTEST
-        printf("Trashing %d sectors @ sector %d (%s)\n", 
-            1+iLast-iFirst, iFirst, pWrite->pFile->zName
+        printf("Trashing %d sectors @ %d (sector %d) (%s)\n", 
+            1+iLast-iFirst, pWrite->iOffset, iFirst, pWrite->pFile->zName
         );
 #endif
 

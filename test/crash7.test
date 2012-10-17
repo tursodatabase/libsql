@@ -13,6 +13,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix crash7
 
 ifcapable !crashtest {
   finish_test
@@ -78,5 +79,38 @@ foreach f [list test.db test.db-journal] {
     integrity_check crash7-1.$ii.integrity
   } 
 }
+
+db close
+forcedelete test.db
+sqlite3 db test.db
+do_execsql_test 2.0 {
+  CREATE TABLE t1(a, b, UNIQUE(a, b));
+  INSERT INTO t1 VALUES(randomblob(100), randomblob(100));
+  INSERT INTO t1 SELECT randomblob(100), randomblob(100) FROM t1;
+  INSERT INTO t1 SELECT randomblob(100), randomblob(100) FROM t1;
+  INSERT INTO t1 SELECT randomblob(100), randomblob(100) FROM t1;
+  INSERT INTO t1 SELECT randomblob(100), randomblob(100) FROM t1;
+  INSERT INTO t1 SELECT randomblob(100), randomblob(100) FROM t1;
+  INSERT INTO t1 SELECT randomblob(100), randomblob(100) FROM t1;
+  INSERT INTO t1 SELECT randomblob(100), randomblob(100) FROM t1;
+  INSERT INTO t1 SELECT randomblob(100), randomblob(100) FROM t1;
+  INSERT INTO t1 SELECT randomblob(100), randomblob(100) FROM t1;
+  INSERT INTO t1 SELECT randomblob(100), randomblob(100) FROM t1;
+  INSERT INTO t1 SELECT randomblob(100), randomblob(100) FROM t1;
+  INSERT INTO t1 SELECT randomblob(100), randomblob(100) FROM t1;
+  INSERT INTO t1 SELECT randomblob(100), randomblob(100) FROM t1;
+  INSERT INTO t1 SELECT randomblob(100), randomblob(100) FROM t1;
+  DELETE FROM t1 WHERE rowid%2;
+}
+db_save_and_close
+
+for {set i 0} {$i < 20} {incr i} {
+  db_restore_and_reopen
+  do_test 2.[expr $i+1].1 {
+    crashsql -file test.db -seed $i {VACUUM}
+  } {1 {child process exited abnormally}}
+  do_execsql_test 2.[expr $i+1].2 { PRAGMA integrity_check } {ok}
+}
+
 
 finish_test
