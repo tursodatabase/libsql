@@ -779,13 +779,13 @@ static int fts3PendingTermsAdd(
   u32 *pnWord                     /* OUT: Number of tokens inserted */
 ){
   int rc;
-  int iStart;
-  int iEnd;
-  int iPos;
+  int iStart = 0;
+  int iEnd = 0;
+  int iPos = 0;
   int nWord = 0;
 
   char const *zToken;
-  int nToken;
+  int nToken = 0;
 
   sqlite3_tokenizer *pTokenizer = p->pTokenizer;
   sqlite3_tokenizer_module const *pModule = pTokenizer->pModule;
@@ -4934,9 +4934,9 @@ static int fts3IntegrityCheck(Fts3Table *p, int *pbOk){
         rc = sqlite3Fts3OpenTokenizer(p->pTokenizer, iLang, zText, nText, &pT);
         while( rc==SQLITE_OK ){
           char const *zToken;       /* Buffer containing token */
-          int nToken;               /* Number of bytes in token */
-          int iDum1, iDum2;         /* Dummy variables */
-          int iPos;                 /* Position of token in zText */
+          int nToken = 0;           /* Number of bytes in token */
+          int iDum1 = 0, iDum2 = 0; /* Dummy variables */
+          int iPos = 0;             /* Position of token in zText */
 
           rc = pModule->xNext(pT, &zToken, &nToken, &iDum1, &iDum2, &iPos);
           if( rc==SQLITE_OK ){
@@ -5103,9 +5103,9 @@ int sqlite3Fts3CacheDeferredDoclists(Fts3Cursor *pCsr){
       rc = sqlite3Fts3OpenTokenizer(pT, pCsr->iLangid, zText, -1, &pTC);
       while( rc==SQLITE_OK ){
         char const *zToken;       /* Buffer containing token */
-        int nToken;               /* Number of bytes in token */
-        int iDum1, iDum2;         /* Dummy variables */
-        int iPos;                 /* Position of token in zText */
+        int nToken = 0;           /* Number of bytes in token */
+        int iDum1 = 0, iDum2 = 0; /* Dummy variables */
+        int iPos = 0;             /* Position of token in zText */
   
         rc = pModule->xNext(pTC, &zToken, &nToken, &iDum1, &iDum2, &iPos);
         for(pDef=pCsr->pDeferred; pDef && rc==SQLITE_OK; pDef=pDef->pNext){
