@@ -1,5 +1,5 @@
-C Remove\san\sincorrect\s"#ifndef\sSQLITE_OMIT_AUTOVACUUM"\sfrom\spager.
-D 2012-10-17T13:15:02.029
+C Change\sthe\sway\sthe\stcl\scrash-test\scode\sworks\sto\savoid\striggering\san\sassert()\sin\sos_unix.c.
+D 2012-10-17T15:28:26.766
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -189,7 +189,7 @@ F src/test2.c 4178056dd1e7d70f954ad8a1e3edb71a2a784daf
 F src/test3.c 3c3c2407fa6ec7a19e24ae23f7cb439d0275a60d
 F src/test4.c bf9fa9bece01de08e6f5e02314e4af5c13590dfa
 F src/test5.c a6d1ac55ac054d0b2b8f37b5e655b6c92645a013
-F src/test6.c 417e1e214734393c24a8ee80b41485a9c4169123
+F src/test6.c 0e47537ba157896ffaab64228fbf3bc1bd13622e
 F src/test7.c 2e0781754905c8adc3268d8f0967e7633af58843
 F src/test8.c 8bcce65e5ee027fbfd7da41d28371aabbfd369ff
 F src/test9.c bea1e8cf52aa93695487badedd6e1886c321ea60
@@ -1021,7 +1021,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 2c3af657fee6153842d660a6ce29aa7d791ebd38
-R d55cc10c39c57d8a9dc0166111e15a7c
-U drh
-Z 4c6ce6c173b785cd15d66fe798355adb
+P bf44d73d3e4ec403947d361d2fa150cc240c4d45
+R 952a26a9f71a580bdba3323d9c78b6cc
+U dan
+Z f98feedce000e0221af4d7c87f85bbd8

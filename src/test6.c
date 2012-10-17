@@ -628,18 +628,19 @@ static int cfOpen(
       ** to read data from the 512-byte locking region of a file opened
       ** with the SQLITE_OPEN_MAIN_DB flag. This region of a database file
       ** never contains valid data anyhow. So avoid doing such a read here.
+      **
+      ** UPDATE: It also contains an assert() verifying that each call
+      ** to the xRead() method reads less than 128KB of data.
       */
       const int isDb = (flags&SQLITE_OPEN_MAIN_DB);
-      i64 iChunk = pWrapper->iSize;
-      if( iChunk>PENDING_BYTE && isDb ){
-        iChunk = PENDING_BYTE;
-      }
+      i64 iOff;
+
       memset(pWrapper->zData, 0, pWrapper->nData);
-      rc = sqlite3OsRead(pReal, pWrapper->zData, (int)iChunk, 0); 
-      if( SQLITE_OK==rc && pWrapper->iSize>(PENDING_BYTE+512) && isDb ){
-        i64 iOff = PENDING_BYTE+512;
-        iChunk = pWrapper->iSize - iOff;
-        rc = sqlite3OsRead(pReal, &pWrapper->zData[iOff], (int)iChunk, iOff);
+      for(iOff=0; iOff<pWrapper->iSize; iOff += 512){
+        int nRead = pWrapper->iSize - iOff;
+        if( nRead>512 ) nRead = 512;
+        if( isDb && iOff==PENDING_BYTE ) continue;
+        rc = sqlite3OsRead(pReal, &pWrapper->zData[iOff], nRead, iOff);
       }
     }else{
       rc = SQLITE_NOMEM;
