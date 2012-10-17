@@ -644,6 +644,17 @@ static int fts3SnippetText(
     int iFin = 0;                 /* Offset in zDoc of end of token */
     int isHighlight = 0;          /* True for highlighted terms */
 
+    /* Variable DUMMY1 is initialized to a negative value above. Elsewhere
+    ** in the FTS code the variable that the third argument to xNext points to
+    ** is initialized to zero before the first (*but not necessarily
+    ** subsequent*) call to xNext(). This is done for a particular application
+    ** that needs to know whether or not the tokenizer is being used for
+    ** snippet generation or for some other purpose.
+    **
+    ** Extreme care is required when writing code to depend on this
+    ** initialization. It is not a documented part of the tokenizer interface.
+    ** If a tokenizer is used directly by any code outside of FTS, this
+    ** convention might not be respected.  */
     rc = pMod->xNext(pC, &ZDUMMY, &DUMMY1, &iBegin, &iFin, &iCurrent);
     if( rc!=SQLITE_OK ){
       if( rc==SQLITE_DONE ){

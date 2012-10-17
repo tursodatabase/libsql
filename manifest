@@ -1,5 +1,5 @@
-C Initialize\svariables\sused\sas\soutputs\sof\scustom\stokenizer\smethod\scalls\sin\sfts4.
-D 2012-10-17T20:15:10.788
+C Add\sa\scomment\sto\sfts3_snippet.c.
+D 2012-10-17T20:28:52.286
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -64,7 +64,7 @@ F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
 F ext/fts3/fts3_hash.h 8331fb2206c609f9fc4c4735b9ab5ad6137c88ec
 F ext/fts3/fts3_icu.c b85eca4a52e5ec11b94392de5167974c11906d4a
 F ext/fts3/fts3_porter.c a465b49fcb8249a755792f87516eff182efa42b3
-F ext/fts3/fts3_snippet.c 776facfe762142c5f0e1707a3bff45afa6ec6b20
+F ext/fts3/fts3_snippet.c f6ebb3536069ceaa27e9f178f4a59379db44ac10
 F ext/fts3/fts3_term.c a521f75132f9a495bdca1bdd45949b3191c52763
 F ext/fts3/fts3_test.c 348f7d08cae05285794e23dc4fe8b8fdf66e264a
 F ext/fts3/fts3_tokenizer.c 3664bb8836ab7633cf9da786c9d6fd366be5ae2c
@@ -1021,7 +1021,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P db9b1fa5973d79e29885817d5aedc3a886c2589a
-R 46675ce9c095beeab174116848331a09
+P 514505a84bcc677518d60a42896598f85ed78265
+R 8bd41a2c439b9257ed0c53b5b5e0e2b7
 U dan
-Z 8a9b2ab3f9fc72155da917dba29d509a
+Z 16efc8c4916610ff9f4669700be42910
