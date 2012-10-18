@@ -1,5 +1,5 @@
-C Merge\sWatcom\scompiler\swarning\sfixes\sinto\strunk.
-D 2012-10-18T15:01:27.155
+C Put\sauxiliary\slibraries\safter\slibsqlite3.a\sin\sthe\stestfixture\starget\sof\sthe\n"main.mk"\smakefile.
+D 2012-10-18T20:49:26.488
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -103,7 +103,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk 7b60c2663388270258f01b59fbf8b9bd78f946bf
+F main.mk ed9b74318401c0242fcac7caa95747912b9bd18f
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -1021,7 +1021,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P b5f5ba3103e6fcf117fb69d5379fa70f691a652d 51a6a797e1d61c4361b87cdf3467bfd3ce161cc3
-R 118e249f38e185342e1ec7a1a462b9aa
+P 5be96788a142362fa1f218191d2a93fdea46d93d
+R 3f8f18e3119674320ee09b7250162066
 U drh
-Z ac436b000019895766c5be314c79e007
+Z 482461e0a8744c4ec96bca6882c387ab
