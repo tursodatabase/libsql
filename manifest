@@ -1,5 +1,5 @@
-C Add\sa\scomment\sto\sfts3_snippet.c.
-D 2012-10-17T20:28:52.286
+C Merge\sWatcom\scompiler\swarning\sfixes\sinto\strunk.
+D 2012-10-18T15:01:27.155
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -121,7 +121,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c cab40f2c1fe79d6eb93d3b4086c78c41ad2fa5d0
 F src/bitvec.c 26675fe8e431dc555e6f2d0e11e651d172234aa1
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 299377f0793038ad3ea322907fbda7fbea615094
+F src/btree.c eccee944cb2221e919d7a855e5928d8643194b14
 F src/btree.h 3ad7964d6c5b1c7bff569aab6adfa075f8bf06cd
 F src/btreeInt.h 4e5c2bd0f9b36b2a815a6d84f771a61a65830621
 F src/build.c f35dac52924a6e8e6346a90f0c195a84e28b6f21
@@ -135,7 +135,7 @@ F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c c82a04e7a92bb728f9ab972b76590403283be2af
 F src/func.c cbb90dc84b22eea25caf39528d342279e61b8898
 F src/global.c fb44b11e02e06c995e6ed6642509edd23599d584
-F src/hash.c a4031441741932da9e7a65bee2b36b5d0e81c073
+F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
 F src/insert.c ad0d8943d2a4f0b52ebf75b9e459f2da00117dbd
@@ -161,7 +161,7 @@ F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 0d3a39dd576c9f384fd7772a2dadc67b144c6ce7
-F src/os_win.c 28bd027791252a4012dffd4d64355a1eb84d761c
+F src/os_win.c 43ec1285357e5d5d919cb0492eac775c58ad7d12
 F src/pager.c ee59fef31673d5124413c5a801cfd9ef3e6766d3
 F src/pager.h 1109a06578ec5574dc2c74cf8d9f69daf36fe3e0
 F src/parse.y f29df90bd3adc64b33114ab1de9fb7768fcf2099
@@ -189,7 +189,7 @@ F src/test2.c 4178056dd1e7d70f954ad8a1e3edb71a2a784daf
 F src/test3.c 3c3c2407fa6ec7a19e24ae23f7cb439d0275a60d
 F src/test4.c bf9fa9bece01de08e6f5e02314e4af5c13590dfa
 F src/test5.c a6d1ac55ac054d0b2b8f37b5e655b6c92645a013
-F src/test6.c e0fc0551afc349acd081a7264627354c682629ca
+F src/test6.c 938794c970ed6810036c8d28450ca28166524bf7
 F src/test7.c 2e0781754905c8adc3268d8f0967e7633af58843
 F src/test8.c 8bcce65e5ee027fbfd7da41d28371aabbfd369ff
 F src/test9.c bea1e8cf52aa93695487badedd6e1886c321ea60
@@ -1021,7 +1021,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 514505a84bcc677518d60a42896598f85ed78265
-R 8bd41a2c439b9257ed0c53b5b5e0e2b7
-U dan
-Z 16efc8c4916610ff9f4669700be42910
+P b5f5ba3103e6fcf117fb69d5379fa70f691a652d 51a6a797e1d61c4361b87cdf3467bfd3ce161cc3
+R 118e249f38e185342e1ec7a1a462b9aa
+U drh
+Z ac436b000019895766c5be314c79e007

@@ -312,7 +312,7 @@ static int writeListSync(CrashFile *pFile, int isCrash){
         assert(pWrite->zBuf);
 
 #ifdef TRACE_CRASHTEST
-        printf("Trashing %d sectors @ %d (sector %d) (%s)\n", 
+        printf("Trashing %d sectors @ %lld (sector %d) (%s)\n", 
             1+iLast-iFirst, pWrite->iOffset, iFirst, pWrite->pFile->zName
         );
 #endif
@@ -637,7 +637,7 @@ static int cfOpen(
 
       memset(pWrapper->zData, 0, pWrapper->nData);
       for(iOff=0; iOff<pWrapper->iSize; iOff += 512){
-        int nRead = pWrapper->iSize - iOff;
+        int nRead = pWrapper->iSize - (int)iOff;
         if( nRead>512 ) nRead = 512;
         if( isDb && iOff==PENDING_BYTE ) continue;
         rc = sqlite3OsRead(pReal, &pWrapper->zData[iOff], nRead, iOff);
