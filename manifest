@@ -1,5 +1,5 @@
-C Add\sa\scomment\sto\sfts3_snippet.c.
-D 2012-10-17T20:28:52.286
+C Fix\sharmless\scompiler\swarnings.
+D 2012-10-18T09:39:16.781
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -161,7 +161,7 @@ F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 0d3a39dd576c9f384fd7772a2dadc67b144c6ce7
-F src/os_win.c 28bd027791252a4012dffd4d64355a1eb84d761c
+F src/os_win.c 43ec1285357e5d5d919cb0492eac775c58ad7d12
 F src/pager.c ee59fef31673d5124413c5a801cfd9ef3e6766d3
 F src/pager.h 1109a06578ec5574dc2c74cf8d9f69daf36fe3e0
 F src/parse.y f29df90bd3adc64b33114ab1de9fb7768fcf2099
@@ -189,7 +189,7 @@ F src/test2.c 4178056dd1e7d70f954ad8a1e3edb71a2a784daf
 F src/test3.c 3c3c2407fa6ec7a19e24ae23f7cb439d0275a60d
 F src/test4.c bf9fa9bece01de08e6f5e02314e4af5c13590dfa
 F src/test5.c a6d1ac55ac054d0b2b8f37b5e655b6c92645a013
-F src/test6.c e0fc0551afc349acd081a7264627354c682629ca
+F src/test6.c b990d3cfa24d589afefb47bb86db3c4a56e5e7be
 F src/test7.c 2e0781754905c8adc3268d8f0967e7633af58843
 F src/test8.c 8bcce65e5ee027fbfd7da41d28371aabbfd369ff
 F src/test9.c bea1e8cf52aa93695487badedd6e1886c321ea60
@@ -1021,7 +1021,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 514505a84bcc677518d60a42896598f85ed78265
-R 8bd41a2c439b9257ed0c53b5b5e0e2b7
-U dan
-Z 16efc8c4916610ff9f4669700be42910
+P b5f5ba3103e6fcf117fb69d5379fa70f691a652d
+R 39dbbb084ae6a161ccbba144af20810a
+T *branch * warnings
+T *sym-warnings *
+T -sym-trunk *
+U mistachkin
+Z 2d0ade0fb9b94740b143c6669e1b62e9

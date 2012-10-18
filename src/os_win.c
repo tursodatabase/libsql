@@ -2192,7 +2192,8 @@ static int winWrite(
         if( retryIoerr(&nRetry, &lastErrno) ) continue;
         break;
       }
-      if( nWrite<=0 ){
+      assert( nWrite==0 || nWrite<=(DWORD)nRem );
+      if( nWrite==0 || nWrite>(DWORD)nRem ){
         lastErrno = osGetLastError();
         break;
       }
