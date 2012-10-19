@@ -1,5 +1,5 @@
-C Add\sdetailed\scomments\sto\sthe\sbuild\stools\sused\sto\sgenerate\sthe\sVSIX\spackage.\s\sAlso,\sallow\sthe\sbuild\sconfigurations\sand\snative\slibrary\sdirectories\sto\sbe\soverridden\sfor\sthe\smulti-platform\sbuild\stool\sfor\sMSVC.
-D 2012-10-19T00:23:31.437
+C Make\ssure\ssubstructure\selements\shave\sproper\salignment\sin\sthe\sICU\stokenizers\nof\sFTS2\sand\sFTS3.
+D 2012-10-19T02:10:53.511
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -45,7 +45,7 @@ F ext/fts2/fts2.c 4ef7d7ecf590da0dd416ac54612c53a7d4175790
 F ext/fts2/fts2.h da5f76c65163301d1068a971fd32f4119e3c95fa
 F ext/fts2/fts2_hash.c 2689e42e1107ea67207f725cf69cf8972d00cf93
 F ext/fts2/fts2_hash.h 9a5b1be94664139f93217a0770d7144425cffb3a
-F ext/fts2/fts2_icu.c 1ea9993a39c9783c2e2d7446d055e9d64411dda0
+F ext/fts2/fts2_icu.c 51c5cd3c04954badd329fa738c95fcdb717b5188
 F ext/fts2/fts2_porter.c 747056987951f743e955c8479f1df21a565720fe
 F ext/fts2/fts2_tokenizer.c 26e993a00b2bd5b6e73c155597361710b12ffe25
 F ext/fts2/fts2_tokenizer.h a7e46462d935a314b2682287f12f27530a3ee08e
@@ -62,7 +62,7 @@ F ext/fts3/fts3_aux.c 5205182bd8f372782597888156404766edf5781e
 F ext/fts3/fts3_expr.c ceefcaf91344abbf6ceb3cadf404eef5be6924e6
 F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
 F ext/fts3/fts3_hash.h 8331fb2206c609f9fc4c4735b9ab5ad6137c88ec
-F ext/fts3/fts3_icu.c b85eca4a52e5ec11b94392de5167974c11906d4a
+F ext/fts3/fts3_icu.c e319e108661147bcca8dd511cd562f33a1ba81b5
 F ext/fts3/fts3_porter.c a465b49fcb8249a755792f87516eff182efa42b3
 F ext/fts3/fts3_snippet.c f6ebb3536069ceaa27e9f178f4a59379db44ac10
 F ext/fts3/fts3_term.c a521f75132f9a495bdca1bdd45949b3191c52763
@@ -1021,7 +1021,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 8fc8548f52ab8fcfb53f88db68422e09c9b98da1
-R ecd8eecc21d562cb6365b84ab6aacfa3
-U mistachkin
-Z e537762f3e1c5212ff12ec99c30fc6e2
+P 0482c73bfdf80b0c0ce9abea706554d7ddf36f69
+R 359b18ae3c286a09e1c7579425de96fe
+U drh
+Z 09f8af841cfaabcfb0c92e8b07cb012e
