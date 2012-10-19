@@ -2,7 +2,85 @@
 #
 # This script is used to generate a VSIX (Visual Studio Extension) file for
 # SQLite usable by Visual Studio.
-
+#
+# PREREQUISITES
+#
+# 1. Tcl 8.4 and later are supported, earlier versions have not been tested.
+#
+# 2. The "sqlite3.h" file is assumed to exist in the parent directory of the
+#    directory containing this script.  The [optional] second command line
+#    argument to this script may be used to specify an alternate location.
+#    This script also assumes that the "sqlite3.h" file corresponds with the
+#    version of the binaries to be packaged.  This assumption is not verified
+#    by this script.
+#
+# 3. The temporary directory specified in the TEMP or TMP environment variables
+#    must refer to an existing directory writable by the current user.
+#
+# 4. The "zip" and "unzip" command line tools must be located either in a
+#    directory contained in the PATH environment variable or specified as the
+#    exact file names to execute in the "ZipTool" and "UnZipTool" environment
+#    variables, respectively.
+#
+# 5. The template VSIX file (which is basically a zip file) must be located in
+#    a "win" directory inside the directory containing this script.  It should
+#    not contain any executable binaries.  It should only contain dynamic
+#    textual content files to be processed using [subst] and/or static content
+#    files to be copied verbatim.
+#
+# 6. The executable and other compiled binary files to be packaged into the
+#    final VSIX file (e.g. DLLs, LIBs, and PDBs) must be located in a single
+#    directory tree.  The top-level directory of the tree must be specified as
+#    the first command line argument to this script.  The second level
+#    sub-directory names must match those of the build configuration (e.g.
+#    "Debug" or "Retail").  The third level sub-directory names must match
+#    those of the platform (e.g. "x86", "x64", and "ARM").  For example, the
+#    binary files to be packaged would need to be organized as follows when
+#    packaging the "Debug" and "Retail" build configurations for the "x86" and
+#    "x64" platforms (in this example, "C:\temp" is the top-level directory as
+#    specified in the first command line argument):
+#
+#                         C:\Temp\Debug\x86\sqlite3.lib
+#                         C:\Temp\Debug\x86\sqlite3.dll
+#                         C:\Temp\Debug\x86\sqlite3.pdb
+#                         C:\Temp\Debug\x64\sqlite3.lib
+#                         C:\Temp\Debug\x64\sqlite3.dll
+#                         C:\Temp\Debug\x64\sqlite3.pdb
+#                         C:\Temp\Retail\x86\sqlite3.lib
+#                         C:\Temp\Retail\x86\sqlite3.dll
+#                         C:\Temp\Retail\x86\sqlite3.pdb
+#                         C:\Temp\Retail\x64\sqlite3.lib
+#                         C:\Temp\Retail\x64\sqlite3.dll
+#                         C:\Temp\Retail\x64\sqlite3.pdb
+#
+#    The above directory tree organization is performed automatically if the
+#    "tool\build-all-msvc.bat" batch script is used to build the binary files
+#    to be packaged.
+#
+# USAGE
+#
+# Typically, when on Windows, this script is executed using commands similar to
+# the following (from a normal Windows command prompt window):
+#
+#                         CD /D C:\dev\sqlite\core
+#                         tclsh85 tool\mkvsix.tcl C:\Temp
+#
+# In the example above, "C:\dev\sqlite\core" represents the root of the source
+# tree for SQLite and "C:\Temp" represents the top-level directory containing
+# the executable and other compiled binary files, organized into a directory
+# tree as described in item 6 of the PREREQUISITES section, above.
+#
+# This script should work on non-Windows platforms as well, provided that all
+# the requirements listed in the PREREQUISITES section are met.
+#
+# NOTES
+#
+# The temporary directory is used as a staging area for the final VSIX file.
+# The template VSIX file is extracted, its contents processed, and then the
+# resulting files are packaged into the final VSIX file.
+#
+package require Tcl 8.4
+
 proc fail { {error ""} {usage false} } {
   if {[string length $error] > 0} then {
     puts stdout $error
@@ -245,7 +323,11 @@ if {![regexp -line -- $pattern $data dummy version]} then {
 ###############################################################################
 
 #
-# NOTE: Setup the master file list data, including the necessary flags.
+# NOTE: Setup all the master file list data.  This includes the source and
+#       destination file names, build-neutral boolean flags, platform-neutral
+#       boolean flags, and the dynamic content (subst) boolean flags.  There
+#       is also one set of boolean flags per build configuration, currently
+#       "Debug" and "Retail", that control which files are skipped for it.
 #
 if {![info exists fileNames(source)]} then {
   set fileNames(source) [list "" "" "" \

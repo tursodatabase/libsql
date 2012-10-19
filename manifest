@@ -1,5 +1,5 @@
-C Put\sauxiliary\slibraries\safter\slibsqlite3.a\sin\sthe\stestfixture\starget\sof\sthe\n"main.mk"\smakefile.
-D 2012-10-18T20:49:26.488
+C Add\sdetailed\scomments\sto\sthe\sbuild\stools\sused\sto\sgenerate\sthe\sVSIX\spackage.\s\sAlso,\sallow\sthe\sbuild\sconfigurations\sand\snative\slibrary\sdirectories\sto\sbe\soverridden\sfor\sthe\smulti-platform\sbuild\stool\sfor\sMSVC.
+D 2012-10-19T00:23:31.437
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -977,7 +977,7 @@ F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/win32lock.test b2a539e85ae6b2d78475e016a9636b4451dc7fb9
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test e7f77fded01dfcdf92ac2c5400f1e35d7a21463c
-F tool/build-all-msvc.bat 76b835e0ab91e30f22d8aa48db9dea4d2dc59e9f x
+F tool/build-all-msvc.bat c4ff2f18b1a59bb370ce48fdd286b51a82fa0f5c x
 F tool/build-shell.sh b64a481901fc9ffe5ca8812a2a9255b6cfb77381
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -995,7 +995,7 @@ F tool/mksqlite3c-noext.tcl 8bce31074e4cbe631bb7676526a048335f4c9f02
 F tool/mksqlite3c.tcl 589c7f44e990be1b8443cfe4808dce392b0327fa
 F tool/mksqlite3h.tcl 78013ad79a5e492e5f764f3c7a8ef834255061f8
 F tool/mksqlite3internalh.tcl 3dca7bb5374cee003379b8cbac73714f610ef795
-F tool/mkvsix.tcl adc17f82e3812787fdb015098d006e31804d6aa5
+F tool/mkvsix.tcl c5e0d52592fb07a17626cd54e5f71295fb4d1b55
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
 F tool/omittest.tcl 4665982e95a6e5c1bd806cf7bc3dea95be422d77
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -1021,7 +1021,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 5be96788a142362fa1f218191d2a93fdea46d93d
-R 3f8f18e3119674320ee09b7250162066
-U drh
-Z 482461e0a8744c4ec96bca6882c387ab
+P 8fc8548f52ab8fcfb53f88db68422e09c9b98da1
+R ecd8eecc21d562cb6365b84ab6aacfa3
+U mistachkin
+Z e537762f3e1c5212ff12ec99c30fc6e2
