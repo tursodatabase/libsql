@@ -1,5 +1,5 @@
-C Backport\sof\stooling\ssupport\sfor\sincluding\sthe\sdebug\sbuild\sin\sthe\sVSIX\spackage.
-D 2012-10-12T18:22:51.788
+C Correct\sthe\sdesign-time\slibrary\sfile\spath\sin\sthe\sVSIX\spackage\snow\sthat\sit\sis\sper-configuration.
+D 2012-10-19T19:22:52.308
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1013,8 +1013,8 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 091570e46d04e84b67228e0bdbcd6e1fb60c6bdb
-R bcccfde8794119107a5caab4043fcd6f
+F tool/win/sqlite.vsix bc91332e37e980c20575e087b368922f93673f1b
+P c188896719cb6b942936e27fab4ead52e2c63c54
+R 1112df1397c9e1dc16e373b2f3c55484
 U mistachkin
-Z 3c221b4f8f4bd86b2446cbb21b2a832f
+Z 37635a13acb9cd0621aee42fe1ebec26
