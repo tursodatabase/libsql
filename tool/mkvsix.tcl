@@ -59,8 +59,18 @@
 #
 # USAGE
 #
-# Typically, when on Windows, this script is executed using commands similar to
-# the following (from a normal Windows command prompt window):
+# The first argument to this script is required and must be the name of the
+# top-level directory containing the directories and files organized into a
+# tree as described in item 6 of the PREREQUISITES section, above.  The second
+# argument is optional and if present must contain the name of the directory
+# containing the root of the source tree for SQLite.  The third argument is
+# optional and if present must contain the flavor the VSIX package to build.
+# Currently, the only supported package flavors are "WinRT" and "WP80".  The
+# fourth argument is optional and if present must be a string containing a list
+# of platforms to include in the VSIX package.  The format of the platform list
+# string is "platform1,platform2,platform3".  Typically, when on Windows, this
+# script is executed using commands similar to the following from a normal
+# Windows command prompt:
 #
 #                         CD /D C:\dev\sqlite\core
 #                         tclsh85 tool\mkvsix.tcl C:\Temp
@@ -89,9 +99,14 @@ proc fail { {error ""} {usage false} } {
 
   puts stdout "usage:\
 [file tail [info nameofexecutable]]\
-[file tail [info script]] <binaryDirectory> \[sourceDirectory\]"
+[file tail [info script]] <binaryDirectory> \[sourceDirectory\]\
+\[packageFlavor\] \[platformNames\]"
 
   exit 1
+}
+
+proc appendArgs { args } {
+  set result ""; eval append result $args
 }
 
 proc getEnvironmentVariable { name } {
@@ -162,21 +177,24 @@ proc writeFile { fileName data } {
 proc substFile { fileName } {
   #
   # NOTE: Performs all Tcl command, variable, and backslash substitutions in
-  #       the specified file and then re-writes the contents of that same file
+  #       the specified file and then rewrites the contents of that same file
   #       with the substituted data.
   #
   return [writeFile $fileName [uplevel 1 [list subst [readFile $fileName]]]]
 }
 
-proc replaceBuildAndPlatform { fileName buildName platformName } {
+proc replaceFileNameTokens { fileName name buildName platformName } {
   #
   # NOTE: Returns the specified file name containing the platform name instead
   #       of platform placeholder tokens.
   #
-  return [string map [list <build> $buildName <platform> $platformName] \
-      $fileName]
+  return [string map [list <build> $buildName <platform> $platformName \
+      <name> $name] $fileName]
 }
 
+#
+# NOTE: This is the entry point for this script.
+#
 set script [file normalize [info script]]
 
 if {[string length $script] == 0} then {
@@ -192,7 +210,7 @@ set rootName [file rootname [file tail $script]]
 # NOTE: Process and verify all the command line arguments.
 #
 set argc [llength $argv]
-if {$argc != 1 && $argc != 2} then {fail}
+if {$argc < 1 || $argc > 4} then {fail}
 
 set binaryDirectory [lindex $argv 0]
 
@@ -205,7 +223,7 @@ if {![file exists $binaryDirectory] || \
   fail "binary directory does not exist"
 }
 
-if {$argc == 2} then {
+if {$argc >= 2} then {
   set sourceDirectory [lindex $argv 1]
 } else {
   #
@@ -222,6 +240,47 @@ if {[string length $sourceDirectory] == 0} then {
 if {![file exists $sourceDirectory] || \
     ![file isdirectory $sourceDirectory]} then {
   fail "source directory does not exist"
+}
+
+if {$argc >= 3} then {
+  set packageFlavor [lindex $argv 2]
+} else {
+  #
+  # NOTE: Assume the package flavor is WinRT.
+  #
+  set packageFlavor WinRT
+}
+
+if {[string length $packageFlavor] == 0} then {
+  fail "invalid package flavor"
+}
+
+if {[string equal -nocase $packageFlavor WinRT]} then {
+  set shortName SQLite.WinRT
+  set displayName "SQLite for Windows Runtime"
+  set targetPlatformIdentifier Windows
+  set extraSdkPath ""
+  set extraFileListAttributes [appendArgs \
+      "\r\n    " {AppliesTo="WindowsAppContainer"} \
+      "\r\n    " {DependsOn="Microsoft.VCLibs, version=11.0"}]
+} elseif {[string equal -nocase $packageFlavor WP80]} then {
+  set shortName SQLite.WP80
+  set displayName "SQLite for Windows Phone"
+  set targetPlatformIdentifier "Windows Phone"
+  set extraSdkPath "\\..\\$targetPlatformIdentifier"
+  set extraFileListAttributes ""
+} else {
+  fail "unsupported package flavor, must be \"WinRT\" or \"WP80\""
+}
+
+if {$argc >= 4} then {
+  set platformNames [list]
+
+  foreach platformName [split [lindex $argv 3] ", "] {
+    if {[string length $platformName] > 0} then {
+      lappend platformNames $platformName
+    }
+  }
 }
 
 ###############################################################################
@@ -247,7 +306,7 @@ if {![file exists $templateFile] || \
 }
 
 set currentDirectory [pwd]
-set outputFile [file join $currentDirectory sqlite-output.vsix]
+set outputFile [file join $currentDirectory sqlite-$packageFlavor-output.vsix]
 
 if {[file exists $outputFile]} then {
   fail [appendArgs "output file \"" $outputFile "\" already exists"]
@@ -323,17 +382,41 @@ if {![regexp -line -- $pattern $data dummy version]} then {
 ###############################################################################
 
 #
-# NOTE: Setup all the master file list data.  This includes the source and
-#       destination file names, build-neutral boolean flags, platform-neutral
-#       boolean flags, and the dynamic content (subst) boolean flags.  There
-#       is also one set of boolean flags per build configuration, currently
-#       "Debug" and "Retail", that control which files are skipped for it.
+# NOTE: Setup all the master file list data.  This includes the source file
+#       names, the destination file names, and the file processing flags.  The
+#       possible file processing flags are:
+#
+#       "buildNeutral" -- This flag indicates the file location and content do
+#                         not depend on the build configuration.
+#
+#       "platformNeutral" -- This flag indicates the file location and content
+#                            do not depend on the build platform.
+#
+#       "subst" -- This flag indicates that the file contains dynamic textual
+#                  content that needs to be processed using [subst] prior to
+#                  packaging the file into the final VSIX package.  The primary
+#                  use of this flag is to insert the name of the VSIX package,
+#                  some package flavor-specific value, or the SQLite version
+#                  into a file.
+#
+#       "noDebug" -- This flag indicates that the file should be skipped when
+#                    processing the debug build.
+#
+#       "noRetail" -- This flag indicates that the file should be skipped when
+#                     processing the retail build.
+#
+#       "move" -- This flag indicates that the file should be moved from the
+#                 source to the destination instead of being copied.
+#
+#       This file metadata may be overridden, either in whole or in part, via
+#       the user-specific customizations file.
 #
 if {![info exists fileNames(source)]} then {
-  set fileNames(source) [list "" "" "" \
-      [file join $sourceDirectory sqlite3.h] \
-      [file join $binaryDirectory <build> <platform> sqlite3.lib] \
-      [file join $binaryDirectory <build> <platform> sqlite3.dll]]
+  set fileNames(source) [list "" "" \
+    [file join $stagingDirectory DesignTime <build> <platform> sqlite3.props] \
+    [file join $sourceDirectory sqlite3.h] \
+    [file join $binaryDirectory <build> <platform> sqlite3.lib] \
+    [file join $binaryDirectory <build> <platform> sqlite3.dll]]
 
   if {![info exists no(symbols)]} then {
     lappend fileNames(source) \
@@ -343,13 +426,12 @@ if {![info exists fileNames(source)]} then {
 
 if {![info exists fileNames(destination)]} then {
   set fileNames(destination) [list \
-      [file join $stagingDirectory extension.vsixmanifest] \
-      [file join $stagingDirectory SDKManifest.xml] \
-      [file join $stagingDirectory DesignTime <build> <platform> \
-          SQLite.WinRT.props] \
-      [file join $stagingDirectory DesignTime <build> <platform> sqlite3.h] \
-      [file join $stagingDirectory DesignTime <build> <platform> sqlite3.lib] \
-      [file join $stagingDirectory Redist <build> <platform> sqlite3.dll]]
+    [file join $stagingDirectory extension.vsixmanifest] \
+    [file join $stagingDirectory SDKManifest.xml] \
+    [file join $stagingDirectory DesignTime <build> <platform> <name>.props] \
+    [file join $stagingDirectory DesignTime <build> <platform> sqlite3.h] \
+    [file join $stagingDirectory DesignTime <build> <platform> sqlite3.lib] \
+    [file join $stagingDirectory Redist <build> <platform> sqlite3.dll]]
 
   if {![info exists no(symbols)]} then {
     lappend fileNames(destination) \
@@ -357,50 +439,24 @@ if {![info exists fileNames(destination)]} then {
   }
 }
 
-if {![info exists fileNames(buildNeutral)]} then {
-  set fileNames(buildNeutral) [list 1 1 1 1 0 0]
+if {![info exists fileNames(flags)]} then {
+  set fileNames(flags) [list \
+      [list buildNeutral platformNeutral subst] \
+      [list buildNeutral platformNeutral subst] \
+      [list buildNeutral platformNeutral subst move] \
+      [list buildNeutral platformNeutral] \
+      [list] [list] [list noRetail]]
 
   if {![info exists no(symbols)]} then {
-    lappend fileNames(buildNeutral) 0
-  }
-}
-
-if {![info exists fileNames(platformNeutral)]} then {
-  set fileNames(platformNeutral) [list 1 1 1 1 0 0]
-
-  if {![info exists no(symbols)]} then {
-    lappend fileNames(platformNeutral) 0
-  }
-}
-
-if {![info exists fileNames(subst)]} then {
-  set fileNames(subst) [list 1 1 1 0 0 0]
-
-  if {![info exists no(symbols)]} then {
-    lappend fileNames(subst) 0
-  }
-}
-
-if {![info exists fileNames(noDebug)]} then {
-  set fileNames(noDebug) [list 0 0 0 0 0 0]
-
-  if {![info exists no(symbols)]} then {
-    lappend fileNames(noDebug) 0
-  }
-}
-
-if {![info exists fileNames(noRetail)]} then {
-  set fileNames(noRetail) [list 0 0 0 0 0 0]
-
-  if {![info exists no(symbols)]} then {
-    lappend fileNames(noRetail) 1
+    lappend fileNames(flags) [list noRetail]
   }
 }
 
 ###############################################################################
 
 #
-# NOTE: Setup the list of builds supported by this script.
+# NOTE: Setup the list of builds supported by this script.  These may be
+#       overridden via the user-specific customizations file.
 #
 if {![info exists buildNames]} then {
   set buildNames [list Debug Retail]
@@ -409,7 +465,9 @@ if {![info exists buildNames]} then {
 ###############################################################################
 
 #
-# NOTE: Setup the list of platforms supported by this script.
+# NOTE: Setup the list of platforms supported by this script.  These may be
+#       overridden via the command line or the user-specific customizations
+#       file.
 #
 if {![info exists platformNames]} then {
   set platformNames [list x86 x64 ARM]
@@ -423,54 +481,64 @@ if {![info exists platformNames]} then {
 file mkdir $stagingDirectory
 
 #
-# NOTE: Build the Tcl command used to extract the template package to the
-#       staging directory.
+# NOTE: Build the Tcl command used to extract the template VSIX package to
+#       the staging directory.
 #
 set extractCommand [list exec -- $unzip $templateFile -d $stagingDirectory]
 
 #
-# NOTE: Extract the template package to the staging directory.
+# NOTE: Extract the template VSIX package to the staging directory.
 #
 eval $extractCommand
 
 ###############################################################################
 
 #
-# NOTE: Process each file in the master file list.  There are actually seven
+# NOTE: Process each file in the master file list.  There are actually three
 #       parallel lists that contain the source file names, the destination file
-#       names, the build-neutral flags, the platform-neutral flags, the
-#       use-subst flags, the no-debug flags, and the no-retail flags.  If the
-#       platform-neutral flag is non-zero, the file is not platform-specific.
-#       If the build-neutral flag is non-zero, the file is not build-specific.
-#       If the use-subst flag is non-zero, the file is considered to be a text
-#       file that may contain Tcl variable and/or command replacements, to be
-#       dynamically replaced during processing.  If the no-debug flag is
-#       non-zero, the file will be skipped when processing for the debug build.
-#       If the no-retail flag is non-zero, the file will be skipped when
-#       processing for the retail build.  If the source file name is an empty
-#       string, then the destination file name will be assumed to already exist
-#       in the staging directory and will not be copied; however, dynamic
-#       replacements may still be performed on the destination file prior to
-#       the package being re-zipped.
+#       names, and the file processing flags. If the "buildNeutral" flag is
+#       present, the file location and content do not depend on the build
+#       configuration and "CommonConfiguration" will be used in place of the
+#       build configuration name.  If the "platformNeutral" flag is present,
+#       the file location and content do not depend on the build platform and
+#       "neutral" will be used in place of the build platform name.  If the
+#       "subst" flag is present, the file is assumed to be a text file that may
+#       contain Tcl variable, command, and backslash replacements, to be
+#       dynamically replaced during processing using the Tcl [subst] command.
+#       If the "noDebug" flag is present, the file will be skipped when
+#       processing for the debug build.  If the "noRetail" flag is present, the
+#       file will be skipped when processing for the retail build.  If the
+#       "move" flag is present, the source file will be deleted after it is
+#       copied to the destination file.  If the source file name is an empty
+#       string, the destination file name will be assumed to already exist in
+#       the staging directory and will not be copied; however, Tcl variable,
+#       command, and backslash replacements may still be performed on the
+#       destination file prior to the final VSIX package being built if the
+#       "subst" flag is present.
 #
 foreach sourceFileName      $fileNames(source) \
         destinationFileName $fileNames(destination) \
-        buildNeutral        $fileNames(buildNeutral) \
-        platformNeutral     $fileNames(platformNeutral) \
-        useSubst            $fileNames(subst) \
-        noDebug             $fileNames(noDebug) \
-        noRetail            $fileNames(noRetail) {
+        fileFlags           $fileNames(flags) {
+  #
+  # NOTE: Process the file flags into separate boolean variables that may be
+  #       used within the loop.
+  #
+  set isBuildNeutral [expr {[lsearch $fileFlags buildNeutral] != -1}]
+  set isPlatformNeutral [expr {[lsearch $fileFlags platformNeutral] != -1}]
+  set isMove [expr {[lsearch $fileFlags move] != -1}]
+  set useSubst [expr {[lsearch $fileFlags subst] != -1}]
+
   #
   # NOTE: If the current file is build-neutral, then only one build will
   #       be processed for it, namely "CommonConfiguration"; otherwise, each
   #       supported build will be processed for it individually.
   #
   foreach buildName \
-      [expr {$buildNeutral ? [list CommonConfiguration] : $buildNames}] {
+      [expr {$isBuildNeutral ? [list CommonConfiguration] : $buildNames}] {
     #
     # NOTE: Should the current file be skipped for this build?
     #
-    if {[info exists no${buildName}] && [set no${buildName}]} then {
+    if {[lsearch $fileFlags no${buildName}] != -1} then {
       continue
     }
 
@@ -480,12 +548,12 @@ foreach sourceFileName      $fileNames(source) \
     #       supported platform will be processed for it individually.
     #
     foreach platformName \
-        [expr {$platformNeutral ? [list neutral] : $platformNames}] {
+        [expr {$isPlatformNeutral ? [list neutral] : $platformNames}] {
       #
       # NOTE: Use the actual platform name in the destination file name.
       #
-      set newDestinationFileName [replaceBuildAndPlatform \
-          $destinationFileName $buildName $platformName]
+      set newDestinationFileName [replaceFileNameTokens $destinationFileName \
+          $shortName $buildName $platformName]
 
       #
       # NOTE: Does the source file need to be copied to the destination file?
@@ -499,8 +567,18 @@ foreach sourceFileName      $fileNames(source) \
         #
         # NOTE: Then, copy the source file to the destination file verbatim.
         #
-        file copy [replaceBuildAndPlatform $sourceFileName $buildName \
-            $platformName] $newDestinationFileName
+        set newSourceFileName [replaceFileNameTokens $sourceFileName \
+            $shortName $buildName $platformName]
+
+        file copy $newSourceFileName $newDestinationFileName
+
+        #
+        # NOTE: If this is a move instead of a copy, delete the source file
+        #       now.
+        #
+        if {$isMove} then {
+          file delete $newSourceFileName
+        }
       }
 
       #
@@ -528,13 +606,13 @@ foreach sourceFileName      $fileNames(source) \
 cd $stagingDirectory
 
 #
-# NOTE: Build the Tcl command used to archive the final package in the
+# NOTE: Build the Tcl command used to archive the final VSIX package in the
 #       output directory.
 #
 set archiveCommand [list exec -- $zip -r $outputFile *]
 
 #
-# NOTE: Build the final package archive in the output directory.
+# NOTE: Build the final VSIX package archive in the output directory.
 #
 eval $archiveCommand
 

@@ -1,5 +1,5 @@
-C Make\ssure\ssubstructure\selements\shave\sproper\salignment\sin\sthe\sICU\stokenizers\nof\sFTS2\sand\sFTS3.
-D 2012-10-19T02:10:53.511
+C Modify\sVSIX\sbuild\stools\sin\ssupport\sof\san\sadditional\spackage\sflavor.
+D 2012-10-20T08:40:05.626
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -977,7 +977,7 @@ F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/win32lock.test b2a539e85ae6b2d78475e016a9636b4451dc7fb9
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test e7f77fded01dfcdf92ac2c5400f1e35d7a21463c
-F tool/build-all-msvc.bat c4ff2f18b1a59bb370ce48fdd286b51a82fa0f5c x
+F tool/build-all-msvc.bat 74fb6e5cca66ebdb6c9bbafb2f8b802f08146d38 x
 F tool/build-shell.sh b64a481901fc9ffe5ca8812a2a9255b6cfb77381
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -995,7 +995,7 @@ F tool/mksqlite3c-noext.tcl 8bce31074e4cbe631bb7676526a048335f4c9f02
 F tool/mksqlite3c.tcl 589c7f44e990be1b8443cfe4808dce392b0327fa
 F tool/mksqlite3h.tcl 78013ad79a5e492e5f764f3c7a8ef834255061f8
 F tool/mksqlite3internalh.tcl 3dca7bb5374cee003379b8cbac73714f610ef795
-F tool/mkvsix.tcl c5e0d52592fb07a17626cd54e5f71295fb4d1b55
+F tool/mkvsix.tcl 0c7febb4115fd278ff5764f59bf5111172d78d1b
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
 F tool/omittest.tcl 4665982e95a6e5c1bd806cf7bc3dea95be422d77
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -1020,8 +1020,11 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 0482c73bfdf80b0c0ce9abea706554d7ddf36f69
-R 359b18ae3c286a09e1c7579425de96fe
-U drh
-Z 09f8af841cfaabcfb0c92e8b07cb012e
+F tool/win/sqlite.vsix afaf61050ca4587a7acf3335fc4cde7c9aa254af
+P aaa2d9b0db74d8452d9294de17cff786ab4ec7c8
+R 75ba814e4bd96022706eb169d0651507
+T *branch * vsixFlavor
+T *sym-vsixFlavor *
+T -sym-trunk *
+U mistachkin
+Z ef10ccc9c6ae9e2d11f5c86ef842bcab
