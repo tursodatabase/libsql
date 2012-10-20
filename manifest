@@ -1,9 +1,9 @@
-C Modify\sVSIX\sbuild\stools\sin\ssupport\sof\san\sadditional\spackage\sflavor.
-D 2012-10-20T08:40:05.626
+C Modify\sclean\starget\sto\shandle\sall\sVSIX\spackage\sflavors.
+D 2012-10-20T09:35:57.904
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
+F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 1d8a5d3cf33b8b8d3247c99367a37af384cc7ebd
+F Makefile.msc 911b8188f5d67801035a113e063c3023a617525d
 F Makefile.vxworks b18ad88e9a8c6a001f5cf4a389116a4f1a7ab45f
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION edab4af5a4623f8198833ea481ce98ab53750a8d
@@ -103,7 +103,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk ed9b74318401c0242fcac7caa95747912b9bd18f
+F main.mk 615aeaf7474cb2f141547e0c3ac08bcb75dd2b55
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -1021,10 +1021,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix afaf61050ca4587a7acf3335fc4cde7c9aa254af
-P aaa2d9b0db74d8452d9294de17cff786ab4ec7c8
-R 75ba814e4bd96022706eb169d0651507
-T *branch * vsixFlavor
-T *sym-vsixFlavor *
-T -sym-trunk *
+P 702ebc646b43468e6a89322e4e2f4b1ef7858589
+R a24f05c2d976ce62cd18d97580a50a82
 U mistachkin
-Z ef10ccc9c6ae9e2d11f5c86ef842bcab
+Z 266a8c9fa37a8bad07b2577c7f95cb0a
