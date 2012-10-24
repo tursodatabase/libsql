@@ -1,5 +1,5 @@
-C Modify\sclean\starget\sto\shandle\sall\sVSIX\spackage\sflavors.
-D 2012-10-20T09:35:57.904
+C Translate\sthe\sDebug/Release\sproject\sconfigurations\sto\sthe\sDebug/Retail\sVSIX\spackage\sconfigurations.
+D 2012-10-24T00:47:59.405
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1020,8 +1020,8 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-F tool/win/sqlite.vsix afaf61050ca4587a7acf3335fc4cde7c9aa254af
-P 702ebc646b43468e6a89322e4e2f4b1ef7858589
-R a24f05c2d976ce62cd18d97580a50a82
+F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
+P 023217ea9eea4fea5d3be7707599c6980d4b76f7
+R df31fe3fba4c339b050d48573a558d63
 U mistachkin
-Z 266a8c9fa37a8bad07b2577c7f95cb0a
+Z d50bfe888efa984ae49286b522083a84
