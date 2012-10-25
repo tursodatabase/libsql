@@ -1,5 +1,5 @@
-C Make\ssure\ssubstructure\selements\shave\sproper\salignment\sin\sthe\sICU\stokenizers\nof\sFTS2\sand\sFTS3.
-D 2012-10-19T02:10:53.511
+C Improvements\sto\sthe\scommand-line\sargument\sparsing\sin\sthe\s\ncommand-line\sshell.\s\sCommand-line\soptions\scan\snow\soccur\seither\sbefore\nor\safter\sthe\sdatabase\sname\sand\sfirst\scommand\sand\sare\sstill\saccepted\sand\nprocessed.\s\sCommand-line\soptions\sare\sprocessed\seven\sif\sno\sdatabase\sname\nis\sgiven\s(and\s:memory:\sis\sassumed).
+D 2012-10-25T15:23:14.369
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 7b986a715ac281643309c29257bb58cfae7aa810
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 9b759521f805e25e97baa2dd64037157fe365817
-F src/shell.c 8ee5a3cb502e2d574f97b43972e6c1e275e7bec7
+F src/shell.c d570e6cb3889eb07fdf15808a1b6b136c78e4da5
 F src/sqlite.h.in c7be05ad191d2634292fcc77bdb2bcfa4526eb98
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
@@ -706,7 +706,7 @@ F test/shared8.test b27befbefbe7f4517f1d6b7ff8f64a41ec74165d
 F test/shared9.test 614a3ca431adc73c857632deb4eff75bcaee40ec
 F test/shared_err.test 91e26ec4f3fbe07951967955585137e2f18993de
 F test/sharedlock.test ffa0a3c4ac192145b310f1254f8afca4d553eabf
-F test/shell1.test 272384163432c0efd2c6817396beb0d119565d53
+F test/shell1.test 340125225cc96c7f48d59a869aaf82866e481007
 F test/shell2.test 037d6ad16e873354195d30bb2dc4b5321788154a
 F test/shell3.test 9196c42772d575685e722c92b4b39053c6ebba59
 F test/shell4.test aa4eef8118b412d1a01477a53426ece169ea86a9
@@ -1021,7 +1021,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 0482c73bfdf80b0c0ce9abea706554d7ddf36f69
-R 359b18ae3c286a09e1c7579425de96fe
+P aaa2d9b0db74d8452d9294de17cff786ab4ec7c8
+R 4204a6c0a11b862c569be1046625095c
 U drh
-Z 09f8af841cfaabcfb0c92e8b07cb012e
+Z 98d27aa00ef0fe7caf71f35a32885811
