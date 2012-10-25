@@ -1016,6 +1016,10 @@ static char *save_err_msg(
   return zErrMsg;
 }
 
+#ifdef SQLITE_ENABLE_SSDSIM
+extern void ssdsim_report(FILE*, int);
+#endif
+
 /*
 ** Display memory stats.
 */
@@ -2100,6 +2104,9 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   }else
 
   if( c=='q' && strncmp(azArg[0], "quit", n)==0 && nArg==1 ){
+#ifdef SQLITE_ENABLE_SSDSIM
+    ssdsim_report(p->out, 0);
+#endif
     rc = 2;
   }else
 
@@ -2954,6 +2961,11 @@ int main(int argc, char **argv){
       extern int sqlite3_multiple_initialize(const char*,int);
       sqlite3_multiplex_initialize(0, 1);
 #endif
+#ifdef SQLITE_ENABLE_SSDSIM
+    }else if( strcmp(z, "-ssdsim")==0 ){
+      extern int ssdsim_register(const char*,const char*,int);
+      ssdsim_register(0, argv[++i], 1);
+#endif
     }else if( strcmp(z,"-vfs")==0 ){
       sqlite3_vfs *pVfs = sqlite3_vfs_find(argv[++i]);
       if( pVfs ){
@@ -3076,6 +3088,10 @@ int main(int argc, char **argv){
 #endif
 #ifdef SQLITE_ENABLE_MULTIPLEX
     }else if( strcmp(z,"-multiplex")==0 ){
+      i++;
+#endif
+#ifdef SQLITE_ENABLE_SSDSIM
+    }else if( strcmp(z,"-ssdsim")==0 ){
       i++;
 #endif
     }else if( strcmp(z,"-help")==0 ){

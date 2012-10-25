@@ -1,5 +1,5 @@
-C Make\ssure\ssubstructure\selements\shave\sproper\salignment\sin\sthe\sICU\stokenizers\nof\sFTS2\sand\sFTS3.
-D 2012-10-19T02:10:53.511
+C Initial\scheck-in\sof\sa\stest\sVFS\sdesigned\sto\ssimulate\sa\sNAND-flash\sSSD\sfor\sthe\npurpose\sof\smeasuring\sand\ssubsequently\sminimizing\swrite\samplification\scaused\nby\sSQLite.\s\sThe\scode\sin\sthis\scheck-in\scompiles\sbut\sdoes\snot\srun.
+D 2012-10-25T01:50:59.924
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 7b986a715ac281643309c29257bb58cfae7aa810
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 9b759521f805e25e97baa2dd64037157fe365817
-F src/shell.c 8ee5a3cb502e2d574f97b43972e6c1e275e7bec7
+F src/shell.c 623242218008315d402d3781c12c26800f4c5edd
 F src/sqlite.h.in c7be05ad191d2634292fcc77bdb2bcfa4526eb98
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
@@ -221,6 +221,7 @@ F src/test_rtree.c aba603c949766c4193f1068b91c787f57274e0d9
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
 F src/test_spellfix.c 76dd8d3111d2f5354c374f71fa23b752bd0b029c
+F src/test_ssdsim.c 8588d7342a0f7860a4f82133739649f68061f19c
 F src/test_stat.c d1569c7a4839f13e80187e2c26b2ab4da2d03935
 F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c a992d8c80ea91fbf21fb2dd570db40e77dd7e6ae
@@ -1021,7 +1022,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 0482c73bfdf80b0c0ce9abea706554d7ddf36f69
-R 359b18ae3c286a09e1c7579425de96fe
+P aaa2d9b0db74d8452d9294de17cff786ab4ec7c8
+R 96b1e07669c40725e91ba8ce05ad794a
+T *branch * ssdsim
+T *sym-ssdsim *
+T -sym-trunk *
 U drh
-Z 09f8af841cfaabcfb0c92e8b07cb012e
+Z b9dc476f0ad97be89f8c78207cb254e0
