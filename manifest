@@ -1,5 +1,5 @@
-C Change\sthe\sICU\stokenizer\sso\sthat\sit\sdoes\snot\sattempt\sto\scall\sstrlen(NULL).\nThis\sis\sa\scherry-pick\sof\sthe\sfix\sin\s[04298f1ac42c40c]\son\s2012-03-31\sfirst\nappearing\sin\srelease\s3.7.12.
-D 2012-10-15T23:15:45.151
+C Use\sa\sconstant\sstring\s"BINARY"\sfor\sthe\sunspecified\scollating\ssequence.\nThis\sis\spart\sof\scheck-in\s[635e3a762dd]\sthat\sis\sbeing\sback-ported.
+D 2012-10-25T17:21:42.232
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -128,7 +128,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 32199e2d939233ade25340eaba450f818b37c079
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
-F src/build.c d1acf9b8d20137dff6ce4d6f9f3b5028c7422a13
+F src/build.c 1c01c649a1fc2e6afe7d172b55a54358f2b2ef0a
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c a9c26822515f81ec21588cbb482ca6724be02e33
@@ -974,7 +974,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P b02849e7bde458dd8a2d91892f18bae7fdc7724d
-R 2a748a26dd1003c041b90c305129751f
+P 49ffbc11c5ea7e3cefd0370f39832dbfc7276ffe
+R cd5c487ce59b532423972a6f65ae6a93
 U drh
-Z 9c6de044d5854c180b1ac01f5cc72aaa
+Z f93cd9628e21d232f54e3d9d5a0111d5
