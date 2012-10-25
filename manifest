@@ -1,5 +1,5 @@
-C Fix\stypo\sin\susage\stext\sfor\sthe\scommand-line\sshell.\s\sAlso,\sin\sthe\ssame\susage\stext,\smake\sthe\sfile\sname\sargument\sto\s-init\suppercase\sfor\sconsistency.
-D 2012-10-25T15:43:28.141
+C Fix\sa\sbug\sin\sfts3\scausing\sit\sto\sreturn\sSQLITE_NOMEM\swhen\sNEAR,\sOR\sand\ssome\sauxiliary\sfunctions\swere\sused\stogether.\sAlso\sa\ssegfault\sin\svtab.c\sthat\scould\sfollow\san\sOOM\scondition.
+D 2012-10-25T19:25:39.022
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -55,7 +55,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c ab90126ee0163539d21d0618d22afa2eb645f7e2
+F ext/fts3/fts3.c a867cafae0235324df64c5775cbf352a3f712cb9
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 1e58825246b56259267382d2f9902774c049460a
 F ext/fts3/fts3_aux.c 5205182bd8f372782597888156404766edf5781e
@@ -245,7 +245,7 @@ F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
 F src/vdbesort.c 0dc1b274dcb4d4c8e71b0b2b15261f286caba39b
 F src/vdbetrace.c 8bd5da325fc90f28464335e4cc4ad1407fe30835
-F src/vtab.c 9c64ae18af78c740610df841c6f49fc2d240a279
+F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
@@ -486,7 +486,7 @@ F test/fts3fault.test cb72dccb0a3b9f730f16c5240f3fcb9303eb1660
 F test/fts3fault2.test 3198eef2804deea7cac8403e771d9cbcb752d887
 F test/fts3first.test dbdedd20914c8d539aa3206c9b34a23775644641
 F test/fts3malloc.test b86ea33db9e8c58c0c2f8027a9fcadaf6a1568be
-F test/fts3matchinfo.test 15edde2c4d373d60449658176af7164d622a62f0
+F test/fts3matchinfo.test ecb08f586d027eb03941bcfcded6cb9d8ccb3a66
 F test/fts3near.test 2e318ee434d32babd27c167142e2b94ddbab4844
 F test/fts3prefix.test b36d4f00b128a51e7b386cc013a874246d9d7dc1
 F test/fts3prefix2.test 477ca96e67f60745b7ac931cfa6e9b080c562da5
@@ -1021,7 +1021,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 317c80cba3688a97ade9cde622cc3bd94cf3436a
-R b4db6e6bb401c9fc38dad15257c4f5e0
-U mistachkin
-Z 8698214bd6601b08970e9286ab6d0b5c
+P a6d906cfeb9b181fd5b88df3650bab7ee1a24c0b
+R 674e19925b07366510d1fc7375732e22
+U dan
+Z 1032beb5eac48ad97bee39ee66a1a525

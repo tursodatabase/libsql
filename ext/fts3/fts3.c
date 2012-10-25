@@ -4743,35 +4743,39 @@ static int fts3EvalNearTest(Fts3Expr *pExpr, int *pRc){
       nTmp += p->pRight->pPhrase->doclist.nList;
     }
     nTmp += p->pPhrase->doclist.nList;
-    aTmp = sqlite3_malloc(nTmp*2);
-    if( !aTmp ){
-      *pRc = SQLITE_NOMEM;
+    if( nTmp==0 ){
       res = 0;
     }else{
-      char *aPoslist = p->pPhrase->doclist.pList;
-      int nToken = p->pPhrase->nToken;
+      aTmp = sqlite3_malloc(nTmp*2);
+      if( !aTmp ){
+        *pRc = SQLITE_NOMEM;
+        res = 0;
+      }else{
+        char *aPoslist = p->pPhrase->doclist.pList;
+        int nToken = p->pPhrase->nToken;
 
-      for(p=p->pParent;res && p && p->eType==FTSQUERY_NEAR; p=p->pParent){
-        Fts3Phrase *pPhrase = p->pRight->pPhrase;
-        int nNear = p->nNear;
-        res = fts3EvalNearTrim(nNear, aTmp, &aPoslist, &nToken, pPhrase);
+        for(p=p->pParent;res && p && p->eType==FTSQUERY_NEAR; p=p->pParent){
+          Fts3Phrase *pPhrase = p->pRight->pPhrase;
+          int nNear = p->nNear;
+          res = fts3EvalNearTrim(nNear, aTmp, &aPoslist, &nToken, pPhrase);
+        }
+
+        aPoslist = pExpr->pRight->pPhrase->doclist.pList;
+        nToken = pExpr->pRight->pPhrase->nToken;
+        for(p=pExpr->pLeft; p && res; p=p->pLeft){
+          int nNear;
+          Fts3Phrase *pPhrase;
+          assert( p->pParent && p->pParent->pLeft==p );
+          nNear = p->pParent->nNear;
+          pPhrase = (
+              p->eType==FTSQUERY_NEAR ? p->pRight->pPhrase : p->pPhrase
+              );
+          res = fts3EvalNearTrim(nNear, aTmp, &aPoslist, &nToken, pPhrase);
+        }
       }
-  
-      aPoslist = pExpr->pRight->pPhrase->doclist.pList;
-      nToken = pExpr->pRight->pPhrase->nToken;
-      for(p=pExpr->pLeft; p && res; p=p->pLeft){
-        int nNear;
-        Fts3Phrase *pPhrase;
-        assert( p->pParent && p->pParent->pLeft==p );
-        nNear = p->pParent->nNear;
-        pPhrase = (
-            p->eType==FTSQUERY_NEAR ? p->pRight->pPhrase : p->pPhrase
-        );
-        res = fts3EvalNearTrim(nNear, aTmp, &aPoslist, &nToken, pPhrase);
-      }
+
+      sqlite3_free(aTmp);
     }
-
-    sqlite3_free(aTmp);
   }
 
   return res;
