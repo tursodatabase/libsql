@@ -149,7 +149,7 @@ do_test shell1-1.14.3 {
   set res [catchcmd "-separator" ""]
   set rc [lindex $res 0]
   list $rc \
-       [regexp {Error: missing argument for option: -separator} $res]
+       [regexp {Error: missing argument to -separator} $res]
 } {1 1}
 
 # -stats               print memory stats before each finalize
@@ -168,7 +168,7 @@ do_test shell1-1.15.3 {
   set res [catchcmd "-nullvalue" ""]
   set rc [lindex $res 0]
   list $rc \
-       [regexp {Error: missing argument for option: -nullvalue} $res]
+       [regexp {Error: missing argument to -nullvalue} $res]
 } {1 1}
 
 # -version             show SQLite version

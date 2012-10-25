@@ -168,11 +168,11 @@ static void ssdsimShutdown(void){
 }
 
 /*
-** Initialize the ssdsim system.
+** Initialize the ssdsim system.  Return non-zero if there is an error.
 */
-static void ssdsimInit(void){
+static int ssdsimInit(void){
   int nPage;
-  if( g.nPage ) return;
+  if( g.nPage ) return 0;
   if( g.szPage==0 ) g.szPage = 4096;
   if( g.szEBlock==0 ) g.szEBlock = 262144;
   if( g.szDisk==0 ) g.szDisk = 67108864;
@@ -180,14 +180,15 @@ static void ssdsimInit(void){
   g.nEBlock = g.szDisk/g.szEBlock;
   sqlite3_free(g.apPage);
   g.apPage = sqlite3_malloc( sizeof(g.apPage[0])*g.nPage );
-  if( g.apPage==0 ){ ssdsimShutdown(); return; }
-  memset(g.apPage, 0, sizeof(g.apPage[0])*nPage);
+  if( g.apPage==0 ){ ssdsimShutdown(); return 1; }
+  memset(g.apPage, 0, sizeof(g.apPage[0])*g.nPage);
   g.aDealloc = sqlite3_malloc( sizeof(g.aDealloc[0])*g.nPage );
-  if( g.aDealloc==0 ){ ssdsimShutdown(); return; }
+  if( g.aDealloc==0 ){ ssdsimShutdown(); return 1; }
   g.nDealloc = 0;
   g.mxAlloc = 0;
   g.nHostWrite = 0;
   g.nNANDWrite = 0;
+  return 0;
 }
 
 /*
@@ -656,7 +657,7 @@ static int ssdsimShmUnmap(sqlite3_file *pFile, int delFlag){
 }
 
 static const sqlite3_io_methods ssdsim_io_methods = {
-  /* iVersion               */ 2,
+  /* iVersion               */ 3,
   /* xClose                 */ ssdsimClose,
   /* xRead                  */ ssdsimRead,
   /* xWrite                 */ ssdsimWrite,
@@ -698,7 +699,17 @@ static int ssdsimOpen(
 ){
   int rc;
   ssdsim_file *p = (ssdsim_file *)pFile;
-  ssdsim_inode *pInode = ssdsimFindInode(zName);
+  ssdsim_inode *pInode;
+  char zTempname[100];
+
+  if( ssdsimInit() ) return SQLITE_CANTOPEN;
+  if( zName==0 ){
+    sqlite3_uint64 r;
+    sqlite3_randomness(sizeof(r), &r);
+    sqlite3_snprintf(sizeof(zTempname), zTempname, "/tmp%llx", r);
+    zName = zTempname;
+  }
+  pInode = ssdsimFindInode(zName);
   if( pInode==0 ){
     int n = (int)strlen(zName);
     pInode = sqlite3_malloc( sizeof(*pInode) + n + 1 );
@@ -737,7 +748,10 @@ static int ssdsimOpen(
 ** returning.
 */
 static int ssdsimDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
-  ssdsim_inode *pInode = ssdsimFindInode(zPath);
+  ssdsim_inode *pInode;
+
+  if( ssdsimInit() ) return SQLITE_CANTOPEN;
+  pInode = ssdsimFindInode(zPath);
   if( pInode==0 ) return SQLITE_NOTFOUND;
   ssdsimDeleteInode(pInode);
   return SQLITE_OK;
@@ -753,7 +767,9 @@ static int ssdsimAccess(
   int flags, 
   int *pResOut
 ){
-  ssdsim_inode *pInode = ssdsimFindInode(zPath);
+  ssdsim_inode *pInode;
+  if( ssdsimInit() ) return SQLITE_CANTOPEN;
+  pInode = ssdsimFindInode(zPath);
   *pResOut = pInode!=0;
   return SQLITE_OK;
 }
