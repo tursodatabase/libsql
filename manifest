@@ -1,5 +1,5 @@
-C Merge\sthe\scommand-line\sshell\senhancements\sfrom\strunk.\s\sOther\sedits\stoward\ntrying\sto\sget\sssdsim\sto\srun.
-D 2012-10-25T15:32:29.056
+C Further\swork\son\sgetting\sssdsim\sto\srun.\s\sThis\sis\san\sincremental\scheckin\sto\nsave\smy\splace\swhile\sjumping\soff\sto\swork\son\sother\sthings.
+D 2012-10-25T23:47:27.493
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -221,7 +221,7 @@ F src/test_rtree.c aba603c949766c4193f1068b91c787f57274e0d9
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
 F src/test_spellfix.c 76dd8d3111d2f5354c374f71fa23b752bd0b029c
-F src/test_ssdsim.c b4b2ff870e31cdecaf5716c4373a7d9ffc1d3762
+F src/test_ssdsim.c bb4fefe91b9e4d4e3e09488814cc586575590ad4
 F src/test_stat.c d1569c7a4839f13e80187e2c26b2ab4da2d03935
 F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c a992d8c80ea91fbf21fb2dd570db40e77dd7e6ae
@@ -1022,7 +1022,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 9e6efcf05402cd0b259c9b2ae57e349800650bd7 317c80cba3688a97ade9cde622cc3bd94cf3436a
-R b62d4d680a3785f5f27895a1b1bebbb9
+P 848f87e22fc6bfbbb7dbc7491c8a20cdd53b7420
+R b9ddcfef141182b6a9e7751152774567
 U drh
-Z cbf54f1147196dcbcbab5648835d5435
+Z 1dcb4d96fc4b1f34fb139b8208725f7a

@@ -310,7 +310,7 @@ static int ssdsimRead(
   ssdsim_file *p = (ssdsim_file *)pFile;
   ssdsim_inode *pInode = p->pInode;
   int rc = SQLITE_OK;
-  int lpn, ppn, n;
+  int lpn, ppn, n, mx;
   unsigned char *pOut = (unsigned char*)zBuf;
   unsigned char *pContent;
   while( iAmt>0 ){
@@ -322,9 +322,8 @@ static int ssdsimRead(
     lpn = pInode->aiPage[iOfst/g.szPage];
     ppn = ssdsimCoreLpnToPpn(lpn, 0);
     n = iAmt;
-    if( (iOfst+n-1)*g.szPage > lpn ){
-      n = (lpn+1)*g.szPage - iOfst;
-    }
+    mx = g.szPage - iOfst%g.szPage;
+    if( n>mx ) n = mx;
     if( ppn>=0 && ppn<g.nPage && (pContent = g.apPage[ppn])!=0 ){
       memcpy(pOut, &pContent[iOfst%g.szPage], n);
     }else{
@@ -360,8 +359,8 @@ static int ssdsimWrite(
   }else{
     int nOld, nNew;
     int *aiPage;
-    nOld = pInode->len/g.szPage;
-    nNew = (iOfst+iAmt)/g.szPage;
+    nOld = (pInode->len+g.szPage-1)/g.szPage;
+    nNew = (iOfst+iAmt+g.szPage-1)/g.szPage;
     if( nOld<nNew ){
       aiPage = sqlite3_realloc(pInode->aiPage, nNew*sizeof(int));
       if( aiPage==0 ) return SQLITE_NOMEM;
@@ -370,19 +369,17 @@ static int ssdsimWrite(
     }
   }
   while( iAmt>0 ){
-    int n;
+    int n, mx;
     lpn = pInode->aiPage[iOfst/g.szPage];
     if( lpn<0 ){
       lpn = ssdsimCoreLpnAlloc();
       if( lpn<0 ) return SQLITE_FULL;
-      pInode->aiPage[iOfst/g.szPage];
     }
     ppn = ssdsimCoreLpnToPpn(lpn, 1);
     if( ppn<0 ) return SQLITE_NOMEM;
     n = iAmt;
-    if( (iOfst+n-1)*g.szPage > lpn ){
-      n = (lpn+1)*g.szPage - iOfst;
-    }
+    mx = g.szPage - iOfst%g.szPage;
+    if( n>mx ) n = mx;
     pDest = g.apPage[ppn];
     memcpy(pDest, pIn, n);
     iOfst += n;
@@ -752,8 +749,7 @@ static int ssdsimDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
 
   if( ssdsimInit() ) return SQLITE_CANTOPEN;
   pInode = ssdsimFindInode(zPath);
-  if( pInode==0 ) return SQLITE_NOTFOUND;
-  ssdsimDeleteInode(pInode);
+  if( pInode ) ssdsimDeleteInode(pInode);
   return SQLITE_OK;
 }
 
