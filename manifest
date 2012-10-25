@@ -1,5 +1,5 @@
-C Make\ssure\ssubstructure\selements\shave\sproper\salignment\sin\sthe\sICU\stokenizers\nof\sFTS2\sand\sFTS3.
-D 2012-10-19T02:10:53.511
+C Implementation\sof\sthe\sINSTR()\sSQL\sfunction,\sas\sfound\sin\sSQL\sServer,\sMySQL,\nand\sOracle.
+D 2012-10-25T03:07:29.004
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -133,7 +133,7 @@ F src/delete.c e35684ad93c741266b086610d2efd709b7946853
 F src/expr.c 57fb8e7a05d4147e40b9f4c439e37ed2abab9332
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c c82a04e7a92bb728f9ab972b76590403283be2af
-F src/func.c cbb90dc84b22eea25caf39528d342279e61b8898
+F src/func.c 1755cafdb8f2a291681f1ea55e0215518ebd6e52
 F src/global.c fb44b11e02e06c995e6ed6642509edd23599d584
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
@@ -544,6 +544,7 @@ F test/insert2.test 4f3a04d168c728ed5ec2c88842e772606c7ce435
 F test/insert3.test 1b7db95a03ad9c5013fdf7d6722b6cd66ee55e30
 F test/insert4.test 87f6798f31d60c4e177622fcc3663367e6ecbd90
 F test/insert5.test 394f96728d1258f406fe5f5aeb0aaf29487c39a6
+F test/instr.test a34e1d46a9eefb098a7167ef0e730a4a3d82fba0
 F test/intarray.test 066b7d7ac38d25bf96f87f1b017bfc687551cdd4
 F test/interrupt.test 42e7cf98646fd9cb4a3b131a93ed3c50b9e149f1
 F test/intpkey.test 7af30f6ae852d8d1c2b70e4bf1551946742e92d8
@@ -1021,7 +1022,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 0482c73bfdf80b0c0ce9abea706554d7ddf36f69
-R 359b18ae3c286a09e1c7579425de96fe
+P aaa2d9b0db74d8452d9294de17cff786ab4ec7c8
+R f112d1955e32a3fb5862640b210a6a2c
+T *branch * instr
+T *sym-instr *
+T -sym-trunk *
 U drh
-Z 09f8af841cfaabcfb0c92e8b07cb012e
+Z 0dc399021047fb88f550870a282a864e
