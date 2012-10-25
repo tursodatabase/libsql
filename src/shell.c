@@ -2824,10 +2824,10 @@ static const char zOptions[] =
   "   -bail                stop after hitting an error\n"
   "   -batch               force batch I/O\n"
   "   -column              set output mode to 'column'\n"
-  "   -cmd COMMIT          run \"COMMAND\" before reading stdin\n"
+  "   -cmd COMMAND         run \"COMMAND\" before reading stdin\n"
   "   -csv                 set output mode to 'csv'\n"
   "   -echo                print commands before execution\n"
-  "   -init filename       read/process named file\n"
+  "   -init FILENAME       read/process named file\n"
   "   -[no]header          turn headers on or off\n"
 #if defined(SQLITE_ENABLE_MEMSYS3) || defined(SQLITE_ENABLE_MEMSYS5)
   "   -heap SIZE           Size of heap for memsys3 or memsys5\n"

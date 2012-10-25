@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\scommand-line\sargument\sparsing\sin\sthe\s\ncommand-line\sshell.\s\sCommand-line\soptions\scan\snow\soccur\seither\sbefore\nor\safter\sthe\sdatabase\sname\sand\sfirst\scommand\sand\sare\sstill\saccepted\sand\nprocessed.\s\sCommand-line\soptions\sare\sprocessed\seven\sif\sno\sdatabase\sname\nis\sgiven\s(and\s:memory:\sis\sassumed).
-D 2012-10-25T15:23:14.369
+C Fix\stypo\sin\susage\stext\sfor\sthe\scommand-line\sshell.\s\sAlso,\sin\sthe\ssame\susage\stext,\smake\sthe\sfile\sname\sargument\sto\s-init\suppercase\sfor\sconsistency.
+D 2012-10-25T15:43:28.141
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 7b986a715ac281643309c29257bb58cfae7aa810
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 9b759521f805e25e97baa2dd64037157fe365817
-F src/shell.c d570e6cb3889eb07fdf15808a1b6b136c78e4da5
+F src/shell.c 24cd0aa74aff73ea08594629faead564c4c2a286
 F src/sqlite.h.in c7be05ad191d2634292fcc77bdb2bcfa4526eb98
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
@@ -1021,7 +1021,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P aaa2d9b0db74d8452d9294de17cff786ab4ec7c8
-R 4204a6c0a11b862c569be1046625095c
-U drh
-Z 98d27aa00ef0fe7caf71f35a32885811
+P 317c80cba3688a97ade9cde622cc3bd94cf3436a
+R b4db6e6bb401c9fc38dad15257c4f5e0
+U mistachkin
+Z 8698214bd6601b08970e9286ab6d0b5c
