@@ -1,5 +1,5 @@
-C Make\ssure\sall\svirtual\stable\scursors\shave\sbeen\sclosed\son\sa\sprepared\sstatement\nprior\sto\sunlinking\sthe\sperpared\sstatement\sfrom\sits\sdatabase\sconnection.\nThe\stest\scase\sfor\sthis\sis\sin\sTH3,\sin\sthe\smain39.test\smodule.
-D 2012-10-26T00:55:07.323
+C Add\sQNX-specific\sperformance\stweaks\sto\sthe\sunix\sVFS.\s(Cherry-pick\smerge\sof\n[b02849e7bde458].)
+D 2012-10-26T13:46:24.545
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -160,7 +160,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c 0d3a39dd576c9f384fd7772a2dadc67b144c6ce7
+F src/os_unix.c 603d020fe6c58047794cc72c05c7c8f4a82a0579
 F src/os_win.c 43ec1285357e5d5d919cb0492eac775c58ad7d12
 F src/pager.c ee59fef31673d5124413c5a801cfd9ef3e6766d3
 F src/pager.h 1109a06578ec5574dc2c74cf8d9f69daf36fe3e0
@@ -1021,7 +1021,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 33f4f9817e8b3cb97ce02a4c49bd586332da37b2 f7c5abe8739090db0738d2c7002a0d71f76c927e
-R bc72b67b42140060c43fae49b44a7daa
+P 6d42d806adb833572a324d4141ab3b2c315617b2
+R 9679b392e94d1e56bc54a4f85e939c7e
 U drh
-Z d0356ac18ea49d0169f59bb16fb002ee
+Z d2173a314f2a3b1470d7441b9db15fea
