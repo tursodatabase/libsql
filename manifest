@@ -1,5 +1,5 @@
-C Add\sQNX-specific\sperformance\stweaks\sto\sthe\sunix\sVFS.\s(Cherry-pick\smerge\sof\n[b02849e7bde458].)
-D 2012-10-26T13:46:24.545
+C Make\ssure\sthe\sautomatic\sindex\soptimization\sis\schecked\seven\sif\sthe\s\ncovering\sindex\sscan\soptimization\swas\spreviously\sselected.
+D 2012-10-26T18:40:01.620
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -249,7 +249,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 3e6c1f9efe4c6a029b0a750e0f6a63964f43bcce
+F src/where.c bcd54574cffbfd17a1755d75c29759913f714ac4
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 0be144b453e0622a085fae8665c32f5676708e00
@@ -1021,7 +1021,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 6d42d806adb833572a324d4141ab3b2c315617b2
-R 9679b392e94d1e56bc54a4f85e939c7e
+P 63a7dd75e61afb3d05a1434f66ad6a5f08352aad
+R 85a59d09377232ed0e481748f0829aa6
 U drh
-Z d2173a314f2a3b1470d7441b9db15fea
+Z 79ad95b1749193530040778d29c308fb

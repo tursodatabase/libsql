@@ -1815,7 +1815,9 @@ static void bestAutomaticIndex(WhereBestIdx *p){
     /* Automatic indices are disabled at run-time */
     return;
   }
-  if( (p->cost.plan.wsFlags & WHERE_NOT_FULLSCAN)!=0 ){
+  if( (p->cost.plan.wsFlags & WHERE_NOT_FULLSCAN)!=0
+   && (p->cost.plan.wsFlags & WHERE_COVER_SCAN)==0
+  ){
     /* We already have some kind of index in use for this query. */
     return;
   }
