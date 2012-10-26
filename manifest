@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sautomatic\sindex\soptimization\sis\schecked\seven\sif\sthe\s\ncovering\sindex\sscan\soptimization\swas\spreviously\sselected.
-D 2012-10-26T18:40:01.620
+C Fix\sa\s32-bit\sinteger\soverflow\sproblem\sthat\scould\scause\san\serror\sin\sa\sCREATE\sINDEX\sstatement\sthat\swrites\smore\sthan\s16GB\sof\sdata.
+D 2012-10-26T19:22:45.500
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -243,7 +243,7 @@ F src/vdbeapi.c 4c2418161cf45392ba76a7ca92f9a5f06b96f89c
 F src/vdbeaux.c 8c8cfd30063e9b3664e2faa0e3785102bf131a10
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
-F src/vdbesort.c 0dc1b274dcb4d4c8e71b0b2b15261f286caba39b
+F src/vdbesort.c c61ca318681c0e7267da8be3abfca8469652a7e9
 F src/vdbetrace.c 8bd5da325fc90f28464335e4cc4ad1407fe30835
 F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
@@ -1021,7 +1021,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 63a7dd75e61afb3d05a1434f66ad6a5f08352aad
-R 85a59d09377232ed0e481748f0829aa6
-U drh
-Z 79ad95b1749193530040778d29c308fb
+P ac1d5d8a553d8ba76a332eed9d563ce7f04a7a37
+R 3459aaea2ca2a903a1c6e2fb4e6f5b42
+U dan
+Z ba6f72d8caf0a404fc1f08cc5da9f7c5
