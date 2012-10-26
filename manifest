@@ -1,5 +1,5 @@
-C Correct\sthe\sdesign-time\slibrary\sfile\spath\sin\sthe\sVSIX\spackage\snow\sthat\sit\sis\sper-configuration.
-D 2012-10-19T19:22:52.308
+C Add\sQNX-specific\sperformance\stweaks\sto\sthe\sunix\sVFS.\s(Cherry-pick\smerge\sof\n[b02849e7bde458].)\nPut\sauxiliary\slibraries\safter\slibsqlite3.a\sin\sthe\stestfixture\starget\sof\nthe\s"main.mk"\smakefile.\s\s(Cherry-pick\smerge\sof\s[8fc8548f52ab8fcfb5].)
+D 2012-10-26T13:25:32.533
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -103,7 +103,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk 72026405046ed5b1f0368943b89c0aa29ad558b6
+F main.mk 7bdf74b8299aaced4e066ac04467e8bf782e7552
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -162,7 +162,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c 69b2fe66316524eebf5f1ce85c1fdfe2952307e9
+F src/os_unix.c 2383c59237fbf2a395a496baaffb683b9f469b06
 F src/os_win.c 5dec8fe85ee547152075c020db72aec4382f0d0a
 F src/pager.c 5665fa9ecec51f11dabdfd8eefefa89391856007
 F src/pager.h 8b8c9bc065a3c66769df8724dfdf492ee1aab3c5
@@ -1014,7 +1014,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix bc91332e37e980c20575e087b368922f93673f1b
-P c188896719cb6b942936e27fab4ead52e2c63c54
-R 1112df1397c9e1dc16e373b2f3c55484
-U mistachkin
-Z 37635a13acb9cd0621aee42fe1ebec26
+P 521024d4a799f36618e8adb1d032d76806db28bc
+R 8488838a2bba50b76a7185282c39e09d
+U drh
+Z 0b8c2e8e933f44d93bc453110c788c68
