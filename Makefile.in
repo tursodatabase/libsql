@@ -944,7 +944,7 @@ clean:
 	rm -f sqlite3.dll sqlite3.lib sqlite3.exp sqlite3.def
 	rm -f sqlite3.c
 	rm -f sqlite3_analyzer$(TEXE) sqlite3_analyzer.c
-	rm -f sqlite-output.vsix
+	rm -f sqlite-*-output.vsix
 
 distclean:	clean
 	rm -f config.log config.status libtool Makefile sqlite3.pc

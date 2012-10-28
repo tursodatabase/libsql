@@ -151,13 +151,21 @@ REM NOTE: Setup environment variables to translate between the MSVC platform
 REM       names and the names to be used for the platform-specific binary
 REM       directories.
 REM
+SET amd64_NAME=x64
+SET arm_NAME=ARM
+SET x64_NAME=x64
 SET x86_NAME=x86
 SET x86_amd64_NAME=x64
 SET x86_arm_NAME=ARM
+SET x86_x64_NAME=x64
 
+%_VECHO% amd64_Name = '%amd64_NAME%'
+%_VECHO% arm_Name = '%arm_NAME%'
+%_VECHO% x64_Name = '%x64_NAME%'
 %_VECHO% x86_Name = '%x86_NAME%'
 %_VECHO% x86_amd64_Name = '%x86_amd64_NAME%'
 %_VECHO% x86_arm_Name = '%x86_arm_NAME%'
+%_VECHO% x86_x64_Name = '%x86_x64_NAME%'
 
 REM
 REM NOTE: Check for the external tools needed during the build process ^(i.e.
@@ -211,6 +219,19 @@ IF "%VisualStudioVersion%" == "11.0" (
 )
 
 REM
+REM NOTE: Check if this is the Windows Phone SDK.  If so, a different batch
+REM       file is necessary to setup the build environment.  Since the variable
+REM       values involved here may contain parenthesis, using GOTO instead of
+REM       an IF block is required.
+REM
+IF DEFINED WindowsPhoneKitDir GOTO set_vcvarsall_phone
+SET VCVARSALL=%VCINSTALLDIR%\vcvarsall.bat
+GOTO set_vcvarsall_done
+:set_vcvarsall_phone
+SET VCVARSALL=%VCINSTALLDIR%\WPSDK\WP80\vcvarsphoneall.bat
+:set_vcvarsall_done
+
+REM
 REM NOTE: This is the outer loop.  There should be exactly one iteration per
 REM       platform.
 REM
@@ -250,6 +271,7 @@ FOR %%P IN (%PLATFORMS%) DO (
     CALL :fn_UnsetVariable Platform
     REM CALL :fn_UnsetVariable VCINSTALLDIR
     CALL :fn_UnsetVariable VSINSTALLDIR
+    CALL :fn_UnsetVariable WindowsPhoneKitDir
     CALL :fn_UnsetVariable WindowsSdkDir
     CALL :fn_UnsetVariable WindowsSdkDir_35
     CALL :fn_UnsetVariable WindowsSdkDir_old
@@ -292,10 +314,10 @@ FOR %%P IN (%PLATFORMS%) DO (
         REM
         REM NOTE: Attempt to setup the MSVC environment for this platform.
         REM
-        %__ECHO3% CALL "%VCINSTALLDIR%\vcvarsall.bat" %%P
+        %__ECHO3% CALL "%VCVARSALL%" %%P
 
         IF ERRORLEVEL 1 (
-          ECHO Failed to call "%VCINSTALLDIR%\vcvarsall.bat" for platform %%P.
+          ECHO Failed to call "%VCVARSALL%" for platform %%P.
           GOTO errors
         )
 
@@ -305,10 +327,12 @@ FOR %%P IN (%PLATFORMS%) DO (
         REM       as current versions of their official batch file do not set
         REM       the exit code upon failure.
         REM
-        IF NOT DEFINED __ECHO (
-          IF NOT DEFINED WindowsSdkDir (
-            ECHO Cannot build, Windows SDK not found for platform %%P.
-            GOTO errors
+        IF NOT DEFINED __ECHO3 (
+          IF NOT DEFINED WindowsPhoneKitDir (
+            IF NOT DEFINED WindowsSdkDir (
+              ECHO Cannot build, Windows SDK not found for platform %%P.
+              GOTO errors
+            )
           )
         )
 
@@ -322,8 +346,13 @@ FOR %%P IN (%PLATFORMS%) DO (
         REM       file used to setup the MSVC environment.
         REM
         IF DEFINED SET_NSDKLIBPATH (
-          CALL :fn_CopyVariable WindowsSdkDir NSDKLIBPATH
-          CALL :fn_AppendVariable NSDKLIBPATH \lib\win8\um\x86
+          IF DEFINED WindowsPhoneKitDir (
+            CALL :fn_CopyVariable WindowsPhoneKitDir NSDKLIBPATH
+            CALL :fn_AppendVariable NSDKLIBPATH \lib\x86
+          ) ELSE IF DEFINED WindowsSdkDir (
+            CALL :fn_CopyVariable WindowsSdkDir NSDKLIBPATH
+            CALL :fn_AppendVariable NSDKLIBPATH \lib\win8\um\x86
+          )
         )
 
         REM
