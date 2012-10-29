@@ -77,6 +77,13 @@
 #include "sqlite3.h"
 
 /*
+** Make sure we can call this stuff from C++.
+*/
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/*
 ** An sqlite3_intarray is an abstract type to stores an instance of
 ** an integer array.
 */
@@ -112,3 +119,7 @@ int sqlite3_intarray_bind(
   sqlite3_int64 *aElements,      /* Content of the intarray */
   void (*xFree)(void*)           /* How to dispose of the intarray when done */
 );
+
+#ifdef __cplusplus
+}  /* End of the 'extern "C"' block */
+#endif

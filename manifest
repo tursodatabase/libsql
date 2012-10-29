@@ -1,5 +1,5 @@
-C Merge\sVSIX\stooling\sand\spackaging\senhancements\sto\strunk.
-D 2012-10-28T19:35:55.072
+C Make\sthe\smultiplexor\sand\sthe\sIntArray\sextensions\scallable\sfrom\sC++.
+D 2012-10-29T14:27:26.624
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -205,12 +205,12 @@ F src/test_fuzzer.c 1d26aa965120420bc14807da29d4d4541bfa6148
 F src/test_hexio.c abfdecb6fa58c354623978efceb088ca18e379cd
 F src/test_init.c 3cbad7ce525aec925f8fda2192d576d47f0d478a
 F src/test_intarray.c 07ddcebe4097d400ffca362770f1d883c112387a
-F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
+F src/test_intarray.h b999bb18d090b8d9d9c49d36ec37ef8f341fe169
 F src/test_journal.c f5c0a05b7b3d5930db769b5ee6c3766dc2221a64
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c 01cd65ae7ae93de9fbf8214d1ee6b4eba4850700
 F src/test_multiplex.c ac0fbc1748e5b86a41a1d7a84654fae0d53a881d
-F src/test_multiplex.h e99c571bc4968b7a9363b661481f3934bfead61d
+F src/test_multiplex.h 9b63b95f07acedee425fdfe49a47197c9bf5f9d8
 F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 0396f220561f3b4eedc450cef26d40c593c69a25
 F src/test_osinst.c 90a845c8183013d80eccb1f29e8805608516edba
@@ -1021,7 +1021,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P e24ba5bee4424e99d0859ef652164ae1397a2378 5023a7adcac2022a4a2009183d9d9e0f6b46952b
-R 2f269b564c50576f53b5801166a85a63
-U mistachkin
-Z 36e5e06b13ff5e0a8276b5cdb5553525
+P 99f27d642fbaba02264a470977cde38c3a526d13
+R 07bc3a42510a6d7b1ec8ddb3f50b6182
+U drh
+Z 118483038e9bfcfd996fdf110e0050f4
