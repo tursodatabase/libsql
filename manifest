@@ -1,5 +1,5 @@
-C Make\sit\spossible\sto\sdisable\sthe\ssubquery-by-coroutine\soptimization\susing\nsqlite3_test_control().\s\sRemove\san\salways-false\sconditional.
-D 2012-10-30T14:39:12.994
+C Fix\sa\stypo\sin\sthe\sheader\scomment\sfor\sthe\sOpenPseudo\sopcode.
+D 2012-10-30T14:44:14.439
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -236,7 +236,7 @@ F src/update.c 28d2d098b43a2c70dae399896ea8a02f622410ef
 F src/utf.c 8d819e2e5104a430fc2005f018db14347c95a38f
 F src/util.c 0af2e515dc0dabacec931bca39525f6c3f1c5455
 F src/vacuum.c 2727bdd08847fcb6b2d2da6d14f018910e8645d3
-F src/vdbe.c fbb695e32d00dfb35f6a34947b88ea3ef9f10430
+F src/vdbe.c e1b2f881f85598b8e5d3366a3cdba60526d40144
 F src/vdbe.h b52887278cb173e66188da84dfab216bea61119d
 F src/vdbeInt.h 79abf9b31be406d35ca77d6999cb2d42aaf91e78
 F src/vdbeapi.c 4c2418161cf45392ba76a7ca92f9a5f06b96f89c
@@ -1021,7 +1021,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 7af3acbbd49a2114fcdada9ec907c68ba9b053bd
-R 76b1d0ca402c9a816ba12f1054e42e79
+P 564631f3e45f8f8a8db69f1e0df0d1dadbad8a2c
+R 918a33fddb4e577c100ae5ae2579f54e
 U drh
-Z 70485ac41c9ad9e9086d4cf7e24e57e2
+Z b3c2f4b19e56c38b641de4231414b78d
