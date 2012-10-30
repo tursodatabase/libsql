@@ -827,7 +827,7 @@ struct sqlite3 {
   unsigned int openFlags;       /* Flags passed to sqlite3_vfs.xOpen() */
   int errCode;                  /* Most recent error code (SQLITE_*) */
   int errMask;                  /* & result codes with this before returning */
-  u8 dbOptFlags;                /* Flags to enable/disable optimizations */
+  u16 dbOptFlags;               /* Flags to enable/disable optimizations */
   u8 autoCommit;                /* The auto-commit flag. */
   u8 temp_store;                /* 1: file 2: memory 0: default */
   u8 mallocFailed;              /* True if we have seen a malloc failure */
@@ -972,7 +972,8 @@ struct sqlite3 {
 #define SQLITE_DistinctOpt    0x0020   /* DISTINCT using indexes */
 #define SQLITE_CoverIdxScan   0x0040   /* Covering index scans */
 #define SQLITE_OrderByIdxJoin 0x0080   /* ORDER BY of joins via index */
-#define SQLITE_AllOpts        0x00ff   /* All optimizations */
+#define SQLITE_SubqCoroutine  0x0100   /* Evaluate subqueries as coroutines */
+#define SQLITE_AllOpts        0xffff   /* All optimizations */
 
 /*
 ** Macros for testing whether or not optimizations are enabled or disabled.
@@ -1878,8 +1879,9 @@ struct SrcList {
     int addrFillSub;  /* Address of subroutine to manifest a subquery */
     int regReturn;    /* Register holding return address of addrFillSub */
     u8 jointype;      /* Type of join between this able and the previous */
-    u8 notIndexed;    /* True if there is a NOT INDEXED clause */
-    u8 isCorrelated;  /* True if sub-query is correlated */
+    unsigned notIndexed :1;    /* True if there is a NOT INDEXED clause */
+    unsigned isCorrelated :1;  /* True if sub-query is correlated */
+    unsigned viaCoroutine :1;  /* Implemented as a co-routine */
 #ifndef SQLITE_OMIT_EXPLAIN
     u8 iSelectId;     /* If pSelect!=0, the id of the sub-select in EQP */
 #endif
@@ -2103,14 +2105,15 @@ struct Select {
 ** Allowed values for Select.selFlags.  The "SF" prefix stands for
 ** "Select Flag".
 */
-#define SF_Distinct        0x01  /* Output should be DISTINCT */
-#define SF_Resolved        0x02  /* Identifiers have been resolved */
-#define SF_Aggregate       0x04  /* Contains aggregate functions */
-#define SF_UsesEphemeral   0x08  /* Uses the OpenEphemeral opcode */
-#define SF_Expanded        0x10  /* sqlite3SelectExpand() called on this */
-#define SF_HasTypeInfo     0x20  /* FROM subqueries have Table metadata */
-#define SF_UseSorter       0x40  /* Sort using a sorter */
-#define SF_Values          0x80  /* Synthesized from VALUES clause */
+#define SF_Distinct        0x0001  /* Output should be DISTINCT */
+#define SF_Resolved        0x0002  /* Identifiers have been resolved */
+#define SF_Aggregate       0x0004  /* Contains aggregate functions */
+#define SF_UsesEphemeral   0x0008  /* Uses the OpenEphemeral opcode */
+#define SF_Expanded        0x0010  /* sqlite3SelectExpand() called on this */
+#define SF_HasTypeInfo     0x0020  /* FROM subqueries have Table metadata */
+#define SF_UseSorter       0x0040  /* Sort using a sorter */
+#define SF_Values          0x0080  /* Synthesized from VALUES clause */
+#define SF_Materialize     0x0100  /* Force materialization of views */
 
 
 /*
