@@ -52,8 +52,8 @@ do_test tkt3527-1.1 {
     INSERT INTO Element VALUES(5,'Elem5');
     INSERT INTO ElemOr Values(3,4);
     INSERT INTO ElemOr Values(3,5);
-    INSERT INTO ElemAnd VALUES(1,3,1,1,1);
-    INSERT INTO ElemAnd VALUES(1,2,1,1,1);
+    INSERT INTO ElemAnd VALUES(1,3,'a','b','c');
+    INSERT INTO ElemAnd VALUES(1,2,'x','y','z');
     
     CREATE VIEW ElemView1 AS
     SELECT
@@ -112,12 +112,12 @@ do_test tkt3527-1.1 {
  
     SELECT * FROM ElemView1;
   }
-} {1 1 Elem1 2 1 1 1 0 0 1 1 Elem1 3 1 1 1 0 0 3 3 Elem3 4 {} {} {} 0 1 3 3 Elem3 5 {} {} {} 0 1}
+} {1 1 Elem1 2 x y z 0 0 1 1 Elem1 3 a b c 0 0 3 3 Elem3 4 {} {} {} 0 1 3 3 Elem3 5 {} {} {} 0 1}
    
 do_test tkt3527-1.2 {
   db eval {
     SELECT * FROM ElemView2;
   }
-} {1 1 Elem1 2 1 1 1 0 0 1 1 Elem1 3 1 1 1 0 0 1.3 3 Elem3 4 {} {} {} 1 1 1.3 3 Elem3 5 {} {} {} 1 1 3 3 Elem3 4 {} {} {} 0 1 3 3 Elem3 5 {} {} {} 0 1}
+} {1 1 Elem1 2 x y z 0 0 1 1 Elem1 3 a b c 0 0 1.3 3 Elem3 4 {} {} {} 1 1 1.3 3 Elem3 5 {} {} {} 1 1 3 3 Elem3 4 {} {} {} 0 1 3 3 Elem3 5 {} {} {} 0 1}
 
 finish_test

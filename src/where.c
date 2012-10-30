@@ -2998,7 +2998,7 @@ static int isSortingIndex(
 ** SQLITE_BIG_DBL. If a plan is found that uses the named index, 
 ** then the cost is calculated in the usual way.
 **
-** If a NOT INDEXED clause (pSrc->notIndexed!=0) was attached to the table 
+** If a NOT INDEXED clause was attached to the table 
 ** in the SELECT statement, then no indexes are considered. However, the 
 ** selected plan may still take advantage of the built-in rowid primary key
 ** index.
@@ -4025,6 +4025,16 @@ static Bitmask codeOneLoopStart(
     sqlite3VdbeAddOp2(v, OP_Integer, 0, pLevel->iLeftJoin);
     VdbeComment((v, "init LEFT JOIN no-match flag"));
   }
+
+  /* Special case of a FROM clause subquery implemented as a co-routine */
+  if( pTabItem->viaCoroutine ){
+    int regYield = pTabItem->regReturn;
+    sqlite3VdbeAddOp2(v, OP_Integer, pTabItem->addrFillSub-1, regYield);
+    pLevel->p2 =  sqlite3VdbeAddOp1(v, OP_Yield, regYield);
+    VdbeComment((v, "next row of co-routine %s", pTabItem->pTab->zName));
+    sqlite3VdbeAddOp2(v, OP_If, regYield+1, addrBrk);
+    pLevel->op = OP_Goto;
+  }else
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   if(  (pLevel->plan.wsFlags & WHERE_VIRTUALTABLE)!=0 ){

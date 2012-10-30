@@ -939,6 +939,7 @@ SrcList *sqlite3SrcListDup(sqlite3 *db, SrcList *p, int flags){
     pNewItem->addrFillSub = pOldItem->addrFillSub;
     pNewItem->regReturn = pOldItem->regReturn;
     pNewItem->isCorrelated = pOldItem->isCorrelated;
+    pNewItem->viaCoroutine = pOldItem->viaCoroutine;
     pNewItem->zIndex = sqlite3DbStrDup(db, pOldItem->zIndex);
     pNewItem->notIndexed = pOldItem->notIndexed;
     pNewItem->pIndex = pOldItem->pIndex;

@@ -3909,8 +3909,17 @@ int sqlite3Select(
     int isAggSub;
 
     if( pSub==0 ) continue;
+
+    /* Sometimes the code for a subquery will be generated more than
+    ** once, if the subquery is part of the WHERE clause in a LEFT JOIN,
+    ** for example.  In that case, do not regenerate the code to manifest
+    ** a view or the co-routine to implement a view.  The first instance
+    ** is sufficient, though the subroutine to manifest the view does need
+    ** to be invoked again. */
     if( pItem->addrFillSub ){
-      sqlite3VdbeAddOp2(v, OP_Gosub, pItem->regReturn, pItem->addrFillSub);
+      if( pItem->viaCoroutine==0 ){
+        sqlite3VdbeAddOp2(v, OP_Gosub, pItem->regReturn, pItem->addrFillSub);
+      }
       continue;
     }
 
@@ -3931,6 +3940,33 @@ int sqlite3Select(
         p->selFlags |= SF_Aggregate;
       }
       i = -1;
+    }else if( pTabList->nSrc==1 && (p->selFlags & SF_Materialize)==0 ){
+      /* Implement a co-routine that will return a single row of the result
+      ** set on each invocation.
+      */
+      int addrTop;
+      int addrEof;
+      pItem->regReturn = ++pParse->nMem;
+      addrEof = ++pParse->nMem;
+      sqlite3VdbeAddOp0(v, OP_Goto);
+      addrTop = sqlite3VdbeAddOp1(v, OP_OpenPseudo, pItem->iCursor);
+      sqlite3VdbeChangeP5(v, 1);
+      VdbeComment((v, "coroutine for %s", pItem->pTab->zName));
+      pItem->addrFillSub = addrTop;
+      sqlite3VdbeAddOp2(v, OP_Integer, 0, addrEof);
+      sqlite3VdbeChangeP5(v, 1);
+      sqlite3SelectDestInit(&dest, SRT_Coroutine, pItem->regReturn);
+      explainSetInteger(pItem->iSelectId, (u8)pParse->iNextSelectId);
+      sqlite3Select(pParse, pSub, &dest);
+      pItem->pTab->nRowEst = (unsigned)pSub->nSelectRow;
+      pItem->viaCoroutine = 1;
+      sqlite3VdbeChangeP2(v, addrTop, dest.iSdst);
+      sqlite3VdbeChangeP3(v, addrTop, dest.nSdst);
+      sqlite3VdbeAddOp2(v, OP_Integer, 1, addrEof);
+      sqlite3VdbeAddOp1(v, OP_Yield, pItem->regReturn);
+      VdbeComment((v, "end %s", pItem->pTab->zName));
+      sqlite3VdbeJumpHere(v, addrTop-1);
+      sqlite3ClearTempRegCache(pParse);
     }else{
       /* Generate a subroutine that will fill an ephemeral table with
       ** the content of this subquery.  pItem->addrFillSub will point

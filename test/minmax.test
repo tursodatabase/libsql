@@ -299,7 +299,7 @@ ifcapable {compound && subquery} {
         SELECT max(rowid) FROM t4 UNION SELECT max(rowid) FROM t5
       )
     }
-  } {1}
+  } {{}}
   do_test minmax-9.2 {
     execsql {
       SELECT max(rowid) FROM (
