@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sthe\sheader\scomment\sfor\sthe\sOpenPseudo\sopcode.
-D 2012-10-30T14:44:14.439
+C Make\ssure\sthat\sthe\soptimizer\snever\stries\sto\screate\san\sautomatic\nindex\son\sa\scoroutine\ssubquery.
+D 2012-10-30T15:31:31.124
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -249,7 +249,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 73eb4c41f3e745bbaa7ecc49d3aa2688e4f298ba
+F src/where.c 6a753aa008de6494e64dd265a27afbb0ad80ccf5
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 0be144b453e0622a085fae8665c32f5676708e00
@@ -1021,7 +1021,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 564631f3e45f8f8a8db69f1e0df0d1dadbad8a2c
-R 918a33fddb4e577c100ae5ae2579f54e
+P 4f1061230e0e5a66038a4db99f1ee6203e4d2b9f
+R 4d92f802c3d1be35ade1de0afef59aa0
 U drh
-Z b3c2f4b19e56c38b641de4231414b78d
+Z a71a8eb0758da05cfd0416f53ad3bce7

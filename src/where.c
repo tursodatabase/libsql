@@ -1821,6 +1821,10 @@ static void bestAutomaticIndex(WhereBestIdx *p){
     /* We already have some kind of index in use for this query. */
     return;
   }
+  if( pSrc->viaCoroutine ){
+    /* Cannot index a co-routine */
+    return;
+  }
   if( pSrc->notIndexed ){
     /* The NOT INDEXED clause appears in the SQL. */
     return;
