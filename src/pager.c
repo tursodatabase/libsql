@@ -5885,7 +5885,7 @@ int sqlite3PagerCommitPhaseOne(
   
       /* If this transaction has made the database smaller, then all pages
       ** being discarded by the truncation must be written to the journal
-      ** file. This can only happen in auto-vacuum mode.
+      ** file.
       **
       ** Before reading the pages with page numbers larger than the 
       ** current value of Pager.dbSize, set dbSize back to the value
@@ -5893,7 +5893,6 @@ int sqlite3PagerCommitPhaseOne(
       ** calls to sqlite3PagerGet() return zeroed pages instead of 
       ** reading data from the database file.
       */
-  #ifndef SQLITE_OMIT_AUTOVACUUM
       if( pPager->dbSize<pPager->dbOrigSize 
        && pPager->journalMode!=PAGER_JOURNALMODE_OFF
       ){
@@ -5913,7 +5912,6 @@ int sqlite3PagerCommitPhaseOne(
         }
         pPager->dbSize = dbSize;
       } 
-  #endif
   
       /* Write the master journal name into the journal file. If a master 
       ** journal file name has already been written to the journal file, 

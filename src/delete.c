@@ -112,6 +112,7 @@ void sqlite3MaterializeView(
       sqlite3SelectDelete(db, pDup);
     }
     pDup = sqlite3SelectNew(pParse, 0, pFrom, pWhere, 0, 0, 0, 0, 0, 0);
+    if( pDup ) pDup->selFlags |= SF_Materialize;
   }
   sqlite3SelectDestInit(&dest, SRT_EphemTab, iCur);
   sqlite3Select(pParse, pDup, &dest);

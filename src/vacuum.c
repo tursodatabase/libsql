@@ -85,6 +85,7 @@ void sqlite3Vacuum(Parse *pParse){
   Vdbe *v = sqlite3GetVdbe(pParse);
   if( v ){
     sqlite3VdbeAddOp2(v, OP_Vacuum, 0, 0);
+    sqlite3VdbeUsesBtree(v, 0);
   }
   return;
 }

@@ -2435,12 +2435,14 @@ void sqlite3VdbeDeleteAuxData(VdbeFunc *pVdbeFunc, int mask){
 }
 
 /*
-** Free all memory associated with the Vdbe passed as the second argument.
+** Free all memory associated with the Vdbe passed as the second argument,
+** except for object itself, which is preserved.
+**
 ** The difference between this function and sqlite3VdbeDelete() is that
 ** VdbeDelete() also unlinks the Vdbe from the list of VMs associated with
-** the database connection.
+** the database connection and frees the object itself.
 */
-void sqlite3VdbeDeleteObject(sqlite3 *db, Vdbe *p){
+void sqlite3VdbeClearObject(sqlite3 *db, Vdbe *p){
   SubProgram *pSub, *pNext;
   int i;
   assert( p->db==0 || p->db==db );
@@ -2461,7 +2463,6 @@ void sqlite3VdbeDeleteObject(sqlite3 *db, Vdbe *p){
   sqlite3DbFree(db, p->zExplain);
   sqlite3DbFree(db, p->pExplain);
 #endif
-  sqlite3DbFree(db, p);
 }
 
 /*
@@ -2473,6 +2474,7 @@ void sqlite3VdbeDelete(Vdbe *p){
   if( NEVER(p==0) ) return;
   db = p->db;
   assert( sqlite3_mutex_held(db->mutex) );
+  sqlite3VdbeClearObject(db, p);
   if( p->pPrev ){
     p->pPrev->pNext = p->pNext;
   }else{
@@ -2484,7 +2486,7 @@ void sqlite3VdbeDelete(Vdbe *p){
   }
   p->magic = VDBE_MAGIC_DEAD;
   p->db = 0;
-  sqlite3VdbeDeleteObject(db, p);
+  sqlite3DbFree(db, p);
 }
 
 /*
