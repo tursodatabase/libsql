@@ -2207,10 +2207,7 @@ case OP_Column: {
   ** the number of columns is stored in the VdbeCursor.nField element.
   */
   pC = p->apCsr[p1];
-  if( pC==0 ){
-    sqlite3VdbeMemSetNull(pDest);
-    goto op_column_out;
-  }
+  assert( pC!=0 );
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   assert( pC->pVtabCursor==0 );
 #endif

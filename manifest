@@ -1,5 +1,5 @@
-C Add\san\soptimization\sthat\sattempts\sto\srun\sa\ssubquery\sas\sa\scoroutine\srather\nthan\smanifesting\sit\sinto\sa\stemporary\stable.
-D 2012-10-30T00:29:07.224
+C Make\sit\spossible\sto\sdisable\sthe\ssubquery-by-coroutine\soptimization\susing\nsqlite3_test_control().\s\sRemove\san\salways-false\sconditional.
+D 2012-10-30T14:39:12.994
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -143,7 +143,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
-F src/main.c ca6784455f3207524b82d24141676d641d44f137
+F src/main.c 5249486037f88e765cce7c4870846dc5a2cd2ed1
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
@@ -174,12 +174,12 @@ F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 7b986a715ac281643309c29257bb58cfae7aa810
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c d441b50c389dc0ffc50f0b6f469ff5117196dc86
+F src/select.c 3a8baf4719f9723b4e0b43f2baa60692d0d921f8
 F src/shell.c 24cd0aa74aff73ea08594629faead564c4c2a286
 F src/sqlite.h.in c7be05ad191d2634292fcc77bdb2bcfa4526eb98
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h c1927e2b0d596480445bcf3b7d679aae1069a8e0
+F src/sqliteInt.h f29ed6fbbf80a6d9ac8aae9998ecae2b8d72e0ae
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 53463144deb5dfac0a66b3be4dd7844b8f8a4c98
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -236,7 +236,7 @@ F src/update.c 28d2d098b43a2c70dae399896ea8a02f622410ef
 F src/utf.c 8d819e2e5104a430fc2005f018db14347c95a38f
 F src/util.c 0af2e515dc0dabacec931bca39525f6c3f1c5455
 F src/vacuum.c 2727bdd08847fcb6b2d2da6d14f018910e8645d3
-F src/vdbe.c f3310ec731dc43e58bbf871da0054a297ecada4b
+F src/vdbe.c fbb695e32d00dfb35f6a34947b88ea3ef9f10430
 F src/vdbe.h b52887278cb173e66188da84dfab216bea61119d
 F src/vdbeInt.h 79abf9b31be406d35ca77d6999cb2d42aaf91e78
 F src/vdbeapi.c 4c2418161cf45392ba76a7ca92f9a5f06b96f89c
@@ -1021,10 +1021,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P cbd8fddf3b4cde840279502e1e9b151bb4bd42f0
-R e804ca235c11687c1af8c5ce37532c75
-T *branch * subquery-as-coroutine
-T *sym-subquery-as-coroutine *
-T -sym-trunk *
+P 7af3acbbd49a2114fcdada9ec907c68ba9b053bd
+R 76b1d0ca402c9a816ba12f1054e42e79
 U drh
-Z e25ab88b15575239ebd4117d30628530
+Z 70485ac41c9ad9e9086d4cf7e24e57e2
