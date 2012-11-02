@@ -4030,8 +4030,10 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
         ExprSetIrreducible(pExpr);
         pExpr->iAgg = (i16)i;
         pExpr->pAggInfo = pAggInfo;
+        return WRC_Prune;
+      }else{
+        return WRC_Continue;
       }
-      return WRC_Prune;
     }
   }
   return WRC_Continue;
