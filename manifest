@@ -1,5 +1,5 @@
-C Enable\sthe\suse\sof\scoroutines\sas\san\salternative\sto\smanifesting\sviews\sused\nin\sa\sFROM\sclause.
-D 2012-10-30T18:09:46.180
+C Fix\san\sout-of-date\scomment.\s\sNo\schanges\sto\scode.
+D 2012-11-02T18:24:57.937
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -130,7 +130,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 72a70dcfda75d3a1f81041ce4573e7afddcd8e4e
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c 9b8d308979114991e5dc7cee958316e07186941d
-F src/expr.c 152ba793a8747061c0c332857d0e4d4fd52d4397
+F src/expr.c eec289bcac90fb13ada9ef184a4d9bb84f5aa68e
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c c82a04e7a92bb728f9ab972b76590403283be2af
 F src/func.c cbb90dc84b22eea25caf39528d342279e61b8898
@@ -1021,7 +1021,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P cbd8fddf3b4cde840279502e1e9b151bb4bd42f0 f83aa0de8470748b3cd0bff232aeea3baf8dae53
-R 4d92f802c3d1be35ade1de0afef59aa0
+P 9dca18f5fea84afbecb314ee1cdfb98430656af3
+R 3ba2075c2bb54e4c430b6beca83153a6
 U drh
-Z 3cf95a6ff7a3079d84c74ccc0794b887
+Z 23b76a34e07f1ecdfd7e7199b52cce1c
