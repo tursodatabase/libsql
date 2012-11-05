@@ -1,5 +1,5 @@
-C Use\sa\sconstant\sstring\s"BINARY"\sfor\sthe\sunspecified\scollating\ssequence.\nThis\sis\spart\sof\scheck-in\s[635e3a762dd]\sthat\sis\sbeing\sback-ported.
-D 2012-10-25T17:21:42.232
+C Merge\sthe\somit-wal-fix\sbranch\sinto\sbranch-3.7.9\swhere\sit\sbelongs,\sand\sin\sso\ndoing\sget\sbranch-3.7.9\sworking\swith\sSQLITE_OMIT_WAL.
+D 2012-11-05T16:36:10.077
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 97c346f849b0aeb8f1556141ee1875db5f1f6357
 F src/os_win.c 49d418916428a59d773f39993db0ecde56ab4c37
-F src/pager.c ad62daa0c21e27ae332b3ceb4f579a2a97046ddc
+F src/pager.c db33d4bf1e3e019c34c220971cc6c3aa07c30f54
 F src/pager.h 9f81b08efb06db4ba8be69446e10b005c351373d
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
 F src/pcache.c 49e718c095810c6b3334e3a6d89970aceaddefce
@@ -974,7 +974,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 49ffbc11c5ea7e3cefd0370f39832dbfc7276ffe
-R cd5c487ce59b532423972a6f65ae6a93
+P 9078ea75f52fc76039100b3cc0b9a2a3b9a5bff0 a499ae3835ed7f1591c40bea20e0c97f58ceedbb
+R df5458efb6b35dd58a12691fa478e848
 U drh
-Z f93cd9628e21d232f54e3d9d5a0111d5
+Z 1b1a0deed720e56c598218ee2e4bad91
