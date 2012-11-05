@@ -1,0 +1,210 @@
+# 2012 October 24
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the built-in INSTR() functions.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Create a table to work with.
+#
+do_test instr-1.1 {
+  db eval {SELECT instr('abcdefg','a');}
+} {1}
+do_test instr-1.2 {
+  db eval {SELECT instr('abcdefg','b');}
+} {2}
+do_test instr-1.3 {
+  db eval {SELECT instr('abcdefg','c');}
+} {3}
+do_test instr-1.4 {
+  db eval {SELECT instr('abcdefg','d');}
+} {4}
+do_test instr-1.5 {
+  db eval {SELECT instr('abcdefg','e');}
+} {5}
+do_test instr-1.6 {
+  db eval {SELECT instr('abcdefg','f');}
+} {6}
+do_test instr-1.7 {
+  db eval {SELECT instr('abcdefg','g');}
+} {7}
+do_test instr-1.8 {
+  db eval {SELECT instr('abcdefg','h');}
+} {0}
+do_test instr-1.9 {
+  db eval {SELECT instr('abcdefg','abcdefg');}
+} {1}
+do_test instr-1.10 {
+  db eval {SELECT instr('abcdefg','abcdefgh');}
+} {0}
+do_test instr-1.11 {
+  db eval {SELECT instr('abcdefg','bcdefg');}
+} {2}
+do_test instr-1.12 {
+  db eval {SELECT instr('abcdefg','bcdefgh');}
+} {0}
+do_test instr-1.13 {
+  db eval {SELECT instr('abcdefg','cdefg');}
+} {3}
+do_test instr-1.14 {
+  db eval {SELECT instr('abcdefg','cdefgh');}
+} {0}
+do_test instr-1.15 {
+  db eval {SELECT instr('abcdefg','defg');}
+} {4}
+do_test instr-1.16 {
+  db eval {SELECT instr('abcdefg','defgh');}
+} {0}
+do_test instr-1.17 {
+  db eval {SELECT instr('abcdefg','efg');}
+} {5}
+do_test instr-1.18 {
+  db eval {SELECT instr('abcdefg','efgh');}
+} {0}
+do_test instr-1.19 {
+  db eval {SELECT instr('abcdefg','fg');}
+} {6}
+do_test instr-1.20 {
+  db eval {SELECT instr('abcdefg','fgh');}
+} {0}
+do_test instr-1.21 {
+  db eval {SELECT coalesce(instr('abcdefg',NULL),'nil');}
+} {nil}
+do_test instr-1.22 {
+  db eval {SELECT coalesce(instr(NULL,'x'),'nil');}
+} {nil}
+do_test instr-1.23 {
+  db eval {SELECT instr(12345,34);}
+} {3}
+do_test instr-1.24 {
+  db eval {SELECT instr(123456.78,34);}
+} {3}
+do_test instr-1.25 {
+  db eval {SELECT instr(123456.78,x'3334');}
+} {3}
+do_test instr-1.26 {
+  db eval {SELECT instr('äbcdefg','efg');}
+} {5}
+do_test instr-1.27 {
+  db eval {SELECT instr('€xyzzy','xyz');}
+} {2}
+do_test instr-1.28 {
+  db eval {SELECT instr('abc€xyzzy','xyz');}
+} {5}
+do_test instr-1.29 {
+  db eval {SELECT instr('abc€xyzzy','€xyz');}
+} {4}
+do_test instr-1.30 {
+  db eval {SELECT instr('abc€xyzzy','c€xyz');}
+} {3}
+do_test instr-1.31 {
+  db eval {SELECT instr(x'0102030405',x'01');}
+} {1}
+do_test instr-1.32 {
+  db eval {SELECT instr(x'0102030405',x'02');}
+} {2}
+do_test instr-1.33 {
+  db eval {SELECT instr(x'0102030405',x'03');}
+} {3}
+do_test instr-1.34 {
+  db eval {SELECT instr(x'0102030405',x'04');}
+} {4}
+do_test instr-1.35 {
+  db eval {SELECT instr(x'0102030405',x'05');}
+} {5}
+do_test instr-1.36 {
+  db eval {SELECT instr(x'0102030405',x'06');}
+} {0}
+do_test instr-1.37 {
+  db eval {SELECT instr(x'0102030405',x'0102030405');}
+} {1}
+do_test instr-1.38 {
+  db eval {SELECT instr(x'0102030405',x'02030405');}
+} {2}
+do_test instr-1.39 {
+  db eval {SELECT instr(x'0102030405',x'030405');}
+} {3}
+do_test instr-1.40 {
+  db eval {SELECT instr(x'0102030405',x'0405');}
+} {4}
+do_test instr-1.41 {
+  db eval {SELECT instr(x'0102030405',x'0506');}
+} {0}
+do_test instr-1.42 {
+  db eval {SELECT instr(x'0102030405',x'');}
+} {1}
+do_test instr-1.43 {
+  db eval {SELECT instr(x'',x'');}
+} {1}
+do_test instr-1.44 {
+  db eval {SELECT instr('','');}
+} {1}
+do_test instr-1.45 {
+  db eval {SELECT instr('abcdefg','');}
+} {1}
+unset -nocomplain longstr
+set longstr abcdefghijklmonpqrstuvwxyz
+append longstr $longstr
+append longstr $longstr
+append longstr $longstr
+append longstr $longstr
+append longstr $longstr
+append longstr $longstr
+append longstr $longstr
+append longstr $longstr
+append longstr $longstr
+append longstr $longstr
+append longstr $longstr
+append longstr $longstr
+# puts [string length $longstr]
+append longstr Xabcde
+do_test instr-1.46 {
+  db eval {SELECT instr($longstr,'X');}
+} {106497}
+do_test instr-1.47 {
+  db eval {SELECT instr($longstr,'Y');}
+} {0}
+do_test instr-1.48 {
+  db eval {SELECT instr($longstr,'Xa');}
+} {106497}
+do_test instr-1.49 {
+  db eval {SELECT instr($longstr,'zXa');}
+} {106496}
+set longstr [string map {a ä} $longstr]
+do_test instr-1.50 {
+  db eval {SELECT instr($longstr,'X');}
+} {106497}
+do_test instr-1.51 {
+  db eval {SELECT instr($longstr,'Y');}
+} {0}
+do_test instr-1.52 {
+  db eval {SELECT instr($longstr,'Xä');}
+} {106497}
+do_test instr-1.53 {
+  db eval {SELECT instr($longstr,'zXä');}
+} {106496}
+do_test instr-1.54 {
+  db eval {SELECT instr(x'78c3a4e282ac79','x');}
+} {1}
+do_test instr-1.55 {
+  db eval {SELECT instr(x'78c3a4e282ac79','y');}
+} {4}
+do_test instr-1.56 {
+  db eval {SELECT instr(x'78c3a4e282ac79',x'79');}
+} {7}
+do_test instr-1.57 {
+  db eval {SELECT instr('xä€y',x'79');}
+} {4}
+
+
+finish_test

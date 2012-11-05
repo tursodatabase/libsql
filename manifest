@@ -1,5 +1,5 @@
-C Merge\sthe\sfix\sfor\sticket\s[bfbf38e5e9956ac6]\sinto\strunk.
-D 2012-11-02T23:42:50.017
+C Add\sthe\sINSTR()\sSQL\sfunction.
+D 2012-11-05T13:51:58.781
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -133,7 +133,7 @@ F src/delete.c 9b8d308979114991e5dc7cee958316e07186941d
 F src/expr.c 3b25a95f3d309403940ba4a3212f197b8b6251d5
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c c82a04e7a92bb728f9ab972b76590403283be2af
-F src/func.c cbb90dc84b22eea25caf39528d342279e61b8898
+F src/func.c 1755cafdb8f2a291681f1ea55e0215518ebd6e52
 F src/global.c fb44b11e02e06c995e6ed6642509edd23599d584
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
@@ -544,6 +544,7 @@ F test/insert2.test 4f3a04d168c728ed5ec2c88842e772606c7ce435
 F test/insert3.test 1b7db95a03ad9c5013fdf7d6722b6cd66ee55e30
 F test/insert4.test 87f6798f31d60c4e177622fcc3663367e6ecbd90
 F test/insert5.test 394f96728d1258f406fe5f5aeb0aaf29487c39a6
+F test/instr.test a34e1d46a9eefb098a7167ef0e730a4a3d82fba0
 F test/intarray.test 066b7d7ac38d25bf96f87f1b017bfc687551cdd4
 F test/interrupt.test 42e7cf98646fd9cb4a3b131a93ed3c50b9e149f1
 F test/intpkey.test 7af30f6ae852d8d1c2b70e4bf1551946742e92d8
@@ -1021,7 +1022,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 10cc12b16b2f1ae4e6b3a84cef5a44564d282e9c 62ebfa747635a5593759ea2a28166d054c8eee8a
-R 0bddd84c58415ef799271c8a76e36e44
+P 4f7dfc32aad1c552d09dc8fefb40cc3656d74883 49ccae964f3a8ae5aab87f56503121e09424545f
+R 9c69fd93cfd942af384711e31b335f2e
 U drh
-Z ea837b25a77a7de14b46a8e2c78a888e
+Z 948b87ce69fca256505028584053ea0a
