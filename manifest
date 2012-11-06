@@ -1,5 +1,5 @@
-C In\stest_quota.c,\sprovide\sa\swork-around\sfor\sthe\smissing\s_chsize_s()\sfunction\nin\smingw.
-D 2012-11-06T18:41:41.558
+C Adjust\sthe\sSQLITE_DBSTATUS_STMT_USED\scalculation\sto\stake\sthe\smodified\susage\sof\ssqlite3VdbeClearObject()\sinto\saccount.
+D 2012-11-06T20:39:11.759
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -181,7 +181,7 @@ F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h f29ed6fbbf80a6d9ac8aae9998ecae2b8d72e0ae
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
-F src/status.c 53463144deb5dfac0a66b3be4dd7844b8f8a4c98
+F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 515abd8e33e82aa330eeb54675185a7e1e5b6778
 F src/test1.c 936afc02766403e5debca49a1817a780e116df7e
@@ -1022,7 +1022,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P a4c181cbcf9b8baa6e07501a93ef81603d91ba7d
-R ffefeab3454a555d2c573fd19c705ae8
-U drh
-Z 21f5933910ea4269dcf611e571177ae9
+P 6b4979e86c05f2da2c5fff67ea7feec5fa56756a
+R 275b30fd4dabbb76a3c510773e928640
+U mistachkin
+Z 07851b8d86e7907c3dc0dd17f564d79e
