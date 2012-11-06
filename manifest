@@ -1,5 +1,5 @@
-C Add\sthe\sINSTR()\sSQL\sfunction.
-D 2012-11-05T13:51:58.781
+C In\stest_quota.c,\sprovide\sa\swork-around\sfor\sthe\smissing\s_chsize_s()\sfunction\nin\smingw.
+D 2012-11-06T18:41:41.558
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -215,7 +215,7 @@ F src/test_mutex.c a6bd7b9cf6e19d989e31392b06ac8d189f0d573e
 F src/test_onefile.c 0396f220561f3b4eedc450cef26d40c593c69a25
 F src/test_osinst.c 90a845c8183013d80eccb1f29e8805608516edba
 F src/test_pcache.c a5cd24730cb43c5b18629043314548c9169abb00
-F src/test_quota.c e5fdb7d28e5afae1b619922804e544db0041ec81
+F src/test_quota.c 0e0e2e3bf6766b101ecccd8c042b66e44e9be8f5
 F src/test_quota.h 8761e463b25e75ebc078bd67d70e39b9c817a0cb
 F src/test_rtree.c aba603c949766c4193f1068b91c787f57274e0d9
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
@@ -1022,7 +1022,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 4f7dfc32aad1c552d09dc8fefb40cc3656d74883 49ccae964f3a8ae5aab87f56503121e09424545f
-R 9c69fd93cfd942af384711e31b335f2e
+P a4c181cbcf9b8baa6e07501a93ef81603d91ba7d
+R ffefeab3454a555d2c573fd19c705ae8
 U drh
-Z 948b87ce69fca256505028584053ea0a
+Z 21f5933910ea4269dcf611e571177ae9
