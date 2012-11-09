@@ -1,5 +1,5 @@
-C Take\sinto\saccount\sthe\scost\sof\sinner\sloops\swhen\sselecting\swhich\stable\sof\sa\sjoin\nto\suse\sfor\sthe\snext\souter\sloop.
-D 2012-11-09T18:32:05.073
+C Change\sos_unix.c\sto\spropagate\sENOENT\serrors\sback\sto\ssqlite\sas\sSQLITE_IOERR_DELETE_NOENT.\sHave\sSQLite\signore\sthese\swhere\sthey\sare\sbenign\sand\spropagate\sthem\sback\sto\sthe\scaller\swhere\sthey\smay\sindicate\sa\sfile-system\smalfunction\sof\ssome\sdescription.
+D 2012-11-09T20:17:26.376
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -160,9 +160,9 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c 603d020fe6c58047794cc72c05c7c8f4a82a0579
+F src/os_unix.c 1f7c7f2a3b2c66590c7bab75e4b4d28003b316a9
 F src/os_win.c 43ec1285357e5d5d919cb0492eac775c58ad7d12
-F src/pager.c ee59fef31673d5124413c5a801cfd9ef3e6766d3
+F src/pager.c ed53fe75a269c1d67645fe079ea0f3f0ce6492d5
 F src/pager.h 1109a06578ec5574dc2c74cf8d9f69daf36fe3e0
 F src/parse.y f29df90bd3adc64b33114ab1de9fb7768fcf2099
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -176,7 +176,7 @@ F src/resolve.c 7b986a715ac281643309c29257bb58cfae7aa810
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 3a8baf4719f9723b4e0b43f2baa60692d0d921f8
 F src/shell.c 24cd0aa74aff73ea08594629faead564c4c2a286
-F src/sqlite.h.in c7be05ad191d2634292fcc77bdb2bcfa4526eb98
+F src/sqlite.h.in 2a0d1234242d75e19e297db99f0925fc9f021e85
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h 79c00e24d84541c3117ef34ce09c5749dcdcba25
@@ -639,7 +639,7 @@ F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
 F test/orderby1.test f33968647da5c546528fe4d2bf86c6a6a2e5a7ae
 F test/orderby2.test bc11009f7cd99d96b1b11e57b199b00633eb5b04
 F test/oserror.test 50417780d0e0d7cd23cf12a8277bb44024765df3
-F test/pager1.test 07116f72a61960b882952e7472cc2846d161d6e2
+F test/pager1.test f4c57e14583da2183fe31555c67fb32feda96092
 F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
 F test/pagerfault.test 452f2cc23e3bfcfa935f4442aec1da4fe1dc0442
@@ -1024,7 +1024,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 82eb7eadb8c76b3af8c811d791f87a634c35935f 51bfd63b7f9fe53831570ad124c932cb3582b104
-R 283b8e4433f3480f37a4748d3a98dd6b
-U drh
-Z fb5e55182e15313d5ce5bacd4603beff
+P 3f87f4593b631819609248c8f1370c1e19465eb0
+R 2f3e513245018c14d7af93e651fbc22c
+U dan
+Z 1e3c59db135f9831a4bbf3c3ac743265
