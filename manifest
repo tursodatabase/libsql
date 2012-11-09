@@ -1,5 +1,5 @@
-C Adjust\sthe\sSQLITE_DBSTATUS_STMT_USED\scalculation\sto\stake\sthe\smodified\susage\sof\ssqlite3VdbeClearObject()\sinto\saccount.
-D 2012-11-06T20:39:11.759
+C Take\sinto\saccount\sthe\scost\sof\sinner\sloops\swhen\sselecting\swhich\stable\sof\sa\sjoin\nto\suse\sfor\sthe\snext\souter\sloop.
+D 2012-11-09T18:32:05.073
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -179,7 +179,7 @@ F src/shell.c 24cd0aa74aff73ea08594629faead564c4c2a286
 F src/sqlite.h.in c7be05ad191d2634292fcc77bdb2bcfa4526eb98
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h f29ed6fbbf80a6d9ac8aae9998ecae2b8d72e0ae
+F src/sqliteInt.h 79c00e24d84541c3117ef34ce09c5749dcdcba25
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -249,7 +249,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 6a753aa008de6494e64dd265a27afbb0ad80ccf5
+F src/where.c 832e33fefbe5ba751c1f5a06e63de98be95e56f2
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -636,7 +636,7 @@ F test/notify3.test a86259abbfb923aa27d30f0fc038c88e5251488a
 F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
-F test/orderby1.test ef4f7c40df81b9a4303a718433d34052f07db47d
+F test/orderby1.test f33968647da5c546528fe4d2bf86c6a6a2e5a7ae
 F test/orderby2.test bc11009f7cd99d96b1b11e57b199b00633eb5b04
 F test/oserror.test 50417780d0e0d7cd23cf12a8277bb44024765df3
 F test/pager1.test 07116f72a61960b882952e7472cc2846d161d6e2
@@ -974,6 +974,8 @@ F test/whereA.test 24c234263c8fe358f079d5e57d884fb569d2da0a
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/whereC.test 13ff5ec0dba407c0e0c075980c75b3275a6774e5
 F test/whereD.test 3f3ee93825c94804f1fc91eef2de0d365981759a
+F test/whereE.test 7bd34945797efef15819368479bacc34215e4e1d
+F test/whereF.test a0e296643cabe5278379bc1a0aa158cf3c54a1c9
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/win32lock.test b2a539e85ae6b2d78475e016a9636b4451dc7fb9
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
@@ -1022,7 +1024,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 6b4979e86c05f2da2c5fff67ea7feec5fa56756a
-R 275b30fd4dabbb76a3c510773e928640
-U mistachkin
-Z 07851b8d86e7907c3dc0dd17f564d79e
+P 82eb7eadb8c76b3af8c811d791f87a634c35935f 51bfd63b7f9fe53831570ad124c932cb3582b104
+R 283b8e4433f3480f37a4748d3a98dd6b
+U drh
+Z fb5e55182e15313d5ce5bacd4603beff
