@@ -5378,9 +5378,9 @@ static int unixDelete(
     if( errno==ENOENT ){
       rc = SQLITE_IOERR_DELETE_NOENT;
     }else{
-      rc = SQLITE_IOERR_DELETE;
+      rc = unixLogError(SQLITE_IOERR_DELETE, "unlink", zPath);
     }
-    return unixLogError(rc, "unlink", zPath);
+    return rc;
   }
 #ifndef SQLITE_DISABLE_DIRSYNC
   if( (dirSync & 1)!=0 ){
