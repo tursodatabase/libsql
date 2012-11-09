@@ -4744,6 +4744,16 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
   }
 }
 
+/*
+** Return TRUE if the wsFlags indicate that a full table scan (or a
+** full scan of a covering index) is indicated.
+*/
+static int isFullscan(unsigned wsFlags){
+  if( wsFlags & WHERE_COVER_SCAN ) return 1;
+  if( (wsFlags & WHERE_NOT_FULLSCAN)==0 ) return 1;
+  return 0;
+}
+
 
 /*
 ** Generate the beginning of the loop used for WHERE clause processing.
@@ -5102,6 +5112,19 @@ WhereInfo *sqlite3WhereBegin(
         if( isOptimal && (sWBI.cost.plan.wsFlags & WHERE_NOT_FULLSCAN)==0 ){
           notIndexed |= m;
         }
+        if( isOptimal ){
+          pWInfo->a[j].rOptCost = sWBI.cost.rCost;
+        }else if( iFrom<nTabList-1 ){
+          /* If two or more tables have nearly the same outer loop cost,
+          ** very different inner loop (optimal) cost, we want to choose
+          ** for the outer loop that table which benefits the least from
+          ** being in the inner loop.  The following code scales the 
+          ** outer loop cost estimate to accomplish that. */
+          WHERETRACE(("   scaling cost from %.1f to %.1f\n",
+                      sWBI.cost.rCost,
+                      sWBI.cost.rCost/pWInfo->a[j].rOptCost));
+          sWBI.cost.rCost /= pWInfo->a[j].rOptCost;
+        }
 
         /* Conditions under which this table becomes the best so far:
         **
@@ -5126,8 +5149,8 @@ WhereInfo *sqlite3WhereBegin(
         */
         if( (sWBI.cost.used&sWBI.notValid)==0                    /* (1) */
             && (bestJ<0 || (notIndexed&m)!=0                     /* (2) */
-                || (bestPlan.plan.wsFlags & WHERE_NOT_FULLSCAN)==0
-                || (sWBI.cost.plan.wsFlags & WHERE_NOT_FULLSCAN)!=0)
+                || isFullscan(bestPlan.plan.wsFlags)
+                || !isFullscan(sWBI.cost.plan.wsFlags))
             && (nUnconstrained==0 || sWBI.pSrc->pIndex==0        /* (3) */
                 || NEVER((sWBI.cost.plan.wsFlags & WHERE_NOT_FULLSCAN)!=0))
             && (bestJ<0 || compareCost(&sWBI.cost, &bestPlan))   /* (4) */
