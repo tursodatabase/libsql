@@ -4744,16 +4744,6 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
   }
 }
 
-/*
-** Return TRUE if the wsFlags indicate that a full table scan (or a
-** full scan of a covering index) is indicated.
-*/
-static int isFullscan(unsigned wsFlags){
-  if( wsFlags & WHERE_COVER_SCAN ) return 1;
-  if( (wsFlags & WHERE_NOT_FULLSCAN)==0 ) return 1;
-  return 0;
-}
-
 
 /*
 ** Generate the beginning of the loop used for WHERE clause processing.
@@ -5132,8 +5122,8 @@ WhereInfo *sqlite3WhereBegin(
         **       yet run.  (In other words, it must not depend on tables
         **       in inner loops.)
         **
-        **   (2) A full-table-scan plan cannot supercede indexed plan unless
-        **       the full-table-scan is an "optimal" plan as defined above.
+        **   (2) (This rule was removed on 2012-11-09.  The scaling of the
+        **       cost using the optimal scan cost made this rule obsolete.)
         **
         **   (3) All tables have an INDEXED BY clause or this table lacks an
         **       INDEXED BY clause or this table uses the specific
@@ -5148,9 +5138,6 @@ WhereInfo *sqlite3WhereBegin(
         **       is defined by the compareCost() function above. 
         */
         if( (sWBI.cost.used&sWBI.notValid)==0                    /* (1) */
-            && (bestJ<0 || (notIndexed&m)!=0                     /* (2) */
-                || isFullscan(bestPlan.plan.wsFlags)
-                || !isFullscan(sWBI.cost.plan.wsFlags))
             && (nUnconstrained==0 || sWBI.pSrc->pIndex==0        /* (3) */
                 || NEVER((sWBI.cost.plan.wsFlags & WHERE_NOT_FULLSCAN)!=0))
             && (bestJ<0 || compareCost(&sWBI.cost, &bestPlan))   /* (4) */

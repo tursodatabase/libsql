@@ -1,5 +1,5 @@
-C Try\sto\stake\sinto\saccount\sthe\scost\sof\sinner\sloops\swhen\sselecting\swhich\stable\nof\sa\sjoin\sto\suse\sfor\sthe\souter\sloop.
-D 2012-11-09T17:59:26.161
+C Disable\sthe\stable\sselection\srule\sthat\stried\sto\sprevent\sfull\stable\sscans\sfrom\nmigrating\sto\sthe\souter\sloop\sunless\sthey\swere\soptimal.\s\sThe\snew\sscaling\sof\s\nouter-loop\scosts\sby\scost\sof\sinner\sloops\sobviates\sthe\sneed\sfor\sthat\sstep.\s\sAnd,\nin\sfact,\sthat\sstep\scauses\sproblems\swith\sthe\snew\sinner-loop\scost\saccounting.
+D 2012-11-09T18:22:26.026
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -249,7 +249,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c b97f14d4ce618ceb18138238b1bd028cf02014b4
+F src/where.c 832e33fefbe5ba751c1f5a06e63de98be95e56f2
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1024,10 +1024,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 82eb7eadb8c76b3af8c811d791f87a634c35935f
-R 6e69028f10fbf48578845dd76c89b910
-T *branch * inner-loop-cost
-T *sym-inner-loop-cost *
-T -sym-trunk *
+P 942556342a332b04a11169bb04f387d741ef9488
+R 283b8e4433f3480f37a4748d3a98dd6b
 U drh
-Z 386f6fc4840a28b57311013bb9458533
+Z d761059332f6b35837425e120092c25f
