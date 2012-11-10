@@ -2487,4 +2487,32 @@ do_test pager1-32.1 {
 # Cleanup 20MB file left by the previous test.
 forcedelete test.db
 
+#-------------------------------------------------------------------------
+# Test that if a transaction is committed in journal_mode=DELETE mode,
+# and the call to unlink() returns an ENOENT error, the COMMIT does not
+# succeed.
+#
+if {$::tcl_platform(platform)=="unix"} {
+  do_test pager1-33.1 {
+    sqlite3 db test.db
+    execsql {
+      CREATE TABLE t1(x);
+      INSERT INTO t1 VALUES('one');
+      INSERT INTO t1 VALUES('two');
+      BEGIN;
+        INSERT INTO t1 VALUES('three');
+        INSERT INTO t1 VALUES('four');
+    }
+    forcedelete bak-journal
+    file rename test.db-journal bak-journal
+
+    catchsql COMMIT
+  } {1 {disk I/O error}}
+
+  do_test pager1-33.2 {
+    file rename bak-journal test.db-journal
+    execsql { SELECT * FROM t1 }
+  } {one two}
+}
+
 finish_test

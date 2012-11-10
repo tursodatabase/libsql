@@ -1975,6 +1975,7 @@ struct WhereLevel {
     } in;                 /* Used when plan.wsFlags&WHERE_IN_ABLE */
     Index *pCovidx;       /* Possible covering index for WHERE_MULTI_OR */
   } u;
+  double rOptCost;      /* "Optimal" cost for this level */
 
   /* The following field is really not part of the current level.  But
   ** we need a place to cache virtual table index information for each

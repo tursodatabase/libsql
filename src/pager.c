@@ -3159,6 +3159,7 @@ static int pagerOpenWalIfPresent(Pager *pPager){
     if( rc ) return rc;
     if( nPage==0 ){
       rc = sqlite3OsDelete(pPager->pVfs, pPager->zWal, 0);
+      if( rc==SQLITE_IOERR_DELETE_NOENT ) rc = SQLITE_OK;
       isWal = 0;
     }else{
       rc = sqlite3OsAccess(

@@ -1179,7 +1179,13 @@ int sqlite3_quota_ftruncate(quota_FILE *p, sqlite3_int64 szNew){
   rc = ftruncate(fileno(p->f), szNew);
 #endif
 #if SQLITE_OS_WIN
-  rc = _chsize_s(_fileno(p->f), szNew);
+#  if defined(__MINGW32__) && defined(SQLITE_TEST)
+     /* _chsize_s() is missing from MingW (as of 2012-11-06).  Use
+     ** _chsize() as a work-around for testing purposes. */
+     rc = _chsize(_fileno(p->f), (long)szNew);
+#  else
+     rc = _chsize_s(_fileno(p->f), szNew);
+#  endif
 #endif
   if( pFile && rc==0 ){
     quotaGroup *pGroup = pFile->pGroup;
