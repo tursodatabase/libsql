@@ -1,5 +1,5 @@
-C When\savailable,\suse\sposix_fallocate()\srather\sthan\sftruncate()\sto\sallocate\nspace\sfor\smmap()ed\s-shm\sfiles,\ssince\sposix_fallocate()\sgives\san\serror\sif\nno\sdisk\sspace\sis\savailable\swhereas\sftruncate()\sis\ssilent\sand\sleaves\sthe\ssystem\nvulnerable\sto\sa\sSIGBUS\supon\sfirst\swrite\sto\sthe\smmap()ed\sregion.\nTicket\s[5eaa61ea1881040b17449ca043b6f8fd9ca55dc3]
-D 2012-11-13T10:54:12.768
+C Use\spreprocessor\smacros\sto\sautomatically\sdetect\swhether\sor\snot\nposix_allocate()\sis\savailable.\s\s(It\sis\sgenerally\savailable\son\sLinux\nbut\snot\son\sMac.)\s\sTicket\s[5eaa61ea1881040b17449ca043b6f8fd9ca55dc3]
+D 2012-11-13T11:08:49.725
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -160,7 +160,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c fad4c9cbf89aa5e5de1f5972458c39bd75418b16
+F src/os_unix.c b75d9b0876ad3fde151843ad389b4c3dd727c662
 F src/os_win.c 43ec1285357e5d5d919cb0492eac775c58ad7d12
 F src/pager.c ed53fe75a269c1d67645fe079ea0f3f0ce6492d5
 F src/pager.h 1109a06578ec5574dc2c74cf8d9f69daf36fe3e0
@@ -1024,10 +1024,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 5a3b07f0f5dfae7eea870303f52f37d6a17f1da2
-R 457e538f0280386531160ea4b104ea9e
-T *branch * tkt-5eaa61ea18
-T *sym-tkt-5eaa61ea18 *
-T -sym-trunk *
+P 356259617cfad04492a02912fdf781f54a2b4494
+R 1da6d6b008a37af0f12b5b83b4203af6
 U drh
-Z 97e3b0ff73b00a5f41754576708d0771
+Z 2b21d116614b6c7fcc6d8aed3f12096b
