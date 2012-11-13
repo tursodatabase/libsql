@@ -4168,11 +4168,19 @@ static int unixShmMap(
         ** the requested memory region.
         */
         if( !bExtend ) goto shmpage_out;
+#if defined(HAVE_POSIX_FALLOCATE) && HAVE_POSIX_FALLOCATE
+        if( osFallocate(pShmNode->h, sStat.st_size, nByte)!=0 ){
+          rc = unixLogError(SQLITE_IOERR_SHMSIZE, "fallocate",
+                            pShmNode->zFilename);
+          goto shmpage_out;
+        }
+#else
         if( robust_ftruncate(pShmNode->h, nByte) ){
           rc = unixLogError(SQLITE_IOERR_SHMSIZE, "ftruncate",
                             pShmNode->zFilename);
           goto shmpage_out;
         }
+#endif
       }
     }
 
