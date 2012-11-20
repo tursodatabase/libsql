@@ -1,5 +1,5 @@
-C Strive\sto\suse\sposix_fallocate()\srather\sthan\sftruncate()\swhen\s\nposix_fallocate()\sis\savailable.\s\sTicket\s[5eaa61ea18].
-D 2012-11-13T11:16:04.644
+C Have\sthe\swindows\simplementation\sof\sxDelete\sreturn\sSQLITE_IOERR_DELETE_NOENT\nif\sthe\sfile\sto\sbe\sdeleted\sdoes\snot\sexist.\s\sThe\sunix\simplementation\swas\npreviously\smodified\sto\sbehave\sthis\sway.\s\sThe\scurrent\schanges\ssimply\sbrings\nthe\stwo\simplementations\sinto\salignment.
+D 2012-11-20T15:06:57.977
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -161,7 +161,7 @@ F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c b75d9b0876ad3fde151843ad389b4c3dd727c662
-F src/os_win.c 43ec1285357e5d5d919cb0492eac775c58ad7d12
+F src/os_win.c 1003f13a187bdab1d2cb54d7a930ac875dc7cf08
 F src/pager.c ed53fe75a269c1d67645fe079ea0f3f0ce6492d5
 F src/pager.h 1109a06578ec5574dc2c74cf8d9f69daf36fe3e0
 F src/parse.y f29df90bd3adc64b33114ab1de9fb7768fcf2099
@@ -1024,7 +1024,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 5a3b07f0f5dfae7eea870303f52f37d6a17f1da2 597333f1024092b94bcd8772541e19a0f707bd40
-R 1da6d6b008a37af0f12b5b83b4203af6
+P 29980b08ec591f695386b715df72d4afb6ffc3fb
+R b34ddf6d9c41f9627ecb66c931c8da70
 U drh
-Z 308917846cd590cd935ef45fbc502739
+Z d5d273e9e92a86e1ab421c06a18a3cfd
