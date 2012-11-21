@@ -1,5 +1,5 @@
-C Have\sthe\swindows\simplementation\sof\sxDelete\sreturn\sSQLITE_IOERR_DELETE_NOENT\nif\sthe\sfile\sto\sbe\sdeleted\sdoes\snot\sexist.\s\sThe\sunix\simplementation\swas\npreviously\smodified\sto\sbehave\sthis\sway.\s\sThe\scurrent\schanges\ssimply\sbrings\nthe\stwo\simplementations\sinto\salignment.
-D 2012-11-20T15:06:57.977
+C In\swinDelete,\sdetermine\sthat\sa\sfile\sdoes\snot\sexist\sby\schecking\sfor\sa\slast\serror\sof\sERROR_FILE_NOT_FOUND\sor\sERROR_PATH_NOT_FOUND.
+D 2012-11-21T02:10:20.646
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -161,7 +161,7 @@ F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c b75d9b0876ad3fde151843ad389b4c3dd727c662
-F src/os_win.c 1003f13a187bdab1d2cb54d7a930ac875dc7cf08
+F src/os_win.c 6e55b48f793d0c0d0e086d3f1482a0882530eeeb
 F src/pager.c ed53fe75a269c1d67645fe079ea0f3f0ce6492d5
 F src/pager.h 1109a06578ec5574dc2c74cf8d9f69daf36fe3e0
 F src/parse.y f29df90bd3adc64b33114ab1de9fb7768fcf2099
@@ -1024,7 +1024,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 29980b08ec591f695386b715df72d4afb6ffc3fb
-R b34ddf6d9c41f9627ecb66c931c8da70
-U drh
-Z d5d273e9e92a86e1ab421c06a18a3cfd
+P d4c36d4991b048133efb21b251ab57fa66764d9d
+R 2bf66cd8bb02066607c81d87d184d12d
+T *branch * winNotFound
+T *sym-winNotFound *
+T -sym-trunk *
+U mistachkin
+Z 28cfcb44d275b9d2825a3e2f3bb8894b
