@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\scausing\sthe\s"number-of-documents"\sfield\smaintained\sby\sFTS4\sto\sbe\sset\sincorrectly.
-D 2012-11-27T15:56:38.822
+C Improved\sdetection\sof\sfile-does-not-exist\sin\swinDelete.
+D 2012-11-27T21:12:39.388
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -161,7 +161,7 @@ F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c b75d9b0876ad3fde151843ad389b4c3dd727c662
-F src/os_win.c 1003f13a187bdab1d2cb54d7a930ac875dc7cf08
+F src/os_win.c 6e55b48f793d0c0d0e086d3f1482a0882530eeeb
 F src/pager.c ed53fe75a269c1d67645fe079ea0f3f0ce6492d5
 F src/pager.h 1109a06578ec5574dc2c74cf8d9f69daf36fe3e0
 F src/parse.y f29df90bd3adc64b33114ab1de9fb7768fcf2099
@@ -1024,7 +1024,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P d4c36d4991b048133efb21b251ab57fa66764d9d
-R 2a6f06cab2a0521f17074582d293668f
-U dan
-Z e9d30bbbbbbe7245e672e07e58ec0924
+P e38fb02d5ea5daa6992df4dfbbeec92bf7b525f6 692ad3c02b1af83f0419283fab9b800e361cdf31
+R b2b538782552b89537f1602194fffc5b
+U drh
+Z 96c1130ee11d36c8156561f6a7a10ba8
