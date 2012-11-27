@@ -3888,14 +3888,24 @@ static int winDelete(
                                   &sAttrData) ){
         attr = sAttrData.dwFileAttributes;
       }else{
-        rc = SQLITE_OK; /* Already gone? */
+        lastErrno = osGetLastError();
+        if( lastErrno==ERROR_FILE_NOT_FOUND || lastErrno==ERROR_PATH_NOT_FOUND ){
+          rc = SQLITE_IOERR_DELETE_NOENT; /* Already gone? */
+        }else{
+          rc = SQLITE_ERROR;
+        }
         break;
       }
 #else
       attr = osGetFileAttributesW(zConverted);
 #endif
       if ( attr==INVALID_FILE_ATTRIBUTES ){
-        rc = SQLITE_OK; /* Already gone? */
+        lastErrno = osGetLastError();
+        if( lastErrno==ERROR_FILE_NOT_FOUND || lastErrno==ERROR_PATH_NOT_FOUND ){
+          rc = SQLITE_IOERR_DELETE_NOENT; /* Already gone? */
+        }else{
+          rc = SQLITE_ERROR;
+        }
         break;
       }
       if ( attr&FILE_ATTRIBUTE_DIRECTORY ){
@@ -3917,7 +3927,12 @@ static int winDelete(
     do {
       attr = osGetFileAttributesA(zConverted);
       if ( attr==INVALID_FILE_ATTRIBUTES ){
-        rc = SQLITE_OK; /* Already gone? */
+        lastErrno = osGetLastError();
+        if( lastErrno==ERROR_FILE_NOT_FOUND || lastErrno==ERROR_PATH_NOT_FOUND ){
+          rc = SQLITE_IOERR_DELETE_NOENT; /* Already gone? */
+        }else{
+          rc = SQLITE_ERROR;
+        }
         break;
       }
       if ( attr&FILE_ATTRIBUTE_DIRECTORY ){
@@ -3935,7 +3950,7 @@ static int winDelete(
     } while(1);
   }
 #endif
-  if( rc ){
+  if( rc && rc!=SQLITE_IOERR_DELETE_NOENT ){
     rc = winLogError(SQLITE_IOERR_DELETE, lastErrno,
              "winDelete", zFilename);
   }else{
