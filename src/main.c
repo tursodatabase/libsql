@@ -134,7 +134,7 @@ int sqlite3_initialize(void){
 
 #ifdef SQLITE_ENABLE_SQLLOG
   {
-    extern sqlite3_init_sqllog(void);
+    extern void sqlite3_init_sqllog(void);
     sqlite3_init_sqllog();
   }
 #endif
@@ -837,7 +837,8 @@ static int sqlite3Close(sqlite3 *db, int forceZombie){
 
 #ifdef SQLITE_ENABLE_SQLLOG
   if( sqlite3GlobalConfig.xSqllog ){
-    sqlite3GlobalConfig.xSqllog(sqlite3GlobalConfig.pSqllogArg, db, 0, 0);
+    /* Closing the handle. Fourth parameter is passed the value 2. */
+    sqlite3GlobalConfig.xSqllog(sqlite3GlobalConfig.pSqllogArg, db, 0, 2);
   }
 #endif
 
@@ -2475,9 +2476,9 @@ opendb_out:
   *ppDb = db;
 #ifdef SQLITE_ENABLE_SQLLOG
   if( sqlite3GlobalConfig.xSqllog ){
-    sqlite3GlobalConfig.xSqllog(
-        sqlite3GlobalConfig.pSqllogArg, db, zFilename, -1
-    );
+    /* Opening a db handle. Fourth parameter is passed 0. */
+    void *pArg = sqlite3GlobalConfig.pSqllogArg;
+    sqlite3GlobalConfig.xSqllog(pArg, db, zFilename, 0);
   }
 #endif
   return sqlite3ApiExit(0, rc);
