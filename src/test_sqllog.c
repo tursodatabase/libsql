@@ -66,7 +66,11 @@
 #include "sys/types.h"
 #include "unistd.h"
 static int getProcessId(void){
+#if SQLITE_OS_WIN
+  return (int)_getpid();
+#else
   return (int)getpid();
+#endif
 }
 
 
@@ -210,14 +214,14 @@ static int sqllogFindAttached(
   rc = sqlite3_prepare_v2(p->db, "PRAGMA database_list", -1, &pStmt, 0);
   if( rc==SQLITE_OK ){
     while( SQLITE_ROW==sqlite3_step(pStmt) ){
-      char *zVal1; int nVal1;
-      char *zVal2; int nVal2;
+      const char *zVal1; int nVal1;
+      const char *zVal2; int nVal2;
 
-      zVal1 = sqlite3_column_text(pStmt, 1);
+      zVal1 = (const char*)sqlite3_column_text(pStmt, 1);
       nVal1 = sqlite3_column_bytes(pStmt, 1);
       memcpy(zName, zVal1, nVal1+1);
 
-      zVal2 = sqlite3_column_text(pStmt, 2);
+      zVal2 = (const char*)sqlite3_column_text(pStmt, 2);
       nVal2 = sqlite3_column_bytes(pStmt, 2);
       memcpy(zFile, zVal2, nVal2+1);
 
@@ -466,4 +470,3 @@ void sqlite3_init_sqllog(void){
     }
   }
 }
-
