@@ -1,5 +1,5 @@
-C Improved\sdetection\sof\sfile-does-not-exist\sin\swinDelete.
-D 2012-11-27T21:12:39.388
+C Add\sthe\sSQLLOG\scapability\sto\strunk.
+D 2012-11-27T21:22:54.195
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -103,7 +103,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk 615aeaf7474cb2f141547e0c3ac08bcb75dd2b55
+F main.mk a0d170ae1a8a8683688e281194e09d47a68eaa3f
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -134,7 +134,7 @@ F src/expr.c 3b25a95f3d309403940ba4a3212f197b8b6251d5
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c c82a04e7a92bb728f9ab972b76590403283be2af
 F src/func.c 1755cafdb8f2a291681f1ea55e0215518ebd6e52
-F src/global.c fb44b11e02e06c995e6ed6642509edd23599d584
+F src/global.c e59ecd2c553ad0d4bfbc84ca71231336f8993a7a
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
@@ -143,7 +143,7 @@ F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
-F src/main.c 5249486037f88e765cce7c4870846dc5a2cd2ed1
+F src/main.c 448564ee3795b13c373bbc5c8590df8fbfe1d64c
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
@@ -176,10 +176,10 @@ F src/resolve.c 7b986a715ac281643309c29257bb58cfae7aa810
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 3a8baf4719f9723b4e0b43f2baa60692d0d921f8
 F src/shell.c 24cd0aa74aff73ea08594629faead564c4c2a286
-F src/sqlite.h.in 2a0d1234242d75e19e297db99f0925fc9f021e85
+F src/sqlite.h.in 4e71a210f383b6d060bd3fdf81d850f0f8c4eca3
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h 79c00e24d84541c3117ef34ce09c5749dcdcba25
+F src/sqliteInt.h 68f23dcfc3fb6559c07b327ab6d8d2e63e4bb69e
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -221,6 +221,7 @@ F src/test_rtree.c aba603c949766c4193f1068b91c787f57274e0d9
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
 F src/test_spellfix.c 76dd8d3111d2f5354c374f71fa23b752bd0b029c
+F src/test_sqllog.c 7813b47021a6d4e39bb7b1b328a8893dc59885cb
 F src/test_stat.c d1569c7a4839f13e80187e2c26b2ab4da2d03935
 F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c a992d8c80ea91fbf21fb2dd570db40e77dd7e6ae
@@ -240,7 +241,7 @@ F src/vdbe.c e1b2f881f85598b8e5d3366a3cdba60526d40144
 F src/vdbe.h b52887278cb173e66188da84dfab216bea61119d
 F src/vdbeInt.h 79abf9b31be406d35ca77d6999cb2d42aaf91e78
 F src/vdbeapi.c 4c2418161cf45392ba76a7ca92f9a5f06b96f89c
-F src/vdbeaux.c 8c8cfd30063e9b3664e2faa0e3785102bf131a10
+F src/vdbeaux.c 552a878f5d9d3484ff6fd09acc3d566403f5db4b
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
 F src/vdbesort.c c61ca318681c0e7267da8be3abfca8469652a7e9
@@ -1024,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P e38fb02d5ea5daa6992df4dfbbeec92bf7b525f6 692ad3c02b1af83f0419283fab9b800e361cdf31
-R b2b538782552b89537f1602194fffc5b
+P 92e9b5bc05887c47bc964828447a76ce29aa255c b3809c937b230b34e5bc6ce4909c04ceef72fb85
+R 7b1c6922767981286ed7cd5ff2185445
 U drh
-Z 96c1130ee11d36c8156561f6a7a10ba8
+Z 56c73f084832549f0811a2beca2c3d86
