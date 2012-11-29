@@ -1,5 +1,5 @@
-C Add\sthe\sSQLLOG\scapability\sto\strunk.
-D 2012-11-27T21:22:54.195
+C Mark\sthe\s"async"\smodule\sas\sdeprecated\sas\sits\sfunctionality\shas\sbeen\nsuperceded\sby\sWAL\smode.\s\sThis\scloses\sticket\s[f46ca03b55ae0e]
+D 2012-11-29T14:26:11.774
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -22,7 +22,7 @@ F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
 F doc/vfs-shm.txt e101f27ea02a8387ce46a05be2b1a902a021d37a
 F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
-F ext/async/README.txt 0c541f418b14b415212264cbaaf51c924ec62e5b
+F ext/async/README.txt 048f24b1b8f28eb31fb84aac28e70a6ce3de6973
 F ext/async/sqlite3async.c 733a9f21b1066f44ff07b9c0da973b1e483d1e0c
 F ext/async/sqlite3async.h a21e1252deb14a2c211f0e165c4b9122a8f1f344
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 92e9b5bc05887c47bc964828447a76ce29aa255c b3809c937b230b34e5bc6ce4909c04ceef72fb85
-R 7b1c6922767981286ed7cd5ff2185445
+P f0843f885ab3337f83fe3b304aab80bb7b5dd0a3
+R 1bc9994dc1983e832fe7d5970ec76e1b
 U drh
-Z 56c73f084832549f0811a2beca2c3d86
+Z d2606d0f5b2b21bd75d458ededc57a06
