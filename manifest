@@ -1,5 +1,5 @@
-C Do\snot\sexist\sthe\scommand-line\sshell\sif\sa\s".read"\scommand\sinvokes\sa\sscript\sthat\ncontains\stwo\serrors.\s\sBut\sreported\son\sthe\smailing\slist.
-D 2012-12-01T20:21:22.105
+C Make\ssure\sthat\sthe\soptimization\sthat\sset\sthe\smaximum\scolumn\sthat\swill\sbe\sused\non\sa\sparticular\squery\sdoes\snot\smistakenly\schange\san\sopcode\sother\sthan\nOP_OpenRead\sor\sOP_OpenWrite.\s\sIn\sparticular,\smake\ssure\sit\sdoes\snot\soverwrite\nthe\sP4\sfield\sof\san\sOP_SorterOpen.
+D 2012-12-03T17:04:40.994
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -237,11 +237,11 @@ F src/update.c 28d2d098b43a2c70dae399896ea8a02f622410ef
 F src/utf.c 8d819e2e5104a430fc2005f018db14347c95a38f
 F src/util.c 0af2e515dc0dabacec931bca39525f6c3f1c5455
 F src/vacuum.c 2727bdd08847fcb6b2d2da6d14f018910e8645d3
-F src/vdbe.c e1b2f881f85598b8e5d3366a3cdba60526d40144
+F src/vdbe.c 5b49cb1f852e4604a4fb6c47e087ddab28af193f
 F src/vdbe.h b52887278cb173e66188da84dfab216bea61119d
 F src/vdbeInt.h 79abf9b31be406d35ca77d6999cb2d42aaf91e78
 F src/vdbeapi.c 4c2418161cf45392ba76a7ca92f9a5f06b96f89c
-F src/vdbeaux.c 552a878f5d9d3484ff6fd09acc3d566403f5db4b
+F src/vdbeaux.c 2d1b3ee65860b1ea97ad9f20a02338b26caf2367
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
 F src/vdbesort.c c61ca318681c0e7267da8be3abfca8469652a7e9
@@ -250,7 +250,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 832e33fefbe5ba751c1f5a06e63de98be95e56f2
+F src/where.c b5325975cbdd9b64f680fb88d7e727fc9368db68
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 3d548db7eb14a4133afa6a94530f61fb3ef4a052
-R a8f759d368c1676ca502f98eec1f6be2
+P 2e5e65152758bc37439584ccba4c1b1c5ceb24f8
+R a8b889710169aeb4c03f1d5fd7d8d5f6
 U drh
-Z 02e70790acf1c68859534e04f6be9da6
+Z 49f89035377b6df810239244d05c5340

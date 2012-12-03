@@ -3300,7 +3300,7 @@ case OP_OpenEphemeral: {
   break;
 }
 
-/* Opcode: OpenSorter P1 P2 * P4 *
+/* Opcode: SorterOpen P1 P2 * P4 *
 **
 ** This opcode works like OP_OpenEphemeral except that it opens
 ** a transient index that is specifically designed to sort large

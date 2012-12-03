@@ -5257,6 +5257,8 @@ WhereInfo *sqlite3WhereBegin(
       const char *pVTab = (const char *)sqlite3GetVTable(db, pTab);
       int iCur = pTabItem->iCursor;
       sqlite3VdbeAddOp4(v, OP_VOpen, iCur, 0, 0, pVTab, P4_VTAB);
+    }else if( IsVirtual(pTab) ){
+      /* noop */
     }else
 #endif
     if( (pLevel->plan.wsFlags & WHERE_IDX_ONLY)==0
