@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\s'tcl'\sshell\soutput\smode.\sEscape\sdoublequotes,\s\nset\sseparator\sto\sspace\swhen\smode\sis\sset,\sand\sskip\sseparator\safter\sfinal\s\ncolumn.
-D 2012-12-04T00:59:05.343
+C Add\sa\stest\sto\sensure\sthat\sthe\sfix\sin\s[b0c1ba655d]\shas\sworked.
+D 2012-12-04T05:24:21.277
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -918,7 +918,7 @@ F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 7701bb609fe8bf6535514e8b849a309e8f00573b
 F test/view.test b182a67ec43f490b156b5a710827a341be83dd17
-F test/vtab1.test 10fb9e656fe4b318cd82ff1616a340acc01aac4b
+F test/vtab1.test 36c9935e4be3b6350b31b6b697561b6fc3ab349a
 F test/vtab2.test 7bcffc050da5c68f4f312e49e443063e2d391c0d
 F test/vtab3.test baad99fd27217f5d6db10660522e0b7192446de1
 F test/vtab4.test 942f8b8280b3ea8a41dae20e7822d065ca1cb275
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P ffd1e51490286abfaea68fd4b4b4cb967d87b04b 41fd9dd29034b2269e4b7f2626350124d37b5303
-R 73681e387dffe475fd9637264683a4fd
-U drh
-Z 4616a9e41f5cc64f88cf72ef7a9185dc
+P 487ba753139c256b911f16aee9586144faea846f
+R 3d588766f0b20ddf6011174c0e1b67ff
+U dan
+Z 0f97fb82e8b32b135392c5a33d9875bf
