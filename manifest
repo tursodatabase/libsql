@@ -1,5 +1,5 @@
-C Fix\san\sout-of-order\sfunction\sdeclaration\swhen\scompiled\swith\sMEMDEBUG.
-D 2012-12-04T00:37:58.757
+C Fix\san\suninitialized\svariable\sdetected\sby\svalgrind.
+D 2012-12-04T00:53:08.237
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -72,7 +72,7 @@ F ext/fts3/fts3_tokenizer.h 66dec98e365854b6cd2d54f1a96bb6d428fc5a68
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 49e36e6ba59f79e6bd6a8bfe434570fe48d20559
 F ext/fts3/fts3_unicode2.c a863f05f758af36777dffc2facc898bc73fec896
-F ext/fts3/fts3_write.c a432433a706bd065e8bb0f8b3b33ce7cf9d7f21d
+F ext/fts3/fts3_write.c c2166f7148a4ad8bcdad99a99d647b1091744e6b
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 7d5fc1a339cf4f3597ab6a5f3e7101884d2d7673
-R 51b08a3d6b6d9647118accff35071b4d
-U mistachkin
-Z e9663e5c6dfd0808fc144666962de0b7
+P 6d31557837fef2c8fad6f009ac6dd97dd4af0a54
+R ffba2844807fcdd5e34e884677457f21
+U drh
+Z f9efa9b0c08091e08c6d5b44e8bed86a
