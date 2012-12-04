@@ -1,5 +1,5 @@
-C Fix\san\suninitialized\svariable\sdetected\sby\svalgrind.
-D 2012-12-04T00:53:08.237
+C Improvements\sto\sthe\s'tcl'\sshell\soutput\smode.\sEscape\sdoublequotes,\s\nset\sseparator\sto\sspace\swhen\smode\sis\sset,\sand\sskip\sseparator\safter\sfinal\s\ncolumn.
+D 2012-12-04T00:59:05.343
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 7b986a715ac281643309c29257bb58cfae7aa810
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 3a8baf4719f9723b4e0b43f2baa60692d0d921f8
-F src/shell.c 99091f9dcf2bca1e1ff342f3361388b57f804135
+F src/shell.c e392dd1ccbb77cc1d75a8367a89b473c24bea019
 F src/sqlite.h.in 4e71a210f383b6d060bd3fdf81d850f0f8c4eca3
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
@@ -708,7 +708,7 @@ F test/shared8.test b27befbefbe7f4517f1d6b7ff8f64a41ec74165d
 F test/shared9.test 614a3ca431adc73c857632deb4eff75bcaee40ec
 F test/shared_err.test 91e26ec4f3fbe07951967955585137e2f18993de
 F test/sharedlock.test ffa0a3c4ac192145b310f1254f8afca4d553eabf
-F test/shell1.test 340125225cc96c7f48d59a869aaf82866e481007
+F test/shell1.test b7896eb84028f3bc8300caf1fc796a73728aad0b
 F test/shell2.test 037d6ad16e873354195d30bb2dc4b5321788154a
 F test/shell3.test 9196c42772d575685e722c92b4b39053c6ebba59
 F test/shell4.test aa4eef8118b412d1a01477a53426ece169ea86a9
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 6d31557837fef2c8fad6f009ac6dd97dd4af0a54
-R ffba2844807fcdd5e34e884677457f21
+P ffd1e51490286abfaea68fd4b4b4cb967d87b04b 41fd9dd29034b2269e4b7f2626350124d37b5303
+R 73681e387dffe475fd9637264683a4fd
 U drh
-Z f9efa9b0c08091e08c6d5b44e8bed86a
+Z 4616a9e41f5cc64f88cf72ef7a9185dc
