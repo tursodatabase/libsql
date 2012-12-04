@@ -1,5 +1,5 @@
-C Add\sa\stest\sto\sensure\sthat\sthe\sfix\sin\s[b0c1ba655d]\shas\sworked.
-D 2012-12-04T05:24:21.277
+C Fix\sa\sharmless\scompiler\swarning.
+D 2012-12-04T11:03:11.336
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -133,7 +133,7 @@ F src/delete.c 9b8d308979114991e5dc7cee958316e07186941d
 F src/expr.c 3b25a95f3d309403940ba4a3212f197b8b6251d5
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c c82a04e7a92bb728f9ab972b76590403283be2af
-F src/func.c 1755cafdb8f2a291681f1ea55e0215518ebd6e52
+F src/func.c 8147799b048065a1590805be464d05b4913e652c
 F src/global.c e59ecd2c553ad0d4bfbc84ca71231336f8993a7a
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 487ba753139c256b911f16aee9586144faea846f
-R 3d588766f0b20ddf6011174c0e1b67ff
-U dan
-Z 0f97fb82e8b32b135392c5a33d9875bf
+P 41806de5c88e924e306ca737192755c011517426
+R d1dfe038d18ec2a0011faa499e6f0db7
+U drh
+Z 4b51d21c427563be96796ad15017cf65
