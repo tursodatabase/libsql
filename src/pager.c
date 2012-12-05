@@ -3486,7 +3486,7 @@ void sqlite3PagerSetBusyhandler(
     void **ap = (void **)&pPager->xBusyHandler;
     assert( ((int(*)(void *))(ap[0]))==xBusyHandler );
     assert( ap[1]==pBusyHandlerArg );
-    sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_BUSYHANDLER, (void *)ap);
+    sqlite3OsFileControlHint(pPager->fd, SQLITE_FCNTL_BUSYHANDLER, (void *)ap);
   }
 }
 

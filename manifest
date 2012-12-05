@@ -1,5 +1,5 @@
-C If\sthe\satomic-write\sproperty\sis\senabled,\sa\stransaction\smay\sbe\scommitted\sin\sjournal_mode=DELETE\smode\swithout\sever\sactually\screating\sa\sjournal\sfile\son\sdisk.\sIn\sthis\scase,\sdo\snot\sattempt\sto\sunlink()\sthe\sjournal\sfile\swhen\scommitting\sthe\stransaction.
-D 2012-12-05T10:01:35.014
+C Since\serrors\sare\signored\sanyway,\suse\ssqlite3OsFileControlHint()\sinstead\sof\sOsFileControl()\sto\sinvoke\sthe\sSQLITE_FCNTL_BUSY_HANDLER\sfile-control.
+D 2012-12-05T11:30:28.616
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -162,7 +162,7 @@ F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c b75d9b0876ad3fde151843ad389b4c3dd727c662
 F src/os_win.c 6e55b48f793d0c0d0e086d3f1482a0882530eeeb
-F src/pager.c 521251dd7855cb4d917815f742dd679baf3f148e
+F src/pager.c 4092c907222cfd451c74fe6bd2fd64b342f7190f
 F src/pager.h 1109a06578ec5574dc2c74cf8d9f69daf36fe3e0
 F src/parse.y f29df90bd3adc64b33114ab1de9fb7768fcf2099
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 04ab2dc6914e4d6fe2682eba08fc1cd1148a44a1
-R 8c3b33c5b9f09a2ab875a23939115f6f
+P 11aa47b0a837858b644c304638e1cbbf482de2f0
+R 2c5b6d51e26c07bb7aa01494f26aa504
 U dan
-Z 626b4f7906fb9116d17f012a395a239f
+Z 491f382600c3145f948c8c8459b2421a
