@@ -1,5 +1,5 @@
-C Make\ssure\smemory\sis\sfreed\susing\sa\sroutine\sthat\sis\scompatible\swith\sthe\nroutine\sused\sto\sallocate\sthe\smemory.\s\sThe\sSQLITE_MEMDEBUG\scompile-time\noption\senforces\sthis.
-D 2012-12-05T14:31:13.890
+C Fixes\sto\sa\stest\scase\sin\sshared_err.test.\sThe\sfix\sis\sto\sprevent\ssqlite3_prepare()\sfrom\sbeing\scalled\swhen\sthe\stest\sintends\sto\stest\sthe\sresponse\sof\ssqlite3_step()\sto\san\sOOM\scondition.
+D 2012-12-05T14:37:55.972
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -706,7 +706,7 @@ F test/shared6.test 866bb4982c45ce216c61ded5e8fde4e7e2f3ffa9
 F test/shared7.test 960760bc8d03e1419e70dea69cf41db62853616e
 F test/shared8.test b27befbefbe7f4517f1d6b7ff8f64a41ec74165d
 F test/shared9.test 614a3ca431adc73c857632deb4eff75bcaee40ec
-F test/shared_err.test 91e26ec4f3fbe07951967955585137e2f18993de
+F test/shared_err.test 0079c05c97d88cfa03989b7c20a8b266983087aa
 F test/sharedlock.test ffa0a3c4ac192145b310f1254f8afca4d553eabf
 F test/shell1.test b7896eb84028f3bc8300caf1fc796a73728aad0b
 F test/shell2.test 037d6ad16e873354195d30bb2dc4b5321788154a
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P bdceca2738eb3e8acc44d0384cf2a3a969ee8170
-R 80503ae4ab80fdd798bfbc400d2c3f61
-U drh
-Z 4593af5fed4b145d5a6fe4d8f35510ce
+P 9f6c68856b694373b7ffb124abd996e519ba5921
+R 0d9643e028363737d4ff9c9748568eab
+U dan
+Z bbb987d6c204716231a7c44af62004e5
