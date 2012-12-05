@@ -1,5 +1,5 @@
-C Update\sa\scouple\sof\stest\sscripts\sso\sthat\sthey\swork\sin\sauto-vacuum\smode.
-D 2012-12-05T09:12:58.803
+C If\sthe\satomic-write\sproperty\sis\senabled,\sa\stransaction\smay\sbe\scommitted\sin\sjournal_mode=DELETE\smode\swithout\sever\sactually\screating\sa\sjournal\sfile\son\sdisk.\sIn\sthis\scase,\sdo\snot\sattempt\sto\sunlink()\sthe\sjournal\sfile\swhen\scommitting\sthe\stransaction.
+D 2012-12-05T10:01:35.014
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -139,7 +139,7 @@ F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
 F src/insert.c d7ed04b1fab887d6d26cf5e36753f5d6d1246290
-F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
+F src/journal.c eb7b9f5e783266521bcd9b2b93d419a219411f71
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
@@ -162,7 +162,7 @@ F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c b75d9b0876ad3fde151843ad389b4c3dd727c662
 F src/os_win.c 6e55b48f793d0c0d0e086d3f1482a0882530eeeb
-F src/pager.c ed53fe75a269c1d67645fe079ea0f3f0ce6492d5
+F src/pager.c 521251dd7855cb4d917815f742dd679baf3f148e
 F src/pager.h 1109a06578ec5574dc2c74cf8d9f69daf36fe3e0
 F src/parse.y f29df90bd3adc64b33114ab1de9fb7768fcf2099
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -179,7 +179,7 @@ F src/shell.c e392dd1ccbb77cc1d75a8367a89b473c24bea019
 F src/sqlite.h.in 4e71a210f383b6d060bd3fdf81d850f0f8c4eca3
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h 68f23dcfc3fb6559c07b327ab6d8d2e63e4bb69e
+F src/sqliteInt.h 72ab83e698a42d509a0d1cf16a66ec2dae51a756
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 12693deba9b8a47ad02ca4e32d5fba6006b0401c
-R c40e9ea83d74454bcc63d7bebd03fb54
+P 04ab2dc6914e4d6fe2682eba08fc1cd1148a44a1
+R 8c3b33c5b9f09a2ab875a23939115f6f
 U dan
-Z 803d14ed6f4f5e70c7f9aeded4a72924
+Z 626b4f7906fb9116d17f012a395a239f

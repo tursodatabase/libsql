@@ -3253,8 +3253,10 @@ int sqlite3FindInIndex(Parse *, Expr *, int*);
   int sqlite3JournalOpen(sqlite3_vfs *, const char *, sqlite3_file *, int, int);
   int sqlite3JournalSize(sqlite3_vfs *);
   int sqlite3JournalCreate(sqlite3_file *);
+  int sqlite3JournalExists(sqlite3_file *p);
 #else
   #define sqlite3JournalSize(pVfs) ((pVfs)->szOsFile)
+  #define sqlite3JournalExists(p) 1
 #endif
 
 void sqlite3MemJournalOpen(sqlite3_file *);
