@@ -63,8 +63,7 @@ do_execsql_test 2.1 {
   CREATE TABLE t1(a, b);
   CREATE INDEX i1 ON t1(a, b);
 }
-
-do_test 2.2 { file size test.db } 3072
+do_test 2.2 { file size test.db } [expr $AUTOVACUUM ? 4096 : 3072]
 
 do_test 2.3 {
   sqlite3 db1 test.db2
@@ -90,8 +89,7 @@ do_execsql_test 3.1 {
   CREATE TABLE t1(a, b);
   CREATE INDEX i1 ON t1(a, b);
 }
-
-do_test 3.2 { file size test.db } 12288
+do_test 3.2 { file size test.db } [expr $AUTOVACUUM ? 16384 : 12288]
 
 do_test 3.3 {
   sqlite3 db1 test.db2

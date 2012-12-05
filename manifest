@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scompiler\swarning.
-D 2012-12-04T11:03:11.336
+C Update\sa\scouple\sof\stest\sscripts\sso\sthat\sthey\swork\sin\sauto-vacuum\smode.
+D 2012-12-05T09:12:58.803
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -290,7 +290,7 @@ F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
 F test/backcompat.test ecd841f3a3bfb81518721879cc56a760670e3198
 F test/backup.test c9cdd23a495864b9edf75a9fa66f5cb7e10fcf62
 F test/backup2.test 34986ef926ea522911a51dfdb2f8e99b7b75ebcf
-F test/backup4.test 3c3639d28f3cdb4a123694a0a7c5fa7bfe304e2a
+F test/backup4.test 4d90389daeb781fe718816a4fc836ad1b06791d8
 F test/backup_ioerr.test 40d208bc9224b666ee3ed423f49bc9062a36a9d0
 F test/backup_malloc.test 7162d604ec2b4683c4b3799a48657fb8b5e2d450
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
@@ -944,7 +944,7 @@ F test/wal5.test f58ed4b8b542f71c7441da12fbd769d99b362437
 F test/wal6.test 2e3bc767d9c2ce35c47106148d43fcbd072a93b3
 F test/wal7.test 2ae8f427d240099cc4b2dfef63cff44e2a68a1bd
 F test/wal8.test b3ee739fe8f7586aaebdc2367f477ebcf3e3b034
-F test/wal9.test 48c40803faf6849515c81213697e9f3376835981
+F test/wal9.test 378e76a9ad09cd9bee06c172ad3547b0129a6750
 F test/wal_common.tcl a98f17fba96206122eff624db0ab13ec377be4fe
 F test/walbak.test b9f68e39646375c2b877be906babcc15d38b4877
 F test/walbig.test f437473a16cfb314867c6b5d1dbcd519e73e3434
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 41806de5c88e924e306ca737192755c011517426
-R d1dfe038d18ec2a0011faa499e6f0db7
-U drh
-Z 4b51d21c427563be96796ad15017cf65
+P 12693deba9b8a47ad02ca4e32d5fba6006b0401c
+R c40e9ea83d74454bcc63d7bebd03fb54
+U dan
+Z 803d14ed6f4f5e70c7f9aeded4a72924
