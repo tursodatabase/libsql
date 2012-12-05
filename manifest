@@ -1,5 +1,5 @@
-C Modify\sa\squery\sin\stest/thread001.test\sto\sensure\sthat\sresults\sare\sreturned\sin\sthe\sorder\sexpected\sby\sthe\stest.
-D 2012-12-05T16:44:13.337
+C Disable\sa\scouple\sof\stests\sin\swhere.test\swhen\srunning\sthe\s"no_optimization"\spermutation.
+D 2012-12-05T19:04:32.951
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -961,7 +961,7 @@ F test/walro.test a31deb621033442a76c3a61e44929250d06f81b1
 F test/walshared.test 6dda2293880c300baf5d791c307f653094585761
 F test/walslow.test e7be6d9888f83aa5d3d3c7c08aa9b5c28b93609a
 F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
-F test/where.test 41b65069a227a61238c1387b050f029480ca5677
+F test/where.test 9714e6f292d70c22e78e1cecb3d896457186b9b7
 F test/where2.test 43d4becaf5a5df854e6c21d624a1cb84c6904554
 F test/where3.test 667e75642102c97a00bf9b23d3cb267db321d006
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 40c143955ebe75f8e73119f9103f36a3c8ac4514
-R f84e4b8cfc7fea3471a813d76f6cf616
+P 51cbddd51d02bcd954be411ecc83556c049a2680
+R 004544aa2f154dd2f5140bcbbf89a0db
 U dan
-Z cfac0ef537a462cb80cbccc9f0909b0c
+Z 47907e9189566266b1668203df85c209
