@@ -1,5 +1,5 @@
-C Since\serrors\sare\signored\sanyway,\suse\ssqlite3OsFileControlHint()\sinstead\sof\sOsFileControl()\sto\sinvoke\sthe\sSQLITE_FCNTL_BUSY_HANDLER\sfile-control.
-D 2012-12-05T11:30:28.616
+C Make\ssure\smemory\sis\sfreed\susing\sa\sroutine\sthat\sis\scompatible\swith\sthe\nroutine\sused\sto\sallocate\sthe\smemory.\s\sThe\sSQLITE_MEMDEBUG\scompile-time\noption\senforces\sthis.
+D 2012-12-05T14:31:13.890
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -116,7 +116,7 @@ F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c f8db986c03eb0bfb221523fc9bbb9d0b70de3168
 F src/analyze.c 7553068d21e32a57fc33ab6b2393fc8c1ba41410
-F src/attach.c 34c15ecd686e58f08e5bb1389e28a0b65c2c83db
+F src/attach.c ea5247f240e2c08afd608e9beb380814b86655e1
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c cab40f2c1fe79d6eb93d3b4086c78c41ad2fa5d0
 F src/bitvec.c 26675fe8e431dc555e6f2d0e11e651d172234aa1
@@ -241,7 +241,7 @@ F src/vdbe.c 5b49cb1f852e4604a4fb6c47e087ddab28af193f
 F src/vdbe.h b52887278cb173e66188da84dfab216bea61119d
 F src/vdbeInt.h 79abf9b31be406d35ca77d6999cb2d42aaf91e78
 F src/vdbeapi.c 4c2418161cf45392ba76a7ca92f9a5f06b96f89c
-F src/vdbeaux.c 2d1b3ee65860b1ea97ad9f20a02338b26caf2367
+F src/vdbeaux.c f68a124380954985d797fa7d91fe483e2e894aca
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
 F src/vdbesort.c c61ca318681c0e7267da8be3abfca8469652a7e9
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 11aa47b0a837858b644c304638e1cbbf482de2f0
-R 2c5b6d51e26c07bb7aa01494f26aa504
-U dan
-Z 491f382600c3145f948c8c8459b2421a
+P bdceca2738eb3e8acc44d0384cf2a3a969ee8170
+R 80503ae4ab80fdd798bfbc400d2c3f61
+U drh
+Z 4593af5fed4b145d5a6fe4d8f35510ce

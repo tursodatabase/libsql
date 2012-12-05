@@ -2482,7 +2482,7 @@ void sqlite3VdbeClearObject(sqlite3 *db, Vdbe *p){
   sqlite3DbFree(db, p->zSql);
   sqlite3DbFree(db, p->pFree);
 #if defined(SQLITE_ENABLE_TREE_EXPLAIN)
-  sqlite3DbFree(db, p->zExplain);
+  sqlite3_free(p->zExplain);
   sqlite3DbFree(db, p->pExplain);
 #endif
 }
