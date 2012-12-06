@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_FCNTL_TEMPFILENAME\sfile\scontrol\sthat\sasks\sthe\sunderlying\sVFS\nto\sreturn\sa\snew\stemporary\sfilename.\s\sPer\srequest\sfrom\sNSS\steam\sat\sMozilla.
-D 2012-12-06T19:01:42.467
+C Apply\sthe\ssame\srestrictions\son\sconstant\srefactoring\sto\sstatements\swithin\sa\strigger\sprogram\sas\stop-level\sstatements.\sCandidate\sfix\sfor\s[ae3c5670b6].
+D 2012-12-06T19:37:22.521
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -124,7 +124,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c eccee944cb2221e919d7a855e5928d8643194b14
 F src/btree.h 3ad7964d6c5b1c7bff569aab6adfa075f8bf06cd
 F src/btreeInt.h 4e5c2bd0f9b36b2a815a6d84f771a61a65830621
-F src/build.c f35dac52924a6e8e6346a90f0c195a84e28b6f21
+F src/build.c fd68fb1bee609b88f4f7c8ebe4dc9560c583c39d
 F src/callback.c d7e46f40c3cf53c43550b7da7a1d0479910b62cc
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 72a70dcfda75d3a1f81041ce4573e7afddcd8e4e
@@ -232,7 +232,7 @@ F src/test_vfstrace.c 34b544e80ba7fb77be15395a609c669df2e660a2
 F src/test_wholenumber.c 3d2b9ed1505c40ad5c5ca2ad16ae7a289d6cc251
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c 1e86210d3976717a19238ea7b047fac481fe8c12
-F src/trigger.c 3f258307040173aff383eb23fb74c44fe829078c
+F src/trigger.c cd95ac64efa60e39faf9b5597443192ff27a22fa
 F src/update.c 28d2d098b43a2c70dae399896ea8a02f622410ef
 F src/utf.c 8d819e2e5104a430fc2005f018db14347c95a38f
 F src/util.c 0af2e515dc0dabacec931bca39525f6c3f1c5455
@@ -899,7 +899,7 @@ F test/trigger8.test 30cb0530bd7c4728055420e3f739aa00412eafa4
 F test/trigger9.test 5b0789f1c5c4600961f8e68511b825b87be53e31
 F test/triggerA.test e0aaba16d3547193d36bbd82a1b0ed75e9c88d40
 F test/triggerB.test 56780c031b454abac2340dbb3b71ac5c56c3d7fe
-F test/triggerC.test 29173df06f8e91bec2b95ea7048b30d1e1c7b9db
+F test/triggerC.test a7b4367392c755bc5fd5fff88011753e6b6afe90
 F test/triggerD.test 8e7f3921a92a5797d472732108109e44575fa650
 F test/tt3_checkpoint.c 415eccce672d681b297485fc20f44cdf0eac93af
 F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
@@ -1025,7 +1025,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P d507648d820cfea70e17f3d21c35c932a2d20367
-R eb2cb26563b5f98893b41a686dd89dac
-U drh
-Z a78031be2e88797bf9b27c616571dbb4
+P 1a63b1d5fa5d79f96eddbda6d94bc10248863710
+R 919f27f45c7dc1e6e97e702080115442
+T *branch * constant-refactoring-in-triggers
+T *sym-constant-refactoring-in-triggers *
+T -sym-trunk *
+U dan
+Z 10c6ff069df8e2b9b146f1c13827ef9e
