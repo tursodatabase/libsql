@@ -1,7 +1,7 @@
-C Remove\sobsolete\scomments\sfrom\sthe\sdefinition\sof\sthe\sCollSeq\sobject.
-D 2012-12-06T01:03:15.144
+C Stop\susing\sthe\sTCL_LIBS\sconfiguration\svariable\swhen\slinking\swith\sTcl.\nRemove\ssuperfluous\s'rm'\scommand\sfrom\sthe\s"clean"\starget.
+D 2012-12-06T02:56:05.083
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
+F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 911b8188f5d67801035a113e063c3023a617525d
 F Makefile.vxworks b18ad88e9a8c6a001f5cf4a389116a4f1a7ab45f
@@ -15,8 +15,8 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 4907207e1627a394e8892cce8dcc8068fbe5f7cd x
-F configure.ac 6e909664785b8184db2179013cd9d574f96ca3a3
+F configure 252992f6588107ebd5d17c956d90cf7484580c6f x
+F configure.ac 81c43d151d0b0e406be056394cc9ff4cb3fd0444
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 5e961e37c5357776bcb44c473cb5ee4b59561f07
-R fb935adb35724a8c37f202a5f108afb7
+P 7b6951016f5bf4c21f843f09769ba176c709e785 e1feab9834fe829d43ae895cc575ad269a36668c
+R f01b3a94b8eaef4b696e4f8ea4977242
 U drh
-Z be388c11b29af9fbbbff8cde4f1db193
+Z 32493e27d940243c2fe11a6697bb936e
