@@ -45,7 +45,7 @@ TCC += @TCL_INCLUDE_SPEC@
 
 # The library that programs using TCL must link against.
 #
-LIBTCL = @TCL_LIB_SPEC@ @TCL_LIBS@
+LIBTCL = @TCL_LIB_SPEC@
 
 # Compiler options needed for programs that use the readline() library.
 #
@@ -935,7 +935,6 @@ clean:
 	rm -rf .libs .deps
 	rm -f lemon$(BEXE) lempar.c parse.* sqlite*.tar.gz
 	rm -f mkkeywordhash$(BEXE) keywordhash.h
-	rm -f $(PUBLISH)
 	rm -f *.da *.bb *.bbg gmon.out
 	rm -rf quota2a quota2b quota2c
 	rm -rf tsrc .target_source
