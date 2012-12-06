@@ -1678,7 +1678,6 @@ struct Expr {
     ExprList *pList;     /* Function arguments or in "<expr> IN (<expr-list)" */
     Select *pSelect;     /* Used for sub-selects and "<expr> IN (<select>)" */
   } x;
-  CollSeq *pColl;        /* The collation type of the column or 0 */
 
   /* If the EP_Reduced flag is set in the Expr.flags mask, then no
   ** space is allocated for the fields below this point. An attempt to
@@ -1714,7 +1713,7 @@ struct Expr {
 #define EP_VarSelect  0x0020  /* pSelect is correlated, not constant */
 #define EP_DblQuoted  0x0040  /* token.z was originally in "..." */
 #define EP_InfixFunc  0x0080  /* True for an infix function: LIKE, GLOB, etc */
-#define EP_ExpCollate 0x0100  /* Collating sequence specified explicitly */
+#define EP_Collate    0x0100  /* Tree contains a TK_COLLATE opeartor */
 #define EP_FixedDest  0x0200  /* Result needed in a specific register */
 #define EP_IntValue   0x0400  /* Integer value contained in u.iValue */
 #define EP_xIsSelect  0x0800  /* x.pSelect is valid (otherwise x.pList is) */
@@ -3022,7 +3021,6 @@ int sqlite3ReadSchema(Parse *pParse);
 CollSeq *sqlite3FindCollSeq(sqlite3*,u8 enc, const char*,int);
 CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char*zName);
 CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr);
-Expr *sqlite3ExprSetColl(Expr*, CollSeq*);
 Expr *sqlite3ExprSetCollByToken(Parse *pParse, Expr*, Token*);
 int sqlite3CheckCollSeq(Parse *, CollSeq *);
 int sqlite3CheckObjectName(Parse *, const char *);

@@ -56,66 +56,72 @@ char sqlite3ExprAffinity(Expr *pExpr){
 }
 
 /*
-** Set the explicit collating sequence for an expression to the
-** collating sequence supplied in the second argument.
-*/
-Expr *sqlite3ExprSetColl(Expr *pExpr, CollSeq *pColl){
-  if( pExpr && pColl ){
-    pExpr->pColl = pColl;
-    pExpr->flags |= EP_ExpCollate;
-  }
-  return pExpr;
-}
-
-/*
 ** Set the collating sequence for expression pExpr to be the collating
-** sequence named by pToken.   Return a pointer to the revised expression.
-** The collating sequence is marked as "explicit" using the EP_ExpCollate
-** flag.  An explicit collating sequence will override implicit
-** collating sequences.
+** sequence named by pToken.   Return a pointer to a new Expr node that
+** implements the COLLATE operator.
 */
 Expr *sqlite3ExprSetCollByToken(Parse *pParse, Expr *pExpr, Token *pCollName){
-  char *zColl = 0;            /* Dequoted name of collation sequence */
-  CollSeq *pColl;
-  sqlite3 *db = pParse->db;
-  zColl = sqlite3NameFromToken(db, pCollName);
-  pColl = sqlite3LocateCollSeq(pParse, zColl);
-  sqlite3ExprSetColl(pExpr, pColl);
-  sqlite3DbFree(db, zColl);
-  return pExpr;
+  Expr *pNew = sqlite3ExprAlloc(pParse->db, TK_COLLATE, pCollName, 1);
+  if( pNew ){
+    pNew->pLeft = pExpr;
+    pNew->flags |= EP_Collate;
+  }
+  return pNew;
 }
 
 /*
-** Return the default collation sequence for the expression pExpr. If
-** there is no default collation type, return 0.
+** Return the collation sequence for the expression pExpr. If
+** there is no defined collating sequence, return NULL.
+**
+** The collating sequence might be determined by a COLLATE operator
+** or by the presence of a column with a defined collating sequence.
+** COLLATE operators take first precedence.  Left operands take
+** precedence over right operands.
 */
 CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
+  sqlite3 *db = pParse->db;
   CollSeq *pColl = 0;
   Expr *p = pExpr;
-  while( p ){
-    int op;
-    pColl = p->pColl;
-    if( pColl ) break;
-    op = p->op;
-    if( p->pTab!=0 && (
-        op==TK_AGG_COLUMN || op==TK_COLUMN || op==TK_REGISTER || op==TK_TRIGGER
-    )){
+  while( p && pColl==0 ){
+    int op = p->op;
+    if( op==TK_CAST || op==TK_UPLUS ){
+      p = p->pLeft;
+      continue;
+    }
+    if( op==TK_COLLATE ){
+      pColl = sqlite3FindCollSeq(db, ENC(db), p->u.zToken, 0);
+      break;
+    }
+    if( p->pTab!=0
+     && (op==TK_AGG_COLUMN || op==TK_COLUMN
+          || op==TK_REGISTER || op==TK_TRIGGER)
+    ){
       /* op==TK_REGISTER && p->pTab!=0 happens when pExpr was originally
       ** a TK_COLUMN but was previously evaluated and cached in a register */
-      const char *zColl;
       int j = p->iColumn;
       if( j>=0 ){
-        sqlite3 *db = pParse->db;
-        zColl = p->pTab->aCol[j].zColl;
+        const char *zColl = p->pTab->aCol[j].zColl;
         pColl = sqlite3FindCollSeq(db, ENC(db), zColl, 0);
-        pExpr->pColl = pColl;
       }
       break;
     }
-    if( op!=TK_CAST && op!=TK_UPLUS ){
+    if( p->flags & EP_Collate ){
+      if( p->pLeft->flags & EP_Collate ){
+        p = p->pLeft;
+      }else{
+        p = p->pRight;
+      }
+    }else{
       break;
     }
-    p = p->pLeft;
+#if 0
+    else if( p->flags & EP_TokenOnly ){
+      break;
+    }else{
+      pColl = sqlite3ExprCollSeq(pParse, p->pLeft);
+      p = p->pRight;
+    }
+#endif
   }
   if( sqlite3CheckCollSeq(pParse, pColl) ){ 
     pColl = 0;
@@ -219,12 +225,10 @@ CollSeq *sqlite3BinaryCompareCollSeq(
 ){
   CollSeq *pColl;
   assert( pLeft );
-  if( pLeft->flags & EP_ExpCollate ){
-    assert( pLeft->pColl );
-    pColl = pLeft->pColl;
-  }else if( pRight && pRight->flags & EP_ExpCollate ){
-    assert( pRight->pColl );
-    pColl = pRight->pColl;
+  if( pLeft->flags & EP_Collate ){
+    pColl = sqlite3ExprCollSeq(pParse, pLeft);
+  }else if( pRight && (pRight->flags & EP_Collate)!=0 ){
+    pColl = sqlite3ExprCollSeq(pParse, pRight);
   }else{
     pColl = sqlite3ExprCollSeq(pParse, pLeft);
     if( !pColl ){
@@ -454,17 +458,11 @@ void sqlite3ExprAttachSubtrees(
   }else{
     if( pRight ){
       pRoot->pRight = pRight;
-      if( pRight->flags & EP_ExpCollate ){
-        pRoot->flags |= EP_ExpCollate;
-        pRoot->pColl = pRight->pColl;
-      }
+      pRoot->flags |= EP_Collate & pRight->flags;
     }
     if( pLeft ){
       pRoot->pLeft = pLeft;
-      if( pLeft->flags & EP_ExpCollate ){
-        pRoot->flags |= EP_ExpCollate;
-        pRoot->pColl = pLeft->pColl;
-      }
+      pRoot->flags |= EP_Collate & pLeft->flags;
     }
     exprSetHeight(pRoot);
   }
@@ -722,7 +720,7 @@ static int dupedExprStructSize(Expr *p, int flags){
     assert( !ExprHasProperty(p, EP_FromJoin) ); 
     assert( (p->flags2 & EP2_MallocedToken)==0 );
     assert( (p->flags2 & EP2_Irreducible)==0 );
-    if( p->pLeft || p->pRight || p->pColl || p->x.pList ){
+    if( p->pLeft || p->pRight || p->x.pList ){
       nSize = EXPR_REDUCEDSIZE | EP_Reduced;
     }else{
       nSize = EXPR_TOKENONLYSIZE | EP_TokenOnly;
@@ -2746,6 +2744,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       sqlite3ReleaseTempReg(pParse, r4);
       break;
     }
+    case TK_COLLATE: 
     case TK_UPLUS: {
       inReg = sqlite3ExprCodeTarget(pParse, pExpr->pLeft, target);
       break;
@@ -3773,7 +3772,15 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB){
     return 2;
   }
   if( (pA->flags & EP_Distinct)!=(pB->flags & EP_Distinct) ) return 2;
-  if( pA->op!=pB->op ) return 2;
+  if( pA->op!=pB->op ){
+    if( pA->op==TK_COLLATE && sqlite3ExprCompare(pA->pLeft, pB)<2 ){
+      return 1;
+    }
+    if( pB->op==TK_COLLATE && sqlite3ExprCompare(pA, pB->pLeft)<2 ){
+      return 1;
+    }
+    return 2;
+  }
   if( sqlite3ExprCompare(pA->pLeft, pB->pLeft) ) return 2;
   if( sqlite3ExprCompare(pA->pRight, pB->pRight) ) return 2;
   if( sqlite3ExprListCompare(pA->x.pList, pB->x.pList) ) return 2;
@@ -3785,11 +3792,9 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB){
   }else if( pA->op!=TK_COLUMN && ALWAYS(pA->op!=TK_AGG_COLUMN) && pA->u.zToken){
     if( ExprHasProperty(pB, EP_IntValue) || NEVER(pB->u.zToken==0) ) return 2;
     if( strcmp(pA->u.zToken,pB->u.zToken)!=0 ){
-      return 2;
+      return pA->op==TK_COLLATE ? 1 : 2;
     }
   }
-  if( (pA->flags & EP_ExpCollate)!=(pB->flags & EP_ExpCollate) ) return 1;
-  if( (pA->flags & EP_ExpCollate)!=0 && pA->pColl!=pB->pColl ) return 2;
   return 0;
 }
 

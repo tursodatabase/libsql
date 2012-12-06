@@ -114,10 +114,6 @@ static void resolveAlias(
     pDup->flags2 |= EP2_MallocedToken;
     pDup->u.zToken = sqlite3DbStrDup(db, zToken);
   }
-  if( pExpr->flags & EP_ExpCollate ){
-    pDup->pColl = pExpr->pColl;
-    pDup->flags |= EP_ExpCollate;
-  }
 
   /* Before calling sqlite3ExprDelete(), set the EP_Static flag. This 
   ** prevents ExprDelete() from deleting the Expr structure itself,
@@ -830,13 +826,10 @@ static int resolveCompoundOrderBy(
         }
       }
       if( iCol>0 ){
-        CollSeq *pColl = pE->pColl;
-        int flags = pE->flags & EP_ExpCollate;
         sqlite3ExprDelete(db, pE);
         pItem->pExpr = pE = sqlite3Expr(db, TK_INTEGER, 0);
         if( pE==0 ) return 1;
-        pE->pColl = pColl;
-        pE->flags |= EP_IntValue | flags;
+        pE->flags |= EP_IntValue;
         pE->u.iValue = iCol;
         pItem->iOrderByCol = (u16)iCol;
         pItem->done = 1;

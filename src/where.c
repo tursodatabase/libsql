@@ -563,23 +563,32 @@ static int allowedOp(int op){
 ** Commute a comparison operator.  Expressions of the form "X op Y"
 ** are converted into "Y op X".
 **
-** If a collation sequence is associated with either the left or right
+** If left/right precendence rules come into play when determining the
+** collating
 ** side of the comparison, it remains associated with the same side after
 ** the commutation. So "Y collate NOCASE op X" becomes 
-** "X collate NOCASE op Y". This is because any collation sequence on
+** "X op Y". This is because any collation sequence on
 ** the left hand side of a comparison overrides any collation sequence 
-** attached to the right. For the same reason the EP_ExpCollate flag
+** attached to the right. For the same reason the EP_Collate flag
 ** is not commuted.
 */
 static void exprCommute(Parse *pParse, Expr *pExpr){
-  u16 expRight = (pExpr->pRight->flags & EP_ExpCollate);
-  u16 expLeft = (pExpr->pLeft->flags & EP_ExpCollate);
+  u16 expRight = (pExpr->pRight->flags & EP_Collate);
+  u16 expLeft = (pExpr->pLeft->flags & EP_Collate);
   assert( allowedOp(pExpr->op) && pExpr->op!=TK_IN );
-  pExpr->pRight->pColl = sqlite3ExprCollSeq(pParse, pExpr->pRight);
-  pExpr->pLeft->pColl = sqlite3ExprCollSeq(pParse, pExpr->pLeft);
-  SWAP(CollSeq*,pExpr->pRight->pColl,pExpr->pLeft->pColl);
-  pExpr->pRight->flags = (pExpr->pRight->flags & ~EP_ExpCollate) | expLeft;
-  pExpr->pLeft->flags = (pExpr->pLeft->flags & ~EP_ExpCollate) | expRight;
+  if( expRight==expLeft ){
+    /* Either X and Y both have COLLATE operator or neither do */
+    if( expRight ){
+      /* Both X and Y have COLLATE operators.  Make sure X is always
+      ** used by clearing the EP_Collate flag from Y. */
+      pExpr->pRight->flags &= ~EP_Collate;
+    }else if( sqlite3ExprCollSeq(pParse, pExpr->pLeft)!=0 ){
+      /* Neither X nor Y have COLLATE operators, but X has a non-default
+      ** collating sequence.  So add the EP_Collate marker on X to cause
+      ** it to be searched first. */
+      pExpr->pLeft->flags |= EP_Collate;
+    }
+  }
   SWAP(Expr*,pExpr->pRight,pExpr->pLeft);
   if( pExpr->op>=TK_GT ){
     assert( TK_LT==TK_GT+2 );
@@ -1314,7 +1323,7 @@ static void exprAnalyze(
     Expr *pNewExpr2;
     int idxNew1;
     int idxNew2;
-    CollSeq *pColl;    /* Collating sequence to use */
+    Token sCollSeqName;  /* Name of collating sequence */
 
     pLeft = pExpr->x.pList->a[1].pExpr;
     pStr2 = sqlite3ExprDup(db, pStr1, 0);
@@ -1336,16 +1345,19 @@ static void exprAnalyze(
       }
       *pC = c + 1;
     }
-    pColl = sqlite3FindCollSeq(db, SQLITE_UTF8, noCase ? "NOCASE" : "BINARY",0);
+    sCollSeqName.z = noCase ? "NOCASE" : "BINARY";
+    sCollSeqName.n = 6;
+    pNewExpr1 = sqlite3ExprDup(db, pLeft, 0);
     pNewExpr1 = sqlite3PExpr(pParse, TK_GE, 
-                     sqlite3ExprSetColl(sqlite3ExprDup(db,pLeft,0), pColl),
-                     pStr1, 0);
+           sqlite3ExprSetCollByToken(pParse,pNewExpr1,&sCollSeqName),
+           pStr1, 0);
     idxNew1 = whereClauseInsert(pWC, pNewExpr1, TERM_VIRTUAL|TERM_DYNAMIC);
     testcase( idxNew1==0 );
     exprAnalyze(pSrc, pWC, idxNew1);
+    pNewExpr2 = sqlite3ExprDup(db, pLeft, 0);
     pNewExpr2 = sqlite3PExpr(pParse, TK_LT,
-                     sqlite3ExprSetColl(sqlite3ExprDup(db,pLeft,0), pColl),
-                     pStr2, 0);
+           sqlite3ExprSetCollByToken(pParse,pNewExpr2,&sCollSeqName),
+           pStr2, 0);
     idxNew2 = whereClauseInsert(pWC, pNewExpr2, TERM_VIRTUAL|TERM_DYNAMIC);
     testcase( idxNew2==0 );
     exprAnalyze(pSrc, pWC, idxNew2);

@@ -1,5 +1,5 @@
-C Add\sa\stest\scase\sthat\sdemonstrates\sticket\s[71e333e7d2e642].
-D 2012-12-06T15:15:15.819
+C Remove\sthe\sExpr.pColl\sfield\sand\scompute\sthe\scollating\ssequence\sas\sit\sis\sneeded.\nThis\sfixes\sthe\stest\sscript\s"shared9.test",\sthough\sthere\sis\sstill\sa\smemory\sleak.\nAnd\sthere\sare\sother\sproblems.\s\sConsider\sthis\sa\swork-in-progress.
+D 2012-12-06T21:16:43.401
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -124,15 +124,15 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c eccee944cb2221e919d7a855e5928d8643194b14
 F src/btree.h 3ad7964d6c5b1c7bff569aab6adfa075f8bf06cd
 F src/btreeInt.h 4e5c2bd0f9b36b2a815a6d84f771a61a65830621
-F src/build.c f35dac52924a6e8e6346a90f0c195a84e28b6f21
+F src/build.c 9721f654f5dc84b3c85559d181346b701f8ea9a4
 F src/callback.c d7e46f40c3cf53c43550b7da7a1d0479910b62cc
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 72a70dcfda75d3a1f81041ce4573e7afddcd8e4e
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c 9b8d308979114991e5dc7cee958316e07186941d
-F src/expr.c 3b25a95f3d309403940ba4a3212f197b8b6251d5
+F src/expr.c 696c9e664a3d0405fb83ed206500809519f9c1a7
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
-F src/fkey.c c82a04e7a92bb728f9ab972b76590403283be2af
+F src/fkey.c ca70996e72b307d58718e4d1f11668ff76d5f2d4
 F src/func.c 8147799b048065a1590805be464d05b4913e652c
 F src/global.c e59ecd2c553ad0d4bfbc84ca71231336f8993a7a
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
@@ -172,14 +172,14 @@ F src/pragma.c 015723c48072781d2740e310ab04dc92956b76d1
 F src/prepare.c 931ad0d852a0df48f79adcba6ce79ca5f475625c
 F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
-F src/resolve.c 7b986a715ac281643309c29257bb58cfae7aa810
+F src/resolve.c 6faf0f337ef89f7f9f6142d766793a87074612dc
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 3a8baf4719f9723b4e0b43f2baa60692d0d921f8
+F src/select.c da1af4c2f1ff4d280aa68eb58b714e9b7d0fc1c3
 F src/shell.c e392dd1ccbb77cc1d75a8367a89b473c24bea019
 F src/sqlite.h.in 4e71a210f383b6d060bd3fdf81d850f0f8c4eca3
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h 666935d603a7354d90e7ddfe040e3afdd1d8ee16
+F src/sqliteInt.h 9cec95011e6e6f14f74f855275e21bea79daee2e
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -250,7 +250,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c b5325975cbdd9b64f680fb88d7e727fc9368db68
+F src/where.c 1c7ff5ad06fe23d9d46008a23f9118926bb4fcb7
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1025,10 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P d507648d820cfea70e17f3d21c35c932a2d20367
-R c8862607377e39d862ea6493db661aac
-T *branch * ticket-71e333e7
-T *sym-ticket-71e333e7 *
-T -sym-trunk *
+P cc6e0785df3c2342376351e19ba7dba7b8d2f6a3
+R a2a449d5f80e428bd0ee765a55dfac68
 U drh
-Z b40bafefd4b37344c158547788b014ab
+Z 434d5050577e1426f5ec867bc43f759c

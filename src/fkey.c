@@ -516,7 +516,7 @@ static void fkScanChildren(
         if( pTab->iPKey==iCol ) iCol = -1;
         pLeft->iTable = regData+iCol+1;
         pLeft->affinity = pCol->affinity;
-        pLeft->pColl = sqlite3LocateCollSeq(pParse, pCol->zColl);
+        // fix me.  pLeft->pColl = sqlite3LocateCollSeq(pParse, pCol->zColl);
       }else{
         pLeft->iTable = regData;
         pLeft->affinity = SQLITE_AFF_INTEGER;
