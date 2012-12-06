@@ -1,5 +1,5 @@
-C Stop\susing\sthe\sTCL_LIBS\sconfiguration\svariable\swhen\slinking\swith\sTcl.\nRemove\ssuperfluous\s'rm'\scommand\sfrom\sthe\s"clean"\starget.
-D 2012-12-06T02:56:05.083
+C Bring\sthe\sancient\smalloc3.test\sfile\scloser\sinto\srelevance\swith\sthe\slatest\score\scode.
+D 2012-12-06T04:19:24.854
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -587,7 +587,7 @@ F test/lookaside.test 93f07bac140c5bb1d49f3892d2684decafdc7af2
 F test/main.test 39c4bb8a157f57298ed1659d6df89d9f35aaf2c8
 F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
 F test/malloc.test bc745155ff4252d4f35ec8316625b0dfe2abc659
-F test/malloc3.test de8eca0c3e748878845fdca3663ec4b642073caf
+F test/malloc3.test c4f172a3007d90750f2cf0232f24a3e8d80197bd
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
 F test/malloc5.test a577cbbcc1594c7763b9b3515b3633555751c7f0
 F test/malloc6.test 2f039d9821927eacae43e1831f815e157659a151
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 7b6951016f5bf4c21f843f09769ba176c709e785 e1feab9834fe829d43ae895cc575ad269a36668c
-R f01b3a94b8eaef4b696e4f8ea4977242
-U drh
-Z 32493e27d940243c2fe11a6697bb936e
+P 1551277208048cb24887928f2f971e47a942c849
+R 2cd100741db07187aa3e11b20913cc45
+U mistachkin
+Z 3201c1cb9479ff298b2a89dab4136397
