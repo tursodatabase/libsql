@@ -126,8 +126,8 @@ void sqlite3Update(
   int regRowCount = 0;   /* A count of rows changed */
   int regOldRowid;       /* The old rowid */
   int regNewRowid;       /* The new rowid */
-  int regNew;
-  int regOld = 0;
+  int regNew;            /* Content of the NEW.* table in triggers */
+  int regOld = 0;        /* Content of OLD.* table in triggers */
   int regRowSet = 0;     /* Rowset of rows to be updated */
 
   memset(&sContext, 0, sizeof(sContext));
@@ -276,6 +276,7 @@ void sqlite3Update(
 #endif
 
   /* Allocate required registers. */
+  regRowSet = ++pParse->nMem;
   regOldRowid = regNewRowid = ++pParse->nMem;
   if( pTrigger || hasFK ){
     regOld = pParse->nMem + 1;
@@ -310,7 +311,7 @@ void sqlite3Update(
 
   /* Begin the database scan
   */
-  sqlite3VdbeAddOp2(v, OP_Null, 0, regOldRowid);
+  sqlite3VdbeAddOp3(v, OP_Null, 0, regRowSet, regOldRowid);
   pWInfo = sqlite3WhereBegin(
       pParse, pTabList, pWhere, 0, 0, WHERE_ONEPASS_DESIRED
   );
@@ -321,7 +322,6 @@ void sqlite3Update(
   */
   sqlite3VdbeAddOp2(v, OP_Rowid, iCur, regOldRowid);
   if( !okOnePass ){
-    regRowSet = ++pParse->nMem;
     sqlite3VdbeAddOp2(v, OP_RowSetAdd, regRowSet, regOldRowid);
   }
 
@@ -425,9 +425,10 @@ void sqlite3Update(
   newmask = sqlite3TriggerColmask(
       pParse, pTrigger, pChanges, 1, TRIGGER_BEFORE, pTab, onError
   );
+  sqlite3VdbeAddOp3(v, OP_Null, 0, regNew, regNew+pTab->nCol-1);
   for(i=0; i<pTab->nCol; i++){
     if( i==pTab->iPKey ){
-      sqlite3VdbeAddOp2(v, OP_Null, 0, regNew+i);
+      /*sqlite3VdbeAddOp2(v, OP_Null, 0, regNew+i);*/
     }else{
       j = aXRef[i];
       if( j>=0 ){

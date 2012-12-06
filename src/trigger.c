@@ -904,6 +904,7 @@ static TriggerPrg *codeRowTrigger(
     }
     pProgram->nMem = pSubParse->nMem;
     pProgram->nCsr = pSubParse->nTab;
+    pProgram->nOnce = pSubParse->nOnce;
     pProgram->token = (void *)pTrigger;
     pPrg->aColmask[0] = pSubParse->oldmask;
     pPrg->aColmask[1] = pSubParse->newmask;

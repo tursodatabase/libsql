@@ -117,6 +117,8 @@ struct VdbeFrame {
   int nOp;                /* Size of aOp array */
   Mem *aMem;              /* Array of memory cells for parent frame */
   int nMem;               /* Number of entries in aMem */
+  u8 *aOnceFlag;          /* Array of OP_Once flags for parent frame */
+  int nOnceFlag;          /* Number of entries in aOnceFlag */
   VdbeCursor **apCsr;     /* Array of Vdbe cursors for parent frame */
   u16 nCursor;            /* Number of entries in apCsr */
   void *token;            /* Copy of SubProgram.token */
@@ -326,6 +328,8 @@ struct Vdbe {
   int nFrame;             /* Number of frames in pFrame list */
   u32 expmask;            /* Binding to these vars invalidates VM */
   SubProgram *pProgram;   /* Linked list of all sub-programs used by VM */
+  int nOnceFlag;          /* Size of array aOnceFlag[] */
+  u8 *aOnceFlag;          /* Flags for OP_Once */
 };
 
 /*
