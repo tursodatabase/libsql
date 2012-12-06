@@ -1,9 +1,9 @@
-C Bring\sthe\sancient\smalloc3.test\sfile\scloser\sinto\srelevance\swith\sthe\slatest\score\scode.
-D 2012-12-06T04:19:24.854
+C For\sthe\ssqlite3-all.c\starget,\suse\sbackslashes\swhen\scalling\sthe\ssplitter\sscript\svia\sthe\sMSVC\smakefile.
+D 2012-12-06T04:33:13.120
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 911b8188f5d67801035a113e063c3023a617525d
+F Makefile.msc 5a3b6f34d263b01f8b798c291fac1529fd650308
 F Makefile.vxworks b18ad88e9a8c6a001f5cf4a389116a4f1a7ab45f
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION edab4af5a4623f8198833ea481ce98ab53750a8d
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 1551277208048cb24887928f2f971e47a942c849
-R 2cd100741db07187aa3e11b20913cc45
+P 9793a21c13a1188383b4be64df86629f196ca330
+R b1ae0671b34d9888ba979c90eefe9883
 U mistachkin
-Z 3201c1cb9479ff298b2a89dab4136397
+Z 488057b91d078ba82beb69ea442d1563
