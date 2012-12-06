@@ -1,5 +1,5 @@
-C For\sthe\ssqlite3-all.c\starget,\suse\sbackslashes\swhen\scalling\sthe\ssplitter\sscript\svia\sthe\sMSVC\smakefile.
-D 2012-12-06T04:33:13.120
+C Add\sa\stest\scase\sthat\sdemonstrates\sticket\s[71e333e7d2e642].
+D 2012-12-06T15:15:15.819
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -705,7 +705,7 @@ F test/shared4.test 72d90821e8d2fc918a08f16d32880868d8ee8e9d
 F test/shared6.test 866bb4982c45ce216c61ded5e8fde4e7e2f3ffa9
 F test/shared7.test 960760bc8d03e1419e70dea69cf41db62853616e
 F test/shared8.test b27befbefbe7f4517f1d6b7ff8f64a41ec74165d
-F test/shared9.test 614a3ca431adc73c857632deb4eff75bcaee40ec
+F test/shared9.test 5f2a8f79b4d6c7d107a01ffa1ed05ae7e6333e21
 F test/shared_err.test 0079c05c97d88cfa03989b7c20a8b266983087aa
 F test/sharedlock.test ffa0a3c4ac192145b310f1254f8afca4d553eabf
 F test/shell1.test b7896eb84028f3bc8300caf1fc796a73728aad0b
@@ -1025,7 +1025,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 9793a21c13a1188383b4be64df86629f196ca330
-R b1ae0671b34d9888ba979c90eefe9883
-U mistachkin
-Z 488057b91d078ba82beb69ea442d1563
+P d507648d820cfea70e17f3d21c35c932a2d20367
+R c8862607377e39d862ea6493db661aac
+T *branch * ticket-71e333e7
+T *sym-ticket-71e333e7 *
+T -sym-trunk *
+U drh
+Z b40bafefd4b37344c158547788b014ab
