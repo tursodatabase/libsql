@@ -1,5 +1,5 @@
-C For\sthe\ssqlite3-all.c\starget,\suse\sbackslashes\swhen\scalling\sthe\ssplitter\sscript\svia\sthe\sMSVC\smakefile.
-D 2012-12-06T04:33:13.120
+C Add\sthe\sSQLITE_FCNTL_TEMPFILENAME\sfile\scontrol\sthat\sasks\sthe\sunderlying\sVFS\nto\sreturn\sa\snew\stemporary\sfilename.\s\sPer\srequest\sfrom\sNSS\steam\sat\sMozilla.
+D 2012-12-06T19:01:42.467
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -160,8 +160,8 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c b75d9b0876ad3fde151843ad389b4c3dd727c662
-F src/os_win.c 6e55b48f793d0c0d0e086d3f1482a0882530eeeb
+F src/os_unix.c ad459bb62eb6f3f6aae26d97b1a28fbac7bf0260
+F src/os_win.c ce1f5db8a7bb4d6f2092b1b2cb9631bec54a6320
 F src/pager.c 4092c907222cfd451c74fe6bd2fd64b342f7190f
 F src/pager.h 1109a06578ec5574dc2c74cf8d9f69daf36fe3e0
 F src/parse.y f29df90bd3adc64b33114ab1de9fb7768fcf2099
@@ -176,7 +176,7 @@ F src/resolve.c 7b986a715ac281643309c29257bb58cfae7aa810
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 3a8baf4719f9723b4e0b43f2baa60692d0d921f8
 F src/shell.c e392dd1ccbb77cc1d75a8367a89b473c24bea019
-F src/sqlite.h.in 4e71a210f383b6d060bd3fdf81d850f0f8c4eca3
+F src/sqlite.h.in e5552743b5b74dc675ebbdedd849ba8283424fa9
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h 666935d603a7354d90e7ddfe040e3afdd1d8ee16
@@ -184,7 +184,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 515abd8e33e82aa330eeb54675185a7e1e5b6778
-F src/test1.c 936afc02766403e5debca49a1817a780e116df7e
+F src/test1.c f62769c989146149590662ab02de4a813813a9c5
 F src/test2.c 4178056dd1e7d70f954ad8a1e3edb71a2a784daf
 F src/test3.c 3c3c2407fa6ec7a19e24ae23f7cb439d0275a60d
 F src/test4.c bf9fa9bece01de08e6f5e02314e4af5c13590dfa
@@ -221,14 +221,14 @@ F src/test_rtree.c aba603c949766c4193f1068b91c787f57274e0d9
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
 F src/test_spellfix.c 76dd8d3111d2f5354c374f71fa23b752bd0b029c
-F src/test_sqllog.c 7813b47021a6d4e39bb7b1b328a8893dc59885cb
+F src/test_sqllog.c 8acb843ddb9928dea8962e31bb09f421a72ffccb
 F src/test_stat.c d1569c7a4839f13e80187e2c26b2ab4da2d03935
 F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c a992d8c80ea91fbf21fb2dd570db40e77dd7e6ae
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c e286f2173563f2a1747c24bcda6b9d030bf4f4e4
 F src/test_vfs.c c6260ef238c1142c8f8bd402db02216afd182ae3
-F src/test_vfstrace.c f60e12754e65c05386aab59db8d2ae086314138d
+F src/test_vfstrace.c 34b544e80ba7fb77be15395a609c669df2e660a2
 F src/test_wholenumber.c 3d2b9ed1505c40ad5c5ca2ad16ae7a289d6cc251
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c 1e86210d3976717a19238ea7b047fac481fe8c12
@@ -406,7 +406,7 @@ F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/exists.test 8f7b27b61c2fbe5822f0a1f899c715d14e416e30
 F test/expr.test 67c9fd6f8f829e239dc8b0f4a08a73c08b09196d
 F test/fallocate.test b5d34437bd7ab01d41b1464b8117aefd4d32160e
-F test/filectrl.test f0327bd804d9c7bd048fa7a151c5eab8e27df42b
+F test/filectrl.test 14fa712e42c4cb791e09dfd58a6a03efb47ef13a
 F test/filefmt.test ffa17b5aebc3eb4b1e3be1ccb5ee906ffbd97f6e
 F test/fkey1.test 01c7de578e11747e720c2d9aeef27f239853c4da
 F test/fkey2.test 080969fe219b3b082b0e097ac18c6af2e5b0631f
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 9793a21c13a1188383b4be64df86629f196ca330
-R b1ae0671b34d9888ba979c90eefe9883
-U mistachkin
-Z 488057b91d078ba82beb69ea442d1563
+P d507648d820cfea70e17f3d21c35c932a2d20367
+R eb2cb26563b5f98893b41a686dd89dac
+U drh
+Z a78031be2e88797bf9b27c616571dbb4
