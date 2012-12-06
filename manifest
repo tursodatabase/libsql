@@ -1,5 +1,5 @@
-C Disable\sa\scouple\sof\stests\sin\swhere.test\swhen\srunning\sthe\s"no_optimization"\spermutation.
-D 2012-12-05T19:04:32.951
+C Remove\sobsolete\scomments\sfrom\sthe\sdefinition\sof\sthe\sCollSeq\sobject.
+D 2012-12-06T01:03:15.144
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 82c41c0ed4cc94dd3cc7d498575b84c57c2c2384
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -179,7 +179,7 @@ F src/shell.c e392dd1ccbb77cc1d75a8367a89b473c24bea019
 F src/sqlite.h.in 4e71a210f383b6d060bd3fdf81d850f0f8c4eca3
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h 72ab83e698a42d509a0d1cf16a66ec2dae51a756
+F src/sqliteInt.h 666935d603a7354d90e7ddfe040e3afdd1d8ee16
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 51cbddd51d02bcd954be411ecc83556c049a2680
-R 004544aa2f154dd2f5140bcbbf89a0db
-U dan
-Z 47907e9189566266b1668203df85c209
+P 5e961e37c5357776bcb44c473cb5ee4b59561f07
+R fb935adb35724a8c37f202a5f108afb7
+U drh
+Z be388c11b29af9fbbbff8cde4f1db193
