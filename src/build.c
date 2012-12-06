@@ -127,6 +127,7 @@ void sqlite3FinishCoding(Parse *pParse){
   sqlite3 *db;
   Vdbe *v;
 
+  assert( pParse->pToplevel==0 );
   db = pParse->db;
   if( db->mallocFailed ) return;
   if( pParse->nested ) return;
@@ -3572,6 +3573,15 @@ int sqlite3OpenTempDatabase(Parse *pParse){
 void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
   Parse *pToplevel = sqlite3ParseToplevel(pParse);
 
+#ifndef SQLITE_OMIT_TRIGGER
+  if( pToplevel!=pParse ){
+    /* This branch is taken if a trigger is currently being coded. In this
+    ** case, set cookieGoto to a non-zero value to show that this function
+    ** has been called. This is used by the sqlite3ExprCodeConstants()
+    ** function. */
+    pParse->cookieGoto = -1;
+  }
+#endif
   if( pToplevel->cookieGoto==0 ){
     Vdbe *v = sqlite3GetVdbe(pToplevel);
     if( v==0 ) return;  /* This only happens if there was a prior error */

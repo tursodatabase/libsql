@@ -1,5 +1,5 @@
-C Cherrypick\s[557c69055a3]\sand\s[0064bab7714]\s(OP_Once-related\sfixes\sfor\striggers).
-D 2012-12-06T20:19:09.714
+C Cherrypick\s[79ef8e3c77]\s(Apply\sthe\ssame\srestrictions\son\sconstant\srefactoring\sto\sstatements\swithin\sa\strigger\sprogram\sas\stop-level\sstatements).
+D 2012-12-06T20:27:49.877
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a162fe39e249b8ed4a65ee947c30152786cfe897
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -128,7 +128,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 32199e2d939233ade25340eaba450f818b37c079
 F src/btree.h f5d775cd6cfc7ac32a2535b70e8d2af48ef5f2ce
 F src/btreeInt.h 67978c014fa4f7cc874032dd3aacadd8db656bc3
-F src/build.c 1c01c649a1fc2e6afe7d172b55a54358f2b2ef0a
+F src/build.c f354512133f3c3403df55d00602b9179249858ab
 F src/callback.c 0425c6320730e6d3981acfb9202c1bed9016ad1a
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c a9c26822515f81ec21588cbb482ca6724be02e33
@@ -234,7 +234,7 @@ F src/test_vfstrace.c 0b884e06094a746da729119a2cabdc7aa790063d
 F src/test_wholenumber.c 6129adfbe7c7444f2e60cc785927f3aa74e12290
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c c819d9f72168a035d545a5bdafe9b085b20df705
-F src/trigger.c ee7e178fb9188f44b532cebd449a7c1df90fb684
+F src/trigger.c 84f90c64d7118ad2be370063dc3a660001bb02ee
 F src/update.c d3076782c887c10e882996550345da9c4c9f9dea
 F src/utf.c 890c67dcfcc7a74623c95baac7535aadfe265e84
 F src/util.c df83983bd57057df4951516880066b42b7055269
@@ -857,7 +857,7 @@ F test/trigger8.test 30cb0530bd7c4728055420e3f739aa00412eafa4
 F test/trigger9.test 5b0789f1c5c4600961f8e68511b825b87be53e31
 F test/triggerA.test e0aaba16d3547193d36bbd82a1b0ed75e9c88d40
 F test/triggerB.test 56780c031b454abac2340dbb3b71ac5c56c3d7fe
-F test/triggerC.test 4d4bdaf0230c206b50d350330107ef9802bc2d4f
+F test/triggerC.test c9e59c1c8834ef8024045202a2f64816e917c07a
 F test/triggerD.test 8e7f3921a92a5797d472732108109e44575fa650
 F test/tt3_checkpoint.c 415eccce672d681b297485fc20f44cdf0eac93af
 F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
@@ -975,7 +975,7 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 0391951792c986555c996c654b9b5166267d9094
-R f3af1c83cb060930ae53f2e980547792
+P 0d7b5d455cee06aac4a5b331f26aa5da6963d97f
+R 1321c1938d7d3f11b7481c95ce141586
 U dan
-Z 3bdb6f7a206b8062e49e353b5fa0d9da
+Z 4d8a6a6b21f3fade47676f63c6713742
