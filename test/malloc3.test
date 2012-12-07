@@ -27,6 +27,24 @@ if {!$MEMDEBUG} {
    return
 }
 
+
+# Do not run these tests with an in-memory journal.
+#
+# In the pager layer, if an IO or OOM error occurs during a ROLLBACK, or
+# when flushing a page to disk due to cache-stress, the pager enters an
+# "error state". The only way out of the error state is to unlock the
+# database file and end the transaction, leaving whatever journal and
+# database files happen to be on disk in place. The next time the current
+# (or any other) connection opens a read transaction, hot-journal rollback
+# is performed if necessary.
+#
+# Of course, this doesn't work with an in-memory journal.
+#
+if {[permutation]=="inmemory_journal"} {
+  finish_test
+  return
+}
+
 #--------------------------------------------------------------------------
 # NOTES ON RECOVERING FROM A MALLOC FAILURE
 # 

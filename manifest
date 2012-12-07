@@ -1,5 +1,5 @@
-C Spelling\sand\sheader\sfixes\sfor\sthe\sasync\sextension.
-D 2012-12-07T09:08:42.147
+C Do\snot\srun\stest\sfile\smalloc3.test\sas\spart\sof\sthe\sinmemory_journal\spermutation.\sExplanation\sis\sin\sa\scomment\sat\sthe\stop\sof\smalloc3.test.
+D 2012-12-07T10:55:19.457
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -587,7 +587,7 @@ F test/lookaside.test 93f07bac140c5bb1d49f3892d2684decafdc7af2
 F test/main.test 39c4bb8a157f57298ed1659d6df89d9f35aaf2c8
 F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
 F test/malloc.test bc745155ff4252d4f35ec8316625b0dfe2abc659
-F test/malloc3.test c4f172a3007d90750f2cf0232f24a3e8d80197bd
+F test/malloc3.test 3e9eb921c4314acf4fb64230868fdb2e1ce60eea
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
 F test/malloc5.test a577cbbcc1594c7763b9b3515b3633555751c7f0
 F test/malloc6.test 2f039d9821927eacae43e1831f815e157659a151
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P c507ca4a8eb255923ff32001a1903dc85960f485
-R dad5db263b112e39ce603389d8591aef
-U mistachkin
-Z 39fff713a1016104fa2d5a1d9cb6376f
+P 930ba85262b76e8b1555bcfe4637135c27e04d58
+R b96d73379dcce1aa6dec570833c9717e
+U dan
+Z 7338179a23fbd57add88fe12a2439b64
