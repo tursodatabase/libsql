@@ -1,5 +1,5 @@
-C Do\snot\sreport\smissing\scollating\sfunctions\swhile\sparsing\sthe\sschema.\nAlso\sremove\sa\sstray\scomment.
-D 2012-12-07T22:54:41.904
+C For\san\sORDER\sBY\son\sa\scompound\sSELECT,\stake\sthe\scollating\ssequence\sfrom\sthe\nleft-most\sterm\sof\sthe\scompound.
+D 2012-12-07T23:10:40.495
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,7 +174,7 @@ F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 5ed606916be6c63f0e262cc2cb817712384f18b5
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c ebbbe13c0935bbe1064372370958cc4e44766018
+F src/select.c def5381139465670bc06b3e1adfe39a7f7dd21c2
 F src/shell.c e392dd1ccbb77cc1d75a8367a89b473c24bea019
 F src/sqlite.h.in 4e71a210f383b6d060bd3fdf81d850f0f8c4eca3
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 0aaf52a339808386984c30cca0c0c35ac2e70e7e
-R 7af19f524bb6d3b67c53aaadb01843a9
+P e313edca0472f07e9b872b92120d80b4bc177328
+R e4585f659b2dcbe9302be05eb8524ec0
 U drh
-Z f5116fba24c8cad62b7fc1fe326fd934
+Z 090567ff5e7c71e3b99bc2fa20ffefbb
