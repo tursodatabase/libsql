@@ -129,6 +129,9 @@ static void resolveAlias(
   /* Before calling sqlite3ExprDelete(), set the EP_Static flag. This 
   ** prevents ExprDelete() from deleting the Expr structure itself,
   ** allowing it to be repopulated by the memcpy() on the following line.
+  ** The pExpr->u.zToken might point into memory that will be freed by the
+  ** sqlite3DbFree(db, pDup) on the last line of this block, so be sure to
+  ** make a copy of the token before doing the sqlite3DbFree().
   */
   ExprSetProperty(pExpr, EP_Static);
   sqlite3ExprDelete(db, pExpr);
@@ -824,7 +827,7 @@ static int resolveCompoundOrderBy(
       int iCol = -1;
       Expr *pE, *pDup;
       if( pItem->done ) continue;
-      pE = pItem->pExpr;
+      pE = sqlite3ExprSkipCollate(pItem->pExpr);
       if( sqlite3ExprIsInteger(pE, &iCol) ){
         if( iCol<=0 || iCol>pEList->nExpr ){
           resolveOutOfRangeError(pParse, "ORDER", i+1, pEList->nExpr);
@@ -842,11 +845,20 @@ static int resolveCompoundOrderBy(
         }
       }
       if( iCol>0 ){
+        /* Convert the ORDER BY term into an integer column number iCol,
+        ** taking care to preserve the COLLATE clause if it exists */
+        Expr *pNew = sqlite3Expr(db, TK_INTEGER, 0);
+        if( pNew==0 ) return 1;
+        pNew->flags |= EP_IntValue;
+        pNew->u.iValue = iCol;
+        if( pItem->pExpr==pE ){
+          pItem->pExpr = pNew;
+        }else{
+          assert( pItem->pExpr->op==TK_COLLATE );
+          assert( pItem->pExpr->pLeft==pE );
+          pItem->pExpr->pLeft = pNew;
+        }
         sqlite3ExprDelete(db, pE);
-        pItem->pExpr = pE = sqlite3Expr(db, TK_INTEGER, 0);
-        if( pE==0 ) return 1;
-        pE->flags |= EP_IntValue;
-        pE->u.iValue = iCol;
         pItem->iOrderByCol = (u16)iCol;
         pItem->done = 1;
       }else{

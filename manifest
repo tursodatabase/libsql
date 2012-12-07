@@ -1,5 +1,5 @@
-C Many\smore\stests\sare\spassing.\s\sOnly\sabout\s100\sfailures\sremain\sin\sveryquick.
-D 2012-12-07T20:31:11.446
+C Fix\sthe\sprocessing\sof\sORDER\sBY\sclauses\swith\sCOLLATE\sterms\son\scompound\nqueries.\s\s52\sveryquick\stest\sfailures\sremain.
+D 2012-12-07T21:02:47.824
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,7 +172,7 @@ F src/pragma.c 015723c48072781d2740e310ab04dc92956b76d1
 F src/prepare.c 931ad0d852a0df48f79adcba6ce79ca5f475625c
 F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
-F src/resolve.c fd2206ae5c324d9539b97d402b7a957afac78307
+F src/resolve.c 34168dc9c5e7b388d0ce209dac16069263ae7ed7
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c eb3ded8d6ffcbab20dc3e65ba6a6dc13a01e7fbf
 F src/shell.c e392dd1ccbb77cc1d75a8367a89b473c24bea019
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 972443b4eb282d45507da06c75e2cd46dd72326b
-R addb1e849abbd533b321eb7c1f86638b
+P f9fa7581c0371fe0feb4e97487741ade18595810
+R ffd541783cdf83fbb00a5f595a07c0f7
 U drh
-Z f47e0ce4e032364f0db26315f2eb73bb
+Z c3f0cf345664d8221c8b35557e376692
