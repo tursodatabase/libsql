@@ -956,7 +956,7 @@ static int resolveOrderGroupBy(
       /* The ORDER BY term is an integer constant.  Again, set the column
       ** number so that sqlite3ResolveOrderGroupBy() will convert the
       ** order-by term to a copy of the result-set expression */
-      if( (iCol & ~0xffff)!=0 ){
+      if( iCol<1 || iCol>0xffff ){
         resolveOutOfRangeError(pParse, zType, i+1, nResult);
         return 1;
       }
