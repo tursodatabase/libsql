@@ -1188,7 +1188,7 @@ static void exprAnalyze(
   }
   pTerm = &pWC->a[idxTerm];
   pMaskSet = pWC->pMaskSet;
-  pExpr = pTerm->pExpr;
+  pExpr = sqlite3ExprSkipCollate(pTerm->pExpr);
   prereqLeft = exprTableUsage(pMaskSet, pExpr->pLeft);
   op = pExpr->op;
   if( op==TK_IN ){
@@ -1215,8 +1215,8 @@ static void exprAnalyze(
   pTerm->iParent = -1;
   pTerm->eOperator = 0;
   if( allowedOp(op) && (pTerm->prereqRight & prereqLeft)==0 ){
-    Expr *pLeft = pExpr->pLeft;
-    Expr *pRight = pExpr->pRight;
+    Expr *pLeft = sqlite3ExprSkipCollate(pExpr->pLeft);
+    Expr *pRight = sqlite3ExprSkipCollate(pExpr->pRight);
     if( pLeft->op==TK_COLUMN ){
       pTerm->leftCursor = pLeft->iTable;
       pTerm->u.leftColumn = pLeft->iColumn;
@@ -2865,7 +2865,7 @@ static int isSortingIndex(
     /* If the next term of the ORDER BY clause refers to anything other than
     ** a column in the "base" table, then this index will not be of any
     ** further use in handling the ORDER BY. */
-    pOBExpr = pOBItem->pExpr;
+    pOBExpr = sqlite3ExprSkipCollate(pOBItem->pExpr);
     if( pOBExpr->op!=TK_COLUMN || pOBExpr->iTable!=base ){
       break;
     }
@@ -2891,7 +2891,7 @@ static int isSortingIndex(
     ** clause entry.  Set isMatch to 1 if they both match. */
     if( pOBExpr->iColumn==iColumn ){
       if( zColl ){
-        pColl = sqlite3ExprCollSeq(pParse, pOBExpr);
+        pColl = sqlite3ExprCollSeq(pParse, pOBItem->pExpr);
         if( !pColl ) pColl = db->pDfltColl;
         isMatch = sqlite3StrICmp(pColl->zName, zColl)==0;
       }else{

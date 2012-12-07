@@ -112,7 +112,7 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
       continue;
     }
     if( op==TK_COLLATE ){
-      pColl = sqlite3FindCollSeq(db, ENC(db), p->u.zToken, 0);
+      pColl = sqlite3GetCollSeq(pParse, ENC(db), 0, p->u.zToken);
       break;
     }
     if( p->pTab!=0
@@ -3128,6 +3128,12 @@ void sqlite3ExplainExpr(Vdbe *pOut, Expr *pExpr){
     case TK_NOT:     zUniOp = "NOT";    break;
     case TK_ISNULL:  zUniOp = "ISNULL"; break;
     case TK_NOTNULL: zUniOp = "NOTNULL"; break;
+
+    case TK_COLLATE: {
+      sqlite3ExplainExpr(pOut, pExpr->pLeft);
+      sqlite3ExplainPrintf(pOut,".COLLATE(%s)",pExpr->u.zToken);
+      break;
+    }
 
     case TK_AGG_FUNCTION:
     case TK_CONST_FUNC:
