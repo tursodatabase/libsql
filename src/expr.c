@@ -59,14 +59,37 @@ char sqlite3ExprAffinity(Expr *pExpr){
 ** Set the collating sequence for expression pExpr to be the collating
 ** sequence named by pToken.   Return a pointer to a new Expr node that
 ** implements the COLLATE operator.
+**
+** If a memory allocation error occurs, that fact is recorded in pParse->db
+** and the pExpr parameter is returned unchanged.
 */
-Expr *sqlite3ExprSetCollByToken(Parse *pParse, Expr *pExpr, Token *pCollName){
-  Expr *pNew = sqlite3ExprAlloc(pParse->db, TK_COLLATE, pCollName, 1);
-  if( pNew ){
-    pNew->pLeft = pExpr;
-    pNew->flags |= EP_Collate;
+Expr *sqlite3ExprAddCollateToken(Parse *pParse, Expr *pExpr, Token *pCollName){
+  if( pCollName->n>0 ){
+    Expr *pNew = sqlite3ExprAlloc(pParse->db, TK_COLLATE, pCollName, 1);
+    if( pNew ){
+      pNew->pLeft = pExpr;
+      pNew->flags |= EP_Collate;
+      pExpr = pNew;
+    }
   }
-  return pNew;
+  return pExpr;
+}
+Expr *sqlite3ExprAddCollateString(Parse *pParse, Expr *pExpr, const char *zC){
+  if( zC ){
+    Token s;
+    s.z = zC;
+    s.n = sqlite3Strlen30(s.z);
+    pExpr = sqlite3ExprAddCollateToken(pParse, pExpr, &s);
+  }
+  return pExpr;
+}
+
+/*
+** Skip over any TK_COLLATE operator in an expression.
+*/
+Expr *sqlite3ExprSkipCollate(Expr *pExpr){
+  if( pExpr && pExpr->op==TK_COLLATE ) pExpr = pExpr->pLeft;
+  return pExpr;
 }
 
 /*

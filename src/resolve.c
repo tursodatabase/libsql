@@ -68,6 +68,15 @@ static void incrAggFunctionDepth(Expr *pExpr, int N){
 ** from the result in the result-set.  We might fix this someday.  Or
 ** then again, we might not...
 **
+** If the reference is followed by a COLLATE operator, then make sure
+** the COLLATE operator is preserved.  For example:
+**
+**     SELECT a+b, c+d FROM t1 ORDER BY 1 COLLATE nocase;
+**
+** Should be transformed into:
+**
+**     SELECT a+b, c+d FROM t1 ORDER BY (a+b) COLLATE nocase;
+**
 ** The nSubquery parameter specifies how many levels of subquery the
 ** alias is removed from the original expression.  The usually value is
 ** zero but it might be more if the alias is contained within a subquery
@@ -91,8 +100,9 @@ static void resolveAlias(
   assert( pOrig!=0 );
   assert( pOrig->flags & EP_Resolved );
   db = pParse->db;
+  pDup = sqlite3ExprDup(db, pOrig, 0);
+  if( pDup==0 ) return;
   if( pOrig->op!=TK_COLUMN && zType[0]!='G' ){
-    pDup = sqlite3ExprDup(db, pOrig, 0);
     incrAggFunctionDepth(pDup, nSubquery);
     pDup = sqlite3PExpr(pParse, TK_AS, pDup, 0, 0);
     if( pDup==0 ) return;
@@ -100,21 +110,21 @@ static void resolveAlias(
       pEList->a[iCol].iAlias = (u16)(++pParse->nAlias);
     }
     pDup->iTable = pEList->a[iCol].iAlias;
-  }else if( ExprHasProperty(pOrig, EP_IntValue) || pOrig->u.zToken==0 ){
-    pDup = sqlite3ExprDup(db, pOrig, 0);
-    if( pDup==0 ) return;
-  }else{
-    char *zToken = pOrig->u.zToken;
-    assert( zToken!=0 );
-    pOrig->u.zToken = 0;
-    pDup = sqlite3ExprDup(db, pOrig, 0);
-    pOrig->u.zToken = zToken;
-    if( pDup==0 ) return;
-    assert( (pDup->flags & (EP_Reduced|EP_TokenOnly))==0 );
-    pDup->flags2 |= EP2_MallocedToken;
-    pDup->u.zToken = sqlite3DbStrDup(db, zToken);
   }
-  pDup->flags |= EP_Collate & pExpr->flags;
+#if 1 /* FIXME */
+  if( pExpr->flags & EP_Collate ){
+    CollSeq *pColl = sqlite3ExprCollSeq(pParse, pExpr);
+    if( pColl ){
+      pDup = sqlite3ExprAddCollateString(pParse, pDup, pColl->zName);
+    }
+    pDup->flags |= EP_Collate;
+  }
+#else
+  /* Should be this: */
+  if( pExpr->op==TK_COLLATE ){
+    pDup = sqlite3ExprAddCollateString(pParse, pDup, pExpr->u.zToken);
+  }
+#endif
 
   /* Before calling sqlite3ExprDelete(), set the EP_Static flag. This 
   ** prevents ExprDelete() from deleting the Expr structure itself,
@@ -123,6 +133,11 @@ static void resolveAlias(
   ExprSetProperty(pExpr, EP_Static);
   sqlite3ExprDelete(db, pExpr);
   memcpy(pExpr, pDup, sizeof(*pExpr));
+  if( !ExprHasProperty(pExpr, EP_IntValue) && pExpr->u.zToken!=0 ){
+    assert( (pExpr->flags & (EP_Reduced|EP_TokenOnly))==0 );
+    pExpr->u.zToken = sqlite3DbStrDup(db, pExpr->u.zToken);
+    pExpr->flags2 |= EP2_MallocedToken;
+  }
   sqlite3DbFree(db, pDup);
 }
 
@@ -936,11 +951,11 @@ static int resolveOrderGroupBy(
       pItem->iOrderByCol = (u16)iCol;
       continue;
     }
-    if( sqlite3ExprIsInteger(pE, &iCol) ){
+    if( sqlite3ExprIsInteger(sqlite3ExprSkipCollate(pE), &iCol) ){
       /* The ORDER BY term is an integer constant.  Again, set the column
       ** number so that sqlite3ResolveOrderGroupBy() will convert the
       ** order-by term to a copy of the result-set expression */
-      if( iCol<1 ){
+      if( (iCol & ~0xffff)!=0 ){
         resolveOutOfRangeError(pParse, zType, i+1, nResult);
         return 1;
       }
