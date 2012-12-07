@@ -1,5 +1,5 @@
-C Do\snot\srun\stest\sfile\smalloc3.test\sas\spart\sof\sthe\sinmemory_journal\spermutation.\sExplanation\sis\sin\sa\scomment\sat\sthe\stop\sof\smalloc3.test.
-D 2012-12-07T10:55:19.457
+C Ensure\sthe\sVerifyCookie\ssub-routine\shas\sbeen\srun\sbefore\sthe\sdatabase\sis\saccessed\sin\san\sobscure\scase.\sFix\sfor\sticket\s[d6b36be38].
+D 2012-12-07T19:28:26.162
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,7 +174,7 @@ F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 7b986a715ac281643309c29257bb58cfae7aa810
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 3a8baf4719f9723b4e0b43f2baa60692d0d921f8
+F src/select.c 1462a391952c7659168460fe2d7eed7d41529be1
 F src/shell.c e392dd1ccbb77cc1d75a8367a89b473c24bea019
 F src/sqlite.h.in e5552743b5b74dc675ebbdedd849ba8283424fa9
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
@@ -732,7 +732,7 @@ F test/sqllimits1.test b1aae27cc98eceb845e7f7adf918561256e31298
 F test/stat.test be8d477306006ec696bc86757cfb34bec79447ce
 F test/stmt.test 25d64e3dbf9a3ce89558667d7f39d966fe2a71b9
 F test/subquery.test d4aea23ac267463d4aa604bf937c3992347b20f7
-F test/subquery2.test edcad5c118f0531c2e21bf16a09bbb105252d4cd
+F test/subquery2.test 91e1e364072aeff431d1f9689b15147e421d88c7
 F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
 F test/superlock.test 1cde669f68d2dd37d6c9bd35eee1d95491ae3fc2
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 930ba85262b76e8b1555bcfe4637135c27e04d58
-R b96d73379dcce1aa6dec570833c9717e
+P df1827b19e47724b62fdf6fbedfd4e61add343d3
+R d9a49317c83cd75d961bd50ea4d2b4bf
 U dan
-Z 7338179a23fbd57add88fe12a2439b64
+Z 4659749d4c8a1f0da88866b82eed162a

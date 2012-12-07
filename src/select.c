@@ -3950,6 +3950,15 @@ int sqlite3Select(
       int addrEof;
       pItem->regReturn = ++pParse->nMem;
       addrEof = ++pParse->nMem;
+      /* Before coding the OP_Goto to jump to the start of the main routine,
+      ** ensure that the jump to the verify-schema routine has already
+      ** been coded. Otherwise, the verify-schema would likely be coded as 
+      ** part of the co-routine. If the main routine then accessed the 
+      ** database before invoking the co-routine for the first time (for 
+      ** example to initialize a LIMIT register from a sub-select), it would 
+      ** be doing so without having verified the schema version and obtained 
+      ** the required db locks. See ticket d6b36be38.  */
+      sqlite3CodeVerifySchema(pParse, -1);
       sqlite3VdbeAddOp0(v, OP_Goto);
       addrTop = sqlite3VdbeAddOp1(v, OP_OpenPseudo, pItem->iCursor);
       sqlite3VdbeChangeP5(v, 1);
