@@ -1,9 +1,9 @@
-C Backport\sthe\s[/timeline?r=shared-cache-fix\s|\sshared-cache-fix]\sbranch.
-D 2012-10-26T13:34:05.437
+C Backport\sVSIX\stooling\sand\spackaging\sfixes\sand\senhancements.
+D 2012-12-07T04:46:53.606
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 1d8a5d3cf33b8b8d3247c99367a37af384cc7ebd
+F Makefile.msc 5a3b6f34d263b01f8b798c291fac1529fd650308
 F Makefile.vxworks 879f034a64062a364b21000266bbd5bc6e0c19b9
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 9694dff497fc7e53037a5890f30ab069c26e8ab7
@@ -972,7 +972,7 @@ F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/win32lock.test b2a539e85ae6b2d78475e016a9636b4451dc7fb9
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test 0de750389990b1078bab203c712dc3fefd1d8b82
-F tool/build-all-msvc.bat 76b835e0ab91e30f22d8aa48db9dea4d2dc59e9f x
+F tool/build-all-msvc.bat 74fb6e5cca66ebdb6c9bbafb2f8b802f08146d38 x
 F tool/build-shell.sh b64a481901fc9ffe5ca8812a2a9255b6cfb77381
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -990,7 +990,7 @@ F tool/mksqlite3c-noext.tcl 8bce31074e4cbe631bb7676526a048335f4c9f02
 F tool/mksqlite3c.tcl 589c7f44e990be1b8443cfe4808dce392b0327fa
 F tool/mksqlite3h.tcl 78013ad79a5e492e5f764f3c7a8ef834255061f8
 F tool/mksqlite3internalh.tcl 3dca7bb5374cee003379b8cbac73714f610ef795
-F tool/mkvsix.tcl a27951f30bb39c3504196610f17f687fc0b1c94d
+F tool/mkvsix.tcl 0be7f7a591f1e83f9199cb82911b66668ca484c9
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
 F tool/omittest.tcl 4665982e95a6e5c1bd806cf7bc3dea95be422d77
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -1014,8 +1014,8 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-F tool/win/sqlite.vsix bc91332e37e980c20575e087b368922f93673f1b
-P cbfd1b120ada30ee98403af8d95cfbd590353365
-R cec8d9ad420249b78e42ff233036b95b
-U drh
-Z f05ff88a3dfee3e1a7e5cb1a864f2163
+F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
+P 325364a984e9a5c0825810bf50f57e026ff3b8dd
+R b6cebc4c5e41527b0959f9cee96db5b7
+U mistachkin
+Z b5160dec06b175ffc06bc0e43cb2677f
