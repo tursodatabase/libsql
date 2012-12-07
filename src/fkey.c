@@ -511,12 +511,17 @@ static void fkScanChildren(
       ** expression to the parent key column defaults.  */
       if( pIdx ){
         Column *pCol;
+        Expr *pNew;
+        Token s;
         iCol = pIdx->aiColumn[i];
         pCol = &pTab->aCol[iCol];
         if( pTab->iPKey==iCol ) iCol = -1;
         pLeft->iTable = regData+iCol+1;
         pLeft->affinity = pCol->affinity;
-        // fix me.  pLeft->pColl = sqlite3LocateCollSeq(pParse, pCol->zColl);
+        s.z = pCol->zColl;
+        s.n = sqlite3Strlen30(s.z);
+        pNew = sqlite3ExprSetCollByToken(pParse, pLeft, &s);
+        if( pNew ) pLeft = pNew;
       }else{
         pLeft->iTable = regData;
         pLeft->affinity = SQLITE_AFF_INTEGER;

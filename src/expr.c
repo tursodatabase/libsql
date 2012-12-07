@@ -106,7 +106,7 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
       break;
     }
     if( p->flags & EP_Collate ){
-      if( p->pLeft->flags & EP_Collate ){
+      if( p->pLeft && (p->pLeft->flags & EP_Collate)!=0 ){
         p = p->pLeft;
       }else{
         p = p->pRight;
@@ -114,14 +114,6 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
     }else{
       break;
     }
-#if 0
-    else if( p->flags & EP_TokenOnly ){
-      break;
-    }else{
-      pColl = sqlite3ExprCollSeq(pParse, p->pLeft);
-      p = p->pRight;
-    }
-#endif
   }
   if( sqlite3CheckCollSeq(pParse, pColl) ){ 
     pColl = 0;
@@ -3355,7 +3347,7 @@ static int evalConstExpr(Walker *pWalker, Expr *pExpr){
     int r1 = ++pParse->nMem;
     int r2;
     r2 = sqlite3ExprCodeTarget(pParse, pExpr, r1);
-    if( NEVER(r1!=r2) ) sqlite3ReleaseTempReg(pParse, r1);
+    if( r1!=r2 ) sqlite3ReleaseTempReg(pParse, r1);
     pExpr->op2 = pExpr->op;
     pExpr->op = TK_REGISTER;
     pExpr->iTable = r2;
@@ -3795,6 +3787,7 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB){
       return pA->op==TK_COLLATE ? 1 : 2;
     }
   }
+  if( (pA->flags&EP_Collate)!=(pB->flags&EP_Collate) ) return 1;
   return 0;
 }
 

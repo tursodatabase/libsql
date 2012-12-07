@@ -114,6 +114,7 @@ static void resolveAlias(
     pDup->flags2 |= EP2_MallocedToken;
     pDup->u.zToken = sqlite3DbStrDup(db, zToken);
   }
+  pDup->flags |= EP_Collate & pExpr->flags;
 
   /* Before calling sqlite3ExprDelete(), set the EP_Static flag. This 
   ** prevents ExprDelete() from deleting the Expr structure itself,

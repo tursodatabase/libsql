@@ -665,7 +665,7 @@ static WhereTerm *findTerm(
           */
           assert(pX->pLeft);
           pColl = sqlite3BinaryCompareCollSeq(pParse, pX->pLeft, pX->pRight);
-          assert(pColl || pParse->nErr);
+          if( pColl==0 ) pColl = pParse->db->pDfltColl;
   
           for(j=0; pIdx->aiColumn[j]!=iColumn; j++){
             if( NEVER(j>=pIdx->nColumn) ) return 0;
