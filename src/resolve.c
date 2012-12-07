@@ -111,20 +111,9 @@ static void resolveAlias(
     }
     pDup->iTable = pEList->a[iCol].iAlias;
   }
-#if 1 /* FIXME */
-  if( pExpr->flags & EP_Collate ){
-    CollSeq *pColl = sqlite3ExprCollSeq(pParse, pExpr);
-    if( pColl ){
-      pDup = sqlite3ExprAddCollateString(pParse, pDup, pColl->zName);
-    }
-    pDup->flags |= EP_Collate;
-  }
-#else
-  /* Should be this: */
   if( pExpr->op==TK_COLLATE ){
     pDup = sqlite3ExprAddCollateString(pParse, pDup, pExpr->u.zToken);
   }
-#endif
 
   /* Before calling sqlite3ExprDelete(), set the EP_Static flag. This 
   ** prevents ExprDelete() from deleting the Expr structure itself,

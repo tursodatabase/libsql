@@ -1,5 +1,5 @@
-C Fix\sthe\sprocessing\sof\sORDER\sBY\sclauses\swith\sCOLLATE\sterms\son\scompound\nqueries.\s\s52\sveryquick\stest\sfailures\sremain.
-D 2012-12-07T21:02:47.824
+C Fix\sa\slong-standing\sissue\swith\sthe\sdistinct-as-aggregate\soptimization\sthat\nonly\sexpressed\swhen\sthe\snew\scollating-sequence\slogic\sis\sturned\son.
+D 2012-12-07T22:18:54.026
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,14 +172,14 @@ F src/pragma.c 015723c48072781d2740e310ab04dc92956b76d1
 F src/prepare.c 931ad0d852a0df48f79adcba6ce79ca5f475625c
 F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
-F src/resolve.c 34168dc9c5e7b388d0ce209dac16069263ae7ed7
+F src/resolve.c 5ed606916be6c63f0e262cc2cb817712384f18b5
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c eb3ded8d6ffcbab20dc3e65ba6a6dc13a01e7fbf
+F src/select.c 28176222b138f30a9bf25bdcec94f58980273f84
 F src/shell.c e392dd1ccbb77cc1d75a8367a89b473c24bea019
 F src/sqlite.h.in 4e71a210f383b6d060bd3fdf81d850f0f8c4eca3
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h 02e8c8d6f3001243fccbffc1cc484fb24b344ecc
+F src/sqliteInt.h d1f0866c69d94fe018a32f78c31a043e3fc0d0de
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -237,7 +237,7 @@ F src/update.c 28d2d098b43a2c70dae399896ea8a02f622410ef
 F src/utf.c 8d819e2e5104a430fc2005f018db14347c95a38f
 F src/util.c 0af2e515dc0dabacec931bca39525f6c3f1c5455
 F src/vacuum.c 2727bdd08847fcb6b2d2da6d14f018910e8645d3
-F src/vdbe.c 5b49cb1f852e4604a4fb6c47e087ddab28af193f
+F src/vdbe.c 328cb259ca182026ff63d78a005821339a17ba09
 F src/vdbe.h b52887278cb173e66188da84dfab216bea61119d
 F src/vdbeInt.h 79abf9b31be406d35ca77d6999cb2d42aaf91e78
 F src/vdbeapi.c 4c2418161cf45392ba76a7ca92f9a5f06b96f89c
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P f9fa7581c0371fe0feb4e97487741ade18595810
-R ffd541783cdf83fbb00a5f595a07c0f7
+P 49654453ad157693414c1f86fa3afa0918acffd4
+R 1c9591aed33110a685184b6893dbfa0d
 U drh
-Z c3f0cf345664d8221c8b35557e376692
+Z 2db21ba84371cf56d0d7dbac86085c64
