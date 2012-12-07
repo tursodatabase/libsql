@@ -1,5 +1,5 @@
-C In\sthe\sasync\sVFS,\streat\sthe\snew\serror\scode\sSQLITE_IOERR_DELETE_NOENT\sas\ssuccess\sfor\sxDelete.
-D 2012-12-06T23:16:58.098
+C Spelling\sand\sheader\sfixes\sfor\sthe\sasync\sextension.
+D 2012-12-07T09:08:42.147
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -22,9 +22,9 @@ F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
 F doc/vfs-shm.txt e101f27ea02a8387ce46a05be2b1a902a021d37a
 F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
-F ext/async/README.txt 048f24b1b8f28eb31fb84aac28e70a6ce3de6973
+F ext/async/README.txt e12275968f6fde133a80e04387d0e839b0c51f91
 F ext/async/sqlite3async.c b5a3e30f538a9ffe81538b3063b4d5963f9bb422
-F ext/async/sqlite3async.h a21e1252deb14a2c211f0e165c4b9122a8f1f344
+F ext/async/sqlite3async.h f489b080af7e72aec0e1ee6f1d98ab6cf2e4dcef
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 1a35e654a235c2c662d3ca0dfc3138ad60b8b7d5
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 79ef8e3c7798dfdf37359ac816e886a43ba9d98d
-R fc13000d0eb5e984211666c5c06b93d1
+P c507ca4a8eb255923ff32001a1903dc85960f485
+R dad5db263b112e39ce603389d8591aef
 U mistachkin
-Z bfcb502a603625c76bbdc1bb1f12b4f2
+Z 39fff713a1016104fa2d5a1d9cb6376f

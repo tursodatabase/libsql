@@ -1,6 +1,6 @@
 NOTE (2012-11-29):
 
-The functionality implemented by this extension has been superceded
+The functionality implemented by this extension has been superseded
 by WAL-mode.  This module is no longer supported or maintained.  The
 code is retained for historical reference only.
 
