@@ -1,5 +1,5 @@
-C Fix\sa\slong-standing\sissue\swith\sthe\sdistinct-as-aggregate\soptimization\sthat\nonly\sexpressed\swhen\sthe\snew\scollating-sequence\slogic\sis\sturned\son.
-D 2012-12-07T22:18:54.026
+C Do\snot\sreport\smissing\scollating\sfunctions\swhile\sparsing\sthe\sschema.\nAlso\sremove\sa\sstray\scomment.
+D 2012-12-07T22:54:41.904
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -130,7 +130,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 72a70dcfda75d3a1f81041ce4573e7afddcd8e4e
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c 9b8d308979114991e5dc7cee958316e07186941d
-F src/expr.c 9102d69c2d06fb34616d14de943bd8f342585c47
+F src/expr.c 6b50dcc885e8f898e6ba97457d1b2305b78cc8d0
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c ddf44f8ce43b91623e8687fd940c6bf3882d9480
 F src/func.c 8147799b048065a1590805be464d05b4913e652c
@@ -174,7 +174,7 @@ F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 5ed606916be6c63f0e262cc2cb817712384f18b5
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 28176222b138f30a9bf25bdcec94f58980273f84
+F src/select.c ebbbe13c0935bbe1064372370958cc4e44766018
 F src/shell.c e392dd1ccbb77cc1d75a8367a89b473c24bea019
 F src/sqlite.h.in 4e71a210f383b6d060bd3fdf81d850f0f8c4eca3
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 49654453ad157693414c1f86fa3afa0918acffd4
-R 1c9591aed33110a685184b6893dbfa0d
+P 0aaf52a339808386984c30cca0c0c35ac2e70e7e
+R 7af19f524bb6d3b67c53aaadb01843a9
 U drh
-Z 2db21ba84371cf56d0d7dbac86085c64
+Z f5116fba24c8cad62b7fc1fe326fd934
