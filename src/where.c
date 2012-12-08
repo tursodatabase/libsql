@@ -3032,6 +3032,11 @@ static void bestBtreeIndex(WhereBestIdx *p){
   tRowcnt aiRowEstPk[2];      /* The aiRowEst[] value for the sPk index */
   int aiColumnPk = -1;        /* The aColumn[] value for the sPk index */
   int wsFlagMask;             /* Allowed flags in p->cost.plan.wsFlag */
+  int nPriorSat;              /* ORDER BY terms satisfied by outer loops */
+  int nOrderBy;               /* Number of ORDER BY terms */
+  char bSortInit;             /* Initializer for bSort in inner loop */
+  char bDistInit;             /* Initializer for bDist in inner loop */
+
 
   /* Initialize the cost to a worst-case value */
   memset(&p->cost, 0, sizeof(p->cost));
@@ -3079,6 +3084,17 @@ static void bestBtreeIndex(WhereBestIdx *p){
     );
     eqTermMask = WO_EQ|WO_IN;
     pIdx = 0;
+  }
+
+  nOrderBy = p->pOrderBy ? p->pOrderBy->nExpr : 0;
+  if( p->i ){
+    nPriorSat = p->aLevel[p->i-1].plan.nOBSat;
+    bSortInit = nPriorSat<nOrderBy;
+    bDistInit = 0;
+  }else{
+    nPriorSat = 0;
+    bSortInit = nOrderBy>0;
+    bDistInit = p->pDistinct!=0;
   }
 
   /* Loop over all indices looking for the best one to use
@@ -3158,11 +3174,9 @@ static void bestBtreeIndex(WhereBestIdx *p){
     int nInMul = 1;               /* Number of distinct equalities to lookup */
     double rangeDiv = (double)1;  /* Estimated reduction in search space */
     int nBound = 0;               /* Number of range constraints seen */
-    int bSort;                    /* True if external sort required */
-    int bDist;                    /* True if index cannot help with DISTINCT */
-    int bLookup = 0;              /* True if not a covering index */
-    int nPriorSat;                /* ORDER BY terms satisfied by outer loops */
-    int nOrderBy;                 /* Number of ORDER BY terms */
+    char bSort = bSortInit;       /* True if external sort required */
+    char bDist = bDistInit;       /* True if index cannot help with DISTINCT */
+    char bLookup = 0;             /* True if not a covering index */
     WhereTerm *pTerm;             /* A single term of the WHERE clause */
 #ifdef SQLITE_ENABLE_STAT3
     WhereTerm *pFirstTerm = 0;    /* First term matching the index */
@@ -3173,16 +3187,7 @@ static void bestBtreeIndex(WhereBestIdx *p){
       pSrc->pTab->zName, (pIdx ? pIdx->zName : "ipk")
     ));
     memset(&pc, 0, sizeof(pc));
-    nOrderBy = p->pOrderBy ? p->pOrderBy->nExpr : 0;
-    if( p->i ){
-      nPriorSat = pc.plan.nOBSat = p->aLevel[p->i-1].plan.nOBSat;
-      bSort = nPriorSat<nOrderBy;
-      bDist = 0;
-    }else{
-      nPriorSat = pc.plan.nOBSat = 0;
-      bSort = nOrderBy>0;
-      bDist = p->pDistinct!=0;
-    }
+    pc.plan.nOBSat = nPriorSat;
 
     /* Determine the values of pc.plan.nEq and nInMul */
     for(pc.plan.nEq=0; pc.plan.nEq<pProbe->nColumn; pc.plan.nEq++){
