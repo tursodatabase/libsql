@@ -1,5 +1,5 @@
-C Make\ssure\sWHERE\sclause\sconstraints\sA=B\sand\sB=A\swork\sthe\ssame\seven\swith\nCOLLATE\sclauses.
-D 2012-12-08T14:16:47.364
+C Adjustments\sto\sthe\scollating-sequence\srefactoring\sto\sfacilitate\sfull-coverage\ntesting\sand\sto\sfix\ssome\sminor\sissues\sfound\sby\sTH3.
+D 2012-12-08T21:36:26.700
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -130,7 +130,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 72a70dcfda75d3a1f81041ce4573e7afddcd8e4e
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c 9b8d308979114991e5dc7cee958316e07186941d
-F src/expr.c f4c7d2040f2125986102deefe801cbdb36abff49
+F src/expr.c 0e41d66d868b37dbc0e041c342e0036fad27e705
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c dcb7c37a4bf526ded7b24a01a60fe071bcd160a2
 F src/func.c 8147799b048065a1590805be464d05b4913e652c
@@ -241,7 +241,7 @@ F src/vdbe.c 89138e8e8b5468f349ace581db9c49801f4d6543
 F src/vdbe.h b52887278cb173e66188da84dfab216bea61119d
 F src/vdbeInt.h 79abf9b31be406d35ca77d6999cb2d42aaf91e78
 F src/vdbeapi.c 4c2418161cf45392ba76a7ca92f9a5f06b96f89c
-F src/vdbeaux.c f68a124380954985d797fa7d91fe483e2e894aca
+F src/vdbeaux.c 7658c5d9db838db5780f6a1c4d1280d0646e3569
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
 F src/vdbesort.c c61ca318681c0e7267da8be3abfca8469652a7e9
@@ -250,7 +250,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c f4b0ec5ac0c3ace1ecb6602d464a2c850a00a212
+F src/where.c b613cf5be71a34c85e3a85782d9ea44bba8ea373
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 2722f4074fd8d189b7bd2b9107484b66500e5e9b
-R 44ade51d63c6fcbdb696e1733dcc6d8c
+P b3f53668115f0a12a01167c2a75eecc735416024
+R c313aa327376738494eed0390171cf5a
 U drh
-Z 2cda5cfb2150123461ceb6bd2affdc5c
+Z 3d64fe6a86ada817dbd1c90263075af4

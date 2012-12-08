@@ -77,13 +77,11 @@ Expr *sqlite3ExprAddCollateToken(Parse *pParse, Expr *pExpr, Token *pCollName){
   return pExpr;
 }
 Expr *sqlite3ExprAddCollateString(Parse *pParse, Expr *pExpr, const char *zC){
-  if( zC ){
-    Token s;
-    s.z = zC;
-    s.n = sqlite3Strlen30(s.z);
-    pExpr = sqlite3ExprAddCollateToken(pParse, pExpr, &s);
-  }
-  return pExpr;
+  Token s;
+  assert( zC!=0 );
+  s.z = zC;
+  s.n = sqlite3Strlen30(s.z);
+  return sqlite3ExprAddCollateToken(pParse, pExpr, &s);
 }
 
 /*
@@ -110,13 +108,14 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
   sqlite3 *db = pParse->db;
   CollSeq *pColl = 0;
   Expr *p = pExpr;
-  while( p && pColl==0 ){
+  while( p ){
     int op = p->op;
     if( op==TK_CAST || op==TK_UPLUS ){
       p = p->pLeft;
       continue;
     }
-    if( op==TK_COLLATE || (op==TK_REGISTER && p->op2==TK_COLLATE) ){
+    assert( op!=TK_REGISTER || p->op2!=TK_COLLATE );
+    if( op==TK_COLLATE ){
       if( db->init.busy ){
         /* Do not report errors when parsing while the schema */
         pColl = sqlite3FindCollSeq(db, ENC(db), p->u.zToken, 0);
@@ -139,7 +138,7 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
       break;
     }
     if( p->flags & EP_Collate ){
-      if( p->pLeft && (p->pLeft->flags & EP_Collate)!=0 ){
+      if( ALWAYS(p->pLeft) && (p->pLeft->flags & EP_Collate)!=0 ){
         p = p->pLeft;
       }else{
         p = p->pRight;
@@ -3363,6 +3362,9 @@ static int evalConstExpr(Walker *pWalker, Expr *pExpr){
     case TK_REGISTER: {
       return WRC_Prune;
     }
+    case TK_COLLATE: {
+      return WRC_Continue;
+    }
     case TK_FUNCTION:
     case TK_AGG_FUNCTION:
     case TK_CONST_FUNC: {
@@ -3384,9 +3386,11 @@ static int evalConstExpr(Walker *pWalker, Expr *pExpr){
   }
   if( isAppropriateForFactoring(pExpr) ){
     int r1 = ++pParse->nMem;
-    int r2;
-    r2 = sqlite3ExprCodeTarget(pParse, pExpr, r1);
-    if( r1!=r2 ) sqlite3ReleaseTempReg(pParse, r1);
+    int r2 = sqlite3ExprCodeTarget(pParse, pExpr, r1);
+    /* If r2!=r1, it means that register r1 is never used.  That is harmless
+    ** but suboptimal, so we want to know about the situation to fix it.
+    ** Hence the following assert: */
+    assert( r2==r1 );
     pExpr->op2 = pExpr->op;
     pExpr->op = TK_REGISTER;
     pExpr->iTable = r2;
@@ -3826,7 +3830,6 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB){
       return pA->op==TK_COLLATE ? 1 : 2;
     }
   }
-  if( (pA->flags&EP_Collate)!=(pB->flags&EP_Collate) ) return 1;
   return 0;
 }
 

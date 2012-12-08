@@ -670,7 +670,7 @@ static WhereTerm *findTerm(
           for(j=0; pIdx->aiColumn[j]!=iColumn; j++){
             if( NEVER(j>=pIdx->nColumn) ) return 0;
           }
-          if( pColl && sqlite3StrICmp(pColl->zName, pIdx->azColl[j]) ) continue;
+          if( sqlite3StrICmp(pColl->zName, pIdx->azColl[j]) ) continue;
         }
         return pTerm;
       }

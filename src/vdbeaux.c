@@ -866,22 +866,18 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
       i = sqlite3Strlen30(zTemp);
       for(j=0; j<pKeyInfo->nField; j++){
         CollSeq *pColl = pKeyInfo->aColl[j];
-        if( pColl ){
-          int n = sqlite3Strlen30(pColl->zName);
-          if( i+n>nTemp-6 ){
-            memcpy(&zTemp[i],",...",4);
-            break;
-          }
-          zTemp[i++] = ',';
-          if( pKeyInfo->aSortOrder[j] ){
-            zTemp[i++] = '-';
-          }
-          memcpy(&zTemp[i], pColl->zName,n+1);
-          i += n;
-        }else if( i+4<nTemp-6 ){
-          memcpy(&zTemp[i],",nil",4);
-          i += 4;
+        const char *zColl = pColl ? pColl->zName : "nil";
+        int n = sqlite3Strlen30(zColl);
+        if( i+n>nTemp-6 ){
+          memcpy(&zTemp[i],",...",4);
+          break;
         }
+        zTemp[i++] = ',';
+        if( pKeyInfo->aSortOrder[j] ){
+          zTemp[i++] = '-';
+        }
+        memcpy(&zTemp[i], zColl, n+1);
+        i += n;
       }
       zTemp[i++] = ')';
       zTemp[i] = 0;
