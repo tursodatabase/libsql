@@ -136,6 +136,30 @@ do_test 2.4 {
   set ::invoked_mycollate_db1
 } {0}
 
+forcedelete test.db test.db2
+sqlite3 db1 test.db
+sqlite3 db2 test.db
+db1 collate mycollate mycollate_db1
+db2 collate mycollate mycollate_db2
+
+do_test 2.13 {
+  set ::invoked_mycollate_db1 0
+  db1 eval {
+    CREATE TABLE t1(a, CHECK (a COLLATE mycollate IN ('one', 'two', 'three')));
+    INSERT INTO t1 VALUES('one');
+  }
+  db1 close
+  set ::invoked_mycollate_db1
+} {1}
+do_test 2.14 {
+  set ::invoked_mycollate_db1 0
+  db2 eval {
+    INSERT INTO t1 VALUES('two');
+  }
+  db2 close
+  set ::invoked_mycollate_db1
+} {0}
+
 #-------------------------------------------------------------------------
 # This test verifies that a bug causing a busy-handler belonging to one
 # shared-cache connection to be executed as a result of an sqlite3_step()
@@ -204,4 +228,3 @@ db2 close
 
 sqlite3_enable_shared_cache $::enable_shared_cache
 finish_test
-

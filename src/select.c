@@ -1335,7 +1335,7 @@ static int selectColumnsFromExprList(
   for(i=0, pCol=aCol; i<nCol; i++, pCol++){
     /* Get an appropriate name for the column
     */
-    p = pEList->a[i].pExpr;
+    p = sqlite3ExprSkipCollate(pEList->a[i].pExpr);
     assert( p->pRight==0 || ExprHasProperty(p->pRight, EP_IntValue)
                || p->pRight->u.zToken==0 || p->pRight->u.zToken[0]!=0 );
     if( (zName = pEList->a[i].zName)!=0 ){
@@ -2333,12 +2333,13 @@ static int multiSelectOrderBy(
       for(i=0; i<nOrderBy; i++){
         CollSeq *pColl;
         Expr *pTerm = pOrderBy->a[i].pExpr;
-        if( pTerm->flags & EP_ExpCollate ){
-          pColl = pTerm->pColl;
+        if( pTerm->flags & EP_Collate ){
+          pColl = sqlite3ExprCollSeq(pParse, pTerm);
         }else{
           pColl = multiSelectCollSeq(pParse, p, aPermute[i]);
-          pTerm->flags |= EP_ExpCollate;
-          pTerm->pColl = pColl;
+          if( pColl==0 ) pColl = db->pDfltColl;
+          pOrderBy->a[i].pExpr =
+             sqlite3ExprAddCollateString(pParse, pTerm, pColl->zName);
         }
         pKeyMerge->aColl[i] = pColl;
         pKeyMerge->aSortOrder[i] = pOrderBy->a[i].sortOrder;
@@ -2541,6 +2542,7 @@ static int multiSelectOrderBy(
   sqlite3VdbeAddOp4(v, OP_Permutation, 0, 0, 0, (char*)aPermute, P4_INTARRAY);
   sqlite3VdbeAddOp4(v, OP_Compare, destA.iSdst, destB.iSdst, nOrderBy,
                          (char*)pKeyMerge, P4_KEYINFO_HANDOFF);
+  sqlite3VdbeChangeP5(v, OPFLAG_PERMUTE);
   sqlite3VdbeAddOp3(v, OP_Jump, addrAltB, addrAeqB, addrAgtB);
 
   /* Release temporary registers
@@ -2608,9 +2610,6 @@ static Expr *substExpr(
       assert( pEList!=0 && pExpr->iColumn<pEList->nExpr );
       assert( pExpr->pLeft==0 && pExpr->pRight==0 );
       pNew = sqlite3ExprDup(db, pEList->a[pExpr->iColumn].pExpr, 0);
-      if( pNew && pExpr->pColl ){
-        pNew->pColl = pExpr->pColl;
-      }
       sqlite3ExprDelete(db, pExpr);
       pExpr = pNew;
     }
