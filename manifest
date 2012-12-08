@@ -1,5 +1,5 @@
-C Veryquick\spasses\sall\stests\snow.
-D 2012-12-08T03:34:04.199
+C Duplicating\scheck\sconstraint\sexpressions\sprior\sto\scode\sgeneration\sis\sno\nlonger\srequired,\sand\sso\sit\sis\sremoved.
+D 2012-12-08T04:10:44.860
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -138,7 +138,7 @@ F src/global.c e59ecd2c553ad0d4bfbc84ca71231336f8993a7a
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c d7ed04b1fab887d6d26cf5e36753f5d6d1246290
+F src/insert.c dc197aa9293a26d300eb5378880e701f7b20fefa
 F src/journal.c eb7b9f5e783266521bcd9b2b93d419a219411f71
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P f66c1db2965054f38125218202b6a6ec62d57666
-R 511d405c0f499c6308ea89128ae45a9c
+P 7b96115e81deab0aa0472839cf787ba3f2fc64a7
+R 8013579f53b80064be673dd6b756f3d9
 U drh
-Z c72d9ea52b798f92d7f766e244fc6469
+Z 116d2ac1551cc67be301e91dcf07c1f6
