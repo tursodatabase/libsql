@@ -127,6 +127,7 @@ void sqlite3FinishCoding(Parse *pParse){
   sqlite3 *db;
   Vdbe *v;
 
+  assert( pParse->pToplevel==0 );
   db = pParse->db;
   if( db->mallocFailed ) return;
   if( pParse->nested ) return;
@@ -2690,10 +2691,8 @@ Index *sqlite3CreateIndex(
   for(i=0; i<pList->nExpr; i++){
     Expr *pExpr = pList->a[i].pExpr;
     if( pExpr ){
-      CollSeq *pColl = pExpr->pColl;
-      /* Either pColl!=0 or there was an OOM failure.  But if an OOM
-      ** failure we have quit before reaching this point. */
-      if( ALWAYS(pColl) ){
+      CollSeq *pColl = sqlite3ExprCollSeq(pParse, pExpr);
+      if( pColl ){
         nExtra += (1 + sqlite3Strlen30(pColl->zName));
       }
     }
@@ -2756,6 +2755,7 @@ Index *sqlite3CreateIndex(
     const char *zColName = pListItem->zName;
     Column *pTabCol;
     int requestedSortOrder;
+    CollSeq *pColl;                /* Collating sequence */
     char *zColl;                   /* Collation sequence name */
 
     for(j=0, pTabCol=pTab->aCol; j<pTab->nCol; j++, pTabCol++){
@@ -2768,14 +2768,11 @@ Index *sqlite3CreateIndex(
       goto exit_create_index;
     }
     pIndex->aiColumn[i] = j;
-    /* Justification of the ALWAYS(pListItem->pExpr->pColl):  Because of
-    ** the way the "idxlist" non-terminal is constructed by the parser,
-    ** if pListItem->pExpr is not null then either pListItem->pExpr->pColl
-    ** must exist or else there must have been an OOM error.  But if there
-    ** was an OOM error, we would never reach this point. */
-    if( pListItem->pExpr && ALWAYS(pListItem->pExpr->pColl) ){
+    if( pListItem->pExpr
+     && (pColl = sqlite3ExprCollSeq(pParse, pListItem->pExpr))!=0
+    ){
       int nColl;
-      zColl = pListItem->pExpr->pColl->zName;
+      zColl = pColl->zName;
       nColl = sqlite3Strlen30(zColl) + 1;
       assert( nExtra>=nColl );
       memcpy(zExtra, zColl, nColl);
@@ -3589,6 +3586,15 @@ int sqlite3OpenTempDatabase(Parse *pParse){
 void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
   Parse *pToplevel = sqlite3ParseToplevel(pParse);
 
+#ifndef SQLITE_OMIT_TRIGGER
+  if( pToplevel!=pParse ){
+    /* This branch is taken if a trigger is currently being coded. In this
+    ** case, set cookieGoto to a non-zero value to show that this function
+    ** has been called. This is used by the sqlite3ExprCodeConstants()
+    ** function. */
+    pParse->cookieGoto = -1;
+  }
+#endif
   if( pToplevel->cookieGoto==0 ){
     Vdbe *v = sqlite3GetVdbe(pToplevel);
     if( v==0 ) return;  /* This only happens if there was a prior error */

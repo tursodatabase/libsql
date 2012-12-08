@@ -471,7 +471,7 @@ int sqlite3FixSrcList(
          pFix->zType, pFix->pName, pItem->zDatabase);
       return 1;
     }
-    sqlite3_free(pItem->zDatabase);
+    sqlite3DbFree(pFix->pParse->db, pItem->zDatabase);
     pItem->zDatabase = 0;
     pItem->pSchema = pFix->pSchema;
 #if !defined(SQLITE_OMIT_VIEW) || !defined(SQLITE_OMIT_TRIGGER)

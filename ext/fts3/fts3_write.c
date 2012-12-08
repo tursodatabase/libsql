@@ -5253,7 +5253,7 @@ int sqlite3Fts3UpdateMethod(
   int rc = SQLITE_OK;             /* Return Code */
   int isRemove = 0;               /* True for an UPDATE or DELETE */
   u32 *aSzIns = 0;                /* Sizes of inserted documents */
-  u32 *aSzDel;                    /* Sizes of deleted documents */
+  u32 *aSzDel = 0;                /* Sizes of deleted documents */
   int nChng = 0;                  /* Net change in number of documents */
   int bInsertDone = 0;
 

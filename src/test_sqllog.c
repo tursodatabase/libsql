@@ -390,7 +390,7 @@ static void testSqllogStmt(struct SLConn *p, const char *zSql){
 ** The SQLITE_CONFIG_SQLLOG callback registered by sqlite3_init_sqllog().
 */
 static void testSqllog(void *pCtx, sqlite3 *db, const char *zSql, int eType){
-  struct SLConn *p;
+  struct SLConn *p = 0;
   sqlite3_mutex *master = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
 
   assert( eType==0 || eType==1 || eType==2 );

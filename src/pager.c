@@ -1941,12 +1941,13 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
       ** file should be closed and deleted. If this connection writes to
       ** the database file, it will do so using an in-memory journal. 
       */
+      int bDelete = (!pPager->tempFile && sqlite3JournalExists(pPager->jfd));
       assert( pPager->journalMode==PAGER_JOURNALMODE_DELETE 
            || pPager->journalMode==PAGER_JOURNALMODE_MEMORY 
            || pPager->journalMode==PAGER_JOURNALMODE_WAL 
       );
       sqlite3OsClose(pPager->jfd);
-      if( !pPager->tempFile ){
+      if( bDelete ){
         rc = sqlite3OsDelete(pPager->pVfs, pPager->zJournal, 0);
       }
     }
@@ -3485,7 +3486,7 @@ void sqlite3PagerSetBusyhandler(
     void **ap = (void **)&pPager->xBusyHandler;
     assert( ((int(*)(void *))(ap[0]))==xBusyHandler );
     assert( ap[1]==pBusyHandlerArg );
-    sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_BUSYHANDLER, (void *)ap);
+    sqlite3OsFileControlHint(pPager->fd, SQLITE_FCNTL_BUSYHANDLER, (void *)ap);
   }
 }
 

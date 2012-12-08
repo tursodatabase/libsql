@@ -501,7 +501,6 @@ if test "${use_tcl}" = "yes" ; then
     AC_SUBST(TCL_VERSION)
     AC_SUBST(TCL_BIN_DIR)
     AC_SUBST(TCL_SRC_DIR)
-    AC_SUBST(TCL_LIBS)
     AC_SUBST(TCL_INCLUDE_SPEC)
     
     AC_SUBST(TCL_LIB_FILE)

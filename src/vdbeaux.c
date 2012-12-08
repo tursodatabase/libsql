@@ -724,6 +724,7 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
     addr = p->nOp - 1;
   }
   pOp = &p->aOp[addr];
+  assert( pOp->p4type==P4_NOTUSED || pOp->p4type==P4_INT32 );
   freeP4(db, pOp->p4type, pOp->p4.p);
   pOp->p4.p = 0;
   if( n==P4_INT32 ){
@@ -866,22 +867,18 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
       i = sqlite3Strlen30(zTemp);
       for(j=0; j<pKeyInfo->nField; j++){
         CollSeq *pColl = pKeyInfo->aColl[j];
-        if( pColl ){
-          int n = sqlite3Strlen30(pColl->zName);
-          if( i+n>nTemp-6 ){
-            memcpy(&zTemp[i],",...",4);
-            break;
-          }
-          zTemp[i++] = ',';
-          if( pKeyInfo->aSortOrder[j] ){
-            zTemp[i++] = '-';
-          }
-          memcpy(&zTemp[i], pColl->zName,n+1);
-          i += n;
-        }else if( i+4<nTemp-6 ){
-          memcpy(&zTemp[i],",nil",4);
-          i += 4;
+        const char *zColl = pColl ? pColl->zName : "nil";
+        int n = sqlite3Strlen30(zColl);
+        if( i+n>nTemp-6 ){
+          memcpy(&zTemp[i],",...",4);
+          break;
         }
+        zTemp[i++] = ',';
+        if( pKeyInfo->aSortOrder[j] ){
+          zTemp[i++] = '-';
+        }
+        memcpy(&zTemp[i], zColl, n+1);
+        i += n;
       }
       zTemp[i++] = ')';
       zTemp[i] = 0;
@@ -2482,7 +2479,7 @@ void sqlite3VdbeClearObject(sqlite3 *db, Vdbe *p){
   sqlite3DbFree(db, p->zSql);
   sqlite3DbFree(db, p->pFree);
 #if defined(SQLITE_ENABLE_TREE_EXPLAIN)
-  sqlite3DbFree(db, p->zExplain);
+  sqlite3_free(p->zExplain);
   sqlite3DbFree(db, p->pExplain);
 #endif
 }

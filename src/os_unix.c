@@ -3581,6 +3581,9 @@ static void unixModeBit(unixFile *pFile, unsigned char mask, int *pArg){
   }
 }
 
+/* Forward declaration */
+static int unixGetTempname(int nBuf, char *zBuf);
+
 /*
 ** Information and control of an open file handle.
 */
@@ -3616,6 +3619,14 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
     }
     case SQLITE_FCNTL_VFSNAME: {
       *(char**)pArg = sqlite3_mprintf("%s", pFile->pVfs->zName);
+      return SQLITE_OK;
+    }
+    case SQLITE_FCNTL_TEMPFILENAME: {
+      char *zTFile = sqlite3_malloc( pFile->pVfs->mxPathname );
+      if( zTFile ){
+        unixGetTempname(pFile->pVfs->mxPathname, zTFile);
+        *(char**)pArg = zTFile;
+      }
       return SQLITE_OK;
     }
 #ifdef SQLITE_DEBUG

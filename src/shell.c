@@ -541,6 +541,9 @@ static void output_c_string(FILE *out, const char *z){
     if( c=='\\' ){
       fputc(c, out);
       fputc(c, out);
+    }else if( c=='"' ){
+      fputc('\\', out);
+      fputc('"', out);
     }else if( c=='\t' ){
       fputc('\\', out);
       fputc('t', out);
@@ -796,14 +799,14 @@ static int shell_callback(void *pArg, int nArg, char **azArg, char **azCol, int 
       if( p->cnt++==0 && p->showHeader ){
         for(i=0; i<nArg; i++){
           output_c_string(p->out,azCol[i] ? azCol[i] : "");
-          fprintf(p->out, "%s", p->separator);
+          if(i<nArg-1) fprintf(p->out, "%s", p->separator);
         }
         fprintf(p->out,"\n");
       }
       if( azArg==0 ) break;
       for(i=0; i<nArg; i++){
         output_c_string(p->out, azArg[i] ? azArg[i] : p->nullvalue);
-        fprintf(p->out, "%s", p->separator);
+        if(i<nArg-1) fprintf(p->out, "%s", p->separator);
       }
       fprintf(p->out,"\n");
       break;
@@ -2018,6 +2021,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       p->mode = MODE_Html;
     }else if( n2==3 && strncmp(azArg[1],"tcl",n2)==0 ){
       p->mode = MODE_Tcl;
+      sqlite3_snprintf(sizeof(p->separator), p->separator, " ");
     }else if( n2==3 && strncmp(azArg[1],"csv",n2)==0 ){
       p->mode = MODE_Csv;
       sqlite3_snprintf(sizeof(p->separator), p->separator, ",");
@@ -2711,7 +2715,7 @@ static int process_input(struct callback_data *p, FILE *in){
     free(zSql);
   }
   free(zLine);
-  return errCnt;
+  return errCnt>0;
 }
 
 /*

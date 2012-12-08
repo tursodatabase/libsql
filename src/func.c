@@ -192,6 +192,7 @@ static void instrFunc(
   int N = 1;
   int isText;
 
+  UNUSED_PARAMETER(argc);
   typeHaystack = sqlite3_value_type(argv[0]);
   typeNeedle = sqlite3_value_type(argv[1]);
   if( typeHaystack==SQLITE_NULL || typeNeedle==SQLITE_NULL ) return;

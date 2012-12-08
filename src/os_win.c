@@ -2691,6 +2691,9 @@ static void winModeBit(winFile *pFile, unsigned char mask, int *pArg){
   }
 }
 
+/* Forward declaration */
+static int getTempname(int nBuf, char *zBuf);
+
 /*
 ** Control and query of the open file handle.
 */
@@ -2748,6 +2751,14 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
         win32IoerrRetryDelay = a[1];
       }else{
         a[1] = win32IoerrRetryDelay;
+      }
+      return SQLITE_OK;
+    }
+    case SQLITE_FCNTL_TEMPFILENAME: {
+      char *zTFile = sqlite3_malloc( pFile->pVfs->mxPathname );
+      if( zTFile ){
+        getTempname(pFile->pVfs->mxPathname, zTFile);
+        *(char**)pArg = zTFile;
       }
       return SQLITE_OK;
     }

@@ -852,7 +852,6 @@ struct sqlite3_io_methods {
 ** compilation of the PRAGMA fails with an error.  ^The [SQLITE_FCNTL_PRAGMA]
 ** file control occurs at the beginning of pragma statement analysis and so
 ** it is able to override built-in [PRAGMA] statements.
-** </ul>
 **
 ** <li>[[SQLITE_FCNTL_BUSYHANDLER]]
 ** ^This file-control may be invoked by SQLite on the database file handle
@@ -864,6 +863,16 @@ struct sqlite3_io_methods {
 ** the array as the only argument. If it returns non-zero, then the operation
 ** should be retried. If it returns zero, the custom VFS should abandon the
 ** current operation.
+**
+** <li>[[SQLITE_FCNTL_TEMPFILENAME]]
+** ^Application can invoke this file-control to have SQLite generate a
+** temporary filename using the same algorithm that is followed to generate
+** temporary filenames for TEMP tables and other internal uses.  The
+** argument should be a char** which will be filled with the filename
+** written into memory obtained from [sqlite3_malloc()].  The caller should
+** invoke [sqlite3_free()] on the result to avoid a memory leak.
+**
+** </ul>
 */
 #define SQLITE_FCNTL_LOCKSTATE               1
 #define SQLITE_GET_LOCKPROXYFILE             2
@@ -880,6 +889,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_POWERSAFE_OVERWRITE    13
 #define SQLITE_FCNTL_PRAGMA                 14
 #define SQLITE_FCNTL_BUSYHANDLER            15
+#define SQLITE_FCNTL_TEMPFILENAME           16
 
 /*
 ** CAPI3REF: Mutex Handle

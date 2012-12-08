@@ -563,23 +563,32 @@ static int allowedOp(int op){
 ** Commute a comparison operator.  Expressions of the form "X op Y"
 ** are converted into "Y op X".
 **
-** If a collation sequence is associated with either the left or right
+** If left/right precendence rules come into play when determining the
+** collating
 ** side of the comparison, it remains associated with the same side after
 ** the commutation. So "Y collate NOCASE op X" becomes 
-** "X collate NOCASE op Y". This is because any collation sequence on
+** "X op Y". This is because any collation sequence on
 ** the left hand side of a comparison overrides any collation sequence 
-** attached to the right. For the same reason the EP_ExpCollate flag
+** attached to the right. For the same reason the EP_Collate flag
 ** is not commuted.
 */
 static void exprCommute(Parse *pParse, Expr *pExpr){
-  u16 expRight = (pExpr->pRight->flags & EP_ExpCollate);
-  u16 expLeft = (pExpr->pLeft->flags & EP_ExpCollate);
+  u16 expRight = (pExpr->pRight->flags & EP_Collate);
+  u16 expLeft = (pExpr->pLeft->flags & EP_Collate);
   assert( allowedOp(pExpr->op) && pExpr->op!=TK_IN );
-  pExpr->pRight->pColl = sqlite3ExprCollSeq(pParse, pExpr->pRight);
-  pExpr->pLeft->pColl = sqlite3ExprCollSeq(pParse, pExpr->pLeft);
-  SWAP(CollSeq*,pExpr->pRight->pColl,pExpr->pLeft->pColl);
-  pExpr->pRight->flags = (pExpr->pRight->flags & ~EP_ExpCollate) | expLeft;
-  pExpr->pLeft->flags = (pExpr->pLeft->flags & ~EP_ExpCollate) | expRight;
+  if( expRight==expLeft ){
+    /* Either X and Y both have COLLATE operator or neither do */
+    if( expRight ){
+      /* Both X and Y have COLLATE operators.  Make sure X is always
+      ** used by clearing the EP_Collate flag from Y. */
+      pExpr->pRight->flags &= ~EP_Collate;
+    }else if( sqlite3ExprCollSeq(pParse, pExpr->pLeft)!=0 ){
+      /* Neither X nor Y have COLLATE operators, but X has a non-default
+      ** collating sequence.  So add the EP_Collate marker on X to cause
+      ** it to be searched first. */
+      pExpr->pLeft->flags |= EP_Collate;
+    }
+  }
   SWAP(Expr*,pExpr->pRight,pExpr->pLeft);
   if( pExpr->op>=TK_GT ){
     assert( TK_LT==TK_GT+2 );
@@ -656,12 +665,12 @@ static WhereTerm *findTerm(
           */
           assert(pX->pLeft);
           pColl = sqlite3BinaryCompareCollSeq(pParse, pX->pLeft, pX->pRight);
-          assert(pColl || pParse->nErr);
+          if( pColl==0 ) pColl = pParse->db->pDfltColl;
   
           for(j=0; pIdx->aiColumn[j]!=iColumn; j++){
             if( NEVER(j>=pIdx->nColumn) ) return 0;
           }
-          if( pColl && sqlite3StrICmp(pColl->zName, pIdx->azColl[j]) ) continue;
+          if( sqlite3StrICmp(pColl->zName, pIdx->azColl[j]) ) continue;
         }
         return pTerm;
       }
@@ -1179,7 +1188,7 @@ static void exprAnalyze(
   }
   pTerm = &pWC->a[idxTerm];
   pMaskSet = pWC->pMaskSet;
-  pExpr = pTerm->pExpr;
+  pExpr = sqlite3ExprSkipCollate(pTerm->pExpr);
   prereqLeft = exprTableUsage(pMaskSet, pExpr->pLeft);
   op = pExpr->op;
   if( op==TK_IN ){
@@ -1206,8 +1215,8 @@ static void exprAnalyze(
   pTerm->iParent = -1;
   pTerm->eOperator = 0;
   if( allowedOp(op) && (pTerm->prereqRight & prereqLeft)==0 ){
-    Expr *pLeft = pExpr->pLeft;
-    Expr *pRight = pExpr->pRight;
+    Expr *pLeft = sqlite3ExprSkipCollate(pExpr->pLeft);
+    Expr *pRight = sqlite3ExprSkipCollate(pExpr->pRight);
     if( pLeft->op==TK_COLUMN ){
       pTerm->leftCursor = pLeft->iTable;
       pTerm->u.leftColumn = pLeft->iColumn;
@@ -1235,7 +1244,7 @@ static void exprAnalyze(
         pNew = pTerm;
       }
       exprCommute(pParse, pDup);
-      pLeft = pDup->pLeft;
+      pLeft = sqlite3ExprSkipCollate(pDup->pLeft);
       pNew->leftCursor = pLeft->iTable;
       pNew->u.leftColumn = pLeft->iColumn;
       testcase( (prereqLeft | extraRight) != prereqLeft );
@@ -1314,7 +1323,7 @@ static void exprAnalyze(
     Expr *pNewExpr2;
     int idxNew1;
     int idxNew2;
-    CollSeq *pColl;    /* Collating sequence to use */
+    Token sCollSeqName;  /* Name of collating sequence */
 
     pLeft = pExpr->x.pList->a[1].pExpr;
     pStr2 = sqlite3ExprDup(db, pStr1, 0);
@@ -1336,16 +1345,19 @@ static void exprAnalyze(
       }
       *pC = c + 1;
     }
-    pColl = sqlite3FindCollSeq(db, SQLITE_UTF8, noCase ? "NOCASE" : "BINARY",0);
+    sCollSeqName.z = noCase ? "NOCASE" : "BINARY";
+    sCollSeqName.n = 6;
+    pNewExpr1 = sqlite3ExprDup(db, pLeft, 0);
     pNewExpr1 = sqlite3PExpr(pParse, TK_GE, 
-                     sqlite3ExprSetColl(sqlite3ExprDup(db,pLeft,0), pColl),
-                     pStr1, 0);
+           sqlite3ExprAddCollateToken(pParse,pNewExpr1,&sCollSeqName),
+           pStr1, 0);
     idxNew1 = whereClauseInsert(pWC, pNewExpr1, TERM_VIRTUAL|TERM_DYNAMIC);
     testcase( idxNew1==0 );
     exprAnalyze(pSrc, pWC, idxNew1);
+    pNewExpr2 = sqlite3ExprDup(db, pLeft, 0);
     pNewExpr2 = sqlite3PExpr(pParse, TK_LT,
-                     sqlite3ExprSetColl(sqlite3ExprDup(db,pLeft,0), pColl),
-                     pStr2, 0);
+           sqlite3ExprAddCollateToken(pParse,pNewExpr2,&sCollSeqName),
+           pStr2, 0);
     idxNew2 = whereClauseInsert(pWC, pNewExpr2, TERM_VIRTUAL|TERM_DYNAMIC);
     testcase( idxNew2==0 );
     exprAnalyze(pSrc, pWC, idxNew2);
@@ -1463,12 +1475,12 @@ static int findIndexCol(
   const char *zColl = pIdx->azColl[iCol];
 
   for(i=0; i<pList->nExpr; i++){
-    Expr *p = pList->a[i].pExpr;
+    Expr *p = sqlite3ExprSkipCollate(pList->a[i].pExpr);
     if( p->op==TK_COLUMN
      && p->iColumn==pIdx->aiColumn[iCol]
      && p->iTable==iBase
     ){
-      CollSeq *pColl = sqlite3ExprCollSeq(pParse, p);
+      CollSeq *pColl = sqlite3ExprCollSeq(pParse, pList->a[i].pExpr);
       if( ALWAYS(pColl) && 0==sqlite3StrICmp(pColl->zName, zColl) ){
         return i;
       }
@@ -1515,7 +1527,7 @@ static int isDistinctIndex(
   */
   for(i=0; i<pDistinct->nExpr; i++){
     WhereTerm *pTerm;
-    Expr *p = pDistinct->a[i].pExpr;
+    Expr *p = sqlite3ExprSkipCollate(pDistinct->a[i].pExpr);
     if( p->op!=TK_COLUMN ) return 0;
     pTerm = findTerm(pWC, p->iTable, p->iColumn, ~(Bitmask)0, WO_EQ, 0);
     if( pTerm ){
@@ -1567,7 +1579,7 @@ static int isDistinctRedundant(
   ** current SELECT is a correlated sub-query.
   */
   for(i=0; i<pDistinct->nExpr; i++){
-    Expr *p = pDistinct->a[i].pExpr;
+    Expr *p = sqlite3ExprSkipCollate(pDistinct->a[i].pExpr);
     if( p->op==TK_COLUMN && p->iTable==iBase && p->iColumn<0 ) return 1;
   }
 
@@ -2853,7 +2865,7 @@ static int isSortingIndex(
     /* If the next term of the ORDER BY clause refers to anything other than
     ** a column in the "base" table, then this index will not be of any
     ** further use in handling the ORDER BY. */
-    pOBExpr = pOBItem->pExpr;
+    pOBExpr = sqlite3ExprSkipCollate(pOBItem->pExpr);
     if( pOBExpr->op!=TK_COLUMN || pOBExpr->iTable!=base ){
       break;
     }
@@ -2879,7 +2891,7 @@ static int isSortingIndex(
     ** clause entry.  Set isMatch to 1 if they both match. */
     if( pOBExpr->iColumn==iColumn ){
       if( zColl ){
-        pColl = sqlite3ExprCollSeq(pParse, pOBExpr);
+        pColl = sqlite3ExprCollSeq(pParse, pOBItem->pExpr);
         if( !pColl ) pColl = db->pDfltColl;
         isMatch = sqlite3StrICmp(pColl->zName, zColl)==0;
       }else{
@@ -3020,6 +3032,11 @@ static void bestBtreeIndex(WhereBestIdx *p){
   tRowcnt aiRowEstPk[2];      /* The aiRowEst[] value for the sPk index */
   int aiColumnPk = -1;        /* The aColumn[] value for the sPk index */
   int wsFlagMask;             /* Allowed flags in p->cost.plan.wsFlag */
+  int nPriorSat;              /* ORDER BY terms satisfied by outer loops */
+  int nOrderBy;               /* Number of ORDER BY terms */
+  char bSortInit;             /* Initializer for bSort in inner loop */
+  char bDistInit;             /* Initializer for bDist in inner loop */
+
 
   /* Initialize the cost to a worst-case value */
   memset(&p->cost, 0, sizeof(p->cost));
@@ -3067,6 +3084,17 @@ static void bestBtreeIndex(WhereBestIdx *p){
     );
     eqTermMask = WO_EQ|WO_IN;
     pIdx = 0;
+  }
+
+  nOrderBy = p->pOrderBy ? p->pOrderBy->nExpr : 0;
+  if( p->i ){
+    nPriorSat = p->aLevel[p->i-1].plan.nOBSat;
+    bSortInit = nPriorSat<nOrderBy;
+    bDistInit = 0;
+  }else{
+    nPriorSat = 0;
+    bSortInit = nOrderBy>0;
+    bDistInit = p->pDistinct!=0;
   }
 
   /* Loop over all indices looking for the best one to use
@@ -3146,11 +3174,9 @@ static void bestBtreeIndex(WhereBestIdx *p){
     int nInMul = 1;               /* Number of distinct equalities to lookup */
     double rangeDiv = (double)1;  /* Estimated reduction in search space */
     int nBound = 0;               /* Number of range constraints seen */
-    int bSort;                    /* True if external sort required */
-    int bDist;                    /* True if index cannot help with DISTINCT */
-    int bLookup = 0;              /* True if not a covering index */
-    int nPriorSat;                /* ORDER BY terms satisfied by outer loops */
-    int nOrderBy;                 /* Number of ORDER BY terms */
+    char bSort = bSortInit;       /* True if external sort required */
+    char bDist = bDistInit;       /* True if index cannot help with DISTINCT */
+    char bLookup = 0;             /* True if not a covering index */
     WhereTerm *pTerm;             /* A single term of the WHERE clause */
 #ifdef SQLITE_ENABLE_STAT3
     WhereTerm *pFirstTerm = 0;    /* First term matching the index */
@@ -3161,16 +3187,7 @@ static void bestBtreeIndex(WhereBestIdx *p){
       pSrc->pTab->zName, (pIdx ? pIdx->zName : "ipk")
     ));
     memset(&pc, 0, sizeof(pc));
-    nOrderBy = p->pOrderBy ? p->pOrderBy->nExpr : 0;
-    if( p->i ){
-      nPriorSat = pc.plan.nOBSat = p->aLevel[p->i-1].plan.nOBSat;
-      bSort = nPriorSat<nOrderBy;
-      bDist = 0;
-    }else{
-      nPriorSat = pc.plan.nOBSat = 0;
-      bSort = nOrderBy>0;
-      bDist = p->pDistinct!=0;
-    }
+    pc.plan.nOBSat = nPriorSat;
 
     /* Determine the values of pc.plan.nEq and nInMul */
     for(pc.plan.nEq=0; pc.plan.nEq<pProbe->nColumn; pc.plan.nEq++){
@@ -5257,6 +5274,8 @@ WhereInfo *sqlite3WhereBegin(
       const char *pVTab = (const char *)sqlite3GetVTable(db, pTab);
       int iCur = pTabItem->iCursor;
       sqlite3VdbeAddOp4(v, OP_VOpen, iCur, 0, 0, pVTab, P4_VTAB);
+    }else if( IsVirtual(pTab) ){
+      /* noop */
     }else
 #endif
     if( (pLevel->plan.wsFlags & WHERE_IDX_ONLY)==0
