@@ -1335,7 +1335,7 @@ static int selectColumnsFromExprList(
   for(i=0, pCol=aCol; i<nCol; i++, pCol++){
     /* Get an appropriate name for the column
     */
-    p = pEList->a[i].pExpr;
+    p = sqlite3ExprSkipCollate(pEList->a[i].pExpr);
     assert( p->pRight==0 || ExprHasProperty(p->pRight, EP_IntValue)
                || p->pRight->u.zToken==0 || p->pRight->u.zToken[0]!=0 );
     if( (zName = pEList->a[i].zName)!=0 ){

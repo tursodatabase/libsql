@@ -1475,12 +1475,12 @@ static int findIndexCol(
   const char *zColl = pIdx->azColl[iCol];
 
   for(i=0; i<pList->nExpr; i++){
-    Expr *p = pList->a[i].pExpr;
+    Expr *p = sqlite3ExprSkipCollate(pList->a[i].pExpr);
     if( p->op==TK_COLUMN
      && p->iColumn==pIdx->aiColumn[iCol]
      && p->iTable==iBase
     ){
-      CollSeq *pColl = sqlite3ExprCollSeq(pParse, p);
+      CollSeq *pColl = sqlite3ExprCollSeq(pParse, pList->a[i].pExpr);
       if( ALWAYS(pColl) && 0==sqlite3StrICmp(pColl->zName, zColl) ){
         return i;
       }
@@ -1527,7 +1527,7 @@ static int isDistinctIndex(
   */
   for(i=0; i<pDistinct->nExpr; i++){
     WhereTerm *pTerm;
-    Expr *p = pDistinct->a[i].pExpr;
+    Expr *p = sqlite3ExprSkipCollate(pDistinct->a[i].pExpr);
     if( p->op!=TK_COLUMN ) return 0;
     pTerm = findTerm(pWC, p->iTable, p->iColumn, ~(Bitmask)0, WO_EQ, 0);
     if( pTerm ){
@@ -1579,7 +1579,7 @@ static int isDistinctRedundant(
   ** current SELECT is a correlated sub-query.
   */
   for(i=0; i<pDistinct->nExpr; i++){
-    Expr *p = pDistinct->a[i].pExpr;
+    Expr *p = sqlite3ExprSkipCollate(pDistinct->a[i].pExpr);
     if( p->op==TK_COLUMN && p->iTable==iBase && p->iColumn<0 ) return 1;
   }
 

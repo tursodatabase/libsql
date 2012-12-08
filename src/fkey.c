@@ -511,12 +511,15 @@ static void fkScanChildren(
       ** expression to the parent key column defaults.  */
       if( pIdx ){
         Column *pCol;
+        const char *zColl;
         iCol = pIdx->aiColumn[i];
         pCol = &pTab->aCol[iCol];
         if( pTab->iPKey==iCol ) iCol = -1;
         pLeft->iTable = regData+iCol+1;
         pLeft->affinity = pCol->affinity;
-        pLeft = sqlite3ExprAddCollateString(pParse, pLeft, pCol->zColl);
+        zColl = pCol->zColl;
+        if( zColl==0 ) zColl = db->pDfltColl->zName;
+        pLeft = sqlite3ExprAddCollateString(pParse, pLeft, zColl);
       }else{
         pLeft->iTable = regData;
         pLeft->affinity = SQLITE_AFF_INTEGER;
