@@ -85,10 +85,13 @@ Expr *sqlite3ExprAddCollateString(Parse *pParse, Expr *pExpr, const char *zC){
 }
 
 /*
-** Skip over any TK_COLLATE operator in an expression.
+** Skip over any TK_COLLATE and/or TK_AS operators at the root of
+** an expression.
 */
 Expr *sqlite3ExprSkipCollate(Expr *pExpr){
-  if( pExpr && pExpr->op==TK_COLLATE ) pExpr = pExpr->pLeft;
+  while( pExpr && (pExpr->op==TK_COLLATE || pExpr->op==TK_AS) ){
+    pExpr = pExpr->pLeft;
+  }
   return pExpr;
 }
 
@@ -111,7 +114,7 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
       p = p->pLeft;
       continue;
     }
-    if( op==TK_COLLATE ){
+    if( op==TK_COLLATE || (op==TK_REGISTER && p->op2==TK_COLLATE) ){
       if( db->init.busy ){
         /* Do not report errors when parsing while the schema */
         pColl = sqlite3FindCollSeq(db, ENC(db), p->u.zToken, 0);

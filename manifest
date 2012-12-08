@@ -1,5 +1,5 @@
-C Improved\serror\smessages\swhen\scolumn\sintegers\sin\san\sORDER\sBY\sclause\sare\s\nout\sof\srange.
-D 2012-12-07T23:23:53.894
+C Recognize\sTK_COLLATE\soperators\sthat\shave\sbeen\stransformed\sinto\sTK_REGISTER.\nSkip\sboth\sTK_COLLATE\sand\sTK_AS\soperators\swhen\slooking\sfor\sthe\stop\sof\san\nexpression.
+D 2012-12-08T00:52:14.756
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -130,7 +130,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 72a70dcfda75d3a1f81041ce4573e7afddcd8e4e
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c 9b8d308979114991e5dc7cee958316e07186941d
-F src/expr.c 6b50dcc885e8f898e6ba97457d1b2305b78cc8d0
+F src/expr.c 7b3659c3dc5fb667a1c47262182b79495ab3c19d
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c ddf44f8ce43b91623e8687fd940c6bf3882d9480
 F src/func.c 8147799b048065a1590805be464d05b4913e652c
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 8e724b383da1314909c9a05e9d941a26a9f50b95
-R 881a229233da2a5bfc26c84533c04750
+P bd960d937f8d6521c8ec4b7bd8a77a498dd432d4
+R 186ed0129944dda9e365917ac59a8e17
 U drh
-Z a8bde7d83f4cf51f4dbb6d352a9305a4
+Z a53089f14a1e3e28e1b6c68901d1de44
