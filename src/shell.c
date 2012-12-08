@@ -541,6 +541,9 @@ static void output_c_string(FILE *out, const char *z){
     if( c=='\\' ){
       fputc(c, out);
       fputc(c, out);
+    }else if( c=='"' ){
+      fputc('\\', out);
+      fputc('"', out);
     }else if( c=='\t' ){
       fputc('\\', out);
       fputc('t', out);
@@ -796,14 +799,14 @@ static int shell_callback(void *pArg, int nArg, char **azArg, char **azCol, int 
       if( p->cnt++==0 && p->showHeader ){
         for(i=0; i<nArg; i++){
           output_c_string(p->out,azCol[i] ? azCol[i] : "");
-          fprintf(p->out, "%s", p->separator);
+          if(i<nArg-1) fprintf(p->out, "%s", p->separator);
         }
         fprintf(p->out,"\n");
       }
       if( azArg==0 ) break;
       for(i=0; i<nArg; i++){
         output_c_string(p->out, azArg[i] ? azArg[i] : p->nullvalue);
-        fprintf(p->out, "%s", p->separator);
+        if(i<nArg-1) fprintf(p->out, "%s", p->separator);
       }
       fprintf(p->out,"\n");
       break;
@@ -2018,6 +2021,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       p->mode = MODE_Html;
     }else if( n2==3 && strncmp(azArg[1],"tcl",n2)==0 ){
       p->mode = MODE_Tcl;
+      sqlite3_snprintf(sizeof(p->separator), p->separator, " ");
     }else if( n2==3 && strncmp(azArg[1],"csv",n2)==0 ){
       p->mode = MODE_Csv;
       sqlite3_snprintf(sizeof(p->separator), p->separator, ",");
@@ -2711,7 +2715,7 @@ static int process_input(struct callback_data *p, FILE *in){
     free(zSql);
   }
   free(zLine);
-  return errCnt;
+  return errCnt>0;
 }
 
 /*
@@ -2824,11 +2828,14 @@ static const char zOptions[] =
   "   -bail                stop after hitting an error\n"
   "   -batch               force batch I/O\n"
   "   -column              set output mode to 'column'\n"
-  "   -cmd command         run \"command\" before reading stdin\n"
+  "   -cmd COMMAND         run \"COMMAND\" before reading stdin\n"
   "   -csv                 set output mode to 'csv'\n"
   "   -echo                print commands before execution\n"
-  "   -init filename       read/process named file\n"
+  "   -init FILENAME       read/process named file\n"
   "   -[no]header          turn headers on or off\n"
+#if defined(SQLITE_ENABLE_MEMSYS3) || defined(SQLITE_ENABLE_MEMSYS5)
+  "   -heap SIZE           Size of heap for memsys3 or memsys5\n"
+#endif
   "   -help                show this message\n"
   "   -html                set output mode to HTML\n"
   "   -interactive         force interactive I/O\n"
@@ -2837,8 +2844,8 @@ static const char zOptions[] =
 #ifdef SQLITE_ENABLE_MULTIPLEX
   "   -multiplex           enable the multiplexor VFS\n"
 #endif
-  "   -nullvalue 'text'    set text string for NULL values\n"
-  "   -separator 'x'       set output field separator (|)\n"
+  "   -nullvalue TEXT      set text string for NULL values. Default ''\n"
+  "   -separator SEP       set output field separator. Default: '|'\n"
   "   -stats               print memory stats before each finalize\n"
   "   -version             show SQLite version\n"
   "   -vfs NAME            use NAME as the default VFS\n"
@@ -2874,6 +2881,19 @@ static void main_init(struct callback_data *data) {
   sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);
 }
 
+/*
+** Get the argument to an --option.  Throw an error and die if no argument
+** is available.
+*/
+static char *cmdline_option_value(int argc, char **argv, int i){
+  if( i==argc ){
+    fprintf(stderr, "%s: Error: missing argument to %s\n",
+            argv[0], argv[argc-1]);
+    exit(1);
+  }
+  return argv[i];
+}
+
 int main(int argc, char **argv){
   char *zErrMsg = 0;
   struct callback_data data;
@@ -2903,24 +2923,35 @@ int main(int argc, char **argv){
   ** the size of the alternative malloc heap,
   ** and the first command to execute.
   */
-  for(i=1; i<argc-1; i++){
+  for(i=1; i<argc; i++){
     char *z;
-    if( argv[i][0]!='-' ) break;
     z = argv[i];
+    if( z[0]!='-' ){
+      if( data.zDbFilename==0 ){
+        data.zDbFilename = z;
+        continue;
+      }
+      if( zFirstCmd==0 ){
+        zFirstCmd = z;
+        continue;
+      }
+      fprintf(stderr,"%s: Error: too many options: \"%s\"\n", Argv0, argv[i]);
+      fprintf(stderr,"Use -help for a list of options.\n");
+      return 1;
+    }
     if( z[1]=='-' ) z++;
     if( strcmp(z,"-separator")==0
      || strcmp(z,"-nullvalue")==0
      || strcmp(z,"-cmd")==0
     ){
-      i++;
+      (void)cmdline_option_value(argc, argv, ++i);
     }else if( strcmp(z,"-init")==0 ){
-      i++;
-      zInitFile = argv[i];
-    /* Need to check for batch mode here to so we can avoid printing
-    ** informational messages (like from process_sqliterc) before 
-    ** we do the actual processing of arguments later in a second pass.
-    */
+      zInitFile = cmdline_option_value(argc, argv, ++i);
     }else if( strcmp(z,"-batch")==0 ){
+      /* Need to check for batch mode here to so we can avoid printing
+      ** informational messages (like from process_sqliterc) before 
+      ** we do the actual processing of arguments later in a second pass.
+      */
       stdin_is_interactive = 0;
     }else if( strcmp(z,"-heap")==0 ){
 #if defined(SQLITE_ENABLE_MEMSYS3) || defined(SQLITE_ENABLE_MEMSYS5)
@@ -2928,7 +2959,7 @@ int main(int argc, char **argv){
       const char *zSize;
       sqlite3_int64 szHeap;
 
-      zSize = argv[++i];
+      zSize = cmdline_option_value(argc, argv, ++i);
       szHeap = atoi(zSize);
       for(j=0; (c = zSize[j])!=0; j++){
         if( c=='M' ){ szHeap *= 1000000; break; }
@@ -2955,7 +2986,7 @@ int main(int argc, char **argv){
       sqlite3_multiplex_initialize(0, 1);
 #endif
     }else if( strcmp(z,"-vfs")==0 ){
-      sqlite3_vfs *pVfs = sqlite3_vfs_find(argv[++i]);
+      sqlite3_vfs *pVfs = sqlite3_vfs_find(cmdline_option_value(argc,argv,++i));
       if( pVfs ){
         sqlite3_vfs_register(pVfs, 1);
       }else{
@@ -2964,31 +2995,15 @@ int main(int argc, char **argv){
       }
     }
   }
-  if( i<argc ){
-    data.zDbFilename = argv[i++];
-  }else{
+  if( data.zDbFilename==0 ){
 #ifndef SQLITE_OMIT_MEMORYDB
     data.zDbFilename = ":memory:";
 #else
-    data.zDbFilename = 0;
-#endif
-  }
-  if( i<argc ){
-    zFirstCmd = argv[i++];
-  }
-  if( i<argc ){
-    fprintf(stderr,"%s: Error: too many options: \"%s\"\n", Argv0, argv[i]);
-    fprintf(stderr,"Use -help for a list of options.\n");
-    return 1;
-  }
-  data.out = stdout;
-
-#ifdef SQLITE_OMIT_MEMORYDB
-  if( data.zDbFilename==0 ){
     fprintf(stderr,"%s: Error: no database filename specified\n", Argv0);
     return 1;
-  }
 #endif
+  }
+  data.out = stdout;
 
   /* Go ahead and open the database file if it already exists.  If the
   ** file does not exist, delay opening it.  This prevents empty database
@@ -3013,8 +3028,9 @@ int main(int argc, char **argv){
   ** file is processed so that the command-line arguments will override
   ** settings in the initialization file.
   */
-  for(i=1; i<argc && argv[i][0]=='-'; i++){
+  for(i=1; i<argc; i++){
     char *z = argv[i];
+    if( z[0]!='-' ) continue;
     if( z[1]=='-' ){ z++; }
     if( strcmp(z,"-init")==0 ){
       i++;
@@ -3030,25 +3046,11 @@ int main(int argc, char **argv){
       data.mode = MODE_Csv;
       memcpy(data.separator,",",2);
     }else if( strcmp(z,"-separator")==0 ){
-      i++;
-      if(i>=argc){
-        fprintf(stderr,"%s: Error: missing argument for option: %s\n",
-                        Argv0, z);
-        fprintf(stderr,"Use -help for a list of options.\n");
-        return 1;
-      }
       sqlite3_snprintf(sizeof(data.separator), data.separator,
-                       "%.*s",(int)sizeof(data.separator)-1,argv[i]);
+                       "%s",cmdline_option_value(argc,argv,++i));
     }else if( strcmp(z,"-nullvalue")==0 ){
-      i++;
-      if(i>=argc){
-        fprintf(stderr,"%s: Error: missing argument for option: %s\n",
-                        Argv0, z);
-        fprintf(stderr,"Use -help for a list of options.\n");
-        return 1;
-      }
       sqlite3_snprintf(sizeof(data.nullvalue), data.nullvalue,
-                       "%.*s",(int)sizeof(data.nullvalue)-1,argv[i]);
+                       "%s",cmdline_option_value(argc,argv,++i));
     }else if( strcmp(z,"-header")==0 ){
       data.showHeader = 1;
     }else if( strcmp(z,"-noheader")==0 ){
@@ -3082,8 +3084,7 @@ int main(int argc, char **argv){
       usage(1);
     }else if( strcmp(z,"-cmd")==0 ){
       if( i==argc-1 ) break;
-      i++;
-      z = argv[i];
+      z = cmdline_option_value(argc,argv,++i);
       if( z[0]=='.' ){
         rc = do_meta_command(z, &data);
         if( rc && bail_on_error ) return rc;

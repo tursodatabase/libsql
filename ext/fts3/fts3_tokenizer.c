@@ -251,10 +251,10 @@ static void testFunc(
   const char *azArg[64];
 
   const char *zToken;
-  int nToken;
-  int iStart;
-  int iEnd;
-  int iPos;
+  int nToken = 0;
+  int iStart = 0;
+  int iEnd = 0;
+  int iPos = 0;
   int i;
 
   Tcl_Obj *pRet;

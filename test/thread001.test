@@ -87,7 +87,7 @@ foreach {tn same_db shared_cache} [list \
       do_test t1 {
         execsql {
           SELECT 
-            (SELECT md5sum(a, b) FROM ab WHERE a < (SELECT max(a) FROM ab)) ==
+            (SELECT md5sum(a, b) FROM ab WHERE +a < (SELECT max(a) FROM ab)) ==
             (SELECT b FROM ab WHERE a = (SELECT max(a) FROM ab))
         }
       } {1}
@@ -131,7 +131,7 @@ foreach {tn same_db shared_cache} [list \
   do_test thread001.$tn.6 {
     execsql {
       SELECT 
-        (SELECT md5sum(a, b) FROM ab WHERE a < (SELECT max(a) FROM ab)) ==
+        (SELECT md5sum(a, b) FROM ab WHERE +a < (SELECT max(a) FROM ab)) ==
         (SELECT b FROM ab WHERE a = (SELECT max(a) FROM ab))
     }
   } {1}

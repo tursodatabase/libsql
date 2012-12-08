@@ -185,7 +185,7 @@ static int getNextToken(
   rc = sqlite3Fts3OpenTokenizer(pTokenizer, pParse->iLangid, z, n, &pCursor);
   if( rc==SQLITE_OK ){
     const char *zToken;
-    int nToken, iStart, iEnd, iPosition;
+    int nToken = 0, iStart = 0, iEnd = 0, iPosition = 0;
     int nByte;                               /* total space to allocate */
 
     rc = pModule->xNext(pCursor, &zToken, &nToken, &iStart, &iEnd, &iPosition);
@@ -300,7 +300,7 @@ static int getNextString(
     int ii;
     for(ii=0; rc==SQLITE_OK; ii++){
       const char *zByte;
-      int nByte, iBegin, iEnd, iPos;
+      int nByte = 0, iBegin = 0, iEnd = 0, iPos = 0;
       rc = pModule->xNext(pCursor, &zByte, &nByte, &iBegin, &iEnd, &iPos);
       if( rc==SQLITE_OK ){
         Fts3PhraseToken *pToken;

@@ -228,6 +228,16 @@ int sqlite3JournalCreate(sqlite3_file *p){
   return createFile((JournalFile *)p);
 }
 
+/*
+** The file-handle passed as the only argument is guaranteed to be an open
+** file. It may or may not be of class JournalFile. If the file is a
+** JournalFile, and the underlying file on disk has not yet been opened,
+** return 0. Otherwise, return 1.
+*/
+int sqlite3JournalExists(sqlite3_file *p){
+  return (p->pMethods!=&JournalFileMethods || ((JournalFile *)p)->pReal!=0);
+}
+
 /* 
 ** Return the number of bytes required to store a JournalFile that uses vfs
 ** pVfs to create the underlying on-disk files.

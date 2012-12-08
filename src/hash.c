@@ -193,7 +193,7 @@ static void removeElementGivenHash(
   }
   sqlite3_free( elem );
   pH->count--;
-  if( pH->count<=0 ){
+  if( pH->count==0 ){
     assert( pH->first==0 );
     assert( pH->count==0 );
     sqlite3HashClear(pH);

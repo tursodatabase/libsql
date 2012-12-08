@@ -1293,4 +1293,44 @@ do_test 19.3 {
   db2 close
 } {}
 
+#-------------------------------------------------------------------------
+# Test that the bug fixed by [b0c1ba655d69] really is fixed.
+#
+do_execsql_test 20.1 {
+  CREATE TABLE t7 (a, b);
+  CREATE TABLE t8 (c, d);
+  CREATE INDEX i2 ON t7(a);
+  CREATE INDEX i3 ON t7(b);
+  CREATE INDEX i4 ON t8(c);
+  CREATE INDEX i5 ON t8(d);
+
+  CREATE VIRTUAL TABLE t7v USING echo(t7);
+  CREATE VIRTUAL TABLE t8v USING echo(t8);
+}
+
+do_test 20.2 {
+  for {set i 0} {$i < 1000} {incr i} {
+    db eval {INSERT INTO t7 VALUES($i, $i)}
+    db eval {INSERT INTO t8 VALUES($i, $i)}
+  }
+} {}
+
+do_execsql_test 20.3 {
+  SELECT a, b FROM (
+      SELECT a, b FROM t7 WHERE a=11 OR b=12
+      UNION ALL
+      SELECT c, d FROM t8 WHERE c=5 OR d=6
+  )
+  ORDER BY 1, 2;
+} {5 5 6 6 11 11 12 12}
+
+do_execsql_test 20.4 {
+  SELECT a, b FROM (
+      SELECT a, b FROM t7v WHERE a=11 OR b=12
+      UNION ALL
+      SELECT c, d FROM t8v WHERE c=5 OR d=6
+  )
+  ORDER BY 1, 2;
+} {5 5 6 6 11 11 12 12}
+
 finish_test

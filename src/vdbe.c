@@ -2237,6 +2237,11 @@ case OP_Column: {
     }
   }else if( ALWAYS(pC->pseudoTableReg>0) ){
     pReg = &aMem[pC->pseudoTableReg];
+    if( pC->multiPseudo ){
+      sqlite3VdbeMemShallowCopy(pDest, pReg+p2, MEM_Ephem);
+      Deephemeralize(pDest);
+      goto op_column_out;
+    }
     assert( pReg->flags & MEM_Blob );
     assert( memIsValid(pReg) );
     payloadSize = pReg->n;
@@ -3295,7 +3300,7 @@ case OP_OpenEphemeral: {
   break;
 }
 
-/* Opcode: OpenSorter P1 P2 * P4 *
+/* Opcode: SorterOpen P1 P2 * P4 *
 **
 ** This opcode works like OP_OpenEphemeral except that it opens
 ** a transient index that is specifically designed to sort large
@@ -3318,12 +3323,13 @@ case OP_SorterOpen: {
   break;
 }
 
-/* Opcode: OpenPseudo P1 P2 P3 * *
+/* Opcode: OpenPseudo P1 P2 P3 * P5
 **
 ** Open a new cursor that points to a fake table that contains a single
 ** row of data.  The content of that one row in the content of memory
-** register P2.  In other words, cursor P1 becomes an alias for the 
-** MEM_Blob content contained in register P2.
+** register P2 when P5==0.  In other words, cursor P1 becomes an alias for the 
+** MEM_Blob content contained in register P2.  When P5==1, then the
+** row is represented by P3 consecutive registers beginning with P2.
 **
 ** A pseudo-table created by this opcode is used to hold a single
 ** row output from the sorter so that the row can be decomposed into
@@ -3343,6 +3349,7 @@ case OP_OpenPseudo: {
   pCx->pseudoTableReg = pOp->p2;
   pCx->isTable = 1;
   pCx->isIndex = 0;
+  pCx->multiPseudo = pOp->p5;
   break;
 }
 
@@ -4307,7 +4314,7 @@ case OP_Rowid: {                 /* out2-prerelease */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
-  assert( pC->pseudoTableReg==0 );
+  assert( pC->pseudoTableReg==0 || pC->nullRow );
   if( pC->nullRow ){
     pOut->flags = MEM_Null;
     break;

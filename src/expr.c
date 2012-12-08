@@ -939,6 +939,7 @@ SrcList *sqlite3SrcListDup(sqlite3 *db, SrcList *p, int flags){
     pNewItem->addrFillSub = pOldItem->addrFillSub;
     pNewItem->regReturn = pOldItem->regReturn;
     pNewItem->isCorrelated = pOldItem->isCorrelated;
+    pNewItem->viaCoroutine = pOldItem->viaCoroutine;
     pNewItem->zIndex = sqlite3DbStrDup(db, pOldItem->zIndex);
     pNewItem->notIndexed = pOldItem->notIndexed;
     pNewItem->pIndex = pOldItem->pIndex;
@@ -4029,8 +4030,10 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
         ExprSetIrreducible(pExpr);
         pExpr->iAgg = (i16)i;
         pExpr->pAggInfo = pAggInfo;
+        return WRC_Prune;
+      }else{
+        return WRC_Continue;
       }
-      return WRC_Prune;
     }
   }
   return WRC_Continue;
@@ -4042,9 +4045,10 @@ static int analyzeAggregatesInSelect(Walker *pWalker, Select *pSelect){
 }
 
 /*
-** Analyze the given expression looking for aggregate functions and
-** for variables that need to be added to the pParse->aAgg[] array.
-** Make additional entries to the pParse->aAgg[] array as necessary.
+** Analyze the pExpr expression looking for aggregate functions and
+** for variables that need to be added to AggInfo object that pNC->pAggInfo
+** points to.  Additional entries are made on the AggInfo object as
+** necessary.
 **
 ** This routine should only be called after the expression has been
 ** analyzed by sqlite3ResolveExprNames().

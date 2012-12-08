@@ -1510,6 +1510,7 @@ static void asyncWriterThread(void){
       case ASYNC_DELETE:
         ASYNC_TRACE(("DELETE %s\n", p->zBuf));
         rc = pVfs->xDelete(pVfs, p->zBuf, (int)p->iOffset);
+        if( rc==SQLITE_IOERR_DELETE_NOENT ) rc = SQLITE_OK;
         break;
 
       case ASYNC_OPENEXCLUSIVE: {

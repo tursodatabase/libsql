@@ -169,6 +169,56 @@ static void absFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
 }
 
 /*
+** Implementation of the instr() function.
+**
+** instr(haystack,needle) finds the first occurrence of needle
+** in haystack and returns the number of previous characters plus 1,
+** or 0 if needle does not occur within haystack.
+**
+** If both haystack and needle are BLOBs, then the result is one more than
+** the number of bytes in haystack prior to the first occurrence of needle,
+** or 0 if needle never occurs in haystack.
+*/
+static void instrFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  const unsigned char *zHaystack;
+  const unsigned char *zNeedle;
+  int nHaystack;
+  int nNeedle;
+  int typeHaystack, typeNeedle;
+  int N = 1;
+  int isText;
+
+  UNUSED_PARAMETER(argc);
+  typeHaystack = sqlite3_value_type(argv[0]);
+  typeNeedle = sqlite3_value_type(argv[1]);
+  if( typeHaystack==SQLITE_NULL || typeNeedle==SQLITE_NULL ) return;
+  nHaystack = sqlite3_value_bytes(argv[0]);
+  nNeedle = sqlite3_value_bytes(argv[1]);
+  if( typeHaystack==SQLITE_BLOB && typeNeedle==SQLITE_BLOB ){
+    zHaystack = sqlite3_value_blob(argv[0]);
+    zNeedle = sqlite3_value_blob(argv[1]);
+    isText = 0;
+  }else{
+    zHaystack = sqlite3_value_text(argv[0]);
+    zNeedle = sqlite3_value_text(argv[1]);
+    isText = 1;
+  }
+  while( nNeedle<=nHaystack && memcmp(zHaystack, zNeedle, nNeedle)!=0 ){
+    N++;
+    do{
+      nHaystack--;
+      zHaystack++;
+    }while( isText && (zHaystack[0]&0xc0)==0x80 );
+  }
+  if( nNeedle>nHaystack ) N = 0;
+  sqlite3_result_int(context, N);
+}
+
+/*
 ** Implementation of the substr() function.
 **
 ** substr(x,p1,p2)  returns p2 characters of x[] beginning with p1.
@@ -1536,6 +1586,7 @@ void sqlite3RegisterGlobalFunctions(void){
     AGGREGATE(max,               1, 1, 1, minmaxStep,      minMaxFinalize ),
     FUNCTION2(typeof,            1, 0, 0, typeofFunc,  SQLITE_FUNC_TYPEOF),
     FUNCTION2(length,            1, 0, 0, lengthFunc,  SQLITE_FUNC_LENGTH),
+    FUNCTION(instr,              2, 0, 0, instrFunc        ),
     FUNCTION(substr,             2, 0, 0, substrFunc       ),
     FUNCTION(substr,             3, 0, 0, substrFunc       ),
     FUNCTION(abs,                1, 0, 0, absFunc          ),

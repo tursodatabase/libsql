@@ -195,8 +195,11 @@ static int vdbeSorterIterRead(
     int rc;                       /* sqlite3OsRead() return code */
 
     /* Determine how many bytes of data to read. */
-    nRead = (int)(p->iEof - p->iReadOff);
-    if( nRead>p->nBuffer ) nRead = p->nBuffer;
+    if( (p->iEof - p->iReadOff) > (i64)p->nBuffer ){
+      nRead = p->nBuffer;
+    }else{
+      nRead = (int)(p->iEof - p->iReadOff);
+    }
     assert( nRead>0 );
 
     /* Read data from the file. Return early if an error occurs. */

@@ -176,6 +176,10 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    0,                         /* xLog */
    0,                         /* pLogArg */
    0,                         /* bLocaltimeFault */
+#ifdef SQLITE_ENABLE_SQLLOG
+   0,                         /* xSqllog */
+   0                          /* pSqllogArg */
+#endif
 };
 
 

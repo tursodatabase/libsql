@@ -1815,8 +1815,14 @@ static void bestAutomaticIndex(WhereBestIdx *p){
     /* Automatic indices are disabled at run-time */
     return;
   }
-  if( (p->cost.plan.wsFlags & WHERE_NOT_FULLSCAN)!=0 ){
+  if( (p->cost.plan.wsFlags & WHERE_NOT_FULLSCAN)!=0
+   && (p->cost.plan.wsFlags & WHERE_COVER_SCAN)==0
+  ){
     /* We already have some kind of index in use for this query. */
+    return;
+  }
+  if( pSrc->viaCoroutine ){
+    /* Cannot index a co-routine */
     return;
   }
   if( pSrc->notIndexed ){
@@ -2996,7 +3002,7 @@ static int isSortingIndex(
 ** SQLITE_BIG_DBL. If a plan is found that uses the named index, 
 ** then the cost is calculated in the usual way.
 **
-** If a NOT INDEXED clause (pSrc->notIndexed!=0) was attached to the table 
+** If a NOT INDEXED clause was attached to the table 
 ** in the SELECT statement, then no indexes are considered. However, the 
 ** selected plan may still take advantage of the built-in rowid primary key
 ** index.
@@ -4023,6 +4029,16 @@ static Bitmask codeOneLoopStart(
     sqlite3VdbeAddOp2(v, OP_Integer, 0, pLevel->iLeftJoin);
     VdbeComment((v, "init LEFT JOIN no-match flag"));
   }
+
+  /* Special case of a FROM clause subquery implemented as a co-routine */
+  if( pTabItem->viaCoroutine ){
+    int regYield = pTabItem->regReturn;
+    sqlite3VdbeAddOp2(v, OP_Integer, pTabItem->addrFillSub-1, regYield);
+    pLevel->p2 =  sqlite3VdbeAddOp1(v, OP_Yield, regYield);
+    VdbeComment((v, "next row of co-routine %s", pTabItem->pTab->zName));
+    sqlite3VdbeAddOp2(v, OP_If, regYield+1, addrBrk);
+    pLevel->op = OP_Goto;
+  }else
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   if(  (pLevel->plan.wsFlags & WHERE_VIRTUALTABLE)!=0 ){
@@ -5086,6 +5102,19 @@ WhereInfo *sqlite3WhereBegin(
         if( isOptimal && (sWBI.cost.plan.wsFlags & WHERE_NOT_FULLSCAN)==0 ){
           notIndexed |= m;
         }
+        if( isOptimal ){
+          pWInfo->a[j].rOptCost = sWBI.cost.rCost;
+        }else if( iFrom<nTabList-1 ){
+          /* If two or more tables have nearly the same outer loop cost,
+          ** very different inner loop (optimal) cost, we want to choose
+          ** for the outer loop that table which benefits the least from
+          ** being in the inner loop.  The following code scales the 
+          ** outer loop cost estimate to accomplish that. */
+          WHERETRACE(("   scaling cost from %.1f to %.1f\n",
+                      sWBI.cost.rCost,
+                      sWBI.cost.rCost/pWInfo->a[j].rOptCost));
+          sWBI.cost.rCost /= pWInfo->a[j].rOptCost;
+        }
 
         /* Conditions under which this table becomes the best so far:
         **
@@ -5093,8 +5122,8 @@ WhereInfo *sqlite3WhereBegin(
         **       yet run.  (In other words, it must not depend on tables
         **       in inner loops.)
         **
-        **   (2) A full-table-scan plan cannot supercede indexed plan unless
-        **       the full-table-scan is an "optimal" plan as defined above.
+        **   (2) (This rule was removed on 2012-11-09.  The scaling of the
+        **       cost using the optimal scan cost made this rule obsolete.)
         **
         **   (3) All tables have an INDEXED BY clause or this table lacks an
         **       INDEXED BY clause or this table uses the specific
@@ -5109,9 +5138,6 @@ WhereInfo *sqlite3WhereBegin(
         **       is defined by the compareCost() function above. 
         */
         if( (sWBI.cost.used&sWBI.notValid)==0                    /* (1) */
-            && (bestJ<0 || (notIndexed&m)!=0                     /* (2) */
-                || (bestPlan.plan.wsFlags & WHERE_NOT_FULLSCAN)==0
-                || (sWBI.cost.plan.wsFlags & WHERE_NOT_FULLSCAN)!=0)
             && (nUnconstrained==0 || sWBI.pSrc->pIndex==0        /* (3) */
                 || NEVER((sWBI.cost.plan.wsFlags & WHERE_NOT_FULLSCAN)!=0))
             && (bestJ<0 || compareCost(&sWBI.cost, &bestPlan))   /* (4) */
@@ -5231,6 +5257,8 @@ WhereInfo *sqlite3WhereBegin(
       const char *pVTab = (const char *)sqlite3GetVTable(db, pTab);
       int iCur = pTabItem->iCursor;
       sqlite3VdbeAddOp4(v, OP_VOpen, iCur, 0, 0, pVTab, P4_VTAB);
+    }else if( IsVirtual(pTab) ){
+      /* noop */
     }else
 #endif
     if( (pLevel->plan.wsFlags & WHERE_IDX_ONLY)==0

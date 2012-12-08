@@ -5321,6 +5321,38 @@ static int file_control_vfsname(
   return TCL_OK;  
 }
 
+/*
+** tclcmd:   file_control_tempfilename DB ?AUXDB?
+**
+** Return a string that is a temporary filename
+*/
+static int file_control_tempfilename(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3 *db;
+  const char *zDbName = "main";
+  char *zTName = 0;
+
+  if( objc!=2 && objc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+        Tcl_GetStringFromObj(objv[0], 0), " DB ?AUXDB?", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
+    return TCL_ERROR;
+  }
+  if( objc==3 ){
+    zDbName = Tcl_GetString(objv[2]);
+  }
+  sqlite3_file_control(db, zDbName, SQLITE_FCNTL_TEMPFILENAME, (void*)&zTName);
+  Tcl_AppendResult(interp, zTName, (char*)0);
+  sqlite3_free(zTName);
+  return TCL_OK;  
+}
+
 
 /*
 ** tclcmd:   sqlite3_vfs_list
@@ -6150,6 +6182,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "file_control_persist_wal",    file_control_persist_wal,     0   },
      { "file_control_powersafe_overwrite",file_control_powersafe_overwrite,0},
      { "file_control_vfsname",        file_control_vfsname,         0   },
+     { "file_control_tempfilename",   file_control_tempfilename,    0   },
      { "sqlite3_vfs_list",           vfs_list,     0   },
      { "sqlite3_create_function_v2", test_create_function_v2, 0 },
 

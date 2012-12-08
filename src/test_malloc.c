@@ -720,8 +720,8 @@ static int test_memdebug_settitle(
 #ifdef SQLITE_MEMDEBUG
   {
     const char *zTitle;
-    zTitle = Tcl_GetString(objv[1]);
     extern int sqlite3MemdebugSettitle(const char*);
+    zTitle = Tcl_GetString(objv[1]);
     sqlite3MemdebugSettitle(zTitle);
   }
 #endif
