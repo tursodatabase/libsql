@@ -1244,7 +1244,7 @@ static void exprAnalyze(
         pNew = pTerm;
       }
       exprCommute(pParse, pDup);
-      pLeft = pDup->pLeft;
+      pLeft = sqlite3ExprSkipCollate(pDup->pLeft);
       pNew->leftCursor = pLeft->iTable;
       pNew->u.leftColumn = pLeft->iColumn;
       testcase( (prereqLeft | extraRight) != prereqLeft );

@@ -1,5 +1,5 @@
-C Fix\sthe\sheader\scomment\son\sthe\sOP_Compare\soperator.
-D 2012-12-08T13:26:23.206
+C Make\ssure\sWHERE\sclause\sconstraints\sA=B\sand\sB=A\swork\sthe\ssame\seven\swith\nCOLLATE\sclauses.
+D 2012-12-08T14:16:47.364
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -250,7 +250,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c fdf9eb0551cdc11f1a375cfc2d0707a99b5cfde5
+F src/where.c f4b0ec5ac0c3ace1ecb6602d464a2c850a00a212
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 1a9db8dc2f3c5cb089801d56122cdf5c3a618163
-R e3c2d38c5b1c04086085015686938bf6
+P 2722f4074fd8d189b7bd2b9107484b66500e5e9b
+R 44ade51d63c6fcbdb696e1733dcc6d8c
 U drh
-Z 5f1846a0c26a9b369fef13111cb44cf8
+Z 2cda5cfb2150123461ceb6bd2affdc5c
