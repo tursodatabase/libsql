@@ -2076,8 +2076,6 @@ case OP_BitNot: {             /* same as TK_BITNOT, in1, out2 */
 **
 ** Check if OP_Once flag P1 is set. If so, jump to instruction P2. Otherwise,
 ** set the flag and fall through to the next instruction.
-**
-** See also: JumpOnce
 */
 case OP_Once: {             /* jump */
   assert( pOp->p1<p->nOnceFlag );

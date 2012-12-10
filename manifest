@@ -1,5 +1,5 @@
-C Factor\ssome\swork\sout\sof\sthe\sindex\sloop\sof\sthe\sbestBtreeIndex()\sroutine\sfor\na\ssmall\sperformance\sincrease.
-D 2012-12-08T22:14:29.324
+C Remove\sa\sreference\sto\sJumpOnce\sfrom\sa\scomment\sin\svdbe.c.\sNo\scode\schanges.
+D 2012-12-10T09:08:17.304
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -237,7 +237,7 @@ F src/update.c 28d2d098b43a2c70dae399896ea8a02f622410ef
 F src/utf.c 8d819e2e5104a430fc2005f018db14347c95a38f
 F src/util.c 0af2e515dc0dabacec931bca39525f6c3f1c5455
 F src/vacuum.c 2727bdd08847fcb6b2d2da6d14f018910e8645d3
-F src/vdbe.c 89138e8e8b5468f349ace581db9c49801f4d6543
+F src/vdbe.c fb1d2b75d3674cbad68a8c810f0bd27e977369c4
 F src/vdbe.h b52887278cb173e66188da84dfab216bea61119d
 F src/vdbeInt.h 79abf9b31be406d35ca77d6999cb2d42aaf91e78
 F src/vdbeapi.c 4c2418161cf45392ba76a7ca92f9a5f06b96f89c
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 8542e6180d4321d45b34f33e481658908ce1430d
-R 307714a402bf6d86beef10997fbac787
-U drh
-Z c87a5a2068dc4b6318f0ce8f3372ea0a
+P 92c9ab56b1c67b9468bec57ab1d2c483a69a2810
+R 2fd74e1da240a2ddf2869176f4bfa3b0
+U dan
+Z 3ebdd624f50ae598ba1c6acf15c0ccaa
